@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    name: frontend
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Formatage
+        run: npm run format:check
+
+      - name: Lint (dont frontières d'architecture et déterminisme)
+        run: npm run lint
+
+      - name: Tests unitaires avec couverture
+        run: npm run test:coverage
+
+      - name: Build de production
+        run: npm run build
+
+      - name: Installer Chromium pour Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Tests de bout en bout
+        run: npm run e2e
+
+      - name: Captures sous 5 angles
+        run: npm run captures
+        env:
+          CAPTURE_DIR: ${{ github.workspace }}/captures-ci
+
+      - name: Publier les captures
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: captures
+          path: captures-ci
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Publier le rapport Playwright
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: frontend/playwright-report
+          if-no-files-found: ignore
+          retention-days: 14
