@@ -4,8 +4,24 @@
   "motifPause": "Socle en préparation",
   "experience": {
     "premiereNuit": "2026-10-15",
-    "finsDePhase": ["2026-11-11", "2026-12-09", "2027-01-06"],
+    "finsDePhase": [
+      "2026-11-11",
+      "2026-12-09",
+      "2027-01-06"
+    ],
     "issueRapport": null
   },
-  "nuits": {}
+  "nuits": {
+    "2026-10-20": {
+      "type": "dette",
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-10-15T23:31:26.839Z",
+          "fin": null,
+          "note": null
+        }
+      }
+    }
+  }
 }
