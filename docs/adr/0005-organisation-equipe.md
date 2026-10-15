@@ -18,7 +18,7 @@ doivent se coordonner, ne pas se marcher dessus et laisser une trace lisible pou
 - **État et traces** sur la branche `equipe` : `etat.json` (verrou et historique),
   `journal/`, `captures/`. Elle n'est jamais fusionnée.
 - **Communication** par issues et PR ; rapport du matin dans `journal/NUIT.md` et en
-  commentaire de l'issue épinglée « Rapport du matin ».
+  commentaire de l'issue « Rapport du matin » (#2).
 - Points d'étape à la fin de chaque phase avec pause automatique.
 
 ## Options écartées

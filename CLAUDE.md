@@ -56,11 +56,11 @@ Depuis la racine du clone de `main` :
 
 1. `node .agents/outils/etat.mjs contexte` : prépare le worktree `../equipe` et affiche
    `nuit`, `semaine`, `jour`, `type`, `pause`, l'état de la nuit courante (`nuitCourante`).
-2. **Pause** : si `pause` vaut `true` (drapeau de `etat.json` ou issue `stop` ouverte),
-   consigner `node .agents/outils/etat.mjs phase <rôle> saute "pause : <motif>"` puis terminer.
-3. **Pas de double exécution** : si ta phase est déjà `termine` ou `en-cours` dans
+2. **Pas de double exécution** : si ta phase est déjà `termine` ou `en-cours` dans
    `nuitCourante`, terminer sans rien modifier (une relance manuelle n'est permise qu'après
    `saute` ou `echec`).
+3. **Pause** : si `pause` vaut `true` (drapeau de `etat.json` ou issue `stop` ouverte),
+   consigner `node .agents/outils/etat.mjs phase <rôle> saute "pause : <motif>"` puis terminer.
 4. `node .agents/outils/etat.mjs phase <rôle> en-cours`, puis lire ton fichier de consignes
    `.agents/prompts/<rôle>.md` et le suivre.
 5. Avant de terminer, **toujours** consigner l'issue de ta phase, même en cas d'échec :
