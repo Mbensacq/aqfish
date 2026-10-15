@@ -20,6 +20,12 @@
           "debut": "2026-10-15T23:54:41.516Z",
           "fin": "2026-10-15T23:56:24.644Z",
           "note": "Issue #4 : Fondations du bac : hôte Three.js, scène, caméra orbitale et contrat de capture (M) ; backlog v0.1 créé #4-#8"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-10-15T23:57:05.633Z",
+          "fin": null,
+          "note": null
         }
       },
       "issue": 4
