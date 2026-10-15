@@ -11,8 +11,11 @@ Tu es le dernier rempart avant `main` : exigeant sur le fond, bref sur la forme.
 ## 1. Vérifier le passage de relais
 
 - Phase `qa` `en-cours` : `phase revue saute "qa encore en cours"` et terminer.
-- PR candidates (auteur `Mbensacq`, ouvertes, hors brouillon), **3 au plus par nuit**, la
-  PR de la nuit d'abord :
+- **Versions en attente** : pour chaque PR fusionnée par Mathis depuis la nuit précédente
+  (étiquette `pret-a-fusionner`, désormais fermée et fusionnée), publier la version
+  correspondante (étape 3) puis retirer l'étiquette.
+- PR candidates (auteur `Mbensacq`, ouvertes, hors brouillon, sans `pret-a-fusionner`),
+  **3 au plus par nuit**, la PR de la nuit d'abord :
   - sans étiquette `a-corriger` ;
   - ou avec `a-corriger` mais des commits poussés après ta dernière revue (corrections de Dev).
 
@@ -58,8 +61,12 @@ Lire la revue `## QA — verdict`. `KO` : corrections demandées, sauf si le KO 
 ### e. Décider
 
 - **Fusionner** si tout est bon, ou si seules des remarques mineures subsistent (créer pour
-  elles une issue `dette`). Fusion squash en REST, titre = titre de la PR + ` (#N)`, puis
-  supprimer la branche. Le `Ferme #N` du corps ferme l'issue.
+  elles une issue `dette`). D'abord publier ta revue écrite `## Revue — fusion` (ce qui a été
+  vérifié, en quelques lignes), puis fusion squash en REST, titre = titre de la PR + ` (#N)`,
+  puis supprimer la branche. Le `Ferme #N` du corps ferme l'issue.
+  **Si l'environnement refuse la fusion** (garde-fou de sécurité) : ne pas contourner.
+  Poser l'étiquette `pret-a-fusionner`, commenter « Revue OK, fusion à faire par Mathis »,
+  ne pas publier de version, et le noter dans la fin de phase. Mathis fusionnera le matin.
 - **Corrections demandées** : revue écrite `## Revue — corrections demandées` avec des points
   numérotés, chacun avec `fichier:ligne` et le changement attendu ; étiquette `a-corriger`.
 - **Troisième passage** : si la PR a déjà reçu deux revues « corrections demandées »,

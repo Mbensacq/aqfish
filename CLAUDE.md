@@ -184,6 +184,7 @@ Front uniquement en phase 1. Le backend sera en **NestJS** à partir de la phase
 | `retro` | Rétrospective hebdomadaire |
 | `nuit` | Issue de travail d'une nuit (créée par Planif) |
 | `a-corriger` | Revue : corrections demandées, à traiter en priorité par Dev la nuit suivante |
+| `pret-a-fusionner` | Revue OK mais fusion refusée par l'environnement : Mathis fusionne |
 | `bloque` | Bloqué, besoin d'une décision de Mathis |
 | `idee-mathis` | Idée de Mathis : Planif la traite en priorité |
 | `validation-mathis` | Touche la zone protégée : seul Mathis fusionne |

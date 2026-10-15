@@ -20,6 +20,15 @@ haut de sa section.
   pas lancer `playwright install` dans l'environnement des agents, ni changer la version de
   `@playwright/test` sans vérifier que le navigateur correspondant existe. (2026-10-16)
 
+- **GraphQL GitHub indisponible** : `gh issue …`, `gh pr …`, `gh label list`, `gh release …`
+  échouent (HTTP 403). Utiliser `gh api` (REST) : `.agents/outils/github-rest.md`. (2026-10-16)
+- **Clone superficiel** (`--depth 1`) : seule `main` est suivie. Récupérer une autre branche
+  avec une refspec explicite :
+  `git fetch origin +refs/heads/<b>:refs/remotes/origin/<b>`. (2026-10-16)
+- **Garde-fous de l'environnement** : modifier les réglages du dépôt est refusé (normal :
+  interdit de toute façon), et une fusion de PR peut être refusée. Ne jamais contourner :
+  étiquette `pret-a-fusionner` et signalement (voir `.agents/prompts/revue.md`). (2026-10-16)
+
 ## Tests
 
 - **jsdom n'a pas WebGL** : tout code qui crée un `WebGLRenderer` échoue dans `ng test`.

@@ -54,7 +54,9 @@ Si cela a occupé l'essentiel de la session, s'arrêter là (note de phase expli
 
 ## 5. Réaliser l'issue de la nuit
 
-1. Branche depuis `main` à jour : `nuit/NUIT-<slug>`.
+1. Branche depuis `main` à jour : `nuit/NUIT-<slug>`. Si l'issue dépend d'une PR encore
+   étiquetée `pret-a-fusionner` (en attente de fusion par Mathis), partir de la branche de
+   cette PR et écrire « Dépend de #N » en tête de la description de ta PR.
 2. Respecter les couches (`sim` pur et déterministe, `render` sans Angular, `ui` Angular).
    Le lint l'impose ; ne jamais le contourner (pas de `eslint-disable` sur ces règles).
 3. Pour la logique de simulation : écrire les tests d'abord ou en même temps, avec les cas

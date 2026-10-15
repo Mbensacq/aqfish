@@ -82,6 +82,7 @@ l'effet attendu. Ne jamais la fusionner ni modifier une tâche planifiée pour l
 
 ## Alertes
 ## Décisions attendues de Mathis
+<PR étiquetées `pret-a-fusionner` à fusionner (liens), issues `bloque`, point d'étape>
 ```
 
 Puis `node .agents/outils/etat.mjs publier "journal(NUIT): rapport du matin"`, et publier le
