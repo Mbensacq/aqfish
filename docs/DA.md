@@ -1,0 +1,65 @@
+# Direction artistique
+
+## Intention
+
+Un **aquarium vivant que l'on contemple**, plus qu'un jeu : calme, lisible, apaisant. On
+doit avoir envie de le laisser ouvert dans un coin de l'écran et de tourner autour.
+
+**Référence d'ambiance** : le bassin à koïs en pixel art de Nagomi (vue de dessus, eau
+turquoise lumineuse, nénuphars sombres, koïs blancs tachés de rouge, petits bancs colorés).
+C'est une référence d'**ambiance et de palette uniquement** : aucun code, sprite ou asset
+n'en est repris. aqfish va plus loin avec une vraie 3D que l'on fait tourner.
+
+## Règles du pixel art
+
+1. **Taille de pixel constante** à l'écran, quel que soit le zoom (rendu basse résolution,
+   voir `docs/ARCHITECTURE.md`).
+2. **Palette limitée** (32 à 48 couleurs) définie dans un seul module, chaque couleur
+   nommée par son usage (`eauProfonde`, `koiRouge`…). Toute couleur affichée en provient.
+3. **Aucun lissage** : pas d'anticrénelage, pas de filtrage linéaire ; les dégradés sont
+   obtenus par tramage.
+4. **Contours** sombres d'un pixel sur les animaux et le décor, jamais sur l'eau.
+5. **Lumière** douce venant du haut ; caustiques pixelisées sur le fond ; rayons de lumière
+   discrets dans l'eau ; ombres portées simples des poissons sur le fond (comme dans un
+   bassin vu de dessus).
+6. **Mouvement** : ondulation du corps et de la queue des poissons, nageoires, plantes qui
+   ondulent, bulles, reflets de surface. Rien de saccadé, rien de frénétique.
+
+## Palette de départ (indicative)
+
+Point de départ à affiner par PR, captures à l'appui.
+
+| Usage | Couleurs |
+|---|---|
+| Eau (profonde → claire) | `#0d3b3f` `#1b5e5a` `#2e8b7a` `#5fbfa3` `#a8e6cf` |
+| Sable et roche | `#e3cf9e` `#c9b38a` `#a8916a` `#6e6a63` `#45423e` |
+| Végétation | `#163d22` `#1f4d2b` `#2f6b3a` `#4e9a4a` `#8fd16a` |
+| Koïs | rouge `#d94a3a`, blanc cassé `#f2ead8`, noir `#1c1c22`, orange `#f08a2c`, or `#f2c14e` |
+| Petits poissons | bleu néon `#3fa9f5`, rouge néon `#e63946`, jaune `#ffd166`, rose `#f4978e` |
+| Amphibiens | axolotl rose `#f7b2bd`, grenouille `#7bc950`, triton `#e07a2f` |
+| Fleurs | nénuphar rose `#f06a9b`, cœur `#ffb703` |
+| Interface | fond `#141418` (translucide), texte `#e8e6e3`, accent `#5fbfa3` |
+
+## Environnements visés
+
+| Environnement | Ambiance | Habitants possibles |
+|---|---|---|
+| Bac tropical d'eau douce | Bac planté, lumière chaude | Néons, guppys, corydoras, scalaires, crevettes |
+| Bassin extérieur à koïs | Vue de dessus privilégiée, nénuphars, lotus, pluie, feuilles qui flottent | Koïs, poissons rouges, grenouilles en bordure |
+| Paludarium | Partie terrestre et partie aquatique, mousses, racines | Axolotls (eau), grenouilles et tritons (terre et eau) |
+| Récif marin | Coraux colorés, lumière bleutée | Poissons-clowns, chirurgiens, anémones |
+
+Les espèces sont décrites de façon **déclarative** (taille, silhouette, motifs, couleurs,
+comportement, environnements compatibles, température), puis leurs modèles sont générés par
+le code. Les valeurs réelles sont sourcées ou marquées comme approximations.
+
+## Interface
+
+- Minimale et discrète : barres flottantes sombres translucides aux coins arrondis, qui
+  s'effacent quand on ne les utilise pas. Aucune interface en mode capture.
+- Icônes en pixel art, cohérentes avec la palette.
+- Police : une police pixel sous licence OFL pour les titres (choix à justifier dans une PR),
+  une police lisible pour le texte courant.
+- Contrôles attendus à terme : préréglages de vue, vitesse de simulation, population,
+  jour/nuit, météo (pluie), son, choix de l'environnement, éditeur.
+- Textes en français.
