@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "pause": true,
+  "pause": false,
   "motifPause": "Socle en préparation",
   "experience": {
     "premiereNuit": "2026-10-15",
