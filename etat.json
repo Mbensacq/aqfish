@@ -11,18 +11,5 @@
     ],
     "issueRapport": null
   },
-  "nuits": {
-    "2026-10-20": {
-      "type": "dette",
-      "phases": {
-        "planif": {
-          "statut": "termine",
-          "debut": "2026-10-15T23:31:26.839Z",
-          "fin": "2026-10-15T23:31:29.415Z",
-          "note": "test de l'outil"
-        }
-      },
-      "issue": 5
-    }
-  }
+  "nuits": {}
 }
