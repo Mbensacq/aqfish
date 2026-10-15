@@ -16,10 +16,10 @@
       "type": "dette",
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-15T23:31:26.839Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-15T23:31:29.415Z",
+          "note": "test de l'outil"
         }
       }
     }
