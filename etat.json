@@ -11,5 +11,17 @@
     ],
     "issueRapport": 2
   },
-  "nuits": {}
+  "nuits": {
+    "2026-10-15": {
+      "type": "fonctionnalite",
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-10-15T23:54:41.516Z",
+          "fin": null,
+          "note": null
+        }
+      }
+    }
+  }
 }
