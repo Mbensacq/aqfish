@@ -38,6 +38,12 @@
           "debut": "2026-10-16T00:21:58.247Z",
           "fin": "2026-10-16T00:28:35.737Z",
           "note": "PR #9 fusionnée (a907dc4, CI main verte) ; tag v0.1.0 refusé par l'environnement (403), release à faire par Mathis ; dette #11"
+        },
+        "superviseur": {
+          "statut": "en-cours",
+          "debut": "2026-10-16T04:48:33.494Z",
+          "fin": null,
+          "note": null
         }
       },
       "issue": 4,
