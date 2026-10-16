@@ -66,10 +66,10 @@
       "type": "fonctionnalite",
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-16T21:48:04.226Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-16T21:49:33.233Z",
+          "note": "Issue #5 : PRNG à graine et boucle de simulation à pas fixe (S) ; backlog v0.1 suffisant (#5-#8), bug #10 mineur"
         }
       },
       "issue": 5
