@@ -47,7 +47,20 @@
         }
       },
       "issue": 4,
-      "pr": 9
+      "pr": 9,
+      "metriques": {
+        "livre": true,
+        "version": null,
+        "tests": 87,
+        "testsE2e": 17,
+        "couvertureLignes": 96.29,
+        "lignesCode": 746,
+        "bugsOuverts": 1,
+        "prAjouts": 1446,
+        "prSuppressions": 39,
+        "ciMain": "success",
+        "mutation": null
+      }
     }
   }
 }
