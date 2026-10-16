@@ -28,10 +28,10 @@
           "note": "PR #9 : bac vitré 3D, caméra orbitale et contrat de capture, CI verte"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-16T00:11:09.025Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-16T00:20:58.558Z",
+          "note": "Verdict RÉSERVES (PR #9 : zoom min entre dans le bac), 1 bug #10, 8 tests e2e ajoutés, captures publiées"
         }
       },
       "issue": 4,
