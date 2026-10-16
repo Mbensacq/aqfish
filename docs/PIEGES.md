@@ -20,6 +20,10 @@ haut de sa section.
   pas lancer `playwright install` dans l'environnement des agents, ni changer la version de
   `@playwright/test` sans vérifier que le navigateur correspondant existe. (2026-10-16)
 
+- **Sessions réveillées après leur phase** : une session qui a ouvert une PR peut être
+  relancée par les commentaires de QA ou de Revue. La nuit 0, Dev a ainsi poussé un correctif
+  hors cycle (PR #13), sans passer par QA ni Revue. Règle : après la fin de phase, ne plus
+  agir (`CLAUDE.md`, démarrage, étape 6). (2026-10-16)
 - **Tags et releases refusés** (HTTP 403) dans les sessions des agents : la version se fixe
   dans `frontend/package.json` et c'est le workflow `release.yml` qui crée le tag, la
   release et le déploiement à la fusion. (2026-10-16)
