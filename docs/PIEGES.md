@@ -31,10 +31,23 @@ haut de sa section.
 
 ## Tests
 
+- **`requestAnimationFrame` dans `TestBed`** : le remplacer par une file manuelle
+  (`vi.spyOn(window, 'requestAnimationFrame')`) pour piloter les images une à une, et
+  définir `clientWidth`/`clientHeight` du canvas (jsdom renvoie 0). Exemple :
+  `ui/aquarium-host/aquarium-host.spec.ts`. (2026-10-16)
 - **jsdom n'a pas WebGL** : tout code qui crée un `WebGLRenderer` échoue dans `ng test`.
   Isoler la logique pure (calculs) pour la tester en unitaire, et couvrir le rendu par le
   bout en bout et les captures. (2026-10-16)
 
 ## Rendu
 
-_(à compléter)_
+- **Préréglage strictement vertical** (caméra à l'aplomb de sa cible) : `lookAt` et
+  `OrbitControls` deviennent indéterminés car l'axe « haut » (Y) est colinéaire à la
+  direction de visée. Garder un décalage infime en Z (`render/camera-presets.ts`).
+  (2026-10-16)
+- **Surfaces translucides superposées** (eau, verre) : `depthWrite: false`, `FrontSide`,
+  `renderOrder` explicite (eau puis verre puis arêtes), et le verre légèrement plus grand que
+  l'eau pour éviter le scintillement de profondeur entre faces confondues. (2026-10-16)
+- **Taille nulle au premier rendu** : à l'exécution de `afterNextRender`, le canvas peut
+  encore mesurer 0 × 0. Ne lever le signal « prêt » qu'après un rendu de taille non nulle,
+  à l'image suivante (`ui/aquarium-host/aquarium-host.ts`). (2026-10-16)

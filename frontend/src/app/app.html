@@ -1,4 +1,8 @@
-<main class="shell">
-  <h1 class="shell__title">aqfish</h1>
-  <p class="shell__text">Socle prêt. L'aquarium arrive.</p>
-</main>
+@if (!capture) {
+  <!-- Interface (masquée en mode capture). Titre accessible, invisible à l'écran. -->
+  <h1 class="visually-hidden">aqfish</h1>
+}
+<!-- Three.js est chargé à part pour garder le bundle initial sous le budget (angular.json). -->
+@defer (on immediate) {
+  <app-aquarium-host />
+}
