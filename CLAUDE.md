@@ -65,6 +65,12 @@ Depuis la racine du clone de `main` :
    `.agents/prompts/<rôle>.md` et le suivre.
 5. Avant de terminer, **toujours** consigner l'issue de ta phase, même en cas d'échec :
    `node .agents/outils/etat.mjs phase <rôle> termine|echec|saute "<note d'une ligne>"`.
+6. **Après la fin de phase, ne plus agir.** Ta session peut être réveillée plus tard par une
+   notification GitHub (commentaire, revue ou CI sur une PR que tu as ouverte). Dans ce cas,
+   ne pousse rien, n'ouvre aucune PR, ne commente pas : réponds seulement « phase terminée ».
+   Les remarques sont traitées par le rôle concerné la nuit suivante (Dev reprend les PR
+   `a-corriger`, Planif planifie les bugs et la dette). Seul le cycle de la nuit fait avancer
+   le code.
 
 Rôles : `planif`, `dev`, `qa`, `revue`, `superviseur`.
 
