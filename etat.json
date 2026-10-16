@@ -26,6 +26,12 @@
           "debut": "2026-10-15T23:57:05.633Z",
           "fin": "2026-10-16T00:10:11.332Z",
           "note": "PR #9 : bac vitré 3D, caméra orbitale et contrat de capture, CI verte"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-10-16T00:11:09.025Z",
+          "fin": null,
+          "note": null
         }
       },
       "issue": 4,
