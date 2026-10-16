@@ -40,10 +40,10 @@
           "note": "PR #9 fusionnée (a907dc4, CI main verte) ; tag v0.1.0 refusé par l'environnement (403), release à faire par Mathis ; dette #11"
         },
         "superviseur": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-16T04:48:33.494Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-16T04:50:05.891Z",
+          "note": "Rapport publié, 5 alertes (aucune version publiée : #12 attend Mathis)"
         }
       },
       "issue": 4,
