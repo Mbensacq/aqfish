@@ -28,7 +28,8 @@
           "note": null
         }
       },
-      "issue": 4
+      "issue": 4,
+      "pr": 9
     }
   }
 }
