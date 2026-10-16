@@ -22,10 +22,10 @@
           "note": "Issue #4 : Fondations du bac : hôte Three.js, scène, caméra orbitale et contrat de capture (M) ; backlog v0.1 créé #4-#8"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-15T23:57:05.633Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-16T00:10:11.332Z",
+          "note": "PR #9 : bac vitré 3D, caméra orbitale et contrat de capture, CI verte"
         }
       },
       "issue": 4,
