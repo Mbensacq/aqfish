@@ -72,10 +72,10 @@
           "note": "Issue #5 : PRNG à graine et boucle de simulation à pas fixe (S) ; backlog v0.1 suffisant (#5-#8), bug #10 mineur"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-16T22:44:05.509Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-16T22:57:51.788Z",
+          "note": "PR #15 : PRNG à graine et boucle à pas fixe (issue #5), CI verte, captures identiques"
         }
       },
       "issue": 5,
