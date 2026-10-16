@@ -32,6 +32,12 @@
           "debut": "2026-10-16T00:11:09.025Z",
           "fin": "2026-10-16T00:20:58.558Z",
           "note": "Verdict RÉSERVES (PR #9 : zoom min entre dans le bac), 1 bug #10, 8 tests e2e ajoutés, captures publiées"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-10-16T00:21:58.247Z",
+          "fin": null,
+          "note": null
         }
       },
       "issue": 4,
