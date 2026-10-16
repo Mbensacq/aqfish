@@ -1,22 +1,23 @@
-import { afterNextRender, ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DOCUMENT, inject } from '@angular/core';
 
-import { markCaptureReady } from './core/capture/capture-ready';
+import { parseCaptureParams } from './core/capture/capture-params';
+import { AquariumHost } from './ui/aquarium-host/aquarium-host';
 
 /**
- * Coquille de l'application (socle).
- *
- * La scène 3D n'existe pas encore : elle sera construite par l'équipe d'agents
- * (voir docs/ROADMAP.md). En attendant, la coquille respecte déjà le contrat de
- * capture en signalant qu'elle est prête après son premier rendu.
+ * Racine de l'application : le bac en 3D plein écran et, hors mode capture, l'interface.
+ * Le signal « prêt » du contrat de capture est émis par `AquariumHost` après la première
+ * image complète (docs/ARCHITECTURE.md, « Contrat de capture »).
  */
 @Component({
   selector: 'app-root',
+  imports: [AquariumHost],
   templateUrl: './app.html',
   styleUrl: './app.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class App {
-  constructor() {
-    afterNextRender(() => markCaptureReady());
-  }
+  /** Mode capture : interface masquée. */
+  protected readonly capture = parseCaptureParams(
+    inject(DOCUMENT).defaultView?.location.search ?? '',
+  ).capture;
 }

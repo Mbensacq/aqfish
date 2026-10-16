@@ -75,8 +75,29 @@ Principe : une vraie scène 3D, rendue de façon à rester du pixel art quel que
   zoom à la molette, déplacement au clic droit, gestes tactiles.
 - Préréglages : `top`, `bottom`, `front`, `side`, `three-quarter` (mêmes noms que le contrat
   de capture), accessibles au clavier depuis l'interface.
-- La vue `bottom` montre la scène depuis le dessous du bac ; la façon de traiter le fond
-  (vitré, coupe, transparence du substrat) fait l'objet d'une ADR quand elle sera implémentée.
+- La vue `bottom` est une contre-plongée légèrement avant sous un substrat opaque
+  (ADR 0006).
+- Les préréglages sont calculés par une fonction pure, `cameraPresetPose`
+  (`render/camera-presets.ts`) : cible au centre du bac, distance telle que la sphère
+  englobant le bac tienne dans le cadre pour le rapport d'aspect courant. Tant que
+  l'utilisateur n'a pas bougé la caméra, le cadrage est recalculé au redimensionnement.
+- La position de la caméra est exposée aux tests de bout en bout par l'attribut
+  `data-aqfish-camera="x,y,z"` de `app-aquarium-host` (mis à jour au mouvement, pas à
+  chaque image).
+
+### Organisation actuelle
+
+| Fichier | Rôle |
+|---|---|
+| `render/palette.ts` | Palette unique, couleurs nommées par usage |
+| `render/camera-presets.ts` | Dimensions du bac, préréglages de caméra (fonctions pures) |
+| `render/aquarium-scene.ts` | Scène statique : sable, eau, verre, arêtes, lumières ; libération |
+| `render/aquarium-view.ts` | Vue sans Angular : renderer (fabrique remplaçable), caméra, `OrbitControls` |
+| `ui/aquarium-host/` | Composant hôte : boucle rAF, redimensionnement, contrat de capture, `DestroyRef` |
+
+Le renderer est créé par une fabrique (`AQUARIUM_RENDERER_FACTORY`, par défaut
+`createWebGLRenderer`) : les tests `TestBed` la remplacent par un double, jsdom n'ayant pas
+WebGL.
 
 ## Contrat de capture
 
@@ -88,7 +109,8 @@ respecter :
 |---|---|
 | Paramètres d'URL | `capture`, `seed`, `camera`, `time`, lus par `core/capture/capture-params.ts` |
 | `capture=1` | Simulation avancée de façon déterministe jusqu'à `time` (pas fixe, sans temps réel), puis figée ; interface masquée ; caméra sur le préréglage `camera` ; `devicePixelRatio` forcé à 1 |
-| Signal « prêt » | Appeler `markCaptureReady()` (`core/capture/capture-ready.ts`) une fois la première image **complète** rendue ; `resetCaptureReady()` si la scène est rechargée |
+| Signal « prêt » | Appeler `markCaptureReady()` (`core/capture/capture-ready.ts`) une fois la première image **complète** rendue ; `resetCaptureReady()` si la scène est rechargée. Implémentation : `AquariumHost` lève le signal à l'image qui suit le premier rendu WebGL de taille non nulle, et le retire à sa destruction |
+| Image figée | En mode capture, une seule image est rendue (puis une à chaque redimensionnement) et les contrôles à la souris sont désactivés |
 | Hors capture | Le signal « prêt » est aussi émis après la première image complète (le test de démarrage l'attend) |
 | Erreurs | Aucune erreur de page ne doit survenir (le harnais et le test de démarrage échouent sinon) |
 
