@@ -34,7 +34,7 @@ Documents de référence, à lire selon le besoin :
 | 23:47 | Planif | `.agents/prompts/planif.md` | Issue de la nuit avec critères d'acceptation |
 | 00:43 | Dev | `.agents/prompts/dev.md` | Branche + code + tests + PR |
 | 02:13 | QA | `.agents/prompts/qa.md` | Tests de bout en bout, captures, issues de bug |
-| 03:13 | Revue & release | `.agents/prompts/revue.md` | Revue, fusion, tag de version |
+| 03:13 | Revue & release | `.agents/prompts/revue.md` | Revue, version dans la PR, fusion (la CI publie) |
 | 06:47 | Superviseur | `.agents/prompts/superviseur.md` | Rapport du matin, métriques, alertes |
 
 ### Identifiant de nuit
@@ -168,7 +168,8 @@ Front uniquement en phase 1. Le backend sera en **NestJS** à partir de la phase
 - Une PR = une fonctionnalité ou un correctif cohérent. Taille indicative : moins de 600
   lignes modifiées hors tests et `package-lock.json`. Au-delà, découper.
 - Toute PR remplit le modèle `.github/pull_request_template.md`, référence son issue
-  (`Ferme #12`) et contient les captures si l'apparence change.
+  avec le mot-clé anglais `Closes #12` (GitHub ne reconnaît pas « Ferme »)
+  et contient les captures si l'apparence change.
 - **GitHub uniquement via l'API REST** (`gh api …`) : GraphQL est indisponible, donc
   `gh issue …`, `gh pr …`, `gh release …` échouent. Toutes les opérations utiles (issues,
   étiquettes, PR, revues, fusion, check runs, versions) sont dans

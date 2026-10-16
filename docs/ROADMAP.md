@@ -19,8 +19,9 @@ demande l'accord de Mathis (issue `bloque`).
 ## Versions
 
 Une version mineure par semaine (`v0.<semaine>`), un correctif par PR fusionnée :
-`v0.1.0`, `v0.1.1`… La semaine 12 produit `v1.0.0`. Chaque tag publie le front sur
-GitHub Pages.
+`v0.1.0`, `v0.1.1`… La semaine 12 produit `v1.0.0`. La version est fixée dans
+`frontend/package.json` par Revue avant la fusion ; le workflow `release.yml` publie alors
+le front sur GitHub Pages et crée le tag et la release (notes : `docs/versions/`).
 
 ## Phase 1 — Le bac et la vie (semaines 1 à 4, front seul)
 
