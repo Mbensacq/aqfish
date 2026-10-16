@@ -66,7 +66,7 @@ test.describe('Scène du bac', () => {
     for (let i = 0; i < 12; i++) {
       await page.mouse.wheel(0, -1000);
     }
-    await expect.poll(async () => radiusOf(await cameraPosition(page))).toBeGreaterThan(0.4);
+    await expect.poll(async () => radiusOf(await cameraPosition(page))).toBeGreaterThan(0.71); // rayon englobant ≈ 0,716 m
   });
 
   test('le zoom avant maximal ne fait pas entrer la caméra dans le bac', async ({ page }) => {
