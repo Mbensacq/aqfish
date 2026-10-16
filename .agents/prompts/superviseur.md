@@ -16,7 +16,7 @@ points d'étape, amélioration continue des consignes. Tu ne codes pas et tu ne 
   indisponible, le noter.
 - **GitHub** (REST, `.agents/outils/github-rest.md`) : PR créées, mises à jour et fusionnées
   depuis la veille à 21 h UTC ; issues ouvertes et fermées ; dernière exécution de la CI sur
-  `main` ; dernière exécution du déploiement ; dernier tag.
+  `main` ; dernière exécution du workflow « Version et déploiement » ; dernière release.
 - **Captures** : regarder `../equipe/captures/NUIT/*.png` avec l'outil de lecture d'image
   et les comparer à la série précédente ; résumer en une ou deux phrases ce qui a changé.
 - **Métriques**, sur `main` à jour :

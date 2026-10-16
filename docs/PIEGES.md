@@ -20,6 +20,11 @@ haut de sa section.
   pas lancer `playwright install` dans l'environnement des agents, ni changer la version de
   `@playwright/test` sans vérifier que le navigateur correspondant existe. (2026-10-16)
 
+- **Tags et releases refusés** (HTTP 403) dans les sessions des agents : la version se fixe
+  dans `frontend/package.json` et c'est le workflow `release.yml` qui crée le tag, la
+  release et le déploiement à la fusion. (2026-10-16)
+- **Mots-clés de fermeture en anglais uniquement** : `Closes #N` ferme l'issue à la fusion,
+  « Ferme #N » ne fait rien. (2026-10-16)
 - **GraphQL GitHub indisponible** : `gh issue …`, `gh pr …`, `gh label list`, `gh release …`
   échouent (HTTP 403). Utiliser `gh api` (REST) : `.agents/outils/github-rest.md`. (2026-10-16)
 - **Clone superficiel** (`--depth 1`) : seule `main` est suivie. Récupérer une autre branche

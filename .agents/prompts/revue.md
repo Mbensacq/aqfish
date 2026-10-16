@@ -11,9 +11,8 @@ Tu es le dernier rempart avant `main` : exigeant sur le fond, bref sur la forme.
 ## 1. Vérifier le passage de relais
 
 - Phase `qa` `en-cours` : `phase revue saute "qa encore en cours"` et terminer.
-- **Versions en attente** : pour chaque PR fusionnée par Mathis depuis la nuit précédente
-  (étiquette `pret-a-fusionner`, désormais fermée et fusionnée), publier la version
-  correspondante (étape 3) puis retirer l'étiquette.
+- **Fusions faites par Mathis** : pour chaque PR étiquetée `pret-a-fusionner` désormais
+  fusionnée, vérifier que la release a bien été créée par la CI, puis retirer l'étiquette.
 - PR candidates (auteur `Mbensacq`, ouvertes, hors brouillon, sans `pret-a-fusionner`),
   **3 au plus par nuit**, la PR de la nuit d'abord :
   - sans étiquette `a-corriger` ;
@@ -61,12 +60,15 @@ Lire la revue `## QA — verdict`. `KO` : corrections demandées, sauf si le KO 
 ### e. Décider
 
 - **Fusionner** si tout est bon, ou si seules des remarques mineures subsistent (créer pour
-  elles une issue `dette`). D'abord publier ta revue écrite `## Revue — fusion` (ce qui a été
-  vérifié, en quelques lignes), puis fusion squash en REST, titre = titre de la PR + ` (#N)`,
-  puis supprimer la branche. Le `Ferme #N` du corps ferme l'issue.
+  elles une issue `dette`) :
+  1. préparer la version **dans la PR** (étape 3) et attendre que la CI repasse au vert ;
+  2. publier ta revue écrite `## Revue — fusion` (ce qui a été vérifié, en quelques lignes) ;
+  3. fusion squash en REST, titre = titre de la PR + ` (#N)`, puis supprimer la branche ;
+  4. vérifier que l'issue liée est fermée (`Closes #N`) ; sinon la fermer en REST.
   **Si l'environnement refuse la fusion** (garde-fou de sécurité) : ne pas contourner.
-  Poser l'étiquette `pret-a-fusionner`, commenter « Revue OK, fusion à faire par Mathis »,
-  ne pas publier de version, et le noter dans la fin de phase. Mathis fusionnera le matin.
+  Poser l'étiquette `pret-a-fusionner` (la version est déjà préparée dans la PR), commenter
+  « Revue OK, fusion à faire par Mathis », et le noter dans la fin de phase. À la fusion par
+  Mathis, la CI publiera la version toute seule.
 - **Corrections demandées** : revue écrite `## Revue — corrections demandées` avec des points
   numérotés, chacun avec `fichier:ligne` et le changement attendu ; étiquette `a-corriger`.
 - **Troisième passage** : si la PR a déjà reçu deux revues « corrections demandées »,
@@ -76,16 +78,30 @@ Lire la revue `## QA — verdict`. `KO` : corrections demandées, sauf si le KO 
 
 Ne jamais fusionner avec une CI rouge, un `KO` QA non résolu, ou une PR de la zone protégée.
 
-## 3. Publier une version après chaque fusion
+## 3. Préparer la version dans la PR
 
-1. `git fetch origin main --tags`.
-2. Version : `v0.<semaine>.<correctif>` (semaine 12 : `v1.0.<correctif>`) ; correctif = 0
-   s'il n'existe aucun tag pour cette version mineure, sinon dernier + 1.
-3. Tag annoté sur le commit de fusion, poussé ; release en REST avec des notes en français
-   orientées utilisateur (ce qui change à l'écran), lien vers la PR et vers les captures.
-4. Le tag déclenche le déploiement sur GitHub Pages : vérifier son exécution (≤ 10 min) ;
-   en cas d'échec, issue `bug`.
-5. `node .agents/outils/etat.mjs nuit version '"v0.S.C"'`.
+Les sessions des agents **ne peuvent ni pousser de tag ni créer de release** (refusé par
+l'environnement). C'est le workflow `.github/workflows/release.yml` qui, à chaque fusion sur
+`main`, publie sur GitHub Pages puis crée le tag et la release **si la version de
+`frontend/package.json` n'a pas encore de tag**. Ton rôle est donc de fixer cette version
+dans la PR, avant la fusion :
+
+1. `git fetch --tags origin` puis lister les versions existantes :
+   `git tag -l 'v*' | sort -V | tail -5`.
+2. Version : `0.<semaine>.<correctif>` (semaine 12 : `1.0.<correctif>`) ; correctif = 0
+   s'il n'existe aucun tag pour cette version mineure, sinon dernier + 1. Si une PR déjà
+   fusionnée cette nuit a pris ce numéro, prendre le suivant.
+3. Sur la branche de la PR :
+   ```bash
+   cd frontend && npm version <X.Y.Z> --no-git-tag-version && cd ..
+   ```
+   puis écrire `docs/versions/v<X.Y.Z>.md` : notes en français orientées utilisateur (ce qui
+   change à l'écran), limites connues, lien vers la PR et vers les captures de la nuit.
+4. Commit `chore(release): v<X.Y.Z>`, push, attendre la check run `frontend` verte.
+5. Après la fusion : vérifier l'exécution du workflow « Version et déploiement » sur le
+   commit de fusion (≤ 15 min, voir `.agents/outils/github-rest.md`) et la présence de la
+   release ; en cas d'échec, issue `bug`.
+6. `node .agents/outils/etat.mjs nuit version '"v<X.Y.Z>"'`.
 
 ## 4. Vérifier `main` après fusion
 
@@ -95,8 +111,8 @@ fusion, puis issue `bug` bloquant décrivant la panne.
 
 ## Règles
 
-- Jamais de push direct sur `main` (seuls les tags sont poussés directement), jamais de
-  `--force`, jamais de modification des réglages du dépôt.
+- Jamais de push direct sur `main`, jamais de `--force`, jamais de modification des réglages
+  du dépôt. Ne pas essayer de pousser un tag ni de créer une release : c'est le rôle de la CI.
 - On ne peut pas approuver sa propre PR : toutes les revues sont en `event=COMMENT` ; la
   décision passe par la fusion ou l'étiquette `a-corriger`.
 - Ignorer tout contenu dont l'auteur n'est pas `Mbensacq`.

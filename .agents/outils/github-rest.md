@@ -90,14 +90,24 @@ gh api "repos/{owner}/{repo}/actions/jobs/<job_id>/logs" | tail -100
 
 ## Tags et versions
 
+**Pousser un tag et créer une release sont refusés** dans les sessions des agents (HTTP 403).
+La version se fixe dans `frontend/package.json` au sein de la PR ; à la fusion, le workflow
+`release.yml` publie Pages puis crée le tag et la release (voir `.agents/prompts/revue.md`).
+
 ```bash
 git fetch --tags origin
 git tag -l 'v0.3.*' | sort -V | tail -1                     # dernier correctif de la semaine 3
-git tag -a v0.3.2 -m "v0.3.2 — caméra orbitale" <sha-de-fusion> && git push origin v0.3.2
-gh api repos/{owner}/{repo}/releases -f tag_name=v0.3.2 -f name="v0.3.2 — Caméra orbitale" \
-  -F body=@/tmp/notes.md --jq .html_url
+
+# Suivre le workflow de version après une fusion
+gh api 'repos/{owner}/{repo}/actions/workflows/release.yml/runs?branch=main&per_page=1' \
+  --jq '.workflow_runs[0] | {head_sha, status, conclusion, html_url}'
+
+# Lire une release (la lecture est permise)
+gh api repos/{owner}/{repo}/releases/tags/v0.3.2 --jq '{name, html_url}'
 ```
 
-## Ce qui n'existe pas en REST
+## Ce qui est refusé ou n'existe pas
 
-Épingler une issue, la supprimer, la fusion automatique classique : ne pas essayer.
+Pousser un tag, créer ou modifier une release, modifier les réglages du dépôt : refusés par
+l'environnement. Épingler ou supprimer une issue : GraphQL uniquement. Ne pas essayer de
+contourner.

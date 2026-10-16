@@ -2,7 +2,7 @@
 
 <!-- Ce que fait cette PR, en 2 ou 3 phrases. -->
 
-Ferme #
+Closes #
 
 ## Critères d'acceptation
 

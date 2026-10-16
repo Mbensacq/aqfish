@@ -1,0 +1,114 @@
+name: Version et déploiement
+
+# Les sessions des agents ne peuvent ni pousser de tag ni créer de release : c'est la CI qui
+# le fait. L'agent Revue fixe la version dans frontend/package.json (et, s'il le souhaite,
+# écrit les notes dans docs/versions/vX.Y.Z.md) avant de fusionner la PR.
+# À chaque push sur main : si la version n'a pas encore de tag, ce workflow construit le front,
+# le publie sur GitHub Pages, puis crée le tag vX.Y.Z et la release correspondante.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.lire.outputs.version }}
+      nouvelle: ${{ steps.lire.outputs.nouvelle }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Lire la version et vérifier son tag
+        id: lire
+        run: |
+          VERSION=$(node -p "require('./frontend/package.json').version")
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Version invalide dans frontend/package.json : $VERSION"
+            exit 1
+          fi
+          if [ "$VERSION" = "0.0.0" ] || git rev-parse -q --verify "refs/tags/v$VERSION" >/dev/null; then
+            NOUVELLE=false
+          else
+            NOUVELLE=true
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "nouvelle=$NOUVELLE" >> "$GITHUB_OUTPUT"
+          echo "Version $VERSION, nouvelle : $NOUVELLE"
+
+  build:
+    needs: version
+    if: needs.version.outputs.nouvelle == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      pages: write
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci
+
+      - name: Build pour GitHub Pages
+        run: npm run build -- --base-href /${{ github.event.repository.name }}/
+
+      - name: Repli 404 vers l'application
+        run: cp dist/aqfish/browser/index.html dist/aqfish/browser/404.html
+
+      - uses: actions/configure-pages@v6
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: frontend/dist/aqfish/browser
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
+
+  release:
+    needs: [version, deploy]
+    if: needs.version.outputs.nouvelle == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Créer le tag et la release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          NOTES="docs/versions/v$VERSION.md"
+          if [ -f "$NOTES" ]; then
+            gh release create "v$VERSION" --target "$GITHUB_SHA" --title "v$VERSION" --notes-file "$NOTES"
+          else
+            gh release create "v$VERSION" --target "$GITHUB_SHA" --title "v$VERSION" --generate-notes
+          fi

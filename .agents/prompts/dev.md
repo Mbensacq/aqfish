@@ -76,7 +76,7 @@ Si cela a occupé l'essentiel de la session, s'arrêter là (note de phase expli
 1. `npm run verify` doit passer.
 2. `git push -u origin <branche>`, puis créer la PR en REST
    (`.agents/outils/github-rest.md`) avec le modèle `.github/pull_request_template.md`
-   rempli, `Ferme #<issue>` et les étiquettes de l'issue (`fonctionnalite`, `bug` ou `dette`).
+   rempli, `Closes #<issue>` (mot-clé anglais obligatoire) et les étiquettes de l'issue (`fonctionnalite`, `bug` ou `dette`).
 3. Attendre la check run `frontend` (au plus ~25 min). Si elle échoue : lire les journaux,
    corriger, pousser, attendre de nouveau (3 tentatives au plus).
 4. `node .agents/outils/etat.mjs nuit pr <numéro>`.
