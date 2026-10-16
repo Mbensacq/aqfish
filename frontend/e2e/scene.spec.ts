@@ -62,11 +62,27 @@ test.describe('Scène du bac', () => {
       .poll(async () => radiusOf(await cameraPosition(page)))
       .toBeLessThan(radiusOf(before));
 
-    // Zoom avant massif : la distance reste bornée (pas de traversée du bac).
+    // Zoom avant massif : la distance reste bornée.
     for (let i = 0; i < 12; i++) {
       await page.mouse.wheel(0, -1000);
     }
     await expect.poll(async () => radiusOf(await cameraPosition(page))).toBeGreaterThan(0.4);
+  });
+
+  test('le zoom avant maximal ne fait pas entrer la caméra dans le bac', async ({ page }) => {
+    await openScene(page, '?camera=side');
+    await page.mouse.move(640, 360);
+    for (let i = 0; i < 12; i++) {
+      await page.mouse.wheel(0, -1000);
+    }
+    // Vue de côté (+X) : la caméra doit rester au-delà de la paroi (demi-longueur 0,6 m).
+    await expect
+      .poll(async () => (await cameraPosition(page))[0], { timeout: 10_000 })
+      .toBeLessThan(0.8);
+    const [x, y, z] = await cameraPosition(page);
+    const inside = Math.abs(x) < 0.6 && y > 0 && y < 0.6 && Math.abs(z) < 0.25;
+    expect(inside).toBe(false);
+    expect(Math.abs(x)).toBeGreaterThan(0.6);
   });
 
   test('se déplace au clic droit', async ({ page }) => {
