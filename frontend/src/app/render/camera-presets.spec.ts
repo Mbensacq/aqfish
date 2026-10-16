@@ -5,6 +5,7 @@ import {
   CAMERA_FOV_DEG,
   cameraPresetPose,
   framingDistance,
+  orbitDistanceLimits,
   tankBoundingRadius,
   tankCenter,
   type TankDimensions,
@@ -106,6 +107,32 @@ describe('cameraPresetPose', () => {
     expect(framingDistance(TANK, CAMERA_FOV_DEG, 0.5)).toBeGreaterThan(
       framingDistance(TANK, CAMERA_FOV_DEG, 2),
     );
+  });
+});
+
+describe('orbitDistanceLimits', () => {
+  it.each([TANK, { width: 3, height: 0.2, depth: 0.2 }, { width: 0.3, height: 1, depth: 0.3 }])(
+    'garde la caméra hors du bac sous tous les angles (%j)',
+    (dims) => {
+      const { min } = orbitDistanceLimits(dims);
+      const center = new Vector3(...tankCenter(dims));
+      // Le coin le plus éloigné du centre est plus proche que la borne minimale.
+      const farthest = Math.max(...tankCorners(dims).map((c) => c.distanceTo(center)));
+      expect(min).toBeGreaterThan(farthest);
+    },
+  );
+
+  it('laisse le cadrage des préréglages dans les bornes', () => {
+    const { min, max } = orbitDistanceLimits(TANK);
+    for (const aspect of [16 / 9, 1, 9 / 16, 4]) {
+      const d = framingDistance(TANK, CAMERA_FOV_DEG, aspect);
+      expect(d).toBeGreaterThan(min);
+      expect(d).toBeLessThan(max);
+    }
+  });
+
+  it('rejette des dimensions invalides', () => {
+    expect(() => orbitDistanceLimits({ width: 0, height: 1, depth: 1 })).toThrow(RangeError);
   });
 });
 

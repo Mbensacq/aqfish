@@ -48,6 +48,22 @@ export function tankBoundingRadius(dims: TankDimensions): number {
   return Math.hypot(dims.width, dims.height, dims.depth) / 2;
 }
 
+/** Marge de la borne de zoom minimale au-delà de la sphère englobante (5 %). */
+const MIN_ORBIT_MARGIN = 1.05;
+
+/** Borne de zoom maximale, relative au rayon de la sphère englobante. */
+const MAX_ORBIT_FACTOR = 6;
+
+/**
+ * Bornes de distance caméra-cible pour l'orbite autour du centre du bac. La borne minimale
+ * dépasse le rayon de la sphère englobante : la caméra reste hors du bac sous tous les angles.
+ */
+export function orbitDistanceLimits(dims: TankDimensions): { min: number; max: number } {
+  assertPositiveDimensions(dims);
+  const radius = tankBoundingRadius(dims);
+  return { min: radius * MIN_ORBIT_MARGIN, max: radius * MAX_ORBIT_FACTOR };
+}
+
 /**
  * Distance à laquelle la sphère englobante du bac tient entièrement dans le cadre,
  * pour un champ vertical `fovDeg` et un rapport largeur / hauteur `aspect`.
