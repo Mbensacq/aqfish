@@ -76,6 +76,12 @@
           "debut": "2026-10-16T22:44:05.509Z",
           "fin": "2026-10-16T22:57:51.788Z",
           "note": "PR #15 : PRNG à graine et boucle à pas fixe (issue #5), CI verte, captures identiques"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-10-17T00:14:02.619Z",
+          "fin": null,
+          "note": null
         }
       },
       "issue": 5,
