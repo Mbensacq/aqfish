@@ -17,6 +17,8 @@ import {
   createWebGLRenderer,
   type AquariumRendererFactory,
 } from '../../render/aquarium-view';
+import { fixedStep } from '../../sim/fixed-step';
+import { advance, advanceTo, createWorld, type World } from '../../sim/world';
 
 /** Fabrique du renderer, remplaçable dans les tests (jsdom n'a pas WebGL). */
 export const AQUARIUM_RENDERER_FACTORY = new InjectionToken<AquariumRendererFactory>(
@@ -30,6 +32,10 @@ export const CAMERA_ATTRIBUTE = 'data-aqfish-camera';
 /**
  * Hôte du canvas 3D : crée la vue, porte la boucle `requestAnimationFrame`, suit la taille
  * de la fenêtre et libère toutes les ressources Three.js à la destruction.
+ *
+ * Simulation : le monde (`sim/world.ts`) est créé avec la graine de l'URL. Hors capture, il
+ * avance en temps réel par pas fixes (`sim/fixed-step.ts`). En mode capture, il est avancé
+ * jusqu'à `time` par pas fixes, sans temps réel, avant le premier rendu, puis figé.
  *
  * Contrat de capture : avec `capture=1`, pixel ratio forcé à 1, caméra figée sur le
  * préréglage demandé, une seule image rendue (puis à chaque redimensionnement). Dans tous
@@ -56,7 +62,21 @@ export class AquariumHost {
   private frameId: number | null = null;
   private readySignaled = false;
   private capture = false;
+  private currentWorld: World | null = null;
+  private accumulator = 0;
+  private alpha = 0;
+  private lastTimestamp: number | null = null;
   private readonly cleanups: (() => void)[] = [];
+
+  /** État courant de la simulation (`null` avant le démarrage et après la destruction). */
+  get world(): World | null {
+    return this.currentWorld;
+  }
+
+  /** Facteur d'interpolation du rendu entre les deux derniers pas, dans [0, 1). */
+  get interpolationAlpha(): number {
+    return this.alpha;
+  }
 
   constructor() {
     afterNextRender(() => this.start());
@@ -70,6 +90,9 @@ export class AquariumHost {
     }
     const params = parseCaptureParams(win.location.search);
     this.capture = params.capture;
+    // En mode capture, le temps demandé est atteint ici, avant toute image (contrat de capture).
+    const world = createWorld(params.seed);
+    this.currentWorld = params.capture ? advanceTo(world, params.time) : world;
 
     const view = new AquariumView({
       canvas: this.canvasRef().nativeElement,
@@ -93,14 +116,17 @@ export class AquariumHost {
     if (!win || !this.view || this.frameId !== null) {
       return;
     }
-    this.frameId = win.requestAnimationFrame(() => this.frame());
+    this.frameId = win.requestAnimationFrame((timestamp) => this.frame(timestamp));
   }
 
-  private frame(): void {
+  private frame(timestamp: number): void {
     this.frameId = null;
     const view = this.view;
     if (!view) {
       return;
+    }
+    if (!this.capture) {
+      this.advanceRealTime(timestamp);
     }
     const canvas = this.canvasRef().nativeElement;
     if (view.resize(canvas.clientWidth, canvas.clientHeight)) {
@@ -125,6 +151,19 @@ export class AquariumHost {
     }
   }
 
+  /** Avance la simulation du temps réel écoulé depuis l'image précédente (hors capture). */
+  private advanceRealTime(timestamp: number): void {
+    // Première image : pas de durée de référence, aucun pas.
+    const realDt = this.lastTimestamp === null ? 0 : (timestamp - this.lastTimestamp) / 1000;
+    this.lastTimestamp = timestamp;
+    const result = fixedStep({ accumulator: this.accumulator, realDt });
+    this.accumulator = result.accumulator;
+    this.alpha = result.alpha;
+    if (result.steps > 0 && this.currentWorld) {
+      this.currentWorld = advance(this.currentWorld, result.steps);
+    }
+  }
+
   private exposeCamera(): void {
     if (!this.view) {
       return;
@@ -144,6 +183,7 @@ export class AquariumHost {
     this.cleanups.splice(0).forEach((cleanup) => cleanup());
     this.view?.dispose();
     this.view = null;
+    this.currentWorld = null;
     if (this.readySignaled) {
       resetCaptureReady(this.document);
     }

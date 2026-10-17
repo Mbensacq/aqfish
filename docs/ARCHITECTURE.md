@@ -34,15 +34,25 @@ déterminisme (pas des règles d'import).
 Objectif : **mêmes entrées ⇒ même état**, à la décimale près. C'est ce qui rend la
 simulation testable et les captures reproductibles.
 
-- **Hasard** : un unique générateur pseudo-aléatoire à graine (32 bits) est créé à partir de
-  la graine du monde et injecté ; jamais de `Math.random`. Pour qu'ajouter une entité ne
-  décale pas le hasard des autres, chaque entité dérive son propre sous-générateur de la
-  graine du monde et de son identifiant.
-- **Temps** : pas fixe `SIM_DT = 1 / 60` s. La boucle d'affichage (côté `ui`/`render`)
-  accumule le temps réel écoulé et appelle `step(SIM_DT)` autant de fois que nécessaire
-  (avec un plafond par image pour éviter la spirale de rattrapage), puis interpole le rendu.
-- **État sérialisable** : l'état du monde est un objet de données simple (JSON), sans
-  classe Three.js ni référence circulaire. Il sert à la sauvegarde, aux tests et aux captures.
+- **Hasard** : générateur mulberry32 à graine 32 bits (`core/random/prng.ts`,
+  `createPrng(graine)`) ; jamais de `Math.random`. Pour qu'ajouter une entité ne décale pas
+  le hasard des autres, chaque entité dérive son propre sous-générateur de la graine du
+  monde et de son identifiant : `createEntityPrng(world.seed, id)` (graine dérivée par
+  hachage murmur3 32 bits, `deriveSeed`). Graines et identifiants : entiers dans
+  [0, 2^32), sinon `RangeError`.
+- **Temps** : pas fixe `SIM_DT = 1 / 60` s (`sim/constants.ts`). La boucle d'affichage
+  (`ui/aquarium-host`) accumule le temps réel écoulé et appelle la fonction pure
+  `fixedStep({ accumulator, realDt })` (`sim/fixed-step.ts`), qui renvoie le nombre de pas
+  à exécuter, le reste à reporter et le facteur d'interpolation `alpha` ∈ [0, 1). Au-delà
+  de `MAX_STEPS_PER_FRAME` pas par image, le retard est abandonné (pas de spirale de
+  rattrapage).
+- **Monde** : `sim/world.ts`. `createWorld(seed)`, `step(world, SIM_DT)` (pure : renvoie un
+  nouvel état, ne modifie jamais son entrée), `advance(world, n)` (une seule copie puis
+  aucune allocation par pas), `advanceTo(world, time)` (`round(time / SIM_DT)` pas au total,
+  utilisé par le mode capture avant le premier rendu).
+- **État sérialisable** : l'état du monde (`seed`, `tick`, `time`, `entities`) est un objet
+  de données simple (JSON), sans classe Three.js ni référence circulaire. Il sert à la
+  sauvegarde, aux tests et aux captures.
 - **Unités et repère** : mètres, secondes, degrés Celsius. Axe Y vers le haut ; origine au
   centre du fond du bac.
 - **Données réelles** : toute valeur présentée comme réelle (température d'une espèce,
@@ -89,11 +99,15 @@ Principe : une vraie scène 3D, rendue de façon à rester du pixel art quel que
 
 | Fichier | Rôle |
 |---|---|
+| `core/random/prng.ts` | PRNG mulberry32 à graine, dérivation de sous-générateurs par entité |
+| `sim/constants.ts` | `SIM_DT`, `MAX_STEPS_PER_FRAME` |
+| `sim/fixed-step.ts` | Accumulateur de la boucle à pas fixe (fonction pure) |
+| `sim/world.ts` | État du monde sérialisable, `step`, `advance`, `advanceTo` |
 | `render/palette.ts` | Palette unique, couleurs nommées par usage |
 | `render/camera-presets.ts` | Dimensions du bac, préréglages de caméra (fonctions pures) |
 | `render/aquarium-scene.ts` | Scène statique : sable, eau, verre, arêtes, lumières ; libération |
 | `render/aquarium-view.ts` | Vue sans Angular : renderer (fabrique remplaçable), caméra, `OrbitControls` |
-| `ui/aquarium-host/` | Composant hôte : boucle rAF, redimensionnement, contrat de capture, `DestroyRef` |
+| `ui/aquarium-host/` | Composant hôte : boucle rAF, avance de la simulation, redimensionnement, contrat de capture, `DestroyRef` |
 
 Le renderer est créé par une fabrique (`AQUARIUM_RENDERER_FACTORY`, par défaut
 `createWebGLRenderer`) : les tests `TestBed` la remplacent par un double, jsdom n'ayant pas
