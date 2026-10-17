@@ -88,6 +88,12 @@
           "debut": "2026-10-17T01:14:12.018Z",
           "fin": "2026-10-17T01:20:18.770Z",
           "note": "PR #15 fusionnée → v0.1.1 (release CI OK, main verte) ; dette #16 ; suppression de la branche refusée par l'environnement (403)"
+        },
+        "superviseur": {
+          "statut": "en-cours",
+          "debut": "2026-10-17T04:48:24.936Z",
+          "fin": null,
+          "note": null
         }
       },
       "issue": 5,
