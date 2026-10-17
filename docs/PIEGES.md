@@ -50,6 +50,16 @@ haut de sa section.
 
 ## Rendu
 
+- **Translucides plus clairs dans la cible basse résolution** : dans une `WebGLRenderTarget`
+  (sRGB ou linéaire), le mélange alpha se fait en espace linéaire, alors qu'à l'écran il se
+  faisait sur des valeurs sRGB. L'eau et le verre à faible opacité paraissent donc plus
+  clairs sur fond sombre (la lame d'air tombait sur `rocheSombre`, brun). Vérifier les
+  teintes sur capture après tout changement d'opacité, et compléter la palette si besoin.
+  (2026-10-17)
+- **Doubles du renderer** : l'interface `AquariumRenderer` inclut `setRenderTarget`. Un double
+  qui compte les images doit ne compter que les rendus à l'écran (cible `null`), chaque image
+  faisant deux `render` (scène puis passe palette). (2026-10-17)
+
 - **Préréglage strictement vertical** (caméra à l'aplomb de sa cible) : `lookAt` et
   `OrbitControls` deviennent indéterminés car l'axe « haut » (Y) est colinéaire à la
   direction de visée. Garder un décalage infime en Z (`render/camera-presets.ts`).

@@ -79,6 +79,12 @@ Principe : une vraie scène 3D, rendue de façon à rester du pixel art quel que
    l'autorise. Les grandes populations utilisent `InstancedMesh`.
 6. **Textures** : `NearestFilter`, sans mipmaps.
 
+Mise en œuvre des points 1 et 2 (ADR 0007) : `AquariumView.renderFrame()` rend la scène dans
+la cible de `PalettePass` (taille `ceil(canvas / PIXEL_SIZE)`, `PIXEL_SIZE = 3` pixels CSS),
+puis un quad plein écran lit chaque pixel de scène par `texelFetch` et écrit la couleur de
+palette la plus proche (distance euclidienne en sRGB, première couleur en cas d'égalité).
+La cible est en sRGB 8 bits : les surfaces translucides s'y mélangent en espace linéaire.
+
 ### Caméra
 
 - `OrbitControls` (`three/examples/jsm/controls/OrbitControls.js`) : rotation au clic gauche,
@@ -103,7 +109,9 @@ Principe : une vraie scène 3D, rendue de façon à rester du pixel art quel que
 | `sim/constants.ts` | `SIM_DT`, `MAX_STEPS_PER_FRAME` |
 | `sim/fixed-step.ts` | Accumulateur de la boucle à pas fixe (fonction pure) |
 | `sim/world.ts` | État du monde sérialisable, `step`, `advance`, `advanceTo` |
-| `render/palette.ts` | Palette unique, couleurs nommées par usage |
+| `render/palette.ts` | Palette unique (32 à 48 couleurs), nommées par usage |
+| `render/pixel-art.ts` | `PIXEL_SIZE`, taille de la cible basse résolution, couleur la plus proche (fonctions pures, même métrique que le shader) |
+| `render/palette-pass.ts` | Cible basse résolution et passe plein écran palette (`ShaderMaterial`) ; libération |
 | `render/camera-presets.ts` | Dimensions du bac, préréglages de caméra (fonctions pures) |
 | `render/aquarium-scene.ts` | Scène statique : sable, eau, verre, arêtes, lumières ; libération |
 | `render/aquarium-view.ts` | Vue sans Angular : renderer (fabrique remplaçable), caméra, `OrbitControls` |
