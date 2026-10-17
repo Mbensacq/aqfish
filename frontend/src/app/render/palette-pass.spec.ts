@@ -1,0 +1,69 @@
+import { NearestFilter, ShaderMaterial, SRGBColorSpace, type Mesh } from 'three';
+
+import { PALETTE_COLORS } from './palette';
+import { PalettePass } from './palette-pass';
+import { PIXEL_SIZE } from './pixel-art';
+
+function material(pass: PalettePass): ShaderMaterial {
+  return (pass.scene.children[0] as Mesh).material as ShaderMaterial;
+}
+
+describe('PalettePass', () => {
+  it('crée une cible sans lissage ni mipmaps', () => {
+    const pass = new PalettePass();
+    const texture = pass.target.texture;
+    expect(texture.minFilter).toBe(NearestFilter);
+    expect(texture.magFilter).toBe(NearestFilter);
+    expect(texture.generateMipmaps).toBe(false);
+    expect(texture.colorSpace).toBe(SRGBColorSpace);
+    expect(pass.target.samples).toBe(0);
+    pass.dispose();
+  });
+
+  it('transmet toute la palette au shader', () => {
+    const pass = new PalettePass();
+    const m = material(pass);
+    expect(m.defines['PALETTE_SIZE']).toBe(PALETTE_COLORS.length);
+    const data = m.uniforms['uPalette'].value as Float32Array;
+    expect(data.length).toBe(PALETTE_COLORS.length * 3);
+    // Première couleur : fond de la scène #141418.
+    expect(Array.from(data.slice(0, 3))).toEqual(
+      [0x14 / 255, 0x14 / 255, 0x18 / 255].map(Math.fround),
+    );
+    pass.dispose();
+  });
+
+  it('suit la taille de l’affichage', () => {
+    const pass = new PalettePass();
+    expect(pass.setSize(1280, 721, 1)).toEqual({ width: 427, height: 241 });
+    expect(pass.target.width).toBe(427);
+    expect(pass.target.height).toBe(241);
+    expect(material(pass).uniforms['uSceneSize'].value).toEqual([427, 241]);
+    expect(material(pass).uniforms['uPixelScale'].value).toBe(PIXEL_SIZE);
+
+    pass.setSize(600, 300, 2);
+    expect(pass.target.width).toBe(200);
+    expect(material(pass).uniforms['uPixelScale'].value).toBe(PIXEL_SIZE * 2);
+
+    pass.setSize(0, 0, Number.NaN);
+    expect([pass.target.width, pass.target.height]).toEqual([1, 1]);
+    expect(material(pass).uniforms['uPixelScale'].value).toBe(PIXEL_SIZE);
+    pass.dispose();
+  });
+
+  it('libère la cible, la géométrie et le matériau', () => {
+    const pass = new PalettePass();
+    const m = material(pass);
+    const geometry = (pass.scene.children[0] as Mesh).geometry;
+    const disposed: string[] = [];
+    pass.target.addEventListener('dispose', () => disposed.push('cible'));
+    geometry.addEventListener('dispose', () => disposed.push('geometrie'));
+    m.addEventListener('dispose', () => disposed.push('materiau'));
+    pass.dispose();
+    expect(disposed.sort()).toEqual(['cible', 'geometrie', 'materiau']);
+  });
+
+  it('refuse une palette vide', () => {
+    expect(() => new PalettePass([])).toThrow(/Palette vide/);
+  });
+});

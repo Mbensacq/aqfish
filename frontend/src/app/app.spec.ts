@@ -9,6 +9,7 @@ import { AQUARIUM_RENDERER_FACTORY } from './ui/aquarium-host/aquarium-host';
 const fakeRendererFactory = (): AquariumRenderer => ({
   setPixelRatio: () => undefined,
   setSize: () => undefined,
+  setRenderTarget: () => undefined,
   render: () => undefined,
   dispose: () => undefined,
 });

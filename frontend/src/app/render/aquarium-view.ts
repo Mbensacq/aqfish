@@ -1,4 +1,11 @@
-import { MOUSE, PerspectiveCamera, type Camera, type Scene, WebGLRenderer } from 'three';
+import {
+  MOUSE,
+  PerspectiveCamera,
+  type Camera,
+  type Scene,
+  WebGLRenderer,
+  type WebGLRenderTarget,
+} from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 import type { CameraPreset } from '../core/capture/capture-params';
@@ -11,6 +18,7 @@ import {
   type TankDimensions,
   type Vec3,
 } from './camera-presets';
+import { PalettePass } from './palette-pass';
 
 /**
  * Sous-ensemble de `WebGLRenderer` utilisé par la vue. Permet de remplacer le renderer
@@ -19,6 +27,7 @@ import {
 export interface AquariumRenderer {
   setPixelRatio(ratio: number): void;
   setSize(width: number, height: number, updateStyle?: boolean): void;
+  setRenderTarget(target: WebGLRenderTarget | null): void;
   render(scene: Scene, camera: Camera): void;
   dispose(): void;
 }
@@ -42,6 +51,9 @@ export interface AquariumViewOptions {
 /**
  * Vue 3D du bac, sans Angular : renderer, scène, caméra et contrôles orbitaux.
  * Le composant hôte (`ui/`) porte la boucle d'affichage et appelle `renderFrame()`.
+ *
+ * Pipeline pixel art (ADR 0002) : la scène est rendue dans la cible basse résolution de
+ * `PalettePass`, puis affichée plein écran sans lissage et ramenée à la palette.
  */
 export class AquariumView {
   readonly camera: PerspectiveCamera;
@@ -49,6 +61,8 @@ export class AquariumView {
   private readonly world: AquariumScene;
   private readonly controls: OrbitControls;
   private readonly canvas: HTMLCanvasElement;
+  private readonly pixelPass: PalettePass;
+  private readonly pixelRatio: number;
   private width = 0;
   private height = 0;
   private disposed = false;
@@ -59,7 +73,9 @@ export class AquariumView {
   constructor(options: AquariumViewOptions) {
     this.canvas = options.canvas;
     this.renderer = options.rendererFactory(options.canvas);
+    this.pixelRatio = options.pixelRatio;
     this.renderer.setPixelRatio(options.pixelRatio);
+    this.pixelPass = new PalettePass();
     this.world = createAquariumScene(options.dimensions);
 
     const radius = tankBoundingRadius(this.world.dimensions);
@@ -108,7 +124,9 @@ export class AquariumView {
     this.height = h;
     if (w > 0 && h > 0) {
       this.renderer.setSize(w, h, false);
-      this.camera.aspect = w / h;
+      // Rapport d'aspect de la cible (arrondie au pixel de scène) pour ne pas déformer l'image.
+      const target = this.pixelPass.setSize(w, h, this.pixelRatio);
+      this.camera.aspect = target.width / target.height;
       this.camera.updateProjectionMatrix();
       if (this.preset !== null) {
         this.applyPreset(this.preset);
@@ -127,7 +145,10 @@ export class AquariumView {
     if (this.disposed || !this.hasSize()) {
       return false;
     }
+    this.renderer.setRenderTarget(this.pixelPass.target);
     this.renderer.render(this.world.scene, this.camera);
+    this.renderer.setRenderTarget(null);
+    this.renderer.render(this.pixelPass.scene, this.pixelPass.camera);
     return true;
   }
 
@@ -151,12 +172,13 @@ export class AquariumView {
     this.controls.removeEventListener('start', this.stopFollowingPreset);
     this.controls.dispose();
     this.world.dispose();
+    this.pixelPass.dispose();
     this.renderer.dispose();
   }
 
   private aspect(): number {
     if (this.hasSize()) {
-      return this.width / this.height;
+      return this.camera.aspect;
     }
     const w = this.canvas.clientWidth;
     const h = this.canvas.clientHeight;
