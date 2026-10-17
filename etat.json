@@ -78,10 +78,10 @@
           "note": "PR #15 : PRNG à graine et boucle à pas fixe (issue #5), CI verte, captures identiques"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-17T00:14:02.619Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-17T00:26:49.738Z",
+          "note": "Verdict OK (PR #15), 0 bug, 8 tests e2e simulation ajoutés (CI verte), captures publiées"
         }
       },
       "issue": 5,
