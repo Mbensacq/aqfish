@@ -82,6 +82,12 @@
           "debut": "2026-10-17T00:14:02.619Z",
           "fin": "2026-10-17T00:26:49.738Z",
           "note": "Verdict OK (PR #15), 0 bug, 8 tests e2e simulation ajoutés (CI verte), captures publiées"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-10-17T01:14:12.018Z",
+          "fin": null,
+          "note": null
         }
       },
       "issue": 5,
