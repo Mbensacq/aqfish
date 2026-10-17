@@ -84,10 +84,10 @@
           "note": "Verdict OK (PR #15), 0 bug, 8 tests e2e simulation ajoutés (CI verte), captures publiées"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-17T01:14:12.018Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-17T01:20:18.770Z",
+          "note": "PR #15 fusionnée → v0.1.1 (release CI OK, main verte) ; dette #16 ; suppression de la branche refusée par l'environnement (403)"
         }
       },
       "issue": 5,
