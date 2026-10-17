@@ -90,10 +90,10 @@
           "note": "PR #15 fusionnée → v0.1.1 (release CI OK, main verte) ; dette #16 ; suppression de la branche refusée par l'environnement (403)"
         },
         "superviseur": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-17T04:48:24.936Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-17T04:51:14.087Z",
+          "note": "Rapport publié (journal + issue #2), 0 alerte bloquante, 3 points d'attention"
         }
       },
       "issue": 5,
