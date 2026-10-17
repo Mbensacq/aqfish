@@ -98,7 +98,20 @@
       },
       "issue": 5,
       "pr": 15,
-      "version": "v0.1.1"
+      "version": "v0.1.1",
+      "metriques": {
+        "livre": true,
+        "version": "v0.1.1",
+        "tests": 173,
+        "testsE2e": 26,
+        "couvertureLignes": 97.3,
+        "lignesCode": 1067,
+        "bugsOuverts": 1,
+        "prAjouts": 964,
+        "prSuppressions": 18,
+        "ciMain": "success",
+        "mutation": null
+      }
     }
   }
 }
