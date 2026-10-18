@@ -1,7 +1,18 @@
 import { MAX_CAPTURE_TIME_SECONDS } from '../core/capture/capture-params';
 import { MAX_SEED } from '../core/random/prng';
 import { SIM_DT } from './constants';
-import { advance, advanceTo, createWorld, step, ticksFor, type World } from './world';
+import { NEON, type SpeciesId } from './species';
+import { swimBounds } from './swimmer';
+import { waterVolume } from './tank';
+import {
+  advance,
+  advanceTo,
+  createDefaultWorld,
+  createWorld,
+  step,
+  ticksFor,
+  type World,
+} from './world';
 
 describe('createWorld', () => {
   it('crée un monde vide à t = 0 avec la graine donnée', () => {
@@ -121,5 +132,80 @@ describe('ticksFor / advanceTo (mode capture)', () => {
   it.each([-1, Number.NaN, Number.POSITIVE_INFINITY])('refuse le temps %s', (time) => {
     expect(() => ticksFor(time)).toThrow(RangeError);
     expect(() => advanceTo(createWorld(42), time)).toThrow(RangeError);
+  });
+});
+
+describe('monde peuplé', () => {
+  it('createWorld peuple dans l’ordre demandé, identifiants consécutifs', () => {
+    const world = createWorld(42, [{ species: 'neon', count: 3 }]);
+    expect(world.entities.map((e) => [e.id, e.species])).toEqual([
+      [0, 'neon'],
+      [1, 'neon'],
+      [2, 'neon'],
+    ]);
+  });
+
+  it('createDefaultWorld : population par défaut du néon', () => {
+    expect(createDefaultWorld(42).entities).toHaveLength(NEON.defaultPopulation);
+  });
+
+  it('effectif nul : monde vide', () => {
+    expect(createWorld(42, [{ species: 'neon', count: 0 }]).entities).toEqual([]);
+  });
+
+  it.each([-1, 1.5, Number.NaN])('refuse l’effectif %s', (count) => {
+    expect(() => createWorld(42, [{ species: 'neon', count }])).toThrow(RangeError);
+  });
+
+  it('refuse une espèce inconnue', () => {
+    expect(() => createWorld(42, [{ species: 'requin' as SpeciesId, count: 1 }])).toThrow(
+      RangeError,
+    );
+  });
+
+  it('même graine et même temps ⇒ même monde (positions comprises)', () => {
+    const a = advanceTo(createDefaultWorld(42), 20);
+    const b = advanceTo(createDefaultWorld(42), 20);
+    expect(JSON.stringify(b)).toBe(JSON.stringify(a));
+    expect(a.entities[0].x).not.toBe(createDefaultWorld(42).entities[0].x);
+  });
+
+  it('advance(n) équivaut à n appels de step', () => {
+    let stepped = createDefaultWorld(9);
+    for (let i = 0; i < 50; i++) {
+      stepped = step(stepped);
+    }
+    expect(advance(createDefaultWorld(9), 50)).toEqual(stepped);
+  });
+
+  it('ajouter un poisson ne change pas la trajectoire des autres', () => {
+    const few = advance(createWorld(5, [{ species: 'neon', count: 2 }]), 300);
+    const many = advance(createWorld(5, [{ species: 'neon', count: 5 }]), 300);
+    expect(many.entities.slice(0, 2)).toEqual(few.entities);
+  });
+
+  it('step ne modifie pas les poissons de son entrée', () => {
+    const world = createDefaultWorld(42);
+    const snapshot = JSON.stringify(world);
+    step(world);
+    expect(JSON.stringify(world)).toBe(snapshot);
+  });
+
+  it('10 000 pas : tous les poissons restent dans le volume d’eau, avec la marge', () => {
+    const hard = swimBounds(NEON, waterVolume()).hard;
+    const world = advance(createDefaultWorld(1234), 10_000);
+    for (const f of world.entities) {
+      expect(f.x).toBeGreaterThanOrEqual(hard.minX);
+      expect(f.x).toBeLessThanOrEqual(hard.maxX);
+      expect(f.y).toBeGreaterThanOrEqual(hard.minY);
+      expect(f.y).toBeLessThanOrEqual(hard.maxY);
+      expect(f.z).toBeGreaterThanOrEqual(hard.minZ);
+      expect(f.z).toBeLessThanOrEqual(hard.maxZ);
+    }
+  });
+
+  it('aller-retour JSON identique après des pas', () => {
+    const world = advance(createDefaultWorld(3), 777);
+    expect(JSON.parse(JSON.stringify(world))).toEqual(world);
   });
 });
