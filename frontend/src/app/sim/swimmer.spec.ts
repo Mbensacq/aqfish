@@ -168,6 +168,87 @@ describe('stepFish', () => {
   });
 });
 
+describe('stepFish : pilotage de banc', () => {
+  function at(yaw: number, pitch = 0): MutableFish {
+    const f = createFish(42, 0, 'neon', BOUNDS) as MutableFish;
+    // Au centre du bac, loin des parois : aucun évitement.
+    Object.assign(f, { x: 0, y: 0.3, z: 0, yaw, pitch, turn: 0, pitchTarget: 0 });
+    return f;
+  }
+
+  it('pilotage nul (par défaut ou explicite) : exactement la nage solitaire', () => {
+    const a = at(0.4);
+    const b = at(0.4);
+    for (let i = 0; i < 600; i++) {
+      stepFish(a, SIM_DT, BOUNDS);
+      stepFish(b, SIM_DT, BOUNDS, 0, 0, 0);
+    }
+    expect(b).toEqual(a);
+  });
+
+  it('tourne vers la direction voulue, d’au plus turnRate · dt par pas en plus de l’errance', () => {
+    const steered = at(0);
+    const free = at(0);
+    stepFish(steered, SIM_DT, BOUNDS, 0, 0, 1); // vers +Z
+    stepFish(free, SIM_DT, BOUNDS);
+    const turnRate = (NEON.schooling as { turnRate: number }).turnRate;
+    expect(steered.yaw - free.yaw).toBeCloseTo(turnRate * SIM_DT, 12);
+  });
+
+  it('petit écart : rejoint exactement la direction voulue', () => {
+    const steered = at(0);
+    const free = at(0);
+    const angle = 0.001;
+    stepFish(steered, SIM_DT, BOUNDS, Math.cos(angle) - 1, 0, Math.sin(angle));
+    stepFish(free, SIM_DT, BOUNDS);
+    expect(steered.yaw - free.yaw).toBeCloseTo(angle, 12);
+  });
+
+  it('un banc au-dessus fait monter le poisson', () => {
+    const steered = at(0);
+    for (let i = 0; i < 60; i++) {
+      stepFish(steered, SIM_DT, BOUNDS, 0, 1, 0);
+    }
+    expect(steered.pitch).toBeGreaterThan(0.2);
+    expect(steered.pitch).toBeLessThanOrEqual(NEON.maxPitch);
+  });
+
+  it('en retard sur son banc, accélère ; en avance, ralentit', () => {
+    const behind = at(0);
+    const ahead = at(0);
+    const free = at(0);
+    for (let i = 0; i < 120; i++) {
+      stepFish(behind, SIM_DT, BOUNDS, 0.3, 0, 0);
+      stepFish(ahead, SIM_DT, BOUNDS, -0.3, 0, 0);
+      stepFish(free, SIM_DT, BOUNDS);
+    }
+    expect(behind.speed).toBeGreaterThan(free.speed);
+    expect(ahead.speed).toBeLessThan(free.speed);
+  });
+
+  it('pilotage énorme ou opposé au cap : invariants respectés, valeurs finies', () => {
+    const f = at(0);
+    for (let i = 0; i < 2000; i++) {
+      stepFish(f, SIM_DT, BOUNDS, -1e6, 1e6 * (i % 2 ? 1 : -1), 0);
+      expect(inside(BOUNDS.hard, f)).toBe(true);
+      expect(f.speed).toBeGreaterThanOrEqual(NEON.minSpeed);
+      expect(f.speed).toBeLessThanOrEqual(NEON.maxSpeed);
+      expect(Math.abs(f.pitch)).toBeLessThanOrEqual(NEON.maxPitch + EPS);
+    }
+    expect([f.x, f.y, f.z, f.yaw, f.pitch].every(Number.isFinite)).toBe(true);
+  });
+
+  it('direction voulue verticale : pas de virage, inclinaison bornée', () => {
+    const steered = at(0);
+    const free = at(0);
+    // cap (1, 0, 0) + (−1, 1, 0) = (0, 1, 0) : aucune composante horizontale.
+    stepFish(steered, SIM_DT, BOUNDS, -1, 1, 0);
+    stepFish(free, SIM_DT, BOUNDS);
+    expect(steered.yaw).toBe(free.yaw);
+    expect(steered.pitch).toBeGreaterThan(free.pitch);
+  });
+});
+
 describe('wrapAngle', () => {
   it.each([
     [0, 0],

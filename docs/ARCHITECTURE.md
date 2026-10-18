@@ -66,6 +66,12 @@ simulation testable et les captures reproductibles.
   forme d'un entier (`rng`, avancé par `prngNextState` / `prngOutput`, même suite que
   `createPrng`), et leur état au pas précédent (`px`, `pyaw`…) pour l'interpolation du rendu.
   Ils sont mis à jour en place, par identifiant croissant, sans allocation par pas.
+- **Banc** (ADR 0011, `sim/flocking.ts`) : chaque pas a deux phases. D'abord le pilotage de
+  banc (séparation, alignement, cohésion, paramètres `schooling` de l'espèce) de tous les
+  poissons, calculé sur les positions du début du pas dans un tampon réutilisé ; puis chaque
+  poisson nage (`stepFish`, pilotage passé en trois nombres) ; enfin l'espacement minimal
+  entre congénères est imposé (`enforceMinDistance`). Les poissons d'un banc s'influencent :
+  en ajouter change la trajectoire des autres (le hasard, lui, reste indépendant).
 - **Unités et repère** : mètres, secondes, degrés Celsius. Axe Y vers le haut ; origine au
   centre du fond du bac.
 - **Données réelles** : toute valeur présentée comme réelle (température d'une espèce,

@@ -78,6 +78,13 @@ const SPEED_RECALL = 0.5;
 /** Distance d'anticipation des parois, en secondes de nage (minimum `MIN_LOOKAHEAD`). */
 const LOOKAHEAD_SECONDS = 1.5;
 const MIN_LOOKAHEAD = 0.08;
+/** Pilotage de banc négligeable : en deçà de cette norme, il est ignoré. */
+const STEER_EPSILON = 1e-9;
+/**
+ * Écart maximal de la vitesse visée en banc, en fraction de `cruiseSpeed` : un poisson en
+ * retard sur son banc accélère, un poisson en avance ralentit (approximation de jeu).
+ */
+const SCHOOL_SPEED_GAIN = 0.5;
 
 /** Bornes de nage d'une espèce dans un volume d'eau donné. */
 export function swimBounds(def: SpeciesDefinition, water: Box3): SwimBounds {
@@ -126,19 +133,64 @@ export function createFish(seed: number, id: number, species: SpeciesId, bounds:
 /**
  * Fait nager un poisson pendant `dt` secondes, **en place** (aucune allocation) :
  * errance douce, évitement des parois, du fond et de la surface, vitesse bornée.
+ *
+ * `steerX`, `steerY`, `steerZ` : pilotage de banc (`sim/flocking.ts`, sans dimension), nul
+ * par défaut. La direction voulue est le cap actuel plus ce pilotage ; le poisson y tourne
+ * d'au plus `schooling.turnRate` rad/s, en plus de son errance, et ajuste sa vitesse visée
+ * (`SCHOOL_SPEED_GAIN`). L'évitement des parois, du fond et de la surface reste prioritaire.
+ * Un pilotage nul, ou une espèce sans banc, donne exactement la nage solitaire.
+ *
  * Garanties : le centre reste dans `bounds.hard` ; `speed` ∈ [minSpeed, maxSpeed] ;
  * `|pitch|` ≤ maxPitch ; le déplacement d'un pas ne dépasse jamais `maxSpeed · dt`.
  */
-export function stepFish(fish: Mutable<Fish>, dt: number, bounds: SwimBounds): void {
+export function stepFish(
+  fish: Mutable<Fish>,
+  dt: number,
+  bounds: SwimBounds,
+  steerX = 0,
+  steerY = 0,
+  steerZ = 0,
+): void {
   const def = SPECIES[fish.species];
   const { hard, soft } = bounds;
   savePrevious(fish);
 
-  // Vitesse : petite marche aléatoire rappelée vers la vitesse de croisière.
+  // Pilotage de banc : direction voulue = cap actuel + pilotage.
+  let schoolTurn = 0;
+  let schoolBlend = 0;
+  let schoolPitch = 0;
+  let schoolSpeed = 0;
+  const steerNorm = Math.sqrt(steerX * steerX + steerY * steerY + steerZ * steerZ);
+  if (def.schooling !== null && steerNorm > STEER_EPSILON) {
+    const horizontal = Math.cos(fish.pitch);
+    const hx = Math.cos(fish.yaw) * horizontal;
+    const hy = Math.sin(fish.pitch);
+    const hz = Math.sin(fish.yaw) * horizontal;
+    const dx = hx + steerX;
+    const dy = hy + steerY;
+    const dz = hz + steerZ;
+    const dh = Math.sqrt(dx * dx + dz * dz);
+    if (dh > STEER_EPSILON) {
+      const maxTurn = def.schooling.turnRate * dt;
+      schoolTurn = clamp(wrapAngle(Math.atan2(dz, dx) - fish.yaw), -maxTurn, maxTurn);
+    }
+    const pitchLimit = def.maxPitch * AVOID_PITCH_RATIO;
+    schoolPitch = clamp(Math.atan2(dy, dh), -pitchLimit, pitchLimit);
+    schoolBlend = Math.min(1, steerNorm);
+    schoolSpeed = clamp(
+      steerX * hx + steerY * hy + steerZ * hz,
+      -SCHOOL_SPEED_GAIN,
+      SCHOOL_SPEED_GAIN,
+    );
+  }
+
+  // Vitesse : petite marche aléatoire rappelée vers la vitesse visée (croisière, ajustée en
+  // banc).
+  const speedGoal = def.cruiseSpeed * (1 + schoolSpeed);
   const speed =
     fish.speed +
     (random(fish) * 2 - 1) * SPEED_JITTER * def.cruiseSpeed * dt +
-    (def.cruiseSpeed - fish.speed) * SPEED_RECALL * dt;
+    (speedGoal - fish.speed) * SPEED_RECALL * dt;
   fish.speed = clamp(speed, def.minSpeed, def.maxSpeed);
 
   // Cap : errance (vitesse de virage en marche aléatoire amortie), sauf près d'une paroi.
@@ -159,7 +211,7 @@ export function stepFish(fish: Mutable<Fish>, dt: number, bounds: SwimBounds): v
     fish.yaw = wrapAngle(fish.yaw + clamp(wrapAngle(desired - fish.yaw), -maxTurn, maxTurn));
     fish.turn *= 1 - WANDER_DAMPING * dt;
   } else {
-    fish.yaw = wrapAngle(fish.yaw + fish.turn * dt);
+    fish.yaw = wrapAngle(fish.yaw + fish.turn * dt + schoolTurn);
   }
 
   // Inclinaison : errance lente, ou évitement du fond et de la surface.
@@ -169,7 +221,8 @@ export function stepFish(fish: Mutable<Fish>, dt: number, bounds: SwimBounds): v
     -wanderPitch,
     wanderPitch,
   );
-  let pitchGoal = fish.pitchTarget;
+  // En banc, l'inclinaison visée glisse vers celle de la direction voulue.
+  let pitchGoal = fish.pitchTarget + (schoolPitch - fish.pitchTarget) * schoolBlend;
   if (fish.y < soft.minY) {
     pitchGoal = def.maxPitch * AVOID_PITCH_RATIO;
   } else if (fish.y > soft.maxY) {

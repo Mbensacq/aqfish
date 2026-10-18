@@ -26,6 +26,33 @@ export interface SpeciesColors {
   readonly eye: string;
 }
 
+/**
+ * Comportement de banc (règles de boids : séparation, alignement, cohésion ; `sim/flocking.ts`).
+ * Seuls les congénères (même espèce) situés à moins de `neighborRadius` sont pris en compte.
+ */
+export interface SchoolingParams {
+  /** Rayon de perception des voisins (alignement et cohésion), en mètres. */
+  readonly neighborRadius: number;
+  /** Rayon de séparation : en deçà, le poisson s'écarte de son voisin, en mètres. */
+  readonly separationRadius: number;
+  /** Poids de la séparation (sans dimension). */
+  readonly separationWeight: number;
+  /** Poids de l'alignement (sans dimension). */
+  readonly alignmentWeight: number;
+  /** Poids de la cohésion (sans dimension). */
+  readonly cohesionWeight: number;
+  /**
+   * Vitesse de virage maximale due au banc, en rad/s. Lue dans la définition d'espèce par
+   * `stepFish` (`sim/swimmer.ts`).
+   */
+  readonly turnRate: number;
+  /**
+   * Distance minimale entre les centres de deux congénères, en mètres : en deçà, ils sont
+   * écartés de force (`enforceMinDistance`, `sim/flocking.ts`) pour ne jamais se recouvrir.
+   */
+  readonly minDistance: number;
+}
+
 export interface SpeciesDefinition {
   readonly id: SpeciesId;
   /** Nom affiché, en français. */
@@ -52,6 +79,8 @@ export interface SpeciesDefinition {
   readonly tailBeatFrequency: number;
   /** Population par défaut d'un bac. */
   readonly defaultPopulation: number;
+  /** Comportement de banc, ou `null` pour une espèce solitaire. */
+  readonly schooling: SchoolingParams | null;
   readonly colors: SpeciesColors;
 }
 
@@ -68,6 +97,10 @@ export interface SpeciesDefinition {
  *   (https://fishbase.se/summary/10691) ; non vérifiée ici.
  * - Vitesses, virages, battement de queue, population : **approximations de jeu** (nage
  *   calme, sans prétention de réalisme quantitatif).
+ * - Banc : le néon est une espèce grégaire qui nage en banc ; rayons (5 longueurs de corps
+ *   pour la perception, ≈ 1 pour la séparation), poids, et distance minimale (≈ hauteur du
+ *   corps du modèle, 18 mm) : **approximations de jeu**, réglés pour un banc lâche et mobile
+ *   dans le bac par défaut.
  */
 export const NEON: SpeciesDefinition = {
   id: 'neon',
@@ -82,7 +115,16 @@ export const NEON: SpeciesDefinition = {
   maxPitch: 0.35,
   wallMargin: 0.05,
   tailBeatFrequency: 2.5,
-  defaultPopulation: 8,
+  defaultPopulation: 12,
+  schooling: {
+    neighborRadius: 0.3,
+    separationRadius: 0.05,
+    separationWeight: 1,
+    alignmentWeight: 1,
+    cohesionWeight: 1,
+    turnRate: 1.5,
+    minDistance: 0.02,
+  },
   colors: {
     stripe: '#3fa9f5',
     accent: '#e63946',
@@ -133,6 +175,9 @@ export function validateSpecies(def: SpeciesDefinition): string[] {
   if (!Number.isInteger(def.defaultPopulation) || def.defaultPopulation < 0) {
     problems.push('defaultPopulation doit être un entier positif ou nul');
   }
+  if (def.schooling !== null) {
+    problems.push(...validateSchooling(def.schooling));
+  }
   for (const [name, color] of Object.entries(def.colors)) {
     if (!HEX_COLOR.test(color)) {
       problems.push(`couleur ${name} invalide (attendu #rrggbb en minuscules) : ${color}`);
@@ -140,6 +185,29 @@ export function validateSpecies(def: SpeciesDefinition): string[] {
   }
   if (def.name.trim() === '' || def.scientificName.trim() === '') {
     problems.push('nom et nom scientifique obligatoires');
+  }
+  return problems;
+}
+
+function validateSchooling(params: SchoolingParams): string[] {
+  const problems: string[] = [];
+  for (const key of ['neighborRadius', 'separationRadius', 'turnRate', 'minDistance'] as const) {
+    const value = params[key];
+    if (!(value > 0) || !Number.isFinite(value)) {
+      problems.push(`schooling.${key} doit être un réel strictement positif (reçu : ${value})`);
+    }
+  }
+  for (const key of ['separationWeight', 'alignmentWeight', 'cohesionWeight'] as const) {
+    const value = params[key];
+    if (!(value >= 0) || !Number.isFinite(value)) {
+      problems.push(`schooling.${key} doit être un réel positif ou nul (reçu : ${value})`);
+    }
+  }
+  if (!(params.separationRadius <= params.neighborRadius)) {
+    problems.push('schooling.separationRadius doit être ≤ schooling.neighborRadius');
+  }
+  if (!(params.minDistance <= params.separationRadius)) {
+    problems.push('schooling.minDistance doit être ≤ schooling.separationRadius');
   }
   return problems;
 }
