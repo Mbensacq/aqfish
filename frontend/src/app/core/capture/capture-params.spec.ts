@@ -16,8 +16,22 @@ describe('parseCaptureParams', () => {
       seed: 7,
       camera: 'bottom',
       time: 12.5,
+      filter: null,
     });
   });
+
+  it.each(['pixel', 'aucun'] as const)('lit le filtre de rendu filtre=%s', (filter) => {
+    expect(parseCaptureParams(`?capture=1&camera=three-quarter&filtre=${filter}`).filter).toBe(
+      filter,
+    );
+  });
+
+  it.each(['', 'none', 'AUCUN', 'pixel art', '1'])(
+    'ignore le filtre invalide « %s » (null : choix par défaut)',
+    (filter) => {
+      expect(parseCaptureParams(`?filtre=${encodeURIComponent(filter)}`).filter).toBeNull();
+    },
+  );
 
   it.each(CAMERA_PRESETS)('accepte le préréglage de caméra « %s »', (preset) => {
     expect(parseCaptureParams(`?camera=${preset}`).camera).toBe(preset);

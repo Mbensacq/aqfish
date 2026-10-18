@@ -6,7 +6,8 @@ import { expect, test } from '@playwright/test';
 /**
  * Harnais de captures (projet Playwright « captures »).
  *
- * Photographie l'application sous les 5 angles du contrat de capture, avec une
+ * Photographie l'application sous les 5 angles du contrat de capture (plus une vue
+ * trois-quarts sans filtre pixel art, `filtre=aucun`), avec une
  * graine et un temps de simulation fixes, pour suivre l'évolution visuelle nuit
  * après nuit. Lancer : `npm run captures` (sortie : CAPTURE_DIR, par défaut
  * ../docs/captures/latest).
@@ -38,4 +39,22 @@ test.describe('Captures', () => {
       expect(errors).toEqual([]);
     });
   }
+
+  // Filtre désactivé (issue #33) : capture supplémentaire, les 5 angles ci-dessus restent en
+  // pixel art et inchangés.
+  test('angle three-quarter sans filtre', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+
+    await page.goto(
+      `/?capture=1&seed=${SEED}&camera=three-quarter&time=${TIME_SECONDS}&filtre=aucun`,
+    );
+    await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+
+    await page.screenshot({
+      path: join(OUTPUT_DIR, 'three-quarter-sans-filtre.png'),
+      animations: 'disabled',
+    });
+    expect(errors).toEqual([]);
+  });
 });

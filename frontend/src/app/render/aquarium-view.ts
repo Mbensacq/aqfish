@@ -9,6 +9,7 @@ import {
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 import type { CameraPreset } from '../core/capture/capture-params';
+import { DEFAULT_RENDER_FILTER, type RenderFilter } from '../core/render-filter/render-filter';
 import { createAquariumScene, type AquariumScene } from './aquarium-scene';
 import {
   CAMERA_FOV_DEG,
@@ -26,6 +27,7 @@ import { SPECIES, type SpeciesId } from '../sim/species';
 import type { Fish } from '../sim/swimmer';
 import { FishLayer } from './fish-layer';
 import { PalettePass } from './palette-pass';
+import type { Size } from './pixel-art';
 
 /**
  * Sous-ensemble de `WebGLRenderer` utilisé par la vue. Permet de remplacer le renderer
@@ -53,6 +55,8 @@ export interface AquariumViewOptions {
   /** Contrôles à la souris actifs (désactivés en mode capture). */
   readonly interactive: boolean;
   readonly dimensions?: TankDimensions;
+  /** Filtre de rendu initial (pixel art par défaut), modifiable à chaud par `setFilter`. */
+  readonly filter?: RenderFilter;
 }
 
 /**
@@ -61,6 +65,8 @@ export interface AquariumViewOptions {
  *
  * Pipeline pixel art (ADR 0002) : la scène est rendue dans la cible basse résolution de
  * `PalettePass`, puis affichée plein écran sans lissage et ramenée à la palette.
+ * Filtre `aucun` (ADR 0010) : la scène est rendue directement à l'écran, en pleine
+ * résolution, sans passe palette ; la bascule ne touche ni à la caméra ni à la scène.
  */
 export class AquariumView {
   readonly camera: PerspectiveCamera;
@@ -74,6 +80,9 @@ export class AquariumView {
   private readonly pixelRatio: number;
   private width = 0;
   private height = 0;
+  private currentFilter: RenderFilter;
+  /** Taille de la cible basse résolution (tenue à jour dans les deux modes). */
+  private targetSize: Size = { width: 1, height: 1 };
   private disposed = false;
   /** Préréglage courant, recadré à chaque redimensionnement tant que l'utilisateur n'a pas bougé. */
   private preset: CameraPreset | null;
@@ -89,6 +98,7 @@ export class AquariumView {
     this.canvas = options.canvas;
     this.renderer = options.rendererFactory(options.canvas);
     this.pixelRatio = options.pixelRatio;
+    this.currentFilter = options.filter ?? DEFAULT_RENDER_FILTER;
     this.renderer.setPixelRatio(options.pixelRatio);
     this.pixelPass = new PalettePass();
     this.world = createAquariumScene(options.dimensions);
@@ -192,10 +202,8 @@ export class AquariumView {
     this.height = h;
     if (w > 0 && h > 0) {
       this.renderer.setSize(w, h, false);
-      // Rapport d'aspect de la cible (arrondie au pixel de scène) pour ne pas déformer l'image.
-      const target = this.pixelPass.setSize(w, h, this.pixelRatio);
-      this.camera.aspect = target.width / target.height;
-      this.camera.updateProjectionMatrix();
+      this.targetSize = this.pixelPass.setSize(w, h, this.pixelRatio);
+      this.updateAspect();
       if (this.preset !== null) {
         this.applyPreset(this.preset);
       }
@@ -235,10 +243,36 @@ export class AquariumView {
     return this.fishLayers.map((layer) => layer.species.id);
   }
 
+  /** Filtre de rendu courant. */
+  get filter(): RenderFilter {
+    return this.currentFilter;
+  }
+
+  /**
+   * Change le filtre de rendu à chaud. Seule la projection suit le nouveau rapport d'aspect :
+   * la position et la cible de la caméra, la transition en cours et la scène sont conservées.
+   * Renvoie `true` si le filtre a changé.
+   */
+  setFilter(filter: RenderFilter): boolean {
+    if (this.disposed || filter === this.currentFilter) {
+      return false;
+    }
+    this.currentFilter = filter;
+    if (this.hasSize()) {
+      this.updateAspect();
+    }
+    return true;
+  }
+
   /** Rend une image. Renvoie `false` si rien n'a pu être rendu (taille nulle ou vue libérée). */
   renderFrame(): boolean {
     if (this.disposed || !this.hasSize()) {
       return false;
+    }
+    if (this.currentFilter === 'aucun') {
+      this.renderer.setRenderTarget(null);
+      this.renderer.render(this.world.scene, this.camera);
+      return true;
     }
     this.renderer.setRenderTarget(this.pixelPass.target);
     this.renderer.render(this.world.scene, this.camera);
@@ -286,6 +320,17 @@ export class AquariumView {
     this.world.dispose();
     this.pixelPass.dispose();
     this.renderer.dispose();
+  }
+
+  /**
+   * Rapport d'aspect de la caméra : celui de la cible en pixel art (arrondie au pixel de
+   * scène, pour ne pas déformer l'image), celui du canvas sans filtre.
+   */
+  private updateAspect(): void {
+    const size: Size =
+      this.currentFilter === 'pixel' ? this.targetSize : { width: this.width, height: this.height };
+    this.camera.aspect = size.width / size.height;
+    this.camera.updateProjectionMatrix();
   }
 
   private presetPose(preset: CameraPreset): CameraPose {

@@ -200,3 +200,101 @@ describe('AquariumView (transitions de caméra)', () => {
     expect(view.transitioning).toBe(false);
   });
 });
+
+describe('AquariumView (filtre de rendu)', () => {
+  let renderer: RecordingRenderer;
+  let view: AquariumView;
+
+  function createView(filter?: 'pixel' | 'aucun', interactive = false): AquariumView {
+    return new AquariumView({
+      canvas: document.createElement('canvas'),
+      rendererFactory: () => renderer,
+      pixelRatio: 1,
+      preset: 'three-quarter',
+      interactive,
+      filter,
+    });
+  }
+
+  beforeEach(() => {
+    renderer = new RecordingRenderer();
+  });
+
+  afterEach(() => view.dispose());
+
+  it('pixel art par défaut', () => {
+    view = createView();
+    expect(view.filter).toBe('pixel');
+  });
+
+  it('filtre aucun : la scène est rendue directement à l’écran, sans passe palette', () => {
+    view = createView('aucun');
+    view.resize(1280, 721);
+    renderer.calls.length = 0;
+    expect(view.renderFrame()).toBe(true);
+    expect(renderer.calls).toEqual(['cible écran', 'render PerspectiveCamera']);
+  });
+
+  it('filtre aucun : rapport d’aspect du canvas (pleine résolution), pas de la cible', () => {
+    view = createView('aucun');
+    view.resize(1280, 721);
+    expect(view.camera.aspect).toBeCloseTo(1280 / 721, 10);
+  });
+
+  it('bascule à chaud dans les deux sens sans déplacer la caméra', () => {
+    view = createView('pixel', true);
+    view.resize(1280, 721);
+    const position = view.cameraPosition();
+    const target = view.cameraTarget();
+
+    expect(view.setFilter('aucun')).toBe(true);
+    expect(view.filter).toBe('aucun');
+    expect(view.camera.aspect).toBeCloseTo(1280 / 721, 10);
+    renderer.calls.length = 0;
+    view.renderFrame();
+    expect(renderer.calls).toEqual(['cible écran', 'render PerspectiveCamera']);
+
+    expect(view.setFilter('pixel')).toBe(true);
+    expect(view.camera.aspect).toBeCloseTo(427 / 241, 10);
+    renderer.calls.length = 0;
+    view.renderFrame();
+    expect(renderer.calls).toEqual([
+      'cible 427x241',
+      'render PerspectiveCamera',
+      'cible écran',
+      'render OrthographicCamera',
+    ]);
+    expect(view.cameraPosition()).toEqual(position);
+    expect(view.cameraTarget()).toEqual(target);
+  });
+
+  it('la bascule conserve une transition de caméra en cours', () => {
+    view = createView('pixel', true);
+    view.resize(1280, 721);
+    view.animateToPreset('top', 1);
+    view.stepCameraTransition(0.25);
+    view.setFilter('aucun');
+    expect(view.transitioning).toBe(true);
+  });
+
+  it('même filtre, avant toute taille ou après destruction : sans effet', () => {
+    view = createView('pixel');
+    expect(view.setFilter('pixel')).toBe(false);
+    // Avant redimensionnement : le filtre change, le rapport d'aspect suivra au resize.
+    expect(view.setFilter('aucun')).toBe(true);
+    view.resize(600, 300);
+    expect(view.camera.aspect).toBeCloseTo(2, 10);
+    view.dispose();
+    expect(view.setFilter('pixel')).toBe(false);
+    expect(view.filter).toBe('aucun');
+  });
+
+  it('la cible basse résolution reste à jour en mode aucun (retour au pixel art immédiat)', () => {
+    view = createView('aucun');
+    view.resize(900, 600);
+    view.setFilter('pixel');
+    renderer.calls.length = 0;
+    view.renderFrame();
+    expect(renderer.calls[0]).toBe('cible 300x200');
+  });
+});

@@ -19,6 +19,14 @@ export const VIEW_PRESET_BUTTONS: readonly ViewPresetButton[] = [
   { preset: 'three-quarter', label: '3/4', ariaLabel: 'Vue trois-quarts', key: '5' },
 ];
 
+/** Touche de bascule du filtre pixel art (insensible à la casse). */
+export const PIXEL_ART_KEY = 'p';
+
+/** Vrai pour la touche de bascule du filtre pixel art (`p` ou `P`). */
+export function isPixelArtKey(key: string): boolean {
+  return key.toLowerCase() === PIXEL_ART_KEY;
+}
+
 /** Préréglage associé à une touche (`1` à `5`), `null` sinon. */
 export function presetForKey(key: string): CameraPreset | null {
   return VIEW_PRESET_BUTTONS.find((button) => button.key === key)?.preset ?? null;
@@ -47,26 +55,43 @@ export function isTypingContext(event: KeyboardEvent): boolean {
  * Barre flottante des préréglages de vue (docs/DA.md, « Interface ») : 5 boutons et les
  * raccourcis clavier `1` à `5`. Elle émet le préréglage choisi ; l'hôte l'applique à la vue
  * et lui renvoie le préréglage actif (`activePreset`).
+ * À part, après un séparateur : la bascule « Pixel art » (touche `P`, issue #33). La barre
+ * émet la demande de bascule ; l'état affiché (`pixelArt`) vient de l'hôte.
  * Absente en mode capture (c'est l'application qui ne l'affiche pas).
  */
 @Component({
   selector: 'app-view-presets-bar',
-  template: `<div class="view-presets-bar" role="toolbar" aria-label="Préréglages de vue">
-    @for (button of buttons; track button.preset) {
-      <button
-        type="button"
-        class="view-presets-bar__button"
-        [class.view-presets-bar__button--active]="activePreset() === button.preset"
-        [attr.aria-label]="button.ariaLabel + ' (touche ' + button.key + ')'"
-        [attr.aria-keyshortcuts]="button.key"
-        [attr.aria-pressed]="activePreset() === button.preset"
-        [attr.data-preset]="button.preset"
-        (click)="choose(button.preset)"
-      >
-        <span class="view-presets-bar__key" aria-hidden="true">{{ button.key }}</span>
-        {{ button.label }}
-      </button>
-    }
+  template: `<div class="view-presets-bar">
+    <div class="view-presets-bar__group" role="toolbar" aria-label="Préréglages de vue">
+      @for (button of buttons; track button.preset) {
+        <button
+          type="button"
+          class="view-presets-bar__button"
+          [class.view-presets-bar__button--active]="activePreset() === button.preset"
+          [attr.aria-label]="button.ariaLabel + ' (touche ' + button.key + ')'"
+          [attr.aria-keyshortcuts]="button.key"
+          [attr.aria-pressed]="activePreset() === button.preset"
+          [attr.data-preset]="button.preset"
+          (click)="choose(button.preset)"
+        >
+          <span class="view-presets-bar__key" aria-hidden="true">{{ button.key }}</span>
+          {{ button.label }}
+        </button>
+      }
+    </div>
+    <span class="view-presets-bar__separator" aria-hidden="true"></span>
+    <button
+      type="button"
+      class="view-presets-bar__button"
+      [class.view-presets-bar__button--active]="pixelArt()"
+      aria-label="Filtre pixel art (touche P)"
+      aria-keyshortcuts="P"
+      [attr.aria-pressed]="pixelArt()"
+      (click)="togglePixelArt()"
+    >
+      <span class="view-presets-bar__key" aria-hidden="true">P</span>
+      Pixel art
+    </button>
   </div>`,
   styleUrl: './view-presets-bar.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -82,7 +107,17 @@ export class ViewPresetsBar {
    */
   readonly activePreset = input<CameraPreset | null>(null);
 
+  /** Filtre pixel art actif (fourni par l'hôte : la barre ne le mémorise pas). */
+  readonly pixelArt = input(true);
+
+  /** Demande de bascule du filtre pixel art (clic ou touche `P`). */
+  readonly pixelArtToggled = output<void>();
+
   protected readonly buttons = VIEW_PRESET_BUTTONS;
+
+  protected togglePixelArt(): void {
+    this.pixelArtToggled.emit();
+  }
 
   protected choose(preset: CameraPreset): void {
     this.presetSelected.emit(preset);
@@ -90,6 +125,11 @@ export class ViewPresetsBar {
 
   protected onKeydown(event: KeyboardEvent): void {
     if (event.defaultPrevented || isTypingContext(event)) {
+      return;
+    }
+    if (isPixelArtKey(event.key)) {
+      event.preventDefault();
+      this.togglePixelArt();
       return;
     }
     const preset = presetForKey(event.key);
