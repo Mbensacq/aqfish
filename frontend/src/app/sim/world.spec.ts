@@ -3,7 +3,7 @@ import { MAX_SEED } from '../core/random/prng';
 import { SIM_DT } from './constants';
 import type { Vec3 } from './flocking';
 import { obstacleDistance, sphereObstacle, type Obstacle } from './obstacles';
-import { NEON, type SpeciesId } from './species';
+import { GUPPY, NEON, type SpeciesId } from './species';
 import { swimBounds } from './swimmer';
 import { waterVolume } from './tank';
 import {
@@ -149,8 +149,41 @@ describe('monde peuplé', () => {
     ]);
   });
 
-  it('createDefaultWorld : population par défaut du néon', () => {
-    expect(createDefaultWorld(42).entities).toHaveLength(NEON.defaultPopulation);
+  it('createDefaultWorld : population par défaut de chaque espèce, dans l’ordre de SPECIES', () => {
+    const species = createDefaultWorld(42).entities.map((e) => e.species);
+    expect(species).toEqual([
+      ...Array<string>(NEON.defaultPopulation).fill('neon'),
+      ...Array<string>(GUPPY.defaultPopulation).fill('guppy'),
+    ]);
+  });
+
+  it('les guppys ne changent pas la trajectoire des néons (banc entre congénères seulement)', () => {
+    const alone = advance(
+      createWorld(42, [{ species: 'neon', count: NEON.defaultPopulation }]),
+      600,
+    );
+    const mixed = advance(createDefaultWorld(42), 600);
+    expect(mixed.entities.filter((e) => e.species === 'neon')).toEqual(alone.entities);
+  });
+
+  it('guppys : restent dans le volume d’eau et ne se recouvrent pas après 300 s', () => {
+    const world = advance(createWorld(5, [{ species: 'guppy', count: 20 }]), 18_000);
+    const minDistance = GUPPY.schooling!.minDistance;
+    const water = waterVolume();
+    for (const a of world.entities) {
+      expect(a.x).toBeGreaterThanOrEqual(water.minX);
+      expect(a.x).toBeLessThanOrEqual(water.maxX);
+      expect(a.y).toBeGreaterThanOrEqual(water.minY);
+      expect(a.y).toBeLessThanOrEqual(water.maxY);
+      expect(a.z).toBeGreaterThanOrEqual(water.minZ);
+      expect(a.z).toBeLessThanOrEqual(water.maxZ);
+      for (const b of world.entities) {
+        if (a.id < b.id) {
+          const d = Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
+          expect(d).toBeGreaterThanOrEqual(minDistance - 1e-9);
+        }
+      }
+    }
   });
 
   it('effectif nul : monde vide', () => {

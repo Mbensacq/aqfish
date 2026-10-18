@@ -1,8 +1,11 @@
-import { NEON, SPECIES } from '../sim/species';
+import { GUPPY, NEON, SILHOUETTE_IDS, SPECIES, speciesVariants } from '../sim/species';
 import {
   buildVoxelMesh,
   createFishGeometry,
+  GUPPY_FEMALE_FISH,
+  GUPPY_MALE_FISH,
   modelBodyLength,
+  SILHOUETTES,
   SLENDER_FISH,
   voxelSize,
 } from './fish-model';
@@ -17,8 +20,71 @@ describe('couleurs des espèces', () => {
       for (const color of Object.values(def.colors)) {
         expect(PALETTE_COLORS).toContain(color);
       }
+      for (const variant of speciesVariants(def)) {
+        for (const color of Object.values(variant.colors)) {
+          expect(PALETTE_COLORS).toContain(color);
+        }
+      }
     },
   );
+});
+
+describe('silhouettes', () => {
+  it('chaque silhouette déclarée a un gabarit', () => {
+    expect(Object.keys(SILHOUETTES).sort()).toEqual([...SILHOUETTE_IDS].sort());
+  });
+
+  it.each(Object.entries(SILHOUETTES))('%s : corps et queue se construisent', (_id, template) => {
+    expect(buildVoxelMesh(template.body, template.bodyDepth, NEON.colors, UNIT, 'center').quads)
+      .toBeGreaterThan(0); // prettier-ignore
+    expect(buildVoxelMesh(template.tail, template.tailDepth, NEON.colors, UNIT, 'right').quads)
+      .toBeGreaterThan(0); // prettier-ignore
+  });
+
+  it('le guppy mâle a une caudale plus grande que celle de la femelle', () => {
+    const cells = (rows: readonly string[]) => rows.join('').replaceAll('.', '').length;
+    expect(cells(GUPPY_MALE_FISH.tail)).toBeGreaterThan(2 * cells(GUPPY_FEMALE_FISH.tail));
+    // … et son corps est plus petit (moins de colonnes et d'échelle).
+    expect(cells(GUPPY_MALE_FISH.body)).toBeLessThan(cells(GUPPY_FEMALE_FISH.body));
+  });
+});
+
+describe('modèle du guppy', () => {
+  const [male, female] = speciesVariants(GUPPY);
+  const width = (geometry: ReturnType<typeof createFishGeometry>) => {
+    geometry.computeBoundingBox();
+    const box = geometry.boundingBox!;
+    return box.max.x - box.min.x;
+  };
+
+  it('la longueur du corps suit bodyLength × échelle', () => {
+    expect(width(createFishGeometry(GUPPY, 'body', female))).toBeCloseTo(GUPPY.bodyLength, 6);
+    expect(width(createFishGeometry(GUPPY, 'body', male))).toBeCloseTo(
+      GUPPY.bodyLength * male.scale,
+      6, // positions en Float32
+    );
+    expect(modelBodyLength(GUPPY, GUPPY_MALE_FISH, male.scale)).toBeCloseTo(
+      GUPPY.bodyLength * male.scale,
+      12,
+    );
+  });
+
+  it('les couleurs des sommets sont celles de l’apparence', () => {
+    const geometry = createFishGeometry(GUPPY, 'tail', male);
+    const colors = geometry.getAttribute('color');
+    // Caudale du mâle : orange (fin) et rose (accent) seulement.
+    const distinct = new Set<string>();
+    for (let i = 0; i < colors.count; i++) {
+      distinct.add(
+        [colors.getX(i), colors.getY(i), colors.getZ(i)].map((c) => c.toFixed(4)).join(),
+      );
+    }
+    expect(distinct.size).toBe(2);
+  });
+
+  it('sans apparence précisée : celle par défaut de l’espèce', () => {
+    expect(width(createFishGeometry(GUPPY, 'body'))).toBeCloseTo(GUPPY.bodyLength, 6);
+  });
 });
 
 describe('buildVoxelMesh', () => {

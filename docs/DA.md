@@ -55,6 +55,12 @@ Les espèces sont décrites de façon **déclarative** (taille, silhouette, moti
 comportement, environnements compatibles, température), puis leurs modèles sont générés par
 le code. Les valeurs réelles sont sourcées ou marquées comme approximations.
 
+Une espèce peut avoir plusieurs **apparences** (dimorphisme, ADR 0013). Le guppy : mâle
+plus petit, corps gris roche taché de rose nénuphar, grande caudale orange koï ; femelle
+plus grande, corps sable, dos sable sombre, tache de gestation roche sombre, nageoires
+sable clair. Les espèces autres que le néon n'empruntent pas le bleu et le rouge néon
+(mesures de banc sur image).
+
 ## Interface
 
 - Minimale et discrète : barres flottantes sombres translucides aux coins arrondis, qui

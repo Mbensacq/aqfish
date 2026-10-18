@@ -82,6 +82,7 @@ test.describe('Néons', () => {
 const TANK = { halfWidth: 0.6, halfDepth: 0.25, sand: 0.06, water: 0.6 * 0.9 };
 
 interface FishProbe {
+  species: string;
   x: number;
   y: number;
   z: number;
@@ -94,7 +95,7 @@ async function readFish(page: Page): Promise<FishProbe[]> {
     const host = document.querySelector('app-aquarium-host');
     const component = debug && host ? debug.getComponent(host) : null;
     const world = (component as { world: { entities: FishProbe[] } | null } | null)?.world;
-    return world ? world.entities.map(({ x, y, z }) => ({ x, y, z })) : null;
+    return world ? world.entities.map(({ species, x, y, z }) => ({ species, x, y, z })) : null;
   });
   expect(fish, 'monde lisible via window.ng (build de développement)').not.toBeNull();
   return fish!;
@@ -102,7 +103,7 @@ async function readFish(page: Page): Promise<FishProbe[]> {
 
 test.describe('Néons : maintien dans le bac (monde réel de l’application)', () => {
   for (const seed of [0, 1, 42, 4294967295]) {
-    test(`graine ${seed} : 12 poissons, tous dans le volume d’eau après 600 s`, async ({
+    test(`graine ${seed} : 12 néons et 6 guppys, tous dans le volume d’eau après 600 s`, async ({
       page,
     }) => {
       const errors: string[] = [];
@@ -110,7 +111,10 @@ test.describe('Néons : maintien dans le bac (monde réel de l’application)', 
       await page.goto(`/?capture=1&seed=${seed}&camera=side&time=600`);
       await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
       const fish = await readFish(page);
-      expect(fish).toHaveLength(12); // population par défaut du néon (sim/species.ts)
+      // Populations par défaut (sim/species.ts) : 12 néons, puis 6 guppys.
+      expect(fish.filter((f) => f.species === 'neon')).toHaveLength(12);
+      expect(fish.filter((f) => f.species === 'guppy')).toHaveLength(6);
+      expect(fish).toHaveLength(18);
       for (const { x, y, z } of fish) {
         expect(Math.abs(x)).toBeLessThanOrEqual(TANK.halfWidth);
         expect(Math.abs(z)).toBeLessThanOrEqual(TANK.halfDepth);

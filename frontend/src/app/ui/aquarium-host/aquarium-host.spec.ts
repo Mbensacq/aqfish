@@ -4,7 +4,7 @@ import { isCaptureReady, resetCaptureReady } from '../../core/capture/capture-re
 import { RENDER_FILTER_STORAGE_KEY } from '../../core/render-filter/render-filter';
 import type { AquariumRenderer } from '../../render/aquarium-view';
 import { MAX_STEPS_PER_FRAME } from '../../sim/constants';
-import { NEON } from '../../sim/species';
+import { GUPPY, NEON } from '../../sim/species';
 import { createDefaultWorld } from '../../sim/world';
 import {
   AQUARIUM_RENDERER_FACTORY,
@@ -295,7 +295,7 @@ describe('AquariumHost', () => {
     it('crée le monde par défaut (néons compris) avec la graine de l’URL', async () => {
       await create('?seed=7');
       expect(host().world).toEqual(createDefaultWorld(7));
-      expect(host().world?.entities.length).toBe(NEON.defaultPopulation);
+      expect(host().world?.entities.length).toBe(NEON.defaultPopulation + GUPPY.defaultPopulation);
     });
 
     it('en mode capture : avance jusqu’à time par pas fixes avant le premier rendu', async () => {
