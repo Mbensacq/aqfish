@@ -1,5 +1,5 @@
 import { MAX_STEPS_PER_FRAME, SIM_DT } from './constants';
-import { fixedStep, type FixedStepResult } from './fixed-step';
+import { fixedStep, fixedStepInto, type FixedStepResult, type FixedStepState } from './fixed-step';
 
 /** Enchaîne `fixedStep` sur une suite de durées réelles et totalise les pas. */
 function run(realDts: readonly number[]): { total: number; last: FixedStepResult } {
@@ -113,5 +113,27 @@ describe('fixedStep', () => {
 
   it.each([-1, 1.5])('refuse un plafond de %s', (maxSteps) => {
     expect(() => fixedStep({ accumulator: 0, realDt: 0 }, SIM_DT, maxSteps)).toThrow(RangeError);
+  });
+});
+
+describe('fixedStepInto (boucle d’affichage, sans allocation)', () => {
+  it('écrit dans out, le renvoie, et donne le même résultat que fixedStep', () => {
+    const out: FixedStepState = { steps: -1, accumulator: -1, alpha: -1 };
+    let accumulator = 0;
+    let x = 11;
+    for (let i = 0; i < 500; i++) {
+      x = (x * 1103515245 + 12345) % 2147483648;
+      const realDt = (x / 2147483648) * 0.12;
+      const expected = fixedStep({ accumulator, realDt });
+      expect(fixedStepInto(accumulator, realDt, out)).toBe(out);
+      expect(out).toEqual(expected);
+      accumulator = out.accumulator;
+    }
+  });
+
+  it('valide dt et maxSteps comme fixedStep', () => {
+    const out: FixedStepState = { steps: 0, accumulator: 0, alpha: 0 };
+    expect(() => fixedStepInto(0, 0, out, 0)).toThrow(RangeError);
+    expect(() => fixedStepInto(0, 0, out, SIM_DT, -1)).toThrow(RangeError);
   });
 });

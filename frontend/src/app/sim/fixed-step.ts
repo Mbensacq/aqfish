@@ -1,4 +1,5 @@
 import { MAX_STEPS_PER_FRAME, SIM_DT } from './constants';
+import { assertTimeStep } from './time-step';
 
 /**
  * Tolérance relative sur la division `accumulateur / SIM_DT` : absorbe l'erreur d'arrondi
@@ -22,6 +23,9 @@ export interface FixedStepResult {
   readonly alpha: number;
 }
 
+/** Résultat modifiable de `fixedStepInto`, réutilisé d'une image à l'autre. */
+export type FixedStepState = { -readonly [K in keyof FixedStepResult]: FixedStepResult[K] };
+
 /**
  * Boucle à pas fixe (accumulateur), en fonction pure.
  *
@@ -34,24 +38,42 @@ export function fixedStep(
   dt: number = SIM_DT,
   maxSteps: number = MAX_STEPS_PER_FRAME,
 ): FixedStepResult {
-  if (!(dt > 0) || !Number.isFinite(dt)) {
-    throw new RangeError(`dt doit être un réel strictement positif (reçu : ${dt})`);
-  }
+  const out: FixedStepState = { steps: 0, accumulator: 0, alpha: 0 };
+  return fixedStepInto(input.accumulator, input.realDt, out, dt, maxSteps);
+}
+
+/**
+ * Même calcul que `fixedStep`, sans allocation : le résultat est écrit dans `out`, qui est
+ * renvoyé. Réservé à la boucle d'affichage (`ui/aquarium-host`), appelée à chaque image.
+ * @throws RangeError si `dt` n'est pas un réel strictement positif ou si `maxSteps` n'est
+ * pas un entier positif ou nul.
+ */
+export function fixedStepInto(
+  accumulator: number,
+  realDt: number,
+  out: FixedStepState,
+  dt: number = SIM_DT,
+  maxSteps: number = MAX_STEPS_PER_FRAME,
+): FixedStepState {
+  assertTimeStep(dt);
   if (!Number.isInteger(maxSteps) || maxSteps < 0) {
     throw new RangeError(`maxSteps doit être un entier positif ou nul (reçu : ${maxSteps})`);
   }
 
-  const accumulated = sanitize(input.accumulator) + sanitize(input.realDt);
+  const accumulated = sanitize(accumulator) + sanitize(realDt);
   const available = Math.floor(accumulated / dt + ROUNDING_EPSILON);
   const steps = Math.min(available, maxSteps);
 
   // Reste fractionnaire, ramené dans [0, dt) (le retard au-delà du plafond est abandonné).
-  let accumulator = accumulated - available * dt;
-  if (accumulator < 0 || accumulator >= dt) {
-    accumulator = 0;
+  let rest = accumulated - available * dt;
+  if (rest < 0 || rest >= dt) {
+    rest = 0;
   }
 
-  return { steps, accumulator, alpha: accumulator / dt };
+  out.steps = steps;
+  out.accumulator = rest;
+  out.alpha = rest / dt;
+  return out;
 }
 
 function sanitize(seconds: number): number {
