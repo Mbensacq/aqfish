@@ -69,3 +69,21 @@
     transition: none;
   }
 }
+
+// Petit écran (bug #22) : la barre doit tenir entière à 390 px. Les pastilles de touche
+// (inutiles sans clavier) sont masquées et les marges resserrées ; la largeur reste bornée
+// à la fenêtre en dernier recours.
+@media (max-width: 480px) {
+  .view-presets-bar {
+    gap: 2px;
+    max-width: calc(100vw - 16px);
+  }
+
+  .view-presets-bar__button {
+    padding: 4px 8px;
+  }
+
+  .view-presets-bar__key {
+    display: none;
+  }
+}
