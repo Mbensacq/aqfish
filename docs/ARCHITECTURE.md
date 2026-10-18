@@ -143,9 +143,10 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
   `AquariumView.onUserInteraction`) ; la barre le reçoit en entrée et ne mémorise rien.
 - La position de la caméra est exposée aux tests de bout en bout par l'attribut
   `data-aqfish-camera="x,y,z"` de `app-aquarium-host`, sa cible par `data-aqfish-target`
-  (mis à jour au mouvement, pas à chaque image). L'état de la simulation l'est par `data-aqfish-tick` (mis à jour quand le
-  compteur change) et `data-aqfish-seed` (fixé au démarrage), présents aussi en build de
-  production : les e2e de simulation n'utilisent plus `window.ng`.
+  (mis à jour au mouvement, pas à chaque image). L'état de la simulation l'est par
+  `data-aqfish-tick` (mis à jour quand le compteur change) et `data-aqfish-seed` (fixé au
+  démarrage), présents aussi en build de production : les e2e de simulation n'utilisent plus
+  `window.ng`.
 
 ### Organisation actuelle
 

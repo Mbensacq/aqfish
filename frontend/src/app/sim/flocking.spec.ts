@@ -329,6 +329,9 @@ describe('banc de néons (monde complet)', () => {
     expect(school).toBeLessThan(loose * 0.75);
   });
 
+  // Délai Vitest explicite (15 s) au-dessus de la borne mesurée (5 s) : le délai par défaut
+  // (5 s) couvrait aussi la création du monde et l'échauffement, si bien qu'un runner lent
+  // faisait échouer le test par délai dépassé avant l'assertion (#44). La borne reste 5 s.
   it('60 poissons : une minute simulée en place, mêmes objets, sans dérive de durée', () => {
     const world = createWorld(5, [{ species: 'neon', count: 60 }]) as MutableWorld;
     const entities = world.entities;
@@ -340,8 +343,8 @@ describe('banc de néons (monde complet)', () => {
     expect(world.entities).toBe(entities);
     expect(world.entities[0]).toBe(first);
     expect(world.tick).toBe(3660);
-    // Large marge : ≈ 0,1 à 0,3 s attendues ; un retour à des allocations par paire ou à une
-    // complexité supérieure à O(n²) dépasserait nettement.
+    // Large marge : ≈ 0,6 à 0,9 s mesurées en local (cycle 12) ; un retour à des allocations
+    // par paire ou à une complexité supérieure à O(n²) dépasserait nettement.
     expect(elapsed).toBeLessThan(5000);
-  });
+  }, 15_000);
 });

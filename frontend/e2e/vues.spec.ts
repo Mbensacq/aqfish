@@ -123,8 +123,9 @@ test.describe('Préréglages de vue', () => {
     const errors = await openScene(page);
     const center = tankCenter(DEFAULT_TANK);
     const limit = panTargetRadius(DEFAULT_TANK);
-    // Scénario du bug : glissers droits de (100, 360) à (1200, 360), puis verticaux. Sans
-    // borne, 5 glissers emmènent déjà la cible à plus de 10 unités du bac.
+    // Scénario du bug : un glisser droit de (100, 360) à (1200, 360), puis un vertical. Un
+    // seul glisser par direction suffit à la preuve : sans borne, le premier emmène déjà la
+    // cible bien au-delà de `limit` (le test échoue si `maxTargetRadius` est retiré, #38).
     for (const [from, to] of [
       [
         [100, 360],
@@ -135,12 +136,10 @@ test.describe('Préréglages de vue', () => {
         [640, 700],
       ],
     ]) {
-      for (let i = 0; i < 5; i++) {
-        await page.mouse.move(from[0], from[1]);
-        await page.mouse.down({ button: 'right' });
-        await page.mouse.move(to[0], to[1], { steps: 2 });
-        await page.mouse.up({ button: 'right' });
-      }
+      await page.mouse.move(from[0], from[1]);
+      await page.mouse.down({ button: 'right' });
+      await page.mouse.move(to[0], to[1], { steps: 2 });
+      await page.mouse.up({ button: 'right' });
       const target = await cameraTarget(page);
       // Arrondi à 3 décimales dans l'attribut : tolérance de 1e-3.
       expect(distance(target, [...center])).toBeLessThanOrEqual(limit + 1e-3);
