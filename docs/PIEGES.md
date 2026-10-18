@@ -43,6 +43,14 @@ haut de sa section.
 
 ## Tests
 
+- **Analyse pixel art d'une capture hors mode capture** : l'interface (barre des vues) est
+  superposée au canvas et n'est pas en pixel art (texte lissé, couleurs hors palette).
+  `e2e/pixel-art.spec.ts` masque tout enfant de `app-root` autre que `app-aquarium-host`
+  avant la capture ; toute nouvelle interface y échappe ainsi d'office. (2026-10-18)
+- **`npm run verify` en parallèle d'autres tâches lourdes** (tests unitaires, build) : le
+  test pixel art à pixel ratio 2 a vu une image vide (`colorCount` = 1) sous charge, puis
+  est passé seul. Relancer les e2e sans autre charge avant de conclure à une régression.
+  (2026-10-18)
 - **`requestAnimationFrame` dans `TestBed`** : le remplacer par une file manuelle
   (`vi.spyOn(window, 'requestAnimationFrame')`) pour piloter les images une à une, et
   définir `clientWidth`/`clientHeight` du canvas (jsdom renvoie 0). Exemple :

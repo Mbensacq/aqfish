@@ -101,6 +101,12 @@ La cible est en sRGB 8 bits : les surfaces translucides s'y mélangent en espace
   (`render/camera-presets.ts`) : cible au centre du bac, distance telle que la sphère
   englobant le bac tienne dans le cadre pour le rapport d'aspect courant. Tant que
   l'utilisateur n'a pas bougé la caméra, le cadrage est recalculé au redimensionnement.
+- Barre des préréglages (`ui/view-presets-bar/`) et touches `1` à `5` (ignorées dans un
+  champ de saisie ou avec Ctrl, Alt, Meta) : l'hôte appelle `AquariumView.animateToPreset`.
+  La transition (`CAMERA_TRANSITION_SECONDS`, 0,5 s) est calculée par la fonction pure
+  `interpolatePose` (lissage `smoothstep`, coordonnées sphériques autour de la cible) et
+  avancée par la boucle de rendu (`stepCameraTransition`), jamais par une minuterie. Une
+  interaction à la souris l'annule. En mode capture, placement instantané et aucune barre.
 - La position de la caméra est exposée aux tests de bout en bout par l'attribut
   `data-aqfish-camera="x,y,z"` de `app-aquarium-host` (mis à jour au mouvement, pas à
   chaque image).
@@ -119,12 +125,13 @@ La cible est en sRGB 8 bits : les surfaces translucides s'y mélangent en espace
 | `render/palette.ts` | Palette unique (32 à 48 couleurs), nommées par usage |
 | `render/pixel-art.ts` | `PIXEL_SIZE`, taille de la cible basse résolution, couleur la plus proche (fonctions pures, même métrique que le shader) |
 | `render/palette-pass.ts` | Cible basse résolution et passe plein écran palette (`ShaderMaterial`) ; libération |
-| `render/camera-presets.ts` | Dimensions du bac, préréglages de caméra (fonctions pures) |
+| `render/camera-presets.ts` | Dimensions du bac, préréglages de caméra, interpolation des transitions (fonctions pures) |
 | `render/aquarium-scene.ts` | Scène statique : sable, eau, verre, arêtes, lumières ; libération |
 | `render/fish-model.ts` | Modèles voxel des poissons générés depuis un gabarit de profil (ADR 0009) |
 | `render/fish-layer.ts` | `InstancedMesh` corps et queue par espèce, interpolation entre deux pas, ondulation |
-| `render/aquarium-view.ts` | Vue sans Angular : renderer (fabrique remplaçable), caméra, `OrbitControls`, `updateFish` |
+| `render/aquarium-view.ts` | Vue sans Angular : renderer (fabrique remplaçable), caméra, `OrbitControls`, transitions de caméra, `updateFish` |
 | `ui/aquarium-host/` | Composant hôte : boucle rAF, avance de la simulation, redimensionnement, contrat de capture, `DestroyRef` |
+| `ui/view-presets-bar/` | Barre flottante des 5 préréglages de vue et raccourcis clavier `1` à `5` (émet le préréglage choisi) |
 
 Le renderer est créé par une fabrique (`AQUARIUM_RENDERER_FACTORY`, par défaut
 `createWebGLRenderer`) : les tests `TestBed` la remplacent par un double, jsdom n'ayant pas
