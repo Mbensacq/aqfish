@@ -230,8 +230,9 @@ describe('FishLayer : lisibilité du battement de queue (capture top)', () => {
   });
 
   it('à pose égale, la queue est décalée selon l’individu (déphasage tiré à la graine)', () => {
-    const world = createDefaultWorld(42);
-    const aligned = world.entities.map((f) => ({ ...still(f.phase, f.speed), id: f.id }));
+    // Néons du monde par défaut (la couche testée est celle du néon).
+    const neons = createDefaultWorld(42).entities.filter((f) => f.species === 'neon');
+    const aligned = neons.map((f) => ({ ...still(f.phase, f.speed), id: f.id }));
     layer.update(aligned, 1);
     const offsets = aligned.map((_, i) => tipOffset(i));
     expect(new Set(offsets.map((o) => o.toFixed(6))).size).toBe(offsets.length);
