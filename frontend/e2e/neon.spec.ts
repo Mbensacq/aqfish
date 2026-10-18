@@ -126,6 +126,26 @@ test.describe('Néons : maintien dans le bac (monde réel de l’application)', 
     });
   }
 
+  for (const seed of [3, 42, 999]) {
+    test(`graine ${seed} : les corydoras vivent au fond, les néons et guppys au-dessus (#31)`, async ({
+      page,
+    }) => {
+      await page.goto(`/?capture=1&seed=${seed}&camera=side&time=60`);
+      await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+      const fish = await readFish(page);
+      const height = TANK.water - TANK.sand;
+      const meanDepth = (species: string): number => {
+        const group = fish.filter((f) => f.species === species);
+        expect(group.length, species).toBeGreaterThan(0);
+        return group.reduce((sum, f) => sum + (f.y - TANK.sand) / height, 0) / group.length;
+      };
+      // Zone basse du bac : sous 25 % de la hauteur d'eau en moyenne (critère de l'issue #31).
+      expect(meanDepth('corydora')).toBeLessThan(0.25);
+      expect(meanDepth('neon')).toBeGreaterThan(meanDepth('corydora'));
+      expect(meanDepth('guppy')).toBeGreaterThan(meanDepth('corydora'));
+    });
+  }
+
   test('hors capture, les poissons nagent et restent dans le bac', async ({ page }) => {
     await page.goto('/');
     await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
