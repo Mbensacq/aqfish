@@ -33,7 +33,13 @@ quantification (ADR 0007) :
   l'eau ni par le verre ; ils restent masqués par les objets opaques (sable) grâce au test
   de profondeur.
 - **Ondulation** : lacet du corps et battement de la queue en fonction d'une phase avancée
-  par la simulation (proportionnelle à la vitesse), jamais du temps réel.
+  par la simulation (proportionnelle à la vitesse), jamais du temps réel. Fonctions pures
+  dans `sim/undulation.ts` (cycle 10, issue #29) : vitesse d'avance de la phase, facteur
+  d'amplitude selon la vitesse (1 à la croisière, borné à [0,6 ; 1,4]) et pose. Déphasage
+  individuel tiré du sous-générateur du poisson à sa création ; la phase n'est lue par aucun
+  calcul de trajectoire et son avance ne consomme aucun tirage. Amplitude réglée pour que le
+  bout de la queue parcoure au moins 1 pixel de scène en vue `top` même à vitesse minimale
+  (testé dans `render/fish-layer.spec.ts`).
 
 ## Options écartées
 

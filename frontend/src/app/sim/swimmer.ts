@@ -4,6 +4,7 @@ import type { Vec3 } from './flocking';
 import { obstacleDistance, type Obstacle } from './obstacles';
 import { shrinkBox, type Box3 } from './tank';
 import { SPECIES, type SpeciesDefinition, type SpeciesId } from './species';
+import { tailBeatRate } from './undulation';
 
 /**
  * Poisson de la simulation : objet de données pur, sérialisable en JSON (ADR 0003).
@@ -167,6 +168,7 @@ export function createFish(
     }
   }
   fish.yaw = wrapAngle(random(fish) * TWO_PI);
+  // Déphasage individuel de l'ondulation, tiré du sous-générateur du poisson.
   fish.phase = random(fish) * TWO_PI;
   fish.speed = lerp(def.minSpeed, def.maxSpeed, 0.25 + 0.5 * random(fish));
   savePrevious(fish);
@@ -342,9 +344,9 @@ export function stepFish(
   fish.y = clamp(fish.y, hard.minY, hard.maxY);
   fish.z = clamp(fish.z, hard.minZ, hard.maxZ);
 
-  // Battement de queue : plus rapide quand le poisson nage plus vite.
-  const beat = TWO_PI * def.tailBeatFrequency * (fish.speed / def.cruiseSpeed) * dt;
-  fish.phase = (fish.phase + beat) % TWO_PI;
+  // Battement de queue : plus rapide quand le poisson nage plus vite. La phase n'est lue par
+  // aucun calcul de trajectoire et ne consomme aucun tirage (sim/undulation.ts).
+  fish.phase = (fish.phase + tailBeatRate(def, fish.speed) * dt) % TWO_PI;
 }
 
 function clearOfObstacles(fish: Fish, obstacles: readonly Obstacle[], margin: number): boolean {
