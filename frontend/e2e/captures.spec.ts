@@ -84,7 +84,11 @@ const TRACE_SECONDS = Number(process.env['CAPTURE_TRACE_TIME'] ?? 60);
 /** Pixels par mètre du tracé. */
 const TRACE_SCALE = 1000;
 const TRACE_PADDING = 40;
-const TRACE_COLORS: Record<string, string> = { neon: '#3fa9f5', guppy: '#e8a33d' };
+const TRACE_COLORS: Record<string, string> = {
+  neon: '#3fa9f5',
+  guppy: '#e8a33d',
+  corydora: '#f2ead8',
+};
 
 /**
  * Tracé SVG vu de dessus (X vers la droite, Z vers le bas, comme la vue `top`) : vitres
@@ -98,7 +102,12 @@ function trajectorySvg(
   const water = waterVolume();
   const steps = Math.round(seconds / SIM_DT);
   const traces = recordTrajectories(createDefaultWorld(seed), steps, 3);
-  const stats = glassStats(traces, water, 0.1);
+  // Statistiques de #43 sur les néons et les guppys, comparables d'un cycle à l'autre.
+  const stats = glassStats(
+    traces.filter((t) => t.species !== 'corydora'),
+    water,
+    0.1,
+  );
   const width = Math.round((water.maxX - water.minX) * TRACE_SCALE) + 2 * TRACE_PADDING;
   const height = Math.round((water.maxZ - water.minZ) * TRACE_SCALE) + 2 * TRACE_PADDING + 30;
   const px = (x: number) => (TRACE_PADDING + (x - water.minX) * TRACE_SCALE).toFixed(1);
@@ -113,8 +122,8 @@ function trajectorySvg(
     )
     .join('');
   const legend =
-    `graine ${seed}, ${seconds} s simulées — néons (bleu), guppys (orange) — ` +
-    `médiane des distances minimales aux vitres : ${(stats.medianMinimum * 100).toFixed(1)} cm, ` +
+    `graine ${seed}, ${seconds} s simulées — néons (bleu), guppys (orange), corydoras (blanc) — ` +
+    `néons et guppys : médiane des distances minimales aux vitres : ${(stats.medianMinimum * 100).toFixed(1)} cm, ` +
     `positions à moins de 10 cm : ${(stats.nearFraction * 100).toFixed(1)} %`;
   const markup =
     `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" font-family="sans-serif">` +

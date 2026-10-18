@@ -93,6 +93,7 @@ describe('AquariumView (pipeline pixel art)', () => {
       'poissons-neon',
       'poissons-guppy-male',
       'poissons-guppy-femelle',
+      'poissons-corydora',
     ]);
   });
 

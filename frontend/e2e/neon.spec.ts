@@ -103,7 +103,7 @@ async function readFish(page: Page): Promise<FishProbe[]> {
 
 test.describe('Néons : maintien dans le bac (monde réel de l’application)', () => {
   for (const seed of [0, 1, 42, 4294967295]) {
-    test(`graine ${seed} : 12 néons et 6 guppys, tous dans le volume d’eau après 600 s`, async ({
+    test(`graine ${seed} : 12 néons, 6 guppys et 6 corydoras, tous dans le volume d’eau après 600 s`, async ({
       page,
     }) => {
       const errors: string[] = [];
@@ -111,10 +111,11 @@ test.describe('Néons : maintien dans le bac (monde réel de l’application)', 
       await page.goto(`/?capture=1&seed=${seed}&camera=side&time=600`);
       await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
       const fish = await readFish(page);
-      // Populations par défaut (sim/species.ts) : 12 néons, puis 6 guppys.
+      // Populations par défaut (sim/species.ts) : 12 néons, 6 guppys, puis 6 corydoras.
       expect(fish.filter((f) => f.species === 'neon')).toHaveLength(12);
       expect(fish.filter((f) => f.species === 'guppy')).toHaveLength(6);
-      expect(fish).toHaveLength(18);
+      expect(fish.filter((f) => f.species === 'corydora')).toHaveLength(6);
+      expect(fish).toHaveLength(24);
       for (const { x, y, z } of fish) {
         expect(Math.abs(x)).toBeLessThanOrEqual(TANK.halfWidth);
         expect(Math.abs(z)).toBeLessThanOrEqual(TANK.halfDepth);
