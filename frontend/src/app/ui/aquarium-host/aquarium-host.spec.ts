@@ -9,6 +9,7 @@ import {
   AQUARIUM_RENDERER_FACTORY,
   AquariumHost,
   CAMERA_ATTRIBUTE,
+  CAMERA_TARGET_ATTRIBUTE,
   SEED_ATTRIBUTE,
   TICK_ATTRIBUTE,
 } from './aquarium-host';
@@ -158,6 +159,17 @@ describe('AquariumHost', () => {
     frames.flush();
     const value = (fixture.nativeElement as HTMLElement).getAttribute(CAMERA_ATTRIBUTE);
     expect(value).toMatch(/^-?\d+\.\d{3},-?\d+\.\d{3},-?\d+\.\d{3}$/);
+  });
+
+  it('expose la cible de la caméra (centre du bac sur un préréglage)', async () => {
+    await create('?camera=front');
+    setCanvasSize(800, 600);
+    frames.flush();
+    const target = (fixture.nativeElement as HTMLElement).getAttribute(CAMERA_TARGET_ATTRIBUTE);
+    const [x, y, z] = target!.split(',').map(Number);
+    expect(x).toBeCloseTo(0, 3);
+    expect(y).toBeGreaterThan(0);
+    expect(z).toBeCloseTo(0, 3);
   });
 
   it('en mode capture : pixel ratio 1, image figée, nouveau rendu au redimensionnement', async () => {

@@ -1,5 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
 
+import { panTargetRadius, tankCenter } from '../src/app/render/camera-presets';
+import { DEFAULT_TANK } from '../src/app/sim/tank';
+
 /**
  * Barre des préréglages de vue et raccourcis clavier `1` à `5` (issue #7).
  * La position de la caméra est lue sur `data-aqfish-camera` (docs/ARCHITECTURE.md).
@@ -22,6 +25,38 @@ async function cameraPosition(page: Page): Promise<number[]> {
   const value = await page.locator('app-aquarium-host').getAttribute('data-aqfish-camera');
   expect(value).toMatch(/^[-\d.]+,[-\d.]+,[-\d.]+$/);
   return value!.split(',').map(Number);
+}
+
+async function cameraTarget(page: Page): Promise<number[]> {
+  const value = await page.locator('app-aquarium-host').getAttribute('data-aqfish-target');
+  expect(value).toMatch(/^[-\d.]+,[-\d.]+,[-\d.]+$/);
+  return value!.split(',').map(Number);
+}
+
+/** Part des pixels de l'écran (interface masquée) d'une autre couleur que le fond `#141418`. */
+async function nonBackgroundRatio(page: Page): Promise<number> {
+  await page.addStyleTag({
+    content: 'app-root > :not(app-aquarium-host) { visibility: hidden !important; }',
+  });
+  const png = (await page.screenshot({ animations: 'disabled' })).toString('base64');
+  return page.evaluate(async (png) => {
+    const bitmap = await createImageBitmap(
+      await (await fetch(`data:image/png;base64,${png}`)).blob(),
+    );
+    const context = new OffscreenCanvas(bitmap.width, bitmap.height).getContext('2d');
+    if (!context) {
+      throw new Error('Contexte 2D indisponible');
+    }
+    context.drawImage(bitmap, 0, 0);
+    const data = context.getImageData(0, 0, bitmap.width, bitmap.height).data;
+    let other = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      if (data[i] !== 0x14 || data[i + 1] !== 0x14 || data[i + 2] !== 0x18) {
+        other++;
+      }
+    }
+    return other / (data.length / 4);
+  }, png);
 }
 
 /** Position de référence d'un préréglage : celle d'une page ouverte directement dessus. */
@@ -82,6 +117,38 @@ test.describe('Préréglages de vue', () => {
 
     await page.keyboard.press('3');
     await expect.poll(async () => distance(await cameraPosition(page), front)).toBeLessThan(0.01);
+  });
+
+  test('le déplacement au clic droit est borné : le bac reste visible (#10)', async ({ page }) => {
+    const errors = await openScene(page);
+    const center = tankCenter(DEFAULT_TANK);
+    const limit = panTargetRadius(DEFAULT_TANK);
+    // Scénario du bug : glissers droits de (100, 360) à (1200, 360), puis verticaux. Sans
+    // borne, 5 glissers emmènent déjà la cible à plus de 10 unités du bac.
+    for (const [from, to] of [
+      [
+        [100, 360],
+        [1200, 360],
+      ],
+      [
+        [640, 100],
+        [640, 700],
+      ],
+    ]) {
+      for (let i = 0; i < 5; i++) {
+        await page.mouse.move(from[0], from[1]);
+        await page.mouse.down({ button: 'right' });
+        await page.mouse.move(to[0], to[1], { steps: 2 });
+        await page.mouse.up({ button: 'right' });
+      }
+      const target = await cameraTarget(page);
+      // Arrondi à 3 décimales dans l'attribut : tolérance de 1e-3.
+      expect(distance(target, [...center])).toBeLessThanOrEqual(limit + 1e-3);
+    }
+    // La cible a bien bougé (le geste a eu lieu), mais le bac reste à l'écran.
+    expect(distance(await cameraTarget(page), [...center])).toBeGreaterThan(limit / 2);
+    expect(await nonBackgroundRatio(page)).toBeGreaterThan(0.01);
+    expect(errors).toEqual([]);
   });
 
   test('les touches sont ignorées avec Ctrl', async ({ page }) => {

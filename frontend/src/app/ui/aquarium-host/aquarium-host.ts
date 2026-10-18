@@ -35,6 +35,8 @@ export const AQUARIUM_RENDERER_FACTORY = new InjectionToken<AquariumRendererFact
 
 /** Attribut du composant hôte exposant la position de la caméra aux tests de bout en bout. */
 export const CAMERA_ATTRIBUTE = 'data-aqfish-camera';
+/** Attribut du composant hôte exposant la cible de la caméra (mis à jour avec la position). */
+export const CAMERA_TARGET_ATTRIBUTE = 'data-aqfish-target';
 /** Attribut du composant hôte exposant `world.tick` (mis à jour quand il change). */
 export const TICK_ATTRIBUTE = 'data-aqfish-tick';
 /** Attribut du composant hôte exposant la graine du monde (fixée au démarrage). */
@@ -228,11 +230,9 @@ export class AquariumHost {
     if (!this.view) {
       return;
     }
-    const value = this.view
-      .cameraPosition()
-      .map((c) => c.toFixed(3))
-      .join(',');
-    this.host.nativeElement.setAttribute(CAMERA_ATTRIBUTE, value);
+    const format = (v: readonly number[]) => v.map((c) => c.toFixed(3)).join(',');
+    this.host.nativeElement.setAttribute(CAMERA_ATTRIBUTE, format(this.view.cameraPosition()));
+    this.host.nativeElement.setAttribute(CAMERA_TARGET_ATTRIBUTE, format(this.view.cameraTarget()));
   }
 
   private stop(): void {

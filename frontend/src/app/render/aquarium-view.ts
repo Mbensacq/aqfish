@@ -15,8 +15,10 @@ import {
   cameraPresetPose,
   interpolatePose,
   orbitDistanceLimits,
+  panTargetRadius,
   type CameraPose,
   tankBoundingRadius,
+  tankCenter,
   type TankDimensions,
   type Vec3,
 } from './camera-presets';
@@ -104,6 +106,10 @@ export class AquariumView {
     const limits = orbitDistanceLimits(this.world.dimensions);
     this.controls.minDistance = limits.min;
     this.controls.maxDistance = limits.max;
+    // Déplacement au clic droit borné (bug #10) : la cible reste dans une sphère autour du
+    // centre du bac, qui reste ainsi dans le champ.
+    this.controls.cursor.set(...tankCenter(this.world.dimensions));
+    this.controls.maxTargetRadius = panTargetRadius(this.world.dimensions);
     // Explicite (ce sont aussi les valeurs par défaut) : clic gauche = rotation,
     // molette = zoom, clic droit = déplacement.
     this.controls.mouseButtons = { LEFT: MOUSE.ROTATE, MIDDLE: MOUSE.DOLLY, RIGHT: MOUSE.PAN };
@@ -245,6 +251,12 @@ export class AquariumView {
   cameraPosition(): Vec3 {
     const p = this.camera.position;
     return [p.x, p.y, p.z];
+  }
+
+  /** Cible courante de la caméra (exposée pour les tests de bout en bout). */
+  cameraTarget(): Vec3 {
+    const t = this.controls.target;
+    return [t.x, t.y, t.z];
   }
 
   /** Abonnement aux mouvements de caméra provoqués par l'utilisateur. Renvoie le désabonnement. */
