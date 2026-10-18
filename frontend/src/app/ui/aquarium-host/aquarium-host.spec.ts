@@ -183,6 +183,52 @@ describe('AquariumHost', () => {
     expect(y).toBeGreaterThan(0.6);
   });
 
+  describe('préréglages (goToPreset)', () => {
+    const camera = () =>
+      (fixture.nativeElement as HTMLElement).getAttribute(CAMERA_ATTRIBUTE)!.split(',').map(Number);
+
+    it('transition courte vers le préréglage, avancée par les images', async () => {
+      await create('?camera=front');
+      setCanvasSize(800, 600);
+      frames.flush(0);
+      const start = camera();
+      (fixture.componentInstance as AquariumHost).goToPreset('top');
+      // Le départ ne bouge pas la caméra ; la transition avance image par image.
+      expect(camera()).toEqual(start);
+      frames.flush(200);
+      const mid = camera();
+      expect(mid).not.toEqual(start);
+      expect(mid[1]).toBeLessThan(1.5);
+      frames.flush(1000); // au-delà de la durée : arrivée
+      const end = camera();
+      expect(end[0]).toBeCloseTo(0, 3);
+      expect(end[1]).toBeGreaterThan(mid[1]);
+      // Arrivé : plus de mouvement aux images suivantes.
+      frames.flush(1500);
+      expect(camera()).toEqual(end);
+    });
+
+    it('en mode capture : placement instantané, nouvelle image rendue', async () => {
+      await create('?capture=1&camera=front');
+      setCanvasSize(800, 600);
+      frames.flush();
+      frames.flush();
+      const renders = renderers[0].renders;
+      (fixture.componentInstance as AquariumHost).goToPreset('top');
+      expect(camera()[1]).toBeGreaterThan(0.6);
+      expect(camera()[0]).toBeCloseTo(0, 3);
+      frames.flush();
+      expect(renderers[0].renders).toBe(renders + 1);
+    });
+
+    it('sans effet avant le démarrage ou après la destruction', async () => {
+      await create();
+      fixture.destroy();
+      expect(() => (fixture.componentInstance as AquariumHost).goToPreset('top')).not.toThrow();
+      expect(frames.pending.size).toBe(0);
+    });
+  });
+
   it('utilise le devicePixelRatio de la fenêtre hors mode capture', async () => {
     vi.spyOn(window, 'devicePixelRatio', 'get').mockReturnValue(2);
     await create();

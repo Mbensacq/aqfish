@@ -4,5 +4,8 @@
 }
 <!-- Three.js est chargé à part pour garder le bundle initial sous le budget (angular.json). -->
 @defer (on immediate) {
-  <app-aquarium-host />
+  <app-aquarium-host #aquarium />
+  @if (!capture) {
+    <app-view-presets-bar (presetSelected)="aquarium.goToPreset($event)" />
+  }
 }

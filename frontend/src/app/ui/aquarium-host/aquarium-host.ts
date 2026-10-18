@@ -10,13 +10,14 @@ import {
   viewChild,
 } from '@angular/core';
 
-import { parseCaptureParams } from '../../core/capture/capture-params';
+import { parseCaptureParams, type CameraPreset } from '../../core/capture/capture-params';
 import { markCaptureReady, resetCaptureReady } from '../../core/capture/capture-ready';
 import {
   AquariumView,
   createWebGLRenderer,
   type AquariumRendererFactory,
 } from '../../render/aquarium-view';
+import { CAMERA_TRANSITION_SECONDS } from '../../render/camera-presets';
 import { fixedStep } from '../../sim/fixed-step';
 import { advance, advanceTo, createDefaultWorld, type World } from '../../sim/world';
 
@@ -78,6 +79,22 @@ export class AquariumHost {
     return this.alpha;
   }
 
+  /**
+   * Amène la caméra sur un préréglage (barre de vues, raccourcis clavier) : transition courte
+   * hors capture, placement instantané en mode capture (déterminisme du contrat).
+   */
+  goToPreset(preset: CameraPreset): void {
+    const view = this.view;
+    if (!view) {
+      return;
+    }
+    view.animateToPreset(preset, this.capture ? 0 : CAMERA_TRANSITION_SECONDS);
+    if (!view.transitioning) {
+      this.exposeCamera();
+    }
+    this.scheduleFrame();
+  }
+
   constructor() {
     afterNextRender(() => this.start());
     inject(DestroyRef).onDestroy(() => this.stop());
@@ -126,7 +143,10 @@ export class AquariumHost {
       return;
     }
     if (!this.capture) {
-      this.advanceRealTime(timestamp);
+      const realDt = this.advanceRealTime(timestamp);
+      if (view.stepCameraTransition(realDt)) {
+        this.exposeCamera();
+      }
     }
     const canvas = this.canvasRef().nativeElement;
     if (view.resize(canvas.clientWidth, canvas.clientHeight)) {
@@ -155,8 +175,11 @@ export class AquariumHost {
     }
   }
 
-  /** Avance la simulation du temps réel écoulé depuis l'image précédente (hors capture). */
-  private advanceRealTime(timestamp: number): void {
+  /**
+   * Avance la simulation du temps réel écoulé depuis l'image précédente (hors capture).
+   * Renvoie ce temps, en secondes (0 à la première image).
+   */
+  private advanceRealTime(timestamp: number): number {
     // Première image : pas de durée de référence, aucun pas.
     const realDt = this.lastTimestamp === null ? 0 : (timestamp - this.lastTimestamp) / 1000;
     this.lastTimestamp = timestamp;
@@ -166,6 +189,7 @@ export class AquariumHost {
     if (result.steps > 0 && this.currentWorld) {
       this.currentWorld = advance(this.currentWorld, result.steps);
     }
+    return realDt;
   }
 
   private exposeCamera(): void {
