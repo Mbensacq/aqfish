@@ -120,6 +120,9 @@ La cible est en sRGB 8 bits : les surfaces translucides s'y mélangent en espace
   `interpolatePose` (lissage `smoothstep`, coordonnées sphériques autour de la cible) et
   avancée par la boucle de rendu (`stepCameraTransition`), jamais par une minuterie. Une
   interaction à la souris l'annule. En mode capture, placement instantané et aucune barre.
+- Bouton actif de la barre (bug #23) : l'hôte expose le signal `activePreset` (préréglage
+  suivi ou rejoint, `null` dès le début d'un geste, événement `start` des contrôles via
+  `AquariumView.onUserInteraction`) ; la barre le reçoit en entrée et ne mémorise rien.
 - La position de la caméra est exposée aux tests de bout en bout par l'attribut
   `data-aqfish-camera="x,y,z"` de `app-aquarium-host`, sa cible par `data-aqfish-target`
   (mis à jour au mouvement, pas à chaque image). L'état de la simulation l'est par `data-aqfish-tick` (mis à jour quand le

@@ -259,6 +259,16 @@ export class AquariumView {
     return [t.x, t.y, t.z];
   }
 
+  /**
+   * Abonnement au début d'un geste de l'utilisateur à la souris ou au toucher (événement
+   * `start` des contrôles, une fois par geste) : la caméra ne suit plus de préréglage.
+   * Renvoie le désabonnement.
+   */
+  onUserInteraction(listener: () => void): () => void {
+    this.controls.addEventListener('start', listener);
+    return () => this.controls.removeEventListener('start', listener);
+  }
+
   /** Abonnement aux mouvements de caméra provoqués par l'utilisateur. Renvoie le désabonnement. */
   onCameraChange(listener: () => void): () => void {
     this.controls.addEventListener('change', listener);

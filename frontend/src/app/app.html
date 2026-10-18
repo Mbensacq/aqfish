@@ -6,6 +6,9 @@
 @defer (on immediate) {
   <app-aquarium-host #aquarium />
   @if (!capture) {
-    <app-view-presets-bar (presetSelected)="aquarium.goToPreset($event)" />
+    <app-view-presets-bar
+      [activePreset]="aquarium.activePreset()"
+      (presetSelected)="aquarium.goToPreset($event)"
+    />
   }
 }

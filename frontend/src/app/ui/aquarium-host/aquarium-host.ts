@@ -7,6 +7,7 @@ import {
   ElementRef,
   inject,
   InjectionToken,
+  signal,
   viewChild,
 } from '@angular/core';
 
@@ -87,6 +88,13 @@ export class AquariumHost {
   private readonly onFrame: FrameRequestCallback = (timestamp) => this.frame(timestamp);
   private readonly cleanups: (() => void)[] = [];
 
+  /**
+   * Préréglage que la caméra suit ou rejoint, `null` dès que l'utilisateur la déplace à la
+   * souris (bug #23). Mis à jour au choix d'un préréglage et au début d'un geste, jamais à
+   * chaque image. La barre des vues l'affiche.
+   */
+  readonly activePreset = signal<CameraPreset | null>(null);
+
   /** État courant de la simulation (`null` avant le démarrage et après la destruction). */
   get world(): World | null {
     return this.currentWorld;
@@ -106,6 +114,7 @@ export class AquariumHost {
     if (!view) {
       return;
     }
+    this.activePreset.set(preset);
     view.animateToPreset(preset, this.capture ? 0 : CAMERA_TRANSITION_SECONDS);
     if (!view.transitioning) {
       this.exposeCamera();
@@ -141,7 +150,9 @@ export class AquariumHost {
     });
     this.view = view;
 
+    this.activePreset.set(params.camera);
     this.cleanups.push(view.onCameraChange(() => this.exposeCamera()));
+    this.cleanups.push(view.onUserInteraction(() => this.activePreset.set(null)));
     const onResize = () => this.scheduleFrame();
     win.addEventListener('resize', onResize);
     this.cleanups.push(() => win.removeEventListener('resize', onResize));

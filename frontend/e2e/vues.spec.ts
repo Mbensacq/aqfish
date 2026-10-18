@@ -151,6 +151,29 @@ test.describe('Préréglages de vue', () => {
     expect(errors).toEqual([]);
   });
 
+  test('après la touche 4 puis un glisser, aucun bouton ne reste actif (#23)', async ({ page }) => {
+    const side = await presetPosition(page, 'side');
+    const errors = await openScene(page, '?camera=front');
+    const toolbar = page.getByRole('toolbar', { name: 'Préréglages de vue' });
+    await expect(toolbar.getByRole('button', { name: /Vue de face/ })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await page.keyboard.press('4');
+    await expect.poll(async () => distance(await cameraPosition(page), side)).toBeLessThan(0.01);
+    await expect(toolbar.getByRole('button', { name: /Vue de côté/ })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    // Rotation au clic gauche, au milieu de l'écran (hors de la barre).
+    await page.mouse.move(640, 300);
+    await page.mouse.down();
+    await page.mouse.move(800, 260, { steps: 4 });
+    await page.mouse.up();
+    await expect(toolbar.locator('[aria-pressed="true"]')).toHaveCount(0);
+    expect(errors).toEqual([]);
+  });
+
   test('les touches sont ignorées avec Ctrl', async ({ page }) => {
     await openScene(page, '?camera=front');
     const before = await cameraPosition(page);

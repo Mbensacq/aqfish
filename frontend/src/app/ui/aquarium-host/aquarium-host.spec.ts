@@ -239,6 +239,37 @@ describe('AquariumHost', () => {
       expect(renderers[0].renders).toBe(renders + 1);
     });
 
+    it('préréglage actif : celui de l’URL, puis celui choisi, null après un geste (#23)', async () => {
+      await create('?camera=front');
+      setCanvasSize(800, 600);
+      frames.flush(0);
+      const host = fixture.componentInstance as AquariumHost;
+      expect(host.activePreset()).toBe('front');
+      host.goToPreset('side');
+      // Actif dès le choix, pendant la transition.
+      expect(host.activePreset()).toBe('side');
+      frames.flush(1000);
+      expect(host.activePreset()).toBe('side');
+      // OrbitControls émet « start » au début d'un geste (molette ici).
+      const canvas = fixture.nativeElement.querySelector('canvas') as HTMLCanvasElement;
+      canvas.dispatchEvent(new WheelEvent('wheel', { deltaY: -100, cancelable: true }));
+      expect(host.activePreset()).toBeNull();
+      // Les images suivantes ne le rétablissent pas ; un nouveau choix, si.
+      frames.flush(1100);
+      expect(host.activePreset()).toBeNull();
+      host.goToPreset('top');
+      expect(host.activePreset()).toBe('top');
+    });
+
+    it('plus d’effet des gestes après la destruction (#23)', async () => {
+      await create('?camera=front');
+      const host = fixture.componentInstance as AquariumHost;
+      const canvas = fixture.nativeElement.querySelector('canvas') as HTMLCanvasElement;
+      fixture.destroy();
+      canvas.dispatchEvent(new WheelEvent('wheel', { deltaY: -100, cancelable: true }));
+      expect(host.activePreset()).toBe('front');
+    });
+
     it('sans effet avant le démarrage ou après la destruction', async () => {
       await create();
       fixture.destroy();
