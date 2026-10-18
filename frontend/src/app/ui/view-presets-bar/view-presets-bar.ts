@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 
 import type { CameraPreset } from '../../core/capture/capture-params';
 
@@ -45,7 +45,8 @@ export function isTypingContext(event: KeyboardEvent): boolean {
 
 /**
  * Barre flottante des préréglages de vue (docs/DA.md, « Interface ») : 5 boutons et les
- * raccourcis clavier `1` à `5`. Elle émet le préréglage choisi ; l'hôte l'applique à la vue.
+ * raccourcis clavier `1` à `5`. Elle émet le préréglage choisi ; l'hôte l'applique à la vue
+ * et lui renvoie le préréglage actif (`activePreset`).
  * Absente en mode capture (c'est l'application qui ne l'affiche pas).
  */
 @Component({
@@ -55,10 +56,10 @@ export function isTypingContext(event: KeyboardEvent): boolean {
       <button
         type="button"
         class="view-presets-bar__button"
-        [class.view-presets-bar__button--active]="selected() === button.preset"
+        [class.view-presets-bar__button--active]="activePreset() === button.preset"
         [attr.aria-label]="button.ariaLabel + ' (touche ' + button.key + ')'"
         [attr.aria-keyshortcuts]="button.key"
-        [attr.aria-pressed]="selected() === button.preset"
+        [attr.aria-pressed]="activePreset() === button.preset"
         [attr.data-preset]="button.preset"
         (click)="choose(button.preset)"
       >
@@ -75,12 +76,15 @@ export class ViewPresetsBar {
   /** Préréglage choisi (clic ou touche). */
   readonly presetSelected = output<CameraPreset>();
 
+  /**
+   * Préréglage que la caméra suit réellement (`null` après un déplacement à la souris), fourni
+   * par l'hôte : la barre ne le mémorise pas elle-même (bug #23).
+   */
+  readonly activePreset = input<CameraPreset | null>(null);
+
   protected readonly buttons = VIEW_PRESET_BUTTONS;
-  /** Dernier préréglage choisi (état visuel `aria-pressed`). */
-  protected readonly selected = signal<CameraPreset | null>(null);
 
   protected choose(preset: CameraPreset): void {
-    this.selected.set(preset);
     this.presetSelected.emit(preset);
   }
 

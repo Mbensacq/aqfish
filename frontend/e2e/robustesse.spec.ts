@@ -45,6 +45,26 @@ test.describe('Petit écran (390 × 844)', () => {
     expect(errors).toEqual([]);
   });
 
+  test('la barre des préréglages tient entière dans la largeur (#22)', async ({ page }) => {
+    const errors = await openScene(page);
+    const toolbar = page.getByRole('toolbar', { name: 'Préréglages de vue' });
+    const box = await toolbar.boundingBox();
+    expect(box).not.toBeNull();
+    expect(box!.x).toBeGreaterThanOrEqual(0);
+    expect(box!.x + box!.width).toBeLessThanOrEqual(390);
+    // Chaque bouton est entièrement visible, donc cliquable.
+    const buttons = toolbar.getByRole('button');
+    await expect(buttons).toHaveCount(5);
+    for (const button of await buttons.all()) {
+      const b = (await button.boundingBox())!;
+      expect(b.x).toBeGreaterThanOrEqual(0);
+      expect(b.x + b.width).toBeLessThanOrEqual(390);
+    }
+    await buttons.first().click();
+    await expect(buttons.first()).toHaveAttribute('aria-pressed', 'true');
+    expect(errors).toEqual([]);
+  });
+
   test('le contrat de capture fonctionne en portrait', async ({ page }) => {
     const errors = await openScene(page, '?capture=1&camera=front');
     expect(await canvasSize(page)).toEqual([390, 844]);

@@ -62,17 +62,32 @@ describe('ViewPresetsBar', () => {
     expect(VIEW_PRESET_BUTTONS.map((b) => b.preset).sort()).toEqual([...CAMERA_PRESETS].sort());
   });
 
-  it('émet le préréglage au clic et marque le bouton choisi', async () => {
+  const pressed = () => buttons().map((b) => b.getAttribute('aria-pressed'));
+
+  it('émet le préréglage au clic, sans marquer le bouton elle-même (#23)', async () => {
     buttons()[3].click();
     await fixture.whenStable();
     expect(emitted).toEqual(['side']);
-    expect(buttons().map((b) => b.getAttribute('aria-pressed'))).toEqual([
-      'false',
-      'false',
-      'false',
-      'true',
-      'false',
-    ]);
+    // L'état actif vient de l'hôte (entrée `activePreset`), pas du clic.
+    expect(pressed()).toEqual(['false', 'false', 'false', 'false', 'false']);
+  });
+
+  it('marque le bouton du préréglage actif fourni par l’hôte, aucun si null (#23)', async () => {
+    fixture.componentRef.setInput('activePreset', 'side');
+    await fixture.whenStable();
+    expect(pressed()).toEqual(['false', 'false', 'false', 'true', 'false']);
+    expect(buttons()[3].classList).toContain('view-presets-bar__button--active');
+
+    fixture.componentRef.setInput('activePreset', 'top');
+    await fixture.whenStable();
+    expect(pressed()).toEqual(['true', 'false', 'false', 'false', 'false']);
+
+    fixture.componentRef.setInput('activePreset', null);
+    await fixture.whenStable();
+    expect(pressed()).toEqual(['false', 'false', 'false', 'false', 'false']);
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('.view-presets-bar__button--active'),
+    ).toBeNull();
   });
 
   it('les touches 1 à 5 émettent les 5 préréglages', () => {

@@ -6,6 +6,7 @@ import {
   cameraPresetPose,
   framingDistance,
   orbitDistanceLimits,
+  panTargetRadius,
   tankBoundingRadius,
   tankCenter,
   type TankDimensions,
@@ -155,5 +156,57 @@ describe('géométrie du bac', () => {
     [TANK, 45, Number.POSITIVE_INFINITY],
   ])('rejette des paramètres invalides (%j, fov %f, aspect %f)', (dims, fov, aspect) => {
     expect(() => framingDistance(dims, fov, aspect)).toThrow(RangeError);
+  });
+});
+
+describe('panTargetRadius (bug #10)', () => {
+  const SHAPES: TankDimensions[] = [
+    TANK,
+    { width: 3, height: 0.2, depth: 0.2 },
+    { width: 0.3, height: 1, depth: 0.3 },
+  ];
+
+  it('vaut 90 % de distanceMin × sin(demi-champ) (valeur exacte)', () => {
+    const { min } = orbitDistanceLimits(TANK);
+    expect(panTargetRadius(TANK)).toBeCloseTo(min * Math.sin(Math.PI / 8) * 0.9, 12);
+    expect(panTargetRadius(TANK, 90)).toBeCloseTo(min * Math.SQRT1_2 * 0.9, 12);
+  });
+
+  it.each(SHAPES)(
+    'cible au bord de la sphère, caméra au plus près : le centre reste dans le champ (%j)',
+    (dims) => {
+      const radius = panTargetRadius(dims);
+      const { min } = orbitDistanceLimits(dims);
+      const center = new Vector3(...tankCenter(dims));
+      const halfFov = (CAMERA_FOV_DEG * Math.PI) / 360;
+      // Plusieurs directions de décalage de la cible et de visée, pire cas compris
+      // (visée perpendiculaire au décalage).
+      const offsets = [new Vector3(1, 0, 0), new Vector3(0, 1, 0), new Vector3(0, 0, -1)];
+      const views = [new Vector3(0, 0, 1), new Vector3(1, 0, 0), new Vector3(0, -1, 0.45)];
+      for (const offset of offsets) {
+        for (const viewDir of views) {
+          const target = center.clone().addScaledVector(offset, radius);
+          const camera = target.clone().addScaledVector(viewDir.clone().normalize(), min);
+          const toTarget = target.clone().sub(camera).normalize();
+          const toCenter = center.clone().sub(camera).normalize();
+          expect(toTarget.angleTo(toCenter)).toBeLessThan(halfFov);
+        }
+      }
+    },
+  );
+
+  it('est plus petit que le rayon englobant : la cible ne quitte pas les abords du bac', () => {
+    for (const dims of SHAPES) {
+      expect(panTargetRadius(dims)).toBeGreaterThan(0);
+      expect(panTargetRadius(dims)).toBeLessThan(tankBoundingRadius(dims));
+    }
+  });
+
+  it.each([0, -10, 180, Number.NaN])('rejette un champ de vision invalide (%f)', (fov) => {
+    expect(() => panTargetRadius(TANK, fov)).toThrow(RangeError);
+  });
+
+  it('rejette des dimensions invalides', () => {
+    expect(() => panTargetRadius({ width: 0, height: 1, depth: 1 })).toThrow(RangeError);
   });
 });

@@ -57,6 +57,24 @@ export function orbitDistanceLimits(dims: TankDimensions): { min: number; max: n
   return { min: radius * MIN_ORBIT_MARGIN, max: radius * MAX_ORBIT_FACTOR };
 }
 
+/** Part du demi-champ vertical laissée de marge par `panTargetRadius` (10 %). */
+const PAN_TARGET_SAFETY = 0.9;
+
+/**
+ * Rayon de la sphère, centrée sur `tankCenter`, dans laquelle reste la cible de la caméra
+ * quand l'utilisateur la déplace au clic droit (bug #10). Choisi pour que le centre du bac
+ * reste dans le champ vertical même à la distance d'orbite minimale : la caméra visant la
+ * cible, le centre est vu sous un angle au plus `asin(rayon / distance)`, inférieur au
+ * demi-champ dès que `rayon ≤ distanceMin × sin(demi-champ)`.
+ */
+export function panTargetRadius(dims: TankDimensions, fovDeg: number = CAMERA_FOV_DEG): number {
+  if (!(fovDeg > 0 && fovDeg < 180)) {
+    throw new RangeError(`Champ de vision invalide : ${fovDeg}`);
+  }
+  const { min } = orbitDistanceLimits(dims);
+  return min * Math.sin((fovDeg * Math.PI) / 360) * PAN_TARGET_SAFETY;
+}
+
 /**
  * Distance à laquelle la sphère englobante du bac tient entièrement dans le cadre,
  * pour un champ vertical `fovDeg` et un rapport largeur / hauteur `aspect`.

@@ -7,6 +7,7 @@ import {
   ElementRef,
   inject,
   InjectionToken,
+  signal,
   viewChild,
 } from '@angular/core';
 
@@ -35,6 +36,8 @@ export const AQUARIUM_RENDERER_FACTORY = new InjectionToken<AquariumRendererFact
 
 /** Attribut du composant hôte exposant la position de la caméra aux tests de bout en bout. */
 export const CAMERA_ATTRIBUTE = 'data-aqfish-camera';
+/** Attribut du composant hôte exposant la cible de la caméra (mis à jour avec la position). */
+export const CAMERA_TARGET_ATTRIBUTE = 'data-aqfish-target';
 /** Attribut du composant hôte exposant `world.tick` (mis à jour quand il change). */
 export const TICK_ATTRIBUTE = 'data-aqfish-tick';
 /** Attribut du composant hôte exposant la graine du monde (fixée au démarrage). */
@@ -85,6 +88,13 @@ export class AquariumHost {
   private readonly onFrame: FrameRequestCallback = (timestamp) => this.frame(timestamp);
   private readonly cleanups: (() => void)[] = [];
 
+  /**
+   * Préréglage que la caméra suit ou rejoint, `null` dès que l'utilisateur la déplace à la
+   * souris (bug #23). Mis à jour au choix d'un préréglage et au début d'un geste, jamais à
+   * chaque image. La barre des vues l'affiche.
+   */
+  readonly activePreset = signal<CameraPreset | null>(null);
+
   /** État courant de la simulation (`null` avant le démarrage et après la destruction). */
   get world(): World | null {
     return this.currentWorld;
@@ -104,6 +114,7 @@ export class AquariumHost {
     if (!view) {
       return;
     }
+    this.activePreset.set(preset);
     view.animateToPreset(preset, this.capture ? 0 : CAMERA_TRANSITION_SECONDS);
     if (!view.transitioning) {
       this.exposeCamera();
@@ -139,7 +150,9 @@ export class AquariumHost {
     });
     this.view = view;
 
+    this.activePreset.set(params.camera);
     this.cleanups.push(view.onCameraChange(() => this.exposeCamera()));
+    this.cleanups.push(view.onUserInteraction(() => this.activePreset.set(null)));
     const onResize = () => this.scheduleFrame();
     win.addEventListener('resize', onResize);
     this.cleanups.push(() => win.removeEventListener('resize', onResize));
@@ -228,11 +241,9 @@ export class AquariumHost {
     if (!this.view) {
       return;
     }
-    const value = this.view
-      .cameraPosition()
-      .map((c) => c.toFixed(3))
-      .join(',');
-    this.host.nativeElement.setAttribute(CAMERA_ATTRIBUTE, value);
+    const format = (v: readonly number[]) => v.map((c) => c.toFixed(3)).join(',');
+    this.host.nativeElement.setAttribute(CAMERA_ATTRIBUTE, format(this.view.cameraPosition()));
+    this.host.nativeElement.setAttribute(CAMERA_TARGET_ATTRIBUTE, format(this.view.cameraTarget()));
   }
 
   private stop(): void {
