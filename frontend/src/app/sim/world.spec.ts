@@ -6,6 +6,7 @@ import { swimBounds } from './swimmer';
 import { waterVolume } from './tank';
 import {
   advance,
+  advanceInPlace,
   advanceTo,
   createDefaultWorld,
   createWorld,
@@ -157,6 +158,15 @@ describe('monde peuplé', () => {
     expect(() => createWorld(42, [{ species: 'neon', count }])).toThrow(RangeError);
   });
 
+  it.each(['constructor', 'toString', '__proto__', 'hasOwnProperty'])(
+    'refuse l’espèce « %s » (clé héritée du prototype)',
+    (species) => {
+      expect(() => createWorld(42, [{ species: species as SpeciesId, count: 1 }])).toThrow(
+        RangeError,
+      );
+    },
+  );
+
   it('refuse une espèce inconnue', () => {
     expect(() => createWorld(42, [{ species: 'requin' as SpeciesId, count: 1 }])).toThrow(
       RangeError,
@@ -207,5 +217,63 @@ describe('monde peuplé', () => {
   it('aller-retour JSON identique après des pas', () => {
     const world = advance(createDefaultWorld(3), 777);
     expect(JSON.parse(JSON.stringify(world))).toEqual(world);
+  });
+});
+
+describe('temps simulé (sans dérive)', () => {
+  it('time === tick * SIM_DT exactement après 216 000 pas (1 h)', () => {
+    const world = advance(createWorld(42), 216_000);
+    expect(world.tick).toBe(216_000);
+    expect(world.time).toBe(world.tick * SIM_DT);
+    expect(world.time).toBe(3600);
+  });
+
+  it('reste exact pas à pas, quel que soit le découpage', () => {
+    let world = createWorld(1);
+    for (const n of [1, 59, 7, 1000, 3]) {
+      world = advance(world, n);
+      expect(world.time).toBe(world.tick * SIM_DT);
+    }
+    expect(step(world).time).toBe((world.tick + 1) * SIM_DT);
+  });
+
+  it('un pas libre (dt ≠ SIM_DT) cumule dt', () => {
+    expect(step(createWorld(42), 0.5).time).toBe(0.5);
+    expect(step(step(createWorld(42), 0.25), 0.5).time).toBe(0.75);
+  });
+});
+
+describe('advanceInPlace (boucle d’affichage)', () => {
+  it('modifie le monde donné, sans le remplacer, comme advance', () => {
+    const world = createDefaultWorld(42);
+    const entities = world.entities;
+    const firstFish = world.entities[0];
+    advanceInPlace(world, 37);
+    expect(world).toEqual(advance(createDefaultWorld(42), 37));
+    // Mêmes objets : aucune copie de l'état.
+    expect(world.entities).toBe(entities);
+    expect(world.entities[0]).toBe(firstFish);
+  });
+
+  it('0 pas : monde inchangé', () => {
+    const world = createDefaultWorld(3);
+    advanceInPlace(world, 0);
+    expect(world).toEqual(createDefaultWorld(3));
+  });
+
+  it('enchaîner les appels équivaut à un seul advance', () => {
+    const world = createDefaultWorld(9);
+    let total = 0;
+    for (let i = 0; i < 20; i++) {
+      advanceInPlace(world, i % 6);
+      total += i % 6;
+    }
+    expect(world).toEqual(advance(createDefaultWorld(9), total));
+  });
+
+  it.each([-1, 1.5, Number.NaN])('refuse %s pas sans toucher au monde', (steps) => {
+    const world = createWorld(42);
+    expect(() => advanceInPlace(world, steps)).toThrow(RangeError);
+    expect(world).toEqual(createWorld(42));
   });
 });

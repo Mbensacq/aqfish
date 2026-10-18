@@ -3,6 +3,7 @@ import { SIM_DT } from './constants';
 import { SPECIES, type SpeciesId } from './species';
 import { createFish, stepFish, swimBounds, type Fish, type SwimBounds } from './swimmer';
 import { waterVolume } from './tank';
+import { assertTimeStep } from './time-step';
 
 /**
  * Entité de la simulation. Seuls les poissons existent pour l'instant (`sim/swimmer.ts`).
@@ -26,12 +27,22 @@ export interface World {
   readonly seed: number;
   /** Nombre de pas `SIM_DT` exécutés depuis la création. */
   readonly tick: number;
-  /** Temps simulé écoulé, en secondes. */
+  /**
+   * Temps simulé écoulé, en secondes. Toujours égal à `tick * SIM_DT` tant que le monde n'a
+   * avancé que par pas de `SIM_DT` (cas de l'application) : il est recalculé à partir de
+   * `tick`, jamais cumulé, pour ne pas dériver (erreur flottante).
+   */
   readonly time: number;
   readonly entities: readonly Entity[];
 }
 
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
+
+/**
+ * Monde modifiable en place, possédé par un seul propriétaire (la boucle d'affichage de
+ * `ui/aquarium-host`). Un `World` fraîchement créé lui est assignable.
+ */
+export type MutableWorld = Mutable<World>;
 
 /**
  * Crée un monde à `time = 0`, vide par défaut, peuplé dans l'ordre de `population`
@@ -46,7 +57,8 @@ export function createWorld(seed: number, population: readonly PopulationEntry[]
     if (!Number.isInteger(count) || count < 0) {
       throw new RangeError(`count doit être un entier positif ou nul (reçu : ${count})`);
     }
-    if (!(species in SPECIES)) {
+    // `Object.hasOwn` : refuse les clés héritées du prototype (« constructor », « toString »…).
+    if (!Object.hasOwn(SPECIES, species)) {
       throw new RangeError(`espèce inconnue : ${String(species)}`);
     }
     for (let i = 0; i < count; i++) {
@@ -70,7 +82,7 @@ export function createDefaultWorld(seed: number): World {
  * @throws RangeError si `dt` n'est pas un réel strictement positif.
  */
 export function step(world: World, dt: number = SIM_DT): World {
-  assertDt(dt);
+  assertTimeStep(dt);
   const next = cloneWorld(world);
   stepInPlace(next, dt);
   return next;
@@ -82,17 +94,26 @@ export function step(world: World, dt: number = SIM_DT): World {
  * @throws RangeError si `steps` n'est pas un entier positif ou nul.
  */
 export function advance(world: World, steps: number): World {
-  if (!Number.isInteger(steps) || steps < 0) {
-    throw new RangeError(`steps doit être un entier positif ou nul (reçu : ${steps})`);
-  }
+  assertSteps(steps);
   if (steps === 0) {
     return world;
   }
   const next = cloneWorld(world);
-  for (let i = 0; i < steps; i++) {
-    stepInPlace(next, SIM_DT);
-  }
+  advanceInPlace(next, steps);
   return next;
+}
+
+/**
+ * Fait avancer `world` de `steps` pas de `SIM_DT` **en le modifiant** : aucune allocation.
+ * Réservé au propriétaire unique du monde (boucle d'affichage de `ui/aquarium-host`, appelée
+ * à chaque image) ; les tests et le reste du code utilisent `step` / `advance`, purs.
+ * @throws RangeError si `steps` n'est pas un entier positif ou nul (monde inchangé).
+ */
+export function advanceInPlace(world: MutableWorld, steps: number): void {
+  assertSteps(steps);
+  for (let i = 0; i < steps; i++) {
+    stepInPlace(world, SIM_DT);
+  }
 }
 
 /** Nombre total de pas `SIM_DT` correspondant à un temps simulé : `round(time / SIM_DT)`. */
@@ -111,9 +132,11 @@ export function advanceTo(world: World, time: number): World {
   return advance(world, Math.max(0, ticksFor(time) - world.tick));
 }
 
-function stepInPlace(world: Mutable<World>, dt: number): void {
+function stepInPlace(world: MutableWorld, dt: number): void {
   world.tick += 1;
-  world.time += dt;
+  // Pas nominal : temps dérivé du compteur (exact, sans cumul d'erreur flottante).
+  // Pas libre (`step(world, dt)`, tests) : temps cumulé.
+  world.time = dt === SIM_DT ? world.tick * SIM_DT : world.time + dt;
   // Ordre stable : celui du tableau, c'est-à-dire des identifiants.
   for (const fish of world.entities as Mutable<Entity>[]) {
     stepFish(fish, dt, boundsFor(fish.species));
@@ -132,12 +155,12 @@ function boundsFor(species: SpeciesId): SwimBounds {
   return bounds;
 }
 
-function cloneWorld(world: World): Mutable<World> {
-  return structuredClone(world) as Mutable<World>;
+function cloneWorld(world: World): MutableWorld {
+  return structuredClone(world) as MutableWorld;
 }
 
-function assertDt(dt: number): void {
-  if (!(dt > 0) || !Number.isFinite(dt)) {
-    throw new RangeError(`dt doit être un réel strictement positif (reçu : ${dt})`);
+function assertSteps(steps: number): void {
+  if (!Number.isInteger(steps) || steps < 0) {
+    throw new RangeError(`steps doit être un entier positif ou nul (reçu : ${steps})`);
   }
 }
