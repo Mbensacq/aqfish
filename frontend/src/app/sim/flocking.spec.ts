@@ -329,6 +329,8 @@ describe('banc de néons (monde complet)', () => {
     expect(school).toBeLessThan(loose * 0.75);
   });
 
+  // Délai Vitest explicite (#44) : le délai par défaut (5 s) a été dépassé sous la charge de la
+  // suite complète ; ce test ne mesure aucune durée.
   it('60 poissons : une minute simulée en place, mêmes objets, tick exact', () => {
     const world = createWorld(5, [{ species: 'neon', count: 60 }]) as MutableWorld;
     const entities = world.entities;
@@ -337,7 +339,7 @@ describe('banc de néons (monde complet)', () => {
     expect(world.entities).toBe(entities);
     expect(world.entities[0]).toBe(first);
     expect(world.tick).toBe(3600);
-  });
+  }, 30_000);
 
   // Mesure relative plutôt qu'une borne en millisecondes (#54, action 3 de la rétro #53) :
   // une borne absolue dépendait de la charge du runner et des fichiers exécutés en parallèle
