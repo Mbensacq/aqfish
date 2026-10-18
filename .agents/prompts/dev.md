@@ -5,18 +5,16 @@
 
 ## Mission
 
-Livrer le travail de la nuit dans **une PR prête à fusionner** : code propre, tests
+Livrer le travail du cycle dans **une PR prête à fusionner** : code propre, tests
 significatifs, CI verte, documentation à jour. Viser une session d'environ 80 minutes ; si
 le travail déborde, réduire le périmètre et le dire, plutôt que livrer à moitié cassé.
 
 ## 1. Vérifier le passage de relais
 
-- Phase `planif` `en-cours` : consigner `phase dev saute "planif encore en cours"` et
-  terminer.
-- Phase `planif` `termine` : l'issue de la nuit est `nuitCourante.issue`.
-- Phase `planif` absente, `echec` ou `saute` : prendre, dans l'ordre, un `bug` bloquant, ou
+- Phase `planif` `termine` : l'issue du cycle est `cycleCourant.issue`.
+- Phase `planif` en `echec` ou `saute` : prendre, dans l'ordre, un `bug` bloquant, ou
   l'issue `nuit` ouverte la plus ancienne, ou la première issue `fonctionnalite` estimée `S`
-  de la semaine. Le signaler dans la note de phase (« planif absente »).
+  du sprint. Le signaler dans la note de phase (« planif absente »).
 
 ## 2. Préparer l'environnement
 
@@ -29,11 +27,11 @@ l'apparence est concernée.
 
 ## 3. Santé de `main`
 
-Lancer `npm run verify` sur `main`. S'il échoue, la nuit est consacrée à **réparer
+Lancer `npm run verify` sur `main`. S'il échoue, le cycle est consacré à **réparer
 `main`** :
 
 1. issue `bug` de gravité bloquant si elle n'existe pas ;
-2. correction sur `nuit/NUIT-reparation-main`, PR, CI verte ;
+2. correction sur `cycle/cNNN-reparation-main`, PR, CI verte ;
 3. ne pas commencer de fonctionnalité.
 
 ## 4. Corrections demandées d'abord
@@ -52,9 +50,9 @@ S'il existe une PR ouverte étiquetée `a-corriger` (prendre la plus ancienne, u
 
 Si cela a occupé l'essentiel de la session, s'arrêter là (note de phase explicite).
 
-## 5. Réaliser l'issue de la nuit
+## 5. Réaliser l'issue du cycle
 
-1. Branche depuis `main` à jour : `nuit/NUIT-<slug>`. Si l'issue dépend d'une PR encore
+1. Branche depuis `main` à jour : `cycle/cNNN-<slug>` (NNN = numéro du cycle sur 3 chiffres). Si l'issue dépend d'une PR encore
    étiquetée `pret-a-fusionner` (en attente de fusion par Mathis), partir de la branche de
    cette PR et écrire « Dépend de #N » en tête de la description de ta PR.
 2. Respecter les couches (`sim` pur et déterministe, `render` sans Angular, `ui` Angular).
@@ -79,7 +77,7 @@ Si cela a occupé l'essentiel de la session, s'arrêter là (note de phase expli
    rempli, `Closes #<issue>` (mot-clé anglais obligatoire) et les étiquettes de l'issue (`fonctionnalite`, `bug` ou `dette`).
 3. Attendre la check run `frontend` (au plus ~25 min). Si elle échoue : lire les journaux,
    corriger, pousser, attendre de nouveau (3 tentatives au plus).
-4. `node .agents/outils/etat.mjs nuit pr <numéro>`.
+4. `node .agents/outils/etat.mjs cycle pr <numéro>`.
 
 Si le travail ne peut pas aboutir :
 
@@ -91,7 +89,7 @@ Si le travail ne peut pas aboutir :
 ## Règles
 
 - Jamais de push sur `main`, jamais de `--force` sur une branche partagée.
-- Une seule fonctionnalité par nuit (en plus d'éventuelles corrections `a-corriger`).
+- Une seule fonctionnalité par cycle (en plus d'éventuelles corrections `a-corriger`).
 - Ne jamais supprimer, désactiver (`skip`, `only`) ni affaiblir un test pour faire passer
   la CI.
 - Zone protégée (`CLAUDE.md`, `.agents/**`, `.github/**`) : seulement dans une PR à part,
@@ -106,3 +104,5 @@ node .agents/outils/etat.mjs phase dev termine "PR #N : <titre>, CI verte"
 ```
 
 Ou `echec` / `saute` avec la raison.
+
+Puis lancer le rôle suivant (`CLAUDE.md`, démarrage obligatoire, étape 5).

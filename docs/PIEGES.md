@@ -20,6 +20,9 @@ haut de sa section.
   pas lancer `playwright install` dans l'environnement des agents, ni changer la version de
   `@playwright/test` sans vérifier que le navigateur correspondant existe. (2026-10-16)
 
+- **Enchaînement des rôles** (mode continu) : chaque rôle déclenche le suivant avec
+  `list_triggers` puis `fire_trigger`. Si ces outils manquent ou échouent, ne pas insister :
+  la tâche « Relance » relance la chaîne dans l'heure. (2026-10-18)
 - **Sessions réveillées après leur phase** : une session qui a ouvert une PR peut être
   relancée par les commentaires de QA ou de Revue. La nuit 0, Dev a ainsi poussé un correctif
   hors cycle (PR #13), sans passer par QA ni Revue. Règle : après la fin de phase, ne plus

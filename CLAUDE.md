@@ -8,11 +8,11 @@ instruction directe de Mathis (propriétaire du dépôt).
 **aqfish** est un simulateur d'aquarium en **pixel art 3D** dans le navigateur : poissons,
 amphibiens et plantes dans plusieurs environnements (bac tropical, bassin à koïs, paludarium,
 récif…), que l'on observe et manipule à la souris (rotation, zoom, vues de dessus, de dessous,
-de côté). L'objectif est un rendu **agréable et crédible**.
+de côté). L'objectif est un rendu **agréable et crédible**, et un projet abouti.
 
-Il est construit **chaque nuit** par une équipe de 5 agents Claude, sans intervention humaine
-directe. Mathis lit le rapport du matin et oriente via des issues. L'expérience dure 12
-semaines en 3 phases (voir `docs/ROADMAP.md`).
+Il est construit **en continu** par une équipe d'agents Claude, sans validation humaine :
+dès qu'un cycle se termine, le suivant démarre (jusqu'à 12 cycles par jour). Mathis regarde
+de temps en temps et oriente par des issues ; l'équipe ne l'attend jamais.
 
 Documents de référence, à lire selon le besoin :
 
@@ -20,59 +20,72 @@ Documents de référence, à lire selon le besoin :
 |---|---|
 | `docs/ARCHITECTURE.md` | Couches, déterminisme, rendu pixel art, contrat de capture, tests |
 | `docs/DA.md` | Direction artistique : palette, règles pixel art, environnements, espèces |
-| `docs/ROADMAP.md` | Phases, versions, épopées, backlog |
+| `docs/ROADMAP.md` | Sprints, versions, épopées, backlog |
 | `docs/adr/` | Décisions d'architecture (une par fichier, numérotées) |
 | `docs/PIEGES.md` | Pièges connus et contournements : **à lire avant de coder**, à compléter |
 | `.agents/prompts/<rôle>.md` | Consignes détaillées de chaque rôle |
-| `.agents/outils/etat.mjs` | Outil d'état partagé (contexte de la nuit, phases, publication) |
+| `.agents/outils/etat.mjs` | Outil d'état partagé (contexte, tour de rôle, phases, publication) |
 | `.agents/outils/github-rest.md` | Opérations GitHub en REST (GraphQL indisponible) |
 
-## L'équipe et le calendrier d'une nuit (heure de Paris)
+## L'équipe
 
-| Heure | Rôle | Fichier de consignes | Livrable |
+Un **cycle** enchaîne quatre rôles ; chacun lance le suivant à la fin de sa phase :
+
+```
+Planif → Dev → QA → Revue ──┐
+  ▲                          │  (cycle suivant, tant que le plafond du jour n'est pas atteint)
+  └──────────────────────────┘
+```
+
+| Rôle | Tâche planifiée | Consignes | Livrable |
 |---|---|---|---|
-| 23:47 | Planif | `.agents/prompts/planif.md` | Issue de la nuit avec critères d'acceptation |
-| 00:43 | Dev | `.agents/prompts/dev.md` | Branche + code + tests + PR |
-| 02:13 | QA | `.agents/prompts/qa.md` | Tests de bout en bout, captures, issues de bug |
-| 03:13 | Revue & release | `.agents/prompts/revue.md` | Revue, version dans la PR, fusion (la CI publie) |
-| 06:47 | Superviseur | `.agents/prompts/superviseur.md` | Rapport du matin, métriques, alertes |
+| Planif | `aqfish — 1. Planif` | `.agents/prompts/planif.md` | Issue du cycle avec critères d'acceptation |
+| Dev | `aqfish — 2. Dev` | `.agents/prompts/dev.md` | Branche + code + tests + PR |
+| QA | `aqfish — 3. QA` | `.agents/prompts/qa.md` | Tests de bout en bout, captures, issues de bug |
+| Revue & release | `aqfish — 4. Revue & release` | `.agents/prompts/revue.md` | Revue, version dans la PR, fusion (la CI publie) |
+| Superviseur | `aqfish — 5. Superviseur` (6 h 47 chaque jour) | `.agents/prompts/superviseur.md` | Rapport du jour, métriques, alertes |
+| Relance | `aqfish — 0. Relance` (toutes les heures) | `.agents/prompts/relance.md` | Relance la chaîne si un enchaînement s'est perdu |
 
-### Identifiant de nuit
+Superviseur et Relance sont hors cycle : ils n'ont pas de phase dans l'état.
 
-Une nuit (`NUIT`) est identifiée par la date du soir où elle commence, en heure de Paris
-(date d'il y a 12 heures). Son index, sa semaine et son type se calculent à partir de
-`experience.premiereNuit`. **Ne pas les calculer à la main** : l'outil d'état le fait
-(`node .agents/outils/etat.mjs contexte`).
+### Cycles, sprints, types
 
-| `jour` (index modulo 7) | Type | Contenu |
+Les cycles sont numérotés à partir de 0. Un **sprint** = 7 cycles. Le type d'un cycle
+dépend de son numéro modulo 7 (l'outil d'état le calcule, ne pas le faire à la main) :
+
+| Numéro modulo 7 | Type | Contenu |
 |---|---|---|
 | 0 → 4 | `fonctionnalite` | Une fonctionnalité de la roadmap |
 | 5 | `dette` | Refactorisation, nettoyage, dette technique, performances |
-| 6 | `retro` | Rétrospective, replanification de la semaine suivante, corrections de bugs |
+| 6 | `retro` | Rétrospective du sprint, replanification du suivant, corrections de bugs |
 
-## Démarrage obligatoire de chaque agent
+**Plafond** : `experience.plafondParJour` cycles démarrés par jour (heure de Paris), 12 par
+défaut, pour préserver le quota de Mathis. Une fois atteint, la chaîne s'arrête et la
+Relance la redémarre le lendemain.
+
+## Démarrage obligatoire des rôles du cycle (Planif, Dev, QA, Revue)
 
 Depuis la racine du clone de `main` :
 
 1. `node .agents/outils/etat.mjs contexte` : prépare le worktree `../equipe` et affiche
-   `nuit`, `semaine`, `jour`, `type`, `pause`, l'état de la nuit courante (`nuitCourante`).
-2. **Pas de double exécution** : si ta phase est déjà `termine` ou `en-cours` dans
-   `nuitCourante`, terminer sans rien modifier (une relance manuelle n'est permise qu'après
-   `saute` ou `echec`).
-3. **Pause** : si `pause` vaut `true` (drapeau de `etat.json` ou issue `stop` ouverte),
-   consigner `node .agents/outils/etat.mjs phase <rôle> saute "pause : <motif>"` puis terminer.
-4. `node .agents/outils/etat.mjs phase <rôle> en-cours`, puis lire ton fichier de consignes
-   `.agents/prompts/<rôle>.md` et le suivre.
-5. Avant de terminer, **toujours** consigner l'issue de ta phase, même en cas d'échec :
+   `cycle`, `sprint`, `type`, `pause`, `prochain` (rôle dont c'est le tour), `cycleCourant`.
+2. **Ton tour ?** Si `prochain.role` n'est pas ton rôle (pause, plafond, autre rôle en cours
+   ou à faire), terminer immédiatement sans rien modifier.
+3. `node .agents/outils/etat.mjs phase <rôle> en-cours` (l'outil refuse si ce n'est pas ton
+   tour ; pour Planif, il ouvre le nouveau cycle), puis lire `.agents/prompts/<rôle>.md` et le
+   suivre.
+4. **Fin de phase**, toujours, même en cas d'échec :
    `node .agents/outils/etat.mjs phase <rôle> termine|echec|saute "<note d'une ligne>"`.
-6. **Après la fin de phase, ne plus agir.** Ta session peut être réveillée plus tard par une
-   notification GitHub (commentaire, revue ou CI sur une PR que tu as ouverte). Dans ce cas,
-   ne pousse rien, n'ouvre aucune PR, ne commente pas : réponds seulement « phase terminée ».
-   Les remarques sont traitées par le rôle concerné la nuit suivante (Dev reprend les PR
-   `a-corriger`, Planif planifie les bugs et la dette). Seul le cycle de la nuit fait avancer
-   le code.
+5. **Lancer le suivant** : `node .agents/outils/etat.mjs suivant`. Si `role` n'est pas `null`,
+   retrouver la tâche planifiée nommée `tache` avec l'outil `list_triggers`, puis la
+   déclencher avec `fire_trigger` (texte : « Cycle N : à toi, <rôle> »). Si l'outil est
+   indisponible ou échoue, ne pas insister : la Relance prendra le relais dans l'heure.
+6. **Ensuite, ne plus agir.** Ta session peut être réveillée plus tard par une notification
+   GitHub (commentaire, revue ou CI sur une PR que tu as ouverte). Dans ce cas, ne pousse
+   rien, n'ouvre aucune PR, ne commente pas : réponds seulement « phase terminée ». Les
+   remarques sont traitées par le rôle concerné au cycle suivant.
 
-Rôles : `planif`, `dev`, `qa`, `revue`, `superviseur`.
+Rôles du cycle : `planif`, `dev`, `qa`, `revue`.
 
 ## État partagé : la branche `equipe`
 
@@ -81,62 +94,63 @@ séparé du code :
 
 ```
 equipe/
-├── etat.json          # état courant et historique des nuits (schéma ci-dessous)
-├── journal/NUIT.md    # rapport du matin de chaque nuit (Superviseur)
-└── captures/NUIT/     # captures sous 5 angles (QA) ; captures/latest/ = dernière série
+├── etat.json          # cycles, tour de rôle, jours, réglages (schéma ci-dessous)
+├── journal/JOUR.md    # rapport du jour (Superviseur), JOUR = AAAA-MM-JJ
+└── captures/cNNN/     # captures du cycle NNN sous 5 angles (QA) ; captures/latest/ = dernière série
 ```
 
 Toujours passer par l'outil (il gère le worktree, les commits, les pushs et les courses) :
 
 ```bash
-node .agents/outils/etat.mjs contexte                      # contexte de la nuit (JSON)
+node .agents/outils/etat.mjs contexte                      # contexte (JSON)
+node .agents/outils/etat.mjs suivant                       # rôle à lancer maintenant
 node .agents/outils/etat.mjs phase dev termine "PR #13 ouverte, CI verte"
-node .agents/outils/etat.mjs nuit pr 13                     # champs : issue, pr, version, metriques, type
-node .agents/outils/etat.mjs nuit metriques '{"tests": 42}'
+node .agents/outils/etat.mjs cycle pr 13                    # champs : issue, pr, version, metriques
+node .agents/outils/etat.mjs jour metriques '{"tests": 42}' # champs : rapport, metriques
 node .agents/outils/etat.mjs global pause true              # champs : pause, motifPause, experience
-node .agents/outils/etat.mjs publier "captures(NUIT): 5 angles"   # journal, captures…
+node .agents/outils/etat.mjs publier "captures(c013): 5 angles"   # journal, captures…
 ```
 
 Ne jamais modifier `etat.json` à la main. Les fichiers du journal et des captures
 s'écrivent directement dans `../equipe/`, puis `publier`.
 
-Schéma de `etat.json` :
+Schéma de `etat.json` (2) :
 
 ```json
 {
-  "schema": 1,
+  "schema": 2,
   "pause": false,
   "motifPause": null,
-  "experience": {
-    "premiereNuit": "AAAA-MM-JJ",
-    "finsDePhase": ["AAAA-MM-JJ", "…", "…"],
-    "issueRapport": 2
-  },
-  "nuits": {
-    "AAAA-MM-JJ": {
+  "experience": { "premiereNuit": "2026-10-15", "issueRapport": 2, "plafondParJour": 12 },
+  "cycles": {
+    "13": {
+      "numero": 13,
+      "date": "AAAA-MM-JJ",
+      "debut": "ISO-8601",
       "type": "fonctionnalite | dette | retro",
-      "issue": 12,
-      "pr": 13,
-      "version": "v0.1.3",
+      "issue": 40,
+      "pr": 41,
+      "version": "v0.2.6",
       "phases": {
         "planif": { "statut": "termine", "debut": "ISO-8601", "fin": "ISO-8601", "note": "…" },
         "dev": { "statut": "en-cours", "debut": "ISO-8601", "fin": null, "note": null }
       },
       "metriques": {}
     }
-  }
+  },
+  "jours": { "AAAA-MM-JJ": { "rapport": {}, "metriques": {} } }
 }
 ```
 
-Statuts de phase : `en-cours`, `termine`, `echec`, `saute`. Une phase passe `en-cours` dès
-le démarrage effectif (étape 4), ce qui sert de verrou : le rôle suivant ne travaille pas
-sur une PR dont la phase précédente est encore `en-cours`. Chaque agent ne modifie que
-**sa** phase (et les champs `issue`, `pr`, `version`, `metriques` qui lui reviennent).
+Statuts de phase : `en-cours`, `termine`, `echec`, `saute`. Un cycle est **clos** quand la
+phase `revue` est finie. Une phase `en-cours` depuis plus de 3 h est considérée bloquée :
+la Relance la passe en `echec` et relance la chaîne. Chaque agent ne modifie que **sa**
+phase (et les champs `issue`, `pr`, `version`, `metriques` qui lui reviennent).
 
 ## Stack et commandes
 
-Front uniquement en phase 1. Le backend sera en **NestJS** à partir de la phase 2 (voir
-`docs/adr/0004-backend-nestjs.md`) : ne pas créer `backend/` avant.
+Front uniquement pour l'instant. Le backend sera en **NestJS** quand la roadmap en aura
+besoin (voir `docs/adr/0004-backend-nestjs.md`) : ne pas créer `backend/` avant.
 
 - **Angular 21 (LTS)**, composants standalone, sans zone.js, signaux, `OnPush`.
   Angular 22 exige Node ≥ 22.22.3, or l'environnement des agents a Node 22.22.0 : ne pas
@@ -165,7 +179,8 @@ Front uniquement en phase 1. Le backend sera en **NestJS** à partir de la phase
 
 - **Jamais** de push direct sur `main` (protégée : PR + CI verte obligatoires), jamais de
   `--force` sur une branche partagée, jamais de réécriture de l'historique de `main`.
-- Branche de travail : `nuit/NUIT-<slug>` (ex. `nuit/2026-10-20-camera-orbitale`).
+- Branche de travail : `cycle/cNNN-<slug>` (ex. `cycle/c013-camera-orbitale`, NNN sur 3
+  chiffres).
 - Commits au format **Conventional Commits, en français** :
   `feat(sim): banc de poissons avec séparation et alignement`. Types : `feat`, `fix`,
   `refactor`, `test`, `docs`, `perf`, `chore`, `ci`, `style`.
@@ -188,11 +203,11 @@ Front uniquement en phase 1. Le backend sera en **NestJS** à partir de la phase
 | `fonctionnalite` | Fonctionnalité planifiée |
 | `bug` | Défaut constaté |
 | `dette` | Dette technique, refactorisation |
-| `retro` | Rétrospective hebdomadaire |
-| `nuit` | Issue de travail d'une nuit (créée par Planif) |
-| `a-corriger` | Revue : corrections demandées, à traiter en priorité par Dev la nuit suivante |
+| `retro` | Rétrospective de sprint |
+| `nuit` | Issue de travail d'un cycle (nom historique, créée par Planif) |
+| `a-corriger` | Revue : corrections demandées, à traiter en priorité par Dev au cycle suivant |
 | `pret-a-fusionner` | Revue OK mais fusion refusée par l'environnement : Mathis fusionne |
-| `bloque` | Bloqué, besoin d'une décision de Mathis |
+| `bloque` | Besoin d'une décision de Mathis : signaler, puis **continuer sur autre chose** |
 | `idee-mathis` | Idée de Mathis : Planif la traite en priorité |
 | `validation-mathis` | Touche la zone protégée : seul Mathis fusionne |
 | `stop` | Pause de toute l'équipe tant que l'issue est ouverte |
@@ -241,7 +256,7 @@ Une fonctionnalité est terminée quand :
 
 ## Mémoire de l'équipe
 
-Chaque agent démarre sans mémoire des nuits précédentes. La continuité repose uniquement
+Chaque agent démarre sans mémoire des cycles précédents. La continuité repose uniquement
 sur : ce fichier, `docs/`, les issues et PR, `etat.json` et `journal/` sur la branche
 `equipe`. **Si ce n'est pas écrit, ça n'existe pas** : toute décision, toute découverte
 utile (piège, contournement, convention) doit être écrite au bon endroit avant de terminer.

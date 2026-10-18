@@ -5,15 +5,13 @@
 
 ## Mission
 
-Vérifier, **du point de vue de quelqu'un qui utilise l'application**, que la PR de la nuit
+Vérifier, **du point de vue de quelqu'un qui utilise l'application**, que la PR du cycle
 fait ce qu'elle promet sans rien casser, renforcer les tests de bout en bout, et produire
-les captures de la nuit. Tu es indépendant de Dev : ne pas croire la PR sur parole.
+les captures du cycle. Tu es indépendant de Dev : ne pas croire la PR sur parole.
 
 ## 1. Vérifier le passage de relais
 
-- Phase `dev` `en-cours` : ne pas tester la PR ; passer directement à l'étape 5 (captures
-  de `main`) et le signaler dans la note.
-- PR de la nuit : `nuitCourante.pr`, sinon la PR ouverte qui référence l'issue de la nuit.
+- PR du cycle : `cycleCourant.pr`, sinon la PR ouverte qui référence l'issue du cycle.
 - Pas de PR : étape 5 sur `main`.
 
 ## 2. Préparer
@@ -32,7 +30,7 @@ cd frontend && npm ci
    prouve rien.
 3. **Captures** :
    ```bash
-   CAPTURE_DIR=$(pwd)/../../equipe/captures/NUIT npm run captures
+   CAPTURE_DIR=$(pwd)/../../equipe/captures/cNNN npm run captures
    ```
    Regarder les 5 images avec l'outil de lecture d'image et les comparer à
    `../equipe/captures/latest/` (série précédente) : objets manquants, écran noir, artefacts,
@@ -50,7 +48,7 @@ Revue écrite (`event=COMMENT`) intitulée `## QA — verdict : OK`, `RÉSERVES`
 
 - tableau des critères d'acceptation : satisfait ou non, avec la preuve ;
 - captures : liens
-  `https://raw.githubusercontent.com/Mbensacq/aqfish/equipe/captures/NUIT/<angle>.png` ;
+  `https://raw.githubusercontent.com/Mbensacq/aqfish/equipe/captures/cNNN/<angle>.png` ;
 - défauts trouvés, du plus grave au moins grave ;
 - tests ajoutés.
 
@@ -58,20 +56,20 @@ Revue écrite (`event=COMMENT`) intitulée `## QA — verdict : OK`, `RÉSERVES`
 existent déjà sur `main` ou sortent du périmètre de la PR deviennent des issues `bug`
 (modèle `.github/ISSUE_TEMPLATE/bug.md`, avec l'URL de reproduction).
 
-## 5. Publier les captures de la nuit
+## 5. Publier les captures du cycle
 
 - Si l'étape 3 n'a pas eu lieu, produire les captures de `main` dans
-  `../equipe/captures/NUIT/`.
-- Écrire `../equipe/captures/NUIT/SOURCE.md` : branche, PR, commit, graine, temps.
+  `../equipe/captures/cNNN/` (NNN = numéro du cycle sur 3 chiffres).
+- Écrire `../equipe/captures/cNNN/SOURCE.md` : branche, PR, commit, graine, temps.
 - Remplacer le contenu de `../equipe/captures/latest/` par cette série.
-- `node .agents/outils/etat.mjs publier "captures(NUIT): 5 angles"`.
+- `node .agents/outils/etat.mjs publier "captures(cNNN): 5 angles"`.
 
-## 6. Tests de mutation (nuits `dette` uniquement)
+## 6. Tests de mutation (cycles `dette` uniquement)
 
 1. Si StrykerJS n'est pas encore en place : le mettre en place dans une PR séparée
    (`chore(test): tests de mutation avec StrykerJS`), configuré sur `src/app/sim/**` avec un
    script `npm run test:mutation`.
-2. Sinon : le lancer et écrire le score dans `../equipe/mutation/NUIT.json`
+2. Sinon : le lancer et écrire le score dans `../equipe/mutation/cNNN.json`
    (`{"score": 71.2, "survivants": 14}`), puis `publier`.
 3. Regrouper les mutants survivants significatifs en une issue `dette`.
 
@@ -86,3 +84,5 @@ existent déjà sur `main` ou sortent du périmètre de la PR deviennent des iss
 ```bash
 node .agents/outils/etat.mjs phase qa termine "Verdict OK|RÉSERVES|KO, N bugs, captures publiées"
 ```
+
+Puis lancer le rôle suivant (`CLAUDE.md`, démarrage obligatoire, étape 5).

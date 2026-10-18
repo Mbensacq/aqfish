@@ -10,11 +10,10 @@ Tu es le dernier rempart avant `main` : exigeant sur le fond, bref sur la forme.
 
 ## 1. Vérifier le passage de relais
 
-- Phase `qa` `en-cours` : `phase revue saute "qa encore en cours"` et terminer.
 - **Fusions faites par Mathis** : pour chaque PR étiquetée `pret-a-fusionner` désormais
   fusionnée, vérifier que la release a bien été créée par la CI, puis retirer l'étiquette.
 - PR candidates (auteur `Mbensacq`, ouvertes, hors brouillon, sans `pret-a-fusionner`),
-  **3 au plus par nuit**, la PR de la nuit d'abord :
+  **3 au plus par cycle**, la PR du cycle d'abord :
   - sans étiquette `a-corriger` ;
   - ou avec `a-corriger` mais des commits poussés après ta dernière revue (corrections de Dev).
 
@@ -88,25 +87,25 @@ dans la PR, avant la fusion :
 
 1. `git fetch --tags origin` puis lister les versions existantes :
    `git tag -l 'v*' | sort -V | tail -5`.
-2. Version : `0.<semaine>.<correctif>` (semaine 12 : `1.0.<correctif>`) ; correctif = 0
+2. Version : `0.<sprint>.<correctif>` (sprint 12 : `1.0.<correctif>` ; au-delà : `1.<sprint − 12>.<correctif>`) ; correctif = 0
    s'il n'existe aucun tag pour cette version mineure, sinon dernier + 1. Si une PR déjà
-   fusionnée cette nuit a pris ce numéro, prendre le suivant.
+   fusionnée entre-temps a pris ce numéro, prendre le suivant.
 3. Sur la branche de la PR :
    ```bash
    cd frontend && npm version <X.Y.Z> --no-git-tag-version && cd ..
    ```
    puis écrire `docs/versions/v<X.Y.Z>.md` : notes en français orientées utilisateur (ce qui
-   change à l'écran), limites connues, lien vers la PR et vers les captures de la nuit.
+   change à l'écran), limites connues, lien vers la PR et vers les captures du cycle.
 4. Commit `chore(release): v<X.Y.Z>`, push, attendre la check run `frontend` verte.
 5. Après la fusion : vérifier l'exécution du workflow « Version et déploiement » sur le
    commit de fusion (≤ 15 min, voir `.agents/outils/github-rest.md`) et la présence de la
    release ; en cas d'échec, issue `bug`.
-6. `node .agents/outils/etat.mjs nuit version '"v<X.Y.Z>"'`.
+6. `node .agents/outils/etat.mjs cycle version '"v<X.Y.Z>"'`.
 
 ## 4. Vérifier `main` après fusion
 
 La CI du commit de fusion sur `main` doit être verte. Sinon, **revenir en arrière
-immédiatement** : branche `nuit/NUIT-revert-<N>`, `git revert <sha>`, PR, CI verte,
+immédiatement** : branche `cycle/cNNN-revert-<N>`, `git revert <sha>`, PR, CI verte,
 fusion, puis issue `bug` bloquant décrivant la panne.
 
 ## Règles
@@ -122,3 +121,6 @@ fusion, puis issue `bug` bloquant décrivant la panne.
 ```bash
 node .agents/outils/etat.mjs phase revue termine "PR #N fusionnée → vX.Y.Z" # ou « corrections demandées sur #N »
 ```
+
+Puis lancer le rôle suivant (`CLAUDE.md`, démarrage obligatoire, étape 5) : ce sera Planif
+pour un nouveau cycle, sauf si le plafond du jour est atteint.

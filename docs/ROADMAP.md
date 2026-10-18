@@ -2,28 +2,28 @@
 
 Tenue par **Planif**. Ce fichier liste les phases, les versions et les épopées ; le détail
 des fonctionnalités vit dans les issues (étiquette `fonctionnalite`), qui forment le backlog.
-Planif peut réordonner et découper à chaque rétrospective, en expliquant ses choix dans
-l'issue `retro` de la semaine. Changer le périmètre d'une **phase** (et non d'une semaine)
-demande l'accord de Mathis (issue `bloque`).
+Planif peut réordonner, découper et compléter à chaque rétrospective, en expliquant ses
+choix dans l'issue `retro` du sprint. Mathis oriente par des issues `idee-mathis` ; l'équipe
+ne l'attend jamais.
 
-## Calendrier
+## Calendrier (mode continu)
 
-- 12 semaines, 3 phases de 4 semaines.
-- Semaine type (comptée à partir de la première nuit, voir `CLAUDE.md`) : 5 nuits
-  `fonctionnalite`, puis 1 nuit `dette`, puis 1 nuit `retro`.
-- **Point d'étape à la fin de chaque phase** : le Superviseur met l'équipe en pause
-  (`"pause": true` dans `etat.json`) et rédige un bilan de phase. Mathis décide de
-  continuer, d'ajuster ou d'arrêter, puis lève la pause.
-- Dates exactes : `experience.premiereNuit` et `experience.finsDePhase` dans `etat.json`.
+- L'équipe enchaîne des **cycles** (Planif → Dev → QA → Revue) en continu, jusqu'à
+  `experience.plafondParJour` cycles par jour (12 par défaut). Voir `CLAUDE.md`.
+- Un **sprint** = 7 cycles : 5 cycles `fonctionnalite`, puis 1 cycle `dette`, puis 1 cycle
+  `retro`.
+- Pas de pause aux fins de phase : le Superviseur fait un **bilan tous les 4 sprints** dans son
+  rapport du jour, et l'équipe continue.
+- Les phases ci-dessous comptent en sprints (« semaines » dans les anciens textes).
 
 ## Versions
 
-Une version mineure par semaine (`v0.<semaine>`), un correctif par PR fusionnée :
-`v0.1.0`, `v0.1.1`… La semaine 12 produit `v1.0.0`. La version est fixée dans
-`frontend/package.json` par Revue avant la fusion ; le workflow `release.yml` publie alors
-le front sur GitHub Pages et crée le tag et la release (notes : `docs/versions/`).
+Une version mineure par sprint (`v0.<sprint>`), un correctif par PR fusionnée :
+`v0.1.0`, `v0.1.1`… Le sprint 12 produit `v1.0.0` ; ensuite `v1.<sprint − 12>`. La version
+est fixée dans `frontend/package.json` par Revue avant la fusion ; le workflow `release.yml`
+publie alors le front sur GitHub Pages et crée le tag et la release (notes : `docs/versions/`).
 
-## Phase 1 — Le bac et la vie (semaines 1 à 4, front seul)
+## Phase 1 — Le bac et la vie (sprints 1 à 4, front seul)
 
 | Version | Épopée | Contenu visé |
 |---|---|---|
@@ -32,10 +32,11 @@ le front sur GitHub Pages et crée le tag et la release (notes : `docs/versions/
 | v0.3 | Le décor | Rochers, plantes qui ondulent, bulles, caustiques, cycle jour/nuit, éclairage ; panneau de contrôle |
 | v0.4 | La vie | Nourrissage au clic (chute, attraction, faim) ; population réglable ; vitesse de simulation ; sauvegarde dans le navigateur, export et import JSON |
 
-**Point d'étape 1** : bilan de la phase et choix de l'hébergement du backend NestJS (NAS
-Synology en conteneur, ou Infomaniak).
+**Fin de phase 1** : bilan dans le rapport du jour. L'hébergement du backend NestJS (NAS
+Synology en conteneur, ou Infomaniak) est une décision de Mathis : issue `bloque`, sans
+attendre la réponse pour continuer.
 
-## Phase 2 — Les mondes (semaines 5 à 8)
+## Phase 2 — Les mondes (sprints 5 à 8)
 
 | Version | Épopée | Contenu visé |
 |---|---|---|
@@ -44,22 +45,27 @@ Synology en conteneur, ou Infomaniak).
 | v0.7 | Le récif | Récif marin : coraux, anémones, poissons de récif |
 | v0.8 | L'éditeur | Éditeur de bac et de bassin (dimensions, forme, placement du décor) ; catalogue d'espèces ; backend NestJS : sauvegarde côté serveur et partage (mis en place dès que la phase 2 en a besoin) |
 
-**Point d'étape 2.**
+**Fin de phase 2** : bilan dans le rapport du jour.
 
-## Phase 3 — Le réalisme (semaines 9 à 12)
+## Phase 3 — Le réalisme (sprints 9 à 12)
 
 | Version | Épopée | Contenu visé |
 |---|---|---|
 | v0.9 | L'eau | Qualité de l'eau simplifiée : température, cycle de l'azote, filtration, entretien |
 | v0.10 | Le bien-être | Faim, santé, compatibilité des espèces, comportements selon l'heure |
 | v0.11 | L'ambiance | Sons d'ambiance, météo, partage par lien, accessibilité, performances |
-| v1.0 | La mise en ligne | Hébergement choisi ; stabilisation : les 3 dernières nuits sans nouvelle fonctionnalité |
+| v1.0 | La mise en ligne | Hébergement choisi ; stabilisation : les 3 derniers cycles du sprint sans nouvelle fonctionnalité |
 
-**Point d'étape final** : bilan de l'expérience.
+## Après v1.0 — L'aquarium vivant (sprints 13 et suivants)
+
+La roadmap continue : Planif propose de nouvelles épopées `v1.x` cohérentes avec `docs/DA.md`
+(nouveaux environnements et espèces, comportements plus riches, éditeur avancé, partage,
+performances, accessibilité, finitions visuelles), en privilégiant ce qui rend l'aquarium plus
+beau et plus vivant.
 
 ## Backlog
 
 Le backlog est l'ensemble des issues ouvertes `fonctionnalite`, `bug` et `dette`. Planif
 le maintient : chaque issue a un titre court, un contexte, des **critères d'acceptation
-vérifiables** et une estimation (`S` : une nuit facile, `M` : une nuit pleine, `L` : à
+vérifiables** et une estimation (`S` : un cycle facile, `M` : un cycle plein, `L` : à
 découper).

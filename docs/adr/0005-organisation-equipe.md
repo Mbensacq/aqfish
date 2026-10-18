@@ -1,6 +1,6 @@
 # 0005 — Organisation de l'équipe d'agents
 
-- Statut : acceptée
+- Statut : acceptée (calendrier nocturne remplacé par l'ADR 0008)
 - Date : 2026-10-16
 - Auteur : socle (Claude, avec Mathis)
 
