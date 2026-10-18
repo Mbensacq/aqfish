@@ -11,17 +11,11 @@ import {
 
 import { NEON, type SpeciesDefinition } from '../sim/species';
 import { wrapAngle, type Fish } from '../sim/swimmer';
+import { undulationAt, undulationScale, type Undulation } from '../sim/undulation';
 import { createFishGeometry, modelBodyLength } from './fish-model';
 
 /** Nombre maximal de poissons d'une espèce affichés (capacité des `InstancedMesh`). */
 export const MAX_FISH_PER_SPECIES = 256;
-
-/** Amplitude de l'ondulation du corps (lacet autour de son centre), en radians. */
-const BODY_SWAY = 0.12;
-/** Amplitude du battement de la queue, en radians. */
-const TAIL_SWING = 0.6;
-/** Retard de phase de la queue sur le corps (l'onde part de la tête), en radians. */
-const TAIL_LAG = 0.9;
 
 const TWO_PI = Math.PI * 2;
 
@@ -76,6 +70,7 @@ export class FishLayer {
   private readonly geometries: BufferGeometry[];
   private readonly halfLength: number;
   private readonly pose: FishPose = { x: 0, y: 0, z: 0, yaw: 0, pitch: 0, phase: 0 };
+  private readonly undulation: Undulation = { bodySway: 0, tailSwing: 0 };
   private readonly bodyMatrix = new Matrix4();
   private readonly tailMatrix = new Matrix4();
   private readonly hinge = new Matrix4();
@@ -127,8 +122,12 @@ export class FishLayer {
         continue;
       }
       const pose = interpolateFishPose(fish, alpha, this.pose);
-      const sway = Math.sin(pose.phase) * BODY_SWAY;
-      const swing = Math.sin(pose.phase - TAIL_LAG) * TAIL_SWING;
+      // Amplitude selon la vitesse du pas courant (non interpolée : elle varie lentement).
+      const { bodySway: sway, tailSwing: swing } = undulationAt(
+        pose.phase,
+        undulationScale(this.species, fish.speed),
+        this.undulation,
+      );
 
       // Modèle orienté vers +X : inclinaison autour de Z, puis cap autour de Y
       // (cap mesuré de +X vers +Z, d'où le signe moins ; voir sim/swimmer.ts).

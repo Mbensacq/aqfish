@@ -1,9 +1,14 @@
-import { Matrix4, Object3D, Vector3 } from 'three';
+import { Box3, Matrix4, Object3D, Vector3 } from 'three';
 
 import { NEON } from '../sim/species';
 import { createFish, stepFish, swimBounds, type Fish } from '../sim/swimmer';
-import { waterVolume } from '../sim/tank';
+import { DEFAULT_TANK, waterVolume } from '../sim/tank';
+import { TAIL_LAG } from '../sim/undulation';
+import { createDefaultWorld } from '../sim/world';
+import { CAMERA_FOV_DEG, framingDistance } from './camera-presets';
 import { FishLayer, interpolateFishPose, type FishPose } from './fish-layer';
+import { createFishGeometry } from './fish-model';
+import { PIXEL_SIZE } from './pixel-art';
 
 const BOUNDS = swimBounds(NEON, waterVolume());
 
@@ -117,6 +122,25 @@ describe('FishLayer', () => {
     expect(again.equals(a)).toBe(true);
   });
 
+  it('aucune allocation par image : mêmes tampons d’instances, mêmes matrices à entrée égale', () => {
+    const entities = [fishAfterSteps(0, 10), fishAfterSteps(1, 10)];
+    layer.update(entities, 0.5);
+    const bodyArray = layer.object.children.map(
+      (c) => (c as unknown as { instanceMatrix: { array: Float32Array } }).instanceMatrix.array,
+    );
+    const first = layer.tailMatrixAt(1, new Matrix4());
+    for (let i = 0; i < 100; i++) {
+      layer.update(entities, i / 100);
+    }
+    layer.update(entities, 0.5);
+    const after = layer.object.children.map(
+      (c) => (c as unknown as { instanceMatrix: { array: Float32Array } }).instanceMatrix.array,
+    );
+    expect(after).toHaveLength(2);
+    after.forEach((array, i) => expect(array).toBe(bodyArray[i]));
+    expect(layer.tailMatrixAt(1, new Matrix4()).equals(first)).toBe(true);
+  });
+
   it('ne dépasse pas sa capacité et ignore les autres espèces', () => {
     const many = Array.from({ length: 10 }, (_, i) => fishAfterSteps(i, 0));
     layer.update(many, 0);
@@ -133,5 +157,84 @@ describe('FishLayer', () => {
     scene.add(own.object);
     own.dispose();
     expect(scene.children).toEqual([]);
+  });
+});
+
+describe('FishLayer : lisibilité du battement de queue (capture top)', () => {
+  /**
+   * Taille d'un pixel de scène dans le plan du fond, vue `top` du contrat de capture
+   * (1280 × 720) : le plan le plus éloigné de la caméra, donc le pire cas.
+   */
+  const aspect = 1280 / 720;
+  const distance = framingDistance(DEFAULT_TANK, CAMERA_FOV_DEG, aspect) + DEFAULT_TANK.height / 2;
+  const scenePixel =
+    (2 * distance * Math.tan((CAMERA_FOV_DEG * Math.PI) / 360)) / (720 / PIXEL_SIZE);
+
+  const tailGeometry = createFishGeometry(NEON, 'tail');
+  tailGeometry.computeBoundingBox();
+  const tailTip = new Vector3((tailGeometry.boundingBox as Box3).min.x, 0, 0);
+  tailGeometry.dispose();
+
+  let layer: FishLayer;
+  const m = new Matrix4();
+
+  beforeEach(() => (layer = new FishLayer(NEON, 32)));
+  afterEach(() => layer.dispose());
+
+  /** Poisson au centre, cap 0 (nage vers +X), à plat. */
+  function still(phase: number, speed: number): Fish {
+    return {
+      ...fishAfterSteps(0, 0),
+      x: 0,
+      px: 0,
+      y: 0.2,
+      py: 0.2,
+      z: 0,
+      pz: 0,
+      yaw: 0,
+      pyaw: 0,
+      pitch: 0,
+      ppitch: 0,
+      phase,
+      pphase: phase,
+      speed,
+    };
+  }
+
+  /** Décalage latéral (selon Z, vu de dessus) du bout de la queue de l'instance `index`. */
+  function tipOffset(index: number): number {
+    return tailTip.clone().applyMatrix4(layer.tailMatrixAt(index, m)).z;
+  }
+
+  function peakToPeak(speed: number): number {
+    // Battement maximal de la queue d'un côté, puis de l'autre.
+    layer.update([still(Math.PI / 2 + TAIL_LAG, speed), still(-Math.PI / 2 + TAIL_LAG, speed)], 1);
+    return Math.abs(tipOffset(0) - tipOffset(1));
+  }
+
+  it('le pixel de scène de référence est plausible (quelques millimètres)', () => {
+    expect(scenePixel).toBeGreaterThan(0.004);
+    expect(scenePixel).toBeLessThan(0.012);
+  });
+
+  it('bout de queue : ≥ 2 pixels de scène d’un extrême à l’autre à la vitesse de croisière', () => {
+    expect(peakToPeak(NEON.cruiseSpeed)).toBeGreaterThanOrEqual(2 * scenePixel);
+  });
+
+  it('bout de queue : ≥ 1 pixel de scène même à la vitesse minimale', () => {
+    expect(peakToPeak(NEON.minSpeed)).toBeGreaterThanOrEqual(scenePixel);
+  });
+
+  it('battement plus ample à vitesse maximale qu’à vitesse minimale', () => {
+    expect(peakToPeak(NEON.maxSpeed)).toBeGreaterThan(peakToPeak(NEON.minSpeed));
+  });
+
+  it('à pose égale, la queue est décalée selon l’individu (déphasage tiré à la graine)', () => {
+    const world = createDefaultWorld(42);
+    const aligned = world.entities.map((f) => ({ ...still(f.phase, f.speed), id: f.id }));
+    layer.update(aligned, 1);
+    const offsets = aligned.map((_, i) => tipOffset(i));
+    expect(new Set(offsets.map((o) => o.toFixed(6))).size).toBe(offsets.length);
+    expect(Math.max(...offsets) - Math.min(...offsets)).toBeGreaterThanOrEqual(scenePixel);
   });
 });
