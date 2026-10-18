@@ -222,6 +222,13 @@ describe('enforceMinDistance', () => {
     expect([c.x, d.x]).toEqual([0, 0.001]);
   });
 
+  it('ne touche pas une paire d’espèces différentes', () => {
+    const a = fish(0, 0, 0.2, 0);
+    const b = { ...fish(1, 0.001, 0.2, 0), species: 'autre' as SpeciesId };
+    enforceMinDistance([a, b], boundsOf, () => SCHOOLING);
+    expect([a.x, b.x]).toEqual([0, 0.001]);
+  });
+
   it('ne sort jamais un poisson de ses bornes', () => {
     const { hard } = BOUNDS;
     const a = fish(0, hard.minX, 0.2, 0);
