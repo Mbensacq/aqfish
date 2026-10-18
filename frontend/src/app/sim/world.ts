@@ -1,6 +1,7 @@
 import { assertSeed } from '../core/random/prng';
 import { SIM_DT } from './constants';
 import { computeSchoolSteering, enforceMinDistance } from './flocking';
+import { validateObstacle, type Obstacle } from './obstacles';
 import { SPECIES, type SpeciesId } from './species';
 import { createFish, stepFish, swimBounds, type Fish, type SwimBounds } from './swimmer';
 import { waterVolume } from './tank';
@@ -35,6 +36,11 @@ export interface World {
    */
   readonly time: number;
   readonly entities: readonly Entity[];
+  /**
+   * Obstacles du bac (rochers à venir, `sim/obstacles.ts`), immobiles : les poissons les
+   * contournent (ADR 0012). Données pures, triées par identifiant.
+   */
+  readonly obstacles: readonly Obstacle[];
 }
 
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
@@ -47,12 +53,20 @@ export type MutableWorld = Mutable<World>;
 
 /**
  * Crée un monde à `time = 0`, vide par défaut, peuplé dans l'ordre de `population`
- * (identifiants consécutifs à partir de 0) dans le bac par défaut (`sim/tank.ts`).
- * @throws RangeError si la graine n'est pas un entier 32 bits non signé, ou si un effectif
- * n'est pas un entier positif ou nul.
+ * (identifiants consécutifs à partir de 0) dans le bac par défaut (`sim/tank.ts`), avec les
+ * `obstacles` donnés (copiés, triés par identifiant) ; les poissons naissent hors des
+ * obstacles (`createFish`).
+ * @throws RangeError si la graine n'est pas un entier 32 bits non signé, si un effectif
+ * n'est pas un entier positif ou nul, si un obstacle est invalide ou si deux obstacles ont
+ * le même identifiant.
  */
-export function createWorld(seed: number, population: readonly PopulationEntry[] = []): World {
+export function createWorld(
+  seed: number,
+  population: readonly PopulationEntry[] = [],
+  obstacles: readonly Obstacle[] = [],
+): World {
   assertSeed(seed);
+  const sortedObstacles = copyObstacles(obstacles);
   const entities: Entity[] = [];
   for (const { species, count } of population) {
     if (!Number.isInteger(count) || count < 0) {
@@ -63,10 +77,29 @@ export function createWorld(seed: number, population: readonly PopulationEntry[]
       throw new RangeError(`espèce inconnue : ${String(species)}`);
     }
     for (let i = 0; i < count; i++) {
-      entities.push(createFish(seed, entities.length, species, boundsFor(species)));
+      entities.push(
+        createFish(seed, entities.length, species, boundsFor(species), sortedObstacles),
+      );
     }
   }
-  return { seed, tick: 0, time: 0, entities };
+  return { seed, tick: 0, time: 0, entities, obstacles: sortedObstacles };
+}
+
+function copyObstacles(obstacles: readonly Obstacle[]): Obstacle[] {
+  const copies = obstacles.map((o) => ({ ...o }));
+  for (const o of copies) {
+    const problems = validateObstacle(o);
+    if (problems.length > 0) {
+      throw new RangeError(`obstacle ${String(o.id)} invalide : ${problems.join(' ; ')}`);
+    }
+  }
+  copies.sort((a, b) => a.id - b.id);
+  for (let i = 1; i < copies.length; i++) {
+    if (copies[i].id === copies[i - 1].id) {
+      throw new RangeError(`identifiant d’obstacle en double : ${copies[i].id}`);
+    }
+  }
+  return copies;
 }
 
 /** Monde par défaut de l'application : chaque espèce avec sa population par défaut. */
@@ -153,6 +186,7 @@ function stepInPlace(world: MutableWorld, dt: number): void {
       steering[3 * i],
       steering[3 * i + 1],
       steering[3 * i + 2],
+      world.obstacles,
     );
   }
   enforceMinDistance(fishes, boundsOfFish);
