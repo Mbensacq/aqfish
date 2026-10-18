@@ -13,7 +13,9 @@ import { createAquariumScene, type AquariumScene } from './aquarium-scene';
 import {
   CAMERA_FOV_DEG,
   cameraPresetPose,
+  interpolatePose,
   orbitDistanceLimits,
+  type CameraPose,
   tankBoundingRadius,
   type TankDimensions,
   type Vec3,
@@ -71,7 +73,13 @@ export class AquariumView {
   private disposed = false;
   /** Préréglage courant, recadré à chaque redimensionnement tant que l'utilisateur n'a pas bougé. */
   private preset: CameraPreset | null;
-  private readonly stopFollowingPreset = () => (this.preset = null);
+  /** Transition en cours vers un préréglage (`null` sinon), avancée par `stepCameraTransition`. */
+  private transition: CameraTransition | null = null;
+  /** Une interaction à la souris arrête de suivre le préréglage et annule la transition. */
+  private readonly stopFollowingPreset = () => {
+    this.preset = null;
+    this.transition = null;
+  };
 
   constructor(options: AquariumViewOptions) {
     this.canvas = options.canvas;
@@ -105,14 +113,59 @@ export class AquariumView {
     return this.world.dimensions;
   }
 
-  /** Place la caméra sur un préréglage, cadré pour le rapport d'aspect courant. */
+  /** Place la caméra sur un préréglage, cadré pour le rapport d'aspect courant (instantané). */
   applyPreset(preset: CameraPreset): void {
+    this.transition = null;
     this.preset = preset;
-    const pose = cameraPresetPose(preset, this.world.dimensions, this.aspect(), CAMERA_FOV_DEG);
-    this.camera.position.set(...pose.position);
-    this.controls.target.set(...pose.target);
-    this.camera.lookAt(...pose.target);
-    this.controls.update();
+    this.setPose(this.presetPose(preset));
+  }
+
+  /**
+   * Amène la caméra sur un préréglage par une transition de `durationSeconds`, avancée par
+   * `stepCameraTransition` (donc par la boucle de rendu, pas par une minuterie). Une durée
+   * nulle ou des contrôles inactifs (mode capture, contrat déterministe) : placement instantané.
+   */
+  animateToPreset(preset: CameraPreset, durationSeconds: number): void {
+    if (this.disposed) {
+      return;
+    }
+    if (!(durationSeconds > 0) || !this.controls.enabled) {
+      this.applyPreset(preset);
+      return;
+    }
+    this.preset = null;
+    this.transition = {
+      preset,
+      from: this.currentPose(),
+      elapsed: 0,
+      duration: durationSeconds,
+    };
+  }
+
+  /** Vrai pendant une transition de caméra. */
+  get transitioning(): boolean {
+    return this.transition !== null;
+  }
+
+  /**
+   * Avance la transition de caméra de `dtSeconds`. Renvoie `true` si la caméra a bougé.
+   * La pose d'arrivée est recalculée à chaque pas : un redimensionnement en cours de route
+   * reste cadré. À la fin, la caméra suit de nouveau le préréglage.
+   */
+  stepCameraTransition(dtSeconds: number): boolean {
+    const transition = this.transition;
+    if (!transition || this.disposed) {
+      return false;
+    }
+    const dt = Number.isFinite(dtSeconds) && dtSeconds > 0 ? dtSeconds : 0;
+    transition.elapsed = Math.min(transition.duration, transition.elapsed + dt);
+    if (transition.elapsed >= transition.duration) {
+      this.applyPreset(transition.preset);
+      return true;
+    }
+    const to = this.presetPose(transition.preset);
+    this.setPose(interpolatePose(transition.from, to, transition.elapsed / transition.duration));
+    return true;
   }
 
   /**
@@ -197,6 +250,23 @@ export class AquariumView {
     this.renderer.dispose();
   }
 
+  private presetPose(preset: CameraPreset): CameraPose {
+    return cameraPresetPose(preset, this.world.dimensions, this.aspect(), CAMERA_FOV_DEG);
+  }
+
+  private currentPose(): CameraPose {
+    const p = this.camera.position;
+    const t = this.controls.target;
+    return { position: [p.x, p.y, p.z], target: [t.x, t.y, t.z] };
+  }
+
+  private setPose(pose: CameraPose): void {
+    this.camera.position.set(...pose.position);
+    this.controls.target.set(...pose.target);
+    this.camera.lookAt(...pose.target);
+    this.controls.update();
+  }
+
   private aspect(): number {
     if (this.hasSize()) {
       return this.camera.aspect;
@@ -205,4 +275,11 @@ export class AquariumView {
     const h = this.canvas.clientHeight;
     return w > 0 && h > 0 ? w / h : 1;
   }
+}
+
+interface CameraTransition {
+  readonly preset: CameraPreset;
+  readonly from: CameraPose;
+  elapsed: number;
+  readonly duration: number;
 }

@@ -123,3 +123,87 @@ function assertPositiveDimensions(dims: TankDimensions): void {
     }
   }
 }
+
+/** Durée des transitions de caméra vers un préréglage, en secondes (issue #7 : ≤ 0,6 s). */
+export const CAMERA_TRANSITION_SECONDS = 0.5;
+
+/** Lissage d'Hermite (`smoothstep`) de `t`, borné à [0, 1] : départ et arrivée en douceur. */
+export function smoothstep(t: number): number {
+  if (!(t > 0)) {
+    return 0; // couvre aussi NaN
+  }
+  if (t >= 1) {
+    return 1;
+  }
+  return t * t * (3 - 2 * t);
+}
+
+/**
+ * Pose intermédiaire entre `from` (t = 0) et `to` (t = 1), avec lissage `smoothstep`.
+ *
+ * La cible est interpolée en ligne droite ; la position, en coordonnées sphériques autour de
+ * la cible (distance, angle polaire depuis +Y, azimut par le plus court chemin) : la caméra
+ * tourne autour du bac au lieu de le traverser. Les extrémités sont rendues à l'identique.
+ * Fonction pure.
+ */
+export function interpolatePose(from: CameraPose, to: CameraPose, t: number): CameraPose {
+  const s = smoothstep(t);
+  if (s === 0) {
+    return from;
+  }
+  if (s === 1) {
+    return to;
+  }
+  const target = lerpVec(from.target, to.target, s);
+  const a = toSpherical(from);
+  const b = toSpherical(to);
+  if (a.radius === 0 || b.radius === 0) {
+    // Dégénéré (caméra sur sa cible) : pas d'angle défini, ligne droite.
+    return { position: lerpVec(from.position, to.position, s), target };
+  }
+  const radius = a.radius + (b.radius - a.radius) * s;
+  const polar = a.polar + (b.polar - a.polar) * s;
+  const azimuth = a.azimuth + shortestAngle(a.azimuth, b.azimuth) * s;
+  const sinPolar = Math.sin(polar);
+  const position: Vec3 = [
+    target[0] + radius * sinPolar * Math.sin(azimuth),
+    target[1] + radius * Math.cos(polar),
+    target[2] + radius * sinPolar * Math.cos(azimuth),
+  ];
+  return { position, target };
+}
+
+interface Spherical {
+  readonly radius: number;
+  /** Angle depuis l'axe +Y, dans [0, π]. */
+  readonly polar: number;
+  /** Angle autour de Y, mesuré depuis +Z vers +X, dans ]-π, π]. */
+  readonly azimuth: number;
+}
+
+function toSpherical(pose: CameraPose): Spherical {
+  const x = pose.position[0] - pose.target[0];
+  const y = pose.position[1] - pose.target[1];
+  const z = pose.position[2] - pose.target[2];
+  const radius = Math.hypot(x, y, z);
+  if (radius === 0) {
+    return { radius: 0, polar: 0, azimuth: 0 };
+  }
+  const polar = Math.acos(Math.min(1, Math.max(-1, y / radius)));
+  return { radius, polar, azimuth: Math.atan2(x, z) };
+}
+
+/** Écart angulaire signé de `from` à `to`, ramené dans ]-π, π]. */
+function shortestAngle(from: number, to: number): number {
+  let delta = (to - from) % (2 * Math.PI);
+  if (delta > Math.PI) {
+    delta -= 2 * Math.PI;
+  } else if (delta <= -Math.PI) {
+    delta += 2 * Math.PI;
+  }
+  return delta;
+}
+
+function lerpVec(a: Vec3, b: Vec3, s: number): Vec3 {
+  return [a[0] + (b[0] - a[0]) * s, a[1] + (b[1] - a[1]) * s, a[2] + (b[2] - a[2]) * s];
+}
