@@ -55,10 +55,12 @@ export interface SwimBounds {
   /** Le centre du poisson ne sort jamais de cette boîte (volume d'eau moins `wallMargin`). */
   readonly hard: Box3;
   /**
-   * Boîte plus intérieure, de `AVOID_ZONE` : zone de naissance, et limite de la portée de
-   * l'évitement (la force des parois est nulle tant que le point visé y reste).
+   * Boîte plus intérieure, de `AVOID_ZONE` : limite de la portée de l'évitement (la force des
+   * parois est nulle tant que le point visé y reste).
    */
   readonly soft: Box3;
+  /** Zone de naissance, contenue dans `soft` (voir `SPAWN_MARGINS`). */
+  readonly spawn: Box3;
 }
 
 const TWO_PI = Math.PI * 2;
@@ -68,7 +70,7 @@ const UINT32_RANGE = 4294967296;
  * Portée de l'évitement, en mètres : la force d'une paroi (ou d'un obstacle) croît de 0 à 1
  * quand le point visé passe de `AVOID_ZONE` à 0 de la zone interdite (approximation de jeu).
  */
-const AVOID_ZONE = 0.08;
+const AVOID_ZONE = 0.07;
 /**
  * Gain de l'évitement sur la direction voulue (cap + gain × déviation), sans dimension
  * (approximation de jeu, réglée avec les tests de trajectoire de `swimmer.spec.ts`).
@@ -114,10 +116,21 @@ const SCRATCH_OBSTACLE: Vec3 = { x: 0, y: 0, z: 0 };
 const SCRATCH_AVOID: Vec3 = { x: 0, y: 0, z: 0 };
 const SCRATCH_NORMAL: Vec3 = { x: 0, y: 0, z: 0 };
 
+/**
+ * Zone de naissance : celle d'avant le réglage du cycle 13 (volume d'eau moins 5 cm, puis
+ * moins 8 cm, calculée dans cet ordre pour des positions identiques au bit près), pour que
+ * le réglage de l'évitement ne change pas les mondes à t = 0 (issue #43). Une espèce dont la
+ * zone `soft` est plus intérieure naît dans `soft`.
+ */
+const SPAWN_MARGINS = [0.05, 0.08] as const;
+
 /** Bornes de nage d'une espèce dans un volume d'eau donné. */
 export function swimBounds(def: SpeciesDefinition, water: Box3): SwimBounds {
   const hard = shrinkBox(water, def.wallMargin);
-  return { hard, soft: shrinkBox(hard, AVOID_ZONE) };
+  const soft = shrinkBox(hard, AVOID_ZONE);
+  const legacy = shrinkBox(shrinkBox(water, SPAWN_MARGINS[0]), SPAWN_MARGINS[1]);
+  const spawn = def.wallMargin + AVOID_ZONE > SPAWN_MARGINS[0] + SPAWN_MARGINS[1] ? soft : legacy;
+  return { hard, soft, spawn };
 }
 
 /** Nombre maximal de tirages de la position de naissance hors des obstacles. */
@@ -158,11 +171,11 @@ export function createFish(
     ppitch: 0,
     pphase: 0,
   };
-  const { soft } = bounds;
+  const { spawn } = bounds;
   for (let attempt = 0; attempt < MAX_SPAWN_TRIES; attempt++) {
-    fish.x = lerp(soft.minX, soft.maxX, random(fish));
-    fish.y = lerp(soft.minY, soft.maxY, random(fish));
-    fish.z = lerp(soft.minZ, soft.maxZ, random(fish));
+    fish.x = lerp(spawn.minX, spawn.maxX, random(fish));
+    fish.y = lerp(spawn.minY, spawn.maxY, random(fish));
+    fish.z = lerp(spawn.minZ, spawn.maxZ, random(fish));
     if (clearOfObstacles(fish, obstacles, def.wallMargin)) {
       break;
     }

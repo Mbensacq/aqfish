@@ -25,7 +25,7 @@ collision plus fines (branches, racines).
   (bornée à [0, 1]) ; `wallAvoidance` somme les normales intérieures des six faces de la
   boîte `hard` ; `obstacleAvoidance` somme les normales des obstacles, au point le plus
   proche parmi trois échantillons du segment position → point visé (un petit rocher ne
-  passe pas entre les deux), marge `wallMargin` déduite. Portée : `AVOID_ZONE` (8 cm), donc
+  passe pas entre les deux), marge `wallMargin` déduite. Portée : `AVOID_ZONE` (7 cm ; 8 cm jusqu'au cycle 12), donc
   aucune force tant que le point visé reste dans la boîte `soft`.
 - **Contourner, pas freiner** (`deflect`) : dans le plan horizontal, la composante de la
   force opposée au cap est tournée de 90° du côté `side` ; une force dans le sens du cap est
@@ -64,3 +64,16 @@ collision plus fines (branches, racines).
   `maxSpeed · dt` ; la garantie reste vraie sans obstacle.
 - Coût : 6 faces + 3 évaluations par obstacle et par poisson et par pas ; négligeable
   jusqu'à des dizaines d'obstacles.
+
+## Réglage du cycle 13 (issue #43)
+
+Constat : les poissons restaient loin des vitres (médiane des distances minimales aux vitres
+9 à 10 cm sur 300 s, 0,3 % des positions à moins de 10 cm). Réglage retenu : `wallMargin`
+5 → 4 cm (néon et guppy, toujours ≥ la demi-longueur du corps) et `AVOID_ZONE` 8 → 7 cm.
+La zone de naissance garde l'ancienne marge (13 cm, `SPAWN_MARGINS`), pour que les mondes à
+t = 0 restent identiques au bit près. Résultat : médiane 7 à 8,7 cm (8,5 à 8,6 cm pour les
+graines 1, 42, 2³² − 1), 10 à 14 % des positions à moins de 10 cm, distance minimale ≥ 4,7 cm,
+aucun contact avec la limite de nage (20 graines, avec et sans rochers). Écarté : raccourcir l'anticipation
+(`LOOKAHEAD_SECONDS` 1,5 → 1 ou 1,2 s) : poissons plaqués dans les coins et contre les
+rochers (tests de `swimmer.spec.ts` et `world.spec.ts` en échec). Mesure et tracé :
+`sim/trajectory.ts`, `trajectory.spec.ts` et `trajectoires-top.png` du harnais de captures.

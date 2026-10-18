@@ -51,6 +51,17 @@ haut de sa section.
   (`it(nom, fn, 15_000)`), sans relâcher la borne (`flocking.spec.ts`, banc de 60 néons).
   Mesure locale de ce test : ≈ 0,6 à 0,9 s ; la CI a vu 9,3 s pour tout le fichier.
   (2026-10-18)
+  Cycle 13 : la CI a vu 6,6 s pour ce test pendant qu'un nouveau test lourd (300 s simulées ×
+  3 graines, `trajectory.spec.ts`) tournait en parallèle : un test unitaire de simulation
+  longue doit rester court (≲ 2 s par cas en local) pour ne pas affamer les tests de durée.
+  (2026-10-18)
+  Cycle 14 (#54) : la borne absolue a de nouveau cédé (5,16 s en CI). **Ne plus borner une
+  durée en millisecondes** : comparer deux mesures prises dans le même test, en alternance,
+  en gardant le minimum de plusieurs essais (`flocking.spec.ts` : 600 pas avec 60 néons
+  contre 15, rapport < 40 ; ≈ 10 à 11 mesuré en local, seul comme suite complète, contre
+  64 attendu en O(n³)). La charge des fichiers parallèles touche les deux mesures pareil.
+  Mesure locale de `trajectory.spec.ts` (3 graines × 60 s simulées) : ≈ 80 à 150 ms par cas.
+  (2026-10-19)
 - **E2e de geste à la souris lent en rendu logiciel** (#38) : chaque glisser coûte plusieurs
   secondes sous SwiftShader. Pour prouver une borne, un seul glisser long par direction
   suffit s'il la dépasse sans elle ; le vérifier en retirant la borne le temps d'un essai
@@ -90,6 +101,17 @@ haut de sa section.
   bout en bout et les captures. (2026-10-16)
 
 ## Simulation
+
+- **Rapprocher les poissons des vitres** (#43, cycle 13) : raccourcir l'anticipation de
+  l'évitement (`LOOKAHEAD_SECONDS`) rapproche bien des vitres mais plaque des poissons dans
+  les coins et contre les rochers (tests de coin et `world.spec.ts` rouges). Agir plutôt sur
+  `wallMargin` (limite de nage) et `AVOID_ZONE` (portée), puis mesurer avec
+  `sim/trajectory.ts` (`glassStats`) sur plusieurs graines, avec et sans rochers : le compte
+  de contacts (centre sur la limite `hard`) doit rester nul. La zone de naissance est
+  découplée (`SwimBounds.spawn`) : sans cela, les mondes à t = 0 changent et les témoins de
+  `e2e/guppy.spec.ts` et `e2e/neon.spec.ts` (vue de dessous à t = 0) voient des poissons
+  près de la vitre du fond, au-dessus du bord du sable : le substrat ne cache pas tout.
+  (2026-10-18)
 
 - **Cap qui oscille d'un pas à l'autre près d'une paroi** (cycle 9) : une déviation « tourner
   de côté » renormalisée devient discontinue quand le poisson est presque face à la force ;

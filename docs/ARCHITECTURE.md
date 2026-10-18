@@ -162,6 +162,7 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
 | `sim/species.ts` | Définitions déclaratives des espèces (`NEON`, `GUPPY`), apparences (`speciesVariants`, `speciesVariantIndex`, ADR 0013), `validateSpecies` |
 | `sim/swimmer.ts` | Poisson (état sérialisable, sous-générateur en état explicite), nage : errance, banc, évitement, bornes |
 | `sim/flocking.ts` | Banc : séparation, alignement, cohésion, pilotage en deux phases, espacement minimal (ADR 0011) |
+| `sim/trajectory.ts` | Relevé de trajectoires sur une copie du monde, distance aux vitres et statistiques (mesure et tracé, issue #43) |
 | `sim/obstacles.ts` | Obstacles du bac (données, sphère), distance signée et normale (ADR 0012) |
 | `sim/undulation.ts` | Ondulation (fonctions pures) : avance de la phase, amplitude selon la vitesse, pose du corps et de la queue (ADR 0009) |
 | `sim/avoidance.ts` | Forces d'évitement des parois et des obstacles, proximité, déviation pour contourner (ADR 0012) |
@@ -196,6 +197,7 @@ respecter :
 | Attributs de test | `app-aquarium-host` expose `data-aqfish-camera`, `data-aqfish-target`, `data-aqfish-tick`, `data-aqfish-seed` et `data-aqfish-filter` |
 | Hors capture | Le signal « prêt » est aussi émis après la première image complète (le test de démarrage l'attend) |
 | Erreurs | Aucune erreur de page ne doit survenir (le harnais et le test de démarrage échouent sinon) |
+| Tracé de trajectoires | En plus des angles, `trajectoires-top.png` : trajectoires vues de dessus sur `CAPTURE_TRACE_TIME` s simulées (60 par défaut, même graine), calculées avec la simulation pure (`sim/trajectory.ts`) et dessinées en SVG hors de l'application (issue #43). Preuve d'un comportement de nage qu'une image figée ne montre pas |
 
 Dans l'environnement des agents et en CI, WebGL tourne **en rendu logiciel** (SwiftShader) :
 c'est lent mais fonctionnel. Les scènes de capture doivent rester raisonnables (délai

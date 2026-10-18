@@ -329,22 +329,43 @@ describe('banc de néons (monde complet)', () => {
     expect(school).toBeLessThan(loose * 0.75);
   });
 
-  // Délai Vitest explicite (15 s) au-dessus de la borne mesurée (5 s) : le délai par défaut
-  // (5 s) couvrait aussi la création du monde et l'échauffement, si bien qu'un runner lent
-  // faisait échouer le test par délai dépassé avant l'assertion (#44). La borne reste 5 s.
-  it('60 poissons : une minute simulée en place, mêmes objets, sans dérive de durée', () => {
+  // Délai Vitest explicite (#44) : le délai par défaut (5 s) a été dépassé sous la charge de la
+  // suite complète ; ce test ne mesure aucune durée.
+  it('60 poissons : une minute simulée en place, mêmes objets, tick exact', () => {
     const world = createWorld(5, [{ species: 'neon', count: 60 }]) as MutableWorld;
     const entities = world.entities;
     const first = entities[0];
-    advanceInPlace(world, 60); // échauffement (tampon de pilotage dimensionné une fois)
-    const start = performance.now();
     advanceInPlace(world, 3600);
-    const elapsed = performance.now() - start;
     expect(world.entities).toBe(entities);
     expect(world.entities[0]).toBe(first);
-    expect(world.tick).toBe(3660);
-    // Large marge : ≈ 0,6 à 0,9 s mesurées en local (cycle 12) ; un retour à des allocations
-    // par paire ou à une complexité supérieure à O(n²) dépasserait nettement.
-    expect(elapsed).toBeLessThan(5000);
-  }, 15_000);
+    expect(world.tick).toBe(3600);
+  }, 30_000);
+
+  // Mesure relative plutôt qu'une borne en millisecondes (#54, action 3 de la rétro #53) :
+  // une borne absolue dépendait de la charge du runner et des fichiers exécutés en parallèle
+  // (5,16 s > 5 s en CI). Les deux tailles de banc sont mesurées dans le même test, en
+  // alternance, et l'on garde le minimum de plusieurs essais : une charge extérieure touche
+  // les deux mesures de la même façon. Quadrupler le banc coûte au plus 16× en O(n²)
+  // (≈ 11× mesuré en local, les parties linéaires comptant aussi) ; une complexité O(n³)
+  // donnerait au moins 64×. La borne 40 sépare nettement les deux régimes.
+  it('le coût par pas reste au plus quadratique en nombre de poissons', () => {
+    const steps = 600;
+    const runs = 5;
+    const small = createWorld(5, [{ species: 'neon', count: 15 }]) as MutableWorld;
+    const large = createWorld(5, [{ species: 'neon', count: 60 }]) as MutableWorld;
+    advanceInPlace(small, 60); // échauffement (tampons et JIT)
+    advanceInPlace(large, 60);
+    let smallBest = Infinity;
+    let largeBest = Infinity;
+    for (let run = 0; run < runs; run++) {
+      let start = performance.now();
+      advanceInPlace(small, steps);
+      smallBest = Math.min(smallBest, performance.now() - start);
+      start = performance.now();
+      advanceInPlace(large, steps);
+      largeBest = Math.min(largeBest, performance.now() - start);
+    }
+    expect(smallBest).toBeGreaterThan(0);
+    expect(largeBest / smallBest).toBeLessThan(40);
+  }, 30_000);
 });
