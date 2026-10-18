@@ -13,7 +13,8 @@
     "format:check": "prettier --check .",
     "e2e": "playwright test --project=e2e",
     "captures": "playwright test --project=captures",
-    "verify": "npm run format:check && npm run lint && npm run test && npm run build && npm run e2e"
+    "verify": "npm run format:check && npm run lint && npm run test && npm run build && npm run e2e",
+    "test:mutation": "stryker run"
   },
   "private": true,
   "packageManager": "npm@10.9.4",
@@ -34,6 +35,8 @@
     "@angular/compiler-cli": "^21.2.0",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.56.1",
+    "@stryker-mutator/core": "9.0.1",
+    "@stryker-mutator/vitest-runner": "9.0.1",
     "@types/three": "^0.186.0",
     "@vitest/coverage-v8": "^4.1.12",
     "angular-eslint": "21.4.0",
