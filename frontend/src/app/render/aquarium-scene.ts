@@ -16,17 +16,11 @@ import {
   Scene,
 } from 'three';
 
-import type { TankDimensions } from './camera-presets';
+import { DEFAULT_TANK, SAND_THICKNESS, WATER_LEVEL_RATIO, type TankDimensions } from '../sim/tank';
 import { PALETTE } from './palette';
 
-/** Bac par défaut : 120 × 60 × 50 cm, un format courant de bac d'eau douce. */
-export const DEFAULT_TANK: TankDimensions = { width: 1.2, height: 0.6, depth: 0.5 };
-
-/** Épaisseur de la couche de sable, en mètres. */
-export const SAND_THICKNESS = 0.06;
-
-/** Niveau de l'eau, en fraction de la hauteur du bac. */
-export const WATER_LEVEL_RATIO = 0.9;
+// Géométrie du bac : définie dans sim/tank.ts (partagée avec les bornes de nage).
+export { DEFAULT_TANK, SAND_THICKNESS, WATER_LEVEL_RATIO };
 
 /** Épaisseur apparente du verre : le vitrage englobe légèrement l'eau et le sable. */
 const GLASS_MARGIN = 0.008;

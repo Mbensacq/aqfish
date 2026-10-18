@@ -18,7 +18,7 @@ import {
   type AquariumRendererFactory,
 } from '../../render/aquarium-view';
 import { fixedStep } from '../../sim/fixed-step';
-import { advance, advanceTo, createWorld, type World } from '../../sim/world';
+import { advance, advanceTo, createDefaultWorld, type World } from '../../sim/world';
 
 /** Fabrique du renderer, remplaçable dans les tests (jsdom n'a pas WebGL). */
 export const AQUARIUM_RENDERER_FACTORY = new InjectionToken<AquariumRendererFactory>(
@@ -91,7 +91,7 @@ export class AquariumHost {
     const params = parseCaptureParams(win.location.search);
     this.capture = params.capture;
     // En mode capture, le temps demandé est atteint ici, avant toute image (contrat de capture).
-    const world = createWorld(params.seed);
+    const world = createDefaultWorld(params.seed);
     this.currentWorld = params.capture ? advanceTo(world, params.time) : world;
 
     const view = new AquariumView({
@@ -131,6 +131,10 @@ export class AquariumHost {
     const canvas = this.canvasRef().nativeElement;
     if (view.resize(canvas.clientWidth, canvas.clientHeight)) {
       this.exposeCamera();
+    }
+    if (this.currentWorld) {
+      // En capture, l'image montre exactement l'état au temps demandé (alpha = 1).
+      view.updateFish(this.currentWorld.entities, this.capture ? 1 : this.alpha);
     }
     const rendered = view.renderFrame();
 

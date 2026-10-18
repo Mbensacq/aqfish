@@ -3,6 +3,8 @@ import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { isCaptureReady, resetCaptureReady } from '../../core/capture/capture-ready';
 import type { AquariumRenderer } from '../../render/aquarium-view';
 import { MAX_STEPS_PER_FRAME } from '../../sim/constants';
+import { NEON } from '../../sim/species';
+import { createDefaultWorld } from '../../sim/world';
 import { AQUARIUM_RENDERER_FACTORY, AquariumHost, CAMERA_ATTRIBUTE } from './aquarium-host';
 
 /** Double du renderer WebGL (jsdom n'a pas WebGL). */
@@ -192,9 +194,10 @@ describe('AquariumHost', () => {
       return fixture.componentInstance;
     }
 
-    it('crée le monde avec la graine de l’URL', async () => {
+    it('crée le monde par défaut (néons compris) avec la graine de l’URL', async () => {
       await create('?seed=7');
-      expect(host().world).toEqual({ seed: 7, tick: 0, time: 0, entities: [] });
+      expect(host().world).toEqual(createDefaultWorld(7));
+      expect(host().world?.entities.length).toBe(NEON.defaultPopulation);
     });
 
     it('en mode capture : avance jusqu’à time par pas fixes avant le premier rendu', async () => {

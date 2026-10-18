@@ -18,6 +18,8 @@ import {
   type TankDimensions,
   type Vec3,
 } from './camera-presets';
+import type { Fish } from '../sim/swimmer';
+import { FishLayer } from './fish-layer';
 import { PalettePass } from './palette-pass';
 
 /**
@@ -62,6 +64,7 @@ export class AquariumView {
   private readonly controls: OrbitControls;
   private readonly canvas: HTMLCanvasElement;
   private readonly pixelPass: PalettePass;
+  private readonly fish: FishLayer;
   private readonly pixelRatio: number;
   private width = 0;
   private height = 0;
@@ -77,6 +80,8 @@ export class AquariumView {
     this.renderer.setPixelRatio(options.pixelRatio);
     this.pixelPass = new PalettePass();
     this.world = createAquariumScene(options.dimensions);
+    this.fish = new FishLayer();
+    this.world.scene.add(this.fish.object);
 
     const radius = tankBoundingRadius(this.world.dimensions);
     this.camera = new PerspectiveCamera(CAMERA_FOV_DEG, 1, radius * 0.05, radius * 40);
@@ -140,6 +145,21 @@ export class AquariumView {
     return this.width > 0 && this.height > 0;
   }
 
+  /**
+   * Place les poissons d'après l'état du monde, interpolés entre les deux derniers pas
+   * (`alpha` ∈ [0, 1] : 0 = pas précédent, 1 = pas courant). À appeler avant `renderFrame()`.
+   */
+  updateFish(entities: readonly Fish[], alpha: number): void {
+    if (!this.disposed) {
+      this.fish.update(entities, alpha);
+    }
+  }
+
+  /** Nombre de poissons placés par le dernier `updateFish` (tests). */
+  get fishCount(): number {
+    return this.fish.count;
+  }
+
   /** Rend une image. Renvoie `false` si rien n'a pu être rendu (taille nulle ou vue libérée). */
   renderFrame(): boolean {
     if (this.disposed || !this.hasSize()) {
@@ -171,6 +191,7 @@ export class AquariumView {
     this.disposed = true;
     this.controls.removeEventListener('start', this.stopFollowingPreset);
     this.controls.dispose();
+    this.fish.dispose();
     this.world.dispose();
     this.pixelPass.dispose();
     this.renderer.dispose();
