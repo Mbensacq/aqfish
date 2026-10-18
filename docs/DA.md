@@ -27,7 +27,9 @@ n'en est repris. aqfish va plus loin avec une vraie 3D que l'on fait tourner.
 
 ## Palette de départ (indicative)
 
-Point de départ à affiner par PR, captures à l'appui.
+Point de départ à affiner par PR, captures à l'appui. La palette effective (couleurs
+ci-dessous et tons de transition ajoutés depuis) est déclarée dans `render/palette.ts` ;
+la passe de post-traitement y ramène chaque pixel affiché (ADR 0007).
 
 | Usage | Couleurs |
 |---|---|

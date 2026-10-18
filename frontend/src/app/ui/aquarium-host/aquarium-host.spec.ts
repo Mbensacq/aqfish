@@ -21,8 +21,16 @@ class FakeRenderer implements AquariumRenderer {
   setSize(width: number, height: number): void {
     this.size = [width, height];
   }
+  /** Cible courante : la scène va dans la cible basse résolution, l'image à l'écran (`null`). */
+  target: unknown = null;
+  setRenderTarget(target: unknown): void {
+    this.target = target;
+  }
+  /** Ne compte que les images affichées (rendu à l'écran, après la passe palette). */
   render(): void {
-    this.renders++;
+    if (this.target === null) {
+      this.renders++;
+    }
   }
   dispose(): void {
     this.disposed = true;
