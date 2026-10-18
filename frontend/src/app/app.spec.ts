@@ -66,4 +66,37 @@ describe('App', () => {
     frames.splice(0).forEach((cb) => cb(0)); // image suivante : signal
     expect(isCaptureReady()).toBe(true);
   });
+
+  it('affiche la barre des préréglages, reliée à la caméra', async () => {
+    const fixture = TestBed.createComponent(App);
+    await fixture.whenStable();
+    const root = fixture.nativeElement as HTMLElement;
+    const host = root.querySelector('app-aquarium-host')!;
+    const canvas = host.querySelector('canvas')!;
+    Object.defineProperty(canvas, 'clientWidth', { configurable: true, value: 640 });
+    Object.defineProperty(canvas, 'clientHeight', { configurable: true, value: 480 });
+    frames.splice(0).forEach((cb) => cb(0));
+    const before = host.getAttribute('data-aqfish-camera');
+
+    const buttons = root.querySelectorAll('app-view-presets-bar button');
+    expect(buttons).toHaveLength(5);
+    (root.querySelector('button[data-preset="top"]') as HTMLButtonElement).click();
+    frames.splice(0).forEach((cb) => cb(10_000)); // au-delà de la transition
+    const after = host.getAttribute('data-aqfish-camera');
+    expect(after).not.toBe(before);
+    expect(Number(after!.split(',')[1])).toBeGreaterThan(0.6);
+  });
+
+  it('masque la barre en mode capture', async () => {
+    window.history.replaceState(null, '', '/?capture=1');
+    try {
+      const fixture = TestBed.createComponent(App);
+      await fixture.whenStable();
+      const root = fixture.nativeElement as HTMLElement;
+      expect(root.querySelector('app-aquarium-host')).not.toBeNull();
+      expect(root.querySelector('app-view-presets-bar')).toBeNull();
+    } finally {
+      window.history.replaceState(null, '', '/');
+    }
+  });
 });
