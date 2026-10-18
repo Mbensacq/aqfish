@@ -43,6 +43,12 @@ haut de sa section.
 
 ## Tests
 
+- **`console.log` invisible dans `ng test`** : la sortie des tests n'est pas affichée. Pour
+  explorer des valeurs (réglage de paramètres), les renvoyer dans le message d'un
+  `throw new Error(JSON.stringify(…))` d'un spec jetable, puis le supprimer. (2026-10-18)
+- **Population par défaut écrite en dur** : `e2e/neon.spec.ts` compte les poissons du monde
+  réel ; changer `defaultPopulation` d'une espèce impose de l'y mettre à jour (cycle 8 :
+  8 → 12). (2026-10-18)
 - **Libellé coupé sur deux lignes** : `scrollWidth <= clientWidth` ne détecte pas un retour à
   la ligne dans un bouton. Comparer la hauteur du bouton à celle de ses voisins
   (`white-space: nowrap` sur les boutons de la barre). (2026-10-18)
