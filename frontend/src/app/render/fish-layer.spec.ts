@@ -1,6 +1,6 @@
 import { Box3, Matrix4, Object3D, Vector3 } from 'three';
 
-import { NEON } from '../sim/species';
+import { GUPPY, NEON, speciesVariantIndex } from '../sim/species';
 import { createFish, stepFish, swimBounds, type Fish } from '../sim/swimmer';
 import { DEFAULT_TANK, waterVolume } from '../sim/tank';
 import { TAIL_LAG } from '../sim/undulation';
@@ -237,5 +237,57 @@ describe('FishLayer : lisibilité du battement de queue (capture top)', () => {
     const offsets = aligned.map((_, i) => tipOffset(i));
     expect(new Set(offsets.map((o) => o.toFixed(6))).size).toBe(offsets.length);
     expect(Math.max(...offsets) - Math.min(...offsets)).toBeGreaterThanOrEqual(scenePixel);
+  });
+});
+
+describe('FishLayer : apparences (guppy mâle et femelle)', () => {
+  const world = createDefaultWorld(42);
+  const layers: FishLayer[] = [];
+  afterEach(() => layers.splice(0).forEach((l) => l.dispose()));
+
+  function layerOf(species = NEON, variantIndex = 0): FishLayer {
+    const layer = new FishLayer(species, 64, variantIndex);
+    layers.push(layer);
+    return layer;
+  }
+
+  it('chaque couche ne place que les individus de son espèce et de son apparence', () => {
+    const neon = layerOf(NEON);
+    const male = layerOf(GUPPY, 0);
+    const female = layerOf(GUPPY, 1);
+    for (const layer of [neon, male, female]) {
+      layer.update(world.entities, 1);
+    }
+    const guppies = world.entities.filter((e) => e.species === 'guppy');
+    const males = guppies.filter((e) => speciesVariantIndex(GUPPY, e.id) === 0);
+    expect(neon.count).toBe(NEON.defaultPopulation);
+    expect(male.count).toBe(males.length);
+    expect(female.count).toBe(guppies.length - males.length);
+    expect(male.count).toBeGreaterThan(0);
+    expect(female.count).toBeGreaterThan(0);
+  });
+
+  it('noms : historique pour une apparence unique, suffixé sinon', () => {
+    expect(layerOf(NEON).object.name).toBe('poissons-neon');
+    expect(layerOf(GUPPY, 0).object.name).toBe('poissons-guppy-male');
+    expect(layerOf(GUPPY, 1).object.name).toBe('poissons-guppy-femelle');
+    expect(layerOf(GUPPY, 1).variant.id).toBe('femelle');
+  });
+
+  it.each([-1, 1.5, 2])('refuse l’apparence %s', (index) => {
+    expect(() => new FishLayer(GUPPY, 8, index)).toThrow(RangeError);
+  });
+
+  it('la queue du mâle s’accroche à l’arrière de son corps réduit', () => {
+    const male = layerOf(GUPPY, 0);
+    const fish = world.entities.find(
+      (e) => e.species === 'guppy' && speciesVariantIndex(GUPPY, e.id) === 0,
+    ) as Fish;
+    const flat = { ...fish, yaw: 0, pyaw: 0, pitch: 0, ppitch: 0, speed: 0 };
+    male.update([flat], 1);
+    const body = new Vector3().setFromMatrixPosition(male.bodyMatrixAt(0, new Matrix4()));
+    const hinge = new Vector3().setFromMatrixPosition(male.tailMatrixAt(0, new Matrix4()));
+    const scale = (GUPPY.variants ?? [])[0].scale;
+    expect(body.distanceTo(hinge)).toBeCloseTo((GUPPY.bodyLength * scale) / 2, 6);
   });
 });

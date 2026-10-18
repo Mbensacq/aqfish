@@ -1,6 +1,6 @@
 import type { Camera, Scene, WebGLRenderTarget } from 'three';
 
-import { SPECIES } from '../sim/species';
+import { SPECIES, speciesVariants } from '../sim/species';
 import { createDefaultWorld } from '../sim/world';
 import { AquariumView, type AquariumRenderer } from './aquarium-view';
 import { cameraPresetPose } from './camera-presets';
@@ -85,8 +85,15 @@ describe('AquariumView (pipeline pixel art)', () => {
     expect(view.renderFrame()).toBe(false);
   });
 
-  it('crée une couche de poissons par espèce de SPECIES, dans l’ordre', () => {
-    expect(view.fishLayerSpecies).toEqual(Object.keys(SPECIES));
+  it('crée une couche de poissons par apparence de chaque espèce de SPECIES, dans l’ordre', () => {
+    expect(view.fishLayerSpecies).toEqual(
+      Object.values(SPECIES).flatMap((def) => speciesVariants(def).map(() => def.id)),
+    );
+    expect(view.fishLayerNames).toEqual([
+      'poissons-neon',
+      'poissons-guppy-male',
+      'poissons-guppy-femelle',
+    ]);
   });
 
   it('place les poissons du monde avant le rendu ; ignore les appels après destruction', () => {

@@ -23,9 +23,9 @@ import {
   type TankDimensions,
   type Vec3,
 } from './camera-presets';
-import { SPECIES, type SpeciesId } from '../sim/species';
+import { SPECIES, speciesVariants, type SpeciesId } from '../sim/species';
 import type { Fish } from '../sim/swimmer';
-import { FishLayer } from './fish-layer';
+import { FishLayer, MAX_FISH_PER_SPECIES } from './fish-layer';
 import { PalettePass } from './palette-pass';
 import type { Size } from './pixel-art';
 
@@ -75,7 +75,10 @@ export class AquariumView {
   private readonly controls: OrbitControls;
   private readonly canvas: HTMLCanvasElement;
   private readonly pixelPass: PalettePass;
-  /** Une couche par espèce de `SPECIES`, dans l'ordre de déclaration (aucun champ par espèce). */
+  /**
+   * Une couche par apparence de chaque espèce de `SPECIES` (`speciesVariants`), dans l'ordre
+   * de déclaration (aucun champ par espèce).
+   */
   private readonly fishLayers: readonly FishLayer[];
   private readonly pixelRatio: number;
   private width = 0;
@@ -102,7 +105,11 @@ export class AquariumView {
     this.renderer.setPixelRatio(options.pixelRatio);
     this.pixelPass = new PalettePass();
     this.world = createAquariumScene(options.dimensions);
-    this.fishLayers = Object.values(SPECIES).map((species) => new FishLayer(species));
+    this.fishLayers = Object.values(SPECIES).flatMap((species) =>
+      speciesVariants(species).map(
+        (_, index) => new FishLayer(species, MAX_FISH_PER_SPECIES, index),
+      ),
+    );
     for (const layer of this.fishLayers) {
       this.world.scene.add(layer.object);
     }
@@ -238,9 +245,14 @@ export class AquariumView {
     return count;
   }
 
-  /** Espèces ayant une couche de rendu, dans l'ordre des couches (tests). */
+  /** Espèce de chaque couche de rendu, dans l'ordre des couches (tests). */
   get fishLayerSpecies(): readonly SpeciesId[] {
     return this.fishLayers.map((layer) => layer.species.id);
+  }
+
+  /** Nom de chaque couche de rendu (`poissons-<espèce>[-<apparence>]`), dans l'ordre (tests). */
+  get fishLayerNames(): readonly string[] {
+    return this.fishLayers.map((layer) => layer.object.name);
   }
 
   /** Filtre de rendu courant. */

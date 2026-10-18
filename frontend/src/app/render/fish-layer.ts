@@ -9,10 +9,16 @@ import {
   type BufferGeometry,
 } from 'three';
 
-import { NEON, type SpeciesDefinition } from '../sim/species';
+import {
+  NEON,
+  speciesVariantIndex,
+  speciesVariants,
+  type SpeciesDefinition,
+  type SpeciesVariant,
+} from '../sim/species';
 import { wrapAngle, type Fish } from '../sim/swimmer';
 import { undulationAt, undulationScale, type Undulation } from '../sim/undulation';
-import { createFishGeometry, modelBodyLength } from './fish-model';
+import { SILHOUETTES, createFishGeometry, modelBodyLength } from './fish-model';
 
 /** Nombre maximal de poissons d'une espèce affichés (capacité des `InstancedMesh`). */
 export const MAX_FISH_PER_SPECIES = 256;
@@ -58,9 +64,10 @@ export function interpolateFishPose(fish: Fish, alpha: number, out: FishPose): F
 }
 
 /**
- * Couche des poissons d'une espèce : deux `InstancedMesh` (corps et queue) partageant les
- * mêmes instances. `update()` recalcule les matrices à partir de l'état du monde, sans
- * allocation.
+ * Couche des poissons d'une apparence d'espèce (`speciesVariants`, par exemple les guppys
+ * mâles) : deux `InstancedMesh` (corps et queue) partageant les mêmes instances. Une espèce
+ * sans variantes a une seule couche. `update()` recalcule les matrices à partir de l'état
+ * du monde, sans allocation.
  */
 export class FishLayer {
   readonly object = new Object3D();
@@ -80,18 +87,34 @@ export class FishLayer {
   private readonly euler = new Euler(0, 0, 0, 'YZX');
   private readonly unitScale = new Vector3(1, 1, 1);
 
+  /** Apparence affichée par cette couche. */
+  readonly variant: SpeciesVariant;
+
+  /**
+   * @param variantIndex indice de l'apparence dans `speciesVariants(species)`.
+   * @throws RangeError si `variantIndex` ne désigne aucune apparence de l'espèce.
+   */
   constructor(
     readonly species: SpeciesDefinition = NEON,
     readonly capacity: number = MAX_FISH_PER_SPECIES,
+    readonly variantIndex = 0,
   ) {
-    this.object.name = `poissons-${species.id}`;
+    const variants = speciesVariants(species);
+    const variant = variants[variantIndex];
+    if (!Number.isInteger(variantIndex) || variant === undefined) {
+      throw new RangeError(`apparence ${variantIndex} inconnue pour l'espèce ${species.id}`);
+    }
+    this.variant = variant;
+    // Nom historique conservé pour une espèce à apparence unique.
+    this.object.name =
+      variants.length === 1 ? `poissons-${species.id}` : `poissons-${species.id}-${variant.id}`;
     // Couleurs plates (sans éclairage) : un poisson ne fait que 2 à 4 pixels de scène de
     // haut, et toute nuance d'éclairage ferait basculer le bleu néon vers une teinte d'eau à
     // la quantification. Dessinés après l'eau et le verre (file des transparents, opacité
     // pleine) pour que leurs teintes ne les recouvrent pas (docs/PIEGES.md).
     this.material = new MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: 1 });
-    const bodyGeometry = createFishGeometry(species, 'body');
-    const tailGeometry = createFishGeometry(species, 'tail');
+    const bodyGeometry = createFishGeometry(species, 'body', variant);
+    const tailGeometry = createFishGeometry(species, 'tail', variant);
     this.geometries = [bodyGeometry, tailGeometry];
     this.body = new InstancedMesh(bodyGeometry, this.material, capacity);
     this.tail = new InstancedMesh(tailGeometry, this.material, capacity);
@@ -104,7 +127,7 @@ export class FishLayer {
       mesh.renderOrder = FISH_RENDER_ORDER;
       this.object.add(mesh);
     }
-    this.halfLength = modelBodyLength(species) / 2;
+    this.halfLength = modelBodyLength(species, SILHOUETTES[variant.silhouette], variant.scale) / 2;
     this.hinge.makeTranslation(-this.halfLength, 0, 0);
   }
 
@@ -113,12 +136,15 @@ export class FishLayer {
     return this.body.count;
   }
 
-  /** Place une instance par poisson de l'espèce, interpolée avec `alpha` ∈ [0, 1]. */
+  /** Place une instance par poisson de l'espèce et de l'apparence de la couche, interpolée avec `alpha` ∈ [0, 1]. */
   update(entities: readonly Fish[], alpha: number): void {
     let n = 0;
     for (let i = 0; i < entities.length && n < this.capacity; i++) {
       const fish = entities[i];
-      if (fish.species !== this.species.id) {
+      if (
+        fish.species !== this.species.id ||
+        speciesVariantIndex(this.species, fish.id) !== this.variantIndex
+      ) {
         continue;
       }
       const pose = interpolateFishPose(fish, alpha, this.pose);

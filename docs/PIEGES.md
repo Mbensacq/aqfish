@@ -46,9 +46,15 @@ haut de sa section.
 - **`console.log` invisible dans `ng test`** : la sortie des tests n'est pas affichée. Pour
   explorer des valeurs (réglage de paramètres), les renvoyer dans le message d'un
   `throw new Error(JSON.stringify(…))` d'un spec jetable, puis le supprimer. (2026-10-18)
+- **Monde par défaut multi-espèces** (cycle 11) : `createDefaultWorld` contient néons puis
+  guppys. Un test qui applique une couche ou un réglage du néon à tout le monde par défaut
+  doit d'abord filtrer `species === 'neon'` (`fish-layer.spec.ts`, déphasage des queues).
+  Pour prouver qu'une nouvelle espèce ne perturbe pas les autres : comparer les néons d'un
+  monde mixte à ceux d'un monde de néons seuls (`world.spec.ts`), et les pixels néon des
+  captures avant/après. (2026-10-18)
 - **Population par défaut écrite en dur** : `e2e/neon.spec.ts` compte les poissons du monde
   réel ; changer `defaultPopulation` d'une espèce impose de l'y mettre à jour (cycle 8 :
-  8 → 12). (2026-10-18)
+  8 → 12 ; cycle 11 : 12 néons + 6 guppys). (2026-10-18)
 - **Libellé coupé sur deux lignes** : `scrollWidth <= clientWidth` ne détecte pas un retour à
   la ligne dans un bouton. Comparer la hauteur du bouton à celle de ses voisins
   (`white-space: nowrap` sur les boutons de la barre). (2026-10-18)

@@ -1,7 +1,11 @@
 import {
+  GUPPY,
   NEON,
   SPECIES,
+  speciesVariantIndex,
+  speciesVariants,
   validateSpecies,
+  type SpeciesVariant,
   type SchoolingParams,
   type SpeciesDefinition,
 } from './species';
@@ -22,6 +26,65 @@ describe('définitions d’espèces', () => {
     expect(NEON.colors.accent).toBe('#e63946');
     expect(NEON.scientificName).toBe('Paracheirodon innesi');
     expect(NEON.defaultPopulation).toBeGreaterThan(0);
+  });
+});
+
+describe('guppy', () => {
+  it('est décrit par le même schéma que le néon, et valide', () => {
+    expect(GUPPY.id).toBe('guppy');
+    expect(GUPPY.scientificName).toBe('Poecilia reticulata');
+    expect(validateSpecies(GUPPY)).toEqual([]);
+    expect(SPECIES.guppy).toBe(GUPPY);
+  });
+
+  it('a deux apparences, mâle puis femelle, le mâle plus petit', () => {
+    const [male, female] = speciesVariants(GUPPY);
+    expect(speciesVariants(GUPPY).map((v) => v.id)).toEqual(['male', 'femelle']);
+    expect(male.scale).toBeLessThan(female.scale);
+    expect(male.silhouette).not.toBe(female.silhouette);
+  });
+
+  it('le mâle a une caudale colorée, la femelle des couleurs sobres distinctes', () => {
+    const [male, female] = speciesVariants(GUPPY);
+    expect(male.colors.fin).not.toBe(female.colors.fin);
+    expect(male.colors).not.toEqual(female.colors);
+  });
+
+  it('n’emprunte ni le bleu ni le rouge du néon (mesures de banc sur image)', () => {
+    for (const v of speciesVariants(GUPPY)) {
+      expect(Object.values(v.colors)).not.toContain(NEON.colors.stripe);
+      expect(Object.values(v.colors)).not.toContain(NEON.colors.accent);
+    }
+  });
+
+  it('vitesse et taille distinctes du néon', () => {
+    expect(GUPPY.bodyLength).not.toBe(NEON.bodyLength);
+    expect(GUPPY.cruiseSpeed).not.toBe(NEON.cruiseSpeed);
+    expect(GUPPY.maxSpeed).not.toBe(NEON.maxSpeed);
+    // Le guppy nage plus lentement que le néon ; la femelle est plus grande que le néon.
+    expect(GUPPY.cruiseSpeed).toBeLessThan(NEON.cruiseSpeed);
+    expect(GUPPY.bodyLength).toBeGreaterThan(NEON.bodyLength);
+  });
+});
+
+describe('speciesVariants et speciesVariantIndex', () => {
+  it('une espèce sans variantes a une apparence unique, celle par défaut', () => {
+    expect(speciesVariants(NEON)).toEqual([
+      { id: 'neon', name: 'Néon', silhouette: 'fuseau', scale: 1, colors: NEON.colors },
+    ]);
+    expect(speciesVariants({ ...NEON, variants: [] })).toHaveLength(1);
+  });
+
+  it('les apparences alternent selon l’identifiant', () => {
+    expect([0, 1, 2, 3, 12, 13].map((id) => speciesVariantIndex(GUPPY, id))).toEqual([
+      0, 1, 0, 1, 0, 1,
+    ]);
+    expect(speciesVariantIndex(NEON, 4294967295)).toBe(0);
+    expect(speciesVariantIndex({ ...NEON, variants: [] }, 7)).toBe(0);
+  });
+
+  it.each([-1, 1.5, Number.NaN])('refuse l’identifiant %s', (id) => {
+    expect(() => speciesVariantIndex(GUPPY, id)).toThrow(RangeError);
   });
 });
 
@@ -47,6 +110,35 @@ describe('validateSpecies', () => {
   it('signale une couleur mal formée', () => {
     const def = variant({ colors: { ...NEON.colors, stripe: '#3FA9F5' } });
     expect(validateSpecies(def)).toEqual([expect.stringContaining('stripe')]);
+  });
+
+  const male = (GUPPY.variants as readonly SpeciesVariant[])[0];
+  const withVariants = (...variants: SpeciesVariant[]): SpeciesDefinition => variant({ variants });
+
+  it.each([
+    ['liste vide', withVariants(), 'au moins une'],
+    ['échelle nulle', withVariants({ ...male, scale: 0 }), 'scale'],
+    ['échelle au-delà de 1', withVariants({ ...male, scale: 1.2 }), 'scale'],
+    ['échelle NaN', withVariants({ ...male, scale: Number.NaN }), 'scale'],
+    ['identifiant en double', withVariants(male, male), 'double'],
+    ['nom vide', withVariants({ ...male, name: '' }), 'obligatoires'],
+    [
+      'couleur mal formée',
+      withVariants({ ...male, colors: { ...male.colors, fin: 'orange' } }),
+      'fin',
+    ],
+    [
+      'silhouette inconnue',
+      withVariants({ ...male, silhouette: 'requin' as SpeciesVariant['silhouette'] }),
+      'silhouette',
+    ],
+  ])('variantes : signale %s', (_label, def, key) => {
+    expect(validateSpecies(def)).toEqual(expect.arrayContaining([expect.stringContaining(key)]));
+  });
+
+  it('signale une silhouette par défaut inconnue', () => {
+    const def = variant({ silhouette: 'requin' as SpeciesDefinition['silhouette'] });
+    expect(validateSpecies(def)).toEqual([expect.stringContaining('silhouette')]);
   });
 
   it('population nulle acceptée', () => {

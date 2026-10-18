@@ -8,7 +8,16 @@
  */
 
 /** Identifiant d'espèce, stable (sérialisé dans l'état du monde). */
-export type SpeciesId = 'neon';
+export type SpeciesId = 'neon' | 'guppy';
+
+/**
+ * Silhouette voxel d'une apparence : le rendu associe à chaque identifiant un gabarit de
+ * profil (`render/fish-model.ts`, `SILHOUETTES`).
+ */
+export const SILHOUETTE_IDS = ['fuseau', 'guppy-male', 'guppy-femelle'] as const;
+export type SilhouetteId = (typeof SILHOUETTE_IDS)[number];
+
+const SILHOUETTE_SET: ReadonlySet<string> = new Set(SILHOUETTE_IDS);
 
 /** Couleurs d'une espèce, en sRGB `#rrggbb`, prises dans la palette de docs/DA.md. */
 export interface SpeciesColors {
@@ -53,6 +62,25 @@ export interface SchoolingParams {
   readonly minDistance: number;
 }
 
+/**
+ * Apparence d'une partie des individus d'une espèce (mâle, femelle…), affichée dans une
+ * couche de rendu à part. Les individus sont répartis entre les apparences par
+ * `speciesVariantIndex`, sans état supplémentaire dans la simulation.
+ */
+export interface SpeciesVariant {
+  /** Identifiant stable, unique dans l'espèce. */
+  readonly id: string;
+  /** Nom affiché, en français. */
+  readonly name: string;
+  readonly silhouette: SilhouetteId;
+  /**
+   * Échelle du modèle par rapport à `bodyLength`, dans (0, 1] : la simulation (marges,
+   * distances) raisonne toujours sur la plus grande taille, `bodyLength`.
+   */
+  readonly scale: number;
+  readonly colors: SpeciesColors;
+}
+
 export interface SpeciesDefinition {
   readonly id: SpeciesId;
   /** Nom affiché, en français. */
@@ -81,7 +109,15 @@ export interface SpeciesDefinition {
   readonly defaultPopulation: number;
   /** Comportement de banc, ou `null` pour une espèce solitaire. */
   readonly schooling: SchoolingParams | null;
+  /** Silhouette de l'apparence par défaut (espèce sans `variants`). */
+  readonly silhouette: SilhouetteId;
+  /** Couleurs de l'apparence par défaut (espèce sans `variants`). */
   readonly colors: SpeciesColors;
+  /**
+   * Apparences distinctes (dimorphisme), ou absent pour une apparence unique (`silhouette`,
+   * `colors`, échelle 1). Si présent, remplace l'apparence par défaut pour l'affichage.
+   */
+  readonly variants?: readonly SpeciesVariant[];
 }
 
 /**
@@ -125,6 +161,7 @@ export const NEON: SpeciesDefinition = {
     turnRate: 1.5,
     minDistance: 0.02,
   },
+  silhouette: 'fuseau',
   colors: {
     stripe: '#3fa9f5',
     accent: '#e63946',
@@ -135,8 +172,110 @@ export const NEON: SpeciesDefinition = {
   },
 };
 
-/** Toutes les espèces connues, par identifiant. */
-export const SPECIES: Readonly<Record<SpeciesId, SpeciesDefinition>> = { neon: NEON };
+/**
+ * Guppy (Poecilia reticulata), bac tropical (docs/DA.md).
+ *
+ * - Dimorphisme : mâle plus petit, corps gris à taches, grande nageoire caudale orange
+ *   tachée de rose ; femelle plus grande, corps sable, nageoires claires (sobre). Couleurs
+ *   prises dans la palette existante (docs/DA.md), hors bleu et rouge néon pour que les
+ *   mesures de banc des néons sur image (`e2e/banc.spec.ts`) ne comptent pas les guppys.
+ *   Répartition : un individu sur deux de chaque sexe (`speciesVariantIndex`).
+ * - `bodyLength` (femelle, 7 cm) et échelle du mâle (0,7) : **approximations de jeu**,
+ *   agrandies comme le néon pour la lisibilité ; ordre de grandeur réel : femelle nettement
+ *   plus grande que le mâle (référence à consulter : FishBase, Poecilia reticulata ; non
+ *   vérifiée ici).
+ * - Nage plus lente et plus erratique que le néon, banc lâche (le guppy est grégaire sans
+ *   former de banc serré) : vitesses, virages, poids et rayons sont des **approximations de
+ *   jeu**.
+ */
+const GUPPY_FEMALE_COLORS: SpeciesColors = {
+  stripe: '#c9b38a',
+  accent: '#45423e',
+  back: '#a8916a',
+  belly: '#f2ead8',
+  fin: '#e3cf9e',
+  eye: '#1c1c22',
+};
+
+export const GUPPY: SpeciesDefinition = {
+  id: 'guppy',
+  name: 'Guppy',
+  scientificName: 'Poecilia reticulata',
+  bodyLength: 0.07,
+  cruiseSpeed: 0.045,
+  minSpeed: 0.02,
+  maxSpeed: 0.09,
+  wanderTurnRate: 1.1,
+  avoidTurnRate: 2.5,
+  maxPitch: 0.3,
+  wallMargin: 0.05,
+  tailBeatFrequency: 2,
+  defaultPopulation: 6,
+  schooling: {
+    neighborRadius: 0.25,
+    separationRadius: 0.07,
+    separationWeight: 1,
+    alignmentWeight: 0.4,
+    cohesionWeight: 0.5,
+    turnRate: 1.2,
+    minDistance: 0.025,
+  },
+  silhouette: 'guppy-femelle',
+  colors: GUPPY_FEMALE_COLORS,
+  variants: [
+    {
+      id: 'male',
+      name: 'Guppy mâle',
+      silhouette: 'guppy-male',
+      scale: 0.7,
+      colors: {
+        stripe: '#6e6a63',
+        accent: '#f06a9b',
+        back: '#45423e',
+        belly: '#f2ead8',
+        fin: '#f08a2c',
+        eye: '#1c1c22',
+      },
+    },
+    {
+      id: 'femelle',
+      name: 'Guppy femelle',
+      silhouette: 'guppy-femelle',
+      scale: 1,
+      colors: GUPPY_FEMALE_COLORS,
+    },
+  ],
+};
+
+/** Toutes les espèces connues, par identifiant (ordre de déclaration = ordre de peuplement). */
+export const SPECIES: Readonly<Record<SpeciesId, SpeciesDefinition>> = {
+  neon: NEON,
+  guppy: GUPPY,
+};
+
+/** Apparences d'une espèce : ses `variants`, ou son apparence par défaut seule. */
+export function speciesVariants(def: SpeciesDefinition): readonly SpeciesVariant[] {
+  if (def.variants && def.variants.length > 0) {
+    return def.variants;
+  }
+  return [{ id: def.id, name: def.name, silhouette: def.silhouette, scale: 1, colors: def.colors }];
+}
+
+/**
+ * Indice de l'apparence d'un individu dans `speciesVariants(def)`, tiré de son identifiant
+ * (`id` modulo le nombre d'apparences) : déterministe, sans état ni tirage aléatoire, donc
+ * sans effet sur la simulation. Les identifiants étant consécutifs, les apparences
+ * alternent.
+ * @throws RangeError si `id` n'est pas un entier positif ou nul.
+ */
+export function speciesVariantIndex(def: SpeciesDefinition, id: number): number {
+  if (!Number.isInteger(id) || id < 0) {
+    throw new RangeError(`identifiant invalide : ${id}`);
+  }
+  // Sans passer par `speciesVariants` : aucune allocation (appelé à chaque image par le rendu).
+  const count = def.variants && def.variants.length > 0 ? def.variants.length : 1;
+  return id % count;
+}
 
 const HEX_COLOR = /^#[0-9a-f]{6}$/;
 
@@ -178,13 +317,51 @@ export function validateSpecies(def: SpeciesDefinition): string[] {
   if (def.schooling !== null) {
     problems.push(...validateSchooling(def.schooling));
   }
-  for (const [name, color] of Object.entries(def.colors)) {
-    if (!HEX_COLOR.test(color)) {
-      problems.push(`couleur ${name} invalide (attendu #rrggbb en minuscules) : ${color}`);
-    }
+  if (!SILHOUETTE_SET.has(def.silhouette)) {
+    problems.push(`silhouette inconnue : ${String(def.silhouette)}`);
+  }
+  problems.push(...validateColors(def.colors, ''));
+  if (def.variants !== undefined) {
+    problems.push(...validateVariants(def.variants));
   }
   if (def.name.trim() === '' || def.scientificName.trim() === '') {
     problems.push('nom et nom scientifique obligatoires');
+  }
+  return problems;
+}
+
+function validateColors(colors: SpeciesColors, prefix: string): string[] {
+  const problems: string[] = [];
+  for (const [name, color] of Object.entries(colors)) {
+    if (!HEX_COLOR.test(color)) {
+      problems.push(`${prefix}couleur ${name} invalide (attendu #rrggbb en minuscules) : ${color}`);
+    }
+  }
+  return problems;
+}
+
+function validateVariants(variants: readonly SpeciesVariant[]): string[] {
+  const problems: string[] = [];
+  if (variants.length === 0) {
+    problems.push('variants, si présent, doit contenir au moins une apparence');
+  }
+  const ids = new Set<string>();
+  for (const variant of variants) {
+    const prefix = `variante ${variant.id} : `;
+    if (variant.id.trim() === '' || variant.name.trim() === '') {
+      problems.push('identifiant et nom de variante obligatoires');
+    }
+    if (ids.has(variant.id)) {
+      problems.push(`identifiant de variante en double : ${variant.id}`);
+    }
+    ids.add(variant.id);
+    if (!(variant.scale > 0 && variant.scale <= 1)) {
+      problems.push(`${prefix}scale doit être dans (0, 1] (reçu : ${variant.scale})`);
+    }
+    if (!SILHOUETTE_SET.has(variant.silhouette)) {
+      problems.push(`${prefix}silhouette inconnue : ${String(variant.silhouette)}`);
+    }
+    problems.push(...validateColors(variant.colors, prefix));
   }
   return problems;
 }

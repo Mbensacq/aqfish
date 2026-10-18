@@ -1,6 +1,11 @@
 import { BufferAttribute, BufferGeometry, Color } from 'three';
 
-import type { SpeciesColors, SpeciesDefinition } from '../sim/species';
+import type {
+  SilhouetteId,
+  SpeciesColors,
+  SpeciesDefinition,
+  SpeciesVariant,
+} from '../sim/species';
 
 /**
  * Modèles voxel des poissons, générés par le code à partir des définitions d'espèces
@@ -49,6 +54,48 @@ export const SLENDER_FISH: FishTemplate = {
   tailDepth: 1,
 };
 
+/**
+ * Guppy femelle : corps plus haut et plus long, dos sable sombre, flanc sable, ventre
+ * clair avec la tache de gestation sombre (`a`), petite caudale claire.
+ */
+export const GUPPY_FEMALE_FISH: FishTemplate = {
+  body: [
+    // queue → tête
+    '...kkkkk..',
+    '.kkkkkkkk.',
+    'ssssssssse',
+    '.bbbabbbb.',
+    '...bbbb...',
+  ],
+  tail: ['f.', 'ff', 'ff', 'ff', 'f.'],
+  bodyDepth: 2,
+  tailDepth: 1,
+};
+
+/**
+ * Guppy mâle : petit corps gris (`s`) taché de rose (`a`) et d'orange (`f`, couleur de la
+ * caudale), grande nageoire caudale en éventail, orange tachée de rose.
+ */
+export const GUPPY_MALE_FISH: FishTemplate = {
+  body: [
+    // queue → tête
+    '...kkkkk.',
+    'fasssasse',
+    'ffassbbb.',
+    '..fbbb...',
+  ],
+  tail: ['ff...', 'fff..', 'faff.', 'ffaff', 'faff.', 'fff..', 'ff...'],
+  bodyDepth: 2,
+  tailDepth: 1,
+};
+
+/** Gabarit de chaque silhouette déclarée par les espèces (`sim/species.ts`). */
+export const SILHOUETTES: Readonly<Record<SilhouetteId, FishTemplate>> = {
+  fuseau: SLENDER_FISH,
+  'guppy-male': GUPPY_MALE_FISH,
+  'guppy-femelle': GUPPY_FEMALE_FISH,
+};
+
 /** Proportions des voxels : hauteur et épaisseur relatives à la longueur d'un voxel. */
 const VOXEL_HEIGHT_RATIO = 0.75;
 const VOXEL_DEPTH_RATIO = 0.7;
@@ -69,12 +116,16 @@ export interface VoxelSize {
   readonly z: number;
 }
 
-/** Taille d'un voxel du modèle d'une espèce (la longueur du corps couvre ses colonnes). */
+/**
+ * Taille d'un voxel du modèle d'une espèce : la longueur du corps, multipliée par `scale`,
+ * couvre les colonnes du gabarit.
+ */
 export function voxelSize(
   def: SpeciesDefinition,
   template: FishTemplate = SLENDER_FISH,
+  scale = 1,
 ): VoxelSize {
-  const x = def.bodyLength / templateWidth(template.body);
+  const x = (def.bodyLength * scale) / templateWidth(template.body);
   return { x, y: x * VOXEL_HEIGHT_RATIO, z: x * VOXEL_DEPTH_RATIO };
 }
 
@@ -82,8 +133,9 @@ export function voxelSize(
 export function modelBodyLength(
   def: SpeciesDefinition,
   template: FishTemplate = SLENDER_FISH,
+  scale = 1,
 ): number {
-  return voxelSize(def, template).x * templateWidth(template.body);
+  return voxelSize(def, template, scale).x * templateWidth(template.body);
 }
 
 /**
@@ -165,17 +217,25 @@ export function buildVoxelMesh(
   };
 }
 
-/** Géométrie Three.js du corps ou de la queue d'une espèce. */
+/**
+ * Géométrie Three.js du corps ou de la queue d'une apparence d'espèce (par défaut :
+ * l'apparence par défaut de l'espèce, `silhouette` et `colors`).
+ */
 export function createFishGeometry(
   def: SpeciesDefinition,
   part: 'body' | 'tail',
-  template: FishTemplate = SLENDER_FISH,
+  variant: Pick<SpeciesVariant, 'silhouette' | 'scale' | 'colors'> = {
+    silhouette: def.silhouette,
+    scale: 1,
+    colors: def.colors,
+  },
 ): BufferGeometry {
-  const size = voxelSize(def, template);
+  const template = SILHOUETTES[variant.silhouette];
+  const size = voxelSize(def, template, variant.scale);
   const data =
     part === 'body'
-      ? buildVoxelMesh(template.body, template.bodyDepth, def.colors, size, 'center')
-      : buildVoxelMesh(template.tail, template.tailDepth, def.colors, size, 'right');
+      ? buildVoxelMesh(template.body, template.bodyDepth, variant.colors, size, 'center')
+      : buildVoxelMesh(template.tail, template.tailDepth, variant.colors, size, 'right');
   const geometry = new BufferGeometry();
   geometry.setAttribute('position', new BufferAttribute(data.positions, 3));
   geometry.setAttribute('normal', new BufferAttribute(data.normals, 3));
