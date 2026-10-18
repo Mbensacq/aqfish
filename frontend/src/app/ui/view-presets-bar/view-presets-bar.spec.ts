@@ -3,6 +3,7 @@ import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import type { CameraPreset } from '../../core/capture/capture-params';
 import { CAMERA_PRESETS } from '../../core/capture/capture-params';
 import {
+  isPixelArtKey,
   isTypingContext,
   presetForKey,
   VIEW_PRESET_BUTTONS,
@@ -13,8 +14,13 @@ describe('ViewPresetsBar', () => {
   let fixture: ComponentFixture<ViewPresetsBar>;
   let emitted: CameraPreset[];
 
+  /** Boutons des préréglages (dans la barre d'outils), hors bascule du filtre. */
   const buttons = (): HTMLButtonElement[] =>
-    Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('button'));
+    Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('[role="toolbar"] button'));
+  const toggle = (): HTMLButtonElement =>
+    (fixture.nativeElement as HTMLElement).querySelector(
+      'button[aria-keyshortcuts="P"]',
+    ) as HTMLButtonElement;
 
   function press(key: string, init: KeyboardEventInit = {}, target: EventTarget = document.body) {
     const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...init });
@@ -86,8 +92,72 @@ describe('ViewPresetsBar', () => {
     await fixture.whenStable();
     expect(pressed()).toEqual(['false', 'false', 'false', 'false', 'false']);
     expect(
-      (fixture.nativeElement as HTMLElement).querySelector('.view-presets-bar__button--active'),
+      (fixture.nativeElement as HTMLElement).querySelector(
+        '[role="toolbar"] .view-presets-bar__button--active',
+      ),
     ).toBeNull();
+  });
+
+  describe('bascule pixel art (#33)', () => {
+    let toggles: number;
+
+    beforeEach(() => {
+      toggles = 0;
+      fixture.componentInstance.pixelArtToggled.subscribe(() => toggles++);
+    });
+
+    it('bouton « Pixel art » hors de la barre des préréglages, accessible', () => {
+      const button = toggle();
+      expect(button).not.toBeNull();
+      expect(button.closest('[role="toolbar"]')).toBeNull();
+      expect(button.type).toBe('button');
+      expect(button.textContent?.replace(/\s+/g, ' ').trim()).toBe('P Pixel art');
+      expect(button.getAttribute('aria-label')).toBe('Filtre pixel art (touche P)');
+    });
+
+    it('aria-pressed reflète l’état fourni par l’hôte (vrai par défaut)', async () => {
+      expect(toggle().getAttribute('aria-pressed')).toBe('true');
+      expect(toggle().classList).toContain('view-presets-bar__button--active');
+      fixture.componentRef.setInput('pixelArt', false);
+      await fixture.whenStable();
+      expect(toggle().getAttribute('aria-pressed')).toBe('false');
+      expect(toggle().classList).not.toContain('view-presets-bar__button--active');
+    });
+
+    it('le clic émet une demande de bascule, sans changer l’état lui-même', async () => {
+      toggle().click();
+      await fixture.whenStable();
+      expect(toggles).toBe(1);
+      expect(toggle().getAttribute('aria-pressed')).toBe('true');
+      expect(emitted).toEqual([]);
+    });
+
+    it('les touches p et P émettent la bascule et sont consommées', () => {
+      expect(press('p').defaultPrevented).toBe(true);
+      expect(press('P').defaultPrevented).toBe(true);
+      expect(toggles).toBe(2);
+      expect(emitted).toEqual([]);
+    });
+
+    it('P ignorée avec Ctrl, dans un champ de saisie ou déjà traitée', () => {
+      press('p', { ctrlKey: true });
+      const field = document.createElement('input');
+      field.setAttribute('data-test-field', '');
+      document.body.appendChild(field);
+      press('p', {}, field);
+      const handled = new KeyboardEvent('keydown', { key: 'p', bubbles: true, cancelable: true });
+      handled.preventDefault();
+      document.body.dispatchEvent(handled);
+      expect(toggles).toBe(0);
+    });
+
+    it('isPixelArtKey : p et P seulement', () => {
+      expect(isPixelArtKey('p')).toBe(true);
+      expect(isPixelArtKey('P')).toBe(true);
+      for (const key of ['o', '1', 'Pause', 'PageUp', '']) {
+        expect(isPixelArtKey(key)).toBe(false);
+      }
+    });
   });
 
   it('les touches 1 à 5 émettent les 5 préréglages', () => {

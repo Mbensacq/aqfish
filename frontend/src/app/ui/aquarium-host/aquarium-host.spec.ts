@@ -1,6 +1,7 @@
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 
 import { isCaptureReady, resetCaptureReady } from '../../core/capture/capture-ready';
+import { RENDER_FILTER_STORAGE_KEY } from '../../core/render-filter/render-filter';
 import type { AquariumRenderer } from '../../render/aquarium-view';
 import { MAX_STEPS_PER_FRAME } from '../../sim/constants';
 import { NEON } from '../../sim/species';
@@ -10,6 +11,7 @@ import {
   AquariumHost,
   CAMERA_ATTRIBUTE,
   CAMERA_TARGET_ATTRIBUTE,
+  FILTER_ATTRIBUTE,
   SEED_ATTRIBUTE,
   TICK_ATTRIBUTE,
 } from './aquarium-host';
@@ -112,6 +114,7 @@ describe('AquariumHost', () => {
     vi.restoreAllMocks();
     resetCaptureReady();
     setSearch('');
+    window.localStorage.removeItem(RENDER_FILTER_STORAGE_KEY);
   });
 
   it('crée un renderer sur son canvas', async () => {
@@ -380,6 +383,108 @@ describe('AquariumHost', () => {
       await create();
       fixture.destroy();
       expect(host().world).toBeNull();
+    });
+  });
+
+  describe('filtre de rendu (#33)', () => {
+    const host = () => fixture.componentInstance;
+    const exposedFilter = () =>
+      (fixture.nativeElement as HTMLElement).getAttribute(FILTER_ATTRIBUTE);
+    const stored = () => window.localStorage.getItem(RENDER_FILTER_STORAGE_KEY);
+
+    it('pixel art par défaut, exposé dans data-aqfish-filter', async () => {
+      await create();
+      expect(host().filter()).toBe('pixel');
+      expect(exposedFilter()).toBe('pixel');
+    });
+
+    it('reprend le choix mémorisé au démarrage', async () => {
+      window.localStorage.setItem(RENDER_FILTER_STORAGE_KEY, 'aucun');
+      await create();
+      expect(host().filter()).toBe('aucun');
+      expect(exposedFilter()).toBe('aucun');
+    });
+
+    it('un choix mémorisé invalide est ignoré', async () => {
+      window.localStorage.setItem(RENDER_FILTER_STORAGE_KEY, 'flou');
+      await create();
+      expect(host().filter()).toBe('pixel');
+    });
+
+    it('filtre= dans l’URL prime sur le choix mémorisé', async () => {
+      window.localStorage.setItem(RENDER_FILTER_STORAGE_KEY, 'aucun');
+      await create('?filtre=pixel');
+      expect(host().filter()).toBe('pixel');
+    });
+
+    it('en capture, le choix mémorisé est ignoré ; filtre=aucun est appliqué', async () => {
+      window.localStorage.setItem(RENDER_FILTER_STORAGE_KEY, 'aucun');
+      await create('?capture=1');
+      expect(host().filter()).toBe('pixel');
+      fixture.destroy();
+      await create('?capture=1&filtre=aucun');
+      expect(host().filter()).toBe('aucun');
+    });
+
+    it('bascule à chaud : mémorise, conserve monde et caméra, rend une nouvelle image', async () => {
+      await create();
+      setCanvasSize(800, 600);
+      frames.flush(0);
+      frames.flush(100);
+      const world = host().world;
+      const tick = world!.tick;
+      const camera = (fixture.nativeElement as HTMLElement).getAttribute(CAMERA_ATTRIBUTE);
+
+      host().toggleFilter();
+      expect(host().filter()).toBe('aucun');
+      expect(exposedFilter()).toBe('aucun');
+      expect(stored()).toBe('aucun');
+      expect(host().world).toBe(world);
+      expect(host().world!.tick).toBe(tick);
+      expect((fixture.nativeElement as HTMLElement).getAttribute(CAMERA_ATTRIBUTE)).toBe(camera);
+      expect(renderers).toHaveLength(1);
+
+      host().toggleFilter();
+      expect(host().filter()).toBe('pixel');
+      expect(stored()).toBe('pixel');
+    });
+
+    it('en capture : la bascule rend une nouvelle image mais ne mémorise rien', async () => {
+      await create('?capture=1');
+      setCanvasSize(800, 600);
+      frames.flush();
+      expect(renderers[0].renders).toBe(1);
+      expect(frames.pending.size).toBe(1); // signal « prêt »
+      frames.flush();
+      host().setFilter('aucun');
+      frames.flush();
+      expect(renderers[0].renders).toBe(2);
+      expect(stored()).toBeNull();
+    });
+
+    it('stockage indisponible : la bascule fonctionne quand même (repli en mémoire)', async () => {
+      vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+        throw new DOMException('Quota dépassé', 'QuotaExceededError');
+      });
+      vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+        throw new DOMException('Accès refusé', 'SecurityError');
+      });
+      await create();
+      expect(host().filter()).toBe('pixel');
+      expect(() => host().toggleFilter()).not.toThrow();
+      expect(host().filter()).toBe('aucun');
+    });
+
+    it('sans effet avant le démarrage ou après la destruction', async () => {
+      setSearch('');
+      fixture = TestBed.createComponent(AquariumHost);
+      host().setFilter('aucun'); // avant afterNextRender
+      expect(host().filter()).toBe('pixel');
+      await fixture.whenStable();
+      fixture.destroy();
+      host().toggleFilter();
+      expect(host().filter()).toBe('pixel');
+      expect(stored()).toBeNull();
     });
   });
 

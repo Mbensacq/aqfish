@@ -8,7 +8,9 @@
   @if (!capture) {
     <app-view-presets-bar
       [activePreset]="aquarium.activePreset()"
+      [pixelArt]="aquarium.filter() === 'pixel'"
       (presetSelected)="aquarium.goToPreset($event)"
+      (pixelArtToggled)="aquarium.toggleFilter()"
     />
   }
 }

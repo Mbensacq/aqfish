@@ -27,6 +27,19 @@
   }
 }
 
+.view-presets-bar__group {
+  display: flex;
+  gap: inherit;
+}
+
+// Sépare la bascule du filtre des préréglages de vue.
+.view-presets-bar__separator {
+  align-self: stretch;
+  width: 1px;
+  margin: 4px 2px;
+  background: rgb(232 230 227 / 20%);
+}
+
 .view-presets-bar__button {
   display: inline-flex;
   align-items: center;
@@ -38,6 +51,7 @@
   background: transparent;
   color: inherit;
   font: inherit;
+  white-space: nowrap;
   cursor: pointer;
 
   &:hover {
@@ -80,7 +94,11 @@
   }
 
   .view-presets-bar__button {
-    padding: 4px 8px;
+    padding: 4px 6px;
+  }
+
+  .view-presets-bar__separator {
+    margin: 4px 0;
   }
 
   .view-presets-bar__key {

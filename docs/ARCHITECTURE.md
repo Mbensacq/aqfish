@@ -98,6 +98,11 @@ puis un quad plein écran lit chaque pixel de scène par `texelFetch` et écrit 
 palette la plus proche (distance euclidienne en sRGB, première couleur en cas d'égalité).
 La cible est en sRGB 8 bits : les surfaces translucides s'y mélangent en espace linéaire.
 
+**Filtre désactivable** (ADR 0010) : avec le filtre `aucun`, `renderFrame()` rend la scène
+directement à l'écran en pleine résolution, sans passe palette, et la caméra prend le
+rapport d'aspect du canvas. `AquariumView.setFilter()` bascule à chaud sans toucher à la
+caméra ni à la scène. Le pixel art reste le mode par défaut.
+
 ### Caméra
 
 - `OrbitControls` (`three/examples/jsm/controls/OrbitControls.js`) : rotation au clic gauche,
@@ -133,6 +138,7 @@ La cible est en sRGB 8 bits : les surfaces translucides s'y mélangent en espace
 
 | Fichier | Rôle |
 |---|---|
+| `core/render-filter/render-filter.ts` | Filtre de rendu `pixel` / `aucun` : décodage, bascule, filtre initial, mémorisation tolérante (`aqfish.filtre`) |
 | `core/random/prng.ts` | PRNG mulberry32 à graine, dérivation de sous-générateurs par entité |
 | `sim/constants.ts` | `SIM_DT`, `MAX_STEPS_PER_FRAME` |
 | `sim/fixed-step.ts` | Accumulateur de la boucle à pas fixe (`fixedStep`, pure ; `fixedStepInto`, sans allocation) |
@@ -150,7 +156,7 @@ La cible est en sRGB 8 bits : les surfaces translucides s'y mélangent en espace
 | `render/fish-layer.ts` | `InstancedMesh` corps et queue par espèce, interpolation entre deux pas, ondulation ; `AquariumView` en crée une par entrée de `SPECIES` |
 | `render/aquarium-view.ts` | Vue sans Angular : renderer (fabrique remplaçable), caméra, `OrbitControls`, transitions de caméra, `updateFish` |
 | `ui/aquarium-host/` | Composant hôte : boucle rAF, avance de la simulation, redimensionnement, contrat de capture, `DestroyRef` |
-| `ui/view-presets-bar/` | Barre flottante des 5 préréglages de vue et raccourcis clavier `1` à `5` (émet le préréglage choisi) |
+| `ui/view-presets-bar/` | Barre flottante des 5 préréglages de vue et raccourcis clavier `1` à `5` (émet le préréglage choisi), bascule « Pixel art » et touche `P` (émet la demande de bascule) |
 
 Le renderer est créé par une fabrique (`AQUARIUM_RENDERER_FACTORY`, par défaut
 `createWebGLRenderer`) : les tests `TestBed` la remplacent par un double, jsdom n'ayant pas
@@ -164,10 +170,12 @@ respecter :
 
 | Élément | Règle |
 |---|---|
-| Paramètres d'URL | `capture`, `seed`, `camera`, `time`, lus par `core/capture/capture-params.ts` |
+| Paramètres d'URL | `capture`, `seed`, `camera`, `time`, et `filtre` facultatif, lus par `core/capture/capture-params.ts` |
+| `filtre=pixel\|aucun` | Force le filtre de rendu (ADR 0010), y compris hors capture où il prime sur le choix mémorisé. Absent en capture : pixel art, quel que soit le choix mémorisé (séries existantes inchangées) |
 | `capture=1` | Simulation avancée de façon déterministe jusqu'à `time` (pas fixe, sans temps réel), puis figée ; interface masquée ; caméra sur le préréglage `camera` ; `devicePixelRatio` forcé à 1 |
 | Signal « prêt » | Appeler `markCaptureReady()` (`core/capture/capture-ready.ts`) une fois la première image **complète** rendue ; `resetCaptureReady()` si la scène est rechargée. Implémentation : `AquariumHost` lève le signal à l'image qui suit le premier rendu WebGL de taille non nulle, et le retire à sa destruction |
 | Image figée | En mode capture, une seule image est rendue (puis une à chaque redimensionnement) et les contrôles à la souris sont désactivés |
+| Attributs de test | `app-aquarium-host` expose `data-aqfish-camera`, `data-aqfish-target`, `data-aqfish-tick`, `data-aqfish-seed` et `data-aqfish-filter` |
 | Hors capture | Le signal « prêt » est aussi émis après la première image complète (le test de démarrage l'attend) |
 | Erreurs | Aucune erreur de page ne doit survenir (le harnais et le test de démarrage échouent sinon) |
 

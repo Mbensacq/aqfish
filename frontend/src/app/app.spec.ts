@@ -78,13 +78,33 @@ describe('App', () => {
     frames.splice(0).forEach((cb) => cb(0));
     const before = host.getAttribute('data-aqfish-camera');
 
-    const buttons = root.querySelectorAll('app-view-presets-bar button');
+    const buttons = root.querySelectorAll('app-view-presets-bar [role="toolbar"] button');
     expect(buttons).toHaveLength(5);
     (root.querySelector('button[data-preset="top"]') as HTMLButtonElement).click();
     frames.splice(0).forEach((cb) => cb(10_000)); // au-delà de la transition
     const after = host.getAttribute('data-aqfish-camera');
     expect(after).not.toBe(before);
     expect(Number(after!.split(',')[1])).toBeGreaterThan(0.6);
+  });
+
+  it('le bouton « Pixel art » bascule le filtre de l’hôte et reflète son état (#33)', async () => {
+    const fixture = TestBed.createComponent(App);
+    await fixture.whenStable();
+    const root = fixture.nativeElement as HTMLElement;
+    const host = root.querySelector('app-aquarium-host')!;
+    const toggle = root.querySelector(
+      'app-view-presets-bar button[aria-keyshortcuts="P"]',
+    ) as HTMLButtonElement;
+    expect(host.getAttribute('data-aqfish-filter')).toBe('pixel');
+    expect(toggle.getAttribute('aria-pressed')).toBe('true');
+    try {
+      toggle.click();
+      await fixture.whenStable();
+      expect(host.getAttribute('data-aqfish-filter')).toBe('aucun');
+      expect(toggle.getAttribute('aria-pressed')).toBe('false');
+    } finally {
+      window.localStorage.removeItem('aqfish.filtre');
+    }
   });
 
   it('masque la barre en mode capture', async () => {

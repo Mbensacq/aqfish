@@ -43,6 +43,12 @@ haut de sa section.
 
 ## Tests
 
+- **Libellé coupé sur deux lignes** : `scrollWidth <= clientWidth` ne détecte pas un retour à
+  la ligne dans un bouton. Comparer la hauteur du bouton à celle de ses voisins
+  (`white-space: nowrap` sur les boutons de la barre). (2026-10-18)
+- **Modifier le code pendant un `npm run verify`** : `ng serve` recompile à chaud et les e2e
+  restants testent le code en cours d'écriture (échecs de compilation trompeurs). Lancer
+  `verify` sur `main` jusqu'au bout avant de toucher aux sources. (2026-10-18)
 - **Analyse pixel art d'une capture hors mode capture** : l'interface (barre des vues) est
   superposée au canvas et n'est pas en pixel art (texte lissé, couleurs hors palette).
   `e2e/pixel-art.spec.ts` masque tout enfant de `app-root` autre que `app-aquarium-host`
@@ -61,6 +67,12 @@ haut de sa section.
 
 ## Rendu
 
+- **Rendu sans filtre (`filtre=aucun`) : peu de couleurs, teintes différentes** : la scène est
+  en couleurs plates sans anticrénelage, donc une vingtaine de couleurs seulement (un test
+  « plus de couleurs que la palette » échoue) ; et les translucides s'y mélangent en sRGB à
+  l'écran, d'où un sable plus vert et une eau plus sombre qu'en pixel art. Distinguer les
+  deux modes par les couleurs hors palette et les blocs de `PIXEL_SIZE` rompus
+  (`e2e/filtre.spec.ts`). (2026-10-18)
 - **Petits objets et surfaces translucides** : un poisson de 2 à 4 pixels de scène change de
   couleur de palette dès qu'il est éclairé ou vu à travers l'eau ou même le verre (8 %
   d'opacité : le rouge néon devenait rouge koï). Les animaux sont en couleurs plates et

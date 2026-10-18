@@ -12,6 +12,14 @@ import {
 } from '@angular/core';
 
 import { parseCaptureParams, type CameraPreset } from '../../core/capture/capture-params';
+import {
+  type FilterStorage,
+  initialRenderFilter,
+  readStoredRenderFilter,
+  type RenderFilter,
+  toggleRenderFilter,
+  writeStoredRenderFilter,
+} from '../../core/render-filter/render-filter';
 import { markCaptureReady, resetCaptureReady } from '../../core/capture/capture-ready';
 import {
   AquariumView,
@@ -42,6 +50,17 @@ export const CAMERA_TARGET_ATTRIBUTE = 'data-aqfish-target';
 export const TICK_ATTRIBUTE = 'data-aqfish-tick';
 /** Attribut du composant hôte exposant la graine du monde (fixée au démarrage). */
 export const SEED_ATTRIBUTE = 'data-aqfish-seed';
+/** Attribut du composant hôte exposant le filtre de rendu courant (`pixel` ou `aucun`). */
+export const FILTER_ATTRIBUTE = 'data-aqfish-filter';
+
+/** `localStorage` s'il est accessible, `null` sinon (l'accès lui-même peut lever). */
+function browserStorage(win: Window): FilterStorage | null {
+  try {
+    return win.localStorage ?? null;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Hôte du canvas 3D : crée la vue, porte la boucle `requestAnimationFrame`, suit la taille
@@ -95,6 +114,12 @@ export class AquariumHost {
    */
   readonly activePreset = signal<CameraPreset | null>(null);
 
+  /**
+   * Filtre de rendu courant (issue #33). Pixel art par défaut ; `filtre=` dans l'URL prime
+   * sur le choix mémorisé (`aqfish.filtre`). Mis à jour à la bascule seulement.
+   */
+  readonly filter = signal<RenderFilter>('pixel');
+
   /** État courant de la simulation (`null` avant le démarrage et après la destruction). */
   get world(): World | null {
     return this.currentWorld;
@@ -122,6 +147,32 @@ export class AquariumHost {
     this.scheduleFrame();
   }
 
+  /**
+   * Change le filtre de rendu à chaud (bouton « Pixel art », touche `P`) : la simulation, la
+   * caméra et la vue ne sont pas réinitialisées. Le choix est mémorisé s'il est possible de
+   * l'écrire, sinon il reste en mémoire pour la session (repli silencieux).
+   */
+  setFilter(filter: RenderFilter): void {
+    const view = this.view;
+    if (!view) {
+      return;
+    }
+    if (view.setFilter(filter)) {
+      this.filter.set(filter);
+      this.exposeFilter();
+      this.scheduleFrame();
+    }
+    const win = this.document.defaultView;
+    if (win && !this.capture) {
+      writeStoredRenderFilter(browserStorage(win), filter);
+    }
+  }
+
+  /** Bascule entre pixel art et rendu sans filtre. */
+  toggleFilter(): void {
+    this.setFilter(toggleRenderFilter(this.filter()));
+  }
+
   constructor() {
     afterNextRender(() => this.start());
     inject(DestroyRef).onDestroy(() => this.stop());
@@ -141,14 +192,23 @@ export class AquariumHost {
     this.host.nativeElement.setAttribute(SEED_ATTRIBUTE, String(this.currentWorld.seed));
     this.exposeTick();
 
+    const filter = initialRenderFilter(
+      params.filter,
+      params.capture ? null : readStoredRenderFilter(browserStorage(win)),
+      params.capture,
+    );
+    this.filter.set(filter);
+
     const view = new AquariumView({
       canvas: this.canvasRef().nativeElement,
       rendererFactory: this.rendererFactory,
       pixelRatio: params.capture ? 1 : win.devicePixelRatio || 1,
       preset: params.camera,
       interactive: !params.capture,
+      filter,
     });
     this.view = view;
+    this.exposeFilter();
 
     this.activePreset.set(params.camera);
     this.cleanups.push(view.onCameraChange(() => this.exposeCamera()));
@@ -235,6 +295,10 @@ export class AquariumHost {
     }
     this.exposedTick = world.tick;
     this.host.nativeElement.setAttribute(TICK_ATTRIBUTE, String(world.tick));
+  }
+
+  private exposeFilter(): void {
+    this.host.nativeElement.setAttribute(FILTER_ATTRIBUTE, this.filter());
   }
 
   private exposeCamera(): void {

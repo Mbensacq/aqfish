@@ -4,9 +4,14 @@
  *
  * Exemple : /?capture=1&seed=42&camera=top&time=30
  *
+ * Paramètre facultatif `filtre=pixel|aucun` (issue #33) : force le filtre de rendu ; absent,
+ * l'image est en pixel art (séries de captures existantes inchangées).
+ *
  * Ce module est volontairement pur (aucune dépendance à Angular ni à Three.js).
  * Voir docs/ARCHITECTURE.md, section « Contrat de capture ».
  */
+
+import { isRenderFilter, type RenderFilter } from '../render-filter/render-filter';
 
 export const CAMERA_PRESETS = ['top', 'bottom', 'front', 'side', 'three-quarter'] as const;
 
@@ -21,6 +26,8 @@ export interface CaptureParams {
   readonly camera: CameraPreset;
   /** Temps de simulation (en secondes) à atteindre avant de figer l'image. */
   readonly time: number;
+  /** Filtre de rendu forcé par `filtre=` ; `null` si absent ou invalide (choix par défaut). */
+  readonly filter: RenderFilter | null;
 }
 
 export const DEFAULT_CAPTURE_PARAMS: CaptureParams = {
@@ -28,6 +35,7 @@ export const DEFAULT_CAPTURE_PARAMS: CaptureParams = {
   seed: 42,
   camera: 'three-quarter',
   time: 0,
+  filter: null,
 };
 
 /** Temps de simulation maximal accepté (1 h), pour éviter un calcul démesuré. */
@@ -45,6 +53,7 @@ export function parseCaptureParams(search: string): CaptureParams {
     seed: parseSeed(params.get('seed')),
     camera: parseCamera(params.get('camera')),
     time: parseTime(params.get('time')),
+    filter: parseFilter(params.get('filtre')),
   };
 }
 
@@ -70,4 +79,8 @@ function parseTime(raw: string | null): number {
     return DEFAULT_CAPTURE_PARAMS.time;
   }
   return Math.min(value, MAX_CAPTURE_TIME_SECONDS);
+}
+
+function parseFilter(raw: string | null): RenderFilter | null {
+  return isRenderFilter(raw) ? raw : null;
 }
