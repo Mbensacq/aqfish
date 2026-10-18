@@ -55,6 +55,13 @@ haut de sa section.
   3 graines, `trajectory.spec.ts`) tournait en parallèle : un test unitaire de simulation
   longue doit rester court (≲ 2 s par cas en local) pour ne pas affamer les tests de durée.
   (2026-10-18)
+  Cycle 14 (#54) : la borne absolue a de nouveau cédé (5,16 s en CI). **Ne plus borner une
+  durée en millisecondes** : comparer deux mesures prises dans le même test, en alternance,
+  en gardant le minimum de plusieurs essais (`flocking.spec.ts` : 600 pas avec 60 néons
+  contre 15, rapport < 40 ; ≈ 10 à 11 mesuré en local, seul comme suite complète, contre
+  64 attendu en O(n³)). La charge des fichiers parallèles touche les deux mesures pareil.
+  Mesure locale de `trajectory.spec.ts` (3 graines × 60 s simulées) : ≈ 80 à 150 ms par cas.
+  (2026-10-19)
 - **E2e de geste à la souris lent en rendu logiciel** (#38) : chaque glisser coûte plusieurs
   secondes sous SwiftShader. Pour prouver une borne, un seul glisser long par direction
   suffit s'il la dépasse sans elle ; le vérifier en retirant la borne le temps d'un essai
