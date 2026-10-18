@@ -187,7 +187,7 @@ maximal : 60 s par angle), et **aucune mesure de performance** ne doit y être f
 | Composant | Vitest + `TestBed` | Composants `ui` (sans WebGL : jsdom n'en a pas) |
 | Bout en bout | Playwright (`npm run e2e`) | Parcours utilisateur : rotation à la souris, préréglages, nourrissage… |
 | Visuel | Playwright (`npm run captures`) | 5 angles fixes, relus chaque nuit par la QA |
-| Mutation | StrykerJS (à mettre en place par la QA) | Détecter les tests qui ne testent rien |
+| Mutation | StrykerJS (`npm run test:mutation`, à la demande, hors CI) | `src/app/sim` : détecter les tests qui ne testent rien (score suivi dans `equipe/mutation/`) |
 
 Le code qui exige WebGL n'est pas testable en unitaire (jsdom) : il est couvert par le bout
 en bout et les captures. Cible de couverture : **≥ 80 % des lignes de `src/app/sim`**.
