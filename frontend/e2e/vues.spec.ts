@@ -93,6 +93,25 @@ test.describe('Préréglages de vue', () => {
     expect(distance(await cameraPosition(page), before)).toBeLessThan(1e-3);
   });
 
+  test('le bouton actif suit la touche pressée ; les touches hors 1 à 5 sont ignorées', async ({
+    page,
+  }) => {
+    await openScene(page, '?camera=front');
+    const toolbar = page.getByRole('toolbar', { name: 'Préréglages de vue' });
+    const top = toolbar.getByRole('button', { name: /Vue de dessus/ });
+    await page.keyboard.press('1');
+    await expect(top).toHaveAttribute('aria-pressed', 'true');
+    // Laisser finir la transition, puis mémoriser la pose d'arrivée.
+    await page.waitForTimeout(1000);
+    const arrival = await cameraPosition(page);
+    for (const key of ['6', '0', 'a']) {
+      await page.keyboard.press(key);
+    }
+    await page.waitForTimeout(1000);
+    await expect(top).toHaveAttribute('aria-pressed', 'true');
+    expect(distance(await cameraPosition(page), arrival)).toBeLessThan(1e-3);
+  });
+
   test('mode capture : aucune barre, touches sans effet', async ({ page }) => {
     const errors = await openScene(page, '?capture=1&camera=front');
     await expect(page.locator('app-view-presets-bar')).toHaveCount(0);
