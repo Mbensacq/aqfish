@@ -71,6 +71,23 @@ haut de sa section.
   Isoler la logique pure (calculs) pour la tester en unitaire, et couvrir le rendu par le
   bout en bout et les captures. (2026-10-16)
 
+## Simulation
+
+- **Cap qui oscille d'un pas à l'autre près d'une paroi** (cycle 9) : une déviation « tourner
+  de côté » renormalisée devient discontinue quand le poisson est presque face à la force ;
+  dans un coin, une petite force de la seconde paroi qui apparaît ou disparaît (point visé
+  qui entre ou sort de sa portée) suffit à inverser le côté du virage, et le cap alterne
+  entre deux valeurs à ± `avoidTurnRate · dt` jusqu'au contact. Symptôme : `yaw` identique
+  un pas sur deux dans une trace. Solution : déviation continue en cap, calculée dans le
+  plan horizontal, et côté départagé par la mémoire du virage (`sim/avoidance.ts`,
+  `deflect`, ADR 0012). Explorer une trajectoire avec `npx -y tsx` sur un script hors du
+  dépôt (le `console.log` des specs est invisible). (2026-10-18)
+- **Tester une trajectoire malgré l'errance** : l'errance aléatoire peut faire demi-tour à un
+  poisson sans aucun obstacle (sur 24 poissons lancés en ligne droite, 10 ne dépassent pas
+  36 cm en 15 s). Pour tester un comportement géométrique (contourner un rocher), remettre
+  `fish.turn = 0` avant chaque pas, et placer la scène dans un grand bac pour qu'aucune paroi
+  n'interfère (`swimmer.spec.ts`). (2026-10-18)
+
 ## Rendu
 
 - **Rendu sans filtre (`filtre=aucun`) : peu de couleurs, teintes différentes** : la scène est
