@@ -102,13 +102,15 @@ async function readFish(page: Page): Promise<FishProbe[]> {
 
 test.describe('Néons : maintien dans le bac (monde réel de l’application)', () => {
   for (const seed of [0, 1, 42, 4294967295]) {
-    test(`graine ${seed} : 8 poissons, tous dans le volume d’eau après 600 s`, async ({ page }) => {
+    test(`graine ${seed} : 12 poissons, tous dans le volume d’eau après 600 s`, async ({
+      page,
+    }) => {
       const errors: string[] = [];
       page.on('pageerror', (error) => errors.push(error.message));
       await page.goto(`/?capture=1&seed=${seed}&camera=side&time=600`);
       await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
       const fish = await readFish(page);
-      expect(fish).toHaveLength(8);
+      expect(fish).toHaveLength(12); // population par défaut du néon (sim/species.ts)
       for (const { x, y, z } of fish) {
         expect(Math.abs(x)).toBeLessThanOrEqual(TANK.halfWidth);
         expect(Math.abs(z)).toBeLessThanOrEqual(TANK.halfDepth);
