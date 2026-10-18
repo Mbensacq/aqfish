@@ -91,6 +91,17 @@ haut de sa section.
 
 ## Simulation
 
+- **Rapprocher les poissons des vitres** (#43, cycle 13) : raccourcir l'anticipation de
+  l'évitement (`LOOKAHEAD_SECONDS`) rapproche bien des vitres mais plaque des poissons dans
+  les coins et contre les rochers (tests de coin et `world.spec.ts` rouges). Agir plutôt sur
+  `wallMargin` (limite de nage) et `AVOID_ZONE` (portée), puis mesurer avec
+  `sim/trajectory.ts` (`glassStats`) sur plusieurs graines, avec et sans rochers : le compte
+  de contacts (centre sur la limite `hard`) doit rester nul. La zone de naissance est
+  découplée (`SwimBounds.spawn`) : sans cela, les mondes à t = 0 changent et les témoins de
+  `e2e/guppy.spec.ts` et `e2e/neon.spec.ts` (vue de dessous à t = 0) voient des poissons
+  près de la vitre du fond, au-dessus du bord du sable : le substrat ne cache pas tout.
+  (2026-10-18)
+
 - **Cap qui oscille d'un pas à l'autre près d'une paroi** (cycle 9) : une déviation « tourner
   de côté » renormalisée devient discontinue quand le poisson est presque face à la force ;
   dans un coin, une petite force de la seconde paroi qui apparaît ou disparaît (point visé

@@ -3,7 +3,8 @@ import { expect, test } from '@playwright/test';
 /**
  * Évitement des parois (issue #28, QA cycle 9), vu depuis l'application réelle : à plusieurs
  * instants et pour plusieurs graines, aucun poisson ne colle une paroi, le sable ou la
- * surface. Seuil de 3 cm (le relevé du cycle 9 donne au moins 10 cm) : marge large pour ne
+ * surface. Seuil de 3 cm (le relevé du cycle 9 donne au moins 10 cm, environ 5 cm depuis le réglage du
+ * cycle 13, issue #43) : marge large pour ne
  * pas rendre le test fragile. Garde de non-régression seulement : il passe aussi sur `main`
  * (les marges de rebond existaient déjà) et ne prouve donc pas l'évitement, couvert par les
  * tests unitaires de `sim/avoidance.spec.ts` et `sim/world.spec.ts`.

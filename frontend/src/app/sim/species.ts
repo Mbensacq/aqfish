@@ -149,7 +149,7 @@ export const NEON: SpeciesDefinition = {
   wanderTurnRate: 0.8,
   avoidTurnRate: 2.5,
   maxPitch: 0.35,
-  wallMargin: 0.05,
+  wallMargin: 0.04,
   tailBeatFrequency: 2.5,
   defaultPopulation: 12,
   schooling: {
@@ -208,7 +208,7 @@ export const GUPPY: SpeciesDefinition = {
   wanderTurnRate: 1.1,
   avoidTurnRate: 2.5,
   maxPitch: 0.3,
-  wallMargin: 0.05,
+  wallMargin: 0.04,
   tailBeatFrequency: 2,
   defaultPopulation: 6,
   schooling: {
