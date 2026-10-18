@@ -121,21 +121,21 @@ describe('glassStats', () => {
 
 /**
  * Issue #43 : les poissons nageaient trop loin des vitres (distance minimale ≥ 10 cm relevée
- * par la QA au cycle 9). Relevé sur 120 s (un point tous les 4 pas), graines 1, 42 et
+ * par la QA au cycle 9). Relevé sur 60 s (un point tous les 4 pas), graines 1, 42 et
  * 2³² − 1 : avant réglage (`main`, cycle 12), médiane des distances minimales aux vitres
- * 10,5 / 10,4 / 10,4 cm et 0,1 à 0,2 % des positions à moins de 10 cm d'une vitre ; après
- * (`wallMargin` 4 cm, `AVOID_ZONE` 7 cm, naissance inchangée), 8,8 / 8,8 / 8,8 cm et 10 à
- * 14 %. La distance minimale reste supérieure à `wallMargin` (centre jamais plaqué sur la
+ * 10,5 / 10,8 / 10,6 cm et 0,1 à 0,2 % des positions à moins de 10 cm d'une vitre ; après
+ * (`wallMargin` 4 cm, `AVOID_ZONE` 7 cm, naissance inchangée), 9,0 / 8,8 / 9,0 cm et 9 à
+ * 15 %. La distance minimale reste supérieure à `wallMargin` (centre jamais plaqué sur la
  * limite de nage) ; l'absence de demi-tour brusque est gardée par `world.spec.ts`.
- * Durée simulée limitée à 120 s : un test plus long charge le processeur pendant que le test
- * de durée de `flocking.spec.ts` s'exécute en parallèle (CI rouge à 300 s, PR #54).
+ * Durée simulée limitée à 60 s : un test plus long charge le processeur pendant que le test
+ * de durée de `flocking.spec.ts` s'exécute en parallèle (CI rouge à 300 puis 120 s, PR #54).
  */
 describe('distance aux vitres du monde par défaut (#43)', () => {
   const water = waterVolume();
-  const steps = Math.round(120 / SIM_DT);
+  const steps = Math.round(60 / SIM_DT);
 
   it.each([1, 42, 0xffffffff])(
-    'graine %s, 120 s : longe les vitres de plus près, sans les toucher',
+    'graine %s, 60 s : longe les vitres de plus près, sans les toucher',
     (seed) => {
       const stats = glassStats(recordTrajectories(createDefaultWorld(seed), steps, 4), water, 0.1);
       expect(stats.medianMinimum).toBeLessThan(0.095);
