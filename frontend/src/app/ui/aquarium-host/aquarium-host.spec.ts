@@ -5,7 +5,13 @@ import type { AquariumRenderer } from '../../render/aquarium-view';
 import { MAX_STEPS_PER_FRAME } from '../../sim/constants';
 import { NEON } from '../../sim/species';
 import { createDefaultWorld } from '../../sim/world';
-import { AQUARIUM_RENDERER_FACTORY, AquariumHost, CAMERA_ATTRIBUTE } from './aquarium-host';
+import {
+  AQUARIUM_RENDERER_FACTORY,
+  AquariumHost,
+  CAMERA_ATTRIBUTE,
+  SEED_ATTRIBUTE,
+  TICK_ATTRIBUTE,
+} from './aquarium-host';
 
 /** Double du renderer WebGL (jsdom n'a pas WebGL). */
 class FakeRenderer implements AquariumRenderer {
@@ -285,6 +291,46 @@ describe('AquariumHost', () => {
       frames.flush(0);
       frames.flush(60_000);
       expect(host().world?.tick).toBe(MAX_STEPS_PER_FRAME);
+    });
+
+    it('expose la graine et le tick dans le DOM (data-aqfish-seed, data-aqfish-tick)', async () => {
+      await create('?capture=1&seed=42&time=30');
+      const el = fixture.nativeElement as HTMLElement;
+      expect(el.getAttribute(SEED_ATTRIBUTE)).toBe('42');
+      expect(el.getAttribute(TICK_ATTRIBUTE)).toBe('1800');
+    });
+
+    it('hors capture : le tick exposé suit le monde', async () => {
+      await create('?seed=5');
+      const el = fixture.nativeElement as HTMLElement;
+      setCanvasSize(800, 600);
+      expect(el.getAttribute(TICK_ATTRIBUTE)).toBe('0');
+      frames.flush(0);
+      for (let i = 1; i <= 30; i++) {
+        frames.flush((i * 1000) / 60);
+      }
+      expect(el.getAttribute(TICK_ATTRIBUTE)).toBe(String(host().world?.tick));
+      expect(host().world?.tick).toBe(30);
+    });
+
+    it('hors capture : avance le monde en place et réutilise le même rappel rAF', async () => {
+      const raf = vi.mocked(window.requestAnimationFrame);
+      await create();
+      setCanvasSize(800, 600);
+      frames.flush(0);
+      const world = host().world;
+      const entities = world?.entities;
+      raf.mockClear();
+      for (let i = 1; i <= 10; i++) {
+        frames.flush((i * 1000) / 60);
+      }
+      // Même objet monde (aucune copie par image), tick avancé.
+      expect(host().world).toBe(world);
+      expect(host().world?.entities).toBe(entities);
+      expect(world?.tick).toBe(10);
+      // Une demande d'image par image, toujours avec le même rappel (créé une seule fois).
+      expect(raf).toHaveBeenCalledTimes(10);
+      expect(new Set(raf.mock.calls.map(([cb]) => cb)).size).toBe(1);
     });
 
     it('libère le monde à la destruction', async () => {

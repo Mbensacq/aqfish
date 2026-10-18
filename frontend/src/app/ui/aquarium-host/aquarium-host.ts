@@ -18,8 +18,14 @@ import {
   type AquariumRendererFactory,
 } from '../../render/aquarium-view';
 import { CAMERA_TRANSITION_SECONDS } from '../../render/camera-presets';
-import { fixedStep } from '../../sim/fixed-step';
-import { advance, advanceTo, createDefaultWorld, type World } from '../../sim/world';
+import { fixedStepInto, type FixedStepState } from '../../sim/fixed-step';
+import {
+  advanceInPlace,
+  advanceTo,
+  createDefaultWorld,
+  type MutableWorld,
+  type World,
+} from '../../sim/world';
 
 /** Fabrique du renderer, remplaçable dans les tests (jsdom n'a pas WebGL). */
 export const AQUARIUM_RENDERER_FACTORY = new InjectionToken<AquariumRendererFactory>(
@@ -29,6 +35,10 @@ export const AQUARIUM_RENDERER_FACTORY = new InjectionToken<AquariumRendererFact
 
 /** Attribut du composant hôte exposant la position de la caméra aux tests de bout en bout. */
 export const CAMERA_ATTRIBUTE = 'data-aqfish-camera';
+/** Attribut du composant hôte exposant `world.tick` (mis à jour quand il change). */
+export const TICK_ATTRIBUTE = 'data-aqfish-tick';
+/** Attribut du composant hôte exposant la graine du monde (fixée au démarrage). */
+export const SEED_ATTRIBUTE = 'data-aqfish-seed';
 
 /**
  * Hôte du canvas 3D : crée la vue, porte la boucle `requestAnimationFrame`, suit la taille
@@ -42,6 +52,10 @@ export const CAMERA_ATTRIBUTE = 'data-aqfish-camera';
  * préréglage demandé, une seule image rendue (puis à chaque redimensionnement). Dans tous
  * les modes, `markCaptureReady()` est appelé après la première image complète.
  * Aucun signal n'est mis à jour à chaque image (docs/ARCHITECTURE.md, « Interface »).
+ *
+ * Boucle d'affichage sans allocation : le monde appartient à l'hôte et avance en place
+ * (`advanceInPlace`), l'accumulateur est réécrit dans un objet réutilisé (`fixedStepInto`)
+ * et le rappel `requestAnimationFrame` est créé une seule fois.
  */
 @Component({
   selector: 'app-aquarium-host',
@@ -63,10 +77,12 @@ export class AquariumHost {
   private frameId: number | null = null;
   private readySignaled = false;
   private capture = false;
-  private currentWorld: World | null = null;
-  private accumulator = 0;
-  private alpha = 0;
+  private currentWorld: MutableWorld | null = null;
+  /** État de la boucle à pas fixe, réécrit à chaque image (aucune allocation). */
+  private readonly clock: FixedStepState = { steps: 0, accumulator: 0, alpha: 0 };
   private lastTimestamp: number | null = null;
+  private exposedTick: number | null = null;
+  private readonly onFrame: FrameRequestCallback = (timestamp) => this.frame(timestamp);
   private readonly cleanups: (() => void)[] = [];
 
   /** État courant de la simulation (`null` avant le démarrage et après la destruction). */
@@ -76,7 +92,7 @@ export class AquariumHost {
 
   /** Facteur d'interpolation du rendu entre les deux derniers pas, dans [0, 1). */
   get interpolationAlpha(): number {
-    return this.alpha;
+    return this.clock.alpha;
   }
 
   /**
@@ -108,8 +124,11 @@ export class AquariumHost {
     const params = parseCaptureParams(win.location.search);
     this.capture = params.capture;
     // En mode capture, le temps demandé est atteint ici, avant toute image (contrat de capture).
-    const world = createDefaultWorld(params.seed);
+    // Le monde créé ici appartient à l'hôte seul : il pourra être avancé en place.
+    const world: MutableWorld = createDefaultWorld(params.seed);
     this.currentWorld = params.capture ? advanceTo(world, params.time) : world;
+    this.host.nativeElement.setAttribute(SEED_ATTRIBUTE, String(this.currentWorld.seed));
+    this.exposeTick();
 
     const view = new AquariumView({
       canvas: this.canvasRef().nativeElement,
@@ -133,7 +152,7 @@ export class AquariumHost {
     if (!win || !this.view || this.frameId !== null) {
       return;
     }
-    this.frameId = win.requestAnimationFrame((timestamp) => this.frame(timestamp));
+    this.frameId = win.requestAnimationFrame(this.onFrame);
   }
 
   private frame(timestamp: number): void {
@@ -154,7 +173,7 @@ export class AquariumHost {
     }
     if (this.currentWorld) {
       // En capture, l'image montre exactement l'état au temps demandé (alpha = 1).
-      view.updateFish(this.currentWorld.entities, this.capture ? 1 : this.alpha);
+      view.updateFish(this.currentWorld.entities, this.capture ? 1 : this.clock.alpha);
     }
     const rendered = view.renderFrame();
 
@@ -183,13 +202,26 @@ export class AquariumHost {
     // Première image : pas de durée de référence, aucun pas.
     const realDt = this.lastTimestamp === null ? 0 : (timestamp - this.lastTimestamp) / 1000;
     this.lastTimestamp = timestamp;
-    const result = fixedStep({ accumulator: this.accumulator, realDt });
-    this.accumulator = result.accumulator;
-    this.alpha = result.alpha;
-    if (result.steps > 0 && this.currentWorld) {
-      this.currentWorld = advance(this.currentWorld, result.steps);
+    const clock = fixedStepInto(this.clock.accumulator, realDt, this.clock);
+    if (clock.steps > 0 && this.currentWorld) {
+      advanceInPlace(this.currentWorld, clock.steps);
+      this.exposeTick();
     }
     return realDt;
+  }
+
+  /**
+   * Expose `world.tick` aux tests de bout en bout (`data-aqfish-tick`), y compris en build de
+   * production. Seule écriture DOM de la boucle : une courte chaîne, et seulement quand le
+   * compteur a changé.
+   */
+  private exposeTick(): void {
+    const world = this.currentWorld;
+    if (!world || world.tick === this.exposedTick) {
+      return;
+    }
+    this.exposedTick = world.tick;
+    this.host.nativeElement.setAttribute(TICK_ATTRIBUTE, String(world.tick));
   }
 
   private exposeCamera(): void {
