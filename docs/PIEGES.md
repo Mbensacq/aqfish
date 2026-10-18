@@ -53,6 +53,13 @@ haut de sa section.
 
 ## Rendu
 
+- **Petits objets et surfaces translucides** : un poisson de 2 à 4 pixels de scène change de
+  couleur de palette dès qu'il est éclairé ou vu à travers l'eau ou même le verre (8 %
+  d'opacité : le rouge néon devenait rouge koï). Les animaux sont en couleurs plates et
+  dessinés après l'eau et le verre (ADR 0009). Vérifier les couleurs exactes d'une capture
+  avec un histogramme (Pillow : `Counter(Image.open(p).convert('RGB').getdata())`), pas
+  seulement à l'œil. (2026-10-18)
+
 - **Translucides plus clairs dans la cible basse résolution** : dans une `WebGLRenderTarget`
   (sRGB ou linéaire), le mélange alpha se fait en espace linéaire, alors qu'à l'écran il se
   faisait sur des valeurs sRGB. L'eau et le verre à faible opacité paraissent donc plus

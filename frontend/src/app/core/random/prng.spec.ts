@@ -1,4 +1,12 @@
-import { assertSeed, createEntityPrng, createPrng, deriveSeed, MAX_SEED } from './prng';
+import {
+  assertSeed,
+  createEntityPrng,
+  createPrng,
+  deriveSeed,
+  MAX_SEED,
+  prngNextState,
+  prngOutput,
+} from './prng';
 
 function take(next: () => number, n: number): number[] {
   return Array.from({ length: n }, () => next());
@@ -58,6 +66,25 @@ describe('createPrng (mulberry32)', () => {
       expect(() => createPrng(seed)).toThrow(RangeError);
     },
   );
+});
+
+describe('prngNextState / prngOutput (état explicite)', () => {
+  it.each([0, 1, 42, MAX_SEED])('même suite que createPrng(%s)', (seed) => {
+    const expected = take(createPrng(seed).nextUint32, 100);
+    let state = seed;
+    const actual = take(() => {
+      state = prngNextState(state);
+      return prngOutput(state);
+    }, 100);
+    expect(actual).toEqual(expected);
+  });
+
+  it('l’état reste un entier 32 bits non signé (débordement compris)', () => {
+    const state = prngNextState(MAX_SEED);
+    expect(Number.isInteger(state)).toBe(true);
+    expect(state).toBeGreaterThanOrEqual(0);
+    expect(state).toBeLessThanOrEqual(MAX_SEED);
+  });
 });
 
 describe('deriveSeed / createEntityPrng', () => {

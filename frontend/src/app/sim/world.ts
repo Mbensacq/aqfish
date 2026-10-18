@@ -1,14 +1,20 @@
 import { assertSeed } from '../core/random/prng';
 import { SIM_DT } from './constants';
+import { SPECIES, type SpeciesId } from './species';
+import { createFish, stepFish, swimBounds, type Fish, type SwimBounds } from './swimmer';
+import { waterVolume } from './tank';
 
 /**
- * Entité de la simulation (poisson, plante…). Vide pour l'instant : les espèces arrivent
- * avec l'issue « Première espèce qui nage ». Chaque entité tirera son hasard de
- * `createEntityPrng(world.seed, id)` (core/random/prng.ts).
+ * Entité de la simulation. Seuls les poissons existent pour l'instant (`sim/swimmer.ts`).
+ * Chaque entité tire son hasard de son propre sous-générateur, dérivé de la graine du
+ * monde et de son identifiant (`deriveSeed`, core/random/prng.ts).
  */
-export interface Entity {
-  /** Identifiant unique, entier 32 bits non signé. */
-  readonly id: number;
+export type Entity = Fish;
+
+/** Population demandée à la création du monde. */
+export interface PopulationEntry {
+  readonly species: SpeciesId;
+  readonly count: number;
 }
 
 /**
@@ -28,11 +34,34 @@ export interface World {
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
 
 /**
- * Crée un monde vide à `time = 0`.
- * @throws RangeError si la graine n'est pas un entier 32 bits non signé.
+ * Crée un monde à `time = 0`, vide par défaut, peuplé dans l'ordre de `population`
+ * (identifiants consécutifs à partir de 0) dans le bac par défaut (`sim/tank.ts`).
+ * @throws RangeError si la graine n'est pas un entier 32 bits non signé, ou si un effectif
+ * n'est pas un entier positif ou nul.
  */
-export function createWorld(seed: number): World {
-  return { seed: assertSeed(seed), tick: 0, time: 0, entities: [] };
+export function createWorld(seed: number, population: readonly PopulationEntry[] = []): World {
+  assertSeed(seed);
+  const entities: Entity[] = [];
+  for (const { species, count } of population) {
+    if (!Number.isInteger(count) || count < 0) {
+      throw new RangeError(`count doit être un entier positif ou nul (reçu : ${count})`);
+    }
+    if (!(species in SPECIES)) {
+      throw new RangeError(`espèce inconnue : ${String(species)}`);
+    }
+    for (let i = 0; i < count; i++) {
+      entities.push(createFish(seed, entities.length, species, boundsFor(species)));
+    }
+  }
+  return { seed, tick: 0, time: 0, entities };
+}
+
+/** Monde par défaut de l'application : chaque espèce avec sa population par défaut. */
+export function createDefaultWorld(seed: number): World {
+  return createWorld(
+    seed,
+    Object.values(SPECIES).map((def) => ({ species: def.id, count: def.defaultPopulation })),
+  );
 }
 
 /**
@@ -85,7 +114,22 @@ export function advanceTo(world: World, time: number): World {
 function stepInPlace(world: Mutable<World>, dt: number): void {
   world.tick += 1;
   world.time += dt;
-  // Les comportements des entités viendront ici (dans un ordre stable, par identifiant).
+  // Ordre stable : celui du tableau, c'est-à-dire des identifiants.
+  for (const fish of world.entities as Mutable<Entity>[]) {
+    stepFish(fish, dt, boundsFor(fish.species));
+  }
+}
+
+/** Bornes de nage par espèce dans le bac par défaut, calculées une fois (aucune allocation par pas). */
+const BOUNDS_CACHE = new Map<SpeciesId, SwimBounds>();
+
+function boundsFor(species: SpeciesId): SwimBounds {
+  let bounds = BOUNDS_CACHE.get(species);
+  if (!bounds) {
+    bounds = swimBounds(SPECIES[species], waterVolume());
+    BOUNDS_CACHE.set(species, bounds);
+  }
+  return bounds;
 }
 
 function cloneWorld(world: World): Mutable<World> {

@@ -1,14 +1,7 @@
 import type { CameraPreset } from '../core/capture/capture-params';
+import type { TankDimensions } from '../sim/tank';
 
-/** Dimensions intérieures du bac, en mètres (repère : Y vers le haut, origine au centre du fond). */
-export interface TankDimensions {
-  /** Longueur selon X. */
-  readonly width: number;
-  /** Hauteur selon Y. */
-  readonly height: number;
-  /** Profondeur selon Z. */
-  readonly depth: number;
-}
+export type { TankDimensions } from '../sim/tank';
 
 export type Vec3 = readonly [number, number, number];
 

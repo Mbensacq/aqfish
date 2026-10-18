@@ -26,11 +26,8 @@ export function createPrng(seed: number): Prng {
   let state = assertSeed(seed);
 
   const nextUint32 = (): number => {
-    state = (state + 0x6d2b79f5) >>> 0;
-    let t = state;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return (t ^ (t >>> 14)) >>> 0;
+    state = prngNextState(state);
+    return prngOutput(state);
   };
 
   return {
@@ -38,6 +35,29 @@ export function createPrng(seed: number): Prng {
     // Division par 2^32 : le résultat reste strictement inférieur à 1.
     next: () => nextUint32() / 4294967296,
   };
+}
+
+/**
+ * Forme « à état explicite » de mulberry32, pour les entités de la simulation dont l'état
+ * doit rester sérialisable (un nombre, pas une fermeture) et ne rien allouer par pas :
+ *
+ * ```ts
+ * entity.rng = prngNextState(entity.rng);
+ * const r = prngOutput(entity.rng) / 4294967296; // réel dans [0, 1)
+ * ```
+ *
+ * À partir du même état, cette suite est identique à celle de `createPrng(état)`.
+ */
+export function prngNextState(state: number): number {
+  return (state + 0x6d2b79f5) >>> 0;
+}
+
+/** Sortie entière (dans [0, 2^32)) associée à un état déjà avancé par `prngNextState`. */
+export function prngOutput(state: number): number {
+  let t = state;
+  t = Math.imul(t ^ (t >>> 15), t | 1);
+  t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+  return (t ^ (t >>> 14)) >>> 0;
 }
 
 /**

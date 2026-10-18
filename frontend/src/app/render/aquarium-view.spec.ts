@@ -1,5 +1,6 @@
 import type { Camera, Scene, WebGLRenderTarget } from 'three';
 
+import { createDefaultWorld } from '../sim/world';
 import { AquariumView, type AquariumRenderer } from './aquarium-view';
 
 /** Double du renderer WebGL qui consigne les appels (jsdom n'a pas WebGL). */
@@ -80,5 +81,14 @@ describe('AquariumView (pipeline pixel art)', () => {
     view.dispose();
     expect(renderer.calls.filter((c) => c === 'dispose')).toEqual(['dispose']);
     expect(view.renderFrame()).toBe(false);
+  });
+
+  it('place les poissons du monde avant le rendu ; ignore les appels après destruction', () => {
+    const world = createDefaultWorld(42);
+    view.updateFish(world.entities, 0.5);
+    expect(view.fishCount).toBe(world.entities.length);
+    view.dispose();
+    view.updateFish([], 0);
+    expect(view.fishCount).toBe(world.entities.length);
   });
 });

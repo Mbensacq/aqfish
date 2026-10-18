@@ -46,13 +46,17 @@ simulation testable et les captures reproductibles.
   à exécuter, le reste à reporter et le facteur d'interpolation `alpha` ∈ [0, 1). Au-delà
   de `MAX_STEPS_PER_FRAME` pas par image, le retard est abandonné (pas de spirale de
   rattrapage).
-- **Monde** : `sim/world.ts`. `createWorld(seed)`, `step(world, SIM_DT)` (pure : renvoie un
+- **Monde** : `sim/world.ts`. `createWorld(seed, population?)` (vide par défaut), `createDefaultWorld(seed)` (monde de l’application), `step(world, SIM_DT)` (pure : renvoie un
   nouvel état, ne modifie jamais son entrée), `advance(world, n)` (une seule copie puis
   aucune allocation par pas), `advanceTo(world, time)` (`round(time / SIM_DT)` pas au total,
   utilisé par le mode capture avant le premier rendu).
 - **État sérialisable** : l'état du monde (`seed`, `tick`, `time`, `entities`) est un objet
   de données simple (JSON), sans classe Three.js ni référence circulaire. Il sert à la
   sauvegarde, aux tests et aux captures.
+- **Entités** : les poissons (`sim/swimmer.ts`) gardent l'état de leur sous-générateur sous
+  forme d'un entier (`rng`, avancé par `prngNextState` / `prngOutput`, même suite que
+  `createPrng`), et leur état au pas précédent (`px`, `pyaw`…) pour l'interpolation du rendu.
+  Ils sont mis à jour en place, par identifiant croissant, sans allocation par pas.
 - **Unités et repère** : mètres, secondes, degrés Celsius. Axe Y vers le haut ; origine au
   centre du fond du bac.
 - **Données réelles** : toute valeur présentée comme réelle (température d'une espèce,
@@ -108,13 +112,18 @@ La cible est en sRGB 8 bits : les surfaces translucides s'y mélangent en espace
 | `core/random/prng.ts` | PRNG mulberry32 à graine, dérivation de sous-générateurs par entité |
 | `sim/constants.ts` | `SIM_DT`, `MAX_STEPS_PER_FRAME` |
 | `sim/fixed-step.ts` | Accumulateur de la boucle à pas fixe (fonction pure) |
-| `sim/world.ts` | État du monde sérialisable, `step`, `advance`, `advanceTo` |
+| `sim/world.ts` | État du monde sérialisable, `step`, `advance`, `advanceTo`, `createDefaultWorld` (population par défaut) |
+| `sim/tank.ts` | Dimensions du bac, volume d'eau, `shrinkBox` (partagés par la simulation et le rendu) |
+| `sim/species.ts` | Définitions déclaratives des espèces (`NEON`), `validateSpecies` |
+| `sim/swimmer.ts` | Poisson (état sérialisable, sous-générateur en état explicite), nage : errance, évitement des parois, bornes |
 | `render/palette.ts` | Palette unique (32 à 48 couleurs), nommées par usage |
 | `render/pixel-art.ts` | `PIXEL_SIZE`, taille de la cible basse résolution, couleur la plus proche (fonctions pures, même métrique que le shader) |
 | `render/palette-pass.ts` | Cible basse résolution et passe plein écran palette (`ShaderMaterial`) ; libération |
 | `render/camera-presets.ts` | Dimensions du bac, préréglages de caméra (fonctions pures) |
 | `render/aquarium-scene.ts` | Scène statique : sable, eau, verre, arêtes, lumières ; libération |
-| `render/aquarium-view.ts` | Vue sans Angular : renderer (fabrique remplaçable), caméra, `OrbitControls` |
+| `render/fish-model.ts` | Modèles voxel des poissons générés depuis un gabarit de profil (ADR 0009) |
+| `render/fish-layer.ts` | `InstancedMesh` corps et queue par espèce, interpolation entre deux pas, ondulation |
+| `render/aquarium-view.ts` | Vue sans Angular : renderer (fabrique remplaçable), caméra, `OrbitControls`, `updateFish` |
 | `ui/aquarium-host/` | Composant hôte : boucle rAF, avance de la simulation, redimensionnement, contrat de capture, `DestroyRef` |
 
 Le renderer est créé par une fabrique (`AQUARIUM_RENDERER_FACTORY`, par défaut
