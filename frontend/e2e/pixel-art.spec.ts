@@ -40,8 +40,15 @@ async function cameraOf(page: Page): Promise<string | null> {
   return page.locator('app-aquarium-host').getAttribute('data-aqfish-camera');
 }
 
-/** Analyse la capture d'écran : couleurs hors palette et blocs non uniformes. */
+/**
+ * Analyse la capture d'écran : couleurs hors palette et blocs non uniformes.
+ * L'interface superposée au canvas (barre des vues, hors mode capture) n'est pas du pixel
+ * art : elle est masquée pour n'analyser que l'image 3D.
+ */
 async function analyseScreen(page: Page, blockSize: number): Promise<PixelReport> {
+  await page.addStyleTag({
+    content: 'app-root > :not(app-aquarium-host) { visibility: hidden !important; }',
+  });
   const png = (await page.screenshot({ animations: 'disabled' })).toString('base64');
   return page.evaluate(
     async ({ png, blockSize, palette }) => {
