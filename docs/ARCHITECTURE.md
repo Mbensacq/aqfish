@@ -59,7 +59,7 @@ simulation testable et les captures reproductibles.
   `fixedStepInto` (résultat réécrit dans un objet réutilisé) puis `advanceInPlace`, avec un
   rappel `requestAnimationFrame` créé une seule fois. Validation du pas : `assertTimeStep`
   (`sim/time-step.ts`), unique.
-- **État sérialisable** : l'état du monde (`seed`, `tick`, `time`, `entities`) est un objet
+- **État sérialisable** : l'état du monde (`seed`, `tick`, `time`, `entities`, `obstacles`) est un objet
   de données simple (JSON), sans classe Three.js ni référence circulaire. Il sert à la
   sauvegarde, aux tests et aux captures.
 - **Entités** : les poissons (`sim/swimmer.ts`) gardent l'état de leur sous-générateur sous
@@ -72,6 +72,13 @@ simulation testable et les captures reproductibles.
   poisson nage (`stepFish`, pilotage passé en trois nombres) ; enfin l'espacement minimal
   entre congénères est imposé (`enforceMinDistance`). Les poissons d'un banc s'influencent :
   en ajouter change la trajectoire des autres (le hasard, lui, reste indépendant).
+- **Évitement** (ADR 0012, `sim/avoidance.ts`, `sim/obstacles.ts`) : les obstacles du monde
+  (`world.obstacles`, sphères pour l'instant) sont des données, décrites par une distance
+  signée et une normale. Dans `stepFish`, parois (au point visé) et obstacles (le long du
+  segment position → point visé) donnent une force proportionnelle à la proximité ; elle est
+  déviée pour contourner (`deflect`, continue en cap), et son intensité dose le virage aux
+  dépens de l'errance et du banc. Filets de sécurité : projection hors d'un obstacle, puis
+  dans les bornes `hard`.
 - **Unités et repère** : mètres, secondes, degrés Celsius. Axe Y vers le haut ; origine au
   centre du fond du bac.
 - **Données réelles** : toute valeur présentée comme réelle (température d'une espèce,
@@ -152,7 +159,10 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
 | `sim/world.ts` | État du monde sérialisable, `step`, `advance`, `advanceTo`, `advanceInPlace` (boucle d'affichage), `createDefaultWorld` (population par défaut) |
 | `sim/tank.ts` | Dimensions du bac, volume d'eau, `shrinkBox` (partagés par la simulation et le rendu) |
 | `sim/species.ts` | Définitions déclaratives des espèces (`NEON`), `validateSpecies` |
-| `sim/swimmer.ts` | Poisson (état sérialisable, sous-générateur en état explicite), nage : errance, évitement des parois, bornes |
+| `sim/swimmer.ts` | Poisson (état sérialisable, sous-générateur en état explicite), nage : errance, banc, évitement, bornes |
+| `sim/flocking.ts` | Banc : séparation, alignement, cohésion, pilotage en deux phases, espacement minimal (ADR 0011) |
+| `sim/obstacles.ts` | Obstacles du bac (données, sphère), distance signée et normale (ADR 0012) |
+| `sim/avoidance.ts` | Forces d'évitement des parois et des obstacles, proximité, déviation pour contourner (ADR 0012) |
 | `render/palette.ts` | Palette unique (32 à 48 couleurs), nommées par usage |
 | `render/pixel-art.ts` | `PIXEL_SIZE`, taille de la cible basse résolution, couleur la plus proche (fonctions pures, même métrique que le shader) |
 | `render/palette-pass.ts` | Cible basse résolution et passe plein écran palette (`ShaderMaterial`) ; libération |

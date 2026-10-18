@@ -1,6 +1,8 @@
 import { MAX_CAPTURE_TIME_SECONDS } from '../core/capture/capture-params';
 import { MAX_SEED } from '../core/random/prng';
 import { SIM_DT } from './constants';
+import type { Vec3 } from './flocking';
+import { obstacleDistance, sphereObstacle, type Obstacle } from './obstacles';
 import { NEON, type SpeciesId } from './species';
 import { swimBounds } from './swimmer';
 import { waterVolume } from './tank';
@@ -12,12 +14,13 @@ import {
   createWorld,
   step,
   ticksFor,
+  type MutableWorld,
   type World,
 } from './world';
 
 describe('createWorld', () => {
   it('crée un monde vide à t = 0 avec la graine donnée', () => {
-    expect(createWorld(42)).toEqual({ seed: 42, tick: 0, time: 0, entities: [] });
+    expect(createWorld(42)).toEqual({ seed: 42, tick: 0, time: 0, entities: [], obstacles: [] });
   });
 
   it.each([0, MAX_SEED])('accepte la graine limite %s', (seed) => {
@@ -227,6 +230,100 @@ describe('monde peuplé', () => {
     const world = advance(createDefaultWorld(3), 777);
     expect(JSON.parse(JSON.stringify(world))).toEqual(world);
   });
+});
+
+describe('obstacles', () => {
+  const rocks = [sphereObstacle(1, 0.35, 0.15, 0.1, 0.06), sphereObstacle(0, 0, 0.2, 0, 0.08)];
+
+  it('copiés et triés par identifiant, sérialisables en JSON', () => {
+    const input = rocks.map((r) => ({ ...r }));
+    const world = createWorld(42, [], input);
+    expect(world.obstacles.map((o) => o.id)).toEqual([0, 1]);
+    expect(world.obstacles[0]).not.toBe(input[1]);
+    input[1].x = 99 as never;
+    expect(world.obstacles[0].x).toBe(0);
+    expect(JSON.parse(JSON.stringify(world))).toEqual(world);
+  });
+
+  it('refuse un obstacle invalide ou un identifiant en double', () => {
+    const bad = { ...rocks[0], radius: 0 } as Obstacle;
+    expect(() => createWorld(42, [], [bad])).toThrow(RangeError);
+    const twin = { ...rocks[1], x: -0.3 } as Obstacle;
+    expect(() => createWorld(42, [], [rocks[1], twin])).toThrow(/double/);
+  });
+
+  it('sans obstacle : monde identique à celui d’avant (liste vide par défaut)', () => {
+    expect(createWorld(5, [{ species: 'neon', count: 4 }], [])).toEqual(
+      createWorld(5, [{ species: 'neon', count: 4 }]),
+    );
+  });
+
+  it('step ne modifie pas les obstacles de son entrée', () => {
+    const world = createWorld(42, [{ species: 'neon', count: 3 }], rocks);
+    const snapshot = JSON.stringify(world.obstacles);
+    const next = step(world);
+    expect(JSON.stringify(world.obstacles)).toBe(snapshot);
+    expect(next.obstacles).toEqual(world.obstacles);
+  });
+
+  // Critères de l'issue #28 : 20 poissons, 10 000 pas, bac par défaut avec deux rochers.
+  it.each([1, 42, 0xffffffff])(
+    'graine %s : 20 poissons sur 10 000 pas, jamais hors du bac, ni contre une paroi, ni dans un rocher, sans demi-tour brusque',
+    (seed) => {
+      const water = waterVolume();
+      const hard = swimBounds(NEON, water).hard;
+      const world = createWorld(seed, [{ species: 'neon', count: 20 }], rocks) as MutableWorld;
+      const n: Vec3 = { x: 0, y: 0, z: 0 };
+      let outside = 0;
+      let wallContacts = 0;
+      let rockContacts = 0;
+      let sharpTurns = 0;
+      for (let i = 0; i < 10_000; i++) {
+        advanceInPlace(world, 1);
+        for (const f of world.entities) {
+          if (
+            f.x < water.minX ||
+            f.x > water.maxX ||
+            f.y < water.minY ||
+            f.y > water.maxY ||
+            f.z < water.minZ ||
+            f.z > water.maxZ
+          ) {
+            outside++;
+          }
+          // Contact : centre plaqué sur la limite de nage (filet de sécurité sollicité).
+          if (
+            f.x <= hard.minX ||
+            f.x >= hard.maxX ||
+            f.y <= hard.minY ||
+            f.y >= hard.maxY ||
+            f.z <= hard.minZ ||
+            f.z >= hard.maxZ
+          ) {
+            wallContacts++;
+          }
+          for (const rock of world.obstacles) {
+            if (obstacleDistance(rock, f.x, f.y, f.z, n) < NEON.bodyLength / 2) {
+              rockContacts++;
+            }
+          }
+          // Demi-tour brusque : caps successifs à plus de 90° (produit scalaire négatif).
+          const dot =
+            Math.cos(f.pitch) * Math.cos(f.ppitch) * Math.cos(f.yaw - f.pyaw) +
+            Math.sin(f.pitch) * Math.sin(f.ppitch);
+          if (dot < 0) {
+            sharpTurns++;
+          }
+        }
+      }
+      expect({ outside, wallContacts, rockContacts, sharpTurns }).toEqual({
+        outside: 0,
+        wallContacts: 0,
+        rockContacts: 0,
+        sharpTurns: 0,
+      });
+    },
+  );
 });
 
 describe('temps simulé (sans dérive)', () => {

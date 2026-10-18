@@ -1,4 +1,6 @@
 import { SIM_DT } from './constants';
+import type { Vec3 } from './flocking';
+import { obstacleDistance, sphereObstacle } from './obstacles';
 import { NEON } from './species';
 import { createFish, stepFish, swimBounds, wrapAngle, type Fish, type SwimBounds } from './swimmer';
 import { waterVolume, type Box3 } from './tank';
@@ -246,6 +248,127 @@ describe('stepFish : pilotage de banc', () => {
     stepFish(free, SIM_DT, BOUNDS);
     expect(steered.yaw).toBe(free.yaw);
     expect(steered.pitch).toBeGreaterThan(free.pitch);
+  });
+});
+
+describe('stepFish : évitement des parois et des obstacles', () => {
+  function placed(x: number, z: number, yaw: number, id = 0): MutableFish {
+    const f = createFish(42, id, 'neon', BOUNDS) as MutableFish;
+    Object.assign(f, { x, y: 0.3, z, yaw, pitch: 0, turn: 0, pitchTarget: 0, speed: 0.06 });
+    return f;
+  }
+
+  it('le virage d’évitement croît avec la proximité de la paroi', () => {
+    // Même poisson (même hasard), cap +X, à trois distances de la paroi +X.
+    const free = placed(0, 0, 0);
+    const far = placed(BOUNDS.soft.maxX - 0.15, 0, 0);
+    const mid = placed(BOUNDS.soft.maxX - 0.05, 0, 0);
+    const near = placed(BOUNDS.soft.maxX + 0.03, 0, 0);
+    for (const f of [free, far, mid, near]) {
+      stepFish(f, SIM_DT, BOUNDS);
+    }
+    // Loin (point visé hors de portée) : exactement la nage libre.
+    expect(far.yaw).toBe(free.yaw);
+    const midTurn = Math.abs(mid.yaw - free.yaw);
+    const nearTurn = Math.abs(near.yaw - free.yaw);
+    expect(midTurn).toBeGreaterThan(0);
+    expect(nearTurn).toBeGreaterThan(midTurn);
+    expect(nearTurn).toBeLessThanOrEqual((NEON.avoidTurnRate + NEON.wanderTurnRate) * SIM_DT);
+  });
+
+  it('longe la paroi : lancé de biais vers elle, la suit sans la toucher', () => {
+    const f = placed(0, 0, 0.6); // vers +X et +Z
+    let maxZ = f.z;
+    for (let i = 0; i < 900; i++) {
+      stepFish(f, SIM_DT, BOUNDS);
+      maxZ = Math.max(maxZ, f.z);
+      expect(f.z).toBeLessThan(BOUNDS.hard.maxZ);
+      expect(f.x).toBeLessThan(BOUNDS.hard.maxX);
+    }
+    expect(maxZ).toBeGreaterThan(BOUNDS.soft.maxZ - 0.05); // a bien approché la paroi
+  });
+
+  it.each([0, 1, 2, 3])(
+    'coin : lancé droit dans un coin (id %s), en ressort sans toucher les parois',
+    (id) => {
+      const f = placed(BOUNDS.soft.maxX - 0.05, BOUNDS.soft.maxZ - 0.05, Math.PI / 4, id);
+      for (let i = 0; i < 600; i++) {
+        stepFish(f, SIM_DT, BOUNDS);
+        expect(f.x).toBeLessThan(BOUNDS.hard.maxX);
+        expect(f.z).toBeLessThan(BOUNDS.hard.maxZ);
+      }
+      expect(Math.cos(f.yaw) < 0 || Math.sin(f.yaw) < 0).toBe(true); // reparti du coin
+    },
+  );
+
+  describe('obstacle sphérique', () => {
+    const rock = sphereObstacle(0, 0, 0.3, 0, 0.06);
+    const n: Vec3 = { x: 0, y: 0, z: 0 };
+
+    // Bac très grand : seul le rocher compte (pas de paroi à portée).
+    const OPEN = swimBounds(NEON, waterVolume({ width: 3, height: 2, depth: 3 }));
+    const openRock = sphereObstacle(0, 0, 0.9, 0, 0.06);
+
+    it.each([
+      [0, 0],
+      [1, 0],
+      [2, 0.02],
+      [3, -0.02],
+      [4, 0.05],
+      [5, -0.05],
+    ])(
+      'lancé vers le rocher (id %s, décalage %s m), le contourne sans le toucher',
+      (id, offset) => {
+        const f = createFish(42, id, 'neon', OPEN) as MutableFish;
+        Object.assign(f, { x: -0.3, y: 0.9, z: offset, yaw: 0, pitch: 0, turn: 0 });
+        Object.assign(f, { pitchTarget: 0, speed: 0.06 });
+        let minClearance = Infinity;
+        let crossedAt: number | null = null;
+        for (let i = 0; i < 900 && crossedAt === null; i++) {
+          f.turn = 0; // errance neutralisée : seul l'évitement oriente le poisson
+          stepFish(f, SIM_DT, OPEN, 0, 0, 0, [openRock]);
+          minClearance = Math.min(minClearance, obstacleDistance(openRock, f.x, f.y, f.z, n));
+          crossedAt = f.x > openRock.x ? Math.hypot(f.y - openRock.y, f.z - openRock.z) : null;
+        }
+        expect(crossedAt).not.toBeNull(); // est passé de l'autre côté du rocher…
+        expect(crossedAt as number).toBeGreaterThan(openRock.radius); // …à côté…
+        expect(minClearance).toBeGreaterThan(NEON.bodyLength / 2); // …sans le toucher
+      },
+    );
+
+    it('sans évitement, la même trajectoire traverserait le rocher (témoin)', () => {
+      // Ligne droite de (−0,3 ; 0,9 ; 0) selon +X : passe par le centre du rocher.
+      expect(obstacleDistance(openRock, 0, 0.9, 0, n)).toBeLessThan(0);
+    });
+
+    it('loin du rocher : exactement la nage sans obstacle', () => {
+      const a = placed(-0.4, 0, Math.PI); // s'éloigne du rocher
+      const b = placed(-0.4, 0, Math.PI);
+      for (let i = 0; i < 60; i++) {
+        stepFish(a, SIM_DT, BOUNDS);
+        stepFish(b, SIM_DT, BOUNDS, 0, 0, 0, [rock]);
+      }
+      expect(b).toEqual(a);
+    });
+
+    it('poisson placé dans le rocher (état corrompu) : ressorti dès le pas suivant', () => {
+      const f = placed(0.01, 0, 0);
+      stepFish(f, SIM_DT, BOUNDS, 0, 0, 0, [rock]);
+      expect(obstacleDistance(rock, f.x, f.y, f.z, n)).toBeGreaterThanOrEqual(-1e-12);
+      expect(inside(BOUNDS.hard, f)).toBe(true);
+    });
+
+    it('naissance : jamais à moins de wallMargin d’un obstacle', () => {
+      const big = sphereObstacle(0, 0, 0.3, 0, 0.12);
+      for (let id = 0; id < 200; id++) {
+        const f = createFish(7, id, 'neon', BOUNDS, [big]);
+        expect(obstacleDistance(big, f.x, f.y, f.z, n)).toBeGreaterThanOrEqual(NEON.wallMargin);
+      }
+    });
+
+    it('sans obstacle, la naissance est inchangée (liste vide = défaut)', () => {
+      expect(createFish(7, 3, 'neon', BOUNDS, [])).toEqual(createFish(7, 3, 'neon', BOUNDS));
+    });
   });
 });
 
