@@ -51,6 +51,10 @@ haut de sa section.
   (`it(nom, fn, 15_000)`), sans relâcher la borne (`flocking.spec.ts`, banc de 60 néons).
   Mesure locale de ce test : ≈ 0,6 à 0,9 s ; la CI a vu 9,3 s pour tout le fichier.
   (2026-10-18)
+  Cycle 13 : la CI a vu 6,6 s pour ce test pendant qu'un nouveau test lourd (300 s simulées ×
+  3 graines, `trajectory.spec.ts`) tournait en parallèle : un test unitaire de simulation
+  longue doit rester court (≲ 2 s par cas en local) pour ne pas affamer les tests de durée.
+  (2026-10-18)
 - **E2e de geste à la souris lent en rendu logiciel** (#38) : chaque glisser coûte plusieurs
   secondes sous SwiftShader. Pour prouver une borne, un seul glisser long par direction
   suffit s'il la dépasse sans elle ; le vérifier en retirant la borne le temps d'un essai
