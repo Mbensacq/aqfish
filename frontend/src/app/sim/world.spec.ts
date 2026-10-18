@@ -188,10 +188,19 @@ describe('monde peuplé', () => {
     expect(advance(createDefaultWorld(9), 50)).toEqual(stepped);
   });
 
-  it('ajouter un poisson ne change pas la trajectoire des autres', () => {
+  it('ajouter un poisson ne change pas l’état initial ni le hasard des autres', () => {
+    // Depuis le comportement de banc (#27), les poissons d'une espèce grégaire s'influencent :
+    // la trajectoire des autres change donc, par conception. L'indépendance qui reste
+    // garantie est celle du hasard (sous-générateur par entité, ADR 0003).
+    const few = createWorld(5, [{ species: 'neon', count: 2 }]);
+    const many = createWorld(5, [{ species: 'neon', count: 5 }]);
+    expect(many.entities.slice(0, 2)).toEqual(few.entities);
+  });
+
+  it('les poissons d’un banc s’influencent : en ajouter change la trajectoire des autres', () => {
     const few = advance(createWorld(5, [{ species: 'neon', count: 2 }]), 300);
     const many = advance(createWorld(5, [{ species: 'neon', count: 5 }]), 300);
-    expect(many.entities.slice(0, 2)).toEqual(few.entities);
+    expect(many.entities.slice(0, 2)).not.toEqual(few.entities);
   });
 
   it('step ne modifie pas les poissons de son entrée', () => {

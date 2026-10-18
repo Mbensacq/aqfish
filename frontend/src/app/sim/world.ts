@@ -1,5 +1,6 @@
 import { assertSeed } from '../core/random/prng';
 import { SIM_DT } from './constants';
+import { computeSchoolSteering, enforceMinDistance } from './flocking';
 import { SPECIES, type SpeciesId } from './species';
 import { createFish, stepFish, swimBounds, type Fish, type SwimBounds } from './swimmer';
 import { waterVolume } from './tank';
@@ -137,10 +138,38 @@ function stepInPlace(world: MutableWorld, dt: number): void {
   // Pas nominal : temps dérivé du compteur (exact, sans cumul d'erreur flottante).
   // Pas libre (`step(world, dt)`, tests) : temps cumulé.
   world.time = dt === SIM_DT ? world.tick * SIM_DT : world.time + dt;
+  // Deux phases : le pilotage de banc de tous les poissons est calculé sur les positions du
+  // début du pas, puis chacun nage. Le résultat ne dépend donc pas de l'ordre de mise à jour.
+  const fishes = world.entities as Mutable<Entity>[];
+  const steering = steeringBuffer(fishes.length);
+  computeSchoolSteering(fishes, steering);
   // Ordre stable : celui du tableau, c'est-à-dire des identifiants.
-  for (const fish of world.entities as Mutable<Entity>[]) {
-    stepFish(fish, dt, boundsFor(fish.species));
+  for (let i = 0; i < fishes.length; i++) {
+    const fish = fishes[i];
+    stepFish(
+      fish,
+      dt,
+      boundsFor(fish.species),
+      steering[3 * i],
+      steering[3 * i + 1],
+      steering[3 * i + 2],
+    );
   }
+  enforceMinDistance(fishes, boundsOfFish);
+}
+
+function boundsOfFish(fish: Entity): SwimBounds {
+  return boundsFor(fish.species);
+}
+
+/** Tampon de pilotage réutilisé d'un pas à l'autre ; réalloué seulement si la population croît. */
+let steeringScratch = new Float64Array(0);
+
+function steeringBuffer(count: number): Float64Array {
+  if (steeringScratch.length < count * 3) {
+    steeringScratch = new Float64Array(count * 3);
+  }
+  return steeringScratch;
 }
 
 /** Bornes de nage par espèce dans le bac par défaut, calculées une fois (aucune allocation par pas). */
