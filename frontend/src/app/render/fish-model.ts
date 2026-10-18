@@ -89,11 +89,31 @@ export const GUPPY_MALE_FISH: FishTemplate = {
   tailDepth: 1,
 };
 
+/**
+ * Corydora : corps court et haut, plus épais que les autres (3 voxels), ventre plat clair,
+ * haute dorsale (`f`), flanc gris taché de noir (`a`), tête massive et arrondie.
+ */
+export const CORYDORA_FISH: FishTemplate = {
+  body: [
+    // queue → tête
+    '....ff...',
+    '...kkkkk.',
+    '.kksasskk',
+    'sasssasse',
+    'ssasssass',
+    '.bbbbbbbb',
+  ],
+  tail: ['f.', 'ff', 'f.', 'ff', 'f.'],
+  bodyDepth: 3,
+  tailDepth: 1,
+};
+
 /** Gabarit de chaque silhouette déclarée par les espèces (`sim/species.ts`). */
 export const SILHOUETTES: Readonly<Record<SilhouetteId, FishTemplate>> = {
   fuseau: SLENDER_FISH,
   'guppy-male': GUPPY_MALE_FISH,
   'guppy-femelle': GUPPY_FEMALE_FISH,
+  corydora: CORYDORA_FISH,
 };
 
 /** Proportions des voxels : hauteur et épaisseur relatives à la longueur d'un voxel. */

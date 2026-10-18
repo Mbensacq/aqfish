@@ -1,5 +1,7 @@
 import {
+  CORYDORA,
   GUPPY,
+  MAX_FLOOR_ZONE,
   NEON,
   SPECIES,
   speciesVariantIndex,
@@ -26,6 +28,61 @@ describe('définitions d’espèces', () => {
     expect(NEON.colors.accent).toBe('#e63946');
     expect(NEON.scientificName).toBe('Paracheirodon innesi');
     expect(NEON.defaultPopulation).toBeGreaterThan(0);
+  });
+});
+
+describe('corydora (#31)', () => {
+  it('définition enregistrée, valide, espèce de fond', () => {
+    expect(CORYDORA.id).toBe('corydora');
+    expect(CORYDORA.scientificName).toBe('Corydoras paleatus');
+    expect(validateSpecies(CORYDORA)).toEqual([]);
+    expect(SPECIES.corydora).toBe(CORYDORA);
+    expect(CORYDORA.defaultPopulation).toBeGreaterThan(0);
+    // Préférence dans la zone basse du bac (sous 25 % de la hauteur d'eau).
+    expect(CORYDORA.depth!.maxHeightRatio).toBeGreaterThan(0);
+    expect(CORYDORA.depth!.maxHeightRatio).toBeLessThan(0.25);
+  });
+
+  it('distinct du néon et du guppy : silhouette, taille, vitesse, couleurs', () => {
+    for (const other of [NEON, GUPPY]) {
+      expect(CORYDORA.silhouette).not.toBe(other.silhouette);
+      expect(CORYDORA.bodyLength).not.toBe(other.bodyLength);
+      expect(CORYDORA.colors).not.toEqual(other.colors);
+      // Plus lent en croisière : il fouille le sable.
+      expect(CORYDORA.cruiseSpeed).toBeLessThan(other.cruiseSpeed);
+      expect(other.depth).toBeUndefined();
+    }
+    // Hors bleu et rouge néon (mesures de banc sur image).
+    expect(Object.values(CORYDORA.colors)).not.toContain(NEON.colors.stripe);
+    expect(Object.values(CORYDORA.colors)).not.toContain(NEON.colors.accent);
+  });
+});
+
+describe('validateSpecies : préférence de profondeur', () => {
+  const depth = CORYDORA.depth!;
+  const withDepth = (patch: Partial<typeof depth>): SpeciesDefinition => ({
+    ...CORYDORA,
+    depth: { ...depth, ...patch },
+  });
+
+  it.each([0, 1, -0.1, Number.NaN])('refuse maxHeightRatio = %s', (maxHeightRatio) => {
+    expect(validateSpecies(withDepth({ maxHeightRatio })).join()).toContain('maxHeightRatio');
+  });
+
+  it.each([0, MAX_FLOOR_ZONE + 1e-6, Number.NaN])('refuse floorZone = %s', (floorZone) => {
+    expect(validateSpecies(withDepth({ floorZone })).join()).toContain('floorZone');
+  });
+
+  it('accepte floorZone = MAX_FLOOR_ZONE et ascentRate = 0', () => {
+    expect(validateSpecies(withDepth({ floorZone: MAX_FLOOR_ZONE, ascentRate: 0 }))).toEqual([]);
+  });
+
+  it.each([-1, Number.POSITIVE_INFINITY, Number.NaN])('refuse ascentRate = %s', (ascentRate) => {
+    expect(validateSpecies(withDepth({ ascentRate })).join()).toContain('ascentRate');
+  });
+
+  it.each([0, -1, Number.POSITIVE_INFINITY])('refuse ascentDuration = %s', (ascentDuration) => {
+    expect(validateSpecies(withDepth({ ascentDuration })).join()).toContain('ascentDuration');
   });
 });
 

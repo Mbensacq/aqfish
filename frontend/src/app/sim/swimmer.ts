@@ -37,6 +37,11 @@ export interface Fish {
   readonly pitchTarget: number;
   /** Phase du battement de queue, en radians, dans [0, 2π). */
   readonly phase: number;
+  /**
+   * Temps restant de la remontée en cours vers la surface, en secondes (0 : aucune). Reste
+   * nul pour une espèce sans préférence de profondeur (`SpeciesDefinition.depth`).
+   */
+  readonly ascent: number;
   /** État du sous-générateur de l'entité (mulberry32, voir `prngNextState`). */
   readonly rng: number;
   // État au pas précédent (interpolation du rendu).
@@ -59,8 +64,19 @@ export interface SwimBounds {
    * parois est nulle tant que le point visé y reste).
    */
   readonly soft: Box3;
-  /** Zone de naissance, contenue dans `soft` (voir `SPAWN_MARGINS`). */
+  /**
+   * Zone de naissance, contenue dans `soft` (voir `SPAWN_MARGINS`) ; pour une espèce de fond,
+   * la tranche de `hard` sous `preferredMaxY`.
+   */
   readonly spawn: Box3;
+  /**
+   * Boîte dont les parois repoussent le point visé (portée `AVOID_ZONE`) : `hard` lui-même,
+   * sauf pour une espèce de fond, dont le fond est abaissé pour que sa portée effective soit
+   * `depth.floorZone` (elle nage alors au ras du sable sans en être chassée).
+   */
+  readonly avoid: Box3;
+  /** Hauteur au-dessus de laquelle une espèce de fond est tirée vers le bas ; +∞ sinon. */
+  readonly preferredMaxY: number;
 }
 
 const TWO_PI = Math.PI * 2;
@@ -109,6 +125,12 @@ const STEER_EPSILON = 1e-9;
  * retard sur son banc accélère, un poisson en avance ralentit (approximation de jeu).
  */
 const SCHOOL_SPEED_GAIN = 0.5;
+/**
+ * Espèce de fond : au-dessus de `preferredMaxY`, l'inclinaison visée glisse vers la descente
+ * en proportion de l'écart, entièrement à partir de `DEPTH_PULL_ZONE` mètres (approximation
+ * de jeu).
+ */
+const DEPTH_PULL_ZONE = 0.03;
 /** Aucun obstacle (valeur par défaut partagée, sans allocation). */
 const NO_OBSTACLES: readonly Obstacle[] = Object.freeze([]);
 const SCRATCH_WALL: Vec3 = { x: 0, y: 0, z: 0 };
@@ -130,7 +152,21 @@ export function swimBounds(def: SpeciesDefinition, water: Box3): SwimBounds {
   const soft = shrinkBox(hard, AVOID_ZONE);
   const legacy = shrinkBox(shrinkBox(water, SPAWN_MARGINS[0]), SPAWN_MARGINS[1]);
   const spawn = def.wallMargin + AVOID_ZONE > SPAWN_MARGINS[0] + SPAWN_MARGINS[1] ? soft : legacy;
-  return { hard, soft, spawn };
+  const { depth } = def;
+  if (depth === undefined) {
+    return { hard, soft, spawn, avoid: hard, preferredMaxY: Number.POSITIVE_INFINITY };
+  }
+  const preferredMaxY = Math.min(
+    hard.maxY,
+    Math.max(hard.minY, water.minY + depth.maxHeightRatio * (water.maxY - water.minY)),
+  );
+  return {
+    hard,
+    soft,
+    spawn: { ...spawn, minY: hard.minY, maxY: preferredMaxY },
+    avoid: { ...hard, minY: hard.minY - (AVOID_ZONE - Math.min(depth.floorZone, AVOID_ZONE)) },
+    preferredMaxY,
+  };
 }
 
 /** Nombre maximal de tirages de la position de naissance hors des obstacles. */
@@ -163,6 +199,7 @@ export function createFish(
     turn: 0,
     pitchTarget: 0,
     phase: 0,
+    ascent: 0,
     rng: deriveSeed(seed, id),
     px: 0,
     py: 0,
@@ -224,6 +261,19 @@ export function stepFish(
   const { hard } = bounds;
   savePrevious(fish);
 
+  // Espèce de fond : brève remontée vers la surface, déclenchée au hasard (tirage seulement
+  // pour ces espèces : les autres gardent exactement leur suite de tirages), terminée à la
+  // limite `soft` de la surface ou au bout de `ascentDuration`.
+  const depth = def.depth;
+  if (depth !== undefined) {
+    if (fish.ascent > 0) {
+      fish.ascent = fish.y >= bounds.soft.maxY ? 0 : Math.max(0, fish.ascent - dt);
+    } else if (random(fish) < depth.ascentRate * dt) {
+      fish.ascent = depth.ascentDuration;
+    }
+  }
+  const ascending = fish.ascent > 0;
+
   // Pilotage de banc : direction voulue = cap actuel + pilotage.
   let schoolTurn = 0;
   let schoolBlend = 0;
@@ -255,7 +305,9 @@ export function stepFish(
 
   // Vitesse : petite marche aléatoire rappelée vers la vitesse visée (croisière, ajustée en
   // banc).
-  const speedGoal = def.cruiseSpeed * (1 + schoolSpeed);
+  const speedGoal = ascending
+    ? (def.cruiseSpeed + def.maxSpeed) / 2
+    : def.cruiseSpeed * (1 + schoolSpeed);
   const speed =
     fish.speed +
     (random(fish) * 2 - 1) * SPEED_JITTER * def.cruiseSpeed * dt +
@@ -272,7 +324,7 @@ export function stepFish(
   const probeX = fish.x + headX * lookahead;
   const probeY = fish.y + headY * lookahead;
   const probeZ = fish.z + headZ * lookahead;
-  const wall = wallAvoidance(probeX, probeY, probeZ, hard, AVOID_ZONE, SCRATCH_WALL);
+  const wall = wallAvoidance(probeX, probeY, probeZ, bounds.avoid, AVOID_ZONE, SCRATCH_WALL);
   const obstacle = obstacleAvoidance(
     fish.x,
     fish.y,
@@ -325,6 +377,17 @@ export function stepFish(
   );
   // En banc, l'inclinaison visée glisse vers celle de la direction voulue.
   let pitchGoal = fish.pitchTarget + (schoolPitch - fish.pitchTarget) * schoolBlend;
+  // Espèce de fond : montée à l'inclinaison maximale pendant une remontée, sinon descente
+  // au-dessus de la hauteur préférée. L'évitement (surface, obstacles) garde la priorité ci-dessous.
+  if (depth !== undefined) {
+    const steep = def.maxPitch * AVOID_PITCH_RATIO;
+    if (ascending) {
+      pitchGoal = def.maxPitch;
+    } else if (fish.y > bounds.preferredMaxY) {
+      const pull = Math.min(1, (fish.y - bounds.preferredMaxY) / DEPTH_PULL_ZONE);
+      pitchGoal += (-steep - pitchGoal) * pull;
+    }
+  }
   if (avoid > 0) {
     const avoidPitchLimit = def.maxPitch * AVOID_PITCH_RATIO;
     const avoidPitch = clamp(Math.atan2(avoidY, avoidH), -avoidPitchLimit, avoidPitchLimit);

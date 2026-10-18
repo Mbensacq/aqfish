@@ -1,6 +1,7 @@
-import { GUPPY, NEON, SILHOUETTE_IDS, SPECIES, speciesVariants } from '../sim/species';
+import { CORYDORA, GUPPY, NEON, SILHOUETTE_IDS, SPECIES, speciesVariants } from '../sim/species';
 import {
   buildVoxelMesh,
+  CORYDORA_FISH,
   createFishGeometry,
   GUPPY_FEMALE_FISH,
   GUPPY_MALE_FISH,
@@ -46,6 +47,31 @@ describe('silhouettes', () => {
     expect(cells(GUPPY_MALE_FISH.tail)).toBeGreaterThan(2 * cells(GUPPY_FEMALE_FISH.tail));
     // … et son corps est plus petit (moins de colonnes et d'échelle).
     expect(cells(GUPPY_MALE_FISH.body)).toBeLessThan(cells(GUPPY_FEMALE_FISH.body));
+  });
+});
+
+describe('modèle du corydora (#31)', () => {
+  const rows = (t: { body: readonly string[] }) => t.body.length;
+  const columns = (t: { body: readonly string[] }) => t.body[0].length;
+
+  it('silhouette trapue : plus haute par rapport à sa longueur que le néon et le guppy', () => {
+    const ratio = (t: { body: readonly string[] }) => rows(t) / columns(t);
+    for (const other of [SLENDER_FISH, GUPPY_FEMALE_FISH, GUPPY_MALE_FISH]) {
+      expect(ratio(CORYDORA_FISH)).toBeGreaterThan(ratio(other));
+      expect(CORYDORA_FISH.bodyDepth).toBeGreaterThan(other.bodyDepth);
+    }
+  });
+
+  it('ventre plat : la dernière rangée couvre presque toute la longueur', () => {
+    const last = CORYDORA_FISH.body[CORYDORA_FISH.body.length - 1];
+    expect(last.replaceAll('.', '').length).toBeGreaterThanOrEqual(columns(CORYDORA_FISH) - 1);
+  });
+
+  it('modèle de la longueur du corps de l’espèce', () => {
+    const geometry = createFishGeometry(CORYDORA, 'body', speciesVariants(CORYDORA)[0]);
+    geometry.computeBoundingBox();
+    const box = geometry.boundingBox!;
+    expect(box.max.x - box.min.x).toBeCloseTo(CORYDORA.bodyLength, 6);
   });
 });
 
