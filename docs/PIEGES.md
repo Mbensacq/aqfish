@@ -43,6 +43,18 @@ haut de sa section.
 
 ## Tests
 
+- **Test de performance : délai Vitest ≠ borne mesurée** (#44) : le délai par défaut d'un
+  test Vitest (5 s) couvre tout le test, création du monde et échauffement compris. Un test
+  qui borne une durée mesurée à 5 s (`expect(elapsed).toBeLessThan(5000)`) peut donc
+  échouer par « Test timed out » sur un runner lent, avant même l'assertion, puis passer à
+  la relance. Donner au test un délai explicite nettement supérieur à sa borne
+  (`it(nom, fn, 15_000)`), sans relâcher la borne (`flocking.spec.ts`, banc de 60 néons).
+  Mesure locale de ce test : ≈ 0,6 à 0,9 s ; la CI a vu 9,3 s pour tout le fichier.
+  (2026-10-18)
+- **E2e de geste à la souris lent en rendu logiciel** (#38) : chaque glisser coûte plusieurs
+  secondes sous SwiftShader. Pour prouver une borne, un seul glisser long par direction
+  suffit s'il la dépasse sans elle ; le vérifier en retirant la borne le temps d'un essai
+  (`vues.spec.ts`, pan borné : 29 s → 11 s en local). (2026-10-18)
 - **`console.log` invisible dans `ng test`** : la sortie des tests n'est pas affichée. Pour
   explorer des valeurs (réglage de paramètres), les renvoyer dans le message d'un
   `throw new Error(JSON.stringify(…))` d'un spec jetable, puis le supprimer. (2026-10-18)
