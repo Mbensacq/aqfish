@@ -5,16 +5,16 @@ import { expect, test, type Page } from '@playwright/test';
  * avancé jusqu'à `time` avant le signal « prêt » en mode capture, puis figé ; hors capture,
  * il avance en temps réel par pas fixes de 1/60 s.
  *
- * L'état du monde n'est pas exposé dans le DOM : on le lit sur le composant hôte via l'API
- * de débogage d'Angular (`window.ng`), disponible car le serveur des e2e est `ng serve`
- * (build de développement, voir playwright.config.ts).
+ * L'état du monde est lu sur les attributs `data-aqfish-tick` et `data-aqfish-seed` de
+ * `app-aquarium-host`, présents aussi en build de production (cycle 5, issue #16). Le temps
+ * simulé vaut exactement `tick * SIM_DT` (test unitaire `sim/world.spec.ts`) et le facteur
+ * d'interpolation est couvert par `ui/aquarium-host/aquarium-host.spec.ts` : ni l'un ni
+ * l'autre ne sont écrits dans le DOM à chaque image (boucle sans allocation).
  */
 
 interface WorldProbe {
   tick: number;
-  time: number;
   seed: number;
-  alpha: number;
 }
 
 /** Valeurs alignées sur src/app/sim/constants.ts et src/app/core/capture/capture-params.ts. */
@@ -36,28 +36,14 @@ async function openScene(page: Page, search = ''): Promise<string[]> {
 }
 
 async function readWorld(page: Page): Promise<WorldProbe> {
-  const probe = await page.evaluate(() => {
-    const debug = (window as unknown as { ng?: { getComponent(el: Element): unknown } }).ng;
-    const host = document.querySelector('app-aquarium-host');
-    if (!debug || !host) {
-      return null;
-    }
-    const component = debug.getComponent(host) as {
-      world: { tick: number; time: number; seed: number } | null;
-      interpolationAlpha: number;
-    } | null;
-    const world = component?.world;
-    return world
-      ? {
-          tick: world.tick,
-          time: world.time,
-          seed: world.seed,
-          alpha: component.interpolationAlpha,
-        }
-      : null;
-  });
-  expect(probe, 'monde lisible via window.ng (build de développement)').not.toBeNull();
-  return probe!;
+  const host = page.locator('app-aquarium-host');
+  const [tick, seed] = await Promise.all([
+    host.getAttribute('data-aqfish-tick'),
+    host.getAttribute('data-aqfish-seed'),
+  ]);
+  expect(tick, 'attribut data-aqfish-tick').toMatch(/^\d+$/);
+  expect(seed, 'attribut data-aqfish-seed').toMatch(/^\d+$/);
+  return { tick: Number(tick), seed: Number(seed) };
 }
 
 /** Laisse passer `count` images (requestAnimationFrame), sans attente fixe. */
@@ -85,7 +71,6 @@ test.describe('Simulation en mode capture', () => {
     const errors = await openScene(page, '?capture=1&seed=42&camera=front&time=30');
     const atReady = await readWorld(page);
     expect(atReady.tick).toBe(30 * TICKS_PER_SECOND);
-    expect(atReady.time).toBeCloseTo(30, 6);
     expect(atReady.seed).toBe(42);
 
     await waitFrames(page, 10);
@@ -159,9 +144,6 @@ test.describe('Simulation hors capture', () => {
     expect(end.tick - start.tick).toBeLessThanOrEqual(
       Math.ceil(elapsedSeconds * TICKS_PER_SECOND) + MAX_STEPS_PER_FRAME,
     );
-    expect(end.time).toBeCloseTo(end.tick / TICKS_PER_SECOND, 6);
-    expect(end.alpha).toBeGreaterThanOrEqual(0);
-    expect(end.alpha).toBeLessThan(1);
     expect(errors).toEqual([]);
   });
 

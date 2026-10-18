@@ -20,6 +20,7 @@ import {
   type TankDimensions,
   type Vec3,
 } from './camera-presets';
+import { SPECIES, type SpeciesId } from '../sim/species';
 import type { Fish } from '../sim/swimmer';
 import { FishLayer } from './fish-layer';
 import { PalettePass } from './palette-pass';
@@ -66,7 +67,8 @@ export class AquariumView {
   private readonly controls: OrbitControls;
   private readonly canvas: HTMLCanvasElement;
   private readonly pixelPass: PalettePass;
-  private readonly fish: FishLayer;
+  /** Une couche par espèce de `SPECIES`, dans l'ordre de déclaration (aucun champ par espèce). */
+  private readonly fishLayers: readonly FishLayer[];
   private readonly pixelRatio: number;
   private width = 0;
   private height = 0;
@@ -88,8 +90,10 @@ export class AquariumView {
     this.renderer.setPixelRatio(options.pixelRatio);
     this.pixelPass = new PalettePass();
     this.world = createAquariumScene(options.dimensions);
-    this.fish = new FishLayer();
-    this.world.scene.add(this.fish.object);
+    this.fishLayers = Object.values(SPECIES).map((species) => new FishLayer(species));
+    for (const layer of this.fishLayers) {
+      this.world.scene.add(layer.object);
+    }
 
     const radius = tankBoundingRadius(this.world.dimensions);
     this.camera = new PerspectiveCamera(CAMERA_FOV_DEG, 1, radius * 0.05, radius * 40);
@@ -203,14 +207,26 @@ export class AquariumView {
    * (`alpha` ∈ [0, 1] : 0 = pas précédent, 1 = pas courant). À appeler avant `renderFrame()`.
    */
   updateFish(entities: readonly Fish[], alpha: number): void {
-    if (!this.disposed) {
-      this.fish.update(entities, alpha);
+    if (this.disposed) {
+      return;
+    }
+    for (const layer of this.fishLayers) {
+      layer.update(entities, alpha);
     }
   }
 
-  /** Nombre de poissons placés par le dernier `updateFish` (tests). */
+  /** Nombre de poissons placés par le dernier `updateFish`, toutes espèces confondues (tests). */
   get fishCount(): number {
-    return this.fish.count;
+    let count = 0;
+    for (const layer of this.fishLayers) {
+      count += layer.count;
+    }
+    return count;
+  }
+
+  /** Espèces ayant une couche de rendu, dans l'ordre des couches (tests). */
+  get fishLayerSpecies(): readonly SpeciesId[] {
+    return this.fishLayers.map((layer) => layer.species.id);
   }
 
   /** Rend une image. Renvoie `false` si rien n'a pu être rendu (taille nulle ou vue libérée). */
@@ -244,7 +260,7 @@ export class AquariumView {
     this.disposed = true;
     this.controls.removeEventListener('start', this.stopFollowingPreset);
     this.controls.dispose();
-    this.fish.dispose();
+    this.fishLayers.forEach((layer) => layer.dispose());
     this.world.dispose();
     this.pixelPass.dispose();
     this.renderer.dispose();

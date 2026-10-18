@@ -49,7 +49,16 @@ simulation testable et les captures reproductibles.
 - **Monde** : `sim/world.ts`. `createWorld(seed, population?)` (vide par défaut), `createDefaultWorld(seed)` (monde de l’application), `step(world, SIM_DT)` (pure : renvoie un
   nouvel état, ne modifie jamais son entrée), `advance(world, n)` (une seule copie puis
   aucune allocation par pas), `advanceTo(world, time)` (`round(time / SIM_DT)` pas au total,
-  utilisé par le mode capture avant le premier rendu).
+  utilisé par le mode capture avant le premier rendu), et `advanceInPlace(world, n)`
+  (modifie le monde, aucune allocation), **réservé à la boucle d'affichage** qui possède
+  seule son monde ; tout le reste du code et les tests utilisent les fonctions pures.
+- **Temps simulé** : `world.time` est recalculé à chaque pas comme `tick * SIM_DT` (jamais
+  cumulé, donc sans dérive flottante : exactement 3600 après 216 000 pas). Un pas libre
+  `step(world, dt)` avec `dt ≠ SIM_DT` (tests) cumule `dt`.
+- **Boucle d'affichage sans allocation** : hors capture, chaque image appelle
+  `fixedStepInto` (résultat réécrit dans un objet réutilisé) puis `advanceInPlace`, avec un
+  rappel `requestAnimationFrame` créé une seule fois. Validation du pas : `assertTimeStep`
+  (`sim/time-step.ts`), unique.
 - **État sérialisable** : l'état du monde (`seed`, `tick`, `time`, `entities`) est un objet
   de données simple (JSON), sans classe Three.js ni référence circulaire. Il sert à la
   sauvegarde, aux tests et aux captures.
@@ -109,7 +118,9 @@ La cible est en sRGB 8 bits : les surfaces translucides s'y mélangent en espace
   interaction à la souris l'annule. En mode capture, placement instantané et aucune barre.
 - La position de la caméra est exposée aux tests de bout en bout par l'attribut
   `data-aqfish-camera="x,y,z"` de `app-aquarium-host` (mis à jour au mouvement, pas à
-  chaque image).
+  chaque image). L'état de la simulation l'est par `data-aqfish-tick` (mis à jour quand le
+  compteur change) et `data-aqfish-seed` (fixé au démarrage), présents aussi en build de
+  production : les e2e de simulation n'utilisent plus `window.ng`.
 
 ### Organisation actuelle
 
@@ -117,8 +128,9 @@ La cible est en sRGB 8 bits : les surfaces translucides s'y mélangent en espace
 |---|---|
 | `core/random/prng.ts` | PRNG mulberry32 à graine, dérivation de sous-générateurs par entité |
 | `sim/constants.ts` | `SIM_DT`, `MAX_STEPS_PER_FRAME` |
-| `sim/fixed-step.ts` | Accumulateur de la boucle à pas fixe (fonction pure) |
-| `sim/world.ts` | État du monde sérialisable, `step`, `advance`, `advanceTo`, `createDefaultWorld` (population par défaut) |
+| `sim/fixed-step.ts` | Accumulateur de la boucle à pas fixe (`fixedStep`, pure ; `fixedStepInto`, sans allocation) |
+| `sim/time-step.ts` | `assertTimeStep` : validation unique d'un pas de temps |
+| `sim/world.ts` | État du monde sérialisable, `step`, `advance`, `advanceTo`, `advanceInPlace` (boucle d'affichage), `createDefaultWorld` (population par défaut) |
 | `sim/tank.ts` | Dimensions du bac, volume d'eau, `shrinkBox` (partagés par la simulation et le rendu) |
 | `sim/species.ts` | Définitions déclaratives des espèces (`NEON`), `validateSpecies` |
 | `sim/swimmer.ts` | Poisson (état sérialisable, sous-générateur en état explicite), nage : errance, évitement des parois, bornes |
@@ -128,7 +140,7 @@ La cible est en sRGB 8 bits : les surfaces translucides s'y mélangent en espace
 | `render/camera-presets.ts` | Dimensions du bac, préréglages de caméra, interpolation des transitions (fonctions pures) |
 | `render/aquarium-scene.ts` | Scène statique : sable, eau, verre, arêtes, lumières ; libération |
 | `render/fish-model.ts` | Modèles voxel des poissons générés depuis un gabarit de profil (ADR 0009) |
-| `render/fish-layer.ts` | `InstancedMesh` corps et queue par espèce, interpolation entre deux pas, ondulation |
+| `render/fish-layer.ts` | `InstancedMesh` corps et queue par espèce, interpolation entre deux pas, ondulation ; `AquariumView` en crée une par entrée de `SPECIES` |
 | `render/aquarium-view.ts` | Vue sans Angular : renderer (fabrique remplaçable), caméra, `OrbitControls`, transitions de caméra, `updateFish` |
 | `ui/aquarium-host/` | Composant hôte : boucle rAF, avance de la simulation, redimensionnement, contrat de capture, `DestroyRef` |
 | `ui/view-presets-bar/` | Barre flottante des 5 préréglages de vue et raccourcis clavier `1` à `5` (émet le préréglage choisi) |
