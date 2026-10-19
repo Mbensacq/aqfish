@@ -194,7 +194,8 @@ describe('monde peuplé', () => {
         }
       }
     }
-  });
+    // 18 000 pas : délai explicite (docs/PIEGES.md, « délai Vitest »), vu à 5,2 s sous couverture.
+  }, 15_000);
 
   it('effectif nul : monde vide', () => {
     expect(createWorld(42, [{ species: 'neon', count: 0 }]).entities).toEqual([]);

@@ -9,10 +9,17 @@
  * couleurs affichées (ADR 0007).
  */
 
-/** Durée d'une journée simulée par défaut, en secondes. */
-export const DEFAULT_DAY_LENGTH_SECONDS = 180;
+/**
+ * Durée d'une journée simulée par défaut, en secondes : 20 minutes (issue #75). Constante
+ * unique : l'hôte et les tests la lisent ici.
+ */
+export const DEFAULT_DAY_LENGTH_SECONDS = 1200;
+/** Heure de « plein jour » : midi. */
+export const NOON_HOUR = 12;
+/** Heure de « nuit » : minuit. */
+export const MIDNIGHT_HOUR = 0;
 /** Heure de départ par défaut : midi (captures par défaut inchangées). */
-export const DEFAULT_START_HOUR = 12;
+export const DEFAULT_START_HOUR = NOON_HOUR;
 /** Nombre d'heures d'une journée. */
 export const HOURS_PER_DAY = 24;
 
@@ -81,7 +88,7 @@ export const TWILIGHT_SKY: Rgb = [1, 0.78, 0.66];
 /** Part maximale de la teinte d'aube ou de crépuscule (atteinte à mi-transition). */
 export const TWILIGHT_STRENGTH = 0.6;
 
-/** Horloge par défaut : départ à midi, journée de 180 s, en marche. */
+/** Horloge par défaut : départ à midi, journée de 20 min, en marche. */
 export const DEFAULT_DAY_CLOCK: DayClock = {
   startHour: DEFAULT_START_HOUR,
   dayLengthSeconds: DEFAULT_DAY_LENGTH_SECONDS,
@@ -154,6 +161,16 @@ export function resumeClock(clock: DayClock, time: number): DayClock {
   }
   const elapsedHours = (HOURS_PER_DAY * time) / clock.dayLengthSeconds;
   return { ...clock, startHour: normalizeHour(clock.startHour - elapsedHours), frozen: false };
+}
+
+/**
+ * Fige l'horloge à l'heure `hour` (ramenée dans [0, 24)), qu'elle tourne ou non : touches
+ * « plein jour » (midi) et « nuit » (minuit), issue #75. La durée de la journée est
+ * conservée ; `resumeClock` repart ensuite de cette heure, sans saut.
+ * @throws RangeError si `hour` n'est pas un réel fini.
+ */
+export function freezeClockAt(clock: DayClock, hour: number): DayClock {
+  return { ...clock, startHour: normalizeHour(hour), frozen: true };
 }
 
 /** Fige ou remet en marche l'horloge au temps `time` (touche `H`). */

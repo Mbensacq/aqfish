@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 
 import type { CameraPreset } from '../../core/capture/capture-params';
+import { MIDNIGHT_HOUR, NOON_HOUR } from '../../sim/daylight';
 
 /** Bouton de la barre : préréglage, libellé visible, nom accessible et touche associée. */
 export interface ViewPresetButton {
@@ -35,6 +36,27 @@ export function isClockKey(key: string): boolean {
   return key.toLowerCase() === CLOCK_KEY;
 }
 
+/** Touche qui fige l'heure en plein jour, à midi (insensible à la casse, issue #75). */
+export const DAY_KEY = 'j';
+
+/** Touche qui fige l'heure en pleine nuit, à minuit (insensible à la casse, issue #75). */
+export const NIGHT_KEY = 'n';
+
+/**
+ * Heure à laquelle figer l'horloge pour une touche : midi pour `j`/`J`, minuit pour
+ * `n`/`N`, `null` pour toute autre touche.
+ */
+export function fixedHourForKey(key: string): number | null {
+  switch (key.toLowerCase()) {
+    case DAY_KEY:
+      return NOON_HOUR;
+    case NIGHT_KEY:
+      return MIDNIGHT_HOUR;
+    default:
+      return null;
+  }
+}
+
 /** Préréglage associé à une touche (`1` à `5`), `null` sinon. */
 export function presetForKey(key: string): CameraPreset | null {
   return VIEW_PRESET_BUTTONS.find((button) => button.key === key)?.preset ?? null;
@@ -66,7 +88,8 @@ export function isTypingContext(event: KeyboardEvent): boolean {
  * À part, après un séparateur : la bascule « Pixel art » (touche `P`, issue #33). La barre
  * émet la demande de bascule ; l'état affiché (`pixelArt`) vient de l'hôte.
  * Touche `H` (issue #51) : demande à l'hôte de figer ou de remettre en marche l'heure (sans
- * bouton : le panneau de contrôle viendra avec une issue suivante).
+ * bouton : le panneau de contrôle viendra avec une issue suivante). Touches `J` et `N`
+ * (issue #75) : demandent de figer l'heure à midi (plein jour) ou à minuit (nuit).
  * Absente en mode capture (c'est l'application qui ne l'affiche pas).
  */
 @Component({
@@ -126,6 +149,9 @@ export class ViewPresetsBar {
   /** Demande de figer ou de remettre en marche l'heure de la journée (touche `H`). */
   readonly clockToggled = output<void>();
 
+  /** Demande de figer l'heure à une heure donnée (touches `J` : midi, `N` : minuit). */
+  readonly clockFrozenAt = output<number>();
+
   protected readonly buttons = VIEW_PRESET_BUTTONS;
 
   protected togglePixelArt(): void {
@@ -148,6 +174,12 @@ export class ViewPresetsBar {
     if (isClockKey(event.key)) {
       event.preventDefault();
       this.clockToggled.emit();
+      return;
+    }
+    const fixedHour = fixedHourForKey(event.key);
+    if (fixedHour !== null) {
+      event.preventDefault();
+      this.clockFrozenAt.emit(fixedHour);
       return;
     }
     const preset = presetForKey(event.key);

@@ -3,9 +3,12 @@ import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import type { CameraPreset } from '../../core/capture/capture-params';
 import { CAMERA_PRESETS } from '../../core/capture/capture-params';
 import {
+  DAY_KEY,
+  fixedHourForKey,
   isClockKey,
   isPixelArtKey,
   isTypingContext,
+  NIGHT_KEY,
   presetForKey,
   VIEW_PRESET_BUTTONS,
   ViewPresetsBar,
@@ -189,6 +192,57 @@ describe('ViewPresetsBar', () => {
       expect(isClockKey('H')).toBe(true);
       for (const key of ['g', 'p', 'Home', '']) {
         expect(isClockKey(key)).toBe(false);
+      }
+    });
+  });
+
+  describe('plein jour et nuit (#75)', () => {
+    let hours: number[];
+    let clockToggles: number;
+    beforeEach(() => {
+      hours = [];
+      clockToggles = 0;
+      fixture.componentInstance.clockFrozenAt.subscribe((h) => hours.push(h));
+      fixture.componentInstance.clockToggled.subscribe(() => clockToggles++);
+    });
+
+    it('J fige à midi, N à minuit (insensible à la casse), touches consommées', () => {
+      for (const key of ['j', 'J', 'n', 'N']) {
+        expect(press(key).defaultPrevented).toBe(true);
+      }
+      expect(hours).toEqual([12, 12, 0, 0]);
+      expect(clockToggles).toBe(0);
+      expect(emitted).toEqual([]);
+    });
+
+    it('J et N ignorées avec Ctrl, Alt, Meta, dans un champ de saisie ou déjà traitées', () => {
+      press('j', { ctrlKey: true });
+      press('n', { altKey: true });
+      press('n', { metaKey: true });
+      const field = document.createElement('input');
+      field.setAttribute('data-test-field', '');
+      document.body.appendChild(field);
+      press('j', {}, field);
+      const handled = new KeyboardEvent('keydown', { key: 'n', bubbles: true, cancelable: true });
+      handled.preventDefault();
+      document.body.dispatchEvent(handled);
+      expect(hours).toEqual([]);
+    });
+
+    it('fixedHourForKey : j/J ⇒ 12, n/N ⇒ 0, sinon null ; touches distinctes de H, P et 1 à 5', () => {
+      expect(DAY_KEY).toBe('j');
+      expect(NIGHT_KEY).toBe('n');
+      expect(fixedHourForKey('j')).toBe(12);
+      expect(fixedHourForKey('J')).toBe(12);
+      expect(fixedHourForKey('n')).toBe(0);
+      expect(fixedHourForKey('N')).toBe(0);
+      for (const key of ['h', 'H', 'p', '1', '5', 'k', 'm', 'Enter', '']) {
+        expect(fixedHourForKey(key)).toBeNull();
+      }
+      for (const key of [DAY_KEY, NIGHT_KEY]) {
+        expect(isClockKey(key)).toBe(false);
+        expect(isPixelArtKey(key)).toBe(false);
+        expect(presetForKey(key)).toBeNull();
       }
     });
   });

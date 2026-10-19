@@ -406,12 +406,12 @@ describe('AquariumHost', () => {
     it('initialDayClock : heure= figée, sinon midi figé en capture, midi en marche hors capture', () => {
       expect(initialDayClock(6.5, false)).toEqual({
         startHour: 6.5,
-        dayLengthSeconds: 180,
+        dayLengthSeconds: 1200,
         frozen: true,
       });
       expect(initialDayClock(null, true)).toEqual({
         startHour: 12,
-        dayLengthSeconds: 180,
+        dayLengthSeconds: 1200,
         frozen: true,
       });
       expect(initialDayClock(null, false).frozen).toBe(false);
@@ -443,15 +443,16 @@ describe('AquariumHost', () => {
 
     // Simulation courte (≤ 9 s simulées par test) : chaque pas fait nager tout le monde par
     // défaut, et jsdom sur la CI est lent (docs/PIEGES.md, « Test de performance »).
-    it('hors capture : l’heure avance avec le monde par pas fixes (7,5 s ⇒ 13 h)', async () => {
+    it('hors capture : l’heure avance avec le monde par pas fixes (7,5 s ⇒ 12,15 h)', async () => {
       await create();
       setCanvasSize(800, 600);
       frames.flush(0);
       expect(attr(HOUR_FROZEN_ATTRIBUTE)).toBe('false');
       run(7.5);
       expect(host().world?.tick).toBe(450);
-      expect(host().hour).toBeCloseTo(13, 1);
-      expect(Number(attr(HOUR_ATTRIBUTE))).toBeCloseTo(13, 1);
+      // Journée de 1 200 s : 7,5 s = 0,15 h.
+      expect(host().hour).toBeCloseTo(12.15, 2);
+      expect(Number(attr(HOUR_ATTRIBUTE))).toBeCloseTo(12.15, 2);
     }, 15_000);
 
     it('la touche H (toggleClock) fige puis remet en marche l’heure, sans saut', async () => {
@@ -462,15 +463,56 @@ describe('AquariumHost', () => {
       host().toggleClock();
       expect(attr(HOUR_FROZEN_ATTRIBUTE)).toBe('true');
       const frozenHour = host().hour!;
-      expect(frozenHour).toBeCloseTo(12.4, 1);
+      expect(frozenHour).toBeCloseTo(12.06, 2);
       now = run(3, now);
       expect(host().hour).toBe(frozenHour);
       host().toggleClock();
       expect(attr(HOUR_FROZEN_ATTRIBUTE)).toBe('false');
       expect(host().hour).toBeCloseTo(frozenHour, 9);
       run(3, now);
-      expect(host().hour).toBeCloseTo(frozenHour + 0.4, 1);
+      expect(host().hour).toBeCloseTo(frozenHour + 0.06, 2);
     }, 15_000);
+
+    it('freezeClockAt (touches J et N, #75) : fige à midi ou minuit, puis H reprend sans saut', async () => {
+      await create();
+      setCanvasSize(800, 600);
+      frames.flush(0);
+      let now = run(1);
+      expect(attr(HOUR_FROZEN_ATTRIBUTE)).toBe('false');
+      host().freezeClockAt(0);
+      expect(attr(HOUR_FROZEN_ATTRIBUTE)).toBe('true');
+      now = run(1, now);
+      expect(host().hour).toBe(0);
+      expect(attr(HOUR_ATTRIBUTE)).toBe('0.00');
+      // Déjà figée : on peut passer directement au plein jour.
+      host().freezeClockAt(12);
+      now = run(1, now);
+      expect(host().hour).toBe(12);
+      expect(attr(HOUR_ATTRIBUTE)).toBe('12.00');
+      // Valeur non finie ignorée.
+      host().freezeClockAt(Number.NaN);
+      expect(host().hour).toBe(12);
+      host().toggleClock();
+      expect(attr(HOUR_FROZEN_ATTRIBUTE)).toBe('false');
+      expect(host().hour).toBeCloseTo(12, 9);
+      run(3, now);
+      // Journée de 20 min : 3 s = 0,06 h.
+      expect(host().hour).toBeCloseTo(12.06, 2);
+    }, 15_000);
+
+    it('en capture, freezeClockAt est sans effet ; avant le démarrage aussi', async () => {
+      await create('?capture=1&heure=3');
+      setCanvasSize(800, 600);
+      frames.flush(0);
+      const renders = renderers[0].renders;
+      host().freezeClockAt(12);
+      expect(host().hour).toBe(3);
+      frames.flush(1000);
+      expect(renderers[0].renders).toBe(renders);
+      fixture.destroy();
+      host().freezeClockAt(0);
+      expect(host().hour).toBeNull();
+    });
 
     it('en capture, toggleClock est sans effet ; avant le démarrage, heure null', async () => {
       await create('?capture=1&heure=3');
