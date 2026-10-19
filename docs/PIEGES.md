@@ -72,6 +72,13 @@ haut de sa section.
   Cycle 18 (#51) : dans `aquarium-host.spec.ts`, faire avancer le monde par défaut image par
   image (`frames.flush`) coûte cher : 45 s simulées passaient en local mais dépassaient 5 s
   en CI. Y garder ≤ 10 s simulées par test, avec un délai explicite (15 s). (2026-10-19)
+- **Tests de mutation : délais explicites sous code instrumenté** (#66) : le code instrumenté
+  par Stryker est ~5 à 10 fois plus lent. `testTimeout` ne suffit pas : un délai explicite
+  (`it(nom, fn, 15_000)`, y compris `it.each(table)(nom, fn, 15_000)`) prime sur la
+  configuration. `vitest.mutation.setup.ts` multiplie donc tout délai explicite par 10, sous
+  Stryker seulement ; `ng test` n'est pas touché. Un nouveau test lourd n'a rien à faire de
+  plus ; une nouvelle forme de déclaration (`it.concurrent`, `test.for`…) avec délai devra
+  être ajoutée à ce fichier. (2026-10-19)
 - **E2e de geste à la souris lent en rendu logiciel** (#38) : chaque glisser coûte plusieurs
   secondes sous SwiftShader. Pour prouver une borne, un seul glisser long par direction
   suffit s'il la dépasse sans elle ; le vérifier en retirant la borne le temps d'un essai
