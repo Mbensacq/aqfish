@@ -6,13 +6,16 @@ import {
   DEFAULT_DAY_CLOCK,
   DEFAULT_DAY_LENGTH_SECONDS,
   freezeClock,
+  freezeClockAt,
   hourAt,
   lightAt,
   lightAtInto,
+  MIDNIGHT_HOUR,
   mix,
   NIGHT_ELEVATION,
   NIGHT_SKY,
   NIGHT_TINT,
+  NOON_HOUR,
   normalizeHour,
   resumeClock,
   sunElevation,
@@ -219,6 +222,80 @@ describe('horloge de journée', () => {
     } finally {
       now.mockRestore();
       dateNow.mockRestore();
+    }
+  });
+});
+
+describe('journée de 20 min et heure figée à midi ou minuit (#75)', () => {
+  it('par défaut, une journée dure 1 200 s : minuit à 600 s, midi au bout, périodique', () => {
+    expect(DEFAULT_DAY_LENGTH_SECONDS).toBe(1200);
+    const clock = DEFAULT_DAY_CLOCK;
+    expect(hourAt(clock, 0)).toBe(12);
+    expect(hourAt(clock, 300)).toBe(18);
+    expect(hourAt(clock, 600)).toBe(0);
+    expect(hourAt(clock, 900)).toBe(6);
+    expect(hourAt(clock, 1200)).toBe(12);
+    for (const t of [0, 1, 37.5, 599.9, 600, 1000]) {
+      expect(hourAt(clock, t + 1200)).toBeCloseTo(hourAt(clock, t), 9);
+      expect(hourAt(clock, t + 5 * 1200)).toBeCloseTo(hourAt(clock, t), 9);
+    }
+    // Un pas fixe avance l'heure de 24 · SIM_DT / 1200 = 1/3000 h.
+    expect(hourAt(clock, SIM_DT) - hourAt(clock, 0)).toBeCloseTo(1 / 3000, 12);
+  });
+
+  it('plein jour et nuit : midi et minuit', () => {
+    expect(NOON_HOUR).toBe(12);
+    expect(MIDNIGHT_HOUR).toBe(0);
+    expect(lightAt(NOON_HOUR).intensity).toBe(1);
+    expect(lightAt(MIDNIGHT_HOUR).intensity).toBe(0);
+  });
+
+  it('freezeClockAt fige à l’heure demandée, que l’horloge tourne ou non', () => {
+    const running = createDayClock(12, 1200);
+    const day = freezeClockAt(running, NOON_HOUR);
+    expect(day).toEqual({ startHour: 12, dayLengthSeconds: 1200, frozen: true });
+    for (const t of [0, 1, 600, 1e6]) {
+      expect(hourAt(day, t)).toBe(12);
+    }
+    const night = freezeClockAt(day, MIDNIGHT_HOUR);
+    expect(night).toEqual({ startHour: 0, dayLengthSeconds: 1200, frozen: true });
+    // Durée conservée, heure ramenée dans [0, 24), pas de −0.
+    expect(freezeClockAt(createDayClock(3, 60), 36)).toEqual({
+      startHour: 12,
+      dayLengthSeconds: 60,
+      frozen: true,
+    });
+    expect(Object.is(freezeClockAt(running, -0).startHour, 0)).toBe(true);
+    expect(freezeClockAt(running, -1).startHour).toBe(23);
+    // Pur : l'horloge d'origine n'est pas modifiée.
+    expect(running).toEqual({ startHour: 12, dayLengthSeconds: 1200, frozen: false });
+  });
+
+  it('reprise depuis l’heure figée sans saut, à tout instant', () => {
+    for (const [hour, t] of [
+      [NOON_HOUR, 0],
+      [NOON_HOUR, 437.25],
+      [MIDNIGHT_HOUR, 1e5 + SIM_DT],
+      [MIDNIGHT_HOUR, 1199.99],
+    ]) {
+      const frozen = freezeClockAt(DEFAULT_DAY_CLOCK, hour);
+      const resumed = resumeClock(frozen, t);
+      expect(resumed.frozen).toBe(false);
+      expect(resumed.startHour).toBeGreaterThanOrEqual(0);
+      expect(resumed.startHour).toBeLessThan(24);
+      // Juste après la reprise : l'heure figée, à la précision du pas près.
+      const delta = hourAt(resumed, t) - hour;
+      expect(Math.abs(delta - 24 * Math.round(delta / 24))).toBeLessThan(1e-9);
+      const afterStep = hourAt(resumed, t + SIM_DT) - hour;
+      expect(afterStep - 24 * Math.round(afterStep / 24)).toBeCloseTo(1 / 3000, 9);
+      // 300 s plus tard : 6 h plus tard.
+      expect(hourAt(resumed, t + 300)).toBeCloseTo(normalizeHour(hour + 6), 6);
+    }
+  });
+
+  it('freezeClockAt : heure non finie ⇒ RangeError', () => {
+    for (const h of [Number.NaN, Infinity, -Infinity]) {
+      expect(() => freezeClockAt(DEFAULT_DAY_CLOCK, h)).toThrow(RangeError);
     }
   });
 });

@@ -34,6 +34,7 @@ import {
   DEFAULT_DAY_CLOCK,
   DEFAULT_DAY_LENGTH_SECONDS,
   DEFAULT_START_HOUR,
+  freezeClockAt,
   hourAt,
   lightAtInto,
   toggleClock,
@@ -71,8 +72,8 @@ export const HOUR_ATTRIBUTE = 'data-aqfish-hour';
 export const HOUR_FROZEN_ATTRIBUTE = 'data-aqfish-hour-frozen';
 
 /**
- * Écart d'heure minimal (en heures) avant de recalculer l'éclairage : 0,01 h, soit 0,075 s
- * avec la journée de 180 s. Évite de recalculer (et d'allouer) à chaque image pour un
+ * Écart d'heure minimal (en heures) avant de recalculer l'éclairage : 0,01 h, soit 0,5 s
+ * avec la journée de 20 min. Évite de recalculer (et d'allouer) à chaque image pour un
  * changement invisible une fois l'image ramenée à la palette.
  */
 export const LIGHT_HOUR_STEP = 0.01;
@@ -234,6 +235,21 @@ export class AquariumHost {
     this.dayClock = toggleClock(this.dayClock, this.renderTime());
     this.litHour = null;
     this.host.nativeElement.setAttribute(HOUR_FROZEN_ATTRIBUTE, String(this.dayClock.frozen));
+    this.scheduleFrame();
+  }
+
+  /**
+   * Fige l'heure à `hour` (touches « plein jour » et « nuit », issue #75), que l'horloge
+   * tourne ou non ; `toggleClock` la remet ensuite en marche depuis cette heure, sans saut.
+   * Sans effet en mode capture (contrat de capture) ou si `hour` n'est pas un réel fini.
+   */
+  freezeClockAt(hour: number): void {
+    if (!this.currentWorld || this.capture || !Number.isFinite(hour)) {
+      return;
+    }
+    this.dayClock = freezeClockAt(this.dayClock, hour);
+    this.litHour = null;
+    this.host.nativeElement.setAttribute(HOUR_FROZEN_ATTRIBUTE, 'true');
     this.scheduleFrame();
   }
 

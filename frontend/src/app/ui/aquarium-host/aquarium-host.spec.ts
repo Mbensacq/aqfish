@@ -472,6 +472,47 @@ describe('AquariumHost', () => {
       expect(host().hour).toBeCloseTo(frozenHour + 0.4, 1);
     }, 15_000);
 
+    it('freezeClockAt (touches J et N, #75) : fige à midi ou minuit, puis H reprend sans saut', async () => {
+      await create();
+      setCanvasSize(800, 600);
+      frames.flush(0);
+      let now = run(1);
+      expect(attr(HOUR_FROZEN_ATTRIBUTE)).toBe('false');
+      host().freezeClockAt(0);
+      expect(attr(HOUR_FROZEN_ATTRIBUTE)).toBe('true');
+      now = run(1, now);
+      expect(host().hour).toBe(0);
+      expect(attr(HOUR_ATTRIBUTE)).toBe('0.00');
+      // Déjà figée : on peut passer directement au plein jour.
+      host().freezeClockAt(12);
+      now = run(1, now);
+      expect(host().hour).toBe(12);
+      expect(attr(HOUR_ATTRIBUTE)).toBe('12.00');
+      // Valeur non finie ignorée.
+      host().freezeClockAt(Number.NaN);
+      expect(host().hour).toBe(12);
+      host().toggleClock();
+      expect(attr(HOUR_FROZEN_ATTRIBUTE)).toBe('false');
+      expect(host().hour).toBeCloseTo(12, 9);
+      run(3, now);
+      // Journée de 20 min : 3 s = 0,06 h.
+      expect(host().hour).toBeCloseTo(12.06, 2);
+    }, 15_000);
+
+    it('en capture, freezeClockAt est sans effet ; avant le démarrage aussi', async () => {
+      await create('?capture=1&heure=3');
+      setCanvasSize(800, 600);
+      frames.flush(0);
+      const renders = renderers[0].renders;
+      host().freezeClockAt(12);
+      expect(host().hour).toBe(3);
+      frames.flush(1000);
+      expect(renderers[0].renders).toBe(renders);
+      fixture.destroy();
+      host().freezeClockAt(0);
+      expect(host().hour).toBeNull();
+    });
+
     it('en capture, toggleClock est sans effet ; avant le démarrage, heure null', async () => {
       await create('?capture=1&heure=3');
       setCanvasSize(800, 600);
