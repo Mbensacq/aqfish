@@ -86,9 +86,12 @@
 
 // Petit écran (bug #22) : la barre doit tenir entière à 390 px. Les pastilles de touche
 // (inutiles sans clavier) sont masquées et les marges resserrées ; la largeur reste bornée
-// à la fenêtre en dernier recours.
+// à la fenêtre et, depuis le bouton « Nourrir » (#67), la barre passe sur deux lignes
+// plutôt que de rogner un bouton.
 @media (max-width: 480px) {
   .view-presets-bar {
+    flex-wrap: wrap;
+    justify-content: center;
     gap: 2px;
     max-width: calc(100vw - 16px);
   }
