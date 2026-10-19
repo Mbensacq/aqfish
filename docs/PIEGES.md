@@ -43,6 +43,13 @@ haut de sa section.
 
 ## Tests
 
+- **Mesurer un mouvement du décor sur capture** (cycle 16, #49) : les poissons bougent aussi,
+  donc deux captures à 1 s d'écart diffèrent toujours. Ne comparer que les pixels de
+  végétation (couleurs que les poissons n'ont pas) et vérifier le test en annulant le
+  mouvement (`PLANT_SWAY_RATIO = 0` : 27 pixels changés sur 4 500 contre 2 700 avec
+  ondulation). `e2e/plantes.spec.ts`. (2026-10-19)
+- **`toBe(0)` et `-0`** : `Object.is(-0, 0)` est faux ; un produit `0 · sin(x)` négatif donne
+  `-0`. Comparer `Math.abs(v)` à 0 quand le signe du zéro n'a pas de sens. (2026-10-19)
 - **Test de performance : délai Vitest ≠ borne mesurée** (#44) : le délai par défaut d'un
   test Vitest (5 s) couvre tout le test, création du monde et échauffement compris. Un test
   qui borne une durée mesurée à 5 s (`expect(elapsed).toBeLessThan(5000)`) peut donc
@@ -106,6 +113,10 @@ haut de sa section.
 
 ## Simulation
 
+- **Phases tirées de la graine qui coïncident** (cycle 16, #49) : deux graines quelconques
+  peuvent donner des phases presque égales (101 et 202 : 0,85 et 0,81 rad), et deux plantes
+  voisines bougent alors à l'unisson. Tester l'écart des phases du décor par défaut et
+  changer de graine si besoin (`plant.spec.ts`). (2026-10-19)
 - **Rapprocher les poissons des vitres** (#43, cycle 13) : raccourcir l'anticipation de
   l'évitement (`LOOKAHEAD_SECONDS`) rapproche bien des vitres mais plaque des poissons dans
   les coins et contre les rochers (tests de coin et `world.spec.ts` rouges). Agir plutôt sur
