@@ -174,6 +174,21 @@ test.describe('Nourrissage (#67)', () => {
     await openScene(page, `${query}&nourrir=10,25`);
     expect((await page.screenshot({ animations: 'disabled' })).equals(first)).toBe(true);
   });
+  for (const seed of [7, 123]) {
+    test(`capture : les poissons mangent un dépôt, graine ${seed}, sans erreur (QA)`, async ({
+      page,
+    }) => {
+      const errors = await openScene(page, `?capture=1&seed=${seed}&camera=top&time=40&nourrir=0`);
+      const expected = advanceToWithFeedings(createDefaultWorld(seed), 40, [
+        { time: 0, x: 0, z: 0 },
+      ]).food.length;
+      // Le dépôt a été entamé par les poissons : moins de granulés que déposés (#68).
+      expect(expected).toBeLessThan(FOOD_PER_DROP);
+      await expect(host(page)).toHaveAttribute('data-aqfish-food', String(expected));
+      expect(errors).toEqual([]);
+    });
+  }
+
   test('le nombre de granulés reste borné quand on nourrit sans cesse (QA)', async ({ page }) => {
     const errors = await openScene(page);
     for (let i = 0; i < MAX_FOOD / FOOD_PER_DROP + 4; i++) {
