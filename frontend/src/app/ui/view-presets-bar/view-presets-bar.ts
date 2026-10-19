@@ -27,6 +27,14 @@ export function isPixelArtKey(key: string): boolean {
   return key.toLowerCase() === PIXEL_ART_KEY;
 }
 
+/** Touche qui fige ou remet en marche l'heure de la journée (insensible à la casse). */
+export const CLOCK_KEY = 'h';
+
+/** Vrai pour la touche qui fige ou remet en marche l'heure (`h` ou `H`, issue #51). */
+export function isClockKey(key: string): boolean {
+  return key.toLowerCase() === CLOCK_KEY;
+}
+
 /** Préréglage associé à une touche (`1` à `5`), `null` sinon. */
 export function presetForKey(key: string): CameraPreset | null {
   return VIEW_PRESET_BUTTONS.find((button) => button.key === key)?.preset ?? null;
@@ -57,6 +65,8 @@ export function isTypingContext(event: KeyboardEvent): boolean {
  * et lui renvoie le préréglage actif (`activePreset`).
  * À part, après un séparateur : la bascule « Pixel art » (touche `P`, issue #33). La barre
  * émet la demande de bascule ; l'état affiché (`pixelArt`) vient de l'hôte.
+ * Touche `H` (issue #51) : demande à l'hôte de figer ou de remettre en marche l'heure (sans
+ * bouton : le panneau de contrôle viendra avec une issue suivante).
  * Absente en mode capture (c'est l'application qui ne l'affiche pas).
  */
 @Component({
@@ -113,6 +123,9 @@ export class ViewPresetsBar {
   /** Demande de bascule du filtre pixel art (clic ou touche `P`). */
   readonly pixelArtToggled = output<void>();
 
+  /** Demande de figer ou de remettre en marche l'heure de la journée (touche `H`). */
+  readonly clockToggled = output<void>();
+
   protected readonly buttons = VIEW_PRESET_BUTTONS;
 
   protected togglePixelArt(): void {
@@ -130,6 +143,11 @@ export class ViewPresetsBar {
     if (isPixelArtKey(event.key)) {
       event.preventDefault();
       this.togglePixelArt();
+      return;
+    }
+    if (isClockKey(event.key)) {
+      event.preventDefault();
+      this.clockToggled.emit();
       return;
     }
     const preset = presetForKey(event.key);

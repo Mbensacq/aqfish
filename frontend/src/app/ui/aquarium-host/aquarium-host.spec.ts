@@ -12,6 +12,9 @@ import {
   CAMERA_ATTRIBUTE,
   CAMERA_TARGET_ATTRIBUTE,
   FILTER_ATTRIBUTE,
+  HOUR_ATTRIBUTE,
+  HOUR_FROZEN_ATTRIBUTE,
+  initialDayClock,
   SEED_ATTRIBUTE,
   TICK_ATTRIBUTE,
 } from './aquarium-host';
@@ -385,6 +388,101 @@ describe('AquariumHost', () => {
       await create();
       fixture.destroy();
       expect(host().world).toBeNull();
+    });
+  });
+
+  describe('heure de la journée (#51)', () => {
+    const host = () => fixture.componentInstance;
+    const attr = (name: string) => (fixture.nativeElement as HTMLElement).getAttribute(name);
+    /** Avance de `seconds` secondes réelles, image par image à 60 Hz, depuis `from` ms. */
+    function run(seconds: number, from = 0): number {
+      const frames60 = Math.round(seconds * 60);
+      for (let i = 1; i <= frames60; i++) {
+        frames.flush(from + (i * 1000) / 60);
+      }
+      return from + seconds * 1000;
+    }
+
+    it('initialDayClock : heure= figée, sinon midi figé en capture, midi en marche hors capture', () => {
+      expect(initialDayClock(6.5, false)).toEqual({
+        startHour: 6.5,
+        dayLengthSeconds: 180,
+        frozen: true,
+      });
+      expect(initialDayClock(null, true)).toEqual({
+        startHour: 12,
+        dayLengthSeconds: 180,
+        frozen: true,
+      });
+      expect(initialDayClock(null, false).frozen).toBe(false);
+      expect(initialDayClock(null, false).startHour).toBe(12);
+    });
+
+    it('en capture, sans heure= : midi, même après time=90 (heure figée)', async () => {
+      await create('?capture=1&time=90');
+      setCanvasSize(800, 600);
+      frames.flush(0);
+      expect(host().hour).toBe(12);
+      expect(attr(HOUR_ATTRIBUTE)).toBe('12.00');
+      expect(attr(HOUR_FROZEN_ATTRIBUTE)).toBe('true');
+    });
+
+    it('heure= fige l’heure, hors capture comme en capture ; valeur invalide ignorée', async () => {
+      await create('?heure=21.5');
+      setCanvasSize(800, 600);
+      frames.flush(0);
+      run(10);
+      expect(host().hour).toBe(21.5);
+      expect(attr(HOUR_ATTRIBUTE)).toBe('21.50');
+      fixture.destroy();
+      await create('?capture=1&heure=abc');
+      setCanvasSize(800, 600);
+      frames.flush(0);
+      expect(host().hour).toBe(12);
+    });
+
+    it('hors capture : l’heure avance avec le monde par pas fixes (45 s ⇒ 18 h)', async () => {
+      await create();
+      setCanvasSize(800, 600);
+      frames.flush(0);
+      expect(attr(HOUR_FROZEN_ATTRIBUTE)).toBe('false');
+      run(45);
+      expect(host().world?.tick).toBe(45 * 60);
+      expect(host().hour).toBeCloseTo(18, 1);
+      expect(Number(attr(HOUR_ATTRIBUTE))).toBeCloseTo(18, 1);
+    });
+
+    it('la touche H (toggleClock) fige puis remet en marche l’heure, sans saut', async () => {
+      await create();
+      setCanvasSize(800, 600);
+      frames.flush(0);
+      let now = run(15);
+      host().toggleClock();
+      expect(attr(HOUR_FROZEN_ATTRIBUTE)).toBe('true');
+      const frozenHour = host().hour!;
+      expect(frozenHour).toBeCloseTo(14, 1);
+      now = run(30, now);
+      expect(host().hour).toBe(frozenHour);
+      host().toggleClock();
+      expect(attr(HOUR_FROZEN_ATTRIBUTE)).toBe('false');
+      expect(host().hour).toBeCloseTo(frozenHour, 9);
+      run(7.5, now);
+      expect(host().hour).toBeCloseTo(frozenHour + 1, 1);
+    });
+
+    it('en capture, toggleClock est sans effet ; avant le démarrage, heure null', async () => {
+      await create('?capture=1&heure=3');
+      setCanvasSize(800, 600);
+      frames.flush(0);
+      const renders = renderers[0].renders;
+      host().toggleClock();
+      expect(host().hour).toBe(3);
+      expect(attr(HOUR_FROZEN_ATTRIBUTE)).toBe('true');
+      frames.flush(1000);
+      expect(renderers[0].renders).toBe(renders);
+      fixture.destroy();
+      expect(host().hour).toBeNull();
+      host().toggleClock();
     });
   });
 

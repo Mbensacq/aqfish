@@ -7,6 +7,10 @@
  * Paramètre facultatif `filtre=pixel|aucun` (issue #33) : force le filtre de rendu ; absent,
  * l'image est en pixel art (séries de captures existantes inchangées).
  *
+ * Paramètre facultatif `heure=` (issue #51, ADR 0018) : fige l'heure de la journée simulée,
+ * réel dans [0, 24) (`heure=0` : minuit, `heure=18.5` : 18 h 30) ; valeur invalide ignorée.
+ * Absent en capture : midi (séries de captures existantes inchangées).
+ *
  * Ce module est volontairement pur (aucune dépendance à Angular ni à Three.js).
  * Voir docs/ARCHITECTURE.md, section « Contrat de capture ».
  */
@@ -28,6 +32,8 @@ export interface CaptureParams {
   readonly time: number;
   /** Filtre de rendu forcé par `filtre=` ; `null` si absent ou invalide (choix par défaut). */
   readonly filter: RenderFilter | null;
+  /** Heure figée par `heure=`, dans [0, 24) ; `null` si absente ou invalide. */
+  readonly hour: number | null;
 }
 
 export const DEFAULT_CAPTURE_PARAMS: CaptureParams = {
@@ -36,6 +42,7 @@ export const DEFAULT_CAPTURE_PARAMS: CaptureParams = {
   camera: 'three-quarter',
   time: 0,
   filter: null,
+  hour: null,
 };
 
 /** Temps de simulation maximal accepté (1 h), pour éviter un calcul démesuré. */
@@ -54,6 +61,7 @@ export function parseCaptureParams(search: string): CaptureParams {
     camera: parseCamera(params.get('camera')),
     time: parseTime(params.get('time')),
     filter: parseFilter(params.get('filtre')),
+    hour: parseHour(params.get('heure')),
   };
 }
 
@@ -83,4 +91,15 @@ function parseTime(raw: string | null): number {
 
 function parseFilter(raw: string | null): RenderFilter | null {
   return isRenderFilter(raw) ? raw : null;
+}
+
+/** Heure décimale : chiffres, point décimal facultatif (ni signe, ni exposant, ni espace). */
+const HOUR_PATTERN = /^\d{1,2}(\.\d+)?$/;
+
+function parseHour(raw: string | null): number | null {
+  if (raw === null || !HOUR_PATTERN.test(raw)) {
+    return null;
+  }
+  const value = Number(raw);
+  return value < 24 ? value : null;
 }

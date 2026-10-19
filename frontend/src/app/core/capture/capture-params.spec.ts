@@ -17,6 +17,7 @@ describe('parseCaptureParams', () => {
       camera: 'bottom',
       time: 12.5,
       filter: null,
+      hour: null,
     });
   });
 
@@ -63,5 +64,26 @@ describe('parseCaptureParams', () => {
     expect(parseCaptureParams('?capture=true').capture).toBe(false);
     expect(parseCaptureParams('?capture=0').capture).toBe(false);
     expect(parseCaptureParams('?capture=1').capture).toBe(true);
+  });
+
+  it.each([
+    ['0', 0],
+    ['12', 12],
+    ['6.5', 6.5],
+    ['23.99', 23.99],
+    ['07', 7],
+  ])('lit l’heure figée heure=%s', (raw, hour) => {
+    expect(parseCaptureParams(`?capture=1&heure=${raw}`).hour).toBe(hour);
+  });
+
+  it.each(['', '24', '25', '-1', 'midi', '12h', '1e1', ' 12', '12.', '.5', 'NaN', '100'])(
+    'ignore l’heure invalide « %s » (null : midi en capture)',
+    (raw) => {
+      expect(parseCaptureParams(`?capture=1&heure=${encodeURIComponent(raw)}`).hour).toBeNull();
+    },
+  );
+
+  it('sans heure= : null', () => {
+    expect(parseCaptureParams('?capture=1&camera=top').hour).toBeNull();
   });
 });

@@ -145,6 +145,14 @@ haut de sa section.
 
 ## Rendu
 
+- **Assombrir la scène sans casser les captures de midi** (cycle 18, #51) : la passe
+  palette choisit la couleur la plus proche ; une caustique translucide (opacité réduite
+  avec la lumière) sur un sable assombri retombe sur des couleurs ternes (craquelures
+  brunes), et un reflet de surface trop faible devient brun sur l'eau de nuit. Préférer des
+  paliers de couleurs pleines de la palette (`render/water-light.ts`, `CAUSTIC_STAGES`).
+  Pour l'identité à l'octet des captures par défaut : mélanges `a · (1 − t) + b · t` ou
+  `Color.lerpColors(a, b, 0)` (exacts aux bornes), et `cmp` des captures avant/après.
+  (2026-10-19)
 - **Face supérieure de l'eau invisible du dessous** (cycle 17, #50) : le volume d'eau est en
   `FrontSide` ; vue de dessous, sa face du haut est éliminée. Un effet de surface visible
   des deux côtés va sur un plan à part en `DoubleSide` (`render/water-light.ts`).

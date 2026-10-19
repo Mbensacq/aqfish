@@ -70,6 +70,26 @@ test.describe('Captures', () => {
     expect(errors).toEqual([]);
   });
 
+  // Cycle jour/nuit (issue #51) : captures supplémentaires à heure figée (`heure=`). Les
+  // captures ci-dessus, sans `heure=`, sont à midi et restent inchangées.
+  const DAY_CAPTURES = [
+    { name: 'three-quarter-crepuscule', query: 'heure=18' },
+    { name: 'three-quarter-minuit', query: 'heure=0' },
+    { name: 'three-quarter-sans-filtre-minuit', query: 'heure=0&filtre=aucun' },
+  ] as const;
+  for (const { name, query } of DAY_CAPTURES) {
+    test(`angle ${name}`, async ({ page }) => {
+      const errors: string[] = [];
+      page.on('pageerror', (error) => errors.push(error.message));
+      await page.goto(
+        `/?capture=1&seed=${SEED}&camera=three-quarter&time=${TIME_SECONDS}&${query}`,
+      );
+      await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+      await page.screenshot({ path: join(OUTPUT_DIR, `${name}.png`), animations: 'disabled' });
+      expect(errors).toEqual([]);
+    });
+  }
+
   test('tracé des trajectoires, vue de dessus', async ({ page }) => {
     const svg = trajectorySvg(SEED, TRACE_SECONDS);
     await page.setViewportSize({ width: svg.width, height: svg.height });

@@ -47,6 +47,23 @@ export const CAUSTIC_COLOR = PALETTE.sableClair;
 export const CAUSTIC_OPACITY = 1;
 export const SURFACE_COLOR = PALETTE.eauTresClaire;
 export const SURFACE_OPACITY = 0.4;
+/** Part de l'opacité du reflet conservée la nuit (clair de lune). */
+export const NIGHT_SURFACE_RATIO = 0.85;
+/**
+ * Caustiques selon l'intensité du jour : toujours opaques, en couleur pleine de la palette
+ * (une caustique translucide sur un sable assombri retombe sur des couleurs ternes après la
+ * passe palette, docs/PIEGES.md). Du plus clair au plus sombre ; éteintes en dessous du
+ * dernier seuil.
+ */
+export const CAUSTIC_STAGES: readonly { readonly minDaylight: number; readonly color: string }[] = [
+  { minDaylight: 0.75, color: CAUSTIC_COLOR },
+  { minDaylight: 0.4, color: PALETTE.sable },
+];
+
+/** Couleur des caustiques pour une intensité du jour, `null` si elles sont éteintes. */
+export function causticColorFor(daylight: number): string | null {
+  return CAUSTIC_STAGES.find((stage) => daylight >= stage.minDaylight)?.color ?? null;
+}
 
 /** Ordre de rendu : caustiques après le sable et avant l'eau, reflet après l'eau, avant le verre. */
 export const CAUSTIC_RENDER_ORDER = 2.3;
@@ -213,6 +230,23 @@ export class WaterLightLayer {
     this.surface.renderOrder = SURFACE_RENDER_ORDER;
 
     this.object.add(this.caustics, this.surface);
+  }
+
+  /**
+   * Suit l'intensité du jour (`sim/daylight.ts`, ADR 0018), dans [0, 1] : les caustiques
+   * passent à une couleur plus sombre de la palette puis s'éteignent (`CAUSTIC_STAGES`), le
+   * reflet de surface s'atténue sans disparaître (clair de lune). À 1 (midi), couleurs et
+   * opacités d'origine.
+   */
+  setDaylight(intensity: number): void {
+    const day = Math.min(1, Math.max(0, Number.isFinite(intensity) ? intensity : 1));
+    const causticColor = causticColorFor(day);
+    this.caustics.visible = causticColor !== null;
+    if (causticColor !== null) {
+      (this.caustics.material.uniforms['uColor'].value as Color).set(causticColor);
+    }
+    this.surface.material.uniforms['uOpacity'].value =
+      SURFACE_OPACITY * (NIGHT_SURFACE_RATIO + (1 - NIGHT_SURFACE_RATIO) * day);
   }
 
   /** Anime les motifs au temps simulé `time`, en secondes (jamais l'horloge murale). */

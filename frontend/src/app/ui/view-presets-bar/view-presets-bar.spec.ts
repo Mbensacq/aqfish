@@ -3,6 +3,7 @@ import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import type { CameraPreset } from '../../core/capture/capture-params';
 import { CAMERA_PRESETS } from '../../core/capture/capture-params';
 import {
+  isClockKey,
   isPixelArtKey,
   isTypingContext,
   presetForKey,
@@ -156,6 +157,38 @@ describe('ViewPresetsBar', () => {
       expect(isPixelArtKey('P')).toBe(true);
       for (const key of ['o', '1', 'Pause', 'PageUp', '']) {
         expect(isPixelArtKey(key)).toBe(false);
+      }
+    });
+  });
+
+  describe('heure figée (#51)', () => {
+    let clockToggles: number;
+    beforeEach(() => {
+      clockToggles = 0;
+      fixture.componentInstance.clockToggled.subscribe(() => clockToggles++);
+    });
+
+    it('les touches h et H émettent la bascule de l’horloge et sont consommées', () => {
+      expect(press('h').defaultPrevented).toBe(true);
+      expect(press('H').defaultPrevented).toBe(true);
+      expect(clockToggles).toBe(2);
+      expect(emitted).toEqual([]);
+    });
+
+    it('H ignorée avec Ctrl ou dans un champ de saisie', () => {
+      press('h', { ctrlKey: true });
+      const field = document.createElement('input');
+      field.setAttribute('data-test-field', '');
+      document.body.appendChild(field);
+      press('h', {}, field);
+      expect(clockToggles).toBe(0);
+    });
+
+    it('isClockKey : h et H seulement', () => {
+      expect(isClockKey('h')).toBe(true);
+      expect(isClockKey('H')).toBe(true);
+      for (const key of ['g', 'p', 'Home', '']) {
+        expect(isClockKey(key)).toBe(false);
       }
     });
   });
