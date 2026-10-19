@@ -148,6 +148,14 @@ haut de sa section.
 
 ## Rendu
 
+- **Ajouter une couleur à la palette sans toucher aux captures de midi** (cycle 19, #64) :
+  pour savoir quels pixels une couleur ajoutée capterait, court-circuiter la passe palette
+  le temps d'une capture (`gl_FragColor = vec4(color, 1.0)` dans `render/palette-pass.ts`,
+  à ne pas committer), puis rejouer la quantification en Python (Numpy) sur toutes les
+  captures avant/après. Mesure du cycle 19 : aucun sable nocturne n'était possible, l'eau
+  de midi (`#3b685d` avant quantification) étant trop proche du sable de minuit
+  (`#486068`) (ADR 0019). Ne pas lancer `prettier` sur `docs/` : il reformate les tableaux
+  de tous les documents (`npm run format` ne couvre que `frontend/`). (2026-10-19)
 - **Assombrir la scène sans casser les captures de midi** (cycle 18, #51) : la passe
   palette choisit la couleur la plus proche ; une caustique translucide (opacité réduite
   avec la lumière) sur un sable assombri retombe sur des couleurs ternes (craquelures
