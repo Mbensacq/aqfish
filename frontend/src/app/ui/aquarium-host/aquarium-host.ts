@@ -27,6 +27,7 @@ import {
   type AquariumRendererFactory,
 } from '../../render/aquarium-view';
 import { CAMERA_TRANSITION_SECONDS } from '../../render/camera-presets';
+import { SIM_DT } from '../../sim/constants';
 import { fixedStepInto, type FixedStepState } from '../../sim/fixed-step';
 import {
   advanceInPlace,
@@ -248,6 +249,9 @@ export class AquariumHost {
     if (this.currentWorld) {
       // En capture, l'image montre exactement l'état au temps demandé (alpha = 1).
       view.updateFish(this.currentWorld.entities, this.capture ? 1 : this.clock.alpha);
+      // Temps du décor interpolé comme les poissons (alpha = 0 : pas précédent).
+      const alpha = this.capture ? 1 : this.clock.alpha;
+      view.updateDecor(Math.max(0, this.currentWorld.time - (1 - alpha) * SIM_DT));
     }
     const rendered = view.renderFrame();
 

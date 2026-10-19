@@ -1,7 +1,9 @@
 import {
   BackSide,
+  BufferAttribute,
   BufferGeometry,
   Color,
+  DynamicDrawUsage,
   Group,
   Mesh,
   MeshBasicMaterial,
@@ -9,10 +11,17 @@ import {
   Vector2,
 } from 'three';
 
-import { rockBaseY, rockModel, type DecorItem } from '../sim/decor';
+import { plantBaseY, rockBaseY, rockModel, type DecorItem } from '../sim/decor';
+import { plantModel, type PlantForm } from '../sim/plant';
 import { FISH_RENDER_ORDER } from './fish-layer';
 import { PALETTE } from './palette';
-import { buildRockMesh, createOutlineGeometry, createRockGeometry } from './rock-model';
+import { applyPlantSway, buildPlantMesh, type PlantMeshData } from './plant-model';
+import {
+  buildRockMesh,
+  createOutlineGeometry,
+  createRockGeometry,
+  type VoxelMeshData,
+} from './rock-model';
 
 /**
  * Couleur du contour du décor (docs/DA.md, règle 4) : la couleur la plus sombre de la
@@ -75,9 +84,19 @@ export function createOutlineMaterial(): ShaderMaterial {
   });
 }
 
+/** Plante affichée : ses données d'ondulation et l'attribut de positions partagé. */
+interface SwayingPlant {
+  readonly data: PlantMeshData;
+  readonly amplitude: number;
+  readonly rotation: number;
+  readonly position: BufferAttribute;
+}
+
 /**
  * Couche du décor : un maillage voxel et une coque de contour par élément de `World.decor`,
- * placés selon ses données (même transformation que `decorToTank` côté simulation).
+ * placés selon ses données (même transformation que `decorToTank` côté simulation). Les
+ * plantes ondulent (`update`) : leur maillage et leur coque partagent un même attribut de
+ * positions, réécrit en place à chaque image.
  */
 export class DecorLayer {
   readonly object = new Group();
@@ -88,6 +107,7 @@ export class DecorLayer {
   });
   private readonly outlineMaterial = createOutlineMaterial();
   private geometries: BufferGeometry[] = [];
+  private plants: SwayingPlant[] = [];
 
   constructor() {
     this.object.name = 'decor';
@@ -97,25 +117,72 @@ export class DecorLayer {
   setDecor(items: readonly DecorItem[]): void {
     this.clear();
     items.forEach((item, n) => {
-      const model = rockModel(item.seed, item.scale);
-      const data = buildRockMesh(model, item.seed);
+      let data: VoxelMeshData;
+      let baseY: number;
+      let name: string;
+      let sway: SwayingPlant | undefined;
+      if (item.kind === 'plant') {
+        const model = plantModel(item.seed, item.scale, item.form as PlantForm);
+        const plant = buildPlantMesh(model, item.seed);
+        data = plant;
+        baseY = plantBaseY(model.voxelSize);
+        name = `plante-${n}`;
+        sway = {
+          data: plant,
+          amplitude: model.amplitude,
+          rotation: item.rotation,
+          position: new BufferAttribute(plant.positions, 3),
+        };
+        this.plants.push(sway);
+      } else {
+        const model = rockModel(item.seed, item.scale);
+        data = buildRockMesh(model, item.seed);
+        baseY = rockBaseY(model.voxelSize);
+        name = `rocher-${n}`;
+      }
       const geometry = createRockGeometry(data);
       const outline = createOutlineGeometry(data);
+      if (sway) {
+        sway.position.setUsage(DynamicDrawUsage);
+        geometry.setAttribute('position', sway.position);
+        outline.setAttribute('position', sway.position);
+      }
       this.geometries.push(geometry, outline);
       const group = new Group();
-      group.name = `rocher-${n}`;
-      group.position.set(item.x, rockBaseY(model.voxelSize), item.z);
+      group.name = name;
+      group.position.set(item.x, baseY, item.z);
       group.rotation.y = item.rotation;
       const mesh = new Mesh(geometry, this.material);
-      mesh.name = `rocher-${n}-voxels`;
+      mesh.name = `${name}-voxels`;
       const hull = new Mesh(outline, this.outlineMaterial);
-      hull.name = `rocher-${n}-contour`;
+      hull.name = `${name}-contour`;
       for (const m of [hull, mesh]) {
         m.renderOrder = DECOR_RENDER_ORDER;
+        // Une plante qui ondule sort de sa sphère englobante au repos.
+        m.frustumCulled = sway === undefined;
         group.add(m);
       }
       this.object.add(group);
     });
+  }
+
+  /** Pose les plantes au temps simulé `time` (secondes), sans allocation. */
+  update(time: number): void {
+    for (const plant of this.plants) {
+      applyPlantSway(
+        plant.data,
+        plant.amplitude,
+        plant.rotation,
+        time,
+        plant.position.array as Float32Array,
+      );
+      plant.position.needsUpdate = true;
+    }
+  }
+
+  /** Nombre de plantes affichées. */
+  get plantCount(): number {
+    return this.plants.length;
   }
 
   /** Nombre d'éléments affichés. */
@@ -141,5 +208,6 @@ export class DecorLayer {
     this.object.clear();
     this.geometries.forEach((g) => g.dispose());
     this.geometries = [];
+    this.plants = [];
   }
 }

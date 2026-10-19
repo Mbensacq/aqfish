@@ -1,6 +1,7 @@
-import { Mesh, ShaderMaterial, Vector2 } from 'three';
+import { BufferAttribute, BufferGeometry, Mesh, ShaderMaterial, Vector2 } from 'three';
 
-import { DEFAULT_DECOR, rockBaseY, rockModel } from '../sim/decor';
+import { DEFAULT_DECOR, decorBaseY, type DecorItem } from '../sim/decor';
+import { plantModel } from '../sim/plant';
 import {
   DECOR_RENDER_ORDER,
   DecorLayer,
@@ -19,14 +20,85 @@ describe('DecorLayer', () => {
       const item = DEFAULT_DECOR[i];
       expect(group.position.x).toBe(item.x);
       expect(group.position.z).toBe(item.z);
-      expect(group.position.y).toBe(rockBaseY(rockModel(item.seed, item.scale).voxelSize));
+      expect(group.position.y).toBe(decorBaseY(item));
       expect(group.rotation.y).toBe(item.rotation);
-      expect(group.children.map((c) => c.name)).toEqual([
-        `rocher-${i}-contour`,
-        `rocher-${i}-voxels`,
-      ]);
+      const name = item.kind === 'plant' ? `plante-${i}` : `rocher-${i}`;
+      expect(group.name).toBe(name);
+      expect(group.children.map((c) => c.name)).toEqual([`${name}-contour`, `${name}-voxels`]);
     });
+    expect(layer.plantCount).toBe(DEFAULT_DECOR.filter((d) => d.kind === 'plant').length);
     layer.dispose();
+  });
+
+  describe('plantes qui ondulent', () => {
+    const PLANT: DecorItem = {
+      kind: 'plant',
+      form: 'tall',
+      x: 0,
+      z: 0,
+      rotation: 0.9,
+      scale: 1,
+      seed: 7,
+    };
+
+    function positions(layer: DecorLayer, name: string): Float32Array {
+      const mesh = layer.object.getObjectByName(name) as Mesh;
+      return (mesh.geometry as BufferGeometry).getAttribute('position').array as Float32Array;
+    }
+
+    it('update réécrit les positions en place, partagées par le maillage et sa coque', () => {
+      const layer = new DecorLayer();
+      layer.setDecor([PLANT]);
+      const voxels = layer.object.getObjectByName('plante-0-voxels') as Mesh;
+      const hull = layer.object.getObjectByName('plante-0-contour') as Mesh;
+      const attribute = (voxels.geometry as BufferGeometry).getAttribute(
+        'position',
+      ) as BufferAttribute;
+      expect((hull.geometry as BufferGeometry).getAttribute('position')).toBe(attribute);
+      const array = attribute.array;
+      const before = attribute.version;
+      layer.update(1.3);
+      const a = Float32Array.from(positions(layer, 'plante-0-voxels'));
+      layer.update(2.1);
+      expect(positions(layer, 'plante-0-voxels')).toBe(array); // aucune réallocation
+      expect(attribute.version).toBeGreaterThan(before);
+      expect(positions(layer, 'plante-0-voxels')).not.toEqual(a);
+      layer.update(1.3);
+      expect(positions(layer, 'plante-0-voxels')).toEqual(a); // même temps, même pose
+      expect(voxels.frustumCulled).toBe(false);
+      layer.dispose();
+    });
+
+    it('le déplacement reste dans la borne de l’ondulation, nul à la racine', () => {
+      const layer = new DecorLayer();
+      layer.setDecor([PLANT]);
+      const model = plantModel(PLANT.seed, PLANT.scale, 'tall');
+      const rest = Float32Array.from(positions(layer, 'plante-0-voxels'));
+      layer.update(0);
+      const top = model.height * model.voxelSize;
+      for (const time of [0.4, 3.7, 12.25]) {
+        layer.update(time);
+        const now = positions(layer, 'plante-0-voxels');
+        for (let n = 0; n < now.length; n += 3) {
+          const h = Math.min(1, now[n + 1] / top);
+          const moved = Math.hypot(now[n] - rest[n], now[n + 2] - rest[n + 2]);
+          expect(now[n + 1]).toBe(rest[n + 1]);
+          expect(moved).toBeLessThanOrEqual(model.amplitude * h * h + 1e-6);
+        }
+      }
+      layer.dispose();
+    });
+
+    it('les rochers ne bougent pas, un décor sans plante ne fait rien à update', () => {
+      const layer = new DecorLayer();
+      const rock = DEFAULT_DECOR.find((d) => d.kind === 'rock') as DecorItem;
+      layer.setDecor([rock]);
+      const before = Float32Array.from(positions(layer, 'rocher-0-voxels'));
+      layer.update(5);
+      expect(positions(layer, 'rocher-0-voxels')).toEqual(before);
+      expect(layer.plantCount).toBe(0);
+      layer.dispose();
+    });
   });
 
   it('remplacer le décor retire l’ancien', () => {

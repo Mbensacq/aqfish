@@ -12,8 +12,8 @@ import { PALETTE } from './palette';
  * voisin est vide sont émises ; la face du dessous de la rangée enterrée (j = 0) est omise.
  */
 
-/** Données brutes d'un maillage (non indexé), testables sans WebGL. */
-export interface RockMeshData {
+/** Données brutes d'un maillage voxel (non indexé), testables sans WebGL. */
+export interface VoxelMeshData {
   readonly positions: Float32Array;
   readonly normals: Float32Array;
   readonly colors: Float32Array;
@@ -22,8 +22,13 @@ export interface RockMeshData {
    * contour : une coque gonflée selon les normales des faces s'ouvrirait aux arêtes.
    */
   readonly smoothNormals: Float32Array;
+  /** Indice, dans la liste des voxels, du voxel de chaque sommet. */
+  readonly vertexCells: Uint32Array;
   readonly quads: number;
 }
+
+/** Données brutes du maillage d'un rocher. */
+export type RockMeshData = VoxelMeshData;
 
 /** Couleurs d'un rocher, dans l'ordre : dessus, dessus poudré, flanc clair, flanc sombre. */
 export const ROCK_COLORS = {
@@ -81,19 +86,29 @@ export function rockFaceColor(seed: number, cell: RockCell, up: boolean): string
  * comme son modèle. `seed` choisit les couleurs (même graine, même rocher).
  */
 export function buildRockMesh(model: RockModel, seed: number): RockMeshData {
+  return buildVoxelMesh(model.cells, model.voxelSize, (cell, up) => rockFaceColor(seed, cell, up));
+}
+
+/**
+ * Maillage voxel générique (rochers, plantes) : seules les faces dont le voisin est vide
+ * sont émises ; la face du dessous de la rangée enterrée (j = 0) est omise. `colorOf`
+ * donne la couleur (palette, `#rrggbb`) d'une face, `up` pour le dessus.
+ */
+export function buildVoxelMesh<C extends RockCell>(
+  cells: readonly C[],
+  voxelSize: number,
+  colorOf: (cell: C, up: boolean) => string,
+): VoxelMeshData {
   const key = (i: number, j: number, k: number): string => `${i},${j},${k}`;
-  const filled = new Set(model.cells.map((c) => key(c.i, c.j, c.k)));
+  const filled = new Set(cells.map((c) => key(c.i, c.j, c.k)));
   const linear = new Map<string, [number, number, number]>();
-  for (const hex of Object.values(ROCK_COLORS)) {
-    const c = new Color(hex);
-    linear.set(hex, [c.r, c.g, c.b]);
-  }
-  const v = model.voxelSize;
+  const v = voxelSize;
   const positions: number[] = [];
   const normals: number[] = [];
   const colors: number[] = [];
+  const vertexCells: number[] = [];
   let quads = 0;
-  for (const cell of model.cells) {
+  cells.forEach((cell, index) => {
     for (const face of FACES) {
       const [dx, dy, dz] = face.d;
       if (filled.has(key(cell.i + dx, cell.j + dy, cell.k + dz))) {
@@ -102,7 +117,13 @@ export function buildRockMesh(model: RockModel, seed: number): RockMeshData {
       if (dy < 0 && cell.j === 0) {
         continue; // dessous enterré
       }
-      const color = linear.get(rockFaceColor(seed, cell, dy > 0)) as [number, number, number];
+      const hex = colorOf(cell, dy > 0);
+      let color = linear.get(hex);
+      if (!color) {
+        const c = new Color(hex);
+        color = [c.r, c.g, c.b];
+        linear.set(hex, color);
+      }
       quads++;
       for (const corner of face.corners) {
         positions.push(
@@ -112,14 +133,16 @@ export function buildRockMesh(model: RockModel, seed: number): RockMeshData {
         );
         normals.push(dx, dy, dz);
         colors.push(color[0], color[1], color[2]);
+        vertexCells.push(index);
       }
     }
-  }
+  });
   return {
     positions: new Float32Array(positions),
     normals: new Float32Array(normals),
     colors: new Float32Array(colors),
     smoothNormals: smoothNormals(positions, normals),
+    vertexCells: new Uint32Array(vertexCells),
     quads,
   };
 }
@@ -151,7 +174,7 @@ function smoothNormals(positions: readonly number[], normals: readonly number[])
 }
 
 /** Géométrie Three.js du rocher (positions, normales des faces, couleurs). */
-export function createRockGeometry(data: RockMeshData): BufferGeometry {
+export function createRockGeometry(data: VoxelMeshData): BufferGeometry {
   const geometry = new BufferGeometry();
   geometry.setAttribute('position', new BufferAttribute(data.positions, 3));
   geometry.setAttribute('normal', new BufferAttribute(data.normals, 3));
@@ -161,7 +184,7 @@ export function createRockGeometry(data: RockMeshData): BufferGeometry {
 }
 
 /** Géométrie de la coque du contour : mêmes positions, normales lissées. */
-export function createOutlineGeometry(data: RockMeshData): BufferGeometry {
+export function createOutlineGeometry(data: VoxelMeshData): BufferGeometry {
   const geometry = new BufferGeometry();
   geometry.setAttribute('position', new BufferAttribute(data.positions, 3));
   geometry.setAttribute('normal', new BufferAttribute(data.smoothNormals, 3));

@@ -1,5 +1,13 @@
 import type { Vec3 } from './flocking';
-import { obstacleDistance, sphereObstacle, validateObstacle, type Obstacle } from './obstacles';
+import { createPrng } from '../core/random/prng';
+import { DEFAULT_DECOR, decorObstacles } from './decor';
+import {
+  obstacleBound,
+  obstacleDistance,
+  sphereObstacle,
+  validateObstacle,
+  type Obstacle,
+} from './obstacles';
 
 function vec(): Vec3 {
   return { x: 0, y: 0, z: 0 };
@@ -126,5 +134,71 @@ describe('obstacle en union de sphères', () => {
     };
     expect(obstacleDistance(twins, 0, 0, 0, n)).toBeCloseTo(0.5, 12);
     expect(n).toEqual({ x: 1, y: 0, z: 0 });
+  });
+});
+
+describe('obstacleBound : sphère englobante (rejet rapide)', () => {
+  const obstacles: Obstacle[] = [
+    sphereObstacle(0, 0.1, 0.2, 0, 0.05),
+    ...decorObstacles(DEFAULT_DECOR, 1),
+  ];
+
+  it('contient chaque sphère de l’obstacle ; une sphère est sa propre enveloppe', () => {
+    expect(obstacleBound(obstacles[0])).toBe(obstacles[0]);
+    for (const o of obstacles) {
+      const b = obstacleBound(o);
+      for (const s of o.shape === 'spheres' ? o.spheres : [o]) {
+        expect(Math.hypot(s.x - b.x, s.y - b.y, s.z - b.z) + s.radius).toBeLessThanOrEqual(
+          b.radius + 1e-12,
+        );
+      }
+    }
+  });
+
+  it('mise en cache par obstacle', () => {
+    expect(obstacleBound(obstacles[1])).toBe(obstacleBound(obstacles[1]));
+  });
+
+  it('minore la distance : obstacleDistance ≥ |p − centre| − rayon (balayage)', () => {
+    const rng = createPrng(9);
+    const n = vec();
+    for (const o of obstacles) {
+      const b = obstacleBound(o);
+      for (let k = 0; k < 200; k++) {
+        const x = (rng.next() - 0.5) * 1.2;
+        const y = rng.next() * 0.6;
+        const z = (rng.next() - 0.5) * 0.5;
+        const lower = Math.hypot(x - b.x, y - b.y, z - b.z) - b.radius;
+        expect(obstacleDistance(o, x, y, z, n)).toBeGreaterThanOrEqual(lower - 1e-12);
+      }
+    }
+  });
+
+  it('union : même distance et même normale qu’un parcours complet de ses sphères', () => {
+    const rng = createPrng(4);
+    const n = vec();
+    for (const o of obstacles) {
+      if (o.shape !== 'spheres') {
+        continue;
+      }
+      for (let k = 0; k < 100; k++) {
+        const x = (rng.next() - 0.5) * 1.2;
+        const y = rng.next() * 0.6;
+        const z = (rng.next() - 0.5) * 0.5;
+        let best = Infinity;
+        let nearest = o.spheres[0];
+        for (const s of o.spheres) {
+          const [dx, dy, dz] = [x - s.x, y - s.y, z - s.z];
+          const d = Math.sqrt(dx * dx + dy * dy + dz * dz) - s.radius;
+          if (d < best) {
+            best = d;
+            nearest = s;
+          }
+        }
+        expect(obstacleDistance(o, x, y, z, n)).toBe(best);
+        const len = Math.hypot(x - nearest.x, y - nearest.y, z - nearest.z);
+        expect(n.x).toBeCloseTo((x - nearest.x) / len, 12);
+      }
+    }
   });
 });

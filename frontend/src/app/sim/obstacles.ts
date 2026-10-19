@@ -135,7 +135,13 @@ export function obstacleDistance(
     const dx = x - s.x;
     const dy = y - s.y;
     const dz = z - s.z;
-    const d = Math.sqrt(dx * dx + dy * dy + dz * dz) - s.radius;
+    const d2 = dx * dx + dy * dy + dz * dz;
+    // Rejet sans racine : la sphère ne peut pas faire mieux que `best`.
+    const reach = best + s.radius;
+    if (reach >= 0 && d2 >= reach * reach) {
+      continue;
+    }
+    const d = Math.sqrt(d2) - s.radius;
     if (d < best) {
       best = d;
       bestIndex = i;
@@ -145,6 +151,39 @@ export function obstacleDistance(
     sphereDistance(spheres[bestIndex], x, y, z, normal);
   }
   return best;
+}
+
+const BOUNDS = new WeakMap<SpheresObstacle, Sphere>();
+
+/**
+ * Sphère englobante d'un obstacle (centre moyen des sphères, rayon couvrant chacune), mise
+ * en cache par objet : les obstacles sont des données immuables. Pour tout point `p`,
+ * `obstacleDistance(o, p) ≥ |p − centre| − rayon`, minorant qui permet d'écarter un
+ * obstacle lointain sans parcourir ses sphères (`obstacleAvoidance`).
+ */
+export function obstacleBound(obstacle: Obstacle): Sphere {
+  if (obstacle.shape === 'sphere') {
+    return obstacle;
+  }
+  let bound = BOUNDS.get(obstacle);
+  if (!bound) {
+    const spheres = obstacle.spheres;
+    let x = 0;
+    let y = 0;
+    let z = 0;
+    for (const s of spheres) {
+      x += s.x / spheres.length;
+      y += s.y / spheres.length;
+      z += s.z / spheres.length;
+    }
+    let radius = 0;
+    for (const s of spheres) {
+      radius = Math.max(radius, Math.hypot(s.x - x, s.y - y, s.z - z) + s.radius);
+    }
+    bound = { x, y, z, radius };
+    BOUNDS.set(obstacle, bound);
+  }
+  return bound;
 }
 
 function sphereDistance(obstacle: Sphere, x: number, y: number, z: number, normal: Vec3): number {

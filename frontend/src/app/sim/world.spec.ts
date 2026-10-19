@@ -256,6 +256,8 @@ describe('monde peuplé', () => {
     expect(JSON.stringify(world)).toBe(snapshot);
   });
 
+  // Délai explicite (docs/PIEGES.md, Tests) : 10 000 pas du monde par défaut, plantes
+  // comprises, ont pris 5,5 s sous instrumentation de couverture (cycle 16).
   it('10 000 pas : tous les poissons restent dans le volume d’eau, avec la marge', () => {
     const world = advance(createDefaultWorld(1234), 10_000);
     for (const f of world.entities) {
@@ -268,7 +270,7 @@ describe('monde peuplé', () => {
       expect(f.z).toBeGreaterThanOrEqual(hard.minZ);
       expect(f.z).toBeLessThanOrEqual(hard.maxZ);
     }
-  });
+  }, 15_000);
 
   it('aller-retour JSON identique après des pas', () => {
     const world = advance(createDefaultWorld(3), 777);

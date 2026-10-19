@@ -1,7 +1,7 @@
 import { prngNextState, prngOutput, deriveSeed } from '../core/random/prng';
 import { deflect, obstacleAvoidance, wallAvoidance } from './avoidance';
 import type { Vec3 } from './flocking';
-import { obstacleDistance, type Obstacle } from './obstacles';
+import { obstacleBound, obstacleDistance, type Obstacle } from './obstacles';
 import { shrinkBox, type Box3 } from './tank';
 import { SPECIES, type SpeciesDefinition, type SpeciesId } from './species';
 import { tailBeatRate } from './undulation';
@@ -413,6 +413,9 @@ export function stepFish(
   for (let pass = 0; pass < OBSTACLE_PASSES; pass++) {
     let moved = false;
     for (const o of obstacles) {
+      if (outsideBound(o, fish.x, fish.y, fish.z)) {
+        continue; // hors de la sphère englobante, donc hors de l'obstacle
+      }
       const d = obstacleDistance(o, fish.x, fish.y, fish.z, SCRATCH_NORMAL);
       if (d < 0) {
         fish.x -= SCRATCH_NORMAL.x * d;
@@ -478,4 +481,13 @@ function clamp(value: number, min: number, max: number): number {
 
 function lerp(a: number, b: number, t: number): number {
   return a + (b - a) * t;
+}
+
+/** Vrai si `(x, y, z)` est hors de la sphère englobante de `o` (rejet exact, sans racine). */
+function outsideBound(o: Obstacle, x: number, y: number, z: number): boolean {
+  const b = obstacleBound(o);
+  const dx = x - b.x;
+  const dy = y - b.y;
+  const dz = z - b.z;
+  return dx * dx + dy * dy + dz * dz >= b.radius * b.radius;
 }
