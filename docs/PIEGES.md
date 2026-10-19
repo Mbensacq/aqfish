@@ -102,6 +102,17 @@ haut de sa section.
 - **Libellé coupé sur deux lignes** : `scrollWidth <= clientWidth` ne détecte pas un retour à
   la ligne dans un bouton. Comparer la hauteur du bouton à celle de ses voisins
   (`white-space: nowrap` sur les boutons de la barre). (2026-10-18)
+- **Serveur e2e réutilisé d'un autre clone** (cycle 22) : hors CI, Playwright réutilise un
+  serveur déjà à l'écoute sur le port 4300 (`reuseExistingServer`). Un `verify` interrompu
+  (ou lancé depuis un autre worktree) laisse son `ng serve` actif : les e2e suivants testent
+  alors **l'autre** code. Tuer ce serveur par son PID (`pgrep -af "ng serve"`), ou lancer
+  sur un autre port (`E2E_PORT=4310 npx playwright test …`). Ne pas utiliser
+  `pkill -f <motif>` : le motif figure aussi dans la ligne de commande du shell de l'outil,
+  qui est tué avec (code 144). (2026-10-19)
+- **Tester le code d'une branche pendant le `verify` de `main`** (cycle 22) : travailler
+  dans un worktree séparé (`git worktree add ../aqfish-cNNN -b <branche> main`, puis lien
+  symbolique vers `frontend/node_modules`) évite de modifier les sources servies par le
+  `ng serve` du `verify` en cours. (2026-10-19)
 - **Modifier le code pendant un `npm run verify`** : `ng serve` recompile à chaud et les e2e
   restants testent le code en cours d'écriture (échecs de compilation trompeurs). Lancer
   `verify` sur `main` jusqu'au bout avant de toucher aux sources. (2026-10-18)
