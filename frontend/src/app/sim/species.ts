@@ -302,12 +302,15 @@ export const CORYDORA: SpeciesDefinition = {
   defaultPopulation: 6,
   schooling: {
     neighborRadius: 0.2,
-    separationRadius: 0.06,
-    separationWeight: 1,
+    // Banc lâche (#57) : à ~1 longueur de corps d'écart, les corydoras se fondaient en un
+    // amas gris à l'écran. Séparation sur ~3 longueurs, cohésion faible, et jamais moins de
+    // 1,5 longueur entre deux centres : chaque individu reste lisible sur les captures.
+    separationRadius: 0.15,
+    separationWeight: 1.5,
     alignmentWeight: 0.5,
-    cohesionWeight: 0.8,
+    cohesionWeight: 0.3,
     turnRate: 1.2,
-    minDistance: 0.03,
+    minDistance: 0.08,
   },
   silhouette: 'corydora',
   colors: {
