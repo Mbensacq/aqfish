@@ -69,6 +69,9 @@ haut de sa section.
   64 attendu en O(n³)). La charge des fichiers parallèles touche les deux mesures pareil.
   Mesure locale de `trajectory.spec.ts` (3 graines × 60 s simulées) : ≈ 80 à 150 ms par cas.
   (2026-10-19)
+  Cycle 18 (#51) : dans `aquarium-host.spec.ts`, faire avancer le monde par défaut image par
+  image (`frames.flush`) coûte cher : 45 s simulées passaient en local mais dépassaient 5 s
+  en CI. Y garder ≤ 10 s simulées par test, avec un délai explicite (15 s). (2026-10-19)
 - **E2e de geste à la souris lent en rendu logiciel** (#38) : chaque glisser coûte plusieurs
   secondes sous SwiftShader. Pour prouver une borne, un seul glisser long par direction
   suffit s'il la dépasse sans elle ; le vérifier en retirant la borne le temps d'un essai
