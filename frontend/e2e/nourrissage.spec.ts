@@ -3,6 +3,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { FOOD_COLOR } from '../src/app/render/food-layer';
 import { CAMERA_FOV_DEG } from '../src/app/render/camera-presets';
 import { FOOD_PER_DROP, MAX_FOOD } from '../src/app/sim/food';
+import { advanceToWithFeedings, createDefaultWorld } from '../src/app/sim/world';
 import { waterVolume } from '../src/app/sim/tank';
 
 /**
@@ -157,7 +158,14 @@ test.describe('Nourrissage (#67)', () => {
     const without = await countColor(page, FOOD_COLOR);
 
     await openScene(page, `${query}&nourrir=10,25`);
-    await expect(host(page)).toHaveAttribute('data-aqfish-food', String(2 * FOOD_PER_DROP));
+    // Les poissons mangent (#68) : le compte attendu est celui de la simulation pure, avec les
+    // mêmes dépôts (5 : le dépôt de 10 s est mangé, celui de 25 s coule encore).
+    const expected = advanceToWithFeedings(createDefaultWorld(42), 30, [
+      { time: 10, x: 0, z: 0 },
+      { time: 25, x: 0, z: 0 },
+    ]).food.length;
+    expect(expected).toBeGreaterThanOrEqual(FOOD_PER_DROP);
+    await expect(host(page)).toHaveAttribute('data-aqfish-food', String(expected));
     const first = await page.screenshot({ animations: 'disabled' });
     const withFood = await countColor(page, FOOD_COLOR);
     // Au moins quelques granulés de 2 × 2 pixels de scène (3 pixels CSS par pixel de scène).
