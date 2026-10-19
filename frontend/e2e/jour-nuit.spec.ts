@@ -118,8 +118,8 @@ test.describe('Cycle jour/nuit', () => {
     const errors = await openScene(page, '');
     const hour = async () => Number(await host(page).getAttribute('data-aqfish-hour'));
     await expect(host(page)).toHaveAttribute('data-aqfish-hour-frozen', 'false');
-    // L'heure avance (journée de 180 s : 0,13 h par seconde simulée).
-    await expect.poll(hour).toBeGreaterThan(12.05);
+    // L'heure avance (journée de 1 200 s : 0,02 h par seconde simulée).
+    await expect.poll(hour).toBeGreaterThan(12.02);
     await page.keyboard.press('h');
     await expect(host(page)).toHaveAttribute('data-aqfish-hour-frozen', 'true');
     const frozen = await host(page).getAttribute('data-aqfish-hour');
@@ -130,7 +130,7 @@ test.describe('Cycle jour/nuit', () => {
     expect(await host(page).getAttribute('data-aqfish-hour')).toBe(frozen);
     await page.keyboard.press('H');
     await expect(host(page)).toHaveAttribute('data-aqfish-hour-frozen', 'false');
-    await expect.poll(hour).toBeGreaterThan(Number(frozen) + 0.05);
+    await expect.poll(hour).toBeGreaterThan(Number(frozen) + 0.02);
     expect(errors).toEqual([]);
   });
 

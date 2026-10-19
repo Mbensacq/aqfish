@@ -135,10 +135,10 @@ describe('sunElevation et normalizeHour', () => {
 });
 
 describe('horloge de journée', () => {
-  it('par défaut : départ à midi, journée de 180 s, en marche', () => {
-    expect(DEFAULT_DAY_CLOCK).toEqual({ startHour: 12, dayLengthSeconds: 180, frozen: false });
+  it('par défaut : départ à midi, journée de 1 200 s (20 min, #75), en marche', () => {
+    expect(DEFAULT_DAY_CLOCK).toEqual({ startHour: 12, dayLengthSeconds: 1200, frozen: false });
     expect(createDayClock()).toEqual(DEFAULT_DAY_CLOCK);
-    expect(DEFAULT_DAY_LENGTH_SECONDS).toBe(180);
+    expect(DEFAULT_DAY_LENGTH_SECONDS).toBe(1200);
   });
 
   it('une journée entière dure dayLengthSeconds : minuit à mi-journée, midi au bout', () => {
@@ -200,7 +200,8 @@ describe('horloge de journée', () => {
     const dateNow = vi.spyOn(Date, 'now').mockReturnValue(1e12);
     try {
       const world = createWorld(42);
-      const clock = DEFAULT_DAY_CLOCK;
+      // Journée explicite de 180 s : 45 s simulées suffisent à couvrir 6 h (test rapide).
+      const clock = createDayClock(12, 180);
       expect(hourAt(clock, world.time)).toBe(12);
       // 45 s simulées = 6 h, atteintes par pas fixes de SIM_DT.
       const later = advance(world, ticksFor(45));
