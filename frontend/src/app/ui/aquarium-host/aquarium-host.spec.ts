@@ -431,7 +431,7 @@ describe('AquariumHost', () => {
       await create('?heure=21.5');
       setCanvasSize(800, 600);
       frames.flush(0);
-      run(10);
+      run(3);
       expect(host().hour).toBe(21.5);
       expect(attr(HOUR_ATTRIBUTE)).toBe('21.50');
       fixture.destroy();
@@ -441,34 +441,36 @@ describe('AquariumHost', () => {
       expect(host().hour).toBe(12);
     });
 
-    it('hors capture : l’heure avance avec le monde par pas fixes (45 s ⇒ 18 h)', async () => {
+    // Simulation courte (≤ 9 s simulées par test) : chaque pas fait nager tout le monde par
+    // défaut, et jsdom sur la CI est lent (docs/PIEGES.md, « Test de performance »).
+    it('hors capture : l’heure avance avec le monde par pas fixes (7,5 s ⇒ 13 h)', async () => {
       await create();
       setCanvasSize(800, 600);
       frames.flush(0);
       expect(attr(HOUR_FROZEN_ATTRIBUTE)).toBe('false');
-      run(45);
-      expect(host().world?.tick).toBe(45 * 60);
-      expect(host().hour).toBeCloseTo(18, 1);
-      expect(Number(attr(HOUR_ATTRIBUTE))).toBeCloseTo(18, 1);
-    });
+      run(7.5);
+      expect(host().world?.tick).toBe(450);
+      expect(host().hour).toBeCloseTo(13, 1);
+      expect(Number(attr(HOUR_ATTRIBUTE))).toBeCloseTo(13, 1);
+    }, 15_000);
 
     it('la touche H (toggleClock) fige puis remet en marche l’heure, sans saut', async () => {
       await create();
       setCanvasSize(800, 600);
       frames.flush(0);
-      let now = run(15);
+      let now = run(3);
       host().toggleClock();
       expect(attr(HOUR_FROZEN_ATTRIBUTE)).toBe('true');
       const frozenHour = host().hour!;
-      expect(frozenHour).toBeCloseTo(14, 1);
-      now = run(30, now);
+      expect(frozenHour).toBeCloseTo(12.4, 1);
+      now = run(3, now);
       expect(host().hour).toBe(frozenHour);
       host().toggleClock();
       expect(attr(HOUR_FROZEN_ATTRIBUTE)).toBe('false');
       expect(host().hour).toBeCloseTo(frozenHour, 9);
-      run(7.5, now);
-      expect(host().hour).toBeCloseTo(frozenHour + 1, 1);
-    });
+      run(3, now);
+      expect(host().hour).toBeCloseTo(frozenHour + 0.4, 1);
+    }, 15_000);
 
     it('en capture, toggleClock est sans effet ; avant le démarrage, heure null', async () => {
       await create('?capture=1&heure=3');
