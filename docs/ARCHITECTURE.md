@@ -120,7 +120,8 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
 ### Caméra
 
 - `OrbitControls` (`three/examples/jsm/controls/OrbitControls.js`) : rotation au clic gauche,
-  zoom à la molette, déplacement au clic droit, gestes tactiles.
+  zoom à la molette, déplacement au clic droit, gestes tactiles ; boutons et gestes tactiles réglés
+  d'après `core/commands` (ADR 0020), qui alimente aussi l'aide-mémoire.
 - Déplacement au clic droit borné (bug #10) : la cible reste dans une sphère centrée sur le
   bac (`controls.cursor`, `maxTargetRadius`), de rayon `panTargetRadius`
   (`render/camera-presets.ts`), choisi pour que le centre du bac reste dans le champ vertical
@@ -155,6 +156,7 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
 |---|---|
 | `core/render-filter/render-filter.ts` | Filtre de rendu `pixel` / `aucun` : décodage, bascule, filtre initial, mémorisation tolérante (`aqfish.filtre`) |
 | `core/random/prng.ts` | PRNG mulberry32 à graine, dérivation de sous-générateurs par entité |
+| `core/commands/commands.ts` | Source unique des commandes (ADR 0020) : raccourcis clavier `KEY_COMMANDS` (`keyCommandFor`, `commandKey`), gestes de la caméra `ORBIT_MOUSE_BUTTONS` / `ORBIT_TOUCHES` et leurs libellés (`orbitGestures`), aide-mémoire `helpSections()` |
 | `sim/constants.ts` | `SIM_DT`, `MAX_STEPS_PER_FRAME` |
 | `sim/fixed-step.ts` | Accumulateur de la boucle à pas fixe (`fixedStep`, pure ; `fixedStepInto`, sans allocation) |
 | `sim/time-step.ts` | `assertTimeStep` : validation unique d'un pas de temps |
@@ -187,7 +189,8 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
 | `render/night-shade.ts` | `flatBrightness(intensité)` : luminosité des couleurs plates (poissons, bulles, diffuseur), 1 en plein jour, `NIGHT_FLAT_BRIGHTNESS` la nuit (ADR 0019) |
 | `render/aquarium-view.ts` | Vue sans Angular : renderer (fabrique remplaçable), caméra, `OrbitControls`, transitions de caméra, `updateFish`, `setDecor`, `updateDecor` (temps simulé interpolé), `updateLight` (lumière du jour, luminosité des couleurs plates des poissons et des bulles) |
 | `ui/aquarium-host/` | Composant hôte : boucle rAF, avance de la simulation, horloge de journée (`initialDayClock`, `toggleClock`, `freezeClockAt`), redimensionnement, contrat de capture, `DestroyRef` |
-| `ui/view-presets-bar/` | Barre flottante des 5 préréglages de vue et raccourcis clavier `1` à `5` (émet le préréglage choisi), bascule « Pixel art » et touche `P` (émet la demande de bascule), touche `H` (fige ou remet en marche l'heure), touches `J` (plein jour : fige à midi) et `N` (nuit : fige à minuit), issue #75 |
+| `ui/view-presets-bar/` | Barre flottante des 5 préréglages de vue et raccourcis clavier `1` à `5` (émet le préréglage choisi), bascule « Pixel art » et touche `P` (émet la demande de bascule), touche `H` (fige ou remet en marche l'heure), touches `J` (plein jour : fige à midi) et `N` (nuit : fige à minuit), issue #75 ; touches lues dans `core/commands` |
+| `ui/commands-help/` | Aide-mémoire des commandes (#74, ADR 0020) : panneau généré par `helpSections()`, repliable par `?`, état mémorisé (`aqfish.aide-commandes`, repli en mémoire) ; contient le test d'exhaustivité des raccourcis |
 
 Le renderer est créé par une fabrique (`AQUARIUM_RENDERER_FACTORY`, par défaut
 `createWebGLRenderer`) : les tests `TestBed` la remplacent par un double, jsdom n'ayant pas
@@ -226,6 +229,10 @@ maximal : 60 s par angle), et **aucune mesure de performance** ne doit y être f
   à la destruction du composant (`DestroyRef`).
 - Textes d'interface en français. Chaque contrôle a un libellé accessible et une alternative
   au clavier.
+- Raccourcis clavier et gestes : déclarés une seule fois dans `core/commands` (ADR 0020).
+  Tout nouveau raccourci y est déclaré avant d'être géré ; l'aide-mémoire (`?`) suit sans
+  autre modification, et un test d'exhaustivité échoue si une touche gérée n'est pas
+  déclarée.
 
 ## Tests
 
