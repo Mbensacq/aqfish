@@ -145,6 +145,16 @@ haut de sa section.
 
 ## Rendu
 
+- **Face supérieure de l'eau invisible du dessous** (cycle 17, #50) : le volume d'eau est en
+  `FrontSide` ; vue de dessous, sa face du haut est éliminée. Un effet de surface visible
+  des deux côtés va sur un plan à part en `DoubleSide` (`render/water-light.ts`).
+  Et un effet translucide posé sous l'eau (caustiques à 45 % sur le sable) est teinté par
+  l'eau puis ramené par la passe palette vers `eauTresClaire` : le dessiner après l'eau et
+  le verre, en couleur pleine de la palette. (2026-10-19)
+- **Taille de point en pixels de la cible** (cycle 17) : `PointsMaterial` avec
+  `sizeAttenuation: false` donne une taille en pixels de la surface de rendu : 1 pixel de
+  scène en pixel art, mais 1 pixel d'écran sans filtre. Multiplier par
+  `PIXEL_SIZE × pixelRatio` en mode `aucun` (`render/bubble-layer.ts`). (2026-10-19)
 - **Contour en coque gonflée sur des voxels** (cycle 15) : gonfler la coque selon les
   normales des faces l'ouvre aux arêtes (faces disjointes). Utiliser des normales lissées
   (moyenne des faces au même sommet, `render/rock-model.ts`) et un décalage en pixels de la

@@ -168,6 +168,7 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
 | `sim/decor.ts` | Décor en données JSON (`DecorItem` : rochers et plantes, validation, `parseDecor`), rochers voxel générés depuis leur graine (`rockModel`), collision en union de sphères (`decorObstacles`), `DEFAULT_DECOR` (ADR 0015, 0016) |
 | `sim/plant.ts` | Plantes voxel générées depuis leur graine, deux formes (`tall`, `tuft`), phase d'ondulation, collision des tiges élargie de la borne d'ondulation (`plantCollision`, ADR 0016) |
 | `sim/plant-sway.ts` | Ondulation des plantes (fonction pure du temps simulé, de la hauteur relative et de la phase, bornée par `amplitude · h²`, ADR 0016) |
+| `sim/bubbles.ts` | Bulles du diffuseur : fonction fermée de la graine, du numéro de bulle et du temps simulé (émission à cadence fixe, montée, zigzag, fin à la surface), tampon préalloué borné par `MAX_BUBBLES`, flux de hasard séparé (ADR 0017) |
 | `sim/undulation.ts` | Ondulation (fonctions pures) : avance de la phase, amplitude selon la vitesse, pose du corps et de la queue (ADR 0009) |
 | `sim/avoidance.ts` | Forces d'évitement des parois et des obstacles, proximité, déviation pour contourner (ADR 0012) |
 | `render/palette.ts` | Palette unique (32 à 48 couleurs), nommées par usage |
@@ -180,6 +181,8 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
 | `render/rock-model.ts` | Maillage voxel générique (`buildVoxelMesh`) et maillage d'un rocher (couleurs plates de la palette), normales lissées de sa coque de contour (ADR 0015) |
 | `render/plant-model.ts` | Maillage voxel d'une plante (couleurs de végétation), hauteur et phase par sommet, `applyPlantSway` (positions réécrites en place, ADR 0016) |
 | `render/decor-layer.ts` | Couche du décor : maillages et coques de contour d'un pixel (décalage en pixels de la cible), placés selon `World.decor` ; `update(time)` fait onduler les plantes (ADR 0015, 0016) |
+| `render/bubble-layer.ts` | Bulles en nuages de points de 1 et 2 pixels de la cible (taille fixe à l'écran) et diffuseur ; positions réécrites en place (ADR 0017) |
+| `render/water-light.ts` | Caustiques sur le sable et reflet de surface (visible des deux côtés) : motifs par cases fixes du bac, en GLSL avec référence TypeScript (`causticLit`, `surfaceGlint`), animés par le temps simulé (ADR 0017) |
 | `render/aquarium-view.ts` | Vue sans Angular : renderer (fabrique remplaçable), caméra, `OrbitControls`, transitions de caméra, `updateFish`, `setDecor`, `updateDecor` (temps simulé interpolé) |
 | `ui/aquarium-host/` | Composant hôte : boucle rAF, avance de la simulation, redimensionnement, contrat de capture, `DestroyRef` |
 | `ui/view-presets-bar/` | Barre flottante des 5 préréglages de vue et raccourcis clavier `1` à `5` (émet le préréglage choisi), bascule « Pixel art » et touche `P` (émet la demande de bascule) |

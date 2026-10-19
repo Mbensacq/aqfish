@@ -1,4 +1,5 @@
 import { assertSeed } from '../core/random/prng';
+import { fillBubbles, type BubbleBuffer } from './bubbles';
 import { SIM_DT } from './constants';
 import { DEFAULT_DECOR, decorObstacles, parseDecorItems, type DecorItem } from './decor';
 import { computeSchoolSteering, enforceMinDistance } from './flocking';
@@ -166,6 +167,16 @@ export function advanceInPlace(world: MutableWorld, steps: number): void {
   for (let i = 0; i < steps; i++) {
     stepInPlace(world, SIM_DT);
   }
+}
+
+/**
+ * Écrit dans `out` les bulles du diffuseur du monde (`sim/bubbles.ts`, ADR 0017) et renvoie
+ * leur nombre. Les bulles sont une fonction pure de la graine et du temps du monde : elles
+ * n'ont pas d'état dans `World`, ne consomment aucun générateur des poissons et n'en
+ * changent pas les trajectoires.
+ */
+export function worldBubbles(world: World, out: BubbleBuffer): number {
+  return fillBubbles(world.seed, world.time, out);
 }
 
 /** Nombre total de pas `SIM_DT` correspondant à un temps simulé : `round(time / SIM_DT)`. */
