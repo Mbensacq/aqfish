@@ -123,4 +123,17 @@ test.describe('Cycle jour/nuit', () => {
     expect(await host(page).getAttribute('data-aqfish-hour')).toBe('0.00');
     expect(errors).toEqual([]);
   });
+  test('robustesse : valeurs d’URL extrêmes ignorées, petit écran de nuit sans erreur', async ({
+    page,
+  }) => {
+    const byDefault = await screenshot(page, BASE);
+    for (const raw of ['-1', 'abc', '24', '1e1', '']) {
+      const png = await screenshot(page, `${BASE}&heure=${encodeURIComponent(raw)}`);
+      expect(png.equals(byDefault), `heure=${raw} doit retomber sur midi`).toBe(true);
+    }
+    await page.setViewportSize({ width: 390, height: 844 });
+    const errors = await openScene(page, '?heure=23.99');
+    await expect(host(page)).toHaveAttribute('data-aqfish-hour', '23.99');
+    expect(errors).toEqual([]);
+  });
 });
