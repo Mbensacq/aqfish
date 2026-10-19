@@ -56,6 +56,12 @@ traversable.
 
 - Les plantes ajoutent des obstacles au monde par défaut : les trajectoires des poissons
   et les captures changent (naissances hors des tiges, évitement).
+- Coût : les colonnes de sphères des tiges rendaient 10 000 pas du monde par défaut 45 %
+  plus lents (5,5 s sous couverture, délai du test dépassé). Rejets **exacts** ajoutés
+  (`obstacleBound`, sphère englobante mise en cache ; distance à une union sans racine pour
+  les sphères qui ne peuvent pas battre la meilleure) : résultats identiques au bit près,
+  surcoût ramené à environ 30 %. Le reste vient du comportement (évitement plus fréquent
+  près des plantes), non de la géométrie : espacer les sphères n'y change rien.
 - Deux plantes proches de phases presque égales bougeraient à l'unisson : les graines du
   décor par défaut sont choisies pour des phases distinctes (test).
 - Une nouvelle forme de plante n'ajoute qu'une branche à `plantModel` ; la collision et le

@@ -1,5 +1,5 @@
 import type { Vec3 } from './flocking';
-import { obstacleDistance, type Obstacle } from './obstacles';
+import { obstacleBound, obstacleDistance, type Obstacle } from './obstacles';
 import type { Box3 } from './tank';
 
 /**
@@ -71,6 +71,9 @@ export function obstacleAvoidance(
   out.y = 0;
   out.z = 0;
   for (const obstacle of obstacles) {
+    if (beyondReach(obstacle, ax, ay, az, bx, by, bz, clearance + range)) {
+      continue; // contribution nulle de toute façon : proximity(d − clearance, range) = 0
+    }
     let best = Infinity;
     let nx = 0;
     let ny = 0;
@@ -96,6 +99,38 @@ export function obstacleAvoidance(
     out.z += nz * w;
   }
   return out;
+}
+
+/**
+ * Vrai si les trois échantillons du segment `a → b` sont à `reach` ou plus de la surface de
+ * la sphère englobante de l'obstacle : la distance à l'obstacle, qu'elle minore, l'est
+ * aussi. Rejet exact (même résultat que le calcul complet), sans racine carrée.
+ */
+function beyondReach(
+  obstacle: Obstacle,
+  ax: number,
+  ay: number,
+  az: number,
+  bx: number,
+  by: number,
+  bz: number,
+  reach: number,
+): boolean {
+  const b = obstacleBound(obstacle);
+  const limit = b.radius + reach;
+  if (!(limit > 0)) {
+    return false;
+  }
+  const limit2 = limit * limit;
+  for (const t of SAMPLES) {
+    const dx = ax + (bx - ax) * t - b.x;
+    const dy = ay + (by - ay) * t - b.y;
+    const dz = az + (bz - az) * t - b.z;
+    if (dx * dx + dy * dy + dz * dz < limit2) {
+      return false;
+    }
+  }
+  return true;
 }
 
 /**

@@ -1,6 +1,8 @@
 import { deflect, obstacleAvoidance, proximity, wallAvoidance } from './avoidance';
 import type { Vec3 } from './flocking';
-import { sphereObstacle } from './obstacles';
+import { createPrng } from '../core/random/prng';
+import { DEFAULT_DECOR, decorObstacles } from './decor';
+import { obstacleDistance, sphereObstacle, type Obstacle } from './obstacles';
 import type { Box3 } from './tank';
 
 function vec(): Vec3 {
@@ -168,5 +170,71 @@ describe('deflect', () => {
     const withY = deflect(-0.05, 0.27, 1, -1.517, 1, vec());
     expect(withY.x).toBe(flat.x);
     expect(withY.z).toBe(flat.z);
+  });
+});
+
+describe('obstacleAvoidance : rejet des obstacles lointains', () => {
+  /** Calcul complet, sans rejet : référence. */
+  function reference(
+    a: Vec3,
+    b: Vec3,
+    obstacles: readonly Obstacle[],
+    clearance: number,
+    range: number,
+  ): Vec3 {
+    const out = vec();
+    const n = vec();
+    for (const o of obstacles) {
+      let best = Infinity;
+      let nb = vec();
+      for (const t of [0, 0.5, 1]) {
+        const d = obstacleDistance(
+          o,
+          a.x + (b.x - a.x) * t,
+          a.y + (b.y - a.y) * t,
+          a.z + (b.z - a.z) * t,
+          n,
+        );
+        if (d < best) {
+          best = d;
+          nb = { ...n };
+        }
+      }
+      const w = proximity(best - clearance, range);
+      out.x += nb.x * w;
+      out.y += nb.y * w;
+      out.z += nb.z * w;
+    }
+    return out;
+  }
+
+  it('même résultat que le calcul complet, au bit près (décor par défaut, balayage)', () => {
+    const obstacles = decorObstacles(DEFAULT_DECOR);
+    const rng = createPrng(21);
+    const out = vec();
+    let nonZero = 0;
+    for (let k = 0; k < 2000; k++) {
+      const a = {
+        x: (rng.next() - 0.5) * 1.2,
+        y: 0.06 + rng.next() * 0.5,
+        z: (rng.next() - 0.5) * 0.5,
+      };
+      const b = {
+        x: a.x + (rng.next() - 0.5) * 0.2,
+        y: a.y + (rng.next() - 0.5) * 0.1,
+        z: a.z + (rng.next() - 0.5) * 0.2,
+      };
+      obstacleAvoidance(a.x, a.y, a.z, b.x, b.y, b.z, obstacles, 0.01, 0.07, out);
+      const expected = reference(a, b, obstacles, 0.01, 0.07);
+      expect(out.x).toBe(expected.x);
+      expect(out.y).toBe(expected.y);
+      expect(out.z).toBe(expected.z);
+      if (out.x !== 0 || out.z !== 0) {
+        nonZero++;
+      }
+    }
+    // Le balayage couvre des segments proches (force non nulle) et lointains.
+    expect(nonZero).toBeGreaterThan(100);
+    expect(nonZero).toBeLessThan(1900);
   });
 });
