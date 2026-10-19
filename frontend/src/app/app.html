@@ -1,6 +1,8 @@
 @if (!capture) {
   <!-- Interface (masquée en mode capture). Titre accessible, invisible à l'écran. -->
   <h1 class="visually-hidden">aqfish</h1>
+  <!-- Aide-mémoire des commandes (#74), indépendant de Three.js : affiché tout de suite. -->
+  <app-commands-help />
 }
 <!-- Three.js est chargé à part pour garder le bundle initial sous le budget (angular.json). -->
 @defer (on immediate) {

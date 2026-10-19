@@ -1,0 +1,162 @@
+// Aide-mémoire des commandes (docs/DA.md, « Interface ») : panneau sombre translucide aux
+// coins arrondis, en haut à droite, loin de la barre des préréglages (en bas au centre).
+:host {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 1;
+  color: #e8e6e3;
+  font:
+    400 13px / 1.3 system-ui,
+    sans-serif;
+}
+
+.commands-help {
+  box-sizing: border-box;
+  width: 300px;
+  max-width: calc(100vw - 24px);
+  // Ne jamais descendre jusqu'à la barre des préréglages (bas : 16 px + ~42 px de haut).
+  max-height: calc(100vh - 12px - 76px);
+  overflow-y: auto;
+  padding: 8px 12px 10px;
+  border: 1px solid rgb(232 230 227 / 8%);
+  border-radius: 10px;
+  // Assez opaque pour rester lisible par-dessus le bac (sable clair, eau).
+  background: rgb(20 20 24 / 88%); // #141418
+  opacity: 0.9;
+  transition: opacity 150ms ease-out;
+
+  &:hover,
+  &:focus-within {
+    opacity: 1;
+  }
+}
+
+.commands-help__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.commands-help__title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.commands-help__group {
+  margin: 8px 0 2px;
+  color: #5fbfa3;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+// Une grille par groupe : la colonne des touches et gestes prend la largeur du plus long.
+.commands-help__list {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  column-gap: 12px;
+  row-gap: 2px;
+  margin: 0;
+}
+
+.commands-help__row {
+  display: contents;
+
+  dt,
+  dd {
+    margin: 0;
+  }
+
+  dt {
+    white-space: nowrap;
+  }
+
+  dd {
+    color: rgb(232 230 227 / 85%);
+  }
+}
+
+.commands-help__gesture {
+  color: #e8e6e3;
+}
+
+.commands-help__key {
+  display: inline-block;
+  min-width: 1.1em;
+  padding: 0 4px;
+  border-radius: 3px;
+  background: rgb(232 230 227 / 14%);
+  font:
+    600 11px / 1.5 system-ui,
+    sans-serif;
+  text-align: center;
+}
+
+.commands-help__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 2px 8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  white-space: nowrap;
+  cursor: pointer;
+
+  &:hover {
+    background: rgb(232 230 227 / 10%);
+  }
+
+  &:focus-visible {
+    outline: 2px solid #5fbfa3;
+    outline-offset: 1px;
+  }
+
+  // Replié : une petite pastille, atténuée comme la barre des préréglages.
+  &--folded {
+    min-height: 32px;
+    padding: 4px 10px;
+    border-radius: 10px;
+    background: rgb(20 20 24 / 72%);
+    opacity: 0.6;
+    transition: opacity 150ms ease-out;
+
+    &:hover,
+    &:focus-visible {
+      background: rgb(20 20 24 / 72%);
+      opacity: 1;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .commands-help,
+  .commands-help__toggle--folded {
+    transition: none;
+  }
+}
+
+// Petit écran : panneau resserré contre le bord.
+@media (max-width: 480px) {
+  :host {
+    top: 8px;
+    right: 8px;
+  }
+
+  .commands-help {
+    width: 280px;
+    max-width: calc(100vw - 16px);
+    max-height: calc(100vh - 8px - 76px);
+    // Ouvert à la demande, par-dessus une bonne part du bac : fond presque opaque.
+    background: rgb(20 20 24 / 95%);
+    opacity: 1;
+  }
+}
