@@ -1,5 +1,12 @@
 import { createPrng, MAX_SEED } from '../core/random/prng';
 import type { Sphere, SpheresObstacle } from './obstacles';
+import {
+  PLANT_FORMS,
+  PLANT_SINK_VOXELS,
+  plantCollision,
+  plantModel,
+  type PlantForm,
+} from './plant';
 import { DEFAULT_TANK, SAND_THICKNESS, type TankDimensions } from './tank';
 
 /**
@@ -12,12 +19,12 @@ import { DEFAULT_TANK, SAND_THICKNESS, type TankDimensions } from './tank';
  */
 
 /** Types d'éléments de décor connus. */
-export const DECOR_KINDS = ['rock'] as const;
+export const DECOR_KINDS = ['rock', 'plant'] as const;
 export type DecorKind = (typeof DECOR_KINDS)[number];
 
 /**
  * Élément de décor posé sur le sable. Unités : mètres et radians. L'altitude n'est pas une
- * donnée : un élément repose toujours sur le sable (`rockBaseY`).
+ * donnée : un élément repose toujours sur le sable (`decorBaseY`).
  */
 export interface DecorItem {
   readonly kind: DecorKind;
@@ -30,17 +37,20 @@ export interface DecorItem {
   readonly scale: number;
   /** Graine de forme, entier 32 bits non signé. */
   readonly seed: number;
+  /** Forme d'une plante (`sim/plant.ts`), obligatoire pour `plant`, interdite sinon. */
+  readonly form?: PlantForm;
 }
 
 export const MIN_DECOR_SCALE = 0.25;
 export const MAX_DECOR_SCALE = 3;
 
-const ITEM_KEYS: readonly string[] = ['kind', 'x', 'z', 'rotation', 'scale', 'seed'];
+const ITEM_KEYS: readonly string[] = ['kind', 'x', 'z', 'rotation', 'scale', 'seed', 'form'];
 
 /**
  * Problèmes d'un élément de décor venu de l'extérieur (JSON), liste vide s'il est valide.
  * Refuse : objet absent, clé inconnue ou manquante, type inconnu, nombre non fini, échelle
- * hors bornes, graine non entière sur 32 bits, position hors du bac `dims`.
+ * hors bornes, graine non entière sur 32 bits, position hors du bac `dims`, forme de plante
+ * absente ou inconnue, forme donnée à autre chose qu'une plante.
  */
 export function validateDecorItem(value: unknown, dims: TankDimensions = DEFAULT_TANK): string[] {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
@@ -55,6 +65,12 @@ export function validateDecorItem(value: unknown, dims: TankDimensions = DEFAULT
   }
   if (!(DECOR_KINDS as readonly unknown[]).includes(item['kind'])) {
     problems.push(`kind inconnu : ${String(item['kind'])}`);
+  }
+  if (item['kind'] === 'plant' && !(PLANT_FORMS as readonly unknown[]).includes(item['form'])) {
+    problems.push(`form doit être ${PLANT_FORMS.join(' ou ')} (reçu : ${String(item['form'])})`);
+  }
+  if (item['kind'] !== 'plant' && 'form' in item) {
+    problems.push('form est réservée aux plantes');
   }
   for (const key of ['x', 'z', 'rotation', 'scale', 'seed']) {
     const v = item[key];
@@ -101,14 +117,11 @@ export function parseDecorItems(value: unknown, dims: TankDimensions = DEFAULT_T
   if (problems.length > 0) {
     throw new RangeError(problems.join(' ; '));
   }
-  return (value as DecorItem[]).map(({ kind, x, z, rotation, scale, seed }) => ({
-    kind,
-    x,
-    z,
-    rotation,
-    scale,
-    seed,
-  }));
+  return (value as DecorItem[]).map(({ kind, x, z, rotation, scale, seed, form }) =>
+    form === undefined
+      ? { kind, x, z, rotation, scale, seed }
+      : { kind, x, z, rotation, scale, seed, form },
+  );
 }
 
 /**
@@ -257,6 +270,33 @@ export function decorToTank(
   out.z = item.z - s * lx + c * lz;
 }
 
+/** Altitude de la racine d'une plante (repère du bac) : enfoncée de `PLANT_SINK_VOXELS`. */
+export function plantBaseY(voxelSize: number): number {
+  return SAND_THICKNESS - PLANT_SINK_VOXELS * voxelSize;
+}
+
+/** Altitude de la base d'un élément de décor, selon son type. */
+export function decorBaseY(item: DecorItem): number {
+  return item.kind === 'plant'
+    ? plantBaseY(plantModel(item.seed, item.scale, item.form as PlantForm).voxelSize)
+    : rockBaseY(rockModel(item.seed, item.scale).voxelSize);
+}
+
+/**
+ * Forme de collision d'une plante : sphères de ses tiges (`plantCollision`), dans le
+ * repère du bac. Le feuillage n'y est pas : il reste traversable.
+ */
+export function plantSpheres(item: DecorItem): Sphere[] {
+  const model = plantModel(item.seed, item.scale, item.form as PlantForm);
+  const v = model.voxelSize;
+  const baseY = plantBaseY(v);
+  const p = { x: 0, y: 0, z: 0 };
+  return plantCollision(model).map((b) => {
+    decorToTank(item, baseY, b.x * v, b.y * v, b.z * v, p);
+    return { x: p.x, y: p.y, z: p.z, radius: b.r * v };
+  });
+}
+
 /** Forme de collision d'un rocher : ses blocs, en sphères du repère du bac. */
 export function rockSpheres(item: DecorItem): Sphere[] {
   const model = rockModel(item.seed, item.scale);
@@ -277,18 +317,25 @@ export function decorObstacles(items: readonly DecorItem[], firstId = 0): Sphere
   return items.map((item, n) => ({
     id: firstId + n,
     shape: 'spheres',
-    spheres: rockSpheres(item),
+    spheres: item.kind === 'plant' ? plantSpheres(item) : rockSpheres(item),
   }));
 }
 
 /**
- * Décor par défaut du bac tropical : quelques rochers de formes variées, en données JSON
- * (validées au chargement du module comme n'importe quel décor venu de l'extérieur). Deux
- * rochers à gauche laissent entre eux un passage.
+ * Décor par défaut du bac tropical : quelques rochers de formes variées, de longues plantes
+ * vers le fond et des touffes basses devant, en données JSON (validées au chargement du
+ * module comme n'importe quel décor venu de l'extérieur). Deux rochers à gauche laissent
+ * entre eux un passage.
  */
 export const DEFAULT_DECOR: readonly DecorItem[] = parseDecor(`[
   { "kind": "rock", "x": -0.36, "z": -0.09, "rotation": 0.4, "scale": 1.4, "seed": 11 },
   { "kind": "rock", "x": -0.1, "z": -0.12, "rotation": 2.1, "scale": 1.05, "seed": 27 },
   { "kind": "rock", "x": 0.3, "z": 0.03, "rotation": 5.2, "scale": 1.25, "seed": 3 },
-  { "kind": "rock", "x": 0.47, "z": -0.14, "rotation": 1.3, "scale": 0.85, "seed": 8 }
+  { "kind": "rock", "x": 0.47, "z": -0.14, "rotation": 1.3, "scale": 0.85, "seed": 8 },
+  { "kind": "plant", "form": "tall", "x": -0.5, "z": -0.17, "rotation": 0.3, "scale": 1.2, "seed": 101 },
+  { "kind": "plant", "form": "tall", "x": 0.12, "z": -0.19, "rotation": 1.9, "scale": 1, "seed": 204 },
+  { "kind": "plant", "form": "tall", "x": 0.2, "z": -0.15, "rotation": 4.1, "scale": 0.8, "seed": 303 },
+  { "kind": "plant", "form": "tuft", "x": -0.2, "z": 0.1, "rotation": 0.8, "scale": 1, "seed": 404 },
+  { "kind": "plant", "form": "tuft", "x": 0.08, "z": 0.14, "rotation": 2.6, "scale": 1.2, "seed": 505 },
+  { "kind": "plant", "form": "tuft", "x": 0.52, "z": 0.1, "rotation": 5.5, "scale": 0.9, "seed": 606 }
 ]`);

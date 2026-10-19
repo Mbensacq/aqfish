@@ -23,6 +23,8 @@ import { advanceInPlace, createDefaultWorld, createWorld, type MutableWorld } fr
 type MutableFish = { -readonly [K in keyof Fish]: Fish[K] };
 
 const ROCK: DecorItem = { kind: 'rock', x: 0.1, z: -0.05, rotation: 0.7, scale: 1, seed: 42 };
+/** Rochers du décor par défaut (qui contient aussi des plantes, `plant.spec.ts`). */
+const DEFAULT_ROCKS = DEFAULT_DECOR.filter((d) => d.kind === 'rock');
 
 function vec(): Vec3 {
   return { x: 0, y: 0, z: 0 };
@@ -129,12 +131,15 @@ describe('forme de collision des rochers (union de sphères)', () => {
     obstacles.forEach((o, i) => {
       expect(o.shape).toBe('spheres');
       expect(validateObstacle(o)).toEqual([]);
-      expect(o.spheres.length).toBe(rockModel(DEFAULT_DECOR[i].seed, 1).blobs.length);
+      if (DEFAULT_DECOR[i].kind === 'rock') {
+        expect(o.spheres.length).toBe(rockModel(DEFAULT_DECOR[i].seed, 1).blobs.length);
+      }
     });
+    expect(DEFAULT_ROCKS.length).toBeGreaterThanOrEqual(3);
     expect(JSON.parse(JSON.stringify(obstacles))).toEqual(obstacles);
   });
 
-  it.each([ROCK, ...DEFAULT_DECOR])(
+  it.each([ROCK, ...DEFAULT_ROCKS])(
     'chaque coin de chaque voxel est dans la forme de collision (rocher %#)',
     (item) => {
       const model = rockModel(item.seed, item.scale);
@@ -175,7 +180,7 @@ describe('forme de collision des rochers (union de sphères)', () => {
   });
 
   it('les rochers reposent sur le sable : base légèrement enfoncée, sans flotter', () => {
-    for (const item of DEFAULT_DECOR) {
+    for (const item of DEFAULT_ROCKS) {
       const v = rockModel(item.seed, item.scale).voxelSize;
       expect(rockBaseY(v)).toBeLessThan(SAND_THICKNESS);
       expect(rockBaseY(v)).toBeGreaterThan(SAND_THICKNESS - v);
