@@ -68,3 +68,14 @@ pleine eau, corydoras au fond).
 - Nourris et pressés, les poissons frôlent davantage les obstacles (0,38 `wallMargin` au pire
   mesuré sur 3 graines, contre 0,64 sans nourriture) sans jamais y entrer.
 - Le panneau de bien-être (v0.10) pourra lire `Fish.hunger`.
+- **Faim hors de [0, 1] dans un état chargé** (#85) : `growHunger` ramène une valeur non
+  finie à 0 et borne le résultat à [0, 1] dès le premier pas, sans le signaler. Comportement
+  attendu quand la sauvegarde existera (#70) : la validation de l'état chargé **refuse** un
+  `hunger` non fini ou hors de [0, 1] (message d'erreur explicite, comme les autres champs),
+  plutôt que de le corriger en silence.
+- **Coût de la visibilité** (#85, cycle 26) : `nearestPellet` examine les candidats par ordre
+  croissant de (distance, indice), un passage linéaire chacun, et s'arrête au premier en vue.
+  Monde par défaut (24 poissons, 10 obstacles), 60 granulés maintenus, 1 200 pas, 3 graines :
+  19 à 24 tests de visibilité par pas (74 à 90 avant), surcoût de la nourriture ~0,05 ms par
+  pas (~0,1 ms avant), très en deçà du budget d'une image. Granulé retenu inchangé (même
+  égalité), donc trajectoires et captures identiques à l'octet.
