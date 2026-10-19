@@ -31,25 +31,25 @@ Point de départ à affiner par PR, captures à l'appui. La palette effective (c
 ci-dessous et tons de transition ajoutés depuis) est déclarée dans `render/palette.ts` ;
 la passe de post-traitement y ramène chaque pixel affiché (ADR 0007).
 
-| Usage | Couleurs |
-|---|---|
-| Eau (profonde → claire) | `#0d3b3f` `#1b5e5a` `#2e8b7a` `#5fbfa3` `#a8e6cf` |
-| Sable et roche | `#e3cf9e` `#c9b38a` `#a8916a` `#6e6a63` `#45423e` |
-| Végétation | `#163d22` `#1f4d2b` `#2f6b3a` `#4e9a4a` `#8fd16a` |
-| Koïs | rouge `#d94a3a`, blanc cassé `#f2ead8`, noir `#1c1c22`, orange `#f08a2c`, or `#f2c14e` |
-| Petits poissons | bleu néon `#3fa9f5`, rouge néon `#e63946`, jaune `#ffd166`, rose `#f4978e` |
-| Amphibiens | axolotl rose `#f7b2bd`, grenouille `#7bc950`, triton `#e07a2f` |
-| Fleurs | nénuphar rose `#f06a9b`, cœur `#ffb703` |
-| Interface | fond `#141418` (translucide), texte `#e8e6e3`, accent `#5fbfa3` |
+| Usage                   | Couleurs                                                                               |
+| ----------------------- | -------------------------------------------------------------------------------------- |
+| Eau (profonde → claire) | `#0d3b3f` `#1b5e5a` `#2e8b7a` `#5fbfa3` `#a8e6cf`                                      |
+| Sable et roche          | `#e3cf9e` `#c9b38a` `#a8916a` `#6e6a63` `#45423e`                                      |
+| Végétation              | `#163d22` `#1f4d2b` `#2f6b3a` `#4e9a4a` `#8fd16a`                                      |
+| Koïs                    | rouge `#d94a3a`, blanc cassé `#f2ead8`, noir `#1c1c22`, orange `#f08a2c`, or `#f2c14e` |
+| Petits poissons         | bleu néon `#3fa9f5`, rouge néon `#e63946`, jaune `#ffd166`, rose `#f4978e`             |
+| Amphibiens              | axolotl rose `#f7b2bd`, grenouille `#7bc950`, triton `#e07a2f`                         |
+| Fleurs                  | nénuphar rose `#f06a9b`, cœur `#ffb703`                                                |
+| Interface               | fond `#141418` (translucide), texte `#e8e6e3`, accent `#5fbfa3`                        |
 
 ## Environnements visés
 
-| Environnement | Ambiance | Habitants possibles |
-|---|---|---|
-| Bac tropical d'eau douce | Bac planté, lumière chaude | Néons, guppys, corydoras, scalaires, crevettes |
-| Bassin extérieur à koïs | Vue de dessus privilégiée, nénuphars, lotus, pluie, feuilles qui flottent | Koïs, poissons rouges, grenouilles en bordure |
-| Paludarium | Partie terrestre et partie aquatique, mousses, racines | Axolotls (eau), grenouilles et tritons (terre et eau) |
-| Récif marin | Coraux colorés, lumière bleutée | Poissons-clowns, chirurgiens, anémones |
+| Environnement            | Ambiance                                                                  | Habitants possibles                                   |
+| ------------------------ | ------------------------------------------------------------------------- | ----------------------------------------------------- |
+| Bac tropical d'eau douce | Bac planté, lumière chaude                                                | Néons, guppys, corydoras, scalaires, crevettes        |
+| Bassin extérieur à koïs  | Vue de dessus privilégiée, nénuphars, lotus, pluie, feuilles qui flottent | Koïs, poissons rouges, grenouilles en bordure         |
+| Paludarium               | Partie terrestre et partie aquatique, mousses, racines                    | Axolotls (eau), grenouilles et tritons (terre et eau) |
+| Récif marin              | Coraux colorés, lumière bleutée                                           | Poissons-clowns, chirurgiens, anémones                |
 
 Les espèces sont décrites de façon **déclarative** (taille, silhouette, motifs, couleurs,
 comportement, environnements compatibles, température), puis leurs modèles sont générés par
@@ -60,6 +60,11 @@ plus petit, corps gris roche taché de rose nénuphar, grande caudale orange ko�
 plus grande, corps sable, dos sable sombre, tache de gestation roche sombre, nageoires
 sable clair. Les espèces autres que le néon n'empruntent pas le bleu et le rouge néon
 (mesures de banc sur image).
+
+Le corydora (poisson de fond, ADR 0014) : silhouette trapue (corps court et haut, ventre plat
+clair, haute dorsale sable sombre), flanc gris roche « poivré » de taches noires, dos roche
+sombre. Un flanc sable se confondait avec le substrat sur les captures : les poissons de fond
+évitent les tons du sable sur leurs flancs.
 
 ## Interface
 

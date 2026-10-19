@@ -3,7 +3,7 @@ import { MAX_SEED } from '../core/random/prng';
 import { SIM_DT } from './constants';
 import type { Vec3 } from './flocking';
 import { obstacleDistance, sphereObstacle, type Obstacle } from './obstacles';
-import { GUPPY, NEON, type SpeciesId } from './species';
+import { CORYDORA, GUPPY, NEON, SPECIES, type SpeciesId } from './species';
 import { swimBounds } from './swimmer';
 import { waterVolume } from './tank';
 import {
@@ -154,6 +154,7 @@ describe('monde peuplé', () => {
     expect(species).toEqual([
       ...Array<string>(NEON.defaultPopulation).fill('neon'),
       ...Array<string>(GUPPY.defaultPopulation).fill('guppy'),
+      ...Array<string>(CORYDORA.defaultPopulation).fill('corydora'),
     ]);
   });
 
@@ -247,9 +248,10 @@ describe('monde peuplé', () => {
   });
 
   it('10 000 pas : tous les poissons restent dans le volume d’eau, avec la marge', () => {
-    const hard = swimBounds(NEON, waterVolume()).hard;
     const world = advance(createDefaultWorld(1234), 10_000);
     for (const f of world.entities) {
+      // Marge de l'espèce du poisson (le corydora, #31, a une marge plus faible que le néon).
+      const hard = swimBounds(SPECIES[f.species], waterVolume()).hard;
       expect(f.x).toBeGreaterThanOrEqual(hard.minX);
       expect(f.x).toBeLessThanOrEqual(hard.maxX);
       expect(f.y).toBeGreaterThanOrEqual(hard.minY);

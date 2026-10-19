@@ -1,5 +1,5 @@
 import { SIM_DT } from './constants';
-import { NEON } from './species';
+import { CORYDORA, NEON } from './species';
 import { waterVolume, type Box3 } from './tank';
 import {
   glassClearance,
@@ -137,10 +137,24 @@ describe('distance aux vitres du monde par défaut (#43)', () => {
   it.each([1, 42, 0xffffffff])(
     'graine %s, 60 s : longe les vitres de plus près, sans les toucher',
     (seed) => {
-      const stats = glassStats(recordTrajectories(createDefaultWorld(seed), steps, 4), water, 0.1);
+      const traces = recordTrajectories(createDefaultWorld(seed), steps, 4);
+      // Mesure de #43 sur les mêmes poissons qu'au cycle 13 (néons et guppys) : les corydoras
+      // (#31), ajoutés en fin de peuplement, ne changent ni leurs identifiants ni leurs
+      // trajectoires (banc entre congénères) ; ils sont vérifiés à part, avec leur marge.
+      const stats = glassStats(
+        traces.filter((t) => t.species !== 'corydora'),
+        water,
+        0.1,
+      );
       expect(stats.medianMinimum).toBeLessThan(0.095);
       expect(stats.nearFraction).toBeGreaterThan(0.04);
       expect(stats.overallMinimum).toBeGreaterThan(NEON.wallMargin);
+      const corydoras = glassStats(
+        traces.filter((t) => t.species === 'corydora'),
+        water,
+        0.1,
+      );
+      expect(corydoras.overallMinimum).toBeGreaterThan(CORYDORA.wallMargin);
     },
     30_000,
   );

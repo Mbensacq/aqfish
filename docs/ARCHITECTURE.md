@@ -159,8 +159,8 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
 | `sim/time-step.ts` | `assertTimeStep` : validation unique d'un pas de temps |
 | `sim/world.ts` | État du monde sérialisable, `step`, `advance`, `advanceTo`, `advanceInPlace` (boucle d'affichage), `createDefaultWorld` (population par défaut) |
 | `sim/tank.ts` | Dimensions du bac, volume d'eau, `shrinkBox` (partagés par la simulation et le rendu) |
-| `sim/species.ts` | Définitions déclaratives des espèces (`NEON`, `GUPPY`), apparences (`speciesVariants`, `speciesVariantIndex`, ADR 0013), `validateSpecies` |
-| `sim/swimmer.ts` | Poisson (état sérialisable, sous-générateur en état explicite), nage : errance, banc, évitement, bornes |
+| `sim/species.ts` | Définitions déclaratives des espèces (`NEON`, `GUPPY`, `CORYDORA`), apparences (`speciesVariants`, `speciesVariantIndex`, ADR 0013), préférence de profondeur (`depth`, ADR 0014), `validateSpecies` |
+| `sim/swimmer.ts` | Poisson (état sérialisable, sous-générateur en état explicite), nage : errance, banc, évitement, bornes, préférence de profondeur et remontées (ADR 0014) |
 | `sim/flocking.ts` | Banc : séparation, alignement, cohésion, pilotage en deux phases, espacement minimal (ADR 0011) |
 | `sim/trajectory.ts` | Relevé de trajectoires sur une copie du monde, distance aux vitres et statistiques (mesure et tracé, issue #43) |
 | `sim/obstacles.ts` | Obstacles du bac (données, sphère), distance signée et normale (ADR 0012) |
