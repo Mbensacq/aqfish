@@ -1,8 +1,20 @@
-import { Box3, Color, Mesh, MeshBasicMaterial, type Material } from 'three';
+import {
+  Box3,
+  Color,
+  DirectionalLight,
+  HemisphereLight,
+  Mesh,
+  MeshBasicMaterial,
+  type Material,
+} from 'three';
 
+import { lightAt } from '../sim/daylight';
 import {
   createAquariumScene,
+  DAY_AMBIENT_INTENSITY,
+  DAY_SUN_INTENSITY,
   DEFAULT_TANK,
+  NIGHT_AMBIENT_INTENSITY,
   SAND_THICKNESS,
   WATER_LEVEL_RATIO,
 } from './aquarium-scene';
@@ -100,5 +112,62 @@ describe('createAquariumScene', () => {
     const glass = new Box3().setFromObject(world.scene.getObjectByName('verre') as Mesh);
     expect(glass.max.x - glass.min.x).toBeCloseTo(0.408);
     expect(world.dimensions.height).toBe(0.3);
+  });
+});
+
+describe('createAquariumScene : lumière du jour', () => {
+  function parts(scene = createAquariumScene()) {
+    const ambient = scene.scene.getObjectByName('lumiere-ambiante') as HemisphereLight;
+    const sun = scene.scene.getObjectByName('soleil') as DirectionalLight;
+    const water = scene.scene.getObjectByName('eau') as Mesh;
+    const [body, , surface] = water.material as MeshBasicMaterial[];
+    return { scene, ambient, sun, body, surface };
+  }
+
+  /** Empreinte exacte (bits des flottants) de l'éclairage et de l'eau. */
+  function fingerprint(p: ReturnType<typeof parts>): number[] {
+    return [
+      p.ambient.intensity,
+      ...p.ambient.color.toArray(),
+      ...p.ambient.groundColor.toArray(),
+      p.sun.intensity,
+      ...p.sun.color.toArray(),
+      ...p.body.color.toArray(),
+      ...p.surface.color.toArray(),
+    ];
+  }
+
+  it('à midi, la scène est exactement celle d’avant le cycle jour/nuit', () => {
+    const p = parts();
+    const before = fingerprint(p);
+    expect(p.ambient.intensity).toBe(DAY_AMBIENT_INTENSITY);
+    expect(p.sun.intensity).toBe(DAY_SUN_INTENSITY);
+    expect(hex(p.body)).toBe(PALETTE.eauMoyenne);
+    // Après une nuit puis un retour à midi : valeurs identiques au bit près.
+    p.scene.setDaylight(lightAt(0));
+    p.scene.setDaylight(lightAt(12));
+    expect(fingerprint(p)).toEqual(before);
+    expect(p.ambient.color.getHexString()).toBe('ffffff');
+    expect(p.sun.color.getHexString()).toBe('ffffff');
+  });
+
+  it('la nuit : lumières plus faibles et bleutées, eau plus profonde, ambiance non nulle', () => {
+    const p = parts();
+    p.scene.setDaylight(lightAt(0));
+    expect(p.ambient.intensity).toBe(NIGHT_AMBIENT_INTENSITY);
+    expect(p.ambient.intensity).toBeGreaterThan(0);
+    expect(p.sun.intensity).toBeLessThan(DAY_SUN_INTENSITY);
+    expect(p.sun.intensity).toBeGreaterThan(0);
+    expect(p.sun.color.b).toBeGreaterThan(p.sun.color.r);
+    expect(hex(p.body)).toBe(PALETTE.eauProfonde);
+    expect(hex(p.surface)).toBe(PALETTE.eauSombre);
+  });
+
+  it('au crépuscule : lumière orangée, intensités entre la nuit et le jour', () => {
+    const p = parts();
+    p.scene.setDaylight(lightAt(18));
+    expect(p.sun.color.r).toBeGreaterThan(p.sun.color.b);
+    expect(p.ambient.intensity).toBeGreaterThan(NIGHT_AMBIENT_INTENSITY);
+    expect(p.ambient.intensity).toBeLessThan(DAY_AMBIENT_INTENSITY);
   });
 });

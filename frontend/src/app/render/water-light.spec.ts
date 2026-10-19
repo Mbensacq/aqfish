@@ -1,16 +1,20 @@
-import { DoubleSide, FrontSide } from 'three';
+import { Color, DoubleSide, FrontSide } from 'three';
 import { DEFAULT_TANK, SAND_THICKNESS, WATER_LEVEL_RATIO } from '../sim/tank';
-import { PALETTE_COLORS } from './palette';
+import { PALETTE, PALETTE_COLORS } from './palette';
 import {
   CAUSTIC_CELL,
   CAUSTIC_COLOR,
   CAUSTIC_RENDER_ORDER,
+  CAUSTIC_STAGES,
+  causticColorFor,
   causticLit,
   LIGHT_TIME_PERIOD,
   lightTime,
   PATTERN_SPAN,
+  NIGHT_SURFACE_RATIO,
   SURFACE_CELL,
   SURFACE_COLOR,
+  SURFACE_OPACITY,
   SURFACE_RENDER_ORDER,
   surfaceGlint,
   WaterLightLayer,
@@ -125,5 +129,54 @@ describe('WaterLightLayer', () => {
     expect(layer.surface.material.fragmentShader).toContain(`${SURFACE_CELL}`);
     expect(layer.caustics.material.fragmentShader).toContain('discard');
     layer.dispose();
+  });
+
+  it('suit l’intensité du jour : couleurs d’origine à midi, caustiques plus sombres puis éteintes', () => {
+    const layer = new WaterLightLayer();
+    const color = () =>
+      `#${(layer.caustics.material.uniforms['uColor'].value as Color).getHexString()}`;
+    const opacity = () => layer.caustics.material.uniforms['uOpacity'].value as number;
+    const glint = () => layer.surface.material.uniforms['uOpacity'].value as number;
+    const before = (layer.caustics.material.uniforms['uColor'].value as Color).toArray();
+    layer.setDaylight(0.5);
+    layer.setDaylight(1);
+    // Midi : exactement les valeurs d'origine (captures par défaut inchangées).
+    expect((layer.caustics.material.uniforms['uColor'].value as Color).toArray()).toEqual(before);
+    expect(color()).toBe(CAUSTIC_COLOR);
+    expect(opacity()).toBe(1);
+    expect(glint()).toBe(SURFACE_OPACITY);
+    expect(layer.caustics.visible).toBe(true);
+    // Transition : couleur pleine plus sombre de la palette, toujours opaque.
+    layer.setDaylight(0.5);
+    expect(color()).toBe(PALETTE.sable);
+    expect(opacity()).toBe(1);
+    expect(glint()).toBeCloseTo(
+      SURFACE_OPACITY * (NIGHT_SURFACE_RATIO + (1 - NIGHT_SURFACE_RATIO) / 2),
+      12,
+    );
+    // Nuit : caustiques éteintes, reflet atténué sans disparaître.
+    layer.setDaylight(0);
+    expect(layer.caustics.visible).toBe(false);
+    expect(glint()).toBeCloseTo(SURFACE_OPACITY * NIGHT_SURFACE_RATIO, 12);
+    expect(glint()).toBeGreaterThan(0);
+    // Hors bornes ou non finie : bornée (non finie ⇒ plein jour).
+    layer.setDaylight(-1);
+    expect(layer.caustics.visible).toBe(false);
+    layer.setDaylight(Number.NaN);
+    expect(layer.caustics.visible).toBe(true);
+    expect(color()).toBe(CAUSTIC_COLOR);
+    layer.dispose();
+  });
+
+  it('causticColorFor : paliers de la palette, du plus clair au plus sombre', () => {
+    expect(causticColorFor(1)).toBe(CAUSTIC_COLOR);
+    expect(causticColorFor(0.75)).toBe(CAUSTIC_COLOR);
+    expect(causticColorFor(0.74)).toBe(PALETTE.sable);
+    expect(causticColorFor(0.4)).toBe(PALETTE.sable);
+    expect(causticColorFor(0.39)).toBeNull();
+    expect(causticColorFor(0)).toBeNull();
+    for (const stage of CAUSTIC_STAGES) {
+      expect(PALETTE_COLORS).toContain(stage.color);
+    }
   });
 });

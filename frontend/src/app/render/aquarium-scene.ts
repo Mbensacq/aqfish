@@ -14,8 +14,10 @@ import {
   MeshLambertMaterial,
   Object3D,
   Scene,
+  SRGBColorSpace,
 } from 'three';
 
+import { mix, type DayLight, type Rgb } from '../sim/daylight';
 import { DEFAULT_TANK, SAND_THICKNESS, WATER_LEVEL_RATIO, type TankDimensions } from '../sim/tank';
 import { PALETTE } from './palette';
 
@@ -28,9 +30,33 @@ const GLASS_MARGIN = 0.008;
 /** Ordre de rendu des objets transparents (après les opaques, du plus profond au plus proche). */
 const RENDER_ORDER = { water: 1, glass: 2, edges: 3 } as const;
 
+/** Intensités de l'éclairage en plein jour (midi) : celles d'avant le cycle jour/nuit. */
+export const DAY_AMBIENT_INTENSITY = 2;
+export const DAY_SUN_INTENSITY = 1.2;
+/**
+ * Lumière ambiante la nuit (clair de lune) : assez pour que le sable, les rochers et les
+ * plantes restent lisibles (critère « la nuit, le bac reste lisible », issue #51).
+ */
+export const NIGHT_AMBIENT_INTENSITY = 1.1;
+/** Lumière directe la nuit (lune), relative à celle de midi. */
+export const NIGHT_SUN_RATIO = 0.2;
+
+/**
+ * Teintes de l'eau la nuit : couleurs de la palette vers lesquelles l'eau glisse quand
+ * l'intensité du jour baisse (l'eau n'est pas éclairée : `MeshBasicMaterial`).
+ */
+const NIGHT_WATER_BODY = PALETTE.eauProfonde;
+const NIGHT_WATER_SURFACE = PALETTE.eauSombre;
+
 export interface AquariumScene {
   readonly scene: Scene;
   readonly dimensions: TankDimensions;
+  /**
+   * Applique la lumière du jour (`sim/daylight.ts`, ADR 0018) : intensité et teinte des
+   * lumières, teinte de l'eau. À midi (`lightAt(12)`), la scène est exactement celle d'avant
+   * le cycle jour/nuit (captures par défaut inchangées).
+   */
+  setDaylight(light: DayLight): void;
   /** Libère toutes les géométries et tous les matériaux de la scène. */
   dispose(): void;
 }
@@ -44,29 +70,63 @@ export function createAquariumScene(dims: TankDimensions = DEFAULT_TANK): Aquari
   const scene = new Scene();
   scene.background = new Color(PALETTE.fondScene);
 
-  scene.add(createLights(dims));
+  const lights = createLights(dims);
+  scene.add(lights.group);
   scene.add(createSand(dims));
-  scene.add(createWater(dims));
+  const water = createWater(dims);
+  scene.add(water);
   scene.add(...createGlass(dims));
+
+  const [body, , surface] = water.material as MeshBasicMaterial[];
+  const waterColors = {
+    dayBody: new Color(PALETTE.eauMoyenne),
+    nightBody: new Color(NIGHT_WATER_BODY),
+    daySurface: new Color(PALETTE.eauClaire),
+    nightSurface: new Color(NIGHT_WATER_SURFACE),
+  };
 
   return {
     scene,
     dimensions: dims,
+    setDaylight: (light) => {
+      const day = light.intensity;
+      lights.ambient.intensity = mix(NIGHT_AMBIENT_INTENSITY, DAY_AMBIENT_INTENSITY, day);
+      setRgb(lights.ambient.color, light.sky);
+      lights.sun.intensity = DAY_SUN_INTENSITY * mix(NIGHT_SUN_RATIO, 1, day);
+      setRgb(lights.sun.color, light.tint);
+      // `lerpColors(a, b, 0)` vaut exactement `a` : à midi, couleurs d'origine.
+      body.color.lerpColors(waterColors.dayBody, waterColors.nightBody, 1 - day);
+      surface.color.lerpColors(waterColors.daySurface, waterColors.nightSurface, 1 - day);
+    },
     dispose: () => disposeObject(scene),
   };
 }
 
-function createLights(dims: TankDimensions): Object3D {
+function setRgb(color: Color, rgb: Rgb): void {
+  color.setRGB(rgb[0], rgb[1], rgb[2], SRGBColorSpace);
+}
+
+interface Lights {
+  readonly group: Object3D;
+  readonly ambient: HemisphereLight;
+  readonly sun: DirectionalLight;
+}
+
+function createLights(dims: TankDimensions): Lights {
   const group = new Object3D();
   group.name = 'lumieres';
-  // Lumières neutres (blanches) pour ne pas altérer les teintes de la palette.
+  // À midi, lumières neutres (blanches) pour ne pas altérer les teintes de la palette ; le
+  // cycle jour/nuit les teinte ensuite (`setDaylight`).
   // Ambiance : ciel blanc, sol couleur sable (les faces tournées vers le bas restent lisibles).
-  group.add(new HemisphereLight('#ffffff', PALETTE.sableSombre, 2));
+  const ambient = new HemisphereLight('#ffffff', PALETTE.sableSombre, DAY_AMBIENT_INTENSITY);
+  ambient.name = 'lumiere-ambiante';
+  group.add(ambient);
   // Lumière principale venant du haut, légèrement de face.
-  const sun = new DirectionalLight('#ffffff', 1.2);
+  const sun = new DirectionalLight('#ffffff', DAY_SUN_INTENSITY);
+  sun.name = 'soleil';
   sun.position.set(dims.width * 0.2, dims.height * 4, dims.depth * 1.5);
   group.add(sun);
-  return group;
+  return { group, ambient, sun };
 }
 
 /**

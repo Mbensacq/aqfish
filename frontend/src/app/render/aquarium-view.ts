@@ -25,6 +25,7 @@ import {
 } from './camera-presets';
 import { SPECIES, speciesVariants, type SpeciesId } from '../sim/species';
 import type { Fish } from '../sim/swimmer';
+import type { DayLight } from '../sim/daylight';
 import type { DecorItem } from '../sim/decor';
 import { BubbleLayer } from './bubble-layer';
 import { DecorLayer } from './decor-layer';
@@ -260,6 +261,17 @@ export class AquariumView {
       this.decorLayer.update(time);
       this.bubbleLayer.update(time);
       this.waterLight.update(time);
+    }
+  }
+
+  /**
+   * Applique la lumière du jour (`sim/daylight.ts`, ADR 0018) : lumières, teinte de l'eau,
+   * caustiques et reflet. Sans effet sur la caméra, le filtre et le reste de la scène.
+   */
+  updateLight(light: DayLight): void {
+    if (!this.disposed) {
+      this.world.setDaylight(light);
+      this.waterLight.setDaylight(light.intensity);
     }
   }
 

@@ -28,6 +28,16 @@ import {
 } from '../../render/aquarium-view';
 import { CAMERA_TRANSITION_SECONDS } from '../../render/camera-presets';
 import { SIM_DT } from '../../sim/constants';
+import {
+  createDayClock,
+  DEFAULT_DAY_CLOCK,
+  DEFAULT_DAY_LENGTH_SECONDS,
+  DEFAULT_START_HOUR,
+  hourAt,
+  lightAt,
+  toggleClock,
+  type DayClock,
+} from '../../sim/daylight';
 import { fixedStepInto, type FixedStepState } from '../../sim/fixed-step';
 import {
   advanceInPlace,
@@ -53,6 +63,32 @@ export const TICK_ATTRIBUTE = 'data-aqfish-tick';
 export const SEED_ATTRIBUTE = 'data-aqfish-seed';
 /** Attribut du composant hôte exposant le filtre de rendu courant (`pixel` ou `aucun`). */
 export const FILTER_ATTRIBUTE = 'data-aqfish-filter';
+
+/** Attribut du composant hôte exposant l'heure de la journée affichée (2 décimales). */
+export const HOUR_ATTRIBUTE = 'data-aqfish-hour';
+/** Attribut du composant hôte : `true` si l'heure est figée, `false` sinon. */
+export const HOUR_FROZEN_ATTRIBUTE = 'data-aqfish-hour-frozen';
+
+/**
+ * Écart d'heure minimal (en heures) avant de recalculer l'éclairage : 0,01 h, soit 0,075 s
+ * avec la journée de 180 s. Évite de recalculer (et d'allouer) à chaque image pour un
+ * changement invisible une fois l'image ramenée à la palette.
+ */
+export const LIGHT_HOUR_STEP = 0.01;
+
+/**
+ * Horloge de départ (ADR 0018) : `heure=` la fige à cette heure ; sans elle, figée à midi
+ * en mode capture (images reproductibles, séries existantes inchangées), en marche depuis
+ * midi sinon.
+ */
+export function initialDayClock(hour: number | null, capture: boolean): DayClock {
+  if (hour !== null) {
+    return createDayClock(hour, DEFAULT_DAY_LENGTH_SECONDS, true);
+  }
+  return capture
+    ? createDayClock(DEFAULT_START_HOUR, DEFAULT_DAY_LENGTH_SECONDS, true)
+    : DEFAULT_DAY_CLOCK;
+}
 
 /** `localStorage` s'il est accessible, `null` sinon (l'accès lui-même peut lever). */
 function browserStorage(win: Window): FilterStorage | null {
@@ -105,6 +141,11 @@ export class AquariumHost {
   private readonly clock: FixedStepState = { steps: 0, accumulator: 0, alpha: 0 };
   private lastTimestamp: number | null = null;
   private exposedTick: number | null = null;
+  /** Horloge de la journée simulée (ADR 0018) : l'heure suit `world.time`. */
+  private dayClock: DayClock = DEFAULT_DAY_CLOCK;
+  /** Heure de l'éclairage appliqué en dernier (`null` : à appliquer à la prochaine image). */
+  private litHour: number | null = null;
+  private exposedHour: string | null = null;
   private readonly onFrame: FrameRequestCallback = (timestamp) => this.frame(timestamp);
   private readonly cleanups: (() => void)[] = [];
 
@@ -174,6 +215,25 @@ export class AquariumHost {
     }
   }
 
+  /** Heure de la journée affichée, dans [0, 24) (`null` avant le démarrage). */
+  get hour(): number | null {
+    return this.currentWorld ? hourAt(this.dayClock, this.renderTime()) : null;
+  }
+
+  /**
+   * Fige l'heure ou la remet en marche (touche `H`), sans saut d'heure. Sans effet en mode
+   * capture (l'heure y est toujours figée : contrat de capture).
+   */
+  toggleClock(): void {
+    if (!this.currentWorld || this.capture) {
+      return;
+    }
+    this.dayClock = toggleClock(this.dayClock, this.renderTime());
+    this.litHour = null;
+    this.host.nativeElement.setAttribute(HOUR_FROZEN_ATTRIBUTE, String(this.dayClock.frozen));
+    this.scheduleFrame();
+  }
+
   /** Bascule entre pixel art et rendu sans filtre. */
   toggleFilter(): void {
     this.setFilter(toggleRenderFilter(this.filter()));
@@ -195,6 +255,8 @@ export class AquariumHost {
     // Le monde créé ici appartient à l'hôte seul : il pourra être avancé en place.
     const world: MutableWorld = createDefaultWorld(params.seed);
     this.currentWorld = params.capture ? advanceTo(world, params.time) : world;
+    this.dayClock = initialDayClock(params.hour, params.capture);
+    this.host.nativeElement.setAttribute(HOUR_FROZEN_ATTRIBUTE, String(this.dayClock.frozen));
     this.host.nativeElement.setAttribute(SEED_ATTRIBUTE, String(this.currentWorld.seed));
     this.exposeTick();
 
@@ -254,9 +316,9 @@ export class AquariumHost {
     if (this.currentWorld) {
       // En capture, l'image montre exactement l'état au temps demandé (alpha = 1).
       view.updateFish(this.currentWorld.entities, this.capture ? 1 : this.clock.alpha);
-      // Temps du décor interpolé comme les poissons (alpha = 0 : pas précédent).
-      const alpha = this.capture ? 1 : this.clock.alpha;
-      view.updateDecor(Math.max(0, this.currentWorld.time - (1 - alpha) * SIM_DT));
+      const time = this.renderTime();
+      view.updateDecor(time);
+      this.updateLight(view, time);
     }
     const rendered = view.renderFrame();
 
@@ -274,6 +336,38 @@ export class AquariumHost {
     // Tant qu'aucune image n'a pu être rendue (taille nulle), on réessaie à l'image suivante.
     if (!this.capture || !rendered) {
       this.scheduleFrame();
+    }
+  }
+
+  /**
+   * Temps simulé affiché : celui du monde, interpolé comme les poissons (alpha = 0 : pas
+   * précédent ; en capture, alpha = 1 : état exact au temps demandé).
+   */
+  private renderTime(): number {
+    const world = this.currentWorld;
+    if (!world) {
+      return 0;
+    }
+    const alpha = this.capture ? 1 : this.clock.alpha;
+    return Math.max(0, world.time - (1 - alpha) * SIM_DT);
+  }
+
+  /**
+   * Éclairage de l'heure courante, recalculé seulement si l'heure a bougé d'au moins
+   * `LIGHT_HOUR_STEP` (ou après une bascule de l'horloge) ; l'heure exposée suit.
+   */
+  private updateLight(view: AquariumView, time: number): void {
+    const hour = hourAt(this.dayClock, time);
+    if (this.litHour === null || Math.abs(hour - this.litHour) >= LIGHT_HOUR_STEP) {
+      this.litHour = hour;
+      view.updateLight(lightAt(hour));
+    }
+    // Une heure comme 23,999 s'arrondit à « 24.00 » : affichée « 0.00 ».
+    const rounded = hour.toFixed(2);
+    const exposed = rounded === '24.00' ? '0.00' : rounded;
+    if (exposed !== this.exposedHour) {
+      this.exposedHour = exposed;
+      this.host.nativeElement.setAttribute(HOUR_ATTRIBUTE, exposed);
     }
   }
 
