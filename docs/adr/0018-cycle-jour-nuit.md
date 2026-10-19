@@ -80,3 +80,9 @@ par défaut passe à **1 200 s** (20 min), une seule constante
 panneau de contrôle (#52). Les touches `J` et `N` permettent d'aller directement au plein
 jour ou à la nuit sans attendre. Captures inchangées : en capture, l'heure reste figée
 (midi par défaut, ou `heure=`), la durée de la journée n'y intervient pas.
+
+## Révision (cycle 23, issue #73)
+
+`NIGHT_ELEVATION` passe à −0,5 (pleine nuit de 20 h à 4 h) et la teinte d'aube et de
+crépuscule pèse `0,75 · √(4i(1 − i))` ; tons de nuit et du crépuscule ajoutés à la passe
+palette, pondérés par l'heure : voir l'ADR 0021.

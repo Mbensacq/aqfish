@@ -70,23 +70,24 @@ export function createDayLight(): MutableDayLight {
 /**
  * Élévation du soleil (sans unité, dans [−1, 1]) en dessous de laquelle c'est la nuit, et
  * au-dessus de laquelle c'est le plein jour. Entre les deux : aube ou crépuscule.
- * Avec une élévation `−cos(2π · h / 24)` : nuit avant ≈ 5 h 02 et après ≈ 18 h 58, plein
- * jour de 8 h à 16 h.
+ * Avec une élévation `−cos(2π · h / 24)` : nuit avant 4 h et après 20 h, plein jour de 8 h
+ * à 16 h (issue #73 : `NIGHT_ELEVATION` passe de −0,25 à −0,5 pour que le crépuscule dure
+ * jusque vers 19 h 30 au lieu de s'achever à 19 h).
  */
-export const NIGHT_ELEVATION = -0.25;
+export const NIGHT_ELEVATION = -0.5;
 export const DAY_ELEVATION = 0.5;
 
 const WHITE: Rgb = [1, 1, 1];
 /** Lumière de lune : bleutée. */
 export const NIGHT_TINT: Rgb = [0.55, 0.66, 1];
 /** Lumière rasante de l'aube et du crépuscule : orangée. */
-export const TWILIGHT_TINT: Rgb = [1, 0.62, 0.38];
+export const TWILIGHT_TINT: Rgb = [1, 0.58, 0.45];
 /** Ciel de nuit : bleu profond. */
 export const NIGHT_SKY: Rgb = [0.4, 0.5, 0.9];
 /** Ciel de l'aube et du crépuscule : rosé. */
-export const TWILIGHT_SKY: Rgb = [1, 0.78, 0.66];
+export const TWILIGHT_SKY: Rgb = [1, 0.66, 0.62];
 /** Part maximale de la teinte d'aube ou de crépuscule (atteinte à mi-transition). */
-export const TWILIGHT_STRENGTH = 0.6;
+export const TWILIGHT_STRENGTH = 0.75;
 
 /** Horloge par défaut : départ à midi, journée de 20 min, en marche. */
 export const DEFAULT_DAY_CLOCK: DayClock = {
@@ -190,8 +191,8 @@ export function sunElevation(hour: number): number {
  * - `intensity` : `smoothstep` de l'élévation du soleil entre `NIGHT_ELEVATION` et
  *   `DAY_ELEVATION` ; exactement 1 en plein jour et 0 en pleine nuit.
  * - `tint` et `sky` : mélange nuit → jour selon l'intensité, puis vers la teinte d'aube ou
- *   de crépuscule avec un poids `TWILIGHT_STRENGTH · 4 · i · (1 − i)`, nul en plein jour et
- *   en pleine nuit, maximal à mi-transition. Exactement blanc en plein jour.
+ *   de crépuscule avec un poids `TWILIGHT_STRENGTH · √(4 · i · (1 − i))`, nul en plein jour
+ *   et en pleine nuit, maximal à mi-transition. Exactement blanc en plein jour.
  *
  * Alloue un nouvel objet : dans une boucle par image, préférer `lightAtInto`.
  * @throws RangeError si `hour` n'est pas un réel fini.
@@ -207,7 +208,7 @@ export function lightAt(hour: number): DayLight {
  */
 export function lightAtInto(hour: number, out: MutableDayLight): MutableDayLight {
   const intensity = smoothstep(NIGHT_ELEVATION, DAY_ELEVATION, sunElevation(hour));
-  const twilight = TWILIGHT_STRENGTH * 4 * intensity * (1 - intensity);
+  const twilight = TWILIGHT_STRENGTH * Math.sqrt(4 * intensity * (1 - intensity));
   out.intensity = intensity;
   for (let k = 0; k < 3; k++) {
     out.tint[k] = mix(mix(NIGHT_TINT[k], WHITE[k], intensity), TWILIGHT_TINT[k], twilight);
@@ -224,4 +225,31 @@ export function mix(a: number, b: number, t: number): number {
 function smoothstep(edge0: number, edge1: number, x: number): number {
   const t = Math.min(1, Math.max(0, (x - edge0) / (edge1 - edge0)));
   return t * t * (3 - 2 * t);
+}
+
+/** Moment de la journée affiché par l'indicateur (issue #73). */
+export type DayPhase = 'jour' | 'aube' | 'crepuscule' | 'nuit';
+
+/** Intensité du jour à partir de laquelle l'indicateur montre le soleil (plein jour). */
+export const DAY_PHASE_MIN_INTENSITY = 0.6;
+/** Intensité du jour en dessous de laquelle l'indicateur montre la lune. */
+export const NIGHT_PHASE_MAX_INTENSITY = 0.1;
+
+/**
+ * Moment de la journée à l'heure `hour` (toute valeur finie, ramenée modulo 24), d'après
+ * l'intensité de `lightAt` : `jour` dès `DAY_PHASE_MIN_INTENSITY`, `nuit` jusqu'à
+ * `NIGHT_PHASE_MAX_INTENSITY`, entre les deux `aube` le matin et `crepuscule` le soir.
+ * Avec la courbe par défaut : jour de ≈ 6 h 15 à ≈ 17 h 45, nuit de ≈ 19 h 11 à ≈ 4 h 49.
+ * @throws RangeError si `hour` n'est pas un réel fini.
+ */
+export function dayPhaseAt(hour: number): DayPhase {
+  const h = normalizeHour(hour);
+  const intensity = smoothstep(NIGHT_ELEVATION, DAY_ELEVATION, sunElevation(h));
+  if (intensity >= DAY_PHASE_MIN_INTENSITY) {
+    return 'jour';
+  }
+  if (intensity <= NIGHT_PHASE_MAX_INTENSITY) {
+    return 'nuit';
+  }
+  return h < NOON_HOUR ? 'aube' : 'crepuscule';
 }

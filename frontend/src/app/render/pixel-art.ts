@@ -60,16 +60,25 @@ export function colorDistanceSq(a: Rgb, b: Rgb): number {
 /**
  * Indice de la couleur de `palette` la plus proche de `color` (distance euclidienne en
  * sRGB). En cas d'égalité, la première couleur déclarée l'emporte, comme dans le shader.
+ *
+ * `penalties` (facultatif) ajoute à la distance au carré de chaque couleur une pénalité
+ * (0 si absente) : c'est ainsi que la passe propose les tons de nuit et de crépuscule
+ * selon l'heure (ADR 0021). Une pénalité supérieure à 3 (distance au carré maximale entre
+ * deux couleurs sRGB) écarte la couleur, tant qu'une couleur sans pénalité existe.
  * Lève une erreur si la palette est vide.
  */
-export function nearestPaletteIndex(color: Rgb, palette: readonly Rgb[]): number {
+export function nearestPaletteIndex(
+  color: Rgb,
+  palette: readonly Rgb[],
+  penalties: readonly number[] = [],
+): number {
   if (palette.length === 0) {
     throw new Error('Palette vide');
   }
   let best = 0;
-  let bestDistance = colorDistanceSq(color, palette[0]);
+  let bestDistance = colorDistanceSq(color, palette[0]) + (penalties[0] ?? 0);
   for (let i = 1; i < palette.length; i++) {
-    const d = colorDistanceSq(color, palette[i]);
+    const d = colorDistanceSq(color, palette[i]) + (penalties[i] ?? 0);
     if (d < bestDistance) {
       best = i;
       bestDistance = d;

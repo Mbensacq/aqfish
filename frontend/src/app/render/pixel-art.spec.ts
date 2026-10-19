@@ -93,6 +93,18 @@ describe('nearestPaletteIndex', () => {
   const black: Rgb = [0, 0, 0];
   const white: Rgb = [1, 1, 1];
   const red: Rgb = [1, 0, 0];
+
+  it('pénalités : une couleur pénalisée cède à une couleur moins proche (ADR 0021)', () => {
+    const grey: Rgb = [0.4, 0.4, 0.4];
+    expect(nearestPaletteIndex(grey, [black, white, grey])).toBe(2);
+    expect(nearestPaletteIndex(grey, [black, white, grey], [0, 0, 1000])).toBe(0);
+    // Pénalité faible : la couleur exacte reste la plus proche.
+    expect(nearestPaletteIndex(grey, [black, white, grey], [0, 0, 0.01])).toBe(2);
+    // Pénalités absentes : 0 ; égalité : la première l'emporte.
+    expect(nearestPaletteIndex(grey, [grey, grey], [])).toBe(0);
+    expect(nearestPaletteIndex(grey, [grey, grey], [0.5])).toBe(1);
+  });
+
   const darkGrey: Rgb = [0.2, 0.2, 0.2];
   const palette: Rgb[] = [darkGrey, red, [0.9, 0.9, 0.85]];
 

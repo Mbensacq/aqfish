@@ -500,6 +500,24 @@ describe('AquariumHost', () => {
       expect(host().hour).toBeCloseTo(12.06, 2);
     }, 15_000);
 
+    it('dayPhase (indicateur, #73) suit l’heure de l’éclairage', async () => {
+      await create();
+      setCanvasSize(800, 600);
+      expect(host().dayPhase()).toBe('jour');
+      frames.flush(0);
+      let now = run(1);
+      expect(host().dayPhase()).toBe('jour');
+      host().freezeClockAt(0);
+      now = run(1, now);
+      expect(host().dayPhase()).toBe('nuit');
+      host().freezeClockAt(18);
+      now = run(1, now);
+      expect(host().dayPhase()).toBe('crepuscule');
+      host().freezeClockAt(6);
+      run(1, now);
+      expect(host().dayPhase()).toBe('aube');
+    }, 15_000);
+
     it('en capture, freezeClockAt est sans effet ; avant le démarrage aussi', async () => {
       await create('?capture=1&heure=3');
       setCanvasSize(800, 600);

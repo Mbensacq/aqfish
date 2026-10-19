@@ -23,3 +23,85 @@ export function flatBrightness(intensity: number): number {
   const day = Number.isFinite(intensity) ? Math.min(1, Math.max(0, intensity)) : 1;
   return mix(NIGHT_FLAT_BRIGHTNESS, 1, day);
 }
+
+/** Couleur RVB modifiable, composantes linéaires (facteurs multiplicatifs). */
+export type MutableTint = [number, number, number];
+
+/**
+ * Facteur multiplicatif (linéaire, par canal) des couleurs du décor (plantes, rochers : en
+ * couleurs plates, ADR 0015) en pleine nuit : clair de lune, vert-bleu sombre pour les
+ * plantes, gris bleuté pour les rochers (issue #73, ADR 0021).
+ */
+export const DECOR_NIGHT_TINT: readonly [number, number, number] = [0.4, 0.5, 1.2];
+/** Facteur du décor à mi-transition (aube, crépuscule) : lumière rasante, chaude. */
+export const DECOR_TWILIGHT_TINT: readonly [number, number, number] = [1, 0.78, 0.74];
+/** Part maximale de la teinte de crépuscule du décor (atteinte à mi-transition). */
+export const DECOR_TWILIGHT_STRENGTH = 0.75;
+
+/** Intensité ramenée dans [0, 1] ; une valeur non finie compte comme le plein jour. */
+function clampedIntensity(intensity: number): number {
+  return Number.isFinite(intensity) ? Math.min(1, Math.max(0, intensity)) : 1;
+}
+
+/**
+ * Poids de l'aube et du crépuscule pour une intensité du jour : `√(4 · i · (1 − i))`, nul
+ * en plein jour et en pleine nuit, 1 à mi-transition (même forme que `sim/daylight.ts`).
+ */
+export function twilightWeight(intensity: number): number {
+  const i = clampedIntensity(intensity);
+  return Math.sqrt(4 * i * (1 - i));
+}
+
+/**
+ * Teinte du décor pour une intensité du jour, écrite dans `out` (aucune allocation) :
+ * exactement blanc (1, 1, 1) en plein jour (captures de midi inchangées),
+ * `DECOR_NIGHT_TINT` en pleine nuit, teinte chaude à mi-transition.
+ */
+export function decorTintInto(intensity: number, out: MutableTint): MutableTint {
+  const i = clampedIntensity(intensity);
+  const twilight = DECOR_TWILIGHT_STRENGTH * twilightWeight(i);
+  for (let k = 0; k < 3; k++) {
+    out[k] = mix(mix(DECOR_NIGHT_TINT[k], 1, i), DECOR_TWILIGHT_TINT[k], twilight);
+  }
+  return out;
+}
+
+/**
+ * Pénalité qui écarte un groupe de tons de la passe palette : plus grande que la distance
+ * au carré maximale entre deux couleurs sRGB (3). Le groupe ne peut alors jamais l'emporter
+ * sur les couleurs de jour.
+ */
+export const TONE_PENALTY_OFF = 1000;
+/**
+ * Échelle des pénalités : à poids 1/2, un ton est préféré à une couleur de jour plus
+ * proche de lui de moins de √0,02 ≈ 0,14 (≈ 36 niveaux sur 255).
+ */
+export const TONE_PENALTY_SCALE = 0.02;
+
+/** Pénalités de la passe palette pour les tons de nuit et de crépuscule. */
+export interface TonePenalties {
+  night: number;
+  twilight: number;
+}
+
+/** Pénalité d'un groupe de tons de poids `weight` dans [0, 1] : 0 à 1, infinie à 0. */
+export function tonePenalty(weight: number): number {
+  if (!(weight > 0)) {
+    return TONE_PENALTY_OFF;
+  }
+  const w = Math.min(1, weight);
+  return Math.min(TONE_PENALTY_OFF, (TONE_PENALTY_SCALE * (1 - w)) / w);
+}
+
+/**
+ * Pénalités des tons ajoutés à la palette (ADR 0021) pour une intensité du jour, écrites
+ * dans `out` : tons de nuit de poids `1 − i` (écartés en plein jour, libres en pleine nuit),
+ * tons du crépuscule de poids `twilightWeight(i)` (écartés en plein jour et en pleine nuit).
+ * En plein jour, les deux groupes sont écartés : l'image est celle de la palette de jour.
+ */
+export function tonePenaltiesInto(intensity: number, out: TonePenalties): TonePenalties {
+  const i = clampedIntensity(intensity);
+  out.night = tonePenalty(1 - i);
+  out.twilight = tonePenalty(twilightWeight(i));
+  return out;
+}

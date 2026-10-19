@@ -166,6 +166,23 @@ haut de sa section.
 
 ## Rendu
 
+- **Mesurer les couleurs avant quantification sans toucher au harnais** (cycle 23, #73) :
+  dans un worktree, remplacer temporairement `gl_FragColor = vec4(best, 1.0)` par
+  `vec4(color, 1.0)` dans `render/palette-pass.ts`, servir sur un autre port
+  (`npx ng serve --port 4310`), puis photographier avec un petit script Playwright hors du
+  dépôt (`chromium.launch()`, `page.goto(...?capture=1&heure=0...)`, attendre
+  `body[data-aqfish-ready="true"]`) et compter les couleurs (Pillow `Counter`). Penser à
+  remettre `best` avant tout commit. (2026-10-19)
+- **Eau translucide : changer sa couleur de nuit change peu l'image** (cycle 23) : à 30 %
+  d'opacité, passer l'eau de nuit de `eauProfonde` à un bleu sombre ne bougeait l'eau
+  affichée que de quelques unités (`#375058`) ; il faut une couleur d'entrée saturée
+  (`#2050a8`) pour une eau franchement bleue. Plantes et rochers (`MeshBasicMaterial`) ne
+  réagissent pas à la lumière : les teinter par la couleur du matériau (`DecorLayer.setTint`).
+  (2026-10-19)
+- **Un ton de nuit peut capter les poissons** (cycle 23) : le bleu néon assombri (`#3086c3`)
+  est plus proche d'une eau de nuit que de `neonBleu` ; vérifier les couleurs des poissons
+  (histogramme) après tout ajout de ton, et ajouter le ton correspondant (`neonBleuNuit`).
+  (2026-10-19)
 - **Ajouter une couleur à la palette sans toucher aux captures de midi** (cycle 19, #64) :
   pour savoir quels pixels une couleur ajoutée capterait, court-circuiter la passe palette
   le temps d'une capture (`gl_FragColor = vec4(color, 1.0)` dans `render/palette-pass.ts`,

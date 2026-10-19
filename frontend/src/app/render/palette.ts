@@ -67,3 +67,72 @@ export type PaletteColorName = keyof typeof PALETTE;
 
 /** Couleurs de la palette dans leur ordre de déclaration (ordre utilisé par la passe). */
 export const PALETTE_COLORS: readonly string[] = Object.values(PALETTE);
+
+/**
+ * Tons de nuit (issue #73, ADR 0021) : couleurs ajoutées à la palette **seulement la nuit**.
+ * La passe palette ne les propose qu'avec une pénalité qui dépend de l'heure
+ * (`render/night-shade.ts`, `tonePenalties`) : infinie en plein jour, de sorte que les
+ * captures de midi ne peuvent pas les utiliser ; nulle en pleine nuit.
+ */
+export const NIGHT_TONES = {
+  /** Sable sous la lune, vu de dessus (et de dessous, à travers l'eau). */
+  sableLune: '#526a88',
+  /** Côtés du sable sous la lune. */
+  sableLuneOmbre: '#405458',
+  /** Eau de nuit vue de côté. */
+  eauLune: '#385471',
+  /** Haut de l'eau la nuit, sous la surface. */
+  eauLuneClaire: '#41688a',
+  /** Surface de l'eau vue de dessus la nuit. */
+  eauLuneSurface: '#4d7196',
+  /** Rides de la surface la nuit. */
+  refletLune: '#72a2a6',
+  /** Végétation de nuit, de l'ombre à la lumière : vert-bleu sombre. */
+  vegetationLuneSombre: '#0f3a2e',
+  vegetationLune: '#1c4d40',
+  vegetationLuneClaire: '#317051',
+  vegetationLuneLumineuse: '#5d9973',
+  /**
+   * Bleu des néons la nuit (bleu néon assombri, `render/night-shade.ts`) : sans lui, il
+   * tomberait sur `eauLuneSurface` et les néons se fondraient dans l'eau.
+   */
+  neonBleuNuit: '#3086c3',
+  /** Roche sous la lune : gris bleuté. */
+  rocheLune: '#474c6c',
+  rocheLuneSombre: '#2b2e44',
+} as const;
+
+/**
+ * Tons de l'aube et du crépuscule (issue #73, ADR 0021) : comme `NIGHT_TONES`, proposés à
+ * la passe palette seulement pendant les transitions (pénalité infinie en plein jour et en
+ * pleine nuit).
+ */
+export const TWILIGHT_TONES = {
+  /** Sable sous la lumière rasante : beige rosé. */
+  sableCrepuscule: '#9c837a',
+  /** Sable à la fin du crépuscule : mauve. */
+  sableCrepusculeMauve: '#75717e',
+  /** Eau du crépuscule : bleu-vert profond. */
+  eauCrepuscule: '#395f68',
+  /** Haut de l'eau au crépuscule. */
+  eauCrepusculeClaire: '#4b8186',
+} as const;
+
+export type NightToneName = keyof typeof NIGHT_TONES;
+export type TwilightToneName = keyof typeof TWILIGHT_TONES;
+
+/** Tons de nuit, dans leur ordre de déclaration. */
+export const NIGHT_TONE_COLORS: readonly string[] = Object.values(NIGHT_TONES);
+/** Tons de l'aube et du crépuscule, dans leur ordre de déclaration. */
+export const TWILIGHT_TONE_COLORS: readonly string[] = Object.values(TWILIGHT_TONES);
+
+/**
+ * Palette étendue de la passe : `PALETTE_COLORS`, puis les tons de nuit, puis ceux du
+ * crépuscule. Les couleurs de jour viennent en premier : à égalité de distance, elles
+ * l'emportent toujours.
+ */
+export const EXTENDED_PALETTE_COLORS: readonly string[] = [
+  ...PALETTE_COLORS,
+  ...NIGHT_TONE_COLORS,
+  ...TWILIGHT_TONE_COLORS,
+];

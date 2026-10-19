@@ -1,6 +1,7 @@
 import { NearestFilter, ShaderMaterial, SRGBColorSpace, type Mesh } from 'three';
 
-import { PALETTE_COLORS } from './palette';
+import { EXTENDED_PALETTE_COLORS, NIGHT_TONE_COLORS, PALETTE_COLORS } from './palette';
+import { TONE_PENALTY_OFF } from './night-shade';
 import { PalettePass } from './palette-pass';
 import { PIXEL_SIZE } from './pixel-art';
 
@@ -20,12 +21,14 @@ describe('PalettePass', () => {
     pass.dispose();
   });
 
-  it('transmet toute la palette au shader', () => {
+  it('transmet toute la palette au shader, tons de nuit et du crépuscule après le jour', () => {
     const pass = new PalettePass();
     const m = material(pass);
-    expect(m.defines['PALETTE_SIZE']).toBe(PALETTE_COLORS.length);
+    expect(m.defines['PALETTE_SIZE']).toBe(EXTENDED_PALETTE_COLORS.length);
+    expect(m.defines['DAY_SIZE']).toBe(PALETTE_COLORS.length);
+    expect(m.defines['TWILIGHT_START']).toBe(PALETTE_COLORS.length + NIGHT_TONE_COLORS.length);
     const data = m.uniforms['uPalette'].value as Float32Array;
-    expect(data.length).toBe(PALETTE_COLORS.length * 3);
+    expect(data.length).toBe(EXTENDED_PALETTE_COLORS.length * 3);
     // Première couleur : fond de la scène #141418.
     expect(Array.from(data.slice(0, 3))).toEqual(
       [0x14 / 255, 0x14 / 255, 0x18 / 255].map(Math.fround),
@@ -65,5 +68,25 @@ describe('PalettePass', () => {
 
   it('refuse une palette vide', () => {
     expect(() => new PalettePass([])).toThrow(/Palette vide/);
+  });
+
+  it('écarte les tons de nuit et du crépuscule tant que l’heure ne les appelle pas', () => {
+    const pass = new PalettePass();
+    expect(pass.tonePenalties).toEqual([TONE_PENALTY_OFF, TONE_PENALTY_OFF]);
+    pass.setTonePenalties(0, 0.5);
+    expect(pass.tonePenalties).toEqual([0, 0.5]);
+    const m = material(pass);
+    expect(m.uniforms['uNightPenalty'].value).toBe(0);
+    expect(m.uniforms['uTwilightPenalty'].value).toBe(0.5);
+    pass.dispose();
+  });
+
+  it('accepte des groupes de tons vides', () => {
+    const pass = new PalettePass(['#000000', '#ffffff'], [], []);
+    const m = material(pass);
+    expect(m.defines['PALETTE_SIZE']).toBe(2);
+    expect(m.defines['DAY_SIZE']).toBe(2);
+    expect(m.defines['TWILIGHT_START']).toBe(2);
+    pass.dispose();
   });
 });

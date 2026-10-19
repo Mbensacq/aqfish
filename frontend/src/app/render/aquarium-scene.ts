@@ -45,8 +45,17 @@ export const NIGHT_SUN_RATIO = 0.2;
  * Teintes de l'eau la nuit : couleurs de la palette vers lesquelles l'eau glisse quand
  * l'intensité du jour baisse (l'eau n'est pas éclairée : `MeshBasicMaterial`).
  */
-const NIGHT_WATER_BODY = PALETTE.eauProfonde;
-const NIGHT_WATER_SURFACE = PALETTE.eauSombre;
+/**
+ * Teintes d'entrée de l'eau et du sol de l'ambiance la nuit (issue #73, ADR 0021) : bleues
+ * et saturées, car l'eau est translucide (30 % d'opacité) ; l'image affichée est ramenée aux
+ * tons de nuit de la palette (`NIGHT_TONES`) par la passe.
+ */
+export const NIGHT_WATER_BODY = '#2050a8';
+export const NIGHT_WATER_SURFACE = '#3a6eb0';
+/** Couleur du sol de la lumière ambiante la nuit (faces tournées vers le bas, côtés du sable). */
+export const NIGHT_GROUND = '#3c5a8c';
+/** Dessous du sable la nuit (non éclairé : vue de dessous, ADR 0006). */
+export const NIGHT_SAND_BOTTOM = '#3c5272';
 
 export interface AquariumScene {
   readonly scene: Scene;
@@ -72,17 +81,23 @@ export function createAquariumScene(dims: TankDimensions = DEFAULT_TANK): Aquari
 
   const lights = createLights(dims);
   scene.add(lights.group);
-  scene.add(createSand(dims));
+  const sand = createSand(dims);
+  scene.add(sand);
   const water = createWater(dims);
   scene.add(water);
   scene.add(...createGlass(dims));
 
   const [body, , surface] = water.material as MeshBasicMaterial[];
+  const sandBottom = (sand.material as MeshBasicMaterial[])[3];
   const waterColors = {
     dayBody: new Color(PALETTE.eauMoyenne),
     nightBody: new Color(NIGHT_WATER_BODY),
     daySurface: new Color(PALETTE.eauClaire),
     nightSurface: new Color(NIGHT_WATER_SURFACE),
+    dayGround: new Color(PALETTE.sableSombre),
+    nightGround: new Color(NIGHT_GROUND),
+    daySandBottom: new Color(PALETTE.sableSombre),
+    nightSandBottom: new Color(NIGHT_SAND_BOTTOM),
   };
 
   return {
@@ -92,11 +107,17 @@ export function createAquariumScene(dims: TankDimensions = DEFAULT_TANK): Aquari
       const day = light.intensity;
       lights.ambient.intensity = mix(NIGHT_AMBIENT_INTENSITY, DAY_AMBIENT_INTENSITY, day);
       setRgb(lights.ambient.color, light.sky);
+      lights.ambient.groundColor.lerpColors(
+        waterColors.dayGround,
+        waterColors.nightGround,
+        1 - day,
+      );
       lights.sun.intensity = DAY_SUN_INTENSITY * mix(NIGHT_SUN_RATIO, 1, day);
       setRgb(lights.sun.color, light.tint);
       // `lerpColors(a, b, 0)` vaut exactement `a` : à midi, couleurs d'origine.
       body.color.lerpColors(waterColors.dayBody, waterColors.nightBody, 1 - day);
       surface.color.lerpColors(waterColors.daySurface, waterColors.nightSurface, 1 - day);
+      sandBottom.color.lerpColors(waterColors.daySandBottom, waterColors.nightSandBottom, 1 - day);
     },
     dispose: () => disposeObject(scene),
   };
