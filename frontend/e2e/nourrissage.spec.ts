@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 import { FOOD_COLOR } from '../src/app/render/food-layer';
 import { CAMERA_FOV_DEG } from '../src/app/render/camera-presets';
-import { FOOD_PER_DROP } from '../src/app/sim/food';
+import { FOOD_PER_DROP, MAX_FOOD } from '../src/app/sim/food';
 import { waterVolume } from '../src/app/sim/tank';
 
 /**
@@ -165,5 +165,28 @@ test.describe('Nourrissage (#67)', () => {
 
     await openScene(page, `${query}&nourrir=10,25`);
     expect((await page.screenshot({ animations: 'disabled' })).equals(first)).toBe(true);
+  });
+  test('le nombre de granulés reste borné quand on nourrit sans cesse (QA)', async ({ page }) => {
+    const errors = await openScene(page);
+    for (let i = 0; i < MAX_FOOD / FOOD_PER_DROP + 4; i++) {
+      await page.keyboard.press('g');
+    }
+    await expect(host(page)).toHaveAttribute('data-aqfish-food', String(MAX_FOOD));
+    expect(errors).toEqual([]);
+  });
+
+  test('petit écran (390 × 844) : le bouton « Nourrir » dépose des granulés (QA)', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    const errors = await openScene(page);
+    const button = page.getByRole('button', { name: /Nourrir.*touche G/ });
+    await expect(button).toBeVisible();
+    const box = await button.boundingBox();
+    expect(box!.x).toBeGreaterThanOrEqual(0);
+    expect(box!.x + box!.width).toBeLessThanOrEqual(390);
+    await button.click();
+    await expect(host(page)).toHaveAttribute('data-aqfish-food', String(FOOD_PER_DROP));
+    expect(errors).toEqual([]);
   });
 });
