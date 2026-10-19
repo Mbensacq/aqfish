@@ -69,6 +69,14 @@ export function fixedHourForKey(key: string): number | null {
   }
 }
 
+/** Touche de nourrissage : granulés au centre du bac (insensible à la casse, issue #67). */
+export const FEED_KEY = commandKey('nourrir');
+
+/** Vrai pour la touche de nourrissage (`g` ou `G`). */
+export function isFeedKey(key: string): boolean {
+  return key.toLowerCase() === FEED_KEY;
+}
+
 /** Préréglage associé à une touche (`1` à `5`), `null` sinon. */
 export function presetForKey(key: string): CameraPreset | null {
   return VIEW_PRESET_BUTTONS.find((button) => button.key === key)?.preset ?? null;
@@ -102,6 +110,8 @@ export function isTypingContext(event: KeyboardEvent): boolean {
  * Touche `H` (issue #51) : demande à l'hôte de figer ou de remettre en marche l'heure (sans
  * bouton : le panneau de contrôle viendra avec une issue suivante). Touches `J` et `N`
  * (issue #75) : demandent de figer l'heure à midi (plein jour) ou à minuit (nuit).
+ * Bouton « Nourrir » et touche `G` (issue #67) : demandent de déposer des granulés au centre
+ * du bac (le clic sur l'eau, lui, est géré par la vue).
  * Absente en mode capture (c'est l'application qui ne l'affiche pas).
  */
 @Component({
@@ -137,6 +147,17 @@ export function isTypingContext(event: KeyboardEvent): boolean {
       <span class="view-presets-bar__key" aria-hidden="true">{{ pixelArtKey }}</span>
       Pixel art
     </button>
+    <button
+      type="button"
+      class="view-presets-bar__button"
+      [attr.aria-label]="feedDescription + ' (touche ' + feedKey + ')'"
+      [attr.aria-keyshortcuts]="feedKey"
+      data-action="nourrir"
+      (click)="feed()"
+    >
+      <span class="view-presets-bar__key" aria-hidden="true">{{ feedKey }}</span>
+      Nourrir
+    </button>
   </div>`,
   styleUrl: './view-presets-bar.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -164,7 +185,18 @@ export class ViewPresetsBar {
   /** Demande de figer l'heure à une heure donnée (touches `J` : midi, `N` : minuit). */
   readonly clockFrozenAt = output<number>();
 
+  /** Demande de nourrissage au centre du bac (bouton « Nourrir » ou touche `G`). */
+  readonly fed = output<void>();
+
   protected readonly buttons = VIEW_PRESET_BUTTONS;
+
+  /** Touche de nourrissage telle qu'affichée (`G`) et sa description (nom accessible). */
+  protected readonly feedKey = keyCommand('nourrir').display;
+  protected readonly feedDescription = keyCommand('nourrir').description;
+
+  protected feed(): void {
+    this.fed.emit();
+  }
 
   /** Touche du filtre pixel art telle qu'affichée (`P`). */
   protected readonly pixelArtKey = keyCommand('pixel-art').display;
@@ -184,6 +216,11 @@ export class ViewPresetsBar {
     if (isPixelArtKey(event.key)) {
       event.preventDefault();
       this.togglePixelArt();
+      return;
+    }
+    if (isFeedKey(event.key)) {
+      event.preventDefault();
+      this.feed();
       return;
     }
     if (isClockKey(event.key)) {

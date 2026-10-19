@@ -11,6 +11,11 @@
  * réel dans [0, 24) (`heure=0` : minuit, `heure=18.5` : 18 h 30) ; valeur invalide ignorée.
  * Absent en capture : midi (séries de captures existantes inchangées).
  *
+ * Paramètre facultatif `nourrir=` (issue #67) : dépôts de nourriture, en mode capture
+ * seulement, séparés par des virgules ; chacun `t` (centre du bac) ou `t:x:z` (temps simulé
+ * en secondes, position en mètres dans le repère du bac). Exemple : `nourrir=10,25:0.2:0.05`.
+ * Les entrées invalides sont ignorées ; absent, aucun dépôt (séries existantes inchangées).
+ *
  * Ce module est volontairement pur (aucune dépendance à Angular ni à Three.js).
  * Voir docs/ARCHITECTURE.md, section « Contrat de capture ».
  */
@@ -34,7 +39,19 @@ export interface CaptureParams {
   readonly filter: RenderFilter | null;
   /** Heure figée par `heure=`, dans [0, 24) ; `null` si absente ou invalide. */
   readonly hour: number | null;
+  /** Dépôts de nourriture demandés par `nourrir=` (vide si absent). */
+  readonly feedings: readonly CaptureFeeding[];
 }
+
+/** Dépôt de nourriture du contrat de capture : temps simulé (s) et position (m). */
+export interface CaptureFeeding {
+  readonly time: number;
+  readonly x: number;
+  readonly z: number;
+}
+
+/** Nombre maximal de dépôts lus dans `nourrir=` (les suivants sont ignorés). */
+export const MAX_CAPTURE_FEEDINGS = 20;
 
 export const DEFAULT_CAPTURE_PARAMS: CaptureParams = {
   capture: false,
@@ -43,6 +60,7 @@ export const DEFAULT_CAPTURE_PARAMS: CaptureParams = {
   time: 0,
   filter: null,
   hour: null,
+  feedings: [],
 };
 
 /** Temps de simulation maximal accepté (1 h), pour éviter un calcul démesuré. */
@@ -62,6 +80,7 @@ export function parseCaptureParams(search: string): CaptureParams {
     time: parseTime(params.get('time')),
     filter: parseFilter(params.get('filtre')),
     hour: parseHour(params.get('heure')),
+    feedings: parseFeedings(params.get('nourrir')),
   };
 }
 
@@ -102,4 +121,37 @@ function parseHour(raw: string | null): number | null {
   }
   const value = Number(raw);
   return value < 24 ? value : null;
+}
+
+/** Réel décimal signé, sans exposant ni espace. */
+const DECIMAL_PATTERN = /^-?\d+(\.\d+)?$/;
+
+/**
+ * Dépôts `t` ou `t:x:z` séparés par des virgules. Temps : réel positif ou nul, au plus
+ * `MAX_CAPTURE_TIME_SECONDS` ; position : réels (un point hors du bac est ignoré par la
+ * simulation). Entrée invalide : ignorée.
+ */
+function parseFeedings(raw: string | null): readonly CaptureFeeding[] {
+  if (raw === null) {
+    return [];
+  }
+  const feedings: CaptureFeeding[] = [];
+  for (const entry of raw.split(',')) {
+    const parts = entry.split(':');
+    if (
+      (parts.length !== 1 && parts.length !== 3) ||
+      !parts.every((p) => DECIMAL_PATTERN.test(p))
+    ) {
+      continue;
+    }
+    const [time, x, z] = [...parts.map(Number), 0, 0];
+    if (time < 0 || time > MAX_CAPTURE_TIME_SECONDS) {
+      continue;
+    }
+    feedings.push({ time, x, z });
+    if (feedings.length === MAX_CAPTURE_FEEDINGS) {
+      break;
+    }
+  }
+  return feedings;
 }

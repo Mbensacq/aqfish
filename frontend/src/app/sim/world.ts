@@ -3,6 +3,7 @@ import { fillBubbles, type BubbleBuffer } from './bubbles';
 import { SIM_DT } from './constants';
 import { DEFAULT_DECOR, decorObstacles, parseDecorItems, type DecorItem } from './decor';
 import { computeSchoolSteering, enforceMinDistance } from './flocking';
+import { dropFoodInPlace, stepFoodInPlace, type FoodPellet } from './food';
 import { validateObstacle, type Obstacle } from './obstacles';
 import { SPECIES, type SpeciesId } from './species';
 import { createFish, stepFish, swimBounds, type Fish, type SwimBounds } from './swimmer';
@@ -48,6 +49,13 @@ export interface World {
    * de collision sont ajoutées à `obstacles`, après les obstacles explicites (ADR 0015).
    */
   readonly decor: readonly DecorItem[];
+  /**
+   * Granulés de nourriture déposés par l'utilisateur (`sim/food.ts`, ADR 0022), dans l'ordre
+   * des dépôts. Vide à la création.
+   */
+  readonly food: readonly FoodPellet[];
+  /** Identifiant du prochain granulé déposé (compteur, jamais réutilisé). */
+  readonly nextFoodId: number;
 }
 
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
@@ -94,7 +102,16 @@ export function createWorld(
       );
     }
   }
-  return { seed, tick: 0, time: 0, entities, obstacles: sortedObstacles, decor: decorItems };
+  return {
+    seed,
+    tick: 0,
+    time: 0,
+    entities,
+    obstacles: sortedObstacles,
+    decor: decorItems,
+    food: [],
+    nextFoodId: 0,
+  };
 }
 
 function copyObstacles(obstacles: readonly Obstacle[]): Obstacle[] {
@@ -179,6 +196,55 @@ export function worldBubbles(world: World, out: BubbleBuffer): number {
   return fillBubbles(world.seed, world.time, out);
 }
 
+/**
+ * Dépose des granulés autour de (x, z), à la surface (`sim/food.ts`). Fonction pure : renvoie
+ * un nouvel état, `world` n'est jamais modifié. Un point hors du bac ou un bac plein renvoie
+ * un état sans nouveau granulé.
+ * @throws RangeError si `x` ou `z` n'est pas un réel fini.
+ */
+export function feed(world: World, x: number, z: number): World {
+  const next = cloneWorld(world);
+  feedInPlace(next, x, z);
+  return next;
+}
+
+/**
+ * Comme `feed`, **en modifiant** `world` ; renvoie le nombre de granulés ajoutés. Réservé au
+ * propriétaire unique du monde (`ui/aquarium-host`), comme `advanceInPlace`.
+ */
+export function feedInPlace(world: MutableWorld, x: number, z: number): number {
+  return dropFoodInPlace(world as MutableWorld & { food: FoodPellet[] }, x, z);
+}
+
+/** Dépôt de nourriture à un temps simulé donné (contrat de capture, `nourrir=`). */
+export interface Feeding {
+  readonly time: number;
+  readonly x: number;
+  readonly z: number;
+}
+
+/**
+ * Avance le monde jusqu'au temps `time` en déposant la nourriture de `feedings` au temps
+ * simulé de chaque dépôt (dans l'ordre des temps, puis de la liste) : même graine et mêmes
+ * dépôts donnent le même état. Les dépôts postérieurs à `time` sont ignorés. Fonction pure.
+ */
+export function advanceToWithFeedings(
+  world: World,
+  time: number,
+  feedings: readonly Feeding[],
+): World {
+  const target = ticksFor(time);
+  const ordered = feedings
+    .map((feeding, index) => ({ feeding, index, tick: ticksFor(feeding.time) }))
+    .filter((entry) => entry.tick <= target)
+    .sort((a, b) => a.tick - b.tick || a.index - b.index);
+  let current = world;
+  for (const { feeding, tick } of ordered) {
+    current = feed(advance(current, Math.max(0, tick - current.tick)), feeding.x, feeding.z);
+  }
+  return advance(current, Math.max(0, target - current.tick));
+}
+
 /** Nombre total de pas `SIM_DT` correspondant à un temps simulé : `round(time / SIM_DT)`. */
 export function ticksFor(time: number): number {
   if (!Number.isFinite(time) || time < 0) {
@@ -219,6 +285,7 @@ function stepInPlace(world: MutableWorld, dt: number): void {
     );
   }
   enforceMinDistance(fishes, boundsOfFish);
+  stepFoodInPlace(world.food as FoodPellet[], dt);
 }
 
 function boundsOfFish(fish: Entity): SwimBounds {

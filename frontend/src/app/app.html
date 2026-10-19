@@ -15,6 +15,7 @@
       (pixelArtToggled)="aquarium.toggleFilter()"
       (clockToggled)="aquarium.toggleClock()"
       (clockFrozenAt)="aquarium.freezeClockAt($event)"
+      (fed)="aquarium.feedAtCenter()"
     />
     <!-- Indicateur du moment de la journée (#73). -->
     <app-day-indicator [phase]="aquarium.dayPhase()" />
