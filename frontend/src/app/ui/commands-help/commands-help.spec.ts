@@ -4,6 +4,7 @@ import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { GESTURE_COMMANDS, KEY_COMMANDS, keyCommandFor } from '../../core/commands/commands';
 import { ViewPresetsBar } from '../view-presets-bar/view-presets-bar';
 import {
+  COMMANDS_HELP_DEFAULT_OPEN,
   COMMANDS_HELP_STORE,
   createFallbackStore,
   type KeyValueStore,
@@ -44,13 +45,16 @@ describe('CommandsHelp (#74)', () => {
   const toggleButton = (): HTMLButtonElement =>
     root().querySelector('button.commands-help__toggle') as HTMLButtonElement;
 
-  async function create(stored: string | null = null): Promise<void> {
+  async function create(stored: string | null = null, defaultOpen = true): Promise<void> {
     store = new MemoryStore();
     if (stored !== null) {
       store.values.set(COMMANDS_HELP_STORAGE_KEY, stored);
     }
     TestBed.configureTestingModule({
-      providers: [{ provide: COMMANDS_HELP_STORE, useValue: store }],
+      providers: [
+        { provide: COMMANDS_HELP_STORE, useValue: store },
+        { provide: COMMANDS_HELP_DEFAULT_OPEN, useValue: defaultOpen },
+      ],
     });
     fixture = TestBed.createComponent(CommandsHelp);
     await fixture.whenStable();
