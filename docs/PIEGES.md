@@ -140,6 +140,15 @@ haut de sa section.
 
 ## Simulation
 
+- **Attraction vers un point derrière un obstacle : minimum local** (cycle 25, #68) : un
+  poisson attiré par un granulé caché derrière un rocher s'y bloque (attraction et évitement
+  s'équilibrent) ou en est dévié jusqu'à perdre le granulé de vue. Ne viser que ce qui est en
+  vue (`hasLineOfSight`, `sim/feeding.ts`) ; et arrêter la prospection de l'évitement au
+  point visé, sinon un granulé posé au fond ou près d'une plante est repoussé par ce qui se
+  trouve au-delà. Les plantes sont aussi des obstacles (`world.obstacles` : 10 dans le décor
+  par défaut). (2026-10-19)
+- **`SIM_DT` vaut 1/60 s**, pas 1/30 : un test qui compte des pas « à 30 par seconde » simule
+  deux fois moins de temps que prévu. Écrire `Math.round(secondes / SIM_DT)`. (2026-10-19)
 - **Phases tirées de la graine qui coïncident** (cycle 16, #49) : deux graines quelconques
   peuvent donner des phases presque égales (101 et 202 : 0,85 et 0,81 rad), et deux plantes
   voisines bougent alors à l'unisson. Tester l'écart des phases du décor par défaut et

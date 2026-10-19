@@ -8,7 +8,7 @@ import { SPECIES } from '../src/app/sim/species';
 import { swimBounds } from '../src/app/sim/swimmer';
 import { waterVolume } from '../src/app/sim/tank';
 import { glassStats, recordTrajectories } from '../src/app/sim/trajectory';
-import { createDefaultWorld } from '../src/app/sim/world';
+import { advance, createDefaultWorld, feed, type World } from '../src/app/sim/world';
 
 /**
  * Harnais de captures (projet Playwright « captures »).
@@ -22,7 +22,9 @@ import { createDefaultWorld } from '../src/app/sim/world';
  * En plus, `trajectoires-top.png` : tracé des trajectoires vues de dessus sur
  * `TRACE_SECONDS` secondes simulées (issue #43), pour prouver un comportement de nage
  * qu'une image figée ne montre pas. Calculé hors de l'application, avec la simulation pure
- * (même graine que les captures), puis dessiné en SVG.
+ * (même graine que les captures), puis dessiné en SVG. Et `trajectoires-nourriture-top.png`
+ * (issue #68) : même tracé, granulés déposés à t = 0 en `TRACE_FEEDINGS` (croix), pour voir
+ * les poissons converger vers la nourriture.
  *
  * Les angles et paramètres doivent rester alignés avec
  * src/app/core/capture/capture-params.ts et docs/ARCHITECTURE.md.
@@ -104,7 +106,24 @@ test.describe('Captures', () => {
     );
     await page.screenshot({ path: join(OUTPUT_DIR, 'trajectoires-top.png') });
   });
+
+  test('tracé des trajectoires avec nourriture, vue de dessus', async ({ page }) => {
+    const svg = trajectorySvg(SEED, TRACE_FOOD_SECONDS, TRACE_FEEDINGS);
+    await page.setViewportSize({ width: svg.width, height: svg.height });
+    await page.setContent(
+      `<!doctype html><html><body style="margin:0;background:#1c1c22">${svg.markup}</body></html>`,
+    );
+    await page.screenshot({ path: join(OUTPUT_DIR, 'trajectoires-nourriture-top.png') });
+  });
 });
+
+/** Dépôts du tracé avec nourriture (issue #68) : à t = 0, en eau libre (x, z en mètres). */
+const TRACE_FEEDINGS: readonly { x: number; z: number }[] = [
+  { x: -0.25, z: 0.1 },
+  { x: 0.1, z: 0 },
+  { x: 0.4, z: 0.15 },
+];
+const TRACE_FOOD_SECONDS = 30;
 
 const TRACE_SECONDS = Number(process.env['CAPTURE_TRACE_TIME'] ?? 60);
 /** Pixels par mètre du tracé. */
@@ -124,10 +143,15 @@ const TRACE_COLORS: Record<string, string> = {
 function trajectorySvg(
   seed: number,
   seconds: number,
+  feedings: readonly { x: number; z: number }[] = [],
 ): { markup: string; width: number; height: number } {
   const water = waterVolume();
   const steps = Math.round(seconds / SIM_DT);
-  const traces = recordTrajectories(createDefaultWorld(seed), steps, 3);
+  let start: World = createDefaultWorld(seed);
+  for (const { x, z } of feedings) {
+    start = feed(start, x, z);
+  }
+  const traces = recordTrajectories(start, steps, 3);
   // Statistiques de #43 sur les néons et les guppys, comparables d'un cycle à l'autre.
   const stats = glassStats(
     traces.filter((t) => t.species !== 'corydora'),
@@ -135,7 +159,9 @@ function trajectorySvg(
     0.1,
   );
   const width = Math.round((water.maxX - water.minX) * TRACE_SCALE) + 2 * TRACE_PADDING;
-  const height = Math.round((water.maxZ - water.minZ) * TRACE_SCALE) + 2 * TRACE_PADDING + 30;
+  const extraLine = feedings.length > 0 ? 22 : 0;
+  const height =
+    Math.round((water.maxZ - water.minZ) * TRACE_SCALE) + 2 * TRACE_PADDING + 30 + extraLine;
   const px = (x: number) => (TRACE_PADDING + (x - water.minX) * TRACE_SCALE).toFixed(1);
   const pz = (z: number) => (TRACE_PADDING + (z - water.minZ) * TRACE_SCALE).toFixed(1);
   const hard = swimBounds(SPECIES.neon, water).hard;
@@ -147,6 +173,19 @@ function trajectorySvg(
         `<polyline fill="none" stroke="${TRACE_COLORS[t.species] ?? '#f2ead8'}" stroke-width="1.5" stroke-opacity="0.8" points="${t.points.map((p) => `${px(p.x)},${pz(p.z)}`).join(' ')}"/>`,
     )
     .join('');
+  // Granulés : croix rouges aux points de dépôt, et nombre de granulés mangés.
+  const crosses = feedings
+    .map(
+      ({ x, z }) =>
+        `<path d="M${(+px(x) - 9).toFixed(1)},${(+pz(z) - 9).toFixed(1)} l18,18 m0,-18 l-18,18" stroke="#e63946" stroke-width="3"/>`,
+    )
+    .join('');
+  const eaten =
+    feedings.length === 0
+      ? ''
+      : `<text x="${TRACE_PADDING}" y="${height - 36}" fill="#f2ead8" font-size="15">` +
+        `${start.food.length - advance(start, steps).food.length} granulés mangés sur ` +
+        `${start.food.length} en ${seconds} s (croix rouges : dépôts à t = 0)</text>`;
   const legend =
     `graine ${seed}, ${seconds} s simulées — néons (bleu), guppys (orange), corydoras (blanc) — ` +
     `néons et guppys : médiane des distances minimales aux vitres : ${(stats.medianMinimum * 100).toFixed(1)} cm, ` +
@@ -156,6 +195,8 @@ function trajectorySvg(
     rect(water, 'stroke="#a8e6cf" stroke-width="2"') +
     rect(hard, 'stroke="#6a6779" stroke-width="1" stroke-dasharray="6 4"') +
     lines +
+    crosses +
+    eaten +
     `<text x="${TRACE_PADDING}" y="${height - 14}" fill="#f2ead8" font-size="15">${legend}</text>` +
     `</svg>`;
   return { markup, width, height };
