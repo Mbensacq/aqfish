@@ -25,6 +25,8 @@ import {
 } from './camera-presets';
 import { SPECIES, speciesVariants, type SpeciesId } from '../sim/species';
 import type { Fish } from '../sim/swimmer';
+import type { DecorItem } from '../sim/decor';
+import { DecorLayer } from './decor-layer';
 import { FishLayer, MAX_FISH_PER_SPECIES } from './fish-layer';
 import { PalettePass } from './palette-pass';
 import type { Size } from './pixel-art';
@@ -80,6 +82,8 @@ export class AquariumView {
    * de déclaration (aucun champ par espèce).
    */
   private readonly fishLayers: readonly FishLayer[];
+  /** Décor du monde (rochers), fixé par `setDecor`. */
+  private readonly decorLayer = new DecorLayer();
   private readonly pixelRatio: number;
   private width = 0;
   private height = 0;
@@ -113,6 +117,7 @@ export class AquariumView {
     for (const layer of this.fishLayers) {
       this.world.scene.add(layer.object);
     }
+    this.world.scene.add(this.decorLayer.object);
 
     const radius = tankBoundingRadius(this.world.dimensions);
     this.camera = new PerspectiveCamera(CAMERA_FOV_DEG, 1, radius * 0.05, radius * 40);
@@ -236,6 +241,18 @@ export class AquariumView {
     }
   }
 
+  /** Affiche le décor du monde (`World.decor`), immobile : à appeler une fois par monde. */
+  setDecor(items: readonly DecorItem[]): void {
+    if (!this.disposed) {
+      this.decorLayer.setDecor(items);
+    }
+  }
+
+  /** Nombre d'éléments de décor affichés (tests). */
+  get decorCount(): number {
+    return this.decorLayer.count;
+  }
+
   /** Nombre de poissons placés par le dernier `updateFish`, toutes espèces confondues (tests). */
   get fishCount(): number {
     let count = 0;
@@ -282,10 +299,12 @@ export class AquariumView {
       return false;
     }
     if (this.currentFilter === 'aucun') {
+      this.decorLayer.setResolution(this.width * this.pixelRatio, this.height * this.pixelRatio);
       this.renderer.setRenderTarget(null);
       this.renderer.render(this.world.scene, this.camera);
       return true;
     }
+    this.decorLayer.setResolution(this.targetSize.width, this.targetSize.height);
     this.renderer.setRenderTarget(this.pixelPass.target);
     this.renderer.render(this.world.scene, this.camera);
     this.renderer.setRenderTarget(null);
@@ -329,6 +348,7 @@ export class AquariumView {
     this.controls.removeEventListener('start', this.stopFollowingPreset);
     this.controls.dispose();
     this.fishLayers.forEach((layer) => layer.dispose());
+    this.decorLayer.dispose();
     this.world.dispose();
     this.pixelPass.dispose();
     this.renderer.dispose();

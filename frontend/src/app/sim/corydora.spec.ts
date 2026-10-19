@@ -1,3 +1,4 @@
+import { DEFAULT_DECOR } from './decor';
 import { SIM_DT } from './constants';
 import { CORYDORA, NEON, SPECIES } from './species';
 import { swimBounds, type Fish } from './swimmer';
@@ -136,7 +137,8 @@ describe('corydora : nage de fond (#31)', () => {
 
   it('les corydoras ne changent pas la trajectoire des néons', () => {
     const alone = advance(
-      createWorld(42, [{ species: 'neon', count: NEON.defaultPopulation }]),
+      // Même décor que le monde par défaut : seule la présence des autres espèces diffère.
+      createWorld(42, [{ species: 'neon', count: NEON.defaultPopulation }], [], DEFAULT_DECOR),
       600,
     );
     const mixed = advance(createDefaultWorld(42), 600);

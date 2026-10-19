@@ -1,5 +1,6 @@
 import { assertSeed } from '../core/random/prng';
 import { SIM_DT } from './constants';
+import { DEFAULT_DECOR, decorObstacles, parseDecorItems, type DecorItem } from './decor';
 import { computeSchoolSteering, enforceMinDistance } from './flocking';
 import { validateObstacle, type Obstacle } from './obstacles';
 import { SPECIES, type SpeciesId } from './species';
@@ -41,6 +42,11 @@ export interface World {
    * contournent (ADR 0012). Données pures, triées par identifiant.
    */
   readonly obstacles: readonly Obstacle[];
+  /**
+   * Éléments de décor (rochers, `sim/decor.ts`), immobiles, dans l'ordre donné. Leurs formes
+   * de collision sont ajoutées à `obstacles`, après les obstacles explicites (ADR 0015).
+   */
+  readonly decor: readonly DecorItem[];
 }
 
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
@@ -54,19 +60,24 @@ export type MutableWorld = Mutable<World>;
 /**
  * Crée un monde à `time = 0`, vide par défaut, peuplé dans l'ordre de `population`
  * (identifiants consécutifs à partir de 0) dans le bac par défaut (`sim/tank.ts`), avec les
- * `obstacles` donnés (copiés, triés par identifiant) ; les poissons naissent hors des
- * obstacles (`createFish`).
+ * `obstacles` donnés (copiés, triés par identifiant) et le `decor` donné (validé, copié) ;
+ * les formes de collision du décor suivent les obstacles explicites, avec les identifiants
+ * suivant le plus grand d'entre eux. Les poissons naissent hors des obstacles (`createFish`).
  * @throws RangeError si la graine n'est pas un entier 32 bits non signé, si un effectif
- * n'est pas un entier positif ou nul, si un obstacle est invalide ou si deux obstacles ont
- * le même identifiant.
+ * n'est pas un entier positif ou nul, si un obstacle ou un élément de décor est invalide ou
+ * si deux obstacles ont le même identifiant.
  */
 export function createWorld(
   seed: number,
   population: readonly PopulationEntry[] = [],
   obstacles: readonly Obstacle[] = [],
+  decor: readonly DecorItem[] = [],
 ): World {
   assertSeed(seed);
+  const decorItems = parseDecorItems(decor);
   const sortedObstacles = copyObstacles(obstacles);
+  const firstDecorId = sortedObstacles.length > 0 ? sortedObstacles.at(-1)!.id + 1 : 0;
+  sortedObstacles.push(...decorObstacles(decorItems, firstDecorId));
   const entities: Entity[] = [];
   for (const { species, count } of population) {
     if (!Number.isInteger(count) || count < 0) {
@@ -82,11 +93,13 @@ export function createWorld(
       );
     }
   }
-  return { seed, tick: 0, time: 0, entities, obstacles: sortedObstacles };
+  return { seed, tick: 0, time: 0, entities, obstacles: sortedObstacles, decor: decorItems };
 }
 
 function copyObstacles(obstacles: readonly Obstacle[]): Obstacle[] {
-  const copies = obstacles.map((o) => ({ ...o }));
+  const copies = obstacles.map((o) =>
+    o.shape === 'spheres' ? { ...o, spheres: o.spheres.map((s) => ({ ...s })) } : { ...o },
+  );
   for (const o of copies) {
     const problems = validateObstacle(o);
     if (problems.length > 0) {
@@ -102,11 +115,16 @@ function copyObstacles(obstacles: readonly Obstacle[]): Obstacle[] {
   return copies;
 }
 
-/** Monde par défaut de l'application : chaque espèce avec sa population par défaut. */
+/**
+ * Monde par défaut de l'application : chaque espèce avec sa population par défaut, dans le
+ * décor par défaut (`DEFAULT_DECOR`, rochers).
+ */
 export function createDefaultWorld(seed: number): World {
   return createWorld(
     seed,
     Object.values(SPECIES).map((def) => ({ species: def.id, count: def.defaultPopulation })),
+    [],
+    DEFAULT_DECOR,
   );
 }
 

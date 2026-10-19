@@ -208,6 +208,7 @@ export class AquariumHost {
       filter,
     });
     this.view = view;
+    view.setDecor(this.currentWorld.decor);
     this.exposeFilter();
 
     this.activePreset.set(params.camera);

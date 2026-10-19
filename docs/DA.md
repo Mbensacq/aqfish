@@ -66,6 +66,11 @@ clair, haute dorsale sable sombre), flanc gris roche « poivré » de taches noi
 sombre. Un flanc sable se confondait avec le substrat sur les captures : les poissons de fond
 évitent les tons du sable sur leurs flancs.
 
+Les rochers (ADR 0015) : voxels de 1,2 cm (à l'échelle 1) en couleurs plates, dessus
+`roche` parfois poudré de `sableOmbre`, flancs `roche` tachés de `rocheSombre`, rangée du bas
+toujours `rocheSombre` (ombre de contact), contour d'un pixel `koiNoir`. Posés sur le sable,
+base légèrement enfoncée.
+
 ## Interface
 
 - Minimale et discrète : barres flottantes sombres translucides aux coins arrondis, qui

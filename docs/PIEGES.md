@@ -75,6 +75,10 @@ haut de sa section.
   Pour prouver qu'une nouvelle espèce ne perturbe pas les autres : comparer les néons d'un
   monde mixte à ceux d'un monde de néons seuls (`world.spec.ts`), et les pixels néon des
   captures avant/après. (2026-10-18)
+- **Monde par défaut avec décor** (cycle 15) : `createDefaultWorld` contient des rochers
+  (`DEFAULT_DECOR`). Un test qui compare les néons du monde par défaut à ceux d'un monde
+  de néons seuls doit donner le même décor aux deux (`createWorld(seed, pop, [],
+  DEFAULT_DECOR)`), sinon les trajectoires divergent dès la naissance. (2026-10-19)
 - **Population par défaut écrite en dur** : `e2e/neon.spec.ts` compte les poissons du monde
   réel ; changer `defaultPopulation` d'une espèce impose de l'y mettre à jour (cycle 8 :
   8 → 12 ; cycle 11 : 12 néons + 6 guppys). (2026-10-18)
@@ -129,6 +133,13 @@ haut de sa section.
   n'interfère (`swimmer.spec.ts`). (2026-10-18)
 
 ## Rendu
+
+- **Contour en coque gonflée sur des voxels** (cycle 15) : gonfler la coque selon les
+  normales des faces l'ouvre aux arêtes (faces disjointes). Utiliser des normales lissées
+  (moyenne des faces au même sommet, `render/rock-model.ts`) et un décalage en pixels de la
+  cible dans le shader (résolution en uniforme, à tenir à jour dans les deux filtres). Aux
+  sommets concaves, la normale lissée peut rentrer dans la forme : sans effet visible.
+  (2026-10-19)
 
 - **Rendu sans filtre (`filtre=aucun`) : peu de couleurs, teintes différentes** : la scène est
   en couleurs plates sans anticrénelage, donc une vingtaine de couleurs seulement (un test

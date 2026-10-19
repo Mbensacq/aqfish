@@ -96,8 +96,9 @@ Principe : une vraie scène 3D, rendue de façon à rester du pixel art quel que
 2. **Palette limitée** : une passe de post-traitement ramène les couleurs à la palette
    définie dans un module unique (voir `docs/DA.md`), avec tramage ordonné optionnel pour les
    dégradés.
-3. **Contours** : contours sombres d'un pixel sur les silhouettes (animaux, décor), obtenus par
-   détection de discontinuités de profondeur et de normales. Pas de contour sur l'eau.
+3. **Contours** : contours sombres d'un pixel sur les silhouettes (animaux, décor). Pas de
+   contour sur l'eau. Mise en œuvre actuelle (décor seulement, ADR 0015) : coque de faces
+   arrière gonflée d'un pixel de la cible à l'écran ; les poissons n'en ont pas encore.
 4. **Stabilité** : quand la caméra bouge, éviter le scintillement des pixels (par exemple en
    alignant la caméra sur la grille de pixels dans l'espace de vue).
 5. **Modèles** : voxels ou low-poly **générés par le code** à partir des définitions
@@ -157,13 +158,14 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
 | `sim/constants.ts` | `SIM_DT`, `MAX_STEPS_PER_FRAME` |
 | `sim/fixed-step.ts` | Accumulateur de la boucle à pas fixe (`fixedStep`, pure ; `fixedStepInto`, sans allocation) |
 | `sim/time-step.ts` | `assertTimeStep` : validation unique d'un pas de temps |
-| `sim/world.ts` | État du monde sérialisable, `step`, `advance`, `advanceTo`, `advanceInPlace` (boucle d'affichage), `createDefaultWorld` (population par défaut) |
+| `sim/world.ts` | État du monde sérialisable (dont `decor`), `step`, `advance`, `advanceTo`, `advanceInPlace` (boucle d'affichage), `createDefaultWorld` (population et décor par défaut) |
 | `sim/tank.ts` | Dimensions du bac, volume d'eau, `shrinkBox` (partagés par la simulation et le rendu) |
 | `sim/species.ts` | Définitions déclaratives des espèces (`NEON`, `GUPPY`, `CORYDORA`), apparences (`speciesVariants`, `speciesVariantIndex`, ADR 0013), préférence de profondeur (`depth`, ADR 0014), `validateSpecies` |
 | `sim/swimmer.ts` | Poisson (état sérialisable, sous-générateur en état explicite), nage : errance, banc, évitement, bornes, préférence de profondeur et remontées (ADR 0014) |
 | `sim/flocking.ts` | Banc : séparation, alignement, cohésion, pilotage en deux phases, espacement minimal (ADR 0011) |
 | `sim/trajectory.ts` | Relevé de trajectoires sur une copie du monde, distance aux vitres et statistiques (mesure et tracé, issue #43) |
-| `sim/obstacles.ts` | Obstacles du bac (données, sphère), distance signée et normale (ADR 0012) |
+| `sim/obstacles.ts` | Obstacles du bac (données : sphère, union de sphères), distance signée et normale (ADR 0012, 0015) |
+| `sim/decor.ts` | Décor en données JSON (`DecorItem`, validation, `parseDecor`), rochers voxel générés depuis leur graine (`rockModel`), collision en union de sphères (`decorObstacles`), `DEFAULT_DECOR` (ADR 0015) |
 | `sim/undulation.ts` | Ondulation (fonctions pures) : avance de la phase, amplitude selon la vitesse, pose du corps et de la queue (ADR 0009) |
 | `sim/avoidance.ts` | Forces d'évitement des parois et des obstacles, proximité, déviation pour contourner (ADR 0012) |
 | `render/palette.ts` | Palette unique (32 à 48 couleurs), nommées par usage |
@@ -173,7 +175,9 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
 | `render/aquarium-scene.ts` | Scène statique : sable, eau, verre, arêtes, lumières ; libération |
 | `render/fish-model.ts` | Modèles voxel des poissons générés depuis un gabarit de profil par silhouette (`SILHOUETTES`, ADR 0009 et 0013) |
 | `render/fish-layer.ts` | `InstancedMesh` corps et queue par espèce, interpolation entre deux pas, ondulation ; `AquariumView` en crée une par apparence de chaque entrée de `SPECIES` (ADR 0013) |
-| `render/aquarium-view.ts` | Vue sans Angular : renderer (fabrique remplaçable), caméra, `OrbitControls`, transitions de caméra, `updateFish` |
+| `render/rock-model.ts` | Maillage voxel d'un rocher (couleurs plates de la palette), normales lissées de sa coque de contour (ADR 0015) |
+| `render/decor-layer.ts` | Couche du décor : maillages et coques de contour d'un pixel (décalage en pixels de la cible), placés selon `World.decor` (ADR 0015) |
+| `render/aquarium-view.ts` | Vue sans Angular : renderer (fabrique remplaçable), caméra, `OrbitControls`, transitions de caméra, `updateFish`, `setDecor` |
 | `ui/aquarium-host/` | Composant hôte : boucle rAF, avance de la simulation, redimensionnement, contrat de capture, `DestroyRef` |
 | `ui/view-presets-bar/` | Barre flottante des 5 préréglages de vue et raccourcis clavier `1` à `5` (émet le préréglage choisi), bascule « Pixel art » et touche `P` (émet la demande de bascule) |
 

@@ -1,8 +1,9 @@
+import { DEFAULT_DECOR } from './decor';
 import { MAX_CAPTURE_TIME_SECONDS } from '../core/capture/capture-params';
 import { MAX_SEED } from '../core/random/prng';
 import { SIM_DT } from './constants';
 import type { Vec3 } from './flocking';
-import { obstacleDistance, sphereObstacle, type Obstacle } from './obstacles';
+import { obstacleDistance, sphereObstacle, type Obstacle, type SphereObstacle } from './obstacles';
 import { CORYDORA, GUPPY, NEON, SPECIES, type SpeciesId } from './species';
 import { swimBounds } from './swimmer';
 import { waterVolume } from './tank';
@@ -20,7 +21,14 @@ import {
 
 describe('createWorld', () => {
   it('crée un monde vide à t = 0 avec la graine donnée', () => {
-    expect(createWorld(42)).toEqual({ seed: 42, tick: 0, time: 0, entities: [], obstacles: [] });
+    expect(createWorld(42)).toEqual({
+      seed: 42,
+      tick: 0,
+      time: 0,
+      entities: [],
+      obstacles: [],
+      decor: [],
+    });
   });
 
   it.each([0, MAX_SEED])('accepte la graine limite %s', (seed) => {
@@ -160,7 +168,8 @@ describe('monde peuplé', () => {
 
   it('les guppys ne changent pas la trajectoire des néons (banc entre congénères seulement)', () => {
     const alone = advance(
-      createWorld(42, [{ species: 'neon', count: NEON.defaultPopulation }]),
+      // Même décor que le monde par défaut : seule la présence des autres espèces diffère.
+      createWorld(42, [{ species: 'neon', count: NEON.defaultPopulation }], [], DEFAULT_DECOR),
       600,
     );
     const mixed = advance(createDefaultWorld(42), 600);
@@ -276,7 +285,7 @@ describe('obstacles', () => {
     expect(world.obstacles.map((o) => o.id)).toEqual([0, 1]);
     expect(world.obstacles[0]).not.toBe(input[1]);
     input[1].x = 99 as never;
-    expect(world.obstacles[0].x).toBe(0);
+    expect((world.obstacles[0] as SphereObstacle).x).toBe(0);
     expect(JSON.parse(JSON.stringify(world))).toEqual(world);
   });
 
