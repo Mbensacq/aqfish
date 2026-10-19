@@ -134,6 +134,45 @@ test.describe('Cycle jour/nuit', () => {
     expect(errors).toEqual([]);
   });
 
+  test('touches J et N : figent le plein jour (midi) ou la nuit (minuit), H reprend sans saut', async ({
+    page,
+  }) => {
+    const errors = await openScene(page, '');
+    const hour = async () => Number(await host(page).getAttribute('data-aqfish-hour'));
+    await expect(host(page)).toHaveAttribute('data-aqfish-hour-frozen', 'false');
+    await page.keyboard.press('n');
+    await expect(host(page)).toHaveAttribute('data-aqfish-hour-frozen', 'true');
+    await expect(host(page)).toHaveAttribute('data-aqfish-hour', '0.00');
+    const tick = Number(await host(page).getAttribute('data-aqfish-tick'));
+    await expect
+      .poll(async () => Number(await host(page).getAttribute('data-aqfish-tick')))
+      .toBeGreaterThan(tick + 30);
+    expect(await host(page).getAttribute('data-aqfish-hour')).toBe('0.00');
+    // Déjà figée la nuit : J passe directement au plein jour.
+    await page.keyboard.press('J');
+    await expect(host(page)).toHaveAttribute('data-aqfish-hour', '12.00');
+    await expect(host(page)).toHaveAttribute('data-aqfish-hour-frozen', 'true');
+    await page.keyboard.press('N');
+    await expect(host(page)).toHaveAttribute('data-aqfish-hour', '0.00');
+    // Reprise : l'heure repart de minuit (pas de saut vers l'heure qu'il aurait été).
+    await page.keyboard.press('h');
+    await expect(host(page)).toHaveAttribute('data-aqfish-hour-frozen', 'false');
+    const resumed = await hour();
+    expect(resumed).toBeLessThan(0.02);
+    await expect.poll(hour).toBeGreaterThan(0.02);
+    expect(await hour()).toBeLessThan(1);
+    expect(errors).toEqual([]);
+  });
+
+  test('mode capture : J et N sans effet', async ({ page }) => {
+    const errors = await openScene(page, `${BASE}&heure=6`);
+    for (const key of ['j', 'n']) {
+      await page.keyboard.press(key);
+    }
+    await expect(host(page)).toHaveAttribute('data-aqfish-hour', '6.00');
+    expect(errors).toEqual([]);
+  });
+
   test('touche P : le rendu sans filtre fonctionne la nuit', async ({ page }) => {
     const errors = await openScene(page, '?heure=0');
     await page.keyboard.press('p');

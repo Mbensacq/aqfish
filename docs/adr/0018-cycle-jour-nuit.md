@@ -20,10 +20,14 @@ palette (ADR 0007) reste le seul endroit qui fixe les couleurs affichées.
   seulement par les pas fixes : l'heure ne lit jamais `performance.now()` ni `Date`.
   `World` ne change pas (l'horloge est un état de l'hôte, comme le filtre de rendu).
   `freezeClock` / `resumeClock` figent et reprennent sans saut d'heure.
-- **Valeurs par défaut** : journée de **180 s**, départ à **midi**. En capture sans
+- **Valeurs par défaut** : journée de **1 200 s** (20 min ; 180 s jusqu'au cycle 21, voir
+  « Révision » ci-dessous), départ à **midi**. En capture sans
   `heure=`, midi figé : les séries existantes restent identiques. `heure=` (réel dans
   [0, 24), valeur invalide ignorée) fige l'heure, en capture comme hors capture. La
-  touche **`H`** fige ou remet en marche l'heure (sans effet en capture).
+  touche **`H`** fige ou remet en marche l'heure (sans effet en capture). Les touches
+  **`J`** (plein jour) et **`N`** (nuit) figent l'heure à midi ou à minuit
+  (`freezeClockAt`), que l'horloge tourne ou non ; `H` reprend ensuite depuis l'heure
+  figée, sans saut.
 - **Courbe de lumière** `lightAt(heure)` : élévation du soleil `e = −cos(2π · h / 24)` ;
   intensité `i = smoothstep(−0,25 ; 0,5 ; e)`, d'où plein jour de 8 h à 16 h, pleine nuit
   avant ≈ 5 h et après ≈ 19 h. Teintes (lumière directe et ciel) : mélange nuit → blanc
@@ -39,8 +43,9 @@ palette (ADR 0007) reste le seul endroit qui fixe les couleurs affichées.
   - `render/water-light.ts` : caustiques **opaques par paliers** de la palette
     (`sableClair` dès `i ≥ 0,75`, `sable` dès `0,4`, éteintes en dessous) ; reflet de
     surface atténué jusqu'à 85 % de son opacité la nuit.
-  - L'hôte ne recalcule l'éclairage que si l'heure a bougé d'au moins 0,01 h (évite une
-    allocation par image pour un changement invisible après la passe palette).
+  - L'hôte ne recalcule l'éclairage que si l'heure a bougé d'au moins 0,01 h (soit 0,5 s
+    avec la journée de 20 min ; évite une allocation par image pour un changement
+    invisible après la passe palette).
 
 ## Options écartées
 
@@ -61,6 +66,17 @@ palette (ADR 0007) reste le seul endroit qui fixe les couleurs affichées.
   comportements nocturnes (v0.10) si besoin.
 - Le sable de nuit tombe sur `roche` (gris) et celui du crépuscule sur `sableOmbre` : effet
   de nuit sans couleur nouvelle.
-- Hors capture, l'heure fait le tour en 180 s : un test de bout en bout qui compare des
-  images hors capture doit figer l'heure (`heure=`) s'il dure longtemps.
-- Le panneau de contrôle (durée de la journée, heure) viendra avec une issue suivante.
+- Hors capture, l'heure fait le tour en 20 min (0,02 h par seconde simulée) : un test de
+  bout en bout qui compare des images hors capture doit figer l'heure (`heure=`) s'il dure
+  longtemps ; un test qui attend que l'heure avance doit prévoir au moins une seconde
+  simulée par 0,02 h.
+- Le panneau de contrôle (durée de la journée, heure) viendra avec une issue suivante (#52).
+
+## Révision (cycle 21, issue #75)
+
+Demande de Mathis : une journée de 180 s passait trop vite pour observer le bac. La durée
+par défaut passe à **1 200 s** (20 min), une seule constante
+(`DEFAULT_DAY_LENGTH_SECONDS`, `sim/daylight.ts`) ; la durée deviendra réglable avec le
+panneau de contrôle (#52). Les touches `J` et `N` permettent d'aller directement au plein
+jour ou à la nuit sans attendre. Captures inchangées : en capture, l'heure reste figée
+(midi par défaut, ou `heure=`), la durée de la journée n'y intervient pas.
