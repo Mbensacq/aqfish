@@ -25,6 +25,7 @@ describe('commandes (#74)', () => {
       ['horloge', 'h'],
       ['plein-jour', 'j'],
       ['nuit', 'n'],
+      ['nourrir', 'g'],
       ['aide', '?'],
     ]);
   });
@@ -90,6 +91,14 @@ describe('commandes (#74)', () => {
       expect(byId.get('tactile-deux-doigts')?.description).toMatch(/zoomer.*déplacer/);
     });
 
+    it('nourrissage (#67) : un clic ou un toucher sur l’eau dépose des granulés, touche G', () => {
+      const byId = new Map(GESTURE_COMMANDS.map((gesture) => [gesture.id, gesture]));
+      expect(byId.get('souris-clic')?.description).toMatch(/granulés/);
+      expect(byId.get('tactile-toucher')?.description).toMatch(/granulés/);
+      expect(keyCommandFor('G')?.id).toBe('nourrir');
+      expect(keyCommand('nourrir').group).toBe('nourriture');
+    });
+
     it('les libellés suivent le réglage des boutons (pas de description en dur)', () => {
       const swapped = orbitGestures(
         { left: 'pan', middle: 'dolly', right: 'rotate' },
@@ -129,6 +138,7 @@ describe('commandes (#74)', () => {
         'Vues',
         'Affichage',
         'Heure',
+        'Nourriture',
         'Souris',
         'Écran tactile',
         'Aide',

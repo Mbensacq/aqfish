@@ -5,13 +5,15 @@ import { RENDER_FILTER_STORAGE_KEY } from '../../core/render-filter/render-filte
 import type { AquariumRenderer } from '../../render/aquarium-view';
 import { MAX_STEPS_PER_FRAME } from '../../sim/constants';
 import { CORYDORA, GUPPY, NEON } from '../../sim/species';
-import { createDefaultWorld } from '../../sim/world';
+import { expiryAge, FOOD_PER_DROP } from '../../sim/food';
+import { advanceToWithFeedings, createDefaultWorld } from '../../sim/world';
 import {
   AQUARIUM_RENDERER_FACTORY,
   AquariumHost,
   CAMERA_ATTRIBUTE,
   CAMERA_TARGET_ATTRIBUTE,
   FILTER_ATTRIBUTE,
+  FOOD_ATTRIBUTE,
   HOUR_ATTRIBUTE,
   HOUR_FROZEN_ATTRIBUTE,
   initialDayClock,
@@ -388,6 +390,64 @@ describe('AquariumHost', () => {
       await create();
       fixture.destroy();
       expect(host().world).toBeNull();
+    });
+  });
+
+  describe('nourriture (#67)', () => {
+    function host(): AquariumHost {
+      return fixture.componentInstance;
+    }
+    const exposedFood = () => fixture.nativeElement.getAttribute(FOOD_ATTRIBUTE);
+
+    it('feed et feedAtCenter déposent des granulés, exposés dans data-aqfish-food', async () => {
+      await create('?seed=3');
+      expect(exposedFood()).toBe('0');
+      host().feed(0.2, 0.1);
+      expect(host().world?.food.length).toBe(FOOD_PER_DROP);
+      expect(exposedFood()).toBe(String(FOOD_PER_DROP));
+      host().feedAtCenter();
+      expect(exposedFood()).toBe(String(2 * FOOD_PER_DROP));
+      expect(host().world?.food.at(-1)?.x).toBeCloseTo(0, 1);
+    });
+
+    it('point hors du bac ou non fini : ignoré', async () => {
+      await create();
+      host().feed(3, 0);
+      host().feed(Number.NaN, 0);
+      expect(host().world?.food).toEqual([]);
+      expect(exposedFood()).toBe('0');
+    });
+
+    it('le nombre exposé suit la disparition des granulés', async () => {
+      await create();
+      setCanvasSize(800, 600);
+      host().feedAtCenter();
+      frames.flush(0);
+      // Granulés amenés juste avant leur disparition (sans simuler une minute image par image).
+      for (const pellet of host().world!.food) {
+        (pellet as { age: number }).age = expiryAge(pellet) - 0.001;
+      }
+      frames.flush(100);
+      expect(host().world?.food).toEqual([]);
+      expect(exposedFood()).toBe('0');
+    });
+
+    it('en capture : feed est sans effet ; nourrir= dépose au temps demandé', async () => {
+      await create('?capture=1&seed=42&time=4&nourrir=1,2:0.1:0.1');
+      const expected = advanceToWithFeedings(createDefaultWorld(42), 4, [
+        { time: 1, x: 0, z: 0 },
+        { time: 2, x: 0.1, z: 0.1 },
+      ]);
+      expect(host().world).toEqual(expected);
+      expect(exposedFood()).toBe(String(2 * FOOD_PER_DROP));
+      host().feed(0, 0);
+      expect(host().world?.food.length).toBe(2 * FOOD_PER_DROP);
+    });
+
+    it('sans effet avant le démarrage', () => {
+      const instance = TestBed.createComponent(AquariumHost).componentInstance;
+      expect(() => instance.feedAtCenter()).not.toThrow();
+      expect(instance.world).toBeNull();
     });
   });
 

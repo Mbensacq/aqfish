@@ -6,6 +6,7 @@ import {
   DAY_KEY,
   fixedHourForKey,
   isClockKey,
+  isFeedKey,
   isPixelArtKey,
   isTypingContext,
   NIGHT_KEY,
@@ -192,6 +193,50 @@ describe('ViewPresetsBar', () => {
       expect(isClockKey('H')).toBe(true);
       for (const key of ['g', 'p', 'Home', '']) {
         expect(isClockKey(key)).toBe(false);
+      }
+    });
+  });
+
+  describe('nourrissage (#67)', () => {
+    let feeds: number;
+    const feedButton = (): HTMLButtonElement =>
+      (fixture.nativeElement as HTMLElement).querySelector(
+        'button[data-action="nourrir"]',
+      ) as HTMLButtonElement;
+
+    beforeEach(() => {
+      feeds = 0;
+      fixture.componentInstance.fed.subscribe(() => feeds++);
+    });
+
+    it('bouton « Nourrir » nommé pour les lecteurs d’écran, touche G affichée', () => {
+      const button = feedButton();
+      expect(button.textContent?.replace(/\s+/g, ' ').trim()).toBe('G Nourrir');
+      expect(button.getAttribute('aria-label')).toBe(
+        'Nourrir : granulés au centre du bac (touche G)',
+      );
+      expect(button.getAttribute('aria-keyshortcuts')).toBe('G');
+      button.click();
+      expect(feeds).toBe(1);
+    });
+
+    it('G et g nourrissent (touche consommée) ; ignorée avec Ctrl ou dans un champ', () => {
+      expect(press('g').defaultPrevented).toBe(true);
+      expect(press('G').defaultPrevented).toBe(true);
+      press('g', { ctrlKey: true });
+      const field = document.createElement('input');
+      field.setAttribute('data-test-field', '');
+      document.body.appendChild(field);
+      press('g', {}, field);
+      expect(feeds).toBe(2);
+      expect(emitted).toEqual([]);
+    });
+
+    it('isFeedKey : g et G seulement', () => {
+      expect(isFeedKey('g')).toBe(true);
+      expect(isFeedKey('G')).toBe(true);
+      for (const key of ['h', 'n', 'f', '']) {
+        expect(isFeedKey(key)).toBe(false);
       }
     });
   });

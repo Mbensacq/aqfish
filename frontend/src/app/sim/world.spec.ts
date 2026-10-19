@@ -28,6 +28,8 @@ describe('createWorld', () => {
       entities: [],
       obstacles: [],
       decor: [],
+      food: [],
+      nextFoodId: 0,
     });
   });
 

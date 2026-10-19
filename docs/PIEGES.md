@@ -43,6 +43,12 @@ haut de sa section.
 
 ## Tests
 
+- **Clic au centre de l'écran en vue trois-quarts ≠ clic sur l'eau** (cycle 24, #67) : le
+  centre de l'écran vise la cible de la caméra, au milieu du bac ; le rayon coupe le plan de
+  la surface **devant** le bac (hors des vitres), donc rien n'est déposé. Pour un e2e de
+  clic sur la surface, projeter le point voulu à l'écran depuis `data-aqfish-camera` et
+  `data-aqfish-target` (`e2e/nourrissage.spec.ts`, `projectToScreen`). En vue de dessus, le
+  centre convient. (2026-10-19)
 - **Mesurer un mouvement du décor sur capture** (cycle 16, #49) : les poissons bougent aussi,
   donc deux captures à 1 s d'écart diffèrent toujours. Ne comparer que les pixels de
   végétation (couleurs que les poissons n'ont pas) et vérifier le test en annulant le

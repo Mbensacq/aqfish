@@ -99,7 +99,15 @@ describe('CommandsHelp (#74)', () => {
   it('textes en français et titres de groupes', async () => {
     await create();
     const titles = Array.from(root().querySelectorAll('h3')).map((h) => h.textContent?.trim());
-    expect(titles).toEqual(['Vues', 'Affichage', 'Heure', 'Souris', 'Écran tactile', 'Aide']);
+    expect(titles).toEqual([
+      'Vues',
+      'Affichage',
+      'Heure',
+      'Nourriture',
+      'Souris',
+      'Écran tactile',
+      'Aide',
+    ]);
     expect(root().querySelector('h2')?.textContent?.trim()).toBe('Commandes');
   });
 

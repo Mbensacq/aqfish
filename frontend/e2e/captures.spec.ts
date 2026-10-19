@@ -78,6 +78,10 @@ test.describe('Captures', () => {
     { name: 'three-quarter-crepuscule-19h', query: 'heure=19' },
     { name: 'three-quarter-minuit', query: 'heure=0' },
     { name: 'three-quarter-sans-filtre-minuit', query: 'heure=0&filtre=aucun' },
+    // Nourrissage (#67) : à 0 s au centre (posés sur le sable) et sur un rocher (posés
+    // dessus), à 24 s (en train de couler).
+    { name: 'three-quarter-nourriture', query: 'nourrir=0,0:0.3:0.03,24:-0.15:0.1' },
+    { name: 'three-quarter-nourriture-minuit', query: 'nourrir=0,0:0.3:0.03,24:-0.15:0.1&heure=0' },
   ] as const;
   for (const { name, query } of DAY_CAPTURES) {
     test(`angle ${name}`, async ({ page }) => {

@@ -10,7 +10,8 @@ import type { CameraPreset } from '../capture/capture-params';
  */
 
 /** Groupe de l'aide-mémoire, dans l'ordre d'affichage. */
-export type CommandGroupId = 'vues' | 'affichage' | 'heure' | 'souris' | 'tactile' | 'aide';
+export type CommandGroupId =
+  'vues' | 'affichage' | 'heure' | 'nourriture' | 'souris' | 'tactile' | 'aide';
 
 export interface CommandGroup {
   readonly id: CommandGroupId;
@@ -22,6 +23,7 @@ export const COMMAND_GROUPS: readonly CommandGroup[] = [
   { id: 'vues', title: 'Vues' },
   { id: 'affichage', title: 'Affichage' },
   { id: 'heure', title: 'Heure' },
+  { id: 'nourriture', title: 'Nourriture' },
   { id: 'souris', title: 'Souris' },
   { id: 'tactile', title: 'Écran tactile' },
   { id: 'aide', title: 'Aide' },
@@ -37,6 +39,7 @@ export type KeyCommandId =
   | 'horloge'
   | 'plein-jour'
   | 'nuit'
+  | 'nourrir'
   | 'aide';
 
 /** Raccourci clavier. */
@@ -89,6 +92,13 @@ export const KEY_COMMANDS: readonly KeyCommand[] = [
     group: 'heure',
   },
   { id: 'nuit', key: 'n', display: 'N', description: 'Figer la nuit (minuit)', group: 'heure' },
+  {
+    id: 'nourrir',
+    key: 'g',
+    display: 'G',
+    description: 'Nourrir : granulés au centre du bac',
+    group: 'nourriture',
+  },
   {
     id: 'aide',
     key: '?',
@@ -161,6 +171,9 @@ const TOUCH_DESCRIPTIONS: Readonly<
   'dolly-rotate': 'Pincer pour zoomer, glisser pour tourner',
 };
 
+/** Clic (ou toucher) sans glisser sur l'eau : nourrissage (issue #67, `AquariumView`). */
+const FEED_DESCRIPTION = 'Déposer des granulés à cet endroit';
+
 /** Geste de la souris ou de l'écran tactile, tel qu'affiché dans l'aide-mémoire. */
 export interface GestureCommand {
   readonly id: string;
@@ -214,8 +227,20 @@ export function orbitGestures(
       group: 'souris',
     });
   }
+  mouse.push({
+    id: 'souris-clic',
+    gesture: 'Clic sur l’eau',
+    description: FEED_DESCRIPTION,
+    group: 'souris',
+  });
   return [
     ...mouse,
+    {
+      id: 'tactile-toucher',
+      gesture: 'Toucher l’eau',
+      description: FEED_DESCRIPTION,
+      group: 'tactile',
+    },
     {
       id: 'tactile-un-doigt',
       gesture: 'Un doigt',

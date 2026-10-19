@@ -1,6 +1,7 @@
 import {
   CAMERA_PRESETS,
   DEFAULT_CAPTURE_PARAMS,
+  MAX_CAPTURE_FEEDINGS,
   MAX_CAPTURE_TIME_SECONDS,
   parseCaptureParams,
 } from './capture-params';
@@ -18,6 +19,7 @@ describe('parseCaptureParams', () => {
       time: 12.5,
       filter: null,
       hour: null,
+      feedings: [],
     });
   });
 
@@ -85,5 +87,27 @@ describe('parseCaptureParams', () => {
 
   it('sans heure= : null', () => {
     expect(parseCaptureParams('?capture=1&camera=top').hour).toBeNull();
+  });
+});
+
+describe('nourrir= (issue #67)', () => {
+  it('lit des dépôts « t » (centre du bac) et « t:x:z »', () => {
+    expect(parseCaptureParams('?capture=1&nourrir=10,25.5:0.2:-0.05').feedings).toEqual([
+      { time: 10, x: 0, z: 0 },
+      { time: 25.5, x: 0.2, z: -0.05 },
+    ]);
+  });
+
+  it('ignore les entrées invalides, garde les autres', () => {
+    expect(
+      parseCaptureParams('?nourrir=,abc,-1,5:1,5:1:2:3,1e3,7:0.1:x,99999,3:-0.1:0.1').feedings,
+    ).toEqual([{ time: 3, x: -0.1, z: 0.1 }]);
+  });
+
+  it('absent ou vide : aucun dépôt ; au plus MAX_CAPTURE_FEEDINGS', () => {
+    expect(parseCaptureParams('?capture=1').feedings).toEqual([]);
+    expect(parseCaptureParams('?nourrir=').feedings).toEqual([]);
+    const many = Array.from({ length: MAX_CAPTURE_FEEDINGS + 5 }, (_, i) => String(i)).join(',');
+    expect(parseCaptureParams(`?nourrir=${many}`).feedings).toHaveLength(MAX_CAPTURE_FEEDINGS);
   });
 });

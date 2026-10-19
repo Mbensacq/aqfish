@@ -45,8 +45,9 @@ import {
 import { fixedStepInto, type FixedStepState } from '../../sim/fixed-step';
 import {
   advanceInPlace,
-  advanceTo,
+  advanceToWithFeedings,
   createDefaultWorld,
+  feedInPlace,
   type MutableWorld,
   type World,
 } from '../../sim/world';
@@ -67,6 +68,9 @@ export const TICK_ATTRIBUTE = 'data-aqfish-tick';
 export const SEED_ATTRIBUTE = 'data-aqfish-seed';
 /** Attribut du composant hôte exposant le filtre de rendu courant (`pixel` ou `aucun`). */
 export const FILTER_ATTRIBUTE = 'data-aqfish-filter';
+
+/** Attribut du composant hôte exposant le nombre de granulés de nourriture du monde (#67). */
+export const FOOD_ATTRIBUTE = 'data-aqfish-food';
 
 /** Attribut du composant hôte exposant l'heure de la journée affichée (2 décimales). */
 export const HOUR_ATTRIBUTE = 'data-aqfish-hour';
@@ -125,7 +129,7 @@ function browserStorage(win: Window): FilterStorage | null {
   template: `<canvas
     #canvas
     class="aquarium-host__canvas"
-    aria-label="Aquarium en 3D : faites glisser pour tourner, molette pour zoomer, clic droit pour vous déplacer"
+    aria-label="Aquarium en 3D : faites glisser pour tourner, molette pour zoomer, clic droit pour vous déplacer, cliquez sur l’eau pour nourrir les poissons"
   ></canvas>`,
   styleUrl: './aquarium-host.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -145,6 +149,7 @@ export class AquariumHost {
   private readonly clock: FixedStepState = { steps: 0, accumulator: 0, alpha: 0 };
   private lastTimestamp: number | null = null;
   private exposedTick: number | null = null;
+  private exposedFood: number | null = null;
   /** Horloge de la journée simulée (ADR 0018) : l'heure suit `world.time`. */
   private dayClock: DayClock = DEFAULT_DAY_CLOCK;
   /** Heure de l'éclairage appliqué en dernier (`null` : à appliquer à la prochaine image). */
@@ -262,6 +267,27 @@ export class AquariumHost {
     this.scheduleFrame();
   }
 
+  /**
+   * Dépose des granulés autour de (x, z), dans le repère du bac (clic sur l'eau, issue #67).
+   * Sans effet en mode capture (image figée : les dépôts passent par `nourrir=`), avant le
+   * démarrage, ou pour un point hors du bac.
+   */
+  feed(x: number, z: number): void {
+    const world = this.currentWorld;
+    if (!world || this.capture || !Number.isFinite(x) || !Number.isFinite(z)) {
+      return;
+    }
+    if (feedInPlace(world, x, z) > 0) {
+      this.exposeFood();
+      this.scheduleFrame();
+    }
+  }
+
+  /** Dépose des granulés au centre du bac (bouton « Nourrir », touche `G`). */
+  feedAtCenter(): void {
+    this.feed(0, 0);
+  }
+
   /** Bascule entre pixel art et rendu sans filtre. */
   toggleFilter(): void {
     this.setFilter(toggleRenderFilter(this.filter()));
@@ -281,12 +307,16 @@ export class AquariumHost {
     this.capture = params.capture;
     // En mode capture, le temps demandé est atteint ici, avant toute image (contrat de capture).
     // Le monde créé ici appartient à l'hôte seul : il pourra être avancé en place.
+    // Dépôts de nourriture de `nourrir=` (#67) : au temps simulé de chacun, en capture.
     const world: MutableWorld = createDefaultWorld(params.seed);
-    this.currentWorld = params.capture ? advanceTo(world, params.time) : world;
+    this.currentWorld = params.capture
+      ? advanceToWithFeedings(world, params.time, params.feedings)
+      : world;
     this.dayClock = initialDayClock(params.hour, params.capture);
     this.host.nativeElement.setAttribute(HOUR_FROZEN_ATTRIBUTE, String(this.dayClock.frozen));
     this.host.nativeElement.setAttribute(SEED_ATTRIBUTE, String(this.currentWorld.seed));
     this.exposeTick();
+    this.exposeFood();
 
     const filter = initialRenderFilter(
       params.filter,
@@ -310,6 +340,7 @@ export class AquariumHost {
     this.activePreset.set(params.camera);
     this.cleanups.push(view.onCameraChange(() => this.exposeCamera()));
     this.cleanups.push(view.onUserInteraction(() => this.activePreset.set(null)));
+    this.cleanups.push(view.onSurfaceClick((x, z) => this.feed(x, z)));
     const onResize = () => this.scheduleFrame();
     win.addEventListener('resize', onResize);
     this.cleanups.push(() => win.removeEventListener('resize', onResize));
@@ -344,6 +375,7 @@ export class AquariumHost {
     if (this.currentWorld) {
       // En capture, l'image montre exactement l'état au temps demandé (alpha = 1).
       view.updateFish(this.currentWorld.entities, this.capture ? 1 : this.clock.alpha);
+      view.updateFood(this.currentWorld.food);
       const time = this.renderTime();
       view.updateDecor(time);
       this.updateLight(view, time);
@@ -412,6 +444,7 @@ export class AquariumHost {
     if (clock.steps > 0 && this.currentWorld) {
       advanceInPlace(this.currentWorld, clock.steps);
       this.exposeTick();
+      this.exposeFood();
     }
     return realDt;
   }
@@ -428,6 +461,16 @@ export class AquariumHost {
     }
     this.exposedTick = world.tick;
     this.host.nativeElement.setAttribute(TICK_ATTRIBUTE, String(world.tick));
+  }
+
+  /** Expose le nombre de granulés (`data-aqfish-food`), seulement quand il change. */
+  private exposeFood(): void {
+    const world = this.currentWorld;
+    if (!world || world.food.length === this.exposedFood) {
+      return;
+    }
+    this.exposedFood = world.food.length;
+    this.host.nativeElement.setAttribute(FOOD_ATTRIBUTE, String(world.food.length));
   }
 
   private exposeFilter(): void {

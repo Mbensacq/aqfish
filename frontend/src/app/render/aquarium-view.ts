@@ -2,6 +2,7 @@ import {
   MOUSE,
   PerspectiveCamera,
   TOUCH,
+  Vector3,
   type Camera,
   type Scene,
   WebGLRenderer,
@@ -29,9 +30,12 @@ import { SPECIES, speciesVariants, type SpeciesId } from '../sim/species';
 import type { Fish } from '../sim/swimmer';
 import type { DayLight } from '../sim/daylight';
 import type { DecorItem } from '../sim/decor';
+import type { FoodPellet } from '../sim/food';
 import { BubbleLayer } from './bubble-layer';
 import { DecorLayer } from './decor-layer';
 import { FishLayer, MAX_FISH_PER_SPECIES } from './fish-layer';
+import { FoodLayer } from './food-layer';
+import { isClick, toNormalizedDevice, waterSurfacePoint } from './food-pick';
 import {
   decorTintInto,
   flatBrightness,
@@ -118,8 +122,42 @@ export class AquariumView {
   private readonly penalties: TonePenalties = { night: 0, twilight: 0 };
   /** Bulles du diffuseur (ADR 0017), selon la graine fixée par `setDecor`. */
   private readonly bubbleLayer = new BubbleLayer();
+  /** Granulés de nourriture (issue #67), posés par `updateFood`. */
+  private readonly foodLayer = new FoodLayer();
   /** Caustiques sur le sable et reflet de surface (ADR 0017). */
   private readonly waterLight: WaterLightLayer;
+  /** Abonnés au clic sur la surface de l'eau (`onSurfaceClick`). */
+  private readonly surfaceClickListeners = new Set<(x: number, z: number) => void>();
+  /** Appui du pointeur principal en attente de relâchement (`null` : aucun clic possible). */
+  private pendingClick: { readonly id: number; readonly x: number; readonly y: number } | null =
+    null;
+  private readonly onPointerDown = (event: PointerEvent) => {
+    this.pendingClick =
+      event.button === 0 && event.isPrimary
+        ? { id: event.pointerId, x: event.clientX, y: event.clientY }
+        : null;
+  };
+  private readonly onPointerUp = (event: PointerEvent) => {
+    const down = this.pendingClick;
+    this.pendingClick = null;
+    if (
+      !down ||
+      down.id !== event.pointerId ||
+      !this.controls.enabled ||
+      !isClick(down, { x: event.clientX, y: event.clientY })
+    ) {
+      return;
+    }
+    const point = this.pickWaterSurface(event.clientX, event.clientY);
+    if (point) {
+      for (const listener of this.surfaceClickListeners) {
+        listener(point.x, point.z);
+      }
+    }
+  };
+  private readonly onPointerCancel = () => {
+    this.pendingClick = null;
+  };
   private readonly pixelRatio: number;
   private width = 0;
   private height = 0;
@@ -155,6 +193,7 @@ export class AquariumView {
     }
     this.world.scene.add(this.decorLayer.object);
     this.world.scene.add(this.bubbleLayer.object);
+    this.world.scene.add(this.foodLayer.object);
     this.waterLight = new WaterLightLayer(this.world.dimensions);
     this.world.scene.add(this.waterLight.object);
 
@@ -184,6 +223,10 @@ export class AquariumView {
       TWO: ORBIT_TOUCH_ACTIONS[ORBIT_TOUCHES.two],
     };
     this.controls.addEventListener('start', this.stopFollowingPreset);
+    // Nourrissage au clic (issue #67) : écouté à côté des contrôles, qui gardent le glisser.
+    options.canvas.addEventListener('pointerdown', this.onPointerDown);
+    options.canvas.addEventListener('pointerup', this.onPointerUp);
+    options.canvas.addEventListener('pointercancel', this.onPointerCancel);
 
     this.preset = options.preset;
     this.applyPreset(options.preset);
@@ -302,6 +345,50 @@ export class AquariumView {
     }
   }
 
+  /** Pose les granulés de nourriture du monde (`World.food`). À appeler avant `renderFrame()`. */
+  updateFood(food: readonly FoodPellet[]): void {
+    if (!this.disposed) {
+      this.foodLayer.update(food);
+    }
+  }
+
+  /** Nombre de granulés posés par le dernier `updateFood` (tests). */
+  get foodCount(): number {
+    return this.foodLayer.count;
+  }
+
+  /**
+   * Point de la surface de l'eau sous le point de l'écran (`clientX`, `clientY`, pixels CSS),
+   * en (x, z) dans le repère du bac, par lancer de rayon depuis la caméra ; `null` hors du
+   * canvas ou hors du bac.
+   */
+  pickWaterSurface(clientX: number, clientY: number): { x: number; z: number } | null {
+    if (this.disposed) {
+      return null;
+    }
+    const ndc = toNormalizedDevice(clientX, clientY, this.canvas.getBoundingClientRect());
+    if (!ndc) {
+      return null;
+    }
+    const origin = this.camera.position;
+    const direction = new Vector3(ndc.x, ndc.y, 0.5).unproject(this.camera).sub(origin);
+    return waterSurfacePoint(
+      [origin.x, origin.y, origin.z],
+      [direction.x, direction.y, direction.z],
+      this.world.dimensions,
+    );
+  }
+
+  /**
+   * Abonnement au clic (sans glisser, bouton principal) sur la surface de l'eau, avec le
+   * point visé (x, z) dans le repère du bac. Jamais appelé si les contrôles sont inactifs
+   * (mode capture) ni pour un clic hors du bac. Renvoie le désabonnement.
+   */
+  onSurfaceClick(listener: (x: number, z: number) => void): () => void {
+    this.surfaceClickListeners.add(listener);
+    return () => this.surfaceClickListeners.delete(listener);
+  }
+
   /**
    * Applique la lumière du jour (`sim/daylight.ts`, ADR 0018) : lumières, teinte de l'eau,
    * caustiques et reflet, luminosité des couleurs plates (poissons, bulles : ADR 0019),
@@ -317,6 +404,7 @@ export class AquariumView {
         layer.setBrightness(brightness);
       }
       this.bubbleLayer.setBrightness(brightness);
+      this.foodLayer.setBrightness(brightness);
       this.decorLayer.setTint(decorTintInto(light.intensity, this.decorTint));
       const penalties = tonePenaltiesInto(light.intensity, this.penalties);
       this.pixelPass.setTonePenalties(penalties.night, penalties.twilight);
@@ -408,12 +496,14 @@ export class AquariumView {
       this.decorLayer.setResolution(this.width * this.pixelRatio, this.height * this.pixelRatio);
       // Sans filtre, une bulle garde la taille d'un pixel de scène du mode pixel art.
       this.bubbleLayer.setPointScale(PIXEL_SIZE * this.pixelRatio);
+      this.foodLayer.setPointScale(PIXEL_SIZE * this.pixelRatio);
       this.renderer.setRenderTarget(null);
       this.renderer.render(this.world.scene, this.camera);
       return true;
     }
     this.decorLayer.setResolution(this.targetSize.width, this.targetSize.height);
     this.bubbleLayer.setPointScale(1);
+    this.foodLayer.setPointScale(1);
     this.renderer.setRenderTarget(this.pixelPass.target);
     this.renderer.render(this.world.scene, this.camera);
     this.renderer.setRenderTarget(null);
@@ -455,10 +545,15 @@ export class AquariumView {
     }
     this.disposed = true;
     this.controls.removeEventListener('start', this.stopFollowingPreset);
+    this.canvas.removeEventListener('pointerdown', this.onPointerDown);
+    this.canvas.removeEventListener('pointerup', this.onPointerUp);
+    this.canvas.removeEventListener('pointercancel', this.onPointerCancel);
+    this.surfaceClickListeners.clear();
     this.controls.dispose();
     this.fishLayers.forEach((layer) => layer.dispose());
     this.decorLayer.dispose();
     this.bubbleLayer.dispose();
+    this.foodLayer.dispose();
     this.waterLight.dispose();
     this.world.dispose();
     this.pixelPass.dispose();

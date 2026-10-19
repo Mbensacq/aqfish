@@ -59,7 +59,8 @@ simulation testable et les captures reproductibles.
   `fixedStepInto` (résultat réécrit dans un objet réutilisé) puis `advanceInPlace`, avec un
   rappel `requestAnimationFrame` créé une seule fois. Validation du pas : `assertTimeStep`
   (`sim/time-step.ts`), unique.
-- **État sérialisable** : l'état du monde (`seed`, `tick`, `time`, `entities`, `obstacles`) est un objet
+- **État sérialisable** : l'état du monde (`seed`, `tick`, `time`, `entities`, `obstacles`, `decor`,
+  `food`, `nextFoodId`) est un objet
   de données simple (JSON), sans classe Three.js ni référence circulaire. Il sert à la
   sauvegarde, aux tests et aux captures.
 - **Entités** : les poissons (`sim/swimmer.ts`) gardent l'état de leur sous-générateur sous
@@ -79,6 +80,11 @@ simulation testable et les captures reproductibles.
   déviée pour contourner (`deflect`, continue en cap), et son intensité dose le virage aux
   dépens de l'errance et du banc. Filets de sécurité : projection hors d'un obstacle, puis
   dans les bornes `hard`.
+- **Nourriture** (ADR 0022, `sim/food.ts`) : granulés dans `World.food`, déposés par
+  `feed` / `feedInPlace` (5 par dépôt, 60 au plus, hasard tiré une fois au dépôt sur un flux
+  séparé), puis vieillis à chaque pas après les poissons (flottaison, chute à vitesse
+  constante en forme fermée de l'âge, repos sur le sable ou le dessus d'un rocher, retrait).
+  `advanceToWithFeedings` rejoue des dépôts datés (paramètre de capture `nourrir=`).
 - **Unités et repère** : mètres, secondes, degrés Celsius. Axe Y vers le haut ; origine au
   centre du fond du bac.
 - **Données réelles** : toute valeur présentée comme réelle (température d'une espèce,
@@ -175,6 +181,7 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
 | `sim/plant-sway.ts` | Ondulation des plantes (fonction pure du temps simulé, de la hauteur relative et de la phase, bornée par `amplitude · h²`, ADR 0016) |
 | `sim/bubbles.ts` | Bulles du diffuseur : fonction fermée de la graine, du numéro de bulle et du temps simulé (émission à cadence fixe, montée, zigzag, fin à la surface), tampon préalloué borné par `MAX_BUBBLES`, flux de hasard séparé (ADR 0017) |
 | `sim/daylight.ts` | Cycle jour/nuit : horloge de journée (`DayClock`, `hourAt` sur le temps simulé, `freezeClock`, `freezeClockAt`, `resumeClock` ; journée de 1 200 s par défaut, `NOON_HOUR`, `MIDNIGHT_HOUR`), courbe de lumière `lightAt(heure)` et sa variante sans allocation `lightAtInto(heure, tampon)` (intensité, teinte, ciel ; continue, périodique sur 24 h, exactement blanche à midi), moment de la journée `dayPhaseAt` (indicateur, #73), sans couleur de la palette (ADR 0018, 0019, 0021) |
+| `sim/food.ts` | Nourriture (ADR 0022) : granulés sérialisables, dépôt borné et dispersé (`dropFoodInPlace`), sol sous un point (`restHeightAt`, `rockTopAt` sur les voxels des rochers), chute et retrait en place (`stepFoodInPlace`) |
 | `sim/undulation.ts` | Ondulation (fonctions pures) : avance de la phase, amplitude selon la vitesse, pose du corps et de la queue (ADR 0009) |
 | `sim/avoidance.ts` | Forces d'évitement des parois et des obstacles, proximité, déviation pour contourner (ADR 0012) |
 | `render/palette.ts` | Palette unique (32 à 48 couleurs), nommées par usage ; tons de nuit (`NIGHT_TONES`) et du crépuscule (`TWILIGHT_TONES`), palette étendue de la passe (ADR 0021) |
@@ -188,11 +195,13 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
 | `render/plant-model.ts` | Maillage voxel d'une plante (couleurs de végétation), hauteur et phase par sommet, `applyPlantSway` (positions réécrites en place, ADR 0016) |
 | `render/decor-layer.ts` | Couche du décor : maillages et coques de contour d'un pixel (décalage en pixels de la cible), placés selon `World.decor` ; `update(time)` fait onduler les plantes (ADR 0015, 0016) |
 | `render/bubble-layer.ts` | Bulles en nuages de points de 1 et 2 pixels de la cible (taille fixe à l'écran) et diffuseur ; positions réécrites en place (ADR 0017) |
+| `render/food-layer.ts` | Granulés en nuage de points de 2 pixels de scène, `tritonOrange`, assombris la nuit ; positions réécrites en place, rien de dessiné sans granulé (#67) |
+| `render/food-pick.ts` | Clic ou glisser (`isClick`, tolérance 4 px), coordonnées normalisées, point visé sur la surface de l'eau par lancer de rayon (`waterSurfacePoint`), fonctions pures (#67) |
 | `render/water-light.ts` | Caustiques sur le sable et reflet de surface (visible des deux côtés) : motifs par cases fixes du bac, en GLSL avec référence TypeScript (`causticLit`, `surfaceGlint`), animés par le temps simulé (ADR 0017) ; `setDaylight` : caustiques par paliers de couleurs pleines puis éteintes la nuit, reflet atténué (ADR 0018) |
 | `render/night-shade.ts` | `flatBrightness(intensité)` : luminosité des couleurs plates (poissons, bulles, diffuseur), 1 en plein jour, `NIGHT_FLAT_BRIGHTNESS` la nuit (ADR 0019) ; `decorTintInto` (teinte du décor : blanc à midi, clair de lune la nuit) et `tonePenaltiesInto` (pénalités des tons de nuit et du crépuscule de la passe) (ADR 0021) |
-| `render/aquarium-view.ts` | Vue sans Angular : renderer (fabrique remplaçable), caméra, `OrbitControls`, transitions de caméra, `updateFish`, `setDecor`, `updateDecor` (temps simulé interpolé), `updateLight` (lumière du jour, luminosité des couleurs plates des poissons et des bulles) |
-| `ui/aquarium-host/` | Composant hôte : boucle rAF, avance de la simulation, horloge de journée (`initialDayClock`, `toggleClock`, `freezeClockAt`), redimensionnement, contrat de capture, `DestroyRef` |
-| `ui/view-presets-bar/` | Barre flottante des 5 préréglages de vue et raccourcis clavier `1` à `5` (émet le préréglage choisi), bascule « Pixel art » et touche `P` (émet la demande de bascule), touche `H` (fige ou remet en marche l'heure), touches `J` (plein jour : fige à midi) et `N` (nuit : fige à minuit), issue #75 ; touches lues dans `core/commands` |
+| `render/aquarium-view.ts` | Vue sans Angular : renderer (fabrique remplaçable), caméra, `OrbitControls`, transitions de caméra, `updateFish`, `setDecor`, `updateDecor` (temps simulé interpolé), `updateLight` (lumière du jour, luminosité des couleurs plates des poissons, des bulles et des granulés), `updateFood`, `pickWaterSurface` et `onSurfaceClick` (clic sans glisser sur l'eau, #67) |
+| `ui/aquarium-host/` | Composant hôte : boucle rAF, avance de la simulation, horloge de journée (`initialDayClock`, `toggleClock`, `freezeClockAt`), nourrissage (`feed`, `feedAtCenter`, sans effet en capture), redimensionnement, contrat de capture, `DestroyRef` |
+| `ui/view-presets-bar/` | Barre flottante des 5 préréglages de vue et raccourcis clavier `1` à `5` (émet le préréglage choisi), bascule « Pixel art » et touche `P` (émet la demande de bascule), touche `H` (fige ou remet en marche l'heure), touches `J` (plein jour : fige à midi) et `N` (nuit : fige à minuit), issue #75 ; bouton « Nourrir » et touche `G` (granulés au centre du bac, #67) ; touches lues dans `core/commands` |
 | `ui/day-indicator/` | Indicateur du moment de la journée (#73) : icône pixel art en SVG (soleil, soleil sur l'horizon, lune), nom accessible, en haut à gauche ; suit `AquariumHost.dayPhase` (`dayPhaseAt`, `sim/daylight.ts`) |
 | `ui/commands-help/` | Aide-mémoire des commandes (#74, ADR 0020) : panneau généré par `helpSections()`, repliable par `?`, état mémorisé (`aqfish.aide-commandes`, repli en mémoire) ; contient le test d'exhaustivité des raccourcis |
 
@@ -208,13 +217,14 @@ respecter :
 
 | Élément | Règle |
 |---|---|
-| Paramètres d'URL | `capture`, `seed`, `camera`, `time`, et `filtre` et `heure` facultatifs, lus par `core/capture/capture-params.ts` |
+| Paramètres d'URL | `capture`, `seed`, `camera`, `time`, et `filtre`, `heure` et `nourrir` facultatifs, lus par `core/capture/capture-params.ts` |
+| `nourrir=` | En capture seulement (#67, ADR 0022) : dépôts de nourriture séparés par des virgules, `t` (centre du bac) ou `t:x:z` (temps simulé en s, position en m) ; rejoués au temps simulé de chacun avant le premier rendu (`advanceToWithFeedings`). Entrée invalide ignorée, 20 au plus. Absent : aucun granulé (séries existantes inchangées, à l'octet près) |
 | `filtre=pixel\|aucun` | Force le filtre de rendu (ADR 0010), y compris hors capture où il prime sur le choix mémorisé. Absent en capture : pixel art, quel que soit le choix mémorisé (séries existantes inchangées) |
 | `heure=` | Réel dans [0, 24) (`0` : minuit, `18.5` : 18 h 30) : fige l'heure de la journée simulée (ADR 0018), en capture comme hors capture ; valeur invalide ignorée. Absent en capture : midi figé (séries existantes inchangées, à l'octet près) ; absent hors capture : départ à midi, journée de 1 200 s (20 min) simulées |
 | `capture=1` | Simulation avancée de façon déterministe jusqu'à `time` (pas fixe, sans temps réel), puis figée ; interface masquée ; caméra sur le préréglage `camera` ; `devicePixelRatio` forcé à 1 |
 | Signal « prêt » | Appeler `markCaptureReady()` (`core/capture/capture-ready.ts`) une fois la première image **complète** rendue ; `resetCaptureReady()` si la scène est rechargée. Implémentation : `AquariumHost` lève le signal à l'image qui suit le premier rendu WebGL de taille non nulle, et le retire à sa destruction |
 | Image figée | En mode capture, une seule image est rendue (puis une à chaque redimensionnement) et les contrôles à la souris sont désactivés |
-| Attributs de test | `app-aquarium-host` expose `data-aqfish-camera`, `data-aqfish-target`, `data-aqfish-tick`, `data-aqfish-seed`, `data-aqfish-filter`, `data-aqfish-hour` (heure affichée, 2 décimales) et `data-aqfish-hour-frozen` (`true` si l'heure est figée) |
+| Attributs de test | `app-aquarium-host` expose `data-aqfish-camera`, `data-aqfish-target`, `data-aqfish-tick`, `data-aqfish-seed`, `data-aqfish-filter`, `data-aqfish-hour` (heure affichée, 2 décimales), `data-aqfish-hour-frozen` (`true` si l'heure est figée) et `data-aqfish-food` (nombre de granulés, #67) |
 | Hors capture | Le signal « prêt » est aussi émis après la première image complète (le test de démarrage l'attend) |
 | Erreurs | Aucune erreur de page ne doit survenir (le harnais et le test de démarrage échouent sinon) |
 | Tracé de trajectoires | En plus des angles, `trajectoires-top.png` : trajectoires vues de dessus sur `CAPTURE_TRACE_TIME` s simulées (60 par défaut, même graine), calculées avec la simulation pure (`sim/trajectory.ts`) et dessinées en SVG hors de l'application (issue #43). Preuve d'un comportement de nage qu'une image figée ne montre pas |
