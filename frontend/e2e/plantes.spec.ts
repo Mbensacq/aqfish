@@ -113,4 +113,31 @@ test.describe('Plantes qui ondulent', () => {
       expect(step.changed * 5).toBeLessThan(second.changed);
     }
   });
+  test('petite fenêtre, graines extrêmes et mode interactif : plantes visibles, sans erreur', async ({
+    page,
+  }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
+    await page.setViewportSize({ width: 390, height: 844 });
+    for (const seed of ['0', '1', '4294967295']) {
+      await page.goto(`/?capture=1&seed=${seed}&camera=front&time=30`);
+      await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+      const shot = (await page.screenshot({ animations: 'disabled' })).toString('base64');
+      const diff = await vegetationDiff(page, shot, shot);
+      expect(diff.vegetation, `graine ${seed}`).toBeGreaterThan(50);
+    }
+    // Hors capture : le monde tourne en temps réel, les plantes restent affichées.
+    await page.goto('/?seed=42');
+    await expect(page.locator('canvas')).toBeVisible();
+    await page.evaluate(
+      () =>
+        new Promise<void>((done) => {
+          let frames = 0;
+          const tick = (): void => (++frames >= 30 ? done() : void requestAnimationFrame(tick));
+          requestAnimationFrame(tick);
+        }),
+    );
+    expect(errors).toEqual([]);
+  });
 });
