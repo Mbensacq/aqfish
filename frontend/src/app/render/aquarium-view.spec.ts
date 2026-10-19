@@ -109,12 +109,12 @@ describe('AquariumView (pipeline pixel art)', () => {
   it('affiche le décor du monde ; ignore setDecor après destruction', () => {
     const world = createDefaultWorld(42);
     expect(view.decorCount).toBe(0);
-    view.setDecor(world.decor);
+    view.setDecor(world.decor, world.seed);
     expect(view.decorCount).toBe(world.decor.length);
     expect(world.decor.length).toBeGreaterThan(0);
     view.dispose();
     expect(view.decorCount).toBe(0); // libéré avec la vue
-    view.setDecor(world.decor);
+    view.setDecor(world.decor, world.seed);
     expect(view.decorCount).toBe(0);
   });
 });

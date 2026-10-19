@@ -126,6 +126,11 @@ export class AquariumHost {
     return this.currentWorld;
   }
 
+  /** Nombre de bulles affichées à la dernière image (tests de bout en bout). */
+  get bubbleCount(): number {
+    return this.view?.bubbleCount ?? 0;
+  }
+
   /** Facteur d'interpolation du rendu entre les deux derniers pas, dans [0, 1). */
   get interpolationAlpha(): number {
     return this.clock.alpha;
@@ -209,7 +214,7 @@ export class AquariumHost {
       filter,
     });
     this.view = view;
-    view.setDecor(this.currentWorld.decor);
+    view.setDecor(this.currentWorld.decor, this.currentWorld.seed);
     this.exposeFilter();
 
     this.activePreset.set(params.camera);

@@ -26,10 +26,12 @@ import {
 import { SPECIES, speciesVariants, type SpeciesId } from '../sim/species';
 import type { Fish } from '../sim/swimmer';
 import type { DecorItem } from '../sim/decor';
+import { BubbleLayer } from './bubble-layer';
 import { DecorLayer } from './decor-layer';
 import { FishLayer, MAX_FISH_PER_SPECIES } from './fish-layer';
 import { PalettePass } from './palette-pass';
-import type { Size } from './pixel-art';
+import { PIXEL_SIZE, type Size } from './pixel-art';
+import { WaterLightLayer } from './water-light';
 
 /**
  * Sous-ensemble de `WebGLRenderer` utilisé par la vue. Permet de remplacer le renderer
@@ -84,6 +86,10 @@ export class AquariumView {
   private readonly fishLayers: readonly FishLayer[];
   /** Décor du monde (rochers), fixé par `setDecor`. */
   private readonly decorLayer = new DecorLayer();
+  /** Bulles du diffuseur (ADR 0017), selon la graine fixée par `setDecor`. */
+  private readonly bubbleLayer = new BubbleLayer();
+  /** Caustiques sur le sable et reflet de surface (ADR 0017). */
+  private readonly waterLight: WaterLightLayer;
   private readonly pixelRatio: number;
   private width = 0;
   private height = 0;
@@ -118,6 +124,9 @@ export class AquariumView {
       this.world.scene.add(layer.object);
     }
     this.world.scene.add(this.decorLayer.object);
+    this.world.scene.add(this.bubbleLayer.object);
+    this.waterLight = new WaterLightLayer(this.world.dimensions);
+    this.world.scene.add(this.waterLight.object);
 
     const radius = tankBoundingRadius(this.world.dimensions);
     this.camera = new PerspectiveCamera(CAMERA_FOV_DEG, 1, radius * 0.05, radius * 40);
@@ -242,20 +251,32 @@ export class AquariumView {
   }
 
   /**
-   * Pose le décor animé (plantes qui ondulent) au temps simulé `time`, en secondes : jamais
-   * l'horloge murale (contrat de capture). À appeler avant `renderFrame()`.
+   * Pose le décor animé (plantes qui ondulent, bulles, caustiques, reflet de surface) au
+   * temps simulé `time`, en secondes : jamais l'horloge murale (contrat de capture). À
+   * appeler avant `renderFrame()`.
    */
   updateDecor(time: number): void {
     if (!this.disposed) {
       this.decorLayer.update(time);
+      this.bubbleLayer.update(time);
+      this.waterLight.update(time);
     }
   }
 
-  /** Affiche le décor du monde (`World.decor`) : à appeler une fois par monde. */
-  setDecor(items: readonly DecorItem[]): void {
+  /**
+   * Affiche le décor du monde (`World.decor`) et ses bulles, tirées de la graine du monde
+   * (`World.seed`) : à appeler une fois par monde.
+   */
+  setDecor(items: readonly DecorItem[], seed: number): void {
     if (!this.disposed) {
       this.decorLayer.setDecor(items);
+      this.bubbleLayer.setSeed(seed);
     }
+  }
+
+  /** Nombre de bulles posées par le dernier `updateDecor` (tests). */
+  get bubbleCount(): number {
+    return this.bubbleLayer.count;
   }
 
   /** Nombre d'éléments de décor affichés (tests). */
@@ -310,11 +331,14 @@ export class AquariumView {
     }
     if (this.currentFilter === 'aucun') {
       this.decorLayer.setResolution(this.width * this.pixelRatio, this.height * this.pixelRatio);
+      // Sans filtre, une bulle garde la taille d'un pixel de scène du mode pixel art.
+      this.bubbleLayer.setPointScale(PIXEL_SIZE * this.pixelRatio);
       this.renderer.setRenderTarget(null);
       this.renderer.render(this.world.scene, this.camera);
       return true;
     }
     this.decorLayer.setResolution(this.targetSize.width, this.targetSize.height);
+    this.bubbleLayer.setPointScale(1);
     this.renderer.setRenderTarget(this.pixelPass.target);
     this.renderer.render(this.world.scene, this.camera);
     this.renderer.setRenderTarget(null);
@@ -359,6 +383,8 @@ export class AquariumView {
     this.controls.dispose();
     this.fishLayers.forEach((layer) => layer.dispose());
     this.decorLayer.dispose();
+    this.bubbleLayer.dispose();
+    this.waterLight.dispose();
     this.world.dispose();
     this.pixelPass.dispose();
     this.renderer.dispose();
