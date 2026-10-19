@@ -1,6 +1,7 @@
 import {
   MOUSE,
   PerspectiveCamera,
+  TOUCH,
   type Camera,
   type Scene,
   WebGLRenderer,
@@ -9,6 +10,7 @@ import {
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 import type { CameraPreset } from '../core/capture/capture-params';
+import { ORBIT_MOUSE_BUTTONS, ORBIT_TOUCHES, type OrbitAction } from '../core/commands/commands';
 import { DEFAULT_RENDER_FILTER, type RenderFilter } from '../core/render-filter/render-filter';
 import { createAquariumScene, type AquariumScene } from './aquarium-scene';
 import {
@@ -50,6 +52,23 @@ export interface AquariumRenderer {
 export type AquariumRendererFactory = (canvas: HTMLCanvasElement) => AquariumRenderer;
 
 /** Fabrique par défaut : WebGL sans anticrénelage (docs/DA.md, « Aucun lissage »). */
+/** Bouton de la souris d'`OrbitControls` pour chaque action déclarée (`core/commands`). */
+export const ORBIT_MOUSE_ACTIONS: Readonly<Record<OrbitAction, MOUSE>> = {
+  rotate: MOUSE.ROTATE,
+  dolly: MOUSE.DOLLY,
+  pan: MOUSE.PAN,
+};
+
+/** Geste tactile d'`OrbitControls` pour chaque action déclarée (`core/commands`). */
+export const ORBIT_TOUCH_ACTIONS: Readonly<
+  Record<(typeof ORBIT_TOUCHES)['one'] | (typeof ORBIT_TOUCHES)['two'], TOUCH>
+> = {
+  rotate: TOUCH.ROTATE,
+  pan: TOUCH.PAN,
+  'dolly-pan': TOUCH.DOLLY_PAN,
+  'dolly-rotate': TOUCH.DOLLY_ROTATE,
+};
+
 export const createWebGLRenderer: AquariumRendererFactory = (canvas) =>
   new WebGLRenderer({ canvas, antialias: false, powerPreference: 'low-power' });
 
@@ -143,9 +162,18 @@ export class AquariumView {
     // centre du bac, qui reste ainsi dans le champ.
     this.controls.cursor.set(...tankCenter(this.world.dimensions));
     this.controls.maxTargetRadius = panTargetRadius(this.world.dimensions);
-    // Explicite (ce sont aussi les valeurs par défaut) : clic gauche = rotation,
-    // molette = zoom, clic droit = déplacement.
-    this.controls.mouseButtons = { LEFT: MOUSE.ROTATE, MIDDLE: MOUSE.DOLLY, RIGHT: MOUSE.PAN };
+    // Gestes déclarés dans `core/commands` (source unique de l'aide-mémoire, #74) : clic
+    // gauche = rotation, molette = zoom, clic droit = déplacement ; un doigt = rotation, deux
+    // doigts = zoom et déplacement (ce sont aussi les valeurs par défaut d'`OrbitControls`).
+    this.controls.mouseButtons = {
+      LEFT: ORBIT_MOUSE_ACTIONS[ORBIT_MOUSE_BUTTONS.left],
+      MIDDLE: ORBIT_MOUSE_ACTIONS[ORBIT_MOUSE_BUTTONS.middle],
+      RIGHT: ORBIT_MOUSE_ACTIONS[ORBIT_MOUSE_BUTTONS.right],
+    };
+    this.controls.touches = {
+      ONE: ORBIT_TOUCH_ACTIONS[ORBIT_TOUCHES.one],
+      TWO: ORBIT_TOUCH_ACTIONS[ORBIT_TOUCHES.two],
+    };
     this.controls.addEventListener('start', this.stopFollowingPreset);
 
     this.preset = options.preset;

@@ -107,7 +107,15 @@ describe('App', () => {
     }
   });
 
-  it('masque la barre en mode capture', async () => {
+  it('affiche l’aide-mémoire des commandes hors mode capture (#74)', async () => {
+    const fixture = TestBed.createComponent(App);
+    await fixture.whenStable();
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('app-commands-help'),
+    ).not.toBeNull();
+  });
+
+  it('masque la barre et l’aide-mémoire en mode capture', async () => {
     window.history.replaceState(null, '', '/?capture=1');
     try {
       const fixture = TestBed.createComponent(App);
@@ -115,6 +123,7 @@ describe('App', () => {
       const root = fixture.nativeElement as HTMLElement;
       expect(root.querySelector('app-aquarium-host')).not.toBeNull();
       expect(root.querySelector('app-view-presets-bar')).toBeNull();
+      expect(root.querySelector('app-commands-help')).toBeNull();
     } finally {
       window.history.replaceState(null, '', '/');
     }

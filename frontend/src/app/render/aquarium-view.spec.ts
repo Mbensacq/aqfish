@@ -1,9 +1,17 @@
-import type { Camera, Scene, WebGLRenderTarget } from 'three';
+import { MOUSE, TOUCH, type Camera, type Scene, type WebGLRenderTarget } from 'three';
+import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+
+import { ORBIT_MOUSE_BUTTONS, ORBIT_TOUCHES } from '../core/commands/commands';
 
 import { lightAt } from '../sim/daylight';
 import { SPECIES, speciesVariants } from '../sim/species';
 import { createDefaultWorld } from '../sim/world';
-import { AquariumView, type AquariumRenderer } from './aquarium-view';
+import {
+  AquariumView,
+  ORBIT_MOUSE_ACTIONS,
+  ORBIT_TOUCH_ACTIONS,
+  type AquariumRenderer,
+} from './aquarium-view';
 import { cameraPresetPose } from './camera-presets';
 import { NIGHT_FLAT_BRIGHTNESS } from './night-shade';
 
@@ -336,5 +344,40 @@ describe('AquariumView (filtre de rendu)', () => {
     renderer.calls.length = 0;
     view.renderFrame();
     expect(renderer.calls[0]).toBe('cible 300x200');
+  });
+});
+
+describe('AquariumView (gestes de la caméra, #74)', () => {
+  it('règle OrbitControls d’après la déclaration des gestes (source de l’aide-mémoire)', () => {
+    const view = new AquariumView({
+      canvas: document.createElement('canvas'),
+      rendererFactory: () => new RecordingRenderer(),
+      pixelRatio: 1,
+      preset: 'three-quarter',
+      interactive: true,
+    });
+    const controls = (view as unknown as { controls: OrbitControls }).controls;
+    expect(controls.mouseButtons).toEqual({
+      LEFT: ORBIT_MOUSE_ACTIONS[ORBIT_MOUSE_BUTTONS.left],
+      MIDDLE: ORBIT_MOUSE_ACTIONS[ORBIT_MOUSE_BUTTONS.middle],
+      RIGHT: ORBIT_MOUSE_ACTIONS[ORBIT_MOUSE_BUTTONS.right],
+    });
+    expect(controls.touches).toEqual({
+      ONE: ORBIT_TOUCH_ACTIONS[ORBIT_TOUCHES.one],
+      TWO: ORBIT_TOUCH_ACTIONS[ORBIT_TOUCHES.two],
+    });
+    // Réglage actuel, en clair : rotation, zoom, déplacement ; un doigt tourne.
+    expect(controls.mouseButtons).toEqual({
+      LEFT: MOUSE.ROTATE,
+      MIDDLE: MOUSE.DOLLY,
+      RIGHT: MOUSE.PAN,
+    });
+    expect(controls.touches).toEqual({ ONE: TOUCH.ROTATE, TWO: TOUCH.DOLLY_PAN });
+    view.dispose();
+  });
+
+  it('associe chaque action déclarée à une action distincte d’OrbitControls', () => {
+    expect(new Set(Object.values(ORBIT_MOUSE_ACTIONS)).size).toBe(3);
+    expect(new Set(Object.values(ORBIT_TOUCH_ACTIONS)).size).toBe(4);
   });
 });

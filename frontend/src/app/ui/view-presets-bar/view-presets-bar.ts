@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 
 import type { CameraPreset } from '../../core/capture/capture-params';
+import { VIEW_COMMAND_PRESETS, commandKey, keyCommand } from '../../core/commands/commands';
 import { MIDNIGHT_HOUR, NOON_HOUR } from '../../sim/daylight';
 
 /** Bouton de la barre : préréglage, libellé visible, nom accessible et touche associée. */
@@ -11,17 +12,28 @@ export interface ViewPresetButton {
   readonly key: string;
 }
 
+/** Bouton d'une vue, construit d'après sa déclaration (`core/commands`, source unique, #74). */
+function viewButton(id: keyof typeof VIEW_COMMAND_PRESETS, label: string): ViewPresetButton {
+  const command = keyCommand(id);
+  return {
+    preset: VIEW_COMMAND_PRESETS[id],
+    label,
+    ariaLabel: command.description,
+    key: command.display,
+  };
+}
+
 /** Les 5 vues, dans l'ordre des touches `1` à `5`. */
 export const VIEW_PRESET_BUTTONS: readonly ViewPresetButton[] = [
-  { preset: 'top', label: 'Dessus', ariaLabel: 'Vue de dessus', key: '1' },
-  { preset: 'bottom', label: 'Dessous', ariaLabel: 'Vue de dessous', key: '2' },
-  { preset: 'front', label: 'Face', ariaLabel: 'Vue de face', key: '3' },
-  { preset: 'side', label: 'Côté', ariaLabel: 'Vue de côté', key: '4' },
-  { preset: 'three-quarter', label: '3/4', ariaLabel: 'Vue trois-quarts', key: '5' },
+  viewButton('vue-dessus', 'Dessus'),
+  viewButton('vue-dessous', 'Dessous'),
+  viewButton('vue-face', 'Face'),
+  viewButton('vue-cote', 'Côté'),
+  viewButton('vue-trois-quarts', '3/4'),
 ];
 
 /** Touche de bascule du filtre pixel art (insensible à la casse). */
-export const PIXEL_ART_KEY = 'p';
+export const PIXEL_ART_KEY = commandKey('pixel-art');
 
 /** Vrai pour la touche de bascule du filtre pixel art (`p` ou `P`). */
 export function isPixelArtKey(key: string): boolean {
@@ -29,7 +41,7 @@ export function isPixelArtKey(key: string): boolean {
 }
 
 /** Touche qui fige ou remet en marche l'heure de la journée (insensible à la casse). */
-export const CLOCK_KEY = 'h';
+export const CLOCK_KEY = commandKey('horloge');
 
 /** Vrai pour la touche qui fige ou remet en marche l'heure (`h` ou `H`, issue #51). */
 export function isClockKey(key: string): boolean {
@@ -37,10 +49,10 @@ export function isClockKey(key: string): boolean {
 }
 
 /** Touche qui fige l'heure en plein jour, à midi (insensible à la casse, issue #75). */
-export const DAY_KEY = 'j';
+export const DAY_KEY = commandKey('plein-jour');
 
 /** Touche qui fige l'heure en pleine nuit, à minuit (insensible à la casse, issue #75). */
-export const NIGHT_KEY = 'n';
+export const NIGHT_KEY = commandKey('nuit');
 
 /**
  * Heure à laquelle figer l'horloge pour une touche : midi pour `j`/`J`, minuit pour
@@ -117,12 +129,12 @@ export function isTypingContext(event: KeyboardEvent): boolean {
       type="button"
       class="view-presets-bar__button"
       [class.view-presets-bar__button--active]="pixelArt()"
-      aria-label="Filtre pixel art (touche P)"
-      aria-keyshortcuts="P"
+      [attr.aria-label]="'Filtre pixel art (touche ' + pixelArtKey + ')'"
+      [attr.aria-keyshortcuts]="pixelArtKey"
       [attr.aria-pressed]="pixelArt()"
       (click)="togglePixelArt()"
     >
-      <span class="view-presets-bar__key" aria-hidden="true">P</span>
+      <span class="view-presets-bar__key" aria-hidden="true">{{ pixelArtKey }}</span>
       Pixel art
     </button>
   </div>`,
@@ -153,6 +165,9 @@ export class ViewPresetsBar {
   readonly clockFrozenAt = output<number>();
 
   protected readonly buttons = VIEW_PRESET_BUTTONS;
+
+  /** Touche du filtre pixel art telle qu'affichée (`P`). */
+  protected readonly pixelArtKey = keyCommand('pixel-art').display;
 
   protected togglePixelArt(): void {
     this.pixelArtToggled.emit();
