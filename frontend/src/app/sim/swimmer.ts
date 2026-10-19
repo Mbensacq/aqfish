@@ -1,5 +1,6 @@
 import { prngNextState, prngOutput, deriveSeed } from '../core/random/prng';
 import { deflect, obstacleAvoidance, wallAvoidance } from './avoidance';
+import { growHunger, HUNGER_START } from './feeding';
 import type { Vec3 } from './flocking';
 import { obstacleBound, obstacleDistance, type Obstacle } from './obstacles';
 import { shrinkBox, type Box3 } from './tank';
@@ -42,6 +43,11 @@ export interface Fish {
    * nul pour une espèce sans préférence de profondeur (`SpeciesDefinition.depth`).
    */
   readonly ascent: number;
+  /**
+   * Faim, dans [0, 1] : monte avec le temps simulé, baisse à chaque granulé mangé
+   * (`sim/feeding.ts`). Ne consomme aucun tirage.
+   */
+  readonly hunger: number;
   /** État du sous-générateur de l'entité (mulberry32, voir `prngNextState`). */
   readonly rng: number;
   // État au pas précédent (interpolation du rendu).
@@ -131,6 +137,14 @@ const SCHOOL_SPEED_GAIN = 0.5;
  * de jeu).
  */
 const DEPTH_PULL_ZONE = 0.03;
+/**
+ * Approche de la nourriture : vitesse visée de `cruiseSpeed` (au contact) à
+ * `(cruiseSpeed + maxSpeed) / 2` (à `FOOD_RUSH_DISTANCE` mètres et au-delà), pour accourir
+ * sans tourner autour du granulé (approximation de jeu).
+ */
+const FOOD_RUSH_DISTANCE = 0.1;
+/** Rappel de la vitesse vers la vitesse visée en approche de la nourriture, par seconde. */
+const FOOD_SPEED_RECALL = 3;
 /** Aucun obstacle (valeur par défaut partagée, sans allocation). */
 const NO_OBSTACLES: readonly Obstacle[] = Object.freeze([]);
 const SCRATCH_WALL: Vec3 = { x: 0, y: 0, z: 0 };
@@ -200,6 +214,7 @@ export function createFish(
     pitchTarget: 0,
     phase: 0,
     ascent: 0,
+    hunger: HUNGER_START,
     rng: deriveSeed(seed, id),
     px: 0,
     py: 0,
@@ -242,6 +257,12 @@ export function createFish(
  * (`SCHOOL_SPEED_GAIN`). L'évitement reste prioritaire près d'une paroi ou d'un obstacle.
  * Un pilotage nul, ou une espèce sans banc, donne exactement la nage solitaire.
  *
+ * `food` : point visé par un poisson affamé (`foodTarget`, `sim/feeding.ts`), ou `null`.
+ * S'il est donné, le poisson y tourne d'au plus `feeding.turnRate` rad/s et s'y incline, à la
+ * place de l'errance et du banc (dont les tirages sont faits quand même : même suite de
+ * tirages avec ou sans nourriture) ; l'évitement garde la priorité, donc aucun obstacle n'est
+ * traversé pour atteindre un granulé. La faim monte de `feeding.hungerRate · dt`.
+ *
  * Garanties : le centre reste dans `bounds.hard` ; `speed` ∈ [minSpeed, maxSpeed] ;
  * `|pitch|` ≤ maxPitch ; le cap tourne d'au plus `max(avoidTurnRate, wanderTurnRate +
  * schooling.turnRate) · dt` par pas. Filet de sécurité : un centre entré dans un obstacle
@@ -256,10 +277,12 @@ export function stepFish(
   steerY = 0,
   steerZ = 0,
   obstacles: readonly Obstacle[] = NO_OBSTACLES,
+  food: Vec3 | null = null,
 ): void {
   const def = SPECIES[fish.species];
   const { hard } = bounds;
   savePrevious(fish);
+  fish.hunger = growHunger(fish.hunger, def, dt);
 
   // Espèce de fond : brève remontée vers la surface, déclenchée au hasard (tirage seulement
   // pour ces espèces : les autres gardent exactement leur suite de tirages), terminée à la
@@ -303,15 +326,37 @@ export function stepFish(
     );
   }
 
+  // Nourriture : cap et inclinaison vers le point visé (sans effet si `food` est nul).
+  let foodTurn = 0;
+  let foodPitch = 0;
+  let foodDistance = 0;
+  if (food !== null) {
+    const dx = food.x - fish.x;
+    const dy = food.y - fish.y;
+    const dz = food.z - fish.z;
+    const dh = Math.sqrt(dx * dx + dz * dz);
+    foodDistance = Math.sqrt(dh * dh + dy * dy);
+    if (dh > STEER_EPSILON) {
+      const maxTurn = def.feeding.turnRate * dt;
+      foodTurn = clamp(wrapAngle(Math.atan2(dz, dx) - fish.yaw), -maxTurn, maxTurn);
+    }
+    const pitchLimit = def.maxPitch * AVOID_PITCH_RATIO;
+    foodPitch = clamp(Math.atan2(dy, dh), -pitchLimit, pitchLimit);
+  }
+
   // Vitesse : petite marche aléatoire rappelée vers la vitesse visée (croisière, ajustée en
-  // banc).
-  const speedGoal = ascending
-    ? (def.cruiseSpeed + def.maxSpeed) / 2
-    : def.cruiseSpeed * (1 + schoolSpeed);
+  // banc ; accourue vers la nourriture).
+  const rush = (def.cruiseSpeed + def.maxSpeed) / 2;
+  const speedGoal =
+    food !== null
+      ? def.cruiseSpeed + (rush - def.cruiseSpeed) * Math.min(1, foodDistance / FOOD_RUSH_DISTANCE)
+      : ascending
+        ? rush
+        : def.cruiseSpeed * (1 + schoolSpeed);
   const speed =
     fish.speed +
     (random(fish) * 2 - 1) * SPEED_JITTER * def.cruiseSpeed * dt +
-    (speedGoal - fish.speed) * SPEED_RECALL * dt;
+    (speedGoal - fish.speed) * (food !== null ? FOOD_SPEED_RECALL : SPEED_RECALL) * dt;
   fish.speed = clamp(speed, def.minSpeed, def.maxSpeed);
 
   // Évitement : force des parois au point visé, des obstacles le long du segment de
@@ -320,7 +365,11 @@ export function stepFish(
   const headX = Math.cos(fish.yaw) * cosPitch;
   const headY = Math.sin(fish.pitch);
   const headZ = Math.sin(fish.yaw) * cosPitch;
-  const lookahead = Math.max(MIN_LOOKAHEAD, fish.speed * LOOKAHEAD_SECONDS);
+  // En approche de la nourriture, la prospection s'arrête au point visé (dans les bornes de
+  // nage) : un granulé posé au fond ou près d'un rocher n'est plus repoussé par l'évitement
+  // de ce qui se trouve au-delà. L'évitement de ce qui est entre les deux reste entier.
+  const reach = Math.max(MIN_LOOKAHEAD, fish.speed * LOOKAHEAD_SECONDS);
+  const lookahead = food !== null ? Math.max(MIN_LOOKAHEAD, Math.min(reach, foodDistance)) : reach;
   const probeX = fish.x + headX * lookahead;
   const probeY = fish.y + headY * lookahead;
   const probeZ = fish.z + headZ * lookahead;
@@ -365,7 +414,8 @@ export function stepFish(
     }
   }
   fish.turn = clamp(turn, -def.wanderTurnRate, def.wanderTurnRate);
-  fish.yaw = wrapAngle(fish.yaw + avoidTurn * avoid + (fish.turn * dt + schoolTurn) * (1 - avoid));
+  const freeTurn = food !== null ? foodTurn : fish.turn * dt + schoolTurn;
+  fish.yaw = wrapAngle(fish.yaw + avoidTurn * avoid + freeTurn * (1 - avoid));
 
   // Inclinaison : errance lente (et banc), glissant vers celle de l'évitement du fond, de la
   // surface et des obstacles.
@@ -379,7 +429,9 @@ export function stepFish(
   let pitchGoal = fish.pitchTarget + (schoolPitch - fish.pitchTarget) * schoolBlend;
   // Espèce de fond : montée à l'inclinaison maximale pendant une remontée, sinon descente
   // au-dessus de la hauteur préférée. L'évitement (surface, obstacles) garde la priorité ci-dessous.
-  if (depth !== undefined) {
+  if (food !== null) {
+    pitchGoal = foodPitch;
+  } else if (depth !== undefined) {
     const steep = def.maxPitch * AVOID_PITCH_RATIO;
     if (ascending) {
       pitchGoal = def.maxPitch;

@@ -85,6 +85,26 @@ export interface DepthPreference {
 }
 
 /**
+ * Alimentation d'une espèce (`sim/feeding.ts`, issue #68) : faim qui monte avec le temps,
+ * perception des granulés et tranche d'eau où l'espèce mange.
+ */
+export interface FeedingParams {
+  /** Montée de la faim, par seconde : de 0 à 1 en `1 / hungerRate` secondes. */
+  readonly hungerRate: number;
+  /** Distance maximale à laquelle un poisson affamé remarque un granulé, en mètres. */
+  readonly perceptionRadius: number;
+  /** Vitesse de virage maximale vers un granulé, en rad/s. */
+  readonly turnRate: number;
+  /**
+   * Tranche d'eau où l'espèce mange : un granulé n'est remarqué (et mangé) que si sa hauteur
+   * au-dessus du sable, en fraction de la hauteur d'eau, est dans [minHeightRatio,
+   * maxHeightRatio] ⊂ [0, 1].
+   */
+  readonly minHeightRatio: number;
+  readonly maxHeightRatio: number;
+}
+
+/**
  * Apparence d'une partie des individus d'une espèce (mâle, femelle…), affichée dans une
  * couche de rendu à part. Les individus sont répartis entre les apparences par
  * `speciesVariantIndex`, sans état supplémentaire dans la simulation.
@@ -142,6 +162,8 @@ export interface SpeciesDefinition {
   readonly variants?: readonly SpeciesVariant[];
   /** Préférence de profondeur (espèce de fond), ou absent pour toute la hauteur d'eau. */
   readonly depth?: DepthPreference;
+  /** Faim et alimentation (`sim/feeding.ts`). */
+  readonly feeding: FeedingParams;
 }
 
 /**
@@ -193,6 +215,15 @@ export const NEON: SpeciesDefinition = {
     belly: '#f2ead8',
     fin: '#a8e6cf',
     eye: '#1c1c22',
+  },
+  // Mange en surface et en pleine eau (au-dessus de 35 % de la hauteur d'eau) : faim pleine en
+  // 3 min, perception 30 cm (5 longueurs de corps) : approximations de jeu.
+  feeding: {
+    hungerRate: 1 / 180,
+    perceptionRadius: 0.3,
+    turnRate: 2.5,
+    minHeightRatio: 0.35,
+    maxHeightRatio: 1,
   },
 };
 
@@ -269,6 +300,15 @@ export const GUPPY: SpeciesDefinition = {
       colors: GUPPY_FEMALE_COLORS,
     },
   ],
+  // Mange en surface et en pleine eau, un peu plus bas que le néon (au-dessus de 20 %),
+  // plus vorace : approximations de jeu.
+  feeding: {
+    hungerRate: 1 / 150,
+    perceptionRadius: 0.3,
+    turnRate: 2.2,
+    minHeightRatio: 0.2,
+    maxHeightRatio: 1,
+  },
 };
 
 /**
@@ -326,6 +366,15 @@ export const CORYDORA: SpeciesDefinition = {
     floorZone: 0.015,
     ascentRate: 1 / 150,
     ascentDuration: 6,
+  },
+  // Mange au fond seulement : un granulé n'est remarqué qu'arrivé sous 10 % de la hauteur
+  // d'eau (posé sur le sable ou presque) ; faim pleine en 4 min : approximations de jeu.
+  feeding: {
+    hungerRate: 1 / 240,
+    perceptionRadius: 0.4,
+    turnRate: 2.5,
+    minHeightRatio: 0,
+    maxHeightRatio: 0.1,
   },
 };
 
@@ -410,6 +459,7 @@ export function validateSpecies(def: SpeciesDefinition): string[] {
   if (def.depth !== undefined) {
     problems.push(...validateDepth(def.depth));
   }
+  problems.push(...validateFeeding(def.feeding));
   if (def.name.trim() === '' || def.scientificName.trim() === '') {
     problems.push('nom et nom scientifique obligatoires');
   }
@@ -448,6 +498,23 @@ function validateVariants(variants: readonly SpeciesVariant[]): string[] {
       problems.push(`${prefix}silhouette inconnue : ${String(variant.silhouette)}`);
     }
     problems.push(...validateColors(variant.colors, prefix));
+  }
+  return problems;
+}
+
+function validateFeeding(feeding: FeedingParams): string[] {
+  const problems: string[] = [];
+  for (const key of ['hungerRate', 'perceptionRadius', 'turnRate'] as const) {
+    const value = feeding[key];
+    if (!(value > 0) || !Number.isFinite(value)) {
+      problems.push(`feeding.${key} doit être un réel strictement positif (reçu : ${value})`);
+    }
+  }
+  const { minHeightRatio: lo, maxHeightRatio: hi } = feeding;
+  if (!(lo >= 0 && lo < hi && hi <= 1)) {
+    problems.push(
+      `feeding : il faut 0 ≤ minHeightRatio < maxHeightRatio ≤ 1 (reçu : ${lo}, ${hi})`,
+    );
   }
   return problems;
 }

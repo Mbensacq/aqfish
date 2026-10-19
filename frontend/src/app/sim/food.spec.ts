@@ -274,10 +274,13 @@ describe('sim/world : nourriture', () => {
     expect(world.food).toEqual([]);
   });
 
-  it('la nourriture ne change ni les poissons ni leur hasard (attraction hors périmètre)', () => {
+  it('la nourriture ne consomme pas le hasard des poissons (trajectoires changées par l’attraction, #68)', () => {
     const plain = advance(createDefaultWorld(42), 300);
     const fed = advance(feed(createDefaultWorld(42), 0, 0), 300);
-    expect(fed.entities).toEqual(plain.entities);
+    // Même suite de tirages avec ou sans nourriture (ADR 0023)…
+    expect(fed.entities.map((f) => f.rng)).toEqual(plain.entities.map((f) => f.rng));
+    // …mais les poissons affamés viennent manger : trajectoires différentes.
+    expect(fed.entities).not.toEqual(plain.entities);
   });
 
   it('les granulés coulent dans le monde et disparaissent tous', () => {

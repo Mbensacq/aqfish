@@ -3,6 +3,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { FOOD_COLOR } from '../src/app/render/food-layer';
 import { CAMERA_FOV_DEG } from '../src/app/render/camera-presets';
 import { FOOD_PER_DROP, MAX_FOOD } from '../src/app/sim/food';
+import { advanceToWithFeedings, createDefaultWorld } from '../src/app/sim/world';
 import { waterVolume } from '../src/app/sim/tank';
 
 /**
@@ -157,7 +158,14 @@ test.describe('Nourrissage (#67)', () => {
     const without = await countColor(page, FOOD_COLOR);
 
     await openScene(page, `${query}&nourrir=10,25`);
-    await expect(host(page)).toHaveAttribute('data-aqfish-food', String(2 * FOOD_PER_DROP));
+    // Les poissons mangent (#68) : le compte attendu est celui de la simulation pure, avec les
+    // mêmes dépôts (5 : le dépôt de 10 s est mangé, celui de 25 s coule encore).
+    const expected = advanceToWithFeedings(createDefaultWorld(42), 30, [
+      { time: 10, x: 0, z: 0 },
+      { time: 25, x: 0, z: 0 },
+    ]).food.length;
+    expect(expected).toBeGreaterThanOrEqual(FOOD_PER_DROP);
+    await expect(host(page)).toHaveAttribute('data-aqfish-food', String(expected));
     const first = await page.screenshot({ animations: 'disabled' });
     const withFood = await countColor(page, FOOD_COLOR);
     // Au moins quelques granulés de 2 × 2 pixels de scène (3 pixels CSS par pixel de scène).
@@ -166,6 +174,21 @@ test.describe('Nourrissage (#67)', () => {
     await openScene(page, `${query}&nourrir=10,25`);
     expect((await page.screenshot({ animations: 'disabled' })).equals(first)).toBe(true);
   });
+  for (const seed of [7, 123]) {
+    test(`capture : les poissons mangent un dépôt, graine ${seed}, sans erreur (QA)`, async ({
+      page,
+    }) => {
+      const errors = await openScene(page, `?capture=1&seed=${seed}&camera=top&time=40&nourrir=0`);
+      const expected = advanceToWithFeedings(createDefaultWorld(seed), 40, [
+        { time: 0, x: 0, z: 0 },
+      ]).food.length;
+      // Le dépôt a été entamé par les poissons : moins de granulés que déposés (#68).
+      expect(expected).toBeLessThan(FOOD_PER_DROP);
+      await expect(host(page)).toHaveAttribute('data-aqfish-food', String(expected));
+      expect(errors).toEqual([]);
+    });
+  }
+
   test('le nombre de granulés reste borné quand on nourrit sans cesse (QA)', async ({ page }) => {
     const errors = await openScene(page);
     for (let i = 0; i < MAX_FOOD / FOOD_PER_DROP + 4; i++) {

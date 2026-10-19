@@ -2,7 +2,8 @@ import { assertSeed } from '../core/random/prng';
 import { fillBubbles, type BubbleBuffer } from './bubbles';
 import { SIM_DT } from './constants';
 import { DEFAULT_DECOR, decorObstacles, parseDecorItems, type DecorItem } from './decor';
-import { computeSchoolSteering, enforceMinDistance } from './flocking';
+import { eatInPlace, feedingBand, foodTarget, type FeedingBand } from './feeding';
+import { computeSchoolSteering, enforceMinDistance, type Vec3 } from './flocking';
 import { dropFoodInPlace, stepFoodInPlace, type FoodPellet } from './food';
 import { validateObstacle, type Obstacle } from './obstacles';
 import { SPECIES, type SpeciesId } from './species';
@@ -271,25 +272,66 @@ function stepInPlace(world: MutableWorld, dt: number): void {
   const fishes = world.entities as Mutable<Entity>[];
   const steering = steeringBuffer(fishes.length);
   computeSchoolSteering(fishes, steering);
+  // Nourriture (issue #68) : point visé calculé, comme le banc, sur les positions du début du
+  // pas ; sans granulé, `target` reste nul et la nage est exactement celle d'avant.
+  const food = world.food as FoodPellet[];
   // Ordre stable : celui du tableau, c'est-à-dire des identifiants.
   for (let i = 0; i < fishes.length; i++) {
     const fish = fishes[i];
+    const bounds = boundsFor(fish.species);
+    const target =
+      food.length === 0
+        ? null
+        : foodTarget(
+            fish,
+            SPECIES[fish.species],
+            food,
+            bandFor(fish.species),
+            bounds.hard,
+            FOOD_TARGET,
+            world.obstacles,
+          );
     stepFish(
       fish,
       dt,
-      boundsFor(fish.species),
+      bounds,
       steering[3 * i],
       steering[3 * i + 1],
       steering[3 * i + 2],
       world.obstacles,
+      target,
     );
   }
   enforceMinDistance(fishes, boundsOfFish);
-  stepFoodInPlace(world.food as FoodPellet[], dt);
+  eatInPlace(fishes, food, bandOfFish, hardOfFish);
+  stepFoodInPlace(food, dt);
 }
+
+/** Point visé vers la nourriture, réutilisé d'un poisson à l'autre (aucune allocation). */
+const FOOD_TARGET: Vec3 = { x: 0, y: 0, z: 0 };
 
 function boundsOfFish(fish: Entity): SwimBounds {
   return boundsFor(fish.species);
+}
+
+function hardOfFish(fish: Entity): SwimBounds['hard'] {
+  return boundsFor(fish.species).hard;
+}
+
+function bandOfFish(fish: Entity): FeedingBand {
+  return bandFor(fish.species);
+}
+
+/** Tranches d'eau de l'alimentation par espèce dans le bac par défaut, calculées une fois. */
+const BAND_CACHE = new Map<SpeciesId, FeedingBand>();
+
+function bandFor(species: SpeciesId): FeedingBand {
+  let band = BAND_CACHE.get(species);
+  if (!band) {
+    band = feedingBand(SPECIES[species].feeding, waterVolume());
+    BAND_CACHE.set(species, band);
+  }
+  return band;
 }
 
 /** Tampon de pilotage réutilisé d'un pas à l'autre ; réalloué seulement si la population croît. */

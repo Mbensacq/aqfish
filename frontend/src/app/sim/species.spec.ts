@@ -86,6 +86,41 @@ describe('validateSpecies : préférence de profondeur', () => {
   });
 });
 
+describe('validateSpecies : alimentation', () => {
+  const withFeeding = (patch: Partial<SpeciesDefinition['feeding']>): SpeciesDefinition => ({
+    ...NEON,
+    feeding: { ...NEON.feeding, ...patch },
+  });
+
+  it.each(['hungerRate', 'perceptionRadius', 'turnRate'] as const)(
+    'refuse %s nul, négatif ou non fini',
+    (key) => {
+      for (const value of [0, -1, Number.NaN, Number.POSITIVE_INFINITY]) {
+        expect(validateSpecies(withFeeding({ [key]: value })).join()).toContain(key);
+      }
+    },
+  );
+
+  it.each([
+    [-0.1, 1],
+    [0.5, 0.5],
+    [0.6, 0.4],
+    [0, 1.1],
+    [Number.NaN, 1],
+  ])('refuse la tranche [%s, %s]', (minHeightRatio, maxHeightRatio) => {
+    expect(validateSpecies(withFeeding({ minHeightRatio, maxHeightRatio })).join()).toContain(
+      'minHeightRatio',
+    );
+  });
+
+  it('accepte toute la hauteur d’eau ; chaque espèce connue a une alimentation valide', () => {
+    expect(validateSpecies(withFeeding({ minHeightRatio: 0, maxHeightRatio: 1 }))).toEqual([]);
+    for (const def of Object.values(SPECIES)) {
+      expect(validateSpecies(def)).toEqual([]);
+    }
+  });
+});
+
 describe('guppy', () => {
   it('est décrit par le même schéma que le néon, et valide', () => {
     expect(GUPPY.id).toBe('guppy');

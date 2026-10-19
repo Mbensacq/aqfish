@@ -85,6 +85,12 @@ simulation testable et les captures reproductibles.
   séparé), puis vieillis à chaque pas après les poissons (flottaison, chute à vitesse
   constante en forme fermée de l'âge, repos sur le sable ou le dessus d'un rocher, retrait).
   `advanceToWithFeedings` rejoue des dépôts datés (paramètre de capture `nourrir=`).
+- **Faim et attraction** (ADR 0023, `sim/feeding.ts`) : `Fish.hunger` ∈ [0, 1] monte avec le
+  temps (vitesse par espèce, `SpeciesDefinition.feeding`). Au début du pas, chaque poisson
+  affamé vise le granulé le plus proche dans sa tranche d'eau, à portée et en vue
+  (`foodTarget`) ; `stepFish` y tourne à la place de l'errance et du banc, l'évitement restant
+  prioritaire. Après la nage, `eatInPlace` fait manger les poissons dans l'ordre des
+  identifiants (un granulé, un seul mangeur). Sans granulé, nage inchangée.
 - **Unités et repère** : mètres, secondes, degrés Celsius. Axe Y vers le haut ; origine au
   centre du fond du bac.
 - **Données réelles** : toute valeur présentée comme réelle (température d'une espèce,
@@ -182,6 +188,7 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
 | `sim/bubbles.ts` | Bulles du diffuseur : fonction fermée de la graine, du numéro de bulle et du temps simulé (émission à cadence fixe, montée, zigzag, fin à la surface), tampon préalloué borné par `MAX_BUBBLES`, flux de hasard séparé (ADR 0017) |
 | `sim/daylight.ts` | Cycle jour/nuit : horloge de journée (`DayClock`, `hourAt` sur le temps simulé, `freezeClock`, `freezeClockAt`, `resumeClock` ; journée de 1 200 s par défaut, `NOON_HOUR`, `MIDNIGHT_HOUR`), courbe de lumière `lightAt(heure)` et sa variante sans allocation `lightAtInto(heure, tampon)` (intensité, teinte, ciel ; continue, périodique sur 24 h, exactement blanche à midi), moment de la journée `dayPhaseAt` (indicateur, #73), sans couleur de la palette (ADR 0018, 0019, 0021) |
 | `sim/food.ts` | Nourriture (ADR 0022) : granulés sérialisables, dépôt borné et dispersé (`dropFoodInPlace`), sol sous un point (`restHeightAt`, `rockTopAt` sur les voxels des rochers), chute et retrait en place (`stepFoodInPlace`) |
+| `sim/feeding.ts` | Faim et repas (ADR 0023) : montée et retrait de la faim (`growHunger`, `satiate`), tranche d'eau par espèce (`feedingBand`), visibilité (`hasLineOfSight`), granulé le plus proche et point visé (`nearestPellet`, `foodTarget`), repas en place sans double prise (`eatInPlace`) |
 | `sim/undulation.ts` | Ondulation (fonctions pures) : avance de la phase, amplitude selon la vitesse, pose du corps et de la queue (ADR 0009) |
 | `sim/avoidance.ts` | Forces d'évitement des parois et des obstacles, proximité, déviation pour contourner (ADR 0012) |
 | `render/palette.ts` | Palette unique (32 à 48 couleurs), nommées par usage ; tons de nuit (`NIGHT_TONES`) et du crépuscule (`TWILIGHT_TONES`), palette étendue de la passe (ADR 0021) |
