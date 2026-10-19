@@ -241,7 +241,17 @@ export class AquariumView {
     }
   }
 
-  /** Affiche le décor du monde (`World.decor`), immobile : à appeler une fois par monde. */
+  /**
+   * Pose le décor animé (plantes qui ondulent) au temps simulé `time`, en secondes : jamais
+   * l'horloge murale (contrat de capture). À appeler avant `renderFrame()`.
+   */
+  updateDecor(time: number): void {
+    if (!this.disposed) {
+      this.decorLayer.update(time);
+    }
+  }
+
+  /** Affiche le décor du monde (`World.decor`) : à appeler une fois par monde. */
   setDecor(items: readonly DecorItem[]): void {
     if (!this.disposed) {
       this.decorLayer.setDecor(items);
