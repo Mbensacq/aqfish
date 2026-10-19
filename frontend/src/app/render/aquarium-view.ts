@@ -32,7 +32,13 @@ import type { DecorItem } from '../sim/decor';
 import { BubbleLayer } from './bubble-layer';
 import { DecorLayer } from './decor-layer';
 import { FishLayer, MAX_FISH_PER_SPECIES } from './fish-layer';
-import { flatBrightness } from './night-shade';
+import {
+  decorTintInto,
+  flatBrightness,
+  type MutableTint,
+  tonePenaltiesInto,
+  type TonePenalties,
+} from './night-shade';
 import { PalettePass } from './palette-pass';
 import { PIXEL_SIZE, type Size } from './pixel-art';
 import { WaterLightLayer } from './water-light';
@@ -107,6 +113,9 @@ export class AquariumView {
   private readonly fishLayers: readonly FishLayer[];
   /** Décor du monde (rochers), fixé par `setDecor`. */
   private readonly decorLayer = new DecorLayer();
+  /** Tampons réutilisés par `updateLight` (aucune allocation). */
+  private readonly decorTint: MutableTint = [1, 1, 1];
+  private readonly penalties: TonePenalties = { night: 0, twilight: 0 };
   /** Bulles du diffuseur (ADR 0017), selon la graine fixée par `setDecor`. */
   private readonly bubbleLayer = new BubbleLayer();
   /** Caustiques sur le sable et reflet de surface (ADR 0017). */
@@ -295,7 +304,8 @@ export class AquariumView {
 
   /**
    * Applique la lumière du jour (`sim/daylight.ts`, ADR 0018) : lumières, teinte de l'eau,
-   * caustiques et reflet, luminosité des couleurs plates (poissons, bulles : ADR 0019).
+   * caustiques et reflet, luminosité des couleurs plates (poissons, bulles : ADR 0019),
+   * teinte du décor et tons de nuit ou de crépuscule de la passe palette (ADR 0021).
    * Sans effet sur la caméra, le filtre et le reste de la scène.
    */
   updateLight(light: DayLight): void {
@@ -307,6 +317,9 @@ export class AquariumView {
         layer.setBrightness(brightness);
       }
       this.bubbleLayer.setBrightness(brightness);
+      this.decorLayer.setTint(decorTintInto(light.intensity, this.decorTint));
+      const penalties = tonePenaltiesInto(light.intensity, this.penalties);
+      this.pixelPass.setTonePenalties(penalties.night, penalties.twilight);
     }
   }
 
@@ -329,6 +342,16 @@ export class AquariumView {
   /** Luminosité des couleurs plates de chaque couche de poissons, puis des bulles (tests). */
   get flatBrightnesses(): readonly number[] {
     return [...this.fishLayers.map((layer) => layer.brightness), this.bubbleLayer.brightness];
+  }
+
+  /** Teinte courante du décor (tests). */
+  get decorTintValue(): readonly [number, number, number] {
+    return this.decorLayer.tint;
+  }
+
+  /** Pénalités courantes des tons de nuit et du crépuscule (tests). */
+  get tonePenalties(): readonly [number, number] {
+    return this.pixelPass.tonePenalties;
   }
 
   /** Nombre d'éléments de décor affichés (tests). */

@@ -111,6 +111,9 @@ la cible de `PalettePass` (taille `ceil(canvas / PIXEL_SIZE)`, `PIXEL_SIZE = 3` 
 puis un quad plein écran lit chaque pixel de scène par `texelFetch` et écrit la couleur de
 palette la plus proche (distance euclidienne en sRGB, première couleur en cas d'égalité).
 La cible est en sRGB 8 bits : les surfaces translucides s'y mélangent en espace linéaire.
+La passe connaît aussi des **tons de nuit et du crépuscule** (ADR 0021), placés après les
+couleurs de jour et pénalisés selon l'heure : écartés en plein jour (image de midi
+identique à celle de la palette de jour seule), libres en pleine nuit ou à mi-crépuscule.
 
 **Filtre désactivable** (ADR 0010) : avec le filtre `aucun`, `renderFrame()` rend la scène
 directement à l'écran en pleine résolution, sans passe palette, et la caméra prend le
@@ -171,11 +174,11 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
 | `sim/plant.ts` | Plantes voxel générées depuis leur graine, deux formes (`tall`, `tuft`), phase d'ondulation, collision des tiges élargie de la borne d'ondulation (`plantCollision`, ADR 0016) |
 | `sim/plant-sway.ts` | Ondulation des plantes (fonction pure du temps simulé, de la hauteur relative et de la phase, bornée par `amplitude · h²`, ADR 0016) |
 | `sim/bubbles.ts` | Bulles du diffuseur : fonction fermée de la graine, du numéro de bulle et du temps simulé (émission à cadence fixe, montée, zigzag, fin à la surface), tampon préalloué borné par `MAX_BUBBLES`, flux de hasard séparé (ADR 0017) |
-| `sim/daylight.ts` | Cycle jour/nuit : horloge de journée (`DayClock`, `hourAt` sur le temps simulé, `freezeClock`, `freezeClockAt`, `resumeClock` ; journée de 1 200 s par défaut, `NOON_HOUR`, `MIDNIGHT_HOUR`), courbe de lumière `lightAt(heure)` et sa variante sans allocation `lightAtInto(heure, tampon)` (intensité, teinte, ciel ; continue, périodique sur 24 h, exactement blanche à midi), sans couleur de la palette (ADR 0018, 0019) |
+| `sim/daylight.ts` | Cycle jour/nuit : horloge de journée (`DayClock`, `hourAt` sur le temps simulé, `freezeClock`, `freezeClockAt`, `resumeClock` ; journée de 1 200 s par défaut, `NOON_HOUR`, `MIDNIGHT_HOUR`), courbe de lumière `lightAt(heure)` et sa variante sans allocation `lightAtInto(heure, tampon)` (intensité, teinte, ciel ; continue, périodique sur 24 h, exactement blanche à midi), moment de la journée `dayPhaseAt` (indicateur, #73), sans couleur de la palette (ADR 0018, 0019, 0021) |
 | `sim/undulation.ts` | Ondulation (fonctions pures) : avance de la phase, amplitude selon la vitesse, pose du corps et de la queue (ADR 0009) |
 | `sim/avoidance.ts` | Forces d'évitement des parois et des obstacles, proximité, déviation pour contourner (ADR 0012) |
-| `render/palette.ts` | Palette unique (32 à 48 couleurs), nommées par usage |
-| `render/pixel-art.ts` | `PIXEL_SIZE`, taille de la cible basse résolution, couleur la plus proche (fonctions pures, même métrique que le shader) |
+| `render/palette.ts` | Palette unique (32 à 48 couleurs), nommées par usage ; tons de nuit (`NIGHT_TONES`) et du crépuscule (`TWILIGHT_TONES`), palette étendue de la passe (ADR 0021) |
+| `render/pixel-art.ts` | `PIXEL_SIZE`, taille de la cible basse résolution, couleur la plus proche avec pénalités facultatives (fonctions pures, même métrique que le shader) |
 | `render/palette-pass.ts` | Cible basse résolution et passe plein écran palette (`ShaderMaterial`) ; libération |
 | `render/camera-presets.ts` | Dimensions du bac, préréglages de caméra, interpolation des transitions (fonctions pures) |
 | `render/aquarium-scene.ts` | Scène statique : sable, eau, verre, arêtes, lumières ; `setDaylight` (intensité et teinte des lumières, teinte de l'eau entre couleurs de la palette, ADR 0018) ; libération |
@@ -186,10 +189,11 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
 | `render/decor-layer.ts` | Couche du décor : maillages et coques de contour d'un pixel (décalage en pixels de la cible), placés selon `World.decor` ; `update(time)` fait onduler les plantes (ADR 0015, 0016) |
 | `render/bubble-layer.ts` | Bulles en nuages de points de 1 et 2 pixels de la cible (taille fixe à l'écran) et diffuseur ; positions réécrites en place (ADR 0017) |
 | `render/water-light.ts` | Caustiques sur le sable et reflet de surface (visible des deux côtés) : motifs par cases fixes du bac, en GLSL avec référence TypeScript (`causticLit`, `surfaceGlint`), animés par le temps simulé (ADR 0017) ; `setDaylight` : caustiques par paliers de couleurs pleines puis éteintes la nuit, reflet atténué (ADR 0018) |
-| `render/night-shade.ts` | `flatBrightness(intensité)` : luminosité des couleurs plates (poissons, bulles, diffuseur), 1 en plein jour, `NIGHT_FLAT_BRIGHTNESS` la nuit (ADR 0019) |
+| `render/night-shade.ts` | `flatBrightness(intensité)` : luminosité des couleurs plates (poissons, bulles, diffuseur), 1 en plein jour, `NIGHT_FLAT_BRIGHTNESS` la nuit (ADR 0019) ; `decorTintInto` (teinte du décor : blanc à midi, clair de lune la nuit) et `tonePenaltiesInto` (pénalités des tons de nuit et du crépuscule de la passe) (ADR 0021) |
 | `render/aquarium-view.ts` | Vue sans Angular : renderer (fabrique remplaçable), caméra, `OrbitControls`, transitions de caméra, `updateFish`, `setDecor`, `updateDecor` (temps simulé interpolé), `updateLight` (lumière du jour, luminosité des couleurs plates des poissons et des bulles) |
 | `ui/aquarium-host/` | Composant hôte : boucle rAF, avance de la simulation, horloge de journée (`initialDayClock`, `toggleClock`, `freezeClockAt`), redimensionnement, contrat de capture, `DestroyRef` |
 | `ui/view-presets-bar/` | Barre flottante des 5 préréglages de vue et raccourcis clavier `1` à `5` (émet le préréglage choisi), bascule « Pixel art » et touche `P` (émet la demande de bascule), touche `H` (fige ou remet en marche l'heure), touches `J` (plein jour : fige à midi) et `N` (nuit : fige à minuit), issue #75 ; touches lues dans `core/commands` |
+| `ui/day-indicator/` | Indicateur du moment de la journée (#73) : icône pixel art en SVG (soleil, soleil sur l'horizon, lune), nom accessible, en haut à gauche ; suit `AquariumHost.dayPhase` (`dayPhaseAt`, `sim/daylight.ts`) |
 | `ui/commands-help/` | Aide-mémoire des commandes (#74, ADR 0020) : panneau généré par `helpSections()`, repliable par `?`, état mémorisé (`aqfish.aide-commandes`, repli en mémoire) ; contient le test d'exhaustivité des raccourcis |
 
 Le renderer est créé par une fabrique (`AQUARIUM_RENDERER_FACTORY`, par défaut

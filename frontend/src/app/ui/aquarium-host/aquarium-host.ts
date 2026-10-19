@@ -31,6 +31,8 @@ import { SIM_DT } from '../../sim/constants';
 import {
   createDayClock,
   createDayLight,
+  dayPhaseAt,
+  type DayPhase,
   DEFAULT_DAY_CLOCK,
   DEFAULT_DAY_LENGTH_SECONDS,
   DEFAULT_START_HOUR,
@@ -165,6 +167,13 @@ export class AquariumHost {
    * sur le choix mémorisé (`aqfish.filtre`). Mis à jour à la bascule seulement.
    */
   readonly filter = signal<RenderFilter>('pixel');
+
+  /**
+   * Moment de la journée (issue #73), affiché par l'indicateur soleil / lune. Mis à jour
+   * avec l'éclairage (au plus toutes les `LIGHT_HOUR_STEP` heures), et ne notifie que s'il
+   * change : quatre fois par journée simulée.
+   */
+  readonly dayPhase = signal<DayPhase>(dayPhaseAt(DEFAULT_START_HOUR));
 
   /** État courant de la simulation (`null` avant le démarrage et après la destruction). */
   get world(): World | null {
@@ -380,6 +389,7 @@ export class AquariumHost {
     if (this.litHour === null || Math.abs(hour - this.litHour) >= LIGHT_HOUR_STEP) {
       this.litHour = hour;
       view.updateLight(lightAtInto(hour, this.light));
+      this.dayPhase.set(dayPhaseAt(hour));
     }
     // Une heure comme 23,999 s'arrondit à « 24.00 » : affichée « 0.00 ».
     const rounded = hour.toFixed(2);

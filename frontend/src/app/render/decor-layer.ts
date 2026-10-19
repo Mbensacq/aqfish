@@ -180,6 +180,21 @@ export class DecorLayer {
     }
   }
 
+  /**
+   * Teinte du décor (facteur linéaire par canal, `render/night-shade.ts`, `decorTintInto`) :
+   * multiplie les couleurs de sommet des plantes et des rochers. Blanc (1, 1, 1) en plein
+   * jour : couleurs d'origine, à l'octet près.
+   */
+  setTint(tint: readonly [number, number, number]): void {
+    this.material.color.setRGB(tint[0], tint[1], tint[2]);
+  }
+
+  /** Teinte courante du décor (tests). */
+  get tint(): readonly [number, number, number] {
+    const c = this.material.color;
+    return [c.r, c.g, c.b];
+  }
+
   /** Nombre de plantes affichées. */
   get plantCount(): number {
     return this.plants.length;

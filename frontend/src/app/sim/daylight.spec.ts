@@ -2,6 +2,9 @@ import { SIM_DT } from './constants';
 import {
   createDayClock,
   createDayLight,
+  DAY_PHASE_MIN_INTENSITY,
+  dayPhaseAt,
+  NIGHT_PHASE_MAX_INTENSITY,
   DAY_ELEVATION,
   DEFAULT_DAY_CLOCK,
   DEFAULT_DAY_LENGTH_SECONDS,
@@ -52,12 +55,14 @@ describe('lightAt : courbe de lumière', () => {
     }
   });
 
-  it('plein jour de 8 h à 16 h, pleine nuit avant 5 h et après 19 h', () => {
+  it('plein jour de 8 h à 16 h, pleine nuit avant 4 h et après 20 h (#73)', () => {
     for (const h of [8, 9, 10, 14, 16]) {
       expect(lightAt(h).intensity).toBe(1);
       expect(lightAt(h).tint).toEqual([1, 1, 1]);
     }
-    for (const h of [0, 2, 4, 5, 19, 21, 23.5]) {
+    // 19 h n'est plus la pleine nuit : le crépuscule dure jusque vers 19 h 30 (#73).
+    expect(lightAt(19).intensity).toBeGreaterThan(0.1);
+    for (const h of [0, 2, 4, 20, 21, 23.5]) {
       expect(lightAt(h).intensity).toBe(0);
       expect(lightAt(h).tint).toEqual(NIGHT_TINT);
     }
@@ -66,7 +71,8 @@ describe('lightAt : courbe de lumière', () => {
   it('6 h : valeur exacte de l’aube (smoothstep de l’élévation nulle)', () => {
     const x = (0 - NIGHT_ELEVATION) / (DAY_ELEVATION - NIGHT_ELEVATION);
     expect(lightAt(6).intensity).toBeCloseTo(x * x * (3 - 2 * x), 12);
-    expect(lightAt(6).intensity).toBeCloseTo(7 / 27, 12);
+    // Élévation nulle au milieu de [−0,5 ; 0,5] : smoothstep(1/2) = 1/2.
+    expect(lightAt(6).intensity).toBeCloseTo(1 / 2, 12);
   });
 
   it('aube et crépuscule : lumière orangée (rouge > bleu), symétriques autour de midi', () => {
@@ -342,5 +348,44 @@ describe('lightAtInto : variante sans allocation', () => {
       expect(() => lightAtInto(h, out)).toThrow(RangeError);
       expect(out).toEqual(before);
     }
+  });
+});
+
+describe('dayPhaseAt : moment de la journée de l’indicateur (#73)', () => {
+  it('jour à midi, nuit à minuit, aube le matin, crépuscule le soir', () => {
+    expect(dayPhaseAt(12)).toBe('jour');
+    expect(dayPhaseAt(0)).toBe('nuit');
+    expect(dayPhaseAt(6)).toBe('aube');
+    expect(dayPhaseAt(18)).toBe('crepuscule');
+    expect(dayPhaseAt(19)).toBe('crepuscule');
+    expect(dayPhaseAt(21)).toBe('nuit');
+  });
+
+  it('suit les seuils d’intensité, pour toute heure de la journée', () => {
+    for (let h = 0; h < 24; h += 0.05) {
+      const i = lightAt(h).intensity;
+      const phase = dayPhaseAt(h);
+      if (i >= DAY_PHASE_MIN_INTENSITY) {
+        expect(phase).toBe('jour');
+      } else if (i <= NIGHT_PHASE_MAX_INTENSITY) {
+        expect(phase).toBe('nuit');
+      } else {
+        expect(phase).toBe(h < 12 ? 'aube' : 'crepuscule');
+      }
+    }
+  });
+
+  it('ramène l’heure modulo 24 et refuse une heure non finie', () => {
+    expect(dayPhaseAt(24)).toBe('nuit');
+    expect(dayPhaseAt(-6)).toBe('crepuscule');
+    expect(dayPhaseAt(36)).toBe('jour');
+    expect(() => dayPhaseAt(Number.NaN)).toThrow(RangeError);
+    expect(() => dayPhaseAt(Number.POSITIVE_INFINITY)).toThrow(RangeError);
+  });
+
+  it('seuils cohérents : la nuit en dessous du jour', () => {
+    expect(NIGHT_PHASE_MAX_INTENSITY).toBeLessThan(DAY_PHASE_MIN_INTENSITY);
+    expect(NIGHT_PHASE_MAX_INTENSITY).toBeGreaterThan(0);
+    expect(DAY_PHASE_MIN_INTENSITY).toBeLessThan(1);
   });
 });

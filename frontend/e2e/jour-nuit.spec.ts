@@ -1,10 +1,10 @@
 import { expect, test, type Page } from '@playwright/test';
 
-import { PALETTE, PALETTE_COLORS } from '../src/app/render/palette';
+import { EXTENDED_PALETTE_COLORS, NIGHT_TONES, PALETTE } from '../src/app/render/palette';
 
 /**
  * Cycle jour/nuit (issue #51, ADR 0018) : paramètre d'URL `heure=`, touche `H`, rendu de
- * nuit dans la palette et lisible, filtre `P` à toute heure. L'heure affichée est lue sur
+ * nuit dans la palette (tons de nuit compris, ADR 0021) et lisible, filtre `P` à toute heure. L'heure affichée est lue sur
  * `data-aqfish-hour`, l'état de l'horloge sur `data-aqfish-hour-frozen`.
  */
 
@@ -57,7 +57,11 @@ async function analyse(page: Page, png: Buffer): Promise<NightReport> {
       }
       return { offPalette, notBackground, counts };
     },
-    { data: png.toString('base64'), palette: [...PALETTE_COLORS], background: PALETTE.fondScene },
+    {
+      data: png.toString('base64'),
+      palette: [...EXTENDED_PALETTE_COLORS],
+      background: PALETTE.fondScene,
+    },
   );
 }
 
@@ -99,9 +103,61 @@ test.describe('Cycle jour/nuit', () => {
       expect(count(day, color)).toBeGreaterThan(0);
       expect(count(night, color)).toBe(0);
     }
-    // Le bleu néon reste le même, pixel pour pixel en nombre.
-    expect(count(night, PALETTE.neonBleu)).toBeGreaterThan(0);
-    expect(count(night, PALETTE.neonBleu)).toBe(count(day, PALETTE.neonBleu));
+    // Le bleu néon devient son ton de nuit (#73, ADR 0021), pixel pour pixel en nombre.
+    expect(count(day, PALETTE.neonBleu)).toBeGreaterThan(0);
+    expect(count(night, NIGHT_TONES.neonBleuNuit)).toBe(count(day, PALETTE.neonBleu));
+  });
+
+  test('la nuit, sable bleuté et plantes vert-bleu : plus de roche grise sous l’eau (#73)', async ({
+    page,
+  }) => {
+    const day = await analyse(page, await screenshot(page, BASE));
+    const night = await analyse(page, await screenshot(page, `${BASE}&heure=0`));
+    const count = (r: NightReport, color: string) => r.counts[color] ?? 0;
+    // Le sable du dessus couvre une grande partie du bac.
+    expect(count(night, NIGHT_TONES.sableLune)).toBeGreaterThan(10_000);
+    expect(count(night, PALETTE.roche)).toBeLessThan(count(day, PALETTE.roche) + 500);
+    expect(count(night, NIGHT_TONES.vegetationLune)).toBeGreaterThan(0);
+    expect(count(night, PALETTE.vegetationLumineuse)).toBe(0);
+    // Aucun ton ajouté à midi.
+    for (const tone of Object.values(NIGHT_TONES)) {
+      expect(count(day, tone), tone).toBe(0);
+    }
+  });
+
+  test('sans filtre, la nuit est bleutée et non grise (#73)', async ({ page }) => {
+    const mean = async (search: string) =>
+      page.evaluate(
+        async (data) => {
+          const bitmap = await createImageBitmap(
+            await (await fetch(`data:image/png;base64,${data}`)).blob(),
+          );
+          const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+          const ctx = canvas.getContext('2d')!;
+          ctx.drawImage(bitmap, 0, 0);
+          const px = ctx.getImageData(0, 0, bitmap.width, bitmap.height).data;
+          // Moyenne des pixels du bac (hors fond de la scène, #141418).
+          const sum = [0, 0, 0];
+          let n = 0;
+          for (let i = 0; i < px.length; i += 4) {
+            if (px[i] === 0x14 && px[i + 1] === 0x14 && px[i + 2] === 0x18) continue;
+            sum[0] += px[i];
+            sum[1] += px[i + 1];
+            sum[2] += px[i + 2];
+            n++;
+          }
+          return sum.map((s) => s / n);
+        },
+        (await screenshot(page, search)).toString('base64'),
+      );
+    const [r, g, b] = await mean(`${BASE}&heure=0&filtre=aucun`);
+    // Dominante bleue nette : le bleu dépasse le rouge et le vert. Mesure du cycle 23 :
+    // (51, 70, 93) ; avant #73, (50, 70, 71) : bleu égal au vert, ce test échouait.
+    expect(b).toBeGreaterThan(r + 30);
+    expect(b).toBeGreaterThan(g + 10);
+    // À midi, sans filtre, la dominante n'est pas bleue (témoin).
+    const [rd, , bd] = await mean(`${BASE}&filtre=aucun`);
+    expect(bd - rd).toBeLessThan(b - r);
   });
 
   test('hors capture : heure= fige l’heure, qui ne bouge plus avec le temps', async ({ page }) => {

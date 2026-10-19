@@ -15,6 +15,10 @@ import {
   DAY_SUN_INTENSITY,
   DEFAULT_TANK,
   NIGHT_AMBIENT_INTENSITY,
+  NIGHT_GROUND,
+  NIGHT_SAND_BOTTOM,
+  NIGHT_WATER_BODY,
+  NIGHT_WATER_SURFACE,
   SAND_THICKNESS,
   WATER_LEVEL_RATIO,
 } from './aquarium-scene';
@@ -121,7 +125,9 @@ describe('createAquariumScene : lumière du jour', () => {
     const sun = scene.scene.getObjectByName('soleil') as DirectionalLight;
     const water = scene.scene.getObjectByName('eau') as Mesh;
     const [body, , surface] = water.material as MeshBasicMaterial[];
-    return { scene, ambient, sun, body, surface };
+    const sand = scene.scene.getObjectByName('sable') as Mesh;
+    const sandBottom = (sand.material as MeshBasicMaterial[])[3];
+    return { scene, ambient, sun, body, surface, sandBottom };
   }
 
   /** Empreinte exacte (bits des flottants) de l'éclairage et de l'eau. */
@@ -134,6 +140,7 @@ describe('createAquariumScene : lumière du jour', () => {
       ...p.sun.color.toArray(),
       ...p.body.color.toArray(),
       ...p.surface.color.toArray(),
+      ...p.sandBottom.color.toArray(),
     ];
   }
 
@@ -159,8 +166,12 @@ describe('createAquariumScene : lumière du jour', () => {
     expect(p.sun.intensity).toBeLessThan(DAY_SUN_INTENSITY);
     expect(p.sun.intensity).toBeGreaterThan(0);
     expect(p.sun.color.b).toBeGreaterThan(p.sun.color.r);
-    expect(hex(p.body)).toBe(PALETTE.eauProfonde);
-    expect(hex(p.surface)).toBe(PALETTE.eauSombre);
+    // Eau de nuit bleue et saturée (#73, ADR 0021), ramenée aux tons de nuit par la passe.
+    expect(hex(p.body)).toBe(NIGHT_WATER_BODY);
+    expect(hex(p.surface)).toBe(NIGHT_WATER_SURFACE);
+    expect(p.body.color.b).toBeGreaterThan(p.body.color.g);
+    expect(`#${p.ambient.groundColor.getHexString()}`).toBe(NIGHT_GROUND);
+    expect(hex(p.sandBottom)).toBe(NIGHT_SAND_BOTTOM);
   });
 
   it('au crépuscule : lumière orangée, intensités entre la nuit et le jour', () => {

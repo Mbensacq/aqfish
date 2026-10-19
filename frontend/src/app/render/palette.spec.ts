@@ -1,5 +1,15 @@
-import { PALETTE, PALETTE_COLORS } from './palette';
-import { colorDistanceSq, hexToRgb } from './pixel-art';
+import { lightAt } from '../sim/daylight';
+import { tonePenaltiesInto } from './night-shade';
+import {
+  EXTENDED_PALETTE_COLORS,
+  NIGHT_TONE_COLORS,
+  NIGHT_TONES,
+  PALETTE,
+  PALETTE_COLORS,
+  TWILIGHT_TONE_COLORS,
+  TWILIGHT_TONES,
+} from './palette';
+import { colorDistanceSq, hexToRgb, nearestPaletteIndex, type Rgb } from './pixel-art';
 
 describe('PALETTE', () => {
   const names = Object.keys(PALETTE);
@@ -58,5 +68,96 @@ describe('PALETTE', () => {
     expect(PALETTE.fondScene).toBe('#141418');
     expect(PALETTE.eauMoyenne).toBe('#2e8b7a');
     expect(PALETTE.sableClair).toBe('#e3cf9e');
+  });
+});
+
+describe('Tons de nuit et du crépuscule (issue #73, ADR 0021)', () => {
+  const extended = EXTENDED_PALETTE_COLORS.map(hexToRgb);
+  const day = PALETTE_COLORS.map(hexToRgb);
+  const allNames = [
+    ...Object.keys(PALETTE),
+    ...Object.keys(NIGHT_TONES),
+    ...Object.keys(TWILIGHT_TONES),
+  ];
+
+  /** Pénalités par couleur de la palette étendue pour l'heure `hour`. */
+  function penaltiesAt(hour: number): number[] {
+    const p = tonePenaltiesInto(lightAt(hour).intensity, { night: 0, twilight: 0 });
+    return [
+      ...PALETTE_COLORS.map(() => 0),
+      ...NIGHT_TONE_COLORS.map(() => p.night),
+      ...TWILIGHT_TONE_COLORS.map(() => p.twilight),
+    ];
+  }
+  const nameAt = (color: Rgb, hour: number) =>
+    allNames[nearestPaletteIndex(color, extended, penaltiesAt(hour))];
+
+  it('palette étendue : jour, puis nuit, puis crépuscule ; noms uniques, couleurs valides', () => {
+    expect(EXTENDED_PALETTE_COLORS).toEqual([
+      ...PALETTE_COLORS,
+      ...NIGHT_TONE_COLORS,
+      ...TWILIGHT_TONE_COLORS,
+    ]);
+    expect(new Set(allNames).size).toBe(allNames.length);
+    for (const hex of EXTENDED_PALETTE_COLORS) {
+      expect(hex).toMatch(/^#[0-9a-f]{6}$/);
+    }
+  });
+
+  it('toutes les couleurs de la palette étendue sont distinctes et discernables', () => {
+    const minDistanceSq = 3 * (8 / 255) ** 2;
+    for (let i = 0; i < extended.length; i++) {
+      for (let j = i + 1; j < extended.length; j++) {
+        expect(
+          colorDistanceSq(extended[i], extended[j]),
+          `${allNames[i]} / ${allNames[j]}`,
+        ).toBeGreaterThan(minDistanceSq);
+      }
+    }
+  });
+
+  it('à midi, aucune couleur ne bascule sur un ton ajouté (balayage de tout l’espace RVB)', () => {
+    const noon = penaltiesAt(12);
+    const step = 15;
+    for (let r = 0; r <= 255; r += step) {
+      for (let g = 0; g <= 255; g += step) {
+        for (let b = 0; b <= 255; b += step) {
+          const c: Rgb = [r / 255, g / 255, b / 255];
+          expect(nearestPaletteIndex(c, extended, noon)).toBe(nearestPaletteIndex(c, day));
+        }
+      }
+    }
+  });
+
+  it('le sable de minuit n’est plus la roche grise : il devient sableLune', () => {
+    // Sable du dessus avant quantification, mesuré au cycle 23 (dessus, puis vu de dessous).
+    for (const hex of ['#4a6485', '#4c697d']) {
+      const sand = hexToRgb(hex);
+      expect(nameAt(sand, 0)).toBe('sableLune');
+      expect(nameAt(sand, 2)).toBe('sableLune');
+    }
+    // Avec la palette de jour seule, le sable de minuit (#486068, ADR 0019) était la roche.
+    expect(Object.keys(PALETTE)[nearestPaletteIndex(hexToRgb('#486068'), day)]).toBe('roche');
+  });
+
+  it('la nuit, plantes vert-bleu et eau bleue ; au crépuscule, sable chaud', () => {
+    // Couleurs mesurées avant quantification (passe court-circuitée), cycle 23.
+    expect(nameAt(hexToRgb('#1c4d40'), 0)).toBe('vegetationLune');
+    expect(nameAt(hexToRgb('#385471'), 0)).toBe('eauLune');
+    // Bleu néon × NIGHT_FLAT_BRIGHTNESS : les néons restent bleu vif.
+    expect(nameAt(hexToRgb('#3086c3'), 0)).toBe('neonBleuNuit');
+    expect(nameAt(hexToRgb('#9c837a'), 18)).toBe('sableCrepuscule');
+    expect(nameAt(hexToRgb('#75717e'), 19)).toBe('sableCrepusculeMauve');
+    // En pleine nuit, les tons du crépuscule sont écartés.
+    expect(nameAt(hexToRgb('#9c837a'), 0)).not.toBe('sableCrepuscule');
+  });
+
+  it('chaque ton est capté par lui-même à son heure', () => {
+    for (const [name, hex] of Object.entries(NIGHT_TONES)) {
+      expect(nameAt(hexToRgb(hex), 0)).toBe(name);
+    }
+    for (const [name, hex] of Object.entries(TWILIGHT_TONES)) {
+      expect(nameAt(hexToRgb(hex), 18)).toBe(name);
+    }
   });
 });

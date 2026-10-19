@@ -13,7 +13,7 @@ import {
   type AquariumRenderer,
 } from './aquarium-view';
 import { cameraPresetPose } from './camera-presets';
-import { NIGHT_FLAT_BRIGHTNESS } from './night-shade';
+import { DECOR_NIGHT_TINT, NIGHT_FLAT_BRIGHTNESS, TONE_PENALTY_OFF } from './night-shade';
 
 /** Double du renderer WebGL qui consigne les appels (jsdom n'a pas WebGL). */
 class RecordingRenderer implements AquariumRenderer {
@@ -132,6 +132,24 @@ describe('AquariumView (pipeline pixel art)', () => {
     view.dispose();
     view.updateLight(lightAt(0)); // ignoré après destruction
     expect(view.flatBrightnesses).toEqual(Array(layers).fill(1));
+  });
+
+  it('lumière du jour : décor teinté et tons de nuit la nuit, rien à midi (ADR 0021)', () => {
+    const off = [TONE_PENALTY_OFF, TONE_PENALTY_OFF];
+    expect(view.decorTintValue).toEqual([1, 1, 1]);
+    expect(view.tonePenalties).toEqual(off);
+    view.updateLight(lightAt(0));
+    for (let k = 0; k < 3; k++) {
+      expect(view.decorTintValue[k]).toBeCloseTo(DECOR_NIGHT_TINT[k], 6);
+    }
+    expect(view.tonePenalties).toEqual([0, TONE_PENALTY_OFF]);
+    view.updateLight(lightAt(18));
+    expect(view.tonePenalties[1]).toBe(0);
+    expect(view.tonePenalties[0]).toBeGreaterThan(0);
+    expect(view.tonePenalties[0]).toBeLessThan(TONE_PENALTY_OFF);
+    view.updateLight(lightAt(12));
+    expect(view.decorTintValue).toEqual([1, 1, 1]);
+    expect(view.tonePenalties).toEqual(off);
   });
 
   it('affiche le décor du monde ; ignore setDecor après destruction', () => {

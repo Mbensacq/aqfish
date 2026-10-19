@@ -74,6 +74,8 @@ test.describe('Captures', () => {
   // captures ci-dessus, sans `heure=`, sont à midi et restent inchangées.
   const DAY_CAPTURES = [
     { name: 'three-quarter-crepuscule', query: 'heure=18' },
+    // Fin du crépuscule (#73) : teintes chaudes avant la nuit.
+    { name: 'three-quarter-crepuscule-19h', query: 'heure=19' },
     { name: 'three-quarter-minuit', query: 'heure=0' },
     { name: 'three-quarter-sans-filtre-minuit', query: 'heure=0&filtre=aucun' },
   ] as const;
