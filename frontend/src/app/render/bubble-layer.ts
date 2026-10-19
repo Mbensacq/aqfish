@@ -2,6 +2,7 @@ import {
   BoxGeometry,
   BufferAttribute,
   BufferGeometry,
+  Color,
   DynamicDrawUsage,
   Group,
   Mesh,
@@ -55,6 +56,9 @@ export class BubbleLayer {
     transparent: true,
     opacity: 1,
   });
+  private readonly diffuserColor = new Color(DIFFUSER_COLOR);
+  private readonly bubbleColor = new Color(BUBBLE_COLOR);
+  private brightnessFactor = 1;
   private seed = 0;
   /** Pixels de la cible par pixel de scène (1 en pixel art, PIXEL_SIZE × ratio sans filtre). */
   private pointScale = 1;
@@ -87,6 +91,27 @@ export class BubbleLayer {
         cloud.material.size = cloud.size * s;
       }
     }
+  }
+
+  /**
+   * Luminosité des couleurs plates (`render/night-shade.ts`) : facteur appliqué aux
+   * couleurs des bulles et du diffuseur. 1 : couleurs d'origine, exactement.
+   * Une valeur non finie ou négative est ignorée.
+   */
+  setBrightness(factor: number): void {
+    if (!Number.isFinite(factor) || factor < 0 || factor === this.brightnessFactor) {
+      return;
+    }
+    this.brightnessFactor = factor;
+    for (const cloud of this.clouds) {
+      cloud.material.color.copy(this.bubbleColor).multiplyScalar(factor);
+    }
+    this.diffuserMaterial.color.copy(this.diffuserColor).multiplyScalar(factor);
+  }
+
+  /** Luminosité appliquée (tests). */
+  get brightness(): number {
+    return this.brightnessFactor;
   }
 
   /** Pose les bulles au temps simulé `time` (secondes), sans allocation. */

@@ -174,6 +174,22 @@ export class FishLayer {
     this.tail.instanceMatrix.needsUpdate = true;
   }
 
+  /**
+   * Luminosité des couleurs plates (`render/night-shade.ts`) : facteur appliqué à la
+   * couleur du matériau, qui multiplie les couleurs de sommet. 1 : couleurs d'origine.
+   * Une valeur non finie ou négative est ignorée.
+   */
+  setBrightness(factor: number): void {
+    if (Number.isFinite(factor) && factor >= 0) {
+      this.material.color.setScalar(factor);
+    }
+  }
+
+  /** Luminosité appliquée (tests). */
+  get brightness(): number {
+    return this.material.color.r;
+  }
+
   /** Lit la matrice d'une instance du corps (tests). */
   bodyMatrixAt(index: number, out: Matrix4): Matrix4 {
     this.body.getMatrixAt(index, out);

@@ -30,6 +30,7 @@ import type { DecorItem } from '../sim/decor';
 import { BubbleLayer } from './bubble-layer';
 import { DecorLayer } from './decor-layer';
 import { FishLayer, MAX_FISH_PER_SPECIES } from './fish-layer';
+import { flatBrightness } from './night-shade';
 import { PalettePass } from './palette-pass';
 import { PIXEL_SIZE, type Size } from './pixel-art';
 import { WaterLightLayer } from './water-light';
@@ -266,12 +267,18 @@ export class AquariumView {
 
   /**
    * Applique la lumière du jour (`sim/daylight.ts`, ADR 0018) : lumières, teinte de l'eau,
-   * caustiques et reflet. Sans effet sur la caméra, le filtre et le reste de la scène.
+   * caustiques et reflet, luminosité des couleurs plates (poissons, bulles : ADR 0019).
+   * Sans effet sur la caméra, le filtre et le reste de la scène.
    */
   updateLight(light: DayLight): void {
     if (!this.disposed) {
       this.world.setDaylight(light);
       this.waterLight.setDaylight(light.intensity);
+      const brightness = flatBrightness(light.intensity);
+      for (const layer of this.fishLayers) {
+        layer.setBrightness(brightness);
+      }
+      this.bubbleLayer.setBrightness(brightness);
     }
   }
 
@@ -289,6 +296,11 @@ export class AquariumView {
   /** Nombre de bulles posées par le dernier `updateDecor` (tests). */
   get bubbleCount(): number {
     return this.bubbleLayer.count;
+  }
+
+  /** Luminosité des couleurs plates de chaque couche de poissons, puis des bulles (tests). */
+  get flatBrightnesses(): readonly number[] {
+    return [...this.fishLayers.map((layer) => layer.brightness), this.bubbleLayer.brightness];
   }
 
   /** Nombre d'éléments de décor affichés (tests). */
