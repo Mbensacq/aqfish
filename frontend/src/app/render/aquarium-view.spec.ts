@@ -1,9 +1,11 @@
 import type { Camera, Scene, WebGLRenderTarget } from 'three';
 
+import { lightAt } from '../sim/daylight';
 import { SPECIES, speciesVariants } from '../sim/species';
 import { createDefaultWorld } from '../sim/world';
 import { AquariumView, type AquariumRenderer } from './aquarium-view';
 import { cameraPresetPose } from './camera-presets';
+import { NIGHT_FLAT_BRIGHTNESS } from './night-shade';
 
 /** Double du renderer WebGL qui consigne les appels (jsdom n'a pas WebGL). */
 class RecordingRenderer implements AquariumRenderer {
@@ -104,6 +106,24 @@ describe('AquariumView (pipeline pixel art)', () => {
     view.dispose();
     view.updateFish([], 0);
     expect(view.fishCount).toBe(world.entities.length);
+  });
+
+  it('lumière du jour : poissons et bulles assombris la nuit, intacts à midi (ADR 0019)', () => {
+    const layers = view.flatBrightnesses.length;
+    expect(layers).toBe(view.fishLayerNames.length + 1);
+    expect(view.flatBrightnesses).toEqual(Array(layers).fill(1));
+    view.updateLight(lightAt(0));
+    expect(view.flatBrightnesses).toEqual(Array(layers).fill(NIGHT_FLAT_BRIGHTNESS));
+    view.updateLight(lightAt(18));
+    for (const b of view.flatBrightnesses) {
+      expect(b).toBeGreaterThan(NIGHT_FLAT_BRIGHTNESS);
+      expect(b).toBeLessThan(1);
+    }
+    view.updateLight(lightAt(12));
+    expect(view.flatBrightnesses).toEqual(Array(layers).fill(1));
+    view.dispose();
+    view.updateLight(lightAt(0)); // ignoré après destruction
+    expect(view.flatBrightnesses).toEqual(Array(layers).fill(1));
   });
 
   it('affiche le décor du monde ; ignore setDecor après destruction', () => {

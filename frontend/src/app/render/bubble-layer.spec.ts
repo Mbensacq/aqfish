@@ -1,4 +1,4 @@
-import { Mesh, Points, type PointsMaterial } from 'three';
+import { Mesh, Points, type MeshBasicMaterial, type PointsMaterial } from 'three';
 import {
   createBubbleBuffer,
   DEFAULT_BUBBLE_SOURCE,
@@ -98,6 +98,30 @@ describe('BubbleLayer', () => {
     const diffuser = layer.object.getObjectByName('diffuseur')!;
     expect(diffuser.position.x).toBe(DEFAULT_BUBBLE_SOURCE.x);
     expect(diffuser.position.z).toBe(DEFAULT_BUBBLE_SOURCE.z);
+    layer.dispose();
+  });
+
+  it('luminosité : bulles et diffuseur assombris, couleurs d’origine exactes à 1', () => {
+    const layer = new BubbleLayer();
+    const materials = [
+      ...clouds(layer).map((c) => c.material as PointsMaterial),
+      (layer.object.getObjectByName('diffuseur') as Mesh).material as MeshBasicMaterial,
+    ];
+    const before = materials.map((m) => m.color.clone());
+    expect(layer.brightness).toBe(1);
+    layer.setBrightness(0.5);
+    expect(layer.brightness).toBe(0.5);
+    materials.forEach((m, i) => {
+      expect(m.color.r).toBeCloseTo(before[i].r * 0.5, 12);
+      expect(m.color.g).toBeCloseTo(before[i].g * 0.5, 12);
+      expect(m.color.b).toBeCloseTo(before[i].b * 0.5, 12);
+    });
+    layer.setBrightness(Number.NaN);
+    layer.setBrightness(-0.1);
+    expect(layer.brightness).toBe(0.5);
+    layer.setBrightness(1);
+    materials.forEach((m, i) => expect(m.color.equals(before[i])).toBe(true));
+    expect('#' + materials[0].color.getHexString()).toBe(BUBBLE_COLOR);
     layer.dispose();
   });
 });

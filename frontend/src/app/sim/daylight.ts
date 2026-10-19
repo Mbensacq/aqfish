@@ -18,6 +18,8 @@ export const HOURS_PER_DAY = 24;
 
 /** Couleur RVB, composantes dans [0, 1] (sRGB). */
 export type Rgb = readonly [number, number, number];
+/** Couleur RVB modifiable (tampon réutilisé par `lightAtInto`). */
+export type MutableRgb = [number, number, number];
 
 /**
  * Horloge de journée : données pures. L'heure au temps simulé `t` vaut
@@ -40,6 +42,22 @@ export interface DayLight {
   readonly tint: Rgb;
   /** Teinte du ciel (lumière ambiante venant du haut) : blanc à midi. */
   readonly sky: Rgb;
+}
+
+/**
+ * Lumière du jour modifiable : tampon que `lightAtInto` remplit sans allocation (une
+ * instance par hôte, réutilisée à chaque recalcul de l'éclairage). Utilisable partout où
+ * une `DayLight` est attendue.
+ */
+export interface MutableDayLight extends DayLight {
+  intensity: number;
+  readonly tint: MutableRgb;
+  readonly sky: MutableRgb;
+}
+
+/** Nouveau tampon de lumière, initialisé à la lumière de midi. */
+export function createDayLight(): MutableDayLight {
+  return { intensity: 1, tint: [1, 1, 1], sky: [1, 1, 1] };
 }
 
 /**
@@ -157,25 +175,33 @@ export function sunElevation(hour: number): number {
  * - `tint` et `sky` : mélange nuit → jour selon l'intensité, puis vers la teinte d'aube ou
  *   de crépuscule avec un poids `TWILIGHT_STRENGTH · 4 · i · (1 − i)`, nul en plein jour et
  *   en pleine nuit, maximal à mi-transition. Exactement blanc en plein jour.
+ *
+ * Alloue un nouvel objet : dans une boucle par image, préférer `lightAtInto`.
  * @throws RangeError si `hour` n'est pas un réel fini.
  */
 export function lightAt(hour: number): DayLight {
+  return lightAtInto(hour, createDayLight());
+}
+
+/**
+ * Variante sans allocation de `lightAt` : écrit la lumière de l'heure `hour` dans `out` et
+ * le renvoie. Résultat identique à `lightAt(hour)`, composante par composante.
+ * @throws RangeError si `hour` n'est pas un réel fini (`out` n'est alors pas modifié).
+ */
+export function lightAtInto(hour: number, out: MutableDayLight): MutableDayLight {
   const intensity = smoothstep(NIGHT_ELEVATION, DAY_ELEVATION, sunElevation(hour));
   const twilight = TWILIGHT_STRENGTH * 4 * intensity * (1 - intensity);
-  return {
-    intensity,
-    tint: mixRgb(mixRgb(NIGHT_TINT, WHITE, intensity), TWILIGHT_TINT, twilight),
-    sky: mixRgb(mixRgb(NIGHT_SKY, WHITE, intensity), TWILIGHT_SKY, twilight),
-  };
+  out.intensity = intensity;
+  for (let k = 0; k < 3; k++) {
+    out.tint[k] = mix(mix(NIGHT_TINT[k], WHITE[k], intensity), TWILIGHT_TINT[k], twilight);
+    out.sky[k] = mix(mix(NIGHT_SKY[k], WHITE[k], intensity), TWILIGHT_SKY[k], twilight);
+  }
+  return out;
 }
 
 /** `a · (1 − t) + b · t` : exactement `a` pour t = 0 et `b` pour t = 1. */
 export function mix(a: number, b: number, t: number): number {
   return a * (1 - t) + b * t;
-}
-
-function mixRgb(a: Rgb, b: Rgb, t: number): Rgb {
-  return [mix(a[0], b[0], t), mix(a[1], b[1], t), mix(a[2], b[2], t)];
 }
 
 function smoothstep(edge0: number, edge1: number, x: number): number {

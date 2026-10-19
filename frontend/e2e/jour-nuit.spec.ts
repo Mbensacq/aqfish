@@ -29,6 +29,8 @@ interface NightReport {
   offPalette: number;
   /** Pixels différents du fond de la scène (le bac et son contenu). */
   notBackground: number;
+  /** Nombre de pixels de chaque couleur de la palette (`#rrggbb`). */
+  counts: Record<string, number>;
 }
 
 async function analyse(page: Page, png: Buffer): Promise<NightReport> {
@@ -46,12 +48,14 @@ async function analyse(page: Page, png: Buffer): Promise<NightReport> {
       const allowed = new Set(palette);
       let offPalette = 0;
       let notBackground = 0;
+      const counts: Record<string, number> = {};
       for (let i = 0; i < pixels.length; i += 4) {
         const color = hex(i);
         if (!allowed.has(color)) offPalette++;
         if (color !== background) notBackground++;
+        counts[color] = (counts[color] ?? 0) + 1;
       }
-      return { offPalette, notBackground };
+      return { offPalette, notBackground, counts };
     },
     { data: png.toString('base64'), palette: [...PALETTE_COLORS], background: PALETTE.fondScene },
   );
@@ -82,6 +86,22 @@ test.describe('Cycle jour/nuit', () => {
     expect(night.offPalette).toBe(0);
     // Le bac occupe autant de pixels de nuit que de jour : rien ne se fond dans le fond.
     expect(night.notBackground).toBeGreaterThan(day.notBackground * 0.97);
+  });
+
+  test('la nuit, les poissons s’assombrissent mais les néons restent lisibles (ADR 0019)', async ({
+    page,
+  }) => {
+    const day = await analyse(page, await screenshot(page, BASE));
+    const night = await analyse(page, await screenshot(page, `${BASE}&heure=0`));
+    const count = (r: NightReport, color: string) => r.counts[color] ?? 0;
+    // Dans cette vue, le blanc des ventres et le rouge néon n'appartiennent qu'aux poissons.
+    for (const color of [PALETTE.koiBlanc, PALETTE.neonRouge]) {
+      expect(count(day, color)).toBeGreaterThan(0);
+      expect(count(night, color)).toBe(0);
+    }
+    // Le bleu néon reste le même, pixel pour pixel en nombre.
+    expect(count(night, PALETTE.neonBleu)).toBeGreaterThan(0);
+    expect(count(night, PALETTE.neonBleu)).toBe(count(day, PALETTE.neonBleu));
   });
 
   test('hors capture : heure= fige l’heure, qui ne bouge plus avec le temps', async ({ page }) => {

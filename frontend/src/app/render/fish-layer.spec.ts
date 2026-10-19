@@ -1,4 +1,4 @@
-import { Box3, Matrix4, Object3D, Vector3 } from 'three';
+import { Box3, Matrix4, Mesh, Object3D, Vector3, type MeshBasicMaterial } from 'three';
 
 import { GUPPY, NEON, speciesVariantIndex } from '../sim/species';
 import { createFish, stepFish, swimBounds, type Fish } from '../sim/swimmer';
@@ -289,5 +289,20 @@ describe('FishLayer : apparences (guppy mâle et femelle)', () => {
     const hinge = new Vector3().setFromMatrixPosition(male.tailMatrixAt(0, new Matrix4()));
     const scale = (GUPPY.variants ?? [])[0].scale;
     expect(body.distanceTo(hinge)).toBeCloseTo((GUPPY.bodyLength * scale) / 2, 6);
+  });
+
+  it('luminosité : facteur sur la couleur du matériau, exactement blanc à 1 ; valeurs invalides ignorées', () => {
+    const layer = new FishLayer(NEON, 4);
+    const material = (layer.object.children[0] as Mesh).material as MeshBasicMaterial;
+    expect(layer.brightness).toBe(1);
+    expect(material.color.getHex()).toBe(0xffffff);
+    layer.setBrightness(0.6);
+    expect(layer.brightness).toBe(0.6);
+    layer.setBrightness(Number.NaN);
+    layer.setBrightness(-1);
+    expect(layer.brightness).toBe(0.6);
+    layer.setBrightness(1);
+    expect(material.color.getHex()).toBe(0xffffff);
+    layer.dispose();
   });
 });
