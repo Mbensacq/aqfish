@@ -1,12 +1,14 @@
 import { SIM_DT } from './constants';
 import {
   createDayClock,
+  createDayLight,
   DAY_ELEVATION,
   DEFAULT_DAY_CLOCK,
   DEFAULT_DAY_LENGTH_SECONDS,
   freezeClock,
   hourAt,
   lightAt,
+  lightAtInto,
   mix,
   NIGHT_ELEVATION,
   NIGHT_SKY,
@@ -217,6 +219,50 @@ describe('horloge de journée', () => {
     } finally {
       now.mockRestore();
       dateNow.mockRestore();
+    }
+  });
+});
+
+describe('lightAtInto : variante sans allocation', () => {
+  const HOURS = [
+    0, 0.5, 4.99, 5.02, 6, 6.5, 7.3, 8, 12, 15.99, 18, 18.97, 19, 23.999, 24, -3, 37.5,
+  ];
+
+  it('identique à lightAt, composante par composante (égalité exacte)', () => {
+    const out = createDayLight();
+    for (const h of HOURS) {
+      expect(lightAtInto(h, out)).toEqual(lightAt(h));
+    }
+  });
+
+  it('renvoie et réutilise le même tampon (mêmes tableaux de teinte et de ciel)', () => {
+    const out = createDayLight();
+    const { tint, sky } = out;
+    expect(lightAtInto(0, out)).toBe(out);
+    expect(out.tint).toBe(tint);
+    expect(out.sky).toBe(sky);
+    expect(out).toEqual({ intensity: 0, tint: NIGHT_TINT, sky: NIGHT_SKY });
+    // Retour à midi après la nuit : aucune valeur résiduelle.
+    lightAtInto(12, out);
+    expect(out).toEqual({ intensity: 1, tint: [1, 1, 1], sky: [1, 1, 1] });
+    expect(out.tint).toBe(tint);
+  });
+
+  it('createDayLight : lumière de midi, tampons indépendants', () => {
+    const a = createDayLight();
+    const b = createDayLight();
+    expect(a).toEqual(lightAt(12));
+    lightAtInto(0, a);
+    expect(b).toEqual(lightAt(12));
+    expect(a.tint).not.toBe(b.tint);
+  });
+
+  it('heure invalide : RangeError, tampon inchangé', () => {
+    const out = lightAtInto(18, createDayLight());
+    const before = structuredClone(out);
+    for (const h of [Number.NaN, Infinity, -Infinity]) {
+      expect(() => lightAtInto(h, out)).toThrow(RangeError);
+      expect(out).toEqual(before);
     }
   });
 });

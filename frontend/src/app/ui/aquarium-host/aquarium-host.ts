@@ -30,11 +30,12 @@ import { CAMERA_TRANSITION_SECONDS } from '../../render/camera-presets';
 import { SIM_DT } from '../../sim/constants';
 import {
   createDayClock,
+  createDayLight,
   DEFAULT_DAY_CLOCK,
   DEFAULT_DAY_LENGTH_SECONDS,
   DEFAULT_START_HOUR,
   hourAt,
-  lightAt,
+  lightAtInto,
   toggleClock,
   type DayClock,
 } from '../../sim/daylight';
@@ -145,6 +146,8 @@ export class AquariumHost {
   private dayClock: DayClock = DEFAULT_DAY_CLOCK;
   /** Heure de l'éclairage appliqué en dernier (`null` : à appliquer à la prochaine image). */
   private litHour: number | null = null;
+  /** Tampon de la lumière du jour, réécrit à chaque recalcul (aucune allocation). */
+  private readonly light = createDayLight();
   private exposedHour: string | null = null;
   private readonly onFrame: FrameRequestCallback = (timestamp) => this.frame(timestamp);
   private readonly cleanups: (() => void)[] = [];
@@ -360,7 +363,7 @@ export class AquariumHost {
     const hour = hourAt(this.dayClock, time);
     if (this.litHour === null || Math.abs(hour - this.litHour) >= LIGHT_HOUR_STEP) {
       this.litHour = hour;
-      view.updateLight(lightAt(hour));
+      view.updateLight(lightAtInto(hour, this.light));
     }
     // Une heure comme 23,999 s'arrondit à « 24.00 » : affichée « 0.00 ».
     const rounded = hour.toFixed(2);
