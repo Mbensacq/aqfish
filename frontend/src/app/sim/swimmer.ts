@@ -408,12 +408,21 @@ export function stepFish(
   fish.x += Math.cos(fish.yaw) * horizontal;
   fish.y += Math.sin(fish.pitch) * distance;
   fish.z += Math.sin(fish.yaw) * horizontal;
-  for (const o of obstacles) {
-    const d = obstacleDistance(o, fish.x, fish.y, fish.z, SCRATCH_NORMAL);
-    if (d < 0) {
-      fish.x -= SCRATCH_NORMAL.x * d;
-      fish.y -= SCRATCH_NORMAL.y * d;
-      fish.z -= SCRATCH_NORMAL.z * d;
+  // Plusieurs passes : sorti d'une sphère d'une union (ou d'un obstacle), le centre peut se
+  // retrouver dans une sphère voisine ; sans obstacle, aucune passe.
+  for (let pass = 0; pass < OBSTACLE_PASSES; pass++) {
+    let moved = false;
+    for (const o of obstacles) {
+      const d = obstacleDistance(o, fish.x, fish.y, fish.z, SCRATCH_NORMAL);
+      if (d < 0) {
+        fish.x -= SCRATCH_NORMAL.x * d;
+        fish.y -= SCRATCH_NORMAL.y * d;
+        fish.z -= SCRATCH_NORMAL.z * d;
+        moved = true;
+      }
+    }
+    if (!moved) {
+      break;
     }
   }
   fish.x = clamp(fish.x, hard.minX, hard.maxX);
@@ -424,6 +433,9 @@ export function stepFish(
   // aucun calcul de trajectoire et ne consomme aucun tirage (sim/undulation.ts).
   fish.phase = (fish.phase + tailBeatRate(def, fish.speed) * dt) % TWO_PI;
 }
+
+/** Nombre maximal de passes de projection hors des obstacles par pas. */
+const OBSTACLE_PASSES = 4;
 
 function clearOfObstacles(fish: Fish, obstacles: readonly Obstacle[], margin: number): boolean {
   for (const o of obstacles) {

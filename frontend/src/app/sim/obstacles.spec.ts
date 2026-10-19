@@ -66,3 +66,65 @@ describe('obstacleDistance (sphère)', () => {
     expect(n.z).toBe(0);
   });
 });
+
+describe('obstacle en union de sphères', () => {
+  const union: Obstacle = {
+    id: 1,
+    shape: 'spheres',
+    spheres: [
+      { x: 0, y: 0, z: 0, radius: 1 },
+      { x: 3, y: 0, z: 0, radius: 0.5 },
+    ],
+  };
+
+  it('valide, sérialisable en JSON', () => {
+    expect(validateObstacle(union)).toEqual([]);
+    expect(JSON.parse(JSON.stringify(union))).toEqual(union);
+  });
+
+  it('refuse une liste vide ou une sphère invalide, en nommant la sphère', () => {
+    expect(validateObstacle({ id: 0, shape: 'spheres', spheres: [] })).toEqual([
+      'spheres doit être une liste non vide',
+    ]);
+    const bad: Obstacle = {
+      id: 0,
+      shape: 'spheres',
+      spheres: [union.spheres[0], { x: Number.NaN, y: 0, z: 0, radius: -1 }],
+    };
+    expect(validateObstacle(bad)).toEqual([
+      'spheres[1].x doit être un réel fini (reçu : NaN)',
+      'spheres[1].radius doit être un réel strictement positif (reçu : -1)',
+    ]);
+  });
+
+  it('distance : la plus petite des sphères, normale de la sphère la plus proche', () => {
+    const n = vec();
+    expect(obstacleDistance(union, 4, 0, 0, n)).toBeCloseTo(0.5, 12);
+    expect(n).toEqual({ x: 1, y: 0, z: 0 });
+    expect(obstacleDistance(union, -2, 0, 0, n)).toBeCloseTo(1, 12);
+    expect(n).toEqual({ x: -1, y: 0, z: 0 });
+  });
+
+  it('entre deux sphères : hors de l’union (pas d’enveloppe unique)', () => {
+    const n = vec();
+    // x = 1,8 : à 0,8 de la première surface, à 0,7 de la seconde.
+    expect(obstacleDistance(union, 1.8, 0, 0, n)).toBeCloseTo(0.7, 12);
+    expect(n.x).toBeCloseTo(-1, 12);
+  });
+
+  it('à l’intérieur : distance négative ; à égalité, la première sphère', () => {
+    const n = vec();
+    expect(obstacleDistance(union, 3, 0.25, 0, n)).toBeCloseTo(-0.25, 12);
+    expect(n).toEqual({ x: 0, y: 1, z: 0 });
+    const twins: Obstacle = {
+      id: 2,
+      shape: 'spheres',
+      spheres: [
+        { x: -1, y: 0, z: 0, radius: 0.5 },
+        { x: 1, y: 0, z: 0, radius: 0.5 },
+      ],
+    };
+    expect(obstacleDistance(twins, 0, 0, 0, n)).toBeCloseTo(0.5, 12);
+    expect(n).toEqual({ x: 1, y: 0, z: 0 });
+  });
+});
