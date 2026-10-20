@@ -191,4 +191,45 @@ test.describe('Sauvegarde (#70)', () => {
     });
     expect(await page.evaluate(() => localStorage.getItem('aqfish.sauvegarde'))).toBe(stored);
   });
+
+  test('stockage corrompu : le bac démarre à neuf, sans erreur', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    await page.goto('/');
+    await page.evaluate(() =>
+      localStorage.setItem('aqfish.sauvegarde', '{"format":"aqfish","sche'),
+    );
+    await page.reload();
+    await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+    await expect(hostEl(page)).toHaveAttribute(
+      'data-aqfish-population',
+      'neon:12,guppy:6,corydora:6',
+    );
+    expect(errors).toEqual([]);
+  });
+
+  test('fichiers hostiles : refusés avec un message, bac inchangé', async ({ page }) => {
+    const errors = await open(page);
+    await openPanel(page);
+    const population = await hostEl(page).getAttribute('data-aqfish-population');
+    const hostile = [
+      jsonFile('vide.json', ''),
+      jsonFile('texte.json', 'ceci n’est pas du JSON'),
+      jsonFile('tableau.json', '[1,2,3]'),
+      jsonFile('proto.json', '{"__proto__":{"polluted":true},"format":"aqfish","schema":1}'),
+      jsonFile('infini.json', '{"format":"aqfish","schema":1,"seed":1e999}'),
+      jsonFile(
+        'gros.json',
+        JSON.stringify({ format: SAVE_FORMAT, schema: 1, pad: 'x'.repeat(300_000) }),
+      ),
+      jsonFile('profond.json', '['.repeat(50_000) + ']'.repeat(50_000)),
+    ];
+    for (const file of hostile) {
+      await fileInput(page).setInputFiles(file);
+      await expect(page.getByRole('alert')).toContainText('Import refusé');
+      await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', population!);
+    }
+    expect(await page.evaluate(() => ({}).hasOwnProperty.call({}, 'polluted'))).toBe(false);
+    expect(errors).toEqual([]);
+  });
 });
