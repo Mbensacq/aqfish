@@ -131,6 +131,11 @@ export function hasLineOfSight(
  * mètres du point visé (granulé ramené dans `hard`), en ignorant les indices marqués dans
  * `taken` et, si `obstacles` est donné, les granulés cachés (`hasLineOfSight` à
  * `clearance`) ; -1 si aucun. Égalité : le premier dans l'ordre de `food` (déterministe).
+ *
+ * Coût (issue #85) : les candidats sont examinés par ordre croissant de (distance, indice),
+ * un passage linéaire par candidat, sans tri ni allocation ; la visibilité n'est testée que
+ * pour le candidat courant et la recherche s'arrête au premier visible. Le nombre de tests de
+ * visibilité vaut donc 1 + le nombre de granulés cachés plus proches que le granulé retenu.
  */
 export function nearestPellet(
   fish: Feeder,
@@ -142,31 +147,56 @@ export function nearestPellet(
   obstacles: readonly Obstacle[] = NO_OBSTACLES,
   clearance = 0,
 ): number {
-  let best = -1;
-  let bestSq = radius * radius;
-  for (let i = 0; i < food.length; i++) {
-    const p = food[i];
-    if (p.y < band.minY || p.y > band.maxY || (taken !== null && taken[i] === 1)) {
-      continue;
+  const radiusSq = radius * radius;
+  // Dernier candidat écarté (caché) : les suivants sont strictement après lui dans l'ordre
+  // (distance, indice), ce qui exclut tous les candidats déjà examinés.
+  let afterSq = -1;
+  let afterIndex = -1;
+  for (;;) {
+    let best = -1;
+    let bestSq = radiusSq;
+    for (let i = 0; i < food.length; i++) {
+      const p = food[i];
+      if (p.y < band.minY || p.y > band.maxY || (taken !== null && taken[i] === 1)) {
+        continue;
+      }
+      const sq = pelletDistanceSq(fish, p, hard);
+      // Plus proche que le meilleur courant (égalité : le premier dans l'ordre l'emporte),
+      // et pas encore examiné.
+      if (sq < bestSq && (sq > afterSq || (sq === afterSq && i > afterIndex))) {
+        bestSq = sq;
+        best = i;
+      }
     }
-    const tx = clamp(p.x, hard.minX, hard.maxX);
-    const ty = clamp(p.y, hard.minY, hard.maxY);
-    const tz = clamp(p.z, hard.minZ, hard.maxZ);
-    const dx = tx - fish.x;
-    const dy = ty - fish.y;
-    const dz = tz - fish.z;
-    const sq = dx * dx + dy * dy + dz * dz;
-    // Visibilité testée seulement pour un meilleur candidat (coût borné).
+    if (best < 0 || obstacles.length === 0) {
+      return best;
+    }
+    const p = food[best];
     if (
-      sq < bestSq &&
-      (obstacles.length === 0 ||
-        hasLineOfSight(fish.x, fish.y, fish.z, tx, ty, tz, obstacles, clearance))
+      hasLineOfSight(
+        fish.x,
+        fish.y,
+        fish.z,
+        clamp(p.x, hard.minX, hard.maxX),
+        clamp(p.y, hard.minY, hard.maxY),
+        clamp(p.z, hard.minZ, hard.maxZ),
+        obstacles,
+        clearance,
+      )
     ) {
-      bestSq = sq;
-      best = i;
+      return best;
     }
+    afterSq = bestSq;
+    afterIndex = best;
   }
-  return best;
+}
+
+/** Carré de la distance de `fish` au granulé `p` ramené dans les bornes de nage `hard`. */
+function pelletDistanceSq(fish: Feeder, p: FoodPellet, hard: Box3): number {
+  const dx = clamp(p.x, hard.minX, hard.maxX) - fish.x;
+  const dy = clamp(p.y, hard.minY, hard.maxY) - fish.y;
+  const dz = clamp(p.z, hard.minZ, hard.maxZ) - fish.z;
+  return dx * dx + dy * dy + dz * dz;
 }
 
 /**

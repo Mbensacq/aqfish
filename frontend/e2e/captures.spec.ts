@@ -129,6 +129,8 @@ const TRACE_SECONDS = Number(process.env['CAPTURE_TRACE_TIME'] ?? 60);
 /** Pixels par mètre du tracé. */
 const TRACE_SCALE = 1000;
 const TRACE_PADDING = 40;
+/** Hauteur d'une ligne de légende, en pixels. */
+const TRACE_LINE_HEIGHT = 22;
 const TRACE_COLORS: Record<string, string> = {
   neon: '#3fa9f5',
   guppy: '#e8a33d',
@@ -137,8 +139,9 @@ const TRACE_COLORS: Record<string, string> = {
 
 /**
  * Tracé SVG vu de dessus (X vers la droite, Z vers le bas, comme la vue `top`) : vitres
- * (trait plein), limite de nage `wallMargin` (tirets), une polyligne par poisson, et une
- * légende avec la médiane des distances minimales aux vitres.
+ * (trait plein), limite de nage `wallMargin` (tirets), obstacles (disques), une polyligne
+ * par poisson, et une légende sur plusieurs lignes avec la médiane des distances minimales
+ * aux vitres (nombres au format français).
  */
 function trajectorySvg(
   seed: number,
@@ -158,46 +161,77 @@ function trajectorySvg(
     water,
     0.1,
   );
+  // Légende : une ligne de texte par entrée, pour ne jamais déborder du tracé (#85).
+  const textLines = [
+    `graine ${seed}, ${seconds} s simulées — néons (bleu), guppys (orange), corydoras (blanc)` +
+      ` — rochers (gris) et plantes (vert) vus de dessus, survolables`,
+    `néons et guppys : médiane des distances minimales aux vitres : ${frNumber(stats.medianMinimum * 100)} cm,` +
+      ` positions à moins de 10 cm : ${frNumber(stats.nearFraction * 100)} %`,
+  ];
+  if (feedings.length > 0) {
+    textLines.push(
+      `${start.food.length - advance(start, steps).food.length} granulés mangés sur ` +
+        `${start.food.length} en ${seconds} s (croix rouges : dépôts à t = 0)`,
+    );
+  }
   const width = Math.round((water.maxX - water.minX) * TRACE_SCALE) + 2 * TRACE_PADDING;
-  const extraLine = feedings.length > 0 ? 22 : 0;
-  const height =
-    Math.round((water.maxZ - water.minZ) * TRACE_SCALE) + 2 * TRACE_PADDING + 30 + extraLine;
+  const tankBottom = Math.round((water.maxZ - water.minZ) * TRACE_SCALE) + 2 * TRACE_PADDING;
+  const height = tankBottom + TRACE_LINE_HEIGHT * textLines.length + 8;
   const px = (x: number) => (TRACE_PADDING + (x - water.minX) * TRACE_SCALE).toFixed(1);
   const pz = (z: number) => (TRACE_PADDING + (z - water.minZ) * TRACE_SCALE).toFixed(1);
   const hard = swimBounds(SPECIES.neon, water).hard;
   const rect = (b: { minX: number; maxX: number; minZ: number; maxZ: number }, style: string) =>
     `<rect x="${px(b.minX)}" y="${pz(b.minZ)}" width="${((b.maxX - b.minX) * TRACE_SCALE).toFixed(1)}" height="${((b.maxZ - b.minZ) * TRACE_SCALE).toFixed(1)}" fill="none" ${style}/>`;
+  // Obstacles vus de dessus (#55) : un disque par sphère de collision, rochers en gris,
+  // plantes en vert. Les formes du décor suivent les obstacles explicites, dans l'ordre.
+  const decorStart = start.obstacles.length - start.decor.length;
+  const obstacles = start.obstacles
+    .map((o, i) => {
+      const plant = i >= decorStart && start.decor[i - decorStart]?.kind === 'plant';
+      const style = plant
+        ? 'fill="#4caf50" fill-opacity="0.18" stroke="#4caf50" stroke-width="1"'
+        : 'fill="#8d8a99" fill-opacity="0.35" stroke="#b7b4c4" stroke-width="1"';
+      const spheres = o.shape === 'sphere' ? [o] : o.spheres;
+      return spheres
+        .map(
+          (sp) =>
+            `<circle cx="${px(sp.x)}" cy="${pz(sp.z)}" r="${(sp.radius * TRACE_SCALE).toFixed(1)}" ${style}/>`,
+        )
+        .join('');
+    })
+    .join('');
   const lines = traces
     .map(
       (t) =>
         `<polyline fill="none" stroke="${TRACE_COLORS[t.species] ?? '#f2ead8'}" stroke-width="1.5" stroke-opacity="0.8" points="${t.points.map((p) => `${px(p.x)},${pz(p.z)}`).join(' ')}"/>`,
     )
     .join('');
-  // Granulés : croix rouges aux points de dépôt, et nombre de granulés mangés.
+  // Granulés : croix rouges aux points de dépôt.
   const crosses = feedings
     .map(
       ({ x, z }) =>
         `<path d="M${(+px(x) - 9).toFixed(1)},${(+pz(z) - 9).toFixed(1)} l18,18 m0,-18 l-18,18" stroke="#e63946" stroke-width="3"/>`,
     )
     .join('');
-  const eaten =
-    feedings.length === 0
-      ? ''
-      : `<text x="${TRACE_PADDING}" y="${height - 36}" fill="#f2ead8" font-size="15">` +
-        `${start.food.length - advance(start, steps).food.length} granulés mangés sur ` +
-        `${start.food.length} en ${seconds} s (croix rouges : dépôts à t = 0)</text>`;
-  const legend =
-    `graine ${seed}, ${seconds} s simulées — néons (bleu), guppys (orange), corydoras (blanc) — ` +
-    `néons et guppys : médiane des distances minimales aux vitres : ${(stats.medianMinimum * 100).toFixed(1)} cm, ` +
-    `positions à moins de 10 cm : ${(stats.nearFraction * 100).toFixed(1)} %`;
+  const texts = textLines
+    .map(
+      (line, i) =>
+        `<text x="${TRACE_PADDING}" y="${tankBottom + TRACE_LINE_HEIGHT * (i + 1) - 6}" fill="#f2ead8" font-size="15">${line}</text>`,
+    )
+    .join('');
   const markup =
     `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" font-family="sans-serif">` +
     rect(water, 'stroke="#a8e6cf" stroke-width="2"') +
     rect(hard, 'stroke="#6a6779" stroke-width="1" stroke-dasharray="6 4"') +
+    obstacles +
     lines +
     crosses +
-    eaten +
-    `<text x="${TRACE_PADDING}" y="${height - 14}" fill="#f2ead8" font-size="15">${legend}</text>` +
+    texts +
     `</svg>`;
   return { markup, width, height };
+}
+
+/** Nombre à une décimale, virgule décimale (format français) : 8.8 → « 8,8 ». */
+function frNumber(value: number): string {
+  return value.toFixed(1).replace('.', ',');
 }

@@ -5,6 +5,7 @@ import {
   feedingBand,
   foodTarget,
   growHunger,
+  hasLineOfSight,
   HUNGER_START,
   HUNGRY_THRESHOLD,
   isHungry,
@@ -16,7 +17,7 @@ import {
 } from './feeding';
 import type { Vec3 } from './flocking';
 import { expiryAge, type FoodPellet } from './food';
-import { obstacleDistance, sphereObstacle } from './obstacles';
+import { obstacleDistance, sphereObstacle, type Obstacle } from './obstacles';
 import { CORYDORA, GUPPY, NEON, SPECIES, type SpeciesId } from './species';
 import { createFish, stepFish, swimBounds, type Fish } from './swimmer';
 import { waterVolume, type Box3 } from './tank';
@@ -155,6 +156,83 @@ describe('sim/feeding : granulé le plus proche, point visé', () => {
     const below = feeder(0, bounds.hard.maxY - EAT_DISTANCE / 2, 0);
     expect(nearestPellet(below, floating, OPEN_BAND, bounds.hard, EAT_DISTANCE)).toBe(0);
     expect(nearestPellet(below, floating, OPEN_BAND, OPEN_BOX, EAT_DISTANCE)).toBe(-1);
+  });
+
+  it('avec obstacles : même choix qu’une recherche exhaustive (plus proche visible, égalité : premier)', () => {
+    // Référence : tous les candidats, visibilité testée pour chacun (#85 : la recherche
+    // optimisée ne doit pas changer le granulé retenu).
+    const reference = (
+      f: MutableFeeder,
+      pellets: readonly FoodPellet[],
+      radius: number,
+      obstacles: readonly Obstacle[],
+      clearance: number,
+    ): number => {
+      let best = -1;
+      let bestSq = radius * radius;
+      pellets.forEach((p, i) => {
+        const sq = (p.x - f.x) ** 2 + (p.y - f.y) ** 2 + (p.z - f.z) ** 2;
+        if (sq < bestSq && hasLineOfSight(f.x, f.y, f.z, p.x, p.y, p.z, obstacles, clearance)) {
+          bestSq = sq;
+          best = i;
+        }
+      });
+      return best;
+    };
+    // Générateur local (LCG) : configurations reproductibles, sans dépendre de core/random.
+    let state = 12345;
+    const rand = () => (state = (Math.imul(state, 1664525) + 1013904223) >>> 0) / 2 ** 32;
+    let hidden = 0;
+    let visible = 0;
+    for (let n = 0; n < 300; n++) {
+      const obstacles = Array.from({ length: 2 + Math.floor(rand() * 5) }, (_, id) =>
+        sphereObstacle(
+          id,
+          rand() * 0.4 - 0.2,
+          rand() * 0.4,
+          rand() * 0.4 - 0.2,
+          0.03 + rand() * 0.07,
+        ),
+      );
+      const pellets: FoodPellet[] = [];
+      for (let i = 0; i < 1 + Math.floor(rand() * 60); i++) {
+        // Un granulé sur cinq en double d'un précédent : égalités de distance exactes.
+        const twin =
+          pellets.length > 0 && rand() < 0.2 ? pellets[Math.floor(rand() * pellets.length)] : null;
+        pellets.push(
+          twin
+            ? pellet(i, twin.x, twin.y, twin.z)
+            : pellet(i, rand() * 0.6 - 0.3, rand() * 0.4, rand() * 0.6 - 0.3),
+        );
+      }
+      const f = feeder(rand() * 0.6 - 0.3, rand() * 0.4, rand() * 0.6 - 0.3);
+      const radius = 0.05 + rand() * 0.4;
+      const expected = reference(f, pellets, radius, obstacles, 0.01);
+      const all = nearestPellet(f, pellets, OPEN_BAND, OPEN_BOX, radius);
+      expect(nearestPellet(f, pellets, OPEN_BAND, OPEN_BOX, radius, null, obstacles, 0.01)).toBe(
+        expected,
+      );
+      if (expected !== all) {
+        hidden++;
+      } else if (expected >= 0) {
+        visible++;
+      }
+    }
+    // Témoin : les deux cas (plus proche caché, plus proche en vue) sont bien couverts.
+    expect(hidden).toBeGreaterThan(15);
+    expect(visible).toBeGreaterThan(100);
+  });
+
+  it('avec obstacles : tous les candidats cachés ⇒ -1 ; sans obstacle, rien n’est caché', () => {
+    const rock = sphereObstacle(0, 0, 0.3, 0, 0.05);
+    const behind = [
+      pellet(0, 0.1, 0.3, 0),
+      pellet(1, 0.12, 0.3, 0.005),
+      pellet(2, 0.09, 0.3, -0.004),
+    ];
+    const f = feeder(-0.1, 0.3, 0);
+    expect(nearestPellet(f, behind, OPEN_BAND, OPEN_BOX, 1, null, [rock], 0.01)).toBe(-1);
+    expect(nearestPellet(f, behind, OPEN_BAND, OPEN_BOX, 1, null, [], 0.01)).toBe(2);
   });
 
   it('point visé : granulé ramené dans les bornes ; rien sans faim, sans granulé ou hors perception', () => {

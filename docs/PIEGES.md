@@ -41,6 +41,11 @@ haut de sa section.
   interdit de toute façon), et une fusion de PR peut être refusée. Ne jamais contourner :
   étiquette `pret-a-fusionner` et signalement (voir `.agents/prompts/revue.md`). (2026-10-16)
 
+- **`npm run verify` lit les sources en direct pendant l'e2e** (cycle 26) : `ng serve`
+  surveille `src/` ; modifier un fichier pendant que `verify` tourne (sur `main` par
+  exemple) fait tester l'e2e sur le code modifié. Attendre la fin de `verify`, ou travailler
+  dans un autre worktree. (2026-10-20)
+
 ## Tests
 
 - **Clic au centre de l'écran en vue trois-quarts ≠ clic sur l'eau** (cycle 24, #67) : le
@@ -140,6 +145,15 @@ haut de sa section.
 
 ## Simulation
 
+- **Mesurer le coût d'un pas hors CI** (cycle 26, #85) : pas d'horloge murale dans les specs ;
+  écrire un script hors du dépôt qui importe `sim/world.ts` (`createDefaultWorld`,
+  `advanceInPlace`, `feedInPlace`), le regrouper avec l'esbuild déjà installé
+  (`frontend/node_modules/.bin/esbuild bench.ts --bundle --platform=node --format=esm
+  --outfile=bench.mjs`) et le lancer avec `node`. Pour compter les appels d'une fonction
+  interne (impossible à espionner en ESM), ajouter un compteur `globalThis` le temps du
+  regroupement, puis restaurer le fichier **avant** tout test. Vérifier qu'une optimisation
+  ne change rien en comparant l'empreinte (`sha256` du JSON) du monde après quelques
+  milliers de pas, avant et après. (2026-10-20)
 - **Attraction vers un point derrière un obstacle : minimum local** (cycle 25, #68) : un
   poisson attiré par un granulé caché derrière un rocher s'y bloque (attraction et évitement
   s'équilibrent) ou en est dévié jusqu'à perdre le granulé de vue. Ne viser que ce qui est en
