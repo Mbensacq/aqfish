@@ -102,6 +102,19 @@ export const DEFAULT_CAPTURE_PARAMS: CaptureParams = {
 export const MAX_CAPTURE_TIME_SECONDS = 3600;
 
 /**
+ * Paramètres d'URL qui décrivent le monde : `seed`, `environnement` et `population`. Hors
+ * capture, s'il y en a un, l'URL prime sur la sauvegarde automatique (issue #70) : le monde
+ * demandé est créé neuf, sans relire le stockage.
+ */
+export const WORLD_PARAMS = ['seed', 'environnement', 'population'] as const;
+
+/** Vrai si l'URL donne au moins un paramètre de `WORLD_PARAMS` (même invalide). */
+export function hasWorldParams(search: string): boolean {
+  const params = new URLSearchParams(search);
+  return WORLD_PARAMS.some((name) => params.has(name));
+}
+
+/**
  * Lit les paramètres de capture depuis une chaîne de requête (`location.search`).
  * Toute valeur absente ou invalide est remplacée par la valeur par défaut.
  */

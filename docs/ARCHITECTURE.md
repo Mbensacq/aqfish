@@ -65,6 +65,12 @@ simulation testable et les captures reproductibles.
   `food`, `nextFoodId`) est un objet
   de données simple (JSON), sans classe Three.js ni référence circulaire. Il sert à la
   sauvegarde, aux tests et aux captures.
+- **Sauvegarde** (#70, ADR 0028, `sim/save.ts`) : `serializeWorld` écrit un JSON versionné
+  (`format: "aqfish"`, `schema: 1` : graine, environnement, `tick`, décor, poissons avec
+  l'état de leur sous-générateur, granulés, compteurs, réglages de vitesse et d'horloge ;
+  obstacles et temps recalculés) ; `parseWorld` le relit avec une validation stricte qui ne
+  lève jamais (`{ ok: false, error }`). Un monde rechargé puis avancé est identique, au bit
+  près, au monde jamais sauvegardé. Tout nouveau champ d'état doit y être ajouté.
 - **Entités** : les poissons (`sim/swimmer.ts`) gardent l'état de leur sous-générateur sous
   forme d'un entier (`rng`, avancé par `prngNextState` / `prngOutput`, même suite que
   `createPrng`), et leur état au pas précédent (`px`, `pyaw`…) pour l'interpolation du rendu.
@@ -172,6 +178,7 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
 | Fichier | Rôle |
 |---|---|
 | `core/render-filter/render-filter.ts` | Filtre de rendu `pixel` / `aucun` : décodage, bascule, filtre initial, mémorisation tolérante (`aqfish.filtre`) |
+| `core/save-storage/save-storage.ts` | Stockage de la sauvegarde automatique (#70, ADR 0028) : texte opaque sous `aqfish.sauvegarde`, lecture et écriture tolérantes, état `active` / `indisponible` / `plein` |
 | `core/random/prng.ts` | PRNG mulberry32 à graine, dérivation de sous-générateurs par entité |
 | `core/commands/commands.ts` | Source unique des commandes (ADR 0020) : raccourcis clavier `KEY_COMMANDS` (`keyCommandFor`, `commandKey`), gestes de la caméra `ORBIT_MOUSE_BUTTONS` / `ORBIT_TOUCHES` et leurs libellés (`orbitGestures`), aide-mémoire `helpSections()` |
 | `sim/constants.ts` | `SIM_DT`, `MAX_STEPS_PER_FRAME` |
@@ -179,6 +186,7 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
 | `sim/sim-speed.ts` | Vitesse de simulation (#52, ADR 0024) : `SIM_SPEEDS` (0 à ×4), `scaledDt`, `maxStepsForSpeed` |
 | `sim/time-step.ts` | `assertTimeStep` : validation unique d'un pas de temps |
 | `sim/world.ts` | État du monde sérialisable (dont `decor`), `step`, `advance`, `advanceTo`, `advanceInPlace` (boucle d'affichage), `createDefaultWorld` (population et décor par défaut) |
+| `sim/save.ts` | Sauvegarde (#70, ADR 0028) : format JSON versionné (`saveData`, `serializeWorld`), relecture validée (`parseWorld`, `parseSaveData` : bornes, effectifs, propriétés propres seulement, champs inconnus ignorés, schéma inconnu refusé) |
 | `sim/population.ts` | Population réglable (#69, ADR 0025) : `setPopulation` (pure) / `setPopulationInPlace` (hôte), bornes `maxPopulation` par espèce et `MAX_TOTAL_FISH`, `populationCounts`, `populationLimits` |
 | `sim/tank.ts` | Dimensions du bac, volume d'eau, `shrinkBox` (partagés par la simulation et le rendu) |
 | `sim/environment.ts` | Environnements en données (#87, ADR 0026) : bac tropical et bassin (dimensions, teintes de l'eau et du sol en noms de la palette, bordure, vue par défaut, bulles, caustiques, décor, espèces et population de départ, ADR 0027) ; `livesIn` ; `World.environment` choisit le volume d'eau des bornes de nage et des dépôts |
@@ -213,10 +221,10 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
 | `render/water-light.ts` | Caustiques sur le sable et reflet de surface (visible des deux côtés) : motifs par cases fixes du bac, en GLSL avec référence TypeScript (`causticLit`, `surfaceGlint`), animés par le temps simulé (ADR 0017) ; `setDaylight` : caustiques par paliers de couleurs pleines puis éteintes la nuit, reflet atténué (ADR 0018) |
 | `render/night-shade.ts` | `flatBrightness(intensité)` : luminosité des couleurs plates (poissons, bulles, diffuseur), 1 en plein jour, `NIGHT_FLAT_BRIGHTNESS` la nuit (ADR 0019) ; `decorTintInto` (teinte du décor : blanc à midi, clair de lune la nuit) et `tonePenaltiesInto` (pénalités des tons de nuit et du crépuscule de la passe) (ADR 0021) |
 | `render/aquarium-view.ts` | Vue sans Angular : renderer (fabrique remplaçable), caméra, `OrbitControls`, transitions de caméra, `updateFish`, `setDecor`, `updateDecor` (temps simulé interpolé), `updateLight` (lumière du jour, luminosité des couleurs plates des poissons, des bulles et des granulés), `updateFood`, `pickWaterSurface` et `onSurfaceClick` (clic sans glisser sur l'eau, #67) |
-| `ui/aquarium-host/` | Composant hôte : boucle rAF, avance de la simulation, horloge de journée (`initialDayClock`, `toggleClock`, `freezeClockAt`, `setClockRunning`), vitesse (`setSpeed`) et affichage du décor (`setDecorVisible`) du panneau de contrôle (#52), nourrissage (`feed`, `feedAtCenter`, sans effet en capture), redimensionnement, contrat de capture, `DestroyRef` |
+| `ui/aquarium-host/` | Composant hôte : boucle rAF, avance de la simulation, horloge de journée (`initialDayClock`, `toggleClock`, `freezeClockAt`, `setClockRunning`), vitesse (`setSpeed`) et affichage du décor (`setDecorVisible`) du panneau de contrôle (#52), nourrissage (`feed`, `feedAtCenter`, sans effet en capture), sauvegarde (#70 : restauration au démarrage, écriture automatique `saveNow`, `exportSave`, `importSave`, stockage injectable `SAVE_STORAGE`, rien en capture), redimensionnement, contrat de capture, `DestroyRef` |
 | `ui/view-presets-bar/` | Barre flottante des 5 préréglages de vue et raccourcis clavier `1` à `5` (émet le préréglage choisi), bascule « Pixel art » et touche `P` (émet la demande de bascule), touche `H` (fige ou remet en marche l'heure), touches `J` (plein jour : fige à midi) et `N` (nuit : fige à minuit), issue #75 ; bouton « Nourrir » et touche `G` (granulés au centre du bac, #67) ; touches lues dans `core/commands` |
 | `ui/day-indicator/` | Indicateur du moment de la journée (#73) : icône pixel art en SVG (soleil, soleil sur l'horizon, lune), nom accessible, en haut à gauche ; suit `AquariumHost.dayPhase` (`dayPhaseAt`, `sim/daylight.ts`) |
-| `ui/control-panel/` | Panneau de contrôle repliable (#52, ADR 0024), en haut à gauche : sections `fieldset` « Simulation » (curseur de vitesse), « Journée » (curseur d'heure, case « Heure automatique »), « Décor » (case « Afficher le décor ») ; entrées depuis l'hôte, sorties vers l'hôte, aucune logique de simulation ; fermé par défaut |
+| `ui/control-panel/` | Panneau de contrôle repliable (#52, ADR 0024), en haut à gauche : sections `fieldset` « Simulation » (curseur de vitesse), « Journée » (curseur d'heure, case « Heure automatique »), « Décor » (case « Afficher le décor »), « Sauvegarde » (#70 : état, « Exporter », « Importer » avec fichier plafonné avant lecture, message d'import) ; entrées depuis l'hôte, sorties vers l'hôte, aucune logique de simulation ; fermé par défaut |
 | `ui/commands-help/` | Aide-mémoire des commandes (#74, ADR 0020) : panneau généré par `helpSections()`, repliable par `?`, état mémorisé (`aqfish.aide-commandes`, repli en mémoire) ; contient le test d'exhaustivité des raccourcis |
 
 Le renderer est créé par une fabrique (`AQUARIUM_RENDERER_FACTORY`, par défaut
@@ -242,6 +250,7 @@ respecter :
 | Image figée | En mode capture, une seule image est rendue (puis une à chaque redimensionnement) et les contrôles à la souris sont désactivés |
 | Attributs de test | `app-aquarium-host` expose `data-aqfish-camera`, `data-aqfish-target`, `data-aqfish-tick`, `data-aqfish-seed`, `data-aqfish-filter`, `data-aqfish-hour` (heure affichée, 2 décimales), `data-aqfish-hour-frozen` (`true` si l'heure est figée) `data-aqfish-food` (nombre de granulés, #67) `data-aqfish-population` (effectifs `neon:12,guppy:6,corydora:6`, #69) et `data-aqfish-environment` (`tropical` ou `bassin`, #87) |
 | Hors capture | Le signal « prêt » est aussi émis après la première image complète (le test de démarrage l'attend) |
+| Sauvegarde | En capture, le stockage du navigateur n'est jamais lu ni écrit (#70, ADR 0028) : le monde part toujours de la graine. Hors capture, un paramètre de monde (`seed`, `environnement`, `population`) prime aussi sur la sauvegarde ; `data-aqfish-save` expose son état (`active`, `indisponible`, `plein`), absent en capture |
 | Erreurs | Aucune erreur de page ne doit survenir (le harnais et le test de démarrage échouent sinon) |
 | Tracé de trajectoires | En plus des angles, `trajectoires-top.png` : trajectoires vues de dessus sur `CAPTURE_TRACE_TIME` s simulées (60 par défaut, même graine), calculées avec la simulation pure (`sim/trajectory.ts`) et dessinées en SVG hors de l'application (issue #43). Preuve d'un comportement de nage qu'une image figée ne montre pas |
 

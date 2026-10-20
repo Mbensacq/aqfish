@@ -12,10 +12,17 @@ import {
 } from '@angular/core';
 
 import {
+  hasWorldParams,
   parseCaptureParams,
   type CameraPreset,
   type CapturePopulation,
 } from '../../core/capture/capture-params';
+import {
+  readStoredSave,
+  type SaveStatus,
+  type SaveStorage,
+  writeStoredSave,
+} from '../../core/save-storage/save-storage';
 import {
   type FilterStorage,
   initialRenderFilter,
@@ -70,6 +77,7 @@ import {
   setPopulationInPlace,
   type PopulationCounts,
 } from '../../sim/population';
+import { parseWorld, serializeWorld, type SaveSettings } from '../../sim/save';
 import type { SpeciesId } from '../../sim/species';
 import {
   advanceInPlace,
@@ -114,6 +122,36 @@ export const POPULATION_ATTRIBUTE = 'data-aqfish-population';
 
 /** Attribut du composant hôte exposant l'environnement courant (`tropical`, `bassin`, #87). */
 export const ENVIRONMENT_ATTRIBUTE = 'data-aqfish-environment';
+
+/**
+ * Attribut du composant hôte exposant l'état de la sauvegarde automatique (#70) : `active`,
+ * `indisponible` ou `plein` ; absent en mode capture (aucune sauvegarde).
+ */
+export const SAVE_ATTRIBUTE = 'data-aqfish-save';
+
+/** Intervalle de la sauvegarde automatique, en millisecondes (#70). */
+export const AUTOSAVE_INTERVAL_MS = 10_000;
+
+/** Nom proposé pour le fichier exporté (#70). */
+export const SAVE_FILE_NAME = 'aqfish-sauvegarde.json';
+
+/** Message de la section « Sauvegarde » du panneau (#70) : erreur d'import ou information. */
+export interface SaveMessage {
+  readonly kind: 'erreur' | 'info';
+  readonly text: string;
+}
+
+/**
+ * Stockage de la sauvegarde automatique (#70) : `localStorage` s'il est accessible, `null`
+ * sinon. Remplaçable dans les tests par un stockage en mémoire.
+ */
+export const SAVE_STORAGE = new InjectionToken<SaveStorage | null>('SAVE_STORAGE', {
+  providedIn: 'root',
+  factory: () => {
+    const win = inject(DOCUMENT).defaultView;
+    return win ? browserStorage(win) : null;
+  },
+});
 
 /**
  * Effectifs au format de `population=` et de `data-aqfish-population` : `neon:12,guppy:6`.
@@ -164,7 +202,7 @@ export function initialDayClock(hour: number | null, capture: boolean): DayClock
 }
 
 /** `localStorage` s'il est accessible, `null` sinon (l'accès lui-même peut lever). */
-function browserStorage(win: Window): FilterStorage | null {
+function browserStorage(win: Window): (FilterStorage & SaveStorage) | null {
   try {
     return win.localStorage ?? null;
   } catch {
@@ -204,6 +242,7 @@ export class AquariumHost {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly document = inject(DOCUMENT);
   private readonly rendererFactory = inject(AQUARIUM_RENDERER_FACTORY);
+  private readonly saveStorage = inject(SAVE_STORAGE);
 
   private view: AquariumView | null = null;
   private frameId: number | null = null;
@@ -273,6 +312,15 @@ export class AquariumHost {
 
   /** Effectif maximal de chaque espèce compte tenu des autres (`populationLimits`, #69). */
   readonly populationMax = signal<PopulationCounts>(NO_FISH);
+
+  /**
+   * État de la sauvegarde automatique (#70) : `null` en mode capture (jamais de lecture ni
+   * d'écriture du stockage) et avant le démarrage.
+   */
+  readonly saveStatus = signal<SaveStatus | null>(null);
+
+  /** Dernier message de la section « Sauvegarde » (import refusé, import réussi…). */
+  readonly saveMessage = signal<SaveMessage | null>(null);
 
   /** État courant de la simulation (`null` avant le démarrage et après la destruction). */
   get world(): World | null {
@@ -471,6 +519,100 @@ export class AquariumHost {
     this.feed(0, 0);
   }
 
+  /** Réglages enregistrés avec le monde : vitesse et horloge de la journée. */
+  private settings(): SaveSettings {
+    return { speed: this.speed(), clock: this.dayClock };
+  }
+
+  /**
+   * Enregistre le monde et les réglages dans le stockage (sauvegarde automatique, #70) et
+   * renvoie l'état obtenu. Sans effet en mode capture ou avant le démarrage (`null`). Ne lève
+   * jamais : un stockage indisponible ou plein est signalé par `saveStatus`.
+   */
+  saveNow(): SaveStatus | null {
+    const world = this.currentWorld;
+    if (!world || this.capture) {
+      return null;
+    }
+    let status: SaveStatus;
+    try {
+      status = writeStoredSave(this.saveStorage, serializeWorld(world, this.settings()));
+    } catch {
+      status = 'indisponible';
+    }
+    this.exposeSaveStatus(status);
+    return status;
+  }
+
+  /**
+   * Télécharge la sauvegarde du monde courant (bouton « Exporter », #70) dans un fichier
+   * JSON. Sans effet en mode capture ou avant le démarrage.
+   */
+  exportSave(): void {
+    const world = this.currentWorld;
+    const win = this.document.defaultView;
+    if (!world || !win || this.capture) {
+      return;
+    }
+    try {
+      const text = serializeWorld(world, this.settings());
+      const url = win.URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+      const link = this.document.createElement('a');
+      link.href = url;
+      link.download = SAVE_FILE_NAME;
+      link.click();
+      win.setTimeout(() => win.URL.revokeObjectURL(url), 0);
+      this.saveMessage.set({ kind: 'info', text: 'Aquarium exporté.' });
+    } catch {
+      this.saveMessage.set({ kind: 'erreur', text: 'Export impossible dans ce navigateur.' });
+    }
+  }
+
+  /**
+   * Remplace le monde et les réglages par ceux d'une sauvegarde importée (bouton
+   * « Importer », #70). Une sauvegarde refusée (`parseWorld`) laisse le bac en cours intact
+   * et affiche la raison. Renvoie `true` si l'import a réussi. Sans effet en mode capture ou
+   * avant le démarrage.
+   */
+  importSave(text: string): boolean {
+    if (!this.currentWorld || !this.view || this.capture) {
+      return false;
+    }
+    const result = parseWorld(text);
+    if (!result.ok) {
+      this.saveMessage.set({ kind: 'erreur', text: `Import refusé : ${result.error}.` });
+      return false;
+    }
+    this.loadWorld(result.world as MutableWorld, result.settings);
+    this.createView(environmentById(result.world.environment).defaultCamera);
+    this.exposeCamera();
+    this.scheduleFrame();
+    this.saveMessage.set({ kind: 'info', text: 'Aquarium importé.' });
+    this.saveNow();
+    return true;
+  }
+
+  /** Message d'erreur d'un fichier trop gros pour être lu (contrôle du panneau, #70). */
+  rejectImport(text: string): void {
+    this.saveMessage.set({ kind: 'erreur', text: `Import refusé : ${text}.` });
+  }
+
+  /** Installe un monde et ses réglages (démarrage restauré, import) ; la vue suit à part. */
+  private loadWorld(world: MutableWorld, settings: SaveSettings): void {
+    this.currentWorld = world;
+    this.clock.accumulator = 0;
+    this.clock.alpha = 0;
+    this.speed.set(settings.speed);
+    this.host.nativeElement.setAttribute(SPEED_ATTRIBUTE, String(settings.speed));
+    this.dayClock = settings.clock;
+    this.litHour = null;
+    this.exposeClockFrozen();
+    this.exposeEnvironment();
+    this.exposeTick();
+    this.exposeFood();
+    this.exposePopulation();
+  }
+
   /** Bascule entre pixel art et rendu sans filtre. */
   toggleFilter(): void {
     this.setFilter(toggleRenderFilter(this.filter()));
@@ -501,6 +643,15 @@ export class AquariumHost {
       ? advanceToWithFeedings(world, params.time, params.feedings)
       : world;
     this.dayClock = initialDayClock(params.hour, params.capture);
+    // Sauvegarde automatique (#70) : jamais en capture (images reproductibles) ; restaurée
+    // au démarrage sauf si l'URL décrit le monde (`seed`, `environnement`, `population`).
+    if (!params.capture) {
+      this.saveStatus.set('active');
+      if (!hasWorldParams(win.location.search)) {
+        this.restoreSave(params.hour);
+      }
+      this.startAutosave(win);
+    }
     this.exposeClockFrozen();
     this.host.nativeElement.setAttribute(SPEED_ATTRIBUTE, String(this.speed()));
     this.host.nativeElement.setAttribute(DECOR_ATTRIBUTE, String(this.decorVisible()));
@@ -509,6 +660,7 @@ export class AquariumHost {
     this.exposeTick();
     this.exposeFood();
     this.exposePopulation();
+    this.exposeSaveStatus(this.saveStatus());
 
     const filter = initialRenderFilter(
       params.filter,
@@ -519,7 +671,9 @@ export class AquariumHost {
     this.pixelRatio = params.capture ? 1 : win.devicePixelRatio || 1;
     // Sans `camera=`, la vue par défaut de l'environnement (#87 : de dessus pour le bassin).
     this.createView(
-      params.cameraGiven ? params.camera : environmentById(environment).defaultCamera,
+      params.cameraGiven
+        ? params.camera
+        : environmentById(this.currentWorld.environment).defaultCamera,
     );
     this.exposeFilter();
 
@@ -528,6 +682,54 @@ export class AquariumHost {
     this.cleanups.push(() => win.removeEventListener('resize', onResize));
 
     this.scheduleFrame();
+  }
+
+  /**
+   * Restaure la sauvegarde automatique, s'il y en a une de valide (#70) : monde, vitesse et
+   * horloge (sauf si `heure=` fige l'heure). Une sauvegarde illisible est ignorée : le bac
+   * neuf est gardé, et un message le signale.
+   */
+  private restoreSave(hour: number | null): void {
+    const text = readStoredSave(this.saveStorage);
+    if (text === null) {
+      return;
+    }
+    const result = parseWorld(text);
+    if (!result.ok) {
+      this.saveMessage.set({
+        kind: 'erreur',
+        text: `Sauvegarde précédente illisible, aquarium neuf (${result.error}).`,
+      });
+      return;
+    }
+    const clock = hour === null ? result.settings.clock : this.dayClock;
+    this.currentWorld = result.world as MutableWorld;
+    this.speed.set(result.settings.speed);
+    this.dayClock = clock;
+  }
+
+  /**
+   * Sauvegarde automatique (#70) : toutes les `AUTOSAVE_INTERVAL_MS`, quand l'onglet est
+   * masqué et quand la page est quittée (`pagehide`, plus fiable que `beforeunload` sur
+   * mobile).
+   */
+  private startAutosave(win: Window): void {
+    const save = () => {
+      this.saveNow();
+    };
+    const onVisibility = () => {
+      if (this.document.visibilityState === 'hidden') {
+        save();
+      }
+    };
+    const timer = win.setInterval(save, AUTOSAVE_INTERVAL_MS);
+    win.addEventListener('pagehide', save);
+    this.document.addEventListener('visibilitychange', onVisibility);
+    this.cleanups.push(() => {
+      win.clearInterval(timer);
+      win.removeEventListener('pagehide', save);
+      this.document.removeEventListener('visibilitychange', onVisibility);
+    });
   }
 
   /**
@@ -719,6 +921,14 @@ export class AquariumHost {
     if (world) {
       this.environment.set(world.environment);
       this.host.nativeElement.setAttribute(ENVIRONMENT_ATTRIBUTE, world.environment);
+    }
+  }
+
+  /** Expose l'état de la sauvegarde (`data-aqfish-save` et signal `saveStatus`). */
+  private exposeSaveStatus(status: SaveStatus | null): void {
+    this.saveStatus.set(status);
+    if (status !== null) {
+      this.host.nativeElement.setAttribute(SAVE_ATTRIBUTE, status);
     }
   }
 

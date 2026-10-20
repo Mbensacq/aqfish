@@ -9,6 +9,8 @@ import {
 } from '../../sim/environment';
 import { formatHour, HOUR_SLIDER_STEP, HOURS_PER_DAY, NOON_HOUR } from '../../sim/daylight';
 import { NO_FISH, type PopulationCounts } from '../../sim/population';
+import type { SaveStatus } from '../../core/save-storage/save-storage';
+import { MAX_SAVE_LENGTH } from '../../sim/save';
 import { DEFAULT_SIM_SPEED, SIM_SPEEDS, type SimSpeed } from '../../sim/sim-speed';
 import { SPECIES, type SpeciesId } from '../../sim/species';
 
@@ -68,6 +70,26 @@ export interface PopulationRequest {
 /** Nom d'une espèce au pluriel, en minuscules (« néons », « guppys », « corydoras »). */
 export function speciesPlural(species: SpeciesId): string {
   return `${SPECIES[species].name.toLowerCase()}s`;
+}
+
+/** Texte de l'état de la sauvegarde automatique (#70). */
+export function saveStatusText(status: SaveStatus | null): string {
+  switch (status) {
+    case 'active':
+      return 'Enregistré automatiquement dans ce navigateur.';
+    case 'plein':
+      return 'Stockage du navigateur plein : aquarium non enregistré.';
+    case 'indisponible':
+      return 'Stockage du navigateur indisponible : aquarium non enregistré.';
+    default:
+      return 'Sauvegarde automatique désactivée.';
+  }
+}
+
+/** Message de la section « Sauvegarde » fourni par l'hôte (#70). */
+export interface SavePanelMessage {
+  readonly kind: 'erreur' | 'info';
+  readonly text: string;
 }
 
 /** Nombre lu dans une valeur de formulaire ; une chaîne vide donne `NaN` (et non 0). */
@@ -221,6 +243,38 @@ function toNumber(value: string | number): number {
             </div>
           }
         </fieldset>
+
+        <fieldset class="control-panel__section" data-section="sauvegarde">
+          <legend class="control-panel__legend">Sauvegarde</legend>
+          <p class="control-panel__note" data-save-status>{{ statusText() }}</p>
+          <div class="control-panel__buttons">
+            <button type="button" class="control-panel__button" (click)="exportRequested.emit()">
+              Exporter
+            </button>
+            <button type="button" class="control-panel__button" (click)="fileInput.click()">
+              Importer
+            </button>
+            <input
+              #fileInput
+              class="control-panel__file"
+              type="file"
+              accept="application/json,.json"
+              tabindex="-1"
+              aria-label="Fichier de sauvegarde à importer"
+              (change)="onFile($event)"
+            />
+          </div>
+          @if (saveMessage(); as message) {
+            <p
+              class="control-panel__message"
+              [class.control-panel__message--error]="message.kind === 'erreur'"
+              [attr.role]="message.kind === 'erreur' ? 'alert' : 'status'"
+              data-save-message
+            >
+              {{ message.text }}
+            </p>
+          }
+        </fieldset>
       </section>
     }`,
   styleUrl: './control-panel.scss',
@@ -241,6 +295,10 @@ export class ControlPanel {
   readonly population = input<PopulationCounts>(NO_FISH);
   /** Effectif maximal de chaque espèce, compte tenu des autres (fourni par l'hôte). */
   readonly populationMax = input<PopulationCounts>(NO_FISH);
+  /** État de la sauvegarde automatique (fourni par l'hôte, #70). */
+  readonly saveStatus = input<SaveStatus | null>(null);
+  /** Dernier message de la sauvegarde : import refusé, import réussi… (fourni par l'hôte). */
+  readonly saveMessage = input<SavePanelMessage | null>(null);
 
   /** Environnement choisi dans la liste. */
   readonly environmentChanged = output<EnvironmentId>();
@@ -254,6 +312,12 @@ export class ControlPanel {
   readonly decorVisibleChanged = output<boolean>();
   /** Effectif demandé pour une espèce (déjà borné à [0, maximum]). */
   readonly populationChanged = output<PopulationRequest>();
+  /** Bouton « Exporter » (#70). */
+  readonly exportRequested = output<void>();
+  /** Contenu du fichier choisi avec « Importer » (texte, pas encore validé ; #70). */
+  readonly importRequested = output<string>();
+  /** Fichier choisi refusé avant lecture (trop gros, illisible) : raison, en français. */
+  readonly importRejected = output<string>();
 
   /** Panneau déplié (fermé par défaut : captures et premier regard inchangés). */
   readonly open = signal(false);
@@ -270,6 +334,35 @@ export class ControlPanel {
   protected readonly speedIndex = computed(() => speedIndex(this.speed()));
   protected readonly speedText = computed(() => speedLabel(this.speed()));
   protected readonly hourText = computed(() => formatHour(this.hour()));
+  protected readonly statusText = computed(() => saveStatusText(this.saveStatus()));
+
+  /**
+   * Fichier choisi avec « Importer » : refusé avant lecture s'il dépasse `MAX_SAVE_LENGTH`
+   * octets, sinon lu en texte et transmis à l'hôte (qui le valide). Le champ est vidé pour
+   * qu'un même fichier puisse être choisi de nouveau.
+   */
+  protected async onFile(event: Event): Promise<void> {
+    const field = event.target as HTMLInputElement;
+    const file = field.files?.[0];
+    field.value = '';
+    if (!file) {
+      return;
+    }
+    if (file.size > MAX_SAVE_LENGTH) {
+      this.importRejected.emit(
+        `fichier trop volumineux (${Math.ceil(file.size / 1024)} Kio, ${MAX_SAVE_LENGTH / 1024} Kio au plus)`,
+      );
+      return;
+    }
+    let text: string;
+    try {
+      text = await file.text();
+    } catch {
+      this.importRejected.emit('fichier illisible');
+      return;
+    }
+    this.importRequested.emit(text);
+  }
 
   toggle(): void {
     this.open.update((open) => !open);

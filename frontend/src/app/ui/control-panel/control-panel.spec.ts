@@ -3,12 +3,16 @@ import { TestBed, type ComponentFixture } from '@angular/core/testing';
 
 import type { EnvironmentId } from '../../sim/environment';
 import type { PopulationCounts } from '../../sim/population';
+import type { SaveStatus } from '../../core/save-storage/save-storage';
+import { MAX_SAVE_LENGTH } from '../../sim/save';
 import { SIM_SPEEDS } from '../../sim/sim-speed';
 import {
   CONTROL_PANEL_ID,
   ControlPanel,
   populationInput,
   type PopulationRequest,
+  type SavePanelMessage,
+  saveStatusText,
   sliderHour,
   speciesPlural,
   speedAt,
@@ -60,6 +64,13 @@ describe('fonctions du panneau de contrôle', () => {
     }
   });
 
+  it('saveStatusText : un texte par état de la sauvegarde automatique', () => {
+    expect(saveStatusText('active')).toMatch(/Enregistré automatiquement/);
+    expect(saveStatusText('plein')).toMatch(/plein/);
+    expect(saveStatusText('indisponible')).toMatch(/indisponible/);
+    expect(saveStatusText(null)).toMatch(/désactivée/);
+  });
+
   it('speciesPlural : nom de l’espèce au pluriel, en minuscules', () => {
     expect(speciesPlural('neon')).toBe('néons');
     expect(speciesPlural('guppy')).toBe('guppys');
@@ -78,6 +89,11 @@ describe('fonctions du panneau de contrôle', () => {
     [decorVisible]="decor()"
     [population]="population()"
     [populationMax]="populationMax()"
+    [saveStatus]="saveStatus()"
+    [saveMessage]="saveMessage()"
+    (exportRequested)="exports = exports + 1"
+    (importRequested)="imports.push($event)"
+    (importRejected)="rejections.push($event)"
     (populationChanged)="requests.push($event)"
     (speedChanged)="events.push(['vitesse', $event])"
     (hourChanged)="events.push(['heure', $event])"
@@ -98,6 +114,11 @@ class TestHost {
   readonly populationMax = signal<PopulationCounts>({ neon: 40, guppy: 6, corydora: 16, koi: 14 });
   readonly events: [string, number | boolean][] = [];
   readonly requests: PopulationRequest[] = [];
+  readonly saveStatus = signal<SaveStatus | null>('active');
+  readonly saveMessage = signal<SavePanelMessage | null>(null);
+  exports = 0;
+  readonly imports: string[] = [];
+  readonly rejections: string[] = [];
 }
 
 describe('ControlPanel', () => {
@@ -164,7 +185,7 @@ describe('ControlPanel', () => {
     expect(root().querySelector('section')).toBeNull();
   });
 
-  it('sections extensibles : environnement, simulation, journée, décor, population, chacune avec sa légende', async () => {
+  it('sections extensibles : environnement, simulation, journée, décor, population, sauvegarde, chacune avec sa légende', async () => {
     await openPanel();
     const sections = [...root().querySelectorAll('fieldset')];
     expect(sections.map((s) => s.getAttribute('data-section'))).toEqual([
@@ -173,6 +194,7 @@ describe('ControlPanel', () => {
       'journee',
       'decor',
       'population',
+      'sauvegarde',
     ]);
     expect(sections.map((s) => s.querySelector('legend')?.textContent?.trim())).toEqual([
       'Environnement',
@@ -180,6 +202,7 @@ describe('ControlPanel', () => {
       'Journée',
       'Décor',
       'Population',
+      'Sauvegarde',
     ]);
   });
 
@@ -245,9 +268,12 @@ describe('ControlPanel', () => {
 
   it('chaque contrôle a un nom accessible et est atteignable au clavier (aucun tabindex négatif)', async () => {
     await openPanel();
-    const controls = [...root().querySelectorAll<HTMLElement>('button, input')];
-    // 5 contrôles de #52, puis « − », champ et « + » pour chacune des 3 espèces (#69).
-    expect(controls).toHaveLength(5 + 3 * 3);
+    // Le champ de fichier natif est masqué : le bouton « Importer » l'ouvre (#70).
+    const controls = [...root().querySelectorAll<HTMLElement>('button, input:not([type="file"])')];
+    // 5 contrôles de #52, puis « − », champ et « + » pour chacune des 3 espèces (#69), puis
+    // « Exporter » et « Importer » (#70).
+    expect(controls).toHaveLength(5 + 3 * 3 + 2);
+    expect(root().querySelectorAll('input[type="file"]')).toHaveLength(1);
     for (const control of controls) {
       const name =
         control.getAttribute('aria-label') ??
@@ -341,6 +367,88 @@ describe('ControlPanel', () => {
         { species: 'neon', count: 40 },
         { species: 'neon', count: 3 },
       ]);
+    });
+  });
+
+  describe('sauvegarde (#70)', () => {
+    const section = () => root().querySelector<HTMLElement>('[data-section="sauvegarde"]')!;
+    const button = (text: string) =>
+      [...section().querySelectorAll<HTMLButtonElement>('button')].find(
+        (b) => b.textContent?.trim() === text,
+      )!;
+    const fileInput = () => section().querySelector<HTMLInputElement>('input[type="file"]')!;
+
+    /** Simule le choix d'un fichier dans le champ masqué. */
+    async function choose(file: File): Promise<void> {
+      Object.defineProperty(fileInput(), 'files', { configurable: true, value: [file] });
+      fileInput().dispatchEvent(new Event('change'));
+      // Lecture asynchrone du fichier.
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      await fixture.whenStable();
+    }
+
+    it('affiche l’état de la sauvegarde automatique fourni par l’hôte', async () => {
+      await openPanel();
+      expect(section().querySelector('[data-save-status]')?.textContent).toMatch(
+        /Enregistré automatiquement/,
+      );
+      fixture.componentInstance.saveStatus.set('plein');
+      await fixture.whenStable();
+      expect(section().querySelector('[data-save-status]')?.textContent).toMatch(/plein/);
+    });
+
+    it('boutons « Exporter » et « Importer » nommés ; « Exporter » émet une demande', async () => {
+      await openPanel();
+      expect(button('Exporter').type).toBe('button');
+      expect(button('Importer').type).toBe('button');
+      button('Exporter').click();
+      expect(fixture.componentInstance.exports).toBe(1);
+    });
+
+    it('« Importer » ouvre le choix de fichier (champ JSON masqué)', async () => {
+      await openPanel();
+      const click = vi.spyOn(fileInput(), 'click').mockImplementation(() => undefined);
+      button('Importer').click();
+      expect(click).toHaveBeenCalledOnce();
+      expect(fileInput().accept).toContain('.json');
+    });
+
+    it('transmet le texte du fichier choisi à l’hôte', async () => {
+      await openPanel();
+      await choose(new File(['{"format":"aqfish"}'], 'bac.json', { type: 'application/json' }));
+      expect(fixture.componentInstance.imports).toEqual(['{"format":"aqfish"}']);
+      expect(fixture.componentInstance.rejections).toEqual([]);
+    });
+
+    it('refuse un fichier trop volumineux sans le lire', async () => {
+      await openPanel();
+      const big = new File(['x'.repeat(MAX_SAVE_LENGTH + 1)], 'gros.json');
+      const text = vi.spyOn(big, 'text');
+      await choose(big);
+      expect(text).not.toHaveBeenCalled();
+      expect(fixture.componentInstance.imports).toEqual([]);
+      expect(fixture.componentInstance.rejections[0]).toMatch(/trop volumineux/);
+    });
+
+    it('signale un fichier illisible', async () => {
+      await openPanel();
+      const broken = new File(['x'], 'casse.json');
+      vi.spyOn(broken, 'text').mockRejectedValue(new Error('lecture'));
+      await choose(broken);
+      expect(fixture.componentInstance.rejections).toEqual(['fichier illisible']);
+    });
+
+    it('affiche le message de l’hôte : erreur en alerte, information en statut', async () => {
+      await openPanel();
+      expect(section().querySelector('[data-save-message]')).toBeNull();
+      fixture.componentInstance.saveMessage.set({ kind: 'erreur', text: 'Import refusé : x.' });
+      await fixture.whenStable();
+      const message = section().querySelector<HTMLElement>('[data-save-message]')!;
+      expect(message.getAttribute('role')).toBe('alert');
+      expect(message.textContent?.trim()).toBe('Import refusé : x.');
+      fixture.componentInstance.saveMessage.set({ kind: 'info', text: 'Aquarium importé.' });
+      await fixture.whenStable();
+      expect(section().querySelector('[data-save-message]')?.getAttribute('role')).toBe('status');
     });
   });
 });
