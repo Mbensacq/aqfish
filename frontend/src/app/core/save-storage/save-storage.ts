@@ -25,6 +25,15 @@ export interface SaveStorage {
 export type SaveStatus = 'active' | 'indisponible' | 'plein';
 
 /**
+ * Message de la section « Sauvegarde » du panneau : erreur (import refusé, sauvegarde
+ * illisible) ou information (import réussi). Émis par l'hôte, affiché par le panneau.
+ */
+export interface SaveMessage {
+  readonly kind: 'erreur' | 'info';
+  readonly text: string;
+}
+
+/**
  * Texte de la sauvegarde mémorisée, ou `null` s'il n'y en a pas ou si le stockage est
  * indisponible (absent ou levant une exception).
  */

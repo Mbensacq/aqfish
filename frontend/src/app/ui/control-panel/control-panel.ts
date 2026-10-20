@@ -9,7 +9,7 @@ import {
 } from '../../sim/environment';
 import { formatHour, HOUR_SLIDER_STEP, HOURS_PER_DAY, NOON_HOUR } from '../../sim/daylight';
 import { NO_FISH, type PopulationCounts } from '../../sim/population';
-import type { SaveStatus } from '../../core/save-storage/save-storage';
+import type { SaveMessage, SaveStatus } from '../../core/save-storage/save-storage';
 import { MAX_SAVE_LENGTH } from '../../sim/save';
 import { DEFAULT_SIM_SPEED, SIM_SPEEDS, type SimSpeed } from '../../sim/sim-speed';
 import { SPECIES, type SpeciesId } from '../../sim/species';
@@ -84,12 +84,6 @@ export function saveStatusText(status: SaveStatus | null): string {
     default:
       return 'Sauvegarde automatique désactivée.';
   }
-}
-
-/** Message de la section « Sauvegarde » fourni par l'hôte (#70). */
-export interface SavePanelMessage {
-  readonly kind: 'erreur' | 'info';
-  readonly text: string;
 }
 
 /** Nombre lu dans une valeur de formulaire ; une chaîne vide donne `NaN` (et non 0). */
@@ -298,7 +292,7 @@ export class ControlPanel {
   /** État de la sauvegarde automatique (fourni par l'hôte, #70). */
   readonly saveStatus = input<SaveStatus | null>(null);
   /** Dernier message de la sauvegarde : import refusé, import réussi… (fourni par l'hôte). */
-  readonly saveMessage = input<SavePanelMessage | null>(null);
+  readonly saveMessage = input<SaveMessage | null>(null);
 
   /** Environnement choisi dans la liste. */
   readonly environmentChanged = output<EnvironmentId>();

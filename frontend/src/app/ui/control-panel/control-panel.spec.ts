@@ -3,7 +3,7 @@ import { TestBed, type ComponentFixture } from '@angular/core/testing';
 
 import type { EnvironmentId } from '../../sim/environment';
 import type { PopulationCounts } from '../../sim/population';
-import type { SaveStatus } from '../../core/save-storage/save-storage';
+import type { SaveMessage, SaveStatus } from '../../core/save-storage/save-storage';
 import { MAX_SAVE_LENGTH } from '../../sim/save';
 import { SIM_SPEEDS } from '../../sim/sim-speed';
 import {
@@ -11,7 +11,6 @@ import {
   ControlPanel,
   populationInput,
   type PopulationRequest,
-  type SavePanelMessage,
   saveStatusText,
   sliderHour,
   speciesPlural,
@@ -115,7 +114,7 @@ class TestHost {
   readonly events: [string, number | boolean][] = [];
   readonly requests: PopulationRequest[] = [];
   readonly saveStatus = signal<SaveStatus | null>('active');
-  readonly saveMessage = signal<SavePanelMessage | null>(null);
+  readonly saveMessage = signal<SaveMessage | null>(null);
   exports = 0;
   readonly imports: string[] = [];
   readonly rejections: string[] = [];
