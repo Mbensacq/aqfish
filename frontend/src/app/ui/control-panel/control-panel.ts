@@ -1,5 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 
+import {
+  DEFAULT_ENVIRONMENT_ID,
+  ENVIRONMENT_IDS,
+  ENVIRONMENTS,
+  type EnvironmentId,
+} from '../../sim/environment';
 import { formatHour, HOUR_SLIDER_STEP, HOURS_PER_DAY, NOON_HOUR } from '../../sim/daylight';
 import { SPECIES_IDS, type PopulationCounts } from '../../sim/population';
 import { DEFAULT_SIM_SPEED, SIM_SPEEDS, type SimSpeed } from '../../sim/sim-speed';
@@ -77,7 +83,8 @@ function toNumber(value: string | number): number {
  *
  * Le panneau ne contient aucune logique de simulation : il affiche l'état que l'hôte lui
  * fournit (entrées) et émet les demandes de l'utilisateur (sorties), comme la barre des
- * vues. Il est découpé en sections (`fieldset`) : l'environnement (#70) viendra s'y ajouter.
+ * vues. Il est découpé en sections (`fieldset`), la première étant l'environnement (#87 :
+ * bac tropical ou bassin, liste déroulante).
  *
  * Population : par espèce, un champ numérique (entier de 0 au maximum fourni par l'hôte,
  * validé à Entrée ou en quittant le champ, réglable aux flèches) entre deux boutons « − » et
@@ -102,6 +109,25 @@ function toNumber(value: string | number): number {
     </button>
     @if (open()) {
       <section class="control-panel" [id]="panelId" aria-label="Réglages de l’aquarium">
+        <fieldset class="control-panel__section" data-section="environnement">
+          <legend class="control-panel__legend">Environnement</legend>
+          <label class="control-panel__field" for="panneau-environnement">
+            <span class="control-panel__label">Lieu</span>
+            <select
+              id="panneau-environnement"
+              class="control-panel__select"
+              aria-label="Environnement"
+              (change)="onEnvironment($event)"
+            >
+              @for (id of environmentIds; track id) {
+                <option [value]="id" [selected]="id === environment()">
+                  {{ environmentName(id) }}
+                </option>
+              }
+            </select>
+          </label>
+        </fieldset>
+
         <fieldset class="control-panel__section" data-section="simulation">
           <legend class="control-panel__legend">Simulation</legend>
           <label class="control-panel__field" for="panneau-vitesse">
@@ -202,6 +228,8 @@ function toNumber(value: string | number): number {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ControlPanel {
+  /** Environnement affiché (fourni par l'hôte). */
+  readonly environment = input<EnvironmentId>(DEFAULT_ENVIRONMENT_ID);
   /** Vitesse de simulation courante (fournie par l'hôte). */
   readonly speed = input<number>(DEFAULT_SIM_SPEED);
   /** Heure affichée, au quart d'heure (fournie par l'hôte). */
@@ -215,6 +243,8 @@ export class ControlPanel {
   /** Effectif maximal de chaque espèce, compte tenu des autres (fourni par l'hôte). */
   readonly populationMax = input<PopulationCounts>(NO_FISH);
 
+  /** Environnement choisi dans la liste. */
+  readonly environmentChanged = output<EnvironmentId>();
   /** Vitesse choisie au curseur. */
   readonly speedChanged = output<SimSpeed>();
   /** Heure choisie au curseur (l'hôte fige l'horloge à cette heure). */
@@ -232,6 +262,7 @@ export class ControlPanel {
   protected readonly panelId = CONTROL_PANEL_ID;
   protected readonly speeds = SIM_SPEEDS;
   protected readonly speciesIds = SPECIES_IDS;
+  protected readonly environmentIds = ENVIRONMENT_IDS;
   protected readonly hourStep = HOUR_SLIDER_STEP;
   /** Dernier cran du curseur d'heure : 23:45 (24:00 serait minuit, déjà au cran 0). */
   protected readonly maxHour = HOURS_PER_DAY - HOUR_SLIDER_STEP;
@@ -242,6 +273,17 @@ export class ControlPanel {
 
   toggle(): void {
     this.open.update((open) => !open);
+  }
+
+  protected environmentName(id: EnvironmentId): string {
+    return ENVIRONMENTS[id].name;
+  }
+
+  protected onEnvironment(event: Event): void {
+    const id = (event.target as HTMLSelectElement).value;
+    if ((ENVIRONMENT_IDS as readonly string[]).includes(id) && id !== this.environment()) {
+      this.environmentChanged.emit(id as EnvironmentId);
+    }
   }
 
   protected onSpeed(event: Event): void {

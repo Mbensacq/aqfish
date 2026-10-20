@@ -19,14 +19,16 @@
     />
     <!-- Indicateur du moment de la journée (#73). -->
     <app-day-indicator [phase]="aquarium.dayPhase()" />
-    <!-- Panneau de contrôle (#52) : vitesse, heure, décor, population (#69). Fermé par défaut. -->
+    <!-- Panneau de contrôle (#52) : environnement (#87), vitesse, heure, décor, population (#69). Fermé par défaut. -->
     <app-control-panel
+      [environment]="aquarium.environment()"
       [speed]="aquarium.speed()"
       [hour]="aquarium.clockHour()"
       [clockRunning]="!aquarium.clockFrozen()"
       [decorVisible]="aquarium.decorVisible()"
       [population]="aquarium.population()"
       [populationMax]="aquarium.populationMax()"
+      (environmentChanged)="aquarium.setEnvironment($event)"
       (speedChanged)="aquarium.setSpeed($event)"
       (hourChanged)="aquarium.freezeClockAt($event)"
       (clockRunningChanged)="aquarium.setClockRunning($event)"
