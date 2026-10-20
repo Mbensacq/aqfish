@@ -8,7 +8,6 @@ import {
   isClockKey,
   isFeedKey,
   isPixelArtKey,
-  isTypingContext,
   NIGHT_KEY,
   presetForKey,
   VIEW_PRESET_BUTTONS,
@@ -344,27 +343,11 @@ describe('ViewPresetsBar', () => {
   });
 });
 
-describe('presetForKey / isTypingContext', () => {
+describe('presetForKey', () => {
   it('associe les touches 1 à 5, rien d’autre', () => {
     expect(presetForKey('1')).toBe('top');
     expect(presetForKey('5')).toBe('three-quarter');
     expect(presetForKey('')).toBeNull();
     expect(presetForKey('12')).toBeNull();
-  });
-
-  it('cible non élément (document) : pas un contexte de saisie', () => {
-    const event = new KeyboardEvent('keydown', { key: '1' });
-    expect(isTypingContext(event)).toBe(false);
-  });
-
-  it('contenteditable="false" : pas un contexte de saisie', () => {
-    const div = document.createElement('div');
-    div.setAttribute('contenteditable', 'false');
-    document.body.appendChild(div);
-    let result: boolean | null = null;
-    div.addEventListener('keydown', (e) => (result = isTypingContext(e)));
-    div.dispatchEvent(new KeyboardEvent('keydown', { key: '1', bubbles: true }));
-    div.remove();
-    expect(result).toBe(false);
   });
 });

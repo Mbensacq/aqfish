@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 
 import { helpSections, keyCommand, keyCommandFor } from '../../core/commands/commands';
-import { isTypingContext } from '../view-presets-bar/view-presets-bar';
+import { isTypingContext } from '../../core/keyboard/keyboard';
 import { COMMANDS_HELP_DEFAULT_OPEN, COMMANDS_HELP_STORE } from './commands-help-store';
 
 /** Clé de stockage de l'état de l'aide-mémoire. */

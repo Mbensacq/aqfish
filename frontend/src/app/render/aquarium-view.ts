@@ -62,7 +62,6 @@ export interface AquariumRenderer {
 
 export type AquariumRendererFactory = (canvas: HTMLCanvasElement) => AquariumRenderer;
 
-/** Fabrique par défaut : WebGL sans anticrénelage (docs/DA.md, « Aucun lissage »). */
 /** Bouton de la souris d'`OrbitControls` pour chaque action déclarée (`core/commands`). */
 export const ORBIT_MOUSE_ACTIONS: Readonly<Record<OrbitAction, MOUSE>> = {
   rotate: MOUSE.ROTATE,
@@ -80,6 +79,7 @@ export const ORBIT_TOUCH_ACTIONS: Readonly<
   'dolly-rotate': TOUCH.DOLLY_ROTATE,
 };
 
+/** Fabrique par défaut : WebGL sans anticrénelage (docs/DA.md, « Aucun lissage »). */
 export const createWebGLRenderer: AquariumRendererFactory = (canvas) =>
   new WebGLRenderer({ canvas, antialias: false, powerPreference: 'low-power' });
 

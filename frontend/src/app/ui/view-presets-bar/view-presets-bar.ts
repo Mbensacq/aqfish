@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
 
 import type { CameraPreset } from '../../core/capture/capture-params';
 import { VIEW_COMMAND_PRESETS, commandKey, keyCommand } from '../../core/commands/commands';
+import { isTypingContext } from '../../core/keyboard/keyboard';
 import { MIDNIGHT_HOUR, NOON_HOUR } from '../../sim/daylight';
 
 /** Bouton de la barre : préréglage, libellé visible, nom accessible et touche associée. */
@@ -80,25 +81,6 @@ export function isFeedKey(key: string): boolean {
 /** Préréglage associé à une touche (`1` à `5`), `null` sinon. */
 export function presetForKey(key: string): CameraPreset | null {
   return VIEW_PRESET_BUTTONS.find((button) => button.key === key)?.preset ?? null;
-}
-
-/**
- * Vrai si la touche doit être laissée au navigateur : touche de modification enfoncée, ou
- * focus dans un champ de saisie (`input`, `textarea`, `select`, élément éditable).
- */
-export function isTypingContext(event: KeyboardEvent): boolean {
-  if (event.ctrlKey || event.altKey || event.metaKey) {
-    return true;
-  }
-  const target = event.target;
-  if (!(target instanceof Element)) {
-    return false;
-  }
-  if (target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])')) {
-    return true;
-  }
-  // `isContentEditable` peut manquer (jsdom) : comparaison stricte.
-  return target instanceof HTMLElement && target.isContentEditable === true;
 }
 
 /**
