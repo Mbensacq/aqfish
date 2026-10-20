@@ -193,12 +193,29 @@ test.describe('Nourrissage (#67)', () => {
     });
   }
 
+  // #94 : simulation à l'arrêt (vitesse 0) pendant les appuis, pour ne pas dépendre de
+  // l'horloge murale : en temps réel, sur une machine chargée, les poissons mangeaient les
+  // granulés entre deux appuis et le compte n'atteignait jamais `MAX_FOOD`. À l'arrêt, chaque
+  // appui ajoute exactement `FOOD_PER_DROP` granulés jusqu'à la borne, puis plus rien.
   test('le nombre de granulés reste borné quand on nourrit sans cesse (QA)', async ({ page }) => {
-    const errors = await openScene(page);
+    // 19 appuis vérifiés un à un : chacun coûte plusieurs images en rendu logiciel. Petite
+    // fenêtre (rendu moins cher) et délai explicite, pour tenir sous charge (le résultat, lui,
+    // ne dépend plus de la durée).
+    test.setTimeout(300_000);
+    await page.setViewportSize({ width: 640, height: 480 });
+    const errors = await openScene(page, '?seed=42');
+    const toggle = page.getByRole('button', { name: 'Réglages' });
+    await toggle.click();
+    await page.getByRole('slider', { name: 'Vitesse de la simulation' }).fill('0');
+    await expect(host(page)).toHaveAttribute('data-aqfish-speed', '0');
+    // Replier le panneau : la touche `G` est ignorée tant que le focus est dans un champ.
+    await toggle.click();
+    await expect(host(page)).toHaveAttribute('data-aqfish-food', '0');
     for (let i = 0; i < MAX_FOOD / FOOD_PER_DROP + 4; i++) {
       await page.keyboard.press('g');
+      const expected = Math.min(MAX_FOOD, (i + 1) * FOOD_PER_DROP);
+      await expect(host(page)).toHaveAttribute('data-aqfish-food', String(expected));
     }
-    await expect(host(page)).toHaveAttribute('data-aqfish-food', String(MAX_FOOD));
     expect(errors).toEqual([]);
   });
 
