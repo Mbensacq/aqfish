@@ -100,8 +100,8 @@ export function dayIconPixels(phase: DayPhase): readonly IconPixel[] {
 /**
  * Indicateur discret du moment de la journée (issue #73) : petite icône pixel art en haut à
  * gauche (soleil, soleil sur l'horizon à l'aube et au crépuscule, lune la nuit), dont le nom
- * accessible dit le moment (« Moment de la journée : nuit »). Purement informatif : le
- * réglage de l'heure viendra avec le panneau de contrôle (#52). Absent en mode capture
+ * accessible dit le moment (« Moment de la journée : nuit »). Purement informatif : l'heure
+ * se règle dans le panneau de contrôle (#52), juste à côté. Absent en mode capture
  * (c'est l'application qui ne l'affiche pas).
  */
 @Component({

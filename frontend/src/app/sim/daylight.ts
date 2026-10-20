@@ -253,3 +253,29 @@ export function dayPhaseAt(hour: number): DayPhase {
   }
   return h < NOON_HOUR ? 'aube' : 'crepuscule';
 }
+
+/** Pas du curseur d'heure du panneau de contrôle (issue #52) : un quart d'heure. */
+export const HOUR_SLIDER_STEP = 0.25;
+
+/**
+ * Heure (toute valeur finie, ramenée modulo 24) arrondie au multiple de `step` le plus
+ * proche, dans [0, 24) : 23,9 donne 0 (minuit suivant), pas 24.
+ * @throws RangeError si `hour` n'est pas un réel fini ou si `step` n'est pas un réel fini > 0.
+ */
+export function snapHour(hour: number, step: number = HOUR_SLIDER_STEP): number {
+  if (!(step > 0) || !Number.isFinite(step)) {
+    throw new RangeError(`step doit être un réel strictement positif (reçu : ${step})`);
+  }
+  return normalizeHour(Math.round(normalizeHour(hour) / step) * step);
+}
+
+/**
+ * Heure lisible sur 24 h, à la minute la plus proche : 14,5 donne « 14:30 », 9,25 donne
+ * « 09:15 », 23,999 donne « 00:00 » (toute valeur finie, ramenée modulo 24).
+ * @throws RangeError si `hour` n'est pas un réel fini.
+ */
+export function formatHour(hour: number): string {
+  const minutes = Math.round(normalizeHour(hour) * 60) % (HOURS_PER_DAY * 60);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${pad(Math.floor(minutes / 60))}:${pad(minutes % 60)}`;
+}

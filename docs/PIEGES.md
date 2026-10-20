@@ -120,6 +120,9 @@ haut de sa section.
   sur un autre port (`E2E_PORT=4310 npx playwright test …`). Ne pas utiliser
   `pkill -f <motif>` : le motif figure aussi dans la ligne de commande du shell de l'outil,
   qui est tué avec (code 144). (2026-10-19)
+  Idem pour `for p in $(pgrep -f <motif>); do kill $p; done` (cycle 28) : `pgrep -f` liste
+  aussi le shell de l'outil. Relever le PID avec `pgrep -af "ng serve"` dans un appel à
+  part, puis `kill <PID>` dans un autre. (2026-10-20)
 - **Tester le code d'une branche pendant le `verify` de `main`** (cycle 22) : travailler
   dans un worktree séparé (`git worktree add ../aqfish-cNNN -b <branche> main`, puis lien
   symbolique vers `frontend/node_modules`) évite de modifier les sources servies par le

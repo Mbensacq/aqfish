@@ -442,6 +442,21 @@ export class AquariumView {
     return this.pixelPass.tonePenalties;
   }
 
+  /**
+   * Affiche ou masque le décor (rochers et plantes, issue #52) sans le détruire : il reste
+   * en mémoire et réapparaît tel quel. Les bulles, l'eau et la lumière ne changent pas.
+   */
+  setDecorVisible(visible: boolean): void {
+    if (!this.disposed) {
+      this.decorLayer.object.visible = visible;
+    }
+  }
+
+  /** Vrai si le décor est affiché (tests). */
+  get decorVisible(): boolean {
+    return this.decorLayer.object.visible;
+  }
+
   /** Nombre d'éléments de décor affichés (tests). */
   get decorCount(): number {
     return this.decorLayer.count;
