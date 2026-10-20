@@ -4,7 +4,7 @@ import { isCaptureReady, resetCaptureReady } from '../../core/capture/capture-re
 import { RENDER_FILTER_STORAGE_KEY } from '../../core/render-filter/render-filter';
 import type { AquariumRenderer } from '../../render/aquarium-view';
 import { MAX_STEPS_PER_FRAME } from '../../sim/constants';
-import { CORYDORA, GUPPY, NEON } from '../../sim/species';
+import { CORYDORA, GUPPY, KOI, NEON } from '../../sim/species';
 import { expiryAge, FOOD_PER_DROP } from '../../sim/food';
 import { setPopulation } from '../../sim/population';
 import { advance, advanceToWithFeedings, createDefaultWorld } from '../../sim/world';
@@ -654,7 +654,13 @@ describe('AquariumHost', () => {
       expect(host().environment()).toBe('bassin');
       expect(element().getAttribute(ENVIRONMENT_ATTRIBUTE)).toBe('bassin');
       expect(element().getAttribute('data-aqfish-food')).toBe('0');
-      expect(host().population()).toEqual({ neon: 0, guppy: 0, corydora: 0 });
+      expect(host().population()).toEqual({
+        neon: 0,
+        guppy: 0,
+        corydora: 0,
+        koi: KOI.defaultPopulation,
+      });
+      expect(element().getAttribute(POPULATION_ATTRIBUTE)).toBe(`koi:${KOI.defaultPopulation}`);
       expect(host().activePreset()).toBe('top');
       // L'ancienne vue est libérée, une nouvelle est créée ; le décor reste masqué.
       expect(renderers).toHaveLength(2);
@@ -693,12 +699,14 @@ describe('AquariumHost', () => {
     const exposed = () => (fixture.nativeElement as HTMLElement).getAttribute(POPULATION_ATTRIBUTE);
 
     it('formatPopulation : espece:n, dans l’ordre des espèces', () => {
-      expect(formatPopulation({ neon: 12, guppy: 0, corydora: 6 })).toBe(
-        'neon:12,guppy:0,corydora:6',
+      expect(formatPopulation({ neon: 12, guppy: 0, corydora: 6, koi: 2 })).toBe(
+        'neon:12,guppy:0,corydora:6,koi:2',
       );
+      // Espèces d'un environnement (#88) : seulement elles, dans leur ordre.
+      expect(formatPopulation({ neon: 12, guppy: 0, corydora: 6, koi: 2 }, ['koi'])).toBe('koi:2');
     });
 
-    it('applyPopulation : ordre de l’URL, bornes de la simulation, espèce inconnue ignorée', () => {
+    it('applyPopulation : ordre de l’URL, bornes, espèce inconnue ou hors de l’environnement ignorée', () => {
       const world = createDefaultWorld(42);
       applyPopulation(world, [
         { species: 'koi', count: 3 },
@@ -720,11 +728,13 @@ describe('AquariumHost', () => {
         neon: NEON.defaultPopulation,
         guppy: GUPPY.defaultPopulation,
         corydora: CORYDORA.defaultPopulation,
+        koi: 0,
       });
       expect(host().populationMax()).toEqual({
         neon: NEON.maxPopulation,
         guppy: GUPPY.maxPopulation,
         corydora: CORYDORA.maxPopulation,
+        koi: KOI.maxPopulation,
       });
     });
 
@@ -754,7 +764,9 @@ describe('AquariumHost', () => {
       const before = structuredClone(host().world);
       host().setPopulation('neon', 2.5);
       host().setPopulation('neon', -1);
-      host().setPopulation('koi' as never, 3);
+      host().setPopulation('axolotl' as never, 3);
+      // Le koï ne vit pas dans le bac tropical (#88).
+      host().setPopulation('koi', 3);
       expect(host().world).toEqual(before);
     });
 

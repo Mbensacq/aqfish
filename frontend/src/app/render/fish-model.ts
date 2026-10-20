@@ -25,6 +25,12 @@ export interface FishTemplate {
   readonly bodyDepth: number;
   /** Épaisseur de la queue, en voxels. */
   readonly tailDepth: number;
+  /**
+   * Épaisseur du corps par colonne (queue → tête), centrée, pour une silhouette effilée vue
+   * de dessus ; absent : `bodyDepth` partout. Chaque valeur est un entier de [1, bodyDepth]
+   * de même parité que `bodyDepth`.
+   */
+  readonly bodyColumnDepths?: readonly number[];
 }
 
 /** Rôles de couleur des gabarits. */
@@ -108,12 +114,33 @@ export const CORYDORA_FISH: FishTemplate = {
   tailDepth: 1,
 };
 
+/**
+ * Koï (issue #88) : corps long et large (6 voxels), effilé au pédoncule et au museau vu de
+ * dessus (`bodyColumnDepths`). Le dos porte le motif de la robe, lu de dessus : fond (`k`),
+ * taches (`a`) et taches secondaires (`s`), dont les couleurs dépendent de la robe
+ * (`sim/species.ts`, `KOI`). Large caudale (2 voxels d'épaisseur, visible de dessus).
+ */
+export const KOI_FISH: FishTemplate = {
+  body: [
+    // queue → tête
+    '..kaaksaakaa.',
+    'kskaaksaakaak',
+    '.kkbbbbbbbbek',
+    '...bbbbbbbb..',
+  ],
+  tail: ['ff.', 'fff', '.ff', 'fff', 'ff.'],
+  bodyDepth: 6,
+  tailDepth: 2,
+  bodyColumnDepths: [2, 2, 4, 6, 6, 6, 6, 6, 6, 6, 6, 4, 2],
+};
+
 /** Gabarit de chaque silhouette déclarée par les espèces (`sim/species.ts`). */
 export const SILHOUETTES: Readonly<Record<SilhouetteId, FishTemplate>> = {
   fuseau: SLENDER_FISH,
   'guppy-male': GUPPY_MALE_FISH,
   'guppy-femelle': GUPPY_FEMALE_FISH,
   corydora: CORYDORA_FISH,
+  koi: KOI_FISH,
 };
 
 /** Proportions des voxels : hauteur et épaisseur relatives à la longueur d'un voxel. */
@@ -161,8 +188,10 @@ export function modelBodyLength(
 /**
  * Maillage voxel d'un gabarit de profil. Seules les faces dont le voisin est vide sont
  * émises. `anchor` fixe l'origine : `'center'` centre le gabarit, `'right'` place
- * l'origine au milieu de son bord droit (pivot de la queue).
- * @throws Error si un caractère du gabarit n'a pas de rôle ou si les rangées sont inégales.
+ * l'origine au milieu de son bord droit (pivot de la queue). `columnDepths` donne
+ * l'épaisseur de chaque colonne, centrée (absent : `depth` partout).
+ * @throws Error si un caractère du gabarit n'a pas de rôle, si les rangées sont inégales ou
+ * si `columnDepths` est invalide (longueur, valeur hors de [1, depth], parité).
  */
 export function buildVoxelMesh(
   rows: readonly string[],
@@ -170,11 +199,26 @@ export function buildVoxelMesh(
   colors: SpeciesColors,
   size: VoxelSize,
   anchor: 'center' | 'right',
+  columnDepths?: readonly number[],
 ): VoxelMeshData {
   const width = templateWidth(rows);
   const height = rows.length;
   if (!Number.isInteger(depth) || depth < 1) {
     throw new Error(`Épaisseur de gabarit invalide : ${depth}`);
+  }
+  if (columnDepths && columnDepths.length !== width) {
+    throw new Error(`columnDepths doit avoir ${width} valeurs (reçu : ${columnDepths.length})`);
+  }
+  // Première et dernière couche (exclue) remplies dans chaque colonne.
+  const layerStart: number[] = [];
+  const layerEnd: number[] = [];
+  for (let col = 0; col < width; col++) {
+    const d = columnDepths ? columnDepths[col] : depth;
+    if (!Number.isInteger(d) || d < 1 || d > depth || (depth - d) % 2 !== 0) {
+      throw new Error(`Épaisseur de colonne invalide (colonne ${col}) : ${d}`);
+    }
+    layerStart.push((depth - d) / 2);
+    layerEnd.push((depth + d) / 2);
   }
   const linear = new Map<string, [number, number, number]>();
   for (const [char, role] of Object.entries(ROLES)) {
@@ -186,8 +230,8 @@ export function buildVoxelMesh(
     col < width &&
     row >= 0 &&
     row < height &&
-    layer >= 0 &&
-    layer < depth &&
+    layer >= layerStart[col] &&
+    layer < layerEnd[col] &&
     rows[row][col] !== '.';
 
   const originX = anchor === 'center' ? -width / 2 : -width;
@@ -206,7 +250,7 @@ export function buildVoxelMesh(
       if (!color) {
         throw new Error(`Caractère de gabarit sans rôle de couleur : « ${char} »`);
       }
-      for (let layer = 0; layer < depth; layer++) {
+      for (let layer = layerStart[col]; layer < layerEnd[col]; layer++) {
         // Coin minimal du voxel, en unités de voxel ; la rangée 0 est en haut.
         const x0 = originX + col;
         const y0 = height / 2 - row - 1;
@@ -254,7 +298,14 @@ export function createFishGeometry(
   const size = voxelSize(def, template, variant.scale);
   const data =
     part === 'body'
-      ? buildVoxelMesh(template.body, template.bodyDepth, variant.colors, size, 'center')
+      ? buildVoxelMesh(
+          template.body,
+          template.bodyDepth,
+          variant.colors,
+          size,
+          'center',
+          template.bodyColumnDepths,
+        )
       : buildVoxelMesh(template.tail, template.tailDepth, variant.colors, size, 'right');
   const geometry = new BufferGeometry();
   geometry.setAttribute('position', new BufferAttribute(data.positions, 3));

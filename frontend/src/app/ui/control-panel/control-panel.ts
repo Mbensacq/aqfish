@@ -4,10 +4,11 @@ import {
   DEFAULT_ENVIRONMENT_ID,
   ENVIRONMENT_IDS,
   ENVIRONMENTS,
+  environmentById,
   type EnvironmentId,
 } from '../../sim/environment';
 import { formatHour, HOUR_SLIDER_STEP, HOURS_PER_DAY, NOON_HOUR } from '../../sim/daylight';
-import { SPECIES_IDS, type PopulationCounts } from '../../sim/population';
+import { NO_FISH, type PopulationCounts } from '../../sim/population';
 import { DEFAULT_SIM_SPEED, SIM_SPEEDS, type SimSpeed } from '../../sim/sim-speed';
 import { SPECIES, type SpeciesId } from '../../sim/species';
 
@@ -68,8 +69,6 @@ export interface PopulationRequest {
 export function speciesPlural(species: SpeciesId): string {
   return `${SPECIES[species].name.toLowerCase()}s`;
 }
-
-const NO_FISH: PopulationCounts = { neon: 0, guppy: 0, corydora: 0 };
 
 /** Nombre lu dans une valeur de formulaire ; une chaîne vide donne `NaN` (et non 0). */
 function toNumber(value: string | number): number {
@@ -184,7 +183,7 @@ function toNumber(value: string | number): number {
 
         <fieldset class="control-panel__section" data-section="population">
           <legend class="control-panel__legend">Population</legend>
-          @for (id of speciesIds; track id) {
+          @for (id of speciesIds(); track id) {
             <div class="control-panel__count" [attr.data-species]="id">
               <label class="control-panel__count-label" [for]="'panneau-population-' + id">
                 {{ speciesName(id) }}
@@ -261,7 +260,8 @@ export class ControlPanel {
 
   protected readonly panelId = CONTROL_PANEL_ID;
   protected readonly speeds = SIM_SPEEDS;
-  protected readonly speciesIds = SPECIES_IDS;
+  /** Espèces de l'environnement affiché (#88), dans l'ordre de `Environment.species`. */
+  protected readonly speciesIds = computed(() => environmentById(this.environment()).species);
   protected readonly environmentIds = ENVIRONMENT_IDS;
   protected readonly hourStep = HOUR_SLIDER_STEP;
   /** Dernier cran du curseur d'heure : 23:45 (24:00 serait minuit, déjà au cran 0). */

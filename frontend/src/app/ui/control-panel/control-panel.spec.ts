@@ -94,8 +94,8 @@ class TestHost {
   readonly hour = signal(12);
   readonly running = signal(true);
   readonly decor = signal(true);
-  readonly population = signal<PopulationCounts>({ neon: 12, guppy: 6, corydora: 0 });
-  readonly populationMax = signal<PopulationCounts>({ neon: 40, guppy: 6, corydora: 16 });
+  readonly population = signal<PopulationCounts>({ neon: 12, guppy: 6, corydora: 0, koi: 0 });
+  readonly populationMax = signal<PopulationCounts>({ neon: 40, guppy: 6, corydora: 16, koi: 14 });
   readonly events: [string, number | boolean][] = [];
   readonly requests: PopulationRequest[] = [];
 }
@@ -289,7 +289,7 @@ describe('ControlPanel', () => {
       expect(rows[0].querySelector('label')?.getAttribute('for')).toBe(neons.id);
       expect(field('guppys').value).toBe('6');
       expect(field('corydoras').value).toBe('0');
-      fixture.componentInstance.population.set({ neon: 20, guppy: 6, corydora: 0 });
+      fixture.componentInstance.population.set({ neon: 20, guppy: 6, corydora: 0, koi: 0 });
       await fixture.whenStable();
       expect(neons.value).toBe('20');
     });

@@ -39,10 +39,8 @@ test.describe('Environnement', () => {
     await page.keyboard.press('ArrowDown');
     await expect(selector(page)).toHaveValue('bassin');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'bassin');
-    await expect(hostEl(page)).toHaveAttribute(
-      'data-aqfish-population',
-      'neon:0,guppy:0,corydora:0',
-    );
+    // Le bassin a ses koïs (#88), et seulement eux.
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', 'koi:7');
     // Vue par défaut du bassin : de dessus (bouton actif de la barre des vues).
     await expect(page.getByRole('button', { name: /^Vue de dessus/ })).toHaveAttribute(
       'aria-pressed',
@@ -56,9 +54,9 @@ test.describe('Environnement', () => {
       .toBeGreaterThan(tick);
     await selector(page).selectOption('tropical');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'tropical');
-    await expect(hostEl(page)).not.toHaveAttribute(
+    await expect(hostEl(page)).toHaveAttribute(
       'data-aqfish-population',
-      'neon:0,guppy:0,corydora:0',
+      'neon:12,guppy:6,corydora:6',
     );
     expect(errors).toEqual([]);
   });

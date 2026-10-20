@@ -10,7 +10,7 @@ import {
   type EnvironmentId,
 } from './environment';
 import { DEFAULT_DECOR, validateDecorItem } from './decor';
-import { SPECIES } from './species';
+import { CORYDORA, GUPPY, NEON } from './species';
 import { DEFAULT_TANK, waterVolume } from './tank';
 
 describe('environnements', () => {
@@ -19,7 +19,7 @@ describe('environnements', () => {
     expect(TROPICAL_TANK.dimensions).toBe(DEFAULT_TANK);
     expect(TROPICAL_TANK.decor).toBe(DEFAULT_DECOR);
     expect(TROPICAL_TANK.population).toEqual(
-      Object.values(SPECIES).map((def) => ({ species: def.id, count: def.defaultPopulation })),
+      [NEON, GUPPY, CORYDORA].map((def) => ({ species: def.id, count: def.defaultPopulation })),
     );
     expect(TROPICAL_TANK.border).toBe('verre');
     expect(TROPICAL_TANK.bubbles).toBe(true);
