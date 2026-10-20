@@ -18,8 +18,10 @@ import {
 } from 'three';
 
 import { mix, type DayLight, type Rgb } from '../sim/daylight';
+import { TROPICAL_TANK, type Environment } from '../sim/environment';
 import { DEFAULT_TANK, SAND_THICKNESS, WATER_LEVEL_RATIO, type TankDimensions } from '../sim/tank';
-import { PALETTE } from './palette';
+import { PALETTE, type PaletteColorName } from './palette';
+import { createStoneBorder } from './stone-border';
 
 // Géométrie du bac : définie dans sim/tank.ts (partagée avec les bornes de nage).
 export { DEFAULT_TANK, SAND_THICKNESS, WATER_LEVEL_RATIO };
@@ -57,9 +59,22 @@ export const NIGHT_GROUND = '#3c5a8c';
 /** Dessous du sable la nuit (non éclairé : vue de dessous, ADR 0006). */
 export const NIGHT_SAND_BOTTOM = '#3c5272';
 
+/**
+ * Couleur de la palette nommée `name` (teintes des environnements, `sim/environment.ts`).
+ * @throws RangeError si le nom n'est pas celui d'une couleur de `PALETTE`.
+ */
+export function paletteColor(name: string): string {
+  if (!Object.hasOwn(PALETTE, name)) {
+    throw new RangeError(`couleur inconnue de la palette : ${name}`);
+  }
+  return PALETTE[name as PaletteColorName];
+}
+
 export interface AquariumScene {
   readonly scene: Scene;
   readonly dimensions: TankDimensions;
+  /** Environnement représenté (`sim/environment.ts`). */
+  readonly environment: Environment;
   /**
    * Applique la lumière du jour (`sim/daylight.ts`, ADR 0018) : intensité et teinte des
    * lumières, teinte de l'eau. À midi (`lightAt(12)`), la scène est exactement celle d'avant
@@ -71,38 +86,56 @@ export interface AquariumScene {
 }
 
 /**
- * Construit la scène statique du bac : fond de sable, volume d'eau teinté, parois vitrées
- * translucides avec arêtes visibles, éclairage doux venant du haut.
+ * Construit la scène statique d'un environnement (`sim/environment.ts`, le bac tropical par
+ * défaut) : sol, volume d'eau teinté, bordure (parois vitrées translucides avec arêtes
+ * visibles, ou margelle de pierre), éclairage doux venant du haut.
  * Repère : Y vers le haut, origine au centre du fond du bac, unités en mètres.
+ * @throws RangeError si une teinte de l'environnement n'est pas dans la palette.
  */
-export function createAquariumScene(dims: TankDimensions = DEFAULT_TANK): AquariumScene {
+export function createAquariumScene(environment: Environment = TROPICAL_TANK): AquariumScene {
+  const dims = environment.dimensions;
+  const ground = {
+    top: paletteColor(environment.ground.top),
+    side: paletteColor(environment.ground.side),
+    bottom: paletteColor(environment.ground.bottom),
+  };
+  const waterTint = {
+    body: paletteColor(environment.water.body),
+    surface: paletteColor(environment.water.surface),
+  };
   const scene = new Scene();
   scene.background = new Color(PALETTE.fondScene);
 
-  const lights = createLights(dims);
+  const lights = createLights(dims, ground.bottom);
   scene.add(lights.group);
-  const sand = createSand(dims);
+  const sand = createSand(dims, ground);
   scene.add(sand);
-  const water = createWater(dims);
+  const water = createWater(dims, waterTint);
   scene.add(water);
-  scene.add(...createGlass(dims));
+  const stones = environment.border === 'pierre' ? createStoneBorder(dims) : null;
+  if (stones) {
+    scene.add(stones.object);
+  } else {
+    scene.add(...createGlass(dims));
+  }
 
   const [body, , surface] = water.material as MeshBasicMaterial[];
   const sandBottom = (sand.material as MeshBasicMaterial[])[3];
   const waterColors = {
-    dayBody: new Color(PALETTE.eauMoyenne),
+    dayBody: new Color(waterTint.body),
     nightBody: new Color(NIGHT_WATER_BODY),
-    daySurface: new Color(PALETTE.eauClaire),
+    daySurface: new Color(waterTint.surface),
     nightSurface: new Color(NIGHT_WATER_SURFACE),
-    dayGround: new Color(PALETTE.sableSombre),
+    dayGround: new Color(ground.bottom),
     nightGround: new Color(NIGHT_GROUND),
-    daySandBottom: new Color(PALETTE.sableSombre),
+    daySandBottom: new Color(ground.bottom),
     nightSandBottom: new Color(NIGHT_SAND_BOTTOM),
   };
 
   return {
     scene,
     dimensions: dims,
+    environment,
     setDaylight: (light) => {
       const day = light.intensity;
       lights.ambient.intensity = mix(NIGHT_AMBIENT_INTENSITY, DAY_AMBIENT_INTENSITY, day);
@@ -118,6 +151,7 @@ export function createAquariumScene(dims: TankDimensions = DEFAULT_TANK): Aquari
       body.color.lerpColors(waterColors.dayBody, waterColors.nightBody, 1 - day);
       surface.color.lerpColors(waterColors.daySurface, waterColors.nightSurface, 1 - day);
       sandBottom.color.lerpColors(waterColors.daySandBottom, waterColors.nightSandBottom, 1 - day);
+      stones?.setDaylight(day);
     },
     dispose: () => disposeObject(scene),
   };
@@ -133,13 +167,14 @@ interface Lights {
   readonly sun: DirectionalLight;
 }
 
-function createLights(dims: TankDimensions): Lights {
+function createLights(dims: TankDimensions, groundColor: string): Lights {
   const group = new Object3D();
   group.name = 'lumieres';
   // À midi, lumières neutres (blanches) pour ne pas altérer les teintes de la palette ; le
   // cycle jour/nuit les teinte ensuite (`setDaylight`).
-  // Ambiance : ciel blanc, sol couleur sable (les faces tournées vers le bas restent lisibles).
-  const ambient = new HemisphereLight('#ffffff', PALETTE.sableSombre, DAY_AMBIENT_INTENSITY);
+  // Ambiance : ciel blanc, sol couleur du dessous du sol (les faces tournées vers le bas
+  // restent lisibles).
+  const ambient = new HemisphereLight('#ffffff', groundColor, DAY_AMBIENT_INTENSITY);
   ambient.name = 'lumiere-ambiante';
   group.add(ambient);
   // Lumière principale venant du haut, légèrement de face.
@@ -151,14 +186,17 @@ function createLights(dims: TankDimensions): Lights {
 }
 
 /**
- * Sable : dalle opaque. Faces latérales et inférieure plus sombres pour qu'on lise la
- * coupe du substrat de côté et de dessous (voir ADR 0006).
+ * Sol (sable du bac, vase du bassin) : dalle opaque. Faces latérales et inférieure plus
+ * sombres pour qu'on lise la coupe du substrat de côté et de dessous (voir ADR 0006).
  */
-function createSand(dims: TankDimensions): Mesh {
+function createSand(
+  dims: TankDimensions,
+  colors: { readonly top: string; readonly side: string; readonly bottom: string },
+): Mesh {
   const geometry = new BoxGeometry(dims.width, SAND_THICKNESS, dims.depth);
-  const top = new MeshLambertMaterial({ color: PALETTE.sableClair });
-  const side = new MeshLambertMaterial({ color: PALETTE.sable });
-  const bottom = new MeshBasicMaterial({ color: PALETTE.sableSombre });
+  const top = new MeshLambertMaterial({ color: colors.top });
+  const side = new MeshLambertMaterial({ color: colors.side });
+  const bottom = new MeshBasicMaterial({ color: colors.bottom });
   // Ordre des faces d'une BoxGeometry : +X, -X, +Y, -Y, +Z, -Z.
   const mesh = new Mesh(geometry, [side, side, top, bottom, side, side]);
   mesh.name = 'sable';
@@ -167,12 +205,15 @@ function createSand(dims: TankDimensions): Mesh {
 }
 
 /** Eau : volume translucide teinté entre le sable et la surface, surface plus claire. */
-function createWater(dims: TankDimensions): Mesh {
+function createWater(
+  dims: TankDimensions,
+  colors: { readonly body: string; readonly surface: string },
+): Mesh {
   const surfaceY = dims.height * WATER_LEVEL_RATIO;
   const waterHeight = Math.max(surfaceY - SAND_THICKNESS, 0.001);
   const geometry = new BoxGeometry(dims.width, waterHeight, dims.depth);
-  const body = transparentBasic(PALETTE.eauMoyenne, 0.3);
-  const surface = transparentBasic(PALETTE.eauClaire, 0.5);
+  const body = transparentBasic(colors.body, 0.3);
+  const surface = transparentBasic(colors.surface, 0.5);
   const mesh = new Mesh(geometry, [body, body, surface, body, body, body]);
   mesh.name = 'eau';
   mesh.position.y = SAND_THICKNESS + waterHeight / 2;

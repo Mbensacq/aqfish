@@ -29,6 +29,7 @@ import {
 import { SPECIES, speciesVariants, type SpeciesId } from '../sim/species';
 import type { Fish } from '../sim/swimmer';
 import type { DayLight } from '../sim/daylight';
+import type { Environment } from '../sim/environment';
 import type { DecorItem } from '../sim/decor';
 import type { FoodPellet } from '../sim/food';
 import { BubbleLayer } from './bubble-layer';
@@ -89,7 +90,8 @@ export interface AquariumViewOptions {
   readonly preset: CameraPreset;
   /** Contrôles à la souris actifs (désactivés en mode capture). */
   readonly interactive: boolean;
-  readonly dimensions?: TankDimensions;
+  /** Environnement représenté (bac tropical par défaut, `sim/environment.ts`). */
+  readonly environment?: Environment;
   /** Filtre de rendu initial (pixel art par défaut), modifiable à chaud par `setFilter`. */
   readonly filter?: RenderFilter;
 }
@@ -182,7 +184,7 @@ export class AquariumView {
     this.currentFilter = options.filter ?? DEFAULT_RENDER_FILTER;
     this.renderer.setPixelRatio(options.pixelRatio);
     this.pixelPass = new PalettePass();
-    this.world = createAquariumScene(options.dimensions);
+    this.world = createAquariumScene(options.environment);
     this.fishLayers = Object.values(SPECIES).flatMap((species) =>
       speciesVariants(species).map(
         (_, index) => new FishLayer(species, MAX_FISH_PER_SPECIES, index),
@@ -192,9 +194,11 @@ export class AquariumView {
       this.world.scene.add(layer.object);
     }
     this.world.scene.add(this.decorLayer.object);
+    // Bulles et diffuseur : seulement dans un environnement qui en a (bac tropical).
+    this.bubbleLayer.object.visible = this.world.environment.bubbles;
     this.world.scene.add(this.bubbleLayer.object);
     this.world.scene.add(this.foodLayer.object);
-    this.waterLight = new WaterLightLayer(this.world.dimensions);
+    this.waterLight = new WaterLightLayer(this.world.dimensions, this.world.environment.caustics);
     this.world.scene.add(this.waterLight.object);
 
     const radius = tankBoundingRadius(this.world.dimensions);
@@ -234,6 +238,11 @@ export class AquariumView {
 
   get dimensions(): TankDimensions {
     return this.world.dimensions;
+  }
+
+  /** Environnement représenté. */
+  get environment(): Environment {
+    return this.world.environment;
   }
 
   /** Place la caméra sur un préréglage, cadré pour le rapport d'aspect courant (instantané). */
@@ -340,7 +349,9 @@ export class AquariumView {
   updateDecor(time: number): void {
     if (!this.disposed) {
       this.decorLayer.update(time);
-      this.bubbleLayer.update(time);
+      if (this.world.environment.bubbles) {
+        this.bubbleLayer.update(time);
+      }
       this.waterLight.update(time);
     }
   }

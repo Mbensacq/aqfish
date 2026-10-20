@@ -9,6 +9,7 @@ import {
 } from 'three';
 
 import { lightAt } from '../sim/daylight';
+import { ENVIRONMENTS, POND, TROPICAL_TANK } from '../sim/environment';
 import {
   createAquariumScene,
   DAY_AMBIENT_INTENSITY,
@@ -19,6 +20,7 @@ import {
   NIGHT_SAND_BOTTOM,
   NIGHT_WATER_BODY,
   NIGHT_WATER_SURFACE,
+  paletteColor,
   SAND_THICKNESS,
   WATER_LEVEL_RATIO,
 } from './aquarium-scene';
@@ -112,7 +114,10 @@ describe('createAquariumScene', () => {
   });
 
   it('accepte des dimensions personnalisées', () => {
-    const world = createAquariumScene({ width: 0.4, height: 0.3, depth: 0.25 });
+    const world = createAquariumScene({
+      ...TROPICAL_TANK,
+      dimensions: { width: 0.4, height: 0.3, depth: 0.25 },
+    });
     const glass = new Box3().setFromObject(world.scene.getObjectByName('verre') as Mesh);
     expect(glass.max.x - glass.min.x).toBeCloseTo(0.408);
     expect(world.dimensions.height).toBe(0.3);
@@ -180,5 +185,75 @@ describe('createAquariumScene : lumière du jour', () => {
     expect(p.sun.color.r).toBeGreaterThan(p.sun.color.b);
     expect(p.ambient.intensity).toBeGreaterThan(NIGHT_AMBIENT_INTENSITY);
     expect(p.ambient.intensity).toBeLessThan(DAY_AMBIENT_INTENSITY);
+  });
+});
+
+describe('createAquariumScene : environnements (#87)', () => {
+  it('chaque teinte de chaque environnement est une couleur de la palette', () => {
+    for (const env of Object.values(ENVIRONMENTS)) {
+      const names = [...Object.values(env.water), ...Object.values(env.ground)];
+      for (const name of names) {
+        expect(Object.keys(PALETTE)).toContain(name);
+      }
+    }
+  });
+
+  it('paletteColor refuse un nom inconnu ou hérité du prototype', () => {
+    expect(paletteColor('eauMoyenne')).toBe(PALETTE.eauMoyenne);
+    expect(() => paletteColor('bleuInconnu')).toThrow(RangeError);
+    expect(() => paletteColor('constructor')).toThrow(RangeError);
+  });
+
+  it('refuse un environnement dont une teinte est hors palette', () => {
+    expect(() =>
+      createAquariumScene({ ...POND, water: { body: '#123456', surface: 'eauClaire' } }),
+    ).toThrow(RangeError);
+  });
+
+  it('le bac tropical garde ses vitres, ses arêtes et ses couleurs d’avant', () => {
+    const { scene, environment } = createAquariumScene(TROPICAL_TANK);
+    expect(environment).toBe(TROPICAL_TANK);
+    expect(scene.getObjectByName('verre')).toBeDefined();
+    expect(scene.getObjectByName('margelle')).toBeUndefined();
+    const sand = scene.getObjectByName('sable') as Mesh;
+    expect(materials(sand).map(hex)).toEqual([
+      PALETTE.sable,
+      PALETTE.sable,
+      PALETTE.sableClair,
+      PALETTE.sableSombre,
+      PALETTE.sable,
+      PALETTE.sable,
+    ]);
+    const water = scene.getObjectByName('eau') as Mesh;
+    expect(hex(materials(water)[0])).toBe(PALETTE.eauMoyenne);
+    expect(hex(materials(water)[2])).toBe(PALETTE.eauClaire);
+  });
+
+  it('le bassin a une margelle de pierre, pas de vitres, et ses propres teintes', () => {
+    const { scene, dimensions } = createAquariumScene(POND);
+    expect(dimensions).toBe(POND.dimensions);
+    expect(scene.getObjectByName('verre')).toBeUndefined();
+    expect(scene.getObjectByName('aretes')).toBeUndefined();
+    const border = scene.getObjectByName('margelle');
+    expect(border?.children.length).toBeGreaterThan(8);
+    const water = scene.getObjectByName('eau') as Mesh;
+    expect(hex(materials(water)[0])).toBe(paletteColor(POND.water.body));
+    expect(hex(materials(water)[2])).toBe(paletteColor(POND.water.surface));
+    const sand = scene.getObjectByName('sable') as Mesh;
+    expect(hex(materials(sand)[2])).toBe(paletteColor(POND.ground.top));
+    const box = new Box3().setFromObject(water);
+    expect(box.max.x - box.min.x).toBeCloseTo(POND.dimensions.width);
+    expect(box.max.z - box.min.z).toBeCloseTo(POND.dimensions.depth);
+  });
+
+  it('la margelle ne luit pas à midi et luit la nuit', () => {
+    const world = createAquariumScene(POND);
+    const stone = world.scene.getObjectByName('pierre-0') as Mesh;
+    const emissive = () =>
+      (materials(stone)[0] as unknown as { emissive: Color }).emissive.getHexString();
+    world.setDaylight(lightAt(12));
+    expect(emissive()).toBe('000000');
+    world.setDaylight(lightAt(0));
+    expect(emissive()).not.toBe('000000');
   });
 });
