@@ -100,6 +100,27 @@ test.describe('Captures', () => {
     });
   }
 
+  // Bassin (#87) : second environnement, de dessus (sa vue par défaut, sans `camera=`),
+  // en trois-quarts et à minuit. Les captures du bac tropical ci-dessus restent inchangées.
+  const POND_CAPTURES = [
+    { name: 'bassin-top', query: 'environnement=bassin' },
+    { name: 'bassin-three-quarter', query: 'environnement=bassin&camera=three-quarter' },
+    {
+      name: 'bassin-three-quarter-minuit',
+      query: 'environnement=bassin&camera=three-quarter&heure=0',
+    },
+  ] as const;
+  for (const { name, query } of POND_CAPTURES) {
+    test(`angle ${name}`, async ({ page }) => {
+      const errors: string[] = [];
+      page.on('pageerror', (error) => errors.push(error.message));
+      await page.goto(`/?capture=1&seed=${SEED}&time=${TIME_SECONDS}&${query}`);
+      await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+      await page.screenshot({ path: join(OUTPUT_DIR, `${name}.png`), animations: 'disabled' });
+      expect(errors).toEqual([]);
+    });
+  }
+
   // Panneau de contrôle ouvert (#52) : hors mode capture (le contrat de capture n'affiche
   // aucune interface), heure figée à midi, simulation mise à l'arrêt depuis le panneau.
   // Capture d'interface : les poissons dépendent de l'instant de l'arrêt (non reproductible
