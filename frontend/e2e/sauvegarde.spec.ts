@@ -77,6 +77,30 @@ test.describe('Sauvegarde (#70)', () => {
     expect(errors).toEqual([]);
   });
 
+  // #101 : la sauvegarde est lue avant la création du monde ; `heure=` n'est pas un paramètre
+  // de monde (la population est restaurée) mais fige l'heure (l'horloge sauvegardée est ignorée).
+  test('`heure=` dans l’URL : population restaurée, heure figée à celle de l’URL', async ({
+    page,
+  }) => {
+    const errors = await open(page);
+    await openPanel(page);
+    await page.getByRole('button', { name: 'Ajouter un néon' }).click();
+    await expect(hostEl(page)).toHaveAttribute(
+      'data-aqfish-population',
+      'neon:13,guppy:6,corydora:6',
+    );
+    await page.evaluate(() => window.dispatchEvent(new Event('pagehide')));
+    await page.goto('/?heure=3');
+    await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+    await expect(hostEl(page)).toHaveAttribute(
+      'data-aqfish-population',
+      'neon:13,guppy:6,corydora:6',
+    );
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-hour', '3.00');
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-hour-frozen', 'true');
+    expect(errors).toEqual([]);
+  });
+
   test('un paramètre de monde dans l’URL prime sur la sauvegarde', async ({ page }) => {
     await open(page);
     await openPanel(page);
