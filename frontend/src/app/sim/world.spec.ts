@@ -30,6 +30,7 @@ describe('createWorld', () => {
       decor: [],
       food: [],
       nextFoodId: 0,
+      nextFishId: 0,
     });
   });
 

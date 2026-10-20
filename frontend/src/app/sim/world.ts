@@ -57,6 +57,11 @@ export interface World {
   readonly food: readonly FoodPellet[];
   /** Identifiant du prochain granulé déposé (compteur, jamais réutilisé). */
   readonly nextFoodId: number;
+  /**
+   * Identifiant du prochain poisson ajouté (`sim/population.ts`, issue #69) : compteur,
+   * jamais réutilisé, égal à l'effectif initial à la création.
+   */
+  readonly nextFishId: number;
 }
 
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
@@ -112,6 +117,7 @@ export function createWorld(
     decor: decorItems,
     food: [],
     nextFoodId: 0,
+    nextFishId: entities.length,
   };
 }
 
@@ -347,7 +353,8 @@ function steeringBuffer(count: number): Float64Array {
 /** Bornes de nage par espèce dans le bac par défaut, calculées une fois (aucune allocation par pas). */
 const BOUNDS_CACHE = new Map<SpeciesId, SwimBounds>();
 
-function boundsFor(species: SpeciesId): SwimBounds {
+/** Bornes de nage d'une espèce dans le bac par défaut (partagées, ne pas modifier). */
+export function boundsFor(species: SpeciesId): SwimBounds {
   let bounds = BOUNDS_CACHE.get(species);
   if (!bounds) {
     bounds = swimBounds(SPECIES[species], waterVolume());
@@ -356,7 +363,8 @@ function boundsFor(species: SpeciesId): SwimBounds {
   return bounds;
 }
 
-function cloneWorld(world: World): MutableWorld {
+/** Copie profonde d'un monde, modifiable (aucune donnée partagée avec `world`). */
+export function cloneWorld(world: World): MutableWorld {
   return structuredClone(world) as MutableWorld;
 }
 

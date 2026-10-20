@@ -11,7 +11,11 @@ import {
   viewChild,
 } from '@angular/core';
 
-import { parseCaptureParams, type CameraPreset } from '../../core/capture/capture-params';
+import {
+  parseCaptureParams,
+  type CameraPreset,
+  type CapturePopulation,
+} from '../../core/capture/capture-params';
 import {
   type FilterStorage,
   initialRenderFilter,
@@ -52,6 +56,14 @@ import {
   type SimSpeed,
 } from '../../sim/sim-speed';
 import {
+  isSpeciesId,
+  populationCounts,
+  populationLimits,
+  setPopulationInPlace,
+  type PopulationCounts,
+} from '../../sim/population';
+import type { SpeciesId } from '../../sim/species';
+import {
   advanceInPlace,
   advanceToWithFeedings,
   createDefaultWorld,
@@ -89,6 +101,30 @@ export const HOUR_FROZEN_ATTRIBUTE = 'data-aqfish-hour-frozen';
 export const SPEED_ATTRIBUTE = 'data-aqfish-speed';
 /** Attribut du composant hôte : `true` si le décor est affiché, `false` sinon (#52). */
 export const DECOR_ATTRIBUTE = 'data-aqfish-decor';
+/** Attribut du composant hôte exposant les effectifs (`neon:12,guppy:6,corydora:6`, #69). */
+export const POPULATION_ATTRIBUTE = 'data-aqfish-population';
+
+/** Effectifs au format de `population=` et de `data-aqfish-population` : `neon:12,guppy:6`. */
+export function formatPopulation(counts: PopulationCounts): string {
+  return Object.entries(counts)
+    .map(([species, count]) => `${species}:${count}`)
+    .join(',');
+}
+
+/**
+ * Applique les effectifs de `population=` au monde, dans l'ordre de l'URL (bornes de
+ * `sim/population.ts`). Une espèce inconnue est ignorée.
+ */
+export function applyPopulation(
+  world: MutableWorld,
+  population: readonly CapturePopulation[],
+): void {
+  for (const { species, count } of population) {
+    if (isSpeciesId(species)) {
+      setPopulationInPlace(world, species, count);
+    }
+  }
+}
 
 /**
  * Écart d'heure minimal (en heures) avant de recalculer l'éclairage : 0,01 h, soit 0,5 s
@@ -209,6 +245,12 @@ export class AquariumHost {
   /** Décor (rochers et plantes) affiché (#52). Il reste un obstacle pour les poissons. */
   readonly decorVisible = signal(true);
 
+  /** Effectif de chaque espèce (#69), mis à jour au démarrage et à chaque réglage. */
+  readonly population = signal<PopulationCounts>({ neon: 0, guppy: 0, corydora: 0 });
+
+  /** Effectif maximal de chaque espèce compte tenu des autres (`populationLimits`, #69). */
+  readonly populationMax = signal<PopulationCounts>({ neon: 0, guppy: 0, corydora: 0 });
+
   /** État courant de la simulation (`null` avant le démarrage et après la destruction). */
   get world(): World | null {
     return this.currentWorld;
@@ -322,6 +364,23 @@ export class AquariumHost {
   }
 
   /**
+   * Règle l'effectif d'une espèce (#69), ramené à ses bornes : les poissons ajoutés naissent
+   * à une position valide, les plus récents sont retirés ; ni le temps ni le décor ne sont
+   * réinitialisés. Sans effet en mode capture (les effectifs passent par `population=`),
+   * avant le démarrage, pour une espèce inconnue ou un effectif qui n'est pas un entier
+   * positif ou nul.
+   */
+  setPopulation(species: SpeciesId, count: number): void {
+    const world = this.currentWorld;
+    if (!world || this.capture || !isSpeciesId(species) || !Number.isInteger(count) || count < 0) {
+      return;
+    }
+    setPopulationInPlace(world, species, count);
+    this.exposePopulation();
+    this.scheduleFrame();
+  }
+
+  /**
    * Fige l'heure à `hour` (touches « plein jour » et « nuit », issue #75), que l'horloge
    * tourne ou non ; `toggleClock` la remet ensuite en marche depuis cette heure, sans saut.
    * Sans effet en mode capture (contrat de capture) ou si `hour` n'est pas un réel fini.
@@ -378,6 +437,8 @@ export class AquariumHost {
     // Le monde créé ici appartient à l'hôte seul : il pourra être avancé en place.
     // Dépôts de nourriture de `nourrir=` (#67) : au temps simulé de chacun, en capture.
     const world: MutableWorld = createDefaultWorld(params.seed);
+    // Effectifs de `population=` (#69) : appliqués à t = 0, avant d'avancer le monde.
+    applyPopulation(world, params.population);
     this.currentWorld = params.capture
       ? advanceToWithFeedings(world, params.time, params.feedings)
       : world;
@@ -388,6 +449,7 @@ export class AquariumHost {
     this.host.nativeElement.setAttribute(SEED_ATTRIBUTE, String(this.currentWorld.seed));
     this.exposeTick();
     this.exposeFood();
+    this.exposePopulation();
 
     const filter = initialRenderFilter(
       params.filter,
@@ -551,6 +613,18 @@ export class AquariumHost {
     }
     this.exposedFood = world.food.length;
     this.host.nativeElement.setAttribute(FOOD_ATTRIBUTE, String(world.food.length));
+  }
+
+  /** Expose les effectifs (`data-aqfish-population`, signaux `population` et `populationMax`). */
+  private exposePopulation(): void {
+    const world = this.currentWorld;
+    if (!world) {
+      return;
+    }
+    const counts = populationCounts(world);
+    this.population.set(counts);
+    this.populationMax.set(populationLimits(world));
+    this.host.nativeElement.setAttribute(POPULATION_ATTRIBUTE, formatPopulation(counts));
   }
 
   /** Expose l'état de l'horloge (`data-aqfish-hour-frozen` et signal `clockFrozen`). */

@@ -6,8 +6,10 @@ import type { AquariumRenderer } from '../../render/aquarium-view';
 import { MAX_STEPS_PER_FRAME } from '../../sim/constants';
 import { CORYDORA, GUPPY, NEON } from '../../sim/species';
 import { expiryAge, FOOD_PER_DROP } from '../../sim/food';
-import { advanceToWithFeedings, createDefaultWorld } from '../../sim/world';
+import { setPopulation } from '../../sim/population';
+import { advance, advanceToWithFeedings, createDefaultWorld } from '../../sim/world';
 import {
+  applyPopulation,
   AQUARIUM_RENDERER_FACTORY,
   AquariumHost,
   CAMERA_ATTRIBUTE,
@@ -17,7 +19,9 @@ import {
   FOOD_ATTRIBUTE,
   HOUR_ATTRIBUTE,
   HOUR_FROZEN_ATTRIBUTE,
+  formatPopulation,
   initialDayClock,
+  POPULATION_ATTRIBUTE,
   SEED_ATTRIBUTE,
   SPEED_ATTRIBUTE,
   TICK_ATTRIBUTE,
@@ -607,6 +611,94 @@ describe('AquariumHost', () => {
       fixture.destroy();
       expect(host().hour).toBeNull();
       host().toggleClock();
+    });
+  });
+
+  describe('population (#69)', () => {
+    const host = () => fixture.componentInstance;
+    const exposed = () => (fixture.nativeElement as HTMLElement).getAttribute(POPULATION_ATTRIBUTE);
+
+    it('formatPopulation : espece:n, dans l’ordre des espèces', () => {
+      expect(formatPopulation({ neon: 12, guppy: 0, corydora: 6 })).toBe(
+        'neon:12,guppy:0,corydora:6',
+      );
+    });
+
+    it('applyPopulation : ordre de l’URL, bornes de la simulation, espèce inconnue ignorée', () => {
+      const world = createDefaultWorld(42);
+      applyPopulation(world, [
+        { species: 'koi', count: 3 },
+        { species: 'neon', count: 999 },
+        { species: 'constructor', count: 1 },
+        { species: 'guppy', count: 2 },
+      ]);
+      expect(world).toEqual(
+        setPopulation(setPopulation(createDefaultWorld(42), 'neon', 999), 'guppy', 2),
+      );
+    });
+
+    it('expose les effectifs et leurs maximums au démarrage', async () => {
+      await create('?seed=3');
+      expect(exposed()).toBe(
+        `neon:${NEON.defaultPopulation},guppy:${GUPPY.defaultPopulation},corydora:${CORYDORA.defaultPopulation}`,
+      );
+      expect(host().population()).toEqual({
+        neon: NEON.defaultPopulation,
+        guppy: GUPPY.defaultPopulation,
+        corydora: CORYDORA.defaultPopulation,
+      });
+      expect(host().populationMax()).toEqual({
+        neon: NEON.maxPopulation,
+        guppy: GUPPY.maxPopulation,
+        corydora: CORYDORA.maxPopulation,
+      });
+    });
+
+    it('setPopulation : ajoute et retire sans remettre la simulation à zéro', async () => {
+      await create('?seed=3');
+      setCanvasSize(800, 600);
+      for (let i = 1; i <= 60; i++) {
+        frames.flush((i * 1000) / 60);
+      }
+      const world = host().world!;
+      const tick = world.tick;
+      expect(tick).toBeGreaterThan(0);
+      const before = structuredClone(world);
+      host().setPopulation('neon', 15);
+      host().setPopulation('corydora', 0);
+      // Même objet monde (avancé en place), même temps, même décor.
+      expect(host().world).toBe(world);
+      expect(world.tick).toBe(tick);
+      expect(world.decor).toEqual(before.decor);
+      expect(world).toEqual(setPopulation(setPopulation(before, 'neon', 15), 'corydora', 0));
+      expect(exposed()).toBe(`neon:15,guppy:${GUPPY.defaultPopulation},corydora:0`);
+      expect(host().population().neon).toBe(15);
+    }, 15_000);
+
+    it('setPopulation : effectif invalide ou espèce inconnue ignorés', async () => {
+      await create('?seed=3');
+      const before = structuredClone(host().world);
+      host().setPopulation('neon', 2.5);
+      host().setPopulation('neon', -1);
+      host().setPopulation('koi' as never, 3);
+      expect(host().world).toEqual(before);
+    });
+
+    it('population= : appliqué à t = 0, avant d’avancer (capture comme hors capture)', async () => {
+      await create('?capture=1&seed=42&time=2&population=neon:3,guppy:0,corydora:1');
+      let expected = setPopulation(createDefaultWorld(42), 'neon', 3);
+      expected = setPopulation(setPopulation(expected, 'guppy', 0), 'corydora', 1);
+      expect(host().world).toEqual(advance(expected, 120));
+      expect(exposed()).toBe('neon:3,guppy:0,corydora:1');
+    });
+
+    it('en capture : setPopulation est sans effet ; avant le démarrage aussi', async () => {
+      const instance = TestBed.createComponent(AquariumHost).componentInstance;
+      expect(() => instance.setPopulation('neon', 3)).not.toThrow();
+      await create('?capture=1&seed=42');
+      const before = structuredClone(host().world);
+      host().setPopulation('neon', 3);
+      expect(host().world).toEqual(before);
     });
   });
 

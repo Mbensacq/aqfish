@@ -4,7 +4,8 @@ import { PALETTE } from '../src/app/render/palette';
 
 /**
  * Panneau de contrôle (issue #52) : vitesse de simulation, heure de la journée, affichage
- * du décor. Repliable, utilisable au clavier et à 390 px, absent en mode capture.
+ * du décor, population par espèce (#69). Repliable, utilisable au clavier et à 390 px,
+ * absent en mode capture.
  */
 
 const hostEl = (page: Page) => page.locator('app-aquarium-host');
@@ -13,6 +14,9 @@ const speed = (page: Page) => page.getByRole('slider', { name: 'Vitesse de la si
 const hour = (page: Page) => page.getByRole('slider', { name: 'Heure de la journée' });
 const autoHour = (page: Page) => page.getByRole('checkbox', { name: 'Heure automatique' });
 const decor = (page: Page) => page.getByRole('checkbox', { name: 'Afficher le décor' });
+const count = (page: Page, plural: string) =>
+  page.getByRole('spinbutton', { name: `Nombre de ${plural}` });
+const population = (page: Page) => hostEl(page).getAttribute('data-aqfish-population');
 
 async function open(page: Page, search = '?seed=42'): Promise<string[]> {
   const errors: string[] = [];
@@ -155,6 +159,85 @@ test.describe('Panneau de contrôle', () => {
     expect(errors).toEqual([]);
   });
 
+  test('population : « + », « − » et saisie changent les effectifs sans remettre à zéro', async ({
+    page,
+  }) => {
+    const errors = await open(page);
+    await toggle(page).click();
+    await expect(hostEl(page)).toHaveAttribute(
+      'data-aqfish-population',
+      'neon:12,guppy:6,corydora:6',
+    );
+    await expect(count(page, 'néons')).toHaveValue('12');
+    await expect.poll(() => tick(page)).toBeGreaterThan(30);
+    const before = await tick(page);
+    await page.getByRole('button', { name: 'Ajouter un néon' }).click();
+    await expect(hostEl(page)).toHaveAttribute(
+      'data-aqfish-population',
+      'neon:13,guppy:6,corydora:6',
+    );
+    await expect(count(page, 'néons')).toHaveValue('13');
+    await page.getByRole('button', { name: 'Retirer un corydora' }).click();
+    await count(page, 'guppys').fill('2');
+    await count(page, 'guppys').press('Enter');
+    await expect(hostEl(page)).toHaveAttribute(
+      'data-aqfish-population',
+      'neon:13,guppy:2,corydora:5',
+    );
+    // Hors bornes : ramené au maximum de l'espèce, affiché dans le champ.
+    await count(page, 'néons').fill('500');
+    await count(page, 'néons').press('Enter');
+    await expect(count(page, 'néons')).toHaveValue('40');
+    await expect(page.getByRole('button', { name: 'Ajouter un néon' })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    );
+    expect(await population(page)).toBe('neon:40,guppy:2,corydora:5');
+    // Le temps n'est pas remis à zéro, et la simulation continue.
+    const after = await tick(page);
+    expect(after).toBeGreaterThanOrEqual(before);
+    await expect.poll(() => tick(page)).toBeGreaterThan(after);
+    expect(errors).toEqual([]);
+  });
+
+  test('population au clavier : Tab jusqu’aux boutons et au champ, flèches comprises', async ({
+    page,
+  }) => {
+    const errors = await open(page);
+    await toggle(page).click();
+    await decor(page).focus();
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', { name: 'Retirer un néon' })).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(hostEl(page)).toHaveAttribute(
+      'data-aqfish-population',
+      'neon:11,guppy:6,corydora:6',
+    );
+    await page.keyboard.press('Tab');
+    await expect(count(page, 'néons')).toBeFocused();
+    await page.keyboard.press('ArrowUp');
+    await page.keyboard.press('ArrowUp');
+    // Validé en quittant le champ (Tab) : le bouton « + » suivant reçoit le focus.
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', { name: 'Ajouter un néon' })).toBeFocused();
+    await expect(hostEl(page)).toHaveAttribute(
+      'data-aqfish-population',
+      'neon:13,guppy:6,corydora:6',
+    );
+    await page.keyboard.press('Space');
+    await expect(hostEl(page)).toHaveAttribute(
+      'data-aqfish-population',
+      'neon:14,guppy:6,corydora:6',
+    );
+    // Les chiffres tapés dans le champ ne déclenchent pas les raccourcis de vue (1 à 5).
+    const camera = await hostEl(page).getAttribute('data-aqfish-camera');
+    await count(page, 'guppys').focus();
+    await page.keyboard.press('1');
+    await page.waitForTimeout(300);
+    expect(await hostEl(page).getAttribute('data-aqfish-camera')).toBe(camera);
+    expect(errors).toEqual([]);
+  });
+
   test('au clavier : Tab jusqu’au bouton, Entrée, puis chaque contrôle', async ({ page }) => {
     const errors = await open(page);
     let reached = false;
@@ -208,6 +291,19 @@ test.describe('Panneau de contrôle', () => {
       expect(overlaps(b, bar), 'barre des préréglages').toBe(false);
       expect(overlaps(b, indicator), 'indicateur du moment').toBe(false);
       expect(overlaps(b, help), 'aide-mémoire').toBe(false);
+    }
+    // Population (#69) : chaque ligne entière dans le panneau, contrôles de taille tactile.
+    const rows = page.locator('[data-section="population"] .control-panel__count');
+    await expect(rows).toHaveCount(3);
+    for (let i = 0; i < 3; i++) {
+      const row = await box(rows.nth(i));
+      expect(row.x).toBeGreaterThanOrEqual(panel.x);
+      expect(row.x + row.width).toBeLessThanOrEqual(panel.x + panel.width);
+      for (const control of await rows.nth(i).locator('button, input').all()) {
+        const b = await box(control);
+        expect(b.x + b.width).toBeLessThanOrEqual(panel.x + panel.width);
+        expect(b.height).toBeGreaterThanOrEqual(28);
+      }
     }
     // Aucun débordement horizontal à l'intérieur du panneau.
     const scroll = await page

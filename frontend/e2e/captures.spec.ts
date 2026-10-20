@@ -84,6 +84,8 @@ test.describe('Captures', () => {
     // dessus), à 24 s (en train de couler).
     { name: 'three-quarter-nourriture', query: 'nourrir=0,0:0.3:0.03,24:-0.15:0.1' },
     { name: 'three-quarter-nourriture-minuit', query: 'nourrir=0,0:0.3:0.03,24:-0.15:0.1&heure=0' },
+    // Population réglée (#69) : 12 néons, 2 guppys, aucun corydora.
+    { name: 'three-quarter-population', query: 'population=neon:12,guppy:2,corydora:0' },
   ] as const;
   for (const { name, query } of DAY_CAPTURES) {
     test(`angle ${name}`, async ({ page }) => {

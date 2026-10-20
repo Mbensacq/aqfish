@@ -194,6 +194,9 @@ describe('validateSpecies', () => {
     ['marge plus petite que la demi-longueur', { wallMargin: 0.01 }],
     ['population fractionnaire', { defaultPopulation: 1.5 }],
     ['population négative', { defaultPopulation: -1 }],
+    ['maximum sous la population par défaut', { maxPopulation: 3 }],
+    ['maximum fractionnaire', { maxPopulation: 20.5 }],
+    ['maximum NaN', { maxPopulation: Number.NaN }],
     ['nom vide', { name: ' ' }],
   ])('signale : %s', (_label, patch) => {
     expect(validateSpecies(variant(patch as Partial<SpeciesDefinition>)).length).toBeGreaterThan(0);
