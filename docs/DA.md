@@ -61,6 +61,11 @@ plus grande, corps sable, dos sable sombre, tache de gestation roche sombre, nag
 sable clair. Les espèces autres que le néon n'empruntent pas le bleu et le rouge néon
 (mesures de banc sur image).
 
+Les **koïs** du bassin (#88, ADR 0027) ont trois robes, tirées de la graine pour chaque
+individu : *kohaku* (blanc cassé taché de rouge koï), *orenji* (orange koï, ventre et
+nageoires or) et *sanke* (blanc cassé taché de rouge et de noir). Le motif est porté par le
+dos, seul visible de dessus ; le corps est effilé au pédoncule et au museau vu de dessus.
+
 Le corydora (poisson de fond, ADR 0014) : silhouette trapue (corps court et haut, ventre plat
 clair, haute dorsale sable sombre), flanc gris roche « poivré » de taches noires, dos roche
 sombre. Un flanc sable se confondait avec le substrat sur les captures : les poissons de fond

@@ -1,6 +1,6 @@
 import { Box3, Matrix4, Mesh, Object3D, Vector3, type MeshBasicMaterial } from 'three';
 
-import { GUPPY, NEON, speciesVariantIndex } from '../sim/species';
+import { GUPPY, KOI, NEON, speciesVariantIndex } from '../sim/species';
 import { createFish, stepFish, swimBounds, type Fish } from '../sim/swimmer';
 import { DEFAULT_TANK, waterVolume } from '../sim/tank';
 import { TAIL_LAG } from '../sim/undulation';
@@ -265,6 +265,25 @@ describe('FishLayer : apparences (guppy mâle et femelle)', () => {
     expect(female.count).toBe(guppies.length - males.length);
     expect(male.count).toBeGreaterThan(0);
     expect(female.count).toBeGreaterThan(0);
+  });
+
+  it('robes des koïs (#88) : réparties selon la graine du monde passée à update', () => {
+    const pond = createDefaultWorld(42, 'bassin');
+    const robes = [0, 1, 2].map((i) => layerOf(KOI, i));
+    for (const layer of robes) {
+      layer.update(pond.entities, 1, pond.seed);
+    }
+    const expected = [0, 1, 2].map(
+      (i) => pond.entities.filter((e) => speciesVariantIndex(KOI, e.id, pond.seed) === i).length,
+    );
+    expect(robes.map((l) => l.count)).toEqual(expected);
+    expect(expected.every((n) => n > 0)).toBe(true);
+    expect(expected.reduce((a, b) => a + b, 0)).toBe(KOI.defaultPopulation);
+    expect(robes.map((l) => l.object.name)).toEqual([
+      'poissons-koi-kohaku',
+      'poissons-koi-orenji',
+      'poissons-koi-sanke',
+    ]);
   });
 
   it('noms : historique pour une apparence unique, suffixé sinon', () => {

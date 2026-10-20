@@ -136,14 +136,18 @@ export class FishLayer {
     return this.body.count;
   }
 
-  /** Place une instance par poisson de l'espèce et de l'apparence de la couche, interpolée avec `alpha` ∈ [0, 1]. */
-  update(entities: readonly Fish[], alpha: number): void {
+  /**
+   * Place une instance par poisson de l'espèce et de l'apparence de la couche, interpolée avec
+   * `alpha` ∈ [0, 1] ; `seed` (graine du monde) répartit les apparences des espèces à
+   * `variantDraw: 'graine'` (`speciesVariantIndex`).
+   */
+  update(entities: readonly Fish[], alpha: number, seed = 0): void {
     let n = 0;
     for (let i = 0; i < entities.length && n < this.capacity; i++) {
       const fish = entities[i];
       if (
         fish.species !== this.species.id ||
-        speciesVariantIndex(this.species, fish.id) !== this.variantIndex
+        speciesVariantIndex(this.species, fish.id, seed) !== this.variantIndex
       ) {
         continue;
       }

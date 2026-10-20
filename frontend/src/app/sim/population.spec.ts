@@ -3,6 +3,7 @@ import { obstacleDistance } from './obstacles';
 import {
   isSpeciesId,
   MAX_TOTAL_FISH,
+  NO_FISH,
   populationCounts,
   populationLimit,
   populationLimits,
@@ -10,7 +11,7 @@ import {
   setPopulationInPlace,
   SPECIES_IDS,
 } from './population';
-import { CORYDORA, GUPPY, NEON, SPECIES, type SpeciesId } from './species';
+import { CORYDORA, GUPPY, KOI, NEON, SPECIES, type SpeciesId } from './species';
 import { waterVolume } from './tank';
 import {
   advance,
@@ -38,14 +39,14 @@ describe('bornes de population', () => {
   });
 
   it('SPECIES_IDS suit l’ordre de SPECIES', () => {
-    expect(SPECIES_IDS).toEqual(['neon', 'guppy', 'corydora']);
+    expect(SPECIES_IDS).toEqual(['neon', 'guppy', 'corydora', 'koi']);
   });
 
   it.each(['neon', 'guppy', 'corydora'])('isSpeciesId accepte %s', (id) => {
     expect(isSpeciesId(id)).toBe(true);
   });
 
-  it.each(['koi', '', 'constructor', 'toString', 42, null, undefined])(
+  it.each(['axolotl', '', 'constructor', 'toString', 42, null, undefined])(
     'isSpeciesId refuse %s',
     (id) => {
       expect(isSpeciesId(id)).toBe(false);
@@ -57,8 +58,10 @@ describe('bornes de population', () => {
       neon: NEON.defaultPopulation,
       guppy: GUPPY.defaultPopulation,
       corydora: CORYDORA.defaultPopulation,
+      koi: 0,
     });
-    expect(populationCounts(createWorld(42))).toEqual({ neon: 0, guppy: 0, corydora: 0 });
+    expect(populationCounts(createWorld(42))).toEqual({ neon: 0, guppy: 0, corydora: 0, koi: 0 });
+    expect(populationCounts(createWorld(42))).toEqual(NO_FISH);
   });
 
   it('populationLimit : maximum de l’espèce dans un bac peu peuplé', () => {
@@ -66,6 +69,7 @@ describe('bornes de population', () => {
       neon: NEON.maxPopulation,
       guppy: GUPPY.maxPopulation,
       corydora: CORYDORA.maxPopulation,
+      koi: KOI.maxPopulation,
     });
   });
 
@@ -83,7 +87,7 @@ describe('bornes de population', () => {
   });
 
   it('populationLimit refuse une espèce inconnue', () => {
-    expect(() => populationLimit(createWorld(42), 'koi' as SpeciesId)).toThrow(RangeError);
+    expect(() => populationLimit(createWorld(42), 'axolotl' as SpeciesId)).toThrow(RangeError);
   });
 });
 
@@ -137,7 +141,7 @@ describe('setPopulation', () => {
     }
     expect(world.entities).toEqual([]);
     world = setPopulation(world, 'guppy', 3);
-    expect(populationCounts(world)).toEqual({ neon: 0, guppy: 3, corydora: 0 });
+    expect(populationCounts(world)).toEqual({ neon: 0, guppy: 3, corydora: 0, koi: 0 });
   });
 
   it('même effectif : monde inchangé', () => {
@@ -162,6 +166,7 @@ describe('setPopulation', () => {
       neon: NEON.maxPopulation,
       guppy: MAX_TOTAL_FISH - NEON.maxPopulation - CORYDORA.defaultPopulation,
       corydora: CORYDORA.defaultPopulation,
+      koi: 0,
     });
     // Bac plein : plus aucun ajout possible, quelle que soit l'espèce.
     for (const id of SPECIES_IDS) {
@@ -181,7 +186,7 @@ describe('setPopulation', () => {
     },
   );
 
-  it.each(['koi', 'constructor'])('refuse l’espèce inconnue %s, monde inchangé', (id) => {
+  it.each(['axolotl', 'constructor'])('refuse l’espèce inconnue %s, monde inchangé', (id) => {
     const mutable = cloneWorld(createDefaultWorld(42));
     const copy = structuredClone(mutable);
     expect(() => setPopulationInPlace(mutable, id as SpeciesId, 3)).toThrow(RangeError);

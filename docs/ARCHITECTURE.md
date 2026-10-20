@@ -181,8 +181,8 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
 | `sim/world.ts` | État du monde sérialisable (dont `decor`), `step`, `advance`, `advanceTo`, `advanceInPlace` (boucle d'affichage), `createDefaultWorld` (population et décor par défaut) |
 | `sim/population.ts` | Population réglable (#69, ADR 0025) : `setPopulation` (pure) / `setPopulationInPlace` (hôte), bornes `maxPopulation` par espèce et `MAX_TOTAL_FISH`, `populationCounts`, `populationLimits` |
 | `sim/tank.ts` | Dimensions du bac, volume d'eau, `shrinkBox` (partagés par la simulation et le rendu) |
-| `sim/environment.ts` | Environnements en données (#87, ADR 0026) : bac tropical et bassin (dimensions, teintes de l'eau et du sol en noms de la palette, bordure, vue par défaut, bulles, caustiques, décor et population de départ) ; `World.environment` choisit le volume d'eau des bornes de nage et des dépôts |
-| `sim/species.ts` | Définitions déclaratives des espèces (`NEON`, `GUPPY`, `CORYDORA`), apparences (`speciesVariants`, `speciesVariantIndex`, ADR 0013), préférence de profondeur (`depth`, ADR 0014), `validateSpecies` |
+| `sim/environment.ts` | Environnements en données (#87, ADR 0026) : bac tropical et bassin (dimensions, teintes de l'eau et du sol en noms de la palette, bordure, vue par défaut, bulles, caustiques, décor, espèces et population de départ, ADR 0027) ; `livesIn` ; `World.environment` choisit le volume d'eau des bornes de nage et des dépôts |
+| `sim/species.ts` | Définitions déclaratives des espèces (`NEON`, `GUPPY`, `CORYDORA`, `KOI`), apparences (`speciesVariants`, `speciesVariantIndex` en alternance ou tirées de la graine, ADR 0013 et 0027), préférence de profondeur (`depth`, ADR 0014), `validateSpecies` |
 | `sim/swimmer.ts` | Poisson (état sérialisable, sous-générateur en état explicite), nage : errance, banc, évitement, bornes, préférence de profondeur et remontées (ADR 0014) |
 | `sim/flocking.ts` | Banc : séparation, alignement, cohésion, pilotage en deux phases, espacement minimal (ADR 0011) |
 | `sim/trajectory.ts` | Relevé de trajectoires sur une copie du monde, distance aux vitres et statistiques (mesure et tracé, issue #43) |

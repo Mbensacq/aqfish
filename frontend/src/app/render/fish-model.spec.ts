@@ -1,10 +1,19 @@
-import { CORYDORA, GUPPY, NEON, SILHOUETTE_IDS, SPECIES, speciesVariants } from '../sim/species';
+import {
+  CORYDORA,
+  GUPPY,
+  KOI,
+  NEON,
+  SILHOUETTE_IDS,
+  SPECIES,
+  speciesVariants,
+} from '../sim/species';
 import {
   buildVoxelMesh,
   CORYDORA_FISH,
   createFishGeometry,
   GUPPY_FEMALE_FISH,
   GUPPY_MALE_FISH,
+  KOI_FISH,
   modelBodyLength,
   SILHOUETTES,
   SLENDER_FISH,
@@ -47,6 +56,79 @@ describe('silhouettes', () => {
     expect(cells(GUPPY_MALE_FISH.tail)).toBeGreaterThan(2 * cells(GUPPY_FEMALE_FISH.tail));
     // … et son corps est plus petit (moins de colonnes et d'échelle).
     expect(cells(GUPPY_MALE_FISH.body)).toBeLessThan(cells(GUPPY_FEMALE_FISH.body));
+  });
+});
+
+describe('modèle du koï (#88)', () => {
+  /** Rôle visible de dessus dans chaque colonne : la première case pleine en partant du haut. */
+  const topRoles = (rows: readonly string[]) =>
+    Array.from(rows[0], (_, col) => rows.map((r) => r[col]).find((c) => c !== '.') ?? '.');
+
+  it('robe lisible de dessus : le dos alterne fond et taches sur toute la longueur', () => {
+    const top = topRoles(KOI_FISH.body);
+    expect(top).not.toContain('.');
+    expect(top).not.toContain('e'); // pas d'œil vu de dessus
+    // Au moins trois passages fond ↔ tache : un motif, pas un aplat.
+    let changes = 0;
+    for (let i = 1; i < top.length; i++) {
+      changes += Number((top[i] === 'k') !== (top[i - 1] === 'k'));
+    }
+    expect(changes).toBeGreaterThanOrEqual(4);
+    // Chaque robe montre de dessus au moins deux couleurs (sauf l'orenji, d'un orange uni).
+    for (const variant of speciesVariants(KOI)) {
+      const roles = { k: 'back', a: 'accent', s: 'stripe' } as const;
+      const colors = new Set(top.map((c) => variant.colors[roles[c as keyof typeof roles]]));
+      expect(colors.size).toBeGreaterThanOrEqual(variant.id === 'orenji' ? 1 : 2);
+    }
+  });
+
+  it('effilé vu de dessus : pédoncule et museau plus étroits que le corps', () => {
+    const depths = KOI_FISH.bodyColumnDepths!;
+    expect(depths).toHaveLength(KOI_FISH.body[0].length);
+    expect(depths[0]).toBeLessThan(KOI_FISH.bodyDepth);
+    expect(depths.at(-1)).toBeLessThan(KOI_FISH.bodyDepth);
+    expect(Math.max(...depths)).toBe(KOI_FISH.bodyDepth);
+    // Le maillage effilé a moins de faces que le même gabarit extrudé uniformément.
+    const size = voxelSize(KOI, KOI_FISH);
+    const tapered = buildVoxelMesh(
+      KOI_FISH.body,
+      KOI_FISH.bodyDepth,
+      KOI.colors,
+      size,
+      'center',
+      depths,
+    );
+    const full = buildVoxelMesh(KOI_FISH.body, KOI_FISH.bodyDepth, KOI.colors, size, 'center');
+    expect(tapered.quads).toBeGreaterThan(0);
+    expect(tapered.positions.length).toBeLessThan(full.positions.length);
+    // Largeur du pédoncule (sommets des deux premières colonnes, de 2 voxels sur 6) : ±1 voxel.
+    let tailMaxZ = 0;
+    const halfWidth = KOI_FISH.body[0].length / 2;
+    for (let i = 0; i < tapered.positions.length; i += 3) {
+      if (tapered.positions[i] <= (-halfWidth + 1) * size.x + 1e-9) {
+        tailMaxZ = Math.max(tailMaxZ, Math.abs(tapered.positions[i + 2]));
+      }
+    }
+    expect(tailMaxZ).toBeCloseTo(size.z, 9);
+  });
+
+  it('épaisseur par colonne : un voxel de 1 sur 3 donne 6 faces, centré', () => {
+    const mesh = buildVoxelMesh(['k'], 3, NEON.colors, UNIT, 'center', [1]);
+    expect(mesh.quads).toBe(6);
+    const zs = Array.from(mesh.positions).filter((_, i) => i % 3 === 2);
+    expect(Math.min(...zs)).toBeCloseTo(-0.5, 9);
+    expect(Math.max(...zs)).toBeCloseTo(0.5, 9);
+  });
+
+  it('refuse une épaisseur de colonne invalide (longueur, borne, parité)', () => {
+    const build = (depths: number[]) => () =>
+      buildVoxelMesh(['kk'], 4, NEON.colors, UNIT, 'center', depths);
+    expect(build([4])).toThrow(/columnDepths/);
+    expect(build([4, 0])).toThrow(/colonne 1/);
+    expect(build([4, 6])).toThrow(/colonne 1/);
+    expect(build([4, 3])).toThrow(/colonne 1/);
+    expect(build([4, 1.5])).toThrow(/colonne 1/);
+    expect(build([2, 4])).not.toThrow();
   });
 });
 

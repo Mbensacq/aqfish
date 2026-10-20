@@ -29,6 +29,11 @@ export type PopulationCounts = Readonly<Record<SpeciesId, number>>;
 /** Identifiants des espèces, dans l'ordre de `SPECIES` (celui du panneau). */
 export const SPECIES_IDS: readonly SpeciesId[] = Object.values(SPECIES).map((def) => def.id);
 
+/** Effectifs tous nuls (valeur initiale des signaux et entrées de l'interface). */
+export const NO_FISH: PopulationCounts = Object.freeze(
+  Object.fromEntries(SPECIES_IDS.map((id) => [id, 0])) as Record<SpeciesId, number>,
+);
+
 /** Vrai si `value` est l'identifiant d'une espèce connue (clés héritées refusées). */
 export function isSpeciesId(value: unknown): value is SpeciesId {
   return typeof value === 'string' && Object.hasOwn(SPECIES, value);

@@ -8,13 +8,13 @@
  */
 
 /** Identifiant d'espèce, stable (sérialisé dans l'état du monde). */
-export type SpeciesId = 'neon' | 'guppy' | 'corydora';
+export type SpeciesId = 'neon' | 'guppy' | 'corydora' | 'koi';
 
 /**
  * Silhouette voxel d'une apparence : le rendu associe à chaque identifiant un gabarit de
  * profil (`render/fish-model.ts`, `SILHOUETTES`).
  */
-export const SILHOUETTE_IDS = ['fuseau', 'guppy-male', 'guppy-femelle', 'corydora'] as const;
+export const SILHOUETTE_IDS = ['fuseau', 'guppy-male', 'guppy-femelle', 'corydora', 'koi'] as const;
 export type SilhouetteId = (typeof SILHOUETTE_IDS)[number];
 
 const SILHOUETTE_SET: ReadonlySet<string> = new Set(SILHOUETTE_IDS);
@@ -123,6 +123,9 @@ export interface SpeciesVariant {
   readonly colors: SpeciesColors;
 }
 
+/** Mode de répartition des individus entre les apparences (`speciesVariantIndex`). */
+export type VariantDraw = 'alternance' | 'graine';
+
 export interface SpeciesDefinition {
   readonly id: SpeciesId;
   /** Nom affiché, en français. */
@@ -166,6 +169,12 @@ export interface SpeciesDefinition {
    * `colors`, échelle 1). Si présent, remplace l'apparence par défaut pour l'affichage.
    */
   readonly variants?: readonly SpeciesVariant[];
+  /**
+   * Répartition des individus entre les `variants` (`speciesVariantIndex`) : `'alternance'`
+   * (par défaut) selon l'identifiant seul ; `'graine'` selon la graine du monde et
+   * l'identifiant (robes des koïs, issue #88).
+   */
+  readonly variantDraw?: VariantDraw;
   /** Préférence de profondeur (espèce de fond), ou absent pour toute la hauteur d'eau. */
   readonly depth?: DepthPreference;
   /** Faim et alimentation (`sim/feeding.ts`). */
@@ -387,11 +396,104 @@ export const CORYDORA: SpeciesDefinition = {
   },
 };
 
+/**
+ * Koï (Cyprinus rubrofuscus, carpe koï), bassin extérieur (docs/DA.md, issue #88).
+ *
+ * - Robes : trois motifs classiques, générés par le code (`render/fish-model.ts`, gabarit
+ *   `koi`) : « Kohaku » (blanc taché de rouge), « Orenji » (orange, nageoires et ventre or) et « Sanke » (blanc
+ *   taché de rouge et de noir). Couleurs : palette « Koïs » de docs/DA.md. Chaque individu
+ *   reçoit sa robe selon la graine du monde et son identifiant (`variantDraw: 'graine'`).
+ * - `bodyLength` (14 cm) : **approximation de jeu**, volontairement *plus petite* qu'un koï
+ *   adulte réel (plusieurs dizaines de centimètres ; référence à consulter : FishBase,
+ *   Cyprinus rubrofuscus ; non vérifiée ici) : la marge aux parois (`wallMargin`, au moins la
+ *   demi-longueur) vaut aussi en hauteur, et le bassin n'a que 30 cm d'eau.
+ * - Nage lente et calme, en groupe lâche (séparation sur ~2 longueurs, cohésion faible),
+ *   presque à l'horizontale ; vitesses, virages, banc, alimentation : **approximations de
+ *   jeu**.
+ */
+const KOI_KOHAKU: SpeciesColors = {
+  stripe: '#d94a3a',
+  accent: '#d94a3a',
+  back: '#f2ead8',
+  belly: '#f2ead8',
+  fin: '#f2ead8',
+  eye: '#1c1c22',
+};
+
+export const KOI: SpeciesDefinition = {
+  id: 'koi',
+  name: 'Koï',
+  scientificName: 'Cyprinus rubrofuscus',
+  bodyLength: 0.14,
+  cruiseSpeed: 0.05,
+  minSpeed: 0.025,
+  maxSpeed: 0.1,
+  wanderTurnRate: 0.5,
+  avoidTurnRate: 2,
+  maxPitch: 0.2,
+  wallMargin: 0.07,
+  tailBeatFrequency: 1.2,
+  defaultPopulation: 7,
+  maxPopulation: 14,
+  schooling: {
+    neighborRadius: 0.6,
+    separationRadius: 0.3,
+    separationWeight: 1.2,
+    alignmentWeight: 0.6,
+    cohesionWeight: 0.3,
+    turnRate: 0.8,
+    minDistance: 0.16,
+  },
+  silhouette: 'koi',
+  colors: KOI_KOHAKU,
+  variants: [
+    { id: 'kohaku', name: 'Koï kohaku', silhouette: 'koi', scale: 1, colors: KOI_KOHAKU },
+    {
+      id: 'orenji',
+      name: 'Koï orenji',
+      silhouette: 'koi',
+      scale: 1,
+      colors: {
+        stripe: '#f08a2c',
+        accent: '#f08a2c',
+        back: '#f08a2c',
+        belly: '#f2c14e',
+        fin: '#f2c14e',
+        eye: '#1c1c22',
+      },
+    },
+    {
+      id: 'sanke',
+      name: 'Koï sanke',
+      silhouette: 'koi',
+      scale: 1,
+      colors: {
+        stripe: '#1c1c22',
+        accent: '#d94a3a',
+        back: '#f2ead8',
+        belly: '#f2ead8',
+        fin: '#f2ead8',
+        eye: '#1c1c22',
+      },
+    },
+  ],
+  variantDraw: 'graine',
+  // Mange dans toute la hauteur d'eau, faim pleine en 5 min : approximations de jeu.
+  feeding: {
+    hungerRate: 1 / 300,
+    perceptionRadius: 0.5,
+    turnRate: 1.5,
+    minHeightRatio: 0,
+    maxHeightRatio: 1,
+  },
+};
+
 /** Toutes les espèces connues, par identifiant (ordre de déclaration = ordre de peuplement). */
 export const SPECIES: Readonly<Record<SpeciesId, SpeciesDefinition>> = {
   neon: NEON,
   guppy: GUPPY,
   corydora: CORYDORA,
+  koi: KOI,
 };
 
 /** Apparences d'une espèce : ses `variants`, ou son apparence par défaut seule. */
@@ -403,19 +505,65 @@ export function speciesVariants(def: SpeciesDefinition): readonly SpeciesVariant
 }
 
 /**
- * Indice de l'apparence d'un individu dans `speciesVariants(def)`, tiré de son identifiant
- * (`id` modulo le nombre d'apparences) : déterministe, sans état ni tirage aléatoire, donc
- * sans effet sur la simulation. Les identifiants étant consécutifs, les apparences
- * alternent.
- * @throws RangeError si `id` n'est pas un entier positif ou nul.
+ * Indice de l'apparence d'un individu dans `speciesVariants(def)`, déterministe, sans état ni
+ * tirage du générateur des entités, donc sans effet sur la simulation :
+ *
+ * - `variantDraw` absent ou `'alternance'` : `id` modulo le nombre d'apparences (les
+ *   identifiants étant consécutifs, les apparences alternent ; `seed` est ignorée) ;
+ * - `'graine'` : les identifiants sont groupés par blocs de autant d'individus que
+ *   d'apparences, et chaque bloc reçoit une permutation des apparences tirée de la graine et
+ *   du numéro de bloc. Même graine, mêmes robes ; et toutes les apparences sont présentes
+ *   dès qu'il y a au moins autant d'individus que d'apparences.
+ * @throws RangeError si `id` n'est pas un entier positif ou nul, ou si `seed` n'est pas un
+ * entier 32 bits non signé.
  */
-export function speciesVariantIndex(def: SpeciesDefinition, id: number): number {
+export function speciesVariantIndex(def: SpeciesDefinition, id: number, seed = 0): number {
   if (!Number.isInteger(id) || id < 0) {
     throw new RangeError(`identifiant invalide : ${id}`);
   }
   // Sans passer par `speciesVariants` : aucune allocation (appelé à chaque image par le rendu).
   const count = def.variants && def.variants.length > 0 ? def.variants.length : 1;
-  return id % count;
+  if (def.variantDraw !== 'graine' || count === 1) {
+    return id % count;
+  }
+  if (!Number.isInteger(seed) || seed < 0 || seed > 0xffffffff) {
+    throw new RangeError(`graine invalide : ${seed}`);
+  }
+  return blockPermutationAt(seed, Math.floor(id / count), id % count, count);
+}
+
+/** Tableau de travail des permutations (aucune allocation par appel). */
+const PERMUTATION: number[] = [];
+
+/**
+ * Élément `position` de la permutation de `[0, count)` du bloc `block` : mélange de
+ * Fisher-Yates piloté par un hachage entier (variante de « lowbias32 ») de la graine, du bloc
+ * et du rang, indépendant du générateur des entités.
+ */
+function blockPermutationAt(seed: number, block: number, position: number, count: number): number {
+  for (let i = 0; i < count; i++) {
+    PERMUTATION[i] = i;
+  }
+  let h = hash32(seed ^ hash32(block + 0x9e3779b9));
+  for (let i = count - 1; i > 0; i--) {
+    h = hash32(h + i);
+    const j = h % (i + 1);
+    const tmp = PERMUTATION[i];
+    PERMUTATION[i] = PERMUTATION[j];
+    PERMUTATION[j] = tmp;
+  }
+  return PERMUTATION[position];
+}
+
+/** Hachage entier 32 bits non signé (mélange de bits, sans état). */
+function hash32(value: number): number {
+  let x = value >>> 0;
+  x ^= x >>> 16;
+  x = Math.imul(x, 0x7feb352d);
+  x ^= x >>> 15;
+  x = Math.imul(x, 0x846ca68b);
+  x ^= x >>> 16;
+  return x >>> 0;
 }
 
 const HEX_COLOR = /^#[0-9a-f]{6}$/;
@@ -467,6 +615,9 @@ export function validateSpecies(def: SpeciesDefinition): string[] {
   problems.push(...validateColors(def.colors, ''));
   if (def.variants !== undefined) {
     problems.push(...validateVariants(def.variants));
+  }
+  if (def.variantDraw !== undefined && !['alternance', 'graine'].includes(def.variantDraw)) {
+    problems.push(`variantDraw inconnu : ${String(def.variantDraw)}`);
   }
   if (def.depth !== undefined) {
     problems.push(...validateDepth(def.depth));

@@ -458,7 +458,7 @@ describe('sim/feeding : banc et espèces', () => {
   );
 
   it('néons et guppys mangent en surface et en pleine eau, corydoras au fond seulement', () => {
-    const heights: Record<SpeciesId, number[]> = { neon: [], guppy: [], corydora: [] };
+    const heights: Record<SpeciesId, number[]> = { neon: [], guppy: [], corydora: [], koi: [] };
     for (const species of ['neon', 'guppy', 'corydora'] as const) {
       for (const seed of [42, 7, 123]) {
         let world = advance(createWorld(seed, [{ species, count: 6 }]), 50);

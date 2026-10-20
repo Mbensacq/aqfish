@@ -51,6 +51,7 @@ import {
   DEFAULT_ENVIRONMENT_ID,
   environmentById,
   isEnvironmentId,
+  livesIn,
   type EnvironmentId,
 } from '../../sim/environment';
 import { fixedStepInto, type FixedStepState } from '../../sim/fixed-step';
@@ -63,6 +64,7 @@ import {
 } from '../../sim/sim-speed';
 import {
   isSpeciesId,
+  NO_FISH,
   populationCounts,
   populationLimits,
   setPopulationInPlace,
@@ -113,23 +115,28 @@ export const POPULATION_ATTRIBUTE = 'data-aqfish-population';
 /** Attribut du composant hôte exposant l'environnement courant (`tropical`, `bassin`, #87). */
 export const ENVIRONMENT_ATTRIBUTE = 'data-aqfish-environment';
 
-/** Effectifs au format de `population=` et de `data-aqfish-population` : `neon:12,guppy:6`. */
-export function formatPopulation(counts: PopulationCounts): string {
-  return Object.entries(counts)
-    .map(([species, count]) => `${species}:${count}`)
-    .join(',');
+/**
+ * Effectifs au format de `population=` et de `data-aqfish-population` : `neon:12,guppy:6`.
+ * Avec `species`, seulement ces espèces, dans cet ordre (celles de l'environnement, #88).
+ */
+export function formatPopulation(
+  counts: PopulationCounts,
+  species: readonly SpeciesId[] = Object.keys(counts) as SpeciesId[],
+): string {
+  return species.map((id) => `${id}:${counts[id]}`).join(',');
 }
 
 /**
  * Applique les effectifs de `population=` au monde, dans l'ordre de l'URL (bornes de
- * `sim/population.ts`). Une espèce inconnue est ignorée.
+ * `sim/population.ts`). Une espèce inconnue, ou qui ne vit pas dans l'environnement du monde
+ * (`Environment.species`, #88), est ignorée.
  */
 export function applyPopulation(
   world: MutableWorld,
   population: readonly CapturePopulation[],
 ): void {
   for (const { species, count } of population) {
-    if (isSpeciesId(species)) {
+    if (isSpeciesId(species) && livesIn(world.environment, species)) {
       setPopulationInPlace(world, species, count);
     }
   }
@@ -262,10 +269,10 @@ export class AquariumHost {
   readonly environment = signal<EnvironmentId>(DEFAULT_ENVIRONMENT_ID);
 
   /** Effectif de chaque espèce (#69), mis à jour au démarrage et à chaque réglage. */
-  readonly population = signal<PopulationCounts>({ neon: 0, guppy: 0, corydora: 0 });
+  readonly population = signal<PopulationCounts>(NO_FISH);
 
   /** Effectif maximal de chaque espèce compte tenu des autres (`populationLimits`, #69). */
-  readonly populationMax = signal<PopulationCounts>({ neon: 0, guppy: 0, corydora: 0 });
+  readonly populationMax = signal<PopulationCounts>(NO_FISH);
 
   /** État courant de la simulation (`null` avant le démarrage et après la destruction). */
   get world(): World | null {
@@ -383,12 +390,19 @@ export class AquariumHost {
    * Règle l'effectif d'une espèce (#69), ramené à ses bornes : les poissons ajoutés naissent
    * à une position valide, les plus récents sont retirés ; ni le temps ni le décor ne sont
    * réinitialisés. Sans effet en mode capture (les effectifs passent par `population=`),
-   * avant le démarrage, pour une espèce inconnue ou un effectif qui n'est pas un entier
-   * positif ou nul.
+   * avant le démarrage, pour une espèce inconnue ou absente de l'environnement (#88), ou un
+   * effectif qui n'est pas un entier positif ou nul.
    */
   setPopulation(species: SpeciesId, count: number): void {
     const world = this.currentWorld;
-    if (!world || this.capture || !isSpeciesId(species) || !Number.isInteger(count) || count < 0) {
+    if (
+      !world ||
+      this.capture ||
+      !isSpeciesId(species) ||
+      !livesIn(world.environment, species) ||
+      !Number.isInteger(count) ||
+      count < 0
+    ) {
       return;
     }
     setPopulationInPlace(world, species, count);
@@ -572,7 +586,11 @@ export class AquariumHost {
     }
     if (this.currentWorld) {
       // En capture, l'image montre exactement l'état au temps demandé (alpha = 1).
-      view.updateFish(this.currentWorld.entities, this.capture ? 1 : this.clock.alpha);
+      view.updateFish(
+        this.currentWorld.entities,
+        this.capture ? 1 : this.clock.alpha,
+        this.currentWorld.seed,
+      );
       view.updateFood(this.currentWorld.food);
       const time = this.renderTime();
       view.updateDecor(time);
@@ -689,7 +707,10 @@ export class AquariumHost {
     const counts = populationCounts(world);
     this.population.set(counts);
     this.populationMax.set(populationLimits(world));
-    this.host.nativeElement.setAttribute(POPULATION_ATTRIBUTE, formatPopulation(counts));
+    this.host.nativeElement.setAttribute(
+      POPULATION_ATTRIBUTE,
+      formatPopulation(counts, environmentById(world.environment).species),
+    );
   }
 
   /** Expose l'environnement (`data-aqfish-environment` et signal `environment`). */

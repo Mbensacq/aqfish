@@ -104,6 +104,9 @@ describe('AquariumView (pipeline pixel art)', () => {
       'poissons-guppy-male',
       'poissons-guppy-femelle',
       'poissons-corydora',
+      'poissons-koi-kohaku',
+      'poissons-koi-orenji',
+      'poissons-koi-sanke',
     ]);
   });
 

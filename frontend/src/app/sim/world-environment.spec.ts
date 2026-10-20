@@ -2,7 +2,7 @@ import { createBubbleBuffer } from './bubbles';
 import { DEFAULT_DECOR, type DecorItem } from './decor';
 import { POND, type EnvironmentId } from './environment';
 import { setPopulation } from './population';
-import { SPECIES } from './species';
+import { CORYDORA, GUPPY, KOI, NEON } from './species';
 import {
   advance,
   boundsFor,
@@ -37,17 +37,19 @@ describe('monde et environnement (#87)', () => {
     expect(createDefaultWorld(42, 'tropical')).toEqual(world);
     const before = createWorld(
       42,
-      Object.values(SPECIES).map((def) => ({ species: def.id, count: def.defaultPopulation })),
+      [NEON, GUPPY, CORYDORA].map((def) => ({ species: def.id, count: def.defaultPopulation })),
       [],
       DEFAULT_DECOR,
     );
     expect(before).toEqual(world);
   });
 
-  it('le bassin de départ : son décor, aucun poisson, déterministe à graine égale', () => {
+  it('le bassin de départ : son décor, ses koïs (#88), déterministe à graine égale', () => {
     const pond = createDefaultWorld(7, 'bassin');
     expect(pond.environment).toBe('bassin');
-    expect(pond.entities).toEqual([]);
+    expect(pond.entities).toHaveLength(KOI.defaultPopulation);
+    expect(pond.entities.every((f) => f.species === 'koi')).toBe(true);
+    expect(allInside(pond)).toBe(true);
     expect(pond.decor).toEqual(POND.decor);
     expect(pond.obstacles.length).toBe(POND.decor.length);
     expect(createDefaultWorld(7, 'bassin')).toEqual(pond);
@@ -59,7 +61,7 @@ describe('monde et environnement (#87)', () => {
       const a = advance(make(), 600);
       expect(advance(make(), 600)).toEqual(a);
       expect(a.environment).toBe('bassin');
-      expect(a.entities).toHaveLength(12);
+      expect(a.entities).toHaveLength(KOI.defaultPopulation + 12);
       expect(allInside(a)).toBe(true);
       expect(JSON.parse(JSON.stringify(a))).toEqual(a);
     }

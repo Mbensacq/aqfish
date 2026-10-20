@@ -330,14 +330,15 @@ export class AquariumView {
 
   /**
    * Place les poissons d'après l'état du monde, interpolés entre les deux derniers pas
-   * (`alpha` ∈ [0, 1] : 0 = pas précédent, 1 = pas courant). À appeler avant `renderFrame()`.
+   * (`alpha` ∈ [0, 1] : 0 = pas précédent, 1 = pas courant), avec la graine du monde `seed`
+   * (robes des koïs, `speciesVariantIndex`). À appeler avant `renderFrame()`.
    */
-  updateFish(entities: readonly Fish[], alpha: number): void {
+  updateFish(entities: readonly Fish[], alpha: number, seed = 0): void {
     if (this.disposed) {
       return;
     }
     for (const layer of this.fishLayers) {
-      layer.update(entities, alpha);
+      layer.update(entities, alpha, seed);
     }
   }
 

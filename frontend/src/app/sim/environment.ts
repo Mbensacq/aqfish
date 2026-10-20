@@ -1,6 +1,6 @@
 import type { CameraPreset } from '../core/capture/capture-params';
 import { DEFAULT_DECOR, parseDecor, type DecorItem } from './decor';
-import { SPECIES, type SpeciesId } from './species';
+import { CORYDORA, GUPPY, KOI, NEON, type SpeciesId } from './species';
 import { DEFAULT_TANK, waterVolume, type Box3, type TankDimensions } from './tank';
 
 /**
@@ -51,9 +51,23 @@ export interface Environment {
   readonly caustics: boolean;
   /** Décor de départ, validé dans les dimensions de l'environnement. */
   readonly decor: readonly DecorItem[];
-  /** Population de départ, dans l'ordre de création des poissons. */
+  /**
+   * Espèces qui vivent dans l'environnement, dans l'ordre du panneau (issue #88) : seules
+   * celles-ci sont proposées au réglage de population et exposées.
+   */
+  readonly species: readonly SpeciesId[];
+  /** Population de départ (espèces de `species`), dans l'ordre de création des poissons. */
   readonly population: readonly EnvironmentPopulation[];
 }
+
+/** Population de départ : chaque espèce donnée avec sa population par défaut. */
+function defaultPopulation(
+  defs: readonly { id: SpeciesId; defaultPopulation: number }[],
+): EnvironmentPopulation[] {
+  return defs.map((def) => ({ species: def.id, count: def.defaultPopulation }));
+}
+
+const TROPICAL_SPECIES = [NEON, GUPPY, CORYDORA] as const;
 
 /** Bac tropical : le bac d'avant l'issue #87, à l'identique. */
 export const TROPICAL_TANK: Environment = {
@@ -67,10 +81,8 @@ export const TROPICAL_TANK: Environment = {
   bubbles: true,
   caustics: true,
   decor: DEFAULT_DECOR,
-  population: Object.values(SPECIES).map((def) => ({
-    species: def.id,
-    count: def.defaultPopulation,
-  })),
+  species: TROPICAL_SPECIES.map((def) => def.id),
+  population: defaultPopulation(TROPICAL_SPECIES),
 };
 
 /** Bassin extérieur : 2 × 1,4 m, 40 cm de haut (30 cm d'eau), margelle de pierre. */
@@ -78,8 +90,8 @@ export const POND_DIMENSIONS: TankDimensions = { width: 2, height: 0.4, depth: 1
 
 /**
  * Bassin à koïs (épopée v0.5), vu de dessus : plus large et moins profond que le bac, eau
- * verte-bleutée plus sombre, fond de vase couvert d'algues, quelques pierres. Sans poissons pour
- * l'instant : les koïs arrivent avec l'issue #88 (la population reste réglable au panneau).
+ * verte-bleutée plus sombre, fond de vase couvert d'algues, quelques pierres, et des koïs
+ * (issue #88).
  */
 export const POND: Environment = {
   id: 'bassin',
@@ -100,13 +112,19 @@ export const POND: Environment = {
     ]`,
     POND_DIMENSIONS,
   ),
-  population: [],
+  species: [KOI.id],
+  population: defaultPopulation([KOI]),
 };
 
 export const ENVIRONMENTS: Readonly<Record<EnvironmentId, Environment>> = {
   tropical: TROPICAL_TANK,
   bassin: POND,
 };
+
+/** Vrai si l'espèce `species` vit dans l'environnement `id` (`Environment.species`). */
+export function livesIn(id: EnvironmentId, species: SpeciesId): boolean {
+  return environmentById(id).species.includes(species);
+}
 
 /** Vrai si `value` est l'identifiant d'un environnement (clés héritées refusées). */
 export function isEnvironmentId(value: unknown): value is EnvironmentId {
