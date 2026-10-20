@@ -249,6 +249,10 @@ test.describe('Panneau de contrôle', () => {
     await page.keyboard.press('Enter');
     await expect(toggle(page)).toHaveAttribute('aria-expanded', 'true');
 
+    // Premier contrôle : la liste des environnements (#87, testée dans environnement.spec.ts).
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('combobox', { name: 'Environnement' })).toBeFocused();
+
     await page.keyboard.press('Tab');
     await expect(speed(page)).toBeFocused();
     await page.keyboard.press('ArrowRight');

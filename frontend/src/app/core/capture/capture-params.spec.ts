@@ -17,12 +17,32 @@ describe('parseCaptureParams', () => {
       capture: true,
       seed: 7,
       camera: 'bottom',
+      cameraGiven: true,
+      environment: null,
       time: 12.5,
       filter: null,
       hour: null,
       feedings: [],
       population: [],
     });
+  });
+
+  it('lit l’environnement : identifiant en minuscules, sinon null (#87)', () => {
+    expect(parseCaptureParams('?environnement=bassin').environment).toBe('bassin');
+    expect(parseCaptureParams('?environnement=recif').environment).toBe('recif');
+    for (const bad of ['', 'Bassin', 'bassin2', 'bas sin', 'a'.repeat(21)]) {
+      expect(parseCaptureParams(`?environnement=${encodeURIComponent(bad)}`).environment).toBe(
+        null,
+      );
+    }
+    expect(parseCaptureParams('').environment).toBe(null);
+  });
+
+  it('signale si camera= est donné et valide (sinon vue de l’environnement)', () => {
+    expect(parseCaptureParams('?camera=top').cameraGiven).toBe(true);
+    expect(parseCaptureParams('?camera=three-quarter').cameraGiven).toBe(true);
+    expect(parseCaptureParams('?camera=diagonal').cameraGiven).toBe(false);
+    expect(parseCaptureParams('').cameraGiven).toBe(false);
   });
 
   it.each(['pixel', 'aucun'] as const)('lit le filtre de rendu filtre=%s', (filter) => {

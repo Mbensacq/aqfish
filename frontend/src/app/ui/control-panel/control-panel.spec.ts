@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 
+import type { EnvironmentId } from '../../sim/environment';
 import type { PopulationCounts } from '../../sim/population';
 import { SIM_SPEEDS } from '../../sim/sim-speed';
 import {
@@ -70,6 +71,7 @@ describe('fonctions du panneau de contrôle', () => {
 @Component({
   imports: [ControlPanel],
   template: `<app-control-panel
+    [environment]="environment()"
     [speed]="speed()"
     [hour]="hour()"
     [clockRunning]="running()"
@@ -81,10 +83,13 @@ describe('fonctions du panneau de contrôle', () => {
     (hourChanged)="events.push(['heure', $event])"
     (clockRunningChanged)="events.push(['auto', $event])"
     (decorVisibleChanged)="events.push(['decor', $event])"
+    (environmentChanged)="environments.push($event)"
   />`,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 class TestHost {
+  readonly environment = signal<EnvironmentId>('tropical');
+  readonly environments: EnvironmentId[] = [];
   readonly speed = signal(1);
   readonly hour = signal(12);
   readonly running = signal(true);
@@ -124,6 +129,30 @@ describe('ControlPanel', () => {
     expect(root().querySelector('section')).toBeNull();
   });
 
+  it('liste des environnements nommée, sélection fournie par l’hôte, choix émis (#87)', async () => {
+    await openPanel();
+    const select = root().querySelector<HTMLSelectElement>('select[aria-label="Environnement"]')!;
+    expect(select).not.toBeNull();
+    expect(select.id).toBe('panneau-environnement');
+    expect(root().querySelector('label[for="panneau-environnement"]')).not.toBeNull();
+    expect([...select.options].map((o) => [o.value, o.textContent?.trim()])).toEqual([
+      ['tropical', 'Bac tropical'],
+      ['bassin', 'Bassin'],
+    ]);
+    expect(select.value).toBe('tropical');
+
+    select.value = 'bassin';
+    select.dispatchEvent(new Event('change'));
+    expect(fixture.componentInstance.environments).toEqual(['bassin']);
+
+    // L'hôte confirme : la liste suit ; re-choisir l'environnement courant n'émet rien.
+    fixture.componentInstance.environment.set('bassin');
+    await fixture.whenStable();
+    expect(select.value).toBe('bassin');
+    select.dispatchEvent(new Event('change'));
+    expect(fixture.componentInstance.environments).toEqual(['bassin']);
+  });
+
   it('se déplie et se replie au bouton', async () => {
     await openPanel();
     expect(toggle().getAttribute('aria-expanded')).toBe('true');
@@ -135,16 +164,18 @@ describe('ControlPanel', () => {
     expect(root().querySelector('section')).toBeNull();
   });
 
-  it('sections extensibles : simulation, journée, décor, population, chacune avec sa légende', async () => {
+  it('sections extensibles : environnement, simulation, journée, décor, population, chacune avec sa légende', async () => {
     await openPanel();
     const sections = [...root().querySelectorAll('fieldset')];
     expect(sections.map((s) => s.getAttribute('data-section'))).toEqual([
+      'environnement',
       'simulation',
       'journee',
       'decor',
       'population',
     ]);
     expect(sections.map((s) => s.querySelector('legend')?.textContent?.trim())).toEqual([
+      'Environnement',
       'Simulation',
       'Journée',
       'Décor',

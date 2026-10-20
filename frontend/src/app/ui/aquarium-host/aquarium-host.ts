@@ -47,6 +47,12 @@ import {
   toggleClock,
   type DayClock,
 } from '../../sim/daylight';
+import {
+  DEFAULT_ENVIRONMENT_ID,
+  environmentById,
+  isEnvironmentId,
+  type EnvironmentId,
+} from '../../sim/environment';
 import { fixedStepInto, type FixedStepState } from '../../sim/fixed-step';
 import {
   DEFAULT_SIM_SPEED,
@@ -103,6 +109,9 @@ export const SPEED_ATTRIBUTE = 'data-aqfish-speed';
 export const DECOR_ATTRIBUTE = 'data-aqfish-decor';
 /** Attribut du composant hôte exposant les effectifs (`neon:12,guppy:6,corydora:6`, #69). */
 export const POPULATION_ATTRIBUTE = 'data-aqfish-population';
+
+/** Attribut du composant hôte exposant l'environnement courant (`tropical`, `bassin`, #87). */
+export const ENVIRONMENT_ATTRIBUTE = 'data-aqfish-environment';
 
 /** Effectifs au format de `population=` et de `data-aqfish-population` : `neon:12,guppy:6`. */
 export function formatPopulation(counts: PopulationCounts): string {
@@ -208,6 +217,10 @@ export class AquariumHost {
   private exposedHour: string | null = null;
   private readonly onFrame: FrameRequestCallback = (timestamp) => this.frame(timestamp);
   private readonly cleanups: (() => void)[] = [];
+  /** Désabonnements liés à la vue courante (refaits à chaque changement d'environnement). */
+  private readonly viewCleanups: (() => void)[] = [];
+  /** Pixel ratio de la vue (fixé au démarrage). */
+  private pixelRatio = 1;
 
   /**
    * Préréglage que la caméra suit ou rejoint, `null` dès que l'utilisateur la déplace à la
@@ -244,6 +257,9 @@ export class AquariumHost {
 
   /** Décor (rochers et plantes) affiché (#52). Il reste un obstacle pour les poissons. */
   readonly decorVisible = signal(true);
+
+  /** Environnement affiché (#87), changé par le sélecteur du panneau. */
+  readonly environment = signal<EnvironmentId>(DEFAULT_ENVIRONMENT_ID);
 
   /** Effectif de chaque espèce (#69), mis à jour au démarrage et à chaque réglage. */
   readonly population = signal<PopulationCounts>({ neon: 0, guppy: 0, corydora: 0 });
@@ -381,6 +397,31 @@ export class AquariumHost {
   }
 
   /**
+   * Change d'environnement (#87, ADR 0026) : recrée le monde de départ de l'environnement
+   * avec la même graine (même environnement et même graine, même monde), puis la vue, la
+   * caméra allant sur la vue par défaut de l'environnement. L'heure, la vitesse, le filtre et
+   * l'affichage du décor sont conservés ; la nourriture et les effectifs réglés repartent de
+   * zéro. Sans effet en mode capture (`environnement=`), avant le démarrage, pour un
+   * environnement inconnu ou déjà affiché.
+   */
+  setEnvironment(id: string): void {
+    const world = this.currentWorld;
+    if (!world || !this.view || this.capture || !isEnvironmentId(id) || id === world.environment) {
+      return;
+    }
+    this.currentWorld = createDefaultWorld(world.seed, id);
+    this.clock.accumulator = 0;
+    this.clock.alpha = 0;
+    this.exposeEnvironment();
+    this.exposeTick();
+    this.exposeFood();
+    this.exposePopulation();
+    this.createView(environmentById(id).defaultCamera);
+    this.exposeCamera();
+    this.scheduleFrame();
+  }
+
+  /**
    * Fige l'heure à `hour` (touches « plein jour » et « nuit », issue #75), que l'horloge
    * tourne ou non ; `toggleClock` la remet ensuite en marche depuis cette heure, sans saut.
    * Sans effet en mode capture (contrat de capture) ou si `hour` n'est pas un réel fini.
@@ -436,7 +477,10 @@ export class AquariumHost {
     // En mode capture, le temps demandé est atteint ici, avant toute image (contrat de capture).
     // Le monde créé ici appartient à l'hôte seul : il pourra être avancé en place.
     // Dépôts de nourriture de `nourrir=` (#67) : au temps simulé de chacun, en capture.
-    const world: MutableWorld = createDefaultWorld(params.seed);
+    const environment = isEnvironmentId(params.environment)
+      ? params.environment
+      : DEFAULT_ENVIRONMENT_ID;
+    const world: MutableWorld = createDefaultWorld(params.seed, environment);
     // Effectifs de `population=` (#69) : appliqués à t = 0, avant d'avancer le monde.
     applyPopulation(world, params.population);
     this.currentWorld = params.capture
@@ -447,6 +491,7 @@ export class AquariumHost {
     this.host.nativeElement.setAttribute(SPEED_ATTRIBUTE, String(this.speed()));
     this.host.nativeElement.setAttribute(DECOR_ATTRIBUTE, String(this.decorVisible()));
     this.host.nativeElement.setAttribute(SEED_ATTRIBUTE, String(this.currentWorld.seed));
+    this.exposeEnvironment();
     this.exposeTick();
     this.exposeFood();
     this.exposePopulation();
@@ -457,28 +502,48 @@ export class AquariumHost {
       params.capture,
     );
     this.filter.set(filter);
-
-    const view = new AquariumView({
-      canvas: this.canvasRef().nativeElement,
-      rendererFactory: this.rendererFactory,
-      pixelRatio: params.capture ? 1 : win.devicePixelRatio || 1,
-      preset: params.camera,
-      interactive: !params.capture,
-      filter,
-    });
-    this.view = view;
-    view.setDecor(this.currentWorld.decor, this.currentWorld.seed);
+    this.pixelRatio = params.capture ? 1 : win.devicePixelRatio || 1;
+    // Sans `camera=`, la vue par défaut de l'environnement (#87 : de dessus pour le bassin).
+    this.createView(
+      params.cameraGiven ? params.camera : environmentById(environment).defaultCamera,
+    );
     this.exposeFilter();
 
-    this.activePreset.set(params.camera);
-    this.cleanups.push(view.onCameraChange(() => this.exposeCamera()));
-    this.cleanups.push(view.onUserInteraction(() => this.activePreset.set(null)));
-    this.cleanups.push(view.onSurfaceClick((x, z) => this.feed(x, z)));
     const onResize = () => this.scheduleFrame();
     win.addEventListener('resize', onResize);
     this.cleanups.push(() => win.removeEventListener('resize', onResize));
 
     this.scheduleFrame();
+  }
+
+  /**
+   * Crée la vue du monde courant (en libérant la précédente) sur le préréglage `preset`, avec
+   * le filtre et l'affichage du décor courants.
+   */
+  private createView(preset: CameraPreset): void {
+    const world = this.currentWorld;
+    if (!world) {
+      return;
+    }
+    this.viewCleanups.splice(0).forEach((cleanup) => cleanup());
+    this.view?.dispose();
+    const view = new AquariumView({
+      canvas: this.canvasRef().nativeElement,
+      rendererFactory: this.rendererFactory,
+      pixelRatio: this.pixelRatio,
+      preset,
+      interactive: !this.capture,
+      filter: this.filter(),
+      environment: environmentById(world.environment),
+    });
+    this.view = view;
+    view.setDecor(world.decor, world.seed);
+    view.setDecorVisible(this.decorVisible());
+    this.litHour = null;
+    this.activePreset.set(preset);
+    this.viewCleanups.push(view.onCameraChange(() => this.exposeCamera()));
+    this.viewCleanups.push(view.onUserInteraction(() => this.activePreset.set(null)));
+    this.viewCleanups.push(view.onSurfaceClick((x, z) => this.feed(x, z)));
   }
 
   private scheduleFrame(): void {
@@ -627,6 +692,15 @@ export class AquariumHost {
     this.host.nativeElement.setAttribute(POPULATION_ATTRIBUTE, formatPopulation(counts));
   }
 
+  /** Expose l'environnement (`data-aqfish-environment` et signal `environment`). */
+  private exposeEnvironment(): void {
+    const world = this.currentWorld;
+    if (world) {
+      this.environment.set(world.environment);
+      this.host.nativeElement.setAttribute(ENVIRONMENT_ATTRIBUTE, world.environment);
+    }
+  }
+
   /** Expose l'état de l'horloge (`data-aqfish-hour-frozen` et signal `clockFrozen`). */
   private exposeClockFrozen(): void {
     this.clockFrozen.set(this.dayClock.frozen);
@@ -652,6 +726,7 @@ export class AquariumHost {
       this.frameId = null;
     }
     this.cleanups.splice(0).forEach((cleanup) => cleanup());
+    this.viewCleanups.splice(0).forEach((cleanup) => cleanup());
     this.view?.dispose();
     this.view = null;
     this.currentWorld = null;

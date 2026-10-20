@@ -209,7 +209,11 @@ export class WaterLightLayer {
   readonly caustics: Mesh<PlaneGeometry, ShaderMaterial>;
   readonly surface: Mesh<PlaneGeometry, ShaderMaterial>;
 
-  constructor(dims: TankDimensions = DEFAULT_TANK) {
+  /** Faux : caustiques jamais affichées (environnement sans caustiques, issue #87). */
+  private readonly causticsEnabled: boolean;
+
+  constructor(dims: TankDimensions = DEFAULT_TANK, caustics = true) {
+    this.causticsEnabled = caustics;
     this.object.name = 'lumiere-eau';
     this.caustics = new Mesh(
       new PlaneGeometry(dims.width, dims.depth),
@@ -219,6 +223,7 @@ export class WaterLightLayer {
     this.caustics.rotation.x = -Math.PI / 2;
     this.caustics.position.y = SAND_THICKNESS + CAUSTIC_LIFT;
     this.caustics.renderOrder = CAUSTIC_RENDER_ORDER;
+    this.caustics.visible = caustics;
 
     this.surface = new Mesh(
       new PlaneGeometry(dims.width, dims.depth),
@@ -241,7 +246,7 @@ export class WaterLightLayer {
   setDaylight(intensity: number): void {
     const day = Math.min(1, Math.max(0, Number.isFinite(intensity) ? intensity : 1));
     const causticColor = causticColorFor(day);
-    this.caustics.visible = causticColor !== null;
+    this.caustics.visible = this.causticsEnabled && causticColor !== null;
     if (causticColor !== null) {
       (this.caustics.material.uniforms['uColor'].value as Color).set(causticColor);
     }

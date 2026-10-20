@@ -13,6 +13,7 @@ import {
   AQUARIUM_RENDERER_FACTORY,
   AquariumHost,
   CAMERA_ATTRIBUTE,
+  ENVIRONMENT_ATTRIBUTE,
   CAMERA_TARGET_ATTRIBUTE,
   DECOR_ATTRIBUTE,
   FILTER_ATTRIBUTE,
@@ -611,6 +612,79 @@ describe('AquariumHost', () => {
       fixture.destroy();
       expect(host().hour).toBeNull();
       host().toggleClock();
+    });
+  });
+
+  describe('environnement (#87)', () => {
+    const host = () => fixture.componentInstance;
+    const element = () => fixture.nativeElement as HTMLElement;
+    const cameraY = () => Number(element().getAttribute(CAMERA_ATTRIBUTE)!.split(',')[1]);
+
+    it('bac tropical par défaut, exposé dans data-aqfish-environment', async () => {
+      await create('?seed=3');
+      expect(host().environment()).toBe('tropical');
+      expect(element().getAttribute(ENVIRONMENT_ATTRIBUTE)).toBe('tropical');
+      expect(host().world).toEqual(createDefaultWorld(3));
+      expect(host().activePreset()).toBe('three-quarter');
+    });
+
+    it('environnement= : monde du bassin, vu de dessus sans camera= ; inconnu ignoré', async () => {
+      await create('?capture=1&seed=5&environnement=bassin');
+      expect(host().world).toEqual(createDefaultWorld(5, 'bassin'));
+      expect(host().activePreset()).toBe('top');
+      expect(element().getAttribute(ENVIRONMENT_ATTRIBUTE)).toBe('bassin');
+      fixture.destroy();
+      await create('?capture=1&seed=5&environnement=bassin&camera=side');
+      expect(host().activePreset()).toBe('side');
+      fixture.destroy();
+      await create('?capture=1&seed=5&environnement=recif');
+      expect(host().world).toEqual(createDefaultWorld(5));
+    });
+
+    it('setEnvironment : nouveau monde (même graine), nouvelle vue, caméra de dessus', async () => {
+      await create('?seed=9');
+      setCanvasSize(800, 600);
+      frames.flush(0);
+      frames.flush(500);
+      host().feedAtCenter();
+      const tropicalY = cameraY();
+      host().setDecorVisible(false);
+      host().setEnvironment('bassin');
+      expect(host().world).toEqual(createDefaultWorld(9, 'bassin'));
+      expect(host().environment()).toBe('bassin');
+      expect(element().getAttribute(ENVIRONMENT_ATTRIBUTE)).toBe('bassin');
+      expect(element().getAttribute('data-aqfish-food')).toBe('0');
+      expect(host().population()).toEqual({ neon: 0, guppy: 0, corydora: 0 });
+      expect(host().activePreset()).toBe('top');
+      // L'ancienne vue est libérée, une nouvelle est créée ; le décor reste masqué.
+      expect(renderers).toHaveLength(2);
+      expect(renderers[0].disposed).toBe(true);
+      expect(host().decorVisible()).toBe(false);
+      frames.flush(1000);
+      expect(renderers[1].renders).toBeGreaterThan(0);
+      expect(cameraY()).not.toBe(tropicalY);
+      // Retour au bac : même monde de départ qu'au démarrage avec cette graine.
+      host().setEnvironment('tropical');
+      expect(host().world).toEqual(createDefaultWorld(9));
+      expect(renderers).toHaveLength(3);
+    });
+
+    it('setEnvironment : inconnu, identique, en capture ou avant le démarrage : sans effet', async () => {
+      const instance = TestBed.createComponent(AquariumHost).componentInstance;
+      expect(() => instance.setEnvironment('bassin')).not.toThrow();
+      await create('?seed=2');
+      const world = host().world;
+      const created = renderers.length;
+      host().setEnvironment('recif');
+      host().setEnvironment('constructor');
+      host().setEnvironment('tropical');
+      expect(host().world).toBe(world);
+      expect(renderers).toHaveLength(created);
+      fixture.destroy();
+      await create('?capture=1&seed=2');
+      const captured = host().world;
+      host().setEnvironment('bassin');
+      expect(host().world).toBe(captured);
     });
   });
 
