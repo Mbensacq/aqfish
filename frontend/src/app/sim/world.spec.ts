@@ -23,6 +23,7 @@ describe('createWorld', () => {
   it('crée un monde vide à t = 0 avec la graine donnée', () => {
     expect(createWorld(42)).toEqual({
       seed: 42,
+      environment: 'tropical',
       tick: 0,
       time: 0,
       entities: [],

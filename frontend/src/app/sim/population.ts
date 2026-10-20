@@ -103,7 +103,7 @@ export function setPopulationInPlace(
       current -= 1;
     }
   }
-  const bounds = boundsFor(species);
+  const bounds = boundsFor(species, world.environment);
   while (current < target) {
     entities.push(createFish(world.seed, world.nextFishId, species, bounds, world.obstacles));
     world.nextFishId += 1;

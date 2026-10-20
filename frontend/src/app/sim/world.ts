@@ -1,14 +1,19 @@
 import { assertSeed } from '../core/random/prng';
 import { fillBubbles, type BubbleBuffer } from './bubbles';
 import { SIM_DT } from './constants';
-import { DEFAULT_DECOR, decorObstacles, parseDecorItems, type DecorItem } from './decor';
+import { decorObstacles, parseDecorItems, type DecorItem } from './decor';
+import {
+  DEFAULT_ENVIRONMENT_ID,
+  environmentById,
+  environmentWater,
+  type EnvironmentId,
+} from './environment';
 import { eatInPlace, feedingBand, foodTarget, type FeedingBand } from './feeding';
 import { computeSchoolSteering, enforceMinDistance, type Vec3 } from './flocking';
 import { dropFoodInPlace, stepFoodInPlace, type FoodPellet } from './food';
 import { validateObstacle, type Obstacle } from './obstacles';
 import { SPECIES, type SpeciesId } from './species';
 import { createFish, stepFish, swimBounds, type Fish, type SwimBounds } from './swimmer';
-import { waterVolume } from './tank';
 import { assertTimeStep } from './time-step';
 
 /**
@@ -31,6 +36,11 @@ export interface PopulationEntry {
 export interface World {
   /** Graine du monde, entier 32 bits non signé. */
   readonly seed: number;
+  /**
+   * Environnement du monde (`sim/environment.ts`, ADR 0026) : son volume d'eau borne la nage
+   * et les dépôts de nourriture. Fixé à la création.
+   */
+  readonly environment: EnvironmentId;
   /** Nombre de pas `SIM_DT` exécutés depuis la création. */
   readonly tick: number;
   /**
@@ -74,22 +84,26 @@ export type MutableWorld = Mutable<World>;
 
 /**
  * Crée un monde à `time = 0`, vide par défaut, peuplé dans l'ordre de `population`
- * (identifiants consécutifs à partir de 0) dans le bac par défaut (`sim/tank.ts`), avec les
+ * (identifiants consécutifs à partir de 0) dans l'environnement `environment` (le bac
+ * tropical par défaut, `sim/environment.ts`), avec les
  * `obstacles` donnés (copiés, triés par identifiant) et le `decor` donné (validé, copié) ;
  * les formes de collision du décor suivent les obstacles explicites, avec les identifiants
  * suivant le plus grand d'entre eux. Les poissons naissent hors des obstacles (`createFish`).
  * @throws RangeError si la graine n'est pas un entier 32 bits non signé, si un effectif
  * n'est pas un entier positif ou nul, si un obstacle ou un élément de décor est invalide ou
- * si deux obstacles ont le même identifiant.
+ * si deux obstacles ont le même identifiant, ou si l'environnement est inconnu (un élément
+ * de décor doit aussi tenir dans ses dimensions).
  */
 export function createWorld(
   seed: number,
   population: readonly PopulationEntry[] = [],
   obstacles: readonly Obstacle[] = [],
   decor: readonly DecorItem[] = [],
+  environment: EnvironmentId = DEFAULT_ENVIRONMENT_ID,
 ): World {
   assertSeed(seed);
-  const decorItems = parseDecorItems(decor);
+  const env = environmentById(environment);
+  const decorItems = parseDecorItems(decor, env.dimensions);
   const sortedObstacles = copyObstacles(obstacles);
   const firstDecorId = sortedObstacles.length > 0 ? sortedObstacles.at(-1)!.id + 1 : 0;
   sortedObstacles.push(...decorObstacles(decorItems, firstDecorId));
@@ -104,12 +118,19 @@ export function createWorld(
     }
     for (let i = 0; i < count; i++) {
       entities.push(
-        createFish(seed, entities.length, species, boundsFor(species), sortedObstacles),
+        createFish(
+          seed,
+          entities.length,
+          species,
+          boundsFor(species, environment),
+          sortedObstacles,
+        ),
       );
     }
   }
   return {
     seed,
+    environment,
     tick: 0,
     time: 0,
     entities,
@@ -141,16 +162,17 @@ function copyObstacles(obstacles: readonly Obstacle[]): Obstacle[] {
 }
 
 /**
- * Monde par défaut de l'application : chaque espèce avec sa population par défaut, dans le
- * décor par défaut (`DEFAULT_DECOR`, rochers).
+ * Monde de départ d'un environnement (le bac tropical par défaut : chaque espèce avec sa
+ * population par défaut, dans le décor par défaut `DEFAULT_DECOR`), avec sa population et
+ * son décor de départ (`sim/environment.ts`).
+ * @throws RangeError si la graine ou l'environnement est invalide.
  */
-export function createDefaultWorld(seed: number): World {
-  return createWorld(
-    seed,
-    Object.values(SPECIES).map((def) => ({ species: def.id, count: def.defaultPopulation })),
-    [],
-    DEFAULT_DECOR,
-  );
+export function createDefaultWorld(
+  seed: number,
+  environment: EnvironmentId = DEFAULT_ENVIRONMENT_ID,
+): World {
+  const env = environmentById(environment);
+  return createWorld(seed, env.population, [], env.decor, environment);
 }
 
 /**
@@ -200,6 +222,10 @@ export function advanceInPlace(world: MutableWorld, steps: number): void {
  * changent pas les trajectoires.
  */
 export function worldBubbles(world: World, out: BubbleBuffer): number {
+  if (!environmentById(world.environment).bubbles) {
+    out.count = 0;
+    return 0;
+  }
   return fillBubbles(world.seed, world.time, out);
 }
 
@@ -220,7 +246,12 @@ export function feed(world: World, x: number, z: number): World {
  * propriétaire unique du monde (`ui/aquarium-host`), comme `advanceInPlace`.
  */
 export function feedInPlace(world: MutableWorld, x: number, z: number): number {
-  return dropFoodInPlace(world as MutableWorld & { food: FoodPellet[] }, x, z);
+  return dropFoodInPlace(
+    world as MutableWorld & { food: FoodPellet[] },
+    x,
+    z,
+    environmentWater(world.environment),
+  );
 }
 
 /** Dépôt de nourriture à un temps simulé donné (contrat de capture, `nourrir=`). */
@@ -276,6 +307,7 @@ function stepInPlace(world: MutableWorld, dt: number): void {
   // Deux phases : le pilotage de banc de tous les poissons est calculé sur les positions du
   // début du pas, puis chacun nage. Le résultat ne dépend donc pas de l'ordre de mise à jour.
   const fishes = world.entities as Mutable<Entity>[];
+  const environment = world.environment;
   const steering = steeringBuffer(fishes.length);
   computeSchoolSteering(fishes, steering);
   // Nourriture (issue #68) : point visé calculé, comme le banc, sur les positions du début du
@@ -284,7 +316,7 @@ function stepInPlace(world: MutableWorld, dt: number): void {
   // Ordre stable : celui du tableau, c'est-à-dire des identifiants.
   for (let i = 0; i < fishes.length; i++) {
     const fish = fishes[i];
-    const bounds = boundsFor(fish.species);
+    const bounds = boundsFor(fish.species, environment);
     const target =
       food.length === 0
         ? null
@@ -292,7 +324,7 @@ function stepInPlace(world: MutableWorld, dt: number): void {
             fish,
             SPECIES[fish.species],
             food,
-            bandFor(fish.species),
+            bandFor(fish.species, environment),
             bounds.hard,
             FOOD_TARGET,
             world.obstacles,
@@ -308,6 +340,7 @@ function stepInPlace(world: MutableWorld, dt: number): void {
       target,
     );
   }
+  currentEnvironment = environment;
   enforceMinDistance(fishes, boundsOfFish);
   eatInPlace(fishes, food, bandOfFish, hardOfFish);
   stepFoodInPlace(food, dt);
@@ -316,28 +349,58 @@ function stepInPlace(world: MutableWorld, dt: number): void {
 /** Point visé vers la nourriture, réutilisé d'un poisson à l'autre (aucune allocation). */
 const FOOD_TARGET: Vec3 = { x: 0, y: 0, z: 0 };
 
+/**
+ * Environnement du pas en cours, lu par les rappels ci-dessous : des fonctions de module,
+ * pour ne créer aucune fermeture par pas.
+ */
+let currentEnvironment: EnvironmentId = DEFAULT_ENVIRONMENT_ID;
+
 function boundsOfFish(fish: Entity): SwimBounds {
-  return boundsFor(fish.species);
+  return boundsFor(fish.species, currentEnvironment);
 }
 
 function hardOfFish(fish: Entity): SwimBounds['hard'] {
-  return boundsFor(fish.species).hard;
+  return boundsFor(fish.species, currentEnvironment).hard;
 }
 
 function bandOfFish(fish: Entity): FeedingBand {
-  return bandFor(fish.species);
+  return bandFor(fish.species, currentEnvironment);
 }
 
-/** Tranches d'eau de l'alimentation par espèce dans le bac par défaut, calculées une fois. */
-const BAND_CACHE = new Map<SpeciesId, FeedingBand>();
-
-function bandFor(species: SpeciesId): FeedingBand {
-  let band = BAND_CACHE.get(species);
-  if (!band) {
-    band = feedingBand(SPECIES[species].feeding, waterVolume());
-    BAND_CACHE.set(species, band);
+/**
+ * Valeur par espèce et par environnement, calculée une fois : deux tables imbriquées, pour
+ * qu'une lecture n'alloue rien (pas de clé composée).
+ */
+function cached<T>(
+  cache: Map<EnvironmentId, Map<SpeciesId, T>>,
+  species: SpeciesId,
+  environment: EnvironmentId,
+  compute: () => T,
+): T {
+  let perSpecies = cache.get(environment);
+  if (!perSpecies) {
+    perSpecies = new Map();
+    cache.set(environment, perSpecies);
   }
-  return band;
+  let value = perSpecies.get(species);
+  if (value === undefined) {
+    value = compute();
+    perSpecies.set(species, value);
+  }
+  return value;
+}
+
+/** Tranches d'eau de l'alimentation par espèce et par environnement. */
+const BAND_CACHE = new Map<EnvironmentId, Map<SpeciesId, FeedingBand>>();
+
+function bandFor(species: SpeciesId, environment: EnvironmentId): FeedingBand {
+  const band = BAND_CACHE.get(environment)?.get(species);
+  return (
+    band ??
+    cached(BAND_CACHE, species, environment, () =>
+      feedingBand(SPECIES[species].feeding, environmentWater(environment)),
+    )
+  );
 }
 
 /** Tampon de pilotage réutilisé d'un pas à l'autre ; réalloué seulement si la population croît. */
@@ -350,17 +413,24 @@ function steeringBuffer(count: number): Float64Array {
   return steeringScratch;
 }
 
-/** Bornes de nage par espèce dans le bac par défaut, calculées une fois (aucune allocation par pas). */
-const BOUNDS_CACHE = new Map<SpeciesId, SwimBounds>();
+/** Bornes de nage par espèce et par environnement (aucune allocation une fois calculées). */
+const BOUNDS_CACHE = new Map<EnvironmentId, Map<SpeciesId, SwimBounds>>();
 
-/** Bornes de nage d'une espèce dans le bac par défaut (partagées, ne pas modifier). */
-export function boundsFor(species: SpeciesId): SwimBounds {
-  let bounds = BOUNDS_CACHE.get(species);
-  if (!bounds) {
-    bounds = swimBounds(SPECIES[species], waterVolume());
-    BOUNDS_CACHE.set(species, bounds);
-  }
-  return bounds;
+/**
+ * Bornes de nage d'une espèce dans un environnement (le bac tropical par défaut), partagées :
+ * ne pas modifier.
+ */
+export function boundsFor(
+  species: SpeciesId,
+  environment: EnvironmentId = DEFAULT_ENVIRONMENT_ID,
+): SwimBounds {
+  const bounds = BOUNDS_CACHE.get(environment)?.get(species);
+  return (
+    bounds ??
+    cached(BOUNDS_CACHE, species, environment, () =>
+      swimBounds(SPECIES[species], environmentWater(environment)),
+    )
+  );
 }
 
 /** Copie profonde d'un monde, modifiable (aucune donnée partagée avec `world`). */

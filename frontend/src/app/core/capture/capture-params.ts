@@ -22,6 +22,11 @@
  * mal formées ignorées ici, espèces inconnues ignorées par l'application ; absent, population
  * par défaut (séries existantes inchangées).
  *
+ * Paramètre facultatif `environnement=` (issue #87, ADR 0026) : identifiant de
+ * l'environnement (`tropical`, `bassin`) ; inconnu ou absent, le bac tropical (séries
+ * existantes inchangées). Sans `camera=`, la vue est celle de l'environnement (de dessus pour
+ * le bassin).
+ *
  * Ce module est volontairement pur (aucune dépendance à Angular ni à Three.js).
  * Voir docs/ARCHITECTURE.md, section « Contrat de capture ».
  */
@@ -39,6 +44,13 @@ export interface CaptureParams {
   readonly seed: number;
   /** Angle de caméra prédéfini. */
   readonly camera: CameraPreset;
+  /** Vrai si `camera=` est présent et valide (sinon, la vue par défaut de l'environnement). */
+  readonly cameraGiven: boolean;
+  /**
+   * Identifiant d'environnement demandé par `environnement=` (minuscules), `null` si absent
+   * ou mal formé. Non vérifié ici : l'application ignore un environnement inconnu.
+   */
+  readonly environment: string | null;
   /** Temps de simulation (en secondes) à atteindre avant de figer l'image. */
   readonly time: number;
   /** Filtre de rendu forcé par `filtre=` ; `null` si absent ou invalide (choix par défaut). */
@@ -77,6 +89,8 @@ export const DEFAULT_CAPTURE_PARAMS: CaptureParams = {
   capture: false,
   seed: 42,
   camera: 'three-quarter',
+  cameraGiven: false,
+  environment: null,
   time: 0,
   filter: null,
   hour: null,
@@ -98,6 +112,8 @@ export function parseCaptureParams(search: string): CaptureParams {
     capture: params.get('capture') === '1',
     seed: parseSeed(params.get('seed')),
     camera: parseCamera(params.get('camera')),
+    cameraGiven: CAMERA_PRESETS.some((preset) => preset === params.get('camera')),
+    environment: parseEnvironment(params.get('environnement')),
     time: parseTime(params.get('time')),
     filter: parseFilter(params.get('filtre')),
     hour: parseHour(params.get('heure')),
@@ -117,6 +133,13 @@ function parseSeed(raw: string | null): number {
 
 function parseCamera(raw: string | null): CameraPreset {
   return CAMERA_PRESETS.find((preset) => preset === raw) ?? DEFAULT_CAPTURE_PARAMS.camera;
+}
+
+/** Identifiant d'environnement : lettres minuscules, 1 à 20. */
+const ENVIRONMENT_PATTERN = /^[a-z]{1,20}$/;
+
+function parseEnvironment(raw: string | null): string | null {
+  return raw !== null && ENVIRONMENT_PATTERN.test(raw) ? raw : null;
 }
 
 function parseTime(raw: string | null): number {
