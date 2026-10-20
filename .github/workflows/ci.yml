@@ -12,11 +12,14 @@ concurrency:
 permissions:
   contents: read
 
+# Les tests de bout en bout (rendu WebGL logiciel, un seul worker) sont répartis sur
+# plusieurs machines en parallèle (`--shard`). Le job `frontend` regroupe les résultats :
+# c'est le contrôle exigé par la protection de `main`, son nom ne doit pas changer.
 jobs:
-  frontend:
-    name: frontend
+  verifier:
+    name: formatage, lint, tests unitaires, build
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: frontend
@@ -44,11 +47,65 @@ jobs:
       - name: Build de production
         run: npm run build
 
+  e2e:
+    name: e2e ${{ matrix.shard }}/4
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Installer les dépendances
+        run: npm ci
+
       - name: Installer Chromium pour Playwright
         run: npx playwright install --with-deps chromium
 
-      - name: Tests de bout en bout
-        run: npm run e2e
+      - name: Tests de bout en bout (part ${{ matrix.shard }} sur 4)
+        run: npm run e2e -- --shard=${{ matrix.shard }}/4
+
+      - name: Publier le rapport Playwright
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report-${{ matrix.shard }}
+          path: frontend/playwright-report
+          if-no-files-found: ignore
+          retention-days: 14
+
+  captures:
+    name: captures sous 5 angles
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Installer Chromium pour Playwright
+        run: npx playwright install --with-deps chromium
 
       - name: Captures sous 5 angles
         run: npm run captures
@@ -68,7 +125,25 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: playwright-report
+          name: playwright-report-captures
           path: frontend/playwright-report
           if-no-files-found: ignore
           retention-days: 14
+
+  frontend:
+    name: frontend
+    needs: [verifier, e2e, captures]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Tous les contrôles doivent réussir
+        env:
+          VERIFIER: ${{ needs.verifier.result }}
+          E2E: ${{ needs.e2e.result }}
+          CAPTURES: ${{ needs.captures.result }}
+        run: |
+          echo "vérifications : $VERIFIER ; e2e : $E2E ; captures : $CAPTURES"
+          test "$VERIFIER" = success
+          test "$E2E" = success
+          test "$CAPTURES" = success
