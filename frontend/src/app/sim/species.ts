@@ -149,6 +149,12 @@ export interface SpeciesDefinition {
   readonly tailBeatFrequency: number;
   /** Population par défaut d'un bac. */
   readonly defaultPopulation: number;
+  /**
+   * Population maximale réglable dans le panneau (`sim/population.ts`, issue #69), entier au
+   * moins égal à `defaultPopulation`. Le total de toutes les espèces est en plus borné par
+   * `MAX_TOTAL_FISH`.
+   */
+  readonly maxPopulation: number;
   /** Comportement de banc, ou `null` pour une espèce solitaire. */
   readonly schooling: SchoolingParams | null;
   /** Silhouette de l'apparence par défaut (espèce sans `variants`). */
@@ -198,6 +204,7 @@ export const NEON: SpeciesDefinition = {
   wallMargin: 0.04,
   tailBeatFrequency: 2.5,
   defaultPopulation: 12,
+  maxPopulation: 40,
   schooling: {
     neighborRadius: 0.3,
     separationRadius: 0.05,
@@ -266,6 +273,7 @@ export const GUPPY: SpeciesDefinition = {
   wallMargin: 0.04,
   tailBeatFrequency: 2,
   defaultPopulation: 6,
+  maxPopulation: 20,
   schooling: {
     neighborRadius: 0.25,
     separationRadius: 0.07,
@@ -340,6 +348,7 @@ export const CORYDORA: SpeciesDefinition = {
   wallMargin: 0.03,
   tailBeatFrequency: 2.2,
   defaultPopulation: 6,
+  maxPopulation: 16,
   schooling: {
     neighborRadius: 0.2,
     // Banc lâche (#57) : à ~1 longueur de corps d'écart, les corydoras se fondaient en un
@@ -445,6 +454,9 @@ export function validateSpecies(def: SpeciesDefinition): string[] {
   }
   if (!Number.isInteger(def.defaultPopulation) || def.defaultPopulation < 0) {
     problems.push('defaultPopulation doit être un entier positif ou nul');
+  }
+  if (!Number.isInteger(def.maxPopulation) || !(def.maxPopulation >= def.defaultPopulation)) {
+    problems.push('maxPopulation doit être un entier au moins égal à defaultPopulation');
   }
   if (def.schooling !== null) {
     problems.push(...validateSchooling(def.schooling));

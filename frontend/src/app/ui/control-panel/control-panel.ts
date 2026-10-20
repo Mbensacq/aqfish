@@ -1,7 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 
 import { formatHour, HOUR_SLIDER_STEP, HOURS_PER_DAY, NOON_HOUR } from '../../sim/daylight';
+import { SPECIES_IDS, type PopulationCounts } from '../../sim/population';
 import { DEFAULT_SIM_SPEED, SIM_SPEEDS, type SimSpeed } from '../../sim/sim-speed';
+import { SPECIES, type SpeciesId } from '../../sim/species';
 
 /** Identifiant de la région du panneau (cible de `aria-controls`). */
 export const CONTROL_PANEL_ID = 'panneau-controle';
@@ -38,6 +40,31 @@ export function sliderHour(value: string | number): number | null {
   return Number.isFinite(hour) && hour >= 0 && hour < HOURS_PER_DAY ? hour : null;
 }
 
+/**
+ * Effectif lu dans le champ numérique d'une espèce (une chaîne) : arrondi à l'entier le plus
+ * proche et ramené dans [0, max] ; `null` pour une valeur vide ou non numérique.
+ */
+export function populationInput(value: string | number, max: number): number | null {
+  const count = toNumber(value);
+  if (!Number.isFinite(count)) {
+    return null;
+  }
+  return Math.min(Math.max(Math.round(count), 0), Math.max(0, max));
+}
+
+/** Demande de réglage d'effectif émise par le panneau (#69). */
+export interface PopulationRequest {
+  readonly species: SpeciesId;
+  readonly count: number;
+}
+
+/** Nom d'une espèce au pluriel, en minuscules (« néons », « guppys », « corydoras »). */
+export function speciesPlural(species: SpeciesId): string {
+  return `${SPECIES[species].name.toLowerCase()}s`;
+}
+
+const NO_FISH: PopulationCounts = { neon: 0, guppy: 0, corydora: 0 };
+
 /** Nombre lu dans une valeur de formulaire ; une chaîne vide donne `NaN` (et non 0). */
 function toNumber(value: string | number): number {
   return typeof value === 'string' && value.trim() === '' ? Number.NaN : Number(value);
@@ -45,13 +72,16 @@ function toNumber(value: string | number): number {
 
 /**
  * Panneau de contrôle repliable (issue #52, docs/DA.md, « Interface ») : vitesse de la
- * simulation, heure de la journée et affichage du décor. Fermé par défaut, en haut à gauche
+ * simulation, heure de la journée, affichage du décor et population par espèce (#69). Fermé par défaut, en haut à gauche
  * à côté de l'indicateur du moment de la journée, loin de la barre des préréglages (en bas).
  *
  * Le panneau ne contient aucune logique de simulation : il affiche l'état que l'hôte lui
  * fournit (entrées) et émet les demandes de l'utilisateur (sorties), comme la barre des
- * vues. Il est découpé en sections (`fieldset`) : la population (#69) et l'environnement
- * (#70) viendront s'y ajouter.
+ * vues. Il est découpé en sections (`fieldset`) : l'environnement (#70) viendra s'y ajouter.
+ *
+ * Population : par espèce, un champ numérique (entier de 0 au maximum fourni par l'hôte,
+ * validé à Entrée ou en quittant le champ, réglable aux flèches) entre deux boutons « − » et
+ * « + ». À une borne, le bouton reste focalisable (`aria-disabled`) et sans effet.
  *
  * Clavier : bouton « Réglages » (Entrée ou Espace), puis Tab d'un contrôle à l'autre ; les
  * curseurs se règlent aux flèches. Les raccourcis de la barre des vues sont ignorés tant
@@ -125,6 +155,47 @@ function toNumber(value: string | number): number {
             Afficher le décor
           </label>
         </fieldset>
+
+        <fieldset class="control-panel__section" data-section="population">
+          <legend class="control-panel__legend">Population</legend>
+          @for (id of speciesIds; track id) {
+            <div class="control-panel__count" [attr.data-species]="id">
+              <label class="control-panel__count-label" [for]="'panneau-population-' + id">
+                {{ speciesName(id) }}
+              </label>
+              <button
+                type="button"
+                class="control-panel__step"
+                [attr.aria-label]="'Retirer un ' + speciesName(id).toLowerCase()"
+                [attr.aria-disabled]="population()[id] <= 0"
+                (click)="step(id, -1)"
+              >
+                −
+              </button>
+              <input
+                class="control-panel__number"
+                type="number"
+                inputmode="numeric"
+                min="0"
+                step="1"
+                [id]="'panneau-population-' + id"
+                [attr.aria-label]="'Nombre de ' + plural(id)"
+                [attr.max]="populationMax()[id]"
+                [value]="population()[id]"
+                (change)="onCount(id, $event)"
+              />
+              <button
+                type="button"
+                class="control-panel__step"
+                [attr.aria-label]="'Ajouter un ' + speciesName(id).toLowerCase()"
+                [attr.aria-disabled]="population()[id] >= populationMax()[id]"
+                (click)="step(id, 1)"
+              >
+                +
+              </button>
+            </div>
+          }
+        </fieldset>
       </section>
     }`,
   styleUrl: './control-panel.scss',
@@ -139,6 +210,10 @@ export class ControlPanel {
   readonly clockRunning = input(true);
   /** Vrai si le décor est affiché (fourni par l'hôte). */
   readonly decorVisible = input(true);
+  /** Effectif de chaque espèce (fourni par l'hôte). */
+  readonly population = input<PopulationCounts>(NO_FISH);
+  /** Effectif maximal de chaque espèce, compte tenu des autres (fourni par l'hôte). */
+  readonly populationMax = input<PopulationCounts>(NO_FISH);
 
   /** Vitesse choisie au curseur. */
   readonly speedChanged = output<SimSpeed>();
@@ -148,12 +223,15 @@ export class ControlPanel {
   readonly clockRunningChanged = output<boolean>();
   /** Case « Afficher le décor ». */
   readonly decorVisibleChanged = output<boolean>();
+  /** Effectif demandé pour une espèce (déjà borné à [0, maximum]). */
+  readonly populationChanged = output<PopulationRequest>();
 
   /** Panneau déplié (fermé par défaut : captures et premier regard inchangés). */
   readonly open = signal(false);
 
   protected readonly panelId = CONTROL_PANEL_ID;
   protected readonly speeds = SIM_SPEEDS;
+  protected readonly speciesIds = SPECIES_IDS;
   protected readonly hourStep = HOUR_SLIDER_STEP;
   /** Dernier cran du curseur d'heure : 23:45 (24:00 serait minuit, déjà au cran 0). */
   protected readonly maxHour = HOURS_PER_DAY - HOUR_SLIDER_STEP;
@@ -186,5 +264,35 @@ export class ControlPanel {
 
   protected onDecor(event: Event): void {
     this.decorVisibleChanged.emit((event.target as HTMLInputElement).checked);
+  }
+
+  protected speciesName(id: SpeciesId): string {
+    return SPECIES[id].name;
+  }
+
+  protected plural(id: SpeciesId): string {
+    return speciesPlural(id);
+  }
+
+  /** Bouton « − » ou « + » : sans effet à la borne. */
+  protected step(id: SpeciesId, delta: -1 | 1): void {
+    const count = this.population()[id] + delta;
+    if (count >= 0 && count <= this.populationMax()[id]) {
+      this.populationChanged.emit({ species: id, count });
+    }
+  }
+
+  /**
+   * Champ numérique validé : l'effectif lu (borné) est réécrit dans le champ, pour qu'une
+   * saisie hors bornes ou invalide n'y reste pas si l'effectif ne change pas.
+   */
+  protected onCount(id: SpeciesId, event: Event): void {
+    const field = event.target as HTMLInputElement;
+    const count = populationInput(field.value, this.populationMax()[id]);
+    const current = this.population()[id];
+    field.value = String(count ?? current);
+    if (count !== null && count !== current) {
+      this.populationChanged.emit({ species: id, count });
+    }
   }
 }

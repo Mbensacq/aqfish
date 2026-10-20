@@ -2,6 +2,7 @@ import {
   CAMERA_PRESETS,
   DEFAULT_CAPTURE_PARAMS,
   MAX_CAPTURE_FEEDINGS,
+  MAX_CAPTURE_POPULATION_ENTRIES,
   MAX_CAPTURE_TIME_SECONDS,
   parseCaptureParams,
 } from './capture-params';
@@ -20,6 +21,7 @@ describe('parseCaptureParams', () => {
       filter: null,
       hour: null,
       feedings: [],
+      population: [],
     });
   });
 
@@ -109,5 +111,40 @@ describe('nourrir= (issue #67)', () => {
     expect(parseCaptureParams('?nourrir=').feedings).toEqual([]);
     const many = Array.from({ length: MAX_CAPTURE_FEEDINGS + 5 }, (_, i) => String(i)).join(',');
     expect(parseCaptureParams(`?nourrir=${many}`).feedings).toHaveLength(MAX_CAPTURE_FEEDINGS);
+  });
+});
+
+describe('population= (issue #69)', () => {
+  it('lit les effectifs dans l’ordre de l’URL', () => {
+    expect(
+      parseCaptureParams('?capture=1&population=neon:12,guppy:2,corydora:0').population,
+    ).toEqual([
+      { species: 'neon', count: 12 },
+      { species: 'guppy', count: 2 },
+      { species: 'corydora', count: 0 },
+    ]);
+  });
+
+  it('ignore les entrées mal formées (espèce inconnue gardée : l’application la refuse)', () => {
+    expect(
+      parseCaptureParams(
+        '?population=,neon,neon:,neon:-1,neon:1.5,neon:1e2,Neon:3,neon:3:4,guppy:1000,:4,koi:3,guppy:07',
+      ).population,
+    ).toEqual([
+      { species: 'koi', count: 3 },
+      { species: 'guppy', count: 7 },
+    ]);
+  });
+
+  it('absent ou vide : aucun effectif', () => {
+    expect(parseCaptureParams('?capture=1').population).toEqual([]);
+    expect(parseCaptureParams('?population=').population).toEqual([]);
+  });
+
+  it(`au plus ${MAX_CAPTURE_POPULATION_ENTRIES} entrées`, () => {
+    const many = Array.from({ length: 30 }, () => 'neon:1').join(',');
+    expect(parseCaptureParams(`?population=${many}`).population).toHaveLength(
+      MAX_CAPTURE_POPULATION_ENTRIES,
+    );
   });
 });

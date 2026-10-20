@@ -135,6 +135,60 @@
   }
 }
 
+// Population (#69) : nom, puis « − », champ, « + » alignés à droite.
+.control-panel__count {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+}
+
+.control-panel__count-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.control-panel__step,
+.control-panel__number {
+  box-sizing: border-box;
+  height: 28px;
+  border: 1px solid rgb(232 230 227 / 16%);
+  border-radius: 6px;
+  background: rgb(232 230 227 / 6%);
+  color: inherit;
+  font:
+    600 14px / 1 system-ui,
+    sans-serif;
+
+  &:focus-visible {
+    outline: 2px solid #5fbfa3;
+    outline-offset: 1px;
+  }
+}
+
+.control-panel__step {
+  flex: none;
+  width: 28px;
+  padding: 0;
+  cursor: pointer;
+
+  &[aria-disabled='true'] {
+    opacity: 0.4;
+    cursor: default;
+  }
+}
+
+.control-panel__number {
+  flex: none;
+  width: 48px;
+  padding: 0 4px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .control-panel__toggle {
     transition: none;

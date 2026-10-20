@@ -1,11 +1,15 @@
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 
+import type { PopulationCounts } from '../../sim/population';
 import { SIM_SPEEDS } from '../../sim/sim-speed';
 import {
   CONTROL_PANEL_ID,
   ControlPanel,
+  populationInput,
+  type PopulationRequest,
   sliderHour,
+  speciesPlural,
   speedAt,
   speedIndex,
   speedLabel,
@@ -40,6 +44,26 @@ describe('fonctions du panneau de contrôle', () => {
       expect(sliderHour(value)).toBeNull();
     }
   });
+
+  it('populationInput : entier arrondi et borné à [0, max], null si non numérique', () => {
+    expect(populationInput('12', 40)).toBe(12);
+    expect(populationInput(7, 40)).toBe(7);
+    expect(populationInput('0', 40)).toBe(0);
+    expect(populationInput('2.4', 40)).toBe(2);
+    expect(populationInput('2.6', 40)).toBe(3);
+    expect(populationInput('-3', 40)).toBe(0);
+    expect(populationInput('500', 40)).toBe(40);
+    expect(populationInput('5', -2)).toBe(0);
+    for (const value of ['', ' ', 'abc', 'Infinity', Number.NaN]) {
+      expect(populationInput(value, 40)).toBeNull();
+    }
+  });
+
+  it('speciesPlural : nom de l’espèce au pluriel, en minuscules', () => {
+    expect(speciesPlural('neon')).toBe('néons');
+    expect(speciesPlural('guppy')).toBe('guppys');
+    expect(speciesPlural('corydora')).toBe('corydoras');
+  });
 });
 
 /** Hôte de test : fournit l'état au panneau et note ce qu'il émet. */
@@ -50,6 +74,9 @@ describe('fonctions du panneau de contrôle', () => {
     [hour]="hour()"
     [clockRunning]="running()"
     [decorVisible]="decor()"
+    [population]="population()"
+    [populationMax]="populationMax()"
+    (populationChanged)="requests.push($event)"
     (speedChanged)="events.push(['vitesse', $event])"
     (hourChanged)="events.push(['heure', $event])"
     (clockRunningChanged)="events.push(['auto', $event])"
@@ -62,7 +89,10 @@ class TestHost {
   readonly hour = signal(12);
   readonly running = signal(true);
   readonly decor = signal(true);
+  readonly population = signal<PopulationCounts>({ neon: 12, guppy: 6, corydora: 0 });
+  readonly populationMax = signal<PopulationCounts>({ neon: 40, guppy: 6, corydora: 16 });
   readonly events: [string, number | boolean][] = [];
+  readonly requests: PopulationRequest[] = [];
 }
 
 describe('ControlPanel', () => {
@@ -105,18 +135,20 @@ describe('ControlPanel', () => {
     expect(root().querySelector('section')).toBeNull();
   });
 
-  it('sections extensibles : simulation, journée, décor, chacune avec sa légende', async () => {
+  it('sections extensibles : simulation, journée, décor, population, chacune avec sa légende', async () => {
     await openPanel();
     const sections = [...root().querySelectorAll('fieldset')];
     expect(sections.map((s) => s.getAttribute('data-section'))).toEqual([
       'simulation',
       'journee',
       'decor',
+      'population',
     ]);
     expect(sections.map((s) => s.querySelector('legend')?.textContent?.trim())).toEqual([
       'Simulation',
       'Journée',
       'Décor',
+      'Population',
     ]);
   });
 
@@ -183,7 +215,8 @@ describe('ControlPanel', () => {
   it('chaque contrôle a un nom accessible et est atteignable au clavier (aucun tabindex négatif)', async () => {
     await openPanel();
     const controls = [...root().querySelectorAll<HTMLElement>('button, input')];
-    expect(controls).toHaveLength(5);
+    // 5 contrôles de #52, puis « − », champ et « + » pour chacune des 3 espèces (#69).
+    expect(controls).toHaveLength(5 + 3 * 3);
     for (const control of controls) {
       const name =
         control.getAttribute('aria-label') ??
@@ -193,5 +226,90 @@ describe('ControlPanel', () => {
       expect(control.tabIndex).toBeGreaterThanOrEqual(0);
       expect(control.hasAttribute('disabled')).toBe(false);
     }
+  });
+
+  describe('population (#69)', () => {
+    const field = (plural: string) => byLabel(`Nombre de ${plural}`)!;
+    const button = (label: string) =>
+      root().querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`)!;
+
+    it('un champ numérique par espèce, nommé, avec la valeur et le maximum de l’hôte', async () => {
+      await openPanel();
+      const rows = [
+        ...root().querySelectorAll('[data-section="population"] .control-panel__count'),
+      ];
+      expect(rows.map((r) => r.getAttribute('data-species'))).toEqual([
+        'neon',
+        'guppy',
+        'corydora',
+      ]);
+      expect(rows.map((r) => r.querySelector('label')?.textContent?.trim())).toEqual([
+        'Néon',
+        'Guppy',
+        'Corydora',
+      ]);
+      const neons = field('néons');
+      expect(neons.type).toBe('number');
+      expect(neons.min).toBe('0');
+      expect(neons.max).toBe('40');
+      expect(neons.step).toBe('1');
+      expect(neons.value).toBe('12');
+      // Le libellé visible désigne bien le champ.
+      expect(rows[0].querySelector('label')?.getAttribute('for')).toBe(neons.id);
+      expect(field('guppys').value).toBe('6');
+      expect(field('corydoras').value).toBe('0');
+      fixture.componentInstance.population.set({ neon: 20, guppy: 6, corydora: 0 });
+      await fixture.whenStable();
+      expect(neons.value).toBe('20');
+    });
+
+    it('boutons « − » et « + » : émettent l’effectif voisin', async () => {
+      await openPanel();
+      button('Ajouter un néon').click();
+      button('Retirer un néon').click();
+      button('Ajouter un corydora').click();
+      expect(fixture.componentInstance.requests).toEqual([
+        { species: 'neon', count: 13 },
+        { species: 'neon', count: 11 },
+        { species: 'corydora', count: 1 },
+      ]);
+    });
+
+    it('aux bornes : bouton marqué inactif, focalisable, sans effet', async () => {
+      await openPanel();
+      // Corydoras à 0, guppys au maximum (6).
+      const minus = button('Retirer un corydora');
+      const plus = button('Ajouter un guppy');
+      expect(minus.getAttribute('aria-disabled')).toBe('true');
+      expect(plus.getAttribute('aria-disabled')).toBe('true');
+      expect(button('Ajouter un néon').getAttribute('aria-disabled')).toBe('false');
+      expect(minus.disabled).toBe(false);
+      minus.click();
+      plus.click();
+      expect(fixture.componentInstance.requests).toEqual([]);
+    });
+
+    it('saisie : valeur bornée émise et réécrite ; invalide ou inchangée : rien émis', async () => {
+      await openPanel();
+      const neons = field('néons');
+      neons.value = '25';
+      neons.dispatchEvent(new Event('change'));
+      neons.value = '999';
+      neons.dispatchEvent(new Event('change'));
+      expect(neons.value).toBe('40');
+      neons.value = '2.6';
+      neons.dispatchEvent(new Event('change'));
+      expect(neons.value).toBe('3');
+      neons.value = '';
+      neons.dispatchEvent(new Event('change'));
+      expect(neons.value).toBe('12');
+      neons.value = '12';
+      neons.dispatchEvent(new Event('change'));
+      expect(fixture.componentInstance.requests).toEqual([
+        { species: 'neon', count: 25 },
+        { species: 'neon', count: 40 },
+        { species: 'neon', count: 3 },
+      ]);
+    });
   });
 });

@@ -179,6 +179,7 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
 | `sim/sim-speed.ts` | Vitesse de simulation (#52, ADR 0024) : `SIM_SPEEDS` (0 à ×4), `scaledDt`, `maxStepsForSpeed` |
 | `sim/time-step.ts` | `assertTimeStep` : validation unique d'un pas de temps |
 | `sim/world.ts` | État du monde sérialisable (dont `decor`), `step`, `advance`, `advanceTo`, `advanceInPlace` (boucle d'affichage), `createDefaultWorld` (population et décor par défaut) |
+| `sim/population.ts` | Population réglable (#69, ADR 0025) : `setPopulation` (pure) / `setPopulationInPlace` (hôte), bornes `maxPopulation` par espèce et `MAX_TOTAL_FISH`, `populationCounts`, `populationLimits` |
 | `sim/tank.ts` | Dimensions du bac, volume d'eau, `shrinkBox` (partagés par la simulation et le rendu) |
 | `sim/species.ts` | Définitions déclaratives des espèces (`NEON`, `GUPPY`, `CORYDORA`), apparences (`speciesVariants`, `speciesVariantIndex`, ADR 0013), préférence de profondeur (`depth`, ADR 0014), `validateSpecies` |
 | `sim/swimmer.ts` | Poisson (état sérialisable, sous-générateur en état explicite), nage : errance, banc, évitement, bornes, préférence de profondeur et remontées (ADR 0014) |
@@ -228,14 +229,15 @@ respecter :
 
 | Élément | Règle |
 |---|---|
-| Paramètres d'URL | `capture`, `seed`, `camera`, `time`, et `filtre`, `heure` et `nourrir` facultatifs, lus par `core/capture/capture-params.ts` |
+| Paramètres d'URL | `capture`, `seed`, `camera`, `time`, et `filtre`, `heure`, `nourrir` et `population` facultatifs, lus par `core/capture/capture-params.ts` |
+| `population=` | En capture comme hors capture (#69, ADR 0025) : effectifs `espece:n` séparés par des virgules (`neon:12,guppy:2,corydora:0`), appliqués à t = 0 dans l'ordre de l'URL, bornés par `sim/population.ts`. Entrée mal formée ou espèce inconnue ignorée, 10 au plus. Absent : population par défaut (séries existantes inchangées, à l'octet près) |
 | `nourrir=` | En capture seulement (#67, ADR 0022) : dépôts de nourriture séparés par des virgules, `t` (centre du bac) ou `t:x:z` (temps simulé en s, position en m) ; rejoués au temps simulé de chacun avant le premier rendu (`advanceToWithFeedings`). Entrée invalide ignorée, 20 au plus. Absent : aucun granulé (séries existantes inchangées, à l'octet près) |
 | `filtre=pixel\|aucun` | Force le filtre de rendu (ADR 0010), y compris hors capture où il prime sur le choix mémorisé. Absent en capture : pixel art, quel que soit le choix mémorisé (séries existantes inchangées) |
 | `heure=` | Réel dans [0, 24) (`0` : minuit, `18.5` : 18 h 30) : fige l'heure de la journée simulée (ADR 0018), en capture comme hors capture ; valeur invalide ignorée. Absent en capture : midi figé (séries existantes inchangées, à l'octet près) ; absent hors capture : départ à midi, journée de 1 200 s (20 min) simulées |
 | `capture=1` | Simulation avancée de façon déterministe jusqu'à `time` (pas fixe, sans temps réel), puis figée ; interface masquée ; caméra sur le préréglage `camera` ; `devicePixelRatio` forcé à 1 |
 | Signal « prêt » | Appeler `markCaptureReady()` (`core/capture/capture-ready.ts`) une fois la première image **complète** rendue ; `resetCaptureReady()` si la scène est rechargée. Implémentation : `AquariumHost` lève le signal à l'image qui suit le premier rendu WebGL de taille non nulle, et le retire à sa destruction |
 | Image figée | En mode capture, une seule image est rendue (puis une à chaque redimensionnement) et les contrôles à la souris sont désactivés |
-| Attributs de test | `app-aquarium-host` expose `data-aqfish-camera`, `data-aqfish-target`, `data-aqfish-tick`, `data-aqfish-seed`, `data-aqfish-filter`, `data-aqfish-hour` (heure affichée, 2 décimales), `data-aqfish-hour-frozen` (`true` si l'heure est figée) et `data-aqfish-food` (nombre de granulés, #67) |
+| Attributs de test | `app-aquarium-host` expose `data-aqfish-camera`, `data-aqfish-target`, `data-aqfish-tick`, `data-aqfish-seed`, `data-aqfish-filter`, `data-aqfish-hour` (heure affichée, 2 décimales), `data-aqfish-hour-frozen` (`true` si l'heure est figée) `data-aqfish-food` (nombre de granulés, #67) et `data-aqfish-population` (effectifs `neon:12,guppy:6,corydora:6`, #69) |
 | Hors capture | Le signal « prêt » est aussi émis après la première image complète (le test de démarrage l'attend) |
 | Erreurs | Aucune erreur de page ne doit survenir (le harnais et le test de démarrage échouent sinon) |
 | Tracé de trajectoires | En plus des angles, `trajectoires-top.png` : trajectoires vues de dessus sur `CAPTURE_TRACE_TIME` s simulées (60 par défaut, même graine), calculées avec la simulation pure (`sim/trajectory.ts`) et dessinées en SVG hors de l'application (issue #43). Preuve d'un comportement de nage qu'une image figée ne montre pas |

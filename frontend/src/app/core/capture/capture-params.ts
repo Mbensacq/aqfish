@@ -16,6 +16,12 @@
  * en secondes, position en mètres dans le repère du bac). Exemple : `nourrir=10,25:0.2:0.05`.
  * Les entrées invalides sont ignorées ; absent, aucun dépôt (séries existantes inchangées).
  *
+ * Paramètre facultatif `population=` (issue #69) : effectifs par espèce, appliqués à t = 0
+ * dans l'ordre donné (`sim/population.ts`, bornes comprises), séparés par des virgules ;
+ * chacun `espece:n` (n entier). Exemple : `population=neon:12,guppy:2,corydora:0`. Entrées
+ * mal formées ignorées ici, espèces inconnues ignorées par l'application ; absent, population
+ * par défaut (séries existantes inchangées).
+ *
  * Ce module est volontairement pur (aucune dépendance à Angular ni à Three.js).
  * Voir docs/ARCHITECTURE.md, section « Contrat de capture ».
  */
@@ -41,7 +47,21 @@ export interface CaptureParams {
   readonly hour: number | null;
   /** Dépôts de nourriture demandés par `nourrir=` (vide si absent). */
   readonly feedings: readonly CaptureFeeding[];
+  /** Effectifs demandés par `population=`, dans l'ordre de l'URL (vide si absent). */
+  readonly population: readonly CapturePopulation[];
 }
+
+/**
+ * Effectif d'une espèce demandé par `population=`. L'espèce n'est pas vérifiée ici (module
+ * sans dépendance à la simulation) : l'application ignore une espèce inconnue.
+ */
+export interface CapturePopulation {
+  readonly species: string;
+  readonly count: number;
+}
+
+/** Nombre maximal d'entrées lues dans `population=` (les suivantes sont ignorées). */
+export const MAX_CAPTURE_POPULATION_ENTRIES = 10;
 
 /** Dépôt de nourriture du contrat de capture : temps simulé (s) et position (m). */
 export interface CaptureFeeding {
@@ -61,6 +81,7 @@ export const DEFAULT_CAPTURE_PARAMS: CaptureParams = {
   filter: null,
   hour: null,
   feedings: [],
+  population: [],
 };
 
 /** Temps de simulation maximal accepté (1 h), pour éviter un calcul démesuré. */
@@ -81,6 +102,7 @@ export function parseCaptureParams(search: string): CaptureParams {
     filter: parseFilter(params.get('filtre')),
     hour: parseHour(params.get('heure')),
     feedings: parseFeedings(params.get('nourrir')),
+    population: parsePopulation(params.get('population')),
   };
 }
 
@@ -154,4 +176,26 @@ function parseFeedings(raw: string | null): readonly CaptureFeeding[] {
     }
   }
   return feedings;
+}
+
+/** Entrée `espece:n` : identifiant en minuscules, effectif entier de 1 à 3 chiffres. */
+const POPULATION_PATTERN = /^([a-z]+):(\d{1,3})$/;
+
+/** Effectifs `espece:n` séparés par des virgules ; entrée mal formée : ignorée. */
+function parsePopulation(raw: string | null): readonly CapturePopulation[] {
+  if (raw === null) {
+    return [];
+  }
+  const entries: CapturePopulation[] = [];
+  for (const entry of raw.split(',')) {
+    const match = POPULATION_PATTERN.exec(entry);
+    if (match === null) {
+      continue;
+    }
+    entries.push({ species: match[1], count: Number(match[2]) });
+    if (entries.length === MAX_CAPTURE_POPULATION_ENTRIES) {
+      break;
+    }
+  }
+  return entries;
 }
