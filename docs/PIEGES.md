@@ -48,6 +48,22 @@ haut de sa section.
 
 ## Tests
 
+- **Hauteur de texte différente en CI : `system-ui` n'est pas la même police** (cycle 34,
+  #79) : dans l'environnement des agents, `system-ui` donne **Inter** ; sur le runner
+  `ubuntu-latest`, **DejaVu Sans**, plus large (plus de retours à la ligne). Le panneau
+  « Commandes » mesurait 608 px en local et 641 px en CI : e2e vert en local, rouge en CI.
+  Pour mesurer comme la CI, imposer la police (`page.addStyleTag` avec
+  `font-family: 'DejaVu Sans' !important`, installée dans les deux environnements) :
+  `e2e/cadrage-panneaux.spec.ts` le fait. Pour la même raison, la capture `front-panneau`
+  (seule avec du texte) ne peut pas être comparée à l'octet entre local et CI. (2026-10-20)
+- **Panneau d'interface rogné en bas, trouvé tard** (cycles 31 à 34, #101, #79) : chaque
+  panneau a sa hauteur maximale (réserve de la barre des préréglages) et défile au-delà ;
+  ajouter une ligne ou une section le fait déborder sans qu'aucun test unitaire ne le voie.
+  `e2e/cadrage-panneaux.spec.ts` contrôle chaque panneau de `PANELS` à 1280 × 720 et
+  390 × 844 (dans la fenêtre, sans recouvrir la barre) ; **tout nouveau panneau s'y ajoute**.
+  Le panneau « Commandes » doit en plus tenir sans défiler à 1280 × 720 : marge de 51 px
+  au cycle 34 (contenu 581 px pour 632 px permis, lignes en 12 px, interligne 1,25). Sous
+  480 px, la barre passe sur deux lignes : réserver ~120 px en bas, pas 76. (2026-10-20)
 - **E2e qui compte un état que la simulation consomme** (cycle 33, #94) : « nourrir 19 fois
   puis attendre `MAX_FOOD` » échouait sur machine chargée, car les poissons mangeaient entre
   deux appuis (chaque appui coûte plusieurs secondes en rendu logiciel). Mettre la

@@ -6,8 +6,9 @@
   right: 12px;
   z-index: 1;
   color: #e8e6e3;
+  // Interligne resserré (1,25) : à 1280 × 720, tout le panneau tient sans défiler (#79).
   font:
-    400 13px / 1.3 system-ui,
+    400 13px / 1.25 system-ui,
     sans-serif;
 }
 
@@ -16,6 +17,8 @@
   width: 300px;
   max-width: calc(100vw - 24px);
   // Ne jamais descendre jusqu'à la barre des préréglages (bas : 16 px + ~42 px de haut).
+  // À 1280 × 720, le contenu tient entier sous cette hauteur, section « Aide » comprise
+  // (#79, `e2e/cadrage-panneaux.spec.ts`) : ajouter des lignes peut de nouveau le rogner.
   max-height: calc(100vh - 12px - 76px);
   overflow-y: auto;
   padding: 8px 12px 10px;
@@ -47,7 +50,7 @@
 }
 
 .commands-help__group {
-  margin: 8px 0 2px;
+  margin: 6px 0 1px;
   color: #5fbfa3;
   font-size: 11px;
   font-weight: 600;
@@ -56,11 +59,14 @@
 }
 
 // Une grille par groupe : la colonne des touches et gestes prend la largeur du plus long.
+// Lignes en 12 px (titres en 13-14 px) : à 1280 × 720, le panneau tient sans défiler même
+// avec une police plus large qu'Inter, comme DejaVu Sans en CI (#79, docs/PIEGES.md).
 .commands-help__list {
   display: grid;
+  font-size: 12px;
   grid-template-columns: max-content minmax(0, 1fr);
   column-gap: 12px;
-  row-gap: 2px;
+  row-gap: 1px;
   margin: 0;
 }
 
@@ -154,7 +160,9 @@
   .commands-help {
     width: 280px;
     max-width: calc(100vw - 16px);
-    max-height: calc(100vh - 8px - 76px);
+    // Barre des préréglages sur deux lignes sous 480 px (bas : 16 px + deux lignes de
+    // ~40 px, plus un écart), comme le panneau de réglages.
+    max-height: calc(100vh - 8px - 120px);
     // Ouvert à la demande, par-dessus une bonne part du bac : fond presque opaque.
     background: rgb(20 20 24 / 95%);
     opacity: 1;

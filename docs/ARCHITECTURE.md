@@ -181,6 +181,7 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
 | `core/save-storage/save-storage.ts` | Stockage de la sauvegarde automatique (#70, ADR 0028) : texte opaque sous `aqfish.sauvegarde`, lecture et écriture tolérantes, état `active` / `indisponible` / `plein` |
 | `core/random/prng.ts` | PRNG mulberry32 à graine, dérivation de sous-générateurs par entité |
 | `core/commands/commands.ts` | Source unique des commandes (ADR 0020) : raccourcis clavier `KEY_COMMANDS` (`keyCommandFor`, `commandKey`), gestes de la caméra `ORBIT_MOUSE_BUTTONS` / `ORBIT_TOUCHES` et leurs libellés (`orbitGestures`), aide-mémoire `helpSections()` |
+| `core/keyboard/keyboard.ts` | Règles communes des gestionnaires de raccourcis (#79) : `isTypingContext` (touche laissée au navigateur si une touche de modification est enfoncée ou si le focus est dans un champ de saisie), importé par `ui/view-presets-bar` et `ui/commands-help` |
 | `sim/constants.ts` | `SIM_DT`, `MAX_STEPS_PER_FRAME` |
 | `sim/fixed-step.ts` | Accumulateur de la boucle à pas fixe (`fixedStep`, pure ; `fixedStepInto`, sans allocation) |
 | `sim/sim-speed.ts` | Vitesse de simulation (#52, ADR 0024) : `SIM_SPEEDS` (0 à ×4), `scaledDt`, `maxStepsForSpeed` |
