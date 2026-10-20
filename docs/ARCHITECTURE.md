@@ -181,6 +181,7 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
 | `sim/world.ts` | État du monde sérialisable (dont `decor`), `step`, `advance`, `advanceTo`, `advanceInPlace` (boucle d'affichage), `createDefaultWorld` (population et décor par défaut) |
 | `sim/population.ts` | Population réglable (#69, ADR 0025) : `setPopulation` (pure) / `setPopulationInPlace` (hôte), bornes `maxPopulation` par espèce et `MAX_TOTAL_FISH`, `populationCounts`, `populationLimits` |
 | `sim/tank.ts` | Dimensions du bac, volume d'eau, `shrinkBox` (partagés par la simulation et le rendu) |
+| `sim/environment.ts` | Environnements en données (#87, ADR 0026) : bac tropical et bassin (dimensions, teintes de l'eau et du sol en noms de la palette, bordure, vue par défaut, bulles, caustiques, décor et population de départ) ; `World.environment` choisit le volume d'eau des bornes de nage et des dépôts |
 | `sim/species.ts` | Définitions déclaratives des espèces (`NEON`, `GUPPY`, `CORYDORA`), apparences (`speciesVariants`, `speciesVariantIndex`, ADR 0013), préférence de profondeur (`depth`, ADR 0014), `validateSpecies` |
 | `sim/swimmer.ts` | Poisson (état sérialisable, sous-générateur en état explicite), nage : errance, banc, évitement, bornes, préférence de profondeur et remontées (ADR 0014) |
 | `sim/flocking.ts` | Banc : séparation, alignement, cohésion, pilotage en deux phases, espacement minimal (ADR 0011) |
@@ -199,7 +200,8 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
 | `render/pixel-art.ts` | `PIXEL_SIZE`, taille de la cible basse résolution, couleur la plus proche avec pénalités facultatives (fonctions pures, même métrique que le shader) |
 | `render/palette-pass.ts` | Cible basse résolution et passe plein écran palette (`ShaderMaterial`) ; libération |
 | `render/camera-presets.ts` | Dimensions du bac, préréglages de caméra, interpolation des transitions (fonctions pures) |
-| `render/aquarium-scene.ts` | Scène statique : sable, eau, verre, arêtes, lumières ; `setDaylight` (intensité et teinte des lumières, teinte de l'eau entre couleurs de la palette, ADR 0018) ; libération |
+| `render/stone-border.ts` | Margelle de pierre du bassin (#87) : anneau de blocs à joints sombres, hauteurs selon un motif fixe (`stoneBorderBlocks`, pur et testé) ; lueur de nuit `rocheLuneSombre` pour rester lisible |
+| `render/aquarium-scene.ts` | Scène statique d'un environnement (ADR 0026) : sol, eau aux teintes de l'environnement, verre et arêtes ou margelle, lumières ; `setDaylight` (intensité et teinte des lumières, teinte de l'eau entre couleurs de la palette, ADR 0018) ; libération |
 | `render/fish-model.ts` | Modèles voxel des poissons générés depuis un gabarit de profil par silhouette (`SILHOUETTES`, ADR 0009 et 0013) |
 | `render/fish-layer.ts` | `InstancedMesh` corps et queue par espèce, interpolation entre deux pas, ondulation ; `AquariumView` en crée une par apparence de chaque entrée de `SPECIES` (ADR 0013) |
 | `render/rock-model.ts` | Maillage voxel générique (`buildVoxelMesh`) et maillage d'un rocher (couleurs plates de la palette), normales lissées de sa coque de contour (ADR 0015) |
@@ -229,7 +231,8 @@ respecter :
 
 | Élément | Règle |
 |---|---|
-| Paramètres d'URL | `capture`, `seed`, `camera`, `time`, et `filtre`, `heure`, `nourrir` et `population` facultatifs, lus par `core/capture/capture-params.ts` |
+| Paramètres d'URL | `capture`, `seed`, `camera`, `time`, et `filtre`, `heure`, `nourrir`, `population` et `environnement` facultatifs, lus par `core/capture/capture-params.ts` |
+| `environnement=` | En capture comme hors capture (#87, ADR 0026) : `tropical` ou `bassin` ; inconnu ou absent : bac tropical (séries existantes inchangées, à l'octet près). Sans `camera=`, vue par défaut de l'environnement (`top` pour le bassin) |
 | `population=` | En capture comme hors capture (#69, ADR 0025) : effectifs `espece:n` séparés par des virgules (`neon:12,guppy:2,corydora:0`), appliqués à t = 0 dans l'ordre de l'URL, bornés par `sim/population.ts`. Entrée mal formée ou espèce inconnue ignorée, 10 au plus. Absent : population par défaut (séries existantes inchangées, à l'octet près) |
 | `nourrir=` | En capture seulement (#67, ADR 0022) : dépôts de nourriture séparés par des virgules, `t` (centre du bac) ou `t:x:z` (temps simulé en s, position en m) ; rejoués au temps simulé de chacun avant le premier rendu (`advanceToWithFeedings`). Entrée invalide ignorée, 20 au plus. Absent : aucun granulé (séries existantes inchangées, à l'octet près) |
 | `filtre=pixel\|aucun` | Force le filtre de rendu (ADR 0010), y compris hors capture où il prime sur le choix mémorisé. Absent en capture : pixel art, quel que soit le choix mémorisé (séries existantes inchangées) |
@@ -237,7 +240,7 @@ respecter :
 | `capture=1` | Simulation avancée de façon déterministe jusqu'à `time` (pas fixe, sans temps réel), puis figée ; interface masquée ; caméra sur le préréglage `camera` ; `devicePixelRatio` forcé à 1 |
 | Signal « prêt » | Appeler `markCaptureReady()` (`core/capture/capture-ready.ts`) une fois la première image **complète** rendue ; `resetCaptureReady()` si la scène est rechargée. Implémentation : `AquariumHost` lève le signal à l'image qui suit le premier rendu WebGL de taille non nulle, et le retire à sa destruction |
 | Image figée | En mode capture, une seule image est rendue (puis une à chaque redimensionnement) et les contrôles à la souris sont désactivés |
-| Attributs de test | `app-aquarium-host` expose `data-aqfish-camera`, `data-aqfish-target`, `data-aqfish-tick`, `data-aqfish-seed`, `data-aqfish-filter`, `data-aqfish-hour` (heure affichée, 2 décimales), `data-aqfish-hour-frozen` (`true` si l'heure est figée) `data-aqfish-food` (nombre de granulés, #67) et `data-aqfish-population` (effectifs `neon:12,guppy:6,corydora:6`, #69) |
+| Attributs de test | `app-aquarium-host` expose `data-aqfish-camera`, `data-aqfish-target`, `data-aqfish-tick`, `data-aqfish-seed`, `data-aqfish-filter`, `data-aqfish-hour` (heure affichée, 2 décimales), `data-aqfish-hour-frozen` (`true` si l'heure est figée) `data-aqfish-food` (nombre de granulés, #67) `data-aqfish-population` (effectifs `neon:12,guppy:6,corydora:6`, #69) et `data-aqfish-environment` (`tropical` ou `bassin`, #87) |
 | Hors capture | Le signal « prêt » est aussi émis après la première image complète (le test de démarrage l'attend) |
 | Erreurs | Aucune erreur de page ne doit survenir (le harnais et le test de démarrage échouent sinon) |
 | Tracé de trajectoires | En plus des angles, `trajectoires-top.png` : trajectoires vues de dessus sur `CAPTURE_TRACE_TIME` s simulées (60 par défaut, même graine), calculées avec la simulation pure (`sim/trajectory.ts`) et dessinées en SVG hors de l'application (issue #43). Preuve d'un comportement de nage qu'une image figée ne montre pas |
