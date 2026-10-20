@@ -140,6 +140,35 @@ test.describe('Sauvegarde (#70)', () => {
     expect(errors).toEqual([]);
   });
 
+  // #101 : à 1280 × 720 (capture `front-panneau`), les boutons étaient rognés au bas du
+  // panneau et demandaient un défilement. Ils doivent tenir entiers sans défiler, et le
+  // panneau rester au-dessus de la barre des préréglages (à 390 px aussi, avec défilement).
+  for (const [width, height] of [
+    [1280, 720],
+    [390, 844],
+  ] as const) {
+    test(`${width} × ${height} : panneau au-dessus de la barre ; à 1280, boutons entiers sans défiler`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width, height });
+      const errors = await open(page, '?seed=42');
+      await openPanel(page);
+      const panel = page.locator('.control-panel');
+      const panelBox = (await panel.boundingBox())!;
+      const barBox = (await page.locator('.view-presets-bar').boundingBox())!;
+      expect(panelBox.y + panelBox.height).toBeLessThanOrEqual(barBox.y);
+      if (width === 1280) {
+        expect(await panel.evaluate((el) => el.scrollTop)).toBe(0);
+        for (const button of [exportButton(page), importButton(page)]) {
+          const box = (await button.boundingBox())!;
+          expect(box.y).toBeGreaterThanOrEqual(panelBox.y);
+          expect(box.y + box.height).toBeLessThanOrEqual(panelBox.y + panelBox.height);
+        }
+      }
+      expect(errors).toEqual([]);
+    });
+  }
+
   test('boutons atteignables au clavier et lisibles à 390 px', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await open(page);
