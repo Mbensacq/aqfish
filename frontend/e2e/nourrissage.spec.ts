@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-import { FOOD_COLOR } from '../src/app/render/food-layer';
+import { FOOD_COLOR, FOOD_OUTLINE_COLOR } from '../src/app/render/food-layer';
 import { CAMERA_FOV_DEG } from '../src/app/render/camera-presets';
 import { FOOD_PER_DROP, MAX_FOOD } from '../src/app/sim/food';
 import { advanceToWithFeedings, createDefaultWorld } from '../src/app/sim/world';
@@ -156,6 +156,7 @@ test.describe('Nourrissage (#67)', () => {
     const query = '?capture=1&seed=42&camera=three-quarter&time=30';
     await openScene(page, query);
     const without = await countColor(page, FOOD_COLOR);
+    const outlineWithout = await countColor(page, FOOD_OUTLINE_COLOR);
 
     await openScene(page, `${query}&nourrir=10,25`);
     // Les poissons mangent (#68) : le compte attendu est celui de la simulation pure, avec les
@@ -170,6 +171,9 @@ test.describe('Nourrissage (#67)', () => {
     const withFood = await countColor(page, FOOD_COLOR);
     // Au moins quelques granulés de 2 × 2 pixels de scène (3 pixels CSS par pixel de scène).
     expect(withFood - without).toBeGreaterThanOrEqual(4 * 9);
+    // Chaque granulé est cerné d'un liseré sombre d'un pixel de scène (#83).
+    const outlineWithFood = await countColor(page, FOOD_OUTLINE_COLOR);
+    expect(outlineWithFood - outlineWithout).toBeGreaterThanOrEqual(12 * 9);
 
     await openScene(page, `${query}&nourrir=10,25`);
     expect((await page.screenshot({ animations: 'disabled' })).equals(first)).toBe(true);

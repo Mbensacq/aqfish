@@ -238,6 +238,18 @@ haut de sa section.
   `sizeAttenuation: false` donne une taille en pixels de la surface de rendu : 1 pixel de
   scène en pixel art, mais 1 pixel d'écran sans filtre. Multiplier par
   `PIXEL_SIZE × pixelRatio` en mode `aucun` (`render/bubble-layer.ts`). (2026-10-19)
+- **Point posé sur une surface vue en biais** (cycle 27) : un point est un carré à l'écran
+  mais n'a qu'une profondeur, celle de son centre. Posé sur le sable ou un rocher, la
+  surface passe devant sa moitié basse et le cache (un granulé de 4 pixels réduit à un
+  trait). Avancer le point le long du rayon de vue dans le shader (`withDepthBias`,
+  `render/food-layer.ts`) : position et taille à l'écran inchangées, profondeur seule
+  corrigée. Le décalage doit rester petit (2,5 cm) : tout objet plus proche ne cache plus
+  le point. (2026-10-20)
+- **Liseré d'un nuage de points** : un second `Points` sur la même géométrie, plus grand de
+  2 pixels, en couleur sombre et dessiné juste avant (`renderOrder` inférieur) ; le test de
+  profondeur garde l'ordre entre points. Une couleur de point qui, assombrie la nuit,
+  retombe sur celle d'un animal assombri devient indiscernable : vérifier la couleur de nuit
+  ramenée à la palette étendue (`nearestPaletteIndex`). (2026-10-20)
 - **Contour en coque gonflée sur des voxels** (cycle 15) : gonfler la coque selon les
   normales des faces l'ouvre aux arêtes (faces disjointes). Utiliser des normales lissées
   (moyenne des faces au même sommet, `render/rock-model.ts`) et un décalage en pixels de la
