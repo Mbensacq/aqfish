@@ -12,12 +12,14 @@ import {
   AquariumHost,
   CAMERA_ATTRIBUTE,
   CAMERA_TARGET_ATTRIBUTE,
+  DECOR_ATTRIBUTE,
   FILTER_ATTRIBUTE,
   FOOD_ATTRIBUTE,
   HOUR_ATTRIBUTE,
   HOUR_FROZEN_ATTRIBUTE,
   initialDayClock,
   SEED_ATTRIBUTE,
+  SPEED_ATTRIBUTE,
   TICK_ATTRIBUTE,
 } from './aquarium-host';
 
@@ -605,6 +607,134 @@ describe('AquariumHost', () => {
       fixture.destroy();
       expect(host().hour).toBeNull();
       host().toggleClock();
+    });
+  });
+
+  describe('panneau de contrôle (#52)', () => {
+    const host = () => fixture.componentInstance;
+    const attr = (name: string) => (fixture.nativeElement as HTMLElement).getAttribute(name);
+    /** Avance de `seconds` secondes réelles, image par image à 60 Hz, depuis `from` ms. */
+    function run(seconds: number, from = 0): number {
+      const frames60 = Math.round(seconds * 60);
+      for (let i = 1; i <= frames60; i++) {
+        frames.flush(from + (i * 1000) / 60);
+      }
+      return from + seconds * 1000;
+    }
+
+    it('vitesse 0 : le monde s’arrête, le rendu continue ; ×1 reprend', async () => {
+      await create();
+      setCanvasSize(800, 600);
+      frames.flush(0);
+      expect(host().speed()).toBe(1);
+      expect(attr(SPEED_ATTRIBUTE)).toBe('1');
+      let now = run(0.5);
+      expect(host().world?.tick).toBe(30);
+      host().setSpeed(0);
+      expect(attr(SPEED_ATTRIBUTE)).toBe('0');
+      const renders = renderers[0].renders;
+      const hour = host().hour;
+      now = run(1, now);
+      expect(host().world?.tick).toBe(30);
+      expect(host().hour).toBe(hour);
+      expect(renderers[0].renders).toBe(renders + 60);
+      host().setSpeed(1);
+      run(0.5, now);
+      expect(host().world?.tick).toBe(60);
+    }, 15_000);
+
+    it('vitesse ×2 et ×0,5 : deux fois plus et deux fois moins de pas, même pas fixe', async () => {
+      await create();
+      setCanvasSize(800, 600);
+      frames.flush(0);
+      host().setSpeed(2);
+      let now = run(1);
+      expect(host().world?.tick).toBe(120);
+      host().setSpeed(0.5);
+      now = run(1, now);
+      expect(host().world?.tick).toBe(150);
+      // ×4 : la caméra suit toujours le temps réel (transition non accélérée).
+      host().setSpeed(4);
+      run(0.25, now);
+      expect(host().world?.tick).toBe(210);
+    }, 15_000);
+
+    it('vitesse invalide, en capture ou avant le démarrage : sans effet', async () => {
+      // Avant le démarrage (aucune image encore rendue, pas de monde).
+      const early = TestBed.createComponent(AquariumHost);
+      early.componentInstance.setSpeed(0);
+      early.componentInstance.setDecorVisible(false);
+      expect(early.componentInstance.speed()).toBe(1);
+      expect(early.componentInstance.decorVisible()).toBe(true);
+      early.destroy();
+      await create();
+      host().setSpeed(3);
+      host().setSpeed(Number.NaN);
+      expect(host().speed()).toBe(1);
+      fixture.destroy();
+      await create('?capture=1&time=1');
+      host().setSpeed(0);
+      expect(host().speed()).toBe(1);
+      expect(attr(SPEED_ATTRIBUTE)).toBe('1');
+    });
+
+    it('heure du panneau : quart d’heure de l’éclairage, horloge figée puis remise en marche', async () => {
+      await create();
+      setCanvasSize(800, 600);
+      frames.flush(0);
+      expect(host().clockHour()).toBe(12);
+      expect(host().clockFrozen()).toBe(false);
+      host().freezeClockAt(14.5);
+      const now = run(0.1);
+      expect(host().clockHour()).toBe(14.5);
+      expect(host().clockFrozen()).toBe(true);
+      host().setClockRunning(false); // déjà figée : rien ne change
+      expect(host().clockFrozen()).toBe(true);
+      host().setClockRunning(true);
+      expect(host().clockFrozen()).toBe(false);
+      expect(attr('data-aqfish-hour-frozen')).toBe('false');
+      host().setClockRunning(true); // déjà en marche
+      expect(host().clockFrozen()).toBe(false);
+      // 2,5 s réelles à ×4 = 10 s simulées = 0,2 h : 14:42 ⇒ quart d’heure 14:45.
+      host().setSpeed(4);
+      run(2.5, now);
+      expect(host().hour).toBeCloseTo(14.7, 2);
+      expect(host().clockHour()).toBe(14.75);
+      host().setClockRunning(false);
+      expect(host().clockFrozen()).toBe(true);
+    }, 15_000);
+
+    it('heure= : clockFrozen vrai dès le démarrage', async () => {
+      await create('?heure=6');
+      expect(host().clockFrozen()).toBe(true);
+      setCanvasSize(800, 600);
+      frames.flush(0);
+      expect(host().clockHour()).toBe(6);
+    });
+
+    it('décor : masqué puis réaffiché, exposé dans data-aqfish-decor ; sans effet en capture', async () => {
+      await create();
+      setCanvasSize(800, 600);
+      frames.flush(0);
+      expect(attr(DECOR_ATTRIBUTE)).toBe('true');
+      const world = host().world;
+      host().setDecorVisible(false);
+      expect(host().decorVisible()).toBe(false);
+      expect(attr(DECOR_ATTRIBUTE)).toBe('false');
+      // La simulation n'est pas touchée : le décor reste un obstacle.
+      expect(host().world).toBe(world);
+      expect(host().world?.obstacles.length).toBeGreaterThan(0);
+      host().setDecorVisible(true);
+      expect(attr(DECOR_ATTRIBUTE)).toBe('true');
+      fixture.destroy();
+      await create('?capture=1');
+      setCanvasSize(800, 600);
+      frames.flush(0);
+      const renders = renderers.at(-1)!.renders;
+      host().setDecorVisible(false);
+      expect(host().decorVisible()).toBe(true);
+      frames.flush(1000);
+      expect(renderers.at(-1)!.renders).toBe(renders);
     });
   });
 

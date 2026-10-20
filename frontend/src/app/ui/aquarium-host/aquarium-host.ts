@@ -39,10 +39,18 @@ import {
   freezeClockAt,
   hourAt,
   lightAtInto,
+  snapHour,
   toggleClock,
   type DayClock,
 } from '../../sim/daylight';
 import { fixedStepInto, type FixedStepState } from '../../sim/fixed-step';
+import {
+  DEFAULT_SIM_SPEED,
+  isSimSpeed,
+  maxStepsForSpeed,
+  scaledDt,
+  type SimSpeed,
+} from '../../sim/sim-speed';
 import {
   advanceInPlace,
   advanceToWithFeedings,
@@ -76,6 +84,11 @@ export const FOOD_ATTRIBUTE = 'data-aqfish-food';
 export const HOUR_ATTRIBUTE = 'data-aqfish-hour';
 /** Attribut du composant hôte : `true` si l'heure est figée, `false` sinon. */
 export const HOUR_FROZEN_ATTRIBUTE = 'data-aqfish-hour-frozen';
+
+/** Attribut du composant hôte exposant la vitesse de simulation (#52). */
+export const SPEED_ATTRIBUTE = 'data-aqfish-speed';
+/** Attribut du composant hôte : `true` si le décor est affiché, `false` sinon (#52). */
+export const DECOR_ATTRIBUTE = 'data-aqfish-decor';
 
 /**
  * Écart d'heure minimal (en heures) avant de recalculer l'éclairage : 0,01 h, soit 0,5 s
@@ -180,6 +193,22 @@ export class AquariumHost {
    */
   readonly dayPhase = signal<DayPhase>(dayPhaseAt(DEFAULT_START_HOUR));
 
+  /**
+   * Heure affichée par le panneau de contrôle (#52), arrondie au quart d'heure : mise à jour
+   * avec l'éclairage et ne notifie qu'au changement de quart d'heure (toutes les 12,5 s
+   * réelles à vitesse ×1), jamais à chaque image.
+   */
+  readonly clockHour = signal<number>(DEFAULT_START_HOUR);
+
+  /** Vrai si l'heure est figée (curseur, touches `H`, `J`, `N`, `heure=`, mode capture). */
+  readonly clockFrozen = signal(false);
+
+  /** Vitesse de simulation (#52) : multiplie le temps réel versé à la boucle à pas fixe. */
+  readonly speed = signal<SimSpeed>(DEFAULT_SIM_SPEED);
+
+  /** Décor (rochers et plantes) affiché (#52). Il reste un obstacle pour les poissons. */
+  readonly decorVisible = signal(true);
+
   /** État courant de la simulation (`null` avant le démarrage et après la destruction). */
   get world(): World | null {
     return this.currentWorld;
@@ -248,7 +277,47 @@ export class AquariumHost {
     }
     this.dayClock = toggleClock(this.dayClock, this.renderTime());
     this.litHour = null;
-    this.host.nativeElement.setAttribute(HOUR_FROZEN_ATTRIBUTE, String(this.dayClock.frozen));
+    this.exposeClockFrozen();
+    this.scheduleFrame();
+  }
+
+  /**
+   * Remet l'heure en marche (`true`) ou la fige (`false`) : case « Heure automatique » du
+   * panneau de contrôle (#52). Sans effet si l'horloge est déjà dans l'état demandé.
+   */
+  setClockRunning(running: boolean): void {
+    if (this.currentWorld && running === this.dayClock.frozen) {
+      this.toggleClock();
+    }
+  }
+
+  /**
+   * Change la vitesse de simulation (#52) : le pas fixe ne change pas, seul le temps réel
+   * versé à la boucle est multiplié. À 0, le monde ne bouge plus mais le rendu continue.
+   * Sans effet en mode capture (le monde y est figé), avant le démarrage, ou pour une
+   * vitesse hors de `SIM_SPEEDS`.
+   */
+  setSpeed(speed: number): void {
+    if (!this.currentWorld || this.capture || !isSimSpeed(speed)) {
+      return;
+    }
+    this.speed.set(speed);
+    this.host.nativeElement.setAttribute(SPEED_ATTRIBUTE, String(speed));
+  }
+
+  /**
+   * Affiche ou masque le décor (#52) sans le détruire. La simulation n'est pas touchée :
+   * rochers et plantes restent des obstacles (ADR 0024). Sans effet en mode capture ou
+   * avant le démarrage.
+   */
+  setDecorVisible(visible: boolean): void {
+    const view = this.view;
+    if (!view || this.capture) {
+      return;
+    }
+    view.setDecorVisible(visible);
+    this.decorVisible.set(visible);
+    this.host.nativeElement.setAttribute(DECOR_ATTRIBUTE, String(visible));
     this.scheduleFrame();
   }
 
@@ -263,7 +332,7 @@ export class AquariumHost {
     }
     this.dayClock = freezeClockAt(this.dayClock, hour);
     this.litHour = null;
-    this.host.nativeElement.setAttribute(HOUR_FROZEN_ATTRIBUTE, 'true');
+    this.exposeClockFrozen();
     this.scheduleFrame();
   }
 
@@ -313,7 +382,9 @@ export class AquariumHost {
       ? advanceToWithFeedings(world, params.time, params.feedings)
       : world;
     this.dayClock = initialDayClock(params.hour, params.capture);
-    this.host.nativeElement.setAttribute(HOUR_FROZEN_ATTRIBUTE, String(this.dayClock.frozen));
+    this.exposeClockFrozen();
+    this.host.nativeElement.setAttribute(SPEED_ATTRIBUTE, String(this.speed()));
+    this.host.nativeElement.setAttribute(DECOR_ATTRIBUTE, String(this.decorVisible()));
     this.host.nativeElement.setAttribute(SEED_ATTRIBUTE, String(this.currentWorld.seed));
     this.exposeTick();
     this.exposeFood();
@@ -422,6 +493,7 @@ export class AquariumHost {
       this.litHour = hour;
       view.updateLight(lightAtInto(hour, this.light));
       this.dayPhase.set(dayPhaseAt(hour));
+      this.clockHour.set(snapHour(hour));
     }
     // Une heure comme 23,999 s'arrondit à « 24.00 » : affichée « 0.00 ».
     const rounded = hour.toFixed(2);
@@ -440,7 +512,15 @@ export class AquariumHost {
     // Première image : pas de durée de référence, aucun pas.
     const realDt = this.lastTimestamp === null ? 0 : (timestamp - this.lastTimestamp) / 1000;
     this.lastTimestamp = timestamp;
-    const clock = fixedStepInto(this.clock.accumulator, realDt, this.clock);
+    // Vitesse (#52) : temps simulé = temps réel × vitesse, toujours par pas `SIM_DT`.
+    const speed = this.speed();
+    const clock = fixedStepInto(
+      this.clock.accumulator,
+      scaledDt(realDt, speed),
+      this.clock,
+      SIM_DT,
+      maxStepsForSpeed(speed),
+    );
     if (clock.steps > 0 && this.currentWorld) {
       advanceInPlace(this.currentWorld, clock.steps);
       this.exposeTick();
@@ -471,6 +551,12 @@ export class AquariumHost {
     }
     this.exposedFood = world.food.length;
     this.host.nativeElement.setAttribute(FOOD_ATTRIBUTE, String(world.food.length));
+  }
+
+  /** Expose l'état de l'horloge (`data-aqfish-hour-frozen` et signal `clockFrozen`). */
+  private exposeClockFrozen(): void {
+    this.clockFrozen.set(this.dayClock.frozen);
+    this.host.nativeElement.setAttribute(HOUR_FROZEN_ATTRIBUTE, String(this.dayClock.frozen));
   }
 
   private exposeFilter(): void {

@@ -98,6 +98,22 @@ test.describe('Captures', () => {
     });
   }
 
+  // Panneau de contrôle ouvert (#52) : hors mode capture (le contrat de capture n'affiche
+  // aucune interface), heure figée à midi, simulation mise à l'arrêt depuis le panneau.
+  // Capture d'interface : les poissons dépendent de l'instant de l'arrêt (non reproductible
+  // à l'octet, contrairement aux captures ci-dessus, inchangées).
+  test('angle front avec le panneau de contrôle ouvert', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    await page.goto(`/?seed=${SEED}&camera=front&heure=12`);
+    await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+    await page.getByRole('button', { name: 'Réglages' }).click();
+    await page.getByRole('slider', { name: 'Vitesse de la simulation' }).fill('0');
+    await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-speed', '0');
+    await page.screenshot({ path: join(OUTPUT_DIR, 'front-panneau.png'), animations: 'disabled' });
+    expect(errors).toEqual([]);
+  });
+
   test('tracé des trajectoires, vue de dessus', async ({ page }) => {
     const svg = trajectorySvg(SEED, TRACE_SECONDS);
     await page.setViewportSize({ width: svg.width, height: svg.height });

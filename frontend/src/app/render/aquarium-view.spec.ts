@@ -152,6 +152,20 @@ describe('AquariumView (pipeline pixel art)', () => {
     expect(view.tonePenalties).toEqual(off);
   });
 
+  it('setDecorVisible masque puis réaffiche le décor sans le détruire (#52)', () => {
+    const world = createDefaultWorld(42);
+    view.setDecor(world.decor, world.seed);
+    expect(view.decorVisible).toBe(true);
+    view.setDecorVisible(false);
+    expect(view.decorVisible).toBe(false);
+    expect(view.decorCount).toBe(world.decor.length);
+    view.setDecorVisible(true);
+    expect(view.decorVisible).toBe(true);
+    view.dispose();
+    view.setDecorVisible(false); // sans effet après destruction
+    expect(view.decorVisible).toBe(true);
+  });
+
   it('affiche le décor du monde ; ignore setDecor après destruction', () => {
     const world = createDefaultWorld(42);
     expect(view.decorCount).toBe(0);

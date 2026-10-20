@@ -108,7 +108,7 @@ export function isTypingContext(event: KeyboardEvent): boolean {
  * À part, après un séparateur : la bascule « Pixel art » (touche `P`, issue #33). La barre
  * émet la demande de bascule ; l'état affiché (`pixelArt`) vient de l'hôte.
  * Touche `H` (issue #51) : demande à l'hôte de figer ou de remettre en marche l'heure (sans
- * bouton : le panneau de contrôle viendra avec une issue suivante). Touches `J` et `N`
+ * bouton ici : le réglage à la souris est dans le panneau de contrôle, #52). Touches `J` et `N`
  * (issue #75) : demandent de figer l'heure à midi (plein jour) ou à minuit (nuit).
  * Bouton « Nourrir » et touche `G` (issue #67) : demandent de déposer des granulés au centre
  * du bac (le clic sur l'eau, lui, est géré par la vue).

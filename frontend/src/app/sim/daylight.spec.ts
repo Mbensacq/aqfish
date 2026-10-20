@@ -24,6 +24,9 @@ import {
   sunElevation,
   toggleClock,
   type DayLight,
+  formatHour,
+  HOUR_SLIDER_STEP,
+  snapHour,
 } from './daylight';
 import { advance, createDefaultWorld, createWorld, ticksFor } from './world';
 
@@ -387,5 +390,49 @@ describe('dayPhaseAt : moment de la journée de l’indicateur (#73)', () => {
     expect(NIGHT_PHASE_MAX_INTENSITY).toBeLessThan(DAY_PHASE_MIN_INTENSITY);
     expect(NIGHT_PHASE_MAX_INTENSITY).toBeGreaterThan(0);
     expect(DAY_PHASE_MIN_INTENSITY).toBeLessThan(1);
+  });
+});
+
+describe('curseur d’heure (#52)', () => {
+  it('snapHour arrondit au quart d’heure, dans [0, 24)', () => {
+    expect(HOUR_SLIDER_STEP).toBe(0.25);
+    expect(snapHour(14.5)).toBe(14.5);
+    expect(snapHour(14.12)).toBe(14);
+    expect(snapHour(14.13)).toBe(14.25);
+    expect(snapHour(0)).toBe(0);
+    expect(snapHour(23.9)).toBe(0);
+    expect(snapHour(23.8)).toBe(23.75);
+    expect(snapHour(-0.5)).toBe(23.5);
+    expect(snapHour(36.25)).toBe(12.25);
+    expect(snapHour(7.4, 1)).toBe(7);
+    expect(Object.is(snapHour(-0.01), 0)).toBe(true);
+  });
+
+  it('snapHour : heure ou pas invalides, RangeError', () => {
+    expect(() => snapHour(Number.NaN)).toThrow(RangeError);
+    expect(() => snapHour(12, 0)).toThrow(RangeError);
+    expect(() => snapHour(12, -1)).toThrow(RangeError);
+    expect(() => snapHour(12, Infinity)).toThrow(RangeError);
+  });
+
+  it('formatHour : « HH:MM » sur 24 h, à la minute près', () => {
+    expect(formatHour(14.5)).toBe('14:30');
+    expect(formatHour(9.25)).toBe('09:15');
+    expect(formatHour(0)).toBe('00:00');
+    expect(formatHour(12)).toBe('12:00');
+    expect(formatHour(23.75)).toBe('23:45');
+    expect(formatHour(23.999)).toBe('00:00');
+    expect(formatHour(24)).toBe('00:00');
+    expect(formatHour(-1)).toBe('23:00');
+    expect(formatHour(6 + 59.6 / 60)).toBe('07:00');
+    expect(() => formatHour(Infinity)).toThrow(RangeError);
+  });
+
+  it('formatHour : chaque cran du curseur a un libellé distinct', () => {
+    const labels = new Set<string>();
+    for (let h = 0; h < 24; h += HOUR_SLIDER_STEP) {
+      labels.add(formatHour(h));
+    }
+    expect(labels.size).toBe(96);
   });
 });
