@@ -48,6 +48,14 @@ haut de sa section.
 
 ## Tests
 
+- **Panneau d'interface rogné en bas, trouvé tard** (cycles 31 à 34, #101, #79) : chaque
+  panneau a sa hauteur maximale (réserve de la barre des préréglages) et défile au-delà ;
+  ajouter une ligne ou une section le fait déborder sans qu'aucun test unitaire ne le voie.
+  `e2e/cadrage-panneaux.spec.ts` contrôle chaque panneau de `PANELS` à 1280 × 720 et
+  390 × 844 (dans la fenêtre, sans recouvrir la barre) ; **tout nouveau panneau s'y ajoute**.
+  Le panneau « Commandes » doit en plus tenir sans défiler à 1280 × 720 : marge de
+  24 px au cycle 34 (contenu 608 px pour 632 px permis, interligne 1,25). Sous 480 px, la barre passe sur deux lignes : réserver
+  ~120 px en bas, pas 76. (2026-10-20)
 - **E2e qui compte un état que la simulation consomme** (cycle 33, #94) : « nourrir 19 fois
   puis attendre `MAX_FOOD` » échouait sur machine chargée, car les poissons mangeaient entre
   deux appuis (chaque appui coûte plusieurs secondes en rendu logiciel). Mettre la
