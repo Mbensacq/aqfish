@@ -90,4 +90,27 @@ test.describe('Environnement', () => {
     expect(await cameraY(page)).toBeGreaterThan(1);
     expect(errors).toEqual([]);
   });
+
+  test('bassin : rotation, zoom, préréglages et allers-retours sans erreur (QA)', async ({
+    page,
+  }) => {
+    const errors = await open(page, '?seed=7');
+    await toggle(page).click();
+    await selector(page).selectOption('bassin');
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'bassin');
+    const canvas = (await page.locator('canvas').first().boundingBox())!;
+    const cx = canvas.x + canvas.width / 2;
+    const cy = canvas.y + canvas.height / 2;
+    await page.mouse.move(cx, cy);
+    await page.mouse.down();
+    await page.mouse.move(cx + 120, cy + 40, { steps: 6 });
+    await page.mouse.up();
+    await page.mouse.wheel(0, -400);
+    await page.mouse.wheel(0, 800);
+    for (const key of ['1', '2', '3', '4', '5']) await page.keyboard.press(key);
+    await selector(page).selectOption('tropical');
+    await selector(page).selectOption('bassin');
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'bassin');
+    expect(errors).toEqual([]);
+  });
 });
