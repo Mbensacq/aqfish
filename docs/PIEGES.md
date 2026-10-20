@@ -48,6 +48,19 @@ haut de sa section.
 
 ## Tests
 
+- **E2e qui compte un état que la simulation consomme** (cycle 33, #94) : « nourrir 19 fois
+  puis attendre `MAX_FOOD` » échouait sur machine chargée, car les poissons mangeaient entre
+  deux appuis (chaque appui coûte plusieurs secondes en rendu logiciel). Mettre la
+  simulation à l'arrêt depuis le panneau (`Vitesse` à 0, puis replier le panneau : la touche
+  `G` est ignorée tant que le focus est dans un champ) et vérifier la valeur exacte après
+  chaque action (`e2e/nourrissage.spec.ts`). Prouvé 3 fois de suite avec 4 boucles de
+  calcul en parallèle sur 2 cœurs. (2026-10-20)
+- **Hauteur du panneau de réglages et barre des préréglages** (cycle 33, #101) : la
+  hauteur maximale du panneau réserve la place de la barre en bas, sur une ligne au-delà de
+  480 px et sur deux lignes en dessous (`control-panel.scss`). Ajouter une section au
+  panneau peut de nouveau rogner le bas à 1280 × 720 : `e2e/sauvegarde.spec.ts` vérifie que
+  les boutons de sauvegarde tiennent sans défiler et que le panneau reste au-dessus de la
+  barre (1280 × 720 et 390 × 844). (2026-10-20)
 - **`setInputFiles` avec un chemin accentué ne sélectionne rien** (cycle 32, #70) : un
   fichier écrit dans `testInfo.outputPath(...)` vit dans un dossier nommé d'après le titre
   du test (« refusé », « altérer »…) ; `setInputFiles(chemin)` n'y attache alors aucun

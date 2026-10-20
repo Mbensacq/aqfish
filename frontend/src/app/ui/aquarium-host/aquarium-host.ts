@@ -19,6 +19,7 @@ import {
 } from '../../core/capture/capture-params';
 import {
   readStoredSave,
+  type SaveMessage,
   type SaveStatus,
   type SaveStorage,
   writeStoredSave,
@@ -134,12 +135,6 @@ export const AUTOSAVE_INTERVAL_MS = 10_000;
 
 /** Nom proposé pour le fichier exporté (#70). */
 export const SAVE_FILE_NAME = 'aqfish-sauvegarde.json';
-
-/** Message de la section « Sauvegarde » du panneau (#70) : erreur d'import ou information. */
-export interface SaveMessage {
-  readonly kind: 'erreur' | 'info';
-  readonly text: string;
-}
 
 /**
  * Stockage de la sauvegarde automatique (#70) : `localStorage` s'il est accessible, `null`
@@ -633,23 +628,31 @@ export class AquariumHost {
     // En mode capture, le temps demandé est atteint ici, avant toute image (contrat de capture).
     // Le monde créé ici appartient à l'hôte seul : il pourra être avancé en place.
     // Dépôts de nourriture de `nourrir=` (#67) : au temps simulé de chacun, en capture.
-    const environment = isEnvironmentId(params.environment)
-      ? params.environment
-      : DEFAULT_ENVIRONMENT_ID;
-    const world: MutableWorld = createDefaultWorld(params.seed, environment);
-    // Effectifs de `population=` (#69) : appliqués à t = 0, avant d'avancer le monde.
-    applyPopulation(world, params.population);
-    this.currentWorld = params.capture
-      ? advanceToWithFeedings(world, params.time, params.feedings)
-      : world;
     this.dayClock = initialDayClock(params.hour, params.capture);
     // Sauvegarde automatique (#70) : jamais en capture (images reproductibles) ; restaurée
     // au démarrage sauf si l'URL décrit le monde (`seed`, `environnement`, `population`).
+    // Lue avant toute création : le monde neuf n'est créé que s'il n'y a rien à restaurer.
+    const restored = params.capture || hasWorldParams(win.location.search) ? null : this.readSave();
+    if (restored) {
+      this.currentWorld = restored.world as MutableWorld;
+      this.speed.set(restored.settings.speed);
+      // `heure=` fige l'heure : l'horloge sauvegardée ne s'applique pas.
+      if (params.hour === null) {
+        this.dayClock = restored.settings.clock;
+      }
+    } else {
+      const environment = isEnvironmentId(params.environment)
+        ? params.environment
+        : DEFAULT_ENVIRONMENT_ID;
+      const world: MutableWorld = createDefaultWorld(params.seed, environment);
+      // Effectifs de `population=` (#69) : appliqués à t = 0, avant d'avancer le monde.
+      applyPopulation(world, params.population);
+      this.currentWorld = params.capture
+        ? advanceToWithFeedings(world, params.time, params.feedings)
+        : world;
+    }
     if (!params.capture) {
       this.saveStatus.set('active');
-      if (!hasWorldParams(win.location.search)) {
-        this.restoreSave(params.hour);
-      }
       this.startAutosave(win);
     }
     this.exposeClockFrozen();
@@ -685,14 +688,14 @@ export class AquariumHost {
   }
 
   /**
-   * Restaure la sauvegarde automatique, s'il y en a une de valide (#70) : monde, vitesse et
-   * horloge (sauf si `heure=` fige l'heure). Une sauvegarde illisible est ignorée : le bac
-   * neuf est gardé, et un message le signale.
+   * Sauvegarde automatique à restaurer au démarrage (#70) : monde et réglages, ou `null` s'il
+   * n'y en a pas. Une sauvegarde illisible est ignorée (`null`) : le bac neuf sera créé, et
+   * un message le signale.
    */
-  private restoreSave(hour: number | null): void {
+  private readSave(): { readonly world: World; readonly settings: SaveSettings } | null {
     const text = readStoredSave(this.saveStorage);
     if (text === null) {
-      return;
+      return null;
     }
     const result = parseWorld(text);
     if (!result.ok) {
@@ -700,12 +703,9 @@ export class AquariumHost {
         kind: 'erreur',
         text: `Sauvegarde précédente illisible, aquarium neuf (${result.error}).`,
       });
-      return;
+      return null;
     }
-    const clock = hour === null ? result.settings.clock : this.dayClock;
-    this.currentWorld = result.world as MutableWorld;
-    this.speed.set(result.settings.speed);
-    this.dayClock = clock;
+    return result;
   }
 
   /**
