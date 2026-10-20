@@ -36,24 +36,28 @@ publie alors le front sur GitHub Pages et crée le tag et la release (notes : `d
 Synology en conteneur, ou Infomaniak) est une décision de Mathis : issue `bloque`, sans
 attendre la réponse pour continuer.
 
-## Phase 2 — Les mondes (sprints 5 à 8)
+## Phase 2 — Les mondes (sprints 5 à 9)
+
+Mise à jour à la rétro du sprint 5 : l'épopée « Le bassin » déborde sur le sprint 6 (le sprint 5
+a aussi terminé le reliquat de v0.4 : panneau, population, sauvegarde). Les épopées suivantes
+sont décalées d'un sprint ; la phase 3 se resserre pour que **v1.0 reste au sprint 12**.
 
 | Version | Épopée | Contenu visé |
 |---|---|---|
-| v0.5 | Le bassin | Bassin extérieur à koïs : vue de dessus, nénuphars, lotus, pluie, feuilles flottantes ; motifs de koïs variés |
-| v0.6 | Le paludarium | Partie terrestre et aquatique ; amphibiens (axolotl, grenouilles, tritons) et leurs déplacements entre terre et eau |
-| v0.7 | Le récif | Récif marin : coraux, anémones, poissons de récif |
-| v0.8 | L'éditeur | Éditeur de bac et de bassin (dimensions, forme, placement du décor) ; catalogue d'espèces ; backend NestJS : sauvegarde côté serveur et partage (mis en place dès que la phase 2 en a besoin) |
+| v0.5 | Le bassin (début) | Livré au sprint 5 : bassin extérieur sélectionnable, koïs aux robes tirées de la graine |
+| v0.6 | Le bassin (suite) | Nénuphars, lotus, feuilles mortes flottantes, pluie, bassin enterré (sol et berge), robes de koïs plus naturelles |
+| v0.7 | Le paludarium | Partie terrestre et aquatique ; amphibiens (axolotl, grenouilles, tritons) et leurs déplacements entre terre et eau |
+| v0.8 | Le récif | Récif marin : coraux, anémones, poissons de récif |
+| v0.9 | L'éditeur | Éditeur de bac et de bassin (dimensions, forme, placement du décor) ; catalogue d'espèces ; backend NestJS : sauvegarde côté serveur et partage (mis en place dès que la phase 2 en a besoin) |
 
 **Fin de phase 2** : bilan dans le rapport du jour.
 
-## Phase 3 — Le réalisme (sprints 9 à 12)
+## Phase 3 — Le réalisme (sprints 10 à 12)
 
 | Version | Épopée | Contenu visé |
 |---|---|---|
-| v0.9 | L'eau | Qualité de l'eau simplifiée : température, cycle de l'azote, filtration, entretien |
-| v0.10 | Le bien-être | Faim, santé, compatibilité des espèces, comportements selon l'heure |
-| v0.11 | L'ambiance | Sons d'ambiance, météo, partage par lien, accessibilité, performances |
+| v0.10 | Le vivant | Qualité de l'eau simplifiée (température, cycle de l'azote, filtration, entretien) et bien-être (faim, santé, compatibilité des espèces, comportements selon l'heure) |
+| v0.11 | L'ambiance | Sons d'ambiance, météo étendue, partage par lien, accessibilité, performances |
 | v1.0 | La mise en ligne | Hébergement choisi ; stabilisation : les 3 derniers cycles du sprint sans nouvelle fonctionnalité |
 
 ## Après v1.0 — L'aquarium vivant (sprints 13 et suivants)
