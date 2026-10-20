@@ -103,25 +103,39 @@ for (const viewport of VIEWPORTS) {
 // #79 : à 1280 × 720, la section « Aide » du panneau « Commandes » n'apparaissait qu'en
 // défilant (capture `front-panneau` du cycle 33). Elle doit tenir sans défilement ; à
 // 390 × 844, le panneau défile, mais sa dernière ligne reste atteignable au-dessus de la barre.
+// La hauteur du texte dépend de la police : `system-ui` donne Inter dans l'environnement des
+// agents et DejaVu Sans (plus large, donc plus de retours à la ligne) en CI. Le test impose
+// aussi DejaVu Sans, pour que l'écart se voie avant la CI (docs/PIEGES.md).
+const FONTS = [null, 'DejaVu Sans'] as const;
+
 test.describe('panneau « Commandes » (#79)', () => {
-  test('1280 × 720 : entier sans défilement, section « Aide » comprise', async ({ page }) => {
-    await page.setViewportSize({ width: 1280, height: 720 });
-    const errors = await openScene(page);
-    const commands = PANELS.find((p) => p.name === 'Commandes')!;
-    await commands.open(page);
-    const panel = commands.panel(page);
-    const { scrollHeight, clientHeight } = await panel.evaluate((el) => ({
-      scrollHeight: el.scrollHeight,
-      clientHeight: el.clientHeight,
-    }));
-    expect(scrollHeight, 'contenu plus haut que le panneau : défilement').toBeLessThanOrEqual(
-      clientHeight,
-    );
-    const panelBox = await box(panel);
-    const last = await box(panel.locator('[data-command="aide"]').locator('dd'));
-    expect(last.y + last.height).toBeLessThanOrEqual(panelBox.y + panelBox.height);
-    expect(errors).toEqual([]);
-  });
+  for (const font of FONTS) {
+    test(`1280 × 720 : entier sans défilement, section « Aide » comprise (police ${font ?? 'par défaut'})`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width: 1280, height: 720 });
+      const errors = await openScene(page);
+      if (font) {
+        await page.addStyleTag({
+          content: `app-commands-help, app-commands-help * { font-family: '${font}' !important; }`,
+        });
+      }
+      const commands = PANELS.find((p) => p.name === 'Commandes')!;
+      await commands.open(page);
+      const panel = commands.panel(page);
+      const { scrollHeight, clientHeight } = await panel.evaluate((el) => ({
+        scrollHeight: el.scrollHeight,
+        clientHeight: el.clientHeight,
+      }));
+      expect(scrollHeight, 'contenu plus haut que le panneau : défilement').toBeLessThanOrEqual(
+        clientHeight,
+      );
+      const panelBox = await box(panel);
+      const last = await box(panel.locator('[data-command="aide"]').locator('dd'));
+      expect(last.y + last.height).toBeLessThanOrEqual(panelBox.y + panelBox.height);
+      expect(errors).toEqual([]);
+    });
+  }
 
   test('390 × 844 : dernière ligne atteignable, au-dessus de la barre des vues', async ({
     page,

@@ -59,8 +59,11 @@
 }
 
 // Une grille par groupe : la colonne des touches et gestes prend la largeur du plus long.
+// Lignes en 12 px (titres en 13-14 px) : à 1280 × 720, le panneau tient sans défiler même
+// avec une police plus large qu'Inter, comme DejaVu Sans en CI (#79, docs/PIEGES.md).
 .commands-help__list {
   display: grid;
+  font-size: 12px;
   grid-template-columns: max-content minmax(0, 1fr);
   column-gap: 12px;
   row-gap: 1px;
