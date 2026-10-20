@@ -1,5 +1,6 @@
 import {
   CAMERA_PRESETS,
+  hasWorldParams,
   DEFAULT_CAPTURE_PARAMS,
   MAX_CAPTURE_FEEDINGS,
   MAX_CAPTURE_POPULATION_ENTRIES,
@@ -166,5 +167,18 @@ describe('population= (issue #69)', () => {
     expect(parseCaptureParams(`?population=${many}`).population).toHaveLength(
       MAX_CAPTURE_POPULATION_ENTRIES,
     );
+  });
+});
+
+describe('hasWorldParams', () => {
+  it.each([
+    ['', false],
+    ['?camera=top&filtre=aucun&heure=12', false],
+    ['?seed=7', true],
+    ['?environnement=bassin', true],
+    ['?population=neon:3', true],
+    ['?seed=abc', true],
+  ])('%s → %s', (search, expected) => {
+    expect(hasWorldParams(search)).toBe(expected);
   });
 });

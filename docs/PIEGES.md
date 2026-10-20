@@ -48,6 +48,18 @@ haut de sa section.
 
 ## Tests
 
+- **`setInputFiles` avec un chemin accentué ne sélectionne rien** (cycle 32, #70) : un
+  fichier écrit dans `testInfo.outputPath(...)` vit dans un dossier nommé d'après le titre
+  du test (« refusé », « altérer »…) ; `setInputFiles(chemin)` n'y attache alors aucun
+  fichier, sans erreur (`input.files.length` = 0, aucun événement `change`). Passer le
+  fichier en mémoire : `setInputFiles({ name, mimeType, buffer })` (`e2e/sauvegarde.spec.ts`).
+  (2026-10-20)
+- **Sauvegarde automatique et e2e** (cycle 32, #70) : sans paramètre de monde dans l'URL
+  (`seed`, `environnement`, `population`), l'application restaure `aqfish.sauvegarde` au
+  démarrage, et quitter une page l'écrit (`pagehide`). Un e2e qui recharge ou renavigue sur
+  `/` sans `seed=` retrouve donc le monde précédent (temps, population) ; ajouter `?seed=42`
+  pour repartir d'un monde neuf. Dans `aquarium-host.spec.ts`, le stockage est un double en
+  mémoire neuf à chaque test (`SAVE_STORAGE`). (2026-10-20)
 - **Clic au centre de l'écran en vue trois-quarts ≠ clic sur l'eau** (cycle 24, #67) : le
   centre de l'écran vise la cible de la caméra, au milieu du bac ; le rayon coupe le plan de
   la surface **devant** le bac (hors des vitres), donc rien n'est déposé. Pour un e2e de

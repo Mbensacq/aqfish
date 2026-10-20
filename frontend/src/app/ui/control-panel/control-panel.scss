@@ -226,3 +226,54 @@
     max-width: calc(100vw - 55px - 8px);
   }
 }
+
+// Sauvegarde (#70) : état, boutons « Exporter » et « Importer », message d'import.
+.control-panel__note,
+.control-panel__message {
+  margin: 0;
+  color: rgb(232 230 227 / 75%);
+  font-size: 12px;
+}
+
+.control-panel__message {
+  color: #5fbfa3;
+
+  &--error {
+    color: #f2a39a;
+  }
+}
+
+.control-panel__buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.control-panel__button {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 32px;
+  padding: 4px 8px;
+  border: 1px solid rgb(232 230 227 / 16%);
+  border-radius: 6px;
+  background: rgb(232 230 227 / 6%);
+  color: inherit;
+  font:
+    600 14px / 1.2 system-ui,
+    sans-serif;
+  white-space: nowrap;
+  cursor: pointer;
+
+  &:hover {
+    background: rgb(232 230 227 / 12%);
+  }
+
+  &:focus-visible {
+    outline: 2px solid #5fbfa3;
+    outline-offset: 1px;
+  }
+}
+
+// Champ de fichier natif masqué : le bouton « Importer » l'ouvre (libellé et style communs).
+.control-panel__file {
+  display: none;
+}

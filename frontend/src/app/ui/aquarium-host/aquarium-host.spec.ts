@@ -2,6 +2,9 @@ import { TestBed, type ComponentFixture } from '@angular/core/testing';
 
 import { isCaptureReady, resetCaptureReady } from '../../core/capture/capture-ready';
 import { RENDER_FILTER_STORAGE_KEY } from '../../core/render-filter/render-filter';
+import { SAVE_STORAGE_KEY, type SaveStorage } from '../../core/save-storage/save-storage';
+import { createDayClock } from '../../sim/daylight';
+import { parseWorld, serializeWorld } from '../../sim/save';
 import type { AquariumRenderer } from '../../render/aquarium-view';
 import { MAX_STEPS_PER_FRAME } from '../../sim/constants';
 import { CORYDORA, GUPPY, KOI, NEON } from '../../sim/species';
@@ -12,6 +15,10 @@ import {
   applyPopulation,
   AQUARIUM_RENDERER_FACTORY,
   AquariumHost,
+  AUTOSAVE_INTERVAL_MS,
+  SAVE_ATTRIBUTE,
+  SAVE_FILE_NAME,
+  SAVE_STORAGE,
   CAMERA_ATTRIBUTE,
   ENVIRONMENT_ATTRIBUTE,
   CAMERA_TARGET_ATTRIBUTE,
@@ -60,6 +67,25 @@ class FakeRenderer implements AquariumRenderer {
   }
 }
 
+/** Stockage en mémoire (sauvegarde automatique, #70), avec quota optionnel et compteurs. */
+class MemoryStorage implements SaveStorage {
+  readonly data = new Map<string, string>();
+  reads = 0;
+  writes = 0;
+  constructor(private readonly quota = Number.POSITIVE_INFINITY) {}
+  getItem(key: string): string | null {
+    this.reads++;
+    return this.data.get(key) ?? null;
+  }
+  setItem(key: string, value: string): void {
+    this.writes++;
+    if (value.length > this.quota) {
+      throw new DOMException('quota', 'QuotaExceededError');
+    }
+    this.data.set(key, value);
+  }
+}
+
 /** File d'attente manuelle pour `requestAnimationFrame`. */
 class FrameQueue {
   private nextId = 1;
@@ -84,6 +110,8 @@ describe('AquariumHost', () => {
   let renderers: FakeRenderer[];
   let frames: FrameQueue;
   let fixture: ComponentFixture<AquariumHost>;
+  /** Stockage de la sauvegarde automatique (#70), neuf pour chaque test. */
+  let saveStorage: SaveStorage | null;
 
   function setCanvasSize(width: number, height: number): void {
     const canvas = fixture.nativeElement.querySelector('canvas') as HTMLCanvasElement;
@@ -107,9 +135,11 @@ describe('AquariumHost', () => {
     frames = new FrameQueue();
     vi.spyOn(window, 'requestAnimationFrame').mockImplementation(frames.request);
     vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(frames.cancel);
+    saveStorage = new MemoryStorage();
     TestBed.configureTestingModule({
       imports: [AquariumHost],
       providers: [
+        { provide: SAVE_STORAGE, useFactory: () => saveStorage },
         {
           provide: AQUARIUM_RENDERER_FACTORY,
           useValue: (canvas: HTMLCanvasElement) => {
@@ -1033,5 +1063,192 @@ describe('AquariumHost', () => {
     expect(isCaptureReady()).toBe(false);
     window.dispatchEvent(new Event('resize'));
     expect(frames.pending.size).toBe(0);
+  });
+  describe('sauvegarde (#70)', () => {
+    const host = () => fixture.componentInstance;
+    const element = () => fixture.nativeElement as HTMLElement;
+    const memory = () => saveStorage as MemoryStorage;
+
+    /** Écrit dans le stockage la sauvegarde d'un bassin avancé, à vitesse ×2, figé à 18 h. */
+    function storePond(): string {
+      const world = setPopulation(advance(createDefaultWorld(11, 'bassin'), 600), 'koi', 3);
+      const text = serializeWorld(world, { speed: 2, clock: createDayClock(18, 1200, true) });
+      memory().data.set(SAVE_STORAGE_KEY, text);
+      return text;
+    }
+
+    it('sans sauvegarde : monde neuf, sauvegarde automatique active', async () => {
+      await create();
+      expect(host().world).toEqual(createDefaultWorld(42));
+      expect(host().saveStatus()).toBe('active');
+      expect(element().getAttribute(SAVE_ATTRIBUTE)).toBe('active');
+    });
+
+    it('restaure au démarrage le monde, la population, la vitesse et l’heure', async () => {
+      const text = storePond();
+      await create();
+      const expected = parseWorld(text);
+      expect(expected.ok).toBe(true);
+      expect(host().world).toEqual(expected.ok ? expected.world : null);
+      expect(host().environment()).toBe('bassin');
+      expect(host().population().koi).toBe(3);
+      expect(host().speed()).toBe(2);
+      expect(element().getAttribute(SPEED_ATTRIBUTE)).toBe('2');
+      expect(host().clockFrozen()).toBe(true);
+      expect(host().hour).toBe(18);
+      expect(host().activePreset()).toBe('top');
+    });
+
+    it('heure= prime sur l’heure sauvegardée ; seed=, environnement= ou population= sur le monde', async () => {
+      storePond();
+      await create('?heure=6');
+      expect(host().environment()).toBe('bassin');
+      expect(host().hour).toBe(6);
+      fixture.destroy();
+      for (const search of ['?seed=11', '?environnement=tropical', '?population=neon:2']) {
+        await create(search);
+        expect(host().environment()).toBe('tropical');
+        expect(host().world!.tick).toBe(0);
+        fixture.destroy();
+      }
+    });
+
+    it('en mode capture : le stockage n’est ni lu ni écrit', async () => {
+      storePond();
+      const reads = memory().reads;
+      await create('?capture=1&seed=3');
+      expect(host().world).toEqual(createDefaultWorld(3));
+      expect(host().saveNow()).toBeNull();
+      host().exportSave();
+      expect(host().importSave(serializeWorld(createDefaultWorld(1)))).toBe(false);
+      window.dispatchEvent(new Event('pagehide'));
+      expect(memory().reads).toBe(reads);
+      expect(memory().writes).toBe(0);
+      expect(host().saveStatus()).toBeNull();
+      expect(element().hasAttribute(SAVE_ATTRIBUTE)).toBe(false);
+    });
+
+    it('sauvegarde illisible : monde neuf et message d’erreur', async () => {
+      memory().data.set(SAVE_STORAGE_KEY, '{"format":"aqfish","schema":99}');
+      await create();
+      expect(host().world).toEqual(createDefaultWorld(42));
+      expect(host().saveMessage()?.kind).toBe('erreur');
+      expect(host().saveMessage()?.text).toMatch(/illisible/);
+    });
+
+    it('écrit à intervalle et quand la page est quittée ou masquée', async () => {
+      const interval = vi.spyOn(window, 'setInterval');
+      await create('');
+      setCanvasSize(800, 600);
+      frames.flush(0);
+      frames.flush(1000);
+      const call = interval.mock.calls.find(([, delay]) => delay === AUTOSAVE_INTERVAL_MS);
+      expect(call).toBeDefined();
+      (call![0] as () => void)();
+      const saved = parseWorld(memory().data.get(SAVE_STORAGE_KEY)!);
+      expect(saved.ok && saved.world).toEqual(host().world);
+      host().feedAtCenter();
+      window.dispatchEvent(new Event('pagehide'));
+      const afterPagehide = parseWorld(memory().data.get(SAVE_STORAGE_KEY)!);
+      expect(afterPagehide.ok && afterPagehide.world.food.length).toBe(FOOD_PER_DROP);
+      const writes = memory().writes;
+      Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'hidden' });
+      document.dispatchEvent(new Event('visibilitychange'));
+      delete (document as unknown as Record<string, unknown>)['visibilityState'];
+      expect(memory().writes).toBe(writes + 1);
+      // Plus aucune écriture après la destruction.
+      fixture.destroy();
+      window.dispatchEvent(new Event('pagehide'));
+      expect(memory().writes).toBe(writes + 1);
+    });
+
+    it('stockage indisponible ou plein : l’application continue et le signale', async () => {
+      saveStorage = null;
+      await create();
+      expect(host().saveNow()).toBe('indisponible');
+      expect(element().getAttribute(SAVE_ATTRIBUTE)).toBe('indisponible');
+      setCanvasSize(800, 600);
+      frames.flush(0);
+      frames.flush(500);
+      expect(host().world!.tick).toBeGreaterThan(0);
+      fixture.destroy();
+      saveStorage = new MemoryStorage(10);
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        imports: [AquariumHost],
+        providers: [
+          { provide: SAVE_STORAGE, useFactory: () => saveStorage },
+          {
+            provide: AQUARIUM_RENDERER_FACTORY,
+            useValue: (canvas: HTMLCanvasElement) => new FakeRenderer(canvas),
+          },
+        ],
+      });
+      await create();
+      expect(host().saveNow()).toBe('plein');
+      expect(host().saveStatus()).toBe('plein');
+    });
+
+    it('importSave : remplace le monde et les réglages, puis enregistre', async () => {
+      await create('?seed=4');
+      const world = advance(createDefaultWorld(8, 'bassin'), 300);
+      expect(
+        host().importSave(
+          serializeWorld(world, { speed: 0.5, clock: createDayClock(3, 1200, false) }),
+        ),
+      ).toBe(true);
+      expect(host().world).toEqual(world);
+      expect(host().environment()).toBe('bassin');
+      expect(host().speed()).toBe(0.5);
+      expect(host().clockFrozen()).toBe(false);
+      expect(host().saveMessage()).toEqual({ kind: 'info', text: 'Aquarium importé.' });
+      expect(renderers).toHaveLength(2);
+      expect(renderers[0].disposed).toBe(true);
+      expect(element().getAttribute(TICK_ATTRIBUTE)).toBe('300');
+      expect(memory().data.has(SAVE_STORAGE_KEY)).toBe(true);
+    });
+
+    it('importSave refusé : le bac en cours est intact et l’erreur est affichée', async () => {
+      await create('?seed=4');
+      const world = host().world;
+      const snapshot = structuredClone(world);
+      for (const text of ['pas du json', '{"format":"aqfish","schema":2}', '{"__proto__":{}}']) {
+        expect(host().importSave(text)).toBe(false);
+        expect(host().saveMessage()?.kind).toBe('erreur');
+        expect(host().saveMessage()?.text).toMatch(/^Import refusé : /);
+      }
+      expect(host().world).toBe(world);
+      expect(host().world).toEqual(snapshot);
+      expect(renderers).toHaveLength(1);
+      host().rejectImport('fichier trop volumineux');
+      expect(host().saveMessage()?.text).toBe('Import refusé : fichier trop volumineux.');
+    });
+
+    it('exportSave : télécharge la sauvegarde du monde courant', async () => {
+      await create('?seed=6');
+      host().setSpeed(4);
+      let blob: Blob | null = null;
+      const createUrl = vi.fn((b: Blob) => {
+        blob = b;
+        return 'blob:aqfish';
+      });
+      Object.assign(window.URL, { createObjectURL: createUrl, revokeObjectURL: vi.fn() });
+      const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (
+        this: HTMLAnchorElement,
+      ) {
+        expect(this.download).toBe(SAVE_FILE_NAME);
+        expect(this.href).toBe('blob:aqfish');
+      });
+      host().exportSave();
+      expect(click).toHaveBeenCalledOnce();
+      const result = parseWorld(await blob!.text());
+      expect(result.ok && result.world).toEqual(host().world);
+      expect(result.ok && result.settings.speed).toBe(4);
+      expect(host().saveMessage()?.kind).toBe('info');
+      delete (window.URL as unknown as Record<string, unknown>)['createObjectURL'];
+      delete (window.URL as unknown as Record<string, unknown>)['revokeObjectURL'];
+      host().exportSave();
+      expect(host().saveMessage()?.kind).toBe('erreur');
+    });
   });
 });
