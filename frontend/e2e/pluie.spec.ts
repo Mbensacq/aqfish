@@ -110,4 +110,23 @@ test.describe('Pluie (#106)', () => {
     expect((await page.screenshot({ animations: 'disabled' })).equals(wet)).toBe(false);
     expect(errors).toEqual([]);
   });
+
+  test('trois-quarts : ronds identifiables sur l’eau (eau très claire en hausse), image stable', async ({
+    page,
+  }) => {
+    const base = '?capture=1&seed=42&time=30&environnement=bassin&camera=three-quarter';
+    const errors = await open(page, base);
+    const dry = await page.screenshot({ animations: 'disabled' });
+    await open(page, `${base}&pluie=1`);
+    await expect(host(page)).toHaveAttribute('data-aqfish-rain', 'true');
+    const wet = await page.screenshot({ animations: 'disabled' });
+    const before = await countColor(page, dry, PALETTE.eauTresClaire);
+    const after = await countColor(page, wet, PALETTE.eauTresClaire);
+    expect(after, `eau très claire en trois-quarts : ${before} → ${after}`).toBeGreaterThan(
+      before + 100,
+    );
+    await open(page, `${base}&pluie=1`);
+    expect((await page.screenshot({ animations: 'disabled' })).equals(wet)).toBe(true);
+    expect(errors).toEqual([]);
+  });
 });
