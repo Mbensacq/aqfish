@@ -36,6 +36,7 @@ import type { DecorItem } from '../sim/decor';
 import type { FoodPellet } from '../sim/food';
 import { BubbleLayer } from './bubble-layer';
 import { DecorLayer } from './decor-layer';
+import { type EffectLayer, type SceneLayer, updateVisibleEffects } from './effect-layer';
 import { FishLayer, MAX_FISH_PER_SPECIES } from './fish-layer';
 import { FoodLayer } from './food-layer';
 import { scenePixelsPerMeter } from './food-size';
@@ -137,6 +138,13 @@ export class AquariumView {
   private readonly lilyPadLayer: LilyPadLayer;
   /** Pluie (issue #106), possible dans un environnement qui en a (`Environment.rain`). */
   private readonly rainLayer: RainLayer;
+  /**
+   * Effets animés au contrat commun `EffectLayer` (issue #125) : bulles, puis pluie. Parcourus
+   * par `updateDecor`, `updateLight`, `setDecor` et `dispose`.
+   */
+  private readonly effects: readonly EffectLayer[];
+  /** Toutes les couches, dans l'ordre d'ajout à la scène (et de libération). */
+  private readonly sceneLayers: readonly SceneLayer[];
   /** Abonnés au clic sur la surface de l'eau (`onSurfaceClick`). */
   private readonly surfaceClickListeners = new Set<(x: number, z: number) => void>();
   /** Appui du pointeur principal en attente de relâchement (`null` : aucun clic possible). */
@@ -199,20 +207,25 @@ export class AquariumView {
         (_, index) => new FishLayer(species, MAX_FISH_PER_SPECIES, index),
       ),
     );
-    for (const layer of this.fishLayers) {
+    // Bulles et diffuseur : seulement dans un environnement qui en a (bac tropical). Masquées,
+    // elles ne sont pas posées (`updateVisibleEffects`).
+    this.bubbleLayer.object.visible = this.world.environment.bubbles;
+    this.waterLight = new WaterLightLayer(this.world.dimensions, this.world.environment.caustics);
+    this.lilyPadLayer = new LilyPadLayer(this.world.dimensions);
+    this.rainLayer = new RainLayer(environmentWater(this.world.environment.id));
+    this.effects = [this.bubbleLayer, this.rainLayer];
+    this.sceneLayers = [
+      ...this.fishLayers,
+      this.decorLayer,
+      this.bubbleLayer,
+      this.foodLayer,
+      this.waterLight,
+      this.lilyPadLayer,
+      this.rainLayer,
+    ];
+    for (const layer of this.sceneLayers) {
       this.world.scene.add(layer.object);
     }
-    this.world.scene.add(this.decorLayer.object);
-    // Bulles et diffuseur : seulement dans un environnement qui en a (bac tropical).
-    this.bubbleLayer.object.visible = this.world.environment.bubbles;
-    this.world.scene.add(this.bubbleLayer.object);
-    this.world.scene.add(this.foodLayer.object);
-    this.waterLight = new WaterLightLayer(this.world.dimensions, this.world.environment.caustics);
-    this.world.scene.add(this.waterLight.object);
-    this.lilyPadLayer = new LilyPadLayer(this.world.dimensions);
-    this.world.scene.add(this.lilyPadLayer.object);
-    this.rainLayer = new RainLayer(environmentWater(this.world.environment.id));
-    this.world.scene.add(this.rainLayer.object);
 
     const radius = tankBoundingRadius(this.world.dimensions);
     this.camera = new PerspectiveCamera(CAMERA_FOV_DEG, 1, radius * 0.05, radius * 40);
@@ -365,10 +378,7 @@ export class AquariumView {
       this.decorLayer.update(time);
       // Sous la pluie, les nénuphars frémissent (issue #106).
       this.lilyPadLayer.update(time, this.rainLayer.isEnabled ? 1 : 0);
-      if (this.world.environment.bubbles) {
-        this.bubbleLayer.update(time);
-      }
-      this.rainLayer.update(time);
+      updateVisibleEffects(this.effects, time);
       this.waterLight.update(time);
     }
   }
@@ -448,8 +458,9 @@ export class AquariumView {
       for (const layer of this.fishLayers) {
         layer.setBrightness(brightness);
       }
-      this.bubbleLayer.setBrightness(brightness);
-      this.rainLayer.setBrightness(brightness);
+      for (const layer of this.effects) {
+        layer.setBrightness(brightness);
+      }
       this.foodLayer.setBrightness(brightness);
       this.decorLayer.setTint(decorTintInto(light.intensity, this.decorTint));
       this.lilyPadLayer.setTint(this.decorTint);
@@ -481,8 +492,9 @@ export class AquariumView {
   setDecor(items: readonly DecorItem[], seed: number): void {
     if (!this.disposed) {
       this.decorLayer.setDecor(items);
-      this.bubbleLayer.setSeed(seed);
-      this.rainLayer.setSeed(seed);
+      for (const layer of this.effects) {
+        layer.setSeed(seed);
+      }
       const env = this.world.environment;
       this.lilyPadLayer.setPads(lilyPadLayout(seed, environmentWater(env.id), env.lilyPads));
     }
@@ -534,6 +546,11 @@ export class AquariumView {
   /** Vrai s'il pleut. */
   get raining(): boolean {
     return this.rainLayer.isEnabled;
+  }
+
+  /** Nom de chaque couche d'effet (`EffectLayer`), dans l'ordre où la vue les parcourt (tests). */
+  get effectLayerNames(): readonly string[] {
+    return this.effects.map((layer) => layer.object.name);
   }
 
   /** Gouttes en l'air et ronds à la surface posés par le dernier `updateDecor` (tests). */
@@ -676,13 +693,9 @@ export class AquariumView {
     this.canvas.removeEventListener('pointercancel', this.onPointerCancel);
     this.surfaceClickListeners.clear();
     this.controls.dispose();
-    this.fishLayers.forEach((layer) => layer.dispose());
-    this.decorLayer.dispose();
-    this.bubbleLayer.dispose();
-    this.foodLayer.dispose();
-    this.waterLight.dispose();
-    this.lilyPadLayer.dispose();
-    this.rainLayer.dispose();
+    for (const layer of this.sceneLayers) {
+      layer.dispose();
+    }
     this.world.dispose();
     this.pixelPass.dispose();
     this.renderer.dispose();

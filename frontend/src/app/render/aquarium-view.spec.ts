@@ -126,6 +126,10 @@ describe('AquariumView (pipeline pixel art)', () => {
     ]);
   });
 
+  it('parcourt les couches d’effets (bulles, puis pluie) dans une liste (issue #125)', () => {
+    expect(view.effectLayerNames).toEqual(['bulles', 'pluie']);
+  });
+
   it('place les poissons du monde avant le rendu ; ignore les appels après destruction', () => {
     const world = createDefaultWorld(42);
     view.updateFish(world.entities, 0.5);
