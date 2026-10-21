@@ -1,5 +1,6 @@
 import type { CameraPreset } from '../core/capture/capture-params';
 import { DEFAULT_DECOR, parseDecor, type DecorItem } from './decor';
+import { assertLilyPadSettings, type LilyPadSettings } from './lily-pads';
 import { CORYDORA, GUPPY, KOI, NEON, type SpeciesId } from './species';
 import { DEFAULT_TANK, waterVolume, type Box3, type TankDimensions } from './tank';
 
@@ -52,6 +53,11 @@ export interface Environment {
   /** Décor de départ, validé dans les dimensions de l'environnement. */
   readonly decor: readonly DecorItem[];
   /**
+   * Nénuphars flottants (issue #103, `sim/lily-pads.ts`) : nombre et tailles des feuilles,
+   * disposées selon la graine du monde ; `null` : aucun.
+   */
+  readonly lilyPads: LilyPadSettings | null;
+  /**
    * Espèces qui vivent dans l'environnement, dans l'ordre du panneau (issue #88) : seules
    * celles-ci sont proposées au réglage de population et exposées.
    */
@@ -81,6 +87,7 @@ export const TROPICAL_TANK: Environment = {
   bubbles: true,
   caustics: true,
   decor: DEFAULT_DECOR,
+  lilyPads: null,
   species: TROPICAL_SPECIES.map((def) => def.id),
   population: defaultPopulation(TROPICAL_SPECIES),
 };
@@ -90,8 +97,8 @@ export const POND_DIMENSIONS: TankDimensions = { width: 2, height: 0.4, depth: 1
 
 /**
  * Bassin à koïs (épopée v0.5), vu de dessus : plus large et moins profond que le bac, eau
- * verte-bleutée plus sombre, fond de vase couvert d'algues, quelques pierres, et des koïs
- * (issue #88).
+ * verte-bleutée plus sombre, fond de vase couvert d'algues, quelques pierres, des koïs
+ * (issue #88) et des nénuphars (issue #103).
  */
 export const POND: Environment = {
   id: 'bassin',
@@ -112,6 +119,10 @@ export const POND: Environment = {
     ]`,
     POND_DIMENSIONS,
   ),
+  lilyPads: assertLilyPadSettings({
+    count: { min: 5, max: 8 },
+    radius: { min: 0.075, max: 0.13 },
+  }),
   species: [KOI.id],
   population: defaultPopulation([KOI]),
 };

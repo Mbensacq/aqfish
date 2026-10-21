@@ -29,13 +29,15 @@ import {
 import { SPECIES, speciesVariants, type SpeciesId } from '../sim/species';
 import type { Fish } from '../sim/swimmer';
 import type { DayLight } from '../sim/daylight';
-import type { Environment } from '../sim/environment';
+import { environmentWater, type Environment } from '../sim/environment';
+import { lilyPadLayout } from '../sim/lily-pads';
 import type { DecorItem } from '../sim/decor';
 import type { FoodPellet } from '../sim/food';
 import { BubbleLayer } from './bubble-layer';
 import { DecorLayer } from './decor-layer';
 import { FishLayer, MAX_FISH_PER_SPECIES } from './fish-layer';
 import { FoodLayer } from './food-layer';
+import { LilyPadLayer } from './lily-pad-layer';
 import { isClick, toNormalizedDevice, waterSurfacePoint } from './food-pick';
 import {
   decorTintInto,
@@ -128,6 +130,8 @@ export class AquariumView {
   private readonly foodLayer = new FoodLayer();
   /** Caustiques sur le sable et reflet de surface (ADR 0017). */
   private readonly waterLight: WaterLightLayer;
+  /** Nénuphars (issue #103), tirés de la graine fixée par `setDecor`. */
+  private readonly lilyPadLayer: LilyPadLayer;
   /** Abonnés au clic sur la surface de l'eau (`onSurfaceClick`). */
   private readonly surfaceClickListeners = new Set<(x: number, z: number) => void>();
   /** Appui du pointeur principal en attente de relâchement (`null` : aucun clic possible). */
@@ -200,6 +204,8 @@ export class AquariumView {
     this.world.scene.add(this.foodLayer.object);
     this.waterLight = new WaterLightLayer(this.world.dimensions, this.world.environment.caustics);
     this.world.scene.add(this.waterLight.object);
+    this.lilyPadLayer = new LilyPadLayer(this.world.dimensions);
+    this.world.scene.add(this.lilyPadLayer.object);
 
     const radius = tankBoundingRadius(this.world.dimensions);
     this.camera = new PerspectiveCamera(CAMERA_FOV_DEG, 1, radius * 0.05, radius * 40);
@@ -350,6 +356,7 @@ export class AquariumView {
   updateDecor(time: number): void {
     if (!this.disposed) {
       this.decorLayer.update(time);
+      this.lilyPadLayer.update(time);
       if (this.world.environment.bubbles) {
         this.bubbleLayer.update(time);
       }
@@ -418,19 +425,22 @@ export class AquariumView {
       this.bubbleLayer.setBrightness(brightness);
       this.foodLayer.setBrightness(brightness);
       this.decorLayer.setTint(decorTintInto(light.intensity, this.decorTint));
+      this.lilyPadLayer.setTint(this.decorTint);
       const penalties = tonePenaltiesInto(light.intensity, this.penalties);
       this.pixelPass.setTonePenalties(penalties.night, penalties.twilight);
     }
   }
 
   /**
-   * Affiche le décor du monde (`World.decor`) et ses bulles, tirées de la graine du monde
-   * (`World.seed`) : à appeler une fois par monde.
+   * Affiche le décor du monde (`World.decor`), ses bulles et ses nénuphars, tirés de la graine
+   * du monde (`World.seed`) : à appeler une fois par monde.
    */
   setDecor(items: readonly DecorItem[], seed: number): void {
     if (!this.disposed) {
       this.decorLayer.setDecor(items);
       this.bubbleLayer.setSeed(seed);
+      const env = this.world.environment;
+      this.lilyPadLayer.setPads(lilyPadLayout(seed, environmentWater(env.id), env.lilyPads));
     }
   }
 
@@ -455,13 +465,24 @@ export class AquariumView {
   }
 
   /**
-   * Affiche ou masque le décor (rochers et plantes, issue #52) sans le détruire : il reste
-   * en mémoire et réapparaît tel quel. Les bulles, l'eau et la lumière ne changent pas.
+   * Affiche ou masque le décor (rochers, plantes et nénuphars, issue #52) sans le détruire :
+   * il reste en mémoire et réapparaît tel quel. Les bulles, l'eau et la lumière ne changent pas.
    */
   setDecorVisible(visible: boolean): void {
     if (!this.disposed) {
       this.decorLayer.object.visible = visible;
+      this.lilyPadLayer.object.visible = visible;
     }
+  }
+
+  /** Nombre de nénuphars affichés (tests). */
+  get lilyPadCount(): number {
+    return this.lilyPadLayer.count;
+  }
+
+  /** Vrai si les nénuphars sont affichés (tests). */
+  get lilyPadsVisible(): boolean {
+    return this.lilyPadLayer.object.visible;
   }
 
   /** Vrai si le décor est affiché (tests). */
@@ -521,6 +542,7 @@ export class AquariumView {
     }
     if (this.currentFilter === 'aucun') {
       this.decorLayer.setResolution(this.width * this.pixelRatio, this.height * this.pixelRatio);
+      this.lilyPadLayer.setResolution(this.width * this.pixelRatio, this.height * this.pixelRatio);
       // Sans filtre, une bulle garde la taille d'un pixel de scène du mode pixel art.
       this.bubbleLayer.setPointScale(PIXEL_SIZE * this.pixelRatio);
       this.foodLayer.setPointScale(PIXEL_SIZE * this.pixelRatio);
@@ -529,6 +551,7 @@ export class AquariumView {
       return true;
     }
     this.decorLayer.setResolution(this.targetSize.width, this.targetSize.height);
+    this.lilyPadLayer.setResolution(this.targetSize.width, this.targetSize.height);
     this.bubbleLayer.setPointScale(1);
     this.foodLayer.setPointScale(1);
     this.renderer.setRenderTarget(this.pixelPass.target);
@@ -582,6 +605,7 @@ export class AquariumView {
     this.bubbleLayer.dispose();
     this.foodLayer.dispose();
     this.waterLight.dispose();
+    this.lilyPadLayer.dispose();
     this.world.dispose();
     this.pixelPass.dispose();
     this.renderer.dispose();

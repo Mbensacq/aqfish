@@ -239,6 +239,18 @@ haut de sa section.
 
 ## Rendu
 
+- **Objet très mince et coque de contour : contour par-dessus l'objet** (cycle 35, #103) :
+  la feuille de nénuphar fait 6 mm ; en vue trois-quarts, le dessous de la coque et le
+  dessus de la feuille tombaient sur la même profondeur quantifiée et le contour (`koiNoir`)
+  couvrait la moitié **lointaine** de chaque feuille (la plus touchée par la perte de
+  précision), alors que la vue de dessus était juste. Diagnostic : masquer la coque le temps
+  d'une capture. Solution : `polygonOffset` (facteur −2, unités −8) sur le matériau de la
+  feuille (`render/lily-pad-layer.ts`). (2026-10-21)
+- **Ombre sous l'eau du bassin invisible** (cycle 35, #103) : vu de dessus, le fond du
+  bassin n'apparaît pas, la passe palette ramène « eau + fond » à `eauSombre` ; même une
+  ombre noire posée sur le fond donnait `eauSombre`. Dessiner l'ombre en couleur pleine
+  (`eauProfonde`) **après** le volume d'eau (ordre 1) et **avant** les rides de la surface
+  (`SURFACE_RENDER_ORDER`, 1,5). (2026-10-21)
 - **Mesurer les couleurs avant quantification sans toucher au harnais** (cycle 23, #73) :
   dans un worktree, remplacer temporairement `gl_FragColor = vec4(best, 1.0)` par
   `vec4(color, 1.0)` dans `render/palette-pass.ts`, servir sur un autre port

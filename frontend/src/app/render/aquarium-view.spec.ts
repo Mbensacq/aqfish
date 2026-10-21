@@ -5,7 +5,9 @@ import { ORBIT_MOUSE_BUTTONS, ORBIT_TOUCHES } from '../core/commands/commands';
 
 import { lightAt } from '../sim/daylight';
 import { SPECIES, speciesVariants } from '../sim/species';
-import { createDefaultWorld } from '../sim/world';
+import { environmentWater, POND, TROPICAL_TANK } from '../sim/environment';
+import { lilyPadLayout } from '../sim/lily-pads';
+import { createDefaultWorld, createWorld } from '../sim/world';
 import {
   AquariumView,
   ORBIT_MOUSE_ACTIONS,
@@ -179,6 +181,52 @@ describe('AquariumView (pipeline pixel art)', () => {
     expect(view.decorCount).toBe(0); // libéré avec la vue
     view.setDecor(world.decor, world.seed);
     expect(view.decorCount).toBe(0);
+  });
+});
+
+describe('AquariumView (nénuphars, #103)', () => {
+  function createIn(environment = POND): AquariumView {
+    return new AquariumView({
+      canvas: document.createElement('canvas'),
+      rendererFactory: () => new RecordingRenderer(),
+      pixelRatio: 1,
+      preset: 'top',
+      interactive: false,
+      environment,
+    });
+  }
+
+  it('le bassin affiche les nénuphars tirés de la graine du monde', () => {
+    const view = createIn();
+    const world = createWorld(42, [], [], POND.decor, 'bassin');
+    expect(view.lilyPadCount).toBe(0);
+    view.setDecor(world.decor, world.seed);
+    const expected = lilyPadLayout(42, environmentWater('bassin'), POND.lilyPads).length;
+    expect(expected).toBeGreaterThan(0);
+    expect(view.lilyPadCount).toBe(expected);
+    view.updateDecor(30);
+    view.updateLight(lightAt(0));
+    view.dispose();
+    expect(view.lilyPadCount).toBe(0); // libérés avec la vue
+  });
+
+  it('le bac tropical n’en a aucun', () => {
+    const view = createIn(TROPICAL_TANK);
+    const world = createDefaultWorld(42);
+    view.setDecor(world.decor, world.seed);
+    expect(view.lilyPadCount).toBe(0);
+    view.dispose();
+  });
+
+  it('masqués et réaffichés avec le décor', () => {
+    const view = createIn();
+    const world = createWorld(7, [], [], POND.decor, 'bassin');
+    view.setDecor(world.decor, world.seed);
+    view.setDecorVisible(false);
+    expect(view.lilyPadsVisible).toBe(false);
+    view.setDecorVisible(true);
+    expect(view.lilyPadsVisible).toBe(true);
+    view.dispose();
   });
 });
 
