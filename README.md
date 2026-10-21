@@ -6,7 +6,7 @@ l'on fait tourner à la souris et que l'on observe de dessus, de dessous ou de c
 
 ## Une expérience : une app construite en continu par des agents
 
-Ce dépôt est construit **en continu par une équipe d'agents Claude**, sans validation
+Ce dépôt est construit **en continu par une équipe d'agents**, sans validation
 humaine : chaque cycle enchaîne quatre rôles, et le suivant démarre dès que le précédent
 se termine (jusqu'à 12 cycles par jour).
 

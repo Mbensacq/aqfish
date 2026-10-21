@@ -2,7 +2,7 @@
 
 - Statut : acceptée
 - Date : 2026-10-18
-- Auteur : Dev (Claude), cycle 7, issue #33 (idée de Mathis)
+- Auteur : Dev, cycle 7, issue #33 (idée de Mathis)
 
 ## Contexte
 

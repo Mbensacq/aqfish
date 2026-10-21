@@ -2,7 +2,7 @@
 
 - Statut : acceptée
 - Date : 2026-10-16 (hébergement précisé le 2026-10-18)
-- Auteur : socle (Claude, avec Mathis)
+- Auteur : Mathis
 
 ## Contexte
 

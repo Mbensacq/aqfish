@@ -2,7 +2,7 @@
 
 - Statut : acceptée
 - Date : 2026-10-17
-- Auteur : Dev (Claude)
+- Auteur : Dev
 
 ## Contexte
 

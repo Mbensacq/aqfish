@@ -2,7 +2,7 @@
 
 - Statut : acceptée (remplace le calendrier nocturne de l'ADR 0005)
 - Date : 2026-10-18
-- Auteur : socle (Claude, avec Mathis)
+- Auteur : Mathis
 
 ## Contexte
 

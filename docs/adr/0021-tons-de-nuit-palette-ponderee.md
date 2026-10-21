@@ -2,7 +2,7 @@
 
 - Statut : acceptée
 - Date : 2026-10-19
-- Auteur : Dev (Claude), cycle 23, issue #73
+- Auteur : Dev, cycle 23, issue #73
 
 ## Contexte
 

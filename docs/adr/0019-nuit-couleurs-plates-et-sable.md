@@ -2,7 +2,7 @@
 
 - Statut : acceptée ; point « sable nocturne » remplacé par l’ADR 0021
 - Date : 2026-10-19
-- Auteur : Dev (Claude), cycle 19, issue #64
+- Auteur : Dev, cycle 19, issue #64
 
 ## Contexte
 

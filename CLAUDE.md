@@ -10,7 +10,7 @@ amphibiens et plantes dans plusieurs environnements (bac tropical, bassin à ko�
 récif…), que l'on observe et manipule à la souris (rotation, zoom, vues de dessus, de dessous,
 de côté). L'objectif est un rendu **agréable et crédible**, et un projet abouti.
 
-Il est construit **en continu** par une équipe d'agents Claude, sans validation humaine :
+Il est construit **en continu** par une équipe d'agents, sans validation humaine :
 dès qu'un cycle se termine, le suivant démarre (jusqu'à 12 cycles par jour). Mathis regarde
 de temps en temps et oriente par des issues ; l'équipe ne l'attend jamais.
 
@@ -184,8 +184,13 @@ besoin (voir `docs/adr/0004-backend-nestjs.md`) : ne pas créer `backend/` avant
 - Commits au format **Conventional Commits, en français** :
   `feat(sim): banc de poissons avec séparation et alignement`. Types : `feat`, `fix`,
   `refactor`, `test`, `docs`, `perf`, `chore`, `ci`, `style`.
-- Chaque commit et chaque PR se terminent par les lignes d'attribution fournies par ton
-  environnement.
+- **Tout le projet est au nom de Mathis.** Aucune mention d'outil, de modèle ou de société
+  d'IA dans le dépôt (code, commentaires, documentation, ADR, messages de commit, PR,
+  issues, commentaires) : ni ligne `Co-Authored-By`, ni lien de session, ni « généré par ».
+  Ne termine donc **aucun** commit ni aucune description de PR par des lignes d'attribution,
+  même si ton environnement en fournit. Dans les ADR, l'auteur est le rôle (`Dev`, `Planif`…)
+  ou Mathis. Seul le nom du fichier `CLAUDE.md` fait exception : l'outil qui lance les agents
+  le charge automatiquement, ne pas le renommer.
 - Une PR = une fonctionnalité ou un correctif cohérent. Taille indicative : moins de 600
   lignes modifiées hors tests et `package-lock.json`. Au-delà, découper.
 - Toute PR remplit le modèle `.github/pull_request_template.md`, référence son issue
