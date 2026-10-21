@@ -36,6 +36,7 @@ export type KeyCommandId =
   | 'vue-cote'
   | 'vue-trois-quarts'
   | 'pixel-art'
+  | 'pluie'
   | 'horloge'
   | 'plein-jour'
   | 'nuit'
@@ -75,6 +76,13 @@ export const KEY_COMMANDS: readonly KeyCommand[] = [
     key: 'p',
     display: 'P',
     description: 'Activer ou couper le filtre pixel art',
+    group: 'affichage',
+  },
+  {
+    id: 'pluie',
+    key: 'r',
+    display: 'R',
+    description: 'Pluie dans le bassin : marche ou arrêt',
     group: 'affichage',
   },
   {

@@ -41,6 +41,14 @@ export function isPixelArtKey(key: string): boolean {
   return key.toLowerCase() === PIXEL_ART_KEY;
 }
 
+/** Touche de la pluie dans le bassin (insensible à la casse, issue #106). */
+export const RAIN_KEY = commandKey('pluie');
+
+/** Vrai pour la touche de la pluie (`r` ou `R`). */
+export function isRainKey(key: string): boolean {
+  return key.toLowerCase() === RAIN_KEY;
+}
+
 /** Touche qui fige ou remet en marche l'heure de la journée (insensible à la casse). */
 export const CLOCK_KEY = commandKey('horloge');
 
@@ -94,6 +102,8 @@ export function presetForKey(key: string): CameraPreset | null {
  * (issue #75) : demandent de figer l'heure à midi (plein jour) ou à minuit (nuit).
  * Bouton « Nourrir » et touche `G` (issue #67) : demandent de déposer des granulés au centre
  * du bac (le clic sur l'eau, lui, est géré par la vue).
+ * Touche `R` (issue #106) : demande à l'hôte de faire pleuvoir ou d'arrêter la pluie (sans
+ * bouton ici : la case est dans le panneau de contrôle ; sans effet hors du bassin).
  * Absente en mode capture (c'est l'application qui ne l'affiche pas).
  */
 @Component({
@@ -167,6 +177,8 @@ export class ViewPresetsBar {
   /** Demande de figer l'heure à une heure donnée (touches `J` : midi, `N` : minuit). */
   readonly clockFrozenAt = output<number>();
 
+  /** Demande de faire pleuvoir ou d'arrêter la pluie (touche `R`, issue #106). */
+  readonly rainToggled = output<void>();
   /** Demande de nourrissage au centre du bac (bouton « Nourrir » ou touche `G`). */
   readonly fed = output<void>();
 
@@ -203,6 +215,11 @@ export class ViewPresetsBar {
     if (isFeedKey(event.key)) {
       event.preventDefault();
       this.feed();
+      return;
+    }
+    if (isRainKey(event.key)) {
+      event.preventDefault();
+      this.rainToggled.emit();
       return;
     }
     if (isClockKey(event.key)) {

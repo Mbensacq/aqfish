@@ -31,6 +31,10 @@
  * nourriture, en mode capture seulement ; absent ou invalide, en points (séries existantes
  * inchangées).
  *
+ * Paramètre facultatif `pluie=1` (issue #106) : fait pleuvoir dans le bassin, en capture
+ * comme hors capture (sans effet dans un environnement sans pluie) ; toute autre valeur ou
+ * absent, pas de pluie (séries existantes inchangées).
+ *
  * Ce module est volontairement pur (aucune dépendance à Angular ni à Three.js).
  * Voir docs/ARCHITECTURE.md, section « Contrat de capture ».
  */
@@ -68,6 +72,8 @@ export interface CaptureParams {
   readonly population: readonly CapturePopulation[];
   /** Rendu des granulés forcé par `granules=` ; `null` si absent ou invalide. */
   readonly foodStyle: FoodStyle | null;
+  /** Vrai pour `pluie=1` : il pleut dès le départ (issue #106). */
+  readonly rain: boolean;
 }
 
 /**
@@ -104,6 +110,7 @@ export const DEFAULT_CAPTURE_PARAMS: CaptureParams = {
   feedings: [],
   population: [],
   foodStyle: null,
+  rain: false,
 };
 
 /** Temps de simulation maximal accepté (1 h), pour éviter un calcul démesuré. */
@@ -141,6 +148,7 @@ export function parseCaptureParams(search: string): CaptureParams {
     feedings: parseFeedings(params.get('nourrir')),
     population: parsePopulation(params.get('population')),
     foodStyle: parseFoodStyle(params.get('granules')),
+    rain: params.get('pluie') === '1',
   };
 }
 

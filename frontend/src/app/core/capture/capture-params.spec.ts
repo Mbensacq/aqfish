@@ -26,7 +26,18 @@ describe('parseCaptureParams', () => {
       feedings: [],
       population: [],
       foodStyle: null,
+      rain: false,
     });
+  });
+
+  it('lit la pluie : pluie=1 seulement, sinon pas de pluie (#106)', () => {
+    expect(parseCaptureParams('?pluie=1').rain).toBe(true);
+    expect(parseCaptureParams('?capture=1&environnement=bassin&pluie=1').rain).toBe(true);
+    for (const bad of ['', '0', 'oui', 'true', '1 ', '01', '2']) {
+      expect(parseCaptureParams(`?pluie=${encodeURIComponent(bad)}`).rain).toBe(false);
+    }
+    expect(parseCaptureParams('?capture=1').rain).toBe(false);
+    expect(DEFAULT_CAPTURE_PARAMS.rain).toBe(false);
   });
 
   it('lit le rendu des granulés : points ou voxels, sinon null (#117)', () => {

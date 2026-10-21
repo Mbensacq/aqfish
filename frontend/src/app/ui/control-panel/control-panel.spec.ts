@@ -87,6 +87,7 @@ describe('fonctions du panneau de contrôle', () => {
     [hour]="hour()"
     [clockRunning]="running()"
     [decorVisible]="decor()"
+    [rain]="rain()"
     [foodStyle]="foodStyle()"
     [population]="population()"
     [populationMax]="populationMax()"
@@ -100,6 +101,7 @@ describe('fonctions du panneau de contrôle', () => {
     (hourChanged)="events.push(['heure', $event])"
     (clockRunningChanged)="events.push(['auto', $event])"
     (decorVisibleChanged)="events.push(['decor', $event])"
+    (rainChanged)="events.push(['pluie', $event])"
     (environmentChanged)="environments.push($event)"
     (foodStyleToggled)="foodToggles = foodToggles + 1"
   />`,
@@ -112,6 +114,7 @@ class TestHost {
   readonly hour = signal(12);
   readonly running = signal(true);
   readonly decor = signal(true);
+  readonly rain = signal(false);
   readonly foodStyle = signal<FoodStyle>('points');
   foodToggles = 0;
   readonly population = signal<PopulationCounts>({ neon: 12, guppy: 6, corydora: 0, koi: 0 });
@@ -257,6 +260,24 @@ describe('ControlPanel', () => {
     expect(box.checked).toBe(false);
     box.click();
     expect(fixture.componentInstance.events).toEqual([['auto', true]]);
+  });
+
+  it('case « Pluie » (#106) : bassin seulement, suit l’hôte et émet la demande', async () => {
+    await openPanel();
+    expect(checkbox('Pluie')).toBeNull();
+    fixture.componentInstance.environment.set('bassin');
+    await fixture.whenStable();
+    const box = checkbox('Pluie')!;
+    expect(box.checked).toBe(false);
+    box.click();
+    expect(fixture.componentInstance.events).toEqual([['pluie', true]]);
+    fixture.componentInstance.rain.set(true);
+    await fixture.whenStable();
+    expect(checkbox('Pluie')!.checked).toBe(true);
+    // Sur la ligne de « Heure automatique » : le panneau ne grandit pas (#101).
+    expect(box.closest('.control-panel__row')).toBe(
+      checkbox('Heure automatique')!.closest('.control-panel__row'),
+    );
   });
 
   it('case « Afficher le décor » : suit l’hôte et émet la demande', async () => {

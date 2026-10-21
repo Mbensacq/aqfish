@@ -23,6 +23,8 @@ interface PanelCase {
   readonly panel: (page: Page) => Locator;
   /** Ouvre le panneau (quel que soit son état initial) et attend qu'il soit visible. */
   readonly open: (page: Page) => Promise<void>;
+  /** Requête de la page (monde neuf, graine 42, bac tropical par défaut). */
+  readonly search?: string;
 }
 
 const PANELS: readonly PanelCase[] = [
@@ -32,6 +34,16 @@ const PANELS: readonly PanelCase[] = [
     open: async (page) => {
       await page.getByRole('button', { name: 'Réglages' }).click();
       await expect(page.locator('.control-panel')).toBeVisible();
+    },
+  },
+  {
+    // Bassin (#106) : case « Pluie » en plus, sur la ligne de « Heure automatique ».
+    name: 'Réglages (bassin)',
+    search: '?seed=42&environnement=bassin',
+    panel: (page) => page.locator('.control-panel'),
+    open: async (page) => {
+      await page.getByRole('button', { name: 'Réglages' }).click();
+      await expect(page.locator('.control-panel [data-rain]')).toBeVisible();
     },
   },
   {
@@ -53,11 +65,11 @@ const VIEWPORTS = [
   { width: 390, height: 844 },
 ] as const;
 
-async function openScene(page: Page): Promise<string[]> {
+async function openScene(page: Page, search = '?seed=42'): Promise<string[]> {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   // `seed=` : monde neuf, sans relire une sauvegarde d'un test précédent (docs/PIEGES.md).
-  await page.goto('/?seed=42');
+  await page.goto(`/${search}`);
   await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
   return errors;
 }
@@ -80,7 +92,7 @@ for (const viewport of VIEWPORTS) {
       test(`panneau « ${panelCase.name} » ouvert : dans la fenêtre, sans recouvrir la barre des vues`, async ({
         page,
       }) => {
-        const errors = await openScene(page);
+        const errors = await openScene(page, panelCase.search);
         await panelCase.open(page);
         const panel = await box(panelCase.panel(page));
         const bar = await box(page.locator('.view-presets-bar'));

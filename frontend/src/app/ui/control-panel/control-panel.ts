@@ -184,10 +184,19 @@ function toNumber(value: string | number): number {
               (input)="onHour($event)"
             />
           </label>
-          <label class="control-panel__check">
-            <input type="checkbox" [checked]="clockRunning()" (change)="onClockRunning($event)" />
-            Heure automatique
-          </label>
+          <!-- Pluie (#106), bassin seulement : sur la même ligne, le panneau ne grandit pas (#101). -->
+          <div class="control-panel__row">
+            <label class="control-panel__check">
+              <input type="checkbox" [checked]="clockRunning()" (change)="onClockRunning($event)" />
+              Heure automatique
+            </label>
+            @if (rainAvailable()) {
+              <label class="control-panel__check" data-rain>
+                <input type="checkbox" [checked]="rain()" (change)="onRain($event)" />
+                Pluie
+              </label>
+            }
+          </div>
         </fieldset>
 
         <fieldset class="control-panel__section" data-section="decor">
@@ -298,6 +307,8 @@ export class ControlPanel {
   readonly clockRunning = input(true);
   /** Vrai si le décor est affiché (fourni par l'hôte). */
   readonly decorVisible = input(true);
+  /** Vrai s'il pleut (fourni par l'hôte, #106). */
+  readonly rain = input(false);
   /** Rendu des granulés, `points` ou `voxels` (fourni par l'hôte, #117). */
   readonly foodStyle = input<FoodStyle>(DEFAULT_FOOD_STYLE);
   /** Effectif de chaque espèce (fourni par l'hôte). */
@@ -319,6 +330,8 @@ export class ControlPanel {
   readonly clockRunningChanged = output<boolean>();
   /** Case « Afficher le décor ». */
   readonly decorVisibleChanged = output<boolean>();
+  /** Case « Pluie » (#106) : `true` pour faire pleuvoir, `false` pour arrêter. */
+  readonly rainChanged = output<boolean>();
   /** Bouton « Granulés » : passer à l'autre rendu (#117). */
   readonly foodStyleToggled = output<void>();
   /** Effectif demandé pour une espèce (déjà borné à [0, maximum]). */
@@ -338,6 +351,8 @@ export class ControlPanel {
   /** Espèces de l'environnement affiché (#88), dans l'ordre de `Environment.species`. */
   protected readonly speciesIds = computed(() => environmentById(this.environment()).species);
   protected readonly environmentIds = ENVIRONMENT_IDS;
+  /** Case « Pluie » proposée seulement là où il peut pleuvoir (le bassin, #106). */
+  protected readonly rainAvailable = computed(() => environmentById(this.environment()).rain);
   protected readonly hourStep = HOUR_SLIDER_STEP;
   /** Dernier cran du curseur d'heure : 23:45 (24:00 serait minuit, déjà au cran 0). */
   protected readonly maxHour = HOURS_PER_DAY - HOUR_SLIDER_STEP;
@@ -406,6 +421,10 @@ export class ControlPanel {
 
   protected onClockRunning(event: Event): void {
     this.clockRunningChanged.emit((event.target as HTMLInputElement).checked);
+  }
+
+  protected onRain(event: Event): void {
+    this.rainChanged.emit((event.target as HTMLInputElement).checked);
   }
 
   protected onDecor(event: Event): void {

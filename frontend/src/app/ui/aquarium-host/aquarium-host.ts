@@ -126,6 +126,8 @@ export const HOUR_FROZEN_ATTRIBUTE = 'data-aqfish-hour-frozen';
 export const SPEED_ATTRIBUTE = 'data-aqfish-speed';
 /** Attribut du composant hôte : `true` si le décor est affiché, `false` sinon (#52). */
 export const DECOR_ATTRIBUTE = 'data-aqfish-decor';
+/** Attribut du composant hôte : `true` s'il pleut, `false` sinon (#106). */
+export const RAIN_ATTRIBUTE = 'data-aqfish-rain';
 /** Attribut du composant hôte exposant les effectifs (`neon:12,guppy:6,corydora:6`, #69). */
 export const POPULATION_ATTRIBUTE = 'data-aqfish-population';
 
@@ -308,6 +310,12 @@ export class AquariumHost {
   readonly decorVisible = signal(true);
 
   /**
+   * Pluie (#106) : touche `R`, case du panneau, `pluie=1`. Possible dans le bassin seulement ;
+   * jamais sauvegardée.
+   */
+  readonly rain = signal(false);
+
+  /**
    * Rendu des granulés (#117) : points par défaut, voxels au choix (bouton du panneau),
    * enregistré avec les réglages de la sauvegarde ; `granules=` en capture.
    */
@@ -441,6 +449,24 @@ export class AquariumHost {
     this.decorVisible.set(visible);
     this.host.nativeElement.setAttribute(DECOR_ATTRIBUTE, String(visible));
     this.scheduleFrame();
+  }
+
+  /**
+   * Fait pleuvoir ou arrête la pluie (#106) : gouttes, ronds à la surface et nénuphars qui
+   * frémissent. Sans effet hors du bassin (`Environment.rain`),
+   * en mode capture (`pluie=`) ou avant le démarrage. Rien n'est sauvegardé.
+   */
+  setRain(enabled: boolean): void {
+    if (!this.view || this.capture) {
+      return;
+    }
+    this.applyRain(enabled);
+    this.scheduleFrame();
+  }
+
+  /** Alterne pluie et beau temps (touche `R`, #106). */
+  toggleRain(): void {
+    this.setRain(!this.rain());
   }
 
   /**
@@ -704,6 +730,8 @@ export class AquariumHost {
     this.exposeClockFrozen();
     this.host.nativeElement.setAttribute(SPEED_ATTRIBUTE, String(this.speed()));
     this.host.nativeElement.setAttribute(DECOR_ATTRIBUTE, String(this.decorVisible()));
+    // Pluie de `pluie=1` (#106) : appliquée à la création de la vue (bassin seulement).
+    this.rain.set(params.rain);
     this.host.nativeElement.setAttribute(SEED_ATTRIBUTE, String(this.currentWorld.seed));
     this.exposeEnvironment();
     this.exposeTick();
@@ -802,6 +830,8 @@ export class AquariumHost {
     view.setDecor(world.decor, world.seed);
     view.setDecorVisible(this.decorVisible());
     this.applyFoodStyle(this.foodStyle());
+    // Hors du bassin, la vue refuse la pluie : l'état affiché suit (#106).
+    this.applyRain(this.rain());
     this.litHour = null;
     this.activePreset.set(preset);
     this.viewCleanups.push(view.onCameraChange(() => this.exposeCamera()));
@@ -961,6 +991,13 @@ export class AquariumHost {
       POPULATION_ATTRIBUTE,
       formatPopulation(counts, environmentById(world.environment).species),
     );
+  }
+
+  /** Applique la pluie à la vue courante et expose l'état obtenu (`data-aqfish-rain`). */
+  private applyRain(enabled: boolean): void {
+    const raining = this.view?.setRain(enabled) ?? false;
+    this.rain.set(raining);
+    this.host.nativeElement.setAttribute(RAIN_ATTRIBUTE, String(raining));
   }
 
   /** Expose l'environnement (`data-aqfish-environment` et signal `environment`). */

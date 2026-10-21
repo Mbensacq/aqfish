@@ -8,6 +8,7 @@ import {
   isClockKey,
   isFeedKey,
   isPixelArtKey,
+  isRainKey,
   NIGHT_KEY,
   presetForKey,
   VIEW_PRESET_BUTTONS,
@@ -237,6 +238,36 @@ describe('ViewPresetsBar', () => {
       for (const key of ['h', 'n', 'f', '']) {
         expect(isFeedKey(key)).toBe(false);
       }
+    });
+  });
+
+  describe('pluie (#106)', () => {
+    let toggles: number;
+
+    beforeEach(() => {
+      toggles = 0;
+      fixture.componentInstance.rainToggled.subscribe(() => toggles++);
+    });
+
+    it('R et r demandent la pluie (touche consommée) ; ignorée avec Ctrl ou dans un champ', () => {
+      expect(press('r').defaultPrevented).toBe(true);
+      expect(press('R').defaultPrevented).toBe(true);
+      press('r', { ctrlKey: true });
+      const field = document.createElement('input');
+      document.body.appendChild(field);
+      press('r', {}, field);
+      field.remove();
+      expect(toggles).toBe(2);
+      expect(emitted).toEqual([]);
+    });
+
+    it('isRainKey : r et R seulement ; P reste le filtre pixel art', () => {
+      expect(isRainKey('r')).toBe(true);
+      expect(isRainKey('R')).toBe(true);
+      for (const key of ['p', 'P', 'g', '']) {
+        expect(isRainKey(key)).toBe(false);
+      }
+      expect(isPixelArtKey('p')).toBe(true);
     });
   });
 

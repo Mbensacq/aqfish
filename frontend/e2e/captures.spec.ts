@@ -141,6 +141,12 @@ test.describe('Captures', () => {
     { name: 'bassin-side', query: 'environnement=bassin&camera=side' },
     { name: 'bassin-front', query: 'environnement=bassin&camera=front' },
     { name: 'bassin-bottom', query: 'environnement=bassin&camera=bottom' },
+    // Pluie (#106) : gouttes et ronds à la surface, de dessus et en trois-quarts.
+    { name: 'bassin-top-pluie', query: 'environnement=bassin&pluie=1' },
+    {
+      name: 'bassin-three-quarter-pluie',
+      query: 'environnement=bassin&camera=three-quarter&pluie=1',
+    },
   ] as const;
   for (const { name, query } of POND_CAPTURES) {
     test(`angle ${name}`, async ({ page }) => {

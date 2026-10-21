@@ -21,6 +21,7 @@ import {
   SAVE_STORAGE,
   CAMERA_ATTRIBUTE,
   ENVIRONMENT_ATTRIBUTE,
+  RAIN_ATTRIBUTE,
   CAMERA_TARGET_ATTRIBUTE,
   DECOR_ATTRIBUTE,
   FILTER_ATTRIBUTE,
@@ -722,6 +723,65 @@ describe('AquariumHost', () => {
       const captured = host().world;
       host().setEnvironment('bassin');
       expect(host().world).toBe(captured);
+    });
+  });
+
+  describe('pluie (#106)', () => {
+    const host = () => fixture.componentInstance;
+    const rainAttr = () => (fixture.nativeElement as HTMLElement).getAttribute(RAIN_ATTRIBUTE);
+
+    it('bassin : touche R et case, exposée ; jamais dans la sauvegarde ; bac : sans effet', async () => {
+      await create('?seed=4');
+      setCanvasSize(800, 600);
+      frames.flush(0);
+      expect(host().rain()).toBe(false);
+      expect(rainAttr()).toBe('false');
+      // Bac tropical : pas de pluie possible.
+      host().toggleRain();
+      host().setRain(true);
+      expect(host().rain()).toBe(false);
+      expect(rainAttr()).toBe('false');
+      host().setEnvironment('bassin');
+      const world = host().world;
+      host().toggleRain();
+      expect(host().rain()).toBe(true);
+      expect(rainAttr()).toBe('true');
+      frames.flush(500);
+      // La simulation n'est pas touchée, et rien n'est sauvegardé de la pluie.
+      expect(host().world).toBe(world);
+      host().saveNow();
+      expect(saveStorage?.getItem(SAVE_STORAGE_KEY)).not.toMatch(/pluie|rain/i);
+      host().setRain(false);
+      expect(rainAttr()).toBe('false');
+      host().setRain(true);
+      // Retour au bac : la pluie s'arrête.
+      host().setEnvironment('tropical');
+      expect(host().rain()).toBe(false);
+      expect(rainAttr()).toBe('false');
+    });
+
+    it('pluie=1 : il pleut dès le départ dans le bassin, pas dans le bac ; capture figée', async () => {
+      await create('?capture=1&seed=5&environnement=bassin&pluie=1');
+      expect(host().rain()).toBe(true);
+      expect(rainAttr()).toBe('true');
+      host().setRain(false);
+      host().toggleRain();
+      expect(host().rain()).toBe(true);
+      fixture.destroy();
+      await create('?capture=1&seed=5&pluie=1');
+      expect(host().rain()).toBe(false);
+      expect(rainAttr()).toBe('false');
+      fixture.destroy();
+      await create('?seed=5&environnement=bassin');
+      expect(host().rain()).toBe(false);
+    });
+
+    it('sans effet avant le démarrage', () => {
+      const early = TestBed.createComponent(AquariumHost);
+      early.componentInstance.setRain(true);
+      early.componentInstance.toggleRain();
+      expect(early.componentInstance.rain()).toBe(false);
+      early.destroy();
     });
   });
 

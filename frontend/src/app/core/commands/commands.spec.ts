@@ -22,6 +22,7 @@ describe('commandes (#74)', () => {
       ['vue-cote', '4'],
       ['vue-trois-quarts', '5'],
       ['pixel-art', 'p'],
+      ['pluie', 'r'],
       ['horloge', 'h'],
       ['plein-jour', 'j'],
       ['nuit', 'n'],
@@ -41,6 +42,18 @@ describe('commandes (#74)', () => {
       expect(command.display.toLowerCase()).toBe(command.key);
       expect(command.description.trim()).not.toBe('');
     }
+  });
+
+  it('jamais deux commandes sur la même touche : P reste le pixel art, R la pluie (#106)', () => {
+    const byKey = new Map<string, string[]>();
+    for (const command of KEY_COMMANDS) {
+      byKey.set(command.key, [...(byKey.get(command.key) ?? []), command.id]);
+    }
+    const shared = [...byKey].filter(([, ids]) => ids.length > 1);
+    expect(shared).toEqual([]);
+    expect(keyCommandFor('P')?.id).toBe('pixel-art');
+    expect(keyCommandFor('r')?.id).toBe('pluie');
+    expect(keyCommandFor('R')?.group).toBe('affichage');
   });
 
   it('chaque commande appartient à un groupe déclaré ; aucun groupe orphelin', () => {
