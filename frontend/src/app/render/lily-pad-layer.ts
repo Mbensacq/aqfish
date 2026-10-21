@@ -312,10 +312,13 @@ export class LilyPadLayer {
     parent.add(outline, body);
   }
 
-  /** Pose les feuilles et leurs ombres au temps simulé `time` (secondes), sans allocation. */
-  update(time: number): void {
+  /**
+   * Pose les feuilles et leurs ombres au temps simulé `time` (secondes), sans allocation.
+   * `shiver` : frémissement sous la pluie, de 0 (aucun) à 1 (`lilyPadPose`, issue #106).
+   */
+  update(time: number, shiver = 0): void {
     for (const { pad, leaf, shadow } of this.pads) {
-      const pose = lilyPadPose(pad, time, this.pose);
+      const pose = lilyPadPose(pad, time, this.pose, shiver);
       leaf.position.x = pose.x;
       leaf.position.z = pose.z;
       leaf.rotation.y = pose.rotation;

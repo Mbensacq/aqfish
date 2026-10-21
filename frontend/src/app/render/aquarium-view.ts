@@ -40,6 +40,7 @@ import { FishLayer, MAX_FISH_PER_SPECIES } from './fish-layer';
 import { FoodLayer } from './food-layer';
 import { scenePixelsPerMeter } from './food-size';
 import { LilyPadLayer } from './lily-pad-layer';
+import { RainLayer } from './rain-layer';
 import { isClick, toNormalizedDevice, waterSurfacePoint } from './food-pick';
 import {
   decorTintInto,
@@ -134,6 +135,8 @@ export class AquariumView {
   private readonly waterLight: WaterLightLayer;
   /** Nénuphars (issue #103), tirés de la graine fixée par `setDecor`. */
   private readonly lilyPadLayer: LilyPadLayer;
+  /** Pluie (issue #106), possible dans un environnement qui en a (`Environment.rain`). */
+  private readonly rainLayer: RainLayer;
   /** Abonnés au clic sur la surface de l'eau (`onSurfaceClick`). */
   private readonly surfaceClickListeners = new Set<(x: number, z: number) => void>();
   /** Appui du pointeur principal en attente de relâchement (`null` : aucun clic possible). */
@@ -208,6 +211,8 @@ export class AquariumView {
     this.world.scene.add(this.waterLight.object);
     this.lilyPadLayer = new LilyPadLayer(this.world.dimensions);
     this.world.scene.add(this.lilyPadLayer.object);
+    this.rainLayer = new RainLayer(environmentWater(this.world.environment.id));
+    this.world.scene.add(this.rainLayer.object);
 
     const radius = tankBoundingRadius(this.world.dimensions);
     this.camera = new PerspectiveCamera(CAMERA_FOV_DEG, 1, radius * 0.05, radius * 40);
@@ -358,10 +363,12 @@ export class AquariumView {
   updateDecor(time: number): void {
     if (!this.disposed) {
       this.decorLayer.update(time);
-      this.lilyPadLayer.update(time);
+      // Sous la pluie, les nénuphars frémissent (issue #106).
+      this.lilyPadLayer.update(time, this.rainLayer.isEnabled ? 1 : 0);
       if (this.world.environment.bubbles) {
         this.bubbleLayer.update(time);
       }
+      this.rainLayer.update(time);
       this.waterLight.update(time);
     }
   }
@@ -442,6 +449,7 @@ export class AquariumView {
         layer.setBrightness(brightness);
       }
       this.bubbleLayer.setBrightness(brightness);
+      this.rainLayer.setBrightness(brightness);
       this.foodLayer.setBrightness(brightness);
       this.decorLayer.setTint(decorTintInto(light.intensity, this.decorTint));
       this.lilyPadLayer.setTint(this.decorTint);
@@ -474,6 +482,7 @@ export class AquariumView {
     if (!this.disposed) {
       this.decorLayer.setDecor(items);
       this.bubbleLayer.setSeed(seed);
+      this.rainLayer.setSeed(seed);
       const env = this.world.environment;
       this.lilyPadLayer.setPads(lilyPadLayout(seed, environmentWater(env.id), env.lilyPads));
     }
@@ -508,6 +517,28 @@ export class AquariumView {
       this.decorLayer.object.visible = visible;
       this.lilyPadLayer.object.visible = visible;
     }
+  }
+
+  /**
+   * Fait pleuvoir (`true`) ou arrête la pluie (issue #106) : gouttes, ronds à la surface et
+   * nénuphars qui frémissent, au temps simulé de `updateDecor`. Sans effet dans un
+   * environnement sans pluie (`Environment.rain`). Renvoie l'état appliqué.
+   */
+  setRain(enabled: boolean): boolean {
+    if (!this.disposed && this.world.environment.rain) {
+      this.rainLayer.setEnabled(enabled);
+    }
+    return this.rainLayer.isEnabled;
+  }
+
+  /** Vrai s'il pleut. */
+  get raining(): boolean {
+    return this.rainLayer.isEnabled;
+  }
+
+  /** Gouttes en l'air et ronds à la surface posés par le dernier `updateDecor` (tests). */
+  get rainCounts(): readonly [number, number] {
+    return [this.rainLayer.dropCount, this.rainLayer.rippleCount];
   }
 
   /** Nombre de nénuphars affichés (tests). */
@@ -651,6 +682,7 @@ export class AquariumView {
     this.foodLayer.dispose();
     this.waterLight.dispose();
     this.lilyPadLayer.dispose();
+    this.rainLayer.dispose();
     this.world.dispose();
     this.pixelPass.dispose();
     this.renderer.dispose();
