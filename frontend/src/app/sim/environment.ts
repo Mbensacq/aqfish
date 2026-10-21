@@ -58,6 +58,11 @@ export interface Environment {
    */
   readonly lilyPads: LilyPadSettings | null;
   /**
+   * Pluie possible (issue #106, `sim/rain.ts`) : le bassin, à ciel ouvert. Ailleurs, la
+   * commande de pluie est sans effet.
+   */
+  readonly rain: boolean;
+  /**
    * Espèces qui vivent dans l'environnement, dans l'ordre du panneau (issue #88) : seules
    * celles-ci sont proposées au réglage de population et exposées.
    */
@@ -88,6 +93,7 @@ export const TROPICAL_TANK: Environment = {
   caustics: true,
   decor: DEFAULT_DECOR,
   lilyPads: null,
+  rain: false,
   species: TROPICAL_SPECIES.map((def) => def.id),
   population: defaultPopulation(TROPICAL_SPECIES),
 };
@@ -123,6 +129,7 @@ export const POND: Environment = {
     count: { min: 5, max: 8 },
     radius: { min: 0.075, max: 0.13 },
   }),
+  rain: true,
   species: [KOI.id],
   population: defaultPopulation([KOI]),
 };

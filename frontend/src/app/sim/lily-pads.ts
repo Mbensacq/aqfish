@@ -1,5 +1,6 @@
 import { assertSeed, deriveSeed, prngNextState, prngOutput } from '../core/random/prng';
 import { sunElevation } from './daylight';
+import { rainShiver } from './rain';
 import type { Box3 } from './tank';
 
 /**
@@ -226,11 +227,18 @@ export function lilyPadLayout(
  * l'horloge murale : contrat de capture). Le centre reste dans le disque de rayon
  * `pad.drift` autour de l'ancre (dérive de Lissajous normalisée), l'orientation à
  * `LILY_PAD_SWAY_ANGLE` près de celle de repos.
- * @throws RangeError si `time` n'est pas fini.
+ *
+ * `shiver` (issue #106) : frémissement sous la pluie, de 0 (aucun, pose inchangée à l'octet)
+ * à 1 ; il ajoute à l'orientation au plus `shiver · RAIN_PAD_SHIVER_ANGLE` (`rainShiver`),
+ * sans toucher au centre : l'encombrement de la feuille ne change pas.
+ * @throws RangeError si `time` n'est pas fini ou si `shiver` n'est pas dans [0, 1].
  */
-export function lilyPadPose(pad: LilyPad, time: number, out: LilyPadPose): LilyPadPose {
+export function lilyPadPose(pad: LilyPad, time: number, out: LilyPadPose, shiver = 0): LilyPadPose {
   if (!Number.isFinite(time)) {
     throw new RangeError(`time doit être fini (reçu : ${time})`);
+  }
+  if (!(shiver >= 0 && shiver <= 1)) {
+    throw new RangeError(`shiver doit être dans [0, 1] (reçu : ${shiver})`);
   }
   // Composantes de norme ≤ 1/√2 chacune : le déplacement reste dans le disque de rayon `drift`.
   const k = pad.drift * Math.SQRT1_2;
@@ -238,6 +246,10 @@ export function lilyPadPose(pad: LilyPad, time: number, out: LilyPadPose): LilyP
   out.z = pad.z + k * Math.sin(pad.omegaZ * time + pad.phaseZ);
   out.rotation =
     pad.rotation + LILY_PAD_SWAY_ANGLE * Math.sin(pad.omegaSway * time + pad.phaseSway);
+  if (shiver > 0) {
+    // Phase propre à la feuille (celle du balancement) : les feuilles ne frémissent pas à l'unisson.
+    out.rotation += shiver * rainShiver(time, pad.phaseSway);
+  }
   return out;
 }
 
