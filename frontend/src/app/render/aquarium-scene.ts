@@ -21,6 +21,8 @@ import { mix, type DayLight, type Rgb } from '../sim/daylight';
 import { TROPICAL_TANK, type Environment } from '../sim/environment';
 import { DEFAULT_TANK, SAND_THICKNESS, WATER_LEVEL_RATIO, type TankDimensions } from '../sim/tank';
 import { PALETTE, type PaletteColorName } from './palette';
+import { cutawaySides } from './pond-cutaway';
+import { createPondGround, pondGroundTop } from './pond-ground';
 import { createStoneBorder } from './stone-border';
 
 // Géométrie du bac : définie dans sim/tank.ts (partagée avec les bornes de nage).
@@ -81,6 +83,12 @@ export interface AquariumScene {
    * le cycle jour/nuit (captures par défaut inchangées).
    */
   setDaylight(light: DayLight): void;
+  /**
+   * Place le point de vue (position de la caméra) : pour le bassin enterré, retire le sol et
+   * la margelle du côté de la caméra quand elle passe sous le niveau du sol (vue en coupe,
+   * `pond-cutaway.ts`, #105). Sans effet pour le bac tropical.
+   */
+  setViewpoint(x: number, y: number, z: number): void;
   /** Libère toutes les géométries et tous les matériaux de la scène. */
   dispose(): void;
 }
@@ -113,8 +121,10 @@ export function createAquariumScene(environment: Environment = TROPICAL_TANK): A
   const water = createWater(dims, waterTint);
   scene.add(water);
   const stones = environment.border === 'pierre' ? createStoneBorder(dims) : null;
-  if (stones) {
-    scene.add(stones.object);
+  // Bassin enterré (#105) : le sol l'entoure, seule une margelle basse dépasse.
+  const pondGround = stones ? createPondGround(dims) : null;
+  if (stones && pondGround) {
+    scene.add(stones.object, pondGround.object);
   } else {
     scene.add(...createGlass(dims));
   }
@@ -152,6 +162,14 @@ export function createAquariumScene(environment: Environment = TROPICAL_TANK): A
       surface.color.lerpColors(waterColors.daySurface, waterColors.nightSurface, 1 - day);
       sandBottom.color.lerpColors(waterColors.daySandBottom, waterColors.nightSandBottom, 1 - day);
       stones?.setDaylight(day);
+      pondGround?.setDaylight(day);
+    },
+    setViewpoint: (x, y, z) => {
+      if (stones && pondGround) {
+        const hidden = cutawaySides([x, y, z], dims, pondGroundTop(dims));
+        stones.setHiddenSides(hidden);
+        pondGround.setHiddenSides(hidden);
+      }
     },
     dispose: () => disposeObject(scene),
   };

@@ -575,6 +575,8 @@ export class AquariumView {
     if (this.disposed || !this.hasSize()) {
       return false;
     }
+    // Bassin enterré (#105) : coupe du sol et de la margelle si la caméra passe sous le sol.
+    this.world.setViewpoint(this.camera.position.x, this.camera.position.y, this.camera.position.z);
     // Taille des granulés selon le zoom (#117) : échelle à la distance de la cible.
     this.foodLayer.setPixelsPerMeter(
       scenePixelsPerMeter(

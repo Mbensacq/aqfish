@@ -246,6 +246,43 @@ describe('createAquariumScene : environnements (#87)', () => {
     expect(box.max.z - box.min.z).toBeCloseTo(POND.dimensions.depth);
   });
 
+  it('le bassin est enterré : un sol l’entoure, absent du bac tropical (#105)', () => {
+    expect(createAquariumScene(POND).scene.getObjectByName('sol-bassin')).toBeDefined();
+    expect(createAquariumScene(TROPICAL_TANK).scene.getObjectByName('sol-bassin')).toBeUndefined();
+  });
+
+  it('coupe le sol et la margelle du côté d’une caméra passée sous le sol (#105)', () => {
+    const world = createAquariumScene(POND);
+    const hiddenNames = () => {
+      const names: string[] = [];
+      world.scene.traverse((o) => {
+        if (!o.visible) {
+          names.push(o.name);
+        }
+      });
+      return names;
+    };
+    // Vue de côté (+X, à mi-hauteur) : le côté +X est retiré.
+    world.setViewpoint(3.4, 0.2, 0);
+    const hidden = hiddenNames();
+    expect(hidden.some((n) => n.startsWith('pierre-'))).toBe(true);
+    expect(hidden.some((n) => n.startsWith('sol-'))).toBe(true);
+    expect(world.scene.getObjectByName('eau')?.visible).toBe(true);
+    // Vue de trois-quarts (au-dessus du sol) : tout est rendu.
+    world.setViewpoint(1.8, 1.6, 2.4);
+    expect(hiddenNames()).toEqual([]);
+  });
+
+  it('le point de vue ne change rien au bac tropical', () => {
+    const world = createAquariumScene(TROPICAL_TANK);
+    world.setViewpoint(3, 0.1, 0);
+    let hidden = 0;
+    world.scene.traverse((o) => {
+      hidden += o.visible ? 0 : 1;
+    });
+    expect(hidden).toBe(0);
+  });
+
   it('la margelle ne luit pas à midi et luit la nuit', () => {
     const world = createAquariumScene(POND);
     const stone = world.scene.getObjectByName('pierre-0') as Mesh;

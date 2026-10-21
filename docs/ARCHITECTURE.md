@@ -211,7 +211,9 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
 | `render/palette-pass.ts` | Cible basse résolution et passe plein écran palette (`ShaderMaterial`) ; libération |
 | `render/camera-presets.ts` | Dimensions du bac, préréglages de caméra, interpolation des transitions (fonctions pures) |
 | `render/stone-border.ts` | Margelle de pierre du bassin (#87) : anneau de blocs à joints sombres, hauteurs selon un motif fixe (`stoneBorderBlocks`, pur et testé) ; lueur de nuit `rocheLuneSombre` pour rester lisible |
-| `render/aquarium-scene.ts` | Scène statique d'un environnement (ADR 0026) : sol, eau aux teintes de l'environnement, verre et arêtes ou margelle, lumières ; `setDaylight` (intensité et teinte des lumières, teinte de l'eau entre couleurs de la palette, ADR 0018) ; libération |
+| `render/pond-ground.ts` | Sol du bassin enterré (#105, ADR 0031) : anneau de terre et d'herbe autour de la margelle (`pondGroundSlabs`), touffes d'herbe à graine fixe (`pondGrassTufts`), purs et testés ; lueur de nuit ; masquage par côté pour la coupe |
+| `render/pond-cutaway.ts` | Vue en coupe du bassin (#105, ADR 0031) : côtés du sol et de la margelle à masquer quand la caméra passe sous le sol (`cutawaySides`, pur) |
+| `render/aquarium-scene.ts` | Scène statique d'un environnement (ADR 0026) : sol, eau aux teintes de l'environnement, verre et arêtes ou margelle, lumières ; `setDaylight` (intensité et teinte des lumières, teinte de l'eau entre couleurs de la palette, ADR 0018) ; `setViewpoint` (coupe du bassin enterré sous le niveau du sol, ADR 0031) ; libération |
 | `render/fish-model.ts` | Modèles voxel des poissons générés depuis un gabarit de profil par silhouette (`SILHOUETTES`, ADR 0009 et 0013) |
 | `render/fish-layer.ts` | `InstancedMesh` corps et queue par espèce, interpolation entre deux pas, ondulation ; `AquariumView` en crée une par apparence de chaque entrée de `SPECIES` (ADR 0013) |
 | `render/rock-model.ts` | Maillage voxel générique (`buildVoxelMesh`) et maillage d'un rocher (couleurs plates de la palette), normales lissées de sa coque de contour (ADR 0015) |

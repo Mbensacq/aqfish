@@ -2,6 +2,7 @@ import { BoxGeometry, Color, Mesh, MeshLambertMaterial, Object3D } from 'three';
 
 import type { TankDimensions } from '../sim/tank';
 import { NIGHT_TONES, PALETTE } from './palette';
+import type { PondSide } from './pond-cutaway';
 
 /**
  * Margelle de pierre du bassin (issue #87, ADR 0026) : un anneau de blocs autour du volume
@@ -31,6 +32,8 @@ export interface StoneBlock {
   readonly depth: number;
   /** Rang du bloc le long de l'anneau (choix de la couleur du dessus). */
   readonly index: number;
+  /** Côté du bassin (les coins appartiennent aux côtés selon X, `±z`). */
+  readonly side: PondSide;
 }
 
 /**
@@ -47,7 +50,13 @@ export function stoneBorderBlocks(dims: TankDimensions): StoneBlock[] {
   }
   const t = STONE_BORDER_THICKNESS;
   const blocks: StoneBlock[] = [];
-  const side = (length: number, along: 'x' | 'z', offset: number, start: number): void => {
+  const side = (
+    length: number,
+    along: 'x' | 'z',
+    offset: number,
+    start: number,
+    name: PondSide,
+  ): void => {
     const count = Math.max(1, Math.round(length / STONE_BLOCK_LENGTH));
     const step = length / count;
     for (let i = 0; i < count; i++) {
@@ -63,14 +72,15 @@ export function stoneBorderBlocks(dims: TankDimensions): StoneBlock[] {
         height,
         depth: along === 'x' ? t : size,
         index,
+        side: name,
       });
     }
   };
   const fullWidth = dims.width + 2 * t;
-  side(fullWidth, 'x', -(dims.depth + t) / 2, -fullWidth / 2);
-  side(dims.depth, 'z', (dims.width + t) / 2, -dims.depth / 2);
-  side(fullWidth, 'x', (dims.depth + t) / 2, -fullWidth / 2);
-  side(dims.depth, 'z', -(dims.width + t) / 2, -dims.depth / 2);
+  side(fullWidth, 'x', -(dims.depth + t) / 2, -fullWidth / 2, '-z');
+  side(dims.depth, 'z', (dims.width + t) / 2, -dims.depth / 2, '+x');
+  side(fullWidth, 'x', (dims.depth + t) / 2, -fullWidth / 2, '+z');
+  side(dims.depth, 'z', -(dims.width + t) / 2, -dims.depth / 2, '-x');
   return blocks;
 }
 
@@ -88,6 +98,8 @@ export interface StoneBorder {
   readonly object: Object3D;
   /** Intensité du jour dans [0, 1] : à 1 (midi), aucune lueur ; à 0, `STONE_NIGHT_GLOW`. */
   setDaylight(intensity: number): void;
+  /** Masque les blocs des côtés `hidden` (vue en coupe, `pond-cutaway.ts`), montre les autres. */
+  setHiddenSides(hidden: ReadonlySet<PondSide>): void;
 }
 
 /**
@@ -100,6 +112,7 @@ export function createStoneBorder(dims: TankDimensions): StoneBorder {
   const tops = TOP_COLORS.map((color) => new MeshLambertMaterial({ color }));
   const side = new MeshLambertMaterial({ color: PALETTE.rocheSombre });
   const materials = [...tops, side];
+  const meshes: { readonly mesh: Mesh; readonly side: PondSide }[] = [];
   for (const block of stoneBorderBlocks(dims)) {
     const top = tops[block.index % tops.length];
     // Ordre des faces d'une BoxGeometry : +X, -X, +Y, -Y, +Z, -Z.
@@ -114,6 +127,7 @@ export function createStoneBorder(dims: TankDimensions): StoneBorder {
     mesh.name = `pierre-${block.index}`;
     mesh.position.set(block.x, block.y, block.z);
     object.add(mesh);
+    meshes.push({ mesh, side: block.side });
   }
   const black = new Color(0, 0, 0);
   const glow = new Color(STONE_NIGHT_GLOW);
@@ -124,6 +138,11 @@ export function createStoneBorder(dims: TankDimensions): StoneBorder {
       for (const material of materials) {
         // `lerpColors(a, b, 0)` vaut exactement `a` : noir (aucune lueur) à midi.
         material.emissive.lerpColors(black, glow, 1 - day);
+      }
+    },
+    setHiddenSides: (hidden) => {
+      for (const { mesh, side: blockSide } of meshes) {
+        mesh.visible = !hidden.has(blockSide);
       }
     },
   };

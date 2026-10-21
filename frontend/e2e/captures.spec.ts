@@ -137,6 +137,10 @@ test.describe('Captures', () => {
       name: 'bassin-three-quarter-minuit',
       query: 'environnement=bassin&camera=three-quarter&heure=0',
     },
+    // Bassin enterré (#105) : vues basses en coupe, sol et margelle retirés côté caméra.
+    { name: 'bassin-side', query: 'environnement=bassin&camera=side' },
+    { name: 'bassin-front', query: 'environnement=bassin&camera=front' },
+    { name: 'bassin-bottom', query: 'environnement=bassin&camera=bottom' },
   ] as const;
   for (const { name, query } of POND_CAPTURES) {
     test(`angle ${name}`, async ({ page }) => {

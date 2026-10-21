@@ -59,6 +59,27 @@ describe('stoneBorderBlocks', () => {
     expect(blocks.map((b) => b.index)).toEqual(blocks.map((_, i) => i));
   });
 
+  it('range chaque bloc de son côté du bassin (coins : côtés selon X)', () => {
+    for (const block of blocks) {
+      const e = extent(block);
+      switch (block.side) {
+        case '+x':
+          expect(e.minX).toBeGreaterThanOrEqual(dims.width / 2 - 1e-9);
+          break;
+        case '-x':
+          expect(e.maxX).toBeLessThanOrEqual(-dims.width / 2 + 1e-9);
+          break;
+        case '+z':
+          expect(e.minZ).toBeGreaterThanOrEqual(dims.depth / 2 - 1e-9);
+          break;
+        case '-z':
+          expect(e.maxZ).toBeLessThanOrEqual(-dims.depth / 2 + 1e-9);
+          break;
+      }
+    }
+    expect(new Set(blocks.map((b) => b.side)).size).toBe(4);
+  });
+
   it('garde au moins un bloc par côté pour un très petit bassin', () => {
     expect(stoneBorderBlocks({ width: 0.05, height: 0.1, depth: 0.05 })).toHaveLength(4);
   });
@@ -77,6 +98,17 @@ describe('createStoneBorder', () => {
     expect(border.object.name).toBe('margelle');
     expect(border.object.children).toHaveLength(stoneBorderBlocks(POND_DIMENSIONS).length);
     expect(border.object.children.every((c) => c instanceof Mesh)).toBe(true);
+  });
+
+  it('masque les blocs des côtés retirés (vue en coupe), et les rend ensuite', () => {
+    const border = createStoneBorder(POND_DIMENSIONS);
+    const blocks = stoneBorderBlocks(POND_DIMENSIONS);
+    border.setHiddenSides(new Set(['+z', '-x']));
+    border.object.children.forEach((child, i) => {
+      expect(child.visible).toBe(blocks[i].side !== '+z' && blocks[i].side !== '-x');
+    });
+    border.setHiddenSides(new Set());
+    expect(border.object.children.every((c) => c.visible)).toBe(true);
   });
 
   it('ignore une intensité non finie (traitée comme midi)', () => {
