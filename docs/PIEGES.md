@@ -45,6 +45,12 @@ haut de sa section.
   surveille `src/` ; modifier un fichier pendant que `verify` tourne (sur `main` par
   exemple) fait tester l'e2e sur le code modifié. Attendre la fin de `verify`, ou travailler
   dans un autre worktree. (2026-10-20)
+- **Serveur `ng serve` orphelin réutilisé** (cycle 37) : un `verify` interrompu laisse
+  `ng serve --port 4300` tourner ; Playwright le réutilise (`reuseExistingServer` hors CI),
+  y compris depuis un autre worktree : des captures « avant / après » sortent alors du même
+  code (identiques à l'octet, à tort). Vérifier `ps -eo pid,args | grep '[n]g serve'` et
+  l'arrêter avant de comparer. Ne pas utiliser `pkill -f "ng serve"` : le motif correspond
+  aussi à la commande du shell qui l'exécute, qui se tue elle-même (code 144). (2026-10-21)
 
 ## Tests
 

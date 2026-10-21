@@ -40,9 +40,38 @@ allocation par pas.
   relâchement) d'un glisser de caméra, puis lance un rayon depuis la caméra sur le plan de la
   surface de l'eau (`render/food-pick.ts`) ; hors du bac, rien. Touche `G` et bouton
   « Nourrir » : dépôt au centre du bac.
-- **Rendu** : nuage de points de 2 pixels de scène, `tritonOrange`, file des bulles
+- **Rendu** (voir l'avenant du cycle 37) : nuage de points de 2 pixels de scène, `tritonOrange`, file des bulles
   (opacité pleine, couleur exacte), assombri la nuit comme les couleurs plates (ADR 0019).
   Sans granulé, plage de dessin vide : images inchangées.
+
+## Avenant — granulés discrets, points ou voxels (cycle 37, issue #117)
+
+- Auteur : Dev, 2026-10-21.
+- **Taille selon le zoom** : un granulé a un diamètre dans le monde (`FOOD_PELLET_DIAMETER`,
+  1,2 cm, approximation de jeu). À chaque image, la vue calcule les pixels de scène par
+  mètre à la distance de la cible de la caméra (`scenePixelsPerMeter`, `render/food-size.ts`)
+  et en déduit le côté du cœur, arrondi au pixel, **au moins 1 pixel de scène**. Une seule
+  échelle par image (et non par granulé) : pas de taille fractionnaire, mêmes granulés de
+  même taille. Vue trois-quarts du bac tropical en 1280 × 720 : 2 pixels (inchangé) ;
+  téléphone en portrait (390 × 844) : 1 pixel.
+- **Liseré réduit** : complet (un pixel de chaque côté) à partir d'un cœur de 2 pixels,
+  réduit à un pixel en tout en dessous (`foodOutlineExtra`) : un granulé lointain fait
+  2 × 2 pixels au lieu de 4 × 4.
+- **Second rendu, en voxels** : un cube instancié par granulé, du diamètre du granulé (au
+  moins un pixel de scène), posé sur son point, en `poissonJaune` sur toutes ses faces (des
+  côtés `koiOr` retombaient la nuit sur l'orangé des guppys, écarté par #83), cerné d'une
+  coque `koiNoir` (cube grandi d'1 ou 2 pixels, faces arrière seules). Même biais de
+  profondeur (`withDepthBias` s'applique aussi au shader `MeshBasicMaterial` : chaque sommet
+  avance le long de son propre rayon, la silhouette à l'écran ne change pas), même
+  assombrissement de nuit, même file de dessin que les points.
+- **Bouton provisoire** : « Granulés : points / voxels » dans le panneau, sur la ligne
+  « Afficher le décor » (une section de plus faisait défiler le panneau à 1280 × 720, #101),
+  points par défaut, choix enregistré dans les réglages de la sauvegarde
+  (`settings.foodStyle`, facultatif : une sauvegarde sans le champ donne des points, schéma
+  inchangé). `granules=` le fixe en capture. **Une fois le rendu choisi par Mathis, retirer
+  le bouton, le paramètre `granules=` et le rendu écarté** (le champ de sauvegarde pourra
+  rester accepté et ignoré).
+- Images sans granulé inchangées à l'octet (aucune instance, plage de dessin vide).
 
 ## Options écartées
 
