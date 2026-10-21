@@ -87,6 +87,20 @@ test.describe('Nénuphars (#103)', () => {
     expect(errors).toEqual([]);
   });
 
+  for (const seed of [0, 4294967295]) {
+    test(`graine extrême ${seed}, écran de 390 px : feuilles visibles, aucune erreur`, async ({
+      page,
+    }) => {
+      const errors: string[] = [];
+      await page.setViewportSize({ width: 390, height: 844 });
+      await open(page, `?capture=1&seed=${seed}&environnement=bassin&population=koi:0`, errors);
+      const { counts } = await colorPixels(page, [...LEAF_COLORS]);
+      expect(counts[0]).toBeGreaterThan(0);
+      expect(counts[1]).toBeGreaterThan(0);
+      expect(errors).toEqual([]);
+    });
+  }
+
   test('le bac tropical n’a pas d’ombre de nénuphar', async ({ page }) => {
     const errors: string[] = [];
     await open(page, '?capture=1&seed=42&camera=top', errors);
