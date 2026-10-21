@@ -10,6 +10,7 @@ import {
 import { formatHour, HOUR_SLIDER_STEP, HOURS_PER_DAY, NOON_HOUR } from '../../sim/daylight';
 import { NO_FISH, type PopulationCounts } from '../../sim/population';
 import type { SaveMessage, SaveStatus } from '../../core/save-storage/save-storage';
+import { DEFAULT_FOOD_STYLE, type FoodStyle } from '../../core/food-style/food-style';
 import { MAX_SAVE_LENGTH } from '../../sim/save';
 import { DEFAULT_SIM_SPEED, SIM_SPEEDS, type SimSpeed } from '../../sim/sim-speed';
 import { SPECIES, type SpeciesId } from '../../sim/species';
@@ -191,10 +192,22 @@ function toNumber(value: string | number): number {
 
         <fieldset class="control-panel__section" data-section="decor">
           <legend class="control-panel__legend">Décor</legend>
-          <label class="control-panel__check">
-            <input type="checkbox" [checked]="decorVisible()" (change)="onDecor($event)" />
-            Afficher le décor
-          </label>
+          <!-- Granulés (#117) : sur la même ligne, le panneau tient sans défiler à 1280 × 720 (#101). -->
+          <div class="control-panel__row">
+            <label class="control-panel__check">
+              <input type="checkbox" [checked]="decorVisible()" (change)="onDecor($event)" />
+              Afficher le décor
+            </label>
+            <button
+              type="button"
+              class="control-panel__button control-panel__button--compact"
+              data-food-style
+              [attr.aria-label]="'Granulés : ' + foodStyle() + ', changer de rendu'"
+              (click)="foodStyleToggled.emit()"
+            >
+              Granulés : {{ foodStyle() }}
+            </button>
+          </div>
         </fieldset>
 
         <fieldset class="control-panel__section" data-section="population">
@@ -285,6 +298,8 @@ export class ControlPanel {
   readonly clockRunning = input(true);
   /** Vrai si le décor est affiché (fourni par l'hôte). */
   readonly decorVisible = input(true);
+  /** Rendu des granulés, `points` ou `voxels` (fourni par l'hôte, #117). */
+  readonly foodStyle = input<FoodStyle>(DEFAULT_FOOD_STYLE);
   /** Effectif de chaque espèce (fourni par l'hôte). */
   readonly population = input<PopulationCounts>(NO_FISH);
   /** Effectif maximal de chaque espèce, compte tenu des autres (fourni par l'hôte). */
@@ -304,6 +319,8 @@ export class ControlPanel {
   readonly clockRunningChanged = output<boolean>();
   /** Case « Afficher le décor ». */
   readonly decorVisibleChanged = output<boolean>();
+  /** Bouton « Granulés » : passer à l'autre rendu (#117). */
+  readonly foodStyleToggled = output<void>();
   /** Effectif demandé pour une espèce (déjà borné à [0, maximum]). */
   readonly populationChanged = output<PopulationRequest>();
   /** Bouton « Exporter » (#70). */

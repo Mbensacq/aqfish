@@ -79,6 +79,12 @@ import {
   type PopulationCounts,
 } from '../../sim/population';
 import { parseWorld, serializeWorld, type SaveSettings } from '../../sim/save';
+import {
+  DEFAULT_FOOD_STYLE,
+  isFoodStyle,
+  toggleFoodStyle as otherFoodStyle,
+  type FoodStyle,
+} from '../../core/food-style/food-style';
 import type { SpeciesId } from '../../sim/species';
 import {
   advanceInPlace,
@@ -108,6 +114,8 @@ export const FILTER_ATTRIBUTE = 'data-aqfish-filter';
 
 /** Attribut du composant hôte exposant le nombre de granulés de nourriture du monde (#67). */
 export const FOOD_ATTRIBUTE = 'data-aqfish-food';
+/** Attribut du composant hôte exposant le rendu des granulés (`points` ou `voxels`, #117). */
+export const FOOD_STYLE_ATTRIBUTE = 'data-aqfish-food-style';
 
 /** Attribut du composant hôte exposant l'heure de la journée affichée (2 décimales). */
 export const HOUR_ATTRIBUTE = 'data-aqfish-hour';
@@ -299,6 +307,12 @@ export class AquariumHost {
   /** Décor (rochers et plantes) affiché (#52). Il reste un obstacle pour les poissons. */
   readonly decorVisible = signal(true);
 
+  /**
+   * Rendu des granulés (#117) : points par défaut, voxels au choix (bouton du panneau),
+   * enregistré avec les réglages de la sauvegarde ; `granules=` en capture.
+   */
+  readonly foodStyle = signal<FoodStyle>(DEFAULT_FOOD_STYLE);
+
   /** Environnement affiché (#87), changé par le sélecteur du panneau. */
   readonly environment = signal<EnvironmentId>(DEFAULT_ENVIRONMENT_ID);
 
@@ -430,6 +444,26 @@ export class AquariumHost {
   }
 
   /**
+   * Change le rendu des granulés (#117) à chaud, sans toucher au monde ni à la caméra ; le
+   * choix est enregistré avec la sauvegarde. Sans effet en mode capture (`granules=`) ou
+   * avant le démarrage.
+   */
+  setFoodStyle(style: FoodStyle): void {
+    const view = this.view;
+    if (!view || this.capture || !isFoodStyle(style)) {
+      return;
+    }
+    this.applyFoodStyle(style);
+    this.saveNow();
+    this.scheduleFrame();
+  }
+
+  /** Alterne entre granulés en points et en voxels (bouton du panneau, #117). */
+  toggleFoodStyle(): void {
+    this.setFoodStyle(otherFoodStyle(this.foodStyle()));
+  }
+
+  /**
    * Règle l'effectif d'une espèce (#69), ramené à ses bornes : les poissons ajoutés naissent
    * à une position valide, les plus récents sont retirés ; ni le temps ni le décor ne sont
    * réinitialisés. Sans effet en mode capture (les effectifs passent par `population=`),
@@ -514,9 +548,16 @@ export class AquariumHost {
     this.feed(0, 0);
   }
 
-  /** Réglages enregistrés avec le monde : vitesse et horloge de la journée. */
+  /** Réglages enregistrés avec le monde : vitesse, horloge et rendu des granulés. */
   private settings(): SaveSettings {
-    return { speed: this.speed(), clock: this.dayClock };
+    return { speed: this.speed(), clock: this.dayClock, foodStyle: this.foodStyle() };
+  }
+
+  /** Applique le rendu des granulés à la vue courante et l'expose. */
+  private applyFoodStyle(style: FoodStyle): void {
+    this.foodStyle.set(style);
+    this.view?.setFoodStyle(style);
+    this.host.nativeElement.setAttribute(FOOD_STYLE_ATTRIBUTE, style);
   }
 
   /**
@@ -600,6 +641,7 @@ export class AquariumHost {
     this.speed.set(settings.speed);
     this.host.nativeElement.setAttribute(SPEED_ATTRIBUTE, String(settings.speed));
     this.dayClock = settings.clock;
+    this.foodStyle.set(settings.foodStyle ?? DEFAULT_FOOD_STYLE);
     this.litHour = null;
     this.exposeClockFrozen();
     this.exposeEnvironment();
@@ -636,11 +678,15 @@ export class AquariumHost {
     if (restored) {
       this.currentWorld = restored.world as MutableWorld;
       this.speed.set(restored.settings.speed);
+      this.foodStyle.set(restored.settings.foodStyle ?? DEFAULT_FOOD_STYLE);
       // `heure=` fige l'heure : l'horloge sauvegardée ne s'applique pas.
       if (params.hour === null) {
         this.dayClock = restored.settings.clock;
       }
     } else {
+      if (params.capture && params.foodStyle !== null) {
+        this.foodStyle.set(params.foodStyle);
+      }
       const environment = isEnvironmentId(params.environment)
         ? params.environment
         : DEFAULT_ENVIRONMENT_ID;
@@ -755,6 +801,7 @@ export class AquariumHost {
     this.view = view;
     view.setDecor(world.decor, world.seed);
     view.setDecorVisible(this.decorVisible());
+    this.applyFoodStyle(this.foodStyle());
     this.litHour = null;
     this.activePreset.set(preset);
     this.viewCleanups.push(view.onCameraChange(() => this.exposeCamera()));

@@ -24,6 +24,7 @@ import {
   CAMERA_TARGET_ATTRIBUTE,
   DECOR_ATTRIBUTE,
   FILTER_ATTRIBUTE,
+  FOOD_STYLE_ATTRIBUTE,
   FOOD_ATTRIBUTE,
   HOUR_ATTRIBUTE,
   HOUR_FROZEN_ATTRIBUTE,
@@ -1111,6 +1112,34 @@ describe('AquariumHost', () => {
         expect(host().world!.tick).toBe(0);
         fixture.destroy();
       }
+    });
+
+    it('rendu des granulés (#117) : points par défaut, bascule enregistrée et restaurée', async () => {
+      await create();
+      expect(host().foodStyle()).toBe('points');
+      expect(element().getAttribute(FOOD_STYLE_ATTRIBUTE)).toBe('points');
+      host().toggleFoodStyle();
+      expect(host().foodStyle()).toBe('voxels');
+      expect(element().getAttribute(FOOD_STYLE_ATTRIBUTE)).toBe('voxels');
+      const saved = parseWorld(memory().data.get(SAVE_STORAGE_KEY)!);
+      expect(saved.ok && saved.settings.foodStyle).toBe('voxels');
+      // Valeur inconnue ignorée.
+      host().setFoodStyle('cubes' as never);
+      expect(host().foodStyle()).toBe('voxels');
+      fixture.destroy();
+      await create();
+      expect(host().foodStyle()).toBe('voxels');
+      expect(element().getAttribute(FOOD_STYLE_ATTRIBUTE)).toBe('voxels');
+    });
+
+    it('rendu des granulés : granules= en capture seulement, bouton sans effet', async () => {
+      await create('?capture=1&seed=3&granules=voxels');
+      expect(host().foodStyle()).toBe('voxels');
+      host().toggleFoodStyle();
+      expect(host().foodStyle()).toBe('voxels');
+      fixture.destroy();
+      await create('?granules=voxels');
+      expect(host().foodStyle()).toBe('points');
     });
 
     it('en mode capture : le stockage n’est ni lu ni écrit', async () => {

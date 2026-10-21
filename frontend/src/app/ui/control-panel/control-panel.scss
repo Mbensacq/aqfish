@@ -252,6 +252,13 @@
   gap: 8px;
 }
 
+.control-panel__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
 .control-panel__button {
   flex: 1 1 0;
   min-width: 0;
@@ -280,4 +287,12 @@
 // Champ de fichier natif masqué : le bouton « Importer » l'ouvre (libellé et style communs).
 .control-panel__file {
   display: none;
+}
+
+// Bouton d'une ligne partagée avec une case à cocher (« Granulés », #117) : à sa taille.
+.control-panel__button--compact {
+  flex: 0 0 auto;
+  min-height: 28px;
+  padding: 2px 8px;
+  font-size: 12px;
 }

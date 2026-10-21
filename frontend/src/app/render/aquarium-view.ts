@@ -13,6 +13,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import type { CameraPreset } from '../core/capture/capture-params';
 import { ORBIT_MOUSE_BUTTONS, ORBIT_TOUCHES, type OrbitAction } from '../core/commands/commands';
 import { DEFAULT_RENDER_FILTER, type RenderFilter } from '../core/render-filter/render-filter';
+import type { FoodStyle } from '../core/food-style/food-style';
 import { createAquariumScene, type AquariumScene } from './aquarium-scene';
 import {
   CAMERA_FOV_DEG,
@@ -37,6 +38,7 @@ import { BubbleLayer } from './bubble-layer';
 import { DecorLayer } from './decor-layer';
 import { FishLayer, MAX_FISH_PER_SPECIES } from './fish-layer';
 import { FoodLayer } from './food-layer';
+import { scenePixelsPerMeter } from './food-size';
 import { LilyPadLayer } from './lily-pad-layer';
 import { isClick, toNormalizedDevice, waterSurfacePoint } from './food-pick';
 import {
@@ -376,6 +378,23 @@ export class AquariumView {
     return this.foodLayer.count;
   }
 
+  /** Rendu des granulés (points ou voxels, issue #117). */
+  get foodStyle(): FoodStyle {
+    return this.foodLayer.style;
+  }
+
+  /** Change le rendu des granulés à chaud ; la scène et la caméra ne changent pas. */
+  setFoodStyle(style: FoodStyle): void {
+    if (!this.disposed) {
+      this.foodLayer.setStyle(style);
+    }
+  }
+
+  /** Taille courante du cœur d'un granulé en points, en pixels de la surface de rendu (tests). */
+  get foodPointSize(): number {
+    return this.foodLayer.pointSize;
+  }
+
   /**
    * Point de la surface de l'eau sous le point de l'écran (`clientX`, `clientY`, pixels CSS),
    * en (x, z) dans le repère du bac, par lancer de rayon depuis la caméra ; `null` hors du
@@ -556,6 +575,14 @@ export class AquariumView {
     if (this.disposed || !this.hasSize()) {
       return false;
     }
+    // Taille des granulés selon le zoom (#117) : échelle à la distance de la cible.
+    this.foodLayer.setPixelsPerMeter(
+      scenePixelsPerMeter(
+        this.camera.position.distanceTo(this.controls.target),
+        this.camera.fov,
+        this.targetSize.height,
+      ),
+    );
     if (this.currentFilter === 'aucun') {
       this.decorLayer.setResolution(this.width * this.pixelRatio, this.height * this.pixelRatio);
       this.lilyPadLayer.setResolution(this.width * this.pixelRatio, this.height * this.pixelRatio);

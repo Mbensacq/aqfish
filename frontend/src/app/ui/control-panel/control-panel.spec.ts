@@ -1,3 +1,4 @@
+import type { FoodStyle } from '../../core/food-style/food-style';
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 
@@ -86,6 +87,7 @@ describe('fonctions du panneau de contrôle', () => {
     [hour]="hour()"
     [clockRunning]="running()"
     [decorVisible]="decor()"
+    [foodStyle]="foodStyle()"
     [population]="population()"
     [populationMax]="populationMax()"
     [saveStatus]="saveStatus()"
@@ -99,6 +101,7 @@ describe('fonctions du panneau de contrôle', () => {
     (clockRunningChanged)="events.push(['auto', $event])"
     (decorVisibleChanged)="events.push(['decor', $event])"
     (environmentChanged)="environments.push($event)"
+    (foodStyleToggled)="foodToggles = foodToggles + 1"
   />`,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -109,6 +112,8 @@ class TestHost {
   readonly hour = signal(12);
   readonly running = signal(true);
   readonly decor = signal(true);
+  readonly foodStyle = signal<FoodStyle>('points');
+  foodToggles = 0;
   readonly population = signal<PopulationCounts>({ neon: 12, guppy: 6, corydora: 0, koi: 0 });
   readonly populationMax = signal<PopulationCounts>({ neon: 40, guppy: 6, corydora: 16, koi: 14 });
   readonly events: [string, number | boolean][] = [];
@@ -269,9 +274,9 @@ describe('ControlPanel', () => {
     await openPanel();
     // Le champ de fichier natif est masqué : le bouton « Importer » l'ouvre (#70).
     const controls = [...root().querySelectorAll<HTMLElement>('button, input:not([type="file"])')];
-    // 5 contrôles de #52, puis « − », champ et « + » pour chacune des 3 espèces (#69), puis
-    // « Exporter » et « Importer » (#70).
-    expect(controls).toHaveLength(5 + 3 * 3 + 2);
+    // 5 contrôles de #52, « Granulés » (#117), puis « − », champ et « + » pour chacune des 3
+    // espèces (#69), puis « Exporter » et « Importer » (#70).
+    expect(controls).toHaveLength(5 + 1 + 3 * 3 + 2);
     expect(root().querySelectorAll('input[type="file"]')).toHaveLength(1);
     for (const control of controls) {
       const name =
@@ -282,6 +287,19 @@ describe('ControlPanel', () => {
       expect(control.tabIndex).toBeGreaterThanOrEqual(0);
       expect(control.hasAttribute('disabled')).toBe(false);
     }
+  });
+
+  it('bouton « Granulés » (#117) : rendu de l’hôte, émet la bascule', async () => {
+    await openPanel();
+    const button = () =>
+      root().querySelector<HTMLButtonElement>('[data-section="decor"] button[data-food-style]')!;
+    expect(button().textContent?.trim()).toBe('Granulés : points');
+    expect(button().getAttribute('aria-label')).toBe('Granulés : points, changer de rendu');
+    button().click();
+    expect(fixture.componentInstance.foodToggles).toBe(1);
+    fixture.componentInstance.foodStyle.set('voxels');
+    await fixture.whenStable();
+    expect(button().textContent?.trim()).toBe('Granulés : voxels');
   });
 
   describe('population (#69)', () => {

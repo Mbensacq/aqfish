@@ -32,6 +32,12 @@ import { advance, createDefaultWorld, feed, type World } from '../src/app/sim/wo
 const CAMERA_PRESETS = ['top', 'bottom', 'front', 'side', 'three-quarter'] as const;
 const SEED = Number(process.env['CAPTURE_SEED'] ?? 42);
 const TIME_SECONDS = Number(process.env['CAPTURE_TIME'] ?? 30);
+/**
+ * Granulés posés (#117) : bac sans poissons (rien n'est mangé), quatre dépôts à t = 0, au
+ * centre, sur un rocher, au pied d'une plante et sur le sable ; posés au temps de capture.
+ */
+const RESTING_FOOD =
+  'population=neon:0,guppy:0,corydora:0&nourrir=0,0:0.3:0.03,0:-0.15:0.1,0:-0.4:0.15';
 const OUTPUT_DIR = resolve(
   process.env['CAPTURE_DIR'] ?? join(__dirname, '..', '..', 'docs', 'captures', 'latest'),
 );
@@ -84,6 +90,24 @@ test.describe('Captures', () => {
     // dessus), à 24 s (en train de couler).
     { name: 'three-quarter-nourriture', query: 'nourrir=0,0:0.3:0.03,24:-0.15:0.1' },
     { name: 'three-quarter-nourriture-minuit', query: 'nourrir=0,0:0.3:0.03,24:-0.15:0.1&heure=0' },
+    // Granulés en voxels (#117), mêmes dépôts ; puis granulés posés (bac sans poissons, rien
+    // n'est mangé) sur le sable, au pied d'une plante et sur un rocher, de jour et de nuit.
+    {
+      name: 'three-quarter-nourriture-voxels',
+      query: 'nourrir=0,0:0.3:0.03,24:-0.15:0.1&granules=voxels',
+    },
+    { name: 'three-quarter-nourriture-posee', query: RESTING_FOOD },
+    { name: 'three-quarter-nourriture-posee-minuit', query: `${RESTING_FOOD}&heure=0` },
+    { name: 'three-quarter-nourriture-posee-voxels', query: `${RESTING_FOOD}&granules=voxels` },
+    {
+      name: 'three-quarter-nourriture-posee-voxels-minuit',
+      query: `${RESTING_FOOD}&granules=voxels&heure=0`,
+    },
+    { name: 'front-nourriture', query: 'nourrir=0,0:0.3:0.03,24:-0.15:0.1&camera=front' },
+    {
+      name: 'front-nourriture-voxels',
+      query: 'nourrir=0,0:0.3:0.03,24:-0.15:0.1&camera=front&granules=voxels',
+    },
     // Population réglée (#69) : 12 néons, 2 guppys, aucun corydora.
     { name: 'three-quarter-population', query: 'population=neon:12,guppy:2,corydora:0' },
   ] as const;
@@ -91,9 +115,10 @@ test.describe('Captures', () => {
     test(`angle ${name}`, async ({ page }) => {
       const errors: string[] = [];
       page.on('pageerror', (error) => errors.push(error.message));
-      await page.goto(
-        `/?capture=1&seed=${SEED}&camera=three-quarter&time=${TIME_SECONDS}&${query}`,
-      );
+      // `camera=` de la requête, s'il y en a un, remplace la vue trois-quarts (le dernier
+      // paramètre répété ne compte pas : `URLSearchParams.get` lit le premier).
+      const camera = query.includes('camera=') ? '' : 'camera=three-quarter&';
+      await page.goto(`/?capture=1&seed=${SEED}&${camera}time=${TIME_SECONDS}&${query}`);
       await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
       await page.screenshot({ path: join(OUTPUT_DIR, `${name}.png`), animations: 'disabled' });
       expect(errors).toEqual([]);
@@ -118,6 +143,28 @@ test.describe('Captures', () => {
       const errors: string[] = [];
       page.on('pageerror', (error) => errors.push(error.message));
       await page.goto(`/?capture=1&seed=${SEED}&time=${TIME_SECONDS}&${query}`);
+      await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+      await page.screenshot({ path: join(OUTPUT_DIR, `${name}.png`), animations: 'disabled' });
+      expect(errors).toEqual([]);
+    });
+  }
+
+  // Téléphone en portrait (390 × 844, #117) : vue trois-quarts cadrée sur un écran étroit,
+  // donc dézoomée, sans nourriture puis avec granulés posés en points et en voxels.
+  const PHONE_CAPTURES = [
+    { name: 'telephone-three-quarter', query: '' },
+    { name: 'telephone-three-quarter-nourriture', query: `&${RESTING_FOOD}` },
+    {
+      name: 'telephone-three-quarter-nourriture-voxels',
+      query: `&${RESTING_FOOD}&granules=voxels`,
+    },
+  ] as const;
+  for (const { name, query } of PHONE_CAPTURES) {
+    test(`angle ${name}`, async ({ page }) => {
+      const errors: string[] = [];
+      page.on('pageerror', (error) => errors.push(error.message));
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.goto(`/?capture=1&seed=${SEED}&camera=three-quarter&time=${TIME_SECONDS}${query}`);
       await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
       await page.screenshot({ path: join(OUTPUT_DIR, `${name}.png`), animations: 'disabled' });
       expect(errors).toEqual([]);

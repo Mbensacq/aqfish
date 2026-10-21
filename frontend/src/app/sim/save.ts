@@ -1,3 +1,4 @@
+import { DEFAULT_FOOD_STYLE, isFoodStyle, type FoodStyle } from '../core/food-style/food-style';
 import { MAX_SEED } from '../core/random/prng';
 import { SIM_DT } from './constants';
 import { createDayClock, DEFAULT_DAY_CLOCK, HOURS_PER_DAY, type DayClock } from './daylight';
@@ -24,7 +25,7 @@ import { boundsFor, createWorld, type Entity, type MutableWorld, type World } fr
  *
  * Ce qui est enregistré : graine, environnement, compteur de pas (le temps simulé en dérive,
  * `tick · SIM_DT`), décor, poissons (état complet, sous-générateur compris), granulés,
- * compteurs d'identifiants, et les réglages de vitesse et d'heure. Les obstacles ne sont pas
+ * compteurs d'identifiants, et les réglages de vitesse, d'heure et de rendu des granulés. Les obstacles ne sont pas
  * enregistrés : ils sont recalculés à partir du décor (`createWorld`), comme à la création.
  * Les robes des koïs dérivent de la graine et de l'identifiant (ADR 0027) : rien à stocker.
  *
@@ -78,12 +79,18 @@ export interface SaveSettings {
   readonly speed: SimSpeed;
   /** Horloge de la journée (`sim/daylight.ts`) : l'heure en dérive au temps du monde. */
   readonly clock: DayClock;
+  /**
+   * Rendu des granulés (issue #117). Facultatif : absent (anciennes sauvegardes), c'est
+   * `DEFAULT_FOOD_STYLE` ; toujours présent dans une sauvegarde écrite et relue.
+   */
+  readonly foodStyle?: FoodStyle;
 }
 
-/** Réglages par défaut (vitesse ×1, départ à midi, heure en marche). */
+/** Réglages par défaut (vitesse ×1, départ à midi, heure en marche, granulés en points). */
 export const DEFAULT_SAVE_SETTINGS: SaveSettings = {
   speed: DEFAULT_SIM_SPEED,
   clock: DEFAULT_DAY_CLOCK,
+  foodStyle: DEFAULT_FOOD_STYLE,
 };
 
 /** Poisson enregistré : tous les champs de `Fish` sauf `kind` (toujours `fish`). */
@@ -184,6 +191,7 @@ export function saveData(world: World, settings: SaveSettings = DEFAULT_SAVE_SET
         dayLengthSeconds: settings.clock.dayLengthSeconds,
         frozen: settings.clock.frozen,
       },
+      foodStyle: settings.foodStyle ?? DEFAULT_FOOD_STYLE,
     },
   };
 }
@@ -305,9 +313,11 @@ function parseSettings(value: unknown, problems: string[]): SaveSettings | null 
   const startHour = isRecord(clockValue) ? own(clockValue, 'startHour') : undefined;
   const dayLength = isRecord(clockValue) ? own(clockValue, 'dayLengthSeconds') : undefined;
   const frozen = isRecord(clockValue) ? own(clockValue, 'frozen') : undefined;
+  const foodStyle = own(value, 'foodStyle');
   const settings = {
     speed: speed as SimSpeed,
     clock: { startHour, dayLengthSeconds: dayLength, frozen } as unknown as DayClock,
+    foodStyle: foodStyle as FoodStyle | undefined,
   };
   const found = settingsProblems(settings);
   if (found.length > 0) {
@@ -321,6 +331,7 @@ function parseSettings(value: unknown, problems: string[]): SaveSettings | null 
       settings.clock.dayLengthSeconds,
       settings.clock.frozen,
     ),
+    foodStyle: settings.foodStyle ?? DEFAULT_FOOD_STYLE,
   };
 }
 
@@ -344,6 +355,9 @@ function settingsProblems(settings: SaveSettings): string[] {
   }
   if (typeof clock['frozen'] !== 'boolean') {
     problems.push('horloge : frozen doit être un booléen');
+  }
+  if (settings.foodStyle !== undefined && !isFoodStyle(settings.foodStyle)) {
+    problems.push(`rendu des granulés inconnu (${describe(settings.foodStyle)})`);
   }
   return problems;
 }

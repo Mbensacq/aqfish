@@ -25,7 +25,17 @@ describe('parseCaptureParams', () => {
       hour: null,
       feedings: [],
       population: [],
+      foodStyle: null,
     });
+  });
+
+  it('lit le rendu des granulés : points ou voxels, sinon null (#117)', () => {
+    expect(parseCaptureParams('?granules=voxels').foodStyle).toBe('voxels');
+    expect(parseCaptureParams('?granules=points').foodStyle).toBe('points');
+    for (const bad of ['', 'Voxels', 'cubes', 'voxels ']) {
+      expect(parseCaptureParams(`?granules=${encodeURIComponent(bad)}`).foodStyle).toBeNull();
+    }
+    expect(parseCaptureParams('?capture=1').foodStyle).toBeNull();
   });
 
   it('lit l’environnement : identifiant en minuscules, sinon null (#87)', () => {

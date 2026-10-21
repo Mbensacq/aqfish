@@ -74,6 +74,20 @@ describe('AquariumView (pipeline pixel art)', () => {
     ]);
   });
 
+  it('granulés (#117) : taille selon le zoom à chaque image, rendu points ou voxels', () => {
+    // Vue trois-quarts du bac tropical en 1280 × 720 : 2 pixels de scène, comme avant #117.
+    view.resize(1280, 720);
+    view.renderFrame();
+    expect(view.foodPointSize).toBe(2);
+    // Écran étroit (téléphone en portrait) : caméra plus loin, 1 pixel.
+    view.resize(390, 844);
+    view.renderFrame();
+    expect(view.foodPointSize).toBe(1);
+    expect(view.foodStyle).toBe('points');
+    view.setFoodStyle('voxels');
+    expect(view.foodStyle).toBe('voxels');
+  });
+
   it('cale le rapport d’aspect de la caméra sur la cible', () => {
     view.resize(1280, 721);
     expect(view.camera.aspect).toBeCloseTo(427 / 241, 10);

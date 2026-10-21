@@ -206,6 +206,9 @@ test.describe('Panneau de contrôle', () => {
     const errors = await open(page);
     await toggle(page).click();
     await decor(page).focus();
+    // Le bouton « Granulés » (#117) partage la ligne du décor : il vient juste après.
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', { name: /^Granulés : / })).toBeFocused();
     await page.keyboard.press('Tab');
     await expect(page.getByRole('button', { name: 'Retirer un néon' })).toBeFocused();
     await page.keyboard.press('Enter');

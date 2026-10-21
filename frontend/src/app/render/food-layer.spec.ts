@@ -1,6 +1,10 @@
 import {
+  BackSide,
   Color,
+  Matrix4,
+  Quaternion,
   ShaderLib,
+  Vector3,
   type WebGLProgramParametersWithUniforms,
   type WebGLRenderer,
 } from 'three';
@@ -13,11 +17,10 @@ import {
   FOOD_CORE_RENDER_ORDER,
   FOOD_DEPTH_BIAS,
   FOOD_OUTLINE_COLOR,
-  FOOD_OUTLINED_SIZE,
-  FOOD_POINT_SIZE,
   FoodLayer,
   withDepthBias,
 } from './food-layer';
+import { foodVoxelOutlineSide, foodVoxelSide } from './food-size';
 import { NIGHT_FLAT_BRIGHTNESS } from './night-shade';
 import { EXTENDED_PALETTE_COLORS, PALETTE, PALETTE_COLORS } from './palette';
 import { hexToRgb, nearestPaletteIndex } from './pixel-art';
@@ -98,7 +101,12 @@ describe('render/food-layer', () => {
   });
 
   it('liseré dessiné avant le cœur, sur la même géométrie', () => {
-    expect(layer.object.children).toEqual([layer.outline, layer.core]);
+    expect(layer.object.children).toEqual([
+      layer.outline,
+      layer.core,
+      layer.voxelOutline,
+      layer.voxels,
+    ]);
     expect(layer.outline.geometry).toBe(layer.geometry);
     expect(layer.core.geometry).toBe(layer.geometry);
     expect(layer.outline.renderOrder).toBe(BUBBLE_RENDER_ORDER);
@@ -108,17 +116,98 @@ describe('render/food-layer', () => {
     expect(layer.core.frustumCulled).toBe(false);
   });
 
-  it('taille fixe en pixels de scène, mise à l’échelle sans filtre', () => {
-    expect(layer.pointSize).toBe(FOOD_POINT_SIZE);
-    // Liseré d'un pixel de scène de chaque côté du cœur.
-    expect(layer.outlineSize).toBe(FOOD_POINT_SIZE + 2);
-    expect(FOOD_OUTLINED_SIZE).toBe(FOOD_POINT_SIZE + 2);
+  it('taille qui suit le zoom, plancher d’un pixel, mise à l’échelle sans filtre (#117)', () => {
+    // Sans échelle connue : plancher d'un pixel, liseré réduit (2 pixels en tout).
+    expect(layer.pointSize).toBe(1);
+    expect(layer.outlineSize).toBe(2);
+    // Zoom proche (500 px/m) : cœur de 6 pixels, liseré d'un pixel de chaque côté.
+    layer.setPixelsPerMeter(500);
+    expect(layer.pointSize).toBe(6);
+    expect(layer.outlineSize).toBe(8);
+    // Vue par défaut sur bureau 1280 × 720 (~148 px/m) : comme avant #117.
+    layer.setPixelsPerMeter(148);
+    expect(layer.pointSize).toBe(2);
+    expect(layer.outlineSize).toBe(4);
+    // Dézoomé (téléphone, ~85 px/m) : un pixel, liseré réduit.
+    layer.setPixelsPerMeter(85);
+    expect(layer.pointSize).toBe(1);
+    expect(layer.outlineSize).toBe(2);
+    // Sans filtre : multiplié par la taille d'un pixel de scène à l'écran.
     layer.setPointScale(6);
-    expect(layer.pointSize).toBe(FOOD_POINT_SIZE * 6);
-    expect(layer.outlineSize).toBe(FOOD_OUTLINED_SIZE * 6);
+    expect(layer.pointSize).toBe(6);
+    expect(layer.outlineSize).toBe(12);
     layer.setPointScale(0);
-    expect(layer.pointSize).toBe(FOOD_POINT_SIZE);
-    expect(layer.outlineSize).toBe(FOOD_OUTLINED_SIZE);
+    layer.setPixelsPerMeter(Number.NaN);
+    expect(layer.pointSize).toBe(1);
+    expect(layer.outlineSize).toBe(2);
+  });
+
+  it('points par défaut, voxels au choix : un seul rendu visible', () => {
+    expect(layer.style).toBe('points');
+    expect([layer.core.visible, layer.outline.visible]).toEqual([true, true]);
+    expect([layer.voxels.visible, layer.voxelOutline.visible]).toEqual([false, false]);
+    layer.setStyle('voxels');
+    expect(layer.style).toBe('voxels');
+    expect([layer.core.visible, layer.outline.visible]).toEqual([false, false]);
+    expect([layer.voxels.visible, layer.voxelOutline.visible]).toEqual([true, true]);
+    layer.setStyle('points');
+    expect(layer.voxels.visible).toBe(false);
+  });
+
+  it('voxels : un cube par granulé, posé sur son point, coque plus grande (#117)', () => {
+    const food = feed(createWorld(42), 0.1, 0.05).food;
+    layer.setPixelsPerMeter(600);
+    layer.update(food);
+    // Rendu en points : les voxels ne sont pas recalculés.
+    expect(layer.voxels.count).toBe(0);
+    layer.setStyle('voxels');
+    expect(layer.voxels.count).toBe(food.length);
+    expect(layer.voxelOutline.count).toBe(food.length);
+    const [side, outlineSide] = layer.voxelSides;
+    expect(side).toBe(foodVoxelSide(600));
+    expect(outlineSide).toBe(foodVoxelOutlineSide(600));
+    const matrix = new Matrix4();
+    const position = new Vector3();
+    const scale = new Vector3();
+    layer.voxels.getMatrixAt(1, matrix);
+    matrix.decompose(position, new Quaternion(), scale);
+    expect(position.x).toBeCloseTo(food[1].x, 6);
+    expect(position.y).toBeCloseTo(food[1].y + side / 2, 6);
+    expect(position.z).toBeCloseTo(food[1].z, 6);
+    expect(scale.x).toBeCloseTo(side, 9);
+    layer.voxelOutline.getMatrixAt(1, matrix);
+    expect(new Vector3().setFromMatrixScale(matrix).y).toBeCloseTo(outlineSide, 9);
+    // Dézoomé : plancher d'un pixel de scène.
+    layer.setPixelsPerMeter(40);
+    layer.voxels.getMatrixAt(0, matrix);
+    expect(new Vector3().setFromMatrixScale(matrix).x * 40).toBeCloseTo(1, 6);
+    layer.update([]);
+    expect(layer.voxels.count).toBe(0);
+    expect(layer.voxelOutline.count).toBe(0);
+  });
+
+  it('voxels : couleur des points, coque sombre vue de l’intérieur', () => {
+    expect(layer.voxelColors.hex).toBe(new Color(FOOD_COLOR).getHex());
+    expect(layer.voxelOutline.material).toMatchObject({ side: BackSide });
+    expect(layer.voxels.geometry).toBe(layer.voxelOutline.geometry);
+    expect(layer.voxelOutline.renderOrder).toBe(BUBBLE_RENDER_ORDER);
+    expect(layer.voxels.renderOrder).toBe(FOOD_CORE_RENDER_ORDER);
+    expect(layer.voxels.frustumCulled).toBe(false);
+  });
+
+  it('voxels assombris la nuit comme les points', () => {
+    expect(layer.voxelColors).toEqual({
+      hex: new Color(FOOD_COLOR).getHex(),
+      outlineHex: new Color(FOOD_OUTLINE_COLOR).getHex(),
+    });
+    layer.setBrightness(NIGHT_FLAT_BRIGHTNESS);
+    // Mêmes couleurs que les points la nuit : lisibilité de #83 conservée.
+    expect(layer.voxelColors).toEqual({
+      hex: layer.colorHex,
+      outlineHex: layer.outlineColorHex,
+    });
+    layer.setBrightness(1);
+    expect(layer.voxelColors.hex).toBe(new Color(FOOD_COLOR).getHex());
   });
 
   it('rapproche les granulés de la caméra pour la profondeur seulement (#83)', () => {
@@ -135,16 +224,21 @@ describe('render/food-layer', () => {
     expect(() => withDepthBias('void main() {}', FOOD_DEPTH_BIAS)).toThrow(/project_vertex/);
   });
 
-  it('les deux matériaux appliquent le rapprochement à la compilation', () => {
-    for (const points of [layer.core, layer.outline]) {
-      const shader = {
-        vertexShader: ShaderLib.points.vertexShader,
-      } as WebGLProgramParametersWithUniforms;
+  it('les quatre matériaux appliquent le rapprochement à la compilation', () => {
+    const cases = [
+      [layer.core.material, ShaderLib.points.vertexShader],
+      [layer.outline.material, ShaderLib.points.vertexShader],
+      [layer.voxels.material, ShaderLib.basic.vertexShader],
+      [layer.voxelOutline.material, ShaderLib.basic.vertexShader],
+    ] as const;
+    for (const [material, source] of cases) {
+      const shader = { vertexShader: source } as WebGLProgramParametersWithUniforms;
       // Le moteur de rendu n'est pas utilisé par le correctif.
-      points.material.onBeforeCompile(shader, null as unknown as WebGLRenderer);
-      expect(shader.vertexShader).toBe(
-        withDepthBias(ShaderLib.points.vertexShader, FOOD_DEPTH_BIAS),
+      (Array.isArray(material) ? material[0] : material).onBeforeCompile(
+        shader,
+        null as unknown as WebGLRenderer,
       );
+      expect(shader.vertexShader).toBe(withDepthBias(source, FOOD_DEPTH_BIAS));
     }
   });
 });

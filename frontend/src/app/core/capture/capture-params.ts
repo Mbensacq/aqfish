@@ -27,10 +27,15 @@
  * existantes inchangées). Sans `camera=`, la vue est celle de l'environnement (de dessus pour
  * le bassin).
  *
+ * Paramètre facultatif `granules=points|voxels` (issue #117) : rendu des granulés de
+ * nourriture, en mode capture seulement ; absent ou invalide, en points (séries existantes
+ * inchangées).
+ *
  * Ce module est volontairement pur (aucune dépendance à Angular ni à Three.js).
  * Voir docs/ARCHITECTURE.md, section « Contrat de capture ».
  */
 
+import { isFoodStyle, type FoodStyle } from '../food-style/food-style';
 import { isRenderFilter, type RenderFilter } from '../render-filter/render-filter';
 
 export const CAMERA_PRESETS = ['top', 'bottom', 'front', 'side', 'three-quarter'] as const;
@@ -61,6 +66,8 @@ export interface CaptureParams {
   readonly feedings: readonly CaptureFeeding[];
   /** Effectifs demandés par `population=`, dans l'ordre de l'URL (vide si absent). */
   readonly population: readonly CapturePopulation[];
+  /** Rendu des granulés forcé par `granules=` ; `null` si absent ou invalide. */
+  readonly foodStyle: FoodStyle | null;
 }
 
 /**
@@ -96,6 +103,7 @@ export const DEFAULT_CAPTURE_PARAMS: CaptureParams = {
   hour: null,
   feedings: [],
   population: [],
+  foodStyle: null,
 };
 
 /** Temps de simulation maximal accepté (1 h), pour éviter un calcul démesuré. */
@@ -132,6 +140,7 @@ export function parseCaptureParams(search: string): CaptureParams {
     hour: parseHour(params.get('heure')),
     feedings: parseFeedings(params.get('nourrir')),
     population: parsePopulation(params.get('population')),
+    foodStyle: parseFoodStyle(params.get('granules')),
   };
 }
 
@@ -168,6 +177,10 @@ function parseTime(raw: string | null): number {
 
 function parseFilter(raw: string | null): RenderFilter | null {
   return isRenderFilter(raw) ? raw : null;
+}
+
+function parseFoodStyle(raw: string | null): FoodStyle | null {
+  return isFoodStyle(raw) ? raw : null;
 }
 
 /** Heure décimale : chiffres, point décimal facultatif (ni signe, ni exposant, ni espace). */

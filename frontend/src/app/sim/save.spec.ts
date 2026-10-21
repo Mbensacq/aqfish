@@ -100,8 +100,12 @@ describe('serializeWorld / parseWorld : aller-retour', () => {
     );
   });
 
-  it('restitue les réglages de vitesse et d’heure', () => {
-    const settings: SaveSettings = { speed: 4, clock: createDayClock(18.5, 1200, true) };
+  it('restitue les réglages de vitesse, d’heure et de rendu des granulés', () => {
+    const settings: SaveSettings = {
+      speed: 4,
+      clock: createDayClock(18.5, 1200, true),
+      foodStyle: 'voxels',
+    };
     const { settings: back } = restored(
       parseWorld(serializeWorld(createDefaultWorld(1), settings)),
     );
@@ -119,6 +123,39 @@ describe('serializeWorld / parseWorld : aller-retour', () => {
   it('refuse d’écrire un monde à obstacles explicites (hors décor)', () => {
     const world = createWorld(1, [], [sphereObstacle(0, 0, 0.2, 0, 0.05)]);
     expect(() => serializeWorld(world)).toThrow(RangeError);
+  });
+
+  it('granulés en points si le réglage n’est pas donné, à l’écriture comme à la relecture', () => {
+    const settings: SaveSettings = { speed: 2, clock: createDayClock(9, 1200, false) };
+    const data = saveData(createDefaultWorld(1), settings);
+    expect(data.settings.foodStyle).toBe('points');
+    expect(restored(parseSaveData(structuredClone(data))).settings.foodStyle).toBe('points');
+  });
+
+  it('accepte une ancienne sauvegarde sans rendu des granulés (#117)', () => {
+    const data = structuredClone(saveData(createDefaultWorld(3))) as unknown as {
+      settings: Record<string, unknown>;
+    };
+    delete data.settings['foodStyle'];
+    const { settings } = restored(parseSaveData(data));
+    expect(settings.foodStyle).toBe('points');
+    expect(settings.speed).toBe(DEFAULT_SAVE_SETTINGS.speed);
+  });
+
+  it('refuse un rendu des granulés inconnu, à l’écriture comme à la lecture', () => {
+    for (const foodStyle of ['cubes', '', null, 1, { points: true }]) {
+      const data = structuredClone(saveData(createDefaultWorld(3))) as unknown as {
+        settings: Record<string, unknown>;
+      };
+      data.settings['foodStyle'] = foodStyle;
+      const result = parseSaveData(data);
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error).toMatch(/rendu des granulés inconnu/);
+      }
+    }
+    const bad = { ...DEFAULT_SAVE_SETTINGS, foodStyle: 'cubes' } as unknown as SaveSettings;
+    expect(() => serializeWorld(createWorld(1), bad)).toThrow(/granulés/);
   });
 
   it('refuse d’écrire des réglages invalides', () => {
