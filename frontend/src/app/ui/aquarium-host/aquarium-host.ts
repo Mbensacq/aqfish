@@ -839,6 +839,7 @@ export class AquariumHost {
     if (this.litHour === null || Math.abs(hour - this.litHour) >= LIGHT_HOUR_STEP) {
       this.litHour = hour;
       view.updateLight(lightAtInto(hour, this.light));
+      view.updateFlowers(hour);
       this.dayPhase.set(dayPhaseAt(hour));
       this.clockHour.set(snapHour(hour));
     }

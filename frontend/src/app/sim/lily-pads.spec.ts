@@ -3,17 +3,24 @@ import { SIM_DT } from './constants';
 import { environmentWater, POND, TROPICAL_TANK } from './environment';
 import {
   assertLilyPadSettings,
+  FLOWER_CLOSED_ELEVATION,
+  FLOWER_OPEN_ELEVATION,
+  flowerOpenness,
+  LILY_PAD_BLOOM,
   LILY_PAD_DRIFT,
   LILY_PAD_EDGE_MARGIN,
   LILY_PAD_GAP,
   LILY_PAD_SWAY_ANGLE,
+  lilyPadKind,
   lilyPadLayout,
   lilyPadPose,
   lilyPadReach,
+  LOTUS_LEAF_SCALE,
   type LilyPad,
   type LilyPadPose,
   type LilyPadSettings,
 } from './lily-pads';
+import { sunElevation } from './daylight';
 import { saveData, serializeWorld, parseWorld, SAVE_SCHEMA } from './save';
 import { createWorld } from './world';
 import type { Box3 } from './tank';
@@ -63,8 +70,10 @@ describe('nénuphars : disposition', () => {
     const { radius } = POND.lilyPads!;
     pondLayout(seed).forEach((pad, index) => {
       expect(pad.id).toBe(index);
-      expect(pad.radius).toBeGreaterThanOrEqual(radius.min);
-      expect(pad.radius).toBeLessThanOrEqual(radius.max);
+      // Un lotus a une feuille plus grande : le rayon tiré, multiplié par LOTUS_LEAF_SCALE.
+      const scale = pad.kind === 'lotus' ? LOTUS_LEAF_SCALE : 1;
+      expect(pad.radius).toBeGreaterThanOrEqual(radius.min * scale);
+      expect(pad.radius).toBeLessThanOrEqual(radius.max * scale);
       expect(pad.drift).toBeGreaterThanOrEqual(LILY_PAD_DRIFT.min);
       expect(pad.drift).toBeLessThanOrEqual(LILY_PAD_DRIFT.max);
       expect(pad.notch).toBeGreaterThan(0);
@@ -143,6 +152,130 @@ describe('nénuphars : disposition', () => {
   it.each([-1, 1.5, MAX_SEED + 1, Number.NaN])('refuse la graine invalide %s', (seed) => {
     expect(() => pondLayout(seed)).toThrow(RangeError);
   });
+});
+
+describe('nénuphars : fleurs et lotus', () => {
+  it.each(SEEDS)('nature des feuilles déterministe pour une graine (graine %s)', (seed) => {
+    const kinds = (s: number) => pondLayout(s).map((pad) => [pad.kind, pad.flowerTwist]);
+    expect(kinds(seed)).toEqual(kinds(seed));
+    for (const pad of pondLayout(seed)) {
+      expect(['feuille', 'fleur', 'lotus']).toContain(pad.kind);
+      expect(pad.flowerTwist).toBeGreaterThanOrEqual(0);
+      expect(pad.flowerTwist).toBeLessThan(2 * Math.PI);
+    }
+  });
+
+  it('la nature dépend de la graine, dans les proportions de LILY_PAD_BLOOM', () => {
+    const counts = { feuille: 0, fleur: 0, lotus: 0 };
+    const signatures = new Set<string>();
+    for (let seed = 0; seed < 400; seed++) {
+      const pads = pondLayout(seed);
+      pads.forEach((pad) => counts[pad.kind]++);
+      signatures.add(pads.map((pad) => pad.kind).join(','));
+    }
+    const total = counts.feuille + counts.fleur + counts.lotus;
+    // Tolérance large : quelques lotus, plus grands, trouvent moins souvent leur place.
+    expect(counts.lotus / total).toBeGreaterThan(LILY_PAD_BLOOM.lotus - 0.07);
+    expect(counts.lotus / total).toBeLessThan(LILY_PAD_BLOOM.lotus + 0.05);
+    expect(counts.fleur / total).toBeGreaterThan(LILY_PAD_BLOOM.fleur - 0.05);
+    expect(counts.fleur / total).toBeLessThan(LILY_PAD_BLOOM.fleur + 0.07);
+    expect(signatures.size).toBeGreaterThan(100);
+  });
+
+  it('graine 42 (captures) : au moins une fleur, un lotus et une feuille nue', () => {
+    const kinds = new Set(pondLayout(42).map((pad) => pad.kind));
+    expect([...kinds].sort()).toEqual(['feuille', 'fleur', 'lotus']);
+  });
+
+  it('les lotus respectent aussi les marges : leur rayon agrandi compte dans l’encombrement', () => {
+    for (let seed = 0; seed < 100; seed++) {
+      const pads = pondLayout(seed);
+      for (const pad of pads.filter((p) => p.kind === 'lotus')) {
+        expect(edgeClearance(pad.x, pad.z, lilyPadReach(pad), POND_WATER)).toBeGreaterThanOrEqual(
+          LILY_PAD_EDGE_MARGIN - 1e-12,
+        );
+        for (const other of pads.filter((p) => p !== pad)) {
+          expect(Math.hypot(pad.x - other.x, pad.z - other.z)).toBeGreaterThanOrEqual(
+            lilyPadReach(pad) + lilyPadReach(other) + LILY_PAD_GAP - 1e-12,
+          );
+        }
+      }
+    }
+  });
+
+  it('lilyPadKind : seuils de LILY_PAD_BLOOM', () => {
+    expect(lilyPadKind(0)).toBe('lotus');
+    expect(lilyPadKind(LILY_PAD_BLOOM.lotus - 1e-9)).toBe('lotus');
+    expect(lilyPadKind(LILY_PAD_BLOOM.lotus)).toBe('fleur');
+    expect(lilyPadKind(LILY_PAD_BLOOM.lotus + LILY_PAD_BLOOM.fleur - 1e-9)).toBe('fleur');
+    expect(lilyPadKind(LILY_PAD_BLOOM.lotus + LILY_PAD_BLOOM.fleur)).toBe('feuille');
+    expect(lilyPadKind(0.999999)).toBe('feuille');
+  });
+
+  it.each([-0.01, 1, Number.NaN])('lilyPadKind refuse le tirage %s', (u) => {
+    expect(() => lilyPadKind(u)).toThrow(RangeError);
+  });
+});
+
+describe('nénuphars : ouverture des fleurs', () => {
+  it('fermées à minuit, grandes ouvertes à midi (exactement)', () => {
+    expect(flowerOpenness(0)).toBe(0);
+    expect(flowerOpenness(24)).toBe(0);
+    expect(flowerOpenness(12)).toBe(1);
+  });
+
+  it('fermées toute la nuit, ouvertes en plein jour', () => {
+    for (const h of [20, 22, 23.5, 1, 3, 4.5]) {
+      expect(flowerOpenness(h)).toBe(0);
+    }
+    for (const h of [8.5, 10, 14, 15.5]) {
+      expect(flowerOpenness(h)).toBe(1);
+    }
+  });
+
+  it('transition progressive : croissante de minuit à midi, continue, entre 0 et 1', () => {
+    let previous = flowerOpenness(0);
+    let partial = 0;
+    for (let h = 0.05; h <= 12; h += 0.05) {
+      const o = flowerOpenness(h);
+      expect(o).toBeGreaterThanOrEqual(previous);
+      expect(o).toBeLessThanOrEqual(1);
+      // Pas de saut : au plus 5 % d'ouverture en 3 minutes.
+      expect(o - previous).toBeLessThan(0.05);
+      if (o > 0 && o < 1) {
+        partial++;
+      }
+      previous = o;
+    }
+    // La transition dure plusieurs heures (au moins 2 h, soit 40 pas de 3 min).
+    expect(partial).toBeGreaterThan(40);
+  });
+
+  it('les bornes de la transition sont celles de l’élévation du soleil', () => {
+    // Heures où l'élévation vaut les seuils : h = 12 · acos(−e) / π.
+    const closed = (12 * Math.acos(-FLOWER_CLOSED_ELEVATION)) / Math.PI;
+    const open = (12 * Math.acos(-FLOWER_OPEN_ELEVATION)) / Math.PI;
+    expect(sunElevation(closed)).toBeCloseTo(FLOWER_CLOSED_ELEVATION, 12);
+    expect(flowerOpenness(closed - 0.01)).toBe(0);
+    expect(flowerOpenness(closed + 0.01)).toBeGreaterThan(0);
+    expect(flowerOpenness(open - 0.01)).toBeLessThan(1);
+    expect(flowerOpenness(open + 0.01)).toBe(1);
+  });
+
+  it('symétrique autour de midi et périodique (24 h)', () => {
+    for (const h of [5.5, 6, 6.75, 7.5]) {
+      expect(flowerOpenness(24 - h)).toBeCloseTo(flowerOpenness(h), 12);
+      expect(flowerOpenness(h + 24)).toBeCloseTo(flowerOpenness(h), 12);
+      expect(flowerOpenness(h - 48)).toBeCloseTo(flowerOpenness(h), 12);
+    }
+  });
+
+  it.each([Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY])(
+    'refuse l’heure invalide %s',
+    (hour) => {
+      expect(() => flowerOpenness(hour)).toThrow(RangeError);
+    },
+  );
 });
 
 describe('nénuphars : dérive', () => {

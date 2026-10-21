@@ -1,17 +1,30 @@
 import { Mesh, ShaderMaterial, Vector2, type MeshBasicMaterial } from 'three';
 
 import { environmentWater, POND } from '../sim/environment';
+import { MAX_SEED } from '../core/random/prng';
 import { LILY_PAD_EDGE_MARGIN, lilyPadLayout, lilyPadPose } from '../sim/lily-pads';
 import { SAND_THICKNESS, WATER_LEVEL_RATIO } from '../sim/tank';
 import { DECOR_RENDER_ORDER, OUTLINE_COLOR, OUTLINE_WIDTH_PX } from './decor-layer';
+import { FISH_RENDER_ORDER } from './fish-layer';
 import {
   createLilyPadOutlineMaterial,
+  FLOWER_OUTLINE_RENDER_ORDER,
+  FLOWER_RENDER_ORDER,
   LILY_PAD_LIFT,
   LILY_PAD_SHADOW_COLOR,
   LILY_PAD_SHADOW_OFFSET,
   LILY_PAD_SHADOW_RENDER_ORDER,
   LilyPadLayer,
 } from './lily-pad-layer';
+import {
+  FLOWER_OFFSET_RATIO,
+  flowerSpread,
+  LILY_FLOWER_COLORS,
+  LOTUS_FLOWER_SCALE,
+  LOTUS_STALK_HEIGHT,
+  PETAL_RINGS,
+} from './lily-flower-model';
+import { LILY_PAD_THICKNESS } from './lily-pad-model';
 import { PALETTE_COLORS } from './palette';
 import { SURFACE_RENDER_ORDER } from './water-light';
 
@@ -115,6 +128,138 @@ describe('LilyPadLayer', () => {
     expect(uniform.toArray()).toEqual([427, 241]);
     layer.setResolution(0, -5);
     expect(uniform.toArray()).toEqual([1, 1]);
+  });
+});
+
+describe('LilyPadLayer : fleurs (issue #104)', () => {
+  let layer: LilyPadLayer;
+
+  beforeEach(() => {
+    layer = new LilyPadLayer(POND.dimensions);
+    layer.setPads(PADS);
+  });
+
+  afterEach(() => layer.dispose());
+
+  const petalsPerFlower = PETAL_RINGS.reduce((sum, ring) => sum + ring.count, 0);
+
+  it('une fleur sur chaque nénuphar fleuri et chaque lotus, aucune sur une feuille nue', () => {
+    const blooming = PADS.filter((pad) => pad.kind !== 'feuille');
+    expect(blooming.length).toBeGreaterThan(0);
+    expect(layer.flowerCount).toBe(blooming.length);
+    PADS.forEach((pad, n) => {
+      const flower = layer.object.getObjectByName(`nenuphar-${n}-fleur`);
+      expect(flower !== undefined).toBe(pad.kind !== 'feuille');
+      if (!flower) {
+        return;
+      }
+      // Attachée à la feuille : elle suit sa pose (dérive et balancement).
+      expect(flower.parent!.name).toBe(`nenuphar-${n}`);
+      const names: string[] = [];
+      flower.traverse((o) => names.push(o.name));
+      expect(names.filter((name) => name === `nenuphar-${n}-petale`)).toHaveLength(petalsPerFlower);
+      expect(names.filter((name) => name === `nenuphar-${n}-petale-contour`)).toHaveLength(
+        petalsPerFlower,
+      );
+      expect(names).toContain(`nenuphar-${n}-coeur`);
+      expect(names.includes(`nenuphar-${n}-tige`)).toBe(pad.kind === 'lotus');
+      // Posée sur la feuille, du côté opposé à l'encoche (−X local).
+      expect(flower.position.x).toBeCloseTo(-FLOWER_OFFSET_RATIO * pad.radius, 12);
+      expect(flower.position.y).toBe(LILY_PAD_THICKNESS);
+      flower.traverse((o) => {
+        if (o instanceof Mesh) {
+          const outline = o.name.endsWith('-contour');
+          expect(o.renderOrder).toBe(outline ? FLOWER_OUTLINE_RENDER_ORDER : FLOWER_RENDER_ORDER);
+          expect((o.material as MeshBasicMaterial).depthWrite).toBe(!outline);
+        }
+      });
+    });
+  });
+
+  it('ordre : feuilles, puis contours des fleurs, puis fleurs, puis poissons', () => {
+    expect(FLOWER_OUTLINE_RENDER_ORDER).toBeGreaterThan(DECOR_RENDER_ORDER);
+    expect(FLOWER_RENDER_ORDER).toBeGreaterThan(FLOWER_OUTLINE_RENDER_ORDER);
+    expect(FLOWER_RENDER_ORDER).toBeLessThan(FISH_RENDER_ORDER);
+  });
+
+  it('lotus : fleur plus grande, au bout de sa tige ; nénuphar : fleur sur la feuille', () => {
+    PADS.forEach((pad, n) => {
+      const flower = layer.object.getObjectByName(`nenuphar-${n}-fleur`);
+      if (!flower) {
+        return;
+      }
+      const head = flower.children.find((c) => c.name === '')!;
+      const lotus = pad.kind === 'lotus';
+      expect(head.position.y).toBe(lotus ? LOTUS_STALK_HEIGHT : 0);
+      expect(head.scale.x).toBe(lotus ? LOTUS_FLOWER_SCALE : 1);
+      expect(head.rotation.y).toBe(pad.flowerTwist);
+    });
+    expect(PADS.some((pad) => pad.kind === 'lotus')).toBe(true);
+  });
+
+  it.each([0, 1, 7, 42, 1234, MAX_SEED])(
+    'vue de dessus, une fleur grande ouverte tient dans sa feuille (graine %s)',
+    (seed) => {
+      for (const pad of lilyPadLayout(seed, environmentWater('bassin'), POND.lilyPads)) {
+        const scale = pad.kind === 'lotus' ? LOTUS_FLOWER_SCALE : 1;
+        expect(FLOWER_OFFSET_RATIO * pad.radius + scale * flowerSpread(1)).toBeLessThan(pad.radius);
+      }
+    },
+  );
+
+  it('ouverture : pétales penchés selon petalTilt ; conservée par setPads', () => {
+    const tilts = () => {
+      const values: number[] = [];
+      layer.object.traverse((o) => {
+        if (o.name.endsWith('-petale')) {
+          values.push(-o.parent!.rotation.z);
+        }
+      });
+      return values;
+    };
+    const expected = (openness: number) =>
+      PADS.filter((pad) => pad.kind !== 'feuille').flatMap(() =>
+        PETAL_RINGS.flatMap((ring) =>
+          Array.from(
+            { length: ring.count },
+            () => ring.closedTilt + (ring.openTilt - ring.closedTilt) * openness,
+          ),
+        ),
+      );
+    expect(layer.flowerOpenness).toBe(1);
+    expect(tilts()).toEqual(expected(1));
+    layer.setOpenness(0);
+    expect(tilts()).toEqual(expected(0));
+    layer.setOpenness(0.5);
+    tilts().forEach((t, i) => expect(t).toBeCloseTo(expected(0.5)[i], 12));
+    layer.setPads(PADS);
+    expect(layer.flowerOpenness).toBe(0.5);
+    tilts().forEach((t, i) => expect(t).toBeCloseTo(expected(0.5)[i], 12));
+  });
+
+  it('refuse une ouverture hors de [0, 1] sans rien changer', () => {
+    layer.setOpenness(0.25);
+    expect(() => layer.setOpenness(1.5)).toThrow(RangeError);
+    expect(layer.flowerOpenness).toBe(0.25);
+  });
+
+  it('teinte : couleurs de la palette en plein jour, multipliées la nuit', () => {
+    layer.setTint([1, 1, 1]);
+    expect(`#${layer.petalColor.getHexString()}`).toBe(LILY_FLOWER_COLORS.petal);
+    layer.setTint([0.5, 0.25, 1]);
+    const base = new Mesh().material as MeshBasicMaterial;
+    base.color.set(LILY_FLOWER_COLORS.petal);
+    expect(layer.petalColor.r).toBeCloseTo(base.color.r * 0.5, 12);
+    expect(layer.petalColor.g).toBeCloseTo(base.color.g * 0.25, 12);
+    expect(layer.petalColor.b).toBeCloseTo(base.color.b, 12);
+    base.dispose();
+  });
+
+  it('setPads([]) retire toutes les fleurs', () => {
+    layer.setPads([]);
+    expect(layer.flowerCount).toBe(0);
+    layer.setOpenness(0.3);
+    expect(layer.flowerOpenness).toBe(0.3);
   });
 });
 

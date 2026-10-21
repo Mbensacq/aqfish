@@ -218,6 +218,22 @@ describe('AquariumView (nénuphars, #103)', () => {
     view.dispose();
   });
 
+  it('les fleurs s’ouvrent à midi et se ferment à minuit (updateFlowers, issue #104)', () => {
+    const view = createIn();
+    const world = createWorld(42, [], [], POND.decor, 'bassin');
+    view.setDecor(world.decor, world.seed);
+    view.updateFlowers(0);
+    expect(view.flowerOpenness).toBe(0);
+    view.updateFlowers(12);
+    expect(view.flowerOpenness).toBe(1);
+    view.updateFlowers(6.5);
+    expect(view.flowerOpenness).toBeGreaterThan(0);
+    expect(view.flowerOpenness).toBeLessThan(1);
+    expect(() => view.updateFlowers(Number.NaN)).toThrow(RangeError);
+    view.dispose();
+    expect(() => view.updateFlowers(0)).not.toThrow(); // sans effet une fois libérée
+  });
+
   it('masqués et réaffichés avec le décor', () => {
     const view = createIn();
     const world = createWorld(7, [], [], POND.decor, 'bassin');

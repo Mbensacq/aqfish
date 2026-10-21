@@ -102,8 +102,11 @@ test.describe('Captures', () => {
 
   // Bassin (#87) : second environnement, de dessus (sa vue par défaut, sans `camera=`),
   // en trois-quarts et à minuit. Les captures du bac tropical ci-dessus restent inchangées.
+  // Fleurs des nénuphars (#104) : ouvertes à midi, fermées à minuit, vues de dessus.
   const POND_CAPTURES = [
     { name: 'bassin-top', query: 'environnement=bassin' },
+    { name: 'bassin-top-minuit', query: 'environnement=bassin&heure=0' },
+    { name: 'bassin-top-sans-filtre', query: 'environnement=bassin&filtre=aucun' },
     { name: 'bassin-three-quarter', query: 'environnement=bassin&camera=three-quarter' },
     {
       name: 'bassin-three-quarter-minuit',

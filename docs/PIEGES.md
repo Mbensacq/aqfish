@@ -239,6 +239,18 @@ haut de sa section.
 
 ## Rendu
 
+- **Petit objet en plusieurs pièces : un contour par pièce le noircit** (cycle 36, #104) :
+  une fleur de ~15 pixels faite de 13 pétales, chacun avec sa coque de contour, montrait en
+  vue trois-quarts des traits noirs entre tous les pétales. Dessiner toutes les coques
+  d'abord, **sans écrire la profondeur** (`depthWrite: false`, ordre juste après le support),
+  puis les pièces, qui recouvrent les contours intérieurs : seule la silhouette garde son
+  liseré (`FLOWER_OUTLINE_RENDER_ORDER`, `render/lily-pad-layer.ts`). (2026-10-21)
+- **Choisir une constante de flux de hasard pour la graine des captures** (cycle 36) : la
+  graine 42 ne tirait aucun lotus. Plutôt que de truquer les probabilités, essayer quelques
+  valeurs de flux dans un test jetable (sortie via `throw new Error(...)` : `console.log`
+  n'apparaît pas dans `ng test`) et figer la valeur retenue par un test (« graine 42 :
+  au moins une fleur, un lotus et une feuille nue »). (2026-10-21)
+
 - **Objet très mince et coque de contour : contour par-dessus l'objet** (cycle 35, #103) :
   la feuille de nénuphar fait 6 mm ; en vue trois-quarts, le dessous de la coque et le
   dessus de la feuille tombaient sur la même profondeur quantifiée et le contour (`koiNoir`)

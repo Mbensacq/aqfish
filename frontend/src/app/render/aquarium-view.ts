@@ -30,7 +30,7 @@ import { SPECIES, speciesVariants, type SpeciesId } from '../sim/species';
 import type { Fish } from '../sim/swimmer';
 import type { DayLight } from '../sim/daylight';
 import { environmentWater, type Environment } from '../sim/environment';
-import { lilyPadLayout } from '../sim/lily-pads';
+import { flowerOpenness, lilyPadLayout } from '../sim/lily-pads';
 import type { DecorItem } from '../sim/decor';
 import type { FoodPellet } from '../sim/food';
 import { BubbleLayer } from './bubble-layer';
@@ -429,6 +429,22 @@ export class AquariumView {
       const penalties = tonePenaltiesInto(light.intensity, this.penalties);
       this.pixelPass.setTonePenalties(penalties.night, penalties.twilight);
     }
+  }
+
+  /**
+   * Ouvre ou ferme les fleurs des nénuphars selon l'heure `hour` (`flowerOpenness`, issue
+   * #104) : à appeler avec `updateLight`, à la même heure.
+   * @throws RangeError si `hour` n'est pas un réel fini.
+   */
+  updateFlowers(hour: number): void {
+    if (!this.disposed) {
+      this.lilyPadLayer.setOpenness(flowerOpenness(hour));
+    }
+  }
+
+  /** Ouverture courante des fleurs des nénuphars (tests). */
+  get flowerOpenness(): number {
+    return this.lilyPadLayer.flowerOpenness;
   }
 
   /**
