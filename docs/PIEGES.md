@@ -245,6 +245,13 @@ haut de sa section.
 
 ## Rendu
 
+- **Baisser l'intensité du jour pour assombrir la scène, en plein midi** (cycle 39, #106) :
+  multiplier `DayLight.intensity` par 0,85 sous la pluie desserrait aussi les pénalités des
+  tons du crépuscule (`tonePenaltiesInto`) et changeait la teinte du décor
+  (`decorTintInto`) : stries claires sur les parois intérieures de l'eau du bassin en vue
+  trois-quarts, touffes d'herbe claires ternies. L'intensité n'est pas un simple
+  « variateur » : elle choisit aussi les tons de la passe palette. Comparer les captures avec
+  et sans l'effet avant de le garder (retiré, issue #123). (2026-10-21)
 - **Petit objet en plusieurs pièces : un contour par pièce le noircit** (cycle 36, #104) :
   une fleur de ~15 pixels faite de 13 pétales, chacun avec sa coque de contour, montrait en
   vue trois-quarts des traits noirs entre tous les pétales. Dessiner toutes les coques
