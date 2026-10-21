@@ -498,3 +498,36 @@ describe('AquariumView (gestes de la caméra, #74)', () => {
     expect(new Set(Object.values(ORBIT_TOUCH_ACTIONS)).size).toBe(4);
   });
 });
+
+describe('AquariumView (ronds de pluie vus de biais, #125)', () => {
+  it('tracé de biais en trois-quarts, habituel de dessus, de face et de dessous', () => {
+    const view = new AquariumView({
+      canvas: document.createElement('canvas'),
+      rendererFactory: () => new RecordingRenderer(),
+      pixelRatio: 1,
+      preset: 'top',
+      interactive: false,
+      environment: POND,
+    });
+    view.resize(1280, 720);
+    view.setRain(true);
+    const oblique: Record<string, boolean> = {};
+    for (const preset of ['top', 'bottom', 'front', 'side', 'three-quarter'] as const) {
+      view.applyPreset(preset);
+      view.renderFrame();
+      oblique[preset] = view.rainObliqueView;
+    }
+    expect(oblique).toEqual({
+      top: false,
+      bottom: false,
+      front: false,
+      side: false,
+      'three-quarter': true,
+    });
+    // Sans filtre aussi : le choix ne dépend que de la caméra.
+    view.setFilter('aucun');
+    view.renderFrame();
+    expect(view.rainObliqueView).toBe(true);
+    view.dispose();
+  });
+});

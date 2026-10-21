@@ -4,6 +4,7 @@ import { environmentWater } from '../sim/environment';
 import {
   createRainBuffer,
   fillRain,
+  RAIN_START_HEIGHT,
   RAIN_STREAK_LENGTH,
   RIPPLE_DURATION,
   RIPPLE_RING_GAP,
@@ -13,10 +14,16 @@ import { BUBBLE_RENDER_ORDER } from './bubble-layer';
 import { DECOR_RENDER_ORDER } from './decor-layer';
 import { PALETTE_COLORS } from './palette';
 import {
+  isObliqueView,
   RAIN_DROP_COLOR,
   RAIN_DROP_RENDER_ORDER,
+  RAIN_FADE_BOTTOM,
+  RAIN_FADE_TOP,
+  rainDropAlpha,
   RainLayer,
   RIPPLE_LIFT,
+  RIPPLE_OBLIQUE_MAX_SIN,
+  RIPPLE_OBLIQUE_MIN_SIN,
   RIPPLE_OLD_COLOR,
   RIPPLE_RENDER_ORDER,
   RIPPLE_SEGMENTS,
@@ -147,6 +154,105 @@ describe('RainLayer (#106)', () => {
     layer.setBrightness(Number.NaN);
     layer.setBrightness(-1);
     expect(layer.brightness).toBe(0.6);
+    layer.dispose();
+  });
+});
+
+describe('RainLayer : lisibilité en trois-quarts (#125)', () => {
+  it('fondu des gouttes : nul en haut, plein en bas, linéaire entre les deux', () => {
+    expect(rainDropAlpha(RAIN_FADE_TOP)).toBe(0);
+    expect(rainDropAlpha(RAIN_START_HEIGHT)).toBe(0);
+    expect(rainDropAlpha(RAIN_START_HEIGHT + RAIN_STREAK_LENGTH)).toBe(0);
+    expect(rainDropAlpha(RAIN_FADE_BOTTOM)).toBe(1);
+    expect(rainDropAlpha(0)).toBe(1);
+    expect(rainDropAlpha(-1)).toBe(1);
+    expect(rainDropAlpha((RAIN_FADE_TOP + RAIN_FADE_BOTTOM) / 2)).toBeCloseTo(0.5, 12);
+    expect(rainDropAlpha(Number.NaN)).toBe(0);
+    expect(rainDropAlpha(Number.POSITIVE_INFINITY)).toBe(0);
+    expect(rainDropAlpha(Number.NEGATIVE_INFINITY)).toBe(1);
+    // Le fondu commence sous la naissance des gouttes et finit au-dessus de la surface.
+    expect(RAIN_FADE_TOP).toBeLessThan(RAIN_START_HEIGHT);
+    expect(RAIN_FADE_BOTTOM).toBeGreaterThan(0);
+    expect(RAIN_FADE_BOTTOM).toBeLessThan(RAIN_FADE_TOP);
+  });
+
+  it('opacité par sommet : le haut du trait jamais plus opaque que le bas', () => {
+    const layer = new RainLayer(WATER);
+    layer.setSeed(42);
+    layer.setEnabled(true);
+    layer.update(12.34);
+    const expected = createRainBuffer();
+    fillRain(42, 12.34, WATER, expected);
+    const { drops } = lines(layer);
+    const colors = drops.geometry.getAttribute('color');
+    expect(colors.itemSize).toBe(4);
+    expect((drops.material as LineBasicMaterial).vertexColors).toBe(true);
+    expect((drops.material as LineBasicMaterial).depthWrite).toBe(false);
+    for (let i = 0; i < expected.dropCount; i++) {
+      const height = expected.drops[3 * i + 1] - WATER.maxY;
+      const bottom = colors.getW(2 * i);
+      const top = colors.getW(2 * i + 1);
+      expect(bottom).toBeCloseTo(rainDropAlpha(height), 6);
+      expect(top).toBeCloseTo(rainDropAlpha(height + RAIN_STREAK_LENGTH), 6);
+      expect(top).toBeLessThanOrEqual(bottom);
+      // Teinte blanche : la couleur vient du matériau (palette, luminosité).
+      expect([colors.getX(2 * i), colors.getY(2 * i), colors.getZ(2 * i)]).toEqual([1, 1, 1]);
+    }
+    layer.dispose();
+  });
+
+  it('vue de biais : seulement entre les deux sinus d’élévation', () => {
+    const target: [number, number, number] = [0, 0, 0];
+    const at = (sin: number): [number, number, number] => [Math.sqrt(1 - sin * sin), sin, 0];
+    expect(isObliqueView(at(0.4), target)).toBe(true);
+    expect(isObliqueView([0.75, 0.55, 1], target)).toBe(true); // trois-quarts
+    expect(isObliqueView([0, 1, 1e-3], target)).toBe(false); // dessus
+    expect(isObliqueView([0, 0, 1], target)).toBe(false); // face, à hauteur du bac
+    expect(isObliqueView([0, -1, 0.3], target)).toBe(false); // dessous
+    expect(isObliqueView(at(RIPPLE_OBLIQUE_MIN_SIN), target)).toBe(false);
+    expect(isObliqueView(at(RIPPLE_OBLIQUE_MAX_SIN), target)).toBe(false);
+    expect(isObliqueView([1, 2, 3], [1, 2, 3])).toBe(false);
+    expect(isObliqueView([Number.NaN, 1, 1], target)).toBe(false);
+    expect(isObliqueView([Number.POSITIVE_INFINITY, 1, 1], target)).toBe(false);
+  });
+
+  it('ronds de biais : rond extérieur seul, couleur la plus claire, tracé habituel masqué', () => {
+    const layer = new RainLayer(WATER);
+    layer.setSeed(3);
+    layer.setEnabled(true);
+    const all = layer.object.children.filter((c): c is LineSegments => c instanceof LineSegments);
+    const oblique = all.find((c) => c.name === 'pluie-ronds-biais')!;
+    const { ripples } = lines(layer);
+    expect(oblique.renderOrder).toBe(RIPPLE_RENDER_ORDER);
+    expect(oblique.visible).toBe(false);
+    expect(ripples.visible).toBe(true);
+    layer.update(20);
+    const expected = createRainBuffer();
+    fillRain(3, 20, WATER, expected);
+    let outer = 0;
+    for (let i = 0; i < expected.rippleCount; i++) {
+      outer += rippleRadius(expected.ripples[3 * i + 2]) > 0 ? 1 : 0;
+    }
+    expect(oblique.geometry.drawRange.count).toBe(outer * 2 * RIPPLE_SEGMENTS);
+    // Même premier cercle que le tracé habituel (rond extérieur du premier impact).
+    const a = oblique.geometry.getAttribute('position').array;
+    const b = ripples.geometry.getAttribute('position').array;
+    expect(Array.from(a.slice(0, 6 * RIPPLE_SEGMENTS))).toEqual(
+      Array.from(b.slice(0, 6 * RIPPLE_SEGMENTS)),
+    );
+    const material = oblique.material as LineBasicMaterial;
+    expect('#' + material.color.getHexString()).toBe(RIPPLE_YOUNG_COLOR);
+    layer.setObliqueView(true);
+    expect(layer.obliqueView).toBe(true);
+    expect(oblique.visible).toBe(true);
+    expect(ripples.visible).toBe(false);
+    layer.setBrightness(0.5);
+    expect(material.color.r).toBeCloseTo(new Color(RIPPLE_YOUNG_COLOR).r * 0.5, 12);
+    layer.setObliqueView(false);
+    expect(oblique.visible).toBe(false);
+    expect(ripples.visible).toBe(true);
+    layer.setEnabled(false);
+    expect(oblique.geometry.drawRange.count).toBe(0);
     layer.dispose();
   });
 });

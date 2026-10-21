@@ -41,7 +41,7 @@ import { FishLayer, MAX_FISH_PER_SPECIES } from './fish-layer';
 import { FoodLayer } from './food-layer';
 import { scenePixelsPerMeter } from './food-size';
 import { LilyPadLayer } from './lily-pad-layer';
-import { RainLayer } from './rain-layer';
+import { isObliqueView, RainLayer } from './rain-layer';
 import { isClick, toNormalizedDevice, waterSurfacePoint } from './food-pick';
 import {
   decorTintInto,
@@ -553,6 +553,11 @@ export class AquariumView {
     return this.effects.map((layer) => layer.object.name);
   }
 
+  /** Vrai si les ronds de pluie sont tracés pour une vue de biais (tests). */
+  get rainObliqueView(): boolean {
+    return this.rainLayer.obliqueView;
+  }
+
   /** Gouttes en l'air et ronds à la surface posés par le dernier `updateDecor` (tests). */
   get rainCounts(): readonly [number, number] {
     return [this.rainLayer.dropCount, this.rainLayer.rippleCount];
@@ -633,6 +638,8 @@ export class AquariumView {
         this.targetSize.height,
       ),
     );
+    // Ronds de pluie vus de biais (#125) : rond extérieur seul, plus clair.
+    this.rainLayer.setObliqueView(isObliqueView(this.cameraPosition(), this.cameraTarget()));
     if (this.currentFilter === 'aucun') {
       this.decorLayer.setResolution(this.width * this.pixelRatio, this.height * this.pixelRatio);
       this.lilyPadLayer.setResolution(this.width * this.pixelRatio, this.height * this.pixelRatio);

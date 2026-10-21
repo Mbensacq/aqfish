@@ -53,6 +53,21 @@ rien de nouveau dans la sauvegarde.
 - **Ronds en anneaux translucides qui s'estompent** : l'opacité partielle est ramenée par la
   passe palette à des couleurs imprévisibles ; deux paliers de couleurs pleines suffisent.
 
+## Amendement (cycle 40, issue #125)
+
+Lisibilité en vue trois-quarts, sans toucher à la simulation (`sim/rain.ts` inchangé : mêmes
+impacts, mêmes instants, mêmes ronds) :
+
+- **Gouttes en fondu** : opacité par sommet, nulle à `RAIN_FADE_TOP` (0,4 m) au-dessus de la
+  surface, pleine à `RAIN_FADE_BOTTOM` (0,15 m). Une goutte ne se voit qu'en fin de chute et
+  ne se détache plus sur le fond au-dessus du terrain. Abaisser `RAIN_START_HEIGHT` aurait
+  décalé tous les impacts dans le temps (ronds différents dans toutes les captures de pluie)
+  et, pour la même lisibilité, réduit la chute à quelques images.
+- **Ronds vus de biais** (sinus de l'élévation de la caméra dans ]0,2 ; 0,9[) : rond extérieur
+  seul, toujours `eauTresClaire`, pour qu'il se distingue des reflets `eauClaire` de la
+  surface. Vue de dessus : tracé habituel, captures identiques. Un tracé épaissi d'un pixel a
+  été essayé et écarté (ellipses remplies en taches).
+
 ## Conséquences
 
 - Changer la cadence, les durées, le flux ou l'ordre des tirages change les captures avec

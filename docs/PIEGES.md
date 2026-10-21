@@ -245,6 +245,16 @@ haut de sa section.
 
 ## Rendu
 
+- **Épaissir un petit cercle de ligne vu de biais** (ronds de pluie en trois-quarts, #125) :
+  un second tracé décalé d'un pixel de scène vers la caméra remplit les ellipses de 3 à
+  4 pixels de haut, qui deviennent des taches claires sans forme de rond. Pour la lisibilité
+  d'un petit motif écrasé, jouer sur la couleur et le nombre de traits (rond extérieur seul,
+  couleur la plus claire), pas sur l'épaisseur. (2026-10-21)
+- **Opacité partielle et passe palette** : une couleur mélangée au fond est ramenée à la
+  couleur de palette la plus proche, souvent inattendue (gris `roche` pour un vert d'eau à
+  moitié sur le fond sombre). Le fondu des gouttes (#125) n'est acceptable que parce qu'il est
+  court et placé haut : vérifier sur capture qu'aucun pixel parasite n'apparaît (compter les
+  pixels hors fond dans la zone concernée). (2026-10-21)
 - **Baisser l'intensité du jour pour assombrir la scène, en plein midi** (cycle 39, #106) :
   multiplier `DayLight.intensity` par 0,85 sous la pluie desserrait aussi les pénalités des
   tons du crépuscule (`tonePenaltiesInto`) et changeait la teinte du décor
