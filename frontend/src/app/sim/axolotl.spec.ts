@@ -39,6 +39,14 @@ function axolotls(world: World): Fish[] {
   return world.entities.filter((e) => e.species === 'axolotl');
 }
 
+/**
+ * Paludarium peuplé d'axolotls seulement (identifiants 0 à count − 1) : le monde que ces
+ * tests observaient avant l'arrivée des grenouilles (#131), qui ne les influencent pas.
+ */
+function axolotlWorld(seed: number, count: number): World {
+  return createWorld(seed, [{ species: 'axolotl', count }], [], [], 'paludarium');
+}
+
 describe('axolotl : espèce du paludarium (#130)', () => {
   it('définition valide, solitaire, qui marche sur le fond', () => {
     expect(validateSpecies(AXOLOTL)).toEqual([]);
@@ -49,15 +57,15 @@ describe('axolotl : espèce du paludarium (#130)', () => {
   });
 
   it('déclaré en données pour le paludarium seulement, deux par défaut', () => {
-    expect(PALUDARIUM.species).toEqual(['axolotl']);
-    expect(PALUDARIUM.population).toEqual([{ species: 'axolotl', count: 2 }]);
+    expect(PALUDARIUM.species).toContain('axolotl');
+    expect(PALUDARIUM.population).toContainEqual({ species: 'axolotl', count: 2 });
     expect(livesIn('paludarium', 'axolotl')).toBe(true);
     expect(livesIn('tropical', 'axolotl')).toBe(false);
     expect(livesIn('bassin', 'axolotl')).toBe(false);
     expect(TROPICAL_TANK.species).not.toContain('axolotl');
     expect(POND.species).not.toContain('axolotl');
     const world = createDefaultWorld(42, 'paludarium');
-    expect(world.entities.map((e) => e.species)).toEqual(['axolotl', 'axolotl']);
+    expect(axolotls(world).map((e) => e.id)).toEqual([0, 1]);
   });
 
   it('population réglable de 0 à 4 dans le paludarium, nouveaux venus posés dans l’eau', () => {
@@ -65,9 +73,10 @@ describe('axolotl : espèce du paludarium (#130)', () => {
     expect(populationLimit(world, 'axolotl')).toBe(4);
     const four = setPopulation(world, 'axolotl', 9);
     expect(axolotls(four)).toHaveLength(4);
-    // Les deux premiers sont inchangés ; les nouveaux ont les identifiants suivants.
-    expect(four.entities.slice(0, 2)).toEqual(world.entities);
-    expect(four.entities.map((e) => e.id)).toEqual([0, 1, 2, 3]);
+    // Les deux premiers sont inchangés ; les nouveaux ont les identifiants suivants (après
+    // ceux des grenouilles, #131).
+    expect(axolotls(four).slice(0, 2)).toEqual(axolotls(world));
+    expect(axolotls(four).map((e) => e.id)).toEqual([0, 1, world.nextFishId, world.nextFishId + 1]);
     for (const fish of axolotls(four)) {
       expect(walkerCanStand(fish.x, fish.z, AXOLOTL, BOUNDS, GROUND)).toBe(true);
       expect(fish.y).toBeCloseTo(groundHeight(fish.x, fish.z, GROUND) + WALKER.clearance, 12);
@@ -180,14 +189,14 @@ describe('axolotl : machine à états (#130)', () => {
   });
 
   it('chaque état se voit dans la trajectoire : fond, pleine eau, surface', () => {
-    const world = cloneWorld(setPopulation(createDefaultWorld(42, 'paludarium'), 'axolotl', 4));
+    const world = cloneWorld(axolotlWorld(42, 4));
     const gap: Record<WalkerMode, number[]> = { marche: [], nage: [], remontee: [] };
     let nearSurface = 0;
     let burstMin = Number.POSITIVE_INFINITY;
     let burstMax = 0;
     for (let tick = 0; tick < 36_000; tick++) {
       advanceInPlace(world, 1);
-      for (const fish of world.entities) {
+      for (const fish of axolotls(world)) {
         const phase = walkerPhaseAt(WALKER, world.seed, fish.id, world.time);
         const floor = groundHeight(fish.x, fish.z, GROUND) + WALKER.clearance;
         // Après 4 s dans le créneau : l'animal a rejoint la hauteur de l'état.
@@ -224,13 +233,13 @@ describe('axolotl : machine à états (#130)', () => {
  * inclinaison bornés.
  */
 function checkInvariants(seed: number, count: number): void {
-  const world = cloneWorld(setPopulation(createDefaultWorld(seed, 'paludarium'), 'axolotl', count));
+  const world = cloneWorld(axolotlWorld(seed, count));
   const { hard } = BOUNDS;
   const eps = 1e-9;
   const settings = PALUDARIUM.terrain!;
   for (let tick = 0; tick < 10_000; tick++) {
     advanceInPlace(world, 1);
-    for (const fish of world.entities) {
+    for (const fish of axolotls(world)) {
       const sample = terrainAt(fish.x, fish.z, settings, WATER);
       const midX = (fish.x + fish.px) / 2;
       const midZ = (fish.z + fish.pz) / 2;
@@ -270,10 +279,10 @@ describe('axolotl : bornes, propriété sur 10 000 pas (#130)', () => {
   );
 
   it('n’entre jamais là où l’eau est trop basse (pente de la berge)', () => {
-    const world = cloneWorld(setPopulation(createDefaultWorld(5, 'paludarium'), 'axolotl', 4));
+    const world = cloneWorld(axolotlWorld(5, 4));
     for (let tick = 0; tick < 10_000; tick++) {
       advanceInPlace(world, 1);
-      for (const fish of world.entities) {
+      for (const fish of axolotls(world)) {
         const depth = SURFACE - WALKER.surfaceMargin - groundHeight(fish.x, fish.z, GROUND);
         expect(depth).toBeGreaterThanOrEqual(WALKER.clearance + WADE_ROOM - 1e-9);
       }
