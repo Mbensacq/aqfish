@@ -63,6 +63,11 @@ export interface Environment {
    */
   readonly rain: boolean;
   /**
+   * Feuilles mortes qui flottent et dérivent (issue #107, `sim/floating-leaves.ts`) : le
+   * bassin, sous les arbres.
+   */
+  readonly floatingLeaves: boolean;
+  /**
    * Espèces qui vivent dans l'environnement, dans l'ordre du panneau (issue #88) : seules
    * celles-ci sont proposées au réglage de population et exposées.
    */
@@ -94,6 +99,7 @@ export const TROPICAL_TANK: Environment = {
   decor: DEFAULT_DECOR,
   lilyPads: null,
   rain: false,
+  floatingLeaves: false,
   species: TROPICAL_SPECIES.map((def) => def.id),
   population: defaultPopulation(TROPICAL_SPECIES),
 };
@@ -130,6 +136,7 @@ export const POND: Environment = {
     radius: { min: 0.075, max: 0.13 },
   }),
   rain: true,
+  floatingLeaves: true,
   species: [KOI.id],
   population: defaultPopulation([KOI]),
 };
