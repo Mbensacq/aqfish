@@ -1,8 +1,9 @@
 @if (!capture) {
   <!-- Interface (masquée en mode capture). Titre accessible, invisible à l'écran. -->
   <h1 class="visually-hidden">aqfish</h1>
-  <!-- Aide-mémoire des commandes (#74), indépendant de Three.js : affiché tout de suite. -->
-  <app-commands-help />
+  <!-- Aide-mémoire des commandes (#74), indépendant de Three.js : affiché tout de suite.
+       Exclusif avec « Réglages » sur écran étroit (#136). -->
+  <app-commands-help #help (opened)="onHelpOpened()" />
 }
 <!-- Three.js est chargé à part pour garder le bundle initial sous le budget (angular.json). -->
 @defer (on immediate) {
@@ -22,6 +23,8 @@
     <app-day-indicator [phase]="aquarium.dayPhase()" />
     <!-- Panneau de contrôle (#52) : environnement (#87), vitesse, heure et pluie (#106), décor et granulés (#117), population (#69), sauvegarde (#70). Fermé par défaut. -->
     <app-control-panel
+      #panel
+      (opened)="onPanelOpened()"
       [environment]="aquarium.environment()"
       [speed]="aquarium.speed()"
       [hour]="aquarium.clockHour()"

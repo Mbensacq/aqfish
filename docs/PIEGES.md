@@ -66,6 +66,12 @@ haut de sa section.
 
 ## Tests
 
+- **`npm run verify` lancé en arrière-plan pendant qu'on modifie le code** (cycle 48) : les
+  e2e passent par `ng serve`, qui recompile à chaque enregistrement ; un `verify` « de
+  santé de `main` » lancé avant de coder teste en réalité le code en cours d'écriture, et son
+  verdict ne vaut rien. Le lancer dans un worktree séparé (`git worktree add`), ou attendre
+  sa fin avant de toucher aux sources ; à défaut, s'appuyer sur la CI verte de `main`.
+  (2026-10-22)
 - **Hôte transparent d'un composant qui capte les clics** (cycle 41, #112) : l'hôte
   `position: fixed` de `app-control-panel` forme une boîte invisible aussi large que le
   panneau, du bouton jusqu'au bas du panneau ; placé après `app-commands-help` dans le DOM,

@@ -103,4 +103,8 @@ base légèrement enfoncée.
   une police lisible pour le texte courant.
 - Contrôles attendus à terme : préréglages de vue, vitesse de simulation, population,
   jour/nuit, météo (pluie), son, choix de l'environnement, éditeur.
+- Panneaux qui ne tiennent pas côte à côte : jamais ouverts ensemble. Sous 640 px de large,
+  ouvrir « Réglages » replie « Commandes » et inversement (#136), et l'aide-mémoire démarre
+  replié (paysage de téléphone compris). Un nouveau panneau flottant suit la même règle
+  (`ui/exclusive-panels`).
 - Textes en français.

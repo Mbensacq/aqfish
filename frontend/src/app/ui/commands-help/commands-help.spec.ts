@@ -1,10 +1,11 @@
-import { Component } from '@angular/core';
+import { Component, DOCUMENT } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 
 import { GESTURE_COMMANDS, KEY_COMMANDS, keyCommandFor } from '../../core/commands/commands';
 import { ViewPresetsBar } from '../view-presets-bar/view-presets-bar';
 import {
   COMMANDS_HELP_DEFAULT_OPEN,
+  COMMANDS_HELP_NARROW_MAX_WIDTH,
   COMMANDS_HELP_STORE,
   createFallbackStore,
   type KeyValueStore,
@@ -210,6 +211,36 @@ describe('CommandsHelp (#74)', () => {
     fixture.destroy();
     expect(press('?').defaultPrevented).toBe(false);
   });
+
+  it('déplié par l’utilisateur (bouton ou `?`) : émet `opened` ; replié : rien (#136)', async () => {
+    await create(COMMANDS_HELP_FOLDED);
+    let opened = 0;
+    fixture.componentInstance.opened.subscribe(() => opened++);
+    toggleButton().click();
+    await fixture.whenStable();
+    expect(opened).toBe(1);
+    toggleButton().click(); // replier
+    await fixture.whenStable();
+    expect(opened).toBe(1);
+    press('?');
+    await fixture.whenStable();
+    expect(panel()).not.toBeNull();
+    expect(opened).toBe(2);
+  });
+
+  it('`fold()` replie sans mémoriser ni émettre : l’état choisi revient au rechargement (#136)', async () => {
+    await create(COMMANDS_HELP_OPEN);
+    let opened = 0;
+    fixture.componentInstance.opened.subscribe(() => opened++);
+    fixture.componentInstance.fold();
+    await fixture.whenStable();
+    expect(panel()).toBeNull();
+    expect(root().querySelector('.commands-help__toggle--folded')).not.toBeNull();
+    expect(store.writes).toEqual([]);
+    expect(opened).toBe(0);
+    fixture.componentInstance.fold(); // déjà replié : sans effet
+    expect(fixture.componentInstance.open()).toBe(false);
+  });
 });
 
 describe('createFallbackStore', () => {
@@ -245,6 +276,36 @@ describe('createFallbackStore', () => {
     expect(store.read('k')).toBeNull();
     expect(() => store.write('k', 'v')).not.toThrow();
     expect(store.read('k')).toBe('v');
+  });
+
+  it('par défaut : replié jusqu’à 639 px (paysage 568 × 320 compris), déplié au-delà (#136)', () => {
+    const cases: [number, boolean][] = [
+      [320, false],
+      [568, false],
+      [639, false],
+      [640, true],
+      [1280, true],
+    ];
+    for (const [width, expected] of cases) {
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        providers: [
+          {
+            provide: DOCUMENT,
+            useValue: {
+              defaultView: {
+                matchMedia: (query: string) =>
+                  ({
+                    matches: width <= Number(/\(max-width: (\d+)px\)/.exec(query)?.[1]),
+                  }) as MediaQueryList,
+              },
+            },
+          },
+        ],
+      });
+      expect(TestBed.inject(COMMANDS_HELP_DEFAULT_OPEN), `${width} px`).toBe(expected);
+    }
+    expect(COMMANDS_HELP_NARROW_MAX_WIDTH).toBe(639);
   });
 
   it('par défaut sans matchMedia (jsdom) : déplié', () => {

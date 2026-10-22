@@ -4,6 +4,8 @@ import { App } from './app';
 import { isCaptureReady, resetCaptureReady } from './core/capture/capture-ready';
 import type { AquariumRenderer } from './render/aquarium-view';
 import { AQUARIUM_RENDERER_FACTORY } from './ui/aquarium-host/aquarium-host';
+import { COMMANDS_HELP_STORE, createFallbackStore } from './ui/commands-help/commands-help-store';
+import { EXCLUSIVE_PANELS } from './ui/exclusive-panels/exclusive-panels';
 
 /** jsdom n'a pas WebGL : renderer factice (docs/PIEGES.md). */
 const fakeRendererFactory = (): AquariumRenderer => ({
@@ -127,5 +129,56 @@ describe('App', () => {
     } finally {
       window.history.replaceState(null, '', '/');
     }
+  });
+  describe('« Réglages » et « Commandes » (#136)', () => {
+    let narrow: boolean;
+
+    async function render() {
+      narrow = true;
+      TestBed.overrideProvider(EXCLUSIVE_PANELS, { useValue: () => narrow });
+      TestBed.overrideProvider(COMMANDS_HELP_STORE, { useValue: createFallbackStore(null) });
+      const fixture = TestBed.createComponent(App);
+      await fixture.whenStable();
+      const root = fixture.nativeElement as HTMLElement;
+      const settingsButton = () => root.querySelector<HTMLButtonElement>('.control-panel__toggle')!;
+      const helpButton = () => root.querySelector<HTMLButtonElement>('.commands-help__toggle')!;
+      const settings = () => root.querySelector('.control-panel');
+      const help = () => root.querySelector('#aide-commandes');
+      const click = async (button: HTMLButtonElement) => {
+        button.click();
+        await fixture.whenStable();
+      };
+      return { settingsButton, helpButton, settings, help, click };
+    }
+
+    it('écran étroit : ouvrir l’un replie l’autre, dans les deux sens', async () => {
+      const ui = await render();
+      expect(ui.help()).not.toBeNull(); // déplié par défaut sans matchMedia (jsdom)
+      await ui.click(ui.settingsButton());
+      expect(ui.settings()).not.toBeNull();
+      expect(ui.help()).toBeNull();
+      await ui.click(ui.helpButton());
+      expect(ui.help()).not.toBeNull();
+      expect(ui.settings()).toBeNull();
+      await ui.click(ui.settingsButton());
+      expect(ui.settings()).not.toBeNull();
+      expect(ui.help()).toBeNull();
+    });
+
+    it('écran large : les deux restent ouverts ensemble', async () => {
+      const ui = await render();
+      narrow = false;
+      await ui.click(ui.settingsButton());
+      expect(ui.settings()).not.toBeNull();
+      expect(ui.help()).not.toBeNull();
+    });
+
+    it('replier l’un ne touche pas à l’autre', async () => {
+      const ui = await render();
+      await ui.click(ui.settingsButton()); // replie « Commandes »
+      await ui.click(ui.settingsButton()); // replie « Réglages »
+      expect(ui.settings()).toBeNull();
+      expect(ui.help()).toBeNull();
+    });
   });
 });

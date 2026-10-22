@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, output, signal } from '@angular/core';
 
 import { helpSections, keyCommand, keyCommandFor } from '../../core/commands/commands';
 import { isTypingContext } from '../../core/keyboard/keyboard';
@@ -29,7 +29,8 @@ export function initialOpen(stored: string | null, defaultOpen: boolean): boolea
  * (`core/commands`, ADR 0020) : touches, gestes de la souris et de l'écran tactile.
  * Repliable par son bouton ou la touche `?` ; l'état est conservé au rechargement
  * (`localStorage`, repli en mémoire). Ouvert par défaut, pour qu'on le découvre, sauf sur
- * un petit écran où il masquerait le bac (`COMMANDS_HELP_DEFAULT_OPEN`).
+ * un écran étroit où il masquerait le bac (`COMMANDS_HELP_DEFAULT_OPEN`). Sur un tel écran,
+ * l'application le replie quand « Réglages » s'ouvre, et inversement (`opened`, `fold`, #136).
  * Absent en mode capture (c'est l'application qui ne l'affiche pas).
  */
 @Component({
@@ -99,11 +100,25 @@ export class CommandsHelp {
   /** Touche de l'aide telle qu'affichée (`?`). */
   protected readonly helpKey = keyCommand('aide').display;
 
+  /** Déplié par l'utilisateur (bouton ou touche `?`), pour replier un panneau voisin (#136). */
+  readonly opened = output<void>();
+
   /** Replie ou déplie l'aide-mémoire, et mémorise l'état. */
   toggle(): void {
     const open = !this.open();
     this.open.set(open);
     this.store.write(COMMANDS_HELP_STORAGE_KEY, open ? COMMANDS_HELP_OPEN : COMMANDS_HELP_FOLDED);
+    if (open) {
+      this.opened.emit();
+    }
+  }
+
+  /**
+   * Replie l'aide-mémoire pour laisser la place à un autre panneau (#136), sans mémoriser
+   * l'état : ce n'est pas un choix de l'utilisateur, qui la retrouve au rechargement.
+   */
+  fold(): void {
+    this.open.set(false);
   }
 
   protected onKeydown(event: KeyboardEvent): void {

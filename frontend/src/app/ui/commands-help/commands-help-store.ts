@@ -1,5 +1,11 @@
 import { DOCUMENT, InjectionToken, inject } from '@angular/core';
 
+import {
+  EXCLUSIVE_PANELS_MAX_WIDTH,
+  exclusivePanelsQuery,
+  matchesQuery,
+} from '../exclusive-panels/exclusive-panels';
+
 /** Lecture et écriture d'une valeur courte, persistante si possible. */
 export interface KeyValueStore {
   read(key: string): string | null;
@@ -52,13 +58,17 @@ export const COMMANDS_HELP_STORE = new InjectionToken<KeyValueStore>('COMMANDS_H
   factory: () => createFallbackStore(windowStorage()),
 });
 
-/** Largeur d'écran (px) au-dessous de laquelle l'aide-mémoire démarre replié. */
-export const COMMANDS_HELP_NARROW_MAX_WIDTH = 480;
+/**
+ * Largeur d'écran (px) jusqu'à laquelle l'aide-mémoire démarre replié : celle où il ne tient
+ * pas à côté de « Réglages » (#136), paysage de téléphone compris (568 × 320). Il masquerait
+ * l'essentiel du bac et recouvrirait « Réglages » dès son ouverture.
+ */
+export const COMMANDS_HELP_NARROW_MAX_WIDTH = EXCLUSIVE_PANELS_MAX_WIDTH;
 
 /**
- * Aide-mémoire déplié par défaut (aucun état mémorisé) : oui, sauf sur un petit écran
- * (≤ `COMMANDS_HELP_NARROW_MAX_WIDTH` px), où il masquerait l'essentiel du bac ; il y reste
- * accessible par sa pastille. Sans `matchMedia` : déplié.
+ * Aide-mémoire déplié par défaut (aucun état mémorisé) : oui, sauf sur un écran étroit
+ * (≤ `COMMANDS_HELP_NARROW_MAX_WIDTH` px) ; il y reste accessible par sa pastille.
+ * Sans `matchMedia` : déplié.
  */
 export const COMMANDS_HELP_DEFAULT_OPEN = new InjectionToken<boolean>(
   'COMMANDS_HELP_DEFAULT_OPEN',
@@ -69,7 +79,7 @@ export const COMMANDS_HELP_DEFAULT_OPEN = new InjectionToken<boolean>(
       if (typeof win?.matchMedia !== 'function') {
         return true;
       }
-      return !win.matchMedia(`(max-width: ${COMMANDS_HELP_NARROW_MAX_WIDTH}px)`).matches;
+      return !matchesQuery(win, exclusivePanelsQuery(COMMANDS_HELP_NARROW_MAX_WIDTH));
     },
   },
 );

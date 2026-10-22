@@ -353,6 +353,8 @@ export class ControlPanel {
   readonly importRequested = output<string>();
   /** Fichier choisi refusé avant lecture (trop gros, illisible) : raison, en français. */
   readonly importRejected = output<string>();
+  /** Déplié par l'utilisateur, pour replier un panneau voisin sur petit écran (#136). */
+  readonly opened = output<void>();
 
   /** Panneau déplié (fermé par défaut : captures et premier regard inchangés). */
   readonly open = signal(false);
@@ -402,7 +404,16 @@ export class ControlPanel {
   }
 
   toggle(): void {
-    this.open.update((open) => !open);
+    const open = !this.open();
+    this.open.set(open);
+    if (open) {
+      this.opened.emit();
+    }
+  }
+
+  /** Replie le panneau pour laisser la place à un autre (#136). */
+  close(): void {
+    this.open.set(false);
   }
 
   protected environmentName(id: EnvironmentId): string {

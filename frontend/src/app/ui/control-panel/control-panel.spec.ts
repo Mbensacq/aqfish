@@ -540,3 +540,44 @@ describe('ControlPanel', () => {
     });
   });
 });
+
+describe('ControlPanel : exclusif avec « Commandes » sur petit écran (#136)', () => {
+  let fixture: ComponentFixture<ControlPanel>;
+  const toggle = () =>
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
+      '.control-panel__toggle',
+    )!;
+  const section = () => (fixture.nativeElement as HTMLElement).querySelector('section');
+
+  beforeEach(async () => {
+    fixture = TestBed.createComponent(ControlPanel);
+    await fixture.whenStable();
+  });
+
+  it('déplié au bouton : émet `opened` ; replié : rien', async () => {
+    let opened = 0;
+    fixture.componentInstance.opened.subscribe(() => opened++);
+    toggle().click();
+    await fixture.whenStable();
+    expect(section()).not.toBeNull();
+    expect(opened).toBe(1);
+    toggle().click();
+    await fixture.whenStable();
+    expect(section()).toBeNull();
+    expect(opened).toBe(1);
+  });
+
+  it('`close()` replie sans émettre, et reste sans effet si déjà replié', async () => {
+    let opened = 0;
+    fixture.componentInstance.opened.subscribe(() => opened++);
+    toggle().click();
+    await fixture.whenStable();
+    fixture.componentInstance.close();
+    await fixture.whenStable();
+    expect(section()).toBeNull();
+    expect(toggle().getAttribute('aria-expanded')).toBe('false');
+    fixture.componentInstance.close();
+    expect(fixture.componentInstance.open()).toBe(false);
+    expect(opened).toBe(1);
+  });
+});
