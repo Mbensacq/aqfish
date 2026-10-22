@@ -62,4 +62,32 @@ test.describe('Paludarium : parcours utilisateur', () => {
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', /^(tropical|bassin)$/);
     expect(errors).toEqual([]);
   });
+  test.describe('berge : mousses et racines (#132)', () => {
+    for (const [seed, camera] of [
+      ['0', 'three-quarter'],
+      ['4294967295', 'top'],
+      ['7', 'front'],
+    ]) {
+      test(`mode capture, graine ${seed}, vue ${camera} : rendu sans erreur`, async ({ page }) => {
+        const errors = await open(
+          page,
+          `?capture=1&seed=${seed}&environnement=paludarium&camera=${camera}&time=5`,
+        );
+        await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'paludarium');
+        expect(errors).toEqual([]);
+      });
+    }
+
+    test('la même graine donne le même décor : deux chargements, même image', async ({ page }) => {
+      const url = '/?capture=1&seed=42&environnement=paludarium&camera=three-quarter&time=0';
+      const shoot = async (): Promise<Buffer> => {
+        await page.goto(url);
+        await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+        return page.screenshot();
+      };
+      const first = await shoot();
+      const second = await shoot();
+      expect(second.equals(first)).toBe(true);
+    });
+  });
 });
