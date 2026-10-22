@@ -8,7 +8,7 @@
  */
 
 /** Identifiant d'espèce, stable (sérialisé dans l'état du monde). */
-export type SpeciesId = 'neon' | 'guppy' | 'corydora' | 'koi' | 'axolotl';
+export type SpeciesId = 'neon' | 'guppy' | 'corydora' | 'koi' | 'axolotl' | 'grenouille';
 
 /**
  * Silhouette voxel d'une apparence : le rendu associe à chaque identifiant un gabarit de
@@ -21,6 +21,7 @@ export const SILHOUETTE_IDS = [
   'corydora',
   'koi',
   'axolotl',
+  'grenouille',
 ] as const;
 export type SilhouetteId = (typeof SILHOUETTE_IDS)[number];
 
@@ -157,6 +158,42 @@ export interface BottomWalkerParams {
   readonly climbSpeed: number;
 }
 
+/**
+ * Déplacement d'une espèce qui vit entre terre et eau en sautant (grenouille, issue #131,
+ * `sim/frog.ts`) : posée sur la berge, petits sauts en parabole, entrée dans l'eau, nage
+ * près de la surface, sortie en remontant la pente. Le milieu voulu (terre ou eau) suit un
+ * cycle fonction du temps et de la graine ; les sauts partent au début de créneaux.
+ */
+export interface AmphibianParams {
+  /** Hauteur du centre au-dessus du sol, posée, en mètres (> 0). */
+  readonly clearance: number;
+  /** Profondeur du centre sous la surface à la nage, en mètres (> 0). */
+  readonly floatDepth: number;
+  /**
+   * Hauteur maximale du centre au-dessus de la surface de l'eau, en mètres (> 0) : borne
+   * haute de la zone de vie (berge et sauts compris).
+   */
+  readonly maxRise: number;
+  /** Durée d'un saut, en secondes (> 0). */
+  readonly hopDuration: number;
+  /** Portée minimale d'un saut, en mètres (> 0). */
+  readonly hopMinRange: number;
+  /** Portée maximale d'un saut, en mètres (≥ hopMinRange ; hopMaxRange / hopDuration ≤ maxSpeed). */
+  readonly hopMaxRange: number;
+  /** Hauteur de l'arc au-dessus de la corde du saut, en mètres (> 0). */
+  readonly hopHeight: number;
+  /** Durée d'un créneau à terre, en secondes (> 0) : un saut possible au début de chacun. */
+  readonly hopSlot: number;
+  /** Probabilité de sauter au début d'un créneau quand la grenouille reste à terre, dans [0, 1]. */
+  readonly hopChance: number;
+  /** Période du cycle terre puis eau, en secondes (> 0). */
+  readonly cycleDuration: number;
+  /** Part du cycle où la grenouille veut être dans l'eau, dans ]0, 1[. */
+  readonly waterShare: number;
+  /** Vitesse de nage, en m/s, dans [minSpeed, maxSpeed]. */
+  readonly swimSpeed: number;
+}
+
 /** Mode de répartition des individus entre les apparences (`speciesVariantIndex`). */
 export type VariantDraw = 'alternance' | 'graine';
 
@@ -218,6 +255,11 @@ export interface SpeciesDefinition {
    * (`sim/swimmer.ts`).
    */
   readonly walker?: BottomWalkerParams;
+  /**
+   * Présent pour une espèce qui vit entre terre et eau en sautant (grenouille, issue #131) :
+   * déplacement propre (`sim/frog.ts`), exclusif de `walker` et de `depth`.
+   */
+  readonly amphibian?: AmphibianParams;
 }
 
 /**
@@ -586,6 +628,68 @@ export const AXOLOTL: SpeciesDefinition = {
   },
 };
 
+/**
+ * Grenouille, paludarium (docs/DA.md « Amphibiens », issue #131) : vit sur la berge, saute,
+ * entre dans l'eau pour nager quelques secondes, puis revient sur la berge.
+ *
+ * - Couleurs : vert grenouille `#7bc950` de la palette « Amphibiens » de docs/DA.md (dos et
+ *   flancs), taches et pattes en vert sombre `#4e9a4a`, ventre `#f2ead8`, œil `#1c1c22` :
+ *   couleurs existantes de la palette.
+ * - Durées, portées et hauteur des sauts, vitesse de nage, part du temps dans l'eau :
+ *   **approximations de jeu**, pour des sauts lisibles à l'échelle du bac.
+ * - `bodyLength` (5 cm) : **approximation de jeu**, ordre de grandeur d'une petite grenouille
+ *   arboricole (référence à consulter : AmphibiaWeb ; non vérifiée ici), agrandi pour rester
+ *   lisible en pixel art.
+ * - Solitaire (pas de banc). Ne cherche pas la nourriture (nourrissage hors périmètre de #131).
+ */
+export const GRENOUILLE: SpeciesDefinition = {
+  id: 'grenouille',
+  name: 'Grenouille',
+  scientificName: 'Anura',
+  bodyLength: 0.05,
+  cruiseSpeed: 0.05,
+  minSpeed: 0.01,
+  maxSpeed: 0.2,
+  wanderTurnRate: 1.2,
+  avoidTurnRate: 3,
+  maxPitch: 0.9,
+  wallMargin: 0.05,
+  tailBeatFrequency: 2,
+  defaultPopulation: 3,
+  maxPopulation: 4,
+  schooling: null,
+  silhouette: 'grenouille',
+  colors: {
+    stripe: '#7bc950',
+    accent: '#4e9a4a',
+    back: '#7bc950',
+    belly: '#f2ead8',
+    fin: '#4e9a4a',
+    eye: '#1c1c22',
+  },
+  feeding: {
+    hungerRate: 1 / 300,
+    perceptionRadius: 0.1,
+    turnRate: 1,
+    minHeightRatio: 0.7,
+    maxHeightRatio: 1,
+  },
+  amphibian: {
+    clearance: 0.012,
+    floatDepth: 0.008,
+    maxRise: 0.26,
+    hopDuration: 0.5,
+    hopMinRange: 0.04,
+    hopMaxRange: 0.09,
+    hopHeight: 0.04,
+    hopSlot: 1.6,
+    hopChance: 0.45,
+    cycleDuration: 40,
+    waterShare: 0.35,
+    swimSpeed: 0.05,
+  },
+};
+
 /** Toutes les espèces connues, par identifiant (ordre de déclaration = ordre de peuplement). */
 export const SPECIES: Readonly<Record<SpeciesId, SpeciesDefinition>> = {
   neon: NEON,
@@ -593,6 +697,7 @@ export const SPECIES: Readonly<Record<SpeciesId, SpeciesDefinition>> = {
   corydora: CORYDORA,
   koi: KOI,
   axolotl: AXOLOTL,
+  grenouille: GRENOUILLE,
 };
 
 /** Apparences d'une espèce : ses `variants`, ou son apparence par défaut seule. */
@@ -725,6 +830,9 @@ export function validateSpecies(def: SpeciesDefinition): string[] {
   if (def.walker !== undefined) {
     problems.push(...validateWalker(def.walker, def));
   }
+  if (def.amphibian !== undefined) {
+    problems.push(...validateAmphibian(def.amphibian, def));
+  }
   if (def.name.trim() === '' || def.scientificName.trim() === '') {
     problems.push('nom et nom scientifique obligatoires');
   }
@@ -813,6 +921,52 @@ function validateWalker(walker: BottomWalkerParams, def: SpeciesDefinition): str
   }
   if (def.depth !== undefined) {
     problems.push('walker et depth sont exclusifs');
+  }
+  return problems;
+}
+
+function validateAmphibian(params: AmphibianParams, def: SpeciesDefinition): string[] {
+  const problems: string[] = [];
+  for (const key of [
+    'clearance',
+    'floatDepth',
+    'maxRise',
+    'hopDuration',
+    'hopMinRange',
+    'hopMaxRange',
+    'hopHeight',
+    'hopSlot',
+    'cycleDuration',
+    'swimSpeed',
+  ] as const) {
+    const value = params[key];
+    if (!(value > 0) || !Number.isFinite(value)) {
+      problems.push(`amphibian.${key} doit être un réel strictement positif (reçu : ${value})`);
+    }
+  }
+  if (!(params.hopChance >= 0 && params.hopChance <= 1)) {
+    problems.push(`amphibian.hopChance doit être dans [0, 1] (reçu : ${params.hopChance})`);
+  }
+  if (!(params.waterShare > 0 && params.waterShare < 1)) {
+    problems.push(`amphibian.waterShare doit être dans ]0, 1[ (reçu : ${params.waterShare})`);
+  }
+  if (!(params.hopMaxRange >= params.hopMinRange)) {
+    problems.push('amphibian.hopMaxRange doit être au moins hopMinRange');
+  }
+  const hopSpeeds = [params.hopMinRange, params.hopMaxRange].map((r) => r / params.hopDuration);
+  if (hopSpeeds.some((v) => !(v >= def.minSpeed && v <= def.maxSpeed))) {
+    problems.push(
+      'amphibian : la vitesse des sauts (portée / durée) doit être dans [minSpeed, maxSpeed]',
+    );
+  }
+  if (!(params.swimSpeed >= def.minSpeed && params.swimSpeed <= def.maxSpeed)) {
+    problems.push('amphibian.swimSpeed doit être dans [minSpeed, maxSpeed]');
+  }
+  if (def.schooling !== null) {
+    problems.push('une espèce amphibie est solitaire (schooling: null)');
+  }
+  if (def.walker !== undefined || def.depth !== undefined) {
+    problems.push('amphibian est exclusif de walker et de depth');
   }
   return problems;
 }

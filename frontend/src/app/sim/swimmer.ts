@@ -40,7 +40,8 @@ export interface Fish {
   readonly phase: number;
   /**
    * Temps restant de la remontée en cours vers la surface, en secondes (0 : aucune). Reste
-   * nul pour une espèce sans préférence de profondeur (`SpeciesDefinition.depth`).
+   * nul pour une espèce sans préférence de profondeur (`SpeciesDefinition.depth`). Pour une
+   * espèce amphibie (`sim/frog.ts`), temps restant du saut en cours (0 : au sol ou à l'eau).
    */
   readonly ascent: number;
   /**
@@ -165,6 +166,9 @@ export function swimBounds(def: SpeciesDefinition, water: Box3): SwimBounds {
   if (def.walker !== undefined) {
     return walkerBounds(def, water);
   }
+  if (def.amphibian !== undefined) {
+    return amphibianBounds(def, water);
+  }
   const hard = shrinkBox(water, def.wallMargin);
   const soft = shrinkBox(hard, AVOID_ZONE);
   const legacy = shrinkBox(shrinkBox(water, SPAWN_MARGINS[0]), SPAWN_MARGINS[1]);
@@ -200,6 +204,26 @@ function walkerBounds(def: SpeciesDefinition, water: Box3): SwimBounds {
     maxX: walls.maxX,
     minY,
     maxY: Math.max(minY, water.maxY - walker.surfaceMargin),
+    minZ: walls.minZ,
+    maxZ: walls.maxZ,
+  };
+  return { hard, soft: hard, spawn: hard, avoid: hard, preferredMaxY: Number.POSITIVE_INFINITY };
+}
+
+/**
+ * Bornes d'une espèce qui vit entre terre et eau (`sim/frog.ts`) : `wallMargin` des vitres ;
+ * en hauteur, du fond plus `clearance` à la surface plus `maxRise` (berge et sauts). Le sol
+ * réel (`sim/terrain.ts`) resserre le bas, point par point.
+ */
+function amphibianBounds(def: SpeciesDefinition, water: Box3): SwimBounds {
+  const params = def.amphibian!;
+  const walls = shrinkBox(water, def.wallMargin);
+  const minY = water.minY + params.clearance;
+  const hard: Box3 = {
+    minX: walls.minX,
+    maxX: walls.maxX,
+    minY,
+    maxY: Math.max(minY, water.maxY + params.maxRise),
     minZ: walls.minZ,
     maxZ: walls.maxZ,
   };

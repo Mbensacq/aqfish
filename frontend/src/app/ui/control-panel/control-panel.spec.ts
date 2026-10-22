@@ -131,6 +131,7 @@ class TestHost {
     corydora: 0,
     koi: 0,
     axolotl: 0,
+    grenouille: 0,
   });
   readonly populationMax = signal<PopulationCounts>({
     neon: 40,
@@ -138,6 +139,7 @@ class TestHost {
     corydora: 16,
     koi: 14,
     axolotl: 4,
+    grenouille: 0,
   });
   readonly events: [string, number | boolean][] = [];
   readonly requests: PopulationRequest[] = [];
@@ -177,15 +179,16 @@ describe('ControlPanel', () => {
     expect(root().querySelector('section')).toBeNull();
   });
 
-  it('paludarium (#130) : un seul compteur, celui des axolotls', async () => {
+  it('paludarium (#130, #131) : compteurs des axolotls et des grenouilles', async () => {
     await openPanel();
     fixture.componentInstance.environment.set('paludarium');
     await fixture.whenStable();
     const section = root().querySelector('[data-section="population"]')!;
     const rows = [...section.querySelectorAll('[data-species]')];
-    expect(rows.map((row) => row.getAttribute('data-species'))).toEqual(['axolotl']);
+    expect(rows.map((row) => row.getAttribute('data-species'))).toEqual(['axolotl', 'grenouille']);
     expect(section.querySelector('[data-population-empty]')).toBeNull();
     expect(byLabel('Nombre d’axolotls')?.value).toBe('0');
+    expect(byLabel('Nombre de grenouilles')?.value).toBe('0');
   });
 
   it('liste des environnements nommée, sélection fournie par l’hôte, choix émis (#87)', async () => {
@@ -391,6 +394,7 @@ describe('ControlPanel', () => {
         corydora: 0,
         koi: 0,
         axolotl: 0,
+        grenouille: 0,
       });
       await fixture.whenStable();
       expect(neons.value).toBe('20');

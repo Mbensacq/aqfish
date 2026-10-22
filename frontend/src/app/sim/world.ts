@@ -1,5 +1,6 @@
 import { assertSeed } from '../core/random/prng';
 import { createWalker, stepWalker, type WalkerGround } from './axolotl';
+import { createFrog, stepFrog } from './frog';
 import { fillBubbles, type BubbleBuffer } from './bubbles';
 import { SIM_DT } from './constants';
 import { decorObstacles, parseDecorItems, type DecorItem } from './decor';
@@ -138,7 +139,8 @@ export function createWorld(
 /**
  * Crée l'entité `id` d'une espèce dans un environnement : un poisson (`createFish`), ou, pour
  * une espèce qui marche sur le fond, un individu posé sur le fond (`createWalker`,
- * `sim/axolotl.ts`). Partagé par la création du monde et la population réglable.
+ * `sim/axolotl.ts`) ; pour une espèce amphibie, un individu posé sur la berge (`createFrog`,
+ * `sim/frog.ts`). Partagé par la création du monde et la population réglable.
  */
 export function spawnEntity(
   seed: number,
@@ -148,9 +150,14 @@ export function spawnEntity(
   obstacles: readonly Obstacle[],
 ): Entity {
   const bounds = boundsFor(species, environment);
-  return SPECIES[species].walker === undefined
-    ? createFish(seed, id, species, bounds, obstacles)
-    : createWalker(seed, id, species, bounds, groundFor(environment), obstacles);
+  const def = SPECIES[species];
+  if (def.walker !== undefined) {
+    return createWalker(seed, id, species, bounds, groundFor(environment), obstacles);
+  }
+  if (def.amphibian !== undefined) {
+    return createFrog(seed, id, species, bounds, groundFor(environment), obstacles);
+  }
+  return createFish(seed, id, species, bounds, obstacles);
 }
 
 /** Sol et eau de chaque environnement, pour les espèces qui marchent sur le fond. */
@@ -347,6 +354,12 @@ function stepInPlace(world: MutableWorld, dt: number): void {
       // Espèce qui marche sur le fond (axolotl) : sa propre machine à états, sans banc ni
       // recherche de nourriture (`sim/axolotl.ts`).
       stepWalker(fish, dt, world.seed, world.time, bounds, groundFor(environment));
+      continue;
+    }
+    if (SPECIES[fish.species].amphibian !== undefined) {
+      // Espèce amphibie (grenouille) : posée, sauts, nage, entre terre et eau, sans banc ni
+      // recherche de nourriture (`sim/frog.ts`).
+      stepFrog(fish, dt, world.seed, world.time, bounds, groundFor(environment));
       continue;
     }
     const target =

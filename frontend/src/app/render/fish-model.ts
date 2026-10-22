@@ -183,6 +183,30 @@ export const AXOLOTL_FISH: FishTemplate = {
   ],
 };
 
+/**
+ * Grenouille (issue #131) : corps court et trapu, vert `#7bc950` taché de vert sombre (`a`),
+ * ventre clair, tête bombée. Parties paires : yeux noirs de chaque côté du haut de la tête, cuisses repliées le long de l'arrière du corps et pieds écartés (`f`), pattes avant sous la
+ * tête. La « queue » est la paire de pieds arrière, qui bat à la nage et pendant le saut.
+ */
+export const FROG_FISH: FishTemplate = {
+  body: [
+    // queue → tête
+    '......kk.',
+    '.kkakkkkk',
+    'kkkkkakkk',
+    'ssassssss',
+    '.bbbbbbb.',
+  ],
+  tail: ['.f', 'ff'],
+  bodyDepth: 6,
+  tailDepth: 2,
+  bodyColumnDepths: [2, 4, 4, 6, 6, 6, 4, 4, 2],
+  paired: [
+    ['......e..', '.........', '.ff......', 'fff...f..', 'ff....f..'],
+    ['.........', '.........', '.........', '.ff......', 'ff.....f.'],
+  ],
+};
+
 /** Gabarit de chaque silhouette déclarée par les espèces (`sim/species.ts`). */
 export const SILHOUETTES: Readonly<Record<SilhouetteId, FishTemplate>> = {
   fuseau: SLENDER_FISH,
@@ -191,6 +215,7 @@ export const SILHOUETTES: Readonly<Record<SilhouetteId, FishTemplate>> = {
   corydora: CORYDORA_FISH,
   koi: KOI_FISH,
   axolotl: AXOLOTL_FISH,
+  grenouille: FROG_FISH,
 };
 
 /** Proportions des voxels : hauteur et épaisseur relatives à la longueur d'un voxel. */

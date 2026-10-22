@@ -40,14 +40,17 @@ describe('environnements', () => {
     expect(POND.water).not.toEqual(TROPICAL_TANK.water);
   });
 
-  it('le paludarium (#129) : bac vitré à moitié en eau, berge émergée, axolotls (#130)', () => {
+  it('le paludarium (#129) : bac vitré à moitié en eau, berge émergée, axolotls (#130) et grenouilles (#131)', () => {
     expect(PALUDARIUM.id).toBe('paludarium');
     expect(PALUDARIUM.name).toBe('Paludarium');
     expect(PALUDARIUM.border).toBe('verre');
     expect(PALUDARIUM.waterLevel).toBeLessThan(WATER_LEVEL_RATIO);
     // Axolotls depuis l'issue #130.
-    expect(PALUDARIUM.species).toEqual(['axolotl']);
-    expect(PALUDARIUM.population).toEqual([{ species: 'axolotl', count: 2 }]);
+    expect(PALUDARIUM.species).toEqual(['axolotl', 'grenouille']);
+    expect(PALUDARIUM.population).toEqual([
+      { species: 'axolotl', count: 2 },
+      { species: 'grenouille', count: 3 },
+    ]);
     expect(PALUDARIUM.bubbles || PALUDARIUM.caustics || PALUDARIUM.rain).toBe(false);
     expect(PALUDARIUM.lilyPads).toBeNull();
     const terrain = PALUDARIUM.terrain;

@@ -7,7 +7,7 @@ import { createDayClock } from '../../sim/daylight';
 import { parseWorld, serializeWorld } from '../../sim/save';
 import type { AquariumRenderer } from '../../render/aquarium-view';
 import { MAX_STEPS_PER_FRAME } from '../../sim/constants';
-import { AXOLOTL, CORYDORA, GUPPY, KOI, NEON } from '../../sim/species';
+import { AXOLOTL, CORYDORA, GRENOUILLE, GUPPY, KOI, NEON } from '../../sim/species';
 import { expiryAge, FOOD_PER_DROP } from '../../sim/food';
 import { setPopulation } from '../../sim/population';
 import { advance, advanceToWithFeedings, createDefaultWorld } from '../../sim/world';
@@ -692,6 +692,7 @@ describe('AquariumHost', () => {
         corydora: 0,
         koi: KOI.defaultPopulation,
         axolotl: 0,
+        grenouille: 0,
       });
       expect(element().getAttribute(POPULATION_ATTRIBUTE)).toBe(`koi:${KOI.defaultPopulation}`);
       expect(host().activePreset()).toBe('top');
@@ -791,8 +792,10 @@ describe('AquariumHost', () => {
     const exposed = () => (fixture.nativeElement as HTMLElement).getAttribute(POPULATION_ATTRIBUTE);
 
     it('formatPopulation : espece:n, dans l’ordre des espèces', () => {
-      const counts = { neon: 12, guppy: 0, corydora: 6, koi: 2, axolotl: 1 };
-      expect(formatPopulation(counts)).toBe('neon:12,guppy:0,corydora:6,koi:2,axolotl:1');
+      const counts = { neon: 12, guppy: 0, corydora: 6, koi: 2, axolotl: 1, grenouille: 3 };
+      expect(formatPopulation(counts)).toBe(
+        'neon:12,guppy:0,corydora:6,koi:2,axolotl:1,grenouille:3',
+      );
       // Espèces d'un environnement (#88) : seulement elles, dans leur ordre.
       expect(formatPopulation(counts, ['koi'])).toBe('koi:2');
     });
@@ -821,6 +824,7 @@ describe('AquariumHost', () => {
         corydora: CORYDORA.defaultPopulation,
         koi: 0,
         axolotl: 0,
+        grenouille: 0,
       });
       expect(host().populationMax()).toEqual({
         neon: NEON.maxPopulation,
@@ -828,6 +832,7 @@ describe('AquariumHost', () => {
         corydora: CORYDORA.maxPopulation,
         koi: KOI.maxPopulation,
         axolotl: AXOLOTL.maxPopulation,
+        grenouille: GRENOUILLE.maxPopulation,
       });
     });
 
