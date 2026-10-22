@@ -855,7 +855,7 @@ describe('AquariumHost', () => {
       const before = structuredClone(host().world);
       host().setPopulation('neon', 2.5);
       host().setPopulation('neon', -1);
-      host().setPopulation('axolotl' as never, 3);
+      host().setPopulation('requin' as never, 3);
       // Le koï ne vit pas dans le bac tropical (#88).
       host().setPopulation('koi', 3);
       expect(host().world).toEqual(before);

@@ -46,7 +46,7 @@ describe('bornes de population', () => {
     expect(isSpeciesId(id)).toBe(true);
   });
 
-  it.each(['axolotl', '', 'constructor', 'toString', 42, null, undefined])(
+  it.each(['requin', '', 'constructor', 'toString', 42, null, undefined])(
     'isSpeciesId refuse %s',
     (id) => {
       expect(isSpeciesId(id)).toBe(false);
@@ -87,7 +87,7 @@ describe('bornes de population', () => {
   });
 
   it('populationLimit refuse une espèce inconnue', () => {
-    expect(() => populationLimit(createWorld(42), 'axolotl' as SpeciesId)).toThrow(RangeError);
+    expect(() => populationLimit(createWorld(42), 'requin' as SpeciesId)).toThrow(RangeError);
   });
 });
 
@@ -186,7 +186,7 @@ describe('setPopulation', () => {
     },
   );
 
-  it.each(['axolotl', 'constructor'])('refuse l’espèce inconnue %s, monde inchangé', (id) => {
+  it.each(['requin', 'constructor'])('refuse l’espèce inconnue %s, monde inchangé', (id) => {
     const mutable = cloneWorld(createDefaultWorld(42));
     const copy = structuredClone(mutable);
     expect(() => setPopulationInPlace(mutable, id as SpeciesId, 3)).toThrow(RangeError);
