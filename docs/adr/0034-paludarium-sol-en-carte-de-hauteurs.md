@@ -39,10 +39,15 @@ captures du bac tropical et du bassin identiques à l'octet.
   cellules de 2 cm, chaque colonne a une hauteur arrondie au centimètre (marches nettes en
   pixel art) ; seules les faces visibles sont émises (dessus, flancs plus hauts que la
   voisine, flancs du bord jusqu'à y = 0 pour la coupe derrière la vitre, un dessous d'un
-  seul tenant). Une colonne émergée dépasse toujours l'eau d'au moins un cran, une colonne
-  immergée reste sous la surface : le rivage dessiné est celui de la carte. Couleurs :
-  fond `sable` (côtés `sableSombre`), terre `sableOmbre` (côtés `rocheSombre`), roche
-  `roche` (côtés `rocheSombre`), dessous de la couleur du dessous du sol.
+  seul tenant). Les flancs de coupe portent un sommet à la hauteur partagée avec leurs
+  voisins : sans lui, les jonctions en T laissaient percer l'eau en points isolés. Une
+  colonne émergée dépasse toujours l'eau d'au moins un cran, une colonne immergée reste sous
+  la surface : le rivage dessiné est celui de la carte. Couleurs : fond `sable` (côtés
+  `sableSombre`), terre `sableSombre` (dessus et côtés : les flancs, moins éclairés,
+  s'affichent `sableOmbre`, d'où des marches lisibles), roche `roche` (côtés `rocheSombre`,
+  terre sous la bosse dans la coupe), dessous de la couleur du dessous du sol. Des flancs de
+  terre en `rocheSombre` ou `sableOmbre` s'affichaient presque noirs ou gris roche (essais
+  du cycle 43).
 - **Eau du paludarium en retrait d'un millimètre** des vitres et des bords : les flancs de
   la berge, collés à la vitre, passent devant les faces de l'eau au lieu de les disputer à
   la profondeur. Le bac et le bassin gardent leur volume d'eau exact.
