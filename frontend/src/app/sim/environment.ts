@@ -1,4 +1,5 @@
 import type { CameraPreset } from '../core/capture/capture-params';
+import { assertBankDecorSettings, type BankDecorSettings } from './bank-decor';
 import { DEFAULT_DECOR, parseDecor, type DecorItem } from './decor';
 import { assertLilyPadSettings, type LilyPadSettings } from './lily-pads';
 import { AXOLOTL, CORYDORA, GRENOUILLE, GUPPY, KOI, NEON, TRITON, type SpeciesId } from './species';
@@ -76,6 +77,11 @@ export interface Environment {
    */
   readonly lilyPads: LilyPadSettings | null;
   /**
+   * Mousses et racines de la berge (`sim/bank-decor.ts`, #132, ADR 0038), ou `null` : seulement
+   * pour un environnement à berge (`terrain` non nul).
+   */
+  readonly bankDecor: BankDecorSettings | null;
+  /**
    * Pluie possible (issue #106, `sim/rain.ts`) : le bassin, à ciel ouvert. Ailleurs, la
    * commande de pluie est sans effet.
    */
@@ -118,6 +124,7 @@ export const TROPICAL_TANK: Environment = {
   caustics: true,
   decor: DEFAULT_DECOR,
   lilyPads: null,
+  bankDecor: null,
   rain: false,
   floatingLeaves: false,
   species: TROPICAL_SPECIES.map((def) => def.id),
@@ -157,6 +164,7 @@ export const POND: Environment = {
     count: { min: 5, max: 8 },
     radius: { min: 0.075, max: 0.13 },
   }),
+  bankDecor: null,
   rain: true,
   floatingLeaves: true,
   species: [KOI.id],
@@ -198,6 +206,15 @@ export const PALUDARIUM: Environment = {
   caustics: false,
   decor: [],
   lilyPads: null,
+  bankDecor: assertBankDecorSettings({
+    seed: 132,
+    moss: { count: { min: 10, max: 13 }, radius: { min: 0.04, max: 0.075 } },
+    roots: {
+      count: { min: 3, max: 4 },
+      length: { min: 0.24, max: 0.34 },
+      radius: { min: 0.012, max: 0.017 },
+    },
+  }),
   rain: false,
   floatingLeaves: false,
   species: [AXOLOTL.id, GRENOUILLE.id, TRITON.id],

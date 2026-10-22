@@ -80,6 +80,10 @@ describe('environnements', () => {
   it('seul le paludarium a un sol à berge ; le bac et le bassin gardent l’eau à 90 %', () => {
     expect(TROPICAL_TANK.terrain).toBeNull();
     expect(POND.terrain).toBeNull();
+    // Mousses et racines (#132) : seulement sur la berge du paludarium.
+    expect(TROPICAL_TANK.bankDecor).toBeNull();
+    expect(POND.bankDecor).toBeNull();
+    expect(PALUDARIUM.bankDecor).not.toBeNull();
     expect(TROPICAL_TANK.waterLevel).toBe(WATER_LEVEL_RATIO);
     expect(POND.waterLevel).toBe(WATER_LEVEL_RATIO);
   });
