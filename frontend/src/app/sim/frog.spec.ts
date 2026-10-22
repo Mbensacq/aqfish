@@ -13,13 +13,14 @@ import {
   restHeight,
   stepFrog,
   wantsWater,
+  waterYaw,
   type FrogMode,
 } from './frog';
 import { populationLimit, setPopulation } from './population';
 import { parseWorld, serializeWorld } from './save';
 import { AXOLOTL, GRENOUILLE, NEON, validateSpecies, type SpeciesDefinition } from './species';
 import type { Fish } from './swimmer';
-import { shoreLineX } from './terrain';
+import { shoreLineX, type TerrainSettings } from './terrain';
 import {
   advance,
   advanceInPlace,
@@ -468,5 +469,60 @@ describe('grenouille : déterminisme et sauvegarde', () => {
       return;
     }
     expect(advance(parsed.world, 600).entities).toEqual(advance(world, 600).entities);
+  });
+});
+
+describe('grenouille : sens de l’eau porté par le terrain (#142)', () => {
+  const SETTINGS = PALUDARIUM.terrain!;
+  /** Paludarium retourné : eau vers −X, terre vers +X. */
+  const FLIPPED: TerrainSettings = { ...SETTINGS, shoreX: -SETTINGS.shoreX, waterSide: -1 };
+  const FLIPPED_GROUND: WalkerGround = { water: WATER, terrain: FLIPPED };
+
+  it('waterYaw : 0 au paludarium et sans terrain, π quand l’eau est vers −X', () => {
+    expect(waterYaw(GROUND)).toBe(0);
+    expect(waterYaw({ water: WATER, terrain: null })).toBe(0);
+    expect(waterYaw(FLIPPED_GROUND)).toBe(Math.PI);
+  });
+
+  it('eau vers −X : saute vers −X pour entrer dans l’eau, ressort vers +X sur la terre', () => {
+    const shore = shoreLineX(0, FLIPPED);
+    const fish = createFrog(42, 0, 'grenouille', BOUNDS, FLIPPED_GROUND) as Mutable<Fish>;
+    fish.x = shore + 0.03;
+    fish.z = 0;
+    fish.y = restHeight(fish.x, fish.z, PARAMS, FLIPPED_GROUND);
+    expect(isOnLand(fish.x, fish.z, FLIPPED_GROUND)).toBe(true);
+
+    /** Avance par pas de 1/60 s jusqu'à ce que `until` soit vrai ; renvoie le temps atteint. */
+    const run = (start: number, until: (mode: FrogMode) => boolean): number => {
+      let time = start;
+      for (let k = 0; k < 20000; k++) {
+        time += 1 / 60;
+        stepFrog(fish, 1 / 60, 42, time, BOUNDS, FLIPPED_GROUND);
+        if (until(frogModeOf(fish, 42, time, FLIPPED_GROUND))) {
+          return time;
+        }
+      }
+      throw new Error('transition non atteinte');
+    };
+
+    const enter = run(timeWhere(true, timeWhere(false)), (m) => m === 'entree');
+    // Saut vers l'eau : à ±(WATER_HOP_SPREAD + replis) de π, donc vers −X.
+    expect(Math.cos(fish.yaw)).toBeLessThan(0);
+    const swim = run(enter, (m) => m !== 'entree');
+    expect(isOnLand(fish.x, fish.z, FLIPPED_GROUND)).toBe(false);
+    expect(fish.x).toBeLessThan(shoreLineX(fish.z, FLIPPED));
+    const leave = run(swim, (m) => m === 'sortie');
+    expect(wantsWater(PARAMS, 42, 0, leave)).toBe(false);
+    // Sortie : le cap converge vers +X (la berge), puis la grenouille remonte sur la terre.
+    let maxCos = -1;
+    let time = leave;
+    while (!isOnLand(fish.x, fish.z, FLIPPED_GROUND)) {
+      time += 1 / 60;
+      stepFrog(fish, 1 / 60, 42, time, BOUNDS, FLIPPED_GROUND);
+      maxCos = Math.max(maxCos, Math.cos(fish.yaw));
+      expect(time - leave).toBeLessThan(120);
+    }
+    expect(maxCos).toBeGreaterThan(0.99);
+    expect(fish.x).toBeGreaterThanOrEqual(shoreLineX(fish.z, FLIPPED));
   });
 });

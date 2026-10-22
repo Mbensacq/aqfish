@@ -5,7 +5,8 @@ import type { Box3 } from './tank';
  * Sol émergé du paludarium (issue #129, ADR 0034) : une carte de hauteurs **pure**. Pour tout
  * point (x, z) du bac, `terrainAt` donne la hauteur du sol, sa nature et s'il est sous l'eau.
  *
- * Profil, de l'eau (+X) vers la terre (−X) :
+ * Profil, de l'eau vers la terre (eau du côté +X par défaut, du côté −X si
+ * `waterSide` = −1) :
  * - fond plat à `bedHeight` ;
  * - pente immergée sur `underwaterSlope`, en `(1 − u)²` : nulle au fond, plus raide au bord ;
  * - rivage (hauteur = niveau de l'eau) sur une ligne qui ondule selon z (`shoreWave`) ;
@@ -22,8 +23,13 @@ import type { Box3 } from './tank';
 export interface TerrainSettings {
   /** Graine des phases des ondulations et des reliefs (entier 32 bits non signé). */
   readonly seed: number;
-  /** Abscisse moyenne du rivage (la terre est du côté des x plus petits). */
+  /** Abscisse moyenne du rivage. */
   readonly shoreX: number;
+  /**
+   * Côté de l'eau par rapport au rivage, selon x : `1` (défaut) si l'eau est du côté des x
+   * plus grands et la terre des x plus petits, `-1` dans l'autre sens (`waterDirection`).
+   */
+  readonly waterSide?: 1 | -1;
   /** Écart maximal de la ligne de rivage autour de `shoreX`, selon z. */
   readonly shoreWave: number;
   /** Hauteur du fond immergé (au moins le bas du volume d'eau). */
@@ -131,6 +137,9 @@ export function assertTerrainSettings(settings: TerrainSettings): TerrainSetting
       throw new RangeError(`terrain.${name} doit être un réel positif ou nul (reçu : ${value})`);
     }
   }
+  if (settings.waterSide !== undefined && settings.waterSide !== 1 && settings.waterSide !== -1) {
+    throw new RangeError(`terrain.waterSide doit valoir 1 ou -1 (reçu : ${settings.waterSide})`);
+  }
   const threshold = settings.rock.threshold;
   if (!(threshold >= 0 && threshold < 1)) {
     throw new RangeError(`terrain.rock.threshold doit être dans [0, 1[ (reçu : ${threshold})`);
@@ -143,6 +152,14 @@ export function terrainMaxRise(settings: TerrainSettings): number {
   return settings.landRise + settings.relief + settings.rock.height;
 }
 
+/**
+ * Sens de l'eau selon x : `1` si l'eau est vers +X depuis le rivage, `-1` si elle est vers −X
+ * (`TerrainSettings.waterSide`). La terre est dans le sens opposé.
+ */
+export function waterDirection(settings: TerrainSettings): 1 | -1 {
+  return settings.waterSide ?? 1;
+}
+
 /** Abscisse du rivage à la profondeur `z` (avant la mise dans le bac de `terrainAt`). */
 export function shoreLineX(z: number, settings: TerrainSettings): number {
   const [a, b] = phasesOf(settings).shore;
@@ -153,9 +170,17 @@ export function shoreLineX(z: number, settings: TerrainSettings): number {
   return settings.shoreX + settings.shoreWave * wave;
 }
 
-/** Nature du dernier point calculé par `terrainHeightAt` (lue par `terrainAt`). */
-let lastSubmerged = false;
-let lastRock = 0;
+/** Objet de travail de `sampleTerrain` : hauteur et nature d'un point du sol. */
+interface TerrainScratch {
+  height: number;
+  submerged: boolean;
+  /** Hauteur des bosses de roche en ce point (0 côté eau). */
+  rock: number;
+}
+
+/** Objets de travail propres à chaque fonction publique : aucun état partagé entre elles. */
+const SAMPLE_SCRATCH: TerrainScratch = { height: 0, submerged: false, rock: 0 };
+const HEIGHT_SCRATCH: TerrainScratch = { height: 0, submerged: false, rock: 0 };
 
 /**
  * Sol au point (x, z), ramené dans le bac (bornes x et z de `water`) ; la surface de l'eau
@@ -168,14 +193,14 @@ export function terrainAt(
   settings: TerrainSettings,
   water: Box3,
 ): TerrainSample {
-  const height = terrainHeightAt(x, z, settings, water);
-  if (lastSubmerged) {
-    return { height, kind: 'fond', submerged: true };
+  const sample = sampleTerrain(x, z, settings, water, SAMPLE_SCRATCH);
+  if (sample.submerged) {
+    return { height: sample.height, kind: 'fond', submerged: true };
   }
   return {
     // Au rivage même (d = 0), le sol est au niveau de l'eau, émergé.
-    height,
-    kind: lastRock >= ROCK_MIN_HEIGHT ? 'roche' : 'terre',
+    height: sample.height,
+    kind: sample.rock >= ROCK_MIN_HEIGHT ? 'roche' : 'terre',
     submerged: false,
   };
 }
@@ -190,19 +215,36 @@ export function terrainHeightAt(
   settings: TerrainSettings,
   water: Box3,
 ): number {
+  return sampleTerrain(x, z, settings, water, HEIGHT_SCRATCH).height;
+}
+
+/**
+ * Calcul commun de `terrainAt` et `terrainHeightAt` : écrit la hauteur et la nature du sol
+ * au point (x, z) dans `out` et le renvoie (aucune allocation).
+ */
+function sampleTerrain(
+  x: number,
+  z: number,
+  settings: TerrainSettings,
+  water: Box3,
+  out: TerrainScratch,
+): TerrainScratch {
   const cx = clamp(x, water.minX, water.maxX);
   const cz = clamp(z, water.minZ, water.maxZ);
   const level = water.maxY;
   const bed = Math.min(Math.max(settings.bedHeight, water.minY), level);
-  const d = shoreLineX(cz, settings) - cx;
+  // Distance au rivage, positive côté terre.
+  const toShore = shoreLineX(cz, settings) - cx;
+  const d = waterDirection(settings) === 1 ? toShore : -toShore;
   if (d < 0) {
     // Côté eau : du rivage (niveau) au fond plat, pente nulle au fond.
     const u = Math.min(-d / settings.underwaterSlope, 1);
     const height = bed + (level - bed) * (1 - u) * (1 - u);
-    lastSubmerged = true;
-    lastRock = 0;
+    out.submerged = true;
+    out.rock = 0;
     // Au rivage même (u infime), `height` peut arrondir au niveau : rester dessous.
-    return Math.min(height, nextDown(level));
+    out.height = Math.min(height, nextDown(level));
+    return out;
   }
   // Côté terre : la berge monte, raide au bord de l'eau, puis s'adoucit.
   const v = Math.min(d / settings.landSlope, 1);
@@ -219,9 +261,10 @@ export function terrainHeightAt(
   const threshold = settings.rock.threshold;
   const rock =
     pattern > threshold ? (settings.rock.height * v * (pattern - threshold)) / (1 - threshold) : 0;
-  lastSubmerged = false;
-  lastRock = rock;
-  return level + rise + relief + rock;
+  out.submerged = false;
+  out.rock = rock;
+  out.height = level + rise + relief + rock;
+  return out;
 }
 
 function clamp(value: number, min: number, max: number): number {

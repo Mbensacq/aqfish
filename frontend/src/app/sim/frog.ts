@@ -2,6 +2,7 @@ import { assertSeed, deriveSeed, prngOutput } from '../core/random/prng';
 import { groundHeight, type WalkerGround } from './axolotl';
 import { growHunger } from './feeding';
 import { obstacleDistance, type Obstacle } from './obstacles';
+import { waterDirection } from './terrain';
 import { SPECIES, type AmphibianParams, type SpeciesDefinition, type SpeciesId } from './species';
 import { createFish, random, savePrevious, wrapAngle, type Fish, type SwimBounds } from './swimmer';
 import { tailBeatRate } from './undulation';
@@ -16,7 +17,8 @@ import { tailBeatRate } from './undulation';
  * - **saut** : parabole d'un point de la terre à un autre (`hopArc`) ;
  * - **entrée** : saut dont le point d'arrivée est dans l'eau ;
  * - **nage** : près de la surface, dans l'eau, sans jamais remonter sur la terre ;
- * - **sortie** : nage vers la berge (−X, côté terre du paludarium, `sim/terrain.ts`), puis
+ * - **sortie** : nage vers la berge (côté terre du rivage, `waterDirection` de `sim/terrain.ts` :
+ *   −X au paludarium), puis
  *   montée le long du sol jusqu'à la terre émergée.
  *
  * L'état se lit sur l'entité, sans champ nouveau (la sauvegarde, ADR 0028, ne change pas) :
@@ -52,7 +54,7 @@ export const HOP_SAMPLES = 16;
 const HOP_FALLBACK_ANGLE = 0.6;
 /** Nombre de directions essayées de chaque côté de la direction voulue. */
 const HOP_FALLBACK_STEPS = 3;
-/** Écart maximal de la direction d'un saut vers l'eau autour de +X, en radians. */
+/** Écart maximal de la direction d'un saut vers l'eau autour du sens de l'eau, en radians. */
 const WATER_HOP_SPREAD = 0.5;
 /** Errance du cap à la nage (comme les poissons, plus calme). */
 const WANDER_JITTER = 4;
@@ -331,6 +333,14 @@ export function stepFrog(
   }
 }
 
+/**
+ * Cap (yaw) qui pointe vers l'eau depuis le rivage : 0 (+X) ou π (−X), selon
+ * `waterDirection` ; 0 sans terrain.
+ */
+export function waterYaw(ground: WalkerGround): number {
+  return ground.terrain !== null && waterDirection(ground.terrain) === -1 ? Math.PI : 0;
+}
+
 /** Au pas où un créneau de saut commence, lance un saut si le tirage et le terrain le permettent. */
 function maybeStartHop(
   fish: Mutable<Fish>,
@@ -351,16 +361,18 @@ function maybeStartHop(
   if (!toWater && draw.chance >= params.hopChance) {
     return;
   }
-  // Vers l'eau : vers +X (côté eau du paludarium), à peu près ; à terre : n'importe où.
+  // Vers l'eau : dans le sens de l'eau (`waterDirection`, +X au paludarium), à peu près ;
+  // à terre : n'importe où.
   const base = toWater
-    ? (draw.direction * 2 - 1) * WATER_HOP_SPREAD
+    ? waterYaw(ground) + (draw.direction * 2 - 1) * WATER_HOP_SPREAD
     : fish.yaw + (draw.direction * 2 - 1) * Math.PI;
   const landing: HopLanding = toWater ? 'libre' : 'terre';
-  const ranges = [
-    params.hopMinRange + (params.hopMaxRange - params.hopMinRange) * draw.range,
-    params.hopMinRange,
-  ];
-  for (const range of ranges) {
+  // Portée tirée d'abord, puis portée minimale (sans tableau : aucune allocation).
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const range =
+      attempt === 0
+        ? params.hopMinRange + (params.hopMaxRange - params.hopMinRange) * draw.range
+        : params.hopMinRange;
     for (let k = 0; k <= 2 * HOP_FALLBACK_STEPS; k++) {
       // 0, +1, −1, +2, −2… pas de côté autour de la direction voulue.
       const offset = (k % 2 === 1 ? 1 : -1) * Math.ceil(k / 2) * HOP_FALLBACK_ANGLE;
@@ -436,8 +448,8 @@ function stepSwim(
     (random(fish) * 2 - 1) * WANDER_JITTER * def.wanderTurnRate * dt;
   let yaw = fish.yaw;
   if (!toWater) {
-    // Sortie : virage vers −X (la berge), puis droit devant.
-    const error = wrapAngle(Math.PI - yaw);
+    // Sortie : virage vers la berge (à l'opposé de l'eau), puis droit devant.
+    const error = wrapAngle(waterYaw(ground) + Math.PI - yaw);
     yaw += clamp(error, -def.avoidTurnRate * dt, def.avoidTurnRate * dt);
     turn = 0;
   } else {

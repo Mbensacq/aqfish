@@ -5,7 +5,9 @@ import {
   ROCK_MIN_HEIGHT,
   shoreLineX,
   terrainAt,
+  terrainHeightAt,
   terrainMaxRise,
+  waterDirection,
   type TerrainSettings,
 } from './terrain';
 
@@ -179,5 +181,101 @@ describe('assertTerrainSettings', () => {
     expect(() => assertTerrainSettings({ ...SETTINGS, ...patch } as TerrainSettings)).toThrow(
       RangeError,
     );
+  });
+});
+
+describe('terrainAt et terrainHeightAt : aucun état partagé (#142)', () => {
+  /** Points émergés (terre, roche) et immergés, pris sur une grille du paludarium. */
+  function mixedPoints(): [number, number][] {
+    const byKind = new Map<string, [number, number][]>();
+    for (const [x, z] of gridPoints(60)) {
+      const { kind } = terrainAt(x, z, SETTINGS, WATER);
+      const list = byKind.get(kind) ?? [];
+      list.push([x, z]);
+      byKind.set(kind, list);
+    }
+    expect([...byKind.keys()].sort()).toEqual(['fond', 'roche', 'terre']);
+    // Alternance fond, roche, terre, fond… pour que chaque appel suive un point d'une autre nature.
+    const lists = [...byKind.values()];
+    const points: [number, number][] = [];
+    for (let i = 0; i < 40; i++) {
+      for (const list of lists) {
+        points.push(list[(i * 7) % list.length]);
+      }
+    }
+    return points;
+  }
+
+  it('appels alternés : mêmes valeurs que des appels isolés', () => {
+    const points = mixedPoints();
+    // Valeurs de référence : chaque point calculé seul, juste après un point d'une autre nature.
+    const alone = points.map(([x, z]) => {
+      terrainHeightAt(WATER.maxX, 0, SETTINGS, WATER);
+      const sample = terrainAt(x, z, SETTINGS, WATER);
+      terrainAt(WATER.minX, 0, SETTINGS, WATER);
+      const height = terrainHeightAt(x, z, SETTINGS, WATER);
+      return { sample, height };
+    });
+    // Alternance serrée : hauteur d'un point, puis échantillon du point suivant, et l'inverse.
+    for (let i = 0; i + 1 < points.length; i++) {
+      const [x0, z0] = points[i];
+      const [x1, z1] = points[i + 1];
+      const h0 = terrainHeightAt(x0, z0, SETTINGS, WATER);
+      const s1 = terrainAt(x1, z1, SETTINGS, WATER);
+      const h1 = terrainHeightAt(x1, z1, SETTINGS, WATER);
+      const s0 = terrainAt(x0, z0, SETTINGS, WATER);
+      expect(h0).toBe(alone[i].height);
+      expect(s0).toEqual(alone[i].sample);
+      expect(h1).toBe(alone[i + 1].height);
+      expect(s1).toEqual(alone[i + 1].sample);
+      expect(h0).toBe(s0.height);
+    }
+  });
+});
+
+describe('waterDirection : côté de l’eau (#142)', () => {
+  /** Paludarium retourné : eau vers −X, rivage à l'abscisse opposée. */
+  const FLIPPED: TerrainSettings = { ...SETTINGS, shoreX: -SETTINGS.shoreX, waterSide: -1 };
+
+  it('vaut 1 par défaut (paludarium : eau vers +X) et suit waterSide', () => {
+    expect(SETTINGS.waterSide).toBeUndefined();
+    expect(waterDirection(SETTINGS)).toBe(1);
+    expect(waterDirection({ ...SETTINGS, waterSide: 1 })).toBe(1);
+    expect(waterDirection(FLIPPED)).toBe(-1);
+  });
+
+  it('waterSide: 1 explicite donne le même sol que la valeur par défaut', () => {
+    const explicit: TerrainSettings = { ...SETTINGS, waterSide: 1 };
+    for (const [x, z] of gridPoints(30)) {
+      expect(terrainAt(x, z, explicit, WATER)).toEqual(terrainAt(x, z, SETTINGS, WATER));
+    }
+  });
+
+  it('eau vers −X : coins −X au fond, coins +X émergés, rivage net dans l’autre sens', () => {
+    expect(terrainAt(WATER.minX, WATER.minZ, FLIPPED, WATER).height).toBe(SETTINGS.bedHeight);
+    expect(terrainAt(WATER.minX, WATER.maxZ, FLIPPED, WATER).height).toBe(SETTINGS.bedHeight);
+    expect(terrainAt(WATER.maxX, WATER.minZ, FLIPPED, WATER).submerged).toBe(false);
+    expect(terrainAt(WATER.maxX, WATER.maxZ, FLIPPED, WATER).submerged).toBe(false);
+    for (const z of [WATER.minZ, -0.05, 0, 0.21, WATER.maxZ]) {
+      const shore = shoreLineX(z, FLIPPED);
+      expect(terrainAt(shore, z, FLIPPED, WATER).height).toBe(LEVEL);
+      expect(terrainAt(shore - 1e-9, z, FLIPPED, WATER).submerged).toBe(true);
+      expect(terrainAt(shore + 1e-6, z, FLIPPED, WATER).height).toBeGreaterThan(LEVEL);
+    }
+    for (const [x, z] of gridPoints(40)) {
+      const sample = terrainAt(x, z, FLIPPED, WATER);
+      expect(sample.submerged).toBe(sample.height < LEVEL);
+      expect(sample.submerged).toBe(x < shoreLineX(z, FLIPPED));
+      expect(terrainHeightAt(x, z, FLIPPED, WATER)).toBe(sample.height);
+    }
+  });
+
+  it('assertTerrainSettings refuse un waterSide autre que 1 ou -1', () => {
+    expect(assertTerrainSettings(FLIPPED)).toBe(FLIPPED);
+    for (const waterSide of [0, 2, -0.5, Number.NaN]) {
+      expect(() =>
+        assertTerrainSettings({ ...SETTINGS, waterSide } as unknown as TerrainSettings),
+      ).toThrow(RangeError);
+    }
   });
 });

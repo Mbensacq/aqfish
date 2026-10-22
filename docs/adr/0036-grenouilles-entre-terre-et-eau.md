@@ -73,6 +73,9 @@ l'octet.
 
 - La direction de l'eau (+X) est celle du paludarium (ADR 0034) : un autre environnement à
   berge devra fournir la sienne.
+  Cycle 47 (#142) : c'est fait, le terrain porte ce sens (`TerrainSettings.waterSide`, 1 par
+  défaut, lu par `waterDirection`) ; `sim/frog.ts` en tire le cap des sauts vers l'eau et de
+  la sortie (`waterYaw`). Le paludarium garde la valeur par défaut.
 - Les grenouilles ne contournent pas d'obstacles (le paludarium n'en a pas ; décor #132) et
   ne mangent pas (nourrissage hors périmètre).
 - Les captures `paludarium-*` montrent trois grenouilles (une sur la berge, deux dans l'eau à
