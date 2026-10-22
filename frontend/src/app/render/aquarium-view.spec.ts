@@ -123,6 +123,7 @@ describe('AquariumView (pipeline pixel art)', () => {
       'poissons-koi-kohaku',
       'poissons-koi-orenji',
       'poissons-koi-sanke',
+      'poissons-axolotl',
     ]);
   });
 

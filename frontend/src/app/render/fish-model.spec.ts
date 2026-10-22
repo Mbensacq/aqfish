@@ -1,4 +1,7 @@
+import { Color } from 'three';
+
 import {
+  AXOLOTL,
   CORYDORA,
   GUPPY,
   KOI,
@@ -8,6 +11,7 @@ import {
   speciesVariants,
 } from '../sim/species';
 import {
+  AXOLOTL_FISH,
   buildVoxelMesh,
   CORYDORA_FISH,
   createFishGeometry,
@@ -129,6 +133,112 @@ describe('modèle du koï (#88)', () => {
     expect(build([4, 3])).toThrow(/colonne 1/);
     expect(build([4, 1.5])).toThrow(/colonne 1/);
     expect(build([2, 4])).not.toThrow();
+  });
+});
+
+describe('modèle de l’axolotl (#130)', () => {
+  const size = voxelSize(AXOLOTL, AXOLOTL_FISH);
+  const mesh = buildVoxelMesh(
+    AXOLOTL_FISH.body,
+    AXOLOTL_FISH.bodyDepth,
+    AXOLOTL.colors,
+    size,
+    'center',
+    AXOLOTL_FISH.bodyColumnDepths,
+    AXOLOTL_FISH.paired,
+  );
+  const bodyOnly = buildVoxelMesh(
+    AXOLOTL_FISH.body,
+    AXOLOTL_FISH.bodyDepth,
+    AXOLOTL.colors,
+    size,
+    'center',
+    AXOLOTL_FISH.bodyColumnDepths,
+  );
+  const extent = (data: { positions: Float32Array }, axis: 0 | 1 | 2) => {
+    let min = Infinity;
+    let max = -Infinity;
+    for (let i = axis; i < data.positions.length; i += 3) {
+      min = Math.min(min, data.positions[i]);
+      max = Math.max(max, data.positions[i]);
+    }
+    return [min, max];
+  };
+  const gillColor = new Color(AXOLOTL.colors.accent);
+
+  it('trois branchies de chaque côté de la tête, en rose soutenu', () => {
+    // Trois branchies par côté, chacune d'une base (couche 0) et d'une pointe (couche 1).
+    const gills = AXOLOTL_FISH.paired!.map(
+      (layer) =>
+        layer
+          .join('')
+          .split('')
+          .filter((c) => c === 'a').length,
+    );
+    expect(gills).toEqual([3, 3]);
+    // Branchies visibles des deux côtés : des sommets à la couleur des branchies en z > 0 et z < 0.
+    let plus = 0;
+    let minus = 0;
+    for (let v = 0; v < mesh.colors.length / 3; v++) {
+      const isGill =
+        Math.abs(mesh.colors[3 * v] - gillColor.r) < 1e-6 &&
+        Math.abs(mesh.colors[3 * v + 1] - gillColor.g) < 1e-6 &&
+        Math.abs(mesh.colors[3 * v + 2] - gillColor.b) < 1e-6;
+      if (isGill) {
+        if (mesh.positions[3 * v + 2] > 0) plus++;
+        else minus++;
+      }
+    }
+    expect(plus).toBeGreaterThan(0);
+    expect(plus).toBe(minus);
+  });
+
+  it('vu de dessus, branchies et pattes dépassent des flancs (plus large que le corps seul)', () => {
+    const [bodyMin, bodyMax] = extent(bodyOnly, 2);
+    const [min, max] = extent(mesh, 2);
+    expect(max - min).toBeCloseTo(bodyMax - bodyMin + 4 * size.z, 6);
+    expect(min).toBeCloseTo(-max, 6);
+  });
+
+  it('pattes au sol et branchies sous la surface : hauteur dans les marges de la marche', () => {
+    const [minY, maxY] = extent(mesh, 1);
+    expect(-minY).toBeLessThanOrEqual(AXOLOTL.walker!.clearance + 1e-6);
+    expect(maxY).toBeLessThanOrEqual(AXOLOTL.walker!.surfaceMargin + 1e-6);
+  });
+
+  it('sans parties paires, le maillage du corps est celui d’avant (autres espèces inchangées)', () => {
+    const koi = buildVoxelMesh(KOI_FISH.body, KOI_FISH.bodyDepth, KOI.colors, UNIT, 'center');
+    const koiPaired = buildVoxelMesh(
+      KOI_FISH.body,
+      KOI_FISH.bodyDepth,
+      KOI.colors,
+      UNIT,
+      'center',
+      undefined,
+      [],
+    );
+    expect(koiPaired).toEqual(koi);
+    expect(mesh.quads).toBeGreaterThan(bodyOnly.quads);
+    // Le corps est émis d'abord, à l'identique.
+    expect(Array.from(mesh.positions.slice(0, bodyOnly.positions.length))).toEqual(
+      Array.from(bodyOnly.positions),
+    );
+  });
+
+  it('refuse une couche paire de mauvaises dimensions ou à caractère inconnu', () => {
+    const build = (paired: string[][]) => () =>
+      buildVoxelMesh(['ss', 'ss'], 2, AXOLOTL.colors, UNIT, 'center', undefined, paired);
+    expect(build([['s.']])).toThrow();
+    expect(build([['s..', '...']])).toThrow();
+    expect(build([['x.', '..']])).toThrow();
+    expect(build([['s.', '..']])).not.toThrow();
+  });
+
+  it('une partie paire n’émet pas sa face contre le corps', () => {
+    // Un voxel de corps et un voxel pair de chaque côté : le corps garde ses 6 faces (maillage
+    // du corps inchangé), chaque voxel pair n'en émet que 5.
+    const data = buildVoxelMesh(['s'], 1, AXOLOTL.colors, UNIT, 'center', undefined, [['f']]);
+    expect(data.quads).toBe(6 + 2 * 5);
   });
 });
 

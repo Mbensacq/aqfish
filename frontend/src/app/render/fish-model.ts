@@ -31,6 +31,13 @@ export interface FishTemplate {
    * de même parité que `bodyDepth`.
    */
   readonly bodyColumnDepths?: readonly number[];
+  /**
+   * Parties paires (branchies, pattes de l'axolotl, issue #130) : couches de profil, de la
+   * plus proche du corps à la plus éloignée, de mêmes dimensions que `body`. Chaque voxel
+   * d'une couche `n` est posé des deux côtés du corps, contre la colonne (épaisseur de la
+   * colonne, `bodyColumnDepths`) plus `n` voxels : vue de dessus, la partie dépasse du flanc.
+   */
+  readonly paired?: readonly (readonly string[])[];
 }
 
 /** Rôles de couleur des gabarits. */
@@ -134,6 +141,48 @@ export const KOI_FISH: FishTemplate = {
   bodyColumnDepths: [2, 2, 4, 6, 6, 6, 6, 6, 6, 6, 6, 4, 2],
 };
 
+/**
+ * Axolotl (issue #130) : corps rose, large tête (6 voxels d'épaisseur vue de dessus), crête
+ * dorsale le long de l'arrière du corps et longue queue à nageoire. Parties paires : trois
+ * branchies de chaque côté de l'arrière de la tête (`a`, rose soutenu), en éventail (vers le
+ * haut, vers l'arrière, vers le bas : trois traits distincts de profil), base contre le flanc
+ * et pointe un voxel plus loin (vue de dessus) ; quatre pattes (`f`) sous le ventre, pieds
+ * écartés d'un voxel, posés à la rangée du bas.
+ */
+export const AXOLOTL_FISH: FishTemplate = {
+  body: [
+    // queue → tête
+    '.............',
+    '..fffff......',
+    '.kkkkkkkkkkkk',
+    'ssssssssssses',
+    '.bbbbbbbbbbbb',
+    '.............',
+  ],
+  tail: ['..fffff', 'ffkkkkk', 'ffsssss', '..fffff'],
+  bodyDepth: 6,
+  tailDepth: 2,
+  bodyColumnDepths: [2, 2, 2, 4, 4, 4, 4, 4, 4, 6, 6, 6, 4],
+  paired: [
+    [
+      '.............',
+      '.........a...',
+      '........a....',
+      '.........a...',
+      '...f......f..',
+      '...f......f..',
+    ],
+    [
+      '........a....',
+      '.............',
+      '.......a.....',
+      '.............',
+      '........a....',
+      '..f.......f..',
+    ],
+  ],
+};
+
 /** Gabarit de chaque silhouette déclarée par les espèces (`sim/species.ts`). */
 export const SILHOUETTES: Readonly<Record<SilhouetteId, FishTemplate>> = {
   fuseau: SLENDER_FISH,
@@ -141,6 +190,7 @@ export const SILHOUETTES: Readonly<Record<SilhouetteId, FishTemplate>> = {
   'guppy-femelle': GUPPY_FEMALE_FISH,
   corydora: CORYDORA_FISH,
   koi: KOI_FISH,
+  axolotl: AXOLOTL_FISH,
 };
 
 /** Proportions des voxels : hauteur et épaisseur relatives à la longueur d'un voxel. */
@@ -200,6 +250,7 @@ export function buildVoxelMesh(
   size: VoxelSize,
   anchor: 'center' | 'right',
   columnDepths?: readonly number[],
+  paired: readonly (readonly string[])[] = [],
 ): VoxelMeshData {
   const width = templateWidth(rows);
   const height = rows.length;
@@ -273,6 +324,50 @@ export function buildVoxelMesh(
       }
     }
   }
+  // Parties paires : après le corps (maillage du corps inchangé pour les autres gabarits).
+  const pairedVoxels = new Map<string, string>();
+  paired.forEach((layerRows, distance) => {
+    if (layerRows.length !== height || layerRows.some((r) => r.length !== width)) {
+      throw new Error('Les couches paires doivent avoir les dimensions du corps');
+    }
+    for (let row = 0; row < height; row++) {
+      for (let col = 0; col < width; col++) {
+        const char = layerRows[row][col];
+        if (char === '.') {
+          continue;
+        }
+        if (!linear.has(char)) {
+          throw new Error(`Caractère de gabarit sans rôle de couleur : « ${char} »`);
+        }
+        pairedVoxels.set(`${col},${row},${layerEnd[col] + distance}`, char);
+        pairedVoxels.set(`${col},${row},${layerStart[col] - 1 - distance}`, char);
+      }
+    }
+  });
+  const occupied = (col: number, row: number, layer: number): boolean =>
+    filled(col, row, layer) || pairedVoxels.has(`${col},${row},${layer}`);
+  for (const [key, char] of pairedVoxels) {
+    const [col, row, layer] = key.split(',').map(Number);
+    const color = linear.get(char)!;
+    const x0 = originX + col;
+    const y0 = height / 2 - row - 1;
+    const z0 = -depth / 2 + layer;
+    for (const face of FACES) {
+      if (occupied(col + face.dc, row - face.dy, layer + face.dz)) {
+        continue;
+      }
+      quads++;
+      for (const corner of face.corners) {
+        positions.push(
+          (x0 + corner[0]) * size.x,
+          (y0 + corner[1]) * size.y,
+          (z0 + corner[2]) * size.z,
+        );
+        normals.push(face.normal[0], face.normal[1], face.normal[2]);
+        vertexColors.push(color[0], color[1], color[2]);
+      }
+    }
+  }
   return {
     positions: new Float32Array(positions),
     normals: new Float32Array(normals),
@@ -305,6 +400,7 @@ export function createFishGeometry(
           size,
           'center',
           template.bodyColumnDepths,
+          template.paired,
         )
       : buildVoxelMesh(template.tail, template.tailDepth, variant.colors, size, 'right');
   const geometry = new BufferGeometry();
