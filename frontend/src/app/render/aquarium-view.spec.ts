@@ -126,8 +126,8 @@ describe('AquariumView (pipeline pixel art)', () => {
     ]);
   });
 
-  it('parcourt les couches d’effets (bulles, puis pluie) dans une liste (issue #125)', () => {
-    expect(view.effectLayerNames).toEqual(['bulles', 'pluie']);
+  it('parcourt les couches d’effets (bulles, pluie, feuilles mortes) dans une liste (#125, #107)', () => {
+    expect(view.effectLayerNames).toEqual(['bulles', 'pluie', 'feuilles-mortes']);
   });
 
   it('place les poissons du monde avant le rendu ; ignore les appels après destruction', () => {
@@ -234,6 +234,24 @@ describe('AquariumView (nénuphars, #103)', () => {
     view.setDecor(world.decor, world.seed);
     expect(view.lilyPadCount).toBe(0);
     view.dispose();
+  });
+
+  it('feuilles mortes (#107) : posées au temps simulé dans le bassin, jamais dans le bac', () => {
+    const pond = createIn();
+    const world = createWorld(42, [], [], POND.decor, 'bassin');
+    pond.setDecor(world.decor, world.seed);
+    pond.updateDecor(0);
+    expect(pond.floatingLeafCount).toBe(0);
+    pond.updateDecor(30);
+    expect(pond.floatingLeafCount).toBeGreaterThanOrEqual(2);
+    pond.dispose();
+
+    const tank = createIn(TROPICAL_TANK);
+    const tropical = createDefaultWorld(42);
+    tank.setDecor(tropical.decor, tropical.seed);
+    tank.updateDecor(30);
+    expect(tank.floatingLeafCount).toBe(0);
+    tank.dispose();
   });
 
   it('les fleurs s’ouvrent à midi et se ferment à minuit (updateFlowers, issue #104)', () => {

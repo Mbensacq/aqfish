@@ -37,6 +37,7 @@ import type { FoodPellet } from '../sim/food';
 import { BubbleLayer } from './bubble-layer';
 import { DecorLayer } from './decor-layer';
 import { type EffectLayer, type SceneLayer, updateVisibleEffects } from './effect-layer';
+import { FloatingLeafLayer } from './floating-leaf-layer';
 import { FishLayer, MAX_FISH_PER_SPECIES } from './fish-layer';
 import { FoodLayer } from './food-layer';
 import { scenePixelsPerMeter } from './food-size';
@@ -138,8 +139,11 @@ export class AquariumView {
   private readonly lilyPadLayer: LilyPadLayer;
   /** Pluie (issue #106), possible dans un environnement qui en a (`Environment.rain`). */
   private readonly rainLayer: RainLayer;
+  /** Feuilles mortes flottantes (issue #107), dans un environnement qui en a. */
+  private readonly floatingLeafLayer: FloatingLeafLayer;
   /**
-   * Effets animés au contrat commun `EffectLayer` (issue #125) : bulles, puis pluie. Parcourus
+   * Effets animés au contrat commun `EffectLayer` (issue #125) : bulles, pluie, puis feuilles
+   * mortes. Parcourus
    * par `updateDecor`, `updateLight`, `setDecor` et `dispose`.
    */
   private readonly effects: readonly EffectLayer[];
@@ -213,7 +217,9 @@ export class AquariumView {
     this.waterLight = new WaterLightLayer(this.world.dimensions, this.world.environment.caustics);
     this.lilyPadLayer = new LilyPadLayer(this.world.dimensions);
     this.rainLayer = new RainLayer(environmentWater(this.world.environment.id));
-    this.effects = [this.bubbleLayer, this.rainLayer];
+    this.floatingLeafLayer = new FloatingLeafLayer(environmentWater(this.world.environment.id));
+    this.floatingLeafLayer.object.visible = this.world.environment.floatingLeaves;
+    this.effects = [this.bubbleLayer, this.rainLayer, this.floatingLeafLayer];
     this.sceneLayers = [
       ...this.fishLayers,
       this.decorLayer,
@@ -222,6 +228,7 @@ export class AquariumView {
       this.waterLight,
       this.lilyPadLayer,
       this.rainLayer,
+      this.floatingLeafLayer,
     ];
     for (const layer of this.sceneLayers) {
       this.world.scene.add(layer.object);
@@ -563,6 +570,11 @@ export class AquariumView {
     return [this.rainLayer.dropCount, this.rainLayer.rippleCount];
   }
 
+  /** Feuilles mortes posées par le dernier `updateDecor` (tests). */
+  get floatingLeafCount(): number {
+    return this.floatingLeafLayer.object.visible ? this.floatingLeafLayer.count : 0;
+  }
+
   /** Nombre de nénuphars affichés (tests). */
   get lilyPadCount(): number {
     return this.lilyPadLayer.count;
@@ -643,6 +655,10 @@ export class AquariumView {
     if (this.currentFilter === 'aucun') {
       this.decorLayer.setResolution(this.width * this.pixelRatio, this.height * this.pixelRatio);
       this.lilyPadLayer.setResolution(this.width * this.pixelRatio, this.height * this.pixelRatio);
+      this.floatingLeafLayer.setResolution(
+        this.width * this.pixelRatio,
+        this.height * this.pixelRatio,
+      );
       // Sans filtre, une bulle garde la taille d'un pixel de scène du mode pixel art.
       this.bubbleLayer.setPointScale(PIXEL_SIZE * this.pixelRatio);
       this.foodLayer.setPointScale(PIXEL_SIZE * this.pixelRatio);
@@ -652,6 +668,7 @@ export class AquariumView {
     }
     this.decorLayer.setResolution(this.targetSize.width, this.targetSize.height);
     this.lilyPadLayer.setResolution(this.targetSize.width, this.targetSize.height);
+    this.floatingLeafLayer.setResolution(this.targetSize.width, this.targetSize.height);
     this.bubbleLayer.setPointScale(1);
     this.foodLayer.setPointScale(1);
     this.renderer.setRenderTarget(this.pixelPass.target);
