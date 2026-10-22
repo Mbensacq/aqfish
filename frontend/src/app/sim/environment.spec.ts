@@ -5,13 +5,15 @@ import {
   environmentById,
   environmentWater,
   isEnvironmentId,
+  PALUDARIUM,
   POND,
   TROPICAL_TANK,
   type EnvironmentId,
 } from './environment';
 import { DEFAULT_DECOR, validateDecorItem } from './decor';
 import { CORYDORA, GUPPY, NEON } from './species';
-import { DEFAULT_TANK, waterVolume } from './tank';
+import { DEFAULT_TANK, SAND_THICKNESS, WATER_LEVEL_RATIO, waterVolume } from './tank';
+import { terrainAt, terrainMaxRise } from './terrain';
 
 describe('environnements', () => {
   it('le bac tropical est l’environnement par défaut, avec le bac d’avant #87', () => {
@@ -38,6 +40,45 @@ describe('environnements', () => {
     expect(POND.water).not.toEqual(TROPICAL_TANK.water);
   });
 
+  it('le paludarium (#129) : bac vitré à moitié en eau, berge émergée, sans espèces', () => {
+    expect(PALUDARIUM.id).toBe('paludarium');
+    expect(PALUDARIUM.name).toBe('Paludarium');
+    expect(PALUDARIUM.border).toBe('verre');
+    expect(PALUDARIUM.waterLevel).toBeLessThan(WATER_LEVEL_RATIO);
+    expect(PALUDARIUM.species).toEqual([]);
+    expect(PALUDARIUM.population).toEqual([]);
+    expect(PALUDARIUM.bubbles || PALUDARIUM.caustics || PALUDARIUM.rain).toBe(false);
+    expect(PALUDARIUM.lilyPads).toBeNull();
+    const terrain = PALUDARIUM.terrain;
+    if (!terrain) {
+      throw new Error('le paludarium doit avoir un sol');
+    }
+    const water = environmentWater('paludarium');
+    expect(water.maxY).toBeCloseTo(PALUDARIUM.dimensions.height * PALUDARIUM.waterLevel, 12);
+    // La berge la plus haute reste sous le haut du bac.
+    expect(water.maxY + terrainMaxRise(terrain)).toBeLessThan(PALUDARIUM.dimensions.height);
+    expect(terrain.bedHeight).toBeGreaterThanOrEqual(SAND_THICKNESS);
+    // Environ la moitié de la longueur en eau : part immergée de la surface sur une grille.
+    let submerged = 0;
+    const n = 100;
+    for (let i = 0; i < n; i++) {
+      for (let j = 0; j < n; j++) {
+        const x = water.minX + ((i + 0.5) / n) * (water.maxX - water.minX);
+        const z = water.minZ + ((j + 0.5) / n) * (water.maxZ - water.minZ);
+        submerged += terrainAt(x, z, terrain, water).submerged ? 1 : 0;
+      }
+    }
+    expect(submerged / (n * n)).toBeGreaterThan(0.4);
+    expect(submerged / (n * n)).toBeLessThan(0.6);
+  });
+
+  it('seul le paludarium a un sol à berge ; le bac et le bassin gardent l’eau à 90 %', () => {
+    expect(TROPICAL_TANK.terrain).toBeNull();
+    expect(POND.terrain).toBeNull();
+    expect(TROPICAL_TANK.waterLevel).toBe(WATER_LEVEL_RATIO);
+    expect(POND.waterLevel).toBe(WATER_LEVEL_RATIO);
+  });
+
   it('chaque environnement est indexé par son identifiant, dans l’ordre du sélecteur', () => {
     expect(Object.keys(ENVIRONMENTS)).toEqual([...ENVIRONMENT_IDS]);
     for (const id of ENVIRONMENT_IDS) {
@@ -57,6 +98,7 @@ describe('environnements', () => {
   it('isEnvironmentId refuse les valeurs inconnues et les clés héritées', () => {
     expect(isEnvironmentId('tropical')).toBe(true);
     expect(isEnvironmentId('bassin')).toBe(true);
+    expect(isEnvironmentId('paludarium')).toBe(true);
     for (const bad of ['recif', '', 'constructor', 'toString', null, undefined, 3]) {
       expect(isEnvironmentId(bad)).toBe(false);
     }
@@ -72,5 +114,8 @@ describe('environnements', () => {
     expect(environmentWater('tropical')).toEqual(waterVolume());
     expect(environmentWater('bassin')).toEqual(waterVolume(POND.dimensions));
     expect(environmentWater('bassin')).toBe(environmentWater('bassin'));
+    expect(environmentWater('paludarium')).toEqual(
+      waterVolume(PALUDARIUM.dimensions, PALUDARIUM.waterLevel),
+    );
   });
 });

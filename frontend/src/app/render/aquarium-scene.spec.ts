@@ -9,7 +9,13 @@ import {
 } from 'three';
 
 import { lightAt } from '../sim/daylight';
-import { ENVIRONMENTS, POND, TROPICAL_TANK } from '../sim/environment';
+import {
+  environmentWater,
+  ENVIRONMENTS,
+  PALUDARIUM,
+  POND,
+  TROPICAL_TANK,
+} from '../sim/environment';
 import {
   createAquariumScene,
   DAY_AMBIENT_INTENSITY,
@@ -22,6 +28,7 @@ import {
   NIGHT_WATER_SURFACE,
   paletteColor,
   SAND_THICKNESS,
+  TERRAIN_WATER_INSET,
   WATER_LEVEL_RATIO,
 } from './aquarium-scene';
 import { PALETTE } from './palette';
@@ -244,6 +251,39 @@ describe('createAquariumScene : environnements (#87)', () => {
     const box = new Box3().setFromObject(water);
     expect(box.max.x - box.min.x).toBeCloseTo(POND.dimensions.width);
     expect(box.max.z - box.min.z).toBeCloseTo(POND.dimensions.depth);
+  });
+
+  it('le paludarium (#129) : vitres, sol en berge à la place du sable, eau à son niveau', () => {
+    const { scene, dimensions } = createAquariumScene(PALUDARIUM);
+    expect(dimensions).toBe(PALUDARIUM.dimensions);
+    expect(scene.getObjectByName('verre')).toBeDefined();
+    expect(scene.getObjectByName('aretes')).toBeDefined();
+    expect(scene.getObjectByName('margelle')).toBeUndefined();
+    expect(scene.getObjectByName('sable')).toBeUndefined();
+    const ground = scene.getObjectByName('sol-paludarium') as Mesh;
+    expect(ground).toBeInstanceOf(Mesh);
+    const water = scene.getObjectByName('eau') as Mesh;
+    const box = new Box3().setFromObject(water);
+    const expected = environmentWater('paludarium');
+    expect(box.max.y).toBeCloseTo(expected.maxY, 6);
+    expect(box.min.y).toBeCloseTo(expected.minY, 6);
+    // Eau en retrait des vitres : les flancs du sol passent devant.
+    expect(box.max.x).toBeCloseTo(expected.maxX - TERRAIN_WATER_INSET, 6);
+    expect(box.min.z).toBeCloseTo(expected.minZ + TERRAIN_WATER_INSET, 6);
+    // La berge émerge : le sol dépasse la surface de l'eau.
+    expect(new Box3().setFromObject(ground).max.y).toBeGreaterThan(expected.maxY);
+  });
+
+  it('le dessous du sol du paludarium s’assombrit la nuit, comme le sable du bac', () => {
+    const world = createAquariumScene(PALUDARIUM);
+    const ground = world.scene.getObjectByName('sol-paludarium') as Mesh;
+    const bottom = materials(ground).at(-1) as MeshBasicMaterial;
+    world.setDaylight(lightAt(12));
+    expect(hex(bottom)).toBe(paletteColor(PALUDARIUM.ground.bottom));
+    world.setDaylight(lightAt(0));
+    expect(hex(bottom)).not.toBe(paletteColor(PALUDARIUM.ground.bottom));
+    world.setViewpoint(0, -1, 0);
+    expect(ground.visible).toBe(true);
   });
 
   it('le bassin est enterré : un sol l’entoure, absent du bac tropical (#105)', () => {

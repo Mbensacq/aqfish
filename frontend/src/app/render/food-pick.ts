@@ -1,5 +1,5 @@
 import { isInsideTank } from '../sim/food';
-import { waterVolume, type TankDimensions } from '../sim/tank';
+import { waterVolume, type Box3, type TankDimensions } from '../sim/tank';
 import type { Vec3 } from './camera-presets';
 
 /**
@@ -60,8 +60,8 @@ export function waterSurfacePoint(
   origin: Vec3,
   direction: Vec3,
   dims: TankDimensions,
+  water: Box3 = waterVolume(dims),
 ): { x: number; z: number } | null {
-  const water = waterVolume(dims);
   const dy = direction[1];
   if (Math.abs(dy) < 1e-9) {
     return null;

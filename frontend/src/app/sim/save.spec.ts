@@ -78,6 +78,7 @@ describe('serializeWorld / parseWorld : aller-retour', () => {
     ],
     ['monde vide', () => createWorld(0)],
     ['bassin à koïs', () => advance(createDefaultWorld(42, 'bassin'), 1800)],
+    ['paludarium (sans espèces, #129)', () => advance(createDefaultWorld(42, 'paludarium'), 600)],
     [
       'population réglée (identifiants non consécutifs)',
       () => setPopulation(setPopulation(createDefaultWorld(9), 'neon', 3), 'guppy', 9),
@@ -85,6 +86,14 @@ describe('serializeWorld / parseWorld : aller-retour', () => {
   ])('restitue le %s sans perte', (_name, make) => {
     const world = make();
     const { world: back } = restored(parseWorld(serializeWorld(world)));
+    expect(back).toEqual(world);
+  });
+
+  it('restitue l’environnement paludarium (#129)', () => {
+    const world = advance(createDefaultWorld(8, 'paludarium'), 120);
+    expect(world.environment).toBe('paludarium');
+    const { world: back } = restored(parseWorld(serializeWorld(world)));
+    expect(back.environment).toBe('paludarium');
     expect(back).toEqual(world);
   });
 
@@ -169,6 +178,7 @@ describe('déterminisme après rechargement', () => {
     [42, 'tropical'],
     [7, 'tropical'],
     [99, 'bassin'],
+    [5, 'paludarium'],
   ] as const)(
     'graine %s (%s) : sauvegardé, rechargé puis avancé = jamais sauvegardé',
     (seed, environment) => {

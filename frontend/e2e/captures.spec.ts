@@ -159,6 +159,27 @@ test.describe('Captures', () => {
     });
   }
 
+  // Paludarium (#129) : berge émergée et eau, vue trois-quarts par défaut (sans `camera=`),
+  // coupe de côté et de face, dessus, dessous et minuit. Bac et bassin ci-dessus inchangés.
+  const PALUDARIUM_CAPTURES = [
+    { name: 'paludarium-three-quarter', query: 'environnement=paludarium' },
+    { name: 'paludarium-side', query: 'environnement=paludarium&camera=side' },
+    { name: 'paludarium-front', query: 'environnement=paludarium&camera=front' },
+    { name: 'paludarium-top', query: 'environnement=paludarium&camera=top' },
+    { name: 'paludarium-bottom', query: 'environnement=paludarium&camera=bottom' },
+    { name: 'paludarium-three-quarter-minuit', query: 'environnement=paludarium&heure=0' },
+  ] as const;
+  for (const { name, query } of PALUDARIUM_CAPTURES) {
+    test(`angle ${name}`, async ({ page }) => {
+      const errors: string[] = [];
+      page.on('pageerror', (error) => errors.push(error.message));
+      await page.goto(`/?capture=1&seed=${SEED}&time=${TIME_SECONDS}&${query}`);
+      await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+      await page.screenshot({ path: join(OUTPUT_DIR, `${name}.png`), animations: 'disabled' });
+      expect(errors).toEqual([]);
+    });
+  }
+
   // Téléphone en portrait (390 × 844, #117) : vue trois-quarts cadrée sur un écran étroit,
   // donc dézoomée, sans nourriture puis avec granulés posés en points et en voxels.
   const PHONE_CAPTURES = [

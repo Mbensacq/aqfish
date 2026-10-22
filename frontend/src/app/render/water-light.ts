@@ -212,7 +212,15 @@ export class WaterLightLayer {
   /** Faux : caustiques jamais affichées (environnement sans caustiques, issue #87). */
   private readonly causticsEnabled: boolean;
 
-  constructor(dims: TankDimensions = DEFAULT_TANK, caustics = true) {
+  /**
+   * `surfaceY` : hauteur de la surface de l'eau (celle de `waterVolume(dims)` par défaut ;
+   * plus basse au paludarium, ADR 0034).
+   */
+  constructor(
+    dims: TankDimensions = DEFAULT_TANK,
+    caustics = true,
+    surfaceY: number = Math.max(dims.height * WATER_LEVEL_RATIO, SAND_THICKNESS),
+  ) {
     this.causticsEnabled = caustics;
     this.object.name = 'lumiere-eau';
     this.caustics = new Mesh(
@@ -231,7 +239,7 @@ export class WaterLightLayer {
     );
     this.surface.name = 'reflet-surface';
     this.surface.rotation.x = -Math.PI / 2;
-    this.surface.position.y = Math.max(dims.height * WATER_LEVEL_RATIO, SAND_THICKNESS);
+    this.surface.position.y = surfaceY;
     this.surface.renderOrder = SURFACE_RENDER_ORDER;
 
     this.object.add(this.caustics, this.surface);

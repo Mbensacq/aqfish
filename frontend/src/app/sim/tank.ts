@@ -32,13 +32,19 @@ export const SAND_THICKNESS = 0.06;
 /** Niveau de l'eau, en fraction de la hauteur du bac. */
 export const WATER_LEVEL_RATIO = 0.9;
 
-/** Volume d'eau : du dessus du sable à la surface, paroi à paroi. */
-export function waterVolume(dims: TankDimensions = DEFAULT_TANK): Box3 {
+/**
+ * Volume d'eau : du dessus du sable à la surface, paroi à paroi. `levelRatio` : niveau de
+ * l'eau en fraction de la hauteur (`Environment.waterLevel` ; `WATER_LEVEL_RATIO` par défaut).
+ */
+export function waterVolume(
+  dims: TankDimensions = DEFAULT_TANK,
+  levelRatio: number = WATER_LEVEL_RATIO,
+): Box3 {
   return {
     minX: -dims.width / 2,
     maxX: dims.width / 2,
     minY: SAND_THICKNESS,
-    maxY: Math.max(dims.height * WATER_LEVEL_RATIO, SAND_THICKNESS),
+    maxY: Math.max(dims.height * levelRatio, SAND_THICKNESS),
     minZ: -dims.depth / 2,
     maxZ: dims.depth / 2,
   };

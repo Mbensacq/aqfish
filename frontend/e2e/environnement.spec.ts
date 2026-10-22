@@ -1,8 +1,11 @@
 import { expect, test, type Page } from '@playwright/test';
 
+import { FOOD_PER_DROP } from '../src/app/sim/food';
+
 /**
- * Environnements (issue #87) : choix entre le bac tropical et le bassin dans le panneau de
- * contrôle, au clavier comme à la souris, lisible à 390 px ; `environnement=` en capture.
+ * Environnements (issue #87) : choix entre le bac tropical, le bassin et le paludarium (#129)
+ * dans le panneau de contrôle, au clavier comme à la souris, lisible à 390 px ;
+ * `environnement=` en capture.
  */
 
 const hostEl = (page: Page) => page.locator('app-aquarium-host');
@@ -86,6 +89,50 @@ test.describe('Environnement', () => {
     const errors = await open(page, '?capture=1&seed=42&environnement=bassin');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'bassin');
     expect(await cameraY(page)).toBeGreaterThan(1);
+    expect(errors).toEqual([]);
+  });
+
+  test('paludarium (#129) : choisi au panneau, sans espèces, nourri sur l’eau seulement, gardé au rechargement', async ({
+    page,
+  }) => {
+    // Sans `seed=` : la sauvegarde automatique restaure le monde au rechargement.
+    const errors = await open(page, '');
+    await toggle(page).click();
+    await selector(page).selectOption('paludarium');
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'paludarium');
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', '');
+    await expect(page.locator('[data-population-empty]')).toBeVisible();
+    await toggle(page).click();
+
+    // Vue de dessus : la berge à gauche (−X), l'eau à droite (+X).
+    await page.keyboard.press('1');
+    await expect.poll(() => cameraY(page)).toBeGreaterThan(1);
+    await page.waitForTimeout(800); // fin de la transition de caméra (0,5 s)
+    const box = (await page.locator('canvas').first().boundingBox())!;
+    const y = box.y + box.height / 2;
+    await page.mouse.click(box.x + box.width * 0.38, y);
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-food', '0');
+    await page.mouse.click(box.x + box.width * 0.62, y);
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-food', String(FOOD_PER_DROP));
+
+    await page.reload();
+    await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'paludarium');
+    expect(errors).toEqual([]);
+  });
+
+  test('capture environnement=paludarium : vue trois-quarts par défaut, sans erreur', async ({
+    page,
+  }) => {
+    const errors = await open(page, '?capture=1&seed=42&environnement=paludarium');
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'paludarium');
+    // Trois-quarts : devant (+Z), à droite (+X), au-dessus du bac.
+    const [x, y, z] = (await hostEl(page).getAttribute('data-aqfish-camera'))!
+      .split(',')
+      .map(Number);
+    expect(x).toBeGreaterThan(0);
+    expect(y).toBeGreaterThan(0.6);
+    expect(z).toBeGreaterThan(x);
     expect(errors).toEqual([]);
   });
 

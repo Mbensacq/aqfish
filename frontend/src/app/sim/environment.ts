@@ -2,11 +2,19 @@ import type { CameraPreset } from '../core/capture/capture-params';
 import { DEFAULT_DECOR, parseDecor, type DecorItem } from './decor';
 import { assertLilyPadSettings, type LilyPadSettings } from './lily-pads';
 import { CORYDORA, GUPPY, KOI, NEON, type SpeciesId } from './species';
-import { DEFAULT_TANK, waterVolume, type Box3, type TankDimensions } from './tank';
+import { assertTerrainSettings, type TerrainSettings } from './terrain';
+import {
+  DEFAULT_TANK,
+  SAND_THICKNESS,
+  WATER_LEVEL_RATIO,
+  waterVolume,
+  type Box3,
+  type TankDimensions,
+} from './tank';
 
 /**
- * Environnements (issue #87, ADR 0026) : le bac tropical, le bassin, puis le paludarium et le
- * récif. Un environnement est une **donnée** : dimensions, teintes de l'eau et du sol, type
+ * Environnements (issue #87, ADR 0026) : le bac tropical, le bassin, le paludarium (issue #129,
+ * ADR 0034), puis le récif. Un environnement est une **donnée** : dimensions, teintes de l'eau et du sol, type
  * de bordure, vue par défaut, décor et population de départ. Le monde (`sim/world.ts`) en
  * tire ses bornes de nage, le rendu (`render/aquarium-scene.ts`) sa scène statique.
  *
@@ -15,7 +23,7 @@ import { DEFAULT_TANK, waterVolume, type Box3, type TankDimensions } from './tan
  */
 
 /** Identifiants des environnements, dans l'ordre du sélecteur. */
-export const ENVIRONMENT_IDS = ['tropical', 'bassin'] as const;
+export const ENVIRONMENT_IDS = ['tropical', 'bassin', 'paludarium'] as const;
 export type EnvironmentId = (typeof ENVIRONMENT_IDS)[number];
 
 /** Environnement de l'application sans choix explicite (séries de captures existantes). */
@@ -36,6 +44,16 @@ export interface Environment {
   readonly name: string;
   /** Dimensions intérieures (repère de `sim/tank.ts`). */
   readonly dimensions: TankDimensions;
+  /**
+   * Niveau de l'eau, en fraction de la hauteur (`waterVolume`) : `WATER_LEVEL_RATIO` pour le
+   * bac et le bassin, plus bas pour le paludarium, dont la berge émerge.
+   */
+  readonly waterLevel: number;
+  /**
+   * Sol à berge émergée (paludarium, `sim/terrain.ts`, ADR 0034) ; `null` : dalle plate de
+   * `SAND_THICKNESS` (bac, bassin).
+   */
+  readonly terrain: TerrainSettings | null;
   /** Teintes de l'eau en plein jour : corps du volume et surface (noms de la palette). */
   readonly water: { readonly body: string; readonly surface: string };
   /** Teintes du sol : dessus, côtés, dessous (noms de la palette). */
@@ -90,6 +108,8 @@ export const TROPICAL_TANK: Environment = {
   id: 'tropical',
   name: 'Bac tropical',
   dimensions: DEFAULT_TANK,
+  waterLevel: WATER_LEVEL_RATIO,
+  terrain: null,
   water: { body: 'eauMoyenne', surface: 'eauClaire' },
   ground: { top: 'sableClair', side: 'sable', bottom: 'sableSombre' },
   border: 'verre',
@@ -116,6 +136,8 @@ export const POND: Environment = {
   id: 'bassin',
   name: 'Bassin',
   dimensions: POND_DIMENSIONS,
+  waterLevel: WATER_LEVEL_RATIO,
+  terrain: null,
   water: { body: 'eauSombre', surface: 'eauMoyenne' },
   ground: { top: 'vegetationOmbre', side: 'rocheSombre', bottom: 'rocheSombre' },
   border: 'pierre',
@@ -141,9 +163,50 @@ export const POND: Environment = {
   population: defaultPopulation([KOI]),
 };
 
+/** Paludarium : 1 m × 50 cm, 60 cm de haut, eau à 27 cm. */
+export const PALUDARIUM_DIMENSIONS: TankDimensions = { width: 1, height: 0.6, depth: 0.5 };
+
+/**
+ * Paludarium (épopée v0.7, issue #129, ADR 0034) : bac vitré dont la moitié +X est en eau et
+ * la moitié −X une berge de terre et de roche qui émerge, en pente douce vers l'eau
+ * (`sim/terrain.ts`). Sans espèces pour l'instant (#130, #131) ni décor (#132).
+ */
+export const PALUDARIUM: Environment = {
+  id: 'paludarium',
+  name: 'Paludarium',
+  dimensions: PALUDARIUM_DIMENSIONS,
+  waterLevel: 0.45,
+  terrain: assertTerrainSettings({
+    seed: 129,
+    shoreX: -0.02,
+    shoreWave: 0.06,
+    bedHeight: SAND_THICKNESS,
+    underwaterSlope: 0.24,
+    landSlope: 0.26,
+    landRise: 0.1,
+    relief: 0.025,
+    rock: { threshold: 0.55, height: 0.04 },
+  }),
+  water: { body: 'eauMoyenne', surface: 'eauClaire' },
+  // Dessus et côtés : ceux du fond immergé ; la terre et la roche ont leurs couleurs
+  // (`render/terrain-mesh.ts`). Dessous : celui du bac tropical.
+  ground: { top: 'sable', side: 'sableSombre', bottom: 'sableSombre' },
+  border: 'verre',
+  defaultCamera: 'three-quarter',
+  bubbles: false,
+  caustics: false,
+  decor: [],
+  lilyPads: null,
+  rain: false,
+  floatingLeaves: false,
+  species: [],
+  population: [],
+};
+
 export const ENVIRONMENTS: Readonly<Record<EnvironmentId, Environment>> = {
   tropical: TROPICAL_TANK,
   bassin: POND,
+  paludarium: PALUDARIUM,
 };
 
 /** Vrai si l'espèce `species` vit dans l'environnement `id` (`Environment.species`). */
@@ -174,7 +237,8 @@ const WATER_CACHE = new Map<EnvironmentId, Box3>();
 export function environmentWater(id: EnvironmentId): Box3 {
   let water = WATER_CACHE.get(id);
   if (!water) {
-    water = waterVolume(environmentById(id).dimensions);
+    const env = environmentById(id);
+    water = waterVolume(env.dimensions, env.waterLevel);
     WATER_CACHE.set(id, water);
   }
   return water;

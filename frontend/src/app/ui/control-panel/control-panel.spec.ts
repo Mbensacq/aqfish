@@ -157,6 +157,18 @@ describe('ControlPanel', () => {
     expect(root().querySelector('section')).toBeNull();
   });
 
+  it('paludarium sans espèces (#129) : la population l’annonce, sans compteur', async () => {
+    await openPanel();
+    expect(root().querySelector('[data-population-empty]')).toBeNull();
+    fixture.componentInstance.environment.set('paludarium');
+    await fixture.whenStable();
+    const section = root().querySelector('[data-section="population"]')!;
+    expect(section.querySelectorAll('[data-species]').length).toBe(0);
+    expect(section.querySelector('[data-population-empty]')?.textContent?.trim()).toBe(
+      'Aucune espèce pour l’instant.',
+    );
+  });
+
   it('liste des environnements nommée, sélection fournie par l’hôte, choix émis (#87)', async () => {
     await openPanel();
     const select = root().querySelector<HTMLSelectElement>('select[aria-label="Environnement"]')!;
@@ -166,6 +178,7 @@ describe('ControlPanel', () => {
     expect([...select.options].map((o) => [o.value, o.textContent?.trim()])).toEqual([
       ['tropical', 'Bac tropical'],
       ['bassin', 'Bassin'],
+      ['paludarium', 'Paludarium'],
     ]);
     expect(select.value).toBe('tropical');
 

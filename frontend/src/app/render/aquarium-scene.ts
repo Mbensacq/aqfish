@@ -18,18 +18,32 @@ import {
 } from 'three';
 
 import { mix, type DayLight, type Rgb } from '../sim/daylight';
-import { TROPICAL_TANK, type Environment } from '../sim/environment';
-import { DEFAULT_TANK, SAND_THICKNESS, WATER_LEVEL_RATIO, type TankDimensions } from '../sim/tank';
+import { environmentWater, TROPICAL_TANK, type Environment } from '../sim/environment';
+import {
+  DEFAULT_TANK,
+  SAND_THICKNESS,
+  WATER_LEVEL_RATIO,
+  type Box3,
+  type TankDimensions,
+} from '../sim/tank';
 import { PALETTE, type PaletteColorName } from './palette';
 import { cutawaySides } from './pond-cutaway';
 import { createPondGround, pondGroundTop } from './pond-ground';
 import { createStoneBorder } from './stone-border';
+import { createTerrainMesh } from './terrain-mesh';
 
 // Géométrie du bac : définie dans sim/tank.ts (partagée avec les bornes de nage).
 export { DEFAULT_TANK, SAND_THICKNESS, WATER_LEVEL_RATIO };
 
 /** Épaisseur apparente du verre : le vitrage englobe légèrement l'eau et le sable. */
 const GLASS_MARGIN = 0.008;
+
+/**
+ * Retrait de l'eau d'un environnement à berge (paludarium, ADR 0034) par rapport aux vitres :
+ * les flancs du sol, collés à la vitre, passent devant les faces de l'eau au lieu de leur
+ * disputer la profondeur. Bien moins d'un pixel de scène : invisible ailleurs.
+ */
+export const TERRAIN_WATER_INSET = 0.001;
 
 /** Ordre de rendu des objets transparents (après les opaques, du plus profond au plus proche). */
 const RENDER_ORDER = { water: 1, glass: 2, edges: 3 } as const;
@@ -116,9 +130,14 @@ export function createAquariumScene(environment: Environment = TROPICAL_TANK): A
 
   const lights = createLights(dims, ground.bottom);
   scene.add(lights.group);
-  const sand = createSand(dims, ground);
-  scene.add(sand);
-  const water = createWater(dims, waterTint);
+  const waterBox = environmentWater(environment.id);
+  // Sol : dalle plate (bac, bassin) ou berge en colonnes (paludarium, #129).
+  const terrain = environment.terrain
+    ? createTerrainMesh(environment.terrain, waterBox, ground.bottom)
+    : null;
+  const sand = terrain ? null : createSand(dims, ground);
+  scene.add(terrain ? terrain.mesh : (sand as Mesh));
+  const water = createWater(terrain ? insetWater(waterBox) : waterBox, waterTint);
   scene.add(water);
   const stones = environment.border === 'pierre' ? createStoneBorder(dims) : null;
   // Bassin enterré (#105) : le sol l'entoure, seule une margelle basse dépasse.
@@ -130,7 +149,7 @@ export function createAquariumScene(environment: Environment = TROPICAL_TANK): A
   }
 
   const [body, , surface] = water.material as MeshBasicMaterial[];
-  const sandBottom = (sand.material as MeshBasicMaterial[])[3];
+  const sandBottom = terrain ? terrain.bottom : (sand?.material as MeshBasicMaterial[])[3];
   const waterColors = {
     dayBody: new Color(waterTint.body),
     nightBody: new Color(NIGHT_WATER_BODY),
@@ -222,19 +241,33 @@ function createSand(
   return mesh;
 }
 
+/** Volume d'eau rentré de `TERRAIN_WATER_INSET` sur ses côtés (pas en hauteur). */
+function insetWater(water: Box3): Box3 {
+  return {
+    ...water,
+    minX: water.minX + TERRAIN_WATER_INSET,
+    maxX: water.maxX - TERRAIN_WATER_INSET,
+    minZ: water.minZ + TERRAIN_WATER_INSET,
+    maxZ: water.maxZ - TERRAIN_WATER_INSET,
+  };
+}
+
 /** Eau : volume translucide teinté entre le sable et la surface, surface plus claire. */
 function createWater(
-  dims: TankDimensions,
+  water: Box3,
   colors: { readonly body: string; readonly surface: string },
 ): Mesh {
-  const surfaceY = dims.height * WATER_LEVEL_RATIO;
-  const waterHeight = Math.max(surfaceY - SAND_THICKNESS, 0.001);
-  const geometry = new BoxGeometry(dims.width, waterHeight, dims.depth);
+  const waterHeight = Math.max(water.maxY - water.minY, 0.001);
+  const geometry = new BoxGeometry(water.maxX - water.minX, waterHeight, water.maxZ - water.minZ);
   const body = transparentBasic(colors.body, 0.3);
   const surface = transparentBasic(colors.surface, 0.5);
   const mesh = new Mesh(geometry, [body, body, surface, body, body, body]);
   mesh.name = 'eau';
-  mesh.position.y = SAND_THICKNESS + waterHeight / 2;
+  mesh.position.set(
+    (water.minX + water.maxX) / 2,
+    water.minY + waterHeight / 2,
+    (water.minZ + water.maxZ) / 2,
+  );
   mesh.renderOrder = RENDER_ORDER.water;
   return mesh;
 }

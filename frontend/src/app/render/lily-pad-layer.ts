@@ -187,9 +187,13 @@ export class LilyPadLayer {
   private pads: PlacedPad[] = [];
   private readonly pose: LilyPadPose = { x: 0, z: 0, rotation: 0 };
 
-  constructor(dims: TankDimensions) {
+  /** `surfaceY` : hauteur de la surface de l'eau (celle de `waterVolume(dims)` par défaut). */
+  constructor(
+    dims: TankDimensions,
+    surfaceY: number = Math.max(dims.height * WATER_LEVEL_RATIO, SAND_THICKNESS),
+  ) {
     this.object.name = 'nenuphars';
-    this.surfaceY = Math.max(dims.height * WATER_LEVEL_RATIO, SAND_THICKNESS);
+    this.surfaceY = surfaceY;
   }
 
   /** Remplace les feuilles affichées (`lilyPadLayout`), posées à t = 0. */

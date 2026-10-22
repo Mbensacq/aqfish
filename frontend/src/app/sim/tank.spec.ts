@@ -12,6 +12,15 @@ describe('waterVolume', () => {
     });
   });
 
+  it('niveau d’eau réglable (paludarium, #129) : seule la surface change', () => {
+    const box = waterVolume({ width: 1, height: 0.6, depth: 0.5 }, 0.45);
+    expect(box.maxY).toBeCloseTo(0.27, 12);
+    expect(box.minY).toBe(SAND_THICKNESS);
+    expect(box.maxX).toBe(0.5);
+    // Niveau sous le sable : volume plat, jamais inversé.
+    expect(waterVolume(DEFAULT_TANK, 0).maxY).toBe(SAND_THICKNESS);
+  });
+
   it('un bac plus bas que le sable donne un volume plat, jamais inversé', () => {
     const box = waterVolume({ width: 1, height: 0.01, depth: 1 });
     expect(box.maxY).toBe(box.minY);

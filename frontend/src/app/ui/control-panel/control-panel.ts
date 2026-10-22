@@ -257,6 +257,8 @@ function toNumber(value: string | number): number {
                 +
               </button>
             </div>
+          } @empty {
+            <p class="control-panel__note" data-population-empty>Aucune espèce pour l’instant.</p>
           }
         </fieldset>
 

@@ -31,6 +31,7 @@ import { SPECIES, speciesVariants, type SpeciesId } from '../sim/species';
 import type { Fish } from '../sim/swimmer';
 import type { DayLight } from '../sim/daylight';
 import { environmentWater, type Environment } from '../sim/environment';
+import { terrainAt } from '../sim/terrain';
 import { flowerOpenness, lilyPadLayout } from '../sim/lily-pads';
 import type { DecorItem } from '../sim/decor';
 import type { FoodPellet } from '../sim/food';
@@ -214,8 +215,13 @@ export class AquariumView {
     // Bulles et diffuseur : seulement dans un environnement qui en a (bac tropical). Masquées,
     // elles ne sont pas posées (`updateVisibleEffects`).
     this.bubbleLayer.object.visible = this.world.environment.bubbles;
-    this.waterLight = new WaterLightLayer(this.world.dimensions, this.world.environment.caustics);
-    this.lilyPadLayer = new LilyPadLayer(this.world.dimensions);
+    const surfaceY = environmentWater(this.world.environment.id).maxY;
+    this.waterLight = new WaterLightLayer(
+      this.world.dimensions,
+      this.world.environment.caustics,
+      surfaceY,
+    );
+    this.lilyPadLayer = new LilyPadLayer(this.world.dimensions, surfaceY);
     this.rainLayer = new RainLayer(environmentWater(this.world.environment.id));
     this.floatingLeafLayer = new FloatingLeafLayer(environmentWater(this.world.environment.id));
     this.floatingLeafLayer.object.visible = this.world.environment.floatingLeaves;
@@ -422,7 +428,7 @@ export class AquariumView {
   /**
    * Point de la surface de l'eau sous le point de l'écran (`clientX`, `clientY`, pixels CSS),
    * en (x, z) dans le repère du bac, par lancer de rayon depuis la caméra ; `null` hors du
-   * canvas ou hors du bac.
+   * canvas, hors du bac ou sur la terre émergée du paludarium (#129).
    */
   pickWaterSurface(clientX: number, clientY: number): { x: number; z: number } | null {
     if (this.disposed) {
@@ -434,11 +440,18 @@ export class AquariumView {
     }
     const origin = this.camera.position;
     const direction = new Vector3(ndc.x, ndc.y, 0.5).unproject(this.camera).sub(origin);
-    return waterSurfacePoint(
+    const env = this.world.environment;
+    const water = environmentWater(env.id);
+    const point = waterSurfacePoint(
       [origin.x, origin.y, origin.z],
       [direction.x, direction.y, direction.z],
       this.world.dimensions,
+      water,
     );
+    if (point && env.terrain && !terrainAt(point.x, point.z, env.terrain, water).submerged) {
+      return null;
+    }
+    return point;
   }
 
   /**
