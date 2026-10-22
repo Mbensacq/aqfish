@@ -73,6 +73,15 @@ export function speciesPlural(species: SpeciesId): string {
   return `${SPECIES[species].name.toLowerCase()}s`;
 }
 
+/**
+ * Nom accessible du champ d'effectif : « Nombre de néons », « Nombre d’axolotls » (élision
+ * devant une voyelle, #130).
+ */
+export function speciesCountLabel(species: SpeciesId): string {
+  const plural = speciesPlural(species);
+  return /^[aeiouyàâéèêëîïôûù]/.test(plural) ? `Nombre d’${plural}` : `Nombre de ${plural}`;
+}
+
 /** Texte de l'état de la sauvegarde automatique (#70). */
 export function saveStatusText(status: SaveStatus | null): string {
   switch (status) {
@@ -242,7 +251,7 @@ function toNumber(value: string | number): number {
                 min="0"
                 step="1"
                 [id]="'panneau-population-' + id"
-                [attr.aria-label]="'Nombre de ' + plural(id)"
+                [attr.aria-label]="countLabel(id)"
                 [attr.max]="populationMax()[id]"
                 [value]="population()[id]"
                 (change)="onCount(id, $event)"
@@ -437,8 +446,8 @@ export class ControlPanel {
     return SPECIES[id].name;
   }
 
-  protected plural(id: SpeciesId): string {
-    return speciesPlural(id);
+  protected countLabel(id: SpeciesId): string {
+    return speciesCountLabel(id);
   }
 
   /** Bouton « − » ou « + » : sans effet à la borne. */

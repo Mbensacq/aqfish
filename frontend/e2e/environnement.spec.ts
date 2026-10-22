@@ -92,7 +92,7 @@ test.describe('Environnement', () => {
     expect(errors).toEqual([]);
   });
 
-  test('paludarium (#129) : choisi au panneau, sans espèces, nourri sur l’eau seulement, gardé au rechargement', async ({
+  test('paludarium (#129) : choisi au panneau, deux axolotls (#130), nourri sur l’eau seulement, gardé au rechargement', async ({
     page,
   }) => {
     // Sans `seed=` : la sauvegarde automatique restaure le monde au rechargement.
@@ -100,8 +100,9 @@ test.describe('Environnement', () => {
     await toggle(page).click();
     await selector(page).selectOption('paludarium');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'paludarium');
-    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', '');
-    await expect(page.locator('[data-population-empty]')).toBeVisible();
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', 'axolotl:2');
+    await expect(page.getByRole('spinbutton', { name: 'Nombre d’axolotls' })).toHaveValue('2');
+    await expect(page.locator('[data-population-empty]')).toHaveCount(0);
     await toggle(page).click();
 
     // Vue de dessus : la berge à gauche (−X), l'eau à droite (+X).

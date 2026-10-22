@@ -1,7 +1,7 @@
 import type { CameraPreset } from '../core/capture/capture-params';
 import { DEFAULT_DECOR, parseDecor, type DecorItem } from './decor';
 import { assertLilyPadSettings, type LilyPadSettings } from './lily-pads';
-import { CORYDORA, GUPPY, KOI, NEON, type SpeciesId } from './species';
+import { AXOLOTL, CORYDORA, GUPPY, KOI, NEON, type SpeciesId } from './species';
 import { assertTerrainSettings, type TerrainSettings } from './terrain';
 import {
   DEFAULT_TANK,
@@ -169,7 +169,8 @@ export const PALUDARIUM_DIMENSIONS: TankDimensions = { width: 1, height: 0.6, de
 /**
  * Paludarium (épopée v0.7, issue #129, ADR 0034) : bac vitré dont la moitié +X est en eau et
  * la moitié −X une berge de terre et de roche qui émerge, en pente douce vers l'eau
- * (`sim/terrain.ts`). Sans espèces pour l'instant (#130, #131) ni décor (#132).
+ * (`sim/terrain.ts`). Axolotls dans l'eau (issue #130) ; grenouilles et tritons (#131) et
+ * décor (#132) à venir.
  */
 export const PALUDARIUM: Environment = {
   id: 'paludarium',
@@ -199,8 +200,8 @@ export const PALUDARIUM: Environment = {
   lilyPads: null,
   rain: false,
   floatingLeaves: false,
-  species: [],
-  population: [],
+  species: [AXOLOTL.id],
+  population: defaultPopulation([AXOLOTL]),
 };
 
 export const ENVIRONMENTS: Readonly<Record<EnvironmentId, Environment>> = {

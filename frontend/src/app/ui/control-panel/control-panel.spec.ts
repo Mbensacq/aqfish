@@ -14,6 +14,7 @@ import {
   type PopulationRequest,
   saveStatusText,
   sliderHour,
+  speciesCountLabel,
   speciesPlural,
   speedAt,
   speedIndex,
@@ -75,6 +76,13 @@ describe('fonctions du panneau de contrôle', () => {
     expect(speciesPlural('neon')).toBe('néons');
     expect(speciesPlural('guppy')).toBe('guppys');
     expect(speciesPlural('corydora')).toBe('corydoras');
+    expect(speciesPlural('axolotl')).toBe('axolotls');
+  });
+
+  it('speciesCountLabel : élision devant une voyelle (#130)', () => {
+    expect(speciesCountLabel('neon')).toBe('Nombre de néons');
+    expect(speciesCountLabel('koi')).toBe('Nombre de koïs');
+    expect(speciesCountLabel('axolotl')).toBe('Nombre d’axolotls');
   });
 });
 
@@ -117,8 +125,20 @@ class TestHost {
   readonly rain = signal(false);
   readonly foodStyle = signal<FoodStyle>('points');
   foodToggles = 0;
-  readonly population = signal<PopulationCounts>({ neon: 12, guppy: 6, corydora: 0, koi: 0 });
-  readonly populationMax = signal<PopulationCounts>({ neon: 40, guppy: 6, corydora: 16, koi: 14 });
+  readonly population = signal<PopulationCounts>({
+    neon: 12,
+    guppy: 6,
+    corydora: 0,
+    koi: 0,
+    axolotl: 0,
+  });
+  readonly populationMax = signal<PopulationCounts>({
+    neon: 40,
+    guppy: 6,
+    corydora: 16,
+    koi: 14,
+    axolotl: 4,
+  });
   readonly events: [string, number | boolean][] = [];
   readonly requests: PopulationRequest[] = [];
   readonly saveStatus = signal<SaveStatus | null>('active');
@@ -157,16 +177,15 @@ describe('ControlPanel', () => {
     expect(root().querySelector('section')).toBeNull();
   });
 
-  it('paludarium sans espèces (#129) : la population l’annonce, sans compteur', async () => {
+  it('paludarium (#130) : un seul compteur, celui des axolotls', async () => {
     await openPanel();
-    expect(root().querySelector('[data-population-empty]')).toBeNull();
     fixture.componentInstance.environment.set('paludarium');
     await fixture.whenStable();
     const section = root().querySelector('[data-section="population"]')!;
-    expect(section.querySelectorAll('[data-species]').length).toBe(0);
-    expect(section.querySelector('[data-population-empty]')?.textContent?.trim()).toBe(
-      'Aucune espèce pour l’instant.',
-    );
+    const rows = [...section.querySelectorAll('[data-species]')];
+    expect(rows.map((row) => row.getAttribute('data-species'))).toEqual(['axolotl']);
+    expect(section.querySelector('[data-population-empty]')).toBeNull();
+    expect(byLabel('Nombre d’axolotls')?.value).toBe('0');
   });
 
   it('liste des environnements nommée, sélection fournie par l’hôte, choix émis (#87)', async () => {
@@ -366,7 +385,13 @@ describe('ControlPanel', () => {
       expect(rows[0].querySelector('label')?.getAttribute('for')).toBe(neons.id);
       expect(field('guppys').value).toBe('6');
       expect(field('corydoras').value).toBe('0');
-      fixture.componentInstance.population.set({ neon: 20, guppy: 6, corydora: 0, koi: 0 });
+      fixture.componentInstance.population.set({
+        neon: 20,
+        guppy: 6,
+        corydora: 0,
+        koi: 0,
+        axolotl: 0,
+      });
       await fixture.whenStable();
       expect(neons.value).toBe('20');
     });

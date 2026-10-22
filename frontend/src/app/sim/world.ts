@@ -1,4 +1,5 @@
 import { assertSeed } from '../core/random/prng';
+import { createWalker, stepWalker, type WalkerGround } from './axolotl';
 import { fillBubbles, type BubbleBuffer } from './bubbles';
 import { SIM_DT } from './constants';
 import { decorObstacles, parseDecorItems, type DecorItem } from './decor';
@@ -117,15 +118,7 @@ export function createWorld(
       throw new RangeError(`espèce inconnue : ${String(species)}`);
     }
     for (let i = 0; i < count; i++) {
-      entities.push(
-        createFish(
-          seed,
-          entities.length,
-          species,
-          boundsFor(species, environment),
-          sortedObstacles,
-        ),
-      );
+      entities.push(spawnEntity(seed, entities.length, species, environment, sortedObstacles));
     }
   }
   return {
@@ -140,6 +133,39 @@ export function createWorld(
     nextFoodId: 0,
     nextFishId: entities.length,
   };
+}
+
+/**
+ * Crée l'entité `id` d'une espèce dans un environnement : un poisson (`createFish`), ou, pour
+ * une espèce qui marche sur le fond, un individu posé sur le fond (`createWalker`,
+ * `sim/axolotl.ts`). Partagé par la création du monde et la population réglable.
+ */
+export function spawnEntity(
+  seed: number,
+  id: number,
+  species: SpeciesId,
+  environment: EnvironmentId,
+  obstacles: readonly Obstacle[],
+): Entity {
+  const bounds = boundsFor(species, environment);
+  return SPECIES[species].walker === undefined
+    ? createFish(seed, id, species, bounds, obstacles)
+    : createWalker(seed, id, species, bounds, groundFor(environment), obstacles);
+}
+
+/** Sol et eau de chaque environnement, pour les espèces qui marchent sur le fond. */
+const GROUND_CACHE = new Map<EnvironmentId, WalkerGround>();
+
+function groundFor(environment: EnvironmentId): WalkerGround {
+  let ground = GROUND_CACHE.get(environment);
+  if (!ground) {
+    ground = {
+      water: environmentWater(environment),
+      terrain: environmentById(environment).terrain,
+    };
+    GROUND_CACHE.set(environment, ground);
+  }
+  return ground;
 }
 
 function copyObstacles(obstacles: readonly Obstacle[]): Obstacle[] {
@@ -317,6 +343,12 @@ function stepInPlace(world: MutableWorld, dt: number): void {
   for (let i = 0; i < fishes.length; i++) {
     const fish = fishes[i];
     const bounds = boundsFor(fish.species, environment);
+    if (SPECIES[fish.species].walker !== undefined) {
+      // Espèce qui marche sur le fond (axolotl) : sa propre machine à états, sans banc ni
+      // recherche de nourriture (`sim/axolotl.ts`).
+      stepWalker(fish, dt, world.seed, world.time, bounds, groundFor(environment));
+      continue;
+    }
     const target =
       food.length === 0
         ? null

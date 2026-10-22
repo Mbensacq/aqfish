@@ -71,6 +71,11 @@ clair, haute dorsale sable sombre), flanc gris roche « poivré » de taches noi
 sombre. Un flanc sable se confondait avec le substrat sur les captures : les poissons de fond
 évitent les tons du sable sur leurs flancs.
 
+L'**axolotl** du paludarium (#130, ADR 0035) : corps rose axolotl, ventre blanc cassé,
+crête dorsale, pattes et nageoire de la queue rose poisson, trois branchies de chaque côté de
+la tête en rose nénuphar (plus soutenu que le corps, pour qu'elles se lisent de profil comme
+de dessus, où elles dépassent des flancs). Il reste rose sur le sable clair du fond.
+
 Les **feuilles mortes** du bassin (#107, ADR 0033) : petites feuilles de 9 à 13 cm au bord
 irrégulier, brunes (`sableSombre`, `sableOmbre`) ou ocre (`tritonOrange`, `sableSombre`), en
 deux tons de part et d'autre de la nervure, contour `koiNoir`. Elles se posent par vagues

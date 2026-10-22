@@ -162,6 +162,9 @@ const SPAWN_MARGINS = [0.05, 0.08] as const;
 
 /** Bornes de nage d'une espèce dans un volume d'eau donné. */
 export function swimBounds(def: SpeciesDefinition, water: Box3): SwimBounds {
+  if (def.walker !== undefined) {
+    return walkerBounds(def, water);
+  }
   const hard = shrinkBox(water, def.wallMargin);
   const soft = shrinkBox(hard, AVOID_ZONE);
   const legacy = shrinkBox(shrinkBox(water, SPAWN_MARGINS[0]), SPAWN_MARGINS[1]);
@@ -181,6 +184,26 @@ export function swimBounds(def: SpeciesDefinition, water: Box3): SwimBounds {
     avoid: { ...hard, minY: hard.minY - (AVOID_ZONE - Math.min(depth.floorZone, AVOID_ZONE)) },
     preferredMaxY,
   };
+}
+
+/**
+ * Bornes d'une espèce qui marche sur le fond (`sim/axolotl.ts`) : `wallMargin` des vitres
+ * seulement ; en hauteur, du fond plus `clearance` (pattes posées) à la surface moins
+ * `surfaceMargin`. Le sol réel (`sim/terrain.ts`) resserre encore le bas, point par point.
+ */
+function walkerBounds(def: SpeciesDefinition, water: Box3): SwimBounds {
+  const walker = def.walker!;
+  const walls = shrinkBox(water, def.wallMargin);
+  const minY = water.minY + walker.clearance;
+  const hard: Box3 = {
+    minX: walls.minX,
+    maxX: walls.maxX,
+    minY,
+    maxY: Math.max(minY, water.maxY - walker.surfaceMargin),
+    minZ: walls.minZ,
+    maxZ: walls.maxZ,
+  };
+  return { hard, soft: hard, spawn: hard, avoid: hard, preferredMaxY: Number.POSITIVE_INFINITY };
 }
 
 /** Nombre maximal de tirages de la position de naissance hors des obstacles. */
@@ -512,7 +535,8 @@ export function wrapAngle(angle: number): number {
   return a;
 }
 
-function savePrevious(fish: Mutable<Fish>): void {
+/** Garde l'état du pas précédent (interpolation du rendu). */
+export function savePrevious(fish: Mutable<Fish>): void {
   fish.px = fish.x;
   fish.py = fish.y;
   fish.pz = fish.z;
@@ -522,7 +546,7 @@ function savePrevious(fish: Mutable<Fish>): void {
 }
 
 /** Prochain réel uniforme dans [0, 1) du sous-générateur du poisson. */
-function random(fish: Mutable<Fish>): number {
+export function random(fish: Mutable<Fish>): number {
   fish.rng = prngNextState(fish.rng);
   return prngOutput(fish.rng) / UINT32_RANGE;
 }

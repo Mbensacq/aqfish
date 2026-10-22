@@ -78,7 +78,7 @@ describe('serializeWorld / parseWorld : aller-retour', () => {
     ],
     ['monde vide', () => createWorld(0)],
     ['bassin à koïs', () => advance(createDefaultWorld(42, 'bassin'), 1800)],
-    ['paludarium (sans espèces, #129)', () => advance(createDefaultWorld(42, 'paludarium'), 600)],
+    ['paludarium (axolotls, #129, #130)', () => advance(createDefaultWorld(42, 'paludarium'), 600)],
     [
       'population réglée (identifiants non consécutifs)',
       () => setPopulation(setPopulation(createDefaultWorld(9), 'neon', 3), 'guppy', 9),

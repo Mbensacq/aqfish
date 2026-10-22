@@ -11,7 +11,7 @@ import {
   setPopulationInPlace,
   SPECIES_IDS,
 } from './population';
-import { CORYDORA, GUPPY, KOI, NEON, SPECIES, type SpeciesId } from './species';
+import { AXOLOTL, CORYDORA, GUPPY, KOI, NEON, SPECIES, type SpeciesId } from './species';
 import { waterVolume } from './tank';
 import {
   advance,
@@ -39,7 +39,7 @@ describe('bornes de population', () => {
   });
 
   it('SPECIES_IDS suit l’ordre de SPECIES', () => {
-    expect(SPECIES_IDS).toEqual(['neon', 'guppy', 'corydora', 'koi']);
+    expect(SPECIES_IDS).toEqual(['neon', 'guppy', 'corydora', 'koi', 'axolotl']);
   });
 
   it.each(['neon', 'guppy', 'corydora'])('isSpeciesId accepte %s', (id) => {
@@ -59,8 +59,15 @@ describe('bornes de population', () => {
       guppy: GUPPY.defaultPopulation,
       corydora: CORYDORA.defaultPopulation,
       koi: 0,
+      axolotl: 0,
     });
-    expect(populationCounts(createWorld(42))).toEqual({ neon: 0, guppy: 0, corydora: 0, koi: 0 });
+    expect(populationCounts(createWorld(42))).toEqual({
+      neon: 0,
+      guppy: 0,
+      corydora: 0,
+      koi: 0,
+      axolotl: 0,
+    });
     expect(populationCounts(createWorld(42))).toEqual(NO_FISH);
   });
 
@@ -70,6 +77,7 @@ describe('bornes de population', () => {
       guppy: GUPPY.maxPopulation,
       corydora: CORYDORA.maxPopulation,
       koi: KOI.maxPopulation,
+      axolotl: AXOLOTL.maxPopulation,
     });
   });
 
@@ -141,7 +149,13 @@ describe('setPopulation', () => {
     }
     expect(world.entities).toEqual([]);
     world = setPopulation(world, 'guppy', 3);
-    expect(populationCounts(world)).toEqual({ neon: 0, guppy: 3, corydora: 0, koi: 0 });
+    expect(populationCounts(world)).toEqual({
+      neon: 0,
+      guppy: 3,
+      corydora: 0,
+      koi: 0,
+      axolotl: 0,
+    });
   });
 
   it('même effectif : monde inchangé', () => {
@@ -167,6 +181,7 @@ describe('setPopulation', () => {
       guppy: MAX_TOTAL_FISH - NEON.maxPopulation - CORYDORA.defaultPopulation,
       corydora: CORYDORA.defaultPopulation,
       koi: 0,
+      axolotl: 0,
     });
     // Bac plein : plus aucun ajout possible, quelle que soit l'espèce.
     for (const id of SPECIES_IDS) {

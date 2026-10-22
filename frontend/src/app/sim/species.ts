@@ -8,13 +8,20 @@
  */
 
 /** Identifiant d'espèce, stable (sérialisé dans l'état du monde). */
-export type SpeciesId = 'neon' | 'guppy' | 'corydora' | 'koi';
+export type SpeciesId = 'neon' | 'guppy' | 'corydora' | 'koi' | 'axolotl';
 
 /**
  * Silhouette voxel d'une apparence : le rendu associe à chaque identifiant un gabarit de
  * profil (`render/fish-model.ts`, `SILHOUETTES`).
  */
-export const SILHOUETTE_IDS = ['fuseau', 'guppy-male', 'guppy-femelle', 'corydora', 'koi'] as const;
+export const SILHOUETTE_IDS = [
+  'fuseau',
+  'guppy-male',
+  'guppy-femelle',
+  'corydora',
+  'koi',
+  'axolotl',
+] as const;
 export type SilhouetteId = (typeof SILHOUETTE_IDS)[number];
 
 const SILHOUETTE_SET: ReadonlySet<string> = new Set(SILHOUETTE_IDS);
@@ -123,6 +130,33 @@ export interface SpeciesVariant {
   readonly colors: SpeciesColors;
 }
 
+/**
+ * Déplacement d'une espèce qui vit sur le fond et ne nage que par moments (axolotl, issue
+ * #130, `sim/axolotl.ts`) : à la place de la nage des poissons (`stepFish`), une machine à
+ * trois états (marche sur le fond, nage, remontée à la surface) fonction du temps et de la
+ * graine, bornée par le sol (`sim/terrain.ts`) et la surface.
+ */
+export interface BottomWalkerParams {
+  /** Hauteur du centre au-dessus du sol en marche (pattes posées), en mètres (> 0). */
+  readonly clearance: number;
+  /** Distance minimale du centre sous la surface (branchies dans l'eau), en mètres (> 0). */
+  readonly surfaceMargin: number;
+  /** Vitesse de marche, en m/s, dans [minSpeed, maxSpeed]. */
+  readonly walkSpeed: number;
+  /** Durée d'un créneau de comportement, en secondes (> 0). */
+  readonly slotDuration: number;
+  /** Poids relatifs des trois états, positifs ou nuls, de somme strictement positive. */
+  readonly weights: {
+    readonly marche: number;
+    readonly nage: number;
+    readonly remontee: number;
+  };
+  /** Période des à-coups de la nage, en secondes (> 0). */
+  readonly burstPeriod: number;
+  /** Vitesse verticale maximale de la remontée, en m/s (> 0). */
+  readonly climbSpeed: number;
+}
+
 /** Mode de répartition des individus entre les apparences (`speciesVariantIndex`). */
 export type VariantDraw = 'alternance' | 'graine';
 
@@ -179,6 +213,11 @@ export interface SpeciesDefinition {
   readonly depth?: DepthPreference;
   /** Faim et alimentation (`sim/feeding.ts`). */
   readonly feeding: FeedingParams;
+  /**
+   * Espèce qui marche sur le fond (`sim/axolotl.ts`), ou absent pour une espèce qui nage
+   * (`sim/swimmer.ts`).
+   */
+  readonly walker?: BottomWalkerParams;
 }
 
 /**
@@ -488,12 +527,72 @@ export const KOI: SpeciesDefinition = {
   },
 };
 
+/**
+ * Axolotl (Ambystoma mexicanum), paludarium (docs/DA.md, issue #130) : amphibien qui garde
+ * toute sa vie ses branchies externes (trois de chaque côté de la tête) et vit dans l'eau.
+ *
+ * - Couleurs : rose `#f7b2bd` de la palette « Amphibiens » de docs/DA.md (corps), branchies
+ *   en rose nénuphar `#f06a9b` (plus soutenu, pour se détacher du corps), crête et pattes
+ *   en rose `#f4978e`, ventre `#f2ead8`, œil `#1c1c22` : couleurs existantes de la palette.
+ * - Marche lentement sur le fond, nage par à-coups en ondulant la queue et remonte parfois
+ *   vers la surface (comportement décrit par l'issue #130, qualitativement) : durées,
+ *   poids des états, vitesses : **approximations de jeu**.
+ * - `bodyLength` (9 cm sans la queue, 13 cm en tout) : **approximation de jeu**, plus petit
+ *   qu'un axolotl adulte réel (référence à consulter : AmphibiaWeb, Ambystoma mexicanum ;
+ *   non vérifiée ici), pour tenir dans les 21 cm d'eau du paludarium.
+ * - Solitaire (pas de banc). Alimentation générique (hors périmètre de #130) : mange un
+ *   granulé qui passe à sa portée près du fond, sans le chercher.
+ */
+export const AXOLOTL: SpeciesDefinition = {
+  id: 'axolotl',
+  name: 'Axolotl',
+  scientificName: 'Ambystoma mexicanum',
+  bodyLength: 0.09,
+  cruiseSpeed: 0.03,
+  minSpeed: 0.008,
+  maxSpeed: 0.09,
+  wanderTurnRate: 0.6,
+  avoidTurnRate: 2,
+  maxPitch: 1.1,
+  wallMargin: 0.07,
+  tailBeatFrequency: 1.2,
+  defaultPopulation: 2,
+  maxPopulation: 4,
+  schooling: null,
+  silhouette: 'axolotl',
+  colors: {
+    stripe: '#f7b2bd',
+    accent: '#f06a9b',
+    back: '#f7b2bd',
+    belly: '#f2ead8',
+    fin: '#f4978e',
+    eye: '#1c1c22',
+  },
+  feeding: {
+    hungerRate: 1 / 300,
+    perceptionRadius: 0.2,
+    turnRate: 1,
+    minHeightRatio: 0,
+    maxHeightRatio: 0.3,
+  },
+  walker: {
+    clearance: 0.016,
+    surfaceMargin: 0.016,
+    walkSpeed: 0.012,
+    slotDuration: 12,
+    weights: { marche: 0.5, nage: 0.35, remontee: 0.15 },
+    burstPeriod: 2.4,
+    climbSpeed: 0.06,
+  },
+};
+
 /** Toutes les espèces connues, par identifiant (ordre de déclaration = ordre de peuplement). */
 export const SPECIES: Readonly<Record<SpeciesId, SpeciesDefinition>> = {
   neon: NEON,
   guppy: GUPPY,
   corydora: CORYDORA,
   koi: KOI,
+  axolotl: AXOLOTL,
 };
 
 /** Apparences d'une espèce : ses `variants`, ou son apparence par défaut seule. */
@@ -623,6 +722,9 @@ export function validateSpecies(def: SpeciesDefinition): string[] {
     problems.push(...validateDepth(def.depth));
   }
   problems.push(...validateFeeding(def.feeding));
+  if (def.walker !== undefined) {
+    problems.push(...validateWalker(def.walker, def));
+  }
   if (def.name.trim() === '' || def.scientificName.trim() === '') {
     problems.push('nom et nom scientifique obligatoires');
   }
@@ -678,6 +780,39 @@ function validateFeeding(feeding: FeedingParams): string[] {
     problems.push(
       `feeding : il faut 0 ≤ minHeightRatio < maxHeightRatio ≤ 1 (reçu : ${lo}, ${hi})`,
     );
+  }
+  return problems;
+}
+
+function validateWalker(walker: BottomWalkerParams, def: SpeciesDefinition): string[] {
+  const problems: string[] = [];
+  for (const key of [
+    'clearance',
+    'surfaceMargin',
+    'walkSpeed',
+    'slotDuration',
+    'burstPeriod',
+    'climbSpeed',
+  ] as const) {
+    const value = walker[key];
+    if (!(value > 0) || !Number.isFinite(value)) {
+      problems.push(`walker.${key} doit être un réel strictement positif (reçu : ${value})`);
+    }
+  }
+  if (!(walker.walkSpeed >= def.minSpeed && walker.walkSpeed <= def.maxSpeed)) {
+    problems.push('walker.walkSpeed doit être dans [minSpeed, maxSpeed]');
+  }
+  const weights = Object.values(walker.weights);
+  if (weights.some((w) => !(w >= 0) || !Number.isFinite(w))) {
+    problems.push('walker.weights : poids positifs ou nuls attendus');
+  } else if (!(weights.reduce((a, b) => a + b, 0) > 0)) {
+    problems.push('walker.weights : la somme des poids doit être strictement positive');
+  }
+  if (def.schooling !== null) {
+    problems.push('une espèce qui marche sur le fond est solitaire (schooling: null)');
+  }
+  if (def.depth !== undefined) {
+    problems.push('walker et depth sont exclusifs');
   }
   return problems;
 }

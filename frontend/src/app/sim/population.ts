@@ -1,6 +1,5 @@
 import { SPECIES, type SpeciesId } from './species';
-import { createFish } from './swimmer';
-import { boundsFor, cloneWorld, type Entity, type MutableWorld, type World } from './world';
+import { cloneWorld, spawnEntity, type Entity, type MutableWorld, type World } from './world';
 
 /**
  * Population réglable par espèce (issue #69, ADR 0025).
@@ -10,7 +9,7 @@ import { boundsFor, cloneWorld, type Entity, type MutableWorld, type World } fro
  *   bac). Une demande au-delà est ramenée à la borne ; une demande invalide est refusée.
  * - Ajout : chaque nouveau poisson reçoit l'identifiant `world.nextFishId` (compteur jamais
  *   réutilisé), donc son propre sous-générateur (`deriveSeed(seed, id)`), et naît comme à la
- *   création du monde (`createFish` : zone de naissance de l'espèce, à sa profondeur
+ *   création du monde (`spawnEntity` : zone de naissance de l'espèce, à sa profondeur
  *   préférée, hors des obstacles). Il est ajouté en fin de tableau : l'ordre des entités
  *   reste celui des identifiants.
  * - Retrait : le poisson de l'espèce le plus récent (identifiant le plus grand) disparaît ;
@@ -108,9 +107,10 @@ export function setPopulationInPlace(
       current -= 1;
     }
   }
-  const bounds = boundsFor(species, world.environment);
   while (current < target) {
-    entities.push(createFish(world.seed, world.nextFishId, species, bounds, world.obstacles));
+    entities.push(
+      spawnEntity(world.seed, world.nextFishId, species, world.environment, world.obstacles),
+    );
     world.nextFishId += 1;
     current += 1;
   }

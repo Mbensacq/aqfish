@@ -153,6 +153,10 @@ export function shoreLineX(z: number, settings: TerrainSettings): number {
   return settings.shoreX + settings.shoreWave * wave;
 }
 
+/** Nature du dernier point calculé par `terrainHeightAt` (lue par `terrainAt`). */
+let lastSubmerged = false;
+let lastRock = 0;
+
 /**
  * Sol au point (x, z), ramené dans le bac (bornes x et z de `water`) ; la surface de l'eau
  * est `water.maxY`, le fond ne descend jamais sous `water.minY`.
@@ -164,6 +168,28 @@ export function terrainAt(
   settings: TerrainSettings,
   water: Box3,
 ): TerrainSample {
+  const height = terrainHeightAt(x, z, settings, water);
+  if (lastSubmerged) {
+    return { height, kind: 'fond', submerged: true };
+  }
+  return {
+    // Au rivage même (d = 0), le sol est au niveau de l'eau, émergé.
+    height,
+    kind: lastRock >= ROCK_MIN_HEIGHT ? 'roche' : 'terre',
+    submerged: false,
+  };
+}
+
+/**
+ * Hauteur du sol au point (x, z), comme `terrainAt(x, z, …).height`, sans allocation :
+ * appelée à chaque pas par les espèces qui suivent le fond (`sim/axolotl.ts`).
+ */
+export function terrainHeightAt(
+  x: number,
+  z: number,
+  settings: TerrainSettings,
+  water: Box3,
+): number {
   const cx = clamp(x, water.minX, water.maxX);
   const cz = clamp(z, water.minZ, water.maxZ);
   const level = water.maxY;
@@ -173,8 +199,10 @@ export function terrainAt(
     // Côté eau : du rivage (niveau) au fond plat, pente nulle au fond.
     const u = Math.min(-d / settings.underwaterSlope, 1);
     const height = bed + (level - bed) * (1 - u) * (1 - u);
+    lastSubmerged = true;
+    lastRock = 0;
     // Au rivage même (u infime), `height` peut arrondir au niveau : rester dessous.
-    return { height: Math.min(height, nextDown(level)), kind: 'fond', submerged: true };
+    return Math.min(height, nextDown(level));
   }
   // Côté terre : la berge monte, raide au bord de l'eau, puis s'adoucit.
   const v = Math.min(d / settings.landSlope, 1);
@@ -191,13 +219,9 @@ export function terrainAt(
   const threshold = settings.rock.threshold;
   const rock =
     pattern > threshold ? (settings.rock.height * v * (pattern - threshold)) / (1 - threshold) : 0;
-  const height = level + rise + relief + rock;
-  return {
-    // Au rivage même (d = 0), le sol est au niveau de l'eau, émergé.
-    height,
-    kind: rock >= ROCK_MIN_HEIGHT ? 'roche' : 'terre',
-    submerged: false,
-  };
+  lastSubmerged = false;
+  lastRock = rock;
+  return level + rise + relief + rock;
 }
 
 function clamp(value: number, min: number, max: number): number {

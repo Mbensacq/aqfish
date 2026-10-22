@@ -210,6 +210,15 @@ haut de sa section.
 
 ## Simulation
 
+- **Espèce « inconnue » des tests qui devient réelle** (cycle 44, #130) : plusieurs tests
+  utilisaient `'axolotl'` comme exemple d'espèce inconnue (`population.spec.ts`,
+  `aquarium-host.spec.ts`) ; l'ajouter à `SPECIES` les faisait échouer. Prendre un nom qui
+  ne sera jamais une espèce du projet (`'requin'`). Ajouter une espèce change aussi tous les
+  objets d'effectifs (`populationCounts`, `NO_FISH` : une clé de plus) et la liste des
+  couches de `AquariumView`. (2026-10-22)
+- **Graine invalide masquée par un sel** (cycle 44) : `(seed ^ SEL) >>> 0` rend valide une
+  graine négative ; valider la graine (`assertSeed`) **avant** de la mélanger. (2026-10-22)
+
 - **Mesurer le coût d'un pas hors CI** (cycle 26, #85) : pas d'horloge murale dans les specs ;
   écrire un script hors du dépôt qui importe `sim/world.ts` (`createDefaultWorld`,
   `advanceInPlace`, `feedInPlace`), le regrouper avec l'esbuild déjà installé
