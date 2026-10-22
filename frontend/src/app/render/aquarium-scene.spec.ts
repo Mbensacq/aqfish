@@ -222,6 +222,7 @@ describe('createAquariumScene : environnements (#87)', () => {
     expect(environment).toBe(TROPICAL_TANK);
     expect(scene.getObjectByName('verre')).toBeDefined();
     expect(scene.getObjectByName('margelle')).toBeUndefined();
+    expect(scene.getObjectByName('berge')).toBeUndefined();
     const sand = scene.getObjectByName('sable') as Mesh;
     expect(materials(sand).map(hex)).toEqual([
       PALETTE.sable,
@@ -241,6 +242,7 @@ describe('createAquariumScene : environnements (#87)', () => {
     expect(dimensions).toBe(POND.dimensions);
     expect(scene.getObjectByName('verre')).toBeUndefined();
     expect(scene.getObjectByName('aretes')).toBeUndefined();
+    expect(scene.getObjectByName('berge')).toBeUndefined();
     const border = scene.getObjectByName('margelle');
     expect(border?.children.length).toBeGreaterThan(8);
     const water = scene.getObjectByName('eau') as Mesh;
@@ -262,6 +264,9 @@ describe('createAquariumScene : environnements (#87)', () => {
     expect(scene.getObjectByName('sable')).toBeUndefined();
     const ground = scene.getObjectByName('sol-paludarium') as Mesh;
     expect(ground).toBeInstanceOf(Mesh);
+    // Mousses et racines de la berge (#132).
+    expect(scene.getObjectByName('mousses')).toBeInstanceOf(Mesh);
+    expect(scene.getObjectByName('racines')).toBeInstanceOf(Mesh);
     const water = scene.getObjectByName('eau') as Mesh;
     const box = new Box3().setFromObject(water);
     const expected = environmentWater('paludarium');

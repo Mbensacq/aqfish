@@ -160,7 +160,8 @@ test.describe('Captures', () => {
   }
 
   // Paludarium (#129) : berge émergée et eau, vue trois-quarts par défaut (sans `camera=`),
-  // coupe de côté et de face, dessus, dessous et minuit. Bac et bassin ci-dessus inchangés.
+  // coupe de côté et de face, dessus, dessous, minuit et sans filtre. Bac et bassin ci-dessus
+  // inchangés.
   const PALUDARIUM_CAPTURES = [
     { name: 'paludarium-three-quarter', query: 'environnement=paludarium' },
     { name: 'paludarium-side', query: 'environnement=paludarium&camera=side' },
@@ -168,6 +169,11 @@ test.describe('Captures', () => {
     { name: 'paludarium-top', query: 'environnement=paludarium&camera=top' },
     { name: 'paludarium-bottom', query: 'environnement=paludarium&camera=bottom' },
     { name: 'paludarium-three-quarter-minuit', query: 'environnement=paludarium&heure=0' },
+    // Mousses et racines (#132) : mêmes teintes sans le filtre pixel art (cf. #40).
+    {
+      name: 'paludarium-three-quarter-sans-filtre',
+      query: 'environnement=paludarium&filtre=aucun',
+    },
   ] as const;
   for (const { name, query } of PALUDARIUM_CAPTURES) {
     test(`angle ${name}`, async ({ page }) => {

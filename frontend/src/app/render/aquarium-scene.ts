@@ -17,6 +17,7 @@ import {
   SRGBColorSpace,
 } from 'three';
 
+import { bankDecorLayout } from '../sim/bank-decor';
 import { mix, type DayLight, type Rgb } from '../sim/daylight';
 import { environmentWater, TROPICAL_TANK, type Environment } from '../sim/environment';
 import {
@@ -26,6 +27,7 @@ import {
   type Box3,
   type TankDimensions,
 } from '../sim/tank';
+import { createBankDecorObject } from './bank-decor-mesh';
 import { PALETTE, type PaletteColorName } from './palette';
 import { cutawaySides } from './pond-cutaway';
 import { createPondGround, pondGroundTop } from './pond-ground';
@@ -137,6 +139,11 @@ export function createAquariumScene(environment: Environment = TROPICAL_TANK): A
     : null;
   const sand = terrain ? null : createSand(dims, ground);
   scene.add(terrain ? terrain.mesh : (sand as Mesh));
+  // Mousses et racines de la berge (#132) : aménagement fixe, comme le sol.
+  if (environment.terrain && environment.bankDecor) {
+    const layout = bankDecorLayout(environment.bankDecor, environment.terrain, waterBox);
+    scene.add(createBankDecorObject(layout, environment.terrain, waterBox));
+  }
   const water = createWater(terrain ? insetWater(waterBox) : waterBox, waterTint);
   scene.add(water);
   const stones = environment.border === 'pierre' ? createStoneBorder(dims) : null;
