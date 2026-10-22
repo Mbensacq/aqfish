@@ -260,6 +260,12 @@ haut de sa section.
 
 ## Rendu
 
+- **Petit objet posé sur l'eau du bassin, vu de dessus : les gris se lisent comme des
+  pierres** (cycle 42, #107) : des feuilles mortes en `sableOmbre` et `rocheSombre` de 5 à
+  7 cm (5 × 3 pixels de scène) ressemblaient aux rochers du fond, que l'eau ramène aux mêmes
+  tons. Tons chauds (`sableSombre`, `tritonOrange`) et au moins ~8 pixels de scène de long
+  (9 à 13 cm dans le bassin, `LEAF_LENGTH`) pour qu'une forme se lise. Toujours zoomer la
+  capture (Pillow, `NEAREST`) avant de juger. (2026-10-22)
 - **Épaissir un petit cercle de ligne vu de biais** (ronds de pluie en trois-quarts, #125) :
   un second tracé décalé d'un pixel de scène vers la caméra remplit les ellipses de 3 à
   4 pixels de haut, qui deviennent des taches claires sans forme de rond. Pour la lisibilité

@@ -71,6 +71,13 @@ clair, haute dorsale sable sombre), flanc gris roche « poivré » de taches noi
 sombre. Un flanc sable se confondait avec le substrat sur les captures : les poissons de fond
 évitent les tons du sable sur leurs flancs.
 
+Les **feuilles mortes** du bassin (#107, ADR 0033) : petites feuilles de 9 à 13 cm au bord
+irrégulier, brunes (`sableSombre`, `sableOmbre`) ou ocre (`tritonOrange`, `sableSombre`), en
+deux tons de part et d'autre de la nervure, contour `koiNoir`. Elles se posent par vagues
+faibles, jamais plus de **8** à la fois (1 à 2 en moyenne), dérivent lentement au-dessus des
+nénuphars et coulent au bout de 52 s. Des gris de la roche, essayés d'abord, les faisaient
+confondre avec les pierres.
+
 Les rochers (ADR 0015) : voxels de 1,2 cm (à l'échelle 1) en couleurs plates, dessus
 `roche` parfois poudré de `sableOmbre`, flancs `roche` tachés de `rocheSombre`, rangée du bas
 toujours `rocheSombre` (ombre de contact), contour d'un pixel `koiNoir`. Posés sur le sable,
