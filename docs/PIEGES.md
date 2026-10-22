@@ -6,6 +6,18 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Deux clones, un seul serveur e2e** (cycle 46) : Playwright réutilise un serveur déjà
+  lancé sur son port (`reuseExistingServer` hors CI). Avec `npm run verify` de `main` encore
+  en cours sur le port 4300, un `verify` lancé depuis un second worktree aurait testé le code
+  de `main`. Pour travailler en parallèle, donner un autre port au second clone
+  (`E2E_PORT=4310`, aussi pour `npm run captures`) ou arrêter le premier serveur ; un worktree
+  peut partager `node_modules` par un lien symbolique. Le `verify` complet prend ~30 min en
+  local (e2e sur un seul worker) : le lancer en arrière-plan et coder pendant ce temps.
+  (2026-10-22)
+- **Auteur des commits** : l'environnement peut configurer un auteur autre que Mathis. Avant
+  le premier commit, vérifier `git log -1 --format='%an <%ae>'` sur `main` et reprendre
+  cet auteur (`git config user.name` / `user.email`). (2026-10-22)
+
 - **npm 10 : `Cannot read properties of null (reading 'edgesOut')`** à l'installation
   d'un paquet. Solution : `npx -y npm@11 install <paquet>@<version>`. `npm ci` fonctionne
   normalement avec le `package-lock.json` existant. (2026-10-16)
