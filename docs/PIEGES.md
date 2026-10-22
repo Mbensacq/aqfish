@@ -260,6 +260,20 @@ haut de sa section.
 
 ## Rendu
 
+- **Points parasites sur un maillage en colonnes : jonctions en T** (cycle 43, #129) : la
+  coupe de la berge du paludarium, contre la vitre, était faite d'un rectangle par colonne
+  (de y = 0 à sa hauteur). Deux colonnes voisines de hauteurs différentes partagent un bord
+  vertical, mais la plus haute n'a pas de sommet à la hauteur de la plus basse : la
+  rastérisation laisse des fentes d'un pixel, et l'eau derrière perçait en points isolés
+  (`eauSombre`) sur la terre, en vue trois-quarts. Ce n'était pas un conflit de profondeur
+  avec l'eau (l'éloigner de 4 mm n'y changeait rien). Solution : un sommet à la hauteur
+  partagée sur chaque bord (`pushCut`, `render/terrain-mesh.ts`). Pour vérifier, compter les
+  couleurs étrangères dans la zone (Pillow `Counter`) avant et après. (2026-10-22)
+- **Flanc éclairé et passe palette : la couleur choisie n'est pas celle affichée** (cycle 43) :
+  un flanc vertical en `sableOmbre` ou en `rocheSombre`, moins éclairé que le dessus,
+  retombe sur `roche` (gris) ou presque noir ; pour un flanc de terre brun, partir d'une
+  couleur plus claire (`sableSombre`, affiché `sableOmbre`). Juger sur capture. (2026-10-22)
+
 - **Petit objet posé sur l'eau du bassin, vu de dessus : les gris se lisent comme des
   pierres** (cycle 42, #107) : des feuilles mortes en `sableOmbre` et `rocheSombre` de 5 à
   7 cm (5 × 3 pixels de scène) ressemblaient aux rochers du fond, que l'eau ramène aux mêmes
