@@ -216,6 +216,12 @@ haut de sa section.
   ne sera jamais une espèce du projet (`'requin'`). Ajouter une espèce change aussi tous les
   objets d'effectifs (`populationCounts`, `NO_FISH` : une clé de plus) et la liste des
   couches de `AquariumView`. (2026-10-22)
+- **Nouvelle espèce dans un environnement déjà peuplé** (cycle 45, #131) : les tests de
+  l'axolotl parcouraient `world.entities` d'un paludarium par défaut en supposant n'y voir
+  que des axolotls, et comptaient sur leurs identifiants (0 à 3) : l'ajout des grenouilles
+  (identifiants 2 à 4) les faisait échouer ou changeait les individus observés. Filtrer par
+  espèce, et construire le monde observé avec `createWorld(seed, [{ species, count }], [], [],
+  environnement)` plutôt que `setPopulation(createDefaultWorld(…))`. (2026-10-22)
 - **Graine invalide masquée par un sel** (cycle 44) : `(seed ^ SEL) >>> 0` rend valide une
   graine négative ; valider la graine (`assertSeed`) **avant** de la mélanger. (2026-10-22)
 

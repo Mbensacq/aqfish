@@ -76,6 +76,12 @@ crête dorsale, pattes et nageoire de la queue rose poisson, trois branchies de 
 la tête en rose nénuphar (plus soutenu que le corps, pour qu'elles se lisent de profil comme
 de dessus, où elles dépassent des flancs). Il reste rose sur le sable clair du fond.
 
+La **grenouille** du paludarium (#131, ADR 0036) : corps trapu vert grenouille taché de vert
+végétation (`vegetationClaire`), ventre blanc cassé, deux yeux noirs posés de chaque côté du
+haut de la tête (un œil en bandeau sur le dessus se lisait comme un chapeau noir), cuisses
+et pieds vert sombre qui dépassent des flancs vu de dessus. À la nage, le dos et les yeux
+restent au-dessus de la surface : elle se lit sur l'eau claire du rivage.
+
 Les **feuilles mortes** du bassin (#107, ADR 0033) : petites feuilles de 9 à 13 cm au bord
 irrégulier, brunes (`sableSombre`, `sableOmbre`) ou ocre (`tritonOrange`, `sableSombre`), en
 deux tons de part et d'autre de la nervure, contour `koiNoir`. Elles se posent par vagues
