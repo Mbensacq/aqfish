@@ -54,6 +54,21 @@ haut de sa section.
 
 ## Tests
 
+- **Hôte transparent d'un composant qui capte les clics** (cycle 41, #112) : l'hôte
+  `position: fixed` de `app-control-panel` forme une boîte invisible aussi large que le
+  panneau, du bouton jusqu'au bas du panneau ; placé après `app-commands-help` dans le DOM,
+  il interceptait le clic sur le bouton « Commandes » replié (en haut à droite) dès 390 px
+  de large, sans que rien ne se voie. Un hôte flottant qui en englobe d'autres prend
+  `pointer-events: none`, ses enfants cliquables `pointer-events: auto`.
+  `e2e/cadrage-panneaux.spec.ts` (`coveredButtons`) vérifie par `elementFromPoint` le centre
+  et les coins de chaque bouton d'interface, à 1280 × 720, 390 × 844 et 320 × 568 : un
+  coin pris à moins de 3 px du bord tombe hors de l'arrondi du bouton (rayon 8 à 10 px) et
+  touche ce qui est dessous, d'où un retrait de 4 px. (2026-10-22)
+- **Capture `front-panneau` non reproductible d'une exécution à l'autre** (cycle 41) :
+  même en local, deux `npm run captures` successifs sur le même code donnent quelques
+  pixels différents dans le bac (simulation lancée avant la mise à l'arrêt). Les 35 autres
+  captures sont identiques à l'octet ; pour `front-panneau`, comparer la zone des panneaux,
+  pas le fichier. (2026-10-22)
 - **Hauteur de texte différente en CI : `system-ui` n'est pas la même police** (cycle 34,
   #79) : dans l'environnement des agents, `system-ui` donne **Inter** ; sur le runner
   `ubuntu-latest`, **DejaVu Sans**, plus large (plus de retours à la ligne). Le panneau
@@ -65,8 +80,8 @@ haut de sa section.
 - **Panneau d'interface rogné en bas, trouvé tard** (cycles 31 à 34, #101, #79) : chaque
   panneau a sa hauteur maximale (réserve de la barre des préréglages) et défile au-delà ;
   ajouter une ligne ou une section le fait déborder sans qu'aucun test unitaire ne le voie.
-  `e2e/cadrage-panneaux.spec.ts` contrôle chaque panneau de `PANELS` à 1280 × 720 et
-  390 × 844 (dans la fenêtre, sans recouvrir la barre) ; **tout nouveau panneau s'y ajoute**.
+  `e2e/cadrage-panneaux.spec.ts` contrôle chaque panneau de `PANELS` à 1280 × 720,
+  390 × 844 et 320 × 568 (dans la fenêtre, sans recouvrir la barre ni les boutons) ; **tout nouveau panneau s'y ajoute**.
   Le panneau « Commandes » doit en plus tenir sans défiler à 1280 × 720 : marge de 51 px
   au cycle 34 (contenu 581 px pour 632 px permis, lignes en 12 px, interligne 1,25). Sous
   480 px, la barre passe sur deux lignes : réserver ~120 px en bas, pas 76. (2026-10-20)
