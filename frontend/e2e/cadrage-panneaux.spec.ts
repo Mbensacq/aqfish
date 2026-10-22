@@ -190,7 +190,8 @@ test('320 × 568 : « Réglages » ouvert, le bouton « Commandes » ouvre l’a
   await PANELS.find((p) => p.name === 'Réglages')!.open(page);
   await page.getByRole('button', { name: /Afficher l’aide-mémoire des commandes/ }).click();
   await expect(page.locator('#aide-commandes')).toBeVisible();
-  await expect(page.locator('.control-panel')).toBeVisible();
+  // #136 : sous 640 px, ouvrir « Commandes » replie « Réglages » (panneaux exclusifs).
+  await expect(page.locator('.control-panel')).toHaveCount(0);
   expect(errors).toEqual([]);
 });
 
