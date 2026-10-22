@@ -160,9 +160,13 @@
   .commands-help {
     width: 280px;
     max-width: calc(100vw - 16px);
+    // Ouvert, il descend sous la ligne des boutons du haut (32 px + 6 px d'écart, comme le
+    // panneau de réglages) : sinon il passe sous le bouton « Réglages », qui en masque le
+    // titre et le chevauche dès 390 px de large (#112).
+    margin-top: 38px;
     // Barre des préréglages sur deux lignes sous 480 px (bas : 16 px + deux lignes de
     // ~40 px, plus un écart), comme le panneau de réglages.
-    max-height: calc(100vh - 8px - 120px);
+    max-height: calc(100vh - 8px - 38px - 120px);
     // Ouvert à la demande, par-dessus une bonne part du bac : fond presque opaque.
     background: rgb(20 20 24 / 95%);
     opacity: 1;

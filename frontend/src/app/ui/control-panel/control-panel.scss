@@ -1,7 +1,11 @@
 // Panneau de contrôle (docs/DA.md, « Interface ») : sombre translucide aux coins arrondis,
 // en haut à gauche à côté de l'indicateur du moment de la journée (39 px de large à 12 px
 // du bord), loin de la barre des préréglages (en bas au centre).
+// L'hôte est une boîte transparente aussi large que le panneau, du bouton jusqu'au bas du
+// panneau : il ne doit pas capter les clics, sinon il masque le bouton « Commandes » replié
+// en haut à droite sur petit écran (#112). Seuls ses enfants (bouton, panneau) les reçoivent.
 :host {
+  pointer-events: none;
   position: fixed;
   top: 12px;
   left: 59px;
@@ -14,6 +18,11 @@
   font:
     400 13px / 1.3 system-ui,
     sans-serif;
+}
+
+.control-panel__toggle,
+.control-panel {
+  pointer-events: auto;
 }
 
 .control-panel__toggle {
