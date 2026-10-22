@@ -293,6 +293,13 @@ haut de sa section.
 
 ## Rendu
 
+- **Voxels de 1 cm vus en trois-quarts : les flancs prennent autant de place que le dessus**
+  (cycle 49, #132) : des tapis de mousse en cubes de 1 cm posés sur les marches de la berge
+  montrent presque autant de flancs que de dessus. Avec des flancs `vegetationSombre`, moins
+  éclairés, la passe palette les affichait presque noirs et la mousse se lisait comme des
+  taches sombres (alors que la vue de dessus était juste). Flancs dans la couleur du dessus
+  (`vegetation`) : l'éclairage suffit à marquer le relief. Toujours regarder la capture
+  trois-quarts zoomée, pas seulement le dessus. (2026-10-23)
 - **Points parasites sur un maillage en colonnes : jonctions en T** (cycle 43, #129) : la
   coupe de la berge du paludarium, contre la vitre, était faite d'un rectangle par colonne
   (de y = 0 à sa hauteur). Deux colonnes voisines de hauteurs différentes partagent un bord
