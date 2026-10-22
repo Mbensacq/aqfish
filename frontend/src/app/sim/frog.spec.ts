@@ -73,7 +73,7 @@ describe('grenouille : espèce du paludarium (#131)', () => {
   });
 
   it('déclarée en données pour le paludarium seulement, trois par défaut', () => {
-    expect(PALUDARIUM.species).toEqual(['axolotl', 'grenouille']);
+    expect(PALUDARIUM.species).toEqual(['axolotl', 'grenouille', 'triton']);
     expect(PALUDARIUM.population).toContainEqual({ species: 'grenouille', count: 3 });
     expect(livesIn('paludarium', 'grenouille')).toBe(true);
     expect(TROPICAL_TANK.species).not.toContain('grenouille');
@@ -86,6 +86,8 @@ describe('grenouille : espèce du paludarium (#131)', () => {
       'grenouille',
       'grenouille',
       'grenouille',
+      'triton',
+      'triton',
     ]);
   });
 

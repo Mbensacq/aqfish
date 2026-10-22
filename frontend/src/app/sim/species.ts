@@ -8,7 +8,7 @@
  */
 
 /** Identifiant d'espèce, stable (sérialisé dans l'état du monde). */
-export type SpeciesId = 'neon' | 'guppy' | 'corydora' | 'koi' | 'axolotl' | 'grenouille';
+export type SpeciesId = 'neon' | 'guppy' | 'corydora' | 'koi' | 'axolotl' | 'grenouille' | 'triton';
 
 /**
  * Silhouette voxel d'une apparence : le rendu associe à chaque identifiant un gabarit de
@@ -22,6 +22,7 @@ export const SILHOUETTE_IDS = [
   'koi',
   'axolotl',
   'grenouille',
+  'triton',
 ] as const;
 export type SilhouetteId = (typeof SILHOUETTE_IDS)[number];
 
@@ -159,8 +160,8 @@ export interface BottomWalkerParams {
 }
 
 /**
- * Déplacement d'une espèce qui vit entre terre et eau en sautant (grenouille, issue #131,
- * `sim/frog.ts`) : posée sur la berge, petits sauts en parabole, entrée dans l'eau, nage
+ * Déplacement d'une espèce qui vit entre terre et eau (grenouille, issue #131 ; triton,
+ * issue #133 : mêmes états, autres durées, `sim/frog.ts`) : posée sur la berge, petits sauts en parabole, entrée dans l'eau, nage
  * près de la surface, sortie en remontant la pente. Le milieu voulu (terre ou eau) suit un
  * cycle fonction du temps et de la graine ; les sauts partent au début de créneaux.
  */
@@ -256,7 +257,7 @@ export interface SpeciesDefinition {
    */
   readonly walker?: BottomWalkerParams;
   /**
-   * Présent pour une espèce qui vit entre terre et eau en sautant (grenouille, issue #131) :
+   * Présent pour une espèce qui vit entre terre et eau (grenouille, issue #131 ; triton, #133) :
    * déplacement propre (`sim/frog.ts`), exclusif de `walker` et de `depth`.
    */
   readonly amphibian?: AmphibianParams;
@@ -690,6 +691,74 @@ export const GRENOUILLE: SpeciesDefinition = {
   },
 };
 
+/**
+ * Triton, paludarium (docs/DA.md « Amphibiens », issue #133) : plus aquatique que la
+ * grenouille. Même machine à états (`sim/frog.ts`, ADR 0036), autres réglages (ADR 0037) :
+ *
+ * - **à terre** : les « sauts » sont des pas rampants, courts (2 à 4 cm), lents (0,8 s) et
+ *   à ras du sol (6 mm d'arc) ; repos fréquent sur la berge ;
+ * - **dans l'eau** : 70 % d'un cycle de 60 s, nage lente (3 cm/s, queue ondulante à 1,4 Hz)
+ *   à 2 cm sous la surface : la chasse lente près de la surface de l'issue (le triton ne
+ *   mange pas encore : nourrissage hors périmètre).
+ *
+ * - Couleurs : orange triton `#e07a2f` de la palette « Amphibiens » de docs/DA.md (dos,
+ *   flancs, queue), taches `#1c1c22`, ventre jaune orangé `#f2c14e`, bas de la queue et pattes
+ *   `#45423e` : couleurs existantes de la palette.
+ * - `bodyLength` (7 cm, museau au départ de la queue) : **approximation de jeu**, ordre de
+ *   grandeur d'un petit triton (référence à consulter : AmphibiaWeb ; non vérifiée ici),
+ *   agrandi pour rester lisible en pixel art ; corps fin (4 voxels d'épaisseur au plus,
+ *   contre 6 pour la grenouille) et longue queue.
+ * - Durées, portées, vitesses, part du temps dans l'eau : **approximations de jeu**.
+ * - Solitaire (pas de banc).
+ */
+export const TRITON: SpeciesDefinition = {
+  id: 'triton',
+  name: 'Triton',
+  scientificName: 'Salamandridae',
+  bodyLength: 0.07,
+  cruiseSpeed: 0.03,
+  minSpeed: 0.008,
+  maxSpeed: 0.08,
+  wanderTurnRate: 0.8,
+  avoidTurnRate: 2.5,
+  maxPitch: 0.6,
+  wallMargin: 0.05,
+  tailBeatFrequency: 1.4,
+  defaultPopulation: 2,
+  maxPopulation: 3,
+  schooling: null,
+  silhouette: 'triton',
+  colors: {
+    stripe: '#e07a2f',
+    accent: '#1c1c22',
+    back: '#e07a2f',
+    belly: '#f2c14e',
+    fin: '#45423e',
+    eye: '#1c1c22',
+  },
+  feeding: {
+    hungerRate: 1 / 300,
+    perceptionRadius: 0.1,
+    turnRate: 1,
+    minHeightRatio: 0.6,
+    maxHeightRatio: 1,
+  },
+  amphibian: {
+    clearance: 0.008,
+    floatDepth: 0.02,
+    maxRise: 0.26,
+    hopDuration: 0.8,
+    hopMinRange: 0.02,
+    hopMaxRange: 0.04,
+    hopHeight: 0.006,
+    hopSlot: 1.2,
+    hopChance: 0.5,
+    cycleDuration: 60,
+    waterShare: 0.7,
+    swimSpeed: 0.03,
+  },
+};
+
 /** Toutes les espèces connues, par identifiant (ordre de déclaration = ordre de peuplement). */
 export const SPECIES: Readonly<Record<SpeciesId, SpeciesDefinition>> = {
   neon: NEON,
@@ -698,6 +767,7 @@ export const SPECIES: Readonly<Record<SpeciesId, SpeciesDefinition>> = {
   koi: KOI,
   axolotl: AXOLOTL,
   grenouille: GRENOUILLE,
+  triton: TRITON,
 };
 
 /** Apparences d'une espèce : ses `variants`, ou son apparence par défaut seule. */

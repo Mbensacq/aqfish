@@ -7,7 +7,7 @@ import { createDayClock } from '../../sim/daylight';
 import { parseWorld, serializeWorld } from '../../sim/save';
 import type { AquariumRenderer } from '../../render/aquarium-view';
 import { MAX_STEPS_PER_FRAME } from '../../sim/constants';
-import { AXOLOTL, CORYDORA, GRENOUILLE, GUPPY, KOI, NEON } from '../../sim/species';
+import { AXOLOTL, CORYDORA, GRENOUILLE, GUPPY, KOI, NEON, TRITON } from '../../sim/species';
 import { expiryAge, FOOD_PER_DROP } from '../../sim/food';
 import { setPopulation } from '../../sim/population';
 import { advance, advanceToWithFeedings, createDefaultWorld } from '../../sim/world';
@@ -693,6 +693,7 @@ describe('AquariumHost', () => {
         koi: KOI.defaultPopulation,
         axolotl: 0,
         grenouille: 0,
+        triton: 0,
       });
       expect(element().getAttribute(POPULATION_ATTRIBUTE)).toBe(`koi:${KOI.defaultPopulation}`);
       expect(host().activePreset()).toBe('top');
@@ -792,9 +793,17 @@ describe('AquariumHost', () => {
     const exposed = () => (fixture.nativeElement as HTMLElement).getAttribute(POPULATION_ATTRIBUTE);
 
     it('formatPopulation : espece:n, dans l’ordre des espèces', () => {
-      const counts = { neon: 12, guppy: 0, corydora: 6, koi: 2, axolotl: 1, grenouille: 3 };
+      const counts = {
+        neon: 12,
+        guppy: 0,
+        corydora: 6,
+        koi: 2,
+        axolotl: 1,
+        grenouille: 3,
+        triton: 2,
+      };
       expect(formatPopulation(counts)).toBe(
-        'neon:12,guppy:0,corydora:6,koi:2,axolotl:1,grenouille:3',
+        'neon:12,guppy:0,corydora:6,koi:2,axolotl:1,grenouille:3,triton:2',
       );
       // Espèces d'un environnement (#88) : seulement elles, dans leur ordre.
       expect(formatPopulation(counts, ['koi'])).toBe('koi:2');
@@ -825,6 +834,7 @@ describe('AquariumHost', () => {
         koi: 0,
         axolotl: 0,
         grenouille: 0,
+        triton: 0,
       });
       expect(host().populationMax()).toEqual({
         neon: NEON.maxPopulation,
@@ -833,6 +843,7 @@ describe('AquariumHost', () => {
         koi: KOI.maxPopulation,
         axolotl: AXOLOTL.maxPopulation,
         grenouille: GRENOUILLE.maxPopulation,
+        triton: TRITON.maxPopulation,
       });
     });
 

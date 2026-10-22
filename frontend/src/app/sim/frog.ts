@@ -7,8 +7,10 @@ import { createFish, random, savePrevious, wrapAngle, type Fish, type SwimBounds
 import { tailBeatRate } from './undulation';
 
 /**
- * Déplacement des espèces qui vivent entre terre et eau (grenouille, issue #131, ADR 0036) :
- * à la place de la nage des poissons, une machine à cinq états.
+ * Déplacement des espèces qui vivent entre terre et eau (grenouille, issue #131, ADR 0036 ;
+ * triton, issue #133, ADR 0037) : à la place de la nage des poissons, une machine à cinq
+ * états, commune aux deux espèces et réglée par leurs `AmphibianParams` (le triton y fait
+ * des pas rampants, courts et à ras du sol, et passe plus de temps dans l'eau).
  *
  * - **posée** : immobile sur la terre émergée, à `clearance` au-dessus du sol ;
  * - **saut** : parabole d'un point de la terre à un autre (`hopArc`) ;

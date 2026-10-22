@@ -357,7 +357,7 @@ function stepInPlace(world: MutableWorld, dt: number): void {
       continue;
     }
     if (SPECIES[fish.species].amphibian !== undefined) {
-      // Espèce amphibie (grenouille) : posée, sauts, nage, entre terre et eau, sans banc ni
+      // Espèce amphibie (grenouille, triton) : posée, sauts, nage, entre terre et eau, sans banc ni
       // recherche de nourriture (`sim/frog.ts`).
       stepFrog(fish, dt, world.seed, world.time, bounds, groundFor(environment));
       continue;

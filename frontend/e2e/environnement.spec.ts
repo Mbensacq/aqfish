@@ -92,7 +92,7 @@ test.describe('Environnement', () => {
     expect(errors).toEqual([]);
   });
 
-  test('paludarium (#129) : choisi au panneau, deux axolotls (#130) et trois grenouilles (#131), nourri sur l’eau seulement, gardé au rechargement', async ({
+  test('paludarium (#129) : choisi au panneau, deux axolotls (#130), trois grenouilles (#131) et deux tritons (#133), nourri sur l’eau seulement, gardé au rechargement', async ({
     page,
   }) => {
     // Sans `seed=` : la sauvegarde automatique restaure le monde au rechargement.
@@ -100,9 +100,13 @@ test.describe('Environnement', () => {
     await toggle(page).click();
     await selector(page).selectOption('paludarium');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'paludarium');
-    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', 'axolotl:2,grenouille:3');
+    await expect(hostEl(page)).toHaveAttribute(
+      'data-aqfish-population',
+      'axolotl:2,grenouille:3,triton:2',
+    );
     await expect(page.getByRole('spinbutton', { name: 'Nombre d’axolotls' })).toHaveValue('2');
     await expect(page.getByRole('spinbutton', { name: 'Nombre de grenouilles' })).toHaveValue('3');
+    await expect(page.getByRole('spinbutton', { name: 'Nombre de tritons' })).toHaveValue('2');
     await expect(page.locator('[data-population-empty]')).toHaveCount(0);
     await toggle(page).click();
 

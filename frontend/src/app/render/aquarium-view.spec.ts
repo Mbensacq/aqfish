@@ -125,6 +125,7 @@ describe('AquariumView (pipeline pixel art)', () => {
       'poissons-koi-sanke',
       'poissons-axolotl',
       'poissons-grenouille',
+      'poissons-triton',
     ]);
   });
 

@@ -207,6 +207,32 @@ export const FROG_FISH: FishTemplate = {
   ],
 };
 
+/**
+ * Triton (issue #133) : corps long et fin (4 voxels d'épaisseur au plus, contre 6 pour la
+ * grenouille), orange `#e07a2f` taché de sombre (`a`, surtout sur les flancs : vu de dessus,
+ * le dos reste orange), ventre jaune orangé, tête étroite. Longue queue aplatie, crête
+ * orange et bord inférieur sombre (`f`), qui ondule à la nage. Parties paires : quatre
+ * pattes courtes (`f`) sous le flanc, pieds écartés d'un voxel (vue de dessus) ; de profil,
+ * le triton reste bas et allongé, la grenouille haute et ramassée.
+ */
+export const NEWT_FISH: FishTemplate = {
+  body: [
+    // queue → tête
+    '.kkkkkkakkk.',
+    'kakkkkkkakke',
+    'bbbbbbbbbbb.',
+    '............',
+  ],
+  tail: ['...kkkk', 'kkkkkkk', 'kkakkkk', '...ffff'],
+  bodyDepth: 4,
+  tailDepth: 2,
+  bodyColumnDepths: [2, 2, 4, 4, 4, 4, 4, 4, 4, 4, 2, 2],
+  paired: [
+    ['............', '............', '..f.....f...', '.ff.....ff..'],
+    ['............', '............', '............', '.f.......f..'],
+  ],
+};
+
 /** Gabarit de chaque silhouette déclarée par les espèces (`sim/species.ts`). */
 export const SILHOUETTES: Readonly<Record<SilhouetteId, FishTemplate>> = {
   fuseau: SLENDER_FISH,
@@ -216,6 +242,7 @@ export const SILHOUETTES: Readonly<Record<SilhouetteId, FishTemplate>> = {
   koi: KOI_FISH,
   axolotl: AXOLOTL_FISH,
   grenouille: FROG_FISH,
+  triton: NEWT_FISH,
 };
 
 /** Proportions des voxels : hauteur et épaisseur relatives à la longueur d'un voxel. */

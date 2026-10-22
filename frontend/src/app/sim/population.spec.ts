@@ -15,6 +15,7 @@ import {
   AXOLOTL,
   CORYDORA,
   GRENOUILLE,
+  TRITON,
   GUPPY,
   KOI,
   NEON,
@@ -48,7 +49,15 @@ describe('bornes de population', () => {
   });
 
   it('SPECIES_IDS suit l’ordre de SPECIES', () => {
-    expect(SPECIES_IDS).toEqual(['neon', 'guppy', 'corydora', 'koi', 'axolotl', 'grenouille']);
+    expect(SPECIES_IDS).toEqual([
+      'neon',
+      'guppy',
+      'corydora',
+      'koi',
+      'axolotl',
+      'grenouille',
+      'triton',
+    ]);
   });
 
   it.each(['neon', 'guppy', 'corydora'])('isSpeciesId accepte %s', (id) => {
@@ -70,6 +79,7 @@ describe('bornes de population', () => {
       koi: 0,
       axolotl: 0,
       grenouille: 0,
+      triton: 0,
     });
     expect(populationCounts(createWorld(42))).toEqual({
       neon: 0,
@@ -78,6 +88,7 @@ describe('bornes de population', () => {
       koi: 0,
       axolotl: 0,
       grenouille: 0,
+      triton: 0,
     });
     expect(populationCounts(createWorld(42))).toEqual(NO_FISH);
   });
@@ -90,6 +101,7 @@ describe('bornes de population', () => {
       koi: KOI.maxPopulation,
       axolotl: AXOLOTL.maxPopulation,
       grenouille: GRENOUILLE.maxPopulation,
+      triton: TRITON.maxPopulation,
     });
   });
 
@@ -168,6 +180,7 @@ describe('setPopulation', () => {
       koi: 0,
       axolotl: 0,
       grenouille: 0,
+      triton: 0,
     });
   });
 
@@ -196,6 +209,7 @@ describe('setPopulation', () => {
       koi: 0,
       axolotl: 0,
       grenouille: 0,
+      triton: 0,
     });
     // Bac plein : plus aucun ajout possible, quelle que soit l'espèce.
     for (const id of SPECIES_IDS) {
