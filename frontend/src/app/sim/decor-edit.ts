@@ -1,7 +1,16 @@
 import { createPrng, deriveSeed } from '../core/random/prng';
-import { validateDecorItem, type DecorItem } from './decor';
+import {
+  MAX_DECOR_SCALE,
+  MIN_DECOR_SCALE,
+  plantSpheres,
+  rockModel,
+  rockSpheres,
+  validateDecorItem,
+  type DecorItem,
+} from './decor';
 import { environmentById, type EnvironmentId } from './environment';
-import type { PlantForm } from './plant';
+import type { Sphere } from './obstacles';
+import { plantModel, type PlantForm } from './plant';
 import { MAX_SAVE_DECOR } from './save';
 import { createWorld, seededObstacleCount, type MutableWorld, type World } from './world';
 
@@ -160,4 +169,215 @@ export function withDecor(world: World, decor: readonly DecorItem[]): World {
   const copy: MutableWorld = { ...world };
   setDecorInPlace(copy, decor);
   return copy;
+}
+
+// ---------------------------------------------------------------------------------------
+// Déplacer, tourner, redimensionner (issue #168)
+
+/** Pas de rotation de l'éditeur : 15°, en radians. */
+export const DECOR_ROTATION_STEP = Math.PI / 12;
+
+/** Pas d'échelle de l'éditeur (ajouté ou retiré), borné à [`MIN_DECOR_SCALE`, `MAX_DECOR_SCALE`]. */
+export const DECOR_SCALE_STEP = 0.25;
+
+/**
+ * Emprise horizontale d'un élément, en mètres : rayon du disque, centré sur (x, z), qui
+ * contient tous ses voxels quelle que soit sa rotation (plus l'ondulation d'une plante).
+ */
+export function decorFootprint(item: DecorItem): number {
+  const model =
+    item.kind === 'plant'
+      ? plantModel(item.seed, item.scale, item.form as PlantForm)
+      : rockModel(item.seed, item.scale);
+  let reach2 = 0;
+  for (const { i, k } of model.cells) {
+    // Coin du voxel le plus éloigné de l'axe vertical.
+    const dx = Math.max(Math.abs(i), Math.abs(i + 1));
+    const dz = Math.max(Math.abs(k), Math.abs(k + 1));
+    reach2 = Math.max(reach2, dx * dx + dz * dz);
+  }
+  const sway = 'amplitude' in model ? model.amplitude : 0;
+  return Math.sqrt(reach2) * model.voxelSize + sway;
+}
+
+/**
+ * Position (x, z) la plus proche de (`x`, `z`) où l'élément `item` tient dans le bac de
+ * l'environnement `environment` : son emprise (`decorFootprint`, au moins
+ * `DECOR_EDGE_MARGIN`) ne dépasse d'aucune vitre. Un élément plus large que le bac sur un axe
+ * est centré sur cet axe. `null` si `x` ou `z` n'est pas un réel fini.
+ */
+export function clampDecorPosition(
+  item: DecorItem,
+  x: number,
+  z: number,
+  environment: EnvironmentId,
+): { x: number; z: number } | null {
+  if (!Number.isFinite(x) || !Number.isFinite(z)) {
+    return null;
+  }
+  const { width, depth } = environmentById(environment).dimensions;
+  const reach = Math.max(decorFootprint(item), DECOR_EDGE_MARGIN);
+  const clamp = (v: number, half: number) => {
+    const bound = Math.max(half - reach, 0);
+    return Math.min(Math.max(v, -bound), bound);
+  };
+  return { x: clamp(x, width / 2), z: clamp(z, depth / 2) };
+}
+
+/** Sphères de collision d'un élément (repère du bac). */
+function collisionSpheres(item: DecorItem): Sphere[] {
+  return item.kind === 'plant' ? plantSpheres(item) : rockSpheres(item);
+}
+
+/** Vrai si les formes de collision de `a` et `b` se pénètrent (au moins deux sphères sécantes). */
+export function decorItemsOverlap(a: DecorItem, b: DecorItem): boolean {
+  const sa = collisionSpheres(a);
+  const sb = collisionSpheres(b);
+  return sa.some((p) =>
+    sb.some((q) => Math.hypot(p.x - q.x, p.y - q.y, p.z - q.z) < p.radius + q.radius),
+  );
+}
+
+/** Indices des éléments de `decor` (autres que `index`) que `item` pénètre. */
+function overlapsAt(decor: readonly DecorItem[], index: number, item: DecorItem): Set<number> {
+  const hits = new Set<number>();
+  decor.forEach((other, n) => {
+    if (n !== index && decorItemsOverlap(item, other)) {
+      hits.add(n);
+    }
+  });
+  return hits;
+}
+
+/**
+ * Vrai si la nouvelle pose de l'élément `index` (`next[index]`, le reste de `next` égal à
+ * `previous`) est acceptable : elle ne pénètre aucun autre élément qu'il ne pénétrait pas déjà
+ * dans `previous`. Deux formes qui se chevauchent peuvent enfermer un poisson entre elles ;
+ * un chevauchement hérité (décor chargé) ne bloque pas pour autant l'élément sur place.
+ * Faux si `index` n'existe pas dans l'un des deux décors, ou si leurs longueurs diffèrent.
+ */
+export function isDecorPoseAllowed(
+  previous: readonly DecorItem[],
+  next: readonly DecorItem[],
+  index: number,
+): boolean {
+  if (
+    previous.length !== next.length ||
+    !Number.isInteger(index) ||
+    index < 0 ||
+    index >= next.length
+  ) {
+    return false;
+  }
+  const before = overlapsAt(previous, index, previous[index]);
+  for (const n of overlapsAt(next, index, next[index])) {
+    if (!before.has(n)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/** Décor `decor` dont l'élément `index` est remplacé par `item` (validé), `null` sinon. */
+function replaceItem(
+  decor: readonly DecorItem[],
+  index: number,
+  item: DecorItem,
+  environment: EnvironmentId,
+): DecorItem[] | null {
+  if (validateDecorItem(item, environmentById(environment).dimensions).length > 0) {
+    return null;
+  }
+  return decor.map((other, n) => (n === index ? item : other));
+}
+
+function editableIndex(
+  decor: readonly DecorItem[],
+  index: number,
+  environment: EnvironmentId,
+): boolean {
+  return (
+    isDecorEditable(environment) && Number.isInteger(index) && index >= 0 && index < decor.length
+  );
+}
+
+/**
+ * Décor `decor` dont l'élément `index` est déplacé vers (`x`, `z`), position bornée au bac
+ * (`clampDecorPosition`). Aperçu du glissement : le chevauchement n'est pas vérifié ici
+ * (`isDecorPoseAllowed`, au lâcher). `null` si le décor n'est pas éditable, si l'indice
+ * n'existe pas ou si la position n'est pas finie.
+ */
+export function moveDecorItem(
+  decor: readonly DecorItem[],
+  index: number,
+  x: number,
+  z: number,
+  environment: EnvironmentId,
+): DecorItem[] | null {
+  if (!editableIndex(decor, index, environment)) {
+    return null;
+  }
+  const item = decor[index];
+  const p = clampDecorPosition(item, x, z, environment);
+  return p ? replaceItem(decor, index, { ...item, x: p.x, z: p.z }, environment) : null;
+}
+
+/** Angle ramené dans [0, 2π). */
+function normalizeAngle(angle: number): number {
+  const turn = 2 * Math.PI;
+  const a = angle % turn;
+  return a < 0 ? a + turn : a;
+}
+
+/**
+ * Décor `decor` dont l'élément `index` a tourné de `steps` pas de `DECOR_ROTATION_STEP`
+ * (positif : sens de `rotation`), angle ramené dans [0, 2π). `null` si le décor n'est pas
+ * éditable, si l'indice n'existe pas, si `steps` n'est pas un entier non nul, ou si la
+ * nouvelle pose est refusée (`isDecorPoseAllowed`).
+ */
+export function rotateDecorItem(
+  decor: readonly DecorItem[],
+  index: number,
+  steps: number,
+  environment: EnvironmentId,
+): DecorItem[] | null {
+  if (!editableIndex(decor, index, environment) || !Number.isInteger(steps) || steps === 0) {
+    return null;
+  }
+  const item = decor[index];
+  const rotation = normalizeAngle(item.rotation + steps * DECOR_ROTATION_STEP);
+  const next = replaceItem(decor, index, { ...item, rotation }, environment);
+  return next && isDecorPoseAllowed(decor, next, index) ? next : null;
+}
+
+/**
+ * Décor `decor` dont l'élément `index` a changé d'échelle de `steps` pas de
+ * `DECOR_SCALE_STEP`, bornée à [`MIN_DECOR_SCALE`, `MAX_DECOR_SCALE`] ; la position est
+ * rebornée au bac (l'emprise change avec l'échelle). `null` si le décor n'est pas éditable,
+ * si l'indice n'existe pas, si `steps` n'est pas un entier non nul, si l'échelle est déjà à
+ * la borne, ou si la nouvelle pose est refusée (`isDecorPoseAllowed`).
+ */
+export function scaleDecorItem(
+  decor: readonly DecorItem[],
+  index: number,
+  steps: number,
+  environment: EnvironmentId,
+): DecorItem[] | null {
+  if (!editableIndex(decor, index, environment) || !Number.isInteger(steps) || steps === 0) {
+    return null;
+  }
+  const item = decor[index];
+  // Arrondi au millionième : pas de dérive après plusieurs pas (1,4 + 0,25 · 3).
+  const raw = Math.round((item.scale + steps * DECOR_SCALE_STEP) * 1e6) / 1e6;
+  const scale = Math.min(Math.max(raw, MIN_DECOR_SCALE), MAX_DECOR_SCALE);
+  if (scale === item.scale) {
+    return null;
+  }
+  const resized = { ...item, scale };
+  const p = clampDecorPosition(resized, item.x, item.z, environment);
+  if (!p) {
+    return null;
+  }
+  const next = replaceItem(decor, index, { ...resized, x: p.x, z: p.z }, environment);
+  return next && isDecorPoseAllowed(decor, next, index) ? next : null;
 }

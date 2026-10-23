@@ -288,4 +288,33 @@ describe('DecorLayer', () => {
       layer.dispose();
     });
   });
+
+  describe('aperçu du glissement (#168)', () => {
+    it('déplace le seul élément visé, et le rayon le trouve à sa nouvelle place', () => {
+      const layer = new DecorLayer();
+      layer.setDecor(DEFAULT_DECOR);
+      const rock = DEFAULT_DECOR[2];
+      const y = layer.object.children[2].position.y;
+      layer.moveItem(2, 0.05, 0.18);
+      expect(layer.itemPosition(2)).toEqual({ x: 0.05, z: 0.18 });
+      expect(layer.object.children[2].position.y).toBe(y);
+      expect(layer.itemPosition(1)).toEqual({ x: DEFAULT_DECOR[1].x, z: DEFAULT_DECOR[1].z });
+      const ray = new Raycaster();
+      ray.set(new Vector3(0.05, 1, 0.18), new Vector3(0, -1, 0));
+      expect(layer.pickItem(ray)).toBe(2);
+      ray.set(new Vector3(rock.x, 1, rock.z), new Vector3(0, -1, 0));
+      expect(layer.pickItem(ray)).not.toBe(2);
+      layer.dispose();
+    });
+
+    it('sans effet pour un indice inexistant', () => {
+      const layer = new DecorLayer();
+      layer.setDecor(DEFAULT_DECOR);
+      layer.moveItem(99, 0, 0);
+      layer.moveItem(-1, 0, 0);
+      expect(layer.itemPosition(99)).toBeNull();
+      expect(layer.itemPosition(0)).toEqual({ x: DEFAULT_DECOR[0].x, z: DEFAULT_DECOR[0].z });
+      layer.dispose();
+    });
+  });
 });

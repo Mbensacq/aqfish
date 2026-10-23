@@ -27,11 +27,47 @@ export const DECOR_TOOLS: readonly { readonly id: DecorTool; readonly name: stri
 ];
 
 /**
- * Consigne de l'éditeur selon l'outil et la sélection (#167) : ce qu'un clic fera.
+ * Commandes de pose de l'élément sélectionné (#168), dans l'ordre d'affichage : rotation par
+ * pas de 15° (`rotate`, en pas) ou échelle (`scale`, en pas), avec leur touche.
  */
-export function decorEditorHint(tool: DecorTool, selection: number | null, full: boolean): string {
+export const DECOR_POSE_COMMANDS: readonly {
+  readonly id: string;
+  readonly label: string;
+  readonly name: string;
+  readonly key: string;
+  readonly rotate: number;
+  readonly scale: number;
+}[] = [
+  { id: 'gauche', label: '−15°', name: 'Tourner de −15°', key: 'ArrowLeft', rotate: -1, scale: 0 },
+  { id: 'droite', label: '+15°', name: 'Tourner de +15°', key: 'ArrowRight', rotate: 1, scale: 0 },
+  { id: 'reduire', label: 'Réduire', name: 'Réduire', key: '-', rotate: 0, scale: -1 },
+  { id: 'agrandir', label: 'Agrandir', name: 'Agrandir', key: '+', rotate: 0, scale: 1 },
+];
+
+/** Touches de pose (`KeyboardEvent.key`) : `=` est le `+` sans Maj d'un clavier QWERTY. */
+const POSE_KEYS: Readonly<Record<string, { readonly rotate: number; readonly scale: number }>> = {
+  ArrowLeft: { rotate: -1, scale: 0 },
+  ArrowRight: { rotate: 1, scale: 0 },
+  '-': { rotate: 0, scale: -1 },
+  '+': { rotate: 0, scale: 1 },
+  '=': { rotate: 0, scale: 1 },
+};
+
+/**
+ * Consigne de l'éditeur selon l'outil, la sélection et la dernière pose (#167, #168) : ce
+ * qu'un geste fera, ou pourquoi la pose a été refusée.
+ */
+export function decorEditorHint(
+  tool: DecorTool,
+  selection: number | null,
+  full: boolean,
+  refused = false,
+): string {
+  if (refused) {
+    return 'Pose refusée : l’élément chevaucherait un autre élément.';
+  }
   if (selection !== null) {
-    return 'Élément sélectionné : Suppr pour le retirer.';
+    return 'Glissez pour déplacer ; ← → tournent, + − changent la taille, Suppr retire.';
   }
   if (tool === 'select') {
     return 'Cliquez sur un élément pour le sélectionner.';
@@ -68,7 +104,22 @@ export function decorEditorHint(tool: DecorTool, selection: number | null, full:
         </button>
       }
     </div>
-    <p class="decor-editor__hint" data-decor-hint>{{ hint() }}</p>
+    <p class="decor-editor__hint" data-decor-hint aria-live="polite">{{ hint() }}</p>
+    <div class="decor-editor__pose" role="group" aria-label="Pose de l’élément">
+      @for (c of poseCommands; track c.id) {
+        <button
+          type="button"
+          class="decor-editor__action decor-editor__pose-button"
+          [attr.aria-label]="c.name"
+          [attr.aria-keyshortcuts]="c.key"
+          [attr.aria-disabled]="selection() === null"
+          [attr.data-pose]="c.id"
+          (click)="pose(c.rotate, c.scale)"
+        >
+          {{ c.label }}
+        </button>
+      }
+    </div>
     <div class="decor-editor__actions">
       <button
         type="button"
@@ -100,6 +151,8 @@ export class DecorEditor {
   readonly selection = input<number | null>(null);
   /** Nombre d'éléments du décor (fourni par l'hôte). */
   readonly count = input(0);
+  /** Vrai si la dernière pose a été refusée (chevauchement, fourni par l'hôte). */
+  readonly refused = input(false);
 
   /** Outil choisi. */
   readonly toolChanged = output<DecorTool>();
@@ -109,12 +162,17 @@ export class DecorEditor {
   readonly closed = output<void>();
   /** Désélection demandée (Échap avec une sélection). */
   readonly deselectRequested = output<void>();
+  /** Rotation de l'élément sélectionné demandée, en pas de 15° (boutons, flèches). */
+  readonly rotateRequested = output<number>();
+  /** Changement d'échelle de l'élément sélectionné demandé, en pas (boutons, + et −). */
+  readonly scaleRequested = output<number>();
 
   protected readonly panelId = DECOR_EDITOR_ID;
   protected readonly tools = DECOR_TOOLS;
   protected readonly max = MAX_DECOR_ITEMS;
+  protected readonly poseCommands = DECOR_POSE_COMMANDS;
   protected readonly hint = computed(() =>
-    decorEditorHint(this.tool(), this.selection(), this.count() >= MAX_DECOR_ITEMS),
+    decorEditorHint(this.tool(), this.selection(), this.count() >= MAX_DECOR_ITEMS, this.refused()),
   );
 
   constructor() {
@@ -131,7 +189,21 @@ export class DecorEditor {
     }
   }
 
+  /** Bouton ou touche de pose : sans effet sans sélection. */
+  protected pose(rotate: number, scale: number): void {
+    if (this.selection() === null) {
+      return;
+    }
+    if (rotate !== 0) {
+      this.rotateRequested.emit(rotate);
+    }
+    if (scale !== 0) {
+      this.scaleRequested.emit(scale);
+    }
+  }
+
   /**
+   * Flèches gauche et droite : tournent la sélection de 15° ; + et − : changent sa taille ;
    * Suppr ou Retour arrière : supprime la sélection ; Échap : désélectionne, ou termine
    * l'édition sans sélection. Ignoré dans un champ de saisie (`isTypingContext`).
    */
@@ -139,7 +211,13 @@ export class DecorEditor {
     if (isTypingContext(event)) {
       return;
     }
-    if (event.key === 'Delete' || event.key === 'Backspace') {
+    const pose = POSE_KEYS[event.key];
+    if (pose && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      if (this.selection() !== null) {
+        event.preventDefault();
+        this.pose(pose.rotate, pose.scale);
+      }
+    } else if (event.key === 'Delete' || event.key === 'Backspace') {
       if (this.selection() !== null) {
         event.preventDefault();
         this.deleteRequested.emit();

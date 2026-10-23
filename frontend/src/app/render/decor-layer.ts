@@ -262,6 +262,24 @@ export class DecorLayer {
     }
   }
 
+  /**
+   * Place l'élément d'indice `index` en (`x`, `z`) sans reconstruire son maillage (aperçu du
+   * glissement, #168) ; sans effet pour un indice inexistant.
+   */
+  moveItem(index: number, x: number, z: number): void {
+    const group = this.items[index]?.voxels.parent;
+    if (group) {
+      group.position.x = x;
+      group.position.z = z;
+    }
+  }
+
+  /** Position (x, z) affichée de l'élément d'indice `index`, `null` s'il n'existe pas. */
+  itemPosition(index: number): { x: number; z: number } | null {
+    const group = this.items[index]?.voxels.parent;
+    return group ? { x: group.position.x, z: group.position.z } : null;
+  }
+
   /** Indice de l'élément sélectionné, `null` sinon (tests). */
   get selectedIndex(): number | null {
     return this.selected;

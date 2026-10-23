@@ -40,7 +40,7 @@ import type { DecorItem } from '../sim/decor';
 import type { FoodPellet } from '../sim/food';
 import { BubbleLayer } from './bubble-layer';
 import { DecorLayer } from './decor-layer';
-import { sandPoint, type DecorPick } from './decor-pick';
+import { sandPlanePoint, sandPoint, type DecorPick } from './decor-pick';
 import { type EffectLayer, type SceneLayer, updateVisibleEffects } from './effect-layer';
 import { FloatingLeafLayer } from './floating-leaf-layer';
 import { FishLayer, MAX_FISH_PER_SPECIES } from './fish-layer';
@@ -109,6 +109,20 @@ export interface AquariumViewOptions {
 }
 
 /**
+ * Abonné au glissement d'un élément du décor à la souris ou au doigt (#168, `onDecorDrag`).
+ * `start` : appui sur l'élément `index` (la caméra ne tourne plus) ; `move` : centre visé en
+ * (x, z) sur le plan du sable, **non borné** (le décalage entre le point saisi et le centre
+ * est conservé), seulement au-delà de `CLICK_TOLERANCE_PX` ; `end` : relâchement (`commit`
+ * vrai si l'élément a bougé), ou abandon (`commit` faux : annulation du pointeur, fin du
+ * mode édition).
+ */
+export interface DecorDragListener {
+  start(index: number): void;
+  move(index: number, x: number, z: number): void;
+  end(index: number, commit: boolean): void;
+}
+
+/**
  * Vue 3D du bac, sans Angular : renderer, scène, caméra et contrôles orbitaux.
  * Le composant hôte (`ui/`) porte la boucle d'affichage et appelle `renderFrame()`.
  *
@@ -163,6 +177,74 @@ export class AquariumView {
   /** Appui du pointeur principal en attente de relâchement (`null` : aucun clic possible). */
   private pendingClick: { readonly id: number; readonly x: number; readonly y: number } | null =
     null;
+  /** Contrôles à la souris demandés (faux en mode capture) ; coupés le temps d'un glissement. */
+  private readonly interactive: boolean;
+  /** Glissement du décor possible (mode édition, `setDecorDragEnabled`). */
+  private decorDragEnabled = false;
+  private decorDragListener: DecorDragListener | null = null;
+  /** Glissement en cours d'un élément du décor (`null` sinon). */
+  private drag: {
+    readonly id: number;
+    readonly index: number;
+    readonly offsetX: number;
+    readonly offsetZ: number;
+    readonly start: { readonly x: number; readonly y: number };
+    moved: boolean;
+  } | null = null;
+  /**
+   * Appui sur un élément du décor en mode édition (#168) : écouté en phase de capture, donc
+   * avant `OrbitControls`, coupés pour tout le geste (glisser un élément ne tourne pas la
+   * caméra). Un appui dans le vide laisse les contrôles tourner comme avant.
+   */
+  private readonly onDragPointerDown = (event: PointerEvent) => {
+    const listener = this.decorDragListener;
+    if (
+      !listener ||
+      !this.decorDragEnabled ||
+      !this.interactive ||
+      this.drag ||
+      event.button !== 0 ||
+      !event.isPrimary
+    ) {
+      return;
+    }
+    const pick = this.pickDecor(event.clientX, event.clientY);
+    const center = pick?.kind === 'item' ? this.decorLayer.itemPosition(pick.index) : null;
+    if (pick?.kind !== 'item' || !center) {
+      return;
+    }
+    const grab = this.sandPlaneAt(event.clientX, event.clientY);
+    this.drag = {
+      id: event.pointerId,
+      index: pick.index,
+      offsetX: grab ? center.x - grab.x : 0,
+      offsetZ: grab ? center.z - grab.z : 0,
+      start: { x: event.clientX, y: event.clientY },
+      moved: false,
+    };
+    this.controls.enabled = false;
+    this.canvas.style.cursor = 'grabbing';
+    try {
+      this.canvas.setPointerCapture?.(event.pointerId);
+    } catch {
+      // Pointeur déjà relâché : le glissement s'arrêtera au prochain relâchement.
+    }
+    listener.start(pick.index);
+  };
+  private readonly onDragPointerMove = (event: PointerEvent) => {
+    const drag = this.drag;
+    if (!drag || drag.id !== event.pointerId) {
+      return;
+    }
+    if (!drag.moved && isClick(drag.start, { x: event.clientX, y: event.clientY })) {
+      return;
+    }
+    drag.moved = true;
+    const p = this.sandPlaneAt(event.clientX, event.clientY);
+    if (p) {
+      this.decorDragListener?.move(drag.index, p.x + drag.offsetX, p.z + drag.offsetZ);
+    }
+  };
   private readonly onPointerDown = (event: PointerEvent) => {
     this.pendingClick =
       event.button === 0 && event.isPrimary
@@ -170,12 +252,15 @@ export class AquariumView {
         : null;
   };
   private readonly onPointerUp = (event: PointerEvent) => {
+    if (this.drag?.id === event.pointerId) {
+      this.endDrag(true);
+    }
     const down = this.pendingClick;
     this.pendingClick = null;
     if (
       !down ||
       down.id !== event.pointerId ||
-      !this.controls.enabled ||
+      !this.interactive ||
       !isClick(down, { x: event.clientX, y: event.clientY })
     ) {
       return;
@@ -190,8 +275,11 @@ export class AquariumView {
       }
     }
   };
-  private readonly onPointerCancel = () => {
+  private readonly onPointerCancel = (event: PointerEvent) => {
     this.pendingClick = null;
+    if (this.drag?.id === event.pointerId) {
+      this.endDrag(false);
+    }
   };
   private readonly pixelRatio: number;
   private width = 0;
@@ -257,6 +345,7 @@ export class AquariumView {
     this.camera = new PerspectiveCamera(CAMERA_FOV_DEG, 1, radius * 0.05, radius * 40);
 
     this.controls = new OrbitControls(this.camera, options.canvas);
+    this.interactive = options.interactive;
     this.controls.enabled = options.interactive;
     this.controls.enableDamping = false;
     const limits = orbitDistanceLimits(this.world.dimensions);
@@ -283,6 +372,9 @@ export class AquariumView {
     options.canvas.addEventListener('pointerdown', this.onPointerDown);
     options.canvas.addEventListener('pointerup', this.onPointerUp);
     options.canvas.addEventListener('pointercancel', this.onPointerCancel);
+    // Glissement du décor (#168) : avant `OrbitControls`, qui écoute en phase de bouillonnement.
+    options.canvas.addEventListener('pointerdown', this.onDragPointerDown, { capture: true });
+    options.canvas.addEventListener('pointermove', this.onDragPointerMove);
 
     this.preset = options.preset;
     this.applyPreset(options.preset);
@@ -313,7 +405,7 @@ export class AquariumView {
     if (this.disposed) {
       return;
     }
-    if (!(durationSeconds > 0) || !this.controls.enabled) {
+    if (!(durationSeconds > 0) || !this.interactive) {
       this.applyPreset(preset);
       return;
     }
@@ -494,6 +586,68 @@ export class AquariumView {
       this.world.dimensions,
     );
     return point ? { kind: 'sand', x: point.x, z: point.z } : null;
+  }
+
+  /** Point du plan du sable (non borné) sous le point de l'écran, `null` hors du canvas. */
+  private sandPlaneAt(clientX: number, clientY: number): { x: number; z: number } | null {
+    const ndc = toNormalizedDevice(clientX, clientY, this.canvas.getBoundingClientRect());
+    if (!ndc) {
+      return null;
+    }
+    this.camera.updateMatrixWorld();
+    this.raycaster.setFromCamera(new Vector2(ndc.x, ndc.y), this.camera);
+    const { origin, direction } = this.raycaster.ray;
+    return sandPlanePoint([origin.x, origin.y, origin.z], [direction.x, direction.y, direction.z]);
+  }
+
+  /**
+   * Autorise ou non le glissement des éléments du décor (mode édition, #168). Le couper
+   * pendant un glissement l'abandonne (`end` sans `commit`) et rend la main à la caméra.
+   */
+  setDecorDragEnabled(enabled: boolean): void {
+    this.decorDragEnabled = enabled;
+    if (!enabled && this.drag) {
+      this.endDrag(false);
+    }
+  }
+
+  /** Abonnement (unique) au glissement du décor (`DecorDragListener`). Renvoie le désabonnement. */
+  onDecorDrag(listener: DecorDragListener): () => void {
+    this.decorDragListener = listener;
+    return () => {
+      if (this.decorDragListener === listener) {
+        this.decorDragListener = null;
+      }
+    };
+  }
+
+  /** Vrai pendant le glissement d'un élément du décor (tests). */
+  get decorDragging(): boolean {
+    return this.drag !== null;
+  }
+
+  /** Aperçu du glissement : l'élément `index` affiché en (x, z), sans reconstruire le décor. */
+  previewDecorMove(index: number, x: number, z: number): void {
+    if (!this.disposed) {
+      this.decorLayer.moveItem(index, x, z);
+    }
+  }
+
+  /** Termine le glissement en cours : caméra rendue, abonné prévenu. */
+  private endDrag(commit: boolean): void {
+    const drag = this.drag;
+    if (!drag) {
+      return;
+    }
+    this.drag = null;
+    this.controls.enabled = this.interactive && !this.disposed;
+    this.canvas.style.cursor = '';
+    try {
+      this.canvas.releasePointerCapture?.(drag.id);
+    } catch {
+      // Capture déjà relâchée par le navigateur.
+    }
+    this.decorDragListener?.end(drag.index, commit && drag.moved);
   }
 
   /** Sélectionne l'élément d'indice `index` de `World.decor` (contour clair), ou aucun. */
@@ -821,6 +975,10 @@ export class AquariumView {
     this.canvas.removeEventListener('pointerdown', this.onPointerDown);
     this.canvas.removeEventListener('pointerup', this.onPointerUp);
     this.canvas.removeEventListener('pointercancel', this.onPointerCancel);
+    this.canvas.removeEventListener('pointerdown', this.onDragPointerDown, { capture: true });
+    this.canvas.removeEventListener('pointermove', this.onDragPointerMove);
+    this.drag = null;
+    this.decorDragListener = null;
     this.surfaceClickListeners.clear();
     this.canvasClickListeners.clear();
     this.controls.dispose();

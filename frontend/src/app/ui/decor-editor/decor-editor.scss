@@ -78,6 +78,15 @@
   flex: 1 1 0;
 }
 
+// Pose (#168) : rotation puis échelle, deux par ligne, au-dessus de « Supprimer » et
+// « Terminer ».
+.decor-editor__pose {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
 .decor-editor__action--done {
   border-color: #5fbfa3;
 }
@@ -92,6 +101,15 @@
 .decor-editor__count {
   margin: 6px 0 0;
   font-variant-numeric: tabular-nums;
+}
+
+// Écran tactile ou étroit : cibles de 44 px au moins (#168).
+@media (pointer: coarse), (max-width: 480px) {
+  .decor-editor__tool,
+  .decor-editor__action {
+    min-width: 44px;
+    min-height: 44px;
+  }
 }
 
 // Petit écran : l'indicateur et les boutons du haut sont à 8 px du bord.

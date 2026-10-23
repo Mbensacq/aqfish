@@ -1,5 +1,5 @@
 import { SAND_THICKNESS, DEFAULT_TANK } from '../sim/tank';
-import { sandPoint } from './decor-pick';
+import { sandPlanePoint, sandPoint } from './decor-pick';
 
 describe('sandPoint', () => {
   it('trouve le point visé sur le sable, vu de biais comme d’aplomb', () => {
@@ -20,5 +20,21 @@ describe('sandPoint', () => {
   it('accepte le bord exact du bac', () => {
     const edge = DEFAULT_TANK.width / 2;
     expect(sandPoint([edge, 1, 0], [0, -1, 0], DEFAULT_TANK)).toEqual({ x: edge, z: 0 });
+  });
+});
+
+describe('sandPlanePoint', () => {
+  it('suit le rayon hors du bac (glissement borné ensuite)', () => {
+    const far = sandPlanePoint([DEFAULT_TANK.width, 1, 0], [0, -1, 0]);
+    expect(far).toEqual({ x: DEFAULT_TANK.width, z: 0 });
+    // Vu de dessous : le rayon remonte vers le sable.
+    const below = sandPlanePoint([0.1, -1, 0.05], [0, 1, 0]);
+    expect(below).toEqual({ x: 0.1, z: 0.05 });
+  });
+
+  it('rien pour un rayon parallèle ou qui s’éloigne du plan', () => {
+    expect(sandPlanePoint([0, 1, 0], [1, 0, 0])).toBeNull();
+    expect(sandPlanePoint([0, 1, 0], [0, 1, 0])).toBeNull();
+    expect(sandPlanePoint([0, 1, 0], [0, Number.NaN, 0])).toBeNull();
   });
 });

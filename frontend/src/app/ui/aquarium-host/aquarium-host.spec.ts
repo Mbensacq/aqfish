@@ -21,7 +21,9 @@ import {
 import { expiryAge, FOOD_PER_DROP } from '../../sim/food';
 import { setPopulation } from '../../sim/population';
 import { advance, advanceToWithFeedings, createDefaultWorld } from '../../sim/world';
-import { DEFAULT_DECOR } from '../../sim/decor';
+import { DEFAULT_DECOR, MAX_DECOR_SCALE, MIN_DECOR_SCALE } from '../../sim/decor';
+import { DECOR_ROTATION_STEP, DECOR_SCALE_STEP, decorFootprint } from '../../sim/decor-edit';
+import { DEFAULT_TANK } from '../../sim/tank';
 import {
   applyPopulation,
   AQUARIUM_RENDERER_FACTORY,
@@ -1464,6 +1466,104 @@ describe('AquariumHost', () => {
       expect(host().decorEditable()).toBe(false);
       host().setDecorEditing(true);
       expect(host().decorEditing()).toBe(false);
+    });
+
+    it('tourner et redimensionner la sélection (#168), enregistré aussitôt', async () => {
+      await create();
+      host().setDecorEditing(true);
+      expect(host().rotateSelectedDecor(1)).toBe(false);
+      host().editAt({ kind: 'item', index: 2 });
+      expect(host().rotateSelectedDecor(1)).toBe(true);
+      expect(host().world!.decor[2].rotation).toBeCloseTo(
+        DEFAULT_DECOR[2].rotation + DECOR_ROTATION_STEP,
+        12,
+      );
+      expect(host().scaleSelectedDecor(-1)).toBe(true);
+      expect(host().world!.decor[2].scale).toBe(DEFAULT_DECOR[2].scale - DECOR_SCALE_STEP);
+      // La sélection reste sur l'élément modifié ; les autres sont intacts.
+      expect(host().decorSelection()).toBe(2);
+      expect(host().world!.decor.filter((_, n) => n !== 2)).toEqual(
+        DEFAULT_DECOR.filter((_, n) => n !== 2),
+      );
+      const saved = parseWorld(saveStorage!.getItem(SAVE_STORAGE_KEY)!);
+      expect(saved.ok && saved.world.decor[2].scale).toBe(host().world!.decor[2].scale);
+      // À la borne d'échelle : rien ne change, et ce n'est pas un refus.
+      while (host().scaleSelectedDecor(-1)) {
+        // jusqu'à MIN_DECOR_SCALE
+      }
+      expect(host().world!.decor[2].scale).toBe(MIN_DECOR_SCALE);
+      expect(host().decorRefused()).toBe(false);
+    });
+
+    it('agrandir jusqu’à pénétrer un voisin : refusé, signalé, pose inchangée', async () => {
+      await create('?seed=42');
+      host().setDecorEditing(true);
+      host().editAt({ kind: 'item', index: 1 });
+      let n = 0;
+      while (host().scaleSelectedDecor(1)) {
+        n++;
+      }
+      const decor = host().world!.decor;
+      expect(decor[1].scale).toBeLessThan(MAX_DECOR_SCALE);
+      expect(host().decorRefused()).toBe(true);
+      expect(n).toBeGreaterThan(0);
+      // Une sélection efface le refus.
+      host().selectDecor(1);
+      expect(host().decorRefused()).toBe(false);
+    });
+
+    it('glisser : aperçu borné au bac, pose enregistrée au lâcher (#168)', async () => {
+      await create();
+      host().setDecorEditing(true);
+      host().startDecorDrag(2);
+      expect(host().decorSelection()).toBe(2);
+      host().moveDecorDrag(2, 0.35, 10);
+      // Pendant le glissement, le monde n'a pas changé.
+      expect(host().world!.decor).toEqual(DEFAULT_DECOR);
+      host().endDecorDrag(2, true);
+      const rock = host().world!.decor[2];
+      expect(rock.x).toBe(0.35);
+      expect(rock.z).toBeCloseTo(DEFAULT_TANK.depth / 2 - decorFootprint(rock), 12);
+      expect(host().world!.obstacles.length).toBe(DEFAULT_DECOR.length);
+      const saved = parseWorld(saveStorage!.getItem(SAVE_STORAGE_KEY)!);
+      expect(saved.ok && saved.world.decor[2]).toEqual(rock);
+    });
+
+    it('glisser sur un autre élément : refusé, retour à la dernière pose valide', async () => {
+      await create('?seed=42');
+      host().setDecorEditing(true);
+      host().startDecorDrag(2);
+      host().moveDecorDrag(2, DEFAULT_DECOR[1].x, DEFAULT_DECOR[1].z);
+      host().endDecorDrag(2, true);
+      expect(host().world!.decor).toEqual(DEFAULT_DECOR);
+      expect(host().decorRefused()).toBe(true);
+      // Geste abandonné (commit faux) : rien n'est enregistré, sans refus.
+      host().startDecorDrag(2);
+      host().moveDecorDrag(2, 0, 0.15);
+      host().endDecorDrag(2, false);
+      expect(host().world!.decor).toEqual(DEFAULT_DECOR);
+      expect(host().decorRefused()).toBe(false);
+      // Hors édition ou indice inexistant : ignoré.
+      host().setDecorEditing(false);
+      host().startDecorDrag(2);
+      host().moveDecorDrag(2, 0, 0.15);
+      host().endDecorDrag(2, true);
+      host().setDecorEditing(true);
+      host().startDecorDrag(99);
+      host().moveDecorDrag(99, 0, 0.15);
+      host().endDecorDrag(99, true);
+      expect(host().world!.decor).toEqual(DEFAULT_DECOR);
+    });
+
+    it('glisser pendant qu’un élément est supprimé : le glissement est abandonné', async () => {
+      await create('?seed=42');
+      host().setDecorEditing(true);
+      host().startDecorDrag(2);
+      host().moveDecorDrag(2, 0, 0.15);
+      expect(host().deleteSelectedDecor()).toBe(true);
+      host().moveDecorDrag(2, 0, 0.16);
+      host().endDecorDrag(2, true);
+      expect(host().world!.decor).toEqual(DEFAULT_DECOR.filter((_, n) => n !== 2));
     });
 
     it('capture : edition=<indice> montre la sélection ; aucune édition possible', async () => {

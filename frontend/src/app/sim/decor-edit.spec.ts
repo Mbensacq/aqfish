@@ -1,13 +1,28 @@
-import { DEFAULT_DECOR, validateDecorItem, type DecorItem } from './decor';
+import {
+  DEFAULT_DECOR,
+  MAX_DECOR_SCALE,
+  MIN_DECOR_SCALE,
+  validateDecorItem,
+  type DecorItem,
+} from './decor';
 import {
   addDecorItem,
   canPlaceDecorAt,
+  clampDecorPosition,
+  decorFootprint,
+  decorItemsOverlap,
   DECOR_EDGE_MARGIN,
+  DECOR_ROTATION_STEP,
+  DECOR_SCALE_STEP,
   isDecorChoiceId,
   isDecorEditable,
+  isDecorPoseAllowed,
   MAX_DECOR_ITEMS,
+  moveDecorItem,
   nextDecorSeed,
   removeDecorItem,
+  rotateDecorItem,
+  scaleDecorItem,
   setDecorInPlace,
   withDecor,
 } from './decor-edit';
@@ -228,5 +243,203 @@ describe('setDecorInPlace et withDecor', () => {
       expect(result.world.decor).toEqual(decor);
       expect(result.world.obstacles).toEqual(world.obstacles);
     }
+  });
+});
+
+describe('decorFootprint', () => {
+  it('contient tous les voxels, et croît avec l’échelle', () => {
+    for (const item of DEFAULT_DECOR) {
+      const r = decorFootprint(item);
+      expect(r).toBeGreaterThan(0);
+      expect(decorFootprint({ ...item, scale: item.scale * 2 })).toBeGreaterThan(r);
+    }
+  });
+
+  it('ne dépend pas de la rotation ni de la position', () => {
+    const rock = DEFAULT_DECOR[0];
+    expect(decorFootprint({ ...rock, rotation: 3, x: 0.2, z: -0.1 })).toBe(decorFootprint(rock));
+  });
+});
+
+describe('clampDecorPosition', () => {
+  const rock = DEFAULT_DECOR[2];
+  const reach = decorFootprint(rock);
+
+  it('laisse inchangée une position libre à l’intérieur du bac', () => {
+    expect(clampDecorPosition(rock, 0.1, -0.05, 'tropical')).toEqual({ x: 0.1, z: -0.05 });
+  });
+
+  it('borne la position à l’emprise de l’élément, sur chaque vitre (bornes comprises)', () => {
+    expect(clampDecorPosition(rock, 5, 0, 'tropical')).toEqual({ x: HALF_W - reach, z: 0 });
+    expect(clampDecorPosition(rock, -5, 0, 'tropical')).toEqual({ x: -(HALF_W - reach), z: 0 });
+    expect(clampDecorPosition(rock, 0, 5, 'tropical')).toEqual({ x: 0, z: HALF_D - reach });
+    expect(clampDecorPosition(rock, 0, -5, 'tropical')).toEqual({ x: 0, z: -(HALF_D - reach) });
+    // Juste à la borne : inchangé.
+    expect(clampDecorPosition(rock, HALF_W - reach, 0, 'tropical')!.x).toBe(HALF_W - reach);
+    // Coin : les deux axes sont bornés.
+    expect(clampDecorPosition(rock, 9, -9, 'tropical')).toEqual({
+      x: HALF_W - reach,
+      z: -(HALF_D - reach),
+    });
+  });
+
+  it('garde au moins DECOR_EDGE_MARGIN, même pour un élément minuscule', () => {
+    const tiny = { ...rock, scale: MIN_DECOR_SCALE };
+    const p = clampDecorPosition(tiny, 9, 9, 'tropical')!;
+    expect(HALF_W - p.x).toBeGreaterThanOrEqual(DECOR_EDGE_MARGIN - 1e-12);
+    expect(HALF_D - p.z).toBeGreaterThanOrEqual(DECOR_EDGE_MARGIN - 1e-12);
+  });
+
+  it('centre sur un axe un élément plus large que le bac', () => {
+    const huge = { ...rock, scale: MAX_DECOR_SCALE };
+    expect(decorFootprint(huge)).toBeGreaterThan(HALF_D);
+    expect(clampDecorPosition(huge, 0.1, 0.2, 'tropical')!.z).toBe(0);
+  });
+
+  it('refuse une position non finie', () => {
+    expect(clampDecorPosition(rock, Number.NaN, 0, 'tropical')).toBeNull();
+    expect(clampDecorPosition(rock, 0, Infinity, 'tropical')).toBeNull();
+  });
+});
+
+describe('moveDecorItem', () => {
+  it('déplace l’élément d’indice donné, sans modifier le décor ni les autres éléments', () => {
+    const start = [...DEFAULT_DECOR];
+    const moved = moveDecorItem(start, 2, 0.05, 0.1, 'tropical')!;
+    expect(moved[2]).toEqual({ ...DEFAULT_DECOR[2], x: 0.05, z: 0.1 });
+    expect(start).toEqual(DEFAULT_DECOR);
+    moved.forEach((item, n) => {
+      if (n !== 2) {
+        expect(item).toBe(DEFAULT_DECOR[n]);
+      }
+    });
+  });
+
+  it('borne la position au bac (rayon de la souris hors du bac)', () => {
+    const moved = moveDecorItem(DEFAULT_DECOR, 0, 10, -10, 'tropical')!;
+    const reach = decorFootprint(DEFAULT_DECOR[0]);
+    expect(moved[0].x).toBeCloseTo(HALF_W - reach, 12);
+    expect(moved[0].z).toBeCloseTo(-(HALF_D - reach), 12);
+    expect(validateDecorItem(moved[0])).toEqual([]);
+  });
+
+  it('null : indice inexistant, position non finie, environnement non éditable', () => {
+    expect(moveDecorItem(DEFAULT_DECOR, -1, 0, 0, 'tropical')).toBeNull();
+    expect(moveDecorItem(DEFAULT_DECOR, DEFAULT_DECOR.length, 0, 0, 'tropical')).toBeNull();
+    expect(moveDecorItem(DEFAULT_DECOR, 1.5, 0, 0, 'tropical')).toBeNull();
+    expect(moveDecorItem(DEFAULT_DECOR, 0, Number.NaN, 0, 'tropical')).toBeNull();
+    expect(moveDecorItem(DEFAULT_DECOR, 0, 0, 0, 'bassin')).toBeNull();
+    expect(moveDecorItem([], 0, 0, 0, 'tropical')).toBeNull();
+  });
+});
+
+describe('rotateDecorItem', () => {
+  it('tourne par pas de 15°, dans les deux sens, angle dans [0, 2π)', () => {
+    expect(DECOR_ROTATION_STEP).toBeCloseTo((15 * Math.PI) / 180, 12);
+    const item: DecorItem = { ...DEFAULT_DECOR[2], rotation: 0 };
+    const decor = [item];
+    expect(rotateDecorItem(decor, 0, 1, 'tropical')![0].rotation).toBeCloseTo(Math.PI / 12, 12);
+    expect(rotateDecorItem(decor, 0, -1, 'tropical')![0].rotation).toBeCloseTo(
+      2 * Math.PI - Math.PI / 12,
+      12,
+    );
+    // 24 pas : un tour complet.
+    expect(rotateDecorItem(decor, 0, 24, 'tropical')![0].rotation).toBeCloseTo(0, 9);
+    let current: DecorItem[] = decor;
+    for (let n = 0; n < 30; n++) {
+      current = rotateDecorItem(current, 0, 1, 'tropical')!;
+      expect(current[0].rotation).toBeGreaterThanOrEqual(0);
+      expect(current[0].rotation).toBeLessThan(2 * Math.PI);
+    }
+    expect(current[0].rotation).toBeCloseTo(6 * DECOR_ROTATION_STEP, 9);
+    expect(current[0]).toMatchObject({ x: item.x, z: item.z, scale: item.scale });
+  });
+
+  it('null : zéro pas, pas fractionnaire, indice inexistant, environnement non éditable', () => {
+    expect(rotateDecorItem(DEFAULT_DECOR, 0, 0, 'tropical')).toBeNull();
+    expect(rotateDecorItem(DEFAULT_DECOR, 0, 0.5, 'tropical')).toBeNull();
+    expect(rotateDecorItem(DEFAULT_DECOR, 99, 1, 'tropical')).toBeNull();
+    expect(rotateDecorItem(DEFAULT_DECOR, 0, 1, 'recif')).toBeNull();
+  });
+});
+
+describe('scaleDecorItem', () => {
+  it('change l’échelle par pas de DECOR_SCALE_STEP, sans dérive', () => {
+    const decor = [{ ...DEFAULT_DECOR[2], x: 0, z: 0, scale: 1.4 }];
+    expect(scaleDecorItem(decor, 0, 1, 'tropical')![0].scale).toBe(1.4 + DECOR_SCALE_STEP);
+    expect(scaleDecorItem(decor, 0, 3, 'tropical')![0].scale).toBe(2.15);
+    expect(scaleDecorItem(decor, 0, -2, 'tropical')![0].scale).toBe(0.9);
+  });
+
+  it('borne l’échelle à [MIN_DECOR_SCALE, MAX_DECOR_SCALE] ; null à la borne', () => {
+    const decor = [{ ...DEFAULT_DECOR[2], x: 0, z: 0, scale: 1 }];
+    expect(scaleDecorItem(decor, 0, 100, 'tropical')![0].scale).toBe(MAX_DECOR_SCALE);
+    expect(scaleDecorItem(decor, 0, -100, 'tropical')![0].scale).toBe(MIN_DECOR_SCALE);
+    const top = [{ ...decor[0], scale: MAX_DECOR_SCALE }];
+    const bottom = [{ ...decor[0], scale: MIN_DECOR_SCALE }];
+    expect(scaleDecorItem(top, 0, 1, 'tropical')).toBeNull();
+    expect(scaleDecorItem(bottom, 0, -1, 'tropical')).toBeNull();
+    expect(scaleDecorItem(top, 0, -1, 'tropical')![0].scale).toBe(MAX_DECOR_SCALE - 0.25);
+  });
+
+  it('rentre dans le bac un élément agrandi contre une vitre', () => {
+    const rock = DEFAULT_DECOR[2];
+    const atEdge = clampDecorPosition(rock, 9, 0, 'tropical')!;
+    const decor = [{ ...rock, x: atEdge.x, z: 0 }];
+    const bigger = scaleDecorItem(decor, 0, 2, 'tropical')![0];
+    expect(bigger.x).toBeLessThan(atEdge.x);
+    expect(bigger.x + decorFootprint(bigger)).toBeCloseTo(HALF_W, 12);
+  });
+
+  it('null : zéro pas, pas fractionnaire, indice inexistant', () => {
+    expect(scaleDecorItem(DEFAULT_DECOR, 0, 0, 'tropical')).toBeNull();
+    expect(scaleDecorItem(DEFAULT_DECOR, 0, 1.5, 'tropical')).toBeNull();
+    expect(scaleDecorItem(DEFAULT_DECOR, -1, 1, 'tropical')).toBeNull();
+  });
+});
+
+describe('isDecorPoseAllowed (chevauchement au lâcher)', () => {
+  const rockA: DecorItem = { kind: 'rock', x: -0.2, z: 0, rotation: 0, scale: 1, seed: 11 };
+  const rockB: DecorItem = { kind: 'rock', x: 0.2, z: 0, rotation: 0, scale: 1, seed: 27 };
+
+  it('le décor par défaut ne se chevauche pas', () => {
+    DEFAULT_DECOR.forEach((a, i) =>
+      DEFAULT_DECOR.forEach((b, j) => {
+        if (j > i) {
+          expect(decorItemsOverlap(a, b)).toBe(false);
+        }
+      }),
+    );
+  });
+
+  it('accepte une pose libre, refuse une pose qui pénètre un autre élément', () => {
+    const decor = [rockA, rockB];
+    const free = moveDecorItem(decor, 0, -0.3, 0.05, 'tropical')!;
+    expect(isDecorPoseAllowed(decor, free, 0)).toBe(true);
+    const onTop = moveDecorItem(decor, 0, 0.21, 0, 'tropical')!;
+    expect(decorItemsOverlap(onTop[0], rockB)).toBe(true);
+    expect(isDecorPoseAllowed(decor, onTop, 0)).toBe(false);
+  });
+
+  it('un chevauchement hérité ne bloque pas l’élément ; un nouveau, si', () => {
+    const rockC: DecorItem = { ...rockB, x: -0.5, seed: 3 };
+    const tangled = [rockA, { ...rockB, x: -0.18 }, rockC];
+    expect(decorItemsOverlap(tangled[0], tangled[1])).toBe(true);
+    const turned = rotateDecorItem(tangled, 0, 1, 'tropical');
+    expect(turned).not.toBeNull();
+    const intoC = moveDecorItem(tangled, 0, -0.48, 0, 'tropical')!;
+    expect(isDecorPoseAllowed(tangled, intoC, 0)).toBe(false);
+  });
+
+  it('refuse un agrandissement ou une rotation qui pénètre un voisin', () => {
+    const close: DecorItem[] = [rockA, { ...rockB, x: rockA.x + 0.13 }];
+    expect(decorItemsOverlap(close[0], close[1])).toBe(false);
+    expect(scaleDecorItem(close, 0, 4, 'tropical')).toBeNull();
+  });
+
+  it('faux pour des décors de longueurs différentes ou un indice inexistant', () => {
+    expect(isDecorPoseAllowed([rockA, rockB], [rockA], 0)).toBe(false);
+    expect(isDecorPoseAllowed([rockA], [rockA], 1)).toBe(false);
+    expect(isDecorPoseAllowed([rockA], [rockA], -1)).toBe(false);
   });
 });

@@ -43,8 +43,12 @@ import type { DecorPick } from '../../render/decor-pick';
 import {
   addDecorItem,
   isDecorEditable,
+  isDecorPoseAllowed,
   isDecorTool,
+  moveDecorItem,
   removeDecorItem,
+  rotateDecorItem,
+  scaleDecorItem,
   setDecorInPlace,
   type DecorTool,
 } from '../../sim/decor-edit';
@@ -374,6 +378,23 @@ export class AquariumHost {
   /** Nombre d'éléments du décor (#167). */
   readonly decorCount = signal(0);
 
+  /**
+   * Vrai si la dernière pose demandée (glissement, rotation, échelle, #168) a été refusée
+   * parce qu'elle pénétrait un autre élément ; effacé à la sélection suivante ou à la pose
+   * acceptée suivante.
+   */
+  readonly decorRefused = signal(false);
+
+  /**
+   * Glissement en cours (#168) : décor du monde au début du geste (abandon s'il a changé
+   * entre-temps) et dernier aperçu (décor déplacé, borné au bac).
+   */
+  private decorDrag: {
+    readonly base: readonly DecorItem[];
+    readonly index: number;
+    preview: DecorItem[] | null;
+  } | null = null;
+
   /** État courant de la simulation (`null` avant le démarrage et après la destruction). */
   get world(): World | null {
     return this.currentWorld;
@@ -638,6 +659,7 @@ export class AquariumHost {
     if (!world || !view) {
       return;
     }
+    this.decorRefused.set(false);
     const valid =
       index !== null && Number.isInteger(index) && index >= 0 && index < world.decor.length;
     if (index !== null && (!valid || !this.decorEditing())) {
@@ -698,6 +720,101 @@ export class AquariumHost {
   }
 
   /**
+   * Tourne l'élément sélectionné de `steps` pas de 15° (flèches, boutons, #168) ; renvoie
+   * `true` si la pose a changé. Refusée (`decorRefused`) si elle pénètre un autre élément.
+   */
+  rotateSelectedDecor(steps: number): boolean {
+    return this.editSelected((decor, index, env) => rotateDecorItem(decor, index, steps, env));
+  }
+
+  /**
+   * Agrandit (`steps` > 0) ou réduit l'élément sélectionné (touches + et −, boutons, #168) ;
+   * renvoie `true` si la pose a changé. Sans effet à la borne d'échelle ; refusée
+   * (`decorRefused`) si elle pénètre un autre élément.
+   */
+  scaleSelectedDecor(steps: number): boolean {
+    return this.editSelected((decor, index, env) => scaleDecorItem(decor, index, steps, env));
+  }
+
+  /** Applique `edit` à l'élément sélectionné ; `null` d'`edit` : pose refusée ou inchangée. */
+  private editSelected(
+    edit: (decor: readonly DecorItem[], index: number, env: EnvironmentId) => DecorItem[] | null,
+  ): boolean {
+    const world = this.currentWorld;
+    const index = this.decorSelection();
+    if (!world || index === null || !this.decorEditing() || this.decorDrag) {
+      return false;
+    }
+    const decor = edit(world.decor, index, world.environment);
+    if (!decor) {
+      // Inchangée à la borne d'échelle ; sinon, la pose pénétrait un voisin.
+      this.decorRefused.set(this.wouldOverlap(edit, world.decor, index, world.environment));
+      return false;
+    }
+    this.applyDecor(decor, index);
+    return true;
+  }
+
+  /** Vrai si `edit` a échoué pour cause de chevauchement (et non de borne). */
+  private wouldOverlap(
+    edit: (decor: readonly DecorItem[], index: number, env: EnvironmentId) => DecorItem[] | null,
+    decor: readonly DecorItem[],
+    index: number,
+    env: EnvironmentId,
+  ): boolean {
+    // Sans les voisins, la même modification réussit-elle ?
+    return edit([decor[index]], 0, env) !== null;
+  }
+
+  /** Début du glissement de l'élément `index` (#168) : il est sélectionné. */
+  startDecorDrag(index: number): void {
+    const world = this.currentWorld;
+    if (!world || !this.decorEditing() || index < 0 || index >= world.decor.length) {
+      return;
+    }
+    this.selectDecor(index);
+    this.decorDrag = { base: world.decor, index, preview: null };
+  }
+
+  /** Glissement (#168) : aperçu de l'élément au point visé, borné au bac. */
+  moveDecorDrag(index: number, x: number, z: number): void {
+    const world = this.currentWorld;
+    const drag = this.decorDrag;
+    if (!world || !drag || drag.index !== index || world.decor !== drag.base) {
+      return;
+    }
+    const preview = moveDecorItem(world.decor, index, x, z, world.environment);
+    if (preview) {
+      drag.preview = preview;
+      this.view?.previewDecorMove(index, preview[index].x, preview[index].z);
+      this.scheduleFrame();
+    }
+  }
+
+  /**
+   * Fin du glissement (#168) : la pose est enregistrée si elle ne pénètre aucun autre élément
+   * (`isDecorPoseAllowed`) ; sinon, ou si le geste est abandonné, l'élément revient à sa
+   * dernière pose valide.
+   */
+  endDecorDrag(index: number, commit: boolean): void {
+    const world = this.currentWorld;
+    const drag = this.decorDrag;
+    this.decorDrag = null;
+    if (!world || !drag || drag.index !== index || world.decor !== drag.base || !drag.preview) {
+      return;
+    }
+    const allowed = isDecorPoseAllowed(world.decor, drag.preview, index);
+    if (commit && this.decorEditing() && allowed) {
+      this.applyDecor(drag.preview, index);
+      return;
+    }
+    const last = world.decor[index];
+    this.view?.previewDecorMove(index, last.x, last.z);
+    this.decorRefused.set(commit && !allowed);
+    this.scheduleFrame();
+  }
+
+  /**
    * Installe un décor édité (#167) : obstacles du monde recalculés, vue mise à jour,
    * sélection `selection`, puis sauvegarde immédiate (le rechargement le restitue).
    */
@@ -708,6 +825,7 @@ export class AquariumHost {
       return;
     }
     setDecorInPlace(world, decor);
+    this.decorRefused.set(false);
     view.replaceDecorItems(world.decor, world.seed);
     this.exposeDecorCount();
     view.setDecorSelection(selection);
@@ -995,6 +1113,15 @@ export class AquariumHost {
     this.activePreset.set(preset);
     this.viewCleanups.push(view.onCameraChange(() => this.exposeCamera()));
     this.viewCleanups.push(view.onUserInteraction(() => this.activePreset.set(null)));
+    view.setDecorDragEnabled(this.decorEditing());
+    this.decorDrag = null;
+    this.viewCleanups.push(
+      view.onDecorDrag({
+        start: (index) => this.startDecorDrag(index),
+        move: (index, x, z) => this.moveDecorDrag(index, x, z),
+        end: (index, commit) => this.endDecorDrag(index, commit),
+      }),
+    );
     // En mode édition, un clic pose ou choisit un élément du décor au lieu de nourrir (#167).
     this.viewCleanups.push(
       view.onCanvasClick((x, y) => {
@@ -1193,6 +1320,9 @@ export class AquariumHost {
   /** Applique et expose le mode édition (`data-aqfish-editing`, signal `decorEditing`). */
   private applyDecorEditing(editing: boolean): void {
     this.decorEditing.set(editing);
+    this.decorRefused.set(false);
+    // Hors capture seulement : `edition=` montre la sélection sans gestes.
+    this.view?.setDecorDragEnabled(editing && !this.capture);
     this.host.nativeElement.setAttribute(EDITING_ATTRIBUTE, String(editing));
   }
 
