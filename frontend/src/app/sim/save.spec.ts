@@ -162,6 +162,18 @@ describe('serializeWorld / parseWorld : aller-retour', () => {
     expect(back.entities[0]).not.toBe(world.entities[0]);
   });
 
+  it('récif (#149) : coraux recalculés de la graine, sans champ nouveau ; explicite refusé', () => {
+    const world = createDefaultWorld(42, 'recif');
+    expect(world.obstacles.length).toBeGreaterThan(world.decor.length);
+    const text = serializeWorld(world);
+    expect(text).not.toContain('corail');
+    expect(text).not.toContain('box');
+    const { world: back } = restored(parseWorld(text));
+    expect(back.obstacles).toEqual(world.obstacles);
+    const extra = createWorld(42, [], [sphereObstacle(0, 0, 0.2, 0, 0.05)], world.decor, 'recif');
+    expect(() => serializeWorld(extra)).toThrow(RangeError);
+  });
+
   it('refuse d’écrire un monde à obstacles explicites (hors décor)', () => {
     const world = createWorld(1, [], [sphereObstacle(0, 0, 0.2, 0, 0.05)]);
     expect(() => serializeWorld(world)).toThrow(RangeError);

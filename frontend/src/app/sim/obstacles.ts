@@ -6,9 +6,10 @@ import type { Vec3 } from './flocking';
  *
  * Toute forme d'obstacle se ramène à une **distance signée** à sa surface (négative à
  * l'intérieur) et à une **normale** unitaire sortante (`obstacleDistance`). Formes : la
- * sphère, et l'union de sphères (`spheres`), forme de collision fine des éléments de décor
- * (rochers, `sim/decor.ts`, ADR 0015). Une nouvelle forme n'ajoute qu'une variante à
- * `Obstacle` et un cas à `obstacleDistance`.
+ * sphère, l'union de sphères (`spheres`), forme de collision fine des éléments de décor
+ * (rochers, `sim/decor.ts`, ADR 0015), et la boîte alignée sur les axes (`box`), qui enveloppe
+ * une colonie de corail (`sim/corals.ts`, ADR 0040). Une nouvelle forme n'ajoute qu'une
+ * variante à `Obstacle` et un cas à `obstacleDistance`.
  */
 
 /** Obstacle sphérique (rocher, en attendant une forme plus fine). Unités : mètres. */
@@ -45,8 +46,25 @@ export interface SpheresObstacle {
   readonly spheres: readonly Sphere[];
 }
 
+/**
+ * Obstacle en boîte alignée sur les axes du bac (colonie de corail) : centre et
+ * demi-dimensions, en mètres.
+ */
+export interface BoxObstacle {
+  readonly id: number;
+  readonly shape: 'box';
+  /** Centre. */
+  readonly x: number;
+  readonly y: number;
+  readonly z: number;
+  /** Demi-dimensions selon X, Y et Z, strictement positives. */
+  readonly halfX: number;
+  readonly halfY: number;
+  readonly halfZ: number;
+}
+
 /** Obstacle du bac (union discriminée par `shape`). */
-export type Obstacle = SphereObstacle | SpheresObstacle;
+export type Obstacle = SphereObstacle | SpheresObstacle | BoxObstacle;
 
 /**
  * Crée un obstacle sphérique.
@@ -89,6 +107,20 @@ export function validateObstacle(obstacle: Obstacle): string[] {
     );
     return problems;
   }
+  if (obstacle.shape === 'box') {
+    for (const key of ['x', 'y', 'z'] as const) {
+      if (!Number.isFinite(obstacle[key])) {
+        problems.push(`${key} doit être un réel fini (reçu : ${obstacle[key]})`);
+      }
+    }
+    for (const key of ['halfX', 'halfY', 'halfZ'] as const) {
+      const v = obstacle[key];
+      if (!(v > 0) || !Number.isFinite(v)) {
+        problems.push(`${key} doit être un réel strictement positif (reçu : ${v})`);
+      }
+    }
+    return problems;
+  }
   problems.push(`forme d’obstacle inconnue : ${String((obstacle as { shape: unknown }).shape)}`);
   return problems;
 }
@@ -115,6 +147,10 @@ function validateSphere(sphere: Sphere, prefix: string): string[] {
  *
  * Union de sphères : minimum des distances signées des sphères (distance exacte à l'union
  * hors de l'obstacle), normale de la sphère retenue ; à égalité, la première de la liste.
+ *
+ * Boîte : distance exacte (euclidienne au point le plus proche hors de la boîte, à la face la
+ * plus proche dedans). Dedans, normale de cette face ; à égalité, X puis Y puis Z, côté
+ * positif au centre exact.
  * Aucune allocation.
  */
 export function obstacleDistance(
@@ -126,6 +162,9 @@ export function obstacleDistance(
 ): number {
   if (obstacle.shape === 'sphere') {
     return sphereDistance(obstacle, x, y, z, normal);
+  }
+  if (obstacle.shape === 'box') {
+    return boxDistance(obstacle, x, y, z, normal);
   }
   const spheres = obstacle.spheres;
   let best = sphereDistance(spheres[0], x, y, z, normal);
@@ -153,7 +192,7 @@ export function obstacleDistance(
   return best;
 }
 
-const BOUNDS = new WeakMap<SpheresObstacle, Sphere>();
+const BOUNDS = new WeakMap<SpheresObstacle | BoxObstacle, Sphere>();
 
 /**
  * Sphère englobante d'un obstacle (centre moyen des sphères, rayon couvrant chacune), mise
@@ -164,6 +203,15 @@ const BOUNDS = new WeakMap<SpheresObstacle, Sphere>();
 export function obstacleBound(obstacle: Obstacle): Sphere {
   if (obstacle.shape === 'sphere') {
     return obstacle;
+  }
+  if (obstacle.shape === 'box') {
+    let box = BOUNDS.get(obstacle);
+    if (!box) {
+      const { x, y, z, halfX, halfY, halfZ } = obstacle;
+      box = { x, y, z, radius: Math.hypot(halfX, halfY, halfZ) };
+      BOUNDS.set(obstacle, box);
+    }
+    return box;
   }
   let bound = BOUNDS.get(obstacle);
   if (!bound) {
@@ -201,4 +249,37 @@ function sphereDistance(obstacle: Sphere, x: number, y: number, z: number, norma
     normal.z = dz / d;
   }
   return d - obstacle.radius;
+}
+
+function boxDistance(box: BoxObstacle, x: number, y: number, z: number, normal: Vec3): number {
+  const dx = x - box.x;
+  const dy = y - box.y;
+  const dz = z - box.z;
+  // Écart à chaque paire de faces (positif hors de la tranche).
+  const qx = Math.abs(dx) - box.halfX;
+  const qy = Math.abs(dy) - box.halfY;
+  const qz = Math.abs(dz) - box.halfZ;
+  if (qx > 0 || qy > 0 || qz > 0) {
+    const ox = qx > 0 ? (dx < 0 ? -qx : qx) : 0;
+    const oy = qy > 0 ? (dy < 0 ? -qy : qy) : 0;
+    const oz = qz > 0 ? (dz < 0 ? -qz : qz) : 0;
+    const d = Math.sqrt(ox * ox + oy * oy + oz * oz);
+    normal.x = ox / d;
+    normal.y = oy / d;
+    normal.z = oz / d;
+    return d;
+  }
+  normal.x = 0;
+  normal.y = 0;
+  normal.z = 0;
+  if (qx >= qy && qx >= qz) {
+    normal.x = dx < 0 ? -1 : 1;
+    return qx;
+  }
+  if (qy >= qz) {
+    normal.y = dy < 0 ? -1 : 1;
+    return qy;
+  }
+  normal.z = dz < 0 ? -1 : 1;
+  return qz;
 }

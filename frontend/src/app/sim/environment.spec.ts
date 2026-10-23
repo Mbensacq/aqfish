@@ -1,3 +1,4 @@
+import { assertCoralSettings, MAX_CORALS, type CoralSettings } from './corals';
 import {
   DEFAULT_ENVIRONMENT_ID,
   ENVIRONMENT_IDS,
@@ -106,6 +107,18 @@ describe('environnements', () => {
     }
   });
 
+  it('coraux (#149) : seulement au récif, réglage valide et borné', () => {
+    for (const env of Object.values(ENVIRONMENTS)) {
+      if (env === REEF) {
+        expect(env.corals).not.toBeNull();
+        expect(assertCoralSettings(env.corals as CoralSettings)).toBe(env.corals);
+        expect(env.corals!.count.max).toBeLessThanOrEqual(MAX_CORALS);
+      } else {
+        expect(env.corals).toBeNull();
+      }
+    }
+  });
+
   it('le récif (#148) : bac vitré plus grand que le bac tropical, eau bleue, sans habitants', () => {
     expect(ENVIRONMENT_IDS).toContain('recif');
     expect(environmentById('recif')).toBe(REEF);
@@ -125,7 +138,7 @@ describe('environnements', () => {
     // Eau et tons propres au récif, sol différent de celui du bac tropical.
     expect(REEF.water).not.toEqual(TROPICAL_TANK.water);
     expect(REEF.ground.top).not.toBe(TROPICAL_TANK.ground.top);
-    expect(REEF.tones).toEqual(['eauRecif', 'eauRecifClaire']);
+    expect(REEF.tones).toEqual(['eauRecif', 'eauRecifClaire', 'corailViolet', 'corailVioletClair']);
     // Sans habitants pour l'instant : population et espèces vides.
     expect(REEF.species).toEqual([]);
     expect(REEF.population).toEqual([]);

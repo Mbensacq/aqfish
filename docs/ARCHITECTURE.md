@@ -135,8 +135,9 @@ La passe connaît aussi des **tons de nuit et du crépuscule** (ADR 0021), plac�
 couleurs de jour et pénalisés selon l'heure : écartés en plein jour (image de midi
 identique à celle de la palette de jour seule), libres en pleine nuit ou à mi-crépuscule.
 Viennent enfin les **tons d'environnement** (ADR 0039, `ENVIRONMENT_TONES`) : libres dans
-l'environnement qui les déclare (`Environment.tones`, les bleus du récif), écartés partout
-ailleurs, dont les images restent celles de la palette commune.
+l'environnement qui les déclare (`Environment.tones`, les bleus du récif et les violets de
+ses coraux, ADR 0040), écartés partout ailleurs, dont les images restent celles de la
+palette commune.
 
 **Filtre désactivable** (ADR 0010) : avec le filtre `aucun`, `renderFrame()` rend la scène
 directement à l'écran en pleine résolution, sans passe palette, et la caméra prend le
@@ -198,7 +199,9 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
 | `sim/swimmer.ts` | Poisson (état sérialisable, sous-générateur en état explicite), nage : errance, banc, évitement, bornes, préférence de profondeur et remontées (ADR 0014) |
 | `sim/flocking.ts` | Banc : séparation, alignement, cohésion, pilotage en deux phases, espacement minimal (ADR 0011) |
 | `sim/trajectory.ts` | Relevé de trajectoires sur une copie du monde, distance aux vitres et statistiques (mesure et tracé, issue #43) |
-| `sim/obstacles.ts` | Obstacles du bac (données : sphère, union de sphères), distance signée et normale (ADR 0012, 0015) |
+| `sim/obstacles.ts` | Obstacles du bac (données : sphère, union de sphères, boîte alignée sur les axes), distance signée et normale (ADR 0012, 0015, 0040) |
+| `sim/coral-shapes.ts` | Formes des coraux (#149, ADR 0040) : modèle voxel d'une colonie tiré de sa graine (`coralModel` : branchu, table, dôme), boîte englobante en voxels |
+| `sim/corals.ts` | Coraux du récif (#149, ADR 0040) : colonies de trois formes et quatre teintes, disposées d'un flux de hasard séparé (`coralLayout` : sur le sable, quarts de tour, sans chevauchement ni contact avec les rochers, nombre borné) ; boîte d'obstacle par colonie (`coralObstacles`), ajoutée aux obstacles par `createWorld` |
 | `sim/decor.ts` | Décor en données JSON (`DecorItem` : rochers et plantes, validation, `parseDecor`), rochers voxel générés depuis leur graine (`rockModel`), collision en union de sphères (`decorObstacles`), `DEFAULT_DECOR` (ADR 0015, 0016) |
 | `sim/plant.ts` | Plantes voxel générées depuis leur graine, deux formes (`tall`, `tuft`), phase d'ondulation, collision des tiges élargie de la borne d'ondulation (`plantCollision`, ADR 0016) |
 | `sim/plant-sway.ts` | Ondulation des plantes (fonction pure du temps simulé, de la hauteur relative et de la phase, bornée par `amplitude · h²`, ADR 0016) |
@@ -229,7 +232,8 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
 | `render/fish-layer.ts` | `InstancedMesh` corps et queue par espèce, interpolation entre deux pas, ondulation ; `AquariumView` en crée une par apparence de chaque entrée de `SPECIES` (ADR 0013) |
 | `render/rock-model.ts` | Maillage voxel générique (`buildVoxelMesh`) et maillage d'un rocher (couleurs plates de la palette), normales lissées de sa coque de contour (ADR 0015) |
 | `render/plant-model.ts` | Maillage voxel d'une plante (couleurs de végétation), hauteur et phase par sommet, `applyPlantSway` (positions réécrites en place, ADR 0016) |
-| `render/decor-layer.ts` | Couche du décor : maillages et coques de contour d'un pixel (décalage en pixels de la cible), placés selon `World.decor` ; `update(time)` fait onduler les plantes (ADR 0015, 0016) |
+| `render/coral-model.ts` | Maillage voxel d'une colonie de corail : flancs foncés, dessus et bouts clairs, rebord des tables foncé, polypes des dômes (`CORAL_COLORS`, ADR 0040) |
+| `render/decor-layer.ts` | Couche du décor : maillages et coques de contour d'un pixel (décalage en pixels de la cible), placés selon `World.decor`, puis les coraux (`setDecor(items, corals)`, ADR 0040) ; `update(time)` fait onduler les plantes (ADR 0015, 0016) |
 | `render/lily-pad-model.ts` | Maillage d'une feuille de nénuphar (prisme mince à encoche, dessus en deux tons), coque de contour avec onglets aux coins de l'encoche, ombre plate (données brutes, testables sans WebGL) |
 | `render/lily-flower-model.ts` | Fleurs des nénuphars et lotus (#104) : prismes convexes indexés (pétales en losange, cœur, tige de lotus) et inclinaison des pétales selon l'ouverture (données brutes, testables sans WebGL) |
 | `render/lily-pad-layer.ts` | Couche des nénuphars : feuilles et contours comme le décor (après l'eau, `polygonOffset` contre le contour), ombres en eau profonde sur le fond, dessinées entre l'eau et les rides de la surface ; `update(time)` pose la dérive (ADR 0029) ; fleurs attachées aux feuilles, contour de silhouette, `setOpenness` (ADR 0030) |

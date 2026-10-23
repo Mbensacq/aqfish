@@ -11,8 +11,10 @@ import {
   Vector2,
 } from 'three';
 
+import { coralBaseY, coralModel, type CoralColony } from '../sim/corals';
 import { plantBaseY, rockBaseY, rockModel, type DecorItem } from '../sim/decor';
 import { plantModel, type PlantForm } from '../sim/plant';
+import { buildCoralMesh } from './coral-model';
 import { FISH_RENDER_ORDER } from './fish-layer';
 import { PALETTE } from './palette';
 import { applyPlantSway, buildPlantMesh, type PlantMeshData } from './plant-model';
@@ -94,9 +96,9 @@ interface SwayingPlant {
 
 /**
  * Couche du décor : un maillage voxel et une coque de contour par élément de `World.decor`,
- * placés selon ses données (même transformation que `decorToTank` côté simulation). Les
- * plantes ondulent (`update`) : leur maillage et leur coque partagent un même attribut de
- * positions, réécrit en place à chaque image.
+ * placés selon ses données (même transformation que `decorToTank` côté simulation), puis par
+ * colonie de corail (`sim/corals.ts`). Les plantes ondulent (`update`) : leur maillage et leur
+ * coque partagent un même attribut de positions, réécrit en place à chaque image.
  */
 export class DecorLayer {
   readonly object = new Group();
@@ -108,13 +110,14 @@ export class DecorLayer {
   private readonly outlineMaterial = createOutlineMaterial();
   private geometries: BufferGeometry[] = [];
   private plants: SwayingPlant[] = [];
+  private corals = 0;
 
   constructor() {
     this.object.name = 'decor';
   }
 
-  /** Remplace le décor affiché. */
-  setDecor(items: readonly DecorItem[]): void {
+  /** Remplace le décor affiché : éléments `items`, puis colonies de corail `corals`. */
+  setDecor(items: readonly DecorItem[], corals: readonly CoralColony[] = []): void {
     this.clear();
     items.forEach((item, n) => {
       let data: VoxelMeshData;
@@ -164,6 +167,33 @@ export class DecorLayer {
       }
       this.object.add(group);
     });
+    corals.forEach((colony, n) => {
+      const model = coralModel(colony.form, colony.seed, colony.scale);
+      const data = buildCoralMesh(colony.form, model, colony.hue, colony.seed);
+      const group = this.addVoxelGroup(`corail-${n}`, data);
+      group.position.set(colony.x, coralBaseY(model.voxelSize), colony.z);
+      group.rotation.y = (colony.quarterTurns * Math.PI) / 2;
+    });
+    this.corals = corals.length;
+  }
+
+  /** Groupe d'un maillage voxel immobile et de sa coque de contour, ajouté à la couche. */
+  private addVoxelGroup(name: string, data: VoxelMeshData): Group {
+    const geometry = createRockGeometry(data);
+    const outline = createOutlineGeometry(data);
+    this.geometries.push(geometry, outline);
+    const group = new Group();
+    group.name = name;
+    const mesh = new Mesh(geometry, this.material);
+    mesh.name = `${name}-voxels`;
+    const hull = new Mesh(outline, this.outlineMaterial);
+    hull.name = `${name}-contour`;
+    for (const m of [hull, mesh]) {
+      m.renderOrder = DECOR_RENDER_ORDER;
+      group.add(m);
+    }
+    this.object.add(group);
+    return group;
   }
 
   /** Pose les plantes au temps simulé `time` (secondes), sans allocation. */
@@ -200,7 +230,12 @@ export class DecorLayer {
     return this.plants.length;
   }
 
-  /** Nombre d'éléments affichés. */
+  /** Nombre de colonies de corail affichées. */
+  get coralCount(): number {
+    return this.corals;
+  }
+
+  /** Nombre d'éléments affichés (coraux compris). */
   get count(): number {
     return this.object.children.length;
   }
@@ -224,5 +259,6 @@ export class DecorLayer {
     this.geometries.forEach((g) => g.dispose());
     this.geometries = [];
     this.plants = [];
+    this.corals = 0;
   }
 }

@@ -41,7 +41,7 @@ la passe de post-traitement y ramène chaque pixel affiché (ADR 0007).
 | Amphibiens              | axolotl rose `#f7b2bd`, grenouille `#7bc950`, triton `#e07a2f`                         |
 | Fleurs                  | nénuphar rose `#f06a9b`, cœur `#ffb703`                                                |
 | Interface               | fond `#141418` (translucide), texte `#e8e6e3`, accent `#5fbfa3`                        |
-| Récif (tons d'environnement) | eau `#3f7597`, eau sous la surface `#4796cb`                                      |
+| Récif (tons d'environnement) | eau `#3f7597`, eau sous la surface `#4796cb`, corail violet `#7d4fb8` et `#b58be6` |
 
 ## Environnements visés
 
@@ -97,6 +97,16 @@ bleue, il se lit en eau très claire, comme un lagon) et quelques rochers. Ses d
 sont des **tons d'environnement** : la passe palette ne les propose qu'au récif, les autres
 environnements n'en voient jamais la couleur. Teinte d'entrée de l'eau : le bleu néon,
 saturé, que la translucidité ramène sur ces deux bleus.
+
+Les **coraux** du récif (#149, ADR 0040) : colonies en voxels, en couleurs plates, de trois
+formes lisibles de profil comme de dessus : **branchu** (branches fines et penchées, en bois
+de cerf ; de dessus, des points), **table** (plateau large en T sur un pied ; de dessus, un
+disque clair cerné de son rebord foncé), **dôme** (bosse pleine semée de polypes foncés).
+Quatre teintes, chacune en deux couleurs (flanc foncé, dessus et bouts clairs) : rose
+(`nenupharRose`, `axolotlRose`), orange (`tritonOrange`, `koiOrange`), jaune (`koiOr`,
+`poissonJaune`) et violet, absent de la palette commune (`corailViolet`,
+`corailVioletClair`, tons du récif). La nuit, roses et violets se confondent en violet,
+oranges et jaunes en sable : la lumière du récif reste à faire.
 
 Les rochers (ADR 0015) : voxels de 1,2 cm (à l'échelle 1) en couleurs plates, dessus
 `roche` parfois poudré de `sableOmbre`, flancs `roche` tachés de `rocheSombre`, rangée du bas

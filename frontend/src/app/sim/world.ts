@@ -3,6 +3,7 @@ import { createWalker, stepWalker, type WalkerGround } from './axolotl';
 import { createFrog, stepFrog } from './frog';
 import { fillBubbles, type BubbleBuffer } from './bubbles';
 import { SIM_DT } from './constants';
+import { coralLayout, coralObstacles } from './corals';
 import { decorObstacles, parseDecorItems, type DecorItem } from './decor';
 import {
   DEFAULT_ENVIRONMENT_ID,
@@ -59,7 +60,8 @@ export interface World {
   readonly obstacles: readonly Obstacle[];
   /**
    * Éléments de décor (rochers, `sim/decor.ts`), immobiles, dans l'ordre donné. Leurs formes
-   * de collision sont ajoutées à `obstacles`, après les obstacles explicites (ADR 0015).
+   * de collision sont ajoutées à `obstacles`, après les obstacles explicites (ADR 0015), puis
+   * les boîtes des coraux tirés de la graine (`sim/corals.ts`, ADR 0040).
    */
   readonly decor: readonly DecorItem[];
   /**
@@ -90,7 +92,8 @@ export type MutableWorld = Mutable<World>;
  * tropical par défaut, `sim/environment.ts`), avec les
  * `obstacles` donnés (copiés, triés par identifiant) et le `decor` donné (validé, copié) ;
  * les formes de collision du décor suivent les obstacles explicites, avec les identifiants
- * suivant le plus grand d'entre eux. Les poissons naissent hors des obstacles (`createFish`).
+ * suivant le plus grand d'entre eux, puis les boîtes des coraux de l'environnement
+ * (`coralLayout`, tirés de la graine). Les poissons naissent hors des obstacles (`createFish`).
  * @throws RangeError si la graine n'est pas un entier 32 bits non signé, si un effectif
  * n'est pas un entier positif ou nul, si un obstacle ou un élément de décor est invalide ou
  * si deux obstacles ont le même identifiant, ou si l'environnement est inconnu (un élément
@@ -109,6 +112,9 @@ export function createWorld(
   const sortedObstacles = copyObstacles(obstacles);
   const firstDecorId = sortedObstacles.length > 0 ? sortedObstacles.at(-1)!.id + 1 : 0;
   sortedObstacles.push(...decorObstacles(decorItems, firstDecorId));
+  // Coraux du récif (ADR 0040) : tirés de la graine autour du décor, après lui.
+  const corals = coralLayout(seed, env.dimensions, env.corals, decorItems);
+  sortedObstacles.push(...coralObstacles(corals, firstDecorId + decorItems.length));
   const entities: Entity[] = [];
   for (const { species, count } of population) {
     if (!Number.isInteger(count) || count < 0) {

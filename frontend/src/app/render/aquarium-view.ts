@@ -33,6 +33,7 @@ import type { DayLight } from '../sim/daylight';
 import { environmentWater, type Environment } from '../sim/environment';
 import { terrainAt } from '../sim/terrain';
 import { flowerOpenness, lilyPadLayout } from '../sim/lily-pads';
+import { coralLayout } from '../sim/corals';
 import type { DecorItem } from '../sim/decor';
 import type { FoodPellet } from '../sim/food';
 import { BubbleLayer } from './bubble-layer';
@@ -508,16 +509,17 @@ export class AquariumView {
   }
 
   /**
-   * Affiche le décor du monde (`World.decor`), ses bulles et ses nénuphars, tirés de la graine
+   * Affiche le décor du monde (`World.decor`), ses coraux, ses bulles et ses nénuphars, tirés de la graine
    * du monde (`World.seed`) : à appeler une fois par monde.
    */
   setDecor(items: readonly DecorItem[], seed: number): void {
     if (!this.disposed) {
-      this.decorLayer.setDecor(items);
+      const env = this.world.environment;
+      // Mêmes coraux que les obstacles du monde (`createWorld`) : même graine, même décor.
+      this.decorLayer.setDecor(items, coralLayout(seed, env.dimensions, env.corals, items));
       for (const layer of this.effects) {
         layer.setSeed(seed);
       }
-      const env = this.world.environment;
       this.lilyPadLayer.setPads(lilyPadLayout(seed, environmentWater(env.id), env.lilyPads));
     }
   }
@@ -613,6 +615,11 @@ export class AquariumView {
   /** Nombre d'éléments de décor affichés (tests). */
   get decorCount(): number {
     return this.decorLayer.count;
+  }
+
+  /** Nombre de colonies de corail affichées (tests). */
+  get coralCount(): number {
+    return this.decorLayer.coralCount;
   }
 
   /** Nombre de poissons placés par le dernier `updateFish`, toutes espèces confondues (tests). */

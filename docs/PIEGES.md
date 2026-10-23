@@ -6,6 +6,11 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Capture « tracé des trajectoires » : `Unable to capture screenshot`** (cycle 51) : avec le
+  navigateur 1243 sous le nom 1194 (voir ci-dessous), cette seule capture échoue en local, sur
+  `main` comme sur la branche ; les 49 autres passent, et la CI la produit normalement. Ne pas
+  en conclure à une régression. (2026-10-23)
+
 - **Navigateur de Playwright absent : `chromium_headless_shell-1194`** (cycles 49 et 50) :
   Playwright 1.56 cherche `/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell`,
   alors que l'image fournit la version 1243 (`chrome-headless-shell-linux64/chrome-headless-shell`) :
@@ -241,6 +246,14 @@ haut de sa section.
 
 ## Simulation
 
+- **Teinte « parcourue en boucle » sautée par une colonie omise** (cycle 51, #149) : les
+  teintes des coraux suivent une permutation tirée de la graine ; indexée par le rang de la
+  colonie **visée**, une colonie qui ne trouve pas de place emporte sa teinte avec elle
+  (graine 4294967295 : 5 colonies, 3 teintes). Indexer par le rang de la colonie **placée**.
+  Le placement par rejet n'assure pas un nombre minimal : le mesurer sur beaucoup de graines
+  (script esbuild hors du dépôt) et le figer par un test (300 graines, au moins 4).
+  (2026-10-23)
+
 - **Espèce « inconnue » des tests qui devient réelle** (cycle 44, #130) : plusieurs tests
   utilisaient `'axolotl'` comme exemple d'espèce inconnue (`population.spec.ts`,
   `aquarium-host.spec.ts`) ; l'ajouter à `SPECIES` les faisait échouer. Prendre un nom qui
@@ -305,6 +318,12 @@ haut de sa section.
   n'interfère (`swimmer.spec.ts`). (2026-10-18)
 
 ## Rendu
+
+- **Un ton d'environnement capte les couleurs assombries de la nuit** (cycle 51, #149) : les
+  deux violets des coraux, ajoutés aux tons du récif, captent la nuit le rose assombri des
+  coraux roses (`decorTintInto`), qui se confondent alors avec les violets. Les autres
+  environnements n'en voient rien (pénalité `TONE_PENALTY_OFF`), mais un ton déclaré reste
+  libre la nuit : regarder la capture de minuit de l'environnement qui le déclare. (2026-10-23)
 
 - **Une couleur ajoutée à la palette commune change les images des autres environnements**
   (cycle 50, #148) : deux bleus pour l'eau du récif ont capté, dans les captures du bac

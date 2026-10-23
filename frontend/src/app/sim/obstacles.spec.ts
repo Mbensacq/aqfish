@@ -6,7 +6,9 @@ import {
   obstacleDistance,
   sphereObstacle,
   validateObstacle,
+  type BoxObstacle,
   type Obstacle,
+  type SphereObstacle,
 } from './obstacles';
 
 function vec(): Vec3 {
@@ -147,7 +149,7 @@ describe('obstacleBound : sphère englobante (rejet rapide)', () => {
     expect(obstacleBound(obstacles[0])).toBe(obstacles[0]);
     for (const o of obstacles) {
       const b = obstacleBound(o);
-      for (const s of o.shape === 'spheres' ? o.spheres : [o]) {
+      for (const s of o.shape === 'spheres' ? o.spheres : [o as SphereObstacle]) {
         expect(Math.hypot(s.x - b.x, s.y - b.y, s.z - b.z) + s.radius).toBeLessThanOrEqual(
           b.radius + 1e-12,
         );
@@ -199,6 +201,80 @@ describe('obstacleBound : sphère englobante (rejet rapide)', () => {
         const len = Math.hypot(x - nearest.x, y - nearest.y, z - nearest.z);
         expect(n.x).toBeCloseTo((x - nearest.x) / len, 12);
       }
+    }
+  });
+});
+
+describe('obstacle en boîte (coraux, #149)', () => {
+  const box: BoxObstacle = {
+    id: 2,
+    shape: 'box',
+    x: 0.1,
+    y: 0.2,
+    z: -0.1,
+    halfX: 0.05,
+    halfY: 0.03,
+    halfZ: 0.04,
+  };
+
+  it('valide, sérialisable en JSON', () => {
+    expect(validateObstacle(box)).toEqual([]);
+    expect(JSON.parse(JSON.stringify(box))).toEqual(box);
+  });
+
+  it('refuse un centre non fini ou une demi-dimension nulle, négative ou infinie', () => {
+    expect(validateObstacle({ ...box, x: Number.NaN })).toEqual([
+      'x doit être un réel fini (reçu : NaN)',
+    ]);
+    expect(validateObstacle({ ...box, halfX: 0, halfY: -1, halfZ: Infinity })).toHaveLength(3);
+    expect(validateObstacle({ ...box, id: -1 })).toHaveLength(1);
+  });
+
+  it('dehors, face à une face : distance à la face, normale de la face', () => {
+    const n = vec();
+    expect(obstacleDistance(box, 0.25, 0.2, -0.1, n)).toBeCloseTo(0.1, 12);
+    expect(n).toEqual({ x: 1, y: 0, z: 0 });
+    expect(obstacleDistance(box, 0.1, 0.1, -0.1, n)).toBeCloseTo(0.07, 12);
+    expect(n).toEqual({ x: 0, y: -1, z: 0 });
+    expect(obstacleDistance(box, 0.1, 0.2, -0.2, n)).toBeCloseTo(0.06, 12);
+    expect(n).toEqual({ x: 0, y: 0, z: -1 });
+  });
+
+  it('dehors, face à un coin : distance euclidienne au coin, normale unitaire vers le point', () => {
+    const n = vec();
+    // Coin (0,15 ; 0,23 ; −0,06) ; point décalé de (0,03 ; 0,04 ; 0).
+    expect(obstacleDistance(box, 0.18, 0.27, -0.06, n)).toBeCloseTo(0.05, 12);
+    expect(n.x).toBeCloseTo(0.6, 12);
+    expect(n.y).toBeCloseTo(0.8, 12);
+    expect(n.z).toBeCloseTo(0, 12);
+  });
+
+  it('dedans : distance négative à la face la plus proche ; au centre, X positif', () => {
+    const n = vec();
+    expect(obstacleDistance(box, 0.1, 0.22, -0.1, n)).toBeCloseTo(-0.01, 12);
+    expect(n).toEqual({ x: 0, y: 1, z: 0 });
+    expect(obstacleDistance(box, 0.07, 0.2, -0.1, n)).toBeCloseTo(-0.02, 12);
+    expect(n).toEqual({ x: -1, y: 0, z: 0 });
+    expect(obstacleDistance(box, 0.1, 0.2, -0.13, n)).toBeCloseTo(-0.01, 12);
+    expect(n).toEqual({ x: 0, y: 0, z: -1 });
+    const cube: BoxObstacle = { ...box, halfX: 0.05, halfY: 0.05, halfZ: 0.05 };
+    expect(obstacleDistance(cube, cube.x, cube.y, cube.z, n)).toBeCloseTo(-0.05, 12);
+    expect(n).toEqual({ x: 1, y: 0, z: 0 });
+  });
+
+  it('sur la surface : distance nulle', () => {
+    expect(obstacleDistance(box, 0.15, 0.2, -0.1, vec())).toBeCloseTo(0, 12);
+  });
+
+  it('obstacleBound : sphère circonscrite, en cache, qui minore la distance', () => {
+    const b = obstacleBound(box);
+    expect(obstacleBound(box)).toBe(b);
+    expect(b.radius).toBeCloseTo(Math.hypot(0.05, 0.03, 0.04), 12);
+    const rng = createPrng(5);
+    for (let i = 0; i < 500; i++) {
+      const [x, y, z] = [rng.next() - 0.4, rng.next() - 0.3, rng.next() - 0.6];
+      const d = obstacleDistance(box, x, y, z, vec());
+      expect(d).toBeGreaterThanOrEqual(Math.hypot(x - b.x, y - b.y, z - b.z) - b.radius - 1e-12);
     }
   });
 });

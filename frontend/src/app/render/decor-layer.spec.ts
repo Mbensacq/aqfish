@@ -1,6 +1,8 @@
 import { BufferAttribute, BufferGeometry, Mesh, ShaderMaterial, Vector2 } from 'three';
 
+import { coralBaseY, coralLayout, coralModel } from '../sim/corals';
 import { DEFAULT_DECOR, decorBaseY, type DecorItem } from '../sim/decor';
+import { REEF } from '../sim/environment';
 import { plantModel } from '../sim/plant';
 import {
   DECOR_RENDER_ORDER,
@@ -99,6 +101,34 @@ describe('DecorLayer', () => {
       expect(layer.plantCount).toBe(0);
       layer.dispose();
     });
+  });
+
+  it('coraux (#149) : un groupe par colonie après le décor, posé et tourné d’un quart de tour', () => {
+    const layer = new DecorLayer();
+    const colonies = coralLayout(42, REEF.dimensions, REEF.corals, REEF.decor);
+    layer.setDecor(REEF.decor, colonies);
+    expect(layer.coralCount).toBe(colonies.length);
+    expect(layer.count).toBe(REEF.decor.length + colonies.length);
+    colonies.forEach((colony, n) => {
+      const group = layer.object.children[REEF.decor.length + n];
+      const v = coralModel(colony.form, colony.seed, colony.scale).voxelSize;
+      expect(group.name).toBe(`corail-${n}`);
+      expect(group.position.toArray()).toEqual([colony.x, coralBaseY(v), colony.z]);
+      expect(group.rotation.y).toBe((colony.quarterTurns * Math.PI) / 2);
+      expect(group.children.map((c) => c.name)).toEqual([
+        `corail-${n}-contour`,
+        `corail-${n}-voxels`,
+      ]);
+      for (const mesh of group.children as Mesh[]) {
+        expect(mesh.renderOrder).toBe(DECOR_RENDER_ORDER);
+      }
+    });
+    // Sans corail (par défaut) : aucun.
+    layer.setDecor(REEF.decor);
+    expect(layer.coralCount).toBe(0);
+    expect(layer.count).toBe(REEF.decor.length);
+    layer.dispose();
+    expect(layer.coralCount).toBe(0);
   });
 
   it('remplacer le décor retire l’ancien', () => {

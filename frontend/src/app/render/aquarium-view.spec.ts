@@ -3,6 +3,7 @@ import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js
 
 import { ORBIT_MOUSE_BUTTONS, ORBIT_TOUCHES } from '../core/commands/commands';
 
+import { coralLayout } from '../sim/corals';
 import { lightAt } from '../sim/daylight';
 import { SPECIES, speciesVariants } from '../sim/species';
 import { environmentWater, PALUDARIUM, POND, REEF, TROPICAL_TANK } from '../sim/environment';
@@ -206,7 +207,7 @@ describe('AquariumView (pipeline pixel art)', () => {
 });
 
 describe('AquariumView (tons d’environnement, #148)', () => {
-  it('le récif propose ses deux tons à la passe, les autres environnements aucun', () => {
+  it('le récif propose ses quatre tons à la passe (eau, #148 ; coraux, #149), les autres aucun', () => {
     for (const environment of [TROPICAL_TANK, POND, PALUDARIUM, REEF]) {
       const view = new AquariumView({
         canvas: document.createElement('canvas'),
@@ -216,11 +217,39 @@ describe('AquariumView (tons d’environnement, #148)', () => {
         interactive: false,
         environment,
       });
-      const expected = environment === REEF ? [0, 0] : [TONE_PENALTY_OFF, TONE_PENALTY_OFF];
+      const expected =
+        environment === REEF
+          ? [0, 0, 0, 0]
+          : [TONE_PENALTY_OFF, TONE_PENALTY_OFF, TONE_PENALTY_OFF, TONE_PENALTY_OFF];
       expect(view.environmentTonePenalties).toEqual(expected);
       // L'heure ne les touche pas.
       view.updateLight(lightAt(0));
       expect(view.environmentTonePenalties).toEqual(expected);
+      view.dispose();
+    }
+  });
+});
+
+describe('AquariumView (coraux, #149)', () => {
+  it('récif : coraux tirés de la graine du monde ; autres environnements sans corail', () => {
+    for (const environment of [TROPICAL_TANK, POND, PALUDARIUM, REEF]) {
+      const view = new AquariumView({
+        canvas: document.createElement('canvas'),
+        rendererFactory: () => new RecordingRenderer(),
+        pixelRatio: 1,
+        preset: 'three-quarter',
+        interactive: false,
+        environment,
+      });
+      const world = createDefaultWorld(42, environment.id);
+      view.setDecor(world.decor, world.seed);
+      const expected = coralLayout(42, environment.dimensions, environment.corals, world.decor);
+      expect(view.coralCount).toBe(expected.length);
+      expect(view.coralCount).toBe(world.obstacles.length - world.decor.length);
+      expect(view.decorCount).toBe(world.decor.length + expected.length);
+      if (environment === REEF) {
+        expect(view.coralCount).toBeGreaterThanOrEqual(4);
+      }
       view.dispose();
     }
   });

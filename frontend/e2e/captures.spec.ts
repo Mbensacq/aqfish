@@ -186,8 +186,8 @@ test.describe('Captures', () => {
     });
   }
 
-  // Récif (#148) : eau bleue et sable corallien, sans habitants ; vue trois-quarts par
-  // défaut (sans `camera=`), face, dessus, côté, dessous et minuit.
+  // Récif (#148) : eau bleue, sable corallien et coraux (#149), sans habitants ; vue
+  // trois-quarts par défaut (sans `camera=`), face, dessus, côté, dessous, minuit et sans filtre.
   const REEF_CAPTURES = [
     { name: 'recif-three-quarter', query: 'environnement=recif' },
     { name: 'recif-front', query: 'environnement=recif&camera=front' },
@@ -195,6 +195,8 @@ test.describe('Captures', () => {
     { name: 'recif-side', query: 'environnement=recif&camera=side' },
     { name: 'recif-bottom', query: 'environnement=recif&camera=bottom' },
     { name: 'recif-three-quarter-minuit', query: 'environnement=recif&heure=0' },
+    // Coraux (#149) : mêmes teintes sans le filtre pixel art (cf. #40).
+    { name: 'recif-three-quarter-sans-filtre', query: 'environnement=recif&filtre=aucun' },
   ] as const;
   for (const { name, query } of REEF_CAPTURES) {
     test(`angle ${name}`, async ({ page }) => {

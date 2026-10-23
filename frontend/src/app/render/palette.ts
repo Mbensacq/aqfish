@@ -132,6 +132,10 @@ export const ENVIRONMENT_TONES = {
   eauRecif: '#3f7597',
   /** Eau du récif sous la surface (opacité 50 %) : bleu plus clair. */
   eauRecifClaire: '#4796cb',
+  /** Corail violet (issue #149) : flancs. Aucun violet dans la palette commune. */
+  corailViolet: '#7d4fb8',
+  /** Corail violet : dessus et bouts des branches. */
+  corailVioletClair: '#b58be6',
 } as const;
 
 export type NightToneName = keyof typeof NIGHT_TONES;

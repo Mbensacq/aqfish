@@ -1,6 +1,7 @@
 import { DEFAULT_FOOD_STYLE, isFoodStyle, type FoodStyle } from '../core/food-style/food-style';
 import { MAX_SEED } from '../core/random/prng';
 import { SIM_DT } from './constants';
+import { coralLayout } from './corals';
 import { createDayClock, DEFAULT_DAY_CLOCK, HOURS_PER_DAY, type DayClock } from './daylight';
 import { parseDecorItems, type DecorItem } from './decor';
 import {
@@ -154,11 +155,14 @@ const FOOD_NUMBER_KEYS = [
 /**
  * Contenu de la sauvegarde de `world` et de `settings` (objet de données, copié : rien n'est
  * partagé avec `world`).
- * @throws RangeError si le monde a des obstacles explicites (hors décor), non enregistrables
+ * @throws RangeError si le monde a des obstacles explicites (hors décor et coraux), non enregistrables
  * dans le schéma 1, ou si un réglage est invalide.
  */
 export function saveData(world: World, settings: SaveSettings = DEFAULT_SAVE_SETTINGS): SaveData {
-  if (world.obstacles.length !== world.decor.length) {
+  // Obstacles recalculables : ceux du décor, puis ceux des coraux tirés de la graine.
+  const env = environmentById(world.environment);
+  const corals = coralLayout(world.seed, env.dimensions, env.corals, world.decor);
+  if (world.obstacles.length !== world.decor.length + corals.length) {
     throw new RangeError(
       'sauvegarde : seuls les obstacles issus du décor sont enregistrables (schéma 1)',
     );

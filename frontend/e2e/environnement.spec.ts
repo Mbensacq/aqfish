@@ -236,6 +236,36 @@ test.describe('Environnement', () => {
     expect(errors).toEqual([]);
   });
 
+  test('récif : coraux des quatre teintes, de profil et de dessus, sans filtre aussi (#149)', async ({
+    page,
+  }) => {
+    // Couleurs de flanc (vues de profil) et claires (dessus, bouts des branches) des teintes.
+    const hues = [
+      [PALETTE.nenupharRose, PALETTE.axolotlRose],
+      [PALETTE.tritonOrange, PALETTE.koiOrange],
+      [ENVIRONMENT_TONES.corailViolet, ENVIRONMENT_TONES.corailVioletClair],
+      [PALETTE.koiOr, PALETTE.poissonJaune],
+    ];
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    for (const query of ['', '&camera=top', '&camera=front', '&filtre=aucun']) {
+      await page.goto(`/?capture=1&seed=42&environnement=recif${query}`);
+      await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+      const counts = await countColors(page, hues.flat());
+      for (let h = 0; h < hues.length; h++) {
+        expect(counts[2 * h] + counts[2 * h + 1], `${query} : teinte ${h}`).toBeGreaterThan(150);
+      }
+    }
+    // Les autres environnements n'emploient jamais le violet des coraux.
+    const violets = [ENVIRONMENT_TONES.corailViolet, ENVIRONMENT_TONES.corailVioletClair];
+    for (const env of ['tropical', 'bassin', 'paludarium']) {
+      await page.goto(`/?capture=1&seed=42&environnement=${env}`);
+      await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+      expect(await countColors(page, violets)).toEqual([0, 0]);
+    }
+    expect(errors).toEqual([]);
+  });
+
   test('bassin : rotation, zoom, préréglages et allers-retours sans erreur (QA)', async ({
     page,
   }) => {
