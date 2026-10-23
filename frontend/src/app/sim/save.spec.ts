@@ -14,6 +14,7 @@ import {
   type ParseWorldResult,
   type SaveSettings,
 } from './save';
+import { CHIRURGIEN } from './species';
 import { sphereObstacle } from './obstacles';
 import { advance, createDefaultWorld, createWorld, feed, type World } from './world';
 
@@ -89,10 +90,15 @@ describe('serializeWorld / parseWorld : aller-retour', () => {
     expect(back).toEqual(world);
   });
 
-  it('restitue l’environnement récif (#148), poissons-clowns (#150) et granulés compris', () => {
+  it('restitue l’environnement récif (#148), poissons-clowns (#150), chirurgiens (#151) et granulés compris', () => {
     const world = advance(feed(createDefaultWorld(8, 'recif'), 0.2, -0.1), 90);
     expect(world.environment).toBe('recif');
-    expect(world.entities.map((e) => e.species)).toEqual(['clown', 'clown', 'clown']);
+    expect(world.entities.map((e) => e.species)).toEqual([
+      'clown',
+      'clown',
+      'clown',
+      ...new Array<string>(CHIRURGIEN.defaultPopulation).fill('chirurgien'),
+    ]);
     expect(world.food.length).toBeGreaterThan(0);
     expect(world.decor.length).toBeGreaterThan(0);
     const text = serializeWorld(world);

@@ -108,7 +108,14 @@ describe('PalettePass', () => {
     const pass = new PalettePass();
     expect(pass.environmentPenalties).toEqual(ENVIRONMENT_TONE_NAMES.map(() => TONE_PENALTY_OFF));
     pass.setEnvironmentPenalties(environmentTonePenalties(['eauRecifClaire']));
-    const partial = [TONE_PENALTY_OFF, 0, TONE_PENALTY_OFF, TONE_PENALTY_OFF, TONE_PENALTY_OFF];
+    const partial = [
+      TONE_PENALTY_OFF,
+      0,
+      TONE_PENALTY_OFF,
+      TONE_PENALTY_OFF,
+      TONE_PENALTY_OFF,
+      TONE_PENALTY_OFF,
+    ];
     expect(pass.environmentPenalties).toEqual(partial);
     expect(material(pass).uniforms['uEnvironmentPenalty'].value).toEqual(partial);
     pass.setEnvironmentPenalties(environmentTonePenalties([]));
@@ -120,9 +127,9 @@ describe('PalettePass', () => {
     const pass = new PalettePass();
     expect(() => pass.setEnvironmentPenalties([0])).toThrow(RangeError);
     expect(() => pass.setEnvironmentPenalties([0, 0, 0, 0])).toThrow(RangeError);
-    expect(() => pass.setEnvironmentPenalties([0, 0, 0, 0, 0, 0])).toThrow(RangeError);
+    expect(() => pass.setEnvironmentPenalties([0, 0, 0, 0, 0, 0, 0])).toThrow(RangeError);
     for (const bad of [-1, Number.NaN, Number.POSITIVE_INFINITY]) {
-      expect(() => pass.setEnvironmentPenalties([0, bad, 0, 0, 0])).toThrow(RangeError);
+      expect(() => pass.setEnvironmentPenalties([0, bad, 0, 0, 0, 0])).toThrow(RangeError);
     }
     // Un refus ne change rien.
     expect(pass.environmentPenalties).toEqual(ENVIRONMENT_TONE_NAMES.map(() => TONE_PENALTY_OFF));
@@ -133,12 +140,20 @@ describe('PalettePass', () => {
 describe('environmentTonePenalties (#148, ADR 0039)', () => {
   it('pénalité nulle pour les tons déclarés, écartés sinon', () => {
     const off = TONE_PENALTY_OFF;
-    expect(environmentTonePenalties([])).toEqual([off, off, off, off, off]);
-    expect(environmentTonePenalties(['eauRecif', 'eauRecifClaire'])).toEqual([0, 0, off, off, off]);
-    expect(environmentTonePenalties(['eauRecif'])).toEqual([0, off, off, off, off]);
-    expect(environmentTonePenalties(['corailVioletClair'])).toEqual([off, off, off, 0, off]);
-    expect(environmentTonePenalties(['clownOrange'])).toEqual([off, off, off, off, 0]);
-    expect(environmentTonePenalties([...ENVIRONMENT_TONE_NAMES])).toEqual([0, 0, 0, 0, 0]);
+    expect(environmentTonePenalties([])).toEqual([off, off, off, off, off, off]);
+    expect(environmentTonePenalties(['eauRecif', 'eauRecifClaire'])).toEqual([
+      0,
+      0,
+      off,
+      off,
+      off,
+      off,
+    ]);
+    expect(environmentTonePenalties(['eauRecif'])).toEqual([0, off, off, off, off, off]);
+    expect(environmentTonePenalties(['corailVioletClair'])).toEqual([off, off, off, 0, off, off]);
+    expect(environmentTonePenalties(['clownOrange'])).toEqual([off, off, off, off, 0, off]);
+    expect(environmentTonePenalties(['chirurgienBleu'])).toEqual([off, off, off, off, off, 0]);
+    expect(environmentTonePenalties([...ENVIRONMENT_TONE_NAMES])).toEqual([0, 0, 0, 0, 0, 0]);
   });
 
   it('refuse un nom qui n’est pas un ton d’environnement', () => {

@@ -91,11 +91,13 @@ test.describe('Anémones et poissons-clowns : parcours utilisateur', () => {
   });
 
   for (const seed of [1, 7, 123]) {
-    test(`récif graine ${seed} : se charge sans erreur, trois clowns`, async ({ page }) => {
+    test(`récif graine ${seed} : se charge sans erreur, trois clowns et quatre chirurgiens`, async ({
+      page,
+    }) => {
       const errors = await open(page, `?environnement=recif&seed=${seed}`);
       await expect(page.locator('app-aquarium-host')).toHaveAttribute(
         'data-aqfish-population',
-        'clown:3',
+        'clown:3,chirurgien:4',
       );
       await page.waitForTimeout(500);
       expect(errors).toEqual([]);

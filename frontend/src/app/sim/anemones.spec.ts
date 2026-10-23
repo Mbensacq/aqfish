@@ -199,7 +199,7 @@ describe('poisson-clown (#150)', () => {
     expect(CLOWN.defaultPopulation).toBeLessThanOrEqual(4);
     expect(CLOWN.schooling).not.toBeNull();
     expect(CLOWN.variants).toBeUndefined();
-    expect(REEF.species).toEqual(['clown']);
+    expect(REEF.species).toEqual(['clown', 'chirurgien']);
     expect(populationCounts(createDefaultWorld(42, 'recif')).clown).toBe(CLOWN.defaultPopulation);
   });
 
@@ -214,12 +214,12 @@ describe('poisson-clown (#150)', () => {
   /** Part du temps (échantillons toutes les 0,1 s sur `seconds`) passée à moins de `radius`. */
   function nearShare(world: World, seconds: number, radius: number): number[] {
     const homes = worldAnemoneHomes(world);
-    const inside = world.entities.map(() => 0);
+    const inside = clowns(world).map(() => 0);
     const w = cloneWorld(world);
     const samples = seconds * 10;
     for (let s = 0; s < samples; s++) {
       advanceInPlace(w, 6);
-      w.entities.forEach((fish, rank) => {
+      clowns(w).forEach((fish, rank) => {
         const home = homeForRank(homes, CLOWN.anemone, rank)!;
         if (Math.hypot(fish.x - home.x, fish.y - home.hoverY, fish.z - home.z) < radius) {
           inside[rank] += 1;
@@ -247,7 +247,8 @@ describe('poisson-clown (#150)', () => {
     expect(homeForRank(homes, CLOWN.anemone, 4)).toBe(homes[1]);
     expect(homeForRank(homes, undefined, 0)).toBeNull();
     expect(homeForRank([], CLOWN.anemone, 0)).toBeNull();
-    world.entities.forEach((fish, rank) => {
+    expect(clowns(world)).toHaveLength(6);
+    clowns(world).forEach((fish, rank) => {
       const home = homeForRank(homes, CLOWN.anemone, rank)!;
       expect(Math.hypot(fish.x - home.x, fish.z - home.z)).toBeLessThan(CLOWN.anemone!.leashRadius);
     });
@@ -293,6 +294,11 @@ describe('poisson-clown (#150)', () => {
   });
 });
 
+/** Poissons-clowns du monde, dans l'ordre des entités (le récif a aussi des chirurgiens, #151). */
+function clowns(world: World): World['entities'] {
+  return world.entities.filter((f) => f.species === 'clown');
+}
+
 function distances(world: World, home: { x: number; refugeY: number; z: number }): number[] {
-  return world.entities.map((f) => Math.hypot(f.x - home.x, f.y - home.refugeY, f.z - home.z));
+  return clowns(world).map((f) => Math.hypot(f.x - home.x, f.y - home.refugeY, f.z - home.z));
 }

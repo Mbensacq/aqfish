@@ -14,7 +14,7 @@ import {
   type EnvironmentId,
 } from './environment';
 import { DEFAULT_DECOR, validateDecorItem } from './decor';
-import { CLOWN, CORYDORA, GUPPY, NEON } from './species';
+import { CHIRURGIEN, CLOWN, CORYDORA, GUPPY, NEON } from './species';
 import { DEFAULT_TANK, SAND_THICKNESS, WATER_LEVEL_RATIO, waterVolume } from './tank';
 import { terrainAt, terrainMaxRise } from './terrain';
 
@@ -144,14 +144,19 @@ describe('environnements', () => {
       'corailViolet',
       'corailVioletClair',
       'clownOrange',
+      'chirurgienBleu',
     ]);
-    // Poissons-clowns (#150), seule espèce du récif, avec leur population par défaut.
-    expect(REEF.species).toEqual(['clown']);
-    expect(REEF.population).toEqual([{ species: 'clown', count: CLOWN.defaultPopulation }]);
+    // Poissons-clowns (#150) et chirurgiens bleus (#151), avec leur population par défaut.
+    expect(REEF.species).toEqual(['clown', 'chirurgien']);
+    expect(REEF.population).toEqual([
+      { species: 'clown', count: CLOWN.defaultPopulation },
+      { species: 'chirurgien', count: CHIRURGIEN.defaultPopulation },
+    ]);
     expect(REEF.anemones).not.toBeNull();
     for (const env of [TROPICAL_TANK, POND, PALUDARIUM]) {
       expect(env.anemones).toBeNull();
       expect(env.species).not.toContain('clown');
+      expect(env.species).not.toContain('chirurgien');
     }
     // Quelques roches, dans le bac et écartées les unes des autres.
     expect(REEF.decor.length).toBeGreaterThanOrEqual(3);

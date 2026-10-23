@@ -173,13 +173,14 @@ describe('Tons d’environnement (#148, ADR 0039)', () => {
     ...Object.keys(TWILIGHT_TONES),
   ];
 
-  it('tons du récif (eau, #148 ; coraux violets, #149 ; clown, #150), valides, hors de la palette étendue', () => {
+  it('tons du récif (eau, #148 ; coraux violets, #149 ; clown, #150 ; chirurgien, #151), valides, hors de la palette étendue', () => {
     expect(ENVIRONMENT_TONE_NAMES).toEqual([
       'eauRecif',
       'eauRecifClaire',
       'corailViolet',
       'corailVioletClair',
       'clownOrange',
+      'chirurgienBleu',
     ]);
     expect(ENVIRONMENT_TONE_COLORS).toEqual(Object.values(ENVIRONMENT_TONES));
     for (const name of ENVIRONMENT_TONE_NAMES) {

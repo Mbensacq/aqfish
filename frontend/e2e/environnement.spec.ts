@@ -186,8 +186,8 @@ test.describe('Environnement', () => {
     await expect(selector(page).locator('option[value="recif"]')).toHaveText('Récif');
     await selector(page).selectOption('recif');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'recif');
-    // Poissons-clowns (#150) : seule espèce du récif.
-    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', 'clown:3');
+    // Poissons-clowns (#150) et chirurgiens bleus (#151), espèces du récif.
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', 'clown:3,chirurgien:4');
     await expect(page.locator('[data-population-empty]')).toHaveCount(0);
     await toggle(page).click();
 
@@ -211,7 +211,7 @@ test.describe('Environnement', () => {
     const tones = [ENVIRONMENT_TONES.eauRecif, ENVIRONMENT_TONES.eauRecifClaire];
     const errors = await open(page, '?capture=1&seed=42&environnement=recif');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'recif');
-    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', 'clown:3');
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', 'clown:3,chirurgien:4');
     // Trois-quarts : devant (+Z), à droite (+X), au-dessus du bac.
     const [x, y, z] = (await hostEl(page).getAttribute('data-aqfish-camera'))!
       .split(',')

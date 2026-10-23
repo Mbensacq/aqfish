@@ -134,6 +134,7 @@ class TestHost {
     grenouille: 0,
     triton: 0,
     clown: 0,
+    chirurgien: 0,
   });
   readonly populationMax = signal<PopulationCounts>({
     neon: 40,
@@ -144,6 +145,7 @@ class TestHost {
     grenouille: 0,
     triton: 0,
     clown: 0,
+    chirurgien: 0,
   });
   readonly events: [string, number | boolean][] = [];
   readonly requests: PopulationRequest[] = [];
@@ -200,16 +202,18 @@ describe('ControlPanel', () => {
     expect(byLabel('Nombre de tritons')?.value).toBe('0');
   });
 
-  it('récif (#150) : la population propose les seuls poissons-clowns', async () => {
+  it('récif (#150, #151) : la population propose poissons-clowns et chirurgiens bleus', async () => {
     await openPanel();
     fixture.componentInstance.environment.set('recif');
     await fixture.whenStable();
     const section = root().querySelector('[data-section="population"]')!;
     const rows = [...section.querySelectorAll('[data-species]')];
-    expect(rows.map((r) => r.getAttribute('data-species'))).toEqual(['clown']);
+    expect(rows.map((r) => r.getAttribute('data-species'))).toEqual(['clown', 'chirurgien']);
     expect(section.querySelector('[data-population-empty]')).toBeNull();
     expect(byLabel('Nombre de poissons-clowns')).not.toBeNull();
+    expect(byLabel('Nombre de chirurgiens bleus')).not.toBeNull();
     expect(speciesPlural('clown')).toBe('poissons-clowns');
+    expect(speciesPlural('chirurgien')).toBe('chirurgiens bleus');
     expect(speciesPlural('neon')).toBe('néons');
   });
 
@@ -420,6 +424,7 @@ describe('ControlPanel', () => {
         grenouille: 0,
         triton: 0,
         clown: 0,
+        chirurgien: 0,
       });
       await fixture.whenStable();
       expect(neons.value).toBe('20');

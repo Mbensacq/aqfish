@@ -20,17 +20,17 @@ test.describe('Récif : parcours utilisateur', () => {
     test(`graine ${seed} : le récif démarre sans erreur`, async ({ page }) => {
       const errors = await open(page, `?environnement=recif&seed=${seed}`);
       await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'recif');
-      await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', 'clown:3');
+      await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', 'clown:3,chirurgien:4');
       expect(errors).toEqual([]);
     });
   }
 
-  test('une population d’URL d’autres espèces est ignorée : le récif garde ses poissons-clowns (#150)', async ({
+  test('une population d’URL d’autres espèces est ignorée : le récif garde ses poissons-clowns et ses chirurgiens (#150, #151)', async ({
     page,
   }) => {
     const errors = await open(page, '?environnement=recif&seed=42&population=guppy:5,neon:9999');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'recif');
-    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', 'clown:3');
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', 'clown:3,chirurgien:4');
     expect(errors).toEqual([]);
   });
 

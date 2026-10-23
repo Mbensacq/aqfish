@@ -127,6 +127,7 @@ describe('AquariumView (pipeline pixel art)', () => {
       'poissons-grenouille',
       'poissons-triton',
       'poissons-clown',
+      'poissons-chirurgien',
     ]);
   });
 
@@ -207,7 +208,7 @@ describe('AquariumView (pipeline pixel art)', () => {
 });
 
 describe('AquariumView (tons d’environnement, #148)', () => {
-  it('le récif propose ses cinq tons à la passe (eau, #148 ; coraux, #149 ; clown, #150), les autres aucun', () => {
+  it('le récif propose ses six tons à la passe (eau, #148 ; coraux, #149 ; clown, #150 ; chirurgien, #151), les autres aucun', () => {
     for (const environment of [TROPICAL_TANK, POND, PALUDARIUM, REEF]) {
       const view = new AquariumView({
         canvas: document.createElement('canvas'),
@@ -218,7 +219,7 @@ describe('AquariumView (tons d’environnement, #148)', () => {
         environment,
       });
       const expected =
-        environment === REEF ? [0, 0, 0, 0, 0] : new Array<number>(5).fill(TONE_PENALTY_OFF);
+        environment === REEF ? [0, 0, 0, 0, 0, 0] : new Array<number>(6).fill(TONE_PENALTY_OFF);
       expect(view.environmentTonePenalties).toEqual(expected);
       // L'heure ne les touche pas.
       view.updateLight(lightAt(0));
