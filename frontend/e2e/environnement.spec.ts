@@ -177,7 +177,7 @@ test.describe('Environnement', () => {
     expect(errors).toEqual([]);
   });
 
-  test('récif (#148) : choisi au panneau, sans habitants, nourri, gardé au rechargement', async ({
+  test('récif (#148) : choisi au panneau, poissons-clowns (#150), nourri, gardé au rechargement', async ({
     page,
   }) => {
     // Sans `seed=` : la sauvegarde automatique restaure le monde au rechargement.
@@ -186,8 +186,9 @@ test.describe('Environnement', () => {
     await expect(selector(page).locator('option[value="recif"]')).toHaveText('Récif');
     await selector(page).selectOption('recif');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'recif');
-    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', '');
-    await expect(page.locator('[data-population-empty]')).toBeVisible();
+    // Poissons-clowns (#150) : seule espèce du récif.
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', 'clown:3');
+    await expect(page.locator('[data-population-empty]')).toHaveCount(0);
     await toggle(page).click();
 
     // Vue de dessus : un clic au centre dépose des granulés sur l'eau.
@@ -210,7 +211,7 @@ test.describe('Environnement', () => {
     const tones = [ENVIRONMENT_TONES.eauRecif, ENVIRONMENT_TONES.eauRecifClaire];
     const errors = await open(page, '?capture=1&seed=42&environnement=recif');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'recif');
-    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', '');
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', 'clown:3');
     // Trois-quarts : devant (+Z), à droite (+X), au-dessus du bac.
     const [x, y, z] = (await hostEl(page).getAttribute('data-aqfish-camera'))!
       .split(',')

@@ -133,6 +133,7 @@ class TestHost {
     axolotl: 0,
     grenouille: 0,
     triton: 0,
+    clown: 0,
   });
   readonly populationMax = signal<PopulationCounts>({
     neon: 40,
@@ -142,6 +143,7 @@ class TestHost {
     axolotl: 4,
     grenouille: 0,
     triton: 0,
+    clown: 0,
   });
   readonly events: [string, number | boolean][] = [];
   readonly requests: PopulationRequest[] = [];
@@ -198,15 +200,17 @@ describe('ControlPanel', () => {
     expect(byLabel('Nombre de tritons')?.value).toBe('0');
   });
 
-  it('récif sans habitants (#148) : la population l’annonce, sans compteur', async () => {
+  it('récif (#150) : la population propose les seuls poissons-clowns', async () => {
     await openPanel();
     fixture.componentInstance.environment.set('recif');
     await fixture.whenStable();
     const section = root().querySelector('[data-section="population"]')!;
-    expect(section.querySelectorAll('[data-species]').length).toBe(0);
-    expect(section.querySelector('[data-population-empty]')?.textContent?.trim()).toBe(
-      'Aucune espèce pour l’instant.',
-    );
+    const rows = [...section.querySelectorAll('[data-species]')];
+    expect(rows.map((r) => r.getAttribute('data-species'))).toEqual(['clown']);
+    expect(section.querySelector('[data-population-empty]')).toBeNull();
+    expect(byLabel('Nombre de poissons-clowns')).not.toBeNull();
+    expect(speciesPlural('clown')).toBe('poissons-clowns');
+    expect(speciesPlural('neon')).toBe('néons');
   });
 
   it('liste des environnements nommée, sélection fournie par l’hôte, choix émis (#87)', async () => {
@@ -415,6 +419,7 @@ describe('ControlPanel', () => {
         axolotl: 0,
         grenouille: 0,
         triton: 0,
+        clown: 0,
       });
       await fixture.whenStable();
       expect(neons.value).toBe('20');

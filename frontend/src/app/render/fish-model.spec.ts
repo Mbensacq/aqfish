@@ -13,6 +13,7 @@ import {
 import {
   AXOLOTL_FISH,
   buildVoxelMesh,
+  CLOWN_FISH,
   CORYDORA_FISH,
   createFishGeometry,
   GUPPY_FEMALE_FISH,
@@ -23,24 +24,69 @@ import {
   SLENDER_FISH,
   voxelSize,
 } from './fish-model';
-import { PALETTE_COLORS } from './palette';
+import { ENVIRONMENT_IDS, environmentById } from '../sim/environment';
+import { ENVIRONMENT_TONE_NAMES, ENVIRONMENT_TONES, PALETTE_COLORS } from './palette';
 
 const UNIT = { x: 1, y: 1, z: 1 };
 
 describe('couleurs des espèces', () => {
+  // Une couleur hors de la palette commune n'est admise que si c'est un ton d'environnement
+  // (ADR 0039) déclaré par **chaque** environnement où l'espèce vit : partout où elle nage,
+  // la passe palette le propose (poisson-clown, `clownOrange`, #150).
   it.each(Object.values(SPECIES))(
     '$name : toutes ses couleurs appartiennent à la palette (survivent à la quantification)',
     (def) => {
+      const homes = ENVIRONMENT_IDS.map(environmentById).filter((env) =>
+        env.species.includes(def.id),
+      );
+      const allowed = [
+        ...PALETTE_COLORS,
+        ...ENVIRONMENT_TONE_NAMES.filter(
+          (name) => homes.length > 0 && homes.every((env) => env.tones.includes(name)),
+        ).map((name) => ENVIRONMENT_TONES[name]),
+      ];
       for (const color of Object.values(def.colors)) {
-        expect(PALETTE_COLORS).toContain(color);
+        expect(allowed).toContain(color);
       }
       for (const variant of speciesVariants(def)) {
         for (const color of Object.values(variant.colors)) {
-          expect(PALETTE_COLORS).toContain(color);
+          expect(allowed).toContain(color);
         }
       }
     },
   );
+});
+
+describe('poisson-clown (#150)', () => {
+  it('trois bandes blanches, chacune cerclée de noir des deux côtés, sur toute la hauteur du flanc', () => {
+    const flank = CLOWN_FISH.body[2];
+    const bands = [...flank.matchAll(/a/g)].map((m) => m.index);
+    expect(bands).toHaveLength(3);
+    for (const col of bands) {
+      expect(flank[col - 1]).toBe('e');
+      expect(flank[col + 1]).toBe('e');
+      // La bande traverse le flanc : blanche dans chaque rangée où le corps est plein.
+      for (const row of CLOWN_FISH.body) {
+        expect(['a', '.']).toContain(row[col]);
+      }
+    }
+    // Vu de dessus, le dos garde au moins deux bandes ; orange partout ailleurs.
+    expect([...CLOWN_FISH.body[0].matchAll(/a/g)].length).toBeGreaterThanOrEqual(2);
+    expect(SPECIES.clown.colors.accent).toBe('#f2ead8');
+    expect(SPECIES.clown.colors.eye).toBe('#1c1c22');
+  });
+
+  it('orange du clown distinct des oranges et rouges de la palette commune (coraux compris)', () => {
+    // Distance euclidienne en sRGB 8 bits.
+    const rgb = (hex: string): number[] => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+    const clown = rgb(SPECIES.clown.colors.stripe);
+    for (const hex of PALETTE_COLORS) {
+      const c = rgb(hex);
+      expect(Math.hypot(c[0] - clown[0], c[1] - clown[1], c[2] - clown[2]), hex).toBeGreaterThan(
+        40,
+      );
+    }
+  });
 });
 
 describe('silhouettes', () => {

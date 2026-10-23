@@ -14,7 +14,7 @@ import {
   type EnvironmentId,
 } from './environment';
 import { DEFAULT_DECOR, validateDecorItem } from './decor';
-import { CORYDORA, GUPPY, NEON } from './species';
+import { CLOWN, CORYDORA, GUPPY, NEON } from './species';
 import { DEFAULT_TANK, SAND_THICKNESS, WATER_LEVEL_RATIO, waterVolume } from './tank';
 import { terrainAt, terrainMaxRise } from './terrain';
 
@@ -119,7 +119,7 @@ describe('environnements', () => {
     }
   });
 
-  it('le récif (#148) : bac vitré plus grand que le bac tropical, eau bleue, sans habitants', () => {
+  it('le récif (#148) : bac vitré plus grand que le bac tropical, eau bleue, poissons-clowns (#150)', () => {
     expect(ENVIRONMENT_IDS).toContain('recif');
     expect(environmentById('recif')).toBe(REEF);
     expect(REEF.name).toBe('Récif');
@@ -138,10 +138,21 @@ describe('environnements', () => {
     // Eau et tons propres au récif, sol différent de celui du bac tropical.
     expect(REEF.water).not.toEqual(TROPICAL_TANK.water);
     expect(REEF.ground.top).not.toBe(TROPICAL_TANK.ground.top);
-    expect(REEF.tones).toEqual(['eauRecif', 'eauRecifClaire', 'corailViolet', 'corailVioletClair']);
-    // Sans habitants pour l'instant : population et espèces vides.
-    expect(REEF.species).toEqual([]);
-    expect(REEF.population).toEqual([]);
+    expect(REEF.tones).toEqual([
+      'eauRecif',
+      'eauRecifClaire',
+      'corailViolet',
+      'corailVioletClair',
+      'clownOrange',
+    ]);
+    // Poissons-clowns (#150), seule espèce du récif, avec leur population par défaut.
+    expect(REEF.species).toEqual(['clown']);
+    expect(REEF.population).toEqual([{ species: 'clown', count: CLOWN.defaultPopulation }]);
+    expect(REEF.anemones).not.toBeNull();
+    for (const env of [TROPICAL_TANK, POND, PALUDARIUM]) {
+      expect(env.anemones).toBeNull();
+      expect(env.species).not.toContain('clown');
+    }
     // Quelques roches, dans le bac et écartées les unes des autres.
     expect(REEF.decor.length).toBeGreaterThanOrEqual(3);
     expect(REEF.decor.length).toBeLessThanOrEqual(6);

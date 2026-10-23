@@ -26,7 +26,13 @@ import { obstacleDistance, validateObstacle, type BoxObstacle } from './obstacle
 import { NEON } from './species';
 import { createFish, stepFish, swimBounds, type Fish } from './swimmer';
 import { waterVolume } from './tank';
-import { advanceInPlace, createDefaultWorld, createWorld, type MutableWorld } from './world';
+import {
+  advanceInPlace,
+  createDefaultWorld,
+  createWorld,
+  seededFeatures,
+  type MutableWorld,
+} from './world';
 
 type MutableFish = { -readonly [K in keyof Fish]: Fish[K] };
 
@@ -313,9 +319,11 @@ describe('coraux dans le monde', () => {
 
   it('récif : boîtes des coraux après le décor ; autres environnements sans corail', () => {
     const world = createDefaultWorld(42, 'recif');
-    const colonies = layout(42);
-    expect(world.obstacles.length).toBe(REEF.decor.length + colonies.length);
-    expect(world.obstacles.slice(REEF.decor.length)).toEqual(
+    // Les coraux du monde évitent les anémones (#150, ADR 0041), dont les boîtes les suivent.
+    const colonies = seededFeatures(42, 'recif', world.decor).corals;
+    expect(colonies.length).toBeGreaterThanOrEqual(4);
+    expect(world.obstacles.length).toBeGreaterThan(REEF.decor.length + colonies.length);
+    expect(world.obstacles.slice(REEF.decor.length, REEF.decor.length + colonies.length)).toEqual(
       coralObstacles(colonies, REEF.decor.length),
     );
     for (const env of ['tropical', 'bassin', 'paludarium'] as const) {

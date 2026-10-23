@@ -3,12 +3,11 @@ import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js
 
 import { ORBIT_MOUSE_BUTTONS, ORBIT_TOUCHES } from '../core/commands/commands';
 
-import { coralLayout } from '../sim/corals';
 import { lightAt } from '../sim/daylight';
 import { SPECIES, speciesVariants } from '../sim/species';
 import { environmentWater, PALUDARIUM, POND, REEF, TROPICAL_TANK } from '../sim/environment';
 import { lilyPadLayout } from '../sim/lily-pads';
-import { createDefaultWorld, createWorld } from '../sim/world';
+import { createDefaultWorld, createWorld, seededFeatures } from '../sim/world';
 import {
   AquariumView,
   ORBIT_MOUSE_ACTIONS,
@@ -127,6 +126,7 @@ describe('AquariumView (pipeline pixel art)', () => {
       'poissons-axolotl',
       'poissons-grenouille',
       'poissons-triton',
+      'poissons-clown',
     ]);
   });
 
@@ -207,7 +207,7 @@ describe('AquariumView (pipeline pixel art)', () => {
 });
 
 describe('AquariumView (tons d’environnement, #148)', () => {
-  it('le récif propose ses quatre tons à la passe (eau, #148 ; coraux, #149), les autres aucun', () => {
+  it('le récif propose ses cinq tons à la passe (eau, #148 ; coraux, #149 ; clown, #150), les autres aucun', () => {
     for (const environment of [TROPICAL_TANK, POND, PALUDARIUM, REEF]) {
       const view = new AquariumView({
         canvas: document.createElement('canvas'),
@@ -218,9 +218,7 @@ describe('AquariumView (tons d’environnement, #148)', () => {
         environment,
       });
       const expected =
-        environment === REEF
-          ? [0, 0, 0, 0]
-          : [TONE_PENALTY_OFF, TONE_PENALTY_OFF, TONE_PENALTY_OFF, TONE_PENALTY_OFF];
+        environment === REEF ? [0, 0, 0, 0, 0] : new Array<number>(5).fill(TONE_PENALTY_OFF);
       expect(view.environmentTonePenalties).toEqual(expected);
       // L'heure ne les touche pas.
       view.updateLight(lightAt(0));
@@ -243,12 +241,18 @@ describe('AquariumView (coraux, #149)', () => {
       });
       const world = createDefaultWorld(42, environment.id);
       view.setDecor(world.decor, world.seed);
-      const expected = coralLayout(42, environment.dimensions, environment.corals, world.decor);
+      // Coraux du monde : ils évitent les anémones (#150), comme dans `createWorld`.
+      const { corals: expected, anemones } = seededFeatures(42, environment.id, world.decor);
       expect(view.coralCount).toBe(expected.length);
-      expect(view.coralCount).toBe(world.obstacles.length - world.decor.length);
-      expect(view.decorCount).toBe(world.decor.length + expected.length);
+      // Anémones (#150) : affichées après les coraux, obstacles après eux.
+      expect(view.anemoneCount).toBe(anemones.length);
+      expect(view.coralCount + view.anemoneCount).toBe(world.obstacles.length - world.decor.length);
+      expect(view.decorCount).toBe(world.decor.length + expected.length + anemones.length);
       if (environment === REEF) {
         expect(view.coralCount).toBeGreaterThanOrEqual(4);
+        expect(view.anemoneCount).toBeGreaterThanOrEqual(2);
+      } else {
+        expect(view.anemoneCount).toBe(0);
       }
       view.dispose();
     }

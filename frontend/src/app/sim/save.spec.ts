@@ -89,10 +89,10 @@ describe('serializeWorld / parseWorld : aller-retour', () => {
     expect(back).toEqual(world);
   });
 
-  it('restitue l’environnement récif (#148), sans habitants, granulés compris', () => {
+  it('restitue l’environnement récif (#148), poissons-clowns (#150) et granulés compris', () => {
     const world = advance(feed(createDefaultWorld(8, 'recif'), 0.2, -0.1), 90);
     expect(world.environment).toBe('recif');
-    expect(world.entities).toEqual([]);
+    expect(world.entities.map((e) => e.species)).toEqual(['clown', 'clown', 'clown']);
     expect(world.food.length).toBeGreaterThan(0);
     expect(world.decor.length).toBeGreaterThan(0);
     const text = serializeWorld(world);
