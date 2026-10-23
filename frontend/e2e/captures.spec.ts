@@ -186,6 +186,27 @@ test.describe('Captures', () => {
     });
   }
 
+  // Récif (#148) : eau bleue et sable corallien, sans habitants ; vue trois-quarts par
+  // défaut (sans `camera=`), face, dessus, côté, dessous et minuit.
+  const REEF_CAPTURES = [
+    { name: 'recif-three-quarter', query: 'environnement=recif' },
+    { name: 'recif-front', query: 'environnement=recif&camera=front' },
+    { name: 'recif-top', query: 'environnement=recif&camera=top' },
+    { name: 'recif-side', query: 'environnement=recif&camera=side' },
+    { name: 'recif-bottom', query: 'environnement=recif&camera=bottom' },
+    { name: 'recif-three-quarter-minuit', query: 'environnement=recif&heure=0' },
+  ] as const;
+  for (const { name, query } of REEF_CAPTURES) {
+    test(`angle ${name}`, async ({ page }) => {
+      const errors: string[] = [];
+      page.on('pageerror', (error) => errors.push(error.message));
+      await page.goto(`/?capture=1&seed=${SEED}&time=${TIME_SECONDS}&${query}`);
+      await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+      await page.screenshot({ path: join(OUTPUT_DIR, `${name}.png`), animations: 'disabled' });
+      expect(errors).toEqual([]);
+    });
+  }
+
   // Téléphone en portrait (390 × 844, #117) : vue trois-quarts cadrée sur un écran étroit,
   // donc dézoomée, sans nourriture puis avec granulés posés en points et en voxels.
   const PHONE_CAPTURES = [

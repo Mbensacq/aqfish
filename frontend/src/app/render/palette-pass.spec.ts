@@ -1,8 +1,14 @@
 import { NearestFilter, ShaderMaterial, SRGBColorSpace, type Mesh } from 'three';
 
-import { EXTENDED_PALETTE_COLORS, NIGHT_TONE_COLORS, PALETTE_COLORS } from './palette';
+import {
+  ENVIRONMENT_TONE_COLORS,
+  ENVIRONMENT_TONE_NAMES,
+  EXTENDED_PALETTE_COLORS,
+  NIGHT_TONE_COLORS,
+  PALETTE_COLORS,
+} from './palette';
 import { TONE_PENALTY_OFF } from './night-shade';
-import { PalettePass } from './palette-pass';
+import { environmentTonePenalties, PalettePass } from './palette-pass';
 import { PIXEL_SIZE } from './pixel-art';
 
 function material(pass: PalettePass): ShaderMaterial {
@@ -21,14 +27,17 @@ describe('PalettePass', () => {
     pass.dispose();
   });
 
-  it('transmet toute la palette au shader, tons de nuit et du crépuscule après le jour', () => {
+  it('transmet toute la palette au shader : jour, nuit, crépuscule, puis tons d’environnement', () => {
     const pass = new PalettePass();
     const m = material(pass);
-    expect(m.defines['PALETTE_SIZE']).toBe(EXTENDED_PALETTE_COLORS.length);
+    const size = EXTENDED_PALETTE_COLORS.length + ENVIRONMENT_TONE_COLORS.length;
+    expect(m.defines['PALETTE_SIZE']).toBe(size);
     expect(m.defines['DAY_SIZE']).toBe(PALETTE_COLORS.length);
     expect(m.defines['TWILIGHT_START']).toBe(PALETTE_COLORS.length + NIGHT_TONE_COLORS.length);
+    expect(m.defines['ENVIRONMENT_START']).toBe(EXTENDED_PALETTE_COLORS.length);
+    expect(m.defines['ENVIRONMENT_PENALTY_SIZE']).toBe(ENVIRONMENT_TONE_COLORS.length);
     const data = m.uniforms['uPalette'].value as Float32Array;
-    expect(data.length).toBe(EXTENDED_PALETTE_COLORS.length * 3);
+    expect(data.length).toBe(size * 3);
     // Première couleur : fond de la scène #141418.
     expect(Array.from(data.slice(0, 3))).toEqual(
       [0x14 / 255, 0x14 / 255, 0x18 / 255].map(Math.fround),
@@ -82,11 +91,53 @@ describe('PalettePass', () => {
   });
 
   it('accepte des groupes de tons vides', () => {
-    const pass = new PalettePass(['#000000', '#ffffff'], [], []);
+    const pass = new PalettePass(['#000000', '#ffffff'], [], [], []);
     const m = material(pass);
     expect(m.defines['PALETTE_SIZE']).toBe(2);
     expect(m.defines['DAY_SIZE']).toBe(2);
     expect(m.defines['TWILIGHT_START']).toBe(2);
+    expect(m.defines['ENVIRONMENT_START']).toBe(2);
+    // Un tableau GLSL ne peut pas être vide : une case, jamais lue.
+    expect(m.defines['ENVIRONMENT_PENALTY_SIZE']).toBe(1);
+    expect(pass.environmentPenalties).toEqual([]);
+    pass.setEnvironmentPenalties([]);
     pass.dispose();
+  });
+
+  it('écarte les tons d’environnement tant qu’aucun environnement ne les déclare (#148)', () => {
+    const pass = new PalettePass();
+    expect(pass.environmentPenalties).toEqual(ENVIRONMENT_TONE_NAMES.map(() => TONE_PENALTY_OFF));
+    pass.setEnvironmentPenalties(environmentTonePenalties(['eauRecifClaire']));
+    expect(pass.environmentPenalties).toEqual([TONE_PENALTY_OFF, 0]);
+    expect(material(pass).uniforms['uEnvironmentPenalty'].value).toEqual([TONE_PENALTY_OFF, 0]);
+    pass.setEnvironmentPenalties(environmentTonePenalties([]));
+    expect(pass.environmentPenalties).toEqual([TONE_PENALTY_OFF, TONE_PENALTY_OFF]);
+    pass.dispose();
+  });
+
+  it('setEnvironmentPenalties refuse un nombre ou des valeurs de pénalités invalides', () => {
+    const pass = new PalettePass();
+    expect(() => pass.setEnvironmentPenalties([0])).toThrow(RangeError);
+    expect(() => pass.setEnvironmentPenalties([0, 0, 0])).toThrow(RangeError);
+    for (const bad of [-1, Number.NaN, Number.POSITIVE_INFINITY]) {
+      expect(() => pass.setEnvironmentPenalties([0, bad])).toThrow(RangeError);
+    }
+    // Un refus ne change rien.
+    expect(pass.environmentPenalties).toEqual([TONE_PENALTY_OFF, TONE_PENALTY_OFF]);
+    pass.dispose();
+  });
+});
+
+describe('environmentTonePenalties (#148, ADR 0039)', () => {
+  it('pénalité nulle pour les tons déclarés, écartés sinon', () => {
+    expect(environmentTonePenalties([])).toEqual([TONE_PENALTY_OFF, TONE_PENALTY_OFF]);
+    expect(environmentTonePenalties(['eauRecif', 'eauRecifClaire'])).toEqual([0, 0]);
+    expect(environmentTonePenalties(['eauRecif'])).toEqual([0, TONE_PENALTY_OFF]);
+  });
+
+  it('refuse un nom qui n’est pas un ton d’environnement', () => {
+    for (const bad of ['eauMoyenne', 'sableLune', 'constructor', '']) {
+      expect(() => environmentTonePenalties([bad])).toThrow(RangeError);
+    }
   });
 });

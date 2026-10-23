@@ -134,6 +134,9 @@ La cible est en sRGB 8 bits : les surfaces translucides s'y mélangent en espace
 La passe connaît aussi des **tons de nuit et du crépuscule** (ADR 0021), placés après les
 couleurs de jour et pénalisés selon l'heure : écartés en plein jour (image de midi
 identique à celle de la palette de jour seule), libres en pleine nuit ou à mi-crépuscule.
+Viennent enfin les **tons d'environnement** (ADR 0039, `ENVIRONMENT_TONES`) : libres dans
+l'environnement qui les déclare (`Environment.tones`, les bleus du récif), écartés partout
+ailleurs, dont les images restent celles de la palette commune.
 
 **Filtre désactivable** (ADR 0010) : avec le filtre `aucun`, `renderFrame()` rend la scène
 directement à l'écran en pleine résolution, sans passe palette, et la caméra prend le
@@ -190,7 +193,7 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
 | `sim/save.ts` | Sauvegarde (#70, ADR 0028) : format JSON versionné (`saveData`, `serializeWorld`), relecture validée (`parseWorld`, `parseSaveData` : bornes, effectifs, propriétés propres seulement, champs inconnus ignorés, schéma inconnu refusé) |
 | `sim/population.ts` | Population réglable (#69, ADR 0025) : `setPopulation` (pure) / `setPopulationInPlace` (hôte), bornes `maxPopulation` par espèce et `MAX_TOTAL_FISH`, `populationCounts`, `populationLimits` |
 | `sim/tank.ts` | Dimensions du bac, volume d'eau, `shrinkBox` (partagés par la simulation et le rendu) |
-| `sim/environment.ts` | Environnements en données (#87, ADR 0026) : bac tropical, bassin et paludarium (#129) (dimensions, niveau de l'eau, sol à berge `terrain` et ses mousses et racines `bankDecor` (#132), teintes de l'eau et du sol en noms de la palette, bordure, vue par défaut, bulles, caustiques, décor, espèces et population de départ, ADR 0027) ; `livesIn` ; `World.environment` choisit le volume d'eau des bornes de nage et des dépôts |
+| `sim/environment.ts` | Environnements en données (#87, ADR 0026) : bac tropical, bassin, paludarium (#129) et récif (#148, ADR 0039) (dimensions, niveau de l'eau, sol à berge `terrain` et ses mousses et racines `bankDecor` (#132), teintes de l'eau et du sol en noms de la palette, tons d'environnement `tones`, bordure, vue par défaut, bulles, caustiques, décor, espèces et population de départ, ADR 0027) ; `livesIn` ; `World.environment` choisit le volume d'eau des bornes de nage et des dépôts |
 | `sim/species.ts` | Définitions déclaratives des espèces (`NEON`, `GUPPY`, `CORYDORA`, `KOI`, `AXOLOTL`), espèces qui marchent sur le fond (`walker`, ADR 0035), apparences (`speciesVariants`, `speciesVariantIndex` en alternance ou tirées de la graine, ADR 0013 et 0027), préférence de profondeur (`depth`, ADR 0014), `validateSpecies` |
 | `sim/swimmer.ts` | Poisson (état sérialisable, sous-générateur en état explicite), nage : errance, banc, évitement, bornes, préférence de profondeur et remontées (ADR 0014) |
 | `sim/flocking.ts` | Banc : séparation, alignement, cohésion, pilotage en deux phases, espacement minimal (ADR 0011) |
@@ -212,9 +215,9 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
 | `sim/feeding.ts` | Faim et repas (ADR 0023) : montée et retrait de la faim (`growHunger`, `satiate`), tranche d'eau par espèce (`feedingBand`), visibilité (`hasLineOfSight`), granulé le plus proche et point visé (`nearestPellet`, `foodTarget`), repas en place sans double prise (`eatInPlace`) |
 | `sim/undulation.ts` | Ondulation (fonctions pures) : avance de la phase, amplitude selon la vitesse, pose du corps et de la queue (ADR 0009) |
 | `sim/avoidance.ts` | Forces d'évitement des parois et des obstacles, proximité, déviation pour contourner (ADR 0012) |
-| `render/palette.ts` | Palette unique (32 à 48 couleurs), nommées par usage ; tons de nuit (`NIGHT_TONES`) et du crépuscule (`TWILIGHT_TONES`), palette étendue de la passe (ADR 0021) |
+| `render/palette.ts` | Palette unique (32 à 48 couleurs), nommées par usage ; tons de nuit (`NIGHT_TONES`) et du crépuscule (`TWILIGHT_TONES`), palette étendue de la passe (ADR 0021) ; tons d'environnement (`ENVIRONMENT_TONES`, ADR 0039) |
 | `render/pixel-art.ts` | `PIXEL_SIZE`, taille de la cible basse résolution, couleur la plus proche avec pénalités facultatives (fonctions pures, même métrique que le shader) |
-| `render/palette-pass.ts` | Cible basse résolution et passe plein écran palette (`ShaderMaterial`) ; libération |
+| `render/palette-pass.ts` | Cible basse résolution et passe plein écran palette (`ShaderMaterial`) ; pénalités des tons de l'heure et des tons d'environnement (`environmentTonePenalties`) ; libération |
 | `render/camera-presets.ts` | Dimensions du bac, préréglages de caméra, interpolation des transitions (fonctions pures) |
 | `render/stone-border.ts` | Margelle de pierre du bassin (#87) : anneau de blocs à joints sombres, hauteurs selon un motif fixe (`stoneBorderBlocks`, pur et testé) ; lueur de nuit `rocheLuneSombre` pour rester lisible |
 | `render/terrain-mesh.ts` | Sol du paludarium en colonnes (#129, ADR 0034) : grille pure (`terrainGrid`, cellules de 2 cm, hauteurs au centimètre, colonnes émergées au moins un cran au-dessus de l'eau), maillage des seules faces visibles, coupe le long des vitres sans jonction en T |
@@ -259,7 +262,7 @@ respecter :
 | Élément | Règle |
 |---|---|
 | Paramètres d'URL | `capture`, `seed`, `camera`, `time`, et `filtre`, `heure`, `nourrir`, `population`, `environnement`, `granules` et `pluie` facultatifs, lus par `core/capture/capture-params.ts` |
-| `environnement=` | En capture comme hors capture (#87, ADR 0026) : `tropical`, `bassin` ou `paludarium` (#129) ; inconnu ou absent : bac tropical (séries existantes inchangées, à l'octet près). Sans `camera=`, vue par défaut de l'environnement (`top` pour le bassin, `three-quarter` pour le bac et le paludarium) |
+| `environnement=` | En capture comme hors capture (#87, ADR 0026) : `tropical`, `bassin`, `paludarium` (#129) ou `recif` (#148) ; inconnu ou absent : bac tropical (séries existantes inchangées, à l'octet près). Sans `camera=`, vue par défaut de l'environnement (`top` pour le bassin, `three-quarter` pour le bac, le paludarium et le récif) |
 | `population=` | En capture comme hors capture (#69, ADR 0025) : effectifs `espece:n` séparés par des virgules (`neon:12,guppy:2,corydora:0`), appliqués à t = 0 dans l'ordre de l'URL, bornés par `sim/population.ts`. Entrée mal formée ou espèce inconnue ignorée, 10 au plus. Absent : population par défaut (séries existantes inchangées, à l'octet près) |
 | `nourrir=` | En capture seulement (#67, ADR 0022) : dépôts de nourriture séparés par des virgules, `t` (centre du bac) ou `t:x:z` (temps simulé en s, position en m) ; rejoués au temps simulé de chacun avant le premier rendu (`advanceToWithFeedings`). Entrée invalide ignorée, 20 au plus. Absent : aucun granulé (séries existantes inchangées, à l'octet près) |
 | `granules=` | En capture seulement (#117, ADR 0022) : rendu des granulés, `points` ou `voxels`. Absent ou invalide : points (séries existantes inchangées, à l'octet près) |

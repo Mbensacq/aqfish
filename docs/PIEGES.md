@@ -6,6 +6,19 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Navigateur de Playwright absent : `chromium_headless_shell-1194`** (cycles 49 et 50) :
+  Playwright 1.56 cherche `/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell`,
+  alors que l'image fournit la version 1243 (`chrome-headless-shell-linux64/chrome-headless-shell`) :
+  tous les e2e et captures échouent en 1 ms (« Executable doesn't exist »). Sans rien
+  télécharger, créer le dossier attendu et un lien vers le binaire fourni (`mkdir -p
+  …-1194/chrome-linux && ln -s …-1243/chrome-headless-shell-linux64/chrome-headless-shell
+  …-1194/chrome-linux/headless_shell`), plus les fichiers vides `INSTALLATION_COMPLETE` et
+  `DEPENDENCIES_VALIDATED`. Captures et e2e passent ensuite normalement. (2026-10-23)
+- **`git checkout <fichier>` pour retirer un essai jetable efface aussi le travail en cours**
+  (cycle 50) : le court-circuit de la passe palette (`vec4(color, 1.0)`, voir « Rendu ») posé
+  par `sed` sur `render/palette-pass.ts` puis retiré par `git checkout` a ramené le fichier à
+  sa version commitée, modifications du cycle comprises. Retirer l'essai par le `sed` inverse,
+  ou copier le fichier avant l'essai. (2026-10-23)
 - **Deux clones, un seul serveur e2e** (cycle 46) : Playwright réutilise un serveur déjà
   lancé sur son port (`reuseExistingServer` hors CI). Avec `npm run verify` de `main` encore
   en cours sur le port 4300, un `verify` lancé depuis un second worktree aurait testé le code
@@ -293,6 +306,18 @@ haut de sa section.
 
 ## Rendu
 
+- **Une couleur ajoutée à la palette commune change les images des autres environnements**
+  (cycle 50, #148) : deux bleus pour l'eau du récif ont capté, dans les captures du bac
+  tropical au crépuscule, l'eau de lune (35 946 pixels) et des néons (396 pixels). Une
+  couleur utile à un seul environnement va dans `ENVIRONMENT_TONES` (ADR 0039), proposée par
+  la passe seulement là où `Environment.tones` la déclare. Comparer toutes les captures avec
+  `cmp`, pas seulement celles de midi. Pour choisir la couleur, calculer le mélange
+  translucide (en linéaire : `c · a + fond · (1 − a)`, puis sRGB) : le modèle redonnait
+  l'image mesurée à 1 unité près. (2026-10-23)
+- **Eau teintée vue de dessus : le sol prend la teinte de la surface** (cycle 50) : vu de
+  dessus, le sol est vu à travers la surface (50 %) ; une surface bleue rend tout sable clair
+  bleuté, ramené à `eauTresClaire`. Aucune couleur de sable de la palette n'est atteignable
+  sans renoncer à une surface bleue en trois-quarts (ADR 0039). (2026-10-23)
 - **Voxels de 1 cm vus en trois-quarts : les flancs prennent autant de place que le dessus**
   (cycle 49, #132) : des tapis de mousse en cubes de 1 cm posés sur les marches de la berge
   montrent presque autant de flancs que de dessus. Avec des flancs `vegetationSombre`, moins

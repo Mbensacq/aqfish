@@ -5,7 +5,7 @@ import { ORBIT_MOUSE_BUTTONS, ORBIT_TOUCHES } from '../core/commands/commands';
 
 import { lightAt } from '../sim/daylight';
 import { SPECIES, speciesVariants } from '../sim/species';
-import { environmentWater, POND, TROPICAL_TANK } from '../sim/environment';
+import { environmentWater, PALUDARIUM, POND, REEF, TROPICAL_TANK } from '../sim/environment';
 import { lilyPadLayout } from '../sim/lily-pads';
 import { createDefaultWorld, createWorld } from '../sim/world';
 import {
@@ -202,6 +202,27 @@ describe('AquariumView (pipeline pixel art)', () => {
     expect(view.decorCount).toBe(0); // libéré avec la vue
     view.setDecor(world.decor, world.seed);
     expect(view.decorCount).toBe(0);
+  });
+});
+
+describe('AquariumView (tons d’environnement, #148)', () => {
+  it('le récif propose ses deux tons à la passe, les autres environnements aucun', () => {
+    for (const environment of [TROPICAL_TANK, POND, PALUDARIUM, REEF]) {
+      const view = new AquariumView({
+        canvas: document.createElement('canvas'),
+        rendererFactory: () => new RecordingRenderer(),
+        pixelRatio: 1,
+        preset: 'three-quarter',
+        interactive: false,
+        environment,
+      });
+      const expected = environment === REEF ? [0, 0] : [TONE_PENALTY_OFF, TONE_PENALTY_OFF];
+      expect(view.environmentTonePenalties).toEqual(expected);
+      // L'heure ne les touche pas.
+      view.updateLight(lightAt(0));
+      expect(view.environmentTonePenalties).toEqual(expected);
+      view.dispose();
+    }
   });
 });
 

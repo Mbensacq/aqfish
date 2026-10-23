@@ -198,6 +198,17 @@ describe('ControlPanel', () => {
     expect(byLabel('Nombre de tritons')?.value).toBe('0');
   });
 
+  it('récif sans habitants (#148) : la population l’annonce, sans compteur', async () => {
+    await openPanel();
+    fixture.componentInstance.environment.set('recif');
+    await fixture.whenStable();
+    const section = root().querySelector('[data-section="population"]')!;
+    expect(section.querySelectorAll('[data-species]').length).toBe(0);
+    expect(section.querySelector('[data-population-empty]')?.textContent?.trim()).toBe(
+      'Aucune espèce pour l’instant.',
+    );
+  });
+
   it('liste des environnements nommée, sélection fournie par l’hôte, choix émis (#87)', async () => {
     await openPanel();
     const select = root().querySelector<HTMLSelectElement>('select[aria-label="Environnement"]')!;
@@ -208,6 +219,7 @@ describe('ControlPanel', () => {
       ['tropical', 'Bac tropical'],
       ['bassin', 'Bassin'],
       ['paludarium', 'Paludarium'],
+      ['recif', 'Récif'],
     ]);
     expect(select.value).toBe('tropical');
 

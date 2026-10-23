@@ -14,6 +14,7 @@ import {
   ENVIRONMENTS,
   PALUDARIUM,
   POND,
+  REEF,
   TROPICAL_TANK,
 } from '../sim/environment';
 import {
@@ -31,7 +32,7 @@ import {
   TERRAIN_WATER_INSET,
   WATER_LEVEL_RATIO,
 } from './aquarium-scene';
-import { PALETTE } from './palette';
+import { ENVIRONMENT_TONES, isEnvironmentToneName, PALETTE } from './palette';
 
 function mesh(name: string): Mesh {
   const object = createAquariumScene().scene.getObjectByName(name);
@@ -202,7 +203,27 @@ describe('createAquariumScene : environnements (#87)', () => {
       for (const name of names) {
         expect(Object.keys(PALETTE)).toContain(name);
       }
+      // Tons d'environnement (#148, ADR 0039) : déclarés dans `ENVIRONMENT_TONES`.
+      for (const tone of env.tones) {
+        expect(isEnvironmentToneName(tone)).toBe(true);
+      }
     }
+  });
+
+  it('le récif (#148) : vitres, sol sans berge, eau teintée de bleu saturé', () => {
+    const { scene, environment, dimensions } = createAquariumScene(REEF);
+    expect(environment).toBe(REEF);
+    expect(dimensions).toBe(REEF.dimensions);
+    expect(scene.getObjectByName('verre')).toBeDefined();
+    expect(scene.getObjectByName('margelle')).toBeUndefined();
+    expect(scene.getObjectByName('sol-paludarium')).toBeUndefined();
+    const sand = scene.getObjectByName('sable') as Mesh;
+    expect(hex(materials(sand)[2])).toBe(PALETTE.koiBlanc);
+    const water = scene.getObjectByName('eau') as Mesh;
+    // Teinte d'entrée bleu néon : l'image retombe sur les tons du récif (ADR 0039).
+    expect(hex(materials(water)[0])).toBe(PALETTE.neonBleu);
+    expect(hex(materials(water)[2])).toBe(PALETTE.neonBleu);
+    expect(Object.keys(ENVIRONMENT_TONES)).toEqual([...REEF.tones]);
   });
 
   it('paletteColor refuse un nom inconnu ou hérité du prototype', () => {

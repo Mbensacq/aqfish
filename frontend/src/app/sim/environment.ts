@@ -15,8 +15,8 @@ import {
 
 /**
  * Environnements (issue #87, ADR 0026) : le bac tropical, le bassin, le paludarium (issue #129,
- * ADR 0034), puis le récif. Un environnement est une **donnée** : dimensions, teintes de l'eau et du sol, type
- * de bordure, vue par défaut, décor et population de départ. Le monde (`sim/world.ts`) en
+ * ADR 0034) et le récif (issue #148). Un environnement est une **donnée** : dimensions, teintes
+ * de l'eau et du sol, type de bordure, vue par défaut, décor et population de départ. Le monde (`sim/world.ts`) en
  * tire ses bornes de nage, le rendu (`render/aquarium-scene.ts`) sa scène statique.
  *
  * Les teintes sont des **noms** de couleurs de la palette (`render/palette.ts`) : la
@@ -24,7 +24,7 @@ import {
  */
 
 /** Identifiants des environnements, dans l'ordre du sélecteur. */
-export const ENVIRONMENT_IDS = ['tropical', 'bassin', 'paludarium'] as const;
+export const ENVIRONMENT_IDS = ['tropical', 'bassin', 'paludarium', 'recif'] as const;
 export type EnvironmentId = (typeof ENVIRONMENT_IDS)[number];
 
 /** Environnement de l'application sans choix explicite (séries de captures existantes). */
@@ -57,6 +57,11 @@ export interface Environment {
   readonly terrain: TerrainSettings | null;
   /** Teintes de l'eau en plein jour : corps du volume et surface (noms de la palette). */
   readonly water: { readonly body: string; readonly surface: string };
+  /**
+   * Tons d'environnement (`ENVIRONMENT_TONES` de `render/palette.ts`, ADR 0039) que la passe
+   * palette peut employer ici, en plus de la palette commune : vide sauf au récif.
+   */
+  readonly tones: readonly string[];
   /** Teintes du sol : dessus, côtés, dessous (noms de la palette). */
   readonly ground: { readonly top: string; readonly side: string; readonly bottom: string };
   readonly border: BorderKind;
@@ -117,6 +122,7 @@ export const TROPICAL_TANK: Environment = {
   waterLevel: WATER_LEVEL_RATIO,
   terrain: null,
   water: { body: 'eauMoyenne', surface: 'eauClaire' },
+  tones: [],
   ground: { top: 'sableClair', side: 'sable', bottom: 'sableSombre' },
   border: 'verre',
   defaultCamera: 'three-quarter',
@@ -146,6 +152,7 @@ export const POND: Environment = {
   waterLevel: WATER_LEVEL_RATIO,
   terrain: null,
   water: { body: 'eauSombre', surface: 'eauMoyenne' },
+  tones: [],
   ground: { top: 'vegetationOmbre', side: 'rocheSombre', bottom: 'rocheSombre' },
   border: 'pierre',
   defaultCamera: 'top',
@@ -197,6 +204,7 @@ export const PALUDARIUM: Environment = {
     rock: { threshold: 0.55, height: 0.04 },
   }),
   water: { body: 'eauMoyenne', surface: 'eauClaire' },
+  tones: [],
   // Dessus et côtés : ceux du fond immergé ; la terre et la roche ont leurs couleurs
   // (`render/terrain-mesh.ts`). Dessous : celui du bac tropical.
   ground: { top: 'sable', side: 'sableSombre', bottom: 'sableSombre' },
@@ -221,10 +229,53 @@ export const PALUDARIUM: Environment = {
   population: defaultPopulation([AXOLOTL, GRENOUILLE, TRITON]),
 };
 
+/** Récif : 1,5 m × 60 cm, 65 cm de haut, plus long, plus large et plus haut que le bac. */
+export const REEF_DIMENSIONS: TankDimensions = { width: 1.5, height: 0.65, depth: 0.6 };
+
+/**
+ * Récif marin (épopée v0.8, issue #148) : bac vitré plus grand que le bac tropical, eau d'un
+ * bleu franc plus clair en surface, sable corallien clair et quelques roches. Sans habitants
+ * pour l'instant : coraux, anémones et poissons viendront aux cycles suivants.
+ */
+export const REEF: Environment = {
+  id: 'recif',
+  name: 'Récif',
+  dimensions: REEF_DIMENSIONS,
+  waterLevel: WATER_LEVEL_RATIO,
+  terrain: null,
+  // Teinte d'entrée saturée (bleu néon) : à travers l'eau translucide, l'image retombe sur
+  // les deux tons du récif, `eauRecif` (volume) et `eauRecifClaire` (surface).
+  water: { body: 'neonBleu', surface: 'neonBleu' },
+  tones: ['eauRecif', 'eauRecifClaire'],
+  // Sable corallien : blanc cassé ; vu de côté, il reste blanc sous l'eau bleue ; vu de
+  // dessus, à travers la surface bleue, il se lit en eau très claire, comme un lagon.
+  ground: { top: 'koiBlanc', side: 'sableClair', bottom: 'sableSombre' },
+  border: 'verre',
+  defaultCamera: 'three-quarter',
+  bubbles: false,
+  caustics: false,
+  decor: parseDecor(
+    `[
+      { "kind": "rock", "x": -0.48, "z": -0.14, "rotation": 0.7, "scale": 1.5, "seed": 148 },
+      { "kind": "rock", "x": -0.3, "z": -0.19, "rotation": 2.8, "scale": 0.9, "seed": 61 },
+      { "kind": "rock", "x": 0.36, "z": -0.1, "rotation": 4.9, "scale": 1.3, "seed": 23 },
+      { "kind": "rock", "x": 0.1, "z": 0.16, "rotation": 1.2, "scale": 0.7, "seed": 77 }
+    ]`,
+    REEF_DIMENSIONS,
+  ),
+  lilyPads: null,
+  bankDecor: null,
+  rain: false,
+  floatingLeaves: false,
+  species: [],
+  population: [],
+};
+
 export const ENVIRONMENTS: Readonly<Record<EnvironmentId, Environment>> = {
   tropical: TROPICAL_TANK,
   bassin: POND,
   paludarium: PALUDARIUM,
+  recif: REEF,
 };
 
 /** Vrai si l'espèce `species` vit dans l'environnement `id` (`Environment.species`). */

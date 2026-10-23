@@ -1,10 +1,11 @@
 import { expect, test, type Page } from '@playwright/test';
 
+import { ENVIRONMENT_TONES, PALETTE } from '../src/app/render/palette';
 import { FOOD_PER_DROP } from '../src/app/sim/food';
 
 /**
- * Environnements (issue #87) : choix entre le bac tropical, le bassin et le paludarium (#129)
- * dans le panneau de contrôle, au clavier comme à la souris, lisible à 390 px ;
+ * Environnements (issue #87) : choix entre le bac tropical, le bassin, le paludarium (#129) et
+ * le récif (#148) dans le panneau de contrôle, au clavier comme à la souris, lisible à 390 px ;
  * `environnement=` en capture.
  */
 
@@ -15,9 +16,43 @@ const selector = (page: Page) => page.getByRole('combobox', { name: 'Environneme
 async function open(page: Page, search: string): Promise<string[]> {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
+  page.on('console', (message) => {
+    if (message.type() === 'error') {
+      errors.push(message.text());
+    }
+  });
   await page.goto(`/${search}`);
   await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
   return errors;
+}
+
+/** Nombre de pixels de chaque couleur `colors` dans une capture de la page. */
+async function countColors(page: Page, colors: readonly string[]): Promise<number[]> {
+  const png = (await page.screenshot({ animations: 'disabled' })).toString('base64');
+  return page.evaluate(
+    async ({ png, colors }) => {
+      const blob = await (await fetch(`data:image/png;base64,${png}`)).blob();
+      const bitmap = await createImageBitmap(blob);
+      const context = new OffscreenCanvas(bitmap.width, bitmap.height).getContext('2d');
+      if (!context) {
+        throw new Error('Contexte 2D indisponible');
+      }
+      context.drawImage(bitmap, 0, 0);
+      const data = context.getImageData(0, 0, bitmap.width, bitmap.height).data;
+      const counts = new Map(colors.map((c) => [c, 0]));
+      for (let i = 0; i < data.length; i += 4) {
+        const hex =
+          '#' +
+          [data[i], data[i + 1], data[i + 2]].map((v) => v.toString(16).padStart(2, '0')).join('');
+        const n = counts.get(hex);
+        if (n !== undefined) {
+          counts.set(hex, n + 1);
+        }
+      }
+      return colors.map((c) => counts.get(c) ?? 0);
+    },
+    { png, colors },
+  );
 }
 
 /** Altitude (Y) de la caméra exposée par l'hôte. */
@@ -139,6 +174,65 @@ test.describe('Environnement', () => {
     expect(x).toBeGreaterThan(0);
     expect(y).toBeGreaterThan(0.6);
     expect(z).toBeGreaterThan(x);
+    expect(errors).toEqual([]);
+  });
+
+  test('récif (#148) : choisi au panneau, sans habitants, nourri, gardé au rechargement', async ({
+    page,
+  }) => {
+    // Sans `seed=` : la sauvegarde automatique restaure le monde au rechargement.
+    const errors = await open(page, '');
+    await toggle(page).click();
+    await expect(selector(page).locator('option[value="recif"]')).toHaveText('Récif');
+    await selector(page).selectOption('recif');
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'recif');
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', '');
+    await expect(page.locator('[data-population-empty]')).toBeVisible();
+    await toggle(page).click();
+
+    // Vue de dessus : un clic au centre dépose des granulés sur l'eau.
+    await page.keyboard.press('1');
+    await expect.poll(() => cameraY(page)).toBeGreaterThan(1);
+    await page.waitForTimeout(800); // fin de la transition de caméra (0,5 s)
+    const box = (await page.locator('canvas').first().boundingBox())!;
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-food', String(FOOD_PER_DROP));
+
+    await page.reload();
+    await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'recif');
+    expect(errors).toEqual([]);
+  });
+
+  test('capture environnement=recif : vue trois-quarts, eau bleue des seuls tons du récif', async ({
+    page,
+  }) => {
+    const tones = [ENVIRONMENT_TONES.eauRecif, ENVIRONMENT_TONES.eauRecifClaire];
+    const errors = await open(page, '?capture=1&seed=42&environnement=recif');
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'recif');
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', '');
+    // Trois-quarts : devant (+Z), à droite (+X), au-dessus du bac.
+    const [x, y, z] = (await hostEl(page).getAttribute('data-aqfish-camera'))!
+      .split(',')
+      .map(Number);
+    expect(x).toBeGreaterThan(0);
+    expect(y).toBeGreaterThan(0.6);
+    expect(z).toBeGreaterThan(x);
+    // Eau bleue (volume et surface) et sable blanc cassé, sans l'eau verte du bac tropical.
+    const [body, surface, sand, tropicalWater] = await countColors(page, [
+      ...tones,
+      PALETTE.texteInterface,
+      PALETTE.eauMoyenne,
+    ]);
+    expect(body).toBeGreaterThan(10_000);
+    expect(surface).toBeGreaterThan(10_000);
+    expect(sand).toBeGreaterThan(10_000);
+    expect(tropicalWater).toBe(0);
+
+    // Le bac tropical n'emploie jamais les tons du récif.
+    await page.goto('/?capture=1&seed=42');
+    await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+    expect(await countColors(page, tones)).toEqual([0, 0]);
     expect(errors).toEqual([]);
   });
 

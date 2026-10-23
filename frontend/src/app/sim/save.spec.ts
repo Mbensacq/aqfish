@@ -89,6 +89,39 @@ describe('serializeWorld / parseWorld : aller-retour', () => {
     expect(back).toEqual(world);
   });
 
+  it('restitue l’environnement récif (#148), sans habitants, granulés compris', () => {
+    const world = advance(feed(createDefaultWorld(8, 'recif'), 0.2, -0.1), 90);
+    expect(world.environment).toBe('recif');
+    expect(world.entities).toEqual([]);
+    expect(world.food.length).toBeGreaterThan(0);
+    expect(world.decor.length).toBeGreaterThan(0);
+    const text = serializeWorld(world);
+    const { world: back } = restored(parseWorld(text));
+    expect(back.environment).toBe('recif');
+    expect(back).toEqual(world);
+    // Le format ne change pas : même version, relue à l'identique (ADR 0028).
+    const data = JSON.parse(text) as { format: string; schema: number };
+    expect([data.format, data.schema]).toEqual([SAVE_FORMAT, SAVE_SCHEMA]);
+    expect(serializeWorld(back)).toBe(text);
+  });
+
+  it('refuse un poisson d’une autre espèce dans une sauvegarde du récif (#148)', () => {
+    const data = JSON.parse(serializeWorld(createDefaultWorld(4))) as Record<string, unknown>;
+    data['environment'] = 'recif';
+    expect(refusal(parseWorld(JSON.stringify(data)))).toMatch(
+      /ne vit pas dans l’environnement recif/,
+    );
+  });
+
+  it('les sauvegardes des autres environnements se relisent toujours (#148)', () => {
+    for (const id of ['tropical', 'bassin', 'paludarium'] as const) {
+      const text = serializeWorld(advance(createDefaultWorld(21, id), 120));
+      const { world: back } = restored(parseWorld(text));
+      expect(back.environment).toBe(id);
+      expect(serializeWorld(back)).toBe(text);
+    }
+  });
+
   it('restitue l’environnement paludarium (#129)', () => {
     const world = advance(createDefaultWorld(8, 'paludarium'), 120);
     expect(world.environment).toBe('paludarium');
@@ -179,6 +212,7 @@ describe('déterminisme après rechargement', () => {
     [7, 'tropical'],
     [99, 'bassin'],
     [5, 'paludarium'],
+    [13, 'recif'],
   ] as const)(
     'graine %s (%s) : sauvegardé, rechargé puis avancé = jamais sauvegardé',
     (seed, environment) => {

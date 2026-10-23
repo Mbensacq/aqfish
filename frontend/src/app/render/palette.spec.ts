@@ -1,7 +1,11 @@
 import { lightAt } from '../sim/daylight';
 import { tonePenaltiesInto } from './night-shade';
 import {
+  ENVIRONMENT_TONE_COLORS,
+  ENVIRONMENT_TONE_NAMES,
+  ENVIRONMENT_TONES,
   EXTENDED_PALETTE_COLORS,
+  isEnvironmentToneName,
   NIGHT_TONE_COLORS,
   NIGHT_TONES,
   PALETTE,
@@ -159,5 +163,54 @@ describe('Tons de nuit et du crépuscule (issue #73, ADR 0021)', () => {
     for (const [name, hex] of Object.entries(TWILIGHT_TONES)) {
       expect(nameAt(hexToRgb(hex), 18)).toBe(name);
     }
+  });
+});
+
+describe('Tons d’environnement (#148, ADR 0039)', () => {
+  const others = [
+    ...Object.keys(PALETTE),
+    ...Object.keys(NIGHT_TONES),
+    ...Object.keys(TWILIGHT_TONES),
+  ];
+
+  it('au plus deux tons, nommés, valides, hors de la palette de jour et des tons d’heure', () => {
+    expect(ENVIRONMENT_TONE_NAMES).toEqual(['eauRecif', 'eauRecifClaire']);
+    expect(ENVIRONMENT_TONE_COLORS).toEqual(Object.values(ENVIRONMENT_TONES));
+    for (const name of ENVIRONMENT_TONE_NAMES) {
+      expect(others).not.toContain(name);
+      expect(isEnvironmentToneName(name)).toBe(true);
+    }
+    for (const hex of ENVIRONMENT_TONE_COLORS) {
+      expect(hex).toMatch(/^#[0-9a-f]{6}$/);
+      expect(EXTENDED_PALETTE_COLORS).not.toContain(hex);
+    }
+    for (const bad of ['eauMoyenne', 'constructor', 'toString', '']) {
+      expect(isEnvironmentToneName(bad)).toBe(false);
+    }
+  });
+
+  it('discernables entre eux et de toute couleur de la palette étendue', () => {
+    const minDistanceSq = 3 * (8 / 255) ** 2;
+    const tones = ENVIRONMENT_TONE_COLORS.map(hexToRgb);
+    const all = [...EXTENDED_PALETTE_COLORS.map(hexToRgb), ...tones];
+    for (const tone of tones) {
+      for (const other of all) {
+        if (other !== tone) {
+          expect(colorDistanceSq(tone, other)).toBeGreaterThan(minDistanceSq);
+        }
+      }
+    }
+  });
+
+  it('bleus : le ton de la surface est plus clair que celui du volume', () => {
+    const [body, surface] = [ENVIRONMENT_TONES.eauRecif, ENVIRONMENT_TONES.eauRecifClaire].map(
+      hexToRgb,
+    );
+    for (const [r, g, b] of [body, surface]) {
+      expect(b).toBeGreaterThan(g);
+      expect(g).toBeGreaterThan(r);
+    }
+    const sum = (c: Rgb) => c[0] + c[1] + c[2];
+    expect(sum(surface)).toBeGreaterThan(sum(body));
   });
 });

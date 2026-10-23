@@ -9,7 +9,14 @@ import {
   WebGLRenderTarget,
 } from 'three';
 
-import { NIGHT_TONE_COLORS, PALETTE_COLORS, TWILIGHT_TONE_COLORS } from './palette';
+import {
+  ENVIRONMENT_TONE_COLORS,
+  ENVIRONMENT_TONE_NAMES,
+  isEnvironmentToneName,
+  NIGHT_TONE_COLORS,
+  PALETTE_COLORS,
+  TWILIGHT_TONE_COLORS,
+} from './palette';
 import { TONE_PENALTY_OFF } from './night-shade';
 import { flattenPalette, hexToRgb, lowResolutionSize, PIXEL_SIZE, type Size } from './pixel-art';
 
@@ -23,6 +30,9 @@ import { flattenPalette, hexToRgb, lowResolutionSize, PIXEL_SIZE, type Size } fr
  * nuit puis ceux du crépuscule ; leur distance reçoit une pénalité (`uNightPenalty`,
  * `uTwilightPenalty`) fixée selon l'heure. Pénalité `TONE_PENALTY_OFF` : le ton ne peut
  * jamais l'emporter (plein jour : image identique à celle de la palette de jour seule).
+ * Viennent enfin les tons d'environnement (ADR 0039), chacun avec sa pénalité
+ * (`uEnvironmentPenalty`) : nulle dans l'environnement qui le déclare, `TONE_PENALTY_OFF`
+ * ailleurs.
  *
  * La couleur écrite est la valeur sRGB exacte de la palette : le shader n'inclut pas
  * `colorspace_fragment`, Three.js n'y ajoute donc aucune conversion.
@@ -40,12 +50,16 @@ uniform float uPixelScale;
 uniform vec3 uPalette[PALETTE_SIZE];
 uniform float uNightPenalty;
 uniform float uTwilightPenalty;
+uniform float uEnvironmentPenalty[ENVIRONMENT_PENALTY_SIZE];
 
 float penalty(int i) {
   if (i < DAY_SIZE) {
     return 0.0;
   }
-  return i < TWILIGHT_START ? uNightPenalty : uTwilightPenalty;
+  if (i < TWILIGHT_START) {
+    return uNightPenalty;
+  }
+  return i < ENVIRONMENT_START ? uTwilightPenalty : uEnvironmentPenalty[i - ENVIRONMENT_START];
 }
 
 vec3 linearToSrgb(vec3 c) {
@@ -87,20 +101,27 @@ export class PalettePass {
   private readonly geometry = new PlaneGeometry(2, 2);
   private readonly material: ShaderMaterial;
 
+  /** Nombre de tons d'environnement (fin de la palette du shader). */
+  private readonly environmentToneCount: number;
+
   /**
    * @param paletteHex couleurs de jour (toujours proposées).
    * @param nightHex tons de nuit, puis `twilightHex` tons du crépuscule : proposés selon les
    *   pénalités de `setTonePenalties` (écartés tant qu'elle n'est pas appelée).
+   * @param environmentHex tons d'environnement : proposés selon `setEnvironmentPenalties`
+   *   (écartés tant qu'elle n'est pas appelée).
    */
   constructor(
     paletteHex: readonly string[] = PALETTE_COLORS,
     nightHex: readonly string[] = NIGHT_TONE_COLORS,
     twilightHex: readonly string[] = TWILIGHT_TONE_COLORS,
+    environmentHex: readonly string[] = ENVIRONMENT_TONE_COLORS,
   ) {
     if (paletteHex.length === 0) {
       throw new Error('Palette vide');
     }
-    const all = [...paletteHex, ...nightHex, ...twilightHex];
+    const all = [...paletteHex, ...nightHex, ...twilightHex, ...environmentHex];
+    this.environmentToneCount = environmentHex.length;
     this.target = new WebGLRenderTarget(1, 1, {
       minFilter: NearestFilter,
       magFilter: NearestFilter,
@@ -113,6 +134,9 @@ export class PalettePass {
         PALETTE_SIZE: all.length,
         DAY_SIZE: paletteHex.length,
         TWILIGHT_START: paletteHex.length + nightHex.length,
+        ENVIRONMENT_START: paletteHex.length + nightHex.length + twilightHex.length,
+        // Un tableau GLSL ne peut pas être vide : une case inutilisée sans ton d'environnement.
+        ENVIRONMENT_PENALTY_SIZE: Math.max(1, environmentHex.length),
       },
       uniforms: {
         uScene: { value: this.target.texture },
@@ -121,6 +145,9 @@ export class PalettePass {
         uPalette: { value: flattenPalette(all.map(hexToRgb)) },
         uNightPenalty: { value: TONE_PENALTY_OFF },
         uTwilightPenalty: { value: TONE_PENALTY_OFF },
+        uEnvironmentPenalty: {
+          value: new Array<number>(Math.max(1, environmentHex.length)).fill(TONE_PENALTY_OFF),
+        },
       },
       vertexShader: VERTEX_SHADER,
       fragmentShader: FRAGMENT_SHADER,
@@ -148,6 +175,31 @@ export class PalettePass {
   }
 
   /**
+   * Pénalités des tons d'environnement, une par ton dans l'ordre de `environmentHex`
+   * (`environmentTonePenalties`).
+   * @throws RangeError si le nombre de pénalités n'est pas celui des tons, ou si l'une n'est
+   *   pas un réel positif ou nul.
+   */
+  setEnvironmentPenalties(penalties: readonly number[]): void {
+    if (penalties.length !== this.environmentToneCount) {
+      throw new RangeError(
+        `${penalties.length} pénalités pour ${this.environmentToneCount} tons d'environnement`,
+      );
+    }
+    if (penalties.some((p) => !Number.isFinite(p) || p < 0)) {
+      throw new RangeError(`pénalités invalides : ${penalties.join(', ')}`);
+    }
+    const value = this.material.uniforms['uEnvironmentPenalty'].value as number[];
+    penalties.forEach((p, i) => (value[i] = p));
+  }
+
+  /** Pénalités courantes des tons d'environnement (tests). */
+  get environmentPenalties(): readonly number[] {
+    const value = this.material.uniforms['uEnvironmentPenalty'].value as number[];
+    return value.slice(0, this.environmentToneCount);
+  }
+
+  /**
    * Adapte la cible à une surface d'affichage de `width` × `height` pixels CSS rendue avec
    * `pixelRatio` pixels physiques par pixel CSS. Renvoie la taille de la cible.
    */
@@ -165,4 +217,18 @@ export class PalettePass {
     this.geometry.dispose();
     this.material.dispose();
   }
+}
+
+/**
+ * Pénalités des tons d'environnement (`ENVIRONMENT_TONES`, ADR 0039) pour un environnement qui
+ * déclare les tons `tones` : nulle pour ceux-ci, `TONE_PENALTY_OFF` pour les autres.
+ * @throws RangeError si un nom n'est pas celui d'un ton d'environnement.
+ */
+export function environmentTonePenalties(tones: readonly string[]): number[] {
+  for (const name of tones) {
+    if (!isEnvironmentToneName(name)) {
+      throw new RangeError(`ton d'environnement inconnu : ${name}`);
+    }
+  }
+  return ENVIRONMENT_TONE_NAMES.map((name) => (tones.includes(name) ? 0 : TONE_PENALTY_OFF));
 }

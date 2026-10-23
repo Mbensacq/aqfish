@@ -41,6 +41,7 @@ la passe de post-traitement y ramène chaque pixel affiché (ADR 0007).
 | Amphibiens              | axolotl rose `#f7b2bd`, grenouille `#7bc950`, triton `#e07a2f`                         |
 | Fleurs                  | nénuphar rose `#f06a9b`, cœur `#ffb703`                                                |
 | Interface               | fond `#141418` (translucide), texte `#e8e6e3`, accent `#5fbfa3`                        |
+| Récif (tons d'environnement) | eau `#3f7597`, eau sous la surface `#4796cb`                                      |
 
 ## Environnements visés
 
@@ -88,6 +89,14 @@ deux tons de part et d'autre de la nervure, contour `koiNoir`. Elles se posent p
 faibles, jamais plus de **8** à la fois (1 à 2 en moyenne), dérivent lentement au-dessus des
 nénuphars et coulent au bout de 52 s. Des gris de la roche, essayés d'abord, les faisaient
 confondre avec les pierres.
+
+Le **récif** (#148, ADR 0039) : bac vitré plus grand que le bac tropical, eau d'un bleu franc
+(`eauRecif`), plus clair sous la surface (`eauRecifClaire`), sable corallien blanc cassé
+(`koiBlanc`, affiché `texteInterface` à travers l'eau ; de dessus, à travers la surface
+bleue, il se lit en eau très claire, comme un lagon) et quelques rochers. Ses deux bleus
+sont des **tons d'environnement** : la passe palette ne les propose qu'au récif, les autres
+environnements n'en voient jamais la couleur. Teinte d'entrée de l'eau : le bleu néon,
+saturé, que la translucidité ramène sur ces deux bleus.
 
 Les rochers (ADR 0015) : voxels de 1,2 cm (à l'échelle 1) en couleurs plates, dessus
 `roche` parfois poudré de `sableOmbre`, flancs `roche` tachés de `rocheSombre`, rangée du bas

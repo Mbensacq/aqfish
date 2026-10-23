@@ -52,7 +52,7 @@ import {
   tonePenaltiesInto,
   type TonePenalties,
 } from './night-shade';
-import { PalettePass } from './palette-pass';
+import { environmentTonePenalties, PalettePass } from './palette-pass';
 import { PIXEL_SIZE, type Size } from './pixel-art';
 import { WaterLightLayer } from './water-light';
 
@@ -207,6 +207,8 @@ export class AquariumView {
     this.renderer.setPixelRatio(options.pixelRatio);
     this.pixelPass = new PalettePass();
     this.world = createAquariumScene(options.environment);
+    // Tons propres à l'environnement (eau du récif, ADR 0039) : écartés ailleurs.
+    this.pixelPass.setEnvironmentPenalties(environmentTonePenalties(this.world.environment.tones));
     this.fishLayers = Object.values(SPECIES).flatMap((species) =>
       speciesVariants(species).map(
         (_, index) => new FishLayer(species, MAX_FISH_PER_SPECIES, index),
@@ -538,6 +540,11 @@ export class AquariumView {
   /** Pénalités courantes des tons de nuit et du crépuscule (tests). */
   get tonePenalties(): readonly [number, number] {
     return this.pixelPass.tonePenalties;
+  }
+
+  /** Pénalités des tons d'environnement, fixées par l'environnement de la vue (tests). */
+  get environmentTonePenalties(): readonly number[] {
+    return this.pixelPass.environmentPenalties;
   }
 
   /**

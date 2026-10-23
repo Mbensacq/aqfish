@@ -7,6 +7,8 @@ import {
   isEnvironmentId,
   PALUDARIUM,
   POND,
+  REEF,
+  REEF_DIMENSIONS,
   TROPICAL_TANK,
   type EnvironmentId,
 } from './environment';
@@ -104,10 +106,56 @@ describe('environnements', () => {
     }
   });
 
+  it('le récif (#148) : bac vitré plus grand que le bac tropical, eau bleue, sans habitants', () => {
+    expect(ENVIRONMENT_IDS).toContain('recif');
+    expect(environmentById('recif')).toBe(REEF);
+    expect(REEF.name).toBe('Récif');
+    expect(REEF.dimensions).toBe(REEF_DIMENSIONS);
+    // Plus long, plus large et plus haut que le bac tropical.
+    expect(REEF.dimensions.width).toBeGreaterThan(DEFAULT_TANK.width);
+    expect(REEF.dimensions.depth).toBeGreaterThan(DEFAULT_TANK.depth);
+    expect(REEF.dimensions.height).toBeGreaterThanOrEqual(DEFAULT_TANK.height);
+    expect(REEF.border).toBe('verre');
+    expect(REEF.defaultCamera).toBe('three-quarter');
+    expect(REEF.waterLevel).toBe(WATER_LEVEL_RATIO);
+    expect(REEF.terrain).toBeNull();
+    expect(REEF.bankDecor).toBeNull();
+    expect(REEF.lilyPads).toBeNull();
+    expect(REEF.bubbles || REEF.caustics || REEF.rain || REEF.floatingLeaves).toBe(false);
+    // Eau et tons propres au récif, sol différent de celui du bac tropical.
+    expect(REEF.water).not.toEqual(TROPICAL_TANK.water);
+    expect(REEF.ground.top).not.toBe(TROPICAL_TANK.ground.top);
+    expect(REEF.tones).toEqual(['eauRecif', 'eauRecifClaire']);
+    // Sans habitants pour l'instant : population et espèces vides.
+    expect(REEF.species).toEqual([]);
+    expect(REEF.population).toEqual([]);
+    // Quelques roches, dans le bac et écartées les unes des autres.
+    expect(REEF.decor.length).toBeGreaterThanOrEqual(3);
+    expect(REEF.decor.length).toBeLessThanOrEqual(6);
+    for (const item of REEF.decor) {
+      expect(item.kind).toBe('rock');
+      expect(validateDecorItem(item, REEF.dimensions)).toEqual([]);
+    }
+    for (let i = 0; i < REEF.decor.length; i++) {
+      for (let j = i + 1; j < REEF.decor.length; j++) {
+        const a = REEF.decor[i];
+        const b = REEF.decor[j];
+        expect(Math.hypot(a.x - b.x, a.z - b.z)).toBeGreaterThan(0.1);
+      }
+    }
+  });
+
+  it('seul le récif déclare des tons d’environnement', () => {
+    for (const env of Object.values(ENVIRONMENTS)) {
+      expect(env.tones.length > 0).toBe(env.id === 'recif');
+    }
+  });
+
   it('isEnvironmentId refuse les valeurs inconnues et les clés héritées', () => {
     expect(isEnvironmentId('tropical')).toBe(true);
     expect(isEnvironmentId('bassin')).toBe(true);
     expect(isEnvironmentId('paludarium')).toBe(true);
+    expect(isEnvironmentId('recif')).toBe(true);
     for (const bad of ['lune', '', 'constructor', 'toString', null, undefined, 3]) {
       expect(isEnvironmentId(bad)).toBe(false);
     }
@@ -126,5 +174,6 @@ describe('environnements', () => {
     expect(environmentWater('paludarium')).toEqual(
       waterVolume(PALUDARIUM.dimensions, PALUDARIUM.waterLevel),
     );
+    expect(environmentWater('recif')).toEqual(waterVolume(REEF_DIMENSIONS));
   });
 });

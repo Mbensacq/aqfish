@@ -118,13 +118,41 @@ export const TWILIGHT_TONES = {
   eauCrepusculeClaire: '#4b8186',
 } as const;
 
+/**
+ * Tons d'environnement (issue #148, ADR 0039) : couleurs proposées à la passe palette
+ * **seulement** dans les environnements qui les déclarent (`Environment.tones`,
+ * `sim/environment.ts`). Ailleurs, leur pénalité est `TONE_PENALTY_OFF` : elles ne peuvent
+ * jamais l'emporter, et les images des autres environnements ne changent pas d'un octet.
+ */
+export const ENVIRONMENT_TONES = {
+  /**
+   * Eau du récif vue de côté : bleu franc. La teinte d'entrée de l'eau du récif est
+   * `neonBleu`, saturé, que l'opacité du volume (30 %) ramène sur ce ton.
+   */
+  eauRecif: '#3f7597',
+  /** Eau du récif sous la surface (opacité 50 %) : bleu plus clair. */
+  eauRecifClaire: '#4796cb',
+} as const;
+
 export type NightToneName = keyof typeof NIGHT_TONES;
+export type EnvironmentToneName = keyof typeof ENVIRONMENT_TONES;
 export type TwilightToneName = keyof typeof TWILIGHT_TONES;
 
 /** Tons de nuit, dans leur ordre de déclaration. */
 export const NIGHT_TONE_COLORS: readonly string[] = Object.values(NIGHT_TONES);
 /** Tons de l'aube et du crépuscule, dans leur ordre de déclaration. */
 export const TWILIGHT_TONE_COLORS: readonly string[] = Object.values(TWILIGHT_TONES);
+/** Noms des tons d'environnement, dans leur ordre de déclaration. */
+export const ENVIRONMENT_TONE_NAMES = Object.keys(
+  ENVIRONMENT_TONES,
+) as readonly EnvironmentToneName[];
+/** Tons d'environnement, dans le même ordre (placés après la palette étendue dans la passe). */
+export const ENVIRONMENT_TONE_COLORS: readonly string[] = Object.values(ENVIRONMENT_TONES);
+
+/** Vrai si `name` est le nom d'un ton d'environnement (clés héritées refusées). */
+export function isEnvironmentToneName(name: string): name is EnvironmentToneName {
+  return Object.hasOwn(ENVIRONMENT_TONES, name);
+}
 
 /**
  * Palette étendue de la passe : `PALETTE_COLORS`, puis les tons de nuit, puis ceux du
