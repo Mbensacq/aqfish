@@ -126,7 +126,9 @@ export function createWorld(
   const firstCoralId = firstDecorId + decorItems.length;
   sortedObstacles.push(...coralObstacles(corals, firstCoralId));
   sortedObstacles.push(...anemoneObstacles(anemones, firstCoralId + corals.length));
-  const homes = anemoneHomes(anemones);
+  // Cache des éléments tirés de la graine (`worldFeatures`) : la sauvegarde et les pas ne
+  // les recalculent pas.
+  const { homes } = cacheFeatures(seed, environment, decorItems, corals, anemones);
   const entities: Entity[] = [];
   for (const { species, count } of population) {
     if (!Number.isInteger(count) || count < 0) {
@@ -189,6 +191,10 @@ export function bondedCount(entities: readonly Entity[]): number {
  * Anémone du poisson attaché de rang `rank` (rang parmi les poissons attachés, dans l'ordre
  * des entités) : `perAnemone` poissons par anémone, puis on recommence à la première ;
  * `null` sans anémone ou pour une espèce sans attache.
+ *
+ * Le rang est stable pour les poissons qui restent : le panneau retire toujours le poisson
+ * le plus récent de l'espèce (`setPopulationInPlace`), en fin de tableau, et ajoute en fin
+ * de tableau ; les autres espèces n'entrent pas dans le compte (ADR 0041, cycle 54).
  */
 export function homeForRank(
   homes: readonly AnemoneHome[],
@@ -201,26 +207,81 @@ export function homeForRank(
   return homes[Math.floor(rank / bond.perAnemone) % homes.length];
 }
 
-/** Points d'attache des anémones d'un monde, recalculés seulement quand le décor change. */
-const HOMES_CACHE = new WeakMap<
-  readonly DecorItem[],
-  { seed: number; environment: EnvironmentId; homes: readonly AnemoneHome[] }
->();
-const NO_HOMES: readonly AnemoneHome[] = Object.freeze([]);
+/** Coraux, anémones et points d'attache tirés de la graine d'un monde (`worldFeatures`). */
+export interface WorldFeatures {
+  readonly corals: readonly CoralColony[];
+  readonly anemones: readonly Anemone[];
+  readonly homes: readonly AnemoneHome[];
+}
 
-/** Points d'attache des anémones de `world` (`anemoneHomes`), mis en cache. */
-export function worldAnemoneHomes(world: World): readonly AnemoneHome[] {
-  if (environmentById(world.environment).anemones === null) {
-    return NO_HOMES;
+/**
+ * Éléments tirés de la graine, mis en cache par tableau de décor (le décor d'un monde n'est
+ * jamais modifié en place : un changement de décor donne un nouveau tableau).
+ */
+const FEATURES_CACHE = new WeakMap<
+  readonly DecorItem[],
+  { seed: number; environment: EnvironmentId; features: WorldFeatures }
+>();
+const NO_FEATURES: WorldFeatures = Object.freeze({
+  corals: Object.freeze([]),
+  anemones: Object.freeze([]),
+  homes: Object.freeze([]),
+});
+/** Nombre de calculs de `seededFeatures` faits pour `worldFeatures` (tests : cache). */
+let featureComputations = 0;
+
+/** Nombre de dispositions calculées par `worldFeatures` depuis le chargement (tests). */
+export function worldFeatureComputations(): number {
+  return featureComputations;
+}
+
+function cacheFeatures(
+  seed: number,
+  environment: EnvironmentId,
+  decor: readonly DecorItem[],
+  corals: readonly CoralColony[],
+  anemones: readonly Anemone[],
+): WorldFeatures {
+  const features: WorldFeatures = Object.freeze({
+    corals: Object.freeze([...corals]),
+    anemones: Object.freeze([...anemones]),
+    homes: Object.freeze(anemoneHomes(anemones)),
+  });
+  FEATURES_CACHE.set(decor, { seed, environment, features });
+  return features;
+}
+
+/**
+ * Coraux, anémones et points d'attache de `world` (`seededFeatures`), figés et mis en cache
+ * par tableau de décor : la disposition (modèles voxels compris) n'est recalculée que si le
+ * décor, la graine ou l'environnement change. `createWorld` remplit le cache.
+ */
+export function worldFeatures(world: World): WorldFeatures {
+  const env = environmentById(world.environment);
+  if (env.corals === null && env.anemones === null) {
+    return NO_FEATURES;
   }
-  const hit = HOMES_CACHE.get(world.decor);
+  const hit = FEATURES_CACHE.get(world.decor);
   if (hit && hit.seed === world.seed && hit.environment === world.environment) {
-    return hit.homes;
+    return hit.features;
   }
-  const { anemones } = seededFeatures(world.seed, world.environment, world.decor);
-  const homes = anemoneHomes(anemones);
-  HOMES_CACHE.set(world.decor, { seed: world.seed, environment: world.environment, homes });
-  return homes;
+  featureComputations += 1;
+  const { corals, anemones } = seededFeatures(world.seed, world.environment, world.decor);
+  return cacheFeatures(world.seed, world.environment, world.decor, corals, anemones);
+}
+
+/** Points d'attache des anémones de `world` (`anemoneHomes`), mis en cache (`worldFeatures`). */
+export function worldAnemoneHomes(world: World): readonly AnemoneHome[] {
+  return worldFeatures(world).homes;
+}
+
+/**
+ * Nombre d'obstacles de `world` tirés de la graine (coraux et anémones), sans recalcul quand
+ * le décor n'a pas changé (`worldFeatures`).
+ */
+export function seededObstacleCount(world: World): number {
+  const { corals, anemones } = worldFeatures(world);
+  return corals.length + anemones.length;
 }
 
 /**

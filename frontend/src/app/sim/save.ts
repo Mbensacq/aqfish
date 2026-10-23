@@ -20,7 +20,7 @@ import type { Box3 } from './tank';
 import {
   boundsFor,
   createWorld,
-  seededFeatures,
+  seededObstacleCount,
   type Entity,
   type MutableWorld,
   type World,
@@ -166,9 +166,8 @@ const FOOD_NUMBER_KEYS = [
  */
 export function saveData(world: World, settings: SaveSettings = DEFAULT_SAVE_SETTINGS): SaveData {
   // Obstacles recalculables : ceux du décor, puis ceux des coraux et des anémones tirés de la
-  // graine.
-  const { corals, anemones } = seededFeatures(world.seed, world.environment, world.decor);
-  if (world.obstacles.length !== world.decor.length + corals.length + anemones.length) {
+  // graine (comptés sans reconstruire leurs modèles voxels : cache de `worldFeatures`).
+  if (world.obstacles.length !== world.decor.length + seededObstacleCount(world)) {
     throw new RangeError(
       'sauvegarde : seuls les obstacles issus du décor sont enregistrables (schéma 1)',
     );

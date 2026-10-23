@@ -1,6 +1,11 @@
 import { createDayClock } from './daylight';
 import { MAX_FOOD } from './food';
-import { MAX_TOTAL_FISH, populationCounts, setPopulation } from './population';
+import {
+  MAX_TOTAL_FISH,
+  populationCounts,
+  setPopulation,
+  setPopulationInPlace,
+} from './population';
 import {
   DEFAULT_SAVE_SETTINGS,
   MAX_SAVE_DECOR,
@@ -16,7 +21,19 @@ import {
 } from './save';
 import { CHIRURGIEN } from './species';
 import { sphereObstacle } from './obstacles';
-import { advance, createDefaultWorld, createWorld, feed, type World } from './world';
+import {
+  advance,
+  advanceInPlace,
+  cloneWorld,
+  createDefaultWorld,
+  createWorld,
+  feed,
+  feedInPlace,
+  seededFeatures,
+  worldFeatureComputations,
+  worldFeatures,
+  type World,
+} from './world';
 
 /** Monde restauré, ou échec du test avec le message de refus. */
 function restored(result: ParseWorldResult): { world: World; settings: SaveSettings } {
@@ -178,6 +195,43 @@ describe('serializeWorld / parseWorld : aller-retour', () => {
     expect(back.obstacles).toEqual(world.obstacles);
     const extra = createWorld(42, [], [sphereObstacle(0, 0, 0.2, 0, 0.05)], world.decor, 'recif');
     expect(() => serializeWorld(extra)).toThrow(RangeError);
+  });
+
+  it('récif (#159) : la sauvegarde ne recalcule pas la disposition des coraux', () => {
+    // Comme l'hôte (`ui/aquarium-host`) : un seul monde, modifié en place, sauvegardé souvent.
+    const world = cloneWorld(createDefaultWorld(42, 'recif'));
+    setPopulationInPlace(world, 'clown', 5);
+    const first = serializeWorld(world);
+    const before = worldFeatureComputations();
+    for (let n = 0; n < 3; n++) {
+      feedInPlace(world, 0.1, 0);
+      advanceInPlace(world, 120);
+      saveData(world);
+    }
+    serializeWorld(world);
+    expect(worldFeatureComputations()).toBe(before);
+    // Disposition en cache identique à celle tirée de la graine, figée ; aller-retour inchangé.
+    const { corals, anemones } = seededFeatures(42, 'recif', world.decor);
+    expect(worldFeatures(world).corals).toEqual(corals);
+    expect(worldFeatures(world).anemones).toEqual(anemones);
+    expect(Object.isFrozen(worldFeatures(world).corals)).toBe(true);
+    const { world: back } = restored(parseWorld(first));
+    expect(serializeWorld(back)).toBe(first);
+    // Un tableau de décor neuf (copie du monde) : un seul calcul, puis plus aucun.
+    const copy = cloneWorld(back);
+    const afterCopy = worldFeatureComputations();
+    serializeWorld(copy);
+    serializeWorld(copy);
+    expect(worldFeatureComputations()).toBe(afterCopy + 1);
+    expect(serializeWorld(copy)).toBe(first);
+  });
+
+  it('les environnements sans coraux ni anémones ne calculent rien', () => {
+    const before = worldFeatureComputations();
+    const world = createDefaultWorld(42);
+    serializeWorld({ ...world, decor: [...world.decor] });
+    expect(worldFeatureComputations()).toBe(before);
+    expect(worldFeatures(world).corals).toEqual([]);
   });
 
   it('refuse d’écrire un monde à obstacles explicites (hors décor)', () => {

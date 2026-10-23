@@ -254,6 +254,39 @@ describe('poisson-clown (#150)', () => {
     });
   });
 
+  it('retirer ou ajouter un clown au panneau ne change pas l’anémone des autres (#162)', () => {
+    /** Anémone de chaque clown, par identifiant de poisson (indice dans `homes`). */
+    const homeById = (world: World): Map<number, number> => {
+      const homes = worldAnemoneHomes(world);
+      return new Map(
+        clowns(world).map((fish, rank) => [
+          fish.id,
+          homes.indexOf(homeForRank(homes, CLOWN.anemone, rank)!),
+        ]),
+      );
+    };
+    const full = setPopulation(createDefaultWorld(42, 'recif'), 'clown', CLOWN.maxPopulation);
+    const reference = homeById(full);
+    // Les deux anémones sont occupées : un décalage de rang changerait d'anémone.
+    expect(new Set(reference.values())).toEqual(new Set([0, 1]));
+    const variants = [
+      setPopulation(advance(full, 120), 'clown', 5),
+      setPopulation(full, 'clown', 1),
+      setPopulation(setPopulation(full, 'chirurgien', 0), 'clown', 6),
+      setPopulation(setPopulation(full, 'clown', 2), 'clown', CLOWN.maxPopulation),
+    ];
+    for (const world of variants) {
+      for (const [id, home] of homeById(world)) {
+        if (reference.has(id)) {
+          expect(home).toBe(reference.get(id));
+        }
+      }
+    }
+    // Après un retrait puis un ajout, le nouveau clown (identifiant neuf) prend la place libre.
+    const refilled = homeById(variants[3]);
+    expect([...refilled.values()].sort()).toEqual([...reference.values()].sort());
+  });
+
   it('se réfugie parmi les tentacules quand on dépose de la nourriture près de l’anémone', () => {
     const start = advance(createDefaultWorld(42, 'recif'), 600);
     const home = worldAnemoneHomes(start)[0];

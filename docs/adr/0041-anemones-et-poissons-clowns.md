@@ -69,3 +69,29 @@ déterministe ? Comment garder la place des anémones sur un fond déjà chargé
   assombri) : comme les violets des coraux (PIEGES), la lumière du récif reste à faire.
 - Un clown seul peut rester loin de son anémone si un obstacle se trouve entre eux (le
   retour n'est pas une recherche de chemin) ; rare sur les graines mesurées.
+
+## Complément (Dev, cycle 54, issues #162 et #159)
+
+- **Laisse de 8 cm** : la valeur (`leashRadius: 0.08`) est celle mesurée ci-dessus (test des
+  80 % à moins de 25 cm) ; seul le commentaire de `CLOWN`, qui disait 10 cm, est corrigé.
+- **Attache par rang conservée, pas d'attache par identifiant.** Le rang d'un clown parmi
+  les poissons attachés est stable pour ceux qui restent : le panneau retire toujours le
+  poisson le plus récent de l'espèce, en fin de tableau, et ajoute en fin de tableau
+  (`setPopulationInPlace`, ADR 0025) ; les autres espèces n'entrent pas dans le compte, et
+  la sauvegarde garde l'ordre des entités. Retirer un clown ne déplace donc jamais les
+  autres (test : population maximale, retraits, retrait des chirurgiens, retrait puis
+  ajout). Une attache par identifiant (`id` modulo) aurait changé l'anémone des clowns à la
+  graine des captures, et une attache enregistrée aurait demandé un nouveau schéma de
+  sauvegarde : écartées. À revoir si un retrait d'un poisson précis (clic) apparaît.
+- **Rétention de la nourriture près d'une anémone : compromis voulu.** Un granulé déposé
+  à moins de 25 cm d'une anémone fait se réfugier ses clowns pendant 5 s au lieu d'aller le
+  manger ; il reste mangeable par les autres poissons et par un clown qui passe à portée
+  (`eatInPlace` ne dépend pas du point visé), puis par tous une fois le refuge écoulé. C'est le
+  comportement recherché : on « approche » l'anémone, les clowns s'y cachent, puis
+  ressortent se nourrir.
+- **Disposition mise en cache** (`worldFeatures`, `sim/world.ts`) : coraux, anémones et
+  points d'attache d'un monde sont figés et mis en cache par tableau de décor (le décor
+  n'est jamais modifié en place), remplis par `createWorld`. `saveData` compte les obstacles
+  tirés de la graine par ce cache (`seededObstacleCount`) au lieu de reconstruire les
+  modèles voxels des coraux à chaque sauvegarde automatique ; une copie pure du monde
+  (`cloneWorld`, qui copie le décor) recalcule une fois. Format de sauvegarde inchangé.

@@ -809,7 +809,7 @@ export const TRITON: SpeciesDefinition = {
  *   lisibilité (ordre de grandeur réel : une dizaine de centimètres ; référence à consulter :
  *   FishBase, Amphiprion ocellaris ; non vérifiée ici).
  * - Vit en petit groupe autour d'une anémone et s'y réfugie (comportement connu, décrit
- *   qualitativement) : laisse de 10 cm, refuge 5 s après un dépôt à moins de 25 cm, quatre
+ *   qualitativement) : laisse de 8 cm, refuge 5 s après un dépôt à moins de 25 cm, quatre
  *   poissons par anémone ; nage lente, banc lâche : **approximations de jeu**.
  */
 export const CLOWN: SpeciesDefinition = {
