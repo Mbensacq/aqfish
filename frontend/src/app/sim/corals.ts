@@ -161,7 +161,8 @@ export function coralObstacles(colonies: readonly CoralColony[], firstId = 0): B
  * des colonies placées : dès
  * 3 colonies, les trois formes sont présentes ; dès 4, les quatre teintes. Chaque colonie est
  * placée au plus `CORAL_ATTEMPTS` fois, puis omise (le nombre obtenu peut être inférieur au
- * nombre visé). `settings` nul : aucun corail.
+ * nombre visé). Les emprises `keepOut` (anémones, ADR 0041) sont évitées comme des colonies
+ * déjà posées. `settings` nul : aucun corail.
  * @throws RangeError si la graine ou le réglage est invalide.
  */
 export function coralLayout(
@@ -169,6 +170,7 @@ export function coralLayout(
   dims: TankDimensions,
   settings: CoralSettings | null,
   decor: readonly DecorItem[] = [],
+  keepOut: readonly Rect[] = [],
 ): CoralColony[] {
   assertSeed(seed);
   if (settings === null) {
@@ -183,7 +185,8 @@ export function coralLayout(
     settings.count.min + Math.floor(rng.next() * (settings.count.max - settings.count.min + 1));
   const halfW = dims.width / 2 - CORAL_EDGE_MARGIN;
   const halfD = dims.depth / 2 - CORAL_EDGE_MARGIN;
-  const placed: ReturnType<typeof coralFootprint>[] = [];
+  // Emprises réservées (anémones, ADR 0041) : tenues à `CORAL_GAP` comme les autres colonies.
+  const placed: Rect[] = [...keepOut];
   const colonies: CoralColony[] = [];
   for (let n = 0; n < target; n++) {
     const form = forms[colonies.length % forms.length];
@@ -222,7 +225,8 @@ export function coralLayout(
   return colonies;
 }
 
-type Rect = ReturnType<typeof coralFootprint>;
+/** Rectangle au sol, aligné sur les axes du bac (mètres). */
+export type Rect = ReturnType<typeof coralFootprint>;
 
 /** Écart entre deux rectangles (0 s'ils se touchent ou se recouvrent). */
 export function rectGap(a: Rect, b: Rect): number {

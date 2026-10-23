@@ -437,6 +437,18 @@ export function stepFish(
   const rawY = wall.y + obstacle.y;
   const rawZ = wall.z + obstacle.z;
   const avoid = Math.min(1, Math.sqrt(rawX * rawX + rawY * rawY + rawZ * rawZ));
+  // Part de l'évitement dans le cap. Poisson attaché à une anémone (issue #150) qui revient
+  // vers elle : seule la part horizontale compte (le fond, tout proche de l'anémone, ne joue
+  // que sur l'inclinaison), et rien quand le point visé est du côté où l'évitement pousse (dos
+  // à la paroi ou à l'obstacle) : sinon il longe la vitre ou le sable au lieu de faire
+  // demi-tour. Réservé aux espèces `anemone` : la nage des autres reste celle d'avant, à
+  // l'octet.
+  let yawAvoid = avoid;
+  if (def.anemone !== undefined && food !== null && avoid > 0) {
+    const tx = food.x - fish.x;
+    const tz = food.z - fish.z;
+    yawAvoid = tx * rawX + tz * rawZ > 0 ? 0 : Math.min(1, Math.sqrt(rawX * rawX + rawZ * rawZ));
+  }
   const force = deflect(rawX, rawY, rawZ, fish.yaw, fish.turn, SCRATCH_AVOID);
   const avoidX = headX + force.x * AVOID_GAIN;
   const avoidY = headY + force.y * AVOID_GAIN;
@@ -447,22 +459,22 @@ export function stepFish(
   // l'évitement en proportion de son intensité.
   // Le hasard de l'errance s'efface pendant l'évitement (sens du virage stable).
   const wanderJitter =
-    (random(fish) * 2 - 1) * WANDER_JITTER * def.wanderTurnRate * dt * (1 - avoid);
+    (random(fish) * 2 - 1) * WANDER_JITTER * def.wanderTurnRate * dt * (1 - yawAvoid);
   let turn = fish.turn * (1 - WANDER_DAMPING * dt) + wanderJitter;
   let avoidTurn = 0;
-  if (avoid > 0 && avoidH > STEER_EPSILON) {
+  if (yawAvoid > 0 && avoidH > STEER_EPSILON) {
     const maxTurn = def.avoidTurnRate * dt;
     avoidTurn = clamp(wrapAngle(Math.atan2(avoidZ, avoidX) - fish.yaw), -maxTurn, maxTurn);
     // Mémoire du virage : l'errance prend le sens de l'évitement, qui reste ainsi le même
     // d'un pas à l'autre quand le poisson est pile face à la paroi (`deflect`, `side`).
     if (avoidTurn !== 0) {
       const committed = (avoidTurn > 0 ? 1 : -1) * AVOID_COMMIT_TURN * def.wanderTurnRate;
-      turn += (committed - turn) * Math.min(1, AVOID_COMMIT * avoid * dt);
+      turn += (committed - turn) * Math.min(1, AVOID_COMMIT * yawAvoid * dt);
     }
   }
   fish.turn = clamp(turn, -def.wanderTurnRate, def.wanderTurnRate);
   const freeTurn = food !== null ? foodTurn : fish.turn * dt + schoolTurn;
-  fish.yaw = wrapAngle(fish.yaw + avoidTurn * avoid + freeTurn * (1 - avoid));
+  fish.yaw = wrapAngle(fish.yaw + avoidTurn * yawAvoid + freeTurn * (1 - yawAvoid));
 
   // Inclinaison : errance lente (et banc), glissant vers celle de l'évitement du fond, de la
   // surface et des obstacles.

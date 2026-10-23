@@ -3,7 +3,15 @@ import { createWalker, stepWalker, type WalkerGround } from './axolotl';
 import { createFrog, stepFrog } from './frog';
 import { fillBubbles, type BubbleBuffer } from './bubbles';
 import { SIM_DT } from './constants';
-import { coralLayout, coralObstacles } from './corals';
+import {
+  anemoneFootprints,
+  anemoneHomes,
+  anemoneLayout,
+  anemoneObstacles,
+  type Anemone,
+  type AnemoneHome,
+} from './anemones';
+import { coralLayout, coralObstacles, type CoralColony } from './corals';
 import { decorObstacles, parseDecorItems, type DecorItem } from './decor';
 import {
   DEFAULT_ENVIRONMENT_ID,
@@ -15,7 +23,7 @@ import { eatInPlace, feedingBand, foodTarget, type FeedingBand } from './feeding
 import { computeSchoolSteering, enforceMinDistance, type Vec3 } from './flocking';
 import { dropFoodInPlace, stepFoodInPlace, type FoodPellet } from './food';
 import { validateObstacle, type Obstacle } from './obstacles';
-import { SPECIES, type SpeciesId } from './species';
+import { SPECIES, type AnemoneBondParams, type SpeciesId } from './species';
 import { createFish, stepFish, swimBounds, type Fish, type SwimBounds } from './swimmer';
 import { assertTimeStep } from './time-step';
 
@@ -112,9 +120,13 @@ export function createWorld(
   const sortedObstacles = copyObstacles(obstacles);
   const firstDecorId = sortedObstacles.length > 0 ? sortedObstacles.at(-1)!.id + 1 : 0;
   sortedObstacles.push(...decorObstacles(decorItems, firstDecorId));
-  // Coraux du récif (ADR 0040) : tirés de la graine autour du décor, après lui.
-  const corals = coralLayout(seed, env.dimensions, env.corals, decorItems);
-  sortedObstacles.push(...coralObstacles(corals, firstDecorId + decorItems.length));
+  // Coraux du récif (ADR 0040), puis anémones (ADR 0041) : tirés de la graine autour du
+  // décor, après lui.
+  const { corals, anemones } = seededFeatures(seed, environment, decorItems);
+  const firstCoralId = firstDecorId + decorItems.length;
+  sortedObstacles.push(...coralObstacles(corals, firstCoralId));
+  sortedObstacles.push(...anemoneObstacles(anemones, firstCoralId + corals.length));
+  const homes = anemoneHomes(anemones);
   const entities: Entity[] = [];
   for (const { species, count } of population) {
     if (!Number.isInteger(count) || count < 0) {
@@ -125,7 +137,10 @@ export function createWorld(
       throw new RangeError(`espèce inconnue : ${String(species)}`);
     }
     for (let i = 0; i < count; i++) {
-      entities.push(spawnEntity(seed, entities.length, species, environment, sortedObstacles));
+      const home = homeForRank(homes, SPECIES[species].anemone, bondedCount(entities));
+      entities.push(
+        spawnEntity(seed, entities.length, species, environment, sortedObstacles, home),
+      );
     }
   }
   return {
@@ -143,6 +158,72 @@ export function createWorld(
 }
 
 /**
+ * Coraux (`sim/corals.ts`, ADR 0040) et anémones (`sim/anemones.ts`, ADR 0041) d'un
+ * environnement, tirés de la graine autour du décor `decor` : ce que `createWorld` ajoute aux
+ * obstacles, et ce que la sauvegarde et le rendu recalculent.
+ */
+export function seededFeatures(
+  seed: number,
+  environment: EnvironmentId,
+  decor: readonly DecorItem[],
+): { corals: CoralColony[]; anemones: Anemone[] } {
+  const env = environmentById(environment);
+  // Anémones d'abord : les coraux évitent leur emprise (ADR 0041).
+  const anemones = anemoneLayout(seed, env.dimensions, env.anemones, decor);
+  const corals = coralLayout(seed, env.dimensions, env.corals, decor, anemoneFootprints(anemones));
+  return { corals, anemones };
+}
+
+/** Nombre de poissons attachés à une anémone (`SpeciesDefinition.anemone`) parmi `entities`. */
+export function bondedCount(entities: readonly Entity[]): number {
+  let n = 0;
+  for (const e of entities) {
+    if (SPECIES[e.species].anemone !== undefined) {
+      n += 1;
+    }
+  }
+  return n;
+}
+
+/**
+ * Anémone du poisson attaché de rang `rank` (rang parmi les poissons attachés, dans l'ordre
+ * des entités) : `perAnemone` poissons par anémone, puis on recommence à la première ;
+ * `null` sans anémone ou pour une espèce sans attache.
+ */
+export function homeForRank(
+  homes: readonly AnemoneHome[],
+  bond: AnemoneBondParams | undefined,
+  rank: number,
+): AnemoneHome | null {
+  if (bond === undefined || homes.length === 0) {
+    return null;
+  }
+  return homes[Math.floor(rank / bond.perAnemone) % homes.length];
+}
+
+/** Points d'attache des anémones d'un monde, recalculés seulement quand le décor change. */
+const HOMES_CACHE = new WeakMap<
+  readonly DecorItem[],
+  { seed: number; environment: EnvironmentId; homes: readonly AnemoneHome[] }
+>();
+const NO_HOMES: readonly AnemoneHome[] = Object.freeze([]);
+
+/** Points d'attache des anémones de `world` (`anemoneHomes`), mis en cache. */
+export function worldAnemoneHomes(world: World): readonly AnemoneHome[] {
+  if (environmentById(world.environment).anemones === null) {
+    return NO_HOMES;
+  }
+  const hit = HOMES_CACHE.get(world.decor);
+  if (hit && hit.seed === world.seed && hit.environment === world.environment) {
+    return hit.homes;
+  }
+  const { anemones } = seededFeatures(world.seed, world.environment, world.decor);
+  const homes = anemoneHomes(anemones);
+  HOMES_CACHE.set(world.decor, { seed: world.seed, environment: world.environment, homes });
+  return homes;
+}
+
+/**
  * Crée l'entité `id` d'une espèce dans un environnement : un poisson (`createFish`), ou, pour
  * une espèce qui marche sur le fond, un individu posé sur le fond (`createWalker`,
  * `sim/axolotl.ts`) ; pour une espèce amphibie, un individu posé sur la berge (`createFrog`,
@@ -154,9 +235,14 @@ export function spawnEntity(
   species: SpeciesId,
   environment: EnvironmentId,
   obstacles: readonly Obstacle[],
+  home: AnemoneHome | null = null,
 ): Entity {
   const bounds = boundsFor(species, environment);
   const def = SPECIES[species];
+  if (def.anemone !== undefined && home !== null) {
+    // Poisson attaché : naît près de son anémone, dans la laisse (`homeSpawn`).
+    return createFish(seed, id, species, homeSpawn(bounds, home, def.anemone), obstacles);
+  }
   if (def.walker !== undefined) {
     return createWalker(seed, id, species, bounds, groundFor(environment), obstacles);
   }
@@ -164,6 +250,24 @@ export function spawnEntity(
     return createFrog(seed, id, species, bounds, groundFor(environment), obstacles);
   }
   return createFish(seed, id, species, bounds, obstacles);
+}
+
+/**
+ * Bornes de nage dont la zone de naissance est le cube de demi-côté `leashRadius / 2` centré
+ * sur le point d'attache `home`, ramené dans `bounds.hard`.
+ */
+function homeSpawn(bounds: SwimBounds, home: AnemoneHome, bond: AnemoneBondParams): SwimBounds {
+  const { hard } = bounds;
+  const r = bond.leashRadius / 2;
+  const clampTo = (v: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, v));
+  const axis = (c: number, lo: number, hi: number): [number, number] => [
+    clampTo(c - r, lo, hi),
+    clampTo(c + r, lo, hi),
+  ];
+  const [minX, maxX] = axis(home.x, hard.minX, hard.maxX);
+  const [minY, maxY] = axis(home.hoverY, hard.minY, hard.maxY);
+  const [minZ, maxZ] = axis(home.z, hard.minZ, hard.maxZ);
+  return { ...bounds, spawn: { minX, maxX, minY, maxY, minZ, maxZ } };
 }
 
 /** Sol et eau de chaque environnement, pour les espèces qui marchent sur le fond. */
@@ -352,6 +456,9 @@ function stepInPlace(world: MutableWorld, dt: number): void {
   // Nourriture (issue #68) : point visé calculé, comme le banc, sur les positions du début du
   // pas ; sans granulé, `target` reste nul et la nage est exactement celle d'avant.
   const food = world.food as FoodPellet[];
+  // Anémones (issue #150) : points d'attache des poissons-clowns, aucun hors du récif.
+  const homes = worldAnemoneHomes(world);
+  let bondRank = 0;
   // Ordre stable : celui du tableau, c'est-à-dire des identifiants.
   for (let i = 0; i < fishes.length; i++) {
     const fish = fishes[i];
@@ -368,7 +475,7 @@ function stepInPlace(world: MutableWorld, dt: number): void {
       stepFrog(fish, dt, world.seed, world.time, bounds, groundFor(environment));
       continue;
     }
-    const target =
+    let target =
       food.length === 0
         ? null
         : foodTarget(
@@ -380,6 +487,11 @@ function stepInPlace(world: MutableWorld, dt: number): void {
             FOOD_TARGET,
             world.obstacles,
           );
+    const bond = SPECIES[fish.species].anemone;
+    if (bond !== undefined) {
+      target = bondTarget(fish, bond, homeForRank(homes, bond, bondRank), food, target);
+      bondRank += 1;
+    }
     stepFish(
       fish,
       dt,
@@ -399,6 +511,52 @@ function stepInPlace(world: MutableWorld, dt: number): void {
 
 /** Point visé vers la nourriture, réutilisé d'un poisson à l'autre (aucune allocation). */
 const FOOD_TARGET: Vec3 = { x: 0, y: 0, z: 0 };
+/** Point visé vers l'anémone, réutilisé d'un poisson à l'autre (aucune allocation). */
+const HOME_TARGET: Vec3 = { x: 0, y: 0, z: 0 };
+
+/**
+ * Point visé par un poisson attaché à l'anémone `home` (issue #150), passé à `stepFish` à la
+ * place de la nourriture : le cœur des tentacules (`refugeY`) tant qu'un granulé déposé il y
+ * a moins de `refugeDuration` secondes est à moins de `refugeRadius` de l'anémone (à
+ * l'horizontale) ; sinon la nourriture visée (`food`), s'il y en a ; sinon le point d'attache
+ * (`hoverY`) quand le poisson s'en est éloigné de plus de `leashRadius` ; sinon rien (nage
+ * libre). Sans anémone (`home` nul) : `food` inchangé.
+ */
+export function bondTarget(
+  fish: Entity,
+  bond: AnemoneBondParams,
+  home: AnemoneHome | null,
+  pellets: readonly FoodPellet[],
+  food: Vec3 | null,
+): Vec3 | null {
+  if (home === null) {
+    return food;
+  }
+  const r2 = bond.refugeRadius * bond.refugeRadius;
+  for (const p of pellets) {
+    const dx = p.x - home.x;
+    const dz = p.z - home.z;
+    if (p.age < bond.refugeDuration && dx * dx + dz * dz < r2) {
+      HOME_TARGET.x = home.x;
+      HOME_TARGET.y = home.refugeY;
+      HOME_TARGET.z = home.z;
+      return HOME_TARGET;
+    }
+  }
+  if (food !== null) {
+    return food;
+  }
+  const dx = fish.x - home.x;
+  const dy = fish.y - home.hoverY;
+  const dz = fish.z - home.z;
+  if (dx * dx + dy * dy + dz * dz > bond.leashRadius * bond.leashRadius) {
+    HOME_TARGET.x = home.x;
+    HOME_TARGET.y = home.hoverY;
+    HOME_TARGET.z = home.z;
+    return HOME_TARGET;
+  }
+  return null;
+}
 
 /**
  * Environnement du pas en cours, lu par les rappels ci-dessous : des fonctions de module,

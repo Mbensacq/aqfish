@@ -68,9 +68,16 @@ export interface PopulationRequest {
   readonly count: number;
 }
 
-/** Nom d'une espèce au pluriel, en minuscules (« néons », « guppys », « corydoras »). */
+/**
+ * Nom d'une espèce au pluriel, en minuscules (« néons », « guppys », « corydoras ») ; chaque
+ * mot d'un nom composé prend la marque (« poissons-clowns », #150).
+ */
 export function speciesPlural(species: SpeciesId): string {
-  return `${SPECIES[species].name.toLowerCase()}s`;
+  return SPECIES[species].name
+    .toLowerCase()
+    .split('-')
+    .map((word) => `${word}s`)
+    .join('-');
 }
 
 /**

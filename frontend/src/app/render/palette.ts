@@ -136,6 +136,11 @@ export const ENVIRONMENT_TONES = {
   corailViolet: '#7d4fb8',
   /** Corail violet : dessus et bouts des branches. */
   corailVioletClair: '#b58be6',
+  /**
+   * Poisson-clown (issue #150) : orange vif, plus rouge et plus saturé que les oranges des
+   * coraux (`koiOrange`, `tritonOrange`), dont il doit se distinguer.
+   */
+  clownOrange: '#ff6d00',
 } as const;
 
 export type NightToneName = keyof typeof NIGHT_TONES;

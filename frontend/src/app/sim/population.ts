@@ -1,5 +1,14 @@
 import { SPECIES, type SpeciesId } from './species';
-import { cloneWorld, spawnEntity, type Entity, type MutableWorld, type World } from './world';
+import {
+  bondedCount,
+  cloneWorld,
+  homeForRank,
+  spawnEntity,
+  worldAnemoneHomes,
+  type Entity,
+  type MutableWorld,
+  type World,
+} from './world';
 
 /**
  * Population réglable par espèce (issue #69, ADR 0025).
@@ -109,7 +118,14 @@ export function setPopulationInPlace(
   }
   while (current < target) {
     entities.push(
-      spawnEntity(world.seed, world.nextFishId, species, world.environment, world.obstacles),
+      spawnEntity(
+        world.seed,
+        world.nextFishId,
+        species,
+        world.environment,
+        world.obstacles,
+        homeForRank(worldAnemoneHomes(world), SPECIES[species].anemone, bondedCount(entities)),
+      ),
     );
     world.nextFishId += 1;
     current += 1;

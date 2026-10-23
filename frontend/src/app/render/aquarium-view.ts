@@ -33,7 +33,7 @@ import type { DayLight } from '../sim/daylight';
 import { environmentWater, type Environment } from '../sim/environment';
 import { terrainAt } from '../sim/terrain';
 import { flowerOpenness, lilyPadLayout } from '../sim/lily-pads';
-import { coralLayout } from '../sim/corals';
+import { seededFeatures } from '../sim/world';
 import type { DecorItem } from '../sim/decor';
 import type { FoodPellet } from '../sim/food';
 import { BubbleLayer } from './bubble-layer';
@@ -515,8 +515,10 @@ export class AquariumView {
   setDecor(items: readonly DecorItem[], seed: number): void {
     if (!this.disposed) {
       const env = this.world.environment;
-      // Mêmes coraux que les obstacles du monde (`createWorld`) : même graine, même décor.
-      this.decorLayer.setDecor(items, coralLayout(seed, env.dimensions, env.corals, items));
+      // Mêmes coraux et anémones que les obstacles du monde (`createWorld`) : même graine,
+      // même décor.
+      const { corals, anemones } = seededFeatures(seed, env.id, items);
+      this.decorLayer.setDecor(items, corals, anemones);
       for (const layer of this.effects) {
         layer.setSeed(seed);
       }
@@ -615,6 +617,11 @@ export class AquariumView {
   /** Nombre d'éléments de décor affichés (tests). */
   get decorCount(): number {
     return this.decorLayer.count;
+  }
+
+  /** Nombre d'anémones affichées (tests). */
+  get anemoneCount(): number {
+    return this.decorLayer.anemoneCount;
   }
 
   /** Nombre de colonies de corail affichées (tests). */

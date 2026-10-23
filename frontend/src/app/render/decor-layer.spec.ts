@@ -1,5 +1,6 @@
 import { BufferAttribute, BufferGeometry, Mesh, ShaderMaterial, Vector2 } from 'three';
 
+import { anemoneBaseY, anemoneLayout, anemoneModel } from '../sim/anemones';
 import { coralBaseY, coralLayout, coralModel } from '../sim/corals';
 import { DEFAULT_DECOR, decorBaseY, type DecorItem } from '../sim/decor';
 import { REEF } from '../sim/environment';
@@ -129,6 +130,48 @@ describe('DecorLayer', () => {
     expect(layer.count).toBe(REEF.decor.length);
     layer.dispose();
     expect(layer.coralCount).toBe(0);
+  });
+
+  it('anémones (#150) : après les coraux, posées sur le sable, tentacules qui ondulent, pied fixe', () => {
+    const layer = new DecorLayer();
+    const anemones = anemoneLayout(42, REEF.dimensions, REEF.anemones, REEF.decor);
+    expect(anemones.length).toBeGreaterThanOrEqual(2);
+    layer.setDecor(REEF.decor, [], anemones);
+    expect(layer.anemoneCount).toBe(anemones.length);
+    expect(layer.count).toBe(REEF.decor.length + anemones.length);
+    // Ondulent comme des plantes : réécrites par `update`.
+    expect(layer.plantCount).toBe(anemones.length);
+    const group = layer.object.children[REEF.decor.length];
+    const model = anemoneModel(anemones[0].seed, anemones[0].scale);
+    expect(group.name).toBe('anemone-0');
+    expect(group.position.toArray()).toEqual([
+      anemones[0].x,
+      anemoneBaseY(model.voxelSize),
+      anemones[0].z,
+    ]);
+    const mesh = group.children[1] as Mesh;
+    const hull = group.children[0] as Mesh;
+    expect(mesh.geometry.getAttribute('position')).toBe(hull.geometry.getAttribute('position'));
+    const read = () => Array.from(mesh.geometry.getAttribute('position').array as Float32Array);
+    layer.update(0);
+    const t0 = read();
+    layer.update(1.7);
+    const t1 = read();
+    const columnTop = 3 * model.voxelSize + 1e-6;
+    let moved = 0;
+    for (let n = 0; n < t0.length; n += 3) {
+      expect(t1[n + 1]).toBe(t0[n + 1]);
+      if (t0[n + 1] <= columnTop - 2e-6 || (t0[n + 1] < 1e-9 && t1[n + 1] < 1e-9)) {
+        // Sous le haut du pied : immobile.
+        expect([t1[n], t1[n + 2]]).toEqual([t0[n], t0[n + 2]]);
+      } else if (t1[n] !== t0[n] || t1[n + 2] !== t0[n + 2]) {
+        moved += 1;
+      }
+    }
+    expect(moved).toBeGreaterThan(100);
+    layer.setDecor(REEF.decor);
+    expect(layer.anemoneCount).toBe(0);
+    layer.dispose();
   });
 
   it('remplacer le décor retire l’ancien', () => {

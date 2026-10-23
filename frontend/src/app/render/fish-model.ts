@@ -233,6 +233,26 @@ export const NEWT_FISH: FishTemplate = {
   ],
 };
 
+/**
+ * Poisson-clown (issue #150) : corps ovale, haut et court, orange (`s`, `k`, `b`), trois
+ * bandes blanches (`a`) cerclées de noir (`e`, couleur de l'œil) : derrière l'œil, au milieu
+ * du corps (sous la dorsale) et au pédoncule. Vu de dessus, le dos (`k`) garde les trois
+ * bandes. Caudale arrondie orange (`f`) bordée de noir.
+ */
+export const CLOWN_FISH: FishTemplate = {
+  body: [
+    // queue → tête
+    '...kkeaekeae..',
+    'eaesseaeseaese',
+    'eaesseaeseaess',
+    '..ebbeaebeaeb.',
+    '....beaebeae..',
+  ],
+  tail: ['.f', 'ef', 'ef', 'ef', '.f'],
+  bodyDepth: 2,
+  tailDepth: 1,
+};
+
 /** Gabarit de chaque silhouette déclarée par les espèces (`sim/species.ts`). */
 export const SILHOUETTES: Readonly<Record<SilhouetteId, FishTemplate>> = {
   fuseau: SLENDER_FISH,
@@ -243,6 +263,7 @@ export const SILHOUETTES: Readonly<Record<SilhouetteId, FishTemplate>> = {
   axolotl: AXOLOTL_FISH,
   grenouille: FROG_FISH,
   triton: NEWT_FISH,
+  clown: CLOWN_FISH,
 };
 
 /** Proportions des voxels : hauteur et épaisseur relatives à la longueur d'un voxel. */

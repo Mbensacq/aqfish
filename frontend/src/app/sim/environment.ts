@@ -1,9 +1,20 @@
 import type { CameraPreset } from '../core/capture/capture-params';
+import { assertAnemoneSettings, type AnemoneSettings } from './anemones';
 import { assertBankDecorSettings, type BankDecorSettings } from './bank-decor';
 import { assertCoralSettings, type CoralSettings } from './corals';
 import { DEFAULT_DECOR, parseDecor, type DecorItem } from './decor';
 import { assertLilyPadSettings, type LilyPadSettings } from './lily-pads';
-import { AXOLOTL, CORYDORA, GRENOUILLE, GUPPY, KOI, NEON, TRITON, type SpeciesId } from './species';
+import {
+  AXOLOTL,
+  CLOWN,
+  CORYDORA,
+  GRENOUILLE,
+  GUPPY,
+  KOI,
+  NEON,
+  TRITON,
+  type SpeciesId,
+} from './species';
 import { assertTerrainSettings, type TerrainSettings } from './terrain';
 import {
   DEFAULT_TANK,
@@ -83,6 +94,11 @@ export interface Environment {
    */
   readonly corals: CoralSettings | null;
   /**
+   * Anémones (issue #150, `sim/anemones.ts`, ADR 0041) : nombre et échelles, disposées selon la
+   * graine du monde autour du décor et des coraux ; `null` : aucune (sauf au récif).
+   */
+  readonly anemones: AnemoneSettings | null;
+  /**
    * Nénuphars flottants (issue #103, `sim/lily-pads.ts`) : nombre et tailles des feuilles,
    * disposées selon la graine du monde ; `null` : aucun.
    */
@@ -136,6 +152,7 @@ export const TROPICAL_TANK: Environment = {
   caustics: true,
   decor: DEFAULT_DECOR,
   corals: null,
+  anemones: null,
   lilyPads: null,
   bankDecor: null,
   rain: false,
@@ -175,6 +192,7 @@ export const POND: Environment = {
     POND_DIMENSIONS,
   ),
   corals: null,
+  anemones: null,
   lilyPads: assertLilyPadSettings({
     count: { min: 5, max: 8 },
     radius: { min: 0.075, max: 0.13 },
@@ -222,6 +240,7 @@ export const PALUDARIUM: Environment = {
   caustics: false,
   decor: [],
   corals: null,
+  anemones: null,
   lilyPads: null,
   bankDecor: assertBankDecorSettings({
     seed: 132,
@@ -244,8 +263,7 @@ export const REEF_DIMENSIONS: TankDimensions = { width: 1.5, height: 0.65, depth
 /**
  * Récif marin (épopée v0.8, issue #148) : bac vitré plus grand que le bac tropical, eau d'un
  * bleu franc plus clair en surface, sable corallien clair, quelques roches et des colonies de
- * coraux tirées de la graine (issue #149). Sans habitants pour l'instant : anémones et
- * poissons viendront aux cycles suivants.
+ * coraux tirées de la graine (issue #149), des anémones et leurs poissons-clowns (issue #150).
  */
 export const REEF: Environment = {
   id: 'recif',
@@ -256,8 +274,9 @@ export const REEF: Environment = {
   // Teinte d'entrée saturée (bleu néon) : à travers l'eau translucide, l'image retombe sur
   // les deux tons du récif, `eauRecif` (volume) et `eauRecifClaire` (surface).
   water: { body: 'neonBleu', surface: 'neonBleu' },
-  // Violets des coraux (issue #149) : absents de la palette commune.
-  tones: ['eauRecif', 'eauRecifClaire', 'corailViolet', 'corailVioletClair'],
+  // Violets des coraux (issue #149) et orange des poissons-clowns (issue #150) : absents de la
+  // palette commune.
+  tones: ['eauRecif', 'eauRecifClaire', 'corailViolet', 'corailVioletClair', 'clownOrange'],
   // Sable corallien : blanc cassé ; vu de côté, il reste blanc sous l'eau bleue ; vu de
   // dessus, à travers la surface bleue, il se lit en eau très claire, comme un lagon.
   ground: { top: 'koiBlanc', side: 'sableClair', bottom: 'sableSombre' },
@@ -275,12 +294,13 @@ export const REEF: Environment = {
     REEF_DIMENSIONS,
   ),
   corals: assertCoralSettings({ count: { min: 7, max: 9 }, scale: { min: 1, max: 1.5 } }),
+  anemones: assertAnemoneSettings({ count: { min: 2, max: 2 }, scale: { min: 1.2, max: 1.4 } }),
   lilyPads: null,
   bankDecor: null,
   rain: false,
   floatingLeaves: false,
-  species: [],
-  population: [],
+  species: [CLOWN.id],
+  population: defaultPopulation([CLOWN]),
 };
 
 export const ENVIRONMENTS: Readonly<Record<EnvironmentId, Environment>> = {

@@ -8,7 +8,8 @@
  */
 
 /** Identifiant d'espèce, stable (sérialisé dans l'état du monde). */
-export type SpeciesId = 'neon' | 'guppy' | 'corydora' | 'koi' | 'axolotl' | 'grenouille' | 'triton';
+export type SpeciesId =
+  'neon' | 'guppy' | 'corydora' | 'koi' | 'axolotl' | 'grenouille' | 'triton' | 'clown';
 
 /**
  * Silhouette voxel d'une apparence : le rendu associe à chaque identifiant un gabarit de
@@ -23,6 +24,7 @@ export const SILHOUETTE_IDS = [
   'axolotl',
   'grenouille',
   'triton',
+  'clown',
 ] as const;
 export type SilhouetteId = (typeof SILHOUETTE_IDS)[number];
 
@@ -195,6 +197,24 @@ export interface AmphibianParams {
   readonly swimSpeed: number;
 }
 
+/**
+ * Attache à une anémone (poisson-clown, issue #150, `sim/anemones.ts`) : le poisson revient
+ * vers le point d'attache de son anémone dès qu'il s'en éloigne de plus de `leashRadius`, et
+ * se réfugie parmi ses tentacules tant qu'un dépôt de nourriture récent (moins de
+ * `refugeDuration` secondes) est tombé à moins de `refugeRadius` (à l'horizontale) de
+ * l'anémone : la main qui approche.
+ */
+export interface AnemoneBondParams {
+  /** Distance au point d'attache au-delà de laquelle le poisson y revient, en mètres. */
+  readonly leashRadius: number;
+  /** Portée horizontale d'un dépôt qui déclenche le refuge, en mètres. */
+  readonly refugeRadius: number;
+  /** Durée du refuge après un dépôt, en secondes (âge du granulé). */
+  readonly refugeDuration: number;
+  /** Nombre de poissons par anémone (rang dans l'espèce / ce nombre : rang de l'anémone). */
+  readonly perAnemone: number;
+}
+
 /** Mode de répartition des individus entre les apparences (`speciesVariantIndex`). */
 export type VariantDraw = 'alternance' | 'graine';
 
@@ -261,6 +281,11 @@ export interface SpeciesDefinition {
    * déplacement propre (`sim/frog.ts`), exclusif de `walker` et de `depth`.
    */
   readonly amphibian?: AmphibianParams;
+  /**
+   * Présent pour une espèce attachée à une anémone (poisson-clown, issue #150) : retour et
+   * refuge (`sim/world.ts`), sans effet là où il n'y a pas d'anémone.
+   */
+  readonly anemone?: AnemoneBondParams;
 }
 
 /**
@@ -759,6 +784,67 @@ export const TRITON: SpeciesDefinition = {
   },
 };
 
+/**
+ * Poisson-clown (Amphiprion ocellaris), récif marin (docs/DA.md), issue #150.
+ *
+ * - Robe : orange vif `clownOrange` (ton du récif, ADR 0039 : distinct de l'orange des
+ *   coraux, `koiOrange` et `tritonOrange`), trois bandes blanches (`koiBlanc`) cerclées de
+ *   noir (`koiNoir`), nageoires orange bordées de noir. Robe unique.
+ * - `bodyLength` (8 cm) : **approximation de jeu**, agrandie comme le néon pour la
+ *   lisibilité (ordre de grandeur réel : une dizaine de centimètres ; référence à consulter :
+ *   FishBase, Amphiprion ocellaris ; non vérifiée ici).
+ * - Vit en petit groupe autour d'une anémone et s'y réfugie (comportement connu, décrit
+ *   qualitativement) : laisse de 10 cm, refuge 5 s après un dépôt à moins de 25 cm, quatre
+ *   poissons par anémone ; nage lente, banc lâche : **approximations de jeu**.
+ */
+export const CLOWN: SpeciesDefinition = {
+  id: 'clown',
+  name: 'Poisson-clown',
+  scientificName: 'Amphiprion ocellaris',
+  bodyLength: 0.08,
+  cruiseSpeed: 0.03,
+  minSpeed: 0.012,
+  maxSpeed: 0.06,
+  wanderTurnRate: 1.2,
+  avoidTurnRate: 2.5,
+  maxPitch: 0.4,
+  wallMargin: 0.045,
+  tailBeatFrequency: 2.2,
+  defaultPopulation: 3,
+  maxPopulation: 8,
+  schooling: {
+    neighborRadius: 0.2,
+    separationRadius: 0.06,
+    separationWeight: 1,
+    alignmentWeight: 0.3,
+    cohesionWeight: 0.4,
+    turnRate: 1,
+    minDistance: 0.03,
+  },
+  silhouette: 'clown',
+  colors: {
+    stripe: '#ff6d00',
+    accent: '#f2ead8',
+    back: '#ff6d00',
+    belly: '#ff6d00',
+    fin: '#ff6d00',
+    eye: '#1c1c22',
+  },
+  // Mange en pleine eau, près de son anémone (perception courte) : approximations de jeu.
+  feeding: {
+    hungerRate: 1 / 200,
+    perceptionRadius: 0.15,
+    turnRate: 2.5,
+    minHeightRatio: 0,
+    maxHeightRatio: 1,
+  },
+  // Reste dans le bas du bac, près de ses anémones posées sur le sable : tiré vers le bas
+  // au-dessus de 40 % de la hauteur d'eau, évitement du fond réduit à 3 cm (sinon il
+  // l'emporte sur le retour à l'anémone), sans remontée : approximations de jeu.
+  depth: { maxHeightRatio: 0.4, floorZone: 0.03, ascentRate: 0, ascentDuration: 1 },
+  anemone: { leashRadius: 0.08, refugeRadius: 0.25, refugeDuration: 5, perAnemone: 4 },
+};
+
 /** Toutes les espèces connues, par identifiant (ordre de déclaration = ordre de peuplement). */
 export const SPECIES: Readonly<Record<SpeciesId, SpeciesDefinition>> = {
   neon: NEON,
@@ -768,6 +854,7 @@ export const SPECIES: Readonly<Record<SpeciesId, SpeciesDefinition>> = {
   axolotl: AXOLOTL,
   grenouille: GRENOUILLE,
   triton: TRITON,
+  clown: CLOWN,
 };
 
 /** Apparences d'une espèce : ses `variants`, ou son apparence par défaut seule. */
@@ -903,8 +990,27 @@ export function validateSpecies(def: SpeciesDefinition): string[] {
   if (def.amphibian !== undefined) {
     problems.push(...validateAmphibian(def.amphibian, def));
   }
+  if (def.anemone !== undefined) {
+    problems.push(...validateAnemoneBond(def.anemone, def));
+  }
   if (def.name.trim() === '' || def.scientificName.trim() === '') {
     problems.push('nom et nom scientifique obligatoires');
+  }
+  return problems;
+}
+
+function validateAnemoneBond(params: AnemoneBondParams, def: SpeciesDefinition): string[] {
+  const problems: string[] = [];
+  for (const key of ['leashRadius', 'refugeRadius', 'refugeDuration'] as const) {
+    if (!(params[key] > 0) || !Number.isFinite(params[key])) {
+      problems.push(`anemone.${key} doit être un réel strictement positif`);
+    }
+  }
+  if (!Number.isInteger(params.perAnemone) || params.perAnemone < 1) {
+    problems.push('anemone.perAnemone doit être un entier au moins égal à 1');
+  }
+  if (def.walker !== undefined || def.amphibian !== undefined) {
+    problems.push('anemone est réservé aux espèces qui nagent');
   }
   return problems;
 }

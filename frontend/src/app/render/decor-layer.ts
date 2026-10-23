@@ -11,9 +11,11 @@ import {
   Vector2,
 } from 'three';
 
+import { anemoneBaseY, anemoneModel, type Anemone } from '../sim/anemones';
 import { coralBaseY, coralModel, type CoralColony } from '../sim/corals';
 import { plantBaseY, rockBaseY, rockModel, type DecorItem } from '../sim/decor';
 import { plantModel, type PlantForm } from '../sim/plant';
+import { buildAnemoneMesh } from './anemone-model';
 import { buildCoralMesh } from './coral-model';
 import { FISH_RENDER_ORDER } from './fish-layer';
 import { PALETTE } from './palette';
@@ -111,13 +113,21 @@ export class DecorLayer {
   private geometries: BufferGeometry[] = [];
   private plants: SwayingPlant[] = [];
   private corals = 0;
+  private anemones = 0;
 
   constructor() {
     this.object.name = 'decor';
   }
 
-  /** Remplace le décor affiché : éléments `items`, puis colonies de corail `corals`. */
-  setDecor(items: readonly DecorItem[], corals: readonly CoralColony[] = []): void {
+  /**
+   * Remplace le décor affiché : éléments `items`, puis colonies de corail `corals`, puis
+   * anémones `anemones` (dont les tentacules ondulent comme les plantes).
+   */
+  setDecor(
+    items: readonly DecorItem[],
+    corals: readonly CoralColony[] = [],
+    anemones: readonly Anemone[] = [],
+  ): void {
     this.clear();
     items.forEach((item, n) => {
       let data: VoxelMeshData;
@@ -175,12 +185,34 @@ export class DecorLayer {
       group.rotation.y = (colony.quarterTurns * Math.PI) / 2;
     });
     this.corals = corals.length;
+    anemones.forEach((anemone, n) => {
+      const model = anemoneModel(anemone.seed, anemone.scale);
+      const data = buildAnemoneMesh(model);
+      const sway: SwayingPlant = {
+        data,
+        amplitude: model.amplitude,
+        rotation: 0,
+        position: new BufferAttribute(data.positions, 3),
+      };
+      this.plants.push(sway);
+      const group = this.addVoxelGroup(`anemone-${n}`, data, sway.position);
+      group.position.set(anemone.x, anemoneBaseY(model.voxelSize), anemone.z);
+    });
+    this.anemones = anemones.length;
   }
 
-  /** Groupe d'un maillage voxel immobile et de sa coque de contour, ajouté à la couche. */
-  private addVoxelGroup(name: string, data: VoxelMeshData): Group {
+  /**
+   * Groupe d'un maillage voxel et de sa coque de contour, ajouté à la couche ; immobile, ou,
+   * avec `position`, attribut de positions partagé réécrit à chaque image (ondulation).
+   */
+  private addVoxelGroup(name: string, data: VoxelMeshData, position?: BufferAttribute): Group {
     const geometry = createRockGeometry(data);
     const outline = createOutlineGeometry(data);
+    if (position) {
+      position.setUsage(DynamicDrawUsage);
+      geometry.setAttribute('position', position);
+      outline.setAttribute('position', position);
+    }
     this.geometries.push(geometry, outline);
     const group = new Group();
     group.name = name;
@@ -190,6 +222,8 @@ export class DecorLayer {
     hull.name = `${name}-contour`;
     for (const m of [hull, mesh]) {
       m.renderOrder = DECOR_RENDER_ORDER;
+      // Un maillage qui ondule sort de sa sphère englobante au repos.
+      m.frustumCulled = position === undefined;
       group.add(m);
     }
     this.object.add(group);
@@ -235,7 +269,12 @@ export class DecorLayer {
     return this.corals;
   }
 
-  /** Nombre d'éléments affichés (coraux compris). */
+  /** Nombre d'anémones affichées. */
+  get anemoneCount(): number {
+    return this.anemones;
+  }
+
+  /** Nombre d'éléments affichés (coraux et anémones compris). */
   get count(): number {
     return this.object.children.length;
   }
@@ -260,5 +299,6 @@ export class DecorLayer {
     this.geometries = [];
     this.plants = [];
     this.corals = 0;
+    this.anemones = 0;
   }
 }
