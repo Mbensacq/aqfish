@@ -89,6 +89,14 @@ haut de sa section.
 
 ## Tests
 
+- **E2e d'édition du décor : une pose refusée ressemble à un geste raté** (cycle 57, #168) :
+  agrandir ou déplacer un élément près d'un voisin est refusé s'il le pénètre
+  (`isDecorPoseAllowed`), et le test attend en vain une sauvegarde modifiée. Choisir les
+  cibles par une sonde unitaire jetable (`moveDecorItem` puis `isDecorPoseAllowed` sur
+  `DEFAULT_DECOR`) avant d'écrire l'e2e. Le toucher de Playwright ne sait que taper : un
+  glissement au doigt s'envoie en `PointerEvent` (`pointerType: 'touch'`) au canvas
+  (`touchDragTank`, `e2e/editeur-decor.spec.ts`). (2026-10-24)
+
 - **E2e qui clique « hors du bac » à droite : l'aide-mémoire ouvert reçoit le clic** (cycle 56,
   #167) : à 800 px de large, « Commandes » (300 px, ouvert par défaut) recouvre la droite du
   bac ; un clic projeté à côté du bac tombe sur le panneau et ne désélectionne rien. Replier
@@ -360,6 +368,14 @@ haut de sa section.
   n'interfère (`swimmer.spec.ts`). (2026-10-18)
 
 ## Rendu
+
+- **Écouter le canvas avant `OrbitControls`** (cycle 57, #168) : `OrbitControls` pose son
+  `pointerdown` sur le canvas dès sa construction ; un écouteur ajouté ensuite passe après lui,
+  trop tard pour lui couper la main (`controls.enabled = false`) avant qu'il ne capture le
+  pointeur. Écouter en **phase de capture** (`addEventListener('pointerdown', f, { capture:
+  true })`) : au niveau de la cible, Chromium appelle les écouteurs de capture d'abord. Ne
+  plus lire `controls.enabled` pour savoir si la vue est interactive (il change pendant un
+  glissement) : garder le réglage d'origine à part (`interactive`). (2026-10-24)
 
 - **Un ton d'environnement capte les couleurs assombries de la nuit** (cycle 51, #149) : les
   deux violets des coraux, ajoutés aux tons du récif, captent la nuit le rose assombri des
