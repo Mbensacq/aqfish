@@ -246,6 +246,20 @@ haut de sa section.
 
 ## Simulation
 
+- **Attacher un poisson à un point : l'évitement l'emporte sur le retour** (cycle 52, #150) :
+  passé à `stepFish` comme une nourriture, le point d'attache des poissons-clowns ne les
+  ramenait pas : près d'une vitre, du sable ou d'une colonie de corail, l'évitement
+  (prioritaire, avec sa mémoire de virage) les faisait longer l'obstacle sur 50 cm au lieu
+  de faire demi-tour (trace : cap presque constant, point visé toujours donné). Remèdes
+  cumulés : préférence de profondeur basse (évitement du fond réduit), clairière sans corail
+  autour de l'anémone, et, pour les seules espèces `anemone`, évitement réduit à sa part
+  horizontale et annulé quand le point visé est du côté où il pousse. Mesurer la part du
+  temps près de l'ancre sur plusieurs graines (script esbuild hors du dépôt) avant d'écrire
+  le test. (2026-10-23)
+- **Placer un élément sur un fond déjà plein** (cycle 52, #150) : tirées après les coraux, les
+  anémones manquaient sur 40 % des graines. Poser d'abord l'élément indispensable, et faire
+  éviter son emprise par les suivants (`coralLayout`, `keepOut`). (2026-10-23)
+
 - **Teinte « parcourue en boucle » sautée par une colonie omise** (cycle 51, #149) : les
   teintes des coraux suivent une permutation tirée de la graine ; indexée par le rang de la
   colonie **visée**, une colonie qui ne trouve pas de place emporte sa teinte avec elle

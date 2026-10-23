@@ -41,7 +41,7 @@ la passe de post-traitement y ramène chaque pixel affiché (ADR 0007).
 | Amphibiens              | axolotl rose `#f7b2bd`, grenouille `#7bc950`, triton `#e07a2f`                         |
 | Fleurs                  | nénuphar rose `#f06a9b`, cœur `#ffb703`                                                |
 | Interface               | fond `#141418` (translucide), texte `#e8e6e3`, accent `#5fbfa3`                        |
-| Récif (tons d'environnement) | eau `#3f7597`, eau sous la surface `#4796cb`, corail violet `#7d4fb8` et `#b58be6` |
+| Récif (tons d'environnement) | eau `#3f7597`, eau sous la surface `#4796cb`, corail violet `#7d4fb8` et `#b58be6`, poisson-clown `#ff6d00` |
 
 ## Environnements visés
 
@@ -107,6 +107,14 @@ Quatre teintes, chacune en deux couleurs (flanc foncé, dessus et bouts clairs) 
 `poissonJaune`) et violet, absent de la palette commune (`corailViolet`,
 `corailVioletClair`, tons du récif). La nuit, roses et violets se confondent en violet,
 oranges et jaunes en sable : la lumière du récif reste à faire.
+
+Les **anémones** du récif (#150, ADR 0041) : pied rond ocre (`sableSombre`) couronné d'un
+tapis serré de tentacules rouges (`koiRouge`) aux bouts renflés rose saumon (`poissonRose`),
+qui ondulent doucement en vagues ; aucun rouge parmi les coraux. Les **poissons-clowns** :
+corps ovale orange vif (`clownOrange` #ff6d00, ton du récif, plus rouge et plus saturé que
+les oranges des coraux), trois bandes blanches (`koiBlanc`) cerclées de noir (`koiNoir`) :
+derrière l'œil, au milieu du corps, au pédoncule ; caudale arrondie bordée de noir. Robe
+unique, petit groupe lâche au-dessus de son anémone.
 
 Les rochers (ADR 0015) : voxels de 1,2 cm (à l'échelle 1) en couleurs plates, dessus
 `roche` parfois poudré de `sableOmbre`, flancs `roche` tachés de `rocheSombre`, rangée du bas
