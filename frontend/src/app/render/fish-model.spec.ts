@@ -66,22 +66,49 @@ describe('couleurs des espèces', () => {
 });
 
 describe('poisson-clown (#150)', () => {
-  it('trois bandes blanches, chacune cerclée de noir des deux côtés, sur toute la hauteur du flanc', () => {
+  it('trois bandes blanches sur toute la hauteur du flanc, un liseré noir côté queue (#161)', () => {
     const flank = CLOWN_FISH.body[2];
-    const bands = [...flank.matchAll(/a/g)].map((m) => m.index);
+    // Bandes = suites de `a` contiguës sur le flanc (queue → tête).
+    const bands = [...flank.matchAll(/a+/g)].map((m) => ({
+      start: m.index,
+      end: m.index + m[0].length - 1,
+    }));
     expect(bands).toHaveLength(3);
-    for (const col of bands) {
-      expect(flank[col - 1]).toBe('e');
-      expect(flank[col + 1]).toBe('e');
+    // La bande du milieu (sous la dorsale) est la plus large.
+    expect(bands[1].end - bands[1].start).toBeGreaterThan(bands[0].end - bands[0].start);
+    for (const { start, end } of bands) {
+      // Liseré noir côté queue, orange côté tête : la bande se détache du sable sans que le
+      // noir double sa largeur.
+      expect(flank[start - 1]).toBe('e');
+      expect(flank[end + 1]).toBe('s');
       // La bande traverse le flanc : blanche dans chaque rangée où le corps est plein.
-      for (const row of CLOWN_FISH.body) {
-        expect(['a', '.']).toContain(row[col]);
+      for (let col = start; col <= end; col++) {
+        for (const row of CLOWN_FISH.body) {
+          expect(['a', '.']).toContain(row[col]);
+        }
       }
     }
-    // Vu de dessus, le dos garde au moins deux bandes ; orange partout ailleurs.
+    // Vu de dessus, le dos garde au moins deux bandes.
     expect([...CLOWN_FISH.body[0].matchAll(/a/g)].length).toBeGreaterThanOrEqual(2);
     expect(SPECIES.clown.colors.accent).toBe('#f2ead8');
     expect(SPECIES.clown.colors.eye).toBe('#1c1c22');
+  });
+
+  it('noir minoritaire : moins de voxels noirs que de blancs, l’orange en tête (#161)', () => {
+    const cells = CLOWN_FISH.body.join('');
+    const count = (c: string): number => [...cells].filter((x) => x === c).length;
+    const black = count('e');
+    const white = count('a');
+    const orange = count('s') + count('k') + count('b');
+    expect(black).toBeLessThan(white);
+    expect(orange).toBeGreaterThan(white);
+  });
+
+  it('clown agrandi pour la lisibilité, toujours plus petit que le chirurgien (#161)', () => {
+    expect(SPECIES.clown.bodyLength).toBeGreaterThan(0.08);
+    expect(SPECIES.clown.bodyLength).toBeLessThan(SPECIES.chirurgien.bodyLength);
+    const clown = modelBodyLength(SPECIES.clown, CLOWN_FISH);
+    expect(clown).toBeCloseTo(SPECIES.clown.bodyLength, 6);
   });
 
   it('orange du clown distinct des oranges et rouges de la palette commune (coraux compris)', () => {

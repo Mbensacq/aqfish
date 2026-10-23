@@ -235,18 +235,24 @@ export const NEWT_FISH: FishTemplate = {
 
 /**
  * Poisson-clown (issue #150) : corps ovale, haut et court, orange (`s`, `k`, `b`), trois
- * bandes blanches (`a`) cerclées de noir (`e`, couleur de l'œil) : derrière l'œil, au milieu
- * du corps (sous la dorsale) et au pédoncule. Vu de dessus, le dos (`k`) garde les trois
- * bandes. Caudale arrondie orange (`f`) bordée de noir.
+ * bandes blanches (`a`) : derrière l'œil, au milieu du corps (sous la dorsale, la plus large,
+ * 2 voxels) et au pédoncule. Vu de dessus, le dos (`k`) garde les bandes. Caudale arrondie
+ * orange (`f`) bordée de noir (`e`, couleur de l'œil).
+ *
+ * Lisibilité (issue #161) : chaque bande n'a qu'un liseré noir, côté queue, au lieu de deux.
+ * Avec deux liserés, le noir occupait autant de voxels que l'orange et le blanc réunis et
+ * noyait les bandes à l'échelle des captures ; sans aucun liseré, une bande blanche se
+ * confondait avec le sable corallien en vue de trois-quarts. Un seul liseré garde la bande
+ * détachée du sable tout en laissant l'orange dominer.
  */
 export const CLOWN_FISH: FishTemplate = {
   body: [
     // queue → tête
-    '...kkeaekeae..',
-    'eaesseaeseaese',
-    'eaesseaeseaess',
-    '..ebbeaebeaeb.',
-    '....beaebeae..',
+    '...keaakkeak..',
+    'easseaasseasse',
+    'easseaasseasss',
+    '..bbeaabbeab..',
+    '....eaabbea...',
   ],
   tail: ['.f', 'ef', 'ef', 'ef', '.f'],
   bodyDepth: 2,

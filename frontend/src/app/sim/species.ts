@@ -803,11 +803,13 @@ export const TRITON: SpeciesDefinition = {
  * Poisson-clown (Amphiprion ocellaris), récif marin (docs/DA.md), issue #150.
  *
  * - Robe : orange vif `clownOrange` (ton du récif, ADR 0039 : distinct de l'orange des
- *   coraux, `koiOrange` et `tritonOrange`), trois bandes blanches (`koiBlanc`) cerclées de
- *   noir (`koiNoir`), nageoires orange bordées de noir. Robe unique.
- * - `bodyLength` (8 cm) : **approximation de jeu**, agrandie comme le néon pour la
- *   lisibilité (ordre de grandeur réel : une dizaine de centimètres ; référence à consulter :
- *   FishBase, Amphiprion ocellaris ; non vérifiée ici).
+ *   coraux, `koiOrange` et `tritonOrange`), trois bandes blanches (`koiBlanc`) bordées de
+ *   noir (`koiNoir`, un liseré par bande, côté queue, issue #161), nageoires orange bordées de
+ *   noir. Robe unique.
+ * - `bodyLength` (9 cm) : **approximation de jeu**, portée de 8 à 9 cm pour la lisibilité
+ *   des bandes (issue #161), toujours plus petit que le chirurgien (ordre de grandeur réel :
+ *   une dizaine de centimètres ; référence à consulter : FishBase, Amphiprion ocellaris ;
+ *   non vérifiée ici).
  * - Vit en petit groupe autour d'une anémone et s'y réfugie (comportement connu, décrit
  *   qualitativement) : laisse de 8 cm, refuge 5 s après un dépôt à moins de 25 cm, quatre
  *   poissons par anémone ; nage lente, banc lâche : **approximations de jeu**.
@@ -816,7 +818,7 @@ export const CLOWN: SpeciesDefinition = {
   id: 'clown',
   name: 'Poisson-clown',
   scientificName: 'Amphiprion ocellaris',
-  bodyLength: 0.08,
+  bodyLength: 0.09,
   cruiseSpeed: 0.03,
   minSpeed: 0.012,
   maxSpeed: 0.06,
@@ -867,7 +869,7 @@ export const CLOWN: SpeciesDefinition = {
  *   que l'eau du récif, `eauRecif` et `eauRecifClaire`, et que `neonBleu`), marque noire
  *   (`koiNoir`) en « palette » sur le flanc, caudale et pédoncule jaunes (`poissonJaune`).
  *   Robe unique.
- * - `bodyLength` (11 cm) : **approximation de jeu**, plus grand que le poisson-clown (8 cm)
+ * - `bodyLength` (11 cm) : **approximation de jeu**, plus grand que le poisson-clown (9 cm)
  *   comme dans la nature (ordre de grandeur réel : une vingtaine de centimètres pour un
  *   adulte ; référence à consulter : FishBase, Paracanthurus hepatus ; non vérifiée ici).
  * - Nage en pleine eau, en petits groupes lâches (comportement connu, décrit
