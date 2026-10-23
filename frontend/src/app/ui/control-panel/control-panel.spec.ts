@@ -269,7 +269,16 @@ describe('ControlPanel', () => {
       'population',
       'sauvegarde',
     ]);
-    expect(sections.map((s) => s.querySelector('legend')?.textContent?.trim())).toEqual([
+    // Titre de la section : sa légende, ou l'élément qui la nomme (`aria-labelledby`) quand la
+    // légende porte aussi un bouton (« Décor » et « Éditer le décor », #167).
+    const title = (s: HTMLFieldSetElement) => {
+      const labelledBy = s.getAttribute('aria-labelledby');
+      const label = labelledBy
+        ? s.querySelector(`legend #${labelledBy}`)
+        : s.querySelector('legend');
+      return label?.textContent?.trim();
+    };
+    expect(sections.map(title)).toEqual([
       'Environnement',
       'Simulation',
       'Journée',
