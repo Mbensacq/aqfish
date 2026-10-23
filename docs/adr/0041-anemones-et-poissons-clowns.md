@@ -95,3 +95,13 @@ déterministe ? Comment garder la place des anémones sur un fond déjà chargé
   tirés de la graine par ce cache (`seededObstacleCount`) au lieu de reconstruire les
   modèles voxels des coraux à chaque sauvegarde automatique ; une copie pure du monde
   (`cloneWorld`, qui copie le décor) recalcule une fois. Format de sauvegarde inchangé.
+- **Lisibilité du clown** (issue #161, cycle 55) : les bandes blanches cerclées de noir des
+  deux côtés étaient fidèles à l'espèce mais illisibles à l'échelle des captures (le noir
+  occupait autant de voxels que l'orange et le blanc réunis). Le gabarit garde **un seul
+  liseré noir par bande, côté queue**, et la bande du milieu passe à 2 voxels ; le clown
+  passe de 8 à 9 cm, toujours plus petit que le chirurgien ; `wallMargin` (4,5 cm) reste
+  égal à la demi-longueur du corps. À 10 cm, il aurait fallu élargir `wallMargin`, ce qui
+  change les trajectoires : à la graine des captures, les clowns passaient alors derrière
+  le grand corail rose, de face, au lieu de devant. Écartés : aucun liseré (bandes blanches confondues avec le sable
+  corallien en vue de trois-quarts) ; un contour de coque comme le décor (les poissons n'en
+  ont pas, `docs/PIEGES.md`).

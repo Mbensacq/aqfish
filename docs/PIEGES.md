@@ -98,6 +98,11 @@ haut de sa section.
   liseré n'entoure les poissons ; le noir visible sur un clown vient de son gabarit (`e`,
   `a`). Pour détacher un poisson de l'eau, jouer sur sa couleur (contraste avec les tons de
   l'eau), pas sur un contour. (2026-10-23)
+- **Le noir d'un gabarit de petit poisson se lit d'abord** (cycle 55, #161) : à l'échelle des
+  captures, un voxel noir entre deux couleurs claires pèse plus qu'elles ; des bandes
+  cerclées de noir des deux côtés deviennent une tache noire. Compter les voxels par rôle
+  (test `noir minoritaire`, `render/fish-model.spec.ts`) et vérifier sur fond clair (sable)
+  autant que sur l'eau : sans aucun liseré, un blanc se perd sur le sable. (2026-10-23)
 - **`npm run verify` lancé en arrière-plan pendant qu'on modifie le code** (cycle 48) : les
   e2e passent par `ng serve`, qui recompile à chaque enregistrement ; un `verify` « de
   santé de `main` » lancé avant de coder teste en réalité le code en cours d'écriture, et son
