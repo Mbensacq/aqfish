@@ -216,22 +216,28 @@ function toNumber(value: string | number): number {
           </div>
         </fieldset>
 
-        <fieldset class="control-panel__section control-panel__section--decor" data-section="decor">
-          <legend class="control-panel__legend">Décor</legend>
+        <fieldset
+          class="control-panel__section"
+          data-section="decor"
+          aria-labelledby="panneau-decor-titre"
+        >
           <!-- Éditeur (#167) : sur la ligne du titre, le panneau ne grandit pas (#101). -->
-          <button
-            type="button"
-            class="control-panel__edit"
-            data-decor-edit
-            [attr.aria-disabled]="!decorEditable()"
-            [attr.aria-label]="
-              decorEditable() ? 'Éditer le décor' : 'Éditer le décor (bac tropical seulement)'
-            "
-            [attr.title]="decorEditable() ? null : 'Bac tropical seulement'"
-            (click)="onEdit()"
-          >
-            Éditer le décor
-          </button>
+          <legend class="control-panel__legend control-panel__legend--row">
+            <span id="panneau-decor-titre">Décor</span>
+            <button
+              type="button"
+              class="control-panel__edit"
+              data-decor-edit
+              [attr.aria-disabled]="!decorEditable()"
+              [attr.aria-label]="
+                decorEditable() ? 'Éditer le décor' : 'Éditer le décor (bac tropical seulement)'
+              "
+              [attr.title]="decorEditable() ? null : 'Bac tropical seulement'"
+              (click)="onEdit()"
+            >
+              Éditer le décor
+            </button>
+          </legend>
           <!-- Granulés (#117) : sur la même ligne, le panneau tient sans défiler à 1280 × 720 (#101). -->
           <div class="control-panel__row">
             <label class="control-panel__check">
