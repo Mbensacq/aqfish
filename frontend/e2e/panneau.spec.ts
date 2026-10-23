@@ -271,6 +271,9 @@ test.describe('Panneau de contrôle', () => {
     await page.keyboard.press('Space');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-hour-frozen', 'false');
 
+    // Section « Décor » : « Éditer le décor » (#167), sur la ligne du titre, puis la case.
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', { name: 'Éditer le décor', exact: true })).toBeFocused();
     await page.keyboard.press('Tab');
     await expect(decor(page)).toBeFocused();
     await page.keyboard.press('Space');
