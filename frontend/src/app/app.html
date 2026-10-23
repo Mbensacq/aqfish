@@ -31,6 +31,7 @@
       [clockRunning]="!aquarium.clockFrozen()"
       [decorVisible]="aquarium.decorVisible()"
       [rain]="aquarium.rain()"
+      [decorEditable]="aquarium.decorEditable()"
       [foodStyle]="aquarium.foodStyle()"
       [population]="aquarium.population()"
       [populationMax]="aquarium.populationMax()"
@@ -42,11 +43,24 @@
       (clockRunningChanged)="aquarium.setClockRunning($event)"
       (decorVisibleChanged)="aquarium.setDecorVisible($event)"
       (rainChanged)="aquarium.setRain($event)"
+      (editRequested)="onEditRequested()"
       (foodStyleToggled)="aquarium.toggleFoodStyle()"
       (populationChanged)="aquarium.setPopulation($event.species, $event.count)"
       (exportRequested)="aquarium.exportSave()"
       (importRequested)="aquarium.importSave($event)"
       (importRejected)="aquarium.rejectImport($event)"
     />
+    <!-- Éditeur de décor (#167) : en mode édition, à la place de « Réglages ». -->
+    @if (aquarium.decorEditing()) {
+      <app-decor-editor
+        [tool]="aquarium.decorTool()"
+        [selection]="aquarium.decorSelection()"
+        [count]="aquarium.decorCount()"
+        (toolChanged)="aquarium.setDecorTool($event)"
+        (deleteRequested)="aquarium.deleteSelectedDecor()"
+        (deselectRequested)="aquarium.selectDecor(null)"
+        (closed)="aquarium.setDecorEditing(false)"
+      />
+    }
   }
 }

@@ -39,6 +39,15 @@ import {
   type AquariumRendererFactory,
 } from '../../render/aquarium-view';
 import { CAMERA_TRANSITION_SECONDS } from '../../render/camera-presets';
+import type { DecorPick } from '../../render/decor-pick';
+import {
+  addDecorItem,
+  isDecorEditable,
+  isDecorTool,
+  removeDecorItem,
+  setDecorInPlace,
+  type DecorTool,
+} from '../../sim/decor-edit';
 import { SIM_DT } from '../../sim/constants';
 import {
   createDayClock,
@@ -86,6 +95,7 @@ import {
   type FoodStyle,
 } from '../../core/food-style/food-style';
 import type { SpeciesId } from '../../sim/species';
+import type { DecorItem } from '../../sim/decor';
 import {
   advanceInPlace,
   advanceToWithFeedings,
@@ -139,6 +149,16 @@ export const ENVIRONMENT_ATTRIBUTE = 'data-aqfish-environment';
  * `indisponible` ou `plein` ; absent en mode capture (aucune sauvegarde).
  */
 export const SAVE_ATTRIBUTE = 'data-aqfish-save';
+
+/** Attribut du composant hôte : `true` en mode édition du décor, `false` sinon (#167). */
+export const EDITING_ATTRIBUTE = 'data-aqfish-editing';
+/** Attribut du composant hôte exposant le nombre d'éléments de `World.decor` (#167). */
+export const DECOR_COUNT_ATTRIBUTE = 'data-aqfish-decor-count';
+/**
+ * Attribut du composant hôte exposant l'indice de l'élément de décor sélectionné, `aucun`
+ * sans sélection (#167).
+ */
+export const DECOR_SELECTION_ATTRIBUTE = 'data-aqfish-decor-selected';
 
 /** Intervalle de la sauvegarde automatique, en millisecondes (#70). */
 export const AUTOSAVE_INTERVAL_MS = 10_000;
@@ -338,6 +358,21 @@ export class AquariumHost {
 
   /** Dernier message de la section « Sauvegarde » (import refusé, import réussi…). */
   readonly saveMessage = signal<SaveMessage | null>(null);
+
+  /** Mode édition du décor (#167) : les clics sur le bac posent ou choisissent un élément. */
+  readonly decorEditing = signal(false);
+
+  /** Vrai si le décor de l'environnement courant est modifiable (bac tropical, #167). */
+  readonly decorEditable = signal(false);
+
+  /** Outil courant de l'éditeur de décor (#167). */
+  readonly decorTool = signal<DecorTool>('rock');
+
+  /** Indice de l'élément de décor sélectionné (#167), `null` sinon. */
+  readonly decorSelection = signal<number | null>(null);
+
+  /** Nombre d'éléments du décor (#167). */
+  readonly decorCount = signal(0);
 
   /** État courant de la simulation (`null` avant le démarrage et après la destruction). */
   get world(): World | null {
@@ -569,6 +604,118 @@ export class AquariumHost {
     }
   }
 
+  /**
+   * Entre en mode édition du décor ou en sort (#167). En sortant, la sélection est effacée.
+   * Sans effet en mode capture (`edition=`), avant le démarrage, ou pour entrer dans un
+   * environnement dont le décor n'est pas modifiable (`isDecorEditable`).
+   */
+  setDecorEditing(editing: boolean): void {
+    const world = this.currentWorld;
+    if (!world || !this.view || this.capture || (editing && !isDecorEditable(world.environment))) {
+      return;
+    }
+    if (!editing) {
+      this.selectDecor(null);
+    }
+    this.applyDecorEditing(editing);
+  }
+
+  /** Choisit l'outil de l'éditeur de décor (#167) ; un outil inconnu est ignoré. */
+  setDecorTool(tool: string): void {
+    if (isDecorTool(tool)) {
+      this.decorTool.set(tool);
+    }
+  }
+
+  /**
+   * Sélectionne l'élément d'indice `index` du décor (contour clair), ou aucun avec `null`
+   * (#167). Sans effet hors du mode édition (sauf pour désélectionner) ou pour un indice
+   * inexistant.
+   */
+  selectDecor(index: number | null): void {
+    const world = this.currentWorld;
+    const view = this.view;
+    if (!world || !view) {
+      return;
+    }
+    const valid =
+      index !== null && Number.isInteger(index) && index >= 0 && index < world.decor.length;
+    if (index !== null && (!valid || !this.decorEditing())) {
+      return;
+    }
+    view.setDecorSelection(index);
+    this.exposeDecorSelection(index);
+    this.scheduleFrame();
+  }
+
+  /**
+   * Supprime l'élément de décor sélectionné (touche Suppr, bouton « Supprimer », #167) ;
+   * renvoie `true` s'il a été supprimé. Sans effet sans sélection.
+   */
+  deleteSelectedDecor(): boolean {
+    const world = this.currentWorld;
+    const index = this.decorSelection();
+    if (!world || index === null || !this.decorEditing()) {
+      return false;
+    }
+    const decor = removeDecorItem(world.decor, index);
+    if (!decor) {
+      return false;
+    }
+    this.applyDecor(decor, null);
+    return true;
+  }
+
+  /**
+   * Clic en mode édition (#167) : un élément touché est sélectionné ; un point du sable reçoit
+   * l'élément de l'outil courant (qui est alors sélectionné), ou, avec l'outil `select`,
+   * désélectionne ; un clic hors du bac désélectionne. Sans effet hors du mode édition.
+   */
+  editAt(pick: DecorPick): void {
+    const world = this.currentWorld;
+    if (!world || !this.decorEditing()) {
+      return;
+    }
+    if (pick === null) {
+      this.selectDecor(null);
+      return;
+    }
+    if (pick.kind === 'item') {
+      this.selectDecor(pick.index);
+      return;
+    }
+    const tool = this.decorTool();
+    if (tool === 'select') {
+      this.selectDecor(null);
+      return;
+    }
+    const decor = addDecorItem(world.decor, tool, pick.x, pick.z, world.seed, world.environment);
+    if (decor) {
+      this.applyDecor(decor, decor.length - 1);
+    } else {
+      this.selectDecor(null);
+    }
+  }
+
+  /**
+   * Installe un décor édité (#167) : obstacles du monde recalculés, vue mise à jour,
+   * sélection `selection`, puis sauvegarde immédiate (le rechargement le restitue).
+   */
+  private applyDecor(decor: readonly DecorItem[], selection: number | null): void {
+    const world = this.currentWorld;
+    const view = this.view;
+    if (!world || !view) {
+      return;
+    }
+    setDecorInPlace(world, decor);
+    view.replaceDecorItems(world.decor, world.seed);
+    this.exposeDecorCount();
+    view.setDecorSelection(selection);
+    this.exposeDecorSelection(selection);
+    this.saveNow();
+    this.scheduleFrame();
+  }
+
   /** Dépose des granulés au centre du bac (bouton « Nourrir », touche `G`). */
   feedAtCenter(): void {
     this.feed(0, 0);
@@ -753,6 +900,18 @@ export class AquariumHost {
         : environmentById(this.currentWorld.environment).defaultCamera,
     );
     this.exposeFilter();
+    this.applyDecorEditing(false);
+    // `edition=` (#167) : mode édition et élément sélectionné, en capture seulement.
+    if (
+      params.capture &&
+      params.editSelection !== null &&
+      isDecorEditable(this.currentWorld.environment) &&
+      params.editSelection < this.currentWorld.decor.length
+    ) {
+      this.applyDecorEditing(true);
+      this.view?.setDecorSelection(params.editSelection);
+      this.exposeDecorSelection(params.editSelection);
+    }
 
     const onResize = () => this.scheduleFrame();
     win.addEventListener('resize', onResize);
@@ -836,7 +995,23 @@ export class AquariumHost {
     this.activePreset.set(preset);
     this.viewCleanups.push(view.onCameraChange(() => this.exposeCamera()));
     this.viewCleanups.push(view.onUserInteraction(() => this.activePreset.set(null)));
-    this.viewCleanups.push(view.onSurfaceClick((x, z) => this.feed(x, z)));
+    // En mode édition, un clic pose ou choisit un élément du décor au lieu de nourrir (#167).
+    this.viewCleanups.push(
+      view.onCanvasClick((x, y) => {
+        if (this.decorEditing()) {
+          this.editAt(view.pickDecor(x, y));
+        }
+      }),
+    );
+    this.viewCleanups.push(
+      view.onSurfaceClick((x, z) => {
+        if (!this.decorEditing()) {
+          this.feed(x, z);
+        }
+      }),
+    );
+    // Vue neuve : aucun élément sélectionné.
+    this.exposeDecorSelection(null);
   }
 
   private scheduleFrame(): void {
@@ -1006,7 +1181,35 @@ export class AquariumHost {
     if (world) {
       this.environment.set(world.environment);
       this.host.nativeElement.setAttribute(ENVIRONMENT_ATTRIBUTE, world.environment);
+      const editable = isDecorEditable(world.environment);
+      this.decorEditable.set(editable);
+      if (!editable && this.decorEditing()) {
+        this.applyDecorEditing(false);
+      }
+      this.exposeDecorCount();
     }
+  }
+
+  /** Applique et expose le mode édition (`data-aqfish-editing`, signal `decorEditing`). */
+  private applyDecorEditing(editing: boolean): void {
+    this.decorEditing.set(editing);
+    this.host.nativeElement.setAttribute(EDITING_ATTRIBUTE, String(editing));
+  }
+
+  /** Expose le nombre d'éléments du décor (`data-aqfish-decor-count`, signal `decorCount`). */
+  private exposeDecorCount(): void {
+    const count = this.currentWorld?.decor.length ?? 0;
+    this.decorCount.set(count);
+    this.host.nativeElement.setAttribute(DECOR_COUNT_ATTRIBUTE, String(count));
+  }
+
+  /** Expose la sélection (`data-aqfish-decor-selected`, signal `decorSelection`). */
+  private exposeDecorSelection(index: number | null): void {
+    this.decorSelection.set(index);
+    this.host.nativeElement.setAttribute(
+      DECOR_SELECTION_ATTRIBUTE,
+      index === null ? 'aucun' : String(index),
+    );
   }
 
   /** Expose l'état de la sauvegarde (`data-aqfish-save` et signal `saveStatus`). */

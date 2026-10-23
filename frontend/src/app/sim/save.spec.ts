@@ -1,4 +1,6 @@
 import { createDayClock } from './daylight';
+import { DEFAULT_DECOR } from './decor';
+import { addDecorItem, removeDecorItem, withDecor } from './decor-edit';
 import { MAX_FOOD } from './food';
 import {
   MAX_TOTAL_FISH,
@@ -175,6 +177,17 @@ describe('serializeWorld / parseWorld : aller-retour', () => {
       parseWorld(serializeWorld(createDefaultWorld(1), settings)),
     );
     expect(back).toEqual(settings);
+  });
+
+  it('restitue un décor édité (#167) : éléments ajoutés et retirés, obstacles recalculés', () => {
+    let decor = addDecorItem(DEFAULT_DECOR, 'rock', 0.05, 0.12, 42, 'tropical')!;
+    decor = addDecorItem(decor, 'tuft', -0.25, -0.05, 42, 'tropical')!;
+    decor = removeDecorItem(decor, 3)!;
+    const world = withDecor(advance(createDefaultWorld(42), 20), decor);
+    const result = parseWorld(serializeWorld(world));
+    expect(result.ok).toBe(true);
+    expect(result.ok && result.world).toEqual(world);
+    expect(result.ok && result.world.decor).toEqual(decor);
   });
 
   it('ne partage aucune donnée avec le monde sauvegardé', () => {

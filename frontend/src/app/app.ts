@@ -5,6 +5,7 @@ import { AquariumHost } from './ui/aquarium-host/aquarium-host';
 import { CommandsHelp } from './ui/commands-help/commands-help';
 import { ControlPanel } from './ui/control-panel/control-panel';
 import { DayIndicator } from './ui/day-indicator/day-indicator';
+import { DecorEditor } from './ui/decor-editor/decor-editor';
 import { EXCLUSIVE_PANELS } from './ui/exclusive-panels/exclusive-panels';
 import { ViewPresetsBar } from './ui/view-presets-bar/view-presets-bar';
 
@@ -19,7 +20,7 @@ import { ViewPresetsBar } from './ui/view-presets-bar/view-presets-bar';
  */
 @Component({
   selector: 'app-root',
-  imports: [AquariumHost, CommandsHelp, ControlPanel, DayIndicator, ViewPresetsBar],
+  imports: [AquariumHost, CommandsHelp, ControlPanel, DayIndicator, DecorEditor, ViewPresetsBar],
   templateUrl: './app.html',
   styleUrl: './app.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -35,18 +36,39 @@ export class App {
   // `ControlPanel` comme valeur le chargerait hors du bloc `@defer`.
   private readonly help = viewChild<CommandsHelp>('help');
   private readonly panel = viewChild<ControlPanel>('panel');
+  private readonly aquarium = viewChild<AquariumHost>('aquarium');
 
-  /** « Commandes » déplié : replie « Réglages » sur écran étroit (#136). */
+  /**
+   * « Commandes » déplié : replie « Réglages » et quitte l'éditeur de décor sur écran étroit
+   * (#136, #167).
+   */
   protected onHelpOpened(): void {
     if (this.exclusivePanels()) {
       this.panel()?.close();
+      this.aquarium()?.setDecorEditing(false);
     }
   }
 
-  /** « Réglages » déplié : replie « Commandes » sur écran étroit (#136). */
+  /**
+   * « Réglages » déplié : quitte l'éditeur de décor, qui occupe la même place (#167), et
+   * replie « Commandes » sur écran étroit (#136).
+   */
   protected onPanelOpened(): void {
+    this.aquarium()?.setDecorEditing(false);
     if (this.exclusivePanels()) {
       this.help()?.fold();
     }
+  }
+
+  /**
+   * « Éditer le décor » (#167) : l'éditeur prend la place de « Réglages », replié, et, sur
+   * écran étroit, celle de « Commandes ».
+   */
+  protected onEditRequested(): void {
+    this.panel()?.close();
+    if (this.exclusivePanels()) {
+      this.help()?.fold();
+    }
+    this.aquarium()?.setDecorEditing(true);
   }
 }

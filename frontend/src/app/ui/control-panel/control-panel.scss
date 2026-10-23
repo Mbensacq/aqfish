@@ -298,6 +298,41 @@
   display: none;
 }
 
+// « Éditer le décor » (#167) : sur la ligne du titre de la section, hors du flux.
+.control-panel__section--decor {
+  position: relative;
+}
+
+.control-panel__edit {
+  position: absolute;
+  top: 2px;
+  right: 0;
+  min-height: 22px;
+  padding: 1px 8px;
+  border: 1px solid #5fbfa3;
+  border-radius: 6px;
+  background: transparent;
+  color: #5fbfa3;
+  font:
+    600 11px / 1.2 system-ui,
+    sans-serif;
+  cursor: pointer;
+
+  &:hover {
+    background: rgb(95 191 163 / 16%);
+  }
+
+  &:focus-visible {
+    outline: 2px solid #5fbfa3;
+    outline-offset: 1px;
+  }
+
+  &[aria-disabled='true'] {
+    opacity: 0.45;
+    cursor: default;
+  }
+}
+
 // Bouton d'une ligne partagée avec une case à cocher (« Granulés », #117) : à sa taille.
 .control-panel__button--compact {
   flex: 0 0 auto;

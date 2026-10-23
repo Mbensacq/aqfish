@@ -96,6 +96,7 @@ describe('fonctions du panneau de contrôle', () => {
     [clockRunning]="running()"
     [decorVisible]="decor()"
     [rain]="rain()"
+    [decorEditable]="editable()"
     [foodStyle]="foodStyle()"
     [population]="population()"
     [populationMax]="populationMax()"
@@ -112,6 +113,7 @@ describe('fonctions du panneau de contrôle', () => {
     (rainChanged)="events.push(['pluie', $event])"
     (environmentChanged)="environments.push($event)"
     (foodStyleToggled)="foodToggles = foodToggles + 1"
+    (editRequested)="edits = edits + 1"
   />`,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -125,6 +127,8 @@ class TestHost {
   readonly rain = signal(false);
   readonly foodStyle = signal<FoodStyle>('points');
   foodToggles = 0;
+  readonly editable = signal(true);
+  edits = 0;
   readonly population = signal<PopulationCounts>({
     neon: 12,
     guppy: 6,
@@ -357,9 +361,9 @@ describe('ControlPanel', () => {
     await openPanel();
     // Le champ de fichier natif est masqué : le bouton « Importer » l'ouvre (#70).
     const controls = [...root().querySelectorAll<HTMLElement>('button, input:not([type="file"])')];
-    // 5 contrôles de #52, « Granulés » (#117), puis « − », champ et « + » pour chacune des 3
-    // espèces (#69), puis « Exporter » et « Importer » (#70).
-    expect(controls).toHaveLength(5 + 1 + 3 * 3 + 2);
+    // 5 contrôles de #52, « Éditer le décor » (#167), « Granulés » (#117), puis « − », champ
+    // et « + » pour chacune des 3 espèces (#69), puis « Exporter » et « Importer » (#70).
+    expect(controls).toHaveLength(5 + 1 + 1 + 3 * 3 + 2);
     expect(root().querySelectorAll('input[type="file"]')).toHaveLength(1);
     for (const control of controls) {
       const name =
@@ -370,6 +374,23 @@ describe('ControlPanel', () => {
       expect(control.tabIndex).toBeGreaterThanOrEqual(0);
       expect(control.hasAttribute('disabled')).toBe(false);
     }
+  });
+
+  it('bouton « Éditer le décor » (#167) : émet la demande si le décor est modifiable', async () => {
+    await openPanel();
+    const button = () =>
+      root().querySelector<HTMLButtonElement>('[data-section="decor"] [data-decor-edit]')!;
+    expect(button().textContent?.trim()).toBe('Éditer le décor');
+    expect(button().getAttribute('aria-disabled')).toBe('false');
+    expect(button().getAttribute('aria-label')).toBe('Éditer le décor');
+    button().click();
+    expect(fixture.componentInstance.edits).toBe(1);
+    fixture.componentInstance.editable.set(false);
+    await fixture.whenStable();
+    expect(button().getAttribute('aria-disabled')).toBe('true');
+    expect(button().getAttribute('aria-label')).toBe('Éditer le décor (bac tropical seulement)');
+    button().click();
+    expect(fixture.componentInstance.edits).toBe(1);
   });
 
   it('bouton « Granulés » (#117) : rendu de l’hôte, émet la bascule', async () => {

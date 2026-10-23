@@ -7,6 +7,7 @@ import {
   Group,
   Mesh,
   MeshBasicMaterial,
+  type Raycaster,
   ShaderMaterial,
   Vector2,
 } from 'three';
@@ -35,6 +36,14 @@ export const OUTLINE_COLOR = PALETTE.koiNoir;
 
 /** Épaisseur du contour, en pixels de la cible de rendu (un pixel de scène en pixel art). */
 export const OUTLINE_WIDTH_PX = 1;
+
+/**
+ * Contour de l'élément sélectionné dans l'éditeur de décor (#167) : clair, la couleur du texte
+ * de l'interface, et deux fois plus épais que le contour ordinaire, pour se lire à l'échelle
+ * normale sur le sable comme sur l'eau.
+ */
+export const SELECTION_COLOR = PALETTE.texteInterface;
+export const SELECTION_WIDTH_PX = 2;
 
 /**
  * Ordre de rendu du décor : dans la file des transparents (opacité pleine), après l'eau et
@@ -74,12 +83,15 @@ void main() {
  * silhouette reste visible, d'un pixel quel que soit le zoom ; l'eau, qui n'a pas de coque,
  * n'a jamais de contour.
  */
-export function createOutlineMaterial(): ShaderMaterial {
+export function createOutlineMaterial(
+  color: string = OUTLINE_COLOR,
+  width: number = OUTLINE_WIDTH_PX,
+): ShaderMaterial {
   return new ShaderMaterial({
     uniforms: {
       uResolution: { value: new Vector2(1, 1) },
-      uWidth: { value: OUTLINE_WIDTH_PX },
-      uColor: { value: new Color(OUTLINE_COLOR) },
+      uWidth: { value: width },
+      uColor: { value: new Color(color) },
     },
     vertexShader: OUTLINE_VERTEX,
     fragmentShader: OUTLINE_FRAGMENT,
@@ -110,7 +122,12 @@ export class DecorLayer {
     opacity: 1,
   });
   private readonly outlineMaterial = createOutlineMaterial();
+  /** Contour de l'élément sélectionné (`setSelected`). */
+  private readonly selectionMaterial = createOutlineMaterial(SELECTION_COLOR, SELECTION_WIDTH_PX);
   private geometries: BufferGeometry[] = [];
+  /** Maillage voxel et coque de chaque élément de `World.decor`, dans l'ordre (sélection). */
+  private items: { readonly voxels: Mesh; readonly hull: Mesh }[] = [];
+  private selected: number | null = null;
   private plants: SwayingPlant[] = [];
   private corals = 0;
   private anemones = 0;
@@ -176,6 +193,7 @@ export class DecorLayer {
         group.add(m);
       }
       this.object.add(group);
+      this.items.push({ voxels: mesh, hull });
     });
     corals.forEach((colony, n) => {
       const model = coralModel(colony.form, colony.seed, colony.scale);
@@ -230,6 +248,44 @@ export class DecorLayer {
     return group;
   }
 
+  /**
+   * Sélectionne l'élément d'indice `index` de `World.decor` (contour clair et épais,
+   * `SELECTION_COLOR`), ou aucun avec `null` ou un indice inexistant.
+   */
+  setSelected(index: number | null): void {
+    if (this.selected !== null) {
+      this.items[this.selected].hull.material = this.outlineMaterial;
+    }
+    this.selected = index !== null && index >= 0 && index < this.items.length ? index : null;
+    if (this.selected !== null) {
+      this.items[this.selected].hull.material = this.selectionMaterial;
+    }
+  }
+
+  /** Indice de l'élément sélectionné, `null` sinon (tests). */
+  get selectedIndex(): number | null {
+    return this.selected;
+  }
+
+  /**
+   * Indice dans `World.decor` de l'élément le plus proche touché par le rayon `raycaster`
+   * (maillages voxels, coraux et anémones exclus), `null` si aucun ou si le décor est masqué.
+   */
+  pickItem(raycaster: Raycaster): number | null {
+    if (!this.object.visible || this.items.length === 0) {
+      return null;
+    }
+    const voxels = this.items.map((item) => item.voxels);
+    // Positions des plantes réécrites à chaque image : boîtes englobantes à recalculer.
+    for (const mesh of voxels) {
+      mesh.geometry.boundingSphere = null;
+      mesh.geometry.boundingBox = null;
+    }
+    this.object.updateMatrixWorld();
+    const hit = raycaster.intersectObjects(voxels, false)[0];
+    return hit ? voxels.indexOf(hit.object as Mesh) : null;
+  }
+
   /** Pose les plantes au temps simulé `time` (secondes), sans allocation. */
   update(time: number): void {
     for (const plant of this.plants) {
@@ -281,16 +337,19 @@ export class DecorLayer {
 
   /** Résolution de la surface de rendu, en pixels (épaisseur constante du contour). */
   setResolution(width: number, height: number): void {
-    (this.outlineMaterial.uniforms['uResolution'].value as Vector2).set(
-      Math.max(1, width),
-      Math.max(1, height),
-    );
+    for (const material of [this.outlineMaterial, this.selectionMaterial]) {
+      (material.uniforms['uResolution'].value as Vector2).set(
+        Math.max(1, width),
+        Math.max(1, height),
+      );
+    }
   }
 
   dispose(): void {
     this.clear();
     this.material.dispose();
     this.outlineMaterial.dispose();
+    this.selectionMaterial.dispose();
   }
 
   private clear(): void {
@@ -298,6 +357,8 @@ export class DecorLayer {
     this.geometries.forEach((g) => g.dispose());
     this.geometries = [];
     this.plants = [];
+    this.items = [];
+    this.selected = null;
     this.corals = 0;
     this.anemones = 0;
   }

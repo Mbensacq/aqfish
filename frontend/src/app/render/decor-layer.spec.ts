@@ -1,4 +1,12 @@
-import { BufferAttribute, BufferGeometry, Mesh, ShaderMaterial, Vector2 } from 'three';
+import {
+  BufferAttribute,
+  BufferGeometry,
+  Mesh,
+  Raycaster,
+  ShaderMaterial,
+  Vector2,
+  Vector3,
+} from 'three';
 
 import { anemoneBaseY, anemoneLayout, anemoneModel } from '../sim/anemones';
 import { coralBaseY, coralLayout, coralModel } from '../sim/corals';
@@ -10,6 +18,8 @@ import {
   DecorLayer,
   OUTLINE_COLOR,
   createOutlineMaterial,
+  SELECTION_COLOR,
+  SELECTION_WIDTH_PX,
 } from './decor-layer';
 import { FISH_RENDER_ORDER } from './fish-layer';
 import { PALETTE_COLORS } from './palette';
@@ -212,5 +222,70 @@ describe('DecorLayer', () => {
     const material = createOutlineMaterial();
     expect(material.side).toBe(1); // BackSide
     material.dispose();
+  });
+
+  describe('sélection et choix au rayon (#167)', () => {
+    const contour = (layer: DecorLayer, n: number) =>
+      (layer.object.children[n].children.find((c) => c.name.endsWith('-contour')) as Mesh)
+        .material as ShaderMaterial;
+
+    it('un rayon d’aplomb, de face ou de côté touche l’élément visé', () => {
+      const layer = new DecorLayer();
+      layer.setDecor(DEFAULT_DECOR);
+      const ray = new Raycaster();
+      DEFAULT_DECOR.forEach((item, n) => {
+        if (item.kind !== 'rock') {
+          return;
+        }
+        const target = new Vector3(item.x, decorBaseY(item) + 0.02, item.z);
+        ray.set(new Vector3(item.x, 1, item.z), new Vector3(0, -1, 0));
+        expect(layer.pickItem(ray)).toBe(n);
+        // Vu du côté droit, au ras du rocher : l'élément touché est le plus proche.
+        ray.set(new Vector3(item.x, target.y, item.z + 2), new Vector3(0, 0, -1));
+        expect(layer.pickItem(ray)).not.toBeNull();
+      });
+      ray.set(new Vector3(0, 1, 0.2), new Vector3(0, -1, 0));
+      expect(layer.pickItem(ray)).toBeNull();
+      layer.object.visible = false;
+      ray.set(new Vector3(DEFAULT_DECOR[0].x, 1, DEFAULT_DECOR[0].z), new Vector3(0, -1, 0));
+      expect(layer.pickItem(ray)).toBeNull();
+      layer.dispose();
+    });
+
+    it('coraux et anémones ne sont jamais choisis', () => {
+      const layer = new DecorLayer();
+      const corals = coralLayout(5, REEF.dimensions, REEF.corals, []);
+      layer.setDecor([], corals);
+      const ray = new Raycaster();
+      ray.set(new Vector3(corals[0].x, 1, corals[0].z), new Vector3(0, -1, 0));
+      expect(layer.pickItem(ray)).toBeNull();
+      layer.dispose();
+    });
+
+    it('contour clair et épais pour l’élément sélectionné, un seul à la fois', () => {
+      const layer = new DecorLayer();
+      layer.setDecor(DEFAULT_DECOR);
+      const normal = contour(layer, 0);
+      layer.setSelected(1);
+      expect(layer.selectedIndex).toBe(1);
+      const selected = contour(layer, 1);
+      expect(selected).not.toBe(normal);
+      expect(
+        '#' + (selected.uniforms['uColor'].value as { getHexString(): string }).getHexString(),
+      ).toBe(SELECTION_COLOR);
+      expect(selected.uniforms['uWidth'].value).toBe(SELECTION_WIDTH_PX);
+      layer.setSelected(3);
+      expect(contour(layer, 1)).toBe(normal);
+      expect(contour(layer, 3)).toBe(selected);
+      layer.setSelected(99);
+      expect(layer.selectedIndex).toBeNull();
+      expect(contour(layer, 3)).toBe(normal);
+      layer.setSelected(2);
+      layer.setDecor(DEFAULT_DECOR);
+      expect(layer.selectedIndex).toBeNull();
+      layer.setResolution(320, 180);
+      expect((selected.uniforms['uResolution'].value as Vector2).toArray()).toEqual([320, 180]);
+      layer.dispose();
+    });
   });
 });

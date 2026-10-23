@@ -21,6 +21,7 @@ import {
 import { expiryAge, FOOD_PER_DROP } from '../../sim/food';
 import { setPopulation } from '../../sim/population';
 import { advance, advanceToWithFeedings, createDefaultWorld } from '../../sim/world';
+import { DEFAULT_DECOR } from '../../sim/decor';
 import {
   applyPopulation,
   AQUARIUM_RENDERER_FACTORY,
@@ -34,6 +35,9 @@ import {
   RAIN_ATTRIBUTE,
   CAMERA_TARGET_ATTRIBUTE,
   DECOR_ATTRIBUTE,
+  DECOR_COUNT_ATTRIBUTE,
+  DECOR_SELECTION_ATTRIBUTE,
+  EDITING_ATTRIBUTE,
   FILTER_ATTRIBUTE,
   FOOD_STYLE_ATTRIBUTE,
   FOOD_ATTRIBUTE,
@@ -1374,6 +1378,108 @@ describe('AquariumHost', () => {
       delete (window.URL as unknown as Record<string, unknown>)['revokeObjectURL'];
       host().exportSave();
       expect(host().saveMessage()?.kind).toBe('erreur');
+    });
+  });
+
+  describe('édition du décor (#167)', () => {
+    const host = () => fixture.componentInstance;
+    const element = () => fixture.nativeElement as HTMLElement;
+
+    it('expose le décor ; entrer et sortir du mode édition', async () => {
+      await create('?seed=42');
+      expect(element().getAttribute(DECOR_COUNT_ATTRIBUTE)).toBe(String(DEFAULT_DECOR.length));
+      expect(element().getAttribute(EDITING_ATTRIBUTE)).toBe('false');
+      expect(element().getAttribute(DECOR_SELECTION_ATTRIBUTE)).toBe('aucun');
+      expect(host().decorEditable()).toBe(true);
+      host().setDecorEditing(true);
+      expect(host().decorEditing()).toBe(true);
+      expect(element().getAttribute(EDITING_ATTRIBUTE)).toBe('true');
+      host().editAt({ kind: 'item', index: 1 });
+      expect(host().decorSelection()).toBe(1);
+      host().setDecorEditing(false);
+      expect(host().decorEditing()).toBe(false);
+      expect(host().decorSelection()).toBeNull();
+    });
+
+    it('hors édition, un clic n’édite rien ; un indice inexistant n’est pas sélectionné', async () => {
+      await create('?seed=42');
+      host().editAt({ kind: 'sand', x: 0, z: 0.1 });
+      host().selectDecor(0);
+      expect(host().world!.decor).toEqual(DEFAULT_DECOR);
+      expect(host().decorSelection()).toBeNull();
+      host().setDecorEditing(true);
+      host().selectDecor(DEFAULT_DECOR.length);
+      host().selectDecor(-1);
+      host().selectDecor(0.5);
+      expect(host().decorSelection()).toBeNull();
+      expect(host().deleteSelectedDecor()).toBe(false);
+    });
+
+    it('sable : pose l’élément de l’outil (sélectionné) ; outil Sélection ou hors du bac : désélectionne', async () => {
+      await create('?seed=42');
+      host().setDecorEditing(true);
+      host().editAt({ kind: 'sand', x: 0, z: 0.1 });
+      const world = host().world!;
+      expect(world.decor.length).toBe(DEFAULT_DECOR.length + 1);
+      expect(world.decor.at(-1)).toMatchObject({ kind: 'rock', x: 0, z: 0.1 });
+      expect(world.obstacles.length).toBe(DEFAULT_DECOR.length + 1);
+      expect(host().decorSelection()).toBe(DEFAULT_DECOR.length);
+      expect(element().getAttribute(DECOR_COUNT_ATTRIBUTE)).toBe(String(DEFAULT_DECOR.length + 1));
+      host().editAt(null);
+      expect(host().decorSelection()).toBeNull();
+      host().setDecorTool('tall');
+      host().setDecorTool('inconnu');
+      expect(host().decorTool()).toBe('tall');
+      host().editAt({ kind: 'sand', x: -0.3, z: 0.1 });
+      expect(host().world!.decor.at(-1)).toMatchObject({ kind: 'plant', form: 'tall' });
+      host().setDecorTool('select');
+      host().editAt({ kind: 'sand', x: 0.2, z: 0.1 });
+      expect(host().world!.decor.length).toBe(DEFAULT_DECOR.length + 2);
+      expect(host().decorSelection()).toBeNull();
+      // Hors des bornes : rien n'est posé.
+      host().setDecorTool('rock');
+      host().editAt({ kind: 'sand', x: 10, z: 0 });
+      expect(host().world!.decor.length).toBe(DEFAULT_DECOR.length + 2);
+    });
+
+    it('supprime la sélection et enregistre aussitôt le décor édité', async () => {
+      await create();
+      host().setDecorEditing(true);
+      host().editAt({ kind: 'item', index: 2 });
+      expect(host().deleteSelectedDecor()).toBe(true);
+      expect(host().decorSelection()).toBeNull();
+      expect(host().world!.decor).toEqual(DEFAULT_DECOR.filter((_, n) => n !== 2));
+      const saved = parseWorld(saveStorage!.getItem(SAVE_STORAGE_KEY)!);
+      expect(saved.ok && saved.world.decor).toEqual(host().world!.decor);
+      fixture.destroy();
+      await create();
+      expect(host().world!.decor).toEqual(DEFAULT_DECOR.filter((_, n) => n !== 2));
+    });
+
+    it('environnement non éditable : refusé, et changer d’environnement quitte l’édition', async () => {
+      await create('?seed=42');
+      host().setDecorEditing(true);
+      host().setEnvironment('bassin');
+      expect(host().decorEditing()).toBe(false);
+      expect(host().decorEditable()).toBe(false);
+      host().setDecorEditing(true);
+      expect(host().decorEditing()).toBe(false);
+    });
+
+    it('capture : edition=<indice> montre la sélection ; aucune édition possible', async () => {
+      await create('?capture=1&seed=42&edition=2');
+      expect(host().decorEditing()).toBe(true);
+      expect(host().decorSelection()).toBe(2);
+      expect(element().getAttribute(DECOR_SELECTION_ATTRIBUTE)).toBe('2');
+      fixture.destroy();
+      await create('?capture=1&seed=42&edition=99');
+      expect(host().decorEditing()).toBe(false);
+      expect(host().decorSelection()).toBeNull();
+      host().setDecorEditing(true);
+      expect(host().decorEditing()).toBe(false);
+      fixture.destroy();
+      await create('?seed=42&edition=1');
+      expect(host().decorEditing()).toBe(false);
     });
   });
 });

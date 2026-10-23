@@ -2,6 +2,8 @@ import {
   MOUSE,
   PerspectiveCamera,
   TOUCH,
+  Raycaster,
+  Vector2,
   Vector3,
   type Camera,
   type Scene,
@@ -38,6 +40,7 @@ import type { DecorItem } from '../sim/decor';
 import type { FoodPellet } from '../sim/food';
 import { BubbleLayer } from './bubble-layer';
 import { DecorLayer } from './decor-layer';
+import { sandPoint, type DecorPick } from './decor-pick';
 import { type EffectLayer, type SceneLayer, updateVisibleEffects } from './effect-layer';
 import { FloatingLeafLayer } from './floating-leaf-layer';
 import { FishLayer, MAX_FISH_PER_SPECIES } from './fish-layer';
@@ -153,6 +156,10 @@ export class AquariumView {
   private readonly sceneLayers: readonly SceneLayer[];
   /** Abonnés au clic sur la surface de l'eau (`onSurfaceClick`). */
   private readonly surfaceClickListeners = new Set<(x: number, z: number) => void>();
+  /** Abonnés à tout clic sur le canvas (`onCanvasClick`), avant ceux de la surface. */
+  private readonly canvasClickListeners = new Set<(clientX: number, clientY: number) => void>();
+  /** Lancer de rayon de `pickDecor`, réutilisé. */
+  private readonly raycaster = new Raycaster();
   /** Appui du pointeur principal en attente de relâchement (`null` : aucun clic possible). */
   private pendingClick: { readonly id: number; readonly x: number; readonly y: number } | null =
     null;
@@ -172,6 +179,9 @@ export class AquariumView {
       !isClick(down, { x: event.clientX, y: event.clientY })
     ) {
       return;
+    }
+    for (const listener of this.canvasClickListeners) {
+      listener(event.clientX, event.clientY);
     }
     const point = this.pickWaterSurface(event.clientX, event.clientY);
     if (point) {
@@ -458,6 +468,57 @@ export class AquariumView {
   }
 
   /**
+   * Cible d'un clic en mode édition du décor (#167) au point de l'écran (`clientX`,
+   * `clientY`, pixels CSS) : l'élément de `World.decor` le plus proche touché par le rayon de
+   * la caméra, sinon le point du sable visé dans le bac, sinon `null` (hors du canvas, hors du
+   * bac). Juste sous les cinq angles de vue : lancer de rayon sur les maillages affichés.
+   */
+  pickDecor(clientX: number, clientY: number): DecorPick {
+    if (this.disposed) {
+      return null;
+    }
+    const ndc = toNormalizedDevice(clientX, clientY, this.canvas.getBoundingClientRect());
+    if (!ndc) {
+      return null;
+    }
+    this.camera.updateMatrixWorld();
+    this.raycaster.setFromCamera(new Vector2(ndc.x, ndc.y), this.camera);
+    const index = this.decorLayer.pickItem(this.raycaster);
+    if (index !== null) {
+      return { kind: 'item', index };
+    }
+    const { origin, direction } = this.raycaster.ray;
+    const point = sandPoint(
+      [origin.x, origin.y, origin.z],
+      [direction.x, direction.y, direction.z],
+      this.world.dimensions,
+    );
+    return point ? { kind: 'sand', x: point.x, z: point.z } : null;
+  }
+
+  /** Sélectionne l'élément d'indice `index` de `World.decor` (contour clair), ou aucun. */
+  setDecorSelection(index: number | null): void {
+    if (!this.disposed) {
+      this.decorLayer.setSelected(index);
+    }
+  }
+
+  /** Indice de l'élément de décor sélectionné, `null` sinon (tests). */
+  get decorSelection(): number | null {
+    return this.decorLayer.selectedIndex;
+  }
+
+  /**
+   * Abonnement à tout clic (sans glisser, bouton principal) sur le canvas, avec le point de
+   * l'écran (pixels CSS) ; jamais appelé si les contrôles sont inactifs (mode capture).
+   * Renvoie le désabonnement.
+   */
+  onCanvasClick(listener: (clientX: number, clientY: number) => void): () => void {
+    this.canvasClickListeners.add(listener);
+    return () => this.canvasClickListeners.delete(listener);
+  }
+
+  /**
    * Abonnement au clic (sans glisser, bouton principal) sur la surface de l'eau, avec le
    * point visé (x, z) dans le repère du bac. Jamais appelé si les contrôles sont inactifs
    * (mode capture) ni pour un clic hors du bac. Renvoie le désabonnement.
@@ -523,6 +584,17 @@ export class AquariumView {
         layer.setSeed(seed);
       }
       this.lilyPadLayer.setPads(lilyPadLayout(seed, environmentWater(env.id), env.lilyPads));
+    }
+  }
+
+  /**
+   * Remplace les seuls éléments du décor affichés (édition du décor, #167), sans toucher aux
+   * effets tirés de la graine (bulles, nénuphars) ; la sélection est effacée.
+   */
+  replaceDecorItems(items: readonly DecorItem[], seed: number): void {
+    if (!this.disposed) {
+      const { corals, anemones } = seededFeatures(seed, this.world.environment.id, items);
+      this.decorLayer.setDecor(items, corals, anemones);
     }
   }
 
@@ -750,6 +822,7 @@ export class AquariumView {
     this.canvas.removeEventListener('pointerup', this.onPointerUp);
     this.canvas.removeEventListener('pointercancel', this.onPointerCancel);
     this.surfaceClickListeners.clear();
+    this.canvasClickListeners.clear();
     this.controls.dispose();
     for (const layer of this.sceneLayers) {
       layer.dispose();

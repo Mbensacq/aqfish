@@ -1,0 +1,108 @@
+// Éditeur de décor (#167, docs/DA.md, « Interface ») : même apparence que « Réglages », à
+// sa place (sous la ligne des boutons du haut, 32 px + 6 px d'écart), plus court.
+:host {
+  position: fixed;
+  top: 50px;
+  left: 59px;
+  z-index: 1;
+  color: #e8e6e3;
+  font:
+    400 13px / 1.3 system-ui,
+    sans-serif;
+}
+
+.decor-editor {
+  box-sizing: border-box;
+  width: 260px;
+  max-width: calc(100vw - 59px - 12px);
+  max-height: calc(100vh - 50px - 80px);
+  overflow-y: auto;
+  padding: 8px 12px 10px;
+  border: 1px solid #5fbfa3;
+  border-radius: 10px;
+  background: rgb(20 20 24 / 88%); // #141418
+}
+
+.decor-editor__title {
+  margin: 0 0 6px;
+  color: #5fbfa3;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.decor-editor__tools,
+.decor-editor__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.decor-editor__tool,
+.decor-editor__action {
+  min-height: 30px;
+  padding: 3px 8px;
+  border: 1px solid rgb(232 230 227 / 16%);
+  border-radius: 6px;
+  background: rgb(232 230 227 / 6%);
+  color: inherit;
+  font:
+    600 13px / 1.2 system-ui,
+    sans-serif;
+  white-space: nowrap;
+  cursor: pointer;
+
+  &:hover {
+    background: rgb(232 230 227 / 12%);
+  }
+
+  &:focus-visible {
+    outline: 2px solid #5fbfa3;
+    outline-offset: 1px;
+  }
+
+  &[aria-disabled='true'] {
+    opacity: 0.45;
+    cursor: default;
+  }
+}
+
+.decor-editor__tool--active {
+  border-color: #5fbfa3;
+  background: rgb(95 191 163 / 20%);
+  color: #a8e6cf;
+}
+
+.decor-editor__action {
+  flex: 1 1 0;
+}
+
+.decor-editor__action--done {
+  border-color: #5fbfa3;
+}
+
+.decor-editor__hint,
+.decor-editor__count {
+  margin: 8px 0;
+  color: rgb(232 230 227 / 75%);
+  font-size: 12px;
+}
+
+.decor-editor__count {
+  margin: 6px 0 0;
+  font-variant-numeric: tabular-nums;
+}
+
+// Petit écran : l'indicateur et les boutons du haut sont à 8 px du bord.
+@media (max-width: 480px) {
+  :host {
+    top: 46px;
+    left: 55px;
+  }
+
+  .decor-editor {
+    max-width: calc(100vw - 55px - 8px);
+    max-height: calc(100vh - 46px - 120px);
+  }
+}

@@ -110,6 +110,8 @@ test.describe('Captures', () => {
     },
     // Population réglée (#69) : 12 néons, 2 guppys, aucun corydora.
     { name: 'three-quarter-population', query: 'population=neon:12,guppy:2,corydora:0' },
+    // Éditeur de décor (#167) : rocher d'indice 2 sélectionné, contour clair.
+    { name: 'three-quarter-edition', query: 'edition=2' },
   ] as const;
   for (const { name, query } of DAY_CAPTURES) {
     test(`angle ${name}`, async ({ page }) => {

@@ -1,0 +1,124 @@
+import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+import { TestBed, type ComponentFixture } from '@angular/core/testing';
+
+import { MAX_DECOR_ITEMS, type DecorTool } from '../../sim/decor-edit';
+import { DECOR_TOOLS, DecorEditor, decorEditorHint } from './decor-editor';
+
+describe('decorEditorHint', () => {
+  it('dit ce que fera un clic, selon l’outil et la sélection', () => {
+    expect(decorEditorHint('rock', null, false)).toBe('Cliquez sur le sable pour poser : rocher.');
+    expect(decorEditorHint('tuft', null, false)).toContain('touffe');
+    expect(decorEditorHint('select', null, false)).toContain('sélectionner');
+    expect(decorEditorHint('rock', 0, false)).toContain('Suppr');
+    expect(decorEditorHint('rock', null, true)).toContain(String(MAX_DECOR_ITEMS));
+  });
+
+  it('propose la sélection puis chaque type du catalogue', () => {
+    expect(DECOR_TOOLS.map((t) => t.id)).toEqual(['select', 'rock', 'tall', 'tuft']);
+  });
+});
+
+@Component({
+  imports: [DecorEditor],
+  template: `<app-decor-editor
+      [tool]="tool()"
+      [selection]="selection()"
+      [count]="count()"
+      (toolChanged)="tools.push($event)"
+      (deleteRequested)="deletes = deletes + 1"
+      (deselectRequested)="deselects = deselects + 1"
+      (closed)="closes = closes + 1"
+    />
+    <input aria-label="champ" />`,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+class TestHost {
+  readonly tool = signal<DecorTool>('rock');
+  readonly selection = signal<number | null>(null);
+  readonly count = signal(10);
+  readonly tools: DecorTool[] = [];
+  deletes = 0;
+  deselects = 0;
+  closes = 0;
+}
+
+describe('DecorEditor', () => {
+  let fixture: ComponentFixture<TestHost>;
+  const root = () => fixture.nativeElement as HTMLElement;
+  const host = () => fixture.componentInstance;
+  const button = (text: string) =>
+    [...root().querySelectorAll<HTMLButtonElement>('button')].find(
+      (b) => b.textContent?.trim() === text,
+    )!;
+  const key = (k: string, target: EventTarget = document.body) =>
+    target.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true }));
+
+  beforeEach(async () => {
+    fixture = TestBed.createComponent(TestHost);
+    await fixture.whenStable();
+  });
+
+  afterEach(() => fixture.destroy());
+
+  it('affiche les outils, l’outil courant coché, et émet le choix', async () => {
+    const radios = [...root().querySelectorAll<HTMLButtonElement>('[role="radio"]')];
+    expect(radios.map((r) => r.textContent?.trim())).toEqual([
+      'Sélection',
+      'Rocher',
+      'Grande plante',
+      'Touffe',
+    ]);
+    expect(radios.map((r) => r.getAttribute('aria-checked'))).toEqual([
+      'false',
+      'true',
+      'false',
+      'false',
+    ]);
+    button('Touffe').click();
+    expect(host().tools).toEqual(['tuft']);
+    host().tool.set('tuft');
+    await fixture.whenStable();
+    expect(button('Touffe').getAttribute('aria-checked')).toBe('true');
+    expect(root().querySelector('[data-decor-count]')?.textContent?.trim()).toBe(
+      `10 / ${MAX_DECOR_ITEMS} éléments`,
+    );
+  });
+
+  it('« Supprimer » et Suppr : seulement avec une sélection', async () => {
+    button('Supprimer').click();
+    key('Delete');
+    expect(host().deletes).toBe(0);
+    expect(button('Supprimer').getAttribute('aria-disabled')).toBe('true');
+    host().selection.set(3);
+    await fixture.whenStable();
+    expect(button('Supprimer').getAttribute('aria-disabled')).toBe('false');
+    button('Supprimer').click();
+    key('Delete');
+    key('Backspace');
+    expect(host().deletes).toBe(3);
+  });
+
+  it('Échap désélectionne, puis termine ; « Terminer » termine', async () => {
+    host().selection.set(1);
+    await fixture.whenStable();
+    key('Escape');
+    expect(host().deselects).toBe(1);
+    expect(host().closes).toBe(0);
+    host().selection.set(null);
+    await fixture.whenStable();
+    key('Escape');
+    expect(host().closes).toBe(1);
+    button('Terminer').click();
+    expect(host().closes).toBe(2);
+  });
+
+  it('ignore les touches tapées dans un champ, et n’écoute plus une fois détruit', async () => {
+    host().selection.set(0);
+    await fixture.whenStable();
+    key('Delete', root().querySelector('input')!);
+    expect(host().deletes).toBe(0);
+    fixture.destroy();
+    key('Delete');
+    expect(host().deletes).toBe(0);
+  });
+});

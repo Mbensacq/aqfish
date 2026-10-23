@@ -216,8 +216,22 @@ function toNumber(value: string | number): number {
           </div>
         </fieldset>
 
-        <fieldset class="control-panel__section" data-section="decor">
+        <fieldset class="control-panel__section control-panel__section--decor" data-section="decor">
           <legend class="control-panel__legend">Décor</legend>
+          <!-- Éditeur (#167) : sur la ligne du titre, le panneau ne grandit pas (#101). -->
+          <button
+            type="button"
+            class="control-panel__edit"
+            data-decor-edit
+            [attr.aria-disabled]="!decorEditable()"
+            [attr.aria-label]="
+              decorEditable() ? 'Éditer le décor' : 'Éditer le décor (bac tropical seulement)'
+            "
+            [attr.title]="decorEditable() ? null : 'Bac tropical seulement'"
+            (click)="onEdit()"
+          >
+            Éditer le décor
+          </button>
           <!-- Granulés (#117) : sur la même ligne, le panneau tient sans défiler à 1280 × 720 (#101). -->
           <div class="control-panel__row">
             <label class="control-panel__check">
@@ -328,6 +342,8 @@ export class ControlPanel {
   readonly decorVisible = input(true);
   /** Vrai s'il pleut (fourni par l'hôte, #106). */
   readonly rain = input(false);
+  /** Vrai si le décor de l'environnement est modifiable (fourni par l'hôte, #167). */
+  readonly decorEditable = input(false);
   /** Rendu des granulés, `points` ou `voxels` (fourni par l'hôte, #117). */
   readonly foodStyle = input<FoodStyle>(DEFAULT_FOOD_STYLE);
   /** Effectif de chaque espèce (fourni par l'hôte). */
@@ -349,6 +365,8 @@ export class ControlPanel {
   readonly clockRunningChanged = output<boolean>();
   /** Case « Afficher le décor ». */
   readonly decorVisibleChanged = output<boolean>();
+  /** Bouton « Éditer le décor » (#167), seulement si le décor est modifiable. */
+  readonly editRequested = output<void>();
   /** Case « Pluie » (#106) : `true` pour faire pleuvoir, `false` pour arrêter. */
   readonly rainChanged = output<boolean>();
   /** Bouton « Granulés » : passer à l'autre rendu (#117). */
@@ -455,6 +473,12 @@ export class ControlPanel {
 
   protected onRain(event: Event): void {
     this.rainChanged.emit((event.target as HTMLInputElement).checked);
+  }
+
+  protected onEdit(): void {
+    if (this.decorEditable()) {
+      this.editRequested.emit();
+    }
   }
 
   protected onDecor(event: Event): void {

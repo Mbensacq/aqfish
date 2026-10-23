@@ -35,6 +35,10 @@
  * comme hors capture (sans effet dans un environnement sans pluie) ; toute autre valeur ou
  * absent, pas de pluie (séries existantes inchangées).
  *
+ * Paramètre facultatif `edition=<indice>` (issue #167) : en mode capture, montre le mode
+ * édition du décor avec l'élément d'indice donné de `World.decor` sélectionné (entier de 0 à
+ * 999) ; absent, invalide ou hors du décor, aucune sélection (séries existantes inchangées).
+ *
  * Ce module est volontairement pur (aucune dépendance à Angular ni à Three.js).
  * Voir docs/ARCHITECTURE.md, section « Contrat de capture ».
  */
@@ -74,6 +78,8 @@ export interface CaptureParams {
   readonly foodStyle: FoodStyle | null;
   /** Vrai pour `pluie=1` : il pleut dès le départ (issue #106). */
   readonly rain: boolean;
+  /** Élément du décor sélectionné par `edition=` (issue #167) ; `null` si absent ou invalide. */
+  readonly editSelection: number | null;
 }
 
 /**
@@ -111,6 +117,7 @@ export const DEFAULT_CAPTURE_PARAMS: CaptureParams = {
   population: [],
   foodStyle: null,
   rain: false,
+  editSelection: null,
 };
 
 /** Temps de simulation maximal accepté (1 h), pour éviter un calcul démesuré. */
@@ -149,7 +156,13 @@ export function parseCaptureParams(search: string): CaptureParams {
     population: parsePopulation(params.get('population')),
     foodStyle: parseFoodStyle(params.get('granules')),
     rain: params.get('pluie') === '1',
+    editSelection: parseEditSelection(params.get('edition')),
   };
+}
+
+/** Indice de `edition=` : entier décimal de 0 à 999, sinon `null`. */
+function parseEditSelection(raw: string | null): number | null {
+  return raw !== null && /^\d{1,3}$/.test(raw) ? Number(raw) : null;
 }
 
 function parseSeed(raw: string | null): number {

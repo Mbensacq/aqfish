@@ -27,7 +27,18 @@ describe('parseCaptureParams', () => {
       population: [],
       foodStyle: null,
       rain: false,
+      editSelection: null,
     });
+  });
+
+  it('lit l’élément sélectionné en édition : edition=<indice> (#167)', () => {
+    expect(parseCaptureParams('?capture=1&edition=2').editSelection).toBe(2);
+    expect(parseCaptureParams('?edition=0').editSelection).toBe(0);
+    expect(parseCaptureParams('?edition=999').editSelection).toBe(999);
+    expect(parseCaptureParams('').editSelection).toBeNull();
+    for (const bad of ['', '-1', '1.5', '1000', 'a', ' 2', '0x2']) {
+      expect(parseCaptureParams(`?edition=${encodeURIComponent(bad)}`).editSelection).toBeNull();
+    }
   });
 
   it('lit la pluie : pluie=1 seulement, sinon pas de pluie (#106)', () => {
