@@ -6,6 +6,11 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Captures et `verify` en parallèle : e2e lents en délai dépassé** (cycle 54) : lancer
+  `npm run captures` (port 4310) pendant l'e2e de `verify` partage le processeur ;
+  `anemones-qa` « tentacules rouges… » (1,4 min seul) a alors dépassé son délai de 2 min.
+  Relancer la spec seule avant de conclure à une régression, ou lancer les captures avant
+  ou après l'e2e. (2026-10-23)
 - **Capture « tracé des trajectoires » : `Unable to capture screenshot`** (cycle 51) : avec le
   navigateur 1243 sous le nom 1194 (voir ci-dessous), cette seule capture échoue en local, sur
   `main` comme sur la branche ; les 49 autres passent, et la CI la produit normalement. Ne pas
