@@ -47,8 +47,8 @@ sont décalées d'un sprint ; la phase 3 se resserre pour que **v1.0 reste au sp
 | v0.5 | Le bassin (début) | Livré au sprint 5 : bassin extérieur sélectionnable, koïs aux robes tirées de la graine |
 | v0.6 | Le bassin (suite) | Nénuphars, lotus, feuilles mortes flottantes, pluie, bassin enterré (sol et berge), robes de koïs plus naturelles |
 | v0.7 | Le paludarium | Partie terrestre et aquatique ; amphibiens (axolotl, grenouilles, tritons) et leurs déplacements entre terre et eau |
-| v0.8 | Le récif | Récif marin : coraux, anémones, poissons de récif |
-| v0.9 | L'éditeur | Éditeur de bac et de bassin (dimensions, forme, placement du décor) ; catalogue d'espèces ; backend NestJS : sauvegarde côté serveur et partage (mis en place dès que la phase 2 en a besoin) |
+| v0.8 | Le récif | Livré au sprint 8 : environnement marin, coraux, anémones, poissons-clowns, chirurgiens bleus |
+| v0.9 | L'éditeur | Sprint 9, front seul : édition du décor du bac (ajout, déplacement, bois flotté à collision fine, pose par gravité avec Rapier chargé à la demande), dimensions du bac réglables. Sprint 10 : décor de la pièce (#35), catalogue d'espèces, forme du bassin. Le backend NestJS (sauvegarde serveur, partage) n'est lancé que si une fonctionnalité ne tient pas dans la sauvegarde locale et l'export/import JSON (ADR 0004) |
 
 **Fin de phase 2** : bilan dans le rapport du jour.
 
