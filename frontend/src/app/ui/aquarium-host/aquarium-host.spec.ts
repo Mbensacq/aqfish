@@ -669,7 +669,7 @@ describe('AquariumHost', () => {
       await create('?capture=1&seed=5&environnement=bassin&camera=side');
       expect(host().activePreset()).toBe('side');
       fixture.destroy();
-      await create('?capture=1&seed=5&environnement=recif');
+      await create('?capture=1&seed=5&environnement=lune');
       expect(host().world).toEqual(createDefaultWorld(5));
     });
 
@@ -716,7 +716,7 @@ describe('AquariumHost', () => {
       await create('?seed=2');
       const world = host().world;
       const created = renderers.length;
-      host().setEnvironment('recif');
+      host().setEnvironment('lune');
       host().setEnvironment('constructor');
       host().setEnvironment('tropical');
       expect(host().world).toBe(world);

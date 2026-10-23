@@ -229,7 +229,7 @@ describe('parseWorld : refus', () => {
   });
 
   it('refuse un environnement inconnu, y compris une clé héritée', () => {
-    expect(refusal(parseMutated((d) => (d['environment'] = 'recif')))).toMatch(/environnement/);
+    expect(refusal(parseMutated((d) => (d['environment'] = 'lune')))).toMatch(/environnement/);
     expect(refusal(parseMutated((d) => (d['environment'] = 'constructor')))).toMatch(
       /environnement/,
     );

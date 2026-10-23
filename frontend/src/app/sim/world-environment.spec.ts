@@ -93,7 +93,7 @@ describe('monde et environnement (#87)', () => {
   });
 
   it('refuse un environnement inconnu', () => {
-    expect(() => createWorld(1, [], [], [], 'recif' as EnvironmentId)).toThrow(RangeError);
+    expect(() => createWorld(1, [], [], [], 'lune' as EnvironmentId)).toThrow(RangeError);
     expect(() => createDefaultWorld(1, 'constructor' as EnvironmentId)).toThrow(RangeError);
   });
 

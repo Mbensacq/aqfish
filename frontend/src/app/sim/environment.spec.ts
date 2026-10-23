@@ -108,14 +108,14 @@ describe('environnements', () => {
     expect(isEnvironmentId('tropical')).toBe(true);
     expect(isEnvironmentId('bassin')).toBe(true);
     expect(isEnvironmentId('paludarium')).toBe(true);
-    for (const bad of ['recif', '', 'constructor', 'toString', null, undefined, 3]) {
+    for (const bad of ['lune', '', 'constructor', 'toString', null, undefined, 3]) {
       expect(isEnvironmentId(bad)).toBe(false);
     }
   });
 
   it('environmentById lève pour un environnement inconnu', () => {
     expect(environmentById('bassin')).toBe(POND);
-    expect(() => environmentById('recif' as EnvironmentId)).toThrow(RangeError);
+    expect(() => environmentById('lune' as EnvironmentId)).toThrow(RangeError);
     expect(() => environmentById('constructor' as EnvironmentId)).toThrow(RangeError);
   });
 
