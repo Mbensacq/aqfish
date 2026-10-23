@@ -89,6 +89,15 @@ haut de sa section.
 
 ## Tests
 
+- **E2e qui clique « hors du bac » à droite : l'aide-mémoire ouvert reçoit le clic** (cycle 56,
+  #167) : à 800 px de large, « Commandes » (300 px, ouvert par défaut) recouvre la droite du
+  bac ; un clic projeté à côté du bac tombe sur le panneau et ne désélectionne rien. Replier
+  l'aide-mémoire au début du test. De même, `click()` de Playwright refuse un bouton
+  `aria-disabled="true"` (« element is not enabled ») : `dispatchEvent('click')` pour vérifier
+  qu'il reste sans effet. Chaque clic sur le canvas coûte plusieurs secondes en rendu
+  logiciel : fenêtre réduite et `test.setTimeout(300_000)` dans `editeur-decor.spec.ts`.
+  (2026-10-23)
+
 - **Tests du récif qui parcourent `world.entities` comme s'il n'y avait que des clowns**
   (cycle 53, #151) : avec une deuxième espèce au récif, les tests d'attache (`nearShare`,
   rang → anémone) comptaient les chirurgiens comme des clowns et échouaient (8 % du temps
