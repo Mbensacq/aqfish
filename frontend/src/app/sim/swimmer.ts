@@ -73,7 +73,7 @@ export interface SwimBounds {
   readonly soft: Box3;
   /**
    * Zone de naissance, contenue dans `soft` (voir `SPAWN_MARGINS`) ; pour une espèce de fond,
-   * la tranche de `hard` sous `preferredMaxY`.
+   * la tranche de `hard` entre `preferredMinY` et `preferredMaxY`.
    */
   readonly spawn: Box3;
   /**
@@ -84,6 +84,11 @@ export interface SwimBounds {
   readonly avoid: Box3;
   /** Hauteur au-dessus de laquelle une espèce de fond est tirée vers le bas ; +∞ sinon. */
   readonly preferredMaxY: number;
+  /**
+   * Hauteur au-dessous de laquelle une espèce de mi-hauteur (`depth.minHeightRatio`, issue
+   * #151) est tirée vers le haut ; −∞ sinon.
+   */
+  readonly preferredMinY: number;
 }
 
 const TWO_PI = Math.PI * 2;
@@ -135,7 +140,7 @@ const SCHOOL_SPEED_GAIN = 0.5;
 /**
  * Espèce de fond : au-dessus de `preferredMaxY`, l'inclinaison visée glisse vers la descente
  * en proportion de l'écart, entièrement à partir de `DEPTH_PULL_ZONE` mètres (approximation
- * de jeu).
+ * de jeu) ; de même vers la montée sous `preferredMinY` (espèce de mi-hauteur).
  */
 const DEPTH_PULL_ZONE = 0.03;
 /**
@@ -161,6 +166,12 @@ const SCRATCH_NORMAL: Vec3 = { x: 0, y: 0, z: 0 };
  */
 const SPAWN_MARGINS = [0.05, 0.08] as const;
 
+/** Bornes de profondeur d'une espèce sans préférence (toute la hauteur d'eau). */
+const NO_DEPTH_PREFERENCE = {
+  preferredMaxY: Number.POSITIVE_INFINITY,
+  preferredMinY: Number.NEGATIVE_INFINITY,
+} as const;
+
 /** Bornes de nage d'une espèce dans un volume d'eau donné. */
 export function swimBounds(def: SpeciesDefinition, water: Box3): SwimBounds {
   if (def.walker !== undefined) {
@@ -175,18 +186,26 @@ export function swimBounds(def: SpeciesDefinition, water: Box3): SwimBounds {
   const spawn = def.wallMargin + AVOID_ZONE > SPAWN_MARGINS[0] + SPAWN_MARGINS[1] ? soft : legacy;
   const { depth } = def;
   if (depth === undefined) {
-    return { hard, soft, spawn, avoid: hard, preferredMaxY: Number.POSITIVE_INFINITY };
+    return { hard, soft, spawn, avoid: hard, ...NO_DEPTH_PREFERENCE };
   }
   const preferredMaxY = Math.min(
     hard.maxY,
     Math.max(hard.minY, water.minY + depth.maxHeightRatio * (water.maxY - water.minY)),
   );
+  const preferredMinY =
+    depth.minHeightRatio === undefined
+      ? Number.NEGATIVE_INFINITY
+      : Math.min(
+          preferredMaxY,
+          Math.max(hard.minY, water.minY + depth.minHeightRatio * (water.maxY - water.minY)),
+        );
   return {
     hard,
     soft,
-    spawn: { ...spawn, minY: hard.minY, maxY: preferredMaxY },
+    spawn: { ...spawn, minY: Math.max(hard.minY, preferredMinY), maxY: preferredMaxY },
     avoid: { ...hard, minY: hard.minY - (AVOID_ZONE - Math.min(depth.floorZone, AVOID_ZONE)) },
     preferredMaxY,
+    preferredMinY,
   };
 }
 
@@ -207,7 +226,7 @@ function walkerBounds(def: SpeciesDefinition, water: Box3): SwimBounds {
     minZ: walls.minZ,
     maxZ: walls.maxZ,
   };
-  return { hard, soft: hard, spawn: hard, avoid: hard, preferredMaxY: Number.POSITIVE_INFINITY };
+  return { hard, soft: hard, spawn: hard, avoid: hard, ...NO_DEPTH_PREFERENCE };
 }
 
 /**
@@ -227,7 +246,7 @@ function amphibianBounds(def: SpeciesDefinition, water: Box3): SwimBounds {
     minZ: walls.minZ,
     maxZ: walls.maxZ,
   };
-  return { hard, soft: hard, spawn: hard, avoid: hard, preferredMaxY: Number.POSITIVE_INFINITY };
+  return { hard, soft: hard, spawn: hard, avoid: hard, ...NO_DEPTH_PREFERENCE };
 }
 
 /** Nombre maximal de tirages de la position de naissance hors des obstacles. */
@@ -497,6 +516,10 @@ export function stepFish(
     } else if (fish.y > bounds.preferredMaxY) {
       const pull = Math.min(1, (fish.y - bounds.preferredMaxY) / DEPTH_PULL_ZONE);
       pitchGoal += (-steep - pitchGoal) * pull;
+    } else if (fish.y < bounds.preferredMinY) {
+      // Espèce de mi-hauteur (issue #151) : montée symétrique sous la hauteur minimale.
+      const pull = Math.min(1, (bounds.preferredMinY - fish.y) / DEPTH_PULL_ZONE);
+      pitchGoal += (steep - pitchGoal) * pull;
     }
   }
   if (avoid > 0) {

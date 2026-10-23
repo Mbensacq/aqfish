@@ -6,6 +6,7 @@ import { DEFAULT_DECOR, parseDecor, type DecorItem } from './decor';
 import { assertLilyPadSettings, type LilyPadSettings } from './lily-pads';
 import {
   AXOLOTL,
+  CHIRURGIEN,
   CLOWN,
   CORYDORA,
   GRENOUILLE,
@@ -263,7 +264,8 @@ export const REEF_DIMENSIONS: TankDimensions = { width: 1.5, height: 0.65, depth
 /**
  * Récif marin (épopée v0.8, issue #148) : bac vitré plus grand que le bac tropical, eau d'un
  * bleu franc plus clair en surface, sable corallien clair, quelques roches et des colonies de
- * coraux tirées de la graine (issue #149), des anémones et leurs poissons-clowns (issue #150).
+ * coraux tirées de la graine (issue #149), des anémones et leurs poissons-clowns (issue #150),
+ * des chirurgiens bleus en banc à mi-hauteur (issue #151).
  */
 export const REEF: Environment = {
   id: 'recif',
@@ -274,9 +276,16 @@ export const REEF: Environment = {
   // Teinte d'entrée saturée (bleu néon) : à travers l'eau translucide, l'image retombe sur
   // les deux tons du récif, `eauRecif` (volume) et `eauRecifClaire` (surface).
   water: { body: 'neonBleu', surface: 'neonBleu' },
-  // Violets des coraux (issue #149) et orange des poissons-clowns (issue #150) : absents de la
-  // palette commune.
-  tones: ['eauRecif', 'eauRecifClaire', 'corailViolet', 'corailVioletClair', 'clownOrange'],
+  // Violets des coraux (issue #149), orange des poissons-clowns (issue #150) et bleu des
+  // chirurgiens (issue #151) : absents de la palette commune.
+  tones: [
+    'eauRecif',
+    'eauRecifClaire',
+    'corailViolet',
+    'corailVioletClair',
+    'clownOrange',
+    'chirurgienBleu',
+  ],
   // Sable corallien : blanc cassé ; vu de côté, il reste blanc sous l'eau bleue ; vu de
   // dessus, à travers la surface bleue, il se lit en eau très claire, comme un lagon.
   ground: { top: 'koiBlanc', side: 'sableClair', bottom: 'sableSombre' },
@@ -299,8 +308,8 @@ export const REEF: Environment = {
   bankDecor: null,
   rain: false,
   floatingLeaves: false,
-  species: [CLOWN.id],
-  population: defaultPopulation([CLOWN]),
+  species: [CLOWN.id, CHIRURGIEN.id],
+  population: defaultPopulation([CLOWN, CHIRURGIEN]),
 };
 
 export const ENVIRONMENTS: Readonly<Record<EnvironmentId, Environment>> = {

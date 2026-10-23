@@ -22,10 +22,18 @@ import {
   modelBodyLength,
   SILHOUETTES,
   SLENDER_FISH,
+  SURGEON_FISH,
   voxelSize,
 } from './fish-model';
 import { ENVIRONMENT_IDS, environmentById } from '../sim/environment';
-import { ENVIRONMENT_TONE_NAMES, ENVIRONMENT_TONES, PALETTE_COLORS } from './palette';
+import {
+  ENVIRONMENT_TONE_COLORS,
+  ENVIRONMENT_TONE_NAMES,
+  ENVIRONMENT_TONES,
+  EXTENDED_PALETTE_COLORS,
+  PALETTE,
+  PALETTE_COLORS,
+} from './palette';
 
 const UNIT = { x: 1, y: 1, z: 1 };
 
@@ -86,6 +94,61 @@ describe('poisson-clown (#150)', () => {
         40,
       );
     }
+  });
+});
+
+describe('chirurgien bleu (#151)', () => {
+  /** Distance euclidienne en sRGB 8 bits. */
+  const distance = (a: string, b: string): number => {
+    const rgb = (hex: string): number[] => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+    const [p, q] = [rgb(a), rgb(b)];
+    return Math.hypot(p[0] - q[0], p[1] - q[1], p[2] - q[2]);
+  };
+  const blue = SPECIES.chirurgien.colors.stripe;
+
+  it('bleu roi `chirurgienBleu`, ton du récif ; marque noire, caudale jaune', () => {
+    expect(blue).toBe(ENVIRONMENT_TONES.chirurgienBleu);
+    expect(SPECIES.chirurgien.colors.back).toBe(blue);
+    expect(SPECIES.chirurgien.colors.belly).toBe(blue);
+    expect(SPECIES.chirurgien.colors.accent).toBe(PALETTE.koiNoir);
+    expect(SPECIES.chirurgien.colors.fin).toBe(PALETTE.poissonJaune);
+    expect(SPECIES.chirurgien.silhouette).toBe('chirurgien');
+    expect(SILHOUETTES.chirurgien).toBe(SURGEON_FISH);
+  });
+
+  it('distinct de l’eau du récif et du bleu des néons, de jour comme sous les tons de nuit', () => {
+    // Mesures (sRGB 8 bits) : eauRecif ≈ 75, eauRecifClaire ≈ 97, neonBleu ≈ 124.
+    expect(distance(blue, ENVIRONMENT_TONES.eauRecif)).toBeGreaterThan(60);
+    expect(distance(blue, ENVIRONMENT_TONES.eauRecifClaire)).toBeGreaterThan(80);
+    expect(distance(blue, PALETTE.neonBleu)).toBeGreaterThan(100);
+    // Aucune couleur de la palette étendue (nuit, crépuscule) ni autre ton n'en est proche :
+    // la passe ne peut pas le confondre avec elles.
+    for (const hex of [...EXTENDED_PALETTE_COLORS, ...ENVIRONMENT_TONE_COLORS]) {
+      if (hex !== blue) {
+        expect(distance(blue, hex), hex).toBeGreaterThan(60);
+      }
+    }
+  });
+
+  it('silhouette : hautes nageoires bleues, marque noire sur le haut du flanc, pédoncule jaune', () => {
+    const body = SURGEON_FISH.body;
+    const voxels = body.join('').replace(/\./g, '');
+    // Nageoires dorsale (rangées du haut) et anale (rangées du bas) bleues : le corps est
+    // plus haut que long d'un tiers au moins (7 rangées pour 14 colonnes, voxels de 0,75).
+    expect(body[0]).toMatch(/^[.k]+$/);
+    expect(body.at(-1)).toMatch(/^[.b]+$/);
+    expect(body.length * 0.75).toBeGreaterThanOrEqual(body[0].length / 3);
+    // Marque noire présente mais minoritaire (noir dominant sur les clowns, cf. #161).
+    const black = [...voxels].filter((c) => c === 'a').length;
+    expect(black).toBeGreaterThanOrEqual(8);
+    expect(black / voxels.length).toBeLessThan(0.25);
+    // Pédoncule et caudale jaunes : premières colonnes du flanc et toute la queue.
+    for (const row of [2, 3, 4]) {
+      expect(body[row].slice(0, 2)).toBe('ff');
+    }
+    expect(SURGEON_FISH.tail.join('').replace(/\./g, '')).toMatch(/^f+$/);
+    // L'œil, noir, est à l'avant.
+    expect(body.some((row) => row.endsWith('e'))).toBe(true);
   });
 });
 

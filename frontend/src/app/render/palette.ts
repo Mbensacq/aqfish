@@ -141,6 +141,11 @@ export const ENVIRONMENT_TONES = {
    * coraux (`koiOrange`, `tritonOrange`), dont il doit se distinguer.
    */
   clownOrange: '#ff6d00',
+  /**
+   * Chirurgien bleu (issue #151) : bleu roi, plus sombre et plus saturé que l'eau du récif
+   * (`eauRecif`, `eauRecifClaire`) et que `neonBleu`, dont il doit se distinguer.
+   */
+  chirurgienBleu: '#1d3fbf',
 } as const;
 
 export type NightToneName = keyof typeof NIGHT_TONES;

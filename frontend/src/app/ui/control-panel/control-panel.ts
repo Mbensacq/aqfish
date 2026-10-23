@@ -70,14 +70,15 @@ export interface PopulationRequest {
 
 /**
  * Nom d'une espèce au pluriel, en minuscules (« néons », « guppys », « corydoras ») ; chaque
- * mot d'un nom composé prend la marque (« poissons-clowns », #150).
+ * mot d'un nom composé prend la marque (« poissons-clowns », #150 ; « chirurgiens bleus »,
+ * #151).
  */
 export function speciesPlural(species: SpeciesId): string {
   return SPECIES[species].name
     .toLowerCase()
-    .split('-')
-    .map((word) => `${word}s`)
-    .join('-');
+    .split(/([ -])/)
+    .map((word) => (word === ' ' || word === '-' ? word : `${word}s`))
+    .join('');
 }
 
 /**

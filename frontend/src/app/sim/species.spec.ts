@@ -73,6 +73,18 @@ describe('validateSpecies : préférence de profondeur', () => {
     expect(validateSpecies(withDepth({ floorZone })).join()).toContain('floorZone');
   });
 
+  // Hauteur minimale (espèce de mi-hauteur, #151) : dans [0, maxHeightRatio).
+  it.each([-0.01, 0.12, 0.5, Number.NaN])(
+    'refuse minHeightRatio = %s (maxHeightRatio = 0,12)',
+    (minHeightRatio) => {
+      expect(validateSpecies(withDepth({ minHeightRatio })).join()).toContain('minHeightRatio');
+    },
+  );
+
+  it.each([0, 0.05, undefined])('accepte minHeightRatio = %s', (minHeightRatio) => {
+    expect(validateSpecies(withDepth({ minHeightRatio }))).toEqual([]);
+  });
+
   it('accepte floorZone = MAX_FLOOR_ZONE et ascentRate = 0', () => {
     expect(validateSpecies(withDepth({ floorZone: MAX_FLOOR_ZONE, ascentRate: 0 }))).toEqual([]);
   });

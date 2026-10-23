@@ -253,6 +253,30 @@ export const CLOWN_FISH: FishTemplate = {
   tailDepth: 1,
 };
 
+/**
+ * Chirurgien bleu (issue #151) : corps ovale, haut et plat (2 voxels d'épaisseur), bleu roi
+ * (`s`, `k`, `b`), hautes nageoires dorsale (`k`) et anale (`b`) dans le prolongement du
+ * corps, marque noire (`a`) en « palette » de l'œil au pédoncule le long du haut du flanc,
+ * pédoncule et caudale en croissant jaunes (`f`). Peu de noir dans le gabarit (cf. #161 : noir
+ * dominant sur les petits poissons) : le bleu roi, sombre et saturé, détache seul la
+ * silhouette de l'eau du récif.
+ */
+export const SURGEON_FISH: FishTemplate = {
+  body: [
+    // queue → tête
+    '.....kkkkk....',
+    '...kkkkkkkkk..',
+    'ffaaaaaaaskkk.',
+    'ffsaaaaaaaasse',
+    'ffssssssssssss',
+    '..bbbbbbbbbbb.',
+    '....bbbbbb....',
+  ],
+  tail: ['ff.', '.ff', '.ff', '.ff', 'ff.'],
+  bodyDepth: 2,
+  tailDepth: 1,
+};
+
 /** Gabarit de chaque silhouette déclarée par les espèces (`sim/species.ts`). */
 export const SILHOUETTES: Readonly<Record<SilhouetteId, FishTemplate>> = {
   fuseau: SLENDER_FISH,
@@ -264,6 +288,7 @@ export const SILHOUETTES: Readonly<Record<SilhouetteId, FishTemplate>> = {
   grenouille: FROG_FISH,
   triton: NEWT_FISH,
   clown: CLOWN_FISH,
+  chirurgien: SURGEON_FISH,
 };
 
 /** Proportions des voxels : hauteur et épaisseur relatives à la longueur d'un voxel. */

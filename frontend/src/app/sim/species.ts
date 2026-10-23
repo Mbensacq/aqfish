@@ -9,7 +9,15 @@
 
 /** Identifiant d'espèce, stable (sérialisé dans l'état du monde). */
 export type SpeciesId =
-  'neon' | 'guppy' | 'corydora' | 'koi' | 'axolotl' | 'grenouille' | 'triton' | 'clown';
+  | 'neon'
+  | 'guppy'
+  | 'corydora'
+  | 'koi'
+  | 'axolotl'
+  | 'grenouille'
+  | 'triton'
+  | 'clown'
+  | 'chirurgien';
 
 /**
  * Silhouette voxel d'une apparence : le rendu associe à chaque identifiant un gabarit de
@@ -25,6 +33,7 @@ export const SILHOUETTE_IDS = [
   'grenouille',
   'triton',
   'clown',
+  'chirurgien',
 ] as const;
 export type SilhouetteId = (typeof SILHOUETTE_IDS)[number];
 
@@ -74,11 +83,17 @@ export interface SchoolingParams {
 }
 
 /**
- * Préférence de profondeur d'une espèce de fond (`stepFish`, `sim/swimmer.ts`) : au-dessus de
- * `maxHeightRatio`, l'inclinaison visée est tirée vers le bas ; de temps en temps, une brève
- * remontée vers la surface.
+ * Préférence de profondeur (`stepFish`, `sim/swimmer.ts`) : au-dessus de `maxHeightRatio`,
+ * l'inclinaison visée est tirée vers le bas ; sous `minHeightRatio` (s'il est donné), vers le
+ * haut (espèce de mi-hauteur, issue #151) ; de temps en temps, une brève remontée vers la
+ * surface.
  */
 export interface DepthPreference {
+  /**
+   * Hauteur minimale préférée du centre au-dessus du sable, en fraction de la hauteur d'eau,
+   * dans [0, maxHeightRatio) ; absent : aucune (espèce de fond).
+   */
+  readonly minHeightRatio?: number;
   /**
    * Hauteur maximale préférée du centre au-dessus du sable, en fraction de la hauteur d'eau,
    * dans (0, 1).
@@ -845,6 +860,71 @@ export const CLOWN: SpeciesDefinition = {
   anemone: { leashRadius: 0.08, refugeRadius: 0.25, refugeDuration: 5, perAnemone: 4 },
 };
 
+/**
+ * Chirurgien bleu (Paracanthurus hepatus), récif marin (docs/DA.md), issue #151.
+ *
+ * - Robe : bleu roi `chirurgienBleu` (ton du récif, ADR 0039 : plus sombre et plus saturé
+ *   que l'eau du récif, `eauRecif` et `eauRecifClaire`, et que `neonBleu`), marque noire
+ *   (`koiNoir`) en « palette » sur le flanc, caudale et pédoncule jaunes (`poissonJaune`).
+ *   Robe unique.
+ * - `bodyLength` (11 cm) : **approximation de jeu**, plus grand que le poisson-clown (8 cm)
+ *   comme dans la nature (ordre de grandeur réel : une vingtaine de centimètres pour un
+ *   adulte ; référence à consulter : FishBase, Paracanthurus hepatus ; non vérifiée ici).
+ * - Nage en pleine eau, en petits groupes lâches (comportement connu, décrit
+ *   qualitativement) : plus rapide que le clown, banc lâche (séparation sur ~1 longueur,
+ *   cohésion modérée), mi-hauteur (tiré vers le bas au-dessus de 60 % de la hauteur d'eau,
+ *   vers le haut sous 40 %, sans remontée) : **approximations de jeu**.
+ */
+export const CHIRURGIEN: SpeciesDefinition = {
+  id: 'chirurgien',
+  name: 'Chirurgien bleu',
+  scientificName: 'Paracanthurus hepatus',
+  bodyLength: 0.11,
+  cruiseSpeed: 0.06,
+  minSpeed: 0.03,
+  maxSpeed: 0.13,
+  wanderTurnRate: 0.8,
+  avoidTurnRate: 2.5,
+  maxPitch: 0.35,
+  wallMargin: 0.06,
+  tailBeatFrequency: 2,
+  defaultPopulation: 4,
+  maxPopulation: 10,
+  schooling: {
+    neighborRadius: 0.4,
+    separationRadius: 0.12,
+    separationWeight: 1.2,
+    alignmentWeight: 0.6,
+    cohesionWeight: 0.5,
+    turnRate: 1.2,
+    minDistance: 0.07,
+  },
+  silhouette: 'chirurgien',
+  colors: {
+    stripe: '#1d3fbf',
+    accent: '#1c1c22',
+    back: '#1d3fbf',
+    belly: '#1d3fbf',
+    fin: '#ffd166',
+    eye: '#1c1c22',
+  },
+  // Mange en pleine eau : approximations de jeu.
+  feeding: {
+    hungerRate: 1 / 180,
+    perceptionRadius: 0.3,
+    turnRate: 2.2,
+    minHeightRatio: 0.2,
+    maxHeightRatio: 1,
+  },
+  depth: {
+    minHeightRatio: 0.4,
+    maxHeightRatio: 0.6,
+    floorZone: 0.07, // portée commune des parois (`MAX_FLOOR_ZONE`)
+    ascentRate: 0,
+    ascentDuration: 1,
+  },
+};
+
 /** Toutes les espèces connues, par identifiant (ordre de déclaration = ordre de peuplement). */
 export const SPECIES: Readonly<Record<SpeciesId, SpeciesDefinition>> = {
   neon: NEON,
@@ -855,6 +935,7 @@ export const SPECIES: Readonly<Record<SpeciesId, SpeciesDefinition>> = {
   grenouille: GRENOUILLE,
   triton: TRITON,
   clown: CLOWN,
+  chirurgien: CHIRURGIEN,
 };
 
 /** Apparences d'une espèce : ses `variants`, ou son apparence par défaut seule. */
@@ -1152,6 +1233,14 @@ export const MAX_FLOOR_ZONE = 0.07;
 
 function validateDepth(depth: DepthPreference): string[] {
   const problems: string[] = [];
+  if (
+    depth.minHeightRatio !== undefined &&
+    !(depth.minHeightRatio >= 0 && depth.minHeightRatio < depth.maxHeightRatio)
+  ) {
+    problems.push(
+      `depth.minHeightRatio doit être dans [0, maxHeightRatio) (reçu : ${depth.minHeightRatio})`,
+    );
+  }
   if (!(depth.maxHeightRatio > 0 && depth.maxHeightRatio < 1)) {
     problems.push(`depth.maxHeightRatio doit être dans (0, 1) (reçu : ${depth.maxHeightRatio})`);
   }
