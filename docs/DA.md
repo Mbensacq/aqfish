@@ -41,7 +41,7 @@ la passe de post-traitement y ramène chaque pixel affiché (ADR 0007).
 | Amphibiens              | axolotl rose `#f7b2bd`, grenouille `#7bc950`, triton `#e07a2f`                         |
 | Fleurs                  | nénuphar rose `#f06a9b`, cœur `#ffb703`                                                |
 | Interface               | fond `#141418` (translucide), texte `#e8e6e3`, accent `#5fbfa3`                        |
-| Récif (tons d'environnement) | eau `#3f7597`, eau sous la surface `#4796cb`, corail violet `#7d4fb8` et `#b58be6`, poisson-clown `#ff6d00` |
+| Récif (tons d'environnement) | eau `#3f7597`, eau sous la surface `#4796cb`, corail violet `#7d4fb8` et `#b58be6`, poisson-clown `#ff6d00`, chirurgien `#1d3fbf` |
 
 ## Environnements visés
 
@@ -115,6 +115,12 @@ corps ovale orange vif (`clownOrange` #ff6d00, ton du récif, plus rouge et plus
 les oranges des coraux), trois bandes blanches (`koiBlanc`) cerclées de noir (`koiNoir`) :
 derrière l'œil, au milieu du corps, au pédoncule ; caudale arrondie bordée de noir. Robe
 unique, petit groupe lâche au-dessus de son anémone.
+
+Les **chirurgiens bleus** du récif (#151, ADR 0042) : corps ovale, haut et plat, bleu roi
+(`chirurgienBleu` #1d3fbf, ton du récif, plus sombre et plus saturé que l'eau et que le bleu
+néon), hautes nageoires dorsale et anale bleues, marque noire (`koiNoir`) de l'œil au
+pédoncule sur le haut du flanc, pédoncule et caudale en croissant jaunes (`poissonJaune`).
+Plus grands que les clowns ; banc lâche de 3 à 5 à mi-hauteur, au-dessus des coraux.
 
 Les rochers (ADR 0015) : voxels de 1,2 cm (à l'échelle 1) en couleurs plates, dessus
 `roche` parfois poudré de `sableOmbre`, flancs `roche` tachés de `rocheSombre`, rangée du bas

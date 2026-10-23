@@ -84,6 +84,15 @@ haut de sa section.
 
 ## Tests
 
+- **Tests du récif qui parcourent `world.entities` comme s'il n'y avait que des clowns**
+  (cycle 53, #151) : avec une deuxième espèce au récif, les tests d'attache (`nearShare`,
+  rang → anémone) comptaient les chirurgiens comme des clowns et échouaient (8 % du temps
+  près de « leur » anémone). Filtrer par espèce (`clowns(world)`, `sim/anemones.spec.ts`)
+  plutôt que supposer la population d'un environnement. (2026-10-23)
+- **Les poissons n'ont pas de coque de contour** (cycle 53) : contrairement au décor, aucun
+  liseré n'entoure les poissons ; le noir visible sur un clown vient de son gabarit (`e`,
+  `a`). Pour détacher un poisson de l'eau, jouer sur sa couleur (contraste avec les tons de
+  l'eau), pas sur un contour. (2026-10-23)
 - **`npm run verify` lancé en arrière-plan pendant qu'on modifie le code** (cycle 48) : les
   e2e passent par `ng serve`, qui recompile à chaque enregistrement ; un `verify` « de
   santé de `main` » lancé avant de coder teste en réalité le code en cours d'écriture, et son
