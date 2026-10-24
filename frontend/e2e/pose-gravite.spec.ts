@@ -4,9 +4,11 @@ import { DEFAULT_DECOR, type DecorItem } from '../src/app/sim/decor';
 import { isDecorPoseAllowed } from '../src/app/sim/decor-edit';
 import { SAND_THICKNESS } from '../src/app/sim/tank';
 import {
+  blockEngine,
   clickTank,
   count,
   dragTank,
+  ENGINE_MARKER,
   FREE_SAND,
   host,
   openScene,
@@ -22,8 +24,6 @@ import {
  * Le fragment du moteur se reconnaît à son WebAssembly embarqué en base64 (en-tête `\0asm`).
  */
 
-const WASM_BASE64 = 'AGFzbQ';
-
 /** Signale chaque script reçu qui contient le moteur. */
 function watchEngine(page: Page): { loaded: () => boolean } {
   let loaded = false;
@@ -32,7 +32,7 @@ function watchEngine(page: Page): { loaded: () => boolean } {
       return;
     }
     try {
-      if ((await response.text()).includes(WASM_BASE64)) {
+      if ((await response.text()).includes(ENGINE_MARKER)) {
         loaded = true;
       }
     } catch {
@@ -100,15 +100,8 @@ test.describe('Pose par gravité (#170)', () => {
   });
 
   test('moteur inaccessible : posé sur le sable, avec un message', async ({ page }) => {
-    // Hors ligne pour le moteur seulement : tout script qui le contient est refusé.
-    await page.route(/\.m?js(\?|$)/, async (route) => {
-      const response = await route.fetch();
-      if ((await response.text()).includes(WASM_BASE64)) {
-        await route.abort('internetdisconnected');
-      } else {
-        await route.fulfill({ response });
-      }
-    });
+    // Hors ligne pour le moteur seulement.
+    await blockEngine(page);
     const errors = await openScene(page, '?seed=42');
     await startEditing(page);
     await expect(host(page)).toHaveAttribute('data-aqfish-decor-physics', 'indisponible', {

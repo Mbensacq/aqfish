@@ -149,3 +149,21 @@ export async function touchDragTank(
     [x0, y0, x1, y1],
   );
 }
+
+/**
+ * Début de `\0asm` (en-tête WebAssembly) en base64 : marque le fragment du moteur de chute
+ * (Rapier, WebAssembly embarqué, #170).
+ */
+export const ENGINE_MARKER = 'AGFzbQ';
+
+/** Coupe l'accès au moteur de chute (hors ligne) : tout script qui le contient est refusé. */
+export async function blockEngine(page: Page): Promise<void> {
+  await page.route(/\.m?js(\?|$)/, async (route) => {
+    const response = await route.fetch();
+    if ((await response.text()).includes(ENGINE_MARKER)) {
+      await route.abort('internetdisconnected');
+    } else {
+      await route.fulfill({ response });
+    }
+  });
+}
