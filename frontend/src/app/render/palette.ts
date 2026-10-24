@@ -113,7 +113,7 @@ export const TWILIGHT_TONES = {
   /** Sable à la fin du crépuscule : mauve (plus saturé depuis l'issue #81). */
   sableCrepusculeMauve: '#786884',
   /** Côtés du sable à la fin du crépuscule : brun rosé. */
-  sableCrepusculeOmbre: '#62524f',
+  sableCrepusculeOmbre: '#6c5850',
   /** Eau du crépuscule : bleu-vert profond. */
   eauCrepuscule: '#395f68',
   /** Haut de l'eau au crépuscule. */

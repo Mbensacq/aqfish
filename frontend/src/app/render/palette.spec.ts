@@ -166,6 +166,8 @@ describe('Tons de nuit et du crépuscule (issue #73, ADR 0021)', () => {
     // À 18 h, faces de rocher éclairées et à l'ombre.
     expect(nameAt(hexToRgb('#6a535d'), 18)).toBe('rocheCrepuscule');
     expect(nameAt(hexToRgb('#42333a'), 18)).toBe('rocheCrepusculeSombre');
+    // Côté du sable à 18 h : brun rosé, pas la roche grise.
+    expect(nameAt(hexToRgb('#7d6054'), 18)).toBe('sableCrepusculeOmbre');
     // Les tons du sable de 19 h sont saturés : plus d'écart entre canaux que la roche grise.
     const spread = (hex: string) => {
       const [r, g, b] = hexToRgb(hex);
