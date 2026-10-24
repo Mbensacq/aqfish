@@ -16,6 +16,7 @@ import {
 import { FOOD_MAX_FLOAT_SECONDS, FOOD_MIN_FLOAT_SECONDS, FOOD_SINK_SPEED, MAX_FOOD } from './food';
 import type { FoodPellet } from './food';
 import { isSpeciesId, MAX_TOTAL_FISH } from './population';
+import { clampRoom, DEFAULT_ROOM, readRoom, roomData, type Room } from './room';
 import { DEFAULT_SIM_SPEED, isSimSpeed, type SimSpeed } from './sim-speed';
 import { SPECIES, type SpeciesId } from './species';
 import type { Fish } from './swimmer';
@@ -95,13 +96,20 @@ export interface SaveSettings {
    * `DEFAULT_FOOD_STYLE` ; toujours présent dans une sauvegarde écrite et relue.
    */
   readonly foodStyle?: FoodStyle;
+  /**
+   * Pièce autour du bac (issue #187, ADR 0048). Facultative : absente (anciennes
+   * sauvegardes), c'est `DEFAULT_ROOM` (masquée) ; toujours présente dans une sauvegarde
+   * écrite et relue.
+   */
+  readonly room?: Room;
 }
 
-/** Réglages par défaut (vitesse ×1, départ à midi, heure en marche, granulés en points). */
+/** Réglages par défaut (vitesse ×1, départ à midi, heure en marche, granulés en points, pièce masquée). */
 export const DEFAULT_SAVE_SETTINGS: SaveSettings = {
   speed: DEFAULT_SIM_SPEED,
   clock: DEFAULT_DAY_CLOCK,
   foodStyle: DEFAULT_FOOD_STYLE,
+  room: DEFAULT_ROOM,
 };
 
 /** Poisson enregistré : tous les champs de `Fish` sauf `kind` (toujours `fish`). */
@@ -211,6 +219,7 @@ export function saveData(world: World, settings: SaveSettings = DEFAULT_SAVE_SET
         frozen: settings.clock.frozen,
       },
       foodStyle: settings.foodStyle ?? DEFAULT_FOOD_STYLE,
+      room: roomData(clampRoom(settings.room ?? DEFAULT_ROOM)),
     },
   };
 }
@@ -376,7 +385,14 @@ function parseSettings(value: unknown, problems: string[]): SaveSettings | null 
     foodStyle: foodStyle as FoodStyle | undefined,
   };
   const found = settingsProblems(settings);
-  if (found.length > 0) {
+  // Pièce (#187) : absente, masquée ; présente, validée et bornée (`readRoom`).
+  const roomValue = own(value, 'room');
+  const room =
+    roomValue === undefined ? { ok: true as const, room: DEFAULT_ROOM } : readRoom(roomValue);
+  if (!room.ok) {
+    found.push(room.error);
+  }
+  if (found.length > 0 || !room.ok) {
     problems.push(...found);
     return null;
   }
@@ -388,6 +404,7 @@ function parseSettings(value: unknown, problems: string[]): SaveSettings | null 
       settings.clock.frozen,
     ),
     foodStyle: settings.foodStyle ?? DEFAULT_FOOD_STYLE,
+    room: room.room,
   };
 }
 
@@ -414,6 +431,12 @@ function settingsProblems(settings: SaveSettings): string[] {
   }
   if (settings.foodStyle !== undefined && !isFoodStyle(settings.foodStyle)) {
     problems.push(`rendu des granulés inconnu (${describe(settings.foodStyle)})`);
+  }
+  if (settings.room !== undefined) {
+    const room = readRoom(settings.room);
+    if (!room.ok) {
+      problems.push(room.error);
+    }
   }
   return problems;
 }

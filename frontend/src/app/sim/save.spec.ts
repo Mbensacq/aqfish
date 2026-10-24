@@ -21,6 +21,7 @@ import {
   type ParseWorldResult,
   type SaveSettings,
 } from './save';
+import { DEFAULT_ROOM } from './room';
 import { CHIRURGIEN } from './species';
 import { sphereObstacle } from './obstacles';
 import {
@@ -167,11 +168,12 @@ describe('serializeWorld / parseWorld : aller-retour', () => {
     );
   });
 
-  it('restitue les réglages de vitesse, d’heure et de rendu des granulés', () => {
+  it('restitue les réglages de vitesse, d’heure, de rendu des granulés et de la pièce', () => {
     const settings: SaveSettings = {
       speed: 4,
       clock: createDayClock(18.5, 1200, true),
       foodStyle: 'voxels',
+      room: { shown: true, cabinetHeight: 0.9 },
     };
     const { settings: back } = restored(
       parseWorld(serializeWorld(createDefaultWorld(1), settings)),
@@ -283,6 +285,80 @@ describe('serializeWorld / parseWorld : aller-retour', () => {
     }
     const bad = { ...DEFAULT_SAVE_SETTINGS, foodStyle: 'cubes' } as unknown as SaveSettings;
     expect(() => serializeWorld(createWorld(1), bad)).toThrow(/granulés/);
+  });
+
+  it('pièce masquée si le réglage n’est pas donné, à l’écriture comme à la relecture (#187)', () => {
+    const settings: SaveSettings = { speed: 2, clock: createDayClock(9, 1200, false) };
+    const data = saveData(createDefaultWorld(1), settings);
+    expect(data.settings.room).toEqual(DEFAULT_ROOM);
+    expect(restored(parseSaveData(structuredClone(data))).settings.room).toEqual(DEFAULT_ROOM);
+  });
+
+  it('accepte une ancienne sauvegarde sans pièce : pièce masquée, même schéma (#187)', () => {
+    const data = structuredClone(saveData(createDefaultWorld(3))) as unknown as {
+      schema: number;
+      settings: Record<string, unknown>;
+    };
+    delete data.settings['room'];
+    expect(data.schema).toBe(SAVE_SCHEMA);
+    const { settings, world } = restored(parseSaveData(data));
+    expect(settings.room).toEqual(DEFAULT_ROOM);
+    expect(world.entities.length).toBeGreaterThan(0);
+  });
+
+  it('borne une hauteur de meuble hors bornes, à l’écriture comme à la lecture (#187)', () => {
+    const data = structuredClone(saveData(createDefaultWorld(3))) as unknown as {
+      settings: Record<string, unknown>;
+    };
+    data.settings['room'] = { shown: true, cabinetHeight: 7 };
+    expect(restored(parseSaveData(data)).settings.room).toEqual({ shown: true, cabinetHeight: 1 });
+    data.settings['room'] = { shown: false, cabinetHeight: -3 };
+    expect(restored(parseSaveData(data)).settings.room).toEqual({
+      shown: false,
+      cabinetHeight: 0.6,
+    });
+    const written = saveData(createDefaultWorld(3), {
+      ...DEFAULT_SAVE_SETTINGS,
+      room: { shown: true, cabinetHeight: 0.73 },
+    });
+    expect(written.settings.room).toEqual({ shown: true, cabinetHeight: 0.75 });
+  });
+
+  it('refuse une pièce mal formée, à l’écriture comme à la lecture (#187)', () => {
+    for (const room of [
+      null,
+      'oui',
+      1,
+      [],
+      {},
+      { shown: 'true' },
+      { shown: true, cabinetHeight: '0.8' },
+    ]) {
+      const data = structuredClone(saveData(createDefaultWorld(3))) as unknown as {
+        settings: Record<string, unknown>;
+      };
+      data.settings['room'] = room;
+      const result = parseSaveData(data);
+      expect(result.ok, JSON.stringify(room)).toBe(false);
+      if (!result.ok) {
+        expect(result.error).toMatch(/pièce/);
+      }
+    }
+    const bad = { ...DEFAULT_SAVE_SETTINGS, room: { shown: 1 } } as unknown as SaveSettings;
+    expect(() => serializeWorld(createWorld(1), bad)).toThrow(/pièce/);
+  });
+
+  it('ignore les champs inconnus et hérités de la pièce (#187)', () => {
+    const data = JSON.parse(serializeWorld(createDefaultWorld(3))) as {
+      settings: Record<string, unknown>;
+    };
+    data.settings['room'] = JSON.parse(
+      '{"shown":true,"couleur":"rouge","__proto__":{"cabinetHeight":0.9}}',
+    );
+    expect(restored(parseWorld(JSON.stringify(data))).settings.room).toEqual({
+      shown: true,
+      cabinetHeight: DEFAULT_ROOM.cabinetHeight,
+    });
   });
 
   it('refuse d’écrire des réglages invalides', () => {
