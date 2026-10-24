@@ -164,6 +164,34 @@ test.describe('Sauvegarde (#70)', () => {
     expect(errors).toEqual([]);
   });
 
+  // #171 : les dimensions du bac passent par le fichier JSON ; hors bornes elles sont bornées,
+  // hors du bac tropical le fichier est refusé et le bac reste inchangé.
+  test('import : dimensions bornées, refusées hors du bac tropical (#171)', async ({ page }) => {
+    const errors = await open(page);
+    await openPanel(page);
+    const base = JSON.parse(serializeWorld(createDefaultWorld(42)));
+
+    await fileInput(page).setInputFiles(
+      jsonFile(
+        'bac.json',
+        JSON.stringify({ ...base, dimensions: { width: 9, height: 0.1, depth: 0.45 } }),
+      ),
+    );
+    await expect(message(page)).toHaveText('Aquarium importé.');
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-tank', '2:0.5:0.45');
+
+    const pond = JSON.parse(serializeWorld(createDefaultWorld(7, 'bassin')));
+    await fileInput(page).setInputFiles(
+      jsonFile(
+        'bassin.json',
+        JSON.stringify({ ...pond, dimensions: { width: 1, height: 0.6, depth: 0.5 } }),
+      ),
+    );
+    await expect(page.getByRole('alert')).toContainText('Import refusé');
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-tank', '2:0.5:0.45');
+    expect(errors).toEqual([]);
+  });
+
   // #101 : à 1280 × 720 (capture `front-panneau`), les boutons étaient rognés au bas du
   // panneau et demandaient un défilement. Ils doivent tenir entiers sans défiler, et le
   // panneau rester au-dessus de la barre des préréglages (à 390 px aussi, avec défilement).
