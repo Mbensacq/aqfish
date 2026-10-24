@@ -327,6 +327,28 @@ test.describe('Éditeur de décor : déplacer, tourner, redimensionner (#168)', 
         .toBeCloseTo(rock.scale - 0.25, 6);
       expect(errors).toEqual([]);
     });
+
+    test('lâcher un rocher sur un autre : la pose est refusée, il revient à sa place', async ({
+      page,
+    }) => {
+      const errors = await openScene(page);
+      await startEditing(page);
+      const target = DEFAULT_DECOR[3];
+      await dragTank(page, ROCK_2, [target.x, SAND_THICKNESS + 0.03, target.z]);
+      await expect(host(page)).toHaveAttribute('data-aqfish-decor-selected', '2');
+      // Sauvegarde écrite à chaque modification : à défaut, on valide l'état après un geste
+      // suivant, valide celui-là (déplacement vers le sable libre devant).
+      await dragTank(page, ROCK_2, [FREE_SAND_2[0], SAND_THICKNESS + 0.03, FREE_SAND_2[2]]);
+      await expect
+        .poll(async () => (await savedDecor(page))[2].z, { timeout: 60_000 })
+        .toBeGreaterThan(DEFAULT_DECOR[2].z + 0.05);
+      // Le rocher visé n'a pas bougé et aucun élément n'a été ajouté ni retiré.
+      const saved = await savedDecor(page);
+      expect(saved[3].x).toBeCloseTo(target.x, 6);
+      expect(saved[3].z).toBeCloseTo(target.z, 6);
+      expect(saved).toHaveLength(DEFAULT_DECOR.length);
+      expect(errors).toEqual([]);
+    });
   });
 
   test.describe('au toucher, 390 × 844', () => {
