@@ -257,11 +257,6 @@ export function applyPopulation(
 }
 
 /**
- * Ajoute au décor du monde les bois flottés de `bois=` (#169), dans l'ordre de l'URL. Un bois
- * invalide (hors du bac de l'environnement, échelle hors bornes, graine invalide) est ignoré,
- * de même que ceux qui dépassent `MAX_DECOR_ITEMS`. Sans bois valide, le monde est inchangé.
- */
-/**
  * Pièce `room` garnie des éléments de `meubles=` (#188), lâchés dans l'ordre autour d'un bac
  * `dims` (`dropRoomItem`) ; type inconnu ou pose refusée : élément ignoré. Nouvel objet.
  */
@@ -283,6 +278,11 @@ export function applyCaptureFurniture(
   return current;
 }
 
+/**
+ * Ajoute au décor du monde les bois flottés de `bois=` (#169), dans l'ordre de l'URL. Un bois
+ * invalide (hors du bac de l'environnement, échelle hors bornes, graine invalide) est ignoré,
+ * de même que ceux qui dépassent `MAX_DECOR_ITEMS`. Sans bois valide, le monde est inchangé.
+ */
 export function applyCaptureWoods(world: MutableWorld, woods: readonly CaptureWood[]): void {
   const dims = placeDimensions(world);
   const added = woods

@@ -80,8 +80,6 @@ test.describe('Captures', () => {
     expect(errors).toEqual([]);
   });
 
-  // Cycle jour/nuit (issue #51) : captures supplémentaires à heure figée (`heure=`). Les
-  // captures ci-dessus, sans `heure=`, sont à midi et restent inchangées.
   // Éléments de la pièce (#188), à gauche du bac : visibles en vue trois-quarts.
   const SHELF = 'etagere:-1.25:-0.17:0';
   const PLANT_ON_SHELF = 'plante-pot:-1.4:-0.17:0';
@@ -89,6 +87,8 @@ test.describe('Captures', () => {
   const SOFA = 'canape:-1.7:0.6:1';
   const PLANT = 'plante-pot:-1:0.3:0';
   const PLANT_ON_TABLE = 'plante-pot:-1.25:0.55:0';
+  // Cycle jour/nuit (issue #51) : captures supplémentaires à heure figée (`heure=`). Les
+  // captures ci-dessus, sans `heure=`, sont à midi et restent inchangées.
   const DAY_CAPTURES = [
     { name: 'three-quarter-crepuscule', query: 'heure=18' },
     // Fin du crépuscule (#73) : teintes chaudes avant la nuit.
