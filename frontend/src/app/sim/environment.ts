@@ -404,18 +404,43 @@ export function placeDimensions(place: Place): TankDimensions {
 }
 
 /**
+ * Clés déjà construites, par objet `dimensions` (#185) : la clé d'un monde redimensionné est
+ * lue à chaque pas, son objet `dimensions` ne change qu'au redimensionnement
+ * (`setTankDimensionsInPlace`). Les dimensions sont en lecture seule : un objet n'est jamais
+ * modifié après sa création. On garde l'environnement avec la clé, au cas où le même objet
+ * servirait à deux environnements.
+ */
+const PLACE_KEYS = new WeakMap<TankDimensions, { environment: EnvironmentId; key: string }>();
+
+/** Nombre de clés de lieu construites (`placeKey`) depuis le chargement du module (tests). */
+let placeKeyBuilds = 0;
+
+/** Nombre de clés de lieu construites depuis le chargement du module, pour les tests. */
+export function placeKeyBuildCount(): number {
+  return placeKeyBuilds;
+}
+
+/**
  * Clé d'un lieu pour les tables de valeurs calculées une fois : l'identifiant de
- * l'environnement sans dimensions réglées (aucune allocation), sinon l'identifiant suivi des
- * trois dimensions.
+ * l'environnement sans dimensions réglées, sinon l'identifiant suivi des trois dimensions.
+ * Aucune allocation, sauf au premier appel pour un objet `dimensions` donné (`PLACE_KEYS`).
  */
 export function placeKey(place: Place): string {
   if (typeof place === 'string') {
     return place;
   }
   const d = place.dimensions;
-  return d === undefined
-    ? place.environment
-    : `${place.environment}:${d.width}:${d.height}:${d.depth}`;
+  if (d === undefined) {
+    return place.environment;
+  }
+  const hit = PLACE_KEYS.get(d);
+  if (hit !== undefined && hit.environment === place.environment) {
+    return hit.key;
+  }
+  placeKeyBuilds += 1;
+  const key = `${place.environment}:${d.width}:${d.height}:${d.depth}`;
+  PLACE_KEYS.set(d, { environment: place.environment, key });
+  return key;
 }
 
 /** Environnement d'un lieu, avec ses dimensions (pour le rendu de la scène). */

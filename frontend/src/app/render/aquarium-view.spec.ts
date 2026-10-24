@@ -607,3 +607,38 @@ describe('AquariumView (ronds de pluie vus de biais, #125)', () => {
     view.dispose();
   });
 });
+
+describe('AquariumView (lancer de rayon du pointeur, #178)', () => {
+  it('aucun Vector2 alloué par événement : le même vecteur sert à chaque lancer', () => {
+    const canvas = document.createElement('canvas');
+    canvas.getBoundingClientRect = () => new DOMRect(0, 0, 800, 600);
+    const view = new AquariumView({
+      canvas,
+      rendererFactory: () => new RecordingRenderer(),
+      pixelRatio: 1,
+      preset: 'three-quarter',
+      interactive: true,
+    });
+    const internals = view as unknown as {
+      raycaster: { setFromCamera: (coords: unknown, camera: unknown) => void };
+      sandPlaneAt: (x: number, y: number) => { x: number; z: number } | null;
+    };
+    const coords: unknown[] = [];
+    const original = internals.raycaster.setFromCamera.bind(internals.raycaster);
+    internals.raycaster.setFromCamera = (c, camera) => {
+      coords.push(c);
+      original(c, camera);
+    };
+    view.pickDecor(400, 450);
+    view.pickDecor(100, 500);
+    expect(internals.sandPlaneAt(420, 460)).not.toBeNull();
+    internals.sandPlaneAt(300, 480);
+    expect(coords).toHaveLength(4);
+    expect(new Set(coords).size).toBe(1);
+    // Le vecteur porte bien le dernier point visé (coordonnées normalisées).
+    const last = coords[0] as { x: number; y: number };
+    expect(last.x).toBeCloseTo(-0.25, 12);
+    expect(last.y).toBeCloseTo(-0.6, 12);
+    view.dispose();
+  });
+});

@@ -21,7 +21,13 @@ import {
 import { expiryAge, FOOD_PER_DROP } from '../../sim/food';
 import { setPopulation } from '../../sim/population';
 import { advance, advanceToWithFeedings, createDefaultWorld } from '../../sim/world';
-import { DEFAULT_DECOR, MAX_DECOR_SCALE, MIN_DECOR_SCALE } from '../../sim/decor';
+import {
+  DEFAULT_DECOR,
+  MAX_DECOR_SCALE,
+  MIN_DECOR_SCALE,
+  withElevation,
+  type DecorItem,
+} from '../../sim/decor';
 import {
   DECOR_ROTATION_STEP,
   DECOR_SCALE_STEP,
@@ -1706,6 +1712,79 @@ describe('AquariumHost', () => {
       frames.flush(1016);
       frames.flush(5000);
       expect(host().world!.decor.at(-1)).toBe(item);
+    });
+
+    /** Rocher ajouté sur `DEFAULT_DECOR[0]` (graine 42), moteur prêt, sélectionné. */
+    async function stackedRock(): Promise<{ index: number; item: DecorItem }> {
+      TestBed.overrideProvider(DECOR_PHYSICS_LOADER, { useValue: () => initDecorPhysics() });
+      await create('?seed=42');
+      host().setDecorEditing(true);
+      await vi.waitFor(() => expect(host().decorPhysics()).toBe('pret'));
+      const target = DEFAULT_DECOR[0];
+      host().editAt({ kind: 'sand', x: target.x, z: target.z });
+      const index = host().world!.decor.length - 1;
+      const item = host().world!.decor[index];
+      expect(item.elevation ?? 0).toBeGreaterThan(0.01);
+      expect(host().decorSelection()).toBe(index);
+      return { index, item };
+    }
+
+    /** Vrai si `item`, abaissé de `drop` mètres, pénètre un autre élément de `decor`. */
+    function restsOnSupport(decor: readonly DecorItem[], index: number, drop: number): boolean {
+      const item = decor[index];
+      const lowered = withElevation(item, Math.max(0, (item.elevation ?? 0) - drop));
+      return decor.some((other, n) => n !== index && decorItemsOverlap(lowered, other));
+    }
+
+    it('réduire un rocher posé sur un autre le fait reposer sur son support, sans vide (#183)', async () => {
+      const { index, item } = await stackedRock();
+      expect(host().scaleSelectedDecor(-2)).toBe(true);
+      const decor = host().world!.decor;
+      const rock = decor[index];
+      expect(rock.scale).toBe(item.scale - 2 * DECOR_SCALE_STEP);
+      expect(rock.elevation ?? 0).toBeGreaterThan(0);
+      // Posé : il ne pénètre rien, mais 3 mm plus bas il pénétrerait son support (contact du
+      // moteur à `DROP_SKIN` près).
+      expect(decor.every((other, n) => n === index || !decorItemsOverlap(rock, other))).toBe(true);
+      expect(restsOnSupport(decor, index, 0.003)).toBe(true);
+      expect(rock.elevation!).toBeLessThan(item.elevation!);
+      // Sans nouvelle chute, la réduction l'aurait laissé au-dessus d'un vide.
+      const kept = decor.map((other, n) =>
+        n === index ? { ...rock, elevation: item.elevation } : other,
+      );
+      expect(restsOnSupport(kept, index, 0.003)).toBe(false);
+      // Pose enregistrée telle quelle, puis chute affichée sans la modifier.
+      const saved = parseWorld(saveStorage!.getItem(SAVE_STORAGE_KEY)!);
+      expect(saved.ok && saved.world.decor[index]).toEqual(rock);
+      frames.flush(1000);
+      frames.flush(5000);
+      expect(host().world!.decor[index]).toBe(rock);
+    });
+
+    it('tourner un élément posé sur un autre : il retombe et reste posé, sans vide (#183)', async () => {
+      const { index } = await stackedRock();
+      expect(host().rotateSelectedDecor(3)).toBe(true);
+      const decor = host().world!.decor;
+      expect(
+        decor.every((other, n) => n === index || !decorItemsOverlap(decor[index], other)),
+      ).toBe(true);
+      const elevation = decor[index].elevation ?? 0;
+      expect(elevation === 0 || restsOnSupport(decor, index, 0.003)).toBe(true);
+    });
+
+    it('un élément sur le sable tourné ou redimensionné garde exactement sa pose (#183)', async () => {
+      TestBed.overrideProvider(DECOR_PHYSICS_LOADER, { useValue: () => initDecorPhysics() });
+      await create('?seed=42');
+      host().setDecorEditing(true);
+      await vi.waitFor(() => expect(host().decorPhysics()).toBe('pret'));
+      host().editAt({ kind: 'item', index: 2 });
+      expect(host().rotateSelectedDecor(1)).toBe(true);
+      expect(host().scaleSelectedDecor(-1)).toBe(true);
+      const rock = host().world!.decor[2];
+      expect(rock).not.toHaveProperty('elevation');
+      expect([rock.x, rock.z]).toEqual([DEFAULT_DECOR[2].x, DEFAULT_DECOR[2].z]);
+      expect(rock.rotation).toBeCloseTo(DEFAULT_DECOR[2].rotation + DECOR_ROTATION_STEP, 12);
+      expect(rock.scale).toBe(DEFAULT_DECOR[2].scale - DECOR_SCALE_STEP);
     });
 
     it('moteur indisponible : posé sur le sable à la position du lâcher, avec un message', async () => {

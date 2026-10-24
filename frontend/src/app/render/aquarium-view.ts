@@ -175,6 +175,8 @@ export class AquariumView {
   private readonly canvasClickListeners = new Set<(clientX: number, clientY: number) => void>();
   /** Lancer de rayon de `pickDecor`, réutilisé. */
   private readonly raycaster = new Raycaster();
+  /** Point visé en coordonnées normalisées, réutilisé par chaque lancer de rayon (#178). */
+  private readonly pointerNdc = new Vector2();
   /** Appui du pointeur principal en attente de relâchement (`null` : aucun clic possible). */
   private pendingClick: { readonly id: number; readonly x: number; readonly y: number } | null =
     null;
@@ -580,7 +582,7 @@ export class AquariumView {
       return null;
     }
     this.camera.updateMatrixWorld();
-    this.raycaster.setFromCamera(new Vector2(ndc.x, ndc.y), this.camera);
+    this.raycaster.setFromCamera(this.pointerNdc.set(ndc.x, ndc.y), this.camera);
     const index = this.decorLayer.pickItem(this.raycaster);
     if (index !== null) {
       return { kind: 'item', index };
@@ -601,7 +603,7 @@ export class AquariumView {
       return null;
     }
     this.camera.updateMatrixWorld();
-    this.raycaster.setFromCamera(new Vector2(ndc.x, ndc.y), this.camera);
+    this.raycaster.setFromCamera(this.pointerNdc.set(ndc.x, ndc.y), this.camera);
     const { origin, direction } = this.raycaster.ray;
     return sandPlanePoint([origin.x, origin.y, origin.z], [direction.x, direction.y, direction.z]);
   }

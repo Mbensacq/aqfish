@@ -119,7 +119,7 @@ import {
   type FoodStyle,
 } from '../../core/food-style/food-style';
 import type { SpeciesId } from '../../sim/species';
-import { decorBaseY, validateDecorItem, type DecorItem } from '../../sim/decor';
+import { decorBaseY, decorElevation, validateDecorItem, type DecorItem } from '../../sim/decor';
 import {
   advanceInPlace,
   advanceToWithFeedings,
@@ -939,7 +939,10 @@ export class AquariumHost {
     return this.editSelected((decor, index, env) => scaleDecorItem(decor, index, steps, env));
   }
 
-  /** Applique `edit` à l'élément sélectionné ; `null` d'`edit` : pose refusée ou inchangée. */
+  /**
+   * Applique `edit` à l'élément sélectionné ; `null` d'`edit` : pose refusée ou inchangée.
+   * Un élément posé sur un autre retombe ensuite depuis sa position (#183, `redropEdited`).
+   */
   private editSelected(
     edit: (decor: readonly DecorItem[], index: number, env: Place) => DecorItem[] | null,
   ): boolean {
@@ -947,6 +950,12 @@ export class AquariumHost {
     const index = this.decorSelection();
     if (!world || index === null || !this.decorEditing() || this.decorDrag) {
       return false;
+    }
+    const redrop = this.redropEdited(edit, world.decor, index, world);
+    if (redrop) {
+      this.applyDecor(redrop.decor, index);
+      this.playDrop(index, redrop.path);
+      return true;
     }
     const decor = edit(world.decor, index, world);
     if (!decor) {
@@ -956,6 +965,34 @@ export class AquariumHost {
     }
     this.applyDecor(decor, index);
     return true;
+  }
+
+  /**
+   * Rotation ou échelle d'un élément posé sur un autre (`elevation` > 0, #183) : l'élément
+   * modifié retombe depuis sa position, par le moteur du lâcher (`dropDecor`). Réduit ou
+   * tourné, il rejoint son support au lieu de rester au-dessus d'un vide ; agrandi, il s'y
+   * repose plus haut au lieu d'être refusé. `null` si l'élément est sur le sable (sa pose ne
+   * change pas), si le moteur n'est pas prêt (l'élévation est alors gardée : la poser sur le
+   * sable la ferait pénétrer son support), si `edit` échoue même sans voisins (borne
+   * d'échelle), ou si la pose obtenue pénètre un autre élément (`isDecorPoseAllowed`).
+   */
+  private redropEdited(
+    edit: (decor: readonly DecorItem[], index: number, env: Place) => DecorItem[] | null,
+    decor: readonly DecorItem[],
+    index: number,
+    env: Place,
+  ): { decor: readonly DecorItem[]; path: readonly DropPoint[] } | null {
+    if (!this.dropper || decorElevation(decor[index]) === 0) {
+      return null;
+    }
+    // Sans les voisins : la pose est vérifiée après la chute, pas à l'élévation d'avant.
+    const alone = edit([decor[index]], 0, env);
+    if (!alone) {
+      return null;
+    }
+    const candidate = decor.map((item, n) => (n === index ? alone[0] : item));
+    const drop = this.dropDecor(candidate, index, env);
+    return drop.path.length > 0 && isDecorPoseAllowed(decor, drop.decor, index) ? drop : null;
   }
 
   /** Vrai si `edit` a échoué pour cause de chevauchement (et non de borne). */

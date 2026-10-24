@@ -180,10 +180,38 @@ export const DECOR_ROTATION_STEP = Math.PI / 12;
 export const DECOR_SCALE_STEP = 0.25;
 
 /**
+ * Emprises déjà calculées, par élément (#178) : le calcul régénère le modèle voxel de
+ * l'élément, trop coûteux pour chaque déplacement du pointeur. Un `DecorItem` est en lecture
+ * seule : une rotation ou une échelle produit un nouvel objet, donc une nouvelle entrée.
+ */
+const FOOTPRINTS = new WeakMap<DecorItem, number>();
+
+/** Nombre d'emprises calculées (`decorFootprint`) depuis le chargement du module (tests). */
+let footprintComputations = 0;
+
+/** Nombre d'emprises calculées depuis le chargement du module, pour les tests. */
+export function decorFootprintComputations(): number {
+  return footprintComputations;
+}
+
+/**
  * Emprise horizontale d'un élément, en mètres : rayon du disque, centré sur (x, z), qui
  * contient tous ses voxels quelle que soit sa rotation (plus l'ondulation d'une plante).
+ * Elle ne dépend que du type, de la forme, de la graine et de l'échelle ; mémorisée par
+ * élément (`FOOTPRINTS`).
  */
 export function decorFootprint(item: DecorItem): number {
+  const hit = FOOTPRINTS.get(item);
+  if (hit !== undefined) {
+    return hit;
+  }
+  footprintComputations += 1;
+  const footprint = computeFootprint(item);
+  FOOTPRINTS.set(item, footprint);
+  return footprint;
+}
+
+function computeFootprint(item: DecorItem): number {
   const model = decorVoxels(item);
   let reach2 = 0;
   for (const { i, k } of model.cells) {
@@ -308,7 +336,14 @@ export function moveDecorItem(
   }
   const item = decor[index];
   const p = clampDecorPosition(item, x, z, environment);
-  return p ? replaceItem(decor, index, { ...item, x: p.x, z: p.z }, environment) : null;
+  if (!p) {
+    return null;
+  }
+  // Même forme, même échelle : l'élément déplacé reprend l'emprise de l'original, qu'un
+  // glissement enchaîné à partir de l'aperçu ne recalcule donc pas (#178).
+  const moved = { ...item, x: p.x, z: p.z };
+  FOOTPRINTS.set(moved, decorFootprint(item));
+  return replaceItem(decor, index, moved, environment);
 }
 
 /** Angle ramené dans [0, 2π). */

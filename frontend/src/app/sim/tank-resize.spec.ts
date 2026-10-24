@@ -2,7 +2,13 @@ import { MAX_SEED } from '../core/random/prng';
 import { bubbleSourceFor, createBubbleBuffer, DEFAULT_BUBBLE_SOURCE, MAX_BUBBLES } from './bubbles';
 import { decorFootprint, DECOR_EDGE_MARGIN, moveDecorItem, setDecorInPlace } from './decor-edit';
 import { validateDecorItem } from './decor';
-import { environmentWater, PLACE_CACHE_LIMIT, placeDimensions } from './environment';
+import {
+  environmentWater,
+  PLACE_CACHE_LIMIT,
+  placeDimensions,
+  placeKey,
+  placeKeyBuildCount,
+} from './environment';
 import { sphereObstacle } from './obstacles';
 import { populationCounts, setPopulationInPlace } from './population';
 import { parseWorld, serializeWorld } from './save';
@@ -270,6 +276,40 @@ describe('setTankDimensionsInPlace (#171)', () => {
     const b = resized(createDefaultWorld(11), SMALL);
     advanceInPlace(a, 300);
     expect(a).toEqual(advance(b, 300));
+  });
+});
+
+describe('clé du lieu d’un bac redimensionné (#185)', () => {
+  it('aucune clé construite par pas : une seule au premier pas après le redimensionnement', () => {
+    const world = busyWorld();
+    setTankDimensionsInPlace(world, SMALL);
+    advanceInPlace(world, 1);
+    const before = placeKeyBuildCount();
+    advanceInPlace(world, 120);
+    expect(placeKeyBuildCount()).toBe(before);
+    // Nouveau redimensionnement : nouvel objet `dimensions`, clé reconstruite, puis plus rien.
+    setTankDimensionsInPlace(world, LARGE);
+    advanceInPlace(world, 1);
+    const resized = placeKeyBuildCount();
+    expect(resized).toBeGreaterThan(before);
+    advanceInPlace(world, 60);
+    expect(placeKeyBuildCount()).toBe(resized);
+  });
+
+  it('même clé pour des dimensions égales, quel que soit l’objet ; clé propre à chaque environnement', () => {
+    const a = { environment: 'tropical' as const, dimensions: { ...SMALL } };
+    const b = { environment: 'tropical' as const, dimensions: { ...SMALL } };
+    expect(placeKey(a)).toBe('tropical:0.6:0.5:0.3');
+    expect(placeKey(b)).toBe(placeKey(a));
+    expect(placeKey(a)).toBe(placeKey(a));
+    // Le même objet `dimensions` sous un autre environnement ne reprend pas la clé mémorisée.
+    expect(placeKey({ environment: 'recif', dimensions: a.dimensions })).toBe('recif:0.6:0.5:0.3');
+    expect(placeKey(a)).toBe('tropical:0.6:0.5:0.3');
+    // Sans dimensions réglées : l'identifiant seul, sans rien construire.
+    const before = placeKeyBuildCount();
+    expect(placeKey({ environment: 'tropical' })).toBe('tropical');
+    expect(placeKey('bassin')).toBe('bassin');
+    expect(placeKeyBuildCount()).toBe(before);
   });
 });
 

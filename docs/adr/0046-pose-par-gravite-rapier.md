@@ -54,6 +54,12 @@ enregistrées (ADR 0003 : `sim/` reste pur, sans moteur).
 - **Repli** : moteur en chargement, inaccessible (hors ligne) ou en erreur : l'élément est
   posé sur le sable à la position du lâcher ; s'il est inaccessible, le panneau l'annonce
   (« Chute indisponible… »).
+- **Rotation et échelle d'un élément posé** (#183, cycle 61) : tourner ou redimensionner un
+  élément d'élévation non nulle le fait retomber depuis sa position, par la même chute
+  (réduit ou tourné, il rejoint son support ; agrandi, il s'y repose plus haut au lieu d'être
+  refusé). La pose obtenue passe par `isDecorPoseAllowed` ; refusée, ou moteur pas encore
+  prêt, l'édition se fait à élévation constante comme avant (le repli sur le sable ferait
+  pénétrer le support). Un élément sur le sable garde exactement sa pose.
 - **Image** : la trajectoire (un point par pas) est rejouée en temps réel par l'hôte
   (`previewDecorPose`), sans toucher au monde déjà enregistré.
 

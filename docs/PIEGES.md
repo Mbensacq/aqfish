@@ -47,9 +47,17 @@ haut de sa section.
   peut partager `node_modules` par un lien symbolique. Le `verify` complet prend ~30 min en
   local (e2e sur un seul worker) : le lancer en arrière-plan et coder pendant ce temps.
   (2026-10-22)
-- **Auteur des commits** : l'environnement peut configurer un auteur autre que Mathis. Avant
-  le premier commit, vérifier `git log -1 --format='%an <%ae>'` sur `main` et reprendre
-  cet auteur (`git config user.name` / `user.email`). (2026-10-22)
+- **Auteur des commits, pour tous les rôles** (cycles 46 et 61, #178) : l'environnement
+  configure un auteur git par défaut qui n'est pas Mathis ; un commit QA (`636e619`, sur la
+  branche de la PR #177) est ainsi parti sous un autre nom. Tout rôle qui committe (Dev, QA,
+  Revue, Superviseur, sur une branche de code comme sur `equipe`) le fait au nom de Mathis,
+  l'auteur des commits de `main` : `Mathis BENSACQ
+  <126905623+Mbensacq@users.noreply.github.com>`. Le plus sûr, commit par commit :
+  `git -c user.name="Mathis BENSACQ" -c user.email="126905623+Mbensacq@users.noreply.github.com" commit …`
+  (ou `git config user.name` / `user.email` dans le clone, avant le premier commit). Vérifier
+  avec `git log -1 --format='%an <%ae>'` avant de pousser ; un commit mal attribué déjà poussé
+  se corrige à la fusion squash par un message et un auteur explicites, jamais par une
+  réécriture d'une branche partagée. (2026-10-24)
 
 - **npm 10 : `Cannot read properties of null (reading 'edgesOut')`** à l'installation
   d'un paquet. Solution : `npx -y npm@11 install <paquet>@<version>`. `npm ci` fonctionne

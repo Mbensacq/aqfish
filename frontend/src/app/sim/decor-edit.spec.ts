@@ -10,6 +10,7 @@ import {
   canPlaceDecorAt,
   clampDecorPosition,
   decorFootprint,
+  decorFootprintComputations,
   decorItemsOverlap,
   DECOR_EDGE_MARGIN,
   DECOR_ROTATION_STEP,
@@ -321,6 +322,40 @@ describe('moveDecorItem', () => {
     expect(moved[0].x).toBeCloseTo(HALF_W - reach, 12);
     expect(moved[0].z).toBeCloseTo(-(HALF_D - reach), 12);
     expect(validateDecorItem(moved[0])).toEqual([]);
+  });
+
+  it('glissement : l’emprise est calculée une fois, pas à chaque déplacement (#178)', () => {
+    // Copies neuves : aucune emprise mémorisée par un autre test.
+    const base = DEFAULT_DECOR.map((item) => ({ ...item }));
+    const before = decorFootprintComputations();
+    // Comme l'hôte : chaque aperçu part du décor du début du geste.
+    for (let n = 0; n < 50; n++) {
+      moveDecorItem(base, 2, -0.3 + n * 0.012, 0.05, 'tropical');
+    }
+    expect(decorFootprintComputations()).toBe(before + 1);
+    // Glissement enchaîné (chaque aperçu part du précédent) : rien de plus.
+    let decor: readonly DecorItem[] = base;
+    for (let n = 0; n < 50; n++) {
+      decor = moveDecorItem(decor, 2, 0.3 - n * 0.012, -0.05, 'tropical')!;
+    }
+    expect(decorFootprintComputations()).toBe(before + 1);
+    // L'emprise reprise est exactement celle d'un calcul neuf.
+    const fresh = { ...decor[2] };
+    expect(decorFootprint(decor[2])).toBe(decorFootprint(fresh));
+    expect(decorFootprintComputations()).toBe(before + 2);
+  });
+
+  it('emprise recalculée après rotation ou redimensionnement (pas de valeur périmée)', () => {
+    const base = DEFAULT_DECOR.map((item) => ({ ...item }));
+    const reach = decorFootprint(base[2]);
+    const scaled = scaleDecorItem(base, 2, -1, 'tropical')!;
+    expect(decorFootprint(scaled[2])).toBeLessThan(reach);
+    expect(decorFootprint(scaled[2])).toBe(decorFootprint({ ...scaled[2] }));
+    const rotated = rotateDecorItem(base, 2, 1, 'tropical')!;
+    expect(decorFootprint(rotated[2])).toBe(reach);
+    // Déplacé après réduction : borné avec la nouvelle emprise.
+    const moved = moveDecorItem(scaled, 2, 9, 0, 'tropical')!;
+    expect(moved[2].x).toBeCloseTo(HALF_W - decorFootprint({ ...scaled[2] }), 12);
   });
 
   it('null : indice inexistant, position non finie, environnement non éditable', () => {
