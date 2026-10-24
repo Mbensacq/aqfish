@@ -8,6 +8,7 @@ import {
   Object3D,
 } from 'three';
 
+import { furnitureBlocks } from '../sim/room-furniture';
 import { roomBlocks, roomVisibility, type Room, type RoomBlock, type RoomPart } from '../sim/room';
 import type { TankDimensions } from '../sim/tank';
 import type { SceneLayer } from './effect-layer';
@@ -15,7 +16,8 @@ import { PALETTE } from './palette';
 import { FACES } from './rock-model';
 
 /**
- * Pièce autour du bac (issue #187, ADR 0048) : les blocs de `roomBlocks` en deux maillages à
+ * Pièce autour du bac (issue #187, ADR 0048) et ses meubles (#188, ADR 0049) : les blocs de
+ * `roomBlocks` et de `furnitureBlocks` en deux maillages à
  * couleurs de la palette par sommet. Sol, plinthe et meuble sous un matériau éclairé : ils
  * suivent la lumière du jour comme la margelle du bassin, sans lumière propre. Mur et cimaise
  * à part, en couleurs plates (voir `wallMaterial`), pour être masqués seuls quand la caméra
@@ -36,6 +38,13 @@ export const ROOM_COLORS: Readonly<Record<RoomPart, readonly [string, string]>> 
   porte: [PALETTE.sableSombre, PALETTE.sableSombre],
   poignee: [PALETTE.rocheSombre, PALETTE.rocheSombre],
   socle: [PALETTE.rocheSombre, PALETTE.rocheSombre],
+  // Meubles et plantes de la pièce (#188, ADR 0049).
+  bois: [PALETTE.sableSombre, PALETTE.sableOmbre],
+  livre: [PALETTE.koiRouge, PALETTE.neonBleu],
+  tissu: [PALETTE.eauSombre, PALETTE.verreSombre],
+  coussin: [PALETTE.eauMoyenne, PALETTE.eauSombre],
+  pot: [PALETTE.roche, PALETTE.koiNoir],
+  feuillage: [PALETTE.vegetation, PALETTE.vegetationClaire],
 };
 
 /** Parties dessinées avec le mur (masquées avec lui). */
@@ -114,7 +123,7 @@ export class RoomLayer implements SceneLayer {
    */
   setRoom(dims: TankDimensions, room: Room, available: boolean): void {
     this.clear();
-    const blocks = available ? roomBlocks(dims, room) : [];
+    const blocks = available ? [...roomBlocks(dims, room), ...furnitureBlocks(room)] : [];
     this.blockCount = blocks.length;
     if (blocks.length === 0) {
       return;

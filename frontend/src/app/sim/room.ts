@@ -21,7 +21,35 @@ export interface Room {
   readonly shown: boolean;
   /** Hauteur du meuble support, en mètres (`ROOM_LIMITS`). */
   readonly cabinetHeight: number;
+  /**
+   * Meubles et plantes posés dans la pièce (issue #188, `sim/room-furniture.ts`).
+   * Facultatif : absent ou vide, la pièce est nue (pièces d'avant #188 identiques à l'octet).
+   */
+  readonly items?: readonly RoomItem[];
 }
+
+/** Types d'éléments de la pièce (catalogue de `sim/room-furniture.ts`). */
+export const ROOM_ITEM_KINDS = ['etagere', 'table-basse', 'canape', 'plante-pot'] as const;
+export type RoomItemKind = (typeof ROOM_ITEM_KINDS)[number];
+
+/** Quart de tour d'un élément de la pièce autour de la verticale (0 : face à +Z). */
+export type RoomQuarter = 0 | 1 | 2 | 3;
+
+/**
+ * Élément posé dans la pièce : type, centre de son emprise au sol (x, z, repère du bac, en
+ * mètres, au centimètre), quart de tour, et hauteur de sa base au-dessus du parquet
+ * (`elevation`, omise au sol), calculée par la pose par gravité (`dropRoomItem`).
+ */
+export interface RoomItem {
+  readonly kind: RoomItemKind;
+  readonly x: number;
+  readonly z: number;
+  readonly quarter: RoomQuarter;
+  readonly elevation?: number;
+}
+
+/** Nombre maximal d'éléments dans la pièce. */
+export const MAX_ROOM_ITEMS = 24;
 
 /** Bornes et pas des réglages numériques de la pièce. */
 export const ROOM_LIMITS: Readonly<{ cabinetHeight: DimensionRange }> = {
@@ -48,7 +76,7 @@ export function isRoomAvailable(id: EnvironmentId): boolean {
  * ramenée à la borne ; une hauteur non finie prend celle de `DEFAULT_ROOM`. Nouvel objet.
  */
 export function clampRoom(room: Room): Room {
-  return {
+  const clamped: Room = {
     shown: room.shown === true,
     cabinetHeight: clampDimension(
       room.cabinetHeight,
@@ -56,16 +84,85 @@ export function clampRoom(room: Room): Room {
       DEFAULT_ROOM.cabinetHeight,
     ),
   };
+  return room.items && room.items.length > 0 ? { ...clamped, items: room.items } : clamped;
 }
 
-/** Vrai si `a` et `b` décrivent la même pièce. */
+function sameItem(a: RoomItem, b: RoomItem): boolean {
+  return (
+    a.kind === b.kind &&
+    a.x === b.x &&
+    a.z === b.z &&
+    a.quarter === b.quarter &&
+    (a.elevation ?? 0) === (b.elevation ?? 0)
+  );
+}
+
+/** Vrai si `a` et `b` décrivent la même pièce (éléments compris, dans le même ordre). */
 export function sameRoom(a: Room, b: Room): boolean {
-  return a.shown === b.shown && a.cabinetHeight === b.cabinetHeight;
+  const itemsA = a.items ?? [];
+  const itemsB = b.items ?? [];
+  return (
+    a.shown === b.shown &&
+    a.cabinetHeight === b.cabinetHeight &&
+    itemsA.length === itemsB.length &&
+    itemsA.every((item, i) => sameItem(item, itemsB[i]))
+  );
 }
 
-/** Pièce enregistrée dans une sauvegarde (copie simple, champs connus seulement). */
+/** Copie d'un élément, champs connus seulement ; `elevation` omise au sol. */
+export function roomItemData(item: RoomItem): RoomItem {
+  const data: RoomItem = { kind: item.kind, x: item.x, z: item.z, quarter: item.quarter };
+  return item.elevation !== undefined && item.elevation > 0
+    ? { ...data, elevation: item.elevation }
+    : data;
+}
+
+/**
+ * Pièce enregistrée dans une sauvegarde (copie simple, champs connus seulement) ; `items`
+ * n'est écrit que s'il y a des éléments.
+ */
 export function roomData(room: Room): Room {
-  return { shown: room.shown, cabinetHeight: room.cabinetHeight };
+  const data: Room = { shown: room.shown, cabinetHeight: room.cabinetHeight };
+  return room.items && room.items.length > 0
+    ? { ...data, items: room.items.map(roomItemData) }
+    : data;
+}
+
+/** Plus grande cote acceptée pour un élément relu (position ou élévation), en mètres. */
+const MAX_ITEM_COORD = 100;
+
+function isQuarter(value: unknown): value is RoomQuarter {
+  return value === 0 || value === 1 || value === 2 || value === 3;
+}
+
+/**
+ * Relit l'élément `value` d'une sauvegarde : `kind` du catalogue, `x` et `z` réels finis
+ * (|v| ≤ 100 m), `quarter` entier de 0 à 3, `elevation` facultative, réelle finie dans
+ * [0, 100 m]. `null` si l'élément est invalide. Propriétés propres seulement.
+ */
+export function readRoomItem(value: unknown): RoomItem | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+  const field = (key: string): unknown => (Object.hasOwn(value, key) ? value[key] : undefined);
+  const kind = field('kind');
+  const x = field('x');
+  const z = field('z');
+  const quarter = field('quarter');
+  const elevation = field('elevation');
+  const isCoord = (v: unknown): v is number =>
+    typeof v === 'number' && Number.isFinite(v) && Math.abs(v) <= MAX_ITEM_COORD;
+  if (
+    typeof kind !== 'string' ||
+    !(ROOM_ITEM_KINDS as readonly string[]).includes(kind) ||
+    !isCoord(x) ||
+    !isCoord(z) ||
+    !isQuarter(quarter) ||
+    (elevation !== undefined && (!isCoord(elevation) || elevation < 0))
+  ) {
+    return null;
+  }
+  return roomItemData({ kind: kind as RoomItemKind, x, z, quarter, elevation });
 }
 
 /** Résultat de `readRoom` : la pièce lue (bornée), ou la raison du refus. */
@@ -75,8 +172,9 @@ export type ReadRoomResult =
 /**
  * Relit la pièce d'une sauvegarde : objet avec `shown` (booléen, obligatoire) et
  * `cabinetHeight` (réel fini, facultatif : absent, celui de `DEFAULT_ROOM`). Une hauteur
- * hors bornes est bornée, pas refusée. Seules les propriétés propres sont lues ; les champs
- * inconnus sont ignorés. Ne lève jamais.
+ * hors bornes est bornée, pas refusée. `items` (#188) facultatif : liste d'au plus
+ * `MAX_ROOM_ITEMS` éléments valides (`readRoomItem`), sinon refus. Seules les propriétés
+ * propres sont lues ; les champs inconnus sont ignorés. Ne lève jamais.
  */
 export function readRoom(value: unknown): ReadRoomResult {
   if (!isRecord(value)) {
@@ -92,12 +190,45 @@ export function readRoom(value: unknown): ReadRoomResult {
   if (typeof height !== 'number' || !Number.isFinite(height)) {
     return { ok: false, error: 'pièce : cabinetHeight doit être un nombre fini' };
   }
-  return { ok: true, room: clampRoom({ shown, cabinetHeight: height }) };
+  const itemsValue = Object.hasOwn(value, 'items') ? value['items'] : undefined;
+  if (itemsValue === undefined) {
+    return { ok: true, room: clampRoom({ shown, cabinetHeight: height }) };
+  }
+  if (!Array.isArray(itemsValue) || itemsValue.length > MAX_ROOM_ITEMS) {
+    return {
+      ok: false,
+      error: `pièce : items doit être une liste de ${MAX_ROOM_ITEMS} éléments au plus`,
+    };
+  }
+  const items: RoomItem[] = [];
+  for (const [i, entry] of itemsValue.entries()) {
+    const item = readRoomItem(entry);
+    if (!item) {
+      return { ok: false, error: `pièce : élément ${i} invalide` };
+    }
+    items.push(item);
+  }
+  return { ok: true, room: clampRoom({ shown, cabinetHeight: height, items }) };
 }
 
 /** Partie de la pièce à laquelle appartient un bloc (choisit sa couleur au rendu). */
 export type RoomPart =
-  'parquet' | 'mur' | 'cimaise' | 'plinthe' | 'plateau' | 'caisson' | 'porte' | 'poignee' | 'socle';
+  | 'parquet'
+  | 'mur'
+  | 'cimaise'
+  | 'plinthe'
+  | 'plateau'
+  | 'caisson'
+  | 'porte'
+  | 'poignee'
+  | 'socle'
+  // Meubles et plantes de la pièce (#188).
+  | 'bois'
+  | 'livre'
+  | 'tissu'
+  | 'coussin'
+  | 'pot'
+  | 'feuillage';
 
 /** Bloc de la pièce : boîte alignée sur les axes, partie et teinte (0 ou 1). */
 export interface RoomBlock {
@@ -122,6 +253,8 @@ export const WALL_THICKNESS = 0.05;
 export const FLOOR_THICKNESS = 0.03;
 /** Hauteur du mur au-dessus du haut du bac. */
 export const WALL_RISE = 1.2;
+/** Saillie de la plinthe du mur dans la pièce. */
+export const BASEBOARD_DEPTH = 0.015;
 /** Étendue du sol et du mur de chaque côté du bac, et du sol devant lui. */
 export const ROOM_MARGIN = 3;
 /** Lames de parquet : largeur (selon Z) et longueur (selon X), décalées d'une rangée à l'autre. */
@@ -136,7 +269,6 @@ const DOOR_GAP = 0.01;
 /** Saillie des portes, de la plinthe et des poignées. */
 const DOOR_DEPTH = 0.01;
 const BASEBOARD_HEIGHT = 0.08;
-const BASEBOARD_DEPTH = 0.015;
 /** Cimaise : baguette horizontale du mur, au-dessus du haut du bac (hauteur de son bas). */
 export const RAIL_RISE = 0.25;
 const RAIL_HEIGHT = 0.03;

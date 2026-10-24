@@ -312,6 +312,11 @@ haut de sa section.
 
 ## Simulation
 
+- **Arrondir au centimètre en multipliant par 0,01 laisse du bruit** (cycle 65, #188) :
+  `Math.round(v / 0.01) * 0.01` donne `-1.4000000000000001` pour `-1.4` ; une pose ainsi
+  arrondie ne se compare plus égale à la demande ni à sa relecture. Diviser à la fin :
+  `Math.round(v * 100) / 100` (`snap` de `sim/room-furniture.ts`). (2026-10-25)
+
 - **Sphères de collision d'un rocher : une partie enfouie sous sa base** (cycle 59, #170) :
   les blocs d'un rocher sont centrés à 0,2–0,45 r au-dessus de la base, donc descendent
   jusqu'à 0,8 r sous le sable, sans voxel visible. Un rocher posé sur un autre par le moteur

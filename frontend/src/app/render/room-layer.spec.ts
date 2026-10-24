@@ -1,6 +1,7 @@
 import { Color, Mesh } from 'three';
 
 import { DEFAULT_ROOM, roomBlocks, type Room } from '../sim/room';
+import { ROOM_CATALOG } from '../sim/room-furniture';
 import { DEFAULT_TANK } from '../sim/tank';
 import { PALETTE_COLORS } from './palette';
 import { buildRoomMesh, ROOM_COLORS, RoomLayer } from './room-layer';
@@ -72,6 +73,22 @@ describe('RoomLayer (#187)', () => {
     layer.setRoom(DEFAULT_TANK, DEFAULT_ROOM, true);
     expect(layer.object.children.length).toBe(0);
     expect(layer.object.visible).toBe(false);
+    layer.dispose();
+  });
+
+  it('dessine les meubles de la pièce avec le sol et le meuble du bac (#188)', () => {
+    const layer = new RoomLayer();
+    const furnished = {
+      ...SHOWN,
+      items: [{ kind: 'etagere', x: -1.25, z: -0.17, quarter: 0 }] as const,
+    };
+    layer.setRoom(DEFAULT_TANK, furnished, true);
+    expect(layer.count).toBe(
+      roomBlocks(DEFAULT_TANK, SHOWN).length + ROOM_CATALOG.etagere.blocks.length,
+    );
+    expect(layer.object.children.length).toBe(2);
+    layer.setRoom(DEFAULT_TANK, { ...furnished, shown: false }, true);
+    expect(layer.built).toBe(false);
     layer.dispose();
   });
 

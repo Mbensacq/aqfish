@@ -16,6 +16,7 @@ import {
   parseCaptureParams,
   type CameraPreset,
   type CapturePopulation,
+  type CaptureFurniture,
   type CaptureWood,
 } from '../../core/capture/capture-params';
 import {
@@ -96,7 +97,8 @@ import {
 } from '../../sim/environment';
 import { sameDimensions, type TankDimensions } from '../../sim/tank';
 import { setTankDimensionsInPlace } from '../../sim/tank-resize';
-import { DEFAULT_ROOM, type Room } from '../../sim/room';
+import { DEFAULT_ROOM, ROOM_ITEM_KINDS, type Room, type RoomItemKind } from '../../sim/room';
+import { dropRoomItem } from '../../sim/room-furniture';
 import { fixedStepInto, type FixedStepState } from '../../sim/fixed-step';
 import {
   DEFAULT_SIM_SPEED,
@@ -259,6 +261,28 @@ export function applyPopulation(
  * invalide (hors du bac de l'environnement, échelle hors bornes, graine invalide) est ignoré,
  * de même que ceux qui dépassent `MAX_DECOR_ITEMS`. Sans bois valide, le monde est inchangé.
  */
+/**
+ * Pièce `room` garnie des éléments de `meubles=` (#188), lâchés dans l'ordre autour d'un bac
+ * `dims` (`dropRoomItem`) ; type inconnu ou pose refusée : élément ignoré. Nouvel objet.
+ */
+export function applyCaptureFurniture(
+  room: Room,
+  dims: TankDimensions,
+  furniture: readonly CaptureFurniture[],
+): Room {
+  let current = room;
+  for (const { kind, x, z, quarter } of furniture) {
+    if (!(ROOM_ITEM_KINDS as readonly string[]).includes(kind)) {
+      continue;
+    }
+    const result = dropRoomItem(current, dims, { kind: kind as RoomItemKind, x, z, quarter });
+    if (result.ok) {
+      current = { ...current, items: result.items };
+    }
+  }
+  return current;
+}
+
 export function applyCaptureWoods(world: MutableWorld, woods: readonly CaptureWood[]): void {
   const dims = placeDimensions(world);
   const added = woods
@@ -1307,6 +1331,12 @@ export class AquariumHost {
           setTankDimensionsInPlace(world, params.tank);
         }
         applyCaptureWoods(world, params.woods);
+        // Éléments de la pièce de `meubles=` (#188), aux dimensions du bac de `bac=`.
+        if (params.room && params.furniture.length > 0) {
+          this.room.set(
+            applyCaptureFurniture(this.room(), placeDimensions(world), params.furniture),
+          );
+        }
       }
       // Effectifs de `population=` (#69) : appliqués à t = 0, avant d'avancer le monde.
       applyPopulation(world, params.population);

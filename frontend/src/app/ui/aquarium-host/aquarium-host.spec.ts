@@ -38,6 +38,7 @@ import {
 import { DEFAULT_TANK } from '../../sim/tank';
 import { initDecorPhysics } from '../../core/decor-physics/decor-physics';
 import {
+  applyCaptureFurniture,
   applyCaptureWoods,
   applyPopulation,
   AQUARIUM_RENDERER_FACTORY,
@@ -999,6 +1000,22 @@ describe('AquariumHost', () => {
       expect(world).toEqual(
         setPopulation(setPopulation(createDefaultWorld(42), 'neon', 999), 'guppy', 2),
       );
+    });
+
+    it('applyCaptureFurniture : éléments lâchés dans l’ordre, inconnus ou refusés ignorés (#188)', () => {
+      const room = { shown: true, cabinetHeight: 0.75 };
+      const furnished = applyCaptureFurniture(room, DEFAULT_TANK, [
+        { kind: 'etagere', x: -1.25, z: -0.17, quarter: 0 },
+        { kind: 'lit', x: -2, z: 1, quarter: 0 }, // type inconnu
+        { kind: 'plante-pot', x: 0, z: 0, quarter: 0 }, // sur le meuble du bac
+        { kind: 'plante-pot', x: -1.4, z: -0.17, quarter: 0 }, // sur l'étagère
+      ]);
+      expect(furnished.items).toEqual([
+        { kind: 'etagere', x: -1.25, z: -0.17, quarter: 0 },
+        { kind: 'plante-pot', x: -1.4, z: -0.17, quarter: 0, elevation: 0.8 },
+      ]);
+      expect(room).toEqual({ shown: true, cabinetHeight: 0.75 });
+      expect(applyCaptureFurniture(room, DEFAULT_TANK, [])).toEqual(room);
     });
 
     it('applyCaptureWoods : bois valides ajoutés au décor, invalides ignorés (#169)', () => {

@@ -1,4 +1,5 @@
 import {
+  MAX_CAPTURE_FURNITURE,
   CAMERA_PRESETS,
   hasWorldParams,
   DEFAULT_CAPTURE_PARAMS,
@@ -32,7 +33,29 @@ describe('parseCaptureParams', () => {
       editSelection: null,
       woods: [],
       tank: null,
+      furniture: [],
     });
+  });
+
+  it('lit les éléments de la pièce : meubles=type:x:z:quart (#188)', () => {
+    expect(
+      parseCaptureParams('?capture=1&meubles=etagere:-1.25:-0.17:0,plante-pot:-1.4:-0.17:3')
+        .furniture,
+    ).toEqual([
+      { kind: 'etagere', x: -1.25, z: -0.17, quarter: 0 },
+      { kind: 'plante-pot', x: -1.4, z: -0.17, quarter: 3 },
+    ]);
+    // Entrées mal formées ignorées ; type inconnu gardé (vérifié par l'application).
+    expect(
+      parseCaptureParams(
+        '?meubles=etagere:1:2,etagere:a:0:0,etagere:0:0:4,ETAGERE:0:0:0,:0:0:0,lit:0.5:-1:1',
+      ).furniture,
+    ).toEqual([{ kind: 'lit', x: 0.5, z: -1, quarter: 1 }]);
+    const many = Array.from({ length: MAX_CAPTURE_FURNITURE + 3 }, () => 'canape:0:0:0');
+    expect(parseCaptureParams(`?meubles=${many.join(',')}`).furniture).toHaveLength(
+      MAX_CAPTURE_FURNITURE,
+    );
+    expect(parseCaptureParams('').furniture).toEqual([]);
   });
 
   it('lit les bois flottés ajoutés : bois=x:z:rotation:echelle:graine (#169)', () => {

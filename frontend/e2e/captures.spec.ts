@@ -82,6 +82,13 @@ test.describe('Captures', () => {
 
   // Cycle jour/nuit (issue #51) : captures supplémentaires à heure figée (`heure=`). Les
   // captures ci-dessus, sans `heure=`, sont à midi et restent inchangées.
+  // Éléments de la pièce (#188), à gauche du bac : visibles en vue trois-quarts.
+  const SHELF = 'etagere:-1.25:-0.17:0';
+  const PLANT_ON_SHELF = 'plante-pot:-1.4:-0.17:0';
+  const TABLE = 'table-basse:-1.45:0.55:0';
+  const SOFA = 'canape:-1.7:0.6:1';
+  const PLANT = 'plante-pot:-1:0.3:0';
+  const PLANT_ON_TABLE = 'plante-pot:-1.25:0.55:0';
   const DAY_CAPTURES = [
     { name: 'three-quarter-crepuscule', query: 'heure=18' },
     // Fin du crépuscule (#73) : teintes chaudes avant la nuit.
@@ -128,6 +135,16 @@ test.describe('Captures', () => {
     { name: 'bottom-piece', query: 'piece=1&camera=bottom' },
     { name: 'three-quarter-piece-minuit', query: 'piece=1&heure=0' },
     { name: 'three-quarter-piece-grand-bac', query: 'piece=1&bac=2:0.9:0.9' },
+    // Meubles et plantes de la pièce (#188) : chaque élément du catalogue seul, puis une
+    // plante posée par gravité sur l'étagère et une autre sur la table basse.
+    { name: 'three-quarter-meuble-etagere', query: `piece=1&meubles=${SHELF}` },
+    { name: 'three-quarter-meuble-table', query: `piece=1&meubles=${TABLE}` },
+    { name: 'three-quarter-meuble-canape', query: `piece=1&meubles=${SOFA}` },
+    { name: 'three-quarter-meuble-plante', query: `piece=1&meubles=${PLANT}` },
+    {
+      name: 'three-quarter-meubles',
+      query: `piece=1&meubles=${SHELF},${PLANT_ON_SHELF},${TABLE},${PLANT_ON_TABLE}`,
+    },
   ] as const;
   for (const { name, query } of DAY_CAPTURES) {
     test(`angle ${name}`, async ({ page }) => {

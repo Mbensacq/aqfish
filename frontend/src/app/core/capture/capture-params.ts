@@ -54,6 +54,13 @@
  * (`TANK_LIMITS`) ; sans effet hors d'un environnement réglable. Entrée mal formée ou absente,
  * dimensions de l'environnement (séries existantes inchangées).
  *
+ * Paramètre facultatif `meubles=` (issue #188) : en mode capture, avec `piece=1`, éléments
+ * lâchés dans la pièce dans l'ordre de l'URL, séparés par des virgules ; chacun
+ * `type:x:z:quart` (type du catalogue, centre en mètres, quart de tour de 0 à 3). Exemple :
+ * `meubles=etagere:-1.2:-0.2:0,plante-pot:-1.2:-0.2:0` (la plante se pose sur l'étagère).
+ * Entrée mal formée ignorée ici ; type inconnu ou pose refusée ignorés par l'application ;
+ * absent, pièce nue (séries existantes inchangées).
+ *
  * Ce module est volontairement pur (aucune dépendance à Angular ni à Three.js).
  * Voir docs/ARCHITECTURE.md, section « Contrat de capture ».
  */
@@ -101,7 +108,23 @@ export interface CaptureParams {
   readonly woods: readonly CaptureWood[];
   /** Dimensions du bac de `bac=` (issue #171), en mètres ; `null` si absent ou mal formé. */
   readonly tank: CaptureTank | null;
+  /** Éléments lâchés dans la pièce par `meubles=` (issue #188), vide si absent. */
+  readonly furniture: readonly CaptureFurniture[];
 }
+
+/**
+ * Élément de la pièce du contrat de capture : type (non vérifié ici), centre (m) et quart de
+ * tour (0 à 3).
+ */
+export interface CaptureFurniture {
+  readonly kind: string;
+  readonly x: number;
+  readonly z: number;
+  readonly quarter: 0 | 1 | 2 | 3;
+}
+
+/** Nombre maximal d'éléments lus dans `meubles=` (les suivants sont ignorés). */
+export const MAX_CAPTURE_FURNITURE = 8;
 
 /** Bois flotté du contrat de capture : position (m), rotation (rad), échelle, graine. */
 export interface CaptureWood {
@@ -160,6 +183,7 @@ export const DEFAULT_CAPTURE_PARAMS: CaptureParams = {
   room: false,
   editSelection: null,
   woods: [],
+  furniture: [],
   tank: null,
 };
 
@@ -203,6 +227,7 @@ export function parseCaptureParams(search: string): CaptureParams {
     editSelection: parseEditSelection(params.get('edition')),
     woods: parseWoods(params.get('bois')),
     tank: parseTank(params.get('bac')),
+    furniture: parseFurniture(params.get('meubles')),
   };
 }
 
@@ -234,6 +259,42 @@ function parseWoods(raw: string | null): readonly CaptureWood[] {
     }
   }
   return woods;
+}
+
+/** Type d'élément de `meubles=` : minuscules et tirets (vérifié par l'application). */
+const FURNITURE_KIND_PATTERN = /^[a-z][a-z-]{0,31}$/;
+
+/**
+ * Éléments `type:x:z:quart` séparés par des virgules : un type, deux réels décimaux puis un
+ * quart de tour de 0 à 3. Entrée mal formée : ignorée.
+ */
+function parseFurniture(raw: string | null): readonly CaptureFurniture[] {
+  if (raw === null) {
+    return [];
+  }
+  const furniture: CaptureFurniture[] = [];
+  for (const entry of raw.split(',')) {
+    const parts = entry.split(':');
+    if (
+      parts.length !== 4 ||
+      !FURNITURE_KIND_PATTERN.test(parts[0]) ||
+      !DECIMAL_PATTERN.test(parts[1]) ||
+      !DECIMAL_PATTERN.test(parts[2]) ||
+      !/^[0-3]$/.test(parts[3])
+    ) {
+      continue;
+    }
+    furniture.push({
+      kind: parts[0],
+      x: Number(parts[1]),
+      z: Number(parts[2]),
+      quarter: Number(parts[3]) as CaptureFurniture['quarter'],
+    });
+    if (furniture.length === MAX_CAPTURE_FURNITURE) {
+      break;
+    }
+  }
+  return furniture;
 }
 
 /** Dimensions `longueur:hauteur:profondeur` : trois réels décimaux positifs, sinon `null`. */
