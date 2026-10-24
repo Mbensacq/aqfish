@@ -56,6 +56,21 @@ describe('corydora (#31)', () => {
     expect(Object.values(CORYDORA.colors)).not.toContain(NEON.colors.stripe);
     expect(Object.values(CORYDORA.colors)).not.toContain(NEON.colors.accent);
   });
+
+  it('flanc plus clair que la roche : lisible devant un rocher (#76)', () => {
+    // Couleurs de la roche (`roche`, `rocheSombre` de `render/palette.ts`).
+    const rock = ['#6e6a63', '#45423e'];
+    expect(rock).not.toContain(CORYDORA.colors.stripe);
+    const luma = (hex: string) =>
+      [1, 3, 5].reduce(
+        (sum, i, n) => sum + parseInt(hex.slice(i, i + 2), 16) * [0.3, 0.59, 0.11][n],
+        0,
+      );
+    expect(luma(CORYDORA.colors.stripe)).toBeGreaterThan(luma(rock[0]) + 60);
+    // Le dos reste sombre (lu de dessus sur le sable) et les taches noires.
+    expect(luma(CORYDORA.colors.back)).toBeLessThan(luma(rock[0]));
+    expect(CORYDORA.colors.accent).toBe('#1c1c22');
+  });
 });
 
 describe('validateSpecies : préférence de profondeur', () => {

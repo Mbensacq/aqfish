@@ -68,9 +68,10 @@ nageoires or) et *sanke* (blanc cassé taché de rouge et de noir). Le motif est
 dos, seul visible de dessus ; le corps est effilé au pédoncule et au museau vu de dessus.
 
 Le corydora (poisson de fond, ADR 0014) : silhouette trapue (corps court et haut, ventre plat
-clair, haute dorsale sable sombre), flanc gris roche « poivré » de taches noires, dos roche
-sombre. Un flanc sable se confondait avec le substrat sur les captures : les poissons de fond
-évitent les tons du sable sur leurs flancs.
+clair, haute dorsale sable sombre), flanc crème (`koiBlanc`) « poivré » de taches noires, dos
+roche sombre. Un flanc sable se confondait avec le substrat sur les captures, et un flanc
+gris roche avec les rochers (#76) : les poissons de fond évitent les tons du sable **et** de
+la roche sur leurs flancs ; le contraste clair / noir les détache des deux.
 
 L'**axolotl** du paludarium (#130, ADR 0035) : corps rose axolotl, ventre blanc cassé,
 crête dorsale, pattes et nageoire de la queue rose poisson, trois branchies de chaque côté de

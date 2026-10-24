@@ -493,8 +493,12 @@ export const CORYDORA: SpeciesDefinition = {
     minDistance: 0.08,
   },
   silhouette: 'corydora',
+  // Flanc crème (#76) : gris comme la roche, les corydoras se fondaient dans les rochers
+  // devant lesquels ils passent. Crème plutôt que sable (DA : pas de ton du sable sur le
+  // flanc d'un poisson de fond), poivré de taches noires (`accent`) qui le détachent aussi
+  // du sable ; le dos reste sombre, lu de dessus sur le sable.
   colors: {
-    stripe: '#6e6a63',
+    stripe: '#f2ead8',
     accent: '#1c1c22',
     back: '#45423e',
     belly: '#f2ead8',
