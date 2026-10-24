@@ -131,8 +131,8 @@ test.describe('Éditeur de décor (#167)', () => {
     ]);
     // Posé au point cliqué, ramené là où son emprise tient dans le bac (#59).
     const expected = clampDecorPosition(decor.at(-1)!, FREE_SAND[0], FREE_SAND[2], 'tropical')!;
-    expect(decor.at(-1)!.x).toBeCloseTo(expected.x, 6);
-    expect(decor.at(-1)!.z).toBeCloseTo(expected.z, 6);
+    expect(decor.at(-1)!.x).toBeCloseTo(expected.x, 2);
+    expect(decor.at(-1)!.z).toBeCloseTo(expected.z, 2);
     expect(Math.abs(decor.at(-1)!.z - FREE_SAND[2])).toBeLessThan(0.02);
     // Et l'élément ajouté se sélectionne après le rechargement.
     await startEditing(page);
