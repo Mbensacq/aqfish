@@ -6,6 +6,16 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Modifier `src/` pendant un e2e recharge la page** (cycle 60) : le serveur de Playwright
+  (`ng serve`, réutilisé hors CI) recompile et recharge l'application à chaque modification
+  d'un fichier de l'application ; le test en cours repart d'un monde neuf (`data-aqfish-tick`
+  petit, mode édition fermé) et échoue sans raison apparente. Ne pas toucher `src/` pendant
+  un e2e ou des captures (les `*.spec.ts` unitaires, `e2e/` et `docs/` ne déclenchent rien).
+  (2026-10-24)
+- **Curseur `range` : `[value]` borné par l'ancien `max`** (cycle 60, #171) : avec
+  `[attr.max]` lié dans un `@for`, Angular peut poser la valeur avant les bornes ; une valeur
+  au-delà du `max` par défaut (100) est ramenée à 100. Écrire `min`, `max` et `step` en
+  attributs statiques (posés à la création de l'élément), puis lier `[value]`. (2026-10-24)
 - **Captures et `verify` en parallèle : e2e lents en délai dépassé** (cycle 54) : lancer
   `npm run captures` (port 4310) pendant l'e2e de `verify` partage le processeur ;
   `anemones-qa` « tentacules rouges… » (1,4 min seul) a alors dépassé son délai de 2 min.
