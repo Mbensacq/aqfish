@@ -25,6 +25,7 @@ import { DEFAULT_DECOR, MAX_DECOR_SCALE, MIN_DECOR_SCALE } from '../../sim/decor
 import { DECOR_ROTATION_STEP, DECOR_SCALE_STEP, decorFootprint } from '../../sim/decor-edit';
 import { DEFAULT_TANK } from '../../sim/tank';
 import {
+  applyCaptureWoods,
   applyPopulation,
   AQUARIUM_RENDERER_FACTORY,
   AquariumHost,
@@ -840,6 +841,31 @@ describe('AquariumHost', () => {
       expect(world).toEqual(
         setPopulation(setPopulation(createDefaultWorld(42), 'neon', 999), 'guppy', 2),
       );
+    });
+
+    it('applyCaptureWoods : bois valides ajoutés au décor, invalides ignorés (#169)', () => {
+      const world = createDefaultWorld(42);
+      const before = world.decor.length;
+      applyCaptureWoods(world, [
+        { x: 0.05, z: 0.1, rotation: 0.3, scale: 1, seed: 7 },
+        { x: 9, z: 0, rotation: 0, scale: 1, seed: 1 }, // hors du bac
+        { x: 0, z: 0, rotation: 0, scale: 9, seed: 1 }, // échelle hors bornes
+        { x: 0, z: 0, rotation: 0, scale: 1, seed: 2 ** 40 }, // graine invalide
+      ]);
+      expect(world.decor).toHaveLength(before + 1);
+      expect(world.decor[before]).toEqual({
+        kind: 'wood',
+        x: 0.05,
+        z: 0.1,
+        rotation: 0.3,
+        scale: 1,
+        seed: 7,
+      });
+      expect(world.obstacles).toHaveLength(createDefaultWorld(42).obstacles.length + 1);
+      // Sans bois valide : monde inchangé.
+      const untouched = createDefaultWorld(42);
+      applyCaptureWoods(untouched, [{ x: 9, z: 9, rotation: 0, scale: 1, seed: 1 }]);
+      expect(untouched).toEqual(createDefaultWorld(42));
     });
 
     it('expose les effectifs et leurs maximums au démarrage', async () => {

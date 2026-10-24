@@ -14,8 +14,9 @@ import {
 
 import { anemoneBaseY, anemoneModel, type Anemone } from '../sim/anemones';
 import { coralBaseY, coralModel, type CoralColony } from '../sim/corals';
-import { plantBaseY, rockBaseY, rockModel, type DecorItem } from '../sim/decor';
+import { plantBaseY, rockBaseY, rockModel, woodBaseY, type DecorItem } from '../sim/decor';
 import { plantModel, type PlantForm } from '../sim/plant';
+import { woodModel } from '../sim/wood';
 import { buildAnemoneMesh } from './anemone-model';
 import { buildCoralMesh } from './coral-model';
 import { FISH_RENDER_ORDER } from './fish-layer';
@@ -27,6 +28,7 @@ import {
   createRockGeometry,
   type VoxelMeshData,
 } from './rock-model';
+import { buildWoodMesh } from './wood-model';
 
 /**
  * Couleur du contour du décor (docs/DA.md, règle 4) : la couleur la plus sombre de la
@@ -164,6 +166,11 @@ export class DecorLayer {
           position: new BufferAttribute(plant.positions, 3),
         };
         this.plants.push(sway);
+      } else if (item.kind === 'wood') {
+        const model = woodModel(item.seed, item.scale);
+        data = buildWoodMesh(model, item.seed);
+        baseY = woodBaseY(model.voxelSize);
+        name = `bois-${n}`;
       } else {
         const model = rockModel(item.seed, item.scale);
         data = buildRockMesh(model, item.seed);

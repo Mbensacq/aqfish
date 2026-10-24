@@ -39,6 +39,12 @@
  * édition du décor avec l'élément d'indice donné de `World.decor` sélectionné (entier de 0 à
  * 999) ; absent, invalide ou hors du décor, aucune sélection (séries existantes inchangées).
  *
+ * Paramètre facultatif `bois=` (issue #169) : en mode capture, bois flottés ajoutés au décor
+ * par défaut de l'environnement, séparés par des virgules ; chacun `x:z:rotation:echelle:graine`
+ * (mètres, radians, graine entière). Exemple : `bois=0.05:0.02:0.3:1:7`. Entrée mal formée
+ * ignorée ici, bois invalide (hors du bac, échelle hors bornes) ignoré par l'application ;
+ * absent, décor par défaut (séries existantes inchangées).
+ *
  * Ce module est volontairement pur (aucune dépendance à Angular ni à Three.js).
  * Voir docs/ARCHITECTURE.md, section « Contrat de capture ».
  */
@@ -80,7 +86,21 @@ export interface CaptureParams {
   readonly rain: boolean;
   /** Élément du décor sélectionné par `edition=` (issue #167) ; `null` si absent ou invalide. */
   readonly editSelection: number | null;
+  /** Bois flottés ajoutés au décor par `bois=` (issue #169), vide si absent. */
+  readonly woods: readonly CaptureWood[];
 }
+
+/** Bois flotté du contrat de capture : position (m), rotation (rad), échelle, graine. */
+export interface CaptureWood {
+  readonly x: number;
+  readonly z: number;
+  readonly rotation: number;
+  readonly scale: number;
+  readonly seed: number;
+}
+
+/** Nombre maximal de bois lus dans `bois=` (les suivants sont ignorés). */
+export const MAX_CAPTURE_WOODS = 4;
 
 /**
  * Effectif d'une espèce demandé par `population=`. L'espèce n'est pas vérifiée ici (module
@@ -118,6 +138,7 @@ export const DEFAULT_CAPTURE_PARAMS: CaptureParams = {
   foodStyle: null,
   rain: false,
   editSelection: null,
+  woods: [],
 };
 
 /** Temps de simulation maximal accepté (1 h), pour éviter un calcul démesuré. */
@@ -157,7 +178,38 @@ export function parseCaptureParams(search: string): CaptureParams {
     foodStyle: parseFoodStyle(params.get('granules')),
     rain: params.get('pluie') === '1',
     editSelection: parseEditSelection(params.get('edition')),
+    woods: parseWoods(params.get('bois')),
   };
+}
+
+/** Graine décimale : entier de 1 à 10 chiffres (bornes vérifiées par l'application). */
+const SEED_PATTERN = /^\d{1,10}$/;
+
+/**
+ * Bois `x:z:rotation:echelle:graine` séparés par des virgules : quatre réels décimaux puis
+ * une graine entière. Entrée mal formée : ignorée.
+ */
+function parseWoods(raw: string | null): readonly CaptureWood[] {
+  if (raw === null) {
+    return [];
+  }
+  const woods: CaptureWood[] = [];
+  for (const entry of raw.split(',')) {
+    const parts = entry.split(':');
+    if (
+      parts.length !== 5 ||
+      !parts.slice(0, 4).every((p) => DECIMAL_PATTERN.test(p)) ||
+      !SEED_PATTERN.test(parts[4])
+    ) {
+      continue;
+    }
+    const [x, z, rotation, scale, seed] = parts.map(Number);
+    woods.push({ x, z, rotation, scale, seed });
+    if (woods.length === MAX_CAPTURE_WOODS) {
+      break;
+    }
+  }
+  return woods;
 }
 
 /** Indice de `edition=` : entier décimal de 0 à 999, sinon `null`. */

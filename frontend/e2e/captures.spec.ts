@@ -38,6 +38,8 @@ const TIME_SECONDS = Number(process.env['CAPTURE_TIME'] ?? 30);
  */
 const RESTING_FOOD =
   'population=neon:0,guppy:0,corydora:0&nourrir=0,0:0.3:0.03,0:-0.15:0.1,0:-0.4:0.15';
+/** Bois flotté ajouté au décor par défaut (#169) : `x:z:rotation:echelle:graine`. */
+const WOOD = 'bois=-0.02:0:-0.2:1.5:7';
 const OUTPUT_DIR = resolve(
   process.env['CAPTURE_DIR'] ?? join(__dirname, '..', '..', 'docs', 'captures', 'latest'),
 );
@@ -112,6 +114,9 @@ test.describe('Captures', () => {
     { name: 'three-quarter-population', query: 'population=neon:12,guppy:2,corydora:0' },
     // Éditeur de décor (#167) : rocher d'indice 2 sélectionné, contour clair.
     { name: 'three-quarter-edition', query: 'edition=2' },
+    // Bois flotté à branches (#169) : un bois ajouté au décor par défaut, devant les rochers.
+    { name: 'three-quarter-bois', query: WOOD },
+    { name: 'side-bois', query: `${WOOD}&camera=side` },
   ] as const;
   for (const { name, query } of DAY_CAPTURES) {
     test(`angle ${name}`, async ({ page }) => {

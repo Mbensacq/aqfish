@@ -5,6 +5,7 @@ import {
   MAX_CAPTURE_FEEDINGS,
   MAX_CAPTURE_POPULATION_ENTRIES,
   MAX_CAPTURE_TIME_SECONDS,
+  MAX_CAPTURE_WOODS,
   parseCaptureParams,
 } from './capture-params';
 
@@ -28,7 +29,37 @@ describe('parseCaptureParams', () => {
       foodStyle: null,
       rain: false,
       editSelection: null,
+      woods: [],
     });
+  });
+
+  it('lit les bois flottés ajoutés : bois=x:z:rotation:echelle:graine (#169)', () => {
+    expect(parseCaptureParams('?capture=1&bois=0.05:-0.02:0.3:1.5:7').woods).toEqual([
+      { x: 0.05, z: -0.02, rotation: 0.3, scale: 1.5, seed: 7 },
+    ]);
+    expect(parseCaptureParams('?bois=0:0:0:1:1,0.2:0.1:1:2:4294967295').woods).toEqual([
+      { x: 0, z: 0, rotation: 0, scale: 1, seed: 1 },
+      { x: 0.2, z: 0.1, rotation: 1, scale: 2, seed: 4294967295 },
+    ]);
+    expect(parseCaptureParams('').woods).toEqual([]);
+    expect(DEFAULT_CAPTURE_PARAMS.woods).toEqual([]);
+    // Entrées mal formées ignorées, les autres gardées.
+    for (const bad of [
+      '',
+      '0:0:0:1',
+      '0:0:0:1:1:1',
+      'a:0:0:1:1',
+      '0:0:0:1:1.5',
+      '0:0:0:1:-1',
+      '0:0:0:1e1:1',
+    ]) {
+      expect(parseCaptureParams(`?bois=${encodeURIComponent(`${bad},0:0:0:1:3`)}`).woods).toEqual([
+        { x: 0, z: 0, rotation: 0, scale: 1, seed: 3 },
+      ]);
+    }
+    // Au plus MAX_CAPTURE_WOODS bois.
+    const many = Array.from({ length: MAX_CAPTURE_WOODS + 2 }, (_, n) => `0:0:0:1:${n}`).join(',');
+    expect(parseCaptureParams(`?bois=${many}`).woods).toHaveLength(MAX_CAPTURE_WOODS);
   });
 
   it('lit l’élément sélectionné en édition : edition=<indice> (#167)', () => {

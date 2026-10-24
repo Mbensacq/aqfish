@@ -43,6 +43,23 @@ describe('DecorLayer', () => {
     layer.dispose();
   });
 
+  it('un bois flotté : groupe « bois-n » sur le sable, voxels et coque, sans ondulation', () => {
+    const wood: DecorItem = { kind: 'wood', x: 0.1, z: -0.1, rotation: 1.2, scale: 1, seed: 7 };
+    const layer = new DecorLayer();
+    layer.setDecor([...DEFAULT_DECOR, wood]);
+    const n = DEFAULT_DECOR.length;
+    const group = layer.object.children[n];
+    expect(group.name).toBe(`bois-${n}`);
+    expect(group.children.map((c) => c.name)).toEqual([`bois-${n}-contour`, `bois-${n}-voxels`]);
+    expect(group.position.y).toBe(decorBaseY(wood));
+    expect(group.rotation.y).toBe(wood.rotation);
+    const voxels = group.children[1] as Mesh;
+    expect(voxels.frustumCulled).toBe(true);
+    expect(voxels.renderOrder).toBe(DECOR_RENDER_ORDER);
+    expect(layer.plantCount).toBe(DEFAULT_DECOR.filter((d) => d.kind === 'plant').length);
+    layer.dispose();
+  });
+
   describe('plantes qui ondulent', () => {
     const PLANT: DecorItem = {
       kind: 'plant',

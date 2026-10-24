@@ -16,6 +16,7 @@ import {
   parseCaptureParams,
   type CameraPreset,
   type CapturePopulation,
+  type CaptureWood,
 } from '../../core/capture/capture-params';
 import {
   readStoredSave,
@@ -45,6 +46,7 @@ import {
   isDecorEditable,
   isDecorPoseAllowed,
   isDecorTool,
+  MAX_DECOR_ITEMS,
   moveDecorItem,
   removeDecorItem,
   rotateDecorItem,
@@ -99,7 +101,7 @@ import {
   type FoodStyle,
 } from '../../core/food-style/food-style';
 import type { SpeciesId } from '../../sim/species';
-import type { DecorItem } from '../../sim/decor';
+import { validateDecorItem, type DecorItem } from '../../sim/decor';
 import {
   advanceInPlace,
   advanceToWithFeedings,
@@ -206,6 +208,29 @@ export function applyPopulation(
     if (isSpeciesId(species) && livesIn(world.environment, species)) {
       setPopulationInPlace(world, species, count);
     }
+  }
+}
+
+/**
+ * Ajoute au décor du monde les bois flottés de `bois=` (#169), dans l'ordre de l'URL. Un bois
+ * invalide (hors du bac de l'environnement, échelle hors bornes, graine invalide) est ignoré,
+ * de même que ceux qui dépassent `MAX_DECOR_ITEMS`. Sans bois valide, le monde est inchangé.
+ */
+export function applyCaptureWoods(world: MutableWorld, woods: readonly CaptureWood[]): void {
+  const dims = environmentById(world.environment).dimensions;
+  const added = woods
+    .map(({ x, z, rotation, scale, seed }): DecorItem => ({
+      kind: 'wood',
+      x,
+      z,
+      rotation,
+      scale,
+      seed,
+    }))
+    .filter((item) => validateDecorItem(item, dims).length === 0)
+    .slice(0, Math.max(0, MAX_DECOR_ITEMS - world.decor.length));
+  if (added.length > 0) {
+    setDecorInPlace(world, [...world.decor, ...added]);
   }
 }
 
@@ -982,6 +1007,10 @@ export class AquariumHost {
         ? params.environment
         : DEFAULT_ENVIRONMENT_ID;
       const world: MutableWorld = createDefaultWorld(params.seed, environment);
+      // Bois flottés de `bois=` (#169), en capture : ajoutés au décor avant la population.
+      if (params.capture) {
+        applyCaptureWoods(world, params.woods);
+      }
       // Effectifs de `population=` (#69) : appliqués à t = 0, avant d'avancer le monde.
       applyPopulation(world, params.population);
       this.currentWorld = params.capture
