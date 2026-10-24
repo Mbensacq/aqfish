@@ -4,7 +4,8 @@ import { isCaptureReady, resetCaptureReady } from '../../core/capture/capture-re
 import { RENDER_FILTER_STORAGE_KEY } from '../../core/render-filter/render-filter';
 import { SAVE_STORAGE_KEY, type SaveStorage } from '../../core/save-storage/save-storage';
 import { createDayClock } from '../../sim/daylight';
-import { parseWorld, serializeWorld } from '../../sim/save';
+import { DEFAULT_SAVE_SETTINGS, parseWorld, serializeWorld } from '../../sim/save';
+import { DEFAULT_ROOM } from '../../sim/room';
 import type { AquariumRenderer } from '../../render/aquarium-view';
 import { MAX_STEPS_PER_FRAME } from '../../sim/constants';
 import {
@@ -50,6 +51,7 @@ import {
   CAMERA_ATTRIBUTE,
   ENVIRONMENT_ATTRIBUTE,
   RAIN_ATTRIBUTE,
+  ROOM_ATTRIBUTE,
   TANK_ATTRIBUTE,
   CAMERA_TARGET_ATTRIBUTE,
   DECOR_ATTRIBUTE,
@@ -868,6 +870,98 @@ describe('AquariumHost', () => {
       early.componentInstance.toggleRain();
       expect(early.componentInstance.rain()).toBe(false);
       early.destroy();
+    });
+  });
+
+  describe('pièce autour du bac (#187)', () => {
+    const host = () => fixture.componentInstance;
+    const roomAttr = () => (fixture.nativeElement as HTMLElement).getAttribute(ROOM_ATTRIBUTE);
+    const savedRoom = () => {
+      const saved = parseWorld(saveStorage!.getItem(SAVE_STORAGE_KEY)!);
+      return saved.ok ? saved.settings.room : null;
+    };
+
+    it('case : affichée, enregistrée et restaurée, sans toucher au monde ni recréer la vue', async () => {
+      await create('?seed=8');
+      setCanvasSize(800, 600);
+      frames.flush(0);
+      expect(host().room()).toEqual(DEFAULT_ROOM);
+      expect(roomAttr()).toBe('false');
+      const world = host().world;
+      const tick = world!.tick;
+      host().setRoomShown(true);
+      expect(host().room().shown).toBe(true);
+      expect(roomAttr()).toBe('true');
+      expect(renderers).toHaveLength(1);
+      expect(host().world).toBe(world);
+      expect(host().world!.tick).toBe(tick);
+      expect(savedRoom()).toEqual({ ...DEFAULT_ROOM, shown: true });
+      frames.flush(1000);
+      expect(renderers[0].renders).toBeGreaterThan(0);
+      fixture.destroy();
+      await create();
+      expect(host().room().shown).toBe(true);
+      expect(roomAttr()).toBe('true');
+      host().setRoomShown(false);
+      expect(roomAttr()).toBe('false');
+      expect(savedRoom()).toEqual(DEFAULT_ROOM);
+    });
+
+    it('hors du bac tropical : réglage gardé mais rien n’est dessiné', async () => {
+      await create('?seed=8');
+      host().setRoomShown(true);
+      host().setEnvironment('bassin');
+      expect(host().room().shown).toBe(true);
+      expect(roomAttr()).toBe('false');
+      host().setEnvironment('tropical');
+      expect(roomAttr()).toBe('true');
+    });
+
+    it('même simulation, pièce affichée ou non', async () => {
+      await create('?seed=12');
+      host().setRoomShown(true);
+      setCanvasSize(800, 600);
+      frames.flush(0);
+      frames.flush(500);
+      const withRoom = host().world;
+      fixture.destroy();
+      await create('?seed=12');
+      setCanvasSize(800, 600);
+      frames.flush(0);
+      frames.flush(500);
+      expect(host().world).toEqual(withRoom);
+    });
+
+    it('piece=1 en capture seulement ; case sans effet en capture et avant le démarrage', async () => {
+      const early = TestBed.createComponent(AquariumHost);
+      expect(() => early.componentInstance.setRoomShown(true)).not.toThrow();
+      expect(early.componentInstance.room().shown).toBe(false);
+      early.destroy();
+      await create('?capture=1&seed=3&piece=1');
+      expect(host().room().shown).toBe(true);
+      expect(roomAttr()).toBe('true');
+      host().setRoomShown(false);
+      expect(host().room().shown).toBe(true);
+      fixture.destroy();
+      await create('?capture=1&seed=3&piece=1&environnement=bassin');
+      expect(roomAttr()).toBe('false');
+      fixture.destroy();
+      await create('?capture=1&seed=3');
+      expect(roomAttr()).toBe('false');
+      fixture.destroy();
+      await create('?seed=3&piece=1');
+      expect(host().room().shown).toBe(false);
+    });
+
+    it('import : la pièce de la sauvegarde importée est appliquée', async () => {
+      await create('?seed=3');
+      const text = serializeWorld(createDefaultWorld(5), {
+        ...DEFAULT_SAVE_SETTINGS,
+        room: { shown: true, cabinetHeight: 0.9 },
+      });
+      expect(host().importSave(text)).toBe(true);
+      expect(host().room()).toEqual({ shown: true, cabinetHeight: 0.9 });
+      expect(roomAttr()).toBe('true');
     });
   });
 

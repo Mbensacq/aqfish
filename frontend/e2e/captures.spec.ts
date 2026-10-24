@@ -120,6 +120,14 @@ test.describe('Captures', () => {
     // Dimensions du bac (#171) : le plus petit et le plus grand bac réglables, décor ramené.
     { name: 'three-quarter-petit-bac', query: 'bac=0.6:0.5:0.3' },
     { name: 'three-quarter-grand-bac', query: 'bac=2:0.9:0.9' },
+    // Pièce autour du bac (#187) : sol, mur et meuble support ; sous le bac, la pièce s'efface.
+    { name: 'three-quarter-piece', query: 'piece=1' },
+    { name: 'front-piece', query: 'piece=1&camera=front' },
+    { name: 'top-piece', query: 'piece=1&camera=top' },
+    { name: 'side-piece', query: 'piece=1&camera=side' },
+    { name: 'bottom-piece', query: 'piece=1&camera=bottom' },
+    { name: 'three-quarter-piece-minuit', query: 'piece=1&heure=0' },
+    { name: 'three-quarter-piece-grand-bac', query: 'piece=1&bac=2:0.9:0.9' },
   ] as const;
   for (const { name, query } of DAY_CAPTURES) {
     test(`angle ${name}`, async ({ page }) => {

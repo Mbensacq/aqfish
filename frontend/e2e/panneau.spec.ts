@@ -256,6 +256,12 @@ test.describe('Panneau de contrôle', () => {
     await page.keyboard.press('Tab');
     await expect(page.getByRole('combobox', { name: 'Environnement' })).toBeFocused();
 
+    // Case « Afficher la pièce » (#187), sous la liste, dans le bac tropical.
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('checkbox', { name: 'Afficher la pièce' })).toBeFocused();
+    await page.keyboard.press('Space');
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-room', 'true');
+
     await page.keyboard.press('Tab');
     await expect(speed(page)).toBeFocused();
     await page.keyboard.press('ArrowRight');

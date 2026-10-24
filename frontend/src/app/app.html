@@ -21,7 +21,7 @@
     />
     <!-- Indicateur du moment de la journée (#73). -->
     <app-day-indicator [phase]="aquarium.dayPhase()" />
-    <!-- Panneau de contrôle (#52) : environnement (#87), vitesse, heure et pluie (#106), décor et granulés (#117), population (#69), sauvegarde (#70). Fermé par défaut. -->
+    <!-- Panneau de contrôle (#52) : environnement (#87) et pièce (#187), vitesse, heure et pluie (#106), décor et granulés (#117), population (#69), sauvegarde (#70). Fermé par défaut. -->
     <app-control-panel
       #panel
       (opened)="onPanelOpened()"
@@ -33,6 +33,7 @@
       [rain]="aquarium.rain()"
       [decorEditable]="aquarium.decorEditable()"
       [foodStyle]="aquarium.foodStyle()"
+      [roomShown]="aquarium.room().shown"
       [population]="aquarium.population()"
       [populationMax]="aquarium.populationMax()"
       [saveStatus]="aquarium.saveStatus()"
@@ -43,6 +44,7 @@
       (clockRunningChanged)="aquarium.setClockRunning($event)"
       (decorVisibleChanged)="aquarium.setDecorVisible($event)"
       (rainChanged)="aquarium.setRain($event)"
+      (roomShownChanged)="aquarium.setRoomShown($event)"
       (editRequested)="onEditRequested()"
       (foodStyleToggled)="aquarium.toggleFoodStyle()"
       (populationChanged)="aquarium.setPopulation($event.species, $event.count)"

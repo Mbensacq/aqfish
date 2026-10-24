@@ -35,6 +35,10 @@
  * comme hors capture (sans effet dans un environnement sans pluie) ; toute autre valeur ou
  * absent, pas de pluie (séries existantes inchangées).
  *
+ * Paramètre facultatif `piece=1` (issue #187) : en mode capture, la pièce autour du bac
+ * (sol, mur, meuble support) est affichée, dans le bac tropical seulement ; toute autre
+ * valeur ou absent, pièce masquée (séries existantes inchangées).
+ *
  * Paramètre facultatif `edition=<indice>` (issue #167) : en mode capture, montre le mode
  * édition du décor avec l'élément d'indice donné de `World.decor` sélectionné (entier de 0 à
  * 999) ; absent, invalide ou hors du décor, aucune sélection (séries existantes inchangées).
@@ -89,6 +93,8 @@ export interface CaptureParams {
   readonly foodStyle: FoodStyle | null;
   /** Vrai pour `pluie=1` : il pleut dès le départ (issue #106). */
   readonly rain: boolean;
+  /** Vrai pour `piece=1` : pièce autour du bac affichée, en capture (issue #187). */
+  readonly room: boolean;
   /** Élément du décor sélectionné par `edition=` (issue #167) ; `null` si absent ou invalide. */
   readonly editSelection: number | null;
   /** Bois flottés ajoutés au décor par `bois=` (issue #169), vide si absent. */
@@ -151,6 +157,7 @@ export const DEFAULT_CAPTURE_PARAMS: CaptureParams = {
   population: [],
   foodStyle: null,
   rain: false,
+  room: false,
   editSelection: null,
   woods: [],
   tank: null,
@@ -192,6 +199,7 @@ export function parseCaptureParams(search: string): CaptureParams {
     population: parsePopulation(params.get('population')),
     foodStyle: parseFoodStyle(params.get('granules')),
     rain: params.get('pluie') === '1',
+    room: params.get('piece') === '1',
     editSelection: parseEditSelection(params.get('edition')),
     woods: parseWoods(params.get('bois')),
     tank: parseTank(params.get('bac')),

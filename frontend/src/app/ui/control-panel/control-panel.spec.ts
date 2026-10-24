@@ -96,6 +96,7 @@ describe('fonctions du panneau de contrôle', () => {
     [clockRunning]="running()"
     [decorVisible]="decor()"
     [rain]="rain()"
+    [roomShown]="room()"
     [decorEditable]="editable()"
     [foodStyle]="foodStyle()"
     [population]="population()"
@@ -111,6 +112,7 @@ describe('fonctions du panneau de contrôle', () => {
     (clockRunningChanged)="events.push(['auto', $event])"
     (decorVisibleChanged)="events.push(['decor', $event])"
     (rainChanged)="events.push(['pluie', $event])"
+    (roomShownChanged)="events.push(['piece', $event])"
     (environmentChanged)="environments.push($event)"
     (foodStyleToggled)="foodToggles = foodToggles + 1"
     (editRequested)="edits = edits + 1"
@@ -125,6 +127,7 @@ class TestHost {
   readonly running = signal(true);
   readonly decor = signal(true);
   readonly rain = signal(false);
+  readonly room = signal(false);
   readonly foodStyle = signal<FoodStyle>('points');
   foodToggles = 0;
   readonly editable = signal(true);
@@ -355,6 +358,32 @@ describe('ControlPanel', () => {
     );
   });
 
+  it('case « Afficher la pièce » (#187) : bac tropical seulement, suit l’hôte et émet la demande', async () => {
+    await openPanel();
+    const box = checkbox('Afficher la pièce')!;
+    expect(box.checked).toBe(false);
+    expect(box.closest('[data-section="environnement"]')).not.toBeNull();
+    // Avec le libellé « Lieu » (sur sa ligne, #101), après la liste dans l'ordre du clavier.
+    expect(box.closest('.control-panel__field')?.textContent).toContain('Lieu');
+    const select = root().querySelector('#panneau-environnement')!;
+    expect(select.compareDocumentPosition(box) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    box.click();
+    expect(fixture.componentInstance.events).toEqual([['piece', true]]);
+    fixture.componentInstance.room.set(true);
+    await fixture.whenStable();
+    expect(checkbox('Afficher la pièce')!.checked).toBe(true);
+    checkbox('Afficher la pièce')!.click();
+    expect(fixture.componentInstance.events).toEqual([
+      ['piece', true],
+      ['piece', false],
+    ]);
+    for (const id of ['bassin', 'paludarium', 'recif'] as const) {
+      fixture.componentInstance.environment.set(id);
+      await fixture.whenStable();
+      expect(checkbox('Afficher la pièce'), id).toBeNull();
+    }
+  });
+
   it('case « Afficher le décor » : suit l’hôte et émet la demande', async () => {
     await openPanel();
     const box = checkbox('Afficher le décor')!;
@@ -370,9 +399,10 @@ describe('ControlPanel', () => {
     await openPanel();
     // Le champ de fichier natif est masqué : le bouton « Importer » l'ouvre (#70).
     const controls = [...root().querySelectorAll<HTMLElement>('button, input:not([type="file"])')];
-    // 5 contrôles de #52, « Éditer le décor » (#167), « Granulés » (#117), puis « − », champ
-    // et « + » pour chacune des 3 espèces (#69), puis « Exporter » et « Importer » (#70).
-    expect(controls).toHaveLength(5 + 1 + 1 + 3 * 3 + 2);
+    // 5 contrôles de #52, « Éditer le décor » (#167), « Granulés » (#117), « Afficher la
+    // pièce » (#187), puis « − », champ et « + » pour chacune des 3 espèces (#69), puis
+    // « Exporter » et « Importer » (#70).
+    expect(controls).toHaveLength(5 + 1 + 1 + 1 + 3 * 3 + 2);
     expect(root().querySelectorAll('input[type="file"]')).toHaveLength(1);
     for (const control of controls) {
       const name =

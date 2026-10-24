@@ -28,6 +28,7 @@ describe('parseCaptureParams', () => {
       population: [],
       foodStyle: null,
       rain: false,
+      room: false,
       editSelection: null,
       woods: [],
       tank: null,
@@ -94,6 +95,15 @@ describe('parseCaptureParams', () => {
     }
     expect(parseCaptureParams('?capture=1').rain).toBe(false);
     expect(DEFAULT_CAPTURE_PARAMS.rain).toBe(false);
+  });
+
+  it('lit la pièce : piece=1 seulement, sinon pièce masquée (#187)', () => {
+    expect(parseCaptureParams('?capture=1&piece=1').room).toBe(true);
+    for (const bad of ['', '0', 'oui', 'true', '1 ', '01', '2']) {
+      expect(parseCaptureParams(`?capture=1&piece=${encodeURIComponent(bad)}`).room).toBe(false);
+    }
+    expect(parseCaptureParams('?capture=1').room).toBe(false);
+    expect(DEFAULT_CAPTURE_PARAMS.room).toBe(false);
   });
 
   it('lit le rendu des granulés : points ou voxels, sinon null (#117)', () => {

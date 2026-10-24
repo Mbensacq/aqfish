@@ -52,8 +52,11 @@ function quad(a: Corner, b: Corner, c: Corner, d: Corner): Corner[] {
   return [a, b, c, a, c, d];
 }
 
-/** Six faces d'un cube unité, triangles dans le sens antihoraire vus de l'extérieur. */
-const FACES: readonly Face[] = [
+/**
+ * Six faces d'un cube unité, triangles dans le sens antihoraire vus de l'extérieur ; partagées
+ * avec la pièce (`render/room-layer.ts`).
+ */
+export const FACES: readonly Face[] = [
   { d: [1, 0, 0], corners: quad([1, 0, 1], [1, 0, 0], [1, 1, 0], [1, 1, 1]) },
   { d: [-1, 0, 0], corners: quad([0, 0, 0], [0, 0, 1], [0, 1, 1], [0, 1, 0]) },
   { d: [0, 1, 0], corners: quad([0, 1, 1], [1, 1, 1], [1, 1, 0], [0, 1, 0]) },

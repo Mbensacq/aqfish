@@ -166,6 +166,31 @@
   }
 }
 
+// Case sur une ligne de libellé (« Afficher la pièce », #187) : sans hauteur minimale, la
+// ligne garde la hauteur du texte et le panneau tient sans défiler à 1280 × 720 (#101).
+.control-panel__check--inline {
+  min-height: 0;
+  gap: 6px;
+}
+
+// « Lieu » et la case de la pièce sur la première ligne, la liste dessous, sur toute la largeur.
+.control-panel__field--place {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  column-gap: 8px;
+
+  .control-panel__select {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .control-panel__check--inline {
+    grid-column: 2;
+    grid-row: 1;
+  }
+}
+
 // Population (#69) : nom, puis « − », champ, « + » alignés à droite.
 .control-panel__count {
   display: flex;

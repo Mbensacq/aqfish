@@ -11,6 +11,7 @@ import { formatHour, HOUR_SLIDER_STEP, HOURS_PER_DAY, NOON_HOUR } from '../../si
 import { NO_FISH, type PopulationCounts } from '../../sim/population';
 import type { SaveMessage, SaveStatus } from '../../core/save-storage/save-storage';
 import { DEFAULT_FOOD_STYLE, type FoodStyle } from '../../core/food-style/food-style';
+import { isRoomAvailable } from '../../sim/room';
 import { MAX_SAVE_LENGTH } from '../../sim/save';
 import { DEFAULT_SIM_SPEED, SIM_SPEEDS, type SimSpeed } from '../../sim/sim-speed';
 import { SPECIES, type SpeciesId } from '../../sim/species';
@@ -144,8 +145,10 @@ function toNumber(value: string | number): number {
       <section class="control-panel" [id]="panelId" aria-label="Réglages de l’aquarium">
         <fieldset class="control-panel__section" data-section="environnement">
           <legend class="control-panel__legend">Environnement</legend>
-          <label class="control-panel__field" for="panneau-environnement">
-            <span class="control-panel__label">Lieu</span>
+          <!-- Pièce autour du bac (#187), bac tropical seulement : après la liste au clavier,
+               mais sur la ligne de « Lieu » à l'écran, le panneau ne grandit pas (#101). -->
+          <div class="control-panel__field control-panel__field--place">
+            <label class="control-panel__label" for="panneau-environnement">Lieu</label>
             <select
               id="panneau-environnement"
               class="control-panel__select"
@@ -158,7 +161,13 @@ function toNumber(value: string | number): number {
                 </option>
               }
             </select>
-          </label>
+            @if (roomAvailable()) {
+              <label class="control-panel__check control-panel__check--inline" data-room>
+                <input type="checkbox" [checked]="roomShown()" (change)="onRoom($event)" />
+                Afficher la pièce
+              </label>
+            }
+          </div>
         </fieldset>
 
         <fieldset class="control-panel__section" data-section="simulation">
@@ -352,6 +361,8 @@ export class ControlPanel {
   readonly decorEditable = input(false);
   /** Rendu des granulés, `points` ou `voxels` (fourni par l'hôte, #117). */
   readonly foodStyle = input<FoodStyle>(DEFAULT_FOOD_STYLE);
+  /** Vrai si la pièce autour du bac est affichée (fourni par l'hôte, #187). */
+  readonly roomShown = input(false);
   /** Effectif de chaque espèce (fourni par l'hôte). */
   readonly population = input<PopulationCounts>(NO_FISH);
   /** Effectif maximal de chaque espèce, compte tenu des autres (fourni par l'hôte). */
@@ -375,6 +386,8 @@ export class ControlPanel {
   readonly editRequested = output<void>();
   /** Case « Pluie » (#106) : `true` pour faire pleuvoir, `false` pour arrêter. */
   readonly rainChanged = output<boolean>();
+  /** Case « Afficher la pièce » (#187). */
+  readonly roomShownChanged = output<boolean>();
   /** Bouton « Granulés » : passer à l'autre rendu (#117). */
   readonly foodStyleToggled = output<void>();
   /** Effectif demandé pour une espèce (déjà borné à [0, maximum]). */
@@ -398,6 +411,8 @@ export class ControlPanel {
   protected readonly environmentIds = ENVIRONMENT_IDS;
   /** Case « Pluie » proposée seulement là où il peut pleuvoir (le bassin, #106). */
   protected readonly rainAvailable = computed(() => environmentById(this.environment()).rain);
+  /** Case « Afficher la pièce » proposée seulement autour du bac tropical (#187). */
+  protected readonly roomAvailable = computed(() => isRoomAvailable(this.environment()));
   protected readonly hourStep = HOUR_SLIDER_STEP;
   /** Dernier cran du curseur d'heure : 23:45 (24:00 serait minuit, déjà au cran 0). */
   protected readonly maxHour = HOURS_PER_DAY - HOUR_SLIDER_STEP;
@@ -479,6 +494,10 @@ export class ControlPanel {
 
   protected onRain(event: Event): void {
     this.rainChanged.emit((event.target as HTMLInputElement).checked);
+  }
+
+  protected onRoom(event: Event): void {
+    this.roomShownChanged.emit((event.target as HTMLInputElement).checked);
   }
 
   protected onEdit(): void {

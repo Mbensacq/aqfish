@@ -96,6 +96,7 @@ import {
 } from '../../sim/environment';
 import { sameDimensions, type TankDimensions } from '../../sim/tank';
 import { setTankDimensionsInPlace } from '../../sim/tank-resize';
+import { DEFAULT_ROOM, type Room } from '../../sim/room';
 import { fixedStepInto, type FixedStepState } from '../../sim/fixed-step';
 import {
   DEFAULT_SIM_SPEED,
@@ -163,6 +164,8 @@ export const SPEED_ATTRIBUTE = 'data-aqfish-speed';
 export const DECOR_ATTRIBUTE = 'data-aqfish-decor';
 /** Attribut du composant hôte : `true` s'il pleut, `false` sinon (#106). */
 export const RAIN_ATTRIBUTE = 'data-aqfish-rain';
+/** Attribut exposant si la pièce autour du bac est affichée (#187), `true` ou `false`. */
+export const ROOM_ATTRIBUTE = 'data-aqfish-room';
 /** Attribut du composant hôte exposant les effectifs (`neon:12,guppy:6,corydora:6`, #69). */
 export const POPULATION_ATTRIBUTE = 'data-aqfish-population';
 
@@ -416,6 +419,12 @@ export class AquariumHost {
    */
   readonly foodStyle = signal<FoodStyle>(DEFAULT_FOOD_STYLE);
 
+  /**
+   * Pièce autour du bac (#187) : case « Afficher la pièce » du panneau, enregistrée avec les
+   * réglages de la sauvegarde ; `piece=1` en capture. Affichée dans le bac tropical seulement.
+   */
+  readonly room = signal<Room>(DEFAULT_ROOM);
+
   /** Environnement affiché (#87), changé par le sélecteur du panneau. */
   readonly environment = signal<EnvironmentId>(DEFAULT_ENVIRONMENT_ID);
 
@@ -590,6 +599,22 @@ export class AquariumHost {
     view.setDecorVisible(visible);
     this.decorVisible.set(visible);
     this.host.nativeElement.setAttribute(DECOR_ATTRIBUTE, String(visible));
+    this.scheduleFrame();
+  }
+
+  /**
+   * Affiche ou masque la pièce autour du bac (#187) : sol, mur et meuble support, sans
+   * effet sur la simulation. Le choix est enregistré avec la sauvegarde, même hors du bac
+   * tropical, où la pièce n'est pas dessinée. Sans effet en mode capture (`piece=`) ou avant
+   * le démarrage.
+   */
+  setRoomShown(shown: boolean): void {
+    const view = this.view;
+    if (!view || this.capture || shown === this.room().shown) {
+      return;
+    }
+    this.applyRoom({ ...this.room(), shown });
+    this.saveNow();
     this.scheduleFrame();
   }
 
@@ -1116,7 +1141,19 @@ export class AquariumHost {
 
   /** Réglages enregistrés avec le monde : vitesse, horloge et rendu des granulés. */
   private settings(): SaveSettings {
-    return { speed: this.speed(), clock: this.dayClock, foodStyle: this.foodStyle() };
+    return {
+      speed: this.speed(),
+      clock: this.dayClock,
+      foodStyle: this.foodStyle(),
+      room: this.room(),
+    };
+  }
+
+  /** Applique la pièce à la vue courante et l'expose (`ROOM_ATTRIBUTE`). */
+  private applyRoom(room: Room): void {
+    this.room.set(room);
+    this.view?.setRoom(room);
+    this.host.nativeElement.setAttribute(ROOM_ATTRIBUTE, String(this.view?.roomShown ?? false));
   }
 
   /** Applique le rendu des granulés à la vue courante et l'expose. */
@@ -1208,6 +1245,7 @@ export class AquariumHost {
     this.host.nativeElement.setAttribute(SPEED_ATTRIBUTE, String(settings.speed));
     this.dayClock = settings.clock;
     this.foodStyle.set(settings.foodStyle ?? DEFAULT_FOOD_STYLE);
+    this.room.set(settings.room ?? DEFAULT_ROOM);
     this.litHour = null;
     this.exposeClockFrozen();
     this.exposeEnvironment();
@@ -1245,6 +1283,7 @@ export class AquariumHost {
       this.currentWorld = restored.world as MutableWorld;
       this.speed.set(restored.settings.speed);
       this.foodStyle.set(restored.settings.foodStyle ?? DEFAULT_FOOD_STYLE);
+      this.room.set(restored.settings.room ?? DEFAULT_ROOM);
       // `heure=` fige l'heure : l'horloge sauvegardée ne s'applique pas.
       if (params.hour === null) {
         this.dayClock = restored.settings.clock;
@@ -1252,6 +1291,10 @@ export class AquariumHost {
     } else {
       if (params.capture && params.foodStyle !== null) {
         this.foodStyle.set(params.foodStyle);
+      }
+      // Pièce de `piece=1` (#187), en capture : appliquée à la création de la vue.
+      if (params.capture && params.room) {
+        this.room.set({ ...DEFAULT_ROOM, shown: true });
       }
       const environment = isEnvironmentId(params.environment)
         ? params.environment
@@ -1390,6 +1433,8 @@ export class AquariumHost {
     view.setDecor(world.decor, world.seed);
     view.setDecorVisible(this.decorVisible());
     this.applyFoodStyle(this.foodStyle());
+    // Hors du bac tropical, la vue ne dessine pas la pièce : l'état exposé suit (#187).
+    this.applyRoom(this.room());
     // Hors du bassin, la vue refuse la pluie : l'état affiché suit (#106).
     this.applyRain(this.rain());
     this.litHour = null;

@@ -39,6 +39,7 @@ import { flowerOpenness, lilyPadLayout } from '../sim/lily-pads';
 import { seededFeatures } from '../sim/world';
 import type { DecorItem } from '../sim/decor';
 import type { FoodPellet } from '../sim/food';
+import { isRoomAvailable, type Room } from '../sim/room';
 import { BubbleLayer } from './bubble-layer';
 import { DecorLayer } from './decor-layer';
 import { sandPlanePoint, sandPoint, type DecorPick } from './decor-pick';
@@ -49,6 +50,7 @@ import { FoodLayer } from './food-layer';
 import { scenePixelsPerMeter } from './food-size';
 import { LilyPadLayer } from './lily-pad-layer';
 import { isObliqueView, RainLayer } from './rain-layer';
+import { RoomLayer } from './room-layer';
 import { isClick, toNormalizedDevice, waterSurfacePoint } from './food-pick';
 import {
   decorTintInto,
@@ -146,6 +148,8 @@ export class AquariumView {
   private readonly fishLayers: readonly FishLayer[];
   /** Décor du monde (rochers), fixé par `setDecor`. */
   private readonly decorLayer = new DecorLayer();
+  /** Pièce autour du bac (#187), masquée par défaut. */
+  private readonly roomLayer = new RoomLayer();
   /** Tampons réutilisés par `updateLight` (aucune allocation). */
   private readonly decorTint: MutableTint = [1, 1, 1];
   private readonly penalties: TonePenalties = { night: 0, twilight: 0 };
@@ -344,6 +348,7 @@ export class AquariumView {
       this.lilyPadLayer,
       this.rainLayer,
       this.floatingLeafLayer,
+      this.roomLayer,
     ];
     for (const layer of this.sceneLayers) {
       this.world.scene.add(layer.object);
@@ -807,6 +812,36 @@ export class AquariumView {
   }
 
   /**
+   * Affiche ou masque la pièce autour du bac (sol, mur, meuble support, issue #187), aux
+   * dimensions du bac de la vue. Sans effet hors d'un environnement qui en a une
+   * (`isRoomAvailable`) : rien n'y est jamais construit.
+   */
+  setRoom(room: Room): void {
+    if (!this.disposed) {
+      this.roomLayer.setRoom(
+        this.world.dimensions,
+        room,
+        isRoomAvailable(this.world.environment.id),
+      );
+    }
+  }
+
+  /** Vrai si la pièce est construite (tests). */
+  get roomShown(): boolean {
+    return this.roomLayer.built;
+  }
+
+  /** Nombre de blocs de la pièce (tests). */
+  get roomBlockCount(): number {
+    return this.roomLayer.count;
+  }
+
+  /** Vrai si le mur de la pièce est affiché au dernier rendu (tests). */
+  get roomWallVisible(): boolean {
+    return this.roomLayer.wallVisible;
+  }
+
+  /**
    * Fait pleuvoir (`true`) ou arrête la pluie (issue #106) : gouttes, ronds à la surface et
    * nénuphars qui frémissent, au temps simulé de `updateDecor`. Sans effet dans un
    * environnement sans pluie (`Environment.rain`). Renvoie l'état appliqué.
@@ -920,6 +955,8 @@ export class AquariumView {
     }
     // Bassin enterré (#105) : coupe du sol et de la margelle si la caméra passe sous le sol.
     this.world.setViewpoint(this.camera.position.x, this.camera.position.y, this.camera.position.z);
+    // Pièce (#187) : rien ne cache le bac, la caméra passât-elle sous le bac ou derrière le mur.
+    this.roomLayer.setViewpoint(this.camera.position.y, this.camera.position.z);
     // Taille des granulés selon le zoom (#117) : échelle à la distance de la cible.
     this.foodLayer.setPixelsPerMeter(
       scenePixelsPerMeter(
