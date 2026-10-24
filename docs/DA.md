@@ -135,6 +135,13 @@ Les rochers (ADR 0015) : voxels de 1,2 cm (à l'échelle 1) en couleurs plates, 
 toujours `rocheSombre` (ombre de contact), contour d'un pixel `koiNoir`. Posés sur le sable,
 base légèrement enfoncée.
 
+La **pièce** autour du bac tropical (#187, ADR 0048), facultative : une pièce sombre où le
+bac est la source de lumière. Meuble support en bois clair (`sableOmbre`, portes
+`sableSombre`, poignées et socle `rocheSombre`), parquet sombre à lames de deux teintes
+(`rocheSombre`, `koiNoir`), mur presque noir (`koiNoir`, couleurs plates) avec cimaise
+`rocheSombre` au-dessus du bac et plinthe `sableOmbre`. Le mur reste sombre pour que l'eau vue
+devant lui garde son vert ; aucune couleur ajoutée à la palette.
+
 ## Interface
 
 - Minimale et discrète : barres flottantes sombres translucides aux coins arrondis, qui

@@ -412,6 +412,21 @@ haut de sa section.
 
 ## Rendu
 
+- **Un fond derrière l'eau change la couleur de l'eau** (cycle 64, #187) : l'eau est
+  translucide ; vue devant un mur `roche` ou même `rocheSombre` éclairé, la passe palette la
+  ramenait à `roche` (eau grise), alors que sur le fond de la scène (`fondScene`) elle tombe
+  sur `eauSombre`. Un mur `koiNoir` éclairé retombait, lui, sur `fondScene` (invisible). Mur
+  de la pièce en couleurs plates (`MeshBasicMaterial`, `koiNoir`) et repères plus clairs hors
+  de l'axe des vitres (cimaise au-dessus du bac, plinthe au sol). Tout nouvel objet placé
+  derrière le bac : regarder la vue `front` et la vue `top`, où l'eau des vitres latérales se
+  voit sur le sol. (2026-10-24)
+- **Cotes arrondies au centimètre : `Math.round(-17.5)` vaut −17** (cycle 64, #187) : arrondir
+  au voxel une cote négative à mi-pas la rapproche de zéro, une positive l'en éloigne ; dans
+  le bac de 35 cm (demi-profondeur 17,5 cm), deux cotes voisines arrondies séparément se
+  confondaient et la poignée, d'épaisseur nulle, était omise (test « bac de 0,8 × 0,55 ×
+  0,35 m »). Arrondir une fois les demi-dimensions (positives, par excès), puis ne construire
+  que des sommes de pas (`roomBlocks`, `sim/room.ts`). (2026-10-24)
+
 - **Un ton de crépuscule n'est pas gratuit à 19 h** (cycle 62, #81) : à 19 h, l'intensité
   du jour vaut ≈ 0,15 et le poids du crépuscule ≈ 0,71 ; la pénalité des tons du crépuscule
   est alors ≈ 0,0083 (distance au carré, sRGB sur [0, 1]), soit ≈ 23 niveaux sur 255. Un
