@@ -89,6 +89,12 @@ haut de sa section.
 
 ## Tests
 
+- **Reconnaître le fragment du moteur physique dans un e2e** (cycle 59, #170) : ses noms de
+  fichiers changent (hachage, pré-bundle de `ng serve`). Le chercher par son contenu : la
+  variante `compat` de Rapier embarque son WebAssembly en base64, qui commence par `AGFzbQ`
+  (`ENGINE_MARKER`, `e2e/outils-decor.ts`). `blockEngine` simule le hors-ligne en refusant
+  tout script qui le contient. (2026-10-24)
+
 - **E2e d'édition du décor : une pose refusée ressemble à un geste raté** (cycle 57, #168) :
   agrandir ou déplacer un élément près d'un voisin est refusé s'il le pénètre
   (`isDecorPoseAllowed`), et le test attend en vain une sauvegarde modifiée. Choisir les
@@ -281,6 +287,13 @@ haut de sa section.
   bout en bout et les captures. (2026-10-16)
 
 ## Simulation
+
+- **Sphères de collision d'un rocher : une partie enfouie sous sa base** (cycle 59, #170) :
+  les blocs d'un rocher sont centrés à 0,2–0,45 r au-dessus de la base, donc descendent
+  jusqu'à 0,8 r sous le sable, sans voxel visible. Un rocher posé sur un autre par le moteur
+  reposait sur cette partie : 6 cm de vide sous lui. D'où `liftedSphereY` pour tout élément
+  élevé (ADR 0046). Toujours regarder un empilement à l'image, pas seulement les tests de
+  chevauchement. (2026-10-24)
 
 - **Test de non-traversée : un poisson posé sur la surface « est dedans » à −1e-17 m près**
   (cycle 58, #169) : le filet de sécurité de `stepFish` projette le centre exactement sur la
