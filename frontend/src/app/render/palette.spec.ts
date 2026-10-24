@@ -5,6 +5,7 @@ import {
   ENVIRONMENT_TONE_NAMES,
   ENVIRONMENT_TONES,
   EXTENDED_PALETTE_COLORS,
+  INPUT_TONES,
   isEnvironmentToneName,
   NIGHT_TONE_COLORS,
   NIGHT_TONES,
@@ -156,6 +157,24 @@ describe('Tons de nuit et du crépuscule (issue #73, ADR 0021)', () => {
     expect(nameAt(hexToRgb('#9c837a'), 0)).not.toBe('sableCrepuscule');
   });
 
+  it('crépuscule de 19 h : sable et rochers mauves ou chauds, pas de gris neutre (#81)', () => {
+    // Couleurs mesurées avant quantification (passe court-circuitée), cycle 62, vue
+    // trois-quarts à 19 h : dessus et côté du sable, faces de rocher éclairées.
+    expect(nameAt(hexToRgb('#756a7c'), 19)).toBe('sableCrepusculeMauve');
+    expect(nameAt(hexToRgb('#5e5853'), 19)).toBe('sableCrepusculeOmbre');
+    expect(nameAt(hexToRgb('#615062'), 19)).toBe('rocheCrepuscule');
+    // À 18 h, faces de rocher éclairées et à l'ombre.
+    expect(nameAt(hexToRgb('#6a535d'), 18)).toBe('rocheCrepuscule');
+    expect(nameAt(hexToRgb('#42333a'), 18)).toBe('rocheCrepusculeSombre');
+    // Les tons du sable de 19 h sont saturés : plus d'écart entre canaux que la roche grise.
+    const spread = (hex: string) => {
+      const [r, g, b] = hexToRgb(hex);
+      return Math.max(r, g, b) - Math.min(r, g, b);
+    };
+    expect(spread(TWILIGHT_TONES.sableCrepusculeMauve)).toBeGreaterThan(2 * spread(PALETTE.roche));
+    expect(spread(TWILIGHT_TONES.rocheCrepuscule)).toBeGreaterThan(2 * spread(PALETTE.roche));
+  });
+
   it('chaque ton est capté par lui-même à son heure', () => {
     for (const [name, hex] of Object.entries(NIGHT_TONES)) {
       expect(nameAt(hexToRgb(hex), 0)).toBe(name);
@@ -219,5 +238,15 @@ describe('Tons d’environnement (#148, ADR 0039)', () => {
     }
     const sum = (c: Rgb) => c[0] + c[1] + c[2];
     expect(sum(surface)).toBeGreaterThan(sum(body));
+  });
+});
+
+describe('Tons d’entrée (#81)', () => {
+  it('sont des couleurs valides, absentes de la passe palette (jamais affichées telles quelles)', () => {
+    for (const hex of Object.values(INPUT_TONES)) {
+      expect(hex).toMatch(/^#[0-9a-f]{6}$/);
+      expect(EXTENDED_PALETTE_COLORS).not.toContain(hex);
+      expect(ENVIRONMENT_TONE_COLORS).not.toContain(hex);
+    }
   });
 });

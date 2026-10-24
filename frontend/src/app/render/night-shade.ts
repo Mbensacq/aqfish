@@ -1,4 +1,6 @@
-import { mix } from '../sim/daylight';
+import { clampIntensity, mix, twilightWeight } from '../sim/daylight';
+
+export { twilightWeight };
 
 /**
  * Luminosité des objets en couleurs plates (poissons, bulles, diffuseur : ADR 0009, 0017)
@@ -20,8 +22,7 @@ export const NIGHT_FLAT_BRIGHTNESS = 0.6;
  * comme le plein jour.
  */
 export function flatBrightness(intensity: number): number {
-  const day = Number.isFinite(intensity) ? Math.min(1, Math.max(0, intensity)) : 1;
-  return mix(NIGHT_FLAT_BRIGHTNESS, 1, day);
+  return mix(NIGHT_FLAT_BRIGHTNESS, 1, clampIntensity(intensity));
 }
 
 /** Couleur RVB modifiable, composantes linéaires (facteurs multiplicatifs). */
@@ -34,23 +35,9 @@ export type MutableTint = [number, number, number];
  */
 export const DECOR_NIGHT_TINT: readonly [number, number, number] = [0.4, 0.5, 1.2];
 /** Facteur du décor à mi-transition (aube, crépuscule) : lumière rasante, chaude. */
-export const DECOR_TWILIGHT_TINT: readonly [number, number, number] = [1, 0.78, 0.74];
+export const DECOR_TWILIGHT_TINT: readonly [number, number, number] = [1, 0.55, 0.8];
 /** Part maximale de la teinte de crépuscule du décor (atteinte à mi-transition). */
 export const DECOR_TWILIGHT_STRENGTH = 0.75;
-
-/** Intensité ramenée dans [0, 1] ; une valeur non finie compte comme le plein jour. */
-function clampedIntensity(intensity: number): number {
-  return Number.isFinite(intensity) ? Math.min(1, Math.max(0, intensity)) : 1;
-}
-
-/**
- * Poids de l'aube et du crépuscule pour une intensité du jour : `√(4 · i · (1 − i))`, nul
- * en plein jour et en pleine nuit, 1 à mi-transition (même forme que `sim/daylight.ts`).
- */
-export function twilightWeight(intensity: number): number {
-  const i = clampedIntensity(intensity);
-  return Math.sqrt(4 * i * (1 - i));
-}
 
 /**
  * Teinte du décor pour une intensité du jour, écrite dans `out` (aucune allocation) :
@@ -58,7 +45,7 @@ export function twilightWeight(intensity: number): number {
  * `DECOR_NIGHT_TINT` en pleine nuit, teinte chaude à mi-transition.
  */
 export function decorTintInto(intensity: number, out: MutableTint): MutableTint {
-  const i = clampedIntensity(intensity);
+  const i = clampIntensity(intensity);
   const twilight = DECOR_TWILIGHT_STRENGTH * twilightWeight(i);
   for (let k = 0; k < 3; k++) {
     out[k] = mix(mix(DECOR_NIGHT_TINT[k], 1, i), DECOR_TWILIGHT_TINT[k], twilight);
@@ -100,7 +87,7 @@ export function tonePenalty(weight: number): number {
  * En plein jour, les deux groupes sont écartés : l'image est celle de la palette de jour.
  */
 export function tonePenaltiesInto(intensity: number, out: TonePenalties): TonePenalties {
-  const i = clampedIntensity(intensity);
+  const i = clampIntensity(intensity);
   out.night = tonePenalty(1 - i);
   out.twilight = tonePenalty(twilightWeight(i));
   return out;

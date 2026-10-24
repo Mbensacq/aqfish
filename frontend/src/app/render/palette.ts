@@ -110,12 +110,18 @@ export const NIGHT_TONES = {
 export const TWILIGHT_TONES = {
   /** Sable sous la lumière rasante : beige rosé. */
   sableCrepuscule: '#9c837a',
-  /** Sable à la fin du crépuscule : mauve. */
-  sableCrepusculeMauve: '#75717e',
+  /** Sable à la fin du crépuscule : mauve (plus saturé depuis l'issue #81). */
+  sableCrepusculeMauve: '#786884',
+  /** Côtés du sable à la fin du crépuscule : brun rosé. */
+  sableCrepusculeOmbre: '#62524f',
   /** Eau du crépuscule : bleu-vert profond. */
   eauCrepuscule: '#395f68',
   /** Haut de l'eau au crépuscule. */
   eauCrepusculeClaire: '#4b8186',
+  /** Roche sous la lumière rasante de fin de crépuscule : mauve rosé. */
+  rocheCrepuscule: '#6e5266',
+  /** Faces de roche à l'ombre au crépuscule : prune sombre. */
+  rocheCrepusculeSombre: '#44323d',
 } as const;
 
 /**
@@ -146,6 +152,29 @@ export const ENVIRONMENT_TONES = {
    * (`eauRecif`, `eauRecifClaire`) et que `neonBleu`, dont il doit se distinguer.
    */
   chirurgienBleu: '#1d3fbf',
+} as const;
+
+/**
+ * Tons d'entrée (issue #81) : couleurs données aux matériaux, **pas** proposées à la passe
+ * palette. Elles ne s'affichent pas telles quelles : la passe les ramène à la couleur la plus
+ * proche de la palette étendue. Seul le mode sans filtre les montre ; elles sont regroupées
+ * ici pour que toute couleur du rendu vienne de ce module (docs/DA.md).
+ *
+ * Teintes d'entrée de l'eau et du sol de l'ambiance la nuit (issue #73, ADR 0021) : bleues
+ * et saturées, car l'eau est translucide (30 % d'opacité) ; l'image affichée est ramenée aux
+ * tons de nuit (`NIGHT_TONES`) par la passe.
+ */
+export const INPUT_TONES = {
+  /** Volume de l'eau la nuit. */
+  eauNuitEntree: '#2050a8',
+  /** Surface de l'eau la nuit. */
+  surfaceNuitEntree: '#3a6eb0',
+  /** Sol de la lumière ambiante la nuit (faces tournées vers le bas, côtés du sable). */
+  solNuitEntree: '#3c5a8c',
+  /** Dessous du sable la nuit (non éclairé : vue de dessous, ADR 0006). */
+  dessousSableNuitEntree: '#3c5272',
+  /** Lumière blanche (ciel de l'ambiance, soleil) : teinte neutre des lumières. */
+  lumiereBlanche: '#ffffff',
 } as const;
 
 export type NightToneName = keyof typeof NIGHT_TONES;

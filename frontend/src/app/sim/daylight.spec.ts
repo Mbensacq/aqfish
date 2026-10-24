@@ -1,7 +1,9 @@
 import { SIM_DT } from './constants';
 import {
+  clampIntensity,
   createDayClock,
   createDayLight,
+  dayIntensityAt,
   DAY_PHASE_MIN_INTENSITY,
   dayPhaseAt,
   NIGHT_PHASE_MAX_INTENSITY,
@@ -23,6 +25,7 @@ import {
   resumeClock,
   sunElevation,
   toggleClock,
+  twilightWeight,
   type DayLight,
   formatHour,
   HOUR_SLIDER_STEP,
@@ -434,5 +437,33 @@ describe('curseur d’heure (#52)', () => {
       labels.add(formatHour(h));
     }
     expect(labels.size).toBe(96);
+  });
+});
+
+describe('dayIntensityAt, clampIntensity, twilightWeight (factorisation, #81)', () => {
+  it('dayIntensityAt donne l’intensité de lightAt, au bit près, heure par heure', () => {
+    for (let h = -24; h <= 48; h += 0.25) {
+      expect(dayIntensityAt(h)).toBe(lightAt(h).intensity);
+    }
+    expect(dayIntensityAt(NOON_HOUR)).toBe(1);
+    expect(dayIntensityAt(MIDNIGHT_HOUR)).toBe(0);
+    expect(() => dayIntensityAt(Number.NaN)).toThrow(RangeError);
+  });
+
+  it('clampIntensity borne à [0, 1] ; une valeur non finie compte comme le plein jour', () => {
+    expect(clampIntensity(0.3)).toBe(0.3);
+    expect(clampIntensity(-2)).toBe(0);
+    expect(clampIntensity(5)).toBe(1);
+    expect(clampIntensity(Number.NaN)).toBe(1);
+    expect(clampIntensity(Number.NEGATIVE_INFINITY)).toBe(1);
+  });
+
+  it('twilightWeight : nul en plein jour et en pleine nuit, 1 à mi-transition, symétrique', () => {
+    expect(twilightWeight(0)).toBe(0);
+    expect(twilightWeight(1)).toBe(0);
+    expect(twilightWeight(0.5)).toBe(1);
+    expect(twilightWeight(0.2)).toBeCloseTo(twilightWeight(0.8), 12);
+    expect(twilightWeight(-1)).toBe(0);
+    expect(twilightWeight(Number.NaN)).toBe(0);
   });
 });

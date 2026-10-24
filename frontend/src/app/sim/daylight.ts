@@ -85,7 +85,7 @@ export const TWILIGHT_TINT: Rgb = [1, 0.58, 0.45];
 /** Ciel de nuit : bleu profond. */
 export const NIGHT_SKY: Rgb = [0.4, 0.5, 0.9];
 /** Ciel de l'aube et du crépuscule : rosé. */
-export const TWILIGHT_SKY: Rgb = [1, 0.66, 0.62];
+export const TWILIGHT_SKY: Rgb = [1, 0.45, 0.55];
 /** Part maximale de la teinte d'aube ou de crépuscule (atteinte à mi-transition). */
 export const TWILIGHT_STRENGTH = 0.75;
 
@@ -207,14 +207,41 @@ export function lightAt(hour: number): DayLight {
  * @throws RangeError si `hour` n'est pas un réel fini (`out` n'est alors pas modifié).
  */
 export function lightAtInto(hour: number, out: MutableDayLight): MutableDayLight {
-  const intensity = smoothstep(NIGHT_ELEVATION, DAY_ELEVATION, sunElevation(hour));
-  const twilight = TWILIGHT_STRENGTH * Math.sqrt(4 * intensity * (1 - intensity));
+  const intensity = dayIntensityAt(hour);
+  const twilight = TWILIGHT_STRENGTH * twilightWeight(intensity);
   out.intensity = intensity;
   for (let k = 0; k < 3; k++) {
     out.tint[k] = mix(mix(NIGHT_TINT[k], WHITE[k], intensity), TWILIGHT_TINT[k], twilight);
     out.sky[k] = mix(mix(NIGHT_SKY[k], WHITE[k], intensity), TWILIGHT_SKY[k], twilight);
   }
   return out;
+}
+
+/**
+ * Intensité du jour à l'heure `hour` (toute valeur finie, ramenée modulo 24) : `smoothstep`
+ * de l'élévation du soleil entre `NIGHT_ELEVATION` et `DAY_ELEVATION`, exactement 1 en plein
+ * jour et 0 en pleine nuit (`DayLight.intensity`).
+ * @throws RangeError si `hour` n'est pas un réel fini.
+ */
+export function dayIntensityAt(hour: number): number {
+  return smoothstep(NIGHT_ELEVATION, DAY_ELEVATION, sunElevation(hour));
+}
+
+/**
+ * Intensité ramenée dans [0, 1] ; une valeur non finie compte comme le plein jour (1).
+ */
+export function clampIntensity(intensity: number): number {
+  return Number.isFinite(intensity) ? Math.min(1, Math.max(0, intensity)) : 1;
+}
+
+/**
+ * Poids de l'aube et du crépuscule pour une intensité du jour : `√(4 · i · (1 − i))`, nul
+ * en plein jour et en pleine nuit, 1 à mi-transition. L'intensité est d'abord ramenée dans
+ * [0, 1] (`clampIntensity`).
+ */
+export function twilightWeight(intensity: number): number {
+  const i = clampIntensity(intensity);
+  return Math.sqrt(4 * i * (1 - i));
 }
 
 /** `a · (1 − t) + b · t` : exactement `a` pour t = 0 et `b` pour t = 1. */
@@ -244,7 +271,7 @@ export const NIGHT_PHASE_MAX_INTENSITY = 0.1;
  */
 export function dayPhaseAt(hour: number): DayPhase {
   const h = normalizeHour(hour);
-  const intensity = smoothstep(NIGHT_ELEVATION, DAY_ELEVATION, sunElevation(h));
+  const intensity = dayIntensityAt(h);
   if (intensity >= DAY_PHASE_MIN_INTENSITY) {
     return 'jour';
   }

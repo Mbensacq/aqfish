@@ -28,7 +28,7 @@ import {
   type TankDimensions,
 } from '../sim/tank';
 import { createBankDecorObject } from './bank-decor-mesh';
-import { PALETTE, type PaletteColorName } from './palette';
+import { INPUT_TONES, PALETTE, type PaletteColorName } from './palette';
 import { cutawaySides } from './pond-cutaway';
 import { createPondGround, pondGroundTop } from './pond-ground';
 import { createStoneBorder } from './stone-border';
@@ -62,20 +62,15 @@ export const NIGHT_AMBIENT_INTENSITY = 1.1;
 export const NIGHT_SUN_RATIO = 0.2;
 
 /**
- * Teintes de l'eau la nuit : couleurs de la palette vers lesquelles l'eau glisse quand
- * l'intensité du jour baisse (l'eau n'est pas éclairée : `MeshBasicMaterial`).
+ * Teintes d'entrée de l'eau et du sol de l'ambiance la nuit (issue #73, ADR 0021), tirées
+ * des tons d'entrée de la palette (`INPUT_TONES`, issue #81).
  */
-/**
- * Teintes d'entrée de l'eau et du sol de l'ambiance la nuit (issue #73, ADR 0021) : bleues
- * et saturées, car l'eau est translucide (30 % d'opacité) ; l'image affichée est ramenée aux
- * tons de nuit de la palette (`NIGHT_TONES`) par la passe.
- */
-export const NIGHT_WATER_BODY = '#2050a8';
-export const NIGHT_WATER_SURFACE = '#3a6eb0';
+export const NIGHT_WATER_BODY = INPUT_TONES.eauNuitEntree;
+export const NIGHT_WATER_SURFACE = INPUT_TONES.surfaceNuitEntree;
 /** Couleur du sol de la lumière ambiante la nuit (faces tournées vers le bas, côtés du sable). */
-export const NIGHT_GROUND = '#3c5a8c';
+export const NIGHT_GROUND = INPUT_TONES.solNuitEntree;
 /** Dessous du sable la nuit (non éclairé : vue de dessous, ADR 0006). */
-export const NIGHT_SAND_BOTTOM = '#3c5272';
+export const NIGHT_SAND_BOTTOM = INPUT_TONES.dessousSableNuitEntree;
 
 /**
  * Couleur de la palette nommée `name` (teintes des environnements, `sim/environment.ts`).
@@ -218,11 +213,15 @@ function createLights(dims: TankDimensions, groundColor: string): Lights {
   // cycle jour/nuit les teinte ensuite (`setDaylight`).
   // Ambiance : ciel blanc, sol couleur du dessous du sol (les faces tournées vers le bas
   // restent lisibles).
-  const ambient = new HemisphereLight('#ffffff', groundColor, DAY_AMBIENT_INTENSITY);
+  const ambient = new HemisphereLight(
+    INPUT_TONES.lumiereBlanche,
+    groundColor,
+    DAY_AMBIENT_INTENSITY,
+  );
   ambient.name = 'lumiere-ambiante';
   group.add(ambient);
   // Lumière principale venant du haut, légèrement de face.
-  const sun = new DirectionalLight('#ffffff', DAY_SUN_INTENSITY);
+  const sun = new DirectionalLight(INPUT_TONES.lumiereBlanche, DAY_SUN_INTENSITY);
   sun.name = 'soleil';
   sun.position.set(dims.width * 0.2, dims.height * 4, dims.depth * 1.5);
   group.add(sun);

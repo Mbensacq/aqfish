@@ -40,7 +40,11 @@ choisie par la passe ».
   couleurs plates non éclairées (ADR 0015), donc identiques à midi et à minuit. Leur
   matériau reçoit un facteur linéaire par canal : blanc à midi (exact), `DECOR_NIGHT_TINT`
   `(0,4 ; 0,5 ; 1,2)` la nuit (plantes vert-bleu sombre, rochers gris bleuté), teinte chaude
-  `(1 ; 0,78 ; 0,74)` à mi-transition.
+  `(1 ; 0,78 ; 0,74)` à mi-transition. Cycle 62 (#81) : à 19 h, sable gris-mauve et rochers
+  gris neutre ; la teinte de crépuscule du décor passe à `(1 ; 0,55 ; 0,8)` (rochers mauve
+  rosé, plantes vert-bleu), le ciel de crépuscule à `(1 ; 0,45 ; 0,55)`, et trois tons
+  mesurés s'ajoutent (`rocheCrepuscule`, `rocheCrepusculeSombre`, `sableCrepusculeOmbre`) ;
+  `sableCrepusculeMauve` est plus saturé. Midi reste identique à l'octet.
 - **Entrées de nuit bleues** (`render/aquarium-scene.ts`) : l'eau étant translucide (30 %),
   une eau de nuit `eauProfonde` changeait à peine l'image. Les teintes d'entrée la nuit
   sont bleues et saturées (`NIGHT_WATER_BODY`, `NIGHT_WATER_SURFACE`), de même que le sol de
