@@ -61,6 +61,7 @@ import {
   settleDecorItem,
   type DropPoint,
 } from '../../sim/decor-drop';
+import { decorFallScene, releaseUnsupportedDecor, type DecorFall } from '../../sim/decor-release';
 import type { DecorDropper } from '../../core/decor-physics/decor-physics';
 import {
   loadDecorPhysics,
@@ -808,6 +809,26 @@ export class AquariumHost {
     return { decor: groundDecorItem(decor, index) ?? decor, path: [] };
   }
 
+  /**
+   * Chute d'un élément depuis sa pose (#182) : son support a disparu. Mêmes moteur et lecture
+   * du repos que le lâcher (`dropDecor`), départ à sa pose (`decorFallScene`). `null` sans
+   * moteur, hors d'un environnement éditable, ou si le moteur échoue.
+   */
+  private readonly fallDecor: DecorFall = (decor, index) => {
+    const world = this.currentWorld;
+    const scene = world ? decorFallScene(decor, index, world) : null;
+    if (!world || !this.dropper || !scene) {
+      return null;
+    }
+    try {
+      const result = this.dropper.drop(scene);
+      const settled = settleDecorItem(decor, index, result.rest, world);
+      return settled ? { decor: settled, path: [scene.start, ...result.path] } : null;
+    } catch {
+      return null;
+    }
+  };
+
   /** Affiche la chute de l'élément `index` le long de `path` (rien si `path` est vide). */
   private playDrop(index: number, path: readonly DropPoint[]): void {
     this.dropAnimation = path.length > 0 ? { index, path, elapsed: 0 } : null;
@@ -1061,8 +1082,10 @@ export class AquariumHost {
   }
 
   /**
-   * Installe un décor édité (#167) : obstacles du monde recalculés, vue mise à jour,
-   * sélection `selection`, puis sauvegarde immédiate (le rechargement le restitue).
+   * Installe un décor édité (#167) : les éléments dont le support a disparu retombent d'abord
+   * (#182, `releaseUnsupportedDecor`), puis obstacles du monde recalculés, vue mise à jour,
+   * sélection `selection`, et sauvegarde immédiate (le rechargement le restitue). La première
+   * de ces chutes est affichée, sauf si l'appelant affiche ensuite la sienne (`playDrop`).
    */
   private applyDecor(decor: readonly DecorItem[], selection: number | null): void {
     const world = this.currentWorld;
@@ -1071,7 +1094,12 @@ export class AquariumHost {
       return;
     }
     this.finishDropAnimation();
-    setDecorInPlace(world, decor);
+    const released = releaseUnsupportedDecor(decor, this.dropper ? this.fallDecor : null);
+    setDecorInPlace(world, released.decor);
+    const first = released.falls[0];
+    if (first) {
+      this.playDrop(first.index, first.path);
+    }
     this.decorRefused.set(false);
     view.replaceDecorItems(world.decor, world.seed);
     this.exposeDecorCount();

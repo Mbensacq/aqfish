@@ -60,6 +60,22 @@ enregistrées (ADR 0003 : `sim/` reste pur, sans moteur).
   refusé). La pose obtenue passe par `isDecorPoseAllowed` ; refusée, ou moteur pas encore
   prêt, l'édition se fait à élévation constante comme avant (le repli sur le sable ferait
   pénétrer le support). Un élément sur le sable garde exactement sa pose.
+- **Éléments dont le support disparaît** (#182, cycle 63) : après chaque modification du
+  décor dans l'éditeur (`AquariumHost.applyDecor` : ajout, suppression, glissement, rotation,
+  échelle), chaque élément d'élévation non nulle qui ne repose plus sur rien retombe
+  (`sim/decor-release.ts`). « Soutenu » : une de ses sphères touche, par en dessous, une
+  sphère d'un rocher ou d'un bois (distance au plus la somme des rayons + `DROP_SKIN` +
+  `SUPPORT_GAP` de 5 mm, normale de contact à plus de 0,2 de la verticale ; les plantes ne
+  portent rien). Mesuré sur 709 poses obtenues par la chute (rochers, bois et plantes lâchés
+  sur le décor par défaut) : 706 jugées soutenues ; à 2 mm de jeu, une plante posée à 6 mm
+  de son support était jugée en l'air. La chute part de la **pose actuelle** (`decorFallScene`),
+  pas du dessus du décor : ce que porte l'élément ne l'arrête pas. Le plus bas d'abord, puis
+  de nouveau (cascade : ce qu'il portait retombe à son tour), au plus deux chutes par élément.
+  Une chute qui déplace l'élément de moins de 1 mm (`SUPPORT_SAME_POSE`, élément calé sans
+  appui assez vertical) est ignorée : un élément soutenu garde sa pose **à l'octet**. Pose
+  refusée par `isDecorPoseAllowed`, ou moteur absent : posé sur le sable si c'est permis,
+  sinon laissé tel quel. La première de ces chutes est affichée, sauf si le geste affiche la
+  sienne (lâcher, rotation ou échelle d'un élément posé).
 - **Image** : la trajectoire (un point par pas) est rejouée en temps réel par l'hôte
   (`previewDecorPose`), sans toucher au monde déjà enregistré.
 
@@ -77,8 +93,8 @@ enregistrées (ADR 0003 : `sim/` reste pur, sans moteur).
 
 ## Conséquences
 
-- Un élément posé sur un autre garde son élévation si on retire ou déplace son support (il
-  reste en l'air) : à traiter dans une issue de suite (relâcher les éléments soutenus).
+- Un élément posé sur un autre retombe si l'on retire, déplace ou réduit son support (#182).
+  Le redimensionnement du bac (ADR 0047) ne relâche rien : hors de l'éditeur du décor.
 - Le rendu (`DecorLayer`), les formes de collision et la nourriture posée sur un rocher
   tiennent compte de `elevation`.
 - Le bassin et le récif ne sont toujours pas éditables (ADR 0043).
