@@ -30,6 +30,7 @@ describe('parseCaptureParams', () => {
       rain: false,
       editSelection: null,
       woods: [],
+      tank: null,
     });
   });
 
@@ -43,6 +44,19 @@ describe('parseCaptureParams', () => {
     ]);
     expect(parseCaptureParams('').woods).toEqual([]);
     expect(DEFAULT_CAPTURE_PARAMS.woods).toEqual([]);
+  });
+
+  it('bac= (#171) : trois réels positifs longueur:hauteur:profondeur, sinon null', () => {
+    expect(parseCaptureParams('?bac=0.8:0.45:0.35').tank).toEqual({
+      width: 0.8,
+      height: 0.45,
+      depth: 0.35,
+    });
+    expect(parseCaptureParams('?bac=2:1:1').tank).toEqual({ width: 2, height: 1, depth: 1 });
+    for (const bad of ['', '0.8:0.45', '0.8:0.45:0.35:1', '-0.8:0.45:0.35', 'a:b:c', '1e3:1:1']) {
+      expect(parseCaptureParams(`?bac=${bad}`).tank).toBeNull();
+    }
+    expect(DEFAULT_CAPTURE_PARAMS.tank).toBeNull();
     // Entrées mal formées ignorées, les autres gardées.
     for (const bad of [
       '',

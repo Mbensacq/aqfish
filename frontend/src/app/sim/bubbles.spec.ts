@@ -16,7 +16,7 @@ import {
   type BubbleBuffer,
   type BubbleTraits,
 } from './bubbles';
-import { waterVolume } from './tank';
+import { MAX_TANK, waterVolume } from './tank';
 import { advance, createDefaultWorld, worldBubbles } from './world';
 
 const WATER = waterVolume();
@@ -165,7 +165,16 @@ describe('bulles : émission et fin à la surface', () => {
   });
 
   it('régime établi : le nombre de bulles reste borné par MAX_BUBBLES, sur toutes les graines', () => {
-    expect(MAX_BUBBLES).toBe(Math.floor(BUBBLE_MAX_LIFETIME / BUBBLE_EMIT_PERIOD) + 1);
+    // Tampon dimensionné pour le plus haut des bacs réglables (#171), donc au moins celui du
+    // bac par défaut.
+    expect(MAX_BUBBLES).toBe(
+      Math.floor(
+        (waterVolume(MAX_TANK).maxY - BUBBLE_START_Y) / BUBBLE_MIN_SPEED / BUBBLE_EMIT_PERIOD,
+      ) + 1,
+    );
+    expect(MAX_BUBBLES).toBeGreaterThanOrEqual(
+      Math.floor(BUBBLE_MAX_LIFETIME / BUBBLE_EMIT_PERIOD) + 1,
+    );
     expect(MAX_BUBBLES).toBeLessThanOrEqual(32);
     const buffer = createBubbleBuffer(MAX_BUBBLES + 10);
     let maxSeen = 0;
