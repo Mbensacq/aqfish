@@ -24,7 +24,9 @@ describe('decorDropScene', () => {
     const world = decorSpheres(rock);
     scene.body.forEach((s, n) => {
       expect(s.x + rock.x).toBeCloseTo(world[n].x, 12);
-      expect(s.y + base).toBeCloseTo(world[n].y, 12);
+      // Remontée : aucune sphère sous la base (partie enfouie sur le sable).
+      expect(s.y).toBeCloseTo(Math.max(world[n].y - base, world[n].radius), 12);
+      expect(s.y - s.radius).toBeGreaterThanOrEqual(-1e-12);
       expect(s.radius).toBe(world[n].radius);
     });
     const lowest = Math.min(...scene.body.map((s) => s.y - s.radius));
@@ -39,12 +41,30 @@ describe('decorDropScene', () => {
     const index = decor.length - 1;
     const scene = decorDropScene(decor, index, 'tropical');
     if (!scene) throw new Error('scène attendue');
-    const others = decor.slice(0, index).flatMap(decorSpheres);
+    const others = decor
+      .slice(0, index)
+      .filter((d) => d.kind !== 'plant')
+      .flatMap(decorSpheres);
     expect(scene.fixed.length).toBe(others.length);
     expect(scene.fixed[0].radius).toBeCloseTo(others[0].radius + DROP_SKIN, 12);
     const top = Math.max(...scene.fixed.map((s) => s.y + s.radius));
     const bottom = scene.start.y - scene.groundBaseY + scene.floorY;
     expect(bottom).toBeGreaterThanOrEqual(top + DROP_CLEARANCE - 1e-12);
+  });
+
+  it('les plantes ne portent rien : aucune sphère fixe pour elles', () => {
+    const plant: DecorItem = {
+      kind: 'plant',
+      form: 'tall',
+      x: 0,
+      z: 0,
+      rotation: 0,
+      scale: 1,
+      seed: 6,
+    };
+    const scene = decorDropScene([plant, rock], 1, 'tropical');
+    expect(scene?.fixed).toEqual([]);
+    expect(scene?.start.y).toBeCloseTo((scene?.groundBaseY ?? 0) + DROP_MIN_HEIGHT, 12);
   });
 
   it('ignore l’élévation de l’élément lâché', () => {

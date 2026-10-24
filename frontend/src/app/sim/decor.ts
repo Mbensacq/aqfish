@@ -356,6 +356,16 @@ export function decorVoxels(item: DecorItem): {
 }
 
 /**
+ * Hauteur locale du centre d'une sphère de collision de rayon `r` (centre à `y` au-dessus de
+ * la base) : inchangée sur le sable, où la partie enfouie des sphères ne se voit pas ; pour
+ * un élément posé sur un autre (`elevation` > 0), remontée pour qu'aucune sphère ne descende
+ * sous la base, sans quoi il reposerait sur sa partie invisible, au-dessus du vide (ADR 0046).
+ */
+export function liftedSphereY(item: DecorItem): (y: number, r: number) => number {
+  return decorElevation(item) > 0 ? (y, r) => Math.max(y, r) : (y) => y;
+}
+
+/**
  * Forme de collision d'une plante : sphères de ses tiges (`plantCollision`), dans le
  * repère du bac. Le feuillage n'y est pas : il reste traversable.
  */
@@ -363,9 +373,10 @@ export function plantSpheres(item: DecorItem): Sphere[] {
   const model = plantModel(item.seed, item.scale, item.form as PlantForm);
   const v = model.voxelSize;
   const baseY = plantBaseY(v) + decorElevation(item);
+  const lift = liftedSphereY(item);
   const p = { x: 0, y: 0, z: 0 };
   return plantCollision(model).map((b) => {
-    decorToTank(item, baseY, b.x * v, b.y * v, b.z * v, p);
+    decorToTank(item, baseY, b.x * v, lift(b.y * v, b.r * v), b.z * v, p);
     return { x: p.x, y: p.y, z: p.z, radius: b.r * v };
   });
 }
@@ -375,9 +386,10 @@ export function rockSpheres(item: DecorItem): Sphere[] {
   const model = rockModel(item.seed, item.scale);
   const v = model.voxelSize;
   const baseY = rockBaseY(v) + decorElevation(item);
+  const lift = liftedSphereY(item);
   const p = { x: 0, y: 0, z: 0 };
   return model.blobs.map((b) => {
-    decorToTank(item, baseY, b.x * v, b.y * v, b.z * v, p);
+    decorToTank(item, baseY, b.x * v, lift(b.y * v, b.r * v), b.z * v, p);
     return { x: p.x, y: p.y, z: p.z, radius: b.r * v };
   });
 }
@@ -390,9 +402,10 @@ export function woodSpheres(item: DecorItem): Sphere[] {
   const model = woodModel(item.seed, item.scale);
   const v = model.voxelSize;
   const baseY = woodBaseY(v) + decorElevation(item);
+  const lift = liftedSphereY(item);
   const p = { x: 0, y: 0, z: 0 };
   return model.spheres.map((b) => {
-    decorToTank(item, baseY, b.x * v, b.y * v, b.z * v, p);
+    decorToTank(item, baseY, b.x * v, lift(b.y * v, b.r * v), b.z * v, p);
     return { x: p.x, y: p.y, z: p.z, radius: b.r * v };
   });
 }

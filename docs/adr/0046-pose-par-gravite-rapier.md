@@ -28,9 +28,10 @@ enregistrées (ADR 0003 : `sim/` reste pur, sans moteur).
   initial contient le moteur.
 - **Scène pure** (`sim/decor-drop.ts`) : le corps qui tombe est l'élément lâché, décrit par
   ses **sphères de collision** (ADR 0015 : blocs des rochers, sphères des branches du bois,
-  tiges des plantes, le feuillage restant traversable). Les autres éléments sont des sphères
-  **fixes**, épaissies de 2 mm (`DROP_SKIN`) pour absorber la pénétration tolérée par le
-  contact du moteur. Sol : une boîte dont le dessus est le point le plus bas du corps posé
+  tiges des plantes, le feuillage restant traversable). Les autres rochers et bois sont des
+  sphères **fixes**, épaissies de 2 mm (`DROP_SKIN`) pour absorber la pénétration tolérée par le
+  contact du moteur. Les plantes ne portent rien (elles plient) : un rocher lâché dans une
+  plante tombe jusqu'au sable, et la pose est refusée s'il pénètre ses tiges. Sol : une boîte dont le dessus est le point le plus bas du corps posé
   sur le sable ; quatre vitres. Départ au-dessus du plus haut voisin (+ 2 cm), à 8 cm au
   moins.
 - **Chute** : pas fixe de 1/60 s, **2 s au plus** (`DROP_MAX_STEPS` = 120), arrêt dès que le
@@ -44,6 +45,12 @@ enregistrées (ADR 0003 : `sim/` reste pur, sans moteur).
   identique à l'octet à celui d'avant (captures inchangées, sauvegarde au même schéma 1). Sur
   le sable libre, la position du lâcher est gardée telle quelle (le contact avec le sol la
   décale d'un millimètre). La pose finale passe par `isDecorPoseAllowed` comme un glissement.
+- **Sphères remontées** : sur le sable, les sphères d'un rocher descendent sous sa base (partie
+  enfouie, invisible). Posé sur un autre élément, il reposerait sur cette partie, au-dessus
+  du vide (vu en local : 6 cm d'écart). Pour le corps qui tombe et pour tout élément
+  d'élévation non nulle, chaque sphère est remontée pour ne pas descendre sous la base
+  (`liftedSphereY`) : ce sont aussi ses obstacles pour les poissons et pour
+  `isDecorPoseAllowed`.
 - **Repli** : moteur en chargement, inaccessible (hors ligne) ou en erreur : l'élément est
   posé sur le sable à la position du lâcher ; s'il est inaccessible, le panneau l'annonce
   (« Chute indisponible… »).

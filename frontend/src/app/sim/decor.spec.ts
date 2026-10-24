@@ -331,8 +331,11 @@ describe('élévation d’un élément posé sur un autre (#170)', () => {
       const raised = withElevation(item, 0.04);
       expect(decorBaseY(raised)).toBeCloseTo(decorBaseY(item) + 0.04, 12);
       const low = decorSpheres(item);
+      const base = decorBaseY(item);
       decorSpheres(raised).forEach((s, n) => {
-        expect(s.y).toBeCloseTo(low[n].y + 0.04, 12);
+        // Élevée de 4 cm, et remontée pour ne pas descendre sous la base (ADR 0046).
+        expect(s.y).toBeCloseTo(Math.max(low[n].y - base, s.radius) + base + 0.04, 12);
+        expect(s.y - s.radius).toBeGreaterThanOrEqual(decorBaseY(raised) - 1e-12);
         expect(s.x).toBe(low[n].x);
       });
     }

@@ -1,4 +1,10 @@
-import { decorGroundBaseY, decorSpheres, validateDecorItem, withElevation } from './decor';
+import {
+  decorGroundBaseY,
+  decorSpheres,
+  liftedSphereY,
+  validateDecorItem,
+  withElevation,
+} from './decor';
 import type { DecorItem } from './decor';
 import { clampDecorPosition, decorItemsOverlap, isDecorEditable } from './decor-edit';
 import { environmentById, type EnvironmentId } from './environment';
@@ -43,7 +49,10 @@ export interface DropPoint {
 
 /** Scène de chute de l'élément `index` d'un décor (`decorDropScene`). */
 export interface DropScene {
-  /** Sphères du corps qui tombe, relatives à sa base (rotation comprise, ADR 0015). */
+  /**
+   * Sphères du corps qui tombe, relatives à sa base (rotation comprise, ADR 0015), remontées
+   * au-dessus de la base comme pour un élément posé sur un autre (`liftedSphereY`).
+   */
   readonly body: readonly Sphere[];
   /** Base du corps au départ (repère du bac). */
   readonly start: DropPoint;
@@ -60,8 +69,9 @@ export interface DropScene {
 
 /**
  * Scène de chute de l'élément `index` de `decor`, lâché à sa position (x, z) : son corps
- * (ses sphères de collision, sans élévation), les autres éléments fixes, le sol et les
- * vitres. Le corps part assez haut pour passer au-dessus de tous les autres éléments
+ * (ses sphères de collision, sans élévation), les autres rochers et bois fixes (pas les
+ * plantes, qui plient : un élément qui finirait dans une plante est refusé ensuite par
+ * `isDecorPoseAllowed`), le sol et les vitres. Le corps part assez haut pour passer au-dessus de tous les autres éléments
  * (`DROP_CLEARANCE`), et au moins à `DROP_MIN_HEIGHT` du sable. `null` si le décor n'est pas
  * éditable ou si l'indice n'existe pas.
  */
@@ -80,16 +90,20 @@ export function decorDropScene(
   }
   const grounded = withElevation(decor[index], 0);
   const groundBaseY = decorGroundBaseY(grounded);
+  // Corps tel qu'il sera s'il se pose sur un autre élément : sphères remontées au-dessus de
+  // sa base (`liftedSphereY`) ; sur le sable, il revient à sa pose d'origine (élévation 0).
+  const lift = liftedSphereY(withElevation(grounded, 1));
   const body = decorSpheres(grounded).map((s) => ({
     x: s.x - grounded.x,
-    y: s.y - groundBaseY,
+    y: lift(s.y - groundBaseY, s.radius),
     z: s.z - grounded.z,
     radius: s.radius,
   }));
   const lowest = Math.min(...body.map((s) => s.y - s.radius));
   const fixed: Sphere[] = [];
   decor.forEach((other, n) => {
-    if (n !== index) {
+    // Une plante plie : rien ne se pose sur ses tiges (ADR 0046).
+    if (n !== index && other.kind !== 'plant') {
       for (const s of decorSpheres(other)) {
         fixed.push({ x: s.x, y: s.y, z: s.z, radius: s.radius + DROP_SKIN });
       }
