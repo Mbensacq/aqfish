@@ -6,6 +6,12 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **`pkill -f "npm run verify"` tue son propre shell, pas le `verify`** (cycle 61) : le motif
+  figure aussi dans la ligne de commande du shell qui lance `pkill` ; il se tue (code 144)
+  avant les autres, et le `verify` visé continue. Deux e2e ont alors tourné ensemble sur le
+  même serveur (délais dépassés sur `anemones-qa` et `axolotl-qa`). Arrêter par numéro de
+  processus (`ps -ef | grep playwright`, puis `kill <pid>`), et vérifier qu'il ne reste
+  aucun `playwright test` ni `ng serve` avant de relancer. (2026-10-24)
 - **Modifier `src/` pendant un e2e recharge la page** (cycle 60) : le serveur de Playwright
   (`ng serve`, réutilisé hors CI) recompile et recharge l'application à chaque modification
   d'un fichier de l'application ; le test en cours repart d'un monde neuf (`data-aqfish-tick`
