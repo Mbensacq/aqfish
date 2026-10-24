@@ -1,7 +1,8 @@
 import { expect, test } from '@playwright/test';
 
 import { SAVE_STORAGE_KEY } from '../src/app/core/save-storage/save-storage';
-import { DEFAULT_DECOR } from '../src/app/sim/decor';
+import { DEFAULT_DECOR, type DecorItem } from '../src/app/sim/decor';
+import { clampDecorPosition } from '../src/app/sim/decor-edit';
 import { DEFAULT_TANK, SAND_THICKNESS } from '../src/app/sim/tank';
 import {
   blockEngine,
@@ -122,14 +123,17 @@ test.describe('Éditeur de décor (#167)', () => {
     );
     const text = await page.evaluate((key) => localStorage.getItem(key), SAVE_STORAGE_KEY);
     expect(text).not.toBeNull();
-    const decor = (JSON.parse(text!) as { decor: { kind: string; x: number; z: number }[] }).decor;
+    const decor = (JSON.parse(text!) as { decor: DecorItem[] }).decor;
     // Le rocher d'indice 2 a disparu, le rocher posé est le dernier élément.
     expect(decor.map((i) => i.kind)).toEqual([
       ...DEFAULT_DECOR.filter((_, n) => n !== 2).map((i) => i.kind),
       'rock',
     ]);
-    expect(decor.at(-1)!.x).toBeCloseTo(FREE_SAND[0], 2);
-    expect(decor.at(-1)!.z).toBeCloseTo(FREE_SAND[2], 2);
+    // Posé au point cliqué, ramené là où son emprise tient dans le bac (#59).
+    const expected = clampDecorPosition(decor.at(-1)!, FREE_SAND[0], FREE_SAND[2], 'tropical')!;
+    expect(decor.at(-1)!.x).toBeCloseTo(expected.x, 6);
+    expect(decor.at(-1)!.z).toBeCloseTo(expected.z, 6);
+    expect(Math.abs(decor.at(-1)!.z - FREE_SAND[2])).toBeLessThan(0.02);
     // Et l'élément ajouté se sélectionne après le rechargement.
     await startEditing(page);
     await page.getByRole('radio', { name: 'Sélection' }).click();

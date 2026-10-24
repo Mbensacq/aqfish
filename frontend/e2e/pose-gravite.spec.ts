@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
 import { DEFAULT_DECOR, type DecorItem } from '../src/app/sim/decor';
-import { isDecorPoseAllowed } from '../src/app/sim/decor-edit';
+import { clampDecorPosition, isDecorPoseAllowed } from '../src/app/sim/decor-edit';
 import { SAND_THICKNESS } from '../src/app/sim/tank';
 import {
   blockEngine,
@@ -62,7 +62,8 @@ test.describe('Pose par gravité (#170)', () => {
       timeout: 60_000,
     });
     await expect.poll(engine.loaded).toBe(true);
-    // Sur le sable libre : posé exactement au point du lâcher, sans élévation.
+    // Sur le sable libre : posé au point du lâcher (ramené là où son emprise tient dans le
+    // bac, #59), sans élévation.
     await clickTank(page, FREE_SAND);
     await expect(host(page)).toHaveAttribute(
       'data-aqfish-decor-count',
@@ -70,8 +71,15 @@ test.describe('Pose par gravité (#170)', () => {
     );
     const added = (await savedDecor(page)).at(-1)!;
     expect(added.elevation).toBeUndefined();
-    expect(added.x).toBeCloseTo(FREE_SAND[0], 2);
-    expect(added.z).toBeCloseTo(FREE_SAND[2], 2);
+    const expected = clampDecorPosition(
+      added as DecorItem,
+      FREE_SAND[0],
+      FREE_SAND[2],
+      'tropical',
+    )!;
+    expect(added.x).toBeCloseTo(expected.x, 2);
+    expect(added.z).toBeCloseTo(expected.z, 2);
+    expect(Math.abs(added.z - FREE_SAND[2])).toBeLessThan(0.02);
     expect(errors).toEqual([]);
   });
 

@@ -318,9 +318,11 @@ describe('le bois dans le décor (type « wood »)', () => {
 
   it('catalogue de l’éditeur : « Bois flotté » se pose sur le sable, graine tirée du monde', () => {
     expect(DECOR_CATALOG.wood).toEqual({ id: 'wood', name: 'Bois flotté', kind: 'wood' });
-    const decor = addDecorItem([], 'wood', 0.2, -0.1, 42, 'tropical')!;
+    // Point où le bois tient entier dans le bac : posé exactement là (à z = −0,1, son emprise
+    // dépassait la vitre du fond ; il est désormais ramené vers l'intérieur, #59).
+    const decor = addDecorItem([], 'wood', 0.2, -0.04, 42, 'tropical')!;
     expect(decor).toHaveLength(1);
-    expect(decor[0]).toMatchObject({ kind: 'wood', x: 0.2, z: -0.1, scale: 1 });
+    expect(decor[0]).toMatchObject({ kind: 'wood', x: 0.2, z: -0.04, scale: 1 });
     expect(decor[0]).not.toHaveProperty('form');
     expect(validateDecorItem(decor[0])).toEqual([]);
   });
