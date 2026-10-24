@@ -44,6 +44,7 @@ import {
   CAMERA_ATTRIBUTE,
   ENVIRONMENT_ATTRIBUTE,
   RAIN_ATTRIBUTE,
+  TANK_ATTRIBUTE,
   CAMERA_TARGET_ATTRIBUTE,
   DECOR_ATTRIBUTE,
   DECOR_COUNT_ATTRIBUTE,
@@ -755,6 +756,53 @@ describe('AquariumHost', () => {
       const captured = host().world;
       host().setEnvironment('bassin');
       expect(host().world).toBe(captured);
+    });
+  });
+
+  describe('dimensions du bac (#171)', () => {
+    const host = () => fixture.componentInstance;
+    const element = () => fixture.nativeElement as HTMLElement;
+    const SMALL = { width: 0.6, height: 0.5, depth: 0.3 };
+
+    it('setTankDimensions : bornées, décor ramené, vue recréée sur le même préréglage, enregistré', async () => {
+      await create('?seed=9');
+      setCanvasSize(800, 600);
+      frames.flush(0);
+      expect(host().tankDimensions()).toEqual(DEFAULT_TANK);
+      expect(element().getAttribute(TANK_ATTRIBUTE)).toBe('1.2:0.6:0.5');
+      host().goToPreset('side');
+      const population = host().population();
+      host().setTankDimensions({ width: 0.1, height: 0.5, depth: 0.3 });
+      expect(host().world?.dimensions).toEqual(SMALL);
+      expect(host().tankDimensions()).toEqual(SMALL);
+      expect(element().getAttribute(TANK_ATTRIBUTE)).toBe('0.6:0.5:0.3');
+      expect(host().population()).toEqual(population);
+      expect(host().world?.decor.every((item) => Math.abs(item.z) < SMALL.depth / 2)).toBe(true);
+      expect(renderers).toHaveLength(2);
+      expect(renderers[0].disposed).toBe(true);
+      expect(host().activePreset()).toBe('side');
+      expect(saveStorage?.getItem(SAVE_STORAGE_KEY)).toContain('"dimensions"');
+      frames.flush(1000);
+      expect(renderers[1].renders).toBeGreaterThan(0);
+      // Mêmes dimensions : rien n'est recréé.
+      host().setTankDimensions(SMALL);
+      expect(renderers).toHaveLength(2);
+    });
+
+    it('hors du bac tropical, en capture ou avant le démarrage : sans effet ; bac= en capture', async () => {
+      const instance = TestBed.createComponent(AquariumHost).componentInstance;
+      expect(() => instance.setTankDimensions(SMALL)).not.toThrow();
+      await create('?seed=2');
+      host().setEnvironment('bassin');
+      expect(host().tankDimensions()).toBeNull();
+      const world = host().world;
+      host().setTankDimensions(SMALL);
+      expect(host().world).toBe(world);
+      fixture.destroy();
+      await create('?capture=1&seed=2&bac=0.6:0.5:0.3');
+      expect(host().world?.dimensions).toEqual(SMALL);
+      host().setTankDimensions(DEFAULT_TANK);
+      expect(host().world?.dimensions).toEqual(SMALL);
     });
   });
 

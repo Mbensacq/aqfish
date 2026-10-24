@@ -32,7 +32,8 @@ import {
 import { SPECIES, speciesVariants, type SpeciesId } from '../sim/species';
 import type { Fish } from '../sim/swimmer';
 import type { DayLight } from '../sim/daylight';
-import { environmentWater, type Environment } from '../sim/environment';
+import { bubbleSourceFor } from '../sim/bubbles';
+import { environmentDataWater, type Environment } from '../sim/environment';
 import { terrainAt } from '../sim/terrain';
 import { flowerOpenness, lilyPadLayout } from '../sim/lily-pads';
 import { seededFeatures } from '../sim/world';
@@ -149,7 +150,7 @@ export class AquariumView {
   private readonly decorTint: MutableTint = [1, 1, 1];
   private readonly penalties: TonePenalties = { night: 0, twilight: 0 };
   /** Bulles du diffuseur (ADR 0017), selon la graine fixée par `setDecor`. */
-  private readonly bubbleLayer = new BubbleLayer();
+  private readonly bubbleLayer: BubbleLayer;
   /** Granulés de nourriture (issue #67), posés par `updateFood`. */
   private readonly foodLayer = new FoodLayer();
   /** Caustiques sur le sable et reflet de surface (ADR 0017). */
@@ -315,16 +316,21 @@ export class AquariumView {
     );
     // Bulles et diffuseur : seulement dans un environnement qui en a (bac tropical). Masquées,
     // elles ne sont pas posées (`updateVisibleEffects`).
+    // Diffuseur à l'échelle du bac (issue #171), comme les bulles de la simulation.
+    this.bubbleLayer = new BubbleLayer(
+      bubbleSourceFor(this.world.dimensions),
+      environmentDataWater(this.world.environment),
+    );
     this.bubbleLayer.object.visible = this.world.environment.bubbles;
-    const surfaceY = environmentWater(this.world.environment.id).maxY;
+    const surfaceY = environmentDataWater(this.world.environment).maxY;
     this.waterLight = new WaterLightLayer(
       this.world.dimensions,
       this.world.environment.caustics,
       surfaceY,
     );
     this.lilyPadLayer = new LilyPadLayer(this.world.dimensions, surfaceY);
-    this.rainLayer = new RainLayer(environmentWater(this.world.environment.id));
-    this.floatingLeafLayer = new FloatingLeafLayer(environmentWater(this.world.environment.id));
+    this.rainLayer = new RainLayer(environmentDataWater(this.world.environment));
+    this.floatingLeafLayer = new FloatingLeafLayer(environmentDataWater(this.world.environment));
     this.floatingLeafLayer.object.visible = this.world.environment.floatingLeaves;
     this.effects = [this.bubbleLayer, this.rainLayer, this.floatingLeafLayer];
     this.sceneLayers = [
@@ -546,7 +552,7 @@ export class AquariumView {
     const origin = this.camera.position;
     const direction = new Vector3(ndc.x, ndc.y, 0.5).unproject(this.camera).sub(origin);
     const env = this.world.environment;
-    const water = environmentWater(env.id);
+    const water = environmentDataWater(env);
     const point = waterSurfacePoint(
       [origin.x, origin.y, origin.z],
       [direction.x, direction.y, direction.z],
@@ -747,7 +753,7 @@ export class AquariumView {
       for (const layer of this.effects) {
         layer.setSeed(seed);
       }
-      this.lilyPadLayer.setPads(lilyPadLayout(seed, environmentWater(env.id), env.lilyPads));
+      this.lilyPadLayer.setPads(lilyPadLayout(seed, environmentDataWater(env), env.lilyPads));
     }
   }
 

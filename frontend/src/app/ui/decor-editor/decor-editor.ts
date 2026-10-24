@@ -16,6 +16,7 @@ import {
   MAX_DECOR_ITEMS,
   type DecorTool,
 } from '../../sim/decor-edit';
+import { clampTankDimensions, TANK_LIMITS, type TankDimensions } from '../../sim/tank';
 
 /** Identifiant du panneau de l'éditeur de décor. */
 export const DECOR_EDITOR_ID = 'editeur-decor';
@@ -43,6 +44,30 @@ export const DECOR_POSE_COMMANDS: readonly {
   { id: 'reduire', label: 'Réduire', name: 'Réduire', key: '-', rotate: 0, scale: -1 },
   { id: 'agrandir', label: 'Agrandir', name: 'Agrandir', key: '+', rotate: 0, scale: 1 },
 ];
+
+/**
+ * Curseurs des dimensions du bac (issue #171), dans l'ordre d'affichage : bornes et pas de
+ * `TANK_LIMITS`, affichés en centimètres.
+ */
+export const TANK_DIMENSION_FIELDS: readonly {
+  readonly key: keyof TankDimensions;
+  readonly label: string;
+  readonly min: number;
+  readonly max: number;
+  readonly step: number;
+}[] = (
+  [
+    ['width', 'Longueur'],
+    ['depth', 'Largeur'],
+    ['height', 'Hauteur'],
+  ] as const
+).map(([key, label]) => ({
+  key,
+  label,
+  min: Math.round(TANK_LIMITS[key].min * 100),
+  max: Math.round(TANK_LIMITS[key].max * 100),
+  step: Math.round(TANK_LIMITS[key].step * 100),
+}));
 
 /** Touches de pose (`KeyboardEvent.key`) : `=` est le `+` sans Maj d'un clavier QWERTY. */
 const POSE_KEYS: Readonly<Record<string, { readonly rotate: number; readonly scale: number }>> = {
@@ -145,6 +170,68 @@ export function decorEditorHint(
       </button>
     </div>
     <p class="decor-editor__count" data-decor-count>{{ count() }} / {{ max }} éléments</p>
+    @if (dimensions(); as dims) {
+      <fieldset class="decor-editor__tank" data-tank-dimensions>
+        <legend class="decor-editor__legend">Dimensions du bac</legend>
+        <label class="decor-editor__field">
+          <span class="decor-editor__label">
+            Longueur
+            <output class="decor-editor__value">{{ centimeters(dims.width) }} cm</output>
+          </span>
+          <!-- Bornes statiques (TANK_LIMITS, vérifiées par le test) : posées avant la valeur. -->
+          <input
+            class="decor-editor__range"
+            type="range"
+            min="60"
+            max="200"
+            step="10"
+            aria-label="Longueur du bac, en centimètres"
+            data-dimension="width"
+            [value]="centimeters(dims.width)"
+            [attr.aria-valuetext]="centimeters(dims.width) + ' cm'"
+            (change)="onDimension('width', $event)"
+          />
+        </label>
+        <label class="decor-editor__field">
+          <span class="decor-editor__label">
+            Largeur
+            <output class="decor-editor__value">{{ centimeters(dims.depth) }} cm</output>
+          </span>
+          <!-- Bornes statiques (TANK_LIMITS, vérifiées par le test) : posées avant la valeur. -->
+          <input
+            class="decor-editor__range"
+            type="range"
+            min="30"
+            max="90"
+            step="5"
+            aria-label="Largeur du bac, en centimètres"
+            data-dimension="depth"
+            [value]="centimeters(dims.depth)"
+            [attr.aria-valuetext]="centimeters(dims.depth) + ' cm'"
+            (change)="onDimension('depth', $event)"
+          />
+        </label>
+        <label class="decor-editor__field">
+          <span class="decor-editor__label">
+            Hauteur
+            <output class="decor-editor__value">{{ centimeters(dims.height) }} cm</output>
+          </span>
+          <!-- Bornes statiques (TANK_LIMITS, vérifiées par le test) : posées avant la valeur. -->
+          <input
+            class="decor-editor__range"
+            type="range"
+            min="50"
+            max="90"
+            step="5"
+            aria-label="Hauteur du bac, en centimètres"
+            data-dimension="height"
+            [value]="centimeters(dims.height)"
+            [attr.aria-valuetext]="centimeters(dims.height) + ' cm'"
+            (change)="onDimension('height', $event)"
+          />
+        </label>
+      </fieldset>
+    }
   </section>`,
   styleUrl: './decor-editor.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -160,6 +247,11 @@ export class DecorEditor {
   readonly refused = input(false);
   /** Vrai si le dernier élément lâché a été posé sans chute (moteur absent, fourni par l'hôte). */
   readonly grounded = input(false);
+  /**
+   * Dimensions du bac (fournies par l'hôte), `null` si l'environnement ne les règle pas : les
+   * curseurs sont alors masqués.
+   */
+  readonly dimensions = input<TankDimensions | null>(null);
 
   /** Outil choisi. */
   readonly toolChanged = output<DecorTool>();
@@ -173,6 +265,8 @@ export class DecorEditor {
   readonly rotateRequested = output<number>();
   /** Changement d'échelle de l'élément sélectionné demandé, en pas (boutons, + et −). */
   readonly scaleRequested = output<number>();
+  /** Nouvelles dimensions du bac demandées (curseurs relâchés), bornées à `TANK_LIMITS`. */
+  readonly dimensionsChanged = output<TankDimensions>();
 
   protected readonly panelId = DECOR_EDITOR_ID;
   protected readonly tools = DECOR_TOOLS;
@@ -193,6 +287,21 @@ export class DecorEditor {
     const onKey = (event: KeyboardEvent) => this.onKey(event);
     doc.addEventListener('keydown', onKey);
     inject(DestroyRef).onDestroy(() => doc.removeEventListener('keydown', onKey));
+  }
+
+  /** Dimension en centimètres entiers, pour l'affichage. */
+  protected centimeters(meters: number): number {
+    return Math.round(meters * 100);
+  }
+
+  /** Curseur relâché : émet les dimensions avec la nouvelle valeur (en mètres, bornées). */
+  protected onDimension(key: keyof TankDimensions, event: Event): void {
+    const dims = this.dimensions();
+    const value = Number((event.target as HTMLInputElement).value) / 100;
+    if (dims === null || !Number.isFinite(value)) {
+      return;
+    }
+    this.dimensionsChanged.emit(clampTankDimensions({ ...dims, [key]: value }));
   }
 
   /** Bouton « Supprimer » : sans effet sans sélection. */

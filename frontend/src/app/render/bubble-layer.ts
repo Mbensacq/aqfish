@@ -18,7 +18,7 @@ import {
   MAX_BUBBLES,
   type BubbleSource,
 } from '../sim/bubbles';
-import { SAND_THICKNESS } from '../sim/tank';
+import { SAND_THICKNESS, waterVolume, type Box3 } from '../sim/tank';
 import { DECOR_RENDER_ORDER } from './decor-layer';
 import { FISH_RENDER_ORDER } from './fish-layer';
 import { PALETTE } from './palette';
@@ -63,7 +63,14 @@ export class BubbleLayer {
   /** Pixels de la cible par pixel de scène (1 en pixel art, PIXEL_SIZE × ratio sans filtre). */
   private pointScale = 1;
 
-  constructor(private readonly source: BubbleSource = DEFAULT_BUBBLE_SOURCE) {
+  /**
+   * `source` : diffuseur ; `water` : eau du bac, dont la surface fait éclater les bulles
+   * (issue #171 : les deux suivent les dimensions réglées ; le bac par défaut sans argument).
+   */
+  constructor(
+    private readonly source: BubbleSource = DEFAULT_BUBBLE_SOURCE,
+    private readonly water: Box3 = waterVolume(),
+  ) {
     this.object.name = 'bulles';
     this.clouds = ([1, 2] as const).map((size) => new BubbleCloud(size));
     for (const cloud of this.clouds) {
@@ -117,7 +124,7 @@ export class BubbleLayer {
   /** Pose les bulles au temps simulé `time` (secondes), sans allocation. */
   update(time: number): void {
     const { positions, sizes } = this.buffer;
-    const count = fillBubbles(this.seed, Math.max(0, time), this.buffer, this.source);
+    const count = fillBubbles(this.seed, Math.max(0, time), this.buffer, this.source, this.water);
     for (const cloud of this.clouds) {
       cloud.count = 0;
     }

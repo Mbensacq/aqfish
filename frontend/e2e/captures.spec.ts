@@ -117,6 +117,9 @@ test.describe('Captures', () => {
     // Bois flotté à branches (#169) : un bois ajouté au décor par défaut, devant les rochers.
     { name: 'three-quarter-bois', query: WOOD },
     { name: 'side-bois', query: `${WOOD}&camera=side` },
+    // Dimensions du bac (#171) : le plus petit et le plus grand bac réglables, décor ramené.
+    { name: 'three-quarter-petit-bac', query: 'bac=0.6:0.5:0.3' },
+    { name: 'three-quarter-grand-bac', query: 'bac=2:0.9:0.9' },
   ] as const;
   for (const { name, query } of DAY_CAPTURES) {
     test(`angle ${name}`, async ({ page }) => {

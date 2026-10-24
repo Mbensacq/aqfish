@@ -45,6 +45,11 @@
  * ignorée ici, bois invalide (hors du bac, échelle hors bornes) ignoré par l'application ;
  * absent, décor par défaut (séries existantes inchangées).
  *
+ * Paramètre facultatif `bac=longueur:hauteur:profondeur` (issue #171) : en mode capture,
+ * dimensions du bac en mètres (exemple : `bac=0.8:0.45:0.35`), bornées par l'application
+ * (`TANK_LIMITS`) ; sans effet hors d'un environnement réglable. Entrée mal formée ou absente,
+ * dimensions de l'environnement (séries existantes inchangées).
+ *
  * Ce module est volontairement pur (aucune dépendance à Angular ni à Three.js).
  * Voir docs/ARCHITECTURE.md, section « Contrat de capture ».
  */
@@ -88,6 +93,8 @@ export interface CaptureParams {
   readonly editSelection: number | null;
   /** Bois flottés ajoutés au décor par `bois=` (issue #169), vide si absent. */
   readonly woods: readonly CaptureWood[];
+  /** Dimensions du bac de `bac=` (issue #171), en mètres ; `null` si absent ou mal formé. */
+  readonly tank: CaptureTank | null;
 }
 
 /** Bois flotté du contrat de capture : position (m), rotation (rad), échelle, graine. */
@@ -97,6 +104,13 @@ export interface CaptureWood {
   readonly rotation: number;
   readonly scale: number;
   readonly seed: number;
+}
+
+/** Dimensions du bac lues dans `bac=` (mètres, non bornées ici). */
+export interface CaptureTank {
+  readonly width: number;
+  readonly height: number;
+  readonly depth: number;
 }
 
 /** Nombre maximal de bois lus dans `bois=` (les suivants sont ignorés). */
@@ -139,6 +153,7 @@ export const DEFAULT_CAPTURE_PARAMS: CaptureParams = {
   rain: false,
   editSelection: null,
   woods: [],
+  tank: null,
 };
 
 /** Temps de simulation maximal accepté (1 h), pour éviter un calcul démesuré. */
@@ -179,6 +194,7 @@ export function parseCaptureParams(search: string): CaptureParams {
     rain: params.get('pluie') === '1',
     editSelection: parseEditSelection(params.get('edition')),
     woods: parseWoods(params.get('bois')),
+    tank: parseTank(params.get('bac')),
   };
 }
 
@@ -210,6 +226,16 @@ function parseWoods(raw: string | null): readonly CaptureWood[] {
     }
   }
   return woods;
+}
+
+/** Dimensions `longueur:hauteur:profondeur` : trois réels décimaux positifs, sinon `null`. */
+function parseTank(raw: string | null): CaptureTank | null {
+  const parts = raw?.split(':') ?? [];
+  if (parts.length !== 3 || !parts.every((p) => /^\d+(\.\d+)?$/.test(p))) {
+    return null;
+  }
+  const [width, height, depth] = parts.map(Number);
+  return { width, height, depth };
 }
 
 /** Indice de `edition=` : entier décimal de 0 à 999, sinon `null`. */

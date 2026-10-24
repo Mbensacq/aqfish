@@ -58,11 +58,13 @@
         [count]="aquarium.decorCount()"
         [refused]="aquarium.decorRefused()"
         [grounded]="aquarium.decorDropGrounded()"
+        [dimensions]="aquarium.tankDimensions()"
         (toolChanged)="aquarium.setDecorTool($event)"
         (deleteRequested)="aquarium.deleteSelectedDecor()"
         (rotateRequested)="aquarium.rotateSelectedDecor($event)"
         (scaleRequested)="aquarium.scaleSelectedDecor($event)"
         (deselectRequested)="aquarium.selectDecor(null)"
+        (dimensionsChanged)="aquarium.setTankDimensions($event)"
         (closed)="aquarium.setDecorEditing(false)"
       />
     }

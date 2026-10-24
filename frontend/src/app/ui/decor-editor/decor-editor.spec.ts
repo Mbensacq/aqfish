@@ -2,7 +2,8 @@ import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 
 import { MAX_DECOR_ITEMS, type DecorTool } from '../../sim/decor-edit';
-import { DECOR_TOOLS, DecorEditor, decorEditorHint } from './decor-editor';
+import { DEFAULT_TANK, type TankDimensions } from '../../sim/tank';
+import { DECOR_TOOLS, DecorEditor, decorEditorHint, TANK_DIMENSION_FIELDS } from './decor-editor';
 
 describe('decorEditorHint', () => {
   it('dit ce que fera un clic, selon l’outil et la sélection', () => {
@@ -36,6 +37,8 @@ describe('decorEditorHint', () => {
       [selection]="selection()"
       [count]="count()"
       [refused]="refused()"
+      [dimensions]="dimensions()"
+      (dimensionsChanged)="dims.push($event)"
       (rotateRequested)="rotations.push($event)"
       (scaleRequested)="scales.push($event)"
       (toolChanged)="tools.push($event)"
@@ -51,6 +54,8 @@ class TestHost {
   readonly selection = signal<number | null>(null);
   readonly count = signal(10);
   readonly refused = signal(false);
+  readonly dimensions = signal<TankDimensions | null>(DEFAULT_TANK);
+  readonly dims: TankDimensions[] = [];
   readonly tools: DecorTool[] = [];
   readonly rotations: number[] = [];
   readonly scales: number[] = [];
@@ -180,5 +185,35 @@ describe('DecorEditor', () => {
     fixture.destroy();
     key('Delete');
     expect(host().deletes).toBe(0);
+  });
+
+  it('dimensions du bac (#171) : trois curseurs en centimètres, bornés, masqués sans réglage', async () => {
+    expect(TANK_DIMENSION_FIELDS.map((f) => [f.key, f.min, f.max, f.step])).toEqual([
+      ['width', 60, 200, 10],
+      ['depth', 30, 90, 5],
+      ['height', 50, 90, 5],
+    ]);
+    for (const f of TANK_DIMENSION_FIELDS) {
+      const input = root().querySelector<HTMLInputElement>(`[data-dimension="${f.key}"]`)!;
+      expect([input.min, input.max, input.step]).toEqual([f.min, f.max, f.step].map(String));
+    }
+    const slider = (k: string) =>
+      root().querySelector<HTMLInputElement>(`[data-dimension="${k}"]`)!;
+    expect(slider('width').value).toBe('120');
+    expect(slider('depth').value).toBe('50');
+    expect(slider('height').value).toBe('60');
+    expect(slider('width').getAttribute('aria-valuetext')).toBe('120 cm');
+    expect(root().querySelector('[data-tank-dimensions]')?.textContent).toContain('120 cm');
+    slider('depth').value = '35';
+    slider('depth').dispatchEvent(new Event('change'));
+    expect(host().dims).toEqual([{ width: 1.2, height: 0.6, depth: 0.35 }]);
+    // Une flèche sur un curseur ne tourne pas la sélection (champ de saisie).
+    host().selection.set(0);
+    await fixture.whenStable();
+    key('ArrowLeft', slider('width'));
+    expect(host().rotations).toEqual([]);
+    host().dimensions.set(null);
+    await fixture.whenStable();
+    expect(root().querySelector('[data-tank-dimensions]')).toBeNull();
   });
 });

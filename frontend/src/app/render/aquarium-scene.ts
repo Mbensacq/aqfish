@@ -19,7 +19,7 @@ import {
 
 import { bankDecorLayout } from '../sim/bank-decor';
 import { mix, type DayLight, type Rgb } from '../sim/daylight';
-import { environmentWater, TROPICAL_TANK, type Environment } from '../sim/environment';
+import { environmentDataWater, TROPICAL_TANK, type Environment } from '../sim/environment';
 import {
   DEFAULT_TANK,
   SAND_THICKNESS,
@@ -132,7 +132,7 @@ export function createAquariumScene(environment: Environment = TROPICAL_TANK): A
 
   const lights = createLights(dims, ground.bottom);
   scene.add(lights.group);
-  const waterBox = environmentWater(environment.id);
+  const waterBox = environmentDataWater(environment);
   // Sol : dalle plate (bac, bassin) ou berge en colonnes (paludarium, #129).
   const terrain = environment.terrain
     ? createTerrainMesh(environment.terrain, waterBox, ground.bottom)

@@ -1,10 +1,12 @@
 import { Mesh, Points, type MeshBasicMaterial, type PointsMaterial } from 'three';
 import {
   createBubbleBuffer,
+  bubbleSourceFor,
   DEFAULT_BUBBLE_SOURCE,
   fillBubbles,
   MAX_BUBBLES,
 } from '../sim/bubbles';
+import { waterVolume } from '../sim/tank';
 import { BUBBLE_COLOR, BUBBLE_RENDER_ORDER, BubbleLayer } from './bubble-layer';
 import { FISH_RENDER_ORDER } from './fish-layer';
 import { PALETTE_COLORS } from './palette';
@@ -91,6 +93,25 @@ describe('BubbleLayer', () => {
     layer.setPointScale(0);
     expect(small.size).toBe(1);
     layer.dispose();
+  });
+
+  it('bac réglé (#171) : bulles du diffuseur donné, éclatées à la surface de l’eau donnée', () => {
+    const dims = { width: 0.6, height: 0.5, depth: 0.3 };
+    const water = waterVolume(dims);
+    const source = bubbleSourceFor(dims);
+    const layer = new BubbleLayer(source, water);
+    layer.setSeed(7);
+    layer.update(60);
+    const expected = createBubbleBuffer();
+    expect(layer.count).toBe(fillBubbles(7, 60, expected, source, water));
+    const ys = clouds(layer).flatMap((cloud) =>
+      Array.from(
+        { length: cloud.geometry.drawRange.count },
+        (_, i) => cloud.geometry.getAttribute('position').array[3 * i + 1],
+      ),
+    );
+    expect(ys.length).toBe(layer.count);
+    expect(Math.max(...ys)).toBeLessThan(water.maxY);
   });
 
   it('diffuseur sous le point d’émission', () => {

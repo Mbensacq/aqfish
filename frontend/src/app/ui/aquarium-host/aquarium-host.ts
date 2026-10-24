@@ -86,9 +86,15 @@ import {
   DEFAULT_ENVIRONMENT_ID,
   environmentById,
   isEnvironmentId,
+  isTankResizable,
   livesIn,
+  placeDimensions,
+  placeEnvironmentData,
   type EnvironmentId,
+  type Place,
 } from '../../sim/environment';
+import { sameDimensions, type TankDimensions } from '../../sim/tank';
+import { setTankDimensionsInPlace } from '../../sim/tank-resize';
 import { fixedStepInto, type FixedStepState } from '../../sim/fixed-step';
 import {
   DEFAULT_SIM_SPEED,
@@ -193,6 +199,12 @@ export const DECOR_COUNT_ATTRIBUTE = 'data-aqfish-decor-count';
  */
 export const DECOR_SELECTION_ATTRIBUTE = 'data-aqfish-decor-selected';
 
+/**
+ * Attribut de l'hôte : dimensions du bac en mètres, `longueur:hauteur:profondeur` (issue
+ * #171, même ordre que `bac=`).
+ */
+export const TANK_ATTRIBUTE = 'data-aqfish-tank';
+
 /** Intervalle de la sauvegarde automatique, en millisecondes (#70). */
 export const AUTOSAVE_INTERVAL_MS = 10_000;
 
@@ -244,7 +256,7 @@ export function applyPopulation(
  * de même que ceux qui dépassent `MAX_DECOR_ITEMS`. Sans bois valide, le monde est inchangé.
  */
 export function applyCaptureWoods(world: MutableWorld, woods: readonly CaptureWood[]): void {
-  const dims = environmentById(world.environment).dimensions;
+  const dims = placeDimensions(world);
   const added = woods
     .map(({ x, z, rotation, scale, seed }): DecorItem => ({
       kind: 'wood',
@@ -451,6 +463,12 @@ export class AquariumHost {
    * (#170) ; effacé à la pose suivante réussie.
    */
   readonly decorDropGrounded = signal(false);
+
+  /**
+   * Dimensions du bac du monde courant (issue #171), `null` si l'environnement ne les règle
+   * pas (`isTankResizable`).
+   */
+  readonly tankDimensions = signal<TankDimensions | null>(null);
 
   /**
    * Glissement en cours (#168) : décor du monde au début du geste (abandon s'il a changé
@@ -662,6 +680,38 @@ export class AquariumHost {
   }
 
   /**
+   * Règle les dimensions du bac (issue #171, ADR 0047) : bornées, le décor ramené dans le bac,
+   * poissons et granulés gardés dans l'eau (`setTankDimensionsInPlace`), puis la vue recréée
+   * et la caméra recadrée sur le préréglage actif (la vue par défaut si l'utilisateur l'avait
+   * quitté). La sélection du décor est conservée ; le monde est enregistré aussitôt. Sans effet en mode capture (`bac=`), avant le
+   * démarrage, hors d'un environnement réglable ou à dimensions inchangées.
+   */
+  setTankDimensions(dims: TankDimensions): void {
+    const world = this.currentWorld;
+    const previous = this.tankDimensions();
+    if (!world || !this.view || this.capture || previous === null) {
+      return;
+    }
+    // Une chute en cours se termine d'abord : son décor est celui que l'on redimensionne.
+    this.finishDropAnimation();
+    const applied = setTankDimensionsInPlace(world, dims);
+    if (applied === null || sameDimensions(applied, previous)) {
+      return;
+    }
+    const selection = this.decorSelection();
+    this.exposeTankDimensions();
+    this.exposeFood();
+    this.createView(this.activePreset() ?? environmentById(world.environment).defaultCamera);
+    if (selection !== null && selection < world.decor.length) {
+      this.view?.setDecorSelection(selection);
+    }
+    this.exposeCamera();
+    // Comme une modification du décor : enregistré tout de suite.
+    this.saveNow();
+    this.scheduleFrame();
+  }
+
+  /**
    * Fige l'heure à `hour` (touches « plein jour » et « nuit », issue #75), que l'horloge
    * tourne ou non ; `toggleClock` la remet ensuite en marche depuis cette heure, sans saut.
    * Sans effet en mode capture (contrat de capture) ou si `hour` n'est pas un réel fini.
@@ -739,7 +789,7 @@ export class AquariumHost {
   private dropDecor(
     decor: readonly DecorItem[],
     index: number,
-    environment: EnvironmentId,
+    environment: Place,
   ): { decor: readonly DecorItem[]; path: readonly DropPoint[] } {
     const scene = this.dropper ? decorDropScene(decor, index, environment) : null;
     if (this.dropper && scene) {
@@ -859,10 +909,10 @@ export class AquariumHost {
       this.selectDecor(null);
       return;
     }
-    const decor = addDecorItem(world.decor, tool, pick.x, pick.z, world.seed, world.environment);
+    const decor = addDecorItem(world.decor, tool, pick.x, pick.z, world.seed, world);
     if (decor) {
       const index = decor.length - 1;
-      const drop = this.dropDecor(decor, index, world.environment);
+      const drop = this.dropDecor(decor, index, world);
       // Un élément ajouté peut chevaucher (#167) ; sa chute ne doit pas l'aggraver.
       const allowed = isDecorPoseAllowed(decor, drop.decor, index);
       this.applyDecor(allowed ? drop.decor : decor, index);
@@ -891,17 +941,17 @@ export class AquariumHost {
 
   /** Applique `edit` à l'élément sélectionné ; `null` d'`edit` : pose refusée ou inchangée. */
   private editSelected(
-    edit: (decor: readonly DecorItem[], index: number, env: EnvironmentId) => DecorItem[] | null,
+    edit: (decor: readonly DecorItem[], index: number, env: Place) => DecorItem[] | null,
   ): boolean {
     const world = this.currentWorld;
     const index = this.decorSelection();
     if (!world || index === null || !this.decorEditing() || this.decorDrag) {
       return false;
     }
-    const decor = edit(world.decor, index, world.environment);
+    const decor = edit(world.decor, index, world);
     if (!decor) {
       // Inchangée à la borne d'échelle ; sinon, la pose pénétrait un voisin.
-      this.decorRefused.set(this.wouldOverlap(edit, world.decor, index, world.environment));
+      this.decorRefused.set(this.wouldOverlap(edit, world.decor, index, world));
       return false;
     }
     this.applyDecor(decor, index);
@@ -910,10 +960,10 @@ export class AquariumHost {
 
   /** Vrai si `edit` a échoué pour cause de chevauchement (et non de borne). */
   private wouldOverlap(
-    edit: (decor: readonly DecorItem[], index: number, env: EnvironmentId) => DecorItem[] | null,
+    edit: (decor: readonly DecorItem[], index: number, env: Place) => DecorItem[] | null,
     decor: readonly DecorItem[],
     index: number,
-    env: EnvironmentId,
+    env: Place,
   ): boolean {
     // Sans les voisins, la même modification réussit-elle ?
     return edit([decor[index]], 0, env) !== null;
@@ -937,7 +987,7 @@ export class AquariumHost {
     if (!world || !drag || drag.index !== index || world.decor !== drag.base) {
       return;
     }
-    const preview = moveDecorItem(world.decor, index, x, z, world.environment);
+    const preview = moveDecorItem(world.decor, index, x, z, world);
     if (preview) {
       drag.preview = preview;
       this.view?.previewDecorMove(index, preview[index].x, preview[index].z);
@@ -959,7 +1009,7 @@ export class AquariumHost {
     }
     // Lâché (#170) : l'élément tombe à sa nouvelle position avant d'être posé.
     const drop = commit
-      ? this.dropDecor(drag.preview, index, world.environment)
+      ? this.dropDecor(drag.preview, index, world)
       : { decor: drag.preview, path: [] };
     const allowed = isDecorPoseAllowed(world.decor, drop.decor, index);
     if (commit && this.decorEditing() && allowed) {
@@ -1142,8 +1192,12 @@ export class AquariumHost {
         ? params.environment
         : DEFAULT_ENVIRONMENT_ID;
       const world: MutableWorld = createDefaultWorld(params.seed, environment);
-      // Bois flottés de `bois=` (#169), en capture : ajoutés au décor avant la population.
+      // Bois flottés de `bois=` (#169), en capture : ajoutés au décor avant la population,
+      // après les dimensions du bac de `bac=` (#171).
       if (params.capture) {
+        if (params.tank !== null) {
+          setTankDimensionsInPlace(world, params.tank);
+        }
         applyCaptureWoods(world, params.woods);
       }
       // Effectifs de `population=` (#69) : appliqués à t = 0, avant d'avancer le monde.
@@ -1265,7 +1319,7 @@ export class AquariumHost {
       preset,
       interactive: !this.capture,
       filter: this.filter(),
-      environment: environmentById(world.environment),
+      environment: placeEnvironmentData(world),
     });
     this.view = view;
     view.setDecor(world.decor, world.seed);
@@ -1477,11 +1531,26 @@ export class AquariumHost {
       this.host.nativeElement.setAttribute(ENVIRONMENT_ATTRIBUTE, world.environment);
       const editable = isDecorEditable(world.environment);
       this.decorEditable.set(editable);
+      this.exposeTankDimensions();
       if (!editable && this.decorEditing()) {
         this.applyDecorEditing(false);
       }
       this.exposeDecorCount();
     }
+  }
+
+  /** Expose les dimensions du bac (`data-aqfish-tank` et signal `tankDimensions`). */
+  private exposeTankDimensions(): void {
+    const world = this.currentWorld;
+    if (!world) {
+      return;
+    }
+    const dims = placeDimensions(world);
+    this.tankDimensions.set(isTankResizable(world.environment) ? dims : null);
+    this.host.nativeElement.setAttribute(
+      TANK_ATTRIBUTE,
+      `${dims.width}:${dims.height}:${dims.depth}`,
+    );
   }
 
   /** Applique et expose le mode édition (`data-aqfish-editing`, signal `decorEditing`). */
