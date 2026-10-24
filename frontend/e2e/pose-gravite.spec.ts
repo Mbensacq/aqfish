@@ -119,4 +119,28 @@ test.describe('Pose par gravité (#170)', () => {
     await expect(page.locator('[data-decor-hint]')).toContainText('posé sur le sable');
     expect(errors).toEqual([]);
   });
+
+  test('pose après chute : conservée au rechargement, simulation sans moteur', async ({ page }) => {
+    const errors = await openScene(page);
+    await startEditing(page);
+    await expect(host(page)).toHaveAttribute('data-aqfish-decor-physics', 'pret', {
+      timeout: 60_000,
+    });
+    await page.getByRole('radio', { name: 'Sélection' }).click();
+    const target = DEFAULT_DECOR[3];
+    await dragTank(page, ROCK_2, [target.x, SAND_THICKNESS, target.z]);
+    await expect
+      .poll(async () => (await savedDecor(page))[2]?.x ?? DEFAULT_DECOR[2].x)
+      .not.toBe(DEFAULT_DECOR[2].x);
+    const before = await savedDecor(page);
+    // Hors édition, après rechargement : mêmes poses, aucun moteur demandé.
+    const engine = watchEngine(page);
+    await page.reload();
+    await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+    await page.waitForTimeout(2_000);
+    expect(await savedDecor(page)).toEqual(before);
+    expect(engine.loaded()).toBe(false);
+    expect(await physics(page)).toBeNull();
+    expect(errors).toEqual([]);
+  });
 });
