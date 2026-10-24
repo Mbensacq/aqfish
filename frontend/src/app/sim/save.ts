@@ -4,11 +4,14 @@ import { SIM_DT } from './constants';
 import { createDayClock, DEFAULT_DAY_CLOCK, HOURS_PER_DAY, type DayClock } from './daylight';
 import { parseDecorItems, type DecorItem } from './decor';
 import {
-  environmentById,
   environmentWater,
   isEnvironmentId,
+  isTankResizable,
   livesIn,
+  placeDimensions,
+  placeEnvironment,
   type EnvironmentId,
+  type Place,
 } from './environment';
 import { FOOD_MAX_FLOAT_SECONDS, FOOD_MIN_FLOAT_SECONDS, FOOD_SINK_SPEED, MAX_FOOD } from './food';
 import type { FoodPellet } from './food';
@@ -16,7 +19,7 @@ import { isSpeciesId, MAX_TOTAL_FISH } from './population';
 import { DEFAULT_SIM_SPEED, isSimSpeed, type SimSpeed } from './sim-speed';
 import { SPECIES, type SpeciesId } from './species';
 import type { Fish } from './swimmer';
-import type { Box3 } from './tank';
+import { clampTankDimensions, type Box3, type TankDimensions } from './tank';
 import {
   boundsFor,
   createWorld,
@@ -30,7 +33,8 @@ import {
  * Sauvegarde du monde (issue #70, ADR 0028) : format JSON versionné, écrit et relu par des
  * fonctions pures (`serializeWorld`, `parseWorld`).
  *
- * Ce qui est enregistré : graine, environnement, compteur de pas (le temps simulé en dérive,
+ * Ce qui est enregistré : graine, environnement, dimensions réglées du bac (issue #171,
+ * facultatives : absentes, ce sont celles de l'environnement), compteur de pas (le temps simulé en dérive,
  * `tick · SIM_DT`), décor, poissons (état complet, sous-générateur compris), granulés,
  * compteurs d'identifiants, et les réglages de vitesse, d'heure et de rendu des granulés. Les obstacles ne sont pas
  * enregistrés : ils sont recalculés à partir du décor (`createWorld`), comme à la création.
@@ -109,6 +113,11 @@ export interface SaveData {
   readonly schema: typeof SAVE_SCHEMA;
   readonly seed: number;
   readonly environment: EnvironmentId;
+  /**
+   * Dimensions réglées du bac (issue #171, ADR 0047). Facultatives : absentes (anciennes
+   * sauvegardes, bac jamais redimensionné), ce sont celles de l'environnement.
+   */
+  readonly dimensions?: TankDimensions;
   readonly tick: number;
   readonly nextFishId: number;
   readonly nextFoodId: number;
@@ -181,6 +190,7 @@ export function saveData(world: World, settings: SaveSettings = DEFAULT_SAVE_SET
     schema: SAVE_SCHEMA,
     seed: world.seed,
     environment: world.environment,
+    ...(world.dimensions === undefined ? {} : { dimensions: { ...world.dimensions } }),
     tick: world.tick,
     nextFishId: world.nextFishId,
     nextFoodId: world.nextFoodId,
@@ -268,6 +278,8 @@ export function parseSaveData(value: unknown): ParseWorldResult {
   if (!isEnvironmentId(environment)) {
     return failure(`environnement inconnu (${describe(environment)})`);
   }
+  const dimensions = parseDimensions(own(value, 'dimensions'), environment, problems);
+  const place: Place = dimensions === undefined ? environment : { environment, dimensions };
   const tick = own(value, 'tick');
   if (!isIntegerIn(tick, 0, MAX_SAVE_TICK)) {
     problems.push(`tick doit être un entier dans [0, ${MAX_SAVE_TICK}]`);
@@ -290,19 +302,19 @@ export function parseSaveData(value: unknown): ParseWorldResult {
     problems.push(`trop d’éléments de décor (${decorValue.length}, ${MAX_SAVE_DECOR} au plus)`);
   } else {
     try {
-      decor = parseDecorItems(decorValue, environmentById(environment).dimensions);
+      decor = parseDecorItems(decorValue, placeDimensions(place));
     } catch (error) {
       problems.push(`décor : ${(error as Error).message}`);
     }
   }
 
-  const fish = parseFishList(own(value, 'fish'), environment, nextFishId, problems);
-  const food = parseFoodList(own(value, 'food'), environment, nextFoodId, problems);
+  const fish = parseFishList(own(value, 'fish'), place, nextFishId, problems);
+  const food = parseFoodList(own(value, 'food'), place, nextFoodId, problems);
   if (problems.length > 0 || settings === null) {
     return failure(problems.slice(0, 5).join(' ; ') + (problems.length > 5 ? ' ; …' : ''));
   }
 
-  const world: MutableWorld = createWorld(seed as number, [], [], decor, environment);
+  const world: MutableWorld = createWorld(seed as number, [], [], decor, place);
   world.tick = tick as number;
   world.time = (tick as number) * SIM_DT;
   world.entities = fish;
@@ -310,6 +322,41 @@ export function parseSaveData(value: unknown): ParseWorldResult {
   world.nextFishId = nextFishId as number;
   world.nextFoodId = nextFoodId as number;
   return { ok: true, world, settings };
+}
+
+/**
+ * Dimensions réglées d'une sauvegarde : `undefined` si absentes ; sinon trois réels finis,
+ * bornés à `TANK_LIMITS` (`clampTankDimensions` : une valeur hors bornes est ramenée, pas
+ * refusée), dans un environnement qui les accepte (`isTankResizable`).
+ */
+function parseDimensions(
+  value: unknown,
+  environment: EnvironmentId,
+  problems: string[],
+): TankDimensions | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+  if (!isTankResizable(environment)) {
+    problems.push(`dimensions non réglables dans l’environnement ${environment}`);
+    return undefined;
+  }
+  if (!isRecord(value)) {
+    problems.push('dimensions doit être un objet');
+    return undefined;
+  }
+  const raw = {
+    width: own(value, 'width'),
+    height: own(value, 'height'),
+    depth: own(value, 'depth'),
+  };
+  for (const [key, v] of Object.entries(raw)) {
+    if (typeof v !== 'number' || !Number.isFinite(v)) {
+      problems.push(`dimensions : ${key} doit être un nombre fini`);
+      return undefined;
+    }
+  }
+  return clampTankDimensions(raw as unknown as TankDimensions);
 }
 
 function parseSettings(value: unknown, problems: string[]): SaveSettings | null {
@@ -373,7 +420,7 @@ function settingsProblems(settings: SaveSettings): string[] {
 
 function parseFishList(
   value: unknown,
-  environment: EnvironmentId,
+  environment: Place,
   nextFishId: unknown,
   problems: string[],
 ): Entity[] {
@@ -413,7 +460,7 @@ function parseFishList(
 
 function parseFish(
   item: unknown,
-  environment: EnvironmentId,
+  environment: Place,
   report: (problem: string) => void,
 ): Entity | null {
   if (!isRecord(item)) {
@@ -430,8 +477,9 @@ function parseFish(
     report(`espèce inconnue (${describe(species)})`);
     return null;
   }
-  if (!livesIn(environment, species)) {
-    report(`l’espèce ${species} ne vit pas dans l’environnement ${environment}`);
+  const envId = placeEnvironment(environment);
+  if (!livesIn(envId, species)) {
+    report(`l’espèce ${species} ne vit pas dans l’environnement ${envId}`);
     return null;
   }
   const fish: Record<string, number | string> = { id, kind: 'fish', species };
@@ -479,7 +527,7 @@ function parseFish(
 
 function parseFoodList(
   value: unknown,
-  environment: EnvironmentId,
+  environment: Place,
   nextFoodId: unknown,
   problems: string[],
 ): FoodPellet[] {

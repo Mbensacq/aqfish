@@ -1,5 +1,12 @@
 import { assertSeed, deriveSeed, MAX_SEED, prngNextState, prngOutput } from '../core/random/prng';
-import { SAND_THICKNESS, waterVolume, type Box3 } from './tank';
+import {
+  DEFAULT_TANK,
+  MAX_TANK,
+  SAND_THICKNESS,
+  waterVolume,
+  type Box3,
+  type TankDimensions,
+} from './tank';
 
 /**
  * Bulles d'un diffuseur posé sur le sable (issue #50, ADR 0017).
@@ -47,6 +54,18 @@ export interface BubbleSource {
 /** Diffuseur par défaut : au fond à gauche, entre deux rochers du décor par défaut. */
 export const DEFAULT_BUBBLE_SOURCE: BubbleSource = { x: -0.24, z: -0.2 };
 
+/**
+ * Diffuseur d'un bac aux dimensions `dims` (issue #171) : la position par défaut mise à
+ * l'échelle de la longueur et de la profondeur, pour rester au fond à gauche entre les rochers
+ * ramenés dans le bac. Aux dimensions par défaut, exactement `DEFAULT_BUBBLE_SOURCE`.
+ */
+export function bubbleSourceFor(dims: TankDimensions): BubbleSource {
+  return {
+    x: DEFAULT_BUBBLE_SOURCE.x * (dims.width / DEFAULT_TANK.width),
+    z: DEFAULT_BUBBLE_SOURCE.z * (dims.depth / DEFAULT_TANK.depth),
+  };
+}
+
 /** Hauteur de naissance des bulles : dessus du diffuseur. */
 export const BUBBLE_START_Y = SAND_THICKNESS + DIFFUSER_HEIGHT;
 
@@ -54,10 +73,14 @@ export const BUBBLE_START_Y = SAND_THICKNESS + DIFFUSER_HEIGHT;
 export const BUBBLE_MAX_LIFETIME = (waterVolume().maxY - BUBBLE_START_Y) / BUBBLE_MIN_SPEED;
 
 /**
- * Plafond du nombre de bulles vivantes à un instant : bulles nées dans la dernière durée
- * de vie maximale, bornes comprises.
+ * Plafond du nombre de bulles vivantes à un instant : bulles nées dans la dernière durée de
+ * vie maximale, bornes comprises, dans le plus haut des bacs réglables (`MAX_TANK`, issue
+ * #171), pour que le tampon suffise à toutes les dimensions.
  */
-export const MAX_BUBBLES = Math.floor(BUBBLE_MAX_LIFETIME / BUBBLE_EMIT_PERIOD) + 1;
+export const MAX_BUBBLES =
+  Math.floor(
+    (waterVolume(MAX_TANK).maxY - BUBBLE_START_Y) / BUBBLE_MIN_SPEED / BUBBLE_EMIT_PERIOD,
+  ) + 1;
 
 /** Paramètres tirés d'une bulle (fonction pure de la graine et de son numéro). */
 export interface BubbleTraits {
@@ -186,9 +209,11 @@ export function fillBubbles(
     if (p.y >= water.maxY) {
       continue;
     }
-    out.positions[3 * count] = p.x;
+    // Dans un bac étroit (issue #171), la dérive pourrait atteindre la vitre : la bulle la
+    // longe. Jamais le cas dans le bac par défaut (écart maximal ~4 cm, vitre à 5 cm).
+    out.positions[3 * count] = Math.min(water.maxX, Math.max(water.minX, p.x));
     out.positions[3 * count + 1] = p.y;
-    out.positions[3 * count + 2] = p.z;
+    out.positions[3 * count + 2] = Math.min(water.maxZ, Math.max(water.minZ, p.z));
     out.sizes[count] = traits.size;
     count++;
   }

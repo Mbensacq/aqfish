@@ -7,7 +7,7 @@ import {
   validateDecorItem,
   type DecorItem,
 } from './decor';
-import { environmentById, type EnvironmentId } from './environment';
+import { placeDimensions, placeEnvironment, type EnvironmentId, type Place } from './environment';
 import type { PlantForm } from './plant';
 import { MAX_SAVE_DECOR } from './save';
 import { createWorld, seededObstacleCount, type MutableWorld, type World } from './world';
@@ -93,8 +93,8 @@ export function nextDecorSeed(worldSeed: number, decor: readonly DecorItem[]): n
  * Vrai si (x, z) peut recevoir un élément dans l'environnement `environment` : réels finis,
  * à au moins `DECOR_EDGE_MARGIN` des vitres.
  */
-export function canPlaceDecorAt(x: number, z: number, environment: EnvironmentId): boolean {
-  const { width, depth } = environmentById(environment).dimensions;
+export function canPlaceDecorAt(x: number, z: number, environment: Place): boolean {
+  const { width, depth } = placeDimensions(environment);
   return (
     Number.isFinite(x) &&
     Number.isFinite(z) &&
@@ -115,10 +115,10 @@ export function addDecorItem(
   x: number,
   z: number,
   worldSeed: number,
-  environment: EnvironmentId,
+  environment: Place,
 ): DecorItem[] | null {
   if (
-    !isDecorEditable(environment) ||
+    !isDecorEditable(placeEnvironment(environment)) ||
     !isDecorChoiceId(choice) ||
     decor.length >= MAX_DECOR_ITEMS ||
     !canPlaceDecorAt(x, z, environment)
@@ -132,7 +132,7 @@ export function addDecorItem(
     form === undefined
       ? { kind, x, z, rotation, scale: 1, seed }
       : { kind, x, z, rotation, scale: 1, seed, form };
-  if (validateDecorItem(item, environmentById(environment).dimensions).length > 0) {
+  if (validateDecorItem(item, placeDimensions(environment)).length > 0) {
     return null;
   }
   return [...decor, item];
@@ -158,7 +158,7 @@ export function setDecorInPlace(world: MutableWorld, decor: readonly DecorItem[]
   if (world.obstacles.length !== world.decor.length + seededObstacleCount(world)) {
     throw new RangeError('édition du décor : le monde a des obstacles explicites');
   }
-  const rebuilt = createWorld(world.seed, [], [], decor, world.environment);
+  const rebuilt = createWorld(world.seed, [], [], decor, world);
   world.decor = rebuilt.decor;
   world.obstacles = rebuilt.obstacles;
 }
@@ -205,12 +205,12 @@ export function clampDecorPosition(
   item: DecorItem,
   x: number,
   z: number,
-  environment: EnvironmentId,
+  environment: Place,
 ): { x: number; z: number } | null {
   if (!Number.isFinite(x) || !Number.isFinite(z)) {
     return null;
   }
-  const { width, depth } = environmentById(environment).dimensions;
+  const { width, depth } = placeDimensions(environment);
   const reach = Math.max(decorFootprint(item), DECOR_EDGE_MARGIN);
   const clamp = (v: number, half: number) => {
     const bound = Math.max(half - reach, 0);
@@ -273,21 +273,20 @@ function replaceItem(
   decor: readonly DecorItem[],
   index: number,
   item: DecorItem,
-  environment: EnvironmentId,
+  environment: Place,
 ): DecorItem[] | null {
-  if (validateDecorItem(item, environmentById(environment).dimensions).length > 0) {
+  if (validateDecorItem(item, placeDimensions(environment)).length > 0) {
     return null;
   }
   return decor.map((other, n) => (n === index ? item : other));
 }
 
-function editableIndex(
-  decor: readonly DecorItem[],
-  index: number,
-  environment: EnvironmentId,
-): boolean {
+function editableIndex(decor: readonly DecorItem[], index: number, environment: Place): boolean {
   return (
-    isDecorEditable(environment) && Number.isInteger(index) && index >= 0 && index < decor.length
+    isDecorEditable(placeEnvironment(environment)) &&
+    Number.isInteger(index) &&
+    index >= 0 &&
+    index < decor.length
   );
 }
 
@@ -302,7 +301,7 @@ export function moveDecorItem(
   index: number,
   x: number,
   z: number,
-  environment: EnvironmentId,
+  environment: Place,
 ): DecorItem[] | null {
   if (!editableIndex(decor, index, environment)) {
     return null;
@@ -329,7 +328,7 @@ export function rotateDecorItem(
   decor: readonly DecorItem[],
   index: number,
   steps: number,
-  environment: EnvironmentId,
+  environment: Place,
 ): DecorItem[] | null {
   if (!editableIndex(decor, index, environment) || !Number.isInteger(steps) || steps === 0) {
     return null;
@@ -351,7 +350,7 @@ export function scaleDecorItem(
   decor: readonly DecorItem[],
   index: number,
   steps: number,
-  environment: EnvironmentId,
+  environment: Place,
 ): DecorItem[] | null {
   if (!editableIndex(decor, index, environment) || !Number.isInteger(steps) || steps === 0) {
     return null;

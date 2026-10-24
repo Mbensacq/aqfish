@@ -1,7 +1,7 @@
 import { assertSeed } from '../core/random/prng';
 import { createWalker, stepWalker, type WalkerGround } from './axolotl';
 import { createFrog, stepFrog } from './frog';
-import { fillBubbles, type BubbleBuffer } from './bubbles';
+import { bubbleSourceFor, fillBubbles, type BubbleBuffer } from './bubbles';
 import { SIM_DT } from './constants';
 import {
   anemoneFootprints,
@@ -17,7 +17,13 @@ import {
   DEFAULT_ENVIRONMENT_ID,
   environmentById,
   environmentWater,
+  isTankResizable,
+  PLACE_CACHE_LIMIT,
+  placeDimensions,
+  placeEnvironment,
+  placeKey,
   type EnvironmentId,
+  type Place,
 } from './environment';
 import { eatInPlace, feedingBand, foodTarget, type FeedingBand } from './feeding';
 import { computeSchoolSteering, enforceMinDistance, type Vec3 } from './flocking';
@@ -25,6 +31,7 @@ import { dropFoodInPlace, stepFoodInPlace, type FoodPellet } from './food';
 import { validateObstacle, type Obstacle } from './obstacles';
 import { SPECIES, type AnemoneBondParams, type SpeciesId } from './species';
 import { createFish, stepFish, swimBounds, type Fish, type SwimBounds } from './swimmer';
+import { clampTankDimensions, type TankDimensions } from './tank';
 import { assertTimeStep } from './time-step';
 
 /**
@@ -52,6 +59,11 @@ export interface World {
    * et les dépôts de nourriture. Fixé à la création.
    */
   readonly environment: EnvironmentId;
+  /**
+   * Dimensions réglées du bac (issue #171, ADR 0047), bornées à `TANK_LIMITS` ; absentes :
+   * celles de l'environnement. Le monde est ainsi un lieu (`TankPlace`, `sim/environment.ts`).
+   */
+  readonly dimensions?: TankDimensions;
   /** Nombre de pas `SIM_DT` exécutés depuis la création. */
   readonly tick: number;
   /**
@@ -112,23 +124,27 @@ export function createWorld(
   population: readonly PopulationEntry[] = [],
   obstacles: readonly Obstacle[] = [],
   decor: readonly DecorItem[] = [],
-  environment: EnvironmentId = DEFAULT_ENVIRONMENT_ID,
+  place: Place = DEFAULT_ENVIRONMENT_ID,
 ): World {
   assertSeed(seed);
-  const env = environmentById(environment);
-  const decorItems = parseDecorItems(decor, env.dimensions);
+  const environment = placeEnvironment(place);
+  environmentById(environment);
+  const dimensions = worldDimensions(place);
+  // Lieu du monde : l'environnement seul, ou avec ses dimensions réglées (bornées).
+  const where: Place = dimensions === undefined ? environment : { environment, dimensions };
+  const decorItems = parseDecorItems(decor, placeDimensions(where));
   const sortedObstacles = copyObstacles(obstacles);
   const firstDecorId = sortedObstacles.length > 0 ? sortedObstacles.at(-1)!.id + 1 : 0;
   sortedObstacles.push(...decorObstacles(decorItems, firstDecorId));
   // Coraux du récif (ADR 0040), puis anémones (ADR 0041) : tirés de la graine autour du
   // décor, après lui.
-  const { corals, anemones } = seededFeatures(seed, environment, decorItems);
+  const { corals, anemones } = seededFeatures(seed, where, decorItems);
   const firstCoralId = firstDecorId + decorItems.length;
   sortedObstacles.push(...coralObstacles(corals, firstCoralId));
   sortedObstacles.push(...anemoneObstacles(anemones, firstCoralId + corals.length));
   // Cache des éléments tirés de la graine (`worldFeatures`) : la sauvegarde et les pas ne
   // les recalculent pas.
-  const { homes } = cacheFeatures(seed, environment, decorItems, corals, anemones);
+  const { homes } = cacheFeatures(seed, placeKey(where), decorItems, corals, anemones);
   const entities: Entity[] = [];
   for (const { species, count } of population) {
     if (!Number.isInteger(count) || count < 0) {
@@ -140,14 +156,13 @@ export function createWorld(
     }
     for (let i = 0; i < count; i++) {
       const home = homeForRank(homes, SPECIES[species].anemone, bondedCount(entities));
-      entities.push(
-        spawnEntity(seed, entities.length, species, environment, sortedObstacles, home),
-      );
+      entities.push(spawnEntity(seed, entities.length, species, where, sortedObstacles, home));
     }
   }
   return {
     seed,
     environment,
+    ...(dimensions === undefined ? {} : { dimensions }),
     tick: 0,
     time: 0,
     entities,
@@ -160,19 +175,34 @@ export function createWorld(
 }
 
 /**
+ * Dimensions réglées d'un lieu, bornées (`clampTankDimensions`), ou `undefined` sans réglage.
+ * @throws RangeError si l'environnement du lieu n'a pas de dimensions réglables.
+ */
+function worldDimensions(place: Place): TankDimensions | undefined {
+  if (typeof place === 'string' || place.dimensions === undefined) {
+    return undefined;
+  }
+  if (!isTankResizable(place.environment)) {
+    throw new RangeError(`dimensions non réglables dans l’environnement ${place.environment}`);
+  }
+  return clampTankDimensions(place.dimensions);
+}
+
+/**
  * Coraux (`sim/corals.ts`, ADR 0040) et anémones (`sim/anemones.ts`, ADR 0041) d'un
  * environnement, tirés de la graine autour du décor `decor` : ce que `createWorld` ajoute aux
  * obstacles, et ce que la sauvegarde et le rendu recalculent.
  */
 export function seededFeatures(
   seed: number,
-  environment: EnvironmentId,
+  place: Place,
   decor: readonly DecorItem[],
 ): { corals: CoralColony[]; anemones: Anemone[] } {
-  const env = environmentById(environment);
+  const env = environmentById(placeEnvironment(place));
+  const dims = placeDimensions(place);
   // Anémones d'abord : les coraux évitent leur emprise (ADR 0041).
-  const anemones = anemoneLayout(seed, env.dimensions, env.anemones, decor);
-  const corals = coralLayout(seed, env.dimensions, env.corals, decor, anemoneFootprints(anemones));
+  const anemones = anemoneLayout(seed, dims, env.anemones, decor);
+  const corals = coralLayout(seed, dims, env.corals, decor, anemoneFootprints(anemones));
   return { corals, anemones };
 }
 
@@ -220,7 +250,7 @@ export interface WorldFeatures {
  */
 const FEATURES_CACHE = new WeakMap<
   readonly DecorItem[],
-  { seed: number; environment: EnvironmentId; features: WorldFeatures }
+  { seed: number; key: string; features: WorldFeatures }
 >();
 const NO_FEATURES: WorldFeatures = Object.freeze({
   corals: Object.freeze([]),
@@ -237,7 +267,7 @@ export function worldFeatureComputations(): number {
 
 function cacheFeatures(
   seed: number,
-  environment: EnvironmentId,
+  key: string,
   decor: readonly DecorItem[],
   corals: readonly CoralColony[],
   anemones: readonly Anemone[],
@@ -247,7 +277,7 @@ function cacheFeatures(
     anemones: Object.freeze([...anemones]),
     homes: Object.freeze(anemoneHomes(anemones)),
   });
-  FEATURES_CACHE.set(decor, { seed, environment, features });
+  FEATURES_CACHE.set(decor, { seed, key, features });
   return features;
 }
 
@@ -261,13 +291,14 @@ export function worldFeatures(world: World): WorldFeatures {
   if (env.corals === null && env.anemones === null) {
     return NO_FEATURES;
   }
+  const key = placeKey(world);
   const hit = FEATURES_CACHE.get(world.decor);
-  if (hit && hit.seed === world.seed && hit.environment === world.environment) {
+  if (hit && hit.seed === world.seed && hit.key === key) {
     return hit.features;
   }
   featureComputations += 1;
-  const { corals, anemones } = seededFeatures(world.seed, world.environment, world.decor);
-  return cacheFeatures(world.seed, world.environment, world.decor, corals, anemones);
+  const { corals, anemones } = seededFeatures(world.seed, world, world.decor);
+  return cacheFeatures(world.seed, key, world.decor, corals, anemones);
 }
 
 /** Points d'attache des anémones de `world` (`anemoneHomes`), mis en cache (`worldFeatures`). */
@@ -294,7 +325,7 @@ export function spawnEntity(
   seed: number,
   id: number,
   species: SpeciesId,
-  environment: EnvironmentId,
+  environment: Place,
   obstacles: readonly Obstacle[],
   home: AnemoneHome | null = null,
 ): Entity {
@@ -331,19 +362,27 @@ function homeSpawn(bounds: SwimBounds, home: AnemoneHome, bond: AnemoneBondParam
   return { ...bounds, spawn: { minX, maxX, minY, maxY, minZ, maxZ } };
 }
 
-/** Sol et eau de chaque environnement, pour les espèces qui marchent sur le fond. */
-const GROUND_CACHE = new Map<EnvironmentId, WalkerGround>();
+/** Sol et eau de chaque lieu (`placeKey`), pour les espèces qui marchent sur le fond. */
+const GROUND_CACHE = new Map<string, WalkerGround>();
 
-function groundFor(environment: EnvironmentId): WalkerGround {
-  let ground = GROUND_CACHE.get(environment);
+function groundFor(place: Place, key: string = placeKey(place)): WalkerGround {
+  let ground = GROUND_CACHE.get(key);
   if (!ground) {
     ground = {
-      water: environmentWater(environment),
-      terrain: environmentById(environment).terrain,
+      water: environmentWater(place),
+      terrain: environmentById(placeEnvironment(place)).terrain,
     };
-    GROUND_CACHE.set(environment, ground);
+    trimCache(GROUND_CACHE);
+    GROUND_CACHE.set(key, ground);
   }
   return ground;
+}
+
+/** Vide une table par lieu devenue trop grande (`PLACE_CACHE_LIMIT`). */
+function trimCache(cache: Map<string, unknown>): void {
+  if (cache.size >= PLACE_CACHE_LIMIT) {
+    cache.clear();
+  }
 }
 
 function copyObstacles(obstacles: readonly Obstacle[]): Obstacle[] {
@@ -430,7 +469,16 @@ export function worldBubbles(world: World, out: BubbleBuffer): number {
     out.count = 0;
     return 0;
   }
-  return fillBubbles(world.seed, world.time, out);
+  if (world.dimensions === undefined) {
+    return fillBubbles(world.seed, world.time, out);
+  }
+  return fillBubbles(
+    world.seed,
+    world.time,
+    out,
+    bubbleSourceFor(world.dimensions),
+    environmentWater(world),
+  );
 }
 
 /**
@@ -454,7 +502,7 @@ export function feedInPlace(world: MutableWorld, x: number, z: number): number {
     world as MutableWorld & { food: FoodPellet[] },
     x,
     z,
-    environmentWater(world.environment),
+    environmentWater(world),
   );
 }
 
@@ -511,7 +559,9 @@ function stepInPlace(world: MutableWorld, dt: number): void {
   // Deux phases : le pilotage de banc de tous les poissons est calculé sur les positions du
   // début du pas, puis chacun nage. Le résultat ne dépend donc pas de l'ordre de mise à jour.
   const fishes = world.entities as Mutable<Entity>[];
-  const environment = world.environment;
+  // Lieu du pas : une seule clé calculée par pas, lue par toutes les tables (`placeKey`).
+  const place: Place = world;
+  const key = placeKey(place);
   const steering = steeringBuffer(fishes.length);
   computeSchoolSteering(fishes, steering);
   // Nourriture (issue #68) : point visé calculé, comme le banc, sur les positions du début du
@@ -523,17 +573,17 @@ function stepInPlace(world: MutableWorld, dt: number): void {
   // Ordre stable : celui du tableau, c'est-à-dire des identifiants.
   for (let i = 0; i < fishes.length; i++) {
     const fish = fishes[i];
-    const bounds = boundsFor(fish.species, environment);
+    const bounds = boundsAt(fish.species, place, key);
     if (SPECIES[fish.species].walker !== undefined) {
       // Espèce qui marche sur le fond (axolotl) : sa propre machine à états, sans banc ni
       // recherche de nourriture (`sim/axolotl.ts`).
-      stepWalker(fish, dt, world.seed, world.time, bounds, groundFor(environment));
+      stepWalker(fish, dt, world.seed, world.time, bounds, groundFor(place, key));
       continue;
     }
     if (SPECIES[fish.species].amphibian !== undefined) {
       // Espèce amphibie (grenouille, triton) : posée, sauts, nage, entre terre et eau, sans banc ni
       // recherche de nourriture (`sim/frog.ts`).
-      stepFrog(fish, dt, world.seed, world.time, bounds, groundFor(environment));
+      stepFrog(fish, dt, world.seed, world.time, bounds, groundFor(place, key));
       continue;
     }
     let target =
@@ -543,7 +593,7 @@ function stepInPlace(world: MutableWorld, dt: number): void {
             fish,
             SPECIES[fish.species],
             food,
-            bandFor(fish.species, environment),
+            bandFor(fish.species, place, key),
             bounds.hard,
             FOOD_TARGET,
             world.obstacles,
@@ -564,7 +614,8 @@ function stepInPlace(world: MutableWorld, dt: number): void {
       target,
     );
   }
-  currentEnvironment = environment;
+  currentPlace = place;
+  currentKey = key;
   enforceMinDistance(fishes, boundsOfFish);
   eatInPlace(fishes, food, bandOfFish, hardOfFish);
   stepFoodInPlace(food, dt);
@@ -623,34 +674,36 @@ export function bondTarget(
  * Environnement du pas en cours, lu par les rappels ci-dessous : des fonctions de module,
  * pour ne créer aucune fermeture par pas.
  */
-let currentEnvironment: EnvironmentId = DEFAULT_ENVIRONMENT_ID;
+let currentPlace: Place = DEFAULT_ENVIRONMENT_ID;
+let currentKey: string = DEFAULT_ENVIRONMENT_ID;
 
 function boundsOfFish(fish: Entity): SwimBounds {
-  return boundsFor(fish.species, currentEnvironment);
+  return boundsAt(fish.species, currentPlace, currentKey);
 }
 
 function hardOfFish(fish: Entity): SwimBounds['hard'] {
-  return boundsFor(fish.species, currentEnvironment).hard;
+  return boundsAt(fish.species, currentPlace, currentKey).hard;
 }
 
 function bandOfFish(fish: Entity): FeedingBand {
-  return bandFor(fish.species, currentEnvironment);
+  return bandFor(fish.species, currentPlace, currentKey);
 }
 
 /**
- * Valeur par espèce et par environnement, calculée une fois : deux tables imbriquées, pour
+ * Valeur par espèce et par lieu (`placeKey`), calculée une fois : deux tables imbriquées, pour
  * qu'une lecture n'alloue rien (pas de clé composée).
  */
 function cached<T>(
-  cache: Map<EnvironmentId, Map<SpeciesId, T>>,
+  cache: Map<string, Map<SpeciesId, T>>,
   species: SpeciesId,
-  environment: EnvironmentId,
+  key: string,
   compute: () => T,
 ): T {
-  let perSpecies = cache.get(environment);
+  let perSpecies = cache.get(key);
   if (!perSpecies) {
     perSpecies = new Map();
-    cache.set(environment, perSpecies);
+    trimCache(cache);
+    cache.set(key, perSpecies);
   }
   let value = perSpecies.get(species);
   if (value === undefined) {
@@ -660,15 +713,15 @@ function cached<T>(
   return value;
 }
 
-/** Tranches d'eau de l'alimentation par espèce et par environnement. */
-const BAND_CACHE = new Map<EnvironmentId, Map<SpeciesId, FeedingBand>>();
+/** Tranches d'eau de l'alimentation par espèce et par lieu. */
+const BAND_CACHE = new Map<string, Map<SpeciesId, FeedingBand>>();
 
-function bandFor(species: SpeciesId, environment: EnvironmentId): FeedingBand {
-  const band = BAND_CACHE.get(environment)?.get(species);
+function bandFor(species: SpeciesId, place: Place, key: string): FeedingBand {
+  const band = BAND_CACHE.get(key)?.get(species);
   return (
     band ??
-    cached(BAND_CACHE, species, environment, () =>
-      feedingBand(SPECIES[species].feeding, environmentWater(environment)),
+    cached(BAND_CACHE, species, key, () =>
+      feedingBand(SPECIES[species].feeding, environmentWater(place)),
     )
   );
 }
@@ -683,23 +736,25 @@ function steeringBuffer(count: number): Float64Array {
   return steeringScratch;
 }
 
-/** Bornes de nage par espèce et par environnement (aucune allocation une fois calculées). */
-const BOUNDS_CACHE = new Map<EnvironmentId, Map<SpeciesId, SwimBounds>>();
+/** Bornes de nage par espèce et par lieu (aucune allocation une fois calculées). */
+const BOUNDS_CACHE = new Map<string, Map<SpeciesId, SwimBounds>>();
 
 /**
- * Bornes de nage d'une espèce dans un environnement (le bac tropical par défaut), partagées :
- * ne pas modifier.
+ * Bornes de nage d'une espèce dans un environnement (le bac tropical par défaut) ou dans un
+ * lieu aux dimensions réglées (un monde), partagées : ne pas modifier.
  */
 export function boundsFor(
   species: SpeciesId,
-  environment: EnvironmentId = DEFAULT_ENVIRONMENT_ID,
+  environment: Place = DEFAULT_ENVIRONMENT_ID,
 ): SwimBounds {
-  const bounds = BOUNDS_CACHE.get(environment)?.get(species);
+  return boundsAt(species, environment, placeKey(environment));
+}
+
+function boundsAt(species: SpeciesId, place: Place, key: string): SwimBounds {
+  const bounds = BOUNDS_CACHE.get(key)?.get(species);
   return (
     bounds ??
-    cached(BOUNDS_CACHE, species, environment, () =>
-      swimBounds(SPECIES[species], environmentWater(environment)),
-    )
+    cached(BOUNDS_CACHE, species, key, () => swimBounds(SPECIES[species], environmentWater(place)))
   );
 }
 

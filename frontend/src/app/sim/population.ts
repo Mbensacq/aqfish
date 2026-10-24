@@ -122,7 +122,7 @@ export function setPopulationInPlace(
         world.seed,
         world.nextFishId,
         species,
-        world.environment,
+        world,
         world.obstacles,
         homeForRank(worldAnemoneHomes(world), SPECIES[species].anemone, bondedCount(entities)),
       ),

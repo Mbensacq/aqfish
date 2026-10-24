@@ -7,7 +7,7 @@ import {
 } from './decor';
 import type { DecorItem } from './decor';
 import { clampDecorPosition, decorItemsOverlap, isDecorEditable } from './decor-edit';
-import { environmentById, type EnvironmentId } from './environment';
+import { placeDimensions, placeEnvironment, type Place } from './environment';
 import type { Sphere } from './obstacles';
 
 /**
@@ -78,10 +78,10 @@ export interface DropScene {
 export function decorDropScene(
   decor: readonly DecorItem[],
   index: number,
-  environment: EnvironmentId,
+  environment: Place,
 ): DropScene | null {
   if (
-    !isDecorEditable(environment) ||
+    !isDecorEditable(placeEnvironment(environment)) ||
     !Number.isInteger(index) ||
     index < 0 ||
     index >= decor.length
@@ -112,7 +112,7 @@ export function decorDropScene(
   const floorY = groundBaseY + lowest;
   const top = fixed.reduce((max, s) => Math.max(max, s.y + s.radius), floorY);
   const height = Math.max(DROP_MIN_HEIGHT, top - floorY + DROP_CLEARANCE);
-  const { width, depth } = environmentById(environment).dimensions;
+  const { width, depth } = placeDimensions(environment);
   return {
     body,
     start: { x: grounded.x, y: groundBaseY + height, z: grounded.z },
@@ -137,7 +137,7 @@ export function settleDecorItem(
   decor: readonly DecorItem[],
   index: number,
   rest: DropPoint,
-  environment: EnvironmentId,
+  environment: Place,
 ): DecorItem[] | null {
   if (
     !Number.isInteger(index) ||
@@ -160,7 +160,7 @@ export function settleDecorItem(
     elevation === 0 && free(grounded)
       ? grounded
       : withElevation({ ...grounded, x: p.x, z: p.z }, elevation);
-  if (validateDecorItem(item, environmentById(environment).dimensions).length > 0) {
+  if (validateDecorItem(item, placeDimensions(environment)).length > 0) {
     return null;
   }
   return decor.map((other, n) => (n === index ? item : other));

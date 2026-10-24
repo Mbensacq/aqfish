@@ -340,16 +340,97 @@ export function environmentById(id: EnvironmentId): Environment {
   return ENVIRONMENTS[id];
 }
 
-/** Volumes d'eau par environnement, calculés une fois (partagés, ne pas modifier). */
-const WATER_CACHE = new Map<EnvironmentId, Box3>();
+/** Volumes d'eau par lieu (`placeKey`), calculés une fois (partagés, ne pas modifier). */
+const WATER_CACHE = new Map<string, Box3>();
 
-/** Volume d'eau d'un environnement (`waterVolume` de ses dimensions), mis en cache. */
-export function environmentWater(id: EnvironmentId): Box3 {
-  let water = WATER_CACHE.get(id);
+/**
+ * Nombre maximal d'entrées des tables par lieu (`placeKey`) : au-delà, la table est vidée.
+ * Les dimensions réglées tombent sur des pas (`TANK_LIMITS`) ; la borne protège seulement
+ * d'un appelant qui passerait des dimensions quelconques en boucle.
+ */
+export const PLACE_CACHE_LIMIT = 256;
+
+/** Volume d'eau d'un environnement ou d'un lieu (`waterVolume` de ses dimensions), mis en cache. */
+export function environmentWater(place: Place): Box3 {
+  const key = placeKey(place);
+  let water = WATER_CACHE.get(key);
   if (!water) {
-    const env = environmentById(id);
-    water = waterVolume(env.dimensions, env.waterLevel);
-    WATER_CACHE.set(id, water);
+    water = waterVolume(
+      placeDimensions(place),
+      environmentById(placeEnvironment(place)).waterLevel,
+    );
+    if (WATER_CACHE.size >= PLACE_CACHE_LIMIT) {
+      WATER_CACHE.clear();
+    }
+    WATER_CACHE.set(key, water);
   }
   return water;
+}
+
+// ---------------------------------------------------------------------------------------
+// Dimensions réglables (issue #171, ADR 0047)
+
+/**
+ * Lieu de la simulation : un environnement dont les dimensions peuvent être réglées. Un monde
+ * (`sim/world.ts`) en est un : `dimensions` absent, ce sont celles de l'environnement.
+ */
+export interface TankPlace {
+  readonly environment: EnvironmentId;
+  readonly dimensions?: TankDimensions;
+}
+
+/** Environnement seul (dimensions d'origine) ou lieu aux dimensions réglées. */
+export type Place = EnvironmentId | TankPlace;
+
+/** Environnements dont les dimensions se règlent (le bac tropical seulement). */
+export const RESIZABLE_ENVIRONMENTS: readonly EnvironmentId[] = ['tropical'];
+
+/** Vrai si les dimensions de l'environnement `id` se règlent. */
+export function isTankResizable(id: EnvironmentId): boolean {
+  return RESIZABLE_ENVIRONMENTS.includes(id);
+}
+
+/** Environnement d'un lieu. */
+export function placeEnvironment(place: Place): EnvironmentId {
+  return typeof place === 'string' ? place : place.environment;
+}
+
+/** Dimensions d'un lieu : les siennes, sinon celles de son environnement. */
+export function placeDimensions(place: Place): TankDimensions {
+  if (typeof place !== 'string' && place.dimensions !== undefined) {
+    return place.dimensions;
+  }
+  return environmentById(placeEnvironment(place)).dimensions;
+}
+
+/**
+ * Clé d'un lieu pour les tables de valeurs calculées une fois : l'identifiant de
+ * l'environnement sans dimensions réglées (aucune allocation), sinon l'identifiant suivi des
+ * trois dimensions.
+ */
+export function placeKey(place: Place): string {
+  if (typeof place === 'string') {
+    return place;
+  }
+  const d = place.dimensions;
+  return d === undefined
+    ? place.environment
+    : `${place.environment}:${d.width}:${d.height}:${d.depth}`;
+}
+
+/** Environnement d'un lieu, avec ses dimensions (pour le rendu de la scène). */
+export function placeEnvironmentData(place: Place): Environment {
+  const env = environmentById(placeEnvironment(place));
+  const dimensions = placeDimensions(place);
+  return dimensions === env.dimensions ? env : { ...env, dimensions };
+}
+
+/** Volume d'eau d'un environnement aux dimensions éventuellement réglées (`placeEnvironmentData`). */
+export function environmentDataWater(env: Environment): Box3 {
+  const base = environmentById(env.id);
+  return environmentWater(
+    env.dimensions === base.dimensions
+      ? env.id
+      : { environment: env.id, dimensions: env.dimensions },
+  );
 }
