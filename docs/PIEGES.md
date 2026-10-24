@@ -412,6 +412,23 @@ haut de sa section.
 
 ## Rendu
 
+- **Un ton de crépuscule n'est pas gratuit à 19 h** (cycle 62, #81) : à 19 h, l'intensité
+  du jour vaut ≈ 0,15 et le poids du crépuscule ≈ 0,71 ; la pénalité des tons du crépuscule
+  est alors ≈ 0,0083 (distance au carré, sRGB sur [0, 1]), soit ≈ 23 niveaux sur 255. Un
+  ton ne l'emporte sur une couleur de jour que si l'entrée est **plus loin** de celle-ci que
+  √0,0083 : ajouter un ton mauve à côté d'une roche grise ne sert à rien tant que l'entrée
+  reste grise. Il faut d'abord déplacer l'entrée (teinte du décor, ciel de crépuscule), puis
+  poser le ton sur la couleur mesurée (passe court-circuitée, voir plus bas). La capture
+  `filtre=aucun` **n'est pas** l'entrée de la passe (rendu pleine résolution) : pour mesurer,
+  court-circuiter la passe (`gl_FragColor = vec4(color, 1.0)`), et vérifier le choix par
+  `nameAt` dans `palette.spec.ts`, qui applique les vraies pénalités. (2026-10-24)
+- **Éditeur : un élément ajouté au bord était posé sans tenir compte de son emprise**
+  (cycle 62, #59) : `addDecorItem` ne bornait que le point cliqué (`DECOR_EDGE_MARGIN`,
+  4 cm), et `settleDecorItem` garde la position du lâcher quand l'élément retombe libre sur
+  le sable : un rocher posé contre une vitre en dépassait. `addDecorItem` ramène désormais
+  le point par `clampDecorPosition`. Les e2e qui posent en `FREE_SAND` (z = 0,17) attendent
+  donc la position bornée, pas le point cliqué. (2026-10-24)
+
 - **Écouter le canvas avant `OrbitControls`** (cycle 57, #168) : `OrbitControls` pose son
   `pointerdown` sur le canvas dès sa construction ; un écouteur ajouté ensuite passe après lui,
   trop tard pour lui couper la main (`controls.enabled = false`) avant qu'il ne capture le
