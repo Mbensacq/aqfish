@@ -54,6 +54,18 @@ import {
   setDecorInPlace,
   type DecorTool,
 } from '../../sim/decor-edit';
+import {
+  DROP_TIME_STEP,
+  decorDropScene,
+  groundDecorItem,
+  settleDecorItem,
+  type DropPoint,
+} from '../../sim/decor-drop';
+import type { DecorDropper } from '../../core/decor-physics/decor-physics';
+import {
+  loadDecorPhysics,
+  type DecorPhysicsLoader,
+} from '../../core/decor-physics/load-decor-physics';
 import { SIM_DT } from '../../sim/constants';
 import {
   createDayClock,
@@ -101,7 +113,7 @@ import {
   type FoodStyle,
 } from '../../core/food-style/food-style';
 import type { SpeciesId } from '../../sim/species';
-import { validateDecorItem, type DecorItem } from '../../sim/decor';
+import { decorBaseY, validateDecorItem, type DecorItem } from '../../sim/decor';
 import {
   advanceInPlace,
   advanceToWithFeedings,
@@ -155,6 +167,21 @@ export const ENVIRONMENT_ATTRIBUTE = 'data-aqfish-environment';
  * `indisponible` ou `plein` ; absent en mode capture (aucune sauvegarde).
  */
 export const SAVE_ATTRIBUTE = 'data-aqfish-save';
+
+/**
+ * Chargeur du moteur de chute de l'éditeur (#170, ADR 0046) : import dynamique de Rapier par
+ * défaut ; remplaçable dans les tests.
+ */
+export const DECOR_PHYSICS_LOADER = new InjectionToken<DecorPhysicsLoader>('DECOR_PHYSICS_LOADER', {
+  providedIn: 'root',
+  factory: () => loadDecorPhysics,
+});
+
+/** État du moteur de chute de l'éditeur (#170). */
+export type DecorPhysicsState = 'absent' | 'chargement' | 'pret' | 'indisponible';
+
+/** Attribut du composant hôte exposant l'état du moteur de chute (`DecorPhysicsState`, #170). */
+export const DECOR_PHYSICS_ATTRIBUTE = 'data-aqfish-decor-physics';
 
 /** Attribut du composant hôte : `true` en mode édition du décor, `false` sinon (#167). */
 export const EDITING_ATTRIBUTE = 'data-aqfish-editing';
@@ -297,6 +324,12 @@ export class AquariumHost {
   private readonly document = inject(DOCUMENT);
   private readonly rendererFactory = inject(AQUARIUM_RENDERER_FACTORY);
   private readonly saveStorage = inject(SAVE_STORAGE);
+  private readonly physicsLoader = inject(DECOR_PHYSICS_LOADER);
+  /** Moteur de chute, une fois chargé (#170). */
+  private dropper: DecorDropper | null = null;
+  /** Chute affichée (#170) : trajectoire de la base de l'élément `index`, temps écoulé (s). */
+  private dropAnimation: { index: number; path: readonly DropPoint[]; elapsed: number } | null =
+    null;
 
   private view: AquariumView | null = null;
   private frameId: number | null = null;
@@ -409,6 +442,15 @@ export class AquariumHost {
    * acceptée suivante.
    */
   readonly decorRefused = signal(false);
+
+  /** État du moteur de chute (#170), chargé à la première ouverture de l'éditeur. */
+  readonly decorPhysics = signal<DecorPhysicsState>('absent');
+
+  /**
+   * Vrai si le dernier élément lâché a été posé sur le sable sans chute, faute de moteur
+   * (#170) ; effacé à la pose suivante réussie.
+   */
+  readonly decorDropGrounded = signal(false);
 
   /**
    * Glissement en cours (#168) : décor du monde au début du geste (abandon s'il a changé
@@ -662,8 +704,89 @@ export class AquariumHost {
     }
     if (!editing) {
       this.selectDecor(null);
+    } else {
+      this.loadDecorPhysics();
     }
     this.applyDecorEditing(editing);
+  }
+
+  /** Charge le moteur de chute une seule fois (#170) ; un échec est retenu (`indisponible`). */
+  private loadDecorPhysics(): void {
+    if (this.decorPhysics() !== 'absent') {
+      return;
+    }
+    this.exposeDecorPhysics('chargement');
+    this.physicsLoader().then(
+      (dropper) => {
+        this.dropper = dropper;
+        this.exposeDecorPhysics('pret');
+      },
+      () => this.exposeDecorPhysics('indisponible'),
+    );
+  }
+
+  private exposeDecorPhysics(state: DecorPhysicsState): void {
+    this.decorPhysics.set(state);
+    this.host.nativeElement.setAttribute(DECOR_PHYSICS_ATTRIBUTE, state);
+  }
+
+  /**
+   * Fait tomber l'élément `index` de `decor` (#170) depuis le dessus du décor jusqu'au repos
+   * sur le sable ou sur un autre élément. Sans moteur (en chargement ou indisponible), ou si
+   * la chute échoue, l'élément est posé sur le sable à sa position. Renvoie le décor obtenu
+   * et la trajectoire à afficher (vide sans chute).
+   */
+  private dropDecor(
+    decor: readonly DecorItem[],
+    index: number,
+    environment: EnvironmentId,
+  ): { decor: readonly DecorItem[]; path: readonly DropPoint[] } {
+    const scene = this.dropper ? decorDropScene(decor, index, environment) : null;
+    if (this.dropper && scene) {
+      try {
+        const result = this.dropper.drop(scene);
+        const settled = settleDecorItem(decor, index, result.rest, environment);
+        if (settled) {
+          this.decorDropGrounded.set(false);
+          return { decor: settled, path: [scene.start, ...result.path] };
+        }
+      } catch {
+        // Moteur en erreur : repli sur le sable, comme sans moteur.
+      }
+    }
+    this.decorDropGrounded.set(this.decorPhysics() === 'indisponible');
+    return { decor: groundDecorItem(decor, index) ?? decor, path: [] };
+  }
+
+  /** Affiche la chute de l'élément `index` le long de `path` (rien si `path` est vide). */
+  private playDrop(index: number, path: readonly DropPoint[]): void {
+    this.dropAnimation = path.length > 0 ? { index, path, elapsed: 0 } : null;
+  }
+
+  /** Avance la chute affichée de `realDt` secondes ; à la fin, l'élément est à sa pose. */
+  private stepDropAnimation(view: AquariumView, realDt: number): void {
+    const animation = this.dropAnimation;
+    const item = animation ? this.currentWorld?.decor[animation.index] : undefined;
+    if (!animation || !item) {
+      this.dropAnimation = null;
+      return;
+    }
+    animation.elapsed += realDt;
+    const step = Math.floor(animation.elapsed / DROP_TIME_STEP);
+    if (step >= animation.path.length - 1) {
+      this.dropAnimation = null;
+      view.previewDecorPose(animation.index, item.x, decorBaseY(item), item.z);
+      return;
+    }
+    const p = animation.path[step];
+    view.previewDecorPose(animation.index, p.x, p.y, p.z);
+  }
+
+  /** Termine aussitôt la chute affichée (l'élément rejoint sa pose). */
+  private finishDropAnimation(): void {
+    if (this.dropAnimation && this.view) {
+      this.stepDropAnimation(this.view, Number.POSITIVE_INFINITY);
+    }
   }
 
   /** Choisit l'outil de l'éditeur de décor (#167) ; un outil inconnu est ignoré. */
@@ -738,7 +861,12 @@ export class AquariumHost {
     }
     const decor = addDecorItem(world.decor, tool, pick.x, pick.z, world.seed, world.environment);
     if (decor) {
-      this.applyDecor(decor, decor.length - 1);
+      const index = decor.length - 1;
+      const drop = this.dropDecor(decor, index, world.environment);
+      // Un élément ajouté peut chevaucher (#167) ; sa chute ne doit pas l'aggraver.
+      const allowed = isDecorPoseAllowed(decor, drop.decor, index);
+      this.applyDecor(allowed ? drop.decor : decor, index);
+      this.playDrop(index, allowed ? drop.path : []);
     } else {
       this.selectDecor(null);
     }
@@ -797,6 +925,7 @@ export class AquariumHost {
     if (!world || !this.decorEditing() || index < 0 || index >= world.decor.length) {
       return;
     }
+    this.finishDropAnimation();
     this.selectDecor(index);
     this.decorDrag = { base: world.decor, index, preview: null };
   }
@@ -828,9 +957,14 @@ export class AquariumHost {
     if (!world || !drag || drag.index !== index || world.decor !== drag.base || !drag.preview) {
       return;
     }
-    const allowed = isDecorPoseAllowed(world.decor, drag.preview, index);
+    // Lâché (#170) : l'élément tombe à sa nouvelle position avant d'être posé.
+    const drop = commit
+      ? this.dropDecor(drag.preview, index, world.environment)
+      : { decor: drag.preview, path: [] };
+    const allowed = isDecorPoseAllowed(world.decor, drop.decor, index);
     if (commit && this.decorEditing() && allowed) {
-      this.applyDecor(drag.preview, index);
+      this.applyDecor(drop.decor, index);
+      this.playDrop(index, drop.path);
       return;
     }
     const last = world.decor[index];
@@ -849,6 +983,7 @@ export class AquariumHost {
     if (!world || !view) {
       return;
     }
+    this.finishDropAnimation();
     setDecorInPlace(world, decor);
     this.decorRefused.set(false);
     view.replaceDecorItems(world.decor, world.seed);
@@ -1188,6 +1323,9 @@ export class AquariumHost {
       const realDt = this.advanceRealTime(timestamp);
       if (view.stepCameraTransition(realDt)) {
         this.exposeCamera();
+      }
+      if (this.dropAnimation) {
+        this.stepDropAnimation(view, realDt);
       }
     }
     const canvas = this.canvasRef().nativeElement;

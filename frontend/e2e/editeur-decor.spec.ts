@@ -1,9 +1,22 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
-import { CAMERA_FOV_DEG } from '../src/app/render/camera-presets';
 import { SAVE_STORAGE_KEY } from '../src/app/core/save-storage/save-storage';
 import { DEFAULT_DECOR } from '../src/app/sim/decor';
 import { DEFAULT_TANK, SAND_THICKNESS } from '../src/app/sim/tank';
+import {
+  host,
+  openScene,
+  startEditing,
+  clickTank,
+  FREE_SAND,
+  FREE_SAND_2,
+  OUTSIDE,
+  ROCK_2,
+  count,
+  savedDecor,
+  dragTank,
+  touchDragTank,
+} from './outils-decor';
 
 /**
  * Éditeur de décor (issue #167) : « Réglages » → « Éditer le décor » ouvre le mode édition ;
@@ -12,136 +25,6 @@ import { DEFAULT_TANK, SAND_THICKNESS } from '../src/app/sim/tank';
  * survit au rechargement (sauvegarde locale). L'état est lu sur les attributs de l'hôte
  * (`data-aqfish-decor-count`, `data-aqfish-decor-selected`, `data-aqfish-editing`).
  */
-
-const host = (page: Page) => page.locator('app-aquarium-host');
-
-async function openScene(page: Page, search = ''): Promise<string[]> {
-  const errors: string[] = [];
-  page.on('pageerror', (error) => errors.push(error.message));
-  await page.goto(`/${search}`);
-  await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
-  // Aide-mémoire replié : il ne recouvre pas le bac (clics hors du bac, à droite).
-  const fold = page.getByRole('button', { name: /Replier l’aide-mémoire/ });
-  if ((await fold.count()) > 0) {
-    await fold.click();
-  }
-  return errors;
-}
-
-async function startEditing(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Réglages' }).click();
-  await page.getByRole('button', { name: 'Éditer le décor', exact: true }).click();
-  await expect(host(page)).toHaveAttribute('data-aqfish-editing', 'true');
-  await expect(page.getByRole('region', { name: 'Éditeur de décor' })).toBeVisible();
-  // L'éditeur prend la place de « Réglages ».
-  await expect(page.locator('.control-panel')).toHaveCount(0);
-}
-
-async function vec3Attribute(page: Page, name: string): Promise<number[]> {
-  const value = await host(page).getAttribute(name);
-  expect(value).toMatch(/^[-\d.]+,[-\d.]+,[-\d.]+$/);
-  return value!.split(',').map(Number);
-}
-
-/** Position à l'écran (pixels CSS) d'un point du bac (projection perspective, sans Three.js). */
-async function projectToScreen(page: Page, point: readonly number[]): Promise<[number, number]> {
-  const eye = await vec3Attribute(page, 'data-aqfish-camera');
-  const target = await vec3Attribute(page, 'data-aqfish-target');
-  const box = (await page.locator('app-aquarium-host canvas').boundingBox())!;
-  const sub = (a: readonly number[], b: readonly number[]) => a.map((v, i) => v - b[i]);
-  const dot = (a: readonly number[], b: readonly number[]) =>
-    a.reduce((s, v, i) => s + v * b[i], 0);
-  const norm = (a: readonly number[]) => a.map((v) => v / Math.hypot(...a));
-  const cross = (a: readonly number[], b: readonly number[]) => [
-    a[1] * b[2] - a[2] * b[1],
-    a[2] * b[0] - a[0] * b[2],
-    a[0] * b[1] - a[1] * b[0],
-  ];
-  const forward = norm(sub(target, eye));
-  const right = norm(cross(forward, [0, 1, 0]));
-  const up = cross(right, forward);
-  const d = sub(point, eye);
-  const tan = Math.tan((CAMERA_FOV_DEG * Math.PI) / 360);
-  const ndcX = dot(d, right) / (dot(d, forward) * tan * (box.width / box.height));
-  const ndcY = dot(d, up) / (dot(d, forward) * tan);
-  return [box.x + ((ndcX + 1) / 2) * box.width, box.y + ((1 - ndcY) / 2) * box.height];
-}
-
-async function clickTank(page: Page, point: readonly number[]): Promise<void> {
-  const [x, y] = await projectToScreen(page, point);
-  await page.mouse.click(x, y);
-}
-
-/** Point libre du sable, devant les rochers et plantes par défaut. */
-const FREE_SAND = [-0.05, SAND_THICKNESS, 0.17] as const;
-const FREE_SAND_2 = [0.38, SAND_THICKNESS, 0.17] as const;
-/** Hors du bac, à droite, au niveau du sable. */
-const OUTSIDE = [DEFAULT_TANK.width / 2 + 0.12, SAND_THICKNESS, 0] as const;
-/** Cœur du rocher d'indice 2 du décor par défaut (devant à droite en trois-quarts). */
-const ROCK_2 = [DEFAULT_DECOR[2].x, SAND_THICKNESS + 0.03, DEFAULT_DECOR[2].z] as const;
-
-const count = (page: Page) => host(page).getAttribute('data-aqfish-decor-count');
-
-interface SavedItem {
-  kind: string;
-  x: number;
-  z: number;
-  rotation: number;
-  scale: number;
-}
-
-/** Décor de la sauvegarde locale (écrite à chaque modification du décor). */
-async function savedDecor(page: Page): Promise<SavedItem[]> {
-  const text = await page.evaluate((key) => localStorage.getItem(key), SAVE_STORAGE_KEY);
-  expect(text).not.toBeNull();
-  return (JSON.parse(text!) as { decor: SavedItem[] }).decor;
-}
-
-/** Glisser à la souris de `from` à `to` (points du bac), en plusieurs pas. */
-async function dragTank(page: Page, from: readonly number[], to: readonly number[]): Promise<void> {
-  const [x0, y0] = await projectToScreen(page, from);
-  const [x1, y1] = await projectToScreen(page, to);
-  await page.mouse.move(x0, y0);
-  await page.mouse.down();
-  await page.mouse.move(x1, y1, { steps: 6 });
-  await page.mouse.up();
-}
-
-/**
- * Glisser au doigt : événements pointeur tactiles envoyés au canvas (le toucher de Playwright
- * ne sait que taper).
- */
-async function touchDragTank(
-  page: Page,
-  from: readonly number[],
-  to: readonly number[],
-): Promise<void> {
-  const [x0, y0] = await projectToScreen(page, from);
-  const [x1, y1] = await projectToScreen(page, to);
-  await page.locator('app-aquarium-host canvas').evaluate(
-    (canvas, [ax, ay, bx, by]) => {
-      const fire = (type: string, x: number, y: number) =>
-        canvas.dispatchEvent(
-          new PointerEvent(type, {
-            pointerId: 7,
-            pointerType: 'touch',
-            isPrimary: true,
-            button: type === 'pointermove' ? -1 : 0,
-            buttons: type === 'pointerup' ? 0 : 1,
-            clientX: x,
-            clientY: y,
-            bubbles: true,
-          }),
-        );
-      fire('pointerdown', ax, ay);
-      for (let n = 1; n <= 6; n++) {
-        fire('pointermove', ax + ((bx - ax) * n) / 6, ay + ((by - ay) * n) / 6);
-      }
-      fire('pointerup', bx, by);
-    },
-    [x0, y0, x1, y1],
-  );
-}
 
 test.describe('Éditeur de décor (#167)', () => {
   // Rendu logiciel lent : chaque clic attend des images ; fenêtre réduite (au-delà de 640 px,

@@ -54,17 +54,22 @@ const POSE_KEYS: Readonly<Record<string, { readonly rotate: number; readonly sca
 };
 
 /**
- * Consigne de l'éditeur selon l'outil, la sélection et la dernière pose (#167, #168) : ce
- * qu'un geste fera, ou pourquoi la pose a été refusée.
+ * Consigne de l'éditeur selon l'outil, la sélection et la dernière pose (#167, #168, #170) :
+ * ce qu'un geste fera, pourquoi la pose a été refusée, ou que l'élément a été posé sans
+ * chute faute de moteur.
  */
 export function decorEditorHint(
   tool: DecorTool,
   selection: number | null,
   full: boolean,
   refused = false,
+  grounded = false,
 ): string {
   if (refused) {
     return 'Pose refusée : l’élément chevaucherait un autre élément.';
+  }
+  if (grounded) {
+    return 'Chute indisponible (moteur non chargé) : élément posé sur le sable.';
   }
   if (selection !== null) {
     return 'Glissez pour déplacer ; ← → tournent, + − changent la taille, Suppr retire.';
@@ -153,6 +158,8 @@ export class DecorEditor {
   readonly count = input(0);
   /** Vrai si la dernière pose a été refusée (chevauchement, fourni par l'hôte). */
   readonly refused = input(false);
+  /** Vrai si le dernier élément lâché a été posé sans chute (moteur absent, fourni par l'hôte). */
+  readonly grounded = input(false);
 
   /** Outil choisi. */
   readonly toolChanged = output<DecorTool>();
@@ -172,7 +179,13 @@ export class DecorEditor {
   protected readonly max = MAX_DECOR_ITEMS;
   protected readonly poseCommands = DECOR_POSE_COMMANDS;
   protected readonly hint = computed(() =>
-    decorEditorHint(this.tool(), this.selection(), this.count() >= MAX_DECOR_ITEMS, this.refused()),
+    decorEditorHint(
+      this.tool(),
+      this.selection(),
+      this.count() >= MAX_DECOR_ITEMS,
+      this.refused(),
+      this.grounded(),
+    ),
   );
 
   constructor() {

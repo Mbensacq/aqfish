@@ -22,13 +22,21 @@ import { expiryAge, FOOD_PER_DROP } from '../../sim/food';
 import { setPopulation } from '../../sim/population';
 import { advance, advanceToWithFeedings, createDefaultWorld } from '../../sim/world';
 import { DEFAULT_DECOR, MAX_DECOR_SCALE, MIN_DECOR_SCALE } from '../../sim/decor';
-import { DECOR_ROTATION_STEP, DECOR_SCALE_STEP, decorFootprint } from '../../sim/decor-edit';
+import {
+  DECOR_ROTATION_STEP,
+  DECOR_SCALE_STEP,
+  decorFootprint,
+  decorItemsOverlap,
+} from '../../sim/decor-edit';
 import { DEFAULT_TANK } from '../../sim/tank';
+import { initDecorPhysics } from '../../core/decor-physics/decor-physics';
 import {
   applyCaptureWoods,
   applyPopulation,
   AQUARIUM_RENDERER_FACTORY,
   AquariumHost,
+  DECOR_PHYSICS_ATTRIBUTE,
+  DECOR_PHYSICS_LOADER,
   AUTOSAVE_INTERVAL_MS,
   SAVE_ATTRIBUTE,
   SAVE_FILE_NAME,
@@ -167,6 +175,8 @@ describe('AquariumHost', () => {
             return renderer;
           },
         },
+        // Moteur de chute (#170) : jamais chargé, sauf dans les tests qui le remplacent.
+        { provide: DECOR_PHYSICS_LOADER, useValue: () => new Promise<never>(() => undefined) },
       ],
     });
   });
@@ -1606,6 +1616,62 @@ describe('AquariumHost', () => {
       fixture.destroy();
       await create('?seed=42&edition=1');
       expect(host().decorEditing()).toBe(false);
+    });
+  });
+
+  describe('pose par gravité (#170)', () => {
+    const host = () => fixture.componentInstance;
+    const element = () => fixture.nativeElement as HTMLElement;
+
+    it('charge le moteur une fois, à la première ouverture de l’éditeur seulement', async () => {
+      const loader = vi.fn(() => initDecorPhysics());
+      TestBed.overrideProvider(DECOR_PHYSICS_LOADER, { useValue: loader });
+      await create('?seed=42');
+      expect(loader).not.toHaveBeenCalled();
+      expect(element().getAttribute(DECOR_PHYSICS_ATTRIBUTE)).toBeNull();
+      host().setDecorEditing(true);
+      expect(element().getAttribute(DECOR_PHYSICS_ATTRIBUTE)).toBe('chargement');
+      await vi.waitFor(() => expect(host().decorPhysics()).toBe('pret'));
+      host().setDecorEditing(false);
+      host().setDecorEditing(true);
+      expect(loader).toHaveBeenCalledTimes(1);
+      expect(element().getAttribute(DECOR_PHYSICS_ATTRIBUTE)).toBe('pret');
+    });
+
+    it('un rocher lâché sur un autre s’y pose (élévation enregistrée), puis tombe à l’image', async () => {
+      TestBed.overrideProvider(DECOR_PHYSICS_LOADER, { useValue: () => initDecorPhysics() });
+      await create('?seed=42');
+      setCanvasSize(800, 600);
+      host().setDecorEditing(true);
+      await vi.waitFor(() => expect(host().decorPhysics()).toBe('pret'));
+      const target = DEFAULT_DECOR[0];
+      host().editAt({ kind: 'sand', x: target.x, z: target.z });
+      const world = host().world!;
+      const item = world.decor.at(-1)!;
+      expect(item.elevation ?? 0).toBeGreaterThan(0.01);
+      expect(decorItemsOverlap(item, target)).toBe(false);
+      expect(host().decorDropGrounded()).toBe(false);
+      const saved = parseWorld(saveStorage!.getItem(SAVE_STORAGE_KEY)!);
+      expect(saved.ok && saved.world.decor.at(-1)).toEqual(item);
+      // Animation de la chute sur plusieurs images : la pose enregistrée ne bouge pas.
+      frames.flush(1000);
+      frames.flush(1016);
+      frames.flush(5000);
+      expect(host().world!.decor.at(-1)).toBe(item);
+    });
+
+    it('moteur indisponible : posé sur le sable à la position du lâcher, avec un message', async () => {
+      TestBed.overrideProvider(DECOR_PHYSICS_LOADER, {
+        useValue: () => Promise.reject(new Error('hors ligne')),
+      });
+      await create('?seed=42');
+      host().setDecorEditing(true);
+      await vi.waitFor(() => expect(host().decorPhysics()).toBe('indisponible'));
+      expect(element().getAttribute(DECOR_PHYSICS_ATTRIBUTE)).toBe('indisponible');
+      host().editAt({ kind: 'sand', x: 0, z: 0.1 });
+      expect(host().world!.decor.at(-1)).toMatchObject({ kind: 'rock', x: 0, z: 0.1 });
+      expect(host().world!.decor.at(-1)).not.toHaveProperty('elevation');
+      expect(host().decorDropGrounded()).toBe(true);
     });
   });
 });

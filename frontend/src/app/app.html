@@ -57,6 +57,7 @@
         [selection]="aquarium.decorSelection()"
         [count]="aquarium.decorCount()"
         [refused]="aquarium.decorRefused()"
+        [grounded]="aquarium.decorDropGrounded()"
         (toolChanged)="aquarium.setDecorTool($event)"
         (deleteRequested)="aquarium.deleteSelectedDecor()"
         (rotateRequested)="aquarium.rotateSelectedDecor($event)"

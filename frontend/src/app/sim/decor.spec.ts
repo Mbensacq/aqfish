@@ -10,7 +10,10 @@ import {
   rockBaseY,
   rockModel,
   rockSpheres,
+  decorBaseY,
+  decorSpheres,
   validateDecorItem,
+  withElevation,
   type DecorItem,
 } from './decor';
 import type { Vec3 } from './flocking';
@@ -292,5 +295,46 @@ describe('poissons et rochers', () => {
       [3, 'sphere'],
       [4, 'spheres'],
     ]);
+  });
+});
+
+describe('élévation d’un élément posé sur un autre (#170)', () => {
+  it('validée : réel fini dans [0, hauteur du bac] ; absente par défaut', () => {
+    expect(validateDecorItem({ ...ROCK, elevation: 0 })).toEqual([]);
+    expect(validateDecorItem({ ...ROCK, elevation: DEFAULT_TANK.height })).toEqual([]);
+    for (const elevation of [-0.001, DEFAULT_TANK.height + 0.01, NaN, '0.1', null]) {
+      expect(validateDecorItem({ ...ROCK, elevation })).toHaveLength(1);
+    }
+  });
+
+  it('conservée au décodage, omise quand elle est absente', () => {
+    const [a, b] = parseDecorItems([{ ...ROCK, elevation: 0.05 }, ROCK]);
+    expect(a.elevation).toBe(0.05);
+    expect(b).not.toHaveProperty('elevation');
+  });
+
+  it('withElevation : clé omise à 0, sans modifier l’original', () => {
+    const raised = withElevation(ROCK, 0.03);
+    expect(raised).toEqual({ ...ROCK, elevation: 0.03 });
+    expect(withElevation(raised, 0)).toEqual(ROCK);
+    expect(withElevation(raised, 0)).not.toHaveProperty('elevation');
+    expect(ROCK).not.toHaveProperty('elevation');
+  });
+
+  it('élève la base et les sphères de collision de chaque type', () => {
+    const items: DecorItem[] = [
+      ROCK,
+      { kind: 'wood', x: 0, z: 0, rotation: 0, scale: 1, seed: 5 },
+      { kind: 'plant', form: 'tall', x: 0, z: 0, rotation: 0, scale: 1, seed: 6 },
+    ];
+    for (const item of items) {
+      const raised = withElevation(item, 0.04);
+      expect(decorBaseY(raised)).toBeCloseTo(decorBaseY(item) + 0.04, 12);
+      const low = decorSpheres(item);
+      decorSpheres(raised).forEach((s, n) => {
+        expect(s.y).toBeCloseTo(low[n].y + 0.04, 12);
+        expect(s.x).toBe(low[n].x);
+      });
+    }
   });
 });

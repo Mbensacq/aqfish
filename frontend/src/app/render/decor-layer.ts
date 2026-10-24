@@ -14,7 +14,14 @@ import {
 
 import { anemoneBaseY, anemoneModel, type Anemone } from '../sim/anemones';
 import { coralBaseY, coralModel, type CoralColony } from '../sim/corals';
-import { plantBaseY, rockBaseY, rockModel, woodBaseY, type DecorItem } from '../sim/decor';
+import {
+  decorElevation,
+  plantBaseY,
+  rockBaseY,
+  rockModel,
+  woodBaseY,
+  type DecorItem,
+} from '../sim/decor';
 import { plantModel, type PlantForm } from '../sim/plant';
 import { woodModel } from '../sim/wood';
 import { buildAnemoneMesh } from './anemone-model';
@@ -187,7 +194,7 @@ export class DecorLayer {
       this.geometries.push(geometry, outline);
       const group = new Group();
       group.name = name;
-      group.position.set(item.x, baseY, item.z);
+      group.position.set(item.x, baseY + decorElevation(item), item.z);
       group.rotation.y = item.rotation;
       const mesh = new Mesh(geometry, this.material);
       mesh.name = `${name}-voxels`;
@@ -279,6 +286,14 @@ export class DecorLayer {
       group.position.x = x;
       group.position.z = z;
     }
+  }
+
+  /**
+   * Place l'élément d'indice `index` à la base (`x`, `y`, `z`), repère du bac, sans toucher
+   * au monde : image de la chute de l'éditeur (ADR 0046).
+   */
+  placeItem(index: number, x: number, y: number, z: number): void {
+    this.items[index]?.voxels.parent?.position.set(x, y, z);
   }
 
   /** Position (x, z) affichée de l'élément d'indice `index`, `null` s'il n'existe pas. */

@@ -25,8 +25,9 @@ export const DECOR_KINDS = ['rock', 'plant', 'wood'] as const;
 export type DecorKind = (typeof DECOR_KINDS)[number];
 
 /**
- * Élément de décor posé sur le sable. Unités : mètres et radians. L'altitude n'est pas une
- * donnée : un élément repose toujours sur le sable (`decorBaseY`).
+ * Élément de décor posé sur le sable. Unités : mètres et radians. L'altitude découle du type
+ * (`decorBaseY`) : un élément repose sur le sable, sauf s'il a été posé sur un autre élément
+ * par la chute de l'éditeur (`elevation`, ADR 0046).
  */
 export interface DecorItem {
   readonly kind: DecorKind;
@@ -41,18 +42,33 @@ export interface DecorItem {
   readonly seed: number;
   /** Forme d'une plante (`sim/plant.ts`), obligatoire pour `plant`, interdite sinon. */
   readonly form?: PlantForm;
+  /**
+   * Hauteur de la base au-dessus de sa pose sur le sable, en mètres (≥ 0) ; absente : 0.
+   * Non nulle seulement pour un élément posé sur un autre (ADR 0046).
+   */
+  readonly elevation?: number;
 }
 
 export const MIN_DECOR_SCALE = 0.25;
 export const MAX_DECOR_SCALE = 3;
 
-const ITEM_KEYS: readonly string[] = ['kind', 'x', 'z', 'rotation', 'scale', 'seed', 'form'];
+const ITEM_KEYS: readonly string[] = [
+  'kind',
+  'x',
+  'z',
+  'rotation',
+  'scale',
+  'seed',
+  'form',
+  'elevation',
+];
 
 /**
  * Problèmes d'un élément de décor venu de l'extérieur (JSON), liste vide s'il est valide.
  * Refuse : objet absent, clé inconnue ou manquante, type inconnu, nombre non fini, échelle
  * hors bornes, graine non entière sur 32 bits, position hors du bac `dims`, forme de plante
- * absente ou inconnue, forme donnée à autre chose qu'une plante.
+ * absente ou inconnue, forme donnée à autre chose qu'une plante, élévation négative ou plus
+ * haute que le bac.
  */
 export function validateDecorItem(value: unknown, dims: TankDimensions = DEFAULT_TANK): string[] {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
@@ -98,6 +114,12 @@ export function validateDecorItem(value: unknown, dims: TankDimensions = DEFAULT
   if (!Number.isInteger(seed) || seed < 0 || seed > MAX_SEED) {
     problems.push(`seed doit être un entier 32 bits non signé (reçu : ${seed})`);
   }
+  if ('elevation' in item) {
+    const e = item['elevation'];
+    if (typeof e !== 'number' || !Number.isFinite(e) || e < 0 || e > dims.height) {
+      problems.push(`elevation doit être un réel dans [0, ${dims.height}] (reçu : ${String(e)})`);
+    }
+  }
   return problems;
 }
 
@@ -119,11 +141,13 @@ export function parseDecorItems(value: unknown, dims: TankDimensions = DEFAULT_T
   if (problems.length > 0) {
     throw new RangeError(problems.join(' ; '));
   }
-  return (value as DecorItem[]).map(({ kind, x, z, rotation, scale, seed, form }) =>
-    form === undefined
-      ? { kind, x, z, rotation, scale, seed }
-      : { kind, x, z, rotation, scale, seed, form },
-  );
+  return (value as DecorItem[]).map(({ kind, x, z, rotation, scale, seed, form, elevation }) => {
+    const item: DecorItem =
+      form === undefined
+        ? { kind, x, z, rotation, scale, seed }
+        : { kind, x, z, rotation, scale, seed, form };
+    return elevation === undefined ? item : withElevation(item, elevation);
+  });
 }
 
 /**
@@ -282,8 +306,23 @@ export function woodBaseY(voxelSize: number): number {
   return SAND_THICKNESS - WOOD_SINK_RATIO * voxelSize;
 }
 
-/** Altitude de la base d'un élément de décor, selon son type. */
-export function decorBaseY(item: DecorItem): number {
+/** Élévation d'un élément au-dessus de sa pose sur le sable (`elevation`, 0 si absente). */
+export function decorElevation(item: DecorItem): number {
+  return item.elevation ?? 0;
+}
+
+/**
+ * Copie de `item` à l'élévation `elevation` : la clé est omise à 0 (un décor posé sur le
+ * sable reste identique à celui d'avant l'ADR 0046).
+ */
+export function withElevation(item: DecorItem, elevation: number): DecorItem {
+  const copy: { -readonly [K in keyof DecorItem]: DecorItem[K] } = { ...item };
+  delete copy.elevation;
+  return elevation === 0 ? copy : { ...copy, elevation };
+}
+
+/** Altitude de la base d'un élément sur le sable (sans `elevation`), selon son type. */
+export function decorGroundBaseY(item: DecorItem): number {
   if (item.kind === 'plant') {
     return plantBaseY(plantModel(item.seed, item.scale, item.form as PlantForm).voxelSize);
   }
@@ -291,6 +330,11 @@ export function decorBaseY(item: DecorItem): number {
     return woodBaseY(woodModel(item.seed, item.scale).voxelSize);
   }
   return rockBaseY(rockModel(item.seed, item.scale).voxelSize);
+}
+
+/** Altitude de la base d'un élément de décor : sur le sable selon son type, plus `elevation`. */
+export function decorBaseY(item: DecorItem): number {
+  return decorGroundBaseY(item) + decorElevation(item);
 }
 
 /**
@@ -318,7 +362,7 @@ export function decorVoxels(item: DecorItem): {
 export function plantSpheres(item: DecorItem): Sphere[] {
   const model = plantModel(item.seed, item.scale, item.form as PlantForm);
   const v = model.voxelSize;
-  const baseY = plantBaseY(v);
+  const baseY = plantBaseY(v) + decorElevation(item);
   const p = { x: 0, y: 0, z: 0 };
   return plantCollision(model).map((b) => {
     decorToTank(item, baseY, b.x * v, b.y * v, b.z * v, p);
@@ -330,7 +374,7 @@ export function plantSpheres(item: DecorItem): Sphere[] {
 export function rockSpheres(item: DecorItem): Sphere[] {
   const model = rockModel(item.seed, item.scale);
   const v = model.voxelSize;
-  const baseY = rockBaseY(v);
+  const baseY = rockBaseY(v) + decorElevation(item);
   const p = { x: 0, y: 0, z: 0 };
   return model.blobs.map((b) => {
     decorToTank(item, baseY, b.x * v, b.y * v, b.z * v, p);
@@ -345,7 +389,7 @@ export function rockSpheres(item: DecorItem): Sphere[] {
 export function woodSpheres(item: DecorItem): Sphere[] {
   const model = woodModel(item.seed, item.scale);
   const v = model.voxelSize;
-  const baseY = woodBaseY(v);
+  const baseY = woodBaseY(v) + decorElevation(item);
   const p = { x: 0, y: 0, z: 0 };
   return model.spheres.map((b) => {
     decorToTank(item, baseY, b.x * v, b.y * v, b.z * v, p);

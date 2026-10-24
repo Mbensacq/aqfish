@@ -19,6 +19,11 @@ describe('decorEditorHint', () => {
     expect(decorEditorHint('select', null, true, true)).toContain('chevaucherait');
   });
 
+  it('dit qu’un élément a été posé sans chute faute de moteur (#170), après un refus', () => {
+    expect(decorEditorHint('rock', 3, false, false, true)).toContain('posé sur le sable');
+    expect(decorEditorHint('rock', 3, false, true, true)).toContain('refusée');
+  });
+
   it('propose la sélection puis chaque type du catalogue', () => {
     expect(DECOR_TOOLS.map((t) => t.id)).toEqual(['select', 'rock', 'wood', 'tall', 'tuft']);
   });

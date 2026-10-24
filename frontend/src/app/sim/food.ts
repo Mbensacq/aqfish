@@ -1,5 +1,6 @@
 import { deriveSeed, prngNextState, prngOutput } from '../core/random/prng';
 import {
+  decorElevation,
   rockBaseY,
   rockModel,
   woodBaseY,
@@ -94,7 +95,14 @@ export function rockTopAt(
   z: number,
   model: RockModel = rockModel(item.seed, item.scale),
 ): number | null {
-  return voxelTopAt(item, x, z, model.cells, model.voxelSize, rockBaseY(model.voxelSize));
+  return voxelTopAt(
+    item,
+    x,
+    z,
+    model.cells,
+    model.voxelSize,
+    rockBaseY(model.voxelSize) + decorElevation(item),
+  );
 }
 
 /**
@@ -103,7 +111,14 @@ export function rockTopAt(
  */
 export function woodTopAt(item: DecorItem, x: number, z: number): number | null {
   const model = woodModel(item.seed, item.scale);
-  return voxelTopAt(item, x, z, model.cells, model.voxelSize, woodBaseY(model.voxelSize));
+  return voxelTopAt(
+    item,
+    x,
+    z,
+    model.cells,
+    model.voxelSize,
+    woodBaseY(model.voxelSize) + decorElevation(item),
+  );
 }
 
 /** Dessus des voxels `cells` d'un élément à la verticale de (x, z), ou `null`. */

@@ -633,6 +633,16 @@ export class AquariumView {
     }
   }
 
+  /**
+   * Image de la chute (ADR 0046) : la base de l'élément `index` affichée en (`x`, `y`, `z`),
+   * repère du bac, sans reconstruire le décor.
+   */
+  previewDecorPose(index: number, x: number, y: number, z: number): void {
+    if (!this.disposed) {
+      this.decorLayer.placeItem(index, x, y, z);
+    }
+  }
+
   /** Termine le glissement en cours : caméra rendue, abonné prévenu. */
   private endDrag(commit: boolean): void {
     const drag = this.drag;

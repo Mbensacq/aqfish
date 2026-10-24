@@ -184,6 +184,7 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
 | `core/render-filter/render-filter.ts` | Filtre de rendu `pixel` / `aucun` : décodage, bascule, filtre initial, mémorisation tolérante (`aqfish.filtre`) |
 | `core/save-storage/save-storage.ts` | Stockage de la sauvegarde automatique (#70, ADR 0028) : texte opaque sous `aqfish.sauvegarde`, lecture et écriture tolérantes, état `active` / `indisponible` / `plein` |
 | `core/random/prng.ts` | PRNG mulberry32 à graine, dérivation de sous-générateurs par entité |
+| `core/decor-physics/` | Chute d'un élément lâché dans l'éditeur du décor (#170, ADR 0046) : `decor-physics.ts` importe le moteur Rapier et fait tomber la scène décrite par `sim/decor-drop.ts` ; `load-decor-physics.ts` le charge à la demande (`import()` dynamique, hors du bundle initial). Seul endroit du dépôt qui importe Rapier |
 | `core/commands/commands.ts` | Source unique des commandes (ADR 0020) : raccourcis clavier `KEY_COMMANDS` (`keyCommandFor`, `commandKey`), gestes de la caméra `ORBIT_MOUSE_BUTTONS` / `ORBIT_TOUCHES` et leurs libellés (`orbitGestures`), aide-mémoire `helpSections()` |
 | `core/keyboard/keyboard.ts` | Règles communes des gestionnaires de raccourcis (#79) : `isTypingContext` (touche laissée au navigateur si une touche de modification est enfoncée ou si le focus est dans un champ de saisie), importé par `ui/view-presets-bar` et `ui/commands-help` |
 | `sim/constants.ts` | `SIM_DT`, `MAX_STEPS_PER_FRAME` |
@@ -204,6 +205,7 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
 | `sim/corals.ts` | Coraux du récif (#149, ADR 0040) : colonies de trois formes et quatre teintes, disposées d'un flux de hasard séparé (`coralLayout` : sur le sable, quarts de tour, sans chevauchement ni contact avec les rochers, nombre borné) ; boîte d'obstacle par colonie (`coralObstacles`), ajoutée aux obstacles par `createWorld` |
 | `sim/anemones.ts` | Anémones du récif (#150, ADR 0041) : modèle voxel (pied, tapis de tentacules), disposition d'un flux de hasard séparé posée avant les coraux (`anemoneLayout`), ondulation des tentacules (`tentacleSway`), boîte d'obstacle du pied seul et points d'attache des poissons-clowns (`anemoneHomes`) |
 | `sim/decor-edit.ts` | Édition du décor (#167, ADR 0043) : catalogue (`DECOR_CATALOG`, outils `DecorTool`), `addDecorItem` et `removeDecorItem` (nouveau tableau, graine tirée de celle du monde, bornes et plafond de 64), `setDecorInPlace` / `withDecor` (obstacles recalculés) ; bac tropical seulement (`isDecorEditable`). Pose (#168, ADR 0044) : `moveDecorItem` (borné par l'emprise, `clampDecorPosition`, `decorFootprint`), `rotateDecorItem` (pas de 15°), `scaleDecorItem` (pas de 0,25), chevauchement refusé (`isDecorPoseAllowed`) |
+| `sim/decor-drop.ts` | Pose par gravité (#170, ADR 0046) : scène de chute pure (`decorDropScene` : sphères du corps, voisins fixes épaissis, sol, vitres, hauteur de départ), lecture du repos (`settleDecorItem` : élévation, position du lâcher gardée sur le sable libre), repli sans moteur (`groundDecorItem`). `DecorItem.elevation` (facultative) : élément posé sur un autre |
 | `sim/decor.ts` | Décor en données JSON (`DecorItem` : rochers, plantes et bois flottés, validation, `parseDecor`), rochers voxel générés depuis leur graine (`rockModel`), collision en union de sphères (`decorObstacles`, `decorSpheres`), voxels de tout élément (`decorVoxels`), `DEFAULT_DECOR` (ADR 0015, 0016) |
 | `sim/wood.ts` | Bois flotté à branches (#169, ADR 0045) : squelette de capsules tiré de la graine (`woodSkeleton`), voxels et sphères fines qui les contiennent (`woodModel`, au plus `MAX_WOOD_SPHERES`), modèles en cache |
 | `sim/plant.ts` | Plantes voxel générées depuis leur graine, deux formes (`tall`, `tuft`), phase d'ondulation, collision des tiges élargie de la borne d'ondulation (`plantCollision`, ADR 0016) |
@@ -331,6 +333,9 @@ découpé entre deux machines : garder des fichiers de taille raisonnable.
 ## Budgets
 
 - Bundle initial : avertissement à 500 kB, erreur à 1 MB (`angular.json`).
+- Moteur physique de l'éditeur (Rapier, ADR 0046) : hors du bundle initial, fragment chargé à
+  la demande d'environ 4,3 MB (1,2 MB compressé). `npm run build` le vérifie
+  (`postbuild` : `scripts/verifier-bundle-initial.mjs`).
 - Objectif de fluidité : 60 images/s avec 200 poissons sur un portable de milieu de gamme,
   **mesuré par Mathis sur sa machine**, jamais dans l'environnement des agents.
 
