@@ -231,7 +231,8 @@ describe('setTankDimensionsInPlace (#171)', () => {
         const next = advance(world, 1);
         expect(everythingInside(next)).toEqual([]);
         expect(everythingInside(advance(next, 3600))).toEqual([]);
-      });
+        // ~4 500 pas de simulation : au-delà des 5 s par défaut sur la CI.
+      }, 30_000);
     }
   }
 
