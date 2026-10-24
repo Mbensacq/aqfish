@@ -20,7 +20,7 @@ describe('decorEditorHint', () => {
   });
 
   it('propose la sélection puis chaque type du catalogue', () => {
-    expect(DECOR_TOOLS.map((t) => t.id)).toEqual(['select', 'rock', 'tall', 'tuft']);
+    expect(DECOR_TOOLS.map((t) => t.id)).toEqual(['select', 'rock', 'wood', 'tall', 'tuft']);
   });
 });
 
@@ -77,12 +77,14 @@ describe('DecorEditor', () => {
     expect(radios.map((r) => r.textContent?.trim())).toEqual([
       'Sélection',
       'Rocher',
+      'Bois flotté',
       'Grande plante',
       'Touffe',
     ]);
     expect(radios.map((r) => r.getAttribute('aria-checked'))).toEqual([
       'false',
       'true',
+      'false',
       'false',
       'false',
     ]);

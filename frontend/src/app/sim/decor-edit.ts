@@ -1,16 +1,14 @@
 import { createPrng, deriveSeed } from '../core/random/prng';
 import {
+  decorSpheres,
+  decorVoxels,
   MAX_DECOR_SCALE,
   MIN_DECOR_SCALE,
-  plantSpheres,
-  rockModel,
-  rockSpheres,
   validateDecorItem,
   type DecorItem,
 } from './decor';
 import { environmentById, type EnvironmentId } from './environment';
-import type { Sphere } from './obstacles';
-import { plantModel, type PlantForm } from './plant';
+import type { PlantForm } from './plant';
 import { MAX_SAVE_DECOR } from './save';
 import { createWorld, seededObstacleCount, type MutableWorld, type World } from './world';
 
@@ -49,7 +47,7 @@ export interface DecorChoice {
   readonly form?: PlantForm;
 }
 
-export const DECOR_CHOICE_IDS = ['rock', 'tall', 'tuft'] as const;
+export const DECOR_CHOICE_IDS = ['rock', 'wood', 'tall', 'tuft'] as const;
 export type DecorChoiceId = (typeof DECOR_CHOICE_IDS)[number];
 
 /**
@@ -66,6 +64,7 @@ export function isDecorTool(value: unknown): value is DecorTool {
 /** Catalogue de l'éditeur, dans l'ordre d'affichage. */
 export const DECOR_CATALOG: Readonly<Record<DecorChoiceId, DecorChoice>> = {
   rock: { id: 'rock', name: 'Rocher', kind: 'rock' },
+  wood: { id: 'wood', name: 'Bois flotté', kind: 'wood' },
   tall: { id: 'tall', name: 'Grande plante', kind: 'plant', form: 'tall' },
   tuft: { id: 'tuft', name: 'Touffe', kind: 'plant', form: 'tuft' },
 };
@@ -185,10 +184,7 @@ export const DECOR_SCALE_STEP = 0.25;
  * contient tous ses voxels quelle que soit sa rotation (plus l'ondulation d'une plante).
  */
 export function decorFootprint(item: DecorItem): number {
-  const model =
-    item.kind === 'plant'
-      ? plantModel(item.seed, item.scale, item.form as PlantForm)
-      : rockModel(item.seed, item.scale);
+  const model = decorVoxels(item);
   let reach2 = 0;
   for (const { i, k } of model.cells) {
     // Coin du voxel le plus éloigné de l'axe vertical.
@@ -196,8 +192,7 @@ export function decorFootprint(item: DecorItem): number {
     const dz = Math.max(Math.abs(k), Math.abs(k + 1));
     reach2 = Math.max(reach2, dx * dx + dz * dz);
   }
-  const sway = 'amplitude' in model ? model.amplitude : 0;
-  return Math.sqrt(reach2) * model.voxelSize + sway;
+  return Math.sqrt(reach2) * model.voxelSize + model.amplitude;
 }
 
 /**
@@ -224,15 +219,10 @@ export function clampDecorPosition(
   return { x: clamp(x, width / 2), z: clamp(z, depth / 2) };
 }
 
-/** Sphères de collision d'un élément (repère du bac). */
-function collisionSpheres(item: DecorItem): Sphere[] {
-  return item.kind === 'plant' ? plantSpheres(item) : rockSpheres(item);
-}
-
 /** Vrai si les formes de collision de `a` et `b` se pénètrent (au moins deux sphères sécantes). */
 export function decorItemsOverlap(a: DecorItem, b: DecorItem): boolean {
-  const sa = collisionSpheres(a);
-  const sb = collisionSpheres(b);
+  const sa = decorSpheres(a);
+  const sb = decorSpheres(b);
   return sa.some((p) =>
     sb.some((q) => Math.hypot(p.x - q.x, p.y - q.y, p.z - q.z) < p.radius + q.radius),
   );

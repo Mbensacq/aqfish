@@ -8,18 +8,20 @@ import {
   type PlantForm,
 } from './plant';
 import { DEFAULT_TANK, SAND_THICKNESS, type TankDimensions } from './tank';
+import { WOOD_SINK_RATIO, woodModel } from './wood';
 
 /**
  * Décor du bac décrit par des **données** (idée #34, ADR 0015) : chaque élément est un objet
  * JSON (type, position, rotation, échelle, graine de forme), jamais codé en dur dans la
  * scène. Un rocher est un ensemble de voxels généré depuis sa graine (même graine, même
  * forme) ; sa forme de collision est une union de sphères tirée des mêmes « blocs » que ses
- * voxels, qui les contient tous (`rockModel`, `decorObstacles`). Module pur et déterministe,
- * sans Three.js (ADR 0003).
+ * voxels, qui les contient tous (`rockModel`, `decorObstacles`). Un bois flotté (`wood`,
+ * ADR 0045) suit le même principe, avec des sphères fines le long de ses branches
+ * (`sim/wood.ts`). Module pur et déterministe, sans Three.js (ADR 0003).
  */
 
 /** Types d'éléments de décor connus. */
-export const DECOR_KINDS = ['rock', 'plant'] as const;
+export const DECOR_KINDS = ['rock', 'plant', 'wood'] as const;
 export type DecorKind = (typeof DECOR_KINDS)[number];
 
 /**
@@ -275,11 +277,38 @@ export function plantBaseY(voxelSize: number): number {
   return SAND_THICKNESS - PLANT_SINK_VOXELS * voxelSize;
 }
 
+/** Altitude de la base d'un bois flotté (repère du bac) : sur le sable, légèrement enfoncée. */
+export function woodBaseY(voxelSize: number): number {
+  return SAND_THICKNESS - WOOD_SINK_RATIO * voxelSize;
+}
+
 /** Altitude de la base d'un élément de décor, selon son type. */
 export function decorBaseY(item: DecorItem): number {
-  return item.kind === 'plant'
-    ? plantBaseY(plantModel(item.seed, item.scale, item.form as PlantForm).voxelSize)
-    : rockBaseY(rockModel(item.seed, item.scale).voxelSize);
+  if (item.kind === 'plant') {
+    return plantBaseY(plantModel(item.seed, item.scale, item.form as PlantForm).voxelSize);
+  }
+  if (item.kind === 'wood') {
+    return woodBaseY(woodModel(item.seed, item.scale).voxelSize);
+  }
+  return rockBaseY(rockModel(item.seed, item.scale).voxelSize);
+}
+
+/**
+ * Voxels et arête d'un élément de décor, selon son type, dans son repère local (avant
+ * rotation et translation) ; `amplitude` : ondulation d'une plante (0 sinon), en mètres.
+ */
+export function decorVoxels(item: DecorItem): {
+  readonly voxelSize: number;
+  readonly cells: readonly RockCell[];
+  readonly amplitude: number;
+} {
+  if (item.kind === 'plant') {
+    const model = plantModel(item.seed, item.scale, item.form as PlantForm);
+    return { voxelSize: model.voxelSize, cells: model.cells, amplitude: model.amplitude };
+  }
+  const model =
+    item.kind === 'wood' ? woodModel(item.seed, item.scale) : rockModel(item.seed, item.scale);
+  return { voxelSize: model.voxelSize, cells: model.cells, amplitude: 0 };
 }
 
 /**
@@ -310,6 +339,29 @@ export function rockSpheres(item: DecorItem): Sphere[] {
 }
 
 /**
+ * Forme de collision d'un bois flotté : ses sphères fines le long des branches
+ * (`woodModel`), dans le repère du bac.
+ */
+export function woodSpheres(item: DecorItem): Sphere[] {
+  const model = woodModel(item.seed, item.scale);
+  const v = model.voxelSize;
+  const baseY = woodBaseY(v);
+  const p = { x: 0, y: 0, z: 0 };
+  return model.spheres.map((b) => {
+    decorToTank(item, baseY, b.x * v, b.y * v, b.z * v, p);
+    return { x: p.x, y: p.y, z: p.z, radius: b.r * v };
+  });
+}
+
+/** Sphères de collision d'un élément de décor (repère du bac), selon son type. */
+export function decorSpheres(item: DecorItem): Sphere[] {
+  if (item.kind === 'plant') {
+    return plantSpheres(item);
+  }
+  return item.kind === 'wood' ? woodSpheres(item) : rockSpheres(item);
+}
+
+/**
  * Obstacles des éléments de décor, identifiants consécutifs à partir de `firstId`, dans
  * l'ordre de `items`.
  */
@@ -317,7 +369,7 @@ export function decorObstacles(items: readonly DecorItem[], firstId = 0): Sphere
   return items.map((item, n) => ({
     id: firstId + n,
     shape: 'spheres',
-    spheres: item.kind === 'plant' ? plantSpheres(item) : rockSpheres(item),
+    spheres: decorSpheres(item),
   }));
 }
 

@@ -1,5 +1,13 @@
 import { deriveSeed, prngNextState, prngOutput } from '../core/random/prng';
-import { rockBaseY, rockModel, type DecorItem, type RockModel } from './decor';
+import {
+  rockBaseY,
+  rockModel,
+  woodBaseY,
+  type DecorItem,
+  type RockCell,
+  type RockModel,
+} from './decor';
+import { woodModel } from './wood';
 import { SAND_THICKNESS, waterVolume, type Box3 } from './tank';
 
 /**
@@ -86,7 +94,27 @@ export function rockTopAt(
   z: number,
   model: RockModel = rockModel(item.seed, item.scale),
 ): number | null {
-  const v = model.voxelSize;
+  return voxelTopAt(item, x, z, model.cells, model.voxelSize, rockBaseY(model.voxelSize));
+}
+
+/**
+ * Altitude du dessus d'un bois flotté à la verticale de (x, z) (repère du bac), ou `null` si
+ * aucun de ses voxels n'est sous ce point : le haut de la branche la plus haute à cet endroit.
+ */
+export function woodTopAt(item: DecorItem, x: number, z: number): number | null {
+  const model = woodModel(item.seed, item.scale);
+  return voxelTopAt(item, x, z, model.cells, model.voxelSize, woodBaseY(model.voxelSize));
+}
+
+/** Dessus des voxels `cells` d'un élément à la verticale de (x, z), ou `null`. */
+function voxelTopAt(
+  item: DecorItem,
+  x: number,
+  z: number,
+  cells: readonly RockCell[],
+  v: number,
+  baseY: number,
+): number | null {
   // Inverse de `decorToTank` : translation puis rotation de -rotation autour de Y.
   const c = Math.cos(item.rotation);
   const s = Math.sin(item.rotation);
@@ -95,25 +123,25 @@ export function rockTopAt(
   const i = Math.floor((c * dx - s * dz) / v);
   const k = Math.floor((s * dx + c * dz) / v);
   let top = -1;
-  for (const cell of model.cells) {
+  for (const cell of cells) {
     if (cell.i === i && cell.k === k && cell.j > top) {
       top = cell.j;
     }
   }
-  return top < 0 ? null : rockBaseY(v) + (top + 1) * v;
+  return top < 0 ? null : baseY + (top + 1) * v;
 }
 
 /**
  * Altitude où se pose un granulé tombé à la verticale de (x, z) : le plus haut du sable et
- * des rochers du décor, plus `FOOD_RADIUS`. Les plantes sont traversées.
+ * des rochers et des bois flottés du décor, plus `FOOD_RADIUS`. Les plantes sont traversées.
  */
 export function restHeightAt(decor: readonly DecorItem[], x: number, z: number): number {
   let ground = SAND_THICKNESS;
   for (const item of decor) {
-    if (item.kind !== 'rock') {
+    if (item.kind === 'plant') {
       continue;
     }
-    const top = rockTopAt(item, x, z);
+    const top = item.kind === 'wood' ? woodTopAt(item, x, z) : rockTopAt(item, x, z);
     if (top !== null && top > ground) {
       ground = top;
     }
