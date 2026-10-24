@@ -4,6 +4,7 @@ import { SAVE_STORAGE_KEY } from '../src/app/core/save-storage/save-storage';
 import { DEFAULT_DECOR } from '../src/app/sim/decor';
 import { DEFAULT_TANK, SAND_THICKNESS } from '../src/app/sim/tank';
 import {
+  blockEngine,
   host,
   openScene,
   startEditing,
@@ -211,11 +212,17 @@ test.describe('Éditeur de décor : déplacer, tourner, redimensionner (#168)', 
       expect(errors).toEqual([]);
     });
 
-    test('lâcher un rocher sur un autre : la pose est refusée, il revient à sa place', async ({
+    test('sans moteur de chute, lâcher un rocher sur un autre : refusé, il revient à sa place', async ({
       page,
     }) => {
+      // Avec le moteur (#170), le rocher lâché se pose sur l'autre ou à côté
+      // (`pose-gravite.spec.ts`) ; sans lui, il est posé sur le sable, où il le pénétrerait.
+      await blockEngine(page);
       const errors = await openScene(page);
       await startEditing(page);
+      await expect(host(page)).toHaveAttribute('data-aqfish-decor-physics', 'indisponible', {
+        timeout: 60_000,
+      });
       const target = DEFAULT_DECOR[3];
       await dragTank(page, ROCK_2, [target.x, SAND_THICKNESS + 0.03, target.z]);
       await expect(host(page)).toHaveAttribute('data-aqfish-decor-selected', '2');
