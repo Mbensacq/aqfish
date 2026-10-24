@@ -105,9 +105,11 @@ export function canPlaceDecorAt(x: number, z: number, environment: Place): boole
 
 /**
  * Décor `decor` augmenté d'un élément `choice` posé en (x, z), à l'échelle 1 et tourné d'un
- * angle tiré de sa graine (`nextDecorSeed`). `null` (rien n'est ajouté) si le décor n'est pas
- * éditable, s'il est plein (`MAX_DECOR_ITEMS`), si le point est hors des bornes
- * (`canPlaceDecorAt`) ou si l'élément obtenu est invalide (`validateDecorItem`).
+ * angle tiré de sa graine (`nextDecorSeed`). Le point est ensuite ramené là où l'emprise de
+ * l'élément tient dans le bac (`clampDecorPosition`, issue #59) : un rocher posé contre une
+ * vitre n'en dépasse pas. `null` (rien n'est ajouté) si le décor n'est pas éditable, s'il est
+ * plein (`MAX_DECOR_ITEMS`), si le point est hors des bornes (`canPlaceDecorAt`) ou si
+ * l'élément obtenu est invalide (`validateDecorItem`).
  */
 export function addDecorItem(
   decor: readonly DecorItem[],
@@ -128,10 +130,15 @@ export function addDecorItem(
   const seed = nextDecorSeed(worldSeed, decor);
   const rotation = createPrng(seed).next() * 2 * Math.PI;
   const { kind, form } = DECOR_CATALOG[choice];
-  const item: DecorItem =
+  const placed: DecorItem =
     form === undefined
       ? { kind, x, z, rotation, scale: 1, seed }
       : { kind, x, z, rotation, scale: 1, seed, form };
+  const p = clampDecorPosition(placed, x, z, environment);
+  if (p === null) {
+    return null;
+  }
+  const item: DecorItem = p.x === x && p.z === z ? placed : { ...placed, x: p.x, z: p.z };
   if (validateDecorItem(item, placeDimensions(environment)).length > 0) {
     return null;
   }

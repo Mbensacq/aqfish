@@ -157,6 +157,8 @@ const SCRATCH_WALL: Vec3 = { x: 0, y: 0, z: 0 };
 const SCRATCH_OBSTACLE: Vec3 = { x: 0, y: 0, z: 0 };
 const SCRATCH_AVOID: Vec3 = { x: 0, y: 0, z: 0 };
 const SCRATCH_NORMAL: Vec3 = { x: 0, y: 0, z: 0 };
+/** Nombre maximal de passes de projection hors des obstacles par pas. */
+const OBSTACLE_PASSES = 4;
 
 /**
  * Zone de naissance : celle d'avant le réglage du cycle 13 (volume d'eau moins 5 cm, puis
@@ -570,9 +572,6 @@ export function stepFish(
   // aucun calcul de trajectoire et ne consomme aucun tirage (sim/undulation.ts).
   fish.phase = (fish.phase + tailBeatRate(def, fish.speed) * dt) % TWO_PI;
 }
-
-/** Nombre maximal de passes de projection hors des obstacles par pas. */
-const OBSTACLE_PASSES = 4;
 
 function clearOfObstacles(fish: Fish, obstacles: readonly Obstacle[], margin: number): boolean {
   for (const o of obstacles) {

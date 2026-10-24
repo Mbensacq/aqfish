@@ -1,5 +1,7 @@
 import {
   DEFAULT_DECOR,
+  decorToTank,
+  decorVoxels,
   MAX_DECOR_SCALE,
   MIN_DECOR_SCALE,
   validateDecorItem,
@@ -105,6 +107,52 @@ describe('addDecorItem', () => {
     expect(addDecorItem([], 'rock', HALF_W + 1, 0, 1, 'tropical')).toBeNull();
     expect(addDecorItem([], 'rock', Number.NaN, 0, 1, 'tropical')).toBeNull();
     expect(addDecorItem([], 'rock', 0, Number.POSITIVE_INFINITY, 1, 'tropical')).toBeNull();
+  });
+
+  it('ramène un élément posé contre une vitre : aucun voxel ne dépasse du verre (#59)', () => {
+    const edgeX = HALF_W - DECOR_EDGE_MARGIN;
+    const edgeZ = HALF_D - DECOR_EDGE_MARGIN;
+    const corners: [number, number][] = [
+      [edgeX, 0],
+      [-edgeX, 0],
+      [0, edgeZ],
+      [0, -edgeZ],
+      [edgeX, edgeZ],
+      [-edgeX, -edgeZ],
+    ];
+    let moved = 0;
+    for (const choice of ['rock', 'tall', 'tuft', 'wood'] as const) {
+      for (let seed = 0; seed < 12; seed++) {
+        for (const [x, z] of corners) {
+          const item = addDecorItem([], choice, x, z, seed, 'tropical')!.at(-1)!;
+          const reach = voxelReach(item);
+          expect(reach.x, `${choice} ${seed} (${x}, ${z})`).toBeLessThanOrEqual(HALF_W + 1e-9);
+          expect(reach.z, `${choice} ${seed} (${x}, ${z})`).toBeLessThanOrEqual(HALF_D + 1e-9);
+          // Ramené vers l'intérieur, jamais au-delà du point cliqué.
+          expect(Math.abs(item.x)).toBeLessThanOrEqual(Math.abs(x));
+          expect(Math.abs(item.z)).toBeLessThanOrEqual(Math.abs(z));
+          if (item.x !== x || item.z !== z) {
+            moved += 1;
+          }
+        }
+      }
+    }
+    // Sans le rappel, les rochers posés au bord dépassaient : le test les exerce bien.
+    expect(moved).toBeGreaterThan(0);
+  });
+
+  it('garde exactement le point cliqué quand l’élément y tient', () => {
+    const decor = addDecorItem([], 'rock', 0.1, -0.05, 42, 'tropical')!;
+    expect(decor[0].x).toBe(0.1);
+    expect(decor[0].z).toBe(-0.05);
+  });
+
+  it('rochers du décor par défaut : aucun voxel hors du verre (#59)', () => {
+    for (const item of DEFAULT_DECOR.filter((i) => i.kind === 'rock')) {
+      const reach = voxelReach(item);
+      expect(reach.x).toBeLessThanOrEqual(HALF_W);
+      expect(reach.z).toBeLessThanOrEqual(HALF_D);
+    }
   });
 
   it('refuse un type inconnu, un environnement non éditable et un décor plein', () => {
@@ -478,3 +526,28 @@ describe('isDecorPoseAllowed (chevauchement au lâcher)', () => {
     expect(isDecorPoseAllowed([rockA], [rockA], -1)).toBe(false);
   });
 });
+
+/**
+ * Plus grands |x| et |z| atteints par les coins des voxels d'un élément (repère du bac), sa
+ * rotation appliquée ; l'ondulation d'une plante s'y ajoute.
+ */
+function voxelReach(item: DecorItem): { x: number; z: number } {
+  const model = decorVoxels(item);
+  const v = model.voxelSize;
+  const p = { x: 0, y: 0, z: 0 };
+  let x = 0;
+  let z = 0;
+  for (const { i, k } of model.cells) {
+    for (const [di, dk] of [
+      [0, 0],
+      [1, 0],
+      [0, 1],
+      [1, 1],
+    ]) {
+      decorToTank(item, 0, (i + di) * v, 0, (k + dk) * v, p);
+      x = Math.max(x, Math.abs(p.x) + model.amplitude);
+      z = Math.max(z, Math.abs(p.z) + model.amplitude);
+    }
+  }
+  return { x, z };
+}
