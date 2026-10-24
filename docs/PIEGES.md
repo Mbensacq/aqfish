@@ -282,6 +282,12 @@ haut de sa section.
 
 ## Simulation
 
+- **Test de non-traversée : un poisson posé sur la surface « est dedans » à −1e-17 m près**
+  (cycle 58, #169) : le filet de sécurité de `stepFish` projette le centre exactement sur la
+  sphère ; `obstacleDistance` relu ensuite vaut ±1e-17. Contre un obstacle fin (bois flotté)
+  que le poisson touche vraiment, `d < 0` échoue à tort. Compter « dedans » sous −1e-9 m, et
+  vérifier que le test n'est pas vide (distance minimale sous `wallMargin`). (2026-10-24)
+
 - **Attacher un poisson à un point : l'évitement l'emporte sur le retour** (cycle 52, #150) :
   passé à `stepFish` comme une nourriture, le point d'attache des poissons-clowns ne les
   ramenait pas : près d'une vitre, du sable ou d'une colonie de corail, l'évitement

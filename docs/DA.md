@@ -90,6 +90,13 @@ faibles, jamais plus de **8** à la fois (1 à 2 en moyenne), dérivent lentemen
 nénuphars et coulent au bout de 52 s. Des gris de la roche, essayés d'abord, les faisaient
 confondre avec les pierres.
 
+Le **bois flotté** du bac tropical (#169, ADR 0045) : tronc couché sur le sable, un bout
+relevé, deux ou trois branches d'un voxel d'épaisseur au bout qui montent en s'écartant de part
+et d'autre, parfois fourchues. Trois bruns de la palette : dessus clair de bois blanchi
+(`sableSombre`), flancs `sableOmbre`, nœuds et rangée posée sur le sable en `rocheSombre` ;
+contour `koiNoir` comme le reste du décor. Aucun gris de rocher : bois et pierre restent
+distincts au premier coup d'œil.
+
 Le **récif** (#148, ADR 0039) : bac vitré plus grand que le bac tropical, eau d'un bleu franc
 (`eauRecif`), plus clair sous la surface (`eauRecifClaire`), sable corallien blanc cassé
 (`koiBlanc`, affiché `texteInterface` à travers l'eau ; de dessus, à travers la surface
