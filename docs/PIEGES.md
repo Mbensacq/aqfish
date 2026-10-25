@@ -258,6 +258,20 @@ haut de sa section.
   Cycle 18 (#51) : dans `aquarium-host.spec.ts`, faire avancer le monde par défaut image par
   image (`frames.flush`) coûte cher : 45 s simulées passaient en local mais dépassaient 5 s
   en CI. Y garder ≤ 10 s simulées par test, avec un délai explicite (15 s). (2026-10-19)
+- **Tests de mutation : `FixtureParseError` avec Vitest 4** (#166) : le lanceur
+  `@stryker-mutator/vitest-runner` 9.0.1 écrivait `afterAll((suite) => …)` dans son fichier
+  de préparation ; Vitest 4 lit le premier argument d'un crochet comme un contexte de
+  fixtures et exige une déstructuration
+  (`The 1st argument inside a fixture must use object destructuring pattern`), d'où le
+  plantage juste après l'exécution à blanc. Corrigé en amont (`afterAll(({}, suite) => …)`) : `@stryker-mutator/core` et
+  `vitest-runner` sont épinglés en **9.6.1** (les deux à la même version exacte). Premier
+  score (cycle 69) : `npx stryker run --mutate src/app/sim/sim-speed.ts` → **95,24 %**
+  (21 mutants, 20 tués, 1 survivant : le séparateur du message d'erreur), 2 min sur
+  2 cœurs. Un fichier plus gros reste long : `anemones.ts` (297 mutants, dont 250
+  « statiques » qui relancent toute la suite) dépasse 10 min ; viser un petit fichier par
+  session, ou `--ignoreStatic` en le signalant (le score n'est alors plus comparable).
+  Installer ces paquets avec `npx -y npm@11 install` (bogue `edgesOut` de npm 10).
+  (2026-10-25)
 - **Tests de mutation : délais explicites sous code instrumenté** (#66) : le code instrumenté
   par Stryker est ~5 à 10 fois plus lent. `testTimeout` ne suffit pas : un délai explicite
   (`it(nom, fn, 15_000)`, y compris `it.each(table)(nom, fn, 15_000)`) prime sur la
