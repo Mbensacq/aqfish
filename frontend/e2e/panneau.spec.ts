@@ -245,6 +245,9 @@ test.describe('Panneau de contrôle', () => {
   });
 
   test('au clavier : Tab jusqu’au bouton, Entrée, puis chaque contrôle', async ({ page }) => {
+    // Une vingtaine de touches, chacune suivie d'une image en rendu logiciel : avec la section
+    // « Eau » (#207), le parcours dépasse le délai par défaut de 2 min en local.
+    test.setTimeout(240_000);
     const errors = await open(page);
     let reached = false;
     for (let i = 0; i < 40 && !reached; i++) {
@@ -279,6 +282,14 @@ test.describe('Panneau de contrôle', () => {
     await expect(autoHour(page)).toBeFocused();
     await page.keyboard.press('Space');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-hour-frozen', 'false');
+
+    // Section « Eau » (#207) : « Changer l’eau », sur la ligne du titre, puis le chauffage.
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', { name: 'Changer l’eau' })).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('slider', { name: 'Consigne du chauffage' })).toBeFocused();
+    await page.keyboard.press('ArrowRight');
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-water', /^[a-z-]+;[\d.]+;25\.5;/);
 
     // Section « Décor » : « Éditer le décor » (#167), sur la ligne du titre, puis la case.
     await page.keyboard.press('Tab');
