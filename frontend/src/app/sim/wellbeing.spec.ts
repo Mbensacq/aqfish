@@ -222,7 +222,9 @@ describe('faim et santé dans le monde', () => {
       expect(fish.health).toBeLessThan(1);
       expect(fish.health).toBeCloseTo(1 - 60 * HEALTH_DECAY_RATE, 2);
     }
-    const later = advance(at150, steps(3600));
+    // 8 minutes de plus : la durée d'une descente complète de 1 au plancher (une cause),
+    // assez pour l'atteindre d'ici, sans simuler une heure (test trop lent sous couverture).
+    const later = advance(at150, steps(480));
     expect(healths(later)).toEqual([HEALTH_FLOOR, HEALTH_FLOOR]);
   });
 
