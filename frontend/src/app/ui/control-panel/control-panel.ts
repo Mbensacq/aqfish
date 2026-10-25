@@ -14,7 +14,8 @@ import { DEFAULT_FOOD_STYLE, type FoodStyle } from '../../core/food-style/food-s
 import { isRoomAvailable } from '../../sim/room';
 import { MAX_SAVE_LENGTH } from '../../sim/save';
 import { DEFAULT_SIM_SPEED, SIM_SPEEDS, type SimSpeed } from '../../sim/sim-speed';
-import { SPECIES, type SpeciesId } from '../../sim/species';
+import { SPECIES_LABELS, speciesCatalog } from '../../sim/species-catalog';
+import { type SpeciesId } from '../../sim/species';
 
 /** Identifiant de la région du panneau (cible de `aria-controls`). */
 export const CONTROL_PANEL_ID = 'panneau-controle';
@@ -70,16 +71,20 @@ export interface PopulationRequest {
 }
 
 /**
- * Nom d'une espèce au pluriel, en minuscules (« néons », « guppys », « corydoras ») ; chaque
- * mot d'un nom composé prend la marque (« poissons-clowns », #150 ; « chirurgiens bleus »,
- * #151).
+ * Nom d'une espèce au pluriel, en minuscules (« néons », « poissons-clowns », « chirurgiens
+ * bleus ») : porté par le catalogue (`SPECIES_LABELS`, #95), pas deviné.
  */
 export function speciesPlural(species: SpeciesId): string {
-  return SPECIES[species].name
-    .toLowerCase()
-    .split(/([ -])/)
-    .map((word) => (word === ' ' || word === '-' ? word : `${word}s`))
-    .join('');
+  return SPECIES_LABELS[species].plural;
+}
+
+/**
+ * Nom accessible des boutons « − » et « + » : « Retirer un néon », « Ajouter une grenouille »
+ * (genre porté par le catalogue, #95).
+ */
+export function speciesStepLabel(species: SpeciesId, delta: -1 | 1): string {
+  const { singular, feminine } = SPECIES_LABELS[species];
+  return `${delta < 0 ? 'Retirer' : 'Ajouter'} ${feminine ? 'une' : 'un'} ${singular}`;
 }
 
 /**
@@ -89,6 +94,14 @@ export function speciesPlural(species: SpeciesId): string {
 export function speciesCountLabel(species: SpeciesId): string {
   const plural = speciesPlural(species);
   return /^[aeiouyàâéèêëîïôûù]/.test(plural) ? `Nombre d’${plural}` : `Nombre de ${plural}`;
+}
+
+/**
+ * Nom accessible du curseur d'effectif (#189), distinct de celui du champ : « Curseur du
+ * nombre de néons », « Curseur du nombre d’axolotls ».
+ */
+export function speciesSliderLabel(species: SpeciesId): string {
+  return `Curseur du ${speciesCountLabel(species).replace(/^Nombre/, 'nombre')}`;
 }
 
 /** Texte de l'état de la sauvegarde automatique (#70). */
@@ -120,9 +133,11 @@ function toNumber(value: string | number): number {
  * vues. Il est découpé en sections (`fieldset`), la première étant l'environnement (#87 :
  * bac tropical ou bassin, liste déroulante).
  *
- * Population : par espèce, un champ numérique (entier de 0 au maximum fourni par l'hôte,
- * validé à Entrée ou en quittant le champ, réglable aux flèches) entre deux boutons « − » et
- * « + ». À une borne, le bouton reste focalisable (`aria-disabled`) et sans effet.
+ * Population (catalogue d'espèces, #189) : par espèce, le nom sur sa ligne, puis « − », un
+ * curseur (échelle de 0 au maximum de l'espèce, valeur ramenée au maximum fourni par l'hôte
+ * et réécrite), un champ numérique (entier de 0 à ce maximum, validé à Entrée ou en quittant
+ * le champ, réglable aux flèches) et « + ». À une borne, le bouton reste
+ * focalisable (`aria-disabled`) et sans effet. Libellés tirés du catalogue (`SPECIES_LABELS`).
  *
  * Clavier : bouton « Réglages » (Entrée ou Espace), puis Tab d'un contrôle à l'autre ; les
  * curseurs se règlent aux flèches. Les raccourcis de la barre des vues sont ignorés tant
@@ -267,20 +282,40 @@ function toNumber(value: string | number): number {
 
         <fieldset class="control-panel__section" data-section="population">
           <legend class="control-panel__legend">Population</legend>
-          @for (id of speciesIds(); track id) {
+          @for (entry of catalog(); track entry.species) {
+            @let id = entry.species;
             <div class="control-panel__count" [attr.data-species]="id">
-              <label class="control-panel__count-label" [for]="'panneau-population-' + id">
-                {{ speciesName(id) }}
+              <label
+                class="control-panel__count-label"
+                [for]="'panneau-population-' + id"
+                [attr.title]="entry.scientificName"
+              >
+                {{ entry.name }}
               </label>
               <button
                 type="button"
                 class="control-panel__step"
-                [attr.aria-label]="'Retirer un ' + speciesName(id).toLowerCase()"
+                [attr.aria-label]="stepLabel(id, -1)"
                 [attr.aria-disabled]="population()[id] <= 0"
                 (click)="step(id, -1)"
               >
                 −
               </button>
+              <!-- Curseur d'effectif (#189), entre « − » et le champ : échelle fixe de 0 au
+                   maximum de l'espèce ; la valeur est ramenée à la place restante (maximum
+                   fourni par l'hôte). -->
+              <input
+                class="control-panel__range control-panel__count-range"
+                type="range"
+                min="0"
+                step="1"
+                [attr.max]="entry.maxCount"
+                [value]="population()[id]"
+                [attr.aria-label]="slideLabel(id)"
+                [attr.aria-valuetext]="population()[id] + ' ' + entry.labels.plural"
+                [attr.data-count-slider]="id"
+                (input)="onCount(id, $event)"
+              />
               <input
                 class="control-panel__number"
                 type="number"
@@ -296,7 +331,7 @@ function toNumber(value: string | number): number {
               <button
                 type="button"
                 class="control-panel__step"
-                [attr.aria-label]="'Ajouter un ' + speciesName(id).toLowerCase()"
+                [attr.aria-label]="stepLabel(id, 1)"
                 [attr.aria-disabled]="population()[id] >= populationMax()[id]"
                 (click)="step(id, 1)"
               >
@@ -406,8 +441,11 @@ export class ControlPanel {
 
   protected readonly panelId = CONTROL_PANEL_ID;
   protected readonly speeds = SIM_SPEEDS;
-  /** Espèces de l'environnement affiché (#88), dans l'ordre de `Environment.species`. */
-  protected readonly speciesIds = computed(() => environmentById(this.environment()).species);
+  /**
+   * Catalogue des espèces de l'environnement affiché (#88, #189), dans l'ordre de
+   * `Environment.species`.
+   */
+  protected readonly catalog = computed(() => speciesCatalog(this.environment()));
   protected readonly environmentIds = ENVIRONMENT_IDS;
   /** Case « Pluie » proposée seulement là où il peut pleuvoir (le bassin, #106). */
   protected readonly rainAvailable = computed(() => environmentById(this.environment()).rain);
@@ -510,12 +548,16 @@ export class ControlPanel {
     this.decorVisibleChanged.emit((event.target as HTMLInputElement).checked);
   }
 
-  protected speciesName(id: SpeciesId): string {
-    return SPECIES[id].name;
-  }
-
   protected countLabel(id: SpeciesId): string {
     return speciesCountLabel(id);
+  }
+
+  protected stepLabel(id: SpeciesId, delta: -1 | 1): string {
+    return speciesStepLabel(id, delta);
+  }
+
+  protected slideLabel(id: SpeciesId): string {
+    return speciesSliderLabel(id);
   }
 
   /** Bouton « − » ou « + » : sans effet à la borne. */

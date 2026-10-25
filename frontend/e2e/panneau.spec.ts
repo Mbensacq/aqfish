@@ -216,6 +216,9 @@ test.describe('Panneau de contrôle', () => {
       'data-aqfish-population',
       'neon:11,guppy:6,corydora:6',
     );
+    // Curseur d'effectif (#189), entre « − » et le champ.
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('slider', { name: 'Curseur du nombre de néons' })).toBeFocused();
     await page.keyboard.press('Tab');
     await expect(count(page, 'néons')).toBeFocused();
     await page.keyboard.press('ArrowUp');

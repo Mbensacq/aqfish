@@ -16,6 +16,8 @@ import {
   sliderHour,
   speciesCountLabel,
   speciesPlural,
+  speciesSliderLabel,
+  speciesStepLabel,
   speedAt,
   speedIndex,
   speedLabel,
@@ -83,6 +85,20 @@ describe('fonctions du panneau de contrôle', () => {
     expect(speciesCountLabel('neon')).toBe('Nombre de néons');
     expect(speciesCountLabel('koi')).toBe('Nombre de koïs');
     expect(speciesCountLabel('axolotl')).toBe('Nombre d’axolotls');
+  });
+
+  it('speciesStepLabel : genre porté par le catalogue (#95)', () => {
+    expect(speciesStepLabel('neon', -1)).toBe('Retirer un néon');
+    expect(speciesStepLabel('neon', 1)).toBe('Ajouter un néon');
+    expect(speciesStepLabel('grenouille', 1)).toBe('Ajouter une grenouille');
+    expect(speciesStepLabel('grenouille', -1)).toBe('Retirer une grenouille');
+    expect(speciesStepLabel('clown', 1)).toBe('Ajouter un poisson-clown');
+    expect(speciesStepLabel('chirurgien', -1)).toBe('Retirer un chirurgien bleu');
+  });
+
+  it('speciesSliderLabel : distinct du champ, élision conservée (#189)', () => {
+    expect(speciesSliderLabel('neon')).toBe('Curseur du nombre de néons');
+    expect(speciesSliderLabel('axolotl')).toBe('Curseur du nombre d’axolotls');
   });
 });
 
@@ -400,9 +416,9 @@ describe('ControlPanel', () => {
     // Le champ de fichier natif est masqué : le bouton « Importer » l'ouvre (#70).
     const controls = [...root().querySelectorAll<HTMLElement>('button, input:not([type="file"])')];
     // 5 contrôles de #52, « Éditer le décor » (#167), « Granulés » (#117), « Afficher la
-    // pièce » (#187), puis « − », champ et « + » pour chacune des 3 espèces (#69), puis
-    // « Exporter » et « Importer » (#70).
-    expect(controls).toHaveLength(5 + 1 + 1 + 1 + 3 * 3 + 2);
+    // pièce » (#187), puis « − », champ, « + » (#69) et curseur (#189) pour chacune des 3
+    // espèces, puis « Exporter » et « Importer » (#70).
+    expect(controls).toHaveLength(5 + 1 + 1 + 1 + 3 * 4 + 2);
     expect(root().querySelectorAll('input[type="file"]')).toHaveLength(1);
     for (const control of controls) {
       const name =
@@ -514,6 +530,33 @@ describe('ControlPanel', () => {
       minus.click();
       plus.click();
       expect(fixture.componentInstance.requests).toEqual([]);
+    });
+
+    it('curseur (#189) : échelle de l’espèce, valeur de l’hôte, bornée à la place restante', async () => {
+      await openPanel();
+      const slider = (plural: string) => byLabel(`Curseur du nombre de ${plural}`)!;
+      const neons = slider('néons');
+      expect(neons.type).toBe('range');
+      expect(neons.min).toBe('0');
+      expect(neons.max).toBe('40');
+      expect(neons.value).toBe('12');
+      // Échelle fixe de l'espèce (`maxPopulation`), même quand l'hôte permet moins (guppys : 6).
+      expect(slider('corydoras').max).toBe('16');
+      expect(slider('guppys').max).toBe('20');
+      neons.value = '20';
+      neons.dispatchEvent(new Event('input'));
+      // Guppys au maximum fourni par l'hôte (6) : le curseur est ramené et rien n'est émis.
+      const guppys = slider('guppys');
+      guppys.value = '15';
+      guppys.dispatchEvent(new Event('input'));
+      expect(guppys.value).toBe('6');
+      expect(fixture.componentInstance.requests).toEqual([{ species: 'neon', count: 20 }]);
+    });
+
+    it('libellé : nom scientifique en info-bulle (#189)', async () => {
+      await openPanel();
+      const label = root().querySelector('[data-species="neon"] label')!;
+      expect(label.getAttribute('title')).toBe('Paracheirodon innesi');
     });
 
     it('saisie : valeur bornée émise et réécrite ; invalide ou inchangée : rien émis', async () => {
