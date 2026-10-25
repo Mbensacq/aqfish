@@ -179,6 +179,9 @@ haut de sa section.
   pixels différents dans le bac (simulation lancée avant la mise à l'arrêt). Les 35 autres
   captures sont identiques à l'octet ; pour `front-panneau`, comparer la zone des panneaux,
   pas le fichier. (2026-10-22)
+  Même cas pour `telephone-catalogue` (cycle 68) : deux exécutions sur `main` donnent
+  ~15 pixels différents dans le bac, sous le catalogue ouvert ; les 68 autres captures du
+  cycle 68 sont identiques à l'octet à celles de c067. (2026-10-25)
 - **Hauteur de texte différente en CI : `system-ui` n'est pas la même police** (cycle 34,
   #79) : dans l'environnement des agents, `system-ui` donne **Inter** ; sur le runner
   `ubuntu-latest`, **DejaVu Sans**, plus large (plus de retours à la ligne). Le panneau
