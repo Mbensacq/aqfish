@@ -18,6 +18,11 @@ haut de sa section.
   petit, mode édition fermé) et échoue sans raison apparente. Ne pas toucher `src/` pendant
   un e2e ou des captures (les `*.spec.ts` unitaires, `e2e/` et `docs/` ne déclenchent rien).
   (2026-10-24)
+- **Panneau « Réglages » à 1280 × 720 : plus de place pour une section** (cycle 71, #207) :
+  avant la section « Eau », le contenu laissait ~12 px de marge ; elle en prend ~107. Le
+  panneau passe sur deux colonnes (`column-count: 2`, sections `break-inside: avoid`) au-delà
+  de 900 px de large et en deçà de 900 px de haut. Mesurer `scrollHeight` et `clientHeight`
+  du panneau dans chaque environnement avant d'ajouter une ligne. (2026-10-25)
 - **Curseur `range` : `[value]` borné par l'ancien `max`** (cycle 60, #171) : avec
   `[attr.max]` lié dans un `@for`, Angular peut poser la valeur avant les bornes ; une valeur
   au-delà du `max` par défaut (100) est ramenée à 100. Écrire `min`, `max` et `step` en
@@ -113,6 +118,11 @@ haut de sa section.
 
 ## Tests
 
+- **`toHaveText(/^…$/)` ne retire pas les blancs** (cycle 71, #207) : avec une chaîne,
+  Playwright compare le texte normalisé ; avec une expression régulière, il teste le
+  `textContent` brut, blancs du gabarit Angular compris (`\n  17,2\n`). `/^17,2$/` échoue
+  alors que la valeur est juste. Ne pas ancrer l'expression (`/\b17,2\b/`) ou comparer une
+  chaîne. (2026-10-25)
 - **E2e de la pièce : le parquet est hors de l'écran en trois-quarts** (cycle 66, #188) : à
   1280 × 720, la vue trois-quarts par défaut cadre le bac ; le parquet devant lui se projette
   sous le bas de l'écran (y ≈ 1 000 px) et à gauche il est sous le panneau de l'éditeur.
@@ -442,6 +452,13 @@ haut de sa section.
 
 ## Rendu
 
+- **Teinter l'eau translucide : la passe palette saute d'une couleur à l'autre** (cycle 71,
+  #207) : pour l'eau trouble, mêler les teintes d'entrée vers un vert ne donne que des paliers
+  (`eauSombre` → `vegetation` → `verreSombre` pour le volume, `eauMoyenne` →
+  `vegetation` ou `vegetationClaire` pour la surface), sans nuance entre ; une surface trop
+  claire tombe même sur `roche` (gris). Essais à la capture, une valeur à la fois, en
+  mesurant quelques pixels (Pillow) : `filtre=aucun` ne donne pas l'entrée de la passe. Un
+  serveur `ng serve` séparé (`--port 4310`) recharge la teinte en ~10 s. (2026-10-25)
 - **Un fond derrière l'eau change la couleur de l'eau** (cycle 64, #187) : l'eau est
   translucide ; vue devant un mur `roche` ou même `rocheSombre` éclairé, la passe palette la
   ramenait à `roche` (eau grise), alors que sur le fond de la scène (`fondScene`) elle tombe
