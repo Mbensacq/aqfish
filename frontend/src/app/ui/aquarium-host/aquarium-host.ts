@@ -135,11 +135,22 @@ import { decorBaseY, decorElevation, validateDecorItem, type DecorItem } from '.
 import {
   advanceInPlace,
   advanceToWithFeedings,
+  changeWorldWaterInPlace,
   createDefaultWorld,
   feedInPlace,
+  setWorldHeaterInPlace,
   type MutableWorld,
   type World,
 } from '../../sim/world';
+import {
+  DEFAULT_WATER_READOUT,
+  isWaterQuality,
+  sameReadout,
+  sampleWater,
+  waterReadout,
+  waterTurbidity,
+  type WaterReadout,
+} from '../../sim/water-quality';
 
 /** Fabrique du renderer, remplaçable dans les tests (jsdom n'a pas WebGL). */
 export const AQUARIUM_RENDERER_FACTORY = new InjectionToken<AquariumRendererFactory>(
@@ -179,6 +190,14 @@ export const ROOM_ATTRIBUTE = 'data-aqfish-room';
 /** Attribut du composant hôte exposant les effectifs (`neon:12,guppy:6,corydora:6`, #69). */
 export const POPULATION_ATTRIBUTE = 'data-aqfish-population';
 
+/**
+ * Attribut du composant hôte exposant le relevé de l'eau (#207) : `niveau;température;visée;
+ * ammoniaque;nitrites;nitrates`, valeurs au dixième (`bonne;25;25;0;0;0`), mis à jour quand il
+ * change.
+ */
+export const WATER_ATTRIBUTE = 'data-aqfish-water';
+/** Pas de simulation entre deux relevés de l'eau dans la boucle (0,5 s simulée). */
+export const WATER_READOUT_TICKS = 30;
 /** Attribut du composant hôte exposant l'environnement courant (`tropical`, `bassin`, #87). */
 export const ENVIRONMENT_ATTRIBUTE = 'data-aqfish-environment';
 
@@ -468,6 +487,10 @@ export class AquariumHost {
 
   /** Effectif maximal de chaque espèce compte tenu des autres (`populationLimits`, #69). */
   readonly populationMax = signal<PopulationCounts>(NO_FISH);
+  /** Relevé de l'eau affiché par le panneau (#207), au dixième. */
+  readonly water = signal<WaterReadout>(DEFAULT_WATER_READOUT);
+  /** Pas du dernier relevé de l'eau (`exposeWater`). */
+  private waterReadTick = Number.NEGATIVE_INFINITY;
 
   /**
    * État de la sauvegarde automatique (#70) : `null` en mode capture (jamais de lecture ni
@@ -735,6 +758,41 @@ export class AquariumHost {
   }
 
   /**
+   * Changement d'eau (#207) : retire une part des composés dissous (`changeWorldWaterInPlace`),
+   * puis enregistre. Sans effet en mode capture ou avant le démarrage.
+   */
+  changeWater(): void {
+    const world = this.currentWorld;
+    if (!world || this.capture) {
+      return;
+    }
+    changeWorldWaterInPlace(world);
+    this.exposeWater();
+    this.saveNow();
+    this.scheduleFrame();
+  }
+
+  /**
+   * Règle la consigne du chauffage (#207), en °C, arrondie au dixième ; l'eau la rejoint peu à
+   * peu. Enregistrée avec l'eau. Sans effet en mode capture, avant le démarrage ou hors de
+   * [`MIN_HEATER_TEMPERATURE`, `MAX_HEATER_TEMPERATURE`].
+   */
+  setHeater(temperature: number): void {
+    const world = this.currentWorld;
+    if (!world || this.capture) {
+      return;
+    }
+    try {
+      setWorldHeaterInPlace(world, temperature);
+    } catch {
+      return;
+    }
+    this.exposeWater();
+    this.saveNow();
+    this.scheduleFrame();
+  }
+
+  /**
    * Change d'environnement (#87, ADR 0026) : recrée le monde de départ de l'environnement
    * avec la même graine (même environnement et même graine, même monde), puis la vue, la
    * caméra allant sur la vue par défaut de l'environnement. L'heure, la vitesse, le filtre et
@@ -754,6 +812,7 @@ export class AquariumHost {
     this.exposeTick();
     this.exposeFood();
     this.exposePopulation();
+    this.exposeWater();
     this.createView(environmentById(id).defaultCamera);
     this.exposeCamera();
     this.scheduleFrame();
@@ -1491,6 +1550,7 @@ export class AquariumHost {
     this.exposeTick();
     this.exposeFood();
     this.exposePopulation();
+    this.exposeWater();
   }
 
   /** Bascule entre pixel art et rendu sans filtre. */
@@ -1555,6 +1615,10 @@ export class AquariumHost {
       }
       // Effectifs de `population=` (#69) : appliqués à t = 0, avant d'avancer le monde.
       applyPopulation(world, params.population);
+      // Eau d'exemple de `eau=` (#207), en capture : à t = 0, avant d'avancer le monde.
+      if (params.capture && isWaterQuality(params.water)) {
+        world.water = sampleWater(world.environment, params.water);
+      }
       this.currentWorld = params.capture
         ? advanceToWithFeedings(world, params.time, params.feedings)
         : world;
@@ -1573,6 +1637,7 @@ export class AquariumHost {
     this.exposeTick();
     this.exposeFood();
     this.exposePopulation();
+    this.exposeWater();
     this.exposeSaveStatus(this.saveStatus());
 
     const filter = initialRenderFilter(
@@ -1694,6 +1759,8 @@ export class AquariumHost {
     this.applyRoom(this.room());
     // Hors du bassin, la vue refuse la pluie : l'état affiché suit (#106).
     this.applyRain(this.rain());
+    // Eau trouble quand elle est mauvaise (#207) : teinte seulement.
+    view.setWaterTurbidity(waterTurbidity(this.water().quality));
     this.litHour = null;
     this.activePreset.set(preset);
     this.viewCleanups.push(view.onCameraChange(() => this.exposeCamera()));
@@ -1847,6 +1914,9 @@ export class AquariumHost {
       advanceInPlace(this.currentWorld, clock.steps);
       this.exposeTick();
       this.exposeFood();
+      if (this.currentWorld.tick - this.waterReadTick >= WATER_READOUT_TICKS) {
+        this.exposeWater();
+      }
     }
     return realDt;
   }
@@ -1888,6 +1958,37 @@ export class AquariumHost {
       POPULATION_ATTRIBUTE,
       formatPopulation(counts, environmentById(world.environment).species),
     );
+  }
+
+  /**
+   * Relevé de l'eau (#207) : signal `water` et `data-aqfish-water` mis à jour seulement s'il
+   * change, trouble de l'eau de la vue suivant le niveau.
+   */
+  private exposeWater(): void {
+    const world = this.currentWorld;
+    if (!world) {
+      return;
+    }
+    this.waterReadTick = world.tick;
+    const readout = waterReadout(world.water, world.environment);
+    if (
+      !sameReadout(readout, this.water()) ||
+      !this.host.nativeElement.hasAttribute(WATER_ATTRIBUTE)
+    ) {
+      this.water.set(readout);
+      this.host.nativeElement.setAttribute(
+        WATER_ATTRIBUTE,
+        [
+          readout.quality,
+          readout.temperature,
+          readout.target,
+          readout.ammonia,
+          readout.nitrite,
+          readout.nitrate,
+        ].join(';'),
+      );
+    }
+    this.view?.setWaterTurbidity(waterTurbidity(readout.quality));
   }
 
   /** Applique la pluie à la vue courante et expose l'état obtenu (`data-aqfish-rain`). */

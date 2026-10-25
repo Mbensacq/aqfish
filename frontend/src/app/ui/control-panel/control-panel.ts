@@ -16,6 +16,16 @@ import { MAX_SAVE_LENGTH } from '../../sim/save';
 import { DEFAULT_SIM_SPEED, SIM_SPEEDS, type SimSpeed } from '../../sim/sim-speed';
 import { SPECIES_LABELS, speciesCatalog } from '../../sim/species-catalog';
 import { type SpeciesId } from '../../sim/species';
+import { MAX_HEATER_TEMPERATURE, MIN_HEATER_TEMPERATURE } from '../../sim/water';
+import {
+  COMPOUND_THRESHOLDS,
+  DEFAULT_WATER_READOUT,
+  GAUGE_MAX,
+  WATER_COMPOUNDS,
+  WATER_QUALITY_LABELS,
+  type WaterCompound,
+  type WaterReadout,
+} from '../../sim/water-quality';
 
 /** Identifiant de la région du panneau (cible de `aria-controls`). */
 export const CONTROL_PANEL_ID = 'panneau-controle';
@@ -102,6 +112,40 @@ export function speciesCountLabel(species: SpeciesId): string {
  */
 export function speciesSliderLabel(species: SpeciesId): string {
   return `Curseur du ${speciesCountLabel(species).replace(/^Nombre/, 'nombre')}`;
+}
+
+/** Pas du curseur du chauffage, en °C (#207). */
+export const HEATER_SLIDER_STEP = 0.5;
+
+/** Nom affiché de chaque composé de l'eau (#207). */
+export const COMPOUND_LABELS: Readonly<Record<WaterCompound, string>> = {
+  ammonia: 'Ammoniaque',
+  nitrite: 'Nitrites',
+  nitrate: 'Nitrates',
+};
+
+/** Nombre au dixième, virgule décimale (« 25,0 », « 0,8 ») ; « – » s'il n'est pas fini. */
+export function formatTenth(value: number): string {
+  return Number.isFinite(value) ? value.toFixed(1).replace('.', ',') : '–';
+}
+
+/** Température lue sur le curseur du chauffage (une chaîne), `null` hors des bornes. */
+export function sliderHeater(value: string | number): number | null {
+  const t = toNumber(value);
+  return Number.isFinite(t) && t >= MIN_HEATER_TEMPERATURE && t <= MAX_HEATER_TEMPERATURE
+    ? t
+    : null;
+}
+
+/**
+ * Texte du chauffage (#207) : « 26,0 °C », suivi de la température de l'eau tant qu'elle
+ * n'a pas rejoint la consigne (« 26,0 °C · eau 25,3 °C »).
+ */
+export function heaterText(readout: WaterReadout): string {
+  const target = `${formatTenth(readout.target)} °C`;
+  return readout.temperature === readout.target
+    ? target
+    : `${target} · eau ${formatTenth(readout.temperature)} °C`;
 }
 
 /** Texte de l'état de la sauvegarde automatique (#70). */
@@ -236,6 +280,76 @@ function toNumber(value: string | number): number {
                 <input type="checkbox" [checked]="rain()" (change)="onRain($event)" />
                 Pluie
               </label>
+            }
+          </div>
+        </fieldset>
+
+        <!-- Eau (#207) : indicateur global en toutes lettres et « Changer l'eau » sur la ligne
+             du titre, puis le chauffage et les trois jauges sur une ligne (#101). -->
+        <fieldset
+          class="control-panel__section"
+          data-section="eau"
+          aria-labelledby="panneau-eau-titre"
+        >
+          <legend class="control-panel__legend control-panel__legend--row">
+            <span class="control-panel__legend-group">
+              <span id="panneau-eau-titre">Eau</span>
+              <span
+                class="control-panel__quality"
+                [attr.data-water-quality]="water().quality"
+                role="status"
+                [attr.aria-label]="'Qualité de l’eau : ' + qualityText()"
+              >
+                {{ qualityText() }}
+              </span>
+            </span>
+            <button
+              type="button"
+              class="control-panel__edit"
+              data-water-change
+              (click)="waterChangeRequested.emit()"
+            >
+              Changer l’eau
+            </button>
+          </legend>
+          <label class="control-panel__field" for="panneau-chauffage">
+            <span class="control-panel__label">
+              Chauffage <output class="control-panel__value">{{ heaterLabel() }}</output>
+            </span>
+            <!-- Bornes en attributs statiques : posées avant la valeur (docs/PIEGES.md). -->
+            <input
+              id="panneau-chauffage"
+              class="control-panel__range"
+              aria-label="Consigne du chauffage"
+              type="range"
+              min="16"
+              max="32"
+              step="0.5"
+              [value]="water().target"
+              [attr.aria-valuetext]="heaterLabel()"
+              (input)="onHeater($event)"
+            />
+          </label>
+          <div class="control-panel__gauges">
+            @for (compound of compounds; track compound) {
+              <div class="control-panel__gauge" [attr.data-gauge]="compound">
+                <span class="control-panel__gauge-name">{{ compoundLabels[compound] }}</span>
+                <span class="control-panel__gauge-row">
+                  <meter
+                    class="control-panel__meter"
+                    min="0"
+                    optimum="0"
+                    [attr.max]="gaugeMax[compound]"
+                    [attr.low]="thresholds[compound].watch"
+                    [attr.high]="thresholds[compound].bad"
+                    [value]="water()[compound]"
+                    [attr.aria-label]="compoundLabels[compound]"
+                  ></meter>
+                  <output class="control-panel__value" [attr.data-gauge-value]="compound">
+                    {{ tenth(water()[compound]) }}
+                  </output>
+                </span>
+              </div>
             }
           </div>
         </fieldset>
@@ -402,6 +516,8 @@ export class ControlPanel {
   readonly population = input<PopulationCounts>(NO_FISH);
   /** Effectif maximal de chaque espèce, compte tenu des autres (fourni par l'hôte). */
   readonly populationMax = input<PopulationCounts>(NO_FISH);
+  /** Relevé de l'eau (fourni par l'hôte, #207). */
+  readonly water = input<WaterReadout>(DEFAULT_WATER_READOUT);
   /** État de la sauvegarde automatique (fourni par l'hôte, #70). */
   readonly saveStatus = input<SaveStatus | null>(null);
   /** Dernier message de la sauvegarde : import refusé, import réussi… (fourni par l'hôte). */
@@ -427,6 +543,10 @@ export class ControlPanel {
   readonly foodStyleToggled = output<void>();
   /** Effectif demandé pour une espèce (déjà borné à [0, maximum]). */
   readonly populationChanged = output<PopulationRequest>();
+  /** Consigne du chauffage choisie au curseur, en °C (#207). */
+  readonly heaterChanged = output<number>();
+  /** Bouton « Changer l'eau » (#207). */
+  readonly waterChangeRequested = output<void>();
   /** Bouton « Exporter » (#70). */
   readonly exportRequested = output<void>();
   /** Contenu du fichier choisi avec « Importer » (texte, pas encore validé ; #70). */
@@ -459,6 +579,13 @@ export class ControlPanel {
   protected readonly speedText = computed(() => speedLabel(this.speed()));
   protected readonly hourText = computed(() => formatHour(this.hour()));
   protected readonly statusText = computed(() => saveStatusText(this.saveStatus()));
+  protected readonly compounds = WATER_COMPOUNDS;
+  protected readonly compoundLabels = COMPOUND_LABELS;
+  protected readonly gaugeMax = GAUGE_MAX;
+  protected readonly thresholds = COMPOUND_THRESHOLDS;
+  protected readonly qualityText = computed(() => WATER_QUALITY_LABELS[this.water().quality]);
+  protected readonly heaterLabel = computed(() => heaterText(this.water()));
+  protected readonly tenth = formatTenth;
 
   /**
    * Fichier choisi avec « Importer » : refusé avant lecture s'il dépasse `MAX_SAVE_LENGTH`
@@ -523,6 +650,13 @@ export class ControlPanel {
     const hour = sliderHour((event.target as HTMLInputElement).value);
     if (hour !== null) {
       this.hourChanged.emit(hour);
+    }
+  }
+
+  protected onHeater(event: Event): void {
+    const temperature = sliderHeater((event.target as HTMLInputElement).value);
+    if (temperature !== null) {
+      this.heaterChanged.emit(temperature);
     }
   }
 

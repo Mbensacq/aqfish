@@ -7,9 +7,21 @@ import type { PopulationCounts } from '../../sim/population';
 import type { SaveMessage, SaveStatus } from '../../core/save-storage/save-storage';
 import { MAX_SAVE_LENGTH } from '../../sim/save';
 import { SIM_SPEEDS } from '../../sim/sim-speed';
+import { MAX_HEATER_TEMPERATURE, MIN_HEATER_TEMPERATURE } from '../../sim/water';
 import {
+  COMPOUND_THRESHOLDS,
+  DEFAULT_WATER_READOUT,
+  GAUGE_MAX,
+  type WaterReadout,
+} from '../../sim/water-quality';
+import {
+  COMPOUND_LABELS,
   CONTROL_PANEL_ID,
   ControlPanel,
+  formatTenth,
+  HEATER_SLIDER_STEP,
+  heaterText,
+  sliderHeater,
   populationInput,
   type PopulationRequest,
   saveStatusText,
@@ -67,6 +79,29 @@ describe('fonctions du panneau de contrôle', () => {
     }
   });
 
+  it('formatTenth : un chiffre après la virgule ; non fini : tiret', () => {
+    expect(formatTenth(25)).toBe('25,0');
+    expect(formatTenth(0.84)).toBe('0,8');
+    expect(formatTenth(0)).toBe('0,0');
+    expect(formatTenth(Number.NaN)).toBe('–');
+  });
+
+  it('sliderHeater : consigne dans les bornes du chauffage, sinon null (#207)', () => {
+    expect(sliderHeater('26.5')).toBe(26.5);
+    expect(sliderHeater(MIN_HEATER_TEMPERATURE)).toBe(MIN_HEATER_TEMPERATURE);
+    expect(sliderHeater(String(MAX_HEATER_TEMPERATURE))).toBe(MAX_HEATER_TEMPERATURE);
+    for (const value of ['15.9', '32.1', '', 'abc', 'Infinity', Number.NaN]) {
+      expect(sliderHeater(value)).toBeNull();
+    }
+  });
+
+  it('heaterText : consigne seule une fois atteinte, sinon avec la température de l’eau', () => {
+    expect(heaterText(DEFAULT_WATER_READOUT)).toBe('25,0 °C');
+    expect(heaterText({ ...DEFAULT_WATER_READOUT, target: 28, temperature: 25.3 })).toBe(
+      '28,0 °C · eau 25,3 °C',
+    );
+  });
+
   it('saveStatusText : un texte par état de la sauvegarde automatique', () => {
     expect(saveStatusText('active')).toMatch(/Enregistré automatiquement/);
     expect(saveStatusText('plein')).toMatch(/plein/);
@@ -117,6 +152,7 @@ describe('fonctions du panneau de contrôle', () => {
     [foodStyle]="foodStyle()"
     [population]="population()"
     [populationMax]="populationMax()"
+    [water]="water()"
     [saveStatus]="saveStatus()"
     [saveMessage]="saveMessage()"
     (exportRequested)="exports = exports + 1"
@@ -132,6 +168,8 @@ describe('fonctions du panneau de contrôle', () => {
     (environmentChanged)="environments.push($event)"
     (foodStyleToggled)="foodToggles = foodToggles + 1"
     (editRequested)="edits = edits + 1"
+    (heaterChanged)="events.push(['chauffage', $event])"
+    (waterChangeRequested)="waterChanges = waterChanges + 1"
   />`,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -170,6 +208,8 @@ class TestHost {
     clown: 0,
     chirurgien: 0,
   });
+  readonly water = signal<WaterReadout>(DEFAULT_WATER_READOUT);
+  waterChanges = 0;
   readonly events: [string, number | boolean][] = [];
   readonly requests: PopulationRequest[] = [];
   readonly saveStatus = signal<SaveStatus | null>('active');
@@ -277,13 +317,14 @@ describe('ControlPanel', () => {
     expect(root().querySelector('section')).toBeNull();
   });
 
-  it('sections extensibles : environnement, simulation, journée, décor, population, sauvegarde, chacune avec sa légende', async () => {
+  it('sections extensibles : environnement, simulation, journée, eau, décor, population, sauvegarde, chacune avec sa légende', async () => {
     await openPanel();
     const sections = [...root().querySelectorAll('fieldset')];
     expect(sections.map((s) => s.getAttribute('data-section'))).toEqual([
       'environnement',
       'simulation',
       'journee',
+      'eau',
       'decor',
       'population',
       'sauvegarde',
@@ -301,6 +342,7 @@ describe('ControlPanel', () => {
       'Environnement',
       'Simulation',
       'Journée',
+      'Eau',
       'Décor',
       'Population',
       'Sauvegarde',
@@ -416,9 +458,10 @@ describe('ControlPanel', () => {
     // Le champ de fichier natif est masqué : le bouton « Importer » l'ouvre (#70).
     const controls = [...root().querySelectorAll<HTMLElement>('button, input:not([type="file"])')];
     // 5 contrôles de #52, « Éditer le décor » (#167), « Granulés » (#117), « Afficher la
-    // pièce » (#187), puis « − », champ, « + » (#69) et curseur (#189) pour chacune des 3
-    // espèces, puis « Exporter » et « Importer » (#70).
-    expect(controls).toHaveLength(5 + 1 + 1 + 1 + 3 * 4 + 2);
+    // pièce » (#187), « Changer l’eau » et le curseur du chauffage (#207), puis « − », champ,
+    // « + » (#69) et curseur (#189) pour chacune des 3 espèces, puis « Exporter » et
+    // « Importer » (#70).
+    expect(controls).toHaveLength(5 + 1 + 1 + 1 + 2 + 3 * 4 + 2);
     expect(root().querySelectorAll('input[type="file"]')).toHaveLength(1);
     for (const control of controls) {
       const name =
@@ -580,6 +623,84 @@ describe('ControlPanel', () => {
         { species: 'neon', count: 40 },
         { species: 'neon', count: 3 },
       ]);
+    });
+  });
+
+  describe('eau (#207)', () => {
+    const section = () => root().querySelector<HTMLElement>('[data-section="eau"]')!;
+    const quality = () => section().querySelector<HTMLElement>('[data-water-quality]')!;
+    const heater = () => byLabel('Consigne du chauffage')!;
+
+    it('indicateur global en toutes lettres, suit l’hôte', async () => {
+      await openPanel();
+      expect(quality().textContent?.trim()).toBe('Bonne');
+      expect(quality().getAttribute('role')).toBe('status');
+      expect(quality().getAttribute('aria-label')).toBe('Qualité de l’eau : Bonne');
+      fixture.componentInstance.water.set({ ...DEFAULT_WATER_READOUT, quality: 'a-surveiller' });
+      await fixture.whenStable();
+      expect(quality().textContent?.trim()).toBe('À surveiller');
+      fixture.componentInstance.water.set({ ...DEFAULT_WATER_READOUT, quality: 'mauvaise' });
+      await fixture.whenStable();
+      expect(quality().textContent?.trim()).toBe('Mauvaise');
+      expect(quality().getAttribute('data-water-quality')).toBe('mauvaise');
+    });
+
+    it('« Changer l’eau » émet la demande', async () => {
+      await openPanel();
+      const button = section().querySelector<HTMLButtonElement>('[data-water-change]')!;
+      expect(button.textContent?.trim()).toBe('Changer l’eau');
+      button.click();
+      button.click();
+      expect(fixture.componentInstance.waterChanges).toBe(2);
+    });
+
+    it('curseur du chauffage : bornes du modèle, consigne de l’hôte, émet la consigne', async () => {
+      await openPanel();
+      expect(heater().min).toBe(String(MIN_HEATER_TEMPERATURE));
+      expect(heater().max).toBe(String(MAX_HEATER_TEMPERATURE));
+      expect(heater().step).toBe(String(HEATER_SLIDER_STEP));
+      expect(heater().value).toBe('25');
+      expect(section().textContent).toContain('25,0 °C');
+      fixture.componentInstance.water.set({
+        ...DEFAULT_WATER_READOUT,
+        target: 28.5,
+        temperature: 26.1,
+      });
+      await fixture.whenStable();
+      expect(heater().value).toBe('28.5');
+      expect(heater().getAttribute('aria-valuetext')).toBe('28,5 °C · eau 26,1 °C');
+      heater().value = '30';
+      heater().dispatchEvent(new Event('input'));
+      expect(fixture.componentInstance.events).toEqual([['chauffage', 30]]);
+    });
+
+    it('trois jauges nommées : ammoniaque, nitrites, nitrates, avec seuils et valeur', async () => {
+      await openPanel();
+      fixture.componentInstance.water.set({
+        ...DEFAULT_WATER_READOUT,
+        ammonia: 0.8,
+        nitrite: 1.3,
+        nitrate: 42.5,
+      });
+      await fixture.whenStable();
+      const gauges = [...section().querySelectorAll<HTMLElement>('[data-gauge]')];
+      expect(gauges.map((g) => g.getAttribute('data-gauge'))).toEqual([
+        'ammonia',
+        'nitrite',
+        'nitrate',
+      ]);
+      const values = { ammonia: '0,8', nitrite: '1,3', nitrate: '42,5' } as const;
+      for (const gauge of gauges) {
+        const compound = gauge.getAttribute('data-gauge') as keyof typeof values;
+        const meter = gauge.querySelector('meter')!;
+        expect(meter.getAttribute('aria-label')).toBe(COMPOUND_LABELS[compound]);
+        expect(meter.getAttribute('max')).toBe(String(GAUGE_MAX[compound]));
+        expect(meter.getAttribute('low')).toBe(String(COMPOUND_THRESHOLDS[compound].watch));
+        expect(meter.getAttribute('high')).toBe(String(COMPOUND_THRESHOLDS[compound].bad));
+        expect(gauge.querySelector('[data-gauge-value]')?.textContent?.trim()).toBe(
+          values[compound],
+        );
+      }
     });
   });
 

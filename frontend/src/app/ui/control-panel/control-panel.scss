@@ -271,6 +271,21 @@
   }
 }
 
+// Écran large mais peu haut (1280 × 720) : sections sur deux colonnes, pour que tout tienne
+// sans défiler, « Sauvegarde » comprise, malgré la section « Eau » (#207, #101). Plus haut,
+// une colonne suffit et masque moins le bac.
+@media (min-width: 900px) and (max-height: 900px) {
+  .control-panel {
+    width: 532px;
+    column-count: 2;
+    column-gap: 12px;
+  }
+
+  .control-panel__section {
+    break-inside: avoid;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .control-panel__toggle {
     transition: none;
@@ -393,4 +408,71 @@
   min-height: 28px;
   padding: 2px 8px;
   font-size: 12px;
+}
+
+// Eau (#207) : titre et indicateur global groupés à gauche, « Changer l'eau » à droite.
+.control-panel__legend-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+// Indicateur global : le libellé porte l'information (pas seulement la couleur).
+.control-panel__quality {
+  margin: -3px 0;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgb(95 191 163 / 18%);
+  color: #a8e6cf;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+
+  &[data-water-quality='a-surveiller'] {
+    background: rgb(230 190 90 / 18%);
+    color: #f0d68a;
+  }
+
+  &[data-water-quality='mauvaise'] {
+    background: rgb(242 163 154 / 18%);
+    color: #f2a39a;
+  }
+}
+
+// Trois jauges sur une ligne : nom, puis jauge et valeur.
+.control-panel__gauges {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.control-panel__gauge {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.control-panel__gauge-name {
+  overflow: hidden;
+  color: rgb(232 230 227 / 75%);
+  font-size: 11px;
+  line-height: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.control-panel__gauge-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.control-panel__meter {
+  flex: 1 1 0;
+  width: auto;
+  min-width: 0;
+  height: 8px;
 }

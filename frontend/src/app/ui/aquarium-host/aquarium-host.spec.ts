@@ -21,7 +21,14 @@ import {
 } from '../../sim/species';
 import { expiryAge, FOOD_PER_DROP } from '../../sim/food';
 import { setPopulation } from '../../sim/population';
-import { advance, advanceToWithFeedings, createDefaultWorld } from '../../sim/world';
+import {
+  advance,
+  advanceToWithFeedings,
+  changeWorldWater,
+  createDefaultWorld,
+  setWorldHeater,
+} from '../../sim/world';
+import { sampleWater } from '../../sim/water-quality';
 import {
   DEFAULT_DECOR,
   MAX_DECOR_SCALE,
@@ -52,6 +59,8 @@ import {
   CAMERA_ATTRIBUTE,
   ENVIRONMENT_ATTRIBUTE,
   RAIN_ATTRIBUTE,
+  WATER_ATTRIBUTE,
+  WATER_READOUT_TICKS,
   ROOM_ATTRIBUTE,
   ROOM_COUNT_ATTRIBUTE,
   ROOM_SELECTION_ATTRIBUTE,
@@ -872,6 +881,111 @@ describe('AquariumHost', () => {
       early.componentInstance.setRain(true);
       early.componentInstance.toggleRain();
       expect(early.componentInstance.rain()).toBe(false);
+      early.destroy();
+    });
+  });
+
+  describe('eau (#207)', () => {
+    const host = () => fixture.componentInstance;
+    const waterAttr = () => (fixture.nativeElement as HTMLElement).getAttribute(WATER_ATTRIBUTE);
+    const viewOf = (h: AquariumHost) => (h as unknown as { view: AquariumView }).view;
+
+    it('relevé exposé au démarrage : eau saine, bonne, eau claire', async () => {
+      await create('?seed=42');
+      expect(host().water()).toEqual({
+        quality: 'bonne',
+        temperature: 25,
+        target: 25,
+        ammonia: 0,
+        nitrite: 0,
+        nitrate: 0,
+      });
+      expect(waterAttr()).toBe('bonne;25;25;0;0;0');
+      expect(viewOf(host()).waterTurbidity).toBe(0);
+    });
+
+    it('changer l’eau : retire une part des nitrates, relevé et sauvegarde suivent', async () => {
+      await create('?seed=42');
+      const world = host().world as unknown as { water: object };
+      world.water = { ...sampleWater('tropical', 'mauvaise') };
+      const expected = changeWorldWater(structuredClone(host().world!)).water;
+      host().changeWater();
+      expect(host().world!.water).toEqual(expected);
+      expect(host().water().nitrate).toBe(35);
+      expect(host().water().quality).toBe('a-surveiller');
+      const saved = parseWorld(saveStorage!.getItem(SAVE_STORAGE_KEY)!);
+      expect(saved.ok && saved.world.water.nitrate).toBe(35);
+    });
+
+    it('eau mauvaise : l’eau se trouble, puis s’éclaircit après des changements d’eau', async () => {
+      await create('?seed=42');
+      const world = host().world as unknown as { water: object };
+      world.water = { ...sampleWater('tropical', 'mauvaise') };
+      host().changeWater();
+      host().changeWater();
+      expect(viewOf(host()).waterTurbidity).toBe(0);
+      world.water = { ...sampleWater('tropical', 'mauvaise') };
+      host().changeWater();
+      // 50 × 0,7 = 35 : à surveiller, pas de trouble ; remis à 50 sans passer par l'hôte, le
+      // relevé suit à la boucle suivante.
+      world.water = { ...sampleWater('tropical', 'mauvaise') };
+      setCanvasSize(800, 600);
+      for (let t = 0; t <= 2000; t += 100) {
+        frames.flush(t);
+      }
+      expect(host().world!.tick).toBeGreaterThanOrEqual(WATER_READOUT_TICKS);
+      expect(host().water().quality).toBe('mauvaise');
+      expect(viewOf(host()).waterTurbidity).toBe(1);
+    });
+
+    it('chauffage : consigne réglée, enregistrée et restaurée ; hors bornes ignorée', async () => {
+      await create();
+      host().setHeater(28.04);
+      expect(host().world!.water.heater).toBe(28);
+      expect(host().water().target).toBe(28);
+      host().setHeater(50);
+      host().setHeater(Number.NaN);
+      expect(host().world!.water.heater).toBe(28);
+      fixture.destroy();
+      await create();
+      expect(host().world!.water.heater).toBe(28);
+      expect(host().water().target).toBe(28);
+      expect(waterAttr()).toBe('bonne;25;28;0;0;0');
+    });
+
+    it('eau= en capture : eau d’exemple, troublée si mauvaise ; boutons sans effet', async () => {
+      await create('?capture=1&seed=42&eau=mauvaise');
+      expect(host().world!.water.nitrate).toBe(50);
+      expect(host().water().quality).toBe('mauvaise');
+      expect(viewOf(host()).waterTurbidity).toBe(1);
+      host().changeWater();
+      host().setHeater(30);
+      expect(host().world!.water).toEqual(sampleWater('tropical', 'mauvaise'));
+      fixture.destroy();
+      for (const search of ['?capture=1&seed=42&eau=autre', '?capture=1&seed=42']) {
+        await create(search);
+        expect(host().world).toEqual(createDefaultWorld(42));
+        expect(viewOf(host()).waterTurbidity).toBe(0);
+        fixture.destroy();
+      }
+      // Hors capture, `eau=` est ignoré.
+      await create('?seed=42&eau=mauvaise');
+      expect(host().water().quality).toBe('bonne');
+    });
+
+    it('changer d’environnement : eau saine du nouvel environnement', async () => {
+      await create('?seed=42');
+      host().setHeater(30);
+      host().setEnvironment('bassin');
+      expect(host().water().target).toBe(18);
+      expect(host().water().quality).toBe('bonne');
+      expect(setWorldHeater(createDefaultWorld(42, 'bassin'), 30).water.heater).toBe(30);
+    });
+
+    it('sans effet avant le démarrage', () => {
+      const early = TestBed.createComponent(AquariumHost);
+      expect(() => early.componentInstance.changeWater()).not.toThrow();
+      expect(() => early.componentInstance.setHeater(26)).not.toThrow();
       early.destroy();
     });
   });
