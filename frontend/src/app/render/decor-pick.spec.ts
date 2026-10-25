@@ -1,5 +1,5 @@
 import { SAND_THICKNESS, DEFAULT_TANK } from '../sim/tank';
-import { sandPlanePoint, sandPoint } from './decor-pick';
+import { planePoint, sandHit, sandPlanePoint, sandPoint } from './decor-pick';
 
 describe('sandPoint', () => {
   it('trouve le point visé sur le sable, vu de biais comme d’aplomb', () => {
@@ -36,5 +36,36 @@ describe('sandPlanePoint', () => {
     expect(sandPlanePoint([0, 1, 0], [1, 0, 0])).toBeNull();
     expect(sandPlanePoint([0, 1, 0], [0, 1, 0])).toBeNull();
     expect(sandPlanePoint([0, 1, 0], [0, Number.NaN, 0])).toBeNull();
+  });
+});
+
+describe('sandHit (#202)', () => {
+  it('donne le point de sandPoint et sa distance le long du rayon', () => {
+    const origin: [number, number, number] = [0, 1, 1];
+    const direction: [number, number, number] = [0.1, -(1 - SAND_THICKNESS), -1];
+    const hit = sandHit(origin, direction, DEFAULT_TANK)!;
+    const point = sandPoint(origin, direction, DEFAULT_TANK)!;
+    expect({ x: hit.x, z: hit.z }).toEqual(point);
+    expect(hit.distance).toBeCloseTo(1, 12);
+    // Direction deux fois plus longue : distance moitié (même unité que la pièce visée).
+    const doubled = sandHit(origin, [0.2, -2 * (1 - SAND_THICKNESS), -2], DEFAULT_TANK)!;
+    expect(doubled.distance).toBeCloseTo(0.5, 12);
+    expect(sandHit([0, 2, 0], [0, -1, 0], DEFAULT_TANK)!.distance).toBeCloseTo(
+      2 - SAND_THICKNESS,
+      12,
+    );
+  });
+
+  it('rien quand sandPoint ne trouve rien', () => {
+    expect(sandHit([0, 1, 0], [1, 0, 0], DEFAULT_TANK)).toBeNull();
+    expect(sandHit([0, 1, 0], [0, 1, 0], DEFAULT_TANK)).toBeNull();
+    expect(sandHit([DEFAULT_TANK.width, 1, 0], [0, -1, 0], DEFAULT_TANK)).toBeNull();
+  });
+});
+
+describe('planePoint', () => {
+  it('ne renvoie que (x, z)', () => {
+    expect(planePoint([0.3, 2, -0.4], [0, -1, 0], 0.5)).toEqual({ x: 0.3, z: -0.4 });
+    expect(planePoint([0, 1, 0], [0, 1, 0], 0.5)).toBeNull();
   });
 });

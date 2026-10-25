@@ -179,6 +179,10 @@ export class RoomLayer implements SceneLayer {
    * que l'indice existe (aperçu d'un glissement).
    */
   setSelected(index: number | null): void {
+    // `setRoom` reconstruit déjà la coque de la sélection courante : même indice, rien à refaire.
+    if (index === this.selected) {
+      return;
+    }
     this.selected = index;
     this.buildHull();
   }

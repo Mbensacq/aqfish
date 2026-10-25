@@ -1668,6 +1668,21 @@ describe('AquariumHost', () => {
       expect(host().roomSelection()).toBeNull();
     });
 
+    it('sélectionner un élément de la pièce ne pose sa sélection qu’une fois (#202)', async () => {
+      await editRoom();
+      host().setDecorTool('etagere');
+      host().editAt({ kind: 'floor', x: SHELF.x, z: SHELF.z });
+      host().editAt({ kind: 'item', index: 1 });
+      expect(host().decorSelection()).toBe(1);
+      const view = viewOf(host());
+      const setRoomSelection = vi.spyOn(view, 'setRoomSelection');
+      host().selectRoomItem(0);
+      expect(setRoomSelection.mock.calls).toEqual([[0]]);
+      expect(host().decorSelection()).toBeNull();
+      expect(view.decorSelection).toBeNull();
+      expect(view.roomSelection).toBe(0);
+    });
+
     it('tourne d’un quart de tour, sans changer la taille ; supprimer fait retomber', async () => {
       await editRoom();
       host().setDecorTool('etagere');

@@ -43,7 +43,7 @@ import { clampRoom, DEFAULT_ROOM, isRoomAvailable, type Room } from '../sim/room
 import { SAND_THICKNESS } from '../sim/tank';
 import { BubbleLayer } from './bubble-layer';
 import { DecorLayer } from './decor-layer';
-import { planePoint, sandPoint, type DecorPick } from './decor-pick';
+import { planePoint, sandHit, type DecorPick } from './decor-pick';
 import { pickRoom } from './room-pick';
 import { type EffectLayer, type SceneLayer, updateVisibleEffects } from './effect-layer';
 import { FloatingLeafLayer } from './floating-leaf-layer';
@@ -615,13 +615,12 @@ export class AquariumView {
     const { origin: o, direction: d } = this.raycaster.ray;
     const origin: Vec3 = [o.x, o.y, o.z];
     const direction: Vec3 = [d.x, d.y, d.z];
-    const point = sandPoint(origin, direction, this.world.dimensions);
+    const point = sandHit(origin, direction, this.world.dimensions);
     // Pièce (#188) : élément ou parquet visé, sauf derrière le sable du bac.
     const room = this.roomLayer.built
       ? pickRoom(origin, direction, this.world.dimensions, this.room)
       : null;
-    const sandDistance = point ? (SAND_THICKNESS - origin[1]) / direction[1] : Infinity;
-    if (room && room.distance < sandDistance) {
+    if (room && room.distance < (point?.distance ?? Infinity)) {
       return room.kind === 'floor'
         ? { kind: 'floor', x: room.x, z: room.z }
         : { kind: 'room-item', index: room.index, x: room.x, z: room.z };

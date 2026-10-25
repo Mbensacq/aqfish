@@ -157,4 +157,37 @@ describe('RoomLayer (#187)', () => {
     layer.setResolution(0, 0);
     layer.dispose();
   });
+
+  it('même indice sélectionné : coque gardée, reconstruite seulement avec la pièce (#202)', () => {
+    const room: Room = {
+      ...SHOWN,
+      items: [
+        { kind: 'etagere', x: -1.25, z: -0.17, quarter: 0 },
+        { kind: 'plante-pot', x: -1.4, z: -0.17, quarter: 0, elevation: 0.8 },
+      ],
+    };
+    const layer = new RoomLayer();
+    layer.setRoom(DEFAULT_TANK, room, true);
+    const selection = () => layer.object.getObjectByName('piece-selection') as Mesh | undefined;
+    layer.setSelected(1);
+    const first = selection();
+    expect(first).toBeDefined();
+    const dispose = vi.spyOn(first!.geometry, 'dispose');
+    layer.setSelected(1);
+    expect(selection()).toBe(first);
+    expect(dispose).not.toHaveBeenCalled();
+    // Pièce reconstruite (aperçu d'un glissement) : nouvelle coque, à jour.
+    layer.setRoom(DEFAULT_TANK, room, true);
+    const rebuilt = selection();
+    expect(rebuilt).toBeDefined();
+    expect(rebuilt).not.toBe(first);
+    expect(dispose).toHaveBeenCalledTimes(1);
+    layer.setSelected(1);
+    expect(selection()).toBe(rebuilt);
+    // Un autre indice reconstruit la coque.
+    layer.setSelected(0);
+    expect(selection()).not.toBe(rebuilt);
+    expect(layer.selectedIndex).toBe(0);
+    layer.dispose();
+  });
 });

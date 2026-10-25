@@ -37,15 +37,8 @@ export function planePoint(
   direction: Vec3,
   y: number,
 ): { x: number; z: number } | null {
-  const dy = direction[1];
-  if (Math.abs(dy) < 1e-9) {
-    return null;
-  }
-  const t = (y - origin[1]) / dy;
-  if (!(t > 0) || !Number.isFinite(t)) {
-    return null;
-  }
-  return { x: origin[0] + t * direction[0], z: origin[2] + t * direction[2] };
+  const hit = planeHit(origin, direction, y);
+  return hit && { x: hit.x, z: hit.z };
 }
 
 /**
@@ -58,6 +51,36 @@ export function sandPoint(
   direction: Vec3,
   dims: TankDimensions,
 ): { x: number; z: number } | null {
-  const p = sandPlanePoint(origin, direction);
-  return p && Math.abs(p.x) <= dims.width / 2 && Math.abs(p.z) <= dims.depth / 2 ? p : null;
+  const hit = sandHit(origin, direction, dims);
+  return hit && { x: hit.x, z: hit.z };
+}
+
+/**
+ * Comme `sandPoint`, avec la distance `distance` du point à `origin` le long du rayon (en
+ * longueurs de `direction`) : comparée à celle de la pièce visée (#188, #202).
+ */
+export function sandHit(
+  origin: Vec3,
+  direction: Vec3,
+  dims: TankDimensions,
+): { x: number; z: number; distance: number } | null {
+  const hit = planeHit(origin, direction, SAND_THICKNESS);
+  return hit && Math.abs(hit.x) <= dims.width / 2 && Math.abs(hit.z) <= dims.depth / 2 ? hit : null;
+}
+
+/** Intersection du rayon et du plan Y = `y`, avec sa distance ; `null` sans intersection. */
+function planeHit(
+  origin: Vec3,
+  direction: Vec3,
+  y: number,
+): { x: number; z: number; distance: number } | null {
+  const dy = direction[1];
+  if (Math.abs(dy) < 1e-9) {
+    return null;
+  }
+  const t = (y - origin[1]) / dy;
+  if (!(t > 0) || !Number.isFinite(t)) {
+    return null;
+  }
+  return { x: origin[0] + t * direction[0], z: origin[2] + t * direction[2], distance: t };
 }

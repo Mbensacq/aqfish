@@ -966,12 +966,17 @@ export class AquariumHost {
     if (index !== null && (!valid || !this.decorEditing())) {
       return;
     }
-    view.setDecorSelection(index);
-    this.exposeDecorSelection(index);
+    this.showDecorSelection(view, index);
     // Une seule sélection à la fois : celle de la pièce est levée (#188).
     view.setRoomSelection(null);
     this.exposeRoomSelection(null);
     this.scheduleFrame();
+  }
+
+  /** Dessine et expose la sélection du décor `index` (sans toucher à celle de la pièce). */
+  private showDecorSelection(view: AquariumView, index: number | null): void {
+    view.setDecorSelection(index);
+    this.exposeDecorSelection(index);
   }
 
   /**
@@ -988,9 +993,13 @@ export class AquariumHost {
     if (index !== null && !(this.decorEditing() && index >= 0 && index < items.length)) {
       return;
     }
-    this.selectDecor(null);
+    // Lève la sélection du décor sans passer par `selectDecor`, qui lèverait aussi celle de
+    // la pièce : la coque de contour serait détruite puis reconstruite (#202).
+    this.decorRefused.set(false);
+    this.showDecorSelection(view, null);
     view.setRoomSelection(index);
     this.exposeRoomSelection(index);
+    this.scheduleFrame();
   }
 
   /**
