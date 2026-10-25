@@ -39,10 +39,12 @@ import { flowerOpenness, lilyPadLayout } from '../sim/lily-pads';
 import { seededFeatures } from '../sim/world';
 import type { DecorItem } from '../sim/decor';
 import type { FoodPellet } from '../sim/food';
-import { isRoomAvailable, type Room } from '../sim/room';
+import { clampRoom, DEFAULT_ROOM, isRoomAvailable, type Room } from '../sim/room';
+import { SAND_THICKNESS } from '../sim/tank';
 import { BubbleLayer } from './bubble-layer';
 import { DecorLayer } from './decor-layer';
-import { sandPlanePoint, sandPoint, type DecorPick } from './decor-pick';
+import { planePoint, sandPoint, type DecorPick } from './decor-pick';
+import { pickRoom } from './room-pick';
 import { type EffectLayer, type SceneLayer, updateVisibleEffects } from './effect-layer';
 import { FloatingLeafLayer } from './floating-leaf-layer';
 import { FishLayer, MAX_FISH_PER_SPECIES } from './fish-layer';
@@ -189,9 +191,16 @@ export class AquariumView {
   /** Glissement du décor possible (mode édition, `setDecorDragEnabled`). */
   private decorDragEnabled = false;
   private decorDragListener: DecorDragListener | null = null;
-  /** Glissement en cours d'un élément du décor (`null` sinon). */
+  /** Abonné au glissement d'un élément de la pièce (#188, `onRoomDrag`). */
+  private roomDragListener: DecorDragListener | null = null;
+  /** Pièce construite par `setRoom` (choix à la souris), hors aperçu d'un glissement. */
+  private room: Room = DEFAULT_ROOM;
+  /** Glissement en cours d'un élément du décor ou de la pièce (`null` sinon). */
   private drag: {
     readonly id: number;
+    /** Élément du décor, ou de la pièce (#188), glissé sur le plan de sa base. */
+    readonly target: 'decor' | 'room';
+    readonly planeY: number;
     readonly index: number;
     readonly offsetX: number;
     readonly offsetZ: number;
@@ -216,13 +225,24 @@ export class AquariumView {
       return;
     }
     const pick = this.pickDecor(event.clientX, event.clientY);
-    const center = pick?.kind === 'item' ? this.decorLayer.itemPosition(pick.index) : null;
-    if (pick?.kind !== 'item' || !center) {
+    if (pick?.kind !== 'item' && pick?.kind !== 'room-item') {
       return;
     }
-    const grab = this.sandPlaneAt(event.clientX, event.clientY);
+    const room = pick.kind === 'room-item' ? this.room.items?.[pick.index] : undefined;
+    const center = pick.kind === 'item' ? this.decorLayer.itemPosition(pick.index) : room;
+    const roomListener = this.roomDragListener;
+    if (!center || (pick.kind === 'room-item' && !(room && roomListener))) {
+      return;
+    }
+    const target = pick.kind === 'item' ? 'decor' : 'room';
+    const planeY = room
+      ? (room.elevation ?? 0) - clampRoom(this.room).cabinetHeight
+      : SAND_THICKNESS;
+    const grab = this.planeAt(event.clientX, event.clientY, planeY);
     this.drag = {
       id: event.pointerId,
+      target,
+      planeY,
       index: pick.index,
       offsetX: grab ? center.x - grab.x : 0,
       offsetZ: grab ? center.z - grab.z : 0,
@@ -236,7 +256,7 @@ export class AquariumView {
     } catch {
       // Pointeur déjà relâché : le glissement s'arrêtera au prochain relâchement.
     }
-    listener.start(pick.index);
+    (target === 'room' ? (roomListener as DecorDragListener) : listener).start(pick.index);
   };
   private readonly onDragPointerMove = (event: PointerEvent) => {
     const drag = this.drag;
@@ -247,9 +267,9 @@ export class AquariumView {
       return;
     }
     drag.moved = true;
-    const p = this.sandPlaneAt(event.clientX, event.clientY);
+    const p = this.planeAt(event.clientX, event.clientY, drag.planeY);
     if (p) {
-      this.decorDragListener?.move(drag.index, p.x + drag.offsetX, p.z + drag.offsetZ);
+      this.dragListener(drag.target)?.move(drag.index, p.x + drag.offsetX, p.z + drag.offsetZ);
     }
   };
   private readonly onPointerDown = (event: PointerEvent) => {
@@ -592,17 +612,28 @@ export class AquariumView {
     if (index !== null) {
       return { kind: 'item', index };
     }
-    const { origin, direction } = this.raycaster.ray;
-    const point = sandPoint(
-      [origin.x, origin.y, origin.z],
-      [direction.x, direction.y, direction.z],
-      this.world.dimensions,
-    );
+    const { origin: o, direction: d } = this.raycaster.ray;
+    const origin: Vec3 = [o.x, o.y, o.z];
+    const direction: Vec3 = [d.x, d.y, d.z];
+    const point = sandPoint(origin, direction, this.world.dimensions);
+    // Pièce (#188) : élément ou parquet visé, sauf derrière le sable du bac.
+    const room = this.roomLayer.built
+      ? pickRoom(origin, direction, this.world.dimensions, this.room)
+      : null;
+    const sandDistance = point ? (SAND_THICKNESS - origin[1]) / direction[1] : Infinity;
+    if (room && room.distance < sandDistance) {
+      return room.kind === 'floor'
+        ? { kind: 'floor', x: room.x, z: room.z }
+        : { kind: 'room-item', index: room.index, x: room.x, z: room.z };
+    }
     return point ? { kind: 'sand', x: point.x, z: point.z } : null;
   }
 
-  /** Point du plan du sable (non borné) sous le point de l'écran, `null` hors du canvas. */
-  private sandPlaneAt(clientX: number, clientY: number): { x: number; z: number } | null {
+  /**
+   * Point du plan horizontal Y = `y` (non borné) sous le point de l'écran, `null` hors du
+   * canvas : plan du sable pour le décor, de la base de l'élément pour la pièce.
+   */
+  private planeAt(clientX: number, clientY: number, y: number): { x: number; z: number } | null {
     const ndc = toNormalizedDevice(clientX, clientY, this.canvas.getBoundingClientRect());
     if (!ndc) {
       return null;
@@ -610,7 +641,13 @@ export class AquariumView {
     this.camera.updateMatrixWorld();
     this.raycaster.setFromCamera(this.pointerNdc.set(ndc.x, ndc.y), this.camera);
     const { origin, direction } = this.raycaster.ray;
-    return sandPlanePoint([origin.x, origin.y, origin.z], [direction.x, direction.y, direction.z]);
+    const o: Vec3 = [origin.x, origin.y, origin.z];
+    const d: Vec3 = [direction.x, direction.y, direction.z];
+    return planePoint(o, d, y);
+  }
+
+  private dragListener(target: 'decor' | 'room'): DecorDragListener | null {
+    return target === 'room' ? this.roomDragListener : this.decorDragListener;
   }
 
   /**
@@ -630,6 +667,19 @@ export class AquariumView {
     return () => {
       if (this.decorDragListener === listener) {
         this.decorDragListener = null;
+      }
+    };
+  }
+
+  /**
+   * Abonnement (unique) au glissement d'un élément de la pièce (#188) : mêmes appels que
+   * `onDecorDrag`, (x, z) visés sur le plan de la base de l'élément. Renvoie le désabonnement.
+   */
+  onRoomDrag(listener: DecorDragListener): () => void {
+    this.roomDragListener = listener;
+    return () => {
+      if (this.roomDragListener === listener) {
+        this.roomDragListener = null;
       }
     };
   }
@@ -670,7 +720,7 @@ export class AquariumView {
     } catch {
       // Capture déjà relâchée par le navigateur.
     }
-    this.decorDragListener?.end(drag.index, commit && drag.moved);
+    this.dragListener(drag.target)?.end(drag.index, commit && drag.moved);
   }
 
   /** Sélectionne l'élément d'indice `index` de `World.decor` (contour clair), ou aucun. */
@@ -818,12 +868,35 @@ export class AquariumView {
    */
   setRoom(room: Room): void {
     if (!this.disposed) {
+      this.room = room;
+      this.previewRoom(room);
+    }
+  }
+
+  /**
+   * Aperçu du glissement d'un élément de la pièce (#188) : `room` dessinée sans changer celle
+   * du choix à la souris (`setRoom`), sélection gardée.
+   */
+  previewRoom(room: Room): void {
+    if (!this.disposed) {
       this.roomLayer.setRoom(
         this.world.dimensions,
         room,
         isRoomAvailable(this.world.environment.id),
       );
     }
+  }
+
+  /** Sélectionne l'élément d'indice `index` de la pièce (contour clair, #188), ou aucun. */
+  setRoomSelection(index: number | null): void {
+    if (!this.disposed) {
+      this.roomLayer.setSelected(index);
+    }
+  }
+
+  /** Indice de l'élément de la pièce sélectionné et dessiné, `null` sinon (tests). */
+  get roomSelection(): number | null {
+    return this.roomLayer.selectedIndex;
   }
 
   /** Vrai si la pièce est construite (tests). */
@@ -969,6 +1042,7 @@ export class AquariumView {
     this.rainLayer.setObliqueView(isObliqueView(this.cameraPosition(), this.cameraTarget()));
     if (this.currentFilter === 'aucun') {
       this.decorLayer.setResolution(this.width * this.pixelRatio, this.height * this.pixelRatio);
+      this.roomLayer.setResolution(this.width * this.pixelRatio, this.height * this.pixelRatio);
       this.lilyPadLayer.setResolution(this.width * this.pixelRatio, this.height * this.pixelRatio);
       this.floatingLeafLayer.setResolution(
         this.width * this.pixelRatio,
@@ -982,6 +1056,7 @@ export class AquariumView {
       return true;
     }
     this.decorLayer.setResolution(this.targetSize.width, this.targetSize.height);
+    this.roomLayer.setResolution(this.targetSize.width, this.targetSize.height);
     this.lilyPadLayer.setResolution(this.targetSize.width, this.targetSize.height);
     this.floatingLeafLayer.setResolution(this.targetSize.width, this.targetSize.height);
     this.bubbleLayer.setPointScale(1);
@@ -1034,6 +1109,7 @@ export class AquariumView {
     this.canvas.removeEventListener('pointermove', this.onDragPointerMove);
     this.drag = null;
     this.decorDragListener = null;
+    this.roomDragListener = null;
     this.surfaceClickListeners.clear();
     this.canvasClickListeners.clear();
     this.controls.dispose();

@@ -6,11 +6,13 @@ import {
   MeshBasicMaterial,
   MeshLambertMaterial,
   Object3D,
+  Vector2,
 } from 'three';
 
 import { furnitureBlocks } from '../sim/room-furniture';
 import { roomBlocks, roomVisibility, type Room, type RoomBlock, type RoomPart } from '../sim/room';
 import type { TankDimensions } from '../sim/tank';
+import { createOutlineMaterial, SELECTION_COLOR, SELECTION_WIDTH_PX } from './decor-layer';
 import type { SceneLayer } from './effect-layer';
 import { PALETTE } from './palette';
 import { FACES } from './rock-model';
@@ -89,6 +91,27 @@ export function buildRoomMesh(blocks: readonly RoomBlock[]): RoomMeshData {
   return { positions, normals, colors };
 }
 
+/**
+ * Coque de contour des blocs `blocks` (« inverted hull » du décor, `createOutlineMaterial`) :
+ * les six faces de chaque bloc, normales aux coins dirigées vers l'extérieur du bloc (somme
+ * des trois faces), pour le gonflement à l'écran. Contour de sélection d'un meuble (#188).
+ */
+export function buildRoomHull(blocks: readonly RoomBlock[]): RoomMeshData {
+  const data = buildRoomMesh(blocks);
+  const { positions, normals } = data;
+  const r = 1 / Math.sqrt(3);
+  for (let b = 0; b < blocks.length; b++) {
+    const { minX, maxX, minY, maxY, minZ, maxZ } = blocks[b].box;
+    const start = b * FACES.length * 6 * 3;
+    for (let n = start; n < start + FACES.length * 6 * 3; n += 3) {
+      normals[n] = positions[n] > (minX + maxX) / 2 ? r : -r;
+      normals[n + 1] = positions[n + 1] > (minY + maxY) / 2 ? r : -r;
+      normals[n + 2] = positions[n + 2] > (minZ + maxZ) / 2 ? r : -r;
+    }
+  }
+  return data;
+}
+
 function createGeometry(data: RoomMeshData): BufferGeometry {
   const geometry = new BufferGeometry();
   geometry.setAttribute('position', new BufferAttribute(data.positions, 3));
@@ -107,9 +130,14 @@ export class RoomLayer implements SceneLayer {
    * fond de la scène ; plus clair, l'eau vue devant lui virait au gris (`docs/PIEGES.md`).
    */
   private readonly wallMaterial = new MeshBasicMaterial({ vertexColors: true });
+  /** Contour de l'élément sélectionné (#188), celui de la sélection du décor. */
+  private readonly selectionMaterial = createOutlineMaterial(SELECTION_COLOR, SELECTION_WIDTH_PX);
   private wall: Mesh | null = null;
   private rest: Mesh | null = null;
+  private hull: Mesh | null = null;
   private dims: TankDimensions | null = null;
+  private room: Room | null = null;
+  private selected: number | null = null;
   private blockCount = 0;
 
   constructor() {
@@ -141,6 +169,49 @@ export class RoomLayer implements SceneLayer {
     this.rest.name = 'piece-sol-meuble';
     this.object.add(this.rest, this.wall);
     this.object.visible = true;
+    this.room = room;
+    this.buildHull();
+  }
+
+  /**
+   * Sélectionne l'élément d'indice `index` de `room.items` (contour clair et épais, comme la
+   * sélection du décor), ou aucun avec `null` ; gardée quand la pièce est reconstruite tant
+   * que l'indice existe (aperçu d'un glissement).
+   */
+  setSelected(index: number | null): void {
+    this.selected = index;
+    this.buildHull();
+  }
+
+  /** Indice de l'élément sélectionné s'il est dessiné, `null` sinon (tests). */
+  get selectedIndex(): number | null {
+    return this.hull ? this.selected : null;
+  }
+
+  /** Taille de la cible de rendu, en pixels : épaisseur du contour de sélection. */
+  setResolution(width: number, height: number): void {
+    (this.selectionMaterial.uniforms['uResolution'].value as Vector2).set(
+      Math.max(1, width),
+      Math.max(1, height),
+    );
+  }
+
+  private buildHull(): void {
+    if (this.hull) {
+      this.object.remove(this.hull);
+      this.hull.geometry.dispose();
+      this.hull = null;
+    }
+    const blocks =
+      this.room && this.selected !== null && this.blockCount > 0
+        ? furnitureBlocks(this.room, this.selected)
+        : [];
+    if (blocks.length === 0) {
+      return;
+    }
+    this.hull = new Mesh(createGeometry(buildRoomHull(blocks)), this.selectionMaterial);
+    this.hull.name = 'piece-selection';
+    this.object.add(this.hull);
   }
 
   /** Masque ce qui cacherait le bac depuis une caméra à la hauteur `y` et à la cote `z`. */
@@ -172,10 +243,11 @@ export class RoomLayer implements SceneLayer {
     this.clear();
     this.material.dispose();
     this.wallMaterial.dispose();
+    this.selectionMaterial.dispose();
   }
 
   private clear(): void {
-    for (const mesh of [this.wall, this.rest]) {
+    for (const mesh of [this.wall, this.rest, this.hull]) {
       if (mesh) {
         this.object.remove(mesh);
         mesh.geometry.dispose();
@@ -183,6 +255,8 @@ export class RoomLayer implements SceneLayer {
     }
     this.wall = null;
     this.rest = null;
+    this.hull = null;
+    this.room = null;
     this.dims = null;
     this.blockCount = 0;
     this.object.visible = false;

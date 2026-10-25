@@ -31,6 +31,7 @@ describe('parseCaptureParams', () => {
       rain: false,
       room: false,
       editSelection: null,
+      editRoomSelection: null,
       woods: [],
       tank: null,
       furniture: [],
@@ -107,6 +108,14 @@ describe('parseCaptureParams', () => {
     expect(parseCaptureParams('').editSelection).toBeNull();
     for (const bad of ['', '-1', '1.5', '1000', 'a', ' 2', '0x2']) {
       expect(parseCaptureParams(`?edition=${encodeURIComponent(bad)}`).editSelection).toBeNull();
+    }
+  });
+
+  it('lit l’élément de la pièce sélectionné : edition-meuble=<indice> (#188)', () => {
+    expect(parseCaptureParams('?edition-meuble=1').editRoomSelection).toBe(1);
+    expect(parseCaptureParams('?edition=1').editRoomSelection).toBeNull();
+    for (const bad of ['', '-1', '1000', 'a']) {
+      expect(parseCaptureParams(`?edition-meuble=${bad}`).editRoomSelection).toBeNull();
     }
   });
 

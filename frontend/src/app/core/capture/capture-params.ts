@@ -43,6 +43,10 @@
  * édition du décor avec l'élément d'indice donné de `World.decor` sélectionné (entier de 0 à
  * 999) ; absent, invalide ou hors du décor, aucune sélection (séries existantes inchangées).
  *
+ * Paramètre facultatif `edition-meuble=<indice>` (issue #188) : en mode capture, avec
+ * `piece=1`, montre le mode édition avec l'élément d'indice donné de la pièce (`meubles=`)
+ * sélectionné (entier de 0 à 999) ; absent, invalide ou hors de la pièce, aucune sélection.
+ *
  * Paramètre facultatif `bois=` (issue #169) : en mode capture, bois flottés ajoutés au décor
  * par défaut de l'environnement, séparés par des virgules ; chacun `x:z:rotation:echelle:graine`
  * (mètres, radians, graine entière). Exemple : `bois=0.05:0.02:0.3:1:7`. Entrée mal formée
@@ -104,6 +108,8 @@ export interface CaptureParams {
   readonly room: boolean;
   /** Élément du décor sélectionné par `edition=` (issue #167) ; `null` si absent ou invalide. */
   readonly editSelection: number | null;
+  /** Élément de la pièce sélectionné par `edition-meuble=` (issue #188) ; `null` sinon. */
+  readonly editRoomSelection: number | null;
   /** Bois flottés ajoutés au décor par `bois=` (issue #169), vide si absent. */
   readonly woods: readonly CaptureWood[];
   /** Dimensions du bac de `bac=` (issue #171), en mètres ; `null` si absent ou mal formé. */
@@ -182,6 +188,7 @@ export const DEFAULT_CAPTURE_PARAMS: CaptureParams = {
   rain: false,
   room: false,
   editSelection: null,
+  editRoomSelection: null,
   woods: [],
   furniture: [],
   tank: null,
@@ -225,6 +232,7 @@ export function parseCaptureParams(search: string): CaptureParams {
     rain: params.get('pluie') === '1',
     room: params.get('piece') === '1',
     editSelection: parseEditSelection(params.get('edition')),
+    editRoomSelection: parseEditSelection(params.get('edition-meuble')),
     woods: parseWoods(params.get('bois')),
     tank: parseTank(params.get('bac')),
     furniture: parseFurniture(params.get('meubles')),
@@ -307,7 +315,7 @@ function parseTank(raw: string | null): CaptureTank | null {
   return { width, height, depth };
 }
 
-/** Indice de `edition=` : entier décimal de 0 à 999, sinon `null`. */
+/** Indice de `edition=` ou `edition-meuble=` : entier décimal de 0 à 999, sinon `null`. */
 function parseEditSelection(raw: string | null): number | null {
   return raw !== null && /^\d{1,3}$/.test(raw) ? Number(raw) : null;
 }

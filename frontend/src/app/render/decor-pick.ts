@@ -6,10 +6,15 @@ import type { Vec3 } from './camera-presets';
  * choix d'un élément touché passe par `DecorLayer.pickItem`).
  */
 
-/** Résultat d'un clic en mode édition : un élément du décor, un point du sable, ou rien. */
+/**
+ * Résultat d'un clic en mode édition : un élément du décor, un point du sable, un élément de
+ * la pièce (avec le point visé sur lui, #188), un point du parquet, ou rien.
+ */
 export type DecorPick =
   | { readonly kind: 'item'; readonly index: number }
   | { readonly kind: 'sand'; readonly x: number; readonly z: number }
+  | { readonly kind: 'room-item'; readonly index: number; readonly x: number; readonly z: number }
+  | { readonly kind: 'floor'; readonly x: number; readonly z: number }
   | null;
 
 /**
@@ -19,11 +24,24 @@ export type DecorPick =
  * parallèle au plan ou s'en éloigne.
  */
 export function sandPlanePoint(origin: Vec3, direction: Vec3): { x: number; z: number } | null {
+  return planePoint(origin, direction, SAND_THICKNESS);
+}
+
+/**
+ * Point où le rayon (`origin`, `direction`) coupe le plan horizontal Y = `y`, en (x, z), sans
+ * borne : glissement d'un élément de la pièce à la hauteur de sa base (#188). `null` si le
+ * rayon est parallèle au plan ou s'en éloigne.
+ */
+export function planePoint(
+  origin: Vec3,
+  direction: Vec3,
+  y: number,
+): { x: number; z: number } | null {
   const dy = direction[1];
   if (Math.abs(dy) < 1e-9) {
     return null;
   }
-  const t = (SAND_THICKNESS - origin[1]) / dy;
+  const t = (y - origin[1]) / dy;
   if (!(t > 0) || !Number.isFinite(t)) {
     return null;
   }

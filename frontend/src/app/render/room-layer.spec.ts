@@ -1,10 +1,10 @@
 import { Color, Mesh } from 'three';
 
 import { DEFAULT_ROOM, roomBlocks, type Room } from '../sim/room';
-import { ROOM_CATALOG } from '../sim/room-furniture';
+import { furnitureBlocks, ROOM_CATALOG } from '../sim/room-furniture';
 import { DEFAULT_TANK } from '../sim/tank';
 import { PALETTE_COLORS } from './palette';
-import { buildRoomMesh, ROOM_COLORS, RoomLayer } from './room-layer';
+import { buildRoomHull, buildRoomMesh, ROOM_COLORS, RoomLayer } from './room-layer';
 
 const SHOWN: Room = { shown: true, cabinetHeight: 0.75 };
 
@@ -110,5 +110,51 @@ describe('RoomLayer (#187)', () => {
     expect(layer.wallVisible).toBe(true);
     layer.dispose();
     expect(layer.built).toBe(false);
+  });
+
+  it('contour de sélection d’un meuble : coque gonflée vers l’extérieur, gardée à la reconstruction', () => {
+    const room: Room = {
+      ...SHOWN,
+      items: [
+        { kind: 'etagere', x: -1.25, z: -0.17, quarter: 0 },
+        { kind: 'plante-pot', x: -1.4, z: -0.17, quarter: 0, elevation: 0.8 },
+      ],
+    };
+    const blocks = furnitureBlocks(room, 0);
+    const hull = buildRoomHull(blocks);
+    const box = blocks[0].box;
+    for (let i = 0; i < 36 * 3; i += 3) {
+      const center = [
+        (box.minX + box.maxX) / 2,
+        (box.minY + box.maxY) / 2,
+        (box.minZ + box.maxZ) / 2,
+      ];
+      for (let a = 0; a < 3; a++) {
+        expect(Math.sign(hull.normals[i + a])).toBe(Math.sign(hull.positions[i + a] - center[a]));
+      }
+      expect(Math.hypot(hull.normals[i], hull.normals[i + 1], hull.normals[i + 2])).toBeCloseTo(
+        1,
+        6,
+      );
+    }
+    const layer = new RoomLayer();
+    layer.setRoom(DEFAULT_TANK, room, true);
+    expect(layer.selectedIndex).toBeNull();
+    layer.setSelected(1);
+    expect(layer.selectedIndex).toBe(1);
+    const selection = () => layer.object.getObjectByName('piece-selection') as Mesh;
+    expect(selection().geometry.getAttribute('position').count).toBe(
+      ROOM_CATALOG['plante-pot'].blocks.length * 36,
+    );
+    layer.setRoom(DEFAULT_TANK, { ...room, items: room.items?.slice(0, 1) }, true);
+    expect(layer.selectedIndex).toBeNull();
+    layer.setRoom(DEFAULT_TANK, room, true);
+    expect(layer.selectedIndex).toBe(1);
+    layer.setSelected(null);
+    expect(selection()).toBeUndefined();
+    layer.setRoom(DEFAULT_TANK, room, false);
+    expect(layer.selectedIndex).toBeNull();
+    layer.setResolution(0, 0);
+    layer.dispose();
   });
 });

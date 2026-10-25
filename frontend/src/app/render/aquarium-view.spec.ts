@@ -15,6 +15,7 @@ import {
   type AquariumRenderer,
 } from './aquarium-view';
 import { cameraPresetPose } from './camera-presets';
+import { SAND_THICKNESS } from '../sim/tank';
 import { DECOR_NIGHT_TINT, NIGHT_FLAT_BRIGHTNESS, TONE_PENALTY_OFF } from './night-shade';
 
 /** Double du renderer WebGL qui consigne les appels (jsdom n'a pas WebGL). */
@@ -621,7 +622,7 @@ describe('AquariumView (lancer de rayon du pointeur, #178)', () => {
     });
     const internals = view as unknown as {
       raycaster: { setFromCamera: (coords: unknown, camera: unknown) => void };
-      sandPlaneAt: (x: number, y: number) => { x: number; z: number } | null;
+      planeAt: (x: number, y: number, plane: number) => { x: number; z: number } | null;
     };
     const coords: unknown[] = [];
     const original = internals.raycaster.setFromCamera.bind(internals.raycaster);
@@ -631,8 +632,8 @@ describe('AquariumView (lancer de rayon du pointeur, #178)', () => {
     };
     view.pickDecor(400, 450);
     view.pickDecor(100, 500);
-    expect(internals.sandPlaneAt(420, 460)).not.toBeNull();
-    internals.sandPlaneAt(300, 480);
+    expect(internals.planeAt(420, 460, SAND_THICKNESS)).not.toBeNull();
+    internals.planeAt(300, 480, -0.75);
     expect(coords).toHaveLength(4);
     expect(new Set(coords).size).toBe(1);
     // Le vecteur porte bien le dernier point visé (coordonnées normalisées).
@@ -640,5 +641,66 @@ describe('AquariumView (lancer de rayon du pointeur, #178)', () => {
     expect(last.x).toBeCloseTo(-0.25, 12);
     expect(last.y).toBeCloseTo(-0.6, 12);
     view.dispose();
+  });
+});
+
+describe('AquariumView (choix dans la pièce, #188)', () => {
+  function viewWithRoom(): AquariumView {
+    const canvas = document.createElement('canvas');
+    canvas.getBoundingClientRect = () => new DOMRect(0, 0, 800, 600);
+    Object.defineProperty(canvas, 'clientWidth', { value: 800 });
+    Object.defineProperty(canvas, 'clientHeight', { value: 600 });
+    const view = new AquariumView({
+      canvas,
+      rendererFactory: () => new RecordingRenderer(),
+      pixelRatio: 1,
+      preset: 'three-quarter',
+      interactive: true,
+    });
+    view.renderFrame();
+    view.setRoom({ shown: true, cabinetHeight: 0.75 });
+    return view;
+  }
+
+  it('vise le parquet, puis le meuble posé dessus, ou le sable du bac devant eux', () => {
+    const view = viewWithRoom();
+    // En trois-quarts, le parquet se voit en bas à gauche, le sable au centre.
+    const floor = view.pickDecor(50, 550);
+    if (floor?.kind !== 'floor') {
+      throw new Error(`parquet attendu : ${JSON.stringify(floor)}`);
+    }
+    expect(view.pickDecor(500, 450)?.kind).toBe('sand');
+    const x = Math.round(floor.x * 100) / 100;
+    const z = Math.round(floor.z * 100) / 100;
+    view.setRoom({
+      shown: true,
+      cabinetHeight: 0.75,
+      items: [{ kind: 'table-basse', x, z, quarter: 0 }],
+    });
+    const table = view.pickDecor(50, 550);
+    expect(table?.kind).toBe('room-item');
+    expect(table?.kind === 'room-item' && table.index).toBe(0);
+    // Point visé sur le meuble, au-dessus de son emprise.
+    expect(table?.kind === 'room-item' && Math.abs(table.x - x)).toBeLessThan(0.5);
+    // Pièce masquée : rien.
+    view.setRoom({ shown: false, cabinetHeight: 0.75 });
+    expect(view.pickDecor(50, 550)).toBeNull();
+    view.dispose();
+  });
+
+  it('sélection de la pièce : contour dessiné, levé pour un indice inconnu', () => {
+    const view = viewWithRoom();
+    view.setRoom({
+      shown: true,
+      cabinetHeight: 0.75,
+      items: [{ kind: 'table-basse', x: 1.3, z: 0.5, quarter: 0 }],
+    });
+    view.setRoomSelection(0);
+    expect(view.roomSelection).toBe(0);
+    view.previewRoom({ shown: true, cabinetHeight: 0.75 });
+    expect(view.roomSelection).toBeNull();
+    view.setRoomSelection(null);
+    view.dispose();
+    expect(() => view.setRoomSelection(0)).not.toThrow();
   });
 });
