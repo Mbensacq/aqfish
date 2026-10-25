@@ -152,6 +152,9 @@ test.describe('Captures', () => {
       name: 'three-quarter-meubles-edition',
       query: `piece=1&meubles=${SHELF},${PLANT_ON_SHELF},${TABLE},${PLANT_ON_TABLE}&edition-meuble=2`,
     },
+    // Eau mauvaise (#207) : nitrates élevés, eau plus trouble et verdâtre (teinte seulement).
+    { name: 'three-quarter-eau-mauvaise', query: 'eau=mauvaise' },
+    { name: 'top-eau-mauvaise', query: 'eau=mauvaise&camera=top' },
   ] as const;
   for (const { name, query } of DAY_CAPTURES) {
     test(`angle ${name}`, async ({ page }) => {
@@ -305,6 +308,22 @@ test.describe('Captures', () => {
       path: join(OUTPUT_DIR, 'telephone-catalogue.png'),
       animations: 'disabled',
     });
+    expect(errors).toEqual([]);
+  });
+
+  // Section « Eau » (#207) à 390 px : panneau ouvert, section amenée en vue, simulation à
+  // l'arrêt. Capture d'interface, comme ci-dessus.
+  test('téléphone avec la section « Eau » ouverte', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(`/?seed=${SEED}&camera=three-quarter&heure=12`);
+    await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+    await page.getByRole('button', { name: 'Réglages' }).click();
+    await page.getByRole('slider', { name: 'Vitesse de la simulation' }).fill('0');
+    await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-speed', '0');
+    await page.locator('[data-section="eau"]').scrollIntoViewIfNeeded();
+    await page.screenshot({ path: join(OUTPUT_DIR, 'telephone-eau.png'), animations: 'disabled' });
     expect(errors).toEqual([]);
   });
 
