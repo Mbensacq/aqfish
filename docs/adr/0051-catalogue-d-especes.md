@@ -41,11 +41,11 @@ en plus des libellés construits à la main (« Retirer un grenouille », plurie
 
 ## Conséquences
 
-- La ligne d'une espèce passe de 32 à environ 48 px : à 1280 × 720, les boutons de la
-  section « Sauvegarde » ne tiennent plus sans défiler (environ 45 px de trop pour les trois
-  espèces du bac tropical ; #101 les voulait visibles d'emblée). Ils restent atteignables
-  par le défilement interne du panneau. Pistes si c'est gênant : section « Population »
-  repliable, ou panneau plus large sur grand écran (il recouvrirait alors le bac en vue de
-  face). Le panneau masque toujours une bonne partie du bac
-  à 390 px (#95, point 3) : un tiroir bas reste à étudier.
+- La ligne d'une espèce gagne une ligne de nom (12 px). Pour qu'à 1280 × 720 la section
+  « Sauvegarde » tienne toujours sans défiler (#101, test `sauvegarde.spec.ts`), les
+  contrôles d'espèce font 24 px au-delà de 480 px de large (souris) et 28 px en dessous
+  (tactile, test `panneau.spec.ts`). La marge restante est faible : une quatrième espèce
+  dans un environnement ou une nouvelle ligne du panneau demandera une section
+  « Population » repliable ou un autre agencement. Le panneau masque toujours une bonne
+  partie du bac à 390 px (#95, point 3) : un tiroir bas reste à étudier.
 - Ordre au clavier dans une ligne : « − », curseur, champ, « + ».

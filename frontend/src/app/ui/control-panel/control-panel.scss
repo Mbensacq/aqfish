@@ -63,9 +63,9 @@
   // Jamais hors de la fenêtre, à 390 px compris (59 px à gauche, 12 px de marge à droite).
   max-width: calc(100vw - 59px - 12px);
   // Jamais jusqu'à la barre des préréglages (bas : 16 px + une ligne de ~40 px, plus un
-  // écart de 24 px). Depuis le curseur par espèce (#189, ADR 0051), la section « Sauvegarde »
-  // ne tient plus entière à 1280 × 720 (#101) : elle s'atteint par le défilement interne.
-  // Sous 480 px, la barre passe sur deux lignes : voir plus bas.
+  // écart de 24 px) ; à 1280 × 720, la section « Sauvegarde » tient entière (#101, voir les
+  // contrôles d'espèce compacts plus bas, #189). Sous 480 px, la barre passe sur deux lignes :
+  // voir plus bas.
   max-height: calc(100vh - 12px - 38px - 80px);
   overflow-y: auto;
   padding: 6px 12px 10px;
@@ -197,7 +197,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 2px 6px;
+  gap: 0 6px;
 }
 
 .control-panel__count-range {
@@ -212,6 +212,8 @@
 .control-panel__count-label {
   flex: 1 0 100%;
   min-width: 0;
+  font-size: 12px;
+  line-height: 16px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -253,6 +255,20 @@
   padding: 0 4px;
   font-variant-numeric: tabular-nums;
   text-align: center;
+}
+
+// Grand écran, souris : contrôles d'espèce de 24 px, pour qu'à 1280 × 720 la section
+// « Sauvegarde » tienne sans défiler (#101) malgré la ligne du nom (#189). Tactile : 28 px.
+@media (min-width: 481px) {
+  .control-panel__step,
+  .control-panel__number,
+  .control-panel__count-range {
+    height: 24px;
+  }
+
+  .control-panel__step {
+    width: 24px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
