@@ -119,6 +119,8 @@ test.describe('Captures', () => {
     },
     // Population réglée (#69) : 12 néons, 2 guppys, aucun corydora.
     { name: 'three-quarter-population', query: 'population=neon:12,guppy:2,corydora:0' },
+    // Catalogue d'espèces (#189) : plus de corydoras, moins de néons.
+    { name: 'three-quarter-catalogue', query: 'population=neon:4,guppy:6,corydora:14' },
     // Éditeur de décor (#167) : rocher d'indice 2 sélectionné, contour clair.
     { name: 'three-quarter-edition', query: 'edition=2' },
     // Bois flotté à branches (#169) : un bois ajouté au décor par défaut, devant les rochers.
@@ -284,6 +286,25 @@ test.describe('Captures', () => {
     await page.getByRole('slider', { name: 'Vitesse de la simulation' }).fill('0');
     await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-speed', '0');
     await page.screenshot({ path: join(OUTPUT_DIR, 'front-panneau.png'), animations: 'disabled' });
+    expect(errors).toEqual([]);
+  });
+
+  // Catalogue d'espèces (#189) à 390 px : panneau ouvert, section « Population » amenée en
+  // vue (défilement interne), simulation à l'arrêt. Capture d'interface, comme ci-dessus.
+  test('téléphone avec le catalogue d’espèces ouvert', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(`/?seed=${SEED}&camera=three-quarter&heure=12`);
+    await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+    await page.getByRole('button', { name: 'Réglages' }).click();
+    await page.getByRole('slider', { name: 'Vitesse de la simulation' }).fill('0');
+    await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-speed', '0');
+    await page.locator('[data-section="population"]').scrollIntoViewIfNeeded();
+    await page.screenshot({
+      path: join(OUTPUT_DIR, 'telephone-catalogue.png'),
+      animations: 'disabled',
+    });
     expect(errors).toEqual([]);
   });
 
