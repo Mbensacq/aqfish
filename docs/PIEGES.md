@@ -113,6 +113,14 @@ haut de sa section.
 
 ## Tests
 
+- **E2e de la pièce : le parquet est hors de l'écran en trois-quarts** (cycle 66, #188) : à
+  1280 × 720, la vue trois-quarts par défaut cadre le bac ; le parquet devant lui se projette
+  sous le bas de l'écran (y ≈ 1 000 px) et à gauche il est sous le panneau de l'éditeur.
+  Reculer d'abord la caméra à la molette (huit crans), puis chercher un point visible.
+  Projeter beaucoup de points par `projectToScreen` est lent (trois allers-retours avec la
+  page chacun, 5 min pour 120 points) : lire la caméra une fois (`screenProjector`,
+  `e2e/outils-decor.ts`). (2026-10-25)
+
 - **Reconnaître le fragment du moteur physique dans un e2e** (cycle 59, #170) : ses noms de
   fichiers changent (hachage, pré-bundle de `ng serve`). Le chercher par son contenu : la
   variante `compat` de Rapier embarque son WebAssembly en base64, qui commence par `AGFzbQ`
