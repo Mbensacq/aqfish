@@ -54,11 +54,15 @@ sont décalées d'un sprint ; la phase 3 se resserre pour que **v1.0 reste au sp
 
 ## Phase 3 — Le réalisme (sprints 10 à 12)
 
+Mise à jour à la rétro du sprint 10 : l'éditeur (pièce, catalogue d'espèces) a occupé le sprint 10 ;
+« Le vivant » passe au sprint 11, « L'ambiance » et la mise en ligne se resserrent sur le sprint 12
+(les 3 derniers cycles en stabilisation). La forme du bassin (#190) ouvre le sprint 11 en réserve.
+
 | Version | Épopée | Contenu visé |
 |---|---|---|
-| v0.10 | Le vivant | Qualité de l'eau simplifiée (température, cycle de l'azote, filtration, entretien) et bien-être (faim, santé, compatibilité des espèces, comportements selon l'heure) |
-| v0.11 | L'ambiance | Sons d'ambiance, météo étendue, partage par lien, accessibilité, performances |
-| v1.0 | La mise en ligne | Hébergement choisi ; stabilisation : les 3 derniers cycles du sprint sans nouvelle fonctionnalité |
+| v0.10 | L'éditeur (fin) | Livré au sprint 10 : éditeur de la pièce, catalogue d'espèces. Reste : forme du bassin (#190) |
+| v0.11 | Le vivant | Sprint 11 : qualité de l'eau simplifiée (température, cycle de l'azote, filtration, changement d'eau), bien-être (faim, santé), compatibilité des espèces et comportements selon l'heure |
+| v1.0 | L'ambiance et la mise en ligne | Sprint 12 : sons d'ambiance, accessibilité, performances, partage par lien si la sauvegarde locale le permet ; hébergement choisi ; les 3 derniers cycles sans nouvelle fonctionnalité |
 
 ## Après v1.0 — L'aquarium vivant (sprints 13 et suivants)
 
