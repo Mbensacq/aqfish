@@ -52,15 +52,18 @@
       (importRequested)="aquarium.importSave($event)"
       (importRejected)="aquarium.rejectImport($event)"
     />
-    <!-- Éditeur de décor (#167) : en mode édition, à la place de « Réglages ». -->
+    <!-- Éditeur de décor (#167) et de la pièce (#188) : en mode édition, à la place de « Réglages ». -->
     @if (aquarium.decorEditing()) {
       <app-decor-editor
         [tool]="aquarium.decorTool()"
-        [selection]="aquarium.decorSelection()"
+        [selection]="aquarium.decorSelection() ?? aquarium.roomSelection()"
         [count]="aquarium.decorCount()"
         [refused]="aquarium.decorRefused()"
         [grounded]="aquarium.decorDropGrounded()"
         [dimensions]="aquarium.tankDimensions()"
+        [roomTools]="aquarium.roomEditable()"
+        [roomSelected]="aquarium.roomSelection() !== null"
+        [roomCount]="aquarium.roomCount()"
         (toolChanged)="aquarium.setDecorTool($event)"
         (deleteRequested)="aquarium.deleteSelectedDecor()"
         (rotateRequested)="aquarium.rotateSelectedDecor($event)"

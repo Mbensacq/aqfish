@@ -45,6 +45,16 @@ export async function projectToScreen(
   page: Page,
   point: readonly number[],
 ): Promise<[number, number]> {
+  return (await screenProjector(page))(point);
+}
+
+/**
+ * Projection à l'écran (pixels CSS) des points du bac pour la caméra courante, lue une fois :
+ * pour projeter beaucoup de points sans aller-retour avec la page.
+ */
+export async function screenProjector(
+  page: Page,
+): Promise<(point: readonly number[]) => [number, number]> {
   const eye = await vec3Attribute(page, 'data-aqfish-camera');
   const target = await vec3Attribute(page, 'data-aqfish-target');
   const box = (await page.locator('app-aquarium-host canvas').boundingBox())!;
@@ -60,11 +70,13 @@ export async function projectToScreen(
   const forward = norm(sub(target, eye));
   const right = norm(cross(forward, [0, 1, 0]));
   const up = cross(right, forward);
-  const d = sub(point, eye);
   const tan = Math.tan((CAMERA_FOV_DEG * Math.PI) / 360);
-  const ndcX = dot(d, right) / (dot(d, forward) * tan * (box.width / box.height));
-  const ndcY = dot(d, up) / (dot(d, forward) * tan);
-  return [box.x + ((ndcX + 1) / 2) * box.width, box.y + ((1 - ndcY) / 2) * box.height];
+  return (point) => {
+    const d = sub(point, eye);
+    const ndcX = dot(d, right) / (dot(d, forward) * tan * (box.width / box.height));
+    const ndcY = dot(d, up) / (dot(d, forward) * tan);
+    return [box.x + ((ndcX + 1) / 2) * box.width, box.y + ((1 - ndcY) / 2) * box.height];
+  };
 }
 
 export async function clickTank(page: Page, point: readonly number[]): Promise<void> {

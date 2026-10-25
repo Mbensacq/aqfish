@@ -14,18 +14,33 @@ import {
   DECOR_CATALOG,
   DECOR_CHOICE_IDS,
   MAX_DECOR_ITEMS,
+  type DecorChoiceId,
   type DecorTool,
 } from '../../sim/decor-edit';
+import { MAX_ROOM_ITEMS, ROOM_ITEM_KINDS, type RoomItemKind } from '../../sim/room';
+import { ROOM_CATALOG } from '../../sim/room-furniture';
 import { clampTankDimensions, TANK_LIMITS, type TankDimensions } from '../../sim/tank';
 
 /** Identifiant du panneau de l'éditeur de décor. */
 export const DECOR_EDITOR_ID = 'editeur-decor';
 
+/** Outil de l'éditeur : un outil du décor, ou un élément de la pièce à poser (#188). */
+export type EditorTool = DecorTool | RoomItemKind;
+
+/** Vrai si `tool` pose un élément de la pièce (#188). */
+export function isRoomTool(tool: unknown): tool is RoomItemKind {
+  return (ROOM_ITEM_KINDS as readonly unknown[]).includes(tool);
+}
+
 /** Outils de l'éditeur, dans l'ordre d'affichage, avec leur libellé. */
-export const DECOR_TOOLS: readonly { readonly id: DecorTool; readonly name: string }[] = [
+export const DECOR_TOOLS: readonly { readonly id: EditorTool; readonly name: string }[] = [
   { id: 'select', name: 'Sélection' },
   ...DECOR_CHOICE_IDS.map((id) => ({ id, name: DECOR_CATALOG[id].name })),
 ];
+
+/** Outils de la pièce (#188), affichés après ceux du décor quand la pièce est visible. */
+export const ROOM_TOOLS: readonly { readonly id: EditorTool; readonly name: string }[] =
+  ROOM_ITEM_KINDS.map((id) => ({ id, name: ROOM_CATALOG[id].name }));
 
 /**
  * Commandes de pose de l'élément sélectionné (#168), dans l'ordre d'affichage : rotation par
@@ -84,14 +99,26 @@ const POSE_KEYS: Readonly<Record<string, { readonly rotate: number; readonly sca
  * chute faute de moteur.
  */
 export function decorEditorHint(
-  tool: DecorTool,
+  tool: EditorTool,
   selection: number | null,
   full: boolean,
   refused = false,
   grounded = false,
+  roomSelected = false,
 ): string {
+  const room = roomSelected || (selection === null && isRoomTool(tool));
   if (refused) {
-    return 'Pose refusée : l’élément chevaucherait un autre élément.';
+    return room
+      ? 'Pose refusée : place prise, hors de la pièce, sur une plante, ou un meuble en l’air.'
+      : 'Pose refusée : l’élément chevaucherait un autre élément.';
+  }
+  if (roomSelected && selection !== null) {
+    return 'Glissez pour déplacer ; ← → tournent d’un quart de tour, Suppr retire.';
+  }
+  if (room && isRoomTool(tool)) {
+    return full
+      ? `Pièce pleine (${MAX_ROOM_ITEMS} éléments) : retirez-en un d’abord.`
+      : `Cliquez sur le parquet ou un meuble pour poser : ${ROOM_CATALOG[tool].name.toLowerCase()}.`;
   }
   if (grounded) {
     return 'Chute indisponible (moteur non chargé) : élément posé sur le sable.';
@@ -105,7 +132,7 @@ export function decorEditorHint(
   if (full) {
     return `Décor plein (${MAX_DECOR_ITEMS} éléments) : retirez-en un d’abord.`;
   }
-  return `Cliquez sur le sable pour poser : ${DECOR_CATALOG[tool].name.toLowerCase()}.`;
+  return `Cliquez sur le sable pour poser : ${DECOR_CATALOG[tool as DecorChoiceId].name.toLowerCase()}.`;
 }
 
 /**
@@ -120,12 +147,13 @@ export function decorEditorHint(
   template: `<section class="decor-editor" [id]="panelId" aria-label="Éditeur de décor">
     <h2 class="decor-editor__title">Édition du décor</h2>
     <div class="decor-editor__tools" role="radiogroup" aria-label="Outil">
-      @for (t of tools; track t.id) {
+      @for (t of tools(); track t.id) {
         <button
           type="button"
           role="radio"
           class="decor-editor__tool"
           [class.decor-editor__tool--active]="t.id === tool()"
+          [class.decor-editor__tool--room]="isRoomTool(t.id)"
           [attr.aria-checked]="t.id === tool()"
           [attr.data-tool]="t.id"
           (click)="toolChanged.emit(t.id)"
@@ -142,7 +170,7 @@ export function decorEditorHint(
           class="decor-editor__action decor-editor__pose-button"
           [attr.aria-label]="c.name"
           [attr.aria-keyshortcuts]="c.key"
-          [attr.aria-disabled]="selection() === null"
+          [attr.aria-disabled]="selection() === null || (roomSelected() && c.scale !== 0)"
           [attr.data-pose]="c.id"
           (click)="pose(c.rotate, c.scale)"
         >
@@ -170,6 +198,11 @@ export function decorEditorHint(
       </button>
     </div>
     <p class="decor-editor__count" data-decor-count>{{ count() }} / {{ max }} éléments</p>
+    @if (roomTools()) {
+      <p class="decor-editor__count" data-room-count>
+        Pièce : {{ roomCount() }} / {{ roomMax }} meubles
+      </p>
+    }
     @if (dimensions(); as dims) {
       <fieldset class="decor-editor__tank" data-tank-dimensions>
         <legend class="decor-editor__legend">Dimensions du bac</legend>
@@ -238,7 +271,13 @@ export function decorEditorHint(
 })
 export class DecorEditor {
   /** Outil courant (fourni par l'hôte). */
-  readonly tool = input<DecorTool>('rock');
+  readonly tool = input<EditorTool>('rock');
+  /** Vrai si la pièce est affichée : ses éléments s'ajoutent aux outils (#188). */
+  readonly roomTools = input(false);
+  /** Vrai si la sélection est un élément de la pièce (#188) : quart de tour, sans échelle. */
+  readonly roomSelected = input(false);
+  /** Nombre d'éléments de la pièce (#188). */
+  readonly roomCount = input(0);
   /** Indice de l'élément sélectionné, `null` sinon (fourni par l'hôte). */
   readonly selection = input<number | null>(null);
   /** Nombre d'éléments du décor (fourni par l'hôte). */
@@ -254,7 +293,7 @@ export class DecorEditor {
   readonly dimensions = input<TankDimensions | null>(null);
 
   /** Outil choisi. */
-  readonly toolChanged = output<DecorTool>();
+  readonly toolChanged = output<EditorTool>();
   /** Suppression de l'élément sélectionné demandée (bouton, Suppr). */
   readonly deleteRequested = output<void>();
   /** Fin de l'édition demandée (bouton « Terminer », Échap sans sélection). */
@@ -269,16 +308,23 @@ export class DecorEditor {
   readonly dimensionsChanged = output<TankDimensions>();
 
   protected readonly panelId = DECOR_EDITOR_ID;
-  protected readonly tools = DECOR_TOOLS;
+  protected readonly tools = computed(() =>
+    this.roomTools() ? [...DECOR_TOOLS, ...ROOM_TOOLS] : DECOR_TOOLS,
+  );
+  protected readonly isRoomTool = isRoomTool;
   protected readonly max = MAX_DECOR_ITEMS;
+  protected readonly roomMax = MAX_ROOM_ITEMS;
   protected readonly poseCommands = DECOR_POSE_COMMANDS;
   protected readonly hint = computed(() =>
     decorEditorHint(
       this.tool(),
       this.selection(),
-      this.count() >= MAX_DECOR_ITEMS,
+      isRoomTool(this.tool())
+        ? this.roomCount() >= MAX_ROOM_ITEMS
+        : this.count() >= MAX_DECOR_ITEMS,
       this.refused(),
       this.grounded(),
+      this.roomSelected(),
     ),
   );
 
@@ -319,7 +365,8 @@ export class DecorEditor {
     if (rotate !== 0) {
       this.rotateRequested.emit(rotate);
     }
-    if (scale !== 0) {
+    // Un élément de la pièce garde sa taille (#188).
+    if (scale !== 0 && !this.roomSelected()) {
       this.scaleRequested.emit(scale);
     }
   }

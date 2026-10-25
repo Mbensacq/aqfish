@@ -1,9 +1,17 @@
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 
-import { MAX_DECOR_ITEMS, type DecorTool } from '../../sim/decor-edit';
+import { MAX_DECOR_ITEMS } from '../../sim/decor-edit';
+import { MAX_ROOM_ITEMS } from '../../sim/room';
 import { DEFAULT_TANK, type TankDimensions } from '../../sim/tank';
-import { DECOR_TOOLS, DecorEditor, decorEditorHint, TANK_DIMENSION_FIELDS } from './decor-editor';
+import {
+  DECOR_TOOLS,
+  DecorEditor,
+  decorEditorHint,
+  ROOM_TOOLS,
+  TANK_DIMENSION_FIELDS,
+  type EditorTool,
+} from './decor-editor';
 
 describe('decorEditorHint', () => {
   it('dit ce que fera un clic, selon l’outil et la sélection', () => {
@@ -25,6 +33,19 @@ describe('decorEditorHint', () => {
     expect(decorEditorHint('rock', 3, false, true, true)).toContain('refusée');
   });
 
+  it('pièce (#188) : poser sur le parquet ou un meuble, quart de tour, refus expliqué', () => {
+    expect(decorEditorHint('etagere', null, false)).toBe(
+      'Cliquez sur le parquet ou un meuble pour poser : étagère.',
+    );
+    expect(decorEditorHint('plante-pot', null, true)).toContain(String(MAX_ROOM_ITEMS));
+    expect(decorEditorHint('select', 0, false, false, false, true)).toContain('quart de tour');
+    expect(decorEditorHint('canape', null, false, true)).toContain('hors de la pièce');
+    expect(decorEditorHint('select', 1, false, true, false, true)).toContain('en l’air');
+    // Un élément du décor sélectionné garde ses consignes, même outil de la pièce choisi.
+    expect(decorEditorHint('canape', 2, false)).toContain('changent la taille');
+    expect(ROOM_TOOLS.map((t) => t.id)).toEqual(['etagere', 'table-basse', 'canape', 'plante-pot']);
+  });
+
   it('propose la sélection puis chaque type du catalogue', () => {
     expect(DECOR_TOOLS.map((t) => t.id)).toEqual(['select', 'rock', 'wood', 'tall', 'tuft']);
   });
@@ -38,6 +59,9 @@ describe('decorEditorHint', () => {
       [count]="count()"
       [refused]="refused()"
       [dimensions]="dimensions()"
+      [roomTools]="roomTools()"
+      [roomSelected]="roomSelected()"
+      [roomCount]="roomCount()"
       (dimensionsChanged)="dims.push($event)"
       (rotateRequested)="rotations.push($event)"
       (scaleRequested)="scales.push($event)"
@@ -50,13 +74,16 @@ describe('decorEditorHint', () => {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 class TestHost {
-  readonly tool = signal<DecorTool>('rock');
+  readonly tool = signal<EditorTool>('rock');
+  readonly roomTools = signal(false);
+  readonly roomSelected = signal(false);
+  readonly roomCount = signal(3);
   readonly selection = signal<number | null>(null);
   readonly count = signal(10);
   readonly refused = signal(false);
   readonly dimensions = signal<TankDimensions | null>(DEFAULT_TANK);
   readonly dims: TankDimensions[] = [];
-  readonly tools: DecorTool[] = [];
+  readonly tools: EditorTool[] = [];
   readonly rotations: number[] = [];
   readonly scales: number[] = [];
   deletes = 0;
@@ -215,5 +242,36 @@ describe('DecorEditor', () => {
     host().dimensions.set(null);
     await fixture.whenStable();
     expect(root().querySelector('[data-tank-dimensions]')).toBeNull();
+  });
+
+  it('pièce affichée (#188) : outils de la pièce, compte, échelle inactive pour un meuble', async () => {
+    expect(root().querySelector('[data-room-count]')).toBeNull();
+    host().roomTools.set(true);
+    await fixture.whenStable();
+    const radios = [...root().querySelectorAll<HTMLButtonElement>('[role="radio"]')];
+    expect(radios.slice(-4).map((r) => r.textContent?.trim())).toEqual([
+      'Étagère',
+      'Table basse',
+      'Canapé',
+      'Plante en pot',
+    ]);
+    expect(root().querySelector('[data-room-count]')?.textContent?.trim()).toBe(
+      `Pièce : 3 / ${MAX_ROOM_ITEMS} meubles`,
+    );
+    button('Canapé').click();
+    expect(host().tools).toEqual(['canape']);
+    host().selection.set(0);
+    host().roomSelected.set(true);
+    await fixture.whenStable();
+    const grow = root().querySelector<HTMLButtonElement>('[data-pose="agrandir"]')!;
+    expect(grow.getAttribute('aria-disabled')).toBe('true');
+    expect(root().querySelector('[data-pose="droite"]')?.getAttribute('aria-disabled')).toBe(
+      'false',
+    );
+    grow.click();
+    key('+');
+    key('ArrowRight');
+    expect(host().scales).toEqual([]);
+    expect(host().rotations).toEqual([1]);
   });
 });

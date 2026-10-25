@@ -53,7 +53,6 @@ import {
   rotateDecorItem,
   scaleDecorItem,
   setDecorInPlace,
-  type DecorTool,
 } from '../../sim/decor-edit';
 import {
   DROP_TIME_STEP,
@@ -95,10 +94,18 @@ import {
   type EnvironmentId,
   type Place,
 } from '../../sim/environment';
-import { sameDimensions, type TankDimensions } from '../../sim/tank';
+import { DEFAULT_TANK, sameDimensions, type TankDimensions } from '../../sim/tank';
 import { setTankDimensionsInPlace } from '../../sim/tank-resize';
-import { DEFAULT_ROOM, ROOM_ITEM_KINDS, type Room, type RoomItemKind } from '../../sim/room';
-import { dropRoomItem } from '../../sim/room-furniture';
+import {
+  DEFAULT_ROOM,
+  ROOM_ITEM_KINDS,
+  type Room,
+  type RoomItem,
+  type RoomItemKind,
+  type RoomQuarter,
+} from '../../sim/room';
+import { dropRoomItem, removeRoomItem } from '../../sim/room-furniture';
+import { isRoomTool, type EditorTool } from '../decor-editor/decor-editor';
 import { fixedStepInto, type FixedStepState } from '../../sim/fixed-step';
 import {
   DEFAULT_SIM_SPEED,
@@ -204,6 +211,13 @@ export const DECOR_COUNT_ATTRIBUTE = 'data-aqfish-decor-count';
  * sans sélection (#167).
  */
 export const DECOR_SELECTION_ATTRIBUTE = 'data-aqfish-decor-selected';
+/**
+ * Attribut du composant hôte exposant l'indice de l'élément de la pièce sélectionné, `aucun`
+ * sans sélection (#188).
+ */
+export const ROOM_SELECTION_ATTRIBUTE = 'data-aqfish-room-selected';
+/** Attribut du composant hôte exposant le nombre d'éléments de la pièce (#188). */
+export const ROOM_COUNT_ATTRIBUTE = 'data-aqfish-room-count';
 
 /**
  * Attribut de l'hôte : dimensions du bac en mètres, `longueur:hauteur:profondeur` (issue
@@ -474,7 +488,16 @@ export class AquariumHost {
   readonly decorEditable = signal(false);
 
   /** Outil courant de l'éditeur de décor (#167). */
-  readonly decorTool = signal<DecorTool>('rock');
+  readonly decorTool = signal<EditorTool>('rock');
+
+  /** Indice de l'élément de la pièce sélectionné (#188), `null` sinon. */
+  readonly roomSelection = signal<number | null>(null);
+
+  /** Vrai si la pièce est dessinée, donc modifiable en mode édition (#188). */
+  readonly roomEditable = signal(false);
+
+  /** Nombre d'éléments de la pièce (#188). */
+  readonly roomCount = signal(0);
 
   /** Indice de l'élément de décor sélectionné (#167), `null` sinon. */
   readonly decorSelection = signal<number | null>(null);
@@ -512,6 +535,16 @@ export class AquariumHost {
     readonly base: readonly DecorItem[];
     readonly index: number;
     preview: DecorItem[] | null;
+  } | null = null;
+
+  /**
+   * Glissement en cours d'un élément de la pièce (#188) : pièce au début du geste (abandon si
+   * elle a changé entre-temps) et dernière pose acceptée par `dropRoomItem`.
+   */
+  private roomDrag: {
+    readonly base: Room;
+    readonly index: number;
+    preview: readonly RoomItem[] | null;
   } | null = null;
 
   /** État courant de la simulation (`null` avant le démarrage et après la destruction). */
@@ -909,9 +942,12 @@ export class AquariumHost {
     }
   }
 
-  /** Choisit l'outil de l'éditeur de décor (#167) ; un outil inconnu est ignoré. */
+  /**
+   * Choisit l'outil de l'éditeur de décor (#167), ou un élément de la pièce à poser quand la
+   * pièce est dessinée (#188) ; un outil inconnu ou indisponible est ignoré.
+   */
   setDecorTool(tool: string): void {
-    if (isDecorTool(tool)) {
+    if (isDecorTool(tool) || (isRoomTool(tool) && this.roomEditable())) {
       this.decorTool.set(tool);
     }
   }
@@ -935,7 +971,29 @@ export class AquariumHost {
     }
     view.setDecorSelection(index);
     this.exposeDecorSelection(index);
+    // Une seule sélection à la fois : celle de la pièce est levée (#188).
+    view.setRoomSelection(null);
+    this.exposeRoomSelection(null);
     this.scheduleFrame();
+  }
+
+  /**
+   * Sélectionne l'élément d'indice `index` de la pièce (#188, contour clair), ou aucun avec
+   * `null` ; lève la sélection du décor. Sans effet hors du mode édition (sauf pour
+   * désélectionner) ou pour un indice inexistant.
+   */
+  selectRoomItem(index: number | null): void {
+    const view = this.view;
+    const items = this.room().items ?? [];
+    if (!view) {
+      return;
+    }
+    if (index !== null && !(this.decorEditing() && index >= 0 && index < items.length)) {
+      return;
+    }
+    this.selectDecor(null);
+    view.setRoomSelection(index);
+    this.exposeRoomSelection(index);
   }
 
   /**
@@ -943,6 +1001,17 @@ export class AquariumHost {
    * renvoie `true` s'il a été supprimé. Sans effet sans sélection.
    */
   deleteSelectedDecor(): boolean {
+    const roomIndex = this.roomSelection();
+    if (roomIndex !== null && this.decorEditing()) {
+      // Pièce (#188) : ce que l'élément portait retombe ; refus s'il resterait en l'air.
+      const items = removeRoomItem(this.room().items ?? [], roomIndex);
+      if (!items) {
+        this.decorRefused.set(true);
+        return false;
+      }
+      this.applyRoomItems(items, null);
+      return true;
+    }
     const world = this.currentWorld;
     const index = this.decorSelection();
     if (!world || index === null || !this.decorEditing()) {
@@ -975,7 +1044,19 @@ export class AquariumHost {
       return;
     }
     const tool = this.decorTool();
-    if (tool === 'select') {
+    if (pick.kind === 'room-item' || pick.kind === 'floor') {
+      // Pièce (#188) : un outil de la pièce pose au point visé (sur le parquet ou sur le
+      // meuble touché) ; sinon, un élément touché est sélectionné, le parquet désélectionne.
+      if (isRoomTool(tool)) {
+        this.addRoomItem(tool, pick.x, pick.z);
+      } else if (pick.kind === 'room-item') {
+        this.selectRoomItem(pick.index);
+      } else {
+        this.selectDecor(null);
+      }
+      return;
+    }
+    if (tool === 'select' || isRoomTool(tool)) {
       this.selectDecor(null);
       return;
     }
@@ -997,6 +1078,9 @@ export class AquariumHost {
    * `true` si la pose a changé. Refusée (`decorRefused`) si elle pénètre un autre élément.
    */
   rotateSelectedDecor(steps: number): boolean {
+    if (this.roomSelection() !== null) {
+      return this.turnSelectedRoomItem(steps);
+    }
     return this.editSelected((decor, index, env) => rotateDecorItem(decor, index, steps, env));
   }
 
@@ -1006,6 +1090,10 @@ export class AquariumHost {
    * (`decorRefused`) si elle pénètre un autre élément.
    */
   scaleSelectedDecor(steps: number): boolean {
+    // Un élément de la pièce garde sa taille (#188).
+    if (this.roomSelection() !== null) {
+      return false;
+    }
     return this.editSelected((decor, index, env) => scaleDecorItem(decor, index, steps, env));
   }
 
@@ -1131,6 +1219,113 @@ export class AquariumHost {
   }
 
   /**
+   * Pose un élément `kind` de la pièce au point (x, z) (#188) : il tombe sur le parquet ou
+   * sur le meuble que son emprise chevauche (`dropRoomItem`), puis il est sélectionné. Pose
+   * refusée (`decorRefused`) : place prise, hors de la pièce, pièce pleine…
+   */
+  private addRoomItem(kind: RoomItemKind, x: number, z: number): void {
+    const result = dropRoomItem(this.room(), this.roomDimensions(), { kind, x, z, quarter: 0 });
+    if (!result.ok) {
+      this.selectDecor(null);
+      this.decorRefused.set(true);
+      return;
+    }
+    this.applyRoomItems(result.items, result.index);
+  }
+
+  /** Tourne l'élément sélectionné de la pièce d'un quart de tour par pas (signe de `steps`). */
+  private turnSelectedRoomItem(steps: number): boolean {
+    const index = this.roomSelection();
+    const item = index === null ? undefined : this.room().items?.[index];
+    if (!item || index === null || !this.decorEditing() || this.roomDrag || steps === 0) {
+      return false;
+    }
+    const quarter = ((((item.quarter + Math.sign(steps)) % 4) + 4) % 4) as RoomQuarter;
+    const result = dropRoomItem(
+      this.room(),
+      this.roomDimensions(),
+      { kind: item.kind, x: item.x, z: item.z, quarter },
+      index,
+    );
+    if (!result.ok) {
+      this.decorRefused.set(true);
+      return false;
+    }
+    this.applyRoomItems(result.items, index);
+    return true;
+  }
+
+  /** Début du glissement d'un élément de la pièce (#188) : il est sélectionné. */
+  startRoomDrag(index: number): void {
+    const items = this.room().items ?? [];
+    if (!this.decorEditing() || index < 0 || index >= items.length) {
+      return;
+    }
+    this.selectRoomItem(index);
+    this.roomDrag = { base: this.room(), index, preview: null };
+  }
+
+  /**
+   * Glissement d'un élément de la pièce vers (x, z) : aperçu de sa pose par gravité
+   * (`dropRoomItem`), ce qu'il portait retombant ; une pose refusée garde l'aperçu précédent.
+   */
+  moveRoomDrag(index: number, x: number, z: number): void {
+    const drag = this.roomDrag;
+    const item = drag?.base.items?.[index];
+    if (!drag || !item || drag.index !== index || this.room() !== drag.base) {
+      return;
+    }
+    const result = dropRoomItem(
+      drag.base,
+      this.roomDimensions(),
+      { kind: item.kind, x, z, quarter: item.quarter },
+      index,
+    );
+    if (result.ok) {
+      drag.preview = result.items;
+      this.view?.previewRoom({ ...drag.base, items: result.items });
+      this.scheduleFrame();
+    }
+  }
+
+  /**
+   * Fin du glissement : la dernière pose acceptée est appliquée et enregistrée (`commit`) ;
+   * sinon (abandon, aucune pose acceptée), la pièce revient à son état du début du geste.
+   */
+  endRoomDrag(index: number, commit: boolean): void {
+    const drag = this.roomDrag;
+    this.roomDrag = null;
+    if (!drag || drag.index !== index || this.room() !== drag.base) {
+      return;
+    }
+    if (commit && drag.preview && this.decorEditing()) {
+      this.applyRoomItems(drag.preview, index);
+      return;
+    }
+    this.view?.previewRoom(drag.base);
+    this.decorRefused.set(commit);
+    this.scheduleFrame();
+  }
+
+  /** Dimensions du bac autour duquel la pièce est posée. */
+  private roomDimensions(): TankDimensions {
+    return this.currentWorld ? placeDimensions(this.currentWorld) : DEFAULT_TANK;
+  }
+
+  /**
+   * Applique les éléments `items` à la pièce (#188), sélectionne l'élément `selection` (ou
+   * aucun) et enregistre aussitôt (le rechargement les restitue).
+   */
+  private applyRoomItems(items: readonly RoomItem[], selection: number | null): void {
+    const { shown, cabinetHeight } = this.room();
+    this.applyRoom(items.length > 0 ? { shown, cabinetHeight, items } : { shown, cabinetHeight });
+    this.decorRefused.set(false);
+    this.selectRoomItem(selection);
+    this.saveNow();
+    this.scheduleFrame();
+  }
+
+  /**
    * Installe un décor édité (#167) : les éléments dont le support a disparu retombent d'abord
    * (#182, `releaseUnsupportedDecor`), puis obstacles du monde recalculés, vue mise à jour,
    * sélection `selection`, et sauvegarde immédiate (le rechargement le restitue). La première
@@ -1177,7 +1372,21 @@ export class AquariumHost {
   private applyRoom(room: Room): void {
     this.room.set(room);
     this.view?.setRoom(room);
-    this.host.nativeElement.setAttribute(ROOM_ATTRIBUTE, String(this.view?.roomShown ?? false));
+    const shown = this.view?.roomShown ?? false;
+    this.host.nativeElement.setAttribute(ROOM_ATTRIBUTE, String(shown));
+    // Éditeur (#188) : la pièce n'est modifiable que dessinée ; sélection et outil suivent.
+    this.roomEditable.set(shown);
+    const count = room.items?.length ?? 0;
+    this.roomCount.set(count);
+    this.host.nativeElement.setAttribute(ROOM_COUNT_ATTRIBUTE, String(count));
+    const selection = this.roomSelection();
+    if (selection !== null && (!shown || selection >= count)) {
+      this.view?.setRoomSelection(null);
+      this.exposeRoomSelection(null);
+    }
+    if (!shown && isRoomTool(this.decorTool())) {
+      this.decorTool.set('select');
+    }
   }
 
   /** Applique le rendu des granulés à la vue courante et l'expose. */
@@ -1386,6 +1595,18 @@ export class AquariumHost {
       this.view?.setDecorSelection(params.editSelection);
       this.exposeDecorSelection(params.editSelection);
     }
+    // `edition-meuble=` (#188) : mode édition et élément de la pièce sélectionné, en capture.
+    const roomSelection = params.editRoomSelection;
+    if (
+      params.capture &&
+      roomSelection !== null &&
+      this.roomEditable() &&
+      roomSelection < this.roomCount()
+    ) {
+      this.applyDecorEditing(true);
+      this.view?.setRoomSelection(roomSelection);
+      this.exposeRoomSelection(roomSelection);
+    }
 
     const onResize = () => this.scheduleFrame();
     win.addEventListener('resize', onResize);
@@ -1473,11 +1694,17 @@ export class AquariumHost {
     this.viewCleanups.push(view.onUserInteraction(() => this.activePreset.set(null)));
     view.setDecorDragEnabled(this.decorEditing());
     this.decorDrag = null;
+    this.roomDrag = null;
     this.viewCleanups.push(
       view.onDecorDrag({
         start: (index) => this.startDecorDrag(index),
         move: (index, x, z) => this.moveDecorDrag(index, x, z),
         end: (index, commit) => this.endDecorDrag(index, commit),
+      }),
+      view.onRoomDrag({
+        start: (index) => this.startRoomDrag(index),
+        move: (index, x, z) => this.moveRoomDrag(index, x, z),
+        end: (index, commit) => this.endRoomDrag(index, commit),
       }),
     );
     // En mode édition, un clic pose ou choisit un élément du décor au lieu de nourrir (#167).
@@ -1497,6 +1724,7 @@ export class AquariumHost {
     );
     // Vue neuve : aucun élément sélectionné.
     this.exposeDecorSelection(null);
+    this.exposeRoomSelection(null);
   }
 
   private scheduleFrame(): void {
@@ -1714,6 +1942,15 @@ export class AquariumHost {
     this.decorSelection.set(index);
     this.host.nativeElement.setAttribute(
       DECOR_SELECTION_ATTRIBUTE,
+      index === null ? 'aucun' : String(index),
+    );
+  }
+
+  /** Expose la sélection de la pièce (`data-aqfish-room-selected`, signal `roomSelection`). */
+  private exposeRoomSelection(index: number | null): void {
+    this.roomSelection.set(index);
+    this.host.nativeElement.setAttribute(
+      ROOM_SELECTION_ATTRIBUTE,
       index === null ? 'aucun' : String(index),
     );
   }

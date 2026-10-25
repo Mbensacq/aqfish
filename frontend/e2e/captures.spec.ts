@@ -145,6 +145,11 @@ test.describe('Captures', () => {
       name: 'three-quarter-meubles',
       query: `piece=1&meubles=${SHELF},${PLANT_ON_SHELF},${TABLE},${PLANT_ON_TABLE}`,
     },
+    // Éditeur de la pièce (#188) : table basse sélectionnée, même contour clair que le décor.
+    {
+      name: 'three-quarter-meubles-edition',
+      query: `piece=1&meubles=${SHELF},${PLANT_ON_SHELF},${TABLE},${PLANT_ON_TABLE}&edition-meuble=2`,
+    },
   ] as const;
   for (const { name, query } of DAY_CAPTURES) {
     test(`angle ${name}`, async ({ page }) => {

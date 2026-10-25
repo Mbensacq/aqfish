@@ -6,7 +6,7 @@ import { SAVE_STORAGE_KEY, type SaveStorage } from '../../core/save-storage/save
 import { createDayClock } from '../../sim/daylight';
 import { DEFAULT_SAVE_SETTINGS, parseWorld, serializeWorld } from '../../sim/save';
 import { DEFAULT_ROOM } from '../../sim/room';
-import type { AquariumRenderer } from '../../render/aquarium-view';
+import type { AquariumRenderer, AquariumView } from '../../render/aquarium-view';
 import { MAX_STEPS_PER_FRAME } from '../../sim/constants';
 import {
   AXOLOTL,
@@ -53,6 +53,8 @@ import {
   ENVIRONMENT_ATTRIBUTE,
   RAIN_ATTRIBUTE,
   ROOM_ATTRIBUTE,
+  ROOM_COUNT_ATTRIBUTE,
+  ROOM_SELECTION_ATTRIBUTE,
   TANK_ATTRIBUTE,
   CAMERA_TARGET_ATTRIBUTE,
   DECOR_ATTRIBUTE,
@@ -1581,6 +1583,162 @@ describe('AquariumHost', () => {
       delete (window.URL as unknown as Record<string, unknown>)['revokeObjectURL'];
       host().exportSave();
       expect(host().saveMessage()?.kind).toBe('erreur');
+    });
+  });
+
+  describe('édition de la pièce (#188)', () => {
+    const host = () => fixture.componentInstance;
+    const element = () => fixture.nativeElement as HTMLElement;
+    const items = () => host().room().items ?? [];
+    const savedItems = () => {
+      const saved = parseWorld(saveStorage!.getItem(SAVE_STORAGE_KEY)!);
+      return saved.ok ? (saved.settings.room?.items ?? []) : null;
+    };
+    const SHELF = { kind: 'etagere', x: -1.25, z: -0.17, quarter: 0 } as const;
+    const viewOf = (h: AquariumHost) => (h as unknown as { view: AquariumView }).view;
+
+    async function editRoom(): Promise<void> {
+      await create('?seed=4');
+      host().setRoomShown(true);
+      host().setDecorEditing(true);
+    }
+
+    it('outils de la pièce seulement pièce dessinée ; masquer la pièce rend la sélection', async () => {
+      await create('?seed=4');
+      host().setDecorEditing(true);
+      expect(host().roomEditable()).toBe(false);
+      host().setDecorTool('etagere');
+      expect(host().decorTool()).toBe('rock');
+      host().setRoomShown(true);
+      expect(host().roomEditable()).toBe(true);
+      host().setDecorTool('etagere');
+      expect(host().decorTool()).toBe('etagere');
+      host().editAt({ kind: 'floor', x: SHELF.x, z: SHELF.z });
+      expect(host().roomSelection()).toBe(0);
+      host().setRoomShown(false);
+      expect(host().roomSelection()).toBeNull();
+      expect(host().decorTool()).toBe('select');
+      expect(element().getAttribute(ROOM_SELECTION_ATTRIBUTE)).toBe('aucun');
+    });
+
+    it('pose sur le parquet puis sur l’étagère, sélectionne, enregistre et restitue', async () => {
+      await editRoom();
+      host().setDecorTool('etagere');
+      host().editAt({ kind: 'floor', x: SHELF.x, z: SHELF.z });
+      expect(items()).toEqual([SHELF]);
+      expect(element().getAttribute(ROOM_COUNT_ATTRIBUTE)).toBe('1');
+      expect(element().getAttribute(ROOM_SELECTION_ATTRIBUTE)).toBe('0');
+      expect(viewOf(host()).roomSelection).toBe(0);
+      host().setDecorTool('plante-pot');
+      // Clic sur l'étagère avec la plante : elle se pose dessus.
+      host().editAt({ kind: 'room-item', index: 0, x: -1.4, z: -0.17 });
+      expect(items()[1]).toEqual({
+        kind: 'plante-pot',
+        x: -1.4,
+        z: -0.17,
+        quarter: 0,
+        elevation: 0.8,
+      });
+      expect(host().roomSelection()).toBe(1);
+      expect(savedItems()).toEqual(items());
+      // Parquet hors de la pièce ou sur le meuble du bac : refus, rien ne change.
+      host().editAt({ kind: 'floor', x: 0, z: 0.1 });
+      expect(items()).toHaveLength(2);
+      expect(host().decorRefused()).toBe(true);
+      fixture.destroy();
+      await create();
+      expect(items()).toHaveLength(2);
+      expect(element().getAttribute(ROOM_COUNT_ATTRIBUTE)).toBe('2');
+    });
+
+    it('sélection exclusive avec le décor ; le parquet désélectionne', async () => {
+      await editRoom();
+      host().setDecorTool('etagere');
+      host().editAt({ kind: 'floor', x: SHELF.x, z: SHELF.z });
+      host().editAt({ kind: 'item', index: 1 });
+      expect(host().decorSelection()).toBe(1);
+      expect(host().roomSelection()).toBeNull();
+      host().setDecorTool('select');
+      host().editAt({ kind: 'room-item', index: 0, x: SHELF.x, z: SHELF.z });
+      expect(host().roomSelection()).toBe(0);
+      expect(host().decorSelection()).toBeNull();
+      host().editAt({ kind: 'floor', x: 1.5, z: 1 });
+      expect(host().roomSelection()).toBeNull();
+      host().selectRoomItem(7);
+      expect(host().roomSelection()).toBeNull();
+    });
+
+    it('tourne d’un quart de tour, sans changer la taille ; supprimer fait retomber', async () => {
+      await editRoom();
+      host().setDecorTool('etagere');
+      host().editAt({ kind: 'floor', x: SHELF.x, z: SHELF.z });
+      host().setDecorTool('plante-pot');
+      host().editAt({ kind: 'room-item', index: 0, x: -1.4, z: -0.17 });
+      host().selectRoomItem(0);
+      expect(host().scaleSelectedDecor(1)).toBe(false);
+      // Un quart de tour : l'étagère (80 × 30) entrerait dans le mur ; un demi-tour passe.
+      expect(host().rotateSelectedDecor(1)).toBe(false);
+      expect(host().decorRefused()).toBe(true);
+      host().selectRoomItem(1);
+      expect(host().rotateSelectedDecor(-1)).toBe(true);
+      expect(items()[1].quarter).toBe(3);
+      expect(items()[1].elevation).toBe(0.8);
+      host().selectRoomItem(0);
+      expect(host().deleteSelectedDecor()).toBe(true);
+      expect(items()).toEqual([{ kind: 'plante-pot', x: -1.4, z: -0.17, quarter: 3 }]);
+      expect(host().roomSelection()).toBeNull();
+      expect(savedItems()).toEqual(items());
+    });
+
+    it('glisser : aperçu de la pose, appliquée au relâchement, sinon pièce rendue', async () => {
+      await editRoom();
+      host().setDecorTool('etagere');
+      host().editAt({ kind: 'floor', x: SHELF.x, z: SHELF.z });
+      host().setDecorTool('plante-pot');
+      host().editAt({ kind: 'room-item', index: 0, x: -1.4, z: -0.17 });
+      const before = host().room();
+      host().startRoomDrag(0);
+      host().moveRoomDrag(0, -2.2, 0.6);
+      // Pendant le geste, la pièce n'est pas encore changée.
+      expect(host().room()).toBe(before);
+      host().moveRoomDrag(0, 0, 0); // meuble du bac : refusé, aperçu précédent gardé
+      host().endRoomDrag(0, true);
+      expect(items()).toEqual([
+        { ...SHELF, x: -2.2, z: 0.6 },
+        { kind: 'plante-pot', x: -1.4, z: -0.17, quarter: 0 },
+      ]);
+      expect(host().roomSelection()).toBe(0);
+      expect(savedItems()).toEqual(items());
+      // Geste sans pose acceptée : rien ne change, refus signalé.
+      const after = host().room();
+      host().startRoomDrag(1);
+      host().moveRoomDrag(1, 0, 0);
+      host().endRoomDrag(1, true);
+      expect(host().room()).toBe(after);
+      expect(host().decorRefused()).toBe(true);
+      // Abandon et indice inconnu : sans effet.
+      host().startRoomDrag(0);
+      host().moveRoomDrag(0, 2, 1);
+      host().endRoomDrag(0, false);
+      expect(host().room()).toBe(after);
+      host().startRoomDrag(9);
+      host().moveRoomDrag(9, 1, 1);
+      host().endRoomDrag(9, true);
+      expect(host().room()).toBe(after);
+    });
+
+    it('edition-meuble= en capture : élément de la pièce sélectionné', async () => {
+      await create('?capture=1&seed=3&piece=1&meubles=etagere:-1.25:-0.17:0&edition-meuble=0');
+      expect(host().decorEditing()).toBe(true);
+      expect(host().roomSelection()).toBe(0);
+      expect(viewOf(host()).roomSelection).toBe(0);
+      fixture.destroy();
+      await create('?capture=1&seed=3&piece=1&meubles=etagere:-1.25:-0.17:0&edition-meuble=1');
+      expect(host().roomSelection()).toBeNull();
+      expect(host().decorEditing()).toBe(false);
+      fixture.destroy();
+      await create('?capture=1&seed=3&meubles=etagere:-1.25:-0.17:0&edition-meuble=0');
+      expect(host().roomSelection()).toBeNull();
     });
   });
 
