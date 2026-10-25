@@ -123,6 +123,7 @@ import {
   type PopulationCounts,
 } from '../../sim/population';
 import { parseWorld, serializeWorld, type SaveSettings } from '../../sim/save';
+import { applySpeciesCountsInPlace } from '../../sim/species-catalog';
 import {
   DEFAULT_FOOD_STYLE,
   isFoodStyle,
@@ -255,19 +256,15 @@ export function formatPopulation(
 }
 
 /**
- * Applique les effectifs de `population=` au monde, dans l'ordre de l'URL (bornes de
- * `sim/population.ts`). Une espèce inconnue, ou qui ne vit pas dans l'environnement du monde
- * (`Environment.species`, #88), est ignorée.
+ * Applique les effectifs de `population=` au monde, dans l'ordre de l'URL, bornés par le
+ * catalogue d'espèces (`applySpeciesCountsInPlace`, #189). Une espèce inconnue, ou qui ne vit
+ * pas dans l'environnement du monde (`Environment.species`, #88), est ignorée.
  */
 export function applyPopulation(
   world: MutableWorld,
   population: readonly CapturePopulation[],
 ): void {
-  for (const { species, count } of population) {
-    if (isSpeciesId(species) && livesIn(world.environment, species)) {
-      setPopulationInPlace(world, species, count);
-    }
-  }
+  applySpeciesCountsInPlace(world, population);
 }
 
 /**
