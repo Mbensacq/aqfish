@@ -348,6 +348,27 @@ describe('serializeWorld / parseWorld : aller-retour', () => {
     expect(() => serializeWorld(createWorld(1), bad)).toThrow(/pièce/);
   });
 
+  it('relit les meubles reposés, sans chevauchement (#200, cas 2)', () => {
+    const data = structuredClone(saveData(createDefaultWorld(3))) as unknown as {
+      settings: Record<string, unknown>;
+    };
+    const shelf = { kind: 'etagere', x: -1.25, z: -0.17, quarter: 0 };
+    data.settings['room'] = {
+      shown: true,
+      cabinetHeight: 0.75,
+      items: [
+        shelf,
+        { kind: 'table-basse', x: -1.45, z: 0.55, quarter: 0, elevation: 0.5 },
+        { ...shelf, x: -1.3 },
+      ],
+    };
+    expect(restored(parseSaveData(data)).settings.room).toEqual({
+      shown: true,
+      cabinetHeight: 0.75,
+      items: [shelf, { kind: 'table-basse', x: -1.45, z: 0.55, quarter: 0 }],
+    });
+  });
+
   it('ignore les champs inconnus et hérités de la pièce (#187)', () => {
     const data = JSON.parse(serializeWorld(createDefaultWorld(3))) as {
       settings: Record<string, unknown>;

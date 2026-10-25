@@ -17,6 +17,7 @@ import { FOOD_MAX_FLOAT_SECONDS, FOOD_MIN_FLOAT_SECONDS, FOOD_SINK_SPEED, MAX_FO
 import type { FoodPellet } from './food';
 import { isSpeciesId, MAX_TOTAL_FISH } from './population';
 import { clampRoom, DEFAULT_ROOM, readRoom, roomData, type Room } from './room';
+import { tidyRoom } from './room-furniture';
 import { DEFAULT_SIM_SPEED, isSimSpeed, type SimSpeed } from './sim-speed';
 import { SPECIES, type SpeciesId } from './species';
 import type { Fish } from './swimmer';
@@ -404,7 +405,8 @@ function parseSettings(value: unknown, problems: string[]): SaveSettings | null 
       settings.clock.frozen,
     ),
     foodStyle: settings.foodStyle ?? DEFAULT_FOOD_STYLE,
-    room: room.room,
+    // Éléments relus reposés et chevauchements écartés (#200, cas 2).
+    room: tidyRoom(room.room),
   };
 }
 

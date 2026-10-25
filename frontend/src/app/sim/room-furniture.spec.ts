@@ -12,11 +12,15 @@ import {
   boxesOverlap,
   carriedBy,
   dropRoomItem,
+  floatingRoomItems,
   furnitureBlocks,
   removeRoomItem,
   ROOM_CATALOG,
+  roomItemBounds,
   roomItemBox,
   settleRoomItems,
+  tidyRoom,
+  tidyRoomItems,
   type RoomDropRequest,
 } from './room-furniture';
 import { DEFAULT_TANK, MAX_TANK } from './tank';
@@ -316,5 +320,98 @@ describe('pièce : blocs des meubles et sauvegarde (#188)', () => {
       items: [{ kind: 'etagere', x: -1, z: 0, quarter: 3, elevation: 0, extra: 1 }],
     });
     expect(ok.ok && ok.room.items).toEqual([{ kind: 'etagere', x: -1, z: 0, quarter: 3 }]);
+  });
+});
+
+describe('pièce : gestes qui laisseraient un élément en l’air (#200, cas 1)', () => {
+  // Table posée sur l'étagère, son emprise couvre aussi une plante voisine (plus basse).
+  const shelf: RoomDropRequest = { kind: 'etagere', x: -1.6, z: -0.17, quarter: 0 };
+  const plant: RoomDropRequest = { kind: 'plante-pot', x: -1.03, z: -0.17, quarter: 0 };
+  const table: RoomDropRequest = { kind: 'table-basse', x: -1.3, z: -0.08, quarter: 0 };
+
+  it('la table repose sur l’étagère, au-dessus de la plante', () => {
+    const room = dropAll([shelf, plant, table]);
+    expect(room.items?.[2].elevation).toBe(0.8);
+    expect(floatingRoomItems(room.items ?? [])).toEqual([]);
+  });
+
+  it('refuse de retirer ou d’écarter l’étagère : la table resterait en l’air sur la plante', () => {
+    const room = dropAll([shelf, plant, table]);
+    expect(removeRoomItem(room.items ?? [], 0)).toBeNull();
+    expect(dropRoomItem(room, DEFAULT_TANK, { ...shelf, x: -2.5 }, 0)).toEqual({
+      ok: false,
+      reason: 'en-l-air',
+    });
+    // Retirer d'abord la table, puis l'étagère : accepté.
+    const withoutTable = removeRoomItem(room.items ?? [], 2) ?? [];
+    expect(removeRoomItem(withoutTable, 0)).toEqual([plant]);
+  });
+
+  it('repère les éléments en l’air : au-dessus du vide ou posés sur une plante', () => {
+    const pot: RoomItem = { kind: 'plante-pot', x: -1, z: 0.3, quarter: 0 };
+    const onPot: RoomItem = { kind: 'plante-pot', x: -1, z: 0.3, quarter: 0, elevation: 0.34 };
+    const void_: RoomItem = { kind: 'table-basse', x: -2, z: 0.6, quarter: 0, elevation: 0.2 };
+    expect(floatingRoomItems([pot, onPot, void_])).toEqual([1, 2]);
+    expect(floatingRoomItems([])).toEqual([]);
+  });
+});
+
+describe('pièce : sauvegarde relue rendue cohérente (#200, cas 2)', () => {
+  const shelf: RoomItem = { kind: 'etagere', x: -1.25, z: -0.17, quarter: 0 };
+
+  it('rend à l’identique une pièce déjà posée', () => {
+    const room = dropAll([SHELF, PLANT_ON_SHELF, TABLE]);
+    expect(tidyRoomItems(room.items ?? [])).toEqual(room.items);
+    expect(tidyRoom(room)).toEqual(room);
+    expect(tidyRoom(ROOM)).toBe(ROOM);
+  });
+
+  it('repose un meuble flottant et écarte un chevauchement (le dernier de la liste)', () => {
+    const flying: RoomItem = { ...TABLE, elevation: 0.5 };
+    const through: RoomItem = { ...shelf, x: -1.3 };
+    expect(tidyRoomItems([shelf, flying, through])).toEqual([shelf, TABLE]);
+  });
+
+  it('écarte un élément resté en l’air sur une plante, et reste sans chevauchement', () => {
+    const pot: RoomItem = { kind: 'plante-pot', x: -1, z: 0.3, quarter: 0 };
+    const above: RoomItem = { kind: 'table-basse', x: -1.2, z: 0.3, quarter: 0, elevation: 1 };
+    expect(tidyRoomItems([pot, above])).toEqual([pot]);
+    const pile = Array.from({ length: 8 }, (_, i): RoomItem => ({
+      ...shelf,
+      elevation: i * 0.3,
+    }));
+    const tidy = tidyRoomItems(pile);
+    expect(noOverlap(tidy)).toBe(true);
+    expect(floatingRoomItems(tidy)).toEqual([]);
+  });
+
+  it('pièce dont tous les éléments sont écartés : écrite sans liste', () => {
+    const pot: RoomItem = { kind: 'plante-pot', x: -1, z: 0.3, quarter: 0, elevation: 0.34 };
+    const potBelow: RoomItem = { kind: 'plante-pot', x: -1, z: 0.3, quarter: 0 };
+    expect(tidyRoom({ ...ROOM, items: [pot, potBelow] })).toEqual({
+      ...ROOM,
+      items: [potBelow],
+    });
+  });
+});
+
+describe('pièce : cibles du choix à la souris (#188)', () => {
+  it('englobe tout le modèle, feuillage de la plante compris', () => {
+    const plant: RoomItem = { kind: 'plante-pot', x: -1, z: 0.3, quarter: 0, elevation: 0.8 };
+    const bounds = roomItemBounds(plant);
+    expect(bounds.minY).toBeCloseTo(0.8, 9);
+    expect(bounds.maxY).toBeCloseTo(1.76, 9);
+    expect(bounds.maxY).toBeGreaterThan(roomItemBox(plant).maxY);
+    const shelfBounds = roomItemBounds({ kind: 'etagere', x: 0, z: 0, quarter: 1 });
+    expect(shelfBounds).toEqual(roomItemBox({ kind: 'etagere', x: 0, z: 0, quarter: 1 }));
+  });
+
+  it('blocs d’un seul élément pour le contour de sélection', () => {
+    const room = dropAll([SHELF, PLANT_ON_SHELF]);
+    const all = furnitureBlocks(room);
+    const plant = furnitureBlocks(room, 1);
+    expect(plant).toHaveLength(ROOM_CATALOG['plante-pot'].blocks.length);
+    expect(all.slice(-plant.length)).toEqual(plant);
+    expect(furnitureBlocks(room, 5)).toEqual([]);
   });
 });

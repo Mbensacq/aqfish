@@ -274,7 +274,14 @@ export function boxesOverlap(a: FurnitureBox, b: FurnitureBox): boolean {
 
 /** Raison d'un refus de pose. */
 export type RoomDropRefusal =
-  'plein' | 'introuvable' | 'hors-piece' | 'meuble-bac' | 'sur-plante' | 'chevauche' | 'trop-haut';
+  | 'plein'
+  | 'introuvable'
+  | 'hors-piece'
+  | 'meuble-bac'
+  | 'sur-plante'
+  | 'chevauche'
+  | 'trop-haut'
+  | 'en-l-air';
 
 /** Résultat d'une pose : nouvelle liste et indice de l'élément posé, ou refus. */
 export type RoomDropResult =
@@ -289,8 +296,11 @@ export interface RoomDropRequest {
   readonly quarter: RoomQuarter;
 }
 
-/** Limites de la pièce où une emprise peut se trouver, et emprise du meuble du bac. */
-function roomBounds(dims: TankDimensions) {
+/**
+ * Limites de la pièce où une emprise peut se trouver (x, z, mètres), et emprise du meuble du
+ * bac (`cabinet`, au sol) : bornes de la pose et du choix d'un point du parquet (#188).
+ */
+export function roomArea(dims: TankDimensions) {
   const halfW = Math.ceil(dims.width / 2 / ROOM_VOXEL - 1e-9) * ROOM_VOXEL;
   const halfD = Math.ceil(dims.depth / 2 / ROOM_VOXEL - 1e-9) * ROOM_VOXEL;
   return {
@@ -398,7 +408,7 @@ export function dropRoomItem(
     quarter: request.quarter,
   };
   const box = roomItemBox(candidate);
-  const bounds = roomBounds(dims);
+  const bounds = roomArea(dims);
   if (
     box.minX < bounds.minX - EPS ||
     box.maxX > bounds.maxX + EPS ||
@@ -432,16 +442,19 @@ export function dropRoomItem(
     replace === undefined
       ? [...items, placed]
       : items.map((item, i) => (i === replace ? placed : item));
-  return {
-    ok: true,
-    items: settleRoomItems(next),
-    index: replace ?? next.length - 1,
-  };
+  const settled = settleRoomItems(next);
+  // Un élément porté qui retomberait sur une plante, sans place au parquet, resterait en
+  // l'air (#200, cas 1) : le geste est refusé.
+  if (floatingRoomItems(settled).length > 0) {
+    return { ok: false, reason: 'en-l-air' };
+  }
+  return { ok: true, items: settled, index: replace ?? next.length - 1 };
 }
 
 /**
  * Retire l'élément d'indice `index` ; ce qu'il portait retombe (`settleRoomItems`). `null`
- * si l'indice est inconnu.
+ * si l'indice est inconnu, ou si un élément porté resterait en l'air (il retomberait sur une
+ * plante sans place au parquet, #200 cas 1) : la suppression est alors refusée.
  */
 export function removeRoomItem(
   items: readonly RoomItem[],
@@ -450,7 +463,68 @@ export function removeRoomItem(
   if (!(Number.isInteger(index) && index >= 0 && index < items.length)) {
     return null;
   }
-  return settleRoomItems(items.filter((_, i) => i !== index));
+  const settled = settleRoomItems(items.filter((_, i) => i !== index));
+  return floatingRoomItems(settled).length > 0 ? null : settled;
+}
+
+/**
+ * Indices des éléments en l'air : base au-dessus du parquet sans reposer sur le dessus d'un
+ * élément porteur (une plante ne porte rien). Liste vide pour une pièce posée.
+ */
+export function floatingRoomItems(items: readonly RoomItem[]): number[] {
+  const floating: number[] = [];
+  items.forEach((item, i) => {
+    if ((item.elevation ?? 0) <= EPS) {
+      return;
+    }
+    const held = items.some(
+      (other, j) => j !== i && ROOM_CATALOG[other.kind].supports && restsOn(item, other),
+    );
+    if (!held) {
+      floating.push(i);
+    }
+  });
+  return floating;
+}
+
+/**
+ * Pièce relue d'une sauvegarde (`readRoom`), éléments rendus cohérents (`tidyRoomItems`) ;
+ * sans élément, rendue telle quelle.
+ */
+export function tidyRoom(room: Room): Room {
+  if (!room.items || room.items.length === 0) {
+    return room;
+  }
+  const items = tidyRoomItems(room.items);
+  return items.length > 0
+    ? { ...room, items }
+    : { shown: room.shown, cabinetHeight: room.cabinetHeight };
+}
+
+/**
+ * Éléments relus d'une sauvegarde, rendus cohérents (#200, cas 2) : reposés par gravité
+ * (`settleRoomItems`), puis, dans l'ordre de la liste, un élément qui chevauche un élément
+ * gardé avant lui ou qui reste en l'air est écarté, et ainsi de suite jusqu'à une pièce posée
+ * (ce qu'il portait retombe). Une liste déjà cohérente est rendue à l'identique. Pur.
+ */
+export function tidyRoomItems(items: readonly RoomItem[]): readonly RoomItem[] {
+  let work = settleRoomItems(items);
+  // Chaque tour sans arrêt écarte au moins un élément : au plus `length` tours.
+  for (let round = 0; round <= items.length; round++) {
+    const kept: RoomItem[] = [];
+    for (const item of work) {
+      const box = roomItemBox(item);
+      if (!kept.some((other) => boxesOverlap(box, roomItemBox(other)))) {
+        kept.push(item);
+      }
+    }
+    const floating = new Set(floatingRoomItems(kept));
+    if (kept.length === work.length && floating.size === 0) {
+      return work;
+    }
+    work = settleRoomItems(kept.filter((_, i) => !floating.has(i)));
+  }
+  return work;
 }
 
 /**
@@ -488,35 +562,62 @@ export function settleRoomItems(items: readonly RoomItem[]): readonly RoomItem[]
   return work;
 }
 
+/** Blocs voxels de l'élément `item`, base à la hauteur `floorY` + élévation (repère du bac). */
+function itemBlocks(item: RoomItem, floorY: number, out: RoomBlock[]): void {
+  const base = floorY + (item.elevation ?? 0);
+  for (const b of ROOM_CATALOG[item.kind].blocks) {
+    const r = rotateRect(b.minX, b.maxX, b.minZ, b.maxZ, item.quarter);
+    out.push({
+      box: {
+        minX: snap(item.x + r.minX / 100),
+        maxX: snap(item.x + r.maxX / 100),
+        minY: snap(base + b.minY / 100),
+        maxY: snap(base + b.maxY / 100),
+        minZ: snap(item.z + r.minZ / 100),
+        maxZ: snap(item.z + r.maxZ / 100),
+      },
+      part: b.part,
+      shade: b.shade,
+    });
+  }
+}
+
 /**
  * Blocs voxels des éléments de la pièce `room`, dans le repère du bac
  * (parquet en y = −hauteur du meuble), cotes arrondies au centimètre. Liste vide si la pièce
- * est masquée ou sans élément.
+ * est masquée ou sans élément. Avec `only`, blocs de l'élément d'indice `only` seulement
+ * (contour de sélection, #188) ; vide si l'indice est inconnu.
  */
-export function furnitureBlocks(room: Room): RoomBlock[] {
+export function furnitureBlocks(room: Room, only?: number): RoomBlock[] {
   const { shown, cabinetHeight } = clampRoom(room);
   if (!shown || !room.items) {
     return [];
   }
-  const floorY = -cabinetHeight;
   const blocks: RoomBlock[] = [];
-  for (const item of room.items) {
-    const base = floorY + (item.elevation ?? 0);
-    for (const b of ROOM_CATALOG[item.kind].blocks) {
-      const r = rotateRect(b.minX, b.maxX, b.minZ, b.maxZ, item.quarter);
-      blocks.push({
-        box: {
-          minX: snap(item.x + r.minX / 100),
-          maxX: snap(item.x + r.maxX / 100),
-          minY: snap(base + b.minY / 100),
-          maxY: snap(base + b.maxY / 100),
-          minZ: snap(item.z + r.minZ / 100),
-          maxZ: snap(item.z + r.maxZ / 100),
-        },
-        part: b.part,
-        shade: b.shade,
-      });
+  room.items.forEach((item, i) => {
+    if (only === undefined || only === i) {
+      itemBlocks(item, -cabinetHeight, blocks);
     }
-  }
+  });
   return blocks;
+}
+
+/**
+ * Boîte englobant **tout** le modèle de `item` (feuillage compris), en mètres, y compté
+ * depuis le parquet : cible du choix d'un élément à la souris (#188), plus large que sa
+ * boîte de collision pour une plante.
+ */
+export function roomItemBounds(item: RoomItem): FurnitureBox {
+  const blocks: RoomBlock[] = [];
+  itemBlocks(item, 0, blocks);
+  const box: { -readonly [K in keyof FurnitureBox]: number } = { ...blocks[0].box };
+  for (const { box: b } of blocks) {
+    box.minX = Math.min(box.minX, b.minX);
+    box.maxX = Math.max(box.maxX, b.maxX);
+    box.minY = Math.min(box.minY, b.minY);
+    box.maxY = Math.max(box.maxY, b.maxY);
+    box.minZ = Math.min(box.minZ, b.minZ);
+    box.maxZ = Math.max(box.maxZ, b.maxZ);
+  }
+  return box;
 }
