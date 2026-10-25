@@ -40,6 +40,10 @@
  * elle est mauvaise. Le niveau n'est pas vérifié ici : l'application ignore une valeur
  * inconnue ; absent, eau saine (séries existantes inchangées).
  *
+ * Paramètre facultatif `affames=1` (issue #208) : en mode capture, animaux affamés de longue
+ * date à t = 0 (faim maximale, santé au plancher : nage ralentie, couleurs ternies). Toute
+ * autre valeur ou absent : animaux nourris et en bonne santé (séries existantes inchangées).
+ *
  * Paramètre facultatif `piece=1` (issue #187) : en mode capture, la pièce autour du bac
  * (sol, mur, meuble support) est affichée, dans le bac tropical seulement ; toute autre
  * valeur ou absent, pièce masquée (séries existantes inchangées).
@@ -113,6 +117,8 @@ export interface CaptureParams {
   readonly room: boolean;
   /** Niveau de l'eau d'exemple de `eau=` (issue #207), non vérifié ; `null` si absent. */
   readonly water: string | null;
+  /** Vrai pour `affames=1` : animaux affamés de longue date à t = 0 (issue #208). */
+  readonly starved: boolean;
   /** Élément du décor sélectionné par `edition=` (issue #167) ; `null` si absent ou invalide. */
   readonly editSelection: number | null;
   /** Élément de la pièce sélectionné par `edition-meuble=` (issue #188) ; `null` sinon. */
@@ -195,6 +201,7 @@ export const DEFAULT_CAPTURE_PARAMS: CaptureParams = {
   rain: false,
   room: false,
   water: null,
+  starved: false,
   editSelection: null,
   editRoomSelection: null,
   woods: [],
@@ -240,6 +247,7 @@ export function parseCaptureParams(search: string): CaptureParams {
     rain: params.get('pluie') === '1',
     room: params.get('piece') === '1',
     water: params.get('eau'),
+    starved: params.get('affames') === '1',
     editSelection: parseEditSelection(params.get('edition')),
     editRoomSelection: parseEditSelection(params.get('edition-meuble')),
     woods: parseWoods(params.get('bois')),

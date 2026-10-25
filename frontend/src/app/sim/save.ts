@@ -22,6 +22,7 @@ import { DEFAULT_SIM_SPEED, isSimSpeed, type SimSpeed } from './sim-speed';
 import { SPECIES, type SpeciesId } from './species';
 import type { Fish } from './swimmer';
 import { readWater, type WaterState } from './water';
+import { HEALTH_FLOOR, HEALTH_START } from './wellbeing';
 import { clampTankDimensions, type Box3, type TankDimensions } from './tank';
 import {
   boundsFor,
@@ -215,6 +216,7 @@ export function saveData(world: World, settings: SaveSettings = DEFAULT_SAVE_SET
       for (const key of FISH_NUMBER_KEYS) {
         saved[key] = fish[key];
       }
+      saved['health'] = fish.health;
       return saved as unknown as SavedFish;
     }),
     food: world.food.map((pellet) => ({ ...pellet })),
@@ -531,6 +533,17 @@ function parseFish(
       return null;
     }
     fish[key] = v;
+    if (key === 'hunger') {
+      // Santé (issue #208), juste après la faim (même ordre des champs qu'un poisson neuf) :
+      // facultative, une sauvegarde antérieure n'en a pas (animal en pleine santé) ;
+      // présente, nombre fini dans [plancher, 1].
+      const health = own(item, 'health');
+      if (health !== undefined && (typeof health !== 'number' || !Number.isFinite(health))) {
+        report('health doit être un nombre fini');
+        return null;
+      }
+      fish['health'] = health ?? HEALTH_START;
+    }
   }
   const f = fish as unknown as Fish;
   const def = SPECIES[species];
@@ -555,6 +568,7 @@ function parseFish(
     [isNumberIn(f.pphase, 0, 2 * Math.PI), 'pphase hors de [0, 2π]'],
     [isNumberIn(f.ascent, 0, MAX_DURATION_SECONDS), 'ascent hors bornes'],
     [isNumberIn(f.hunger, 0, 1), 'hunger hors de [0, 1]'],
+    [isNumberIn(f.health, HEALTH_FLOOR, 1), 'health hors de [plancher, 1]'],
     [isUint32(f.rng), 'rng doit être un entier 32 bits non signé'],
   ];
   for (const [ok, problem] of checks) {

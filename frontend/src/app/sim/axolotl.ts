@@ -11,6 +11,7 @@ import { createFish, random, savePrevious, wrapAngle, type Fish, type SwimBounds
 import type { Box3 } from './tank';
 import { terrainHeightAt, type TerrainSettings } from './terrain';
 import { tailBeatRate } from './undulation';
+import { vigor } from './wellbeing';
 
 /**
  * Déplacement des espèces qui vivent sur le fond (axolotl, issue #130) : à la place de la
@@ -324,7 +325,8 @@ export function stepWalker(
   fish.yaw = wrapAngle(yaw);
 
   // Déplacement horizontal, refusé s'il mène hors des bornes ou au-dessus d'un fond trop haut.
-  const step = fish.speed * dt;
+  // Santé basse (issue #208) : pas réduit par `vigor`, exactement 1 à santé pleine.
+  const step = fish.speed * dt * vigor(fish.health);
   const nx = clamp(fish.x + Math.cos(fish.yaw) * step, hard.minX, hard.maxX);
   const nz = clamp(fish.z + Math.sin(fish.yaw) * step, hard.minZ, hard.maxZ);
   if (walkerCanStand(nx, nz, def, bounds, ground)) {

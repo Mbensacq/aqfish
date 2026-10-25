@@ -31,6 +31,7 @@ describe('parseCaptureParams', () => {
       rain: false,
       room: false,
       water: null,
+      starved: false,
       editSelection: null,
       editRoomSelection: null,
       woods: [],
@@ -135,6 +136,15 @@ describe('parseCaptureParams', () => {
     expect(parseCaptureParams('?capture=1&eau=autre').water).toBe('autre');
     expect(parseCaptureParams('?capture=1').water).toBeNull();
     expect(DEFAULT_CAPTURE_PARAMS.water).toBeNull();
+  });
+
+  it('lit les animaux affamés : affames=1 seulement, sinon nourris (#208)', () => {
+    expect(parseCaptureParams('?capture=1&affames=1').starved).toBe(true);
+    for (const value of ['0', 'oui', 'true', '']) {
+      expect(parseCaptureParams(`?capture=1&affames=${value}`).starved).toBe(false);
+    }
+    expect(parseCaptureParams('?capture=1').starved).toBe(false);
+    expect(DEFAULT_CAPTURE_PARAMS.starved).toBe(false);
   });
 
   it('lit la pièce : piece=1 seulement, sinon pièce masquée (#187)', () => {

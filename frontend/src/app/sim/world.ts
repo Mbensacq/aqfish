@@ -29,7 +29,7 @@ import { eatInPlace, feedingBand, foodTarget, type FeedingBand } from './feeding
 import { computeSchoolSteering, enforceMinDistance, type Vec3 } from './flocking';
 import { dropFoodInPlace, stepFoodInPlace, type FoodPellet } from './food';
 import { validateObstacle, type Obstacle } from './obstacles';
-import { SPECIES, type AnemoneBondParams, type SpeciesId } from './species';
+import { SPECIES, type AnemoneBondParams, type SpeciesDefinition, type SpeciesId } from './species';
 import { createFish, stepFish, swimBounds, type Fish, type SwimBounds } from './swimmer';
 import { clampTankDimensions, type TankDimensions } from './tank';
 import { assertTimeStep } from './time-step';
@@ -44,6 +44,8 @@ import {
   type MutableWaterState,
   type WaterState,
 } from './water';
+import { waterQuality } from './water-quality';
+import { starveInPlace, stepWellbeingInPlace } from './wellbeing';
 
 /**
  * Entité de la simulation. Seuls les poissons existent pour l'instant (`sim/swimmer.ts`).
@@ -644,6 +646,33 @@ function stepInPlace(world: MutableWorld, dt: number): void {
     waterLiters(environmentWater(place)),
     targetTemperature(world.water, world.environment),
   );
+  // Santé (issue #208) : sur la faim de fin de pas (après les repas) et l'eau du pas, sans
+  // hasard ; à santé pleine, la nage reste exactement celle d'avant.
+  stepWellbeingInPlace(
+    fishes,
+    dt,
+    waterQuality(world.water, world.environment) === 'mauvaise',
+    speciesById,
+  );
+}
+
+function speciesById(species: SpeciesId): SpeciesDefinition {
+  return SPECIES[species];
+}
+
+/**
+ * Animaux affamés de longue date (`starveInPlace`, paramètre de capture `affames=1`, issue
+ * #208) : renvoie un nouvel état, `world` n'est jamais modifié.
+ */
+export function starveWorld(world: World): World {
+  const next = cloneWorld(world);
+  starveWorldInPlace(next);
+  return next;
+}
+
+/** Comme `starveWorld`, **en modifiant** `world` (monde en construction, avant le rendu). */
+export function starveWorldInPlace(world: MutableWorld): void {
+  starveInPlace(world.entities as Mutable<Entity>[]);
 }
 
 /**

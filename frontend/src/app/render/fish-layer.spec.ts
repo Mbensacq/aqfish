@@ -1,12 +1,31 @@
-import { Box3, Matrix4, Mesh, Object3D, Vector3, type MeshBasicMaterial } from 'three';
+import {
+  Box3,
+  Matrix4,
+  Mesh,
+  Object3D,
+  ShaderLib,
+  Vector3,
+  type MeshBasicMaterial,
+  type WebGLProgramParametersWithUniforms,
+  type WebGLRenderer,
+} from 'three';
 
 import { GUPPY, KOI, NEON, speciesVariantIndex } from '../sim/species';
 import { createFish, stepFish, swimBounds, type Fish } from '../sim/swimmer';
 import { DEFAULT_TANK, waterVolume } from '../sim/tank';
 import { TAIL_LAG } from '../sim/undulation';
+import { HEALTH_FLOOR } from '../sim/wellbeing';
 import { createDefaultWorld } from '../sim/world';
 import { CAMERA_FOV_DEG, framingDistance } from './camera-presets';
-import { FishLayer, interpolateFishPose, type FishPose } from './fish-layer';
+import {
+  DULL_ATTRIBUTE,
+  DULL_DARKENING,
+  DULL_DESATURATION,
+  FishLayer,
+  interpolateFishPose,
+  withDullness,
+  type FishPose,
+} from './fish-layer';
 import { createFishGeometry } from './fish-model';
 import { PIXEL_SIZE } from './pixel-art';
 
@@ -323,5 +342,52 @@ describe('FishLayer : apparences (guppy mâle et femelle)', () => {
     layer.setBrightness(1);
     expect(material.color.getHex()).toBe(0xffffff);
     layer.dispose();
+  });
+});
+
+describe('FishLayer : couleurs ternies par la santé (#208)', () => {
+  it('ternissement par instance : 0 à santé pleine, 1 au plancher, dans l’ordre des instances', () => {
+    const layer = new FishLayer(NEON, 4);
+    const healthy = fishAfterSteps(0, 1);
+    const sick: Fish = { ...fishAfterSteps(1, 1), health: HEALTH_FLOOR };
+    const half: Fish = { ...fishAfterSteps(2, 1), health: (1 + HEALTH_FLOOR) / 2 };
+    layer.update([healthy, sick, half], 1);
+    expect(layer.dullnessAt(0)).toBe(0);
+    expect(layer.dullnessAt(1)).toBe(1);
+    expect(layer.dullnessAt(2)).toBeCloseTo(0.5, 6);
+    layer.update([sick, healthy], 1);
+    expect(layer.dullnessAt(0)).toBe(1);
+    expect(layer.dullnessAt(1)).toBe(0);
+    layer.dispose();
+  });
+
+  it('corps et queue partagent l’attribut de ternissement', () => {
+    const layer = new FishLayer(NEON, 4);
+    const [body, tail] = layer.object.children as Mesh[];
+    expect(body.geometry.getAttribute(DULL_ATTRIBUTE)).toBe(
+      tail.geometry.getAttribute(DULL_ATTRIBUTE),
+    );
+    expect(body.geometry.getAttribute(DULL_ATTRIBUTE).count).toBe(4);
+    layer.dispose();
+  });
+
+  it('le matériau ajoute le ternissement à la compilation, après le calcul de vColor', () => {
+    const layer = new FishLayer(NEON, 4);
+    const material = (layer.object.children[0] as Mesh).material as MeshBasicMaterial;
+    const shader = {
+      vertexShader: ShaderLib.basic.vertexShader,
+    } as WebGLProgramParametersWithUniforms;
+    material.onBeforeCompile(shader, null as unknown as WebGLRenderer);
+    expect(shader.vertexShader).toBe(withDullness(ShaderLib.basic.vertexShader));
+    expect(shader.vertexShader).toContain(`attribute float ${DULL_ATTRIBUTE};`);
+    const color = shader.vertexShader.indexOf('#include <color_vertex>');
+    expect(shader.vertexShader.indexOf('vColor.xyz = mix(', color)).toBeGreaterThan(color);
+    expect(shader.vertexShader).toContain(DULL_DESATURATION.toFixed(4));
+    expect(shader.vertexShader).toContain(DULL_DARKENING.toFixed(4));
+    layer.dispose();
+  });
+
+  it('withDullness refuse un shader sans point d’insertion', () => {
+    expect(() => withDullness('void main() {}')).toThrow(/color_vertex/);
   });
 });

@@ -139,6 +139,7 @@ import {
   createDefaultWorld,
   feedInPlace,
   setWorldHeaterInPlace,
+  starveWorldInPlace,
   type MutableWorld,
   type World,
 } from '../../sim/world';
@@ -1618,6 +1619,10 @@ export class AquariumHost {
       // Eau d'exemple de `eau=` (#207), en capture : à t = 0, avant d'avancer le monde.
       if (params.capture && isWaterQuality(params.water)) {
         world.water = sampleWater(world.environment, params.water);
+      }
+      // Animaux affamés de `affames=1` (#208), en capture : à t = 0, avant d'avancer le monde.
+      if (params.capture && params.starved) {
+        starveWorldInPlace(world);
       }
       this.currentWorld = params.capture
         ? advanceToWithFeedings(world, params.time, params.feedings)

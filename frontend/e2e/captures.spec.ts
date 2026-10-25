@@ -155,6 +155,9 @@ test.describe('Captures', () => {
     // Eau mauvaise (#207) : nitrates élevés, eau plus trouble et verdâtre (teinte seulement).
     { name: 'three-quarter-eau-mauvaise', query: 'eau=mauvaise' },
     { name: 'top-eau-mauvaise', query: 'eau=mauvaise&camera=top' },
+    // Animaux affamés de longue date (#208) : santé au plancher, couleurs ternies.
+    { name: 'side-affames', query: 'affames=1&camera=side' },
+    { name: 'three-quarter-affames', query: 'affames=1' },
   ] as const;
   for (const { name, query } of DAY_CAPTURES) {
     test(`angle ${name}`, async ({ page }) => {

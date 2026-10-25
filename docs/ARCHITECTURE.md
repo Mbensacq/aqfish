@@ -108,6 +108,13 @@ simulation testable et les captures reproductibles.
   (`foodTarget`) ; `stepFish` y tourne à la place de l'errance et du banc, l'évitement restant
   prioritaire. Après la nage, `eatInPlace` fait manger les poissons dans l'ordre des
   identifiants (un granulé, un seul mangeur). Sans granulé, nage inchangée.
+- **Santé** (#208, ADR 0054, `sim/wellbeing.ts`) : `Fish.health` ∈ [0,2 ; 1], avancée en
+  fin de pas (après les repas et l'eau), sans hasard ni allocation : baisse tant que la faim
+  vaut 1 (espèces qui mangent les granulés) ou que l'eau est « mauvaise » (`waterQuality`),
+  remonte deux fois plus lentement sinon. Sous 1, déplacement multiplié par `vigor` (0,6 au
+  plancher) et couleurs ternies au rendu (`dullness`, attribut d'instance de `FishLayer`) ;
+  à 1, nage et couleurs exactement celles d'avant. Champ `health` facultatif de la
+  sauvegarde (1 par défaut).
 - **Unités et repère** : mètres, secondes, degrés Celsius. Axe Y vers le haut ; origine au
   centre du fond du bac.
 - **Données réelles** : toute valeur présentée comme réelle (température d'une espèce,
@@ -291,7 +298,7 @@ respecter :
 
 | Élément | Règle |
 |---|---|
-| Paramètres d'URL | `capture`, `seed`, `camera`, `time`, et `filtre`, `heure`, `nourrir`, `population`, `environnement`, `granules`, `pluie`, `eau`, `piece` et `meubles` facultatifs, lus par `core/capture/capture-params.ts` |
+| Paramètres d'URL | `capture`, `seed`, `camera`, `time`, et `filtre`, `heure`, `nourrir`, `population`, `environnement`, `granules`, `pluie`, `eau`, `affames`, `piece` et `meubles` facultatifs, lus par `core/capture/capture-params.ts` |
 | `environnement=` | En capture comme hors capture (#87, ADR 0026) : `tropical`, `bassin`, `paludarium` (#129) ou `recif` (#148) ; inconnu ou absent : bac tropical (séries existantes inchangées, à l'octet près). Sans `camera=`, vue par défaut de l'environnement (`top` pour le bassin, `three-quarter` pour le bac, le paludarium et le récif) |
 | `population=` | En capture comme hors capture (#69, ADR 0025) : effectifs `espece:n` séparés par des virgules (`neon:12,guppy:2,corydora:0`), appliqués à t = 0 dans l'ordre de l'URL, bornés par `sim/species-catalog.ts` (#189 : `neon:9999` donne le maximum de l'espèce, #95). Entrée mal formée (n de plus de 6 chiffres compris) ou espèce inconnue ignorée, 10 au plus. Absent : population par défaut (séries existantes inchangées, à l'octet près) |
 | `nourrir=` | En capture seulement (#67, ADR 0022) : dépôts de nourriture séparés par des virgules, `t` (centre du bac) ou `t:x:z` (temps simulé en s, position en m) ; rejoués au temps simulé de chacun avant le premier rendu (`advanceToWithFeedings`). Entrée invalide ignorée, 20 au plus. Absent : aucun granulé (séries existantes inchangées, à l'octet près) |
@@ -300,6 +307,7 @@ respecter :
 | `bois=x:z:rotation:echelle:graine` | En capture seulement (#169, ADR 0045) : bois flottés ajoutés au décor par défaut, séparés par des virgules (4 au plus). Entrée mal formée ou bois invalide (hors du bac, échelle hors bornes) ignoré ; absent : décor par défaut (séries existantes inchangées) |
 | `bac=longueur:hauteur:profondeur` | En capture seulement (#171, ADR 0047) : dimensions du bac en mètres (trois réels décimaux positifs), bornées à `TANK_LIMITS` ; appliquées avant `bois=` et `population=`. Sans effet hors du bac tropical ; mal formé ou absent : dimensions de l'environnement (séries existantes inchangées) |
 | `eau=bonne\|a-surveiller\|mauvaise` | En capture seulement (#207, ADR 0053) : eau d'exemple du niveau à t = 0 (`sampleWater`, nitrates à 1,25 fois le seuil), troublée si mauvaise. Valeur inconnue ou absent : eau saine (séries existantes inchangées, à l'octet près) |
+| `affames=1` | En capture seulement (#208, ADR 0054) : animaux affamés de longue date à t = 0 (faim 1, santé au plancher : nage ralentie, couleurs ternies). Toute autre valeur ou absent : animaux nourris en pleine santé (séries existantes inchangées, à l'octet près) |
 | `piece=1` | En capture seulement (#187, ADR 0048) : pièce autour du bac tropical affichée (sol, mur, meuble support) ; ailleurs ignoré. Toute autre valeur ou absent : pièce masquée (séries existantes inchangées, à l'octet près) |
 | `meubles=type:x:z:quart` | En capture seulement, avec `piece=1` (#188, ADR 0049) : éléments lâchés dans la pièce dans l'ordre de l'URL (`dropRoomItem`), séparés par des virgules (8 au plus) ; type du catalogue (`etagere`, `table-basse`, `canape`, `plante-pot`), centre en mètres, quart de tour de 0 à 3. Mal formé, type inconnu ou pose refusée : ignoré ; absent : pièce nue (séries existantes inchangées) |
 | `edition-meuble=<indice>` | En capture seulement, avec `piece=1` et `meubles=` (#188, ADR 0050) : mode édition, élément d'indice donné de la pièce sélectionné (même contour que `edition=`). Absent, invalide ou hors de la pièce : aucune sélection (séries existantes inchangées) |

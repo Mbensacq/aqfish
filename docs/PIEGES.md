@@ -452,6 +452,14 @@ haut de sa section.
 
 ## Rendu
 
+- **Ternir un petit poisson : la passe palette le ramène au sable** (cycle 72, #208) : avec
+  45 % de désaturation et 25 % d'assombrissement (et même 75 % / 30 %), néons et guppys
+  affamés sortaient **à l'identique** en tons de sable et de gris : la passe palette ramène
+  toutes ces couleurs ternes aux mêmes voisines, et la nuance réglée ne se voit plus du tout
+  (deux captures égales à l'octet pour deux réglages différents). Balayer plusieurs valeurs
+  en petit pas (capture `side-affames`, zoom Pillow `NEAREST`) et garder la plus forte qui
+  laisse chaque espèce reconnaissable : 30 % / 15 % (`DULL_DESATURATION`,
+  `DULL_DARKENING`). (2026-10-25)
 - **Teinter l'eau translucide : la passe palette saute d'une couleur à l'autre** (cycle 71,
   #207) : pour l'eau trouble, mêler les teintes d'entrée vers un vert ne donne que des paliers
   (`eauSombre` → `vegetation` → `verreSombre` pour le volume, `eauMoyenne` →

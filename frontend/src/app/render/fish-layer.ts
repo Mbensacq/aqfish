@@ -1,5 +1,7 @@
 import {
+  DynamicDrawUsage,
   Euler,
+  InstancedBufferAttribute,
   InstancedMesh,
   Matrix4,
   MeshBasicMaterial,
@@ -18,6 +20,7 @@ import {
 } from '../sim/species';
 import { wrapAngle, type Fish } from '../sim/swimmer';
 import { undulationAt, undulationScale, type Undulation } from '../sim/undulation';
+import { dullness } from '../sim/wellbeing';
 import { SILHOUETTES, createFishGeometry, modelBodyLength } from './fish-model';
 
 /** Nombre maximal de poissons d'une espèce affichés (capacité des `InstancedMesh`). */
@@ -31,6 +34,39 @@ const TWO_PI = Math.PI * 2;
  * néon vers le rouge koï à la quantification (constaté sur capture, cycle 3).
  */
 export const FISH_RENDER_ORDER = 2.5;
+
+/**
+ * Couleurs ternies d'un animal en mauvaise santé (issue #208, ADR 0054) : au ternissement
+ * maximal (`dullness` = 1, santé au plancher), la couleur perd `DULL_DESATURATION` de sa
+ * saturation (mélange vers sa luminance) et `DULL_DARKENING` de sa luminosité. Valeurs
+ * choisies sur capture, après la passe palette.
+ */
+export const DULL_DESATURATION = 0.3;
+export const DULL_DARKENING = 0.15;
+
+/** Attribut d'instance du ternissement, dans [0, 1]. */
+export const DULL_ATTRIBUTE = 'aqfishDull';
+
+const COLOR_VERTEX = '#include <color_vertex>';
+
+/**
+ * Ajoute le ternissement par instance au shader de sommets d'un `MeshBasicMaterial` à
+ * couleurs de sommet, juste après le calcul de `vColor`. À ternissement nul, `mix(c, g, 0)`
+ * puis `× 1` rendent exactement la couleur d'avant (captures inchangées à l'octet).
+ * @throws Error si le shader n'a pas le point d'insertion attendu (version de three.js
+ * incompatible), plutôt que d'ignorer silencieusement l'effet.
+ */
+export function withDullness(vertexShader: string): string {
+  if (!vertexShader.includes(COLOR_VERTEX)) {
+    throw new Error(`Shader de poissons sans ${COLOR_VERTEX}`);
+  }
+  return `attribute float ${DULL_ATTRIBUTE};
+${vertexShader.replace(
+  COLOR_VERTEX,
+  `${COLOR_VERTEX}
+	vColor.xyz = mix( vColor.xyz, vec3( dot( vColor.xyz, vec3( 0.2126, 0.7152, 0.0722 ) ) ), ${DULL_ATTRIBUTE} * ${DULL_DESATURATION.toFixed(4)} ) * ( 1.0 - ${DULL_ATTRIBUTE} * ${DULL_DARKENING.toFixed(4)} );`,
+)}`;
+}
 
 /** Pose interpolée d'un poisson, en repère du bac. */
 export interface FishPose {
@@ -74,6 +110,8 @@ export class FishLayer {
   private readonly body: InstancedMesh;
   private readonly tail: InstancedMesh;
   private readonly material: MeshBasicMaterial;
+  /** Ternissement par instance (`dullness` de la santé), partagé par le corps et la queue. */
+  private readonly dull: InstancedBufferAttribute;
   private readonly geometries: BufferGeometry[];
   private readonly halfLength: number;
   private readonly pose: FishPose = { x: 0, y: 0, z: 0, yaw: 0, pitch: 0, phase: 0 };
@@ -113,9 +151,17 @@ export class FishLayer {
     // la quantification. Dessinés après l'eau et le verre (file des transparents, opacité
     // pleine) pour que leurs teintes ne les recouvrent pas (docs/PIEGES.md).
     this.material = new MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: 1 });
+    this.material.onBeforeCompile = (shader) => {
+      shader.vertexShader = withDullness(shader.vertexShader);
+    };
     const bodyGeometry = createFishGeometry(species, 'body', variant);
     const tailGeometry = createFishGeometry(species, 'tail', variant);
     this.geometries = [bodyGeometry, tailGeometry];
+    this.dull = new InstancedBufferAttribute(new Float32Array(capacity), 1);
+    this.dull.setUsage(DynamicDrawUsage);
+    for (const geometry of this.geometries) {
+      geometry.setAttribute(DULL_ATTRIBUTE, this.dull);
+    }
     this.body = new InstancedMesh(bodyGeometry, this.material, capacity);
     this.tail = new InstancedMesh(tailGeometry, this.material, capacity);
     this.body.name = `${this.object.name}-corps`;
@@ -170,12 +216,14 @@ export class FishLayer {
       this.swing.makeRotationY(swing);
       this.tailMatrix.multiplyMatrices(this.bodyMatrix, this.hinge).multiply(this.swing);
       this.tail.setMatrixAt(n, this.tailMatrix);
+      this.dull.setX(n, dullness(fish.health));
       n++;
     }
     this.body.count = n;
     this.tail.count = n;
     this.body.instanceMatrix.needsUpdate = true;
     this.tail.instanceMatrix.needsUpdate = true;
+    this.dull.needsUpdate = true;
   }
 
   /**
@@ -192,6 +240,11 @@ export class FishLayer {
   /** Luminosité appliquée (tests). */
   get brightness(): number {
     return this.material.color.r;
+  }
+
+  /** Ternissement d'une instance, dans [0, 1] (tests). */
+  dullnessAt(index: number): number {
+    return this.dull.getX(index);
   }
 
   /** Lit la matrice d'une instance du corps (tests). */

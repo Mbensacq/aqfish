@@ -6,6 +6,7 @@ import { obstacleBound, obstacleDistance, type Obstacle } from './obstacles';
 import { shrinkBox, type Box3 } from './tank';
 import { SPECIES, type SpeciesDefinition, type SpeciesId } from './species';
 import { tailBeatRate } from './undulation';
+import { HEALTH_START, vigor } from './wellbeing';
 
 /**
  * Poisson de la simulation : objet de données pur, sérialisable en JSON (ADR 0003).
@@ -49,6 +50,12 @@ export interface Fish {
    * (`sim/feeding.ts`). Ne consomme aucun tirage.
    */
   readonly hunger: number;
+  /**
+   * Santé, dans [`HEALTH_FLOOR`, 1] : baisse si la faim est maximale ou l'eau mauvaise,
+   * remonte sinon (`sim/wellbeing.ts`, issue #208). Ralentit la nage et ternit les couleurs
+   * sous 1. Ne consomme aucun tirage.
+   */
+  readonly health: number;
   /** État du sous-générateur de l'entité (mulberry32, voir `prngNextState`). */
   readonly rng: number;
   // État au pas précédent (interpolation du rendu).
@@ -283,6 +290,7 @@ export function createFish(
     phase: 0,
     ascent: 0,
     hunger: HUNGER_START,
+    health: HEALTH_START,
     rng: deriveSeed(seed, id),
     px: 0,
     py: 0,
@@ -335,7 +343,8 @@ export function createFish(
  * `|pitch|` ≤ maxPitch ; le cap tourne d'au plus `max(avoidTurnRate, wanderTurnRate +
  * schooling.turnRate) · dt` par pas. Filet de sécurité : un centre entré dans un obstacle
  * est ramené sur sa surface (puis dans `bounds.hard`). Sans obstacle, le déplacement d'un
- * pas ne dépasse jamais `maxSpeed · dt`.
+ * pas ne dépasse jamais `maxSpeed · dt`. Santé basse : déplacement multiplié par `vigor`
+ * (`sim/wellbeing.ts`) ; la vitesse `speed` et le battement de queue restent ceux d'avant.
  */
 export function stepFish(
   fish: Mutable<Fish>,
@@ -538,8 +547,9 @@ export function stepFish(
 
   // Déplacement, puis filets de sécurité : sortie d'un obstacle (projection sur sa surface),
   // puis projection sur la boîte (convexe, contenant la position précédente : elle ne peut que
-  // raccourcir le déplacement).
-  const distance = fish.speed * dt;
+  // raccourcir le déplacement). Santé basse (issue #208) : déplacement réduit par `vigor`,
+  // exactement 1 à santé pleine (nage d'avant, au bit près).
+  const distance = fish.speed * dt * vigor(fish.health);
   const horizontal = Math.cos(fish.pitch) * distance;
   fish.x += Math.cos(fish.yaw) * horizontal;
   fish.y += Math.sin(fish.pitch) * distance;

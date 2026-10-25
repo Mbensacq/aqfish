@@ -6,6 +6,7 @@ import { waterDirection } from './terrain';
 import { SPECIES, type AmphibianParams, type SpeciesDefinition, type SpeciesId } from './species';
 import { createFish, random, savePrevious, wrapAngle, type Fish, type SwimBounds } from './swimmer';
 import { tailBeatRate } from './undulation';
+import { vigor } from './wellbeing';
 
 /**
  * Déplacement des espèces qui vivent entre terre et eau (grenouille, issue #131, ADR 0036 ;
@@ -479,7 +480,8 @@ function stepSwim(
 
   // Pas horizontal : à la nage, refusé s'il mène sur la terre ; à la sortie, toujours fait
   // (la grenouille monte le long du sol).
-  const step = fish.speed * dt;
+  // Santé basse (issue #208) : pas réduit par `vigor`, exactement 1 à santé pleine.
+  const step = fish.speed * dt * vigor(fish.health);
   const nx = clamp(fish.x + Math.cos(fish.yaw) * step, hard.minX, hard.maxX);
   const nz = clamp(fish.z + Math.sin(fish.yaw) * step, hard.minZ, hard.maxZ);
   if (!toWater || !isOnLand(nx, nz, ground)) {
