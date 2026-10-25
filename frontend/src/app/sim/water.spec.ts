@@ -8,13 +8,17 @@ import {
   changeWaterInPlace,
   freshWater,
   MAX_CONCENTRATION,
+  MAX_HEATER_TEMPERATURE,
   MAX_WATER_TEMPERATURE,
+  MIN_HEATER_TEMPERATURE,
   MIN_WATER_TEMPERATURE,
   readWater,
   REFERENCE_BODY_LENGTH,
+  setHeaterInPlace,
   stepWater,
   stepWaterInPlace,
   WATER_CHANGE_SHARE,
+  targetTemperature,
   WATER_TEMPERATURES,
   waterLiters,
   waterLoad,
@@ -29,8 +33,11 @@ import {
   cloneWorld,
   createDefaultWorld,
   createWorld,
+  setWorldHeater,
+  setWorldHeaterInPlace,
   type World,
 } from './world';
+import { waterQuality } from './water-quality';
 
 /** Bac tropical par défaut : charge et litres. */
 const TROPICAL_LITERS = waterLiters(environmentWater('tropical'));
@@ -141,6 +148,12 @@ describe('stepWaterInPlace', () => {
     expect(after2h.nitrate).toBeGreaterThan(40);
     expect(after2h.nitrate).toBeLessThan(60);
     expectBounded(after2h);
+  });
+
+  it('calibrage de l’indicateur (#207) : à surveiller avant 1 h, mauvaise avant 2 h', () => {
+    expect(waterQuality(run(freshWater('tropical'), minutes(20)), 'tropical')).toBe('bonne');
+    expect(waterQuality(run(freshWater('tropical'), minutes(60)), 'tropical')).toBe('a-surveiller');
+    expect(waterQuality(run(freshWater('tropical'), minutes(120)), 'tropical')).toBe('mauvaise');
   });
 
   it('surpeuplement : tout monte plus vite qu’avec la population par défaut', () => {
@@ -302,14 +315,86 @@ describe('readWater', () => {
     ['NaN', { ...freshWater('tropical'), temperature: Number.NaN }],
     ['température hors bornes', { ...freshWater('tropical'), temperature: 41 }],
     ['filtre hors bornes', { ...freshWater('tropical'), filter: 1.5 }],
+    ['chauffage trop froid', { ...freshWater('tropical'), heater: MIN_HEATER_TEMPERATURE - 0.1 }],
+    ['chauffage trop chaud', { ...freshWater('tropical'), heater: MAX_HEATER_TEMPERATURE + 0.1 }],
+    ['chauffage en texte', { ...freshWater('tropical'), heater: '26' }],
+    ['chauffage nul', { ...freshWater('tropical'), heater: null }],
   ])('refuse : %s', (_name, value) => {
     const result = readWater(value);
     expect(result.ok).toBe(false);
   });
 
+  it('relit la consigne du chauffage ; absente, elle reste absente', () => {
+    const result = readWater({ ...freshWater('tropical'), heater: 27.5 });
+    expect(result).toEqual({ ok: true, water: { ...freshWater('tropical'), heater: 27.5 } });
+    const without = readWater(freshWater('tropical'));
+    expect(without.ok && Object.hasOwn(without.water, 'heater')).toBe(false);
+  });
+
   it('ne lit pas les propriétés héritées', () => {
     const inherited = Object.create({ ...freshWater('tropical') }) as object;
     expect(readWater(inherited).ok).toBe(false);
+  });
+});
+
+describe('chauffage', () => {
+  it('sans consigne, l’eau vise la température de l’environnement', () => {
+    for (const id of ENVIRONMENT_IDS) {
+      expect(targetTemperature(freshWater(id), id)).toBe(WATER_TEMPERATURES[id]);
+    }
+  });
+
+  it('consigne réglée : visée à la place de celle de l’environnement', () => {
+    expect(targetTemperature({ ...freshWater('bassin'), heater: 24 }, 'bassin')).toBe(24);
+  });
+
+  it('setHeaterInPlace : arrondie au dixième, bornes acceptées', () => {
+    const water: MutableWaterState = { ...freshWater('tropical') };
+    expect(setHeaterInPlace(water, 26.04)).toBe(26);
+    expect(water.heater).toBe(26);
+    expect(setHeaterInPlace(water, 26.06)).toBe(26.1);
+    expect(setHeaterInPlace(water, MIN_HEATER_TEMPERATURE)).toBe(MIN_HEATER_TEMPERATURE);
+    expect(setHeaterInPlace(water, MAX_HEATER_TEMPERATURE)).toBe(MAX_HEATER_TEMPERATURE);
+  });
+
+  it.each([
+    MIN_HEATER_TEMPERATURE - 0.01,
+    MAX_HEATER_TEMPERATURE + 0.01,
+    Number.NaN,
+    Number.POSITIVE_INFINITY,
+  ])('setHeaterInPlace refuse %s, eau inchangée', (temperature) => {
+    const water: MutableWaterState = { ...freshWater('tropical') };
+    expect(() => setHeaterInPlace(water, temperature)).toThrow(RangeError);
+    expect(water).toEqual(freshWater('tropical'));
+  });
+
+  it('monde : l’eau rejoint peu à peu la consigne, sans la dépasser', () => {
+    const world = setWorldHeater(createWorld(7, [], [], [], 'tropical'), 30);
+    expect(world.water.heater).toBe(30);
+    expect(world.water.temperature).toBe(WATER_TEMPERATURES.tropical);
+    const after10min = advance(world, minutes(10));
+    expect(after10min.water.temperature).toBeGreaterThan(27);
+    expect(after10min.water.temperature).toBeLessThan(30);
+    const after2h = advance(after10min, minutes(110));
+    expect(after2h.water.temperature).toBeGreaterThan(29.9);
+    expect(after2h.water.temperature).toBeLessThanOrEqual(30);
+  });
+
+  it('setWorldHeater ne modifie pas le monde ; en place : même eau, même consigne', () => {
+    const world = createDefaultWorld(42);
+    const next = setWorldHeater(world, 20);
+    expect(Object.hasOwn(world.water, 'heater')).toBe(false);
+    expect(next.water.heater).toBe(20);
+    const mutable = cloneWorld(world);
+    const water = mutable.water;
+    expect(setWorldHeaterInPlace(mutable, 20)).toBe(20);
+    expect(mutable.water).toBe(water);
+    expect(mutable).toEqual(next);
+  });
+
+  it('changer d’eau garde la consigne', () => {
+    const world = changeWorldWater(setWorldHeater(createDefaultWorld(42), 28));
+    expect(world.water.heater).toBe(28);
   });
 });
 

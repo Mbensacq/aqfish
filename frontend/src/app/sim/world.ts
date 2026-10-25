@@ -36,8 +36,9 @@ import { assertTimeStep } from './time-step';
 import {
   changeWaterInPlace,
   freshWater,
+  setHeaterInPlace,
   stepWaterInPlace,
-  WATER_TEMPERATURES,
+  targetTemperature,
   waterLiters,
   waterLoad,
   type MutableWaterState,
@@ -641,7 +642,7 @@ function stepInPlace(world: MutableWorld, dt: number): void {
     dt,
     waterLoad(fishes),
     waterLiters(environmentWater(place)),
-    WATER_TEMPERATURES[world.environment],
+    targetTemperature(world.water, world.environment),
   );
 }
 
@@ -661,6 +662,26 @@ export function changeWorldWater(world: World): World {
  */
 export function changeWorldWaterInPlace(world: MutableWorld): void {
   changeWaterInPlace(world.water as MutableWaterState);
+}
+
+/**
+ * Consigne du chauffage (`setHeaterInPlace`, issue #207) : renvoie un nouvel état, `world`
+ * n'est jamais modifié.
+ * @throws RangeError comme `setHeaterInPlace`.
+ */
+export function setWorldHeater(world: World, temperature: number): World {
+  const next = cloneWorld(world);
+  setWorldHeaterInPlace(next, temperature);
+  return next;
+}
+
+/**
+ * Comme `setWorldHeater`, **en modifiant** `world` ; renvoie la consigne retenue (arrondie
+ * au dixième). Réservé au propriétaire unique du monde (`ui/aquarium-host`).
+ * @throws RangeError comme `setHeaterInPlace` (monde inchangé).
+ */
+export function setWorldHeaterInPlace(world: MutableWorld, temperature: number): number {
+  return setHeaterInPlace(world.water as MutableWaterState, temperature);
 }
 
 /** Point visé vers la nourriture, réutilisé d'un poisson à l'autre (aucune allocation). */

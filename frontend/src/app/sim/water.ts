@@ -18,8 +18,9 @@ import { assertTimeStep } from './time-step';
  *   `AMMONIA_CONVERSION · f` et `NITRITE_CONVERSION · f` (forme exacte `1 − e^(−k·dt)`,
  *   stable quel que soit le pas) ;
  * - nitrates : s'accumulent, retirés seulement par un changement d'eau (`changeWaterInPlace`) ;
- * - température : tend vers celle de l'environnement (`WATER_TEMPERATURES`), constante de
- *   temps `TEMPERATURE_TIME_CONSTANT`.
+ * - température : tend vers celle visée (consigne du chauffage `heater` si elle est réglée,
+ *   sinon celle de l'environnement, `WATER_TEMPERATURES` ; issue #207), constante de temps
+ *   `TEMPERATURE_TIME_CONSTANT`.
  * Une concentration plafonnée perd ce qui la ferait dépasser `MAX_CONCENTRATION`.
  */
 
@@ -35,6 +36,12 @@ export interface WaterState {
   readonly nitrate: number;
   /** Efficacité du filtre, dans [0, 1] : 0, filtre arrêté ; 1, filtre neuf. */
   readonly filter: number;
+  /**
+   * Consigne du chauffage (thermostat), en °C, dans [`MIN_HEATER_TEMPERATURE`,
+   * `MAX_HEATER_TEMPERATURE`] (issue #207, ADR 0053). Absente : jamais réglée, l'eau suit la
+   * température de l'environnement (`targetTemperature`).
+   */
+  readonly heater?: number;
 }
 
 /** État de l'eau modifiable en place (propriétaire unique : le monde). */
@@ -58,6 +65,35 @@ export const WATER_TEMPERATURES: Readonly<Record<EnvironmentId, number>> = {
   paludarium: 22,
   recif: 26,
 };
+
+/** Bornes de la consigne du chauffage, en °C (issue #207). */
+export const MIN_HEATER_TEMPERATURE = 16;
+export const MAX_HEATER_TEMPERATURE = 32;
+
+/**
+ * Température visée par l'eau `water` d'un bac de l'environnement `environment` : la consigne
+ * du chauffage si elle est réglée, sinon la température de l'environnement.
+ */
+export function targetTemperature(water: WaterState, environment: EnvironmentId): number {
+  return water.heater ?? WATER_TEMPERATURES[environment];
+}
+
+/**
+ * Règle la consigne du chauffage de `water` **en le modifiant** (issue #207), arrondie au
+ * dixième de degré, et la renvoie. La température de l'eau la rejoint peu à peu
+ * (`stepWaterInPlace`).
+ * @throws RangeError si `temperature` n'est pas un réel dans [`MIN_HEATER_TEMPERATURE`,
+ * `MAX_HEATER_TEMPERATURE`] (eau inchangée).
+ */
+export function setHeaterInPlace(water: MutableWaterState, temperature: number): number {
+  if (!isIn(temperature, MIN_HEATER_TEMPERATURE, MAX_HEATER_TEMPERATURE)) {
+    throw new RangeError(
+      `consigne du chauffage dans [${MIN_HEATER_TEMPERATURE}, ${MAX_HEATER_TEMPERATURE}] attendue (reçu : ${temperature})`,
+    );
+  }
+  water.heater = Math.round(temperature * 10) / 10;
+  return water.heater;
+}
 
 /** Longueur de référence de la charge : un habitant de 5 cm compte pour 1. */
 export const REFERENCE_BODY_LENGTH = 0.05;
@@ -196,7 +232,8 @@ export type ReadWaterResult =
 
 /**
  * Relit un état d'eau venu d'une sauvegarde : objet aux cinq champs numériques finis et
- * bornés ; seules les propriétés propres sont lues, les champs inconnus ignorés. Renvoie une
+ * bornés, plus la consigne du chauffage facultative (`heater`, issue #207 : absente, jamais
+ * réglée) ; seules les propriétés propres sont lues, les champs inconnus ignorés. Renvoie une
  * copie, ou la raison du refus. Ne lève jamais.
  */
 export function readWater(value: unknown): ReadWaterResult {
@@ -218,6 +255,13 @@ export function readWater(value: unknown): ReadWaterResult {
       return { ok: false, error: `eau : ${key} doit être un nombre dans [${min}, ${max}]` };
     }
   }
+  const heater = read('heater');
+  if (heater !== undefined && !isIn(heater, MIN_HEATER_TEMPERATURE, MAX_HEATER_TEMPERATURE)) {
+    return {
+      ok: false,
+      error: `eau : heater doit être un nombre dans [${MIN_HEATER_TEMPERATURE}, ${MAX_HEATER_TEMPERATURE}]`,
+    };
+  }
   return {
     ok: true,
     water: {
@@ -226,6 +270,7 @@ export function readWater(value: unknown): ReadWaterResult {
       nitrite: read('nitrite') as number,
       nitrate: read('nitrate') as number,
       filter: read('filter') as number,
+      ...(heater === undefined ? {} : { heater }),
     },
   };
 }

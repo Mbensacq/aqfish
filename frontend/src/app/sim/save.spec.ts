@@ -35,6 +35,7 @@ import {
   feed,
   feedInPlace,
   seededFeatures,
+  setWorldHeater,
   worldFeatureComputations,
   worldFeatures,
   type World,
@@ -272,6 +273,19 @@ describe('serializeWorld / parseWorld : aller-retour', () => {
     const { world: back } = restored(parseWorld(serializeWorld(world)));
     expect(back.water).toEqual(world.water);
     expect(JSON.stringify(back.water)).toBe(JSON.stringify(world.water));
+  });
+
+  it('écrit et restitue la consigne du chauffage (#207) ; relu, le monde avance au bit près', () => {
+    const world = setWorldHeater(createDefaultWorld(42), 29.5);
+    const { world: back } = restored(parseWorld(serializeWorld(world)));
+    expect(back.water.heater).toBe(29.5);
+    expect(advance(back, 600)).toEqual(advance(world, 600));
+  });
+
+  it('refuse une consigne du chauffage hors bornes (#207)', () => {
+    const data = validData();
+    data['water'] = { ...freshWater('tropical'), heater: 45 };
+    expect(refusal(parseSaveData(data))).toMatch(/^eau : heater/);
   });
 
   it('accepte une ancienne sauvegarde sans eau : eau saine, même schéma (#206)', () => {
