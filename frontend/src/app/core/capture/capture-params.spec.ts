@@ -268,11 +268,19 @@ describe('population= (issue #69)', () => {
   it('ignore les entrées mal formées (espèce inconnue gardée : l’application la refuse)', () => {
     expect(
       parseCaptureParams(
-        '?population=,neon,neon:,neon:-1,neon:1.5,neon:1e2,Neon:3,neon:3:4,guppy:1000,:4,koi:3,guppy:07',
+        '?population=,neon,neon:,neon:-1,neon:1.5,neon:1e2,Neon:3,neon:3:4,guppy:1234567,:4,koi:3,guppy:07',
       ).population,
     ).toEqual([
       { species: 'koi', count: 3 },
       { species: 'guppy', count: 7 },
+    ]);
+  });
+
+  it('grands effectifs (jusqu’à 6 chiffres) lus tels quels : l’application les borne (#95)', () => {
+    expect(parseCaptureParams('?population=neon:9999,guppy:1000,koi:999999').population).toEqual([
+      { species: 'neon', count: 9999 },
+      { species: 'guppy', count: 1000 },
+      { species: 'koi', count: 999999 },
     ]);
   });
 

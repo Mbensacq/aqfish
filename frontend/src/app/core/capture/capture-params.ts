@@ -18,7 +18,7 @@
  *
  * Paramètre facultatif `population=` (issue #69) : effectifs par espèce, appliqués à t = 0
  * dans l'ordre donné (`sim/population.ts`, bornes comprises), séparés par des virgules ;
- * chacun `espece:n` (n entier). Exemple : `population=neon:12,guppy:2,corydora:0`. Entrées
+ * chacun `espece:n` (n entier, 6 chiffres au plus, borné par l'application, #95). Exemple : `population=neon:12,guppy:2,corydora:0`. Entrées
  * mal formées ignorées ici, espèces inconnues ignorées par l'application ; absent, population
  * par défaut (séries existantes inchangées).
  *
@@ -403,8 +403,11 @@ function parseFeedings(raw: string | null): readonly CaptureFeeding[] {
   return feedings;
 }
 
-/** Entrée `espece:n` : identifiant en minuscules, effectif entier de 1 à 3 chiffres. */
-const POPULATION_PATTERN = /^([a-z]+):(\d{1,3})$/;
+/**
+ * Entrée `espece:n` : identifiant en minuscules, effectif entier de 1 à 6 chiffres ; un
+ * effectif trop grand est borné par l'application (`applySpeciesCountsInPlace`), pas ignoré (#95).
+ */
+const POPULATION_PATTERN = /^([a-z]+):(\d{1,6})$/;
 
 /** Effectifs `espece:n` séparés par des virgules ; entrée mal formée : ignorée. */
 function parsePopulation(raw: string | null): readonly CapturePopulation[] {
