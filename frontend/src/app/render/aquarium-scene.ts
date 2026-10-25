@@ -67,6 +67,18 @@ export const NIGHT_SUN_RATIO = 0.2;
  */
 export const NIGHT_WATER_BODY = INPUT_TONES.eauNuitEntree;
 export const NIGHT_WATER_SURFACE = INPUT_TONES.surfaceNuitEntree;
+/**
+ * Teintes d'entrée d'une eau trouble (issue #207, ADR 0053), mêlées à celles de l'eau de jour
+ * dans les proportions `TURBID_BODY_MIX` et `TURBID_SURFACE_MIX` × trouble (`setTurbidity`).
+ */
+export const TURBID_WATER_BODY = INPUT_TONES.eauTroubleEntree;
+export const TURBID_WATER_SURFACE = INPUT_TONES.surfaceTroubleEntree;
+/**
+ * Part de la teinte trouble dans le volume et la surface de l'eau de jour pour un trouble de
+ * 1 : « légèrement » (volume vert sombre, surface encore claire après la passe palette).
+ */
+export const TURBID_BODY_MIX = 0.8;
+export const TURBID_SURFACE_MIX = 0.8;
 /** Couleur du sol de la lumière ambiante la nuit (faces tournées vers le bas, côtés du sable). */
 export const NIGHT_GROUND = INPUT_TONES.solNuitEntree;
 /** Dessous du sable la nuit (non éclairé : vue de dessous, ADR 0006). */
@@ -94,6 +106,15 @@ export interface AquariumScene {
    * le cycle jour/nuit (captures par défaut inchangées).
    */
   setDaylight(light: DayLight): void;
+  /**
+   * Trouble de l'eau (issue #207), dans [0, 1] : teinte l'eau vers un vert trouble, de jour
+   * comme de nuit, en changeant seulement la couleur de ses matériaux (aucun passage de rendu
+   * en plus). À 0 (valeur initiale), couleurs exactement inchangées.
+   * @throws RangeError si `turbidity` n'est pas un réel dans [0, 1].
+   */
+  setTurbidity(turbidity: number): void;
+  /** Trouble de l'eau appliqué (`setTurbidity`). */
+  readonly turbidity: number;
   /**
    * Place le point de vue (position de la caméra) : pour le bassin enterré, retire le sol et
    * la margelle du côté de la caméra quand elle passe sous le niveau du sol (vue en coupe,
@@ -157,18 +178,51 @@ export function createAquariumScene(environment: Environment = TROPICAL_TANK): A
     nightBody: new Color(NIGHT_WATER_BODY),
     daySurface: new Color(waterTint.surface),
     nightSurface: new Color(NIGHT_WATER_SURFACE),
+    turbidBody: new Color(TURBID_WATER_BODY),
+    turbidSurface: new Color(TURBID_WATER_SURFACE),
+    // Eau de jour après le trouble (`setTurbidity`) : égales aux teintes de jour à 0.
+    clearBody: new Color(waterTint.body),
+    clearSurface: new Color(waterTint.surface),
     dayGround: new Color(ground.bottom),
     nightGround: new Color(NIGHT_GROUND),
     daySandBottom: new Color(ground.bottom),
     nightSandBottom: new Color(NIGHT_SAND_BOTTOM),
   };
 
+  let day = 1;
+  let turbidity = 0;
+  // `lerpColors(a, b, 0)` vaut exactement `a` : à midi et sans trouble, couleurs d'origine.
+  const applyWaterColors = (): void => {
+    body.color.lerpColors(waterColors.clearBody, waterColors.nightBody, 1 - day);
+    surface.color.lerpColors(waterColors.clearSurface, waterColors.nightSurface, 1 - day);
+  };
+
   return {
     scene,
     dimensions: dims,
     environment,
+    get turbidity() {
+      return turbidity;
+    },
+    setTurbidity: (value) => {
+      if (!(value >= 0 && value <= 1)) {
+        throw new RangeError(`trouble de l'eau dans [0, 1] attendu (reçu : ${value})`);
+      }
+      turbidity = value;
+      waterColors.clearBody.lerpColors(
+        waterColors.dayBody,
+        waterColors.turbidBody,
+        TURBID_BODY_MIX * value,
+      );
+      waterColors.clearSurface.lerpColors(
+        waterColors.daySurface,
+        waterColors.turbidSurface,
+        TURBID_SURFACE_MIX * value,
+      );
+      applyWaterColors();
+    },
     setDaylight: (light) => {
-      const day = light.intensity;
+      day = light.intensity;
       lights.ambient.intensity = mix(NIGHT_AMBIENT_INTENSITY, DAY_AMBIENT_INTENSITY, day);
       setRgb(lights.ambient.color, light.sky);
       lights.ambient.groundColor.lerpColors(
@@ -178,9 +232,7 @@ export function createAquariumScene(environment: Environment = TROPICAL_TANK): A
       );
       lights.sun.intensity = DAY_SUN_INTENSITY * mix(NIGHT_SUN_RATIO, 1, day);
       setRgb(lights.sun.color, light.tint);
-      // `lerpColors(a, b, 0)` vaut exactement `a` : à midi, couleurs d'origine.
-      body.color.lerpColors(waterColors.dayBody, waterColors.nightBody, 1 - day);
-      surface.color.lerpColors(waterColors.daySurface, waterColors.nightSurface, 1 - day);
+      applyWaterColors();
       sandBottom.color.lerpColors(waterColors.daySandBottom, waterColors.nightSandBottom, 1 - day);
       stones?.setDaylight(day);
       pondGround?.setDaylight(day);

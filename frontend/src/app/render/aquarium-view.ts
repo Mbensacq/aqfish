@@ -925,6 +925,22 @@ export class AquariumView {
     return this.rainLayer.isEnabled;
   }
 
+  /**
+   * Trouble de l'eau (issue #207, `waterTurbidity`), dans [0, 1] : teinte seulement, aucun
+   * passage de rendu en plus. Sans effet si la valeur n'a pas changé ou après `dispose`.
+   * @throws RangeError si `turbidity` n'est pas un réel dans [0, 1].
+   */
+  setWaterTurbidity(turbidity: number): void {
+    if (!this.disposed && turbidity !== this.world.turbidity) {
+      this.world.setTurbidity(turbidity);
+    }
+  }
+
+  /** Trouble de l'eau appliqué (tests). */
+  get waterTurbidity(): number {
+    return this.world.turbidity;
+  }
+
   /** Vrai s'il pleut. */
   get raining(): boolean {
     return this.rainLayer.isEnabled;

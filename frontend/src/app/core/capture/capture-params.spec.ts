@@ -30,6 +30,7 @@ describe('parseCaptureParams', () => {
       foodStyle: null,
       rain: false,
       room: false,
+      water: null,
       editSelection: null,
       editRoomSelection: null,
       woods: [],
@@ -127,6 +128,13 @@ describe('parseCaptureParams', () => {
     }
     expect(parseCaptureParams('?capture=1').rain).toBe(false);
     expect(DEFAULT_CAPTURE_PARAMS.rain).toBe(false);
+  });
+
+  it('lit le niveau d’eau d’exemple : eau=…, non vérifié ici ; absent, null (#207)', () => {
+    expect(parseCaptureParams('?capture=1&eau=mauvaise').water).toBe('mauvaise');
+    expect(parseCaptureParams('?capture=1&eau=autre').water).toBe('autre');
+    expect(parseCaptureParams('?capture=1').water).toBeNull();
+    expect(DEFAULT_CAPTURE_PARAMS.water).toBeNull();
   });
 
   it('lit la pièce : piece=1 seulement, sinon pièce masquée (#187)', () => {

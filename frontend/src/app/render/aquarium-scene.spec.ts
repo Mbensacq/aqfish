@@ -30,6 +30,9 @@ import {
   paletteColor,
   SAND_THICKNESS,
   TERRAIN_WATER_INSET,
+  TURBID_BODY_MIX,
+  TURBID_SURFACE_MIX,
+  TURBID_WATER_BODY,
   WATER_LEVEL_RATIO,
 } from './aquarium-scene';
 import { ENVIRONMENT_TONES, isEnvironmentToneName, PALETTE } from './palette';
@@ -185,6 +188,37 @@ describe('createAquariumScene : lumière du jour', () => {
     expect(p.body.color.b).toBeGreaterThan(p.body.color.g);
     expect(`#${p.ambient.groundColor.getHexString()}`).toBe(NIGHT_GROUND);
     expect(hex(p.sandBottom)).toBe(NIGHT_SAND_BOTTOM);
+  });
+
+  it('trouble de l’eau (#207) : teinte verdâtre de jour, rien d’autre ne change', () => {
+    const p = parts();
+    const before = fingerprint(p);
+    expect(p.scene.turbidity).toBe(0);
+    p.scene.setTurbidity(1);
+    expect(p.scene.turbidity).toBe(1);
+    const expected = new Color(PALETTE.eauMoyenne).lerpColors(
+      new Color(PALETTE.eauMoyenne),
+      new Color(TURBID_WATER_BODY),
+      TURBID_BODY_MIX,
+    );
+    expect(p.body.color.equals(expected)).toBe(true);
+    expect(TURBID_SURFACE_MIX).toBeGreaterThan(0);
+    expect(hex(p.surface)).not.toBe(PALETTE.eauClaire);
+    // Plus vert que bleu : verdâtre.
+    expect(p.body.color.g).toBeGreaterThan(p.body.color.b);
+    // La nuit, le trouble suit sous la teinte de nuit ; retour à 0 : scène d'origine au bit près.
+    p.scene.setDaylight(lightAt(0));
+    p.scene.setDaylight(lightAt(12));
+    p.scene.setTurbidity(0);
+    expect(fingerprint(p)).toEqual(before);
+  });
+
+  it('trouble de l’eau : refuse une valeur hors de [0, 1]', () => {
+    const p = parts();
+    for (const value of [-0.1, 1.1, Number.NaN]) {
+      expect(() => p.scene.setTurbidity(value)).toThrow(RangeError);
+    }
+    expect(p.scene.turbidity).toBe(0);
   });
 
   it('au crépuscule : lumière orangée, intensités entre la nuit et le jour', () => {

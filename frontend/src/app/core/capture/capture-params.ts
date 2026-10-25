@@ -35,6 +35,11 @@
  * comme hors capture (sans effet dans un environnement sans pluie) ; toute autre valeur ou
  * absent, pas de pluie (séries existantes inchangées).
  *
+ * Paramètre facultatif `eau=bonne|a-surveiller|mauvaise` (issue #207) : en mode capture, eau
+ * d'exemple de ce niveau à t = 0 (`sampleWater`, nitrates élevés), qui trouble l'eau quand
+ * elle est mauvaise. Le niveau n'est pas vérifié ici : l'application ignore une valeur
+ * inconnue ; absent, eau saine (séries existantes inchangées).
+ *
  * Paramètre facultatif `piece=1` (issue #187) : en mode capture, la pièce autour du bac
  * (sol, mur, meuble support) est affichée, dans le bac tropical seulement ; toute autre
  * valeur ou absent, pièce masquée (séries existantes inchangées).
@@ -106,6 +111,8 @@ export interface CaptureParams {
   readonly rain: boolean;
   /** Vrai pour `piece=1` : pièce autour du bac affichée, en capture (issue #187). */
   readonly room: boolean;
+  /** Niveau de l'eau d'exemple de `eau=` (issue #207), non vérifié ; `null` si absent. */
+  readonly water: string | null;
   /** Élément du décor sélectionné par `edition=` (issue #167) ; `null` si absent ou invalide. */
   readonly editSelection: number | null;
   /** Élément de la pièce sélectionné par `edition-meuble=` (issue #188) ; `null` sinon. */
@@ -187,6 +194,7 @@ export const DEFAULT_CAPTURE_PARAMS: CaptureParams = {
   foodStyle: null,
   rain: false,
   room: false,
+  water: null,
   editSelection: null,
   editRoomSelection: null,
   woods: [],
@@ -231,6 +239,7 @@ export function parseCaptureParams(search: string): CaptureParams {
     foodStyle: parseFoodStyle(params.get('granules')),
     rain: params.get('pluie') === '1',
     room: params.get('piece') === '1',
+    water: params.get('eau'),
     editSelection: parseEditSelection(params.get('edition')),
     editRoomSelection: parseEditSelection(params.get('edition-meuble')),
     woods: parseWoods(params.get('bois')),

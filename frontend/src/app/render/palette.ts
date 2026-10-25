@@ -175,6 +175,10 @@ export const INPUT_TONES = {
   dessousSableNuitEntree: '#3c5272',
   /** Lumière blanche (ciel de l'ambiance, soleil) : teinte neutre des lumières. */
   lumiereBlanche: '#ffffff',
+  /** Volume d'une eau mauvaise, trouble et verdâtre (issue #207, ADR 0053). */
+  eauTroubleEntree: '#1a3a08',
+  /** Surface d'une eau mauvaise (issue #207). */
+  surfaceTroubleEntree: '#306818',
 } as const;
 
 export type NightToneName = keyof typeof NIGHT_TONES;
