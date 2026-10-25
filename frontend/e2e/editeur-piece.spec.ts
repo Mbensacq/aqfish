@@ -28,10 +28,10 @@ const TABLE_HEIGHT = 0.4;
  * l'éditeur avec de la marge pour le glisser (le cadrage dépend de la fenêtre) : la table
  * basse (1 × 0,5 m) y tient sans toucher le meuble.
  */
-async function visibleFloor(page: Page): Promise<number[]> {
+async function visibleFloor(page: Page, minZ = -0.05): Promise<number[]> {
   const project = await screenProjector(page);
   for (let x = 1.2; x <= 2.6; x += 0.05) {
-    for (let z = -0.05; z <= 1.6; z += 0.05) {
+    for (let z = minZ; z <= 1.6; z += 0.05) {
       const point = [Math.round(x * 100) / 100, FLOOR_Y, Math.round(z * 100) / 100];
       const [sx, sy] = project(point);
       if (sx > 700 && sx < 1100 && sy > 450 && sy < 650) {
@@ -110,6 +110,56 @@ test.describe('Éditeur de la pièce (#188)', () => {
     await expect(host(page)).toHaveAttribute('data-aqfish-room', 'true');
     await expect(host(page)).toHaveAttribute('data-aqfish-room-count', '1');
     expect(await savedRoomItems(page)).toEqual(moved);
+    expect(errors).toEqual([]);
+  });
+
+  test('tourner puis supprimer un meuble : la sauvegarde suit, le rechargement le confirme', async ({
+    page,
+  }) => {
+    const errors = await openScene(page);
+    await page.getByRole('button', { name: 'Réglages' }).click();
+    await page.getByRole('checkbox', { name: 'Afficher la pièce' }).check();
+    await expect(host(page)).toHaveAttribute('data-aqfish-room', 'true');
+    await page.getByRole('button', { name: 'Éditer le décor', exact: true }).click();
+    await expect(host(page)).toHaveAttribute('data-aqfish-editing', 'true');
+    const editor = page.getByRole('region', { name: 'Éditeur de décor' });
+
+    const camera = await host(page).getAttribute('data-aqfish-camera');
+    await page.mouse.move(1000, 400);
+    for (let i = 0; i < 8; i++) {
+      await page.mouse.wheel(0, 600);
+    }
+    await expect(host(page)).not.toHaveAttribute('data-aqfish-camera', camera!);
+    await page.waitForTimeout(500);
+
+    await editor.getByRole('radio', { name: 'Table basse' }).click();
+    const floor = await visibleFloor(page);
+    const [x, y] = await projectToScreen(page, floor);
+    await page.mouse.click(x, y);
+    await expect(host(page)).toHaveAttribute('data-aqfish-room-selected', '0');
+    const added = await savedRoomItems(page);
+    expect(added).toHaveLength(1);
+
+    // Éloigner la table du mur du fond : un quart de tour y serait refusé (chevauchement).
+    const top = [added[0].x, FLOOR_Y + TABLE_HEIGHT, added[0].z];
+    await dragTank(page, top, [top[0], top[1], top[2] + 0.35]);
+    await expect
+      .poll(async () => (await savedRoomItems(page))[0]?.z, { timeout: 60_000 })
+      .toBeGreaterThan(added[0].z + 0.15);
+
+    // Tourner d'un quart de tour : l'orientation sauvegardée change.
+    await page.keyboard.press('ArrowRight');
+    await expect
+      .poll(async () => (await savedRoomItems(page))[0]?.quarter, { timeout: 60_000 })
+      .not.toBe(added[0].quarter);
+
+    // Supprimer : la pièce est vide, y compris après rechargement.
+    await page.keyboard.press('Delete');
+    await expect(host(page)).toHaveAttribute('data-aqfish-room-count', '0', { timeout: 60_000 });
+    expect(await savedRoomItems(page)).toEqual([]);
+    await page.reload();
+    await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+    await expect(host(page)).toHaveAttribute('data-aqfish-room-count', '0');
     expect(errors).toEqual([]);
   });
 });
