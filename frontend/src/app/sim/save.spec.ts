@@ -24,9 +24,11 @@ import {
 import { DEFAULT_ROOM } from './room';
 import { CHIRURGIEN } from './species';
 import { sphereObstacle } from './obstacles';
+import { freshWater } from './water';
 import {
   advance,
   advanceInPlace,
+  changeWorldWater,
   cloneWorld,
   createDefaultWorld,
   createWorld,
@@ -259,6 +261,38 @@ describe('serializeWorld / parseWorld : aller-retour', () => {
     const data = saveData(createDefaultWorld(1), settings);
     expect(data.settings.foodStyle).toBe('points');
     expect(restored(parseSaveData(structuredClone(data))).settings.foodStyle).toBe('points');
+  });
+
+  it('écrit et restitue l’état de l’eau (#206), changement d’eau compris', () => {
+    const world = changeWorldWater(advance(createDefaultWorld(42, 'bassin'), 3600));
+    const data = saveData(world);
+    expect(data.water).toEqual(world.water);
+    expect(data.water).not.toBe(world.water);
+    expect(world.water.nitrite).toBeGreaterThan(0);
+    const { world: back } = restored(parseWorld(serializeWorld(world)));
+    expect(back.water).toEqual(world.water);
+    expect(JSON.stringify(back.water)).toBe(JSON.stringify(world.water));
+  });
+
+  it('accepte une ancienne sauvegarde sans eau : eau saine, même schéma (#206)', () => {
+    const data = validData();
+    expect(data['water']).toBeDefined();
+    delete data['water'];
+    const { world } = restored(parseSaveData(data));
+    expect(world.water).toEqual(freshWater('tropical'));
+    expect(SAVE_SCHEMA).toBe(1);
+  });
+
+  it.each([
+    ['null', null],
+    ['texte', 'saine'],
+    ['nitrates négatifs', { ...freshWater('tropical'), nitrate: -1 }],
+    ['filtre au-delà de 1', { ...freshWater('tropical'), filter: 2 }],
+    ['champ manquant', { temperature: 25 }],
+  ])('refuse une eau invalide (#206) : %s', (_name, water) => {
+    const data = validData();
+    data['water'] = water;
+    expect(refusal(parseSaveData(data))).toMatch(/^eau : /);
   });
 
   it('accepte une ancienne sauvegarde sans rendu des granulés (#117)', () => {

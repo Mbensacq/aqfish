@@ -33,6 +33,16 @@ import { SPECIES, type AnemoneBondParams, type SpeciesId } from './species';
 import { createFish, stepFish, swimBounds, type Fish, type SwimBounds } from './swimmer';
 import { clampTankDimensions, type TankDimensions } from './tank';
 import { assertTimeStep } from './time-step';
+import {
+  changeWaterInPlace,
+  freshWater,
+  stepWaterInPlace,
+  WATER_TEMPERATURES,
+  waterLiters,
+  waterLoad,
+  type MutableWaterState,
+  type WaterState,
+} from './water';
 
 /**
  * Entité de la simulation. Seuls les poissons existent pour l'instant (`sim/swimmer.ts`).
@@ -96,6 +106,11 @@ export interface World {
    * jamais réutilisé, égal à l'effectif initial à la création.
    */
   readonly nextFishId: number;
+  /**
+   * État de l'eau du bac (`sim/water.ts`, issue #206, ADR 0052) : température, composés
+   * azotés, filtre. Eau saine à la création ; avancé à chaque pas, après la nourriture.
+   */
+  readonly water: WaterState;
 }
 
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
@@ -171,6 +186,7 @@ export function createWorld(
     food: [],
     nextFoodId: 0,
     nextFishId: entities.length,
+    water: freshWater(environment),
   };
 }
 
@@ -619,6 +635,32 @@ function stepInPlace(world: MutableWorld, dt: number): void {
   enforceMinDistance(fishes, boundsOfFish);
   eatInPlace(fishes, food, bandOfFish, hardOfFish);
   stepFoodInPlace(food, dt);
+  // Eau (issue #206) : sans hasard, après les poissons ; ne change rien à leur nage.
+  stepWaterInPlace(
+    world.water as MutableWaterState,
+    dt,
+    waterLoad(fishes),
+    waterLiters(environmentWater(place)),
+    WATER_TEMPERATURES[world.environment],
+  );
+}
+
+/**
+ * Changement d'eau (`changeWaterInPlace`, issue #206) : renvoie un nouvel état, `world`
+ * n'est jamais modifié.
+ */
+export function changeWorldWater(world: World): World {
+  const next = cloneWorld(world);
+  changeWorldWaterInPlace(next);
+  return next;
+}
+
+/**
+ * Comme `changeWorldWater`, **en modifiant** `world`. Réservé au propriétaire unique du
+ * monde (`ui/aquarium-host`), comme `advanceInPlace`.
+ */
+export function changeWorldWaterInPlace(world: MutableWorld): void {
+  changeWaterInPlace(world.water as MutableWaterState);
 }
 
 /** Point visé vers la nourriture, réutilisé d'un poisson à l'autre (aucune allocation). */

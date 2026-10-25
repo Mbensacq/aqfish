@@ -32,6 +32,8 @@ describe('createWorld', () => {
       food: [],
       nextFoodId: 0,
       nextFishId: 0,
+      // Eau saine du bac tropical (#206, `freshWater`).
+      water: { temperature: 25, ammonia: 0, nitrite: 0, nitrate: 0, filter: 1 },
     });
   });
 

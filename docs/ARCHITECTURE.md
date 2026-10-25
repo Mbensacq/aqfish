@@ -71,6 +71,11 @@ simulation testable et les captures reproductibles.
   obstacles et temps recalculés) ; `parseWorld` le relit avec une validation stricte qui ne
   lève jamais (`{ ok: false, error }`). Un monde rechargé puis avancé est identique, au bit
   près, au monde jamais sauvegardé. Tout nouveau champ d'état doit y être ajouté.
+- **Eau** (#206, ADR 0052, `sim/water.ts`) : `World.water` (température, ammoniaque,
+  nitrites, nitrates en unités de jeu, filtre), eau saine à la création, avancée à chaque
+  pas après la nourriture, sur place et sans hasard (ne change ni la nage ni les captures).
+  Charge des habitants au cube de leur taille, conversions par le filtre en forme exacte,
+  nitrates retirés par `changeWorldWater`. Champ `water` facultatif de la sauvegarde.
 - **Entités** : les poissons (`sim/swimmer.ts`) gardent l'état de leur sous-générateur sous
   forme d'un entier (`rng`, avancé par `prngNextState` / `prngOutput`, même suite que
   `createPrng`), et leur état au pas précédent (`px`, `pyaw`…) pour l'interpolation du rendu.
@@ -194,6 +199,7 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
 | `sim/world.ts` | État du monde sérialisable (dont `decor`), `step`, `advance`, `advanceTo`, `advanceInPlace` (boucle d'affichage), `createDefaultWorld` (population et décor par défaut) |
 | `sim/save.ts` | Sauvegarde (#70, ADR 0028) : format JSON versionné (`saveData`, `serializeWorld`), relecture validée (`parseWorld`, `parseSaveData` : bornes, effectifs, propriétés propres seulement, champs inconnus ignorés, schéma inconnu refusé) |
 | `sim/population.ts` | Population réglable (#69, ADR 0025) : `setPopulation` (pure) / `setPopulationInPlace` (hôte), bornes `maxPopulation` par espèce et `MAX_TOTAL_FISH`, `populationCounts`, `populationLimits` |
+| `sim/water.ts` | Modèle d'eau (#206, ADR 0052) : `WaterState`, `freshWater`, `stepWaterInPlace` / `stepWater` (charge `waterLoad`, litres `waterLiters`, températures `WATER_TEMPERATURES`), `changeWaterInPlace` / `changeWater`, relecture validée `readWater` |
 | `sim/species-catalog.ts` | Catalogue d'espèces (#189) : `speciesCatalog(env)` (espèces de l'environnement, libellés `SPECIES_LABELS`, effectif par défaut et maximum), `applySpeciesCounts` / `applySpeciesCountsInPlace` (effectifs demandés arrondis et bornés, espèce inconnue ou hors environnement ignorée) |
 | `sim/tank.ts` | Dimensions du bac, volume d'eau, `shrinkBox` (partagés par la simulation et le rendu) ; bornes des dimensions réglables (`TANK_LIMITS`, `clampTankDimensions`, #171, ADR 0047) |
 | `sim/room.ts` | Pièce autour du bac tropical (#187, ADR 0048) : modèle `Room` (`shown`, `cabinetHeight` bornée par `clampRoom`), relecture validée (`readRoom`), disposition pure en blocs au centimètre (`roomBlocks` : parquet, mur, cimaise, plinthe, meuble et portes, hors du volume du bac), parties visibles selon la caméra (`roomVisibility`), éléments `items` relus par `readRoomItem` ; jamais lue par la simulation |

@@ -21,6 +21,7 @@ import { tidyRoom } from './room-furniture';
 import { DEFAULT_SIM_SPEED, isSimSpeed, type SimSpeed } from './sim-speed';
 import { SPECIES, type SpeciesId } from './species';
 import type { Fish } from './swimmer';
+import { readWater, type WaterState } from './water';
 import { clampTankDimensions, type Box3, type TankDimensions } from './tank';
 import {
   boundsFor,
@@ -38,7 +39,7 @@ import {
  * Ce qui est enregistré : graine, environnement, dimensions réglées du bac (issue #171,
  * facultatives : absentes, ce sont celles de l'environnement), compteur de pas (le temps simulé en dérive,
  * `tick · SIM_DT`), décor, poissons (état complet, sous-générateur compris), granulés,
- * compteurs d'identifiants, et les réglages de vitesse, d'heure et de rendu des granulés. Les obstacles ne sont pas
+ * compteurs d'identifiants, état de l'eau (issue #206, facultatif : absent, eau saine), et les réglages de vitesse, d'heure et de rendu des granulés. Les obstacles ne sont pas
  * enregistrés : ils sont recalculés à partir du décor (`createWorld`), comme à la création.
  * Les robes des koïs dérivent de la graine et de l'identifiant (ADR 0027) : rien à stocker.
  *
@@ -133,6 +134,11 @@ export interface SaveData {
   readonly decor: readonly DecorItem[];
   readonly fish: readonly SavedFish[];
   readonly food: readonly FoodPellet[];
+  /**
+   * État de l'eau (issue #206, ADR 0052). Facultatif : absent (anciennes sauvegardes), c'est
+   * une eau saine (`freshWater`) ; toujours présent dans une sauvegarde écrite.
+   */
+  readonly water?: WaterState;
   readonly settings: SaveSettings;
 }
 
@@ -212,6 +218,7 @@ export function saveData(world: World, settings: SaveSettings = DEFAULT_SAVE_SET
       return saved as unknown as SavedFish;
     }),
     food: world.food.map((pellet) => ({ ...pellet })),
+    water: { ...world.water },
     settings: {
       speed: settings.speed,
       clock: {
@@ -320,6 +327,12 @@ export function parseSaveData(value: unknown): ParseWorldResult {
 
   const fish = parseFishList(own(value, 'fish'), place, nextFishId, problems);
   const food = parseFoodList(own(value, 'food'), place, nextFoodId, problems);
+  // Eau (#206) : absente, eau saine (celle de `createWorld`) ; présente, validée.
+  const waterValue = own(value, 'water');
+  const water = waterValue === undefined ? null : readWater(waterValue);
+  if (water !== null && !water.ok) {
+    problems.push(water.error);
+  }
   if (problems.length > 0 || settings === null) {
     return failure(problems.slice(0, 5).join(' ; ') + (problems.length > 5 ? ' ; …' : ''));
   }
@@ -331,6 +344,9 @@ export function parseSaveData(value: unknown): ParseWorldResult {
   world.food = food;
   world.nextFishId = nextFishId as number;
   world.nextFoodId = nextFoodId as number;
+  if (water !== null && water.ok) {
+    world.water = water.water;
+  }
   return { ok: true, world, settings };
 }
 
