@@ -2819,10 +2819,10 @@
           "note": "PR #242 : vitesse=0 rend les captures d'interface reproductibles (3 essais, empreinte unique), CI verte 7/7 au 1er essai ; local : format/lint/unitaires/build OK, e2e ciblés 18/19 (décor panneau en délai dépassé en local, vert en CI) ; pied d'attribution réinjecté par le serveur"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-26T07:22:28.089Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-26T07:34:04.126Z",
+          "note": "Verdict OK, 0 bug, 2443 tests verts, 76 captures publiées (c076), déterminisme front-panneau/téléphone confirmé 3 essais"
         }
       },
       "metriques": {}
