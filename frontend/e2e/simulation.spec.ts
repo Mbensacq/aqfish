@@ -151,4 +151,20 @@ test.describe('Simulation hors capture', () => {
     await openScene(page, '?time=3600');
     expect((await readWorld(page)).tick).toBeLessThan(TICKS_PER_SECOND * 60);
   });
+
+  test('vitesse=0 : le monde reste à t = 0, puis repart au curseur (#232)', async ({ page }) => {
+    const errors = await openScene(page, '?seed=42&vitesse=0');
+    const host = page.locator('app-aquarium-host');
+    await expect(host).toHaveAttribute('data-aqfish-speed', '0');
+    await waitFrames(page, 30);
+    expect((await readWorld(page)).tick).toBe(0);
+
+    await page.getByRole('button', { name: 'Réglages' }).click();
+    const slider = page.getByRole('slider', { name: 'Vitesse de la simulation' });
+    await expect(slider).toHaveValue('0');
+    await slider.fill('2');
+    await expect(host).toHaveAttribute('data-aqfish-speed', '1');
+    await expect.poll(async () => (await readWorld(page)).tick).toBeGreaterThan(0);
+    expect(errors).toEqual([]);
+  });
 });

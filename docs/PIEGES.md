@@ -132,6 +132,12 @@ haut de sa section.
 
 ## Tests
 
+- **Capture d'interface non reproductible** (cycle 76, #232) : hors capture, le monde avance
+  en temps réel dès le chargement ; l'arrêter au curseur de vitesse après coup fige les
+  poissons à un instant qui varie d'un essai à l'autre (`front-panneau` : 3 empreintes sur 3
+  essais). Charger la page avec `vitesse=0` : le monde reste à t = 0 (`data-aqfish-tick` à
+  `0`), et l'image est identique à l'octet. Toute nouvelle capture d'interface fait de même.
+  (2026-10-26)
 - **E2e qui compare jour et nuit pixel pour pixel à `time=30`** (cycle 73, #209) : depuis le
   rythme du jour, les poissons diurnes nagent autrement la nuit (plus lents, plus bas) ;
   après 30 s, néons et guppys ne sont plus aux mêmes places, et un compte de pixels de
