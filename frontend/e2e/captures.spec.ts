@@ -346,6 +346,26 @@ test.describe('Captures', () => {
     expect(errors).toEqual([]);
   });
 
+  // Section « Eau » avec la jauge pH (#236), trois-quarts, 1280 × 720 : panneau ouvert,
+  // section amenée en vue, simulation à l'arrêt dès t = 0. Capture d'interface, comme
+  // ci-dessus.
+  test('angle three-quarter avec la section « Eau » ouverte', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    await page.goto(`/?seed=${SEED}&camera=three-quarter&heure=12&vitesse=0`);
+    await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+    await page.getByRole('button', { name: 'Réglages' }).click();
+    await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-speed', '0');
+    await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-tick', '0');
+    await page.locator('[data-section="eau"]').scrollIntoViewIfNeeded();
+    await expect(page.locator('[data-gauge="ph"]')).toBeVisible();
+    await page.screenshot({
+      path: join(OUTPUT_DIR, 'three-quarter-panneau-eau.png'),
+      animations: 'disabled',
+    });
+    expect(errors).toEqual([]);
+  });
+
   test('tracé des trajectoires, vue de dessus', async ({ page }) => {
     const svg = trajectorySvg(SEED, TRACE_SECONDS);
     await page.setViewportSize({ width: svg.width, height: svg.height });

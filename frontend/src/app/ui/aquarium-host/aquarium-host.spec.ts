@@ -29,6 +29,8 @@ import {
   createDefaultWorld,
   setWorldHeater,
 } from '../../sim/world';
+import { freshWater } from '../../sim/water';
+import { phBands } from '../../sim/water-ph';
 import { sampleWater } from '../../sim/water-quality';
 import {
   DEFAULT_DECOR,
@@ -61,6 +63,7 @@ import {
   ENVIRONMENT_ATTRIBUTE,
   RAIN_ATTRIBUTE,
   WATER_ATTRIBUTE,
+  PH_ATTRIBUTE,
   WATER_READOUT_TICKS,
   ROOM_ATTRIBUTE,
   ROOM_COUNT_ATTRIBUTE,
@@ -924,6 +927,7 @@ describe('AquariumHost', () => {
   describe('eau (#207)', () => {
     const host = () => fixture.componentInstance;
     const waterAttr = () => (fixture.nativeElement as HTMLElement).getAttribute(WATER_ATTRIBUTE);
+    const phAttr = () => (fixture.nativeElement as HTMLElement).getAttribute(PH_ATTRIBUTE);
     const viewOf = (h: AquariumHost) => (h as unknown as { view: AquariumView }).view;
 
     it('relevé exposé au démarrage : eau saine, bonne, eau claire', async () => {
@@ -935,9 +939,29 @@ describe('AquariumHost', () => {
         ammonia: 0,
         nitrite: 0,
         nitrate: 0,
+        ph: 7,
+        phZone: 'ideal',
+        phBands: phBands(['neon', 'guppy', 'corydora']),
       });
       expect(waterAttr()).toBe('bonne;25;25;0;0;0');
+      expect(phAttr()).toBe('7;ideal');
       expect(viewOf(host()).waterTurbidity).toBe(0);
+    });
+
+    it('pH (#236) : zone selon les espèces présentes, remonte au changement d’eau', async () => {
+      await create('?seed=42');
+      const world = host().world as unknown as { water: object };
+      world.water = { ...freshWater('tropical'), ph: 6 };
+      host().changeWater();
+      // 6 + 0,3 × (7 − 6) = 6,3 : sous la tolérance des guppys (6,5).
+      expect(host().world!.water.ph).toBeCloseTo(6.3, 12);
+      expect(host().water().ph).toBe(6.3);
+      expect(host().water().phZone).toBe('hors-plage');
+      expect(phAttr()).toBe('6.3;hors-plage');
+      host().changeWater();
+      expect(phAttr()).toBe('6.5;tolere');
+      const saved = parseWorld(saveStorage!.getItem(SAVE_STORAGE_KEY)!);
+      expect(saved.ok && saved.world.water.ph).toBeCloseTo(6.51, 12);
     });
 
     it('changer l’eau : retire une part des nitrates, relevé et sauvegarde suivent', async () => {

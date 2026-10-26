@@ -8,6 +8,7 @@ import type { SaveMessage, SaveStatus } from '../../core/save-storage/save-stora
 import { MAX_SAVE_LENGTH } from '../../sim/save';
 import { SIM_SPEEDS } from '../../sim/sim-speed';
 import { MAX_HEATER_TEMPERATURE, MIN_HEATER_TEMPERATURE } from '../../sim/water';
+import { MAX_PH, MIN_PH, phBands } from '../../sim/water-ph';
 import {
   COMPOUND_THRESHOLDS,
   DEFAULT_WATER_READOUT,
@@ -21,6 +22,10 @@ import {
   formatTenth,
   HEATER_SLIDER_STEP,
   heaterText,
+  PH_ZONE_COLORS,
+  phGaugeBackground,
+  phPercent,
+  phValueText,
   sliderHeater,
   populationInput,
   type PopulationRequest,
@@ -99,6 +104,39 @@ describe('fonctions du panneau de contrôle', () => {
     expect(heaterText(DEFAULT_WATER_READOUT)).toBe('25,0 °C');
     expect(heaterText({ ...DEFAULT_WATER_READOUT, target: 28, temperature: 25.3 })).toBe(
       '28,0 °C · eau 25,3 °C',
+    );
+  });
+
+  it('phPercent : position sur [4 ; 9,5], bornée, au dixième de pour cent (#236)', () => {
+    expect(phPercent(MIN_PH)).toBe(0);
+    expect(phPercent(MAX_PH)).toBe(100);
+    expect(phPercent(6.75)).toBe(50);
+    expect(phPercent(2)).toBe(0);
+    expect(phPercent(12)).toBe(100);
+    expect(phPercent(Number.NaN)).toBe(0);
+    expect(phPercent(7)).toBe(54.5);
+  });
+
+  it('phGaugeBackground : rouge, orange, vert, orange, rouge aux bornes des plages (#236)', () => {
+    const { ideal, tolere, horsPlage } = PH_ZONE_COLORS;
+    expect(phGaugeBackground(phBands(['guppy']))).toBe(
+      `linear-gradient(to right, ${horsPlage} 0%, ${horsPlage} 45.5%, ` +
+        `${tolere} 45.5%, ${tolere} 54.5%, ${ideal} 54.5%, ${ideal} 72.7%, ` +
+        `${tolere} 72.7%, ${tolere} 81.8%, ${horsPlage} 81.8%, ${horsPlage} 100%)`,
+    );
+    // Sans espèce : tout est idéal.
+    expect(phGaugeBackground(phBands([]))).toContain(`${ideal} 0%, ${ideal} 100%`);
+    // Idéal commun vide : pas de vert.
+    expect(phGaugeBackground(phBands(['neon', 'clown']))).not.toContain(ideal);
+    // Aucune plage commune : tout rouge.
+    expect(phGaugeBackground({ tolerated: null, ideal: null })).toBe(
+      `linear-gradient(to right, ${horsPlage} 0%, ${horsPlage} 100%)`,
+    );
+  });
+
+  it('phValueText : valeur et zone en toutes lettres (#236)', () => {
+    expect(phValueText({ ...DEFAULT_WATER_READOUT, ph: 6.84, phZone: 'tolere' })).toBe(
+      'pH 6,8, toléré',
     );
   });
 
@@ -705,12 +743,15 @@ describe('ControlPanel', () => {
         nitrate: 42.5,
       });
       await fixture.whenStable();
-      const gauges = [...section().querySelectorAll<HTMLElement>('[data-gauge]')];
-      expect(gauges.map((g) => g.getAttribute('data-gauge'))).toEqual([
+      const all = [...section().querySelectorAll<HTMLElement>('[data-gauge]')];
+      // Les trois composés, puis le pH (#236, testé à part).
+      expect(all.map((g) => g.getAttribute('data-gauge'))).toEqual([
         'ammonia',
         'nitrite',
         'nitrate',
+        'ph',
       ]);
+      const gauges = all.slice(0, 3);
       const values = { ammonia: '0,8', nitrite: '1,3', nitrate: '42,5' } as const;
       for (const gauge of gauges) {
         const compound = gauge.getAttribute('data-gauge') as keyof typeof values;
@@ -723,6 +764,32 @@ describe('ControlPanel', () => {
           values[compound],
         );
       }
+    });
+
+    it('jauge pH (#236) : valeur, zone lisible sans la couleur, repère et zones', async () => {
+      await openPanel();
+      const gauge = () => section().querySelector<HTMLElement>('[data-gauge="ph"]')!;
+      const meter = () => gauge().querySelector<HTMLElement>('[role="meter"]')!;
+      expect(gauge().querySelector('[data-gauge-value]')?.textContent?.trim()).toBe('7,0');
+      expect(gauge().getAttribute('data-ph-zone')).toBe('ideal');
+      expect(meter().getAttribute('aria-label')).toBe('pH');
+      expect(meter().getAttribute('aria-valuemin')).toBe(String(MIN_PH));
+      expect(meter().getAttribute('aria-valuemax')).toBe(String(MAX_PH));
+      expect(meter().getAttribute('aria-valuetext')).toBe('pH 7,0, idéal');
+      fixture.componentInstance.water.set({
+        ...DEFAULT_WATER_READOUT,
+        ph: 6.2,
+        phZone: 'hors-plage',
+        phBands: phBands(['guppy']),
+      });
+      await fixture.whenStable();
+      expect(gauge().querySelector('[data-gauge-value]')?.textContent?.trim()).toBe('6,2');
+      expect(gauge().getAttribute('data-ph-zone')).toBe('hors-plage');
+      expect(meter().getAttribute('aria-valuenow')).toBe('6.2');
+      expect(meter().getAttribute('aria-valuetext')).toBe('pH 6,2, hors plage');
+      expect(meter().getAttribute('title')).toBe('pH 6,2, hors plage');
+      const mark = meter().querySelector<HTMLElement>('.control-panel__ph-mark')!;
+      expect(mark.style.left).toBe(`${phPercent(6.2)}%`);
     });
   });
 
