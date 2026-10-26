@@ -2736,6 +2736,12 @@
           "debut": "2026-10-26T01:58:50.886Z",
           "fin": "2026-10-26T01:59:27.790Z",
           "note": "Issue #223 : tritons, inclinaison de saut trop forte (bug idée Mathis) (S) ; PR #224 externe ignorée"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-10-26T01:59:55.610Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
