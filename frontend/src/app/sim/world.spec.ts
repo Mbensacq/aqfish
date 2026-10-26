@@ -376,6 +376,9 @@ describe('obstacles', () => {
         sharpTurns: 0,
       });
     },
+    // Délai explicite (#244, docs/PIEGES.md, Tests) : ~0,7 s par graine en local, plus de 5 s
+    // sur un runner de CI lent sous couverture ; le nombre de pas et de poissons ne change pas.
+    15_000,
   );
 });
 
