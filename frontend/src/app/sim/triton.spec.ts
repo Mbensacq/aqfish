@@ -7,6 +7,7 @@ import { populationLimit, setPopulation } from './population';
 import { parseWorld, serializeWorld } from './save';
 import { GRENOUILLE, TRITON, validateSpecies } from './species';
 import type { Fish } from './swimmer';
+import { SIM_DT } from './constants';
 import { shoreLineX } from './terrain';
 import {
   advance,
@@ -303,6 +304,78 @@ describe('triton : bornes sur 20 000 pas', () => {
     },
     60_000,
   );
+});
+
+describe('triton : inclinaison des pas rampants (#223)', () => {
+  /** Variation d'inclinaison maximale par pas : 3 rad/s (`PITCH_RATE` de `sim/frog.ts`). */
+  const MAX_PITCH_STEP = 3 * SIM_DT + EPS;
+  /** Sur un sol à peu près plat : au plus ~5° (`hopPitch` × pente de l'arc). */
+  const FLAT_PITCH = 0.092;
+  /** Partout (pentes de la berge comprises) : au plus ~7,5°, loin des 34° d'avant. */
+  const ANY_PITCH = 0.13;
+
+  it.each([1, 42, 2024])(
+    'graine %i : presque à plat, sans bascule d’un pas à l’autre, à plat peu après l’arrivée',
+    (seed) => {
+      const world = newtWorld(seed);
+      const hops = new Map<number, { y0: number; x0: number; z0: number; maxPitch: number }>();
+      const landed = new Map<number, number>();
+      let flatHops = 0;
+      for (let t = 0; t < 10000; t++) {
+        advanceInPlace(world, 1);
+        for (const f of world.entities) {
+          expect(Math.abs(f.pitch)).toBeLessThanOrEqual(ANY_PITCH);
+          expect(Math.abs(f.pitch - f.ppitch)).toBeLessThanOrEqual(MAX_PITCH_STEP);
+          if (f.ascent > 0 && !hops.has(f.id) && isOnLand(f.px, f.pz, GROUND)) {
+            hops.set(f.id, { x0: f.px, z0: f.pz, y0: f.py, maxPitch: 0 });
+          }
+          const hop = hops.get(f.id);
+          if (hop !== undefined) {
+            hop.maxPitch = Math.max(hop.maxPitch, Math.abs(f.pitch));
+            if (f.ascent === 0) {
+              hops.delete(f.id);
+              const range = Math.hypot(f.x - hop.x0, f.z - hop.z0);
+              const chord = Math.abs(f.y - hop.y0) / range;
+              // Au plus `hopPitch` × la pente la plus forte de l'arc (à l'envol ou à l'arrivée).
+              expect(hop.maxPitch).toBeLessThanOrEqual(
+                PARAMS.hopPitch * Math.atan((4 * PARAMS.hopHeight) / range + chord) + EPS,
+              );
+              if (isOnLand(f.x, f.z, GROUND) && chord < 0.1) {
+                expect(hop.maxPitch).toBeLessThanOrEqual(FLAT_PITCH);
+                flatHops += 1;
+              }
+              landed.set(f.id, 0);
+            }
+          }
+          const since = landed.get(f.id);
+          if (since !== undefined) {
+            if (f.ascent > 0 || !isOnLand(f.x, f.z, GROUND)) {
+              landed.delete(f.id);
+            } else if (since >= 10) {
+              // Posé depuis 10 pas : revenu à plat (progressivement, voir la borne par pas).
+              expect(f.pitch).toBe(0);
+              landed.delete(f.id);
+            } else {
+              landed.set(f.id, since + 1);
+            }
+          }
+        }
+      }
+      expect(flatHops).toBeGreaterThan(0);
+    },
+    60_000,
+  );
+
+  it('réglage hopPitch : faible pour le triton, borné à [0, 1]', () => {
+    expect(PARAMS.hopPitch).toBeLessThan(FROG.hopPitch);
+    const broken = (hopPitch: number) =>
+      validateSpecies({ ...TRITON, amphibian: { ...PARAMS, hopPitch } });
+    expect(broken(0)).toEqual([]);
+    expect(broken(1)).toEqual([]);
+    expect(broken(-0.1)).not.toEqual([]);
+    expect(broken(1.5)).not.toEqual([]);
+    expect(broken(Number.NaN)).not.toEqual([]);
+  });
 });
 
 describe('triton : déterminisme et sauvegarde', () => {

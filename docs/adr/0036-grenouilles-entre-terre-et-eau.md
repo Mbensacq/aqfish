@@ -81,3 +81,12 @@ l'octet.
 - Les captures `paludarium-*` montrent trois grenouilles (une sur la berge, deux dans l'eau à
   30 s pour la graine 42) ; celles du bac et du bassin sont inchangées.
 - Les tritons (#133), qui passent aussi de la terre à l'eau, pourront partir de ce module.
+- Cycle 74 (#223) : l'inclinaison de saut affectée directement (pente de la parabole, bornée
+  par `maxPitch`) puis remise à 0 à l'arrivée faisait piquer le triton de ±34° à chaque pas
+  rampant de 6 mm, puis le remettait à plat d'un coup. Désormais l'inclinaison visée est une
+  part `hopPitch` (`AmphibianParams`, dans [0, 1]) de la pente de l'arc, 0 une fois posée, et
+  l'inclinaison la suit à vitesse bornée (`PITCH_RATE`, 3 rad/s, celle du retour à plat) :
+  triton 0,1 (5° au plus sur sol plat, 7,5° sur la berge), grenouille 0,5 (≈ 40° au plus,
+  le geste d'un bond). Seule l'inclinaison change : positions, sauvegarde et déterminisme
+  sont identiques (option écartée : plafonner `maxPitch` du triton, qui borne aussi sa nage
+  et garderait la bascule à l'arrivée).
