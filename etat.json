@@ -2897,10 +2897,10 @@
           "note": "PR #249 : pH de l'eau, plages par espèce (approximations de jeu, ADR 0057) et jauge à zones, CI verte au 3e essai (unitaires : délai de 5 s du test 10 000 pas dépassé 2× = #244, délai explicite 15 s en commit séparé) ; 73 captures sans panneau identiques à l'octet ; e2e local ciblé 37/38 (1 délai décor, vert en CI) ; pied d'attribution réinjecté par le serveur dans la PR"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-26T14:08:49.713Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-26T14:23:16.342Z",
+          "note": "Verdict OK, 0 bug bloquant, 2515 tests unitaires verts, e2e pH 4/4 (2 ajoutés), 76 captures publiées (c078)"
         }
       },
       "metriques": {
