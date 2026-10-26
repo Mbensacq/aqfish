@@ -2975,10 +2975,10 @@
           "note": "PR #258 : tableau de bord de l'eau en bordure (ADR 0059), CI verte du premier coup ; 72 captures sans interface identiques à l'octet ; verify local partiel (e2e touchés 62/62) ; dette #257 (cadre visible sous Réglages) ; pied d'attribution réinjecté par le serveur dans le corps de PR"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-26T21:00:56.415Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-26T21:17:57.560Z",
+          "note": "Verdict OK, 0 bug, 2570 tests verts, 15 e2e verts, 83 captures publiées (c080)"
         }
       },
       "metriques": {}
