@@ -98,23 +98,36 @@ test.describe('Captures', () => {
     // Rythme du jour (#209) : la nuit, néons et guppys descendent vers le fond ; vue de côté.
     { name: 'side-minuit', query: 'camera=side&heure=0' },
     // Nourrissage (#67) : à 0 s au centre (posés sur le sable) et sur un rocher (posés
-    // dessus), à 24 s (en train de couler).
-    { name: 'three-quarter-nourriture', query: 'nourrir=0,0:0.3:0.03,24:-0.15:0.1' },
-    { name: 'three-quarter-nourriture-minuit', query: 'nourrir=0,0:0.3:0.03,24:-0.15:0.1&heure=0' },
-    // Granulés en voxels (#117), mêmes dépôts ; puis granulés posés (bac sans poissons, rien
-    // n'est mangé) sur le sable, au pied d'une plante et sur un rocher, de jour et de nuit.
+    // dessus), à 24 s (en train de couler). Les noms sans suffixe gardent le rendu en points
+    // (`granules=points`) ; les voxels, rendu par défaut depuis #226, portent `-voxels`.
+    {
+      name: 'three-quarter-nourriture',
+      query: 'nourrir=0,0:0.3:0.03,24:-0.15:0.1&granules=points',
+    },
+    {
+      name: 'three-quarter-nourriture-minuit',
+      query: 'nourrir=0,0:0.3:0.03,24:-0.15:0.1&heure=0&granules=points',
+    },
+    // Granulés en voxels (#117, #226), mêmes dépôts ; puis granulés posés (bac sans poissons,
+    // rien n'est mangé) sur le sable, au pied d'une plante et sur un rocher, de jour et de nuit.
     {
       name: 'three-quarter-nourriture-voxels',
       query: 'nourrir=0,0:0.3:0.03,24:-0.15:0.1&granules=voxels',
     },
-    { name: 'three-quarter-nourriture-posee', query: RESTING_FOOD },
-    { name: 'three-quarter-nourriture-posee-minuit', query: `${RESTING_FOOD}&heure=0` },
+    { name: 'three-quarter-nourriture-posee', query: `${RESTING_FOOD}&granules=points` },
+    {
+      name: 'three-quarter-nourriture-posee-minuit',
+      query: `${RESTING_FOOD}&granules=points&heure=0`,
+    },
     { name: 'three-quarter-nourriture-posee-voxels', query: `${RESTING_FOOD}&granules=voxels` },
     {
       name: 'three-quarter-nourriture-posee-voxels-minuit',
       query: `${RESTING_FOOD}&granules=voxels&heure=0`,
     },
-    { name: 'front-nourriture', query: 'nourrir=0,0:0.3:0.03,24:-0.15:0.1&camera=front' },
+    {
+      name: 'front-nourriture',
+      query: 'nourrir=0,0:0.3:0.03,24:-0.15:0.1&camera=front&granules=points',
+    },
     {
       name: 'front-nourriture-voxels',
       query: 'nourrir=0,0:0.3:0.03,24:-0.15:0.1&camera=front&granules=voxels',
@@ -263,7 +276,7 @@ test.describe('Captures', () => {
   // donc dézoomée, sans nourriture puis avec granulés posés en points et en voxels.
   const PHONE_CAPTURES = [
     { name: 'telephone-three-quarter', query: '' },
-    { name: 'telephone-three-quarter-nourriture', query: `&${RESTING_FOOD}` },
+    { name: 'telephone-three-quarter-nourriture', query: `&${RESTING_FOOD}&granules=points` },
     {
       name: 'telephone-three-quarter-nourriture-voxels',
       query: `&${RESTING_FOOD}&granules=voxels`,

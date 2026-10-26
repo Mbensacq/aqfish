@@ -257,11 +257,19 @@ describe('serializeWorld / parseWorld : aller-retour', () => {
     expect(() => serializeWorld(world)).toThrow(RangeError);
   });
 
-  it('granulés en points si le réglage n’est pas donné, à l’écriture comme à la relecture', () => {
+  it('granulés en voxels si le réglage n’est pas donné, à l’écriture comme à la relecture (#226)', () => {
     const settings: SaveSettings = { speed: 2, clock: createDayClock(9, 1200, false) };
     const data = saveData(createDefaultWorld(1), settings);
-    expect(data.settings.foodStyle).toBe('points');
-    expect(restored(parseSaveData(structuredClone(data))).settings.foodStyle).toBe('points');
+    expect(data.settings.foodStyle).toBe('voxels');
+    expect(restored(parseSaveData(structuredClone(data))).settings.foodStyle).toBe('voxels');
+  });
+
+  it('respecte un choix déjà enregistré, points comme voxels (#226)', () => {
+    for (const foodStyle of ['points', 'voxels'] as const) {
+      const settings: SaveSettings = { speed: 1, clock: createDayClock(9, 1200, false), foodStyle };
+      const data = structuredClone(saveData(createDefaultWorld(1), settings));
+      expect(restored(parseSaveData(data)).settings.foodStyle).toBe(foodStyle);
+    }
   });
 
   it('écrit et restitue l’état de l’eau (#206), changement d’eau compris', () => {
@@ -309,13 +317,13 @@ describe('serializeWorld / parseWorld : aller-retour', () => {
     expect(refusal(parseSaveData(data))).toMatch(/^eau : /);
   });
 
-  it('accepte une ancienne sauvegarde sans rendu des granulés (#117)', () => {
+  it('accepte une ancienne sauvegarde sans rendu des granulés (#117) : voxels (#226)', () => {
     const data = structuredClone(saveData(createDefaultWorld(3))) as unknown as {
       settings: Record<string, unknown>;
     };
     delete data.settings['foodStyle'];
     const { settings } = restored(parseSaveData(data));
-    expect(settings.foodStyle).toBe('points');
+    expect(settings.foodStyle).toBe('voxels');
     expect(settings.speed).toBe(DEFAULT_SAVE_SETTINGS.speed);
   });
 

@@ -1578,32 +1578,32 @@ describe('AquariumHost', () => {
       }
     });
 
-    it('rendu des granulés (#117) : points par défaut, bascule enregistrée et restaurée', async () => {
+    it('rendu des granulés (#117) : voxels par défaut (#226), bascule enregistrée et restaurée', async () => {
+      await create();
+      expect(host().foodStyle()).toBe('voxels');
+      expect(element().getAttribute(FOOD_STYLE_ATTRIBUTE)).toBe('voxels');
+      host().toggleFoodStyle();
+      expect(host().foodStyle()).toBe('points');
+      expect(element().getAttribute(FOOD_STYLE_ATTRIBUTE)).toBe('points');
+      const saved = parseWorld(memory().data.get(SAVE_STORAGE_KEY)!);
+      expect(saved.ok && saved.settings.foodStyle).toBe('points');
+      // Valeur inconnue ignorée.
+      host().setFoodStyle('cubes' as never);
+      expect(host().foodStyle()).toBe('points');
+      fixture.destroy();
       await create();
       expect(host().foodStyle()).toBe('points');
       expect(element().getAttribute(FOOD_STYLE_ATTRIBUTE)).toBe('points');
-      host().toggleFoodStyle();
-      expect(host().foodStyle()).toBe('voxels');
-      expect(element().getAttribute(FOOD_STYLE_ATTRIBUTE)).toBe('voxels');
-      const saved = parseWorld(memory().data.get(SAVE_STORAGE_KEY)!);
-      expect(saved.ok && saved.settings.foodStyle).toBe('voxels');
-      // Valeur inconnue ignorée.
-      host().setFoodStyle('cubes' as never);
-      expect(host().foodStyle()).toBe('voxels');
-      fixture.destroy();
-      await create();
-      expect(host().foodStyle()).toBe('voxels');
-      expect(element().getAttribute(FOOD_STYLE_ATTRIBUTE)).toBe('voxels');
     });
 
     it('rendu des granulés : granules= en capture seulement, bouton sans effet', async () => {
-      await create('?capture=1&seed=3&granules=voxels');
-      expect(host().foodStyle()).toBe('voxels');
-      host().toggleFoodStyle();
-      expect(host().foodStyle()).toBe('voxels');
-      fixture.destroy();
-      await create('?granules=voxels');
+      await create('?capture=1&seed=3&granules=points');
       expect(host().foodStyle()).toBe('points');
+      host().toggleFoodStyle();
+      expect(host().foodStyle()).toBe('points');
+      fixture.destroy();
+      await create('?granules=points');
+      expect(host().foodStyle()).toBe('voxels');
     });
 
     it('en mode capture : le stockage n’est ni lu ni écrit', async () => {

@@ -478,6 +478,15 @@ haut de sa section.
 
 ## Rendu
 
+- **Ajouter une couleur à la palette commune change les images d'ailleurs** (cycle 77, #226) :
+  trois bruns de granulé ajoutés à `PALETTE` ont pris 19 captures sans nourriture (pièce,
+  meubles, bassin, pixels de nuit du paludarium et du récif). Avant d'ajouter une couleur,
+  lancer `npm run captures` avant / après et comparer à l'octet (`cmp`). Pour une couleur
+  propre à un objet présent partout, la réserver à ses pixels : les granulés écrivent une
+  opacité de 0,5 (`FOOD_ALPHA_MARKER`, mélange `One` / `Zero`) et la passe ne leur propose
+  les tons de la nourriture que sous l'opacité 1 (ADR 0056). Un nouvel objet à mélange
+  personnalisé qui écrirait une opacité inférieure à 1 hériterait de ces tons. (2026-10-26)
+
 - **Ternir un petit poisson : la passe palette le ramène au sable** (cycle 72, #208) : avec
   45 % de désaturation et 25 % d'assombrissement (et même 75 % / 30 %), néons et guppys
   affamés sortaient **à l'identique** en tons de sable et de gris : la passe palette ramène

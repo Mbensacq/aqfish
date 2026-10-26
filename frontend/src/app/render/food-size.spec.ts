@@ -4,10 +4,12 @@ import {
   FOOD_PELLET_DIAMETER,
   foodCoreSize,
   foodOutlineExtra,
-  foodVoxelOutlineSide,
+  FOOD_SHAPE_PROPORTIONS,
+  foodVoxelDimensions,
   foodVoxelSide,
   scenePixelsPerMeter,
 } from './food-size';
+import { FOOD_SHAPES } from '../sim/food';
 
 describe('render/food-size', () => {
   it('pixels de scène par mètre : hauteur de l’image sur la hauteur visible', () => {
@@ -75,12 +77,38 @@ describe('render/food-size', () => {
     }
   });
 
-  it('coque du voxel : 2 pixels de plus au-dessus du seuil, 1 en dessous, aucun sans échelle', () => {
-    // 500 px/m : cube de 6 pixels, coque de 8 pixels.
-    expect(foodVoxelOutlineSide(500) * 500).toBeCloseTo(8, 9);
-    // 50 px/m : cube d'un pixel (plancher), coque de 2 pixels.
-    expect(foodVoxelOutlineSide(50) * 50).toBeCloseTo(2, 9);
-    expect(foodVoxelOutlineSide(0)).toBe(FOOD_PELLET_DIAMETER);
-    expect(foodVoxelOutlineSide(Number.NaN)).toBe(FOOD_PELLET_DIAMETER);
+  it('formes (#226) : proportions du grain appliquées au diamètre et au facteur de taille', () => {
+    expect(FOOD_SHAPE_PROPORTIONS.grain).toEqual([1, 1, 1]);
+    for (const shape of FOOD_SHAPES) {
+      const [x, y, z] = foodVoxelDimensions(shape, 1, 0);
+      const [px, py, pz] = FOOD_SHAPE_PROPORTIONS[shape];
+      expect(x).toBeCloseTo(FOOD_PELLET_DIAMETER * px, 12);
+      expect(y).toBeCloseTo(FOOD_PELLET_DIAMETER * py, 12);
+      expect(z).toBeCloseTo(FOOD_PELLET_DIAMETER * pz, 12);
+      const big = foodVoxelDimensions(shape, 1.15, 0);
+      expect(big[0]).toBeCloseTo(x * 1.15, 12);
+    }
+    // Flocon : plus large et bien plus fin qu'un grain ; paillette : plus petite qu'un grain.
+    const [fx, fy] = FOOD_SHAPE_PROPORTIONS.flocon;
+    expect(fx).toBeGreaterThan(1);
+    expect(fy).toBeLessThan(0.5);
+    const [px, py, pz] = FOOD_SHAPE_PROPORTIONS.paillette;
+    expect(px * py * pz).toBeLessThan(fx * fy * FOOD_SHAPE_PROPORTIONS.flocon[2]);
+  });
+
+  it('formes : chaque dimension au moins un pixel de scène ; facteur invalide ⇒ 1', () => {
+    for (const shape of FOOD_SHAPES) {
+      for (const ppm of [40, 85, 148]) {
+        for (const d of foodVoxelDimensions(shape, 0.85, ppm)) {
+          expect(d * ppm).toBeGreaterThanOrEqual(FOOD_MIN_SCENE_PIXELS - 1e-9);
+        }
+      }
+      for (const factor of [0, -1, Number.NaN, Number.POSITIVE_INFINITY]) {
+        expect(foodVoxelDimensions(shape, factor, 500)).toEqual(foodVoxelDimensions(shape, 1, 500));
+      }
+    }
+    // Zoom proche : rien n'est relevé au plancher, le flocon reste fin.
+    const [, y] = foodVoxelDimensions('flocon', 1, 500);
+    expect(y).toBeCloseTo(FOOD_PELLET_DIAMETER * FOOD_SHAPE_PROPORTIONS.flocon[1], 12);
   });
 });

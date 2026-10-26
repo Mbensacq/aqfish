@@ -155,6 +155,27 @@ export const ENVIRONMENT_TONES = {
 } as const;
 
 /**
+ * Tons de la nourriture (issue #226, ADR 0056) : bruns de granulé, proposés à la passe palette
+ * **seulement** sur les pixels où un granulé a été dessiné (marqueur d'opacité
+ * `FOOD_ALPHA_MARKER`, `render/food-layer.ts`). Partout ailleurs ils ne peuvent jamais
+ * l'emporter : la palette commune n'a aucun brun, et des bruns communs changeaient les images
+ * du bassin, de la pièce et des meubles (bois, roche sombre).
+ */
+export const FOOD_TONES = {
+  /** Granulé ocre : dessus. */
+  granuleOcre: '#a0703a',
+  /** Granulé brun-rouge : dessus ; flanc éclairé du granulé ocre. */
+  granuleBrunRouge: '#8c4630',
+  /** Brun sombre : flancs à l'ombre des granulés. */
+  granuleBrun: '#6b4428',
+} as const;
+
+export type FoodToneName = keyof typeof FOOD_TONES;
+
+/** Tons de la nourriture, dans leur ordre de déclaration (placés en fin de passe). */
+export const FOOD_TONE_COLORS: readonly string[] = Object.values(FOOD_TONES);
+
+/**
  * Tons d'entrée (issue #81) : couleurs données aux matériaux, **pas** proposées à la passe
  * palette. Elles ne s'affichent pas telles quelles : la passe les ramène à la couleur la plus
  * proche de la palette étendue. Seul le mode sans filtre les montre ; elles sont regroupées

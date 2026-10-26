@@ -84,9 +84,10 @@ describe('AquariumView (pipeline pixel art)', () => {
     view.resize(390, 844);
     view.renderFrame();
     expect(view.foodPointSize).toBe(1);
-    expect(view.foodStyle).toBe('points');
-    view.setFoodStyle('voxels');
+    // Voxels par défaut (#226).
     expect(view.foodStyle).toBe('voxels');
+    view.setFoodStyle('points');
+    expect(view.foodStyle).toBe('points');
   });
 
   it('cale le rapport d’aspect de la caméra sur la cible', () => {

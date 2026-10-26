@@ -1,8 +1,8 @@
 import { DEFAULT_FOOD_STYLE, FOOD_STYLES, isFoodStyle, toggleFoodStyle } from './food-style';
 
 describe('core/food-style', () => {
-  it('points par défaut, deux rendus connus', () => {
-    expect(DEFAULT_FOOD_STYLE).toBe('points');
+  it('voxels par défaut (#226), deux rendus connus', () => {
+    expect(DEFAULT_FOOD_STYLE).toBe('voxels');
     expect(FOOD_STYLES).toEqual(['points', 'voxels']);
   });
 

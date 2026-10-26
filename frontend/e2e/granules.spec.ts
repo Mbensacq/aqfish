@@ -5,9 +5,9 @@ import { saveData } from '../src/app/sim/save';
 import { createDefaultWorld } from '../src/app/sim/world';
 
 /**
- * Rendu des granulés (issue #117) : points par défaut, bouton du panneau pour passer aux
- * voxels et revenir, choix conservé au rechargement (sauvegarde), ancienne sauvegarde sans
- * le réglage acceptée, `granules=` en capture, bouton lisible à 390 px.
+ * Rendu des granulés (issues #117 et #226) : voxels par défaut, bouton du panneau pour passer
+ * aux points et revenir, choix conservé au rechargement (sauvegarde), ancienne sauvegarde
+ * sans le réglage acceptée (voxels), `granules=` en capture, bouton lisible à 390 px.
  *
  * Les pages sont ouvertes sans `seed=` : un paramètre de monde dans l'URL désactive la
  * restauration de la sauvegarde.
@@ -31,18 +31,18 @@ async function openPanel(page: Page): Promise<void> {
 }
 
 test.describe('Rendu des granulés (#117)', () => {
-  test('points par défaut, le bouton alterne avec les voxels', async ({ page }) => {
+  test('voxels par défaut (#226), le bouton alterne avec les points', async ({ page }) => {
     const errors = await open(page);
-    await expect(hostEl(page)).toHaveAttribute(STYLE, 'points');
+    await expect(hostEl(page)).toHaveAttribute(STYLE, 'voxels');
     await openPanel(page);
-    await expect(foodButton(page)).toHaveText('Granulés : points');
+    await expect(foodButton(page)).toHaveText('Granulés : voxels');
     await page.keyboard.press('g');
     await expect(hostEl(page)).not.toHaveAttribute('data-aqfish-food', '0');
     await foodButton(page).click();
-    await expect(hostEl(page)).toHaveAttribute(STYLE, 'voxels');
-    await expect(foodButton(page)).toHaveText('Granulés : voxels');
-    await foodButton(page).click();
     await expect(hostEl(page)).toHaveAttribute(STYLE, 'points');
+    await expect(foodButton(page)).toHaveText('Granulés : points');
+    await foodButton(page).click();
+    await expect(hostEl(page)).toHaveAttribute(STYLE, 'voxels');
     expect(errors).toEqual([]);
   });
 
@@ -50,16 +50,16 @@ test.describe('Rendu des granulés (#117)', () => {
     const errors = await open(page);
     await openPanel(page);
     await foodButton(page).click();
-    await expect(hostEl(page)).toHaveAttribute(STYLE, 'voxels');
+    await expect(hostEl(page)).toHaveAttribute(STYLE, 'points');
     await page.reload();
     await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
-    await expect(hostEl(page)).toHaveAttribute(STYLE, 'voxels');
+    await expect(hostEl(page)).toHaveAttribute(STYLE, 'points');
     await openPanel(page);
-    await expect(foodButton(page)).toHaveText('Granulés : voxels');
+    await expect(foodButton(page)).toHaveText('Granulés : points');
     expect(errors).toEqual([]);
   });
 
-  test('ancienne sauvegarde sans le réglage : granulés en points', async ({ page }) => {
+  test('ancienne sauvegarde sans le réglage : granulés en voxels (#226)', async ({ page }) => {
     const data = structuredClone(
       saveData(createDefaultWorld(5), { speed: 1, clock: createDayClock(12, 1200, false) }),
     ) as unknown as { settings: Record<string, unknown> };
@@ -69,15 +69,15 @@ test.describe('Rendu des granulés (#117)', () => {
     }, JSON.stringify(data));
     const errors = await open(page);
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-seed', '5');
-    await expect(hostEl(page)).toHaveAttribute(STYLE, 'points');
+    await expect(hostEl(page)).toHaveAttribute(STYLE, 'voxels');
     expect(errors).toEqual([]);
   });
 
-  test('en capture : granules= choisit le rendu, invalide ⇒ points', async ({ page }) => {
-    await open(page, '?capture=1&seed=42&granules=voxels&nourrir=0');
-    await expect(hostEl(page)).toHaveAttribute(STYLE, 'voxels');
-    await open(page, '?capture=1&seed=42&granules=cubes');
+  test('en capture : granules= choisit le rendu, invalide ⇒ voxels', async ({ page }) => {
+    await open(page, '?capture=1&seed=42&granules=points&nourrir=0');
     await expect(hostEl(page)).toHaveAttribute(STYLE, 'points');
+    await open(page, '?capture=1&seed=42&granules=cubes');
+    await expect(hostEl(page)).toHaveAttribute(STYLE, 'voxels');
   });
 
   test('390 × 844 : bouton atteignable dans le panneau', async ({ page }) => {
@@ -90,6 +90,6 @@ test.describe('Rendu des granulés (#117)', () => {
     expect(box!.x).toBeGreaterThanOrEqual(0);
     expect(box!.x + box!.width).toBeLessThanOrEqual(390);
     await foodButton(page).click();
-    await expect(hostEl(page)).toHaveAttribute(STYLE, 'voxels');
+    await expect(hostEl(page)).toHaveAttribute(STYLE, 'points');
   });
 });
