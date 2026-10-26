@@ -2988,6 +2988,24 @@
         }
       },
       "metriques": {}
+    },
+    "81": {
+      "numero": 81,
+      "date": "2026-10-27",
+      "debut": "2026-10-26T23:05:22.479Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-10-26T23:05:22.479Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
