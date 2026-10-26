@@ -2980,6 +2980,19 @@
         "statut": "termine",
         "note": "8 cycles, 2 alertes"
       }
+    },
+    "2026-10-26": {
+      "metriques": {
+        "cycles": 9,
+        "livres": 9,
+        "version": "v0.11.5",
+        "tests": 2438,
+        "couvertureLignes": 97.52,
+        "lignesCode": 53912,
+        "bugsOuverts": 1,
+        "ciMain": "success",
+        "mutation": null
+      }
     }
   }
 }
