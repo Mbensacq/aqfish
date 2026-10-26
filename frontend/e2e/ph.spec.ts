@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+
 import { expect, test, type Page } from '@playwright/test';
 
 import { createDayClock } from '../src/app/sim/daylight';
@@ -78,6 +80,67 @@ test.describe('pH (#236)', () => {
       const box = await element.boundingBox();
       expect(box?.width ?? 0).toBeGreaterThan(8);
     }
+    expect(errors).toEqual([]);
+  });
+
+  // QA (cycle 78) : le pH suit l'environnement et la sauvegarde.
+  test('récif à pH 7,0 : hors plage ; ancienne sauvegarde sans pH : eau neuve du bassin', async ({
+    page,
+  }) => {
+    const errors = await open(page);
+    const input = page.locator('[data-section="sauvegarde"] input[type="file"]');
+    const clock = createDayClock(12, 1200, true);
+
+    // Récif (poissons-clowns, chirurgiens : tolérance 7,8 à 8,6) importé à pH 7,0.
+    const reef: MutableWorld = createDefaultWorld(42, 'recif');
+    reef.water = { ...freshWater('recif'), ph: 7 };
+    await input.setInputFiles({
+      name: 'recif.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(serializeWorld(reef, { speed: 0, clock })),
+    });
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'recif');
+    await expect(value(page)).toHaveText('7,0');
+    await expect(gauge(page)).toHaveAttribute('data-ph-zone', 'hors-plage');
+
+    // Ancienne sauvegarde : le champ `ph` est retiré de l'eau.
+    const pond = JSON.parse(
+      serializeWorld(createDefaultWorld(7, 'bassin'), { speed: 0, clock }),
+    ) as { water?: Record<string, unknown> };
+    expect(pond.water).toBeDefined();
+    delete pond.water?.['ph'];
+    await input.setInputFiles({
+      name: 'ancien.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(JSON.stringify(pond)),
+    });
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'bassin');
+    await expect(value(page)).toHaveText('7,5');
+    await expect(gauge(page)).toHaveAttribute('data-ph-zone', 'ideal');
+
+    // Un pH hors bornes est refusé, le bac reste inchangé.
+    pond.water!['ph'] = 12;
+    await input.setInputFiles({
+      name: 'hors-bornes.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(JSON.stringify(pond)),
+    });
+    await expect(page.getByRole('alert')).toContainText('ph');
+    await expect(value(page)).toHaveText('7,5');
+    expect(errors).toEqual([]);
+  });
+
+  test('l’export de la sauvegarde contient le pH affiché', async ({ page }) => {
+    const errors = await open(page);
+    await importAcidTank(page);
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      page.locator('[data-section="sauvegarde"]').getByRole('button', { name: 'Exporter' }).click(),
+    ]);
+    const exported = JSON.parse(readFileSync((await download.path())!, 'utf8')) as {
+      water: { ph: number };
+    };
+    expect(exported.water.ph).toBe(6);
     expect(errors).toEqual([]);
   });
 });
