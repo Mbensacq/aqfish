@@ -191,6 +191,16 @@ besoin (voir `docs/adr/0004-backend-nestjs.md`) : ne pas créer `backend/` avant
   même si ton environnement en fournit. Dans les ADR, l'auteur est le rôle (`Dev`, `Planif`…)
   ou Mathis. Seul le nom du fichier `CLAUDE.md` fait exception : l'outil qui lance les agents
   le charge automatiquement, ne pas le renommer.
+- **Aucune ligne d'attribution dans les commits d'une PR, même une seule.** La fusion en
+  squash de Mathis reprend les messages de tous les commits de la PR : une ligne
+  `Co-authored-by:` ou un lien de session dans un seul commit finit dans l'historique de
+  `main`. Avant chaque `git push`, vérifier :
+  `git log origin/main..HEAD --format=%B | grep -i -E '^(co-authored-by|cl[a]ude-session):|cl[a]ude\.(ai|com)/code|generated (with|by)'`
+  (aucune sortie attendue). Si une ligne apparaît : réécrire les messages
+  (`git rebase -i` est indisponible, utiliser `git commit --amend` ou `git reset --soft` puis
+  un nouveau commit propre) et pousser avec `git push --force-with-lease` : exception à la
+  règle sans `--force`, **réservée à ta propre branche `cycle/…` avant fusion**. La CI
+  (job `messages`) échoue si un commit de la PR contient une telle ligne.
 - Une PR = une fonctionnalité ou un correctif cohérent. Taille indicative : moins de 600
   lignes modifiées hors tests et `package-lock.json`. Au-delà, découper.
 - Toute PR remplit le modèle `.github/pull_request_template.md`, référence son issue

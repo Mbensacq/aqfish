@@ -66,6 +66,8 @@ Si cela a occupé l'essentiel de la session, s'arrêter là (note de phase expli
    ```
 5. Garder la PR sous ~600 lignes modifiées hors tests et `package-lock.json`.
 6. Commits Conventional Commits en français (`feat(render): …`).
+   Aucune ligne `Co-authored-by:` ni lien de session dans aucun commit (voir `CLAUDE.md`,
+   « Règles Git ») : la vérifier avant chaque push, la CI échoue sinon.
 7. Mettre à jour la documentation si besoin : ADR pour une décision structurante,
    `docs/ARCHITECTURE.md` si la structure change, `docs/PIEGES.md` pour tout piège rencontré.
 

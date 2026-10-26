@@ -130,9 +130,33 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
+  messages:
+    name: messages de commit sans attribution
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      # La fusion en squash reprend les messages de tous les commits de la PR : une ligne
+      # d'attribution dans un seul commit finit dans l'historique de `main` (CLAUDE.md).
+      - name: Aucun commit de la PR ne porte de ligne d'attribution
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          motif='^(co-authored-by|cl[a]ude-session):|cl[a]ude\.(ai|com)/code|generated (with|by)'
+          if git log "$BASE..$HEAD" --format='%h %B' | grep -i -E "$motif"; then
+            echo "::error::Ligne d'attribution dans un commit de la PR : réécrire les messages (CLAUDE.md, Règles Git)."
+            exit 1
+          fi
+          echo "Aucune ligne d'attribution."
+
   frontend:
     name: frontend
-    needs: [verifier, e2e, captures]
+    needs: [verifier, e2e, captures, messages]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -142,8 +166,11 @@ jobs:
           VERIFIER: ${{ needs.verifier.result }}
           E2E: ${{ needs.e2e.result }}
           CAPTURES: ${{ needs.captures.result }}
+          MESSAGES: ${{ needs.messages.result }}
         run: |
-          echo "vérifications : $VERIFIER ; e2e : $E2E ; captures : $CAPTURES"
+          echo "vérifications : $VERIFIER ; e2e : $E2E ; captures : $CAPTURES ; messages : $MESSAGES"
           test "$VERIFIER" = success
           test "$E2E" = success
           test "$CAPTURES" = success
+          # « skipped » hors pull request (push sur main).
+          test "$MESSAGES" = success -o "$MESSAGES" = skipped

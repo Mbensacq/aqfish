@@ -62,7 +62,9 @@ Lire la revue `## QA — verdict`. `KO` : corrections demandées, sauf si le KO 
   elles une issue `dette`) :
   1. préparer la version **dans la PR** (étape 3) et attendre que la CI repasse au vert ;
   2. publier ta revue écrite `## Revue — fusion` (ce qui a été vérifié, en quelques lignes) ;
-  3. fusion squash en REST, titre = titre de la PR + ` (#N)`, puis supprimer la branche ;
+  3. fusion squash en REST, titre = titre de la PR + ` (#N)`, **corps vide**
+     (`-f commit_message=''`, sinon GitHub y recopie les messages des commits), puis
+     supprimer la branche ;
   4. vérifier que l'issue liée est fermée (`Closes #N`) ; sinon la fermer en REST.
   **Si l'environnement refuse la fusion** (garde-fou de sécurité) : ne pas contourner.
   Poser l'étiquette `pret-a-fusionner` (la version est déjà préparée dans la PR), commenter
