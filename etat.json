@@ -2960,7 +2960,7 @@
       "type": "fonctionnalite",
       "issue": 256,
       "pr": 258,
-      "version": null,
+      "version": "v1.0.3",
       "phases": {
         "planif": {
           "statut": "termine",
