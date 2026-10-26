@@ -2823,6 +2823,12 @@
           "debut": "2026-10-26T07:22:28.089Z",
           "fin": "2026-10-26T07:34:04.126Z",
           "note": "Verdict OK, 0 bug, 2443 tests verts, 76 captures publiées (c076), déterminisme front-panneau/téléphone confirmé 3 essais"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-10-26T07:34:26.503Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
