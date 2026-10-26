@@ -2901,6 +2901,12 @@
           "debut": "2026-10-26T14:08:49.713Z",
           "fin": "2026-10-26T14:23:16.342Z",
           "note": "Verdict OK, 0 bug bloquant, 2515 tests unitaires verts, e2e pH 4/4 (2 ajoutés), 76 captures publiées (c078)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-10-26T14:23:44.546Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {
