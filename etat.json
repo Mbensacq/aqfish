@@ -2768,10 +2768,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-26T04:26:33.495Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-26T04:27:04.985Z",
+          "note": "Issue #233 : tests d'inclinaison à la sortie de l'eau, triton et grenouille (S)"
         }
       },
       "metriques": {}
