@@ -1,6 +1,8 @@
-Branche : cycle/c074 (PR #231, inclinaison de saut des amphibiens)
-PR : #231
-Commit : 6e6155d (tête de PR)
-Graine : 42 (défaut des captures)
-Cycle : 74, série produite le 2026-10-26
-Notes : 68/76 identiques à c073 ; 5 paludarium changées à dessein (amphibiens) ; front-panneau non déterministe d'une exécution à l'autre (3 empreintes sur 3 essais, poissons du bac tropical décalés de quelques pixels), telephone-catalogue/telephone-eau varient pareillement : hors périmètre de la PR.
+# Captures c076
+
+- Branche : cycle/c076-captures-interface-deterministes
+- PR : #242
+- Commit : 2b49f42
+- Graine : 42 (défaut du contrat)
+- Temps : 76 captures en 2,7 min
+- Les 5 angles 3D sont identiques à l'octet à la série c074 ; front-panneau diffère (positions de t = 0, attendu).
