@@ -2784,6 +2784,12 @@
           "debut": "2026-10-26T05:05:29.552Z",
           "fin": "2026-10-26T05:19:05.421Z",
           "note": "Verdict OK, 0 bug, tests 2438 verts, captures non régénérées (délai), mutation non lancée"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-10-26T05:19:39.732Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {
