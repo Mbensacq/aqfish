@@ -2850,6 +2850,12 @@
           "debut": "2026-10-26T08:27:01.003Z",
           "fin": "2026-10-26T08:28:07.524Z",
           "note": "Issue #226 : nourriture en voxels par défaut, grains naturels (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-10-26T08:28:59.836Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
