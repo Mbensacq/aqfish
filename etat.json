@@ -2992,6 +2992,10 @@
         "bugsOuverts": 1,
         "ciMain": "success",
         "mutation": null
+      },
+      "rapport": {
+        "statut": "termine",
+        "note": "9 cycles, 3 alertes"
       }
     }
   }
