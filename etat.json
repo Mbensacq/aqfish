@@ -2825,10 +2825,10 @@
           "note": "Verdict OK, 0 bug, 2443 tests verts, 76 captures publiées (c076), déterminisme front-panneau/téléphone confirmé 3 essais"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-26T07:34:26.503Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-26T08:26:30.241Z",
+          "note": "PR #242 fusionnée → v0.11.6 (release CI ok), #232 fermée ; main rouge au 1er essai (délai 5 s world.spec, flake runner lent) puis verte à la relance → bug #244 ; dette #243 ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {
