@@ -2862,6 +2862,12 @@
           "debut": "2026-10-26T10:09:12.888Z",
           "fin": "2026-10-26T10:26:32.380Z",
           "note": "Verdict OK, 0 bug, 2455 tests unitaires verts, e2e nourriture 14/14 + 2 tests QA de nuit, 76 captures publiées (c077)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-10-26T10:26:57.116Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {
