@@ -2,7 +2,15 @@ import { describe, expect, it } from 'vitest';
 
 import { groundHeight, type WalkerGround } from './axolotl';
 import { environmentWater, livesIn, PALUDARIUM, POND, TROPICAL_TANK } from './environment';
-import { frogModeOf, isOnLand, restHeight, stepFrog, wantsWater, type FrogMode } from './frog';
+import {
+  frogModeOf,
+  isOnLand,
+  PITCH_RATE,
+  restHeight,
+  stepFrog,
+  wantsWater,
+  type FrogMode,
+} from './frog';
 import { populationLimit, setPopulation } from './population';
 import { parseWorld, serializeWorld } from './save';
 import { GRENOUILLE, TRITON, validateSpecies } from './species';
@@ -44,6 +52,52 @@ function newtWorld(seed: number, count = 3): MutableWorld {
   return cloneWorld(
     createWorld(seed, [{ species: 'triton', count }], [], [], 'paludarium'),
   ) as MutableWorld;
+}
+
+/**
+ * Suit chaque individu de `world` pendant `steps` pas et vérifie l'inclinaison à la sortie de
+ * l'eau (#233) : de la reprise de la berge (`nage` → `sortie`) jusqu'à la fin du premier saut
+ * qui suit la sortie (`posee` → `saut` ou `entree`), la variation par pas reste sous
+ * `maxStep`, l'animal arrive à plat sur la berge et le premier saut part à plat. Rend le
+ * nombre de sorties suivies jusqu'au bout.
+ */
+function followExits(world: MutableWorld, steps: number, maxStep: number): number {
+  type Stage = 'sortie' | 'posee' | 'saut';
+  const stage = new Map<number, Stage>();
+  const previous = new Map<number, FrogMode>();
+  let completed = 0;
+  for (let t = 0; t < steps; t++) {
+    advanceInPlace(world, 1);
+    for (const f of world.entities) {
+      const mode = frogModeOf(f, world.seed, world.time, GROUND);
+      const before = previous.get(f.id);
+      previous.set(f.id, mode);
+      if (before === 'nage' && mode === 'sortie') {
+        stage.set(f.id, 'sortie');
+      }
+      const current = stage.get(f.id);
+      if (current === undefined) {
+        continue;
+      }
+      expect(Math.abs(f.pitch - f.ppitch)).toBeLessThanOrEqual(maxStep);
+      if (current === 'sortie' && mode === 'posee') {
+        // Arrivée sur la berge : à plat, comme pendant toute la nage de sortie.
+        expect(f.pitch).toBe(0);
+        stage.set(f.id, 'posee');
+      } else if (current === 'posee' && (mode === 'saut' || mode === 'entree')) {
+        // Premier saut : part à plat, puis s'incline d'au plus `maxStep` par pas.
+        expect(f.ppitch).toBe(0);
+        stage.set(f.id, 'saut');
+      } else if (current === 'saut' && f.ascent === 0) {
+        completed += 1;
+        stage.delete(f.id);
+      } else if (current === 'sortie' && mode === 'nage') {
+        // Le milieu voulu a de nouveau basculé vers l'eau avant la berge : sortie abandonnée.
+        stage.delete(f.id);
+      }
+    }
+  }
+  return completed;
 }
 
 /** Part du temps passé hors de la terre émergée (hors sauts), sur `steps` pas. */
@@ -376,6 +430,18 @@ describe('triton : inclinaison des pas rampants (#223)', () => {
     expect(broken(1.5)).not.toEqual([]);
     expect(broken(Number.NaN)).not.toEqual([]);
   });
+});
+
+describe('triton : inclinaison à la sortie de l’eau (#233)', () => {
+  it.each([1, 42, 2024])(
+    'graine %i : nage → sortie → posé → premier pas rampant, variation bornée à chaque pas',
+    (seed) => {
+      const world = newtWorld(seed);
+      const exits = followExits(world, 20000, PITCH_RATE * SIM_DT + EPS);
+      expect(exits).toBeGreaterThanOrEqual(3);
+    },
+    60_000,
+  );
 });
 
 describe('triton : déterminisme et sauvegarde', () => {
