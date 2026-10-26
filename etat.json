@@ -2738,10 +2738,10 @@
           "note": "Issue #223 : tritons, inclinaison de saut trop forte (bug idée Mathis) (S) ; PR #224 externe ignorée"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-26T01:59:55.610Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-26T03:00:24.994Z",
+          "note": "PR #231 : inclinaison de saut des amphibiens atténuée (hopPitch) et lissée, CI verte 7/7 au 1er essai ; captures triton avant/après publiées (captures/c074/dev) ; e2e local : navigateur 1194 recréé par lien, anemones-qa en délai dépassé (2 min, récif, vert en CI) ; pied d'attribution réinjecté par le serveur"
         }
       },
       "metriques": {}
