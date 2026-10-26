@@ -2846,10 +2846,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-26T08:27:01.003Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-26T08:28:07.524Z",
+          "note": "Issue #226 : nourriture en voxels par défaut, grains naturels (M)"
         }
       },
       "metriques": {}
