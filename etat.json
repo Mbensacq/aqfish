@@ -2778,6 +2778,12 @@
           "debut": "2026-10-26T04:27:33.686Z",
           "fin": "2026-10-26T05:05:03.981Z",
           "note": "PR #234 : tests d'inclinaison à la sortie de l'eau (triton, grenouille) + 39° grenouille = sommet d'un bond court (ADR 0036), CI verte 7/7 au 1er essai ; local : format/lint/unitaires main OK, e2e local interrompu à 84/302 sans échec (trop lent) ; pied d'attribution réinjecté par le serveur"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-10-26T05:05:29.552Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
