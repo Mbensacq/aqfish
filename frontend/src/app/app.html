@@ -21,6 +21,8 @@
     />
     <!-- Indicateur du moment de la journée (#73). -->
     <app-day-indicator [phase]="aquarium.dayPhase()" />
+    <!-- Tableau de bord de l'eau (#256) : sur le bord haut, toujours visible, sous les panneaux. -->
+    <app-dashboard-frame [sample]="aquarium.waterSample()" [readout]="aquarium.water()" />
     <!-- Panneau de contrôle (#52) : environnement (#87) et pièce (#187), vitesse, heure et pluie (#106), décor et granulés (#117), eau (#207), population (#69), sauvegarde (#70). Fermé par défaut. -->
     <app-control-panel
       #panel

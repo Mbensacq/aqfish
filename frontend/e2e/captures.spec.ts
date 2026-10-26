@@ -4,11 +4,20 @@ import { join, resolve } from 'node:path';
 import { expect, test } from '@playwright/test';
 
 import { SIM_DT } from '../src/app/sim/constants';
+import { createDayClock } from '../src/app/sim/daylight';
+import { serializeWorld } from '../src/app/sim/save';
 import { SPECIES } from '../src/app/sim/species';
 import { swimBounds } from '../src/app/sim/swimmer';
 import { waterVolume } from '../src/app/sim/tank';
+import { sampleWater } from '../src/app/sim/water-quality';
 import { glassStats, recordTrajectories } from '../src/app/sim/trajectory';
-import { advance, createDefaultWorld, feed, type World } from '../src/app/sim/world';
+import {
+  advance,
+  createDefaultWorld,
+  feed,
+  type MutableWorld,
+  type World,
+} from '../src/app/sim/world';
 
 /**
  * Harnais de captures (projet Playwright « captures »).
@@ -387,6 +396,50 @@ test.describe('Captures', () => {
     });
     expect(errors).toEqual([]);
   });
+
+  // Tableau de bord de l'eau (#256) en bordure, trois-quarts, bureau, tablette et téléphone :
+  // panneaux fermés (« Commandes » à son état par défaut), simulation à l'arrêt dès t = 0.
+  // Avec `alerte`, bac importé à l'eau mauvaise (nitrates à 50). Captures d'interface.
+  for (const shot of [
+    { name: 'three-quarter-tableau-de-bord', width: 1280, height: 720, alert: false },
+    { name: 'tablette-tableau-de-bord', width: 768, height: 1024, alert: false },
+    { name: 'telephone-tableau-de-bord', width: 390, height: 844, alert: false },
+    { name: 'three-quarter-tableau-de-bord-alerte', width: 1280, height: 720, alert: true },
+    { name: 'telephone-tableau-de-bord-alerte', width: 390, height: 844, alert: true },
+  ]) {
+    test(`tableau de bord : ${shot.name}`, async ({ page }) => {
+      const errors: string[] = [];
+      page.on('pageerror', (error) => errors.push(error.message));
+      await page.setViewportSize({ width: shot.width, height: shot.height });
+      await page.goto(`/?seed=${SEED}&camera=three-quarter&heure=12&vitesse=0`);
+      await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+      if (shot.alert) {
+        const world: MutableWorld = createDefaultWorld(SEED);
+        world.water = sampleWater('tropical', 'mauvaise');
+        const text = serializeWorld(world, { speed: 0, clock: createDayClock(12, 1200, true) });
+        const settings = page.getByRole('button', { name: 'Réglages' });
+        await settings.click();
+        await page.locator('[data-section="sauvegarde"] input[type="file"]').setInputFiles({
+          name: 'eau.json',
+          mimeType: 'application/json',
+          buffer: Buffer.from(text),
+        });
+        await expect(page.locator('[data-dashboard] [data-gauge="nitrate"]')).toHaveAttribute(
+          'data-level',
+          'rouge',
+        );
+        await settings.click();
+        await expect(page.locator('.control-panel')).toHaveCount(0);
+      }
+      await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-speed', '0');
+      await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-tick', '0');
+      await expect(page.locator('[data-dashboard]').getByRole('meter')).toHaveCount(5);
+      // Souris hors du cadre : opacité de repos.
+      await page.mouse.move(shot.width / 2, shot.height / 2);
+      await page.screenshot({ path: join(OUTPUT_DIR, `${shot.name}.png`), animations: 'disabled' });
+      expect(errors).toEqual([]);
+    });
+  }
 
   test('tracé des trajectoires, vue de dessus', async ({ page }) => {
     const svg = trajectorySvg(SEED, TRACE_SECONDS);

@@ -29,16 +29,8 @@ import { mixWarningText, SPECIES_LABELS, speciesCatalog } from '../../sim/specie
 import { type SpeciesId } from '../../sim/species';
 import { addWarnings, addWarningText, sheetRows } from '../../sim/species-sheet';
 import { MAX_HEATER_TEMPERATURE, MIN_HEATER_TEMPERATURE } from '../../sim/water';
-import { MAX_PH, MIN_PH, PH_ZONE_LABELS, type PhBands } from '../../sim/water-ph';
-import {
-  COMPOUND_THRESHOLDS,
-  DEFAULT_WATER_READOUT,
-  GAUGE_MAX,
-  WATER_COMPOUNDS,
-  WATER_QUALITY_LABELS,
-  type WaterCompound,
-  type WaterReadout,
-} from '../../sim/water-quality';
+import { formatTenth } from '../../sim/water-dashboard';
+import { DEFAULT_WATER_READOUT, type WaterReadout } from '../../sim/water-quality';
 
 /** Identifiant de la région du panneau (cible de `aria-controls`). */
 export const CONTROL_PANEL_ID = 'panneau-controle';
@@ -129,65 +121,6 @@ export function speciesSliderLabel(species: SpeciesId): string {
 
 /** Pas du curseur du chauffage, en °C (#207). */
 export const HEATER_SLIDER_STEP = 0.5;
-
-/** Nom affiché de chaque composé de l'eau (#207). */
-export const COMPOUND_LABELS: Readonly<Record<WaterCompound, string>> = {
-  ammonia: 'Ammoniaque',
-  nitrite: 'Nitrites',
-  nitrate: 'Nitrates',
-};
-
-/** Couleurs des zones de la jauge pH (#236), celles de l'indicateur de qualité. */
-export const PH_ZONE_COLORS = {
-  ideal: '#5fbfa3',
-  tolere: '#e6be5a',
-  horsPlage: '#f2a39a',
-} as const;
-
-/** Position d'un pH sur la jauge, en pourcentage de [`MIN_PH`, `MAX_PH`], bornée à [0, 100]. */
-export function phPercent(ph: number): number {
-  if (!Number.isFinite(ph)) {
-    return 0;
-  }
-  const ratio = (ph - MIN_PH) / (MAX_PH - MIN_PH);
-  return Math.round(Math.min(1, Math.max(0, ratio)) * 1000) / 10;
-}
-
-/**
- * Fond de la jauge pH (#236) : dégradé à paliers nets, rouge hors de la plage tolérée commune
- * aux espèces présentes, orange entre tolérée et idéale, vert dans l'idéale. Plage vide :
- * tout rouge (tolérée) ou sans vert (idéale).
- */
-export function phGaugeBackground(bands: PhBands): string {
-  const { ideal, tolere, horsPlage } = PH_ZONE_COLORS;
-  const stops: string[] = [];
-  const band = (color: string, from: number, to: number) =>
-    stops.push(`${color} ${phPercent(from)}%`, `${color} ${phPercent(to)}%`);
-  if (bands.tolerated === null) {
-    band(horsPlage, MIN_PH, MAX_PH);
-  } else {
-    band(horsPlage, MIN_PH, bands.tolerated.min);
-    if (bands.ideal === null) {
-      band(tolere, bands.tolerated.min, bands.tolerated.max);
-    } else {
-      band(tolere, bands.tolerated.min, bands.ideal.min);
-      band(ideal, bands.ideal.min, bands.ideal.max);
-      band(tolere, bands.ideal.max, bands.tolerated.max);
-    }
-    band(horsPlage, bands.tolerated.max, MAX_PH);
-  }
-  return `linear-gradient(to right, ${stops.join(', ')})`;
-}
-
-/** Texte lu de la jauge pH (#236) : « pH 6,9, toléré ». */
-export function phValueText(readout: WaterReadout): string {
-  return `pH ${formatTenth(readout.ph)}, ${PH_ZONE_LABELS[readout.phZone]}`;
-}
-
-/** Nombre au dixième, virgule décimale (« 25,0 », « 0,8 ») ; « – » s'il n'est pas fini. */
-export function formatTenth(value: number): string {
-  return Number.isFinite(value) ? value.toFixed(1).replace('.', ',') : '–';
-}
 
 /** Température lue sur le curseur du chauffage (une chaîne), `null` hors des bornes. */
 export function sliderHeater(value: string | number): number | null {
@@ -351,25 +284,15 @@ function toNumber(value: string | number): number {
           </div>
         </fieldset>
 
-        <!-- Eau (#207) : indicateur global en toutes lettres et « Changer l'eau » sur la ligne
-             du titre, puis le chauffage et les trois jauges sur une ligne (#101). -->
+        <!-- Eau (#207) : ce qui se règle seulement, « Changer l'eau » sur la ligne du titre puis
+             le chauffage ; les jauges sont dans le tableau de bord (#256). -->
         <fieldset
           class="control-panel__section"
           data-section="eau"
           aria-labelledby="panneau-eau-titre"
         >
           <legend class="control-panel__legend control-panel__legend--row">
-            <span class="control-panel__legend-group">
-              <span id="panneau-eau-titre">Eau</span>
-              <span
-                class="control-panel__quality"
-                [attr.data-water-quality]="water().quality"
-                role="status"
-                [attr.aria-label]="'Qualité de l’eau : ' + qualityText()"
-              >
-                {{ qualityText() }}
-              </span>
-            </span>
+            <span id="panneau-eau-titre">Eau</span>
             <button
               type="button"
               class="control-panel__edit"
@@ -397,52 +320,6 @@ function toNumber(value: string | number): number {
               (input)="onHeater($event)"
             />
           </label>
-          <div class="control-panel__gauges">
-            @for (compound of compounds; track compound) {
-              <div class="control-panel__gauge" [attr.data-gauge]="compound">
-                <span class="control-panel__gauge-name">{{ compoundLabels[compound] }}</span>
-                <span class="control-panel__gauge-row">
-                  <meter
-                    class="control-panel__meter"
-                    min="0"
-                    optimum="0"
-                    [attr.max]="gaugeMax[compound]"
-                    [attr.low]="thresholds[compound].watch"
-                    [attr.high]="thresholds[compound].bad"
-                    [value]="water()[compound]"
-                    [attr.aria-label]="compoundLabels[compound]"
-                  ></meter>
-                  <output class="control-panel__value" [attr.data-gauge-value]="compound">
-                    {{ tenth(water()[compound]) }}
-                  </output>
-                </span>
-              </div>
-            }
-          </div>
-          <!-- pH (#236) : ligne à part, toute la largeur ; zones des espèces présentes, valeur et
-               zone lisibles sans la couleur (texte, aria-valuetext). -->
-          <div class="control-panel__ph-row" data-gauge="ph" [attr.data-ph-zone]="water().phZone">
-            <span class="control-panel__gauge-name">pH</span>
-            <span
-              class="control-panel__ph"
-              role="meter"
-              aria-label="pH"
-              [attr.aria-valuemin]="minPh"
-              [attr.aria-valuemax]="maxPh"
-              [attr.aria-valuenow]="water().ph"
-              [attr.aria-valuetext]="phLabel()"
-              [attr.title]="phLabel()"
-              [style.background]="phBackground()"
-            >
-              <span class="control-panel__ph-mark" [style.left.%]="phPosition()"></span>
-            </span>
-            <output class="control-panel__value" data-gauge-value="ph">
-              {{ tenth(water().ph) }}
-            </output>
-            <span class="control-panel__ph-zone" [attr.data-ph-zone-label]="water().phZone">
-              {{ phZoneText() }}
-            </span>
-          </div>
         </fieldset>
 
         <fieldset
@@ -776,19 +653,7 @@ export class ControlPanel {
   protected readonly speedText = computed(() => speedLabel(this.speed()));
   protected readonly hourText = computed(() => formatHour(this.hour()));
   protected readonly statusText = computed(() => saveStatusText(this.saveStatus()));
-  protected readonly compounds = WATER_COMPOUNDS;
-  protected readonly compoundLabels = COMPOUND_LABELS;
-  protected readonly gaugeMax = GAUGE_MAX;
-  protected readonly thresholds = COMPOUND_THRESHOLDS;
-  protected readonly qualityText = computed(() => WATER_QUALITY_LABELS[this.water().quality]);
   protected readonly heaterLabel = computed(() => heaterText(this.water()));
-  protected readonly tenth = formatTenth;
-  protected readonly minPh = MIN_PH;
-  protected readonly maxPh = MAX_PH;
-  protected readonly phLabel = computed(() => phValueText(this.water()));
-  protected readonly phZoneText = computed(() => PH_ZONE_LABELS[this.water().phZone]);
-  protected readonly phBackground = computed(() => phGaugeBackground(this.water().phBands));
-  protected readonly phPosition = computed(() => phPercent(this.water().ph));
 
   /**
    * Fichier choisi avec « Importer » : refusé avant lecture s'il dépasse `MAX_SAVE_LENGTH`

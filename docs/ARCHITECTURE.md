@@ -335,7 +335,7 @@ respecter :
 | `pluie=1` | En capture comme hors capture (#106, ADR 0032) : il pleut dès le départ, dans un environnement qui le permet (le bassin) ; ailleurs ignoré. Gouttes et ronds au temps simulé `time`, déterministes. Toute autre valeur ou absent : pas de pluie (séries existantes inchangées, à l'octet près) |
 | `filtre=pixel\|aucun` | Force le filtre de rendu (ADR 0010), y compris hors capture où il prime sur le choix mémorisé. Absent en capture : pixel art, quel que soit le choix mémorisé (séries existantes inchangées) |
 | `heure=` | Réel dans [0, 24) (`0` : minuit, `18.5` : 18 h 30) : fige l'heure de la journée simulée (ADR 0018), en capture comme hors capture ; valeur invalide ignorée. Absent en capture : midi figé (séries existantes inchangées, à l'octet près) ; absent hors capture : départ à midi, journée de 1 200 s (20 min) simulées |
-| `vitesse=` | Hors capture seulement (#232) : vitesse de la simulation au départ, l'une de `SIM_SPEEDS` (`0`, `0.5`, `1`, `2`, `4`), qui prime sur celle de la sauvegarde ; le curseur reste utilisable. `vitesse=0` : monde à l'arrêt dès t = 0, d'où des **captures d'interface** (panneau ouvert : `front-panneau`, `telephone-catalogue`, `telephone-eau`, `three-quarter-panneau-eau`, `telephone-fiche-espece`) reproductibles à l'octet. Sans effet en capture ; autre valeur ou absent : vitesse habituelle |
+| `vitesse=` | Hors capture seulement (#232) : vitesse de la simulation au départ, l'une de `SIM_SPEEDS` (`0`, `0.5`, `1`, `2`, `4`), qui prime sur celle de la sauvegarde ; le curseur reste utilisable. `vitesse=0` : monde à l'arrêt dès t = 0, d'où des **captures d'interface** (panneau ouvert : `front-panneau`, `telephone-catalogue`, `telephone-eau`, `three-quarter-panneau-eau`, `telephone-fiche-espece` ; tableau de bord, #256 : `three-quarter-tableau-de-bord`, `tablette-tableau-de-bord`, `telephone-tableau-de-bord` et leurs variantes `-alerte`) reproductibles à l'octet. Sans effet en capture ; autre valeur ou absent : vitesse habituelle |
 | `capture=1` | Simulation avancée de façon déterministe jusqu'à `time` (pas fixe, sans temps réel), puis figée ; interface masquée ; caméra sur le préréglage `camera` ; `devicePixelRatio` forcé à 1 |
 | Signal « prêt » | Appeler `markCaptureReady()` (`core/capture/capture-ready.ts`) une fois la première image **complète** rendue ; `resetCaptureReady()` si la scène est rechargée. Implémentation : `AquariumHost` lève le signal à l'image qui suit le premier rendu WebGL de taille non nulle, et le retire à sa destruction |
 | Image figée | En mode capture, une seule image est rendue (puis une à chaque redimensionnement) et les contrôles à la souris sont désactivés |
@@ -355,6 +355,14 @@ maximal : 60 s par angle), et **aucune mesure de performance** ne doit y être f
 - La boucle `requestAnimationFrame` vit dans un service ou le composant hôte du canvas et ne
   met **pas** à jour de signaux à chaque image : les statistiques affichées (nombre de
   poissons, FPS…) sont rafraîchies au plus 4 fois par seconde.
+- **Tableau de bord de l'eau** (`ui/dashboard-frame`, #256, ADR 0059) : cadre en bordure
+  haute (ligne des boutons dès 1100 px, bandeau sous les boutons en deçà), jamais dans le
+  rectangle central de 60 % × 60 %. Il lit deux signaux de l'hôte : `water` (relevé arrondi)
+  et `waterSample` (relevé exact avec son pas), remplacés au plus 4 fois par seconde dans la
+  boucle (`refreshDue`, 250 ms) ; niveaux, valeurs et tendances sont préparés par
+  `sim/water-dashboard.ts`. Plan 0 : les panneaux flottants (plan 1) ouverts à la demande
+  passent par-dessus ; un panneau ouvert par défaut ne le masque jamais (aide-mémoire décalé
+  sur tablette). La section « Eau » du panneau « Réglages » ne garde que ce qui se règle.
 - Les ressources Three.js (géométries, matériaux, cibles de rendu, contrôles) sont libérées
   à la destruction du composant (`DestroyRef`).
 - Textes d'interface en français. Chaque contrôle a un libellé accessible et une alternative

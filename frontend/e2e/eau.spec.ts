@@ -6,8 +6,9 @@ import { sampleWater } from '../src/app/sim/water-quality';
 import { createDefaultWorld, type MutableWorld } from '../src/app/sim/world';
 
 /**
- * Eau (issue #207) : section « Eau » du panneau, indicateur global en toutes lettres, jauges,
- * changement d'eau et consigne du chauffage conservée au rechargement.
+ * Eau (issue #207) : section « Eau » du panneau (changement d'eau, chauffage) et, depuis
+ * #256, indicateur global en toutes lettres et jauges dans le tableau de bord en bordure ;
+ * consigne du chauffage conservée au rechargement.
  *
  * Le bac est importé avec une eau mauvaise (nitrates à 50) et la simulation à l'arrêt
  * (vitesse 0) : les valeurs affichées ne bougent qu'avec les actions du test
@@ -17,8 +18,9 @@ import { createDefaultWorld, type MutableWorld } from '../src/app/sim/world';
 
 const hostEl = (page: Page) => page.locator('app-aquarium-host');
 const section = (page: Page) => page.locator('[data-section="eau"]');
-const quality = (page: Page) => section(page).locator('[data-water-quality]');
-const nitrates = (page: Page) => section(page).locator('[data-gauge-value="nitrate"]');
+const dashboard = (page: Page) => page.locator('[data-dashboard]');
+const quality = (page: Page) => dashboard(page).locator('.dashboard__quality');
+const nitrates = (page: Page) => dashboard(page).locator('[data-gauge-value="nitrate"]');
 const heater = (page: Page) => page.getByRole('slider', { name: 'Consigne du chauffage' });
 
 async function open(page: Page): Promise<string[]> {
@@ -92,15 +94,19 @@ test.describe('Eau (#207)', () => {
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     const errors = await open(page);
+    // Jauges et indicateur dans le tableau de bord (#256), visibles panneau fermé.
+    const meters = await dashboard(page).getByRole('meter').all();
+    expect(meters).toHaveLength(5);
+    for (const element of [quality(page), ...meters]) {
+      await expect(element).toBeInViewport();
+      const box = (await element.boundingBox())!;
+      expect(box.x).toBeGreaterThanOrEqual(0);
+      expect(box.x + box.width).toBeLessThanOrEqual(390);
+    }
     await openPanel(page);
     await section(page).scrollIntoViewIfNeeded();
     const button = section(page).getByRole('button', { name: 'Changer l’eau' });
-    for (const element of [
-      button,
-      quality(page),
-      heater(page),
-      ...(await section(page).locator('meter').all()),
-    ]) {
+    for (const element of [button, heater(page)]) {
       await expect(element).toBeVisible();
       const box = (await element.boundingBox())!;
       expect(box.x).toBeGreaterThanOrEqual(0);

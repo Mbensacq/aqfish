@@ -150,6 +150,16 @@ haut de sa section.
 
 ## Tests
 
+- **`linkedSignal({ source, computation })` : `previous.value` typé `{}`** (cycle 80, #256) :
+  sans paramètres de type, TypeScript infère mal la valeur précédente quand le calcul
+  dépend d'elle (`nextTrendState(previous?.value ?? EMPTY, sample)`) : « Type '{}' is missing
+  the following properties », puis `unknown` à la lecture du signal. Écrire les types :
+  `linkedSignal<WaterSample, TrendState>({ … })` (`ui/dashboard-frame`). (2026-10-26)
+- **Mesurer la place de l'interface avant d'y ajouter un élément** (cycle 80, #256) : à
+  768 px, l'aide-mémoire déplié par défaut occupe 456 à 756 px en haut à droite, et
+  « Réglages » finit à 143 px ; un script Playwright hors du dépôt qui relève
+  `getBoundingClientRect()` des éléments d'interface à 1280 × 720, 768 × 1024 et 390 × 844
+  (sur un `ng serve --port 4320`) donne la place libre en une minute. (2026-10-26)
 - **Capture d'interface non reproductible** (cycle 76, #232) : hors capture, le monde avance
   en temps réel dès le chargement ; l'arrêter au curseur de vitesse après coup fige les
   poissons à un instant qui varie d'un essai à l'autre (`front-panneau` : 3 empreintes sur 3
