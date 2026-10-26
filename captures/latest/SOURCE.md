@@ -1,7 +1,7 @@
-# Captures c079
+# Captures c080
 
-- Branche : cycle/c079-fiches-especes (PR #254)
-- Commit : fc4650d
+- Branche : cycle/c080-tableau-de-bord-jauges (PR #258)
+- Commit : 4bd74c2
 - Graine : 42 (défaut des captures)
-- Série : 78 images ; 72 captures sans panneau identiques à l'octet à c078 ; modifiées : front-panneau, three-quarter-panneau-eau, telephone-eau, telephone-catalogue (bouton Fiche) ; nouvelle : telephone-fiche-espece
-- Temps : 3,7 min (une capture, trajectoires-top, relancée après une erreur de capture d'écran sans lien avec la PR)
+- Série : 83 images ; les captures sans interface sont identiques à l'octet à c079 ; modifiées : front-panneau, three-quarter-panneau-eau, telephone-eau, telephone-catalogue, telephone-fiche-espece ; nouvelles : 5 captures tableau-de-bord
+- Temps : 3,6 min
