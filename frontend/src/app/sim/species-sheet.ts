@@ -1,0 +1,401 @@
+import { compatibility, TEMPERAMENTS, type Temperament } from './compatibility';
+import { SPECIES_LABELS } from './species-catalog';
+import { SPECIES, type SpeciesId } from './species';
+import { SPECIES_PH, type PhRange } from './water-ph';
+
+/**
+ * Fiches d'espèces (issue #237, ADR 0058) : ce dont chaque espèce a besoin, lisible avant de
+ * l'ajouter, et avertissements d'ajout (volume, groupe, voisins incompatibles).
+ *
+ * Données pures, sans rendu ni hasard. **Règle de sourçage** : chaque champ porte un statut,
+ * `source` (avec une référence non vide, consultable) ou `approximation de jeu` (valeur choisie
+ * pour le jeu, sans source consultable pendant le cycle). Aucune valeur n'est présentée comme
+ * sourcée sans référence. Les champs déjà portés par la simulation (pH, tempérament, espèces à
+ * éviter) ne sont pas recopiés : la fiche lit `SPECIES_PH`, `TEMPERAMENTS` et `compatibility`.
+ */
+
+/** Statut d'un champ de fiche. */
+export type FieldStatus =
+  { readonly kind: 'source'; readonly reference: string } | { readonly kind: 'approximation' };
+
+/** Valeur d'une fiche et son statut. */
+export interface SheetField<T> {
+  readonly value: T;
+  readonly status: FieldStatus;
+}
+
+/** Plage de valeurs, bornes comprises. */
+export interface ValueRange {
+  readonly min: number;
+  readonly max: number;
+}
+
+/** Régime alimentaire. */
+export type Diet = 'omnivore' | 'carnivore' | 'herbivore';
+
+/** Fiche d'une espèce. */
+export interface SpeciesSheet {
+  readonly species: SpeciesId;
+  /** Taille adulte, en cm. */
+  readonly adultSize: SheetField<number>;
+  /** Température préférée, en °C (comprise dans la tolérée). */
+  readonly temperaturePreferred: SheetField<ValueRange>;
+  /** Température tolérée, en °C. */
+  readonly temperatureTolerated: SheetField<ValueRange>;
+  /** pH préféré : la plage idéale de la simulation (`SPECIES_PH`). */
+  readonly phPreferred: SheetField<PhRange>;
+  /** pH toléré : la plage tolérée de la simulation (`SPECIES_PH`). */
+  readonly phTolerated: SheetField<PhRange>;
+  readonly diet: SheetField<Diet>;
+  /** Caractère envers les autres espèces (`TEMPERAMENTS`). */
+  readonly temperament: SheetField<Temperament>;
+  /** Taille de groupe minimale conseillée (1 : peut vivre seul). */
+  readonly minGroup: SheetField<number>;
+  /** Volume d'eau conseillé, en litres. */
+  readonly minLiters: SheetField<number>;
+  /** Espèces à éviter (`compatibility`), dans l'ordre de `SPECIES`. */
+  readonly avoid: SheetField<readonly SpeciesId[]>;
+}
+
+const APPROXIMATION: FieldStatus = Object.freeze({ kind: 'approximation' });
+
+function source(reference: string): FieldStatus {
+  return Object.freeze({ kind: 'source', reference });
+}
+
+function approx<T>(value: T): SheetField<T> {
+  return Object.freeze({ value, status: APPROXIMATION });
+}
+
+function sourced<T>(value: T, reference: string): SheetField<T> {
+  return Object.freeze({ value, status: source(reference) });
+}
+
+function range(min: number, max: number): ValueRange {
+  return Object.freeze({ min, max });
+}
+
+/** Références de `docs/SOINS.md` § 11 (paramètres cibles par espèce, bibliographie du document). */
+const SOINS = 'docs/SOINS.md § 11';
+
+/** Données propres aux fiches (le reste vient de la simulation). */
+interface SheetData {
+  readonly adultSize: SheetField<number>;
+  readonly temperaturePreferred: SheetField<ValueRange>;
+  readonly temperatureTolerated: SheetField<ValueRange>;
+  readonly diet: SheetField<Diet>;
+  readonly minGroup: SheetField<number>;
+  readonly minLiters: SheetField<number>;
+}
+
+/**
+ * Données des fiches ; le type impose une entrée pour toute nouvelle espèce. Les plages de
+ * température citées par `docs/SOINS.md` § 11 y sont reprises avec la source que ce document
+ * indique ; tout le reste (tailles, régimes, groupes, volumes, plages préférées) est une
+ * approximation de jeu. Volumes calibrés pour que la population par défaut de chaque
+ * environnement ne déclenche aucun avertissement de volume ni de groupe (testé).
+ */
+const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
+  neon: {
+    adultSize: approx(4),
+    temperaturePreferred: approx(range(22, 25)),
+    temperatureTolerated: sourced(range(20, 26), `${SOINS} (FishBase)`),
+    diet: approx('omnivore'),
+    minGroup: approx(6),
+    minLiters: approx(60),
+  },
+  guppy: {
+    adultSize: approx(5),
+    temperaturePreferred: approx(range(23, 27)),
+    temperatureTolerated: sourced(range(18, 28), `${SOINS} (FishBase ; Seriously Fish : 17–28 °C)`),
+    diet: approx('omnivore'),
+    minGroup: approx(3),
+    minLiters: approx(60),
+  },
+  corydora: {
+    adultSize: approx(7),
+    temperaturePreferred: approx(range(22, 24)),
+    temperatureTolerated: sourced(
+      range(22, 26),
+      `${SOINS} (Seriously Fish ; d'autres sources : 18–24 °C, désaccord)`,
+    ),
+    diet: approx('omnivore'),
+    minGroup: approx(6),
+    minLiters: approx(100),
+  },
+  koi: {
+    adultSize: approx(60),
+    temperaturePreferred: sourced(range(18, 25), `${SOINS} (VIN/WSAVA, optimum)`),
+    temperatureTolerated: approx(range(4, 30)),
+    diet: approx('omnivore'),
+    minGroup: approx(3),
+    minLiters: approx(800),
+  },
+  axolotl: {
+    adultSize: approx(25),
+    temperaturePreferred: sourced(range(16, 18), `${SOINS} (WSAVA/VIN ; PMC10948202)`),
+    temperatureTolerated: approx(range(14, 22)),
+    diet: approx('carnivore'),
+    minGroup: approx(1),
+    minLiters: approx(75),
+  },
+  grenouille: {
+    adultSize: approx(6),
+    temperaturePreferred: approx(range(21, 24)),
+    temperatureTolerated: approx(range(18, 26)),
+    diet: approx('carnivore'),
+    minGroup: approx(1),
+    minLiters: approx(40),
+  },
+  triton: {
+    adultSize: approx(10),
+    temperaturePreferred: approx(range(18, 22)),
+    temperatureTolerated: approx(range(15, 25)),
+    diet: approx('carnivore'),
+    minGroup: approx(1),
+    minLiters: approx(40),
+  },
+  clown: {
+    adultSize: approx(9),
+    temperaturePreferred: approx(range(25, 27)),
+    temperatureTolerated: sourced(range(24, 28), `${SOINS} (TFH Magazine)`),
+    diet: approx('omnivore'),
+    minGroup: approx(1),
+    minLiters: approx(100),
+  },
+  chirurgien: {
+    adultSize: approx(30),
+    temperaturePreferred: approx(range(25, 27)),
+    temperatureTolerated: sourced(
+      range(24, 28),
+      `${SOINS} (Holmes-Farley, paramètres de récif généraux)`,
+    ),
+    diet: approx('omnivore'),
+    minGroup: approx(1),
+    minLiters: approx(450),
+  },
+};
+
+const SPECIES_IDS = Object.keys(SPECIES) as SpeciesId[];
+
+const SHEETS: Readonly<Record<SpeciesId, SpeciesSheet>> = Object.fromEntries(
+  SPECIES_IDS.map((id) => {
+    const data = SHEET_DATA[id];
+    const sheet: SpeciesSheet = Object.freeze({
+      species: id,
+      ...data,
+      // Source unique : les plages de la simulation (ADR 0057), approximations de jeu.
+      phPreferred: approx(SPECIES_PH[id].ideal),
+      phTolerated: approx(SPECIES_PH[id].tolerated),
+      // Tempérament et voisins à éviter (ADR 0055), approximations de jeu.
+      temperament: approx(TEMPERAMENTS[id]),
+      avoid: approx(
+        Object.freeze(SPECIES_IDS.filter((other) => compatibility(id, other) !== 'compatible')),
+      ),
+    });
+    return [id, sheet];
+  }),
+) as unknown as Record<SpeciesId, SpeciesSheet>;
+
+/** Fiche de l'espèce `id` (figée, partagée). */
+export function speciesSheet(id: SpeciesId): SpeciesSheet {
+  return SHEETS[id];
+}
+
+/** Champs d'une fiche, dans l'ordre d'affichage. */
+export const SHEET_FIELDS = [
+  'adultSize',
+  'temperaturePreferred',
+  'temperatureTolerated',
+  'phPreferred',
+  'phTolerated',
+  'diet',
+  'temperament',
+  'minGroup',
+  'minLiters',
+  'avoid',
+] as const satisfies readonly (keyof SpeciesSheet)[];
+
+export type SheetFieldName = (typeof SHEET_FIELDS)[number];
+
+/** Intitulé de chaque champ. */
+export const SHEET_FIELD_LABELS: Readonly<Record<SheetFieldName, string>> = {
+  adultSize: 'Taille adulte',
+  temperaturePreferred: 'Température préférée',
+  temperatureTolerated: 'Température tolérée',
+  phPreferred: 'pH préféré',
+  phTolerated: 'pH toléré',
+  diet: 'Régime',
+  temperament: 'Caractère',
+  minGroup: 'Groupe minimal',
+  minLiters: 'Volume conseillé',
+  avoid: 'À éviter avec',
+};
+
+const DIET_LABELS: Readonly<Record<Diet, string>> = {
+  omnivore: 'omnivore',
+  carnivore: 'carnivore',
+  herbivore: 'herbivore',
+};
+
+const TEMPERAMENT_LABELS: Readonly<Record<Temperament, string>> = {
+  paisible: 'paisible',
+  territorial: 'territorial',
+  predateur: 'prédateur des plus petits',
+};
+
+/** Nombre écrit à la française (virgule décimale), sans zéro inutile. */
+export function frenchNumber(value: number): string {
+  return String(value).replace('.', ',');
+}
+
+/** Plage écrite à la française : « 6,8 – 7,2 », ou une seule valeur si les bornes sont égales. */
+function frenchRange({ min, max }: ValueRange, unit = ''): string {
+  const text = min === max ? frenchNumber(min) : `${frenchNumber(min)} – ${frenchNumber(max)}`;
+  return unit === '' ? text : `${text} ${unit}`;
+}
+
+/** Texte du statut d'un champ, affiché en petit sous la valeur. */
+export function statusText(status: FieldStatus): string {
+  return status.kind === 'source' ? `Source : ${status.reference}` : 'Approximation de jeu';
+}
+
+/** Ligne affichée d'une fiche. */
+export interface SheetRow {
+  readonly field: SheetFieldName;
+  readonly label: string;
+  readonly value: string;
+  readonly status: string;
+}
+
+function fieldValue(sheet: SpeciesSheet, field: SheetFieldName): string {
+  switch (field) {
+    case 'adultSize':
+      return `${frenchNumber(sheet.adultSize.value)} cm`;
+    case 'temperaturePreferred':
+      return frenchRange(sheet.temperaturePreferred.value, '°C');
+    case 'temperatureTolerated':
+      return frenchRange(sheet.temperatureTolerated.value, '°C');
+    case 'phPreferred':
+      return frenchRange(sheet.phPreferred.value);
+    case 'phTolerated':
+      return frenchRange(sheet.phTolerated.value);
+    case 'diet':
+      return DIET_LABELS[sheet.diet.value];
+    case 'temperament':
+      return TEMPERAMENT_LABELS[sheet.temperament.value];
+    case 'minGroup':
+      return sheet.minGroup.value <= 1 ? 'peut vivre seul' : `${sheet.minGroup.value} individus`;
+    case 'minLiters':
+      return `${frenchNumber(sheet.minLiters.value)} L`;
+    case 'avoid':
+      return sheet.avoid.value.length === 0
+        ? 'aucune espèce du jeu'
+        : sheet.avoid.value.map((id) => SPECIES_LABELS[id].plural).join(', ');
+  }
+}
+
+/** Lignes affichées de la fiche de `id`, dans l'ordre de `SHEET_FIELDS`. */
+export function sheetRows(id: SpeciesId): readonly SheetRow[] {
+  const sheet = SHEETS[id];
+  return SHEET_FIELDS.map((field) => ({
+    field,
+    label: SHEET_FIELD_LABELS[field],
+    value: fieldValue(sheet, field),
+    status: statusText(sheet[field].status),
+  }));
+}
+
+/** Avertissement à l'ajout d'une espèce dans le bac courant. */
+export type AddWarning =
+  | {
+      readonly kind: 'volume';
+      readonly species: SpeciesId;
+      readonly liters: number;
+      readonly minLiters: number;
+    }
+  | {
+      readonly kind: 'groupe';
+      readonly species: SpeciesId;
+      readonly count: number;
+      readonly minGroup: number;
+    }
+  | {
+      readonly kind: 'incompatible';
+      readonly species: SpeciesId;
+      readonly other: SpeciesId;
+      readonly reason: 'predateur' | 'territorial';
+    };
+
+function known(id: string): id is SpeciesId {
+  return Object.hasOwn(SPECIES, id);
+}
+
+/**
+ * Avertissements à l'ajout de l'espèce `species`, dont l'effectif devient `count`, dans un bac
+ * de `liters` litres peuplé de `counts` (effectifs après l'ajout, espèce ajoutée comprise) :
+ *
+ * - `volume` si `liters` est strictement inférieur au volume conseillé (volume exact : rien) ;
+ *   rien si `liters` n'est pas un réel strictement positif (volume inconnu) ;
+ * - `groupe` si `count` est strictement inférieur au groupe minimal ;
+ * - `incompatible` pour chaque autre espèce présente (effectif fini strictement positif), dans
+ *   l'ordre de `order` (doublons et espèces inconnues ignorés), déconseillée avec `species`.
+ *
+ * Aucun avertissement si `count` n'est pas un nombre fini strictement positif (rien d'ajouté).
+ */
+export function addWarnings(
+  species: SpeciesId,
+  count: number,
+  liters: number,
+  counts: Readonly<Partial<Record<string, number>>>,
+  order: readonly string[],
+): AddWarning[] {
+  if (!(count > 0) || !Number.isFinite(count)) {
+    return [];
+  }
+  const sheet = SHEETS[species];
+  const warnings: AddWarning[] = [];
+  const minLiters = sheet.minLiters.value;
+  if (liters > 0 && Number.isFinite(liters) && liters < minLiters) {
+    warnings.push({ kind: 'volume', species, liters, minLiters });
+  }
+  const minGroup = sheet.minGroup.value;
+  if (count < minGroup) {
+    warnings.push({ kind: 'groupe', species, count, minGroup });
+  }
+  const seen = new Set<string>();
+  for (const other of order) {
+    if (other === species || seen.has(other) || !known(other)) {
+      continue;
+    }
+    seen.add(other);
+    const n = Object.hasOwn(counts, other) ? counts[other] : undefined;
+    if (n === undefined || !(n > 0) || !Number.isFinite(n)) {
+      continue;
+    }
+    const verdict = compatibility(species, other);
+    if (verdict !== 'compatible') {
+      warnings.push({ kind: 'incompatible', species, other, reason: verdict });
+    }
+  }
+  return warnings;
+}
+
+/** Texte affiché d'un avertissement d'ajout. */
+export function addWarningText(warning: AddWarning): string {
+  const { singular, plural, feminine } = SPECIES_LABELS[warning.species];
+  switch (warning.kind) {
+    case 'volume':
+      return `Bac trop petit pour des ${plural} : ${Math.round(warning.liters)} L, ${warning.minLiters} L conseillés`;
+    case 'groupe':
+      return `Groupe trop petit : ${warning.count} ${warning.count === 1 ? singular : plural}, ${warning.minGroup} au moins conseillé${feminine ? 'e' : ''}s`;
+    case 'incompatible':
+      return `${capitalize(plural)} déconseillé${feminine ? 'e' : ''}s avec les ${SPECIES_LABELS[warning.other].plural} (${
+        warning.reason === 'predateur' ? 'prédateur' : 'deux espèces territoriales'
+      })`;
+  }
+}
+
+function capitalize(text: string): string {
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}

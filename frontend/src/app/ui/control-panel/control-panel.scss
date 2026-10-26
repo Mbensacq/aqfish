@@ -209,8 +209,17 @@
   margin: 0;
 }
 
-.control-panel__count-label {
+// Ligne du nom (#237) : le nom, puis le bouton « Fiche », sans changer la hauteur de la ligne.
+.control-panel__count-head {
+  display: flex;
   flex: 1 0 100%;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.control-panel__count-label {
+  flex: 1 1 auto;
   min-width: 0;
   font-size: 12px;
   line-height: 16px;
@@ -525,4 +534,84 @@
   margin-left: -1px;
   background: #e8e6e3;
   box-shadow: 0 0 0 1px #141418;
+}
+
+// Fiches d'espèces (#237) : bouton discret à côté du nom, fiche sous la ligne de l'espèce.
+.control-panel__sheet-toggle {
+  flex: none;
+  box-sizing: border-box;
+  height: 20px;
+  margin: -2px 0;
+  padding: 0 8px;
+  border: 1px solid rgb(232 230 227 / 16%);
+  border-radius: 6px;
+  background: rgb(232 230 227 / 6%);
+  color: inherit;
+  font:
+    600 11px / 1 system-ui,
+    sans-serif;
+  cursor: pointer;
+
+  &[aria-expanded='true'] {
+    border-color: #5fbfa3;
+    background: rgb(95 191 163 / 18%);
+  }
+
+  &:focus-visible {
+    outline: 2px solid #5fbfa3;
+    outline-offset: 1px;
+  }
+}
+
+.control-panel__sheet {
+  margin: 4px 0 6px;
+  padding: 8px 10px;
+  border: 1px solid rgb(232 230 227 / 16%);
+  border-radius: 8px;
+  background: rgb(232 230 227 / 5%);
+  break-inside: avoid;
+}
+
+.control-panel__sheet-title {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 16px;
+}
+
+.control-panel__sheet-latin {
+  display: block;
+  color: rgb(232 230 227 / 60%);
+  font-size: 11px;
+  font-style: italic;
+  font-weight: 400;
+}
+
+.control-panel__sheet-list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  gap: 4px 8px;
+  margin: 0 0 8px;
+  font-size: 12px;
+  line-height: 15px;
+}
+
+.control-panel__sheet-row {
+  display: contents;
+
+  dt {
+    color: rgb(232 230 227 / 75%);
+  }
+
+  dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+}
+
+.control-panel__sheet-status {
+  display: block;
+  color: rgb(232 230 227 / 62%);
+  font-size: 10px;
+  line-height: 13px;
 }

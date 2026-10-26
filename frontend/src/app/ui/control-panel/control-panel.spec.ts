@@ -190,6 +190,7 @@ describe('fonctions du panneau de contrôle', () => {
     [foodStyle]="foodStyle()"
     [population]="population()"
     [populationMax]="populationMax()"
+    [tankLiters]="tankLiters()"
     [water]="water()"
     [saveStatus]="saveStatus()"
     [saveMessage]="saveMessage()"
@@ -246,6 +247,7 @@ class TestHost {
     clown: 0,
     chirurgien: 0,
   });
+  readonly tankLiters = signal<number | null>(288);
   readonly water = signal<WaterReadout>(DEFAULT_WATER_READOUT);
   waterChanges = 0;
   readonly events: [string, number | boolean][] = [];
@@ -323,6 +325,125 @@ describe('ControlPanel', () => {
     });
     await fixture.whenStable();
     expect(warnings()).toEqual([]);
+  });
+
+  describe('fiches d’espèces (#237)', () => {
+    const sheetToggle = (id: string) =>
+      root().querySelector<HTMLButtonElement>(`[data-sheet-toggle="${id}"]`)!;
+    const sheet = () => root().querySelector<HTMLElement>('[data-species-sheet]');
+    const addWarnings = () =>
+      [...root().querySelectorAll('[data-add-warning]')].map((p) => p.textContent?.trim());
+    const stepButton = (label: string) =>
+      root().querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`)!;
+
+    it('« Fiche » ouvre la fiche (région titrée, statuts) ; un second clic la referme', async () => {
+      await openPanel();
+      const button = sheetToggle('neon');
+      expect(button.textContent?.trim()).toBe('Fiche');
+      expect(button.getAttribute('aria-label')).toBe('Fiche : Néon');
+      expect(button.getAttribute('aria-expanded')).toBe('false');
+      expect(sheet()).toBeNull();
+      button.click();
+      await fixture.whenStable();
+      expect(button.getAttribute('aria-expanded')).toBe('true');
+      const region = sheet()!;
+      expect(region.getAttribute('role')).toBe('region');
+      expect(region.id).toBe(button.getAttribute('aria-controls'));
+      const title = root().querySelector(`#${region.getAttribute('aria-labelledby')}`);
+      expect(title?.textContent).toContain('Fiche : Néon');
+      expect(region.getAttribute('data-species-sheet')).toBe('neon');
+      const rows = region.querySelectorAll('[data-sheet-field]');
+      expect(rows).toHaveLength(10);
+      const statuses = [...region.querySelectorAll('[data-sheet-status]')].map((el) =>
+        el.textContent?.trim(),
+      );
+      expect(statuses).toHaveLength(10);
+      expect(statuses).toContain('Approximation de jeu');
+      expect(statuses).toContain('Source : docs/SOINS.md § 11 (FishBase)');
+      button.click();
+      await fixture.whenStable();
+      expect(sheet()).toBeNull();
+      expect(button.getAttribute('aria-expanded')).toBe('false');
+    });
+
+    it('une seule fiche à la fois ; Échap et « Fermer la fiche » referment et rendent le focus', async () => {
+      await openPanel();
+      sheetToggle('neon').click();
+      await fixture.whenStable();
+      sheetToggle('guppy').click();
+      await fixture.whenStable();
+      expect(root().querySelectorAll('[data-species-sheet]')).toHaveLength(1);
+      expect(sheet()?.getAttribute('data-species-sheet')).toBe('guppy');
+
+      const close = sheet()!.querySelector<HTMLButtonElement>('[data-sheet-close]')!;
+      close.focus();
+      close.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      await fixture.whenStable();
+      expect(sheet()).toBeNull();
+      expect(document.activeElement).toBe(sheetToggle('guppy'));
+
+      sheetToggle('neon').click();
+      await fixture.whenStable();
+      sheet()!.querySelector<HTMLButtonElement>('[data-sheet-close]')!.click();
+      await fixture.whenStable();
+      expect(sheet()).toBeNull();
+      expect(document.activeElement).toBe(sheetToggle('neon'));
+    });
+
+    it('changer d’environnement referme la fiche', async () => {
+      await openPanel();
+      sheetToggle('neon').click();
+      await fixture.whenStable();
+      fixture.componentInstance.environment.set('bassin');
+      await fixture.whenStable();
+      expect(sheet()).toBeNull();
+    });
+
+    it('avertissement d’ajout : groupe trop petit, puis disparu quand le groupe suffit', async () => {
+      await openPanel();
+      fixture.componentInstance.population.update((p) => ({ ...p, neon: 0 }));
+      await fixture.whenStable();
+      expect(addWarnings()).toEqual([]);
+      stepButton('Ajouter un néon').click();
+      expect(fixture.componentInstance.requests.at(-1)).toEqual({ species: 'neon', count: 1 });
+      fixture.componentInstance.population.update((p) => ({ ...p, neon: 1 }));
+      await fixture.whenStable();
+      expect(addWarnings()).toEqual(['Groupe trop petit : 1 néon, 6 au moins conseillés']);
+      // L'avertissement est sous la ligne de l'espèce ajoutée.
+      const row = root().querySelector('[data-species="neon"]')!;
+      expect(row.nextElementSibling?.hasAttribute('data-add-warning')).toBe(true);
+      fixture.componentInstance.population.update((p) => ({ ...p, neon: 6 }));
+      await fixture.whenStable();
+      expect(addWarnings()).toEqual([]);
+    });
+
+    it('avertissement d’ajout : volume trop petit ; volume inconnu ignoré', async () => {
+      fixture.componentInstance.tankLiters.set(81);
+      await openPanel();
+      stepButton('Ajouter un corydora').click();
+      fixture.componentInstance.population.update((p) => ({ ...p, corydora: 6 }));
+      await fixture.whenStable();
+      expect(addWarnings()).toEqual(['Bac trop petit pour des corydoras : 81 L, 100 L conseillés']);
+      fixture.componentInstance.tankLiters.set(null);
+      await fixture.whenStable();
+      expect(addWarnings()).toEqual([]);
+    });
+
+    it('avertissement d’ajout : espèce incompatible présente ; une baisse l’efface', async () => {
+      fixture.componentInstance.environment.set('paludarium');
+      fixture.componentInstance.population.update((p) => ({ ...p, axolotl: 2, triton: 0 }));
+      fixture.componentInstance.populationMax.update((p) => ({ ...p, triton: 3 }));
+      fixture.componentInstance.tankLiters.set(105);
+      await openPanel();
+      stepButton('Ajouter un triton').click();
+      fixture.componentInstance.population.update((p) => ({ ...p, triton: 1 }));
+      await fixture.whenStable();
+      expect(addWarnings()).toEqual(['Tritons déconseillés avec les axolotls (prédateur)']);
+      stepButton('Retirer un triton').click();
+      expect(fixture.componentInstance.requests.at(-1)).toEqual({ species: 'triton', count: 0 });
+      await fixture.whenStable();
+      expect(addWarnings()).toEqual([]);
+    });
   });
 
   it('récif (#150, #151) : la population propose poissons-clowns et chirurgiens bleus', async () => {
@@ -519,9 +640,9 @@ describe('ControlPanel', () => {
     const controls = [...root().querySelectorAll<HTMLElement>('button, input:not([type="file"])')];
     // 5 contrôles de #52, « Éditer le décor » (#167), « Granulés » (#117), « Afficher la
     // pièce » (#187), « Changer l’eau » et le curseur du chauffage (#207), puis « − », champ,
-    // « + » (#69) et curseur (#189) pour chacune des 3 espèces, puis « Exporter » et
-    // « Importer » (#70).
-    expect(controls).toHaveLength(5 + 1 + 1 + 1 + 2 + 3 * 4 + 2);
+    // « + » (#69), curseur (#189) et « Fiche » (#237) pour chacune des 3 espèces, puis
+    // « Exporter » et « Importer » (#70).
+    expect(controls).toHaveLength(5 + 1 + 1 + 1 + 2 + 3 * 5 + 2);
     expect(root().querySelectorAll('input[type="file"]')).toHaveLength(1);
     for (const control of controls) {
       const name =

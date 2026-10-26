@@ -1,4 +1,14 @@
-import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  ElementRef,
+  inject,
+  input,
+  linkedSignal,
+  output,
+  signal,
+} from '@angular/core';
 
 import {
   DEFAULT_ENVIRONMENT_ID,
@@ -17,6 +27,7 @@ import { DEFAULT_SIM_SPEED, SIM_SPEEDS, type SimSpeed } from '../../sim/sim-spee
 import { mixWarnings } from '../../sim/compatibility';
 import { mixWarningText, SPECIES_LABELS, speciesCatalog } from '../../sim/species-catalog';
 import { type SpeciesId } from '../../sim/species';
+import { addWarnings, addWarningText, sheetRows } from '../../sim/species-sheet';
 import { MAX_HEATER_TEMPERATURE, MIN_HEATER_TEMPERATURE } from '../../sim/water';
 import { MAX_PH, MIN_PH, PH_ZONE_LABELS, type PhBands } from '../../sim/water-ph';
 import {
@@ -231,6 +242,13 @@ function toNumber(value: string | number): number {
  * et réécrite), un champ numérique (entier de 0 à ce maximum, validé à Entrée ou en quittant
  * le champ, réglable aux flèches) et « + ». À une borne, le bouton reste
  * focalisable (`aria-disabled`) et sans effet. Libellés tirés du catalogue (`SPECIES_LABELS`).
+ *
+ * Fiches (#237) : à côté du nom, un bouton « Fiche » (disclosure, `aria-expanded`) ouvre sous
+ * la ligne la fiche de l'espèce (`sim/species-sheet.ts`), une région titrée : chaque valeur
+ * avec son statut (source ou approximation de jeu) en petit dessous. Une seule fiche ouverte
+ * à la fois ; Échap ou « Fermer la fiche » la referme et rend le focus au bouton. Après un
+ * ajout (« + », curseur ou champ en hausse), des lignes d'avertissement sous la ligne de
+ * l'espèce si le bac ne lui convient pas (volume, groupe, voisins incompatibles).
  *
  * Clavier : bouton « Réglages » (Entrée ou Espace), puis Tab d'un contrôle à l'autre ; les
  * curseurs se règlent aux flèches. Les raccourcis de la barre des vues sont ignorés tant
@@ -472,13 +490,26 @@ function toNumber(value: string | number): number {
           @for (entry of catalog(); track entry.species) {
             @let id = entry.species;
             <div class="control-panel__count" [attr.data-species]="id">
-              <label
-                class="control-panel__count-label"
-                [for]="'panneau-population-' + id"
-                [attr.title]="entry.scientificName"
-              >
-                {{ entry.name }}
-              </label>
+              <div class="control-panel__count-head">
+                <label
+                  class="control-panel__count-label"
+                  [for]="'panneau-population-' + id"
+                  [attr.title]="entry.scientificName"
+                >
+                  {{ entry.name }}
+                </label>
+                <button
+                  type="button"
+                  class="control-panel__sheet-toggle"
+                  [attr.aria-label]="'Fiche : ' + entry.name"
+                  [attr.aria-expanded]="openSheet() === id"
+                  [attr.aria-controls]="'fiche-' + id"
+                  [attr.data-sheet-toggle]="id"
+                  (click)="toggleSheet(id)"
+                >
+                  Fiche
+                </button>
+              </div>
               <button
                 type="button"
                 class="control-panel__step"
@@ -525,6 +556,51 @@ function toNumber(value: string | number): number {
                 +
               </button>
             </div>
+            <!-- Avertissements d'ajout (#237) : bac qui ne convient pas à l'espèce ajoutée. -->
+            @if (lastAdded() === id) {
+              @for (text of addTexts(); track text) {
+                <p class="control-panel__note control-panel__warning" data-add-warning>
+                  {{ text }}
+                </p>
+              }
+            }
+            <!-- Fiche de l'espèce (#237). -->
+            @if (openSheet() === id) {
+              <section
+                class="control-panel__sheet"
+                role="region"
+                [id]="'fiche-' + id"
+                [attr.aria-labelledby]="'fiche-titre-' + id"
+                [attr.data-species-sheet]="id"
+                (keydown.escape)="closeSheet(id, $event)"
+              >
+                <h3 class="control-panel__sheet-title" [id]="'fiche-titre-' + id">
+                  Fiche : {{ entry.name }}
+                  <span class="control-panel__sheet-latin">{{ entry.scientificName }}</span>
+                </h3>
+                <dl class="control-panel__sheet-list">
+                  @for (row of sheetRows(id); track row.field) {
+                    <div class="control-panel__sheet-row" [attr.data-sheet-field]="row.field">
+                      <dt>{{ row.label }}</dt>
+                      <dd>
+                        {{ row.value }}
+                        <small class="control-panel__sheet-status" data-sheet-status>{{
+                          row.status
+                        }}</small>
+                      </dd>
+                    </div>
+                  }
+                </dl>
+                <button
+                  type="button"
+                  class="control-panel__button control-panel__button--compact"
+                  data-sheet-close
+                  (click)="closeSheet(id)"
+                >
+                  Fermer la fiche
+                </button>
+              </section>
+            }
           } @empty {
             <p class="control-panel__note" data-population-empty>Aucune espèce pour l’instant.</p>
           }
@@ -593,6 +669,8 @@ export class ControlPanel {
   readonly population = input<PopulationCounts>(NO_FISH);
   /** Effectif maximal de chaque espèce, compte tenu des autres (fourni par l'hôte). */
   readonly populationMax = input<PopulationCounts>(NO_FISH);
+  /** Litres d'eau du bac courant (fournis par l'hôte, #237) ; `null` : inconnus. */
+  readonly tankLiters = input<number | null>(null);
   /** Relevé de l'eau (fourni par l'hôte, #207). */
   readonly water = input<WaterReadout>(DEFAULT_WATER_READOUT);
   /** État de la sauvegarde automatique (fourni par l'hôte, #70). */
@@ -633,6 +711,8 @@ export class ControlPanel {
   /** Déplié par l'utilisateur, pour replier un panneau voisin sur petit écran (#136). */
   readonly opened = output<void>();
 
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+
   /** Panneau déplié (fermé par défaut : captures et premier regard inchangés). */
   readonly open = signal(false);
 
@@ -653,6 +733,35 @@ export class ControlPanel {
       this.population(),
     ).map(mixWarningText),
   );
+  /** Espèce dont la fiche est ouverte (#237), refermée au changement d'environnement. */
+  protected readonly openSheet = linkedSignal<EnvironmentId, SpeciesId | null>({
+    source: this.environment,
+    computation: () => null,
+  });
+  /** Dernière espèce ajoutée depuis le panneau (#237), oubliée au changement d'environnement. */
+  protected readonly lastAdded = linkedSignal<EnvironmentId, SpeciesId | null>({
+    source: this.environment,
+    computation: () => null,
+  });
+  /**
+   * Avertissements de la dernière espèce ajoutée (#237), recalculés sur la population et le
+   * volume courants : ils disparaissent quand le bac convient de nouveau.
+   */
+  protected readonly addTexts = computed(() => {
+    const id = this.lastAdded();
+    if (id === null) {
+      return [];
+    }
+    const population = this.population();
+    return addWarnings(
+      id,
+      population[id],
+      this.tankLiters() ?? Number.NaN,
+      population,
+      this.catalog().map((entry) => entry.species),
+    ).map(addWarningText);
+  });
+  protected readonly sheetRows = sheetRows;
   protected readonly environmentIds = ENVIRONMENT_IDS;
   /** Case « Pluie » proposée seulement là où il peut pleuvoir (le bassin, #106). */
   protected readonly rainAvailable = computed(() => environmentById(this.environment()).rain);
@@ -787,11 +896,42 @@ export class ControlPanel {
     return speciesSliderLabel(id);
   }
 
+  /** Bouton « Fiche » : ouvre la fiche de l'espèce, ou la referme si elle est ouverte. */
+  protected toggleSheet(id: SpeciesId): void {
+    this.openSheet.update((open) => (open === id ? null : id));
+  }
+
+  /**
+   * Referme la fiche de `id` (« Fermer la fiche » ou Échap dans la fiche) et rend le focus à
+   * son bouton « Fiche ». Échap ne remonte pas plus haut.
+   */
+  protected closeSheet(id: SpeciesId, event?: Event): void {
+    event?.stopPropagation();
+    if (this.openSheet() !== id) {
+      return;
+    }
+    this.openSheet.set(null);
+    const toggle = this.host.nativeElement.querySelector<HTMLButtonElement>(
+      `[data-sheet-toggle="${id}"]`,
+    );
+    toggle?.focus();
+  }
+
+  /** Demande l'effectif `count` ; une hausse retient l'espèce pour ses avertissements (#237). */
+  private request(id: SpeciesId, count: number): void {
+    if (count > this.population()[id]) {
+      this.lastAdded.set(id);
+    } else if (this.lastAdded() === id) {
+      this.lastAdded.set(null);
+    }
+    this.populationChanged.emit({ species: id, count });
+  }
+
   /** Bouton « − » ou « + » : sans effet à la borne. */
   protected step(id: SpeciesId, delta: -1 | 1): void {
     const count = this.population()[id] + delta;
     if (count >= 0 && count <= this.populationMax()[id]) {
-      this.populationChanged.emit({ species: id, count });
+      this.request(id, count);
     }
   }
 
@@ -805,7 +945,7 @@ export class ControlPanel {
     const current = this.population()[id];
     field.value = String(count ?? current);
     if (count !== null && count !== current) {
-      this.populationChanged.emit({ species: id, count });
+      this.request(id, count);
     }
   }
 }
