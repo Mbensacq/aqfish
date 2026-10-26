@@ -1,8 +1,4 @@
-# Captures c076
-
-- Branche : cycle/c076-captures-interface-deterministes
-- PR : #242
-- Commit : 2b49f42
-- Graine : 42 (défaut du contrat)
-- Temps : 76 captures en 2,7 min
-- Les 5 angles 3D sont identiques à l'octet à la série c074 ; front-panneau diffère (positions de t = 0, attendu).
+# Captures c077
+- Branche : cycle/c077-nourriture-voxels (PR #245), commit 5bc0120
+- Graine : 42 (défaut des captures) ; 76 captures, `npm run captures`, 3 min 12 s
+- Écart avec c076 : 14 captures (nourriture en points/voxels, 3 captures d'interface : libellé du bouton Granulés)
