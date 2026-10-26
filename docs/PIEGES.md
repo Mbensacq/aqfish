@@ -6,6 +6,17 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Budget de style du panneau de réglages : 8 kB** (cycle 79, #237) : `control-panel.scss`
+  approche déjà du plafond ; les styles des fiches (une soixantaine de lignes) l'ont porté à
+  8,01 kB et `ng build` échoue (budget d'erreur 8 kB, `angular.json`), alors que tests et
+  lint passaient. Ajouter le nouveau sélecteur aux règles communes existantes (bordure, fond,
+  focus des boutons d'espèce) au lieu de les recopier, et lancer `npm run build` tôt.
+  (2026-10-26)
+- **Serveur de `ng serve` orphelin après un `verify` interrompu** (cycle 79) : tuer
+  `playwright test` laisse `ng serve --port 4300` tourner ; les captures lancées ensuite depuis
+  un autre worktree le réutilisent et photographient l'ancien code (capture neuve en délai
+  dépassé, captures du panneau identiques à `main`). Vérifier `ps aux | grep "ng serve"` et
+  donner un autre port (`E2E_PORT=4310`). (2026-10-26)
 - **`npm run verify` complet impossible en local en une session** (cycle 78, #236) : sur
   2 cœurs en rendu logiciel, l'e2e passe ~25 à 50 s par test (22 tests en 12 min, un test du
   récif en délai dépassé à 2 min) : plus de 3 h pour les ~300 tests. Lancer en local

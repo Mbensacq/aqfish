@@ -229,7 +229,8 @@
 }
 
 .control-panel__step,
-.control-panel__number {
+.control-panel__number,
+.control-panel__sheet-toggle {
   box-sizing: border-box;
   height: 28px;
   border: 1px solid rgb(232 230 227 / 16%);
@@ -277,6 +278,12 @@
 
   .control-panel__step {
     width: 24px;
+  }
+
+  // Souris : « Fiche » tient dans la ligne du nom (16 px). Tactile : 28 px, comme « − ».
+  .control-panel__sheet-toggle {
+    height: 20px;
+    margin: -2px 0;
   }
 }
 
@@ -539,27 +546,12 @@
 // Fiches d'espèces (#237) : bouton discret à côté du nom, fiche sous la ligne de l'espèce.
 .control-panel__sheet-toggle {
   flex: none;
-  box-sizing: border-box;
-  height: 20px;
-  margin: -2px 0;
   padding: 0 8px;
-  border: 1px solid rgb(232 230 227 / 16%);
-  border-radius: 6px;
-  background: rgb(232 230 227 / 6%);
-  color: inherit;
-  font:
-    600 11px / 1 system-ui,
-    sans-serif;
+  font-size: 11px;
   cursor: pointer;
 
   &[aria-expanded='true'] {
     border-color: #5fbfa3;
-    background: rgb(95 191 163 / 18%);
-  }
-
-  &:focus-visible {
-    outline: 2px solid #5fbfa3;
-    outline-offset: 1px;
   }
 }
 
@@ -581,7 +573,6 @@
 
 .control-panel__sheet-latin {
   display: block;
-  color: rgb(232 230 227 / 60%);
   font-size: 11px;
   font-style: italic;
   font-weight: 400;

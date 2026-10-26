@@ -506,6 +506,7 @@ function toNumber(value: string | number): number {
                   [attr.aria-controls]="'fiche-' + id"
                   [attr.data-sheet-toggle]="id"
                   (click)="toggleSheet(id)"
+                  (keydown.escape)="closeSheet(id, $event)"
                 >
                   Fiche
                 </button>
@@ -902,14 +903,14 @@ export class ControlPanel {
   }
 
   /**
-   * Referme la fiche de `id` (« Fermer la fiche » ou Échap dans la fiche) et rend le focus à
-   * son bouton « Fiche ». Échap ne remonte pas plus haut.
+   * Referme la fiche de `id` (« Fermer la fiche », ou Échap dans la fiche ou sur son bouton)
+   * et rend le focus à son bouton « Fiche ». Échap qui ferme la fiche ne remonte pas plus haut.
    */
   protected closeSheet(id: SpeciesId, event?: Event): void {
-    event?.stopPropagation();
     if (this.openSheet() !== id) {
       return;
     }
+    event?.stopPropagation();
     this.openSheet.set(null);
     const toggle = this.host.nativeElement.querySelector<HTMLButtonElement>(
       `[data-sheet-toggle="${id}"]`,

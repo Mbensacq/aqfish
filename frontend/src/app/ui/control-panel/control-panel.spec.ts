@@ -390,6 +390,21 @@ describe('ControlPanel', () => {
       expect(document.activeElement).toBe(sheetToggle('neon'));
     });
 
+    it('Échap sur le bouton « Fiche » referme la fiche ; sans fiche ouverte, Échap remonte', async () => {
+      await openPanel();
+      const button = sheetToggle('neon');
+      button.click();
+      await fixture.whenStable();
+      const open = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true });
+      button.dispatchEvent(open);
+      await fixture.whenStable();
+      expect(sheet()).toBeNull();
+      let bubbled = false;
+      root().addEventListener('keydown', () => (bubbled = true));
+      button.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      expect(bubbled).toBe(true);
+    });
+
     it('changer d’environnement referme la fiche', async () => {
       await openPanel();
       sheetToggle('neon').click();

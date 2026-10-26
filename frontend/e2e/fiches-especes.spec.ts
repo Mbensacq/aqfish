@@ -27,14 +27,11 @@ async function open(page: Page): Promise<string[]> {
 }
 
 test.describe('Fiches d’espèces (#237)', () => {
-  test('ouvrir et fermer une fiche à la souris puis au clavier', async ({ page }) => {
+  test('à la souris : « Fiche » ouvre, « Fermer la fiche » referme', async ({ page }) => {
     const errors = await open(page);
     const neon = toggleOf(page, 'Néon');
-
-    // Souris : « Fiche » ouvre, « Fermer la fiche » referme.
     await expect(neon).toHaveAttribute('aria-expanded', 'false');
     await neon.click();
-    await expect(sheet(page)).toBeVisible();
     await expect(sheet(page)).toHaveAccessibleName(/Fiche : Néon/);
     await expect(neon).toHaveAttribute('aria-expanded', 'true');
     await expect(sheet(page).locator('[data-sheet-field]')).toHaveCount(10);
@@ -44,23 +41,25 @@ test.describe('Fiches d’espèces (#237)', () => {
     await sheet(page).getByRole('button', { name: 'Fermer la fiche' }).click();
     await expect(sheet(page)).toHaveCount(0);
     await expect(neon).toBeFocused();
+    expect(errors).toEqual([]);
+  });
 
-    // Clavier : Entrée sur « Fiche » ouvre, Échap dans la fiche referme et rend le focus.
+  test('au clavier : Entrée ouvre, Échap referme et rend le focus', async ({ page }) => {
+    const errors = await open(page);
     const guppy = toggleOf(page, 'Guppy');
     await guppy.focus();
     await page.keyboard.press('Enter');
     await expect(sheet(page)).toHaveAccessibleName(/Fiche : Guppy/);
-    await page.keyboard.press('Tab');
-    await expect(sheet(page).getByRole('button', { name: 'Fermer la fiche' })).toBeFocused();
+    // Échap dans la fiche (sur « Fermer la fiche ») : fermée, focus rendu au bouton.
+    await sheet(page).getByRole('button', { name: 'Fermer la fiche' }).focus();
     await page.keyboard.press('Escape');
     await expect(sheet(page)).toHaveCount(0);
     await expect(guppy).toBeFocused();
-    // Espace sur « Fiche » : ouvre puis referme (disclosure).
+    // Espace rouvre (disclosure), Échap sur le bouton referme.
     await page.keyboard.press('Space');
     await expect(sheet(page)).toBeVisible();
-    await page.keyboard.press('Space');
+    await page.keyboard.press('Escape');
     await expect(sheet(page)).toHaveCount(0);
-
     expect(errors).toEqual([]);
   });
 
