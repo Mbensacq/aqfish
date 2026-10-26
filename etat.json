@@ -2729,7 +2729,7 @@
       "type": "fonctionnalite",
       "issue": 223,
       "pr": 231,
-      "version": null,
+      "version": "v0.11.4",
       "phases": {
         "planif": {
           "statut": "termine",
