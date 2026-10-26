@@ -2786,10 +2786,10 @@
           "note": "Verdict OK, 0 bug, tests 2438 verts, captures non régénérées (délai), mutation non lancée"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-26T05:19:39.732Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-26T06:14:41.849Z",
+          "note": "PR #234 fusionnée → v0.11.5 (release CI ok, main verte), #233 fermée, dette #235 ; #225 laissée à Mathis, #224 externe ignorée ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {
