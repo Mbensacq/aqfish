@@ -1,5 +1,7 @@
-# Captures c078 (QA)
-- Branche : cycle/c078-ph-eau, PR #249, commit 68fb201 (code de la PR) ; tests e2e QA ajoutés au-dessus (df29237)
-- Graine : 42 (série standard `npm run captures`)
-- Durée : 76 captures en 3,4 min
-- Écart avec c077 : 73 identiques à l'octet ; changées : front-panneau, telephone-catalogue, telephone-eau ; nouvelle : three-quarter-panneau-eau
+# Captures c079
+
+- Branche : cycle/c079-fiches-especes (PR #254)
+- Commit : fc4650d
+- Graine : 42 (défaut des captures)
+- Série : 78 images ; 72 captures sans panneau identiques à l'octet à c078 ; modifiées : front-panneau, three-quarter-panneau-eau, telephone-eau, telephone-catalogue (bouton Fiche) ; nouvelle : telephone-fiche-espece
+- Temps : 3,7 min (une capture, trajectoires-top, relancée après une erreur de capture d'écran sans lien avec la PR)
