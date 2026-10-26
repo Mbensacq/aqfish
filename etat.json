@@ -2786,7 +2786,10 @@
           "note": null
         }
       },
-      "metriques": {}
+      "metriques": {
+        "tests": 2438,
+        "captures": "non régénérées (délai dépassé 550 s), c074 conservées"
+      }
     }
   },
   "jours": {
