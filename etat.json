@@ -2856,6 +2856,12 @@
           "debut": "2026-10-26T08:28:59.836Z",
           "fin": "2026-10-26T10:08:46.034Z",
           "note": "PR #245 : granulés en voxels par défaut, grains naturels (ADR 0056), CI verte après une relance (e2e 2/4 et 4/4 au-delà de 30 min au 1er essai, sans échec ; lot 2 à 27,7 min, cf. #244) ; non-régression des 64 captures sans nourriture vérifiée octet par octet ; e2e local 211/304 sans échec ; pied d'attribution réinjecté par le serveur dans la PR"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-10-26T10:09:12.888Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
