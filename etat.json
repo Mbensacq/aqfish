@@ -2981,10 +2981,10 @@
           "note": "Verdict OK, 0 bug, 2570 tests verts, 15 e2e verts, 83 captures publiées (c080)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-26T21:18:29.640Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-26T22:49:38.637Z",
+          "note": "PR #258 fusionnée → v1.0.3 (release CI ok), #256 fermée, dette #259 ; CI main verte sur 41d410e ; e2e 2/4 de la PR annulé 1× par le délai du job (tests 28 min, part au ras du délai, noté sur #248), vert à la relance ; PR #224 externe ignorée"
         }
       },
       "metriques": {}
