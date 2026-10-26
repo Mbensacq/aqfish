@@ -3003,6 +3003,12 @@
           "debut": "2026-10-26T23:05:22.479Z",
           "fin": "2026-10-26T23:06:05.128Z",
           "note": "Issue #260 : tableau de bord 2/3, santé, simulation et alertes (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-10-26T23:06:29.738Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
