@@ -2732,10 +2732,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-26T01:58:50.886Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-26T01:59:27.790Z",
+          "note": "Issue #223 : tritons, inclinaison de saut trop forte (bug idée Mathis) (S) ; PR #224 externe ignorée"
         }
       },
       "metriques": {}
