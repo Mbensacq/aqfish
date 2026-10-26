@@ -2889,6 +2889,12 @@
           "debut": "2026-10-26T11:54:36.286Z",
           "fin": "2026-10-26T11:55:22.269Z",
           "note": "Issue #236 : pH simulé, plage par espèce et jauge (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-10-26T11:55:58.045Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
