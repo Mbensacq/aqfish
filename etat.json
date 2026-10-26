@@ -2748,6 +2748,12 @@
           "debut": "2026-10-26T03:00:54.444Z",
           "fin": "2026-10-26T03:29:34.802Z",
           "note": "Verdict RÉSERVES, 1 bug (#232 capture front-panneau non déterministe), captures c074 publiées, sonde: triton ≤ 7°, variation bornée"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-10-26T03:29:58.536Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
