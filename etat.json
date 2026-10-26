@@ -2940,6 +2940,12 @@
           "debut": "2026-10-26T17:55:12.620Z",
           "fin": "2026-10-26T18:11:19.825Z",
           "note": "Verdict OK, 0 bug bloquant, 2537 tests unitaires verts, e2e fiches 4/4 (1 ajouté, 390 px), 78 captures publiées (c079)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-10-26T18:11:50.585Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {
