@@ -2796,6 +2796,24 @@
         "tests": 2438,
         "captures": "non régénérées (délai dépassé 550 s), c074 conservées"
       }
+    },
+    "76": {
+      "numero": 76,
+      "date": "2026-10-26",
+      "debut": "2026-10-26T06:15:11.129Z",
+      "type": "retro",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-10-26T06:15:11.129Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
