@@ -62,7 +62,25 @@ Mise à jour à la rétro du sprint 10 : l'éditeur (pièce, catalogue d'espèce
 |---|---|---|
 | v0.10 | L'éditeur (fin) | Livré au sprint 10 : éditeur de la pièce, catalogue d'espèces. Reste : forme du bassin (#190) |
 | v0.11 | Le vivant | Sprint 11 : qualité de l'eau simplifiée (température, cycle de l'azote, filtration, changement d'eau), bien-être (faim, santé), compatibilité des espèces et comportements selon l'heure |
+| v0.12 | L'aquarium éducatif | Priorité de Mathis du 2026-10-26 (#229) : beaucoup d'espèces avec fiches, pH, soins (feuilles de catappa…), conseils et aides pour débutant. Un cycle sur deux au plus pour cette épopée tant qu'elle n'est pas terminée ; les bugs et la dette gardent leur place |
+| v0.13 | La pièce et la caméra libre | Après v0.12 : pièce complète (#227 : murs, plafond à poutres, fenêtre, détails), caméra libre qui flotte dans la pièce (#228). Cadre optionnel autour du bac, jamais prioritaire sur l'aquarium |
 | v1.0 | L'ambiance et la mise en ligne | Sprint 12 : sons d'ambiance, accessibilité, performances, partage par lien si la sauvegarde locale le permet ; hébergement choisi ; les 3 derniers cycles sans nouvelle fonctionnalité |
+
+## Priorités de Mathis (2026-10-26)
+
+Le projet reste **centré sur l'aquarium**, à la fois éducatif et agréable : une personne qui n'a
+jamais eu d'aquarium doit pouvoir commencer ici et apprendre à s'occuper de ses poissons
+(température, pH, nourriture, soins, entretien). Ordre de traitement des idées de Mathis :
+
+1. #226 — nourriture : voxels par défaut, grains mieux définis et naturels (les deux rendus
+   restent au choix).
+2. #229 — aquarium éducatif (épopée à découper : pH, espèces et fiches, soins, aides).
+3. #227 — pièce complète, puis #228 — caméra libre : seulement après les deux précédentes.
+
+Toute valeur biologique est sourcée (référence consultable) ou marquée « approximation de jeu » ;
+ce qui n'a pas pu être vérifié est signalé, jamais présenté comme réel. Planif replace les
+sprints à la rétro : la stabilisation de v1.0 reste prévue en fin de parcours, la date peut
+glisser si ces épopées le demandent.
 
 ## Après v1.0 — L'aquarium vivant (sprints 13 et suivants)
 
