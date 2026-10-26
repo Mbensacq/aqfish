@@ -38,6 +38,7 @@ import {
   type World,
 } from './world';
 import { waterQuality } from './water-quality';
+import { FRESH_PH, MAX_PH, MIN_PH } from './water-ph';
 
 /** Bac tropical par défaut : charge et litres. */
 const TROPICAL_LITERS = waterLiters(environmentWater('tropical'));
@@ -71,6 +72,8 @@ function expectBounded(water: WaterState): void {
   }
   expect(water.filter).toBeGreaterThanOrEqual(0);
   expect(water.filter).toBeLessThanOrEqual(1);
+  expect(water.ph).toBeGreaterThanOrEqual(MIN_PH);
+  expect(water.ph).toBeLessThanOrEqual(MAX_PH);
 }
 
 const minutes = (m: number): number => Math.round((m * 60) / SIM_DT);
@@ -83,6 +86,7 @@ describe('freshWater', () => {
       nitrite: 0,
       nitrate: 0,
       filter: 1,
+      ph: FRESH_PH[id],
     });
     expectBounded(freshWater(id));
   });
@@ -254,7 +258,7 @@ describe('stepWaterInPlace', () => {
     const state: MutableWaterState = { ...freshWater('tropical') };
     expect(stepWaterInPlace(state, SIM_DT, 5, 50, 25)).toBe(state);
     expect(Object.keys(state).sort()).toEqual(
-      ['ammonia', 'filter', 'nitrate', 'nitrite', 'temperature'].sort(),
+      ['ammonia', 'filter', 'nitrate', 'nitrite', 'ph', 'temperature'].sort(),
     );
   });
 
@@ -269,34 +273,36 @@ describe('stepWaterInPlace', () => {
 
 describe('changeWater', () => {
   it('retire une part fixe des composés dissous, garde température et filtre', () => {
-    const dirty = { temperature: 24, ammonia: 2, nitrite: 4, nitrate: 80, filter: 0.6 };
+    const dirty = { temperature: 24, ammonia: 2, nitrite: 4, nitrate: 80, filter: 0.6, ph: 6 };
     const keep = 1 - WATER_CHANGE_SHARE;
-    expect(changeWater(dirty)).toEqual({
+    expect(changeWater(dirty, 'tropical')).toEqual({
       temperature: 24,
       ammonia: 2 * keep,
       nitrite: 4 * keep,
       nitrate: 80 * keep,
       filter: 0.6,
+      // pH rapproché d'une part `WATER_CHANGE_SHARE` de celui de l'eau neuve (7, #236).
+      ph: 6 + WATER_CHANGE_SHARE * (7 - 6),
     });
     expect(dirty.nitrate).toBe(80);
   });
 
   it('en place : même objet ; eau saine inchangée ; répétés, les nitrates tendent vers 0', () => {
     const state: MutableWaterState = { ...freshWater('bassin'), nitrate: MAX_CONCENTRATION };
-    expect(changeWaterInPlace(state)).toBe(state);
+    expect(changeWaterInPlace(state, 'bassin')).toBe(state);
     for (let i = 0; i < 60; i++) {
-      changeWaterInPlace(state);
+      changeWaterInPlace(state, 'bassin');
     }
     expect(state.nitrate).toBeGreaterThanOrEqual(0);
     expect(state.nitrate).toBeLessThan(1e-6);
-    expect(changeWater(freshWater('bassin'))).toEqual(freshWater('bassin'));
+    expect(changeWater(freshWater('bassin'), 'bassin')).toEqual(freshWater('bassin'));
   });
 });
 
 describe('readWater', () => {
   it('relit un état valide (copie) et ignore les champs inconnus', () => {
     const value = { ...freshWater('recif'), nitrate: 12.5, autre: 'x' };
-    const result = readWater(value);
+    const result = readWater(value, 'recif');
     expect(result).toEqual({ ok: true, water: { ...freshWater('recif'), nitrate: 12.5 } });
     if (result.ok) {
       expect(result.water).not.toBe(value);
@@ -320,20 +326,20 @@ describe('readWater', () => {
     ['chauffage en texte', { ...freshWater('tropical'), heater: '26' }],
     ['chauffage nul', { ...freshWater('tropical'), heater: null }],
   ])('refuse : %s', (_name, value) => {
-    const result = readWater(value);
+    const result = readWater(value, 'tropical');
     expect(result.ok).toBe(false);
   });
 
   it('relit la consigne du chauffage ; absente, elle reste absente', () => {
-    const result = readWater({ ...freshWater('tropical'), heater: 27.5 });
+    const result = readWater({ ...freshWater('tropical'), heater: 27.5 }, 'tropical');
     expect(result).toEqual({ ok: true, water: { ...freshWater('tropical'), heater: 27.5 } });
-    const without = readWater(freshWater('tropical'));
+    const without = readWater(freshWater('tropical'), 'tropical');
     expect(without.ok && Object.hasOwn(without.water, 'heater')).toBe(false);
   });
 
   it('ne lit pas les propriétés héritées', () => {
     const inherited = Object.create({ ...freshWater('tropical') }) as object;
-    expect(readWater(inherited).ok).toBe(false);
+    expect(readWater(inherited, 'tropical').ok).toBe(false);
   });
 });
 
@@ -455,5 +461,106 @@ describe('eau du monde', () => {
     changeWorldWaterInPlace(owned);
     expect(owned.water).toBe(water);
     expect(owned.water).toEqual(changed.water);
+  });
+});
+
+describe('pH de l’eau (#236)', () => {
+  it('dérive : le pH baisse avec la charge, d’autant plus vite qu’elle est forte', () => {
+    const fresh = freshWater('tropical');
+    const light = run(fresh, minutes(10), TROPICAL_LOAD);
+    const heavy = run(fresh, minutes(10), 4 * TROPICAL_LOAD);
+    expect(light.ph).toBeLessThan(fresh.ph);
+    expect(heavy.ph).toBeLessThan(light.ph);
+    expect(fresh.ph - heavy.ph).toBeCloseTo(4 * (fresh.ph - light.ph), 9);
+    expectBounded(heavy);
+  });
+
+  it('dérive lente : bac tropical par défaut, ~0,25 de pH par heure simulée', () => {
+    const after = run(freshWater('tropical'), minutes(60));
+    expect(FRESH_PH.tropical - after.ph).toBeGreaterThan(0.2);
+    expect(FRESH_PH.tropical - after.ph).toBeLessThan(0.3);
+  });
+
+  it('bac sans habitant : pH stable', () => {
+    expect(run(freshWater('recif'), minutes(30), 0).ph).toBe(FRESH_PH.recif);
+  });
+
+  it('bornes : jamais sous 4,0, même avec une charge énorme pendant des heures', () => {
+    const state = run(freshWater('tropical'), minutes(120), 1e6);
+    expect(state.ph).toBe(MIN_PH);
+    expectBounded(state);
+  });
+
+  it('changement d’eau : le pH revient vers celui de l’eau neuve, sans le dépasser', () => {
+    const acid: MutableWaterState = { ...freshWater('tropical'), ph: 5 };
+    changeWaterInPlace(acid, 'tropical');
+    expect(acid.ph).toBeCloseTo(5 + WATER_CHANGE_SHARE * (FRESH_PH.tropical - 5), 12);
+    const basic: MutableWaterState = { ...freshWater('tropical'), ph: 9 };
+    changeWaterInPlace(basic, 'tropical');
+    expect(basic.ph).toBeLessThan(9);
+    expect(basic.ph).toBeGreaterThan(FRESH_PH.tropical);
+    for (let i = 0; i < 80; i++) {
+      changeWaterInPlace(acid, 'tropical');
+    }
+    expect(acid.ph).toBeLessThanOrEqual(FRESH_PH.tropical);
+    expect(acid.ph).toBeCloseTo(FRESH_PH.tropical, 9);
+  });
+
+  it('changement d’eau : l’eau neuve est celle de l’environnement du bac', () => {
+    const drifted: MutableWaterState = { ...freshWater('recif'), ph: 7.5 };
+    expect(changeWater(drifted, 'recif').ph).toBeGreaterThan(7.5);
+    expect(changeWater(drifted, 'tropical').ph).toBeLessThan(7.5);
+  });
+
+  it('déterminisme : même graine, même suite de pH ; graines différentes, même dérive', () => {
+    const series = (seed: number): number[] => {
+      const world = cloneWorld(createDefaultWorld(seed));
+      const values: number[] = [];
+      for (let i = 0; i < 10; i++) {
+        advanceInPlace(world, 120);
+        values.push(world.water.ph);
+      }
+      return values;
+    };
+    expect(series(42)).toEqual(series(42));
+    // La dérive ne dépend que de la charge (même population par défaut), pas des tirages.
+    expect(series(7)).toEqual(series(42));
+    expect(series(42)[9]).toBeLessThan(FRESH_PH.tropical);
+  });
+
+  it('changeWorldWater : le pH du monde remonte vers celui de son environnement', () => {
+    const world: World = {
+      ...createDefaultWorld(42, 'bassin'),
+      water: { ...freshWater('bassin'), ph: 6.5 },
+    };
+    expect(changeWorldWater(world).water.ph).toBeCloseTo(
+      6.5 + WATER_CHANGE_SHARE * (FRESH_PH.bassin - 6.5),
+      12,
+    );
+  });
+});
+
+describe('readWater et pH (#236)', () => {
+  it('relit le pH ; absent (sauvegarde antérieure), reprend celui de l’eau neuve', () => {
+    const old: Partial<MutableWaterState> = { ...freshWater('recif') };
+    delete old.ph;
+    expect(readWater({ ...old, nitrate: 3 }, 'recif')).toEqual({
+      ok: true,
+      water: { ...freshWater('recif'), nitrate: 3 },
+    });
+    expect(readWater({ ...freshWater('recif'), ph: 7.9 }, 'recif')).toEqual({
+      ok: true,
+      water: { ...freshWater('recif'), ph: 7.9 },
+    });
+  });
+
+  it.each([
+    ['trop acide', MIN_PH - 0.1],
+    ['trop basique', MAX_PH + 0.1],
+    ['texte', '7'],
+    ['nul', null],
+    ['NaN', Number.NaN],
+  ])('refuse un pH %s', (_name, ph) => {
+    expect(readWater({ ...freshWater('tropical'), ph }, 'tropical').ok).toBe(false);
   });
 });

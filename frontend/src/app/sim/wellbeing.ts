@@ -1,4 +1,5 @@
 import type { SpeciesDefinition } from './species';
+import { phOutOfTolerance } from './water-ph';
 
 /**
  * Bien-être des animaux, première partie : santé (issue #208, ADR 0054).
@@ -9,6 +10,10 @@ import type { SpeciesDefinition } from './species';
  * « mauvaise » (`waterQuality`, `sim/water-quality.ts`, lu tel quel), d'autant plus vite que
  * les deux causes se cumulent ; sinon elle remonte, plus lentement. Elle ne descend jamais
  * sous le plancher : aucune mort dans ce sprint.
+ *
+ * Un pH hors de la plage tolérée de l'espèce (`sim/water-ph.ts`, issue #236, ADR 0057) est
+ * une cause de plus, de poids `PH_STRESS` : la santé baisse deux fois moins vite que pour
+ * la faim ou l'eau mauvaise.
  *
  * Effets : nage plus lente (`vigor`, facteur du déplacement) et couleurs ternies au rendu
  * (`dullness`). À santé 1, `vigor` vaut exactement 1 et `dullness` exactement 0 : un animal
@@ -34,6 +39,11 @@ export const HEALTH_DECAY_RATE = (1 - HEALTH_FLOOR) / 480;
 export const HEALTH_RECOVERY_RATE = (1 - HEALTH_FLOOR) / 960;
 /** Faim à partir de laquelle l'animal souffre : la faim maximale. */
 export const STARVING_HUNGER = 1;
+/**
+ * Poids d'un pH hors de la plage tolérée (issue #236) : demi-cause, de 1 au plancher en
+ * 16 minutes simulées s'il est la seule cause.
+ */
+export const PH_STRESS = 0.5;
 /** Ralentissement au plancher : la nage y garde `1 − HEALTH_SLOWDOWN` de sa vitesse. */
 export const HEALTH_SLOWDOWN = 0.4;
 
@@ -48,12 +58,18 @@ export function feedsOnPellets(def: SpeciesDefinition): boolean {
 }
 
 /**
- * Nombre de causes de souffrance, de 0 à 2 : faim maximale (seulement pour une espèce qui
- * mange les granulés, `feedsOnPellets`) et eau mauvaise. Une faim non finie ne compte pas.
+ * Poids des causes de souffrance, de 0 à 2,5 : faim maximale (1, seulement pour une espèce
+ * qui mange les granulés, `feedsOnPellets`), eau mauvaise (1) et pH hors de la plage tolérée
+ * (`PH_STRESS`, issue #236). Une faim non finie ne compte pas.
  */
-export function healthStress(hunger: number, def: SpeciesDefinition, badWater: boolean): number {
+export function healthStress(
+  hunger: number,
+  def: SpeciesDefinition,
+  badWater: boolean,
+  phOut = false,
+): number {
   const starving = feedsOnPellets(def) && hunger >= STARVING_HUNGER ? 1 : 0;
-  return starving + (badWater ? 1 : 0);
+  return starving + (badWater ? 1 : 0) + (phOut ? PH_STRESS : 0);
 }
 
 /**
@@ -101,16 +117,19 @@ export interface WellbeingSubject {
 /**
  * Santé d'un pas pour tous les animaux, **en place** (aucune allocation), sur leur faim de
  * fin de pas (après les repas). `speciesOf` donne la définition d'une espèce ; `badWater` :
- * eau « mauvaise » pendant le pas.
+ * eau « mauvaise » pendant le pas ; `ph` : pH de l'eau (issue #236), comparé à la plage
+ * tolérée de chaque espèce (absent : le pH ne compte pas).
  */
 export function stepWellbeingInPlace<S extends WellbeingSubject>(
   animals: readonly S[],
   dt: number,
   badWater: boolean,
   speciesOf: (species: S['species']) => SpeciesDefinition,
+  ph?: number,
 ): void {
   for (const animal of animals) {
-    const stress = healthStress(animal.hunger, speciesOf(animal.species), badWater);
+    const phOut = ph !== undefined && phOutOfTolerance(ph, animal.species);
+    const stress = healthStress(animal.hunger, speciesOf(animal.species), badWater, phOut);
     animal.health = stepHealth(animal.health, stress, dt);
   }
 }

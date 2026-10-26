@@ -1,5 +1,7 @@
-import type { EnvironmentId } from './environment';
+import { environmentById, type EnvironmentId } from './environment';
+import type { SpeciesId } from './species';
 import { freshWater, targetTemperature, WATER_TEMPERATURES, type WaterState } from './water';
+import { phBands, phZone, sameBands, type PhBands, type PhZone } from './water-ph';
 
 /**
  * Qualité de l'eau d'un bac (issue #207, ADR 0053) : indicateur global à trois niveaux et
@@ -129,16 +131,32 @@ export interface WaterReadout {
   readonly ammonia: number;
   readonly nitrite: number;
   readonly nitrate: number;
+  /** pH de l'eau (issue #236). */
+  readonly ph: number;
+  /** Zone du pH pour les espèces présentes (calculée sur la valeur exacte). */
+  readonly phZone: PhZone;
+  /** Plages de pH communes aux espèces présentes (zones de la jauge). */
+  readonly phBands: PhBands;
 }
 
-/** Relevé d'une eau saine du bac tropical (valeur initiale de l'interface). */
-export const DEFAULT_WATER_READOUT: WaterReadout = waterReadout(freshWater('tropical'), 'tropical');
+/** Relevé d'une eau saine du bac tropical peuplé par défaut (valeur initiale de l'interface). */
+export const DEFAULT_WATER_READOUT: WaterReadout = waterReadout(
+  freshWater('tropical'),
+  'tropical',
+  environmentById('tropical').population.map((entry) => entry.species),
+);
 
 /**
- * Relevé de l'eau `water` d'un bac de l'environnement `environment` : indicateur global
- * (calculé sur les valeurs exactes) et valeurs arrondies au dixième.
+ * Relevé de l'eau `water` d'un bac de l'environnement `environment` peuplé des espèces
+ * `species` (doublons permis) : indicateur global et zone du pH (calculés sur les valeurs
+ * exactes), valeurs arrondies au dixième.
  */
-export function waterReadout(water: WaterState, environment: EnvironmentId): WaterReadout {
+export function waterReadout(
+  water: WaterState,
+  environment: EnvironmentId,
+  species: Iterable<SpeciesId> = [],
+): WaterReadout {
+  const bands = phBands(species);
   return {
     quality: waterQuality(water, environment),
     temperature: tenth(water.temperature),
@@ -146,6 +164,9 @@ export function waterReadout(water: WaterState, environment: EnvironmentId): Wat
     ammonia: tenth(water.ammonia),
     nitrite: tenth(water.nitrite),
     nitrate: tenth(water.nitrate),
+    ph: tenth(water.ph),
+    phZone: phZone(water.ph, bands),
+    phBands: bands,
   };
 }
 
@@ -157,7 +178,10 @@ export function sameReadout(a: WaterReadout, b: WaterReadout): boolean {
     a.target === b.target &&
     a.ammonia === b.ammonia &&
     a.nitrite === b.nitrite &&
-    a.nitrate === b.nitrate
+    a.nitrate === b.nitrate &&
+    a.ph === b.ph &&
+    a.phZone === b.phZone &&
+    sameBands(a.phBands, b.phBands)
   );
 }
 

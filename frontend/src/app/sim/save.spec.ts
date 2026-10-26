@@ -290,6 +290,32 @@ describe('serializeWorld / parseWorld : aller-retour', () => {
     expect(advance(back, 600)).toEqual(advance(world, 600));
   });
 
+  it('écrit et restitue le pH (#236) ; relu, le monde avance au bit près', () => {
+    const world = changeWorldWater(advance(createDefaultWorld(42, 'recif'), 1800));
+    expect(world.water.ph).toBeLessThan(freshWater('recif').ph);
+    const data = saveData(world);
+    expect(data.water?.ph).toBe(world.water.ph);
+    const { world: back } = restored(parseWorld(serializeWorld(world)));
+    expect(back.water.ph).toBe(world.water.ph);
+    expect(advance(back, 600)).toEqual(advance(world, 600));
+  });
+
+  it('accepte une ancienne sauvegarde d’eau sans pH (#236) : pH de l’eau neuve du lieu', () => {
+    const world = advance(createDefaultWorld(42, 'bassin'), 600);
+    const data = structuredClone(saveData(world)) as unknown as {
+      water: Record<string, unknown>;
+    };
+    delete data.water['ph'];
+    const { world: back } = restored(parseSaveData(data));
+    expect(back.water).toEqual({ ...world.water, ph: freshWater('bassin').ph });
+  });
+
+  it('refuse un pH hors de [4 ; 9,5] (#236)', () => {
+    const data = validData();
+    data['water'] = { ...freshWater('tropical'), ph: 10 };
+    expect(refusal(parseSaveData(data))).toMatch(/^eau : ph/);
+  });
+
   it('refuse une consigne du chauffage hors bornes (#207)', () => {
     const data = validData();
     data['water'] = { ...freshWater('tropical'), heater: 45 };

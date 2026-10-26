@@ -329,9 +329,10 @@ export function parseSaveData(value: unknown): ParseWorldResult {
 
   const fish = parseFishList(own(value, 'fish'), place, nextFishId, problems);
   const food = parseFoodList(own(value, 'food'), place, nextFoodId, problems);
-  // Eau (#206) : absente, eau saine (celle de `createWorld`) ; présente, validée.
+  // Eau (#206) : absente, eau saine (celle de `createWorld`) ; présente, validée (pH absent :
+  // celui de l'eau neuve de l'environnement, #236).
   const waterValue = own(value, 'water');
-  const water = waterValue === undefined ? null : readWater(waterValue);
+  const water = waterValue === undefined ? null : readWater(waterValue, environment);
   if (water !== null && !water.ok) {
     problems.push(water.error);
   }
