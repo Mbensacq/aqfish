@@ -2952,6 +2952,24 @@
         "tests": 2538,
         "captures": 78
       }
+    },
+    "80": {
+      "numero": 80,
+      "date": "2026-10-26",
+      "debut": "2026-10-26T19:41:08.533Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-10-26T19:41:08.533Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
