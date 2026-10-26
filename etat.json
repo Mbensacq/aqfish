@@ -2763,7 +2763,7 @@
       "date": "2026-10-26",
       "debut": "2026-10-26T04:26:33.495Z",
       "type": "dette",
-      "issue": null,
+      "issue": 233,
       "pr": null,
       "version": null,
       "phases": {
