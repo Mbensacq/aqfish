@@ -6,6 +6,13 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Voir l'inclinaison d'un petit amphibien sur capture** (cycle 74, #223) : à 1280 × 720 un
+  triton fait une dizaine de pixels. Chercher par la simulation pure les instants où il saute
+  de profil (vue `side` : cap ≈ ±π/2 ; vue `front` : cap ≈ 0 ou π), capturer à ces `time=`
+  en 1920 × 1080 avec `deviceScaleFactor: 2` et `filtre=aucun`, puis recadrer autour des
+  pixels orange (`#e07a2f`). Les positions ne dépendant pas de l'inclinaison, les mêmes
+  instants servent avant et après. (2026-10-26)
+
 - **`pkill -f "npm run verify"` tue son propre shell, pas le `verify`** (cycle 61) : le motif
   figure aussi dans la ligne de commande du shell qui lance `pkill` ; il se tue (code 144)
   avant les autres, et le `verify` visé continue. Deux e2e ont alors tourné ensemble sur le

@@ -64,7 +64,7 @@ const WANDER_DAMPING = 0.5;
 const LOOKAHEAD_SECONDS = 1.5;
 /** Angle des sondes latérales qui choisissent le côté du virage, en radians. */
 const SIDE_PROBE_ANGLE = 0.8;
-/** Vitesse de retour à plat de l'inclinaison hors saut, en rad/s. */
+/** Vitesse maximale de l'inclinaison, en saut comme au retour à plat, en rad/s. */
 const PITCH_RATE = 3;
 /** Nombre de tirages de la position de naissance sur la terre émergée. */
 const MAX_SPAWN_TRIES = 32;
@@ -420,12 +420,21 @@ function stepHop(
       : hopArc(y0, y1, params.hopHeight, s);
   const floor = groundHeight(fish.x, fish.z, ground) + params.clearance;
   fish.y = clamp(Math.max(y, floor), hard.minY, hard.maxY);
-  // Inclinaison : la pente de la parabole (museau levé à l'envol, baissé à l'arrivée).
+  // Inclinaison visée : une part `hopPitch` de la pente de la parabole (museau levé à
+  // l'envol, baissé à l'arrivée), à plat une fois posée. Suivie à vitesse bornée
+  // (`PITCH_RATE`) : ni bascule d'un pas à l'autre, ni retour à plat d'un coup (#223).
   const slope = y1 - y0 + 4 * params.hopHeight * (1 - 2 * s);
-  fish.pitchTarget = clamp(Math.atan2(slope, range), -def.maxPitch, def.maxPitch);
-  fish.pitch = fish.ascent === 0 ? 0 : fish.pitchTarget;
+  fish.pitchTarget =
+    fish.ascent === 0
+      ? 0
+      : clamp(Math.atan2(slope, range) * params.hopPitch, -def.maxPitch, def.maxPitch);
+  const maxPitchStep = PITCH_RATE * dt;
+  fish.pitch = clamp(
+    fish.pitch + clamp(fish.pitchTarget - fish.pitch, -maxPitchStep, maxPitchStep),
+    -def.maxPitch,
+    def.maxPitch,
+  );
   if (fish.ascent === 0) {
-    fish.pitchTarget = 0;
     fish.speed = def.minSpeed;
   }
   // Pattes arrière : détente pendant le saut.

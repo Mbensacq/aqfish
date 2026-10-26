@@ -200,6 +200,12 @@ export interface AmphibianParams {
   readonly hopMaxRange: number;
   /** Hauteur de l'arc au-dessus de la corde du saut, en mètres (> 0). */
   readonly hopHeight: number;
+  /**
+   * Part de la pente de l'arc reprise par l'inclinaison pendant un saut, dans [0, 1]
+   * (issue #223) : 0, corps à plat ; 1, corps tangent à la parabole. L'inclinaison suit
+   * cette visée à vitesse bornée et revient à plat progressivement après l'arrivée.
+   */
+  readonly hopPitch: number;
   /** Durée d'un créneau à terre, en secondes (> 0) : un saut possible au début de chacun. */
   readonly hopSlot: number;
   /** Probabilité de sauter au début d'un créneau quand la grenouille reste à terre, dans [0, 1]. */
@@ -727,6 +733,7 @@ export const GRENOUILLE: SpeciesDefinition = {
     hopMinRange: 0.04,
     hopMaxRange: 0.09,
     hopHeight: 0.04,
+    hopPitch: 0.5,
     hopSlot: 1.6,
     hopChance: 0.45,
     cycleDuration: 40,
@@ -795,6 +802,7 @@ export const TRITON: SpeciesDefinition = {
     hopMinRange: 0.02,
     hopMaxRange: 0.04,
     hopHeight: 0.006,
+    hopPitch: 0.1,
     hopSlot: 1.2,
     hopChance: 0.5,
     cycleDuration: 60,
@@ -1206,6 +1214,9 @@ function validateAmphibian(params: AmphibianParams, def: SpeciesDefinition): str
     if (!(value > 0) || !Number.isFinite(value)) {
       problems.push(`amphibian.${key} doit être un réel strictement positif (reçu : ${value})`);
     }
+  }
+  if (!(params.hopPitch >= 0 && params.hopPitch <= 1)) {
+    problems.push(`amphibian.hopPitch doit être dans [0, 1] (reçu : ${params.hopPitch})`);
   }
   if (!(params.hopChance >= 0 && params.hopChance <= 1)) {
     problems.push(`amphibian.hopChance doit être dans [0, 1] (reçu : ${params.hopChance})`);

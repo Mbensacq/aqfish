@@ -16,6 +16,7 @@ import {
   waterYaw,
   type FrogMode,
 } from './frog';
+import { SIM_DT } from './constants';
 import { populationLimit, setPopulation } from './population';
 import { parseWorld, serializeWorld } from './save';
 import { AXOLOTL, GRENOUILLE, NEON, validateSpecies, type SpeciesDefinition } from './species';
@@ -110,6 +111,8 @@ describe('grenouille : espèce du paludarium (#131)', () => {
       validateSpecies({ ...GRENOUILLE, ...extra, amphibian: { ...PARAMS, ...patch } });
     expect(broken({ hopDuration: 0 })).not.toEqual([]);
     expect(broken({ hopChance: 1.5 })).not.toEqual([]);
+    expect(broken({ hopPitch: -0.1 })).not.toEqual([]);
+    expect(broken({ hopPitch: 1.5 })).not.toEqual([]);
     expect(broken({ waterShare: 1 })).not.toEqual([]);
     expect(broken({ waterShare: 0 })).not.toEqual([]);
     expect(broken({ hopMinRange: 0.1, hopMaxRange: 0.05 })).not.toEqual([]);
@@ -401,6 +404,46 @@ describe('grenouille : machine à états', () => {
       expect(fish.y).toBeCloseTo(SURFACE - PARAMS.floatDepth, 12);
     }
   });
+});
+
+describe('grenouille : inclinaison de saut sans bascule (#223)', () => {
+  it.each([1, 42])(
+    'graine %i : variation bornée à chaque pas, à plat peu après chaque arrivée',
+    (seed) => {
+      const world: MutableWorld = cloneWorld(createDefaultWorld(seed, 'paludarium'));
+      const maxStep = 3 * SIM_DT + EPS;
+      const landed = new Map<number, number>();
+      const hopping = new Map<number, boolean>();
+      let landings = 0;
+      for (let t = 0; t < 10000; t++) {
+        advanceInPlace(world, 1);
+        for (const f of frogs(world)) {
+          expect(Math.abs(f.pitch - f.ppitch)).toBeLessThanOrEqual(maxStep);
+          const wasHopping = hopping.get(f.id) ?? false;
+          hopping.set(f.id, f.ascent > 0);
+          if (f.ascent === 0 && wasHopping && isOnLand(f.x, f.z, GROUND)) {
+            // Arrivée : l'inclinaison n'est pas remise à plat d'un coup.
+            landings += 1;
+            landed.set(f.id, 0);
+          }
+          const since = landed.get(f.id);
+          if (since === undefined) {
+            continue;
+          }
+          if (f.ascent > 0 || !isOnLand(f.x, f.z, GROUND)) {
+            landed.delete(f.id);
+          } else if (since >= 20) {
+            expect(f.pitch).toBe(0);
+            landed.delete(f.id);
+          } else {
+            landed.set(f.id, since + 1);
+          }
+        }
+      }
+      expect(landings).toBeGreaterThan(20);
+    },
+    60_000,
+  );
 });
 
 describe('grenouille : bornes sur 20 000 pas', () => {
