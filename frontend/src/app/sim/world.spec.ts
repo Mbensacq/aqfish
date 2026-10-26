@@ -33,7 +33,7 @@ describe('createWorld', () => {
       nextFoodId: 0,
       nextFishId: 0,
       // Eau saine du bac tropical (#206, `freshWater`).
-      water: { temperature: 25, ammonia: 0, nitrite: 0, nitrate: 0, filter: 1 },
+      water: { temperature: 25, ammonia: 0, nitrite: 0, nitrate: 0, filter: 1, ph: 7 },
     });
   });
 
@@ -376,6 +376,9 @@ describe('obstacles', () => {
         sharpTurns: 0,
       });
     },
+    // Délai explicite (#244, docs/PIEGES.md, Tests) : ~0,7 s par graine en local, plus de 5 s
+    // sur un runner de CI lent sous couverture ; le nombre de pas et de poissons ne change pas.
+    15_000,
   );
 });
 

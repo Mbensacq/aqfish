@@ -6,6 +6,13 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **`npm run verify` complet impossible en local en une session** (cycle 78, #236) : sur
+  2 cœurs en rendu logiciel, l'e2e passe ~25 à 50 s par test (22 tests en 12 min, un test du
+  récif en délai dépassé à 2 min) : plus de 3 h pour les ~300 tests. Lancer en local
+  formatage, lint, tests unitaires, build et captures, puis seulement les specs e2e touchées
+  (`npx playwright test --project=e2e e2e/ph.spec.ts …`) ; la suite complète tourne en CI
+  (4 lots). Le dire dans la PR. Le lien `chromium_headless_shell-1194` (plus bas) est à
+  recréer à chaque session. (2026-10-26)
 - **Lancer une seule spec unitaire pendant un `verify`** (cycle 75, #233) : `ng test`
   reconstruit tout et dure ~3 min, et un second `ng` en parallèle du `verify` se dispute le
   cache. Pour une spec de `src/app/sim`, lancer Vitest directement depuis `frontend/` :

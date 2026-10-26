@@ -197,6 +197,8 @@ export const POPULATION_ATTRIBUTE = 'data-aqfish-population';
  * change.
  */
 export const WATER_ATTRIBUTE = 'data-aqfish-water';
+/** pH de l'eau et sa zone pour les espèces présentes, « 6.9;tolere » (#236). */
+export const PH_ATTRIBUTE = 'data-aqfish-ph';
 /** Pas de simulation entre deux relevés de l'eau dans la boucle (0,5 s simulée). */
 export const WATER_READOUT_TICKS = 30;
 /** Attribut du composant hôte exposant l'environnement courant (`tropical`, `bassin`, #87). */
@@ -1981,7 +1983,11 @@ export class AquariumHost {
       return;
     }
     this.waterReadTick = world.tick;
-    const readout = waterReadout(world.water, world.environment);
+    const readout = waterReadout(
+      world.water,
+      world.environment,
+      world.entities.map((entity) => entity.species),
+    );
     if (
       !sameReadout(readout, this.water()) ||
       !this.host.nativeElement.hasAttribute(WATER_ATTRIBUTE)
@@ -1998,6 +2004,7 @@ export class AquariumHost {
           readout.nitrate,
         ].join(';'),
       );
+      this.host.nativeElement.setAttribute(PH_ATTRIBUTE, `${readout.ph};${readout.phZone}`);
     }
     this.view?.setWaterTurbidity(waterTurbidity(readout.quality));
   }

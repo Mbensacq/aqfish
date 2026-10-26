@@ -668,13 +668,14 @@ function stepInPlace(world: MutableWorld, dt: number, clock: SimClock): void {
     waterLiters(environmentWater(place)),
     targetTemperature(world.water, world.environment),
   );
-  // Santé (issue #208) : sur la faim de fin de pas (après les repas) et l'eau du pas, sans
-  // hasard ; à santé pleine, la nage reste exactement celle d'avant.
+  // Santé (issue #208) : sur la faim de fin de pas (après les repas) et l'eau du pas (pH
+  // compris, issue #236), sans hasard ; à santé pleine, la nage reste exactement celle d'avant.
   stepWellbeingInPlace(
     fishes,
     dt,
     waterQuality(world.water, world.environment) === 'mauvaise',
     speciesById,
+    world.water.ph,
   );
 }
 
@@ -712,7 +713,7 @@ export function changeWorldWater(world: World): World {
  * monde (`ui/aquarium-host`), comme `advanceInPlace`.
  */
 export function changeWorldWaterInPlace(world: MutableWorld): void {
-  changeWaterInPlace(world.water as MutableWaterState);
+  changeWaterInPlace(world.water as MutableWaterState, world.environment);
 }
 
 /**

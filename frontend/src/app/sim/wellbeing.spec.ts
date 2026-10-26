@@ -5,6 +5,8 @@ import { parseWorld, serializeWorld } from './save';
 import { AXOLOTL, NEON, SPECIES } from './species';
 import { stepFish, swimBounds, type Fish } from './swimmer';
 import { waterVolume, type Box3 } from './tank';
+import { freshWater } from './water';
+import { FRESH_PH } from './water-ph';
 import { sampleWater } from './water-quality';
 import {
   dullness,
@@ -15,6 +17,7 @@ import {
   HEALTH_SLOWDOWN,
   HEALTH_START,
   healthStress,
+  PH_STRESS,
   STARVING_HUNGER,
   stepHealth,
   stepWellbeingInPlace,
@@ -148,6 +151,69 @@ describe('vigor et dullness', () => {
       expect(dullness(h)).toBeLessThanOrEqual(previousDull);
       previousVigor = vigor(h);
       previousDull = dullness(h);
+    }
+  });
+});
+
+describe('pH hors plage et santé (#236)', () => {
+  it('healthStress : un pH hors de la plage tolérée compte pour une demi-cause', () => {
+    expect(healthStress(0.2, NEON, false, true)).toBe(PH_STRESS);
+    expect(healthStress(1, NEON, true, true)).toBe(2 + PH_STRESS);
+    expect(healthStress(1, AXOLOTL, false, true)).toBe(PH_STRESS);
+    expect(healthStress(0.2, NEON, false, false)).toBe(0);
+  });
+
+  it('progression lente : seule cause, du plein au plancher en 16 min simulées', () => {
+    expect(stepHealth(1, PH_STRESS, 480)).toBeCloseTo(1 - (1 - HEALTH_FLOOR) / 2, 9);
+    expect(stepHealth(1, PH_STRESS, 960)).toBeCloseTo(HEALTH_FLOOR, 9);
+  });
+
+  it('stepWellbeingInPlace : chaque espèce comparée à sa propre plage', () => {
+    const animals = [
+      { species: 'neon' as const, hunger: 0.2, health: 1 },
+      { species: 'guppy' as const, hunger: 0.2, health: 1 },
+    ];
+    // pH 6,0 : toléré par le néon (5 à 7,8), pas par le guppy (6,5 à 8,5).
+    stepWellbeingInPlace(animals, 10, false, (id) => SPECIES[id], 6);
+    expect(animals[0].health).toBe(1);
+    expect(animals[1].health).toBeCloseTo(1 - PH_STRESS * HEALTH_DECAY_RATE * 10, 12);
+  });
+
+  it('monde : un poisson hors plage perd de la santé, un poisson dans la plage n’en perd pas', () => {
+    const base = createWorld(9, [
+      { species: 'neon', count: 2 },
+      { species: 'guppy', count: 2 },
+    ]);
+    const acid: World = { ...cloneWorld(base), water: { ...freshWater('tropical'), ph: 6 } };
+    const after = advance(acid, steps(30));
+    for (const fish of after.entities) {
+      expect(fish.hunger).toBeLessThan(1);
+      if (fish.species === 'guppy') {
+        expect(fish.health).toBeCloseTo(1 - 30 * PH_STRESS * HEALTH_DECAY_RATE, 6);
+      } else {
+        expect(fish.health).toBe(1);
+      }
+    }
+    expect(healths(advance(base, steps(30)))).toEqual([1, 1, 1, 1]);
+  });
+
+  it('bac sans poisson : pH très acide sans effet ni erreur', () => {
+    const empty: World = { ...createWorld(3), water: { ...freshWater('tropical'), ph: 4 } };
+    const after = advance(empty, steps(10));
+    expect(after.entities).toEqual([]);
+    expect(after.water.ph).toBe(4);
+  });
+
+  it('bacs par défaut : pH de l’eau neuve, santé pleine dans chaque environnement', () => {
+    for (const id of ['tropical', 'bassin', 'paludarium', 'recif'] as const) {
+      const world = createDefaultWorld(42, id);
+      expect(world.water.ph).toBe(FRESH_PH[id]);
+      const after = advance(world, steps(60));
+      for (const fish of after.entities) {
+        if (fish.hunger < 1) {
+          expect(fish.health).toBe(1);
+        }
+      }
     }
   });
 });

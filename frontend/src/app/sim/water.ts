@@ -2,6 +2,7 @@ import type { EnvironmentId } from './environment';
 import { SPECIES, type SpeciesId } from './species';
 import type { Box3 } from './tank';
 import { assertTimeStep } from './time-step';
+import { freshPh, MAX_PH, MIN_PH, phAfterWaterChange, stepPh } from './water-ph';
 
 /**
  * Modèle d'eau (issue #206, ADR 0052) : température, ammoniaque, nitrites, nitrates et
@@ -20,7 +21,9 @@ import { assertTimeStep } from './time-step';
  * - nitrates : s'accumulent, retirés seulement par un changement d'eau (`changeWaterInPlace`) ;
  * - température : tend vers celle visée (consigne du chauffage `heater` si elle est réglée,
  *   sinon celle de l'environnement, `WATER_TEMPERATURES` ; issue #207), constante de temps
- *   `TEMPERATURE_TIME_CONSTANT`.
+ *   `TEMPERATURE_TIME_CONSTANT` ;
+ * - pH : baisse lente avec la charge, remonte vers celui de l'eau neuve au changement d'eau
+ *   (`sim/water-ph.ts`, issue #236, ADR 0057).
  * Une concentration plafonnée perd ce qui la ferait dépasser `MAX_CONCENTRATION`.
  */
 
@@ -36,6 +39,11 @@ export interface WaterState {
   readonly nitrate: number;
   /** Efficacité du filtre, dans [0, 1] : 0, filtre arrêté ; 1, filtre neuf. */
   readonly filter: number;
+  /**
+   * pH, dans [`MIN_PH`, `MAX_PH`] (issue #236, ADR 0057). Eau neuve : `FRESH_PH` de
+   * l'environnement.
+   */
+  readonly ph: number;
   /**
    * Consigne du chauffage (thermostat), en °C, dans [`MIN_HEATER_TEMPERATURE`,
    * `MAX_HEATER_TEMPERATURE`] (issue #207, ADR 0053). Absente : jamais réglée, l'eau suit la
@@ -120,7 +128,7 @@ export const WATER_CHANGE_SHARE = 0.3;
 
 /**
  * Eau saine de l'environnement `environment` : à sa température, sans composé azoté, filtre
- * neuf. Nouvel objet à chaque appel.
+ * neuf, au pH de l'eau neuve (`FRESH_PH`). Nouvel objet à chaque appel.
  */
 export function freshWater(environment: EnvironmentId): WaterState {
   return {
@@ -129,6 +137,7 @@ export function freshWater(environment: EnvironmentId): WaterState {
     nitrite: 0,
     nitrate: 0,
     filter: 1,
+    ph: freshPh(environment),
   };
 }
 
@@ -193,6 +202,7 @@ export function stepWaterInPlace(
     MAX_WATER_TEMPERATURE,
   );
   water.filter = filter;
+  water.ph = stepPh(water.ph, dt, load, liters);
   return water;
 }
 
@@ -208,21 +218,27 @@ export function stepWater(
 }
 
 /**
- * Changement d'eau **en modifiant** `water` : retire `WATER_CHANGE_SHARE` de chaque composé
- * dissous (nitrates, et aussi ammoniaque et nitrites, dilués de même). La température et le
- * filtre ne changent pas (eau neuve à la température du bac). Renvoie `water`.
+ * Changement d'eau **en modifiant** `water`, bac de l'environnement `environment` : retire
+ * `WATER_CHANGE_SHARE` de chaque composé dissous (nitrates, et aussi ammoniaque et nitrites,
+ * dilués de même) et rapproche d'autant le pH de celui de l'eau neuve (`FRESH_PH`, issue
+ * #236). La température et le filtre ne changent pas (eau neuve à la température du bac).
+ * Renvoie `water`.
  */
-export function changeWaterInPlace(water: MutableWaterState): MutableWaterState {
+export function changeWaterInPlace(
+  water: MutableWaterState,
+  environment: EnvironmentId,
+): MutableWaterState {
   const keep = 1 - WATER_CHANGE_SHARE;
   water.ammonia *= keep;
   water.nitrite *= keep;
   water.nitrate *= keep;
+  water.ph = phAfterWaterChange(water.ph, freshPh(environment), WATER_CHANGE_SHARE);
   return water;
 }
 
 /** Comme `changeWaterInPlace`, sur une copie : `water` n'est jamais modifié. */
-export function changeWater(water: WaterState): WaterState {
-  return changeWaterInPlace({ ...water });
+export function changeWater(water: WaterState, environment: EnvironmentId): WaterState {
+  return changeWaterInPlace({ ...water }, environment);
 }
 
 /** Résultat de `readWater`. */
@@ -231,19 +247,21 @@ export type ReadWaterResult =
   | { readonly ok: false; readonly error: string };
 
 /**
- * Relit un état d'eau venu d'une sauvegarde : objet aux cinq champs numériques finis et
- * bornés, plus la consigne du chauffage facultative (`heater`, issue #207 : absente, jamais
- * réglée) ; seules les propriétés propres sont lues, les champs inconnus ignorés. Renvoie une
- * copie, ou la raison du refus. Ne lève jamais.
+ * Relit un état d'eau venu d'une sauvegarde d'un bac de l'environnement `environment` : objet
+ * aux cinq champs numériques finis et bornés, plus la consigne du chauffage facultative
+ * (`heater`, issue #207 : absente, jamais réglée) et le pH facultatif (`ph`, issue #236 :
+ * absent dans une sauvegarde antérieure, il reprend celui de l'eau neuve de
+ * l'environnement) ; seules les propriétés propres sont lues, les champs inconnus ignorés.
+ * Renvoie une copie, ou la raison du refus. Ne lève jamais.
  */
-export function readWater(value: unknown): ReadWaterResult {
+export function readWater(value: unknown, environment: EnvironmentId): ReadWaterResult {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
     return { ok: false, error: 'eau : doit être un objet' };
   }
   const record = value as Record<string, unknown>;
   const read = (key: keyof WaterState): unknown =>
     Object.hasOwn(record, key) ? record[key] : undefined;
-  const fields: [keyof WaterState, number, number][] = [
+  const fields: [Exclude<keyof WaterState, 'ph' | 'heater'>, number, number][] = [
     ['temperature', MIN_WATER_TEMPERATURE, MAX_WATER_TEMPERATURE],
     ['ammonia', 0, MAX_CONCENTRATION],
     ['nitrite', 0, MAX_CONCENTRATION],
@@ -262,6 +280,10 @@ export function readWater(value: unknown): ReadWaterResult {
       error: `eau : heater doit être un nombre dans [${MIN_HEATER_TEMPERATURE}, ${MAX_HEATER_TEMPERATURE}]`,
     };
   }
+  const ph = read('ph');
+  if (ph !== undefined && !isIn(ph, MIN_PH, MAX_PH)) {
+    return { ok: false, error: `eau : ph doit être un nombre dans [${MIN_PH}, ${MAX_PH}]` };
+  }
   return {
     ok: true,
     water: {
@@ -270,6 +292,7 @@ export function readWater(value: unknown): ReadWaterResult {
       nitrite: read('nitrite') as number,
       nitrate: read('nitrate') as number,
       filter: read('filter') as number,
+      ph: (ph as number | undefined) ?? freshPh(environment),
       ...(heater === undefined ? {} : { heater }),
     },
   };

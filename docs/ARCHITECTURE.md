@@ -79,7 +79,11 @@ simulation testable et les captures reproductibles.
   Consigne du chauffage (#207, ADR 0053) : `water.heater` facultatif, visé à la place de la
   température de l'environnement (`setWorldHeater`). L'hôte relit l'eau toutes les
   `WATER_READOUT_TICKS` pas (`data-aqfish-water`, signal `water`) et trouble la vue quand
-  elle est mauvaise.
+  elle est mauvaise. pH (#236, ADR 0057, `sim/water-ph.ts`) : `water.ph` dans [4 ; 9,5],
+  eau neuve à `FRESH_PH` de l'environnement, baisse avec la charge, remonte d'une part
+  `WATER_CHANGE_SHARE` vers l'eau neuve au changement d'eau ; absent d'une sauvegarde, celui
+  de l'eau neuve. Zone de la jauge selon les plages communes des espèces présentes
+  (`phBands`, `phZone`), exposée par `data-aqfish-ph` (« 6.9;tolere »).
 - **Entités** : les poissons (`sim/swimmer.ts`) gardent l'état de leur sous-générateur sous
   forme d'un entier (`rng`, avancé par `prngNextState` / `prngOutput`, même suite que
   `createPrng`), et leur état au pas précédent (`px`, `pyaw`…) pour l'interpolation du rendu.
@@ -111,7 +115,8 @@ simulation testable et les captures reproductibles.
 - **Santé** (#208, ADR 0054, `sim/wellbeing.ts`) : `Fish.health` ∈ [0,2 ; 1], avancée en
   fin de pas (après les repas et l'eau), sans hasard ni allocation : baisse tant que la faim
   vaut 1 (espèces qui mangent les granulés) ou que l'eau est « mauvaise » (`waterQuality`),
-  remonte deux fois plus lentement sinon. Sous 1, déplacement multiplié par `vigor` (0,6 au
+  et deux fois moins vite pour un pH hors de la plage tolérée de l'espèce (#236,
+  `PH_STRESS`), remonte deux fois plus lentement sinon. Sous 1, déplacement multiplié par `vigor` (0,6 au
   plancher) et couleurs ternies au rendu (`dullness`, attribut d'instance de `FishLayer`) ;
   à 1, nage et couleurs exactement celles d'avant. Champ `health` facultatif de la
   sauvegarde (1 par défaut).
@@ -222,8 +227,9 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
 | `sim/world.ts` | État du monde sérialisable (dont `decor`), `step`, `advance`, `advanceTo`, `advanceInPlace` (boucle d'affichage), `createDefaultWorld` (population et décor par défaut) |
 | `sim/save.ts` | Sauvegarde (#70, ADR 0028) : format JSON versionné (`saveData`, `serializeWorld`), relecture validée (`parseWorld`, `parseSaveData` : bornes, effectifs, propriétés propres seulement, champs inconnus ignorés, schéma inconnu refusé) |
 | `sim/population.ts` | Population réglable (#69, ADR 0025) : `setPopulation` (pure) / `setPopulationInPlace` (hôte), bornes `maxPopulation` par espèce et `MAX_TOTAL_FISH`, `populationCounts`, `populationLimits` |
-| `sim/water.ts` | Modèle d'eau (#206, ADR 0052) : `WaterState`, `freshWater`, `stepWaterInPlace` / `stepWater` (charge `waterLoad`, litres `waterLiters`, températures `WATER_TEMPERATURES`), `changeWaterInPlace` / `changeWater`, relecture validée `readWater` ; consigne du chauffage `heater` facultative (#207, ADR 0053 : `setHeaterInPlace`, `targetTemperature`) |
-| `sim/water-quality.ts` | Qualité de l'eau (#207, ADR 0053) : indicateur global `waterQuality` (`bonne`, `a-surveiller`, `mauvaise`, pire de l'ammoniaque, des nitrites, des nitrates et de l'écart de température, seuils `COMPOUND_THRESHOLDS` et `TEMPERATURE_THRESHOLDS`), jauges (`GAUGE_MAX`, `gaugeFill`), relevé au dixième pour l'interface (`waterReadout`, `sameReadout`), trouble rendu (`waterTurbidity`), eau d'exemple de `eau=` (`sampleWater`) |
+| `sim/water.ts` | Modèle d'eau (#206, ADR 0052) : `WaterState`, `freshWater`, `stepWaterInPlace` / `stepWater` (charge `waterLoad`, litres `waterLiters`, températures `WATER_TEMPERATURES`), `changeWaterInPlace` / `changeWater`, relecture validée `readWater` ; consigne du chauffage `heater` facultative (#207, ADR 0053 : `setHeaterInPlace`, `targetTemperature`) ; pH `ph` (#236, ADR 0057), remis vers l'eau neuve par `changeWaterInPlace(water, environment)` |
+| `sim/water-ph.ts` | pH (#236, ADR 0057) : bornes `MIN_PH` / `MAX_PH`, eau neuve `FRESH_PH`, dérive `stepPh` (`PH_DROP_PER_LOAD_LITER`), changement d'eau `phAfterWaterChange`, plages tolérée et idéale par espèce `SPECIES_PH` (approximations de jeu), `phOutOfTolerance`, plages communes `phBands`, zone de jauge `phZone` (`ideal`, `tolere`, `hors-plage`) |
+| `sim/water-quality.ts` | Qualité de l'eau (#207, ADR 0053) : indicateur global `waterQuality` (`bonne`, `a-surveiller`, `mauvaise`, pire de l'ammoniaque, des nitrites, des nitrates et de l'écart de température, seuils `COMPOUND_THRESHOLDS` et `TEMPERATURE_THRESHOLDS`), jauges (`GAUGE_MAX`, `gaugeFill`), relevé au dixième pour l'interface (`waterReadout`, `sameReadout` ; pH, zone et plages des espèces présentes, #236), trouble rendu (`waterTurbidity`), eau d'exemple de `eau=` (`sampleWater`) |
 | `sim/compatibility.ts` | Compatibilité des espèces (#209) : `TEMPERAMENTS`, `compatibility(a, b)` (symétrique ; même espèce ou inconnue : compatible), `mixWarnings` (mélanges déconseillés d'une population), évitement entre nageurs incompatibles (`hasRivals`, `addRivalSteering`, `enforceRivalDistance`) |
 | `sim/day-rhythm.ts` | Rythme du jour (#209) : espèces diurnes (`DIURNAL`), repos de nuit `nightRest(espèce, intensité)` et facteur de déplacement `nightPace` (exactement 1 le jour) |
 | `sim/species-catalog.ts` | Catalogue d'espèces (#189) : `speciesCatalog(env)` (espèces de l'environnement, libellés `SPECIES_LABELS`, effectif par défaut et maximum), `applySpeciesCounts` / `applySpeciesCountsInPlace` (effectifs demandés arrondis et bornés, espèce inconnue ou hors environnement ignorée) |
@@ -328,7 +334,7 @@ respecter :
 | `pluie=1` | En capture comme hors capture (#106, ADR 0032) : il pleut dès le départ, dans un environnement qui le permet (le bassin) ; ailleurs ignoré. Gouttes et ronds au temps simulé `time`, déterministes. Toute autre valeur ou absent : pas de pluie (séries existantes inchangées, à l'octet près) |
 | `filtre=pixel\|aucun` | Force le filtre de rendu (ADR 0010), y compris hors capture où il prime sur le choix mémorisé. Absent en capture : pixel art, quel que soit le choix mémorisé (séries existantes inchangées) |
 | `heure=` | Réel dans [0, 24) (`0` : minuit, `18.5` : 18 h 30) : fige l'heure de la journée simulée (ADR 0018), en capture comme hors capture ; valeur invalide ignorée. Absent en capture : midi figé (séries existantes inchangées, à l'octet près) ; absent hors capture : départ à midi, journée de 1 200 s (20 min) simulées |
-| `vitesse=` | Hors capture seulement (#232) : vitesse de la simulation au départ, l'une de `SIM_SPEEDS` (`0`, `0.5`, `1`, `2`, `4`), qui prime sur celle de la sauvegarde ; le curseur reste utilisable. `vitesse=0` : monde à l'arrêt dès t = 0, d'où des **captures d'interface** (panneau ouvert : `front-panneau`, `telephone-catalogue`, `telephone-eau`) reproductibles à l'octet. Sans effet en capture ; autre valeur ou absent : vitesse habituelle |
+| `vitesse=` | Hors capture seulement (#232) : vitesse de la simulation au départ, l'une de `SIM_SPEEDS` (`0`, `0.5`, `1`, `2`, `4`), qui prime sur celle de la sauvegarde ; le curseur reste utilisable. `vitesse=0` : monde à l'arrêt dès t = 0, d'où des **captures d'interface** (panneau ouvert : `front-panneau`, `telephone-catalogue`, `telephone-eau`, `three-quarter-panneau-eau`) reproductibles à l'octet. Sans effet en capture ; autre valeur ou absent : vitesse habituelle |
 | `capture=1` | Simulation avancée de façon déterministe jusqu'à `time` (pas fixe, sans temps réel), puis figée ; interface masquée ; caméra sur le préréglage `camera` ; `devicePixelRatio` forcé à 1 |
 | Signal « prêt » | Appeler `markCaptureReady()` (`core/capture/capture-ready.ts`) une fois la première image **complète** rendue ; `resetCaptureReady()` si la scène est rechargée. Implémentation : `AquariumHost` lève le signal à l'image qui suit le premier rendu WebGL de taille non nulle, et le retire à sa destruction |
 | Image figée | En mode capture, une seule image est rendue (puis une à chaque redimensionnement) et les contrôles à la souris sont désactivés |
