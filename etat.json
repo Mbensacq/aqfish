@@ -2936,10 +2936,10 @@
           "note": "PR #254 : fiches d'espèces sourcées (ADR 0058) et avertissement d'ajout ; CI verte sauf e2e 2/4 annulé 2× par le délai du job (installation Chromium 10-11 min, #248, relance utilisée) ; 72 captures sans panneau identiques à l'octet ; verify local partiel (e2e ciblés) ; pied d'attribution réinjecté par le serveur dans la PR"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-26T17:55:12.620Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-26T18:11:19.825Z",
+          "note": "Verdict OK, 0 bug bloquant, 2537 tests unitaires verts, e2e fiches 4/4 (1 ajouté, 390 px), 78 captures publiées (c079)"
         }
       },
       "metriques": {
