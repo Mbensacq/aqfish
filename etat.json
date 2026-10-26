@@ -2924,10 +2924,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-26T15:25:21.387Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-26T15:26:10.500Z",
+          "note": "Issue #237 : fiches d'espèces et avertissement d'ajout (M)"
         }
       },
       "metriques": {}
