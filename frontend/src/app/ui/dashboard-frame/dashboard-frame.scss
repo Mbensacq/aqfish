@@ -1,0 +1,274 @@
+// Tableau de bord de l'eau (#256, ADR 0059, docs/DA.md « Interface ») : sombre translucide
+// aux coins arrondis, sur le bord haut, jamais au centre du bac.
+// - Bureau (≥ 1100 px) : barre haute dans la ligne des boutons, entre « Réglages » (qui
+//   finit à 143 px) et l'aide-mémoire déplié (300 px à 12 px du bord droit).
+// - Tablette (640 à 1099 px) : bandeau sous la ligne des boutons ; l'aide-mémoire, déplié par
+//   défaut, descend sous le bandeau (commands-help.scss).
+// - Téléphone (≤ 639 px) : bandeau compact sous les boutons, bouton « Eau » au-dessus des
+//   jauges.
+// Partout, un panneau ouvert (« Réglages », « Commandes », éditeur, plan 1) passe par-dessus.
+// L'hôte est une boîte transparente : seuls le cadre et ses boutons reçoivent le pointeur,
+// le reste va au canvas (docs/PIEGES.md, « Hôte transparent »).
+// Couleurs et opacités : variables posées par le composant (`DASHBOARD_COLORS`), celles que
+// le test de contraste vérifie.
+:host {
+  position: fixed;
+  top: 12px;
+  right: 324px;
+  left: 155px;
+  // Plan 0 : au-dessus du canvas (avant lui dans le DOM), sous les panneaux (plan 1).
+  z-index: 0;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  color: var(--dashboard-ink);
+  font:
+    400 12px / 1.25 system-ui,
+    sans-serif;
+}
+
+.dashboard {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  box-sizing: border-box;
+  max-width: 100%;
+  padding: 5px 8px;
+  border: 1px solid rgb(232 230 227 / 8%);
+  border-radius: 10px;
+  background: color-mix(
+    in srgb,
+    var(--dashboard-background) calc(var(--dashboard-background-alpha) * 100%),
+    transparent
+  );
+  opacity: var(--dashboard-rest-opacity);
+  pointer-events: auto;
+  transition: opacity 150ms ease-out;
+
+  &:hover,
+  &:focus-within {
+    opacity: 1;
+  }
+}
+
+.dashboard__toggle {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+  min-height: 32px;
+  padding: 2px 8px;
+  border: 1px solid rgb(232 230 227 / 12%);
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--dashboard-vert);
+    outline-offset: 1px;
+  }
+}
+
+.dashboard__title {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.dashboard__chevron {
+  font-size: 10px;
+}
+
+.dashboard__quality,
+.dashboard__level {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+
+  &[data-level='vert'],
+  &[data-level-label='vert'] {
+    color: var(--dashboard-vert);
+  }
+
+  &[data-level='orange'],
+  &[data-level-label='orange'] {
+    color: var(--dashboard-orange);
+  }
+
+  &[data-level='rouge'],
+  &[data-level-label='rouge'] {
+    color: var(--dashboard-rouge);
+  }
+}
+
+.dashboard__icon {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  fill: currentcolor;
+}
+
+.dashboard--folded .dashboard__toggle {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.dashboard__gauges {
+  display: grid;
+  flex: 1 1 auto;
+  grid-template-columns: repeat(5, minmax(84px, 1fr));
+  gap: 10px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dashboard__gauge {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.dashboard__name {
+  overflow: hidden;
+  color: color-mix(
+    in srgb,
+    var(--dashboard-ink) calc(var(--dashboard-muted-alpha) * 100%),
+    transparent
+  );
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboard__reading {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  white-space: nowrap;
+}
+
+.dashboard__value {
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.dashboard__unit {
+  font-size: 11px;
+}
+
+.dashboard__trend {
+  margin-left: auto;
+  font-size: 12px;
+}
+
+.dashboard__bar {
+  position: relative;
+  display: block;
+  height: 5px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: rgb(232 230 227 / 18%);
+}
+
+.dashboard__zones {
+  position: absolute;
+  inset: 0;
+}
+
+// Repère de la valeur sur les zones du pH : clair, cerné de sombre.
+.dashboard__mark {
+  position: absolute;
+  top: 0;
+  width: 2px;
+  height: 100%;
+  margin-left: -1px;
+  background: var(--dashboard-ink);
+  box-shadow: 0 0 0 1px var(--dashboard-background);
+}
+
+.dashboard__fill {
+  display: block;
+  height: 100%;
+  background: currentcolor;
+}
+
+.dashboard__gauge[data-level='vert'] .dashboard__bar {
+  color: var(--dashboard-vert);
+}
+
+.dashboard__gauge[data-level='orange'] .dashboard__bar {
+  color: var(--dashboard-orange);
+}
+
+.dashboard__gauge[data-level='rouge'] .dashboard__bar {
+  color: var(--dashboard-rouge);
+}
+
+@media (max-width: 1099px) {
+  :host {
+    top: 56px;
+    right: 12px;
+    left: 12px;
+  }
+}
+
+@media (max-width: 639px) {
+  .dashboard {
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+    padding: 4px 6px 6px;
+  }
+
+  .dashboard--folded {
+    width: auto;
+  }
+
+  .dashboard__toggle,
+  .dashboard--folded .dashboard__toggle {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    min-height: 26px;
+  }
+
+  .dashboard__gauges {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .dashboard__level {
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  :host {
+    top: 48px;
+    right: 8px;
+    left: 8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard {
+    transition: none;
+  }
+}
+
+@media print {
+  :host {
+    display: none;
+  }
+}

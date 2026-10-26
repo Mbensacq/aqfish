@@ -154,6 +154,8 @@ import {
   type WaterReadout,
 } from '../../sim/water-quality';
 import { waterLiters } from '../../sim/water';
+import { DEFAULT_WATER_SAMPLE, waterSample, type WaterSample } from '../../sim/water-dashboard';
+import { refreshDue } from '../dashboard-frame/refresh-pace';
 
 /** Fabrique du renderer, remplaçable dans les tests (jsdom n'a pas WebGL). */
 export const AQUARIUM_RENDERER_FACTORY = new InjectionToken<AquariumRendererFactory>(
@@ -492,10 +494,17 @@ export class AquariumHost {
 
   /** Effectif maximal de chaque espèce compte tenu des autres (`populationLimits`, #69). */
   readonly populationMax = signal<PopulationCounts>(NO_FISH);
-  /** Relevé de l'eau affiché par le panneau (#207), au dixième. */
+  /** Relevé de l'eau affiché par le tableau de bord et le panneau (#207, #256), au dixième. */
   readonly water = signal<WaterReadout>(DEFAULT_WATER_READOUT);
+  /**
+   * Relevé exact de l'eau lu par le tableau de bord (#256) : remplacé à chaque relevé
+   * (`exposeWater`), donc au plus 4 fois par seconde dans la boucle (`refreshDue`).
+   */
+  readonly waterSample = signal<WaterSample>(DEFAULT_WATER_SAMPLE);
   /** Pas du dernier relevé de l'eau (`exposeWater`). */
   private waterReadTick = Number.NEGATIVE_INFINITY;
+  /** Instant (ms, horloge de `requestAnimationFrame`) du dernier relevé de la boucle. */
+  private waterReadAt: number | null = null;
 
   /**
    * État de la sauvegarde automatique (#70) : `null` en mode capture (jamais de lecture ni
@@ -1931,7 +1940,12 @@ export class AquariumHost {
       advanceInPlace(this.currentWorld, clock.steps, this.dayClock);
       this.exposeTick();
       this.exposeFood();
-      if (this.currentWorld.tick - this.waterReadTick >= WATER_READOUT_TICKS) {
+      // Au plus 4 relevés par seconde de temps réel, quelle que soit la vitesse (#256).
+      if (
+        this.currentWorld.tick - this.waterReadTick >= WATER_READOUT_TICKS &&
+        refreshDue(timestamp, this.waterReadAt)
+      ) {
+        this.waterReadAt = timestamp;
         this.exposeWater();
       }
     }
@@ -1987,6 +2001,7 @@ export class AquariumHost {
       return;
     }
     this.waterReadTick = world.tick;
+    this.waterSample.set(waterSample(world.water, world.environment, world.tick));
     const readout = waterReadout(
       world.water,
       world.environment,

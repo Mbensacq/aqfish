@@ -948,6 +948,33 @@ describe('AquariumHost', () => {
       expect(viewOf(host()).waterTurbidity).toBe(0);
     });
 
+    it('tableau de bord (#256) : relevé exact exposé, au plus 4 fois par seconde à vitesse 4', async () => {
+      await create('?seed=42');
+      expect(host().waterSample()).toMatchObject({ tick: 0, environment: 'tropical', ph: 7 });
+      host().setSpeed(4);
+      setCanvasSize(800, 600);
+      const reads: number[] = [];
+      let last = host().waterSample();
+      frames.flush(0);
+      // 3 s de temps réel à 60 images par seconde : 720 pas simulés, soit 24 relevés
+      // possibles tous les 30 pas, ramenés à 4 par seconde au plus.
+      for (let i = 1; i <= 180; i++) {
+        const now = (i * 1000) / 60;
+        frames.flush(now);
+        if (host().waterSample() !== last) {
+          last = host().waterSample();
+          reads.push(now);
+        }
+      }
+      expect(host().world?.tick).toBe(720);
+      for (const t of reads) {
+        expect(reads.filter((u) => u >= t && u < t + 1000).length).toBeLessThanOrEqual(4);
+      }
+      expect(reads.length).toBeGreaterThanOrEqual(10);
+      expect(host().waterSample().tick).toBeGreaterThan(0);
+      expect(host().waterSample().tick).toBeLessThanOrEqual(720);
+    }, 15_000);
+
     it('pH (#236) : zone selon les espèces présentes, remonte au changement d’eau', async () => {
       await create('?seed=42');
       const world = host().world as unknown as { water: object };

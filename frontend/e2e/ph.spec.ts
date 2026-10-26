@@ -8,8 +8,8 @@ import { freshWater } from '../src/app/sim/water';
 import { createDefaultWorld, type MutableWorld } from '../src/app/sim/world';
 
 /**
- * pH (issue #236) : jauge « pH » de la section « Eau », zone selon les espèces présentes,
- * remontée vers l'eau neuve au changement d'eau.
+ * pH (issue #236) : jauge « pH » (dans le tableau de bord en bordure depuis #256), zone selon
+ * les espèces présentes, remontée vers l'eau neuve au changement d'eau (section « Eau »).
  *
  * Le bac tropical par défaut (néons, guppys, corydoras) est importé avec une eau acide
  * (pH 6,0, sous la tolérance des guppys) et la simulation à l'arrêt (vitesse 0) : la valeur
@@ -19,7 +19,7 @@ import { createDefaultWorld, type MutableWorld } from '../src/app/sim/world';
 
 const hostEl = (page: Page) => page.locator('app-aquarium-host');
 const section = (page: Page) => page.locator('[data-section="eau"]');
-const gauge = (page: Page) => section(page).locator('[data-gauge="ph"]');
+const gauge = (page: Page) => page.locator('[data-dashboard] [data-gauge="ph"]');
 const value = (page: Page) => gauge(page).locator('[data-gauge-value="ph"]');
 const meter = (page: Page) => gauge(page).getByRole('meter', { name: 'pH' });
 
@@ -45,7 +45,7 @@ async function importAcidTank(page: Page): Promise<void> {
 }
 
 test.describe('pH (#236)', () => {
-  test('la jauge « pH » apparaît dans la section « Eau » et suit le changement d’eau', async ({
+  test('la jauge « pH » apparaît dans le tableau de bord et suit le changement d’eau', async ({
     page,
   }) => {
     const errors = await open(page);
@@ -56,8 +56,8 @@ test.describe('pH (#236)', () => {
 
     await importAcidTank(page);
     await expect(value(page)).toHaveText('6,0');
-    await expect(gauge(page)).toHaveAttribute('data-ph-zone', 'hors-plage');
-    await expect(meter(page)).toHaveAttribute('aria-valuetext', 'pH 6,0, hors plage');
+    await expect(gauge(page)).toHaveAttribute('data-level', 'rouge');
+    await expect(meter(page)).toHaveAttribute('aria-valuetext', 'pH : 6,0, hors plage, stable');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-ph', '6;hors-plage');
 
     await section(page).getByRole('button', { name: 'Changer l’eau' }).click();
@@ -66,8 +66,8 @@ test.describe('pH (#236)', () => {
     await section(page).getByRole('button', { name: 'Changer l’eau' }).click();
     // 6,3 + 0,3 × 0,7 = 6,51 : toléré par les guppys.
     await expect(value(page)).toHaveText('6,5');
-    await expect(gauge(page)).toHaveAttribute('data-ph-zone', 'tolere');
-    await expect(meter(page)).toHaveAttribute('aria-valuetext', 'pH 6,5, toléré');
+    await expect(gauge(page)).toHaveAttribute('data-level', 'orange');
+    await expect(meter(page)).toHaveAttribute('aria-valuetext', 'pH : 6,5, toléré, stable');
     expect(errors).toEqual([]);
   });
 
@@ -101,7 +101,7 @@ test.describe('pH (#236)', () => {
     });
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'recif');
     await expect(value(page)).toHaveText('7,0');
-    await expect(gauge(page)).toHaveAttribute('data-ph-zone', 'hors-plage');
+    await expect(gauge(page)).toHaveAttribute('data-level', 'rouge');
 
     // Ancienne sauvegarde : le champ `ph` est retiré de l'eau.
     const pond = JSON.parse(
@@ -116,7 +116,7 @@ test.describe('pH (#236)', () => {
     });
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'bassin');
     await expect(value(page)).toHaveText('7,5');
-    await expect(gauge(page)).toHaveAttribute('data-ph-zone', 'ideal');
+    await expect(gauge(page)).toHaveAttribute('data-level', 'vert');
 
     // Un pH hors bornes est refusé, le bac reste inchangé.
     pond.water!['ph'] = 12;

@@ -160,4 +160,8 @@ devant lui garde son vert ; aucune couleur ajoutée à la palette.
   ouvrir « Réglages » replie « Commandes » et inversement (#136), et l'aide-mémoire démarre
   replié (paysage de téléphone compris). Un nouveau panneau flottant suit la même règle
   (`ui/exclusive-panels`).
+- Tableau de bord de l'eau (#256, ADR 0059) : cadre sur le bord haut, jamais au centre du
+  bac ; niveaux vert (`#a8e6cf`), orange (`#f0d68a`) et rouge (`#f2a39a`) toujours doublés
+  d'un texte et d'une icône pixel art (coche, point d'exclamation, croix) ; opacité 0,85 au
+  repos, texte lu toujours à 4,5:1 au moins.
 - Textes en français.
