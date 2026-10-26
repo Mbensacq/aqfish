@@ -2942,10 +2942,10 @@
           "note": "Verdict OK, 0 bug bloquant, 2537 tests unitaires verts, e2e fiches 4/4 (1 ajouté, 390 px), 78 captures publiées (c079)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-26T18:11:50.585Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-26T19:40:40.004Z",
+          "note": "PR #254 fusionnée → v1.0.2 (release CI ok), #237 fermée, dette #255 ; PR #253 (roadmap, Mathis) relue et fusionnée ; CI main verte sur 012c0d5 ; e2e 1/4 de la PR annulé 1× par le délai du job (#248), vert à la relance ; pied d'attribution réinjecté par le serveur dans les corps de PR (corps de squash vides)"
         }
       },
       "metriques": {
