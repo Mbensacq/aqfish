@@ -2928,6 +2928,12 @@
           "debut": "2026-10-26T15:25:21.387Z",
           "fin": "2026-10-26T15:26:10.500Z",
           "note": "Issue #237 : fiches d'espèces et avertissement d'ajout (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-10-26T15:26:49.404Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
