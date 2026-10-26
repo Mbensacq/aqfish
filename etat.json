@@ -2864,7 +2864,10 @@
           "note": null
         }
       },
-      "metriques": {}
+      "metriques": {
+        "tests": 2457,
+        "captures": 76
+      }
     }
   },
   "jours": {
