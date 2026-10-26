@@ -1,4 +1,5 @@
-# Captures c077
-- Branche : cycle/c077-nourriture-voxels (PR #245), commit 5bc0120
-- Graine : 42 (défaut des captures) ; 76 captures, `npm run captures`, 3 min 12 s
-- Écart avec c076 : 14 captures (nourriture en points/voxels, 3 captures d'interface : libellé du bouton Granulés)
+# Captures c078 (QA)
+- Branche : cycle/c078-ph-eau, PR #249, commit 68fb201 (code de la PR) ; tests e2e QA ajoutés au-dessus (df29237)
+- Graine : 42 (série standard `npm run captures`)
+- Durée : 76 captures en 3,4 min
+- Écart avec c077 : 73 identiques à l'octet ; changées : front-panneau, telephone-catalogue, telephone-eau ; nouvelle : three-quarter-panneau-eau
