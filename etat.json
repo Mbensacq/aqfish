@@ -2757,6 +2757,24 @@
         }
       },
       "metriques": {}
+    },
+    "75": {
+      "numero": 75,
+      "date": "2026-10-26",
+      "debut": "2026-10-26T04:26:33.495Z",
+      "type": "dette",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-10-26T04:26:33.495Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
