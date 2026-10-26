@@ -2817,6 +2817,12 @@
           "debut": "2026-10-26T06:17:34.461Z",
           "fin": "2026-10-26T07:21:56.843Z",
           "note": "PR #242 : vitesse=0 rend les captures d'interface reproductibles (3 essais, empreinte unique), CI verte 7/7 au 1er essai ; local : format/lint/unitaires/build OK, e2e ciblés 18/19 (décor panneau en délai dépassé en local, vert en CI) ; pied d'attribution réinjecté par le serveur"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-10-26T07:22:28.089Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
