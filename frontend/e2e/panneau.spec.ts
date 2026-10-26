@@ -209,6 +209,9 @@ test.describe('Panneau de contrôle', () => {
     // Le bouton « Granulés » (#117) partage la ligne du décor : il vient juste après.
     await page.keyboard.press('Tab');
     await expect(page.getByRole('button', { name: /^Granulés : / })).toBeFocused();
+    // Bouton « Fiche » (#237), sur la ligne du nom, avant « − ».
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', { name: 'Fiche : Néon' })).toBeFocused();
     await page.keyboard.press('Tab');
     await expect(page.getByRole('button', { name: 'Retirer un néon' })).toBeFocused();
     await page.keyboard.press('Enter');

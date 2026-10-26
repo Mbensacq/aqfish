@@ -86,6 +86,7 @@ import {
 import {
   DEFAULT_ENVIRONMENT_ID,
   environmentById,
+  environmentWater,
   isEnvironmentId,
   isTankResizable,
   livesIn,
@@ -152,6 +153,7 @@ import {
   waterTurbidity,
   type WaterReadout,
 } from '../../sim/water-quality';
+import { waterLiters } from '../../sim/water';
 
 /** Fabrique du renderer, remplaçable dans les tests (jsdom n'a pas WebGL). */
 export const AQUARIUM_RENDERER_FACTORY = new InjectionToken<AquariumRendererFactory>(
@@ -549,6 +551,8 @@ export class AquariumHost {
    * pas (`isTankResizable`).
    */
   readonly tankDimensions = signal<TankDimensions | null>(null);
+  /** Litres d'eau du bac du monde courant (#237, avertissements d'ajout), `null` avant le départ. */
+  readonly tankLiters = signal<number | null>(null);
 
   /**
    * Glissement en cours (#168) : décor du monde au début du geste (abandon s'il a changé
@@ -2040,6 +2044,7 @@ export class AquariumHost {
     }
     const dims = placeDimensions(world);
     this.tankDimensions.set(isTankResizable(world.environment) ? dims : null);
+    this.tankLiters.set(waterLiters(environmentWater(world)));
     this.host.nativeElement.setAttribute(
       TANK_ATTRIBUTE,
       `${dims.width}:${dims.height}:${dims.depth}`,
