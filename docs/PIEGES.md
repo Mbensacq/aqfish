@@ -6,6 +6,13 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Lancer une seule spec unitaire pendant un `verify`** (cycle 75, #233) : `ng test`
+  reconstruit tout et dure ~3 min, et un second `ng` en parallèle du `verify` se dispute le
+  cache. Pour une spec de `src/app/sim`, lancer Vitest directement depuis `frontend/` :
+  `npx vitest run --globals src/app/sim/frog.spec.ts -t "233"` (quelques secondes, aucun
+  fichier de `src/` touché donc aucun rechargement de l'e2e). Le `verify` reste la preuve
+  avant la PR. (2026-10-26)
+
 - **Voir l'inclinaison d'un petit amphibien sur capture** (cycle 74, #223) : à 1280 × 720 un
   triton fait une dizaine de pixels. Chercher par la simulation pure les instants où il saute
   de profil (vue `side` : cap ≈ ±π/2 ; vue `front` : cap ≈ 0 ou π), capturer à ces `time=`

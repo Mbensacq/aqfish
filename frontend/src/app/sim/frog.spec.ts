@@ -10,6 +10,7 @@ import {
   hopDrawAt,
   hopSlotAt,
   isOnLand,
+  PITCH_RATE,
   restHeight,
   stepFrog,
   wantsWater,
@@ -28,6 +29,7 @@ import {
   boundsFor,
   cloneWorld,
   createDefaultWorld,
+  createWorld,
   type MutableWorld,
   type World,
 } from './world';
@@ -43,6 +45,59 @@ type Mutable<T> = { -readonly [K in keyof T]: T[K] };
 
 function frogs(world: World): Fish[] {
   return world.entities.filter((e) => e.species === 'grenouille');
+}
+
+/** Monde du paludarium peuplé de `count` grenouilles seulement. */
+function frogWorld(seed: number, count = 3): MutableWorld {
+  return cloneWorld(
+    createWorld(seed, [{ species: 'grenouille', count }], [], [], 'paludarium'),
+  ) as MutableWorld;
+}
+
+/**
+ * Suit chaque individu de `world` pendant `steps` pas et vérifie l'inclinaison à la sortie de
+ * l'eau (#233) : de la reprise de la berge (`nage` → `sortie`) jusqu'à la fin du premier saut
+ * qui suit la sortie (`posee` → `saut` ou `entree`), la variation par pas reste sous
+ * `maxStep`, l'animal arrive à plat sur la berge et le premier saut part à plat. Rend le
+ * nombre de sorties suivies jusqu'au bout.
+ */
+function followExits(world: MutableWorld, steps: number, maxStep: number): number {
+  type Stage = 'sortie' | 'posee' | 'saut';
+  const stage = new Map<number, Stage>();
+  const previous = new Map<number, FrogMode>();
+  let completed = 0;
+  for (let t = 0; t < steps; t++) {
+    advanceInPlace(world, 1);
+    for (const f of world.entities) {
+      const mode = frogModeOf(f, world.seed, world.time, GROUND);
+      const before = previous.get(f.id);
+      previous.set(f.id, mode);
+      if (before === 'nage' && mode === 'sortie') {
+        stage.set(f.id, 'sortie');
+      }
+      const current = stage.get(f.id);
+      if (current === undefined) {
+        continue;
+      }
+      expect(Math.abs(f.pitch - f.ppitch)).toBeLessThanOrEqual(maxStep);
+      if (current === 'sortie' && mode === 'posee') {
+        // Arrivée sur la berge : à plat, comme pendant toute la nage de sortie.
+        expect(f.pitch).toBe(0);
+        stage.set(f.id, 'posee');
+      } else if (current === 'posee' && (mode === 'saut' || mode === 'entree')) {
+        // Premier saut : part à plat, puis s'incline d'au plus `maxStep` par pas.
+        expect(f.ppitch).toBe(0);
+        stage.set(f.id, 'saut');
+      } else if (current === 'saut' && f.ascent === 0) {
+        completed += 1;
+        stage.delete(f.id);
+      } else if (current === 'sortie' && mode === 'nage') {
+        // Le milieu voulu a de nouveau basculé vers l'eau avant la berge : sortie abandonnée.
+        stage.delete(f.id);
+      }
+    }
+  }
+  return completed;
 }
 
 /** Grenouille à une position donnée, au repos (hauteur `restHeight`). */
@@ -441,6 +496,63 @@ describe('grenouille : inclinaison de saut sans bascule (#223)', () => {
         }
       }
       expect(landings).toBeGreaterThan(20);
+    },
+    60_000,
+  );
+});
+
+describe('grenouille : inclinaison à la sortie de l’eau et origine des 39° (#233)', () => {
+  /** Variation d'inclinaison maximale par pas de simulation. */
+  const MAX_PITCH_STEP = PITCH_RATE * SIM_DT + EPS;
+
+  it.each([1, 42, 2024])(
+    'graine %i : nage → sortie → posée → premier saut, variation bornée à chaque pas',
+    (seed) => {
+      const world = frogWorld(seed);
+      const exits = followExits(world, 20000, MAX_PITCH_STEP);
+      expect(exits).toBeGreaterThanOrEqual(3);
+    },
+    60_000,
+  );
+
+  it.each([1, 42, 2024])(
+    'graine %i : les 39° sont le sommet d’un bond court ; hors saut, l’inclinaison ne fait que revenir à plat',
+    (seed) => {
+      const world = frogWorld(seed);
+      const hops = new Map<number, { y0: number; x0: number; z0: number; maxPitch: number }>();
+      let maxHopPitch = 0;
+      for (let t = 0; t < 20000; t++) {
+        advanceInPlace(world, 1);
+        for (const f of world.entities) {
+          if (f.ascent === 0 && !hops.has(f.id)) {
+            // Posée, nage ou sortie (et pas d'arrivée) : jamais plus inclinée qu'au pas d'avant.
+            // Les ~36° relevés posée ou à la nage sont le reste de l'arrivée d'un saut.
+            expect(Math.abs(f.pitch)).toBeLessThanOrEqual(Math.abs(f.ppitch));
+          }
+          if (f.ascent > 0 && !hops.has(f.id)) {
+            hops.set(f.id, { x0: f.px, z0: f.pz, y0: f.py, maxPitch: 0 });
+          }
+          const hop = hops.get(f.id);
+          if (hop === undefined) {
+            continue;
+          }
+          hop.maxPitch = Math.max(hop.maxPitch, Math.abs(f.pitch));
+          if (f.ascent === 0) {
+            // Arrivée (terre ou eau) : au plus `hopPitch` × la pente la plus forte de l'arc.
+            hops.delete(f.id);
+            const range = Math.hypot(f.x - hop.x0, f.z - hop.z0);
+            const chord = Math.abs(f.y - hop.y0) / range;
+            expect(hop.maxPitch).toBeLessThanOrEqual(
+              PARAMS.hopPitch * Math.atan((4 * PARAMS.hopHeight) / range + chord) + EPS,
+            );
+            maxHopPitch = Math.max(maxHopPitch, hop.maxPitch);
+          }
+        }
+      }
+      // Bond le plus court (`hopMinRange`) : la moitié de atan(4 h / portée) ≈ 38°, plus la
+      // corde d'une entrée dans l'eau ; jamais au-delà de 40°, le réglage de l'ADR 0036.
+      expect(maxHopPitch).toBeGreaterThan(0.5);
+      expect(maxHopPitch).toBeLessThanOrEqual((40 * Math.PI) / 180);
     },
     60_000,
   );

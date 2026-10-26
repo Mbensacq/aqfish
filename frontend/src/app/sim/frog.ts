@@ -65,7 +65,7 @@ const LOOKAHEAD_SECONDS = 1.5;
 /** Angle des sondes latérales qui choisissent le côté du virage, en radians. */
 const SIDE_PROBE_ANGLE = 0.8;
 /** Vitesse maximale de l'inclinaison, en saut comme au retour à plat, en rad/s. */
-const PITCH_RATE = 3;
+export const PITCH_RATE = 3;
 /** Nombre de tirages de la position de naissance sur la terre émergée. */
 const MAX_SPAWN_TRIES = 32;
 /** Grille de repli de la naissance (points par axe). */
