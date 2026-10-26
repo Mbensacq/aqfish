@@ -103,11 +103,14 @@ test.describe('Catalogue d’espèces (#189)', () => {
       expect(b!.x + b!.width).toBeLessThanOrEqual(panel!.x + panel!.width);
       expect(b!.width).toBeGreaterThan(90);
       expect(b!.height).toBeGreaterThanOrEqual(28);
-      // « − », curseur, champ et « + » sur une même ligne.
+      // « − », curseur, champ et « + » sur une même ligne (le bouton « Fiche », #237, est
+      // sur la ligne du nom).
       const row = page
         .locator(`[data-section="population"] [data-species]`)
         .filter({ has: control });
-      for (const other of await row.locator('button, input[type="number"]').all()) {
+      for (const other of await row
+        .locator('button:not([data-sheet-toggle]), input[type="number"]')
+        .all()) {
         const o = await other.boundingBox();
         expect(Math.abs(o!.y + o!.height / 2 - (b!.y + b!.height / 2))).toBeLessThan(4);
       }
