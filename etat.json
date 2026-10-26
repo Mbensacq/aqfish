@@ -2750,10 +2750,10 @@
           "note": "Verdict RÉSERVES, 1 bug (#232 capture front-panneau non déterministe), captures c074 publiées, sonde: triton ≤ 7°, variation bornée"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-26T03:29:58.536Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-26T04:25:59.207Z",
+          "note": "PR #231 fusionnée → v0.11.4 (release CI ok, main verte), #223 fermée, dette #233 ; PR #230 (roadmap, docs) fusionnée ; #225 laissée à Mathis ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
