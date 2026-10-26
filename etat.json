@@ -2979,6 +2979,12 @@
           "debut": "2026-10-26T21:00:56.415Z",
           "fin": "2026-10-26T21:17:57.560Z",
           "note": "Verdict OK, 0 bug, 2570 tests verts, 15 e2e verts, 83 captures publiées (c080)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-10-26T21:18:29.640Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
