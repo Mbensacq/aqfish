@@ -74,6 +74,12 @@
  * Entrée mal formée ignorée ici ; type inconnu ou pose refusée ignorés par l'application ;
  * absent, pièce nue (séries existantes inchangées).
  *
+ * Paramètre facultatif `vitesse=` (issue #232) : hors capture, vitesse de la simulation au
+ * démarrage, l'une de `SIM_SPEEDS` (`sim/sim-speed.ts`, vérifiée par l'application) ;
+ * `vitesse=0` laisse le monde à l'arrêt dès t = 0, pour des captures d'interface
+ * reproductibles à l'octet. Prime sur la vitesse de la sauvegarde. Sans effet en capture (le
+ * monde y est déjà figé) ; absente ou invalide, vitesse habituelle.
+ *
  * Ce module est volontairement pur (aucune dépendance à Angular ni à Three.js).
  * Voir docs/ARCHITECTURE.md, section « Contrat de capture ».
  */
@@ -129,6 +135,12 @@ export interface CaptureParams {
   readonly tank: CaptureTank | null;
   /** Éléments lâchés dans la pièce par `meubles=` (issue #188), vide si absent. */
   readonly furniture: readonly CaptureFurniture[];
+  /**
+   * Vitesse de départ de `vitesse=` (issue #232), hors capture ; `null` si absente ou mal
+   * formée. Non vérifiée ici (module sans dépendance à la simulation) : l'application ignore
+   * une vitesse qui n'est pas l'une de `SIM_SPEEDS`.
+   */
+  readonly speed: number | null;
 }
 
 /**
@@ -207,6 +219,7 @@ export const DEFAULT_CAPTURE_PARAMS: CaptureParams = {
   woods: [],
   furniture: [],
   tank: null,
+  speed: null,
 };
 
 /** Temps de simulation maximal accepté (1 h), pour éviter un calcul démesuré. */
@@ -253,7 +266,15 @@ export function parseCaptureParams(search: string): CaptureParams {
     woods: parseWoods(params.get('bois')),
     tank: parseTank(params.get('bac')),
     furniture: parseFurniture(params.get('meubles')),
+    speed: parseSpeed(params.get('vitesse')),
   };
+}
+
+/** Vitesse `vitesse=` : réel positif ou nul à un chiffre avant la virgule (`0`, `0.5`, `4`). */
+const SPEED_PATTERN = /^\d(\.\d{1,3})?$/;
+
+function parseSpeed(raw: string | null): number | null {
+  return raw !== null && SPEED_PATTERN.test(raw) ? Number(raw) : null;
 }
 
 /** Graine décimale : entier de 1 à 10 chiffres (bornes vérifiées par l'application). */

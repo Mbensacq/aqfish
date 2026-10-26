@@ -282,32 +282,33 @@ test.describe('Captures', () => {
   }
 
   // Panneau de contrôle ouvert (#52) : hors mode capture (le contrat de capture n'affiche
-  // aucune interface), heure figée à midi, simulation mise à l'arrêt depuis le panneau.
-  // Capture d'interface : les poissons dépendent de l'instant de l'arrêt (non reproductible
-  // à l'octet, contrairement aux captures ci-dessus, inchangées).
+  // aucune interface), heure figée à midi, simulation à l'arrêt dès t = 0 par `vitesse=0`
+  // (#232) : reproductible à l'octet comme les captures ci-dessus. Arrêtée au curseur après
+  // le chargement, elle dépendait de l'instant de l'arrêt.
   test('angle front avec le panneau de contrôle ouvert', async ({ page }) => {
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
-    await page.goto(`/?seed=${SEED}&camera=front&heure=12`);
+    await page.goto(`/?seed=${SEED}&camera=front&heure=12&vitesse=0`);
     await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
     await page.getByRole('button', { name: 'Réglages' }).click();
-    await page.getByRole('slider', { name: 'Vitesse de la simulation' }).fill('0');
     await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-speed', '0');
+    await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-tick', '0');
     await page.screenshot({ path: join(OUTPUT_DIR, 'front-panneau.png'), animations: 'disabled' });
     expect(errors).toEqual([]);
   });
 
   // Catalogue d'espèces (#189) à 390 px : panneau ouvert, section « Population » amenée en
-  // vue (défilement interne), simulation à l'arrêt. Capture d'interface, comme ci-dessus.
+  // vue (défilement interne), simulation à l'arrêt dès t = 0. Capture d'interface, comme
+  // ci-dessus.
   test('téléphone avec le catalogue d’espèces ouvert', async ({ page }) => {
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto(`/?seed=${SEED}&camera=three-quarter&heure=12`);
+    await page.goto(`/?seed=${SEED}&camera=three-quarter&heure=12&vitesse=0`);
     await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
     await page.getByRole('button', { name: 'Réglages' }).click();
-    await page.getByRole('slider', { name: 'Vitesse de la simulation' }).fill('0');
     await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-speed', '0');
+    await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-tick', '0');
     await page.locator('[data-section="population"]').scrollIntoViewIfNeeded();
     await page.screenshot({
       path: join(OUTPUT_DIR, 'telephone-catalogue.png'),
@@ -317,16 +318,16 @@ test.describe('Captures', () => {
   });
 
   // Section « Eau » (#207) à 390 px : panneau ouvert, section amenée en vue, simulation à
-  // l'arrêt. Capture d'interface, comme ci-dessus.
+  // l'arrêt dès t = 0. Capture d'interface, comme ci-dessus.
   test('téléphone avec la section « Eau » ouverte', async ({ page }) => {
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto(`/?seed=${SEED}&camera=three-quarter&heure=12`);
+    await page.goto(`/?seed=${SEED}&camera=three-quarter&heure=12&vitesse=0`);
     await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
     await page.getByRole('button', { name: 'Réglages' }).click();
-    await page.getByRole('slider', { name: 'Vitesse de la simulation' }).fill('0');
     await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-speed', '0');
+    await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-tick', '0');
     await page.locator('[data-section="eau"]').scrollIntoViewIfNeeded();
     await page.screenshot({ path: join(OUTPUT_DIR, 'telephone-eau.png'), animations: 'disabled' });
     expect(errors).toEqual([]);

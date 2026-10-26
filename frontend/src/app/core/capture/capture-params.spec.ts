@@ -37,6 +37,7 @@ describe('parseCaptureParams', () => {
       woods: [],
       tank: null,
       furniture: [],
+      speed: null,
     });
   });
 
@@ -216,6 +217,19 @@ describe('parseCaptureParams', () => {
     expect(parseCaptureParams(`?time=${encodeURIComponent(time)}`).time).toBe(
       DEFAULT_CAPTURE_PARAMS.time,
     );
+  });
+
+  it('lit la vitesse de départ : vitesse=…, réel décimal non vérifié ici ; sinon null (#232)', () => {
+    expect(parseCaptureParams('?vitesse=0').speed).toBe(0);
+    expect(parseCaptureParams('?vitesse=0.5').speed).toBe(0.5);
+    expect(parseCaptureParams('?vitesse=4').speed).toBe(4);
+    // Bien formée mais hors de SIM_SPEEDS : transmise, l'application l'ignore.
+    expect(parseCaptureParams('?vitesse=3').speed).toBe(3);
+    for (const bad of ['', '-1', '10', '1e1', ' 1', '1 ', '0.', '.5', 'NaN', 'x', '0,5']) {
+      expect(parseCaptureParams(`?vitesse=${encodeURIComponent(bad)}`).speed).toBeNull();
+    }
+    expect(parseCaptureParams('?seed=42').speed).toBeNull();
+    expect(DEFAULT_CAPTURE_PARAMS.speed).toBeNull();
   });
 
   it('plafonne le temps de simulation', () => {

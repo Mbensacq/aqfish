@@ -8,6 +8,7 @@ import { DEFAULT_SAVE_SETTINGS, parseWorld, serializeWorld } from '../../sim/sav
 import { DEFAULT_ROOM } from '../../sim/room';
 import type { AquariumRenderer, AquariumView } from '../../render/aquarium-view';
 import { MAX_STEPS_PER_FRAME } from '../../sim/constants';
+import { DEFAULT_SIM_SPEED } from '../../sim/sim-speed';
 import {
   AXOLOTL,
   CHIRURGIEN,
@@ -423,6 +424,41 @@ describe('AquariumHost', () => {
       expect(host().world?.tick).toBe(60);
       expect(host().interpolationAlpha).toBeGreaterThanOrEqual(0);
       expect(host().interpolationAlpha).toBeLessThan(1);
+    });
+
+    it('hors capture : vitesse=0 laisse le monde à t = 0 quel que soit le temps réel (#232)', async () => {
+      await create('?seed=42&vitesse=0');
+      const el = fixture.nativeElement as HTMLElement;
+      expect(host().speed()).toBe(0);
+      expect(el.getAttribute(SPEED_ATTRIBUTE)).toBe('0');
+      setCanvasSize(800, 600);
+      frames.flush(0);
+      for (let i = 1; i <= 120; i++) {
+        frames.flush((i * 1000) / 60);
+      }
+      frames.flush(60_000);
+      expect(host().world?.tick).toBe(0);
+      expect(el.getAttribute(TICK_ATTRIBUTE)).toBe('0');
+      expect(host().interpolationAlpha).toBe(0);
+      // Le curseur reste utilisable : la simulation repart.
+      host().setSpeed(1);
+      for (let i = 1; i <= 30; i++) {
+        frames.flush(60_000 + (i * 1000) / 60);
+      }
+      expect(host().world?.tick).toBe(30);
+    });
+
+    it('hors capture : vitesse= hors des vitesses proposées ignorée (#232)', async () => {
+      for (const search of ['?vitesse=3', '?vitesse=x', '?vitesse=-1']) {
+        await create(search);
+        expect(host().speed()).toBe(DEFAULT_SIM_SPEED);
+      }
+    });
+
+    it('en capture : vitesse= sans effet, le monde va jusqu’à time (#232)', async () => {
+      await create('?capture=1&seed=42&time=1&vitesse=0');
+      expect(host().world?.tick).toBe(60);
+      expect(host().speed()).toBe(DEFAULT_SIM_SPEED);
     });
 
     it('hors capture : plafonne les pas après une longue pause (onglet masqué)', async () => {
@@ -1502,6 +1538,15 @@ describe('AquariumHost', () => {
       expect(host().world).toEqual(createDefaultWorld(42));
       expect(host().saveStatus()).toBe('active');
       expect(element().getAttribute(SAVE_ATTRIBUTE)).toBe('active');
+    });
+
+    it('vitesse= prime sur la vitesse de la sauvegarde, le monde restauré est gardé (#232)', async () => {
+      const text = storePond();
+      await create('?vitesse=0');
+      const expected = parseWorld(text);
+      expect(host().world).toEqual(expected.ok ? expected.world : null);
+      expect(host().speed()).toBe(0);
+      expect(element().getAttribute(SPEED_ATTRIBUTE)).toBe('0');
     });
 
     it('restaure au démarrage le monde, la population, la vitesse et l’heure', async () => {

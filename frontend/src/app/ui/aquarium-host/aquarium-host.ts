@@ -1628,6 +1628,11 @@ export class AquariumHost {
         ? advanceToWithFeedings(world, params.time, params.feedings, this.dayClock)
         : world;
     }
+    // Vitesse de `vitesse=` (#232), hors capture : prime sur celle de la sauvegarde.
+    // `vitesse=0` : le monde ne quitte pas t = 0 (captures d'interface reproductibles).
+    if (!params.capture && params.speed !== null && isSimSpeed(params.speed)) {
+      this.speed.set(params.speed);
+    }
     if (!params.capture) {
       this.saveStatus.set('active');
       this.startAutosave(win);
