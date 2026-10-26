@@ -26,14 +26,15 @@ doivent rester identiques à l'octet.
   (`PH_DROP_PER_LOAD_LITER = 4,5e-4`), population par défaut :
 
   | Environnement | Charge | Litres | Baisse par heure simulée | Sortie de la plage tolérée la plus étroite |
-  |---|---|---|---|---|
-  | tropical | 45,2 | 288 | 0,25 | ~2,0 h (guppys sous 6,5) |
-  | bassin | 153,7 | 840 | 0,30 | ~3,4 h (koïs sous 6,5) |
-  | paludarium | 20,2 | 105 | 0,31 | ~2,3 h (axolotls sous 6,5) |
-  | récif | 60,1 | 473 | 0,21 | ~1,9 h (clowns et chirurgiens sous 7,8) |
+  | ------------- | ------ | ------ | ------------------------ | ------------------------------------------ |
+  | tropical      | 45,2   | 288    | 0,25                     | ~2,0 h (guppys sous 6,5)                   |
+  | bassin        | 153,7  | 840    | 0,30                     | ~3,4 h (koïs sous 6,5)                     |
+  | paludarium    | 20,2   | 105    | 0,31                     | ~2,3 h (axolotls sous 6,5)                 |
+  | récif         | 60,1   | 473    | 0,21                     | ~1,9 h (clowns et chirurgiens sous 7,8)    |
 
   Même ordre de grandeur que les nitrates (« mauvaise » en moins de deux heures, ADR 0053) :
   le changement d'eau régulier règle les deux.
+
 - **Changement d'eau** : `changeWaterInPlace(water, environment)` rapproche le pH de celui de
   l'eau neuve de la même part que les composés (`WATER_CHANGE_SHARE`, 30 %) :
   `ph + 0,3 · (FRESH_PH − ph)`. Moyenne linéaire : approximation assumée (le pH est
@@ -45,18 +46,21 @@ doivent rester identiques à l'octet.
   et `docs/SOINS.md` évoqué par l'issue n'existe pas encore). Chaque ligne le dit dans le
   code. Seule contrainte vérifiée par les tests : l'eau neuve de chaque environnement est
   tolérée par toutes ses espèces, et la population par défaut le reste au moins 30 min
-  simulées. À recouper quand une fiche de soins sourcée existera.
+  simulées. Les idéales du néon (jusqu'à 7,2) et du guppy (dès 6,8) ont été choisies pour se
+  recouvrir : le trio par défaut du bac tropical a un idéal commun de 6,8 à 7,2, visible sur
+  la jauge (un idéal réduit à un point n'y laissait aucun vert). À recouper quand une fiche
+  de soins sourcée existera.
 
-  | Espèce | Tolérée | Idéale |
-  |---|---|---|
-  | néon | 5,0 – 7,8 | 6,0 – 7,0 |
-  | guppy | 6,5 – 8,5 | 7,0 – 8,0 |
-  | corydora | 5,8 – 8,0 | 6,5 – 7,5 |
-  | koï | 6,5 – 9,0 | 7,0 – 8,0 |
-  | axolotl | 6,5 – 8,0 | 7,0 – 7,6 |
-  | grenouille | 6,0 – 8,0 | 6,5 – 7,5 |
-  | triton | 6,0 – 8,0 | 6,5 – 7,5 |
-  | poisson-clown | 7,8 – 8,6 | 8,0 – 8,4 |
+  | Espèce          | Tolérée   | Idéale    |
+  | --------------- | --------- | --------- |
+  | néon            | 5,0 – 7,8 | 6,0 – 7,2 |
+  | guppy           | 6,5 – 8,5 | 6,8 – 8,0 |
+  | corydora        | 5,8 – 8,0 | 6,5 – 7,5 |
+  | koï             | 6,5 – 9,0 | 7,0 – 8,0 |
+  | axolotl         | 6,5 – 8,0 | 7,0 – 7,6 |
+  | grenouille      | 6,0 – 8,0 | 6,5 – 7,5 |
+  | triton          | 6,0 – 8,0 | 6,5 – 7,5 |
+  | poisson-clown   | 7,8 – 8,6 | 8,0 – 8,4 |
   | chirurgien bleu | 7,8 – 8,6 | 8,1 – 8,4 |
 
 - **Santé** (`sim/wellbeing.ts`) : un pH hors de la plage tolérée **de l'espèce** est une
@@ -76,11 +80,14 @@ doivent rester identiques à l'octet.
   compare. Le `meter` HTML ne sait pas faire rouge des deux côtés : la jauge est un
   `role="meter"` dont le fond est un dégradé à paliers nets (`phGaugeBackground`) et un repère
   clair, avec la valeur et la zone en toutes lettres (`aria-valuetext`, `title` : « pH 6,9,
-  toléré »). Quatrième colonne de la ligne des jauges : aucune hauteur ajoutée au panneau.
+  toléré », et le libellé de la zone affiché à côté de la valeur). Ligne à part sous les
+  trois jauges, sur toute la largeur de la section : en quatrième colonne, la jauge faisait
+  ~50 px et « Ammoniaque » était tronqué. Le panneau grandit d'une ligne (~22 px), qui tient
+  à 1280 × 720 en deux colonnes (vérifié par capture et par `e2e/cadrage-panneaux.spec.ts`).
 - **Exposition** : attribut `data-aqfish-ph` (« 6.9;tolere ») à côté de `data-aqfish-water`,
   laissé inchangé (les e2e existants lisent sa fin).
 - **Sauvegarde** : schéma 1 inchangé ; `ph` facultatif dans `water` (`readWater(value,
-  environment)`), toujours écrit. Absent : pH de l'eau neuve de l'environnement de la
+environment)`), toujours écrit. Absent : pH de l'eau neuve de l'environnement de la
   sauvegarde. Présent : nombre fini dans [4 ; 9,5], sinon refus.
 - **Capture d'interface** `three-quarter-panneau-eau` (1280 × 720, `vitesse=0`, section
   « Eau » en vue).

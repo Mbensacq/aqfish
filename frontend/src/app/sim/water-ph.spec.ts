@@ -100,7 +100,7 @@ describe('phBands et phZone', () => {
 
   it('plusieurs espèces : intersection des plages, ordre indifférent', () => {
     const bands = phBands(['neon', 'guppy', 'corydora']);
-    expect(bands).toEqual({ tolerated: { min: 6.5, max: 7.8 }, ideal: { min: 7, max: 7 } });
+    expect(bands).toEqual({ tolerated: { min: 6.5, max: 7.8 }, ideal: { min: 6.8, max: 7.2 } });
     expect(sameBands(bands, phBands(['corydora', 'guppy', 'neon', 'guppy']))).toBe(true);
   });
 
@@ -122,8 +122,9 @@ describe('phBands et phZone', () => {
 
   it('zones bornes comprises : idéal, toléré, hors plage ; NaN hors plage', () => {
     const bands = phBands(['guppy']);
-    expect(phZone(7, bands)).toBe('ideal');
+    expect(phZone(6.8, bands)).toBe('ideal');
     expect(phZone(8, bands)).toBe('ideal');
+    expect(phZone(6.79, bands)).toBe('tolere');
     expect(phZone(6.5, bands)).toBe('tolere');
     expect(phZone(8.5, bands)).toBe('tolere');
     expect(phZone(6.49, bands)).toBe('hors-plage');
@@ -133,7 +134,7 @@ describe('phBands et phZone', () => {
 
   it('plage idéale vide mais tolérée commune : orange au mieux', () => {
     const bands = phBands(['neon', 'koi']);
-    expect(bands.ideal).toEqual({ min: 7, max: 7 });
+    expect(bands.ideal).toEqual({ min: 7, max: 7.2 });
     const disjoint = { tolerated: { min: 6, max: 8 }, ideal: null };
     expect(phZone(7, disjoint)).toBe('tolere');
     expect(phZone(5, disjoint)).toBe('hors-plage');

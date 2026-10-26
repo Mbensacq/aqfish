@@ -121,7 +121,7 @@ describe('fonctions du panneau de contrôle', () => {
     const { ideal, tolere, horsPlage } = PH_ZONE_COLORS;
     expect(phGaugeBackground(phBands(['guppy']))).toBe(
       `linear-gradient(to right, ${horsPlage} 0%, ${horsPlage} 45.5%, ` +
-        `${tolere} 45.5%, ${tolere} 54.5%, ${ideal} 54.5%, ${ideal} 72.7%, ` +
+        `${tolere} 45.5%, ${tolere} 50.9%, ${ideal} 50.9%, ${ideal} 72.7%, ` +
         `${tolere} 72.7%, ${tolere} 81.8%, ${horsPlage} 81.8%, ${horsPlage} 100%)`,
     );
     // Sans espèce : tout est idéal.
@@ -788,6 +788,7 @@ describe('ControlPanel', () => {
       expect(meter().getAttribute('aria-valuenow')).toBe('6.2');
       expect(meter().getAttribute('aria-valuetext')).toBe('pH 6,2, hors plage');
       expect(meter().getAttribute('title')).toBe('pH 6,2, hors plage');
+      expect(gauge().querySelector('[data-ph-zone-label]')?.textContent?.trim()).toBe('hors plage');
       const mark = meter().querySelector<HTMLElement>('.control-panel__ph-mark')!;
       expect(mark.style.left).toBe(`${phPercent(6.2)}%`);
     });

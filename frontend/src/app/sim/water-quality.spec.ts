@@ -168,8 +168,8 @@ describe('waterReadout et sameReadout', () => {
       nitrate: 0,
       ph: 7,
       phZone: 'ideal',
-      // Néons, guppys et corydoras (#236) : idéal commun réduit à 7,0.
-      phBands: { tolerated: { min: 6.5, max: 7.8 }, ideal: { min: 7, max: 7 } },
+      // Néons, guppys et corydoras (#236) : idéal commun de 6,8 à 7,2.
+      phBands: { tolerated: { min: 6.5, max: 7.8 }, ideal: { min: 6.8, max: 7.2 } },
     });
   });
 
@@ -206,9 +206,9 @@ describe('waterReadout et sameReadout', () => {
   });
 
   it('pH (#236) : au dixième, zone sur la valeur exacte pour les espèces présentes', () => {
-    const readout = waterReadout(tropical({ ph: 6.96 }), 'tropical', ['guppy', 'neon']);
-    expect(readout.ph).toBe(7);
-    // 6,96 s'affiche 7,0 mais reste sous l'idéal du guppy (7 à 8).
+    const readout = waterReadout(tropical({ ph: 6.76 }), 'tropical', ['guppy', 'neon']);
+    expect(readout.ph).toBe(6.8);
+    // 6,76 s'affiche 6,8 mais reste sous l'idéal du guppy (6,8 à 8).
     expect(readout.phZone).toBe('tolere');
     expect(waterReadout(tropical({ ph: 6.2 }), 'tropical', ['guppy']).phZone).toBe('hors-plage');
     expect(waterReadout(tropical({ ph: 6.2 }), 'tropical', []).phZone).toBe('ideal');

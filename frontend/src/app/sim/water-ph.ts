@@ -64,9 +64,9 @@ export interface SpeciesPh {
  */
 export const SPECIES_PH: Readonly<Record<SpeciesId, SpeciesPh>> = {
   // approximation de jeu : eau douce acide à neutre.
-  neon: { tolerated: { min: 5, max: 7.8 }, ideal: { min: 6, max: 7 } },
+  neon: { tolerated: { min: 5, max: 7.8 }, ideal: { min: 6, max: 7.2 } },
   // approximation de jeu : eau neutre à basique.
-  guppy: { tolerated: { min: 6.5, max: 8.5 }, ideal: { min: 7, max: 8 } },
+  guppy: { tolerated: { min: 6.5, max: 8.5 }, ideal: { min: 6.8, max: 8 } },
   // approximation de jeu.
   corydora: { tolerated: { min: 5.8, max: 8 }, ideal: { min: 6.5, max: 7.5 } },
   // approximation de jeu : bassin extérieur, large tolérance.

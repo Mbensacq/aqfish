@@ -400,29 +400,30 @@ function toNumber(value: string | number): number {
                 </span>
               </div>
             }
-            <!-- pH (#236) : zones des espèces présentes, la valeur et sa zone lisibles sans la
-                 couleur (aria-valuetext, title). -->
-            <div class="control-panel__gauge" data-gauge="ph" [attr.data-ph-zone]="water().phZone">
-              <span class="control-panel__gauge-name">pH</span>
-              <span class="control-panel__gauge-row">
-                <span
-                  class="control-panel__ph"
-                  role="meter"
-                  aria-label="pH"
-                  [attr.aria-valuemin]="minPh"
-                  [attr.aria-valuemax]="maxPh"
-                  [attr.aria-valuenow]="water().ph"
-                  [attr.aria-valuetext]="phLabel()"
-                  [attr.title]="phLabel()"
-                  [style.background]="phBackground()"
-                >
-                  <span class="control-panel__ph-mark" [style.left.%]="phPosition()"></span>
-                </span>
-                <output class="control-panel__value" data-gauge-value="ph">
-                  {{ tenth(water().ph) }}
-                </output>
-              </span>
-            </div>
+          </div>
+          <!-- pH (#236) : ligne à part, toute la largeur ; zones des espèces présentes, valeur et
+               zone lisibles sans la couleur (texte, aria-valuetext). -->
+          <div class="control-panel__ph-row" data-gauge="ph" [attr.data-ph-zone]="water().phZone">
+            <span class="control-panel__gauge-name">pH</span>
+            <span
+              class="control-panel__ph"
+              role="meter"
+              aria-label="pH"
+              [attr.aria-valuemin]="minPh"
+              [attr.aria-valuemax]="maxPh"
+              [attr.aria-valuenow]="water().ph"
+              [attr.aria-valuetext]="phLabel()"
+              [attr.title]="phLabel()"
+              [style.background]="phBackground()"
+            >
+              <span class="control-panel__ph-mark" [style.left.%]="phPosition()"></span>
+            </span>
+            <output class="control-panel__value" data-gauge-value="ph">
+              {{ tenth(water().ph) }}
+            </output>
+            <span class="control-panel__ph-zone" [attr.data-ph-zone-label]="water().phZone">
+              {{ phZoneText() }}
+            </span>
           </div>
         </fieldset>
 
@@ -675,6 +676,7 @@ export class ControlPanel {
   protected readonly minPh = MIN_PH;
   protected readonly maxPh = MAX_PH;
   protected readonly phLabel = computed(() => phValueText(this.water()));
+  protected readonly phZoneText = computed(() => PH_ZONE_LABELS[this.water().phZone]);
   protected readonly phBackground = computed(() => phGaugeBackground(this.water().phBands));
   protected readonly phPosition = computed(() => phPercent(this.water().ph));
 

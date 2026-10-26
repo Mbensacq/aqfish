@@ -445,10 +445,10 @@
   }
 }
 
-// Quatre jauges sur une ligne (trois composés et le pH, #236) : nom, puis jauge et valeur.
+// Trois jauges sur une ligne : nom, puis jauge et valeur.
 .control-panel__gauges {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -482,8 +482,33 @@
   height: 8px;
 }
 
-// Jauge pH (#236) : zones en dégradé à paliers nets (fond posé par le composant), repère clair
-// de la valeur ; même hauteur que les jauges `meter`.
+// Jauge pH (#236), ligne à part sous les trois jauges : nom, jauge, valeur, zone en toutes
+// lettres. Zones en dégradé à paliers nets (fond posé par le composant), repère clair de la
+// valeur ; même hauteur que les jauges `meter`.
+.control-panel__ph-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.control-panel__ph-zone {
+  min-width: 5.5em;
+  color: #a8e6cf;
+  font-size: 11px;
+  white-space: nowrap;
+
+  &[data-ph-zone-label='tolere'] {
+    color: #f0d68a;
+  }
+
+  &[data-ph-zone-label='hors-plage'] {
+    color: #f2a39a;
+  }
+}
+
 .control-panel__ph {
   position: relative;
   flex: 1 1 0;
