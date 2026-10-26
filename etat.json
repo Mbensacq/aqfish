@@ -2772,6 +2772,12 @@
           "debut": "2026-10-26T04:26:33.495Z",
           "fin": "2026-10-26T04:27:04.985Z",
           "note": "Issue #233 : tests d'inclinaison à la sortie de l'eau, triton et grenouille (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-10-26T04:27:33.686Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
