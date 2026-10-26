@@ -2843,7 +2843,7 @@
       "type": "fonctionnalite",
       "issue": 226,
       "pr": 245,
-      "version": null,
+      "version": "v1.0.0",
       "phases": {
         "planif": {
           "statut": "termine",
