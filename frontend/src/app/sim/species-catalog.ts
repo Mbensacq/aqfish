@@ -1,3 +1,4 @@
+import type { MixWarning } from './compatibility';
 import { environmentById, livesIn, type EnvironmentId } from './environment';
 import { isSpeciesId, setPopulationInPlace } from './population';
 import { SPECIES, type SpeciesId } from './species';
@@ -128,4 +129,20 @@ export function applySpeciesCounts(world: World, requests: readonly SpeciesCount
   const next = cloneWorld(world);
   applySpeciesCountsInPlace(next, requests);
   return next;
+}
+
+/** Raison affichée d'un mélange déconseillé (`sim/compatibility.ts`, issue #209). */
+export const MIX_REASON_TEXT: Readonly<Record<MixWarning['reason'], string>> = {
+  predateur: 'prédateur',
+  territorial: 'deux espèces territoriales',
+};
+
+/**
+ * Libellé d'un mélange déconseillé, pour le panneau (issue #209) : « Mélange déconseillé :
+ * axolotls et tritons (prédateur) ».
+ */
+export function mixWarningText(warning: MixWarning): string {
+  const first = SPECIES_LABELS[warning.first].plural;
+  const second = SPECIES_LABELS[warning.second].plural;
+  return `Mélange déconseillé : ${first} et ${second} (${MIX_REASON_TEXT[warning.reason]})`;
 }

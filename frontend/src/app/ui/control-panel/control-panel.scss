@@ -314,6 +314,11 @@
   font-size: 12px;
 }
 
+// Mélange déconseillé (#209) : même ton que les messages d'erreur, sans être une erreur.
+.control-panel__warning {
+  color: #f2c09a;
+}
+
 .control-panel__message {
   color: #5fbfa3;
 

@@ -5,6 +5,7 @@ import type { Vec3 } from './flocking';
 import { obstacleBound, obstacleDistance, type Obstacle } from './obstacles';
 import { shrinkBox, type Box3 } from './tank';
 import { SPECIES, type SpeciesDefinition, type SpeciesId } from './species';
+import { NIGHT_HEIGHT_RATIO, nightPace } from './day-rhythm';
 import { tailBeatRate } from './undulation';
 import { HEALTH_START, vigor } from './wellbeing';
 
@@ -345,6 +346,13 @@ export function createFish(
  * est ramené sur sa surface (puis dans `bounds.hard`). Sans obstacle, le déplacement d'un
  * pas ne dépasse jamais `maxSpeed · dt`. Santé basse : déplacement multiplié par `vigor`
  * (`sim/wellbeing.ts`) ; la vitesse `speed` et le battement de queue restent ceux d'avant.
+ *
+ * `rest` : repos de nuit dans [0, 1] (`nightRest`, `sim/day-rhythm.ts`, issue #209), 0 par
+ * défaut. Le déplacement est multiplié par `nightPace(rest)` ; hors nourriture et remontée,
+ * au-dessus du plafond de nuit (`NIGHT_HEIGHT_RATIO` de la hauteur de `bounds.hard`),
+ * l'inclinaison visée glisse vers la descente avec un poids `rest`, et l'attrait vers la
+ * hauteur minimale d'une espèce de mi-hauteur faiblit d'autant. À 0 : nage d'avant, au bit
+ * près (aucun tirage en plus ou en moins).
  */
 export function stepFish(
   fish: Mutable<Fish>,
@@ -355,6 +363,7 @@ export function stepFish(
   steerZ = 0,
   obstacles: readonly Obstacle[] = NO_OBSTACLES,
   food: Vec3 | null = null,
+  rest = 0,
 ): void {
   const def = SPECIES[fish.species];
   const { hard } = bounds;
@@ -529,8 +538,19 @@ export function stepFish(
       pitchGoal += (-steep - pitchGoal) * pull;
     } else if (fish.y < bounds.preferredMinY) {
       // Espèce de mi-hauteur (issue #151) : montée symétrique sous la hauteur minimale.
-      const pull = Math.min(1, (bounds.preferredMinY - fish.y) / DEPTH_PULL_ZONE);
+      // La nuit (issue #209), l'attrait vers la hauteur minimale faiblit avec le repos.
+      const pull = Math.min(1, (bounds.preferredMinY - fish.y) / DEPTH_PULL_ZONE) * (1 - rest);
       pitchGoal += (steep - pitchGoal) * pull;
+    }
+  }
+  // Repos de nuit (issue #209) : descente au-dessus du plafond de nuit, hors nourriture et
+  // remontée ; sans effet le jour (`rest` nul).
+  if (rest > 0 && food === null && !ascending) {
+    const ceiling = hard.minY + (hard.maxY - hard.minY) * NIGHT_HEIGHT_RATIO;
+    if (fish.y > ceiling) {
+      const steep = def.maxPitch * AVOID_PITCH_RATIO;
+      const pull = Math.min(1, (fish.y - ceiling) / DEPTH_PULL_ZONE) * rest;
+      pitchGoal += (-steep - pitchGoal) * pull;
     }
   }
   if (avoid > 0) {
@@ -549,7 +569,8 @@ export function stepFish(
   // puis projection sur la boîte (convexe, contenant la position précédente : elle ne peut que
   // raccourcir le déplacement). Santé basse (issue #208) : déplacement réduit par `vigor`,
   // exactement 1 à santé pleine (nage d'avant, au bit près).
-  const distance = fish.speed * dt * vigor(fish.health);
+  // Repos de nuit (issue #209) : `nightPace`, exactement 1 le jour.
+  const distance = fish.speed * dt * vigor(fish.health) * nightPace(rest);
   const horizontal = Math.cos(fish.pitch) * distance;
   fish.x += Math.cos(fish.yaw) * horizontal;
   fish.y += Math.sin(fish.pitch) * distance;

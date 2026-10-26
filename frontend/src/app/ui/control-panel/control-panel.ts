@@ -14,7 +14,8 @@ import { DEFAULT_FOOD_STYLE, type FoodStyle } from '../../core/food-style/food-s
 import { isRoomAvailable } from '../../sim/room';
 import { MAX_SAVE_LENGTH } from '../../sim/save';
 import { DEFAULT_SIM_SPEED, SIM_SPEEDS, type SimSpeed } from '../../sim/sim-speed';
-import { SPECIES_LABELS, speciesCatalog } from '../../sim/species-catalog';
+import { mixWarnings } from '../../sim/compatibility';
+import { mixWarningText, SPECIES_LABELS, speciesCatalog } from '../../sim/species-catalog';
 import { type SpeciesId } from '../../sim/species';
 import { MAX_HEATER_TEMPERATURE, MIN_HEATER_TEMPERATURE } from '../../sim/water';
 import {
@@ -455,6 +456,10 @@ function toNumber(value: string | number): number {
           } @empty {
             <p class="control-panel__note" data-population-empty>Aucune espèce pour l’instant.</p>
           }
+          <!-- Mélanges déconseillés (#209) : couples d'espèces présentes incompatibles. -->
+          @for (text of mixTexts(); track text) {
+            <p class="control-panel__note control-panel__warning" data-mix-warning>{{ text }}</p>
+          }
         </fieldset>
 
         <fieldset class="control-panel__section" data-section="sauvegarde">
@@ -566,6 +571,16 @@ export class ControlPanel {
    * `Environment.species`.
    */
   protected readonly catalog = computed(() => speciesCatalog(this.environment()));
+  /**
+   * Libellés des mélanges déconseillés de la population affichée (#209), dans l'ordre du
+   * catalogue (`mixWarnings`, `sim/compatibility.ts`).
+   */
+  protected readonly mixTexts = computed(() =>
+    mixWarnings(
+      this.catalog().map((entry) => entry.species),
+      this.population(),
+    ).map(mixWarningText),
+  );
   protected readonly environmentIds = ENVIRONMENT_IDS;
   /** Case « Pluie » proposée seulement là où il peut pleuvoir (le bassin, #106). */
   protected readonly rainAvailable = computed(() => environmentById(this.environment()).rain);

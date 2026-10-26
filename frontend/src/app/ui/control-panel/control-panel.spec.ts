@@ -265,6 +265,28 @@ describe('ControlPanel', () => {
     expect(byLabel('Nombre de tritons')?.value).toBe('0');
   });
 
+  it('mélange déconseillé (#209) : un libellé par couple incompatible présent', async () => {
+    await openPanel();
+    const warnings = () =>
+      [...root().querySelectorAll('[data-mix-warning]')].map((p) => p.textContent?.trim());
+    expect(warnings()).toEqual([]);
+    fixture.componentInstance.environment.set('paludarium');
+    fixture.componentInstance.population.set({
+      ...fixture.componentInstance.population(),
+      axolotl: 2,
+      grenouille: 0,
+      triton: 2,
+    });
+    await fixture.whenStable();
+    expect(warnings()).toEqual(['Mélange déconseillé : axolotls et tritons (prédateur)']);
+    fixture.componentInstance.population.set({
+      ...fixture.componentInstance.population(),
+      axolotl: 0,
+    });
+    await fixture.whenStable();
+    expect(warnings()).toEqual([]);
+  });
+
   it('récif (#150, #151) : la population propose poissons-clowns et chirurgiens bleus', async () => {
     await openPanel();
     fixture.componentInstance.environment.set('recif');

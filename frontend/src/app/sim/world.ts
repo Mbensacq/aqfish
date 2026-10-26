@@ -2,7 +2,10 @@ import { assertSeed } from '../core/random/prng';
 import { createWalker, stepWalker, type WalkerGround } from './axolotl';
 import { createFrog, stepFrog } from './frog';
 import { bubbleSourceFor, fillBubbles, type BubbleBuffer } from './bubbles';
+import { addRivalSteering, enforceRivalDistance, hasRivals } from './compatibility';
 import { SIM_DT } from './constants';
+import { dayIntensityAt, hourAt, type DayClock } from './daylight';
+import { nightRest } from './day-rhythm';
 import {
   anemoneFootprints,
   anemoneHomes,
@@ -438,14 +441,20 @@ export function createDefaultWorld(
 }
 
 /**
+ * Horloge de journée lue par la simulation (rythme du jour, issue #209), ou `null` : plein
+ * jour, nage d'avant au bit près. L'heure de chaque pas est `hourAt(clock, world.time)`.
+ */
+export type SimClock = DayClock | null;
+
+/**
  * Fait avancer le monde d'un pas. Fonction pure : `world` n'est **jamais** modifié, un
  * nouvel état est renvoyé.
  * @throws RangeError si `dt` n'est pas un réel strictement positif.
  */
-export function step(world: World, dt: number = SIM_DT): World {
+export function step(world: World, dt: number = SIM_DT, clock: SimClock = null): World {
   assertTimeStep(dt);
   const next = cloneWorld(world);
-  stepInPlace(next, dt);
+  stepInPlace(next, dt, clock);
   return next;
 }
 
@@ -454,13 +463,13 @@ export function step(world: World, dt: number = SIM_DT): World {
  * aucune allocation par pas. `world` n'est jamais modifié.
  * @throws RangeError si `steps` n'est pas un entier positif ou nul.
  */
-export function advance(world: World, steps: number): World {
+export function advance(world: World, steps: number, clock: SimClock = null): World {
   assertSteps(steps);
   if (steps === 0) {
     return world;
   }
   const next = cloneWorld(world);
-  advanceInPlace(next, steps);
+  advanceInPlace(next, steps, clock);
   return next;
 }
 
@@ -470,10 +479,10 @@ export function advance(world: World, steps: number): World {
  * à chaque image) ; les tests et le reste du code utilisent `step` / `advance`, purs.
  * @throws RangeError si `steps` n'est pas un entier positif ou nul (monde inchangé).
  */
-export function advanceInPlace(world: MutableWorld, steps: number): void {
+export function advanceInPlace(world: MutableWorld, steps: number, clock: SimClock = null): void {
   assertSteps(steps);
   for (let i = 0; i < steps; i++) {
-    stepInPlace(world, SIM_DT);
+    stepInPlace(world, SIM_DT, clock);
   }
 }
 
@@ -541,6 +550,7 @@ export function advanceToWithFeedings(
   world: World,
   time: number,
   feedings: readonly Feeding[],
+  clock: SimClock = null,
 ): World {
   const target = ticksFor(time);
   const ordered = feedings
@@ -549,9 +559,9 @@ export function advanceToWithFeedings(
     .sort((a, b) => a.tick - b.tick || a.index - b.index);
   let current = world;
   for (const { feeding, tick } of ordered) {
-    current = feed(advance(current, Math.max(0, tick - current.tick)), feeding.x, feeding.z);
+    current = feed(advance(current, Math.max(0, tick - current.tick), clock), feeding.x, feeding.z);
   }
-  return advance(current, Math.max(0, target - current.tick));
+  return advance(current, Math.max(0, target - current.tick), clock);
 }
 
 /** Nombre total de pas `SIM_DT` correspondant à un temps simulé : `round(time / SIM_DT)`. */
@@ -566,11 +576,11 @@ export function ticksFor(time: number): number {
  * Avance le monde par pas fixes jusqu'au temps absolu `time` (contrat de capture : sans
  * temps réel). Un monde déjà au-delà de `time` est renvoyé tel quel (pas de retour arrière).
  */
-export function advanceTo(world: World, time: number): World {
-  return advance(world, Math.max(0, ticksFor(time) - world.tick));
+export function advanceTo(world: World, time: number, clock: SimClock = null): World {
+  return advance(world, Math.max(0, ticksFor(time) - world.tick), clock);
 }
 
-function stepInPlace(world: MutableWorld, dt: number): void {
+function stepInPlace(world: MutableWorld, dt: number, clock: SimClock): void {
   world.tick += 1;
   // Pas nominal : temps dérivé du compteur (exact, sans cumul d'erreur flottante).
   // Pas libre (`step(world, dt)`, tests) : temps cumulé.
@@ -583,6 +593,14 @@ function stepInPlace(world: MutableWorld, dt: number): void {
   const key = placeKey(place);
   const steering = steeringBuffer(fishes.length);
   computeSchoolSteering(fishes, steering);
+  // Espèces incompatibles (issue #209) : évitement anticipé ajouté au pilotage, puis distance
+  // minimale après la nage. Sans couple incompatible, rien ne change (nage d'avant au bit près).
+  const rivalsPresent = hasRivals(fishes);
+  if (rivalsPresent) {
+    addRivalSteering(fishes, steering);
+  }
+  // Rythme du jour (issue #209) : intensité du jour au temps du pas ; sans horloge, plein jour.
+  const intensity = clock === null ? 1 : dayIntensityAt(hourAt(clock, world.time));
   // Nourriture (issue #68) : point visé calculé, comme le banc, sur les positions du début du
   // pas ; sans granulé, `target` reste nul et la nage est exactement celle d'avant.
   const food = world.food as FoodPellet[];
@@ -631,11 +649,15 @@ function stepInPlace(world: MutableWorld, dt: number): void {
       steering[3 * i + 2],
       world.obstacles,
       target,
+      nightRest(fish.species, intensity),
     );
   }
   currentPlace = place;
   currentKey = key;
   enforceMinDistance(fishes, boundsOfFish);
+  if (rivalsPresent) {
+    enforceRivalDistance(fishes, boundsOfFish);
+  }
   eatInPlace(fishes, food, bandOfFish, hardOfFish);
   stepFoodInPlace(food, dt);
   // Eau (issue #206) : sans hasard, après les poissons ; ne change rien à leur nage.

@@ -118,6 +118,12 @@ haut de sa section.
 
 ## Tests
 
+- **E2e qui compare jour et nuit pixel pour pixel à `time=30`** (cycle 73, #209) : depuis le
+  rythme du jour, les poissons diurnes nagent autrement la nuit (plus lents, plus bas) ;
+  après 30 s, néons et guppys ne sont plus aux mêmes places, et un compte de pixels de
+  poisson « jour = nuit » échoue (`jour-nuit.spec.ts`, 396 contre 360). Pour comparer des
+  couleurs de poisson entre deux heures, capturer à `time=0` (positions identiques). Toute
+  capture à une autre heure que midi change dès que la nage de nuit change. (2026-10-26)
 - **`toHaveText(/^…$/)` ne retire pas les blancs** (cycle 71, #207) : avec une chaîne,
   Playwright compare le texte normalisé ; avec une expression régulière, il teste le
   `textContent` brut, blancs du gabarit Angular compris (`\n  17,2\n`). `/^17,2$/` échoue

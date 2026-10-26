@@ -1625,7 +1625,7 @@ export class AquariumHost {
         starveWorldInPlace(world);
       }
       this.currentWorld = params.capture
-        ? advanceToWithFeedings(world, params.time, params.feedings)
+        ? advanceToWithFeedings(world, params.time, params.feedings, this.dayClock)
         : world;
     }
     if (!params.capture) {
@@ -1916,7 +1916,8 @@ export class AquariumHost {
       maxStepsForSpeed(speed),
     );
     if (clock.steps > 0 && this.currentWorld) {
-      advanceInPlace(this.currentWorld, clock.steps);
+      // Rythme du jour (#209) : la simulation lit l'horloge de la journée.
+      advanceInPlace(this.currentWorld, clock.steps, this.dayClock);
       this.exposeTick();
       this.exposeFood();
       if (this.currentWorld.tick - this.waterReadTick >= WATER_READOUT_TICKS) {

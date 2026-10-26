@@ -95,8 +95,12 @@ test.describe('Cycle jour/nuit', () => {
   test('la nuit, les poissons s’assombrissent mais les néons restent lisibles (ADR 0019)', async ({
     page,
   }) => {
-    const day = await analyse(page, await screenshot(page, BASE));
-    const night = await analyse(page, await screenshot(page, `${BASE}&heure=0`));
+    // À t = 0 : depuis le rythme du jour (#209), les poissons nagent autrement la nuit ; à
+    // l'instant initial, jour et nuit ont exactement les mêmes positions, donc les mêmes
+    // pixels de poisson à comparer.
+    const start = BASE.replace('time=30', 'time=0');
+    const day = await analyse(page, await screenshot(page, start));
+    const night = await analyse(page, await screenshot(page, `${start}&heure=0`));
     const count = (r: NightReport, color: string) => r.counts[color] ?? 0;
     // Dans cette vue, le blanc des ventres et le rouge néon n'appartiennent qu'aux poissons.
     for (const color of [PALETTE.koiBlanc, PALETTE.neonRouge]) {

@@ -115,6 +115,14 @@ simulation testable et les captures reproductibles.
   plancher) et couleurs ternies au rendu (`dullness`, attribut d'instance de `FishLayer`) ;
   à 1, nage et couleurs exactement celles d'avant. Champ `health` facultatif de la
   sauvegarde (1 par défaut).
+- **Compatibilité et rythme du jour** (#209, ADR 0055, `sim/compatibility.ts`,
+  `sim/day-rhythm.ts`) : verdict pur par couple d'espèces (tempérament paisible, territorial
+  ou prédateur). Entre poissons **nageurs** d'espèces incompatibles, évitement ajouté au
+  pilotage de banc puis distance minimale après la nage (`RIVAL_MIN_DISTANCE`) ; sans couple
+  incompatible, rien n'est calculé. La simulation lit l'horloge de la journée
+  (`advanceInPlace(monde, pas, horloge)`, `null` : plein jour) : la nuit, les espèces
+  diurnes ralentissent et descendent sous un plafond ; corydoras inchangés. En plein jour,
+  nage exactement celle d'avant.
 - **Unités et repère** : mètres, secondes, degrés Celsius. Axe Y vers le haut ; origine au
   centre du fond du bac.
 - **Données réelles** : toute valeur présentée comme réelle (température d'une espèce,
@@ -212,6 +220,8 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
 | `sim/population.ts` | Population réglable (#69, ADR 0025) : `setPopulation` (pure) / `setPopulationInPlace` (hôte), bornes `maxPopulation` par espèce et `MAX_TOTAL_FISH`, `populationCounts`, `populationLimits` |
 | `sim/water.ts` | Modèle d'eau (#206, ADR 0052) : `WaterState`, `freshWater`, `stepWaterInPlace` / `stepWater` (charge `waterLoad`, litres `waterLiters`, températures `WATER_TEMPERATURES`), `changeWaterInPlace` / `changeWater`, relecture validée `readWater` ; consigne du chauffage `heater` facultative (#207, ADR 0053 : `setHeaterInPlace`, `targetTemperature`) |
 | `sim/water-quality.ts` | Qualité de l'eau (#207, ADR 0053) : indicateur global `waterQuality` (`bonne`, `a-surveiller`, `mauvaise`, pire de l'ammoniaque, des nitrites, des nitrates et de l'écart de température, seuils `COMPOUND_THRESHOLDS` et `TEMPERATURE_THRESHOLDS`), jauges (`GAUGE_MAX`, `gaugeFill`), relevé au dixième pour l'interface (`waterReadout`, `sameReadout`), trouble rendu (`waterTurbidity`), eau d'exemple de `eau=` (`sampleWater`) |
+| `sim/compatibility.ts` | Compatibilité des espèces (#209) : `TEMPERAMENTS`, `compatibility(a, b)` (symétrique ; même espèce ou inconnue : compatible), `mixWarnings` (mélanges déconseillés d'une population), évitement entre nageurs incompatibles (`hasRivals`, `addRivalSteering`, `enforceRivalDistance`) |
+| `sim/day-rhythm.ts` | Rythme du jour (#209) : espèces diurnes (`DIURNAL`), repos de nuit `nightRest(espèce, intensité)` et facteur de déplacement `nightPace` (exactement 1 le jour) |
 | `sim/species-catalog.ts` | Catalogue d'espèces (#189) : `speciesCatalog(env)` (espèces de l'environnement, libellés `SPECIES_LABELS`, effectif par défaut et maximum), `applySpeciesCounts` / `applySpeciesCountsInPlace` (effectifs demandés arrondis et bornés, espèce inconnue ou hors environnement ignorée) |
 | `sim/tank.ts` | Dimensions du bac, volume d'eau, `shrinkBox` (partagés par la simulation et le rendu) ; bornes des dimensions réglables (`TANK_LIMITS`, `clampTankDimensions`, #171, ADR 0047) |
 | `sim/room.ts` | Pièce autour du bac tropical (#187, ADR 0048) : modèle `Room` (`shown`, `cabinetHeight` bornée par `clampRoom`), relecture validée (`readRoom`), disposition pure en blocs au centimètre (`roomBlocks` : parquet, mur, cimaise, plinthe, meuble et portes, hors du volume du bac), parties visibles selon la caméra (`roomVisibility`), éléments `items` relus par `readRoomItem` ; jamais lue par la simulation |
