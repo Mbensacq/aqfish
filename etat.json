@@ -2864,10 +2864,10 @@
           "note": "Verdict OK, 0 bug, 2455 tests unitaires verts, e2e nourriture 14/14 + 2 tests QA de nuit, 76 captures publiées (c077)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-26T10:26:57.116Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-26T11:54:05.109Z",
+          "note": "PR #245 fusionnée → v1.0.0 (release CI ok), #226 fermée, dette #246 ; CI main : e2e 4/4 annulé 2× par délai du job (install Chromium 11-12 min, aucun test KO) → #248 bloque, pas de revert ; flake #244 sur la PR ; suppression de branche refusée"
         }
       },
       "metriques": {
