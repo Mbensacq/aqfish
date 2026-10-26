@@ -2811,6 +2811,12 @@
           "debut": "2026-10-26T06:15:11.129Z",
           "fin": "2026-10-26T06:17:01.052Z",
           "note": "Rétro sprint 11 (#241) ; Dev : bug #232 (S) ; plan sprint 12 : #226 #236 #237 #238 #239"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-10-26T06:17:34.461Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
