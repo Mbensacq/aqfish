@@ -2903,10 +2903,10 @@
           "note": "Verdict OK, 0 bug bloquant, 2515 tests unitaires verts, e2e pH 4/4 (2 ajoutés), 76 captures publiées (c078)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-26T14:23:44.546Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-26T15:24:48.368Z",
+          "note": "PR #249 fusionnée → v1.0.1 (release CI ok), #236 fermée, dette #250 ; PR #247 (docs/SOINS.md, Mathis) relue et fusionnée ; CI main verte sur 70b55ce (run de ea9821d annulé par concurrence), e2e 2/4 à 28 min proche du délai (#248) ; pied d'attribution réinjecté par le serveur dans le corps de #249 (corps de squash vide)"
         }
       },
       "metriques": {
