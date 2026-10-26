@@ -2885,10 +2885,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-26T11:54:36.286Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-26T11:55:22.269Z",
+          "note": "Issue #236 : pH simulé, plage par espèce et jauge (M)"
         }
       },
       "metriques": {}
