@@ -2967,6 +2967,12 @@
           "debut": "2026-10-26T19:41:08.533Z",
           "fin": "2026-10-26T19:41:59.152Z",
           "note": "Issue #256 : tableau de bord 1/3, cadre en bordure et jauges d'eau (M), découpe de #251"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-10-26T19:42:28.579Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
