@@ -73,6 +73,24 @@ allocation par pas.
   rester accepté et ignoré).
 - Images sans granulé inchangées à l'octet (aucune instance, plage de dessin vide).
 
+### Mise à jour (issue #226, cycle 77) : voxels par défaut, grains naturels
+
+Constat de Mathis après essai : des masses orange fluo, pas de la nourriture. Trois pistes
+comparées sur captures (détail dans l'ADR 0056) : bruns mats de la palette commune (granulés
+invisibles sur le sable et les rochers, écartée) ; trois bruns ajoutés à la palette commune
+(19 captures sans nourriture changées, écartée) ; **les mêmes bruns réservés aux pixels de
+granulé par un marqueur d'opacité (retenue)**. Désormais :
+
+- **voxels par défaut** (sauvegarde sans le réglage comprise ; un choix enregistré est
+  respecté) ; le bouton et `granules=` restent ;
+- **aspect par granulé** tiré de son identifiant (`foodLook`) : grain, flocon ou paillette,
+  nuance ocre, beige ou brun-rouge, trois tailles proches, quatre orientations ;
+- voxels **ombrés par face**, **sans coque** `koiNoir` ; un maillage instancié par forme ;
+- points : liseré conservé, cœur de la nuance du granulé.
+
+Les paragraphes ci-dessus sur `poissonJaune`, la coque et le défaut en points décrivent
+l'état d'avant #226.
+
 ## Options écartées
 
 - **Granulés sans état, comme les bulles** (fonction fermée du temps) : impossible, ils

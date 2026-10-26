@@ -11,6 +11,7 @@ import {
 
 import {
   ENVIRONMENT_TONE_COLORS,
+  FOOD_TONE_COLORS,
   ENVIRONMENT_TONE_NAMES,
   isEnvironmentToneName,
   NIGHT_TONE_COLORS,
@@ -30,9 +31,12 @@ import { flattenPalette, hexToRgb, lowResolutionSize, PIXEL_SIZE, type Size } fr
  * nuit puis ceux du crépuscule ; leur distance reçoit une pénalité (`uNightPenalty`,
  * `uTwilightPenalty`) fixée selon l'heure. Pénalité `TONE_PENALTY_OFF` : le ton ne peut
  * jamais l'emporter (plein jour : image identique à celle de la palette de jour seule).
- * Viennent enfin les tons d'environnement (ADR 0039), chacun avec sa pénalité
+ * Viennent ensuite les tons d'environnement (ADR 0039), chacun avec sa pénalité
  * (`uEnvironmentPenalty`) : nulle dans l'environnement qui le déclare, `TONE_PENALTY_OFF`
- * ailleurs.
+ * ailleurs. Enfin les tons de la nourriture (ADR 0056), proposés pixel par pixel : sans
+ * pénalité si l'opacité du pixel de scène est sous `FOOD_ALPHA_THRESHOLD` (un granulé y a
+ * écrit son marqueur), `TONE_PENALTY_OFF` sinon. Rien d'autre n'écrit d'opacité inférieure
+ * à 1 dans la cible (fond opaque, mélanges qui gardent 1 sur une destination à 1).
  *
  * La couleur écrite est la valeur sRGB exacte de la palette : le shader n'inclut pas
  * `colorspace_fragment`, Three.js n'y ajoute donc aucune conversion.
@@ -52,6 +56,9 @@ uniform float uNightPenalty;
 uniform float uTwilightPenalty;
 uniform float uEnvironmentPenalty[ENVIRONMENT_PENALTY_SIZE];
 
+/** Pénalité des tons de la nourriture pour le pixel en cours (fixée dans main). */
+float foodPenalty;
+
 float penalty(int i) {
   if (i < DAY_SIZE) {
     return 0.0;
@@ -59,7 +66,10 @@ float penalty(int i) {
   if (i < TWILIGHT_START) {
     return uNightPenalty;
   }
-  return i < ENVIRONMENT_START ? uTwilightPenalty : uEnvironmentPenalty[i - ENVIRONMENT_START];
+  if (i < ENVIRONMENT_START) {
+    return uTwilightPenalty;
+  }
+  return i < FOOD_START ? uEnvironmentPenalty[i - ENVIRONMENT_START] : foodPenalty;
 }
 
 vec3 linearToSrgb(vec3 c) {
@@ -72,7 +82,9 @@ vec3 linearToSrgb(vec3 c) {
 void main() {
   ivec2 texel = ivec2(floor(gl_FragCoord.xy / uPixelScale));
   texel = clamp(texel, ivec2(0), ivec2(uSceneSize) - 1);
-  vec3 color = linearToSrgb(texelFetch(uScene, texel, 0).rgb);
+  vec4 scene = texelFetch(uScene, texel, 0);
+  vec3 color = linearToSrgb(scene.rgb);
+  foodPenalty = scene.a < FOOD_ALPHA_THRESHOLD ? 0.0 : TONE_OFF;
 
   vec3 best = uPalette[0];
   vec3 delta = color - best;
@@ -88,6 +100,13 @@ void main() {
   gl_FragColor = vec4(best, 1.0);
 }
 `;
+
+/**
+ * Opacité sous laquelle un pixel de scène est tenu pour un granulé (ADR 0056) : le marqueur
+ * des granulés (`FOOD_ALPHA_MARKER`, 0,5) reste sous ce seuil même voilé ensuite par l'eau
+ * translucide (0,3 + 0,5 × 0,7 = 0,65) ; un pixel opaque vaut 1 (255 sur 8 bits).
+ */
+export const FOOD_ALPHA_THRESHOLD = 254.5 / 255;
 
 /**
  * Pipeline pixel art (ADR 0002) : cible basse résolution où la scène est rendue, puis
@@ -110,17 +129,20 @@ export class PalettePass {
    *   pénalités de `setTonePenalties` (écartés tant qu'elle n'est pas appelée).
    * @param environmentHex tons d'environnement : proposés selon `setEnvironmentPenalties`
    *   (écartés tant qu'elle n'est pas appelée).
+   * @param foodHex tons de la nourriture : proposés sur les seuls pixels marqués par un
+   *   granulé (opacité sous `FOOD_ALPHA_THRESHOLD`).
    */
   constructor(
     paletteHex: readonly string[] = PALETTE_COLORS,
     nightHex: readonly string[] = NIGHT_TONE_COLORS,
     twilightHex: readonly string[] = TWILIGHT_TONE_COLORS,
     environmentHex: readonly string[] = ENVIRONMENT_TONE_COLORS,
+    foodHex: readonly string[] = FOOD_TONE_COLORS,
   ) {
     if (paletteHex.length === 0) {
       throw new Error('Palette vide');
     }
-    const all = [...paletteHex, ...nightHex, ...twilightHex, ...environmentHex];
+    const all = [...paletteHex, ...nightHex, ...twilightHex, ...environmentHex, ...foodHex];
     this.environmentToneCount = environmentHex.length;
     this.target = new WebGLRenderTarget(1, 1, {
       minFilter: NearestFilter,
@@ -135,6 +157,10 @@ export class PalettePass {
         DAY_SIZE: paletteHex.length,
         TWILIGHT_START: paletteHex.length + nightHex.length,
         ENVIRONMENT_START: paletteHex.length + nightHex.length + twilightHex.length,
+        FOOD_START:
+          paletteHex.length + nightHex.length + twilightHex.length + environmentHex.length,
+        FOOD_ALPHA_THRESHOLD: FOOD_ALPHA_THRESHOLD.toFixed(4),
+        TONE_OFF: TONE_PENALTY_OFF.toFixed(1),
         // Un tableau GLSL ne peut pas être vide : une case inutilisée sans ton d'environnement.
         ENVIRONMENT_PENALTY_SIZE: Math.max(1, environmentHex.length),
       },

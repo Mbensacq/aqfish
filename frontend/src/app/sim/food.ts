@@ -271,3 +271,54 @@ function nextRandom(): number {
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
+
+/**
+ * Formes des granulés (issue #226) : **grain** (petit cube), **flocon** (plaquette fine et
+ * large), **paillette** (éclat fin et petit). Données de simulation pures : le rendu en tire
+ * le maillage (`render/food-layer.ts`).
+ */
+export const FOOD_SHAPES = ['grain', 'flocon', 'paillette'] as const;
+
+export type FoodShape = (typeof FOOD_SHAPES)[number];
+
+/** Nombre de nuances de granulé (`FoodLook.shade`, de 0 à `FOOD_SHADE_COUNT - 1`). */
+export const FOOD_SHADE_COUNT = 3;
+
+/** Facteurs de taille d'un granulé, proches les uns des autres. */
+export const FOOD_SIZE_FACTORS = [0.85, 1, 1.15] as const;
+
+/** Nombre d'orientations d'un granulé autour de la verticale (quarts de tour divisés). */
+export const FOOD_TURN_STEPS = 4;
+
+/**
+ * Aspect d'un granulé : forme, nuance (indice de teinte), facteur de taille et rotation
+ * autour de la verticale (radians, dans [0, π/2)).
+ */
+export interface FoodLook {
+  readonly shape: FoodShape;
+  readonly shade: number;
+  readonly size: number;
+  readonly turn: number;
+}
+
+/** Clé du hachage de l'aspect des granulés (indépendante de la graine du monde). */
+export const FOOD_LOOK_STREAM = 0x6a1e;
+
+/**
+ * Aspect du granulé d'identifiant `id` (issue #226), tiré d'un hachage de l'identifiant
+ * seul : déterministe, sans état, et sans toucher au flux aléatoire de la simulation (ni au
+ * dépôt, ni aux poissons). Le même granulé garde donc le même aspect d'une image à l'autre,
+ * après un rechargement de sauvegarde et quel que soit l'ordre des granulés.
+ *
+ * Répartition : moitié de grains, 30 % de flocons, 20 % de paillettes ; nuances et tailles
+ * équiprobables. Un identifiant non entier ou négatif est ramené sur 32 bits (`id >>> 0`).
+ */
+export function foodLook(id: number): FoodLook {
+  const h = deriveSeed(FOOD_LOOK_STREAM, id >>> 0);
+  const shapeRoll = (h & 0xff) / 256;
+  const shape: FoodShape = shapeRoll < 0.5 ? 'grain' : shapeRoll < 0.8 ? 'flocon' : 'paillette';
+  const shade = ((h >>> 8) & 0xff) % FOOD_SHADE_COUNT;
+  const size = FOOD_SIZE_FACTORS[((h >>> 16) & 0xff) % FOOD_SIZE_FACTORS.length];
+  const turn = (((h >>> 24) & 0xff) % FOOD_TURN_STEPS) * (Math.PI / 2 / FOOD_TURN_STEPS);
+  return { shape, shade, size, turn };
+}

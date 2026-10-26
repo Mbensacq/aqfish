@@ -1,3 +1,5 @@
+import type { FoodShape } from '../sim/food';
+
 /**
  * Taille des granulés à l'écran selon le zoom (issue #117) : fonctions pures, sans three.js.
  *
@@ -78,15 +80,35 @@ export function foodVoxelSide(pixelsPerMeter: number): number {
 }
 
 /**
- * Côté de la coque sombre d'un granulé en voxel (liseré), en mètres : le cube grandi de
- * `foodOutlineExtra` pixels de scène, selon la taille du cube à l'écran. Sans échelle connue,
- * pas de liseré (le cube seul).
+ * Proportions des formes de granulé en voxels (issue #226), en multiples du côté du grain
+ * (`foodVoxelSide`) : largeur (x), épaisseur (y), profondeur (z). Le grain est un cube ; le
+ * flocon une plaquette fine et large ; la paillette un éclat fin, plus petit que le grain.
  */
-export function foodVoxelOutlineSide(pixelsPerMeter: number): number {
-  const side = foodVoxelSide(pixelsPerMeter);
-  if (!(pixelsPerMeter > 0) || !Number.isFinite(pixelsPerMeter)) {
-    return side;
-  }
-  const core = Math.max(FOOD_MIN_SCENE_PIXELS, Math.round(side * pixelsPerMeter));
-  return side + foodOutlineExtra(core) / pixelsPerMeter;
+export const FOOD_SHAPE_PROPORTIONS: Readonly<
+  Record<FoodShape, readonly [number, number, number]>
+> = {
+  grain: [1, 1, 1],
+  flocon: [1.5, 0.4, 1.25],
+  paillette: [1, 0.3, 0.6],
+};
+
+/**
+ * Dimensions d'un granulé en voxels (x, y, z), en mètres, pour sa forme `shape` et son
+ * facteur de taille `sizeFactor` : les proportions de la forme appliquées au côté du grain,
+ * chaque dimension ramenée à au moins un pixel de scène (plancher de `foodVoxelSide`) pour
+ * qu'aucune face ne disparaisse en dézoomé. Un facteur non fini ou non positif vaut 1.
+ */
+export function foodVoxelDimensions(
+  shape: FoodShape,
+  sizeFactor: number,
+  pixelsPerMeter: number,
+): [number, number, number] {
+  const factor = Number.isFinite(sizeFactor) && sizeFactor > 0 ? sizeFactor : 1;
+  const base = FOOD_PELLET_DIAMETER * factor;
+  const floor =
+    pixelsPerMeter > 0 && Number.isFinite(pixelsPerMeter)
+      ? FOOD_MIN_SCENE_PIXELS / pixelsPerMeter
+      : 0;
+  const [x, y, z] = FOOD_SHAPE_PROPORTIONS[shape];
+  return [Math.max(floor, base * x), Math.max(floor, base * y), Math.max(floor, base * z)];
 }

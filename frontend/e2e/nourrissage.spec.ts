@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
-import { FOOD_COLOR, FOOD_OUTLINE_COLOR } from '../src/app/render/food-layer';
+import { FOOD_OUTLINE_COLOR } from '../src/app/render/food-layer';
+import { FOOD_TONE_COLORS } from '../src/app/render/palette';
 import { CAMERA_FOV_DEG } from '../src/app/render/camera-presets';
 import { FOOD_PER_DROP, MAX_FOOD } from '../src/app/sim/food';
 import { advanceToWithFeedings, createDefaultWorld } from '../src/app/sim/world';
@@ -71,6 +72,15 @@ async function projectToScreen(page: Page, point: readonly number[]): Promise<[n
  * Nombre de pixels d'une couleur exacte dans une capture (interface masquée : la barre et
  * l'aide-mémoire ne sont pas en pixel art).
  */
+/** Pixels de l'image d'une des couleurs `hexes`. */
+async function countColors(page: Page, hexes: readonly string[]): Promise<number> {
+  let total = 0;
+  for (const hex of hexes) {
+    total += await countColor(page, hex);
+  }
+  return total;
+}
+
 async function countColor(page: Page, hex: string): Promise<number> {
   const png = (await page.screenshot({ animations: 'disabled' })).toString('base64');
   return page.evaluate(
@@ -155,8 +165,9 @@ test.describe('Nourrissage (#67)', () => {
   test('capture : nourrir= dépose des granulés visibles, image déterministe', async ({ page }) => {
     const query = '?capture=1&seed=42&camera=three-quarter&time=30';
     await openScene(page, query);
-    const without = await countColor(page, FOOD_COLOR);
-    const outlineWithout = await countColor(page, FOOD_OUTLINE_COLOR);
+    // Tons de la nourriture (#226, ADR 0056) : réservés aux pixels de granulé, absents sans
+    // nourriture.
+    expect(await countColors(page, FOOD_TONE_COLORS)).toBe(0);
 
     await openScene(page, `${query}&nourrir=10,25`);
     // Les poissons mangent (#68) : le compte attendu est celui de la simulation pure, avec les
@@ -168,16 +179,26 @@ test.describe('Nourrissage (#67)', () => {
     expect(expected).toBeGreaterThanOrEqual(FOOD_PER_DROP);
     await expect(host(page)).toHaveAttribute('data-aqfish-food', String(expected));
     const first = await page.screenshot({ animations: 'disabled' });
-    const withFood = await countColor(page, FOOD_COLOR);
-    // Au moins quelques granulés de 2 × 2 pixels de scène (3 pixels CSS par pixel de scène).
-    expect(withFood - without).toBeGreaterThanOrEqual(4 * 9);
-    // Chaque granulé est cerné d'un liseré sombre d'un pixel de scène (#83).
-    const outlineWithFood = await countColor(page, FOOD_OUTLINE_COLOR);
-    expect(outlineWithFood - outlineWithout).toBeGreaterThanOrEqual(12 * 9);
+    // Voxels par défaut (#226) : quelques pixels de scène dans les tons de la nourriture
+    // (3 pixels CSS par pixel de scène).
+    expect(await countColors(page, FOOD_TONE_COLORS)).toBeGreaterThanOrEqual(3 * 9);
 
     await openScene(page, `${query}&nourrir=10,25`);
     expect((await page.screenshot({ animations: 'disabled' })).equals(first)).toBe(true);
   });
+
+  test('capture en points : granulés cernés d’un liseré sombre (#83)', async ({ page }) => {
+    const query = '?capture=1&seed=42&camera=three-quarter&time=30&granules=points';
+    await openScene(page, query);
+    const outlineWithout = await countColor(page, FOOD_OUTLINE_COLOR);
+    await openScene(page, `${query}&nourrir=10,25`);
+    // Au moins quelques granulés de 2 × 2 pixels de scène dans les tons de la nourriture.
+    expect(await countColors(page, FOOD_TONE_COLORS)).toBeGreaterThanOrEqual(4 * 9);
+    // Chaque granulé est cerné d'un liseré sombre d'un pixel de scène (#83).
+    const outlineWithFood = await countColor(page, FOOD_OUTLINE_COLOR);
+    expect(outlineWithFood - outlineWithout).toBeGreaterThanOrEqual(12 * 9);
+  });
+
   for (const seed of [7, 123]) {
     test(`capture : les poissons mangent un dépôt, graine ${seed}, sans erreur (QA)`, async ({
       page,

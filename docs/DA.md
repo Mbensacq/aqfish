@@ -42,6 +42,11 @@ la passe de post-traitement y ramène chaque pixel affiché (ADR 0007).
 | Fleurs                  | nénuphar rose `#f06a9b`, cœur `#ffb703`                                                |
 | Interface               | fond `#141418` (translucide), texte `#e8e6e3`, accent `#5fbfa3`                        |
 | Récif (tons d'environnement) | eau `#3f7597`, eau sous la surface `#4796cb`, corail violet `#7d4fb8` et `#b58be6`, poisson-clown `#ff6d00`, chirurgien `#1d3fbf` |
+| Nourriture (tons réservés aux granulés, ADR 0056) | ocre `#a0703a`, brun-rouge `#8c4630`, brun `#6b4428` ; plus `#a8916a` (beige) de la palette commune |
+
+**Nourriture** (#226) : des grains mats, pas des taches. Petits voxels (grain, flocon,
+paillette) de tons de nourriture réelle, une nuance par granulé, ombrés par face (dessus
+clair, flancs plus sombres), sans liseré ; contraste avec le sable et la roche par la clarté.
 
 ## Environnements visés
 

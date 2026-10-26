@@ -4,11 +4,13 @@ import {
   ENVIRONMENT_TONE_COLORS,
   ENVIRONMENT_TONE_NAMES,
   EXTENDED_PALETTE_COLORS,
+  FOOD_TONE_COLORS,
   NIGHT_TONE_COLORS,
   PALETTE_COLORS,
 } from './palette';
 import { TONE_PENALTY_OFF } from './night-shade';
-import { environmentTonePenalties, PalettePass } from './palette-pass';
+import { environmentTonePenalties, FOOD_ALPHA_THRESHOLD, PalettePass } from './palette-pass';
+import { FOOD_ALPHA_MARKER } from './food-layer';
 import { PIXEL_SIZE } from './pixel-art';
 
 function material(pass: PalettePass): ShaderMaterial {
@@ -27,15 +29,19 @@ describe('PalettePass', () => {
     pass.dispose();
   });
 
-  it('transmet toute la palette au shader : jour, nuit, crépuscule, puis tons d’environnement', () => {
+  it('transmet toute la palette au shader : jour, nuit, crépuscule, environnement, nourriture', () => {
     const pass = new PalettePass();
     const m = material(pass);
-    const size = EXTENDED_PALETTE_COLORS.length + ENVIRONMENT_TONE_COLORS.length;
+    const size =
+      EXTENDED_PALETTE_COLORS.length + ENVIRONMENT_TONE_COLORS.length + FOOD_TONE_COLORS.length;
     expect(m.defines['PALETTE_SIZE']).toBe(size);
     expect(m.defines['DAY_SIZE']).toBe(PALETTE_COLORS.length);
     expect(m.defines['TWILIGHT_START']).toBe(PALETTE_COLORS.length + NIGHT_TONE_COLORS.length);
     expect(m.defines['ENVIRONMENT_START']).toBe(EXTENDED_PALETTE_COLORS.length);
     expect(m.defines['ENVIRONMENT_PENALTY_SIZE']).toBe(ENVIRONMENT_TONE_COLORS.length);
+    expect(m.defines['FOOD_START']).toBe(
+      EXTENDED_PALETTE_COLORS.length + ENVIRONMENT_TONE_COLORS.length,
+    );
     const data = m.uniforms['uPalette'].value as Float32Array;
     expect(data.length).toBe(size * 3);
     // Première couleur : fond de la scène #141418.
@@ -91,16 +97,38 @@ describe('PalettePass', () => {
   });
 
   it('accepte des groupes de tons vides', () => {
-    const pass = new PalettePass(['#000000', '#ffffff'], [], [], []);
+    const pass = new PalettePass(['#000000', '#ffffff'], [], [], [], []);
     const m = material(pass);
     expect(m.defines['PALETTE_SIZE']).toBe(2);
     expect(m.defines['DAY_SIZE']).toBe(2);
     expect(m.defines['TWILIGHT_START']).toBe(2);
     expect(m.defines['ENVIRONMENT_START']).toBe(2);
+    expect(m.defines['FOOD_START']).toBe(2);
     // Un tableau GLSL ne peut pas être vide : une case, jamais lue.
     expect(m.defines['ENVIRONMENT_PENALTY_SIZE']).toBe(1);
     expect(pass.environmentPenalties).toEqual([]);
     pass.setEnvironmentPenalties([]);
+    pass.dispose();
+  });
+
+  it('tons de la nourriture : proposés aux seuls pixels marqués par un granulé (#226)', () => {
+    const pass = new PalettePass();
+    const m = material(pass);
+    // Le marqueur reste sous le seuil, même voilé par l'eau translucide (30 %) ; un pixel
+    // opaque (255) ne l'atteint jamais.
+    expect(FOOD_ALPHA_MARKER).toBeLessThan(FOOD_ALPHA_THRESHOLD);
+    expect(0.3 + FOOD_ALPHA_MARKER * 0.7).toBeLessThan(FOOD_ALPHA_THRESHOLD);
+    expect(Math.round(FOOD_ALPHA_MARKER * 255) / 255).toBeLessThan(FOOD_ALPHA_THRESHOLD);
+    expect(1).toBeGreaterThan(FOOD_ALPHA_THRESHOLD);
+    expect(254 / 255).toBeLessThan(FOOD_ALPHA_THRESHOLD);
+    expect(m.defines['FOOD_ALPHA_THRESHOLD']).toBe(FOOD_ALPHA_THRESHOLD.toFixed(4));
+    expect(Number(m.defines['TONE_OFF'])).toBe(TONE_PENALTY_OFF);
+    expect(m.fragmentShader).toMatch(
+      /foodPenalty = scene\.a < FOOD_ALPHA_THRESHOLD \? 0\.0 : TONE_OFF;/,
+    );
+    expect(m.fragmentShader).toMatch(
+      /i < FOOD_START \? uEnvironmentPenalty\[[^\]]+\] : foodPenalty/,
+    );
     pass.dispose();
   });
 
