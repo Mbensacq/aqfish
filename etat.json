@@ -2969,10 +2969,10 @@
           "note": "Issue #256 : tableau de bord 1/3, cadre en bordure et jauges d'eau (M), découpe de #251"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-26T19:42:28.579Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-26T21:00:22.981Z",
+          "note": "PR #258 : tableau de bord de l'eau en bordure (ADR 0059), CI verte du premier coup ; 72 captures sans interface identiques à l'octet ; verify local partiel (e2e touchés 62/62) ; dette #257 (cadre visible sous Réglages) ; pied d'attribution réinjecté par le serveur dans le corps de PR"
         }
       },
       "metriques": {}
