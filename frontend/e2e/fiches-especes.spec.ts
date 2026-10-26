@@ -78,4 +78,25 @@ test.describe('Fiches d’espèces (#237)', () => {
     );
     expect(errors).toEqual([]);
   });
+
+  test('téléphone 390 px : la fiche tient dans l’écran, sans défilement horizontal', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    const errors = await open(page);
+    await toggleOf(page, 'Corydora').click();
+    const box = await sheet(page).boundingBox();
+    expect(box).not.toBeNull();
+    expect(box!.x).toBeGreaterThanOrEqual(0);
+    expect(box!.x + box!.width).toBeLessThanOrEqual(390);
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+    expect(overflow).toBeLessThanOrEqual(0);
+    // Une seule fiche à la fois : ouvrir celle d'une autre espèce remplace la première.
+    await toggleOf(page, 'Guppy').click();
+    await expect(sheet(page)).toHaveCount(1);
+    await expect(sheet(page)).toHaveAccessibleName(/Fiche : Guppy/);
+    expect(errors).toEqual([]);
+  });
 });
