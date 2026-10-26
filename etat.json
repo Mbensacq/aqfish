@@ -2999,10 +2999,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-26T23:05:22.479Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-26T23:06:05.128Z",
+          "note": "Issue #260 : tableau de bord 2/3, santé, simulation et alertes (M)"
         }
       },
       "metriques": {}
