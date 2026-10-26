@@ -2714,10 +2714,10 @@
           "note": "Verdict RÉSERVES, 0 bug, captures c073 publiées (64/76 identiques, side-minuit nouvelle, nuit voulue), e2e minuit 4 environnements ajouté; évitement sans effet au paludarium, descente nocturne modeste"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-26T00:37:30.018Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-26T01:58:23.653Z",
+          "note": "PR #221 fusionnée → v0.11.3 (release CI ok, main verte), #209 fermée, dette #222 ; e2e 2/4 annulé à 30 min puis vert à la relance unique ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
