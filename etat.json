@@ -2903,7 +2903,10 @@
           "note": null
         }
       },
-      "metriques": {}
+      "metriques": {
+        "tests": 2515,
+        "captures": 76
+      }
     }
   },
   "jours": {
