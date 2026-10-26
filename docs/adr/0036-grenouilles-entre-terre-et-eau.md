@@ -90,3 +90,14 @@ l'octet.
   le geste d'un bond). Seule l'inclinaison change : positions, sauvegarde et déterminisme
   sont identiques (option écartée : plafonner `maxPitch` du triton, qui borne aussi sa nage
   et garderait la bascule à l'arrivée).
+- Cycle 75 (#233) : origine des ≈ 39° mesurés par la QA chez la grenouille (sonde sur
+  5 graines × 20 000 pas, maximum de |inclinaison| par état) : **saut** 39,0°, **entrée**
+  39,2°, posée 36,2°, nage 36,3°, sortie 0°. Le maximum est le sommet d'un **bond court** :
+  à la portée minimale (4 cm, hauteur 4 cm), la pente de l'arc à l'envol vaut atan(4) ≈ 76°,
+  dont `hopPitch` 0,5 donne ≈ 38°, un peu plus pour une entrée dans l'eau (corde
+  descendante). Les ≈ 36° relevés posée ou à la nage ne sont que le reste de l'inclinaison
+  d'arrivée, qui revient à plat en au plus 0,2 s. Ce n'est pas une bascule : la variation
+  reste bornée à `PITCH_RATE` × pas (2,9° par pas), y compris de la nage de sortie au
+  premier saut sur la berge, et hors saut l'inclinaison ne fait que décroître (tests
+  `frog.spec.ts` et `triton.spec.ts`, #233). Réglage conservé ; `PITCH_RATE` est exporté
+  pour les tests.
