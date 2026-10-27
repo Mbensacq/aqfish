@@ -155,6 +155,12 @@ import {
 } from '../../sim/water-quality';
 import { waterLiters } from '../../sim/water';
 import { DEFAULT_WATER_SAMPLE, waterSample, type WaterSample } from '../../sim/water-dashboard';
+import {
+  EMPTY_HEALTH_SUMMARY,
+  healthSummary,
+  sameHealthSummary,
+  type HealthSummary,
+} from '../../sim/health-summary';
 import { refreshDue } from '../dashboard-frame/refresh-pace';
 
 /** Fabrique du renderer, remplaçable dans les tests (jsdom n'a pas WebGL). */
@@ -501,6 +507,11 @@ export class AquariumHost {
    * (`exposeWater`), donc au plus 4 fois par seconde dans la boucle (`refreshDue`).
    */
   readonly waterSample = signal<WaterSample>(DEFAULT_WATER_SAMPLE);
+  /**
+   * Synthèse de la santé des animaux lue par le tableau de bord (#260), relevée avec l'eau
+   * (`exposeWater`) et remplacée seulement si ce qu'elle affiche change (`sameHealthSummary`).
+   */
+  readonly health = signal<HealthSummary>(EMPTY_HEALTH_SUMMARY, { equal: sameHealthSummary });
   /** Pas du dernier relevé de l'eau (`exposeWater`). */
   private waterReadTick = Number.NEGATIVE_INFINITY;
   /** Instant (ms, horloge de `requestAnimationFrame`) du dernier relevé de la boucle. */
@@ -1985,6 +1996,7 @@ export class AquariumHost {
     const counts = populationCounts(world);
     this.population.set(counts);
     this.populationMax.set(populationLimits(world));
+    this.health.set(healthSummary(world.entities));
     this.host.nativeElement.setAttribute(
       POPULATION_ATTRIBUTE,
       formatPopulation(counts, environmentById(world.environment).species),
@@ -2002,6 +2014,7 @@ export class AquariumHost {
     }
     this.waterReadTick = world.tick;
     this.waterSample.set(waterSample(world.water, world.environment, world.tick));
+    this.health.set(healthSummary(world.entities));
     const readout = waterReadout(
       world.water,
       world.environment,

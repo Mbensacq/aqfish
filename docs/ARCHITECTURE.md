@@ -363,6 +363,11 @@ maximal : 60 s par angle), et **aucune mesure de performance** ne doit y être f
   `sim/water-dashboard.ts`. Plan 0 : les panneaux flottants (plan 1) ouverts à la demande
   passent par-dessus ; un panneau ouvert par défaut ne le masque jamais (aide-mémoire décalé
   sur tablette). La section « Eau » du panneau « Réglages » ne garde que ce qui se règle.
+  Le cadre montre aussi la simulation (moment de la journée, heure, vitesse) et, dans un
+  bandeau bas au-dessus de la barre des vues (`dashboard-status`), la santé des animaux et au
+  plus trois alertes avec cause et action (#260, ADR 0060). Synthèse de santé et alertes sont
+  des fonctions pures (`sim/health-summary.ts`, `sim/dashboard-alerts.ts`) ; l'hôte expose
+  le signal `health`, relevé avec l'eau et remplacé seulement si l'affichage change.
 - Les ressources Three.js (géométries, matériaux, cibles de rendu, contrôles) sont libérées
   à la destruction du composant (`DestroyRef`).
 - Textes d'interface en français. Chaque contrôle a un libellé accessible et une alternative

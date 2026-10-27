@@ -215,6 +215,31 @@
   color: var(--dashboard-rouge);
 }
 
+// Simulation (#260) : moment de la journée (icône de `ui/day-indicator`), heure, vitesse.
+.dashboard__sim {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  padding-left: 8px;
+  border-left: 1px solid rgb(232 230 227 / 12%);
+  white-space: nowrap;
+}
+
+.dashboard__day {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  image-rendering: pixelated;
+}
+
+.dashboard__phase,
+.dashboard__clock {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
 @media (max-width: 1099px) {
   :host {
     top: 56px;
@@ -224,11 +249,30 @@
 }
 
 @media (max-width: 639px) {
+  // Bouton « Eau » et simulation sur la première ligne, jauges dessous.
   .dashboard {
-    flex-direction: column;
+    display: grid;
+    grid-template-areas:
+      'toggle sim'
+      'gauges gauges';
+    grid-template-columns: auto 1fr;
     gap: 4px;
     width: 100%;
     padding: 4px 6px 6px;
+  }
+
+  .dashboard__toggle {
+    grid-area: toggle;
+  }
+
+  .dashboard__gauges {
+    grid-area: gauges;
+  }
+
+  .dashboard__sim {
+    grid-area: sim;
+    justify-content: flex-end;
+    border-left: 0;
   }
 
   .dashboard--folded {

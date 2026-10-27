@@ -6,6 +6,12 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Fichier e2e trop long pour une part de la CI** (cycle 81, #260) : chaque test du tableau
+  de bord prend ~1 min en local (import d'un bac compris), et `tableau-de-bord.spec.ts` en
+  dure déjà 7 ; une part e2e de la CI frôle son délai de 30 min (#248). Les tests d'un lot
+  nouveau vont dans un fichier à part (`tableau-de-bord-sante.spec.ts`) et regroupent les
+  vérifications d'un même état (un import, plusieurs assertions) plutôt que d'ouvrir une page
+  par critère ; `test.setTimeout(240_000)` pour ceux qui importent un bac. (2026-10-27)
 - **Budget de style du panneau de réglages : 8 kB** (cycle 79, #237) : `control-panel.scss`
   approche déjà du plafond ; les styles des fiches (une soixantaine de lignes) l'ont porté à
   8,01 kB et `ng build` échoue (budget d'erreur 8 kB, `angular.json`), alors que tests et

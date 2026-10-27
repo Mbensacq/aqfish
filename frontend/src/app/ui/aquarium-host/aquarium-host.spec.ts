@@ -975,6 +975,36 @@ describe('AquariumHost', () => {
       expect(host().waterSample().tick).toBeLessThanOrEqual(720);
     }, 15_000);
 
+    it('tableau de bord (#260) : santé relevée avec l’eau, au plus 4 fois par seconde', async () => {
+      await create('?seed=42');
+      expect(host().health()).toMatchObject({ animals: 24, averageHealth: 1, sick: 0 });
+      // Animaux à la santé usée : la santé remonte (aucune cause), relevée au rythme de l'eau.
+      const fishes = host().world!.entities as unknown as { health: number; hunger: number }[];
+      for (const fish of fishes) {
+        fish.health = 0.5;
+        fish.hunger = 0;
+      }
+      host().setSpeed(4);
+      setCanvasSize(800, 600);
+      const reads: number[] = [];
+      let last = host().health();
+      frames.flush(0);
+      for (let i = 1; i <= 180; i++) {
+        const now = (i * 1000) / 60;
+        frames.flush(now);
+        if (host().health() !== last) {
+          last = host().health();
+          reads.push(now);
+        }
+      }
+      for (const t of reads) {
+        expect(reads.filter((u) => u >= t && u < t + 1000).length).toBeLessThanOrEqual(4);
+      }
+      expect(reads.length).toBeGreaterThanOrEqual(1);
+      expect(host().health().sick).toBe(24);
+      expect(host().health().averageHealth).toBeGreaterThan(0.5);
+    }, 15_000);
+
     it('pH (#236) : zone selon les espèces présentes, remonte au changement d’eau', async () => {
       await create('?seed=42');
       const world = host().world as unknown as { water: object };

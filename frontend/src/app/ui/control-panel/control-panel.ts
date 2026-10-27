@@ -23,7 +23,7 @@ import type { SaveMessage, SaveStatus } from '../../core/save-storage/save-stora
 import { DEFAULT_FOOD_STYLE, type FoodStyle } from '../../core/food-style/food-style';
 import { isRoomAvailable } from '../../sim/room';
 import { MAX_SAVE_LENGTH } from '../../sim/save';
-import { DEFAULT_SIM_SPEED, SIM_SPEEDS, type SimSpeed } from '../../sim/sim-speed';
+import { DEFAULT_SIM_SPEED, SIM_SPEEDS, speedLabel, type SimSpeed } from '../../sim/sim-speed';
 import { mixWarnings } from '../../sim/compatibility';
 import { mixWarningText, SPECIES_LABELS, speciesCatalog } from '../../sim/species-catalog';
 import { type SpeciesId } from '../../sim/species';
@@ -32,16 +32,11 @@ import { MAX_HEATER_TEMPERATURE, MIN_HEATER_TEMPERATURE } from '../../sim/water'
 import { formatTenth } from '../../sim/water-dashboard';
 import { DEFAULT_WATER_READOUT, type WaterReadout } from '../../sim/water-quality';
 
+/** Libellé d'une vitesse (déplacé dans `sim/sim-speed.ts`, partagé avec le tableau de bord). */
+export { speedLabel } from '../../sim/sim-speed';
+
 /** Identifiant de la région du panneau (cible de `aria-controls`). */
 export const CONTROL_PANEL_ID = 'panneau-controle';
-
-/**
- * Libellé d'une vitesse de simulation, en français : « Pause » à 0, sinon « ×0,5 », « ×1 »,
- * « ×2 », « ×4 » (virgule décimale).
- */
-export function speedLabel(speed: number): string {
-  return speed === 0 ? 'Pause' : `×${String(speed).replace('.', ',')}`;
-}
 
 /**
  * Rang d'une vitesse dans `SIM_SPEEDS` (valeur du curseur), celui de la vitesse par défaut

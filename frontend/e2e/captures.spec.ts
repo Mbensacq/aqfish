@@ -9,12 +9,13 @@ import { serializeWorld } from '../src/app/sim/save';
 import { SPECIES } from '../src/app/sim/species';
 import { swimBounds } from '../src/app/sim/swimmer';
 import { waterVolume } from '../src/app/sim/tank';
-import { sampleWater } from '../src/app/sim/water-quality';
+import { freshWater } from '../src/app/sim/water';
 import { glassStats, recordTrajectories } from '../src/app/sim/trajectory';
 import {
   advance,
   createDefaultWorld,
   feed,
+  starveWorldInPlace,
   type MutableWorld,
   type World,
 } from '../src/app/sim/world';
@@ -397,14 +398,16 @@ test.describe('Captures', () => {
     expect(errors).toEqual([]);
   });
 
-  // Tableau de bord de l'eau (#256) en bordure, trois-quarts, bureau, tablette et téléphone :
+  // Tableau de bord (#256, #260) en bordure, trois-quarts, bureau, tablette et téléphone :
   // panneaux fermés (« Commandes » à son état par défaut), simulation à l'arrêt dès t = 0.
-  // Avec `alerte`, bac importé à l'eau mauvaise (nitrates à 50). Captures d'interface.
+  // Avec `alerte`, bac importé à l'eau mauvaise (ammoniaque 6, nitrites 2,5, nitrates 50) et
+  // animaux affamés de longue date : cinq alertes, trois affichées. Captures d'interface.
   for (const shot of [
     { name: 'three-quarter-tableau-de-bord', width: 1280, height: 720, alert: false },
     { name: 'tablette-tableau-de-bord', width: 768, height: 1024, alert: false },
     { name: 'telephone-tableau-de-bord', width: 390, height: 844, alert: false },
     { name: 'three-quarter-tableau-de-bord-alerte', width: 1280, height: 720, alert: true },
+    { name: 'tablette-tableau-de-bord-alerte', width: 768, height: 1024, alert: true },
     { name: 'telephone-tableau-de-bord-alerte', width: 390, height: 844, alert: true },
   ]) {
     test(`tableau de bord : ${shot.name}`, async ({ page }) => {
@@ -415,7 +418,8 @@ test.describe('Captures', () => {
       await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
       if (shot.alert) {
         const world: MutableWorld = createDefaultWorld(SEED);
-        world.water = sampleWater('tropical', 'mauvaise');
+        world.water = { ...freshWater('tropical'), ammonia: 6, nitrite: 2.5, nitrate: 50 };
+        starveWorldInPlace(world);
         const text = serializeWorld(world, { speed: 0, clock: createDayClock(12, 1200, true) });
         const settings = page.getByRole('button', { name: 'Réglages' });
         await settings.click();
@@ -428,6 +432,7 @@ test.describe('Captures', () => {
           'data-level',
           'rouge',
         );
+        await expect(page.locator('[data-dashboard-status] [data-alert]')).toHaveCount(3);
         await settings.click();
         await expect(page.locator('.control-panel')).toHaveCount(0);
       }
