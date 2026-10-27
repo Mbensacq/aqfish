@@ -6,6 +6,12 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Identifiant d'environnement : lettres minuscules seulement** (cycle 87, #271) :
+  `environnement=` n'accepte que `^[a-z]{1,20}$` (`core/capture/capture-params.ts`) ; un
+  identifiant à tiret (`eau-froide`, essayé d'abord) est ignoré **sans erreur** et l'URL
+  retombe sur le bac tropical : les captures du nouvel environnement montraient le bac
+  tropical, tests unitaires et e2e du panneau verts. D'où `eaufroide`. Regarder la première
+  capture d'un nouvel environnement avant de conclure. (2026-10-27)
 - **Ajouter des tests e2e déplace les limites des parts de la CI** (cycle 81, #260) : les
   parts (`--shard=N/4`, 6 parts depuis #248) sont des tranches de fichiers de taille égale en nombre de tests ;
   quatre tests de plus ont fait glisser `meubles-qa.spec.ts` dans la part 2, déjà au ras de

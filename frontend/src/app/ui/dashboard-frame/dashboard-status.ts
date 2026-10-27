@@ -9,6 +9,9 @@ import {
   type AlertSeverity,
   type DashboardAlert,
 } from '../../sim/dashboard-alerts';
+import { mixWarnings } from '../../sim/compatibility';
+import { environmentById, DEFAULT_ENVIRONMENT_ID, type EnvironmentId } from '../../sim/environment';
+import { NO_FISH, type PopulationCounts } from '../../sim/population';
 import { EMPTY_HEALTH_SUMMARY, healthItems, type HealthSummary } from '../../sim/health-summary';
 import { DEFAULT_WATER_SAMPLE, type GaugeLevel, type WaterSample } from '../../sim/water-dashboard';
 import { DEFAULT_WATER_READOUT, type WaterReadout } from '../../sim/water-quality';
@@ -160,6 +163,10 @@ export class DashboardStatus {
   readonly readout = input<WaterReadout>(DEFAULT_WATER_READOUT);
   /** Synthèse de la santé des animaux (fournie par l'hôte, au rythme des relevés de l'eau). */
   readonly health = input<HealthSummary>(EMPTY_HEALTH_SUMMARY);
+  /** Environnement affiché (fourni par l'hôte) : ordre de ses espèces pour les mélanges. */
+  readonly environment = input<EnvironmentId>(DEFAULT_ENVIRONMENT_ID);
+  /** Effectif de chaque espèce (fourni par l'hôte) : mélanges déconseillés (#271). */
+  readonly population = input<PopulationCounts>(NO_FISH);
 
   /** Alerte dépliée (une à la fois), `null` : aucune. */
   readonly expanded = signal<AlertId | null>(null);
@@ -180,6 +187,7 @@ export class DashboardStatus {
       sample: this.sample(),
       phBands: this.readout().phBands,
       health: this.health(),
+      mixes: mixWarnings(environmentById(this.environment()).species, this.population()),
     }),
   );
 

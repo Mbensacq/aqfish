@@ -4,8 +4,8 @@ import { ENVIRONMENT_TONES, PALETTE } from '../src/app/render/palette';
 import { FOOD_PER_DROP } from '../src/app/sim/food';
 
 /**
- * Environnements (issue #87) : choix entre le bac tropical, le bassin, le paludarium (#129) et
- * le récif (#148) dans le panneau de contrôle, au clavier comme à la souris, lisible à 390 px ;
+ * Environnements (issue #87) : choix entre le bac tropical, le bassin, le paludarium (#129),
+ * le récif (#148) et le bac d'eau froide (#271) dans le panneau de contrôle, au clavier comme à la souris, lisible à 390 px ;
  * `environnement=` en capture.
  */
 
@@ -127,7 +127,7 @@ test.describe('Environnement', () => {
     expect(errors).toEqual([]);
   });
 
-  test('paludarium (#129) : choisi au panneau, deux axolotls (#130), trois grenouilles (#131) et deux tritons (#133), nourri sur l’eau seulement, gardé au rechargement', async ({
+  test('paludarium (#129) : choisi au panneau, sans axolotl (#271), trois grenouilles (#131) et deux tritons (#133), nourri sur l’eau seulement, gardé au rechargement', async ({
     page,
   }) => {
     // Sans `seed=` : la sauvegarde automatique restaure le monde au rechargement.
@@ -137,9 +137,10 @@ test.describe('Environnement', () => {
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'paludarium');
     await expect(hostEl(page)).toHaveAttribute(
       'data-aqfish-population',
-      'axolotl:2,grenouille:3,triton:2',
+      'axolotl:0,grenouille:3,triton:2',
     );
-    await expect(page.getByRole('spinbutton', { name: 'Nombre d’axolotls' })).toHaveValue('2');
+    // L'axolotl vit dans le bac d'eau froide depuis #271 : proposé ici, à zéro par défaut.
+    await expect(page.getByRole('spinbutton', { name: 'Nombre d’axolotls' })).toHaveValue('0');
     await expect(
       page.getByRole('spinbutton', { name: 'Nombre de sonneurs orientaux' }),
     ).toHaveValue('3');
@@ -206,6 +207,33 @@ test.describe('Environnement', () => {
     await page.reload();
     await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'recif');
+    expect(errors).toEqual([]);
+  });
+
+  test('bac d’eau froide (#271) : atteint en parcourant la liste, axolotls seuls, aucune erreur console', async ({
+    page,
+  }) => {
+    // Sans `seed=` : la sauvegarde automatique restaure le monde au rechargement.
+    const errors = await open(page, '');
+    await toggle(page).click();
+    await expect(selector(page).locator('option')).toHaveText([
+      'Bac tropical',
+      'Bassin',
+      'Paludarium',
+      'Récif',
+      'Bac d’eau froide',
+    ]);
+    // Chaque environnement, dans l'ordre de la liste, jusqu'au nouveau bac.
+    for (const id of ['bassin', 'paludarium', 'recif', 'eaufroide']) {
+      await selector(page).selectOption(id);
+      await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', id);
+    }
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', 'axolotl:2');
+    await expect(page.getByRole('spinbutton', { name: 'Nombre d’axolotls' })).toHaveValue('2');
+    await expect(page.locator('[data-mix-warning]')).toHaveCount(0);
+    await page.reload();
+    await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'eaufroide');
     expect(errors).toEqual([]);
   });
 

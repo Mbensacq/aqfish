@@ -94,17 +94,17 @@ describe('compatibility (issue #209)', () => {
     expect(Object.keys(TEMPERAMENTS).sort()).toEqual([...IDS].sort());
   });
 
-  it('bac tropical, bassin et récif par défaut : aucun mélange déconseillé', () => {
-    for (const env of ['tropical', 'bassin', 'recif'] as const) {
+  it('aucun environnement par défaut n’a de mélange déconseillé (#271)', () => {
+    for (const env of ENVIRONMENT_IDS) {
       const environment = environmentById(env);
       const counts = Object.fromEntries(environment.population.map((p) => [p.species, p.count]));
-      expect(mixWarnings(environment.species, counts)).toEqual([]);
+      expect(mixWarnings(environment.species, counts), env).toEqual([]);
     }
   });
 
-  it('paludarium par défaut : l’axolotl est déconseillé avec grenouilles et tritons', () => {
+  it('paludarium mixte d’une ancienne sauvegarde : l’axolotl est déconseillé avec grenouilles et tritons', () => {
     const environment = environmentById('paludarium');
-    const counts = Object.fromEntries(environment.population.map((p) => [p.species, p.count]));
+    const counts = { axolotl: 2, grenouille: 3, triton: 2 };
     expect(mixWarnings(environment.species, counts)).toEqual([
       { first: 'axolotl', second: 'grenouille', reason: 'predateur' },
       { first: 'axolotl', second: 'triton', reason: 'predateur' },

@@ -64,14 +64,18 @@ export const MAX_WATER_TEMPERATURE = 40;
 
 /**
  * Température de l'eau de chaque environnement, en °C : **ordres de grandeur** de
- * l'aquariophilie (tropical 25, bassin extérieur 18, paludarium 22, récif 26). Le type
- * impose une entrée pour tout nouvel environnement.
+ * l'aquariophilie (tropical 25, bassin extérieur 18, récif 26). Paludarium 20 et bac d'eau
+ * froide 17 (issue #271, ADR 0065) : 20 °C est la seule température commune aux plages
+ * préférées du sonneur oriental (20–24 °C) et du triton à ventre de feu (14–20 °C) ; 17 °C
+ * tombe dans celle de l'axolotl (16–18 °C). Le type impose une entrée pour tout nouvel
+ * environnement.
  */
 export const WATER_TEMPERATURES: Readonly<Record<EnvironmentId, number>> = {
   tropical: 25,
   bassin: 18,
-  paludarium: 22,
+  paludarium: 20,
   recif: 26,
+  eaufroide: 17,
 };
 
 /** Bornes de la consigne du chauffage, en °C (issue #207). */

@@ -31,12 +31,17 @@ test.describe('Compatibilité des espèces (#209)', () => {
   test('paludarium : axolotl déconseillé avec grenouilles et tritons, libellé qui suit les effectifs', async ({
     page,
   }) => {
-    const errors = await open(page, '?seed=42&environnement=paludarium');
+    // Paludarium mixte d'avant #271 : les axolotls n'y sont plus par défaut, on les ajoute.
+    const errors = await open(page, '?seed=42&environnement=paludarium&population=axolotl:2');
     await toggle(page).click();
     await expect(warnings(page)).toHaveText([
       'Mélange déconseillé : axolotls et sonneurs orientaux (prédateur)',
       'Mélange déconseillé : axolotls et tritons à ventre de feu (prédateur)',
     ]);
+    // Alerte du tableau de bord (#271), « attention ».
+    const alert = page.locator('[data-dashboard-status] [data-alert="mix"]');
+    await expect(alert).toHaveAttribute('data-severity', 'attention');
+    await expect(alert).toContainText('Mélange déconseillé');
 
     // Sans tritons : il ne reste que le couple axolotl et grenouille.
     await slider(page, 'de tritons à ventre de feu').fill('0');
@@ -49,6 +54,7 @@ test.describe('Compatibilité des espèces (#209)', () => {
     await slider(page, 'd’axolotls').fill('0');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /axolotl:0/);
     await expect(warnings(page)).toHaveCount(0);
+    await expect(alert).toHaveCount(0);
 
     // Un axolotl de retour : le libellé revient.
     await slider(page, 'd’axolotls').fill('1');

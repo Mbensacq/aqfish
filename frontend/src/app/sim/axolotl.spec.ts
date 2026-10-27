@@ -13,7 +13,14 @@ import {
   type WalkerGround,
   type WalkerMode,
 } from './axolotl';
-import { environmentWater, livesIn, PALUDARIUM, POND, TROPICAL_TANK } from './environment';
+import {
+  COLD_TANK,
+  environmentWater,
+  livesIn,
+  PALUDARIUM,
+  POND,
+  TROPICAL_TANK,
+} from './environment';
 import { populationLimit, setPopulation } from './population';
 import { parseWorld, serializeWorld } from './save';
 import { AXOLOTL, validateSpecies, type SpeciesDefinition } from './species';
@@ -56,16 +63,21 @@ describe('axolotl : espèce du paludarium (#130)', () => {
     expect(AXOLOTL.colors.stripe).toBe('#f7b2bd');
   });
 
-  it('déclaré en données pour le paludarium seulement, deux par défaut', () => {
+  it('deux par défaut dans le bac d’eau froide, seul ; toléré mais absent par défaut au paludarium (#271)', () => {
+    // Depuis l'issue #271 (ADR 0065), l'axolotl vit seul dans le bac d'eau froide ; il reste
+    // proposé au paludarium (anciennes sauvegardes), sans y être peuplé par défaut.
+    expect(COLD_TANK.species).toEqual(['axolotl']);
+    expect(COLD_TANK.population).toEqual([{ species: 'axolotl', count: 2 }]);
     expect(PALUDARIUM.species).toContain('axolotl');
-    expect(PALUDARIUM.population).toContainEqual({ species: 'axolotl', count: 2 });
+    expect(PALUDARIUM.population.map((p) => p.species)).not.toContain('axolotl');
+    expect(livesIn('eaufroide', 'axolotl')).toBe(true);
     expect(livesIn('paludarium', 'axolotl')).toBe(true);
     expect(livesIn('tropical', 'axolotl')).toBe(false);
     expect(livesIn('bassin', 'axolotl')).toBe(false);
     expect(TROPICAL_TANK.species).not.toContain('axolotl');
     expect(POND.species).not.toContain('axolotl');
-    const world = createDefaultWorld(42, 'paludarium');
-    expect(axolotls(world).map((e) => e.id)).toEqual([0, 1]);
+    expect(axolotls(createDefaultWorld(42, 'eaufroide')).map((e) => e.id)).toEqual([0, 1]);
+    expect(axolotls(createDefaultWorld(42, 'paludarium'))).toEqual([]);
   });
 
   it('population réglable de 0 à 4 dans le paludarium, nouveaux venus posés dans l’eau', () => {
@@ -73,10 +85,14 @@ describe('axolotl : espèce du paludarium (#130)', () => {
     expect(populationLimit(world, 'axolotl')).toBe(4);
     const four = setPopulation(world, 'axolotl', 9);
     expect(axolotls(four)).toHaveLength(4);
-    // Les deux premiers sont inchangés ; les nouveaux ont les identifiants suivants (après
-    // ceux des grenouilles, #131).
-    expect(axolotls(four).slice(0, 2)).toEqual(axolotls(world));
-    expect(axolotls(four).map((e) => e.id)).toEqual([0, 1, world.nextFishId, world.nextFishId + 1]);
+    // Aucun par défaut (#271) : les nouveaux ont les identifiants suivants (après ceux des
+    // grenouilles et des tritons).
+    expect(axolotls(four).map((e) => e.id)).toEqual([
+      world.nextFishId,
+      world.nextFishId + 1,
+      world.nextFishId + 2,
+      world.nextFishId + 3,
+    ]);
     for (const fish of axolotls(four)) {
       expect(walkerCanStand(fish.x, fish.z, AXOLOTL, BOUNDS, GROUND)).toBe(true);
       expect(fish.y).toBeCloseTo(groundHeight(fish.x, fish.z, GROUND) + WALKER.clearance, 12);

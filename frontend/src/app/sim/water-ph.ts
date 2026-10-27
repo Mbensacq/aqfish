@@ -22,14 +22,16 @@ export const MAX_PH = 9.5;
 /**
  * pH de l'eau neuve de chaque environnement. **Approximations de jeu** (ADR 0057) : eau
  * douce un peu acide à neutre pour le bac tropical, légèrement basique pour le bassin, neutre
- * pour le paludarium, eau de mer pour le récif. Le type impose une entrée pour tout nouvel
- * environnement.
+ * pour le paludarium, eau de mer pour le récif, eau dure légèrement basique pour le bac d'eau
+ * froide (axolotl : idéal 7,4–7,6, `docs/ESPECES.md`). Le type impose une entrée pour tout
+ * nouvel environnement.
  */
 export const FRESH_PH: Readonly<Record<EnvironmentId, number>> = {
   tropical: 7,
   bassin: 7.5,
   paludarium: 7.2,
   recif: 8.2,
+  eaufroide: 7.5,
 };
 
 /**

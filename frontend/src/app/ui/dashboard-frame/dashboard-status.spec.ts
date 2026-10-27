@@ -2,6 +2,8 @@ import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 
 import type { DayPhase } from '../../sim/daylight';
+import type { EnvironmentId } from '../../sim/environment';
+import { NO_FISH, type PopulationCounts } from '../../sim/population';
 import { EMPTY_HEALTH_SUMMARY, healthSummary, type HealthSummary } from '../../sim/health-summary';
 import { DEFAULT_WATER_SAMPLE, type WaterSample } from '../../sim/water-dashboard';
 import { DEFAULT_WATER_READOUT } from '../../sim/water-quality';
@@ -16,13 +18,21 @@ const STARVED: HealthSummary = healthSummary(
 /** `alarm()` : bac tropical à cinq alertes (ammoniaque, faim, nitrates, santé, nitrites). */
 @Component({
   imports: [DashboardStatus],
-  template: `<app-dashboard-status [sample]="sample()" [readout]="readout" [health]="health()" />`,
+  template: `<app-dashboard-status
+    [sample]="sample()"
+    [readout]="readout"
+    [health]="health()"
+    [environment]="environment()"
+    [population]="population()"
+  />`,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 class StatusHost {
   readonly sample = signal<WaterSample>(DEFAULT_WATER_SAMPLE);
   readonly readout = DEFAULT_WATER_READOUT;
   readonly health = signal<HealthSummary>(EMPTY_HEALTH_SUMMARY);
+  readonly environment = signal<EnvironmentId>('tropical');
+  readonly population = signal<PopulationCounts>(NO_FISH);
 
   /** Bac à cinq alertes, valeurs de l'eau décalées de `shift`. */
   alarm(shift = 0): void {
@@ -130,6 +140,21 @@ describe('DashboardStatus (#260)', () => {
       (el) => el.dataset['alert'],
     );
     expect(ids).toEqual(['nitrite', 'hunger', 'health']);
+  });
+
+  it('mélange déconseillé de la population reçue : alerte « attention », retirée avec l’espèce (#271)', async () => {
+    const host = fixture.componentInstance;
+    host.environment.set('paludarium');
+    host.population.set({ ...NO_FISH, axolotl: 2, grenouille: 3, triton: 2 });
+    await fixture.whenStable();
+    const alert = root().querySelector<HTMLElement>('[data-alert="mix"]');
+    expect(alert?.dataset['severity']).toBe('attention');
+    expect(alert?.textContent).toContain('Mélange déconseillé');
+    expect(announcement()).toBe('1 alerte : Mélange déconseillé (attention).');
+
+    host.population.set({ ...NO_FISH, grenouille: 3, triton: 2 });
+    await fixture.whenStable();
+    expect(root().querySelector('[data-alert="mix"]')).toBeNull();
   });
 
   it('couleurs du cadre posées en variables CSS sur l’hôte (même test de contraste)', () => {

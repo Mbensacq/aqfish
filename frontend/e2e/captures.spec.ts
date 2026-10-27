@@ -282,6 +282,23 @@ test.describe('Captures', () => {
     });
   }
 
+  // Bac d'eau froide (#271) : axolotls seuls ; vue trois-quarts par défaut, côté et dessus.
+  const COLD_CAPTURES = [
+    { name: 'eaufroide-three-quarter', query: 'environnement=eaufroide' },
+    { name: 'eaufroide-side', query: 'environnement=eaufroide&camera=side' },
+    { name: 'eaufroide-top', query: 'environnement=eaufroide&camera=top' },
+  ] as const;
+  for (const { name, query } of COLD_CAPTURES) {
+    test(`angle ${name}`, async ({ page }) => {
+      const errors: string[] = [];
+      page.on('pageerror', (error) => errors.push(error.message));
+      await page.goto(`/?capture=1&seed=${SEED}&time=${TIME_SECONDS}&${query}`);
+      await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+      await page.screenshot({ path: join(OUTPUT_DIR, `${name}.png`), animations: 'disabled' });
+      expect(errors).toEqual([]);
+    });
+  }
+
   // Téléphone en portrait (390 × 844, #117) : vue trois-quarts cadrée sur un écran étroit,
   // donc dézoomée, sans nourriture puis avec granulés posés en points et en voxels.
   const PHONE_CAPTURES = [
