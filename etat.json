@@ -3089,10 +3089,10 @@
           "note": "Verdict OK, 0 bug, captures c083 publiées (84 identiques à c082)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-27T10:04:55.994Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-27T11:00:49.966Z",
+          "note": "PR #274 fusionnée → v1.0.6 (release CI ok), PR doc #273 fusionnée ; #244 et #272 fermées ; CI main verte sur f02872f ; suppression de branche refusée par l'environnement (laissées)"
         }
       },
       "metriques": {}
