@@ -3221,10 +3221,10 @@
           "note": "Issue #271 : espèces en règle 3/3, environnements cohérents (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-27T21:21:40.480Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-27T22:32:08.820Z",
+          "note": "PR #285 : bac d'eau froide (axolotl seul), paludarium sonneurs+tritons à 20 °C, alerte de mélange (#271, ADR 0065), CI verte ; cohabitation sonneur/triton en sources faibles"
         }
       },
       "metriques": {}
