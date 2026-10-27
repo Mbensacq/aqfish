@@ -3123,6 +3123,12 @@
           "debut": "2026-10-27T12:55:51.189Z",
           "fin": "2026-10-27T13:26:52.364Z",
           "note": "Verdict OK, 0 bug, captures c084 publiées (83 identiques, 2 attendues différentes) ; e2e complet non lancé en local (Chromium absent), CI verte"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-10-27T13:27:26.916Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
