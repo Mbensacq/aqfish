@@ -62,9 +62,11 @@ Mise à jour à la rétro du sprint 10 : l'éditeur (pièce, catalogue d'espèce
 |---|---|---|
 | v0.10 | L'éditeur (fin) | Livré au sprint 10 : éditeur de la pièce, catalogue d'espèces. Reste : forme du bassin (#190) |
 | v0.11 | Le vivant | Sprint 11 : qualité de l'eau simplifiée (température, cycle de l'azote, filtration, changement d'eau), bien-être (faim, santé), compatibilité des espèces et comportements selon l'heure |
-| v0.12 | L'aquarium éducatif | Priorité de Mathis du 2026-10-26 (#229) : beaucoup d'espèces avec fiches, pH, soins (feuilles de catappa…), conseils et aides pour débutant. Un cycle sur deux au plus pour cette épopée tant qu'elle n'est pas terminée ; les bugs et la dette gardent leur place |
-| v0.13 | La pièce et la caméra libre | Après v0.12 : pièce complète (#227 : murs, plafond à poutres, fenêtre, détails), caméra libre qui flotte dans la pièce (#228). Cadre optionnel autour du bac, jamais prioritaire sur l'aquarium |
-| v1.0 | L'ambiance et la mise en ligne | Sprint 12 : sons d'ambiance, accessibilité, performances, partage par lien si la sauvegarde locale le permet ; hébergement choisi ; les 3 derniers cycles sans nouvelle fonctionnalité |
+| v0.12 | L'aquarium éducatif (début) | Livré au sprint 12 (v1.0.0 à v1.0.5) : nourriture en voxels, pH et plages par espèce, fiches d'espèces sourcées, tableau de bord de l'eau, de la santé et des alertes en bordure |
+| v1.1 | Des espèces en règle | Sprint 13 (priorité de Mathis #262) : statut légal en France dans les fiches, triton et grenouille réels, environnements cohérents (#269 à #271), wiki des espèces (#252), premier lot de nouvelles espèces d'eau douce (#238). ADR de la pièce de N aquariums (#264) au c83 |
+| v1.2 | L'aquarium éducatif (fin) | Sprint 14 : feuilles de catappa (#239), aides pour débutant (#240), puis implémentation de la pièce aux aquariums (#264) |
+| v1.3 | La pièce et la caméra libre | Après v1.2 : pièce complète (#227 : murs, plafond à poutres, fenêtre, détails), caméra libre qui flotte dans la pièce (#228). Cadre optionnel autour du bac, jamais prioritaire sur l'aquarium |
+| v1.x | L'ambiance et la mise en ligne | Prévue au sprint 12, repoussée (la numérotation `v1.0.0` a été atteinte au c77) : sons d'ambiance, accessibilité, performances, partage par lien si la sauvegarde locale le permet ; hébergement choisi ; les 3 derniers cycles sans nouvelle fonctionnalité |
 
 ## Priorités de Mathis (2026-10-26)
 
