@@ -3204,6 +3204,24 @@
         }
       },
       "metriques": {}
+    },
+    "87": {
+      "numero": 87,
+      "date": "2026-10-27",
+      "debut": "2026-10-27T21:20:13.024Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-10-27T21:20:13.024Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
