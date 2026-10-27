@@ -3117,6 +3117,12 @@
           "debut": "2026-10-27T11:02:19.411Z",
           "fin": "2026-10-27T12:55:19.772Z",
           "note": "PR #275 : statut légal, liste d'exclusion et corrections de fiches (#269, ADR 0062), CI verte après 1 relance (e2e 1/4 et 2/4 au délai de 30 min, #248) ; 83 captures identiques à main en local, 1 modifiée + 1 nouvelle ; e2e complet non lancé en local"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-10-27T12:55:51.189Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
