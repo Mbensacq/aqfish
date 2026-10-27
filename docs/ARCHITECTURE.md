@@ -71,6 +71,15 @@ simulation testable et les captures reproductibles.
   obstacles et temps recalculés) ; `parseWorld` le relit avec une validation stricte qui ne
   lève jamais (`{ ok: false, error }`). Un monde rechargé puis avancé est identique, au bit
   près, au monde jamais sauvegardé. Tout nouveau champ d'état doit y être ajouté.
+- **Cible : pièce de N bacs** (#264, ADR 0061, pas encore implémentée) : une pièce
+  (`sim/room-state.ts` à venir) est une liste de mondes `World` **indépendants**, un par bac,
+  avancés du même pas par identifiant croissant, sans aucune lecture croisée ; le bac 0 a la
+  graine de la pièce, les autres une graine dérivée avec une constante de domaine ; horloge
+  de la journée commune. Le bassin à koïs est l'unique bac du jardin, hors de la pièce. La
+  sauvegarde passe au schéma 2 (enveloppe de la pièce, corps du schéma 1 pour chaque bac),
+  avec migration 1 → 2 et copie de l'ancien texte sous `aqfish.sauvegarde.schema1`. L'hôte
+  expose le **bac sélectionné** par ses signaux actuels : tableau de bord, alertes, fiches,
+  wiki et actions lisent ces signaux et ne supposent jamais un bac unique ailleurs.
 - **Eau** (#206, ADR 0052, `sim/water.ts`) : `World.water` (température, ammoniaque,
   nitrites, nitrates en unités de jeu, filtre), eau saine à la création, avancée à chaque
   pas après la nourriture, sur place et sans hasard (ne change ni la nage ni les captures).
