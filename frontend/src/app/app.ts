@@ -5,6 +5,7 @@ import { AquariumHost } from './ui/aquarium-host/aquarium-host';
 import { CommandsHelp } from './ui/commands-help/commands-help';
 import { ControlPanel } from './ui/control-panel/control-panel';
 import { DashboardFrame } from './ui/dashboard-frame/dashboard-frame';
+import { DashboardStatus } from './ui/dashboard-frame/dashboard-status';
 import { DayIndicator } from './ui/day-indicator/day-indicator';
 import { DecorEditor } from './ui/decor-editor/decor-editor';
 import { EXCLUSIVE_PANELS } from './ui/exclusive-panels/exclusive-panels';
@@ -13,7 +14,7 @@ import { ViewPresetsBar } from './ui/view-presets-bar/view-presets-bar';
 /**
  * Racine de l'application : le bac en 3D plein écran et, hors mode capture, l'interface
  * (barre des préréglages de vue, reliée à l'hôte du canvas, indicateur du moment de la
- * journée, tableau de bord de l'eau, panneau de contrôle et aide-mémoire des commandes).
+ * journée, tableau de bord (eau et simulation en haut, santé et alertes en bas), panneau de contrôle et aide-mémoire des commandes).
  * Sur écran étroit, « Réglages » et « Commandes » sont exclusifs : ouvrir l'un replie
  * l'autre, pour que leurs textes ne se superposent pas (#136, `EXCLUSIVE_PANELS`).
  * Le signal « prêt » du contrat de capture est émis par `AquariumHost` après la première
@@ -26,6 +27,7 @@ import { ViewPresetsBar } from './ui/view-presets-bar/view-presets-bar';
     CommandsHelp,
     ControlPanel,
     DashboardFrame,
+    DashboardStatus,
     DayIndicator,
     DecorEditor,
     ViewPresetsBar,

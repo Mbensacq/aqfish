@@ -1,43 +1,39 @@
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 
-import { dashboardAlerts, type DashboardAlert } from '../../sim/dashboard-alerts';
 import type { DayPhase } from '../../sim/daylight';
 import { EMPTY_HEALTH_SUMMARY, healthSummary, type HealthSummary } from '../../sim/health-summary';
-import { freshWater } from '../../sim/water';
-import { DEFAULT_WATER_SAMPLE, waterSample, type WaterSample } from '../../sim/water-dashboard';
-import { phBands } from '../../sim/water-ph';
+import { DEFAULT_WATER_SAMPLE, type WaterSample } from '../../sim/water-dashboard';
 import { DEFAULT_WATER_READOUT } from '../../sim/water-quality';
 import { HEALTH_FLOOR } from '../../sim/wellbeing';
-import { DashboardFrame } from './dashboard-frame';
+import { DASHBOARD_COLORS, DASHBOARD_REST_OPACITY, DashboardFrame } from './dashboard-frame';
 import { alertDetailId, DashboardStatus, SEVERITY_LEVELS } from './dashboard-status';
 
 const STARVED: HealthSummary = healthSummary(
   Array.from({ length: 4 }, () => ({ species: 'neon' as const, health: HEALTH_FLOOR, hunger: 1 })),
 );
 
-/** Cinq alertes : ammoniaque, faim, nitrates, santé (critiques), nitrites (attention). */
-function fiveAlerts(): readonly DashboardAlert[] {
-  return dashboardAlerts({
-    sample: {
-      ...waterSample(freshWater('tropical'), 'tropical', 0),
-      ammonia: 6,
-      nitrite: 2.5,
-      nitrate: 50,
-    },
-    phBands: phBands(['neon', 'guppy', 'corydora']),
-    health: STARVED,
-  });
-}
-
+/** `alarm()` : bac tropical à cinq alertes (ammoniaque, faim, nitrates, santé, nitrites). */
 @Component({
   imports: [DashboardStatus],
-  template: `<app-dashboard-status [health]="health()" [alerts]="alerts()" />`,
+  template: `<app-dashboard-status [sample]="sample()" [readout]="readout" [health]="health()" />`,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 class StatusHost {
+  readonly sample = signal<WaterSample>(DEFAULT_WATER_SAMPLE);
+  readonly readout = DEFAULT_WATER_READOUT;
   readonly health = signal<HealthSummary>(EMPTY_HEALTH_SUMMARY);
-  readonly alerts = signal<readonly DashboardAlert[]>([]);
+
+  /** Bac à cinq alertes, valeurs de l'eau décalées de `shift`. */
+  alarm(shift = 0): void {
+    this.sample.set({
+      ...DEFAULT_WATER_SAMPLE,
+      ammonia: 6 + shift,
+      nitrite: 2.5 + shift,
+      nitrate: 50 + shift,
+    });
+    this.health.set(STARVED);
+  }
 }
 
 describe('DashboardStatus (#260)', () => {
@@ -84,7 +80,7 @@ describe('DashboardStatus (#260)', () => {
   });
 
   it('au plus trois alertes, icône + gravité + message, et un compteur « +N »', async () => {
-    fixture.componentInstance.alerts.set(fiveAlerts());
+    fixture.componentInstance.alarm();
     await fixture.whenStable();
     expect(chips()).toHaveLength(3);
     const first = chips()[0]!;
@@ -101,7 +97,7 @@ describe('DashboardStatus (#260)', () => {
   });
 
   it('une alerte se déplie (une à la fois) sur sa cause et son action, `aria-expanded`', async () => {
-    fixture.componentInstance.alerts.set(fiveAlerts());
+    fixture.componentInstance.alarm();
     await fixture.whenStable();
     const [first, second] = chips();
     expect(first!.getAttribute('aria-expanded')).toBe('false');
@@ -126,18 +122,37 @@ describe('DashboardStatus (#260)', () => {
     expect(root().querySelector('[data-alert-detail]')).toBeNull();
   });
 
+  it('alertes calculées depuis l’eau et la santé reçues, ordonnées par gravité', async () => {
+    fixture.componentInstance.sample.set({ ...DEFAULT_WATER_SAMPLE, nitrite: 6 });
+    fixture.componentInstance.health.set(STARVED);
+    await fixture.whenStable();
+    const ids = [...root().querySelectorAll<HTMLElement>('[data-alert]')].map(
+      (el) => el.dataset['alert'],
+    );
+    expect(ids).toEqual(['nitrite', 'hunger', 'health']);
+  });
+
+  it('couleurs du cadre posées en variables CSS sur l’hôte (même test de contraste)', () => {
+    const host = root().querySelector<HTMLElement>('app-dashboard-status')!;
+    expect(host.style.getPropertyValue('--dashboard-ink')).toBe(DASHBOARD_COLORS.ink);
+    expect(host.style.getPropertyValue('--dashboard-rest-opacity')).toBe(
+      String(DASHBOARD_REST_OPACITY),
+    );
+  });
+
   it('alerte dépliée qui disparaît : le détail se referme', async () => {
-    fixture.componentInstance.alerts.set(fiveAlerts());
+    fixture.componentInstance.alarm();
     await fixture.whenStable();
     chips()[0]!.click();
     await fixture.whenStable();
-    fixture.componentInstance.alerts.set([]);
+    fixture.componentInstance.sample.set(DEFAULT_WATER_SAMPLE);
+    fixture.componentInstance.health.set(EMPTY_HEALTH_SUMMARY);
     await fixture.whenStable();
     expect(root().querySelector('[data-alert-detail]')).toBeNull();
   });
 
   it('annonce non répétée : même liste d’alertes recalculée, aucun changement du texte annoncé', async () => {
-    fixture.componentInstance.alerts.set(fiveAlerts());
+    fixture.componentInstance.alarm();
     await fixture.whenStable();
     const status = root().querySelector('[role="status"]')!;
     const changes: MutationRecord[] = [];
@@ -145,7 +160,7 @@ describe('DashboardStatus (#260)', () => {
     observer.observe(status, { childList: true, characterData: true, subtree: true });
     for (let i = 0; i < 5; i++) {
       // Nouveau relevé, nouvelles valeurs, mêmes sujets et gravités.
-      fixture.componentInstance.alerts.set(fiveAlerts());
+      fixture.componentInstance.alarm(i / 10);
       fixture.componentInstance.health.set(
         healthSummary([{ species: 'neon', health: 0.21 + i / 100, hunger: 1 }]),
       );
@@ -161,7 +176,6 @@ describe('DashboardStatus (#260)', () => {
   template: `<app-dashboard-frame
     [sample]="sample()"
     [readout]="readout"
-    [health]="health()"
     [phase]="phase()"
     [hour]="hour()"
     [speed]="speed()"
@@ -171,7 +185,6 @@ describe('DashboardStatus (#260)', () => {
 class FrameHost {
   readonly sample = signal<WaterSample>(DEFAULT_WATER_SAMPLE);
   readonly readout = DEFAULT_WATER_READOUT;
-  readonly health = signal<HealthSummary>(EMPTY_HEALTH_SUMMARY);
   readonly phase = signal<DayPhase>('jour');
   readonly hour = signal(12);
   readonly speed = signal(1);
@@ -206,16 +219,5 @@ describe('DashboardFrame : simulation et alertes (#260)', () => {
     fixture.componentInstance.hour.set(Number.NaN);
     await fixture.whenStable();
     expect(sim().querySelector('[data-dashboard-hour]')!.textContent!.trim()).toBe('–');
-  });
-
-  it('alertes calculées depuis l’eau et la santé, affichées dans le bandeau', async () => {
-    expect(root().querySelector('[data-alert-none]')).not.toBeNull();
-    fixture.componentInstance.sample.update((s) => ({ ...s, nitrite: 6 }));
-    fixture.componentInstance.health.set(STARVED);
-    await fixture.whenStable();
-    const ids = [...root().querySelectorAll<HTMLElement>('[data-alert]')].map(
-      (el) => el.dataset['alert'],
-    );
-    expect(ids).toEqual(['nitrite', 'hunger', 'health']);
   });
 });

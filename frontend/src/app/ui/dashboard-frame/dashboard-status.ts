@@ -3,13 +3,21 @@ import { ChangeDetectionStrategy, Component, computed, input, signal } from '@an
 import {
   ALERT_SEVERITY_LABELS,
   alertsAnnouncement,
+  dashboardAlerts,
   shownAlerts,
   type AlertId,
   type AlertSeverity,
   type DashboardAlert,
 } from '../../sim/dashboard-alerts';
 import { EMPTY_HEALTH_SUMMARY, healthItems, type HealthSummary } from '../../sim/health-summary';
-import type { GaugeLevel } from '../../sim/water-dashboard';
+import { DEFAULT_WATER_SAMPLE, type GaugeLevel, type WaterSample } from '../../sim/water-dashboard';
+import { DEFAULT_WATER_READOUT, type WaterReadout } from '../../sim/water-quality';
+import {
+  DASHBOARD_BACKGROUND_ALPHA,
+  DASHBOARD_COLORS,
+  DASHBOARD_MUTED_ALPHA,
+  DASHBOARD_REST_OPACITY,
+} from './dashboard-frame';
 import { levelIconPixels, LEVEL_ICON_GRID } from './level-icons';
 
 /** Identifiant du détail d'une alerte (cible de `aria-controls`). */
@@ -36,8 +44,9 @@ const ICONS: Readonly<Record<GaugeLevel, readonly (readonly [number, number])[]>
  * icône, sa gravité en texte et un message ; elle se déplie (souris, clavier) sur sa cause
  * probable et l'action conseillée. Au plus trois alertes, les autres comptées (« +N »).
  * Une région `role="status"` annonce les alertes ; son texte ne change qu'avec elles (sujets
- * et gravités), donc rien n'est relu à chaque relevé. Aucune logique de simulation : les
- * données arrivent préparées (`sim/health-summary.ts`, `sim/dashboard-alerts.ts`).
+ * et gravités), donc rien n'est relu à chaque relevé. Aucune logique de simulation : il lit
+ * les relevés de l'hôte (eau, santé) et en dérive les alertes par fonctions pures
+ * (`sim/health-summary.ts`, `sim/dashboard-alerts.ts`). Mêmes couleurs que le cadre haut.
  */
 @Component({
   selector: 'app-dashboard-status',
@@ -133,12 +142,24 @@ const ICONS: Readonly<Record<GaugeLevel, readonly (readonly [number, number])[]>
   </section>`,
   styleUrl: './dashboard-status.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '[style.--dashboard-background]': 'colors.background',
+    '[style.--dashboard-ink]': 'colors.ink',
+    '[style.--dashboard-vert]': 'colors.vert',
+    '[style.--dashboard-orange]': 'colors.orange',
+    '[style.--dashboard-rouge]': 'colors.rouge',
+    '[style.--dashboard-background-alpha]': 'backgroundAlpha',
+    '[style.--dashboard-muted-alpha]': 'mutedAlpha',
+    '[style.--dashboard-rest-opacity]': 'restOpacity',
+  },
 })
 export class DashboardStatus {
-  /** Synthèse de la santé des animaux. */
+  /** Relevé exact de l'eau (fourni par l'hôte, au plus 4 fois par seconde). */
+  readonly sample = input<WaterSample>(DEFAULT_WATER_SAMPLE);
+  /** Relevé arrondi de l'eau (fourni par l'hôte) : zones du pH des espèces présentes. */
+  readonly readout = input<WaterReadout>(DEFAULT_WATER_READOUT);
+  /** Synthèse de la santé des animaux (fournie par l'hôte, au rythme des relevés de l'eau). */
   readonly health = input<HealthSummary>(EMPTY_HEALTH_SUMMARY);
-  /** Alertes, ordonnées par gravité (`dashboardAlerts`). */
-  readonly alerts = input<readonly DashboardAlert[]>([]);
 
   /** Alerte dépliée (une à la fois), `null` : aucune. */
   readonly expanded = signal<AlertId | null>(null);
@@ -148,6 +169,19 @@ export class DashboardStatus {
   protected readonly levels = SEVERITY_LEVELS;
   protected readonly severityLabels = ALERT_SEVERITY_LABELS;
   protected readonly detailId = alertDetailId;
+  protected readonly colors = DASHBOARD_COLORS;
+  protected readonly backgroundAlpha = DASHBOARD_BACKGROUND_ALPHA;
+  protected readonly mutedAlpha = DASHBOARD_MUTED_ALPHA;
+  protected readonly restOpacity = DASHBOARD_REST_OPACITY;
+
+  /** Alertes de l'eau et des animaux, ordonnées par gravité, recalculées à chaque relevé. */
+  readonly alerts = computed<readonly DashboardAlert[]>(() =>
+    dashboardAlerts({
+      sample: this.sample(),
+      phBands: this.readout().phBands,
+      health: this.health(),
+    }),
+  );
 
   protected readonly items = computed(() => healthItems(this.health()));
   protected readonly visible = computed(() => shownAlerts(this.alerts()));

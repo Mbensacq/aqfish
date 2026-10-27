@@ -54,13 +54,15 @@ async function importAlerts(page: Page, speed = 0): Promise<void> {
 
 /** Boîtes de tous les éléments visibles du tableau de bord (cadre haut et bandeau bas). */
 async function frameBoxes(page: Page) {
-  return page.locator('app-dashboard-frame').evaluate((root) =>
-    [root, ...root.querySelectorAll('*')].flatMap((el) => {
-      const r = el.getBoundingClientRect();
-      return r.width > 0 && r.height > 0
-        ? [{ left: r.left, top: r.top, right: r.right, bottom: r.bottom }]
-        : [];
-    }),
+  return page.evaluate(() =>
+    [...document.querySelectorAll('app-dashboard-frame, app-dashboard-status')].flatMap((root) =>
+      [root, ...root.querySelectorAll('*')].flatMap((el) => {
+        const r = el.getBoundingClientRect();
+        return r.width > 0 && r.height > 0
+          ? [{ left: r.left, top: r.top, right: r.right, bottom: r.bottom }]
+          : [];
+      }),
+    ),
   );
 }
 

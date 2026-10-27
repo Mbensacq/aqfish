@@ -52,18 +52,19 @@ bureau, 149 px sur tablette, 79 px sur téléphone.
 - **Disposition** :
   - simulation (icône du moment de la journée de `ui/day-indicator`, heure, vitesse) à droite
     des jauges dans le **cadre haut** ; sur téléphone, sur la ligne du bouton « Eau » ;
-  - santé et alertes dans un **bandeau bas** (`ui/dashboard-frame/dashboard-status`), juste
+  - santé et alertes dans un **bandeau bas** (`ui/dashboard-frame/dashboard-status`,
+    composant frère du cadre dans `app.html`, mêmes couleurs et même estompage), juste
     au-dessus de la barre des vues : il n'y a pas la place sous le cadre haut sur téléphone, et
     le bandeau bas garde la même place à toutes les largeurs. Bas du bandeau à 64 px du bord
     (96 px sous 640 px, où la barre des vues passe sur deux lignes). Mesuré avec trois alertes :
     haut du bandeau à 603 px sur bureau (centre jusqu'à 576), 907 px sur tablette (819),
-    686 px sur téléphone (675). Même plan et même estompage que le cadre.
+    686 px sur téléphone (675).
   - **Au plus trois alertes** affichées, puis « +N ». Chaque alerte est un bouton (icône de
     niveau, gravité en texte, message) qui se déplie, une à la fois, sur une ligne « Cause
     probable : … À faire : … » (`aria-expanded`, `aria-controls` vers le détail ouvert).
 - **Rythme** : la synthèse de santé est relevée avec l'eau (`exposeWater`, donc au plus 4 fois
-  par seconde, et aux changements de population) ; les alertes sont dérivées par le composant
-  (`computed`) des relevés reçus. Aucune écriture dans le monde.
+  par seconde, et aux changements de population) ; les alertes sont dérivées par le bandeau
+  (`computed`) des relevés reçus (eau exacte, zones du pH, santé). Aucune écriture dans le monde.
 
 ## Options écartées
 
