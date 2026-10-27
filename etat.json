@@ -3011,10 +3011,10 @@
           "note": "PR #261 : tableau de bord 2/3 (santé, simulation, alertes ; ADR 0060), CI verte sur a4ff1e3 ; part e2e 2/4 annulée 2× au délai car +4 tests y faisaient glisser meubles-qa (#248) : e2e regroupés, limites des parts = main ; verify local partiel (unitaires 2609, e2e touchés) ; ~1150 lignes hors tests (> 600) ; pied d'attribution réinjecté par le serveur dans le corps de PR"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-27T02:05:36.483Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-27T02:43:33.797Z",
+          "note": "Verdict RÉSERVES, 0 bug bloquant (police du bandeau bas), 10 e2e verts, 80 captures publiées (c081)"
         }
       },
       "metriques": {}
