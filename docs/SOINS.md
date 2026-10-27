@@ -465,6 +465,10 @@ l'alcalinité ; **un bac récifal ne peut jamais recevoir de cuivre**.
 
 ## 11. Paramètres cibles par espèce
 
+> Voir aussi `docs/ESPECES.md` (2026-10-27), plus récent et plus détaillé : fiches, statut légal en
+> France, compatibilité, désaccords entre sources. En cas d'écart, `docs/ESPECES.md` prévaut
+> jusqu'à vérification.
+
 | Espèce / groupe | Température | pH | Dureté | NH₃ / NO₂ / NO₃ | Salinité | Source |
 |---|---|---|---|---|---|---|
 | Néon (Paracheirodon innesi) | 20–26 °C | 5,0–7,0 | dH 1–2 | 0 / 0 / < 20 mg/L (Merck, eau douce) | Ne tolère pas le sel (tétras, UF/IFAS) | FishBase |
