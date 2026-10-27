@@ -3231,6 +3231,12 @@
           "debut": "2026-10-27T22:32:37.866Z",
           "fin": "2026-10-27T23:06:31.049Z",
           "note": "Verdict OK, 0 bug bloquant, captures c087 publiées (78/88 identiques, écarts attendus), CI verte"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-10-27T23:06:56.362Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
