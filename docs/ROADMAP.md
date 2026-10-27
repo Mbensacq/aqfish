@@ -88,6 +88,11 @@ jamais eu d'aquarium doit pouvoir commencer ici et apprendre à s'occuper de ses
    alertes et le wiki soient écrits « par bac » ; l'implémentation vient après #262 et #252 et
    regroupe la pièce complète (#227), la caméra libre (#228), les meubles (#35) et le décor
    personnalisable (#34).
+5. #277 — bug : changer d'environnement efface le bac. **Priorité haute** ; à traiter comme
+   premier lot de #264 si l'ADR le permet vite, sinon en correctif autonome compatible avec la
+   future sauvegarde au schéma 2.
+6. #278 — mode décor (aquarium purement graphique, sans contraintes de soin, un mode par bac),
+   puis #279 — vue « fond d'écran » pour Wallpaper Engine. Après l'ADR de #264.
 
 Toute valeur biologique est sourcée (référence consultable) ou marquée « approximation de jeu » ;
 ce qui n'a pas pu être vérifié est signalé, jamais présenté comme réel. Planif replace les
