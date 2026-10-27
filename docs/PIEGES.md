@@ -74,6 +74,15 @@ haut de sa section.
   `[attr.max]` lié dans un `@for`, Angular peut poser la valeur avant les bornes ; une valeur
   au-delà du `max` par défaut (100) est ramenée à 100. Écrire `min`, `max` et `step` en
   attributs statiques (posés à la création de l'élément), puis lier `[value]`. (2026-10-24)
+- **`npx prettier --write ../docs` reformate toute la documentation** (cycle 86) : Prettier
+  ne couvre que `frontend/` (`format:check`) ; lancé sur `docs/`, il réécrit des dizaines de
+  fichiers Markdown sans rapport. Ne formater que les fichiers touchés, ou pas du tout les
+  `.md`. Rattrapage : `git checkout HEAD -- docs` puis réappliquer ses propres changements.
+  (2026-10-27)
+- **Animal sombre sur la berge du paludarium** (cycle 86, #270) : un dos gris roche
+  (`#45423e`) disparaît sur les racines et rochers de la berge en vue de trois-quarts. Pour un
+  animal de couleur sombre, garder un contraste de clarté avec la roche (noir `koiNoir` taché
+  d'une couleur vive) et regarder la capture `paludarium-three-quarter`. (2026-10-27)
 - **Captures et `verify` en parallèle : e2e lents en délai dépassé** (cycle 54) : lancer
   `npm run captures` (port 4310) pendant l'e2e de `verify` partage le processeur ;
   `anemones-qa` « tentacules rouges… » (1,4 min seul) a alors dépassé son délai de 2 min.

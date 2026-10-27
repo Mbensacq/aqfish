@@ -111,8 +111,8 @@ describe('fonctions du panneau de contrôle', () => {
   it('speciesStepLabel : genre porté par le catalogue (#95)', () => {
     expect(speciesStepLabel('neon', -1)).toBe('Retirer un néon');
     expect(speciesStepLabel('neon', 1)).toBe('Ajouter un néon');
-    expect(speciesStepLabel('grenouille', 1)).toBe('Ajouter une grenouille');
-    expect(speciesStepLabel('grenouille', -1)).toBe('Retirer une grenouille');
+    expect(speciesStepLabel('grenouille', 1)).toBe('Ajouter un sonneur oriental');
+    expect(speciesStepLabel('triton', -1)).toBe('Retirer un triton à ventre de feu');
     expect(speciesStepLabel('clown', 1)).toBe('Ajouter un poisson-clown');
     expect(speciesStepLabel('chirurgien', -1)).toBe('Retirer un chirurgien bleu');
   });
@@ -249,8 +249,8 @@ describe('ControlPanel', () => {
     ]);
     expect(section.querySelector('[data-population-empty]')).toBeNull();
     expect(byLabel('Nombre d’axolotls')?.value).toBe('0');
-    expect(byLabel('Nombre de grenouilles')?.value).toBe('0');
-    expect(byLabel('Nombre de tritons')?.value).toBe('0');
+    expect(byLabel('Nombre de sonneurs orientaux')?.value).toBe('0');
+    expect(byLabel('Nombre de tritons à ventre de feu')?.value).toBe('0');
   });
 
   it('mélange déconseillé (#209) : un libellé par couple incompatible présent', async () => {
@@ -266,7 +266,9 @@ describe('ControlPanel', () => {
       triton: 2,
     });
     await fixture.whenStable();
-    expect(warnings()).toEqual(['Mélange déconseillé : axolotls et tritons (prédateur)']);
+    expect(warnings()).toEqual([
+      'Mélange déconseillé : axolotls et tritons à ventre de feu (prédateur)',
+    ]);
     fixture.componentInstance.population.set({
       ...fixture.componentInstance.population(),
       axolotl: 0,
@@ -402,11 +404,13 @@ describe('ControlPanel', () => {
       fixture.componentInstance.populationMax.update((p) => ({ ...p, triton: 3 }));
       fixture.componentInstance.tankLiters.set(105);
       await openPanel();
-      stepButton('Ajouter un triton').click();
+      stepButton('Ajouter un triton à ventre de feu').click();
       fixture.componentInstance.population.update((p) => ({ ...p, triton: 1 }));
       await fixture.whenStable();
-      expect(addWarnings()).toEqual(['Tritons déconseillés avec les axolotls (prédateur)']);
-      stepButton('Retirer un triton').click();
+      expect(addWarnings()).toEqual([
+        'Tritons à ventre de feu déconseillés avec les axolotls (prédateur)',
+      ]);
+      stepButton('Retirer un triton à ventre de feu').click();
       expect(fixture.componentInstance.requests.at(-1)).toEqual({ species: 'triton', count: 0 });
       await fixture.whenStable();
       expect(addWarnings()).toEqual([]);

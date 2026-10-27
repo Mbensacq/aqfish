@@ -19,11 +19,11 @@ import { cloneWorld, type MutableWorld, type World } from './world';
  * pluriels irréguliers et genre portés par la donnée, pas devinés.
  */
 export interface SpeciesLabels {
-  /** Nom au singulier (« néon », « grenouille »). */
+  /** Nom au singulier (« néon », « sonneur oriental »). */
   readonly singular: string;
   /** Nom au pluriel (« néons », « poissons-clowns », « chirurgiens bleus »). */
   readonly plural: string;
-  /** Vrai si le nom est féminin (« une grenouille »). */
+  /** Vrai si le nom est féminin (aucune espèce actuelle ; « une grenouille »). */
   readonly feminine: boolean;
 }
 
@@ -34,8 +34,12 @@ export const SPECIES_LABELS: Readonly<Record<SpeciesId, SpeciesLabels>> = {
   corydora: { singular: 'corydora', plural: 'corydoras', feminine: false },
   koi: { singular: 'koï', plural: 'koïs', feminine: false },
   axolotl: { singular: 'axolotl', plural: 'axolotls', feminine: false },
-  grenouille: { singular: 'grenouille', plural: 'grenouilles', feminine: true },
-  triton: { singular: 'triton', plural: 'tritons', feminine: false },
+  grenouille: { singular: 'sonneur oriental', plural: 'sonneurs orientaux', feminine: false },
+  triton: {
+    singular: 'triton à ventre de feu',
+    plural: 'tritons à ventre de feu',
+    feminine: false,
+  },
   clown: { singular: 'poisson-clown', plural: 'poissons-clowns', feminine: false },
   chirurgien: { singular: 'chirurgien bleu', plural: 'chirurgiens bleus', feminine: false },
 };

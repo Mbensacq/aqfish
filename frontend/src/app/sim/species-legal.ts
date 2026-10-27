@@ -58,7 +58,8 @@ function legal(
 
 /**
  * Statut légal de chaque espèce ; le type impose une entrée pour toute nouvelle espèce.
- * Aucun statut n'est confirmé à la source consolidée pendant le cycle 84 (ADR 0062).
+ * Aucun statut n'est confirmé à la source consolidée pendant les cycles 84 et 86 (ADR 0062,
+ * ADR 0064).
  */
 export const LEGAL_STATUS: Readonly<Record<SpeciesId, LegalStatus>> = {
   neon: legal('a-verifier', 'non-verifie', ESPECES, 'aucune ligne de l’annexe 2 vérifiée'),
@@ -72,17 +73,22 @@ export const LEGAL_STATUS: Readonly<Record<SpeciesId, LegalStatus>> = {
     'certificat de capacité au-delà ; ne jamais relâcher',
     40,
   ),
+  // Bombina orientalis (#270, ADR 0064) : ligne « Autres Anoures » de docs/ESPECES.md
+  // appliquée à une espèce exotique, hors CITES et hors protection française ; cette lecture
+  // n'a pas été confirmée sur le texte consolidé, d'où la confiance faible.
   grenouille: legal(
-    'a-verifier',
-    'non-verifie',
-    ESPECES,
-    'espèce non déterminée : le régime dépend de la famille (Pipidae exclus)',
+    'sans-formalite',
+    'faible',
+    `${ARRETE_2018} : « Autres Anoures » (application à Bombina orientalis non vérifiée)`,
+    'certificat de capacité au-delà ; Bombina variegata (indigène) exclu ; ne jamais relâcher',
+    40,
   ),
   triton: legal(
-    'a-verifier',
-    'non-verifie',
-    ESPECES,
-    'espèce non déterminée : Cynops sans formalité jusqu’à 40, Triturus exclus',
+    'sans-formalite',
+    'moyenne',
+    `${ARRETE_2018} : « Autres Caudata »`,
+    'certificat de capacité au-delà ; préférer les sujets nés en captivité ; ne jamais relâcher',
+    40,
   ),
   clown: legal('a-verifier', 'non-verifie', ESPECES, 'aucune ligne de l’annexe 2 vérifiée'),
   chirurgien: legal('a-verifier', 'non-verifie', ESPECES, 'aucune ligne de l’annexe 2 vérifiée'),
@@ -186,6 +192,7 @@ export const EXCLUSIONS: readonly Exclusion[] = Object.freeze(
       { taxon: 'Lissotriton helveticus', reason: 'indigene-protegee', reference: INDIGENES },
       { taxon: 'Ichthyosaura alpestris', reason: 'indigene-protegee', reference: INDIGENES },
       { taxon: 'Hyla arborea', reason: 'indigene-protegee', reference: INDIGENES },
+      { taxon: 'Bombina variegata', reason: 'indigene-protegee', reference: INDIGENES },
       { taxon: 'Bufo bufo', reason: 'indigene-protegee', reference: INDIGENES },
     ] satisfies Exclusion[]
   ).map((entry) => Object.freeze(entry)),

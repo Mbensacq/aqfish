@@ -34,15 +34,15 @@ test.describe('Compatibilité des espèces (#209)', () => {
     const errors = await open(page, '?seed=42&environnement=paludarium');
     await toggle(page).click();
     await expect(warnings(page)).toHaveText([
-      'Mélange déconseillé : axolotls et grenouilles (prédateur)',
-      'Mélange déconseillé : axolotls et tritons (prédateur)',
+      'Mélange déconseillé : axolotls et sonneurs orientaux (prédateur)',
+      'Mélange déconseillé : axolotls et tritons à ventre de feu (prédateur)',
     ]);
 
     // Sans tritons : il ne reste que le couple axolotl et grenouille.
-    await slider(page, 'de tritons').fill('0');
+    await slider(page, 'de tritons à ventre de feu').fill('0');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /triton:0/);
     await expect(warnings(page)).toHaveText([
-      'Mélange déconseillé : axolotls et grenouilles (prédateur)',
+      'Mélange déconseillé : axolotls et sonneurs orientaux (prédateur)',
     ]);
 
     // Sans axolotls : plus aucun mélange déconseillé.
@@ -53,7 +53,7 @@ test.describe('Compatibilité des espèces (#209)', () => {
     // Un axolotl de retour : le libellé revient.
     await slider(page, 'd’axolotls').fill('1');
     await expect(warnings(page)).toHaveText([
-      'Mélange déconseillé : axolotls et grenouilles (prédateur)',
+      'Mélange déconseillé : axolotls et sonneurs orientaux (prédateur)',
     ]);
     expect(errors).toEqual([]);
   });

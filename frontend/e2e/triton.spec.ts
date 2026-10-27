@@ -29,7 +29,7 @@ test.describe('Tritons (#133)', () => {
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /triton:2/);
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /grenouille:3/);
     await page.getByRole('button', { name: 'Réglages' }).click();
-    const field = page.getByRole('spinbutton', { name: 'Nombre de tritons' });
+    const field = page.getByRole('spinbutton', { name: 'Nombre de tritons à ventre de feu' });
     await expect(field).toHaveValue('2');
     await field.fill('9');
     await field.dispatchEvent('change');

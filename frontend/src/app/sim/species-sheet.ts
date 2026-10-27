@@ -103,6 +103,9 @@ interface SheetData {
 /** Références de `docs/ESPECES.md` (recherche documentaire du 2026-10-27, #262). */
 const ESPECES = 'docs/ESPECES.md';
 
+/** Fiche de soins secondaire du sonneur oriental (consultée le 2026-10-27, #270). */
+const ANAPSID = 'https://anapsid.org/bombina.html (secondaire)';
+
 function note(text: string, status: FieldStatus): SheetNote {
   return Object.freeze({ text, status });
 }
@@ -166,21 +169,39 @@ const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
     minGroup: approx(1),
     minLiters: approx(75),
   },
+  // Sonneur oriental (#270, ADR 0064) : source secondaire unique, consultée au cycle 86.
   grenouille: {
-    adultSize: approx(6),
-    temperaturePreferred: approx(range(21, 24)),
+    adultSize: sourced(6, `${ANAPSID} (taille adulte)`),
+    temperaturePreferred: sourced(range(20, 24), `${ANAPSID} (température du terrarium)`),
     temperatureTolerated: approx(range(18, 26)),
-    diet: approx('carnivore'),
+    diet: sourced('carnivore', `${ANAPSID} (insectes, vers, petites proies)`),
     minGroup: approx(1),
     minLiters: approx(40),
+    notes: [
+      note(
+        'Semi-aquatique : un quart de berge sèche environ, eau peu profonde (une dizaine de cm)',
+        source(`${ANAPSID} (source secondaire)`),
+      ),
+      note(
+        'Espèce choisie faute d’anoure vérifié dans docs/ESPECES.md : paramètres à recouper',
+        source('ADR 0064'),
+      ),
+    ],
   },
+  // Triton à ventre de feu chinois (#270, ADR 0064).
   triton: {
-    adultSize: approx(10),
-    temperaturePreferred: approx(range(18, 22)),
-    temperatureTolerated: approx(range(15, 25)),
-    diet: approx('carnivore'),
+    adultSize: sourced(10, `${ESPECES} (Caudata Culture : 6 à 10,3 cm)`),
+    temperaturePreferred: sourced(range(14, 20), `${ESPECES} (Caudata Culture)`),
+    temperatureTolerated: approx(range(12, 23)),
+    diet: sourced('carnivore', `${ESPECES} (Caudata Culture : vers, insectes, crustacés)`),
     minGroup: approx(1),
     minLiters: approx(40),
+    notes: [
+      note(
+        'Sans poissons ; éviter au-dessus de 23 °C ; préférer les sujets nés en captivité',
+        source(`${ESPECES} (Caudata Culture)`),
+      ),
+    ],
   },
   clown: {
     adultSize: approx(9),

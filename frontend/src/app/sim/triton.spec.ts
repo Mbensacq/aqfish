@@ -120,15 +120,16 @@ function waterTimeShare(species: 'triton' | 'grenouille', seeds: readonly number
 }
 
 describe('triton : espèce du paludarium (#133)', () => {
-  it('définition valide, solitaire, amphibie, orange de la palette', () => {
+  it('définition valide, solitaire, amphibie, dos noir et ventre orange de la palette (#270)', () => {
     expect(validateSpecies(TRITON)).toEqual([]);
     expect(TRITON.schooling).toBeNull();
     expect(TRITON.amphibian).toBeDefined();
     expect(TRITON.walker).toBeUndefined();
     expect(TRITON.depth).toBeUndefined();
     expect(TRITON.silhouette).toBe('triton');
-    expect(TRITON.colors.back).toBe('#e07a2f');
-    expect(TRITON.colors.stripe).toBe('#e07a2f');
+    expect(TRITON.colors.back).toBe('#1c1c22');
+    expect(TRITON.colors.stripe).toBe('#1c1c22');
+    expect(TRITON.colors.belly).toBe('#e07a2f');
   });
 
   it('déclaré en données pour le paludarium seulement, deux par défaut', () => {

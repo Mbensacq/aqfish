@@ -70,7 +70,7 @@ test.describe('Grenouilles : parcours utilisateur (QA)', () => {
     await page.setViewportSize({ width: 390, height: 844 });
     const errors = await open(page, '?environnement=paludarium&seed=42');
     await page.getByRole('button', { name: 'Réglages' }).click();
-    const field = page.getByRole('spinbutton', { name: 'Nombre de grenouilles' });
+    const field = page.getByRole('spinbutton', { name: 'Nombre de sonneurs orientaux' });
     await field.scrollIntoViewIfNeeded();
     await expect(field).toBeInViewport();
     await field.fill('1');
