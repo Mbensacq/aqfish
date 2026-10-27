@@ -38,7 +38,7 @@ la passe de post-traitement y ramène chaque pixel affiché (ADR 0007).
 | Végétation              | `#163d22` `#1f4d2b` `#2f6b3a` `#4e9a4a` `#8fd16a`                                      |
 | Koïs                    | rouge `#d94a3a`, blanc cassé `#f2ead8`, noir `#1c1c22`, orange `#f08a2c`, or `#f2c14e` |
 | Petits poissons         | bleu néon `#3fa9f5`, rouge néon `#e63946`, jaune `#ffd166`, rose `#f4978e`             |
-| Amphibiens              | axolotl rose `#f7b2bd`, grenouille `#7bc950`, triton `#e07a2f`                         |
+| Amphibiens              | axolotl rose `#f7b2bd`, grenouille `#7bc950`, triton `#e07a2f` (ventre, ADR 0064)       |
 | Fleurs                  | nénuphar rose `#f06a9b`, cœur `#ffb703`                                                |
 | Interface               | fond `#141418` (translucide), texte `#e8e6e3`, accent `#5fbfa3`                        |
 | Récif (tons d'environnement) | eau `#3f7597`, eau sous la surface `#4796cb`, corail violet `#7d4fb8` et `#b58be6`, poisson-clown `#ff6d00`, chirurgien `#1d3fbf` |
@@ -83,11 +83,16 @@ crête dorsale, pattes et nageoire de la queue rose poisson, trois branchies de 
 la tête en rose nénuphar (plus soutenu que le corps, pour qu'elles se lisent de profil comme
 de dessus, où elles dépassent des flancs). Il reste rose sur le sable clair du fond.
 
-La **grenouille** du paludarium (#131, ADR 0036) : corps trapu vert grenouille taché de vert
-végétation (`vegetationClaire`), ventre blanc cassé, deux yeux noirs posés de chaque côté du
+La **grenouille** du paludarium (#131, ADR 0036), sonneur oriental (*Bombina orientalis*)
+depuis #270 (ADR 0064) : corps trapu vert grenouille taché de noir (`koiNoir`), ventre rouge
+(`koiRouge`, le « ventre de feu », lu en vue de dessous), deux yeux noirs posés de chaque côté du
 haut de la tête (un œil en bandeau sur le dessus se lisait comme un chapeau noir), cuisses
 et pieds vert sombre qui dépassent des flancs vu de dessus. À la nage, le dos et les yeux
 restent au-dessus de la surface : elle se lit sur l'eau claire du rivage.
+
+Le **triton** du paludarium (#133, ADR 0037), triton à ventre de feu chinois (*Cynops
+orientalis*) depuis #270 (ADR 0064) : corps fin et longue queue au dos brun-noir (`#45423e`)
+taché de noir, ventre orange triton (`tritonOrange`, lu en vue de dessous).
 
 Les **feuilles mortes** du bassin (#107, ADR 0033) : petites feuilles de 9 à 13 cm au bord
 irrégulier, brunes (`sableSombre`, `sableOmbre`) ou ocre (`tritonOrange`, `sableSombre`), en

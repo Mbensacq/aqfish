@@ -256,6 +256,14 @@ sur `docs/SOINS.md` § 11 jusqu'à vérification.
   aquatique ou semi-aquatique, compatible avec l'environnement, sourcé. Aucun candidat n'a été
   vérifié dans cette recherche : à chercher (#262). À défaut, retirer la grenouille plutôt que
   d'afficher une espèce inexacte.
+- **Retenu au cycle 86 (#270, ADR 0064) : *Bombina orientalis* (sonneur oriental)**, anoure
+  semi-aquatique de Corée, du nord-est de la Chine et du sud-est de la Sibérie (1 700 à
+  3 000 m) ; adulte d'environ 6 cm ; terrarium à 20–24 °C, une dizaine de centimètres d'eau et
+  un quart de berge sèche ; carnivore (insectes, vers, petites proies) (anapsid.org,
+  **secondaire**, [59]). Exotique, hors Pipidae : ligne « Autres Anoures » supposée, **non
+  confirmée** sur l'annexe 2 (copies FAOLEX et AIDA lues jusqu'aux oiseaux seulement) ;
+  confiance faible. Ne pas confondre avec *Bombina variegata* (sonneur à ventre jaune),
+  indigène protégé, ajouté à la liste d'exclusion.
 
 ### Triton : *Cynops* recommandé
 - **Triton à ventre de feu chinois, *Cynops orientalis*** (synonyme *Hypselotriton
@@ -414,3 +422,4 @@ remplacer par une source primaire.
 56. Aquaculture 2020, poisson-mandarin — https://www.sciencedirect.com/science/article/abs/pii/S0044848619316175
 57. *Synchiropus splendidus* — https://en.wikipedia.org/wiki/Synchiropus_splendidus *(secondaire)*
 58. *Hoplisoma sterbai* — https://en.wikipedia.org/wiki/Sterba%27s_corydoras *(secondaire)*
+59. *Bombina orientalis*, fiche de soins — https://anapsid.org/bombina.html *(secondaire, consultée le 2026-10-27, #270)*
