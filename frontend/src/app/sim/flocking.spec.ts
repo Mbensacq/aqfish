@@ -318,6 +318,7 @@ describe('banc de néons (monde complet)', () => {
     },
   );
 
+  // Délai explicite (#244, docs/PIEGES.md) : ≈ 0,5 s en local, bien plus en CI lente.
   it('en moyenne sur les graines, le banc resserre nettement les voisins (au moins 25 %)', () => {
     let school = 0;
     let loose = 0;
@@ -327,7 +328,7 @@ describe('banc de néons (monde complet)', () => {
       loose += meanNearestNeighbor(simulateSchool(seed, 12, TWENTY_SECONDS, () => noCohesion));
     }
     expect(school).toBeLessThan(loose * 0.75);
-  });
+  }, 15_000);
 
   // Délai Vitest explicite (#44) : le délai par défaut (5 s) a été dépassé sous la charge de la
   // suite complète ; ce test ne mesure aucune durée.

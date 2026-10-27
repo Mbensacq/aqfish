@@ -125,12 +125,13 @@ describe('sim/feeding : faim', () => {
     }
   });
 
+  // Délai explicite (#244, docs/PIEGES.md) : ≈ 0,4 s en local, bien plus en CI lente.
   it('déterministe : même graine et mêmes dépôts ⇒ même état ; graine différente ⇒ autre état', () => {
     const run = (seed: number) =>
       advance(feed(feed(createDefaultWorld(seed), 0, 0), 0.2, 0.1), 600);
     expect(run(42)).toEqual(run(42));
     expect(run(7).entities.map((f) => f.hunger)).not.toEqual(run(42).entities.map((f) => f.hunger));
-  });
+  }, 15_000);
 });
 
 describe('sim/feeding : granulé le plus proche, point visé', () => {

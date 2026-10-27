@@ -32,6 +32,7 @@ describe('createPrng (mulberry32)', () => {
     expect(new Set(suites).size).toBe(seeds.length);
   });
 
+  // Délai explicite (#244, docs/PIEGES.md) : ≈ 0,6 s en local, bien plus en CI lente.
   it('renvoie des réels dans [0, 1) et des entiers dans [0, 2^32)', () => {
     for (const seed of [0, 1, 42, MAX_SEED]) {
       const prng = createPrng(seed);
@@ -45,7 +46,7 @@ describe('createPrng (mulberry32)', () => {
         expect(u).toBeLessThanOrEqual(MAX_SEED);
       }
     }
-  });
+  }, 15_000);
 
   it('a une distribution grossièrement uniforme (10 classes)', () => {
     const prng = createPrng(12345);

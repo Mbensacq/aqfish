@@ -374,6 +374,7 @@ describe('chauffage', () => {
     expect(water).toEqual(freshWater('tropical'));
   });
 
+  // Délai explicite (#244, docs/PIEGES.md) : ≈ 0,4 s en local, bien plus en CI lente.
   it('monde : l’eau rejoint peu à peu la consigne, sans la dépasser', () => {
     const world = setWorldHeater(createWorld(7, [], [], [], 'tropical'), 30);
     expect(world.water.heater).toBe(30);
@@ -384,7 +385,7 @@ describe('chauffage', () => {
     const after2h = advance(after10min, minutes(110));
     expect(after2h.water.temperature).toBeGreaterThan(29.9);
     expect(after2h.water.temperature).toBeLessThanOrEqual(30);
-  });
+  }, 15_000);
 
   it('setWorldHeater ne modifie pas le monde ; en place : même eau, même consigne', () => {
     const world = createDefaultWorld(42);
@@ -449,6 +450,7 @@ describe('eau du monde', () => {
     expect(advance(more, 600).water.ammonia).toBeGreaterThan(advance(base, 600).water.ammonia);
   });
 
+  // Délai explicite (#244, docs/PIEGES.md) : ≈ 0,4 s en local, bien plus en CI lente.
   it('changeWorldWater : nouvel état, monde d’origine intact ; en place : même objet', () => {
     const world = advance(createDefaultWorld(42), 3600);
     const before = world.water.nitrate;
@@ -461,7 +463,7 @@ describe('eau du monde', () => {
     changeWorldWaterInPlace(owned);
     expect(owned.water).toBe(water);
     expect(owned.water).toEqual(changed.water);
-  });
+  }, 15_000);
 });
 
 describe('pH de l’eau (#236)', () => {
@@ -512,6 +514,7 @@ describe('pH de l’eau (#236)', () => {
     expect(changeWater(drifted, 'tropical').ph).toBeLessThan(7.5);
   });
 
+  // Délai explicite (#244, docs/PIEGES.md) : ≈ 0,5 s en local, bien plus en CI lente.
   it('déterminisme : même graine, même suite de pH ; graines différentes, même dérive', () => {
     const series = (seed: number): number[] => {
       const world = cloneWorld(createDefaultWorld(seed));
@@ -526,7 +529,7 @@ describe('pH de l’eau (#236)', () => {
     // La dérive ne dépend que de la charge (même population par défaut), pas des tirages.
     expect(series(7)).toEqual(series(42));
     expect(series(42)[9]).toBeLessThan(FRESH_PH.tropical);
-  });
+  }, 15_000);
 
   it('changeWorldWater : le pH du monde remonte vers celui de son environnement', () => {
     const world: World = {

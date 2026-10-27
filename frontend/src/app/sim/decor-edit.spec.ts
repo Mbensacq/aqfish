@@ -259,6 +259,7 @@ describe('setDecorInPlace et withDecor', () => {
     expect(world.decor).toEqual(DEFAULT_DECOR);
   });
 
+  // Délai explicite (#244, docs/PIEGES.md) : ≈ 1,6 s en local, bien plus en CI lente.
   it('un poisson ne traverse jamais un élément ajouté, même posé sur lui', () => {
     for (const seed of [1, 42, 2024]) {
       const world = advance(createDefaultWorld(seed), 60) as MutableWorld;
@@ -278,7 +279,7 @@ describe('setDecorInPlace et withDecor', () => {
         }
       }
     }
-  });
+  }, 30_000);
 
   it('le décor édité est conservé par l’export et l’import JSON', () => {
     const world = createDefaultWorld(42) as MutableWorld;

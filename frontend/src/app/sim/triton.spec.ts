@@ -281,6 +281,7 @@ describe('triton : la machine à états de la grenouille, avec ses propres duré
     expect(newt).toBeGreaterThan(frog + 0.2);
   }, 30_000);
 
+  // Délai explicite (#244, docs/PIEGES.md) : ≈ 0,4 s en local, bien plus en CI lente.
   it('nage près de la surface : dans l’eau profonde, à floatDepth sous la surface', () => {
     const world = newtWorld(42);
     let deep = 0;
@@ -295,7 +296,7 @@ describe('triton : la machine à états de la grenouille, avec ses propres duré
       }
     }
     expect(deep).toBeGreaterThan(1000);
-  });
+  }, 15_000);
 
   it('stepFrog accepte le triton : posé sur la berge, il reste au-dessus du sol', () => {
     const shore = shoreLineX(0, PALUDARIUM.terrain!);

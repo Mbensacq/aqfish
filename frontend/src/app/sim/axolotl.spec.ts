@@ -144,6 +144,7 @@ describe('axolotl : machine à états (#130)', () => {
     }
   });
 
+  // Délai explicite (#244, docs/PIEGES.md) : ≈ 0,4 s en local, bien plus en CI lente.
   it('un état tient tout un créneau, avancement dans [0, 1[ croissant', () => {
     let previous = walkerPhaseAt(WALKER, 9, 3, 0);
     for (let tick = 1; tick <= 6000; tick++) {
@@ -161,7 +162,7 @@ describe('axolotl : machine à états (#130)', () => {
       }
       previous = phase;
     }
-  });
+  }, 15_000);
 
   it('individus et graines désynchronisés', () => {
     const sequence = (seed: number, id: number) =>

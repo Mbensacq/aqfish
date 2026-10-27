@@ -347,6 +347,17 @@ haut de sa section.
   Cycle 18 (#51) : dans `aquarium-host.spec.ts`, faire avancer le monde par défaut image par
   image (`frames.flush`) coûte cher : 45 s simulées passaient en local mais dépassaient 5 s
   en CI. Y garder ≤ 10 s simulées par test, avec un délai explicite (15 s). (2026-10-19)
+  Cycle 83 (#244, rétro du sprint 12) : **règle** : tout test mesuré à **400 ms ou plus en
+  local** reçoit un délai explicite, 15 s (30 s à partir de 1 s mesurée), sans réduire sa
+  charge ; un runner de CI lent sous couverture a multiplié les durées par 7 environ
+  (`world.spec.ts` « graine N », 0,7 s en local, a dépassé 5 s). Pour les trouver, depuis
+  `frontend/` : `npx vitest run --globals --includeTaskLocation src/app/sim src/app/render
+  src/app/core --reporter=./scripts/durees-tests.mjs` (liste ceux restés sur le délai par
+  défaut ; `SEUIL_MS`, `SORTIE` facultatifs). Les mesures varient de ±15 % d'un passage à
+  l'autre : relancer deux fois. Sous Vitest seul, les specs qui ont besoin du DOM
+  (`render/aquarium-view`, `core/capture`, `core/keyboard`, `ui/`) échouent : normal, elles
+  ne tournent que dans `ng test` ; leurs durées ne sont pas mesurées par cet outil.
+  (2026-10-27)
 - **Tests de mutation : `FixtureParseError` avec Vitest 4** (#166) : le lanceur
   `@stryker-mutator/vitest-runner` 9.0.1 écrivait `afterAll((suite) => …)` dans son fichier
   de préparation ; Vitest 4 lit le premier argument d'un crochet comme un contexte de

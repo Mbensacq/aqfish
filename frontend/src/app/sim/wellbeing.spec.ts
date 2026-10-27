@@ -204,6 +204,7 @@ describe('pH hors plage et santé (#236)', () => {
     expect(after.water.ph).toBe(4);
   });
 
+  // Délai explicite (#244, docs/PIEGES.md) : ≈ 1 s en local, bien plus en CI lente.
   it('bacs par défaut : pH de l’eau neuve, santé pleine dans chaque environnement', () => {
     for (const id of ['tropical', 'bassin', 'paludarium', 'recif'] as const) {
       const world = createDefaultWorld(42, id);
@@ -215,7 +216,7 @@ describe('pH hors plage et santé (#236)', () => {
         }
       }
     }
-  });
+  }, 15_000);
 });
 
 describe('stepWellbeingInPlace', () => {

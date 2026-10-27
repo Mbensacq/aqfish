@@ -147,6 +147,7 @@ describe('l’ondulation n’influence pas la simulation', () => {
     return copy;
   }
 
+  // Délai explicite (#244, docs/PIEGES.md) : ≈ 0,4 s en local, bien plus en CI lente.
   it('changer les phases ne change ni positions, ni caps, ni vitesses, ni générateur', () => {
     const start = advance(createDefaultWorld(42), 30);
     const reference = advance(start, 600);
@@ -157,7 +158,7 @@ describe('l’ondulation n’influence pas la simulation', () => {
         reference.entities.map((f) => f.phase),
       );
     }
-  });
+  }, 15_000);
 
   it('la phase avance à tailBeatRate (vitesse courante) et reste dans [0, 2π)', () => {
     const start = createWorld(7, [{ species: 'neon', count: 4 }]);

@@ -30,6 +30,7 @@ describe('buildWoodMesh : bois flotté en voxels', () => {
     }
   });
 
+  // Délai explicite (#244, docs/PIEGES.md) : ≈ 0,4 s en local, bien plus en CI lente.
   it('même graine, même maillage ; faces cachées omises, dessous enterré omis', () => {
     const a = buildWoodMesh(model, 7);
     expect(buildWoodMesh(model, 7)).toEqual(a);
@@ -41,5 +42,5 @@ describe('buildWoodMesh : bois flotté en voxels', () => {
     for (let n = 1; n < a.positions.length; n += 3) {
       expect(a.positions[n]).toBeGreaterThanOrEqual(0);
     }
-  });
+  }, 15_000);
 });

@@ -15,6 +15,7 @@ describe('sim/food : aspect des granulés (#226)', () => {
     }
   });
 
+  // Délai explicite (#244, docs/PIEGES.md) : ≈ 0,4 s en local, bien plus en CI lente.
   it('valeurs toujours dans leurs bornes, y compris aux identifiants extrêmes', () => {
     const ids = [0, 1, 2, 0x7fffffff, 0xffffffff, -1, 1.5, Number.NaN, Number.MAX_SAFE_INTEGER];
     for (let id = 0; id < 2000; id++) {
@@ -30,7 +31,7 @@ describe('sim/food : aspect des granulés (#226)', () => {
       expect(look.turn).toBeGreaterThanOrEqual(0);
       expect(look.turn).toBeLessThan(Math.PI / 2);
     }
-  });
+  }, 15_000);
 
   it('identifiant ramené sur 32 bits : -1 et 2³² - 1 se confondent', () => {
     expect(foodLook(-1)).toEqual(foodLook(0xffffffff));

@@ -48,15 +48,20 @@ describe('couleurs des coraux (#149)', () => {
     expect(speckled).toBeLessThan(tops.length / 2);
   });
 
-  it.each(CORAL_FORMS)('%s : maillage aux seules couleurs de sa teinte, déterministe', (form) => {
-    const model = coralModel(form, 11, 1.2);
-    for (const hue of CORAL_HUES) {
-      const mesh = buildCoralMesh(form, model, hue, 11);
-      expect(mesh.quads).toBeGreaterThan(0);
-      expect(vertexHexes(mesh.colors)).toEqual(
-        new Set([CORAL_COLORS[hue].side, CORAL_COLORS[hue].top]),
-      );
-      expect(buildCoralMesh(form, model, hue, 11)).toEqual(mesh);
-    }
-  });
+  // Délai explicite (#244, docs/PIEGES.md) : ≈ 0,5 s en local, bien plus en CI lente.
+  it.each(CORAL_FORMS)(
+    '%s : maillage aux seules couleurs de sa teinte, déterministe',
+    (form) => {
+      const model = coralModel(form, 11, 1.2);
+      for (const hue of CORAL_HUES) {
+        const mesh = buildCoralMesh(form, model, hue, 11);
+        expect(mesh.quads).toBeGreaterThan(0);
+        expect(vertexHexes(mesh.colors)).toEqual(
+          new Set([CORAL_COLORS[hue].side, CORAL_COLORS[hue].top]),
+        );
+        expect(buildCoralMesh(form, model, hue, 11)).toEqual(mesh);
+      }
+    },
+    15_000,
+  );
 });
