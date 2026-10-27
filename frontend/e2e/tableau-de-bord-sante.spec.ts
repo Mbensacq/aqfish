@@ -66,76 +66,83 @@ async function frameBoxes(page: Page) {
   );
 }
 
-for (const viewport of VIEWPORTS) {
-  test.describe(`${viewport.width} × ${viewport.height}`, () => {
-    test.use({ viewport });
+/**
+ * Santé, simulation et trois alertes à une largeur : texte et icônes, centre du bac dégagé,
+ * rien hors de la fenêtre ni sur la barre des vues.
+ */
+async function checkViewport(page: Page, viewport: { width: number; height: number }) {
+  await page.setViewportSize(viewport);
+  const errors = await open(page);
+  // Simulation : moment de la journée, heure, vitesse.
+  const sim = dashboard(page).locator('[data-dashboard-sim]');
+  await expect(sim).toBeInViewport({ ratio: 1 });
+  await expect(sim).toContainText('Jour');
+  await expect(sim.locator('[data-dashboard-hour]')).toHaveText('12:00');
+  await expect(sim.locator('[data-dashboard-speed]')).toContainText('Pause');
+  await expect(sim.locator('svg rect').first()).toBeAttached();
+  // Santé : quatre lignes, chacune avec son icône.
+  const items = status(page).locator('[data-health]');
+  await expect(items).toHaveCount(4);
+  for (let i = 0; i < 4; i++) {
+    await expect(items.nth(i)).toBeInViewport({ ratio: 1 });
+    await expect(items.nth(i).locator('svg rect').first()).toBeAttached();
+  }
+  await expect(status(page).locator('[data-health-value="health"]')).toHaveText('100 %');
+  await expect(status(page).locator('[data-health-value="sick"]')).toHaveText('0');
+  await expect(status(page).locator('[data-alert-none]')).toContainText('Aucune alerte');
 
-    test('santé, simulation et trois alertes visibles en texte et icône, centre du bac dégagé', async ({
-      page,
-    }) => {
-      // Import d'un bac : plus long que les autres tests en rendu logiciel.
-      test.setTimeout(240_000);
-      const errors = await open(page);
-      // Simulation : moment de la journée, heure, vitesse.
-      const sim = dashboard(page).locator('[data-dashboard-sim]');
-      await expect(sim).toBeInViewport({ ratio: 1 });
-      await expect(sim).toContainText('Jour');
-      await expect(sim.locator('[data-dashboard-hour]')).toHaveText('12:00');
-      await expect(sim.locator('[data-dashboard-speed]')).toContainText('Pause');
-      await expect(sim.locator('svg rect').first()).toBeAttached();
-      // Santé : quatre lignes, chacune avec son icône.
-      const items = status(page).locator('[data-health]');
-      await expect(items).toHaveCount(4);
-      for (let i = 0; i < 4; i++) {
-        await expect(items.nth(i)).toBeInViewport({ ratio: 1 });
-        await expect(items.nth(i).locator('svg rect').first()).toBeAttached();
-      }
-      await expect(status(page).locator('[data-health-value="health"]')).toHaveText('100 %');
-      await expect(status(page).locator('[data-health-value="sick"]')).toHaveText('0');
-      await expect(status(page).locator('[data-alert-none]')).toContainText('Aucune alerte');
-
-      await importAlerts(page);
-      await expect(status(page).locator('[data-health-value="health"]')).toHaveText('20 %');
-      await expect(status(page).locator('[data-health-value="distressed"]')).toHaveText('24');
-      const chips = status(page).locator('[data-alert] button');
-      await expect(chips).toHaveCount(3);
-      for (let i = 0; i < 3; i++) {
-        await expect(chips.nth(i)).toBeInViewport({ ratio: 1 });
-        await expect(chips.nth(i)).toContainText('Critique');
-        await expect(chips.nth(i).locator('svg rect').first()).toBeAttached();
-      }
-      await expect(chips.first()).toContainText('Ammoniaque trop haute');
-      await expect(status(page).locator('[data-alerts-more]')).toContainText('+2');
-      // Centre du bac (60 % × 60 % de la zone de rendu) dégagé, même avec trois alertes.
-      const canvas = await page.locator('app-aquarium-host canvas').boundingBox();
-      const { x, y, width, height } = canvas!;
-      const center = {
-        left: x + 0.2 * width,
-        right: x + 0.8 * width,
-        top: y + 0.2 * height,
-        bottom: y + 0.8 * height,
-      };
-      const boxes = await frameBoxes(page);
-      expect(boxes.length).toBeGreaterThan(20);
-      const intruders = boxes.filter(
-        (b) =>
-          b.left < center.right &&
-          center.left < b.right &&
-          b.top < center.bottom &&
-          center.top < b.bottom,
-      );
-      expect(intruders, 'éléments du tableau de bord dans le rectangle central').toEqual([]);
-      // Rien ne déborde de la fenêtre, ni ne recouvre la barre des vues.
-      const presets = await page.locator('app-view-presets-bar .view-presets-bar').boundingBox();
-      for (const box of boxes) {
-        expect(box.left).toBeGreaterThanOrEqual(0);
-        expect(box.right).toBeLessThanOrEqual(viewport.width);
-        expect(box.bottom).toBeLessThanOrEqual(presets!.y);
-      }
-      expect(errors).toEqual([]);
-    });
-  });
+  await importAlerts(page);
+  await expect(status(page).locator('[data-health-value="health"]')).toHaveText('20 %');
+  await expect(status(page).locator('[data-health-value="distressed"]')).toHaveText('24');
+  const chips = status(page).locator('[data-alert] button');
+  await expect(chips).toHaveCount(3);
+  for (let i = 0; i < 3; i++) {
+    await expect(chips.nth(i)).toBeInViewport({ ratio: 1 });
+    await expect(chips.nth(i)).toContainText('Critique');
+    await expect(chips.nth(i).locator('svg rect').first()).toBeAttached();
+  }
+  await expect(chips.first()).toContainText('Ammoniaque trop haute');
+  await expect(status(page).locator('[data-alerts-more]')).toContainText('+2');
+  // Centre du bac (60 % × 60 % de la zone de rendu) dégagé, même avec trois alertes.
+  const canvas = await page.locator('app-aquarium-host canvas').boundingBox();
+  const { x, y, width, height } = canvas!;
+  const center = {
+    left: x + 0.2 * width,
+    right: x + 0.8 * width,
+    top: y + 0.2 * height,
+    bottom: y + 0.8 * height,
+  };
+  const boxes = await frameBoxes(page);
+  expect(boxes.length).toBeGreaterThan(20);
+  const intruders = boxes.filter(
+    (b) =>
+      b.left < center.right &&
+      center.left < b.right &&
+      b.top < center.bottom &&
+      center.top < b.bottom,
+  );
+  expect(intruders, 'éléments du tableau de bord dans le rectangle central').toEqual([]);
+  // Rien ne déborde de la fenêtre, ni ne recouvre la barre des vues.
+  const presets = await page.locator('app-view-presets-bar .view-presets-bar').boundingBox();
+  for (const box of boxes) {
+    expect(box.left).toBeGreaterThanOrEqual(0);
+    expect(box.right).toBeLessThanOrEqual(viewport.width);
+    expect(box.bottom).toBeLessThanOrEqual(presets!.y);
+  }
+  expect(errors).toEqual([]);
 }
+
+// Un seul test pour les trois largeurs (et non un par largeur) : chaque test ajouté déplace
+// les limites des parts de la CI, dont l'une frôle déjà son délai (docs/PIEGES.md, #248).
+test('santé, simulation et trois alertes visibles en texte et icône à 1280, 768 et 390 px, centre du bac dégagé', async ({
+  page,
+}) => {
+  // Trois pages et trois imports de bac en rendu logiciel.
+  test.setTimeout(600_000);
+  for (const viewport of VIEWPORTS) {
+    await test.step(`${viewport.width} × ${viewport.height}`, () => checkViewport(page, viewport));
+  }
+});
 
 test('alertes : dépliées au clavier sur cause et action, annoncées sans répétition (#260)', async ({
   page,
