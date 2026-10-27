@@ -85,14 +85,15 @@ de dessus, où elles dépassent des flancs). Il reste rose sur le sable clair du
 
 La **grenouille** du paludarium (#131, ADR 0036), sonneur oriental (*Bombina orientalis*)
 depuis #270 (ADR 0064) : corps trapu vert grenouille taché de noir (`koiNoir`), ventre rouge
-(`koiRouge`, le « ventre de feu », lu en vue de dessous), deux yeux noirs posés de chaque côté du
+(`koiRouge`, le « ventre de feu », rangée basse du corps), deux yeux noirs posés de chaque côté du
 haut de la tête (un œil en bandeau sur le dessus se lisait comme un chapeau noir), cuisses
 et pieds vert sombre qui dépassent des flancs vu de dessus. À la nage, le dos et les yeux
 restent au-dessus de la surface : elle se lit sur l'eau claire du rivage.
 
 Le **triton** du paludarium (#133, ADR 0037), triton à ventre de feu chinois (*Cynops
-orientalis*) depuis #270 (ADR 0064) : corps fin et longue queue au dos brun-noir (`#45423e`)
-taché de noir, ventre orange triton (`tritonOrange`, lu en vue de dessous).
+orientalis*) depuis #270 (ADR 0064) : corps fin et longue queue noirs (`koiNoir`), ventre
+orange triton (`tritonOrange`), quelques taches orange sur le dos et les flancs. Un dos gris
+roche (`rocheSombre`), essayé d'abord, se confondait avec les racines et rochers de la berge.
 
 Les **feuilles mortes** du bassin (#107, ADR 0033) : petites feuilles de 9 à 13 cm au bord
 irrégulier, brunes (`sableSombre`, `sableOmbre`) ou ocre (`tritonOrange`, `sableSombre`), en

@@ -57,14 +57,17 @@ Anoures ».
 5. **Apparence** : mêmes gabarits ; couleurs reprises dans la palette existante :
    - sonneur : dos vert grenouille `#7bc950`, taches noires `#1c1c22`, ventre rouge
      `#d94a3a` ;
-   - triton : dos et flancs sombres `#45423e`, ventre orange triton `#e07a2f`.
+   - triton : dos et flancs noirs `#1c1c22`, ventre orange triton `#e07a2f`, taches orange
+     sur le dos (approximation de jeu : un dos gris roche `#45423e`, essayé d'abord, se
+     confondait avec les racines et les rochers de la berge en vue de trois-quarts).
      Les comportements (sauts, nage, part du temps dans l'eau) ne changent pas : les tests de
      déplacement terre/eau (`frog.spec.ts`, `triton.spec.ts`) sont inchangés.
 
 ## Conséquences
 
 - Les autres environnements ne changent pas (captures identiques à l'octet).
-- Les vues de dessous montrent désormais le ventre rouge ou orange des deux espèces.
+- Le ventre « de feu » n'apparaît que sur la rangée basse du corps (profil, trois-quarts) :
+  la vue de dessous du paludarium montre le sol, pas les animaux.
 - Restent à faire : confirmer les deux lignes de l'annexe 2 sur la version consolidée
   (Légifrance) ; recouper les paramètres du sonneur avec une source primaire ; la
   cohabitation axolotl / triton / sonneur, incohérente selon `docs/ESPECES.md`, relève du

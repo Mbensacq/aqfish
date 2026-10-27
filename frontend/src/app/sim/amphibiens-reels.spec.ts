@@ -119,8 +119,8 @@ describe('amphibiens réels du paludarium (#270)', () => {
       accent: '#1c1c22',
       belly: '#d94a3a',
     });
-    expect(TRITON.colors).toMatchObject({ back: '#45423e', belly: '#e07a2f' });
-    // Le ventre se distingue du dos (vue de dessous).
+    expect(TRITON.colors).toMatchObject({ back: '#1c1c22', belly: '#e07a2f' });
+    // Le ventre se distingue du dos.
     expect(GRENOUILLE.colors.belly).not.toBe(GRENOUILLE.colors.back);
     expect(TRITON.colors.belly).not.toBe(TRITON.colors.back);
   });

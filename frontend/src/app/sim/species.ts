@@ -688,8 +688,8 @@ export const AXOLOTL: SpeciesDefinition = {
  * entre dans l'eau pour nager quelques secondes, puis revient sur la berge.
  *
  * - Couleurs : dos vert grenouille `#7bc950` de la palette « Amphibiens » de docs/DA.md,
- *   taches noires `#1c1c22`, ventre rouge `#d94a3a` (le « ventre de feu », visible de
- *   dessous), pattes vert sombre `#4e9a4a`, œil `#1c1c22` : couleurs existantes de la
+ *   taches noires `#1c1c22`, ventre rouge `#d94a3a` (le « ventre de feu », rangée basse
+ *   du gabarit), pattes vert sombre `#4e9a4a`, œil `#1c1c22` : couleurs existantes de la
  *   palette. Teintes : approximation de jeu d'après la description courante de l'espèce.
  * - `bodyLength` (5 cm) : proche de la taille adulte réelle, environ 6 cm (anapsid.org,
  *   Bombina orientalis, source secondaire, consultée le 2026-10-27).
@@ -757,10 +757,12 @@ export const GRENOUILLE: SpeciesDefinition = {
  * - **dans l'eau** : 70 % d'un cycle de 60 s, nage lente (3 cm/s, queue ondulante à 1,4 Hz)
  *   à 2 cm sous la surface (adultes très aquatiques : Caudata Culture, via docs/ESPECES.md).
  *
- * - Couleurs : dos et flancs sombres `#45423e`, taches `#1c1c22`, ventre orange triton
- *   `#e07a2f` (le « ventre de feu »), pattes et bas de la queue `#45423e` : couleurs
- *   existantes de la palette ; teintes : approximation de jeu d'après la description
- *   courante de l'espèce (dos brun-noir, ventre orange taché de noir).
+ * - Couleurs : dos et flancs noirs `#1c1c22`, ventre orange triton `#e07a2f` (le « ventre
+ *   de feu »), pattes et bas de la queue gris roche `#45423e` : couleurs existantes de la
+ *   palette, d'après la description courante de l'espèce (dos brun-noir, ventre orange).
+ *   Taches orange (`accent`) sur le dos et les flancs : **approximation de jeu**, pour que
+ *   le triton se détache des racines et des rochers sombres de la berge (un dos gris roche
+ *   s'y confondait, capture du cycle 86).
  * - `bodyLength` (7 cm, museau au départ de la queue) : **approximation de jeu**, un peu
  *   grand pour une espèce de 6 à 10,3 cm en longueur totale (Caudata Culture, via
  *   docs/ESPECES.md), agrandi pour rester lisible en pixel art ; corps fin (4 voxels
@@ -786,9 +788,9 @@ export const TRITON: SpeciesDefinition = {
   schooling: null,
   silhouette: 'triton',
   colors: {
-    stripe: '#45423e',
-    accent: '#1c1c22',
-    back: '#45423e',
+    stripe: '#1c1c22',
+    accent: '#e07a2f',
+    back: '#1c1c22',
     belly: '#e07a2f',
     fin: '#45423e',
     eye: '#1c1c22',

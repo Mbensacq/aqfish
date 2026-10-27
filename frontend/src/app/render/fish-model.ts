@@ -209,9 +209,9 @@ export const FROG_FISH: FishTemplate = {
 
 /**
  * Triton (issue #133 ; triton à ventre de feu depuis #270, ADR 0064) : corps long et fin
- * (4 voxels d'épaisseur au plus, contre 6 pour la grenouille), dos et flancs sombres taché de
- * noir (`a`, surtout sur les flancs), ventre orange `#e07a2f` (`b`), tête étroite. Longue
- * queue aplatie, crête et bord inférieur sombres (`f`), qui ondule à la nage. Parties paires : quatre
+ * (4 voxels d'épaisseur au plus, contre 6 pour la grenouille), dos et flancs noirs tachés
+ * d'orange (`a`), ventre orange `#e07a2f` (`b`), tête étroite. Longue queue aplatie, noire,
+ * au bord inférieur gris roche (`f`), qui ondule à la nage. Parties paires : quatre
  * pattes courtes (`f`) sous le flanc, pieds écartés d'un voxel (vue de dessus) ; de profil,
  * le triton reste bas et allongé, la grenouille haute et ramassée.
  */
