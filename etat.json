@@ -3024,6 +3024,24 @@
         }
       },
       "metriques": {}
+    },
+    "82": {
+      "numero": 82,
+      "date": "2026-10-27",
+      "debut": "2026-10-27T04:16:26.636Z",
+      "type": "dette",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-10-27T04:16:26.636Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
