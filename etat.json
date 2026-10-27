@@ -3132,6 +3132,24 @@
         }
       },
       "metriques": {}
+    },
+    "85": {
+      "numero": 85,
+      "date": "2026-10-27",
+      "debut": "2026-10-27T14:43:25.762Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-10-27T14:43:25.762Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
