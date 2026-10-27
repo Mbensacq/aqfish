@@ -158,6 +158,13 @@ haut de sa section.
 
 ## Tests
 
+- **Test de l'hôte qui recharge après `setPopulation` : rien d'enregistré** (cycle 85, #277) :
+  le réglage de population de l'hôte n'écrit pas la sauvegarde aussitôt (minuterie
+  `AUTOSAVE_INTERVAL_MS` et `pagehide` seulement), contrairement au décor, aux dimensions ou
+  au changement d'environnement. Dans un test unitaire qui détruit puis recrée l'hôte pour
+  vérifier une restauration, appeler `host().saveNow()` avant `fixture.destroy()` ; en e2e,
+  `page.reload()` déclenche `pagehide`. (2026-10-27)
+
 - **Composant d'interface sans `font` sur `:host` : police à empattements** (cycle 82, #265) :
   il n'y a pas de police globale (`styles.scss` ne pose que fond et couleur) ; un composant
   dont l'hôte ne déclare pas sa police affiche la police par défaut du navigateur. Le bandeau
