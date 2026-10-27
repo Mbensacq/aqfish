@@ -399,8 +399,8 @@ maximal : 60 s par angle), et **aucune mesure de performance** ne doit y être f
 Le code qui exige WebGL n'est pas testable en unitaire (jsdom) : il est couvert par le bout
 en bout et les captures. Cible de couverture : **≥ 80 % des lignes de `src/app/sim`**.
 
-En CI (`.github/workflows/ci.yml`), les tests de bout en bout sont répartis sur 4 machines
-en parallèle (`npm run e2e -- --shard=N/4`), à côté d'un job pour formatage, lint, tests
+En CI (`.github/workflows/ci.yml`), les tests de bout en bout sont répartis sur 6 machines
+en parallèle (`npm run e2e -- --shard=N/6`, délai de 45 min par part, #248), à côté d'un job pour formatage, lint, tests
 unitaires et build, et d'un job pour les captures. Le job `frontend` regroupe les résultats :
 c'est le contrôle exigé pour fusionner dans `main`. Un fichier de test e2e n'est jamais
 découpé entre deux machines : garder des fichiers de taille raisonnable.
