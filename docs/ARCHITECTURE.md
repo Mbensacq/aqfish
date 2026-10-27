@@ -351,7 +351,7 @@ respecter :
 | `pluie=1` | En capture comme hors capture (#106, ADR 0032) : il pleut dès le départ, dans un environnement qui le permet (le bassin) ; ailleurs ignoré. Gouttes et ronds au temps simulé `time`, déterministes. Toute autre valeur ou absent : pas de pluie (séries existantes inchangées, à l'octet près) |
 | `filtre=pixel\|aucun` | Force le filtre de rendu (ADR 0010), y compris hors capture où il prime sur le choix mémorisé. Absent en capture : pixel art, quel que soit le choix mémorisé (séries existantes inchangées) |
 | `heure=` | Réel dans [0, 24) (`0` : minuit, `18.5` : 18 h 30) : fige l'heure de la journée simulée (ADR 0018), en capture comme hors capture ; valeur invalide ignorée. Absent en capture : midi figé (séries existantes inchangées, à l'octet près) ; absent hors capture : départ à midi, journée de 1 200 s (20 min) simulées |
-| `vitesse=` | Hors capture seulement (#232) : vitesse de la simulation au départ, l'une de `SIM_SPEEDS` (`0`, `0.5`, `1`, `2`, `4`), qui prime sur celle de la sauvegarde ; le curseur reste utilisable. `vitesse=0` : monde à l'arrêt dès t = 0, d'où des **captures d'interface** (panneau ouvert : `front-panneau`, `telephone-catalogue`, `telephone-eau`, `three-quarter-panneau-eau`, `telephone-fiche-espece` ; tableau de bord, #256 : `three-quarter-tableau-de-bord`, `tablette-tableau-de-bord`, `telephone-tableau-de-bord` et leurs variantes `-alerte`) reproductibles à l'octet. Sans effet en capture ; autre valeur ou absent : vitesse habituelle |
+| `vitesse=` | Hors capture seulement (#232) : vitesse de la simulation au départ, l'une de `SIM_SPEEDS` (`0`, `0.5`, `1`, `2`, `4`), qui prime sur celle de la sauvegarde ; le curseur reste utilisable. `vitesse=0` : monde à l'arrêt dès t = 0, d'où des **captures d'interface** (panneau ouvert : `front-panneau`, `telephone-catalogue`, `telephone-eau`, `three-quarter-panneau-eau`, `telephone-fiche-espece`, `three-quarter-fiche-chirurgien` (#269) ; tableau de bord, #256 : `three-quarter-tableau-de-bord`, `tablette-tableau-de-bord`, `telephone-tableau-de-bord` et leurs variantes `-alerte`) reproductibles à l'octet. Sans effet en capture ; autre valeur ou absent : vitesse habituelle |
 | `capture=1` | Simulation avancée de façon déterministe jusqu'à `time` (pas fixe, sans temps réel), puis figée ; interface masquée ; caméra sur le préréglage `camera` ; `devicePixelRatio` forcé à 1 |
 | Signal « prêt » | Appeler `markCaptureReady()` (`core/capture/capture-ready.ts`) une fois la première image **complète** rendue ; `resetCaptureReady()` si la scène est rechargée. Implémentation : `AquariumHost` lève le signal à l'image qui suit le premier rendu WebGL de taille non nulle, et le retire à sa destruction |
 | Image figée | En mode capture, une seule image est rendue (puis une à chaque redimensionnement) et les contrôles à la souris sont désactivés |
@@ -406,8 +406,8 @@ maximal : 60 s par angle), et **aucune mesure de performance** ne doit y être f
 Le code qui exige WebGL n'est pas testable en unitaire (jsdom) : il est couvert par le bout
 en bout et les captures. Cible de couverture : **≥ 80 % des lignes de `src/app/sim`**.
 
-En CI (`.github/workflows/ci.yml`), les tests de bout en bout sont répartis sur 4 machines
-en parallèle (`npm run e2e -- --shard=N/4`), à côté d'un job pour formatage, lint, tests
+En CI (`.github/workflows/ci.yml`), les tests de bout en bout sont répartis sur 6 machines
+en parallèle (`npm run e2e -- --shard=N/6`, délai de 45 min par part, #248), à côté d'un job pour formatage, lint, tests
 unitaires et build, et d'un job pour les captures. Le job `frontend` regroupe les résultats :
 c'est le contrôle exigé pour fusionner dans `main`. Un fichier de test e2e n'est jamais
 découpé entre deux machines : garder des fichiers de taille raisonnable.

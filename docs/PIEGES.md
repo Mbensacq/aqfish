@@ -7,7 +7,7 @@ haut de sa section.
 ## Environnement des agents
 
 - **Ajouter des tests e2e déplace les limites des parts de la CI** (cycle 81, #260) : les
-  parts (`--shard=N/4`) sont des tranches de fichiers de taille égale en nombre de tests ;
+  parts (`--shard=N/4`, 6 parts depuis #248) sont des tranches de fichiers de taille égale en nombre de tests ;
   quatre tests de plus ont fait glisser `meubles-qa.spec.ts` dans la part 2, déjà au ras de
   son délai de 30 min (#248) : part 2 annulée deux fois, sans aucun test touché par la PR.
   Comparer `npx playwright test --project=e2e --shard=2/4 --list` sur `main` et sur la
@@ -20,6 +20,13 @@ haut de sa section.
   lint passaient. Ajouter le nouveau sélecteur aux règles communes existantes (bordure, fond,
   focus des boutons d'espèce) au lieu de les recopier, et lancer `npm run build` tôt.
   (2026-10-26)
+- **Prouver « captures identiques à l'octet » en local** (cycle 84, #269) : le Chromium local
+  (1243 via le lien ci-dessous) n'est pas celui de la CI, donc comparer aux captures de
+  `captures/latest/` n'a pas de sens. Générer celles de `main` dans un worktree
+  (`git worktree add ../aqfish-main origin/main`, lien vers `node_modules`, `E2E_PORT=4310`,
+  autre `CAPTURE_DIR`) en parallèle des siennes, puis `cmp` fichier par fichier (~10 min
+  chacune). Ne pas lancer `verify` sur `main` dans le clone pendant qu'on y modifie le code :
+  il lit l'arbre de travail courant. (2026-10-27)
 - **Serveur de `ng serve` orphelin après un `verify` interrompu** (cycle 79) : tuer
   `playwright test` laisse `ng serve --port 4300` tourner ; les captures lancées ensuite depuis
   un autre worktree le réutilisent et photographient l'ancien code (capture neuve en délai

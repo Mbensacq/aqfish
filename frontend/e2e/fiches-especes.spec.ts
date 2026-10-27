@@ -34,7 +34,7 @@ test.describe('Fiches d’espèces (#237)', () => {
     await neon.click();
     await expect(sheet(page)).toHaveAccessibleName(/Fiche : Néon/);
     await expect(neon).toHaveAttribute('aria-expanded', 'true');
-    await expect(sheet(page).locator('[data-sheet-field]')).toHaveCount(10);
+    await expect(sheet(page).locator('[data-sheet-field]')).toHaveCount(11);
     await expect(sheet(page).locator('[data-sheet-status]').first()).toHaveText(
       'Approximation de jeu',
     );

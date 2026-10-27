@@ -1,5 +1,6 @@
 import { compatibility, TEMPERAMENTS, type Temperament } from './compatibility';
 import { SPECIES_LABELS } from './species-catalog';
+import { confidenceText, legalStatus, legalText, type LegalStatus } from './species-legal';
 import { SPECIES, type SpeciesId } from './species';
 import { SPECIES_PH, type PhRange } from './water-ph';
 
@@ -55,6 +56,16 @@ export interface SpeciesSheet {
   readonly minLiters: SheetField<number>;
   /** Espèces à éviter (`compatibility`), dans l'ordre de `SPECIES`. */
   readonly avoid: SheetField<readonly SpeciesId[]>;
+  /** Statut légal en France (`sim/species-legal.ts`, #269, ADR 0062). */
+  readonly legal: SheetField<LegalStatus>;
+  /** Mises en garde affichées en tête de fiche (#269), sourcées ou non vérifiées. */
+  readonly notes: readonly SheetNote[];
+}
+
+/** Mise en garde d'une fiche : texte et statut. */
+export interface SheetNote {
+  readonly text: string;
+  readonly status: FieldStatus;
 }
 
 const APPROXIMATION: FieldStatus = Object.freeze({ kind: 'approximation' });
@@ -86,6 +97,14 @@ interface SheetData {
   readonly diet: SheetField<Diet>;
   readonly minGroup: SheetField<number>;
   readonly minLiters: SheetField<number>;
+  readonly notes?: readonly SheetNote[];
+}
+
+/** Références de `docs/ESPECES.md` (recherche documentaire du 2026-10-27, #262). */
+const ESPECES = 'docs/ESPECES.md';
+
+function note(text: string, status: FieldStatus): SheetNote {
+  return Object.freeze({ text, status });
 }
 
 /**
@@ -125,11 +144,19 @@ const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
   },
   koi: {
     adultSize: approx(60),
-    temperaturePreferred: sourced(range(18, 25), `${SOINS} (VIN/WSAVA, optimum)`),
+    // Non vérifié (#269) : docs/ESPECES.md prévaut sur docs/SOINS.md tant que FishBase et une
+    // source vétérinaire n'ont pas été consultées.
+    temperaturePreferred: approx(range(18, 25)),
     temperatureTolerated: approx(range(4, 30)),
     diet: approx('omnivore'),
     minGroup: approx(3),
     minLiters: approx(800),
+    notes: [
+      note(
+        'Fiche non vérifiée : aucun paramètre chiffré confirmé (FishBase et source vétérinaire à consulter)',
+        source(`${ESPECES} (koï)`),
+      ),
+    ],
   },
   axolotl: {
     adultSize: approx(25),
@@ -162,9 +189,15 @@ const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
     diet: approx('omnivore'),
     minGroup: approx(1),
     minLiters: approx(100),
+    notes: [
+      note(
+        'Vit très bien sans anémone ; les anémones hôtes sont déconseillées au débutant',
+        source(`${ESPECES} (Saltcorner, FishLore : sources secondaires)`),
+      ),
+    ],
   },
   chirurgien: {
-    adultSize: approx(30),
+    adultSize: sourced(31, 'FishBase, Paracanthurus hepatus (longueur totale)'),
     temperaturePreferred: approx(range(25, 27)),
     temperatureTolerated: sourced(
       range(24, 28),
@@ -172,7 +205,16 @@ const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
     ),
     diet: approx('omnivore'),
     minGroup: approx(1),
-    minLiters: approx(450),
+    minLiters: sourced(
+      300,
+      `${ESPECES} (OATA via un revendeur, secondaire ; 700 L selon ReefApp, désaccord)`,
+    ),
+    notes: [
+      note(
+        'Pas pour débutant : 31 cm adulte, 300 L au moins, sujets surtout prélevés dans la nature',
+        source(`${ESPECES} (FishBase ; UF/IFAS FA224 ; npj Ocean Sustainability 2023)`),
+      ),
+    ],
   },
 };
 
@@ -180,10 +222,13 @@ const SPECIES_IDS = Object.keys(SPECIES) as SpeciesId[];
 
 const SHEETS: Readonly<Record<SpeciesId, SpeciesSheet>> = Object.fromEntries(
   SPECIES_IDS.map((id) => {
-    const data = SHEET_DATA[id];
+    const { notes, ...data } = SHEET_DATA[id];
+    const legal = legalStatus(id);
     const sheet: SpeciesSheet = Object.freeze({
       species: id,
       ...data,
+      notes: Object.freeze([...(notes ?? [])]),
+      legal: sourced(legal, legal.reference),
       // Source unique : les plages de la simulation (ADR 0057), approximations de jeu.
       phPreferred: approx(SPECIES_PH[id].ideal),
       phTolerated: approx(SPECIES_PH[id].tolerated),
@@ -214,6 +259,7 @@ export const SHEET_FIELDS = [
   'minGroup',
   'minLiters',
   'avoid',
+  'legal',
 ] as const satisfies readonly (keyof SpeciesSheet)[];
 
 export type SheetFieldName = (typeof SHEET_FIELDS)[number];
@@ -230,6 +276,7 @@ export const SHEET_FIELD_LABELS: Readonly<Record<SheetFieldName, string>> = {
   minGroup: 'Groupe minimal',
   minLiters: 'Volume conseillé',
   avoid: 'À éviter avec',
+  legal: 'Statut légal en France',
 };
 
 const DIET_LABELS: Readonly<Record<Diet, string>> = {
@@ -292,6 +339,8 @@ function fieldValue(sheet: SpeciesSheet, field: SheetFieldName): string {
       return sheet.avoid.value.length === 0
         ? 'aucune espèce du jeu'
         : sheet.avoid.value.map((id) => SPECIES_LABELS[id].plural).join(', ');
+    case 'legal':
+      return legalText(sheet.legal.value);
   }
 }
 
@@ -302,8 +351,16 @@ export function sheetRows(id: SpeciesId): readonly SheetRow[] {
     field,
     label: SHEET_FIELD_LABELS[field],
     value: fieldValue(sheet, field),
-    status: statusText(sheet[field].status),
+    status:
+      field === 'legal'
+        ? `${statusText(sheet.legal.status)} ; ${confidenceText(sheet.legal.value.confidence)}`
+        : statusText(sheet[field].status),
   }));
+}
+
+/** Mises en garde affichées de la fiche de `id` (#269), avec le texte de leur statut. */
+export function sheetNotes(id: SpeciesId): readonly { text: string; status: string }[] {
+  return SHEETS[id].notes.map((entry) => ({ text: entry.text, status: statusText(entry.status) }));
 }
 
 /** Avertissement à l'ajout d'une espèce dans le bac courant. */

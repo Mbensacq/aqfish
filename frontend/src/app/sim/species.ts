@@ -1,3 +1,5 @@
+import { exclusionOf } from './species-legal';
+
 /**
  * Définitions déclaratives des espèces (docs/DA.md, « Les espèces sont décrites de façon
  * déclarative »). Le rendu génère les modèles à partir de ces données ; la simulation en
@@ -457,7 +459,7 @@ export const GUPPY: SpeciesDefinition = {
 };
 
 /**
- * Corydora poivré (Corydoras paleatus), poisson de fond du bac tropical (docs/DA.md).
+ * Corydora poivré (Hoplisoma paleatum, anciennement Corydoras paleatus, #269), poisson de fond du bac tropical (docs/DA.md).
  *
  * - Silhouette trapue (corps court et haut, ventre plat, haute dorsale), flanc gris
  *   « poivré » de taches noires, dos sombre, ventre clair : couleurs de la palette « Sable et
@@ -474,7 +476,7 @@ export const GUPPY: SpeciesDefinition = {
 export const CORYDORA: SpeciesDefinition = {
   id: 'corydora',
   name: 'Corydora',
-  scientificName: 'Corydoras paleatus',
+  scientificName: 'Hoplisoma paleatum',
   bodyLength: 0.055,
   cruiseSpeed: 0.035,
   minSpeed: 0.015,
@@ -1090,6 +1092,11 @@ export function validateSpecies(def: SpeciesDefinition): string[] {
   }
   if (def.name.trim() === '' || def.scientificName.trim() === '') {
     problems.push('nom et nom scientifique obligatoires');
+  }
+  // Espèce que le jeu ne propose jamais (#269, ADR 0062) : interdite, liste de l'Union…
+  const exclusion = exclusionOf(def.scientificName);
+  if (exclusion !== null) {
+    problems.push(`espèce exclue (${exclusion.reason}) : ${exclusion.taxon}`);
   }
   return problems;
 }

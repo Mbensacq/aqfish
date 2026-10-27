@@ -387,6 +387,17 @@ describe('serializeWorld / parseWorld : aller-retour', () => {
     expect(restored(parseSaveData(structuredClone(data))).settings.room).toEqual(DEFAULT_ROOM);
   });
 
+  it('accepte une sauvegarde de chaque lieu écrite avant le statut légal (#269)', () => {
+    // Le statut légal et le nom Hoplisoma ne sont pas sauvegardés : une sauvegarde v1.0.6 se
+    // relit telle quelle (identifiants d'espèces inchangés).
+    for (const env of ['tropical', 'recif', 'bassin', 'paludarium'] as const) {
+      const world = createDefaultWorld(5, env);
+      const before = populationCounts(world);
+      const { world: back } = restored(parseWorld(serializeWorld(world)));
+      expect(populationCounts(back), env).toEqual(before);
+    }
+  });
+
   it('accepte une ancienne sauvegarde sans pièce : pièce masquée, même schéma (#187)', () => {
     const data = structuredClone(saveData(createDefaultWorld(3))) as unknown as {
       schema: number;
