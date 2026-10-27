@@ -3081,6 +3081,12 @@
           "debut": "2026-10-27T07:59:20.991Z",
           "fin": "2026-10-27T09:39:48.868Z",
           "note": "PR #274 : délais explicites des tests ≥ 400 ms (#244, 30 emplacements, rapporteur scripts/durees-tests.mjs) + ADR 0061 pièce de N bacs (renvoi sur #264), CI verte après 1 relance (e2e 2/4 et 4/4 au délai, #248) ; e2e local non lancé, bundle identique à main"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-10-27T09:40:23.174Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
