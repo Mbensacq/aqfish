@@ -3017,10 +3017,10 @@
           "note": "Verdict RÉSERVES, 0 bug bloquant (police du bandeau bas), 10 e2e verts, 80 captures publiées (c081)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-27T02:44:05.962Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-27T04:15:41.757Z",
+          "note": "PR #261 fusionnée → v1.0.4 (release CI ok), #260 fermée, dette #265 (police/cible tactile du bandeau) ; PR #263 (docs Mathis) fusionnée sans version ; CI main verte sur 5ec610c après 1 relance (e2e 2/4 au délai, noté sur #248) ; pied d'attribution du corps de PR réinjecté par le serveur"
         }
       },
       "metriques": {}
