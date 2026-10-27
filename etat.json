@@ -3032,7 +3032,7 @@
       "type": "dette",
       "issue": 265,
       "pr": 266,
-      "version": null,
+      "version": "v1.0.5",
       "phases": {
         "planif": {
           "statut": "termine",
