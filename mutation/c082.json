@@ -1,0 +1,1 @@
+{"score": 74.88, "survivants": 52, "perimetre": "src/app/sim/water-dashboard.ts (207 mutants)", "note": "Stryker complet non exécutable en une phase (10980 mutants) ; mesure limitée à water-dashboard.ts, cible de #259"}

@@ -1,7 +1,6 @@
-# Source des captures c081
+# Captures c082
 
-- Branche : cycle PR #261 (tableau de bord 2/3)
-- Commit : a4ff1e3
-- Graine : celle du harnais de captures (par défaut)
-- Temps : 2026-10-27T02:43:17Z
-- Note : chromium de l environnement (1243) via config locale non commitée
+- Branche : `cycle/c082-bandeau-police-cible` ; PR #266 ; commit `dd143b1`
+- Graine : 42 (défaut) ; temps : celui de `e2e/captures.spec.ts` (inchangé)
+- Rendu logiciel (2 cœurs), 84 tests de capture verts
+- Série regardée : `three-quarter-tableau-de-bord-alerte`, `telephone-tableau-de-bord-alerte` (police sans empattements)
