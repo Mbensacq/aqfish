@@ -3227,10 +3227,10 @@
           "note": "PR #285 : bac d'eau froide (axolotl seul), paludarium sonneurs+tritons à 20 °C, alerte de mélange (#271, ADR 0065), CI verte ; cohabitation sonneur/triton en sources faibles"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-27T22:32:37.866Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-27T23:06:31.049Z",
+          "note": "Verdict OK, 0 bug bloquant, captures c087 publiées (78/88 identiques, écarts attendus), CI verte"
         }
       },
       "metriques": {}
