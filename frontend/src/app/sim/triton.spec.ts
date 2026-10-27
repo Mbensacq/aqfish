@@ -140,15 +140,13 @@ describe('triton : espèce du paludarium (#133)', () => {
     expect(POND.species).not.toContain('triton');
     const world = createDefaultWorld(42, 'paludarium');
     expect(newts(world)).toHaveLength(2);
-    // Après les grenouilles : identifiants des axolotls et des grenouilles inchangés.
+    // Après les grenouilles ; sans axolotl par défaut depuis l'issue #271 (ADR 0065).
     expect(world.entities.map((e) => `${e.species}:${e.id}`)).toEqual([
-      'axolotl:0',
-      'axolotl:1',
+      'grenouille:0',
+      'grenouille:1',
       'grenouille:2',
-      'grenouille:3',
-      'grenouille:4',
-      'triton:5',
-      'triton:6',
+      'triton:3',
+      'triton:4',
     ]);
     for (const env of ['tropical', 'bassin'] as const) {
       expect(newts(createDefaultWorld(42, env))).toEqual([]);

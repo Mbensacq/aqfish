@@ -443,6 +443,7 @@ describe('ControlPanel', () => {
       ['bassin', 'Bassin'],
       ['paludarium', 'Paludarium'],
       ['recif', 'Récif'],
+      ['eaufroide', 'Bac d’eau froide'],
     ]);
     expect(select.value).toBe('tropical');
 

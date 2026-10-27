@@ -137,9 +137,8 @@ describe('grenouille : espèce du paludarium (#131)', () => {
     expect(POND.species).not.toContain('grenouille');
     const world = createDefaultWorld(42, 'paludarium');
     expect(frogs(world)).toHaveLength(3);
+    // Sans axolotl par défaut depuis l'issue #271 (ADR 0065).
     expect(world.entities.map((e) => e.species)).toEqual([
-      'axolotl',
-      'axolotl',
       'grenouille',
       'grenouille',
       'grenouille',

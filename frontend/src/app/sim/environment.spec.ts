@@ -48,10 +48,9 @@ describe('environnements', () => {
     expect(PALUDARIUM.name).toBe('Paludarium');
     expect(PALUDARIUM.border).toBe('verre');
     expect(PALUDARIUM.waterLevel).toBeLessThan(WATER_LEVEL_RATIO);
-    // Axolotls depuis l'issue #130.
+    // Axolotls proposés depuis l'issue #130 ; plus peuplés par défaut depuis l'issue #271.
     expect(PALUDARIUM.species).toEqual(['axolotl', 'grenouille', 'triton']);
     expect(PALUDARIUM.population).toEqual([
-      { species: 'axolotl', count: 2 },
       { species: 'grenouille', count: 3 },
       { species: 'triton', count: 2 },
     ]);

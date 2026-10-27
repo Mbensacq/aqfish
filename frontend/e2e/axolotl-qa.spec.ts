@@ -38,7 +38,8 @@ test.describe('Axolotl : parcours utilisateur', () => {
   });
 
   test('le panneau ajoute et retire un axolotl, bornes comprises', async ({ page }) => {
-    const errors = await open(page, '?environnement=paludarium&seed=42');
+    // Bac d'eau froide : deux axolotls par défaut depuis #271 (aucun au paludarium).
+    const errors = await open(page, '?environnement=eaufroide&seed=42');
     await page.getByRole('button', { name: 'Réglages' }).click();
     const field = page.getByRole('spinbutton', { name: 'Nombre d’axolotls' });
     await expect(field).toHaveValue('2');
