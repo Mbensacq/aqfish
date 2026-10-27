@@ -1,7 +1,5 @@
-# Captures c083
-
-- Branche : `cycle/c083-delais-tests-adr-piece` ; PR #274 ; commit `83fbf27`
-- Graine : 42 (défaut) ; temps : celui de `e2e/captures.spec.ts` (inchangé)
-- Rendu logiciel (2 cœurs), 84 tests de capture verts
-- Les 84 images sont identiques à l'octet à la série c082 (aucun changement d'apparence)
-- Série regardée : `three-quarter.png`
+# Captures c084
+- Branche : cycle/c084-statut-legal-especes (PR #275), commit 3513bc6
+- Graine : celle de captures.spec.ts (par défaut)
+- Générées le 2026-10-27 en local (Chromium headless shell 1243 redirigé), 85 captures, 85 passées en 11,9 min
+- Différences avec c083 : telephone-fiche-espece (ligne « Statut légal en France ») et three-quarter-fiche-chirurgien (nouvelle) ; les 83 autres identiques à l'octet
