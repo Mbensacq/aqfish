@@ -80,7 +80,12 @@ jamais eu d'aquarium doit pouvoir commencer ici et apprendre à s'occuper de ses
    #237 (fiches d'espèces), puis #262 (espèces en règle : statut légal en France, triton et
    grenouille réels, environnements cohérents) **avant** #252 (wiki des espèces en bas à
    droite). Données de départ : `docs/SOINS.md` et `docs/ESPECES.md`, à recouper et compléter.
-4. #227 — pièce complète, puis #228 — caméra libre : seulement après les précédentes.
+4. #264 — pièce aux aquariums : plusieurs bacs et meubles réorganisables, d'un seul poisson à
+   une animalerie entière. **L'ADR d'architecture (pièce de N bacs, sauvegarde au schéma 2)
+   se fait tôt**, au prochain cycle de dette ou de rétro, pour que le tableau de bord, les
+   alertes et le wiki soient écrits « par bac » ; l'implémentation vient après #262 et #252 et
+   regroupe la pièce complète (#227), la caméra libre (#228), les meubles (#35) et le décor
+   personnalisable (#34).
 
 Toute valeur biologique est sourcée (référence consultable) ou marquée « approximation de jeu » ;
 ce qui n'a pas pu être vérifié est signalé, jamais présenté comme réel. Planif replace les
