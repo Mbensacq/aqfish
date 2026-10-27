@@ -3045,6 +3045,12 @@
           "debut": "2026-10-27T04:17:27.220Z",
           "fin": "2026-10-27T05:55:17.574Z",
           "note": "PR #266 : police commune + boutons d'alerte 24 px + phPercent←phFill (#265, #259), CI verte sur dd143b1 ; 1er passage rouge : system-ui plus large en CI → alertes bornées à une demi-ligne sur téléphone ; verify local partiel ; pied d'attribution réinjecté par le serveur dans le corps de PR"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-10-27T05:55:42.555Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
