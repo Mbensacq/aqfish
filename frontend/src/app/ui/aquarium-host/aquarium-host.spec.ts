@@ -793,9 +793,10 @@ describe('AquariumHost', () => {
       frames.flush(1000);
       expect(renderers[1].renders).toBeGreaterThan(0);
       expect(cameraY()).not.toBe(tropicalY);
-      // Retour au bac : même monde de départ qu'au démarrage avec cette graine.
+      // Retour au bac (#277) : le monde quitté, nourri, et non un monde de départ.
       host().setEnvironment('tropical');
-      expect(host().world).toEqual(createDefaultWorld(9));
+      expect(host().world).not.toEqual(createDefaultWorld(9));
+      expect(host().world!.food.length).toBeGreaterThan(0);
       expect(renderers).toHaveLength(3);
     });
 
