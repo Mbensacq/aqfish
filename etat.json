@@ -3161,10 +3161,10 @@
           "note": "Verdict OK, 0 bug, captures c085 publiées (83/84 identiques, écarts dus à #275), e2e ajouté (4 environnements, 390 px) ; e2e complet non terminé en local, CI relancée"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-27T17:26:06.227Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-27T19:07:01.504Z",
+          "note": "PR #282 fusionnée → v1.1.1 ; #275 → v1.1.0 et #280 (docs) fusionnées après mise à jour avec main (CI 6 parts verte) ; main verte, releases créées ; suppression des branches refusée par l'environnement"
         }
       },
       "metriques": {}
