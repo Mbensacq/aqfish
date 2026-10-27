@@ -1,4 +1,9 @@
+import { mixWarnings } from './compatibility';
+import { dashboardAlerts } from './dashboard-alerts';
 import { createDayClock } from './daylight';
+import { EMPTY_HEALTH_SUMMARY } from './health-summary';
+import { waterSample } from './water-dashboard';
+import { phBands } from './water-ph';
 import { DEFAULT_DECOR } from './decor';
 import { addDecorItem, removeDecorItem, withDecor } from './decor-edit';
 import { MAX_FOOD } from './food';
@@ -420,6 +425,49 @@ describe('serializeWorld / parseWorld : aller-retour', () => {
     }
     expect(SPECIES.grenouille.scientificName).toBe('Bombina orientalis');
     expect(SPECIES.triton.scientificName).toBe('Cynops orientalis');
+  });
+
+  it('ancienne sauvegarde du paludarium mixte (#271) : chargée telle quelle, alerte de mélange', () => {
+    // Avant #271, le paludarium par défaut mêlait 2 axolotls, 3 sonneurs et 2 tritons dans
+    // une eau à 22 °C. Il n'y a pas de migration : le monde se recharge à l'identique, et la
+    // population incompatible déclenche l'alerte du tableau de bord.
+    const old = advance(
+      createWorld(
+        11,
+        [
+          { species: 'axolotl', count: 2 },
+          { species: 'grenouille', count: 3 },
+          { species: 'triton', count: 2 },
+        ],
+        [],
+        environmentById('paludarium').decor,
+        'paludarium',
+      ),
+      90,
+    );
+    const data = JSON.parse(serializeWorld(old)) as { water: { temperature: number } };
+    data.water.temperature = 22;
+    const back = restored(parseSaveData(data));
+    expect(back.world.environment).toBe('paludarium');
+    expect(back.world.entities).toEqual(old.entities);
+    expect(back.world.water.temperature).toBe(22);
+    const counts = populationCounts(back.world);
+    expect([counts.axolotl, counts.grenouille, counts.triton]).toEqual([2, 3, 2]);
+    const mixes = mixWarnings(environmentById('paludarium').species, counts);
+    const alerts = dashboardAlerts({
+      sample: waterSample(back.world.water, 'paludarium', back.world.tick),
+      phBands: phBands(['axolotl', 'grenouille', 'triton']),
+      health: EMPTY_HEALTH_SUMMARY,
+      mixes,
+    });
+    // 22 °C au lieu de 20 : écart sous le seuil « attention », pas d'alerte de température.
+    expect(alerts.map((a) => a.id)).toEqual(['mix']);
+    expect(alerts[0].cause).toContain('axolotls et sonneurs orientaux (prédateur)');
+    // Dans `others` aussi (ADR 0063).
+    const other = restored(
+      parseWorld(serializeWorld(createDefaultWorld(11), DEFAULT_SAVE_SETTINGS, [old])),
+    );
+    expect(other.others[0].entities).toEqual(old.entities);
   });
 
   it('accepte une ancienne sauvegarde sans pièce : pièce masquée, même schéma (#187)', () => {
@@ -873,7 +921,8 @@ describe('autres environnements visités (others, #277)', () => {
     ],
     [
       'trop d’éléments',
-      (o: Record<string, unknown>[]) => [o[0], o[0], o[0], o[0]],
+      // Un de plus que d'autres environnements possibles (5 environnements depuis #271).
+      (o: Record<string, unknown>[]) => ENVIRONMENT_IDS.map(() => o[0]),
       /trop d’autres environnements/,
     ],
     [

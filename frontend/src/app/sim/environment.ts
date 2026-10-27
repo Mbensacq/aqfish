@@ -37,7 +37,7 @@ import {
  */
 
 /** Identifiants des environnements, dans l'ordre du sélecteur. */
-export const ENVIRONMENT_IDS = ['tropical', 'bassin', 'paludarium', 'recif'] as const;
+export const ENVIRONMENT_IDS = ['tropical', 'bassin', 'paludarium', 'recif', 'eaufroide'] as const;
 export type EnvironmentId = (typeof ENVIRONMENT_IDS)[number];
 
 /** Environnement de l'application sans choix explicite (séries de captures existantes). */
@@ -211,8 +211,12 @@ export const PALUDARIUM_DIMENSIONS: TankDimensions = { width: 1, height: 0.6, de
 /**
  * Paludarium (épopée v0.7, issue #129, ADR 0034) : bac vitré dont la moitié +X est en eau et
  * la moitié −X une berge de terre et de roche qui émerge, en pente douce vers l'eau
- * (`sim/terrain.ts`). Axolotls dans l'eau (issue #130), grenouilles entre terre et eau
- * (issue #131), tritons plus aquatiques (issue #133) ; décor (#132) à venir.
+ * (`sim/terrain.ts`). Sonneurs orientaux entre terre et eau (issue #131, ADR 0064), tritons à
+ * ventre de feu plus aquatiques (issue #133) ; mousses et racines (#132).
+ *
+ * Population par défaut sans axolotl (issue #271, ADR 0065) : il vit seul, dans le bac d'eau
+ * froide. Il reste proposé ici (`species`) pour que les anciennes sauvegardes du paludarium
+ * mixte se chargent telles quelles ; l'en ajouter déclenche l'alerte de mélange déconseillé.
  */
 export const PALUDARIUM: Environment = {
   id: 'paludarium',
@@ -255,7 +259,7 @@ export const PALUDARIUM: Environment = {
   rain: false,
   floatingLeaves: false,
   species: [AXOLOTL.id, GRENOUILLE.id, TRITON.id],
-  population: defaultPopulation([AXOLOTL, GRENOUILLE, TRITON]),
+  population: defaultPopulation([GRENOUILLE, TRITON]),
 };
 
 /** Récif : 1,5 m × 60 cm, 65 cm de haut, plus long, plus large et plus haut que le bac. */
@@ -312,11 +316,56 @@ export const REEF: Environment = {
   population: defaultPopulation([CLOWN, CHIRURGIEN]),
 };
 
+/** Bac d'eau froide : 1 m × 45 cm, 45 cm de haut (environ 155 L d'eau). */
+export const COLD_TANK_DIMENSIONS: TankDimensions = { width: 1, height: 0.45, depth: 0.45 };
+
+/**
+ * Bac d'eau froide (issue #271, ADR 0065) : l'axolotl, seul avec ses congénères (« seul ou
+ * entre axolotls », `docs/ESPECES.md`), dans une eau fraîche (`WATER_TEMPERATURES`) sans
+ * courant (ni diffuseur ni bulles). Fond plat de sable, eau plus sombre que le bac tropical,
+ * sans caustiques ; quelques plantes et deux pierres au fond, le long de la vitre arrière :
+ * l'axolotl ne contourne pas encore les obstacles en marchant (`sim/axolotl.ts`), le devant
+ * reste dégagé.
+ */
+export const COLD_TANK: Environment = {
+  id: 'eaufroide',
+  name: 'Bac d’eau froide',
+  dimensions: COLD_TANK_DIMENSIONS,
+  waterLevel: WATER_LEVEL_RATIO,
+  terrain: null,
+  water: { body: 'eauSombre', surface: 'eauMoyenne' },
+  tones: [],
+  ground: { top: 'sable', side: 'sableSombre', bottom: 'sableSombre' },
+  border: 'verre',
+  defaultCamera: 'three-quarter',
+  bubbles: false,
+  caustics: false,
+  decor: parseDecor(
+    `[
+      { "kind": "rock", "x": -0.38, "z": -0.15, "rotation": 0.6, "scale": 1.1, "seed": 271 },
+      { "kind": "rock", "x": 0.34, "z": -0.16, "rotation": 3.4, "scale": 0.8, "seed": 72 },
+      { "kind": "plant", "form": "tall", "x": -0.22, "z": -0.17, "rotation": 1.1, "scale": 0.9, "seed": 171 },
+      { "kind": "plant", "form": "tall", "x": 0.05, "z": -0.18, "rotation": 2.7, "scale": 1, "seed": 272 },
+      { "kind": "plant", "form": "tall", "x": 0.42, "z": -0.17, "rotation": 4.6, "scale": 0.75, "seed": 373 }
+    ]`,
+    COLD_TANK_DIMENSIONS,
+  ),
+  corals: null,
+  anemones: null,
+  lilyPads: null,
+  bankDecor: null,
+  rain: false,
+  floatingLeaves: false,
+  species: [AXOLOTL.id],
+  population: defaultPopulation([AXOLOTL]),
+};
+
 export const ENVIRONMENTS: Readonly<Record<EnvironmentId, Environment>> = {
   tropical: TROPICAL_TANK,
   bassin: POND,
   paludarium: PALUDARIUM,
   recif: REEF,
+  eaufroide: COLD_TANK,
 };
 
 /** Vrai si l'espèce `species` vit dans l'environnement `id` (`Environment.species`). */

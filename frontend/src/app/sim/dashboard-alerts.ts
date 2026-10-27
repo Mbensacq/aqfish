@@ -1,4 +1,6 @@
+import type { MixWarning } from './compatibility';
 import { HUNGRY_AVERAGE, type HealthSummary } from './health-summary';
+import { MIX_REASON_TEXT, SPECIES_LABELS } from './species-catalog';
 import { WATER_CHANGE_SHARE, WATER_TEMPERATURES } from './water';
 import {
   compoundLevel,
@@ -17,7 +19,7 @@ import type { WaterCompound } from './water-quality';
  *
  * Règles :
  * - **une alerte par sujet** (identifiant unique) : un composé, la température, le pH, la
- *   faim ou la santé ; jamais de doublon ;
+ *   faim, la santé ou le mélange d'espèces déconseillé (issue #271) ; jamais de doublon ;
  * - **seuils** : ceux des jauges (`levelOf` et seuils de `sim/water-quality.ts`, zones du pH
  *   de `sim/water-ph.ts`, seuils de `sim/health-summary.ts`) : une jauge orange donne une
  *   alerte « attention », une jauge rouge une alerte « critique », une jauge verte aucune ;
@@ -39,7 +41,7 @@ export const ALERT_SEVERITY_LABELS: Readonly<Record<AlertSeverity, string>> = {
 };
 
 /** Sujet d'une alerte (identifiant unique). */
-export type AlertId = WaterCompound | 'temperature' | 'ph' | 'hunger' | 'health';
+export type AlertId = WaterCompound | 'temperature' | 'ph' | 'hunger' | 'health' | 'mix';
 
 /** Ordre des alertes de même gravité. */
 export const ALERT_ORDER: readonly AlertId[] = [
@@ -49,6 +51,7 @@ export const ALERT_ORDER: readonly AlertId[] = [
   'ph',
   'hunger',
   'nitrate',
+  'mix',
   'health',
 ];
 
@@ -67,11 +70,16 @@ export interface DashboardAlert {
   readonly action: string;
 }
 
-/** Ce que les alertes lisent : eau exacte, zones du pH, santé. */
+/** Ce que les alertes lisent : eau exacte, zones du pH, santé, mélanges déconseillés. */
 export interface AlertInput {
   readonly sample: WaterSample;
   readonly phBands: PhBands;
   readonly health: HealthSummary;
+  /**
+   * Mélanges déconseillés de la population affichée (`mixWarnings`, `sim/compatibility.ts`),
+   * absent ou vide : aucun (issue #271).
+   */
+  readonly mixes?: readonly MixWarning[];
 }
 
 const SEVERITY_OF: Readonly<Record<GaugeLevel, AlertSeverity | null>> = {
@@ -251,6 +259,28 @@ function healthAlert(health: HealthSummary, causes: readonly string[]): Dashboar
   };
 }
 
+/**
+ * Mélange déconseillé (issue #271) : une alerte « attention » qui nomme chaque couple présent
+ * et sa raison (« axolotls et sonneurs orientaux (prédateur) »). Le modèle de santé ne s'en
+ * sert pas : c'est un conseil de maintenance, pas une cause de souffrance simulée.
+ */
+export function mixAlert(mixes: readonly MixWarning[]): DashboardAlert | null {
+  if (mixes.length === 0) {
+    return null;
+  }
+  const pairs = mixes.map(
+    (m) =>
+      `${SPECIES_LABELS[m.first].plural} et ${SPECIES_LABELS[m.second].plural} (${MIX_REASON_TEXT[m.reason]})`,
+  );
+  return {
+    id: 'mix',
+    severity: 'attention',
+    message: 'Mélange déconseillé',
+    cause: pairs.join(' ; '),
+    action: 'Retirer l’une des espèces : Réglages, Population',
+  };
+}
+
 /** Causes de souffrance actives, d'après les autres alertes (`sim/wellbeing.ts`). */
 function activeCauses(alerts: readonly DashboardAlert[]): string[] {
   const causes: string[] = [];
@@ -281,7 +311,7 @@ function rank(alert: DashboardAlert): number {
  * bonne santé : aucune alerte.
  */
 export function dashboardAlerts(input: AlertInput): readonly DashboardAlert[] {
-  const { sample, phBands, health } = input;
+  const { sample, phBands, health, mixes = [] } = input;
   const found: DashboardAlert[] = [];
   const push = (alert: DashboardAlert | null) => {
     if (alert !== null && !found.some((a) => a.id === alert.id)) {
@@ -294,6 +324,7 @@ export function dashboardAlerts(input: AlertInput): readonly DashboardAlert[] {
   push(phAlert(sample.ph, phBands));
   push(hungerAlert(health));
   push(compoundAlert('nitrate', sample.nitrate));
+  push(mixAlert(mixes));
   push(healthAlert(health, activeCauses(found)));
   return found.sort((a, b) => rank(a) - rank(b));
 }

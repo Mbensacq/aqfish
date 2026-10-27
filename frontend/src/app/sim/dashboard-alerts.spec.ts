@@ -4,10 +4,12 @@ import {
   animalCount,
   dashboardAlerts,
   MAX_SHOWN_ALERTS,
+  mixAlert,
   shownAlerts,
   type AlertInput,
   type DashboardAlert,
 } from './dashboard-alerts';
+import { mixWarnings } from './compatibility';
 import { EMPTY_HEALTH_SUMMARY, healthSummary, type HealthSummary } from './health-summary';
 import { freshWater, WATER_TEMPERATURES } from './water';
 import { waterSample, type WaterSample } from './water-dashboard';
@@ -231,5 +233,45 @@ describe('alertes du tableau de bord (#260)', () => {
   it('effectifs au singulier et au pluriel', () => {
     expect(animalCount(1)).toBe('1 animal');
     expect(animalCount(3)).toBe('3 animaux');
+  });
+});
+
+describe('alerte de mélange déconseillé (#271)', () => {
+  const mixes = mixWarnings(['axolotl', 'grenouille', 'triton'], {
+    axolotl: 2,
+    grenouille: 3,
+    triton: 2,
+  });
+
+  it('aucun mélange (absent ou vide) : aucune alerte', () => {
+    expect(mixAlert([])).toBeNull();
+    expect(dashboardAlerts({ ...input(), mixes: [] })).toEqual([]);
+    expect(dashboardAlerts(input())).toEqual([]);
+  });
+
+  it('paludarium mixte : une seule alerte « attention » qui nomme chaque couple', () => {
+    const alerts = dashboardAlerts({ ...input(), mixes });
+    expect(alerts).toEqual([
+      {
+        id: 'mix',
+        severity: 'attention',
+        message: 'Mélange déconseillé',
+        cause:
+          'axolotls et sonneurs orientaux (prédateur) ; axolotls et tritons à ventre de feu (prédateur)',
+        action: 'Retirer l’une des espèces : Réglages, Population',
+      },
+    ]);
+    expect(alertsAnnouncement(alerts)).toBe('1 alerte : Mélange déconseillé (attention).');
+  });
+
+  it('après les alertes de l’eau de même gravité, avant la santé ; ne compte pas comme cause', () => {
+    const sick = healthSummary([{ species: 'neon', health: 0.5, hunger: 0.1 }]);
+    const alerts = dashboardAlerts({
+      ...input({ nitrate: COMPOUND_THRESHOLDS.nitrate.watch }, sick),
+      mixes,
+    });
+    expect(ids(alerts)).toEqual(['nitrate', 'mix', 'health']);
+    expect(alerts.find((a) => a.id === 'health')?.cause).not.toContain('mélange');
+    expect(new Set(ALERT_ORDER).size).toBe(ALERT_ORDER.length);
   });
 });
