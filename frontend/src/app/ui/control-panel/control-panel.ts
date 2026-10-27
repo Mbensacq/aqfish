@@ -27,7 +27,7 @@ import { DEFAULT_SIM_SPEED, SIM_SPEEDS, speedLabel, type SimSpeed } from '../../
 import { mixWarnings } from '../../sim/compatibility';
 import { mixWarningText, SPECIES_LABELS, speciesCatalog } from '../../sim/species-catalog';
 import { type SpeciesId } from '../../sim/species';
-import { addWarnings, addWarningText, sheetRows } from '../../sim/species-sheet';
+import { addWarnings, addWarningText, sheetNotes, sheetRows } from '../../sim/species-sheet';
 import { MAX_HEATER_TEMPERATURE, MIN_HEATER_TEMPERATURE } from '../../sim/water';
 import { formatTenth } from '../../sim/water-dashboard';
 import { DEFAULT_WATER_READOUT, type WaterReadout } from '../../sim/water-quality';
@@ -451,6 +451,13 @@ function toNumber(value: string | number): number {
                   Fiche : {{ entry.name }}
                   <span class="control-panel__sheet-latin">{{ entry.scientificName }}</span>
                 </h3>
+                <!-- Mises en garde de la fiche (#269) : non vérifiée, pas pour débutant… -->
+                @for (item of sheetNotes(id); track item.text) {
+                  <p class="control-panel__note control-panel__warning" data-sheet-note>
+                    {{ item.text }}
+                    <small class="control-panel__sheet-status">{{ item.status }}</small>
+                  </p>
+                }
                 <dl class="control-panel__sheet-list">
                   @for (row of sheetRows(id); track row.field) {
                     <div class="control-panel__sheet-row" [attr.data-sheet-field]="row.field">
@@ -635,6 +642,7 @@ export class ControlPanel {
     ).map(addWarningText);
   });
   protected readonly sheetRows = sheetRows;
+  protected readonly sheetNotes = sheetNotes;
   protected readonly environmentIds = ENVIRONMENT_IDS;
   /** Case « Pluie » proposée seulement là où il peut pleuvoir (le bassin, #106). */
   protected readonly rainAvailable = computed(() => environmentById(this.environment()).rain);

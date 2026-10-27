@@ -34,7 +34,7 @@ describe('définitions d’espèces', () => {
 describe('corydora (#31)', () => {
   it('définition enregistrée, valide, espèce de fond', () => {
     expect(CORYDORA.id).toBe('corydora');
-    expect(CORYDORA.scientificName).toBe('Corydoras paleatus');
+    expect(CORYDORA.scientificName).toBe('Hoplisoma paleatum');
     expect(validateSpecies(CORYDORA)).toEqual([]);
     expect(SPECIES.corydora).toBe(CORYDORA);
     expect(CORYDORA.defaultPopulation).toBeGreaterThan(0);

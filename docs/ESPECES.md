@@ -29,6 +29,8 @@ sur `docs/SOINS.md` § 11 jusqu'à vérification.
 
 ## Résumé
 
+- **Dans le code** (#269, ADR 0062) : statut légal par fiche et liste d'exclusion dans
+  `frontend/src/app/sim/species-legal.ts` ; aucun statut confirmé à la source consolidée.
 - Fiches utilisables (avec badges de confiance) : néon, guppy, corydoras poivré, axolotl,
   poisson-clown (paramètres d'eau de source secondaire seulement), chirurgien bleu.
 - **Fiche koï à bloquer** : aucun paramètre chiffré vérifié.
