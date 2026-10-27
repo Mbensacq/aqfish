@@ -3053,10 +3053,10 @@
           "note": "Verdict OK, 0 bug, captures c082 publiées, mutation water-dashboard 74,9 % (#267)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-27T06:30:50.332Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-27T07:56:03.227Z",
+          "note": "PR #266 fusionnée → v1.0.5 (release CI ok), #265/#259 fermées, dette #268 (angle du bac à 1280 px) ; CI main verte sur 6a34a25 après 1 relance (e2e 2/4 au délai, noté sur #248) ; suppression de la branche refusée par l'environnement (laissée)"
         }
       },
       "metriques": {}
