@@ -1,0 +1,174 @@
+// Bandeau bas du tableau de bord (#260, addendum de l'ADR 0059) : santé et alertes,
+// au-dessus de la barre des vues (40 px de haut à 16 px du bas ; deux lignes, 74 px, sur
+// téléphone), jamais au centre du bac. Couleurs et opacités : variables posées par le cadre
+// (`DASHBOARD_COLORS`), héritées. Hôte transparent au pointeur, comme le cadre.
+:host {
+  position: fixed;
+  right: 324px;
+  bottom: 64px;
+  left: 155px;
+  z-index: 0;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.status {
+  display: flex;
+  flex-flow: row wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px 10px;
+  box-sizing: border-box;
+  max-width: 100%;
+  padding: 4px 8px;
+  border: 1px solid rgb(232 230 227 / 8%);
+  border-radius: 10px;
+  background: color-mix(
+    in srgb,
+    var(--dashboard-background) calc(var(--dashboard-background-alpha) * 100%),
+    transparent
+  );
+  opacity: var(--dashboard-rest-opacity);
+  pointer-events: auto;
+  transition: opacity 150ms ease-out;
+
+  &:hover,
+  &:focus-within {
+    opacity: 1;
+  }
+}
+
+.status__health,
+.status__alerts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.status__item,
+.status__chip,
+.status__none,
+.status__more {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.status__name {
+  color: color-mix(
+    in srgb,
+    var(--dashboard-ink) calc(var(--dashboard-muted-alpha) * 100%),
+    transparent
+  );
+}
+
+.status__value,
+.status__severity {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.status__chip {
+  min-height: 24px;
+  padding: 1px 8px;
+  border: 1px solid currentcolor;
+  border-radius: 8px;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--dashboard-ink);
+    outline-offset: 1px;
+  }
+}
+
+.status__message {
+  color: var(--dashboard-ink);
+}
+
+.status__icon {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  fill: currentcolor;
+}
+
+[data-level='vert'] {
+  color: var(--dashboard-vert);
+}
+
+[data-level='orange'] {
+  color: var(--dashboard-orange);
+}
+
+[data-level='rouge'] {
+  color: var(--dashboard-rouge);
+}
+
+.status__item .status__value {
+  color: var(--dashboard-ink);
+}
+
+.status__detail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--dashboard-ink);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (max-width: 1099px) {
+  :host {
+    right: 12px;
+    left: 12px;
+  }
+}
+
+@media (max-width: 639px) {
+  // Trois lignes au plus (santé, deux lignes d'alertes) entre le centre du bac (bas à
+  // 675 px sur 390 × 844) et la barre des vues (haut à 754 px).
+  :host {
+    right: 8px;
+    bottom: 96px;
+    left: 8px;
+  }
+
+  .status,
+  .status__health,
+  .status__alerts {
+    gap: 2px 6px;
+  }
+
+  .status {
+    padding: 3px 6px;
+    font-size: 11px;
+    line-height: 14px;
+  }
+
+  .status__chip {
+    min-height: 20px;
+    padding: 0 5px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status {
+    transition: none;
+  }
+}

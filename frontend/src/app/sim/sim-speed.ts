@@ -24,6 +24,14 @@ export function isSimSpeed(value: number): value is SimSpeed {
 }
 
 /**
+ * Libellé d'une vitesse de simulation, en français : « Pause » à 0, sinon « ×0,5 », « ×1 »,
+ * « ×2 », « ×4 » (virgule décimale).
+ */
+export function speedLabel(speed: number): string {
+  return speed === 0 ? 'Pause' : `×${String(speed).replace('.', ',')}`;
+}
+
+/**
  * Temps à simuler pour une image : `realDt · speed`. Un `realDt` négatif, `NaN` ou infini
  * compte pour 0, comme dans `fixedStepInto` (horloge non monotone, première image).
  * @throws RangeError si `speed` n'est pas l'une des vitesses proposées.

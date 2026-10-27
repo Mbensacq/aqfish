@@ -7,6 +7,8 @@ import {
   signal,
 } from '@angular/core';
 
+import { DEFAULT_START_HOUR, formatHour, type DayPhase } from '../../sim/daylight';
+import { DEFAULT_SIM_SPEED, speedLabel } from '../../sim/sim-speed';
 import { MAX_HEATER_TEMPERATURE, MIN_HEATER_TEMPERATURE } from '../../sim/water';
 import {
   DEFAULT_WATER_SAMPLE,
@@ -22,12 +24,16 @@ import {
   type WaterSample,
 } from '../../sim/water-dashboard';
 import { MAX_PH, MIN_PH, type PhBands } from '../../sim/water-ph';
+import { DAY_PHASE_LABELS, dayIconPixels, DAY_ICON_GRID } from '../day-indicator/day-indicator';
+import { LEVEL_ICON_GRID, levelIconPixels } from './level-icons';
 import {
   DEFAULT_WATER_READOUT,
   GAUGE_MAX,
   WATER_QUALITY_LABELS,
   type WaterReadout,
 } from '../../sim/water-quality';
+
+export { LEVEL_ICON_GRID, levelIconPixels } from './level-icons';
 
 /** Identifiant de la liste des jauges (cible de `aria-controls`). */
 export const DASHBOARD_GAUGES_ID = 'tableau-de-bord-jauges';
@@ -110,30 +116,6 @@ export function phGaugeBackground(bands: PhBands): string {
     band(horsPlage, bands.tolerated.max, MAX_PH);
   }
   return `linear-gradient(to right, ${stops.join(', ')})`;
-}
-
-/** Côté des icônes de niveau, en pixels d'icône. */
-export const LEVEL_ICON_GRID = 5;
-
-/**
- * Icônes de niveau en pixel art (`#` plein, `.` vide) : coche (vert), point d'exclamation
- * (orange), croix (rouge). La forme distingue les niveaux sans la couleur.
- */
-const LEVEL_ICON_MASKS: Readonly<Record<GaugeLevel, readonly string[]>> = {
-  vert: ['.....', '....#', '...#.', '#.#..', '.#...'],
-  orange: ['..#..', '..#..', '..#..', '.....', '..#..'],
-  rouge: ['#...#', '.#.#.', '..#..', '.#.#.', '#...#'],
-};
-
-/** Pixels pleins de l'icône d'un niveau, `[x, y]`. @throws Error si le masque est mal formé. */
-export function levelIconPixels(level: GaugeLevel): readonly (readonly [number, number])[] {
-  const mask = LEVEL_ICON_MASKS[level];
-  if (mask.length !== LEVEL_ICON_GRID || mask.some((row) => row.length !== LEVEL_ICON_GRID)) {
-    throw new Error(`Icône « ${level} » : grille ${LEVEL_ICON_GRID} × ${LEVEL_ICON_GRID} attendue`);
-  }
-  return mask.flatMap((row, y) =>
-    [...row].flatMap((cell, x) => (cell === '#' ? [[x, y] as const] : [])),
-  );
 }
 
 const ICONS: Readonly<Record<GaugeLevel, readonly (readonly [number, number])[]>> = {
@@ -243,6 +225,34 @@ const ICONS: Readonly<Record<GaugeLevel, readonly (readonly [number, number])[]>
         }
       </ul>
     }
+    <p
+      class="dashboard__sim"
+      data-dashboard-sim
+      [attr.data-phase]="phase()"
+      [attr.title]="simSpoken()"
+    >
+      <svg
+        class="dashboard__day"
+        aria-hidden="true"
+        [attr.viewBox]="'0 0 ' + dayGrid + ' ' + dayGrid"
+        shape-rendering="crispEdges"
+      >
+        @for (pixel of dayPixels(); track $index) {
+          <rect
+            [attr.x]="pixel.x"
+            [attr.y]="pixel.y"
+            width="1"
+            height="1"
+            [attr.fill]="pixel.color"
+          />
+        }
+      </svg>
+      <span class="dashboard__phase">{{ phaseText() }}</span>
+      <span class="dashboard__clock" data-dashboard-hour>{{ hourText() }}</span>
+      <span class="dashboard__speed" data-dashboard-speed
+        ><span class="dashboard__name">Vitesse</span> {{ speedText() }}</span
+      >
+    </p>
   </section>`,
   styleUrl: './dashboard-frame.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -262,6 +272,13 @@ export class DashboardFrame {
   readonly sample = input<WaterSample>(DEFAULT_WATER_SAMPLE);
   /** Relevé arrondi de l'eau (fourni par l'hôte) : indicateur global et zone du pH. */
   readonly readout = input<WaterReadout>(DEFAULT_WATER_READOUT);
+
+  /** Moment de la journée (indicateur du jour, #73). */
+  readonly phase = input<DayPhase>('jour');
+  /** Heure de la journée simulée, arrondie au quart d'heure par l'hôte. */
+  readonly hour = input<number>(DEFAULT_START_HOUR);
+  /** Vitesse de simulation. */
+  readonly speed = input<number>(DEFAULT_SIM_SPEED);
 
   /** Jauges dépliées (oui au départ : le cadre est fait pour être vu). */
   readonly expanded = signal(true);
@@ -293,6 +310,19 @@ export class DashboardFrame {
       `Eau : ${this.qualityText().toLowerCase()}. ${this.expanded() ? 'Replier' : 'Déplier'} les jauges`,
   );
 
+  protected readonly dayGrid = DAY_ICON_GRID;
+  protected readonly dayPixels = computed(() => dayIconPixels(this.phase()));
+  protected readonly phaseText = computed(() => capitalize(DAY_PHASE_LABELS[this.phase()]));
+  protected readonly hourText = computed(() =>
+    Number.isFinite(this.hour()) ? formatHour(this.hour()) : '–',
+  );
+  protected readonly speedText = computed(() => speedLabel(this.speed()));
+  protected readonly simSpoken = computed(
+    () =>
+      `Simulation : ${DAY_PHASE_LABELS[this.phase()]}, ${this.hourText()}, ${
+        this.speed() === 0 ? 'en pause' : `vitesse ${this.speedText()}`
+      }`,
+  );
   /** Replie ou déplie les jauges. */
   toggle(): void {
     this.expanded.update((open) => !open);
@@ -303,4 +333,9 @@ export class DashboardFrame {
     const value = this.sample()[id];
     return Number.isFinite(value) ? Math.round(value * 10) / 10 : null;
   }
+}
+
+/** Première lettre en capitale (« nuit » → « Nuit »). */
+function capitalize(text: string): string {
+  return text.charAt(0).toUpperCase() + text.slice(1);
 }
