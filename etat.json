@@ -3075,6 +3075,12 @@
           "debut": "2026-10-27T07:56:33.458Z",
           "fin": "2026-10-27T07:58:47.360Z",
           "note": "Issue #272 : Rétro sprint 12, plan v1.1 (#269-#271, #252, #238), Dev : bug #244 + ADR pièce de N bacs (S) ; PR doc roadmap #273"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-10-27T07:59:20.991Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
