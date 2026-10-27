@@ -3185,10 +3185,10 @@
           "note": "Issue #270 : triton et grenouille réels, lot 2/3 de #262 (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-27T19:08:34.812Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-27T20:21:52.467Z",
+          "note": "PR #283 : sonneur oriental et triton à ventre de feu (#270, ADR 0064), CI verte ; statut légal de Bombina en confiance faible"
         }
       },
       "metriques": {}
