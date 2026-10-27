@@ -114,6 +114,38 @@ test.describe('Sauvegarde (#70)', () => {
     expect(errors).toEqual([]);
   });
 
+  test('quatre environnements visités à 390 px : tous rangés dans la sauvegarde, tick non remis à zéro (#277)', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    const errors = await open(page);
+    const environment = page.getByRole('combobox', { name: 'Environnement' });
+    await openPanel(page);
+    await page.getByRole('button', { name: 'Ajouter un néon' }).click();
+    const tropical = 'neon:13,guppy:6,corydora:6';
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', tropical);
+    await expect.poll(() => tick(page)).toBeGreaterThan(10);
+    const tickAtDeparture = await tick(page);
+
+    for (const id of ['bassin', 'paludarium', 'recif']) {
+      await environment.selectOption(id);
+      await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', id);
+    }
+    await environment.selectOption('tropical');
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', tropical);
+    expect(await tick(page)).toBeGreaterThanOrEqual(tickAtDeparture);
+
+    const stored = await page.evaluate(() => localStorage.getItem('aqfish.sauvegarde'));
+    const document = JSON.parse(stored!) as { schema: number; others?: { environment: string }[] };
+    expect(document.schema).toBe(1);
+    expect(document.others?.map((world) => world.environment).sort()).toEqual([
+      'bassin',
+      'paludarium',
+      'recif',
+    ]);
+    expect(errors).toEqual([]);
+  });
+
   // #101 : la sauvegarde est lue avant la création du monde ; `heure=` n'est pas un paramètre
   // de monde (la population est restaurée) mais fige l'heure (l'horloge sauvegardée est ignorée).
   test('`heure=` dans l’URL : population restaurée, heure figée à celle de l’URL', async ({
