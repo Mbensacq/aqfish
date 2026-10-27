@@ -100,6 +100,8 @@ async function checkViewport(page: Page, viewport: { width: number; height: numb
     await expect(chips.nth(i)).toBeInViewport({ ratio: 1 });
     await expect(chips.nth(i)).toContainText('Critique');
     await expect(chips.nth(i).locator('svg rect').first()).toBeAttached();
+    // Cible tactile d'au moins 24 px de haut, téléphone compris (#265).
+    expect((await chips.nth(i).boundingBox())!.height).toBeGreaterThanOrEqual(24);
   }
   await expect(chips.first()).toContainText('Ammoniaque trop haute');
   await expect(status(page).locator('[data-alerts-more]')).toContainText('+2');

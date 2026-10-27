@@ -1,7 +1,10 @@
 // Bandeau bas du tableau de bord (#260, addendum de l'ADR 0059) : santé et alertes,
 // au-dessus de la barre des vues (40 px de haut à 16 px du bas ; deux lignes, 74 px, sur
 // téléphone), jamais au centre du bac. Couleurs et opacités : variables posées par le cadre
-// (`DASHBOARD_COLORS`), héritées. Hôte transparent au pointeur, comme le cadre.
+// (`DASHBOARD_COLORS`), héritées. Hôte transparent au pointeur, comme le cadre ; même police
+// et même surface (`_dashboard-surface.scss`, #265).
+@use 'dashboard-surface' as dashboard;
+
 :host {
   position: fixed;
   right: 324px;
@@ -11,6 +14,8 @@
   display: flex;
   justify-content: center;
   pointer-events: none;
+
+  @include dashboard.font;
 }
 
 .status {
@@ -19,24 +24,9 @@
   align-items: center;
   justify-content: center;
   gap: 4px 10px;
-  box-sizing: border-box;
-  max-width: 100%;
   padding: 4px 8px;
-  border: 1px solid rgb(232 230 227 / 8%);
-  border-radius: 10px;
-  background: color-mix(
-    in srgb,
-    var(--dashboard-background) calc(var(--dashboard-background-alpha) * 100%),
-    transparent
-  );
-  opacity: var(--dashboard-rest-opacity);
-  pointer-events: auto;
-  transition: opacity 150ms ease-out;
 
-  &:hover,
-  &:focus-within {
-    opacity: 1;
-  }
+  @include dashboard.surface;
 }
 
 .status__health,
@@ -141,11 +131,12 @@
 }
 
 @media (max-width: 639px) {
-  // Trois lignes au plus (santé, deux lignes d'alertes) entre le centre du bac (bas à
-  // 675 px sur 390 × 844) et la barre des vues (haut à 754 px).
+  // Trois lignes au plus (santé, deux lignes d'alertes aux boutons de 24 px, #265) entre
+  // le centre du bac (bas à 675 px sur 390 × 844) et la barre des vues (haut à 754 px) :
+  // 72 px de haut, de 678 à 750 px.
   :host {
     right: 8px;
-    bottom: 96px;
+    bottom: 94px;
     left: 8px;
   }
 
@@ -156,13 +147,13 @@
   }
 
   .status {
-    padding: 3px 6px;
+    padding: 2px 6px;
     font-size: 11px;
     line-height: 14px;
   }
 
+  // Cible tactile de 24 px (#265), comme sur bureau.
   .status__chip {
-    min-height: 20px;
     padding: 0 5px;
   }
 }
