@@ -77,8 +77,9 @@ jamais eu d'aquarium doit pouvoir commencer ici et apprendre à s'occuper de ses
 2. #251 — interface en bordure : tableau de bord permanent de l'eau, de la santé et de la
    simulation (les réglages ne gardent que ce qui se règle).
 3. #229 — aquarium éducatif (épopée à découper : pH, espèces et fiches, soins, aides), avec
-   #237 (fiches d'espèces) puis #252 (wiki des espèces en bas à droite). Données de départ :
-   `docs/SOINS.md`, à recouper et compléter.
+   #237 (fiches d'espèces), puis #262 (espèces en règle : statut légal en France, triton et
+   grenouille réels, environnements cohérents) **avant** #252 (wiki des espèces en bas à
+   droite). Données de départ : `docs/SOINS.md` et `docs/ESPECES.md`, à recouper et compléter.
 4. #227 — pièce complète, puis #228 — caméra libre : seulement après les précédentes.
 
 Toute valeur biologique est sourcée (référence consultable) ou marquée « approximation de jeu » ;
