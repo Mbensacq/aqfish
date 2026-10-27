@@ -3179,10 +3179,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-27T19:07:34.786Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-27T19:08:07.515Z",
+          "note": "Issue #270 : triton et grenouille réels, lot 2/3 de #262 (M)"
         }
       },
       "metriques": {}
