@@ -48,13 +48,15 @@ jobs:
         run: npm run build
 
   e2e:
-    name: e2e ${{ matrix.shard }}/4
+    name: e2e ${{ matrix.shard }}/6
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # L'installation de Chromium (paquets système) prend parfois 8 à 12 min sur certains
+    # runners (#248) : marge de 45 min et 6 parts pour rester loin du délai.
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4]
+        shard: [1, 2, 3, 4, 5, 6]
     defaults:
       run:
         working-directory: frontend
@@ -73,8 +75,8 @@ jobs:
       - name: Installer Chromium pour Playwright
         run: npx playwright install --with-deps chromium
 
-      - name: Tests de bout en bout (part ${{ matrix.shard }} sur 4)
-        run: npm run e2e -- --shard=${{ matrix.shard }}/4
+      - name: Tests de bout en bout (part ${{ matrix.shard }} sur 6)
+        run: npm run e2e -- --shard=${{ matrix.shard }}/6
 
       - name: Publier le rapport Playwright
         if: failure()
@@ -88,7 +90,7 @@ jobs:
   captures:
     name: captures sous 5 angles
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     defaults:
       run:
         working-directory: frontend
