@@ -31,6 +31,11 @@ sur `docs/SOINS.md` § 11 jusqu'à vérification.
 
 - **Dans le code** (#269, ADR 0062) : statut légal par fiche et liste d'exclusion dans
   `frontend/src/app/sim/species-legal.ts` ; aucun statut confirmé à la source consolidée.
+- **Environnements** (#271, ADR 0065) : l'axolotl vit seul dans le bac d'eau froide (17 °C) ;
+  le paludarium (20 °C, seul point commun des plages préférées) accueille sonneurs orientaux
+  et tritons à ventre de feu, cohabitation **possible sous conditions** d'après des
+  témoignages d'éleveurs seulement ([60], faible : grand bac, œufs et têtards du sonneur
+  mangés par les tritons, avis partagés). À recouper avec une source primaire.
 - Fiches utilisables (avec badges de confiance) : néon, guppy, corydoras poivré, axolotl,
   poisson-clown (paramètres d'eau de source secondaire seulement), chirurgien bleu.
 - **Fiche koï à bloquer** : aucun paramètre chiffré vérifié.
@@ -305,8 +310,9 @@ sur `docs/SOINS.md` § 11 jusqu'à vérification.
 **Règle proposée pour la simulation** : compatibilité = intersection non vide des plages
 (T°, pH, GH), même milieu (douce ou marine), et aucune règle d'exclusion (« sans poissons »
 pour axolotl et *Cynops* ; taille, prédation). Le niveau ⚠️ reflète la largeur de
-l'intersection. Conséquence : le paludarium actuel (axolotl + grenouille + triton) n'est pas
-cohérent avec ces sources (#262).
+l'intersection. Conséquence : le paludarium d'avant #271 (axolotl + grenouille + triton)
+n'était pas cohérent avec ces sources (#262) ; depuis l'ADR 0065, l'axolotl a son bac d'eau
+froide.
 
 ## Espèces candidates (à sourcer une par une avant ajout)
 
@@ -423,3 +429,4 @@ remplacer par une source primaire.
 57. *Synchiropus splendidus* — https://en.wikipedia.org/wiki/Synchiropus_splendidus *(secondaire)*
 58. *Hoplisoma sterbai* — https://en.wikipedia.org/wiki/Sterba%27s_corydoras *(secondaire)*
 59. *Bombina orientalis*, fiche de soins — https://anapsid.org/bombina.html *(secondaire, consultée le 2026-10-27, #270)*
+60. Caudata.org, fil « FB Newts + FB Toad = ?? » (avril 2007) — https://www.caudata.org/threads/fb-newts-fb-toad.3236/ *(témoignages, faible, consulté le 2026-10-27, #271)*

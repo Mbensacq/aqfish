@@ -54,7 +54,8 @@ clair, flancs plus sombres), sans liseré ; contraste avec le sable et la roche 
 | ------------------------ | ------------------------------------------------------------------------- | ----------------------------------------------------- |
 | Bac tropical d'eau douce | Bac planté, lumière chaude                                                | Néons, guppys, corydoras, scalaires, crevettes        |
 | Bassin extérieur à koïs  | Vue de dessus privilégiée, nénuphars, lotus, pluie, feuilles qui flottent | Koïs, poissons rouges, grenouilles en bordure         |
-| Paludarium               | Partie terrestre et partie aquatique, mousses, racines                    | Axolotls (eau), grenouilles et tritons (terre et eau) |
+| Paludarium               | Partie terrestre et partie aquatique, mousses, racines                    | Sonneurs orientaux et tritons à ventre de feu (terre et eau, ADR 0065) |
+| Bac d'eau froide         | Eau fraîche plus sombre, sans courant ni bulles, sable, plantes au fond   | Axolotls seuls (ADR 0065)                             |
 | Récif marin              | Coraux colorés, lumière bleutée                                           | Poissons-clowns, chirurgiens, anémones                |
 
 Les espèces sont décrites de façon **déclarative** (taille, silhouette, motifs, couleurs,
@@ -78,7 +79,7 @@ roche sombre. Un flanc sable se confondait avec le substrat sur les captures, et
 gris roche avec les rochers (#76) : les poissons de fond évitent les tons du sable **et** de
 la roche sur leurs flancs ; le contraste clair / noir les détache des deux.
 
-L'**axolotl** du paludarium (#130, ADR 0035) : corps rose axolotl, ventre blanc cassé,
+L'**axolotl** (#130, ADR 0035), seul dans le bac d'eau froide depuis #271 (ADR 0065) : corps rose axolotl, ventre blanc cassé,
 crête dorsale, pattes et nageoire de la queue rose poisson, trois branchies de chaque côté de
 la tête en rose nénuphar (plus soutenu que le corps, pour qu'elles se lisent de profil comme
 de dessus, où elles dépassent des flancs). Il reste rose sur le sable clair du fond.
