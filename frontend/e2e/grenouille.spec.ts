@@ -28,7 +28,7 @@ test.describe('Grenouilles (#131)', () => {
     const errors = await open(page, '?environnement=paludarium&seed=42');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /grenouille:3/);
     await page.getByRole('button', { name: 'Réglages' }).click();
-    const field = page.getByRole('spinbutton', { name: 'Nombre de grenouilles' });
+    const field = page.getByRole('spinbutton', { name: 'Nombre de sonneurs orientaux' });
     await expect(field).toHaveValue('3');
     await field.fill('9');
     await field.dispatchEvent('change');

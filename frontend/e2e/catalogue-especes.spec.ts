@@ -80,9 +80,9 @@ test.describe('Catalogue d’espèces (#189)', () => {
     expect(
       await rows(page).evaluateAll((els) => els.map((el) => el.getAttribute('data-species'))),
     ).toEqual(['axolotl', 'grenouille', 'triton']);
-    await page.getByRole('button', { name: 'Retirer une grenouille' }).click();
+    await page.getByRole('button', { name: 'Retirer un sonneur oriental' }).click();
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /grenouille:2/);
-    await expect(slider(page, 'de grenouilles')).toHaveValue('2');
+    await expect(slider(page, 'de sonneurs orientaux')).toHaveValue('2');
     await slider(page, 'd’axolotls').fill('4');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /axolotl:4/);
     expect(errors).toEqual([]);

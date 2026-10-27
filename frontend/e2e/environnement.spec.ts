@@ -140,8 +140,12 @@ test.describe('Environnement', () => {
       'axolotl:2,grenouille:3,triton:2',
     );
     await expect(page.getByRole('spinbutton', { name: 'Nombre d’axolotls' })).toHaveValue('2');
-    await expect(page.getByRole('spinbutton', { name: 'Nombre de grenouilles' })).toHaveValue('3');
-    await expect(page.getByRole('spinbutton', { name: 'Nombre de tritons' })).toHaveValue('2');
+    await expect(
+      page.getByRole('spinbutton', { name: 'Nombre de sonneurs orientaux' }),
+    ).toHaveValue('3');
+    await expect(
+      page.getByRole('spinbutton', { name: 'Nombre de tritons à ventre de feu' }),
+    ).toHaveValue('2');
     await expect(page.locator('[data-population-empty]')).toHaveCount(0);
     await toggle(page).click();
 

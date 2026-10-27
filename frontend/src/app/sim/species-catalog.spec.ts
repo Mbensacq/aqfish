@@ -58,7 +58,13 @@ describe('catalogue d’espèces (#189)', () => {
       expect(labels.plural).toBe(labels.plural.toLowerCase());
       expect(labels.plural).not.toBe(labels.singular);
     }
-    expect(SPECIES_LABELS.grenouille.feminine).toBe(true);
+    // Plus aucune espèce au nom féminin depuis #270 (« grenouille » → sonneur oriental).
+    expect(SPECIES_LABELS.grenouille).toEqual({
+      singular: 'sonneur oriental',
+      plural: 'sonneurs orientaux',
+      feminine: false,
+    });
+    expect(SPECIES_LABELS.triton.plural).toBe('tritons à ventre de feu');
     expect(SPECIES_LABELS.clown.plural).toBe('poissons-clowns');
     expect(SPECIES_LABELS.chirurgien.plural).toBe('chirurgiens bleus');
   });

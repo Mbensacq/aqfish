@@ -682,23 +682,26 @@ export const AXOLOTL: SpeciesDefinition = {
 };
 
 /**
- * Grenouille, paludarium (docs/DA.md « Amphibiens », issue #131) : vit sur la berge, saute,
+ * Sonneur oriental (Bombina orientalis), « grenouille » du paludarium (docs/DA.md
+ * « Amphibiens », issue #131 ; espèce réelle depuis #270, ADR 0064) : anoure semi-aquatique
+ * de Corée, du nord-est de la Chine et du sud-est de la Sibérie. Vit sur la berge, saute,
  * entre dans l'eau pour nager quelques secondes, puis revient sur la berge.
  *
- * - Couleurs : vert grenouille `#7bc950` de la palette « Amphibiens » de docs/DA.md (dos et
- *   flancs), taches et pattes en vert sombre `#4e9a4a`, ventre `#f2ead8`, œil `#1c1c22` :
- *   couleurs existantes de la palette.
+ * - Couleurs : dos vert grenouille `#7bc950` de la palette « Amphibiens » de docs/DA.md,
+ *   taches noires `#1c1c22`, ventre rouge `#d94a3a` (le « ventre de feu », visible de
+ *   dessous), pattes vert sombre `#4e9a4a`, œil `#1c1c22` : couleurs existantes de la
+ *   palette. Teintes : approximation de jeu d'après la description courante de l'espèce.
+ * - `bodyLength` (5 cm) : proche de la taille adulte réelle, environ 6 cm (anapsid.org,
+ *   Bombina orientalis, source secondaire, consultée le 2026-10-27).
  * - Durées, portées et hauteur des sauts, vitesse de nage, part du temps dans l'eau :
  *   **approximations de jeu**, pour des sauts lisibles à l'échelle du bac.
- * - `bodyLength` (5 cm) : **approximation de jeu**, ordre de grandeur d'une petite grenouille
- *   arboricole (référence à consulter : AmphibiaWeb ; non vérifiée ici), agrandi pour rester
- *   lisible en pixel art.
  * - Solitaire (pas de banc). Ne cherche pas la nourriture (nourrissage hors périmètre de #131).
+ * - L'identifiant `grenouille` est conservé (sérialisé dans les sauvegardes, ADR 0064).
  */
 export const GRENOUILLE: SpeciesDefinition = {
   id: 'grenouille',
-  name: 'Grenouille',
-  scientificName: 'Anura',
+  name: 'Sonneur oriental',
+  scientificName: 'Bombina orientalis',
   bodyLength: 0.05,
   cruiseSpeed: 0.05,
   minSpeed: 0.01,
@@ -714,9 +717,9 @@ export const GRENOUILLE: SpeciesDefinition = {
   silhouette: 'grenouille',
   colors: {
     stripe: '#7bc950',
-    accent: '#4e9a4a',
+    accent: '#1c1c22',
     back: '#7bc950',
-    belly: '#f2ead8',
+    belly: '#d94a3a',
     fin: '#4e9a4a',
     eye: '#1c1c22',
   },
@@ -745,29 +748,30 @@ export const GRENOUILLE: SpeciesDefinition = {
 };
 
 /**
- * Triton, paludarium (docs/DA.md « Amphibiens », issue #133) : plus aquatique que la
- * grenouille. Même machine à états (`sim/frog.ts`, ADR 0036), autres réglages (ADR 0037) :
+ * Triton à ventre de feu chinois (Cynops orientalis), triton du paludarium (docs/DA.md
+ * « Amphibiens », issue #133 ; espèce réelle depuis #270, ADR 0064) : plus aquatique que le
+ * sonneur. Même machine à états (`sim/frog.ts`, ADR 0036), autres réglages (ADR 0037) :
  *
  * - **à terre** : les « sauts » sont des pas rampants, courts (2 à 4 cm), lents (0,8 s) et
  *   à ras du sol (6 mm d'arc) ; repos fréquent sur la berge ;
  * - **dans l'eau** : 70 % d'un cycle de 60 s, nage lente (3 cm/s, queue ondulante à 1,4 Hz)
- *   à 2 cm sous la surface : la chasse lente près de la surface de l'issue (le triton ne
- *   mange pas encore : nourrissage hors périmètre).
+ *   à 2 cm sous la surface (adultes très aquatiques : Caudata Culture, via docs/ESPECES.md).
  *
- * - Couleurs : orange triton `#e07a2f` de la palette « Amphibiens » de docs/DA.md (dos,
- *   flancs, queue), taches `#1c1c22`, ventre jaune orangé `#f2c14e`, bas de la queue et pattes
- *   `#45423e` : couleurs existantes de la palette.
- * - `bodyLength` (7 cm, museau au départ de la queue) : **approximation de jeu**, ordre de
- *   grandeur d'un petit triton (référence à consulter : AmphibiaWeb ; non vérifiée ici),
- *   agrandi pour rester lisible en pixel art ; corps fin (4 voxels d'épaisseur au plus,
- *   contre 6 pour la grenouille) et longue queue.
+ * - Couleurs : dos et flancs sombres `#45423e`, taches `#1c1c22`, ventre orange triton
+ *   `#e07a2f` (le « ventre de feu »), pattes et bas de la queue `#45423e` : couleurs
+ *   existantes de la palette ; teintes : approximation de jeu d'après la description
+ *   courante de l'espèce (dos brun-noir, ventre orange taché de noir).
+ * - `bodyLength` (7 cm, museau au départ de la queue) : **approximation de jeu**, un peu
+ *   grand pour une espèce de 6 à 10,3 cm en longueur totale (Caudata Culture, via
+ *   docs/ESPECES.md), agrandi pour rester lisible en pixel art ; corps fin (4 voxels
+ *   d'épaisseur au plus, contre 6 pour le sonneur) et longue queue.
  * - Durées, portées, vitesses, part du temps dans l'eau : **approximations de jeu**.
- * - Solitaire (pas de banc).
+ * - Solitaire (pas de banc). L'identifiant `triton` est conservé (ADR 0064).
  */
 export const TRITON: SpeciesDefinition = {
   id: 'triton',
-  name: 'Triton',
-  scientificName: 'Salamandridae',
+  name: 'Triton à ventre de feu',
+  scientificName: 'Cynops orientalis',
   bodyLength: 0.07,
   cruiseSpeed: 0.03,
   minSpeed: 0.008,
@@ -782,10 +786,10 @@ export const TRITON: SpeciesDefinition = {
   schooling: null,
   silhouette: 'triton',
   colors: {
-    stripe: '#e07a2f',
+    stripe: '#45423e',
     accent: '#1c1c22',
-    back: '#e07a2f',
-    belly: '#f2c14e',
+    back: '#45423e',
+    belly: '#e07a2f',
     fin: '#45423e',
     eye: '#1c1c22',
   },

@@ -77,9 +77,11 @@ describe('fiches d’espèces (#237)', () => {
       value: { min: 20, max: 26 },
       status: { kind: 'source', reference: 'docs/SOINS.md § 11 (FishBase)' },
     });
-    // Grenouilles et tritons : « non vérifié » dans SOINS.md, donc approximations.
+    // Sonneur et triton (#270) : plage préférée sourcée (docs/ESPECES.md, anapsid.org), plage
+    // tolérée non sourcée, donc approximation.
     expect(speciesSheet('grenouille').temperatureTolerated.status.kind).toBe('approximation');
-    expect(speciesSheet('triton').temperaturePreferred.status.kind).toBe('approximation');
+    expect(speciesSheet('triton').temperatureTolerated.status.kind).toBe('approximation');
+    expect(speciesSheet('triton').temperaturePreferred.status.kind).toBe('source');
   });
 
   it('fiches figées et partagées', () => {
@@ -287,7 +289,7 @@ describe('avertissement d’ajout (#237)', () => {
         other: 'axolotl',
         reason: 'predateur',
       }),
-    ).toBe('Tritons déconseillés avec les axolotls (prédateur)');
+    ).toBe('Tritons à ventre de feu déconseillés avec les axolotls (prédateur)');
     expect(
       addWarningText({
         kind: 'incompatible',
@@ -295,6 +297,6 @@ describe('avertissement d’ajout (#237)', () => {
         other: 'axolotl',
         reason: 'predateur',
       }),
-    ).toBe('Grenouilles déconseillées avec les axolotls (prédateur)');
+    ).toBe('Sonneurs orientaux déconseillés avec les axolotls (prédateur)');
   });
 });

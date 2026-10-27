@@ -398,6 +398,30 @@ describe('serializeWorld / parseWorld : aller-retour', () => {
     }
   });
 
+  it('ancienne sauvegarde du paludarium (#270) : grenouilles et tritons migrés vers les espèces réelles', () => {
+    // Avant #270, `grenouille` et `triton` désignaient Anura et Salamandridae ; les noms ne
+    // sont jamais écrits (ADR 0064) : la migration est l'identité, monde affiché et `others`.
+    const paludarium = advance(createDefaultWorld(11, 'paludarium'), 90);
+    const counts = populationCounts(paludarium);
+    expect(counts.grenouille).toBeGreaterThan(0);
+    expect(counts.triton).toBeGreaterThan(0);
+    const shownText = serializeWorld(paludarium);
+    const otherText = serializeWorld(createDefaultWorld(11), DEFAULT_SAVE_SETTINGS, [paludarium]);
+    for (const text of [shownText, otherText]) {
+      expect(text).not.toMatch(/Anura|Salamandridae|Bombina|Cynops/);
+      const back = restored(parseWorld(text));
+      const world = back.world.environment === 'paludarium' ? back.world : back.others[0];
+      expect(world).toEqual(paludarium);
+      const species = new Set(
+        world.entities.flatMap((e) => (e.kind === 'fish' ? [e.species] : [])),
+      );
+      expect(species).toContain('grenouille');
+      expect(species).toContain('triton');
+    }
+    expect(SPECIES.grenouille.scientificName).toBe('Bombina orientalis');
+    expect(SPECIES.triton.scientificName).toBe('Cynops orientalis');
+  });
+
   it('accepte une ancienne sauvegarde sans pièce : pièce masquée, même schéma (#187)', () => {
     const data = structuredClone(saveData(createDefaultWorld(3))) as unknown as {
       schema: number;

@@ -126,7 +126,7 @@ describe('compatibility (issue #209)', () => {
 
   it('libellé du mélange déconseillé', () => {
     expect(mixWarningText({ first: 'axolotl', second: 'triton', reason: 'predateur' })).toBe(
-      'Mélange déconseillé : axolotls et tritons (prédateur)',
+      'Mélange déconseillé : axolotls et tritons à ventre de feu (prédateur)',
     );
     expect(mixWarningText({ first: 'clown', second: 'koi', reason: 'territorial' })).toBe(
       'Mélange déconseillé : poissons-clowns et koïs (deux espèces territoriales)',

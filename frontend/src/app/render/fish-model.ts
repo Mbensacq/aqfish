@@ -184,8 +184,8 @@ export const AXOLOTL_FISH: FishTemplate = {
 };
 
 /**
- * Grenouille (issue #131) : corps court et trapu, vert `#7bc950` taché de vert sombre (`a`),
- * ventre clair, tête bombée. Parties paires : yeux noirs de chaque côté du haut de la tête, cuisses repliées le long de l'arrière du corps et pieds écartés (`f`), pattes avant sous la
+ * Grenouille (issue #131 ; sonneur oriental depuis #270, ADR 0064) : corps court et trapu,
+ * dos vert `#7bc950` taché de noir (`a`), ventre rouge (`b`), tête bombée. Parties paires : yeux noirs de chaque côté du haut de la tête, cuisses repliées le long de l'arrière du corps et pieds écartés (`f`), pattes avant sous la
  * tête. La « queue » est la paire de pieds arrière, qui bat à la nage et pendant le saut.
  */
 export const FROG_FISH: FishTemplate = {
@@ -208,10 +208,10 @@ export const FROG_FISH: FishTemplate = {
 };
 
 /**
- * Triton (issue #133) : corps long et fin (4 voxels d'épaisseur au plus, contre 6 pour la
- * grenouille), orange `#e07a2f` taché de sombre (`a`, surtout sur les flancs : vu de dessus,
- * le dos reste orange), ventre jaune orangé, tête étroite. Longue queue aplatie, crête
- * orange et bord inférieur sombre (`f`), qui ondule à la nage. Parties paires : quatre
+ * Triton (issue #133 ; triton à ventre de feu depuis #270, ADR 0064) : corps long et fin
+ * (4 voxels d'épaisseur au plus, contre 6 pour la grenouille), dos et flancs sombres taché de
+ * noir (`a`, surtout sur les flancs), ventre orange `#e07a2f` (`b`), tête étroite. Longue
+ * queue aplatie, crête et bord inférieur sombres (`f`), qui ondule à la nage. Parties paires : quatre
  * pattes courtes (`f`) sous le flanc, pieds écartés d'un voxel (vue de dessus) ; de profil,
  * le triton reste bas et allongé, la grenouille haute et ramassée.
  */
