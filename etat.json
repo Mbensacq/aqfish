@@ -3189,6 +3189,12 @@
           "debut": "2026-10-27T19:08:34.812Z",
           "fin": "2026-10-27T20:21:52.467Z",
           "note": "PR #283 : sonneur oriental et triton à ventre de feu (#270, ADR 0064), CI verte ; statut légal de Bombina en confiance faible"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-10-27T20:22:21.931Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
