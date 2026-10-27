@@ -1,6 +1,7 @@
-# Captures c082
+# Captures c083
 
-- Branche : `cycle/c082-bandeau-police-cible` ; PR #266 ; commit `dd143b1`
+- Branche : `cycle/c083-delais-tests-adr-piece` ; PR #274 ; commit `83fbf27`
 - Graine : 42 (défaut) ; temps : celui de `e2e/captures.spec.ts` (inchangé)
 - Rendu logiciel (2 cœurs), 84 tests de capture verts
-- Série regardée : `three-quarter-tableau-de-bord-alerte`, `telephone-tableau-de-bord-alerte` (police sans empattements)
+- Les 84 images sont identiques à l'octet à la série c082 (aucun changement d'apparence)
+- Série regardée : `three-quarter.png`
