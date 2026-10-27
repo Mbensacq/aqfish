@@ -3219,6 +3219,12 @@
           "debut": "2026-10-27T21:20:13.024Z",
           "fin": "2026-10-27T21:21:08.576Z",
           "note": "Issue #271 : espèces en règle 3/3, environnements cohérents (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-10-27T21:21:40.480Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
