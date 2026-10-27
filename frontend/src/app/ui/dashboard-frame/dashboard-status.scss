@@ -152,9 +152,28 @@
     line-height: 14px;
   }
 
+  // Deux lignes d'alertes au plus, quelle que soit la police (#265) : chaque alerte prend au
+  // plus une demi-ligne, son message tronqué au besoin (texte complet lu et déplié).
+  .status__alerts {
+    flex-basis: 100%;
+    justify-content: center;
+  }
+
+  .status__alert {
+    display: flex;
+    min-width: 0;
+    max-width: calc(50% - 3px);
+  }
+
   // Cible tactile de 24 px (#265), comme sur bureau.
   .status__chip {
+    min-width: 0;
     padding: 0 5px;
+  }
+
+  .status__message {
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
 

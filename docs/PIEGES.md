@@ -168,7 +168,12 @@ haut de sa section.
   bandeau tient entre le bas du centre du bac (675 px) et la barre des vues (754 px) ; passer
   les boutons d'alerte de 20 à 24 px l'a fait entrer d'1 px dans le rectangle central (e2e
   rouge). Compenser par `bottom` et le rembourrage, et relancer
-  `tableau-de-bord-sante.spec.ts`. (2026-10-27)
+  `tableau-de-bord-sante.spec.ts`. Attention, `system-ui` n'est pas la même police en local
+  (Inter) et sur la CI (plus large, type DejaVu Sans) : trois alertes tenaient sur deux
+  lignes en local et sur trois en CI (bandeau de 98 px, centre mordu). Ne pas dépendre de la
+  largeur du texte : borner chaque alerte à une demi-ligne et tronquer le message
+  (`text-overflow: ellipsis`) ; tester en local en remplaçant un instant `system-ui` par
+  `"DejaVu Sans"` dans le mixin. (2026-10-27)
 
 - **`linkedSignal({ source, computation })` : `previous.value` typé `{}`** (cycle 80, #256) :
   sans paramètres de type, TypeScript infère mal la valeur précédente quand le calcul
