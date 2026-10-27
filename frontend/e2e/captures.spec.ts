@@ -362,6 +362,27 @@ test.describe('Captures', () => {
     expect(errors).toEqual([]);
   });
 
+  // Fiche du chirurgien bleu (#269) sur bureau, angle trois-quarts : mise en garde « pas pour
+  // débutant » et statut légal. Simulation à l'arrêt dès t = 0, comme ci-dessus.
+  test('bureau avec la fiche du chirurgien bleu ouverte', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    await page.goto(`/?environnement=recif&seed=${SEED}&camera=three-quarter&heure=12&vitesse=0`);
+    await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+    await page.getByRole('button', { name: 'Réglages' }).click();
+    await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-speed', '0');
+    await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-tick', '0');
+    await page.getByRole('button', { name: 'Fiche : Chirurgien bleu' }).click();
+    const sheet = page.locator('[data-species-sheet="chirurgien"]');
+    await expect(sheet.locator('[data-sheet-note]')).toHaveCount(1);
+    await sheet.scrollIntoViewIfNeeded();
+    await page.screenshot({
+      path: join(OUTPUT_DIR, 'three-quarter-fiche-chirurgien.png'),
+      animations: 'disabled',
+    });
+    expect(errors).toEqual([]);
+  });
+
   // Section « Eau » (#207) à 390 px : panneau ouvert, section amenée en vue, simulation à
   // l'arrêt dès t = 0. Capture d'interface, comme ci-dessus.
   test('téléphone avec la section « Eau » ouverte', async ({ page }) => {

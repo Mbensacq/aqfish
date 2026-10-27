@@ -9,6 +9,7 @@ import {
   frenchNumber,
   SHEET_FIELD_LABELS,
   SHEET_FIELDS,
+  sheetNotes,
   sheetRows,
   speciesSheet,
   statusText,
@@ -121,6 +122,72 @@ describe('fiches d’espèces (#237)', () => {
     expect(frenchNumber(60)).toBe('60');
     expect(statusText({ kind: 'approximation' })).toBe('Approximation de jeu');
     expect(statusText({ kind: 'source', reference: 'X' })).toBe('Source : X');
+  });
+});
+
+describe('statut légal et corrections de fiches (#269)', () => {
+  it('chaque fiche porte le statut légal, sourcé, avec sa confiance et la prudence DDPP', () => {
+    for (const id of IDS) {
+      const legal = speciesSheet(id).legal;
+      expect(legal.status.kind, id).toBe('source');
+      const row = sheetRows(id).find((r) => r.field === 'legal');
+      expect(row?.label).toBe('Statut légal en France');
+      expect(row?.value, id).toContain('à vérifier auprès de la DDPP');
+      expect(row?.status, id).toMatch(/^Source : .+ ; (confiance \S+|non vérifié)$/);
+    }
+    expect(sheetRows('axolotl').find((r) => r.field === 'legal')?.status).toMatch(
+      /confiance moyenne$/,
+    );
+  });
+
+  it('koï : fiche non vérifiée, aucun paramètre chiffré présenté comme sourcé', () => {
+    const koi = speciesSheet('koi');
+    for (const field of SHEET_FIELDS.filter((f) => f !== 'legal')) {
+      expect(koi[field].status.kind, field).toBe('approximation');
+    }
+    expect(sheetNotes('koi').map((n) => n.text)).toEqual([
+      'Fiche non vérifiée : aucun paramètre chiffré confirmé (FishBase et source vétérinaire à consulter)',
+    ]);
+  });
+
+  it('chirurgien bleu : pas pour débutant, 31 cm et 300 L sourcés', () => {
+    const s = speciesSheet('chirurgien');
+    expect(s.adultSize).toMatchObject({ value: 31, status: { kind: 'source' } });
+    expect(s.minLiters).toMatchObject({ value: 300, status: { kind: 'source' } });
+    expect(sheetNotes('chirurgien')[0].text).toMatch(/^Pas pour débutant/);
+  });
+
+  it('poisson-clown : vit sans anémone ; autres espèces sans mise en garde', () => {
+    expect(sheetNotes('clown')[0].text).toMatch(/^Vit très bien sans anémone/);
+    for (const note of [
+      ...sheetNotes('clown'),
+      ...sheetNotes('chirurgien'),
+      ...sheetNotes('koi'),
+    ]) {
+      expect(note.status).toMatch(/^Source : docs\/ESPECES\.md/);
+    }
+    expect(sheetNotes('neon')).toEqual([]);
+    expect(Object.isFrozen(speciesSheet('neon').notes)).toBe(true);
+  });
+
+  it('corydoras : Hoplisoma paleatum, nom courant conservé', () => {
+    expect(SPECIES.corydora.scientificName).toBe('Hoplisoma paleatum');
+    expect(SPECIES.corydora.name).toBe('Corydora');
+  });
+
+  it('avertissement d’ajout du chirurgien bleu sous 300 L, absent à 300 L et plus', () => {
+    const recif = environmentById('recif').species;
+    const kinds = (liters: number) =>
+      addWarnings('chirurgien', 1, liters, { chirurgien: 1 }, recif).map((w) => w.kind);
+    expect(addWarnings('chirurgien', 1, 299, { chirurgien: 1 }, recif)).toContainEqual({
+      kind: 'volume',
+      species: 'chirurgien',
+      liters: 299,
+      minLiters: 300,
+    });
+    expect(kinds(299.9)).toContain('volume');
+    expect(kinds(300)).not.toContain('volume');
+    expect(kinds(1000)).not.toContain('volume');
   });
 });
 

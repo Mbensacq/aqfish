@@ -301,11 +301,15 @@ describe('ControlPanel', () => {
       expect(title?.textContent).toContain('Fiche : Néon');
       expect(region.getAttribute('data-species-sheet')).toBe('neon');
       const rows = region.querySelectorAll('[data-sheet-field]');
-      expect(rows).toHaveLength(10);
+      expect(rows).toHaveLength(11);
+      // Statut légal (#269) : dernière ligne, avec la prudence DDPP ; aucune mise en garde.
+      expect(rows[10].getAttribute('data-sheet-field')).toBe('legal');
+      expect(rows[10].textContent).toContain('à vérifier auprès de la DDPP');
+      expect(region.querySelectorAll('[data-sheet-note]')).toHaveLength(0);
       const statuses = [...region.querySelectorAll('[data-sheet-status]')].map((el) =>
         el.textContent?.trim(),
       );
-      expect(statuses).toHaveLength(10);
+      expect(statuses).toHaveLength(11);
       expect(statuses).toContain('Approximation de jeu');
       expect(statuses).toContain('Source : docs/SOINS.md § 11 (FishBase)');
       button.click();
