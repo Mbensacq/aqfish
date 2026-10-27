@@ -3149,10 +3149,10 @@
           "note": "Issue #277 : changer d'environnement efface le bac (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-27T14:44:50.770Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-27T16:53:10.710Z",
+          "note": "PR #282 : état gardé par environnement (#277, ADR 0063) ; CI verte sauf e2e 2/4 annulé au délai 3× (#248, #276 à fusionner par Mathis), e2e touchées vertes en local"
         }
       },
       "metriques": {}
