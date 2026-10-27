@@ -3210,7 +3210,7 @@
       "date": "2026-10-27",
       "debut": "2026-10-27T21:20:13.024Z",
       "type": "fonctionnalite",
-      "issue": null,
+      "issue": 271,
       "pr": null,
       "version": null,
       "phases": {
