@@ -3159,6 +3159,12 @@
           "debut": "2026-10-27T16:54:28.699Z",
           "fin": "2026-10-27T17:25:25.346Z",
           "note": "Verdict OK, 0 bug, captures c085 publiées (83/84 identiques, écarts dus à #275), e2e ajouté (4 environnements, 390 px) ; e2e complet non terminé en local, CI relancée"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-10-27T17:26:06.227Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
