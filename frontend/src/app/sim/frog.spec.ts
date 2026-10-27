@@ -300,6 +300,7 @@ describe('grenouille : saut en parabole', () => {
     );
   });
 
+  // Délai explicite (#244, docs/PIEGES.md) : ≈ 0,5 s en local, bien plus en CI lente.
   it('en simulation, chaque saut est borné en portée et en hauteur au-dessus de sa corde', () => {
     let jumps = 0;
     for (const seed of [1, 42, 99]) {
@@ -332,7 +333,7 @@ describe('grenouille : saut en parabole', () => {
       }
     }
     expect(jumps).toBeGreaterThan(50);
-  });
+  }, 15_000);
 });
 
 describe('grenouille : machine à états', () => {

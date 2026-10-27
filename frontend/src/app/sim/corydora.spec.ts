@@ -61,6 +61,7 @@ function corydoraStats(world: MutableWorld, steps: number): DepthStats {
 }
 
 describe('corydora : nage de fond (#31)', () => {
+  // Délai explicite (#244, docs/PIEGES.md) : ≈ 0,5 s en local, bien plus en CI lente.
   it.each([1, 42, 0xffffffff])(
     'graine %s, monde par défaut, 60 s : plus de 80 % du temps sous 25 % de la hauteur d’eau, jamais dans le sable',
     (seed) => {
@@ -68,8 +69,10 @@ describe('corydora : nage de fond (#31)', () => {
       expect(stats.lowFraction).toBeGreaterThan(0.8);
       expect(stats.minY).toBeGreaterThanOrEqual(water.minY + HALF_HEIGHT);
     },
+    15_000,
   );
 
+  // Délai explicite (#244, docs/PIEGES.md) : ≈ 0,5 s en local, bien plus en CI lente.
   it.each([7, 42, 2026])(
     'graine %s, monde par défaut, 60 s : jamais plaqués contre une vitre (limite de nage)',
     (seed) => {
@@ -89,6 +92,7 @@ describe('corydora : nage de fond (#31)', () => {
       }
       expect(contacts).toBe(0);
     },
+    15_000,
   );
 
   it('naissent dans la zone basse, au-dessus du sable', () => {
@@ -101,6 +105,7 @@ describe('corydora : nage de fond (#31)', () => {
     }
   });
 
+  // Délai explicite (#244, docs/PIEGES.md) : ≈ 0,5 s en local, bien plus en CI lente.
   it('remontent parfois brièvement vers la surface, puis redescendent', () => {
     // 20 corydoras, 120 s : ≈ 16 remontées attendues (1 / 150 s par poisson).
     const world = createWorld(3, [{ species: 'corydora', count: 20 }]) as MutableWorld;
@@ -108,9 +113,10 @@ describe('corydora : nage de fond (#31)', () => {
     expect(stats.ascents).toBeGreaterThan(3);
     expect(stats.maxY).toBeGreaterThan(water.minY + 0.5 * waterHeight);
     expect(stats.lowFraction).toBeGreaterThan(0.8);
-  });
+  }, 15_000);
 
   // Le pas qui déclenche la remontée compte déjà : au plus `ascentDuration` + un pas.
+  // Délai explicite (#244, docs/PIEGES.md) : ≈ 0,4 s en local, bien plus en CI lente.
   it('une remontée dure au plus `ascentDuration` (à un pas près)', () => {
     const world = createWorld(9, [{ species: 'corydora', count: 20 }]) as MutableWorld;
     const longest = new Map<number, number>();
@@ -127,13 +133,14 @@ describe('corydora : nage de fond (#31)', () => {
     expect(Math.max(...longest.values())).toBeLessThanOrEqual(
       CORYDORA.depth!.ascentDuration + SIM_DT + 1e-9,
     );
-  });
+  }, 15_000);
 
+  // Délai explicite (#244, docs/PIEGES.md) : ≈ 0,5 s en local, bien plus en CI lente.
   it('même graine ⇒ mêmes corydoras', () => {
     const a = advance(createDefaultWorld(5), 900);
     const b = advance(createDefaultWorld(5), 900);
     expect(b).toEqual(a);
-  });
+  }, 15_000);
 
   it('les corydoras ne changent pas la trajectoire des néons', () => {
     const alone = advance(

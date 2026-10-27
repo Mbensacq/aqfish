@@ -55,6 +55,7 @@ describe('monde et environnement (#87)', () => {
     expect(createDefaultWorld(7, 'bassin')).toEqual(pond);
   });
 
+  // Délai explicite (#244, docs/PIEGES.md) : ≈ 0,5 s en local, bien plus en CI lente.
   it('changer d’environnement recrée un monde valide et déterministe (poissons ajoutés)', () => {
     for (const seed of [0, 1, 42, 4294967295]) {
       const make = () => setPopulation(createDefaultWorld(seed, 'bassin'), 'neon', 12);
@@ -65,7 +66,7 @@ describe('monde et environnement (#87)', () => {
       expect(allInside(a)).toBe(true);
       expect(JSON.parse(JSON.stringify(a))).toEqual(a);
     }
-  });
+  }, 15_000);
 
   it('les poissons du bassin nagent dans le volume du bassin, pas dans celui du bac', () => {
     const pond = boundsFor('neon', 'bassin').hard;

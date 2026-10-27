@@ -201,6 +201,7 @@ describe('coralLayout', () => {
     expect(coralLayout(42, tiny, SETTINGS)).toEqual([]);
   });
 
+  // Délai explicite (#244, docs/PIEGES.md) : ≈ 0,6 s en local, bien plus en CI lente.
   it('300 graines : de 4 colonies à count.max, les trois formes et les quatre teintes', () => {
     for (const seed of SEEDS) {
       const colonies = layout(seed);
@@ -210,8 +211,9 @@ describe('coralLayout', () => {
       expect(new Set(colonies.map((c) => c.hue)).size).toBe(CORAL_HUES.length);
       colonies.forEach((c, n) => expect(c.id).toBe(n));
     }
-  });
+  }, 15_000);
 
+  // Délai explicite (#244, docs/PIEGES.md) : ≈ 1,2 s en local, bien plus en CI lente.
   it('300 graines : dans le bac, sous la surface, sans chevauchement ni contact avec un rocher', () => {
     const halfW = REEF.dimensions.width / 2 - CORAL_EDGE_MARGIN;
     const halfD = REEF.dimensions.depth / 2 - CORAL_EDGE_MARGIN;
@@ -237,7 +239,7 @@ describe('coralLayout', () => {
         expect(box.y + box.halfY).toBeLessThan(surface - 0.1);
       });
     }
-  });
+  }, 30_000);
 
   it('écarts : rectangles disjoints, en contact ou imbriqués ; disque dehors ou dedans', () => {
     const a = { minX: 0, maxX: 1, minZ: 0, maxZ: 1 };

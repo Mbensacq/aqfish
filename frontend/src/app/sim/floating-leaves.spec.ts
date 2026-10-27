@@ -169,6 +169,7 @@ describe('feuilles mortes : bornes (#107)', () => {
     expect(MAX_FLOATING_LEAVES).toBe(alive);
   });
 
+  // Délai explicite (#244, docs/PIEGES.md) : ≈ 1,1 s en local, bien plus en CI lente.
   it('les feuilles restent dans le bassin, à distance de la bordure, même contre le bord', () => {
     const half = LEAF_LENGTH.max / 2;
     let atEdge = 0;
@@ -197,7 +198,7 @@ describe('feuilles mortes : bornes (#107)', () => {
     }
     // Certaines feuilles atteignent le bord et s'y arrêtent : le cas est bien exercé.
     expect(atEdge).toBeGreaterThan(0);
-  });
+  }, 30_000);
 
   it('dérive lente : au plus la vitesse maximale plus le balancement', () => {
     const buffer = createFloatingLeafBuffer();

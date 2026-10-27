@@ -133,6 +133,7 @@ describe('woodModel : bois flotté à branches tiré de sa graine', () => {
     }
   });
 
+  // Délai explicite (#244, docs/PIEGES.md) : ≈ 1,7 s en local, bien plus en CI lente.
   it('voxels triés, sans doublon, au-dessus de la base, d’un seul tenant, posés sur le sable', () => {
     for (const seed of SEEDS) {
       const model = woodModel(seed, 1);
@@ -147,7 +148,7 @@ describe('woodModel : bois flotté à branches tiré de sa graine', () => {
       expect(model.cells.some((c) => c.j === 0)).toBe(true);
       expect(components(model)).toBe(1);
     }
-  });
+  }, 30_000);
 
   it('plus long que haut, à branches qui montent au-dessus du tronc', () => {
     for (const seed of SEEDS) {
@@ -195,6 +196,7 @@ describe('forme de collision du bois (sphères fines le long des branches)', () 
     }
   });
 
+  // Délai explicite (#244, docs/PIEGES.md) : ≈ 1,4 s en local, bien plus en CI lente.
   it('chaque voxel est entièrement dans une sphère (ses huit coins)', () => {
     for (const seed of SEEDS) {
       const { cells, spheres } = woodModel(seed, 1);
@@ -208,7 +210,7 @@ describe('forme de collision du bois (sphères fines le long des branches)', () 
         expect(inside).toBe(true);
       }
     }
-  });
+  }, 30_000);
 
   it('entre deux branches écartées, un passage libre d’au moins la largeur du plus petit poisson', () => {
     expect(SMALLEST_FISH).toBe(0.05); // grenouille (5 cm)

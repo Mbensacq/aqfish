@@ -107,11 +107,16 @@ describe('serializeWorld / parseWorld : aller-retour', () => {
       'population réglée (identifiants non consécutifs)',
       () => setPopulation(setPopulation(createDefaultWorld(9), 'neon', 3), 'guppy', 9),
     ],
-  ])('restitue le %s sans perte', (_name, make) => {
-    const world = make();
-    const { world: back } = restored(parseWorld(serializeWorld(world)));
-    expect(back).toEqual(world);
-  });
+  ])(
+    'restitue le %s sans perte',
+    (_name, make) => {
+      const world = make();
+      const { world: back } = restored(parseWorld(serializeWorld(world)));
+      expect(back).toEqual(world);
+    },
+    // Délai explicite (#244, docs/PIEGES.md) : ≈ 0,7 s en local, bien plus en CI lente.
+    15_000,
+  );
 
   it('restitue l’environnement récif (#148), poissons-clowns (#150), chirurgiens (#151) et granulés compris', () => {
     const world = advance(feed(createDefaultWorld(8, 'recif'), 0.2, -0.1), 90);
@@ -712,6 +717,7 @@ describe('parseWorld : champs inconnus et prototypes', () => {
     expect(parseWorld(deep).ok).toBe(false);
   });
 
+  // Délai explicite (#244, docs/PIEGES.md) : ≈ 0,6 s en local, bien plus en CI lente.
   it('refuse sans lever des types inattendus partout', () => {
     for (const key of ['decor', 'fish', 'food', 'settings']) {
       for (const value of [null, 1, 'x', {}, [null], [1]]) {
@@ -720,5 +726,5 @@ describe('parseWorld : champs inconnus et prototypes', () => {
       }
     }
     expect(parseWorld(undefined as unknown as string).ok).toBe(false);
-  });
+  }, 15_000);
 });

@@ -101,6 +101,7 @@ describe('disposition des anémones', () => {
     expect(() => layout(-1)).toThrow(RangeError);
   });
 
+  // Délai explicite (#244, docs/PIEGES.md) : ≈ 0,5 s en local, bien plus en CI lente.
   it('200 graines : effectif visé atteint, dans le bac, hors des rochers et l’une de l’autre', () => {
     const rocks = decorObstacles(REEF.decor).flatMap((o) => o.spheres);
     const halfW = REEF.dimensions.width / 2 - ANEMONE_EDGE_MARGIN;
@@ -122,8 +123,9 @@ describe('disposition des anémones', () => {
         }
       });
     }
-  });
+  }, 15_000);
 
+  // Délai explicite (#244, docs/PIEGES.md) : ≈ 0,9 s en local, bien plus en CI lente.
   it('200 graines : les coraux du monde ne chevauchent aucune anémone', () => {
     for (const seed of SEEDS) {
       const { corals, anemones } = seededFeatures(seed, 'recif', REEF.decor);
@@ -139,7 +141,7 @@ describe('disposition des anémones', () => {
         }
       }
     }
-  });
+  }, 15_000);
 
   it('seul le récif a des anémones ; leurs boîtes suivent celles des coraux', () => {
     for (const env of [TROPICAL_TANK, POND, PALUDARIUM]) {
