@@ -10,7 +10,10 @@
 // L'hôte est une boîte transparente : seuls le cadre et ses boutons reçoivent le pointeur,
 // le reste va au canvas (docs/PIEGES.md, « Hôte transparent »).
 // Couleurs et opacités : variables posées par le composant (`DASHBOARD_COLORS`), celles que
-// le test de contraste vérifie.
+// le test de contraste vérifie. Police et surface communes au bandeau bas
+// (`_dashboard-surface.scss`, #265).
+@use 'dashboard-surface' as dashboard;
+
 :host {
   position: fixed;
   top: 12px;
@@ -22,33 +25,17 @@
   justify-content: center;
   pointer-events: none;
   color: var(--dashboard-ink);
-  font:
-    400 12px / 1.25 system-ui,
-    sans-serif;
+
+  @include dashboard.font;
 }
 
 .dashboard {
   display: flex;
   align-items: stretch;
   gap: 8px;
-  box-sizing: border-box;
-  max-width: 100%;
   padding: 5px 8px;
-  border: 1px solid rgb(232 230 227 / 8%);
-  border-radius: 10px;
-  background: color-mix(
-    in srgb,
-    var(--dashboard-background) calc(var(--dashboard-background-alpha) * 100%),
-    transparent
-  );
-  opacity: var(--dashboard-rest-opacity);
-  pointer-events: auto;
-  transition: opacity 150ms ease-out;
 
-  &:hover,
-  &:focus-within {
-    opacity: 1;
-  }
+  @include dashboard.surface;
 }
 
 .dashboard__toggle {
@@ -90,21 +77,20 @@
   font-size: 11px;
   font-weight: 600;
   white-space: nowrap;
+}
 
-  &[data-level='vert'],
-  &[data-level-label='vert'] {
-    color: var(--dashboard-vert);
-  }
+// Couleur du niveau : sur la qualité et sur chaque jauge, dont l'étiquette, la barre
+// (`currentcolor`) et ses icônes héritent ; le relevé reste à l'encre.
+[data-level='vert'] {
+  color: var(--dashboard-vert);
+}
 
-  &[data-level='orange'],
-  &[data-level-label='orange'] {
-    color: var(--dashboard-orange);
-  }
+[data-level='orange'] {
+  color: var(--dashboard-orange);
+}
 
-  &[data-level='rouge'],
-  &[data-level-label='rouge'] {
-    color: var(--dashboard-rouge);
-  }
+[data-level='rouge'] {
+  color: var(--dashboard-rouge);
 }
 
 .dashboard__icon {
@@ -152,6 +138,7 @@
 
 .dashboard__reading {
   display: flex;
+  color: var(--dashboard-ink);
   align-items: baseline;
   gap: 3px;
   white-space: nowrap;
@@ -201,18 +188,6 @@
   display: block;
   height: 100%;
   background: currentcolor;
-}
-
-.dashboard__gauge[data-level='vert'] .dashboard__bar {
-  color: var(--dashboard-vert);
-}
-
-.dashboard__gauge[data-level='orange'] .dashboard__bar {
-  color: var(--dashboard-orange);
-}
-
-.dashboard__gauge[data-level='rouge'] .dashboard__bar {
-  color: var(--dashboard-rouge);
 }
 
 // Simulation (#260) : moment de la journée (icône de `ui/day-indicator`), heure, vitesse.

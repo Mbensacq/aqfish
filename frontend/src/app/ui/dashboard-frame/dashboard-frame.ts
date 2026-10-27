@@ -17,6 +17,7 @@ import {
   dashboardGauges,
   gaugeTrends,
   nextTrendState,
+  phFill,
   type DashboardGaugeId,
   type GaugeLevel,
   type Trend,
@@ -83,13 +84,12 @@ export const PH_ZONE_COLORS = {
   horsPlage: DASHBOARD_COLORS.rouge,
 } as const;
 
-/** Position d'un pH sur la jauge, en pourcentage de [`MIN_PH`, `MAX_PH`], bornée à [0, 100]. */
+/**
+ * Position d'un pH sur la jauge, en pourcentage au dixième : `phFill` (la part de la barre,
+ * seule formule, #259) ramenée à [0, 100].
+ */
 export function phPercent(ph: number): number {
-  if (!Number.isFinite(ph)) {
-    return 0;
-  }
-  const ratio = (ph - MIN_PH) / (MAX_PH - MIN_PH);
-  return Math.round(Math.min(1, Math.max(0, ratio)) * 1000) / 10;
+  return Math.round(phFill(ph) * 1000) / 10;
 }
 
 /**

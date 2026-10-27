@@ -158,6 +158,23 @@ haut de sa section.
 
 ## Tests
 
+- **Composant d'interface sans `font` sur `:host` : police à empattements** (cycle 82, #265) :
+  il n'y a pas de police globale (`styles.scss` ne pose que fond et couleur) ; un composant
+  dont l'hôte ne déclare pas sa police affiche la police par défaut du navigateur. Le bandeau
+  bas du tableau de bord l'avait oubliée (#260) sans qu'aucun test ne le voie. Réutiliser le
+  mixin `font` de `ui/dashboard-frame/_dashboard-surface.scss` (ou la même déclaration), et
+  regarder les captures. (2026-10-27)
+- **Agrandir un élément du bandeau bas sur téléphone** (cycle 82, #265) : à 390 × 844, le
+  bandeau tient entre le bas du centre du bac (675 px) et la barre des vues (754 px) ; passer
+  les boutons d'alerte de 20 à 24 px l'a fait entrer d'1 px dans le rectangle central (e2e
+  rouge). Compenser par `bottom` et le rembourrage, et relancer
+  `tableau-de-bord-sante.spec.ts`. Attention, `system-ui` n'est pas la même police en local
+  (Inter) et sur la CI (plus large, type DejaVu Sans) : trois alertes tenaient sur deux
+  lignes en local et sur trois en CI (bandeau de 98 px, centre mordu). Ne pas dépendre de la
+  largeur du texte : borner chaque alerte à une demi-ligne et tronquer le message
+  (`text-overflow: ellipsis`) ; tester en local en remplaçant un instant `system-ui` par
+  `"DejaVu Sans"` dans le mixin. (2026-10-27)
+
 - **`linkedSignal({ source, computation })` : `previous.value` typé `{}`** (cycle 80, #256) :
   sans paramètres de type, TypeScript infère mal la valeur précédente quand le calcul
   dépend d'elle (`nextTrendState(previous?.value ?? EMPTY, sample)`) : « Type '{}' is missing
