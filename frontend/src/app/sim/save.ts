@@ -4,6 +4,7 @@ import { SIM_DT } from './constants';
 import { createDayClock, DEFAULT_DAY_CLOCK, HOURS_PER_DAY, type DayClock } from './daylight';
 import { parseDecorItems, type DecorItem } from './decor';
 import {
+  ENVIRONMENT_IDS,
   environmentWater,
   isEnvironmentId,
   isTankResizable,
@@ -40,7 +41,9 @@ import {
  * Ce qui est enregistré : graine, environnement, dimensions réglées du bac (issue #171,
  * facultatives : absentes, ce sont celles de l'environnement), compteur de pas (le temps simulé en dérive,
  * `tick · SIM_DT`), décor, poissons (état complet, sous-générateur compris), granulés,
- * compteurs d'identifiants, état de l'eau (issue #206, facultatif : absent, eau saine), et les réglages de vitesse, d'heure et de rendu des granulés. Les obstacles ne sont pas
+ * compteurs d'identifiants, état de l'eau (issue #206, facultatif : absent, eau saine), et les réglages de vitesse, d'heure et de rendu des granulés.
+ * Les mondes des autres environnements visités (issue #277, ADR 0063) sont écrits à côté,
+ * dans `others` (facultatif : absent, aucun), avec le même corps que le monde affiché. Les obstacles ne sont pas
  * enregistrés : ils sont recalculés à partir du décor (`createWorld`), comme à la création.
  * Les robes des koïs dérivent de la graine et de l'identifiant (ADR 0027) : rien à stocker.
  *
@@ -58,7 +61,8 @@ export const SAVE_SCHEMA = 1;
 
 /**
  * Taille maximale d'une sauvegarde, en caractères (256 Kio). Une sauvegarde pleine (60
- * poissons, 60 granulés, décor par défaut) pèse environ 40 Kio.
+ * poissons, 60 granulés, décor par défaut) pèse environ 40 Kio ; avec les mondes des quatre
+ * environnements (issue #277), elle reste sous la limite (test `others`, `save.spec.ts`).
  */
 export const MAX_SAVE_LENGTH = 256 * 1024;
 
@@ -118,10 +122,12 @@ export const DEFAULT_SAVE_SETTINGS: SaveSettings = {
 /** Poisson enregistré : tous les champs de `Fish` sauf `kind` (toujours `fish`). */
 export type SavedFish = Omit<Fish, 'kind'>;
 
-/** Contenu d'une sauvegarde (schéma 1). */
-export interface SaveData {
-  readonly format: typeof SAVE_FORMAT;
-  readonly schema: typeof SAVE_SCHEMA;
+/**
+ * Corps d'un monde enregistré (graine, environnement, dimensions, temps, compteurs, décor,
+ * poissons, granulés, eau) : celui du monde affiché et celui de chaque autre environnement
+ * visité (`SaveData.others`, issue #277).
+ */
+export interface SavedWorld {
   readonly seed: number;
   readonly environment: EnvironmentId;
   /**
@@ -140,12 +146,31 @@ export interface SaveData {
    * une eau saine (`freshWater`) ; toujours présent dans une sauvegarde écrite.
    */
   readonly water?: WaterState;
+}
+
+/** Contenu d'une sauvegarde (schéma 1). */
+export interface SaveData extends SavedWorld {
+  readonly format: typeof SAVE_FORMAT;
+  readonly schema: typeof SAVE_SCHEMA;
   readonly settings: SaveSettings;
+  /**
+   * Mondes des autres environnements visités, figés (issue #277, ADR 0063), dans l'ordre de
+   * `ENVIRONMENT_IDS`, chacun d'un environnement différent de celui du monde affiché.
+   * Facultatif : absent (anciennes sauvegardes, aucun autre environnement visité), aucun ;
+   * jamais écrit vide. Une version antérieure de l'application l'ignore (champ inconnu).
+   */
+  readonly others?: readonly SavedWorld[];
 }
 
 /** Résultat de `parseWorld` : le monde restauré, ou la raison du refus. */
 export type ParseWorldResult =
-  | { readonly ok: true; readonly world: World; readonly settings: SaveSettings }
+  | {
+      readonly ok: true;
+      readonly world: World;
+      readonly settings: SaveSettings;
+      /** Mondes des autres environnements visités (vide si aucun), dans l'ordre écrit. */
+      readonly others: readonly World[];
+    }
   | { readonly ok: false; readonly error: string };
 
 /** Champs numériques d'un poisson, dans l'ordre d'écriture. */
@@ -184,12 +209,54 @@ const FOOD_NUMBER_KEYS = [
 ] as const;
 
 /**
- * Contenu de la sauvegarde de `world` et de `settings` (objet de données, copié : rien n'est
- * partagé avec `world`).
- * @throws RangeError si le monde a des obstacles explicites (hors décor et coraux), non enregistrables
- * dans le schéma 1, ou si un réglage est invalide.
+ * Contenu de la sauvegarde de `world`, de `settings` et des mondes `others` des autres
+ * environnements visités (objet de données, copié : rien n'est partagé avec les mondes).
+ * `others` est écrit dans l'ordre de `ENVIRONMENT_IDS`, et omis s'il est vide.
+ * @throws RangeError si un monde a des obstacles explicites (hors décor et coraux), non enregistrables
+ * dans le schéma 1, si un réglage est invalide, ou si deux mondes ont le même environnement.
  */
-export function saveData(world: World, settings: SaveSettings = DEFAULT_SAVE_SETTINGS): SaveData {
+export function saveData(
+  world: World,
+  settings: SaveSettings = DEFAULT_SAVE_SETTINGS,
+  others: readonly World[] = [],
+): SaveData {
+  const problems = settingsProblems(settings);
+  if (problems.length > 0) {
+    throw new RangeError(`sauvegarde : ${problems.join(' ; ')}`);
+  }
+  const seen = new Set<EnvironmentId>([world.environment]);
+  for (const other of others) {
+    if (seen.has(other.environment)) {
+      throw new RangeError(`sauvegarde : environnement en double (${other.environment})`);
+    }
+    seen.add(other.environment);
+  }
+  const ordered = ENVIRONMENT_IDS.flatMap((id) =>
+    others.filter((other) => other.environment === id),
+  );
+  return {
+    format: SAVE_FORMAT,
+    schema: SAVE_SCHEMA,
+    ...savedWorld(world),
+    settings: {
+      speed: settings.speed,
+      clock: {
+        startHour: settings.clock.startHour,
+        dayLengthSeconds: settings.clock.dayLengthSeconds,
+        frozen: settings.clock.frozen,
+      },
+      foodStyle: settings.foodStyle ?? DEFAULT_FOOD_STYLE,
+      room: roomData(clampRoom(settings.room ?? DEFAULT_ROOM)),
+    },
+    ...(ordered.length === 0 ? {} : { others: ordered.map(savedWorld) }),
+  };
+}
+
+/**
+ * Corps enregistré d'un monde (copié).
+ * @throws RangeError si le monde a des obstacles explicites (hors décor et coraux).
+ */
+function savedWorld(world: World): SavedWorld {
   // Obstacles recalculables : ceux du décor, puis ceux des coraux et des anémones tirés de la
   // graine (comptés sans reconstruire leurs modèles voxels : cache de `worldFeatures`).
   if (world.obstacles.length !== world.decor.length + seededObstacleCount(world)) {
@@ -197,13 +264,7 @@ export function saveData(world: World, settings: SaveSettings = DEFAULT_SAVE_SET
       'sauvegarde : seuls les obstacles issus du décor sont enregistrables (schéma 1)',
     );
   }
-  const problems = settingsProblems(settings);
-  if (problems.length > 0) {
-    throw new RangeError(`sauvegarde : ${problems.join(' ; ')}`);
-  }
   return {
-    format: SAVE_FORMAT,
-    schema: SAVE_SCHEMA,
     seed: world.seed,
     environment: world.environment,
     ...(world.dimensions === undefined ? {} : { dimensions: { ...world.dimensions } }),
@@ -221,28 +282,26 @@ export function saveData(world: World, settings: SaveSettings = DEFAULT_SAVE_SET
     }),
     food: world.food.map((pellet) => ({ ...pellet })),
     water: { ...world.water },
-    settings: {
-      speed: settings.speed,
-      clock: {
-        startHour: settings.clock.startHour,
-        dayLengthSeconds: settings.clock.dayLengthSeconds,
-        frozen: settings.clock.frozen,
-      },
-      foodStyle: settings.foodStyle ?? DEFAULT_FOOD_STYLE,
-      room: roomData(clampRoom(settings.room ?? DEFAULT_ROOM)),
-    },
   };
 }
 
 /**
- * Sauvegarde de `world` et de `settings`, en texte JSON (`saveData`).
- * @throws RangeError comme `saveData`.
+ * Sauvegarde de `world`, de `settings` et des mondes `others`, en texte JSON (`saveData`).
+ * @throws RangeError comme `saveData`, ou si le texte dépasse `MAX_SAVE_LENGTH` (il serait
+ * refusé à la relecture : mieux vaut garder la sauvegarde précédente).
  */
 export function serializeWorld(
   world: World,
   settings: SaveSettings = DEFAULT_SAVE_SETTINGS,
+  others: readonly World[] = [],
 ): string {
-  return JSON.stringify(saveData(world, settings));
+  const text = JSON.stringify(saveData(world, settings, others));
+  if (text.length > MAX_SAVE_LENGTH) {
+    throw new RangeError(
+      `sauvegarde trop volumineuse (${Math.ceil(text.length / 1024)} Kio, ${MAX_SAVE_LENGTH / 1024} Kio au plus)`,
+    );
+  }
+  return text;
 }
 
 /**
@@ -288,14 +347,86 @@ export function parseSaveData(value: unknown): ParseWorldResult {
       `version de sauvegarde inconnue (${describe(schema)}, version ${SAVE_SCHEMA} attendue)`,
     );
   }
+  const environment = own(value, 'environment');
+  if (!isEnvironmentId(environment)) {
+    return failure(`environnement inconnu (${describe(environment)})`);
+  }
   const problems: string[] = [];
+  // Réglages lus entre les compteurs et le décor : ordre historique des messages.
+  const read: { settings: SaveSettings | null } = { settings: null };
+  const world = parseWorldBody(value, problems, () => {
+    read.settings = parseSettings(own(value, 'settings'), problems);
+  });
+  const others = parseOthers(own(value, 'others'), environment, problems);
+  const settings = read.settings;
+  if (problems.length > 0 || settings === null || world === null) {
+    return failure(problems.slice(0, 5).join(' ; ') + (problems.length > 5 ? ' ; …' : ''));
+  }
+  return { ok: true, world, settings, others };
+}
+
+/**
+ * Mondes des autres environnements (`others`, issue #277) : absents, aucun ; sinon une liste
+ * d'au plus `ENVIRONMENT_IDS.length − 1` corps valides, d'environnements tous différents et
+ * différents de `shown`. Les problèmes sont préfixés de l'environnement concerné.
+ */
+function parseOthers(value: unknown, shown: EnvironmentId, problems: string[]): World[] {
+  if (value === undefined) {
+    return [];
+  }
+  if (!Array.isArray(value)) {
+    problems.push('others doit être une liste');
+    return [];
+  }
+  if (value.length > ENVIRONMENT_IDS.length - 1) {
+    problems.push(
+      `trop d’autres environnements (${value.length}, ${ENVIRONMENT_IDS.length - 1} au plus)`,
+    );
+    return [];
+  }
+  const seen = new Set<EnvironmentId>([shown]);
+  const worlds: World[] = [];
+  value.forEach((item: unknown, i) => {
+    if (!isRecord(item)) {
+      problems.push(`autre environnement ${i} : doit être un objet`);
+      return;
+    }
+    const environment = own(item, 'environment');
+    const label = `autre environnement ${isEnvironmentId(environment) ? environment : i}`;
+    if (isEnvironmentId(environment) && seen.has(environment)) {
+      problems.push(`${label} : en double`);
+      return;
+    }
+    const found: string[] = [];
+    const world = parseWorldBody(item, found);
+    problems.push(...found.map((problem) => `${label} : ${problem}`));
+    if (world !== null && found.length === 0) {
+      seen.add(world.environment);
+      worlds.push(world);
+    }
+  });
+  return worlds;
+}
+
+/**
+ * Relit le corps d'un monde (`SavedWorld`) : le monde neuf (obstacles recalculés), ou `null`
+ * si un problème a été ajouté à `problems`. `afterCounters` est appelé après la lecture des
+ * compteurs, avant le décor (ordre historique des messages du monde affiché).
+ */
+function parseWorldBody(
+  value: Record<string, unknown>,
+  problems: string[],
+  afterCounters?: () => void,
+): MutableWorld | null {
+  const before = problems.length;
   const seed = own(value, 'seed');
   if (!isUint32(seed)) {
     problems.push('seed doit être un entier 32 bits non signé');
   }
   const environment = own(value, 'environment');
   if (!isEnvironmentId(environment)) {
-    return failure(`environnement inconnu (${describe(environment)})`);
+    problems.push(`environnement inconnu (${describe(environment)})`);
+    return null;
   }
   const dimensions = parseDimensions(own(value, 'dimensions'), environment, problems);
   const place: Place = dimensions === undefined ? environment : { environment, dimensions };
@@ -311,7 +442,7 @@ export function parseSaveData(value: unknown): ParseWorldResult {
   if (!isIntegerIn(nextFoodId, 0, Number.MAX_SAFE_INTEGER)) {
     problems.push('nextFoodId doit être un entier positif ou nul');
   }
-  const settings = parseSettings(own(value, 'settings'), problems);
+  afterCounters?.();
 
   const decorValue = own(value, 'decor');
   let decor: DecorItem[] = [];
@@ -336,8 +467,8 @@ export function parseSaveData(value: unknown): ParseWorldResult {
   if (water !== null && !water.ok) {
     problems.push(water.error);
   }
-  if (problems.length > 0 || settings === null) {
-    return failure(problems.slice(0, 5).join(' ; ') + (problems.length > 5 ? ' ; …' : ''));
+  if (problems.length > before) {
+    return null;
   }
 
   const world: MutableWorld = createWorld(seed as number, [], [], decor, place);
@@ -350,7 +481,7 @@ export function parseSaveData(value: unknown): ParseWorldResult {
   if (water !== null && water.ok) {
     world.water = water.water;
   }
-  return { ok: true, world, settings };
+  return world;
 }
 
 /**

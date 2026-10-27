@@ -1,5 +1,6 @@
 import { SIM_DT } from './constants';
 import {
+  carryClock,
   clampIntensity,
   createDayClock,
   createDayLight,
@@ -465,5 +466,46 @@ describe('dayIntensityAt, clampIntensity, twilightWeight (factorisation, #81)', 
     expect(twilightWeight(0.2)).toBeCloseTo(twilightWeight(0.8), 12);
     expect(twilightWeight(-1)).toBe(0);
     expect(twilightWeight(Number.NaN)).toBe(0);
+  });
+});
+
+describe('carryClock : heure commune aux environnements (#277)', () => {
+  it('l’heure au temps d’arrivée est celle du temps de départ', () => {
+    const clock = createDayClock(7.5, 1200);
+    for (const [from, to] of [
+      [0, 0],
+      [600, 0],
+      [0, 600],
+      [1234.5, 87.25],
+      [86_400, 3],
+    ]) {
+      const carried = carryClock(clock, from, to);
+      expect(hourAt(carried, to)).toBeCloseTo(hourAt(clock, from), 9);
+      expect(carried.dayLengthSeconds).toBe(1200);
+      expect(carried.frozen).toBe(false);
+      // L'horloge reportée tourne ensuite au même rythme.
+      expect(hourAt(carried, to + 300)).toBeCloseTo(hourAt(clock, from + 300), 9);
+    }
+  });
+
+  it('horloge figée : renvoyée telle quelle', () => {
+    const clock = createDayClock(18, 1200, true);
+    expect(carryClock(clock, 500, 3)).toBe(clock);
+  });
+
+  it('heure dans [0, 24) même quand le temps d’arrivée dépasse une journée', () => {
+    const carried = carryClock(createDayClock(23.9, 60), 0, 60 * 1000 + 1);
+    expect(carried.startHour).toBeGreaterThanOrEqual(0);
+    expect(carried.startHour).toBeLessThan(24);
+  });
+
+  it('refuse un temps négatif ou non fini', () => {
+    const clock = createDayClock(12, 1200);
+    expect(() => carryClock(clock, -1, 0)).toThrow(RangeError);
+    expect(() => carryClock(clock, 0, -1)).toThrow(RangeError);
+    expect(() => carryClock(clock, 0, Number.NaN)).toThrow(RangeError);
+    expect(() => carryClock(clock, Number.POSITIVE_INFINITY, 0)).toThrow(RangeError);
+    // Figée : les temps sont tout de même vérifiés.
+    expect(() => carryClock(createDayClock(12, 1200, true), 0, -1)).toThrow(RangeError);
   });
 });

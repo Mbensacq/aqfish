@@ -174,6 +174,25 @@ export function freezeClockAt(clock: DayClock, hour: number): DayClock {
   return { ...clock, startHour: normalizeHour(hour), frozen: true };
 }
 
+/**
+ * Reporte l'horloge d'un monde à un autre (changement d'environnement, issue #277) :
+ * l'heure au temps `toTime` du monde d'arrivée est celle que l'horloge indiquait au temps
+ * `fromTime` du monde quitté, à l'arrondi près. L'horloge reste ainsi commune aux
+ * environnements, dont les temps simulés diffèrent. Sans effet si l'horloge est figée.
+ * @throws RangeError si un des temps n'est pas un réel fini positif ou nul.
+ */
+export function carryClock(clock: DayClock, fromTime: number, toTime: number): DayClock {
+  const hour = hourAt(clock, fromTime);
+  if (!Number.isFinite(toTime) || toTime < 0) {
+    throw new RangeError(`time doit être un réel positif ou nul (reçu : ${toTime})`);
+  }
+  if (clock.frozen) {
+    return clock;
+  }
+  const elapsedHours = (HOURS_PER_DAY * toTime) / clock.dayLengthSeconds;
+  return { ...clock, startHour: normalizeHour(hour - elapsedHours) };
+}
+
 /** Fige ou remet en marche l'horloge au temps `time` (touche `H`). */
 export function toggleClock(clock: DayClock, time: number): DayClock {
   return clock.frozen ? resumeClock(clock, time) : freezeClock(clock, time);

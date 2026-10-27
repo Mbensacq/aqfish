@@ -71,6 +71,12 @@ simulation testable et les captures reproductibles.
   obstacles et temps recalculés) ; `parseWorld` le relit avec une validation stricte qui ne
   lève jamais (`{ ok: false, error }`). Un monde rechargé puis avancé est identique, au bit
   près, au monde jamais sauvegardé. Tout nouveau champ d'état doit y être ajouté.
+- **Un monde par environnement visité** (#277, ADR 0063, `sim/environment-worlds.ts`) :
+  changer d'environnement range le monde quitté et reprend celui de l'environnement choisi
+  (`switchEnvironment`) ; un environnement non affiché est **figé** (jamais avancé) ;
+  l'heure de la journée continue sans saut (`carryClock`). La sauvegarde écrit les mondes
+  rangés dans le champ facultatif `others` (corps de monde, schéma 1 inchangé). La pièce de
+  N bacs (ci-dessous) remplacera ce mécanisme.
 - **Cible : pièce de N bacs** (#264, ADR 0061, pas encore implémentée) : une pièce
   (`sim/room-state.ts` à venir) est une liste de mondes `World` **indépendants**, un par bac,
   avancés du même pas par identifiant croissant, sans aucune lecture croisée ; le bac 0 a la
@@ -234,7 +240,8 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
 | `sim/sim-speed.ts` | Vitesse de simulation (#52, ADR 0024) : `SIM_SPEEDS` (0 à ×4), `scaledDt`, `maxStepsForSpeed` |
 | `sim/time-step.ts` | `assertTimeStep` : validation unique d'un pas de temps |
 | `sim/world.ts` | État du monde sérialisable (dont `decor`), `step`, `advance`, `advanceTo`, `advanceInPlace` (boucle d'affichage), `createDefaultWorld` (population et décor par défaut) |
-| `sim/save.ts` | Sauvegarde (#70, ADR 0028) : format JSON versionné (`saveData`, `serializeWorld`), relecture validée (`parseWorld`, `parseSaveData` : bornes, effectifs, propriétés propres seulement, champs inconnus ignorés, schéma inconnu refusé) |
+| `sim/save.ts` | Sauvegarde (#70, ADR 0028) : format JSON versionné (`saveData`, `serializeWorld`), relecture validée (`parseWorld`, `parseSaveData` : bornes, effectifs, propriétés propres seulement, champs inconnus ignorés, schéma inconnu refusé) ; mondes des autres environnements visités dans `others` (#277, ADR 0063) |
+| `sim/environment-worlds.ts` | Mondes des environnements visités mais non affichés (#277, ADR 0063) : changement d'environnement pur (`switchEnvironment` : monde quitté rangé, figé ; monde repris ou de départ), liste ordonnée pour la sauvegarde (`stashedList`) et table relue (`stashFromList`) |
 | `sim/population.ts` | Population réglable (#69, ADR 0025) : `setPopulation` (pure) / `setPopulationInPlace` (hôte), bornes `maxPopulation` par espèce et `MAX_TOTAL_FISH`, `populationCounts`, `populationLimits` |
 | `sim/water.ts` | Modèle d'eau (#206, ADR 0052) : `WaterState`, `freshWater`, `stepWaterInPlace` / `stepWater` (charge `waterLoad`, litres `waterLiters`, températures `WATER_TEMPERATURES`), `changeWaterInPlace` / `changeWater`, relecture validée `readWater` ; consigne du chauffage `heater` facultative (#207, ADR 0053 : `setHeaterInPlace`, `targetTemperature`) ; pH `ph` (#236, ADR 0057), remis vers l'eau neuve par `changeWaterInPlace(water, environment)` |
 | `sim/water-ph.ts` | pH (#236, ADR 0057) : bornes `MIN_PH` / `MAX_PH`, eau neuve `FRESH_PH`, dérive `stepPh` (`PH_DROP_PER_LOAD_LITER`), changement d'eau `phAfterWaterChange`, plages tolérée et idéale par espèce `SPECIES_PH` (approximations de jeu), `phOutOfTolerance`, plages communes `phBands`, zone de jauge `phZone` (`ideal`, `tolere`, `hors-plage`) |

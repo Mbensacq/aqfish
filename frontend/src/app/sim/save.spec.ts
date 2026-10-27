@@ -22,6 +22,8 @@ import {
   type SaveSettings,
 } from './save';
 import { DEFAULT_ROOM } from './room';
+import { ENVIRONMENT_IDS, environmentById, type EnvironmentId } from './environment';
+import { SPECIES } from './species';
 import { CHIRURGIEN } from './species';
 import { sphereObstacle } from './obstacles';
 import { freshWater } from './water';
@@ -42,7 +44,11 @@ import {
 } from './world';
 
 /** Monde restauré, ou échec du test avec le message de refus. */
-function restored(result: ParseWorldResult): { world: World; settings: SaveSettings } {
+function restored(result: ParseWorldResult): {
+  world: World;
+  settings: SaveSettings;
+  others: readonly World[];
+} {
   if (!result.ok) {
     throw new Error(`sauvegarde refusée : ${result.error}`);
   }
@@ -738,4 +744,135 @@ describe('parseWorld : champs inconnus et prototypes', () => {
     }
     expect(parseWorld(undefined as unknown as string).ok).toBe(false);
   }, 15_000);
+});
+
+describe('autres environnements visités (others, #277)', () => {
+  /** Monde d'un environnement modifié : un animal de moins, nourri, avancé. */
+  function played(seed: number, environment: EnvironmentId): World {
+    const env = environmentById(environment);
+    const first = env.population[0];
+    const fewer = setPopulation(
+      advance(createDefaultWorld(seed, environment), 60),
+      first.species,
+      Math.max(0, first.count - 1),
+    );
+    return advance(feed(fewer, 0, 0), 45);
+  }
+
+  /** Monde aussi lourd que possible : population maximale, granulés au plafond. */
+  function heaviest(seed: number, environment: EnvironmentId): World {
+    let world = createDefaultWorld(seed, environment);
+    for (const species of environmentById(environment).species) {
+      world = setPopulation(world, species, SPECIES[species].maxPopulation);
+    }
+    for (let i = 0; i < MAX_FOOD; i++) {
+      world = feed(world, 0.01 * (i % 7), -0.01 * (i % 5));
+    }
+    return advance(world, 3);
+  }
+
+  it('sans autre environnement : aucun champ others, texte identique à avant', () => {
+    const world = played(42, 'tropical');
+    const text = serializeWorld(world);
+    expect(serializeWorld(world, DEFAULT_SAVE_SETTINGS, [])).toBe(text);
+    expect(Object.keys(JSON.parse(text) as object)).not.toContain('others');
+    expect(restored(parseWorld(text))).toMatchObject({ others: [] });
+  });
+
+  it('aller-retour avec plusieurs environnements : chacun relu sans perte, ordre stable', () => {
+    const shown = played(42, 'bassin');
+    const others = [played(42, 'recif'), played(42, 'tropical'), played(42, 'paludarium')];
+    const text = serializeWorld(shown, DEFAULT_SAVE_SETTINGS, others);
+    const data = JSON.parse(text) as { others: { environment: string; settings?: unknown }[] };
+    expect(data.others.map((o) => o.environment)).toEqual(['tropical', 'paludarium', 'recif']);
+    // Le corps d'un autre environnement n'a ni format, ni schéma, ni réglages.
+    expect(Object.keys(data.others[0])).not.toContain('settings');
+    expect(Object.keys(data.others[0])).not.toContain('schema');
+    const back = restored(parseWorld(text));
+    expect(back.world).toEqual(shown);
+    expect(back.others).toEqual([others[1], others[2], others[0]]);
+    // Relu puis réécrit : même texte ; relu puis avancé : même état qu'avant, au bit près.
+    expect(serializeWorld(back.world, back.settings, back.others)).toBe(text);
+    expect(JSON.stringify(advance(back.others[0], 600))).toBe(
+      JSON.stringify(advance(others[1], 600)),
+    );
+  });
+
+  it('les quatre environnements au plus lourd tiennent sous la limite de taille', () => {
+    const [shown, ...rest] = ENVIRONMENT_IDS.map((id) => heaviest(3, id));
+    const text = serializeWorld(shown, DEFAULT_SAVE_SETTINGS, rest);
+    expect(text.length).toBeLessThan(MAX_SAVE_LENGTH);
+    expect(restored(parseWorld(text)).others).toHaveLength(ENVIRONMENT_IDS.length - 1);
+  }, 30_000);
+
+  it('refuse d’écrire deux mondes du même environnement', () => {
+    const tropical = createDefaultWorld(1);
+    expect(() => saveData(tropical, DEFAULT_SAVE_SETTINGS, [createDefaultWorld(2)])).toThrow(
+      /double/,
+    );
+    const pond = createDefaultWorld(1, 'bassin');
+    expect(() => saveData(tropical, DEFAULT_SAVE_SETTINGS, [pond, pond])).toThrow(/double/);
+    const explicit = createWorld(1, [], [sphereObstacle(0, 0, 0.2, 0, 0.05)], [], 'bassin');
+    expect(() => saveData(tropical, DEFAULT_SAVE_SETTINGS, [explicit])).toThrow(/obstacles/);
+  });
+
+  it('une version antérieure (sans others) se relit : aucun autre environnement', () => {
+    const data = JSON.parse(serializeWorld(played(5, 'tropical'))) as Record<string, unknown>;
+    delete data['others'];
+    expect(restored(parseSaveData(data)).others).toEqual([]);
+  });
+
+  /** Sauvegarde valide avec le bassin rangé, modifiée par `mutate`. */
+  function withOthers(mutate: (others: Record<string, unknown>[]) => unknown): ParseWorldResult {
+    const data = JSON.parse(
+      serializeWorld(createDefaultWorld(4), DEFAULT_SAVE_SETTINGS, [played(4, 'bassin')]),
+    ) as Record<string, unknown>;
+    const replaced = mutate(data['others'] as Record<string, unknown>[]);
+    if (replaced !== undefined) {
+      data['others'] = replaced;
+    }
+    return parseSaveData(data);
+  }
+
+  it.each([
+    ['others qui n’est pas une liste', () => ({}), /others doit être une liste/],
+    ['un élément qui n’est pas un objet', () => [42], /autre environnement 0 : doit être un objet/],
+    [
+      'l’environnement affiché en double',
+      (o: Record<string, unknown>[]) => [{ ...o[0], environment: 'tropical' }],
+      /autre environnement tropical : en double/,
+    ],
+    [
+      'deux fois le même environnement',
+      (o: Record<string, unknown>[]) => [o[0], o[0]],
+      /autre environnement bassin : en double/,
+    ],
+    [
+      'trop d’éléments',
+      (o: Record<string, unknown>[]) => [o[0], o[0], o[0], o[0]],
+      /trop d’autres environnements/,
+    ],
+    [
+      'un environnement inconnu',
+      (o: Record<string, unknown>[]) => [{ ...o[0], environment: 'lune' }],
+      /autre environnement 0 : environnement inconnu/,
+    ],
+    [
+      'un corps corrompu',
+      (o: Record<string, unknown>[]) => [{ ...o[0], tick: -1 }],
+      /autre environnement bassin : tick/,
+    ],
+    [
+      'un poisson d’un autre environnement',
+      (o: Record<string, unknown>[]) => [{ ...o[0], environment: 'recif' }],
+      /autre environnement recif : poisson 0 : l’espèce koi/,
+    ],
+  ])('refuse %s, sans lever', (_name, mutate, message) => {
+    expect(refusal(withOthers(mutate))).toMatch(message);
+  });
+
+  it('ignore les champs inconnus d’un autre environnement', () => {
+    const result = withOthers((o) => [{ ...o[0], settings: 'x', format: 1, inconnu: true }]);
+    expect(restored(result).others).toHaveLength(1);
+  });
 });
