@@ -69,6 +69,7 @@ import {
 } from '../../core/decor-physics/load-decor-physics';
 import { SIM_DT } from '../../sim/constants';
 import {
+  carryClock,
   createDayClock,
   createDayLight,
   dayPhaseAt,
@@ -95,6 +96,12 @@ import {
   type EnvironmentId,
   type Place,
 } from '../../sim/environment';
+import {
+  stashedList,
+  stashFromList,
+  switchEnvironment,
+  type StashedWorlds,
+} from '../../sim/environment-worlds';
 import { DEFAULT_TANK, sameDimensions, type TankDimensions } from '../../sim/tank';
 import { setTankDimensionsInPlace } from '../../sim/tank-resize';
 import {
@@ -419,6 +426,11 @@ export class AquariumHost {
   private readySignaled = false;
   private capture = false;
   private currentWorld: MutableWorld | null = null;
+  /**
+   * Mondes des autres environnements visités, figés tant qu'ils ne sont pas affichés (#277,
+   * ADR 0063) ; l'hôte en est seul propriétaire, comme du monde courant.
+   */
+  private stash: StashedWorlds = new Map();
   /** État de la boucle à pas fixe, réécrit à chaque image (aucune allocation). */
   private readonly clock: FixedStepState = { steps: 0, accumulator: 0, alpha: 0 };
   private lastTimestamp: number | null = null;
@@ -820,21 +832,30 @@ export class AquariumHost {
   }
 
   /**
-   * Change d'environnement (#87, ADR 0026) : recrée le monde de départ de l'environnement
-   * avec la même graine (même environnement et même graine, même monde), puis la vue, la
-   * caméra allant sur la vue par défaut de l'environnement. L'heure, la vitesse, le filtre et
-   * l'affichage du décor sont conservés ; la nourriture et les effectifs réglés repartent de
-   * zéro. Sans effet en mode capture (`environnement=`), avant le démarrage, pour un
-   * environnement inconnu ou déjà affiché.
+   * Change d'environnement (#87, ADR 0026, #277, ADR 0063) : range le monde affiché, figé, et
+   * reprend celui de l'environnement choisi tel qu'il avait été laissé (population, décor,
+   * eau, nourriture, dimensions, temps) ; un environnement jamais visité part de son monde de
+   * départ avec la même graine. Puis recrée la vue, la caméra allant sur la vue par défaut de
+   * l'environnement. L'heure de la journée continue sans saut (`carryClock`) ; la vitesse, le
+   * filtre et l'affichage du décor sont conservés. Le tout est enregistré aussitôt. Sans effet
+   * en mode capture (`environnement=`), avant le démarrage, pour un environnement inconnu ou
+   * déjà affiché.
    */
   setEnvironment(id: string): void {
     const world = this.currentWorld;
     if (!world || !this.view || this.capture || !isEnvironmentId(id) || id === world.environment) {
       return;
     }
-    this.currentWorld = createDefaultWorld(world.seed, id);
+    // Une chute en cours se termine d'abord : le monde rangé garde un décor posé.
+    this.finishDropAnimation();
+    const fromTime = this.renderTime();
+    const next = switchEnvironment(world, this.stash, id);
+    this.stash = next.stash;
+    this.currentWorld = next.world as MutableWorld;
     this.clock.accumulator = 0;
     this.clock.alpha = 0;
+    this.dayClock = carryClock(this.dayClock, fromTime, this.renderTime());
+    this.litHour = null;
     this.exposeEnvironment();
     this.exposeTick();
     this.exposeFood();
@@ -842,6 +863,7 @@ export class AquariumHost {
     this.exposeWater();
     this.createView(environmentById(id).defaultCamera);
     this.exposeCamera();
+    this.saveNow();
     this.scheduleFrame();
   }
 
@@ -1500,7 +1522,10 @@ export class AquariumHost {
     }
     let status: SaveStatus;
     try {
-      status = writeStoredSave(this.saveStorage, serializeWorld(world, this.settings()));
+      status = writeStoredSave(
+        this.saveStorage,
+        serializeWorld(world, this.settings(), stashedList(this.stash, world.environment)),
+      );
     } catch {
       status = 'indisponible';
     }
@@ -1519,7 +1544,11 @@ export class AquariumHost {
       return;
     }
     try {
-      const text = serializeWorld(world, this.settings());
+      const text = serializeWorld(
+        world,
+        this.settings(),
+        stashedList(this.stash, world.environment),
+      );
       const url = win.URL.createObjectURL(new Blob([text], { type: 'application/json' }));
       const link = this.document.createElement('a');
       link.href = url;
@@ -1547,7 +1576,7 @@ export class AquariumHost {
       this.saveMessage.set({ kind: 'erreur', text: `Import refusé : ${result.error}.` });
       return false;
     }
-    this.loadWorld(result.world as MutableWorld, result.settings);
+    this.loadWorld(result.world as MutableWorld, result.settings, result.others);
     this.createView(environmentById(result.world.environment).defaultCamera);
     this.exposeCamera();
     this.scheduleFrame();
@@ -1561,9 +1590,13 @@ export class AquariumHost {
     this.saveMessage.set({ kind: 'erreur', text: `Import refusé : ${text}.` });
   }
 
-  /** Installe un monde et ses réglages (démarrage restauré, import) ; la vue suit à part. */
-  private loadWorld(world: MutableWorld, settings: SaveSettings): void {
+  /**
+   * Installe un monde, ses réglages et les mondes des autres environnements (import) ; la
+   * vue suit à part.
+   */
+  private loadWorld(world: MutableWorld, settings: SaveSettings, others: readonly World[]): void {
     this.currentWorld = world;
+    this.stash = stashFromList(others, world.environment);
     this.clock.accumulator = 0;
     this.clock.alpha = 0;
     this.speed.set(settings.speed);
@@ -1607,6 +1640,7 @@ export class AquariumHost {
     const restored = params.capture || hasWorldParams(win.location.search) ? null : this.readSave();
     if (restored) {
       this.currentWorld = restored.world as MutableWorld;
+      this.stash = stashFromList(restored.others, restored.world.environment);
       this.speed.set(restored.settings.speed);
       this.foodStyle.set(restored.settings.foodStyle ?? DEFAULT_FOOD_STYLE);
       this.room.set(restored.settings.room ?? DEFAULT_ROOM);
@@ -1727,7 +1761,11 @@ export class AquariumHost {
    * n'y en a pas. Une sauvegarde illisible est ignorée (`null`) : le bac neuf sera créé, et
    * un message le signale.
    */
-  private readSave(): { readonly world: World; readonly settings: SaveSettings } | null {
+  private readSave(): {
+    readonly world: World;
+    readonly settings: SaveSettings;
+    readonly others: readonly World[];
+  } | null {
     const text = readStoredSave(this.saveStorage);
     if (text === null) {
       return null;

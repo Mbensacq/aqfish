@@ -799,6 +799,54 @@ describe('AquariumHost', () => {
       expect(renderers).toHaveLength(3);
     });
 
+    it('setEnvironment (#277) : retour au bac quitté, état gardé et figé, heure sans saut', async () => {
+      await create('?seed=9');
+      setCanvasSize(800, 600);
+      frames.flush(0);
+      frames.flush(700);
+      host().setPopulation('neon', 3);
+      host().feedAtCenter();
+      host().setTankDimensions({ width: 1.2, height: 0.5, depth: 0.45 });
+      frames.flush(900);
+      const tropical = host().world!;
+      const snapshot = serializeWorld(tropical);
+      const tick = tropical.tick;
+      const hour = host().hour!;
+      host().setEnvironment('bassin');
+      // L'heure continue : le bassin neuf part de t = 0 sans ramener l'heure de départ.
+      expect(host().hour!).toBeCloseTo(hour, 6);
+      expect(host().world!.tick).toBe(0);
+      host().setPopulation('koi', 2);
+      frames.flush(1500);
+      expect(host().world!.tick).toBeGreaterThan(0);
+      const pond = host().world!;
+      const pondText = serializeWorld(pond);
+      const pondHour = host().hour!;
+      host().setEnvironment('tropical');
+      // Même objet, même contenu, même temps : rien n'a avancé pendant le séjour au bassin.
+      expect(host().world).toBe(tropical);
+      expect(serializeWorld(host().world!)).toBe(snapshot);
+      expect(host().world!.tick).toBe(tick);
+      expect(host().hour!).toBeCloseTo(pondHour, 6);
+      expect(host().population().neon).toBe(3);
+      expect(host().tankDimensions()).toEqual({ width: 1.2, height: 0.5, depth: 0.45 });
+      expect(element().getAttribute('data-aqfish-food')).toBe(String(tropical.food.length));
+      host().setEnvironment('bassin');
+      expect(serializeWorld(host().world!)).toBe(pondText);
+      expect(host().population().koi).toBe(2);
+    });
+
+    it('setEnvironment (#277) : un environnement jamais visité part de son monde de départ', async () => {
+      await create('?seed=4');
+      host().setPopulation('guppy', 1);
+      host().setEnvironment('recif');
+      expect(host().world).toEqual(createDefaultWorld(4, 'recif'));
+      host().setEnvironment('paludarium');
+      expect(host().world).toEqual(createDefaultWorld(4, 'paludarium'));
+      host().setEnvironment('tropical');
+      expect(host().population().guppy).toBe(1);
+    });
+
     it('setEnvironment : inconnu, identique, en capture ou avant le démarrage : sans effet', async () => {
       const instance = TestBed.createComponent(AquariumHost).componentInstance;
       expect(() => instance.setEnvironment('bassin')).not.toThrow();
@@ -1613,6 +1661,44 @@ describe('AquariumHost', () => {
       memory().data.set(SAVE_STORAGE_KEY, text);
       return text;
     }
+
+    it('changer d’environnement (#277) : enregistré aussitôt avec le monde quitté, restauré au démarrage', async () => {
+      await create();
+      host().setPopulation('neon', 2);
+      const tropical = serializeWorld(host().world!);
+      host().setEnvironment('bassin');
+      const stored = JSON.parse(memory().data.get(SAVE_STORAGE_KEY)!) as {
+        environment: string;
+        others: { environment: string }[];
+      };
+      expect(stored.environment).toBe('bassin');
+      expect(stored.others.map((o) => o.environment)).toEqual(['tropical']);
+      host().setPopulation('koi', 1);
+      // Sauvegarde automatique (minuterie ou `pagehide` en vrai).
+      host().saveNow();
+      fixture.destroy();
+      // Rechargement : le bassin est affiché, le bac tropical attend tel qu'il a été quitté.
+      await create();
+      expect(host().environment()).toBe('bassin');
+      expect(host().population().koi).toBe(1);
+      host().setEnvironment('tropical');
+      expect(serializeWorld(host().world!)).toBe(tropical);
+      expect(host().population().neon).toBe(2);
+    });
+
+    it('import (#277) : remplace aussi les mondes des autres environnements', async () => {
+      await create('?seed=6');
+      host().setEnvironment('recif');
+      host().setEnvironment('tropical');
+      const pond = setPopulation(createDefaultWorld(8, 'bassin'), 'koi', 4);
+      const text = serializeWorld(createDefaultWorld(8), DEFAULT_SAVE_SETTINGS, [pond]);
+      expect(host().importSave(text)).toBe(true);
+      host().setEnvironment('bassin');
+      expect(host().world).toEqual(pond);
+      // Le récif visité avant l'import est oublié : monde de départ de la graine importée.
+      host().setEnvironment('recif');
+      expect(host().world).toEqual(createDefaultWorld(8, 'recif'));
+    });
 
     it('sans sauvegarde : monde neuf, sauvegarde automatique active', async () => {
       await create();
