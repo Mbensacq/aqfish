@@ -3195,6 +3195,12 @@
           "debut": "2026-10-27T20:22:21.931Z",
           "fin": "2026-10-27T20:37:57.393Z",
           "note": "Verdict OK, 0 bug bloquant, captures c086 publiées (79/85 identiques, écarts attendus), e2e fiches ajouté (f1d8ff0)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-10-27T20:38:21.761Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
