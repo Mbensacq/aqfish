@@ -3015,6 +3015,12 @@
           "debut": "2026-10-27T02:05:36.483Z",
           "fin": "2026-10-27T02:43:33.797Z",
           "note": "Verdict RÉSERVES, 0 bug bloquant (police du bandeau bas), 10 e2e verts, 80 captures publiées (c081)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-10-27T02:44:05.962Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
