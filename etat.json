@@ -3197,10 +3197,10 @@
           "note": "Verdict OK, 0 bug bloquant, captures c086 publiées (79/85 identiques, écarts attendus), e2e fiches ajouté (f1d8ff0)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-27T20:38:21.761Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-27T21:19:45.814Z",
+          "note": "PR #283 fusionnée → v1.1.2 ; main verte, release créée ; dette #284 ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
