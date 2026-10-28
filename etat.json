@@ -3251,10 +3251,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-28T00:03:51.907Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-28T00:04:39.770Z",
+          "note": "Issue #287 : wiki des espèces 1/2, lot de #252 (M)"
         }
       },
       "metriques": {}
