@@ -3303,6 +3303,12 @@
           "debut": "2026-10-28T03:26:46.178Z",
           "fin": "2026-10-28T03:56:44.200Z",
           "note": "Verdict OK, 0 bug, captures c089 publiées, mutation water-dashboard 88,9 %"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-10-28T03:57:08.481Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
