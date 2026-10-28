@@ -3503,10 +3503,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-28T19:09:27.171Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-28T19:12:18.997Z",
+          "note": "Issue #240 : aides pour débutant, Pourquoi ? et guide en 5 étapes (M)"
         }
       },
       "metriques": {}
