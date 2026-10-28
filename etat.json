@@ -3339,6 +3339,12 @@
           "debut": "2026-10-28T06:01:28.666Z",
           "fin": "2026-10-28T06:29:25.262Z",
           "note": "Verdict OK, 0 bug, 2739 tests, couverture 97,65 % (sim 99,25 %), captures c090 publiées, e2e ancienne sauvegarde ajouté"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-10-28T06:29:48.650Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
