@@ -3369,6 +3369,12 @@
           "debut": "2026-10-28T07:33:40.756Z",
           "fin": "2026-10-28T09:00:21.261Z",
           "note": "PR #295 : wiki lot 2/2 (comparaison avec le bac, alimentation, cohabitation, pages produits et maladies, ADR 0068), CI verte ; ~1000 lignes hors tests dont ~430 de données"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-10-28T09:00:52.048Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
