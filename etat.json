@@ -3449,10 +3449,10 @@
           "note": "Verdict OK, 0 bug, 2874 unitaires, 1 e2e ajouté (cohabitation lot 1), captures c093 publiées"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-28T15:07:50.745Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-28T16:03:00.134Z",
+          "note": "PR #299 fusionnée → v1.2.2 ; main verte, release créée par la CI ; suppression de branche refusée"
         }
       },
       "metriques": {}
