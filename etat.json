@@ -3519,6 +3519,12 @@
           "debut": "2026-10-28T20:41:59.212Z",
           "fin": "2026-10-28T21:26:48.726Z",
           "note": "Verdict OK, 0 bug, captures c095 publiées (94 + 3 téléphone guide), e2e guide verts, CI verte"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-10-28T21:27:23.789Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
