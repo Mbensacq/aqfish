@@ -1,3 +1,4 @@
+import { catappaTint } from './catappa';
 import { environmentById, type EnvironmentId } from './environment';
 import type { SpeciesId } from './species';
 import { freshWater, targetTemperature, WATER_TEMPERATURES, type WaterState } from './water';
@@ -137,6 +138,10 @@ export interface WaterReadout {
   readonly phZone: PhZone;
   /** Plages de pH communes aux espèces présentes (zones de la jauge). */
   readonly phBands: PhBands;
+  /** Nombre de feuilles de catappa dans le bac (issue #239), décomposées comprises. */
+  readonly catappa: number;
+  /** Teinte brun-thé de l'eau, 0 ou 1 (`catappaTint`, issue #239). */
+  readonly tea: number;
 }
 
 /** Relevé d'une eau saine du bac tropical peuplé par défaut (valeur initiale de l'interface). */
@@ -167,6 +172,8 @@ export function waterReadout(
     ph: tenth(water.ph),
     phZone: phZone(water.ph, bands),
     phBands: bands,
+    catappa: water.catappa?.length ?? 0,
+    tea: catappaTint(water.catappa),
   };
 }
 
@@ -181,7 +188,9 @@ export function sameReadout(a: WaterReadout, b: WaterReadout): boolean {
     a.nitrate === b.nitrate &&
     a.ph === b.ph &&
     a.phZone === b.phZone &&
-    sameBands(a.phBands, b.phBands)
+    sameBands(a.phBands, b.phBands) &&
+    a.catappa === b.catappa &&
+    a.tea === b.tea
   );
 }
 

@@ -224,12 +224,42 @@ describe('AquariumView (tons d’environnement, #148)', () => {
         interactive: false,
         environment,
       });
-      const expected =
-        environment === REEF ? [0, 0, 0, 0, 0, 0] : new Array<number>(6).fill(TONE_PENALTY_OFF);
+      // Six tons du récif, puis les deux de l'eau brun-thé (#239), écartés sans feuille.
+      const expected = [
+        ...(environment === REEF
+          ? [0, 0, 0, 0, 0, 0]
+          : new Array<number>(6).fill(TONE_PENALTY_OFF)),
+        TONE_PENALTY_OFF,
+        TONE_PENALTY_OFF,
+      ];
       expect(view.environmentTonePenalties).toEqual(expected);
       // L'heure ne les touche pas.
       view.updateLight(lightAt(0));
       expect(view.environmentTonePenalties).toEqual(expected);
+      view.dispose();
+    }
+  });
+
+  it('eau brun-thé (#239) : ses deux tons proposés seulement quand l’eau est teintée', () => {
+    for (const environment of [TROPICAL_TANK, REEF]) {
+      const view = new AquariumView({
+        canvas: document.createElement('canvas'),
+        rendererFactory: () => new RecordingRenderer(),
+        pixelRatio: 1,
+        preset: 'three-quarter',
+        interactive: false,
+        environment,
+      });
+      const base = view.environmentTonePenalties.slice(0, 6);
+      view.setWaterTea(1);
+      expect(view.waterTea).toBe(1);
+      expect(view.environmentTonePenalties).toEqual([...base, 0, 0]);
+      view.setWaterTea(0);
+      expect(view.environmentTonePenalties).toEqual([...base, TONE_PENALTY_OFF, TONE_PENALTY_OFF]);
+      view.setCatappa([1, 0]);
+      expect(view.catappaCounts).toEqual([2, 1]);
+      view.setCatappa(undefined);
+      expect(view.catappaCounts).toEqual([0, 0]);
       view.dispose();
     }
   });

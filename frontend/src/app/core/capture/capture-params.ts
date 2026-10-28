@@ -44,6 +44,10 @@
  * date à t = 0 (faim maximale, santé au plancher : nage ralentie, couleurs ternies). Toute
  * autre valeur ou absent : animaux nourris et en bonne santé (séries existantes inchangées).
  *
+ * Paramètre facultatif `catappa=n` (issue #239) : en mode capture, `n` feuilles de catappa
+ * neuves (1 à 5) déposées à t = 0, qui teintent l'eau. Toute autre valeur ou absent : aucune
+ * feuille (séries existantes inchangées).
+ *
  * Paramètre facultatif `piece=1` (issue #187) : en mode capture, la pièce autour du bac
  * (sol, mur, meuble support) est affichée, dans le bac tropical seulement ; toute autre
  * valeur ou absent, pièce masquée (séries existantes inchangées).
@@ -125,6 +129,8 @@ export interface CaptureParams {
   readonly water: string | null;
   /** Vrai pour `affames=1` : animaux affamés de longue date à t = 0 (issue #208). */
   readonly starved: boolean;
+  /** Feuilles de catappa neuves de `catappa=` à t = 0 (issue #239), 0 si absent ou invalide. */
+  readonly catappa: number;
   /** Élément du décor sélectionné par `edition=` (issue #167) ; `null` si absent ou invalide. */
   readonly editSelection: number | null;
   /** Élément de la pièce sélectionné par `edition-meuble=` (issue #188) ; `null` sinon. */
@@ -214,6 +220,7 @@ export const DEFAULT_CAPTURE_PARAMS: CaptureParams = {
   room: false,
   water: null,
   starved: false,
+  catappa: 0,
   editSelection: null,
   editRoomSelection: null,
   woods: [],
@@ -261,6 +268,7 @@ export function parseCaptureParams(search: string): CaptureParams {
     room: params.get('piece') === '1',
     water: params.get('eau'),
     starved: params.get('affames') === '1',
+    catappa: parseCatappa(params.get('catappa')),
     editSelection: parseEditSelection(params.get('edition')),
     editRoomSelection: parseEditSelection(params.get('edition-meuble')),
     woods: parseWoods(params.get('bois')),
@@ -464,4 +472,9 @@ function parsePopulation(raw: string | null): readonly CapturePopulation[] {
     }
   }
   return entries;
+}
+
+/** Nombre de feuilles de `catappa=` (issue #239) : un chiffre de 1 à 5, sinon 0. */
+function parseCatappa(raw: string | null): number {
+  return raw !== null && /^[1-5]$/.test(raw) ? Number(raw) : 0;
 }

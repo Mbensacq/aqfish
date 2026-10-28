@@ -42,6 +42,7 @@ import type { FoodPellet } from '../sim/food';
 import { clampRoom, DEFAULT_ROOM, isRoomAvailable, type Room } from '../sim/room';
 import { SAND_THICKNESS } from '../sim/tank';
 import { BubbleLayer } from './bubble-layer';
+import { CatappaLayer } from './catappa-layer';
 import { DecorLayer } from './decor-layer';
 import { planePoint, sandHit, type DecorPick } from './decor-pick';
 import { pickRoom } from './room-pick';
@@ -78,6 +79,9 @@ export interface AquariumRenderer {
 }
 
 export type AquariumRendererFactory = (canvas: HTMLCanvasElement) => AquariumRenderer;
+
+/** Tons d'environnement de l'eau teintée par les feuilles de catappa (issue #239). */
+export const TEA_TONES: readonly string[] = ['eauThe', 'eauTheClaire'];
 
 /** Bouton de la souris d'`OrbitControls` pour chaque action déclarée (`core/commands`). */
 export const ORBIT_MOUSE_ACTIONS: Readonly<Record<OrbitAction, MOUSE>> = {
@@ -167,6 +171,8 @@ export class AquariumView {
   private readonly rainLayer: RainLayer;
   /** Feuilles mortes flottantes (issue #107), dans un environnement qui en a. */
   private readonly floatingLeafLayer: FloatingLeafLayer;
+  /** Feuilles de catappa sur le sol (issue #239). */
+  private readonly catappaLayer: CatappaLayer;
   /**
    * Effets animés au contrat commun `EffectLayer` (issue #125) : bulles, pluie, puis feuilles
    * mortes. Parcourus
@@ -334,7 +340,7 @@ export class AquariumView {
     this.pixelPass = new PalettePass();
     this.world = createAquariumScene(options.environment);
     // Tons propres à l'environnement (eau du récif, ADR 0039) : écartés ailleurs.
-    this.pixelPass.setEnvironmentPenalties(environmentTonePenalties(this.world.environment.tones));
+    this.applyTonePenalties();
     this.fishLayers = Object.values(SPECIES).flatMap((species) =>
       speciesVariants(species).map(
         (_, index) => new FishLayer(species, MAX_FISH_PER_SPECIES, index),
@@ -359,6 +365,7 @@ export class AquariumView {
     this.floatingLeafLayer = new FloatingLeafLayer(environmentDataWater(this.world.environment));
     this.floatingLeafLayer.object.visible = this.world.environment.floatingLeaves;
     this.effects = [this.bubbleLayer, this.rainLayer, this.floatingLeafLayer];
+    this.catappaLayer = new CatappaLayer(environmentDataWater(this.world.environment));
     this.sceneLayers = [
       ...this.fishLayers,
       this.decorLayer,
@@ -368,6 +375,7 @@ export class AquariumView {
       this.lilyPadLayer,
       this.rainLayer,
       this.floatingLeafLayer,
+      this.catappaLayer,
       this.roomLayer,
     ];
     for (const layer of this.sceneLayers) {
@@ -772,6 +780,7 @@ export class AquariumView {
         layer.setBrightness(brightness);
       }
       this.foodLayer.setBrightness(brightness);
+      this.catappaLayer.setBrightness(brightness);
       this.decorLayer.setTint(decorTintInto(light.intensity, this.decorTint));
       this.lilyPadLayer.setTint(this.decorTint);
       const penalties = tonePenaltiesInto(light.intensity, this.penalties);
@@ -934,6 +943,49 @@ export class AquariumView {
     if (!this.disposed && turbidity !== this.world.turbidity) {
       this.world.setTurbidity(turbidity);
     }
+  }
+
+  /**
+   * Teinte brun-thé des feuilles de catappa (issue #239, `catappaTint`), 0 ou 1 : teinte
+   * seulement. Sans effet si la valeur n'a pas changé ou après `dispose`.
+   * @throws RangeError si `tea` n'est pas un réel dans [0, 1].
+   */
+  setWaterTea(tea: number): void {
+    if (!this.disposed && tea !== this.world.tea) {
+      this.world.setTea(tea);
+      this.applyTonePenalties();
+    }
+  }
+
+  /**
+   * Tons d'environnement proposés à la passe (ADR 0039) : ceux de l'environnement, plus les
+   * tons de l'eau brun-thé (`TEA_TONES`) quand elle est teintée (issue #239).
+   */
+  private applyTonePenalties(): void {
+    const tones = this.world.environment.tones;
+    this.pixelPass.setEnvironmentPenalties(
+      environmentTonePenalties(this.world.tea > 0 ? [...tones, ...TEA_TONES] : tones),
+    );
+  }
+
+  /**
+   * Feuilles de catappa posées sur le sol (issue #239) : une par réserve de `leaves`
+   * (`WaterState.catappa`), plus sombre une fois épuisée. Sans effet après `dispose`.
+   */
+  setCatappa(leaves: readonly number[] | undefined): void {
+    if (!this.disposed) {
+      this.catappaLayer.setLeaves(leaves);
+    }
+  }
+
+  /** Feuilles de catappa affichées, puis celles qui sont épuisées (tests). */
+  get catappaCounts(): readonly [number, number] {
+    return [this.catappaLayer.count, this.catappaLayer.spentCount];
+  }
+
+  /** Teinte brun-thé appliquée (tests). */
+  get waterTea(): number {
+    return this.world.tea;
   }
 
   /** Trouble de l'eau appliqué (tests). */

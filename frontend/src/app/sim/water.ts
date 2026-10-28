@@ -1,3 +1,4 @@
+import { catappaPh, catappaStrength, readCatappa, stepCatappaInPlace } from './catappa';
 import type { EnvironmentId } from './environment';
 import { SPECIES, type SpeciesId } from './species';
 import type { Box3 } from './tank';
@@ -23,7 +24,8 @@ import { freshPh, MAX_PH, MIN_PH, phAfterWaterChange, stepPh } from './water-ph'
  *   sinon celle de l'environnement, `WATER_TEMPERATURES` ; issue #207), constante de temps
  *   `TEMPERATURE_TIME_CONSTANT` ;
  * - pH : baisse lente avec la charge, remonte vers celui de l'eau neuve au changement d'eau
- *   (`sim/water-ph.ts`, issue #236, ADR 0057).
+ *   (`sim/water-ph.ts`, issue #236, ADR 0057) ; les feuilles de catappa le tirent vers un
+ *   plancher et se décomposent (`sim/catappa.ts`, issue #239, ADR 0071).
  * Une concentration plafonnée perd ce qui la ferait dépasser `MAX_CONCENTRATION`.
  */
 
@@ -50,6 +52,11 @@ export interface WaterState {
    * température de l'environnement (`targetTemperature`).
    */
   readonly heater?: number;
+  /**
+   * Feuilles de catappa du bac (issue #239, ADR 0071) : réserve de chaque feuille dans
+   * [0, 1], au plus `MAX_CATAPPA_LEAVES` (`sim/catappa.ts`). Absent : aucune feuille.
+   */
+  readonly catappa?: readonly number[];
 }
 
 /** État de l'eau modifiable en place (propriétaire unique : le monde). */
@@ -209,6 +216,12 @@ export function stepWaterInPlace(
   );
   water.filter = filter;
   water.ph = stepPh(water.ph, dt, load, liters);
+  const leaves = water.catappa as number[] | undefined;
+  if (leaves !== undefined && leaves.length > 0) {
+    // Réserve du début du pas, puis décomposition (même convention que les conversions).
+    water.ph = catappaPh(water.ph, catappaStrength(leaves), liters, dt);
+    stepCatappaInPlace(leaves, dt);
+  }
   return water;
 }
 
@@ -220,7 +233,7 @@ export function stepWater(
   liters: number,
   temperature: number,
 ): WaterState {
-  return stepWaterInPlace({ ...water }, dt, load, liters, temperature);
+  return stepWaterInPlace(copyWater(water), dt, load, liters, temperature);
 }
 
 /**
@@ -244,7 +257,12 @@ export function changeWaterInPlace(
 
 /** Comme `changeWaterInPlace`, sur une copie : `water` n'est jamais modifié. */
 export function changeWater(water: WaterState, environment: EnvironmentId): WaterState {
-  return changeWaterInPlace({ ...water }, environment);
+  return changeWaterInPlace(copyWater(water), environment);
+}
+
+/** Copie de `water`, feuilles de catappa comprises (le tableau n'est jamais partagé). */
+export function copyWater(water: WaterState): MutableWaterState {
+  return water.catappa === undefined ? { ...water } : { ...water, catappa: [...water.catappa] };
 }
 
 /** Résultat de `readWater`. */
@@ -257,7 +275,8 @@ export type ReadWaterResult =
  * aux cinq champs numériques finis et bornés, plus la consigne du chauffage facultative
  * (`heater`, issue #207 : absente, jamais réglée) et le pH facultatif (`ph`, issue #236 :
  * absent dans une sauvegarde antérieure, il reprend celui de l'eau neuve de
- * l'environnement) ; seules les propriétés propres sont lues, les champs inconnus ignorés.
+ * l'environnement) et les feuilles de catappa facultatives (`catappa`, issue #239 : absentes,
+ * aucune feuille) ; seules les propriétés propres sont lues, les champs inconnus ignorés.
  * Renvoie une copie, ou la raison du refus. Ne lève jamais.
  */
 export function readWater(value: unknown, environment: EnvironmentId): ReadWaterResult {
@@ -267,7 +286,7 @@ export function readWater(value: unknown, environment: EnvironmentId): ReadWater
   const record = value as Record<string, unknown>;
   const read = (key: keyof WaterState): unknown =>
     Object.hasOwn(record, key) ? record[key] : undefined;
-  const fields: [Exclude<keyof WaterState, 'ph' | 'heater'>, number, number][] = [
+  const fields: [Exclude<keyof WaterState, 'ph' | 'heater' | 'catappa'>, number, number][] = [
     ['temperature', MIN_WATER_TEMPERATURE, MAX_WATER_TEMPERATURE],
     ['ammonia', 0, MAX_CONCENTRATION],
     ['nitrite', 0, MAX_CONCENTRATION],
@@ -290,6 +309,11 @@ export function readWater(value: unknown, environment: EnvironmentId): ReadWater
   if (ph !== undefined && !isIn(ph, MIN_PH, MAX_PH)) {
     return { ok: false, error: `eau : ph doit être un nombre dans [${MIN_PH}, ${MAX_PH}]` };
   }
+  const catappaValue = read('catappa');
+  const catappa = catappaValue === undefined ? null : readCatappa(catappaValue);
+  if (catappa !== null && !catappa.ok) {
+    return { ok: false, error: catappa.error };
+  }
   return {
     ok: true,
     water: {
@@ -300,6 +324,7 @@ export function readWater(value: unknown, environment: EnvironmentId): ReadWater
       filter: read('filter') as number,
       ph: (ph as number | undefined) ?? freshPh(environment),
       ...(heater === undefined ? {} : { heater }),
+      ...(catappa === null || catappa.leaves.length === 0 ? {} : { catappa: catappa.leaves }),
     },
   };
 }

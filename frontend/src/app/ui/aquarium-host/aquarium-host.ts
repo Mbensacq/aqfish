@@ -148,6 +148,7 @@ import {
   changeWorldWaterInPlace,
   createDefaultWorld,
   feedInPlace,
+  setWorldCatappaInPlace,
   setWorldHeaterInPlace,
   starveWorldInPlace,
   type MutableWorld,
@@ -216,6 +217,11 @@ export const POPULATION_ATTRIBUTE = 'data-aqfish-population';
  * change.
  */
 export const WATER_ATTRIBUTE = 'data-aqfish-water';
+/**
+ * Feuilles de catappa du bac et teinte de l'eau (#239) : « nombre;teinte », `3;1` (teinte 1 :
+ * eau brun-thé), mis à jour avec le relevé de l'eau.
+ */
+export const CATAPPA_ATTRIBUTE = 'data-aqfish-catappa';
 /** pH de l'eau et sa zone pour les espèces présentes, « 6.9;tolere » (#236). */
 export const PH_ATTRIBUTE = 'data-aqfish-ph';
 /** Pas de simulation entre deux relevés de l'eau dans la boucle (0,5 s simulée). */
@@ -827,12 +833,29 @@ export class AquariumHost {
    * [`MIN_HEATER_TEMPERATURE`, `MAX_HEATER_TEMPERATURE`].
    */
   setHeater(temperature: number): void {
+    this.applyWaterSetting((world) => setWorldHeaterInPlace(world, temperature));
+  }
+
+  /**
+   * Nombre de feuilles de catappa dans le bac (#239), de 0 à `MAX_CATAPPA_LEAVES` : ajoute des
+   * feuilles neuves ou retire d'abord les plus décomposées. Enregistré avec l'eau. Sans effet
+   * en mode capture, avant le démarrage ou hors bornes.
+   */
+  setCatappa(count: number): void {
+    this.applyWaterSetting((world) => setWorldCatappaInPlace(world, count));
+  }
+
+  /**
+   * Réglage de l'eau par l'utilisateur : appliqué au monde courant, puis relevé et
+   * enregistrement. Sans effet en mode capture, avant le démarrage ou si `apply` lève.
+   */
+  private applyWaterSetting(apply: (world: MutableWorld) => void): void {
     const world = this.currentWorld;
     if (!world || this.capture) {
       return;
     }
     try {
-      setWorldHeaterInPlace(world, temperature);
+      apply(world);
     } catch {
       return;
     }
@@ -1711,6 +1734,10 @@ export class AquariumHost {
       if (params.capture && params.starved) {
         starveWorldInPlace(world);
       }
+      // Feuilles de catappa neuves de `catappa=` (#239), en capture : à t = 0.
+      if (params.capture && params.catappa > 0) {
+        setWorldCatappaInPlace(world, params.catappa);
+      }
       this.currentWorld = params.capture
         ? advanceToWithFeedings(world, params.time, params.feedings, this.dayClock)
         : world;
@@ -1864,6 +1891,9 @@ export class AquariumHost {
     this.applyRain(this.rain());
     // Eau trouble quand elle est mauvaise (#207) : teinte seulement.
     view.setWaterTurbidity(waterTurbidity(this.water().quality));
+    // Feuilles de catappa et eau brun-thé (#239).
+    view.setWaterTea(this.water().tea);
+    view.setCatappa(world.water.catappa);
     this.litHour = null;
     this.activePreset.set(preset);
     this.viewCleanups.push(view.onCameraChange(() => this.exposeCamera()));
@@ -2104,8 +2134,11 @@ export class AquariumHost {
         ].join(';'),
       );
       this.host.nativeElement.setAttribute(PH_ATTRIBUTE, `${readout.ph};${readout.phZone}`);
+      this.host.nativeElement.setAttribute(CATAPPA_ATTRIBUTE, `${readout.catappa};${readout.tea}`);
     }
     this.view?.setWaterTurbidity(waterTurbidity(readout.quality));
+    this.view?.setWaterTea(readout.tea);
+    this.view?.setCatappa(world.water.catappa);
   }
 
   /** Applique la pluie à la vue courante et expose l'état obtenu (`data-aqfish-rain`). */

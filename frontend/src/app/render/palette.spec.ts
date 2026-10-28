@@ -202,6 +202,8 @@ describe('Tons d’environnement (#148, ADR 0039)', () => {
       'corailVioletClair',
       'clownOrange',
       'chirurgienBleu',
+      'eauThe',
+      'eauTheClaire',
     ]);
     expect(ENVIRONMENT_TONE_COLORS).toEqual(Object.values(ENVIRONMENT_TONES));
     for (const name of ENVIRONMENT_TONE_NAMES) {
@@ -237,6 +239,20 @@ describe('Tons d’environnement (#148, ADR 0039)', () => {
     for (const [r, g, b] of [body, surface]) {
       expect(b).toBeGreaterThan(g);
       expect(g).toBeGreaterThan(r);
+    }
+    const sum = (c: Rgb) => c[0] + c[1] + c[2];
+    expect(sum(surface)).toBeGreaterThan(sum(body));
+  });
+});
+
+describe('Tons de l’eau brun-thé (#239)', () => {
+  it('bruns : rouge > vert > bleu, surface plus claire que le volume', () => {
+    const [body, surface] = [ENVIRONMENT_TONES.eauThe, ENVIRONMENT_TONES.eauTheClaire].map(
+      hexToRgb,
+    );
+    for (const [r, g, b] of [body, surface]) {
+      expect(r).toBeGreaterThan(g);
+      expect(g).toBeGreaterThan(b);
     }
     const sum = (c: Rgb) => c[0] + c[1] + c[2];
     expect(sum(surface)).toBeGreaterThan(sum(body));

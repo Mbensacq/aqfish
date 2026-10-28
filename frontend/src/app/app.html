@@ -66,6 +66,7 @@
       (foodStyleToggled)="aquarium.toggleFoodStyle()"
       (populationChanged)="aquarium.setPopulation($event.species, $event.count)"
       (heaterChanged)="aquarium.setHeater($event)"
+      (catappaChanged)="aquarium.setCatappa($event)"
       (waterChangeRequested)="aquarium.changeWater()"
       (exportRequested)="aquarium.exportSave()"
       (importRequested)="aquarium.importSave($event)"

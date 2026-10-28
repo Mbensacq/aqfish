@@ -17,6 +17,7 @@ import {
   environmentById,
   type EnvironmentId,
 } from '../../sim/environment';
+import { MAX_CATAPPA_LEAVES } from '../../sim/catappa';
 import { formatHour, HOUR_SLIDER_STEP, HOURS_PER_DAY, NOON_HOUR } from '../../sim/daylight';
 import { NO_FISH, type PopulationCounts } from '../../sim/population';
 import type { SaveMessage, SaveStatus } from '../../core/save-storage/save-storage';
@@ -325,6 +326,39 @@ function toNumber(value: string | number): number {
               (input)="onHeater($event)"
             />
           </label>
+          <!-- Feuilles de catappa (#239) : « − », nombre, « + », puis le rappel que l'effet est
+               simplifié (approximation de jeu, ADR 0071). -->
+          <div class="control-panel__count" data-catappa>
+            <span class="control-panel__count-label" id="panneau-catappa">Feuilles de catappa</span>
+            <button
+              type="button"
+              class="control-panel__step"
+              aria-label="Retirer une feuille de catappa"
+              [attr.aria-disabled]="water().catappa <= 0"
+              (click)="stepCatappa(-1)"
+            >
+              −
+            </button>
+            <output
+              class="control-panel__value"
+              aria-labelledby="panneau-catappa"
+              data-catappa-count
+            >
+              {{ water().catappa }}
+            </output>
+            <button
+              type="button"
+              class="control-panel__step"
+              aria-label="Ajouter une feuille de catappa"
+              [attr.aria-disabled]="water().catappa >= maxCatappa"
+              (click)="stepCatappa(1)"
+            >
+              +
+            </button>
+          </div>
+          <p class="control-panel__note" data-catappa-note>
+            Effet simplifié : ne remplace pas un test de pH.
+          </p>
         </fieldset>
 
         <fieldset
@@ -590,6 +624,8 @@ export class ControlPanel {
   readonly populationChanged = output<PopulationRequest>();
   /** Consigne du chauffage choisie au curseur, en °C (#207). */
   readonly heaterChanged = output<number>();
+  /** Nombre de feuilles de catappa demandé (#239), dans [0, `MAX_CATAPPA_LEAVES`]. */
+  readonly catappaChanged = output<number>();
   /** Bouton « Changer l'eau » (#207). */
   readonly waterChangeRequested = output<void>();
   /** Bouton « Exporter » (#70). */
@@ -738,6 +774,17 @@ export class ControlPanel {
     const temperature = sliderHeater((event.target as HTMLInputElement).value);
     if (temperature !== null) {
       this.heaterChanged.emit(temperature);
+    }
+  }
+
+  /** Nombre maximal de feuilles de catappa (#239). */
+  protected readonly maxCatappa = MAX_CATAPPA_LEAVES;
+
+  /** « − » ou « + » des feuilles de catappa (#239) : sans effet aux bornes. */
+  protected stepCatappa(delta: -1 | 1): void {
+    const count = this.water().catappa + delta;
+    if (count >= 0 && count <= MAX_CATAPPA_LEAVES) {
+      this.catappaChanged.emit(count);
     }
   }
 

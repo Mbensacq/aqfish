@@ -167,6 +167,7 @@ describe('fonctions du panneau de contrôle', () => {
     (foodStyleToggled)="foodToggles = foodToggles + 1"
     (editRequested)="edits = edits + 1"
     (heaterChanged)="events.push(['chauffage', $event])"
+    (catappaChanged)="events.push(['catappa', $event])"
     (waterChangeRequested)="waterChanges = waterChanges + 1"
   />`,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -630,10 +631,11 @@ describe('ControlPanel', () => {
     // Le champ de fichier natif est masqué : le bouton « Importer » l'ouvre (#70).
     const controls = [...root().querySelectorAll<HTMLElement>('button, input:not([type="file"])')];
     // 5 contrôles de #52, « Éditer le décor » (#167), « Granulés » (#117), « Afficher la
-    // pièce » (#187), « Changer l’eau » et le curseur du chauffage (#207), puis « − », champ,
-    // « + » (#69), curseur (#189) et « Fiche » (#237) pour chacune des 7 espèces du bac
-    // tropical (#238), puis « Exporter » et « Importer » (#70).
-    expect(controls).toHaveLength(5 + 1 + 1 + 1 + 2 + 7 * 5 + 2);
+    // pièce » (#187), « Changer l’eau » et le curseur du chauffage (#207), « − » et « + » des
+    // feuilles de catappa (#239), puis « − », champ, « + » (#69), curseur (#189) et « Fiche »
+    // (#237) pour chacune des 7 espèces du bac tropical (#238), puis « Exporter » et
+    // « Importer » (#70).
+    expect(controls).toHaveLength(5 + 1 + 1 + 1 + 2 + 2 + 7 * 5 + 2);
     expect(root().querySelectorAll('input[type="file"]')).toHaveLength(1);
     for (const control of controls) {
       const name =
@@ -858,14 +860,48 @@ describe('ControlPanel', () => {
       expect(section().querySelectorAll('[data-gauge], meter, [role="meter"]')).toHaveLength(0);
       expect(section().textContent).not.toContain('Mauvaise');
       expect(section().textContent).not.toContain('Nitrates');
-      // Restent : le changement d'eau et le chauffage.
+      // Restent : le changement d'eau, le chauffage et les feuilles de catappa (#239).
       expect(section().querySelector('[data-water-change]')).not.toBeNull();
       expect(heater()).not.toBeNull();
       expect(
         [...section().querySelectorAll('button, input')].map(
           (el) => el.getAttribute('aria-label') ?? el.textContent?.trim(),
         ),
-      ).toEqual(['Changer l’eau', 'Consigne du chauffage']);
+      ).toEqual([
+        'Changer l’eau',
+        'Consigne du chauffage',
+        'Retirer une feuille de catappa',
+        'Ajouter une feuille de catappa',
+      ]);
+    });
+
+    it('feuilles de catappa (#239) : « + » et « − » émettent le nombre voulu, bornés à [0, 5]', async () => {
+      await openPanel();
+      const add = () =>
+        section().querySelector<HTMLButtonElement>(
+          '[aria-label="Ajouter une feuille de catappa"]',
+        )!;
+      const remove = () =>
+        section().querySelector<HTMLButtonElement>(
+          '[aria-label="Retirer une feuille de catappa"]',
+        )!;
+      expect(section().querySelector('[data-catappa-count]')?.textContent?.trim()).toBe('0');
+      expect(remove().getAttribute('aria-disabled')).toBe('true');
+      remove().click();
+      add().click();
+      fixture.componentInstance.water.set({ ...DEFAULT_WATER_READOUT, catappa: 5, tea: 1 });
+      await fixture.whenStable();
+      expect(section().querySelector('[data-catappa-count]')?.textContent?.trim()).toBe('5');
+      expect(add().getAttribute('aria-disabled')).toBe('true');
+      add().click();
+      remove().click();
+      expect(fixture.componentInstance.events.filter(([kind]) => kind === 'catappa')).toEqual([
+        ['catappa', 1],
+        ['catappa', 4],
+      ]);
+      expect(section().querySelector('[data-catappa-note]')?.textContent).toContain(
+        'ne remplace pas un test de pH',
+      );
     });
   });
 

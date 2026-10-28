@@ -3,6 +3,7 @@ import { createWalker, stepWalker, type WalkerGround } from './axolotl';
 import { createFrog, stepFrog } from './frog';
 import { bubbleSourceFor, fillBubbles, type BubbleBuffer } from './bubbles';
 import { addRivalSteering, enforceRivalDistance, hasRivals } from './compatibility';
+import { catappaActive, withCatappaCount } from './catappa';
 import { SIM_DT } from './constants';
 import { dayIntensityAt, hourAt, type DayClock } from './daylight';
 import { nightRest } from './day-rhythm';
@@ -676,6 +677,7 @@ function stepInPlace(world: MutableWorld, dt: number, clock: SimClock): void {
     waterQuality(world.water, world.environment) === 'mauvaise',
     speciesById,
     world.water.ph,
+    catappaActive(world.water.catappa),
   );
 }
 
@@ -734,6 +736,33 @@ export function setWorldHeater(world: World, temperature: number): World {
  */
 export function setWorldHeaterInPlace(world: MutableWorld, temperature: number): number {
   return setHeaterInPlace(world.water as MutableWaterState, temperature);
+}
+
+/**
+ * Nombre de feuilles de catappa (`withCatappaCount`, issue #239) : renvoie un nouvel état,
+ * `world` n'est jamais modifié.
+ * @throws RangeError comme `withCatappaCount`.
+ */
+export function setWorldCatappa(world: World, count: number): World {
+  const next = cloneWorld(world);
+  setWorldCatappaInPlace(next, count);
+  return next;
+}
+
+/**
+ * Comme `setWorldCatappa`, **en modifiant** `world` : feuilles neuves ajoutées, les plus
+ * décomposées retirées d'abord ; sans feuille, le champ `catappa` disparaît de l'eau.
+ * Réservé au propriétaire unique du monde (`ui/aquarium-host`).
+ * @throws RangeError comme `withCatappaCount` (monde inchangé).
+ */
+export function setWorldCatappaInPlace(world: MutableWorld, count: number): void {
+  const leaves = withCatappaCount(world.water.catappa, count);
+  const water = world.water as MutableWaterState;
+  if (leaves.length === 0) {
+    delete water.catappa;
+  } else {
+    water.catappa = leaves;
+  }
 }
 
 /** Point visé vers la nourriture, réutilisé d'un poisson à l'autre (aucune allocation). */

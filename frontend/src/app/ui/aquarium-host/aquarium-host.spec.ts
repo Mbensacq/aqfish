@@ -1005,6 +1005,8 @@ describe('AquariumHost', () => {
         ph: 7,
         phZone: 'ideal',
         phBands: phBands(['neon', 'guppy', 'corydora']),
+        catappa: 0,
+        tea: 0,
       });
       expect(waterAttr()).toBe('bonne;24;24;0;0;0');
       expect(phAttr()).toBe('7;ideal');

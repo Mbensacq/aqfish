@@ -170,6 +170,9 @@ describe('waterReadout et sameReadout', () => {
       phZone: 'ideal',
       // Néons, guppys et corydoras (#236) : idéal commun de 6,8 à 7,2.
       phBands: { tolerated: { min: 6.5, max: 7.8 }, ideal: { min: 6.8, max: 7.2 } },
+      // Aucune feuille de catappa (#239).
+      catappa: 0,
+      tea: 0,
     });
   });
 
@@ -188,6 +191,8 @@ describe('waterReadout et sameReadout', () => {
       ph: 7,
       phZone: 'ideal',
       phBands: { tolerated: { min: 4, max: 9.5 }, ideal: { min: 4, max: 9.5 } },
+      catappa: 0,
+      tea: 0,
     });
   });
 

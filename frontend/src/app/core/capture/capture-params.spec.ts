@@ -32,6 +32,7 @@ describe('parseCaptureParams', () => {
       room: false,
       water: null,
       starved: false,
+      catappa: 0,
       editSelection: null,
       editRoomSelection: null,
       woods: [],
@@ -146,6 +147,15 @@ describe('parseCaptureParams', () => {
     }
     expect(parseCaptureParams('?capture=1').starved).toBe(false);
     expect(DEFAULT_CAPTURE_PARAMS.starved).toBe(false);
+  });
+
+  it('lit les feuilles de catappa : catappa=1 à 5, sinon aucune (#239)', () => {
+    expect(parseCaptureParams('?capture=1&catappa=3').catappa).toBe(3);
+    expect(parseCaptureParams('?capture=1&catappa=5').catappa).toBe(5);
+    for (const value of ['0', '6', '12', '2.5', '-1', 'x', '']) {
+      expect(parseCaptureParams(`?capture=1&catappa=${value}`).catappa).toBe(0);
+    }
+    expect(DEFAULT_CAPTURE_PARAMS.catappa).toBe(0);
   });
 
   it('lit la pièce : piece=1 seulement, sinon pièce masquée (#187)', () => {
