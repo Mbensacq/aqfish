@@ -3431,10 +3431,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-28T13:27:59.306Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-28T13:28:56.210Z",
+          "note": "Issue #238 : nouvelles espèces d'eau douce lot 1 (M)"
         }
       },
       "metriques": {}
