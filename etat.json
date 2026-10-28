@@ -3521,10 +3521,10 @@
           "note": "Verdict OK, 0 bug, captures c095 publiées (94 + 3 téléphone guide), e2e guide verts, CI verte"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-28T21:27:23.789Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-28T22:38:30.709Z",
+          "note": "PR #301 fusionnée → v1.2.4 ; main verte, release créée par la CI ; dette #302 ; suppression de branche refusée"
         }
       },
       "metriques": {}
