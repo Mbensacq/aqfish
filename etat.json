@@ -3297,6 +3297,12 @@
           "debut": "2026-10-28T02:17:04.894Z",
           "fin": "2026-10-28T03:26:20.906Z",
           "note": "PR #290 : wiki 288 px + Échap global (#289), mutation water-dashboard 74,9→88,9 % (#267), CI verte ; 89/90 captures identiques à main"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-10-28T03:26:46.178Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
