@@ -13,8 +13,9 @@ import { selectedTankWorld } from './outils-sauvegarde';
  * simplification, jauge pH qui réagit.
  *
  * Le bac tropical est importé **sans habitant** (aucune dérive organique du pH) avec une eau
- * à pH 6,96, affichée « 7,0 », simulation en marche (vitesse 4) : sans feuille, le pH ne
- * bouge pas ; une feuille le fait passer sous 6,95 en quelques secondes simulées.
+ * à pH 6,9502, affichée « 7,0 », simulation en marche (vitesse 4) : sans feuille, le pH ne
+ * bouge pas ; une feuille le fait passer sous 6,95 en ~1,5 s simulée (le rendu logiciel
+ * ralentit beaucoup la simulation en local : marge de 60 s).
  */
 
 const hostEl = (page: Page) => page.locator('app-aquarium-host');
@@ -35,11 +36,11 @@ async function open(page: Page): Promise<string[]> {
   return errors;
 }
 
-/** Importe le bac tropical vide, pH 6,96, simulation à la vitesse `speed`, midi figé. */
+/** Importe le bac tropical vide, pH 6,9502, simulation à la vitesse `speed`, midi figé. */
 async function importEmptyTank(page: Page, speed: number): Promise<void> {
   const world: MutableWorld = createDefaultWorld(42);
   world.entities = [];
-  world.water = { ...freshWater('tropical'), ph: 6.96 };
+  world.water = { ...freshWater('tropical'), ph: 6.9502 };
   const text = serializeWorld(world, { speed, clock: createDayClock(12, 1200, true) });
   await page.locator('[data-section="sauvegarde"] input[type="file"]').setInputFiles({
     name: 'catappa.json',
@@ -63,8 +64,8 @@ test.describe('feuilles de catappa (#239)', () => {
     await addLeaf(page).click();
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-catappa', '1;1');
     await expect(section(page).locator('[data-catappa-count]')).toHaveText('1');
-    // Une feuille neuve dans 288 L : 6,96 → sous 6,95 en ~8 s simulées (2 s à la vitesse 4).
-    await expect(phValue(page)).toHaveText('6,9', { timeout: 30_000 });
+    // Une feuille neuve dans 288 L : 6,9502 → sous 6,95 en ~1,5 s simulée.
+    await expect(phValue(page)).toHaveText('6,9', { timeout: 60_000 });
 
     await removeLeaf(page).click();
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-catappa', '0;0');
@@ -80,7 +81,8 @@ test.describe('feuilles de catappa (#239)', () => {
       await expect(hostEl(page)).toHaveAttribute('data-aqfish-catappa', `${i};1`);
     }
     await expect(addLeaf(page)).toHaveAttribute('aria-disabled', 'true');
-    await addLeaf(page).click();
+    // Bouton désactivé (`aria-disabled`) : un clic forcé n'ajoute rien.
+    await addLeaf(page).dispatchEvent('click');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-catappa', '5;1');
 
     const [download] = await Promise.all([
