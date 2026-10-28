@@ -3233,10 +3233,10 @@
           "note": "Verdict OK, 0 bug bloquant, captures c087 publiées (78/88 identiques, écarts attendus), CI verte"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-27T23:06:56.362Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-28T00:03:25.848Z",
+          "note": "PR #285 fusionnée → v1.1.3 ; main verte, release créée ; dette #286 ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
