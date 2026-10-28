@@ -3282,7 +3282,7 @@
       "date": "2026-10-28",
       "debut": "2026-10-28T02:16:11.530Z",
       "type": "dette",
-      "issue": null,
+      "issue": 289,
       "pr": null,
       "version": null,
       "phases": {
