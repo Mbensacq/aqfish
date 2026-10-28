@@ -3341,10 +3341,10 @@
           "note": "Verdict OK, 0 bug, 2739 tests, couverture 97,65 % (sim 99,25 %), captures c090 publiées, e2e ancienne sauvegarde ajouté"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-28T06:29:48.650Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-28T07:31:49.923Z",
+          "note": "PR #294 fusionnée → v1.1.6 ; main verte, release créée ; formatage e2e corrigé à la revue ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
