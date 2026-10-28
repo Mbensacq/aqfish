@@ -3395,10 +3395,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-28T10:43:15.990Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-28T10:43:44.759Z",
+          "note": "Issue #292 : Pièce aux aquariums lot 1/6, état de la pièce et schéma 2 (M)"
         }
       },
       "metriques": {}
