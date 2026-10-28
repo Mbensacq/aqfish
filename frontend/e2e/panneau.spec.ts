@@ -292,7 +292,7 @@ test.describe('Panneau de contrôle', () => {
     await page.keyboard.press('Tab');
     await expect(page.getByRole('slider', { name: 'Consigne du chauffage' })).toBeFocused();
     await page.keyboard.press('ArrowRight');
-    await expect(hostEl(page)).toHaveAttribute('data-aqfish-water', /^[a-z-]+;[\d.]+;25\.5;/);
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-water', /^[a-z-]+;[\d.]+;24\.5;/);
 
     // Section « Décor » : « Éditer le décor » (#167), sur la ligne du titre, puis la case.
     await page.keyboard.press('Tab');

@@ -95,7 +95,7 @@ describe('waterQuality', () => {
   });
 
   it('même eau, environnement différent : la température idéale change le verdict', () => {
-    // 25 °C : bonne pour le bac tropical, mauvaise pour le bassin (18 °C, écart de 7 °C).
+    // 24 °C : bonne pour le bac tropical, mauvaise pour le bassin (18 °C, écart de 6 °C).
     const water = freshWater('tropical');
     expect(waterQuality(water, 'tropical')).toBe('bonne');
     expect(waterQuality(water, 'bassin')).toBe('mauvaise');
@@ -161,8 +161,8 @@ describe('waterReadout et sameReadout', () => {
   it('eau saine : bonne, valeurs entières ; relevé par défaut du bac tropical', () => {
     expect(DEFAULT_WATER_READOUT).toEqual({
       quality: 'bonne',
-      temperature: 25,
-      target: 25,
+      temperature: 24,
+      target: 24,
       ammonia: 0,
       nitrite: 0,
       nitrate: 0,

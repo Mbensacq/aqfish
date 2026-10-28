@@ -1,5 +1,5 @@
 import { compatibility, TEMPERAMENTS, type Temperament } from './compatibility';
-import { SPECIES_LABELS } from './species-catalog';
+import { SPECIES_LABELS, type SpeciesLabels } from './species-catalog';
 import { confidenceText, legalStatus, legalText, type LegalStatus } from './species-legal';
 import { SPECIES, type SpeciesId } from './species';
 import { SPECIES_PH, type PhRange } from './water-ph';
@@ -459,16 +459,27 @@ export function addWarnings(
   return warnings;
 }
 
-/** Texte affiché d'un avertissement d'ajout. */
+/** Texte affiché d'un avertissement d'ajout (libellés du catalogue, `SPECIES_LABELS`). */
 export function addWarningText(warning: AddWarning): string {
-  const { singular, plural, feminine } = SPECIES_LABELS[warning.species];
+  return addWarningTextWith(warning, SPECIES_LABELS);
+}
+
+/**
+ * `addWarningText` avec des libellés donnés : les tests y exercent l'accord au féminin, qu'aucune
+ * espèce du catalogue ne porte plus depuis le sonneur oriental (#284).
+ */
+export function addWarningTextWith(
+  warning: AddWarning,
+  labels: Readonly<Record<SpeciesId, SpeciesLabels>>,
+): string {
+  const { singular, plural, feminine } = labels[warning.species];
   switch (warning.kind) {
     case 'volume':
       return `Bac trop petit pour des ${plural} : ${Math.round(warning.liters)} L, ${warning.minLiters} L conseillés`;
     case 'groupe':
       return `Groupe trop petit : ${warning.count} ${warning.count === 1 ? singular : plural}, ${warning.minGroup} au moins conseillé${feminine ? 'e' : ''}s`;
     case 'incompatible':
-      return `${capitalize(plural)} déconseillé${feminine ? 'e' : ''}s avec les ${SPECIES_LABELS[warning.other].plural} (${
+      return `${capitalize(plural)} déconseillé${feminine ? 'e' : ''}s avec les ${labels[warning.other].plural} (${
         warning.reason === 'predateur' ? 'prédateur' : 'deux espèces territoriales'
       })`;
   }

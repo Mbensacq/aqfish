@@ -176,12 +176,13 @@ describe('tableau de bord de l’eau (#256)', () => {
 
   describe('niveaux et remplissages', () => {
     it('température : écart à celle de l’environnement, dans les deux sens, bornes comprises', () => {
-      expect(temperatureLevel(25, 'tropical')).toBe('vert');
-      expect(temperatureLevel(27.9, 'tropical')).toBe('vert');
-      expect(temperatureLevel(28, 'tropical')).toBe('orange');
-      expect(temperatureLevel(22, 'tropical')).toBe('orange');
-      expect(temperatureLevel(31, 'tropical')).toBe('rouge');
-      expect(temperatureLevel(19, 'tropical')).toBe('rouge');
+      // Bac tropical à 24 °C (ADR 0067) : seuils à 3 et 6 °C d'écart.
+      expect(temperatureLevel(24, 'tropical')).toBe('vert');
+      expect(temperatureLevel(26.9, 'tropical')).toBe('vert');
+      expect(temperatureLevel(27, 'tropical')).toBe('orange');
+      expect(temperatureLevel(21, 'tropical')).toBe('orange');
+      expect(temperatureLevel(30, 'tropical')).toBe('rouge');
+      expect(temperatureLevel(18, 'tropical')).toBe('rouge');
       // Eau de mer : 26 °C au récif.
       expect(temperatureLevel(26, 'recif')).toBe('vert');
       expect(temperatureLevel(Number.NaN, 'recif')).toBe('rouge');
@@ -236,8 +237,8 @@ describe('tableau de bord de l’eau (#256)', () => {
         'vert',
       ]);
       const [temperature, , , nitrate, ph] = DEFAULT_DASHBOARD_GAUGES;
-      expect(temperature).toMatchObject({ label: 'Temp.', value: '25,0', unit: '°C' });
-      expect(temperature?.spoken).toBe('Température : 25,0 degrés, bon, stable');
+      expect(temperature).toMatchObject({ label: 'Temp.', value: '24,0', unit: '°C' });
+      expect(temperature?.spoken).toBe('Température : 24,0 degrés, bon, stable');
       expect(nitrate).toMatchObject({ label: 'NO₃⁻', value: '0,0', unit: 'u.', fill: 0 });
       expect(ph).toMatchObject({ value: '7,0', unit: '', levelLabel: 'Idéal' });
       expect(ph?.spoken).toBe('pH : 7,0, idéal, stable');

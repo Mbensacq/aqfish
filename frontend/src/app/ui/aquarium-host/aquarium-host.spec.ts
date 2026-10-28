@@ -983,8 +983,8 @@ describe('AquariumHost', () => {
       await create('?seed=42');
       expect(host().water()).toEqual({
         quality: 'bonne',
-        temperature: 25,
-        target: 25,
+        temperature: 24,
+        target: 24,
         ammonia: 0,
         nitrite: 0,
         nitrate: 0,
@@ -992,7 +992,7 @@ describe('AquariumHost', () => {
         phZone: 'ideal',
         phBands: phBands(['neon', 'guppy', 'corydora']),
       });
-      expect(waterAttr()).toBe('bonne;25;25;0;0;0');
+      expect(waterAttr()).toBe('bonne;24;24;0;0;0');
       expect(phAttr()).toBe('7;ideal');
       expect(viewOf(host()).waterTurbidity).toBe(0);
     });
@@ -1116,7 +1116,7 @@ describe('AquariumHost', () => {
       await create();
       expect(host().world!.water.heater).toBe(28);
       expect(host().water().target).toBe(28);
-      expect(waterAttr()).toBe('bonne;25;28;0;0;0');
+      expect(waterAttr()).toBe('bonne;24;28;0;0;0');
     });
 
     it('eau= en capture : eau d’exemple, troublée si mauvaise ; boutons sans effet', async () => {
