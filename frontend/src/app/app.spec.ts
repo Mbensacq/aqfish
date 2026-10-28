@@ -181,4 +181,35 @@ describe('App', () => {
       expect(ui.help()).toBeNull();
     });
   });
+
+  describe('wiki des espèces (#287)', () => {
+    it('exclusif avec « Réglages » et « Commandes », même sur écran large', async () => {
+      TestBed.overrideProvider(EXCLUSIVE_PANELS, { useValue: () => false });
+      TestBed.overrideProvider(COMMANDS_HELP_STORE, { useValue: createFallbackStore(null) });
+      const fixture = TestBed.createComponent(App);
+      await fixture.whenStable();
+      const root = fixture.nativeElement as HTMLElement;
+      const click = async (selector: string) => {
+        root.querySelector<HTMLButtonElement>(selector)!.click();
+        await fixture.whenStable();
+      };
+      const wiki = () => root.querySelector('#wiki-especes');
+      const settings = () => root.querySelector('.control-panel');
+      const help = () => root.querySelector('#aide-commandes');
+      await click('.control-panel__toggle');
+      expect(settings()).not.toBeNull();
+      expect(help()).not.toBeNull();
+      await click('[data-wiki-toggle]');
+      expect(wiki()).not.toBeNull();
+      expect(settings()).toBeNull();
+      expect(help()).toBeNull();
+      await click('.commands-help__toggle');
+      expect(help()).not.toBeNull();
+      expect(wiki()).toBeNull();
+      await click('[data-wiki-toggle]');
+      await click('.control-panel__toggle');
+      expect(settings()).not.toBeNull();
+      expect(wiki()).toBeNull();
+    });
+  });
 });

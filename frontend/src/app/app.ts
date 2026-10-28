@@ -9,6 +9,7 @@ import { DashboardStatus } from './ui/dashboard-frame/dashboard-status';
 import { DayIndicator } from './ui/day-indicator/day-indicator';
 import { DecorEditor } from './ui/decor-editor/decor-editor';
 import { EXCLUSIVE_PANELS } from './ui/exclusive-panels/exclusive-panels';
+import { SpeciesWiki } from './ui/species-wiki/species-wiki';
 import { ViewPresetsBar } from './ui/view-presets-bar/view-presets-bar';
 
 /**
@@ -17,6 +18,8 @@ import { ViewPresetsBar } from './ui/view-presets-bar/view-presets-bar';
  * journée, tableau de bord (eau et simulation en haut, santé et alertes en bas), panneau de contrôle et aide-mémoire des commandes).
  * Sur écran étroit, « Réglages » et « Commandes » sont exclusifs : ouvrir l'un replie
  * l'autre, pour que leurs textes ne se superposent pas (#136, `EXCLUSIVE_PANELS`).
+ * Le wiki des espèces (#287) est exclusif avec tous les autres panneaux, à toute largeur : il
+ * occupe la droite de l'écran, comme « Commandes », et la place de « Réglages » sur téléphone.
  * Le signal « prêt » du contrat de capture est émis par `AquariumHost` après la première
  * image complète (docs/ARCHITECTURE.md, « Contrat de capture »).
  */
@@ -30,6 +33,7 @@ import { ViewPresetsBar } from './ui/view-presets-bar/view-presets-bar';
     DashboardStatus,
     DayIndicator,
     DecorEditor,
+    SpeciesWiki,
     ViewPresetsBar,
   ],
   templateUrl: './app.html',
@@ -48,12 +52,14 @@ export class App {
   private readonly help = viewChild<CommandsHelp>('help');
   private readonly panel = viewChild<ControlPanel>('panel');
   private readonly aquarium = viewChild<AquariumHost>('aquarium');
+  private readonly wiki = viewChild<SpeciesWiki>('wiki');
 
   /**
    * « Commandes » déplié : replie « Réglages » et quitte l'éditeur de décor sur écran étroit
    * (#136, #167).
    */
   protected onHelpOpened(): void {
+    this.wiki()?.close();
     if (this.exclusivePanels()) {
       this.panel()?.close();
       this.aquarium()?.setDecorEditing(false);
@@ -65,6 +71,7 @@ export class App {
    * replie « Commandes » sur écran étroit (#136).
    */
   protected onPanelOpened(): void {
+    this.wiki()?.close();
     this.aquarium()?.setDecorEditing(false);
     if (this.exclusivePanels()) {
       this.help()?.fold();
@@ -76,10 +83,21 @@ export class App {
    * écran étroit, celle de « Commandes ».
    */
   protected onEditRequested(): void {
+    this.wiki()?.close();
     this.panel()?.close();
     if (this.exclusivePanels()) {
       this.help()?.fold();
     }
     this.aquarium()?.setDecorEditing(true);
+  }
+
+  /**
+   * Wiki des espèces déplié (#287) : replie « Réglages » et « Commandes » (sans mémoriser ce
+   * repli) et quitte l'éditeur de décor, à toute largeur.
+   */
+  protected onWikiOpened(): void {
+    this.panel()?.close();
+    this.help()?.fold();
+    this.aquarium()?.setDecorEditing(false);
   }
 }

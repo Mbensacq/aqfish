@@ -400,6 +400,29 @@ test.describe('Captures', () => {
     expect(errors).toEqual([]);
   });
 
+  // Wiki des espèces (#287), fiche du néon ouverte, trois-quarts, bureau et téléphone :
+  // simulation à l'arrêt dès t = 0. Captures d'interface, comme ci-dessus.
+  for (const shot of [
+    { name: 'three-quarter-wiki-fiche', width: 1280, height: 720 },
+    { name: 'telephone-wiki-fiche', width: 390, height: 844 },
+  ]) {
+    test(`wiki des espèces : ${shot.name}`, async ({ page }) => {
+      const errors: string[] = [];
+      page.on('pageerror', (error) => errors.push(error.message));
+      await page.setViewportSize({ width: shot.width, height: shot.height });
+      await page.goto(`/?seed=${SEED}&camera=three-quarter&heure=12&vitesse=0`);
+      await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+      await page.getByRole('button', { name: 'Wiki des espèces' }).click();
+      await page.locator('#wiki-especes [data-wiki-species="neon"]').click();
+      await expect(page.locator('[data-wiki-sheet="neon"]')).toBeVisible();
+      await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-tick', '0');
+      // Souris hors des panneaux : opacité de repos des boutons.
+      await page.mouse.move(shot.width / 2, shot.height / 2);
+      await page.screenshot({ path: join(OUTPUT_DIR, `${shot.name}.png`), animations: 'disabled' });
+      expect(errors).toEqual([]);
+    });
+  }
+
   // Section « Eau » (#207) à 390 px : panneau ouvert, section amenée en vue, simulation à
   // l'arrêt dès t = 0. Capture d'interface, comme ci-dessus.
   test('téléphone avec la section « Eau » ouverte', async ({ page }) => {
