@@ -3467,10 +3467,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-28T16:03:33.405Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-28T16:04:37.281Z",
+          "note": "Issue #239 : feuilles de catappa, soin et eau teintée (M)"
         }
       },
       "metriques": {}
