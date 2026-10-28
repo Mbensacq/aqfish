@@ -76,13 +76,13 @@ test.describe('Eau (#207)', () => {
     await openPanel(page);
     await importPollutedTank(page);
     await heater(page).fill('28');
-    await expect(hostEl(page)).toHaveAttribute('data-aqfish-water', /^[a-z-]+;25;28;/);
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-water', /^[a-z-]+;24;28;/);
     await expect(section(page)).toContainText('28,0 °C');
 
     // `pagehide` au rechargement : la sauvegarde est écrite avant de quitter.
     await page.reload();
     await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
-    await expect(hostEl(page)).toHaveAttribute('data-aqfish-water', /^[a-z-]+;25;28;/);
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-water', /^[a-z-]+;24;28;/);
     await openPanel(page);
     await expect(heater(page)).toHaveValue('28');
     await expect(section(page)).toContainText('28,0 °C');

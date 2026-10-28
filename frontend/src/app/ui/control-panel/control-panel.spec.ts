@@ -82,7 +82,7 @@ describe('fonctions du panneau de contrôle', () => {
   });
 
   it('heaterText : consigne seule une fois atteinte, sinon avec la température de l’eau', () => {
-    expect(heaterText(DEFAULT_WATER_READOUT)).toBe('25,0 °C');
+    expect(heaterText(DEFAULT_WATER_READOUT)).toBe('24,0 °C');
     expect(heaterText({ ...DEFAULT_WATER_READOUT, target: 28, temperature: 25.3 })).toBe(
       '28,0 °C · eau 25,3 °C',
     );
@@ -797,8 +797,8 @@ describe('ControlPanel', () => {
       expect(heater().min).toBe(String(MIN_HEATER_TEMPERATURE));
       expect(heater().max).toBe(String(MAX_HEATER_TEMPERATURE));
       expect(heater().step).toBe(String(HEATER_SLIDER_STEP));
-      expect(heater().value).toBe('25');
-      expect(section().textContent).toContain('25,0 °C');
+      expect(heater().value).toBe('24');
+      expect(section().textContent).toContain('24,0 °C');
       fixture.componentInstance.water.set({
         ...DEFAULT_WATER_READOUT,
         target: 28.5,

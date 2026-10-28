@@ -44,13 +44,19 @@ describe('populations par défaut cohérentes (#271)', () => {
       expect(WATER_TEMPERATURES[env], `${env}/${id}`).toBeGreaterThanOrEqual(tolerated.min);
       expect(WATER_TEMPERATURES[env], `${env}/${id}`).toBeLessThanOrEqual(tolerated.max);
     }
-    // Environnements revus à l'issue #271 : l'eau tombe dans la plage préférée commune (le
-    // bac tropical, à 25 °C, dépasse d'un degré la plage préférée approximative du corydoras,
-    // 22–24 °C, sans sortir de sa plage tolérée : hors du périmètre de #271).
-    if (env === 'paludarium' || env === 'eaufroide') {
-      expect(WATER_TEMPERATURES[env], env).toBeGreaterThanOrEqual(low);
-      expect(WATER_TEMPERATURES[env], env).toBeLessThanOrEqual(high);
-    }
+    // Dans chaque environnement, l'eau tombe dans la plage préférée commune (#286, ADR 0067 :
+    // le bac tropical, longtemps à 25 °C, dépassait celle du corydoras, 22–24 °C).
+    expect(WATER_TEMPERATURES[env], env).toBeGreaterThanOrEqual(low);
+    expect(WATER_TEMPERATURES[env], env).toBeLessThanOrEqual(high);
+  });
+
+  it('bac tropical : 24 °C, dans la plage préférée commune 23–24 °C (#286, ADR 0067)', () => {
+    const ranges = defaultSpecies('tropical').map(
+      (id) => speciesSheet(id).temperaturePreferred.value,
+    );
+    expect(Math.max(...ranges.map((r) => r.min))).toBe(23);
+    expect(Math.min(...ranges.map((r) => r.max))).toBe(24);
+    expect(WATER_TEMPERATURES.tropical).toBe(24);
   });
 
   it.each(ENVIRONMENT_IDS)('%s : pH de l’eau neuve toléré par chaque espèce', (env) => {

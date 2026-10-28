@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 
-import { freshWater } from '../../sim/water';
+import { freshWater, WATER_TEMPERATURES } from '../../sim/water';
 import {
   DEFAULT_WATER_SAMPLE,
   TREND_WINDOW_TICKS,
@@ -160,7 +160,7 @@ describe('DashboardFrame (#256)', () => {
       expect(level.textContent?.trim()).toMatch(/^(Bon|Idéal)$/);
       expect(level.querySelectorAll('svg rect').length).toBeGreaterThan(0);
     }
-    expect(value('temperature')).toBe('25,0');
+    expect(value('temperature')).toBe('24,0');
     expect(gauge('temperature')?.textContent).toContain('°C');
     expect(gauge('nitrate')?.textContent).toContain('u.');
     expect(value('ph')).toBe('7,0');
@@ -240,7 +240,8 @@ describe('DashboardFrame (#256)', () => {
   });
 
   it('tendance : flèche et texte lu suivent les relevés successifs (fenêtre en pas)', async () => {
-    const tropical = (tick: number, nitrate: number, temperature = 25): WaterSample => ({
+    const reference = WATER_TEMPERATURES.tropical;
+    const tropical = (tick: number, nitrate: number, temperature = reference): WaterSample => ({
       ...waterSample(freshWater('tropical'), 'tropical', tick),
       nitrate,
       temperature,
@@ -248,7 +249,7 @@ describe('DashboardFrame (#256)', () => {
     fixture.componentInstance.sample.set(tropical(0, 10));
     await fixture.whenStable();
     expect(gauge('nitrate')?.getAttribute('data-trend')).toBe('stable');
-    fixture.componentInstance.sample.set(tropical(TREND_WINDOW_TICKS / 2, 11, 24));
+    fixture.componentInstance.sample.set(tropical(TREND_WINDOW_TICKS / 2, 11, reference - 1));
     await fixture.whenStable();
     expect(gauge('nitrate')?.getAttribute('data-trend')).toBe('hausse');
     expect(gauge('temperature')?.getAttribute('data-trend')).toBe('baisse');

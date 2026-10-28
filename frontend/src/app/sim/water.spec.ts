@@ -219,12 +219,13 @@ describe('stepWaterInPlace', () => {
   });
 
   it('température : tend vers celle visée, sans la dépasser', () => {
+    const target = WATER_TEMPERATURES.tropical;
     const cold = run({ ...freshWater('tropical'), temperature: 15 }, minutes(60), 0);
-    expect(cold.temperature).toBeGreaterThan(24.9);
-    expect(cold.temperature).toBeLessThanOrEqual(25);
+    expect(cold.temperature).toBeGreaterThan(target - 0.1);
+    expect(cold.temperature).toBeLessThanOrEqual(target);
     const hot = run({ ...freshWater('tropical'), temperature: 35 }, minutes(5), 0);
     expect(hot.temperature).toBeLessThan(35);
-    expect(hot.temperature).toBeGreaterThan(25);
+    expect(hot.temperature).toBeGreaterThan(target);
   });
 
   it('ramène un filtre hors bornes dans [0, 1]', () => {

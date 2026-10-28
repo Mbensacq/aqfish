@@ -70,7 +70,7 @@ for (const viewport of VIEWPORTS) {
       }
       const temperature = dashboard(page).locator('[data-gauge="temperature"]');
       await expect(temperature).toContainText('Temp.');
-      await expect(temperature).toContainText('25,0');
+      await expect(temperature).toContainText('24,0');
       await expect(temperature).toContainText('°C');
       await expect(temperature.locator('[data-level-label]')).toHaveText('Bon');
       await expect(temperature.locator('[data-level-label] svg rect').first()).toBeAttached();
