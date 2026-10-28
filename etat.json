@@ -3543,6 +3543,12 @@
           "debut": "2026-10-28T23:05:26.388Z",
           "fin": "2026-10-28T23:05:56.577Z",
           "note": "Issue #302 : suites de la revue du guide du débutant + #296 (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-10-28T23:06:21.263Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
