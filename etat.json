@@ -3359,10 +3359,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-28T07:32:21.490Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-28T07:33:13.918Z",
+          "note": "Issue #291 : Wiki des espèces, lot 2/2 (M)"
         }
       },
       "metriques": {}
