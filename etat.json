@@ -3293,10 +3293,10 @@
           "note": "Issue #289 : suites revue wiki + mutation water-dashboard #267 (S/M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-28T02:17:04.894Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-28T03:26:20.906Z",
+          "note": "PR #290 : wiki 288 px + Échap global (#289), mutation water-dashboard 74,9→88,9 % (#267), CI verte ; 89/90 captures identiques à main"
         }
       },
       "metriques": {}
