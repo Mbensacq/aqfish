@@ -3261,6 +3261,12 @@
           "debut": "2026-10-28T00:05:02.219Z",
           "fin": "2026-10-28T01:03:38.706Z",
           "note": "PR #288 : wiki des espèces 1/2 (recherche, liste, fiche, ajout ; ADR 0066), CI verte ; bouton en haut sous 900 px faute de place en bas à droite"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-10-28T01:04:02.018Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
