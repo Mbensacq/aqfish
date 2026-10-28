@@ -389,6 +389,26 @@ test.describe('Sauvegarde (#70)', () => {
     expect(errors).toEqual([]);
   });
 
+  test('ancienne sauvegarde au schéma 1 avec états par environnement (#264) : l’autre bac est repris', async ({
+    page,
+  }) => {
+    const tropical = setPopulation(advance(createDefaultWorld(5, 'tropical'), 200), 'guppy', 4);
+    const pond = setPopulation(advance(createDefaultWorld(5, 'bassin'), 200), 'koi', 3);
+    const legacy = serializeWorld(pond, { speed: 1, clock: createDayClock(9, 1200, false) }, [
+      tropical,
+    ]);
+    expect(legacy.startsWith('{"format":"aqfish","schema":1,')).toBe(true);
+    await page.addInitScript((text) => localStorage.setItem('aqfish.sauvegarde', text), legacy);
+    const errors = await open(page);
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'bassin');
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /(^|,)koi:3(,|$)/);
+    await toggle(page).click();
+    await page.getByRole('combobox', { name: 'Environnement' }).selectOption('tropical');
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'tropical');
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /(^|,)guppy:4(,|$)/);
+    expect(errors).toEqual([]);
+  });
+
   test('fichiers hostiles : refusés avec un message, bac inchangé', async ({ page }) => {
     const errors = await open(page);
     await openPanel(page);
