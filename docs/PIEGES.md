@@ -180,6 +180,13 @@ haut de sa section.
 
 ## Tests
 
+- **Panneau à droite à 1280 × 720 : le bac finit à 968 px** (cycle 89, #289) : en
+  trois-quarts, le bord droit du bac par défaut est à x = 968 px (capture `three-quarter`) ;
+  un panneau collé à 12 px du bord droit le recouvre au-delà de 300 px de large (wiki :
+  340 px au cycle 88 ; « Commandes », 300 px, le touche). Le wiki fait 288 px. Mesurer le
+  bord du bac sur la capture sans interface avant d'élargir un panneau de droite.
+  (2026-10-28)
+
 - **Plus de place en bas à droite sous 900 px de large** (cycle 88, #287) : la barre des
   vues fait 660 px sur une ligne (54 px libres à droite à 768 px, rien à 640 px) puis deux
   lignes de 280 px sous 481 px (20 px libres à droite à 320 px). Un bouton d'interface « en
@@ -409,6 +416,15 @@ haut de sa section.
   session, ou `--ignoreStatic` en le signalant (le score n'est alors plus comparable).
   Installer ces paquets avec `npx -y npm@11 install` (bogue `edgesOut` de npm 10).
   (2026-10-25)
+- **Mutation : survivant « statique » avec 0 test exécuté = plantage au chargement** (cycle
+  89, #267) : dans `water-dashboard.ts`, 23 survivants restaient après des tests précis
+  (tableau `DASHBOARD_GAUGES` comparé à la lettre, niveau de chaque jauge), tous `static`
+  avec `testsCompleted: 0` dans `reports/mutation/mutation.json`. Le mutant casse une
+  constante calculée au chargement (`DEFAULT_DASHBOARD_GAUGES` : `GAUGE_UNITS['']`
+  indéfini, `COMPOUND_THRESHOLDS['temperature']`) : le fichier de test ne se charge pas,
+  aucun test ne tourne, et Stryker le compte comme survivant. Ne pas écrire de test pour
+  eux : lire `testsCompleted` avant de chercher, et le dire dans la PR. `x + 0` → `x - 0`
+  dans `formatTenth` est équivalent (`(-0).toFixed(1)` vaut `"0.0"`). (2026-10-28)
 - **Tests de mutation : délais explicites sous code instrumenté** (#66) : le code instrumenté
   par Stryker est ~5 à 10 fois plus lent. `testTimeout` ne suffit pas : un délai explicite
   (`it(nom, fn, 15_000)`, y compris `it.each(table)(nom, fn, 15_000)`) prime sur la

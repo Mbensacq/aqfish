@@ -21,7 +21,12 @@ import {
   type WaterSample,
 } from './water-dashboard';
 import { MAX_PH, MIN_PH, phBands, phZone } from './water-ph';
-import { COMPOUND_THRESHOLDS, DEFAULT_WATER_READOUT, waterReadout } from './water-quality';
+import {
+  COMPOUND_THRESHOLDS,
+  DEFAULT_WATER_READOUT,
+  gaugeFill,
+  waterReadout,
+} from './water-quality';
 
 /** Relevé du bac tropical au pas `tick`, valeurs modifiées par `patch`. */
 function sample(tick: number, patch: Partial<WaterSample> = {}): WaterSample {
@@ -120,6 +125,45 @@ describe('tableau de bord de l’eau (#256)', () => {
       // Exactement deux fenêtres : même monde, la base avance.
       const edge = sample(3 * TREND_WINDOW_TICKS);
       expect(nextTrendState(start, edge).base?.tick).toBe(TREND_WINDOW_TICKS);
+    });
+
+    it('relevé au même pas que le dernier point : mémoire inchangée, jamais remise à zéro (#267)', () => {
+      const start = nextTrendState(
+        nextTrendState(EMPTY_TREND_STATE, sample(0)),
+        sample(TREND_WINDOW_TICKS),
+      );
+      const same = sample(TREND_WINDOW_TICKS, { nitrate: 30 });
+      expect(nextTrendState(start, same)).toBe(start);
+      // Fenêtre passée en paramètre : la base avance dès `window` pas.
+      const short = nextTrendState(nextTrendState(EMPTY_TREND_STATE, sample(0)), sample(10), 10);
+      expect(short.base?.tick).toBe(0);
+      expect(nextTrendState(short, sample(31), 10)).toEqual({ base: null, checkpoint: sample(31) });
+    });
+
+    it('référence au même pas que le relevé : stable même si les valeurs diffèrent (#267)', () => {
+      const state = nextTrendState(EMPTY_TREND_STATE, sample(50, { nitrate: 0 }));
+      expect(gaugeTrends(state, sample(50, { nitrate: 30, ph: 5 }))).toEqual(STABLE_TRENDS);
+      // Un pas plus tard, les mêmes écarts comptent.
+      expect(gaugeTrends(state, sample(51, { nitrate: 30, ph: 5 }))).toMatchObject({
+        nitrate: 'hausse',
+        ph: 'baisse',
+      });
+    });
+
+    it('chaque jauge compare sa propre valeur ; la base prime sur le dernier point (#267)', () => {
+      const base = sample(0);
+      const checkpoint = sample(TREND_WINDOW_TICKS, { ammonia: 5, nitrite: 5, temperature: 30 });
+      const state: TrendState = { base, checkpoint };
+      const now = sample(TREND_WINDOW_TICKS + 30, { ammonia: 1, nitrite: 1, temperature: 26 });
+      // Par rapport à la base (eau neuve) : tout monte ; par rapport au dernier point, tout
+      // baisserait.
+      expect(gaugeTrends(state, now)).toEqual({
+        temperature: 'hausse',
+        ammonia: 'hausse',
+        nitrite: 'hausse',
+        nitrate: 'stable',
+        ph: 'stable',
+      });
     });
 
     it('bac tropical par défaut : nitrates en hausse et pH en baisse dans les seuils', () => {
@@ -259,6 +303,93 @@ describe('tableau de bord de l’eau (#256)', () => {
         expect(gauge.fill).toBe(0);
         expect(gauge.trend).toBe('stable');
       }
+    });
+
+    it('remplissage et niveau de chaque jauge selon sa propre échelle (#267)', () => {
+      // Valeurs choisies pour que les trois formules donnent trois parts différentes.
+      const water = sample(0, {
+        temperature: 20,
+        ammonia: 1.5,
+        nitrite: 3,
+        nitrate: 45,
+        ph: 5.375,
+      });
+      const gauges = dashboardGauges(water, { phZone: 'tolere' });
+      expect(gauges.map((g) => [g.id, g.fill])).toEqual([
+        ['temperature', 0.25],
+        ['ammonia', gaugeFill('ammonia', 1.5)],
+        ['nitrite', gaugeFill('nitrite', 3)],
+        ['nitrate', gaugeFill('nitrate', 45)],
+        ['ph', 0.25],
+      ]);
+      expect(gauges.map((g) => g.fill)).toEqual([0.25, 0.2, 0.4, 0.75, 0.25]);
+      expect(gauges.map((g) => [g.level, g.levelLabel])).toEqual([
+        ['orange', 'À surveiller'],
+        ['vert', 'Bon'],
+        ['orange', 'À surveiller'],
+        ['rouge', 'Critique'],
+        ['orange', 'Toléré'],
+      ]);
+    });
+
+    it('niveau du pH : zone de l’espèce (`phZone`), pas la valeur seule (#267)', () => {
+      const ph = (zone: 'ideal' | 'tolere' | 'hors-plage') =>
+        dashboardGauges(sample(0, { ph: 7 }), { phZone: zone }).at(-1);
+      expect(ph('ideal')).toMatchObject({ level: 'vert', levelLabel: 'Idéal' });
+      expect(ph('tolere')).toMatchObject({ level: 'orange', levelLabel: 'Toléré' });
+      expect(ph('hors-plage')).toMatchObject({ level: 'rouge', levelLabel: 'Hors plage' });
+      // Température : écart à celle de l'environnement, quelle que soit la zone du pH.
+      const hot = dashboardGauges(sample(0, { temperature: 31 }), { phZone: 'ideal' })[0];
+      expect(hot).toMatchObject({ level: 'rouge', levelLabel: 'Critique' });
+    });
+
+    it('libellés : noms, unités et texte lu de chaque jauge, chaque tendance (#267)', () => {
+      expect(DASHBOARD_GAUGES).toEqual(['temperature', 'ammonia', 'nitrite', 'nitrate', 'ph']);
+      const water = sample(0, {
+        temperature: 20,
+        ammonia: 1.5,
+        nitrite: 3,
+        nitrate: 45,
+        ph: 5.375,
+      });
+      const gauges = dashboardGauges(
+        water,
+        { phZone: 'hors-plage' },
+        {
+          temperature: 'hausse',
+          ammonia: 'baisse',
+          nitrite: 'stable',
+          nitrate: 'hausse',
+          ph: 'baisse',
+        },
+      );
+      expect(gauges.map((g) => [g.label, g.name, g.unit, g.value, g.trend])).toEqual([
+        ['Temp.', 'Température', '°C', '20,0', 'hausse'],
+        ['NH₃/NH₄⁺', 'Ammoniaque (NH₃/NH₄⁺)', 'u.', '1,5', 'baisse'],
+        ['NO₂⁻', 'Nitrites (NO₂⁻)', 'u.', '3,0', 'stable'],
+        ['NO₃⁻', 'Nitrates (NO₃⁻)', 'u.', '45,0', 'hausse'],
+        ['pH', 'pH', '', '5,4', 'baisse'],
+      ]);
+      expect(gauges.map((g) => g.spoken)).toEqual([
+        'Température : 20,0 degrés, à surveiller, en hausse',
+        'Ammoniaque (NH₃/NH₄⁺) : 1,5 unités de jeu, bon, en baisse',
+        'Nitrites (NO₂⁻) : 3,0 unités de jeu, à surveiller, stable',
+        'Nitrates (NO₃⁻) : 45,0 unités de jeu, critique, en hausse',
+        'pH : 5,4, hors plage, en baisse',
+      ]);
+    });
+
+    it('waterSample recopie chaque valeur de l’eau, le pas et l’environnement (#267)', () => {
+      const water = { ...freshWater('bassin'), temperature: 18.5, ammonia: 0.1, nitrite: 0.2 };
+      expect(waterSample({ ...water, nitrate: 0.3, ph: 7.4 }, 'bassin', 42)).toEqual({
+        tick: 42,
+        environment: 'bassin',
+        temperature: 18.5,
+        ammonia: 0.1,
+        nitrite: 0.2,
+        nitrate: 0.3,
+        ph: 7.4,
+      });
     });
 
     it('relevé par défaut cohérent avec le relevé arrondi de l’interface', () => {
