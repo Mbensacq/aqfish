@@ -128,6 +128,8 @@ test.describe('Wiki des espèces (#287)', () => {
   test('pages « Produits » et « Maladies » au clavier, à 1280 et 390 px (#291)', async ({
     page,
   }) => {
+    // Deux chargements de la scène : le double du délai par défaut.
+    test.setTimeout(240_000);
     for (const viewport of [
       { width: 1280, height: 720 },
       { width: 390, height: 844 },
