@@ -3363,6 +3363,12 @@
           "debut": "2026-10-28T07:32:21.490Z",
           "fin": "2026-10-28T07:33:13.918Z",
           "note": "Issue #291 : Wiki des espèces, lot 2/2 (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-10-28T07:33:40.756Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
