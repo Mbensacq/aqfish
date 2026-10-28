@@ -74,7 +74,7 @@ test.describe('Wiki des espèces (#287)', () => {
     expect(errors).toEqual([]);
   });
 
-  test('au clavier : Entrée ouvre, Tab cherche et choisit, Échap remonte puis ferme', async ({
+  test('au clavier : Entrée ouvre, Tab cherche et choisit, Échap remonte puis ferme, focus hors du wiki compris', async ({
     page,
   }) => {
     const errors = await open(page);
@@ -105,6 +105,20 @@ test.describe('Wiki des espèces (#287)', () => {
     await page.keyboard.press('Escape');
     await expect(wiki(page)).toHaveCount(0);
     await expect(toggle(page)).toBeFocused();
+
+    // #289 : après un clic sur la scène (focus hors du wiki), Échap ferme encore la fiche,
+    // puis le wiki. Clic à gauche du bac, sur le fond de la pièce.
+    await page.keyboard.press('Enter');
+    await list(page, 'present').first().click();
+    await expect(sheet(page)).toHaveCount(1);
+    await page.mouse.click(120, 400);
+    await expect(wiki(page)).toBeVisible();
+    expect(await page.evaluate(() => document.activeElement?.closest('#wiki-especes'))).toBeNull();
+    await page.keyboard.press('Escape');
+    await expect(sheet(page)).toHaveCount(0);
+    await page.mouse.click(120, 400);
+    await page.keyboard.press('Escape');
+    await expect(wiki(page)).toHaveCount(0);
     expect(errors).toEqual([]);
   });
 

@@ -30,7 +30,13 @@ l'environnement courant à la fois. L'idée, estimée L, est découpée en deux 
    `populationChanged`, branchée sur `AquariumHost.setPopulation`. « Ajouter au bac » demande
    **un individu de plus**, comme « + » ; les avertissements d'ajout (#237) s'affichent dans
    la fiche, recalculés sur le bac courant. Échap ferme la fiche (retour à la liste, focus
-   sur l'espèce), puis le wiki (focus sur le bouton).
+   sur l'espèce), puis le wiki (focus sur le bouton), **où que soit le focus** (écouteur
+   sur le document, cycle 89, #289) : après un clic sur la scène, le focus n'est plus dans
+   le wiki et Échap ne faisait plus rien. Sans effet wiki fermé ou si la touche a déjà été
+   traitée (`defaultPrevented`). « Commandes » et « Réglages » ne se ferment pas à Échap
+   (seule la fiche d'espèce de « Réglages » le fait, focus dedans) : le wiki, qui couvre la
+   droite du bac et toute la largeur sur téléphone, se comporte comme une fenêtre qu'on
+   congédie ; aligner les deux autres serait un changement de comportement à part.
 3. **Place à l'écran** (mesurée à 1280, 900, 768, 640, 390 et 320 px de large) :
    - bouton « Wiki » **en bas à droite** au-delà de 899 px, à côté de la barre des vues ;
      en dessous, la barre (660 px, ou deux lignes sur téléphone) ne laisse plus de place à
@@ -38,7 +44,10 @@ l'environnement courant à la fois. L'idée, estimée L, est découpée en deux 
      145 px sous 481 px, où il reste 47 px avant « Commandes » replié à 320 px : texte en
      12 px, rembourrage de 5 px) ;
    - panneau à droite sous la ligne des boutons du haut (sous le tableau de bord entre 640 et
-     1099 px, comme « Commandes »), pleine largeur sous 640 px, au-dessus de la barre.
+     1099 px, comme « Commandes »), pleine largeur sous 640 px, au-dessus de la barre ;
+   - largeur **288 px** (340 au cycle 88) : à 1280 × 720 en trois-quarts, le bord droit du
+     bac est à 968 px, le panneau commence à 980 px et ne le recouvre plus (#289). La fiche la
+     plus longue (néon) y tient encore sans défiler en local ; au-delà, le panneau défile.
 4. **Exclusif avec tous les panneaux, à toute largeur** : le wiki occupe la droite comme
    « Commandes », et toute la largeur sur téléphone. L'ouvrir replie « Réglages » et
    « Commandes » (repli non mémorisé) et quitte l'éditeur de décor ; ouvrir l'un d'eux le

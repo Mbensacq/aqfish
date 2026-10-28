@@ -40,7 +40,8 @@ export function wikiAddCount(
  * ligne des boutons du haut sur écran étroit), panneau flottant avec une recherche, la liste
  * des espèces du bac et de celles qu'on peut y ajouter, et la fiche de chacune
  * (`sim/species-wiki.ts`). Exclusif avec « Réglages » et « Commandes » : c'est l'application
- * qui replie les autres (`opened`, `close`). Échap ferme la fiche, puis le wiki.
+ * qui replie les autres (`opened`, `close`). Échap ferme la fiche, puis le wiki, où que soit
+ * le focus (#289) : après un clic sur la scène, il n'est plus dans le wiki.
  */
 @Component({
   selector: 'app-species-wiki',
@@ -164,7 +165,7 @@ export function wikiAddCount(
     }`,
   styleUrl: './species-wiki.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { '(keydown.escape)': 'onEscape($event)' },
+  host: { '(document:keydown.escape)': 'onEscape($event)' },
 })
 export class SpeciesWiki {
   /** Environnement affiché : ses espèces sont les seules ajoutables. */
@@ -277,12 +278,15 @@ export class SpeciesWiki {
     }
   }
 
-  /** Échap : ferme la fiche ouverte, sinon le wiki ; ne remonte pas plus haut. */
+  /**
+   * Échap, écouté sur le document (#289) : ferme la fiche ouverte, sinon le wiki, même si le
+   * focus a quitté le wiki (clic sur la scène). Sans effet wiki fermé, ou si un autre élément
+   * a déjà traité la touche (`defaultPrevented`, comme l'éditeur de décor).
+   */
   protected onEscape(event: Event): void {
-    if (!this.open()) {
+    if (!this.open() || event.defaultPrevented) {
       return;
     }
-    event.stopPropagation();
     if (this.selected() !== null) {
       this.back();
     } else {

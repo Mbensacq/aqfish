@@ -157,6 +157,42 @@ describe('SpeciesWiki (#287)', () => {
     root().remove();
   });
 
+  it('Échap hors du wiki (focus sur la page, #289) : ferme la fiche, puis le wiki', async () => {
+    document.body.appendChild(root());
+    await openWiki();
+    item('corydora').click();
+    await fixture.whenStable();
+    (document.activeElement as HTMLElement | null)?.blur();
+    escape(document.body);
+    await fixture.whenStable();
+    expect(sheet()).toBeNull();
+    expect(panel()).not.toBeNull();
+    (document.activeElement as HTMLElement | null)?.blur();
+    escape(document.body);
+    await fixture.whenStable();
+    expect(panel()).toBeNull();
+    expect(document.activeElement).toBe(toggle());
+    root().remove();
+  });
+
+  it('Échap déjà traité ailleurs, ou wiki fermé : sans effet', async () => {
+    document.body.appendChild(root());
+    const handled = new KeyboardEvent('keydown', {
+      key: 'Escape',
+      bubbles: true,
+      cancelable: true,
+    });
+    handled.preventDefault();
+    escape(document.body);
+    await fixture.whenStable();
+    expect(panel()).toBeNull();
+    await openWiki();
+    document.body.dispatchEvent(handled);
+    await fixture.whenStable();
+    expect(panel()).not.toBeNull();
+    root().remove();
+  });
+
   it('fermer oublie la recherche et la fiche ; un autre environnement referme la fiche', async () => {
     await openWiki();
     await search('cory');
