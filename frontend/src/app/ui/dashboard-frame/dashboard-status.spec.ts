@@ -9,7 +9,9 @@ import { DEFAULT_WATER_SAMPLE, type WaterSample } from '../../sim/water-dashboar
 import { DEFAULT_WATER_READOUT } from '../../sim/water-quality';
 import { HEALTH_FLOOR } from '../../sim/wellbeing';
 import { DASHBOARD_COLORS, DASHBOARD_REST_OPACITY, DashboardFrame } from './dashboard-frame';
-import { alertDetailId, DashboardStatus, SEVERITY_LEVELS } from './dashboard-status';
+import { ALERT_TOPICS } from '../../sim/beginner-help';
+import { BeginnerGuideState } from '../beginner-guide/beginner-guide-state';
+import { alertDetailId, alertWhyLabel, DashboardStatus, SEVERITY_LEVELS } from './dashboard-status';
 
 const STARVED: HealthSummary = healthSummary(
   Array.from({ length: 4 }, () => ({ species: 'neon' as const, health: HEALTH_FLOOR, hunger: 1 })),
@@ -130,6 +132,24 @@ describe('DashboardStatus (#260)', () => {
     second!.click();
     await fixture.whenStable();
     expect(root().querySelector('[data-alert-detail]')).toBeNull();
+  });
+
+  it('« Pourquoi ? » sous une alerte dépliée : ouvre le guide sur l’explication liée (#240)', async () => {
+    const guide = TestBed.inject(BeginnerGuideState);
+    const show = vi.spyOn(guide, 'show');
+    fixture.componentInstance.alarm();
+    await fixture.whenStable();
+    chips()[0]!.click();
+    await fixture.whenStable();
+    const why = root().querySelector<HTMLButtonElement>('[data-alert-why="ammonia"]')!;
+    expect(why.textContent?.trim()).toBe('Pourquoi ?');
+    expect(why.getAttribute('aria-haspopup')).toBe('dialog');
+    expect(why.getAttribute('aria-label')).toBe(alertWhyLabel('ammonia'));
+    expect(alertWhyLabel('ammonia')).toBe('Pourquoi ? Le cycle de l’azote');
+    why.click();
+    expect(show).toHaveBeenCalledWith(ALERT_TOPICS.ammonia);
+    expect(guide.topic()).toBe('azote');
+    guide.hide();
   });
 
   it('alertes calculées depuis l’eau et la santé reçues, ordonnées par gravité', async () => {
