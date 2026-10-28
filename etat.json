@@ -3507,6 +3507,12 @@
           "debut": "2026-10-28T19:09:27.171Z",
           "fin": "2026-10-28T19:12:18.997Z",
           "note": "Issue #240 : aides pour débutant, Pourquoi ? et guide en 5 étapes (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-10-28T19:12:50.200Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
