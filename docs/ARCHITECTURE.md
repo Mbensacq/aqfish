@@ -65,27 +65,37 @@ simulation testable et les captures reproductibles.
   `food`, `nextFoodId`) est un objet
   de données simple (JSON), sans classe Three.js ni référence circulaire. Il sert à la
   sauvegarde, aux tests et aux captures.
-- **Sauvegarde** (#70, ADR 0028, `sim/save.ts`) : `serializeWorld` écrit un JSON versionné
-  (`format: "aqfish"`, `schema: 1` : graine, environnement, `tick`, décor, poissons avec
+- **Sauvegarde** (#70, ADR 0028, `sim/save.ts`) : l'application écrit le **schéma 2** de la
+  pièce (`serializeRoom`, `sim/room-save.ts`, ci-dessous) ; le corps de chaque bac est celui
+  du schéma 1. `serializeWorld` écrit le schéma 1 (`format: "aqfish"`, `schema: 1` : graine, environnement, `tick`, décor, poissons avec
   l'état de leur sous-générateur, granulés, compteurs, réglages de vitesse et d'horloge ;
   obstacles et temps recalculés) ; `parseWorld` le relit avec une validation stricte qui ne
   lève jamais (`{ ok: false, error }`). Un monde rechargé puis avancé est identique, au bit
-  près, au monde jamais sauvegardé. Tout nouveau champ d'état doit y être ajouté.
+  près, au monde jamais sauvegardé. Tout nouveau champ d'état doit y être ajouté. Le
+  schéma 1 reste lisible (`parseSave` le migre) ; il ne sert plus qu'aux tests et aux
+  fichiers anciens.
 - **Un monde par environnement visité** (#277, ADR 0063, `sim/environment-worlds.ts`) :
   changer d'environnement range le monde quitté et reprend celui de l'environnement choisi
   (`switchEnvironment`) ; un environnement non affiché est **figé** (jamais avancé) ;
   l'heure de la journée continue sans saut (`carryClock`). La sauvegarde écrit les mondes
-  rangés dans le champ facultatif `others` (corps de monde, schéma 1 inchangé). La pièce de
-  N bacs (ci-dessous) remplacera ce mécanisme.
-- **Cible : pièce de N bacs** (#264, ADR 0061, pas encore implémentée) : une pièce
-  (`sim/room-state.ts` à venir) est une liste de mondes `World` **indépendants**, un par bac,
-  avancés du même pas par identifiant croissant, sans aucune lecture croisée ; le bac 0 a la
-  graine de la pièce, les autres une graine dérivée avec une constante de domaine ; horloge
-  de la journée commune. Le bassin à koïs est l'unique bac du jardin, hors de la pièce. La
-  sauvegarde passe au schéma 2 (enveloppe de la pièce, corps du schéma 1 pour chaque bac),
-  avec migration 1 → 2 et copie de l'ancien texte sous `aqfish.sauvegarde.schema1`. L'hôte
-  expose le **bac sélectionné** par ses signaux actuels : tableau de bord, alertes, fiches,
-  wiki et actions lisent ces signaux et ne supposent jamais un bac unique ailleurs.
+  rangés : au schéma 1 dans le champ facultatif `others`, au schéma 2 comme bacs de la pièce
+  (un par environnement visité). La pièce de N bacs (ci-dessous) remplacera ce mécanisme.
+- **Pièce de N bacs** (#264, ADR 0061 et 0069 ; lot 1 livré : modèle et sauvegarde) : une
+  pièce (`sim/room-state.ts`, `RoomState`) est une liste de mondes `World`
+  **indépendants**, un par bac, avec identifiant, nom et lieu (`piece`, ou `jardin` pour le
+  bassin) ; `stepRoom` les avance du même pas par identifiant croissant, sans aucune lecture
+  croisée ; le bac 0 a la graine de la pièce, les autres `tankSeed` (graine dérivée avec la
+  constante `TANK_SEED_SALT`). La sauvegarde est au **schéma 2** (`sim/room-save.ts` :
+  `serializeRoom`, `parseSave`, enveloppe de la pièce et corps du schéma 1 pour chaque bac,
+  graine comprise), avec migration 1 → 2 (`migrateSchema1` : monde affiché en bac 0, mondes
+  de `others` à la suite, graines enregistrées) et copie unique de l'ancien texte sous
+  `aqfish.sauvegarde.schema1` (`core/save-storage`). Lot 1 : l'hôte garde le monde affiché
+  et les mondes rangés (ADR 0063, bacs non sélectionnés figés) et une `RoomState`
+  resynchronisée à chaque sauvegarde (`syncRoom`), avec l'identifiant du bac sélectionné ;
+  au plus un bac par environnement. Meubles, supports et positions des bacs arrivent au
+  lot 2, la liste des bacs et la simulation de tous les bacs au lot 3. L'hôte expose le
+  **bac sélectionné** par ses signaux actuels : tableau de bord, alertes, fiches, wiki et
+  actions lisent ces signaux et ne supposent jamais un bac unique ailleurs.
 - **Eau** (#206, ADR 0052, `sim/water.ts`) : `World.water` (température, ammoniaque,
   nitrites, nitrates en unités de jeu, filtre), eau saine à la création, avancée à chaque
   pas après la nourriture, sur place et sans hasard (ne change ni la nage ni les captures).
@@ -230,7 +240,7 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
 | Fichier | Rôle |
 |---|---|
 | `core/render-filter/render-filter.ts` | Filtre de rendu `pixel` / `aucun` : décodage, bascule, filtre initial, mémorisation tolérante (`aqfish.filtre`) |
-| `core/save-storage/save-storage.ts` | Stockage de la sauvegarde automatique (#70, ADR 0028) : texte opaque sous `aqfish.sauvegarde`, lecture et écriture tolérantes, état `active` / `indisponible` / `plein` |
+| `core/save-storage/save-storage.ts` | Stockage de la sauvegarde automatique (#70, ADR 0028) : texte opaque sous `aqfish.sauvegarde`, lecture et écriture tolérantes, état `active` / `indisponible` / `plein` ; copie unique d'une sauvegarde au schéma 1 sous `aqfish.sauvegarde.schema1` avant la première écriture par-dessus (#264, ADR 0069) |
 | `core/random/prng.ts` | PRNG mulberry32 à graine, dérivation de sous-générateurs par entité |
 | `core/decor-physics/` | Chute d'un élément lâché dans l'éditeur du décor (#170, ADR 0046) : `decor-physics.ts` importe le moteur Rapier et fait tomber la scène décrite par `sim/decor-drop.ts` ; `load-decor-physics.ts` le charge à la demande (`import()` dynamique, hors du bundle initial). Seul endroit du dépôt qui importe Rapier |
 | `core/commands/commands.ts` | Source unique des commandes (ADR 0020) : raccourcis clavier `KEY_COMMANDS` (`keyCommandFor`, `commandKey`), gestes de la caméra `ORBIT_MOUSE_BUTTONS` / `ORBIT_TOUCHES` et leurs libellés (`orbitGestures`), aide-mémoire `helpSections()` |
@@ -241,6 +251,8 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
 | `sim/time-step.ts` | `assertTimeStep` : validation unique d'un pas de temps |
 | `sim/world.ts` | État du monde sérialisable (dont `decor`), `step`, `advance`, `advanceTo`, `advanceInPlace` (boucle d'affichage), `createDefaultWorld` (population et décor par défaut) |
 | `sim/save.ts` | Sauvegarde (#70, ADR 0028) : format JSON versionné (`saveData`, `serializeWorld`), relecture validée (`parseWorld`, `parseSaveData` : bornes, effectifs, propriétés propres seulement, champs inconnus ignorés, schéma inconnu refusé) ; mondes des autres environnements visités dans `others` (#277, ADR 0063) |
+| `sim/room-state.ts` | Pièce de N bacs (#264, ADR 0061 et 0069) : `RoomState` et `RoomTank` (identifiant, nom, lieu, monde), graines des bacs (`tankSeed`), pièce neuve (`createRoom`), pas commun sans lecture croisée (`stepRoom`), bac sélectionné (`resolveSelectedTank`), passage aux mondes de l'hôte du lot 1 (`roomWorlds`, `syncRoom`) |
+| `sim/room-save.ts` | Sauvegarde au schéma 2 (#264, ADR 0069) : `roomSaveData`, `serializeRoom` (256 Kio par bac), relecture validée des schémas 2 et 1 (`parseSave`, `parseRoomSaveData`, ne lève jamais), migration `migrateSchema1`, mondes de l'hôte (`parseSaveWorlds`) |
 | `sim/environment-worlds.ts` | Mondes des environnements visités mais non affichés (#277, ADR 0063) : changement d'environnement pur (`switchEnvironment` : monde quitté rangé, figé ; monde repris ou de départ), liste ordonnée pour la sauvegarde (`stashedList`) et table relue (`stashFromList`) |
 | `sim/population.ts` | Population réglable (#69, ADR 0025) : `setPopulation` (pure) / `setPopulationInPlace` (hôte), bornes `maxPopulation` par espèce et `MAX_TOTAL_FISH`, `populationCounts`, `populationLimits` |
 | `sim/water.ts` | Modèle d'eau (#206, ADR 0052) : `WaterState`, `freshWater`, `stepWaterInPlace` / `stepWater` (charge `waterLoad`, litres `waterLiters`, températures `WATER_TEMPERATURES`), `changeWaterInPlace` / `changeWater`, relecture validée `readWater` ; consigne du chauffage `heater` facultative (#207, ADR 0053 : `setHeaterInPlace`, `targetTemperature`) ; pH `ph` (#236, ADR 0057), remis vers l'eau neuve par `changeWaterInPlace(water, environment)` |
