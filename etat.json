@@ -3411,6 +3411,12 @@
           "debut": "2026-10-28T11:54:57.601Z",
           "fin": "2026-10-28T12:38:59.656Z",
           "note": "Verdict OK, 0 bug, 2825 tests unitaires, 1 e2e ajouté (schéma 1 avec others), captures c092 publiées (89/90 identiques, écart antérieur)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-10-28T12:39:35.171Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
