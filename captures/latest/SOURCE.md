@@ -1,8 +1,8 @@
-# Captures c091
+# Captures c092
 
-- Branche : cycle/c091-wiki-soins
-- PR : #295
-- Commit : cd07e2a
+- Branche : cycle/c092-piece-etat-schema2
+- PR : #298
+- Commit : 6617ca1
 - Graine : celle de captures.spec.ts (inchangée), temps fixé par le mode capture
 - Chromium local 1243 (pas celui de la CI)
-- 87/90 identiques à c090 ; écarts : `three-quarter-wiki-fiche` et `telephone-wiki-fiche` (section « Comparaison avec le bac », voulus) ; `telephone-fiche-espece` (13 pixels au bord du bouton « Fiche », identiques sur `main` : écart antérieur à la PR)
+- 89/90 identiques à c091 ; écart : `telephone-fiche-espece` (déjà signalé au c091, identique sur main : antérieur à la PR)
