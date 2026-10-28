@@ -3323,10 +3323,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-28T04:54:09.266Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-28T04:55:56.564Z",
+          "note": "Issue #293 : Rétro sprint 13, plan sprint 14 (#291, #292, #238-#240), Dev : dette #286/#284 (S)"
         }
       },
       "metriques": {}
