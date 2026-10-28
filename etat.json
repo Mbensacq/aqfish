@@ -3329,10 +3329,10 @@
           "note": "Issue #293 : Rétro sprint 13, plan sprint 14 (#291, #292, #238-#240), Dev : dette #286/#284 (S)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-28T04:56:26.273Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-28T06:00:57.709Z",
+          "note": "PR #294 : bac tropical à 24 °C (ADR 0067), branche féminine testée, sources non vérifiables consignées, ROADMAP sprint 14 ; CI verte, 77/90 captures identiques (13 : texte de température)"
         }
       },
       "metriques": {}
