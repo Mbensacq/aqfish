@@ -13,10 +13,18 @@ import {
 } from '@angular/core';
 
 import { type EnvironmentId, DEFAULT_ENVIRONMENT_ID, environmentById } from '../../sim/environment';
+import {
+  CARE_DISCLAIMER,
+  GUIDE_PAGE_TITLES,
+  GUIDE_PAGES,
+  guideView,
+  type GuidePage,
+} from '../../sim/care-guide';
 import { NO_FISH, type PopulationCounts } from '../../sim/population';
 import { type SpeciesId } from '../../sim/species';
 import { addWarnings, addWarningText } from '../../sim/species-sheet';
-import { wikiLists, wikiSheet } from '../../sim/species-wiki';
+import { tankComparison } from '../../sim/species-care';
+import { wikiCare, wikiLists, wikiSheet } from '../../sim/species-wiki';
 import type { PopulationRequest } from '../control-panel/control-panel';
 
 /** Identifiant du panneau (cible de `aria-controls`). */
@@ -36,11 +44,13 @@ export function wikiAddCount(
 }
 
 /**
- * Wiki des espèces, lot 1/2 (issue #287, ADR 0066) : bouton discret (en bas à droite, dans la
+ * Wiki des espèces (issues #287 et #291, ADR 0066 et 0068) : bouton discret (en bas à droite, dans la
  * ligne des boutons du haut sur écran étroit), panneau flottant avec une recherche, la liste
  * des espèces du bac et de celles qu'on peut y ajouter, et la fiche de chacune
- * (`sim/species-wiki.ts`). Exclusif avec « Réglages » et « Commandes » : c'est l'application
- * qui replie les autres (`opened`, `close`). Échap ferme la fiche, puis le wiki, où que soit
+ * (`sim/species-wiki.ts`) : besoins, comparaison avec l'eau du bac, alimentation, cohabitation ;
+ * deux pages transversales, « Produits et traitements » et « Maladies » (`sim/care-guide.ts`).
+ * Exclusif avec « Réglages » et « Commandes » : c'est l'application
+ * qui replie les autres (`opened`, `close`). Échap ferme la fiche ou la page, puis le wiki, où que soit
  * le focus (#289) : après un clic sur la scène, il n'est plus dans le wiki.
  */
 @Component({
@@ -80,6 +90,29 @@ export function wikiAddCount(
                 <small class="species-wiki__status">{{ item.status }}</small>
               </p>
             }
+            <h4 class="species-wiki__section">Comparaison avec le bac</h4>
+            <dl class="species-wiki__rows">
+              @for (row of comparison(); track row.parameter) {
+                <div
+                  class="species-wiki__row"
+                  [attr.data-wiki-compare]="row.parameter"
+                  [attr.data-fit]="row.fit"
+                >
+                  <dt>{{ row.label }}</dt>
+                  <dd>
+                    Bac : {{ row.tank }} ;
+                    <strong class="species-wiki__fit">{{ row.fitLabel }}</strong>
+                    <small class="species-wiki__status"
+                      >Préférée : {{ row.preferred }}
+                      @if (row.fit !== 'dans-la-plage') {
+                        ; {{ row.gap }}
+                      }
+                    </small>
+                  </dd>
+                </div>
+              }
+            </dl>
+            <h4 class="species-wiki__section">Besoins</h4>
             <dl class="species-wiki__rows">
               @for (row of view.rows; track row.field) {
                 <div class="species-wiki__row" [attr.data-wiki-field]="row.field">
@@ -91,6 +124,40 @@ export function wikiAddCount(
                 </div>
               }
             </dl>
+            @if (care(); as care) {
+              <h4 class="species-wiki__section">Alimentation</h4>
+              <dl class="species-wiki__rows">
+                @for (row of care.feeding; track row.field) {
+                  <div class="species-wiki__row" [attr.data-wiki-feeding]="row.field">
+                    <dt>{{ row.label }}</dt>
+                    <dd>
+                      {{ row.value }}
+                      <small class="species-wiki__status">{{ row.status }}</small>
+                    </dd>
+                  </div>
+                }
+              </dl>
+              <h4 class="species-wiki__section">Cohabitation</h4>
+              <ul class="species-wiki__mates" data-wiki-cohabitation>
+                @for (mate of care.cohabitation.avoid; track mate.species) {
+                  <li data-wiki-mate="avoid" [attr.data-species]="mate.species">
+                    <strong>Déconseillé avec {{ mate.name }}</strong> : {{ mate.reason }}
+                  </li>
+                }
+                @for (mate of care.cohabitation.together; track mate.species) {
+                  <li data-wiki-mate="together" [attr.data-species]="mate.species">
+                    Compatible avec {{ mate.name }} : {{ mate.reason }}
+                  </li>
+                }
+                @if (care.cohabitation.elsewhere.length > 0) {
+                  <li data-wiki-mate="elsewhere">
+                    Autres milieux, jamais dans le même bac du jeu :
+                    {{ care.cohabitation.elsewhere.join(', ') }}
+                  </li>
+                }
+              </ul>
+              <small class="species-wiki__status">{{ care.cohabitation.status }} (ADR 0055)</small>
+            }
             @if (lastAdded() === view.species) {
               @for (text of addTexts(); track text) {
                 <p class="species-wiki__warning" data-wiki-add-warning>{{ text }}</p>
@@ -107,6 +174,35 @@ export function wikiAddCount(
                   Ajouter au bac
                 </button>
               }
+              <button type="button" class="species-wiki__button" data-wiki-back (click)="back()">
+                Retour à la liste
+              </button>
+            </div>
+          </article>
+        } @else if (page(); as current) {
+          <article
+            class="species-wiki__sheet"
+            role="region"
+            aria-labelledby="wiki-page-titre"
+            [attr.data-wiki-page-view]="current"
+          >
+            <h3 class="species-wiki__name" id="wiki-page-titre">{{ titles[current] }}</h3>
+            <p class="species-wiki__warning">{{ disclaimer }}</p>
+            @for (item of guide(); track item.id) {
+              <section class="species-wiki__entry" [attr.data-wiki-entry]="item.id">
+                <h4 class="species-wiki__section">{{ item.name }}</h4>
+                <dl class="species-wiki__rows">
+                  @for (line of item.lines; track line.label) {
+                    <div class="species-wiki__row">
+                      <dt>{{ line.label }}</dt>
+                      <dd>{{ line.text }}</dd>
+                    </div>
+                  }
+                </dl>
+                <small class="species-wiki__status" data-wiki-status>{{ item.status }}</small>
+              </section>
+            }
+            <div class="species-wiki__actions">
               <button type="button" class="species-wiki__button" data-wiki-back (click)="back()">
                 Retour à la liste
               </button>
@@ -160,6 +256,21 @@ export function wikiAddCount(
               <li class="species-wiki__empty">Aucune espèce</li>
             }
           </ul>
+          <h3 class="species-wiki__group">Guides</h3>
+          <ul class="species-wiki__list">
+            @for (id of pages; track id) {
+              <li>
+                <button
+                  type="button"
+                  class="species-wiki__item"
+                  [attr.data-wiki-page]="id"
+                  (click)="openPage(id)"
+                >
+                  <span>{{ titles[id] }}</span>
+                </button>
+              </li>
+            }
+          </ul>
         }
       </section>
     }`,
@@ -176,6 +287,10 @@ export class SpeciesWiki {
   readonly populationMax = input<PopulationCounts>(NO_FISH);
   /** Volume d'eau du bac, en litres (`null` : inconnu), pour les avertissements d'ajout. */
   readonly tankLiters = input<number | null>(null);
+  /** Température de l'eau du bac, en °C (`NaN` : inconnue), pour la comparaison (#291). */
+  readonly waterTemperature = input<number>(Number.NaN);
+  /** pH de l'eau du bac (`NaN` : inconnu), pour la comparaison (#291). */
+  readonly waterPh = input<number>(Number.NaN);
 
   /** « Ajouter au bac » : un individu de plus (borné par `populationMax`). */
   readonly populationChanged = output<PopulationRequest>();
@@ -188,6 +303,11 @@ export class SpeciesWiki {
   /** Wiki ouvert (fermé par défaut : captures et premier regard inchangés). */
   readonly open = signal(false);
   protected readonly panelId = SPECIES_WIKI_ID;
+  protected readonly pages = GUIDE_PAGES;
+  protected readonly titles = GUIDE_PAGE_TITLES;
+  protected readonly disclaimer = CARE_DISCLAIMER;
+  /** Page transversale affichée (`null` : la liste). */
+  protected readonly page = signal<GuidePage | null>(null);
   protected readonly query = signal('');
   /** Espèce dont la fiche est affichée, oubliée au changement d'environnement. */
   protected readonly selected = linkedSignal<EnvironmentId, SpeciesId | null>({
@@ -206,6 +326,20 @@ export class SpeciesWiki {
   protected readonly sheet = computed(() => {
     const id = this.selected();
     return id === null ? null : wikiSheet(id);
+  });
+  /** Comparaison de l'espèce affichée avec l'eau du bac (#291). */
+  protected readonly comparison = computed(() => {
+    const id = this.selected();
+    return id === null ? [] : tankComparison(id, this.waterTemperature(), this.waterPh());
+  });
+  /** Alimentation et cohabitation de l'espèce affichée (#291). */
+  protected readonly care = computed(() => {
+    const id = this.selected();
+    return id === null ? null : wikiCare(id);
+  });
+  protected readonly guide = computed(() => {
+    const current = this.page();
+    return current === null ? [] : guideView(current);
   });
   /** Avertissements de l'espèce ajoutée, recalculés sur le bac courant (#237). */
   protected readonly addTexts = computed(() => {
@@ -237,6 +371,7 @@ export class SpeciesWiki {
     this.open.set(false);
     this.selected.set(null);
     this.lastAdded.set(null);
+    this.page.set(null);
     this.query.set('');
     if (focusToggle) {
       this.focus('[data-wiki-toggle]');
@@ -252,6 +387,12 @@ export class SpeciesWiki {
     return wikiAddCount(id, this.population(), this.populationMax());
   }
 
+  /** Ouvre une page transversale, focus sur son bouton « Retour ». */
+  protected openPage(id: GuidePage): void {
+    this.page.set(id);
+    this.focus('[data-wiki-back]');
+  }
+
   protected onSearch(event: Event): void {
     this.query.set((event.target as HTMLInputElement).value);
   }
@@ -262,12 +403,20 @@ export class SpeciesWiki {
     this.focus('[data-wiki-back]');
   }
 
-  /** Retour à la liste, focus sur l'espèce qu'on quittait. */
+  /** Retour à la liste, focus sur l'espèce ou la page qu'on quittait. */
   protected back(): void {
     const id = this.selected();
+    const page = this.page();
     this.selected.set(null);
     this.lastAdded.set(null);
-    this.focus(id === null ? 'input[type="search"]' : `[data-wiki-species="${id}"]`);
+    this.page.set(null);
+    this.focus(
+      id !== null
+        ? `[data-wiki-species="${id}"]`
+        : page !== null
+          ? `[data-wiki-page="${page}"]`
+          : 'input[type="search"]',
+    );
   }
 
   protected add(id: SpeciesId): void {
@@ -279,7 +428,7 @@ export class SpeciesWiki {
   }
 
   /**
-   * Échap, écouté sur le document (#289) : ferme la fiche ouverte, sinon le wiki, même si le
+   * Échap, écouté sur le document (#289) : ferme la fiche ou la page ouverte, sinon le wiki, même si le
    * focus a quitté le wiki (clic sur la scène). Sans effet wiki fermé, ou si un autre élément
    * a déjà traité la touche (`defaultPrevented`, comme l'éditeur de décor).
    */
@@ -287,7 +436,7 @@ export class SpeciesWiki {
     if (!this.open() || event.defaultPrevented) {
       return;
     }
-    if (this.selected() !== null) {
+    if (this.selected() !== null || this.page() !== null) {
       this.back();
     } else {
       this.close(true);

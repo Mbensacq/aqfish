@@ -60,6 +60,7 @@ l'environnement courant à la fois. L'idée, estimée L, est découpée en deux 
   comparaison des besoins avec les valeurs du bac (température, pH, volume). Ces données
   s'ajoutent à `sim/species-sheet.ts` (même règle de sourçage) et au modèle de vue, pas au
   composant. Pages « produits et traitements » et « maladies » ensuite.
+  Livré au cycle 91 (#291) : voir l'ADR 0068.
 
 ## Options écartées
 
