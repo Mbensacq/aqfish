@@ -89,6 +89,30 @@ test.describe('Eau (#207)', () => {
     expect(errors).toEqual([]);
   });
 
+  test('une ancienne sauvegarde à 25 °C sans chauffage se recharge telle quelle, consigne à 24 °C', async ({
+    page,
+  }) => {
+    const errors = await open(page);
+    await openPanel(page);
+    const world: MutableWorld = createDefaultWorld(42);
+    world.water = { ...sampleWater('tropical', 'bonne'), temperature: 25 };
+    const text = serializeWorld(world, { speed: 0, clock: createDayClock(12, 1200, true) });
+    await page
+      .locator('[data-section="sauvegarde"] input[type="file"]')
+      .setInputFiles({
+        name: 'ancien.json',
+        mimeType: 'application/json',
+        buffer: Buffer.from(text),
+      });
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-speed', '0');
+
+    // L'eau reste à 25 °C (rien n'est réécrit), la consigne proposée est celle du bac : 24 °C.
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-water', /^[a-z-]+;25;24;/);
+    await expect(section(page)).toContainText('25,0 °C');
+    await expect(heater(page)).toHaveValue('24');
+    expect(errors).toEqual([]);
+  });
+
   test('390 × 844 : section lisible, « Changer l’eau » et les jauges dans l’écran', async ({
     page,
   }) => {
