@@ -9,6 +9,7 @@ import { MAX_SAVE_LENGTH } from '../../sim/save';
 import { SIM_SPEEDS } from '../../sim/sim-speed';
 import { MAX_HEATER_TEMPERATURE, MIN_HEATER_TEMPERATURE } from '../../sim/water';
 import { DEFAULT_WATER_READOUT, type WaterReadout } from '../../sim/water-quality';
+import { SPECIES_LABELS } from '../../sim/species-catalog';
 import {
   CONTROL_PANEL_ID,
   ControlPanel,
@@ -115,6 +116,16 @@ describe('fonctions du panneau de contrôle', () => {
     expect(speciesStepLabel('triton', -1)).toBe('Retirer un triton à ventre de feu');
     expect(speciesStepLabel('clown', 1)).toBe('Ajouter un poisson-clown');
     expect(speciesStepLabel('chirurgien', -1)).toBe('Retirer un chirurgien bleu');
+  });
+
+  it('speciesStepLabel : article féminin, sur des libellés factices (#284)', () => {
+    const labels = {
+      ...SPECIES_LABELS,
+      neon: { singular: 'raie', plural: 'raies', feminine: true },
+    };
+    expect(speciesStepLabel('neon', 1, labels)).toBe('Ajouter une raie');
+    expect(speciesStepLabel('neon', -1, labels)).toBe('Retirer une raie');
+    expect(speciesStepLabel('guppy', 1, labels)).toBe('Ajouter un guppy');
   });
 
   it('speciesSliderLabel : distinct du champ, élision conservée (#189)', () => {

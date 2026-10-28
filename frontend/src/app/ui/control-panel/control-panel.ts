@@ -25,7 +25,12 @@ import { isRoomAvailable } from '../../sim/room';
 import { MAX_SAVE_LENGTH } from '../../sim/save';
 import { DEFAULT_SIM_SPEED, SIM_SPEEDS, speedLabel, type SimSpeed } from '../../sim/sim-speed';
 import { mixWarnings } from '../../sim/compatibility';
-import { mixWarningText, SPECIES_LABELS, speciesCatalog } from '../../sim/species-catalog';
+import {
+  mixWarningText,
+  SPECIES_LABELS,
+  speciesCatalog,
+  type SpeciesLabels,
+} from '../../sim/species-catalog';
 import { type SpeciesId } from '../../sim/species';
 import { addWarnings, addWarningText, sheetNotes, sheetRows } from '../../sim/species-sheet';
 import { MAX_HEATER_TEMPERATURE, MIN_HEATER_TEMPERATURE } from '../../sim/water';
@@ -89,11 +94,16 @@ export function speciesPlural(species: SpeciesId): string {
 }
 
 /**
- * Nom accessible des boutons « − » et « + » : « Retirer un néon », « Ajouter une grenouille »
- * (genre porté par le catalogue, #95).
+ * Nom accessible des boutons « − » et « + » : « Retirer un néon », « Ajouter une raie » (genre
+ * porté par le catalogue, #95 ; `labels` n'est donné que par les tests, pour exercer le
+ * féminin qu'aucune espèce ne porte plus, #284).
  */
-export function speciesStepLabel(species: SpeciesId, delta: -1 | 1): string {
-  const { singular, feminine } = SPECIES_LABELS[species];
+export function speciesStepLabel(
+  species: SpeciesId,
+  delta: -1 | 1,
+  labels: Readonly<Record<SpeciesId, SpeciesLabels>> = SPECIES_LABELS,
+): string {
+  const { singular, feminine } = labels[species];
   return `${delta < 0 ? 'Retirer' : 'Ajouter'} ${feminine ? 'une' : 'un'} ${singular}`;
 }
 

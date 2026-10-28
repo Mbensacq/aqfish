@@ -2,10 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { compatibility, TEMPERAMENTS } from './compatibility';
 import { ENVIRONMENT_IDS, environmentById, environmentWater } from './environment';
 import { SPECIES, type SpeciesId } from './species';
-import { speciesCatalog } from './species-catalog';
+import { SPECIES_LABELS, speciesCatalog } from './species-catalog';
 import {
   addWarnings,
   addWarningText,
+  addWarningTextWith,
   frenchNumber,
   SHEET_FIELD_LABELS,
   SHEET_FIELDS,
@@ -298,5 +299,33 @@ describe('avertissement d’ajout (#237)', () => {
         reason: 'predateur',
       }),
     ).toBe('Sonneurs orientaux déconseillés avec les axolotls (prédateur)');
+  });
+
+  it('accord au féminin, sur des libellés factices (#284)', () => {
+    // Aucune espèce du catalogue n'est plus au féminin : une donnée factice garde la branche.
+    expect(Object.values(SPECIES_LABELS).some((l) => l.feminine)).toBe(false);
+    const labels = {
+      ...SPECIES_LABELS,
+      neon: { singular: 'raie', plural: 'raies', feminine: true },
+    };
+    expect(
+      addWarningTextWith({ kind: 'groupe', species: 'neon', count: 1, minGroup: 3 }, labels),
+    ).toBe('Groupe trop petit : 1 raie, 3 au moins conseillées');
+    expect(
+      addWarningTextWith(
+        { kind: 'incompatible', species: 'neon', other: 'axolotl', reason: 'predateur' },
+        labels,
+      ),
+    ).toBe('Raies déconseillées avec les axolotls (prédateur)');
+    // Masculin inchangé avec les mêmes libellés ; l'autre espèce prend aussi les libellés donnés.
+    expect(
+      addWarningTextWith(
+        { kind: 'incompatible', species: 'axolotl', other: 'neon', reason: 'territorial' },
+        labels,
+      ),
+    ).toBe('Axolotls déconseillés avec les raies (deux espèces territoriales)');
+    expect(
+      addWarningTextWith({ kind: 'volume', species: 'neon', liters: 20, minLiters: 60 }, labels),
+    ).toBe('Bac trop petit pour des raies : 20 L, 60 L conseillés');
   });
 });
