@@ -1,9 +1,5 @@
-# Captures c094
-
-- Branche : cycle/c094-feuilles-catappa
-- PR : #300
-- Commit : 36ee8725d06a59da6c386fa4d6380ec8041b7b93
-- Graine : celle par défaut des captures
-- Date : 2026-10-28T18:15:51Z
-- Série partielle : top, bottom, front, side, three-quarter, three-quarter-catappa, top-catappa (la série complète tourne en CI ; dépasse le délai local)
-- Les 5 angles de base sont identiques à l octet à captures/latest.
+# Captures du cycle 95
+- Branche : cycle/c095-aides-debutant (PR #301), commit edb4ffa
+- Série : 94 captures de la suite `npm run captures` (graine 42, heure fixe) + 3 captures téléphone 390 × 844 du guide (telephone-alerte, telephone-guide, telephone-guide-etapes)
+- Chromium local 1243 (≠ CI) : les écarts d'octets avec latest/ ne sont pas probants ; l'identité à l'octet est établie par la CI et la PR
+- Temps : ~15 min pour la suite de captures
