@@ -3566,6 +3566,10 @@
         "bugsOuverts": 0,
         "ciMain": "success",
         "mutation": 88.89
+      },
+      "rapport": {
+        "statut": "termine",
+        "note": "7 cycles clos, 0 alerte bloquante"
       }
     }
   }
