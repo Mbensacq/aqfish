@@ -21,7 +21,7 @@ import {
   type LilyPadSettings,
 } from './lily-pads';
 import { sunElevation } from './daylight';
-import { saveData, serializeWorld, parseWorld, SAVE_SCHEMA } from './save';
+import { saveData, serializeWorld, parseWorld, SAVE_SCHEMA_1 } from './save';
 import { createWorld } from './world';
 import type { Box3 } from './tank';
 
@@ -354,8 +354,8 @@ describe('nénuphars : sauvegarde (ADR 0028)', () => {
   it('aucun champ nouveau : même schéma, et la disposition se retrouve après rechargement', () => {
     const world = createWorld(42, [{ species: 'koi', count: 4 }], [], POND.decor, 'bassin');
     const data = saveData(world);
-    expect(data.schema).toBe(SAVE_SCHEMA);
-    expect(SAVE_SCHEMA).toBe(1);
+    expect(data.schema).toBe(SAVE_SCHEMA_1);
+    expect(SAVE_SCHEMA_1).toBe(1);
     expect(JSON.stringify(data)).not.toMatch(/lily|nenuphar|nénuphar/i);
     const parsed = parseWorld(serializeWorld(world));
     expect(parsed.ok).toBe(true);

@@ -1,5 +1,6 @@
 import {
   isQuotaError,
+  LEGACY_SAVE_STORAGE_KEY,
   readStoredSave,
   SAVE_STORAGE_KEY,
   writeStoredSave,
@@ -63,6 +64,41 @@ describe('writeStoredSave', () => {
   it('renvoie indisponible sans stockage ou si l’accès est refusé', () => {
     expect(writeStoredSave(null, 'abc')).toBe('indisponible');
     expect(writeStoredSave(throwingStorage, 'abc')).toBe('indisponible');
+  });
+});
+
+describe('writeStoredSave : copie de la sauvegarde au schéma 1 (#264, ADR 0069)', () => {
+  const legacy = '{"format":"aqfish","schema":1,"seed":42}';
+  const room = '{"format":"aqfish","schema":2,"seed":42}';
+
+  it('copie une seule fois l’ancienne sauvegarde avant la première écriture par-dessus', () => {
+    const storage = memoryStorage();
+    storage.data.set(SAVE_STORAGE_KEY, legacy);
+    expect(writeStoredSave(storage, room)).toBe('active');
+    expect(storage.data.get(LEGACY_SAVE_STORAGE_KEY)).toBe(legacy);
+    expect(storage.data.get(SAVE_STORAGE_KEY)).toBe(room);
+    // Une autre sauvegarde au schéma 1 écrite ensuite ne remplace pas la copie.
+    storage.data.set(SAVE_STORAGE_KEY, legacy.replace('42', '7'));
+    writeStoredSave(storage, room);
+    expect(storage.data.get(LEGACY_SAVE_STORAGE_KEY)).toBe(legacy);
+  });
+
+  it('ne copie ni le schéma 2, ni un texte étranger, ni l’absence de sauvegarde', () => {
+    for (const before of [room, 'pas du json', '{"schema":1,"format":"aqfish"}', null]) {
+      const storage = memoryStorage();
+      if (before !== null) {
+        storage.data.set(SAVE_STORAGE_KEY, before);
+      }
+      writeStoredSave(storage, room);
+      expect(storage.data.has(LEGACY_SAVE_STORAGE_KEY)).toBe(false);
+    }
+  });
+
+  it('quota dépassé pendant la copie : plein, sauvegarde précédente intacte', () => {
+    const storage = memoryStorage(legacy.length - 1);
+    storage.data.set(SAVE_STORAGE_KEY, legacy);
+    expect(writeStoredSave(storage, room)).toBe('plein');
+    expect(storage.data.get(SAVE_STORAGE_KEY)).toBe(legacy);
   });
 });
 

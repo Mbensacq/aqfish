@@ -130,7 +130,9 @@ import {
   setPopulationInPlace,
   type PopulationCounts,
 } from '../../sim/population';
-import { parseWorld, serializeWorld, type SaveSettings } from '../../sim/save';
+import { parseSaveWorlds, serializeRoom } from '../../sim/room-save';
+import { syncRoom, type RoomState } from '../../sim/room-state';
+import type { SaveSettings } from '../../sim/save';
 import { applySpeciesCountsInPlace } from '../../sim/species-catalog';
 import {
   DEFAULT_FOOD_STYLE,
@@ -431,6 +433,14 @@ export class AquariumHost {
    * ADR 0063) ; l'hôte en est seul propriétaire, comme du monde courant.
    */
   private stash: StashedWorlds = new Map();
+  /**
+   * Pièce de N bacs (#264, lot 1, ADR 0069) : identifiants, noms et graine des bacs,
+   * resynchronisée avec le monde affiché et les mondes rangés à chaque sauvegarde
+   * (`syncRoom`) ; `null` tant qu'aucune sauvegarde n'a été lue ni écrite.
+   */
+  private roomState: RoomState | null = null;
+  /** Bac sélectionné de `roomState` : celui du monde affiché (réglage d'interface). */
+  private selectedTankId = 0;
   /** État de la boucle à pas fixe, réécrit à chaque image (aucune allocation). */
   private readonly clock: FixedStepState = { steps: 0, accumulator: 0, alpha: 0 };
   private lastTimestamp: number | null = null;
@@ -849,6 +859,8 @@ export class AquariumHost {
     // Une chute en cours se termine d'abord : le monde rangé garde un décor posé.
     this.finishDropAnimation();
     const fromTime = this.renderTime();
+    // Le bac quitté garde son identifiant dans la pièce, même jamais sauvegardé (#264).
+    this.syncRoomState(world);
     const next = switchEnvironment(world, this.stash, id);
     this.stash = next.stash;
     this.currentWorld = next.world as MutableWorld;
@@ -1522,10 +1534,7 @@ export class AquariumHost {
     }
     let status: SaveStatus;
     try {
-      status = writeStoredSave(
-        this.saveStorage,
-        serializeWorld(world, this.settings(), stashedList(this.stash, world.environment)),
-      );
+      status = writeStoredSave(this.saveStorage, this.saveText(world));
     } catch {
       status = 'indisponible';
     }
@@ -1544,11 +1553,7 @@ export class AquariumHost {
       return;
     }
     try {
-      const text = serializeWorld(
-        world,
-        this.settings(),
-        stashedList(this.stash, world.environment),
-      );
+      const text = this.saveText(world);
       const url = win.URL.createObjectURL(new Blob([text], { type: 'application/json' }));
       const link = this.document.createElement('a');
       link.href = url;
@@ -1571,11 +1576,13 @@ export class AquariumHost {
     if (!this.currentWorld || !this.view || this.capture) {
       return false;
     }
-    const result = parseWorld(text);
+    const result = parseSaveWorlds(text);
     if (!result.ok) {
       this.saveMessage.set({ kind: 'erreur', text: `Import refusé : ${result.error}.` });
       return false;
     }
+    this.roomState = result.room;
+    this.selectedTankId = result.selectedTankId;
     this.loadWorld(result.world as MutableWorld, result.settings, result.others);
     this.createView(environmentById(result.world.environment).defaultCamera);
     this.exposeCamera();
@@ -1583,6 +1590,24 @@ export class AquariumHost {
     this.saveMessage.set({ kind: 'info', text: 'Aquarium importé.' });
     this.saveNow();
     return true;
+  }
+
+  /**
+   * Texte de la sauvegarde au schéma 2 (#264, ADR 0069) : la pièce resynchronisée avec le
+   * monde affiché (bac sélectionné) et les mondes rangés.
+   * @throws RangeError comme `serializeRoom`.
+   */
+  private saveText(world: World): string {
+    const room = this.syncRoomState(world);
+    return serializeRoom(room, this.selectedTankId, this.settings());
+  }
+
+  /** Resynchronise la pièce avec le monde affiché et les mondes rangés (`syncRoom`). */
+  private syncRoomState(world: World): RoomState {
+    const synced = syncRoom(this.roomState, world, stashedList(this.stash, world.environment));
+    this.roomState = synced.room;
+    this.selectedTankId = synced.selectedTankId;
+    return synced.room;
   }
 
   /** Message d'erreur d'un fichier trop gros pour être lu (contrôle du panneau, #70). */
@@ -1641,6 +1666,8 @@ export class AquariumHost {
     if (restored) {
       this.currentWorld = restored.world as MutableWorld;
       this.stash = stashFromList(restored.others, restored.world.environment);
+      this.roomState = restored.room;
+      this.selectedTankId = restored.selectedTankId;
       this.speed.set(restored.settings.speed);
       this.foodStyle.set(restored.settings.foodStyle ?? DEFAULT_FOOD_STYLE);
       this.room.set(restored.settings.room ?? DEFAULT_ROOM);
@@ -1762,6 +1789,8 @@ export class AquariumHost {
    * un message le signale.
    */
   private readSave(): {
+    readonly room: RoomState;
+    readonly selectedTankId: number;
     readonly world: World;
     readonly settings: SaveSettings;
     readonly others: readonly World[];
@@ -1770,7 +1799,7 @@ export class AquariumHost {
     if (text === null) {
       return null;
     }
-    const result = parseWorld(text);
+    const result = parseSaveWorlds(text);
     if (!result.ok) {
       this.saveMessage.set({
         kind: 'erreur',
@@ -2188,6 +2217,7 @@ export class AquariumHost {
     this.view?.dispose();
     this.view = null;
     this.currentWorld = null;
+    this.roomState = null;
     if (this.readySignaled) {
       resetCaptureReady(this.document);
     }

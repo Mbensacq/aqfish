@@ -4,6 +4,7 @@ import { CAMERA_FOV_DEG } from '../src/app/render/camera-presets';
 import { SAVE_STORAGE_KEY } from '../src/app/core/save-storage/save-storage';
 import { DEFAULT_DECOR } from '../src/app/sim/decor';
 import { DEFAULT_TANK, SAND_THICKNESS } from '../src/app/sim/tank';
+import { selectedTankWorld } from './outils-sauvegarde';
 
 /**
  * Outils communs des e2e de l'éditeur de décor (#167, #168, #170) : ouverture de la scène et
@@ -109,7 +110,7 @@ export interface SavedItem {
 export async function savedDecor(page: Page): Promise<SavedItem[]> {
   const text = await page.evaluate((key) => localStorage.getItem(key), SAVE_STORAGE_KEY);
   expect(text).not.toBeNull();
-  return (JSON.parse(text!) as { decor: SavedItem[] }).decor;
+  return selectedTankWorld<{ decor: SavedItem[] }>(text!).decor;
 }
 
 /** Glisser à la souris de `from` à `to` (points du bac), en plusieurs pas. */

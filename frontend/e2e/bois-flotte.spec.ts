@@ -4,6 +4,7 @@ import { CAMERA_FOV_DEG } from '../src/app/render/camera-presets';
 import { SAVE_STORAGE_KEY } from '../src/app/core/save-storage/save-storage';
 import { DEFAULT_DECOR } from '../src/app/sim/decor';
 import { SAND_THICKNESS } from '../src/app/sim/tank';
+import { selectedTankWorld } from './outils-sauvegarde';
 
 /**
  * QA du bois flotté (issue #169), parcours : pose depuis le catalogue de l'éditeur, sauvegarde
@@ -91,7 +92,7 @@ interface SavedItem {
 async function savedDecor(page: Page): Promise<SavedItem[]> {
   const text = await page.evaluate((key) => localStorage.getItem(key), SAVE_STORAGE_KEY);
   expect(text).not.toBeNull();
-  return (JSON.parse(text!) as { decor: SavedItem[] }).decor;
+  return selectedTankWorld<{ decor: SavedItem[] }>(text!).decor;
 }
 
 test.describe('Bois flotté (#169), parcours QA', () => {
