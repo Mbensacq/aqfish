@@ -1,6 +1,7 @@
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 
 import { NO_FISH, type PopulationCounts } from '../../sim/population';
+import { BeginnerGuideState } from '../beginner-guide/beginner-guide-state';
 import type { PopulationRequest } from '../control-panel/control-panel';
 import { SpeciesWiki, wikiAddCount } from './species-wiki';
 
@@ -283,6 +284,17 @@ describe('SpeciesWiki, lot 2/2 (#291)', () => {
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     await fixture.whenStable();
     expect(q('#wiki-especes')).toBeNull();
+  });
+
+  it('« Guide du débutant » dans la liste des guides : ouvre le guide (#240)', async () => {
+    const guide = TestBed.inject(BeginnerGuideState);
+    const entry = root().querySelector<HTMLButtonElement>('[data-wiki-beginner-guide]')!;
+    expect(entry.textContent?.trim()).toBe('Guide du débutant');
+    expect(entry.getAttribute('aria-haspopup')).toBe('dialog');
+    entry.click();
+    expect(guide.open()).toBe(true);
+    expect(guide.topic()).toBeNull();
+    guide.hide();
   });
 
   it('fermer puis rouvrir : la liste, pas la page', async () => {

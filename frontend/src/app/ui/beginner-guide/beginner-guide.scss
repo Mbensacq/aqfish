@@ -1,0 +1,180 @@
+// Guide du débutant (#240, docs/DA.md, « Interface ») : dialogue modal sombre translucide,
+// centré, au-dessus de tous les panneaux (z-index 1) ; voile qui atténue le bac.
+:host {
+  color: #e8e6e3;
+  font:
+    400 14px / 1.4 system-ui,
+    sans-serif;
+}
+
+.guide__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  background: rgb(10 10 12 / 55%);
+}
+
+.guide {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 11;
+  box-sizing: border-box;
+  width: 520px;
+  max-width: calc(100vw - 24px);
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  padding: 12px 16px 14px;
+  border: 1px solid rgb(232 230 227 / 12%);
+  border-radius: 12px;
+  background: rgb(20 20 24 / 97%); // #141418
+  transform: translate(-50%, -50%);
+
+  &:focus-visible {
+    outline: 2px solid #5fbfa3;
+    outline-offset: 2px;
+  }
+
+  p {
+    margin: 2px 0;
+  }
+}
+
+// En-tête collé en haut quand le guide défile : « Fermer » reste à portée (téléphone).
+.guide__header {
+  position: sticky;
+  top: -12px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: -12px -16px 0;
+  padding: 12px 16px 6px;
+  border-radius: 12px 12px 0 0;
+  background: #141418;
+}
+
+.guide__title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.guide__intro,
+.guide__disclaimer {
+  color: rgb(232 230 227 / 85%);
+}
+
+.guide__disclaimer {
+  margin-top: 10px;
+  font-size: 12px;
+}
+
+.guide__group {
+  margin: 12px 0 4px;
+  color: #5fbfa3;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.guide__steps {
+  margin: 8px 0 0;
+  padding-left: 22px;
+}
+
+.guide__step {
+  margin-bottom: 8px;
+
+  &::marker {
+    color: #5fbfa3;
+    font-weight: 600;
+  }
+}
+
+.guide__step-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.guide__in-game {
+  color: rgb(232 230 227 / 85%);
+}
+
+.guide__status {
+  display: block;
+  color: rgb(232 230 227 / 70%);
+  font-size: 11px;
+}
+
+.guide__topics {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.guide__button,
+.guide__why {
+  min-height: 32px;
+  border: 1px solid rgb(232 230 227 / 16%);
+  border-radius: 8px;
+  background: rgb(232 230 227 / 6%);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+
+  &:hover {
+    background: rgb(232 230 227 / 12%);
+  }
+
+  &:focus-visible {
+    outline: 2px solid #5fbfa3;
+    outline-offset: 1px;
+  }
+}
+
+.guide__button {
+  padding: 4px 12px;
+}
+
+.guide__why {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 4px;
+  padding: 4px 10px;
+  // Déroulée en haut du dialogue à l'ouverture : pas cachée sous l'en-tête collé.
+  scroll-margin-top: 52px;
+  text-align: left;
+}
+
+.guide__chevron {
+  color: #5fbfa3;
+}
+
+.guide__why-text {
+  padding: 4px 10px 6px 26px;
+}
+
+// Téléphone : presque toute la largeur, plus haut ; texte un peu plus serré.
+@media (max-width: 480px) {
+  :host {
+    font-size: 13px;
+  }
+
+  .guide {
+    max-width: calc(100vw - 16px);
+    max-height: calc(100vh - 16px);
+    padding: 10px 12px 12px;
+  }
+
+  .guide__header {
+    top: -10px;
+    margin: -10px -12px 0;
+    padding: 10px 12px 6px;
+  }
+}

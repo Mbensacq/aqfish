@@ -25,6 +25,7 @@ import { type SpeciesId } from '../../sim/species';
 import { addWarnings, addWarningText } from '../../sim/species-sheet';
 import { tankComparison } from '../../sim/species-care';
 import { wikiCare, wikiLists, wikiSheet } from '../../sim/species-wiki';
+import { BeginnerGuideState } from '../beginner-guide/beginner-guide-state';
 import type { PopulationRequest } from '../control-panel/control-panel';
 
 /** Identifiant du panneau (cible de `aria-controls`). */
@@ -48,7 +49,8 @@ export function wikiAddCount(
  * ligne des boutons du haut sur écran étroit), panneau flottant avec une recherche, la liste
  * des espèces du bac et de celles qu'on peut y ajouter, et la fiche de chacune
  * (`sim/species-wiki.ts`) : besoins, comparaison avec l'eau du bac, alimentation, cohabitation ;
- * deux pages transversales, « Produits et traitements » et « Maladies » (`sim/care-guide.ts`).
+ * deux pages transversales, « Produits et traitements » et « Maladies » (`sim/care-guide.ts`),
+ * et l'accès au « Guide du débutant » (#240).
  * Exclusif avec « Réglages » et « Commandes » : c'est l'application
  * qui replie les autres (`opened`, `close`). Échap ferme la fiche ou la page, puis le wiki, où que soit
  * le focus (#289) : après un clic sur la scène, il n'est plus dans le wiki.
@@ -270,6 +272,17 @@ export function wikiAddCount(
                 </button>
               </li>
             }
+            <li>
+              <button
+                type="button"
+                class="species-wiki__item"
+                data-wiki-beginner-guide
+                aria-haspopup="dialog"
+                (click)="beginnerGuide.show()"
+              >
+                <span>Guide du débutant</span>
+              </button>
+            </li>
           </ul>
         }
       </section>
@@ -299,6 +312,8 @@ export class SpeciesWiki {
 
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly injector = inject(Injector);
+  /** « Guide du débutant » (#240), ouvert depuis la liste des guides. */
+  protected readonly beginnerGuide = inject(BeginnerGuideState);
 
   /** Wiki ouvert (fermé par défaut : captures et premier regard inchangés). */
   readonly open = signal(false);

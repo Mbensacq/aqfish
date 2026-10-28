@@ -4,6 +4,8 @@
   <!-- Aide-mémoire des commandes (#74), indépendant de Three.js : affiché tout de suite.
        Exclusif avec « Réglages » sur écran étroit (#136). -->
   <app-commands-help #help (opened)="onHelpOpened()" />
+  <!-- Guide du débutant (#240) : dialogue modal, ouvert une fois à la première visite. -->
+  <app-beginner-guide />
 }
 <!-- Three.js est chargé à part pour garder le bundle initial sous le budget (angular.json). -->
 @defer (on immediate) {

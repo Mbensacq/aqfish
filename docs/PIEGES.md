@@ -185,6 +185,13 @@ haut de sa section.
 
 ## Tests
 
+- **Guide du débutant ouvert à la première visite : stockage de départ des e2e** (cycle 95,
+  #240) : chaque test Playwright démarre avec un `localStorage` vide, donc le dialogue modal
+  du guide couvrirait l'interface de tous les e2e. `playwright.config.ts` pose la clé
+  `aqfish.guide-debutant.v1 = vu` par `storageState` ; un test qui veut la première visite
+  utilise `test.use({ storageState: { cookies: [], origins: [] } })`. Un test qui vide le
+  stockage (`localStorage.clear()`) doit fermer le guide (Échap) ou reposer la clé. (2026-10-28)
+
 - **Panneau à droite à 1280 × 720 : le bac finit à 968 px** (cycle 89, #289) : en
   trois-quarts, le bord droit du bac par défaut est à x = 968 px (capture `three-quarter`) ;
   un panneau collé à 12 px du bord droit le recouvre au-delà de 300 px de large (wiki :

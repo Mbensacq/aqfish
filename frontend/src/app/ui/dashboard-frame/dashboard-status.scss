@@ -114,6 +114,25 @@
   color: var(--dashboard-ink);
 }
 
+// « Pourquoi ? » (#240) : petit bouton souligné, dans la ligne du détail.
+.status__why {
+  min-height: 24px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--dashboard-ink);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid #5fbfa3;
+    outline-offset: 1px;
+  }
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;

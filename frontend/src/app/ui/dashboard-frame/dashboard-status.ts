@@ -1,4 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+
+import { ALERT_TOPICS, whyTopic } from '../../sim/beginner-help';
 
 import {
   ALERT_SEVERITY_LABELS,
@@ -21,11 +23,17 @@ import {
   DASHBOARD_MUTED_ALPHA,
   DASHBOARD_REST_OPACITY,
 } from './dashboard-frame';
+import { BeginnerGuideState } from '../beginner-guide/beginner-guide-state';
 import { levelIconPixels, LEVEL_ICON_GRID } from './level-icons';
 
 /** Identifiant du détail d'une alerte (cible de `aria-controls`). */
 export function alertDetailId(id: AlertId): string {
   return `alerte-${id}`;
+}
+
+/** Libellé accessible du bouton « Pourquoi ? » d'une alerte (#240). */
+export function alertWhyLabel(id: AlertId): string {
+  return `Pourquoi ? ${whyTopic(ALERT_TOPICS[id]).title}`;
 }
 
 /** Niveau (icône et couleur) de chaque gravité d'alerte. */
@@ -45,7 +53,8 @@ const ICONS: Readonly<Record<GaugeLevel, readonly (readonly [number, number])[]>
  * des animaux (santé et faim moyennes, malades, détresse) et alertes de l'eau et des
  * animaux, au-dessus de la barre des vues, jamais au centre du bac. Chaque alerte porte une
  * icône, sa gravité en texte et un message ; elle se déplie (souris, clavier) sur sa cause
- * probable et l'action conseillée. Au plus trois alertes, les autres comptées (« +N »).
+ * probable, l'action conseillée et un bouton « Pourquoi ? » qui ouvre le guide du débutant
+ * sur l'explication liée (#240). Au plus trois alertes, les autres comptées (« +N »).
  * Une région `role="status"` annonce les alertes ; son texte ne change qu'avec elles (sujets
  * et gravités), donc rien n'est relu à chaque relevé. Aucune logique de simulation : il lit
  * les relevés de l'hôte (eau, santé) et en dérive les alertes par fonctions pures
@@ -140,6 +149,16 @@ const ICONS: Readonly<Record<GaugeLevel, readonly (readonly [number, number])[]>
       <p class="status__detail" [id]="detailId(open.id)" [attr.data-alert-detail]="open.id">
         <span><b>Cause probable :</b> {{ open.cause }}.</span>
         <span><b>À faire :</b> {{ open.action }}.</span>
+        <button
+          type="button"
+          class="status__why"
+          aria-haspopup="dialog"
+          [attr.aria-label]="whyLabel(open.id)"
+          [attr.data-alert-why]="open.id"
+          (click)="guide.show(alertTopics[open.id])"
+        >
+          Pourquoi ?
+        </button>
       </p>
     }
   </section>`,
@@ -176,6 +195,10 @@ export class DashboardStatus {
   protected readonly levels = SEVERITY_LEVELS;
   protected readonly severityLabels = ALERT_SEVERITY_LABELS;
   protected readonly detailId = alertDetailId;
+  protected readonly alertTopics = ALERT_TOPICS;
+  protected readonly whyLabel = alertWhyLabel;
+  /** « Pourquoi ? » sous une alerte : ouvre le guide sur l'explication liée (#240). */
+  protected readonly guide = inject(BeginnerGuideState);
   protected readonly colors = DASHBOARD_COLORS;
   protected readonly backgroundAlpha = DASHBOARD_BACKGROUND_ALPHA;
   protected readonly mutedAlpha = DASHBOARD_MUTED_ALPHA;
