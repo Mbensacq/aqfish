@@ -97,13 +97,11 @@ test.describe('Eau (#207)', () => {
     const world: MutableWorld = createDefaultWorld(42);
     world.water = { ...sampleWater('tropical', 'bonne'), temperature: 25 };
     const text = serializeWorld(world, { speed: 0, clock: createDayClock(12, 1200, true) });
-    await page
-      .locator('[data-section="sauvegarde"] input[type="file"]')
-      .setInputFiles({
-        name: 'ancien.json',
-        mimeType: 'application/json',
-        buffer: Buffer.from(text),
-      });
+    await page.locator('[data-section="sauvegarde"] input[type="file"]').setInputFiles({
+      name: 'ancien.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(text),
+    });
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-speed', '0');
 
     // L'eau reste à 25 °C (rien n'est réécrit), la consigne proposée est celle du bac : 24 °C.
