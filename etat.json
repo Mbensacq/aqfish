@@ -3447,6 +3447,12 @@
           "debut": "2026-10-28T14:46:28.950Z",
           "fin": "2026-10-28T15:07:29.449Z",
           "note": "Verdict OK, 0 bug, 2874 unitaires, 1 e2e ajouté (cohabitation lot 1), captures c093 publiées"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-10-28T15:07:50.745Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
