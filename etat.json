@@ -3401,10 +3401,10 @@
           "note": "Issue #292 : Pièce aux aquariums lot 1/6, état de la pièce et schéma 2 (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-28T10:44:11.962Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-28T11:54:26.148Z",
+          "note": "PR #298 : pièce lot 1 (RoomState, schéma 2, migration, copie schema1, ADR 0069), CI verte, captures 90/90 identiques à main"
         }
       },
       "metriques": {}
