@@ -3528,6 +3528,24 @@
         }
       },
       "metriques": {}
+    },
+    "96": {
+      "numero": 96,
+      "date": "2026-10-29",
+      "debut": "2026-10-28T23:05:26.388Z",
+      "type": "dette",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-10-28T23:05:26.388Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
