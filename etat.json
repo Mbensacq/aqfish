@@ -3291,6 +3291,12 @@
           "debut": "2026-10-28T02:16:11.530Z",
           "fin": "2026-10-28T02:16:39.136Z",
           "note": "Issue #289 : suites revue wiki + mutation water-dashboard #267 (S/M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-10-28T02:17:04.894Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
