@@ -3377,10 +3377,10 @@
           "note": "Verdict OK, 0 bug, 2770 tests, captures c091 publiées (87/90 identiques, 2 écarts voulus)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-28T09:38:41.796Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-28T10:42:50.076Z",
+          "note": "PR #295 fusionnée → v1.2.0 ; main verte, release créée ; dette #296 ; corps de fusion avec ligne Co-authored-by (gh non authentifié, outil de fusion de l'environnement) → #297 bloque ; suppression de branche refusée"
         }
       },
       "metriques": {}
