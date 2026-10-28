@@ -3492,6 +3492,24 @@
         }
       },
       "metriques": {}
+    },
+    "95": {
+      "numero": 95,
+      "date": "2026-10-28",
+      "debut": "2026-10-28T19:09:27.171Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-10-28T19:09:27.171Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
