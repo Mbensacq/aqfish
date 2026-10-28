@@ -3276,6 +3276,24 @@
         }
       },
       "metriques": {}
+    },
+    "89": {
+      "numero": 89,
+      "date": "2026-10-28",
+      "debut": "2026-10-28T02:16:11.530Z",
+      "type": "dette",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-10-28T02:16:11.530Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
