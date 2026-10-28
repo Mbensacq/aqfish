@@ -35,7 +35,10 @@ sur `docs/SOINS.md` § 11 jusqu'à vérification.
   le paludarium (20 °C, seul point commun des plages préférées) accueille sonneurs orientaux
   et tritons à ventre de feu, cohabitation **possible sous conditions** d'après des
   témoignages d'éleveurs seulement ([60], faible : grand bac, œufs et têtards du sonneur
-  mangés par les tritons, avis partagés). À recouper avec une source primaire.
+  mangés par les tritons, avis partagés). À recouper avec une source primaire ; toujours non
+  vérifiable au 2026-10-28 (voir « Vérifications du 2026-10-28 »).
+- **Bac tropical à 24 °C** (#286, ADR 0067) : seule eau dans la plage préférée commune du néon,
+  du guppy et du corydoras (23–24 °C), et dans toutes les plages des sources citées.
 - Fiches utilisables (avec badges de confiance) : néon, guppy, corydoras poivré, axolotl,
   poisson-clown (paramètres d'eau de source secondaire seulement), chirurgien bleu.
 - **Fiche koï à bloquer** : aucun paramètre chiffré vérifié.
@@ -143,7 +146,8 @@ sur `docs/SOINS.md` § 11 jusqu'à vérification.
 - **Taille** : 70 mm en longueur standard ; femelles plus grandes et plus rondes.
 - **Eau** : 22–26 °C, pH 6,0–7,0, jusqu'à 12 dGH ; pH et température stables (Seriously Fish).
   **Désaccord** : 16–24 °C chez Animalia.bio (secondaire). Afficher 22–26 °C et noter la
-  tolérance au frais.
+  tolérance au frais. Dans le jeu, plage préférée 22–24 °C (approximation : recoupement des
+  deux sources) ; le bac tropical est à 24 °C pour rester dans les deux (ADR 0067).
 - **Bac** : 61 × 38 × 30 cm (~70 L) ; **substrat sableux** (les barbillons s'infectent sur un
   gravier mal entretenu) ; cachettes.
 - **Respiration** : respiration aérienne facultative par l'intestin (Plaul et al. 2016, PubMed,
@@ -350,11 +354,25 @@ froide.
   officiel ».
 - « L'ancistrus se nourrit seul d'algues » : non vérifié.
 
+## Vérifications du 2026-10-28 (cycle 90, #284 et #286)
+
+Recherche faite pour lever les points de confiance faible ; aucune source primaire n'a pu être
+lue. Rien n'est relevé ni présenté comme confirmé.
+
+| Point | Source visée | Résultat au 2026-10-28 |
+|---|---|---|
+| Statut légal de *Bombina orientalis* (« Autres Anoures ») et de *Cynops orientalis* (« Autres Caudata »), #284 point 1 | Légifrance, version consolidée de l'arrêté du 8 octobre 2018, annexe 2 | **Toujours non vérifiable** : Légifrance refuse l'accès depuis l'environnement de l'équipe ; la copie FAOLEX trouvée est l'arrêté du 14 octobre 2019 (Guadeloupe), qui modifie une autre ligne de l'annexe 2 sans la reproduire. Confiances inchangées dans `sim/species-legal.ts` (faible pour le sonneur, moyenne pour le triton) |
+| Taille, température et besoins du sonneur oriental, #284 point 2 | AmphibiaWeb, fiche *Bombina orientalis* (n° 2045) | **Toujours non vérifiable** : la page renvoie une vérification anti-robot, aucun contenu lu. Fiche du jeu inchangée (anapsid.org, secondaire, [59]) |
+| Cohabitation sonneur oriental / triton à ventre de feu, #286 point 2 | Source primaire (étude, fiche universitaire ou vétérinaire) | **Toujours non vérifiable** : aucune source primaire trouvée sur ce couple ; seule reste [60] (témoignages, faible). ADR 0065 inchangée |
+
+À reprendre par une session qui aura accès à Légifrance et à AmphibiaWeb (ou par Mathis).
+
 ## Non vérifié et désaccords
 
 1. Néon : 21–25 °C (Seriously Fish 2026) / 26,5–29 °C (ancien texte) / 21–29 °C (importateur) /
    20–26 °C (FishBase via `docs/SOINS.md`).
-2. Corydoras poivré : 22–26 °C (Seriously Fish) / 16–24 °C (Animalia.bio, secondaire).
+2. Corydoras poivré : 22–26 °C (Seriously Fish) / 16–24 °C (Animalia.bio, secondaire). Non
+   arbitré : le bac tropical (24 °C, ADR 0067) est dans les deux plages.
 3. Koï : *C. rubrofuscus* / *C. carpio* ; tous les paramètres chiffrés non vérifiés.
 4. Axolotl : « eau saumâtre » (PetMD) contredite ; « nitrite 1 ppm » (Agave Vet) probablement
    erroné ; formes domestiques en France : désaccord entre sources secondaires.
