@@ -54,7 +54,9 @@
   right: 12px;
   z-index: 1;
   box-sizing: border-box;
-  width: 340px;
+  // 288 px (340 au cycle 88) : à 1280 × 720, en trois-quarts, le bord droit du bac est à
+  // 968 px ; le panneau commence à 980 px et ne le recouvre plus (#289, docs/PIEGES.md).
+  width: 288px;
   max-width: calc(100vw - 24px);
   // Sous la ligne des boutons du haut, au-dessus de la barre des vues (une ligne de ~40 px
   // à 16 px du bas) et du bouton « Wiki » à côté d'elle.
