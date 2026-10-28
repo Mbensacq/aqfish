@@ -22,7 +22,7 @@ import { tidyRoom } from './room-furniture';
 import { DEFAULT_SIM_SPEED, isSimSpeed, type SimSpeed } from './sim-speed';
 import { SPECIES, type SpeciesId } from './species';
 import type { Fish } from './swimmer';
-import { readWater, type WaterState } from './water';
+import { copyWater, readWater, type WaterState } from './water';
 import { HEALTH_FLOOR, HEALTH_START } from './wellbeing';
 import { clampTankDimensions, type Box3, type TankDimensions } from './tank';
 import {
@@ -300,7 +300,7 @@ export function savedWorld(world: World): SavedWorld {
       return saved as unknown as SavedFish;
     }),
     food: world.food.map((pellet) => ({ ...pellet })),
-    water: { ...world.water },
+    water: copyWater(world.water),
   };
 }
 

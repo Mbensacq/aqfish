@@ -79,6 +79,16 @@ export const TURBID_WATER_SURFACE = INPUT_TONES.surfaceTroubleEntree;
  */
 export const TURBID_BODY_MIX = 0.8;
 export const TURBID_SURFACE_MIX = 0.8;
+/**
+ * Teintes d'entrée d'une eau teintée par les feuilles de catappa (issue #239, ADR 0071),
+ * mêlées à celles de l'eau de jour dans les proportions `TEA_BODY_MIX` et `TEA_SURFACE_MIX`
+ * × teinte (`setTea`), avant le trouble.
+ */
+export const TEA_WATER_BODY = INPUT_TONES.eauTheEntree;
+export const TEA_WATER_SURFACE = INPUT_TONES.surfaceTheEntree;
+/** Part de la teinte brun-thé pour une teinte de 1. */
+export const TEA_BODY_MIX = 1;
+export const TEA_SURFACE_MIX = 1;
 /** Couleur du sol de la lumière ambiante la nuit (faces tournées vers le bas, côtés du sable). */
 export const NIGHT_GROUND = INPUT_TONES.solNuitEntree;
 /** Dessous du sable la nuit (non éclairé : vue de dessous, ADR 0006). */
@@ -115,6 +125,14 @@ export interface AquariumScene {
   setTurbidity(turbidity: number): void;
   /** Trouble de l'eau appliqué (`setTurbidity`). */
   readonly turbidity: number;
+  /**
+   * Teinte brun-thé des feuilles de catappa (issue #239), dans [0, 1], appliquée sous le
+   * trouble. À 0 (valeur initiale), couleurs exactement inchangées.
+   * @throws RangeError si `tea` n'est pas un réel dans [0, 1].
+   */
+  setTea(tea: number): void;
+  /** Teinte brun-thé appliquée (`setTea`). */
+  readonly tea: number;
   /**
    * Place le point de vue (position de la caméra) : pour le bassin enterré, retire le sol et
    * la margelle du côté de la caméra quand elle passe sous le niveau du sol (vue en coupe,
@@ -180,6 +198,11 @@ export function createAquariumScene(environment: Environment = TROPICAL_TANK): A
     nightSurface: new Color(NIGHT_WATER_SURFACE),
     turbidBody: new Color(TURBID_WATER_BODY),
     turbidSurface: new Color(TURBID_WATER_SURFACE),
+    teaBody: new Color(TEA_WATER_BODY),
+    teaSurface: new Color(TEA_WATER_SURFACE),
+    // Eau de jour après la teinte brun-thé (`setTea`) : égales aux teintes de jour à 0.
+    tintedBody: new Color(waterTint.body),
+    tintedSurface: new Color(waterTint.surface),
     // Eau de jour après le trouble (`setTurbidity`) : égales aux teintes de jour à 0.
     clearBody: new Color(waterTint.body),
     clearSurface: new Color(waterTint.surface),
@@ -191,6 +214,26 @@ export function createAquariumScene(environment: Environment = TROPICAL_TANK): A
 
   let day = 1;
   let turbidity = 0;
+  let tea = 0;
+  // Teinte brun-thé puis trouble ; `lerpColors(a, b, 0)` vaut exactement `a`.
+  const mixWaterTints = (): void => {
+    waterColors.tintedBody.lerpColors(waterColors.dayBody, waterColors.teaBody, TEA_BODY_MIX * tea);
+    waterColors.tintedSurface.lerpColors(
+      waterColors.daySurface,
+      waterColors.teaSurface,
+      TEA_SURFACE_MIX * tea,
+    );
+    waterColors.clearBody.lerpColors(
+      waterColors.tintedBody,
+      waterColors.turbidBody,
+      TURBID_BODY_MIX * turbidity,
+    );
+    waterColors.clearSurface.lerpColors(
+      waterColors.tintedSurface,
+      waterColors.turbidSurface,
+      TURBID_SURFACE_MIX * turbidity,
+    );
+  };
   // `lerpColors(a, b, 0)` vaut exactement `a` : à midi et sans trouble, couleurs d'origine.
   const applyWaterColors = (): void => {
     body.color.lerpColors(waterColors.clearBody, waterColors.nightBody, 1 - day);
@@ -209,16 +252,18 @@ export function createAquariumScene(environment: Environment = TROPICAL_TANK): A
         throw new RangeError(`trouble de l'eau dans [0, 1] attendu (reçu : ${value})`);
       }
       turbidity = value;
-      waterColors.clearBody.lerpColors(
-        waterColors.dayBody,
-        waterColors.turbidBody,
-        TURBID_BODY_MIX * value,
-      );
-      waterColors.clearSurface.lerpColors(
-        waterColors.daySurface,
-        waterColors.turbidSurface,
-        TURBID_SURFACE_MIX * value,
-      );
+      mixWaterTints();
+      applyWaterColors();
+    },
+    get tea() {
+      return tea;
+    },
+    setTea: (value) => {
+      if (!(value >= 0 && value <= 1)) {
+        throw new RangeError(`teinte brun-thé dans [0, 1] attendue (reçu : ${value})`);
+      }
+      tea = value;
+      mixWaterTints();
       applyWaterColors();
     },
     setDaylight: (light) => {

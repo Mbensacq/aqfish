@@ -1,5 +1,5 @@
 import type { SpeciesDefinition } from './species';
-import { phOutOfTolerance } from './water-ph';
+import { likesAcidWater, phOutOfTolerance } from './water-ph';
 
 /**
  * Bien-être des animaux, première partie : santé (issue #208, ADR 0054).
@@ -44,6 +44,12 @@ export const STARVING_HUNGER = 1;
  * 16 minutes simulées s'il est la seule cause.
  */
 export const PH_STRESS = 0.5;
+/**
+ * Santé plancher des espèces d'eau acide (`likesAcidWater`) tant qu'une feuille de catappa
+ * agit (issue #239, ADR 0071) : « légèrement relevée », **valeur de jeu**. La santé n'y est
+ * pas portée d'un coup : elle cesse seulement de baisser en dessous (`stepHealth`).
+ */
+export const CATAPPA_HEALTH_FLOOR = HEALTH_FLOOR + 0.1;
 /** Ralentissement au plancher : la nage y garde `1 − HEALTH_SLOWDOWN` de sa vitesse. */
 export const HEALTH_SLOWDOWN = 0.4;
 
@@ -76,13 +82,21 @@ export function healthStress(
  * Santé après `dt` secondes avec `stress` causes (`healthStress`) : baisse de
  * `stress · HEALTH_DECAY_RATE · dt`, ou regain de `HEALTH_RECOVERY_RATE · dt` sans cause,
  * bornée à [`HEALTH_FLOOR`, 1]. Une valeur non finie (état corrompu) repart de
- * `HEALTH_START`.
+ * `HEALTH_START`. Avec un plancher relevé `floor` (catappa, issue #239), la baisse s'arrête à
+ * `floor`, ou à la santé de départ si elle est déjà en dessous : jamais de saut vers le haut.
  */
-export function stepHealth(health: number, stress: number, dt: number): number {
+export function stepHealth(
+  health: number,
+  stress: number,
+  dt: number,
+  floor = HEALTH_FLOOR,
+): number {
   const base = Number.isFinite(health) ? health : HEALTH_START;
-  const next =
-    stress > 0 ? base - stress * HEALTH_DECAY_RATE * dt : base + HEALTH_RECOVERY_RATE * dt;
-  return clamp(next, HEALTH_FLOOR, 1);
+  if (stress > 0) {
+    const lowest = Math.max(HEALTH_FLOOR, Math.min(base, floor));
+    return clamp(base - stress * HEALTH_DECAY_RATE * dt, lowest, 1);
+  }
+  return clamp(base + HEALTH_RECOVERY_RATE * dt, HEALTH_FLOOR, 1);
 }
 
 /**
@@ -118,7 +132,9 @@ export interface WellbeingSubject {
  * Santé d'un pas pour tous les animaux, **en place** (aucune allocation), sur leur faim de
  * fin de pas (après les repas). `speciesOf` donne la définition d'une espèce ; `badWater` :
  * eau « mauvaise » pendant le pas ; `ph` : pH de l'eau (issue #236), comparé à la plage
- * tolérée de chaque espèce (absent : le pH ne compte pas).
+ * tolérée de chaque espèce (absent : le pH ne compte pas) ; `catappa` : une feuille de catappa
+ * agit (issue #239), la santé des espèces d'eau acide ne baisse plus sous
+ * `CATAPPA_HEALTH_FLOOR`.
  */
 export function stepWellbeingInPlace<S extends WellbeingSubject>(
   animals: readonly S[],
@@ -126,11 +142,13 @@ export function stepWellbeingInPlace<S extends WellbeingSubject>(
   badWater: boolean,
   speciesOf: (species: S['species']) => SpeciesDefinition,
   ph?: number,
+  catappa = false,
 ): void {
   for (const animal of animals) {
     const phOut = ph !== undefined && phOutOfTolerance(ph, animal.species);
     const stress = healthStress(animal.hunger, speciesOf(animal.species), badWater, phOut);
-    animal.health = stepHealth(animal.health, stress, dt);
+    const floor = catappa && likesAcidWater(animal.species) ? CATAPPA_HEALTH_FLOOR : HEALTH_FLOOR;
+    animal.health = stepHealth(animal.health, stress, dt, floor);
   }
 }
 

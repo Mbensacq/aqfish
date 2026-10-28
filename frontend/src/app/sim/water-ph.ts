@@ -124,6 +124,18 @@ export function phOutOfTolerance(ph: number, species: SpeciesId): boolean {
   return !inPhRange(ph, SPECIES_PH[species].tolerated);
 }
 
+/**
+ * pH idéal minimal au-dessous duquel une espèce est dite « d'eau acide » (issue #239) :
+ * celles dont la plage idéale descend jusqu'à 6 ou plus bas (néon, rasbora, tétra citron,
+ * loche kuhli). Seuil de jeu, lu sur `SPECIES_PH`.
+ */
+export const ACID_WATER_IDEAL_MIN = 6;
+
+/** Vrai si l'espèce `species` apprécie l'eau acide (`ACID_WATER_IDEAL_MIN`). */
+export function likesAcidWater(species: SpeciesId): boolean {
+  return SPECIES_PH[species].ideal.min <= ACID_WATER_IDEAL_MIN;
+}
+
 /** Zone de la jauge pH : verte, orange, rouge. */
 export type PhZone = 'ideal' | 'tolere' | 'hors-plage';
 

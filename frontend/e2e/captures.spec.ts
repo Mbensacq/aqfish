@@ -187,6 +187,9 @@ test.describe('Captures', () => {
     // Animaux affamés de longue date (#208) : santé au plancher, couleurs ternies.
     { name: 'side-affames', query: 'affames=1&camera=side' },
     { name: 'three-quarter-affames', query: 'affames=1' },
+    // Feuilles de catappa (#239) : feuilles brunes au sol, eau teintée brun-thé.
+    { name: 'three-quarter-catappa', query: 'catappa=3' },
+    { name: 'top-catappa', query: 'catappa=5&camera=top' },
   ] as const;
   for (const { name, query } of DAY_CAPTURES) {
     test(`angle ${name}`, async ({ page }) => {

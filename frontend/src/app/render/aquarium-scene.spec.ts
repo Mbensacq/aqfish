@@ -213,6 +213,26 @@ describe('createAquariumScene : lumière du jour', () => {
     expect(fingerprint(p)).toEqual(before);
   });
 
+  it('eau brun-thé des feuilles de catappa (#239) : teinte seulement, retour au bit près', () => {
+    const p = parts();
+    const before = fingerprint(p);
+    expect(p.scene.tea).toBe(0);
+    p.scene.setTea(1);
+    expect(p.scene.tea).toBe(1);
+    // Plus rouge que bleu : brun-thé.
+    expect(p.body.color.r).toBeGreaterThan(p.body.color.b);
+    expect(p.surface.color.r).toBeGreaterThan(p.surface.color.b);
+    // Le trouble passe par-dessus la teinte.
+    p.scene.setTurbidity(1);
+    expect(p.body.color.g).toBeGreaterThan(p.body.color.b);
+    p.scene.setTurbidity(0);
+    p.scene.setTea(0);
+    expect(fingerprint(p)).toEqual(before);
+    for (const value of [-0.1, 1.1, Number.NaN]) {
+      expect(() => p.scene.setTea(value)).toThrow(RangeError);
+    }
+  });
+
   it('trouble de l’eau : refuse une valeur hors de [0, 1]', () => {
     const p = parts();
     for (const value of [-0.1, 1.1, Number.NaN]) {
@@ -257,7 +277,9 @@ describe('createAquariumScene : environnements (#87)', () => {
     // Teinte d'entrée bleu néon : l'image retombe sur les tons du récif (ADR 0039).
     expect(hex(materials(water)[0])).toBe(PALETTE.neonBleu);
     expect(hex(materials(water)[2])).toBe(PALETTE.neonBleu);
-    expect(Object.keys(ENVIRONMENT_TONES)).toEqual([...REEF.tones]);
+    // Tous les tons d'environnement sont ceux du récif, sauf l'eau brun-thé (#239), proposée
+    // dans tous les environnements quand l'eau est teintée.
+    expect(Object.keys(ENVIRONMENT_TONES)).toEqual([...REEF.tones, 'eauThe', 'eauTheClaire']);
   });
 
   it('paletteColor refuse un nom inconnu ou hérité du prototype', () => {

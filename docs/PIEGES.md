@@ -606,6 +606,22 @@ haut de sa section.
 
 ## Rendu
 
+- **Objet plat posé sur le sable : masqué en dessous de 6 mm** (cycle 94, #239) : une feuille
+  posée 2 mm au-dessus du sable ne s'affichait pas du tout, même sans filtre ; visible à
+  8 mm. Les ombres plates du décor posées sur le sable l'emportent dans le tampon de
+  profondeur. Pour un objet au sol, partir de 8 mm et vérifier sur capture. (2026-10-28)
+- **Marqueur d'opacité des granulés : dessiner après l'eau et les vitres** (cycle 94, #239) :
+  une feuille marquée comme un granulé (`withFoodMarker`) mais dessinée avant l'eau (ordre
+  0,5) voyait son opacité remontée par l'eau puis les vitres au-dessus du seuil de la passe :
+  gris de la palette au lieu des bruns de la nourriture. Ordre de rendu juste avant
+  `FOOD_CORE_RENDER_ORDER`. (2026-10-28)
+- **Teinter l'eau d'une couleur absente de la palette** (cycle 94, #239) : un brun d'entrée
+  mêlé à 60 % à l'eau de jour tombait sur `rocheSombre` et `roche` (eau grise). Il faut à la
+  fois une entrée saturée remplaçant toute la teinte (mélange 1) et des tons d'environnement
+  dédiés (ADR 0039) proposés seulement quand la teinte est active ; mesurer quelques pixels
+  avec et sans filtre (Pillow) pour régler les tons sur l'entrée réelle de la passe.
+  (2026-10-28)
+
 - **Ajouter une couleur à la palette commune change les images d'ailleurs** (cycle 77, #226) :
   trois bruns de granulé ajoutés à `PALETTE` ont pris 19 captures sans nourriture (pièce,
   meubles, bassin, pixels de nuit du paludarium et du récif). Avant d'ajouter une couleur,

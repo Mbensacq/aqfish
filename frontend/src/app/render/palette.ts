@@ -152,6 +152,14 @@ export const ENVIRONMENT_TONES = {
    * (`eauRecif`, `eauRecifClaire`) et que `neonBleu`, dont il doit se distinguer.
    */
   chirurgienBleu: '#1d3fbf',
+  /**
+   * Eau teintée par les feuilles de catappa (issue #239, ADR 0071) : brun-thé du volume.
+   * Proposé seulement quand l'eau est teintée (`AquariumView.setWaterTea`), dans tous les
+   * environnements ; sans feuille, écarté comme les autres tons d'environnement.
+   */
+  eauThe: '#6a4e2c',
+  /** Eau teintée par les feuilles de catappa : surface, ambre plus clair. */
+  eauTheClaire: '#9a7640',
 } as const;
 
 /**
@@ -200,6 +208,10 @@ export const INPUT_TONES = {
   eauTroubleEntree: '#1a3a08',
   /** Surface d'une eau mauvaise (issue #207). */
   surfaceTroubleEntree: '#306818',
+  /** Volume d'une eau teintée par les feuilles de catappa, brun-thé (issue #239, ADR 0071). */
+  eauTheEntree: '#b05a10',
+  /** Surface d'une eau teintée par les feuilles de catappa (issue #239). */
+  surfaceTheEntree: '#c08030',
 } as const;
 
 export type NightToneName = keyof typeof NIGHT_TONES;
