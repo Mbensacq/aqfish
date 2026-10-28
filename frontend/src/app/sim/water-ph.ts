@@ -83,6 +83,12 @@ export const SPECIES_PH: Readonly<Record<SpeciesId, SpeciesPh>> = {
   clown: { tolerated: { min: 7.8, max: 8.6 }, ideal: { min: 8, max: 8.4 } },
   // approximation de jeu : eau de mer, plage étroite.
   chirurgien: { tolerated: { min: 7.8, max: 8.6 }, ideal: { min: 8.1, max: 8.4 } },
+  // approximations de jeu (ADR 0070), bornes tolérées proches de Seriously Fish (rasbora
+  // 5–7,5 ; tétra citron 5–7,5 ; kuhli 3,5–7 relevé à 5 ; gourami nain 6–7,5).
+  rasbora: { tolerated: { min: 5, max: 7.5 }, ideal: { min: 6, max: 7 } },
+  tetra: { tolerated: { min: 5, max: 7.5 }, ideal: { min: 6, max: 7.2 } },
+  kuhli: { tolerated: { min: 5, max: 7.2 }, ideal: { min: 5.5, max: 6.8 } },
+  gourami: { tolerated: { min: 6, max: 7.8 }, ideal: { min: 6.5, max: 7.5 } },
 };
 
 /** pH de l'eau neuve de l'environnement `environment`. */

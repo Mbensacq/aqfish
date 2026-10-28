@@ -9,10 +9,14 @@ import {
   CHIRURGIEN,
   CLOWN,
   CORYDORA,
+  GOURAMI,
   GRENOUILLE,
   GUPPY,
   KOI,
+  KUHLI,
   NEON,
+  RASBORA,
+  TETRA,
   TRITON,
   type SpeciesId,
 } from './species';
@@ -136,6 +140,11 @@ function defaultPopulation(
 }
 
 const TROPICAL_SPECIES = [NEON, GUPPY, CORYDORA] as const;
+/**
+ * Espèces du lot 1 d'eau douce (#238, ADR 0070) : proposées au bac tropical mais absentes de
+ * sa population de départ, qui reste celle d'avant (captures identiques à l'octet).
+ */
+const TROPICAL_ADDABLE = [RASBORA, TETRA, KUHLI, GOURAMI] as const;
 
 /** Bac tropical : le bac d'avant l'issue #87, à l'identique. */
 export const TROPICAL_TANK: Environment = {
@@ -158,7 +167,7 @@ export const TROPICAL_TANK: Environment = {
   bankDecor: null,
   rain: false,
   floatingLeaves: false,
-  species: TROPICAL_SPECIES.map((def) => def.id),
+  species: [...TROPICAL_SPECIES, ...TROPICAL_ADDABLE].map((def) => def.id),
   population: defaultPopulation(TROPICAL_SPECIES),
 };
 

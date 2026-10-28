@@ -63,7 +63,8 @@ describe('wiki des espèces : présentes et ajoutables (#287)', () => {
       ['neon', 12],
       ['corydora', 4],
     ]);
-    expect(ids(lists.addable)).toEqual(['guppy']);
+    // Lot 1 d'eau douce (#238) : proposé au bac tropical, jamais peuplé d'office.
+    expect(ids(lists.addable)).toEqual(['guppy', 'rasbora', 'tetra', 'kuhli', 'gourami']);
     expect(lists.addable[0]).toEqual({
       species: 'guppy',
       name: SPECIES.guppy.name,
@@ -89,7 +90,14 @@ describe('wiki des espèces : présentes et ajoutables (#287)', () => {
       ['neon', 3],
       ['koi', 2],
     ]);
-    expect(ids(lists.addable)).toEqual(['guppy', 'corydora']);
+    expect(ids(lists.addable)).toEqual([
+      'guppy',
+      'corydora',
+      'rasbora',
+      'tetra',
+      'kuhli',
+      'gourami',
+    ]);
   });
 
   it('effectifs invalides comptés comme nuls ; clés inconnues ignorées', () => {
@@ -167,7 +175,7 @@ describe('wiki des espèces : soins de la fiche (#291)', () => {
   it('néon : déconseillé avec koï et axolotl, avec guppy et corydoras dans le bac tropical', () => {
     const { avoid, together, elsewhere } = wikiCare('neon').cohabitation;
     expect(ids(avoid)).toEqual(['koi', 'axolotl']);
-    expect(ids(together)).toEqual(['guppy', 'corydora']);
+    expect(ids(together)).toEqual(['guppy', 'corydora', 'rasbora', 'tetra', 'kuhli', 'gourami']);
     expect(elsewhere).toEqual(
       ['grenouille', 'triton', 'clown', 'chirurgien'].map((id) => SPECIES[id as SpeciesId].name),
     );

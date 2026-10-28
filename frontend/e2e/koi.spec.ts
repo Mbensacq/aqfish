@@ -79,17 +79,20 @@ test.describe('Koïs (#88)', () => {
     await expect(host(page)).toHaveAttribute('data-aqfish-population', 'koi:8');
     await page.getByRole('combobox', { name: 'Environnement' }).selectOption('tropical');
     await expect(host(page)).toHaveAttribute('data-aqfish-environment', 'tropical');
-    await expect(rows).toHaveCount(3);
+    await expect(rows).toHaveCount(7);
     await expect(host(page)).toHaveAttribute(
       'data-aqfish-population',
-      'neon:12,guppy:6,corydora:6',
+      'neon:12,guppy:6,corydora:6,rasbora:0,tetra:0,kuhli:0,gourami:0',
     );
     expect(errors).toEqual([]);
   });
 
   test('population=koi:5 est ignorée dans le bac tropical', async ({ page }) => {
     const errors = await open(page, '?capture=1&seed=42&population=koi:5,neon:3');
-    await expect(host(page)).toHaveAttribute('data-aqfish-population', 'neon:3,guppy:6,corydora:6');
+    await expect(host(page)).toHaveAttribute(
+      'data-aqfish-population',
+      'neon:3,guppy:6,corydora:6,rasbora:0,tetra:0,kuhli:0,gourami:0',
+    );
     expect(errors).toEqual([]);
   });
 });

@@ -19,7 +19,11 @@ export type SpeciesId =
   | 'grenouille'
   | 'triton'
   | 'clown'
-  | 'chirurgien';
+  | 'chirurgien'
+  | 'rasbora'
+  | 'tetra'
+  | 'kuhli'
+  | 'gourami';
 
 /**
  * Silhouette voxel d'une apparence : le rendu associe à chaque identifiant un gabarit de
@@ -36,6 +40,10 @@ export const SILHOUETTE_IDS = [
   'triton',
   'clown',
   'chirurgien',
+  'rasbora',
+  'tetra',
+  'kuhli',
+  'gourami',
 ] as const;
 export type SilhouetteId = (typeof SILHOUETTE_IDS)[number];
 
@@ -947,6 +955,208 @@ export const CHIRURGIEN: SpeciesDefinition = {
   },
 };
 
+/*
+ * Eau douce tropicale, lot 1 (issue #238, ADR 0070) : rasbora arlequin, tétra citron, loche
+ * kuhli, gourami nain. Ils vivent dans le bac tropical sans y être peuplés d'office (bac par
+ * défaut inchangé). Pour les quatre : couleurs de la palette commune (docs/DA.md), tailles du
+ * modèle agrandies comme le néon pour la lisibilité, vitesses, virages, banc, profondeur et
+ * alimentation : **approximations de jeu** ; valeurs réelles et sources : `sim/species-sheet.ts`.
+ */
+
+/**
+ * Rasbora arlequin (Trigonostigma heteromorpha) : corps cuivré rosé, triangle noir de la
+ * dorsale au pédoncule, nageoires orangées ; banc serré en pleine eau (Seriously Fish : espèce
+ * grégaire, groupe de 8 à 10 au moins).
+ */
+export const RASBORA: SpeciesDefinition = {
+  id: 'rasbora',
+  name: 'Rasbora arlequin',
+  scientificName: 'Trigonostigma heteromorpha',
+  bodyLength: 0.055,
+  cruiseSpeed: 0.055,
+  minSpeed: 0.025,
+  maxSpeed: 0.11,
+  wanderTurnRate: 0.9,
+  avoidTurnRate: 2.5,
+  maxPitch: 0.3,
+  wallMargin: 0.035,
+  tailBeatFrequency: 2.4,
+  defaultPopulation: 8,
+  maxPopulation: 24,
+  schooling: {
+    neighborRadius: 0.28,
+    separationRadius: 0.05,
+    separationWeight: 1,
+    alignmentWeight: 1.1,
+    cohesionWeight: 1.1,
+    turnRate: 1.5,
+    minDistance: 0.025,
+  },
+  silhouette: 'rasbora',
+  colors: {
+    stripe: '#f4978e',
+    accent: '#1c1c22',
+    back: '#e07a2f',
+    belly: '#f2ead8',
+    fin: '#f08a2c',
+    eye: '#1c1c22',
+  },
+  // Pleine eau, entre 25 % et 75 % de la hauteur d'eau.
+  depth: {
+    minHeightRatio: 0.25,
+    maxHeightRatio: 0.75,
+    floorZone: 0.07, // portée commune des parois (`MAX_FLOOR_ZONE`)
+    ascentRate: 0,
+    ascentDuration: 1,
+  },
+  feeding: {
+    hungerRate: 1 / 180,
+    perceptionRadius: 0.3,
+    turnRate: 2.4,
+    minHeightRatio: 0.25,
+    maxHeightRatio: 1,
+  },
+};
+
+/**
+ * Tétra citron (Hyphessobrycon pulchripinnis) : corps haut jaune pâle, dos or, anale bordée de
+ * noir, haut de l'œil rouge ; banc lâche dans toute la hauteur d'eau (Seriously Fish : groupe de
+ * 8 à 10 au moins).
+ */
+export const TETRA: SpeciesDefinition = {
+  id: 'tetra',
+  name: 'Tétra citron',
+  scientificName: 'Hyphessobrycon pulchripinnis',
+  bodyLength: 0.055,
+  cruiseSpeed: 0.05,
+  minSpeed: 0.02,
+  maxSpeed: 0.1,
+  wanderTurnRate: 1,
+  avoidTurnRate: 2.5,
+  maxPitch: 0.35,
+  wallMargin: 0.035,
+  tailBeatFrequency: 2.3,
+  defaultPopulation: 8,
+  maxPopulation: 24,
+  schooling: {
+    neighborRadius: 0.25,
+    separationRadius: 0.07,
+    separationWeight: 1.2,
+    alignmentWeight: 0.7,
+    cohesionWeight: 0.7,
+    turnRate: 1.3,
+    minDistance: 0.03,
+  },
+  silhouette: 'tetra',
+  colors: {
+    stripe: '#ffd166',
+    accent: '#1c1c22',
+    back: '#f2c14e',
+    belly: '#f2ead8',
+    fin: '#ffd166',
+    eye: '#d94a3a',
+  },
+  feeding: {
+    hungerRate: 1 / 180,
+    perceptionRadius: 0.3,
+    turnRate: 2.3,
+    minHeightRatio: 0.3,
+    maxHeightRatio: 1,
+  },
+};
+
+/**
+ * Loche kuhli (Pangio kuhlii) : corps d'anguille orangé barré de brun sombre, au ras du sable,
+ * active la nuit (`DIURNAL`) ; vit en groupe sans former de banc (Seriously Fish : 5 ou 6 au
+ * moins, qui se regroupent au repos), d'où `schooling: null`.
+ */
+export const KUHLI: SpeciesDefinition = {
+  id: 'kuhli',
+  name: 'Loche kuhli',
+  scientificName: 'Pangio kuhlii',
+  bodyLength: 0.09,
+  cruiseSpeed: 0.03,
+  minSpeed: 0.012,
+  maxSpeed: 0.09,
+  wanderTurnRate: 1.2,
+  avoidTurnRate: 2.5,
+  maxPitch: 0.25,
+  wallMargin: 0.05,
+  tailBeatFrequency: 1.6,
+  defaultPopulation: 6,
+  maxPopulation: 12,
+  schooling: null,
+  silhouette: 'kuhli',
+  colors: {
+    stripe: '#f08a2c',
+    accent: '#45423e',
+    back: '#45423e',
+    belly: '#f2c14e',
+    fin: '#e07a2f',
+    eye: '#1c1c22',
+  },
+  depth: {
+    maxHeightRatio: 0.08,
+    floorZone: 0.01,
+    ascentRate: 0,
+    ascentDuration: 1,
+  },
+  feeding: {
+    hungerRate: 1 / 240,
+    perceptionRadius: 0.35,
+    turnRate: 2.2,
+    minHeightRatio: 0,
+    maxHeightRatio: 0.1,
+  },
+};
+
+/**
+ * Gourami nain (Trichogaster lalius) : corps ovale haut, rouge barré de bleu, gorge bleue,
+ * longues ventrales en filaments ; près de la surface, où il vient respirer l'air (poisson à
+ * labyrinthe), solitaire ou en couple (Seriously Fish : un couple plutôt qu'un groupe).
+ */
+export const GOURAMI: SpeciesDefinition = {
+  id: 'gourami',
+  name: 'Gourami nain',
+  scientificName: 'Trichogaster lalius',
+  bodyLength: 0.075,
+  cruiseSpeed: 0.035,
+  minSpeed: 0.015,
+  maxSpeed: 0.08,
+  wanderTurnRate: 0.7,
+  avoidTurnRate: 2.5,
+  maxPitch: 0.3,
+  wallMargin: 0.04,
+  tailBeatFrequency: 1.5,
+  defaultPopulation: 2,
+  maxPopulation: 4,
+  schooling: null,
+  silhouette: 'gourami',
+  colors: {
+    stripe: '#d94a3a',
+    accent: '#3fa9f5',
+    back: '#d94a3a',
+    belly: '#3fa9f5',
+    fin: '#f08a2c',
+    eye: '#1c1c22',
+  },
+  // Moitié haute du bac ; une brève montée à la surface toutes les 90 s en moyenne.
+  depth: {
+    minHeightRatio: 0.55,
+    maxHeightRatio: 0.92,
+    floorZone: 0.07, // portée commune des parois (`MAX_FLOOR_ZONE`)
+    ascentRate: 1 / 90,
+    ascentDuration: 4,
+  },
+  feeding: {
+    hungerRate: 1 / 200,
+    perceptionRadius: 0.3,
+    turnRate: 2,
+    minHeightRatio: 0.4,
+    maxHeightRatio: 1,
+  },
+};
+
 /** Toutes les espèces connues, par identifiant (ordre de déclaration = ordre de peuplement). */
 export const SPECIES: Readonly<Record<SpeciesId, SpeciesDefinition>> = {
   neon: NEON,
@@ -958,6 +1168,10 @@ export const SPECIES: Readonly<Record<SpeciesId, SpeciesDefinition>> = {
   triton: TRITON,
   clown: CLOWN,
   chirurgien: CHIRURGIEN,
+  rasbora: RASBORA,
+  tetra: TETRA,
+  kuhli: KUHLI,
+  gourami: GOURAMI,
 };
 
 /** Apparences d'une espèce : ses `variants`, ou son apparence par défaut seule. */

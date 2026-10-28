@@ -23,7 +23,7 @@ test.describe('Compatibilité des espèces (#209)', () => {
   test('bac tropical par défaut : aucun mélange déconseillé', async ({ page }) => {
     const errors = await open(page, '?seed=42');
     await toggle(page).click();
-    await expect(page.locator('[data-section="population"] [data-species]')).toHaveCount(3);
+    await expect(page.locator('[data-section="population"] [data-species]')).toHaveCount(7);
     await expect(warnings(page)).toHaveCount(0);
     expect(errors).toEqual([]);
   });

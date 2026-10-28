@@ -50,6 +50,7 @@ const RESTING_FOOD =
   'population=neon:0,guppy:0,corydora:0&nourrir=0,0:0.3:0.03,0:-0.15:0.1,0:-0.4:0.15';
 /** Bois flotté ajouté au décor par défaut (#169) : `x:z:rotation:echelle:graine`. */
 const WOOD = 'bois=-0.02:0:-0.2:1.5:7';
+const FRESHWATER_LOT1 = 'population=neon:0,guppy:0,corydora:0,rasbora:8,tetra:8,kuhli:6,gourami:2';
 const OUTPUT_DIR = resolve(
   process.env['CAPTURE_DIR'] ?? join(__dirname, '..', '..', 'docs', 'captures', 'latest'),
 );
@@ -146,6 +147,9 @@ test.describe('Captures', () => {
     { name: 'three-quarter-population', query: 'population=neon:12,guppy:2,corydora:0' },
     // Catalogue d'espèces (#189) : plus de corydoras, moins de néons.
     { name: 'three-quarter-catalogue', query: 'population=neon:4,guppy:6,corydora:14' },
+    // Eau douce, lot 1 (#238) : rasboras, tétras citrons, loches kuhli et gouramis nains seuls.
+    { name: 'three-quarter-eau-douce-lot1', query: FRESHWATER_LOT1 },
+    { name: 'front-eau-douce-lot1', query: `${FRESHWATER_LOT1}&camera=front` },
     // Éditeur de décor (#167) : rocher d'indice 2 sélectionné, contour clair.
     { name: 'three-quarter-edition', query: 'edition=2' },
     // Bois flotté à branches (#169) : un bois ajouté au décor par défaut, devant les rochers.

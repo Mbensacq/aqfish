@@ -122,7 +122,15 @@ describe('koï (#88)', () => {
   it('vivent dans le bassin seulement ; le bac tropical garde ses trois espèces', () => {
     expect(POND.species).toEqual(['koi']);
     expect(POND.population).toEqual([{ species: 'koi', count: KOI.defaultPopulation }]);
-    expect(TROPICAL_TANK.species).toEqual(['neon', 'guppy', 'corydora']);
+    expect(TROPICAL_TANK.species).toEqual([
+      'neon',
+      'guppy',
+      'corydora',
+      'rasbora',
+      'tetra',
+      'kuhli',
+      'gourami',
+    ]);
     expect(livesIn('bassin', 'koi')).toBe(true);
     expect(livesIn('tropical', 'koi')).toBe(false);
     expect(livesIn('bassin', 'neon')).toBe(false);

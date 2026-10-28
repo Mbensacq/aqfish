@@ -15,7 +15,15 @@ const ids = (env: EnvironmentId) => speciesCatalog(env).map((entry) => entry.spe
 
 describe('catalogue d’espèces (#189)', () => {
   it('liste les espèces de chaque environnement, dans l’ordre du panneau', () => {
-    expect(ids('tropical')).toEqual(['neon', 'guppy', 'corydora']);
+    expect(ids('tropical')).toEqual([
+      'neon',
+      'guppy',
+      'corydora',
+      'rasbora',
+      'tetra',
+      'kuhli',
+      'gourami',
+    ]);
     expect(ids('bassin')).toEqual(['koi']);
     expect(ids('paludarium')).toEqual(['axolotl', 'grenouille', 'triton']);
     expect(ids('recif')).toEqual(['clown', 'chirurgien']);
