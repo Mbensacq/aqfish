@@ -6,6 +6,7 @@ import { createDayClock } from '../src/app/sim/daylight';
 import { serializeWorld } from '../src/app/sim/save';
 import { freshWater } from '../src/app/sim/water';
 import { createDefaultWorld, type MutableWorld } from '../src/app/sim/world';
+import { selectedTankWorld } from './outils-sauvegarde';
 
 /**
  * pH (issue #236) : jauge « pH » (dans le tableau de bord en bordure depuis #256), zone selon
@@ -137,9 +138,9 @@ test.describe('pH (#236)', () => {
       page.waitForEvent('download'),
       page.locator('[data-section="sauvegarde"]').getByRole('button', { name: 'Exporter' }).click(),
     ]);
-    const exported = JSON.parse(readFileSync((await download.path())!, 'utf8')) as {
-      water: { ph: number };
-    };
+    const exported = selectedTankWorld<{ water: { ph: number } }>(
+      readFileSync((await download.path())!, 'utf8'),
+    );
     expect(exported.water.ph).toBe(6);
     expect(errors).toEqual([]);
   });

@@ -56,8 +56,18 @@ import {
 /** Marqueur du format, pour reconnaître un fichier aqfish. */
 export const SAVE_FORMAT = 'aqfish';
 
-/** Version du schéma écrite par `serializeWorld` ; la seule acceptée à la lecture. */
-export const SAVE_SCHEMA = 1;
+/**
+ * Version du schéma de la sauvegarde de l'application : la pièce de N bacs (ADR 0061, 0069),
+ * écrite par `serializeRoom` (`sim/room-save.ts`).
+ */
+export const SAVE_SCHEMA = 2;
+
+/**
+ * Schéma 1 : un monde affiché et les mondes rangés des autres environnements. Écrit par
+ * `serializeWorld` (tests, fichiers de compatibilité), relu par `parseWorld` et migré vers
+ * le schéma 2 par `sim/room-save.ts`.
+ */
+export const SAVE_SCHEMA_1 = 1;
 
 /**
  * Taille maximale d'une sauvegarde, en caractères (256 Kio). Une sauvegarde pleine (60
@@ -151,7 +161,7 @@ export interface SavedWorld {
 /** Contenu d'une sauvegarde (schéma 1). */
 export interface SaveData extends SavedWorld {
   readonly format: typeof SAVE_FORMAT;
-  readonly schema: typeof SAVE_SCHEMA;
+  readonly schema: typeof SAVE_SCHEMA_1;
   readonly settings: SaveSettings;
   /**
    * Mondes des autres environnements visités, figés (issue #277, ADR 0063), dans l'ordre de
@@ -220,10 +230,7 @@ export function saveData(
   settings: SaveSettings = DEFAULT_SAVE_SETTINGS,
   others: readonly World[] = [],
 ): SaveData {
-  const problems = settingsProblems(settings);
-  if (problems.length > 0) {
-    throw new RangeError(`sauvegarde : ${problems.join(' ; ')}`);
-  }
+  const settingsCopy = settingsData(settings);
   const seen = new Set<EnvironmentId>([world.environment]);
   for (const other of others) {
     if (seen.has(other.environment)) {
@@ -236,27 +243,39 @@ export function saveData(
   );
   return {
     format: SAVE_FORMAT,
-    schema: SAVE_SCHEMA,
+    schema: SAVE_SCHEMA_1,
     ...savedWorld(world),
-    settings: {
-      speed: settings.speed,
-      clock: {
-        startHour: settings.clock.startHour,
-        dayLengthSeconds: settings.clock.dayLengthSeconds,
-        frozen: settings.clock.frozen,
-      },
-      foodStyle: settings.foodStyle ?? DEFAULT_FOOD_STYLE,
-      room: roomData(clampRoom(settings.room ?? DEFAULT_ROOM)),
-    },
+    settings: settingsCopy,
     ...(ordered.length === 0 ? {} : { others: ordered.map(savedWorld) }),
   };
 }
 
 /**
- * Corps enregistré d'un monde (copié).
+ * Réglages enregistrés (copiés, pièce bornée), communs aux schémas 1 et 2.
+ * @throws RangeError si un réglage est invalide.
+ */
+export function settingsData(settings: SaveSettings): SaveSettings {
+  const problems = settingsProblems(settings);
+  if (problems.length > 0) {
+    throw new RangeError(`sauvegarde : ${problems.join(' ; ')}`);
+  }
+  return {
+    speed: settings.speed,
+    clock: {
+      startHour: settings.clock.startHour,
+      dayLengthSeconds: settings.clock.dayLengthSeconds,
+      frozen: settings.clock.frozen,
+    },
+    foodStyle: settings.foodStyle ?? DEFAULT_FOOD_STYLE,
+    room: roomData(clampRoom(settings.room ?? DEFAULT_ROOM)),
+  };
+}
+
+/**
+ * Corps enregistré d'un monde (copié), commun aux schémas 1 et 2.
  * @throws RangeError si le monde a des obstacles explicites (hors décor et coraux).
  */
-function savedWorld(world: World): SavedWorld {
+export function savedWorld(world: World): SavedWorld {
   // Obstacles recalculables : ceux du décor, puis ceux des coraux et des anémones tirés de la
   // graine (comptés sans reconstruire leurs modèles voxels : cache de `worldFeatures`).
   if (world.obstacles.length !== world.decor.length + seededObstacleCount(world)) {
@@ -342,9 +361,9 @@ export function parseSaveData(value: unknown): ParseWorldResult {
     return failure('ce fichier n’est pas une sauvegarde aqfish');
   }
   const schema = own(value, 'schema');
-  if (schema !== SAVE_SCHEMA) {
+  if (schema !== SAVE_SCHEMA_1) {
     return failure(
-      `version de sauvegarde inconnue (${describe(schema)}, version ${SAVE_SCHEMA} attendue)`,
+      `version de sauvegarde inconnue (${describe(schema)}, version ${SAVE_SCHEMA_1} attendue)`,
     );
   }
   const environment = own(value, 'environment');
@@ -413,7 +432,7 @@ function parseOthers(value: unknown, shown: EnvironmentId, problems: string[]): 
  * si un problème a été ajouté à `problems`. `afterCounters` est appelé après la lecture des
  * compteurs, avant le décor (ordre historique des messages du monde affiché).
  */
-function parseWorldBody(
+export function parseWorldBody(
   value: Record<string, unknown>,
   problems: string[],
   afterCounters?: () => void,
@@ -519,7 +538,8 @@ function parseDimensions(
   return clampTankDimensions(raw as unknown as TankDimensions);
 }
 
-function parseSettings(value: unknown, problems: string[]): SaveSettings | null {
+/** Relit les réglages (communs aux schémas 1 et 2) ; `null` si un problème a été ajouté. */
+export function parseSettings(value: unknown, problems: string[]): SaveSettings | null {
   if (!isRecord(value)) {
     problems.push('settings doit être un objet');
     return null;
@@ -776,12 +796,12 @@ function failure(error: string): ParseWorldResult {
 }
 
 /** Objet JSON (ni tableau ni `null`). */
-function isRecord(value: unknown): value is Record<string, unknown> {
+export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 /** Propriété propre seulement : les clés héritées (`constructor`, `__proto__`…) valent `undefined`. */
-function own(record: Record<string, unknown>, key: string): unknown {
+export function own(record: Record<string, unknown>, key: string): unknown {
   return Object.hasOwn(record, key) ? record[key] : undefined;
 }
 
@@ -794,11 +814,11 @@ function isNumberIn(value: unknown, min: number, max: number, epsilon = 0): valu
   );
 }
 
-function isIntegerIn(value: unknown, min: number, max: number): value is number {
+export function isIntegerIn(value: unknown, min: number, max: number): value is number {
   return typeof value === 'number' && Number.isInteger(value) && value >= min && value <= max;
 }
 
-function isUint32(value: unknown): value is number {
+export function isUint32(value: unknown): value is number {
   return isIntegerIn(value, 0, MAX_SEED);
 }
 
@@ -811,7 +831,7 @@ function insideBox(box: Box3, x: number, y: number, z: number): boolean {
 }
 
 /** Description courte d'une valeur reçue, pour les messages (jamais le texte entier). */
-function describe(value: unknown): string {
+export function describe(value: unknown): string {
   if (typeof value === 'string') {
     return `« ${value.slice(0, 20)}${value.length > 20 ? '…' : ''} »`;
   }

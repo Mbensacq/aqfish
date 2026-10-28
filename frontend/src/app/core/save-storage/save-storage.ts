@@ -11,6 +11,13 @@
 /** Clé de la sauvegarde automatique dans le stockage. */
 export const SAVE_STORAGE_KEY = 'aqfish.sauvegarde';
 
+/**
+ * Copie de la sauvegarde au schéma 1 (#264, ADR 0061 et 0069), faite une seule fois avant la
+ * première écriture par-dessus : une version antérieure de l'application, qui refuse le
+ * schéma 2, repartirait sinon d'un monde neuf et écraserait la sauvegarde.
+ */
+export const LEGACY_SAVE_STORAGE_KEY = 'aqfish.sauvegarde.schema1';
+
 /** Sous-ensemble de `Storage` utilisé ici (remplaçable par un double dans les tests). */
 export interface SaveStorage {
   getItem(key: string): string | null;
@@ -58,6 +65,7 @@ export function writeStoredSave(storage: SaveStorage | null, text: string): Save
     return 'indisponible';
   }
   try {
+    keepLegacySave(storage);
     storage.setItem(SAVE_STORAGE_KEY, text);
     return 'active';
   } catch (error) {
@@ -80,4 +88,25 @@ export function isQuotaError(error: unknown): boolean {
     code === 22 ||
     code === 1014
   );
+}
+
+/** En-tête d'une sauvegarde au schéma 1 telle que l'application l'écrivait (`JSON.stringify`). */
+const LEGACY_SAVE_HEADER = '{"format":"aqfish","schema":1,';
+
+/**
+ * Copie la sauvegarde mémorisée sous `LEGACY_SAVE_STORAGE_KEY` si elle est au schéma 1 et
+ * qu'aucune copie n'existe encore. Le schéma est reconnu à l'en-tête écrit par l'application
+ * (`LEGACY_SAVE_HEADER`), sans décoder le texte : coût constant à chaque sauvegarde
+ * automatique. Peut lever (stockage refusé ou plein) : l'appelant traite l'erreur comme celle
+ * de l'écriture.
+ */
+function keepLegacySave(storage: SaveStorage): void {
+  const current = storage.getItem(SAVE_STORAGE_KEY);
+  if (
+    typeof current === 'string' &&
+    current.startsWith(LEGACY_SAVE_HEADER) &&
+    storage.getItem(LEGACY_SAVE_STORAGE_KEY) === null
+  ) {
+    storage.setItem(LEGACY_SAVE_STORAGE_KEY, current);
+  }
 }

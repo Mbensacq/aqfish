@@ -6,6 +6,7 @@ import { createDayClock } from '../src/app/sim/daylight';
 import { setPopulation } from '../src/app/sim/population';
 import { SAVE_FORMAT, SAVE_SCHEMA, serializeWorld } from '../src/app/sim/save';
 import { advance, createDefaultWorld } from '../src/app/sim/world';
+import { selectedTankWorld } from './outils-sauvegarde';
 
 /**
  * Sauvegarde (issue #70) : enregistrement automatique dans le navigateur et restauration au
@@ -136,13 +137,19 @@ test.describe('Sauvegarde (#70)', () => {
     expect(await tick(page)).toBeGreaterThanOrEqual(tickAtDeparture);
 
     const stored = await page.evaluate(() => localStorage.getItem('aqfish.sauvegarde'));
-    const document = JSON.parse(stored!) as { schema: number; others?: { environment: string }[] };
-    expect(document.schema).toBe(1);
-    expect(document.others?.map((world) => world.environment).sort()).toEqual([
-      'bassin',
-      'paludarium',
-      'recif',
+    // Schéma 2 (#264, ADR 0069) : un bac par environnement visité, dans l'ordre des visites.
+    const document = JSON.parse(stored!) as {
+      schema: number;
+      tanks: { id: number; world: { environment: string } }[];
+    };
+    expect(document.schema).toBe(2);
+    expect(document.tanks.map((tank) => [tank.id, tank.world.environment])).toEqual([
+      [0, 'tropical'],
+      [1, 'bassin'],
+      [2, 'paludarium'],
+      [3, 'recif'],
     ]);
+    expect(selectedTankWorld<{ environment: string }>(stored!).environment).toBe('tropical');
     expect(errors).toEqual([]);
   });
 
@@ -199,13 +206,13 @@ test.describe('Sauvegarde (#70)', () => {
       exportButton(page).click(),
     ]);
     expect(download.suggestedFilename()).toBe('aqfish-sauvegarde.json');
-    const exported = JSON.parse(readFileSync((await download.path())!, 'utf8'));
-    expect(exported).toMatchObject({
+    const exportedText = readFileSync((await download.path())!, 'utf8');
+    expect(JSON.parse(exportedText)).toMatchObject({
       format: SAVE_FORMAT,
       schema: SAVE_SCHEMA,
       seed: 42,
-      environment: 'tropical',
     });
+    expect(selectedTankWorld(exportedText)).toMatchObject({ seed: 42, environment: 'tropical' });
 
     // Import valide : un bassin à 4 koïs, à 18 h figées.
     const pond = setPopulation(advance(createDefaultWorld(7, 'bassin'), 600), 'koi', 4);
@@ -355,6 +362,30 @@ test.describe('Sauvegarde (#70)', () => {
       'data-aqfish-population',
       'neon:12,guppy:6,corydora:6',
     );
+    expect(errors).toEqual([]);
+  });
+
+  test('ancienne sauvegarde au schéma 1 (#264) : chargée sans erreur, copiée puis réécrite au schéma 2', async ({
+    page,
+  }) => {
+    const pond = setPopulation(advance(createDefaultWorld(5, 'bassin'), 300), 'koi', 3);
+    const legacy = serializeWorld(pond, { speed: 2, clock: createDayClock(9, 1200, false) });
+    expect(legacy.startsWith('{"format":"aqfish","schema":1,')).toBe(true);
+    // Écrite avant le chargement de l'application (le rechargement réécrirait la sauvegarde).
+    await page.addInitScript((text) => localStorage.setItem('aqfish.sauvegarde', text), legacy);
+    const errors = await open(page);
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'bassin');
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /(^|,)koi:3(,|$)/);
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-speed', '2');
+    await expect(hostEl(page).locator('canvas').first()).toBeVisible();
+    await page.evaluate(() => window.dispatchEvent(new Event('pagehide')));
+    const stored = await page.evaluate(() => ({
+      current: localStorage.getItem('aqfish.sauvegarde'),
+      copy: localStorage.getItem('aqfish.sauvegarde.schema1'),
+    }));
+    expect(stored.copy).toBe(legacy);
+    expect(JSON.parse(stored.current!)).toMatchObject({ schema: 2, seed: 5, selectedTankId: 0 });
+    expect(selectedTankWorld<{ environment: string }>(stored.current!).environment).toBe('bassin');
     expect(errors).toEqual([]);
   });
 

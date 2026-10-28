@@ -20,7 +20,7 @@ import {
   parseSaveData,
   parseWorld,
   SAVE_FORMAT,
-  SAVE_SCHEMA,
+  SAVE_SCHEMA_1,
   saveData,
   serializeWorld,
   type ParseWorldResult,
@@ -93,7 +93,7 @@ describe('serializeWorld / parseWorld : aller-retour', () => {
   it('écrit le format versionné attendu', () => {
     const data = saveData(createDefaultWorld(42));
     expect(data.format).toBe(SAVE_FORMAT);
-    expect(data.schema).toBe(SAVE_SCHEMA);
+    expect(data.schema).toBe(SAVE_SCHEMA_1);
     expect(data.seed).toBe(42);
     expect(data.environment).toBe('tropical');
     expect(data.tick).toBe(0);
@@ -146,7 +146,7 @@ describe('serializeWorld / parseWorld : aller-retour', () => {
     expect(back).toEqual(world);
     // Le format ne change pas : même version, relue à l'identique (ADR 0028).
     const data = JSON.parse(text) as { format: string; schema: number };
-    expect([data.format, data.schema]).toEqual([SAVE_FORMAT, SAVE_SCHEMA]);
+    expect([data.format, data.schema]).toEqual([SAVE_FORMAT, SAVE_SCHEMA_1]);
     expect(serializeWorld(back)).toBe(text);
   });
 
@@ -344,7 +344,7 @@ describe('serializeWorld / parseWorld : aller-retour', () => {
     delete data['water'];
     const { world } = restored(parseSaveData(data));
     expect(world.water).toEqual(freshWater('tropical'));
-    expect(SAVE_SCHEMA).toBe(1);
+    expect(SAVE_SCHEMA_1).toBe(1);
   });
 
   it.each([
@@ -476,7 +476,7 @@ describe('serializeWorld / parseWorld : aller-retour', () => {
       settings: Record<string, unknown>;
     };
     delete data.settings['room'];
-    expect(data.schema).toBe(SAVE_SCHEMA);
+    expect(data.schema).toBe(SAVE_SCHEMA_1);
     const { settings, world } = restored(parseSaveData(data));
     expect(settings.room).toEqual(DEFAULT_ROOM);
     expect(world.entities.length).toBeGreaterThan(0);

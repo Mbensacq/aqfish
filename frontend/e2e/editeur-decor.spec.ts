@@ -19,6 +19,7 @@ import {
   dragTank,
   touchDragTank,
 } from './outils-decor';
+import { selectedTankWorld } from './outils-sauvegarde';
 
 /**
  * Éditeur de décor (issue #167) : « Réglages » → « Éditer le décor » ouvre le mode édition ;
@@ -123,7 +124,7 @@ test.describe('Éditeur de décor (#167)', () => {
     );
     const text = await page.evaluate((key) => localStorage.getItem(key), SAVE_STORAGE_KEY);
     expect(text).not.toBeNull();
-    const decor = (JSON.parse(text!) as { decor: DecorItem[] }).decor;
+    const decor = selectedTankWorld<{ decor: DecorItem[] }>(text!).decor;
     // Le rocher d'indice 2 a disparu, le rocher posé est le dernier élément.
     expect(decor.map((i) => i.kind)).toEqual([
       ...DEFAULT_DECOR.filter((_, n) => n !== 2).map((i) => i.kind),

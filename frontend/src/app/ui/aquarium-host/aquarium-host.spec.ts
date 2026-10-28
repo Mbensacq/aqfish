@@ -2,9 +2,15 @@ import { TestBed, type ComponentFixture } from '@angular/core/testing';
 
 import { isCaptureReady, resetCaptureReady } from '../../core/capture/capture-ready';
 import { RENDER_FILTER_STORAGE_KEY } from '../../core/render-filter/render-filter';
-import { SAVE_STORAGE_KEY, type SaveStorage } from '../../core/save-storage/save-storage';
+import {
+  LEGACY_SAVE_STORAGE_KEY,
+  SAVE_STORAGE_KEY,
+  type SaveStorage,
+} from '../../core/save-storage/save-storage';
 import { createDayClock } from '../../sim/daylight';
-import { DEFAULT_SAVE_SETTINGS, parseWorld, serializeWorld } from '../../sim/save';
+import { parseSaveWorlds, serializeRoom } from '../../sim/room-save';
+import { createRoom } from '../../sim/room-state';
+import { DEFAULT_SAVE_SETTINGS, serializeWorld } from '../../sim/save';
 import { DEFAULT_ROOM } from '../../sim/room';
 import type { AquariumRenderer, AquariumView } from '../../render/aquarium-view';
 import { MAX_STEPS_PER_FRAME } from '../../sim/constants';
@@ -1066,7 +1072,7 @@ describe('AquariumHost', () => {
       expect(phAttr()).toBe('6.3;hors-plage');
       host().changeWater();
       expect(phAttr()).toBe('6.5;tolere');
-      const saved = parseWorld(saveStorage!.getItem(SAVE_STORAGE_KEY)!);
+      const saved = parseSaveWorlds(saveStorage!.getItem(SAVE_STORAGE_KEY)!);
       expect(saved.ok && saved.world.water.ph).toBeCloseTo(6.51, 12);
     });
 
@@ -1079,7 +1085,7 @@ describe('AquariumHost', () => {
       expect(host().world!.water).toEqual(expected);
       expect(host().water().nitrate).toBe(35);
       expect(host().water().quality).toBe('a-surveiller');
-      const saved = parseWorld(saveStorage!.getItem(SAVE_STORAGE_KEY)!);
+      const saved = parseSaveWorlds(saveStorage!.getItem(SAVE_STORAGE_KEY)!);
       expect(saved.ok && saved.world.water.nitrate).toBe(35);
     });
 
@@ -1160,7 +1166,7 @@ describe('AquariumHost', () => {
     const host = () => fixture.componentInstance;
     const roomAttr = () => (fixture.nativeElement as HTMLElement).getAttribute(ROOM_ATTRIBUTE);
     const savedRoom = () => {
-      const saved = parseWorld(saveStorage!.getItem(SAVE_STORAGE_KEY)!);
+      const saved = parseSaveWorlds(saveStorage!.getItem(SAVE_STORAGE_KEY)!);
       return saved.ok ? saved.settings.room : null;
     };
 
@@ -1668,12 +1674,18 @@ describe('AquariumHost', () => {
       host().setPopulation('neon', 2);
       const tropical = serializeWorld(host().world!);
       host().setEnvironment('bassin');
+      // Schéma 2 (#264, ADR 0069) : un bac par environnement visité, le bassin sélectionné.
       const stored = JSON.parse(memory().data.get(SAVE_STORAGE_KEY)!) as {
-        environment: string;
-        others: { environment: string }[];
+        schema: number;
+        selectedTankId: number;
+        tanks: { id: number; world: { environment: string } }[];
       };
-      expect(stored.environment).toBe('bassin');
-      expect(stored.others.map((o) => o.environment)).toEqual(['tropical']);
+      expect(stored.schema).toBe(2);
+      expect(stored.tanks.map((t) => [t.id, t.world.environment])).toEqual([
+        [0, 'tropical'],
+        [1, 'bassin'],
+      ]);
+      expect(stored.selectedTankId).toBe(1);
       host().setPopulation('koi', 1);
       // Sauvegarde automatique (minuterie ou `pagehide` en vrai).
       host().saveNow();
@@ -1685,6 +1697,41 @@ describe('AquariumHost', () => {
       host().setEnvironment('tropical');
       expect(serializeWorld(host().world!)).toBe(tropical);
       expect(host().population().neon).toBe(2);
+    });
+
+    it('schéma 2 (#264) : bac sélectionné affiché, identifiants et noms gardés à la sauvegarde', async () => {
+      const room = createRoom(21, ['tropical', 'recif']);
+      const named = {
+        ...room,
+        tanks: [room.tanks[0]!, { ...room.tanks[1]!, name: 'Mon récif' }],
+      };
+      memory().data.set(SAVE_STORAGE_KEY, serializeRoom(named, 1));
+      await create();
+      expect(host().environment()).toBe('recif');
+      host().setEnvironment('tropical');
+      host().setEnvironment('bassin');
+      const stored = JSON.parse(memory().data.get(SAVE_STORAGE_KEY)!) as {
+        selectedTankId: number;
+        nextTankId: number;
+        tanks: { id: number; name: string; world: { environment: string; seed: number } }[];
+      };
+      expect(stored.tanks.map((t) => [t.id, t.name, t.world.environment])).toEqual([
+        [0, 'Bac tropical', 'tropical'],
+        [1, 'Mon récif', 'recif'],
+        [2, 'Bassin', 'bassin'],
+      ]);
+      expect([stored.selectedTankId, stored.nextTankId]).toEqual([2, 3]);
+      // Aucune copie de l'ancien schéma : la sauvegarde lue était déjà au schéma 2.
+      expect(memory().data.has(LEGACY_SAVE_STORAGE_KEY)).toBe(false);
+    });
+
+    it('schéma 1 restauré (#264) : copie gardée, réécrit au schéma 2', async () => {
+      const legacy = storePond();
+      await create();
+      expect(host().environment()).toBe('bassin');
+      host().saveNow();
+      expect(memory().data.get(LEGACY_SAVE_STORAGE_KEY)).toBe(legacy);
+      expect(memory().data.get(SAVE_STORAGE_KEY)).toMatch(/^\{"format":"aqfish","schema":2,/);
     });
 
     it('import (#277) : remplace aussi les mondes des autres environnements', async () => {
@@ -1711,7 +1758,7 @@ describe('AquariumHost', () => {
     it('vitesse= prime sur la vitesse de la sauvegarde, le monde restauré est gardé (#232)', async () => {
       const text = storePond();
       await create('?vitesse=0');
-      const expected = parseWorld(text);
+      const expected = parseSaveWorlds(text);
       expect(host().world).toEqual(expected.ok ? expected.world : null);
       expect(host().speed()).toBe(0);
       expect(element().getAttribute(SPEED_ATTRIBUTE)).toBe('0');
@@ -1720,7 +1767,7 @@ describe('AquariumHost', () => {
     it('restaure au démarrage le monde, la population, la vitesse et l’heure', async () => {
       const text = storePond();
       await create();
-      const expected = parseWorld(text);
+      const expected = parseSaveWorlds(text);
       expect(expected.ok).toBe(true);
       expect(host().world).toEqual(expected.ok ? expected.world : null);
       expect(host().environment()).toBe('bassin');
@@ -1753,7 +1800,7 @@ describe('AquariumHost', () => {
       host().toggleFoodStyle();
       expect(host().foodStyle()).toBe('points');
       expect(element().getAttribute(FOOD_STYLE_ATTRIBUTE)).toBe('points');
-      const saved = parseWorld(memory().data.get(SAVE_STORAGE_KEY)!);
+      const saved = parseSaveWorlds(memory().data.get(SAVE_STORAGE_KEY)!);
       expect(saved.ok && saved.settings.foodStyle).toBe('points');
       // Valeur inconnue ignorée.
       host().setFoodStyle('cubes' as never);
@@ -1806,11 +1853,11 @@ describe('AquariumHost', () => {
       const call = interval.mock.calls.find(([, delay]) => delay === AUTOSAVE_INTERVAL_MS);
       expect(call).toBeDefined();
       (call![0] as () => void)();
-      const saved = parseWorld(memory().data.get(SAVE_STORAGE_KEY)!);
+      const saved = parseSaveWorlds(memory().data.get(SAVE_STORAGE_KEY)!);
       expect(saved.ok && saved.world).toEqual(host().world);
       host().feedAtCenter();
       window.dispatchEvent(new Event('pagehide'));
-      const afterPagehide = parseWorld(memory().data.get(SAVE_STORAGE_KEY)!);
+      const afterPagehide = parseSaveWorlds(memory().data.get(SAVE_STORAGE_KEY)!);
       expect(afterPagehide.ok && afterPagehide.world.food.length).toBe(FOOD_PER_DROP);
       const writes = memory().writes;
       Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'hidden' });
@@ -1902,7 +1949,7 @@ describe('AquariumHost', () => {
       });
       host().exportSave();
       expect(click).toHaveBeenCalledOnce();
-      const result = parseWorld(await blob!.text());
+      const result = parseSaveWorlds(await blob!.text());
       expect(result.ok && result.world).toEqual(host().world);
       expect(result.ok && result.settings.speed).toBe(4);
       expect(host().saveMessage()?.kind).toBe('info');
@@ -1918,7 +1965,7 @@ describe('AquariumHost', () => {
     const element = () => fixture.nativeElement as HTMLElement;
     const items = () => host().room().items ?? [];
     const savedItems = () => {
-      const saved = parseWorld(saveStorage!.getItem(SAVE_STORAGE_KEY)!);
+      const saved = parseSaveWorlds(saveStorage!.getItem(SAVE_STORAGE_KEY)!);
       return saved.ok ? (saved.settings.room?.items ?? []) : null;
     };
     const SHELF = { kind: 'etagere', x: -1.25, z: -0.17, quarter: 0 } as const;
@@ -2152,7 +2199,7 @@ describe('AquariumHost', () => {
       expect(host().deleteSelectedDecor()).toBe(true);
       expect(host().decorSelection()).toBeNull();
       expect(host().world!.decor).toEqual(DEFAULT_DECOR.filter((_, n) => n !== 2));
-      const saved = parseWorld(saveStorage!.getItem(SAVE_STORAGE_KEY)!);
+      const saved = parseSaveWorlds(saveStorage!.getItem(SAVE_STORAGE_KEY)!);
       expect(saved.ok && saved.world.decor).toEqual(host().world!.decor);
       fixture.destroy();
       await create();
@@ -2186,7 +2233,7 @@ describe('AquariumHost', () => {
       expect(host().world!.decor.filter((_, n) => n !== 2)).toEqual(
         DEFAULT_DECOR.filter((_, n) => n !== 2),
       );
-      const saved = parseWorld(saveStorage!.getItem(SAVE_STORAGE_KEY)!);
+      const saved = parseSaveWorlds(saveStorage!.getItem(SAVE_STORAGE_KEY)!);
       expect(saved.ok && saved.world.decor[2].scale).toBe(host().world!.decor[2].scale);
       // À la borne d'échelle : rien ne change, et ce n'est pas un refus.
       while (host().scaleSelectedDecor(-1)) {
@@ -2226,7 +2273,7 @@ describe('AquariumHost', () => {
       expect(rock.x).toBe(0.35);
       expect(rock.z).toBeCloseTo(DEFAULT_TANK.depth / 2 - decorFootprint(rock), 12);
       expect(host().world!.obstacles.length).toBe(DEFAULT_DECOR.length);
-      const saved = parseWorld(saveStorage!.getItem(SAVE_STORAGE_KEY)!);
+      const saved = parseSaveWorlds(saveStorage!.getItem(SAVE_STORAGE_KEY)!);
       expect(saved.ok && saved.world.decor[2]).toEqual(rock);
     });
 
@@ -2316,7 +2363,7 @@ describe('AquariumHost', () => {
       expect(item.elevation ?? 0).toBeGreaterThan(0.01);
       expect(decorItemsOverlap(item, target)).toBe(false);
       expect(host().decorDropGrounded()).toBe(false);
-      const saved = parseWorld(saveStorage!.getItem(SAVE_STORAGE_KEY)!);
+      const saved = parseSaveWorlds(saveStorage!.getItem(SAVE_STORAGE_KEY)!);
       expect(saved.ok && saved.world.decor.at(-1)).toEqual(item);
       // Animation de la chute sur plusieurs images : la pose enregistrée ne bouge pas.
       frames.flush(1000);
@@ -2365,7 +2412,7 @@ describe('AquariumHost', () => {
       );
       expect(restsOnSupport(kept, index, 0.003)).toBe(false);
       // Pose enregistrée telle quelle, puis chute affichée sans la modifier.
-      const saved = parseWorld(saveStorage!.getItem(SAVE_STORAGE_KEY)!);
+      const saved = parseSaveWorlds(saveStorage!.getItem(SAVE_STORAGE_KEY)!);
       expect(saved.ok && saved.world.decor[index]).toEqual(rock);
       frames.flush(1000);
       frames.flush(5000);
