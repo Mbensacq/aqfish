@@ -3407,10 +3407,10 @@
           "note": "PR #298 : pièce lot 1 (RoomState, schéma 2, migration, copie schema1, ADR 0069), CI verte, captures 90/90 identiques à main"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-28T11:54:57.601Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-28T12:38:59.656Z",
+          "note": "Verdict OK, 0 bug, 2825 tests unitaires, 1 e2e ajouté (schéma 1 avec others), captures c092 publiées (89/90 identiques, écart antérieur)"
         }
       },
       "metriques": {}
