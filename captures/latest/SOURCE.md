@@ -1,8 +1,8 @@
-# Captures c090
+# Captures c091
 
-- Branche : cycle/c090-dette-donnees-especes
-- PR : #294
-- Commit : 07744be (code) ; 4cfe483 ajoute seulement un test e2e
+- Branche : cycle/c091-wiki-soins
+- PR : #295
+- Commit : cd07e2a
 - Graine : celle de captures.spec.ts (inchangée), temps fixé par le mode capture
 - Chromium local 1243 (pas celui de la CI)
-- 77/90 identiques à c089 ; écart voulu : 13 captures qui affichent la température du bac tropical (25,0 → 24,0 °C), zone du texte seulement
+- 87/90 identiques à c090 ; écarts : `three-quarter-wiki-fiche` et `telephone-wiki-fiche` (section « Comparaison avec le bac », voulus) ; `telephone-fiche-espece` (13 pixels au bord du bouton « Fiche », identiques sur `main` : écart antérieur à la PR)
