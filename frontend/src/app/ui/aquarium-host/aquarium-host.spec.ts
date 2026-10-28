@@ -25,6 +25,10 @@ import {
   KOI,
   NEON,
   TRITON,
+  GOURAMI,
+  KUHLI,
+  RASBORA,
+  TETRA,
 } from '../../sim/species';
 import { expiryAge, FOOD_PER_DROP } from '../../sim/food';
 import { setPopulation } from '../../sim/population';
@@ -789,6 +793,10 @@ describe('AquariumHost', () => {
         triton: 0,
         clown: 0,
         chirurgien: 0,
+        rasbora: 0,
+        tetra: 0,
+        kuhli: 0,
+        gourami: 0,
       });
       expect(element().getAttribute(POPULATION_ATTRIBUTE)).toBe(`koi:${KOI.defaultPopulation}`);
       expect(host().activePreset()).toBe('top');
@@ -1269,9 +1277,13 @@ describe('AquariumHost', () => {
         triton: 2,
         clown: 0,
         chirurgien: 0,
+        rasbora: 0,
+        tetra: 0,
+        kuhli: 0,
+        gourami: 0,
       };
       expect(formatPopulation(counts)).toBe(
-        'neon:12,guppy:0,corydora:6,koi:2,axolotl:1,grenouille:3,triton:2,clown:0,chirurgien:0',
+        'neon:12,guppy:0,corydora:6,koi:2,axolotl:1,grenouille:3,triton:2,clown:0,chirurgien:0,rasbora:0,tetra:0,kuhli:0,gourami:0',
       );
       // Espèces d'un environnement (#88) : seulement elles, dans leur ordre.
       expect(formatPopulation(counts, ['koi'])).toBe('koi:2');
@@ -1334,7 +1346,7 @@ describe('AquariumHost', () => {
     it('expose les effectifs et leurs maximums au démarrage', async () => {
       await create('?seed=3');
       expect(exposed()).toBe(
-        `neon:${NEON.defaultPopulation},guppy:${GUPPY.defaultPopulation},corydora:${CORYDORA.defaultPopulation}`,
+        `neon:${NEON.defaultPopulation},guppy:${GUPPY.defaultPopulation},corydora:${CORYDORA.defaultPopulation},rasbora:0,tetra:0,kuhli:0,gourami:0`,
       );
       expect(host().population()).toEqual({
         neon: NEON.defaultPopulation,
@@ -1346,6 +1358,10 @@ describe('AquariumHost', () => {
         triton: 0,
         clown: 0,
         chirurgien: 0,
+        rasbora: 0,
+        tetra: 0,
+        kuhli: 0,
+        gourami: 0,
       });
       expect(host().populationMax()).toEqual({
         neon: NEON.maxPopulation,
@@ -1357,6 +1373,10 @@ describe('AquariumHost', () => {
         triton: TRITON.maxPopulation,
         clown: CLOWN.maxPopulation,
         chirurgien: CHIRURGIEN.maxPopulation,
+        rasbora: RASBORA.maxPopulation,
+        tetra: TETRA.maxPopulation,
+        kuhli: KUHLI.maxPopulation,
+        gourami: GOURAMI.maxPopulation,
       });
     });
 
@@ -1377,7 +1397,9 @@ describe('AquariumHost', () => {
       expect(world.tick).toBe(tick);
       expect(world.decor).toEqual(before.decor);
       expect(world).toEqual(setPopulation(setPopulation(before, 'neon', 15), 'corydora', 0));
-      expect(exposed()).toBe(`neon:15,guppy:${GUPPY.defaultPopulation},corydora:0`);
+      expect(exposed()).toBe(
+        `neon:15,guppy:${GUPPY.defaultPopulation},corydora:0,rasbora:0,tetra:0,kuhli:0,gourami:0`,
+      );
       expect(host().population().neon).toBe(15);
     }, 15_000);
 
@@ -1397,7 +1419,7 @@ describe('AquariumHost', () => {
       let expected = setPopulation(createDefaultWorld(42), 'neon', 3);
       expected = setPopulation(setPopulation(expected, 'guppy', 0), 'corydora', 1);
       expect(host().world).toEqual(advance(expected, 120));
-      expect(exposed()).toBe('neon:3,guppy:0,corydora:1');
+      expect(exposed()).toBe('neon:3,guppy:0,corydora:1,rasbora:0,tetra:0,kuhli:0,gourami:0');
     });
 
     it('en capture : setPopulation est sans effet ; avant le démarrage aussi', async () => {

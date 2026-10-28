@@ -23,7 +23,7 @@ export interface SpeciesLabels {
   readonly singular: string;
   /** Nom au pluriel (« néons », « poissons-clowns », « chirurgiens bleus »). */
   readonly plural: string;
-  /** Vrai si le nom est féminin (aucune espèce actuelle ; « une grenouille »). */
+  /** Vrai si le nom est féminin (« une loche kuhli »). */
   readonly feminine: boolean;
 }
 
@@ -42,6 +42,10 @@ export const SPECIES_LABELS: Readonly<Record<SpeciesId, SpeciesLabels>> = {
   },
   clown: { singular: 'poisson-clown', plural: 'poissons-clowns', feminine: false },
   chirurgien: { singular: 'chirurgien bleu', plural: 'chirurgiens bleus', feminine: false },
+  rasbora: { singular: 'rasbora arlequin', plural: 'rasboras arlequins', feminine: false },
+  tetra: { singular: 'tétra citron', plural: 'tétras citrons', feminine: false },
+  kuhli: { singular: 'loche kuhli', plural: 'loches kuhli', feminine: true },
+  gourami: { singular: 'gourami nain', plural: 'gouramis nains', feminine: false },
 };
 
 /** Entrée du catalogue d'un environnement. */

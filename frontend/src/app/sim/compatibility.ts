@@ -17,7 +17,7 @@ export type Temperament = 'paisible' | 'territorial' | 'predateur';
  *
  * - `predateur` : mange ou blesse les espèces plus petites qu'elle (koï, axolotl).
  * - `territorial` : défend un territoire contre les autres espèces territoriales
- *   (poisson-clown autour de son anémone).
+ *   (poisson-clown autour de son anémone, gourami nain).
  * - `paisible` : aucun conflit de son fait.
  */
 export const TEMPERAMENTS: Readonly<Record<SpeciesId, Temperament>> = {
@@ -30,6 +30,12 @@ export const TEMPERAMENTS: Readonly<Record<SpeciesId, Temperament>> = {
   triton: 'paisible',
   clown: 'territorial',
   chirurgien: 'paisible',
+  rasbora: 'paisible',
+  tetra: 'paisible',
+  kuhli: 'paisible',
+  // Seriously Fish (Trichogaster lalius) : « timide et territorial », surtout envers les
+  // autres poissons à labyrinthe ; règle de jeu inchangée (ADR 0070).
+  gourami: 'territorial',
 };
 
 /** Verdict pour un couple d'espèces. */

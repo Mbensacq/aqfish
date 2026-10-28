@@ -547,6 +547,12 @@ haut de sa section.
   (identifiants 2 à 4) les faisait échouer ou changeait les individus observés. Filtrer par
   espèce, et construire le monde observé avec `createWorld(seed, [{ species, count }], [], [],
   environnement)` plutôt que `setPopulation(createDefaultWorld(…))`. (2026-10-22)
+- **Espèce ajoutable à un environnement : l'attribut de population s'allonge** (cycle 93,
+  #238) : `data-aqfish-population` liste **toutes** les espèces de `Environment.species`,
+  effectif nul compris. Ajouter quatre espèces au bac tropical sans les peupler change donc
+  ~30 attentes e2e (`'neon:12,guppy:6,corydora:6'` devient `…,rasbora:0,tetra:0,kuhli:0,gourami:0`)
+  et les comptes de lignes du panneau (3 → 7) ; chercher `corydora:` et `toHaveCount(3)` dans
+  `e2e/`. Les captures du canevas restent identiques, celles du panneau changent. (2026-10-28)
 - **Graine invalide masquée par un sel** (cycle 44) : `(seed ^ SEL) >>> 0` rend valide une
   graine négative ; valider la graine (`assertSeed`) **avant** de la mélanger. (2026-10-22)
 

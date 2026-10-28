@@ -23,7 +23,7 @@ test.describe('Compatibilité des espèces (#209)', () => {
   test('bac tropical par défaut : aucun mélange déconseillé', async ({ page }) => {
     const errors = await open(page, '?seed=42');
     await toggle(page).click();
-    await expect(page.locator('[data-section="population"] [data-species]')).toHaveCount(3);
+    await expect(page.locator('[data-section="population"] [data-species]')).toHaveCount(7);
     await expect(warnings(page)).toHaveCount(0);
     expect(errors).toEqual([]);
   });
@@ -63,6 +63,20 @@ test.describe('Compatibilité des espèces (#209)', () => {
     ]);
     expect(errors).toEqual([]);
   });
+  test('espèces d’eau douce du lot 1 : cohabitation avec néon, guppy et corydoras sans mélange déconseillé', async ({
+    page,
+  }) => {
+    const errors = await open(
+      page,
+      '?seed=42&population=rasbora:4,tetra:4,kuhli:3,gourami:2,neon:4,guppy:3,corydoras:3',
+    );
+    await toggle(page).click();
+    // Les nouvelles espèces cohabitent avec les anciennes : aucun avertissement.
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /gourami:2/);
+    await expect(warnings(page)).toHaveCount(0);
+    expect(errors).toEqual([]);
+  });
+
   for (const environnement of ['tropical', 'bassin', 'recif', 'lagune']) {
     test(`${environnement} à minuit : aucun mélange déconseillé, aucune erreur`, async ({
       page,

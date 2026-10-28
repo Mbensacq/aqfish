@@ -302,8 +302,13 @@ describe('avertissement d’ajout (#237)', () => {
   });
 
   it('accord au féminin, sur des libellés factices (#284)', () => {
-    // Aucune espèce du catalogue n'est plus au féminin : une donnée factice garde la branche.
-    expect(Object.values(SPECIES_LABELS).some((l) => l.feminine)).toBe(false);
+    // Seule la loche kuhli (#238) est au féminin au catalogue ; une donnée factice exerce la
+    // branche sur une autre espèce.
+    expect(
+      Object.entries(SPECIES_LABELS)
+        .filter(([, l]) => l.feminine)
+        .map(([id]) => id),
+    ).toEqual(['kuhli']);
     const labels = {
       ...SPECIES_LABELS,
       neon: { singular: 'raie', plural: 'raies', feminine: true },

@@ -283,6 +283,84 @@ export const SURGEON_FISH: FishTemplate = {
   tailDepth: 1,
 };
 
+/**
+ * Rasbora arlequin (#238) : corps plus haut que le néon, cuivré rosé (`s`), dos orangé (`k`),
+ * grand triangle noir (`a`) dont la base est sous la dorsale et la pointe au pédoncule, ventre
+ * clair, nageoires orangées.
+ */
+export const RASBORA_FISH: FishTemplate = {
+  body: [
+    // queue → tête
+    '....kkkkk...',
+    '..kkaaakkk..',
+    'aaaaaaasssse',
+    '.sssaaasbbb.',
+    '...ssabbbb..',
+  ],
+  tail: ['f.', 'ff', 'ff', 'f.'],
+  bodyDepth: 2,
+  tailDepth: 1,
+};
+
+/**
+ * Tétra citron (#238) : corps haut en losange, jaune pâle (`s`), dos or (`k`), haute dorsale et
+ * anale bordées de noir (`a`) ; œil rouge (`e`).
+ */
+export const TETRA_FISH: FishTemplate = {
+  body: [
+    // queue → tête
+    '.....aa....',
+    '....kkkk...',
+    '..kkkkkkkk.',
+    'sssssssssse',
+    '.bbbbbbbbb.',
+    '..aaffbb...',
+    '...aa......',
+  ],
+  tail: ['f.', 'ff', 'ff', 'ff', 'f.'],
+  bodyDepth: 2,
+  tailDepth: 1,
+};
+
+/**
+ * Loche kuhli (#238) : corps d'anguille long et bas (3 rangées pour 16 colonnes), orangé (`s`)
+ * barré de brun sombre (`a`) du dos au flanc, ventre or (`b`), caudale minuscule.
+ */
+export const KUHLI_FISH: FishTemplate = {
+  body: [
+    // queue → tête
+    '.aassaassaassaa.',
+    'saassaassaassaae',
+    '.bbbbbbbbbbbbbb.',
+  ],
+  tail: ['f', 'f', 'f'],
+  bodyDepth: 2,
+  tailDepth: 1,
+};
+
+/**
+ * Gourami nain (#238) : corps ovale haut et plat, rouge (`s`, `k`) barré de bleu (`a`), gorge
+ * et bas du ventre bleus (`b`), longues dorsale et anale ; deux ventrales en filaments (`f`)
+ * qui pendent sous la gorge, signe distinctif à l'échelle des captures.
+ */
+export const GOURAMI_FISH: FishTemplate = {
+  body: [
+    // queue → tête
+    '...kkkkkk...',
+    '.kkakkakkak.',
+    'ssasasasasse',
+    'ssasasasasss',
+    '.bbabababbb.',
+    '..bbbbbbbb..',
+    '......f.f...',
+    '.....f.f....',
+    '....f.......',
+  ],
+  tail: ['ff.', 'fff', '.ff', 'fff', 'ff.'],
+  bodyDepth: 2,
+  tailDepth: 1,
+};
+
 /** Gabarit de chaque silhouette déclarée par les espèces (`sim/species.ts`). */
 export const SILHOUETTES: Readonly<Record<SilhouetteId, FishTemplate>> = {
   fuseau: SLENDER_FISH,
@@ -295,6 +373,10 @@ export const SILHOUETTES: Readonly<Record<SilhouetteId, FishTemplate>> = {
   triton: NEWT_FISH,
   clown: CLOWN_FISH,
   chirurgien: SURGEON_FISH,
+  rasbora: RASBORA_FISH,
+  tetra: TETRA_FISH,
+  kuhli: KUHLI_FISH,
+  gourami: GOURAMI_FISH,
 };
 
 /** Proportions des voxels : hauteur et épaisseur relatives à la longueur d'un voxel. */

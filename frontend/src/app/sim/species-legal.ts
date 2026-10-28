@@ -92,6 +92,11 @@ export const LEGAL_STATUS: Readonly<Record<SpeciesId, LegalStatus>> = {
   ),
   clown: legal('a-verifier', 'non-verifie', ESPECES, 'aucune ligne de l’annexe 2 vérifiée'),
   chirurgien: legal('a-verifier', 'non-verifie', ESPECES, 'aucune ligne de l’annexe 2 vérifiée'),
+  // Lot 1 d'eau douce (#238, ADR 0070) : aucune ligne de l'annexe 2 lue pour ces espèces.
+  rasbora: legal('a-verifier', 'non-verifie', ESPECES, 'aucune ligne de l’annexe 2 vérifiée'),
+  tetra: legal('a-verifier', 'non-verifie', ESPECES, 'aucune ligne de l’annexe 2 vérifiée'),
+  kuhli: legal('a-verifier', 'non-verifie', ESPECES, 'aucune ligne de l’annexe 2 vérifiée'),
+  gourami: legal('a-verifier', 'non-verifie', ESPECES, 'aucune ligne de l’annexe 2 vérifiée'),
 };
 
 /** Statut légal de l'espèce `id` (figé, partagé). */

@@ -103,13 +103,19 @@ describe('soins du wiki : cohabitation (#291)', () => {
     const neonGuppy = cohabitation('neon').find((e) => e.other === 'guppy');
     expect(neonGuppy?.verdict).toBe('compatible');
     expect(neonGuppy?.reason).toBe('aucun conflit de caractère (paisible et paisible)');
-    // Une seule espèce territoriale aujourd'hui : aucun verdict « territorial ».
-    expect(IDS.flatMap((id) => cohabitation(id)).some((e) => e.verdict === 'territorial')).toBe(
-      false,
+    // Deux espèces territoriales depuis le gourami nain (#238) : un seul couple territorial.
+    const territorial = IDS.flatMap((id) =>
+      cohabitation(id)
+        .filter((e) => e.verdict === 'territorial')
+        .map((e) => `${id}/${e.other}`),
     );
+    expect(territorial).toEqual(['clown/gourami', 'gourami/clown']);
+    const gouramiClown = cohabitation('gourami').find((e) => e.other === 'clown');
+    expect(gouramiClown?.reason).toBe('deux espèces territoriales : elles se disputent l’espace');
+    expect(gouramiClown?.sameEnvironment).toBe(false);
   });
 
-  it('raison d’un verdict « territorial » (aucun couple du catalogue aujourd’hui)', () => {
+  it('raison d’un verdict « territorial », même pour un couple factice', () => {
     expect(cohabitationReason('clown', 'neon', 'territorial')).toBe(
       'deux espèces territoriales : elles se disputent l’espace',
     );

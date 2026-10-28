@@ -33,6 +33,8 @@ function sourced<T>(value: T, reference: string): SheetField<T> {
 
 const ESPECES = 'docs/ESPECES.md';
 const ANAPSID = 'https://anapsid.org/bombina.html (secondaire)';
+/** Fiches Seriously Fish consultées le 2026-10-28 (#238, ADR 0070), suivies du nom de page. */
+const SERIOUSLY_FISH = 'https://www.seriouslyfish.com/species/';
 
 /** Alimentation d'une espèce (textes affichés). */
 export interface FeedingGuide {
@@ -105,6 +107,38 @@ const FEEDING: Readonly<Record<SpeciesId, FeedingGuide>> = {
   },
   chirurgien: {
     foods: sourced('zooplancton et algues', `${ESPECES} (FishBase)`),
+    frequency: FISH_FREQUENCY,
+    quantity: PRUDENT_QUANTITY,
+  },
+  rasbora: {
+    foods: sourced(
+      'micro-prédateur de petits insectes ; en bac, aliment sec et proies vivantes ou congelées (daphnies, artémias)',
+      `${SERIOUSLY_FISH} trigonostigma-heteromorpha`,
+    ),
+    frequency: FISH_FREQUENCY,
+    quantity: PRUDENT_QUANTITY,
+  },
+  tetra: {
+    foods: sourced(
+      'probablement omnivore : petits invertébrés, crustacés, algues filamenteuses, fruits tombés',
+      `${SERIOUSLY_FISH} hyphessobrycon-pulchripinnis`,
+    ),
+    frequency: FISH_FREQUENCY,
+    quantity: PRUDENT_QUANTITY,
+  },
+  kuhli: {
+    foods: sourced(
+      'micro-prédateur qui fouille le sable ; aliment sec coulant et proies vivantes ou congelées (daphnies, vers de vase)',
+      `${SERIOUSLY_FISH} pangio-kuhlii`,
+    ),
+    frequency: FISH_FREQUENCY,
+    quantity: PRUDENT_QUANTITY,
+  },
+  gourami: {
+    foods: sourced(
+      'omnivore ; un aliment sec de qualité comme base',
+      `${SERIOUSLY_FISH} trichogaster-lalius`,
+    ),
     frequency: FISH_FREQUENCY,
     quantity: PRUDENT_QUANTITY,
   },

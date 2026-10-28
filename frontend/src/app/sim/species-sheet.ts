@@ -106,6 +106,9 @@ const ESPECES = 'docs/ESPECES.md';
 /** Fiche de soins secondaire du sonneur oriental (consultée le 2026-10-27, #270). */
 const ANAPSID = 'https://anapsid.org/bombina.html (secondaire)';
 
+/** Fiches Seriously Fish consultées le 2026-10-28 (#238, ADR 0070), suivies du nom de page. */
+const SF = 'https://www.seriouslyfish.com/species/';
+
 function note(text: string, status: FieldStatus): SheetNote {
   return Object.freeze({ text, status });
 }
@@ -234,6 +237,59 @@ const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
       note(
         'Pas pour débutant : 31 cm adulte, 300 L au moins, sujets surtout prélevés dans la nature',
         source(`${ESPECES} (FishBase ; UF/IFAS FA224 ; npj Ocean Sustainability 2023)`),
+      ),
+    ],
+  },
+  // Lot 1 d'eau douce (#238, ADR 0070) : tailles en longueur standard (SL), volumes tirés des
+  // dimensions de bac minimales de Seriously Fish (base × 30 cm d'eau environ).
+  rasbora: {
+    adultSize: sourced(4.5, `${SF}trigonostigma-heteromorpha (SL en bac ; 3,2 cm en nature)`),
+    temperaturePreferred: approx(range(23, 26)),
+    temperatureTolerated: sourced(
+      range(21, 28),
+      `${SF}trigonostigma-heteromorpha (FishBase 10881 : 22–25 °C, désaccord)`,
+    ),
+    diet: approx('omnivore'),
+    minGroup: sourced(8, `${SF}trigonostigma-heteromorpha (8 à 10 au moins)`),
+    minLiters: sourced(54, `${SF}trigonostigma-heteromorpha (base 60 × 30 cm)`),
+  },
+  tetra: {
+    adultSize: sourced(4, `${SF}hyphessobrycon-pulchripinnis (SL)`),
+    temperaturePreferred: approx(range(22, 26)),
+    temperatureTolerated: sourced(range(20, 28), `${SF}hyphessobrycon-pulchripinnis`),
+    diet: sourced('omnivore', `${SF}hyphessobrycon-pulchripinnis (« probablement omnivore »)`),
+    minGroup: sourced(8, `${SF}hyphessobrycon-pulchripinnis (8 à 10 au moins)`),
+    // Base 80 × 30 cm citée ; le volume en litres est une estimation.
+    minLiters: approx(85),
+  },
+  kuhli: {
+    adultSize: sourced(10, `${SF}pangio-kuhlii (SL)`),
+    temperaturePreferred: approx(range(23, 25)),
+    temperatureTolerated: sourced(range(21, 26), `${SF}pangio-kuhlii`),
+    diet: sourced('carnivore', `${SF}pangio-kuhlii (micro-prédateur)`),
+    minGroup: sourced(5, `${SF}pangio-kuhlii (5 ou 6 au moins)`),
+    minLiters: sourced(54, `${SF}pangio-kuhlii (base 60 × 30 cm)`),
+    notes: [
+      note(
+        'Se cache dans le sable et les racines : sol fin et cachettes indispensables',
+        APPROXIMATION,
+      ),
+    ],
+  },
+  gourami: {
+    adultSize: sourced(8.8, `${SF}trichogaster-lalius (SL ; FishBase 4774 : 9,5 cm TL)`),
+    temperaturePreferred: approx(range(24, 27)),
+    temperatureTolerated: sourced(
+      range(22, 27),
+      `${SF}trichogaster-lalius (FishBase 4774 : 25–28 °C, désaccord)`,
+    ),
+    diet: sourced('omnivore', `${SF}trichogaster-lalius`),
+    minGroup: sourced(2, `${SF}trichogaster-lalius (un couple)`),
+    minLiters: sourced(56, `${SF}trichogaster-lalius (pour un couple)`),
+    notes: [
+      note(
+        'Un couple plutôt qu’un groupe ; mâle parfois agressif envers les autres poissons à labyrinthe',
+        source(`${SF}trichogaster-lalius`),
       ),
     ],
   },
@@ -465,8 +521,8 @@ export function addWarningText(warning: AddWarning): string {
 }
 
 /**
- * `addWarningText` avec des libellés donnés : les tests y exercent l'accord au féminin, qu'aucune
- * espèce du catalogue ne porte plus depuis le sonneur oriental (#284).
+ * `addWarningText` avec des libellés donnés : les tests y exercent les accords sur des libellés
+ * de leur choix (#284 ; la loche kuhli, #238, porte le féminin au catalogue).
  */
 export function addWarningTextWith(
   warning: AddWarning,

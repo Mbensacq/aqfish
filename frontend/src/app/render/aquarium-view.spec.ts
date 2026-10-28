@@ -130,6 +130,10 @@ describe('AquariumView (pipeline pixel art)', () => {
       'poissons-triton',
       'poissons-clown',
       'poissons-chirurgien',
+      'poissons-rasbora',
+      'poissons-tetra',
+      'poissons-kuhli',
+      'poissons-gourami',
     ]);
   });
 

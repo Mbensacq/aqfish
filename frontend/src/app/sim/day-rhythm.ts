@@ -26,6 +26,11 @@ export const DIURNAL: Readonly<Record<SpeciesId, boolean>> = {
   triton: false,
   clown: true,
   chirurgien: true,
+  rasbora: true,
+  tetra: true,
+  // Loche kuhli : active surtout la nuit (approximation de jeu, ADR 0070).
+  kuhli: false,
+  gourami: true,
 };
 
 /** Ralentissement en pleine nuit : le déplacement y garde `1 − NIGHT_SLOWDOWN` de sa longueur. */

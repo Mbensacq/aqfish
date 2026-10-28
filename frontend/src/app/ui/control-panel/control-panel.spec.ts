@@ -194,6 +194,10 @@ class TestHost {
     triton: 0,
     clown: 0,
     chirurgien: 0,
+    rasbora: 0,
+    tetra: 0,
+    kuhli: 0,
+    gourami: 0,
   });
   readonly populationMax = signal<PopulationCounts>({
     neon: 40,
@@ -205,6 +209,10 @@ class TestHost {
     triton: 0,
     clown: 0,
     chirurgien: 0,
+    rasbora: 0,
+    tetra: 0,
+    kuhli: 0,
+    gourami: 0,
   });
   readonly tankLiters = signal<number | null>(288);
   readonly water = signal<WaterReadout>(DEFAULT_WATER_READOUT);
@@ -623,9 +631,9 @@ describe('ControlPanel', () => {
     const controls = [...root().querySelectorAll<HTMLElement>('button, input:not([type="file"])')];
     // 5 contrôles de #52, « Éditer le décor » (#167), « Granulés » (#117), « Afficher la
     // pièce » (#187), « Changer l’eau » et le curseur du chauffage (#207), puis « − », champ,
-    // « + » (#69), curseur (#189) et « Fiche » (#237) pour chacune des 3 espèces, puis
-    // « Exporter » et « Importer » (#70).
-    expect(controls).toHaveLength(5 + 1 + 1 + 1 + 2 + 3 * 5 + 2);
+    // « + » (#69), curseur (#189) et « Fiche » (#237) pour chacune des 7 espèces du bac
+    // tropical (#238), puis « Exporter » et « Importer » (#70).
+    expect(controls).toHaveLength(5 + 1 + 1 + 1 + 2 + 7 * 5 + 2);
     expect(root().querySelectorAll('input[type="file"]')).toHaveLength(1);
     for (const control of controls) {
       const name =
@@ -682,11 +690,19 @@ describe('ControlPanel', () => {
         'neon',
         'guppy',
         'corydora',
+        'rasbora',
+        'tetra',
+        'kuhli',
+        'gourami',
       ]);
       expect(rows.map((r) => r.querySelector('label')?.textContent?.trim())).toEqual([
         'Néon',
         'Guppy',
         'Corydora',
+        'Rasbora arlequin',
+        'Tétra citron',
+        'Loche kuhli',
+        'Gourami nain',
       ]);
       const neons = field('néons');
       expect(neons.type).toBe('number');
@@ -708,6 +724,10 @@ describe('ControlPanel', () => {
         triton: 0,
         clown: 0,
         chirurgien: 0,
+        rasbora: 0,
+        tetra: 0,
+        kuhli: 0,
+        gourami: 0,
       });
       await fixture.whenStable();
       expect(neons.value).toBe('20');
