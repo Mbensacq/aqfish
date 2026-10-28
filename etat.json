@@ -3485,10 +3485,10 @@
           "note": "Verdict OK, 0 bug, captures c094 publiées (5 angles identiques + 2 catappa), e2e ciblés verts, CI verte"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-28T18:16:45.964Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-28T19:08:42.753Z",
+          "note": "PR #300 fusionnée → v1.2.3 ; main verte, release créée par la CI ; suppression de branche refusée"
         }
       },
       "metriques": {}
