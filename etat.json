@@ -3335,10 +3335,10 @@
           "note": "PR #294 : bac tropical à 24 °C (ADR 0067), branche féminine testée, sources non vérifiables consignées, ROADMAP sprint 14 ; CI verte, 77/90 captures identiques (13 : texte de température)"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-28T06:01:28.666Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-28T06:29:25.262Z",
+          "note": "Verdict OK, 0 bug, 2739 tests, couverture 97,65 % (sim 99,25 %), captures c090 publiées, e2e ancienne sauvegarde ajouté"
         }
       },
       "metriques": {}
