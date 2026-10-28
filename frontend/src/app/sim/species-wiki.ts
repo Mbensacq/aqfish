@@ -1,11 +1,13 @@
 import { environmentById, type EnvironmentId } from './environment';
 import { SPECIES_LABELS } from './species-catalog';
+import { cohabitation, COHABITATION_STATUS, feedingRows, type CareRow } from './species-care';
 import { sheetNotes, sheetRows, type SheetRow } from './species-sheet';
 import { SPECIES, type SpeciesId } from './species';
 
 /**
- * Wiki des espèces, lot 1/2 (issue #287, ADR 0066) : recherche, liste en deux parties (dans
- * le bac, ajoutables ici) et modèle de vue d'une fiche.
+ * Wiki des espèces (ADR 0066, 0068) : recherche, liste en deux parties (dans le bac,
+ * ajoutables ici), modèle de vue d'une fiche (lot 1/2, #287), alimentation et cohabitation
+ * (lot 2/2, #291).
  *
  * Pur et sans état : tout vient du catalogue (`SPECIES`, `SPECIES_LABELS`), de
  * l'environnement et des fiches (`sim/species-sheet.ts`, ADR 0058). Aucune valeur n'est
@@ -130,5 +132,60 @@ export function wikiSheet(id: SpeciesId): WikiSheet {
     scientificName,
     rows: sheetRows(id),
     notes: sheetNotes(id),
+  });
+}
+
+/** Espèce citée dans la cohabitation : nom affiché et raison du verdict. */
+export interface CohabitationItem {
+  readonly species: SpeciesId;
+  readonly name: string;
+  readonly reason: string;
+}
+
+/** Section « Cohabitation » d'une fiche, en trois groupes. */
+export interface WikiCohabitation {
+  /** Espèces déconseillées (verdict ≠ `compatible`), où qu'elles vivent. */
+  readonly avoid: readonly CohabitationItem[];
+  /** Espèces compatibles qu'un environnement du jeu accueille avec celle-ci. */
+  readonly together: readonly CohabitationItem[];
+  /** Noms des espèces compatibles d'autres milieux, jamais dans le même bac du jeu. */
+  readonly elsewhere: readonly string[];
+  /** Texte du statut des raisons (approximation de jeu, ADR 0055). */
+  readonly status: string;
+}
+
+/** Soins de la fiche du wiki : alimentation et cohabitation (lot 2/2). */
+export interface WikiCare {
+  readonly feeding: readonly CareRow[];
+  readonly cohabitation: WikiCohabitation;
+}
+
+/** Modèle de vue des soins de `id` (`sim/species-care.ts`). */
+export function wikiCare(id: SpeciesId): WikiCare {
+  const avoid: CohabitationItem[] = [];
+  const together: CohabitationItem[] = [];
+  const elsewhere: string[] = [];
+  for (const entry of cohabitation(id)) {
+    const item = Object.freeze({
+      species: entry.other,
+      name: SPECIES[entry.other].name,
+      reason: entry.reason,
+    });
+    if (entry.verdict !== 'compatible') {
+      avoid.push(item);
+    } else if (entry.sameEnvironment) {
+      together.push(item);
+    } else {
+      elsewhere.push(item.name);
+    }
+  }
+  return Object.freeze({
+    feeding: feedingRows(id),
+    cohabitation: Object.freeze({
+      avoid: Object.freeze(avoid),
+      together: Object.freeze(together),
+      elsewhere: Object.freeze(elsewhere),
+      status: COHABITATION_STATUS,
+    }),
   });
 }

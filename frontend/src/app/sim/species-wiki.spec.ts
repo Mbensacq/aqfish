@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ENVIRONMENT_IDS, environmentById } from './environment';
 import { SPECIES, type SpeciesId } from './species';
 import { SHEET_FIELD_LABELS, SHEET_FIELDS, speciesSheet, statusText } from './species-sheet';
-import { matchesWikiSearch, searchKey, wikiLists, wikiSheet } from './species-wiki';
+import { matchesWikiSearch, searchKey, wikiCare, wikiLists, wikiSheet } from './species-wiki';
 
 const IDS = Object.keys(SPECIES) as SpeciesId[];
 
@@ -145,5 +145,31 @@ describe('wiki des espèces : modèle de vue d’une fiche (#287)', () => {
     const status = speciesSheet('triton').adultSize.status;
     expect(status.kind).toBe('source');
     expect(triton?.status).toBe(statusText(status));
+  });
+});
+
+describe('wiki des espèces : soins de la fiche (#291)', () => {
+  it('chaque espèce : alimentation non vide, cohabitation en trois groupes disjoints', () => {
+    for (const id of IDS) {
+      const care = wikiCare(id);
+      expect(care.feeding.length, id).toBe(4);
+      const { avoid, together, elsewhere, status } = care.cohabitation;
+      expect(avoid.length + together.length + elsewhere.length, id).toBe(IDS.length - 1);
+      expect(ids(avoid), id).toEqual(speciesSheet(id).avoid.value);
+      for (const item of [...avoid, ...together]) {
+        expect(item.reason.trim(), `${id}/${item.species}`).not.toBe('');
+        expect(item.name).toBe(SPECIES[item.species].name);
+      }
+      expect(status).toBe('Approximation de jeu');
+    }
+  });
+
+  it('néon : déconseillé avec koï et axolotl, avec guppy et corydoras dans le bac tropical', () => {
+    const { avoid, together, elsewhere } = wikiCare('neon').cohabitation;
+    expect(ids(avoid)).toEqual(['koi', 'axolotl']);
+    expect(ids(together)).toEqual(['guppy', 'corydora']);
+    expect(elsewhere).toEqual(
+      ['grenouille', 'triton', 'clown', 'chirurgien'].map((id) => SPECIES[id as SpeciesId].name),
+    );
   });
 });

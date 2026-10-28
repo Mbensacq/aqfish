@@ -214,6 +214,31 @@
   }
 }
 
+// Lot 2/2 (#291) : sections de la fiche et des pages ; l'avis du bac est écrit, la couleur
+// ne fait que le doubler (vert, orange, rouge de la jauge pH).
+.species-wiki__section {
+  margin: 10px 0 2px;
+  font-size: 12px;
+}
+
+.species-wiki__mates {
+  margin: 4px 0;
+  padding-left: 16px;
+  font-size: 12px;
+}
+
+[data-fit='dans-la-plage'] .species-wiki__fit {
+  color: #8fd18a;
+}
+
+[data-fit='limite'] .species-wiki__fit {
+  color: #f2c09a;
+}
+
+[data-fit='hors-plage'] .species-wiki__fit {
+  color: #f08a7a;
+}
+
 // Tablette et petit bureau : la barre des vues occupe le bas ; le bouton rejoint la ligne
 // des boutons du haut, après « Réglages » (59 + 84 px), et le panneau passe sous le
 // tableau de bord, comme « Commandes ».

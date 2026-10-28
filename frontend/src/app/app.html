@@ -79,6 +79,8 @@
       [population]="aquarium.population()"
       [populationMax]="aquarium.populationMax()"
       [tankLiters]="aquarium.tankLiters()"
+      [waterTemperature]="aquarium.water().temperature"
+      [waterPh]="aquarium.water().ph"
       (populationChanged)="aquarium.setPopulation($event.species, $event.count)"
     />
     <!-- Éditeur de décor (#167) et de la pièce (#188) : en mode édition, à la place de « Réglages ». -->

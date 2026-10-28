@@ -6,6 +6,11 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **`pkill -f playwright` tue sa propre commande** (cycle 91, #291) : le motif apparaît dans
+  la ligne de commande du shell qui lance `pkill` ; enchaîné à un `npx playwright test` dans
+  le même appel, tout s'arrête (code 143 ou 144) sans rien lancer. Arrêter les processus dans
+  un appel à part, ou viser un PID (`pgrep -f "ng serve"`). Lancer les e2e longues en tâche de
+  fond (`nohup sh -c '…' &`) : un appel d'outil est coupé au bout de 10 min. (2026-10-28)
 - **Identifiant d'environnement : lettres minuscules seulement** (cycle 87, #271) :
   `environnement=` n'accepte que `^[a-z]{1,20}$` (`core/capture/capture-params.ts`) ; un
   identifiant à tiret (`eau-froide`, essayé d'abord) est ignoré **sans erreur** et l'URL

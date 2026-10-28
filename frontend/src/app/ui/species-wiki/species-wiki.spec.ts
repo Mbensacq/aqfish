@@ -210,3 +210,85 @@ describe('SpeciesWiki (#287)', () => {
     expect(names('addable')).toEqual([]);
   });
 });
+
+describe('SpeciesWiki, lot 2/2 (#291)', () => {
+  let fixture: ComponentFixture<SpeciesWiki>;
+  const root = () => fixture.nativeElement as HTMLElement;
+  const q = (selector: string) => root().querySelector<HTMLElement>(selector);
+  const all = (selector: string) => [...root().querySelectorAll<HTMLElement>(selector)];
+
+  async function click(selector: string): Promise<void> {
+    q(selector)!.click();
+    await fixture.whenStable();
+  }
+
+  beforeEach(async () => {
+    fixture = TestBed.createComponent(SpeciesWiki);
+    fixture.componentRef.setInput('environment', 'tropical');
+    fixture.componentRef.setInput('population', counts({ neon: 12 }));
+    fixture.componentRef.setInput('populationMax', counts({ neon: 30, guppy: 20, corydora: 10 }));
+    fixture.componentRef.setInput('waterTemperature', 24);
+    fixture.componentRef.setInput('waterPh', 7);
+    await fixture.whenStable();
+    await click('[data-wiki-toggle]');
+  });
+
+  it('fiche : comparaison avec le bac, alimentation, cohabitation', async () => {
+    await click('[data-wiki-species="neon"]');
+    expect(all('[data-wiki-compare]').map((r) => r.getAttribute('data-fit'))).toEqual([
+      'dans-la-plage',
+      'dans-la-plage',
+    ]);
+    expect(q('[data-wiki-compare="temperature"]')!.textContent).toContain('Bac : 24 °C');
+    expect(all('[data-wiki-feeding]')).toHaveLength(4);
+    expect(all('[data-wiki-mate="avoid"]').map((m) => m.getAttribute('data-species'))).toEqual([
+      'koi',
+      'axolotl',
+    ]);
+    expect(all('[data-wiki-mate="together"]')).toHaveLength(2);
+    expect(all('[data-wiki-mate="elsewhere"]')).toHaveLength(1);
+
+    // L'eau du bac change : la comparaison suit.
+    fixture.componentRef.setInput('waterTemperature', 30);
+    await fixture.whenStable();
+    expect(q('[data-wiki-compare="temperature"]')!.getAttribute('data-fit')).toBe('hors-plage');
+    expect(q('[data-wiki-compare="temperature"]')!.textContent).toContain(
+      '5 °C au-dessus de la plage préférée',
+    );
+  });
+
+  it('pages « Produits et traitements » et « Maladies » : ouvrir, retour, Échap', async () => {
+    expect(all('[data-wiki-page]').map((b) => b.textContent?.trim())).toEqual([
+      'Produits et traitements',
+      'Maladies',
+    ]);
+    await click('[data-wiki-page="maladies"]');
+    expect(q('[data-wiki-page-view]')!.getAttribute('data-wiki-page-view')).toBe('maladies');
+    expect(q('[data-wiki-page-view]')!.textContent).toContain('pas un avis vétérinaire');
+    expect(all('[data-wiki-entry]').length).toBeGreaterThanOrEqual(8);
+    expect(all('[data-wiki-entry] [data-wiki-status]').length).toBe(
+      all('[data-wiki-entry]').length,
+    );
+    await click('[data-wiki-back]');
+    expect(q('[data-wiki-page-view]')).toBeNull();
+    expect(q('input[type="search"]')).not.toBeNull();
+
+    await click('[data-wiki-page="produits"]');
+    expect(q('[data-wiki-entry="charbon"]')).not.toBeNull();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await fixture.whenStable();
+    expect(q('[data-wiki-page-view]')).toBeNull();
+    expect(q('#wiki-especes')).not.toBeNull();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await fixture.whenStable();
+    expect(q('#wiki-especes')).toBeNull();
+  });
+
+  it('fermer puis rouvrir : la liste, pas la page', async () => {
+    await click('[data-wiki-page="produits"]');
+    await click('[data-wiki-toggle]');
+    await click('[data-wiki-toggle]');
+    expect(q('[data-wiki-page-view]')).toBeNull();
+    expect(q('[data-wiki-list="present"]')).not.toBeNull();
+  });
+});

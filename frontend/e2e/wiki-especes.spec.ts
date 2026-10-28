@@ -122,6 +122,69 @@ test.describe('Wiki des espèces (#287)', () => {
     expect(errors).toEqual([]);
   });
 
+  // Lot 2/2 (#291) : pages transversales au clavier, retour, Échap, bureau et téléphone ;
+  // fiche avec comparaison, alimentation et cohabitation.
+  // Un seul test, une étape par largeur : les parts de la CI restent stables (docs/PIEGES.md).
+  test('pages « Produits » et « Maladies » au clavier, à 1280 et 390 px (#291)', async ({
+    page,
+  }) => {
+    for (const viewport of [
+      { width: 1280, height: 720 },
+      { width: 390, height: 844 },
+    ]) {
+      await test.step(`${viewport.width} px`, async () => {
+        await page.setViewportSize(viewport);
+        const errors = await open(page, '?seed=42&vitesse=0');
+        await toggle(page).focus();
+        await page.keyboard.press('Enter');
+        const products = wiki(page).locator('[data-wiki-page="produits"]');
+        const diseases = wiki(page).locator('[data-wiki-page="maladies"]');
+        const view = wiki(page).locator('[data-wiki-page-view]');
+        const back = wiki(page).getByRole('button', { name: 'Retour à la liste' });
+
+        await products.focus();
+        await page.keyboard.press('Enter');
+        await expect(view).toHaveAttribute('data-wiki-page-view', 'produits');
+        await expect(back).toBeFocused();
+        await expect(view.getByText('pas un avis vétérinaire')).toBeVisible();
+        // Échap : retour à la liste, focus sur la page quittée.
+        await page.keyboard.press('Escape');
+        await expect(view).toHaveCount(0);
+        await expect(products).toBeFocused();
+
+        await page.keyboard.press('Tab');
+        await expect(diseases).toBeFocused();
+        await page.keyboard.press('Enter');
+        await expect(view).toHaveAttribute('data-wiki-page-view', 'maladies');
+        await expect(view.locator('[data-wiki-entry]').first()).toBeVisible();
+        // Le panneau tient dans la fenêtre et défile jusqu'au bouton « Retour ».
+        const box = await wiki(page).boundingBox();
+        expect(box!.y + box!.height).toBeLessThanOrEqual(viewport.height);
+        await back.scrollIntoViewIfNeeded();
+        await expect(back).toBeInViewport();
+        await back.focus();
+        await page.keyboard.press('Enter');
+        await expect(view).toHaveCount(0);
+        await expect(diseases).toBeFocused();
+
+        // Fiche du néon dans le bac tropical à 24 °C : dans la plage.
+        await wiki(page).locator('[data-wiki-species="neon"]').focus();
+        await page.keyboard.press('Enter');
+        await expect(sheet(page).locator('[data-wiki-compare="temperature"]')).toHaveAttribute(
+          'data-fit',
+          'dans-la-plage',
+        );
+        await expect(sheet(page).locator('[data-wiki-feeding]')).toHaveCount(4);
+        await expect(sheet(page).locator('[data-wiki-mate="avoid"]')).toHaveCount(2);
+        await page.keyboard.press('Escape');
+        await page.keyboard.press('Escape');
+        await expect(wiki(page)).toHaveCount(0);
+        await expect(toggle(page)).toBeFocused();
+        expect(errors).toEqual([]);
+      });
+    }
+  });
+
   test('ouvrir « Réglages » ferme le wiki, et inversement', async ({ page }) => {
     const errors = await open(page, '?seed=42&vitesse=0');
     await toggle(page).click();
