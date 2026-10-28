@@ -333,7 +333,7 @@ describe('ControlPanel', () => {
       );
       expect(statuses).toHaveLength(11);
       expect(statuses).toContain('Approximation de jeu');
-      expect(statuses).toContain('Source : docs/SOINS.md § 11 (FishBase)');
+      expect(statuses).toContain('Source : documentation du projet (FishBase)');
       button.click();
       await fixture.whenStable();
       expect(sheet()).toBeNull();

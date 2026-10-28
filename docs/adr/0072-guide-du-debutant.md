@@ -19,8 +19,8 @@ biologique sans source ou sans la mention « simplification de jeu ».
 1. **Contenu pur** (`sim/beginner-help.ts`) : huit explications (`WhyTopicId`) et cinq
    étapes (`GUIDE_STEPS`), chacune avec un statut `FieldStatus` (`sim/species-sheet.ts`) :
    une source dans `docs/SOINS.md`, ou « Simplification de jeu » quand le texte décrit le
-   modèle du jeu. `ALERT_TOPICS` relie chaque alerte à son explication, `GAUGE_TOPICS` chaque
-   jauge ; un test vérifie que tout sujet d'alerte et de jauge a son explication, que chaque
+   modèle du jeu. `ALERT_TOPICS` relie chaque alerte à son explication ; un test vérifie que
+   tout sujet d'alerte a son explication, que chaque
    état hors plage produit son alerte avec une action, et qu'aucun état normal n'en produit.
 2. **Dialogue modal** (`ui/beginner-guide/`) : `role="dialog"`, `aria-modal`, titre par
    `aria-labelledby` ; focus dans le dialogue à l'ouverture (sur l'explication demandée,
@@ -45,8 +45,9 @@ biologique sans source ou sans la mention « simplification de jeu ».
 - **Bouton « Pourquoi ? » dans chaque jauge du cadre haut** : le cadre est mesuré au pixel
   près à 1280 × 720 et sur téléphone (#256, `e2e/cadrage-panneaux.spec.ts`) ; cinq boutons de
   plus l'auraient élargi. Les explications des jauges sont dans le guide, et « Pourquoi ? »
-  apparaît sous chaque alerte, c'est-à-dire quand une jauge sort de sa plage.
-  `GAUGE_TOPICS` est prêt si l'on veut les ajouter plus tard.
+  apparaît sous chaque alerte, c'est-à-dire quand une jauge sort de sa plage. La table
+  jauge → explication (`GAUGE_TOPICS`), restée sans usage, a été retirée au cycle 96 (#302) ;
+  la recréer si l'on ajoute ces boutons.
 - **Paramètre d'URL pour désactiver le guide en e2e** : il aurait fallu modifier chaque
   `page.goto` des ~70 fichiers ; le stockage de départ de Playwright suffit.
 - **Panneau non modal** : le guide se lit d'un bout à l'autre ; un panneau de plus aurait dû
@@ -58,3 +59,13 @@ biologique sans source ou sans la mention « simplification de jeu ».
 - Un nouvel e2e qui vide le stockage (`storageState` vide, `localStorage.clear()`) verra le
   guide s'ouvrir : fermer le dialogue (Échap) ou poser la clé.
 - Ajouter une alerte (`AlertId`) impose de compléter `ALERT_TOPICS` (erreur de typage sinon).
+
+## Suivi (cycle 96, #302)
+
+- **Source affichée** : le statut garde la référence complète (`docs/SOINS.md § 2 et § 14
+  (UF/IFAS FA16)`) pour la traçabilité, mais l'écran montre « Source : documentation du projet
+  (UF/IFAS FA16) » : `publicReference` (`sim/species-sheet.ts`) remplace tout chemin
+  `docs/….md` et ses paragraphes, pour le guide comme pour les fiches, le wiki et le guide de
+  soins.
+- **Nitrates** : la simulation ne modélise pas leur absorption par les plantes ; le texte dit
+  que, dans le jeu, seul un changement d'eau les fait baisser.

@@ -10,6 +10,7 @@ import {
   type ValueRange,
 } from './species-sheet';
 import { SPECIES, type SpeciesId } from './species';
+import { formatTenth } from './water-dashboard';
 
 /**
  * Soins d'une espèce pour le wiki, lot 2/2 (issue #291, ADR 0068) : alimentation,
@@ -282,7 +283,7 @@ export function tankFit(value: number, preferred: ValueRange, tolerated: ValueRa
 export interface TankComparisonRow {
   readonly parameter: 'temperature' | 'ph';
   readonly label: string;
-  /** Valeur du bac, arrondie au dixième (« inconnue » si non finie). */
+  /** Valeur du bac au dixième, comme le tableau de bord (« 7,0 », « 24,0 °C » ; « inconnue » si non finie). */
   readonly tank: string;
   /** Plage préférée de l'espèce. */
   readonly preferred: string;
@@ -292,9 +293,15 @@ export interface TankComparisonRow {
   readonly gap: string;
 }
 
-function rangeText({ min, max }: ValueRange, unit: string): string {
-  const text = min === max ? frenchNumber(min) : `${frenchNumber(min)} – ${frenchNumber(max)}`;
+function withUnit(text: string, unit: string): string {
   return unit === '' ? text : `${text} ${unit}`;
+}
+
+function rangeText({ min, max }: ValueRange, unit: string): string {
+  return withUnit(
+    min === max ? frenchNumber(min) : `${frenchNumber(min)} – ${frenchNumber(max)}`,
+    unit,
+  );
 }
 
 function tenth(value: number): number {
@@ -328,9 +335,7 @@ function comparisonRow(
   return Object.freeze({
     parameter,
     label,
-    tank: Number.isFinite(value)
-      ? rangeText({ min: tenth(value), max: tenth(value) }, unit)
-      : 'inconnue',
+    tank: Number.isFinite(value) ? withUnit(formatTenth(value), unit) : 'inconnue',
     preferred: rangeText(preferred, unit),
     fit,
     fitLabel: TANK_FIT_LABELS[fit],

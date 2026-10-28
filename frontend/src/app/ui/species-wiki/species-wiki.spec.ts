@@ -3,6 +3,7 @@ import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { NO_FISH, type PopulationCounts } from '../../sim/population';
 import { BeginnerGuideState } from '../beginner-guide/beginner-guide-state';
 import type { PopulationRequest } from '../control-panel/control-panel';
+import { PH_ZONE_COLORS } from '../dashboard-frame/dashboard-frame';
 import { SpeciesWiki, wikiAddCount } from './species-wiki';
 
 const counts = (values: Partial<Record<keyof PopulationCounts, number>>): PopulationCounts => ({
@@ -240,7 +241,8 @@ describe('SpeciesWiki, lot 2/2 (#291)', () => {
       'dans-la-plage',
       'dans-la-plage',
     ]);
-    expect(q('[data-wiki-compare="temperature"]')!.textContent).toContain('Bac : 24 °C');
+    expect(q('[data-wiki-compare="temperature"]')!.textContent).toContain('Bac : 24,0 °C');
+    expect(q('[data-wiki-compare="ph"]')!.textContent).toContain('Bac : 7,0');
     expect(all('[data-wiki-feeding]')).toHaveLength(4);
     expect(all('[data-wiki-mate="avoid"]').map((m) => m.getAttribute('data-species'))).toEqual([
       'koi',
@@ -257,6 +259,13 @@ describe('SpeciesWiki, lot 2/2 (#291)', () => {
     expect(q('[data-wiki-compare="temperature"]')!.textContent).toContain(
       '5 °C au-dessus de la plage préférée',
     );
+  });
+
+  it('couleurs de l’avis : celles des zones de la jauge pH, une seule définition (#296)', () => {
+    const style = root().style;
+    expect(style.getPropertyValue('--wiki-fit-dans-la-plage')).toBe(PH_ZONE_COLORS.ideal);
+    expect(style.getPropertyValue('--wiki-fit-limite')).toBe(PH_ZONE_COLORS.tolere);
+    expect(style.getPropertyValue('--wiki-fit-hors-plage')).toBe(PH_ZONE_COLORS.horsPlage);
   });
 
   it('pages « Produits et traitements » et « Maladies » : ouvrir, retour, Échap', async () => {
