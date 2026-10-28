@@ -3312,6 +3312,24 @@
         }
       },
       "metriques": {}
+    },
+    "90": {
+      "numero": 90,
+      "date": "2026-10-28",
+      "debut": "2026-10-28T04:54:09.266Z",
+      "type": "retro",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-10-28T04:54:09.266Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
