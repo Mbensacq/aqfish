@@ -180,6 +180,14 @@ haut de sa section.
 
 ## Tests
 
+- **Plus de place en bas à droite sous 900 px de large** (cycle 88, #287) : la barre des
+  vues fait 660 px sur une ligne (54 px libres à droite à 768 px, rien à 640 px) puis deux
+  lignes de 280 px sous 481 px (20 px libres à droite à 320 px). Un bouton d'interface « en
+  bas à droite » n'y tient qu'au-delà de 899 px ; en dessous, la ligne des boutons du haut a
+  de la place après « Réglages » (47 px seulement à 320 px avant « Commandes » replié). Le
+  vérifier à 1280, 900, 768, 640, 390 et 320 px, police de la CI comprise
+  (`e2e/wiki-especes.spec.ts`, « bouton « Wiki » libre »). (2026-10-28)
+
 - **Test de l'hôte qui recharge après `setPopulation` : rien d'enregistré** (cycle 85, #277) :
   le réglage de population de l'hôte n'écrit pas la sauvegarde aussitôt (minuterie
   `AUTOSAVE_INTERVAL_MS` et `pagehide` seulement), contrairement au décor, aux dimensions ou

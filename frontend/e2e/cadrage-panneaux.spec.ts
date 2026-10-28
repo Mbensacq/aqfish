@@ -59,6 +59,17 @@ const PANELS: readonly PanelCase[] = [
       await expect(page.locator('#aide-commandes')).toBeVisible();
     },
   },
+  {
+    // Wiki des espèces (#287), fiche la plus longue ouverte (chirurgien bleu, récif).
+    name: 'Wiki des espèces',
+    search: '?seed=42&environnement=recif',
+    panel: (page) => page.locator('#wiki-especes'),
+    open: async (page) => {
+      await page.getByRole('button', { name: 'Wiki des espèces' }).click();
+      await page.locator('#wiki-especes [data-wiki-species="chirurgien"]').click();
+      await expect(page.locator('#wiki-especes [data-wiki-sheet]')).toBeVisible();
+    },
+  },
 ];
 
 const VIEWPORTS = [
@@ -74,7 +85,7 @@ const VIEWPORTS = [
  * boutons de la barre des préréglages.
  */
 const INTERFACE_BUTTONS =
-  '.control-panel__toggle, .commands-help__toggle, .view-presets-bar button';
+  '.control-panel__toggle, .commands-help__toggle, .species-wiki__toggle, .view-presets-bar button';
 
 async function openScene(page: Page, search = '?seed=42'): Promise<string[]> {
   const errors: string[] = [];

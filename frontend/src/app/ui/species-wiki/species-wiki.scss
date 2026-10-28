@@ -1,0 +1,259 @@
+// Wiki des espèces (#287, docs/DA.md, « Interface ») : bouton discret en bas à droite, à côté
+// de la barre des vues ; panneau sombre translucide à droite, sous la ligne des boutons du
+// haut et au-dessus de la barre. L'hôte n'est pas positionné : il n'occupe aucune place et
+// ne capte aucun clic (#112) ; seuls le bouton et le panneau sont fixés.
+:host {
+  color: #e8e6e3;
+  font:
+    400 13px / 1.3 system-ui,
+    sans-serif;
+}
+
+.species-wiki__toggle,
+.species-wiki__button,
+.species-wiki__item {
+  border: 1px solid rgb(232 230 227 / 16%);
+  border-radius: 8px;
+  background: rgb(20 20 24 / 72%); // #141418
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid #5fbfa3;
+    outline-offset: 1px;
+  }
+}
+
+.species-wiki__toggle {
+  position: fixed;
+  right: 12px;
+  bottom: 16px;
+  z-index: 1;
+  min-height: 32px;
+  padding: 4px 10px;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0.8;
+
+  &:hover,
+  &:focus-visible,
+  &--open {
+    opacity: 1;
+  }
+
+  &--open {
+    border-color: #5fbfa3;
+    color: #5fbfa3;
+  }
+}
+
+.species-wiki {
+  position: fixed;
+  top: 56px;
+  right: 12px;
+  z-index: 1;
+  box-sizing: border-box;
+  width: 340px;
+  max-width: calc(100vw - 24px);
+  // Sous la ligne des boutons du haut, au-dessus de la barre des vues (une ligne de ~40 px
+  // à 16 px du bas) et du bouton « Wiki » à côté d'elle.
+  max-height: calc(100vh - 56px - 76px);
+  overflow-y: auto;
+  padding: 8px 12px 10px;
+  border: 1px solid rgb(232 230 227 / 8%);
+  border-radius: 10px;
+  // Plus opaque que les autres panneaux : il passe sur le tableau de bord sur téléphone.
+  background: rgb(20 20 24 / 96%);
+}
+
+.species-wiki__header,
+.species-wiki__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.species-wiki__title,
+.species-wiki__name {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.species-wiki__button {
+  min-height: 28px;
+  padding: 2px 10px;
+  font-size: 12px;
+
+  &--add {
+    border-color: #5fbfa3;
+    color: #5fbfa3;
+  }
+
+  &[aria-disabled='true'] {
+    cursor: default;
+    opacity: 0.5;
+  }
+}
+
+.species-wiki__search {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 8px 0 4px;
+  font-size: 12px;
+
+  input {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 32px;
+    padding: 4px 8px;
+    border: 1px solid rgb(232 230 227 / 24%);
+    border-radius: 6px;
+    background: rgb(232 230 227 / 8%);
+    color: inherit;
+    font: inherit;
+
+    &:focus-visible {
+      outline: 2px solid #5fbfa3;
+    }
+  }
+}
+
+.species-wiki__group {
+  margin: 8px 0 4px;
+  color: #5fbfa3;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.species-wiki__list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.species-wiki__item {
+  display: flex;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 36px;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
+  background: rgb(232 230 227 / 6%);
+  text-align: left;
+
+  &:hover {
+    border-color: #5fbfa3;
+  }
+}
+
+.species-wiki__count {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.species-wiki__latin,
+.species-wiki__status,
+.species-wiki__empty {
+  color: rgb(232 230 227 / 72%);
+  font-size: 11px;
+}
+
+.species-wiki__latin {
+  font-style: italic;
+  font-weight: 400;
+}
+
+.species-wiki__name .species-wiki__latin,
+.species-wiki__status {
+  display: block;
+}
+
+.species-wiki__sheet {
+  margin-top: 8px;
+}
+
+.species-wiki__warning {
+  margin: 6px 0;
+  color: #f2c09a;
+  font-size: 12px;
+}
+
+.species-wiki__rows {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr);
+  gap: 6px 8px;
+  margin: 8px 0;
+  font-size: 12px;
+  line-height: 15px;
+}
+
+.species-wiki__row {
+  display: contents;
+
+  dt {
+    color: rgb(232 230 227 / 78%);
+  }
+
+  dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+}
+
+// Tablette et petit bureau : la barre des vues occupe le bas ; le bouton rejoint la ligne
+// des boutons du haut, après « Réglages » (59 + 84 px), et le panneau passe sous le
+// tableau de bord, comme « Commandes ».
+@media (max-width: 899px) {
+  .species-wiki__toggle {
+    top: 12px;
+    right: auto;
+    bottom: auto;
+    left: 151px;
+  }
+}
+
+@media (min-width: 640px) and (max-width: 1099px) {
+  .species-wiki {
+    top: 129px;
+    max-height: calc(100vh - 129px - 76px);
+  }
+}
+
+// Écran étroit : panneau sur toute la largeur, sous la ligne des boutons du haut.
+@media (max-width: 639px) {
+  .species-wiki {
+    top: 48px;
+    right: 8px;
+    left: 8px;
+    width: auto;
+    max-width: none;
+    max-height: calc(100vh - 48px - 80px);
+  }
+}
+
+// Téléphone : boutons du haut à 8 px, « Réglages » finit à 139 px et « Commandes » replié
+// commence à 186 px à 320 px de large ; barre des vues sur deux lignes en bas.
+@media (max-width: 480px) {
+  .species-wiki__toggle {
+    top: 8px;
+    left: 145px;
+    padding: 4px 5px;
+    font-size: 12px;
+  }
+
+  .species-wiki {
+    max-height: calc(100vh - 48px - 100px);
+  }
+}

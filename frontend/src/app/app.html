@@ -71,6 +71,16 @@
       (importRequested)="aquarium.importSave($event)"
       (importRejected)="aquarium.rejectImport($event)"
     />
+    <!-- Wiki des espèces (#287) : bouton discret en bas à droite, panneau exclusif avec les autres. -->
+    <app-species-wiki
+      #wiki
+      (opened)="onWikiOpened()"
+      [environment]="aquarium.environment()"
+      [population]="aquarium.population()"
+      [populationMax]="aquarium.populationMax()"
+      [tankLiters]="aquarium.tankLiters()"
+      (populationChanged)="aquarium.setPopulation($event.species, $event.count)"
+    />
     <!-- Éditeur de décor (#167) et de la pièce (#188) : en mode édition, à la place de « Réglages ». -->
     @if (aquarium.decorEditing()) {
       <app-decor-editor
