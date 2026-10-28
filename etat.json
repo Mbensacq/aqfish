@@ -3500,7 +3500,7 @@
       "type": "fonctionnalite",
       "issue": 240,
       "pr": 301,
-      "version": null,
+      "version": "v1.2.4",
       "phases": {
         "planif": {
           "statut": "termine",
