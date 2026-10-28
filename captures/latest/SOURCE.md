@@ -1,8 +1,8 @@
-# Captures c088
+# Captures c089
 
-- Branche : cycle/c088-wiki-especes
-- PR : #288
-- Commit : ce9cd02ae046c27a793f7f47d39337ce88a11abe
-- Graine : 42 (contrat de capture)
-- Produites le : 2026-10-28T01:18:26Z
-- Écarts avec c087 : 76 identiques, 12 différentes (bouton Wiki dans les captures d'interface), 2 nouvelles (three-quarter-wiki-fiche, telephone-wiki-fiche)
+- Branche : cycle/c089-dette-wiki-mutation
+- PR : #290
+- Commit : 9b032e3
+- Graine : celle de captures.spec.ts (inchangée), temps fixé par le mode capture
+- Chromium local 1243 (pas celui de la CI)
+- 89/90 identiques à captures/latest ; écart voulu : three-quarter-wiki-fiche (panneau 288 px) et telephone-wiki-fiche
