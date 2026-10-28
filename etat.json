@@ -3413,10 +3413,10 @@
           "note": "Verdict OK, 0 bug, 2825 tests unitaires, 1 e2e ajouté (schéma 1 avec others), captures c092 publiées (89/90 identiques, écart antérieur)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-28T12:39:35.171Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-28T13:27:21.549Z",
+          "note": "PR #298 fusionnée → v1.2.1 ; main verte, tag créé par la CI ; corps de fusion explicite (Closes #292) : aucune ligne d'attribution (info ajoutée à #297) ; suppression de branche refusée"
         }
       },
       "metriques": {}
