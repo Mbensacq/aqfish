@@ -3456,6 +3456,24 @@
         }
       },
       "metriques": {}
+    },
+    "94": {
+      "numero": 94,
+      "date": "2026-10-28",
+      "debut": "2026-10-28T16:03:33.405Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-10-28T16:03:33.405Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
