@@ -3483,6 +3483,12 @@
           "debut": "2026-10-28T17:48:06.579Z",
           "fin": "2026-10-28T18:16:09.617Z",
           "note": "Verdict OK, 0 bug, captures c094 publiées (5 angles identiques + 2 catappa), e2e ciblés verts, CI verte"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-10-28T18:16:45.964Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
