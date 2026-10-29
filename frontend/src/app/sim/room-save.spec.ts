@@ -3,13 +3,25 @@ import { DEFAULT_ROOM } from './room';
 import {
   MAX_ROOM_SAVE_LENGTH,
   migrateSchema1,
+  parseRoomSaveData,
   parseSave,
   parseSaveWorlds,
   roomSaveData,
   serializeRoom,
   type ParseSaveResult,
 } from './room-save';
-import { createRoom, MAX_ROOM_TANKS, stepRoom, tankSeed, type RoomState } from './room-state';
+import {
+  addSupport,
+  addTank,
+  createRoom,
+  MAX_ROOM_SUPPORTS,
+  MAX_ROOM_TANKS,
+  removeSupport,
+  removeTank,
+  stepRoom,
+  tankSeed,
+  type RoomState,
+} from './room-state';
 import {
   DEFAULT_SAVE_SETTINGS,
   MAX_SAVE_LENGTH,
@@ -311,5 +323,140 @@ describe('parseSaveWorlds : mondes de l’hôte du lot 1', () => {
     const twin = parseSaveWorlds(serializeRoom(createRoom(1, ['tropical', 'tropical']), 0));
     expect(twin.ok).toBe(false);
     expect(parseSaveWorlds('nope').ok).toBe(false);
+  });
+});
+
+describe('schéma 2, lot 2 : meubles et position des bacs (ADR 0073)', () => {
+  /** Pièce de 3 bacs (2 posés) et 2 meubles. */
+  function furnished(): RoomState {
+    let room = createRoom(42);
+    for (const step of [
+      (r: RoomState) => addSupport(r, 'commode', 2, -2),
+      (r: RoomState) => addSupport(r, 'etagere-bacs', -2, 2, 2),
+      (r: RoomState) =>
+        addTank(r, {
+          environment: 'tropical',
+          size: 'moyen',
+          placement: { supportId: 0, x: 2, z: -2, quarter: 0 },
+        }),
+      (r: RoomState) =>
+        addTank(r, {
+          environment: 'paludarium',
+          size: 'petit',
+          placement: { supportId: null, x: 2.5, z: 2, quarter: 1 },
+          name: 'Grenouilles',
+        }),
+    ]) {
+      const result = step(room);
+      if (!result.ok) {
+        throw new Error(result.reason);
+      }
+      room = result.room;
+    }
+    return stepRoom(room, 30);
+  }
+
+  it('aller-retour : 3 bacs et 2 meubles, au bit près, avancés à l’identique', () => {
+    const room = furnished();
+    expect([room.tanks.length, room.furniture.length]).toEqual([3, 2]);
+    const text = serializeRoom(room, 2);
+    const back = loaded(parseSave(text));
+    expect(back.room.furniture).toEqual(room.furniture);
+    expect(back.room.nextFurnitureId).toBe(2);
+    expect(back.room.tanks.map((t) => t.placement)).toEqual(room.tanks.map((t) => t.placement));
+    expect(back.room.tanks.map((t) => t.name)).toEqual([
+      'Bac tropical',
+      'Bac tropical',
+      'Grenouilles',
+    ]);
+    expect(back.selectedTankId).toBe(2);
+    expect(serializeRoom(back.room, 2)).toBe(text);
+    const a = stepRoom(back.room, 40).tanks.map((t) => text1(t.world));
+    const b = stepRoom(room, 40).tanks.map((t) => text1(t.world));
+    expect(a).toEqual(b);
+  });
+
+  it('pièce sans meuble : champs du lot 2 omis (document du lot 1 inchangé)', () => {
+    const doc = JSON.parse(serializeRoom(room3(), 0)) as Record<string, unknown>;
+    expect('furniture' in doc).toBe(false);
+    expect('nextFurnitureId' in doc).toBe(false);
+    expect((doc['tanks'] as Record<string, unknown>[]).some((t) => 'placement' in t)).toBe(false);
+    const back = loaded(parseRoomSaveData(doc));
+    expect(back.room.furniture).toEqual([]);
+    expect(back.room.nextFurnitureId).toBe(0);
+    expect(back.room.tanks.every((t) => t.placement === null)).toBe(true);
+  });
+
+  it('une sauvegarde du lot 1 relue puis réécrite est identique', () => {
+    const lot1 = serializeRoom(room3(), 2);
+    expect(serializeRoom(loaded(parseSave(lot1)).room, 2)).toBe(lot1);
+  });
+
+  it('meubles retirés et compteur conservé (identifiants jamais réutilisés)', () => {
+    const room = furnished();
+    const freed = removeTank(room, 1);
+    if (!freed.ok) throw new Error(freed.reason);
+    const bare = removeSupport(freed.room, 0);
+    if (!bare.ok) throw new Error(bare.reason);
+    const back = loaded(parseSave(serializeRoom(bare.room, 0)));
+    expect(back.room.furniture.map((f) => f.id)).toEqual([1]);
+    expect(back.room.nextFurnitureId).toBe(2);
+  });
+
+  function furnishedDoc(): Record<string, unknown> {
+    return JSON.parse(serializeRoom(furnished(), 0)) as Record<string, unknown>;
+  }
+
+  const furniture = (d: Record<string, unknown>) => d['furniture'] as Record<string, unknown>[];
+  const tank = (d: Record<string, unknown>, i: number) =>
+    (d['tanks'] as Record<string, unknown>[])[i] as Record<string, unknown>;
+  const placement = (d: Record<string, unknown>, i: number) =>
+    tank(d, i)['placement'] as Record<string, unknown>;
+
+  it.each<[string, (d: Record<string, unknown>) => void, RegExp]>([
+    ['furniture non liste', (d) => (d['furniture'] = {}), /furniture doit être une liste/],
+    ['compteur absent', (d) => delete d['nextFurnitureId'], /nextFurnitureId manquant/],
+    ['compteur invalide', (d) => (d['nextFurnitureId'] = -1), /nextFurnitureId/],
+    ['compteur trop petit', (d) => (d['nextFurnitureId'] = 1), /identifiant ≥ nextFurnitureId/],
+    ['type inconnu', (d) => (furniture(d)[0]!['kind'] = 'buffet'), /meuble 0 : id, kind/],
+    ['meuble non objet', (d) => (furniture(d)[1] = 3 as never), /meuble 1 : doit être un objet/],
+    ['meuble non centimétrique', (d) => (furniture(d)[0]!['x'] = 2.001), /meuble 0/],
+    ['meubles qui se chevauchent', (d) => (furniture(d)[1]!['x'] = 2), /chevauchement/],
+    ['meubles non croissants', (d) => (furniture(d)[1]!['id'] = 0), /non strictement croissants/],
+    [
+      'trop de meubles',
+      (d) => (d['furniture'] = Array.from({ length: MAX_ROOM_SUPPORTS + 1 }, () => ({}))),
+      /trop de meubles/,
+    ],
+    ['placement non objet', (d) => (tank(d, 1)['placement'] = 'commode'), /placement doit être/],
+    ['support invalide', (d) => (placement(d, 1)['supportId'] = 'a'), /supportId/],
+    ['support inconnu', (d) => (placement(d, 1)['supportId'] = 9), /bac 1 : meuble-inconnu/],
+    ['quart invalide', (d) => (placement(d, 1)['quarter'] = 5), /quarter/],
+    ['position non centimétrique', (d) => (placement(d, 2)['z'] = 0.333), /centimètre/],
+    ['bac hors du plateau', (d) => (placement(d, 1)['x'] = 2.4), /bac 1 : hors-support/],
+    [
+      'bacs qui se chevauchent',
+      (d) => Object.assign(placement(d, 2), { x: 2, z: -2 }),
+      /bac 2 : chevauchement/,
+    ],
+    [
+      'position au jardin',
+      (d) => {
+        const doc = JSON.parse(serializeRoom(createRoom(1, ['tropical', 'bassin']), 0));
+        Object.assign(d, doc);
+        tank(d, 1)['placement'] = { supportId: null, x: 2, z: 2, quarter: 0 };
+      },
+      /placement interdit au jardin/,
+    ],
+  ])('refuse : %s', (_label, mutate, pattern) => {
+    const doc = furnishedDoc();
+    mutate(doc);
+    expect(refusal(parseRoomSaveData(doc))).toMatch(pattern);
+  });
+
+  it('roomSaveData refuse une disposition incohérente', () => {
+    const room = furnished();
+    const bad: RoomState = { ...room, nextFurnitureId: 1 };
+    expect(() => serializeRoom(bad, 0)).toThrow(/nextFurnitureId/);
   });
 });
