@@ -3773,10 +3773,10 @@
           "note": "Verdict RÉSERVES (e2e complète non rejouée en local), 0 bug, captures c102 publiées (99), e2e ciblés 17/17, 3102 tests"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-29T17:55:30.604Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-29T18:53:27.030Z",
+          "note": "PR #319 fusionnée → v1.3.4 ; main verte, release créée par la CI ; #278 reste ouverte (lot 2) ; dette #320 ; suppression de la branche refusée par l'environnement (à faire par Mathis)"
         }
       },
       "metriques": {}
