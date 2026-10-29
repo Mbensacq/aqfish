@@ -3791,10 +3791,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-29T18:53:59.398Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-29T18:54:40.871Z",
+          "note": "Issue #320 : suites de revue du mode décor, 3 points de dette (S)"
         }
       },
       "metriques": {}
