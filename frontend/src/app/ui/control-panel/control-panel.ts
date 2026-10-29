@@ -757,8 +757,10 @@ export interface NewTankRequest {
               Transférer à l’épuisette
             </button>
           }
-          @if (tankList().length > 0) {
-            <!-- Renommer un bac (#316) : le bac sélectionné par défaut, nom borné. -->
+          @if (tankList().length > 1) {
+            <!-- Renommer un bac (#316) : le bac sélectionné par défaut, nom borné. Dès deux
+                 bacs seulement : avec un seul, le panneau tient en deux colonnes à 1280 × 720
+                 (e2e/cadrage-panneaux.spec.ts). -->
             <div
               class="control-panel__row control-panel__row--halves"
               role="group"

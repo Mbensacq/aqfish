@@ -6,6 +6,13 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Panneau des réglages à 1280 × 720 : pas une ligne de plus** (cycle 101, #316) : en
+  deux colonnes de hauteur fixe, la moindre ligne ajoutée au cas par défaut (un seul bac)
+  pousse « Sauvegarde » dans une troisième colonne hors du panneau ; seul
+  `e2e/cadrage-panneaux.spec.ts` (débord horizontal, part 1/6) le voit, tests unitaires et
+  captures restant verts. Toute nouvelle commande du panneau doit être conditionnelle
+  (ici : renommage dès deux bacs) ou remplacer une ligne ; lancer cette spec en local.
+  (2026-10-29)
 - **Fonction déjà livrée sous le même nom** (cycle 101, #316) : `renameTank` existait dans
   `sim/room-state.ts` depuis le lot 2 (ADR 0073), sans être utilisée par l'interface ; en
   écrire une seconde a donné « Multiple exports with the same name » au build des tests.

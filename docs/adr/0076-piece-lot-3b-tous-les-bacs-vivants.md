@@ -26,9 +26,11 @@ bac affiché **en place**, sans allocation par image (ADR 0060) ; elle ne doit p
    par bac non affiché et par rattrapage (`advance` est pur).
 3. **Déterminisme** : `advance(monde, a + b) = advance(advance(monde, a), b)` ; le découpage
    en lots, qui dépend du temps réel, ne change donc pas l'état d'un bac. Un bac non affiché
-   évolue exactement comme s'il était affiché, à l'horloge du jour près (point 5).
-4. **Renommage** depuis la liste (« Bac à renommer », « Nouveau nom », « Renommer » ou
-   Entrée) : `renameTank` (existant depuis le lot 2) normalise désormais le nom
+   évolue exactement comme s'il était affiché, à l'horloge du jour près (voir « Conséquences »).
+4. **Renommage** depuis la liste (« Bac », « Nouveau nom », « Renommer » ou Entrée),
+   proposé **dès deux bacs** (avec un seul, le panneau des réglages ne tiendrait plus en
+   deux colonnes à 1280 × 720, `e2e/cadrage-panneaux.spec.ts`) : `renameTank` (existant
+   depuis le lot 2) normalise désormais le nom
    (`normalizeTankName` : caractères de contrôle et suites de blancs ramenés à une espace,
    bords rognés), refuse un nom vide ou de plus de `MAX_TANK_NAME_LENGTH` caractères
    (unités UTF-16, comme la validation du schéma 2) ; refus affiché en `role="status"`. Le

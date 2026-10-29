@@ -370,10 +370,12 @@ describe('ControlPanel', () => {
       ]);
     });
 
-    it('un seul bac : pas de transfert proposé', async () => {
+    it('un seul bac : ni transfert ni renommage proposés', async () => {
       fixture.componentInstance.tanks.set([entry({})]);
       await openPanel();
       expect(section().querySelector('[data-transfer]')).toBeNull();
+      // Renommage dès deux bacs (#316) : le panneau tient en deux colonnes à 1280 × 720.
+      expect(section().querySelector('[data-rename]')).toBeNull();
     });
   });
 
