@@ -696,7 +696,14 @@ function stepInPlace(world: MutableWorld, dt: number, clock: SimClock): void {
   );
 }
 
-/** Faims du début du pas en mode décor (#278), réutilisées d'un pas à l'autre. */
+/**
+ * Faims du début du pas en mode décor (#278), réutilisées d'un pas à l'autre.
+ *
+ * Tampon de module partagé par tous les mondes (évite une allocation par pas) : correct
+ * uniquement parce que `stepInPlace` n'est pas réentrant et que `keepHunger` et
+ * `restoreHunger` sont appelés dans le même pas d'un même monde, sans autre pas entre les
+ * deux. Un futur pas parallèle ou entrelacé des bacs devra porter ce tampon par le monde.
+ */
 let hungerKept = new Float64Array(64);
 
 function keepHunger(fishes: readonly Entity[]): void {
