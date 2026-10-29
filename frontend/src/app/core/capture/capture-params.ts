@@ -78,6 +78,14 @@
  * Entrée mal formée ignorée ici ; type inconnu ou pose refusée ignorés par l'application ;
  * absent, pièce nue (séries existantes inchangées).
  *
+ * Paramètre facultatif `bacs=` (issue #305, lot 2b) : en mode capture, avec `piece=1`,
+ * meubles supports et bacs posés ajoutés à la pièce de N bacs dans l'ordre de l'URL, séparés
+ * par des virgules, chacun à la première place libre : un type de meuble (`commode`,
+ * `etagere-bacs`), ou un bac tropical vide `taille@meuble` (taille du catalogue, meuble par
+ * son rang parmi ceux de `bacs=`, ou `sol`). Exemple : `bacs=commode,moyen@0`. Entrée mal
+ * formée ignorée ici ; type, taille ou pose refusés ignorés par l'application ; absent, pièce
+ * d'un seul bac (séries existantes inchangées).
+ *
  * Paramètre facultatif `vitesse=` (issue #232) : hors capture, vitesse de la simulation au
  * démarrage, l'une de `SIM_SPEEDS` (`sim/sim-speed.ts`, vérifiée par l'application) ;
  * `vitesse=0` laisse le monde à l'arrêt dès t = 0, pour des captures d'interface
@@ -141,6 +149,8 @@ export interface CaptureParams {
   readonly tank: CaptureTank | null;
   /** Éléments lâchés dans la pièce par `meubles=` (issue #188), vide si absent. */
   readonly furniture: readonly CaptureFurniture[];
+  /** Meubles supports et bacs posés de `bacs=` (issue #305), vide si absent. */
+  readonly roomLayout: readonly CaptureLayoutEntry[];
   /**
    * Vitesse de départ de `vitesse=` (issue #232), hors capture ; `null` si absente ou mal
    * formée. Non vérifiée ici (module sans dépendance à la simulation) : l'application ignore
@@ -159,6 +169,16 @@ export interface CaptureFurniture {
   readonly z: number;
   readonly quarter: 0 | 1 | 2 | 3;
 }
+
+/**
+ * Entrée de `bacs=` : un meuble support (`kind`), ou un bac de taille `size` posé sur le
+ * meuble de rang `on` parmi ceux de `bacs=` (`null` : au sol). Types non vérifiés ici.
+ */
+export type CaptureLayoutEntry =
+  { readonly kind: string } | { readonly size: string; readonly on: number | null };
+
+/** Nombre maximal d'entrées lues dans `bacs=` (les suivantes sont ignorées). */
+export const MAX_CAPTURE_LAYOUT = 8;
 
 /** Nombre maximal d'éléments lus dans `meubles=` (les suivants sont ignorés). */
 export const MAX_CAPTURE_FURNITURE = 8;
@@ -225,6 +245,7 @@ export const DEFAULT_CAPTURE_PARAMS: CaptureParams = {
   editRoomSelection: null,
   woods: [],
   furniture: [],
+  roomLayout: [],
   tank: null,
   speed: null,
 };
@@ -274,6 +295,7 @@ export function parseCaptureParams(search: string): CaptureParams {
     woods: parseWoods(params.get('bois')),
     tank: parseTank(params.get('bac')),
     furniture: parseFurniture(params.get('meubles')),
+    roomLayout: parseRoomLayout(params.get('bacs')),
     speed: parseSpeed(params.get('vitesse')),
   };
 }
@@ -349,6 +371,31 @@ function parseFurniture(raw: string | null): readonly CaptureFurniture[] {
     }
   }
   return furniture;
+}
+
+/** Entrée de `bacs=` : `type`, ou `taille@sol`, ou `taille@rang` (rang de 0 à 99). */
+const LAYOUT_PATTERN = /^([a-z][a-z-]{0,31})(?:@(sol|\d{1,2}))?$/;
+
+/** Entrées de `bacs=` séparées par des virgules ; entrée mal formée : ignorée. */
+function parseRoomLayout(raw: string | null): readonly CaptureLayoutEntry[] {
+  if (raw === null) {
+    return [];
+  }
+  const entries: CaptureLayoutEntry[] = [];
+  for (const entry of raw.split(',')) {
+    const match = LAYOUT_PATTERN.exec(entry);
+    if (match === null) {
+      continue;
+    }
+    const [, name, on] = match;
+    entries.push(
+      on === undefined ? { kind: name } : { size: name, on: on === 'sol' ? null : Number(on) },
+    );
+    if (entries.length === MAX_CAPTURE_LAYOUT) {
+      break;
+    }
+  }
+  return entries;
 }
 
 /** Dimensions `longueur:hauteur:profondeur` : trois réels décimaux positifs, sinon `null`. */

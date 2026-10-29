@@ -38,7 +38,7 @@
       [environment]="aquarium.environment()"
       [population]="aquarium.population()"
     />
-    <!-- Panneau de contrôle (#52) : environnement (#87) et pièce (#187), vitesse, heure et pluie (#106), décor et granulés (#117), eau (#207), population (#69), sauvegarde (#70). Fermé par défaut. -->
+    <!-- Panneau de contrôle (#52) : environnement (#87) et pièce (#187), bacs et meubles (#305), vitesse, heure et pluie (#106), décor et granulés (#117), eau (#207), population (#69), sauvegarde (#70). Fermé par défaut. -->
     <app-control-panel
       #panel
       (opened)="onPanelOpened()"
@@ -51,6 +51,7 @@
       [decorEditable]="aquarium.decorEditable()"
       [foodStyle]="aquarium.foodStyle()"
       [roomShown]="aquarium.room().shown"
+      [roomCatalog]="aquarium.roomCatalog()"
       [population]="aquarium.population()"
       [populationMax]="aquarium.populationMax()"
       [tankLiters]="aquarium.tankLiters()"
@@ -64,6 +65,10 @@
       (decorVisibleChanged)="aquarium.setDecorVisible($event)"
       (rainChanged)="aquarium.setRain($event)"
       (roomShownChanged)="aquarium.setRoomShown($event)"
+      (supportAdded)="aquarium.addRoomSupport($event)"
+      (tankAdded)="aquarium.addRoomTank($event.environment, $event.size, $event.supportId)"
+      (tankRemoved)="aquarium.removeRoomTank($event)"
+      (supportRemoved)="aquarium.removeRoomSupport($event)"
       (editRequested)="onEditRequested()"
       (foodStyleToggled)="aquarium.toggleFoodStyle()"
       (populationChanged)="aquarium.setPopulation($event.species, $event.count)"

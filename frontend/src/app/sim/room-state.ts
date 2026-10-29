@@ -152,14 +152,24 @@ export interface RoomWorlds {
 
 /**
  * Mondes de la pièce pour l'hôte du lot 1, qui garde au plus un bac par environnement
- * (ADR 0063) : le monde du bac sélectionné et ceux des autres bacs, dans l'ordre des
- * identifiants.
- * @throws RangeError si deux bacs ont le même environnement (pièce d'un lot ultérieur).
+ * (ADR 0063) : le monde du bac sélectionné et ceux des autres bacs à la position historique,
+ * dans l'ordre des identifiants. Les bacs posés (lot 2) restent dans la pièce, figés.
+ * @throws RangeError si deux bacs à la position historique ont le même environnement, ou si
+ * aucun bac n'est à la position historique.
  */
 export function roomWorlds(room: RoomState, selectedTankId: number | null): RoomWorlds {
-  const selected = resolveSelectedTank(room, selectedTankId);
+  // Lot 2b : seuls les bacs à la position historique s'affichent ; un bac posé reste figé
+  // (ADR 0073, 0074) et n'est pas encore sélectionnable (lot 3) : la sélection retombe alors
+  // sur le premier bac à la position historique.
+  const shown = room.tanks.filter((tank) => tank.placement === null);
+  const firstShown = shown[0];
+  if (firstShown === undefined) {
+    throw new RangeError('pièce sans bac affichable');
+  }
+  const wanted = resolveSelectedTank(room, selectedTankId);
+  const selected = shown.some((tank) => tank.id === wanted) ? wanted : firstShown.id;
   const seen = new Set<EnvironmentId>();
-  for (const tank of room.tanks) {
+  for (const tank of shown) {
     if (seen.has(tank.world.environment)) {
       throw new RangeError(
         `plusieurs bacs du même environnement (${tank.world.environment}) : pas encore pris en charge`,
@@ -168,7 +178,7 @@ export function roomWorlds(room: RoomState, selectedTankId: number | null): Room
     seen.add(tank.world.environment);
   }
   const world = (findTank(room, selected) as RoomTank).world;
-  const others = room.tanks.filter((tank) => tank.id !== selected).map((tank) => tank.world);
+  const others = shown.filter((tank) => tank.id !== selected).map((tank) => tank.world);
   return { world, others, selectedTankId: selected };
 }
 
@@ -196,9 +206,17 @@ export function syncRoom(
   if (byEnvironment.size > MAX_ROOM_TANKS) {
     throw new RangeError(`trop de bacs (${byEnvironment.size}, ${MAX_ROOM_TANKS} au plus)`);
   }
-  const tanks: RoomTank[] = [];
+  // Les bacs posés (lot 2, ADR 0073) sont figés et gardés tels quels : seuls les bacs à la
+  // position historique suivent le monde affiché et les mondes rangés.
+  const tanks: RoomTank[] = (previous?.tanks ?? []).filter((tank) => tank.placement !== null);
+  if (tanks.length + byEnvironment.size > MAX_ROOM_TANKS) {
+    throw new RangeError(`trop de bacs (${MAX_ROOM_TANKS} au plus)`);
+  }
   let nextTankId = previous?.nextTankId ?? 0;
   for (const tank of previous?.tanks ?? []) {
+    if (tank.placement !== null) {
+      continue;
+    }
     const world = byEnvironment.get(tank.world.environment);
     if (world !== undefined) {
       tanks.push({ ...tank, world });
@@ -586,6 +604,10 @@ export function addTank(room: RoomState, request: AddTankRequest): RoomLayoutRes
   if (placeOf(environment) === 'jardin') {
     return { ok: false, reason: 'jardin' };
   }
+  // Taille hors catalogue (interface ou import) : refus typé plutôt qu'une `TypeError` (#311).
+  if (!(TANK_SIZE_IDS as readonly string[]).includes(request.size)) {
+    return { ok: false, reason: 'position-invalide' };
+  }
   const id = room.nextTankId;
   const empty = createWorld(tankSeed(room.seed, id), [], [], env.decor, environment);
   const world = isTankResizable(environment)
@@ -626,6 +648,45 @@ export function removeTank(room: RoomState, id: number): RoomLayoutResult {
     return { ok: false, reason: 'dernier-bac' };
   }
   return { ok: true, room: { ...room, tanks: room.tanks.filter((t) => t.id !== id) }, id };
+}
+
+/**
+ * Raison du refus de redimensionner le bac `id` à `dimensions` (#311), ou `null` si la
+ * disposition reste cohérente : un bac posé doit tenir sur son plateau sans chevaucher ; la
+ * colonne d'un bac à la position historique ne doit chevaucher ni meuble ni bac posé. Sans
+ * cette vérification, la sauvegarde (`serializeRoom`) refuserait la pièce. Au jardin, ou pour
+ * un environnement aux dimensions fixes, toujours `null` (rien ne change dans la pièce).
+ */
+export function tankResizeRefusal(
+  room: RoomState,
+  id: number,
+  dimensions: TankDimensions,
+): RoomLayoutRefusal | null {
+  const tank = findTank(room, id);
+  if (tank === undefined) {
+    return 'bac-inconnu';
+  }
+  if (tank.place === 'jardin' || !isTankResizable(tank.world.environment)) {
+    return null;
+  }
+  const resized: RoomTank = { ...tank, world: { ...tank.world, dimensions } };
+  if (resized.placement !== null) {
+    return tankPlacementRefusal(room, resized, resized.placement);
+  }
+  const column = tankBox(room, resized) as CmBox;
+  for (const item of room.furniture) {
+    if (overlaps(column, supportBox(item))) {
+      return 'chevauchement';
+    }
+  }
+  // Les bacs à la position historique partagent le centre (un seul affiché à la fois).
+  for (const other of room.tanks) {
+    const otherBox = other.id === id || other.placement === null ? null : tankBox(room, other);
+    if (otherBox !== null && overlaps(column, otherBox)) {
+      return 'chevauchement';
+    }
+  }
+  return null;
 }
 
 /** Renomme le bac `id` (nom rogné, 1 à `MAX_TANK_NAME_LENGTH` caractères). `null` si refusé. */

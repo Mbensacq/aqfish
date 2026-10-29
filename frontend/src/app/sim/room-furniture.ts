@@ -217,7 +217,7 @@ const EPS = 1e-6;
  * Coins (x, z) d'un rectangle local tourné de `quarter` quarts de tour (sens direct vu de
  * dessus : la face avant +Z passe vers +X au premier quart).
  */
-function rotateRect(
+export function rotateRect(
   minX: number,
   maxX: number,
   minZ: number,

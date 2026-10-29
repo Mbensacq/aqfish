@@ -17,6 +17,7 @@ import {
   tankAnimalCount,
   tankDimensionsOf,
   tankPlacementRefusal,
+  tankResizeRefusal,
   tankSeed,
   TANK_SIZES,
   type RoomLayoutResult,
@@ -353,10 +354,30 @@ describe('syncRoom (hôte du lot 1) garde la disposition', () => {
       }),
     ).room;
     const shown = stepRoom(room, 5).tanks[0]!.world;
-    const synced = syncRoom(room, shown, [room.tanks[1]!.world]);
+    // Lot 2b : un bac posé n'est jamais un monde rangé (`roomWorlds` l'écarte) ; il est gardé
+    // tel quel par `syncRoom`.
+    const synced = syncRoom(room, shown, []);
     expect(synced.room.furniture).toEqual(room.furniture);
     expect(synced.room.nextFurnitureId).toBe(1);
     expect(synced.room.tanks.map((t) => t.placement)).toEqual(room.tanks.map((t) => t.placement));
     expect(synced.selectedTankId).toBe(0);
+  });
+});
+
+describe('dette #311 : refus typés', () => {
+  it('addTank refuse une taille hors catalogue (valeur d’interface ou d’import)', () => {
+    const result = addTank(createRoom(42), {
+      environment: 'tropical',
+      size: 'nano' as never,
+      placement: floor(2, 2),
+    });
+    expect(result).toEqual({ ok: false, reason: 'position-invalide' });
+  });
+
+  it('tankResizeRefusal : bassin et environnement fixe toujours acceptés', () => {
+    const room = createRoom(42, ['tropical', 'recif', 'bassin']);
+    expect(tankResizeRefusal(room, 1, { width: 2, height: 0.9, depth: 0.9 })).toBeNull();
+    expect(tankResizeRefusal(room, 2, { width: 2, height: 0.9, depth: 0.9 })).toBeNull();
+    expect(tankResizeRefusal(room, 0, { width: 2, height: 0.9, depth: 0.9 })).toBeNull();
   });
 });

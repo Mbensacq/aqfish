@@ -39,7 +39,7 @@ import { flowerOpenness, lilyPadLayout } from '../sim/lily-pads';
 import { seededFeatures } from '../sim/world';
 import type { DecorItem } from '../sim/decor';
 import type { FoodPellet } from '../sim/food';
-import { clampRoom, DEFAULT_ROOM, isRoomAvailable, type Room } from '../sim/room';
+import { clampRoom, DEFAULT_ROOM, isRoomAvailable, type Room, type RoomBlock } from '../sim/room';
 import { SAND_THICKNESS } from '../sim/tank';
 import { BubbleLayer } from './bubble-layer';
 import { CatappaLayer } from './catappa-layer';
@@ -201,6 +201,8 @@ export class AquariumView {
   private roomDragListener: DecorDragListener | null = null;
   /** Pièce construite par `setRoom` (choix à la souris), hors aperçu d'un glissement. */
   private room: Room = DEFAULT_ROOM;
+  /** Blocs des meubles supports et des bacs posés (`setRoomLayout`, #305). */
+  private roomLayout: readonly RoomBlock[] = [];
   /** Glissement en cours d'un élément du décor ou de la pièce (`null` sinon). */
   private drag: {
     readonly id: number;
@@ -891,7 +893,19 @@ export class AquariumView {
         this.world.dimensions,
         room,
         isRoomAvailable(this.world.environment.id),
+        this.roomLayout,
       );
+    }
+  }
+
+  /**
+   * Meubles supports et bacs posés de la pièce de N bacs (#305, lot 2b), en blocs
+   * (`roomLayoutBlocks`) : redessinés avec la pièce courante, seulement si elle est affichée.
+   */
+  setRoomLayout(blocks: readonly RoomBlock[]): void {
+    if (!this.disposed) {
+      this.roomLayout = blocks;
+      this.previewRoom(this.room);
     }
   }
 

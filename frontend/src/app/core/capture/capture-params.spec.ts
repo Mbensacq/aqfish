@@ -1,5 +1,6 @@
 import {
   MAX_CAPTURE_FURNITURE,
+  MAX_CAPTURE_LAYOUT,
   CAMERA_PRESETS,
   hasWorldParams,
   DEFAULT_CAPTURE_PARAMS,
@@ -38,8 +39,26 @@ describe('parseCaptureParams', () => {
       woods: [],
       tank: null,
       furniture: [],
+      roomLayout: [],
       speed: null,
     });
+  });
+
+  it('lit les bacs et meubles de la pièce de N bacs : bacs= (#305)', () => {
+    expect(parseCaptureParams('?capture=1&bacs=commode,moyen@0,petit@sol').roomLayout).toEqual([
+      { kind: 'commode' },
+      { size: 'moyen', on: 0 },
+      { size: 'petit', on: null },
+    ]);
+    // Entrées mal formées ignorées ; type ou taille inconnus gardés (vérifiés par l'application).
+    expect(
+      parseCaptureParams('?bacs=Commode,moyen@,moyen@-1,moyen@100,@0,a@b,lit,nano@12').roomLayout,
+    ).toEqual([{ kind: 'lit' }, { size: 'nano', on: 12 }]);
+    const many = Array.from({ length: MAX_CAPTURE_LAYOUT + 2 }, () => 'commode');
+    expect(parseCaptureParams(`?bacs=${many.join(',')}`).roomLayout).toHaveLength(
+      MAX_CAPTURE_LAYOUT,
+    );
+    expect(parseCaptureParams('').roomLayout).toEqual([]);
   });
 
   it('lit les éléments de la pièce : meubles=type:x:z:quart (#188)', () => {

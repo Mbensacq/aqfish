@@ -77,6 +77,9 @@ import {
   WATER_READOUT_TICKS,
   ROOM_ATTRIBUTE,
   ROOM_COUNT_ATTRIBUTE,
+  ROOM_LAYOUT_MESSAGES,
+  ROOM_SUPPORTS_ATTRIBUTE,
+  ROOM_TANKS_ATTRIBUTE,
   ROOM_SELECTION_ATTRIBUTE,
   TANK_ATTRIBUTE,
   CAMERA_TARGET_ATTRIBUTE,
@@ -1261,6 +1264,106 @@ describe('AquariumHost', () => {
       expect(host().importSave(text)).toBe(true);
       expect(host().room()).toEqual({ shown: true, cabinetHeight: 0.9 });
       expect(roomAttr()).toBe('true');
+    });
+  });
+
+  describe('bacs et meubles de la pièce (#305)', () => {
+    const host = () => fixture.componentInstance;
+    const attr = (name: string) => (fixture.nativeElement as HTMLElement).getAttribute(name);
+    const saved = () => {
+      const result = parseSaveWorlds(saveStorage!.getItem(SAVE_STORAGE_KEY)!);
+      if (!result.ok) {
+        throw new Error(result.error);
+      }
+      return result.room;
+    };
+
+    async function withRoom(): Promise<void> {
+      await create('?seed=8');
+      setCanvasSize(800, 600);
+      frames.flush(0);
+      host().setRoomShown(true);
+    }
+
+    it('commode puis bac posé dessus : catalogue, attributs, sauvegarde ; monde affiché intact', async () => {
+      await withRoom();
+      const world = host().world;
+      expect(
+        host()
+          .roomCatalog()
+          .tanks.map((t) => [t.id, t.shown]),
+      ).toEqual([[0, true]]);
+      host().addRoomSupport('commode');
+      host().addRoomTank('tropical', 'moyen', 0);
+      expect(attr(ROOM_TANKS_ATTRIBUTE)).toBe('2');
+      expect(attr(ROOM_SUPPORTS_ATTRIBUTE)).toBe('1');
+      const catalog = host().roomCatalog();
+      expect(catalog.message).toBeNull();
+      expect(catalog.tanks[1]).toEqual({
+        id: 1,
+        name: 'Bac tropical',
+        animals: 0,
+        shown: false,
+        on: 'Commode 1',
+      });
+      expect(catalog.supports).toEqual([{ id: 0, name: 'Commode 1', occupied: true }]);
+      const room = saved();
+      expect(room.tanks.map((t) => t.placement?.supportId ?? null)).toEqual([null, 0]);
+      expect(host().world).toBe(world);
+      // Meuble occupé : refus en clair.
+      host().removeRoomSupport(0);
+      expect(host().roomCatalog().message).toBe(ROOM_LAYOUT_MESSAGES['support-occupe']);
+      expect(attr(ROOM_SUPPORTS_ATTRIBUTE)).toBe('1');
+    });
+
+    it('refus : valeurs inconnues, plus de place, bac affiché ; pièce masquée : sans effet', async () => {
+      await withRoom();
+      host().addRoomSupport('lit');
+      expect(host().roomCatalog().message).toBe(ROOM_LAYOUT_MESSAGES['position-invalide']);
+      host().addRoomTank('tropical', 'nano', null);
+      expect(host().roomCatalog().message).toBe(ROOM_LAYOUT_MESSAGES['position-invalide']);
+      host().addRoomTank('tropical', 'petit', 4);
+      expect(host().roomCatalog().message).toBe(ROOM_LAYOUT_MESSAGES['meuble-inconnu']);
+      host().removeRoomTank(0);
+      expect(attr(ROOM_TANKS_ATTRIBUTE)).toBe('1');
+      host().addRoomSupport('commode');
+      host().addRoomTank('tropical', 'grand', 0);
+      expect(host().roomCatalog().message).toBe(ROOM_LAYOUT_MESSAGES['aucune-place']);
+      host().setRoomShown(false);
+      host().addRoomSupport('commode');
+      expect(attr(ROOM_SUPPORTS_ATTRIBUTE)).toBe('1');
+    });
+
+    it('retirer un bac rangé l’enlève aussi des mondes rangés', async () => {
+      await withRoom();
+      host().setEnvironment('recif');
+      host().setEnvironment('tropical');
+      expect(attr(ROOM_TANKS_ATTRIBUTE)).toBe('2');
+      const reef = host()
+        .roomCatalog()
+        .tanks.find((t) => !t.shown)!;
+      expect(reef.animals).toBeGreaterThan(0);
+      host().removeRoomTank(reef.id);
+      expect(attr(ROOM_TANKS_ATTRIBUTE)).toBe('1');
+      expect(saved().tanks).toHaveLength(1);
+      // Revenir au récif crée un bac neuf, d'identifiant nouveau.
+      host().setEnvironment('recif');
+      expect(
+        host()
+          .roomCatalog()
+          .tanks.map((t) => t.id),
+      ).toEqual([0, reef.id + 1]);
+    });
+
+    it('agrandir le bac affiché contre la commode est refusé (#311)', async () => {
+      await withRoom();
+      host().addRoomSupport('commode');
+      const before = host().tankDimensions();
+      host().setTankDimensions({ width: 2, height: 0.9, depth: 0.9 });
+      expect(host().tankDimensions()).toEqual(before);
+      expect(host().roomCatalog().message).toBe(ROOM_LAYOUT_MESSAGES.chevauchement);
+      host().setTankDimensions({ width: 0.6, height: 0.5, depth: 0.3 });
+      expect(host().tankDimensions()).toEqual({ width: 0.6, height: 0.5, depth: 0.3 });
     });
   });
 

@@ -190,6 +190,16 @@ haut de sa section.
 
 ## Tests
 
+- **`npm run verify` lancé en arrière-plan pendant qu'on code : l'e2e teste l'arbre modifié**
+  (cycle 99, #305) : le serveur des e2e (`ng serve`) sert le dossier de travail, pas `main` ;
+  un « verify de `main` » laissé tourner pendant les premières modifications mesure donc la
+  branche à moitié écrite. Vérifier `main` d'abord, jusqu'au bout, ou dans un autre clone
+  (voir aussi « Deux clones, un seul serveur e2e »). (2026-10-29)
+- **`aria-disabled` : Playwright refuse de cliquer** (cycle 99, #305) : un bouton
+  `aria-disabled="true"` (resté focalisable, convention du panneau) est « not enabled » pour
+  `click()`, qui attend jusqu'au délai du test. Vérifier l'attribut
+  (`toHaveAttribute('aria-disabled', 'true')`) au lieu de cliquer. (2026-10-29)
+
 - **Guide du débutant ouvert à la première visite : stockage de départ des e2e** (cycle 95,
   #240) : chaque test Playwright démarre avec un `localStorage` vide, donc le dialogue modal
   du guide couvrirait l'interface de tous les e2e. `playwright.config.ts` pose la clé

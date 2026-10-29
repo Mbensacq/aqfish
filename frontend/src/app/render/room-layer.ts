@@ -47,6 +47,10 @@ export const ROOM_COLORS: Readonly<Record<RoomPart, readonly [string, string]>> 
   coussin: [PALETTE.eauMoyenne, PALETTE.eauSombre],
   pot: [PALETTE.roche, PALETTE.koiNoir],
   feuillage: [PALETTE.vegetation, PALETTE.vegetationClaire],
+  // Bacs posés (#305, lot 2b) : rendu simplifié, opaque, d'un bac figé.
+  cadre: [PALETTE.koiNoir, PALETTE.koiNoir],
+  eau: [PALETTE.eauMoyenne, PALETTE.eauSombre],
+  substrat: [PALETTE.sable, PALETTE.sable],
 };
 
 /** Parties dessinées avec le mur (masquées avec lui). */
@@ -147,11 +151,19 @@ export class RoomLayer implements SceneLayer {
 
   /**
    * Construit la pièce `room` autour d'un bac `dims` (remplace la précédente) ; `available`
-   * faux (environnement sans pièce) ou pièce masquée : rien n'est dessiné.
+   * faux (environnement sans pièce) ou pièce masquée : rien n'est dessiné. `layout` : blocs
+   * des meubles supports et des bacs posés de la pièce de N bacs (#305, `roomLayoutBlocks`),
+   * dessinés avec le sol et le meuble, seulement si la pièce l'est.
    */
-  setRoom(dims: TankDimensions, room: Room, available: boolean): void {
+  setRoom(
+    dims: TankDimensions,
+    room: Room,
+    available: boolean,
+    layout: readonly RoomBlock[] = [],
+  ): void {
     this.clear();
-    const blocks = available ? [...roomBlocks(dims, room), ...furnitureBlocks(room)] : [];
+    const base = available ? [...roomBlocks(dims, room), ...furnitureBlocks(room)] : [];
+    const blocks = base.length > 0 ? [...base, ...layout] : base;
     this.blockCount = blocks.length;
     if (blocks.length === 0) {
       return;

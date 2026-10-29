@@ -17,6 +17,7 @@ import {
   type CameraPreset,
   type CapturePopulation,
   type CaptureFurniture,
+  type CaptureLayoutEntry,
   type CaptureWood,
 } from '../../core/capture/capture-params';
 import {
@@ -102,9 +103,15 @@ import {
   switchEnvironment,
   type StashedWorlds,
 } from '../../sim/environment-worlds';
-import { DEFAULT_TANK, sameDimensions, type TankDimensions } from '../../sim/tank';
+import {
+  clampTankDimensions,
+  DEFAULT_TANK,
+  sameDimensions,
+  type TankDimensions,
+} from '../../sim/tank';
 import { setTankDimensionsInPlace } from '../../sim/tank-resize';
 import {
+  clampRoom,
   DEFAULT_ROOM,
   ROOM_ITEM_KINDS,
   type Room,
@@ -112,7 +119,7 @@ import {
   type RoomItemKind,
   type RoomQuarter,
 } from '../../sim/room';
-import { dropRoomItem, removeRoomItem } from '../../sim/room-furniture';
+import { dropRoomItem, removeRoomItem, roomArea, roomItemBox } from '../../sim/room-furniture';
 import { isRoomTool, type EditorTool } from '../decor-editor/decor-editor';
 import { fixedStepInto, type FixedStepState } from '../../sim/fixed-step';
 import {
@@ -131,7 +138,29 @@ import {
   type PopulationCounts,
 } from '../../sim/population';
 import { parseSaveWorlds, serializeRoom } from '../../sim/room-save';
-import { syncRoom, type RoomState } from '../../sim/room-state';
+import {
+  addSupport,
+  addTank,
+  findTank,
+  removeSupport,
+  removeTank,
+  SUPPORT_CATALOG,
+  SUPPORT_KINDS,
+  syncRoom,
+  TANK_SIZE_IDS,
+  tankAnimalCount,
+  tankResizeRefusal,
+  type RoomLayoutRefusal,
+  type RoomState,
+  type SupportKind,
+  type TankSizeId,
+} from '../../sim/room-state';
+import {
+  findSupportSpot,
+  findTankSpot,
+  roomLayoutBlocks,
+  type FloorRect,
+} from '../../sim/room-layout';
 import type { SaveSettings } from '../../sim/save';
 import { applySpeciesCountsInPlace } from '../../sim/species-catalog';
 import {
@@ -266,6 +295,52 @@ export const DECOR_SELECTION_ATTRIBUTE = 'data-aqfish-decor-selected';
 export const ROOM_SELECTION_ATTRIBUTE = 'data-aqfish-room-selected';
 /** Attribut du composant hôte exposant le nombre d'éléments de la pièce (#188). */
 export const ROOM_COUNT_ATTRIBUTE = 'data-aqfish-room-count';
+/** Nombre de bacs de la pièce de N bacs (#305, lot 2b), bac affiché et bacs rangés compris. */
+export const ROOM_TANKS_ATTRIBUTE = 'data-aqfish-room-tanks';
+/** Nombre de meubles supports de la pièce de N bacs (#305, lot 2b). */
+export const ROOM_SUPPORTS_ATTRIBUTE = 'data-aqfish-room-supports';
+
+/** Bac de la pièce vu par le catalogue « Bacs et meubles » (#305). */
+export interface RoomCatalogTank {
+  readonly id: number;
+  readonly name: string;
+  readonly animals: number;
+  /** Bac affiché (non retirable). */
+  readonly shown: boolean;
+  /** Support du bac posé (nom), « sol », ou `null` : position historique. */
+  readonly on: string | null;
+}
+
+/** Meuble support vu par le catalogue « Bacs et meubles » (#305). */
+export interface RoomCatalogSupport {
+  readonly id: number;
+  readonly name: string;
+  /** Vrai si un bac repose dessus (non retirable). */
+  readonly occupied: boolean;
+}
+
+/** Contenu de la pièce de N bacs pour le catalogue « Bacs et meubles » (#305). */
+export interface RoomCatalog {
+  readonly tanks: readonly RoomCatalogTank[];
+  readonly supports: readonly RoomCatalogSupport[];
+  /** Dernier refus, en clair ; `null` après une action acceptée. */
+  readonly message: string | null;
+}
+
+/** Messages des refus du catalogue « Bacs et meubles » (#305). */
+export const ROOM_LAYOUT_MESSAGES: Readonly<Record<RoomLayoutRefusal | 'aucune-place', string>> = {
+  'aucune-place': 'Aucune place libre pour cet élément.',
+  'piece-pleine': 'La pièce est pleine.',
+  'bac-inconnu': 'Ce bac n’existe plus.',
+  'meuble-inconnu': 'Ce meuble n’existe plus.',
+  'hors-piece': 'Hors de la pièce.',
+  'hors-support': 'Le bac dépasse du meuble.',
+  chevauchement: 'Un meuble ou un bac occupe déjà la place.',
+  'support-occupe': 'Un bac repose sur ce meuble.',
+  jardin: 'Le bassin se trouve au jardin.',
+  'dernier-bac': 'La pièce garde au moins un bac.',
+  'position-invalide': 'Choix invalide.',
+};
 
 /**
  * Attribut de l'hôte : dimensions du bac en mètres, `longueur:hauteur:profondeur` (issue
@@ -571,6 +646,9 @@ export class AquariumHost {
 
   /** Nombre d'éléments de la pièce (#188). */
   readonly roomCount = signal(0);
+
+  /** Bacs et meubles supports de la pièce de N bacs (#305), pour le catalogue. */
+  readonly roomCatalog = signal<RoomCatalog>({ tanks: [], supports: [], message: null });
 
   /** Indice de l'élément de décor sélectionné (#167), `null` sinon. */
   readonly decorSelection = signal<number | null>(null);
@@ -914,6 +992,13 @@ export class AquariumHost {
     const previous = this.tankDimensions();
     if (!world || !this.view || this.capture || previous === null) {
       return;
+    }
+    // Un bac agrandi ne doit chevaucher ni meuble ni bac posé de la pièce (#311) : sinon la
+    // sauvegarde refuserait la pièce entière.
+    const room = this.syncRoomState(world);
+    const refusal = tankResizeRefusal(room, this.selectedTankId, clampTankDimensions(dims));
+    if (refusal !== null) {
+      return this.refuseRoomLayout(refusal);
     }
     // Une chute en cours se termine d'abord : son décor est celui que l'on redimensionne.
     this.finishDropAnimation();
@@ -1520,6 +1605,12 @@ export class AquariumHost {
   /** Applique la pièce à la vue courante et l'expose (`ROOM_ATTRIBUTE`). */
   private applyRoom(room: Room): void {
     this.room.set(room);
+    // Meubles supports et bacs posés (#305) : dessinés avec la pièce, au parquet du meuble.
+    this.view?.setRoomLayout(
+      this.roomState === null
+        ? []
+        : roomLayoutBlocks(this.roomState, clampRoom(room).cabinetHeight),
+    );
     this.view?.setRoom(room);
     const shown = this.view?.roomShown ?? false;
     this.host.nativeElement.setAttribute(ROOM_ATTRIBUTE, String(shown));
@@ -1630,7 +1721,194 @@ export class AquariumHost {
     const synced = syncRoom(this.roomState, world, stashedList(this.stash, world.environment));
     this.roomState = synced.room;
     this.selectedTankId = synced.selectedTankId;
+    this.exposeRoomCatalog(this.roomCatalog().message);
     return synced.room;
+  }
+
+  /** Expose les bacs et meubles de la pièce (catalogue et attributs, #305). */
+  private exposeRoomCatalog(message: string | null): void {
+    const room = this.roomState;
+    const supports = room?.furniture ?? [];
+    const tanks = (room?.tanks ?? []).map((tank): RoomCatalogTank => {
+      const supportId = tank.placement?.supportId;
+      const support = supports.find((item) => item.id === supportId);
+      return {
+        id: tank.id,
+        name: tank.name,
+        animals: tankAnimalCount(tank),
+        shown: tank.id === this.selectedTankId,
+        on:
+          tank.placement === null
+            ? null
+            : support === undefined
+              ? 'sol'
+              : `${SUPPORT_CATALOG[support.kind].name} ${support.id + 1}`,
+      };
+    });
+    this.roomCatalog.set({
+      tanks,
+      supports: supports.map((item) => ({
+        id: item.id,
+        name: `${SUPPORT_CATALOG[item.kind].name} ${item.id + 1}`,
+        occupied: (room?.tanks ?? []).some((tank) => tank.placement?.supportId === item.id),
+      })),
+      message,
+    });
+    this.host.nativeElement.setAttribute(ROOM_TANKS_ATTRIBUTE, String(tanks.length));
+    this.host.nativeElement.setAttribute(ROOM_SUPPORTS_ATTRIBUTE, String(supports.length));
+  }
+
+  /**
+   * Aire libre de la pièce graphique autour du bac affiché et obstacles (meubles de la pièce
+   * graphique, ADR 0073) : la pose automatique du catalogue (#305) y cherche une place.
+   */
+  private roomFloor(world: World): { area: FloorRect; obstacles: FloorRect[] } {
+    const area = roomArea(placeDimensions(world));
+    return { area, obstacles: (this.room().items ?? []).map((item) => roomItemBox(item)) };
+  }
+
+  /**
+   * Ajoute un meuble support du catalogue « Bacs et meubles » (#305) à la première place libre
+   * de la pièce affichée. Refus (aucune place, pièce pleine) : message dans le catalogue.
+   * Sans effet en capture, avant le démarrage ou pièce masquée.
+   */
+  addRoomSupport(kind: string): void {
+    const world = this.currentWorld;
+    if (!world || this.capture || !this.roomEditable()) {
+      return;
+    }
+    if (!(SUPPORT_KINDS as readonly string[]).includes(kind)) {
+      return this.refuseRoomLayout('position-invalide');
+    }
+    const room = this.syncRoomState(world);
+    const { area, obstacles } = this.roomFloor(world);
+    const spot = findSupportSpot(room, kind as SupportKind, area, obstacles);
+    if (spot === null) {
+      return this.refuseRoomLayout('aucune-place');
+    }
+    const result = addSupport(room, kind as SupportKind, spot.x, spot.z, 0);
+    this.commitRoomLayout(result.ok ? result.room : null, result.ok ? null : result.reason);
+  }
+
+  /**
+   * Ajoute un bac vide de l'environnement `environment` et de la taille `size` (catalogue
+   * « Bacs et meubles », #305), posé à la première place libre du meuble `supportId` ou du
+   * sol (`null`). Le bac posé est figé jusqu'au lot 3 (ADR 0073, 0074).
+   */
+  addRoomTank(environment: string, size: string, supportId: number | null): void {
+    const world = this.currentWorld;
+    if (!world || this.capture || !this.roomEditable()) {
+      return;
+    }
+    if (!isEnvironmentId(environment) || !(TANK_SIZE_IDS as readonly string[]).includes(size)) {
+      return this.refuseRoomLayout('position-invalide');
+    }
+    const room = this.syncRoomState(world);
+    const { area, obstacles } = this.roomFloor(world);
+    const placement = findTankSpot(
+      room,
+      environment,
+      size as TankSizeId,
+      supportId,
+      area,
+      obstacles,
+    );
+    if (placement === null) {
+      return this.refuseRoomLayout(
+        supportId !== null && !room.furniture.some((item) => item.id === supportId)
+          ? 'meuble-inconnu'
+          : 'aucune-place',
+      );
+    }
+    const result = addTank(room, { environment, size: size as TankSizeId, placement });
+    this.commitRoomLayout(result.ok ? result.room : null, result.ok ? null : result.reason);
+  }
+
+  /**
+   * Retire le bac `id` de la pièce (#305), ses animaux avec lui ; un bac rangé (autre
+   * environnement) quitte aussi les mondes rangés. Le bac affiché ne se retire pas. La
+   * confirmation d'un bac peuplé revient au catalogue.
+   */
+  removeRoomTank(id: number): void {
+    const world = this.currentWorld;
+    if (!world || this.capture) {
+      return;
+    }
+    const room = this.syncRoomState(world);
+    const tank = findTank(room, id);
+    if (tank === undefined || id === this.selectedTankId) {
+      return this.refuseRoomLayout(tank === undefined ? 'bac-inconnu' : 'position-invalide');
+    }
+    const result = removeTank(room, id);
+    if (result.ok && tank.placement === null) {
+      const stash = new Map(this.stash);
+      stash.delete(tank.world.environment);
+      this.stash = stash;
+    }
+    this.commitRoomLayout(result.ok ? result.room : null, result.ok ? null : result.reason);
+  }
+
+  /** Retire le meuble support `id` (#305) ; refusé si un bac repose dessus. */
+  removeRoomSupport(id: number): void {
+    const world = this.currentWorld;
+    if (!world || this.capture) {
+      return;
+    }
+    const result = removeSupport(this.syncRoomState(world), id);
+    this.commitRoomLayout(result.ok ? result.room : null, result.ok ? null : result.reason);
+  }
+
+  /**
+   * Meubles et bacs de `bacs=` (#305), en capture : chacun à la première place libre, dans
+   * l'ordre de l'URL ; type, taille, rang de meuble ou pose refusés : entrée ignorée.
+   */
+  private applyCaptureLayout(world: World, entries: readonly CaptureLayoutEntry[]): void {
+    let room = this.syncRoomState(world);
+    const { area, obstacles } = this.roomFloor(world);
+    const supportIds: number[] = [];
+    for (const entry of entries) {
+      if ('kind' in entry) {
+        const kind = entry.kind as SupportKind;
+        const spot = SUPPORT_KINDS.includes(kind)
+          ? findSupportSpot(room, kind, area, obstacles)
+          : null;
+        const result = spot === null ? null : addSupport(room, kind, spot.x, spot.z, 0);
+        if (result?.ok) {
+          room = result.room;
+          supportIds.push(result.id);
+        }
+        continue;
+      }
+      const size = entry.size as TankSizeId;
+      const supportId = entry.on === null ? null : supportIds[entry.on];
+      if (!TANK_SIZE_IDS.includes(size) || supportId === undefined) {
+        continue;
+      }
+      const placement = findTankSpot(room, 'tropical', size, supportId, area, obstacles);
+      const result =
+        placement === null ? null : addTank(room, { environment: 'tropical', size, placement });
+      if (result?.ok) {
+        room = result.room;
+      }
+    }
+    this.roomState = room;
+    this.exposeRoomCatalog(null);
+  }
+
+  private refuseRoomLayout(reason: RoomLayoutRefusal | 'aucune-place'): void {
+    this.exposeRoomCatalog(ROOM_LAYOUT_MESSAGES[reason]);
+  }
+
+  /** Installe la pièce modifiée (ou affiche le refus), redessine et enregistre aussitôt. */
+  private commitRoomLayout(room: RoomState | null, reason: RoomLayoutRefusal | null): void {
+    if (room === null) {
+      return this.refuseRoomLayout(reason ?? 'position-invalide');
+    }
+    this.roomState = room;
+    this.exposeRoomCatalog(null);
+    this.applyRoom(this.room());
+    this.saveNow();
+    this.scheduleFrame();
   }
 
   /** Message d'erreur d'un fichier trop gros pour être lu (contrôle du panneau, #70). */
@@ -1741,6 +2019,12 @@ export class AquariumHost {
       this.currentWorld = params.capture
         ? advanceToWithFeedings(world, params.time, params.feedings, this.dayClock)
         : world;
+    }
+    // Pièce de N bacs (#305) : bacs et meubles exposés au catalogue dès le démarrage ;
+    // `bacs=` en capture, avec `piece=1`, y ajoute meubles supports et bacs posés.
+    this.syncRoomState(this.currentWorld);
+    if (params.capture && params.room && params.roomLayout.length > 0) {
+      this.applyCaptureLayout(this.currentWorld, params.roomLayout);
     }
     // Vitesse de `vitesse=` (#232), hors capture : prime sur celle de la sauvegarde.
     // `vitesse=0` : le monde ne quitte pas t = 0 (captures d'interface reproductibles).
