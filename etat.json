@@ -3701,10 +3701,10 @@
           "note": "Verdict RÉSERVES (lot 3a partiel assumé), 0 bug, captures c100 publiées (2 nouvelles, reste repris de c099), liste-bacs e2e 2/2, 3063 tests ; exploration manuelle non faite"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-29T11:33:30.672Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-29T12:30:47.334Z",
+          "note": "PR #314 fusionnée → v1.3.2 ; main verte, release créée par la CI ; #306 fermée ; dette #315 (dont lot 3b à planifier) ; suppression de la branche refusée par l'environnement (à faire par Mathis)"
         }
       },
       "metriques": {}
