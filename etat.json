@@ -3822,7 +3822,7 @@
       "date": "2026-10-30",
       "debut": "2026-10-29T23:05:34.612Z",
       "type": "retro",
-      "issue": null,
+      "issue": 325,
       "pr": null,
       "version": null,
       "phases": {
