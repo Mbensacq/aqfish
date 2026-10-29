@@ -437,6 +437,14 @@ haut de sa section.
   aucun test ne tourne, et Stryker le compte comme survivant. Ne pas écrire de test pour
   eux : lire `testsCompleted` avant de chercher, et le dire dans la PR. `x + 0` → `x - 0`
   dans `formatTenth` est équivalent (`(-0).toFixed(1)` vaut `"0.0"`). (2026-10-28)
+- **Mutation : survivants équivalents par les données** (cycle 97, #304) : dans
+  `species-sheet.ts`, une branche que les données ne prennent jamais survit sans que le test
+  manque : aucune espèce herbivore (`DIET_LABELS.herbivore`), aucune plage à bornes égales
+  (`min === max`), aucune fiche sans espèce à éviter (`length === 0`, branche non couverte),
+  `compatibility(a, a)` qui vaut déjà `compatible` (`other === species`), et
+  `n === undefined` déjà rattrapé par `!(n > 0)`. Les noter équivalents dans la PR plutôt
+  que d'exporter une fonction privée pour les tuer ; un libellé comparé à sa propre
+  constante (`SHEET_FIELD_LABELS[f]`) ne tue rien : figer le texte attendu. (2026-10-29)
 - **Tests de mutation : délais explicites sous code instrumenté** (#66) : le code instrumenté
   par Stryker est ~5 à 10 fois plus lent. `testTimeout` ne suffit pas : un délai explicite
   (`it(nom, fn, 15_000)`, y compris `it.each(table)(nom, fn, 15_000)`) prime sur la
