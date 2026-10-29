@@ -6,6 +6,11 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Prettier sur `docs/` réaligne tous les tableaux** (cycle 98, #305) : `npx prettier
+  --write ../docs/ARCHITECTURE.md` depuis `frontend/` a réécrit ~300 lignes (colonnes des
+  tableaux), alors que `npm run format:check` ne regarde pas `docs/`. Ne formater que les
+  fichiers de `frontend/` ; vérifier `git diff --stat` avant de commiter de la doc.
+  (2026-10-29)
 - **`pkill -f playwright` tue sa propre commande** (cycle 91, #291) : le motif apparaît dans
   la ligne de commande du shell qui lance `pkill` ; enchaîné à un `npx playwright test` dans
   le même appel, tout s'arrête (code 143 ou 144) sans rien lancer. Arrêter les processus dans
