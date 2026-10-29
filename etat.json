@@ -3683,10 +3683,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-29T10:01:22.695Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-29T10:02:07.960Z",
+          "note": "Issue #306 : Pièce aux aquariums lot 3/6, liste des bacs, sélection et transfert (M)"
         }
       },
       "metriques": {}
