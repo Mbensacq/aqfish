@@ -3750,7 +3750,7 @@
       "date": "2026-10-29",
       "debut": "2026-10-29T16:05:15.976Z",
       "type": "fonctionnalite",
-      "issue": null,
+      "issue": 278,
       "pr": null,
       "version": null,
       "phases": {
