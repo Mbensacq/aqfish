@@ -3699,6 +3699,12 @@
           "debut": "2026-10-29T11:13:25.972Z",
           "fin": "2026-10-29T11:32:48.208Z",
           "note": "Verdict RÉSERVES (lot 3a partiel assumé), 0 bug, captures c100 publiées (2 nouvelles, reste repris de c099), liste-bacs e2e 2/2, 3063 tests ; exploration manuelle non faite"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-10-29T11:33:30.672Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
