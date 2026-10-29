@@ -3615,6 +3615,12 @@
           "debut": "2026-10-29T03:49:07.823Z",
           "fin": "2026-10-29T03:49:30.605Z",
           "note": "Issue #305 : Pièce aux aquariums lot 2/6, bacs et meubles (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-10-29T03:50:05.751Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
