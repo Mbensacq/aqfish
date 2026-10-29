@@ -80,7 +80,7 @@ simulation testable et les captures reproductibles.
   l'heure de la journée continue sans saut (`carryClock`). La sauvegarde écrit les mondes
   rangés : au schéma 1 dans le champ facultatif `others`, au schéma 2 comme bacs de la pièce
   (un par environnement visité). La pièce de N bacs (ci-dessous) remplacera ce mécanisme.
-- **Pièce de N bacs** (#264, ADR 0061, 0069 et 0073 ; lot 1 livré : modèle et sauvegarde ;
+- **Pièce de N bacs** (#264, ADR 0061, 0069, 0073 et 0074 ; lot 1 livré : modèle et sauvegarde ;
   lot 2 : modèle des meubles et des positions) : une
   pièce (`sim/room-state.ts`, `RoomState`) est une liste de mondes `World`
   **indépendants**, un par bac, avec identifiant, nom et lieu (`piece`, ou `jardin` pour le
@@ -97,7 +97,12 @@ simulation testable et les captures reproductibles.
   `nextFurnitureId`) et position de chaque bac (`placement` : sur un meuble ou au sol,
   `null` pour la position historique), pose analytique au centimètre sans chevauchement
   (`addSupport`, `addTank`, `moveTank`, `removeTank`…), champs facultatifs du schéma 2 omis
-  quand ils sont vides ; l'interface et le rendu des bacs posés suivent (lot 2b). La liste
+  quand ils sont vides. Lot 2b (ADR 0074) : catalogue « Bacs et meubles » des réglages
+  (bac tropical, pièce affichée), pose automatique à la première place libre
+  (`sim/room-layout.ts` : `findSupportSpot`, `findTankSpot`), rendu simplifié et opaque des
+  meubles et des bacs posés (`roomLayoutBlocks`, dessinés par la couche de la pièce) ; les
+  bacs posés sont **figés** et non sélectionnables (`roomWorlds` les écarte, `syncRoom` les
+  garde) ; `bacs=` en capture. La liste
   des bacs et la simulation de tous les bacs viennent au lot 3. L'hôte expose le
   **bac sélectionné** par ses signaux actuels : tableau de bord, alertes, fiches, wiki et
   actions lisent ces signaux et ne supposent jamais un bac unique ailleurs.
@@ -257,6 +262,7 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
 | `sim/world.ts` | État du monde sérialisable (dont `decor`), `step`, `advance`, `advanceTo`, `advanceInPlace` (boucle d'affichage), `createDefaultWorld` (population et décor par défaut) |
 | `sim/save.ts` | Sauvegarde (#70, ADR 0028) : format JSON versionné (`saveData`, `serializeWorld`), relecture validée (`parseWorld`, `parseSaveData` : bornes, effectifs, propriétés propres seulement, champs inconnus ignorés, schéma inconnu refusé) ; mondes des autres environnements visités dans `others` (#277, ADR 0063) |
 | `sim/room-state.ts` | Pièce de N bacs (#264, ADR 0061 et 0069) : `RoomState` et `RoomTank` (identifiant, nom, lieu, monde), graines des bacs (`tankSeed`), pièce neuve (`createRoom`), pas commun sans lecture croisée (`stepRoom`), bac sélectionné (`resolveSelectedTank`), passage aux mondes de l'hôte du lot 1 (`roomWorlds`, `syncRoom`) ; lot 2 (ADR 0073) : catalogue `TANK_SIZES` et `SUPPORT_CATALOG`, meubles supports et positions des bacs, pose analytique (`addSupport`, `removeSupport`, `addTank`, `moveTank`, `removeTank`, `renameTank`, `tankPlacementRefusal`, `roomLayoutProblems`) |
+| `sim/room-layout.ts` | Pièce de N bacs, lot 2b (#305, ADR 0074) : première place libre d'un meuble ou d'un bac ajouté (`findSupportSpot`, `findTankSpot`, dans l'aire de la pièce graphique, hors obstacles), blocs de rendu des meubles supports et des bacs posés (`roomLayoutBlocks`) |
 | `sim/room-save.ts` | Sauvegarde au schéma 2 (#264, ADR 0069) : `roomSaveData`, `serializeRoom` (256 Kio par bac), relecture validée des schémas 2 et 1 (`parseSave`, `parseRoomSaveData`, ne lève jamais), migration `migrateSchema1`, mondes de l'hôte (`parseSaveWorlds`) ; champs facultatifs du lot 2 (`furniture`, `nextFurnitureId`, `placement`, ADR 0073) |
 | `sim/environment-worlds.ts` | Mondes des environnements visités mais non affichés (#277, ADR 0063) : changement d'environnement pur (`switchEnvironment` : monde quitté rangé, figé ; monde repris ou de départ), liste ordonnée pour la sauvegarde (`stashedList`) et table relue (`stashFromList`) |
 | `sim/population.ts` | Population réglable (#69, ADR 0025) : `setPopulation` (pure) / `setPopulationInPlace` (hôte), bornes `maxPopulation` par espèce et `MAX_TOTAL_FISH`, `populationCounts`, `populationLimits` |
