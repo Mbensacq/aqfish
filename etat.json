@@ -3687,6 +3687,12 @@
           "debut": "2026-10-29T10:01:22.695Z",
           "fin": "2026-10-29T10:02:07.960Z",
           "note": "Issue #306 : Pièce aux aquariums lot 3/6, liste des bacs, sélection et transfert (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-10-29T10:02:34.586Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
