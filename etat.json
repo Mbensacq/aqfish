@@ -3564,6 +3564,24 @@
         }
       },
       "metriques": {}
+    },
+    "97": {
+      "numero": 97,
+      "date": "2026-10-29",
+      "debut": "2026-10-29T01:21:34.172Z",
+      "type": "retro",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-10-29T01:21:34.172Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
