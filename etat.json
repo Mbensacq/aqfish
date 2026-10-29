@@ -3723,6 +3723,12 @@
           "debut": "2026-10-29T12:31:18.734Z",
           "fin": "2026-10-29T12:32:07.952Z",
           "note": "Issue #316 : pièce lot 3b, tous les bacs vivants (stepRoom) et renommage (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-10-29T12:32:37.610Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
