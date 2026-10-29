@@ -3663,6 +3663,12 @@
           "debut": "2026-10-29T08:32:20.009Z",
           "fin": "2026-10-29T09:06:04.961Z",
           "note": "Verdict OK (lot 2b), 0 bug, captures c099 publiées (94/94 identiques + 2 nouvelles), 3037 tests ; exploration manuelle non faite"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-10-29T09:06:35.617Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
