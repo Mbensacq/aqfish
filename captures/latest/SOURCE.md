@@ -1,5 +1,8 @@
-# Captures c098
-- Branche : cycle/c098-bacs-et-meubles (PR #310), commit 1deef99
-- Série : 94 captures, identiques à l'octet à captures/latest (c097) : aucun fichier de render/ ni ui/ modifié
-- Graine : celle du contrat de capture (docs/ARCHITECTURE.md) ; durée : 6,2 min
-- Lot 2a : pas de capture « pièce à 2 bacs » (lot 2b)
+# Captures c099
+
+- Branche : cycle/c099-piece-bacs-meubles-ui
+- PR : #312
+- Commit : 90ecbea
+- Graine : celle de captures.spec.ts (inchangée)
+- Date : 2026-10-29, 96 tests de capture, 8,2 min
+- Écart avec latest (c098) : 2 nouvelles images (three-quarter-piece-deux-bacs, top-piece-deux-bacs), toutes les autres identiques à l'octet
