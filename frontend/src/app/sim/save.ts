@@ -1,6 +1,7 @@
 import { DEFAULT_FOOD_STYLE, isFoodStyle, type FoodStyle } from '../core/food-style/food-style';
 import { MAX_SEED } from '../core/random/prng';
 import { SIM_DT } from './constants';
+import { acceptsSavedSpecies, isCareMode, type CareMode } from './care-mode';
 import { createDayClock, DEFAULT_DAY_CLOCK, HOURS_PER_DAY, type DayClock } from './daylight';
 import { parseDecorItems, type DecorItem } from './decor';
 import {
@@ -8,7 +9,6 @@ import {
   environmentWater,
   isEnvironmentId,
   isTankResizable,
-  livesIn,
   placeDimensions,
   placeEnvironment,
   type EnvironmentId,
@@ -156,6 +156,11 @@ export interface SavedWorld {
    * une eau saine (`freshWater`) ; toujours présent dans une sauvegarde écrite.
    */
   readonly water?: WaterState;
+  /**
+   * Mode du bac (#278, ADR 0077). Facultatif : absent (anciennes sauvegardes, bac jamais
+   * passé par le mode décor), mode soins. Présent, le bac admet toute espèce.
+   */
+  readonly careMode?: CareMode;
 }
 
 /** Contenu d'une sauvegarde (schéma 1). */
@@ -301,6 +306,7 @@ export function savedWorld(world: World): SavedWorld {
     }),
     food: world.food.map((pellet) => ({ ...pellet })),
     water: copyWater(world.water),
+    ...(world.careMode === undefined ? {} : { careMode: world.careMode }),
   };
 }
 
@@ -477,7 +483,13 @@ export function parseWorldBody(
     }
   }
 
-  const fish = parseFishList(own(value, 'fish'), place, nextFishId, problems);
+  // Mode du bac (#278) : absent, mode soins et espèces de l'environnement seulement.
+  const careModeValue = own(value, 'careMode');
+  if (careModeValue !== undefined && !isCareMode(careModeValue)) {
+    problems.push(`mode de bac inconnu (${describe(careModeValue)})`);
+  }
+  const careMode = isCareMode(careModeValue) ? careModeValue : undefined;
+  const fish = parseFishList(own(value, 'fish'), place, nextFishId, problems, careMode);
   const food = parseFoodList(own(value, 'food'), place, nextFoodId, problems);
   // Eau (#206) : absente, eau saine (celle de `createWorld`) ; présente, validée (pH absent :
   // celui de l'eau neuve de l'environnement, #236).
@@ -499,6 +511,9 @@ export function parseWorldBody(
   world.nextFoodId = nextFoodId as number;
   if (water !== null && water.ok) {
     world.water = water.water;
+  }
+  if (careMode !== undefined) {
+    world.careMode = careMode;
   }
   return world;
 }
@@ -618,6 +633,7 @@ function parseFishList(
   environment: Place,
   nextFishId: unknown,
   problems: string[],
+  careMode: CareMode | undefined,
 ): Entity[] {
   if (!Array.isArray(value)) {
     problems.push('fish doit être une liste');
@@ -631,7 +647,9 @@ function parseFishList(
   const counts = new Map<SpeciesId, number>();
   let previousId = -1;
   value.forEach((item: unknown, i) => {
-    const fish = parseFish(item, environment, (p) => problems.push(`poisson ${i} : ${p}`));
+    const fish = parseFish(item, environment, careMode, (p) =>
+      problems.push(`poisson ${i} : ${p}`),
+    );
     if (fish === null) {
       return;
     }
@@ -656,6 +674,7 @@ function parseFishList(
 function parseFish(
   item: unknown,
   environment: Place,
+  careMode: CareMode | undefined,
   report: (problem: string) => void,
 ): Entity | null {
   if (!isRecord(item)) {
@@ -673,7 +692,7 @@ function parseFish(
     return null;
   }
   const envId = placeEnvironment(environment);
-  if (!livesIn(envId, species)) {
+  if (!acceptsSavedSpecies(envId, careMode, species)) {
     report(`l’espèce ${species} ne vit pas dans l’environnement ${envId}`);
     return null;
   }

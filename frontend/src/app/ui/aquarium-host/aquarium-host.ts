@@ -91,7 +91,6 @@ import {
   environmentWater,
   isEnvironmentId,
   isTankResizable,
-  livesIn,
   placeDimensions,
   placeEnvironmentData,
   type EnvironmentId,
@@ -169,6 +168,14 @@ import type { SaveSettings } from '../../sim/save';
 import type { AlertSeverity } from '../../sim/dashboard-alerts';
 import { addWarningText } from '../../sim/species-sheet';
 import { tankList, worstAlert, type TankListEntry } from '../../sim/tank-list';
+import {
+  acceptsSpecies,
+  careModeOf,
+  isCareMode,
+  setCareModeInPlace,
+  speciesShownIn,
+  type CareMode,
+} from '../../sim/care-mode';
 import { transferFish } from '../../sim/tank-transfer';
 import { applySpeciesCountsInPlace, SPECIES_LABELS } from '../../sim/species-catalog';
 import {
@@ -310,6 +317,8 @@ export const ROOM_TANKS_ATTRIBUTE = 'data-aqfish-room-tanks';
 export const ROOM_SUPPORTS_ATTRIBUTE = 'data-aqfish-room-supports';
 /** Identifiant du bac sélectionné de la pièce (#306, lot 3). */
 export const SELECTED_TANK_ATTRIBUTE = 'data-aqfish-selected-tank';
+/** Mode du bac affiché (#278) : `soins` ou `decor`. */
+export const CARE_MODE_ATTRIBUTE = 'data-aqfish-mode';
 
 /** Message du dernier transfert d'animal (#306) : réussite ou refus. */
 export interface TransferNotice {
@@ -683,6 +692,8 @@ export class AquariumHost {
    * gravité d'alerte de chaque bac, bac sélectionné compris (relevé à chaque relevé de l'eau).
    */
   readonly tankList = signal<readonly TankListEntry[]>([]);
+  /** Mode du bac affiché (#278) : `decor` remplace le tableau de bord par le badge. */
+  readonly careMode = signal<CareMode>('soins');
 
   /** Message du dernier transfert d'animal (#306), `null` avant tout transfert. */
   readonly transferNotice = signal<TransferNotice | null>(null);
@@ -907,7 +918,8 @@ export class AquariumHost {
    * Règle l'effectif d'une espèce (#69), ramené à ses bornes : les poissons ajoutés naissent
    * à une position valide, les plus récents sont retirés ; ni le temps ni le décor ne sont
    * réinitialisés. Sans effet en mode capture (les effectifs passent par `population=`),
-   * avant le démarrage, pour une espèce inconnue ou absente de l'environnement (#88), ou un
+   * avant le démarrage, pour une espèce inconnue ou absente de l'environnement (#88, sauf en
+   * mode décor, #278), ou un
    * effectif qui n'est pas un entier positif ou nul.
    */
   setPopulation(species: SpeciesId, count: number): void {
@@ -916,7 +928,7 @@ export class AquariumHost {
       !world ||
       this.capture ||
       !isSpeciesId(species) ||
-      !livesIn(world.environment, species) ||
+      !acceptsSpecies(world, species) ||
       !Number.isInteger(count) ||
       count < 0
     ) {
@@ -1804,6 +1816,24 @@ export class AquariumHost {
    * `MAX_TANK_NAME_LENGTH` caractères au plus ; enregistré aussitôt. Refus : message dans
    * `transferNotice`, nom inchangé. Sans effet en capture ou avant le démarrage.
    */
+  /**
+   * Règle le mode du bac affiché (#278) : en décor, eau, faim et santé sont en pause (pas
+   * effacées) et toute espèce s'ajoute ; au retour en soins, l'état reprend où il était et
+   * les animaux d'un autre milieu sont gardés (lot 1). La confirmation est demandée par le
+   * panneau. Sans effet en capture, avant le démarrage, ou pour un mode inconnu.
+   */
+  setCareMode(mode: CareMode): void {
+    const world = this.currentWorld;
+    if (!world || this.capture || !isCareMode(mode) || careModeOf(world) === mode) {
+      return;
+    }
+    setCareModeInPlace(world, mode);
+    this.exposePopulation();
+    this.exposeWater();
+    this.saveNow();
+    this.scheduleFrame();
+  }
+
   renameTank(id: number, name: string): void {
     const world = this.currentWorld;
     if (!world || this.capture) {
@@ -2221,6 +2251,10 @@ export class AquariumHost {
           );
         }
       }
+      // Mode décor de `mode=decor` (#278) : avant `population=`, qui admet alors toute espèce.
+      if (params.decorMode) {
+        setCareModeInPlace(world, 'decor');
+      }
       // Effectifs de `population=` (#69) : appliqués à t = 0, avant d'avancer le monde.
       applyPopulation(world, params.population);
       // Eau d'exemple de `eau=` (#207), en capture : à t = 0, avant d'avancer le monde.
@@ -2601,8 +2635,11 @@ export class AquariumHost {
     this.health.set(healthSummary(world.entities));
     this.host.nativeElement.setAttribute(
       POPULATION_ATTRIBUTE,
-      formatPopulation(counts, environmentById(world.environment).species),
+      formatPopulation(counts, speciesShownIn(environmentById(world.environment).species, counts)),
     );
+    const mode = careModeOf(world);
+    this.careMode.set(mode);
+    this.host.nativeElement.setAttribute(CARE_MODE_ATTRIBUTE, mode);
   }
 
   /**

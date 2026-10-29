@@ -39,7 +39,9 @@ import { animalCountText, tankListDetail, type TankListEntry } from '../../sim/t
 import { MAX_SAVE_LENGTH } from '../../sim/save';
 import { DEFAULT_SIM_SPEED, SIM_SPEEDS, speedLabel, type SimSpeed } from '../../sim/sim-speed';
 import { mixWarnings } from '../../sim/compatibility';
+import { CARE_MODE_LABELS, type CareMode } from '../../sim/care-mode';
 import {
+  decorCatalog,
   mixWarningText,
   SPECIES_LABELS,
   speciesCatalog,
@@ -689,8 +691,69 @@ export interface NewTankRequest {
 
         <!-- Liste des bacs de la pièce (#306, lot 3) : sélection et transfert d'un animal.
              Avant « Sauvegarde » : l'ordre au clavier des sections précédentes ne change pas. -->
-        <fieldset class="control-panel__section" data-section="bacs">
-          <legend class="control-panel__legend">Bacs</legend>
+        <fieldset
+          class="control-panel__section"
+          data-section="bacs"
+          aria-labelledby="panneau-bacs-titre"
+        >
+          <!-- Mode du bac affiché (#278) : sur la ligne du titre, sans ligne de plus (#316). -->
+          <legend class="control-panel__legend control-panel__legend--row">
+            <span id="panneau-bacs-titre">Bacs</span>
+            <button
+              type="button"
+              class="control-panel__edit"
+              data-care-mode-toggle
+              [attr.data-mode]="careMode()"
+              [attr.aria-label]="
+                'Mode du bac affiché : ' +
+                careModeLabels[careMode()].toLowerCase() +
+                '. Changer de mode'
+              "
+              (click)="onToggleCareMode()"
+            >
+              Mode : {{ careModeLabels[careMode()].toLowerCase() }}
+            </button>
+          </legend>
+          @if (confirmMode(); as mode) {
+            <!-- Confirmation (#278) : posée au-dessus du panneau, sans en changer la mise en
+                 page (les colonnes à 1280 × 720 n'ont plus de place). -->
+            <div
+              class="control-panel__confirm"
+              role="alertdialog"
+              aria-labelledby="care-mode-title"
+              aria-describedby="care-mode-text"
+              data-care-mode-confirm
+              (keydown.escape)="confirmMode.set(null); $event.stopPropagation()"
+            >
+              <p id="care-mode-title" class="control-panel__legend">
+                {{ mode === 'decor' ? 'Passer en mode décor ?' : 'Revenir au mode soins ?' }}
+              </p>
+              <p id="care-mode-text" class="control-panel__note">
+                @if (mode === 'decor') {
+                  « {{ shownTankName() }} » devient un aquarium purement graphique : l’eau, la faim
+                  et la santé sont mises en pause, pas effacées, et reprendront au retour en mode
+                  soins. Toute espèce peut y être ajoutée, sans alerte.
+                } @else {
+                  « {{ shownTankName() }} » redevient une simulation : l’eau, la faim et la santé
+                  reprennent où elles en étaient. Les animaux d’un autre milieu sont gardés, avec
+                  les avertissements habituels.
+                }
+              </p>
+              <div class="control-panel__buttons">
+                <button
+                  type="button"
+                  class="control-panel__button"
+                  data-care-mode-confirm-yes
+                  (click)="onConfirmCareMode()"
+                >
+                  {{ mode === 'decor' ? 'Passer en mode décor' : 'Revenir au mode soins' }}
+                </button>
+                <button type="button" class="control-panel__button" (click)="confirmMode.set(null)">
+                  Annuler
+                </button>
+              </div>
+            </div>
+          }
           <ul class="control-panel__tanks" aria-label="Liste des bacs">
             @for (tank of tankList(); track tank.id) {
               <li
@@ -874,6 +937,8 @@ export class ControlPanel {
   readonly roomCatalog = input<RoomCatalog>({ tanks: [], supports: [], message: null });
   /** Liste des bacs de la pièce (fournie par l'hôte, #306). */
   readonly tankList = input<readonly TankListEntry[]>([]);
+  /** Mode du bac affiché (#278) : catalogue complet et aucun avertissement en décor. */
+  readonly careMode = input<CareMode>('soins');
   /** Message du dernier transfert d'animal (fourni par l'hôte, #306). */
   readonly transferNotice = input<TransferNotice | null>(null);
   /** Effectif de chaque espèce (fourni par l'hôte). */
@@ -917,6 +982,8 @@ export class ControlPanel {
   readonly tankSelected = output<number>();
   /** « Renommer » (#316) : bac et nom saisi (normalisé et validé par l'hôte). */
   readonly tankRenamed = output<{ readonly id: number; readonly name: string }>();
+  /** Mode demandé pour le bac affiché (#278), après confirmation. */
+  readonly careModeChanged = output<CareMode>();
   /** « Transférer à l'épuisette » (#306) : espèce du bac sélectionné et bac d'arrivée. */
   readonly animalTransferred = output<{ readonly species: SpeciesId; readonly toId: number }>();
   /** Bouton « Granulés » : passer à l'autre rendu (#117). */
@@ -949,15 +1016,23 @@ export class ControlPanel {
    * Catalogue des espèces de l'environnement affiché (#88, #189), dans l'ordre de
    * `Environment.species`.
    */
-  protected readonly catalog = computed(() => speciesCatalog(this.environment()));
+  protected readonly catalog = computed(() =>
+    this.careMode() === 'decor'
+      ? decorCatalog(this.environment())
+      : speciesCatalog(this.environment()),
+  );
   /**
    * Libellés des mélanges déconseillés de la population affichée (#209), dans l'ordre du
    * catalogue (`mixWarnings`, `sim/compatibility.ts`).
    */
   protected readonly mixTexts = computed(() =>
-    mixWarnings(
-      this.catalog().map((entry) => entry.species),
-      this.population(),
+    // Mode décor (#278) : aucun avertissement.
+    (this.careMode() === 'decor'
+      ? []
+      : mixWarnings(
+          this.catalog().map((entry) => entry.species),
+          this.population(),
+        )
     ).map(mixWarningText),
   );
   /** Espèce dont la fiche est ouverte (#237), refermée au changement d'environnement. */
@@ -976,7 +1051,7 @@ export class ControlPanel {
    */
   protected readonly addTexts = computed(() => {
     const id = this.lastAdded();
-    if (id === null) {
+    if (id === null || this.careMode() === 'decor') {
       return [];
     }
     const population = this.population();
@@ -1088,10 +1163,33 @@ export class ControlPanel {
     return [
       tank.environmentName === tank.name ? null : tank.environmentName,
       tankListDetail(tank),
+      tank.mode === 'decor' ? 'décor' : null,
       tank.selectable ? null : 'posé',
     ]
       .filter((part) => part !== null)
       .join(' · ');
+  }
+
+  protected readonly careModeLabels = CARE_MODE_LABELS;
+  /** Confirmation du changement de mode en cours (#278) : mode demandé, ou `null`. */
+  protected readonly confirmMode = signal<CareMode | null>(null);
+  /** Nom du bac affiché, pour le texte de la confirmation. */
+  protected readonly shownTankName = computed(
+    () => this.tankList().find((tank) => tank.selected)?.name ?? 'ce bac',
+  );
+
+  /** Demande le passage à l'autre mode : la confirmation explique la conséquence. */
+  protected onToggleCareMode(): void {
+    this.confirmMode.set(this.careMode() === 'decor' ? 'soins' : 'decor');
+  }
+
+  /** Confirme le changement de mode demandé. */
+  protected onConfirmCareMode(): void {
+    const mode = this.confirmMode();
+    this.confirmMode.set(null);
+    if (mode !== null) {
+      this.careModeChanged.emit(mode);
+    }
   }
 
   /** Nom accessible d'une ligne : nom, sélection, alerte, contenu. */
@@ -1103,6 +1201,7 @@ export class ControlPanel {
         ? 'aucune alerte'
         : `alerte ${ALERT_SEVERITY_LABELS[tank.worst].toLowerCase()}`,
       `${tank.environmentName}, ${tankListDetail(tank)}`,
+      tank.mode === 'decor' ? 'mode décor' : null,
       tank.selectable ? null : 'posé, pas encore sélectionnable',
     ]
       .filter((part) => part !== null)

@@ -1,3 +1,4 @@
+import { careModeOf, isDecorMode, type CareMode } from './care-mode';
 import { mixWarnings } from './compatibility';
 import { dashboardAlerts, type AlertSeverity } from './dashboard-alerts';
 import { environmentById, environmentWater, type EnvironmentId } from './environment';
@@ -29,7 +30,9 @@ export interface TankListEntry {
    * pas (#316 : montre qu'un bac non affiché vit).
    */
   readonly hunger: number | null;
-  /** Pire gravité d'alerte du bac, `null` sans alerte. */
+  /** Mode du bac (#278) : `soins` ou `decor`. */
+  readonly mode: CareMode;
+  /** Pire gravité d'alerte du bac, `null` sans alerte (toujours en mode décor). */
   readonly worst: AlertSeverity | null;
   /** Bac sélectionné (celui que décrivent tableau de bord, fiches et wiki). */
   readonly selected: boolean;
@@ -42,6 +45,10 @@ export interface TankListEntry {
 
 /** Pire gravité des alertes du tableau de bord pour le monde `world`, `null` s'il n'y en a pas. */
 export function worstAlert(world: World): AlertSeverity | null {
+  if (isDecorMode(world)) {
+    // Mode décor (#278) : aucune alerte.
+    return null;
+  }
   const species = world.entities.map((entity) => entity.species);
   const alerts = dashboardAlerts({
     sample: waterSample(world.water, world.environment, world.tick),
@@ -71,6 +78,7 @@ export function tankListEntry(
     liters: Math.round(waterLiters(environmentWater(world))),
     animals: world.entities.length,
     hunger: hungerPercent(world),
+    mode: careModeOf(world),
     worst,
     selected: tank.id === selectedTankId,
     selectable: tank.placement === null,

@@ -12,6 +12,7 @@ import { DEFAULT_WATER_READOUT, type WaterReadout } from '../../sim/water-qualit
 import { SPECIES_LABELS } from '../../sim/species-catalog';
 import type { RoomCatalog, TransferNotice } from '../aquarium-host/aquarium-host';
 import type { TankListEntry } from '../../sim/tank-list';
+import type { CareMode } from '../../sim/care-mode';
 import {
   CONTROL_PANEL_ID,
   ControlPanel,
@@ -153,6 +154,8 @@ describe('fonctions du panneau de contrôle', () => {
     (tankSelected)="layout.push(['selection', $event])"
     (animalTransferred)="layout.push(['transfert', $event])"
     (tankRenamed)="layout.push(['renommage', $event])"
+    [careMode]="careMode()"
+    (careModeChanged)="layout.push(['mode', $event])"
     [decorEditable]="editable()"
     [foodStyle]="foodStyle()"
     [population]="population()"
@@ -196,6 +199,7 @@ class TestHost {
   readonly catalog = signal<RoomCatalog>({ tanks: [], supports: [], message: null });
   readonly layout: [string, unknown][] = [];
   readonly tanks = signal<readonly TankListEntry[]>([]);
+  readonly careMode = signal<CareMode>('soins');
   readonly notice = signal<TransferNotice | null>(null);
   readonly foodStyle = signal<FoodStyle>('points');
   foodToggles = 0;
@@ -274,6 +278,7 @@ describe('ControlPanel', () => {
       liters: 288,
       animals: 18,
       hunger: 20,
+      mode: 'soins',
       worst: null,
       selected: true,
       selectable: true,
@@ -425,6 +430,57 @@ describe('ControlPanel', () => {
     });
     await fixture.whenStable();
     expect(warnings()).toEqual([]);
+  });
+
+  describe('mode du bac (#278)', () => {
+    const modeButton = () => root().querySelector<HTMLButtonElement>('[data-care-mode-toggle]')!;
+    const confirmBox = () => root().querySelector<HTMLElement>('[data-care-mode-confirm]');
+    const speciesShown = () =>
+      [...root().querySelectorAll<HTMLElement>('[data-species]')].map((el) =>
+        el.getAttribute('data-species'),
+      );
+
+    it('changer de mode demande une confirmation qui explique la conséquence', async () => {
+      await openPanel();
+      expect(modeButton().textContent).toContain('Mode : soins');
+      expect(confirmBox()).toBeNull();
+      modeButton().click();
+      await fixture.whenStable();
+      expect(confirmBox()?.getAttribute('role')).toBe('alertdialog');
+      expect(confirmBox()?.textContent).toContain('mises en pause, pas effacées');
+      // Annuler : rien n'est émis.
+      [...confirmBox()!.querySelectorAll('button')].at(-1)!.click();
+      await fixture.whenStable();
+      expect(confirmBox()).toBeNull();
+      expect(fixture.componentInstance.layout).toEqual([]);
+      modeButton().click();
+      await fixture.whenStable();
+      confirmBox()!.querySelector<HTMLButtonElement>('[data-care-mode-confirm-yes]')!.click();
+      await fixture.whenStable();
+      expect(fixture.componentInstance.layout).toEqual([['mode', 'decor']]);
+      expect(confirmBox()).toBeNull();
+    });
+
+    it('en mode décor : retour aux soins expliqué, catalogue complet, aucun avertissement', async () => {
+      await openPanel();
+      fixture.componentInstance.environment.set('paludarium');
+      fixture.componentInstance.population.update((p) => ({ ...p, axolotl: 2, triton: 2 }));
+      await fixture.whenStable();
+      const ownSpecies = speciesShown();
+      expect(root().querySelector('[data-mix-warning]')).not.toBeNull();
+      fixture.componentInstance.careMode.set('decor');
+      await fixture.whenStable();
+      expect(modeButton().textContent).toContain('Mode : décor');
+      expect(speciesShown().slice(0, ownSpecies.length)).toEqual(ownSpecies);
+      expect(speciesShown()).toContain('clown');
+      expect(root().querySelector('[data-mix-warning]')).toBeNull();
+      modeButton().click();
+      await fixture.whenStable();
+      expect(confirmBox()?.textContent).toContain('reprennent où elles en étaient');
+      confirmBox()!.querySelector<HTMLButtonElement>('[data-care-mode-confirm-yes]')!.click();
+      await fixture.whenStable();
+      expect(fixture.componentInstance.layout).toEqual([['mode', 'soins']]);
+    });
   });
 
   describe('bacs et meubles (#305)', () => {
@@ -887,8 +943,8 @@ describe('ControlPanel', () => {
     // pièce » (#187), « Changer l’eau » et le curseur du chauffage (#207), « − » et « + » des
     // feuilles de catappa (#239), puis « − », champ, « + » (#69), curseur (#189) et « Fiche »
     // (#237) pour chacune des 7 espèces du bac tropical (#238), puis « Exporter » et
-    // « Importer » (#70).
-    expect(controls).toHaveLength(5 + 1 + 1 + 1 + 2 + 2 + 7 * 5 + 2);
+    // « Importer » (#70), et le mode du bac (#278).
+    expect(controls).toHaveLength(5 + 1 + 1 + 1 + 2 + 2 + 7 * 5 + 2 + 1);
     expect(root().querySelectorAll('input[type="file"]')).toHaveLength(1);
     for (const control of controls) {
       const name =

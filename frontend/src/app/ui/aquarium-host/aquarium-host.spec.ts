@@ -1758,6 +1758,44 @@ describe('AquariumHost', () => {
       expect(host().world).toEqual(before);
     });
 
+    it('mode décor (#278) : toute espèce, badge, état de soin en pause puis repris', async () => {
+      await create('?seed=3&vitesse=0');
+      const element = fixture.nativeElement as HTMLElement;
+      expect(host().careMode()).toBe('soins');
+      expect(element.getAttribute('data-aqfish-mode')).toBe('soins');
+      const water = structuredClone(host().world!.water);
+      host().setCareMode('decor');
+      expect(host().careMode()).toBe('decor');
+      expect(host().world!.careMode).toBe('decor');
+      expect(element.getAttribute('data-aqfish-mode')).toBe('decor');
+      // Le koï, d’eau froide, s’ajoute au bac tropical en mode décor.
+      host().setPopulation('koi', 2);
+      expect(host().population().koi).toBe(2);
+      expect(exposed()).toContain(',koi:2');
+      expect(
+        host()
+          .tankList()
+          .find((tank) => tank.selected)?.mode,
+      ).toBe('decor');
+      host().setCareMode('soins');
+      expect(host().world!.careMode).toBe('soins');
+      expect(host().world!.water).toEqual(water);
+      // Retour en soins : le koï est gardé (lot 1), mais on n’en ajoute plus.
+      host().setPopulation('koi', 4);
+      expect(host().population().koi).toBe(2);
+      host().setCareMode('aquarium' as never);
+      expect(host().world!.careMode).toBe('soins');
+    });
+
+    it('mode=decor : bac affiché en mode décor, population= admet toute espèce', async () => {
+      await create('?capture=1&seed=42&mode=decor&population=koi:2');
+      expect(host().world!.careMode).toBe('decor');
+      expect(host().population().koi).toBe(2);
+      await create('?capture=1&seed=42&population=koi:2');
+      expect(host().world!.careMode).toBeUndefined();
+      expect(host().population().koi).toBe(0);
+    });
+
     it('population= : appliqué à t = 0, avant d’avancer (capture comme hors capture)', async () => {
       await create('?capture=1&seed=42&time=2&population=neon:3,guppy:0,corydora:1');
       let expected = setPopulation(createDefaultWorld(42), 'neon', 3);

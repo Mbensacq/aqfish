@@ -347,6 +347,27 @@ test.describe('Captures', () => {
     expect(errors).toEqual([]);
   });
 
+  // Mode décor (#278) : bac tropical avec des poissons d'autres milieux (clowns du récif, un
+  // koï), contrat de capture (`mode=decor`), puis la même scène avec l'interface : badge à la
+  // place du tableau de bord, simulation à l'arrêt dès t = 0.
+  test('mode décor : capture du bac et badge', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    const scene = `seed=${SEED}&camera=front&mode=decor&population=neon:8,clown:3,koi:1`;
+    await page.goto(`/?capture=1&${scene}&time=${TIME_SECONDS}`);
+    await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+    await page.screenshot({ path: join(OUTPUT_DIR, 'front-decor.png'), animations: 'disabled' });
+    await page.goto(`/?${scene}&heure=12&vitesse=0`);
+    await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+    await expect(page.locator('[data-decor-badge]')).toBeVisible();
+    await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-tick', '0');
+    await page.screenshot({
+      path: join(OUTPUT_DIR, 'front-decor-badge.png'),
+      animations: 'disabled',
+    });
+    expect(errors).toEqual([]);
+  });
+
   // Liste des bacs (#306) à trois bacs (tropical, récif, paludarium), bureau et téléphone :
   // les deux autres environnements visités puis le bac tropical repris (vue trois-quarts par
   // défaut), simulation à l'arrêt dès t = 0, section « Bacs » amenée en vue. Captures
