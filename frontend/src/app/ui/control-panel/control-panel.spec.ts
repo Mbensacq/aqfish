@@ -10,7 +10,8 @@ import { SIM_SPEEDS } from '../../sim/sim-speed';
 import { MAX_HEATER_TEMPERATURE, MIN_HEATER_TEMPERATURE } from '../../sim/water';
 import { DEFAULT_WATER_READOUT, type WaterReadout } from '../../sim/water-quality';
 import { SPECIES_LABELS } from '../../sim/species-catalog';
-import type { RoomCatalog } from '../aquarium-host/aquarium-host';
+import type { RoomCatalog, TransferNotice } from '../aquarium-host/aquarium-host';
+import type { TankListEntry } from '../../sim/tank-list';
 import {
   CONTROL_PANEL_ID,
   ControlPanel,
@@ -147,6 +148,10 @@ describe('fonctions du panneau de contrôle', () => {
     [rain]="rain()"
     [roomShown]="room()"
     [roomCatalog]="catalog()"
+    [tankList]="tanks()"
+    [transferNotice]="notice()"
+    (tankSelected)="layout.push(['selection', $event])"
+    (animalTransferred)="layout.push(['transfert', $event])"
     [decorEditable]="editable()"
     [foodStyle]="foodStyle()"
     [population]="population()"
@@ -189,6 +194,8 @@ class TestHost {
   readonly room = signal(false);
   readonly catalog = signal<RoomCatalog>({ tanks: [], supports: [], message: null });
   readonly layout: [string, unknown][] = [];
+  readonly tanks = signal<readonly TankListEntry[]>([]);
+  readonly notice = signal<TransferNotice | null>(null);
   readonly foodStyle = signal<FoodStyle>('points');
   foodToggles = 0;
   readonly editable = signal(true);
@@ -255,6 +262,90 @@ describe('ControlPanel', () => {
     TestBed.configureTestingModule({ imports: [TestHost] });
     fixture = TestBed.createComponent(TestHost);
     await fixture.whenStable();
+  });
+
+  describe('liste des bacs (#306)', () => {
+    const entry = (over: Partial<TankListEntry>): TankListEntry => ({
+      id: 0,
+      name: 'Bac tropical',
+      environment: 'tropical',
+      environmentName: 'Bac tropical',
+      liters: 288,
+      animals: 18,
+      worst: null,
+      selected: true,
+      selectable: true,
+      ...over,
+    });
+    const section = () => root().querySelector<HTMLElement>('[data-section="bacs"]')!;
+    const tankButton = (id: number) =>
+      section().querySelector<HTMLButtonElement>(`[data-tank="${id}"] button`)!;
+
+    beforeEach(() => {
+      fixture.componentInstance.tanks.set([
+        entry({}),
+        entry({
+          id: 1,
+          name: 'Récif',
+          environment: 'recif',
+          environmentName: 'Récif',
+          liters: 540,
+          animals: 5,
+          worst: 'critique',
+          selected: false,
+        }),
+        entry({ id: 2, animals: 0, liters: 90, selected: false, selectable: false }),
+      ]);
+    });
+
+    it('une ligne par bac : sélection, alerte, contenu, bac posé non sélectionnable', async () => {
+      await openPanel();
+      expect(tankButton(0).getAttribute('aria-pressed')).toBe('true');
+      expect(tankButton(1).getAttribute('aria-pressed')).toBe('false');
+      expect(tankButton(1).textContent).toContain('Critique');
+      expect(tankButton(1).getAttribute('aria-label')).toContain('alerte critique');
+      expect(section().querySelector('[data-tank="1"]')!.getAttribute('data-tank-alert')).toBe(
+        'critique',
+      );
+      expect(tankButton(0).textContent).toContain('18 animaux · 288 L');
+      expect(tankButton(2).textContent).toContain('vide · 90 L · posé, figé');
+      expect(tankButton(2).getAttribute('aria-disabled')).toBe('true');
+    });
+
+    it('cliquer un bac le sélectionne ; ni le bac sélectionné ni un bac posé', async () => {
+      await openPanel();
+      tankButton(0).click();
+      tankButton(2).click();
+      tankButton(1).click();
+      expect(fixture.componentInstance.layout).toEqual([['selection', 1]]);
+    });
+
+    it('transfert : espèces présentes, bacs d’arrivée, émission et message', async () => {
+      await openPanel();
+      const species = section().querySelector<HTMLSelectElement>('[data-transfer-species]')!;
+      const target = section().querySelector<HTMLSelectElement>('[data-transfer-target]')!;
+      expect([...species.options].map((o) => o.value)).toEqual(['neon', 'guppy']);
+      expect([...target.options].map((o) => o.value)).toEqual(['1', '2']);
+      species.value = 'guppy';
+      species.dispatchEvent(new Event('change'));
+      target.value = '2';
+      target.dispatchEvent(new Event('change'));
+      section().querySelector<HTMLButtonElement>('[data-transfer]')!.click();
+      expect(fixture.componentInstance.layout).toEqual([
+        ['transfert', { species: 'guppy', toId: 2 }],
+      ]);
+      fixture.componentInstance.notice.set({ kind: 'erreur', text: 'Refusé' });
+      await fixture.whenStable();
+      const notice = section().querySelector('[data-transfer-notice]')!;
+      expect(notice.textContent).toContain('Refusé');
+      expect(notice.classList).toContain('control-panel__message--error');
+    });
+
+    it('un seul bac : pas de transfert proposé', async () => {
+      fixture.componentInstance.tanks.set([entry({})]);
+      await openPanel();
+      expect(section().querySelector('[data-transfer]')).toBeNull();
+    });
   });
 
   it('fermé par défaut : seul le bouton « Réglages » est affiché', () => {
@@ -606,7 +697,7 @@ describe('ControlPanel', () => {
     expect(root().querySelector('section')).toBeNull();
   });
 
-  it('sections extensibles : environnement, simulation, journée, eau, décor, population, sauvegarde, chacune avec sa légende', async () => {
+  it('sections extensibles : environnement, simulation, journée, eau, décor, population, bacs, sauvegarde, chacune avec sa légende', async () => {
     await openPanel();
     const sections = [...root().querySelectorAll('fieldset')];
     expect(sections.map((s) => s.getAttribute('data-section'))).toEqual([
@@ -616,6 +707,7 @@ describe('ControlPanel', () => {
       'eau',
       'decor',
       'population',
+      'bacs',
       'sauvegarde',
     ]);
     // Titre de la section : sa légende, ou l'élément qui la nomme (`aria-labelledby`) quand la
@@ -634,6 +726,7 @@ describe('ControlPanel', () => {
       'Eau',
       'Décor',
       'Population',
+      'Bacs',
       'Sauvegarde',
     ]);
   });

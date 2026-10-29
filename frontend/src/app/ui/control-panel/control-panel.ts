@@ -32,7 +32,9 @@ import {
   type SupportKind,
   type TankSizeId,
 } from '../../sim/room-state';
-import type { RoomCatalog, RoomCatalogTank } from '../aquarium-host/aquarium-host';
+import type { RoomCatalog, RoomCatalogTank, TransferNotice } from '../aquarium-host/aquarium-host';
+import { ALERT_SEVERITY_LABELS } from '../../sim/dashboard-alerts';
+import { tankListDetail, type TankListEntry } from '../../sim/tank-list';
 import { MAX_SAVE_LENGTH } from '../../sim/save';
 import { DEFAULT_SIM_SPEED, SIM_SPEEDS, speedLabel, type SimSpeed } from '../../sim/sim-speed';
 import { mixWarnings } from '../../sim/compatibility';
@@ -684,6 +686,84 @@ export interface NewTankRequest {
           }
         </fieldset>
 
+        <!-- Liste des bacs de la pièce (#306, lot 3) : sélection et transfert d'un animal.
+             Avant « Sauvegarde » : l'ordre au clavier des sections précédentes ne change pas. -->
+        <fieldset class="control-panel__section" data-section="bacs">
+          <legend class="control-panel__legend">Bacs</legend>
+          <ul class="control-panel__tanks" aria-label="Liste des bacs">
+            @for (tank of tankList(); track tank.id) {
+              <li [attr.data-tank]="tank.id" [attr.data-tank-alert]="tank.worst ?? 'aucune'">
+                <button
+                  type="button"
+                  class="control-panel__tank"
+                  [attr.aria-pressed]="tank.selected"
+                  [attr.aria-disabled]="!tank.selectable"
+                  [attr.aria-label]="tankLabel(tank)"
+                  (click)="tank.selectable && !tank.selected && tankSelected.emit(tank.id)"
+                >
+                  <span class="control-panel__tank-name">{{ tank.name }}</span>
+                  @if (tank.worst; as worst) {
+                    <span class="control-panel__tank-alert" [attr.data-level]="worst">{{
+                      severityLabels[worst]
+                    }}</span>
+                  }
+                  <span class="control-panel__sheet-status">{{ tankDetail(tank) }}</span>
+                </button>
+              </li>
+            }
+          </ul>
+          @if (transferTargets().length > 0 && transferSpecies().length > 0) {
+            <div class="control-panel__row" role="group" aria-label="Transférer un animal">
+              <label class="control-panel__field">
+                <span class="control-panel__label">Animal</span>
+                <select
+                  class="control-panel__select"
+                  data-transfer-species
+                  (change)="transferChoice.set($any($event.target).value)"
+                >
+                  @for (id of transferSpecies(); track id) {
+                    <option [value]="id" [selected]="id === transferSpeciesChoice()">
+                      {{ speciesName(id) }}
+                    </option>
+                  }
+                </select>
+              </label>
+              <label class="control-panel__field">
+                <span class="control-panel__label">Vers</span>
+                <select
+                  class="control-panel__select"
+                  data-transfer-target
+                  (change)="transferTarget.set(+$any($event.target).value)"
+                >
+                  @for (tank of transferTargets(); track tank.id) {
+                    <option [value]="tank.id" [selected]="tank.id === transferTargetChoice()">
+                      {{ tank.name }}
+                    </option>
+                  }
+                </select>
+              </label>
+            </div>
+            <button
+              type="button"
+              class="control-panel__button"
+              data-transfer
+              (click)="onTransfer()"
+            >
+              Transférer à l’épuisette
+            </button>
+          }
+          @if (transferNotice(); as notice) {
+            <p
+              class="control-panel__message"
+              [class.control-panel__message--error]="notice.kind === 'erreur'"
+              role="status"
+              data-transfer-notice
+            >
+              {{ notice.text }}
+            </p>
+          }
+        </fieldset>
+
         <fieldset class="control-panel__section" data-section="sauvegarde">
           <legend class="control-panel__legend">Sauvegarde</legend>
           <p class="control-panel__note" data-save-status>{{ statusText() }}</p>
@@ -741,6 +821,10 @@ export class ControlPanel {
   readonly roomShown = input(false);
   /** Bacs et meubles supports de la pièce de N bacs (fournis par l'hôte, #305). */
   readonly roomCatalog = input<RoomCatalog>({ tanks: [], supports: [], message: null });
+  /** Liste des bacs de la pièce (fournie par l'hôte, #306). */
+  readonly tankList = input<readonly TankListEntry[]>([]);
+  /** Message du dernier transfert d'animal (fourni par l'hôte, #306). */
+  readonly transferNotice = input<TransferNotice | null>(null);
   /** Effectif de chaque espèce (fourni par l'hôte). */
   readonly population = input<PopulationCounts>(NO_FISH);
   /** Effectif maximal de chaque espèce, compte tenu des autres (fourni par l'hôte). */
@@ -778,6 +862,10 @@ export class ControlPanel {
   readonly tankRemoved = output<number>();
   /** « Bacs et meubles » (#305) : meuble support libre à retirer. */
   readonly supportRemoved = output<number>();
+  /** Liste des bacs (#306) : bac à sélectionner. */
+  readonly tankSelected = output<number>();
+  /** « Transférer à l'épuisette » (#306) : espèce du bac sélectionné et bac d'arrivée. */
+  readonly animalTransferred = output<{ readonly species: SpeciesId; readonly toId: number }>();
   /** Bouton « Granulés » : passer à l'autre rendu (#117). */
   readonly foodStyleToggled = output<void>();
   /** Effectif demandé pour une espèce (déjà borné à [0, maximum]). */
@@ -883,6 +971,68 @@ export class ControlPanel {
   }
 
   /** Ligne secondaire d'un bac : où il est, et ses animaux. */
+  protected readonly severityLabels = ALERT_SEVERITY_LABELS;
+  /** Choix d'espèce et de bac d'arrivée du transfert (#306) ; `null` : premier de la liste. */
+  protected readonly transferChoice = signal<string | null>(null);
+  protected readonly transferTarget = signal<number | null>(null);
+  /** Espèces présentes dans le bac sélectionné, dans l'ordre du catalogue. */
+  protected readonly transferSpecies = computed(() =>
+    environmentById(this.environment()).species.filter((id) => this.population()[id] > 0),
+  );
+  /** Bacs d'arrivée possibles : tous sauf le bac sélectionné. */
+  protected readonly transferTargets = computed(() =>
+    this.tankList().filter((tank) => !tank.selected),
+  );
+  protected readonly transferSpeciesChoice = computed(() => {
+    const list = this.transferSpecies();
+    const wanted = this.transferChoice();
+    return list.find((id) => id === wanted) ?? list[0] ?? null;
+  });
+  protected readonly transferTargetChoice = computed(() => {
+    const list = this.transferTargets();
+    const wanted = this.transferTarget();
+    return (list.find((tank) => tank.id === wanted) ?? list[0])?.id ?? null;
+  });
+
+  protected onTransfer(): void {
+    const species = this.transferSpeciesChoice();
+    const toId = this.transferTargetChoice();
+    if (species !== null && toId !== null) {
+      this.animalTransferred.emit({ species, toId });
+    }
+  }
+
+  /** Nom d'espèce du catalogue de l'environnement affiché. */
+  protected speciesName(id: SpeciesId): string {
+    return this.catalog().find((entry) => entry.species === id)?.name ?? id;
+  }
+
+  /** Sous-titre d'une ligne : environnement (s'il diffère du nom), contenu, bac posé. */
+  protected tankDetail(tank: TankListEntry): string {
+    return [
+      tank.environmentName === tank.name ? null : tank.environmentName,
+      tankListDetail(tank),
+      tank.selectable ? null : 'posé, figé',
+    ]
+      .filter((part) => part !== null)
+      .join(' · ');
+  }
+
+  /** Nom accessible d'une ligne : nom, sélection, alerte, contenu. */
+  protected tankLabel(tank: TankListEntry): string {
+    return [
+      tank.name,
+      tank.selected ? 'bac sélectionné' : null,
+      tank.worst === null
+        ? 'aucune alerte'
+        : `alerte ${ALERT_SEVERITY_LABELS[tank.worst].toLowerCase()}`,
+      `${tank.environmentName}, ${tankListDetail(tank)}`,
+      tank.selectable ? null : 'posé, pas encore sélectionnable',
+    ]
+      .filter((part) => part !== null)
+      .join(', ');
+  }
+
   protected tankStatus(tank: RoomCatalogTank): string {
     const where = tank.shown ? 'affiché' : tank.on === null ? 'rangé' : `posé sur ${tank.on}`;
     const animals = tank.animals === 0 ? 'vide' : `${tank.animals} animaux`;

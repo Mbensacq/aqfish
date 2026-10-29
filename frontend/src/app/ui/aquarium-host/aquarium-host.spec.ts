@@ -80,6 +80,7 @@ import {
   ROOM_LAYOUT_MESSAGES,
   ROOM_SUPPORTS_ATTRIBUTE,
   ROOM_TANKS_ATTRIBUTE,
+  SELECTED_TANK_ATTRIBUTE,
   ROOM_SELECTION_ATTRIBUTE,
   TANK_ATTRIBUTE,
   CAMERA_TARGET_ATTRIBUTE,
@@ -1364,6 +1365,131 @@ describe('AquariumHost', () => {
       expect(host().roomCatalog().message).toBe(ROOM_LAYOUT_MESSAGES.chevauchement);
       host().setTankDimensions({ width: 0.6, height: 0.5, depth: 0.3 });
       expect(host().tankDimensions()).toEqual({ width: 0.6, height: 0.5, depth: 0.3 });
+    });
+  });
+
+  describe('liste des bacs, sélection et transfert (#306)', () => {
+    const host = () => fixture.componentInstance;
+    const attr = (name: string) => (fixture.nativeElement as HTMLElement).getAttribute(name);
+    const saved = () => {
+      const result = parseSaveWorlds(saveStorage!.getItem(SAVE_STORAGE_KEY)!);
+      if (!result.ok) {
+        throw new Error(result.error);
+      }
+      return result;
+    };
+
+    async function twoTanks(): Promise<void> {
+      await create('?seed=8');
+      setCanvasSize(800, 600);
+      frames.flush(0);
+      host().setEnvironment('recif');
+      host().setEnvironment('tropical');
+    }
+
+    it('liste les bacs ; sélectionner le récif change le monde affiché et les signaux', async () => {
+      await twoTanks();
+      const list = host().tankList();
+      expect(list.map((t) => [t.id, t.environment, t.selected])).toEqual([
+        [0, 'tropical', true],
+        [1, 'recif', false],
+      ]);
+      expect(attr(SELECTED_TANK_ATTRIBUTE)).toBe('0');
+      const neons = host().population().neon;
+      expect(neons).toBeGreaterThan(0);
+      host().selectTank(1);
+      expect(host().environment()).toBe('recif');
+      expect(host().population().neon).toBe(0);
+      expect(host().population().clown).toBeGreaterThan(0);
+      expect(attr(SELECTED_TANK_ATTRIBUTE)).toBe('1');
+      expect(
+        host()
+          .tankList()
+          .map((t) => t.selected),
+      ).toEqual([false, true]);
+      expect(saved().selectedTankId).toBe(1);
+      // Bac inconnu ou déjà sélectionné : sans effet.
+      host().selectTank(9);
+      host().selectTank(1);
+      expect(host().environment()).toBe('recif');
+    });
+
+    it('l’alerte d’un bac non sélectionné reste dans la liste', async () => {
+      await twoTanks();
+      host().selectTank(1);
+      // Nitrites très hauts dans le récif affiché, puis retour au bac tropical.
+      (host().world!.water as { nitrite: number }).nitrite = 50;
+      host().selectTank(0);
+      const reef = host()
+        .tankList()
+        .find((t) => t.id === 1)!;
+      expect(reef.selected).toBe(false);
+      expect(reef.worst).toBe('critique');
+      expect(host().tankList()[0].worst).toBeNull();
+    });
+
+    it('transfert refusé vers l’eau de mer : message, rien ne bouge', async () => {
+      await twoTanks();
+      const before = host().population().neon;
+      host().transferAnimal('neon', 1);
+      expect(host().transferNotice()?.kind).toBe('erreur');
+      expect(host().transferNotice()?.text).toContain('Les néons ne vivent pas');
+      expect(host().population().neon).toBe(before);
+      // Espèce absente du bac affiché.
+      host().transferAnimal('clown', 1);
+      expect(host().transferNotice()?.text).toBe('Aucun animal de cette espèce ici');
+    });
+
+    it('transfert accepté vers un bac posé : départ en place, arrivée enregistrée', async () => {
+      await twoTanks();
+      host().setRoomShown(true);
+      host().addRoomTank('tropical', 'petit', null);
+      const posed = host()
+        .roomCatalog()
+        .tanks.find((t) => t.on !== null)!;
+      const world = host().world!;
+      const before = host().population().neon;
+      host().transferAnimal('neon', posed.id);
+      expect(host().transferNotice()?.kind).toBe('info');
+      expect(host().transferNotice()?.text).toContain('Néon transféré dans « Bac tropical »');
+      expect(host().world).toBe(world);
+      expect(host().population().neon).toBe(before - 1);
+      const entry = host()
+        .tankList()
+        .find((t) => t.id === posed.id)!;
+      expect(entry.animals).toBe(1);
+      expect(entry.selectable).toBe(false);
+      const tank = saved().room.tanks.find((t) => t.id === posed.id)!;
+      expect(tank.world.entities.map((e) => e.species)).toEqual(['neon']);
+      // Un bac posé ne se sélectionne pas encore (lot 3b).
+      host().selectTank(posed.id);
+      expect(host().environment()).toBe('tropical');
+      expect(host().transferNotice()?.text).toContain('pas encore sélectionnable');
+    });
+
+    it('transfert vers un bac rangé : l’animal y est au retour, santé gardée', async () => {
+      await create('?seed=8');
+      setCanvasSize(800, 600);
+      frames.flush(0);
+      host().setEnvironment('paludarium');
+      host().setEnvironment('eaufroide');
+      const axolotls = host().population().axolotl;
+      expect(axolotls).toBeGreaterThan(0);
+      const palu = host()
+        .tankList()
+        .find((t) => t.environment === 'paludarium')!;
+      // Le dernier axolotl est malade : il le reste après le transfert.
+      const entities = host().world!.entities as unknown as { species: string; health: number }[];
+      const last = entities.filter((e) => e.species === 'axolotl').at(-1)!;
+      last.health = 0.3;
+      host().transferAnimal('axolotl', palu.id);
+      expect(host().transferNotice()?.kind).toBe('info');
+      expect(host().population().axolotl).toBe(axolotls - 1);
+      host().selectTank(palu.id);
+      expect(host().environment()).toBe('paludarium');
+      expect(host().population().axolotl).toBe(1);
+      const arrived = host().world!.entities.find((e) => e.species === 'axolotl')!;
+      expect(arrived.health).toBe(0.3);
     });
   });
 

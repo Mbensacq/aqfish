@@ -525,6 +525,14 @@ haut de sa section.
 
 ## Simulation
 
+- **Cache par monde dans l'hôte : un monde rangé a pu changer pendant qu'il était affiché**
+  (cycle 100, #306) : `switchEnvironment` reprend l'**objet** rangé comme monde affiché, qui
+  avance et change en place, puis le range de nouveau, toujours le même objet. Une valeur
+  gardée en cache par identité de monde (`WeakMap<World, …>`, gravité d'alerte de la liste
+  des bacs) est donc périmée au retour. Invalider l'entrée du monde affiché à chaque relevé
+  (`frozenWorst.delete(world)`), ou ne mettre en cache que des valeurs d'un monde jamais
+  affiché depuis. (2026-10-29)
+
 - **Arrondir au centimètre en multipliant par 0,01 laisse du bruit** (cycle 65, #188) :
   `Math.round(v / 0.01) * 0.01` donne `-1.4000000000000001` pour `-1.4` ; une pose ainsi
   arrondie ne se compare plus égale à la demande ni à sa relecture. Diviser à la fin :
