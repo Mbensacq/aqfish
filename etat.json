@@ -3795,6 +3795,12 @@
           "debut": "2026-10-29T18:53:59.398Z",
           "fin": "2026-10-29T18:54:40.871Z",
           "note": "Issue #320 : suites de revue du mode décor, 3 points de dette (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-10-29T18:55:19.471Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
