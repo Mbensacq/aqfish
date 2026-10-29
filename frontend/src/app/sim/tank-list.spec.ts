@@ -1,7 +1,7 @@
 import { setPopulation } from './population';
 import { createRoom, type RoomState, type RoomTank } from './room-state';
-import { tankList, tankListDetail, tankListEntry, worstAlert } from './tank-list';
-import type { World } from './world';
+import { animalCountText, tankList, tankListDetail, tankListEntry, worstAlert } from './tank-list';
+import { advance, type World } from './world';
 
 function withWorld(room: RoomState, id: number, world: World): RoomState {
   return { ...room, tanks: room.tanks.map((t) => (t.id === id ? { ...t, world } : t)) };
@@ -34,10 +34,27 @@ describe('liste des bacs (#306)', () => {
     const empty = withWorld(room, 0, { ...world, entities: [] });
     const entry = tankListEntry(empty.tanks[0], 0);
     expect(entry.animals).toBe(0);
+    expect(entry.hunger).toBeNull();
     expect(entry.worst).toBeNull();
     expect(tankListDetail(entry)).toMatch(/^vide · \d+ L$/);
     expect(tankListDetail({ animals: 1, liters: 54 })).toBe('1 animal · 54 L');
     expect(tankListDetail({ animals: 12, liters: 200 })).toBe('12 animaux · 200 L');
+  });
+
+  it('« vide », « 1 animal », « N animaux » (#316)', () => {
+    expect(animalCountText(0)).toBe('vide');
+    expect(animalCountText(1)).toBe('1 animal');
+    expect(animalCountText(2)).toBe('2 animaux');
+  });
+
+  it('faim moyenne en pour cent : elle monte avec le temps (#316)', () => {
+    const tank = createRoom(42, ['tropical']).tanks[0];
+    const before = tankListEntry(tank, 0).hunger;
+    const after = tankListEntry({ ...tank, world: advance(tank.world, 1800) }, 0).hunger;
+    expect(before).not.toBeNull();
+    expect(Number.isInteger(after)).toBe(true);
+    expect(after!).toBeGreaterThan(before!);
+    expect(after!).toBeLessThanOrEqual(100);
   });
 
   it('un bac neuf n’a pas d’alerte', () => {

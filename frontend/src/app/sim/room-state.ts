@@ -114,14 +114,35 @@ export function createRoom(
 
 /**
  * Avance tous les bacs de `steps` pas, par identifiant croissant, avec l'horloge commune,
- * puis le compteur de la pièce. Fonction pure : `room` et ses mondes ne sont pas modifiés.
+ * puis le compteur de la pièce. `exceptTankId` : bac laissé tel quel (même objet), celui que
+ * l'hôte avance lui-même en place à chaque image (#316, ADR 0076). Fonction pure : `room` et ses mondes ne sont pas modifiés.
  * Chaque bac est avancé seul (`advance`) : son état est identique, au bit près, à celui
  * d'un bac sans voisin.
  * @throws RangeError si `steps` n'est pas un entier positif ou nul.
  */
-export function stepRoom(room: RoomState, steps: number, clock: SimClock = null): RoomState {
-  const tanks = room.tanks.map((tank) => ({ ...tank, world: advance(tank.world, steps, clock) }));
+export function stepRoom(
+  room: RoomState,
+  steps: number,
+  clock: SimClock = null,
+  exceptTankId: number | null = null,
+): RoomState {
+  const tanks = room.tanks.map((tank) =>
+    tank.id === exceptTankId ? tank : { ...tank, world: advance(tank.world, steps, clock) },
+  );
   return { ...room, tick: room.tick + steps, tanks };
+}
+
+/**
+ * Nom saisi, normalisé (#316) : caractères de contrôle et suites de blancs ramenés à une
+ * espace, blancs de tête et de fin retirés.
+ */
+export function normalizeTankName(name: string): string {
+  let spaced = '';
+  for (const char of name) {
+    const code = char.charCodeAt(0);
+    spaced += code < 0x20 || code === 0x7f ? ' ' : char;
+  }
+  return spaced.replace(/\s+/g, ' ').trim();
 }
 
 /** Bac d'identifiant `id`, ou `undefined`. */
@@ -689,7 +710,10 @@ export function tankResizeRefusal(
   return null;
 }
 
-/** Renomme le bac `id` (nom rogné, 1 à `MAX_TANK_NAME_LENGTH` caractères). `null` si refusé. */
+/**
+ * Renomme le bac `id` (nom normalisé par `normalizeTankName`, 1 à `MAX_TANK_NAME_LENGTH`
+ * caractères en unités UTF-16, comme la validation du schéma 2). `null` si refusé.
+ */
 export function renameTank(room: RoomState, id: number, name: string): RoomState | null {
   const tank = findTank(room, id);
   const clean = cleanTankName(name);
@@ -702,7 +726,7 @@ export function tankAnimalCount(tank: RoomTank): number {
 }
 
 function cleanTankName(name: string | undefined): string | null {
-  const clean = typeof name === 'string' ? name.trim() : '';
+  const clean = typeof name === 'string' ? normalizeTankName(name) : '';
   return clean.length === 0 || clean.length > MAX_TANK_NAME_LENGTH ? null : clean;
 }
 
