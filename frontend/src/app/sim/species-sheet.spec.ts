@@ -362,6 +362,15 @@ describe('références affichées sans chemin du dépôt (#302)', () => {
       'arrêté du 8 janvier 2021 (via la documentation du projet)',
     ],
     ['docs/SOINS.md', 'documentation du projet'],
+    // Espacements irréguliers (#304) : aucun, plusieurs, tabulation.
+    ['docs/SOINS.md§2 (X)', 'documentation du projet (X)'],
+    ['docs/SOINS.md §2 (X)', 'documentation du projet (X)'],
+    ['docs/SOINS.md § 2et § 14 (X)', 'documentation du projet (X)'],
+    ['docs/SOINS.md § 2 et§ 14 (X)', 'documentation du projet (X)'],
+    ['docs/SOINS.md § 2 et §14 (X)', 'documentation du projet (X)'],
+    ['docs/SOINS.md§2et§14 (X)', 'documentation du projet (X)'],
+    ['docs/SOINS.md  §  2  et  §  14 (X)', 'documentation du projet (X)'],
+    ['docs/SOINS.md\t§\t2\tet\t§\t14 (X)', 'documentation du projet (X)'],
     ['FishBase', 'FishBase'],
     ['', ''],
   ])('%s → %s', (reference, shown) => {
@@ -381,5 +390,79 @@ describe('références affichées sans chemin du dépôt (#302)', () => {
     for (const text of shown) {
       expect(text).not.toMatch(/docs\/|\.md\b|§/);
     }
+  });
+});
+
+describe('textes affichés, figés à la lettre (#304)', () => {
+  it('intitulés des champs, dans l’ordre des fiches', () => {
+    expect(SHEET_FIELDS.map((field) => SHEET_FIELD_LABELS[field])).toEqual([
+      'Taille adulte',
+      'Température préférée',
+      'Température tolérée',
+      'pH préféré',
+      'pH toléré',
+      'Régime',
+      'Caractère',
+      'Groupe minimal',
+      'Volume conseillé',
+      'À éviter avec',
+      'Statut légal en France',
+    ]);
+  });
+
+  it('chaque champ affiche sa propre valeur (néon)', () => {
+    const values = Object.fromEntries(sheetRows('neon').map((row) => [row.field, row.value]));
+    expect(values).toMatchObject({
+      adultSize: '4 cm',
+      temperaturePreferred: '22 – 25 °C',
+      temperatureTolerated: '20 – 26 °C',
+      phPreferred: '6 – 7,2',
+      phTolerated: '5 – 7,8',
+      diet: 'omnivore',
+      temperament: 'paisible',
+      minGroup: '6 individus',
+      minLiters: '60 L',
+      avoid: 'koïs, axolotls',
+    });
+  });
+
+  it('caractère et régime : libellé de chaque valeur présente dans le jeu', () => {
+    const value = (id: SpeciesId, field: string): string | undefined =>
+      sheetRows(id).find((row) => row.field === field)?.value;
+    expect(value('axolotl', 'diet')).toBe('carnivore');
+    expect(value('axolotl', 'temperament')).toBe('prédateur des plus petits');
+    expect(value('chirurgien', 'temperament')).toBe('paisible');
+    expect(value('clown', 'temperament')).toBe('territorial');
+  });
+
+  it('mises en garde et leurs sources, à la lettre', () => {
+    expect(sheetNotes('grenouille')).toEqual([
+      {
+        text: 'Semi-aquatique : un quart de berge sèche environ, eau peu profonde (une dizaine de cm)',
+        status: 'Source : https://anapsid.org/bombina.html (secondaire) (source secondaire)',
+      },
+      {
+        text: 'Espèce choisie faute d’anoure vérifié dans la documentation du projet : paramètres à recouper',
+        status: 'Source : ADR 0064',
+      },
+    ]);
+    expect(sheetNotes('triton')).toEqual([
+      {
+        text: 'Sans poissons ; éviter au-dessus de 23 °C ; préférer les sujets nés en captivité',
+        status: 'Source : documentation du projet (Caudata Culture)',
+      },
+    ]);
+    expect(sheetNotes('kuhli')).toEqual([
+      {
+        text: 'Se cache dans le sable et les racines : sol fin et cachettes indispensables',
+        status: 'Approximation de jeu',
+      },
+    ]);
+    expect(sheetNotes('gourami')).toEqual([
+      {
+        text: 'Un couple plutôt qu’un groupe ; mâle parfois agressif envers les autres poissons à labyrinthe',
+        status: 'Source : https://www.seriouslyfish.com/species/trichogaster-lalius',
+      },
+    ]);
   });
 });
