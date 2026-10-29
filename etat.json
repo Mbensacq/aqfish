@@ -3611,10 +3611,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-29T03:49:07.823Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-29T03:49:30.605Z",
+          "note": "Issue #305 : Pièce aux aquariums lot 2/6, bacs et meubles (M)"
         }
       },
       "metriques": {}
