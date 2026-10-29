@@ -183,7 +183,7 @@ const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
     notes: [
       note(
         'Semi-aquatique : un quart de berge sèche environ, eau peu profonde (une dizaine de cm)',
-        source(`${ANAPSID} (source secondaire)`),
+        source(`${ANAPSID} (milieu semi-aquatique)`),
       ),
       note(
         'Espèce choisie faute d’anoure vérifié dans la documentation du projet : paramètres à recouper',
