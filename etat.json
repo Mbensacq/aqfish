@@ -3557,10 +3557,10 @@
           "note": "Verdict OK, 0 bug, captures c096 publiées, mutation species-sheet 87,01 % (issue #304)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-29T00:25:43.820Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-29T01:21:06.920Z",
+          "note": "PR #303 fusionnée → v1.2.5 ; main verte, release créée par la CI ; #302 et #296 fermées ; suppression de branche refusée"
         }
       },
       "metriques": {}
