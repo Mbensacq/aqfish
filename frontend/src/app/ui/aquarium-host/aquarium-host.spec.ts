@@ -7,7 +7,7 @@ import {
   SAVE_STORAGE_KEY,
   type SaveStorage,
 } from '../../core/save-storage/save-storage';
-import { createDayClock } from '../../sim/daylight';
+import { createDayClock, type DayClock } from '../../sim/daylight';
 import { parseSaveWorlds, serializeRoom } from '../../sim/room-save';
 import { createRoom } from '../../sim/room-state';
 import { DEFAULT_SAVE_SETTINGS, serializeWorld } from '../../sim/save';
@@ -818,7 +818,7 @@ describe('AquariumHost', () => {
       expect(renderers).toHaveLength(3);
     });
 
-    it('setEnvironment (#277) : retour au bac quitté, état gardé et figé, heure sans saut', async () => {
+    it('setEnvironment (#277, #316) : retour au bac quitté, état gardé et avancé, heure sans saut', async () => {
       await create('?seed=9');
       setCanvasSize(800, 600);
       frames.flush(0);
@@ -841,15 +841,19 @@ describe('AquariumHost', () => {
       const pond = host().world!;
       const pondText = serializeWorld(pond);
       const pondHour = host().hour!;
+      const clock = (host() as unknown as { dayClock: DayClock }).dayClock;
       host().setEnvironment('tropical');
-      // Même objet, même contenu, même temps : rien n'a avancé pendant le séjour au bassin.
-      expect(host().world).toBe(tropical);
-      expect(serializeWorld(host().world!)).toBe(snapshot);
-      expect(host().world!.tick).toBe(tick);
+      // Fin du gel (#316, ADR 0076) : le bac quitté a avancé d'autant de pas que le bassin,
+      // exactement comme s'il avait été avancé seul ; l'objet rangé n'a pas été modifié.
+      expect(serializeWorld(tropical)).toBe(snapshot);
+      expect(host().world!.tick).toBe(tick + pond.tick);
+      expect(serializeWorld(host().world!)).toBe(
+        serializeWorld(advance(tropical, pond.tick, clock)),
+      );
       expect(host().hour!).toBeCloseTo(pondHour, 6);
       expect(host().population().neon).toBe(3);
       expect(host().tankDimensions()).toEqual({ width: 1.2, height: 0.5, depth: 0.45 });
-      expect(element().getAttribute('data-aqfish-food')).toBe(String(tropical.food.length));
+      expect(element().getAttribute('data-aqfish-food')).toBe(String(host().world!.food.length));
       host().setEnvironment('bassin');
       expect(serializeWorld(host().world!)).toBe(pondText);
       expect(host().population().koi).toBe(2);
