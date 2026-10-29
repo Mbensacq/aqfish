@@ -3647,10 +3647,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-29T06:24:25.070Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-29T06:24:51.087Z",
+          "note": "Issue #305 : Pièce aux aquariums lot 2b, interface, rendu, e2e et captures (M)"
         }
       },
       "metriques": {}
