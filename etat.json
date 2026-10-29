@@ -3719,10 +3719,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-29T12:31:18.734Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-29T12:32:07.952Z",
+          "note": "Issue #316 : pièce lot 3b, tous les bacs vivants (stepRoom) et renommage (M)"
         }
       },
       "metriques": {}
