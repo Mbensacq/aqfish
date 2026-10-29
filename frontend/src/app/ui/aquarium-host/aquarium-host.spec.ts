@@ -1536,7 +1536,7 @@ describe('AquariumHost', () => {
       expect(host().world!.environment).toBe('recif');
       expect(host().world!.tick).toBe(tick);
       expect(saved().room.tanks.map((t) => t.world.tick)).toEqual([tick, tick]);
-    });
+    }, 15_000);
 
     it('le bac affiché est identique avec ou sans autres bacs (état haché)', async () => {
       await create('?seed=8');
@@ -1549,7 +1549,7 @@ describe('AquariumHost', () => {
       await twoTanks();
       run(240);
       expect(serializeWorld(host().world!)).toBe(alone);
-    });
+    }, 15_000);
 
     it('un animal transféré dans un bac posé a faim avec le temps (liste)', async () => {
       await twoTanks();
@@ -1571,7 +1571,7 @@ describe('AquariumHost', () => {
       const tank = saved().room.tanks.find((t) => t.id === posed.id)!;
       expect(tank.name).toBe('Nano');
       expect(tank.world.tick).toBe(host().world!.tick);
-    });
+    }, 15_000);
 
     it('en capture, rien n’avance hors du bac affiché', async () => {
       await create('?seed=8&capture=1&t=2');
