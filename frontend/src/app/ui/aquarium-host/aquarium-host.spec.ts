@@ -1493,6 +1493,115 @@ describe('AquariumHost', () => {
     });
   });
 
+  describe('tous les bacs vivants et renommage (#316)', () => {
+    const host = () => fixture.componentInstance;
+    const saved = () => {
+      const result = parseSaveWorlds(saveStorage!.getItem(SAVE_STORAGE_KEY)!);
+      if (!result.ok) {
+        throw new Error(result.error);
+      }
+      return result;
+    };
+    /** `n` images à 60 par seconde à partir de `from` ms ; renvoie l'instant de la dernière. */
+    function run(n: number, from = 0): number {
+      let now = from;
+      for (let i = 1; i <= n; i++) {
+        now = from + (i * 1000) / 60;
+        frames.flush(now);
+      }
+      return now;
+    }
+
+    async function twoTanks(): Promise<void> {
+      await create('?seed=8');
+      setCanvasSize(800, 600);
+      frames.flush(0);
+      host().setEnvironment('recif');
+      host().setEnvironment('tropical');
+    }
+
+    it('le bac rangé avance avec le bac affiché, par lots, sans toucher au bac affiché', async () => {
+      await twoTanks();
+      const shown = host().world!;
+      run(240);
+      expect(host().world).toBe(shown);
+      const tick = shown.tick;
+      expect(tick).toBeGreaterThan(200);
+      // Rattrapé au plus tard au changement de bac : même nombre de pas.
+      host().selectTank(1);
+      expect(host().world!.environment).toBe('recif');
+      expect(host().world!.tick).toBe(tick);
+      expect(saved().room.tanks.map((t) => t.world.tick)).toEqual([tick, tick]);
+    });
+
+    it('le bac affiché est identique avec ou sans autres bacs (état haché)', async () => {
+      await create('?seed=8');
+      setCanvasSize(800, 600);
+      frames.flush(0);
+      run(240);
+      const alone = serializeWorld(host().world!);
+      fixture.destroy();
+      saveStorage = new MemoryStorage();
+      await twoTanks();
+      run(240);
+      expect(serializeWorld(host().world!)).toBe(alone);
+    });
+
+    it('un animal transféré dans un bac posé a faim avec le temps (liste)', async () => {
+      await twoTanks();
+      host().setRoomShown(true);
+      host().addRoomTank('tropical', 'petit', null);
+      const posed = host()
+        .roomCatalog()
+        .tanks.find((t) => t.on !== null)!;
+      host().transferAnimal('neon', posed.id);
+      const entry = () =>
+        host()
+          .tankList()
+          .find((t) => t.id === posed.id)!;
+      const before = entry().hunger!;
+      run(1200);
+      expect(entry().hunger!).toBeGreaterThan(before);
+      // La sauvegarde rattrape d'abord les autres bacs : le bac posé est à l'heure.
+      host().renameTank(posed.id, 'Nano');
+      const tank = saved().room.tanks.find((t) => t.id === posed.id)!;
+      expect(tank.name).toBe('Nano');
+      expect(tank.world.tick).toBe(host().world!.tick);
+    });
+
+    it('en capture, rien n’avance hors du bac affiché', async () => {
+      await create('?seed=8&capture=1&t=2');
+      setCanvasSize(800, 600);
+      frames.flush(0);
+      run(60);
+      const stash = (host() as unknown as { stash: Map<string, unknown> }).stash;
+      expect(stash.size).toBe(0);
+    });
+
+    it('renommer un bac : liste, sauvegarde ; nom vide ou trop long refusé', async () => {
+      await twoTanks();
+      host().renameTank(1, '  Récif   du salon ');
+      expect(host().tankList()[1].name).toBe('Récif du salon');
+      expect(saved().room.tanks[1].name).toBe('Récif du salon');
+      host().renameTank(1, '   ');
+      expect(host().transferNotice()).toEqual({
+        kind: 'erreur',
+        text: 'Nom refusé : de 1 à 40 caractères',
+      });
+      host().renameTank(1, 'x'.repeat(41));
+      expect(host().tankList()[1].name).toBe('Récif du salon');
+      host().renameTank(9, 'Bac');
+      expect(host().transferNotice()?.kind).toBe('erreur');
+      // Le nom survit au changement de bac et au rechargement de la sauvegarde.
+      host().selectTank(1);
+      host().selectTank(0);
+      expect(host().tankList()[1].name).toBe('Récif du salon');
+      fixture.destroy();
+      await create();
+      expect(host().tankList()[1].name).toBe('Récif du salon');
+    });
+  });
+
   describe('population (#69)', () => {
     const host = () => fixture.componentInstance;
     const exposed = () => (fixture.nativeElement as HTMLElement).getAttribute(POPULATION_ATTRIBUTE);

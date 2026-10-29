@@ -152,6 +152,7 @@ describe('fonctions du panneau de contrôle', () => {
     [transferNotice]="notice()"
     (tankSelected)="layout.push(['selection', $event])"
     (animalTransferred)="layout.push(['transfert', $event])"
+    (tankRenamed)="layout.push(['renommage', $event])"
     [decorEditable]="editable()"
     [foodStyle]="foodStyle()"
     [population]="population()"
@@ -272,6 +273,7 @@ describe('ControlPanel', () => {
       environmentName: 'Bac tropical',
       liters: 288,
       animals: 18,
+      hunger: 20,
       worst: null,
       selected: true,
       selectable: true,
@@ -308,7 +310,7 @@ describe('ControlPanel', () => {
         'critique',
       );
       expect(tankButton(0).textContent).toContain('18 animaux · 288 L');
-      expect(tankButton(2).textContent).toContain('vide · 90 L · posé, figé');
+      expect(tankButton(2).textContent).toContain('vide · 90 L · posé');
       expect(tankButton(2).getAttribute('aria-disabled')).toBe('true');
     });
 
@@ -339,6 +341,33 @@ describe('ControlPanel', () => {
       const notice = section().querySelector('[data-transfer-notice]')!;
       expect(notice.textContent).toContain('Refusé');
       expect(notice.classList).toContain('control-panel__message--error');
+    });
+
+    it('faim de chaque bac exposée (#316)', async () => {
+      await openPanel();
+      expect(section().querySelector('[data-tank="0"]')!.getAttribute('data-tank-hunger')).toBe(
+        '20',
+      );
+    });
+
+    it('renommer : bac sélectionné par défaut, nom borné, émission (#316)', async () => {
+      await openPanel();
+      const target = section().querySelector<HTMLSelectElement>('[data-rename-tank]')!;
+      const name = section().querySelector<HTMLInputElement>('[data-rename-name]')!;
+      expect(target.value).toBe('0');
+      expect(name.value).toBe('Bac tropical');
+      expect(name.getAttribute('maxlength')).toBe('40');
+      name.value = 'Bac du salon';
+      section().querySelector<HTMLButtonElement>('[data-rename]')!.click();
+      target.value = '2';
+      target.dispatchEvent(new Event('change'));
+      await fixture.whenStable();
+      name.value = 'Nano';
+      name.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+      expect(fixture.componentInstance.layout).toEqual([
+        ['renommage', { id: 0, name: 'Bac du salon' }],
+        ['renommage', { id: 2, name: 'Nano' }],
+      ]);
     });
 
     it('un seul bac : pas de transfert proposé', async () => {
@@ -467,6 +496,19 @@ describe('ControlPanel', () => {
       expect(rows[0]!.querySelector('[data-remove-tank]')).toBeNull();
       rows[2]!.querySelector<HTMLButtonElement>('[data-remove-tank]')!.click();
       expect(fixture.componentInstance.layout).toEqual([['retrait-bac', 2]]);
+    });
+
+    it('singulier (#315) : « 1 animal », pas « 1 animaux »', async () => {
+      fixture.componentInstance.catalog.set({
+        ...CATALOG,
+        tanks: CATALOG.tanks.map((tank) => (tank.id === 2 ? { ...tank, animals: 1 } : tank)),
+      });
+      fixture.componentInstance.room.set(true);
+      await openPanel();
+      const row = section()!.querySelector('[data-room-tank="2"]')!;
+      expect(row.textContent?.replace(/\s+/g, ' ')).toContain(
+        'posé sur Commode 1, 1 animal Retirer',
+      );
     });
 
     it('un bac peuplé demande une confirmation ; « Garder » l’annule', async () => {

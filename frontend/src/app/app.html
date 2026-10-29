@@ -69,6 +69,7 @@
       (roomShownChanged)="aquarium.setRoomShown($event)"
       (tankSelected)="aquarium.selectTank($event)"
       (animalTransferred)="aquarium.transferAnimal($event.species, $event.toId)"
+      (tankRenamed)="aquarium.renameTank($event.id, $event.name)"
       (supportAdded)="aquarium.addRoomSupport($event)"
       (tankAdded)="aquarium.addRoomTank($event.environment, $event.size, $event.supportId)"
       (tankRemoved)="aquarium.removeRoomTank($event)"

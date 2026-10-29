@@ -142,8 +142,11 @@ import {
   addSupport,
   addTank,
   findTank,
+  MAX_TANK_NAME_LENGTH,
   removeSupport,
   removeTank,
+  renameTank,
+  stepRoom,
   SUPPORT_CATALOG,
   SUPPORT_KINDS,
   syncRoom,
@@ -536,8 +539,17 @@ export class AquariumHost {
   private roomState: RoomState | null = null;
   /** Bac sélectionné de `roomState` : celui du monde affiché (réglage d'interface). */
   private selectedTankId = 0;
-  /** Pire gravité d'alerte des mondes figés (bacs rangés et posés), par monde (#306). */
+  /**
+   * Pire gravité d'alerte des bacs non affichés, par monde (#306) : un monde ne change pas
+   * entre deux rattrapages (`advanceBackgroundTanks`), qui en créent de nouveaux.
+   */
   private frozenWorst = new WeakMap<World, AlertSeverity | null>();
+  /**
+   * Rattrapage des bacs non affichés (#316, ADR 0076) : monde affiché et son `tick` au dernier
+   * rattrapage. Un autre monde affiché (changement de bac, import) repart de zéro.
+   */
+  private backgroundWorld: World | null = null;
+  private backgroundTick = 0;
   /** État de la boucle à pas fixe, réécrit à chaque image (aucune allocation). */
   private readonly clock: FixedStepState = { steps: 0, accumulator: 0, alpha: 0 };
   private lastTimestamp: number | null = null;
@@ -985,7 +997,9 @@ export class AquariumHost {
     // Une chute en cours se termine d'abord : le monde rangé garde un décor posé.
     this.finishDropAnimation();
     const fromTime = this.renderTime();
-    // Le bac quitté garde son identifiant dans la pièce, même jamais sauvegardé (#264).
+    // Les autres bacs rattrapent le bac quitté avant l'échange (#316) ; le bac quitté garde
+    // son identifiant dans la pièce, même jamais sauvegardé (#264).
+    this.advanceBackgroundTanks();
     this.syncRoomState(world);
     const next = switchEnvironment(world, this.stash, id);
     this.stash = next.stash;
@@ -1739,6 +1753,7 @@ export class AquariumHost {
    * @throws RangeError comme `serializeRoom`.
    */
   private saveText(world: World): string {
+    this.advanceBackgroundTanks();
     const room = this.syncRoomState(world);
     return serializeRoom(room, this.selectedTankId, this.settings());
   }
@@ -1754,9 +1769,65 @@ export class AquariumHost {
   }
 
   /**
+   * Rattrapage des bacs non affichés (#316, ADR 0076, fin du gel des ADR 0063 et 0074) : ils
+   * avancent, par `stepRoom`, d'autant de pas que le bac affiché depuis le rattrapage
+   * précédent, avec la même horloge du jour. Appelé au rythme des relevés de l'eau (au plus
+   * 4 fois par seconde de temps réel), et avant tout ce qui lit ou change les autres bacs
+   * (changement de bac, transfert, sauvegarde) : aucune allocation par image. Le bac affiché
+   * n'est pas touché (même objet, avancé en place par la boucle). Sans effet en capture.
+   */
+  private advanceBackgroundTanks(): void {
+    const world = this.currentWorld;
+    if (!world || this.capture) {
+      return;
+    }
+    const pending = this.backgroundWorld === world ? world.tick - this.backgroundTick : 0;
+    this.backgroundWorld = world;
+    this.backgroundTick = world.tick;
+    if (pending <= 0) {
+      return;
+    }
+    const synced = syncRoom(this.roomState, world, stashedList(this.stash, world.environment));
+    const room = stepRoom(synced.room, pending, this.dayClock, synced.selectedTankId);
+    this.stash = stashFromList(
+      room.tanks
+        .filter((tank) => tank.placement === null && tank.id !== synced.selectedTankId)
+        .map((tank) => tank.world),
+      world.environment,
+    );
+    this.roomState = { ...room, tick: world.tick };
+    this.selectedTankId = synced.selectedTankId;
+  }
+
+  /**
+   * Renomme le bac `id` de la liste (#316, `renameTank`) : nom normalisé, non vide, de
+   * `MAX_TANK_NAME_LENGTH` caractères au plus ; enregistré aussitôt. Refus : message dans
+   * `transferNotice`, nom inchangé. Sans effet en capture ou avant le démarrage.
+   */
+  renameTank(id: number, name: string): void {
+    const world = this.currentWorld;
+    if (!world || this.capture) {
+      return;
+    }
+    const renamed = renameTank(this.syncRoomState(world), id, name);
+    if (renamed === null) {
+      this.transferNotice.set({
+        kind: 'erreur',
+        text: `Nom refusé : de 1 à ${MAX_TANK_NAME_LENGTH} caractères`,
+      });
+      this.exposeTankList();
+      return;
+    }
+    this.roomState = renamed;
+    this.transferNotice.set(null);
+    this.syncRoomState(world);
+    this.saveNow();
+  }
+
+  /**
    * Liste des bacs (#306) : le bac sélectionné est relu à chaque appel (son monde avance en
-   * place) ; les autres bacs, figés (ADR 0063, 0074), gardent leur gravité en cache par monde.
-   * Rien en capture (aucune interface).
+   * place) ; les autres bacs gardent leur gravité en cache par monde, recalculée après chaque
+   * rattrapage (#316). Rien en capture (aucune interface).
    */
   private exposeTankList(): void {
     const world = this.currentWorld;
@@ -1791,7 +1862,7 @@ export class AquariumHost {
   /**
    * Sélectionne le bac `id` de la liste (#306) : tableau de bord, fiches et wiki décrivent
    * alors ce bac. Lot 3a : un bac à la position historique (un par environnement) se
-   * sélectionne en changeant d'environnement (`setEnvironment`) ; un bac posé, figé, n'est
+   * sélectionne en changeant d'environnement (`setEnvironment`) ; un bac posé (lot 3c) n'est
    * pas encore sélectionnable (ADR 0075). Sans effet en capture ou avant le démarrage.
    */
   selectTank(id: number): void {
@@ -1827,6 +1898,8 @@ export class AquariumHost {
     if (!world || this.capture || !isSpeciesId(species)) {
       return;
     }
+    // Le bac d'arrivée est d'abord mis à l'heure du bac affiché (#316).
+    this.advanceBackgroundTanks();
     const room = this.syncRoomState(world);
     let index = world.entities.length - 1;
     while (index >= 0 && world.entities[index].species !== species) {
@@ -2484,6 +2557,8 @@ export class AquariumHost {
         refreshDue(timestamp, this.waterReadAt)
       ) {
         this.waterReadAt = timestamp;
+        // Les autres bacs avancent par lots, au rythme des relevés (#316, ADR 0076).
+        this.advanceBackgroundTanks();
         this.exposeWater();
       }
     }

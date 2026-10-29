@@ -24,6 +24,7 @@ import type { SaveMessage, SaveStatus } from '../../core/save-storage/save-stora
 import { DEFAULT_FOOD_STYLE, type FoodStyle } from '../../core/food-style/food-style';
 import { isRoomAvailable } from '../../sim/room';
 import {
+  MAX_TANK_NAME_LENGTH,
   placeOf,
   SUPPORT_CATALOG,
   SUPPORT_KINDS,
@@ -34,7 +35,7 @@ import {
 } from '../../sim/room-state';
 import type { RoomCatalog, RoomCatalogTank, TransferNotice } from '../aquarium-host/aquarium-host';
 import { ALERT_SEVERITY_LABELS } from '../../sim/dashboard-alerts';
-import { tankListDetail, type TankListEntry } from '../../sim/tank-list';
+import { animalCountText, tankListDetail, type TankListEntry } from '../../sim/tank-list';
 import { MAX_SAVE_LENGTH } from '../../sim/save';
 import { DEFAULT_SIM_SPEED, SIM_SPEEDS, speedLabel, type SimSpeed } from '../../sim/sim-speed';
 import { mixWarnings } from '../../sim/compatibility';
@@ -692,7 +693,11 @@ export interface NewTankRequest {
           <legend class="control-panel__legend">Bacs</legend>
           <ul class="control-panel__tanks" aria-label="Liste des bacs">
             @for (tank of tankList(); track tank.id) {
-              <li [attr.data-tank]="tank.id" [attr.data-tank-alert]="tank.worst ?? 'aucune'">
+              <li
+                [attr.data-tank]="tank.id"
+                [attr.data-tank-alert]="tank.worst ?? 'aucune'"
+                [attr.data-tank-hunger]="tank.hunger ?? 'aucune'"
+              >
                 <button
                   type="button"
                   class="control-panel__tank"
@@ -750,6 +755,46 @@ export interface NewTankRequest {
               (click)="onTransfer()"
             >
               Transférer à l’épuisette
+            </button>
+          }
+          @if (tankList().length > 0) {
+            <!-- Renommer un bac (#316) : le bac sélectionné par défaut, nom borné. -->
+            <div class="control-panel__row" role="group" aria-label="Renommer un bac">
+              <label class="control-panel__field">
+                <span class="control-panel__label">Bac à renommer</span>
+                <select
+                  class="control-panel__select"
+                  data-rename-tank
+                  (change)="renameTarget.set(+$any($event.target).value)"
+                >
+                  @for (tank of tankList(); track tank.id) {
+                    <option [value]="tank.id" [selected]="tank.id === renameTargetChoice()">
+                      {{ tank.name }}
+                    </option>
+                  }
+                </select>
+              </label>
+              <label class="control-panel__field">
+                <span class="control-panel__label">Nouveau nom</span>
+                <input
+                  #renameInput
+                  type="text"
+                  class="control-panel__select"
+                  data-rename-name
+                  autocomplete="off"
+                  [attr.maxlength]="maxTankName"
+                  [value]="renameTargetName()"
+                  (keydown.enter)="onRename(renameInput.value)"
+                />
+              </label>
+            </div>
+            <button
+              type="button"
+              class="control-panel__button"
+              data-rename
+              (click)="onRename(renameInput.value)"
+            >
+              Renommer
             </button>
           }
           @if (transferNotice(); as notice) {
@@ -864,6 +909,8 @@ export class ControlPanel {
   readonly supportRemoved = output<number>();
   /** Liste des bacs (#306) : bac à sélectionner. */
   readonly tankSelected = output<number>();
+  /** « Renommer » (#316) : bac et nom saisi (normalisé et validé par l'hôte). */
+  readonly tankRenamed = output<{ readonly id: number; readonly name: string }>();
   /** « Transférer à l'épuisette » (#306) : espèce du bac sélectionné et bac d'arrivée. */
   readonly animalTransferred = output<{ readonly species: SpeciesId; readonly toId: number }>();
   /** Bouton « Granulés » : passer à l'autre rendu (#117). */
@@ -970,8 +1017,24 @@ export class ControlPanel {
     return TANK_SIZES[size].name;
   }
 
-  /** Ligne secondaire d'un bac : où il est, et ses animaux. */
   protected readonly severityLabels = ALERT_SEVERITY_LABELS;
+  /** Longueur maximale d'un nom de bac (#316), aussi bornée par l'hôte. */
+  protected readonly maxTankName = MAX_TANK_NAME_LENGTH;
+  /** Bac à renommer (#316) ; `null` : le bac sélectionné. */
+  protected readonly renameTarget = signal<number | null>(null);
+  protected readonly renameTargetChoice = computed(() => {
+    const list = this.tankList();
+    const wanted = this.renameTarget();
+    return (
+      list.find((tank) => tank.id === wanted) ??
+      list.find((tank) => tank.selected) ??
+      list[0]
+    )?.id;
+  });
+  /** Nom actuel du bac à renommer : valeur de départ du champ. */
+  protected readonly renameTargetName = computed(
+    () => this.tankList().find((tank) => tank.id === this.renameTargetChoice())?.name ?? '',
+  );
   /** Choix d'espèce et de bac d'arrivée du transfert (#306) ; `null` : premier de la liste. */
   protected readonly transferChoice = signal<string | null>(null);
   protected readonly transferTarget = signal<number | null>(null);
@@ -994,6 +1057,13 @@ export class ControlPanel {
     return (list.find((tank) => tank.id === wanted) ?? list[0])?.id ?? null;
   });
 
+  protected onRename(name: string): void {
+    const id = this.renameTargetChoice();
+    if (id !== undefined) {
+      this.tankRenamed.emit({ id, name });
+    }
+  }
+
   protected onTransfer(): void {
     const species = this.transferSpeciesChoice();
     const toId = this.transferTargetChoice();
@@ -1012,7 +1082,7 @@ export class ControlPanel {
     return [
       tank.environmentName === tank.name ? null : tank.environmentName,
       tankListDetail(tank),
-      tank.selectable ? null : 'posé, figé',
+      tank.selectable ? null : 'posé',
     ]
       .filter((part) => part !== null)
       .join(' · ');
@@ -1033,10 +1103,10 @@ export class ControlPanel {
       .join(', ');
   }
 
+  /** Ligne secondaire d'un bac : où il est, et ses animaux. */
   protected tankStatus(tank: RoomCatalogTank): string {
     const where = tank.shown ? 'affiché' : tank.on === null ? 'rangé' : `posé sur ${tank.on}`;
-    const animals = tank.animals === 0 ? 'vide' : `${tank.animals} animaux`;
-    return `${where}, ${animals}`;
+    return `${where}, ${animalCountText(tank.animals)}`;
   }
 
   protected onAddTank(): void {
