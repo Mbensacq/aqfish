@@ -3831,6 +3831,12 @@
           "debut": "2026-10-29T23:05:34.612Z",
           "fin": "2026-10-29T23:06:52.581Z",
           "note": "Issue #325 : rétro sprint 15 ; plan sprint 16 ; Dev : #309 + #322 (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-10-29T23:07:26.481Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
