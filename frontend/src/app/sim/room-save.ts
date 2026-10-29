@@ -19,15 +19,22 @@ import {
   type SaveSettings,
 } from './save';
 import {
+  isCentimetric,
+  MAX_ROOM_SUPPORTS,
   MAX_ROOM_TANKS,
   MAX_TANK_NAME_LENGTH,
   placeOf,
   resolveSelectedTank,
+  roomLayoutProblems,
   roomWorlds,
+  SUPPORT_KINDS,
   syncRoom,
   type RoomState,
+  type RoomSupport,
   type RoomTank,
+  type SupportKind,
   type TankPlace,
+  type TankPlacement,
 } from './room-state';
 import type { World } from './world';
 
@@ -49,6 +56,8 @@ export interface SavedTank {
   readonly id: number;
   readonly name: string;
   readonly place: TankPlace;
+  /** Position dans la pièce (lot 2) ; omise pour la position historique et au jardin. */
+  readonly placement?: TankPlacement;
   readonly world: SavedWorld;
 }
 
@@ -60,6 +69,9 @@ export interface RoomSaveData {
   readonly tick: number;
   readonly nextTankId: number;
   readonly selectedTankId: number;
+  /** Meubles supports et leur compteur (lot 2) ; omis tant qu'aucun meuble n'a été posé. */
+  readonly nextFurnitureId?: number;
+  readonly furniture?: readonly RoomSupport[];
   readonly tanks: readonly SavedTank[];
   readonly settings: SaveSettings;
 }
@@ -95,6 +107,7 @@ export function roomSaveData(
   if (!room.tanks.some((tank) => tank.id === selectedTankId)) {
     problems.push(`bac sélectionné absent (${selectedTankId})`);
   }
+  problems.push(...roomLayoutProblems(room));
   if (problems.length > 0) {
     throw new RangeError(`sauvegarde : ${problems.join(' ; ')}`);
   }
@@ -106,10 +119,24 @@ export function roomSaveData(
     tick: room.tick,
     nextTankId: room.nextTankId,
     selectedTankId,
+    // Champs du lot 2 omis pour une pièce sans meuble : document du lot 1 à l'identique.
+    ...(room.nextFurnitureId === 0 && room.furniture.length === 0
+      ? {}
+      : {
+          nextFurnitureId: room.nextFurnitureId,
+          furniture: room.furniture.map(({ id, kind, x, z, quarter }) => ({
+            id,
+            kind,
+            x,
+            z,
+            quarter,
+          })),
+        }),
     tanks: room.tanks.map((tank) => ({
       id: tank.id,
       name: tank.name,
       place: tank.place,
+      ...(tank.placement === null ? {} : { placement: { ...tank.placement } }),
       world: savedWorld(tank.world),
     })),
     settings: settingsCopy,
@@ -269,6 +296,14 @@ function parseSchema2(value: Record<string, unknown>): ParseSaveResult {
   }
   const settings = parseSettings(own(value, 'settings'), problems);
   const tanks = parseTanks(own(value, 'tanks'), problems);
+  const furnitureValue = own(value, 'furniture');
+  const nextFurnitureValue = own(value, 'nextFurnitureId');
+  const furniture = furnitureValue === undefined ? [] : parseFurniture(furnitureValue, problems);
+  if (nextFurnitureValue !== undefined && !isUint32(nextFurnitureValue)) {
+    problems.push('nextFurnitureId doit être un entier 32 bits non signé');
+  } else if (nextFurnitureValue === undefined && furniture !== null && furniture.length > 0) {
+    problems.push('nextFurnitureId manquant');
+  }
   if (tanks !== null) {
     problems.push(
       ...roomProblems(
@@ -277,15 +312,21 @@ function parseSchema2(value: Record<string, unknown>): ParseSaveResult {
       ),
     );
   }
-  if (problems.length > 0 || settings === null || tanks === null) {
-    return failure(problems.slice(0, 5).join(' ; ') + (problems.length > 5 ? ' ; …' : ''));
+  if (problems.length > 0 || settings === null || tanks === null || furniture === null) {
+    return failureOf(problems);
   }
   const room: RoomState = {
     seed: seed as number,
     tick: tick as number,
     tanks,
     nextTankId: nextTankId as number,
+    furniture,
+    nextFurnitureId: (nextFurnitureValue as number | undefined) ?? 0,
   };
+  problems.push(...roomLayoutProblems(room));
+  if (problems.length > 0) {
+    return failureOf(problems);
+  }
   return {
     ok: true,
     room,
@@ -337,6 +378,11 @@ function parseTank(item: unknown, i: number, problems: string[]): RoomTank | nul
     found.push(`name trop long (${MAX_TANK_NAME_LENGTH} caractères au plus)`);
   }
   const place = own(item, 'place');
+  const placementValue = own(item, 'placement');
+  const placement = placementValue === undefined ? null : parsePlacement(placementValue, found);
+  if (placement !== null && place === 'jardin') {
+    found.push('placement interdit au jardin');
+  }
   const worldValue = own(item, 'world');
   let world: World | null = null;
   if (!isRecord(worldValue)) {
@@ -355,7 +401,70 @@ function parseTank(item: unknown, i: number, problems: string[]): RoomTank | nul
   if (found.length > 0 || world === null) {
     return null;
   }
-  return { id: id as number, name: name as string, place: place as TankPlace, world };
+  return { id: id as number, name: name as string, place: place as TankPlace, placement, world };
+}
+
+/** Position d'un bac relue, ou `null` (problème ajouté à `found`). */
+function parsePlacement(value: unknown, found: string[]): TankPlacement | null {
+  if (!isRecord(value)) {
+    found.push('placement doit être un objet');
+    return null;
+  }
+  const supportId = own(value, 'supportId');
+  const x = own(value, 'x');
+  const z = own(value, 'z');
+  const quarter = own(value, 'quarter');
+  const before = found.length;
+  if (supportId !== null && !isUint32(supportId)) {
+    found.push('placement.supportId doit être null ou un entier 32 bits non signé');
+  }
+  if (typeof x !== 'number' || !isCentimetric(x) || typeof z !== 'number' || !isCentimetric(z)) {
+    found.push('placement.x et placement.z doivent être des mètres au centimètre');
+  }
+  if (!isIntegerIn(quarter, 0, 3)) {
+    found.push('placement.quarter doit être 0, 1, 2 ou 3');
+  }
+  return found.length > before ? null : ({ supportId, x, z, quarter } as TankPlacement);
+}
+
+/** Meubles du schéma 2 : liste d'au plus `MAX_ROOM_SUPPORTS` meubles valides, ou `null`. */
+function parseFurniture(value: unknown, problems: string[]): RoomSupport[] | null {
+  if (!Array.isArray(value)) {
+    problems.push('furniture doit être une liste');
+    return null;
+  }
+  if (value.length > MAX_ROOM_SUPPORTS) {
+    problems.push(`trop de meubles (${value.length}, ${MAX_ROOM_SUPPORTS} au plus)`);
+    return null;
+  }
+  const before = problems.length;
+  const furniture: RoomSupport[] = [];
+  value.forEach((item: unknown, i) => {
+    const label = `meuble ${i}`;
+    if (!isRecord(item)) {
+      problems.push(`${label} : doit être un objet`);
+      return;
+    }
+    const id = own(item, 'id');
+    const kind = own(item, 'kind');
+    const x = own(item, 'x');
+    const z = own(item, 'z');
+    const quarter = own(item, 'quarter');
+    const ok =
+      isUint32(id) &&
+      SUPPORT_KINDS.includes(kind as SupportKind) &&
+      typeof x === 'number' &&
+      isCentimetric(x) &&
+      typeof z === 'number' &&
+      isCentimetric(z) &&
+      isIntegerIn(quarter, 0, 3);
+    if (!ok) {
+      problems.push(`${label} : id, kind (${SUPPORT_KINDS.join(', ')}), x, z ou quarter invalide`);
+      return;
+    }
+    furniture.push({ id, kind, x, z, quarter } as RoomSupport);
+  });
+  return problems.length > before ? null : furniture;
 }
 
 /**
@@ -376,6 +485,10 @@ function roomProblems(ids: readonly number[], nextTankId: number | null): string
     }
   });
   return problems;
+}
+
+function failureOf(problems: readonly string[]): { readonly ok: false; readonly error: string } {
+  return failure(problems.slice(0, 5).join(' ; ') + (problems.length > 5 ? ' ; …' : ''));
 }
 
 function failure(error: string): { readonly ok: false; readonly error: string } {
