@@ -228,7 +228,11 @@ export type RoomPart =
   | 'tissu'
   | 'coussin'
   | 'pot'
-  | 'feuillage';
+  | 'feuillage'
+  // Bacs posés de la pièce de N bacs (#305, lot 2b) : cadre, eau et sol du bac.
+  | 'cadre'
+  | 'eau'
+  | 'substrat';
 
 /** Bloc de la pièce : boîte alignée sur les axes, partie et teinte (0 ou 1). */
 export interface RoomBlock {

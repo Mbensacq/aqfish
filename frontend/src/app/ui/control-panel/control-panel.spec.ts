@@ -10,6 +10,7 @@ import { SIM_SPEEDS } from '../../sim/sim-speed';
 import { MAX_HEATER_TEMPERATURE, MIN_HEATER_TEMPERATURE } from '../../sim/water';
 import { DEFAULT_WATER_READOUT, type WaterReadout } from '../../sim/water-quality';
 import { SPECIES_LABELS } from '../../sim/species-catalog';
+import type { RoomCatalog } from '../aquarium-host/aquarium-host';
 import {
   CONTROL_PANEL_ID,
   ControlPanel,
@@ -145,6 +146,7 @@ describe('fonctions du panneau de contrôle', () => {
     [decorVisible]="decor()"
     [rain]="rain()"
     [roomShown]="room()"
+    [roomCatalog]="catalog()"
     [decorEditable]="editable()"
     [foodStyle]="foodStyle()"
     [population]="population()"
@@ -163,6 +165,10 @@ describe('fonctions du panneau de contrôle', () => {
     (decorVisibleChanged)="events.push(['decor', $event])"
     (rainChanged)="events.push(['pluie', $event])"
     (roomShownChanged)="events.push(['piece', $event])"
+    (supportAdded)="layout.push(['meuble', $event])"
+    (tankAdded)="layout.push(['bac', $event])"
+    (tankRemoved)="layout.push(['retrait-bac', $event])"
+    (supportRemoved)="layout.push(['retrait-meuble', $event])"
     (environmentChanged)="environments.push($event)"
     (foodStyleToggled)="foodToggles = foodToggles + 1"
     (editRequested)="edits = edits + 1"
@@ -181,6 +187,8 @@ class TestHost {
   readonly decor = signal(true);
   readonly rain = signal(false);
   readonly room = signal(false);
+  readonly catalog = signal<RoomCatalog>({ tanks: [], supports: [], message: null });
+  readonly layout: [string, unknown][] = [];
   readonly foodStyle = signal<FoodStyle>('points');
   foodToggles = 0;
   readonly editable = signal(true);
@@ -295,6 +303,114 @@ describe('ControlPanel', () => {
     });
     await fixture.whenStable();
     expect(warnings()).toEqual([]);
+  });
+
+  describe('bacs et meubles (#305)', () => {
+    const section = () => root().querySelector('[data-section="bacs-meubles"]');
+    const CATALOG: RoomCatalog = {
+      tanks: [
+        { id: 0, name: 'Bac tropical', animals: 18, shown: true, on: null },
+        { id: 1, name: 'Récif', animals: 6, shown: false, on: null },
+        { id: 2, name: 'Bac tropical', animals: 0, shown: false, on: 'Commode 1' },
+      ],
+      supports: [
+        { id: 0, name: 'Commode 1', occupied: true },
+        { id: 1, name: 'Étagère basse 2', occupied: false },
+      ],
+      message: null,
+    };
+
+    async function openWithRoom(): Promise<void> {
+      fixture.componentInstance.room.set(true);
+      fixture.componentInstance.catalog.set(CATALOG);
+      await openPanel();
+    }
+
+    it('absent tant que la pièce est masquée, ou hors du bac tropical', async () => {
+      await openPanel();
+      expect(section()).toBeNull();
+      fixture.componentInstance.room.set(true);
+      fixture.componentInstance.environment.set('recif');
+      await fixture.whenStable();
+      expect(section()).toBeNull();
+      fixture.componentInstance.environment.set('tropical');
+      await fixture.whenStable();
+      expect(section()).not.toBeNull();
+    });
+
+    it('ajoute un meuble, puis un bac choisi (environnement, taille, meuble)', async () => {
+      await openWithRoom();
+      section()!.querySelector<HTMLButtonElement>('[data-add-support="etagere-bacs"]')!.click();
+      section()!.querySelector<HTMLButtonElement>('[data-add-tank]')!.click();
+      const pick = (selector: string, value: string): void => {
+        const select = section()!.querySelector<HTMLSelectElement>(selector)!;
+        select.value = value;
+        select.dispatchEvent(new Event('change'));
+      };
+      pick('[data-new-tank-environment]', 'paludarium');
+      pick('[data-new-tank-size]', 'petit');
+      pick('[data-new-tank-support]', '1');
+      await fixture.whenStable();
+      section()!.querySelector<HTMLButtonElement>('[data-add-tank]')!.click();
+      expect(fixture.componentInstance.layout).toEqual([
+        ['meuble', 'etagere-bacs'],
+        ['bac', { environment: 'tropical', size: 'moyen', supportId: null }],
+        ['bac', { environment: 'paludarium', size: 'petit', supportId: 1 }],
+      ]);
+      // Le bassin, au jardin, n'est pas proposé.
+      const options = [
+        ...section()!.querySelectorAll<HTMLOptionElement>('[data-new-tank-environment] option'),
+      ].map((o) => o.value);
+      expect(options).not.toContain('bassin');
+      expect(options).toContain('tropical');
+    });
+
+    it('liste les bacs ; le bac affiché ne se retire pas ; un bac vide se retire aussitôt', async () => {
+      await openWithRoom();
+      const rows = [...section()!.querySelectorAll('[data-room-tank]')];
+      expect(rows.map((r) => r.textContent?.replace(/\s+/g, ' ').trim())).toEqual([
+        'Bac tropical affiché, 18 animaux',
+        'Récif rangé, 6 animaux Retirer',
+        'Bac tropical posé sur Commode 1, vide Retirer',
+      ]);
+      expect(rows[0]!.querySelector('[data-remove-tank]')).toBeNull();
+      rows[2]!.querySelector<HTMLButtonElement>('[data-remove-tank]')!.click();
+      expect(fixture.componentInstance.layout).toEqual([['retrait-bac', 2]]);
+    });
+
+    it('un bac peuplé demande une confirmation ; « Garder » l’annule', async () => {
+      await openWithRoom();
+      const row = () => section()!.querySelector('[data-room-tank="1"]')!;
+      row().querySelector<HTMLButtonElement>('[data-remove-tank]')!.click();
+      await fixture.whenStable();
+      expect(fixture.componentInstance.layout).toEqual([]);
+      const confirm = row().querySelector<HTMLButtonElement>('[data-confirm-remove]')!;
+      expect(confirm.textContent?.trim()).toBe('Retirer avec 6 animaux');
+      [...row().querySelectorAll<HTMLButtonElement>('button')]
+        .find((b) => b.textContent?.trim() === 'Garder')!
+        .click();
+      await fixture.whenStable();
+      expect(row().querySelector('[data-confirm-remove]')).toBeNull();
+      row().querySelector<HTMLButtonElement>('[data-remove-tank]')!.click();
+      await fixture.whenStable();
+      row().querySelector<HTMLButtonElement>('[data-confirm-remove]')!.click();
+      expect(fixture.componentInstance.layout).toEqual([['retrait-bac', 1]]);
+    });
+
+    it('meuble occupé : « Retirer » sans effet ; libre : retiré ; message de refus affiché', async () => {
+      await openWithRoom();
+      const remove = (id: number) =>
+        section()!.querySelector<HTMLButtonElement>(`[data-room-support="${id}"] button`)!;
+      expect(remove(0).getAttribute('aria-disabled')).toBe('true');
+      remove(0).click();
+      remove(1).click();
+      expect(fixture.componentInstance.layout).toEqual([['retrait-meuble', 1]]);
+      fixture.componentInstance.catalog.set({ ...CATALOG, message: 'La pièce est pleine.' });
+      await fixture.whenStable();
+      expect(section()!.querySelector('[role="status"]')?.textContent?.trim()).toBe(
+        'La pièce est pleine.',
+      );
+    });
   });
 
   describe('fiches d’espèces (#237)', () => {
