@@ -3780,6 +3780,24 @@
         }
       },
       "metriques": {}
+    },
+    "103": {
+      "numero": 103,
+      "date": "2026-10-29",
+      "debut": "2026-10-29T18:53:59.398Z",
+      "type": "dette",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-10-29T18:53:59.398Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
