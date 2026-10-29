@@ -3737,10 +3737,10 @@
           "note": "Verdict RÉSERVES (faim visible seulement en attribut data), 0 bug, captures c101 publiées (98), e2e ciblés 4/4, 3079 tests ; suite e2e complète non menée en local, exploration manuelle non faite"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-29T15:06:33.720Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-29T16:04:40.296Z",
+          "note": "PR #317 fusionnée → v1.3.3 ; main verte, release créée par la CI ; #316 fermée ; dette #318 ; suppression de la branche refusée par l'environnement (à faire par Mathis)"
         }
       },
       "metriques": {}
