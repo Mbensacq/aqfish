@@ -6,6 +6,18 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Panneau des réglages à 1280 × 720 : pas une ligne de plus** (cycle 101, #316) : en
+  deux colonnes de hauteur fixe, la moindre ligne ajoutée au cas par défaut (un seul bac)
+  pousse « Sauvegarde » dans une troisième colonne hors du panneau ; seul
+  `e2e/cadrage-panneaux.spec.ts` (débord horizontal, part 1/6) le voit, tests unitaires et
+  captures restant verts. Toute nouvelle commande du panneau doit être conditionnelle
+  (ici : renommage dès deux bacs) ou remplacer une ligne ; lancer cette spec en local.
+  (2026-10-29)
+- **Fonction déjà livrée sous le même nom** (cycle 101, #316) : `renameTank` existait dans
+  `sim/room-state.ts` depuis le lot 2 (ADR 0073), sans être utilisée par l'interface ; en
+  écrire une seconde a donné « Multiple exports with the same name » au build des tests.
+  Avant d'ajouter une fonction de la roadmap, chercher son nom (`grep -rn "export function
+  <nom>" src`) et le tableau des modules de `docs/ARCHITECTURE.md`. (2026-10-29)
 - **Prettier sur `docs/` réaligne tous les tableaux** (cycle 98, #305) : `npx prettier
   --write ../docs/ARCHITECTURE.md` depuis `frontend/` a réécrit ~300 lignes (colonnes des
   tableaux), alors que `npm run format:check` ne regarde pas `docs/`. Ne formater que les

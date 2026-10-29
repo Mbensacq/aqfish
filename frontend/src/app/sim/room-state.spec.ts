@@ -6,7 +6,10 @@ import {
   defaultTankName,
   findTank,
   MAX_ROOM_TANKS,
+  MAX_TANK_NAME_LENGTH,
+  normalizeTankName,
   placeOf,
+  renameTank,
   resolveSelectedTank,
   roomWorlds,
   stepRoom,
@@ -114,6 +117,101 @@ describe('stepRoom : temps commun, aucune lecture croisée', () => {
     expect(same.tanks.map((t) => t.world)).toEqual(room.tanks.map((t) => t.world));
     expect(() => stepRoom(room, -1)).toThrow(RangeError);
     expect(() => stepRoom(room, 0.5)).toThrow(RangeError);
+  });
+});
+
+/** Empreinte du bac tropical de graine 42 après 600 pas, relevée sur `main` (v1.3.2). */
+const GOLDEN_HASH = '92dfd116';
+
+/** Empreinte FNV-1a 32 bits du texte complet d'un monde : « état haché ». */
+function hashWorld(world: World): string {
+  let hash = 0x811c9dc5;
+  for (const char of text(world)) {
+    hash = Math.imul(hash ^ char.charCodeAt(0), 0x01000193) >>> 0;
+  }
+  return hash.toString(16).padStart(8, '0');
+}
+
+describe('stepRoom sauf le bac affiché (#316, lot 3b)', () => {
+  /** Pièce de trois bacs : le bac 0 est le bac affiché, les autres avancent sans lui. */
+  function threeTanks(seed: number): RoomState {
+    return createRoom(seed, ['tropical', 'recif', 'eaufroide']);
+  }
+
+  it('un bac non affiché avance de N pas (eau, faim), de façon déterministe', () => {
+    const clock = createDayClock(9, 120, false);
+    const room = threeTanks(42);
+    const a = stepRoom(room, 900, clock, 0);
+    const b = stepRoom(threeTanks(42), 900, clock, 0);
+    for (const i of [1, 2]) {
+      const before = room.tanks[i]!.world;
+      const after = a.tanks[i]!.world;
+      expect(after.tick).toBe(before.tick + 900);
+      expect(after.water).not.toEqual(before.water);
+      expect(after.entities[0]!.hunger).toBeGreaterThan(before.entities[0]!.hunger);
+      // Même graine, même état ; par lots ou d'un coup, même état aussi.
+      expect(text(after)).toBe(text(b.tanks[i]!.world));
+      const batched = stepRoom(
+        stepRoom(stepRoom(room, 300, clock, 0), 300, clock, 0),
+        300,
+        clock,
+        0,
+      );
+      expect(text(batched.tanks[i]!.world)).toBe(text(after));
+    }
+    // Autre graine, autre état.
+    expect(text(stepRoom(threeTanks(43), 900, clock, 0).tanks[1]!.world)).not.toBe(
+      text(a.tanks[1]!.world),
+    );
+  });
+
+  it('le bac affiché n’est pas touché (même objet) et reste identique à l’avant-lot', () => {
+    const clock = createDayClock(9, 120, false);
+    const room = threeTanks(42);
+    const stepped = stepRoom(room, 600, clock, 0);
+    expect(stepped.tanks[0]!.world).toBe(room.tanks[0]!.world);
+    // L'hôte avance le bac affiché seul, en place : même état, avec ou sans voisins avancés.
+    const alone = advance(room.tanks[0]!.world, 600, clock);
+    const withRoom = advance(stepped.tanks[0]!.world, 600, clock);
+    expect(hashWorld(withRoom)).toBe(hashWorld(alone));
+    // Empreinte relevée sur `main` avant le lot 3b (v1.3.2) : la boucle du bac affiché n'a
+    // pas changé.
+    expect(hashWorld(alone)).toBe(GOLDEN_HASH);
+  });
+
+  it('un identifiant inconnu avance tous les bacs', () => {
+    const room = threeTanks(1);
+    const all = stepRoom(room, 10, null, 99);
+    expect(all.tanks.every((tank, i) => tank.world.tick === room.tanks[i]!.world.tick + 10)).toBe(
+      true,
+    );
+  });
+});
+
+describe('renameTank : saisie libre (#316)', () => {
+  const room = createRoom(5, ['tropical', 'recif']);
+
+  it('renomme un bac, nom normalisé, les autres inchangés', () => {
+    const renamed = renameTank(room, 1, '  Récif\tdu  salon\n');
+    expect(findTank(renamed!, 1)?.name).toBe('Récif du salon');
+    expect(findTank(renamed!, 0)).toBe(room.tanks[0]);
+    expect(room.tanks[1]!.name).toBe('Récif');
+  });
+
+  it('refuse un nom vide (après normalisation) ou trop long', () => {
+    for (const name of ['', '   ', '\u0000\u0007', '\n\t']) {
+      expect(renameTank(room, 0, name)).toBeNull();
+    }
+    const max = 'a'.repeat(MAX_TANK_NAME_LENGTH);
+    expect(findTank(renameTank(room, 0, max)!, 0)?.name).toBe(max);
+    expect(renameTank(room, 0, `${max}b`)).toBeNull();
+    // La borne porte sur le nom normalisé : des blancs en trop ne comptent pas.
+    expect(renameTank(room, 0, `  ${max}  `)).not.toBeNull();
+  });
+
+  it('normalizeTankName remplace les caractères de contrôle', () => {
+    expect(normalizeTankName('a\u0001b\u007fc')).toBe('a b c');
+    expect(normalizeTankName('Bac 🐟')).toBe('Bac 🐟');
   });
 });
 

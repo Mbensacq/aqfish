@@ -24,6 +24,11 @@ export interface TankListEntry {
   readonly environmentName: string;
   readonly liters: number;
   readonly animals: number;
+  /**
+   * Faim moyenne des animaux nourris aux granulés, en pour cent arrondi ; `null` s'il n'y en a
+   * pas (#316 : montre qu'un bac non affiché vit).
+   */
+  readonly hunger: number | null;
   /** Pire gravité d'alerte du bac, `null` sans alerte. */
   readonly worst: AlertSeverity | null;
   /** Bac sélectionné (celui que décrivent tableau de bord, fiches et wiki). */
@@ -65,17 +70,26 @@ export function tankListEntry(
     environmentName: environmentById(world.environment).name,
     liters: Math.round(waterLiters(environmentWater(world))),
     animals: world.entities.length,
+    hunger: hungerPercent(world),
     worst,
     selected: tank.id === selectedTankId,
     selectable: tank.placement === null,
   };
 }
 
+/** Contenu d'un bac en toutes lettres : « vide », « 1 animal », « 3 animaux ». */
+export function animalCountText(animals: number): string {
+  return animals === 0 ? 'vide' : `${animals} anima${animals === 1 ? 'l' : 'ux'}`;
+}
+
 /** Libellé court d'une ligne (« 3 animaux · 240 L »). */
 export function tankListDetail(entry: Pick<TankListEntry, 'animals' | 'liters'>): string {
-  const animals =
-    entry.animals === 0 ? 'vide' : `${entry.animals} anima${entry.animals === 1 ? 'l' : 'ux'}`;
-  return `${animals} · ${entry.liters} L`;
+  return `${animalCountText(entry.animals)} · ${entry.liters} L`;
+}
+
+function hungerPercent(world: World): number | null {
+  const hunger = healthSummary(world.entities).averageHunger;
+  return hunger === null ? null : Math.round(hunger * 100);
 }
 
 /** Lignes de la liste, dans l'ordre des bacs (liste vide : aucune ligne). */

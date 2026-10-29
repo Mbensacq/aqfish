@@ -76,11 +76,12 @@ simulation testable et les captures reproductibles.
   fichiers anciens.
 - **Un monde par environnement visité** (#277, ADR 0063, `sim/environment-worlds.ts`) :
   changer d'environnement range le monde quitté et reprend celui de l'environnement choisi
-  (`switchEnvironment`) ; un environnement non affiché est **figé** (jamais avancé) ;
+  (`switchEnvironment`) ; un environnement non affiché avance par lots avec la pièce depuis
+  le lot 3b (ADR 0076 ; figé jusque-là) ;
   l'heure de la journée continue sans saut (`carryClock`). La sauvegarde écrit les mondes
   rangés : au schéma 1 dans le champ facultatif `others`, au schéma 2 comme bacs de la pièce
   (un par environnement visité). La pièce de N bacs (ci-dessous) remplacera ce mécanisme.
-- **Pièce de N bacs** (#264, ADR 0061, 0069, 0073, 0074 et 0075 ; lot 1 livré : modèle et sauvegarde ;
+- **Pièce de N bacs** (#264, ADR 0061, 0069, 0073, 0074, 0075 et 0076 ; lot 1 livré : modèle et sauvegarde ;
   lot 2 : modèle des meubles et des positions) : une
   pièce (`sim/room-state.ts`, `RoomState`) est une liste de mondes `World`
   **indépendants**, un par bac, avec identifiant, nom et lieu (`piece`, ou `jardin` pour le
@@ -106,7 +107,11 @@ simulation testable et les captures reproductibles.
   « Bacs » : nom, environnement, litrage, animaux, pire gravité d'alerte, `sim/tank-list.ts`),
   sélection d'un bac à la position historique, transfert d'un animal à l'épuisette
   (`sim/tank-transfer.ts` : milieu, température, bac plein ; faim et santé gardées). Les bacs
-  posés restent figés et non sélectionnables ; la simulation de tous les bacs vient au lot 3b. L'hôte expose le
+  posés restent non sélectionnables (lot 3c). Lot 3b (ADR 0076) : **tous les bacs vivent** ;
+  l'hôte avance en place le bac affiché à chaque image et rattrape les autres par lots
+  (`stepRoom` avec `exceptTankId`) aux relevés de l'eau et avant changement de bac, transfert
+  ou sauvegarde ; renommage depuis la liste (`renameTank`, `normalizeTankName`) ; faim
+  moyenne de chaque bac dans la liste (`data-tank-hunger`). L'hôte expose le
   **bac sélectionné** par ses signaux actuels : tableau de bord, alertes, fiches, wiki et
   actions lisent ces signaux et ne supposent jamais un bac unique ailleurs.
 - **Eau** (#206, ADR 0052, `sim/water.ts`) : `World.water` (température, ammoniaque,
@@ -264,10 +269,10 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
 | `sim/time-step.ts` | `assertTimeStep` : validation unique d'un pas de temps |
 | `sim/world.ts` | État du monde sérialisable (dont `decor`), `step`, `advance`, `advanceTo`, `advanceInPlace` (boucle d'affichage), `createDefaultWorld` (population et décor par défaut) |
 | `sim/save.ts` | Sauvegarde (#70, ADR 0028) : format JSON versionné (`saveData`, `serializeWorld`), relecture validée (`parseWorld`, `parseSaveData` : bornes, effectifs, propriétés propres seulement, champs inconnus ignorés, schéma inconnu refusé) ; mondes des autres environnements visités dans `others` (#277, ADR 0063) |
-| `sim/room-state.ts` | Pièce de N bacs (#264, ADR 0061 et 0069) : `RoomState` et `RoomTank` (identifiant, nom, lieu, monde), graines des bacs (`tankSeed`), pièce neuve (`createRoom`), pas commun sans lecture croisée (`stepRoom`), bac sélectionné (`resolveSelectedTank`), passage aux mondes de l'hôte du lot 1 (`roomWorlds`, `syncRoom`) ; lot 2 (ADR 0073) : catalogue `TANK_SIZES` et `SUPPORT_CATALOG`, meubles supports et positions des bacs, pose analytique (`addSupport`, `removeSupport`, `addTank`, `moveTank`, `removeTank`, `renameTank`, `tankPlacementRefusal`, `roomLayoutProblems`) |
+| `sim/room-state.ts` | Pièce de N bacs (#264, ADR 0061 et 0069) : `RoomState` et `RoomTank` (identifiant, nom, lieu, monde), graines des bacs (`tankSeed`), pièce neuve (`createRoom`), pas commun sans lecture croisée (`stepRoom`, bac affiché exclu au lot 3b), nom saisi normalisé (`normalizeTankName`), bac sélectionné (`resolveSelectedTank`), passage aux mondes de l'hôte du lot 1 (`roomWorlds`, `syncRoom`) ; lot 2 (ADR 0073) : catalogue `TANK_SIZES` et `SUPPORT_CATALOG`, meubles supports et positions des bacs, pose analytique (`addSupport`, `removeSupport`, `addTank`, `moveTank`, `removeTank`, `renameTank`, `tankPlacementRefusal`, `roomLayoutProblems`) |
 | `sim/room-layout.ts` | Pièce de N bacs, lot 2b (#305, ADR 0074) : première place libre d'un meuble ou d'un bac ajouté (`findSupportSpot`, `findTankSpot`, dans l'aire de la pièce graphique, hors obstacles), blocs de rendu des meubles supports et des bacs posés (`roomLayoutBlocks`) |
 | `sim/tank-transfer.ts` | Transfert d'un animal entre deux bacs (#306, ADR 0075) : `transferRefusal` (bac, milieu `livesIn`, température tolérée de la fiche, `populationLimit`), `transferFish` (pur ; nouvel identifiant du bac d'arrivée, faim et santé gardées, avertissements d'ajout), `transferMessage` |
-| `sim/tank-list.ts` | Liste des bacs (#306, ADR 0075) : `tankList`, `tankListEntry` (nom, environnement, litrage, animaux, sélection), pire gravité d'alerte d'un monde (`worstAlert`, alertes du tableau de bord) |
+| `sim/tank-list.ts` | Liste des bacs (#306, ADR 0075) : `tankList`, `tankListEntry` (nom, environnement, litrage, animaux, faim moyenne, sélection), contenu en toutes lettres (`animalCountText`), pire gravité d'alerte d'un monde (`worstAlert`, alertes du tableau de bord) |
 | `sim/room-save.ts` | Sauvegarde au schéma 2 (#264, ADR 0069) : `roomSaveData`, `serializeRoom` (256 Kio par bac), relecture validée des schémas 2 et 1 (`parseSave`, `parseRoomSaveData`, ne lève jamais), migration `migrateSchema1`, mondes de l'hôte (`parseSaveWorlds`) ; champs facultatifs du lot 2 (`furniture`, `nextFurnitureId`, `placement`, ADR 0073) |
 | `sim/environment-worlds.ts` | Mondes des environnements visités mais non affichés (#277, ADR 0063) : changement d'environnement pur (`switchEnvironment` : monde quitté rangé, figé ; monde repris ou de départ), liste ordonnée pour la sauvegarde (`stashedList`) et table relue (`stashFromList`) |
 | `sim/population.ts` | Population réglable (#69, ADR 0025) : `setPopulation` (pure) / `setPopulationInPlace` (hôte), bornes `maxPopulation` par espèce et `MAX_TOTAL_FISH`, `populationCounts`, `populationLimits` |
