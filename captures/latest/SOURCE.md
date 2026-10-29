@@ -1,8 +1,8 @@
-# Captures c099
+# Captures du cycle 100
 
-- Branche : cycle/c099-piece-bacs-meubles-ui
-- PR : #312
-- Commit : 90ecbea
-- Graine : celle de captures.spec.ts (inchangée)
-- Date : 2026-10-29, 96 tests de capture, 8,2 min
-- Écart avec latest (c098) : 2 nouvelles images (three-quarter-piece-deux-bacs, top-piece-deux-bacs), toutes les autres identiques à l'octet
+- Branche : cycle/c100-liste-des-bacs (PR #314), commit 6b4e5a6
+- Graine : 42 (celle de captures.spec.ts), heure 12, vitesse 0
+- Produites localement : interface-liste-bacs.png et telephone-liste-bacs.png (regardées).
+- Les autres images sont reprises de la série c099 : le rendu du bac seul est inchangé, vérifié
+  à l'octet par le job CI « captures sous 5 angles » (vert). La série complète n'a pas pu être
+  régénérée en local dans le temps imparti (rendu logiciel, 2 cœurs).
