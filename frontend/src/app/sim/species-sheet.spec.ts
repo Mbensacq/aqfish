@@ -8,6 +8,7 @@ import {
   addWarningText,
   addWarningTextWith,
   frenchNumber,
+  publicReference,
   SHEET_FIELD_LABELS,
   SHEET_FIELDS,
   sheetNotes,
@@ -19,6 +20,8 @@ import {
 import { TANK_LIMITS } from './tank';
 import { waterLiters } from './water';
 import { SPECIES_PH } from './water-ph';
+import { GUIDE_PAGES, guideView } from './care-guide';
+import { wikiCare, wikiSheet } from './species-wiki';
 
 const IDS = Object.keys(SPECIES) as SpeciesId[];
 
@@ -100,7 +103,7 @@ describe('fiches d’espèces (#237)', () => {
     expect(byField['adultSize'].value).toBe('4 cm');
     expect(byField['temperatureTolerated']).toMatchObject({
       value: '20 – 26 °C',
-      status: 'Source : docs/SOINS.md § 11 (FishBase)',
+      status: 'Source : documentation du projet (FishBase)',
     });
     expect(byField['phPreferred']).toMatchObject({
       value: '6 – 7,2',
@@ -163,11 +166,20 @@ describe('statut légal et corrections de fiches (#269)', () => {
   it('poisson-clown : vit sans anémone ; autres espèces sans mise en garde', () => {
     expect(sheetNotes('clown')[0].text).toMatch(/^Vit très bien sans anémone/);
     for (const note of [
+      ...speciesSheet('clown').notes,
+      ...speciesSheet('chirurgien').notes,
+      ...speciesSheet('koi').notes,
+    ]) {
+      expect(note.status).toMatchObject({ kind: 'source' });
+      expect(note.status.kind === 'source' && note.status.reference).toMatch(/^docs\/ESPECES\.md/);
+    }
+    // À l'écran, la même source sans chemin du dépôt (#302).
+    for (const note of [
       ...sheetNotes('clown'),
       ...sheetNotes('chirurgien'),
       ...sheetNotes('koi'),
     ]) {
-      expect(note.status).toMatch(/^Source : docs\/ESPECES\.md/);
+      expect(note.status).toMatch(/^Source : documentation du projet \(/);
     }
     expect(sheetNotes('neon')).toEqual([]);
     expect(Object.isFrozen(speciesSheet('neon').notes)).toBe(true);
@@ -332,5 +344,42 @@ describe('avertissement d’ajout (#237)', () => {
     expect(
       addWarningTextWith({ kind: 'volume', species: 'neon', liters: 20, minLiters: 60 }, labels),
     ).toBe('Bac trop petit pour des raies : 20 L, 60 L conseillés');
+  });
+});
+
+describe('références affichées sans chemin du dépôt (#302)', () => {
+  it.each([
+    ['docs/SOINS.md § 2 et § 14 (UF/IFAS FA16)', 'documentation du projet (UF/IFAS FA16)'],
+    ['docs/SOINS.md § 11 (FishBase)', 'documentation du projet (FishBase)'],
+    ['docs/SOINS.md § 1.5 et § 5.6 (Merck)', 'documentation du projet (Merck)'],
+    ['docs/ESPECES.md (koï)', 'documentation du projet (koï)'],
+    [
+      'docs/ESPECES.md (koï, USGS) ; docs/SOINS.md § 14 (UC Davis)',
+      'documentation du projet (koï, USGS) ; documentation du projet (UC Davis)',
+    ],
+    [
+      'arrêté du 8 janvier 2021 (via docs/ESPECES.md)',
+      'arrêté du 8 janvier 2021 (via la documentation du projet)',
+    ],
+    ['docs/SOINS.md', 'documentation du projet'],
+    ['FishBase', 'FishBase'],
+    ['', ''],
+  ])('%s → %s', (reference, shown) => {
+    expect(publicReference(reference)).toBe(shown);
+  });
+
+  it('aucun texte des fiches, du wiki ni du guide de soins ne montre « docs/… .md » ou « § »', () => {
+    const shown: string[] = [];
+    for (const id of IDS) {
+      shown.push(...sheetRows(id).flatMap((row) => [row.value, row.status]));
+      shown.push(...sheetNotes(id).flatMap((note) => [note.text, note.status]));
+      shown.push(JSON.stringify(wikiSheet(id)), JSON.stringify(wikiCare(id)));
+    }
+    for (const page of GUIDE_PAGES) {
+      shown.push(JSON.stringify(guideView(page)));
+    }
+    for (const text of shown) {
+      expect(text).not.toMatch(/docs\/|\.md\b|§/);
+    }
   });
 });

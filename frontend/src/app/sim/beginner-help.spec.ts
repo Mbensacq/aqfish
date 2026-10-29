@@ -10,7 +10,6 @@ import { EMPTY_HEALTH_SUMMARY, type HealthSummary } from './health-summary';
 import {
   ALERT_TOPICS,
   GAME_SIMPLIFICATION,
-  GAUGE_TOPICS,
   GUIDE_STEPS,
   WHY_TOPIC_ORDER,
   helpStatusText,
@@ -18,7 +17,7 @@ import {
   whyTopics,
 } from './beginner-help';
 import { NO_FISH } from './population';
-import { DEFAULT_WATER_SAMPLE, DASHBOARD_GAUGES, type WaterSample } from './water-dashboard';
+import { DEFAULT_WATER_SAMPLE, type WaterSample } from './water-dashboard';
 import type { PhBands } from './water-ph';
 import { COMPOUND_THRESHOLDS, type WaterCompound } from './water-quality';
 
@@ -104,12 +103,6 @@ describe('aides pour débutant (#240)', () => {
       }
       expect(Object.keys(ALERT_TOPICS).sort()).toEqual([...ALERT_ORDER].sort());
     });
-
-    it('chaque jauge de l’eau a son « Pourquoi ? »', () => {
-      for (const gauge of DASHBOARD_GAUGES) {
-        expect(WHY_TOPIC_ORDER, gauge).toContain(GAUGE_TOPICS[gauge]);
-      }
-    });
   });
 
   describe('contenu', () => {
@@ -164,13 +157,24 @@ describe('aides pour débutant (#240)', () => {
     it('statut : une source citée, ou la mention « Simplification de jeu »', () => {
       expect(helpStatusText({ kind: 'approximation' })).toBe(GAME_SIMPLIFICATION);
       expect(helpStatusText({ kind: 'source', reference: 'docs/SOINS.md § 2' })).toBe(
-        'Source : docs/SOINS.md § 2',
+        'Source : documentation du projet',
       );
       for (const item of [...whyTopics(), ...GUIDE_STEPS]) {
         if (item.status.kind === 'source') {
+          // Traçabilité dans les données ; à l'écran, la publication sans chemin du dépôt (#302).
           expect(item.status.reference, item.id).toMatch(/^docs\/SOINS\.md § /);
+          const shown = helpStatusText(item.status);
+          expect(shown, item.id).toMatch(/^Source : documentation du projet \(.+\)$/);
+          expect(shown, item.id).not.toMatch(/docs\/|\.md|§/);
         }
       }
+    });
+
+    it('nitrates : la baisse par le seul changement d’eau est marquée comme règle du jeu (#302)', () => {
+      const text = whyTopic('azote').paragraphs.join(' ');
+      expect(text).toContain('dans le jeu, seul un changement d’eau partiel les fait baisser');
+      expect(text).toContain('les plantes en absorbent aussi une partie');
+      expect(text).not.toContain('ne partent qu’avec');
     });
 
     it('une valeur chiffrée sans source porte la mention de simplification', () => {

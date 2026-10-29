@@ -1,6 +1,5 @@
 import type { AlertId } from './dashboard-alerts';
-import type { FieldStatus } from './species-sheet';
-import type { DashboardGaugeId } from './water-dashboard';
+import { publicReference, type FieldStatus } from './species-sheet';
 
 /**
  * Aides pour débutant (issue #240, ADR 0072) : explications « Pourquoi ? » par sujet et
@@ -9,8 +8,9 @@ import type { DashboardGaugeId } from './water-dashboard';
  * Règles de contenu :
  * - textes en français, sans jargon non expliqué ;
  * - chaque explication et chaque étape porte un statut : une **source** (`docs/SOINS.md`,
- *   qui cite UF/IFAS, Merck, VIN/WSAVA) ou la mention « simplification de jeu » quand le
- *   texte décrit le modèle de la simulation et non une règle d'aquariophilie ;
+ *   qui cite UF/IFAS, Merck, VIN/WSAVA ; affichée « documentation du projet (UF/IFAS…) »,
+ *   sans chemin du dépôt, #302) ou la mention « simplification de jeu » quand le texte
+ *   décrit le modèle de la simulation et non une règle d'aquariophilie ;
  * - identifiants uniques, aucun texte vide (vérifié par `sim/beginner-help.spec.ts`).
  *
  * Les seuils des alertes ne sont pas recopiés ici : ils restent dans `sim/dashboard-alerts.ts`.
@@ -60,7 +60,9 @@ function source(reference: string): FieldStatus {
 
 /** Texte affiché du statut : « Source : … » ou « Simplification de jeu ». */
 export function helpStatusText(status: FieldStatus): string {
-  return status.kind === 'source' ? `Source : ${status.reference}` : GAME_SIMPLIFICATION;
+  return status.kind === 'source'
+    ? `Source : ${publicReference(status.reference)}`
+    : GAME_SIMPLIFICATION;
 }
 
 const SOINS = 'docs/SOINS.md';
@@ -83,7 +85,7 @@ const TOPICS: Readonly<Record<WhyTopicId, WhyTopic>> = {
     title: 'Le cycle de l’azote',
     paragraphs: [
       'Les déchets des animaux et la nourriture oubliée donnent de l’ammoniaque, toxique. Les bactéries du filtre la changent en nitrites, toxiques aussi, puis en nitrates, bien moins nocifs.',
-      'Un filtre neuf n’a pas encore ces bactéries : il faut 6 à 8 semaines pour qu’il devienne efficace. Les nitrates, eux, ne partent qu’avec un changement d’eau partiel.',
+      'Un filtre neuf n’a pas encore ces bactéries : il faut 6 à 8 semaines pour qu’il devienne efficace. Les nitrates, eux, s’accumulent : dans le jeu, seul un changement d’eau partiel les fait baisser ; dans un vrai bac, les plantes en absorbent aussi une partie.',
       'En cas d’ammoniaque : nourrir moins et changer une partie de l’eau (25 à 50 %), jamais toute l’eau d’un coup.',
     ],
     status: source(`${SOINS} § 2 et § 14 (UF/IFAS FA16)`),
@@ -172,15 +174,6 @@ export const ALERT_TOPICS: Readonly<Record<AlertId, WhyTopicId>> = {
   hunger: 'nourriture',
   health: 'sante',
   mix: 'cohabitation',
-};
-
-/** Explication liée à chaque jauge de l'eau (`sim/water-dashboard.ts`). */
-export const GAUGE_TOPICS: Readonly<Record<DashboardGaugeId, WhyTopicId>> = {
-  temperature: 'temperature',
-  ammonia: 'azote',
-  nitrite: 'azote',
-  nitrate: 'azote',
-  ph: 'ph',
 };
 
 /** Les cinq étapes du guide, dans l'ordre. */

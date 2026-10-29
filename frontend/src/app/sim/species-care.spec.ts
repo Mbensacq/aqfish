@@ -182,11 +182,18 @@ describe('soins du wiki : comparaison avec le bac (#291)', () => {
     expect(rows.map((r) => r.parameter)).toEqual(['temperature', 'ph']);
     expect(rows.map((r) => r.fit)).toEqual(['dans-la-plage', 'dans-la-plage']);
     expect(rows[0]).toMatchObject({
-      tank: '24 °C',
+      tank: '24,0 °C',
       preferred: '22 – 25 °C',
       fitLabel: 'dans la plage',
     });
-    expect(rows[1]).toMatchObject({ tank: '7', preferred: '6 – 7,2' });
+    expect(rows[1]).toMatchObject({ tank: '7,0', preferred: '6 – 7,2' });
+  });
+
+  it('valeur du bac au dixième, comme le tableau de bord (#296)', () => {
+    const [temperature, ph] = tankComparison('neon', 23.96, 6.84);
+    expect(temperature.tank).toBe('24,0 °C');
+    expect(ph.tank).toBe('6,8');
+    expect(tankComparison('neon', -0.04, 0)[0].tank).toBe('0,0 °C');
   });
 
   it('axolotl à 24 °C : hors plage tolérée (14 – 22 °C), écart à la plage préférée', () => {

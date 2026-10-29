@@ -26,6 +26,7 @@ import { addWarnings, addWarningText } from '../../sim/species-sheet';
 import { tankComparison } from '../../sim/species-care';
 import { wikiCare, wikiLists, wikiSheet } from '../../sim/species-wiki';
 import { BeginnerGuideState } from '../beginner-guide/beginner-guide-state';
+import { PH_ZONE_COLORS } from '../dashboard-frame/dashboard-frame';
 import type { PopulationRequest } from '../control-panel/control-panel';
 
 /** Identifiant du panneau (cible de `aria-controls`). */
@@ -289,9 +290,17 @@ export function wikiAddCount(
     }`,
   styleUrl: './species-wiki.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { '(document:keydown.escape)': 'onEscape($event)' },
+  host: {
+    '(document:keydown.escape)': 'onEscape($event)',
+    // Couleurs de l'avis « dans la plage / limite / hors plage » : celles des zones de la
+    // jauge pH du tableau de bord, définies une seule fois (#296).
+    '[style.--wiki-fit-dans-la-plage]': 'fitColors.ideal',
+    '[style.--wiki-fit-limite]': 'fitColors.tolere',
+    '[style.--wiki-fit-hors-plage]': 'fitColors.horsPlage',
+  },
 })
 export class SpeciesWiki {
+  protected readonly fitColors = PH_ZONE_COLORS;
   /** Environnement affiché : ses espèces sont les seules ajoutables. */
   readonly environment = input<EnvironmentId>(DEFAULT_ENVIRONMENT_ID);
   /** Effectifs du bac. */

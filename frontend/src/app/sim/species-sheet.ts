@@ -186,7 +186,7 @@ const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
         source(`${ANAPSID} (source secondaire)`),
       ),
       note(
-        'Espèce choisie faute d’anoure vérifié dans docs/ESPECES.md : paramètres à recouper',
+        'Espèce choisie faute d’anoure vérifié dans la documentation du projet : paramètres à recouper',
         source('ADR 0064'),
       ),
     ],
@@ -379,9 +379,29 @@ function frenchRange({ min, max }: ValueRange, unit = ''): string {
   return unit === '' ? text : `${text} ${unit}`;
 }
 
+/** Documentation du projet, telle que nommée à l'écran. */
+export const PROJECT_DOCUMENTATION = 'documentation du projet';
+
+/** Chemin d'un document du dépôt (`docs/SOINS.md`), suivi de ses paragraphes éventuels. */
+const REPOSITORY_DOCUMENT = /docs\/[A-Za-z0-9_-]+\.md(?:\s*§\s*[\d.]+(?:\s*et\s*§\s*[\d.]+)*)?/g;
+
+/**
+ * Référence telle qu'affichée au joueur (#302) : les chemins de documents du dépôt
+ * (`docs/SOINS.md § 2 et § 14`) deviennent « documentation du projet » ; la publication
+ * citée entre parenthèses est gardée. La référence complète reste dans les données, pour la
+ * traçabilité et les tests.
+ */
+export function publicReference(reference: string): string {
+  return reference
+    .replace(/\(via docs\//g, '(via la docs/')
+    .replace(REPOSITORY_DOCUMENT, PROJECT_DOCUMENTATION);
+}
+
 /** Texte du statut d'un champ, affiché en petit sous la valeur. */
 export function statusText(status: FieldStatus): string {
-  return status.kind === 'source' ? `Source : ${status.reference}` : 'Approximation de jeu';
+  return status.kind === 'source'
+    ? `Source : ${publicReference(status.reference)}`
+    : 'Approximation de jeu';
 }
 
 /** Ligne affichée d'une fiche. */
