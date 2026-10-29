@@ -759,9 +759,13 @@ export interface NewTankRequest {
           }
           @if (tankList().length > 0) {
             <!-- Renommer un bac (#316) : le bac sélectionné par défaut, nom borné. -->
-            <div class="control-panel__row" role="group" aria-label="Renommer un bac">
+            <div
+              class="control-panel__row control-panel__row--halves"
+              role="group"
+              aria-label="Renommer un bac"
+            >
               <label class="control-panel__field">
-                <span class="control-panel__label">Bac à renommer</span>
+                <span class="control-panel__label">Bac</span>
                 <select
                   class="control-panel__select"
                   data-rename-tank

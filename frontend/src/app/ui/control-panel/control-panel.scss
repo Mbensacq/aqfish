@@ -355,6 +355,12 @@
   gap: 8px;
 }
 
+// Deux champs de même largeur (renommage d'un bac, #316).
+.control-panel__row--halves > * {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
 .control-panel__button {
   flex: 1 1 0;
   min-width: 0;
