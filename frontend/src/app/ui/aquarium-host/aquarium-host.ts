@@ -152,6 +152,7 @@ import {
   tankResizeRefusal,
   type RoomLayoutRefusal,
   type RoomState,
+  type RoomTank,
   type SupportKind,
   type TankSizeId,
 } from '../../sim/room-state';
@@ -162,7 +163,11 @@ import {
   type FloorRect,
 } from '../../sim/room-layout';
 import type { SaveSettings } from '../../sim/save';
-import { applySpeciesCountsInPlace } from '../../sim/species-catalog';
+import type { AlertSeverity } from '../../sim/dashboard-alerts';
+import { addWarningText } from '../../sim/species-sheet';
+import { tankList, worstAlert, type TankListEntry } from '../../sim/tank-list';
+import { transferFish } from '../../sim/tank-transfer';
+import { applySpeciesCountsInPlace, SPECIES_LABELS } from '../../sim/species-catalog';
 import {
   DEFAULT_FOOD_STYLE,
   isFoodStyle,
@@ -180,6 +185,7 @@ import {
   setWorldCatappaInPlace,
   setWorldHeaterInPlace,
   starveWorldInPlace,
+  type Entity,
   type MutableWorld,
   type World,
 } from '../../sim/world';
@@ -299,6 +305,14 @@ export const ROOM_COUNT_ATTRIBUTE = 'data-aqfish-room-count';
 export const ROOM_TANKS_ATTRIBUTE = 'data-aqfish-room-tanks';
 /** Nombre de meubles supports de la pièce de N bacs (#305, lot 2b). */
 export const ROOM_SUPPORTS_ATTRIBUTE = 'data-aqfish-room-supports';
+/** Identifiant du bac sélectionné de la pièce (#306, lot 3). */
+export const SELECTED_TANK_ATTRIBUTE = 'data-aqfish-selected-tank';
+
+/** Message du dernier transfert d'animal (#306) : réussite ou refus. */
+export interface TransferNotice {
+  readonly kind: 'info' | 'erreur';
+  readonly text: string;
+}
 
 /** Bac de la pièce vu par le catalogue « Bacs et meubles » (#305). */
 export interface RoomCatalogTank {
@@ -522,6 +536,8 @@ export class AquariumHost {
   private roomState: RoomState | null = null;
   /** Bac sélectionné de `roomState` : celui du monde affiché (réglage d'interface). */
   private selectedTankId = 0;
+  /** Pire gravité d'alerte des mondes figés (bacs rangés et posés), par monde (#306). */
+  private frozenWorst = new WeakMap<World, AlertSeverity | null>();
   /** État de la boucle à pas fixe, réécrit à chaque image (aucune allocation). */
   private readonly clock: FixedStepState = { steps: 0, accumulator: 0, alpha: 0 };
   private lastTimestamp: number | null = null;
@@ -649,6 +665,15 @@ export class AquariumHost {
 
   /** Bacs et meubles supports de la pièce de N bacs (#305), pour le catalogue. */
   readonly roomCatalog = signal<RoomCatalog>({ tanks: [], supports: [], message: null });
+
+  /**
+   * Liste des bacs de la pièce (#306, lot 3) : nom, environnement, litrage, animaux et pire
+   * gravité d'alerte de chaque bac, bac sélectionné compris (relevé à chaque relevé de l'eau).
+   */
+  readonly tankList = signal<readonly TankListEntry[]>([]);
+
+  /** Message du dernier transfert d'animal (#306), `null` avant tout transfert. */
+  readonly transferNotice = signal<TransferNotice | null>(null);
 
   /** Indice de l'élément de décor sélectionné (#167), `null` sinon. */
   readonly decorSelection = signal<number | null>(null);
@@ -965,6 +990,8 @@ export class AquariumHost {
     const next = switchEnvironment(world, this.stash, id);
     this.stash = next.stash;
     this.currentWorld = next.world as MutableWorld;
+    // La liste des bacs (#306) suit aussitôt le bac affiché.
+    this.syncRoomState(next.world);
     this.clock.accumulator = 0;
     this.clock.alpha = 0;
     this.dayClock = carryClock(this.dayClock, fromTime, this.renderTime());
@@ -1722,7 +1749,126 @@ export class AquariumHost {
     this.roomState = synced.room;
     this.selectedTankId = synced.selectedTankId;
     this.exposeRoomCatalog(this.roomCatalog().message);
+    this.exposeTankList();
     return synced.room;
+  }
+
+  /**
+   * Liste des bacs (#306) : le bac sélectionné est relu à chaque appel (son monde avance en
+   * place) ; les autres bacs, figés (ADR 0063, 0074), gardent leur gravité en cache par monde.
+   * Rien en capture (aucune interface).
+   */
+  private exposeTankList(): void {
+    const world = this.currentWorld;
+    if (!world || this.capture) {
+      return;
+    }
+    const room = this.roomState ?? this.syncRoomState(world);
+    const selected = this.selectedTankId;
+    const entries = tankList(room.tanks, selected, (tank) => {
+      if (tank.id === selected) {
+        // Le monde affiché change en place : sa gravité en cache, d'avant son affichage, ne
+        // vaut plus quand il sera de nouveau rangé.
+        this.frozenWorst.delete(world);
+        return worstAlert(world);
+      }
+      let worst = this.frozenWorst.get(tank.world);
+      if (worst === undefined) {
+        worst = worstAlert(tank.world);
+        this.frozenWorst.set(tank.world, worst);
+      }
+      return worst;
+    });
+    // Le bac sélectionné est décrit par le monde affiché, même avant resynchronisation.
+    this.tankList.set(
+      entries.map((entry) =>
+        entry.selected ? { ...entry, animals: world.entities.length } : entry,
+      ),
+    );
+    this.host.nativeElement.setAttribute(SELECTED_TANK_ATTRIBUTE, String(selected));
+  }
+
+  /**
+   * Sélectionne le bac `id` de la liste (#306) : tableau de bord, fiches et wiki décrivent
+   * alors ce bac. Lot 3a : un bac à la position historique (un par environnement) se
+   * sélectionne en changeant d'environnement (`setEnvironment`) ; un bac posé, figé, n'est
+   * pas encore sélectionnable (ADR 0075). Sans effet en capture ou avant le démarrage.
+   */
+  selectTank(id: number): void {
+    const world = this.currentWorld;
+    if (!world || !this.view || this.capture) {
+      return;
+    }
+    const tank = findTank(this.syncRoomState(world), id);
+    if (tank === undefined || tank.id === this.selectedTankId) {
+      return;
+    }
+    if (tank.placement !== null) {
+      this.transferNotice.set({
+        kind: 'erreur',
+        text: `« ${tank.name} » est posé dans la pièce : pas encore sélectionnable`,
+      });
+      return;
+    }
+    this.transferNotice.set(null);
+    this.setEnvironment(tank.world.environment);
+  }
+
+  /**
+   * Transfère à l'épuisette un animal de l'espèce `species` du bac sélectionné vers le bac
+   * `toId` (#306, `transferFish`) : le plus récent de cette espèce, comme le retrait de la
+   * population. Le bac affiché perd l'animal en place ; le bac d'arrivée (rangé ou posé)
+   * reçoit le nouvel animal, avec sa faim et sa santé. Refus (milieu, température, bac plein)
+   * ou réussite : message dans `transferNotice`. Enregistré aussitôt. Sans effet en capture
+   * ou avant le démarrage.
+   */
+  transferAnimal(species: string, toId: number): void {
+    const world = this.currentWorld;
+    if (!world || this.capture || !isSpeciesId(species)) {
+      return;
+    }
+    const room = this.syncRoomState(world);
+    let index = world.entities.length - 1;
+    while (index >= 0 && world.entities[index].species !== species) {
+      index -= 1;
+    }
+    const fish = world.entities[index];
+    if (fish === undefined) {
+      this.transferNotice.set({ kind: 'erreur', text: 'Aucun animal de cette espèce ici' });
+      return;
+    }
+    const result = transferFish(room, this.selectedTankId, toId, fish.id);
+    if (!result.ok) {
+      this.transferNotice.set({ kind: 'erreur', text: result.message });
+      return;
+    }
+    // Une chute en cours se termine d'abord, comme avant tout changement du monde affiché.
+    this.finishDropAnimation();
+    (world.entities as Entity[]).splice(index, 1);
+    const arrival = findTank(result.room, toId) as RoomTank;
+    if (arrival.placement === null) {
+      const stash = new Map(this.stash);
+      stash.set(arrival.world.environment, arrival.world);
+      this.stash = stash;
+    }
+    this.roomState = {
+      ...result.room,
+      tanks: result.room.tanks.map((tank) =>
+        tank.id === this.selectedTankId ? { ...tank, world } : tank,
+      ),
+    };
+    this.syncRoomState(world);
+    const { singular, feminine } = SPECIES_LABELS[species];
+    const moved = `${singular.charAt(0).toUpperCase()}${singular.slice(1)} transféré${feminine ? 'e' : ''}`;
+    const warnings = result.warnings.map(addWarningText);
+    this.transferNotice.set({
+      kind: 'info',
+      text: [`${moved} dans « ${arrival.name} »`, ...warnings].join('. '),
+    });
+    this.exposePopulation();
+    this.exposeWater();
+    this.saveNow();
+    this.scheduleFrame();
   }
 
   /** Expose les bacs et meubles de la pièce (catalogue et attributs, #305). */
@@ -2394,6 +2540,7 @@ export class AquariumHost {
       return;
     }
     this.waterReadTick = world.tick;
+    this.exposeTankList();
     this.waterSample.set(waterSample(world.water, world.environment, world.tick));
     this.health.set(healthSummary(world.entities));
     const readout = waterReadout(

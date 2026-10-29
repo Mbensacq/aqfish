@@ -494,3 +494,68 @@
   font-size: 10px;
   line-height: 13px;
 }
+
+// Liste des bacs (#306) : un bouton par bac, bac sélectionné surligné, gravité d'alerte en
+// couleur du tableau de bord (`DASHBOARD_COLORS`).
+.control-panel__tanks {
+  display: grid;
+  gap: 4px;
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+}
+
+.control-panel__tank {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0 8px;
+  width: 100%;
+  min-height: 32px;
+  padding: 4px 8px;
+  border: 1px solid rgb(232 230 227 / 30%);
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 12px;
+  line-height: 15px;
+  text-align: left;
+  cursor: pointer;
+
+  &[aria-pressed='true'] {
+    border-color: #5fbfa3;
+    background: rgb(95 191 163 / 16%);
+  }
+
+  &[aria-disabled='true'] {
+    cursor: default;
+    opacity: 0.7;
+  }
+
+  &:focus-visible {
+    outline: 2px solid #5fbfa3;
+    outline-offset: 1px;
+  }
+
+  .control-panel__sheet-status {
+    grid-column: 1 / -1;
+  }
+}
+
+.control-panel__tank-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.control-panel__tank-alert {
+  font-weight: 700;
+
+  &[data-level='critique'] {
+    color: #f2a39a;
+  }
+
+  &[data-level='attention'] {
+    color: #f0d68a;
+  }
+}

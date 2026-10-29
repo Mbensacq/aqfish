@@ -347,6 +347,38 @@ test.describe('Captures', () => {
     expect(errors).toEqual([]);
   });
 
+  // Liste des bacs (#306) à trois bacs (tropical, récif, paludarium), bureau et téléphone :
+  // les deux autres environnements visités puis le bac tropical repris (vue trois-quarts par
+  // défaut), simulation à l'arrêt dès t = 0, section « Bacs » amenée en vue. Captures
+  // d'interface, comme ci-dessus.
+  for (const shot of [
+    { name: 'interface-liste-bacs', width: 1280, height: 720 },
+    { name: 'telephone-liste-bacs', width: 390, height: 844 },
+  ]) {
+    test(`liste des bacs : ${shot.name}`, async ({ page }) => {
+      const errors: string[] = [];
+      page.on('pageerror', (error) => errors.push(error.message));
+      await page.setViewportSize({ width: shot.width, height: shot.height });
+      await page.goto(`/?seed=${SEED}&camera=front&heure=12&vitesse=0`);
+      await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+      await page.getByRole('button', { name: 'Réglages' }).click();
+      const environment = page.getByRole('combobox', { name: 'Environnement', exact: true });
+      for (const id of ['recif', 'paludarium', 'tropical']) {
+        await environment.selectOption(id);
+        await expect(page.locator('app-aquarium-host')).toHaveAttribute(
+          'data-aqfish-environment',
+          id,
+        );
+      }
+      await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-tick', '0');
+      const section = page.locator('[data-section="bacs"]');
+      await expect(section.locator('[data-tank]')).toHaveCount(3);
+      await section.scrollIntoViewIfNeeded();
+      await page.screenshot({ path: join(OUTPUT_DIR, `${shot.name}.png`), animations: 'disabled' });
+      expect(errors).toEqual([]);
+    });
+  }
+
   // Catalogue d'espèces (#189) à 390 px : panneau ouvert, section « Population » amenée en
   // vue (défilement interne), simulation à l'arrêt dès t = 0. Capture d'interface, comme
   // ci-dessus.
