@@ -1,8 +1,5 @@
-# Captures c097
-
-- Branche : `cycle/c097-mutation-fiches`
-- PR : #308 (Closes #304, issue du cycle #307)
-- Commit : b3b45b792dac11e7bf0ac0100a0a039b17ea83a4
-- Graine et temps : ceux de `e2e/captures.spec.ts` (inchangés), 94 captures
-- Comparaison avec c096 : 94/94 identiques à l'octet
-- Environnement : lien `chromium_headless_shell-1194` créé (cf. docs/PIEGES.md)
+# Captures c098
+- Branche : cycle/c098-bacs-et-meubles (PR #310), commit 1deef99
+- Série : 94 captures, identiques à l'octet à captures/latest (c097) : aucun fichier de render/ ni ui/ modifié
+- Graine : celle du contrat de capture (docs/ARCHITECTURE.md) ; durée : 6,2 min
+- Lot 2a : pas de capture « pièce à 2 bacs » (lot 2b)
