@@ -3752,7 +3752,7 @@
       "type": "fonctionnalite",
       "issue": 278,
       "pr": 319,
-      "version": null,
+      "version": "v1.3.4",
       "phases": {
         "planif": {
           "statut": "termine",
