@@ -253,137 +253,6 @@ export interface NewTankRequest {
           </div>
         </fieldset>
 
-        @if (roomAvailable() && roomShown()) {
-          <!-- Bacs et meubles de la pièce (#305, lot 2b) : ajout à la première place libre,
-               retrait (confirmation si le bac est peuplé). Les bacs posés restent figés. -->
-          <fieldset class="control-panel__section" data-section="bacs-meubles">
-            <legend class="control-panel__legend">Bacs et meubles</legend>
-            <div class="control-panel__row">
-              @for (kind of supportKinds; track kind) {
-                <button
-                  type="button"
-                  class="control-panel__button control-panel__button--compact"
-                  [attr.data-add-support]="kind"
-                  (click)="supportAdded.emit(kind)"
-                >
-                  {{ supportName(kind) }}
-                </button>
-              }
-            </div>
-            <label class="control-panel__field">
-              <span class="control-panel__label">Environnement du bac</span>
-              <select
-                class="control-panel__select"
-                data-new-tank-environment
-                (change)="newTankEnvironment.set($any($event.target).value)"
-              >
-                @for (id of roomEnvironmentIds; track id) {
-                  <option [value]="id" [selected]="id === newTankEnvironment()">
-                    {{ environmentName(id) }}
-                  </option>
-                }
-              </select>
-            </label>
-            <label class="control-panel__field">
-              <span class="control-panel__label">Taille</span>
-              <select
-                class="control-panel__select"
-                data-new-tank-size
-                (change)="newTankSize.set($any($event.target).value)"
-              >
-                @for (size of tankSizeIds; track size) {
-                  <option [value]="size" [selected]="size === newTankSize()">
-                    {{ tankSizeName(size) }}
-                  </option>
-                }
-              </select>
-            </label>
-            <label class="control-panel__field">
-              <span class="control-panel__label">Posé sur</span>
-              <select
-                class="control-panel__select"
-                data-new-tank-support
-                (change)="newTankSupport.set($any($event.target).value)"
-              >
-                <option value="sol" [selected]="newTankSupport() === 'sol'">Le sol</option>
-                @for (support of roomCatalog().supports; track support.id) {
-                  <option [value]="support.id" [selected]="newTankSupport() === '' + support.id">
-                    {{ support.name }}
-                  </option>
-                }
-              </select>
-            </label>
-            <button type="button" class="control-panel__button" data-add-tank (click)="onAddTank()">
-              Ajouter le bac
-            </button>
-            @if (roomCatalog().message; as message) {
-              <p class="control-panel__message control-panel__message--error" role="status">
-                {{ message }}
-              </p>
-            }
-            <ul class="control-panel__sheet-list" aria-label="Bacs de la pièce">
-              @for (tank of roomCatalog().tanks; track tank.id) {
-                <li class="control-panel__sheet-row" [attr.data-room-tank]="tank.id">
-                  <span>
-                    {{ tank.name }}
-                    <span class="control-panel__sheet-status">{{ tankStatus(tank) }}</span>
-                  </span>
-                  @if (!tank.shown) {
-                    @if (confirmTank() === tank.id) {
-                      <span
-                        class="control-panel__row"
-                        role="group"
-                        aria-label="Confirmer le retrait"
-                      >
-                        <button
-                          type="button"
-                          class="control-panel__button control-panel__button--compact"
-                          data-confirm-remove
-                          (click)="removeTank(tank.id)"
-                        >
-                          Retirer avec {{ tank.animals }} animaux
-                        </button>
-                        <button
-                          type="button"
-                          class="control-panel__button control-panel__button--compact"
-                          (click)="confirmTank.set(null)"
-                        >
-                          Garder
-                        </button>
-                      </span>
-                    } @else {
-                      <button
-                        type="button"
-                        class="control-panel__button control-panel__button--compact"
-                        data-remove-tank
-                        [attr.aria-label]="'Retirer ' + tank.name"
-                        (click)="onRemoveTank(tank)"
-                      >
-                        Retirer
-                      </button>
-                    }
-                  }
-                </li>
-              }
-              @for (support of roomCatalog().supports; track support.id) {
-                <li class="control-panel__sheet-row" [attr.data-room-support]="support.id">
-                  <span>{{ support.name }}</span>
-                  <button
-                    type="button"
-                    class="control-panel__button control-panel__button--compact"
-                    data-remove-support
-                    [attr.aria-label]="'Retirer ' + support.name"
-                    [attr.aria-disabled]="support.occupied"
-                    (click)="support.occupied || supportRemoved.emit(support.id)"
-                  >
-                    Retirer
-                  </button>
-                </li>
-              }
-            </ul>
-          </fieldset>
-        }
-
         <fieldset class="control-panel__section" data-section="simulation">
           <legend class="control-panel__legend">Simulation</legend>
           <label class="control-panel__field" for="panneau-vitesse">
@@ -549,6 +418,138 @@ export interface NewTankRequest {
             </button>
           </div>
         </fieldset>
+
+        @if (roomAvailable() && roomShown()) {
+          <!-- Bacs et meubles de la pièce (#305, lot 2b) : ajout à la première place libre,
+               retrait (confirmation si le bac est peuplé). Les bacs posés restent figés. Après
+               « Décor » : l'ordre au clavier des sections précédentes ne change pas. -->
+          <fieldset class="control-panel__section" data-section="bacs-meubles">
+            <legend class="control-panel__legend">Bacs et meubles</legend>
+            <div class="control-panel__row">
+              @for (kind of supportKinds; track kind) {
+                <button
+                  type="button"
+                  class="control-panel__button control-panel__button--compact"
+                  [attr.data-add-support]="kind"
+                  (click)="supportAdded.emit(kind)"
+                >
+                  {{ supportName(kind) }}
+                </button>
+              }
+            </div>
+            <label class="control-panel__field">
+              <span class="control-panel__label">Environnement du bac</span>
+              <select
+                class="control-panel__select"
+                data-new-tank-environment
+                (change)="newTankEnvironment.set($any($event.target).value)"
+              >
+                @for (id of roomEnvironmentIds; track id) {
+                  <option [value]="id" [selected]="id === newTankEnvironment()">
+                    {{ environmentName(id) }}
+                  </option>
+                }
+              </select>
+            </label>
+            <label class="control-panel__field">
+              <span class="control-panel__label">Taille</span>
+              <select
+                class="control-panel__select"
+                data-new-tank-size
+                (change)="newTankSize.set($any($event.target).value)"
+              >
+                @for (size of tankSizeIds; track size) {
+                  <option [value]="size" [selected]="size === newTankSize()">
+                    {{ tankSizeName(size) }}
+                  </option>
+                }
+              </select>
+            </label>
+            <label class="control-panel__field">
+              <span class="control-panel__label">Posé sur</span>
+              <select
+                class="control-panel__select"
+                data-new-tank-support
+                (change)="newTankSupport.set($any($event.target).value)"
+              >
+                <option value="sol" [selected]="newTankSupport() === 'sol'">Le sol</option>
+                @for (support of roomCatalog().supports; track support.id) {
+                  <option [value]="support.id" [selected]="newTankSupport() === '' + support.id">
+                    {{ support.name }}
+                  </option>
+                }
+              </select>
+            </label>
+            <button type="button" class="control-panel__button" data-add-tank (click)="onAddTank()">
+              Ajouter le bac
+            </button>
+            @if (roomCatalog().message; as message) {
+              <p class="control-panel__message control-panel__message--error" role="status">
+                {{ message }}
+              </p>
+            }
+            <ul class="control-panel__sheet-list" aria-label="Bacs de la pièce">
+              @for (tank of roomCatalog().tanks; track tank.id) {
+                <li class="control-panel__sheet-row" [attr.data-room-tank]="tank.id">
+                  <span>
+                    {{ tank.name }}
+                    <span class="control-panel__sheet-status">{{ tankStatus(tank) }}</span>
+                  </span>
+                  @if (!tank.shown) {
+                    @if (confirmTank() === tank.id) {
+                      <span
+                        class="control-panel__row"
+                        role="group"
+                        aria-label="Confirmer le retrait"
+                      >
+                        <button
+                          type="button"
+                          class="control-panel__button control-panel__button--compact"
+                          data-confirm-remove
+                          (click)="removeTank(tank.id)"
+                        >
+                          Retirer avec {{ tank.animals }} animaux
+                        </button>
+                        <button
+                          type="button"
+                          class="control-panel__button control-panel__button--compact"
+                          (click)="confirmTank.set(null)"
+                        >
+                          Garder
+                        </button>
+                      </span>
+                    } @else {
+                      <button
+                        type="button"
+                        class="control-panel__button control-panel__button--compact"
+                        data-remove-tank
+                        [attr.aria-label]="'Retirer ' + tank.name"
+                        (click)="onRemoveTank(tank)"
+                      >
+                        Retirer
+                      </button>
+                    }
+                  }
+                </li>
+              }
+              @for (support of roomCatalog().supports; track support.id) {
+                <li class="control-panel__sheet-row" [attr.data-room-support]="support.id">
+                  <span>{{ support.name }}</span>
+                  <button
+                    type="button"
+                    class="control-panel__button control-panel__button--compact"
+                    data-remove-support
+                    [attr.aria-label]="'Retirer ' + support.name"
+                    [attr.aria-disabled]="support.occupied"
+                    (click)="support.occupied || supportRemoved.emit(support.id)"
+                  >
+                    Retirer
+                  </button>
+                </li>
+              }
+            </ul>
+          </fieldset>
+        }
 
         <fieldset class="control-panel__section" data-section="population">
           <legend class="control-panel__legend">Population</legend>

@@ -15,8 +15,9 @@ une `TypeError`.
 
 ## Décision
 
-1. **Catalogue dans les réglages** : section « Bacs et meubles » du panneau, seulement quand
-   la pièce est affichée autour du bac tropical : boutons « Commode » et « Étagère basse »,
+1. **Catalogue dans les réglages** : section « Bacs et meubles » du panneau, après « Décor »
+   (l'ordre au clavier des sections précédentes ne change pas), seulement quand la pièce est
+   affichée autour du bac tropical : boutons « Commode » et « Étagère basse »,
    choix de l'environnement (hors bassin), de la taille et du support (sol ou meuble) d'un
    bac vide, liste des bacs (affiché, rangé, posé ; nombre d'animaux) et des meubles avec
    « Retirer ». Le bac affiché ne se retire pas ; un meuble qui porte un bac non plus.
