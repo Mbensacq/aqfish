@@ -439,7 +439,7 @@ describe('textes affichés, figés à la lettre (#304)', () => {
     expect(sheetNotes('grenouille')).toEqual([
       {
         text: 'Semi-aquatique : un quart de berge sèche environ, eau peu profonde (une dizaine de cm)',
-        status: 'Source : https://anapsid.org/bombina.html (secondaire) (source secondaire)',
+        status: 'Source : https://anapsid.org/bombina.html (secondaire) (milieu semi-aquatique)',
       },
       {
         text: 'Espèce choisie faute d’anoure vérifié dans la documentation du projet : paramètres à recouper',
