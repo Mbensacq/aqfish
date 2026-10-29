@@ -3593,10 +3593,10 @@
           "note": "Verdict OK, 1 bug mineur (#309), captures c097 publiées (94/94 identiques), 2968 tests, couverture 97,74 %"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-29T02:47:37.113Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-29T03:48:42.324Z",
+          "note": "PR #308 fusionnée → v1.2.6 ; main verte, release créée par la CI ; #304 et #307 fermées ; suppression de branche refusée"
         }
       },
       "metriques": {}
