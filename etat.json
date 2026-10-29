@@ -3771,6 +3771,12 @@
           "debut": "2026-10-29T17:35:43.409Z",
           "fin": "2026-10-29T17:54:55.278Z",
           "note": "Verdict RÉSERVES (e2e complète non rejouée en local), 0 bug, captures c102 publiées (99), e2e ciblés 17/17, 3102 tests"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-10-29T17:55:30.604Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
