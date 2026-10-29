@@ -1812,11 +1812,6 @@ export class AquariumHost {
   }
 
   /**
-   * Renomme le bac `id` de la liste (#316, `renameTank`) : nom normalisé, non vide, de
-   * `MAX_TANK_NAME_LENGTH` caractères au plus ; enregistré aussitôt. Refus : message dans
-   * `transferNotice`, nom inchangé. Sans effet en capture ou avant le démarrage.
-   */
-  /**
    * Règle le mode du bac affiché (#278) : en décor, eau, faim et santé sont en pause (pas
    * effacées) et toute espèce s'ajoute ; au retour en soins, l'état reprend où il était et
    * les animaux d'un autre milieu sont gardés (lot 1). La confirmation est demandée par le
@@ -1834,6 +1829,11 @@ export class AquariumHost {
     this.scheduleFrame();
   }
 
+  /**
+   * Renomme le bac `id` de la liste (#316, `renameTank`) : nom normalisé, non vide, de
+   * `MAX_TANK_NAME_LENGTH` caractères au plus ; enregistré aussitôt. Refus : message dans
+   * `transferNotice`, nom inchangé. Sans effet en capture ou avant le démarrage.
+   */
   renameTank(id: number, name: string): void {
     const world = this.currentWorld;
     if (!world || this.capture) {
