@@ -1,7 +1,24 @@
 // Déclarations communes au cadre haut (`dashboard-frame.scss`) et au bandeau bas
-// (`dashboard-status.scss`) du tableau de bord (#265) : une seule police, une seule surface
-// sombre translucide. Couleurs et opacités : variables posées par le cadre
-// (`DASHBOARD_COLORS`), celles que le test de contraste vérifie.
+// (`dashboard-status.scss`) du tableau de bord (#265), et au badge du mode décor qui les
+// remplace (`decor-badge.scss`, #320) : une seule police, une seule surface sombre
+// translucide, un seul emplacement horizontal. Couleurs et opacités : variables posées par
+// le cadre (`DASHBOARD_COLORS`), celles que le test de contraste vérifie.
+
+/// Marge des panneaux au bord de l'écran (boutons, aide-mémoire).
+$edge: 12px;
+/// Largeur de l'aide-mémoire déplié (`commands-help.scss`, `.commands-help`).
+$commands-help-width: 300px;
+/// Fin du bouton « Réglages » (`control-panel.scss`), mesurée depuis le bord gauche.
+$settings-button-end: 143px;
+
+/// Emplacement horizontal sur bureau (≥ 1100 px), dans la ligne des boutons : entre
+/// « Réglages » et l'aide-mémoire déplié, à `$edge` de chacun (155 px et 324 px). Si la
+/// largeur de l'aide-mémoire ou du bouton change, mettre à jour les valeurs ci-dessus
+/// (`e2e/cadrage-panneaux.spec.ts` vérifie le non-chevauchement).
+@mixin desk-slot {
+  right: $edge + $commands-help-width + $edge;
+  left: $settings-button-end + $edge;
+}
 
 /// Police du tableau de bord, à poser sur l'hôte : sans elle, le texte prend la police par
 /// défaut du navigateur (à empattements).

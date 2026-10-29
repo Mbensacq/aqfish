@@ -7,14 +7,13 @@
 
 :host {
   position: fixed;
-  right: 324px;
   bottom: 64px;
-  left: 155px;
   z-index: 0;
   display: flex;
   justify-content: center;
   pointer-events: none;
 
+  @include dashboard.desk-slot;
   @include dashboard.font;
 }
 

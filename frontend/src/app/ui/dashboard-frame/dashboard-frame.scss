@@ -17,8 +17,6 @@
 :host {
   position: fixed;
   top: 12px;
-  right: 324px;
-  left: 155px;
   // Plan 0 : au-dessus du canvas (avant lui dans le DOM), sous les panneaux (plan 1).
   z-index: 0;
   display: flex;
@@ -26,6 +24,7 @@
   pointer-events: none;
   color: var(--dashboard-ink);
 
+  @include dashboard.desk-slot;
   @include dashboard.font;
 }
 
