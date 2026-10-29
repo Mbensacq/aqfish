@@ -92,6 +92,11 @@
  * reproductibles à l'octet. Prime sur la vitesse de la sauvegarde. Sans effet en capture (le
  * monde y est déjà figé) ; absente ou invalide, vitesse habituelle.
  *
+ * Paramètre facultatif `mode=decor` (issue #278, ADR 0077) : le bac affiché au démarrage
+ * est en mode décor (eau, faim et santé en pause, toute espèce admise, `population=`
+ * compris), en capture comme hors capture quand l'URL décrit le monde ; toute autre valeur
+ * ou absent, mode soins (séries existantes inchangées).
+ *
  * Ce module est volontairement pur (aucune dépendance à Angular ni à Three.js).
  * Voir docs/ARCHITECTURE.md, section « Contrat de capture ».
  */
@@ -157,6 +162,8 @@ export interface CaptureParams {
    * une vitesse qui n'est pas l'une de `SIM_SPEEDS`.
    */
   readonly speed: number | null;
+  /** Vrai pour `mode=decor` : bac affiché en mode décor au démarrage (issue #278). */
+  readonly decorMode: boolean;
 }
 
 /**
@@ -248,6 +255,7 @@ export const DEFAULT_CAPTURE_PARAMS: CaptureParams = {
   roomLayout: [],
   tank: null,
   speed: null,
+  decorMode: false,
 };
 
 /** Temps de simulation maximal accepté (1 h), pour éviter un calcul démesuré. */
@@ -297,6 +305,7 @@ export function parseCaptureParams(search: string): CaptureParams {
     furniture: parseFurniture(params.get('meubles')),
     roomLayout: parseRoomLayout(params.get('bacs')),
     speed: parseSpeed(params.get('vitesse')),
+    decorMode: params.get('mode') === 'decor',
   };
 }
 

@@ -41,7 +41,16 @@ describe('parseCaptureParams', () => {
       furniture: [],
       roomLayout: [],
       speed: null,
+      decorMode: false,
     });
+  });
+
+  it('lit le mode décor : mode=decor seulement, sinon mode soins (#278)', () => {
+    expect(parseCaptureParams('?capture=1&mode=decor').decorMode).toBe(true);
+    for (const value of ['soins', 'Decor', 'décor', '1', '']) {
+      expect(parseCaptureParams(`?capture=1&mode=${value}`).decorMode).toBe(false);
+    }
+    expect(parseCaptureParams('?capture=1').decorMode).toBe(false);
   });
 
   it('lit les bacs et meubles de la pièce de N bacs : bacs= (#305)', () => {

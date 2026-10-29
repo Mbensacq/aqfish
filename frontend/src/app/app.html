@@ -23,21 +23,25 @@
     />
     <!-- Indicateur du moment de la journée (#73). -->
     <app-day-indicator [phase]="aquarium.dayPhase()" />
-    <!-- Tableau de bord (#256, #260) : eau et simulation sur le bord haut, santé et alertes au-dessus de la barre des vues ; toujours visible, sous les panneaux. -->
-    <app-dashboard-frame
-      [sample]="aquarium.waterSample()"
-      [readout]="aquarium.water()"
-      [phase]="aquarium.dayPhase()"
-      [hour]="aquarium.clockHour()"
-      [speed]="aquarium.speed()"
-    />
-    <app-dashboard-status
-      [sample]="aquarium.waterSample()"
-      [readout]="aquarium.water()"
-      [health]="aquarium.health()"
-      [environment]="aquarium.environment()"
-      [population]="aquarium.population()"
-    />
+    <!-- Tableau de bord (#256, #260) : eau et simulation sur le bord haut, santé et alertes au-dessus de la barre des vues ; toujours visible, sous les panneaux. En mode décor (#278), remplacé par le badge. -->
+    @if (aquarium.careMode() === 'decor') {
+      <app-decor-badge />
+    } @else {
+      <app-dashboard-frame
+        [sample]="aquarium.waterSample()"
+        [readout]="aquarium.water()"
+        [phase]="aquarium.dayPhase()"
+        [hour]="aquarium.clockHour()"
+        [speed]="aquarium.speed()"
+      />
+      <app-dashboard-status
+        [sample]="aquarium.waterSample()"
+        [readout]="aquarium.water()"
+        [health]="aquarium.health()"
+        [environment]="aquarium.environment()"
+        [population]="aquarium.population()"
+      />
+    }
     <!-- Panneau de contrôle (#52) : environnement (#87) et pièce (#187), bacs et meubles (#305), vitesse, heure et pluie (#106), décor et granulés (#117), eau (#207), population (#69), sauvegarde (#70). Fermé par défaut. -->
     <app-control-panel
       #panel
@@ -53,6 +57,7 @@
       [roomShown]="aquarium.room().shown"
       [roomCatalog]="aquarium.roomCatalog()"
       [tankList]="aquarium.tankList()"
+      [careMode]="aquarium.careMode()"
       [transferNotice]="aquarium.transferNotice()"
       [population]="aquarium.population()"
       [populationMax]="aquarium.populationMax()"
@@ -70,6 +75,7 @@
       (tankSelected)="aquarium.selectTank($event)"
       (animalTransferred)="aquarium.transferAnimal($event.species, $event.toId)"
       (tankRenamed)="aquarium.renameTank($event.id, $event.name)"
+      (careModeChanged)="aquarium.setCareMode($event)"
       (supportAdded)="aquarium.addRoomSupport($event)"
       (tankAdded)="aquarium.addRoomTank($event.environment, $event.size, $event.supportId)"
       (tankRemoved)="aquarium.removeRoomTank($event)"

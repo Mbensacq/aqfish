@@ -1,4 +1,5 @@
 import type { MixWarning } from './compatibility';
+import { acceptsSpecies } from './care-mode';
 import { environmentById, livesIn, type EnvironmentId } from './environment';
 import { isSpeciesId, setPopulationInPlace } from './population';
 import { SPECIES, type SpeciesId } from './species';
@@ -80,22 +81,45 @@ export function speciesCatalog(id: EnvironmentId): readonly CatalogEntry[] {
   if (cached !== undefined) {
     return cached;
   }
-  const entries = Object.freeze(
-    env.species.map((species): CatalogEntry => {
-      const def = SPECIES[species];
-      const initial = env.population.find((entry) => entry.species === species);
-      return Object.freeze({
-        species,
-        name: def.name,
-        scientificName: def.scientificName,
-        labels: SPECIES_LABELS[species],
-        defaultCount: initial?.count ?? 0,
-        maxCount: def.maxPopulation,
-      });
-    }),
-  );
+  const entries = Object.freeze(env.species.map((species) => catalogEntry(id, species)));
   CATALOG_CACHE.set(id, entries);
   return entries;
+}
+
+const DECOR_CATALOG_CACHE = new Map<EnvironmentId, readonly CatalogEntry[]>();
+
+/**
+ * Catalogue d'un bac de l'environnement `id` en mode décor (#278) : toutes les espèces du
+ * simulateur, celles de l'environnement d'abord (ordre du catalogue habituel), puis les
+ * autres dans l'ordre de `SPECIES`. Les espèces exclues pour raison légale (#262) ne sont pas
+ * dans `SPECIES` : elles restent absentes. Résultat figé, partagé entre les appels.
+ * @throws RangeError si l'environnement est inconnu.
+ */
+export function decorCatalog(id: EnvironmentId): readonly CatalogEntry[] {
+  const cached = DECOR_CATALOG_CACHE.get(id);
+  if (cached !== undefined) {
+    return cached;
+  }
+  const own = speciesCatalog(id);
+  const others = (Object.keys(SPECIES) as SpeciesId[])
+    .filter((species) => !livesIn(id, species))
+    .map((species) => catalogEntry(id, species));
+  const entries = Object.freeze([...own, ...others]);
+  DECOR_CATALOG_CACHE.set(id, entries);
+  return entries;
+}
+
+function catalogEntry(id: EnvironmentId, species: SpeciesId): CatalogEntry {
+  const def = SPECIES[species];
+  const initial = environmentById(id).population.find((entry) => entry.species === species);
+  return Object.freeze({
+    species,
+    name: def.name,
+    scientificName: def.scientificName,
+    labels: SPECIES_LABELS[species],
+    defaultCount: initial?.count ?? 0,
+    maxCount: def.maxPopulation,
+  });
 }
 
 /**
@@ -114,7 +138,8 @@ export function normalizedCount(count: number): number | null {
  * renvoie les espèces effectivement réglées et leur effectif obtenu. Chaque effectif est
  * arrondi, ramené à 0 au moins et à `populationLimit` au plus (maximum de l'espèce et place
  * restante sous `MAX_TOTAL_FISH`). Ignorés sans erreur : espèce inconnue (clés héritées
- * comprises), espèce qui ne vit pas dans l'environnement du monde, nombre non fini.
+ * comprises), espèce qui ne vit pas dans l'environnement du monde (sauf en mode décor, #278),
+ * nombre non fini.
  * Réservé au propriétaire unique du monde, comme `setPopulationInPlace`.
  */
 export function applySpeciesCountsInPlace(
@@ -124,7 +149,7 @@ export function applySpeciesCountsInPlace(
   const applied: { species: SpeciesId; count: number }[] = [];
   for (const { species, count } of requests) {
     const normalized = normalizedCount(count);
-    if (!isSpeciesId(species) || !livesIn(world.environment, species) || normalized === null) {
+    if (!isSpeciesId(species) || !acceptsSpecies(world, species) || normalized === null) {
       continue;
     }
     applied.push({ species, count: setPopulationInPlace(world, species, normalized) });

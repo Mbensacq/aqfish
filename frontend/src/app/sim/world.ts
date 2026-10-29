@@ -3,6 +3,7 @@ import { createWalker, stepWalker, type WalkerGround } from './axolotl';
 import { createFrog, stepFrog } from './frog';
 import { bubbleSourceFor, fillBubbles, type BubbleBuffer } from './bubbles';
 import { addRivalSteering, enforceRivalDistance, hasRivals } from './compatibility';
+import type { CareMode } from './care-mode';
 import { catappaActive, withCatappaCount } from './catappa';
 import { SIM_DT } from './constants';
 import { dayIntensityAt, hourAt, type DayClock } from './daylight';
@@ -118,6 +119,11 @@ export interface World {
    * azotés, filtre. Eau saine à la création ; avancé à chaque pas, après la nourriture.
    */
   readonly water: WaterState;
+  /**
+   * Mode du bac (#278, `sim/care-mode.ts`, ADR 0077) : absent, le mode soins d'un bac jamais
+   * passé par le mode décor. En mode `decor`, l'eau, la faim et la santé sont en pause.
+   */
+  readonly careMode?: CareMode;
 }
 
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
@@ -589,6 +595,10 @@ function stepInPlace(world: MutableWorld, dt: number, clock: SimClock): void {
   // Deux phases : le pilotage de banc de tous les poissons est calculé sur les positions du
   // début du pas, puis chacun nage. Le résultat ne dépend donc pas de l'ordre de mise à jour.
   const fishes = world.entities as Mutable<Entity>[];
+  const decor = world.careMode === 'decor';
+  if (decor) {
+    keepHunger(fishes);
+  }
   // Lieu du pas : une seule clé calculée par pas, lue par toutes les tables (`placeKey`).
   const place: Place = world;
   const key = placeKey(place);
@@ -661,6 +671,11 @@ function stepInPlace(world: MutableWorld, dt: number, clock: SimClock): void {
   }
   eatInPlace(fishes, food, bandOfFish, hardOfFish);
   stepFoodInPlace(food, dt);
+  if (decor) {
+    // Mode décor (#278) : faim rendue telle qu'au début du pas ; eau et santé en pause.
+    restoreHunger(fishes);
+    return;
+  }
   // Eau (issue #206) : sans hasard, après les poissons ; ne change rien à leur nage.
   stepWaterInPlace(
     world.water as MutableWaterState,
@@ -679,6 +694,24 @@ function stepInPlace(world: MutableWorld, dt: number, clock: SimClock): void {
     world.water.ph,
     catappaActive(world.water.catappa),
   );
+}
+
+/** Faims du début du pas en mode décor (#278), réutilisées d'un pas à l'autre. */
+let hungerKept = new Float64Array(64);
+
+function keepHunger(fishes: readonly Entity[]): void {
+  if (hungerKept.length < fishes.length) {
+    hungerKept = new Float64Array(2 * fishes.length);
+  }
+  for (let i = 0; i < fishes.length; i++) {
+    hungerKept[i] = fishes[i].hunger;
+  }
+}
+
+function restoreHunger(fishes: Mutable<Entity>[]): void {
+  for (let i = 0; i < fishes.length; i++) {
+    fishes[i].hunger = hungerKept[i];
+  }
 }
 
 function speciesById(species: SpeciesId): SpeciesDefinition {

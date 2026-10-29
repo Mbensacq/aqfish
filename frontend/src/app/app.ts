@@ -9,6 +9,7 @@ import { ControlPanel } from './ui/control-panel/control-panel';
 import { DashboardFrame } from './ui/dashboard-frame/dashboard-frame';
 import { DashboardStatus } from './ui/dashboard-frame/dashboard-status';
 import { DayIndicator } from './ui/day-indicator/day-indicator';
+import { DecorBadge } from './ui/decor-badge/decor-badge';
 import { DecorEditor } from './ui/decor-editor/decor-editor';
 import { EXCLUSIVE_PANELS } from './ui/exclusive-panels/exclusive-panels';
 import { SpeciesWiki } from './ui/species-wiki/species-wiki';
@@ -36,6 +37,7 @@ import { ViewPresetsBar } from './ui/view-presets-bar/view-presets-bar';
     DashboardFrame,
     DashboardStatus,
     DayIndicator,
+    DecorBadge,
     DecorEditor,
     SpeciesWiki,
     ViewPresetsBar,
