@@ -3735,6 +3735,12 @@
           "debut": "2026-10-29T14:34:15.437Z",
           "fin": "2026-10-29T15:06:01.180Z",
           "note": "Verdict RÉSERVES (faim visible seulement en attribut data), 0 bug, captures c101 publiées (98), e2e ciblés 4/4, 3079 tests ; suite e2e complète non menée en local, exploration manuelle non faite"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-10-29T15:06:33.720Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
