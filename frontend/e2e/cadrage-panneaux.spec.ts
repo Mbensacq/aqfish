@@ -251,3 +251,44 @@ test.describe('panneau « Commandes » (#79)', () => {
     expect(errors).toEqual([]);
   });
 });
+
+// #322 : le badge du mode décor remplace le cadre haut du tableau de bord ; il prend sa place
+// à toutes les largeurs, marges du téléphone (8 px sous 480 px) comprises. Sur bureau, le
+// cadre et le badge commencent à 12 px après « Réglages » et finissent à 12 px avant
+// l'aide-mémoire déplié (largeurs lues dans `src/app/ui/_panel-layout.scss`).
+test.describe('badge du mode décor à la place du cadre haut (#322)', () => {
+  const widths = [
+    { width: 1280, height: 720 },
+    { width: 768, height: 1024 },
+    { width: 390, height: 844 },
+    { width: 320, height: 568 },
+  ] as const;
+
+  for (const viewport of widths) {
+    test(`${viewport.width} × ${viewport.height} : même place que le cadre haut`, async ({
+      page,
+    }) => {
+      await page.setViewportSize(viewport);
+      const errors = await openScene(page, '?seed=42&vitesse=0');
+      const frame = await box(page.locator('app-dashboard-frame'));
+      await page.goto('/?seed=42&vitesse=0&mode=decor');
+      await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+      await expect(page.locator('[data-decor-badge]')).toBeVisible();
+      const badge = await box(page.locator('app-decor-badge'));
+      expect(badge.x).toBeCloseTo(frame.x, 1);
+      expect(badge.y).toBeCloseTo(frame.y, 1);
+      expect(badge.width).toBeCloseTo(frame.width, 1);
+      const margin = viewport.width <= 480 ? 8 : 12;
+      if (viewport.width >= 1100) {
+        const settings = await box(page.locator('.control-panel__toggle'));
+        const help = await box(page.locator('#aide-commandes'));
+        expect(badge.x - (settings.x + settings.width)).toBeGreaterThanOrEqual(margin);
+        expect(help.x - (badge.x + badge.width)).toBeCloseTo(margin, 1);
+      } else {
+        expect(badge.x).toBeCloseTo(margin, 1);
+        expect(viewport.width - (badge.x + badge.width)).toBeCloseTo(margin, 1);
+      }
+      expect(errors).toEqual([]);
+    });
+  }
+});

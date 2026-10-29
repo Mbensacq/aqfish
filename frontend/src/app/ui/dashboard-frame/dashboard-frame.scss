@@ -1,7 +1,8 @@
 // Tableau de bord de l'eau (#256, ADR 0059, docs/DA.md « Interface ») : sombre translucide
 // aux coins arrondis, sur le bord haut, jamais au centre du bac.
 // - Bureau (≥ 1100 px) : barre haute dans la ligne des boutons, entre « Réglages » (qui
-//   finit à 143 px) et l'aide-mémoire déplié (300 px à 12 px du bord droit).
+//   finit à 143 px) et l'aide-mémoire déplié (300 px à 12 px du bord droit), largeurs lues
+//   dans `../_panel-layout.scss`.
 // - Tablette (640 à 1099 px) : bandeau sous la ligne des boutons ; l'aide-mémoire, déplié par
 //   défaut, descend sous le bandeau (commands-help.scss).
 // - Téléphone (≤ 639 px) : bandeau compact sous les boutons, bouton « Eau » au-dessus des
@@ -15,8 +16,6 @@
 @use 'dashboard-surface' as dashboard;
 
 :host {
-  position: fixed;
-  top: 12px;
   // Plan 0 : au-dessus du canvas (avant lui dans le DOM), sous les panneaux (plan 1).
   z-index: 0;
   display: flex;
@@ -24,8 +23,9 @@
   pointer-events: none;
   color: var(--dashboard-ink);
 
-  @include dashboard.desk-slot;
   @include dashboard.font;
+  // Place (bureau, sous 1100 px, téléphone) commune avec le badge du mode décor (#322).
+  @include dashboard.top-slot;
 }
 
 .dashboard {
@@ -214,14 +214,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-@media (max-width: 1099px) {
-  :host {
-    top: 56px;
-    right: 12px;
-    left: 12px;
-  }
-}
-
 @media (max-width: 639px) {
   // Bouton « Eau » et simulation sur la première ligne, jauges dessous.
   .dashboard {
@@ -268,14 +260,6 @@
 
   .dashboard__level {
     font-size: 10px;
-  }
-}
-
-@media (max-width: 480px) {
-  :host {
-    top: 48px;
-    right: 8px;
-    left: 8px;
   }
 }
 
