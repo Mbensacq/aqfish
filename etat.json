@@ -3759,6 +3759,12 @@
           "debut": "2026-10-29T16:05:15.976Z",
           "fin": "2026-10-29T16:06:07.141Z",
           "note": "Issue #278 : mode décor, lot 1 (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-10-29T16:06:38.353Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
