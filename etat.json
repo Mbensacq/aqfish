@@ -3665,10 +3665,10 @@
           "note": "Verdict OK (lot 2b), 0 bug, captures c099 publiées (94/94 identiques + 2 nouvelles), 3037 tests ; exploration manuelle non faite"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-29T09:06:35.617Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-29T10:00:50.000Z",
+          "note": "PR #312 fusionnée → v1.3.1 ; main verte, release créée par la CI ; #305 et #311 fermées ; dette #313 ; suppression de la branche refusée par l'environnement (à faire par Mathis)"
         }
       },
       "metriques": {}
