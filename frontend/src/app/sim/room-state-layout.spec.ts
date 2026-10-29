@@ -353,7 +353,9 @@ describe('syncRoom (hôte du lot 1) garde la disposition', () => {
       }),
     ).room;
     const shown = stepRoom(room, 5).tanks[0]!.world;
-    const synced = syncRoom(room, shown, [room.tanks[1]!.world]);
+    // Lot 2b : un bac posé n'est jamais un monde rangé (`roomWorlds` l'écarte) ; il est gardé
+    // tel quel par `syncRoom`.
+    const synced = syncRoom(room, shown, []);
     expect(synced.room.furniture).toEqual(room.furniture);
     expect(synced.room.nextFurnitureId).toBe(1);
     expect(synced.room.tanks.map((t) => t.placement)).toEqual(room.tanks.map((t) => t.placement));
