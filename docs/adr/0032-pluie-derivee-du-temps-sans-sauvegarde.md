@@ -73,4 +73,4 @@ impacts, mêmes instants, mêmes ronds) :
 - Changer la cadence, les durées, le flux ou l'ordre des tirages change les captures avec
   pluie seulement ; les séries sans pluie et le bac tropical ne bougent pas.
 - La pluie ne touche pas la simulation des poissons (aucune interaction avec les gouttes).
-- La lumière ne change pas sous la pluie tant que l'issue #123 n'est pas traitée.
+- Lumière sous la pluie : ciel couvert par un facteur dédié aux couleurs (issue #123, ADR 0082).

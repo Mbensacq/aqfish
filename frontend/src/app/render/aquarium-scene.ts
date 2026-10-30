@@ -135,6 +135,16 @@ export interface AquariumScene {
   /** Teinte brun-thé appliquée (`setTea`). */
   readonly tea: number;
   /**
+   * Ciel couvert (pluie, issue #123) : facteur de luminosité dans ]0, 1] appliqué aux seules
+   * intensités des lumières et aux couleurs de l'eau et du dessous du sol, par-dessus la
+   * lumière du jour (`setDaylight`) ; les teintes des lumières ne changent pas. À 1 (valeur
+   * initiale), scène exactement inchangée.
+   * @throws RangeError si `brightness` n'est pas un réel dans ]0, 1].
+   */
+  setOvercast(brightness: number): void;
+  /** Facteur de ciel couvert appliqué (`setOvercast`). */
+  readonly overcast: number;
+  /**
    * Place le point de vue (position de la caméra) : pour le bassin enterré, retire le sol et
    * la margelle du côté de la caméra quand elle passe sous le niveau du sol (vue en coupe,
    * `pond-cutaway.ts`, #105). Sans effet pour le bac tropical.
@@ -220,6 +230,7 @@ export function createAquariumScene(environment: Environment = TROPICAL_TANK): A
   };
 
   let day = 1;
+  let overcast = 1;
   let turbidity = 0;
   let tea = 0;
   // Teinte brun-thé puis trouble ; `lerpColors(a, b, 0)` vaut exactement `a`.
@@ -242,9 +253,20 @@ export function createAquariumScene(environment: Environment = TROPICAL_TANK): A
     );
   };
   // `lerpColors(a, b, 0)` vaut exactement `a` : à midi et sans trouble, couleurs d'origine.
+  // Ciel couvert : `multiplyScalar` n'est appliqué qu'en dessous de 1 (couleurs exactes sinon).
   const applyWaterColors = (): void => {
     body.color.lerpColors(waterColors.clearBody, waterColors.nightBody, 1 - day);
     surface.color.lerpColors(waterColors.clearSurface, waterColors.nightSurface, 1 - day);
+    sandBottom.color.lerpColors(waterColors.daySandBottom, waterColors.nightSandBottom, 1 - day);
+    if (overcast !== 1) {
+      body.color.multiplyScalar(overcast);
+      surface.color.multiplyScalar(overcast);
+      sandBottom.color.multiplyScalar(overcast);
+    }
+  };
+  const applyLightIntensities = (): void => {
+    lights.ambient.intensity = mix(NIGHT_AMBIENT_INTENSITY, DAY_AMBIENT_INTENSITY, day) * overcast;
+    lights.sun.intensity = DAY_SUN_INTENSITY * mix(NIGHT_SUN_RATIO, 1, day) * overcast;
   };
 
   return {
@@ -273,19 +295,28 @@ export function createAquariumScene(environment: Environment = TROPICAL_TANK): A
       mixWaterTints();
       applyWaterColors();
     },
+    get overcast() {
+      return overcast;
+    },
+    setOvercast: (value) => {
+      if (!(value > 0 && value <= 1)) {
+        throw new RangeError(`ciel couvert dans ]0, 1] attendu (reçu : ${value})`);
+      }
+      overcast = value;
+      applyLightIntensities();
+      applyWaterColors();
+    },
     setDaylight: (light) => {
       day = light.intensity;
-      lights.ambient.intensity = mix(NIGHT_AMBIENT_INTENSITY, DAY_AMBIENT_INTENSITY, day);
       setRgb(lights.ambient.color, light.sky);
       lights.ambient.groundColor.lerpColors(
         waterColors.dayGround,
         waterColors.nightGround,
         1 - day,
       );
-      lights.sun.intensity = DAY_SUN_INTENSITY * mix(NIGHT_SUN_RATIO, 1, day);
       setRgb(lights.sun.color, light.tint);
+      applyLightIntensities();
       applyWaterColors();
-      sandBottom.color.lerpColors(waterColors.daySandBottom, waterColors.nightSandBottom, 1 - day);
       stones?.setDaylight(day);
       bank?.setDaylight(day);
       pondGround?.setDaylight(day);

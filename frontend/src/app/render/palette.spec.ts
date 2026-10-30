@@ -15,6 +15,7 @@ import {
   TWILIGHT_TONES,
 } from './palette';
 import { colorDistanceSq, hexToRgb, nearestPaletteIndex, type Rgb } from './pixel-art';
+import { RAIN_OVERCAST_BRIGHTNESS, RAIN_TONES } from './overcast';
 
 describe('PALETTE', () => {
   const names = Object.keys(PALETTE);
@@ -204,6 +205,11 @@ describe('Tons d’environnement (#148, ADR 0039)', () => {
       'chirurgienBleu',
       'eauThe',
       'eauTheClaire',
+      'vegetationClaireCouvert',
+      'vegetationLumineuseCouvert',
+      'rocheCouvert',
+      'rocheSombreCouvert',
+      'sableOmbreCouvert',
     ]);
     expect(ENVIRONMENT_TONE_COLORS).toEqual(Object.values(ENVIRONMENT_TONES));
     for (const name of ENVIRONMENT_TONE_NAMES) {
@@ -256,6 +262,28 @@ describe('Tons de l’eau brun-thé (#239)', () => {
     }
     const sum = (c: Rgb) => c[0] + c[1] + c[2];
     expect(sum(surface)).toBeGreaterThan(sum(body));
+  });
+});
+
+describe('Tons du ciel couvert (#123)', () => {
+  // Trois niveaux sur 255 au plus : `sableOmbreCouvert` est décalé pour rester discernable des
+  // tons du crépuscule (test « discernables » ci-dessus).
+  it('chaque ton est sa couleur de jour à RAIN_OVERCAST_BRIGHTNESS, à trois niveaux près', () => {
+    const sources: Record<string, string> = {
+      vegetationClaireCouvert: PALETTE.vegetationClaire,
+      vegetationLumineuseCouvert: PALETTE.vegetationLumineuse,
+      rocheCouvert: PALETTE.roche,
+      rocheSombreCouvert: PALETTE.rocheSombre,
+      sableOmbreCouvert: PALETTE.sableOmbre,
+    };
+    expect(Object.keys(sources)).toEqual(RAIN_TONES);
+    for (const name of RAIN_TONES) {
+      const tone = hexToRgb(ENVIRONMENT_TONES[name as keyof typeof ENVIRONMENT_TONES]);
+      const day = hexToRgb(sources[name]);
+      for (let k = 0; k < 3; k++) {
+        expect(Math.abs(tone[k] - day[k] * RAIN_OVERCAST_BRIGHTNESS)).toBeLessThanOrEqual(3 / 255);
+      }
+    }
   });
 });
 

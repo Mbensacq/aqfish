@@ -12,6 +12,7 @@ import { TONE_PENALTY_OFF } from './night-shade';
 import { environmentTonePenalties, FOOD_ALPHA_THRESHOLD, PalettePass } from './palette-pass';
 import { FOOD_ALPHA_MARKER } from './food-layer';
 import { PIXEL_SIZE } from './pixel-art';
+import { RAIN_TONES } from './overcast';
 
 function material(pass: PalettePass): ShaderMaterial {
   return (pass.scene.children[0] as Mesh).material as ShaderMaterial;
@@ -145,6 +146,7 @@ describe('PalettePass', () => {
       TONE_PENALTY_OFF,
       TONE_PENALTY_OFF,
       TONE_PENALTY_OFF,
+      ...new Array<number>(RAIN_TONES.length).fill(TONE_PENALTY_OFF),
     ];
     expect(pass.environmentPenalties).toEqual(partial);
     expect(material(pass).uniforms['uEnvironmentPenalty'].value).toEqual(partial);
@@ -158,9 +160,11 @@ describe('PalettePass', () => {
     expect(() => pass.setEnvironmentPenalties([0])).toThrow(RangeError);
     expect(() => pass.setEnvironmentPenalties([0, 0, 0, 0])).toThrow(RangeError);
     expect(() => pass.setEnvironmentPenalties([0, 0, 0, 0, 0, 0, 0])).toThrow(RangeError);
-    expect(() => pass.setEnvironmentPenalties([0, 0, 0, 0, 0, 0, 0, 0, 0])).toThrow(RangeError);
+    expect(() => pass.setEnvironmentPenalties(new Array<number>(14).fill(0))).toThrow(RangeError);
     for (const bad of [-1, Number.NaN, Number.POSITIVE_INFINITY]) {
-      expect(() => pass.setEnvironmentPenalties([0, bad, 0, 0, 0, 0, 0, 0])).toThrow(RangeError);
+      expect(() =>
+        pass.setEnvironmentPenalties([0, bad, ...new Array<number>(11).fill(0)]),
+      ).toThrow(RangeError);
     }
     // Un refus ne change rien.
     expect(pass.environmentPenalties).toEqual(ENVIRONMENT_TONE_NAMES.map(() => TONE_PENALTY_OFF));
@@ -171,8 +175,10 @@ describe('PalettePass', () => {
 describe('environmentTonePenalties (#148, ADR 0039)', () => {
   it('pénalité nulle pour les tons déclarés, écartés sinon', () => {
     const off = TONE_PENALTY_OFF;
-    // Six tons du récif, puis les deux de l'eau brun-thé (#239).
-    const tea = [off, off];
+    // Six tons du récif, puis les deux de l'eau brun-thé (#239) et les cinq du ciel couvert
+    // (#123).
+    const rain = [off, off, off, off, off];
+    const tea = [off, off, ...rain];
     expect(environmentTonePenalties([])).toEqual([off, off, off, off, off, off, ...tea]);
     expect(environmentTonePenalties(['eauRecif', 'eauRecifClaire'])).toEqual([
       0,
@@ -212,8 +218,26 @@ describe('environmentTonePenalties (#148, ADR 0039)', () => {
       off,
       0,
       0,
+      ...rain,
     ]);
-    expect(environmentTonePenalties([...ENVIRONMENT_TONE_NAMES])).toEqual([0, 0, 0, 0, 0, 0, 0, 0]);
+    expect(environmentTonePenalties(RAIN_TONES)).toEqual([
+      off,
+      off,
+      off,
+      off,
+      off,
+      off,
+      off,
+      off,
+      0,
+      0,
+      0,
+      0,
+      0,
+    ]);
+    expect(environmentTonePenalties([...ENVIRONMENT_TONE_NAMES])).toEqual(
+      new Array<number>(13).fill(0),
+    );
   });
 
   it('refuse un nom qui n’est pas un ton d’environnement', () => {
