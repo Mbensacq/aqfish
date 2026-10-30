@@ -36,4 +36,17 @@ test.describe('Forme du bassin (#190)', () => {
     await expect(page.getByRole('combobox', { name: 'Forme du bassin' })).toHaveCount(0);
     expect(errors).toEqual([]);
   });
+
+  test('forme= inconnue ou vide au bassin : retombe sur le rectangle, sans erreur', async ({
+    page,
+  }) => {
+    for (const valeur of ['triangle', '', 'OVALE%00']) {
+      const errors = await openScene(
+        page,
+        `?capture=1&seed=42&environnement=bassin&forme=${valeur}`,
+      );
+      await expect(host(page)).toHaveAttribute('data-aqfish-shape', 'rectangle');
+      expect(errors).toEqual([]);
+    }
+  });
 });
