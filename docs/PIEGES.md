@@ -6,6 +6,12 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Test du fond d'écran qui attend la lecture d'`aqfish-fond.json` : poser la globale**
+  (cycle 111, #332) : depuis #332, le fichier n'est lu que dans le paquet (globale
+  `aqfishFond`) ou en `file://` ; un test unitaire ou e2e en `?fond=1` sans globale ne lit
+  plus rien et démarre aussitôt (source `sauvegarde` ou `defaut`). Pour tester le fichier,
+  poser `window.aqfishFond = { config: null, fps: null }` (`packageGlobal` dans
+  `aquarium-host.spec.ts`, `asPackage` dans `e2e/fond-ecran.spec.ts`). (2026-10-30)
 - **Repère clair sur un mur latéral de la pièce : il traverse l'eau en vue de côté** (cycle
   108, #324) : la cimaise reprise sur les murs de gauche et de droite (à 25 cm au-dessus du
   bac) se voyait, en vue `side`, comme un trait gris en travers de l'eau, au fond du bac ; les

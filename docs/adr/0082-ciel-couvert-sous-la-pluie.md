@@ -35,7 +35,7 @@ captures sans pluie identiques à l'octet.
   assombrie, ils restent lisibles. Non essayé ici, mais d'après les distances de la palette,
   un koï orange à 85 % se rapproche du triton et des gouttes assombries de l'eau claire.
 - Assombrissement immédiat à la bascule de la pluie (aucune transition) : la pluie elle-même
-  apparaît d'un coup.
+  apparaît d'un coup. **Remplacé au cycle 111** (#338) : voir « Mise à jour » ci-dessous.
 
 ## Options écartées
 
@@ -57,3 +57,16 @@ captures sans pluie identiques à l'octet.
   longue, sans effet mesurable sur les captures).
 - Sans pluie, rien ne change : facteur exactement 1, tons couverts écartés
   (`TONE_PENALTY_OFF`).
+
+## Mise à jour (cycle 111, #338) : fondu du facteur
+
+- Une bascule de la pluie **en cours de route** (touche `R`, case du panneau) fait glisser le
+  facteur vers sa cible à vitesse constante, en `OVERCAST_FADE_SECONDS` (3 s) de temps réel
+  (`stepOvercast`, `render/overcast.ts`), avancé par la boucle de rendu comme les transitions de
+  caméra (`AquariumView.stepOvercastFade`). La cible est atteinte exactement : 1 hors pluie.
+- Au démarrage, au changement de vue et en capture (`pluie=1`), le facteur est posé d'un coup
+  (`setRain` sans fondu) : la boucle de capture n'avance jamais le fondu, les captures restent
+  identiques à l'octet, avec ou sans pluie.
+- Gouttes, ronds et tons couverts de la passe palette apparaissent toujours d'un coup : le
+  fondu ne porte que sur l'assombrissement. Temps réel plutôt que simulé : à `vitesse=0` ou
+  ×8, le ciel se couvre au même rythme.

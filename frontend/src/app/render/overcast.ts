@@ -33,3 +33,28 @@ export const RAIN_TONES: readonly string[] = [
 export function overcastBrightness(raining: boolean): number {
   return raining ? RAIN_OVERCAST_BRIGHTNESS : 1;
 }
+
+/**
+ * Durée du fondu du ciel couvert (issue #338), en secondes de temps réel : temps pour passer
+ * de 1 à `RAIN_OVERCAST_BRIGHTNESS`, ou l'inverse, quand la pluie bascule en cours de route.
+ */
+export const OVERCAST_FADE_SECONDS = 3;
+
+/**
+ * Facteur de ciel couvert `current` avancé de `dtSeconds` vers `target`, à vitesse constante
+ * (l'écart entier `1 − RAIN_OVERCAST_BRIGHTNESS` en `OVERCAST_FADE_SECONDS`) : la cible est
+ * atteinte **exactement** (1 hors pluie, jamais 0,999…). Pas nul, négatif ou non fini :
+ * `current` inchangé ; `current` non fini : `target`.
+ */
+export function stepOvercast(current: number, target: number, dtSeconds: number): number {
+  if (!Number.isFinite(current)) {
+    return target;
+  }
+  const dt = Number.isFinite(dtSeconds) && dtSeconds > 0 ? dtSeconds : 0;
+  const step = ((1 - RAIN_OVERCAST_BRIGHTNESS) / OVERCAST_FADE_SECONDS) * dt;
+  const gap = target - current;
+  if (Math.abs(gap) <= step) {
+    return target;
+  }
+  return current + Math.sign(gap) * step;
+}

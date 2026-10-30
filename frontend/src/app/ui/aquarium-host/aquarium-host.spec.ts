@@ -13,6 +13,7 @@ import { createRoom } from '../../sim/room-state';
 import { DEFAULT_SAVE_SETTINGS, serializeWorld } from '../../sim/save';
 import { DEFAULT_ROOM } from '../../sim/room';
 import type { AquariumRenderer, AquariumView } from '../../render/aquarium-view';
+import { OVERCAST_FADE_SECONDS, RAIN_OVERCAST_BRIGHTNESS } from '../../render/overcast';
 import { MAX_STEPS_PER_FRAME } from '../../sim/constants';
 import { DEFAULT_SIM_SPEED } from '../../sim/sim-speed';
 import {
@@ -986,6 +987,35 @@ describe('AquariumHost', () => {
       fixture.destroy();
       await create('?seed=5&environnement=bassin');
       expect(host().rain()).toBe(false);
+    });
+
+    it('ciel couvert en fondu à la bascule (#338), d’un coup au démarrage', async () => {
+      await create('?seed=6&environnement=bassin');
+      setCanvasSize(800, 600);
+      frames.flush(0);
+      const view = (fixture.componentInstance as unknown as { view: AquariumView }).view;
+      expect(view.overcastFactor).toBe(1);
+      host().setRain(true);
+      // Bascule : la pluie est là, l'assombrissement suit au fil des images.
+      expect(view.overcastFactor).toBe(1);
+      frames.flush(16);
+      frames.flush(1016);
+      expect(view.overcastFactor).toBeLessThan(1);
+      expect(view.overcastFactor).toBeGreaterThan(RAIN_OVERCAST_BRIGHTNESS);
+      for (let t = 1016; t <= 1016 + (OVERCAST_FADE_SECONDS + 1) * 1000; t += 100) {
+        frames.flush(t);
+      }
+      expect(view.overcastFactor).toBe(RAIN_OVERCAST_BRIGHTNESS);
+      host().setRain(false);
+      for (let t = 6000; t <= 6000 + (OVERCAST_FADE_SECONDS + 1) * 1000; t += 100) {
+        frames.flush(t);
+      }
+      expect(view.overcastFactor).toBe(1);
+      fixture.destroy();
+      // pluie=1 en capture : ciel couvert dès la première image, sans fondu.
+      await create('?capture=1&seed=5&environnement=bassin&pluie=1');
+      const captured = (fixture.componentInstance as unknown as { view: AquariumView }).view;
+      expect(captured.overcastFactor).toBe(RAIN_OVERCAST_BRIGHTNESS);
     });
 
     it('sans effet avant le démarrage', () => {
@@ -2921,9 +2951,16 @@ describe('AquariumHost', () => {
       delete (window as unknown as Record<string, unknown>)['aqfishFond'];
     });
 
+    /** Globale du paquet (`aqfish-fond.js`) sans configuration embarquée. */
+    function packageGlobal(): void {
+      (window as unknown as Record<string, unknown>)['aqfishFond'] = { config: null, fps: null };
+    }
+
     it('lit aqfish-fond.json à côté de la page, en priorité sur la sauvegarde locale', async () => {
       serveConfig(serializeWorld(createDefaultWorld(9, 'bassin')));
       saveStorage!.setItem(SAVE_STORAGE_KEY, serializeWorld(createDefaultWorld(3, 'recif')));
+      // Dans le paquet (globale présente) : le fichier est lu (#332).
+      packageGlobal();
       await create('?fond=1');
       await settle();
       expect(fetchMock).toHaveBeenCalledWith('aqfish-fond.json', { cache: 'no-store' });
@@ -2936,7 +2973,10 @@ describe('AquariumHost', () => {
     it('fichier invalide : la sauvegarde locale', async () => {
       serveConfig('<!doctype html>');
       saveStorage!.setItem(SAVE_STORAGE_KEY, serializeWorld(createDefaultWorld(3, 'bassin')));
+      packageGlobal();
       await create('?fond=1');
+      await settle();
+      expect(fetchMock).toHaveBeenCalledTimes(1);
       await settle();
       expect(element().getAttribute(WALLPAPER_ATTRIBUTE)).toBe('sauvegarde');
       expect(element().getAttribute(ENVIRONMENT_ATTRIBUTE)).toBe('bassin');
@@ -2945,10 +2985,22 @@ describe('AquariumHost', () => {
     it('fichier absent et sauvegarde illisible : la scène par défaut', async () => {
       serveConfig(null);
       saveStorage!.setItem(SAVE_STORAGE_KEY, '{illisible');
+      packageGlobal();
       await create('?fond=1');
       await settle();
       expect(element().getAttribute(WALLPAPER_ATTRIBUTE)).toBe('defaut');
       expect(element().getAttribute(ENVIRONMENT_ATTRIBUTE)).toBe('tropical');
+    });
+
+    it('fond=1 hors du paquet, en http : aucun fichier lu (pas de 404 en console, #332)', async () => {
+      serveConfig(serializeWorld(createDefaultWorld(9, 'bassin')));
+      saveStorage!.setItem(SAVE_STORAGE_KEY, serializeWorld(createDefaultWorld(3, 'recif')));
+      expect(window.location.protocol).not.toBe('file:');
+      await create('?fond=1');
+      await settle();
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(element().getAttribute(WALLPAPER_ATTRIBUTE)).toBe('sauvegarde');
+      expect(element().getAttribute(ENVIRONMENT_ATTRIBUTE)).toBe('recif');
     });
 
     it('fetch refusé (file://) : la configuration du script aqfish-fond.js', async () => {
@@ -3047,7 +3099,10 @@ describe('AquariumHost', () => {
       let release: (r: Response) => void = () => undefined;
       fetchMock = vi.fn(() => new Promise<Response>((resolve) => (release = resolve)));
       Object.defineProperty(window, 'fetch', { configurable: true, value: fetchMock });
+      // Dans le paquet : le fichier est lu, le démarrage attend sa réponse.
+      packageGlobal();
       await create('?fond=1');
+      expect(fetchMock).toHaveBeenCalledTimes(1);
       fixture.destroy();
       release({ ok: false, text: async () => '' } as Response);
       await settle();

@@ -76,3 +76,7 @@ par Mathis** (`docs/FOND-ECRAN.md`).
 - À vérifier par Mathis dans Wallpaper Engine : accès aux fichiers voisins (XHR) ou repli sur
   le script, modules ES en local, visibilité de la page quand une application est en plein
   écran, limiteur d'images de Wallpaper Engine combiné au nôtre.
+- Mise à jour (cycle 111, #332) : `aqfish-fond.json` n'est lu que dans le paquet (globale
+  `aqfishFond` présente) ou en `file://` (`shouldReadWallpaperFile`) ; en ligne ou sous
+  `ng serve` avec `fond=1`, la lecture d'un fichier absent laissait une erreur 404 en console.
+  L'e2e simule le paquet en posant la globale (`asPackage`, `e2e/fond-ecran.spec.ts`).

@@ -1,6 +1,6 @@
 {
   "name": "aqfish",
-  "version": "1.4.5",
+  "version": "1.4.6",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
@@ -26,7 +26,6 @@
     "@angular/core": "^21.2.0",
     "@angular/forms": "^21.2.0",
     "@angular/platform-browser": "^21.2.0",
-    "@angular/router": "^21.2.0",
     "@dimforge/rapier3d-compat": "0.21.0",
     "rxjs": "~7.8.0",
     "three": "^0.186.1",

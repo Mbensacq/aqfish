@@ -43,10 +43,12 @@ import {
   DEFAULT_WALLPAPER_FPS,
   frameDue,
   readWallpaperGlobal,
+  shouldReadWallpaperFile,
   WALLPAPER_CONFIG_FILE,
   wallpaperGlobalText,
   wallpaperOrbitAngle,
   type FrameLimiter,
+  type WallpaperGlobal,
   type WallpaperSource,
 } from '../../core/wallpaper/wallpaper';
 import {
@@ -966,13 +968,14 @@ export class AquariumHost {
   /**
    * Fait pleuvoir ou arrête la pluie (#106) : gouttes, ronds à la surface et nénuphars qui
    * frémissent. Sans effet hors du bassin (`Environment.rain`),
-   * en mode capture (`pluie=`) ou avant le démarrage. Rien n'est sauvegardé.
+   * en mode capture (`pluie=`) ou avant le démarrage. Rien n'est sauvegardé. Le ciel couvert
+   * suit en fondu (issue #338), avancé par la boucle de rendu.
    */
   setRain(enabled: boolean): void {
     if (!this.view || this.capture) {
       return;
     }
-    this.applyRain(enabled);
+    this.applyRain(enabled, true);
     this.scheduleFrame();
   }
 
@@ -2344,7 +2347,7 @@ export class AquariumHost {
         this.begin(win, params, null);
         return;
       }
-      void this.loadWallpaperConfig(win, wallpaperGlobalText(global)).then((choice) => {
+      void this.loadWallpaperConfig(win, global).then((choice) => {
         if (!this.stopped) {
           this.host.nativeElement.setAttribute(WALLPAPER_ATTRIBUTE, choice.source);
           this.begin(win, params, choice.value);
@@ -2359,12 +2362,16 @@ export class AquariumHost {
    * Configuration du fond d'écran (#279, ADR 0079) : `aqfish-fond.json` à côté de la page,
    * sinon la configuration du script `aqfish-fond.js` (si `fetch` est refusé, en `file://`),
    * sinon la sauvegarde locale, sinon la scène par défaut. Une source illisible est ignorée.
+   * Le fichier n'est lu que dans le paquet ou en `file://` (`shouldReadWallpaperFile`, #332).
    */
   private async loadWallpaperConfig(
     win: Window,
-    scriptText: string | null,
+    global: WallpaperGlobal | null,
   ): Promise<{ readonly source: WallpaperSource; readonly value: RestoredSave | null }> {
-    const fileText = await readLocalText(win, WALLPAPER_CONFIG_FILE);
+    const fileText = shouldReadWallpaperFile(win.location.protocol, global)
+      ? await readLocalText(win, WALLPAPER_CONFIG_FILE)
+      : null;
+    const scriptText = wallpaperGlobalText(global);
     return chooseWallpaperConfig<RestoredSave>(
       [
         { source: 'fichier', text: fileText },
@@ -2722,6 +2729,8 @@ export class AquariumHost {
       if (view.stepCameraTransition(realDt)) {
         this.exposeCamera();
       }
+      // Fondu du ciel couvert à la bascule de la pluie (#338) : jamais en capture.
+      view.stepOvercastFade(realDt);
       if (this.dropAnimation) {
         this.stepDropAnimation(view, realDt);
       }
@@ -2935,9 +2944,12 @@ export class AquariumHost {
     this.view?.setCatappa(world.water.catappa);
   }
 
-  /** Applique la pluie à la vue courante et expose l'état obtenu (`data-aqfish-rain`). */
-  private applyRain(enabled: boolean): void {
-    const raining = this.view?.setRain(enabled) ?? false;
+  /**
+   * Applique la pluie à la vue courante et expose l'état obtenu (`data-aqfish-rain`).
+   * `fade` : ciel couvert en fondu (bascule en cours de route), sinon d'un coup (démarrage).
+   */
+  private applyRain(enabled: boolean, fade = false): void {
+    const raining = this.view?.setRain(enabled, fade) ?? false;
     this.rain.set(raining);
     this.host.nativeElement.setAttribute(RAIN_ATTRIBUTE, String(raining));
   }
