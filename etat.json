@@ -3935,10 +3935,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-30T06:42:34.927Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-30T06:42:56.792Z",
+          "note": "Issue #190 : forme du bassin ovale et haricot (M)"
         }
       },
       "metriques": {}
