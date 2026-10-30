@@ -3881,10 +3881,10 @@
           "note": "Verdict OK, 0 bug, captures c105 publiées (100/100 identiques à c104)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-30T03:18:59.935Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-30T04:17:02.200Z",
+          "note": "PR #328 fusionnée → v1.4.0 ; main verte, release créée par la CI ; #323 fermée ; dette #329 ; fermeture de l'épopée #278 refusée par l'environnement (à faire par Planif/Mathis)"
         }
       },
       "metriques": {}
