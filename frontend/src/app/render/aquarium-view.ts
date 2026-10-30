@@ -858,6 +858,7 @@ export class AquariumView {
     }
     this.decorLayer.setTint(tint);
     this.lilyPadLayer.setTint(tint);
+    this.roomLayer.setDaylight(light, overcast);
     // Pénalités tirées de la seule intensité du jour : jamais de tons du soir à midi.
     const penalties = tonePenaltiesInto(light.intensity, this.penalties);
     this.pixelPass.setTonePenalties(penalties.night, penalties.twilight);

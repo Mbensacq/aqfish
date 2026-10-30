@@ -226,6 +226,10 @@ export type RoomPart =
   // Enveloppe de la pièce (#324) : plafond et poutres apparentes.
   | 'plafond'
   | 'poutre'
+  // Fenêtre du mur du fond (#342, `sim/room-window.ts`) : bois, vitre, tache de lumière au sol.
+  | 'fenetre'
+  | 'vitre'
+  | 'lumiere'
   // Meubles et plantes de la pièce (#188).
   | 'bois'
   | 'livre'

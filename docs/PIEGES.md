@@ -699,6 +699,14 @@ haut de sa section.
 
 ## Rendu
 
+- **Objet clair sur le mur du fond : traverse l'eau en vue de côté et de trois-quarts** (cycle
+  112, #342) : en vue `side`, le mur du fond se voit en enfilade derrière le bac ; une fenêtre
+  posée dessus, même à 1,5 m à gauche du bac, y traçait des traits clairs verticaux à travers
+  l'eau ; en trois-quarts, sa vitre vue à travers le haut du bac virait l'eau à la menthe.
+  S'éloigner du bac ne suffit pas (la perspective ramène le mur vers le centre) : masquer
+  l'objet dès que le bac s'interpose (`isWindowClear`, `sim/room-window.ts`). Et une saillie
+  égale à celle de la cimaise (1,5 cm, soit 2 cm au voxel) se confond avec elle : la cimaise
+  traversait la vitre ; dépasser d'un voxel. (2026-10-31)
 - **Objet plat posé sur le sable : masqué en dessous de 6 mm** (cycle 94, #239) : une feuille
   posée 2 mm au-dessus du sable ne s'affichait pas du tout, même sans filtre ; visible à
   8 mm. Les ombres plates du décor posées sur le sable l'emportent dans le tampon de

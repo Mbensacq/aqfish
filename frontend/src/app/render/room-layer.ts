@@ -9,6 +9,7 @@ import {
   Vector2,
 } from 'three';
 
+import type { DayLight } from '../sim/daylight';
 import { furnitureBlocks } from '../sim/room-furniture';
 import {
   isShellVisible,
@@ -21,6 +22,14 @@ import {
   type RoomPart,
   type RoomShell,
 } from '../sim/room';
+import {
+  createWindowLight,
+  isWindowClear,
+  roomWindow,
+  roomWindowBlocks,
+  windowLightInto,
+  type RoomWindow,
+} from '../sim/room-window';
 import type { TankDimensions } from '../sim/tank';
 import { createOutlineMaterial, SELECTION_COLOR, SELECTION_WIDTH_PX } from './decor-layer';
 import type { SceneLayer } from './effect-layer';
@@ -34,6 +43,11 @@ import { FACES } from './rock-model';
  * suivent la lumière du jour comme la margelle du bassin, sans lumière propre. Chaque paroi
  * de l'enveloppe (murs, plafond et poutres, #324) à part, en couleurs plates (voir
  * `wallMaterial`), pour être masquée seule quand la caméra passe de l'autre côté.
+ *
+ * Fenêtre du mur du fond (#342, ADR 0083) : son bois en couleurs plates comme le mur, sa vitre
+ * et la tache de lumière qu'elle pose au sol en couleurs plates multipliées par la lumière du
+ * jour (`setDaylight`, `windowLightInto`), en trois maillages ; bois et vitre masqués avec le
+ * mur du fond et dès que le bac s'interpose (`isWindowClear`).
  *
  * Masquée (pièce masquée ou environnement sans pièce), la couche n'a aucun maillage et sa
  * racine est invisible : la scène rendue est exactement celle d'avant (#187).
@@ -54,6 +68,11 @@ export const ROOM_COLORS: Readonly<Record<RoomPart, readonly [string, string]>> 
   // Enveloppe (#324, ADR 0081) : plafond sombre, poutres en deux tons de bois.
   plafond: [PALETTE.rocheSombre, PALETTE.rocheSombre],
   poutre: [PALETTE.sableOmbre, PALETTE.sableSombre],
+  // Fenêtre (#342, ADR 0083) : bois des poutres, vitre claire et tache au sol en tons de bois
+  // clair, teintées par la lumière du jour (`windowLightInto`).
+  fenetre: [PALETTE.sableSombre, PALETTE.sableOmbre],
+  vitre: [PALETTE.koiBlanc, PALETTE.koiBlanc],
+  lumiere: [PALETTE.sableSombre, PALETTE.sableOmbre],
   // Meubles et plantes de la pièce (#188, ADR 0049).
   bois: [PALETTE.sableSombre, PALETTE.sableOmbre],
   livre: [PALETTE.koiRouge, PALETTE.neonBleu],
@@ -154,12 +173,29 @@ export class RoomLayer implements SceneLayer {
    * fond de la scène ; plus clair, l'eau vue devant lui virait au gris (`docs/PIEGES.md`).
    */
   private readonly wallMaterial = new MeshBasicMaterial({ vertexColors: true });
+  /** Vitre de la fenêtre (#342) : couleurs plates, teinte du ciel (`setDaylight`). */
+  private readonly glassMaterial = new MeshBasicMaterial({ vertexColors: true });
+  /**
+   * Tache de lumière de la fenêtre sur le parquet (#342) : couleurs plates, teinte de la
+   * lumière directe ; décalée en profondeur pour passer devant les lames qu'elle recouvre.
+   */
+  private readonly patchMaterial = new MeshBasicMaterial({
+    vertexColors: true,
+    polygonOffset: true,
+    polygonOffsetFactor: -1,
+    polygonOffsetUnits: -1,
+  });
+  private readonly windowLight = createWindowLight();
   /** Contour de l'élément sélectionné (#188), celui de la sélection du décor. */
   private readonly selectionMaterial = createOutlineMaterial(SELECTION_COLOR, SELECTION_WIDTH_PX);
   /** Maillage de chaque paroi de l'enveloppe construite (une paroi sans bloc n'en a pas). */
   private readonly shells: { readonly shell: RoomShell; readonly mesh: Mesh }[] = [];
   private interior: RoomInterior | null = null;
   private rest: Mesh | null = null;
+  private wood: Mesh | null = null;
+  private glass: Mesh | null = null;
+  private window: RoomWindow | null = null;
+  private patch: Mesh | null = null;
   private hull: Mesh | null = null;
   private dims: TankDimensions | null = null;
   private room: Room | null = null;
@@ -207,9 +243,65 @@ export class RoomLayer implements SceneLayer {
         this.object.add(mesh);
       }
     }
+    const windowBlocks = roomWindowBlocks(dims, room);
+    this.window = roomWindow(dims);
+    this.wood = this.windowMesh(windowBlocks, 'fenetre', this.wallMaterial, 'piece-fenetre-bois');
+    this.glass = this.windowMesh(windowBlocks, 'vitre', this.glassMaterial, 'piece-fenetre-vitre');
+    this.patch = this.windowMesh(
+      windowBlocks,
+      'lumiere',
+      this.patchMaterial,
+      'piece-fenetre-lumiere',
+    );
     this.object.visible = true;
     this.room = room;
     this.buildHull();
+  }
+
+  /** Maillage des blocs `part` de la fenêtre, ajouté à la couche ; `null` s'il n'y en a pas. */
+  private windowMesh(
+    blocks: readonly RoomBlock[],
+    part: RoomPart,
+    material: MeshBasicMaterial,
+    name: string,
+  ): Mesh | null {
+    const own = blocks.filter((b) => b.part === part);
+    if (own.length === 0) {
+      return null;
+    }
+    const mesh = new Mesh(createGeometry(buildRoomMesh(own)), material);
+    mesh.name = name;
+    this.object.add(mesh);
+    return mesh;
+  }
+
+  /**
+   * Teinte la vitre et la tache de lumière de la fenêtre selon la lumière du jour `light` et
+   * le ciel couvert `overcast` (`windowLightInto`) ; gardée quand la pièce est reconstruite.
+   * Appelée à chaque changement de lumière : aucune allocation.
+   */
+  setDaylight(light: DayLight, overcast = 1): void {
+    const { glass, patch } = windowLightInto(light, overcast, this.windowLight);
+    this.glassMaterial.color.setRGB(glass[0], glass[1], glass[2]);
+    this.patchMaterial.color.setRGB(patch[0], patch[1], patch[2]);
+  }
+
+  /** Multiplicateurs courants de la vitre et de la tache (tests). */
+  get windowColors(): { readonly glass: readonly number[]; readonly patch: readonly number[] } {
+    return {
+      glass: this.glassMaterial.color.toArray(),
+      patch: this.patchMaterial.color.toArray(),
+    };
+  }
+
+  /** Vrai si la vitre de la fenêtre est affichée (tests). */
+  get windowVisible(): boolean {
+    return this.object.visible && (this.glass?.visible ?? false);
+  }
+
+  /** Vrai si la tache de lumière de la fenêtre est construite (tests). */
+  get patchBuilt(): boolean {
+    return this.patch !== null;
   }
 
   /**
@@ -270,6 +362,13 @@ export class RoomLayer implements SceneLayer {
     for (const { shell, mesh } of this.shells) {
       mesh.visible = isShellVisible(interior, shell, x, y, z);
     }
+    const { dims, window } = this;
+    if (dims && window && this.glass && this.wood) {
+      const shown =
+        isShellVisible(interior, 'fond', x, y, z) && isWindowClear(dims, window, x, y, z);
+      this.glass.visible = shown;
+      this.wood.visible = shown;
+    }
   }
 
   /** Vrai si la pièce est construite (tests). */
@@ -296,11 +395,20 @@ export class RoomLayer implements SceneLayer {
     this.clear();
     this.material.dispose();
     this.wallMaterial.dispose();
+    this.glassMaterial.dispose();
+    this.patchMaterial.dispose();
     this.selectionMaterial.dispose();
   }
 
   private clear(): void {
-    for (const mesh of [...this.shells.map((s) => s.mesh), this.rest, this.hull]) {
+    for (const mesh of [
+      ...this.shells.map((s) => s.mesh),
+      this.rest,
+      this.wood,
+      this.glass,
+      this.patch,
+      this.hull,
+    ]) {
       if (mesh) {
         this.object.remove(mesh);
         mesh.geometry.dispose();
@@ -309,6 +417,10 @@ export class RoomLayer implements SceneLayer {
     this.shells.length = 0;
     this.interior = null;
     this.rest = null;
+    this.wood = null;
+    this.glass = null;
+    this.window = null;
+    this.patch = null;
     this.hull = null;
     this.room = null;
     this.dims = null;
