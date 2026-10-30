@@ -4043,10 +4043,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-30T15:31:11.912Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-30T15:32:09.779Z",
+          "note": "Issue #336 : pièce fermée, signature setViewpoint, meubles sous poutres + commentaire overcast + test exclusion forme/dimensions (M)"
         }
       },
       "metriques": {}
