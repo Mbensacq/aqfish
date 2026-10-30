@@ -835,6 +835,12 @@ haut de sa section.
   trois-quarts, touffes d'herbe claires ternies. L'intensité n'est pas un simple
   « variateur » : elle choisit aussi les tons de la passe palette. Comparer les captures avec
   et sans l'effet avant de le garder (retiré, issue #123). (2026-10-21)
+- **Assombrir légèrement une scène : la palette de jour est trop espacée** (cycle 109, #123) :
+  un facteur dédié de 0,85 sur les lumières, l'eau et le décor (sans toucher à l'intensité du
+  jour) ne changeait presque rien à l'image (herbe et eau ramenées à leur couleur de midi) et
+  faisait passer la margelle du beige au gris. Un assombrissement léger demande des tons
+  intermédiaires proposés seulement dans ce cas (tons d'environnement, ADR 0082). Mesurer la
+  luminance moyenne et l'histogramme des captures avant et après, pas seulement l'œil. (2026-10-30)
 - **Petit objet en plusieurs pièces : un contour par pièce le noircit** (cycle 36, #104) :
   une fleur de ~15 pixels faite de 13 pétales, chacun avec sa coque de contour, montrait en
   vue trois-quarts des traits noirs entre tous les pétales. Dessiner toutes les coques

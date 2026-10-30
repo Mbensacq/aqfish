@@ -17,6 +17,8 @@ import {
 import { cameraPresetPose } from './camera-presets';
 import { SAND_THICKNESS } from '../sim/tank';
 import { DECOR_NIGHT_TINT, NIGHT_FLAT_BRIGHTNESS, TONE_PENALTY_OFF } from './night-shade';
+import { RAIN_OVERCAST_BRIGHTNESS, RAIN_TONES } from './overcast';
+import { environmentTonePenalties } from './palette-pass';
 
 /** Double du renderer WebGL qui consigne les appels (jsdom n'a pas WebGL). */
 class RecordingRenderer implements AquariumRenderer {
@@ -224,13 +226,15 @@ describe('AquariumView (tons d’environnement, #148)', () => {
         interactive: false,
         environment,
       });
-      // Six tons du récif, puis les deux de l'eau brun-thé (#239), écartés sans feuille.
+      // Six tons du récif, puis les deux de l'eau brun-thé (#239), écartés sans feuille, et
+      // les cinq du ciel couvert (#123), écartés sans pluie.
       const expected = [
         ...(environment === REEF
           ? [0, 0, 0, 0, 0, 0]
           : new Array<number>(6).fill(TONE_PENALTY_OFF)),
         TONE_PENALTY_OFF,
         TONE_PENALTY_OFF,
+        ...new Array<number>(RAIN_TONES.length).fill(TONE_PENALTY_OFF),
       ];
       expect(view.environmentTonePenalties).toEqual(expected);
       // L'heure ne les touche pas.
@@ -253,9 +257,15 @@ describe('AquariumView (tons d’environnement, #148)', () => {
       const base = view.environmentTonePenalties.slice(0, 6);
       view.setWaterTea(1);
       expect(view.waterTea).toBe(1);
-      expect(view.environmentTonePenalties).toEqual([...base, 0, 0]);
+      const dry = new Array<number>(RAIN_TONES.length).fill(TONE_PENALTY_OFF);
+      expect(view.environmentTonePenalties).toEqual([...base, 0, 0, ...dry]);
       view.setWaterTea(0);
-      expect(view.environmentTonePenalties).toEqual([...base, TONE_PENALTY_OFF, TONE_PENALTY_OFF]);
+      expect(view.environmentTonePenalties).toEqual([
+        ...base,
+        TONE_PENALTY_OFF,
+        TONE_PENALTY_OFF,
+        ...dry,
+      ]);
       view.setCatappa([1, 0]);
       expect(view.catappaCounts).toEqual([2, 1]);
       view.setCatappa(undefined);
@@ -640,6 +650,77 @@ describe('AquariumView (ronds de pluie vus de biais, #125)', () => {
     view.setFilter('aucun');
     view.renderFrame();
     expect(view.rainObliqueView).toBe(true);
+    view.dispose();
+  });
+});
+
+describe('AquariumView (ciel couvert sous la pluie, #123)', () => {
+  function pondView(): AquariumView {
+    const view = new AquariumView({
+      canvas: document.createElement('canvas'),
+      rendererFactory: () => new RecordingRenderer(),
+      pixelRatio: 1,
+      preset: 'top',
+      interactive: false,
+      environment: POND,
+    });
+    view.resize(1280, 720);
+    return view;
+  }
+
+  it('à midi sous la pluie : décor assombri, tons couverts proposés, tons du soir écartés', () => {
+    const view = pondView();
+    view.updateLight(lightAt(12));
+    const layers = view.flatBrightnesses.length;
+    const dry = [...view.environmentTonePenalties];
+    expect(dry.every((p) => p === TONE_PENALTY_OFF)).toBe(true);
+    view.setRain(true);
+    expect(view.decorTintValue).toEqual([
+      RAIN_OVERCAST_BRIGHTNESS,
+      RAIN_OVERCAST_BRIGHTNESS,
+      RAIN_OVERCAST_BRIGHTNESS,
+    ]);
+    // Poissons et bulles gardent leur clarté (koïs aux couleurs de midi).
+    expect(view.flatBrightnesses).toEqual(Array(layers).fill(1));
+    expect(view.tonePenalties).toEqual([TONE_PENALTY_OFF, TONE_PENALTY_OFF]);
+    expect(view.environmentTonePenalties).toEqual(environmentTonePenalties(RAIN_TONES));
+    // L'heure peut avancer sous la pluie : le ciel couvert reste appliqué.
+    view.updateLight(lightAt(12));
+    expect(view.decorTintValue[1]).toBe(RAIN_OVERCAST_BRIGHTNESS);
+    expect(view.tonePenalties).toEqual([TONE_PENALTY_OFF, TONE_PENALTY_OFF]);
+    // Fin de la pluie : valeurs de midi exactes.
+    view.setRain(false);
+    expect(view.decorTintValue).toEqual([1, 1, 1]);
+    expect(view.environmentTonePenalties).toEqual(dry);
+    view.dispose();
+  });
+
+  it('la nuit sous la pluie : pénalités de la nuit seule, décor plus sombre encore', () => {
+    const view = pondView();
+    view.updateLight(lightAt(0));
+    const penalties = [...view.tonePenalties];
+    const night = [...view.decorTintValue];
+    view.setRain(true);
+    expect(view.tonePenalties).toEqual(penalties);
+    for (let k = 0; k < 3; k++) {
+      expect(view.decorTintValue[k]).toBeCloseTo(night[k] * RAIN_OVERCAST_BRIGHTNESS, 12);
+    }
+    view.dispose();
+  });
+
+  it('sans pluie possible (bac tropical) : rien ne change', () => {
+    const view = new AquariumView({
+      canvas: document.createElement('canvas'),
+      rendererFactory: () => new RecordingRenderer(),
+      pixelRatio: 1,
+      preset: 'top',
+      interactive: false,
+    });
+    view.updateLight(lightAt(12));
+    const penalties = [...view.environmentTonePenalties];
+    expect(view.setRain(true)).toBe(false);
+    expect(view.decorTintValue).toEqual([1, 1, 1]);
+    expect(view.environmentTonePenalties).toEqual(penalties);
     view.dispose();
   });
 });

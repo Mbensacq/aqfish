@@ -160,6 +160,30 @@ export const ENVIRONMENT_TONES = {
   eauThe: '#6a4e2c',
   /** Eau teintée par les feuilles de catappa : surface, ambre plus clair. */
   eauTheClaire: '#9a7640',
+  /*
+   * Tons du ciel couvert (issue #123, ADR 0082) : couleurs du bassin à 85 % de leur
+   * luminosité (`RAIN_OVERCAST_BRIGHTNESS`), même teinte. Proposés seulement sous la pluie
+   * (`AquariumView.setRain`) ; sans eux, la palette de jour, trop espacée, ramène l'herbe et la
+   * margelle assombries à leur couleur de midi (ou à une couleur d'une autre famille). L'eau,
+   * translucide, reste sur ses couleurs de jour : aucun ton d'eau couverte n'y était choisi.
+   */
+  /** Herbe et feuilles claires sous un ciel couvert (`vegetationClaire` à 85 %). */
+  vegetationClaireCouvert: '#42833f',
+  /** Touffes d'herbe lumineuses sous un ciel couvert (`vegetationLumineuse` à 85 %). */
+  vegetationLumineuseCouvert: '#7ab25a',
+  /** Pierre de la margelle sous un ciel couvert (`roche` à 85 %). */
+  rocheCouvert: '#5e5a54',
+  /**
+   * Flancs à l'ombre de la margelle sous un ciel couvert (`rocheSombre` à 85 %, à un niveau
+   * près pour rester discernable de `rocheCrepusculeSombre`). Sans lui, ils tombent sur
+   * `verreSombre`, gris-vert.
+   */
+  rocheSombreCouvert: '#3a3934',
+  /**
+   * Terre et pierres beiges sous un ciel couvert (`sableOmbre` à 85 %, rouge relevé de deux
+   * niveaux pour rester discernable de `sableCrepusculeOmbre`).
+   */
+  sableOmbreCouvert: '#74654d',
 } as const;
 
 /**

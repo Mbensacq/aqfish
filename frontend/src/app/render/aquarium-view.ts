@@ -32,7 +32,7 @@ import {
 } from './camera-presets';
 import { SPECIES, speciesVariants, type SpeciesId } from '../sim/species';
 import type { Fish } from '../sim/swimmer';
-import type { DayLight } from '../sim/daylight';
+import { createDayLight, type DayLight } from '../sim/daylight';
 import { bubbleSourceFor } from '../sim/bubbles';
 import { environmentDataWater, type Environment } from '../sim/environment';
 import { terrainAt } from '../sim/terrain';
@@ -53,6 +53,7 @@ import { FishLayer, MAX_FISH_PER_SPECIES } from './fish-layer';
 import { FoodLayer } from './food-layer';
 import { scenePixelsPerMeter } from './food-size';
 import { LilyPadLayer } from './lily-pad-layer';
+import { overcastBrightness, RAIN_TONES } from './overcast';
 import { isObliqueView, RainLayer } from './rain-layer';
 import { RoomLayer } from './room-layer';
 import { isClick, toNormalizedDevice, waterSurfacePoint } from './food-pick';
@@ -160,6 +161,8 @@ export class AquariumView {
   /** Tampons réutilisés par `updateLight` (aucune allocation). */
   private readonly decorTint: MutableTint = [1, 1, 1];
   private readonly penalties: TonePenalties = { night: 0, twilight: 0 };
+  /** Dernière lumière du jour appliquée (`updateLight`), réappliquée quand la pluie change. */
+  private readonly light = createDayLight();
   /** Bulles du diffuseur (ADR 0017), selon la graine fixée par `setDecor`. */
   private readonly bubbleLayer: BubbleLayer;
   /** Granulés de nourriture (issue #67), posés par `updateFood`. */
@@ -342,8 +345,6 @@ export class AquariumView {
     this.renderer.setPixelRatio(options.pixelRatio);
     this.pixelPass = new PalettePass();
     this.world = createAquariumScene(options.environment);
-    // Tons propres à l'environnement (eau du récif, ADR 0039) : écartés ailleurs.
-    this.applyTonePenalties();
     this.fishLayers = Object.values(SPECIES).flatMap((species) =>
       speciesVariants(species).map(
         (_, index) => new FishLayer(species, MAX_FISH_PER_SPECIES, index),
@@ -365,6 +366,9 @@ export class AquariumView {
     );
     this.lilyPadLayer = new LilyPadLayer(this.world.dimensions, surfaceY);
     this.rainLayer = new RainLayer(environmentDataWater(this.world.environment));
+    // Tons propres à l'environnement (eau du récif, ADR 0039) : écartés ailleurs. Après la
+    // pluie, dont ils dépendent (tons du ciel couvert, #123).
+    this.applyTonePenalties();
     this.floatingLeafLayer = new FloatingLeafLayer(environmentDataWater(this.world.environment));
     this.floatingLeafLayer.object.visible = this.world.environment.floatingLeaves;
     this.effects = [this.bubbleLayer, this.rainLayer, this.floatingLeafLayer];
@@ -783,26 +787,48 @@ export class AquariumView {
    * Applique la lumière du jour (`sim/daylight.ts`, ADR 0018) : lumières, teinte de l'eau,
    * caustiques et reflet, luminosité des couleurs plates (poissons, bulles : ADR 0019),
    * teinte du décor et tons de nuit ou de crépuscule de la passe palette (ADR 0021).
+   * Sous la pluie, ciel couvert (issue #123, ADR 0082) : lumières, eau et teinte du décor
+   * multipliées par `overcastBrightness`, pénalités des tons de nuit et du soir inchangées.
    * Sans effet sur la caméra, le filtre et le reste de la scène.
    */
   updateLight(light: DayLight): void {
     if (!this.disposed) {
-      this.world.setDaylight(light);
-      this.waterLight.setDaylight(light.intensity);
-      const brightness = flatBrightness(light.intensity);
-      for (const layer of this.fishLayers) {
-        layer.setBrightness(brightness);
+      this.light.intensity = light.intensity;
+      for (let k = 0; k < 3; k++) {
+        this.light.tint[k] = light.tint[k];
+        this.light.sky[k] = light.sky[k];
       }
-      for (const layer of this.effects) {
-        layer.setBrightness(brightness);
-      }
-      this.foodLayer.setBrightness(brightness);
-      this.catappaLayer.setBrightness(brightness);
-      this.decorLayer.setTint(decorTintInto(light.intensity, this.decorTint));
-      this.lilyPadLayer.setTint(this.decorTint);
-      const penalties = tonePenaltiesInto(light.intensity, this.penalties);
-      this.pixelPass.setTonePenalties(penalties.night, penalties.twilight);
+      this.applyLight();
     }
+  }
+
+  /** Applique `this.light` et le ciel couvert de la pluie courante. */
+  private applyLight(): void {
+    const light = this.light;
+    const overcast = overcastBrightness(this.rainLayer.isEnabled);
+    this.world.setOvercast(overcast);
+    this.world.setDaylight(light);
+    this.waterLight.setDaylight(light.intensity);
+    // Poissons, bulles, gouttes et granulés (couleurs plates) gardent leur clarté : vus à
+    // travers l'eau assombrie, et des koïs ou des gouttes assombris changeraient de couleur.
+    const brightness = flatBrightness(light.intensity);
+    for (const layer of this.fishLayers) {
+      layer.setBrightness(brightness);
+    }
+    for (const layer of this.effects) {
+      layer.setBrightness(brightness);
+    }
+    this.foodLayer.setBrightness(brightness);
+    this.catappaLayer.setBrightness(brightness);
+    const tint = decorTintInto(light.intensity, this.decorTint);
+    for (let k = 0; k < 3; k++) {
+      tint[k] *= overcast;
+    }
+    this.decorLayer.setTint(tint);
+    this.lilyPadLayer.setTint(tint);
+    // Pénalités tirées de la seule intensité du jour : jamais de tons du soir à midi.
+    const penalties = tonePenaltiesInto(light.intensity, this.penalties);
+    this.pixelPass.setTonePenalties(penalties.night, penalties.twilight);
   }
 
   /**
@@ -958,7 +984,12 @@ export class AquariumView {
    */
   setRain(enabled: boolean): boolean {
     if (!this.disposed && this.world.environment.rain) {
+      const changed = this.rainLayer.isEnabled !== enabled;
       this.rainLayer.setEnabled(enabled);
+      if (changed) {
+        this.applyLight();
+        this.applyTonePenalties();
+      }
     }
     return this.rainLayer.isEnabled;
   }
@@ -988,13 +1019,18 @@ export class AquariumView {
 
   /**
    * Tons d'environnement proposés à la passe (ADR 0039) : ceux de l'environnement, plus les
-   * tons de l'eau brun-thé (`TEA_TONES`) quand elle est teintée (issue #239).
+   * tons de l'eau brun-thé (`TEA_TONES`) quand elle est teintée (issue #239), et ceux du ciel
+   * couvert (`RAIN_TONES`) sous la pluie (issue #123).
    */
   private applyTonePenalties(): void {
-    const tones = this.world.environment.tones;
-    this.pixelPass.setEnvironmentPenalties(
-      environmentTonePenalties(this.world.tea > 0 ? [...tones, ...TEA_TONES] : tones),
-    );
+    const tones = [...this.world.environment.tones];
+    if (this.world.tea > 0) {
+      tones.push(...TEA_TONES);
+    }
+    if (this.rainLayer.isEnabled) {
+      tones.push(...RAIN_TONES);
+    }
+    this.pixelPass.setEnvironmentPenalties(environmentTonePenalties(tones));
   }
 
   /**

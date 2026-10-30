@@ -36,6 +36,7 @@ import {
   WATER_LEVEL_RATIO,
 } from './aquarium-scene';
 import { ENVIRONMENT_TONES, isEnvironmentToneName, PALETTE } from './palette';
+import { RAIN_TONES } from './overcast';
 
 function mesh(name: string): Mesh {
   const object = createAquariumScene().scene.getObjectByName(name);
@@ -241,6 +242,40 @@ describe('createAquariumScene : lumière du jour', () => {
     expect(p.scene.turbidity).toBe(0);
   });
 
+  it('ciel couvert (#123) : lumières et eau plus sombres, teintes intactes, retour au bit près', () => {
+    const p = parts();
+    const before = fingerprint(p);
+    expect(p.scene.overcast).toBe(1);
+    p.scene.setOvercast(0.85);
+    expect(p.scene.overcast).toBe(0.85);
+    expect(p.ambient.intensity).toBeCloseTo(DAY_AMBIENT_INTENSITY * 0.85, 12);
+    expect(p.sun.intensity).toBeCloseTo(DAY_SUN_INTENSITY * 0.85, 12);
+    // Teintes des lumières inchangées : aucun ton chaud ni bleuté à midi.
+    expect(p.ambient.color.getHexString()).toBe('ffffff');
+    expect(p.sun.color.getHexString()).toBe('ffffff');
+    const day = new Color(PALETTE.eauMoyenne);
+    expect(p.body.color.r).toBeCloseTo(day.r * 0.85, 12);
+    expect(p.body.color.g).toBeCloseTo(day.g * 0.85, 12);
+    expect(p.body.color.b).toBeCloseTo(day.b * 0.85, 12);
+    // Suit la lumière du jour : la nuit sous la pluie, plus sombre que la nuit seule.
+    p.scene.setDaylight(lightAt(0));
+    expect(p.ambient.intensity).toBeCloseTo(NIGHT_AMBIENT_INTENSITY * 0.85, 12);
+    // Le trouble et la teinte brun-thé se recalculent sous le ciel couvert.
+    p.scene.setTurbidity(0.5);
+    p.scene.setTurbidity(0);
+    p.scene.setDaylight(lightAt(12));
+    p.scene.setOvercast(1);
+    expect(fingerprint(p)).toEqual(before);
+  });
+
+  it('ciel couvert : refuse une valeur hors de ]0, 1]', () => {
+    const p = parts();
+    for (const value of [0, -0.1, 1.1, Number.NaN, Number.POSITIVE_INFINITY]) {
+      expect(() => p.scene.setOvercast(value)).toThrow(RangeError);
+    }
+    expect(p.scene.overcast).toBe(1);
+  });
+
   it('au crépuscule : lumière orangée, intensités entre la nuit et le jour', () => {
     const p = parts();
     p.scene.setDaylight(lightAt(18));
@@ -278,8 +313,13 @@ describe('createAquariumScene : environnements (#87)', () => {
     expect(hex(materials(water)[0])).toBe(PALETTE.neonBleu);
     expect(hex(materials(water)[2])).toBe(PALETTE.neonBleu);
     // Tous les tons d'environnement sont ceux du récif, sauf l'eau brun-thé (#239), proposée
-    // dans tous les environnements quand l'eau est teintée.
-    expect(Object.keys(ENVIRONMENT_TONES)).toEqual([...REEF.tones, 'eauThe', 'eauTheClaire']);
+    // dans tous les environnements quand l'eau est teintée, et le ciel couvert de la pluie (#123).
+    expect(Object.keys(ENVIRONMENT_TONES)).toEqual([
+      ...REEF.tones,
+      'eauThe',
+      'eauTheClaire',
+      ...RAIN_TONES,
+    ]);
   });
 
   it('paletteColor refuse un nom inconnu ou hérité du prototype', () => {
