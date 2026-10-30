@@ -3879,6 +3879,12 @@
           "debut": "2026-10-30T02:55:11.458Z",
           "fin": "2026-10-30T03:18:28.978Z",
           "note": "Verdict OK, 0 bug, captures c105 publiées (100/100 identiques à c104)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-10-30T03:18:59.935Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
