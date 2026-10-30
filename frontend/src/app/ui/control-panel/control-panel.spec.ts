@@ -156,6 +156,7 @@ describe('fonctions du panneau de contrôle', () => {
     (tankRenamed)="layout.push(['renommage', $event])"
     [careMode]="careMode()"
     (careModeChanged)="layout.push(['mode', $event])"
+    (careReturned)="layout.push(['retour-soins', $event])"
     [decorEditable]="editable()"
     [foodStyle]="foodStyle()"
     [population]="population()"
@@ -480,6 +481,64 @@ describe('ControlPanel', () => {
       confirmBox()!.querySelector<HTMLButtonElement>('[data-care-mode-confirm-yes]')!.click();
       await fixture.whenStable();
       expect(fixture.componentInstance.layout).toEqual([['mode', 'soins']]);
+    });
+  });
+
+  describe('retour en soins : animaux inadaptés (#278, lot 2)', () => {
+    const modeButton = () => root().querySelector<HTMLButtonElement>('[data-care-mode-toggle]')!;
+    const confirmBox = () => root().querySelector<HTMLElement>('[data-care-mode-confirm]');
+    const listed = () =>
+      [...(confirmBox()?.querySelectorAll<HTMLElement>('[data-unsuitable]') ?? [])].map((el) =>
+        el.getAttribute('data-unsuitable'),
+      );
+
+    async function askReturn(): Promise<void> {
+      await openPanel();
+      fixture.componentInstance.careMode.set('decor');
+      await fixture.whenStable();
+      modeButton().click();
+      await fixture.whenStable();
+    }
+
+    it('sans animal inadapté : aucune liste, « Revenir au mode soins »', async () => {
+      await askReturn();
+      expect(confirmBox()).not.toBeNull();
+      expect(confirmBox()!.querySelector('[data-unsuitable]')).toBeNull();
+      expect(confirmBox()!.querySelector('[data-care-mode-remove]')).toBeNull();
+      expect(confirmBox()!.querySelector('[data-care-mode-confirm-yes]')?.textContent).toContain(
+        'Revenir au mode soins',
+      );
+    });
+
+    it('liste les espèces inadaptées et leur raison ; « Tout retirer » émet la liste', async () => {
+      fixture.componentInstance.population.update((p) => ({ ...p, clown: 2, koi: 1 }));
+      await askReturn();
+      expect(listed()).toEqual(['koi', 'clown']);
+      const clown = confirmBox()!.querySelector('[data-unsuitable="clown"]')!;
+      expect(clown.textContent).toContain('Poisson-clown (2)');
+      expect(clown.textContent).toContain('Autre milieu : vit dans « Récif »');
+      confirmBox()!.querySelector<HTMLButtonElement>('[data-care-mode-remove]')!.click();
+      await fixture.whenStable();
+      expect(fixture.componentInstance.layout).toEqual([['retour-soins', ['koi', 'clown']]]);
+      expect(confirmBox()).toBeNull();
+    });
+
+    it('« Tout garder » ne retire rien ; en soins, l’avertissement de milieu s’affiche', async () => {
+      fixture.componentInstance.population.update((p) => ({ ...p, clown: 2 }));
+      await askReturn();
+      const keep = confirmBox()!.querySelector<HTMLButtonElement>('[data-care-mode-confirm-yes]')!;
+      expect(keep.textContent).toContain('Tout garder');
+      keep.click();
+      await fixture.whenStable();
+      expect(fixture.componentInstance.layout).toEqual([['mode', 'soins']]);
+      // Aucun avertissement de milieu en décor, un en soins.
+      expect(root().querySelector('[data-milieu-warning]')).toBeNull();
+      fixture.componentInstance.careMode.set('soins');
+      await fixture.whenStable();
+      const notes = [...root().querySelectorAll('[data-milieu-warning]')].map((el) =>
+        el.textContent!.trim(),
+      );
+      expect(notes).toEqual(['Poisson-clown (2) : Autre milieu : vit dans « Récif »']);
     });
   });
 

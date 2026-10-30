@@ -1787,6 +1787,29 @@ describe('AquariumHost', () => {
       expect(host().world!.careMode).toBe('soins');
     });
 
+    it('retour en soins, « Tout retirer » (#278, lot 2) : seuls les animaux listés partent', async () => {
+      await create('?seed=3&vitesse=0');
+      host().setCareMode('decor');
+      host().setPopulation('koi', 2);
+      const kept = host()
+        .world!.entities.filter((fish) => fish.species !== 'koi')
+        .map((fish) => [fish.id, fish.hunger, fish.health]);
+      const water = structuredClone(host().world!.water);
+      host().returnToCare(['koi']);
+      expect(host().world!.careMode).toBe('soins');
+      expect(host().careMode()).toBe('soins');
+      expect(host().population().koi).toBe(0);
+      expect(exposed()).not.toContain('koi');
+      expect(host().world!.entities.map((fish) => [fish.id, fish.hunger, fish.health])).toEqual(
+        kept,
+      );
+      expect(host().world!.water).toEqual(water);
+      // En soins, sans effet.
+      const before = structuredClone(host().world);
+      host().returnToCare(['neon']);
+      expect(host().world).toEqual(before);
+    });
+
     it('mode=decor : bac affiché en mode décor, population= admet toute espèce', async () => {
       await create('?capture=1&seed=42&mode=decor&population=koi:2');
       expect(host().world!.careMode).toBe('decor');
