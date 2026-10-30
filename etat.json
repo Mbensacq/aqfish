@@ -3939,6 +3939,12 @@
           "debut": "2026-10-30T06:42:34.927Z",
           "fin": "2026-10-30T06:42:56.792Z",
           "note": "Issue #190 : forme du bassin ovale et haricot (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-10-30T06:43:28.983Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
