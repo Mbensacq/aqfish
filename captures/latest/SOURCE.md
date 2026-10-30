@@ -1,8 +1,8 @@
-# Captures c105
+# Source c106
 
-- Branche : cycle/c105-retour-soins-inadaptes (PR #328)
-- Commit : 2c22838
-- Chromium local 1243 (lien 1194), rendu logiciel
-- Durée : 7,8 min, 99 tests de capture verts, 100 images
-- Écart avec c104 : 100 identiques à l'octet
-- Sous-dossier `dev/` : retour-soins-1280.png et retour-soins-390.png (confirmation avec liste, produites par Dev)
+- Branche : cycle/c106-fond-ecran
+- PR : #331
+- Commit : 432ba4ef281d379862c4eadaa05d28865675b143
+- Graine : celle des captures (par défaut)
+- Durée : 99 tests, 6,1 min en rendu logiciel
+- 100/100 identiques à captures/latest (c105)
