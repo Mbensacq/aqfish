@@ -4083,6 +4083,12 @@
           "debut": "2026-10-30T18:50:36.877Z",
           "fin": "2026-10-30T18:52:21.714Z",
           "note": "Issue #347 : Rétro sprint 16 ; plan sprint 17 (#342 à #346) ; Dev : #332 + fondu #338 (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-10-30T18:52:42.791Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
