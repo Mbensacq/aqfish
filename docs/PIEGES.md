@@ -6,6 +6,12 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Paroi opaque sous la surface de l'eau du bassin : l'eau vire au gris** (cycle 107, #190) :
+  la berge d'un bassin ovale entre dans la boîte d'eau (translucide, opacité 0,3) ; vue de
+  trois-quarts, sa paroi de terre claire (`sableSombre`) se lisait à travers l'eau et la passe
+  palette ramenait le mélange au gris, sur un tiers du bassin. Une paroi `rocheSombre` (comme
+  les côtés de la margelle) garde la teinte de l'eau. Regarder la vue trois-quarts, pas
+  seulement la vue de dessus. (2026-10-30)
 - **Page ouverte en `file://` : trois refus de Chromium** (cycle 106, #279) : (1) le routeur
   d'Angular réécrit l'URL à la navigation initiale (`history.replaceState`) et lève
   `SecurityError` dans un document `file://` (routeur retiré, ADR 0079) ; (2) `fetch` d'un

@@ -16,6 +16,12 @@ describe('parseCaptureParams', () => {
     expect(parseCaptureParams('')).toEqual(DEFAULT_CAPTURE_PARAMS);
   });
 
+  it('lit forme= tel quel (vérifié par l’application, #190)', () => {
+    expect(parseCaptureParams('?capture=1&forme=ovale').shape).toBe('ovale');
+    expect(parseCaptureParams('?capture=1&forme=haricot').shape).toBe('haricot');
+    expect(parseCaptureParams('?capture=1').shape).toBeNull();
+  });
+
   it('lit une URL de capture complète', () => {
     expect(parseCaptureParams('?capture=1&seed=7&camera=bottom&time=12.5')).toEqual({
       capture: true,
@@ -32,6 +38,7 @@ describe('parseCaptureParams', () => {
       rain: false,
       room: false,
       water: null,
+      shape: null,
       starved: false,
       catappa: 0,
       editSelection: null,
