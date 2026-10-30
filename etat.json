@@ -4061,10 +4061,10 @@
           "note": "Verdict OK, 0 bug, captures c110 publiées (104/104) ; e2e complète non rejouée (CI) ; mutation Stryker interrompue (crash d'un mutant sur shelfBooks), pas de score"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-30T17:40:03.064Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-30T18:50:09.734Z",
+          "note": "PR #339 fusionnée → v1.4.5 (release CI ok) ; PR #341 (roadmap #340) fusionnée ; main verte (CI du commit #339 annulée par concurrence, commit suivant vert) ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
