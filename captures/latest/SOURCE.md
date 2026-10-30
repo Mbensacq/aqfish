@@ -1,8 +1,6 @@
-# Source c106
+# Captures c107
 
-- Branche : cycle/c106-fond-ecran
-- PR : #331
-- Commit : 432ba4ef281d379862c4eadaa05d28865675b143
-- Graine : celle des captures (par défaut)
-- Durée : 99 tests, 6,1 min en rendu logiciel
-- 100/100 identiques à captures/latest (c105)
+- Branche : cycle/c107-forme-bassin (PR #333), commit 67ca942 (QA a ajouté bb52124, test e2e seul)
+- Graine : 42 (`seed=42`), `time=30` selon `e2e/captures.spec.ts`
+- 105 images ; 4 nouvelles (bassin-top/three-quarter, ovale et haricot) ; 99 identiques à la série précédente
+- Différences hors périmètre : `interface-liste-bacs` et `telephone-liste-bacs` (texte du panneau, écarts de quelques pixels, visuellement identiques)
