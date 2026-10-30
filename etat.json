@@ -4019,10 +4019,10 @@
           "note": "PR #337 : ciel couvert sous la pluie (#123), CI verte au 1er essai ; captures sans pluie identiques à l'octet (105 comparées), luminance pluie −9 % ; ADR 0082 ; eau non assombrie après la passe (limite notée)"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-30T13:36:04.692Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-30T14:31:07.263Z",
+          "note": "Verdict OK, 0 bug, captures c109 publiées (pluie −9 % luminance, sans pluie identiques à main) ; e2e complète non rejouée (lenteur), pluie 4/4"
         }
       },
       "metriques": {}
