@@ -4025,10 +4025,10 @@
           "note": "Verdict OK, 0 bug, captures c109 publiées (pluie −9 % luminance, sans pluie identiques à main) ; e2e complète non rejouée (lenteur), pluie 4/4"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-30T14:31:43.157Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-30T15:30:42.496Z",
+          "note": "PR #337 fusionnée → v1.4.4 ; main verte, release créée par la CI ; #123 fermée ; dette #338 ; suppression de branche refusée par l'environnement ; pied d'attribution réajouté par la plateforme au corps de PR (non contournable)"
         }
       },
       "metriques": {}
