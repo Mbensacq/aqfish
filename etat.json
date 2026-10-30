@@ -4115,10 +4115,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-30T23:05:19.826Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-30T23:05:55.508Z",
+          "note": "Issue #342 : Pièce complète lot 2/3, fenêtre et lumière du jour (M)"
         }
       },
       "metriques": {}
