@@ -3983,10 +3983,10 @@
           "note": "PR #335 : pièce fermée, murs, plafond et poutres (#324), CI verte au 1er essai ; 1 seule capture avec pièce modifiée (side-piece) + side-piece-grand-bac ; ADR 0081"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-30T10:41:26.171Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-30T11:08:31.622Z",
+          "note": "Verdict OK, 0 bug, captures c108 publiées (104/105 identiques, side-piece modifiée, side-piece-grand-bac nouvelle) ; e2e complète non rejouée en local (CI verte)"
         }
       },
       "metriques": {}
