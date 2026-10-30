@@ -3903,6 +3903,12 @@
           "debut": "2026-10-30T04:17:22.792Z",
           "fin": "2026-10-30T04:18:17.550Z",
           "note": "Issue #279 : fond d'écran Wallpaper Engine, lot sans fichier de release (M) ; suite #330 ; #278 fermée"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-10-30T04:18:46.230Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
