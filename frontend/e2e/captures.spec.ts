@@ -166,6 +166,9 @@ test.describe('Captures', () => {
     { name: 'bottom-piece', query: 'piece=1&camera=bottom' },
     { name: 'three-quarter-piece-minuit', query: 'piece=1&heure=0' },
     { name: 'three-quarter-piece-grand-bac', query: 'piece=1&bac=2:0.9:0.9' },
+    // Pièce fermée (#324) : de l'intérieur, vers le plafond et ses poutres (grand bac, caméra
+    // plus loin, plus de plafond dans le cadre).
+    { name: 'side-piece-grand-bac', query: 'piece=1&camera=side&bac=2:0.9:0.9' },
     // Pièce à deux bacs (#305, lot 2b) : une commode à droite du bac, un bac moyen posé dessus.
     { name: 'three-quarter-piece-deux-bacs', query: 'piece=1&bacs=commode,moyen@0' },
     { name: 'top-piece-deux-bacs', query: 'piece=1&bacs=commode,moyen@0&camera=top' },

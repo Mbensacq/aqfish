@@ -1124,8 +1124,13 @@ export class AquariumView {
     }
     // Bassin enterré (#105) : coupe du sol et de la margelle si la caméra passe sous le sol.
     this.world.setViewpoint(this.camera.position.x, this.camera.position.y, this.camera.position.z);
-    // Pièce (#187) : rien ne cache le bac, la caméra passât-elle sous le bac ou derrière le mur.
-    this.roomLayer.setViewpoint(this.camera.position.y, this.camera.position.z);
+    // Pièce (#187, #324) : rien ne cache le bac, la caméra passât-elle sous le bac ou hors de
+    // la pièce (chaque mur franchi et le plafond sont masqués).
+    this.roomLayer.setViewpoint(
+      this.camera.position.y,
+      this.camera.position.z,
+      this.camera.position.x,
+    );
     // Taille des granulés selon le zoom (#117) : échelle à la distance de la cible.
     this.foodLayer.setPixelsPerMeter(
       scenePixelsPerMeter(

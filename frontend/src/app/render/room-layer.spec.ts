@@ -1,6 +1,6 @@
 import { Color, Mesh } from 'three';
 
-import { DEFAULT_ROOM, roomBlocks, type Room } from '../sim/room';
+import { DEFAULT_ROOM, roomBlocks, roomInterior, type Room } from '../sim/room';
 import { furnitureBlocks, ROOM_CATALOG } from '../sim/room-furniture';
 import { DEFAULT_TANK } from '../sim/tank';
 import { PALETTE_COLORS } from './palette';
@@ -63,13 +63,17 @@ describe('RoomLayer (#187)', () => {
     expect(layer.object.visible).toBe(true);
     expect(layer.object.children.map((c) => c.name).sort()).toEqual([
       'piece-mur',
+      'piece-mur-avant',
+      'piece-mur-droit',
+      'piece-mur-gauche',
+      'piece-plafond',
       'piece-sol-meuble',
     ]);
     const [first] = layer.object.children as Mesh[];
     const dispose = vi.spyOn(first.geometry, 'dispose');
     layer.setRoom(DEFAULT_TANK, { ...SHOWN, cabinetHeight: 0.9 }, true);
     expect(dispose).toHaveBeenCalled();
-    expect(layer.object.children.length).toBe(2);
+    expect(layer.object.children.length).toBe(6);
     layer.setRoom(DEFAULT_TANK, DEFAULT_ROOM, true);
     expect(layer.object.children.length).toBe(0);
     expect(layer.object.visible).toBe(false);
@@ -86,7 +90,7 @@ describe('RoomLayer (#187)', () => {
     expect(layer.count).toBe(
       roomBlocks(DEFAULT_TANK, SHOWN).length + ROOM_CATALOG.etagere.blocks.length,
     );
-    expect(layer.object.children.length).toBe(2);
+    expect(layer.object.children.length).toBe(6);
     layer.setRoom(DEFAULT_TANK, { ...furnished, shown: false }, true);
     expect(layer.built).toBe(false);
     layer.dispose();
@@ -110,6 +114,43 @@ describe('RoomLayer (#187)', () => {
     expect(layer.wallVisible).toBe(true);
     layer.dispose();
     expect(layer.built).toBe(false);
+  });
+
+  it('enveloppe (#324) : chaque paroi masquée seule quand la caméra la franchit', () => {
+    const layer = new RoomLayer();
+    layer.setRoom(DEFAULT_TANK, SHOWN, true);
+    const inner = roomInterior(DEFAULT_TANK);
+    const shells = ['fond', 'gauche', 'droite', 'avant', 'plafond'] as const;
+    const visible = () => shells.filter((s) => layer.shellVisible(s));
+    // Vue trois-quarts par défaut, dans la pièce : tout est affiché.
+    layer.setViewpoint(1.14, 1.53, 1.15);
+    expect(visible()).toEqual(shells);
+    // Zoom arrière par l'angle avant droit, au-dessus des poutres : droite, avant et plafond
+    // masqués ; le fond et le mur de gauche restent derrière le bac.
+    layer.setViewpoint(inner.beamY + 0.5, inner.maxZ + 0.5, inner.maxX + 0.5);
+    expect(visible()).toEqual(['fond', 'gauche']);
+    layer.setViewpoint(1, 0, inner.minX - 0.5);
+    expect(visible()).toEqual(['fond', 'droite', 'avant', 'plafond']);
+    layer.setViewpoint(-0.5, 0, 0);
+    expect(visible()).toEqual([]);
+    layer.dispose();
+  });
+
+  it('enveloppe en couleurs plates, comme le mur du fond (teinte de l’eau, ADR 0048)', () => {
+    const layer = new RoomLayer();
+    layer.setRoom(DEFAULT_TANK, SHOWN, true);
+    const byName = new Map(layer.object.children.map((c) => [c.name, c as Mesh]));
+    const flat = byName.get('piece-mur')!.material;
+    for (const name of [
+      'piece-mur-gauche',
+      'piece-mur-droit',
+      'piece-mur-avant',
+      'piece-plafond',
+    ]) {
+      expect(byName.get(name)!.material, name).toBe(flat);
+    }
+    expect(byName.get('piece-sol-meuble')!.material).not.toBe(flat);
+    layer.dispose();
   });
 
   it('contour de sélection d’un meuble : coque gonflée vers l’extérieur, gardée à la reconstruction', () => {
