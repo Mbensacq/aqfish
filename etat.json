@@ -3860,7 +3860,7 @@
       "type": "fonctionnalite",
       "issue": 323,
       "pr": 328,
-      "version": null,
+      "version": "v1.4.0",
       "phases": {
         "planif": {
           "statut": "termine",
