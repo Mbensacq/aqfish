@@ -3951,6 +3951,12 @@
           "debut": "2026-10-30T07:52:43.552Z",
           "fin": "2026-10-30T08:16:32.199Z",
           "note": "Verdict OK, 0 bug, captures c107 publiées (99/105 identiques, 4 nouvelles ; e2e complète non exécutable en local, specs touchées vertes), +1 test e2e"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-10-30T08:17:09.017Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
