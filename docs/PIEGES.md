@@ -6,6 +6,13 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Repère clair sur un mur latéral de la pièce : il traverse l'eau en vue de côté** (cycle
+  108, #324) : la cimaise reprise sur les murs de gauche et de droite (à 25 cm au-dessus du
+  bac) se voyait, en vue `side`, comme un trait gris en travers de l'eau, au fond du bac ; les
+  vues trois-quarts et de dessus n'en montraient rien. Murs latéraux sans repère, en
+  `fondScene` (plus sombre que le `koiNoir` du fond) : le coin se lit, l'eau garde sa teinte.
+  Pour tout objet sur un mur latéral, regarder `side-piece` et `side-piece-grand-bac`.
+  (2026-10-30)
 - **Paroi opaque sous la surface de l'eau du bassin : l'eau vire au gris** (cycle 107, #190) :
   la berge d'un bassin ovale entre dans la boîte d'eau (translucide, opacité 0,3) ; vue de
   trois-quarts, sa paroi de terre claire (`sableSombre`) se lisait à travers l'eau et la passe

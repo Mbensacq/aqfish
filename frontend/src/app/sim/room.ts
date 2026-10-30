@@ -3,7 +3,8 @@ import type { EnvironmentId } from './environment';
 
 /**
  * Pièce autour du bac (issue #187, ADR 0048) : un sol de lames de parquet, un mur du fond
- * avec sa plinthe et un meuble support sous le bac. Purement graphique : la simulation des
+ * avec sa plinthe et un meuble support sous le bac ; depuis #324 (ADR 0081), une pièce
+ * fermée : trois autres murs, un plafond et des poutres apparentes. Purement graphique : la simulation des
  * animaux ne la lit jamais.
  *
  * Le modèle (`Room`) est une petite donnée enregistrée avec les réglages de la sauvegarde ;
@@ -222,6 +223,9 @@ export type RoomPart =
   | 'porte'
   | 'poignee'
   | 'socle'
+  // Enveloppe de la pièce (#324) : plafond et poutres apparentes.
+  | 'plafond'
+  | 'poutre'
   // Meubles et plantes de la pièce (#188).
   | 'bois'
   | 'livre'
@@ -234,12 +238,24 @@ export type RoomPart =
   | 'eau'
   | 'substrat';
 
+/**
+ * Paroi de l'enveloppe de la pièce (#324) : mur du fond (derrière le bac), murs de gauche
+ * (−X), de droite (+X) et d'en face (+Z, devant le bac), plafond et ses poutres. Chacune est
+ * masquée seule quand la caméra passe de l'autre côté (`roomVisibility`).
+ */
+export type RoomShell = 'fond' | 'gauche' | 'droite' | 'avant' | 'plafond';
+
+/** Parois de l'enveloppe, dans l'ordre de construction des blocs. */
+export const ROOM_SHELLS: readonly RoomShell[] = ['fond', 'gauche', 'droite', 'avant', 'plafond'];
+
 /** Bloc de la pièce : boîte alignée sur les axes, partie et teinte (0 ou 1). */
 export interface RoomBlock {
   readonly box: Box3;
   readonly part: RoomPart;
   /** Variante de teinte, pour alterner deux tons (lames de parquet). */
   readonly shade: 0 | 1;
+  /** Paroi de l'enveloppe à laquelle le bloc appartient (#324) ; absente hors enveloppe. */
+  readonly shell?: RoomShell;
 }
 
 /** Côté du voxel de la pièce : toutes les cotes des blocs en sont des multiples (1 cm). */
@@ -276,6 +292,12 @@ const BASEBOARD_HEIGHT = 0.08;
 /** Cimaise : baguette horizontale du mur, au-dessus du haut du bac (hauteur de son bas). */
 export const RAIL_RISE = 0.25;
 const RAIL_HEIGHT = 0.03;
+/** Épaisseur du plafond (au-dessus du haut des murs). */
+export const CEILING_THICKNESS = 0.05;
+/** Poutres apparentes (#324) : largeur (selon X), retombée sous le plafond, entraxe visé. */
+export const BEAM_WIDTH = 0.14;
+export const BEAM_DROP = 0.18;
+export const BEAM_SPACING = 1;
 
 /**
  * Teinte d'une lame, tirée d'un hachage entier de son rang et de sa rangée : fixe, sans
@@ -304,6 +326,97 @@ function box(minX: number, maxX: number, minY: number, maxY: number, minZ: numbe
   };
 }
 
+/** Demi-dimension arrondie au voxel, par excès (voir `roomBlocks`). */
+function halfUp(size: number): number {
+  return Math.ceil(size / 2 / ROOM_VOXEL - 1e-9) * ROOM_VOXEL;
+}
+
+/** Faces intérieures de l'enveloppe de la pièce (repère du bac, mètres). */
+export interface RoomInterior {
+  /** Faces intérieures des murs de gauche et de droite. */
+  readonly minX: number;
+  readonly maxX: number;
+  /** Face du mur du fond (côté pièce) et face du mur d'en face (côté pièce). */
+  readonly minZ: number;
+  readonly maxZ: number;
+  /** Sous-face du plafond et dessous des poutres. */
+  readonly ceilingY: number;
+  readonly beamY: number;
+}
+
+/**
+ * Faces intérieures de la pièce autour d'un bac `dims` : murs à `ROOM_MARGIN` des côtés et de
+ * la vitre avant, mur du fond à `WALL_GAP` de la vitre arrière, plafond à `WALL_RISE`
+ * au-dessus du haut du bac. Indépendantes de la hauteur du meuble. Fonction pure.
+ */
+export function roomInterior(dims: TankDimensions): RoomInterior {
+  const halfW = halfUp(dims.width);
+  const halfD = halfUp(dims.depth);
+  const ceilingY = snap(dims.height + WALL_RISE);
+  return {
+    minX: snap(-halfW - ROOM_MARGIN),
+    maxX: snap(halfW + ROOM_MARGIN),
+    minZ: snap(-halfD - WALL_GAP),
+    maxZ: snap(halfD + ROOM_MARGIN),
+    ceilingY,
+    beamY: snap(ceilingY - BEAM_DROP),
+  };
+}
+
+/**
+ * Enveloppe de la pièce (#324) : murs de gauche, de droite et d'en face, du dessous du parquet
+ * au plafond, hors de l'aire du parquet (ils ne la réduisent pas) ; cimaise du mur du fond
+ * reprise sur le mur d'en face ; murs latéraux plus sombres (teinte 1) ; plafond couvrant les
+ * murs ;
+ * poutres selon Z, d'un mur à l'autre (du fond à celui d'en face), réparties à entraxe égal
+ * selon X, la première et la dernière à une demi-travée des murs latéraux.
+ */
+function shellBlocks(
+  inner: RoomInterior,
+  floorBottom: number,
+  railY: number,
+  add: (b: Box3, part: RoomPart, shade: 0 | 1, shell: RoomShell) => void,
+): void {
+  const { minX, maxX, minZ, maxZ, ceilingY, beamY } = inner;
+  const t = WALL_THICKNESS;
+  const d = BASEBOARD_DEPTH;
+  const railTop = railY + RAIL_HEIGHT;
+  // Murs latéraux en teinte 1 (plus sombre, « à l'ombre ») : le coin avec le mur du fond se
+  // lit sans repère clair qui, vu de côté, passerait derrière l'eau du bac.
+  add(box(minX - t, minX, floorBottom, ceilingY, minZ - t, maxZ + t), 'mur', 1, 'gauche');
+  add(box(maxX, maxX + t, floorBottom, ceilingY, minZ - t, maxZ + t), 'mur', 1, 'droite');
+  add(box(minX, maxX, floorBottom, ceilingY, maxZ, maxZ + t), 'mur', 0, 'avant');
+  add(box(minX, maxX, railY, railTop, maxZ - d, maxZ), 'cimaise', 0, 'avant');
+  add(
+    box(minX - t, maxX + t, ceilingY, ceilingY + CEILING_THICKNESS, minZ - t, maxZ + t),
+    'plafond',
+    0,
+    'plafond',
+  );
+  const width = maxX - minX;
+  const beams = Math.max(2, Math.round(width / BEAM_SPACING));
+  // Centres au centimètre : l'entraxe arrondi garde des poutres de largeur égale.
+  const pitchCm = Math.round((width / beams) * 100);
+  const startCm = Math.round(minX * 100 + (width * 100 - pitchCm * (beams - 1)) / 2);
+  const halfBeamCm = Math.round(BEAM_WIDTH * 50);
+  for (let i = 0; i < beams; i++) {
+    const centerCm = startCm + i * pitchCm;
+    add(
+      box(
+        (centerCm - halfBeamCm) / 100,
+        (centerCm + halfBeamCm) / 100,
+        beamY,
+        ceilingY,
+        minZ,
+        maxZ,
+      ),
+      'poutre',
+      (i % 2) as 0 | 1,
+      'plafond',
+    );
+  }
+}
+
 /**
  * Blocs de la pièce autour d'un bac `dims` (dimensions réelles du monde), pour la pièce
  * `room` (bornée par `clampRoom`). Renvoie une liste vide si la pièce est masquée. Aucun
@@ -323,16 +436,16 @@ export function roomBlocks(dims: TankDimensions, room: Room): RoomBlock[] {
     return [];
   }
   const blocks: RoomBlock[] = [];
-  const add = (b: Box3, part: RoomPart, shade: 0 | 1 = 0): void => {
+  const add = (b: Box3, part: RoomPart, shade: 0 | 1 = 0, shell?: RoomShell): void => {
     if (b.maxX > b.minX && b.maxY > b.minY && b.maxZ > b.minZ) {
-      blocks.push({ box: b, part, shade });
+      blocks.push(shell ? { box: b, part, shade, shell } : { box: b, part, shade });
     }
   };
   // Demi-dimensions arrondies une fois au voxel, par excès : les cotes suivantes en sont des
   // sommes de pas. Arrondies une à une, deux cotes voisines pouvaient se confondre
   // (`Math.round(-17.5)` vaut −17, `Math.round(17.5)` vaut 18 : poignée d'épaisseur nulle).
-  const halfW = Math.ceil(dims.width / 2 / ROOM_VOXEL - 1e-9) * ROOM_VOXEL;
-  const halfD = Math.ceil(dims.depth / 2 / ROOM_VOXEL - 1e-9) * ROOM_VOXEL;
+  const halfW = halfUp(dims.width);
+  const halfD = halfUp(dims.depth);
   const floorY = -cabinetHeight;
   const wallFront = -halfD - WALL_GAP;
   const minX = -halfW - ROOM_MARGIN;
@@ -401,35 +514,85 @@ export function roomBlocks(dims: TankDimensions, room: Room): RoomBlock[] {
   add(
     box(minX, maxX, floorY - FLOOR_THICKNESS, wallTop, wallFront - WALL_THICKNESS, wallFront),
     'mur',
+    0,
+    'fond',
   );
   const railY = dims.height + RAIL_RISE;
   add(
     box(minX, maxX, railY, railY + RAIL_HEIGHT, wallFront, wallFront + BASEBOARD_DEPTH),
     'cimaise',
+    0,
+    'fond',
   );
   add(
     box(minX, maxX, floorY, floorY + BASEBOARD_HEIGHT, wallFront, wallFront + BASEBOARD_DEPTH),
     'plinthe',
   );
+
+  // Enveloppe (#324) : trois autres murs, plafond et poutres.
+  shellBlocks(roomInterior(dims), floorY - FLOOR_THICKNESS, railY, add);
   return blocks;
 }
 
 /** Parties de la pièce affichées selon la position de la caméra. */
 export interface RoomVisibility {
-  /** Toute la pièce (sol, meuble, mur). */
+  /** Toute la pièce (sol, meuble, murs, plafond). */
   readonly room: boolean;
-  /** Le mur et sa cimaise. */
+  /** Le mur du fond et sa cimaise. */
   readonly wall: boolean;
+  /** Murs de gauche (−X), de droite (+X) et d'en face (+Z) (#324). */
+  readonly left: boolean;
+  readonly right: boolean;
+  readonly front: boolean;
+  /** Le plafond et ses poutres (#324). */
+  readonly ceiling: boolean;
 }
 
 /**
- * Parties de la pièce à afficher pour une caméra à la hauteur `y` et à la cote `z` (repère
- * du bac ; la position selon X n'y change rien) : sous le
- * fond du bac (y < 0), le meuble et le sol cacheraient le bac, la pièce est masquée ; derrière
- * le mur (z au-delà de sa face), le mur est masqué. Rien ne cache ainsi le bac, sous aucun
- * angle.
+ * Parties de la pièce à afficher pour une caméra en (`x`, `y`, `z`) (repère du bac) : sous le
+ * fond du bac (y < 0), le meuble et le sol cacheraient le bac, la pièce est masquée ; de
+ * l'intérieur, tout est affiché ; vu de l'extérieur, chaque mur dont la caméra a franchi la
+ * face intérieure est masqué, et le plafond dès que la caméra atteint le dessous des poutres.
+ * Rien ne cache ainsi le bac, sous aucun angle. Fonction pure.
  */
-export function roomVisibility(dims: TankDimensions, y: number, z: number): RoomVisibility {
-  const room = y >= 0;
-  return { room, wall: room && z >= -dims.depth / 2 - WALL_GAP };
+export function roomVisibility(dims: TankDimensions, y: number, z: number, x = 0): RoomVisibility {
+  const inner = roomInterior(dims);
+  return {
+    room: y >= 0,
+    wall: isShellVisible(dims, inner, 'fond', x, y, z),
+    left: isShellVisible(dims, inner, 'gauche', x, y, z),
+    right: isShellVisible(dims, inner, 'droite', x, y, z),
+    front: isShellVisible(dims, inner, 'avant', x, y, z),
+    ceiling: isShellVisible(dims, inner, 'plafond', x, y, z),
+  };
+}
+
+/**
+ * Vrai si la paroi `shell` est affichée depuis une caméra en (`x`, `y`, `z`), `inner` étant
+ * `roomInterior(dims)` (règles de `roomVisibility`). Sans allocation : appelée à chaque image
+ * par la couche de la pièce, avec les faces intérieures calculées une fois.
+ */
+export function isShellVisible(
+  dims: TankDimensions,
+  inner: RoomInterior,
+  shell: RoomShell,
+  x: number,
+  y: number,
+  z: number,
+): boolean {
+  if (!(y >= 0)) {
+    return false;
+  }
+  switch (shell) {
+    case 'fond':
+      return z >= -dims.depth / 2 - WALL_GAP;
+    case 'gauche':
+      return x >= inner.minX;
+    case 'droite':
+      return x <= inner.maxX;
+    case 'avant':
+      return z <= inner.maxZ;
+    case 'plafond':
+      return y < inner.beamY;
+  }
 }

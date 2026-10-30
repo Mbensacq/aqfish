@@ -10,7 +10,17 @@ import {
 } from 'three';
 
 import { furnitureBlocks } from '../sim/room-furniture';
-import { roomBlocks, roomVisibility, type Room, type RoomBlock, type RoomPart } from '../sim/room';
+import {
+  isShellVisible,
+  ROOM_SHELLS,
+  roomBlocks,
+  roomInterior,
+  type RoomInterior,
+  type Room,
+  type RoomBlock,
+  type RoomPart,
+  type RoomShell,
+} from '../sim/room';
 import type { TankDimensions } from '../sim/tank';
 import { createOutlineMaterial, SELECTION_COLOR, SELECTION_WIDTH_PX } from './decor-layer';
 import type { SceneLayer } from './effect-layer';
@@ -21,9 +31,9 @@ import { FACES } from './rock-model';
  * Pièce autour du bac (issue #187, ADR 0048) et ses meubles (#188, ADR 0049) : les blocs de
  * `roomBlocks` et de `furnitureBlocks` en deux maillages à
  * couleurs de la palette par sommet. Sol, plinthe et meuble sous un matériau éclairé : ils
- * suivent la lumière du jour comme la margelle du bassin, sans lumière propre. Mur et cimaise
- * à part, en couleurs plates (voir `wallMaterial`), pour être masqués seuls quand la caméra
- * passe derrière le mur.
+ * suivent la lumière du jour comme la margelle du bassin, sans lumière propre. Chaque paroi
+ * de l'enveloppe (murs, plafond et poutres, #324) à part, en couleurs plates (voir
+ * `wallMaterial`), pour être masquée seule quand la caméra passe de l'autre côté.
  *
  * Masquée (pièce masquée ou environnement sans pièce), la couche n'a aucun maillage et sa
  * racine est invisible : la scène rendue est exactement celle d'avant (#187).
@@ -32,7 +42,8 @@ import { FACES } from './rock-model';
 /** Couleurs de chaque partie, teinte 0 puis teinte 1 (palette du projet, `docs/DA.md`). */
 export const ROOM_COLORS: Readonly<Record<RoomPart, readonly [string, string]>> = {
   parquet: [PALETTE.rocheSombre, PALETTE.koiNoir],
-  mur: [PALETTE.koiNoir, PALETTE.koiNoir],
+  // Murs latéraux (#324) en teinte 1, le fond de la scène : l'eau y garde sa teinte (ADR 0048).
+  mur: [PALETTE.koiNoir, PALETTE.fondScene],
   cimaise: [PALETTE.rocheSombre, PALETTE.rocheSombre],
   plinthe: [PALETTE.sableOmbre, PALETTE.sableOmbre],
   plateau: [PALETTE.sableOmbre, PALETTE.sableOmbre],
@@ -40,6 +51,9 @@ export const ROOM_COLORS: Readonly<Record<RoomPart, readonly [string, string]>> 
   porte: [PALETTE.sableSombre, PALETTE.sableSombre],
   poignee: [PALETTE.rocheSombre, PALETTE.rocheSombre],
   socle: [PALETTE.rocheSombre, PALETTE.rocheSombre],
+  // Enveloppe (#324, ADR 0081) : plafond sombre, poutres en deux tons de bois.
+  plafond: [PALETTE.rocheSombre, PALETTE.rocheSombre],
+  poutre: [PALETTE.sableOmbre, PALETTE.sableSombre],
   // Meubles et plantes de la pièce (#188, ADR 0049).
   bois: [PALETTE.sableSombre, PALETTE.sableOmbre],
   livre: [PALETTE.koiRouge, PALETTE.neonBleu],
@@ -53,8 +67,14 @@ export const ROOM_COLORS: Readonly<Record<RoomPart, readonly [string, string]>> 
   substrat: [PALETTE.sable, PALETTE.sable],
 };
 
-/** Parties dessinées avec le mur (masquées avec lui). */
-const WALL_PARTS: ReadonlySet<RoomPart> = new Set<RoomPart>(['mur', 'cimaise']);
+/** Nom de l'objet Three.js de chaque paroi de l'enveloppe (le mur du fond garde le sien). */
+const SHELL_NAMES: Readonly<Record<RoomShell, string>> = {
+  fond: 'piece-mur',
+  gauche: 'piece-mur-gauche',
+  droite: 'piece-mur-droit',
+  avant: 'piece-mur-avant',
+  plafond: 'piece-plafond',
+};
 
 /** Données brutes d'un maillage de blocs (non indexé), testables sans WebGL. */
 export interface RoomMeshData {
@@ -136,7 +156,9 @@ export class RoomLayer implements SceneLayer {
   private readonly wallMaterial = new MeshBasicMaterial({ vertexColors: true });
   /** Contour de l'élément sélectionné (#188), celui de la sélection du décor. */
   private readonly selectionMaterial = createOutlineMaterial(SELECTION_COLOR, SELECTION_WIDTH_PX);
-  private wall: Mesh | null = null;
+  /** Maillage de chaque paroi de l'enveloppe construite (une paroi sans bloc n'en a pas). */
+  private readonly shells: { readonly shell: RoomShell; readonly mesh: Mesh }[] = [];
+  private interior: RoomInterior | null = null;
   private rest: Mesh | null = null;
   private hull: Mesh | null = null;
   private dims: TankDimensions | null = null;
@@ -169,17 +191,22 @@ export class RoomLayer implements SceneLayer {
       return;
     }
     this.dims = dims;
-    this.wall = new Mesh(
-      createGeometry(buildRoomMesh(blocks.filter((b) => WALL_PARTS.has(b.part)))),
-      this.wallMaterial,
-    );
-    this.wall.name = 'piece-mur';
+    this.interior = roomInterior(dims);
     this.rest = new Mesh(
-      createGeometry(buildRoomMesh(blocks.filter((b) => !WALL_PARTS.has(b.part)))),
+      createGeometry(buildRoomMesh(blocks.filter((b) => b.shell === undefined))),
       this.material,
     );
     this.rest.name = 'piece-sol-meuble';
-    this.object.add(this.rest, this.wall);
+    this.object.add(this.rest);
+    for (const shell of ROOM_SHELLS) {
+      const part = blocks.filter((b) => b.shell === shell);
+      if (part.length > 0) {
+        const mesh = new Mesh(createGeometry(buildRoomMesh(part)), this.wallMaterial);
+        mesh.name = SHELL_NAMES[shell];
+        this.shells.push({ shell, mesh });
+        this.object.add(mesh);
+      }
+    }
     this.object.visible = true;
     this.room = room;
     this.buildHull();
@@ -230,14 +257,19 @@ export class RoomLayer implements SceneLayer {
     this.object.add(this.hull);
   }
 
-  /** Masque ce qui cacherait le bac depuis une caméra à la hauteur `y` et à la cote `z`. */
-  setViewpoint(y: number, z: number): void {
-    if (!this.dims || !this.wall) {
+  /**
+   * Masque ce qui cacherait le bac depuis une caméra en (`x`, `y`, `z`) (`roomVisibility`).
+   * Appelée à chaque image : aucune allocation.
+   */
+  setViewpoint(y: number, z: number, x = 0): void {
+    const { dims, interior } = this;
+    if (!dims || !interior || !this.rest) {
       return;
     }
-    const visibility = roomVisibility(this.dims, y, z);
-    this.object.visible = visibility.room;
-    this.wall.visible = visibility.wall;
+    this.object.visible = y >= 0;
+    for (const { shell, mesh } of this.shells) {
+      mesh.visible = isShellVisible(dims, interior, shell, x, y, z);
+    }
   }
 
   /** Vrai si la pièce est construite (tests). */
@@ -250,9 +282,14 @@ export class RoomLayer implements SceneLayer {
     return this.blockCount;
   }
 
-  /** Vrai si le mur est affiché (tests). */
+  /** Vrai si le mur du fond est affiché (tests). */
   get wallVisible(): boolean {
-    return this.object.visible && (this.wall?.visible ?? false);
+    return this.shellVisible('fond');
+  }
+
+  /** Vrai si la paroi `shell` de l'enveloppe est affichée (tests). */
+  shellVisible(shell: RoomShell): boolean {
+    return this.object.visible && this.shells.some((s) => s.shell === shell && s.mesh.visible);
   }
 
   dispose(): void {
@@ -263,13 +300,14 @@ export class RoomLayer implements SceneLayer {
   }
 
   private clear(): void {
-    for (const mesh of [this.wall, this.rest, this.hull]) {
+    for (const mesh of [...this.shells.map((s) => s.mesh), this.rest, this.hull]) {
       if (mesh) {
         this.object.remove(mesh);
         mesh.geometry.dispose();
       }
     }
-    this.wall = null;
+    this.shells.length = 0;
+    this.interior = null;
     this.rest = null;
     this.hull = null;
     this.room = null;
