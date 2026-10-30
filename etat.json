@@ -4032,6 +4032,24 @@
         }
       },
       "metriques": {}
+    },
+    "110": {
+      "numero": 110,
+      "date": "2026-10-30",
+      "debut": "2026-10-30T15:31:11.912Z",
+      "type": "dette",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-10-30T15:31:11.912Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
