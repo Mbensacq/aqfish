@@ -575,8 +575,9 @@ export function roomVisibility(
 /**
  * Vrai si la paroi `shell` est affichée depuis une caméra en (`x`, `y`, `z`), `inner` étant
  * `roomInterior(dims)` (règles de `roomVisibility`) : chaque paroi est masquée dès que la
- * caméra franchit sa face intérieure, mur du fond compris (`inner.minZ`, arrondie au voxel). Sans allocation : appelée à chaque image
- * par la couche de la pièce, avec les faces intérieures calculées une fois.
+ * caméra franchit sa face intérieure, mur du fond compris (`inner.minZ`, arrondie au voxel).
+ * Sans allocation : appelée à chaque image par la couche de la pièce, avec les faces
+ * intérieures calculées une fois.
  */
 export function isShellVisible(
   inner: RoomInterior,
