@@ -4104,6 +4104,24 @@
         }
       },
       "metriques": {}
+    },
+    "112": {
+      "numero": 112,
+      "date": "2026-10-31",
+      "debut": "2026-10-30T23:05:19.826Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-10-30T23:05:19.826Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
