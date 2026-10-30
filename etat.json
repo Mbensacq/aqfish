@@ -3909,6 +3909,12 @@
           "debut": "2026-10-30T04:18:46.230Z",
           "fin": "2026-10-30T05:29:17.280Z",
           "note": "PR #331 : vue fond d'écran Wallpaper Engine (#279), CI verte au 1er essai ; 100/100 captures identiques à main ; paquet vérifié en file:// ; routeur retiré ; WE non testable (à vérifier par Mathis)"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-10-30T05:29:38.199Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
