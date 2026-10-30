@@ -3839,10 +3839,10 @@
           "note": "PR #326 : #309 (source du sonneur, test corrigé en commit séparé) + #322 (_panel-layout.scss, top-slot, badge aux marges téléphone, e2e 4 largeurs) + ROADMAP v1.3/v1.4 ; CI verte au 1er essai ; 100/100 captures identiques à c103"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-30T00:14:49.982Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-30T00:39:09.871Z",
+          "note": "Verdict RÉSERVES (e2e : 25 ciblés verts, suite complète en CI seulement), 0 bug, captures c104 publiées (98/100 identiques, 2 écarts ≤1/255)"
         }
       },
       "metriques": {}
