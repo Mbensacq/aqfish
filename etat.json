@@ -3941,10 +3941,10 @@
           "note": "Issue #190 : forme du bassin ovale et haricot (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-30T06:43:28.983Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-30T07:52:16.561Z",
+          "note": "PR #333 : forme du bassin ovale et haricot (#190), CI verte au 1er essai ; 100/100 captures identiques à main ; ~700 lignes de code (au-delà des 600 indicatives, signalé)"
         }
       },
       "metriques": {}
