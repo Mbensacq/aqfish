@@ -4095,6 +4095,12 @@
           "debut": "2026-10-30T20:05:26.742Z",
           "fin": "2026-10-30T20:42:20.318Z",
           "note": "Verdict OK, 0 bug, captures c111 publiées (105, identiques à c110) ; e2e fond-ecran + pluie rejouées en local, suite complète en CI"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-10-30T20:42:53.976Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
