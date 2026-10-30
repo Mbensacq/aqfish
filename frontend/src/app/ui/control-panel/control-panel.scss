@@ -587,4 +587,16 @@
   border-radius: 8px;
   background: #141418;
   transform: translate(-50%, -50%);
+  // Lot 2 : la liste des animaux inadaptés défile, le dialogue tient à l'écran.
+  max-height: calc(100vh - 24px);
+  overflow-y: auto;
+
+  li {
+    display: grid;
+    overflow-wrap: anywhere;
+  }
+
+  .control-panel__buttons {
+    flex-wrap: wrap;
+  }
 }

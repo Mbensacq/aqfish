@@ -41,6 +41,13 @@ import { DEFAULT_SIM_SPEED, SIM_SPEEDS, speedLabel, type SimSpeed } from '../../
 import { mixWarnings } from '../../sim/compatibility';
 import { CARE_MODE_LABELS, type CareMode } from '../../sim/care-mode';
 import {
+  unsuitableAnimals,
+  unsuitableLine,
+  unsuitableReasonText,
+  unsuitableTitle,
+  type UnsuitableAnimal,
+} from '../../sim/care-return';
+import {
   decorCatalog,
   mixWarningText,
   SPECIES_LABELS,
@@ -687,6 +694,12 @@ export interface NewTankRequest {
           @for (text of mixTexts(); track text) {
             <p class="control-panel__note control-panel__warning" data-mix-warning>{{ text }}</p>
           }
+          <!-- Animaux d'un autre milieu gardés au retour en soins (#278, lot 2). -->
+          @for (text of milieuTexts(); track text) {
+            <p class="control-panel__note control-panel__warning" data-milieu-warning>
+              {{ text }}
+            </p>
+          }
         </fieldset>
 
         <!-- Liste des bacs de la pièce (#306, lot 3) : sélection et transfert d'un animal.
@@ -733,20 +746,50 @@ export interface NewTankRequest {
                   « {{ shownTankName() }} » devient un aquarium purement graphique : l’eau, la faim
                   et la santé sont mises en pause, pas effacées, et reprendront au retour en mode
                   soins. Toute espèce peut y être ajoutée, sans alerte.
+                } @else if (unsuitable().length === 0) {
+                  « {{ shownTankName() }} » redevient une simulation : l’eau, la faim et la santé
+                  reprennent où elles en étaient.
                 } @else {
                   « {{ shownTankName() }} » redevient une simulation : l’eau, la faim et la santé
-                  reprennent où elles en étaient. Les animaux d’un autre milieu sont gardés, avec
-                  les avertissements habituels.
+                  reprennent où elles en étaient. Ces animaux ne conviennent pas à ce bac : les
+                  retirer, ou les garder avec les avertissements habituels.
                 }
               </p>
+              <!-- Animaux inadaptés au retour en soins (#278, lot 2) : espèce et raison. -->
+              @if (mode === 'soins' && unsuitable().length > 0) {
+                <ul class="control-panel__tanks" aria-label="Animaux inadaptés à ce bac">
+                  @for (animal of unsuitable(); track animal.species) {
+                    <li [attr.data-unsuitable]="animal.species">
+                      <strong>{{ unsuitableTitle(animal) }}</strong>
+                      <span class="control-panel__warning">{{ unsuitableReasonText(animal) }}</span>
+                    </li>
+                  }
+                </ul>
+              }
               <div class="control-panel__buttons">
+                @if (mode === 'soins' && unsuitable().length > 0) {
+                  <button
+                    type="button"
+                    class="control-panel__button"
+                    data-care-mode-remove
+                    (click)="onRemoveUnsuitable()"
+                  >
+                    Tout retirer
+                  </button>
+                }
                 <button
                   type="button"
                   class="control-panel__button"
                   data-care-mode-confirm-yes
                   (click)="onConfirmCareMode()"
                 >
-                  {{ mode === 'decor' ? 'Passer en mode décor' : 'Revenir au mode soins' }}
+                  {{
+                    mode === 'decor'
+                      ? 'Passer en mode décor'
+                      : unsuitable().length > 0
+                        ? 'Tout garder'
+                        : 'Revenir au mode soins'
+                  }}
                 </button>
                 <button type="button" class="control-panel__button" (click)="confirmMode.set(null)">
                   Annuler
@@ -984,6 +1027,11 @@ export class ControlPanel {
   readonly tankRenamed = output<{ readonly id: number; readonly name: string }>();
   /** Mode demandé pour le bac affiché (#278), après confirmation. */
   readonly careModeChanged = output<CareMode>();
+  /**
+   * « Tout retirer » au retour en soins (#278, lot 2) : espèces listées comme inadaptées, à
+   * retirer du bac avant de repasser en mode soins (à la place de `careModeChanged`).
+   */
+  readonly careReturned = output<readonly SpeciesId[]>();
   /** « Transférer à l'épuisette » (#306) : espèce du bac sélectionné et bac d'arrivée. */
   readonly animalTransferred = output<{ readonly species: SpeciesId; readonly toId: number }>();
   /** Bouton « Granulés » : passer à l'autre rendu (#117). */
@@ -1177,6 +1225,40 @@ export class ControlPanel {
   protected readonly shownTankName = computed(
     () => this.tankList().find((tank) => tank.selected)?.name ?? 'ce bac',
   );
+
+  /**
+   * Animaux du bac affiché inadaptés au mode soins (#278, lot 2) : milieu, température,
+   * volume, groupe, compatibilité (`unsuitableAnimals`). Volume inconnu : pas de contrôle de
+   * volume.
+   */
+  protected readonly unsuitable = computed<readonly UnsuitableAnimal[]>(() =>
+    unsuitableAnimals({
+      environment: this.environment(),
+      counts: this.population(),
+      liters: this.tankLiters() ?? Number.NaN,
+      temperature: this.water().temperature,
+    }),
+  );
+  /**
+   * Avertissements en mode soins des animaux d'un autre milieu gardés (#278, lot 2) : les
+   * autres raisons ont déjà les leurs (mélanges, ajout, tableau de bord).
+   */
+  protected readonly milieuTexts = computed(() =>
+    this.careMode() === 'decor'
+      ? []
+      : this.unsuitable()
+          .filter((animal) => animal.reason.kind === 'milieu')
+          .map(unsuitableLine),
+  );
+  protected readonly unsuitableTitle = unsuitableTitle;
+  protected readonly unsuitableReasonText = unsuitableReasonText;
+
+  /** « Tout retirer » : retire les animaux listés et repasse en mode soins. */
+  protected onRemoveUnsuitable(): void {
+    const species = this.unsuitable().map((animal) => animal.species);
+    this.confirmMode.set(null);
+    this.careReturned.emit(species);
+  }
 
   /** Demande le passage à l'autre mode : la confirmation explique la conséquence. */
   protected onToggleCareMode(): void {

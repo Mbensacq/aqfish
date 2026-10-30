@@ -6,6 +6,11 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **`control-panel.scss` au bord du budget de style** (cycle 105, #323) : `anyComponentStyle`
+  plafonne à 8 kB (`angular.json`) ; le panneau en est à ~7,9 kB. Les tests unitaires et
+  l'e2e passent, seul `ng build` échoue (« exceeded maximum budget »). Réutiliser les classes
+  existantes (`control-panel__tanks` pour une liste, `control-panel__warning`), imbriquer
+  sous le sélecteur déjà présent, ou sortir un sous-composant. (2026-10-30)
 - **Panneau des réglages à 1280 × 720 : pas une ligne de plus** (cycle 101, #316) : en
   deux colonnes de hauteur fixe, la moindre ligne ajoutée au cas par défaut (un seul bac)
   pousse « Sauvegarde » dans une troisième colonne hors du panneau ; seul

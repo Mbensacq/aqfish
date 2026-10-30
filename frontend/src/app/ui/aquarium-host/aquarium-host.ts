@@ -176,6 +176,7 @@ import {
   speciesShownIn,
   type CareMode,
 } from '../../sim/care-mode';
+import { returnToCareInPlace } from '../../sim/care-return';
 import { transferFish } from '../../sim/tank-transfer';
 import { applySpeciesCountsInPlace, SPECIES_LABELS } from '../../sim/species-catalog';
 import {
@@ -1834,6 +1835,24 @@ export class AquariumHost {
    * `MAX_TANK_NAME_LENGTH` caractères au plus ; enregistré aussitôt. Refus : message dans
    * `transferNotice`, nom inchangé. Sans effet en capture ou avant le démarrage.
    */
+  /**
+   * « Tout retirer » au retour en soins (#278, lot 2) : retire du bac affiché tous les animaux
+   * des espèces `remove` (celles que la confirmation a listées comme inadaptées), puis le
+   * repasse en mode soins ; les autres animaux et l'eau reprennent où ils en étaient. Sans
+   * effet en capture, avant le démarrage, ou si le bac n'est pas en mode décor.
+   */
+  returnToCare(remove: readonly SpeciesId[]): void {
+    const world = this.currentWorld;
+    if (!world || this.capture || careModeOf(world) !== 'decor') {
+      return;
+    }
+    returnToCareInPlace(world, remove);
+    this.exposePopulation();
+    this.exposeWater();
+    this.saveNow();
+    this.scheduleFrame();
+  }
+
   renameTank(id: number, name: string): void {
     const world = this.currentWorld;
     if (!world || this.capture) {
