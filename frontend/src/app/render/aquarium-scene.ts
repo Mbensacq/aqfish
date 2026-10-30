@@ -31,6 +31,7 @@ import { createBankDecorObject } from './bank-decor-mesh';
 import { INPUT_TONES, PALETTE, type PaletteColorName } from './palette';
 import { cutawaySides } from './pond-cutaway';
 import { createPondGround, pondGroundTop } from './pond-ground';
+import { createPondShapeBank } from './pond-shape-bank';
 import { createStoneBorder } from './stone-border';
 import { createTerrainMesh } from './terrain-mesh';
 
@@ -180,11 +181,17 @@ export function createAquariumScene(environment: Environment = TROPICAL_TANK): A
   }
   const water = createWater(terrain ? insetWater(waterBox) : waterBox, waterTint);
   scene.add(water);
-  const stones = environment.border === 'pierre' ? createStoneBorder(dims) : null;
+  const pond = environment.border === 'pierre';
+  // Bassin ovale ou haricot (#190) : berge et margelle courbe à la place de la margelle droite.
+  const shape = pond ? environment.shape : undefined;
+  const bank =
+    shape !== undefined && shape !== 'rectangle' ? createPondShapeBank(dims, shape) : null;
+  const stones = pond && bank === null ? createStoneBorder(dims) : null;
   // Bassin enterré (#105) : le sol l'entoure, seule une margelle basse dépasse.
-  const pondGround = stones ? createPondGround(dims) : null;
-  if (stones && pondGround) {
-    scene.add(stones.object, pondGround.object);
+  const pondGround = pond ? createPondGround(dims) : null;
+  if (pondGround) {
+    // Margelle (ou berge) puis sol : même ordre qu'avant #190 pour le bassin rectangulaire.
+    scene.add((bank ?? stones ?? pondGround).object, pondGround.object);
   } else {
     scene.add(...createGlass(dims));
   }
@@ -280,12 +287,14 @@ export function createAquariumScene(environment: Environment = TROPICAL_TANK): A
       applyWaterColors();
       sandBottom.color.lerpColors(waterColors.daySandBottom, waterColors.nightSandBottom, 1 - day);
       stones?.setDaylight(day);
+      bank?.setDaylight(day);
       pondGround?.setDaylight(day);
     },
     setViewpoint: (x, y, z) => {
-      if (stones && pondGround) {
+      if (pondGround) {
         const hidden = cutawaySides([x, y, z], dims, pondGroundTop(dims));
-        stones.setHiddenSides(hidden);
+        stones?.setHiddenSides(hidden);
+        bank?.setCutaway(hidden.size > 0);
         pondGround.setHiddenSides(hidden);
       }
     },

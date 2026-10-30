@@ -15,8 +15,16 @@ import {
   ENVIRONMENT_IDS,
   ENVIRONMENTS,
   environmentById,
+  isPondShapeable,
   type EnvironmentId,
 } from '../../sim/environment';
+import {
+  DEFAULT_POND_SHAPE,
+  isPondShape,
+  POND_SHAPE_LABELS,
+  POND_SHAPES,
+  type PondShape,
+} from '../../sim/pond-shape';
 import { MAX_CATAPPA_LEAVES } from '../../sim/catappa';
 import { formatHour, HOUR_SLIDER_STEP, HOURS_PER_DAY, NOON_HOUR } from '../../sim/daylight';
 import { NO_FISH, type PopulationCounts } from '../../sim/population';
@@ -256,6 +264,22 @@ export interface NewTankRequest {
                 </option>
               }
             </select>
+            <!-- Forme du bassin (#190), bassin seulement : à la place de la pièce, même ligne. -->
+            @if (shapeAvailable()) {
+              <select
+                class="control-panel__select"
+                data-pond-shape
+                aria-label="Forme du bassin"
+                title="Forme du bassin"
+                (change)="onPondShape($event)"
+              >
+                @for (shape of pondShapes; track shape) {
+                  <option [value]="shape" [selected]="shape === pondShape()">
+                    {{ pondShapeLabels[shape] }}
+                  </option>
+                }
+              </select>
+            }
             @if (roomAvailable()) {
               <label class="control-panel__check control-panel__check--inline" data-room>
                 <input type="checkbox" [checked]="roomShown()" (change)="onRoom($event)" />
@@ -960,6 +984,8 @@ export interface NewTankRequest {
 export class ControlPanel {
   /** Environnement affiché (fourni par l'hôte). */
   readonly environment = input<EnvironmentId>(DEFAULT_ENVIRONMENT_ID);
+  /** Forme du bassin du monde courant (issue #190, fournie par l'hôte). */
+  readonly pondShape = input<PondShape>(DEFAULT_POND_SHAPE);
   /** Vitesse de simulation courante (fournie par l'hôte). */
   readonly speed = input<number>(DEFAULT_SIM_SPEED);
   /** Heure affichée, au quart d'heure (fournie par l'hôte). */
@@ -999,6 +1025,8 @@ export class ControlPanel {
 
   /** Environnement choisi dans la liste. */
   readonly environmentChanged = output<EnvironmentId>();
+  /** Forme du bassin choisie (issue #190). */
+  readonly pondShapeChanged = output<PondShape>();
   /** Vitesse choisie au curseur. */
   readonly speedChanged = output<SimSpeed>();
   /** Heure choisie au curseur (l'hôte fige l'horloge à cette heure). */
@@ -1116,6 +1144,10 @@ export class ControlPanel {
   protected readonly environmentIds = ENVIRONMENT_IDS;
   /** Case « Pluie » proposée seulement là où il peut pleuvoir (le bassin, #106). */
   protected readonly rainAvailable = computed(() => environmentById(this.environment()).rain);
+  /** Forme du bassin réglable (issue #190) : le bassin seulement. */
+  protected readonly shapeAvailable = computed(() => isPondShapeable(this.environment()));
+  protected readonly pondShapes = POND_SHAPES;
+  protected readonly pondShapeLabels = POND_SHAPE_LABELS;
   /** Case « Afficher la pièce » proposée seulement autour du bac tropical (#187). */
   protected readonly roomAvailable = computed(() => isRoomAvailable(this.environment()));
   protected readonly supportKinds = SUPPORT_KINDS;
@@ -1405,6 +1437,13 @@ export class ControlPanel {
 
   protected onClockRunning(event: Event): void {
     this.clockRunningChanged.emit((event.target as HTMLInputElement).checked);
+  }
+
+  protected onPondShape(event: Event): void {
+    const value = (event.target as HTMLSelectElement).value;
+    if (isPondShape(value)) {
+      this.pondShapeChanged.emit(value);
+    }
   }
 
   protected onRain(event: Event): void {

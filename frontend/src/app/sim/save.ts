@@ -8,6 +8,7 @@ import {
   ENVIRONMENT_IDS,
   environmentWater,
   isEnvironmentId,
+  isPondShapeable,
   isTankResizable,
   placeDimensions,
   placeEnvironment,
@@ -17,6 +18,7 @@ import {
 import { FOOD_MAX_FLOAT_SECONDS, FOOD_MIN_FLOAT_SECONDS, FOOD_SINK_SPEED, MAX_FOOD } from './food';
 import type { FoodPellet } from './food';
 import { isSpeciesId, MAX_TOTAL_FISH } from './population';
+import { DEFAULT_POND_SHAPE, isPondShape, type PondShape } from './pond-shape';
 import { clampRoom, DEFAULT_ROOM, readRoom, roomData, type Room } from './room';
 import { tidyRoom } from './room-furniture';
 import { DEFAULT_SIM_SPEED, isSimSpeed, type SimSpeed } from './sim-speed';
@@ -145,6 +147,11 @@ export interface SavedWorld {
    * sauvegardes, bac jamais redimensionné), ce sont celles de l'environnement.
    */
   readonly dimensions?: TankDimensions;
+  /**
+   * Forme du bassin (issue #190, ADR 0080). Facultative : absente (anciennes sauvegardes,
+   * bassin rectangulaire), rectangle ; jamais écrite pour le rectangle.
+   */
+  readonly shape?: PondShape;
   readonly tick: number;
   readonly nextFishId: number;
   readonly nextFoodId: number;
@@ -292,6 +299,7 @@ export function savedWorld(world: World): SavedWorld {
     seed: world.seed,
     environment: world.environment,
     ...(world.dimensions === undefined ? {} : { dimensions: { ...world.dimensions } }),
+    ...(world.shape === undefined ? {} : { shape: world.shape }),
     tick: world.tick,
     nextFishId: world.nextFishId,
     nextFoodId: world.nextFoodId,
@@ -454,7 +462,13 @@ export function parseWorldBody(
     return null;
   }
   const dimensions = parseDimensions(own(value, 'dimensions'), environment, problems);
-  const place: Place = dimensions === undefined ? environment : { environment, dimensions };
+  const shape = parseShape(own(value, 'shape'), environment, problems);
+  const place: Place =
+    dimensions === undefined
+      ? shape === undefined
+        ? environment
+        : { environment, shape }
+      : { environment, dimensions };
   const tick = own(value, 'tick');
   if (!isIntegerIn(tick, 0, MAX_SAVE_TICK)) {
     problems.push(`tick doit être un entier dans [0, ${MAX_SAVE_TICK}]`);
@@ -551,6 +565,32 @@ function parseDimensions(
     }
   }
   return clampTankDimensions(raw as unknown as TankDimensions);
+}
+
+/**
+ * Forme du bassin d'une sauvegarde (issue #190) : `undefined` si absente ou rectangle ; sinon
+ * une forme connue, dans un environnement qui l'accepte (`isPondShapeable`).
+ */
+function parseShape(
+  value: unknown,
+  environment: EnvironmentId,
+  problems: string[],
+): PondShape | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+  if (!isPondShape(value)) {
+    problems.push(`forme de bassin inconnue (${describe(value)})`);
+    return undefined;
+  }
+  if (value === DEFAULT_POND_SHAPE) {
+    return undefined;
+  }
+  if (!isPondShapeable(environment)) {
+    problems.push(`forme non réglable dans l’environnement ${environment}`);
+    return undefined;
+  }
+  return value;
 }
 
 /** Relit les réglages (communs aux schémas 1 et 2) ; `null` si un problème a été ajouté. */

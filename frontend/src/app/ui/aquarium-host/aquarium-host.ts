@@ -103,6 +103,7 @@ import {
   environmentById,
   environmentWater,
   isEnvironmentId,
+  isPondShapeable,
   isTankResizable,
   placeDimensions,
   placeEnvironmentData,
@@ -122,6 +123,8 @@ import {
   type TankDimensions,
 } from '../../sim/tank';
 import { setTankDimensionsInPlace } from '../../sim/tank-resize';
+import { DEFAULT_POND_SHAPE, isPondShape, type PondShape } from '../../sim/pond-shape';
+import { setPondShapeInPlace } from '../../sim/pond-reshape';
 import {
   clampRoom,
   DEFAULT_ROOM,
@@ -400,6 +403,8 @@ export const ROOM_LAYOUT_MESSAGES: Readonly<Record<RoomLayoutRefusal | 'aucune-p
  * #171, même ordre que `bac=`).
  */
 export const TANK_ATTRIBUTE = 'data-aqfish-tank';
+/** Attribut de test : forme du bassin du monde courant (`rectangle` hors du bassin, #190). */
+export const SHAPE_ATTRIBUTE = 'data-aqfish-shape';
 
 /** Intervalle de la sauvegarde automatique, en millisecondes (#70). */
 export const AUTOSAVE_INTERVAL_MS = 10_000;
@@ -805,6 +810,8 @@ export class AquariumHost {
    * pas (`isTankResizable`).
    */
   readonly tankDimensions = signal<TankDimensions | null>(null);
+  /** Forme du bassin du monde courant (issue #190) : rectangle hors du bassin. */
+  readonly pondShape = signal<PondShape>(DEFAULT_POND_SHAPE);
   /** Litres d'eau du bac du monde courant (#237, avertissements d'ajout), `null` avant le départ. */
   readonly tankLiters = signal<number | null>(null);
 
@@ -1148,6 +1155,29 @@ export class AquariumHost {
     }
     this.exposeCamera();
     // Comme une modification du décor : enregistré tout de suite.
+    this.saveNow();
+    this.scheduleFrame();
+  }
+
+  /**
+   * Règle la forme du bassin (issue #190, ADR 0080) : poissons et granulés ramenés dans la
+   * forme (`setPondShapeInPlace`), puis la vue recréée sur le préréglage actif ; le monde est
+   * enregistré aussitôt. Sans effet en mode capture (`forme=`), avant le démarrage, hors du
+   * bassin ou à forme inchangée.
+   */
+  setPondShape(shape: PondShape): void {
+    const world = this.currentWorld;
+    if (!world || !this.view || this.capture || (world.shape ?? DEFAULT_POND_SHAPE) === shape) {
+      return;
+    }
+    this.finishDropAnimation();
+    if (setPondShapeInPlace(world, shape) === null) {
+      return;
+    }
+    this.exposeTankDimensions();
+    this.exposeFood();
+    this.createView(this.activePreset() ?? environmentById(world.environment).defaultCamera);
+    this.exposeCamera();
     this.saveNow();
     this.scheduleFrame();
   }
@@ -2393,7 +2423,12 @@ export class AquariumHost {
       const environment = isEnvironmentId(params.environment)
         ? params.environment
         : DEFAULT_ENVIRONMENT_ID;
-      const world: MutableWorld = createDefaultWorld(params.seed, environment);
+      // Forme du bassin de `forme=` (#190), en capture et au bassin seulement.
+      const shape =
+        params.capture && isPondShape(params.shape) && isPondShapeable(environment)
+          ? params.shape
+          : undefined;
+      const world: MutableWorld = createDefaultWorld(params.seed, environment, shape);
       // Bois flottés de `bois=` (#169), en capture : ajoutés au décor avant la population,
       // après les dimensions du bac de `bac=` (#171).
       if (params.capture) {
@@ -2931,6 +2966,8 @@ export class AquariumHost {
     }
     const dims = placeDimensions(world);
     this.tankDimensions.set(isTankResizable(world.environment) ? dims : null);
+    this.pondShape.set(world.shape ?? DEFAULT_POND_SHAPE);
+    this.host.nativeElement.setAttribute(SHAPE_ATTRIBUTE, world.shape ?? DEFAULT_POND_SHAPE);
     this.tankLiters.set(waterLiters(environmentWater(world)));
     this.host.nativeElement.setAttribute(
       TANK_ATTRIBUTE,

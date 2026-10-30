@@ -1,3 +1,4 @@
+import { DEFAULT_POND_SHAPE, type PondShape } from './pond-shape';
 import type { CameraPreset } from '../core/capture/capture-params';
 import { assertAnemoneSettings, type AnemoneSettings } from './anemones';
 import { assertBankDecorSettings, type BankDecorSettings } from './bank-decor';
@@ -62,6 +63,11 @@ export interface Environment {
   readonly name: string;
   /** Dimensions intérieures (repère de `sim/tank.ts`). */
   readonly dimensions: TankDimensions;
+  /**
+   * Forme du bassin vue de dessus (issue #190) : seulement dans les données d'un lieu de
+   * forme réglée (`placeEnvironmentData`), pour le rendu ; absente, rectangle.
+   */
+  readonly shape?: PondShape;
   /**
    * Niveau de l'eau, en fraction de la hauteur (`waterVolume`) : `WATER_LEVEL_RATIO` pour le
    * bac et le bassin, plus bas pour le paludarium, dont la berge émerge.
@@ -435,6 +441,11 @@ export function environmentWater(place: Place): Box3 {
 export interface TankPlace {
   readonly environment: EnvironmentId;
   readonly dimensions?: TankDimensions;
+  /**
+   * Forme du bassin vue de dessus (issue #190, `sim/pond-shape.ts`) ; absente : rectangle.
+   * Seuls les environnements de `SHAPED_ENVIRONMENTS` en ont une autre.
+   */
+  readonly shape?: PondShape;
 }
 
 /** Environnement seul (dimensions d'origine) ou lieu aux dimensions réglées. */
@@ -446,6 +457,19 @@ export const RESIZABLE_ENVIRONMENTS: readonly EnvironmentId[] = ['tropical'];
 /** Vrai si les dimensions de l'environnement `id` se règlent. */
 export function isTankResizable(id: EnvironmentId): boolean {
   return RESIZABLE_ENVIRONMENTS.includes(id);
+}
+
+/** Environnements dont la forme se règle (issue #190 : le bassin seulement). */
+export const SHAPED_ENVIRONMENTS: readonly EnvironmentId[] = ['bassin'];
+
+/** Vrai si la forme de l'environnement `id` se règle (`sim/pond-shape.ts`). */
+export function isPondShapeable(id: EnvironmentId): boolean {
+  return SHAPED_ENVIRONMENTS.includes(id);
+}
+
+/** Forme d'un lieu : la sienne, sinon le rectangle. */
+export function placeShape(place: Place): PondShape {
+  return typeof place === 'string' ? DEFAULT_POND_SHAPE : (place.shape ?? DEFAULT_POND_SHAPE);
 }
 
 /** Environnement d'un lieu. */
@@ -489,7 +513,10 @@ export function placeKey(place: Place): string {
   }
   const d = place.dimensions;
   if (d === undefined) {
-    return place.environment;
+    const shape = place.shape;
+    return shape === undefined || shape === DEFAULT_POND_SHAPE
+      ? place.environment
+      : shapedKey(place.environment, shape);
   }
   const hit = PLACE_KEYS.get(d);
   if (hit !== undefined && hit.environment === place.environment) {
@@ -501,11 +528,31 @@ export function placeKey(place: Place): string {
   return key;
 }
 
-/** Environnement d'un lieu, avec ses dimensions (pour le rendu de la scène). */
+/** Clés des lieux de forme réglée (issue #190), construites une fois par couple. */
+const SHAPED_KEYS = new Map<EnvironmentId, Map<PondShape, string>>();
+
+function shapedKey(environment: EnvironmentId, shape: PondShape): string {
+  let byShape = SHAPED_KEYS.get(environment);
+  if (byShape === undefined) {
+    byShape = new Map();
+    SHAPED_KEYS.set(environment, byShape);
+  }
+  let key = byShape.get(shape);
+  if (key === undefined) {
+    placeKeyBuilds += 1;
+    key = `${environment}~${shape}`;
+    byShape.set(shape, key);
+  }
+  return key;
+}
+
+/** Environnement d'un lieu, avec ses dimensions et sa forme (pour le rendu de la scène). */
 export function placeEnvironmentData(place: Place): Environment {
   const env = environmentById(placeEnvironment(place));
   const dimensions = placeDimensions(place);
-  return dimensions === env.dimensions ? env : { ...env, dimensions };
+  const sized = dimensions === env.dimensions ? env : { ...env, dimensions };
+  const shape = placeShape(place);
+  return shape === DEFAULT_POND_SHAPE || !isPondShapeable(env.id) ? sized : { ...sized, shape };
 }
 
 /** Volume d'eau d'un environnement aux dimensions éventuellement réglées (`placeEnvironmentData`). */

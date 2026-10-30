@@ -22,18 +22,34 @@ import {
   DEFAULT_ENVIRONMENT_ID,
   environmentById,
   environmentWater,
+  isPondShapeable,
   isTankResizable,
   PLACE_CACHE_LIMIT,
   placeDimensions,
   placeEnvironment,
   placeKey,
+  placeShape,
   type EnvironmentId,
   type Place,
 } from './environment';
 import { eatInPlace, feedingBand, foodTarget, type FeedingBand } from './feeding';
 import { computeSchoolSteering, enforceMinDistance, type Vec3 } from './flocking';
-import { dropFoodInPlace, stepFoodInPlace, type FoodPellet } from './food';
+import {
+  dropFoodInPlace,
+  FOOD_DROP_RADIUS,
+  FOOD_RADIUS,
+  stepFoodInPlace,
+  type FoodPellet,
+} from './food';
 import { validateObstacle, type Obstacle } from './obstacles';
+import {
+  DEFAULT_POND_SHAPE,
+  isPondShape,
+  insideShape,
+  keepInShape,
+  shapeOutline,
+  type PondShape,
+} from './pond-shape';
 import { SPECIES, type AnemoneBondParams, type SpeciesDefinition, type SpeciesId } from './species';
 import { createFish, stepFish, swimBounds, type Fish, type SwimBounds } from './swimmer';
 import { clampTankDimensions, type TankDimensions } from './tank';
@@ -82,6 +98,11 @@ export interface World {
    * celles de l'environnement. Le monde est ainsi un lieu (`TankPlace`, `sim/environment.ts`).
    */
   readonly dimensions?: TankDimensions;
+  /**
+   * Forme du bassin vue de dessus (issue #190, ADR 0080, `sim/pond-shape.ts`) : `ovale` ou
+   * `haricot` ; absente, rectangle (jamais enregistrée ainsi). Fixée à la création.
+   */
+  readonly shape?: PondShape;
   /** Nombre de pas `SIM_DT` exécutés depuis la création. */
   readonly tick: number;
   /**
@@ -158,8 +179,14 @@ export function createWorld(
   const environment = placeEnvironment(place);
   environmentById(environment);
   const dimensions = worldDimensions(place);
-  // Lieu du monde : l'environnement seul, ou avec ses dimensions réglées (bornées).
-  const where: Place = dimensions === undefined ? environment : { environment, dimensions };
+  const shape = worldShape(place);
+  // Lieu du monde : l'environnement seul, ou avec ses dimensions réglées (bornées) ou sa forme.
+  const where: Place =
+    dimensions === undefined
+      ? shape === undefined
+        ? environment
+        : { environment, shape }
+      : { environment, dimensions };
   const decorItems = parseDecorItems(decor, placeDimensions(where));
   const sortedObstacles = copyObstacles(obstacles);
   const firstDecorId = sortedObstacles.length > 0 ? sortedObstacles.at(-1)!.id + 1 : 0;
@@ -191,6 +218,7 @@ export function createWorld(
     seed,
     environment,
     ...(dimensions === undefined ? {} : { dimensions }),
+    ...(shape === undefined ? {} : { shape }),
     tick: 0,
     time: 0,
     entities,
@@ -215,6 +243,27 @@ function worldDimensions(place: Place): TankDimensions | undefined {
     throw new RangeError(`dimensions non réglables dans l’environnement ${place.environment}`);
   }
   return clampTankDimensions(place.dimensions);
+}
+
+/**
+ * Forme réglée d'un lieu (issue #190), `undefined` pour le rectangle ou sans réglage.
+ * @throws RangeError si la forme est inconnue, ou autre que le rectangle dans un
+ * environnement dont la forme ne se règle pas.
+ */
+function worldShape(place: Place): PondShape | undefined {
+  if (typeof place === 'string' || place.shape === undefined) {
+    return undefined;
+  }
+  if (!isPondShape(place.shape)) {
+    throw new RangeError(`forme de bassin inconnue : ${String(place.shape)}`);
+  }
+  if (place.shape === DEFAULT_POND_SHAPE) {
+    return undefined;
+  }
+  if (!isPondShapeable(place.environment)) {
+    throw new RangeError(`forme non réglable dans l’environnement ${place.environment}`);
+  }
+  return place.shape;
 }
 
 /**
@@ -436,15 +485,18 @@ function copyObstacles(obstacles: readonly Obstacle[]): Obstacle[] {
 /**
  * Monde de départ d'un environnement (le bac tropical par défaut : chaque espèce avec sa
  * population par défaut, dans le décor par défaut `DEFAULT_DECOR`), avec sa population et
- * son décor de départ (`sim/environment.ts`).
- * @throws RangeError si la graine ou l'environnement est invalide.
+ * son décor de départ (`sim/environment.ts`), de forme `shape` (issue #190 ; rectangle par
+ * défaut).
+ * @throws RangeError si la graine, l'environnement ou la forme est invalide.
  */
 export function createDefaultWorld(
   seed: number,
   environment: EnvironmentId = DEFAULT_ENVIRONMENT_ID,
+  shape?: PondShape,
 ): World {
   const env = environmentById(environment);
-  return createWorld(seed, env.population, [], env.decor, environment);
+  const place: Place = shape === undefined ? environment : { environment, shape };
+  return createWorld(seed, env.population, [], env.decor, place);
 }
 
 /**
@@ -533,13 +585,31 @@ export function feed(world: World, x: number, z: number): World {
  * propriétaire unique du monde (`ui/aquarium-host`), comme `advanceInPlace`.
  */
 export function feedInPlace(world: MutableWorld, x: number, z: number): number {
-  return dropFoodInPlace(
-    world as MutableWorld & { food: FoodPellet[] },
-    x,
-    z,
-    environmentWater(world),
-  );
+  const water = environmentWater(world);
+  if (world.shape !== undefined && Number.isFinite(x) && Number.isFinite(z)) {
+    // Bassin non rectangulaire (issue #190) : rien sur la berge ; dans l'eau, le centre du
+    // dépôt est écarté du bord pour que tous les granulés y tombent.
+    const outline = shapeOutline(world.shape, water);
+    if (!insideShape(outline, x, z)) {
+      return 0;
+    }
+    FEED_POINT.x = x;
+    FEED_POINT.z = z;
+    keepInShape(FEED_POINT, outline, FEED_SHAPE_MARGIN);
+    return dropFoodInPlace(
+      world as MutableWorld & { food: FoodPellet[] },
+      FEED_POINT.x,
+      FEED_POINT.z,
+      water,
+    );
+  }
+  return dropFoodInPlace(world as MutableWorld & { food: FoodPellet[] }, x, z, water);
 }
+
+/** Point de dépôt ramené dans la forme du bassin (réutilisé, sans allocation). */
+const FEED_POINT = { x: 0, z: 0 };
+/** Marge du centre d'un dépôt au bord d'un bassin non rectangulaire, en mètres. */
+const FEED_SHAPE_MARGIN = FOOD_DROP_RADIUS + FOOD_RADIUS;
 
 /** Dépôt de nourriture à un temps simulé donné (contrat de capture, `nourrir=`). */
 export interface Feeding {
@@ -938,7 +1008,9 @@ function boundsAt(species: SpeciesId, place: Place, key: string): SwimBounds {
   const bounds = BOUNDS_CACHE.get(key)?.get(species);
   return (
     bounds ??
-    cached(BOUNDS_CACHE, species, key, () => swimBounds(SPECIES[species], environmentWater(place)))
+    cached(BOUNDS_CACHE, species, key, () =>
+      swimBounds(SPECIES[species], environmentWater(place), placeShape(place)),
+    )
   );
 }
 

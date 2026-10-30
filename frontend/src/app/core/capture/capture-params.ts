@@ -35,6 +35,10 @@
  * comme hors capture (sans effet dans un environnement sans pluie) ; toute autre valeur ou
  * absent, pas de pluie (séries existantes inchangées).
  *
+ * Paramètre facultatif `forme=ovale|haricot` (issue #190) : en mode capture, forme du bassin
+ * (`sim/pond-shape.ts`, vérifiée par l'application) ; ailleurs qu'au bassin, absent ou
+ * invalide, rectangle (séries existantes inchangées).
+ *
  * Paramètre facultatif `eau=bonne|a-surveiller|mauvaise` (issue #207) : en mode capture, eau
  * d'exemple de ce niveau à t = 0 (`sampleWater`, nitrates élevés), qui trouble l'eau quand
  * elle est mauvaise. Le niveau n'est pas vérifié ici : l'application ignore une valeur
@@ -148,6 +152,8 @@ export interface CaptureParams {
   readonly room: boolean;
   /** Niveau de l'eau d'exemple de `eau=` (issue #207), non vérifié ; `null` si absent. */
   readonly water: string | null;
+  /** Forme du bassin de `forme=` (issue #190), non vérifiée ; `null` si absente. */
+  readonly shape: string | null;
   /** Vrai pour `affames=1` : animaux affamés de longue date à t = 0 (issue #208). */
   readonly starved: boolean;
   /** Feuilles de catappa neuves de `catappa=` à t = 0 (issue #239), 0 si absent ou invalide. */
@@ -258,6 +264,7 @@ export const DEFAULT_CAPTURE_PARAMS: CaptureParams = {
   rain: false,
   room: false,
   water: null,
+  shape: null,
   starved: false,
   catappa: 0,
   editSelection: null,
@@ -310,6 +317,7 @@ export function parseCaptureParams(search: string): CaptureParams {
     rain: params.get('pluie') === '1',
     room: params.get('piece') === '1',
     water: params.get('eau'),
+    shape: params.get('forme'),
     starved: params.get('affames') === '1',
     catappa: parseCatappa(params.get('catappa')),
     editSelection: parseEditSelection(params.get('edition')),

@@ -47,6 +47,7 @@
       #panel
       (opened)="onPanelOpened()"
       [environment]="aquarium.environment()"
+      [pondShape]="aquarium.pondShape()"
       [speed]="aquarium.speed()"
       [hour]="aquarium.clockHour()"
       [clockRunning]="!aquarium.clockFrozen()"
@@ -66,6 +67,7 @@
       [saveStatus]="aquarium.saveStatus()"
       [saveMessage]="aquarium.saveMessage()"
       (environmentChanged)="aquarium.setEnvironment($event)"
+      (pondShapeChanged)="aquarium.setPondShape($event)"
       (speedChanged)="aquarium.setSpeed($event)"
       (hourChanged)="aquarium.freezeClockAt($event)"
       (clockRunningChanged)="aquarium.setClockRunning($event)"

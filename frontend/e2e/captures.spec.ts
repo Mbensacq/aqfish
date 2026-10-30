@@ -230,6 +230,17 @@ test.describe('Captures', () => {
       name: 'bassin-three-quarter-pluie',
       query: 'environnement=bassin&camera=three-quarter&pluie=1',
     },
+    // Forme du bassin (#190) : ovale et haricot, de dessus et en trois-quarts.
+    { name: 'bassin-top-ovale', query: 'environnement=bassin&forme=ovale' },
+    {
+      name: 'bassin-three-quarter-ovale',
+      query: 'environnement=bassin&camera=three-quarter&forme=ovale',
+    },
+    { name: 'bassin-top-haricot', query: 'environnement=bassin&forme=haricot' },
+    {
+      name: 'bassin-three-quarter-haricot',
+      query: 'environnement=bassin&camera=three-quarter&forme=haricot',
+    },
   ] as const;
   for (const { name, query } of POND_CAPTURES) {
     test(`angle ${name}`, async ({ page }) => {

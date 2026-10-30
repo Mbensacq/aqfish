@@ -1,5 +1,16 @@
 import { prngNextState, prngOutput, deriveSeed } from '../core/random/prng';
-import { deflect, obstacleAvoidance, wallAvoidance } from './avoidance';
+import { deflect, obstacleAvoidance, proximity, wallAvoidance } from './avoidance';
+import {
+  constrainToShape,
+  DEFAULT_POND_SHAPE,
+  insideShape,
+  keepInShape,
+  shapeDistance,
+  shapeNormal,
+  shapeOutline,
+  type PondShape,
+  type ShapeOutline,
+} from './pond-shape';
 import { growHunger, HUNGER_START } from './feeding';
 import type { Vec3 } from './flocking';
 import { obstacleBound, obstacleDistance, type Obstacle } from './obstacles';
@@ -93,6 +104,14 @@ export interface SwimBounds {
   /** Hauteur au-dessus de laquelle une espèce de fond est tirée vers le bas ; +∞ sinon. */
   readonly preferredMaxY: number;
   /**
+   * Contour horizontal du bassin quand il n'est pas rectangulaire (issue #190, ADR 0080) :
+   * le centre reste aussi à `wallMargin` au moins de son bord, qui repousse le point visé
+   * comme une paroi. Absent : la boîte seule (nage d'avant, au bit près).
+   */
+  readonly outline?: ShapeOutline;
+  /** Marge du centre au bord du contour (`wallMargin` de l'espèce), avec `outline`. */
+  readonly outlineMargin?: number;
+  /**
    * Hauteur au-dessous de laquelle une espèce de mi-hauteur (`depth.minHeightRatio`, issue
    * #151) est tirée vers le haut ; −∞ sinon.
    */
@@ -165,6 +184,7 @@ const SCRATCH_WALL: Vec3 = { x: 0, y: 0, z: 0 };
 const SCRATCH_OBSTACLE: Vec3 = { x: 0, y: 0, z: 0 };
 const SCRATCH_AVOID: Vec3 = { x: 0, y: 0, z: 0 };
 const SCRATCH_NORMAL: Vec3 = { x: 0, y: 0, z: 0 };
+const SCRATCH_SHAPE = { x: 0, z: 0 };
 /** Nombre maximal de passes de projection hors des obstacles par pas. */
 const OBSTACLE_PASSES = 4;
 
@@ -182,14 +202,30 @@ const NO_DEPTH_PREFERENCE = {
   preferredMinY: Number.NEGATIVE_INFINITY,
 } as const;
 
-/** Bornes de nage d'une espèce dans un volume d'eau donné. */
-export function swimBounds(def: SpeciesDefinition, water: Box3): SwimBounds {
+/**
+ * Bornes de nage d'une espèce dans un volume d'eau donné, de forme horizontale `shape`
+ * (`sim/pond-shape.ts`, issue #190) : rectangle par défaut, la boîte seule. Une autre forme
+ * ajoute son contour (`outline`) aux bornes des espèces qui nagent ; celles qui marchent ou
+ * vivent entre terre et eau n'habitent pas le bassin et l'ignorent.
+ */
+export function swimBounds(
+  def: SpeciesDefinition,
+  water: Box3,
+  shape: PondShape = DEFAULT_POND_SHAPE,
+): SwimBounds {
   if (def.walker !== undefined) {
     return walkerBounds(def, water);
   }
   if (def.amphibian !== undefined) {
     return amphibianBounds(def, water);
   }
+  const bounds = boxSwimBounds(def, water);
+  return shape === DEFAULT_POND_SHAPE
+    ? bounds
+    : { ...bounds, outline: shapeOutline(shape, water), outlineMargin: def.wallMargin };
+}
+
+function boxSwimBounds(def: SpeciesDefinition, water: Box3): SwimBounds {
   const hard = shrinkBox(water, def.wallMargin);
   const soft = shrinkBox(hard, AVOID_ZONE);
   const legacy = shrinkBox(shrinkBox(water, SPAWN_MARGINS[0]), SPAWN_MARGINS[1]);
@@ -301,13 +337,23 @@ export function createFish(
     pphase: 0,
   };
   const { spawn } = bounds;
+  const spawnInset = def.wallMargin + AVOID_ZONE;
   for (let attempt = 0; attempt < MAX_SPAWN_TRIES; attempt++) {
     fish.x = lerp(spawn.minX, spawn.maxX, random(fish));
     fish.y = lerp(spawn.minY, spawn.maxY, random(fish));
     fish.z = lerp(spawn.minZ, spawn.maxZ, random(fish));
-    if (clearOfObstacles(fish, obstacles, def.wallMargin)) {
+    if (
+      clearOfObstacles(fish, obstacles, def.wallMargin) &&
+      (bounds.outline === undefined || insideShape(bounds.outline, fish.x, fish.z, spawnInset))
+    ) {
       break;
     }
+  }
+  if (bounds.outline !== undefined) {
+    // Bassin non rectangulaire (issue #190) : dernier tirage ramené dans la forme si besoin.
+    constrainToShape(bounds.outline, fish.x, fish.z, def.wallMargin, SCRATCH_SHAPE);
+    fish.x = SCRATCH_SHAPE.x;
+    fish.z = SCRATCH_SHAPE.z;
   }
   fish.yaw = wrapAngle(random(fish) * TWO_PI);
   // Déphasage individuel de l'ondulation, tiré du sous-générateur du poisson.
@@ -460,6 +506,16 @@ export function stepFish(
   const probeY = fish.y + headY * lookahead;
   const probeZ = fish.z + headZ * lookahead;
   const wall = wallAvoidance(probeX, probeY, probeZ, bounds.avoid, AVOID_ZONE, SCRATCH_WALL);
+  if (bounds.outline !== undefined) {
+    // Bord du bassin non rectangulaire (issue #190) : repousse comme une paroi verticale.
+    const d = shapeDistance(bounds.outline, probeX, probeZ) - def.wallMargin;
+    const w = proximity(d, AVOID_ZONE);
+    if (w > 0) {
+      shapeNormal(bounds.outline, probeX, probeZ, SCRATCH_SHAPE);
+      wall.x += SCRATCH_SHAPE.x * w;
+      wall.z += SCRATCH_SHAPE.z * w;
+    }
+  }
   const obstacle = obstacleAvoidance(
     fish.x,
     fish.y,
@@ -598,6 +654,9 @@ export function stepFish(
   fish.x = clamp(fish.x, hard.minX, hard.maxX);
   fish.y = clamp(fish.y, hard.minY, hard.maxY);
   fish.z = clamp(fish.z, hard.minZ, hard.maxZ);
+  if (bounds.outline !== undefined) {
+    keepInShape(fish, bounds.outline, def.wallMargin);
+  }
 
   // Battement de queue : plus rapide quand le poisson nage plus vite. La phase n'est lue par
   // aucun calcul de trajectoire et ne consomme aucun tirage (sim/undulation.ts).
