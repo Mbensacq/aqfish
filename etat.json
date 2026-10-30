@@ -3837,6 +3837,12 @@
           "debut": "2026-10-29T23:07:26.481Z",
           "fin": "2026-10-30T00:14:24.720Z",
           "note": "PR #326 : #309 (source du sonneur, test corrigé en commit séparé) + #322 (_panel-layout.scss, top-slot, badge aux marges téléphone, e2e 4 largeurs) + ROADMAP v1.3/v1.4 ; CI verte au 1er essai ; 100/100 captures identiques à c103"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-10-30T00:14:49.982Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
