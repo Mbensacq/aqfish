@@ -4002,7 +4002,7 @@
       "date": "2026-10-30",
       "debut": "2026-10-30T12:05:22.747Z",
       "type": "fonctionnalite",
-      "issue": null,
+      "issue": 123,
       "pr": null,
       "version": null,
       "phases": {
