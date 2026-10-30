@@ -4089,6 +4089,12 @@
           "debut": "2026-10-30T18:52:42.791Z",
           "fin": "2026-10-30T20:04:55.664Z",
           "note": "PR #348 : #332 (pts 1, 2, 4, 6) + fondu ciel couvert #338 + roadmap v1.4/v1.5, CI verte au 1er essai ; 105 captures identiques à main ; suite #349 (pts 3, 5)"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-10-30T20:05:26.742Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
