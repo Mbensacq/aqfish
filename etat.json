@@ -3953,10 +3953,10 @@
           "note": "Verdict OK, 0 bug, captures c107 publiées (99/105 identiques, 4 nouvelles ; e2e complète non exécutable en local, specs touchées vertes), +1 test e2e"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-30T08:17:09.017Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-30T09:30:25.827Z",
+          "note": "PR #333 fusionnée → v1.4.2 ; main verte, release créée par la CI ; #190 fermée ; dette #334 ; suppression de la branche refusée par l'environnement"
         }
       },
       "metriques": {}
