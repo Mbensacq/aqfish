@@ -3843,6 +3843,12 @@
           "debut": "2026-10-30T00:14:49.982Z",
           "fin": "2026-10-30T00:39:09.871Z",
           "note": "Verdict RÉSERVES (e2e : 25 ciblés verts, suite complète en CI seulement), 0 bug, captures c104 publiées (98/100 identiques, 2 écarts ≤1/255)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-10-30T00:39:47.196Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
