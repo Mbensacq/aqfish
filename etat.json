@@ -3917,10 +3917,10 @@
           "note": "Verdict OK, 0 bug bloquant (404 console sans fichier fond, mineur), captures c106 publiées (100/100 identiques)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-30T05:43:40.510Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-30T06:42:11.005Z",
+          "note": "PR #331 fusionnée → v1.4.1 ; main verte, release créée par la CI ; #279 fermée ; dette #332 ; suppression de la branche refusée par l'environnement"
         }
       },
       "metriques": {}
