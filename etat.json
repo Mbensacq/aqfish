@@ -4040,7 +4040,7 @@
       "type": "dette",
       "issue": 336,
       "pr": 339,
-      "version": null,
+      "version": "v1.4.5",
       "phases": {
         "planif": {
           "statut": "termine",
