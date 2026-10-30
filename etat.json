@@ -3852,6 +3852,24 @@
         }
       },
       "metriques": {}
+    },
+    "105": {
+      "numero": 105,
+      "date": "2026-10-30",
+      "debut": "2026-10-30T01:32:53.005Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-10-30T01:32:53.005Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
