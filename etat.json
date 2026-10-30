@@ -3875,10 +3875,10 @@
           "note": "PR #328 : retour en soins avec liste des animaux inadaptés (#323), CI verte au 1er essai ; 100/100 captures identiques à main ; e2e locale : mode-decor seule"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-30T02:55:11.458Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-30T03:18:28.978Z",
+          "note": "Verdict OK, 0 bug, captures c105 publiées (100/100 identiques à c104)"
         }
       },
       "metriques": {}
