@@ -4004,7 +4004,7 @@
       "type": "fonctionnalite",
       "issue": 123,
       "pr": 337,
-      "version": null,
+      "version": "v1.4.4",
       "phases": {
         "planif": {
           "statut": "termine",
