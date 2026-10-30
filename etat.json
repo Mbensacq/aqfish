@@ -4053,6 +4053,12 @@
           "debut": "2026-10-30T15:33:03.848Z",
           "fin": "2026-10-30T16:59:27.642Z",
           "note": "PR #339 : dette pièce (signature x,y,z, mur du fond sur inner.minZ, meubles sous les poutres) + overcast.ts (#338) + test exclusion (#334), CI verte au 1er essai ; 105 captures identiques à main"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-10-30T16:59:51.930Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
