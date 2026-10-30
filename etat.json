@@ -3947,10 +3947,10 @@
           "note": "PR #333 : forme du bassin ovale et haricot (#190), CI verte au 1er essai ; 100/100 captures identiques à main ; ~700 lignes de code (au-delà des 600 indicatives, signalé)"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-30T07:52:43.552Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-30T08:16:32.199Z",
+          "note": "Verdict OK, 0 bug, captures c107 publiées (99/105 identiques, 4 nouvelles ; e2e complète non exécutable en local, specs touchées vertes), +1 test e2e"
         }
       },
       "metriques": {}
