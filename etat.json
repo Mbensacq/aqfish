@@ -3863,10 +3863,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-30T01:32:53.005Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-30T01:33:22.652Z",
+          "note": "Issue #323 : mode décor lot 2, retour en Soins avec liste des animaux inadaptés (M)"
         }
       },
       "metriques": {}
