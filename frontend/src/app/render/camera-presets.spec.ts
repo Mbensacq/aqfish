@@ -6,6 +6,7 @@ import {
   cameraPresetPose,
   framingDistance,
   orbitDistanceLimits,
+  orbitPose,
   panTargetRadius,
   tankBoundingRadius,
   tankCenter,
@@ -208,5 +209,33 @@ describe('panTargetRadius (bug #10)', () => {
 
   it('rejette des dimensions invalides', () => {
     expect(() => panTargetRadius({ width: 0, height: 1, depth: 1 })).toThrow(RangeError);
+  });
+});
+
+describe('orbitPose (fond d’écran, #279)', () => {
+  const base = cameraPresetPose('three-quarter', TANK, 16 / 9, CAMERA_FOV_DEG);
+  const distance = (p: { position: readonly number[]; target: readonly number[] }) =>
+    Math.hypot(...p.position.map((c, i) => c - p.target[i]));
+
+  it('angle nul ou non fini : pose identique', () => {
+    expect(orbitPose(base, 0)).toEqual(base);
+    expect(orbitPose(base, Number.NaN)).toBe(base);
+  });
+
+  it('garde la cible, la hauteur et la distance ; un tour complet revient au départ', () => {
+    for (const angle of [-0.6, 0.3, 1, Math.PI]) {
+      const pose = orbitPose(base, angle);
+      expect(pose.target).toEqual(base.target);
+      expect(pose.position[1]).toBe(base.position[1]);
+      expect(distance(pose)).toBeCloseTo(distance(base), 10);
+    }
+    const full = orbitPose(base, 2 * Math.PI);
+    full.position.forEach((c, i) => expect(c).toBeCloseTo(base.position[i], 10));
+  });
+
+  it('quart de tour : (x, z) relatifs deviennent (z, −x)', () => {
+    const pose = orbitPose({ position: [1, 2, 0], target: [0, 0, 0] }, Math.PI / 2);
+    expect(pose.position[0]).toBeCloseTo(0, 12);
+    expect(pose.position[2]).toBeCloseTo(-1, 12);
   });
 });

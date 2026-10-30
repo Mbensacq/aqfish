@@ -1,6 +1,6 @@
 {
   "name": "aqfish",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
@@ -14,6 +14,7 @@
     "format:check": "prettier --check .",
     "e2e": "playwright test --project=e2e",
     "captures": "playwright test --project=captures",
+    "paquet-fond": "node scripts/paquet-fond.mjs",
     "verify": "npm run format:check && npm run lint && npm run test && npm run build && npm run e2e",
     "test:mutation": "stryker run"
   },

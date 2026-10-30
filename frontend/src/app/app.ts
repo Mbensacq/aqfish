@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, DOCUMENT, inject, viewChild } from '@angular/core';
 
 import { parseCaptureParams } from './core/capture/capture-params';
+import { readWallpaperGlobal } from './core/wallpaper/wallpaper';
 import { AquariumHost } from './ui/aquarium-host/aquarium-host';
 import { BeginnerGuide } from './ui/beginner-guide/beginner-guide';
 import { BeginnerGuideState } from './ui/beginner-guide/beginner-guide-state';
@@ -47,10 +48,17 @@ import { ViewPresetsBar } from './ui/view-presets-bar/view-presets-bar';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class App {
+  private readonly win = inject(DOCUMENT).defaultView;
+  private readonly params = parseCaptureParams(this.win?.location.search ?? '');
   /** Mode capture : interface masquée. */
-  protected readonly capture = parseCaptureParams(
-    inject(DOCUMENT).defaultView?.location.search ?? '',
-  ).capture;
+  private readonly capture = this.params.capture;
+  /**
+   * Vue fond d'écran (#279, ADR 0079) : `fond=1` ou globale `aqfishFond` du paquet ; aucune
+   * interface, seul le canvas est affiché.
+   */
+  private readonly wallpaper = this.params.wallpaper || readWallpaperGlobal(this.win) !== null;
+  /** Interface affichée : ni en capture, ni en fond d'écran. */
+  protected readonly interfaceShown = !this.capture && !this.wallpaper;
 
   private readonly exclusivePanels = inject(EXCLUSIVE_PANELS);
   // Requêtes par nom de référence (`#help`, `#panel`), pas par classe : une référence à
@@ -61,8 +69,9 @@ export class App {
   private readonly wiki = viewChild<SpeciesWiki>('wiki');
 
   constructor() {
-    // Première visite (#240, ADR 0072) : le guide s'ouvre une fois, jamais en mode capture.
-    if (!this.capture) {
+    // Première visite (#240, ADR 0072) : le guide s'ouvre une fois, jamais en mode capture
+    // ni en fond d'écran (#279).
+    if (this.interfaceShown) {
       inject(BeginnerGuideState).showOnFirstVisit();
     }
   }

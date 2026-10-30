@@ -6,6 +6,21 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Page ouverte en `file://` : trois refus de Chromium** (cycle 106, #279) : (1) le routeur
+  d'Angular réécrit l'URL à la navigation initiale (`history.replaceState`) et lève
+  `SecurityError` dans un document `file://` (routeur retiré, ADR 0079) ; (2) `fetch` d'un
+  fichier voisin échoue toujours (« URL scheme "file" is not supported »), même avec
+  `--allow-file-access-from-files` : passer par `XMLHttpRequest` (statut 0 en cas de succès) ;
+  (3) sans ce drapeau, les modules ES de la page voisins sont refusés aussi. Seule
+  `npm run paquet-fond` (page réelle en `file://`) l'a montré : les e2e passent par `ng serve`.
+  (2026-10-30)
+- **Endurance en e2e : la simulation avance au rythme du rendu** (cycle 106, #279) : en rendu
+  logiciel, à 1280 × 720, 45 s réelles à `vitesse=4` n'ont fait que 32 s simulées (pas
+  bornés par image, `maxStepsForSpeed`). Réduire la fenêtre (`setViewportSize` 320 × 180)
+  pour viser des minutes simulées. (2026-10-30)
+- **Documentation de Wallpaper Engine inaccessible** (cycle 106) : la lecture de
+  `docs.wallpaperengine.io` a été refusée (autorisation non accordée en session automatique) ;
+  ne pas la contourner, marquer « à vérifier par Mathis » ce qui en dépend. (2026-10-30)
 - **`control-panel.scss` au bord du budget de style** (cycle 105, #323) : `anyComponentStyle`
   plafonne à 8 kB (`angular.json`) ; le panneau en est à ~7,9 kB. Les tests unitaires et
   l'e2e passent, seul `ng build` échoue (« exceeded maximum budget »). Réutiliser les classes

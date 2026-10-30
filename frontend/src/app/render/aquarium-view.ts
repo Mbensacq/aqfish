@@ -22,6 +22,7 @@ import {
   cameraPresetPose,
   interpolatePose,
   orbitDistanceLimits,
+  orbitPose,
   panTargetRadius,
   type CameraPose,
   tankBoundingRadius,
@@ -459,6 +460,20 @@ export class AquariumView {
       elapsed: 0,
       duration: durationSeconds,
     };
+  }
+
+  /**
+   * Caméra automatique du fond d'écran (#279) : pose du préréglage `preset` tournée de
+   * `angle` radians autour de la verticale de sa cible (`orbitPose`), cadrée pour le rapport
+   * d'aspect courant. Instantané ; annule une transition en cours.
+   */
+  applyOrbit(preset: CameraPreset, angle: number): void {
+    if (this.disposed) {
+      return;
+    }
+    this.transition = null;
+    this.preset = preset;
+    this.setPose(orbitPose(this.presetPose(preset), angle));
   }
 
   /** Vrai pendant une transition de caméra. */
