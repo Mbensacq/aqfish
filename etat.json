@@ -3932,7 +3932,7 @@
       "type": "fonctionnalite",
       "issue": 190,
       "pr": 333,
-      "version": null,
+      "version": "v1.4.2",
       "phases": {
         "planif": {
           "statut": "termine",
