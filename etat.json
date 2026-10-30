@@ -4079,10 +4079,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-30T18:50:36.877Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-30T18:52:21.714Z",
+          "note": "Issue #347 : Rétro sprint 16 ; plan sprint 17 (#342 à #346) ; Dev : #332 + fondu #338 (S)"
         }
       },
       "metriques": {}
