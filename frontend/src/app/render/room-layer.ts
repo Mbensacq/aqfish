@@ -261,14 +261,14 @@ export class RoomLayer implements SceneLayer {
    * Masque ce qui cacherait le bac depuis une caméra en (`x`, `y`, `z`) (`roomVisibility`).
    * Appelée à chaque image : aucune allocation.
    */
-  setViewpoint(y: number, z: number, x = 0): void {
-    const { dims, interior } = this;
-    if (!dims || !interior || !this.rest) {
+  setViewpoint(x: number, y: number, z: number): void {
+    const { interior } = this;
+    if (!interior || !this.rest) {
       return;
     }
     this.object.visible = y >= 0;
     for (const { shell, mesh } of this.shells) {
-      mesh.visible = isShellVisible(dims, interior, shell, x, y, z);
+      mesh.visible = isShellVisible(interior, shell, x, y, z);
     }
   }
 

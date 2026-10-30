@@ -98,19 +98,19 @@ describe('RoomLayer (#187)', () => {
 
   it('suit la caméra : rien sous le fond du bac, pas de mur vu de derrière', () => {
     const layer = new RoomLayer();
-    layer.setViewpoint(1, 1); // sans pièce : sans effet
+    layer.setViewpoint(0, 1, 1); // sans pièce : sans effet
     expect(layer.object.visible).toBe(false);
     layer.setRoom(DEFAULT_TANK, SHOWN, true);
-    layer.setViewpoint(1.2, 1.5);
+    layer.setViewpoint(0, 1.2, 1.5);
     expect(layer.object.visible).toBe(true);
     expect(layer.wallVisible).toBe(true);
-    layer.setViewpoint(-1, 1.5);
+    layer.setViewpoint(0, -1, 1.5);
     expect(layer.object.visible).toBe(false);
     expect(layer.wallVisible).toBe(false);
-    layer.setViewpoint(1.2, -2);
+    layer.setViewpoint(0, 1.2, -2);
     expect(layer.object.visible).toBe(true);
     expect(layer.wallVisible).toBe(false);
-    layer.setViewpoint(1.2, 2);
+    layer.setViewpoint(0, 1.2, 2);
     expect(layer.wallVisible).toBe(true);
     layer.dispose();
     expect(layer.built).toBe(false);
@@ -123,15 +123,15 @@ describe('RoomLayer (#187)', () => {
     const shells = ['fond', 'gauche', 'droite', 'avant', 'plafond'] as const;
     const visible = () => shells.filter((s) => layer.shellVisible(s));
     // Vue trois-quarts par défaut, dans la pièce : tout est affiché.
-    layer.setViewpoint(1.14, 1.53, 1.15);
+    layer.setViewpoint(1.15, 1.14, 1.53);
     expect(visible()).toEqual(shells);
     // Zoom arrière par l'angle avant droit, au-dessus des poutres : droite, avant et plafond
     // masqués ; le fond et le mur de gauche restent derrière le bac.
-    layer.setViewpoint(inner.beamY + 0.5, inner.maxZ + 0.5, inner.maxX + 0.5);
+    layer.setViewpoint(inner.maxX + 0.5, inner.beamY + 0.5, inner.maxZ + 0.5);
     expect(visible()).toEqual(['fond', 'gauche']);
-    layer.setViewpoint(1, 0, inner.minX - 0.5);
+    layer.setViewpoint(inner.minX - 0.5, 1, 0);
     expect(visible()).toEqual(['fond', 'droite', 'avant', 'plafond']);
-    layer.setViewpoint(-0.5, 0, 0);
+    layer.setViewpoint(0, -0.5, 0);
     expect(visible()).toEqual([]);
     layer.dispose();
   });

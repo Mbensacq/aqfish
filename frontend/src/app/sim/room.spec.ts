@@ -285,20 +285,39 @@ describe('pièce : visibilité selon la caméra (#187)', () => {
   };
 
   it('au-dessus du fond du bac, devant le mur : tout est affiché', () => {
-    expect(roomVisibility(DEFAULT_TANK, 1, 2)).toEqual(ALL);
-    expect(roomVisibility(DEFAULT_TANK, 0, 0)).toEqual(ALL);
+    expect(roomVisibility(DEFAULT_TANK, 0, 1, 2)).toEqual(ALL);
+    expect(roomVisibility(DEFAULT_TANK, 0, 0, 0)).toEqual(ALL);
   });
 
   it('sous le fond du bac : la pièce est masquée (le meuble cacherait le bac)', () => {
-    expect(roomVisibility(DEFAULT_TANK, -0.01, 2)).toEqual(NONE);
-    expect(roomVisibility(DEFAULT_TANK, -3, -3)).toEqual(NONE);
-    expect(roomVisibility(DEFAULT_TANK, Number.NaN, 0)).toEqual(NONE);
+    expect(roomVisibility(DEFAULT_TANK, 0, -0.01, 2)).toEqual(NONE);
+    expect(roomVisibility(DEFAULT_TANK, 0, -3, -3)).toEqual(NONE);
+    expect(roomVisibility(DEFAULT_TANK, 0, Number.NaN, 0)).toEqual(NONE);
   });
 
   it('derrière le mur : le mur seul est masqué', () => {
     const wallZ = -DEFAULT_TANK.depth / 2 - WALL_GAP;
-    expect(roomVisibility(DEFAULT_TANK, 1, wallZ - 0.01)).toEqual({ ...ALL, wall: false });
-    expect(roomVisibility(DEFAULT_TANK, 1, wallZ)).toEqual(ALL);
+    expect(roomInterior(DEFAULT_TANK).minZ).toBeCloseTo(wallZ, 9);
+    expect(roomVisibility(DEFAULT_TANK, 0, 1, wallZ - 0.01)).toEqual({ ...ALL, wall: false });
+    expect(roomVisibility(DEFAULT_TANK, 0, 1, wallZ)).toEqual(ALL);
+  });
+
+  it('mur du fond : seuil sur sa face intérieure arrondie au voxel, comme les autres parois (#336)', () => {
+    // Profondeur impaire en centimètres : demi-profondeur arrondie par excès (0,18 m), face du
+    // mur en −0,28 m, là où sont ses blocs (et non −0,275 m).
+    const dims = { ...DEFAULT_TANK, depth: 0.35 };
+    const { minZ } = roomInterior(dims);
+    expect(minZ).toBeCloseTo(-0.28, 9);
+    const wall = roomBlocks(dims, { shown: true, cabinetHeight: 0.75 }).filter(
+      (b) => b.shell === 'fond' && b.part === 'mur',
+    );
+    expect(wall.length).toBeGreaterThan(0);
+    for (const block of wall) {
+      expect(block.box.maxZ).toBeCloseTo(minZ, 9);
+    }
+    expect(roomVisibility(dims, 0, 1, -0.279).wall).toBe(true);
+    expect(roomVisibility(dims, 0, 1, minZ).wall).toBe(true);
+    expect(roomVisibility(dims, 0, 1, minZ - 0.001).wall).toBe(false);
   });
 });
 
@@ -430,14 +449,14 @@ describe('pièce : enveloppe, murs, plafond et poutres (#324)', () => {
   it('de l’intérieur, tout est affiché ; hors de la pièce, chaque mur franchi est masqué', () => {
     const inner = roomInterior(DEFAULT_TANK);
     const y = 1;
-    expect(roomVisibility(DEFAULT_TANK, y, 1, 1)).toMatchObject({
+    expect(roomVisibility(DEFAULT_TANK, 1, y, 1)).toMatchObject({
       left: true,
       right: true,
       front: true,
       ceiling: true,
     });
     // Au-delà du mur de droite et du mur d'en face : ces deux-là seuls sont masqués.
-    const corner = roomVisibility(DEFAULT_TANK, y, inner.maxZ + 0.01, inner.maxX + 0.01);
+    const corner = roomVisibility(DEFAULT_TANK, inner.maxX + 0.01, y, inner.maxZ + 0.01);
     expect(corner).toEqual({
       room: true,
       wall: true,
@@ -446,19 +465,19 @@ describe('pièce : enveloppe, murs, plafond et poutres (#324)', () => {
       front: false,
       ceiling: true,
     });
-    expect(roomVisibility(DEFAULT_TANK, y, 0, inner.minX - 0.01).left).toBe(false);
-    expect(roomVisibility(DEFAULT_TANK, y, 0, inner.minX).left).toBe(true);
-    expect(roomVisibility(DEFAULT_TANK, y, inner.maxZ, 0).front).toBe(true);
+    expect(roomVisibility(DEFAULT_TANK, inner.minX - 0.01, y, 0).left).toBe(false);
+    expect(roomVisibility(DEFAULT_TANK, inner.minX, y, 0).left).toBe(true);
+    expect(roomVisibility(DEFAULT_TANK, 0, y, inner.maxZ).front).toBe(true);
   });
 
   it('plafond et poutres masqués dès que la caméra atteint le dessous des poutres', () => {
     const { beamY } = roomInterior(DEFAULT_TANK);
     expect(beamY).toBeCloseTo(DEFAULT_TANK.height + WALL_RISE - BEAM_DROP, 9);
-    expect(roomVisibility(DEFAULT_TANK, beamY - 0.01, 0).ceiling).toBe(true);
-    expect(roomVisibility(DEFAULT_TANK, beamY, 0).ceiling).toBe(false);
+    expect(roomVisibility(DEFAULT_TANK, 0, beamY - 0.01, 0).ceiling).toBe(true);
+    expect(roomVisibility(DEFAULT_TANK, 0, beamY, 0).ceiling).toBe(false);
     // Vue de dessus de la pièce par défaut : au-dessus du plafond, il ne cache pas le bac.
-    expect(roomVisibility(DEFAULT_TANK, 2.4, 0).ceiling).toBe(false);
-    expect(roomVisibility(DEFAULT_TANK, 2.4, 0).wall).toBe(true);
+    expect(roomVisibility(DEFAULT_TANK, 0, 2.4, 0).ceiling).toBe(false);
+    expect(roomVisibility(DEFAULT_TANK, 0, 2.4, 0).wall).toBe(true);
   });
 
   it('`isShellVisible` : même verdict que `roomVisibility`, paroi par paroi', () => {
@@ -477,9 +496,9 @@ describe('pièce : enveloppe, murs, plafond et poutres (#324)', () => {
       [0, -1, 0],
       [0, 0, 0],
     ]) {
-      const v = roomVisibility(MAX_TANK, y, z, x);
+      const v = roomVisibility(MAX_TANK, x, y, z);
       for (const shell of ROOM_SHELLS) {
-        expect(isShellVisible(MAX_TANK, inner, shell, x, y, z), `${shell} ${x} ${y} ${z}`).toBe(
+        expect(isShellVisible(inner, shell, x, y, z), `${shell} ${x} ${y} ${z}`).toBe(
           v[keys[shell]],
         );
       }
