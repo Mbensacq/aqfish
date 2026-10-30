@@ -1,7 +1,10 @@
 /**
  * Ciel couvert sous la pluie (issue #123, ADR 0082) : la scène est légèrement assombrie par
- * un facteur de luminosité **dédié**, multiplié aux seules couleurs (intensités des
- * lumières, eau, couleurs plates, teinte du décor). L'intensité du jour
+ * un facteur de luminosité **dédié**, multiplié aux intensités des lumières, aux couleurs de
+ * l'eau et du sable (`AquariumScene.setOvercast`) et à la teinte du décor et des nénuphars
+ * (`AquariumView.applyLight`). Les couleurs plates (poissons, bulles, gouttes, granulés,
+ * feuilles de catappa) n'en reçoivent **pas** : vues à travers l'eau assombrie, elles gardent
+ * leur clarté, sans quoi un koï ou une goutte changerait de couleur. L'intensité du jour
  * (`DayLight.intensity`) n'est pas touchée : elle choisit aussi les tons de nuit et du
  * crépuscule de la passe palette (`tonePenaltiesInto`) et la teinte chaude du décor
  * (`decorTintInto`), d'où les stries et les tons du soir à midi de l'essai du cycle 39
