@@ -1,0 +1,26 @@
+// Géométrie des panneaux d'interface partagée (#322) : chaque largeur ou position n'est
+// écrite qu'ici. Les panneaux qui la possèdent (`commands-help.scss`, `control-panel.scss`,
+// `decor-editor.scss`) et le tableau de bord qui se place entre eux
+// (`dashboard-frame/_dashboard-surface.scss`) la lisent tous ici : un changement de largeur
+// ne peut plus diverger. `e2e/cadrage-panneaux.spec.ts` vérifie le non-chevauchement.
+
+/// Marge des panneaux au bord de l'écran (boutons, aide-mémoire).
+$edge: 12px;
+
+/// Marge au bord de l'écran sur téléphone (≤ 480 px).
+$edge-phone: 8px;
+
+/// Bord gauche du bouton « Réglages » et de son panneau : à droite de l'indicateur du moment
+/// de la journée (39 px de large, à `$edge` du bord), plus un écart de 8 px.
+$control-panel-left: 59px;
+
+/// Largeur maximale du bouton « Réglages » (bordure comprise). Le libellé y tient avec
+/// Inter (environnement des agents, 83,7 px) comme avec DejaVu Sans (CI, 78,3 px) ; une
+/// police plus large tronque le libellé au lieu de pousser le tableau de bord.
+$settings-button-width: 84px;
+
+/// Fin du bouton « Réglages », mesurée depuis le bord gauche (143 px).
+$settings-button-end: $control-panel-left + $settings-button-width;
+
+/// Largeur de l'aide-mémoire déplié (`.commands-help`).
+$commands-help-width: 300px;

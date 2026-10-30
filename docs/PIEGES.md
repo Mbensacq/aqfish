@@ -268,6 +268,10 @@ haut de sa section.
   « Réglages » finit à 143 px ; un script Playwright hors du dépôt qui relève
   `getBoundingClientRect()` des éléments d'interface à 1280 × 720, 768 × 1024 et 390 × 844
   (sur un `ng serve --port 4320`) donne la place libre en une minute. (2026-10-26)
+  Depuis #322 (cycle 104), les largeurs et positions partagées (marges, bord gauche et
+  largeur maximale de « Réglages », largeur de l'aide-mémoire) n'existent que dans
+  `src/app/ui/_panel-layout.scss` : un élément qui se place entre les panneaux les lit là
+  (`@use '../panel-layout' as layout;`), sans recopier de valeur. (2026-10-30)
 - **Capture d'interface non reproductible** (cycle 76, #232) : hors capture, le monde avance
   en temps réel dès le chargement ; l'arrêter au curseur de vitesse après coup fige les
   poissons à un instant qui varie d'un essai à l'autre (`front-panneau` : 3 empreintes sur 3

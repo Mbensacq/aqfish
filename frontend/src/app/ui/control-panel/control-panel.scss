@@ -4,11 +4,13 @@
 // L'hôte est une boîte transparente aussi large que le panneau, du bouton jusqu'au bas du
 // panneau : il ne doit pas capter les clics, sinon il masque le bouton « Commandes » replié
 // en haut à droite sur petit écran (#112). Seuls ses enfants (bouton, panneau) les reçoivent.
+@use '../panel-layout' as layout;
+
 :host {
   pointer-events: none;
   position: fixed;
   top: 12px;
-  left: 59px;
+  left: layout.$control-panel-left;
   z-index: 1;
   display: flex;
   flex-direction: column;
@@ -26,6 +28,10 @@
 }
 
 .control-panel__toggle {
+  box-sizing: border-box;
+  // Largeur bornée : le tableau de bord commence à `layout.$settings-button-end` + 12 px
+  // (#322). Le libellé y tient (Inter, DejaVu Sans) ; une police plus large le tronque.
+  max-width: layout.$settings-button-width;
   min-height: 32px;
   padding: 4px 10px;
   border: 1px solid rgb(232 230 227 / 8%);
@@ -36,6 +42,8 @@
     500 14px / 1.2 system-ui,
     sans-serif;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   cursor: pointer;
   opacity: 0.8;
   transition: opacity 150ms ease-out;
@@ -61,7 +69,7 @@
   box-sizing: border-box;
   width: 260px;
   // Jamais hors de la fenêtre, à 390 px compris (59 px à gauche, 12 px de marge à droite).
-  max-width: calc(100vw - 59px - 12px);
+  max-width: calc(100vw - #{layout.$control-panel-left} - #{layout.$edge});
   // Jamais jusqu'à la barre des préréglages (bas : 16 px + une ligne de ~40 px, plus un
   // écart de 24 px) ; à 1280 × 720, la section « Sauvegarde » tient entière (#101, voir les
   // contrôles d'espèce compacts plus bas, #189). Sous 480 px, la barre passe sur deux lignes :

@@ -1,5 +1,6 @@
 // Badge du mode décor (#278, ADR 0077) : à la place du cadre haut du tableau de bord, même
-// emplacement (`dashboard.desk-slot`), même police, mêmes couleurs d'interface
+// place à toutes les largeurs (`dashboard.top-slot`, marges du téléphone comprises, #322),
+// même police, mêmes couleurs d'interface
 // (`DASHBOARD_COLORS`, docs/DA.md « Interface »), posées en variables par le composant.
 @use '../dashboard-frame/dashboard-surface' as dashboard;
 
@@ -9,15 +10,13 @@ $background-alpha: 72%;
 $border-alpha: 18%;
 
 :host {
-  position: fixed;
-  top: 12px;
   z-index: 0;
   display: flex;
   justify-content: center;
   pointer-events: none;
 
-  @include dashboard.desk-slot;
   @include dashboard.font;
+  @include dashboard.top-slot;
 }
 
 .decor-badge {
@@ -28,13 +27,4 @@ $border-alpha: 18%;
   background: color-mix(in srgb, var(--dashboard-background) $background-alpha, transparent);
   color: var(--dashboard-ink);
   pointer-events: auto;
-}
-
-// Sous 1100 px : sous la ligne des boutons, comme le cadre haut (`dashboard-frame.scss`).
-@media (max-width: 1099px) {
-  :host {
-    top: 56px;
-    right: dashboard.$edge;
-    left: dashboard.$edge;
-  }
 }

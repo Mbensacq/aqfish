@@ -1,5 +1,7 @@
 // Aide-mémoire des commandes (docs/DA.md, « Interface ») : panneau sombre translucide aux
 // coins arrondis, en haut à droite, loin de la barre des préréglages (en bas au centre).
+@use '../panel-layout' as layout;
+
 :host {
   position: fixed;
   top: 12px;
@@ -14,7 +16,8 @@
 
 .commands-help {
   box-sizing: border-box;
-  width: 300px;
+  // Largeur lue aussi par le tableau de bord, qui se place à sa gauche (#322).
+  width: layout.$commands-help-width;
   max-width: calc(100vw - 24px);
   // Ne jamais descendre jusqu'à la barre des préréglages (bas : 16 px + ~42 px de haut).
   // À 1280 × 720, le contenu tient entier sous cette hauteur, section « Aide » comprise

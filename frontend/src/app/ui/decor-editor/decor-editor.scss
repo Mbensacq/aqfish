@@ -1,9 +1,11 @@
 // Éditeur de décor (#167, docs/DA.md, « Interface ») : même apparence que « Réglages », à
 // sa place (sous la ligne des boutons du haut, 32 px + 6 px d'écart), plus court.
+@use '../panel-layout' as layout;
+
 :host {
   position: fixed;
   top: 50px;
-  left: 59px;
+  left: layout.$control-panel-left;
   z-index: 1;
   color: #e8e6e3;
   font:
@@ -14,7 +16,7 @@
 .decor-editor {
   box-sizing: border-box;
   width: 260px;
-  max-width: calc(100vw - 59px - 12px);
+  max-width: calc(100vw - #{layout.$control-panel-left} - #{layout.$edge});
   max-height: calc(100vh - 50px - 80px);
   overflow-y: auto;
   padding: 8px 12px 10px;

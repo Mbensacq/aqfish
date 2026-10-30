@@ -1,23 +1,43 @@
 // Déclarations communes au cadre haut (`dashboard-frame.scss`) et au bandeau bas
 // (`dashboard-status.scss`) du tableau de bord (#265), et au badge du mode décor qui les
 // remplace (`decor-badge.scss`, #320) : une seule police, une seule surface sombre
-// translucide, un seul emplacement horizontal. Couleurs et opacités : variables posées par
+// translucide, une seule place (`top-slot`). Couleurs et opacités : variables posées par
 // le cadre (`DASHBOARD_COLORS`), celles que le test de contraste vérifie.
 
-/// Marge des panneaux au bord de l'écran (boutons, aide-mémoire).
-$edge: 12px;
-/// Largeur de l'aide-mémoire déplié (`commands-help.scss`, `.commands-help`).
-$commands-help-width: 300px;
-/// Fin du bouton « Réglages » (`control-panel.scss`), mesurée depuis le bord gauche.
-$settings-button-end: 143px;
+@use '../panel-layout' as layout;
 
 /// Emplacement horizontal sur bureau (≥ 1100 px), dans la ligne des boutons : entre
-/// « Réglages » et l'aide-mémoire déplié, à `$edge` de chacun (155 px et 324 px). Si la
-/// largeur de l'aide-mémoire ou du bouton change, mettre à jour les valeurs ci-dessus
-/// (`e2e/cadrage-panneaux.spec.ts` vérifie le non-chevauchement).
+/// « Réglages » et l'aide-mémoire déplié, à `$edge` de chacun (155 px et 324 px). Largeurs
+/// lues dans `_panel-layout.scss`, comme leurs panneaux (#322) ;
+/// `e2e/cadrage-panneaux.spec.ts` vérifie le non-chevauchement.
 @mixin desk-slot {
-  right: $edge + $commands-help-width + $edge;
-  left: $settings-button-end + $edge;
+  right: layout.$edge + layout.$commands-help-width + layout.$edge;
+  left: layout.$settings-button-end + layout.$edge;
+}
+
+/// Place du cadre haut à toutes les largeurs, à poser sur l'hôte : le cadre
+/// (`dashboard-frame.scss`) et le badge du mode décor qui le remplace (`decor-badge.scss`)
+/// la partagent, marges du téléphone comprises (#322).
+/// - Bureau (≥ 1100 px) : dans la ligne des boutons (`desk-slot`).
+/// - Sous 1100 px : sous la ligne des boutons (12 + 44 px), à `$edge` des bords.
+/// - Téléphone (≤ 480 px) : boutons plus bas et plus serrés, marges de 8 px.
+@mixin top-slot {
+  position: fixed;
+  top: layout.$edge;
+
+  @include desk-slot;
+
+  @media (max-width: 1099px) {
+    top: 56px;
+    right: layout.$edge;
+    left: layout.$edge;
+  }
+
+  @media (max-width: 480px) {
+    top: 48px;
+    right: layout.$edge-phone;
+    left: layout.$edge-phone;
+  }
 }
 
 /// Police du tableau de bord, à poser sur l'hôte : sans elle, le texte prend la police par
