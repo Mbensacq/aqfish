@@ -4059,6 +4059,12 @@
           "debut": "2026-10-30T16:59:51.930Z",
           "fin": "2026-10-30T17:39:14.267Z",
           "note": "Verdict OK, 0 bug, captures c110 publiées (104/104) ; e2e complète non rejouée (CI) ; mutation Stryker interrompue (crash d'un mutant sur shelfBooks), pas de score"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-10-30T17:40:03.064Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
