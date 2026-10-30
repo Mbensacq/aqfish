@@ -1,8 +1,10 @@
 import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
-import { provideRouter } from '@angular/router';
 
-import { routes } from './app.routes';
-
+/**
+ * Configuration de l'application. Sans routeur (#279, ADR 0079) : l'application n'a qu'une
+ * page, et le routeur, à la navigation initiale, réécrivait l'URL (`history.replaceState`),
+ * ce qu'un document ouvert en `file://` refuse (paquet fond d'écran).
+ */
 export const appConfig: ApplicationConfig = {
-  providers: [provideBrowserGlobalErrorListeners(), provideRouter(routes)],
+  providers: [provideBrowserGlobalErrorListeners()],
 };

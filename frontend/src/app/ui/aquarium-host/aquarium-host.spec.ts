@@ -71,6 +71,8 @@ import {
   SAVE_STORAGE,
   CAMERA_ATTRIBUTE,
   ENVIRONMENT_ATTRIBUTE,
+  WALLPAPER_ATTRIBUTE,
+  WALLPAPER_PAUSED_ATTRIBUTE,
   RAIN_ATTRIBUTE,
   WATER_ATTRIBUTE,
   PH_ATTRIBUTE,
@@ -2884,6 +2886,179 @@ describe('AquariumHost', () => {
       expect(host().world!.decor.at(-1)).toMatchObject({ kind: 'rock', x: 0, z: 0.1 });
       expect(host().world!.decor.at(-1)).not.toHaveProperty('elevation');
       expect(host().decorDropGrounded()).toBe(true);
+    });
+  });
+
+  describe('vue fond d’écran (#279)', () => {
+    const element = () => fixture.nativeElement as HTMLElement;
+    const host = () => fixture.componentInstance as AquariumHost;
+    let fetchMock: ReturnType<typeof vi.fn>;
+    const originalFetch = Object.getOwnPropertyDescriptor(window, 'fetch');
+
+    /** `fetch` du fichier de configuration : texte donné (200), ou 404 si `null`. */
+    function serveConfig(text: string | null): void {
+      fetchMock = vi.fn(async () =>
+        text === null
+          ? ({ ok: false, text: async () => 'introuvable' } as Response)
+          : ({ ok: true, text: async () => text } as Response),
+      );
+      Object.defineProperty(window, 'fetch', { configurable: true, value: fetchMock });
+    }
+
+    /** Laisse le chargement asynchrone de la configuration se terminer. */
+    async function settle(): Promise<void> {
+      for (let i = 0; i < 5; i++) {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      }
+    }
+
+    afterEach(() => {
+      if (originalFetch) {
+        Object.defineProperty(window, 'fetch', originalFetch);
+      } else {
+        delete (window as unknown as Record<string, unknown>)['fetch'];
+      }
+      delete (window as unknown as Record<string, unknown>)['aqfishFond'];
+    });
+
+    it('lit aqfish-fond.json à côté de la page, en priorité sur la sauvegarde locale', async () => {
+      serveConfig(serializeWorld(createDefaultWorld(9, 'bassin')));
+      saveStorage!.setItem(SAVE_STORAGE_KEY, serializeWorld(createDefaultWorld(3, 'recif')));
+      await create('?fond=1');
+      await settle();
+      expect(fetchMock).toHaveBeenCalledWith('aqfish-fond.json', { cache: 'no-store' });
+      expect(element().getAttribute(WALLPAPER_ATTRIBUTE)).toBe('fichier');
+      expect(element().getAttribute(ENVIRONMENT_ATTRIBUTE)).toBe('bassin');
+      expect(renderers).toHaveLength(1);
+      expect(renderers[0].pixelRatio).toBe(1);
+    });
+
+    it('fichier invalide : la sauvegarde locale', async () => {
+      serveConfig('<!doctype html>');
+      saveStorage!.setItem(SAVE_STORAGE_KEY, serializeWorld(createDefaultWorld(3, 'bassin')));
+      await create('?fond=1');
+      await settle();
+      expect(element().getAttribute(WALLPAPER_ATTRIBUTE)).toBe('sauvegarde');
+      expect(element().getAttribute(ENVIRONMENT_ATTRIBUTE)).toBe('bassin');
+    });
+
+    it('fichier absent et sauvegarde illisible : la scène par défaut', async () => {
+      serveConfig(null);
+      saveStorage!.setItem(SAVE_STORAGE_KEY, '{illisible');
+      await create('?fond=1');
+      await settle();
+      expect(element().getAttribute(WALLPAPER_ATTRIBUTE)).toBe('defaut');
+      expect(element().getAttribute(ENVIRONMENT_ATTRIBUTE)).toBe('tropical');
+    });
+
+    it('fetch refusé (file://) : la configuration du script aqfish-fond.js', async () => {
+      fetchMock = vi.fn(async () => {
+        throw new TypeError('Failed to fetch');
+      });
+      Object.defineProperty(window, 'fetch', { configurable: true, value: fetchMock });
+      (window as unknown as Record<string, unknown>)['aqfishFond'] = {
+        config: JSON.parse(serializeWorld(createDefaultWorld(5, 'recif'))),
+        fps: 24,
+      };
+      // Sans `fond=1` : la globale du paquet suffit à activer la vue.
+      await create('');
+      await settle();
+      expect(element().getAttribute(WALLPAPER_ATTRIBUTE)).toBe('script');
+      expect(element().getAttribute(ENVIRONMENT_ATTRIBUTE)).toBe('recif');
+    });
+
+    it('n’écrit jamais la sauvegarde locale', async () => {
+      serveConfig(null);
+      await create('?fond=1');
+      await settle();
+      setCanvasSize(800, 600);
+      for (let t = 0; t <= 2000; t += 50) {
+        frames.flush(t);
+      }
+      window.dispatchEvent(new Event('pagehide'));
+      expect((saveStorage as MemoryStorage).writes).toBe(0);
+    });
+
+    it('caméra automatique : bouge au fil du temps réel, même simulation à l’arrêt', async () => {
+      serveConfig(null);
+      await create('?fond=1&vitesse=0');
+      await settle();
+      setCanvasSize(800, 600);
+      const cameraAt: Record<number, string | null> = {};
+      for (let t = 0; t <= 20_000; t += 1000 / 30) {
+        frames.flush(t);
+        const second = Math.floor(t / 1000);
+        cameraAt[second] = element().getAttribute(CAMERA_ATTRIBUTE);
+      }
+      expect(cameraAt[10]).not.toBe(cameraAt[0]);
+      expect(cameraAt[20]).not.toBe(cameraAt[10]);
+      expect(host().world!.tick).toBe(0);
+      // La cible reste le centre du bac.
+      const [x, , z] = element().getAttribute(CAMERA_TARGET_ATTRIBUTE)!.split(',').map(Number);
+      expect(x).toBeCloseTo(0, 3);
+      expect(z).toBeCloseTo(0, 3);
+    });
+
+    it('limite les images par seconde (fps=, 30 par défaut)', async () => {
+      serveConfig(null);
+      await create('?fond=1');
+      await settle();
+      setCanvasSize(800, 600);
+      for (let i = 0; i <= 600; i++) {
+        frames.flush((i * 1000) / 60);
+      }
+      // 10 s d'un écran à 60 Hz : 300 images rendues (± la première).
+      expect(Math.abs(renderers[0].renders - 300)).toBeLessThanOrEqual(2);
+      fixture.destroy();
+
+      serveConfig(null);
+      await create('?fond=1&fps=15');
+      await settle();
+      setCanvasSize(800, 600);
+      for (let i = 0; i <= 600; i++) {
+        frames.flush((i * 1000) / 60);
+      }
+      expect(Math.abs(renderers[1].renders - 150)).toBeLessThanOrEqual(2);
+    });
+
+    it('page masquée : aucune image demandée ; visible : la boucle repart', async () => {
+      serveConfig(null);
+      await create('?fond=1');
+      await settle();
+      setCanvasSize(800, 600);
+      frames.flush(0);
+      frames.flush(40);
+      expect(frames.pending.size).toBe(1);
+      const visibility = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+      document.dispatchEvent(new Event('visibilitychange'));
+      expect(frames.pending.size).toBe(0);
+      expect(element().getAttribute(WALLPAPER_PAUSED_ATTRIBUTE)).toBe('1');
+      visibility.mockReturnValue('visible');
+      document.dispatchEvent(new Event('visibilitychange'));
+      expect(frames.pending.size).toBe(1);
+      expect(element().getAttribute(WALLPAPER_PAUSED_ATTRIBUTE)).toBe('0');
+      // Pas de rattrapage du temps passé masqué : au plus un pas versé à la reprise.
+      const tick = host().world!.tick;
+      frames.flush(600_000);
+      expect(host().world!.tick - tick).toBeLessThanOrEqual(1);
+    });
+
+    it('détruit avant la fin du chargement : ne démarre rien', async () => {
+      let release: (r: Response) => void = () => undefined;
+      fetchMock = vi.fn(() => new Promise<Response>((resolve) => (release = resolve)));
+      Object.defineProperty(window, 'fetch', { configurable: true, value: fetchMock });
+      await create('?fond=1');
+      fixture.destroy();
+      release({ ok: false, text: async () => '' } as Response);
+      await settle();
+      expect(renderers).toHaveLength(0);
+    });
+
+    it('l’URL qui décrit le monde prime, sans lire de fichier', async () => {
+      serveConfig(serializeWorld(createDefaultWorld(9, 'bassin')));
+      await create('?fond=1&environnement=recif');
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(element().getAttribute(ENVIRONMENT_ATTRIBUTE)).toBe('recif');
     });
   });
 });

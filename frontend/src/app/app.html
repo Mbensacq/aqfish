@@ -1,5 +1,5 @@
-@if (!capture) {
-  <!-- Interface (masquée en mode capture). Titre accessible, invisible à l'écran. -->
+@if (interfaceShown) {
+  <!-- Interface (masquée en mode capture et en fond d'écran, #279). Titre accessible, invisible à l'écran. -->
   <h1 class="visually-hidden">aqfish</h1>
   <!-- Aide-mémoire des commandes (#74), indépendant de Three.js : affiché tout de suite.
        Exclusif avec « Réglages » sur écran étroit (#136). -->
@@ -10,7 +10,7 @@
 <!-- Three.js est chargé à part pour garder le bundle initial sous le budget (angular.json). -->
 @defer (on immediate) {
   <app-aquarium-host #aquarium />
-  @if (!capture) {
+  @if (interfaceShown) {
     <app-view-presets-bar
       [activePreset]="aquarium.activePreset()"
       [pixelArt]="aquarium.filter() === 'pixel'"

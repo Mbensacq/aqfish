@@ -15,6 +15,7 @@ import {
   hasWorldParams,
   parseCaptureParams,
   type CameraPreset,
+  type CaptureParams,
   type CapturePopulation,
   type CaptureFurniture,
   type CaptureLayoutEntry,
@@ -36,6 +37,18 @@ import {
   writeStoredRenderFilter,
 } from '../../core/render-filter/render-filter';
 import { markCaptureReady, resetCaptureReady } from '../../core/capture/capture-ready';
+import {
+  chooseWallpaperConfig,
+  clampWallpaperFps,
+  DEFAULT_WALLPAPER_FPS,
+  frameDue,
+  readWallpaperGlobal,
+  WALLPAPER_CONFIG_FILE,
+  wallpaperGlobalText,
+  wallpaperOrbitAngle,
+  type FrameLimiter,
+  type WallpaperSource,
+} from '../../core/wallpaper/wallpaper';
 import {
   AquariumView,
   createWebGLRenderer,
@@ -320,6 +333,19 @@ export const ROOM_SUPPORTS_ATTRIBUTE = 'data-aqfish-room-supports';
 export const SELECTED_TANK_ATTRIBUTE = 'data-aqfish-selected-tank';
 /** Mode du bac affiché (#278) : `soins` ou `decor`. */
 export const CARE_MODE_ATTRIBUTE = 'data-aqfish-mode';
+/**
+ * Vue fond d'écran (#279) : source de la scène (`fichier`, `script`, `sauvegarde`, `defaut`),
+ * absent hors fond d'écran.
+ */
+export const WALLPAPER_ATTRIBUTE = 'data-aqfish-fond';
+/** Vue fond d'écran (#279) : `1` quand la boucle est en pause (page masquée), `0` sinon. */
+export const WALLPAPER_PAUSED_ATTRIBUTE = 'data-aqfish-fond-pause';
+/** Préréglage de base de la caméra automatique du fond d'écran (#279). */
+export const WALLPAPER_PRESET: CameraPreset = 'three-quarter';
+/** Écart (s réelles) entre deux expositions de la caméra automatique (`data-aqfish-camera`). */
+export const WALLPAPER_CAMERA_EXPOSE_SECONDS = 1;
+/** Pas de temps réel maximal versé à la caméra automatique (pas de saut après une pause). */
+const WALLPAPER_MAX_ORBIT_STEP_SECONDS = 0.25;
 
 /** Message du dernier transfert d'animal (#306) : réussite ou refus. */
 export interface TransferNotice {
@@ -377,6 +403,15 @@ export const TANK_ATTRIBUTE = 'data-aqfish-tank';
 
 /** Intervalle de la sauvegarde automatique, en millisecondes (#70). */
 export const AUTOSAVE_INTERVAL_MS = 10_000;
+
+/** Sauvegarde relue au démarrage (#70) ou choisie par le fond d'écran (#279). */
+interface RestoredSave {
+  readonly room: RoomState;
+  readonly selectedTankId: number;
+  readonly world: World;
+  readonly settings: SaveSettings;
+  readonly others: readonly World[];
+}
 
 /** Nom proposé pour le fichier exporté (#70). */
 export const SAVE_FILE_NAME = 'aqfish-sauvegarde.json';
@@ -482,6 +517,37 @@ export function initialDayClock(hour: number | null, capture: boolean): DayClock
     : DEFAULT_DAY_CLOCK;
 }
 
+/**
+ * Texte du fichier `url` (relatif à la page), `null` s'il est absent ou illisible ; ne lève
+ * jamais. En `file://`, `fetch` est refusé par Chromium : `XMLHttpRequest`, que l'hôte peut
+ * autoriser (`--allow-file-access-from-files`) ; sinon `fetch` (#279, ADR 0079).
+ */
+export async function readLocalText(win: Window, url: string): Promise<string | null> {
+  if (win.location.protocol === 'file:') {
+    return new Promise((resolve) => {
+      try {
+        const XHR = (win as Window & { XMLHttpRequest: typeof XMLHttpRequest }).XMLHttpRequest;
+        const request = new XHR();
+        request.open('GET', url);
+        request.overrideMimeType('application/json');
+        // En `file://`, une lecture réussie répond 0 (pas de statut HTTP).
+        request.onload = () =>
+          resolve(request.status === 0 || request.status === 200 ? request.responseText : null);
+        request.onerror = () => resolve(null);
+        request.send();
+      } catch {
+        resolve(null);
+      }
+    });
+  }
+  try {
+    const response = await win.fetch(url, { cache: 'no-store' });
+    return response.ok ? await response.text() : null;
+  } catch {
+    return null;
+  }
+}
+
 /** `localStorage` s'il est accessible, `null` sinon (l'accès lui-même peut lever). */
 function browserStorage(win: Window): (FilterStorage & SaveStorage) | null {
   try {
@@ -535,6 +601,19 @@ export class AquariumHost {
   private frameId: number | null = null;
   private readySignaled = false;
   private capture = false;
+  /** Vue fond d'écran (#279) : sans interface, caméra automatique, cadence limitée. */
+  private wallpaper = false;
+  /** Images par seconde de la vue fond d'écran (`fps=` ou `aqfishFond.fps`). */
+  private wallpaperFps = DEFAULT_WALLPAPER_FPS;
+  /** Limiteur d'images de la vue fond d'écran, réécrit en place (aucune allocation). */
+  private readonly frameLimiter: FrameLimiter = { next: null };
+  /** Temps réel (s) de la caméra automatique et de sa dernière exposition. */
+  private orbitSeconds = 0;
+  private orbitExposedAt = Number.NEGATIVE_INFINITY;
+  /** Page masquée en vue fond d'écran : aucune image demandée (#279). */
+  private paused = false;
+  /** Vrai après `stop()` : un chargement asynchrone en cours ne démarre plus rien. */
+  private stopped = false;
   private currentWorld: MutableWorld | null = null;
   /**
    * Mondes des autres environnements visités, figés tant qu'ils ne sont pas affichés (#277,
@@ -2224,6 +2303,60 @@ export class AquariumHost {
     }
     const params = parseCaptureParams(win.location.search);
     this.capture = params.capture;
+    // Vue fond d'écran (#279) : `fond=1`, ou la globale `aqfishFond` du paquet. En capture,
+    // seule l'interface est masquée (contrat de capture inchangé).
+    const global = readWallpaperGlobal(win);
+    this.wallpaper = params.wallpaper || global !== null;
+    if (this.wallpaper && !params.capture) {
+      this.wallpaperFps = clampWallpaperFps(params.fps ?? global?.fps ?? DEFAULT_WALLPAPER_FPS);
+      // L'URL qui décrit le monde prime, comme hors fond d'écran.
+      if (hasWorldParams(win.location.search)) {
+        this.begin(win, params, null);
+        return;
+      }
+      void this.loadWallpaperConfig(win, wallpaperGlobalText(global)).then((choice) => {
+        if (!this.stopped) {
+          this.host.nativeElement.setAttribute(WALLPAPER_ATTRIBUTE, choice.source);
+          this.begin(win, params, choice.value);
+        }
+      });
+      return;
+    }
+    this.begin(win, params, undefined);
+  }
+
+  /**
+   * Configuration du fond d'écran (#279, ADR 0079) : `aqfish-fond.json` à côté de la page,
+   * sinon la configuration du script `aqfish-fond.js` (si `fetch` est refusé, en `file://`),
+   * sinon la sauvegarde locale, sinon la scène par défaut. Une source illisible est ignorée.
+   */
+  private async loadWallpaperConfig(
+    win: Window,
+    scriptText: string | null,
+  ): Promise<{ readonly source: WallpaperSource; readonly value: RestoredSave | null }> {
+    const fileText = await readLocalText(win, WALLPAPER_CONFIG_FILE);
+    return chooseWallpaperConfig<RestoredSave>(
+      [
+        { source: 'fichier', text: fileText },
+        { source: 'script', text: scriptText },
+        { source: 'sauvegarde', text: readStoredSave(this.saveStorage) },
+      ],
+      (text) => {
+        const result = parseSaveWorlds(text);
+        return result.ok ? { ok: true, value: result } : result;
+      },
+    );
+  }
+
+  /**
+   * Suite du démarrage, une fois la scène connue. `restoredOverride` : scène choisie par le
+   * fond d'écran (`null` : monde neuf) ; `undefined` : sauvegarde automatique habituelle.
+   */
+  private begin(
+    win: Window,
+    params: CaptureParams,
+    restoredOverride: RestoredSave | null | undefined,
+  ): void {
     // En mode capture, le temps demandé est atteint ici, avant toute image (contrat de capture).
     // Le monde créé ici appartient à l'hôte seul : il pourra être avancé en place.
     // Dépôts de nourriture de `nourrir=` (#67) : au temps simulé de chacun, en capture.
@@ -2231,7 +2364,12 @@ export class AquariumHost {
     // Sauvegarde automatique (#70) : jamais en capture (images reproductibles) ; restaurée
     // au démarrage sauf si l'URL décrit le monde (`seed`, `environnement`, `population`).
     // Lue avant toute création : le monde neuf n'est créé que s'il n'y a rien à restaurer.
-    const restored = params.capture || hasWorldParams(win.location.search) ? null : this.readSave();
+    const restored =
+      restoredOverride !== undefined
+        ? restoredOverride
+        : params.capture || hasWorldParams(win.location.search)
+          ? null
+          : this.readSave();
     if (restored) {
       this.currentWorld = restored.world as MutableWorld;
       this.stash = stashFromList(restored.others, restored.world.environment);
@@ -2303,9 +2441,14 @@ export class AquariumHost {
     if (!params.capture && params.speed !== null && isSimSpeed(params.speed)) {
       this.speed.set(params.speed);
     }
-    if (!params.capture) {
+    // Fond d'écran (#279) : jamais d'écriture du stockage (la sauvegarde de l'application
+    // n'est pas remplacée par la scène du fond d'écran) ; pause quand la page est masquée.
+    if (!params.capture && !this.wallpaper) {
       this.saveStatus.set('active');
       this.startAutosave(win);
+    }
+    if (this.wallpaper && !params.capture) {
+      this.startWallpaperPause();
     }
     this.exposeClockFrozen();
     this.host.nativeElement.setAttribute(SPEED_ATTRIBUTE, String(this.speed()));
@@ -2326,12 +2469,16 @@ export class AquariumHost {
       params.capture,
     );
     this.filter.set(filter);
-    this.pixelRatio = params.capture ? 1 : win.devicePixelRatio || 1;
-    // Sans `camera=`, la vue par défaut de l'environnement (#87 : de dessus pour le bassin).
+    // Fond d'écran (#279) : pixel ratio 1, comme en capture (image pixel art, plus léger).
+    this.pixelRatio = params.capture || this.wallpaper ? 1 : win.devicePixelRatio || 1;
+    // Sans `camera=`, la vue par défaut de l'environnement (#87 : de dessus pour le bassin) ;
+    // en fond d'écran, la vue trois-quarts, base de la caméra automatique.
     this.createView(
       params.cameraGiven
         ? params.camera
-        : environmentById(this.currentWorld.environment).defaultCamera,
+        : this.wallpaper
+          ? WALLPAPER_PRESET
+          : environmentById(this.currentWorld.environment).defaultCamera,
     );
     this.exposeFilter();
     this.applyDecorEditing(false);
@@ -2371,13 +2518,7 @@ export class AquariumHost {
    * n'y en a pas. Une sauvegarde illisible est ignorée (`null`) : le bac neuf sera créé, et
    * un message le signale.
    */
-  private readSave(): {
-    readonly room: RoomState;
-    readonly selectedTankId: number;
-    readonly world: World;
-    readonly settings: SaveSettings;
-    readonly others: readonly World[];
-  } | null {
+  private readSave(): RestoredSave | null {
     const text = readStoredSave(this.saveStorage);
     if (text === null) {
       return null;
@@ -2391,6 +2532,31 @@ export class AquariumHost {
       return null;
     }
     return result;
+  }
+
+  /**
+   * Pause de la vue fond d'écran (#279) : page masquée, plus aucune image demandée ; de
+   * nouveau visible, la boucle repart sans rattraper le temps passé masqué.
+   */
+  private startWallpaperPause(): void {
+    const onVisibility = () => {
+      const hidden = this.document.visibilityState === 'hidden';
+      this.paused = hidden;
+      this.host.nativeElement.setAttribute(WALLPAPER_PAUSED_ATTRIBUTE, hidden ? '1' : '0');
+      if (hidden) {
+        if (this.frameId !== null) {
+          this.document.defaultView?.cancelAnimationFrame(this.frameId);
+          this.frameId = null;
+        }
+        return;
+      }
+      this.lastTimestamp = null;
+      this.frameLimiter.next = null;
+      this.scheduleFrame();
+    };
+    onVisibility();
+    this.document.addEventListener('visibilitychange', onVisibility);
+    this.cleanups.push(() => this.document.removeEventListener('visibilitychange', onVisibility));
   }
 
   /**
@@ -2433,7 +2599,7 @@ export class AquariumHost {
       rendererFactory: this.rendererFactory,
       pixelRatio: this.pixelRatio,
       preset,
-      interactive: !this.capture,
+      interactive: !this.capture && !this.wallpaper,
       filter: this.filter(),
       environment: placeEnvironmentData(world),
     });
@@ -2491,7 +2657,7 @@ export class AquariumHost {
 
   private scheduleFrame(): void {
     const win = this.document.defaultView;
-    if (!win || !this.view || this.frameId !== null) {
+    if (!win || !this.view || this.frameId !== null || this.paused) {
       return;
     }
     this.frameId = win.requestAnimationFrame(this.onFrame);
@@ -2503,8 +2669,21 @@ export class AquariumHost {
     if (!view) {
       return;
     }
+    const wallpaper = this.wallpaper && !this.capture;
+    // Fond d'écran (#279) : au plus `wallpaperFps` images par seconde (le temps réel écoulé
+    // entre deux images rendues est versé d'un bloc à la simulation).
+    if (
+      wallpaper &&
+      this.readySignaled &&
+      !frameDue(this.frameLimiter, timestamp, this.wallpaperFps)
+    ) {
+      this.scheduleFrame();
+      return;
+    }
+    let orbitDt = 0;
     if (!this.capture) {
       const realDt = this.advanceRealTime(timestamp);
+      orbitDt = realDt;
       if (view.stepCameraTransition(realDt)) {
         this.exposeCamera();
       }
@@ -2515,6 +2694,9 @@ export class AquariumHost {
     const canvas = this.canvasRef().nativeElement;
     if (view.resize(canvas.clientWidth, canvas.clientHeight)) {
       this.exposeCamera();
+    }
+    if (wallpaper) {
+      this.stepWallpaperCamera(view, orbitDt);
     }
     if (this.currentWorld) {
       // En capture, l'image montre exactement l'état au temps demandé (alpha = 1).
@@ -2544,6 +2726,21 @@ export class AquariumHost {
     // Tant qu'aucune image n'a pu être rendue (taille nulle), on réessaie à l'image suivante.
     if (!this.capture || !rendered) {
       this.scheduleFrame();
+    }
+  }
+
+  /**
+   * Caméra automatique du fond d'écran (#279) : balancement lent autour de la vue
+   * trois-quarts, au temps réel (indépendant de la simulation et de sa vitesse) ; exposée au
+   * plus toutes les `WALLPAPER_CAMERA_EXPOSE_SECONDS`.
+   */
+  private stepWallpaperCamera(view: AquariumView, realDt: number): void {
+    const dt = Number.isFinite(realDt) && realDt > 0 ? realDt : 0;
+    this.orbitSeconds += Math.min(dt, WALLPAPER_MAX_ORBIT_STEP_SECONDS);
+    view.applyOrbit(WALLPAPER_PRESET, wallpaperOrbitAngle(this.orbitSeconds));
+    if (this.orbitSeconds - this.orbitExposedAt >= WALLPAPER_CAMERA_EXPOSE_SECONDS) {
+      this.orbitExposedAt = this.orbitSeconds;
+      this.exposeCamera();
     }
   }
 
@@ -2803,6 +3000,7 @@ export class AquariumHost {
   }
 
   private stop(): void {
+    this.stopped = true;
     if (this.frameId !== null) {
       this.document.defaultView?.cancelAnimationFrame(this.frameId);
       this.frameId = null;

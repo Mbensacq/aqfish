@@ -97,12 +97,20 @@
  * compris), en capture comme hors capture quand l'URL décrit le monde ; toute autre valeur
  * ou absent, mode soins (séries existantes inchangées).
  *
+ * Paramètre facultatif `fond=1` (issue #279, ADR 0079) : vue « fond d'écran », sans aucune
+ * interface, caméra automatique lente, scène lue dans `aqfish-fond.json` à côté de la page,
+ * sinon la sauvegarde locale, sinon la scène par défaut (`core/wallpaper/wallpaper.ts`) ;
+ * toute autre valeur ou absent, application habituelle (séries existantes inchangées).
+ * Paramètre facultatif `fps=` (issue #279) : images par seconde de la vue fond d'écran,
+ * entier borné à [15, 60] ; absent ou mal formé, 30.
+ *
  * Ce module est volontairement pur (aucune dépendance à Angular ni à Three.js).
  * Voir docs/ARCHITECTURE.md, section « Contrat de capture ».
  */
 
 import { isFoodStyle, type FoodStyle } from '../food-style/food-style';
 import { isRenderFilter, type RenderFilter } from '../render-filter/render-filter';
+import { parseWallpaperFps } from '../wallpaper/wallpaper';
 
 export const CAMERA_PRESETS = ['top', 'bottom', 'front', 'side', 'three-quarter'] as const;
 
@@ -164,6 +172,10 @@ export interface CaptureParams {
   readonly speed: number | null;
   /** Vrai pour `mode=decor` : bac affiché en mode décor au démarrage (issue #278). */
   readonly decorMode: boolean;
+  /** Vrai pour `fond=1` : vue fond d'écran, sans interface (issue #279). */
+  readonly wallpaper: boolean;
+  /** Images par seconde de `fps=` (issue #279), bornées à [15, 60] ; `null` si absent. */
+  readonly fps: number | null;
 }
 
 /**
@@ -256,6 +268,8 @@ export const DEFAULT_CAPTURE_PARAMS: CaptureParams = {
   tank: null,
   speed: null,
   decorMode: false,
+  wallpaper: false,
+  fps: null,
 };
 
 /** Temps de simulation maximal accepté (1 h), pour éviter un calcul démesuré. */
@@ -306,6 +320,8 @@ export function parseCaptureParams(search: string): CaptureParams {
     roomLayout: parseRoomLayout(params.get('bacs')),
     speed: parseSpeed(params.get('vitesse')),
     decorMode: params.get('mode') === 'decor',
+    wallpaper: params.get('fond') === '1',
+    fps: parseWallpaperFps(params.get('fps')),
   };
 }
 

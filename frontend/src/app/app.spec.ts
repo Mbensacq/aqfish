@@ -130,6 +130,47 @@ describe('App', () => {
       window.history.replaceState(null, '', '/');
     }
   });
+
+  /** Interface de `App` : aucun composant d'interface ni bouton, seul l'hôte du canvas. */
+  async function expectCanvasOnly(): Promise<void> {
+    const fixture = TestBed.createComponent(App);
+    await fixture.whenStable();
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('app-aquarium-host canvas')).not.toBeNull();
+    for (const selector of [
+      'h1',
+      'button',
+      'app-view-presets-bar',
+      'app-commands-help',
+      'app-beginner-guide',
+      'app-control-panel',
+      'app-dashboard-frame',
+      'app-dashboard-status',
+      'app-day-indicator',
+      'app-species-wiki',
+    ]) {
+      expect(root.querySelector(selector), selector).toBeNull();
+    }
+  }
+
+  it('vue fond d’écran (fond=1, #279) : aucune interface, seul le canvas', async () => {
+    window.history.replaceState(null, '', '/?fond=1');
+    try {
+      await expectCanvasOnly();
+    } finally {
+      window.history.replaceState(null, '', '/');
+    }
+  });
+
+  it('vue fond d’écran par la globale aqfishFond du paquet, sans paramètre (#279)', async () => {
+    (window as unknown as Record<string, unknown>)['aqfishFond'] = { config: null, fps: null };
+    try {
+      await expectCanvasOnly();
+    } finally {
+      delete (window as unknown as Record<string, unknown>)['aqfishFond'];
+    }
+  });
+
   describe('« Réglages » et « Commandes » (#136)', () => {
     let narrow: boolean;
 

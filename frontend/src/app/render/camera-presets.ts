@@ -225,3 +225,24 @@ function shortestAngle(from: number, to: number): number {
 function lerpVec(a: Vec3, b: Vec3, s: number): Vec3 {
   return [a[0] + (b[0] - a[0]) * s, a[1] + (b[1] - a[1]) * s, a[2] + (b[2] - a[2]) * s];
 }
+
+/**
+ * Pose `pose` tournée de `angle` radians autour de l'axe vertical passant par sa cible
+ * (caméra automatique du fond d'écran, #279) : même distance, même hauteur, même cible ;
+ * (x, z) relatifs à la cible deviennent (x cos a + z sin a, −x sin a + z cos a). Angle non
+ * fini : pose inchangée. Nouvel objet.
+ */
+export function orbitPose(pose: CameraPose, angle: number): CameraPose {
+  if (!Number.isFinite(angle)) {
+    return pose;
+  }
+  const [tx, , tz] = pose.target;
+  const dx = pose.position[0] - tx;
+  const dz = pose.position[2] - tz;
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
+  return {
+    position: [tx + dx * cos + dz * sin, pose.position[1], tz - dx * sin + dz * cos],
+    target: pose.target,
+  };
+}

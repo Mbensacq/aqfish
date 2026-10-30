@@ -42,7 +42,21 @@ describe('parseCaptureParams', () => {
       roomLayout: [],
       speed: null,
       decorMode: false,
+      wallpaper: false,
+      fps: null,
     });
+  });
+
+  it('lit la vue fond d’écran : fond=1 seulement, et fps= borné à [15, 60] (#279)', () => {
+    expect(parseCaptureParams('?fond=1').wallpaper).toBe(true);
+    for (const value of ['0', 'oui', 'true', '', '01']) {
+      expect(parseCaptureParams(`?fond=${value}`).wallpaper).toBe(false);
+    }
+    expect(parseCaptureParams('?fond=1&fps=24').fps).toBe(24);
+    expect(parseCaptureParams('?fps=5').fps).toBe(15);
+    expect(parseCaptureParams('?fps=240').fps).toBe(60);
+    expect(parseCaptureParams('?fps=24.5').fps).toBeNull();
+    expect(parseCaptureParams('?fond=1').fps).toBeNull();
   });
 
   it('lit le mode décor : mode=decor seulement, sinon mode soins (#278)', () => {
