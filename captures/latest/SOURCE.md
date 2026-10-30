@@ -1,5 +1,5 @@
-# Captures c110
-- Branche : cycle/c110-dette-piece (PR #339), commit 96a1f8d
-- Graine et temps : ceux de `e2e/captures.spec.ts` (inchangés)
-- Chromium local 1243 (différent de la CI) : comparer à `latest` précédent n'a pas de sens ; l'identité à l'octet avec main a été prouvée par Dev (105/105).
-- 104 tests de capture passés, 105 fichiers, ~10,5 min
+# Captures c111
+- Branche : cycle/c111-dette-fond-pluie, PR #348
+- Commit : 3be1a428b7cb98296aff4fbe972f9ea2c1d2b33b
+- Graine : celle de e2e/captures.spec.ts (par défaut)
+- Temps : 2026-10-30, 104 tests de capture, 9,1 min ; 105 PNG identiques à l'octet à c110 (même Chromium 1243)
