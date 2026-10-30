@@ -5,8 +5,8 @@ import {
   MAX_ROOM_ITEMS,
   ROOM_MARGIN,
   ROOM_VOXEL,
+  roomInterior,
   WALL_GAP,
-  WALL_RISE,
   type Room,
   type RoomBlock,
   type RoomItem,
@@ -379,8 +379,8 @@ function atElevation(item: RoomItem, elevation: number): RoomItem {
  *
  * Refus : pièce pleine (`MAX_ROOM_ITEMS`), indice inconnu, emprise hors de la pièce (au-delà
  * des marges ou dans le mur), sur le meuble du bac (il est sous le bac), pose sur une plante,
- * ou dessus plus haut que le haut du mur. Ne modifie jamais `room` ; même entrée, même
- * résultat.
+ * ou dessus plus haut que le dessous des poutres du plafond (`roomInterior`, #336). Ne
+ * modifie jamais `room` ; même entrée, même résultat.
  */
 export function dropRoomItem(
   room: Room,
@@ -430,7 +430,8 @@ export function dropRoomItem(
   }
   const { cabinetHeight } = clampRoom(room);
   const top = elevation + ROOM_CATALOG[candidate.kind].height / 100;
-  if (top > cabinetHeight + dims.height + WALL_RISE + EPS) {
+  // Dessus borné sous les poutres (#336) : une pile ne monte jamais dans le plafond.
+  if (top > cabinetHeight + roomInterior(dims).beamY + EPS) {
     return { ok: false, reason: 'trop-haut' };
   }
   const placed = atElevation(candidate, elevation);

@@ -1163,9 +1163,9 @@ export class AquariumView {
     // Pièce (#187, #324) : rien ne cache le bac, la caméra passât-elle sous le bac ou hors de
     // la pièce (chaque mur franchi et le plafond sont masqués).
     this.roomLayer.setViewpoint(
+      this.camera.position.x,
       this.camera.position.y,
       this.camera.position.z,
-      this.camera.position.x,
     );
     // Taille des granulés selon le zoom (#117) : échelle à la distance de la cible.
     this.foodLayer.setPixelsPerMeter(

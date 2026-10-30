@@ -1,6 +1,8 @@
 import {
   MAX_ROOM_ITEMS,
   readRoom,
+  ROOM_LIMITS,
+  roomInterior,
   roomData,
   ROOM_ITEM_KINDS,
   sameRoom,
@@ -23,7 +25,7 @@ import {
   tidyRoomItems,
   type RoomDropRequest,
 } from './room-furniture';
-import { DEFAULT_TANK, MAX_TANK } from './tank';
+import { DEFAULT_TANK, MAX_TANK, TANK_LIMITS } from './tank';
 
 const ROOM: Room = { shown: true, cabinetHeight: 0.75 };
 const SHELF: RoomDropRequest = { kind: 'etagere', x: -1.25, z: -0.17, quarter: 0 };
@@ -124,7 +126,7 @@ describe('pièce : pose par gravité (#188)', () => {
     expect(drop(Number.NaN, 0)).toEqual({ ok: false, reason: 'hors-piece' });
   });
 
-  it('refuse une pile plus haute que le mur', () => {
+  it('refuse une pile qui monterait dans les poutres du plafond (#336)', () => {
     let room = ROOM;
     let refused: string | null = null;
     for (let i = 0; i < 10 && refused === null; i++) {
@@ -136,8 +138,37 @@ describe('pièce : pose par gravité (#188)', () => {
       }
     }
     expect(refused).toBe('trop-haut');
-    // Mur : 0,75 (meuble) + 0,6 (bac) + 1,2 = 2,55 m ; trois étagères de 0,8 m tiennent.
-    expect(room.items?.length).toBe(3);
+    // Dessous des poutres : 0,75 (meuble) + 0,6 (bac) + 1,2 − 0,18 = 2,37 m au-dessus du
+    // parquet ; deux étagères de 0,8 m tiennent, une troisième (2,4 m) entrerait dans les poutres.
+    expect(room.items?.length).toBe(2);
+  });
+
+  it('pile bornée sous les poutres, pour toute hauteur de bac et de meuble (#336)', () => {
+    for (let h = TANK_LIMITS.height.min; h <= TANK_LIMITS.height.max + 1e-9; h += 0.05) {
+      for (const cabinetHeight of [ROOM_LIMITS.cabinetHeight.min, ROOM_LIMITS.cabinetHeight.max]) {
+        const dims = { ...DEFAULT_TANK, height: h };
+        const limit = cabinetHeight + roomInterior(dims).beamY;
+        let room: Room = { shown: true, cabinetHeight };
+        for (let i = 0; i < 10; i++) {
+          const result = dropRoomItem(room, dims, {
+            kind: 'table-basse',
+            x: -2,
+            z: 1.5,
+            quarter: 0,
+          });
+          if (!result.ok) {
+            expect(result.reason).toBe('trop-haut');
+            break;
+          }
+          room = { ...room, items: result.items };
+        }
+        const tops = (room.items ?? []).map((item) => roomItemBox(item).maxY);
+        const top = Math.max(0, ...tops);
+        expect(top, `bac ${h}, meuble ${cabinetHeight}`).toBeLessThanOrEqual(limit + 1e-9);
+        // La table suivante (0,4 m) aurait dépassé : la pile monte aussi haut que permis.
+        expect(top + 0.4, `bac ${h}, meuble ${cabinetHeight}`).toBeGreaterThan(limit);
+      }
+    }
   });
 
   it('refuse un nouvel élément quand la pièce est pleine', () => {

@@ -58,6 +58,9 @@ masquée, rien ne doit changer (captures à l'octet, sauvegardes inchangées).
 - Une pile de meubles peut monter jusqu'au haut du mur (`dropRoomItem`) et donc entrer dans
   les poutres : cas limite (pile de plus de 2 m), à reprendre si le lot 3 ajoute des meubles
   hauts.
+  Mise à jour (#336) : la pose est désormais bornée sous le dessous des poutres
+  (`roomInterior(dims).beamY`) ; le mur du fond se masque sur sa face arrondie au voxel
+  (`inner.minZ`), comme les autres parois.
 - Seules les vues de l'intérieur vers le haut changent : `side-piece`, et la nouvelle capture
   `side-piece-grand-bac` (plafond et poutres) ; les vues trois-quarts, de face, de dessus et
   de dessous avec pièce restent identiques à l'octet (mur de gauche du ton du fond de la

@@ -6,10 +6,14 @@ import {
   environmentById,
   environmentWater,
   isEnvironmentId,
+  isPondShapeable,
+  isTankResizable,
   PALUDARIUM,
   POND,
   REEF,
   REEF_DIMENSIONS,
+  RESIZABLE_ENVIRONMENTS,
+  SHAPED_ENVIRONMENTS,
   TROPICAL_TANK,
   type EnvironmentId,
 } from './environment';
@@ -19,6 +23,20 @@ import { DEFAULT_TANK, SAND_THICKNESS, WATER_LEVEL_RATIO, waterVolume } from './
 import { terrainAt, terrainMaxRise } from './terrain';
 
 describe('environnements', () => {
+  it('aucun environnement n’a à la fois des dimensions et une forme réglables (#334)', () => {
+    // Dimensions et forme ne se composent pas encore : la clé de lieu (`placeKey`) et les
+    // lieux de `createWorld` et `parseWorldBody` perdent la forme dès qu'il y a des
+    // dimensions. Combiner les deux demande de les y ajouter d'abord.
+    const both = RESIZABLE_ENVIRONMENTS.filter((id) => SHAPED_ENVIRONMENTS.includes(id));
+    expect(both).toEqual([]);
+    for (const id of ENVIRONMENT_IDS) {
+      expect(isTankResizable(id) && isPondShapeable(id), id).toBe(false);
+    }
+    for (const id of [...RESIZABLE_ENVIRONMENTS, ...SHAPED_ENVIRONMENTS]) {
+      expect(isEnvironmentId(id), id).toBe(true);
+    }
+  });
+
   it('le bac tropical est l’environnement par défaut, avec le bac d’avant #87', () => {
     expect(DEFAULT_ENVIRONMENT_ID).toBe('tropical');
     expect(TROPICAL_TANK.dimensions).toBe(DEFAULT_TANK);

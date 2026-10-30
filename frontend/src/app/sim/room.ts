@@ -555,25 +555,31 @@ export interface RoomVisibility {
  * face intérieure est masqué, et le plafond dès que la caméra atteint le dessous des poutres.
  * Rien ne cache ainsi le bac, sous aucun angle. Fonction pure.
  */
-export function roomVisibility(dims: TankDimensions, y: number, z: number, x = 0): RoomVisibility {
+export function roomVisibility(
+  dims: TankDimensions,
+  x: number,
+  y: number,
+  z: number,
+): RoomVisibility {
   const inner = roomInterior(dims);
   return {
     room: y >= 0,
-    wall: isShellVisible(dims, inner, 'fond', x, y, z),
-    left: isShellVisible(dims, inner, 'gauche', x, y, z),
-    right: isShellVisible(dims, inner, 'droite', x, y, z),
-    front: isShellVisible(dims, inner, 'avant', x, y, z),
-    ceiling: isShellVisible(dims, inner, 'plafond', x, y, z),
+    wall: isShellVisible(inner, 'fond', x, y, z),
+    left: isShellVisible(inner, 'gauche', x, y, z),
+    right: isShellVisible(inner, 'droite', x, y, z),
+    front: isShellVisible(inner, 'avant', x, y, z),
+    ceiling: isShellVisible(inner, 'plafond', x, y, z),
   };
 }
 
 /**
  * Vrai si la paroi `shell` est affichée depuis une caméra en (`x`, `y`, `z`), `inner` étant
- * `roomInterior(dims)` (règles de `roomVisibility`). Sans allocation : appelée à chaque image
- * par la couche de la pièce, avec les faces intérieures calculées une fois.
+ * `roomInterior(dims)` (règles de `roomVisibility`) : chaque paroi est masquée dès que la
+ * caméra franchit sa face intérieure, mur du fond compris (`inner.minZ`, arrondie au voxel).
+ * Sans allocation : appelée à chaque image par la couche de la pièce, avec les faces
+ * intérieures calculées une fois.
  */
 export function isShellVisible(
-  dims: TankDimensions,
   inner: RoomInterior,
   shell: RoomShell,
   x: number,
@@ -585,7 +591,7 @@ export function isShellVisible(
   }
   switch (shell) {
     case 'fond':
-      return z >= -dims.depth / 2 - WALL_GAP;
+      return z >= inner.minZ;
     case 'gauche':
       return x >= inner.minX;
     case 'droite':
