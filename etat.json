@@ -3915,6 +3915,12 @@
           "debut": "2026-10-30T05:29:38.199Z",
           "fin": "2026-10-30T05:43:07.113Z",
           "note": "Verdict OK, 0 bug bloquant (404 console sans fichier fond, mineur), captures c106 publiées (100/100 identiques)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-10-30T05:43:40.510Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
