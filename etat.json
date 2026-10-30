@@ -4049,10 +4049,10 @@
           "note": "Issue #336 : pièce fermée, signature setViewpoint, meubles sous poutres + commentaire overcast + test exclusion forme/dimensions (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-30T15:33:03.848Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-30T16:59:27.642Z",
+          "note": "PR #339 : dette pièce (signature x,y,z, mur du fond sur inner.minZ, meubles sous les poutres) + overcast.ts (#338) + test exclusion (#334), CI verte au 1er essai ; 105 captures identiques à main"
         }
       },
       "metriques": {}
