@@ -3987,6 +3987,12 @@
           "debut": "2026-10-30T10:41:26.171Z",
           "fin": "2026-10-30T11:08:31.622Z",
           "note": "Verdict OK, 0 bug, captures c108 publiées (104/105 identiques, side-piece modifiée, side-piece-grand-bac nouvelle) ; e2e complète non rejouée en local (CI verte)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-10-30T11:09:17.084Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
