@@ -4055,10 +4055,10 @@
           "note": "PR #339 : dette pièce (signature x,y,z, mur du fond sur inner.minZ, meubles sous les poutres) + overcast.ts (#338) + test exclusion (#334), CI verte au 1er essai ; 105 captures identiques à main"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-30T16:59:51.930Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-30T17:39:14.267Z",
+          "note": "Verdict OK, 0 bug, captures c110 publiées (104/104) ; e2e complète non rejouée (CI) ; mutation Stryker interrompue (crash d'un mutant sur shelfBooks), pas de score"
         }
       },
       "metriques": {}
