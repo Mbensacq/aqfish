@@ -3859,7 +3859,7 @@
       "debut": "2026-10-30T01:32:53.005Z",
       "type": "fonctionnalite",
       "issue": 323,
-      "pr": null,
+      "pr": 328,
       "version": null,
       "phases": {
         "planif": {
