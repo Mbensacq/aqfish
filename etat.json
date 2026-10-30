@@ -3930,7 +3930,7 @@
       "date": "2026-10-30",
       "debut": "2026-10-30T06:42:34.927Z",
       "type": "fonctionnalite",
-      "issue": null,
+      "issue": 190,
       "pr": null,
       "version": null,
       "phases": {
