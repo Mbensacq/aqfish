@@ -55,6 +55,11 @@ Le fond d'écran choisit sa scène dans cet ordre :
 
 Un fichier invalide est ignoré : le fond d'écran passe au suivant, sans erreur.
 
+`aqfish-fond.json` n'est lu que dans le paquet (page qui charge `aqfish-fond.js`) ou dans une
+page ouverte depuis le disque (`file://`). Une page en ligne ouverte avec `?fond=1` ne le
+cherche pas (aucune erreur 404 en console) : elle prend la sauvegarde locale, sinon la scène
+par défaut.
+
 **Si votre aquarium n'apparaît pas** (le bac d'exemple s'affiche toujours), Wallpaper Engine
 n'autorise sans doute pas la lecture de `aqfish-fond.json` (**à vérifier par Mathis**). Dans
 ce cas, ouvrez `aqfish-fond.js` dans un éditeur de texte et remplacez tout ce qui suit

@@ -7,7 +7,9 @@ import { expect, test, type CDPSession, type Page } from '@playwright/test';
  * Vue fond d'écran (#279, ADR 0079) : `?fond=1`, aucune interface, caméra automatique,
  * configuration lue dans `aqfish-fond.json` (servi ici par `page.route`, le fichier
  * n'existant pas sur le serveur de développement), cadence limitée, pause page masquée,
- * mémoire stable. Le paquet ouvert en `file://` est vérifié par `npm run paquet-fond`.
+ * mémoire stable. Le fichier n'est lu que dans le paquet (globale `aqfishFond`, posée ici par
+ * `asPackage`) ou en `file://` (#332). Le paquet ouvert en `file://` est vérifié par
+ * `npm run paquet-fond`.
  */
 
 const EXAMPLE = readFileSync(join(__dirname, '..', 'fond-ecran', 'aqfish-fond.json'), 'utf8');
@@ -18,6 +20,13 @@ async function serveConfig(page: Page, body = EXAMPLE): Promise<void> {
   await page.route('**/aqfish-fond.json', (route) =>
     route.fulfill({ status: 200, contentType: 'application/json', body }),
   );
+}
+
+/** Simule le paquet : globale de `aqfish-fond.js`, sans configuration embarquée. */
+async function asPackage(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    (window as unknown as Record<string, unknown>)['aqfishFond'] = { config: null, fps: null };
+  });
 }
 
 /** Erreurs de la page et de la console, à vérifier en fin de test. */
@@ -64,6 +73,7 @@ test.describe('Vue fond d’écran (#279)', () => {
   }, testInfo) => {
     const errors = collectErrors(page);
     await serveConfig(page);
+    await asPackage(page);
     await page.goto('/?fond=1');
     await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-fond', 'fichier');
@@ -107,6 +117,7 @@ test.describe('Vue fond d’écran (#279)', () => {
   }) => {
     const errors = collectErrors(page);
     await serveConfig(page, 'pas une sauvegarde');
+    await asPackage(page);
     await page.goto('/?fond=1&fps=15');
     await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-fond', 'defaut');
@@ -175,12 +186,19 @@ test.describe('Vue fond d’écran (#279)', () => {
     page,
   }) => {
     const errors = collectErrors(page);
-    await serveConfig(page);
+    // Hors du paquet (#332) : aucun `aqfish-fond.json` demandé, donc aucune erreur 404.
+    const configRequests: string[] = [];
+    page.on('request', (request) => {
+      if (request.url().includes('aqfish-fond.json')) {
+        configRequests.push(request.url());
+      }
+    });
     // Vitesse ×4 et petite fenêtre : en rendu logiciel, chaque image coûte cher ; la
     // simulation avance d'au plus quelques pas par image (`maxStepsForSpeed`).
     await page.setViewportSize({ width: 320, height: 180 });
     await page.goto('/?fond=1&vitesse=4&fps=60');
     await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-fond', 'defaut');
     const cdp = await page.context().newCDPSession(page);
     await page.waitForTimeout(5000);
     const startTick = await tick(page);
@@ -204,6 +222,7 @@ test.describe('Vue fond d’écran (#279)', () => {
     expect(texturesEnd).toBeLessThanOrEqual(texturesStart);
     // Tas JS : moins de 5 Mo de plus après ramassage des miettes.
     expect(heapEnd - heapStart).toBeLessThan(5 * 1024 * 1024);
+    expect(configRequests).toEqual([]);
     expect(errors).toEqual([]);
   });
 });

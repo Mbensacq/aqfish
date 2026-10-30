@@ -49,8 +49,16 @@ function injectScript(html) {
   if (html.includes(SCRIPT_TAG)) {
     return html;
   }
-  if (!html.includes('</head>')) {
-    throw new Error('index.html sans </head>');
+  // La balise remplacée est vérifiée telle quelle : `<head>` nue, unique, avant `</head>`
+  // (une `<head lang="…">` ne serait pas remplacée et le script manquerait sans erreur).
+  const openings = html.match(/<head(?:\s[^>]*)?>/gi) ?? [];
+  if (openings.length !== 1 || openings[0] !== '<head>') {
+    throw new Error('index.html sans balise <head> unique et sans attribut');
+  }
+  const opening = html.indexOf('<head>');
+  const closing = html.indexOf('</head>');
+  if (closing < opening) {
+    throw new Error('index.html sans </head> après <head>');
   }
   return html.replace('<head>', `<head>\n  ${SCRIPT_TAG}`);
 }

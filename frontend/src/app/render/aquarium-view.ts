@@ -22,7 +22,7 @@ import {
   cameraPresetPose,
   interpolatePose,
   orbitDistanceLimits,
-  orbitPose,
+  orbitPositionInto,
   panTargetRadius,
   type CameraPose,
   tankBoundingRadius,
@@ -53,7 +53,7 @@ import { FishLayer, MAX_FISH_PER_SPECIES } from './fish-layer';
 import { FoodLayer } from './food-layer';
 import { scenePixelsPerMeter } from './food-size';
 import { LilyPadLayer } from './lily-pad-layer';
-import { overcastBrightness, RAIN_TONES } from './overcast';
+import { overcastBrightness, RAIN_TONES, stepOvercast } from './overcast';
 import { isObliqueView, RainLayer } from './rain-layer';
 import { RoomLayer } from './room-layer';
 import { isClick, toNormalizedDevice, waterSurfacePoint } from './food-pick';
@@ -173,6 +173,18 @@ export class AquariumView {
   private readonly lilyPadLayer: LilyPadLayer;
   /** Pluie (issue #106), possible dans un environnement qui en a (`Environment.rain`). */
   private readonly rainLayer: RainLayer;
+  /**
+   * Facteur de ciel couvert appliqué (ADR 0082) : `overcastBrightness` de la pluie courante,
+   * ou en route vers lui pendant un fondu (`setRain(…, true)`, `stepOvercast`, issue #338).
+   */
+  private overcast = 1;
+  /**
+   * Pose de base de la caméra du fond d'écran (`applyOrbit`, #332), recalculée seulement si
+   * le préréglage, le rapport d'aspect ou le bac changent ; `null` avant le premier appel.
+   */
+  private orbitBase: OrbitBase | null = null;
+  /** Position tournée de la caméra du fond d'écran, réécrite à chaque image (#332). */
+  private readonly orbitPosition: [number, number, number] = [0, 0, 0];
   /** Feuilles mortes flottantes (issue #107), dans un environnement qui en a. */
   private readonly floatingLeafLayer: FloatingLeafLayer;
   /** Feuilles de catappa sur le sol (issue #239). */
@@ -469,7 +481,8 @@ export class AquariumView {
   /**
    * Caméra automatique du fond d'écran (#279) : pose du préréglage `preset` tournée de
    * `angle` radians autour de la verticale de sa cible (`orbitPose`), cadrée pour le rapport
-   * d'aspect courant. Instantané ; annule une transition en cours.
+   * d'aspect courant. Instantané ; annule une transition en cours. Appelé à chaque image :
+   * aucune allocation tant que préréglage, taille et bac ne changent pas (#332).
    */
   applyOrbit(preset: CameraPreset, angle: number): void {
     if (this.disposed) {
@@ -477,7 +490,26 @@ export class AquariumView {
     }
     this.transition = null;
     this.preset = preset;
-    this.setPose(orbitPose(this.presetPose(preset), angle));
+    const base = this.orbitBasePose(preset);
+    this.setPoseFrom(orbitPositionInto(base, angle, this.orbitPosition), base.target);
+  }
+
+  /** Pose de `presetPose(preset)`, en cache tant que préréglage, aspect et bac sont les mêmes. */
+  private orbitBasePose(preset: CameraPreset): CameraPose {
+    const aspect = this.aspect();
+    const dimensions = this.world.dimensions;
+    const cached = this.orbitBase;
+    if (
+      cached !== null &&
+      cached.preset === preset &&
+      cached.aspect === aspect &&
+      cached.dimensions === dimensions
+    ) {
+      return cached.pose;
+    }
+    const pose = this.presetPose(preset);
+    this.orbitBase = { preset, aspect, dimensions, pose };
+    return pose;
   }
 
   /** Vrai pendant une transition de caméra. */
@@ -805,7 +837,7 @@ export class AquariumView {
   /** Applique `this.light` et le ciel couvert de la pluie courante. */
   private applyLight(): void {
     const light = this.light;
-    const overcast = overcastBrightness(this.rainLayer.isEnabled);
+    const overcast = this.overcast;
     this.world.setOvercast(overcast);
     this.world.setDaylight(light);
     this.waterLight.setDaylight(light.intensity);
@@ -981,17 +1013,50 @@ export class AquariumView {
    * Fait pleuvoir (`true`) ou arrête la pluie (issue #106) : gouttes, ronds à la surface et
    * nénuphars qui frémissent, au temps simulé de `updateDecor`. Sans effet dans un
    * environnement sans pluie (`Environment.rain`). Renvoie l'état appliqué.
+   * Ciel couvert (ADR 0082) : appliqué d'un coup, ou, si `fade`, en fondu de
+   * `OVERCAST_FADE_SECONDS` avancé par `stepOvercastFade` (issue #338 ; jamais en capture).
    */
-  setRain(enabled: boolean): boolean {
+  setRain(enabled: boolean, fade = false): boolean {
     if (!this.disposed && this.world.environment.rain) {
       const changed = this.rainLayer.isEnabled !== enabled;
       this.rainLayer.setEnabled(enabled);
-      if (changed) {
+      const overcastBefore = this.overcast;
+      if (!fade) {
+        this.overcast = overcastBrightness(enabled);
+      }
+      if (changed || this.overcast !== overcastBefore) {
         this.applyLight();
         this.applyTonePenalties();
       }
     }
     return this.rainLayer.isEnabled;
+  }
+
+  /**
+   * Avance de `dtSeconds` (temps réel) le fondu du ciel couvert vers celui de la pluie
+   * courante (`stepOvercast`). Renvoie `true` si le facteur a changé (lumières, eau et décor
+   * réappliqués). Sans effet hors fondu : aucun travail par image.
+   */
+  stepOvercastFade(dtSeconds: number): boolean {
+    if (this.disposed) {
+      return false;
+    }
+    const target = overcastBrightness(this.rainLayer.isEnabled);
+    if (this.overcast === target) {
+      return false;
+    }
+    const next = stepOvercast(this.overcast, target, dtSeconds);
+    if (next === this.overcast) {
+      return false;
+    }
+    this.overcast = next;
+    this.applyLight();
+    return true;
+  }
+
+  /** Facteur de ciel couvert appliqué (tests ; 1 hors pluie et fondu terminé). */
+  get overcastFactor(): number {
+    return this.overcast;
   }
 
   /**
@@ -1280,9 +1345,14 @@ export class AquariumView {
   }
 
   private setPose(pose: CameraPose): void {
-    this.camera.position.set(...pose.position);
-    this.controls.target.set(...pose.target);
-    this.camera.lookAt(...pose.target);
+    this.setPoseFrom(pose.position, pose.target);
+  }
+
+  /** Place la caméra en `position`, tournée vers `target` (accès indexés, sans allocation). */
+  private setPoseFrom(position: Vec3, target: Vec3): void {
+    this.camera.position.set(position[0], position[1], position[2]);
+    this.controls.target.set(target[0], target[1], target[2]);
+    this.camera.lookAt(target[0], target[1], target[2]);
     this.controls.update();
   }
 
@@ -1294,6 +1364,14 @@ export class AquariumView {
     const h = this.canvas.clientHeight;
     return w > 0 && h > 0 ? w / h : 1;
   }
+}
+
+/** Pose de base en cache de la caméra du fond d'écran et ce dont elle dépend (#332). */
+interface OrbitBase {
+  readonly preset: CameraPreset;
+  readonly aspect: number;
+  readonly dimensions: TankDimensions;
+  readonly pose: CameraPose;
 }
 
 interface CameraTransition {

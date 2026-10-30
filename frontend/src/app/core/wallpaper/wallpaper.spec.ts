@@ -6,6 +6,7 @@ import {
   type FrameLimiter,
   parseWallpaperFps,
   readWallpaperGlobal,
+  shouldReadWallpaperFile,
   wallpaperGlobalText,
   wallpaperOrbitAngle,
   WALLPAPER_ORBIT_AMPLITUDE,
@@ -225,6 +226,17 @@ describe('Fond d’écran (#279)', () => {
       expect(wallpaperOrbitAngle(-5)).toBe(0);
       expect(wallpaperOrbitAngle(Number.NaN)).toBe(0);
       expect(wallpaperOrbitAngle(Number.POSITIVE_INFINITY)).toBe(0);
+    });
+  });
+
+  describe('shouldReadWallpaperFile (#332)', () => {
+    it('dans le paquet ou en file:// seulement : jamais de 404 en ligne ni sous ng serve', () => {
+      const global = { config: null, fps: null };
+      expect(shouldReadWallpaperFile('https:', null)).toBe(false);
+      expect(shouldReadWallpaperFile('http:', null)).toBe(false);
+      expect(shouldReadWallpaperFile('http:', global)).toBe(true);
+      expect(shouldReadWallpaperFile('file:', null)).toBe(true);
+      expect(shouldReadWallpaperFile('file:', global)).toBe(true);
     });
   });
 });

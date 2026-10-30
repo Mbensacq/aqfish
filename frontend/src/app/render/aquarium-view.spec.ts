@@ -14,10 +14,10 @@ import {
   ORBIT_TOUCH_ACTIONS,
   type AquariumRenderer,
 } from './aquarium-view';
-import { cameraPresetPose } from './camera-presets';
+import { CAMERA_FOV_DEG, cameraPresetPose, orbitPose, type CameraPose } from './camera-presets';
 import { SAND_THICKNESS } from '../sim/tank';
 import { DECOR_NIGHT_TINT, NIGHT_FLAT_BRIGHTNESS, TONE_PENALTY_OFF } from './night-shade';
-import { RAIN_OVERCAST_BRIGHTNESS, RAIN_TONES } from './overcast';
+import { OVERCAST_FADE_SECONDS, RAIN_OVERCAST_BRIGHTNESS, RAIN_TONES } from './overcast';
 import { environmentTonePenalties } from './palette-pass';
 
 /** Double du renderer WebGL qui consigne les appels (jsdom n'a pas WebGL). */
@@ -708,6 +708,53 @@ describe('AquariumView (ciel couvert sous la pluie, #123)', () => {
     view.dispose();
   });
 
+  it('fondu (#338) : le facteur glisse en quelques secondes, puis vaut exactement la cible', () => {
+    const view = pondView();
+    view.updateLight(lightAt(12));
+    view.setRain(true, true);
+    // Bascule : pluie et tons couverts tout de suite, assombrissement pas encore.
+    expect(view.overcastFactor).toBe(1);
+    expect(view.decorTintValue).toEqual([1, 1, 1]);
+    expect(view.environmentTonePenalties).toEqual(environmentTonePenalties(RAIN_TONES));
+    expect(view.stepOvercastFade(OVERCAST_FADE_SECONDS / 2)).toBe(true);
+    const middle = (1 + RAIN_OVERCAST_BRIGHTNESS) / 2;
+    expect(view.overcastFactor).toBeCloseTo(middle, 12);
+    expect(view.decorTintValue[1]).toBeCloseTo(middle, 12);
+    expect(view.stepOvercastFade(OVERCAST_FADE_SECONDS)).toBe(true);
+    expect(view.overcastFactor).toBe(RAIN_OVERCAST_BRIGHTNESS);
+    expect(view.decorTintValue[1]).toBe(RAIN_OVERCAST_BRIGHTNESS);
+    // Fondu terminé : plus aucun travail par image.
+    expect(view.stepOvercastFade(1)).toBe(false);
+    // Fin de la pluie en fondu : retour progressif, puis exactement 1 (valeurs de midi).
+    view.setRain(false, true);
+    expect(view.overcastFactor).toBe(RAIN_OVERCAST_BRIGHTNESS);
+    view.stepOvercastFade(1);
+    expect(view.overcastFactor).toBeGreaterThan(RAIN_OVERCAST_BRIGHTNESS);
+    expect(view.overcastFactor).toBeLessThan(1);
+    for (let i = 0; i < 600; i++) {
+      view.stepOvercastFade(1 / 60);
+    }
+    expect(view.overcastFactor).toBe(1);
+    expect(view.decorTintValue).toEqual([1, 1, 1]);
+    view.dispose();
+  });
+
+  it('sans fondu (démarrage, capture) : ciel couvert d’un coup, même en plein fondu', () => {
+    const view = pondView();
+    view.updateLight(lightAt(12));
+    view.setRain(true, true);
+    view.stepOvercastFade(1);
+    // Même état de pluie, sans fondu : le facteur rejoint aussitôt sa cible.
+    view.setRain(true);
+    expect(view.overcastFactor).toBe(RAIN_OVERCAST_BRIGHTNESS);
+    expect(view.decorTintValue[0]).toBe(RAIN_OVERCAST_BRIGHTNESS);
+    view.setRain(false);
+    expect(view.overcastFactor).toBe(1);
+    expect(view.stepOvercastFade(1)).toBe(false);
+    view.dispose();
+    expect(view.stepOvercastFade(1)).toBe(false);
+  });
+
   it('sans pluie possible (bac tropical) : rien ne change', () => {
     const view = new AquariumView({
       canvas: document.createElement('canvas'),
@@ -719,8 +766,50 @@ describe('AquariumView (ciel couvert sous la pluie, #123)', () => {
     view.updateLight(lightAt(12));
     const penalties = [...view.environmentTonePenalties];
     expect(view.setRain(true)).toBe(false);
+    expect(view.setRain(true, true)).toBe(false);
+    expect(view.stepOvercastFade(1)).toBe(false);
+    expect(view.overcastFactor).toBe(1);
     expect(view.decorTintValue).toEqual([1, 1, 1]);
     expect(view.environmentTonePenalties).toEqual(penalties);
+    view.dispose();
+  });
+});
+
+describe('AquariumView (caméra du fond d’écran, #332)', () => {
+  it('applyOrbit : pose de base calculée une fois par taille, position de orbitPose', () => {
+    const view = new AquariumView({
+      canvas: document.createElement('canvas'),
+      rendererFactory: () => new RecordingRenderer(),
+      pixelRatio: 1,
+      preset: 'three-quarter',
+      interactive: false,
+    });
+    view.resize(1280, 720);
+    const spy = vi.spyOn(
+      view as unknown as { presetPose(preset: 'three-quarter'): CameraPose },
+      'presetPose',
+    );
+    const expected = (aspect: number, angle: number) =>
+      orbitPose(cameraPresetPose('three-quarter', view.dimensions, aspect, CAMERA_FOV_DEG), angle);
+    for (const angle of [0, 0.1, -0.2, 0.3]) {
+      view.applyOrbit('three-quarter', angle);
+      const pose = expected(1280 / 720, angle);
+      view.cameraPosition().forEach((c, i) => expect(c).toBeCloseTo(pose.position[i], 9));
+      view.cameraTarget().forEach((c, i) => expect(c).toBeCloseTo(pose.target[i], 9));
+    }
+    expect(spy).toHaveBeenCalledTimes(1);
+    // Redimensionnement : pose de base recalculée une fois, pour le nouvel aspect.
+    view.resize(800, 600);
+    spy.mockClear();
+    view.applyOrbit('three-quarter', 0.25);
+    view.applyOrbit('three-quarter', 0.5);
+    expect(spy).toHaveBeenCalledTimes(1);
+    const pose = expected(800 / 600, 0.5);
+    view.cameraPosition().forEach((c, i) => expect(c).toBeCloseTo(pose.position[i], 9));
+    // Autre préréglage : recalculée aussi.
+    spy.mockClear();
+    view.applyOrbit('front' as 'three-quarter', 0);
+    expect(spy).toHaveBeenCalledTimes(1);
     view.dispose();
   });
 });

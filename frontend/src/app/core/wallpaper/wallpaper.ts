@@ -49,6 +49,15 @@ export function readWallpaperGlobal(win: object | null | undefined): WallpaperGl
   };
 }
 
+/**
+ * Lire `aqfish-fond.json` à côté de la page (#332) ? Seulement dans le paquet (globale
+ * `aqfishFond` présente) ou en `file://` : en ligne ou sous `ng serve`, avec `fond=1`, le
+ * fichier n'existe pas et sa lecture laisserait une erreur 404 en console.
+ */
+export function shouldReadWallpaperFile(protocol: string, global: WallpaperGlobal | null): boolean {
+  return global !== null || protocol === 'file:';
+}
+
 /** Configuration de la globale en texte JSON (`null` si absente ou non sérialisable). */
 export function wallpaperGlobalText(global: WallpaperGlobal | null): string | null {
   const config = global?.config;

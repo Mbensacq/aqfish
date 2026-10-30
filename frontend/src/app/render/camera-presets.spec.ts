@@ -7,6 +7,7 @@ import {
   framingDistance,
   orbitDistanceLimits,
   orbitPose,
+  orbitPositionInto,
   panTargetRadius,
   tankBoundingRadius,
   tankCenter,
@@ -237,5 +238,26 @@ describe('orbitPose (fond d’écran, #279)', () => {
     const pose = orbitPose({ position: [1, 2, 0], target: [0, 0, 0] }, Math.PI / 2);
     expect(pose.position[0]).toBeCloseTo(0, 12);
     expect(pose.position[2]).toBeCloseTo(-1, 12);
+  });
+});
+
+describe('orbitPositionInto (fond d’écran sans allocation, #332)', () => {
+  const base = cameraPresetPose('three-quarter', TANK, 16 / 9, CAMERA_FOV_DEG);
+
+  it('écrit dans le tableau fourni, renvoyé, la position de orbitPose', () => {
+    const out: [number, number, number] = [0, 0, 0];
+    for (const angle of [-0.6, 0, 0.3, Math.PI]) {
+      expect(orbitPositionInto(base, angle, out)).toBe(out);
+      expect(out).toEqual([...orbitPose(base, angle).position]);
+    }
+  });
+
+  it('angle non fini : position de la pose recopiée ; pose d’entrée intacte', () => {
+    const out: [number, number, number] = [9, 9, 9];
+    const before = [...base.position];
+    orbitPositionInto(base, Number.NaN, out);
+    expect(out).toEqual(before);
+    orbitPositionInto(base, 1, out);
+    expect([...base.position]).toEqual(before);
   });
 });

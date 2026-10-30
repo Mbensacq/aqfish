@@ -230,19 +230,43 @@ function lerpVec(a: Vec3, b: Vec3, s: number): Vec3 {
  * Pose `pose` tournée de `angle` radians autour de l'axe vertical passant par sa cible
  * (caméra automatique du fond d'écran, #279) : même distance, même hauteur, même cible ;
  * (x, z) relatifs à la cible deviennent (x cos a + z sin a, −x sin a + z cos a). Angle non
- * fini : pose inchangée. Nouvel objet.
+ * fini : pose inchangée. Nouvel objet (boucle par image : `orbitPositionInto`).
  */
 export function orbitPose(pose: CameraPose, angle: number): CameraPose {
   if (!Number.isFinite(angle)) {
     return pose;
   }
-  const [tx, , tz] = pose.target;
-  const dx = pose.position[0] - tx;
-  const dz = pose.position[2] - tz;
+  return { position: orbitPositionInto(pose, angle, [0, 0, 0]), target: pose.target };
+}
+
+/**
+ * Position de `orbitPose(pose, angle)` écrite dans `out`, renvoyé : aucune allocation, pour la
+ * caméra du fond d'écran recalculée à chaque image (#332). Angle non fini : position de
+ * `pose` recopiée.
+ */
+export function orbitPositionInto(
+  pose: CameraPose,
+  angle: number,
+  out: [number, number, number],
+): [number, number, number] {
+  // Accès indexés : la déstructuration passerait par un itérateur.
+  const px = pose.position[0];
+  const py = pose.position[1];
+  const pz = pose.position[2];
+  if (!Number.isFinite(angle)) {
+    out[0] = px;
+    out[1] = py;
+    out[2] = pz;
+    return out;
+  }
+  const tx = pose.target[0];
+  const tz = pose.target[2];
+  const dx = px - tx;
+  const dz = pz - tz;
   const cos = Math.cos(angle);
   const sin = Math.sin(angle);
-  return {
-    position: [tx + dx * cos + dz * sin, pose.position[1], tz - dx * sin + dz * cos],
-    target: pose.target,
-  };
+  out[0] = tx + dx * cos + dz * sin;
+  out[1] = py;
+  out[2] = tz - dx * sin + dz * cos;
+  return out;
 }
