@@ -94,6 +94,8 @@ jamais eu d'aquarium doit pouvoir commencer ici et apprendre à s'occuper de ses
    future sauvegarde au schéma 2.
 6. #278 — mode décor (aquarium purement graphique, sans contraintes de soin, un mode par bac),
    puis #279 — vue « fond d'écran » pour Wallpaper Engine. Après l'ADR de #264.
+7. #340 — mode immersif : l'écran devient la vitre de l'aquarium, à taille réelle, parallaxe à
+   l'inclinaison du téléphone. Plus tard, après #278 et #279.
 
 Toute valeur biologique est sourcée (référence consultable) ou marquée « approximation de jeu » ;
 ce qui n'a pas pu être vérifié est signalé, jamais présenté comme réel. Planif replace les
