@@ -3894,7 +3894,7 @@
       "date": "2026-10-30",
       "debut": "2026-10-30T04:17:22.792Z",
       "type": "fonctionnalite",
-      "issue": null,
+      "issue": 279,
       "pr": null,
       "version": null,
       "phases": {
