@@ -3989,10 +3989,10 @@
           "note": "Verdict OK, 0 bug, captures c108 publiées (104/105 identiques, side-piece modifiée, side-piece-grand-bac nouvelle) ; e2e complète non rejouée en local (CI verte)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-30T11:09:17.084Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-30T12:04:44.118Z",
+          "note": "PR #335 fusionnée → v1.4.3 ; main verte, release créée par la CI ; #324 fermée ; dette #336 ; suppression de la branche refusée par l'environnement"
         }
       },
       "metriques": {}
