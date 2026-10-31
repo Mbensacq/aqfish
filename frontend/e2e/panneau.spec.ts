@@ -273,6 +273,10 @@ test.describe('Panneau de contrôle', () => {
     await page.keyboard.press('Space');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-room', 'true');
 
+    // Bouton « Mode immersif » (#345), sur la ligne du titre « Simulation ».
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', { name: 'Mode immersif' })).toBeFocused();
+
     await page.keyboard.press('Tab');
     await expect(speed(page)).toBeFocused();
     await page.keyboard.press('ArrowRight');
