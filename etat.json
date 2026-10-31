@@ -4263,6 +4263,12 @@
           "debut": "2026-10-31T13:34:13.373Z",
           "fin": "2026-10-31T13:34:55.960Z",
           "note": "Issue #346 : Mode immersif lot 2/2, parallaxe, interactions et téléphone (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-10-31T13:35:33.851Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
