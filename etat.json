@@ -4271,10 +4271,10 @@
           "note": "PR #356 : mode immersif lot 2 partiel (parallaxe, autorisation+repli, plein écran, Wake Lock, 30 i/s, pause masquée) + dette #355, CI verte au 2e essai ; reste de #346 (tapotement, nourriture, appui long) non fait, issue laissée ouverte"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-31T15:17:51.188Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-31T15:42:34.602Z",
+          "note": "Verdict RÉSERVES, 0 bug, 3 critères de #346 non faits (tapotement, nourriture, appui long) ; captures c116 publiées ; e2e complet non rejoué en local"
         }
       },
       "metriques": {}
