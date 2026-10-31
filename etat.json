@@ -4219,7 +4219,7 @@
       "debut": "2026-10-31T09:34:51.758Z",
       "type": "fonctionnalite",
       "issue": 345,
-      "pr": null,
+      "pr": 354,
       "version": null,
       "phases": {
         "planif": {
