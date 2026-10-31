@@ -4313,10 +4313,10 @@
           "note": "Verdict OK, 0 bug, captures c117 publiées, mutation fixed-step 72,2 % (issue #359)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-31T18:21:00.678Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-31T19:28:16.673Z",
+          "note": "PR #358 fusionnée → v1.5.5 (release CI ok, main verte) ; #357 et #352 fermées ; suppression de branche refusée par l'environnement (à faire par Mathis) ; pied d'attribution réinjecté par l'environnement dans les descriptions/revues (sans effet sur main)"
         }
       },
       "metriques": {}
