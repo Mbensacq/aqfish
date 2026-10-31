@@ -4151,10 +4151,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-31T02:34:29.562Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-31T02:35:05.002Z",
+          "note": "Issue #343 : Caméra libre dans la pièce, lot 1/2 (M)"
         }
       },
       "metriques": {}
