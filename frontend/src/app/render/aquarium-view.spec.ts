@@ -1008,6 +1008,25 @@ describe('AquariumView (caméra libre dans la pièce, #343)', () => {
     view.dispose();
   });
 
+  it('état libre propre à la vue, modifié en place à chaque image (#352)', () => {
+    const view = create();
+    view.enterFreeCamera();
+    const state = view.freeCameraState!;
+    const position = state.position;
+    const start = [...position];
+    expect(view.stepFreeCamera({ forward: 1, strafe: 0, vertical: 0 }, 0.1)).toBe(true);
+    expect(view.freeCameraState).toBe(state);
+    expect(view.freeCameraState!.position).toBe(position);
+    expect(position).not.toEqual(start);
+    expect(view.cameraPosition()).toEqual([...position]);
+    // Aucun déplacement (consigne nulle, à l'arrêt) : rien ne bouge, faux.
+    for (let i = 0; i < 200; i++) {
+      view.stepFreeCamera({ forward: 0, strafe: 0, vertical: 0 }, 0.1);
+    }
+    expect(view.stepFreeCamera({ forward: 0, strafe: 0, vertical: 0 }, 0.1)).toBe(false);
+    view.dispose();
+  });
+
   it('glisser à la souris oriente la vue sans déplacer la caméra', () => {
     const view = create();
     const canvas = (view as unknown as { canvas: HTMLCanvasElement }).canvas;
@@ -1191,6 +1210,31 @@ describe('AquariumView (mode immersif, #345)', () => {
     expect(controls.enabled).toBe(true);
     view.dispose();
     expect(view.setImmersiveCamera({ eyeX: 0, eyeY: 0, eyeDistance: 1 })).toBe(false);
+  });
+
+  it('copie la caméra dans un objet interne préalloué, le même d’un appel à l’autre (#357)', () => {
+    const view = create();
+    const internal = () => (view as unknown as { immersive: object }).immersive;
+    const first = internal();
+    const eye = { eyeX: 0.02, eyeY: 0, eyeDistance: 1.2 };
+    expect(view.setImmersiveCamera(eye)).toBe(true);
+    expect(internal()).toBe(first);
+    expect(internal()).not.toBe(eye);
+    const position = view.cameraPosition();
+    // L'appelant réutilise son objet : la vue n'en garde aucune référence.
+    eye.eyeX = 0.04;
+    expect(view.cameraPosition()).toEqual(position);
+    expect(view.setImmersiveCamera(eye)).toBe(true);
+    expect(internal()).toBe(first);
+    expect(internal()).toEqual({ eyeX: 0.04, eyeY: 0, eyeDistance: 1.2 });
+    expect(view.cameraPosition()[0]).toBeCloseTo(0.04, 12);
+    // Caméra refusée : l'objet interne garde les dernières valeurs valides.
+    expect(view.setImmersiveCamera({ eyeX: Number.NaN, eyeY: 0, eyeDistance: 1 })).toBe(false);
+    expect(internal()).toEqual({ eyeX: 0.04, eyeY: 0, eyeDistance: 1.2 });
+    expect(view.setImmersiveCamera(null)).toBe(true);
+    expect(view.immersiveActive).toBe(false);
+    expect(internal()).toBe(first);
+    view.dispose();
   });
 
   it('refuse une caméra invalide', () => {

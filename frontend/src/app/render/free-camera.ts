@@ -235,11 +235,33 @@ export function turnFreeCamera(state: FreeCameraState, dx: number, dy: number): 
 }
 
 /**
+ * État de la caméra libre modifiable en place (`stepFreeCameraInPlace`) : la vue en garde un,
+ * avec ses propres tableaux, pour ne rien allouer à chaque image (#352).
+ */
+export interface MutableFreeCameraState {
+  readonly position: [number, number, number];
+  yaw: number;
+  pitch: number;
+  readonly velocity: [number, number, number];
+}
+
+/** Copie modifiable de `state`, avec ses propres tableaux (aucun partage avec `state`). */
+export function mutableFreeCameraState(state: FreeCameraState): MutableFreeCameraState {
+  return {
+    position: [state.position[0], state.position[1], state.position[2]],
+    yaw: state.yaw,
+    pitch: state.pitch,
+    velocity: [state.velocity[0], state.velocity[1], state.velocity[2]],
+  };
+}
+
+/**
  * Avance la caméra libre de `dtSeconds` (borné à `FREE_CAMERA_MAX_DT`) par pas fixes de
  * `FREE_CAMERA_STEP` (le reste, moins d'un pas, est rendu dans `remainder`) : vitesse amortie
  * vers la consigne, puis déplacement axe par axe ; un axe qui ferait sortir de la pièce ou
  * entrer dans l'obstacle est arrêté au bord et sa vitesse annulée (la caméra glisse le long
- * des parois). Fonction pure : mêmes entrées, même résultat.
+ * des parois). Fonction pure : mêmes entrées, même résultat ; moins d'un pas, `state` rendu
+ * tel quel. Variante sans allocation : `stepFreeCameraInPlace`.
  */
 export function stepFreeCamera(
   state: FreeCameraState,
@@ -248,16 +270,34 @@ export function stepFreeCamera(
   bounds: FreeCameraBounds,
   carry = 0,
 ): { state: FreeCameraState; remainder: number } {
-  const dt = Number.isFinite(dtSeconds) && dtSeconds > 0 ? dtSeconds : 0;
-  let time = Math.min(FREE_CAMERA_MAX_DT, dt + (Number.isFinite(carry) && carry > 0 ? carry : 0));
-  const wish = wishVelocity(state.yaw, input);
+  const time = stepTime(dtSeconds, carry);
+  if (time < FREE_CAMERA_STEP - STEP_EPSILON) {
+    return { state, remainder: time };
+  }
+  const next = mutableFreeCameraState(state);
+  const remainder = stepFreeCameraInPlace(next, input, dtSeconds, bounds, carry);
+  return { state: next, remainder };
+}
+
+/**
+ * Même calcul que `stepFreeCamera`, mais `state.position` et `state.velocity` sont modifiés
+ * en place (cap et inclinaison inchangés) ; renvoie le reste de temps. Aucune allocation : à
+ * appeler à chaque image (#352). Mêmes entrées, même résultat que la version pure.
+ */
+export function stepFreeCameraInPlace(
+  state: MutableFreeCameraState,
+  input: FreeCameraInput,
+  dtSeconds: number,
+  bounds: FreeCameraBounds,
+  carry = 0,
+): number {
+  let time = stepTime(dtSeconds, carry);
+  const wish = wishVelocity(state.yaw, input, WISH);
   const blend = 1 - Math.exp(-FREE_CAMERA_STEP / FREE_CAMERA_DAMPING_SECONDS);
-  const p: [number, number, number] = [state.position[0], state.position[1], state.position[2]];
-  const v: [number, number, number] = [state.velocity[0], state.velocity[1], state.velocity[2]];
-  let steps = 0;
-  while (time >= FREE_CAMERA_STEP - 1e-12) {
+  const p = state.position;
+  const v = state.velocity;
+  while (time >= FREE_CAMERA_STEP - STEP_EPSILON) {
     time -= FREE_CAMERA_STEP;
-    steps++;
     for (let axis = 0; axis < 3; axis++) {
       v[axis] += (wish[axis] - v[axis]) * blend;
       if (Math.abs(v[axis]) < REST_SPEED && wish[axis] === 0) {
@@ -276,13 +316,7 @@ export function stepFreeCamera(
       }
     }
   }
-  if (steps === 0) {
-    return { state, remainder: Math.max(0, time) };
-  }
-  return {
-    state: { ...state, position: [p[0], p[1], p[2]], velocity: [v[0], v[1], v[2]] },
-    remainder: Math.max(0, time),
-  };
+  return Math.max(0, time);
 }
 
 /** Vrai si la caméra est à l'arrêt (vitesse nulle). */
@@ -290,8 +324,28 @@ export function isFreeCameraAtRest(state: FreeCameraState): boolean {
   return state.velocity[0] === 0 && state.velocity[1] === 0 && state.velocity[2] === 0;
 }
 
-/** Vitesse visée pour une consigne : plan horizontal selon le cap, verticale à part. */
-function wishVelocity(yaw: number, input: FreeCameraInput): Vec3 {
+/** Tolérance sur le dernier pas fixe (arrondis de la soustraction répétée). */
+const STEP_EPSILON = 1e-12;
+
+/** Tampons de travail du pas de la caméra libre (#352) : jamais exposés, jamais conservés. */
+const WISH: [number, number, number] = [0, 0, 0];
+const PROBE: [number, number, number] = [0, 0, 0];
+
+/** Temps à intégrer : `dtSeconds` (positif fini) plus le report, borné à `FREE_CAMERA_MAX_DT`. */
+function stepTime(dtSeconds: number, carry: number): number {
+  const dt = Number.isFinite(dtSeconds) && dtSeconds > 0 ? dtSeconds : 0;
+  return Math.min(FREE_CAMERA_MAX_DT, dt + (Number.isFinite(carry) && carry > 0 ? carry : 0));
+}
+
+/**
+ * Vitesse visée pour une consigne, écrite dans `out` : plan horizontal selon le cap,
+ * verticale à part.
+ */
+function wishVelocity(
+  yaw: number,
+  input: FreeCameraInput,
+  out: [number, number, number],
+): [number, number, number] {
   const f = axisInput(input.forward);
   const s = axisInput(input.strafe);
   const u = axisInput(input.vertical);
@@ -304,7 +358,20 @@ function wishVelocity(yaw: number, input: FreeCameraInput): Vec3 {
     x /= horizontal;
     z /= horizontal;
   }
-  return [x * FREE_CAMERA_SPEED, u * FREE_CAMERA_SPEED, z * FREE_CAMERA_SPEED];
+  out[0] = x * FREE_CAMERA_SPEED;
+  out[1] = u * FREE_CAMERA_SPEED;
+  out[2] = z * FREE_CAMERA_SPEED;
+  return out;
+}
+
+/** Borne inférieure de `box` sur l'axe `axis` (0 : x, 1 : y, 2 : z). */
+function boxMin(box: FreeBox, axis: number): number {
+  return axis === 0 ? box.minX : axis === 1 ? box.minY : box.minZ;
+}
+
+/** Borne supérieure de `box` sur l'axe `axis` (0 : x, 1 : y, 2 : z). */
+function boxMax(box: FreeBox, axis: number): number {
+  return axis === 0 ? box.maxX : axis === 1 ? box.maxY : box.maxZ;
 }
 
 /**
@@ -318,20 +385,18 @@ function edgeOnAxis(
   before: number,
   velocity: number,
 ): number {
-  const r = bounds.room;
   const o = bounds.obstacle;
-  const roomMin = [r.minX, r.minY, r.minZ][axis];
-  const roomMax = [r.maxX, r.maxY, r.maxZ][axis];
-  const wanted = p[axis];
-  const clamped = clamp(wanted, roomMin, roomMax);
-  const probe: [number, number, number] = [p[0], p[1], p[2]];
+  const clamped = clamp(p[axis], boxMin(bounds.room, axis), boxMax(bounds.room, axis));
+  const probe = PROBE;
+  probe[0] = p[0];
+  probe[1] = p[1];
+  probe[2] = p[2];
   probe[axis] = clamped;
   if (!insideBox(o, probe)) {
     return clamped;
   }
   // Entrée dans l'obstacle : arrêt sur sa face, du côté d'où l'on venait.
-  const face = velocity > 0 ? [o.minX, o.minY, o.minZ][axis] : [o.maxX, o.maxY, o.maxZ][axis];
-  return velocity > 0 ? Math.max(before, face) : Math.min(before, face);
+  return velocity > 0 ? Math.max(before, boxMin(o, axis)) : Math.min(before, boxMax(o, axis));
 }
 
 function axisInput(value: number): number {

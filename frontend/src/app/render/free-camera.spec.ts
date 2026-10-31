@@ -15,7 +15,9 @@ import {
   insideBox,
   isFreeCameraAtRest,
   isFreePositionAllowed,
+  mutableFreeCameraState,
   stepFreeCamera,
+  stepFreeCameraInPlace,
   turnFreeCamera,
   type FreeCameraInput,
   type FreeCameraState,
@@ -336,5 +338,67 @@ describe('stepFreeCamera (#343)', () => {
     const a = run(start, { forward: 1, strafe: 0.5, vertical: 0.2 }, 1.3);
     const b = run(start, { forward: 1, strafe: 0.5, vertical: 0.2 }, 1.3);
     expect(a).toEqual(b);
+  });
+});
+
+describe('stepFreeCameraInPlace (#352)', () => {
+  const INPUTS: FreeCameraInput[] = [
+    { forward: 1, strafe: 0.5, vertical: 0.2 },
+    { forward: -1, strafe: -1, vertical: -1 },
+    FREE_CAMERA_IDLE,
+    { forward: 0, strafe: 1, vertical: 1 },
+  ];
+
+  it('même résultat, à l’octet, que la version pure, image après image (bac compris)', () => {
+    // Départ face au bac : les pas bloqués sur l'obstacle et les murs passent par edgeOnAxis.
+    let pure: FreeCameraState = at([0.3, 0.2, 1.2], 0.4, 0.1);
+    let pureCarry = 0;
+    const live = mutableFreeCameraState(pure);
+    let liveCarry = 0;
+    for (let frame = 0; frame < 240; frame++) {
+      const input = INPUTS[Math.floor(frame / 60)];
+      const dt = frame % 3 === 0 ? 1 / 30 : 1 / 61;
+      const next = stepFreeCamera(pure, input, dt, BOUNDS, pureCarry);
+      pure = next.state;
+      pureCarry = next.remainder;
+      liveCarry = stepFreeCameraInPlace(live, input, dt, BOUNDS, liveCarry);
+      expect(live.position).toEqual(pure.position);
+      expect(live.velocity).toEqual(pure.velocity);
+      expect(liveCarry).toBe(pureCarry);
+    }
+    expect(isFreePositionAllowed(BOUNDS, live.position)).toBe(true);
+  });
+
+  it('modifie l’état en place : mêmes tableaux d’une image à l’autre', () => {
+    const live = mutableFreeCameraState(at([0, 1, 1.5]));
+    const { position, velocity } = live;
+    stepFreeCameraInPlace(live, FORWARD, 0.1, BOUNDS);
+    expect(live.position).toBe(position);
+    expect(live.velocity).toBe(velocity);
+    expect(position[2]).toBeLessThan(1.5);
+    expect(live.yaw).toBe(0);
+  });
+
+  it('copie modifiable sans partage ; version pure : l’état d’entrée n’est jamais modifié', () => {
+    const source = at([0, 1, 1.5]);
+    const copy = mutableFreeCameraState(source);
+    expect(copy.position).not.toBe(source.position);
+    expect(copy.velocity).not.toBe(source.velocity);
+    copy.position[0] = 9;
+    expect(source.position[0]).toBe(0);
+    const next = stepFreeCamera(source, FORWARD, 0.5, BOUNDS).state;
+    expect(source.position).toEqual([0, 1, 1.5]);
+    expect(source.velocity).toEqual([0, 0, 0]);
+    expect(next.position).not.toBe(source.position);
+  });
+
+  it('moins d’un pas : rien ne bouge, le temps est reporté', () => {
+    const live = mutableFreeCameraState(at([0, 1, 1.5]));
+    expect(stepFreeCameraInPlace(live, FORWARD, FREE_CAMERA_STEP / 2, BOUNDS)).toBeCloseTo(
+      FREE_CAMERA_STEP / 2,
+      15,
+    );
+    expect(live.position).toEqual([0, 1, 1.5]);
+    expect(stepFreeCameraInPlace(live, FORWARD, Number.NaN, BOUNDS, -1)).toBe(0);
   });
 });

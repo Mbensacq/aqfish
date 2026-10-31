@@ -240,13 +240,32 @@ export interface FreeMoveAxes {
  * Fonction pure.
  */
 export function freeMoveAxes(pressed: ReadonlySet<FreeMoveId>): FreeMoveAxes {
-  const axis = (plus: FreeMoveId, minus: FreeMoveId): number =>
-    (pressed.has(plus) ? 1 : 0) - (pressed.has(minus) ? 1 : 0);
-  return {
-    forward: axis('avancer', 'reculer'),
-    strafe: axis('droite', 'gauche'),
-    vertical: axis('monter', 'descendre'),
-  };
+  return freeMoveAxesInto(pressed, { forward: 0, strafe: 0, vertical: 0 });
+}
+
+/** Consigne modifiable, remplie par `freeMoveAxesInto`. */
+export interface MutableFreeMoveAxes {
+  forward: number;
+  strafe: number;
+  vertical: number;
+}
+
+/**
+ * Comme `freeMoveAxes`, mais écrit la consigne dans `out` et le renvoie : aucune allocation,
+ * pour la boucle d'affichage (#352).
+ */
+export function freeMoveAxesInto(
+  pressed: ReadonlySet<FreeMoveId>,
+  out: MutableFreeMoveAxes,
+): MutableFreeMoveAxes {
+  out.forward = moveAxis(pressed, 'avancer', 'reculer');
+  out.strafe = moveAxis(pressed, 'droite', 'gauche');
+  out.vertical = moveAxis(pressed, 'monter', 'descendre');
+  return out;
+}
+
+function moveAxis(pressed: ReadonlySet<FreeMoveId>, plus: FreeMoveId, minus: FreeMoveId): number {
+  return (pressed.has(plus) ? 1 : 0) - (pressed.has(minus) ? 1 : 0);
 }
 
 /**

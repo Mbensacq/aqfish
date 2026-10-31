@@ -288,6 +288,41 @@ describe('ImmersiveMode', () => {
       expect(fixture.componentInstance.eyeOffsetMm).toEqual({ x: 0, y: 0 });
     });
 
+    it('refus : pas redemandé aux touchers suivants, redemandé à la réouverture (#357)', async () => {
+      let asked = 0;
+      let answer = 'denied';
+      win.DeviceOrientationEvent = Object.assign(
+        function DeviceOrientationEvent() {
+          /* factice */
+        },
+        { requestPermission: async () => (asked++, answer) },
+      );
+      await create();
+      frame(0);
+      host().dispatchEvent(pointer('touch'));
+      await fixture.whenStable();
+      fixture.detectChanges();
+      expect(host().getAttribute('data-immersive-parallax')).toBe('denied');
+      for (let i = 0; i < 3; i++) {
+        host().dispatchEvent(pointer('touch'));
+      }
+      await fixture.whenStable();
+      fixture.detectChanges();
+      expect(asked).toBe(1);
+      expect(host().getAttribute('data-immersive-parallax')).toBe('denied');
+      // Mode refermé puis rouvert : nouvelle demande au premier toucher, accordée cette fois.
+      fixture.destroy();
+      answer = 'granted';
+      await create();
+      frame(0);
+      expect(host().getAttribute('data-immersive-parallax')).toBe('off');
+      host().dispatchEvent(pointer('touch'));
+      await fixture.whenStable();
+      fixture.detectChanges();
+      expect(asked).toBe(2);
+      expect(host().getAttribute('data-immersive-parallax')).toBe('waiting');
+    });
+
     it('autorisation accordée : l’orientation est écoutée', async () => {
       win.DeviceOrientationEvent = Object.assign(
         function DeviceOrientationEvent() {

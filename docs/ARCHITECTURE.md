@@ -251,7 +251,11 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
   amortie, limites tirées de `roomInterior`, bac et meuble en obstacle) ; `AquariumView`
   coupe `OrbitControls` le temps du mode et rend la pose d'avant en sortant ; déplacements aux
   touches tenues lus par l'hôte (`core/commands`, `FREE_MOVE_COMMANDS`), orientation au
-  glisser. État exposé par `data-aqfish-camera-libre`.
+  glisser. État exposé par `data-aqfish-camera-libre`, qui ne reflète que le mode interactif :
+  il reste `false` sous une pose `libre=` de capture (pose fixe, sans clavier ni barre), lue
+  par `data-aqfish-camera` et `data-aqfish-camera-cible` (#352). Chemin par image sans
+  allocation : état libre propre à la vue modifié en place (`stepFreeCameraInPlace`),
+  consigne du clavier dans un tampon (`freeMoveAxesInto`).
 - Caméra libre au doigt et en édition (#344, ADR 0085) : gestes purs dans
   `render/free-camera-touch.ts` (seuil d'orientation 4 px à la souris, 10 px au doigt ; deux
   doigts qui s'écartent ou se rapprochent donnent une poussée amortie ajoutée à l'avance) ;
@@ -360,7 +364,7 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
 | `render/pixel-art.ts` | `PIXEL_SIZE`, taille de la cible basse résolution, couleur la plus proche avec pénalités facultatives (fonctions pures, même métrique que le shader) |
 | `render/palette-pass.ts` | Cible basse résolution et passe plein écran palette (`ShaderMaterial`) ; pénalités des tons de l'heure et des tons d'environnement (`environmentTonePenalties`), tons de la nourriture selon l'opacité du pixel (`FOOD_ALPHA_THRESHOLD`) ; libération |
 | `render/camera-presets.ts` | Dimensions du bac, préréglages de caméra, interpolation des transitions (fonctions pures) |
-| `render/free-camera.ts` | Caméra libre dans la pièce (#343, ADR 0084) : limites (`freeCameraBounds` : pièce et obstacle bac + meuble), position permise (`constrainFreePosition`), départ d'une pose orbitale (`freeCameraFromPose`), orientation (`turnFreeCamera`), déplacement à pas fixes et vitesse amortie, glissant le long des parois (`stepFreeCamera`) ; fonctions pures |
+| `render/free-camera.ts` | Caméra libre dans la pièce (#343, ADR 0084) : limites (`freeCameraBounds` : pièce et obstacle bac + meuble), position permise (`constrainFreePosition`), départ d'une pose orbitale (`freeCameraFromPose`), orientation (`turnFreeCamera`), déplacement à pas fixes et vitesse amortie, glissant le long des parois (`stepFreeCamera`, pure ; `stepFreeCameraInPlace`, même calcul en place sans allocation pour la boucle d'affichage, #352) ; fonctions pures sauf la variante en place |
 | `render/free-camera-touch.ts` | Gestes de la caméra libre (#344, ADR 0085) : seuil du glisser d'orientation (`beginLook`, `moveLook`), pincement à deux doigts (`beginPinch`, `movePinch`), poussée et son amortissement (`pinchThrust`, `decayThrust`, `combinedForward`) ; fonctions pures, états mutés en place |
 | `render/room-layer.ts` | Pièce autour du bac (#187, ADR 0048) et ses meubles (#188) : blocs de `roomBlocks` et `furnitureBlocks` en maillages à couleurs par sommet (sol et meuble éclairés ; chaque paroi de l'enveloppe, murs, plafond et poutres, en couleurs plates et en maillage à part, #324), masqués selon la caméra (`setViewpoint`), contour de l'élément sélectionné (`setSelected`, ADR 0050), fenêtre et tache de lumière teintées par `setDaylight` (#342, ADR 0083) ; aucun maillage pièce masquée |
 | `sim/room-window.ts` | Fenêtre de la pièce (#342, ADR 0083) : place dans le mur du fond (`roomWindow`, à gauche du bac, sous les poutres), blocs du bois, de la vitre et de la tache de lumière au sol découpée dans les lames (`roomWindowBlocks`), multiplicateurs de couleur selon la lumière du jour et le ciel couvert (`windowLightInto`), occultation par le bac (`isWindowClear`) ; aucun réglage ni champ de sauvegarde |

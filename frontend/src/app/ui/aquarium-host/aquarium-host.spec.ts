@@ -1427,8 +1427,13 @@ describe('AquariumHost', () => {
       frames.flush(0);
       expect(camera()).toEqual([1.5, 0.6, 1.8]);
       expect(host().freeCamera()).toBe(false);
+      // L'attribut ne reflète que le mode interactif (#352) : `false` sous une pose `libre=`,
+      // lue par `data-aqfish-camera` ; aucun préréglage suivi.
+      expect(element().getAttribute(FREE_CAMERA_ATTRIBUTE)).toBe('false');
+      expect(host().activePreset()).toBeNull();
       host().toggleFreeCamera();
       expect(host().freeCamera()).toBe(false);
+      expect(element().getAttribute(FREE_CAMERA_ATTRIBUTE)).toBe('false');
       fixture.destroy();
       await create('?capture=1&seed=3&piece=1&camera=front');
       setCanvasSize(800, 600);

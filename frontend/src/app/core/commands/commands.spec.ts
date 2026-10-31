@@ -8,6 +8,7 @@ import {
   VIEW_COMMAND_PRESETS,
   commandKey,
   freeMoveAxes,
+  freeMoveAxesInto,
   freeMoveFor,
   helpSections,
   keyCommand,
@@ -178,6 +179,14 @@ describe('commandes (#74)', () => {
         expect(key).toBe(key.toLowerCase());
         expect(keyCommandFor(key), key).toBeNull();
       }
+    });
+
+    it('freeMoveAxesInto : même consigne, écrite dans le tampon fourni (#352)', () => {
+      const out = { forward: 9, strafe: 9, vertical: 9 };
+      expect(freeMoveAxesInto(new Set(['avancer', 'gauche', 'monter']), out)).toBe(out);
+      expect(out).toEqual({ forward: 1, strafe: -1, vertical: 1 });
+      expect(freeMoveAxesInto(new Set(['avancer', 'reculer']), out)).toBe(out);
+      expect(out).toEqual(freeMoveAxes(new Set(['avancer', 'reculer'])));
     });
 
     it('freeMoveAxes : chaque axe, sens opposés annulés, aucune touche au repos', () => {
