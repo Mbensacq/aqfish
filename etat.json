@@ -4341,6 +4341,12 @@
           "debut": "2026-10-31T19:33:09.980Z",
           "fin": "2026-10-31T20:32:30.140Z",
           "note": "PR #365 : mutants de fixed-step tués (72,2 % → 100 %, #359 et #127) + ROADMAP v1.5/v1.6, CI verte 1er essai ; capture interface-liste-bacs instable (2 px, sans lien)"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-10-31T20:32:59.502Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
