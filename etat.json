@@ -4349,10 +4349,10 @@
           "note": "Verdict OK, 0 bug, captures c118 publiées (107 identiques), mutation fixed-step 100 % confirmée"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-31T20:49:51.969Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-31T21:50:14.076Z",
+          "note": "PR #365 fusionnée → v1.5.6 (release CI ok, main verte, e2e 2/6 ~33 min) ; #359, #127, #364 fermées ; suppression de branche refusée par l'environnement (Mathis)"
         }
       },
       "metriques": {}
