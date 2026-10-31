@@ -4241,10 +4241,10 @@
           "note": "Verdict RÉSERVES, 0 bug bloquant, captures c115 publiées (107) ; 4 captures de panneau diffèrent (bouton Mode immersif) ; e2e complet non rejoué en local"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-31T12:01:27.970Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-31T13:33:42.548Z",
+          "note": "PR #354 fusionnée → v1.5.3 (release CI ok, main verte) ; #345 fermée ; dette #355 ; suppression de la branche cycle/c115-mode-immersif-etalonnage refusée par l'environnement (à faire par Mathis)"
         }
       },
       "metriques": {}
