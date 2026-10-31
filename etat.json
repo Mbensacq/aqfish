@@ -4203,6 +4203,12 @@
           "debut": "2026-10-31T07:40:48.690Z",
           "fin": "2026-10-31T08:17:04.220Z",
           "note": "Verdict OK, 0 bug, captures c114 publiées (107) ; unitaires 3338 verts, e2e de la PR rejoués, suite e2e complète non rejouée en local"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-10-31T08:17:39.189Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
