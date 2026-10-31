@@ -4191,6 +4191,12 @@
           "debut": "2026-10-31T06:11:46.536Z",
           "fin": "2026-10-31T06:12:20.187Z",
           "note": "Issue #344 : Caméra libre dans la pièce, lot 2/2 tactile et édition (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-10-31T06:12:56.812Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
