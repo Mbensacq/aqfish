@@ -4161,6 +4161,12 @@
           "debut": "2026-10-31T02:35:29.384Z",
           "fin": "2026-10-31T04:30:11.732Z",
           "note": "PR #351 : caméra libre dans la pièce lot 1 (#343), CI verte au 2e essai (aide-mémoire ramené à 1 ligne) ; 96/105 captures identiques à main (9 avec l'aide-mémoire ouvert)"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-10-31T04:30:35.365Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
