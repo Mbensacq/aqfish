@@ -4,6 +4,7 @@ import { SIM_DT } from './constants';
 import { acceptsSavedSpecies, isCareMode, type CareMode } from './care-mode';
 import { createDayClock, DEFAULT_DAY_CLOCK, HOURS_PER_DAY, type DayClock } from './daylight';
 import { parseDecorItems, type DecorItem } from './decor';
+import { ICH_AGGRAVATED_AT, isIchAge } from './disease';
 import {
   ENVIRONMENT_IDS,
   environmentWater,
@@ -310,6 +311,10 @@ export function savedWorld(world: World): SavedWorld {
         saved[key] = fish[key];
       }
       saved['health'] = fish.health;
+      if (fish.ich !== undefined) {
+        // Points blancs (issue #360) : écrits seulement pour un animal malade.
+        saved['ich'] = fish.ich;
+      }
       return saved as unknown as SavedFish;
     }),
     food: world.food.map((pellet) => ({ ...pellet })),
@@ -755,6 +760,16 @@ function parseFish(
       }
       fish['health'] = health ?? HEALTH_START;
     }
+  }
+  // Points blancs (issue #360) : facultatif, absent pour un animal sain et dans toute
+  // sauvegarde antérieure ; présent, âge d'infection dans [0, ICH_AGGRAVATED_AT].
+  const ich = own(item, 'ich');
+  if (ich !== undefined) {
+    if (!isIchAge(ich)) {
+      report(`ich hors de [0, ${ICH_AGGRAVATED_AT}]`);
+      return null;
+    }
+    fish['ich'] = ich;
   }
   const f = fish as unknown as Fish;
   const def = SPECIES[species];

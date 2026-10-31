@@ -68,6 +68,12 @@ export interface Fish {
    * sous 1. Ne consomme aucun tirage.
    */
   readonly health: number;
+  /**
+   * Âge de l'infection par les points blancs, en secondes simulées, dans
+   * [0, `ICH_AGGRAVATED_AT`] (`sim/disease.ts`, issue #360) ; absent : sain. Lecture seule
+   * pour le rendu (`ichStage`, `ichSeverity`).
+   */
+  readonly ich?: number;
   /** État du sous-générateur de l'entité (mulberry32, voir `prngNextState`). */
   readonly rng: number;
   // État au pas précédent (interpolation du rendu).

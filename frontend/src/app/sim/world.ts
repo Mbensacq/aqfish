@@ -18,6 +18,7 @@ import {
 } from './anemones';
 import { coralLayout, coralObstacles, type CoralColony } from './corals';
 import { decorObstacles, parseDecorItems, type DecorItem } from './decor';
+import { ichStress, stepIchInPlace } from './disease';
 import {
   DEFAULT_ENVIRONMENT_ID,
   environmentById,
@@ -755,6 +756,16 @@ function stepInPlace(world: MutableWorld, dt: number, clock: SimClock): void {
     waterLoad(fishes),
     waterLiters(environmentWater(place)),
     targetTemperature(world.water, world.environment),
+  );
+  // Points blancs (issue #360) : sur l'eau de fin de pas ; aucun tirage sans stress ni
+  // malade, donc un bac sain avance exactement comme avant.
+  stepIchInPlace(
+    fishes,
+    dt,
+    ichStress(world.water, world.environment),
+    world.environment,
+    world.seed,
+    world.tick,
   );
   // Santé (issue #208) : sur la faim de fin de pas (après les repas) et l'eau du pas (pH
   // compris, issue #236), sans hasard ; à santé pleine, la nage reste exactement celle d'avant.
