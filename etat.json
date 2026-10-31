@@ -4182,7 +4182,7 @@
       "date": "2026-10-31",
       "debut": "2026-10-31T06:11:46.536Z",
       "type": "fonctionnalite",
-      "issue": null,
+      "issue": 344,
       "pr": null,
       "version": null,
       "phases": {
