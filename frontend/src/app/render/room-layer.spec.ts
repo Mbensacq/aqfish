@@ -1,8 +1,12 @@
 import { Color, Mesh } from 'three';
 
 import { DEFAULT_ROOM, roomBlocks, roomInterior, type Room } from '../sim/room';
+import { lightAt } from '../sim/daylight';
 import { furnitureBlocks, ROOM_CATALOG } from '../sim/room-furniture';
-import { DEFAULT_TANK } from '../sim/tank';
+import { createWindowLight, roomWindowBlocks, windowLightInto } from '../sim/room-window';
+import { DEFAULT_TANK, MAX_TANK } from '../sim/tank';
+import type { CameraPreset } from '../core/capture/capture-params';
+import { cameraPresetPose } from './camera-presets';
 import { PALETTE_COLORS } from './palette';
 import { buildRoomHull, buildRoomMesh, ROOM_COLORS, RoomLayer } from './room-layer';
 
@@ -62,6 +66,9 @@ describe('RoomLayer (#187)', () => {
     expect(layer.count).toBe(roomBlocks(DEFAULT_TANK, SHOWN).length);
     expect(layer.object.visible).toBe(true);
     expect(layer.object.children.map((c) => c.name).sort()).toEqual([
+      'piece-fenetre-bois',
+      'piece-fenetre-lumiere',
+      'piece-fenetre-vitre',
       'piece-mur',
       'piece-mur-avant',
       'piece-mur-droit',
@@ -73,7 +80,7 @@ describe('RoomLayer (#187)', () => {
     const dispose = vi.spyOn(first.geometry, 'dispose');
     layer.setRoom(DEFAULT_TANK, { ...SHOWN, cabinetHeight: 0.9 }, true);
     expect(dispose).toHaveBeenCalled();
-    expect(layer.object.children.length).toBe(6);
+    expect(layer.object.children.length).toBe(9);
     layer.setRoom(DEFAULT_TANK, DEFAULT_ROOM, true);
     expect(layer.object.children.length).toBe(0);
     expect(layer.object.visible).toBe(false);
@@ -90,7 +97,7 @@ describe('RoomLayer (#187)', () => {
     expect(layer.count).toBe(
       roomBlocks(DEFAULT_TANK, SHOWN).length + ROOM_CATALOG.etagere.blocks.length,
     );
-    expect(layer.object.children.length).toBe(6);
+    expect(layer.object.children.length).toBe(9);
     layer.setRoom(DEFAULT_TANK, { ...furnished, shown: false }, true);
     expect(layer.built).toBe(false);
     layer.dispose();
@@ -230,5 +237,93 @@ describe('RoomLayer (#187)', () => {
     expect(selection()).not.toBe(rebuilt);
     expect(layer.selectedIndex).toBe(0);
     layer.dispose();
+  });
+
+  it('fenêtre (#342) : bois avec le mur du fond, vitre masquée avec lui, tache au sol', () => {
+    const layer = new RoomLayer();
+    layer.setRoom(DEFAULT_TANK, SHOWN, true);
+    const byName = new Map(layer.object.children.map((c) => [c.name, c as Mesh]));
+    const window = roomWindowBlocks(DEFAULT_TANK, SHOWN);
+    const count = (part: string) => window.filter((b) => b.part === part).length * 36 * 3;
+    const wallBlocks = roomBlocks(DEFAULT_TANK, SHOWN).filter((b) => b.shell === 'fond');
+    expect(byName.get('piece-mur')!.geometry.getAttribute('position').array.length).toBe(
+      wallBlocks.length * 36 * 3,
+    );
+    expect(byName.get('piece-fenetre-bois')!.geometry.getAttribute('position').array.length).toBe(
+      count('fenetre'),
+    );
+    expect(byName.get('piece-fenetre-bois')!.material).toBe(byName.get('piece-mur')!.material);
+    expect(byName.get('piece-fenetre-vitre')!.geometry.getAttribute('position').array.length).toBe(
+      count('vitre'),
+    );
+    expect(
+      byName.get('piece-fenetre-lumiere')!.geometry.getAttribute('position').array.length,
+    ).toBe(count('lumiere'));
+    // Le nombre de blocs de la pièce (choix à la souris) ne compte pas la fenêtre.
+    expect(layer.count).toBe(roomBlocks(DEFAULT_TANK, SHOWN).length);
+    expect(layer.patchBuilt).toBe(true);
+    const inner = roomInterior(DEFAULT_TANK);
+    layer.setViewpoint(2, 1, 2);
+    expect(layer.windowVisible).toBe(true);
+    layer.setViewpoint(0, 1, inner.minZ - 0.5);
+    expect(layer.windowVisible).toBe(false);
+    expect(layer.shellVisible('fond')).toBe(false);
+    layer.setViewpoint(2, -1, 2);
+    expect(layer.windowVisible).toBe(false);
+    // Vue de côté : le mur du fond reste affiché, la fenêtre (derrière l'eau) non.
+    layer.setViewpoint(2, 0.25, 0);
+    expect(layer.shellVisible('fond')).toBe(true);
+    expect(layer.windowVisible).toBe(false);
+    expect(byName.get('piece-fenetre-bois')!.visible).toBe(false);
+    layer.setViewpoint(1.5, 1.5, 2.5);
+    expect(byName.get('piece-fenetre-bois')!.visible).toBe(true);
+    layer.dispose();
+  });
+
+  it('fenêtre (#342) : vitre et tache teintées par la lumière du jour, gardées à la reconstruction', () => {
+    const layer = new RoomLayer();
+    layer.setRoom(DEFAULT_TANK, SHOWN, true);
+    expect(layer.windowColors.glass).toEqual([1, 1, 1]);
+    const night = lightAt(0);
+    layer.setDaylight(night, 0.8);
+    const expected = windowLightInto(night, 0.8, createWindowLight());
+    for (let k = 0; k < 3; k++) {
+      expect(layer.windowColors.glass[k]).toBeCloseTo(expected.glass[k], 12);
+      expect(layer.windowColors.patch[k]).toBeCloseTo(expected.patch[k], 12);
+    }
+    layer.setRoom(DEFAULT_TANK, { ...SHOWN, cabinetHeight: 0.9 }, true);
+    expect(layer.windowColors.glass[2]).toBeCloseTo(expected.glass[2], 12);
+    layer.setDaylight(lightAt(12));
+    expect(layer.windowColors.glass).toEqual([1, 1, 1]);
+    expect(layer.windowColors.patch).toEqual([1, 1, 1]);
+    layer.dispose();
+  });
+
+  it('fenêtre (#342) : rien pour une pièce masquée ou un environnement sans pièce', () => {
+    const layer = new RoomLayer();
+    layer.setRoom(DEFAULT_TANK, SHOWN, false);
+    expect(layer.patchBuilt).toBe(false);
+    expect(layer.windowVisible).toBe(false);
+    layer.setRoom(DEFAULT_TANK, DEFAULT_ROOM, true);
+    expect(layer.patchBuilt).toBe(false);
+    expect(layer.object.children.length).toBe(0);
+    layer.dispose();
+  });
+
+  it('fenêtre (#342) : affichée dans les vues trois-quarts et de face, cachée de côté', () => {
+    for (const dims of [DEFAULT_TANK, { width: 0.6, height: 0.5, depth: 0.3 }, MAX_TANK]) {
+      const layer = new RoomLayer();
+      layer.setRoom(dims, SHOWN, true);
+      const seen = (preset: CameraPreset): boolean => {
+        const [x, y, z] = cameraPresetPose(preset, dims, 16 / 9).position;
+        layer.setViewpoint(x, y, z);
+        return layer.windowVisible;
+      };
+      expect(seen('three-quarter'), JSON.stringify(dims)).toBe(true);
+      expect(seen('front'), JSON.stringify(dims)).toBe(true);
+      expect(seen('side'), JSON.stringify(dims)).toBe(false);
+      expect(seen('bottom'), JSON.stringify(dims)).toBe(false);
+      layer.dispose();
+    }
   });
 });
