@@ -4183,7 +4183,7 @@
       "debut": "2026-10-31T06:11:46.536Z",
       "type": "fonctionnalite",
       "issue": 344,
-      "pr": null,
+      "pr": 353,
       "version": null,
       "phases": {
         "planif": {
