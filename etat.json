@@ -4311,6 +4311,12 @@
           "debut": "2026-10-31T17:56:16.377Z",
           "fin": "2026-10-31T18:20:35.481Z",
           "note": "Verdict OK, 0 bug, captures c117 publiées, mutation fixed-step 72,2 % (issue #359)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-10-31T18:21:00.678Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
