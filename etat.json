@@ -4227,6 +4227,12 @@
           "debut": "2026-10-31T09:34:51.758Z",
           "fin": "2026-10-31T09:35:24.931Z",
           "note": "Issue #345 : Mode immersif lot 1/2, étalonnage et projection décentrée (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-10-31T09:35:55.236Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
