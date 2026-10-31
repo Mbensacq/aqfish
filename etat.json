@@ -4373,10 +4373,10 @@
           "note": "Issue #360 : maladie des points blancs lot 1/2, modèle sim (S-M, découpée ; rendu et alertes dans #366)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-31T21:52:17.294Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-31T23:11:58.794Z",
+          "note": "PR #367 : points blancs lot 1/2 (sim/disease.ts, ADR 0088), CI verte 1er essai ; empreintes des 5 mondes par défaut identiques à main"
         }
       },
       "metriques": {}
