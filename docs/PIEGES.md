@@ -6,6 +6,14 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **« Réglages » refermé reste dans le DOM** (cycle 114, #344) : après un second clic sur
+  « Réglages », `.control-panel` existe encore (masqué) : `toHaveCount(0)` échoue au bout de
+  60 s ; attendre `toBeHidden()`. `toHaveCount(0)` ne vaut que quand l'éditeur de décor l'a
+  remplacé (`startEditing`). (2026-10-31)
+- **Test unitaire de l'hôte qui relit la sauvegarde : pas de `seed=` dans l'URL** (cycle 114,
+  #344) : `seed=`, `environnement=` ou `population=` décrivent le monde et la sauvegarde n'est
+  pas restaurée (`hasWorldParams`) ; ouvrir `create('?camera=three-quarter')` ou `create('')`.
+  (2026-10-31)
 - **Caméra hors orbite : ne pas appeler `controls.update()`** (cycle 113, #343) : avec
   `OrbitControls` désactivés, `update()` ramène encore la distance caméra-cible dans
   `[minDistance, maxDistance]` et la cible dans la sphère `maxTargetRadius` : une pose libre

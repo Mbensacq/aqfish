@@ -15,6 +15,7 @@ import { DecorEditor } from './ui/decor-editor/decor-editor';
 import { EXCLUSIVE_PANELS } from './ui/exclusive-panels/exclusive-panels';
 import { SpeciesWiki } from './ui/species-wiki/species-wiki';
 import { ViewPresetsBar } from './ui/view-presets-bar/view-presets-bar';
+import { FreeCameraPad } from './ui/free-camera-pad/free-camera-pad';
 
 /**
  * Racine de l'application : le bac en 3D plein écran et, hors mode capture, l'interface
@@ -42,6 +43,7 @@ import { ViewPresetsBar } from './ui/view-presets-bar/view-presets-bar';
     DecorEditor,
     SpeciesWiki,
     ViewPresetsBar,
+    FreeCameraPad,
   ],
   templateUrl: './app.html',
   styleUrl: './app.scss',

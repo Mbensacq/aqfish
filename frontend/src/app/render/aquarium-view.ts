@@ -68,6 +68,18 @@ import {
   type FreeCameraInput,
   type FreeCameraState,
 } from './free-camera';
+import {
+  beginLook,
+  beginPinch,
+  combinedForward,
+  decayThrust,
+  moveLook,
+  movePinch,
+  pinchThrust,
+  type LookDelta,
+  type LookGesture,
+  type PinchGesture,
+} from './free-camera-touch';
 import { isClick, toNormalizedDevice, waterSurfacePoint } from './food-pick';
 import {
   decorTintInto,
@@ -359,8 +371,18 @@ export class AquariumView {
   private transition: CameraTransition | null = null;
   /** Caméra libre dans la pièce (#343, ADR 0084), `null` en orbite. */
   private free: FreeMode | null = null;
-  /** Glissement d'orientation de la caméra libre en cours (pointeur et dernier point). */
-  private look: { readonly id: number; x: number; y: number } | null = null;
+  /** Glisser d'orientation de la caméra libre en cours (#343, seuil de geste #344). */
+  private look: LookGesture | null = null;
+  /** Déplacement du glisser d'orientation, tampon réutilisé (#344). */
+  private readonly lookDelta: LookDelta = { dx: 0, dy: 0 };
+  /** Premier doigt posé en caméra libre (#344) : point de départ d'un pincement. */
+  private firstTouch: { readonly id: number; x: number; y: number } | null = null;
+  /** Pincement à deux doigts en cours en caméra libre (#344). */
+  private pinch: PinchGesture | null = null;
+  /** Poussée du pincement dans [−1, 1], amortie à chaque image (#344). */
+  private touchThrust = 0;
+  /** Consigne passée au modèle de la caméra libre, tampon réutilisé (#344). */
+  private readonly freeInput = { forward: 0, strafe: 0, vertical: 0 };
   /** Une interaction à la souris arrête de suivre le préréglage et annule la transition. */
   private readonly stopFollowingPreset = () => {
     this.preset = null;
@@ -1372,7 +1394,14 @@ export class AquariumView {
     if (!free || this.disposed) {
       return false;
     }
-    const next = stepFreeCamera(free.state, input, dtSeconds, free.bounds, free.carry);
+    // Poussée du pincement (#344) ajoutée à l'avance du clavier, puis amortie.
+    const thrust = this.touchThrust;
+    this.touchThrust = decayThrust(thrust, dtSeconds);
+    const command = this.freeInput;
+    command.forward = combinedForward(input.forward, thrust);
+    command.strafe = input.strafe;
+    command.vertical = input.vertical;
+    const next = stepFreeCamera(free.state, command, dtSeconds, free.bounds, free.carry);
     free.carry = next.remainder;
     if (next.state === free.state) {
       return false;
@@ -1450,28 +1479,83 @@ export class AquariumView {
       return;
     }
     this.free = null;
-    this.look = null;
+    this.resetFreeGestures();
     this.controls.enabled = this.interactive && !this.disposed && this.drag === null;
   }
 
+  /** Abandonne les gestes de la caméra libre en cours (orientation, pincement, poussée). */
+  private resetFreeGestures(): void {
+    this.look = null;
+    this.firstTouch = null;
+    this.pinch = null;
+    this.touchThrust = 0;
+  }
+
+  /** Poussée courante du pincement (tests), dans [−1, 1]. */
+  get freeCameraThrust(): number {
+    return this.touchThrust;
+  }
+
+  /**
+   * Appui en caméra libre : un pointeur principal commence un glisser d'orientation (seuil
+   * de geste, #344) ; un second doigt transforme le geste en pincement (avancer, reculer).
+   */
   private readonly onLookPointerDown = (event: PointerEvent) => {
-    if (!this.free || this.drag || this.look || event.button !== 0 || !event.isPrimary) {
+    if (!this.free || this.drag) {
       return;
     }
-    this.look = { id: event.pointerId, x: event.clientX, y: event.clientY };
+    if (event.pointerType === 'touch') {
+      const first = this.firstTouch;
+      if (first === null) {
+        this.firstTouch = { id: event.pointerId, x: event.clientX, y: event.clientY };
+      } else if (this.pinch === null && first.id !== event.pointerId) {
+        this.pinch = beginPinch(
+          first.id,
+          first.x,
+          first.y,
+          event.pointerId,
+          event.clientX,
+          event.clientY,
+        );
+        // Deux doigts : plus d'orientation, ni de clic du premier doigt.
+        this.look = null;
+        this.pendingClick = null;
+        return;
+      }
+    }
+    if (this.look || this.pinch || event.button !== 0 || !event.isPrimary) {
+      return;
+    }
+    this.look = beginLook(event.pointerId, event.clientX, event.clientY, event.pointerType);
   };
 
   private readonly onLookPointerMove = (event: PointerEvent) => {
-    const look = this.look;
     const free = this.free;
-    if (!look || !free || look.id !== event.pointerId || this.drag) {
+    if (!free || this.drag) {
       return;
     }
-    const dx = event.clientX - look.x;
-    const dy = event.clientY - look.y;
-    look.x = event.clientX;
-    look.y = event.clientY;
-    const turned = turnFreeCamera(free.state, dx, dy);
+    const first = this.firstTouch;
+    if (first !== null && first.id === event.pointerId) {
+      first.x = event.clientX;
+      first.y = event.clientY;
+    }
+    const pinch = this.pinch;
+    if (pinch !== null) {
+      const delta = movePinch(pinch, event.pointerId, event.clientX, event.clientY);
+      if (delta !== 0) {
+        this.touchThrust = pinchThrust(this.touchThrust, delta);
+      }
+      return;
+    }
+    const look = this.look;
+    if (!look || look.id !== event.pointerId) {
+      return;
+    }
+    const delta = this.lookDelta;
+    if (!moveLook(look, event.clientX, event.clientY, delta)) {
+      return;
+    }
+    const turned = turnFreeCamera(free.state, delta.dx, delta.dy);
     if (turned !== free.state) {
       free.state = turned;
       this.applyFreeState(turned);
@@ -1480,8 +1564,16 @@ export class AquariumView {
   };
 
   private readonly onLookPointerEnd = (event: PointerEvent) => {
-    if (this.look?.id === event.pointerId) {
+    const id = event.pointerId;
+    if (this.look?.id === id) {
       this.look = null;
+    }
+    if (this.firstTouch?.id === id) {
+      this.firstTouch = null;
+    }
+    if (this.pinch !== null && (this.pinch.a === id || this.pinch.b === id)) {
+      // La poussée garde son élan et s'éteint d'elle-même (amortissement).
+      this.pinch = null;
     }
   };
 
@@ -1536,7 +1628,7 @@ export class AquariumView {
     this.canvas.removeEventListener('pointerup', this.onLookPointerEnd);
     this.canvas.removeEventListener('pointercancel', this.onLookPointerEnd);
     this.free = null;
-    this.look = null;
+    this.resetFreeGestures();
     this.drag = null;
     this.decorDragListener = null;
     this.roomDragListener = null;

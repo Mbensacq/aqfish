@@ -1047,6 +1047,70 @@ describe('AquariumView (caméra libre dans la pièce, #343)', () => {
     view.dispose();
   });
 
+  function touch(type: string, id: number, x: number, y: number, primary: boolean): Event {
+    const event = new MouseEvent(type, { button: 0, clientX: x, clientY: y });
+    Object.defineProperty(event, 'pointerId', { value: id });
+    Object.defineProperty(event, 'isPrimary', { value: primary });
+    Object.defineProperty(event, 'pointerType', { value: 'touch' });
+    return event;
+  }
+
+  it('au doigt : un appui qui tremble sous le seuil n’oriente pas (#344)', () => {
+    const view = create();
+    const canvas = (view as unknown as { canvas: HTMLCanvasElement }).canvas;
+    view.enterFreeCamera();
+    const yaw = view.freeCameraState!.yaw;
+    canvas.dispatchEvent(touch('pointerdown', 3, 100, 100, true));
+    canvas.dispatchEvent(touch('pointermove', 3, 106, 104, true));
+    expect(view.freeCameraState!.yaw).toBe(yaw);
+    // Au-delà du seuil, tout le glissement depuis l'appui compte.
+    canvas.dispatchEvent(touch('pointermove', 3, 140, 100, true));
+    expect(view.freeCameraState!.yaw).toBeCloseTo(yaw - 40 * 0.004, 12);
+    canvas.dispatchEvent(touch('pointerup', 3, 140, 100, true));
+    view.dispose();
+  });
+
+  it('deux doigts qui s’écartent avancent, puis la poussée s’éteint (#344)', () => {
+    const view = create();
+    const canvas = (view as unknown as { canvas: HTMLCanvasElement }).canvas;
+    view.enterFreeCamera();
+    const state = view.freeCameraState!;
+    const yaw = state.yaw;
+    const start = view.cameraPosition();
+    canvas.dispatchEvent(touch('pointerdown', 1, 300, 200, true));
+    canvas.dispatchEvent(touch('pointerdown', 2, 340, 200, false));
+    // Le premier doigt bouge aussi : pas d'orientation pendant le pincement.
+    canvas.dispatchEvent(touch('pointermove', 1, 260, 200, true));
+    canvas.dispatchEvent(touch('pointermove', 2, 400, 200, false));
+    expect(view.freeCameraState!.yaw).toBe(yaw);
+    expect(view.freeCameraThrust).toBeGreaterThan(0.5);
+    canvas.dispatchEvent(touch('pointerup', 2, 400, 200, false));
+    canvas.dispatchEvent(touch('pointerup', 1, 260, 200, true));
+    expect(view.stepFreeCamera({ forward: 0, strafe: 0, vertical: 0 }, 0.2)).toBe(true);
+    // Avance selon le cap : vers −Z pour la vue de trois-quarts (cap proche de 0).
+    const forward = [-Math.sin(yaw), 0, -Math.cos(yaw)];
+    const moved = view.cameraPosition().map((value, i) => value - start[i]);
+    expect(moved[0] * forward[0] + moved[2] * forward[2]).toBeGreaterThan(0);
+    for (let i = 0; i < 120; i++) {
+      view.stepFreeCamera({ forward: 0, strafe: 0, vertical: 0 }, 1 / 30);
+    }
+    expect(view.freeCameraThrust).toBe(0);
+    view.dispose();
+  });
+
+  it('deux doigts qui se rapprochent reculent ; sortir du mode efface la poussée (#344)', () => {
+    const view = create();
+    const canvas = (view as unknown as { canvas: HTMLCanvasElement }).canvas;
+    view.enterFreeCamera();
+    canvas.dispatchEvent(touch('pointerdown', 1, 200, 200, true));
+    canvas.dispatchEvent(touch('pointerdown', 2, 400, 200, false));
+    canvas.dispatchEvent(touch('pointermove', 2, 260, 200, false));
+    expect(view.freeCameraThrust).toBeLessThan(0);
+    view.exitFreeCamera();
+    expect(view.freeCameraThrust).toBe(0);
+    view.dispose();
+  });
+
   it('reste dans la pièce même en avançant longtemps', () => {
     const view = create();
     view.enterFreeCamera();

@@ -59,6 +59,10 @@ import {
 import { CAMERA_TRANSITION_SECONDS } from '../../render/camera-presets';
 import { freeMoveAxes, freeMoveFor, type FreeMoveId } from '../../core/commands/commands';
 import { isTypingContext } from '../../core/keyboard/keyboard';
+import {
+  readStoredFreeCamera,
+  writeStoredFreeCamera,
+} from '../../core/free-camera-pref/free-camera-pref';
 import type { DecorPick } from '../../render/decor-pick';
 import {
   addDecorItem,
@@ -872,7 +876,11 @@ export class AquariumHost {
     if (!view) {
       return;
     }
-    // Depuis la caméra libre (#343), la vue part de la pose libre vers le préréglage.
+    // Depuis la caméra libre (#343), la vue part de la pose libre vers le préréglage ; le
+    // préréglage choisi vaut retour à l'orbite pour la préférence d'affichage (#344).
+    if (this.freeCamera()) {
+      this.rememberFreeCamera(false);
+    }
     this.syncFreeCamera(false);
     this.activePreset.set(preset);
     view.animateToPreset(preset, this.capture ? 0 : CAMERA_TRANSITION_SECONDS);
@@ -983,7 +991,33 @@ export class AquariumHost {
     } else {
       return;
     }
+    // Préférence d'affichage (#344) : le mode choisi est repris au prochain chargement.
+    this.rememberFreeCamera(this.freeCamera());
     this.exposeCamera();
+    this.scheduleFrame();
+  }
+
+  /** Mémorise le mode de caméra choisi (#344), hors capture et fond d'écran. */
+  private rememberFreeCamera(free: boolean): void {
+    const win = this.document.defaultView;
+    if (win && !this.capture && !this.wallpaper) {
+      writeStoredFreeCamera(browserStorage(win), free);
+    }
+  }
+
+  /**
+   * Déplacement de la caméra libre tenu ou relâché par un bouton à l'écran (#344, boutons
+   * « Avancer » et « Reculer ») : même effet qu'une touche tenue. Sans effet hors caméra libre.
+   */
+  setFreeMoveHeld(move: FreeMoveId, held: boolean): void {
+    if (!held) {
+      this.freeMoves.delete(move);
+      return;
+    }
+    if (!this.freeCamera()) {
+      return;
+    }
+    this.freeMoves.add(move);
     this.scheduleFrame();
   }
 
@@ -2636,6 +2670,12 @@ export class AquariumHost {
         this.activePreset.set(null);
         this.exposeCamera();
       }
+    }
+
+    // Caméra libre mémorisée (#344) : reprise au chargement, pièce affichée, hors capture et
+    // hors fond d'écran (`toggleFreeCamera` refuse sinon).
+    if (!params.capture && !this.wallpaper && readStoredFreeCamera(browserStorage(win))) {
+      this.toggleFreeCamera();
     }
 
     const onResize = () => this.scheduleFrame();
