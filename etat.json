@@ -4383,6 +4383,12 @@
           "debut": "2026-10-31T23:12:24.516Z",
           "fin": "2026-10-31T23:34:06.856Z",
           "note": "Verdict OK, 0 bug, captures c119 publiées (107/108 identiques, liste-bacs téléphone instable)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-10-31T23:34:43.039Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
