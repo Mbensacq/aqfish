@@ -4167,6 +4167,12 @@
           "debut": "2026-10-31T04:30:35.365Z",
           "fin": "2026-10-31T04:51:06.612Z",
           "note": "Verdict OK, 0 bug, captures c113 publiées (107) ; e2e complet non rejoué en local"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-10-31T04:51:32.376Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
