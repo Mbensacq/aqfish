@@ -1,6 +1,7 @@
 import { CAMERA_PRESETS } from '../capture/capture-params';
 import {
   COMMAND_GROUPS,
+  FREE_CAMERA_GESTURES,
   FREE_MOVE_COMMANDS,
   GESTURE_COMMANDS,
   KEY_COMMANDS,
@@ -144,14 +145,36 @@ describe('commandes (#74)', () => {
       const section = helpSections().find((candidate) => candidate.id === 'camera-libre');
       expect(section?.entries.map((entry) => entry.label)).toEqual([
         'L',
-        'Z / W / ↑',
-        'S / ↓',
-        'Q / A / ←',
-        'D / →',
-        'E / Page ↑',
-        'C / Page ↓',
+        'ZQSD / ↑↓←→',
+        'E / C',
         'Glisser',
       ]);
+    });
+
+    it('chaque touche de déplacement figure dans l’aide-mémoire', () => {
+      const shown = FREE_CAMERA_GESTURES.map((gesture) =>
+        `${gesture.gesture} ${gesture.description}`.toLowerCase(),
+      ).join(' ');
+      const names: Record<string, string> = {
+        z: 'zqsd',
+        q: 'zqsd',
+        s: 'zqsd',
+        d: 'zqsd',
+        w: 'wasd',
+        a: 'wasd',
+        e: 'e / c',
+        c: 'e / c',
+        arrowup: '↑↓←→',
+        arrowdown: '↑↓←→',
+        arrowleft: '↑↓←→',
+        arrowright: '↑↓←→',
+        pageup: 'page ↑',
+        pagedown: '↓ aussi',
+      };
+      for (const key of FREE_MOVE_COMMANDS.flatMap((command) => command.keys)) {
+        expect(names[key], key).toBeDefined();
+        expect(shown, key).toContain(names[key]);
+      }
     });
 
     it('déplacements : AZERTY, QWERTY et flèches, insensibles à la casse', () => {

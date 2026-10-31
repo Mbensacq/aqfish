@@ -77,7 +77,7 @@ export const KEY_COMMANDS: readonly KeyCommand[] = [
     id: 'camera-libre',
     key: 'l',
     display: 'L',
-    description: 'Caméra libre dans la pièce : entrer ou revenir à l’orbite',
+    description: 'Entrer en caméra libre ou revenir à l’orbite',
     group: 'camera-libre',
   },
   {
@@ -208,24 +208,16 @@ export interface FreeMoveCommand {
   readonly id: FreeMoveId;
   /** Valeurs de `KeyboardEvent.key` reconnues, en minuscules (AZERTY, QWERTY, flèches). */
   readonly keys: readonly string[];
-  /** Touches telles qu'affichées (`Z / W / ↑`). */
-  readonly display: string;
-  readonly description: string;
 }
 
-/** Déplacements de la caméra libre, dans l'ordre de l'aide-mémoire. */
+/** Déplacements de la caméra libre (affichés par `FREE_CAMERA_GESTURES`). */
 export const FREE_MOVE_COMMANDS: readonly FreeMoveCommand[] = [
-  { id: 'avancer', keys: ['z', 'w', 'arrowup'], display: 'Z / W / ↑', description: 'Avancer' },
-  { id: 'reculer', keys: ['s', 'arrowdown'], display: 'S / ↓', description: 'Reculer' },
-  {
-    id: 'gauche',
-    keys: ['q', 'a', 'arrowleft'],
-    display: 'Q / A / ←',
-    description: 'Aller à gauche',
-  },
-  { id: 'droite', keys: ['d', 'arrowright'], display: 'D / →', description: 'Aller à droite' },
-  { id: 'monter', keys: ['e', 'pageup'], display: 'E / Page ↑', description: 'Monter' },
-  { id: 'descendre', keys: ['c', 'pagedown'], display: 'C / Page ↓', description: 'Descendre' },
+  { id: 'avancer', keys: ['z', 'w', 'arrowup'] },
+  { id: 'reculer', keys: ['s', 'arrowdown'] },
+  { id: 'gauche', keys: ['q', 'a', 'arrowleft'] },
+  { id: 'droite', keys: ['d', 'arrowright'] },
+  { id: 'monter', keys: ['e', 'pageup'] },
+  { id: 'descendre', keys: ['c', 'pagedown'] },
 ];
 
 /** Déplacement de la caméra libre associé à une valeur de `KeyboardEvent.key`, `null` sinon. */
@@ -255,14 +247,24 @@ export function freeMoveAxes(pressed: ReadonlySet<FreeMoveId>): FreeMoveAxes {
   };
 }
 
-/** Lignes de l'aide-mémoire de la caméra libre : déplacements, puis orientation à la souris. */
+/**
+ * Lignes de l'aide-mémoire de la caméra libre, regroupées pour tenir dans le panneau sans
+ * défilement à 1280 × 720 : déplacements dans le plan, hauteur, puis orientation à la souris.
+ * Chaque touche de `FREE_MOVE_COMMANDS` y figure (test de `commands.spec.ts`).
+ */
 export const FREE_CAMERA_GESTURES: readonly GestureCommand[] = [
-  ...FREE_MOVE_COMMANDS.map((command): GestureCommand => ({
-    id: `libre-${command.id}`,
-    gesture: command.display,
-    description: command.description,
+  {
+    id: 'libre-plan',
+    gesture: 'ZQSD / ↑↓←→',
+    description: 'Avancer, reculer, côtés (WASD aussi)',
     group: 'camera-libre',
-  })),
+  },
+  {
+    id: 'libre-hauteur',
+    gesture: 'E / C',
+    description: 'Monter, descendre (Page ↑ / ↓ aussi)',
+    group: 'camera-libre',
+  },
   {
     id: 'libre-souris',
     gesture: 'Glisser',

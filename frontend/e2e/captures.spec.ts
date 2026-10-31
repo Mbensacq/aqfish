@@ -173,7 +173,7 @@ test.describe('Captures', () => {
     // du mur du fond ; vers le plafond et ses poutres.
     { name: 'libre-interieur', query: 'piece=1&libre=2.5:1:2.6:44:-12' },
     { name: 'libre-fenetre', query: 'piece=1&libre=-0.6:0.9:2.2:21:3' },
-    { name: 'libre-plafond', query: 'piece=1&libre=0.8:0.9:1.5:20:55' },
+    { name: 'libre-plafond', query: 'piece=1&libre=1.8:0.7:2.8:30:30' },
     // Pièce à deux bacs (#305, lot 2b) : une commode à droite du bac, un bac moyen posé dessus.
     { name: 'three-quarter-piece-deux-bacs', query: 'piece=1&bacs=commode,moyen@0' },
     { name: 'top-piece-deux-bacs', query: 'piece=1&bacs=commode,moyen@0&camera=top' },

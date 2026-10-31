@@ -6,6 +6,13 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Caméra hors orbite : ne pas appeler `controls.update()`** (cycle 113, #343) : avec
+  `OrbitControls` désactivés, `update()` ramène encore la distance caméra-cible dans
+  `[minDistance, maxDistance]` et la cible dans la sphère `maxTargetRadius` : une pose libre
+  dans la pièce « saute » vers le bac. Placer `camera.position`, `controls.target` et
+  `lookAt` à la main (`AquariumView.applyFreeState`) ; `setPose` (avec `update()`) seulement en
+  revenant à l'orbite. Aussi : l'aide-mémoire « Commandes » ouvert apparaît dans 9 captures
+  d'interface ; toute ligne ajoutée les change (comparer `x ≥ 968` seulement). (2026-10-31)
 - **Test du fond d'écran qui attend la lecture d'`aqfish-fond.json` : poser la globale**
   (cycle 111, #332) : depuis #332, le fichier n'est lu que dans le paquet (globale
   `aqfishFond`) ou en `file://` ; un test unitaire ou e2e en `?fond=1` sans globale ne lit
