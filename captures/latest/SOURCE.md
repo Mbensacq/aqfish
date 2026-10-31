@@ -1,5 +1,5 @@
-# Captures c111
-- Branche : cycle/c111-dette-fond-pluie, PR #348
-- Commit : 3be1a428b7cb98296aff4fbe972f9ea2c1d2b33b
-- Graine : celle de e2e/captures.spec.ts (par défaut)
-- Temps : 2026-10-30, 104 tests de capture, 9,1 min ; 105 PNG identiques à l'octet à c110 (même Chromium 1243)
+# Captures c112
+- Branche : cycle/c112-fenetre-lumiere (PR #350, issue #342)
+- Commit : 0d7b9ff
+- Graine : celle de chaque capture (voir e2e/captures.spec.ts)
+- Durée : 12,7 min en local (Chromium 1243 en rendu logiciel, différent de la CI : pas de comparaison à l'octet avec latest)
