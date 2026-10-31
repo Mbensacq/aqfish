@@ -67,7 +67,10 @@ normale identiques à l'octet, sauvegarde inchangée, `localStorage` faillible.
 ## Conséquences
 
 - La vue normale et ses captures ne changent pas (mode absent en capture, aucun champ de
-  sauvegarde). Pendant le mode, l'hôte ne rend plus rien et son bac est en pause
+  sauvegarde) : bac et rendu identiques. Précision (#355) : les quatre captures montrant le
+  panneau « Réglages » (`front-panneau`, `telephone-eau`, `telephone-liste-bacs`,
+  `three-quarter-panneau-eau`) changent, par le seul bouton « Mode immersif » ajouté au
+  panneau. Pendant le mode, l'hôte ne rend plus rien et son bac est en pause
   (`AquariumHost.setRenderingSuspended`) : un seul contexte WebGL travaille ; à la sortie, la
   boucle repart sans rattraper le temps passé. Limitation des images par seconde : lot 2.
 - Les animaux ne sont pas à taille réelle sur petit écran (voir l'échelle ci-dessus).

@@ -18,10 +18,28 @@ import {
   type CalibrationStorage,
 } from '../../core/immersive/calibration-storage';
 import {
+  FrameLimiter,
+  WakeLockGuard,
+  enterFullscreen,
+  leaveFullscreen,
+  orientationSupport,
+  requestOrientationPermission,
+  type DeviceWindow,
+  type FullscreenDocument,
+  type FullscreenElement,
+  type WakeLockNavigator,
+} from '../../core/immersive/device-api';
+import {
   clampEyeDistanceMm,
   defaultEyeDistanceMm,
   EYE_DISTANCE_MM,
 } from '../../core/immersive/off-axis';
+import {
+  createParallaxState,
+  parallaxStep,
+  resetParallax,
+  type OrientationReading,
+} from '../../core/immersive/parallax';
 import {
   CARD_HEIGHT_MM,
   CARD_WIDTH_MM,
@@ -51,6 +69,15 @@ import { AQUARIUM_RENDERER_FACTORY } from '../aquarium-host/aquarium-host';
 /** Graine du bac immersif (fixe : le bac est un décor, jamais sauvegardé). */
 export const IMMERSIVE_SEED = 345;
 
+/** Images par seconde au plus en mode immersif (batterie, ADR 0087). */
+export const IMMERSIVE_MAX_FPS = 30;
+
+/** Écart sous lequel la caméra n'est pas réappliquée, en mm d'œil (#355). */
+const EYE_EPSILON_MM = 0.05;
+
+/** État de la parallaxe affiché sur l'hôte : `off` sans capteur, `denied` si refusée. */
+export type ParallaxStatus = 'off' | 'waiting' | 'on' | 'denied';
+
 /** Stockage de l'étalonnage, remplaçable dans les tests ; `null` si inaccessible. */
 export const IMMERSIVE_STORAGE = new InjectionToken<CalibrationStorage | null>(
   'IMMERSIVE_STORAGE',
@@ -67,7 +94,7 @@ export const IMMERSIVE_STORAGE = new InjectionToken<CalibrationStorage | null>(
 );
 
 /**
- * Mode immersif, lot 1 (#345, ADR 0086) : plein cadre au-dessus de l'application, un bac aux
+ * Mode immersif, lots 1 et 2 (#345, #346, ADR 0086 et 0087) : plein cadre au-dessus de l'application, un bac aux
  * proportions de l'écran vu à travers sa vitre avant par une projection décentrée
  * (`AquariumView.setImmersiveCamera`). L'écran s'étalonne avec une carte ID-1 ; sans
  * étalonnage, sa taille est estimée et la mention l'indique. Contenu en mode décor : pas une
@@ -84,7 +111,10 @@ export const IMMERSIVE_STORAGE = new InjectionToken<CalibrationStorage | null>(
     'aria-label': 'Mode immersif',
     '[attr.data-immersive-calibrated]': '!calibration().estimated',
     '[attr.data-immersive-screen-mm]': 'screenText()',
+    '[attr.data-immersive-parallax]': 'parallax()',
     '(document:keydown.escape)': 'onEscape()',
+    '(document:visibilitychange)': 'onVisibilityChange()',
+    '(pointerdown)': 'onPointerDown($event)',
   },
   template: `
     <canvas #canvas class="immersive__canvas" aria-hidden="true"></canvas>
@@ -203,6 +233,7 @@ export class ImmersiveMode {
 
   private readonly canvasRef = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
   private readonly document = inject(DOCUMENT);
+  private readonly hostRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly rendererFactory = inject(AQUARIUM_RENDERER_FACTORY);
   private readonly store = new CalibrationStore(inject(IMMERSIVE_STORAGE));
 
@@ -217,6 +248,8 @@ export class ImmersiveMode {
   readonly cardRatio = CARD_HEIGHT_MM / CARD_WIDTH_MM;
   readonly cardMin = Math.ceil(CARD_WIDTH_MM * PX_PER_MM_LIMITS.min);
   readonly cardMax = signal(Math.floor(CARD_WIDTH_MM * PX_PER_MM_LIMITS.max));
+  /** Parallaxe : capteur absent, en attente de lecture, active ou refusée. */
+  readonly parallax = signal<ParallaxStatus>('off');
   readonly screenText = computed(() => {
     const s = this.screen();
     return s === null ? null : `${s.width.toFixed(1)}x${s.height.toFixed(1)}`;
@@ -233,19 +266,130 @@ export class ImmersiveMode {
   private readonly clock: FixedStepState = { steps: 0, accumulator: 0, alpha: 0 };
   private readonly frameCallback = (time: number) => this.frame(time);
   private sizeKey = '';
+  private screenMm: ScreenSizeMm | null = null;
+  private readonly limiter = new FrameLimiter(IMMERSIVE_MAX_FPS);
+  private readonly wakeLock = new WakeLockGuard(
+    this.document.defaultView?.navigator as WakeLockNavigator | undefined,
+  );
+  private readonly parallaxState = createParallaxState();
+  /** Dernière lecture d'orientation (objet réutilisé) ; `hasReading` faux avant la première. */
+  private readonly reading: OrientationReading = { beta: 0, gamma: 0 };
+  private hasReading = false;
+  private orientationListening = false;
+  private gestureHandled = false;
+  /** Caméra appliquée en dernier (mm d'œil, échelle), pour ne pas la réappliquer (#355). */
+  private readonly applied = { eyeX: NaN, eyeY: NaN, eyeDistance: NaN, view: null as unknown };
+  private readonly camera = { eyeX: 0, eyeY: 0, eyeDistance: 1 };
+  private eyeText = '';
+  private readonly orientationHandler = (event: Event) => this.onOrientation(event);
 
   constructor() {
-    afterNextRender(() => this.scheduleFrame());
+    afterNextRender(() => {
+      this.scheduleFrame();
+      void this.wakeLock.acquire();
+      // Orientation sans autorisation à demander : écoutée tout de suite ; sinon (Safari,
+      // Chromium récent), l'autorisation est demandée au premier toucher (ADR 0087).
+      if (orientationSupport(this.deviceWindow) === 'available') {
+        this.listenOrientation();
+      }
+    });
     inject(DestroyRef).onDestroy(() => {
       const win = this.document.defaultView;
       if (this.frameId !== null && win) {
         win.cancelAnimationFrame(this.frameId);
       }
       this.frameId = null;
+      if (this.orientationListening) {
+        win?.removeEventListener('deviceorientation', this.orientationHandler);
+        this.orientationListening = false;
+      }
+      void this.wakeLock.release();
+      void leaveFullscreen(this.document as FullscreenDocument);
       this.view?.dispose();
       this.view = null;
       this.world = null;
     });
+  }
+
+  private get deviceWindow(): DeviceWindow | null {
+    return this.document.defaultView as DeviceWindow | null;
+  }
+
+  /** Décalage courant de l'œil, en mm (tests). */
+  get eyeOffsetMm(): { readonly x: number; readonly y: number } {
+    return { x: this.parallaxState.eyeX, y: this.parallaxState.eyeY };
+  }
+
+  /** Nombre d'applications de la caméra immersive (tests, #355). */
+  cameraApplications = 0;
+
+  /**
+   * Premier toucher : autorisation d'orientation si le navigateur l'exige, plein écran si le
+   * toucher est tactile (ADR 0087). Les deux demandes exigent un geste de l'utilisateur.
+   */
+  onPointerDown(event: PointerEvent): void {
+    if (this.gestureHandled) {
+      return;
+    }
+    this.gestureHandled = true;
+    if (event.pointerType === 'touch') {
+      void enterFullscreen(this.hostRef.nativeElement as FullscreenElement);
+    }
+    if (orientationSupport(this.deviceWindow) === 'needs-permission') {
+      this.parallax.set('waiting');
+      void requestOrientationPermission(this.deviceWindow).then((granted) => {
+        if (granted) {
+          this.listenOrientation();
+        } else {
+          this.parallax.set('denied');
+        }
+      });
+    }
+    void this.wakeLock.acquire();
+  }
+
+  /** Page masquée : boucle arrêtée, verrou d'éveil relâché ; visible : reprise sans rattrapage. */
+  onVisibilityChange(): void {
+    const win = this.document.defaultView;
+    if (this.document.visibilityState === 'hidden') {
+      if (this.frameId !== null && win) {
+        win.cancelAnimationFrame(this.frameId);
+      }
+      this.frameId = null;
+      void this.wakeLock.release();
+      return;
+    }
+    this.lastTime = null;
+    this.limiter.reset();
+    this.scheduleFrame();
+    void this.wakeLock.acquire();
+  }
+
+  private listenOrientation(): void {
+    const win = this.document.defaultView;
+    if (!win || this.orientationListening) {
+      return;
+    }
+    win.addEventListener('deviceorientation', this.orientationHandler);
+    this.orientationListening = true;
+    this.parallax.set('waiting');
+  }
+
+  private onOrientation(event: Event): void {
+    const { beta, gamma } = event as DeviceOrientationEvent;
+    // Ordinateur sans capteur : Chromium envoie des valeurs nulles ; ignorées (repli).
+    if (typeof beta !== 'number' || typeof gamma !== 'number') {
+      return;
+    }
+    if (!Number.isFinite(beta) || !Number.isFinite(gamma)) {
+      return;
+    }
+    this.reading.beta = beta;
+    this.reading.gamma = gamma;
+    if (!this.hasReading) {
+      this.hasReading = true;
+      this.parallax.set('on');
+    }
   }
 
   /** Longueur `mm` en centimètres entiers, pour l'affichage. */
@@ -344,24 +488,76 @@ export class ImmersiveMode {
     const heightPx = canvas.clientHeight;
     if (widthPx > 0 && heightPx > 0) {
       this.syncLayout(widthPx, heightPx);
+      if (!this.limiter.shouldRender(time)) {
+        // Image sautée (limite d'images) : le temps s'accumule jusqu'à la suivante.
+        this.scheduleFrame();
+        return;
+      }
       const view = this.view;
       const world = this.world;
-      if (view && world) {
+      const screen = this.screenMm;
+      if (view && world && screen) {
         const realDt = this.lastTime === null ? 0 : (time - this.lastTime) / 1000;
         fixedStepInto(this.clock.accumulator, realDt, this.clock);
         advanceInPlace(world, this.clock.steps, null);
         view.resize(widthPx, heightPx);
-        view.setImmersiveCamera({
-          eyeX: 0,
-          eyeY: 0,
-          eyeDistance: (this.eyeDistanceMm() / 1000) * this.layout!.scale,
+        const eyeDistanceMm = this.eyeDistanceMm();
+        parallaxStep(this.parallaxState, this.hasReading ? this.reading : null, realDt, {
+          eyeDistance: eyeDistanceMm,
+          screenWidth: screen.width,
+          screenHeight: screen.height,
+          screenAngleDeg: this.screenAngle(),
         });
+        this.applyCamera(view, eyeDistanceMm);
         view.updateFish(world.entities, this.clock.alpha, world.seed);
         view.renderFrame();
       }
     }
     this.lastTime = time;
     this.scheduleFrame();
+  }
+
+  /** Angle d'affichage de l'écran (0 si l'API manque). */
+  private screenAngle(): number {
+    try {
+      return this.document.defaultView?.screen?.orientation?.angle ?? 0;
+    } catch {
+      return 0;
+    }
+  }
+
+  /**
+   * Pose la caméra immersive seulement si l'œil, la distance ou la vue ont changé (#355) :
+   * à paramètres identiques, ni objet neuf, ni tronc, ni matrice.
+   */
+  private applyCamera(view: AquariumView, eyeDistanceMm: number): void {
+    const { eyeX, eyeY } = this.parallaxState;
+    const applied = this.applied;
+    if (
+      applied.view === view &&
+      applied.eyeDistance === eyeDistanceMm &&
+      Math.abs(applied.eyeX - eyeX) < EYE_EPSILON_MM &&
+      Math.abs(applied.eyeY - eyeY) < EYE_EPSILON_MM
+    ) {
+      return;
+    }
+    const scale = this.layout!.scale / 1000;
+    this.camera.eyeX = eyeX * scale;
+    this.camera.eyeY = eyeY * scale;
+    this.camera.eyeDistance = eyeDistanceMm * scale;
+    if (view.setImmersiveCamera(this.camera)) {
+      applied.view = view;
+      applied.eyeX = eyeX;
+      applied.eyeY = eyeY;
+      applied.eyeDistance = eyeDistanceMm;
+      this.cameraApplications++;
+      const text = `${eyeX.toFixed(0)},${eyeY.toFixed(0)}`;
+      if (text !== this.eyeText) {
+        // Exposé pour les tests de bout en bout, écrit seulement quand il change.
+        this.eyeText = text;
+        this.hostRef.nativeElement.setAttribute('data-immersive-eye-mm', text);
+      }
+    }
   }
 
   /** Recrée le bac et sa vue si la taille physique de l'écran ou la profondeur ont changé. */
@@ -374,6 +570,9 @@ export class ImmersiveMode {
     this.sizeKey = key;
     const screen = screenSizeMm(widthPx, heightPx, calibration);
     this.screen.set(screen);
+    this.screenMm = screen;
+    // Nouvelle taille ou rotation : la pose courante redevient la pose neutre.
+    resetParallax(this.parallaxState);
     if (!this.eyeChosen) {
       this.eyeDistanceMm.set(defaultEyeDistanceMm(screen.width, screen.height));
     }
