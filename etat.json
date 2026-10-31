@@ -4155,6 +4155,12 @@
           "debut": "2026-10-31T02:34:29.562Z",
           "fin": "2026-10-31T02:35:05.002Z",
           "note": "Issue #343 : Caméra libre dans la pièce, lot 1/2 (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-10-31T02:35:29.384Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
