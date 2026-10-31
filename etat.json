@@ -4307,10 +4307,10 @@
           "note": "PR #358 : dette caméras (#357 + points 1-2 de #352), sans allocation par image, refus d'orientation tranché (ADR 0087), captures identiques à l'octet, CI verte (e2e 2/6 à 41 min sur 45, à surveiller)"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-31T17:56:16.377Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-31T18:20:35.481Z",
+          "note": "Verdict OK, 0 bug, captures c117 publiées, mutation fixed-step 72,2 % (issue #359)"
         }
       },
       "metriques": {}
