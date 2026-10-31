@@ -4269,6 +4269,12 @@
           "debut": "2026-10-31T13:35:33.851Z",
           "fin": "2026-10-31T15:17:25.427Z",
           "note": "PR #356 : mode immersif lot 2 partiel (parallaxe, autorisation+repli, plein écran, Wake Lock, 30 i/s, pause masquée) + dette #355, CI verte au 2e essai ; reste de #346 (tapotement, nourriture, appui long) non fait, issue laissée ouverte"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-10-31T15:17:51.188Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
