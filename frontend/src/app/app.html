@@ -24,6 +24,10 @@
       [freeCamera]="aquarium.freeCamera()"
       (freeCameraToggled)="aquarium.toggleFreeCamera()"
     />
+    <!-- Pavé « Avancer » / « Reculer » de la caméra libre (#344), surtout pour le tactile. -->
+    @if (aquarium.freeCamera()) {
+      <app-free-camera-pad (moveHeld)="aquarium.setFreeMoveHeld($event.move, $event.held)" />
+    }
     <!-- Indicateur du moment de la journée (#73). -->
     <app-day-indicator [phase]="aquarium.dayPhase()" />
     <!-- Tableau de bord (#256, #260) : eau et simulation sur le bord haut, santé et alertes au-dessus de la barre des vues ; toujours visible, sous les panneaux. En mode décor (#278), remplacé par le badge. -->

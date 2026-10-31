@@ -2,6 +2,7 @@ import { TestBed, type ComponentFixture } from '@angular/core/testing';
 
 import { isCaptureReady, resetCaptureReady } from '../../core/capture/capture-ready';
 import { RENDER_FILTER_STORAGE_KEY } from '../../core/render-filter/render-filter';
+import { FREE_CAMERA_STORAGE_KEY } from '../../core/free-camera-pref/free-camera-pref';
 import {
   LEGACY_SAVE_STORAGE_KEY,
   SAVE_STORAGE_KEY,
@@ -229,6 +230,7 @@ describe('AquariumHost', () => {
     resetCaptureReady();
     setSearch('');
     window.localStorage.removeItem(RENDER_FILTER_STORAGE_KEY);
+    window.localStorage.removeItem(FREE_CAMERA_STORAGE_KEY);
   });
 
   it('crée un renderer sur son canvas', async () => {
@@ -1422,6 +1424,74 @@ describe('AquariumHost', () => {
         expect(camera(), query).not.toEqual([1.5, 0.6, 1.8]);
       }
       expect(front[1]).toBeGreaterThan(0);
+    });
+
+    it('boutons « Avancer » / « Reculer » tenus : comme une touche, hors mode sans effet (#344)', async () => {
+      await withRoom();
+      const before = camera();
+      host().setFreeMoveHeld('avancer', true);
+      frames.flush(100);
+      frames.flush(400);
+      expect(camera()).toEqual(before);
+      host().toggleFreeCamera();
+      host().setFreeMoveHeld('reculer', true);
+      frames.flush(500);
+      frames.flush(900);
+      const moved = camera();
+      expect(moved).not.toEqual(before);
+      host().setFreeMoveHeld('reculer', false);
+      for (let t = 916; t <= 2900; t += 16) {
+        frames.flush(t);
+      }
+      const rest = camera();
+      frames.flush(3400);
+      expect(camera()).toEqual(rest);
+    });
+
+    it('mode libre mémorisé comme préférence d’affichage, repris au chargement (#344)', async () => {
+      const stored = () => window.localStorage.getItem(FREE_CAMERA_STORAGE_KEY);
+      await withRoom();
+      const saveBefore = saveStorage!.getItem(SAVE_STORAGE_KEY);
+      host().toggleFreeCamera();
+      expect(stored()).toBe('libre');
+      // La sauvegarde du monde n'est pas touchée par la bascule (schéma inchangé).
+      expect(saveStorage!.getItem(SAVE_STORAGE_KEY)).toBe(saveBefore);
+      host().toggleFreeCamera();
+      expect(stored()).toBe('orbite');
+      // Un préréglage choisi depuis la caméra libre : retour à l'orbite mémorisé.
+      host().toggleFreeCamera();
+      host().goToPreset('top');
+      expect(stored()).toBe('orbite');
+      host().toggleFreeCamera();
+      // Pièce masquée : orbite, préférence gardée.
+      host().setRoomShown(false);
+      expect(host().freeCamera()).toBe(false);
+      expect(stored()).toBe('libre');
+      fixture.destroy();
+      // Pièce affichée dans la sauvegarde : le mode libre est repris.
+      saveStorage!.setItem(
+        SAVE_STORAGE_KEY,
+        serializeWorld(createDefaultWorld(8), {
+          ...DEFAULT_SAVE_SETTINGS,
+          room: { shown: true, cabinetHeight: 0.75 },
+        }),
+      );
+      // Sans `seed=` : la sauvegarde est restaurée.
+      await create('?camera=three-quarter');
+      expect(host().room().shown).toBe(true);
+      expect(host().freeCamera()).toBe(true);
+      expect(element().getAttribute(FREE_CAMERA_ATTRIBUTE)).toBe('true');
+      fixture.destroy();
+      // Capture : jamais repris.
+      await create('?capture=1&seed=3&piece=1');
+      expect(host().freeCamera()).toBe(false);
+      fixture.destroy();
+      // Sans pièce : orbite, préférence gardée.
+      saveStorage!.setItem(SAVE_STORAGE_KEY, serializeWorld(createDefaultWorld(8)));
+      await create('');
+      expect(host().room().shown).toBe(false);
+      expect(host().freeCamera()).toBe(false);
+      expect(stored()).toBe('libre');
     });
 
     it('libre= dans le bac : position ramenée hors du bac', async () => {
