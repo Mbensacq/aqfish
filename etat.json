@@ -4299,6 +4299,12 @@
           "debut": "2026-10-31T16:35:52.250Z",
           "fin": "2026-10-31T16:36:20.058Z",
           "note": "Issue #357 : dette caméras (allocations, accesseur, refus d'autorisation) + points 1-2 de #352 (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-10-31T16:36:52.915Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
