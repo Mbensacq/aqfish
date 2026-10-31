@@ -4239,6 +4239,12 @@
           "debut": "2026-10-31T11:25:20.494Z",
           "fin": "2026-10-31T12:00:51.250Z",
           "note": "Verdict RÉSERVES, 0 bug bloquant, captures c115 publiées (107) ; 4 captures de panneau diffèrent (bouton Mode immersif) ; e2e complet non rejoué en local"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-10-31T12:01:27.970Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
