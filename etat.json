@@ -4275,6 +4275,12 @@
           "debut": "2026-10-31T15:17:51.188Z",
           "fin": "2026-10-31T15:42:34.602Z",
           "note": "Verdict RÉSERVES, 0 bug, 3 critères de #346 non faits (tapotement, nourriture, appui long) ; captures c116 publiées ; e2e complet non rejoué en local"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-10-31T15:43:02.279Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
