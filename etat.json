@@ -4301,10 +4301,10 @@
           "note": "Issue #357 : dette caméras (allocations, accesseur, refus d'autorisation) + points 1-2 de #352 (S)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-31T16:36:52.915Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-31T17:55:52.490Z",
+          "note": "PR #358 : dette caméras (#357 + points 1-2 de #352), sans allocation par image, refus d'orientation tranché (ADR 0087), captures identiques à l'octet, CI verte (e2e 2/6 à 41 min sur 45, à surveiller)"
         }
       },
       "metriques": {}
