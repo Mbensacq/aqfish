@@ -281,6 +281,8 @@ export class ImmersiveMode {
   private readonly applied = { eyeX: NaN, eyeY: NaN, eyeDistance: NaN, view: null as unknown };
   private readonly camera = { eyeX: 0, eyeY: 0, eyeDistance: 1 };
   private eyeText = '';
+  /** Nombre d'applications de la caméra immersive, lu par `cameraApplications` (#355). */
+  private cameraApplied = 0;
   private readonly orientationHandler = (event: Event) => this.onOrientation(event);
 
   constructor() {
@@ -315,17 +317,21 @@ export class ImmersiveMode {
     return this.document.defaultView as DeviceWindow | null;
   }
 
+  /** Nombre d'applications de la caméra immersive (tests, #355), en lecture seule (#357). */
+  get cameraApplications(): number {
+    return this.cameraApplied;
+  }
+
   /** Décalage courant de l'œil, en mm (tests). */
   get eyeOffsetMm(): { readonly x: number; readonly y: number } {
     return { x: this.parallaxState.eyeX, y: this.parallaxState.eyeY };
   }
 
-  /** Nombre d'applications de la caméra immersive (tests, #355). */
-  cameraApplications = 0;
-
   /**
    * Premier toucher : autorisation d'orientation si le navigateur l'exige, plein écran si le
-   * toucher est tactile (ADR 0087). Les deux demandes exigent un geste de l'utilisateur.
+   * toucher est tactile (ADR 0087). Les deux demandes exigent un geste de l'utilisateur. Une
+   * seule demande d'autorisation par ouverture du mode : un refus n'est pas redemandé aux
+   * touchers suivants, mais à la prochaine ouverture (ADR 0087, #357).
    */
   onPointerDown(event: PointerEvent): void {
     if (this.gestureHandled) {
@@ -550,7 +556,7 @@ export class ImmersiveMode {
       applied.eyeX = eyeX;
       applied.eyeY = eyeY;
       applied.eyeDistance = eyeDistanceMm;
-      this.cameraApplications++;
+      this.cameraApplied++;
       const text = `${eyeX.toFixed(0)},${eyeY.toFixed(0)}`;
       if (text !== this.eyeText) {
         // Exposé pour les tests de bout en bout, écrit seulement quand il change.

@@ -63,11 +63,13 @@ import {
   freeCameraBounds,
   freeCameraFromPose,
   freeCameraPose,
-  stepFreeCamera,
+  mutableFreeCameraState,
+  stepFreeCameraInPlace,
   turnFreeCamera,
   type FreeCameraBounds,
   type FreeCameraInput,
   type FreeCameraState,
+  type MutableFreeCameraState,
 } from './free-camera';
 import {
   beginLook,
@@ -400,8 +402,14 @@ export class AquariumView {
     this.transition = null;
   };
 
-  /** Caméra du mode immersif, ou `null` (orbite ou caméra libre). */
-  private immersive: ImmersiveCamera | null = null;
+  /** Vrai en mode immersif (orbite et caméra libre coupées). */
+  private immersiveOn = false;
+  /**
+   * Caméra du mode immersif, préallouée (#357) : `setImmersiveCamera` y copie les valeurs de
+   * l'appelant, qui peut réutiliser son objet d'une image à l'autre (#355). Lue seulement
+   * quand `immersiveOn` est vrai.
+   */
+  private readonly immersive = { eyeX: 0, eyeY: 0, eyeDistance: 1 };
   /** Préréglage suivi avant le mode immersif, rendu en sortant. */
   private presetBeforeImmersive: CameraPreset = 'front';
 
@@ -1367,7 +1375,7 @@ export class AquariumView {
     this.free = {
       bounds,
       saved,
-      state: freeCameraFromPose(saved.pose, bounds),
+      state: mutableFreeCameraState(freeCameraFromPose(saved.pose, bounds)),
       carry: 0,
       lookDistance: Math.max(
         0.5,
@@ -1417,18 +1425,16 @@ export class AquariumView {
     command.forward = combinedForward(input.forward, thrust);
     command.strafe = input.strafe;
     command.vertical = input.vertical;
-    const next = stepFreeCamera(free.state, command, dtSeconds, free.bounds, free.carry);
-    free.carry = next.remainder;
-    if (next.state === free.state) {
+    // En place, sans allocation par image (#352) : l'état de la vue est le sien seul.
+    const p = free.state.position;
+    const x = p[0];
+    const y = p[1];
+    const z = p[2];
+    free.carry = stepFreeCameraInPlace(free.state, command, dtSeconds, free.bounds, free.carry);
+    if (p[0] === x && p[1] === y && p[2] === z) {
       return false;
     }
-    const before = free.state.position;
-    free.state = next.state;
-    const after = next.state.position;
-    if (before[0] === after[0] && before[1] === after[1] && before[2] === after[2]) {
-      return false;
-    }
-    this.applyFreeState(next.state);
+    this.applyFreeState(free.state);
     return true;
   }
 
@@ -1464,7 +1470,10 @@ export class AquariumView {
     return true;
   }
 
-  /** État de la caméra libre (tests), `null` en orbite. */
+  /**
+   * État de la caméra libre (tests), `null` en orbite. Objet vivant, modifié en place à chaque
+   * image (#352) : copier les valeurs à comparer plutôt que garder l'objet.
+   */
   get freeCameraState(): FreeCameraState | null {
     return this.free?.state ?? null;
   }
@@ -1483,10 +1492,16 @@ export class AquariumView {
     if (!free) {
       return;
     }
-    const pose = freeCameraPose(state, free.lookDistance);
-    this.camera.position.set(pose.position[0], pose.position[1], pose.position[2]);
-    this.controls.target.set(pose.target[0], pose.target[1], pose.target[2]);
-    this.camera.lookAt(pose.target[0], pose.target[1], pose.target[2]);
+    // Même calcul que `freeCameraPose`, sans allocation (chemin par image, #352).
+    const p = state.position;
+    const k = free.lookDistance;
+    const cos = Math.cos(state.pitch);
+    const tx = p[0] - Math.sin(state.yaw) * cos * k;
+    const ty = p[1] + Math.sin(state.pitch) * k;
+    const tz = p[2] - Math.cos(state.yaw) * cos * k;
+    this.camera.position.set(p[0], p[1], p[2]);
+    this.controls.target.set(tx, ty, tz);
+    this.camera.lookAt(tx, ty, tz);
   }
 
   /** Quitte la caméra libre sans toucher à la pose : contrôles orbitaux rendus. */
@@ -1571,10 +1586,13 @@ export class AquariumView {
     if (!moveLook(look, event.clientX, event.clientY, delta)) {
       return;
     }
-    const turned = turnFreeCamera(free.state, delta.dx, delta.dy);
-    if (turned !== free.state) {
-      free.state = turned;
-      this.applyFreeState(turned);
+    const state = free.state;
+    const turned = turnFreeCamera(state, delta.dx, delta.dy);
+    if (turned !== state) {
+      // Cap et inclinaison recopiés : l'état de la vue garde ses propres tableaux (#352).
+      state.yaw = turned.yaw;
+      state.pitch = turned.pitch;
+      this.applyFreeState(state);
       this.cameraListeners.forEach((listener) => listener());
     }
   };
@@ -1605,8 +1623,8 @@ export class AquariumView {
       return false;
     }
     if (camera === null) {
-      if (this.immersive !== null) {
-        this.immersive = null;
+      if (this.immersiveOn) {
+        this.immersiveOn = false;
         this.controls.enabled = this.interactive;
         this.updateAspect();
         this.applyPreset(this.presetBeforeImmersive);
@@ -1623,17 +1641,17 @@ export class AquariumView {
     }
     this.leaveFreeMode();
     this.transition = null;
-    if (this.immersive === null) {
+    if (!this.immersiveOn) {
       this.presetBeforeImmersive = this.preset ?? 'front';
     }
     // Plus de préréglage suivi : un redimensionnement ne replace pas la caméra.
     this.preset = null;
-    // Copie : l'appelant peut réutiliser son objet d'une image à l'autre (#355).
-    this.immersive = {
-      eyeX: camera.eyeX,
-      eyeY: camera.eyeY,
-      eyeDistance: camera.eyeDistance,
-    };
+    // Copie en place, sans allocation (#357) : l'appelant peut réutiliser son objet (#355).
+    const immersive = this.immersive;
+    immersive.eyeX = camera.eyeX;
+    immersive.eyeY = camera.eyeY;
+    immersive.eyeDistance = camera.eyeDistance;
+    this.immersiveOn = true;
     this.controls.enabled = false;
     const { width, height, depth } = this.world.dimensions;
     const x = camera.eyeX;
@@ -1648,11 +1666,11 @@ export class AquariumView {
 
   /** Vrai en mode immersif. */
   get immersiveActive(): boolean {
-    return this.immersive !== null;
+    return this.immersiveOn;
   }
 
   private applyImmersiveProjection(width: number, height: number): void {
-    const camera = this.immersive!;
+    const camera = this.immersive;
     const frustum = offAxisFrustum({
       screenWidth: width,
       screenHeight: height,
@@ -1739,7 +1757,7 @@ export class AquariumView {
       this.currentFilter === 'pixel' ? this.targetSize : { width: this.width, height: this.height };
     this.camera.aspect = size.width / size.height;
     this.camera.updateProjectionMatrix();
-    if (this.immersive !== null) {
+    if (this.immersiveOn) {
       this.applyImmersiveProjection(this.world.dimensions.width, this.world.dimensions.height);
     }
   }
@@ -1787,7 +1805,8 @@ interface OrbitBase {
 /** Caméra libre en cours (#343) : état, limites et pose orbitale à rendre en sortant. */
 interface FreeMode {
   bounds: FreeCameraBounds;
-  state: FreeCameraState;
+  /** État propre à la vue (tableaux non partagés), modifié en place à chaque image (#352). */
+  readonly state: MutableFreeCameraState;
   /** Reste de temps réel, moins d'un pas fixe, reporté à l'image suivante. */
   carry: number;
   readonly saved: { readonly pose: CameraPose; readonly preset: CameraPreset | null };

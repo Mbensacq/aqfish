@@ -57,7 +57,7 @@ import {
   type AquariumRendererFactory,
 } from '../../render/aquarium-view';
 import { CAMERA_TRANSITION_SECONDS } from '../../render/camera-presets';
-import { freeMoveAxes, freeMoveFor, type FreeMoveId } from '../../core/commands/commands';
+import { freeMoveAxesInto, freeMoveFor, type FreeMoveId } from '../../core/commands/commands';
 import { isTypingContext } from '../../core/keyboard/keyboard';
 import {
   readStoredFreeCamera,
@@ -686,6 +686,8 @@ export class AquariumHost {
   readonly freeCamera = signal(false);
   /** Déplacements de la caméra libre enfoncés au clavier (#343). */
   private readonly freeMoves = new Set<FreeMoveId>();
+  /** Consigne de la caméra libre, tampon réutilisé à chaque image (#352). */
+  private readonly freeAxes = { forward: 0, strafe: 0, vertical: 0 };
   /** Préréglage suivi avant la caméra libre, rendu à la barre en revenant à l'orbite. */
   private presetBeforeFree: CameraPreset | null = null;
 
@@ -2903,7 +2905,10 @@ export class AquariumHost {
         this.exposeCamera();
       }
       // Caméra libre (#343) : touches tenues, pas fixes du modèle de déplacement.
-      if (view.freeCameraActive && view.stepFreeCamera(freeMoveAxes(this.freeMoves), realDt)) {
+      if (
+        view.freeCameraActive &&
+        view.stepFreeCamera(freeMoveAxesInto(this.freeMoves, this.freeAxes), realDt)
+      ) {
         this.exposeCamera();
       }
       // Fondu du ciel couvert à la bascule de la pluie (#338) : jamais en capture.

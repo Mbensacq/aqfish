@@ -42,6 +42,13 @@ d'API ; tapotement de la vitre, nourriture et interface minimale suivent dans un
   les connaissances générales, à vérifier sur un iPhone réel.** Refus, rejet, exception ou
   API absente : repli sans parallaxe (œil centré, comportement du lot 1), état exposé par
   `data-immersive-parallax` (`off`, `waiting`, `on`, `denied`).
+- **Après un refus** (décidé au cycle 117, #357) : **une seule demande par ouverture du
+  mode**. Un refus (`denied`, rejet ou exception) n'est pas redemandé aux touchers suivants :
+  le toucher servira à d'autres gestes (tapotement de la vitre, nourriture), un dialogue à
+  chaque toucher serait pénible, et Safari, à notre connaissance, répond de toute façon
+  `denied` sans redemander tant que la page n'est pas rechargée (à vérifier sur un iPhone
+  réel). Refermer puis rouvrir le mode recrée le composant : la demande repart au premier
+  toucher. L'état `denied` reste affiché jusque-là.
 - **Plein écran** demandé au premier toucher **tactile** seulement (`pointerType === 'touch'`) :
   à la souris, un clic sur « Réglages » ne doit pas faire basculer l'écran. Préfixe WebKit
   accepté. Sur iPhone, Safari ne propose pas le plein écran d'un élément : le mode reste en
@@ -55,7 +62,8 @@ d'API ; tapotement de la vitre, nourriture et interface minimale suivent dans un
   sans rattrapage du temps passé.
 - **Aucune allocation par image à paramètres constants** (#355) : la caméra n'est réappliquée
   (tronc, matrice) que si l'œil bouge de plus de 0,05 mm, si la distance ou la vue changent ;
-  objet de caméra réutilisé, copié par `AquariumView.setImmersiveCamera`.
+  objet de caméra réutilisé, copié par `AquariumView.setImmersiveCamera` dans un objet interne
+  préalloué (#357), sans allocation.
 - Aucune de ces fonctions ne lève ni ne rejette : l'échec vaut `false` ou `null`.
 
 ## Options écartées
