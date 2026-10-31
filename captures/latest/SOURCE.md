@@ -1,8 +1,5 @@
-# Source des captures c114
-
-- Branche : cycle/c114-camera-libre-tactile
-- PR : #353
-- Commit : cba112b
-- Graine : celle de captures.spec.ts (107 tests, 108 fichiers)
-- Durée : 8,7 min en local (Chromium 1243, voir docs/PIEGES.md)
-- Écart avec captures/latest : 1 fichier différent sur 107, telephone-liste-bacs.png, visuellement identique (regardé) ; les 106 autres sont identiques à l octet.
+Branche : cycle/c115-mode-immersif-etalonnage
+PR : #354
+Commit : 492824304f332a6bf4b5568b219b2b3cc326eb03
+Graine : celle de npm run captures (par défaut)
+Temps : 107 captures en 9,9 min (rendu logiciel)
