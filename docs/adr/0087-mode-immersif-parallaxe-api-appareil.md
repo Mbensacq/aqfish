@@ -34,7 +34,7 @@ d'API ; tapotement de la vitre, nourriture et interface minimale suivent dans un
   angle non fini, pas de temps négatif) : ignorées ; sans lecture, l'œil revient au centre.
 - **Autorisation** (`core/immersive/device-api.ts`) : si `DeviceOrientationEvent.requestPermission`
   existe (Safari sur iOS et iPadOS depuis la version 13, à notre connaissance ; **constaté
-  aussi sur le Chromium sans interface des e2e**, build 1243, qui répond `prompt` sans
+  aussi sur le Chromium sans interface local**, build 1243 (pas sur celui de la CI), qui répond `prompt` sans
   autorisation du contexte et `granted` avec), elle est demandée au premier `pointerdown`
   dans le mode, puisqu'elle exige un geste ; seule la réponse `granted` active la parallaxe.
   Sinon (navigateurs sans cette fonction) l'écoute commence à l'entrée. **La documentation de référence (MDN,

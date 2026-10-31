@@ -64,10 +64,10 @@ for (const viewport of [
     });
 
     await test.step('parallaxe (#346) : une orientation synthétique décale l’œil', async () => {
-      // Pas de capteur en e2e : Chromium exige `DeviceOrientationEvent.requestPermission`,
-      // accordée ici par le contexte ; demandée au premier toucher, puis lectures injectées.
+      // Pas de capteur en e2e. Selon la version de Chromium, l'orientation est écoutée dès
+      // l'entrée, ou exige `DeviceOrientationEvent.requestPermission` (accordée ici par le
+      // contexte, demandée au premier toucher) : on touche la vitre dans les deux cas.
       await page.context().grantPermissions(['accelerometer', 'gyroscope']);
-      await expect(overlay(page)).toHaveAttribute('data-immersive-parallax', 'off');
       await page.mouse.click(viewport.width / 2, viewport.height / 2);
       await expect(overlay(page)).toHaveAttribute('data-immersive-parallax', 'waiting');
       const tilt = (beta: number, gamma: number) =>
