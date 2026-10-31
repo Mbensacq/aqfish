@@ -4125,6 +4125,12 @@
           "debut": "2026-10-30T23:06:26.573Z",
           "fin": "2026-10-31T00:44:49.383Z",
           "note": "PR #350 : fenêtre du mur du fond et lumière du jour (#342), CI verte au 1er essai ; 90/105 captures identiques à main (15 avec pièce + telephone-liste-bacs variable)"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-10-31T00:45:20.979Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
