@@ -4197,6 +4197,12 @@
           "debut": "2026-10-31T06:12:56.812Z",
           "fin": "2026-10-31T07:40:23.042Z",
           "note": "PR #353 : caméra libre lot 2 tactile et édition (#344), CI verte au 1er essai ; 108/108 captures identiques à main ; ~590 lignes de code hors tests"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-10-31T07:40:48.690Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
