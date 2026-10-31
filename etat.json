@@ -4379,10 +4379,10 @@
           "note": "PR #367 : points blancs lot 1/2 (sim/disease.ts, ADR 0088), CI verte 1er essai ; empreintes des 5 mondes par défaut identiques à main"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-31T23:12:24.516Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-31T23:34:06.856Z",
+          "note": "Verdict OK, 0 bug, captures c119 publiées (107/108 identiques, liste-bacs téléphone instable)"
         }
       },
       "metriques": {}
