@@ -1,7 +1,6 @@
 import { CAMERA_PRESETS } from '../capture/capture-params';
 import {
   COMMAND_GROUPS,
-  FREE_CAMERA_GESTURES,
   FREE_MOVE_COMMANDS,
   GESTURE_COMMANDS,
   KEY_COMMANDS,
@@ -140,40 +139,21 @@ describe('commandes (#74)', () => {
   });
 
   describe('caméra libre (#343)', () => {
-    it('touche L, groupe « Caméra libre » avec ses déplacements et l’orientation', () => {
+    it('touche L, sur une ligne du groupe « Vues », qui résume les déplacements', () => {
       expect(keyCommandFor('L')?.id).toBe('camera-libre');
-      const section = helpSections().find((candidate) => candidate.id === 'camera-libre');
-      expect(section?.entries.map((entry) => entry.label)).toEqual([
-        'L',
-        'ZQSD / ↑↓←→',
-        'E / C',
-        'Glisser',
-      ]);
-    });
-
-    it('chaque touche de déplacement figure dans l’aide-mémoire', () => {
-      const shown = FREE_CAMERA_GESTURES.map((gesture) =>
-        `${gesture.gesture} ${gesture.description}`.toLowerCase(),
-      ).join(' ');
-      const names: Record<string, string> = {
-        z: 'zqsd',
-        q: 'zqsd',
-        s: 'zqsd',
-        d: 'zqsd',
-        w: 'wasd',
-        a: 'wasd',
-        e: 'e / c',
-        c: 'e / c',
-        arrowup: '↑↓←→',
-        arrowdown: '↑↓←→',
-        arrowleft: '↑↓←→',
-        arrowright: '↑↓←→',
-        pageup: 'page ↑',
-        pagedown: '↓ aussi',
-      };
-      for (const key of FREE_MOVE_COMMANDS.flatMap((command) => command.keys)) {
-        expect(names[key], key).toBeDefined();
-        expect(shown, key).toContain(names[key]);
+      const command = keyCommand('camera-libre');
+      expect(command.group).toBe('vues');
+      // Tient sur une ligne de l'aide-mémoire, comme la plus longue description existante.
+      expect(command.description.length).toBeLessThanOrEqual(38);
+      const vues = helpSections().find((section) => section.id === 'vues');
+      expect(vues?.entries.map((entry) => entry.label)).toEqual(['1', '2', '3', '4', '5', 'L']);
+      // Chaque déplacement y est nommé par sa touche AZERTY ; l'orientation par le geste.
+      const text = command.description.toLowerCase();
+      expect(text).toContain('zqsd');
+      expect(text).toContain('e/c');
+      expect(text).toContain('glisser');
+      for (const move of FREE_MOVE_COMMANDS) {
+        expect('zqsdec', move.id).toContain(move.keys[0]);
       }
     });
 
@@ -235,7 +215,6 @@ describe('commandes (#74)', () => {
       const sections = helpSections();
       expect(sections.map((section) => section.title)).toEqual([
         'Vues',
-        'Caméra libre',
         'Affichage',
         'Heure',
         'Nourriture',
@@ -243,7 +222,7 @@ describe('commandes (#74)', () => {
         'Écran tactile',
         'Aide',
       ]);
-      expect(sections[3].entries.map((entry) => entry.label)).toEqual(['H', 'J', 'N']);
+      expect(sections[2].entries.map((entry) => entry.label)).toEqual(['H', 'J', 'N']);
     });
 
     it('omet les groupes vides', () => {

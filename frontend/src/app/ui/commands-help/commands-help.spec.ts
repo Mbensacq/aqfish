@@ -102,7 +102,6 @@ describe('CommandsHelp (#74)', () => {
     const titles = Array.from(root().querySelectorAll('h3')).map((h) => h.textContent?.trim());
     expect(titles).toEqual([
       'Vues',
-      'Caméra libre',
       'Affichage',
       'Heure',
       'Nourriture',

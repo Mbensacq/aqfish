@@ -11,8 +11,13 @@ haut de sa section.
   `[minDistance, maxDistance]` et la cible dans la sphère `maxTargetRadius` : une pose libre
   dans la pièce « saute » vers le bac. Placer `camera.position`, `controls.target` et
   `lookAt` à la main (`AquariumView.applyFreeState`) ; `setPose` (avec `update()`) seulement en
-  revenant à l'orbite. Aussi : l'aide-mémoire « Commandes » ouvert apparaît dans 9 captures
-  d'interface ; toute ligne ajoutée les change (comparer `x ≥ 968` seulement). (2026-10-31)
+  revenant à l'orbite. (2026-10-31)
+- **Aide-mémoire « Commandes » : une ligne de plus au plus** (cycle 113, #343) : à
+  1280 × 720 il doit tenir sans défilement (`e2e/cadrage-panneaux.spec.ts`, seul test qui le
+  voit, en CI part 1/6) ; un groupe de 4 lignes l'a fait déborder, tests unitaires verts. Une
+  nouvelle touche : une ligne dans un groupe existant, description de 38 caractères au plus.
+  Ouvert, il apparaît dans 9 captures d'interface, qui changent avec lui (`x ≥ 968`).
+  (2026-10-31)
 - **Test du fond d'écran qui attend la lecture d'`aqfish-fond.json` : poser la globale**
   (cycle 111, #332) : depuis #332, le fichier n'est lu que dans le paquet (globale
   `aqfishFond`) ou en `file://` ; un test unitaire ou e2e en `?fond=1` sans globale ne lit

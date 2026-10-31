@@ -34,10 +34,13 @@ identiques à l'octet. La caméra orbitale (`OrbitControls`, ADR 0020) garde ses
   préréglage suivi. Refusé sans pièce dessinée et en vue non interactive. Glisser au bouton
   gauche oriente (0,004 rad par pixel). Un préréglage (barre, touches 1 à 5) quitte la caméra
   libre par une transition depuis la pose libre ; masquer la pièce rend l'orbite.
-- **Commandes** (`core/commands`, source unique) : touche `L` (groupe « Caméra libre » de
-  l'aide-mémoire) ; déplacements actifs dans ce mode seulement, AZERTY, QWERTY et flèches
-  (`Z`/`W`/↑, `S`/↓, `Q`/`A`/←, `D`/→, `E`/Page ↑, `C`/Page ↓), lus par l'hôte en touches
-  tenues (relâchées à la perte du focus). Aucune touche de déplacement ne reprend un raccourci.
+- **Commandes** (`core/commands`, source unique) : touche `L`, sur **une seule ligne** du
+  groupe « Vues » de l'aide-mémoire (« Caméra libre : ZQSD, E/C, glisser ») : le panneau doit
+  tenir sans défilement à 1280 × 720 (`e2e/cadrage-panneaux.spec.ts`), un groupe de quatre
+  lignes le faisait déborder. Déplacements actifs dans ce mode seulement, AZERTY, QWERTY et
+  flèches (`Z`/`W`/↑, `S`/↓, `Q`/`A`/←, `D`/→, `E`/Page ↑, `C`/Page ↓), lus par l'hôte en
+  touches tenues (relâchées à la perte du focus). Aucune touche de déplacement ne reprend un
+  raccourci.
 - **Réglage** : bouton « Libre » dans la barre des vues, affiché seulement pièce affichée. Pas
   de ligne dans le panneau des réglages : à 1280 × 720 il n'en accepte plus (PIEGES, #316).
 - **Contrat de capture** : `libre=x:y:z:cap:inclinaison` (mètres, degrés), avec `piece=1`,

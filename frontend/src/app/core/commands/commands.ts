@@ -11,7 +11,7 @@ import type { CameraPreset } from '../capture/capture-params';
 
 /** Groupe de l'aide-mémoire, dans l'ordre d'affichage. */
 export type CommandGroupId =
-  'vues' | 'camera-libre' | 'affichage' | 'heure' | 'nourriture' | 'souris' | 'tactile' | 'aide';
+  'vues' | 'affichage' | 'heure' | 'nourriture' | 'souris' | 'tactile' | 'aide';
 
 export interface CommandGroup {
   readonly id: CommandGroupId;
@@ -21,7 +21,6 @@ export interface CommandGroup {
 /** Groupes de l'aide-mémoire, dans l'ordre d'affichage. */
 export const COMMAND_GROUPS: readonly CommandGroup[] = [
   { id: 'vues', title: 'Vues' },
-  { id: 'camera-libre', title: 'Caméra libre' },
   { id: 'affichage', title: 'Affichage' },
   { id: 'heure', title: 'Heure' },
   { id: 'nourriture', title: 'Nourriture' },
@@ -77,8 +76,11 @@ export const KEY_COMMANDS: readonly KeyCommand[] = [
     id: 'camera-libre',
     key: 'l',
     display: 'L',
-    description: 'Entrer en caméra libre ou revenir à l’orbite',
-    group: 'camera-libre',
+    // Une seule ligne de l'aide-mémoire, qui doit tenir sans défilement à 1280 × 720
+    // (`e2e/cadrage-panneaux.spec.ts`) : les touches principales seulement (WASD, flèches et
+    // Page ↑ / ↓ marchent aussi, ADR 0084).
+    description: 'Caméra libre : ZQSD, E/C, glisser',
+    group: 'vues',
   },
   {
     id: 'pixel-art',
@@ -197,7 +199,7 @@ export interface GestureCommand {
   /** Geste, en français (`Molette`, `Clic droit + glisser`). */
   readonly gesture: string;
   readonly description: string;
-  readonly group: 'souris' | 'tactile' | 'camera-libre';
+  readonly group: 'souris' | 'tactile';
 }
 
 /** Axe de déplacement de la caméra libre (#343) et sens. */
@@ -210,7 +212,7 @@ export interface FreeMoveCommand {
   readonly keys: readonly string[];
 }
 
-/** Déplacements de la caméra libre (affichés par `FREE_CAMERA_GESTURES`). */
+/** Déplacements de la caméra libre (résumés dans la description de la touche `L`). */
 export const FREE_MOVE_COMMANDS: readonly FreeMoveCommand[] = [
   { id: 'avancer', keys: ['z', 'w', 'arrowup'] },
   { id: 'reculer', keys: ['s', 'arrowdown'] },
@@ -246,32 +248,6 @@ export function freeMoveAxes(pressed: ReadonlySet<FreeMoveId>): FreeMoveAxes {
     vertical: axis('monter', 'descendre'),
   };
 }
-
-/**
- * Lignes de l'aide-mémoire de la caméra libre, regroupées pour tenir dans le panneau sans
- * défilement à 1280 × 720 : déplacements dans le plan, hauteur, puis orientation à la souris.
- * Chaque touche de `FREE_MOVE_COMMANDS` y figure (test de `commands.spec.ts`).
- */
-export const FREE_CAMERA_GESTURES: readonly GestureCommand[] = [
-  {
-    id: 'libre-plan',
-    gesture: 'ZQSD / ↑↓←→',
-    description: 'Avancer, reculer, côtés (WASD aussi)',
-    group: 'camera-libre',
-  },
-  {
-    id: 'libre-hauteur',
-    gesture: 'E / C',
-    description: 'Monter, descendre (Page ↑ / ↓ aussi)',
-    group: 'camera-libre',
-  },
-  {
-    id: 'libre-souris',
-    gesture: 'Glisser',
-    description: 'Orienter la vue',
-    group: 'camera-libre',
-  },
-];
 
 /**
  * Gestes réellement gérés par la caméra orbitale, déduits de `ORBIT_MOUSE_BUTTONS` et
@@ -346,14 +322,8 @@ export function orbitGestures(
   ];
 }
 
-/**
- * Lignes de la caméra libre (#343, groupe affiché juste après les vues), puis gestes de la
- * caméra orbitale telle que réglée par `AquariumView` : l'ordre de l'aide-mémoire.
- */
-export const GESTURE_COMMANDS: readonly GestureCommand[] = [
-  ...FREE_CAMERA_GESTURES,
-  ...orbitGestures(),
-];
+/** Gestes de la caméra orbitale telle que réglée par `AquariumView`. */
+export const GESTURE_COMMANDS: readonly GestureCommand[] = orbitGestures();
 
 /** Ligne de l'aide-mémoire : touche ou geste, et son effet. */
 export interface HelpEntry {
