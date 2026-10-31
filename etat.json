@@ -4277,10 +4277,10 @@
           "note": "Verdict RÉSERVES, 0 bug, 3 critères de #346 non faits (tapotement, nourriture, appui long) ; captures c116 publiées ; e2e complet non rejoué en local"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-31T15:43:02.279Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-31T16:35:26.973Z",
+          "note": "PR #356 fusionnée → v1.5.4 (release CI ok, main verte) ; #355 fermée, #346 reste ouverte (3 critères) ; dette #357 ; suppression de branche refusée par l'environnement (à faire par Mathis)"
         }
       },
       "metriques": {}
