@@ -4187,10 +4187,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-31T06:11:46.536Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-31T06:12:20.187Z",
+          "note": "Issue #344 : Caméra libre dans la pièce, lot 2/2 tactile et édition (M)"
         }
       },
       "metriques": {}
