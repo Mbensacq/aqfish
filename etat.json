@@ -4112,7 +4112,7 @@
       "type": "fonctionnalite",
       "issue": 342,
       "pr": 350,
-      "version": null,
+      "version": "v1.5.0",
       "phases": {
         "planif": {
           "statut": "termine",
