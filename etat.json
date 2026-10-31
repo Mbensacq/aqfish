@@ -4121,10 +4121,10 @@
           "note": "Issue #342 : Pièce complète lot 2/3, fenêtre et lumière du jour (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-30T23:06:26.573Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-31T00:44:49.383Z",
+          "note": "PR #350 : fenêtre du mur du fond et lumière du jour (#342), CI verte au 1er essai ; 90/105 captures identiques à main (15 avec pièce + telephone-liste-bacs variable)"
         }
       },
       "metriques": {}
