@@ -4229,10 +4229,10 @@
           "note": "Issue #345 : Mode immersif lot 1/2, étalonnage et projection décentrée (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-31T09:35:55.236Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-31T11:24:55.054Z",
+          "note": "PR #354 : mode immersif lot 1 (#345), CI verte au 2e essai (parcours clavier de panneau.spec : +1 Tab) ; ~1200 lignes hors tests (au-delà de 600, justifié dans la PR) ; captures normales non regénérées en local"
         }
       },
       "metriques": {}
