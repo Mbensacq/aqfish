@@ -1,0 +1,104 @@
+// Mode immersif (#345) : plein cadre au-dessus de toute l'application.
+:host {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: block;
+  background: #000;
+  color: #f2efe6;
+  font: inherit;
+}
+
+.immersive__canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+.immersive__bar {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  left: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  align-items: center;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.immersive__bar > * {
+  pointer-events: auto;
+}
+
+.immersive__note,
+.immersive__settings,
+.immersive__calibration {
+  margin: 0;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: rgb(20 20 24 / 72%); // #141418, comme la barre des vues
+  font-size: 0.85rem;
+}
+
+.immersive__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.immersive__button {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid rgb(242 239 230 / 35%);
+  border-radius: 8px;
+  background: rgb(20 20 24 / 85%);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid #f2c14e;
+    outline-offset: 2px;
+  }
+}
+
+.immersive__settings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  width: 100%;
+}
+
+.immersive__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.immersive__calibration {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+  max-width: calc(100% - 16px);
+  transform: translate(-50%, -50%);
+  box-sizing: border-box;
+}
+
+.immersive__instructions {
+  margin: 0;
+  max-width: 40ch;
+  text-align: center;
+}
+
+.immersive__card {
+  border: 2px dashed #f2c14e;
+  border-radius: 3.18mm; // coins de la carte ID-1, à l'échelle CSS (indicatif)
+  box-sizing: border-box;
+}

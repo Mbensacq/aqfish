@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, DOCUMENT, inject, viewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DOCUMENT,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 
 import { parseCaptureParams } from './core/capture/capture-params';
 import { readWallpaperGlobal } from './core/wallpaper/wallpaper';
@@ -16,6 +23,7 @@ import { EXCLUSIVE_PANELS } from './ui/exclusive-panels/exclusive-panels';
 import { SpeciesWiki } from './ui/species-wiki/species-wiki';
 import { ViewPresetsBar } from './ui/view-presets-bar/view-presets-bar';
 import { FreeCameraPad } from './ui/free-camera-pad/free-camera-pad';
+import { ImmersiveMode } from './ui/immersive-mode/immersive-mode';
 
 /**
  * Racine de l'application : le bac en 3D plein écran et, hors mode capture, l'interface
@@ -44,6 +52,7 @@ import { FreeCameraPad } from './ui/free-camera-pad/free-camera-pad';
     SpeciesWiki,
     ViewPresetsBar,
     FreeCameraPad,
+    ImmersiveMode,
   ],
   templateUrl: './app.html',
   styleUrl: './app.scss',
@@ -69,6 +78,8 @@ export class App {
   private readonly panel = viewChild<ControlPanel>('panel');
   private readonly aquarium = viewChild<AquariumHost>('aquarium');
   private readonly wiki = viewChild<SpeciesWiki>('wiki');
+  /** Mode immersif ouvert (#345). */
+  protected readonly immersive = signal(false);
 
   constructor() {
     // Première visite (#240, ADR 0072) : le guide s'ouvre une fois, jamais en mode capture
@@ -123,5 +134,21 @@ export class App {
     this.panel()?.close();
     this.help()?.fold();
     this.aquarium()?.setDecorEditing(false);
+  }
+
+  /** « Mode immersif » (#345) : replie les panneaux et quitte l'éditeur, puis ouvre le mode. */
+  protected onImmersiveRequested(): void {
+    this.panel()?.close();
+    this.wiki()?.close();
+    this.aquarium()?.setDecorEditing(false);
+    // Le bac affiché ne se rend plus derrière le plein cadre (un seul contexte WebGL actif).
+    this.aquarium()?.setRenderingSuspended(true);
+    this.immersive.set(true);
+  }
+
+  /** Sortie du mode immersif : le bac affiché reprend. */
+  protected onImmersiveClosed(): void {
+    this.immersive.set(false);
+    this.aquarium()?.setRenderingSuspended(false);
   }
 }

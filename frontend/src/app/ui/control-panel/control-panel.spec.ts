@@ -182,6 +182,7 @@ describe('fonctions du panneau de contrôle', () => {
     (environmentChanged)="environments.push($event)"
     (foodStyleToggled)="foodToggles = foodToggles + 1"
     (editRequested)="edits = edits + 1"
+    (immersiveRequested)="immersives = immersives + 1"
     (heaterChanged)="events.push(['chauffage', $event])"
     (catappaChanged)="events.push(['catappa', $event])"
     (waterChangeRequested)="waterChanges = waterChanges + 1"
@@ -206,6 +207,7 @@ class TestHost {
   foodToggles = 0;
   readonly editable = signal(true);
   edits = 0;
+  immersives = 0;
   readonly population = signal<PopulationCounts>({
     neon: 12,
     guppy: 6,
@@ -1002,8 +1004,8 @@ describe('ControlPanel', () => {
     // pièce » (#187), « Changer l’eau » et le curseur du chauffage (#207), « − » et « + » des
     // feuilles de catappa (#239), puis « − », champ, « + » (#69), curseur (#189) et « Fiche »
     // (#237) pour chacune des 7 espèces du bac tropical (#238), puis « Exporter » et
-    // « Importer » (#70), et le mode du bac (#278).
-    expect(controls).toHaveLength(5 + 1 + 1 + 1 + 2 + 2 + 7 * 5 + 2 + 1);
+    // « Importer » (#70), le mode du bac (#278), et « Mode immersif » (#345).
+    expect(controls).toHaveLength(5 + 1 + 1 + 1 + 2 + 2 + 7 * 5 + 2 + 1 + 1);
     expect(root().querySelectorAll('input[type="file"]')).toHaveLength(1);
     for (const control of controls) {
       const name =
@@ -1014,6 +1016,16 @@ describe('ControlPanel', () => {
       expect(control.tabIndex).toBeGreaterThanOrEqual(0);
       expect(control.hasAttribute('disabled')).toBe(false);
     }
+  });
+
+  it('bouton « Mode immersif » (#345) : sur la ligne du titre « Simulation », émet la demande', async () => {
+    await openPanel();
+    const button = root().querySelector<HTMLButtonElement>(
+      '[data-section="simulation"] legend [data-immersive-open]',
+    )!;
+    expect(button.textContent?.trim()).toBe('Mode immersif');
+    button.click();
+    expect(fixture.componentInstance.immersives).toBe(1);
   });
 
   it('bouton « Éditer le décor » (#167) : émet la demande si le décor est modifiable', async () => {

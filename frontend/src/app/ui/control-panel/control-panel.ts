@@ -289,8 +289,23 @@ export interface NewTankRequest {
           </div>
         </fieldset>
 
-        <fieldset class="control-panel__section" data-section="simulation">
-          <legend class="control-panel__legend">Simulation</legend>
+        <fieldset
+          class="control-panel__section"
+          data-section="simulation"
+          aria-labelledby="panneau-simulation-titre"
+        >
+          <!-- Mode immersif (#345) : sur la ligne du titre, le panneau ne grandit pas (#101). -->
+          <legend class="control-panel__legend control-panel__legend--row">
+            <span id="panneau-simulation-titre">Simulation</span>
+            <button
+              type="button"
+              class="control-panel__edit"
+              data-immersive-open
+              (click)="immersiveRequested.emit()"
+            >
+              Mode immersif
+            </button>
+          </legend>
           <label class="control-panel__field" for="panneau-vitesse">
             <span class="control-panel__label">
               Vitesse <output class="control-panel__value">{{ speedText() }}</output>
@@ -1037,6 +1052,8 @@ export class ControlPanel {
   readonly decorVisibleChanged = output<boolean>();
   /** Bouton « Éditer le décor » (#167), seulement si le décor est modifiable. */
   readonly editRequested = output<void>();
+  /** « Mode immersif » (#345) : l'application ouvre le mode en plein cadre. */
+  readonly immersiveRequested = output<void>();
   /** Case « Pluie » (#106) : `true` pour faire pleuvoir, `false` pour arrêter. */
   readonly rainChanged = output<boolean>();
   /** Case « Afficher la pièce » (#187). */

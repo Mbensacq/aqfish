@@ -233,6 +233,27 @@ describe('AquariumHost', () => {
     window.localStorage.removeItem(FREE_CAMERA_STORAGE_KEY);
   });
 
+  it('mode immersif (#345) : rendu suspendu, aucune image demandée, reprise sans rattrapage', async () => {
+    await create();
+    setCanvasSize(640, 480);
+    frames.flush(0);
+    frames.flush(16);
+    expect(frames.pending.size).toBe(1);
+    const host = fixture.componentInstance;
+    host.setRenderingSuspended(true);
+    expect(host.renderingSuspended).toBe(true);
+    expect(frames.pending.size).toBe(0);
+    const tick = fixture.nativeElement.getAttribute('data-aqfish-tick');
+    host.setRenderingSuspended(true);
+    expect(frames.pending.size).toBe(0);
+    host.setRenderingSuspended(false);
+    expect(frames.pending.size).toBe(1);
+    // Dix secondes plus tard : le temps passé en mode immersif n'est pas rattrapé.
+    frames.flush(10_016);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.getAttribute('data-aqfish-tick')).toBe(tick);
+  });
+
   it('crée un renderer sur son canvas', async () => {
     await create();
     expect(renderers).toHaveLength(1);
