@@ -4331,10 +4331,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-31T19:29:12.892Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-31T19:32:28.551Z",
+          "note": "Issue #364 : Rétro sprint 17, plan sprint 18 (#360, #362, #361, #346, #363) ; Dev : #359 + #127 (S)"
         }
       },
       "metriques": {}
