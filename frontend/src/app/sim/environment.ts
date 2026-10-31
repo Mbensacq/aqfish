@@ -446,6 +446,11 @@ export interface TankPlace {
    * Seuls les environnements de `SHAPED_ENVIRONMENTS` en ont une autre.
    */
   readonly shape?: PondShape;
+  /**
+   * Bac du mode immersif (#345, ADR 0086) : dimensions bornées à `IMMERSIVE_LIMITS` (aux
+   * proportions de l'écran) au lieu de `TANK_LIMITS`. Lu seulement à la création du monde.
+   */
+  readonly immersive?: true;
 }
 
 /** Environnement seul (dimensions d'origine) ou lieu aux dimensions réglées. */

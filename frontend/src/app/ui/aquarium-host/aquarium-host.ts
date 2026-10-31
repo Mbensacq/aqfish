@@ -627,6 +627,8 @@ export class AquariumHost {
   private orbitExposedAt = Number.NEGATIVE_INFINITY;
   /** Page masquée en vue fond d'écran : aucune image demandée (#279). */
   private paused = false;
+  /** Rendu suspendu pendant le mode immersif (#345) : aucune image, monde en pause. */
+  private suspended = false;
   /** Vrai après `stop()` : un chargement asynchrone en cours ne démarre plus rien. */
   private stopped = false;
   private currentWorld: MutableWorld | null = null;
@@ -2720,6 +2722,32 @@ export class AquariumHost {
   }
 
   /**
+   * Suspend le rendu et la simulation du bac affiché pendant le mode immersif (#345, ADR 0086),
+   * qui a sa propre vue : plus aucune image demandée. À la reprise, la boucle repart sans
+   * rattraper le temps passé (le bac était en pause).
+   */
+  setRenderingSuspended(suspended: boolean): void {
+    if (suspended === this.suspended) {
+      return;
+    }
+    this.suspended = suspended;
+    if (suspended) {
+      if (this.frameId !== null) {
+        this.document.defaultView?.cancelAnimationFrame(this.frameId);
+        this.frameId = null;
+      }
+      return;
+    }
+    this.lastTimestamp = null;
+    this.scheduleFrame();
+  }
+
+  /** Vrai pendant le mode immersif (rendu suspendu). */
+  get renderingSuspended(): boolean {
+    return this.suspended;
+  }
+
+  /**
    * Pause de la vue fond d'écran (#279) : page masquée, plus aucune image demandée ; de
    * nouveau visible, la boucle repart sans rattraper le temps passé masqué.
    */
@@ -2844,7 +2872,7 @@ export class AquariumHost {
 
   private scheduleFrame(): void {
     const win = this.document.defaultView;
-    if (!win || !this.view || this.frameId !== null || this.paused) {
+    if (!win || !this.view || this.frameId !== null || this.paused || this.suspended) {
       return;
     }
     this.frameId = win.requestAnimationFrame(this.onFrame);

@@ -16,6 +16,7 @@ import type { CameraPreset } from '../core/capture/capture-params';
 import { ORBIT_MOUSE_BUTTONS, ORBIT_TOUCHES, type OrbitAction } from '../core/commands/commands';
 import { DEFAULT_RENDER_FILTER, type RenderFilter } from '../core/render-filter/render-filter';
 import type { FoodStyle } from '../core/food-style/food-style';
+import { frustumMatrix, offAxisFrustum } from '../core/immersive/off-axis';
 import { createAquariumScene, type AquariumScene } from './aquarium-scene';
 import {
   CAMERA_FOV_DEG,
@@ -155,6 +156,16 @@ export interface DecorDragListener {
   start(index: number): void;
   move(index: number, x: number, z: number): void;
   end(index: number, commit: boolean): void;
+}
+
+/**
+ * Caméra du mode immersif (#345, ADR 0086), en mètres de la scène : œil devant la vitre avant
+ * du bac, décalé de (`eyeX`, `eyeY`) par rapport à son centre, à `eyeDistance` de la vitre.
+ */
+export interface ImmersiveCamera {
+  readonly eyeX: number;
+  readonly eyeY: number;
+  readonly eyeDistance: number;
 }
 
 /**
@@ -388,6 +399,11 @@ export class AquariumView {
     this.preset = null;
     this.transition = null;
   };
+
+  /** Caméra du mode immersif, ou `null` (orbite ou caméra libre). */
+  private immersive: ImmersiveCamera | null = null;
+  /** Préréglage suivi avant le mode immersif, rendu en sortant. */
+  private presetBeforeImmersive: CameraPreset = 'front';
 
   constructor(options: AquariumViewOptions) {
     this.canvas = options.canvas;
@@ -1578,6 +1594,72 @@ export class AquariumView {
   };
 
   /** Position courante de la caméra (exposée pour les tests de bout en bout). */
+  /**
+   * Mode immersif (#345, ADR 0086) : caméra parallèle à la vitre avant, projection décentrée
+   * dont le tronc passe par les quatre bords de la vitre (`core/immersive/off-axis.ts`), qui
+   * coïncide ainsi avec l'écran ; contrôles orbitaux et caméra libre coupés. `null` rend
+   * l'orbite sur le préréglage courant. Renvoie faux si la vue est libérée ou si la caméra
+   * est invalide (distance non strictement positive, valeur non finie).
+   */
+  setImmersiveCamera(camera: ImmersiveCamera | null): boolean {
+    if (this.disposed) {
+      return false;
+    }
+    if (camera === null) {
+      if (this.immersive !== null) {
+        this.immersive = null;
+        this.controls.enabled = this.interactive;
+        this.updateAspect();
+        this.applyPreset(this.presetBeforeImmersive);
+      }
+      return true;
+    }
+    if (
+      !Number.isFinite(camera.eyeX) ||
+      !Number.isFinite(camera.eyeY) ||
+      !Number.isFinite(camera.eyeDistance) ||
+      camera.eyeDistance <= 0
+    ) {
+      return false;
+    }
+    this.leaveFreeMode();
+    this.transition = null;
+    if (this.immersive === null) {
+      this.presetBeforeImmersive = this.preset ?? 'front';
+    }
+    // Plus de préréglage suivi : un redimensionnement ne replace pas la caméra.
+    this.preset = null;
+    this.immersive = camera;
+    this.controls.enabled = false;
+    const { width, height, depth } = this.world.dimensions;
+    const x = camera.eyeX;
+    const y = height / 2 + camera.eyeY;
+    const z = depth / 2 + camera.eyeDistance;
+    this.camera.position.set(x, y, z);
+    this.camera.quaternion.identity();
+    this.controls.target.set(x, y, 0);
+    this.applyImmersiveProjection(width, height);
+    return true;
+  }
+
+  /** Vrai en mode immersif. */
+  get immersiveActive(): boolean {
+    return this.immersive !== null;
+  }
+
+  private applyImmersiveProjection(width: number, height: number): void {
+    const camera = this.immersive!;
+    const frustum = offAxisFrustum({
+      screenWidth: width,
+      screenHeight: height,
+      eye: { x: camera.eyeX, y: camera.eyeY, z: camera.eyeDistance },
+      near: camera.eyeDistance / 2,
+      far: camera.eyeDistance + this.world.dimensions.depth + 1,
+    });
+    this.camera.projectionMatrix.fromArray(frustumMatrix(frustum));
+    this.camera.projectionMatrixInverse.copy(this.camera.projectionMatrix).invert();
+  }
+
   cameraPosition(): Vec3 {
     const p = this.camera.position;
     return [p.x, p.y, p.z];
@@ -1652,6 +1734,9 @@ export class AquariumView {
       this.currentFilter === 'pixel' ? this.targetSize : { width: this.width, height: this.height };
     this.camera.aspect = size.width / size.height;
     this.camera.updateProjectionMatrix();
+    if (this.immersive !== null) {
+      this.applyImmersiveProjection(this.world.dimensions.width, this.world.dimensions.height);
+    }
   }
 
   private presetPose(preset: CameraPreset): CameraPose {

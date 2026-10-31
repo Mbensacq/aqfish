@@ -52,7 +52,7 @@ import {
 } from './pond-shape';
 import { SPECIES, type AnemoneBondParams, type SpeciesDefinition, type SpeciesId } from './species';
 import { createFish, stepFish, swimBounds, type Fish, type SwimBounds } from './swimmer';
-import { clampTankDimensions, type TankDimensions } from './tank';
+import { clampImmersiveDimensions, clampTankDimensions, type TankDimensions } from './tank';
 import { assertTimeStep } from './time-step';
 import {
   changeWaterInPlace,
@@ -242,7 +242,9 @@ function worldDimensions(place: Place): TankDimensions | undefined {
   if (!isTankResizable(place.environment)) {
     throw new RangeError(`dimensions non réglables dans l’environnement ${place.environment}`);
   }
-  return clampTankDimensions(place.dimensions);
+  return place.immersive === true
+    ? clampImmersiveDimensions(place.dimensions)
+    : clampTankDimensions(place.dimensions);
 }
 
 /**

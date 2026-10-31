@@ -127,3 +127,29 @@ export function clampTankDimensions(dims: TankDimensions): TankDimensions {
 export function sameDimensions(a: TankDimensions, b: TankDimensions): boolean {
   return a.width === b.width && a.height === b.height && a.depth === b.depth;
 }
+
+/**
+ * Bornes du bac du mode immersif (#345, ADR 0086), en mètres, sans pas : le bac prend les
+ * proportions exactes de l'écran. Les minimums gardent une zone de nage non vide aux plus
+ * grandes marges des petites espèces (marge aux parois 0,04 m et zone d'évitement 0,07 m de
+ * chaque côté, au-dessus du sable de 0,06 m et sous l'eau à 90 % de la hauteur).
+ */
+export const IMMERSIVE_LIMITS: Readonly<Record<keyof TankDimensions, DimensionRange>> = {
+  width: { min: 0.3, max: 2, step: 0 },
+  height: { min: 0.4, max: 1.5, step: 0 },
+  depth: { min: 0.25, max: 0.9, step: 0 },
+};
+
+/**
+ * Dimensions `dims` bornées à `IMMERSIVE_LIMITS`, sans arrondi au pas ; une valeur non finie
+ * prend le minimum. Renvoie un nouvel objet.
+ */
+export function clampImmersiveDimensions(dims: TankDimensions): TankDimensions {
+  const clamp = (value: number, range: DimensionRange): number =>
+    Number.isFinite(value) ? Math.min(range.max, Math.max(range.min, value)) : range.min;
+  return {
+    width: clamp(dims.width, IMMERSIVE_LIMITS.width),
+    height: clamp(dims.height, IMMERSIVE_LIMITS.height),
+    depth: clamp(dims.depth, IMMERSIVE_LIMITS.depth),
+  };
+}

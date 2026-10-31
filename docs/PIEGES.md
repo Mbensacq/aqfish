@@ -101,6 +101,10 @@ haut de sa section.
   branche (worktree de `origin/main` avec un lien vers `node_modules`) ; regrouper les
   vérifications en peu de tests (une boucle de largeurs dans un test, `test.step`) plutôt
   qu'un test par largeur. (2026-10-27)
+- **Deux vues WebGL à la fois : e2e en délai dépassé** (cycle 115, #345) : le mode immersif
+  a sa propre `AquariumView` ; tant que l'hôte continuait de rendre derrière le plein cadre,
+  le parcours à 1280 × 720 dépassait 2 min en rendu logiciel. Suspendre la boucle de l'hôte
+  (`setRenderingSuspended`) pendant toute vue plein cadre ajoutée par-dessus. (2026-10-31)
 - **Budget de style du panneau de réglages : 8 kB** (cycle 79, #237) : `control-panel.scss`
   approche déjà du plafond ; les styles des fiches (une soixantaine de lignes) l'ont porté à
   8,01 kB et `ng build` échoue (budget d'erreur 8 kB, `angular.json`), alors que tests et

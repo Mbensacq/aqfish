@@ -99,7 +99,12 @@
       (exportRequested)="aquarium.exportSave()"
       (importRequested)="aquarium.importSave($event)"
       (importRejected)="aquarium.rejectImport($event)"
+      (immersiveRequested)="onImmersiveRequested()"
     />
+    <!-- Mode immersif (#345) : plein cadre au-dessus de tout, l'écran devient la vitre. -->
+    @if (immersive()) {
+      <app-immersive-mode (closed)="onImmersiveClosed()" />
+    }
     <!-- Wiki des espèces (#287) : bouton discret en bas à droite, panneau exclusif avec les autres. -->
     <app-species-wiki
       #wiki

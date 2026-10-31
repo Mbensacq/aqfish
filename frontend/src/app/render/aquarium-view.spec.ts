@@ -1,11 +1,19 @@
-import { MOUSE, TOUCH, type Camera, type Scene, type WebGLRenderTarget } from 'three';
+import { MOUSE, TOUCH, Vector3, type Camera, type Scene, type WebGLRenderTarget } from 'three';
 import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 import { ORBIT_MOUSE_BUTTONS, ORBIT_TOUCHES } from '../core/commands/commands';
 
 import { lightAt } from '../sim/daylight';
 import { SPECIES, speciesVariants } from '../sim/species';
-import { environmentWater, PALUDARIUM, POND, REEF, TROPICAL_TANK } from '../sim/environment';
+import {
+  environmentWater,
+  PALUDARIUM,
+  placeEnvironmentData,
+  POND,
+  REEF,
+  TROPICAL_TANK,
+} from '../sim/environment';
+import { createImmersiveWorld, immersiveLayout } from '../sim/immersive-tank';
 import { lilyPadLayout } from '../sim/lily-pads';
 import { createDefaultWorld, createWorld, seededFeatures } from '../sim/world';
 import {
@@ -1122,5 +1130,80 @@ describe('AquariumView (caméra libre dans la pièce, #343)', () => {
     expect(z).toBeGreaterThan(-0.5);
     view.dispose();
     expect(view.enterFreeCamera()).toBe(false);
+  });
+});
+
+describe('AquariumView (mode immersif, #345)', () => {
+  function create(): AquariumView {
+    const layout = immersiveLayout({ width: 65, height: 140 }, 40);
+    const world = createImmersiveWorld(345, layout);
+    const view = new AquariumView({
+      canvas: document.createElement('canvas'),
+      rendererFactory: () => new RecordingRenderer(),
+      pixelRatio: 1,
+      preset: 'front',
+      interactive: true,
+      environment: placeEnvironmentData(world),
+    });
+    view.resize(390, 844);
+    return view;
+  }
+
+  function ndc(view: AquariumView, x: number, y: number, z: number): Vector3 {
+    view.camera.updateMatrixWorld();
+    return new Vector3(x, y, z).project(view.camera);
+  }
+
+  it('les quatre coins de la vitre avant se projettent sur les quatre coins de l’image', () => {
+    const view = create();
+    const { width, height, depth } = view.dimensions;
+    for (const eye of [
+      { eyeX: 0, eyeY: 0, eyeDistance: 1.6 },
+      { eyeX: 0.05, eyeY: -0.1, eyeDistance: 0.9 },
+    ]) {
+      expect(view.setImmersiveCamera(eye)).toBe(true);
+      expect(view.immersiveActive).toBe(true);
+      for (const [sx, sy] of [
+        [-1, -1],
+        [1, -1],
+        [1, 1],
+        [-1, 1],
+      ]) {
+        const p = ndc(view, (sx * width) / 2, sy === 1 ? height : 0, depth / 2);
+        expect(p.x).toBeCloseTo(sx, 6);
+        expect(p.y).toBeCloseTo(sy, 6);
+      }
+    }
+    // Un redimensionnement (rotation de l'écran) garde la projection décentrée.
+    view.resize(844, 390);
+    expect(ndc(view, width / 2, height, depth / 2).x).toBeCloseTo(1, 6);
+    view.dispose();
+  });
+
+  it('coupe l’orbite et la caméra libre ; null rend l’orbite', () => {
+    const view = create();
+    const controls = (view as unknown as { controls: OrbitControls }).controls;
+    expect(view.setImmersiveCamera({ eyeX: 0, eyeY: 0, eyeDistance: 1 })).toBe(true);
+    expect(controls.enabled).toBe(false);
+    expect(view.freeCameraActive).toBe(false);
+    expect(view.setImmersiveCamera(null)).toBe(true);
+    expect(view.immersiveActive).toBe(false);
+    expect(controls.enabled).toBe(true);
+    view.dispose();
+    expect(view.setImmersiveCamera({ eyeX: 0, eyeY: 0, eyeDistance: 1 })).toBe(false);
+  });
+
+  it('refuse une caméra invalide', () => {
+    const view = create();
+    for (const bad of [
+      { eyeX: 0, eyeY: 0, eyeDistance: 0 },
+      { eyeX: 0, eyeY: 0, eyeDistance: -1 },
+      { eyeX: Number.NaN, eyeY: 0, eyeDistance: 1 },
+      { eyeX: 0, eyeY: Number.POSITIVE_INFINITY, eyeDistance: 1 },
+    ]) {
+      expect(view.setImmersiveCamera(bad)).toBe(false);
+    }
+    expect(view.immersiveActive).toBe(false);
+    view.dispose();
   });
 });
