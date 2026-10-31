@@ -1,7 +1,5 @@
-# Captures du cycle 118
-
-- Branche : cycle/c118-mutants-fixed-step (PR #365)
-- Commit : 8cb4619
-- Graine et temps : ceux de `npm run captures` (inchangés)
-- Chromium local 1243 (liens vers 1194) ; 107 captures, toutes identiques à l'octet à la série du c117
-  (attendu : la PR ne change aucun rendu).
+# Captures c119
+- Branche : cycle/c119-points-blancs-sim (PR #367), commit 0a0c786
+- Graine : 42 (défaut), 107 PNG + ce fichier
+- Chromium local 1243 (lien 1194), pas celui de la CI
+- Comparaison à c118 : 107 PNG sur 108 identiques à l'octet ; seule telephone-liste-bacs.png diffère (32 px, interface, instable connue)
