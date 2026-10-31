@@ -5,7 +5,7 @@ import { openScene } from './outils-decor';
 /**
  * Mode immersif, lot 1 (issue #345) : entrer depuis « Réglages », taille estimée signalée,
  * étalonner avec une carte ID-1, sortir, sans erreur ; au téléphone (390 px, portrait) et à
- * l'ordinateur. Les images sont jointes au rapport (`immersif-*.png`).
+ * l'ordinateur. Lot 2 (#346) : parallaxe par orientation synthétique. Les images sont jointes au rapport (`immersif-*.png`).
  */
 
 const overlay = (page: Page) => page.locator('app-immersive-mode');
@@ -61,6 +61,38 @@ for (const viewport of [
         path: shotEstime,
         contentType: 'image/png',
       });
+    });
+
+    await test.step('parallaxe (#346) : une orientation synthétique décale l’œil', async () => {
+      // Pas de capteur en e2e. Selon la version de Chromium, l'orientation est écoutée dès
+      // l'entrée, ou exige `DeviceOrientationEvent.requestPermission` (accordée ici par le
+      // contexte, demandée au premier toucher) : on touche la vitre dans les deux cas.
+      await page.context().grantPermissions(['accelerometer', 'gyroscope']);
+      await page.mouse.click(viewport.width / 2, viewport.height / 2);
+      await expect(overlay(page)).toHaveAttribute('data-immersive-parallax', 'waiting');
+      const tilt = (beta: number, gamma: number) =>
+        page.evaluate(
+          ([b, g]) =>
+            window.dispatchEvent(
+              new DeviceOrientationEvent('deviceorientation', { beta: b, gamma: g }),
+            ),
+          [beta, gamma],
+        );
+      await tilt(60, 0);
+      await expect(overlay(page)).toHaveAttribute('data-immersive-parallax', 'on');
+      await tilt(60, 10);
+      await expect
+        .poll(async () =>
+          Number((await overlay(page).getAttribute('data-immersive-eye-mm'))?.split(',')[0]),
+        )
+        .toBeLessThan(-5);
+      // Retour à la pose neutre : l'œil revient vers le centre.
+      await tilt(60, 0);
+      await expect
+        .poll(async () =>
+          Number((await overlay(page).getAttribute('data-immersive-eye-mm'))?.split(',')[0]),
+        )
+        .toBeGreaterThan(-5);
     });
 
     await test.step('étalonner avec la carte', async () => {

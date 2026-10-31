@@ -101,6 +101,14 @@ haut de sa section.
   branche (worktree de `origin/main` avec un lien vers `node_modules`) ; regrouper les
   vérifications en peu de tests (une boucle de largeurs dans un test, `test.step`) plutôt
   qu'un test par largeur. (2026-10-27)
+- **`DeviceOrientationEvent` en e2e : autorisation exigée ou non selon Chromium** (cycle 116,
+  #346) : le Chromium local (1243) expose `DeviceOrientationEvent.requestPermission` (pas
+  seulement Safari), celui de la CI non : un e2e ne doit supposer ni l'un ni l'autre. En
+  local, elle répond `prompt` (donc refus) sauf si le contexte accorde
+  `page.context().grantPermissions(['accelerometer', 'gyroscope'])`, et seulement pendant un
+  geste (clic Playwright). Sans `localhost` ou HTTPS, l'API est absente (`about:blank` n'est
+  pas un contexte sécurisé). `navigator.wakeLock.request` y est refusé (`NotAllowedError`).
+  (2026-10-31)
 - **Deux vues WebGL à la fois : e2e en délai dépassé** (cycle 115, #345) : le mode immersif
   a sa propre `AquariumView` ; tant que l'hôte continuait de rendre derrière le plein cadre,
   le parcours à 1280 × 720 dépassait 2 min en rendu logiciel. Suspendre la boucle de l'hôte

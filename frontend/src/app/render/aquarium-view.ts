@@ -1593,7 +1593,6 @@ export class AquariumView {
     }
   };
 
-  /** Position courante de la caméra (exposée pour les tests de bout en bout). */
   /**
    * Mode immersif (#345, ADR 0086) : caméra parallèle à la vitre avant, projection décentrée
    * dont le tronc passe par les quatre bords de la vitre (`core/immersive/off-axis.ts`), qui
@@ -1629,7 +1628,12 @@ export class AquariumView {
     }
     // Plus de préréglage suivi : un redimensionnement ne replace pas la caméra.
     this.preset = null;
-    this.immersive = camera;
+    // Copie : l'appelant peut réutiliser son objet d'une image à l'autre (#355).
+    this.immersive = {
+      eyeX: camera.eyeX,
+      eyeY: camera.eyeY,
+      eyeDistance: camera.eyeDistance,
+    };
     this.controls.enabled = false;
     const { width, height, depth } = this.world.dimensions;
     const x = camera.eyeX;
@@ -1660,6 +1664,7 @@ export class AquariumView {
     this.camera.projectionMatrixInverse.copy(this.camera.projectionMatrix).invert();
   }
 
+  /** Position courante de la caméra (exposée pour les tests de bout en bout). */
   cameraPosition(): Vec3 {
     const p = this.camera.position;
     return [p.x, p.y, p.z];

@@ -268,6 +268,12 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
   sont ceux de l'image), orbite et caméra libre coupées. Étalonnage px ↔ mm par carte ID-1
   (`core/immersive/screen-calibration.ts`), conservé sous `aqfish.etalonnage-ecran`
   (`core/immersive/calibration-storage.ts`, repli en mémoire). Absent en capture.
+- Mode immersif, lot 2 (#346, ADR 0087) : parallaxe (`core/immersive/parallax.ts`, pur, état
+  modifié en place) : `deviceorientation` → décalage de l'œil devant la vitre, amorti, borné,
+  pose neutre recentrée lentement ; gardes d'API (`core/immersive/device-api.ts` :
+  autorisation d'orientation, plein écran, Wake Lock, limite de 30 images par seconde), qui ne
+  lèvent jamais. Le composant ne réapplique la caméra que si l'œil, la distance ou la vue ont
+  changé (#355) et arrête sa boucle quand la page est masquée.
 - La position de la caméra est exposée aux tests de bout en bout par l'attribut
   `data-aqfish-camera="x,y,z"` de `app-aquarium-host`, sa cible par `data-aqfish-target`
   (mis à jour au mouvement, pas à chaque image). L'état de la simulation l'est par
@@ -279,7 +285,7 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
 
 | Fichier | Rôle |
 |---|---|
-| `core/immersive/` | Mode immersif (#345, ADR 0086) : conversion px ↔ mm et étalonnage par carte ID-1 (`screen-calibration.ts`), stockage tolérant de l'étalonnage (`calibration-storage.ts`), tronc de vue décentré et sa matrice (`off-axis.ts`), distance d'œil bornée et défauts |
+| `core/immersive/` | Mode immersif (#345, ADR 0086) : conversion px ↔ mm et étalonnage par carte ID-1 (`screen-calibration.ts`), stockage tolérant de l'étalonnage (`calibration-storage.ts`), tronc de vue décentré et sa matrice (`off-axis.ts`), distance d'œil bornée et défauts; parallaxe par l'orientation de l'appareil (`parallax.ts`, #346, ADR 0087), gardes des API d'appareil et limite d'images (`device-api.ts`) |
 | `core/free-camera-pref/free-camera-pref.ts` | Préférence d'affichage « caméra libre » (#344) : lecture et écriture tolérantes de `aqfish.camera-libre` (`libre` / `orbite`), hors de la sauvegarde du monde |
 | `core/render-filter/render-filter.ts` | Filtre de rendu `pixel` / `aucun` : décodage, bascule, filtre initial, mémorisation tolérante (`aqfish.filtre`) |
 | `core/save-storage/save-storage.ts` | Stockage de la sauvegarde automatique (#70, ADR 0028) : texte opaque sous `aqfish.sauvegarde`, lecture et écriture tolérantes, état `active` / `indisponible` / `plein` ; copie unique d'une sauvegarde au schéma 1 sous `aqfish.sauvegarde.schema1` avant la première écriture par-dessus (#264, ADR 0069) |
