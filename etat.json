@@ -4131,6 +4131,12 @@
           "debut": "2026-10-31T00:45:20.979Z",
           "fin": "2026-10-31T01:34:49.578Z",
           "note": "Verdict OK, 0 bug, captures c112 publiées (105) ; verify local incomplet (rendu logiciel lent), CI verte"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-10-31T01:35:15.848Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
