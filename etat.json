@@ -4163,10 +4163,10 @@
           "note": "PR #351 : caméra libre dans la pièce lot 1 (#343), CI verte au 2e essai (aide-mémoire ramené à 1 ligne) ; 96/105 captures identiques à main (9 avec l'aide-mémoire ouvert)"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-31T04:30:35.365Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-31T04:51:06.612Z",
+          "note": "Verdict OK, 0 bug, captures c113 publiées (107) ; e2e complet non rejoué en local"
         }
       },
       "metriques": {}
