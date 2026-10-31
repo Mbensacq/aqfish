@@ -4292,7 +4292,7 @@
       "type": "dette",
       "issue": 357,
       "pr": 358,
-      "version": null,
+      "version": "v1.5.5",
       "phases": {
         "planif": {
           "statut": "termine",
