@@ -4371,6 +4371,12 @@
           "debut": "2026-10-31T21:50:47.370Z",
           "fin": "2026-10-31T21:51:35.210Z",
           "note": "Issue #360 : maladie des points blancs lot 1/2, modèle sim (S-M, découpée ; rendu et alertes dans #366)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-10-31T21:52:17.294Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
