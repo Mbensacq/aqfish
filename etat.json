@@ -4199,10 +4199,10 @@
           "note": "PR #353 : caméra libre lot 2 tactile et édition (#344), CI verte au 1er essai ; 108/108 captures identiques à main ; ~590 lignes de code hors tests"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-31T07:40:48.690Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-31T08:17:04.220Z",
+          "note": "Verdict OK, 0 bug, captures c114 publiées (107) ; unitaires 3338 verts, e2e de la PR rejoués, suite e2e complète non rejouée en local"
         }
       },
       "metriques": {}
