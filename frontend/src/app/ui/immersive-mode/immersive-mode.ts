@@ -53,7 +53,7 @@ import {
 import { AquariumView } from '../../render/aquarium-view';
 import { lightAt } from '../../sim/daylight';
 import { placeEnvironmentData } from '../../sim/environment';
-import { fixedStepInto, type FixedStepState } from '../../sim/fixed-step';
+import { createFixedStepState, fixedStepInto, type FixedStepState } from '../../sim/fixed-step';
 import {
   IMMERSIVE_DEPTH_MM,
   clampDepthMm,
@@ -263,7 +263,7 @@ export class ImmersiveMode {
   private depthChosen = false;
   private frameId: number | null = null;
   private lastTime: number | null = null;
-  private readonly clock: FixedStepState = { steps: 0, accumulator: 0, alpha: 0 };
+  private readonly clock: FixedStepState = createFixedStepState();
   private readonly frameCallback = (time: number) => this.frame(time);
   private sizeKey = '';
   private screenMm: ScreenSizeMm | null = null;

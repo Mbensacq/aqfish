@@ -1,5 +1,11 @@
 import { MAX_STEPS_PER_FRAME, SIM_DT } from './constants';
-import { fixedStep, fixedStepInto, type FixedStepResult, type FixedStepState } from './fixed-step';
+import {
+  createFixedStepState,
+  fixedStep,
+  fixedStepInto,
+  type FixedStepResult,
+  type FixedStepState,
+} from './fixed-step';
 
 /** Enchaîne `fixedStep` sur une suite de durées réelles et totalise les pas. */
 function run(realDts: readonly number[]): { total: number; last: FixedStepResult } {
@@ -113,6 +119,63 @@ describe('fixedStep', () => {
 
   it.each([-1, 1.5])('refuse un plafond de %s', (maxSteps) => {
     expect(() => fixedStep({ accumulator: 0, realDt: 0 }, SIM_DT, maxSteps)).toThrow(RangeError);
+  });
+
+  it('nomme le plafond refusé et sa valeur dans le message d’erreur', () => {
+    expect(() => fixedStep({ accumulator: 0, realDt: 0 }, SIM_DT, -3)).toThrow(
+      'maxSteps doit être un entier positif ou nul (reçu : -3)',
+    );
+  });
+
+  it('dt réel juste sous un pas (arrondi) : un pas et un reste nul, jamais négatif', () => {
+    // 1e-15 s sous SIM_DT : la tolérance d'arrondi compte un pas entier, et la différence
+    // brute `accumulé - pas` vaut environ -1e-15.
+    const realDt = SIM_DT - 1e-15;
+    expect(realDt - SIM_DT).toBeLessThan(0);
+    const result = fixedStep({ accumulator: 0, realDt });
+    expect(result.steps).toBe(1);
+    expect(result.accumulator).toBe(0);
+    expect(result.alpha).toBe(0);
+    expect(Object.is(result.accumulator, -0)).toBe(false);
+  });
+
+  it('durée gigantesque : le reste perdu par la précision reste dans [0, SIM_DT)', () => {
+    // À ~5,9e19 s, `pas disponibles × SIM_DT` s'écarte de la durée de 8192 s (un ulp) :
+    // la différence brute dépasse largement un pas.
+    const realDt = 59041428571428570000;
+    const available = Math.floor(realDt / SIM_DT + 1e-9);
+    expect(realDt - available * SIM_DT).toBeGreaterThanOrEqual(SIM_DT);
+    const result = fixedStep({ accumulator: 0, realDt });
+    expect(result.steps).toBe(MAX_STEPS_PER_FRAME);
+    expect(result.accumulator).toBeGreaterThanOrEqual(0);
+    expect(result.accumulator).toBeLessThan(SIM_DT);
+    expect(result.alpha).toBeGreaterThanOrEqual(0);
+    expect(result.alpha).toBeLessThan(1);
+    expect(result.alpha).toBeCloseTo(result.accumulator / SIM_DT, 12);
+  });
+
+  it('somme débordant vers l’infini : pas plafonnés, reste nul (pas de NaN)', () => {
+    const result = fixedStep({ accumulator: Number.MAX_VALUE, realDt: Number.MAX_VALUE });
+    expect(result).toEqual({ steps: MAX_STEPS_PER_FRAME, accumulator: 0, alpha: 0 });
+  });
+
+  it('dt réel finie mais immense : pas plafonnés, reste nul', () => {
+    const result = fixedStep({ accumulator: 0, realDt: Number.MAX_VALUE });
+    expect(result).toEqual({ steps: MAX_STEPS_PER_FRAME, accumulator: 0, alpha: 0 });
+  });
+
+  it('un dt réel de -0 compte pour 0 (reste +0)', () => {
+    const result = fixedStep({ accumulator: -0, realDt: -0 });
+    expect(result.steps).toBe(0);
+    expect(Object.is(result.accumulator, 0)).toBe(true);
+  });
+});
+
+describe('createFixedStepState', () => {
+  it('donne un état vide, neuf à chaque appel', () => {
+    const state = createFixedStepState();
+    expect(state).toEqual({ steps: 0, accumulator: 0, alpha: 0 });
+    expect(createFixedStepState()).not.toBe(state);
   });
 });
 

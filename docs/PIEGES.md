@@ -547,6 +547,15 @@ haut de sa section.
   `n === undefined` déjà rattrapé par `!(n > 0)`. Les noter équivalents dans la PR plutôt
   que d'exporter une fonction privée pour les tuer ; un libellé comparé à sa propre
   constante (`SHEET_FIELD_LABELS[f]`) ne tue rien : figer le texte attendu. (2026-10-29)
+- **Mutation : bornes « à 0 donne 0 » = mutants équivalents, préférer `Math.max`/modulo**
+  (cycle 118, #359) : dans `fixed-step.ts`, `x > 0 ? x : 0` (mutant `>= 0`) et la garde
+  `if (rest < 0 || rest >= dt) rest = 0` (mutants `<= 0`, `> dt`) survivaient sans test
+  possible : à la borne, les deux branches donnent le même résultat, ou la borne exacte
+  (`rest === dt`) est introuvable en flottant. Réécrits en `Math.max(x, 0)` et
+  `Math.max(rest, 0) % dt` (le modulo est exact pour `rest < dt`, donc résultats identiques
+  à l'octet), le score passe de 72 % à 100 %. Au passage : `MAX_VALUE + MAX_VALUE` vaut
+  `Infinity` et `Infinity - Infinity` vaut `NaN`, qu'aucune comparaison ne rattrape ; un
+  `Number.isFinite` final le ramène à 0. (2026-10-31)
 - **Tests de mutation : délais explicites sous code instrumenté** (#66) : le code instrumenté
   par Stryker est ~5 à 10 fois plus lent. `testTimeout` ne suffit pas : un délai explicite
   (`it(nom, fn, 15_000)`, y compris `it.each(table)(nom, fn, 15_000)`) prime sur la

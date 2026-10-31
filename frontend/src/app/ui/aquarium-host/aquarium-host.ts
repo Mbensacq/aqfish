@@ -144,7 +144,7 @@ import {
 } from '../../sim/room';
 import { dropRoomItem, removeRoomItem, roomArea, roomItemBox } from '../../sim/room-furniture';
 import { isRoomTool, type EditorTool } from '../decor-editor/decor-editor';
-import { fixedStepInto, type FixedStepState } from '../../sim/fixed-step';
+import { createFixedStepState, fixedStepInto, type FixedStepState } from '../../sim/fixed-step';
 import {
   DEFAULT_SIM_SPEED,
   isSimSpeed,
@@ -657,7 +657,7 @@ export class AquariumHost {
   private backgroundWorld: World | null = null;
   private backgroundTick = 0;
   /** État de la boucle à pas fixe, réécrit à chaque image (aucune allocation). */
-  private readonly clock: FixedStepState = { steps: 0, accumulator: 0, alpha: 0 };
+  private readonly clock: FixedStepState = createFixedStepState();
   private lastTimestamp: number | null = null;
   private exposedTick: number | null = null;
   private exposedFood: number | null = null;
