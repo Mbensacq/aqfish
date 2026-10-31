@@ -4367,10 +4367,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-31T21:50:47.370Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-31T21:51:35.210Z",
+          "note": "Issue #360 : maladie des points blancs lot 1/2, modèle sim (S-M, découpée ; rendu et alertes dans #366)"
         }
       },
       "metriques": {}
