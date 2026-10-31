@@ -26,6 +26,11 @@ export interface FixedStepResult {
 /** Résultat modifiable de `fixedStepInto`, réutilisé d'une image à l'autre. */
 export type FixedStepState = { -readonly [K in keyof FixedStepResult]: FixedStepResult[K] };
 
+/** État initial de la boucle à pas fixe : aucun pas, accumulateur vide. */
+export function createFixedStepState(): FixedStepState {
+  return { steps: 0, accumulator: 0, alpha: 0 };
+}
+
 /**
  * Boucle à pas fixe (accumulateur), en fonction pure.
  *
@@ -38,8 +43,7 @@ export function fixedStep(
   dt: number = SIM_DT,
   maxSteps: number = MAX_STEPS_PER_FRAME,
 ): FixedStepResult {
-  const out: FixedStepState = { steps: 0, accumulator: 0, alpha: 0 };
-  return fixedStepInto(input.accumulator, input.realDt, out, dt, maxSteps);
+  return fixedStepInto(input.accumulator, input.realDt, createFixedStepState(), dt, maxSteps);
 }
 
 /**
@@ -65,17 +69,21 @@ export function fixedStepInto(
   const steps = Math.min(available, maxSteps);
 
   // Reste fractionnaire, ramené dans [0, dt) (le retard au-delà du plafond est abandonné).
-  let rest = accumulated - available * dt;
-  if (rest < 0 || rest >= dt) {
-    rest = 0;
-  }
+  // L'arrondi peut le sortir de cet intervalle :
+  // - légèrement négatif quand `accumulated` est un multiple de `dt` à `ROUNDING_EPSILON`
+  //   près par défaut (ex. `dt - 1e-15`) : ramené à 0 par `Math.max` ;
+  // - égal ou supérieur à `dt` aux très grandes durées (≥ ~1e19 s), où `available * dt`
+  //   perd plus d'un pas de précision : ramené dans [0, dt) par le modulo ;
+  // - `NaN` si la somme déborde vers l'infini (`Infinity - Infinity`) : ramené à 0.
+  const rest = Math.max(accumulated - available * dt, 0) % dt;
 
   out.steps = steps;
-  out.accumulator = rest;
-  out.alpha = rest / dt;
+  out.accumulator = Number.isFinite(rest) ? rest : 0;
+  out.alpha = out.accumulator / dt;
   return out;
 }
 
+/** Durée utilisable : un nombre négatif, `NaN` ou infini compte pour 0. */
 function sanitize(seconds: number): number {
-  return Number.isFinite(seconds) && seconds > 0 ? seconds : 0;
+  return Number.isFinite(seconds) ? Math.max(seconds, 0) : 0;
 }
