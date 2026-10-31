@@ -4205,10 +4205,10 @@
           "note": "Verdict OK, 0 bug, captures c114 publiées (107) ; unitaires 3338 verts, e2e de la PR rejoués, suite e2e complète non rejouée en local"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-31T08:17:39.189Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-31T09:34:27.880Z",
+          "note": "PR #353 fusionnée → v1.5.2 (release CI ok, main verte) ; #344 fermée ; refusés par l'environnement : suppression de la branche cycle/c114-camera-libre-tactile et retrait des pieds d'attribution des corps de #353, #344 et de la revue QA (à faire par Mathis)"
         }
       },
       "metriques": {}
