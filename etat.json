@@ -4169,10 +4169,10 @@
           "note": "Verdict OK, 0 bug, captures c113 publiées (107) ; e2e complet non rejoué en local"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-31T04:51:32.376Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-31T06:11:22.572Z",
+          "note": "PR #351 fusionnée → v1.5.1 (release CI ok, main verte) ; #343 fermée ; dette #352 ; suppression de la branche cycle/c113-camera-libre refusée par l'environnement (à supprimer par Mathis)"
         }
       },
       "metriques": {}
