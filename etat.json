@@ -4184,7 +4184,7 @@
       "type": "fonctionnalite",
       "issue": 344,
       "pr": 353,
-      "version": null,
+      "version": "v1.5.2",
       "phases": {
         "planif": {
           "statut": "termine",
