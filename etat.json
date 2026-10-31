@@ -4127,10 +4127,10 @@
           "note": "PR #350 : fenêtre du mur du fond et lumière du jour (#342), CI verte au 1er essai ; 90/105 captures identiques à main (15 avec pièce + telephone-liste-bacs variable)"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-31T00:45:20.979Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-10-31T01:34:49.578Z",
+          "note": "Verdict OK, 0 bug, captures c112 publiées (105) ; verify local incomplet (rendu logiciel lent), CI verte"
         }
       },
       "metriques": {}
