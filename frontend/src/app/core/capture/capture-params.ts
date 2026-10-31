@@ -90,6 +90,13 @@
  * formée ignorée ici ; type, taille ou pose refusés ignorés par l'application ; absent, pièce
  * d'un seul bac (séries existantes inchangées).
  *
+ * Paramètre facultatif `libre=x:y:z:cap:inclinaison` (issue #343) : en mode capture, avec
+ * `piece=1`, caméra libre posée en (x, y, z) mètres (repère du bac, ramenée dans la pièce et
+ * hors du bac), cap et inclinaison en degrés (cap 0 vers le mur du fond, positif vers la
+ * gauche ; inclinaison positive vers le haut). Exemple : `libre=1.5:0.6:1.8:30:-10`. Prime
+ * sur `camera=`. Entrée mal formée ou absente, ou pièce masquée : préréglage habituel (séries
+ * existantes inchangées).
+ *
  * Paramètre facultatif `vitesse=` (issue #232) : hors capture, vitesse de la simulation au
  * démarrage, l'une de `SIM_SPEEDS` (`sim/sim-speed.ts`, vérifiée par l'application) ;
  * `vitesse=0` laisse le monde à l'arrêt dès t = 0, pour des captures d'interface
@@ -182,6 +189,21 @@ export interface CaptureParams {
   readonly wallpaper: boolean;
   /** Images par seconde de `fps=` (issue #279), bornées à [15, 60] ; `null` si absent. */
   readonly fps: number | null;
+  /** Pose libre de `libre=` (issue #343), avec `piece=1` ; `null` si absente ou mal formée. */
+  readonly freeCamera: CaptureFreeCamera | null;
+}
+
+/**
+ * Pose de la caméra libre du contrat de capture (#343) : position en mètres (repère du bac),
+ * cap et inclinaison en degrés (cap 0 : vers le mur du fond, positif vers la gauche ;
+ * inclinaison positive vers le haut). Bornes appliquées par la vue.
+ */
+export interface CaptureFreeCamera {
+  readonly x: number;
+  readonly y: number;
+  readonly z: number;
+  readonly yawDeg: number;
+  readonly pitchDeg: number;
 }
 
 /**
@@ -277,6 +299,7 @@ export const DEFAULT_CAPTURE_PARAMS: CaptureParams = {
   decorMode: false,
   wallpaper: false,
   fps: null,
+  freeCamera: null,
 };
 
 /** Temps de simulation maximal accepté (1 h), pour éviter un calcul démesuré. */
@@ -330,7 +353,21 @@ export function parseCaptureParams(search: string): CaptureParams {
     decorMode: params.get('mode') === 'decor',
     wallpaper: params.get('fond') === '1',
     fps: parseWallpaperFps(params.get('fps')),
+    freeCamera: parseFreeCamera(params.get('libre')),
   };
+}
+
+/** Réel signé d'au plus trois chiffres avant et après la virgule (`-1.25`, `90`). */
+const SIGNED_DECIMAL = /^-?\d{1,3}(\.\d{1,3})?$/;
+
+/** `libre=x:y:z:cap:inclinaison` (#343) : cinq réels signés, sinon `null`. */
+function parseFreeCamera(raw: string | null): CaptureFreeCamera | null {
+  const parts = raw?.split(':') ?? [];
+  if (parts.length !== 5 || !parts.every((p) => SIGNED_DECIMAL.test(p))) {
+    return null;
+  }
+  const [x, y, z, yawDeg, pitchDeg] = parts.map(Number);
+  return { x, y, z, yawDeg, pitchDeg };
 }
 
 /** Vitesse `vitesse=` : réel positif ou nul à un chiffre avant la virgule (`0`, `0.5`, `4`). */

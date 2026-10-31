@@ -7,6 +7,7 @@ import {
   fixedHourForKey,
   isClockKey,
   isFeedKey,
+  isFreeCameraKey,
   isPixelArtKey,
   isRainKey,
   NIGHT_KEY,
@@ -268,6 +269,48 @@ describe('ViewPresetsBar', () => {
         expect(isRainKey(key)).toBe(false);
       }
       expect(isPixelArtKey('p')).toBe(true);
+    });
+  });
+
+  describe('caméra libre (#343)', () => {
+    let toggles: number;
+    const freeButton = (): HTMLButtonElement | null =>
+      (fixture.nativeElement as HTMLElement).querySelector('[data-action="camera-libre"]');
+
+    beforeEach(() => {
+      toggles = 0;
+      fixture.componentInstance.freeCameraToggled.subscribe(() => toggles++);
+    });
+
+    it('sans pièce : pas de bouton ; la touche L reste une demande (refusée par l’hôte)', () => {
+      expect(freeButton()).toBeNull();
+      expect(press('l').defaultPrevented).toBe(true);
+      expect(toggles).toBe(1);
+    });
+
+    it('pièce affichée : bouton « Libre » et touche L, état reçu de l’hôte', async () => {
+      fixture.componentRef.setInput('freeCameraAvailable', true);
+      await fixture.whenStable();
+      const button = freeButton()!;
+      expect(button.textContent?.replace(/\s+/g, ' ').trim()).toBe('L Libre');
+      expect(button.getAttribute('aria-pressed')).toBe('false');
+      expect(button.getAttribute('aria-label')).toContain('(touche L)');
+      button.click();
+      expect(press('L').defaultPrevented).toBe(true);
+      press('l', { ctrlKey: true });
+      expect(toggles).toBe(2);
+      fixture.componentRef.setInput('freeCamera', true);
+      await fixture.whenStable();
+      expect(freeButton()!.getAttribute('aria-pressed')).toBe('true');
+      expect(emitted).toEqual([]);
+    });
+
+    it('isFreeCameraKey : l et L seulement', () => {
+      expect(isFreeCameraKey('l')).toBe(true);
+      expect(isFreeCameraKey('L')).toBe(true);
+      for (const key of ['1', 'p', 'z', '']) {
+        expect(isFreeCameraKey(key)).toBe(false);
+      }
     });
   });
 

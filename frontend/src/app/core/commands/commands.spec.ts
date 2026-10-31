@@ -1,11 +1,14 @@
 import { CAMERA_PRESETS } from '../capture/capture-params';
 import {
   COMMAND_GROUPS,
+  FREE_MOVE_COMMANDS,
   GESTURE_COMMANDS,
   KEY_COMMANDS,
   ORBIT_MOUSE_BUTTONS,
   VIEW_COMMAND_PRESETS,
   commandKey,
+  freeMoveAxes,
+  freeMoveFor,
   helpSections,
   keyCommand,
   keyCommandFor,
@@ -21,6 +24,7 @@ describe('commandes (#74)', () => {
       ['vue-face', '3'],
       ['vue-cote', '4'],
       ['vue-trois-quarts', '5'],
+      ['camera-libre', 'l'],
       ['pixel-art', 'p'],
       ['pluie', 'r'],
       ['horloge', 'h'],
@@ -131,6 +135,68 @@ describe('commandes (#74)', () => {
       for (const gesture of GESTURE_COMMANDS) {
         expect(gesture.gesture.trim()).not.toBe('');
       }
+    });
+  });
+
+  describe('caméra libre (#343)', () => {
+    it('touche L, sur une ligne du groupe « Vues », qui résume les déplacements', () => {
+      expect(keyCommandFor('L')?.id).toBe('camera-libre');
+      const command = keyCommand('camera-libre');
+      expect(command.group).toBe('vues');
+      // Tient sur une ligne de l'aide-mémoire, comme la plus longue description existante.
+      expect(command.description.length).toBeLessThanOrEqual(38);
+      const vues = helpSections().find((section) => section.id === 'vues');
+      expect(vues?.entries.map((entry) => entry.label)).toEqual(['1', '2', '3', '4', '5', 'L']);
+      // Chaque déplacement y est nommé par sa touche AZERTY ; l'orientation par le geste.
+      const text = command.description.toLowerCase();
+      expect(text).toContain('zqsd');
+      expect(text).toContain('e/c');
+      expect(text).toContain('glisser');
+      for (const move of FREE_MOVE_COMMANDS) {
+        expect('zqsdec', move.id).toContain(move.keys[0]);
+      }
+    });
+
+    it('déplacements : AZERTY, QWERTY et flèches, insensibles à la casse', () => {
+      expect(freeMoveFor('z')).toBe('avancer');
+      expect(freeMoveFor('W')).toBe('avancer');
+      expect(freeMoveFor('ArrowUp')).toBe('avancer');
+      expect(freeMoveFor('q')).toBe('gauche');
+      expect(freeMoveFor('A')).toBe('gauche');
+      expect(freeMoveFor('ArrowRight')).toBe('droite');
+      expect(freeMoveFor('PageUp')).toBe('monter');
+      expect(freeMoveFor('c')).toBe('descendre');
+      for (const key of ['', 'x', 'l', 'p', ' ', 'Escape', 'zz']) {
+        expect(freeMoveFor(key)).toBeNull();
+      }
+    });
+
+    it('aucune touche de déplacement ne reprend un raccourci, ni deux déplacements une touche', () => {
+      const moveKeys = FREE_MOVE_COMMANDS.flatMap((command) => command.keys);
+      expect(new Set(moveKeys).size).toBe(moveKeys.length);
+      for (const key of moveKeys) {
+        expect(key).toBe(key.toLowerCase());
+        expect(keyCommandFor(key), key).toBeNull();
+      }
+    });
+
+    it('freeMoveAxes : chaque axe, sens opposés annulés, aucune touche au repos', () => {
+      expect(freeMoveAxes(new Set())).toEqual({ forward: 0, strafe: 0, vertical: 0 });
+      expect(freeMoveAxes(new Set(['avancer', 'droite', 'descendre']))).toEqual({
+        forward: 1,
+        strafe: 1,
+        vertical: -1,
+      });
+      expect(freeMoveAxes(new Set(['reculer', 'gauche', 'monter']))).toEqual({
+        forward: -1,
+        strafe: -1,
+        vertical: 1,
+      });
+      expect(freeMoveAxes(new Set(['avancer', 'reculer']))).toEqual({
+        forward: 0,
+        strafe: 0,
+        vertical: 0,
+      });
     });
   });
 

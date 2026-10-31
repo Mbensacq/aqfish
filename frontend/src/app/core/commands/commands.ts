@@ -35,6 +35,7 @@ export type KeyCommandId =
   | 'vue-face'
   | 'vue-cote'
   | 'vue-trois-quarts'
+  | 'camera-libre'
   | 'pixel-art'
   | 'pluie'
   | 'horloge'
@@ -69,6 +70,16 @@ export const KEY_COMMANDS: readonly KeyCommand[] = [
     key: '5',
     display: '5',
     description: 'Vue trois-quarts',
+    group: 'vues',
+  },
+  {
+    id: 'camera-libre',
+    key: 'l',
+    display: 'L',
+    // Une seule ligne de l'aide-mémoire, qui doit tenir sans défilement à 1280 × 720
+    // (`e2e/cadrage-panneaux.spec.ts`) : les touches principales seulement (WASD, flèches et
+    // Page ↑ / ↓ marchent aussi, ADR 0084).
+    description: 'Caméra libre : ZQSD, E/C, glisser',
     group: 'vues',
   },
   {
@@ -189,6 +200,53 @@ export interface GestureCommand {
   readonly gesture: string;
   readonly description: string;
   readonly group: 'souris' | 'tactile';
+}
+
+/** Axe de déplacement de la caméra libre (#343) et sens. */
+export type FreeMoveId = 'avancer' | 'reculer' | 'gauche' | 'droite' | 'monter' | 'descendre';
+
+/** Touches de déplacement de la caméra libre, actives seulement dans ce mode (#343). */
+export interface FreeMoveCommand {
+  readonly id: FreeMoveId;
+  /** Valeurs de `KeyboardEvent.key` reconnues, en minuscules (AZERTY, QWERTY, flèches). */
+  readonly keys: readonly string[];
+}
+
+/** Déplacements de la caméra libre (résumés dans la description de la touche `L`). */
+export const FREE_MOVE_COMMANDS: readonly FreeMoveCommand[] = [
+  { id: 'avancer', keys: ['z', 'w', 'arrowup'] },
+  { id: 'reculer', keys: ['s', 'arrowdown'] },
+  { id: 'gauche', keys: ['q', 'a', 'arrowleft'] },
+  { id: 'droite', keys: ['d', 'arrowright'] },
+  { id: 'monter', keys: ['e', 'pageup'] },
+  { id: 'descendre', keys: ['c', 'pagedown'] },
+];
+
+/** Déplacement de la caméra libre associé à une valeur de `KeyboardEvent.key`, `null` sinon. */
+export function freeMoveFor(key: string): FreeMoveId | null {
+  const normalized = key.toLowerCase();
+  return FREE_MOVE_COMMANDS.find((command) => command.keys.includes(normalized))?.id ?? null;
+}
+
+/** Consigne de la caméra libre, chaque axe dans [−1, 1] (`render/free-camera.ts`). */
+export interface FreeMoveAxes {
+  readonly forward: number;
+  readonly strafe: number;
+  readonly vertical: number;
+}
+
+/**
+ * Consigne de la caméra libre pour les déplacements enfoncés : deux sens opposés s'annulent.
+ * Fonction pure.
+ */
+export function freeMoveAxes(pressed: ReadonlySet<FreeMoveId>): FreeMoveAxes {
+  const axis = (plus: FreeMoveId, minus: FreeMoveId): number =>
+    (pressed.has(plus) ? 1 : 0) - (pressed.has(minus) ? 1 : 0);
+  return {
+    forward: axis('avancer', 'reculer'),
+    strafe: axis('droite', 'gauche'),
+    vertical: axis('monter', 'descendre'),
+  };
 }
 
 /**

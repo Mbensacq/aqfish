@@ -71,6 +71,7 @@ import {
   SAVE_FILE_NAME,
   SAVE_STORAGE,
   CAMERA_ATTRIBUTE,
+  FREE_CAMERA_ATTRIBUTE,
   ENVIRONMENT_ATTRIBUTE,
   WALLPAPER_ATTRIBUTE,
   WALLPAPER_PAUSED_ATTRIBUTE,
@@ -1301,6 +1302,136 @@ describe('AquariumHost', () => {
       expect(host().importSave(text)).toBe(true);
       expect(host().room()).toEqual({ shown: true, cabinetHeight: 0.9 });
       expect(roomAttr()).toBe('true');
+    });
+  });
+
+  describe('caméra libre dans la pièce (#343)', () => {
+    const host = () => fixture.componentInstance;
+    const element = () => fixture.nativeElement as HTMLElement;
+    const camera = () => element().getAttribute(CAMERA_ATTRIBUTE)!.split(',').map(Number);
+    const press = (type: 'keydown' | 'keyup', key: string, target: EventTarget = document) => {
+      const event = new KeyboardEvent(type, { key, bubbles: true, cancelable: true });
+      target.dispatchEvent(event);
+      return event;
+    };
+
+    async function withRoom(): Promise<void> {
+      await create('?seed=8&camera=three-quarter');
+      setCanvasSize(800, 600);
+      frames.flush(0);
+      host().setRoomShown(true);
+      frames.flush(16);
+    }
+
+    it('sans pièce : bascule sans effet, comportement actuel conservé', async () => {
+      await create('?seed=8&camera=three-quarter');
+      setCanvasSize(800, 600);
+      frames.flush(0);
+      const before = camera();
+      host().toggleFreeCamera();
+      expect(host().freeCamera()).toBe(false);
+      expect(host().activePreset()).toBe('three-quarter');
+      expect(element().getAttribute(FREE_CAMERA_ATTRIBUTE)).toBe('false');
+      // Touche d'avance laissée au navigateur.
+      expect(press('keydown', 'z').defaultPrevented).toBe(false);
+      frames.flush(500);
+      expect(camera()).toEqual(before);
+    });
+
+    it('entrer, avancer à la touche tenue, s’arrêter, revenir à l’orbite et au préréglage', async () => {
+      await withRoom();
+      const before = camera();
+      host().toggleFreeCamera();
+      expect(host().freeCamera()).toBe(true);
+      expect(host().activePreset()).toBeNull();
+      expect(element().getAttribute(FREE_CAMERA_ATTRIBUTE)).toBe('true');
+      expect(press('keydown', 'ArrowUp').defaultPrevented).toBe(true);
+      frames.flush(100);
+      frames.flush(400);
+      const moved = camera();
+      expect(moved).not.toEqual(before);
+      press('keyup', 'ArrowUp');
+      // Ralentit sur quelques images, puis s'arrête.
+      for (let t = 516; t <= 2500; t += 16) {
+        frames.flush(t);
+      }
+      const rest = camera();
+      frames.flush(3000);
+      expect(camera()).toEqual(rest);
+      host().toggleFreeCamera();
+      expect(host().freeCamera()).toBe(false);
+      expect(host().activePreset()).toBe('three-quarter');
+      camera().forEach((value, i) => expect(value).toBeCloseTo(before[i], 3));
+      // Simulation intacte : la caméra ne touche pas au monde.
+      expect(host().world!.entities.length).toBeGreaterThan(0);
+    });
+
+    it('touches relâchées à la perte du focus, ignorées dans un champ de saisie', async () => {
+      await withRoom();
+      host().toggleFreeCamera();
+      press('keydown', 'z');
+      window.dispatchEvent(new Event('blur'));
+      frames.flush(100);
+      const still = camera();
+      frames.flush(600);
+      expect(camera()).toEqual(still);
+      const field = document.createElement('input');
+      document.body.appendChild(field);
+      expect(press('keydown', 'z', field).defaultPrevented).toBe(false);
+      frames.flush(1200);
+      field.remove();
+      expect(camera()).toEqual(still);
+    });
+
+    it('un préréglage ou la pièce masquée quittent la caméra libre', async () => {
+      await withRoom();
+      host().toggleFreeCamera();
+      host().goToPreset('top');
+      expect(host().freeCamera()).toBe(false);
+      expect(host().activePreset()).toBe('top');
+      expect(element().getAttribute(FREE_CAMERA_ATTRIBUTE)).toBe('false');
+      frames.flush(1000);
+      host().toggleFreeCamera();
+      expect(host().freeCamera()).toBe(true);
+      host().setRoomShown(false);
+      expect(host().freeCamera()).toBe(false);
+      expect(host().activePreset()).toBe('top');
+    });
+
+    it('libre= en capture avec piece=1 : pose libre ; sans pièce ou mal formée : préréglage', async () => {
+      await create('?capture=1&seed=3&piece=1&libre=1.5:0.6:1.8:30:-10');
+      setCanvasSize(800, 600);
+      frames.flush(0);
+      expect(camera()).toEqual([1.5, 0.6, 1.8]);
+      expect(host().freeCamera()).toBe(false);
+      host().toggleFreeCamera();
+      expect(host().freeCamera()).toBe(false);
+      fixture.destroy();
+      await create('?capture=1&seed=3&piece=1&camera=front');
+      setCanvasSize(800, 600);
+      frames.flush(0);
+      const front = camera();
+      for (const query of [
+        '?capture=1&seed=3&camera=front&libre=1.5:0.6:1.8:30:-10',
+        '?capture=1&seed=3&piece=1&camera=front&libre=1.5:0.6',
+      ]) {
+        fixture.destroy();
+        await create(query);
+        setCanvasSize(800, 600);
+        frames.flush(0);
+        expect(camera(), query).not.toEqual([1.5, 0.6, 1.8]);
+      }
+      expect(front[1]).toBeGreaterThan(0);
+    });
+
+    it('libre= dans le bac : position ramenée hors du bac', async () => {
+      await create('?capture=1&seed=3&piece=1&libre=0:0.2:0:0:0');
+      setCanvasSize(800, 600);
+      frames.flush(0);
+      // Sortie par la face la plus proche qui reste dans la pièce : l'avant du bac.
+      const [x, y, z] = camera();
+      expect([x, y]).toEqual([0, 0.2]);
+      expect(z).toBeGreaterThan(0.35 / 2);
     });
   });
 
