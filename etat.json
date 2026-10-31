@@ -4284,6 +4284,24 @@
         }
       },
       "metriques": {}
+    },
+    "117": {
+      "numero": 117,
+      "date": "2026-10-31",
+      "debut": "2026-10-31T16:35:52.250Z",
+      "type": "dette",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-10-31T16:35:52.250Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
