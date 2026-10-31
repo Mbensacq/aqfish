@@ -169,6 +169,11 @@ test.describe('Captures', () => {
     // Pièce fermée (#324) : de l'intérieur, vers le plafond et ses poutres (grand bac, caméra
     // plus loin, plus de plafond dans le cadre).
     { name: 'side-piece-grand-bac', query: 'piece=1&camera=side&bac=2:0.9:0.9' },
+    // Caméra libre (#343) : dans la pièce, vers le bac depuis l'avant droit ; vers la fenêtre
+    // du mur du fond ; vers le plafond et ses poutres.
+    { name: 'libre-interieur', query: 'piece=1&libre=2.5:1:2.6:44:-12' },
+    { name: 'libre-fenetre', query: 'piece=1&libre=-0.6:0.9:2.2:21:3' },
+    { name: 'libre-plafond', query: 'piece=1&libre=0.8:0.9:1.5:20:55' },
     // Pièce à deux bacs (#305, lot 2b) : une commode à droite du bac, un bac moyen posé dessus.
     { name: 'three-quarter-piece-deux-bacs', query: 'piece=1&bacs=commode,moyen@0' },
     { name: 'top-piece-deux-bacs', query: 'piece=1&bacs=commode,moyen@0&camera=top' },

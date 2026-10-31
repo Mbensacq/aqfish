@@ -86,6 +86,14 @@ export function isFeedKey(key: string): boolean {
   return key.toLowerCase() === FEED_KEY;
 }
 
+/** Touche de la caméra libre dans la pièce (insensible à la casse, issue #343). */
+export const FREE_CAMERA_KEY = commandKey('camera-libre');
+
+/** Vrai pour la touche de la caméra libre (`l` ou `L`). */
+export function isFreeCameraKey(key: string): boolean {
+  return key.toLowerCase() === FREE_CAMERA_KEY;
+}
+
 /** Préréglage associé à une touche (`1` à `5`), `null` sinon. */
 export function presetForKey(key: string): CameraPreset | null {
   return VIEW_PRESET_BUTTONS.find((button) => button.key === key)?.preset ?? null;
@@ -104,6 +112,9 @@ export function presetForKey(key: string): CameraPreset | null {
  * du bac (le clic sur l'eau, lui, est géré par la vue).
  * Touche `R` (issue #106) : demande à l'hôte de faire pleuvoir ou d'arrêter la pluie (sans
  * bouton ici : la case est dans le panneau de contrôle ; sans effet hors du bassin).
+ * Bouton « Libre » (pièce affichée seulement, `freeCameraAvailable`) et touche `L` (issue
+ * #343) : demandent d'entrer en caméra libre ou de revenir à l'orbite (sans pièce, l'hôte
+ * refuse) ; l'état affiché (`freeCamera`) vient de l'hôte.
  * Absente en mode capture (c'est l'application qui ne l'affiche pas).
  */
 @Component({
@@ -123,6 +134,21 @@ export function presetForKey(key: string): CameraPreset | null {
         >
           <span class="view-presets-bar__key" aria-hidden="true">{{ button.key }}</span>
           {{ button.label }}
+        </button>
+      }
+      @if (freeCameraAvailable()) {
+        <button
+          type="button"
+          class="view-presets-bar__button"
+          [class.view-presets-bar__button--active]="freeCamera()"
+          [attr.aria-label]="freeCameraDescription + ' (touche ' + freeCameraKey + ')'"
+          [attr.aria-keyshortcuts]="freeCameraKey"
+          [attr.aria-pressed]="freeCamera()"
+          data-action="camera-libre"
+          (click)="toggleFreeCamera()"
+        >
+          <span class="view-presets-bar__key" aria-hidden="true">{{ freeCameraKey }}</span>
+          Libre
         </button>
       }
     </div>
@@ -182,6 +208,23 @@ export class ViewPresetsBar {
   /** Demande de nourrissage au centre du bac (bouton « Nourrir » ou touche `G`). */
   readonly fed = output<void>();
 
+  /** Caméra libre possible : pièce affichée (fourni par l'hôte, issue #343). */
+  readonly freeCameraAvailable = input(false);
+
+  /** Caméra libre en cours (fourni par l'hôte : la barre ne le mémorise pas). */
+  readonly freeCamera = input(false);
+
+  /** Demande d'entrer en caméra libre ou de revenir à l'orbite (bouton ou touche `L`). */
+  readonly freeCameraToggled = output<void>();
+
+  /** Touche de la caméra libre telle qu'affichée (`L`) et sa description (nom accessible). */
+  protected readonly freeCameraKey = keyCommand('camera-libre').display;
+  protected readonly freeCameraDescription = keyCommand('camera-libre').description;
+
+  protected toggleFreeCamera(): void {
+    this.freeCameraToggled.emit();
+  }
+
   protected readonly buttons = VIEW_PRESET_BUTTONS;
 
   /** Touche de nourrissage telle qu'affichée (`G`) et sa description (nom accessible). */
@@ -215,6 +258,12 @@ export class ViewPresetsBar {
     if (isFeedKey(event.key)) {
       event.preventDefault();
       this.feed();
+      return;
+    }
+    if (isFreeCameraKey(event.key)) {
+      // Toujours consommée, comme les autres raccourcis déclarés : sans pièce, l'hôte refuse.
+      event.preventDefault();
+      this.toggleFreeCamera();
       return;
     }
     if (isRainKey(event.key)) {

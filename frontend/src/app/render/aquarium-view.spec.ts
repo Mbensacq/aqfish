@@ -909,3 +909,154 @@ describe('AquariumView (choix dans la pièce, #188)', () => {
     expect(() => view.setRoomSelection(0)).not.toThrow();
   });
 });
+
+describe('AquariumView (caméra libre dans la pièce, #343)', () => {
+  function create(options: { interactive?: boolean; room?: boolean } = {}): AquariumView {
+    const canvas = document.createElement('canvas');
+    // jsdom n'a pas la capture du pointeur, qu'`OrbitControls` demande à l'appui.
+    canvas.setPointerCapture = () => undefined;
+    canvas.releasePointerCapture = () => undefined;
+    const view = new AquariumView({
+      canvas,
+      rendererFactory: () => new RecordingRenderer(),
+      pixelRatio: 1,
+      preset: 'three-quarter',
+      interactive: options.interactive ?? true,
+    });
+    view.resize(640, 360);
+    if (options.room ?? true) {
+      view.setRoom({ shown: true, cabinetHeight: 0.75 });
+    }
+    return view;
+  }
+
+  function pointer(type: string, x: number, y: number): Event {
+    const event = new MouseEvent(type, { button: 0, clientX: x, clientY: y });
+    Object.defineProperty(event, 'pointerId', { value: 7 });
+    Object.defineProperty(event, 'isPrimary', { value: true });
+    return event;
+  }
+
+  function controlsOf(view: AquariumView): OrbitControls {
+    return (view as unknown as { controls: OrbitControls }).controls;
+  }
+
+  const FORWARD = { forward: 1, strafe: 0, vertical: 0 };
+
+  it('sans pièce affichée : refusée, orbite inchangée', () => {
+    const view = create({ room: false });
+    const before = view.cameraPosition();
+    expect(view.enterFreeCamera()).toBe(false);
+    expect(view.freeCameraActive).toBe(false);
+    expect(view.stepFreeCamera(FORWARD, 1)).toBe(false);
+    expect(view.exitFreeCamera()).toBe(false);
+    expect(view.cameraPosition()).toEqual(before);
+    expect(controlsOf(view).enabled).toBe(true);
+    view.dispose();
+  });
+
+  it('vue non interactive (capture) : refusée', () => {
+    const view = create({ interactive: false });
+    expect(view.enterFreeCamera()).toBe(false);
+    view.dispose();
+  });
+
+  it('entre à la pose orbitale, coupe les contrôles, avance, puis rend la pose d’avant', () => {
+    const view = create();
+    const position = view.cameraPosition();
+    const target = view.cameraTarget();
+    expect(view.enterFreeCamera()).toBe(true);
+    expect(view.enterFreeCamera()).toBe(false);
+    expect(view.freeCameraActive).toBe(true);
+    expect(controlsOf(view).enabled).toBe(false);
+    // Pose de trois-quarts déjà dans la pièce : aucune correction.
+    view.cameraPosition().forEach((value, i) => expect(value).toBeCloseTo(position[i], 9));
+    expect(view.stepFreeCamera(FORWARD, 0.5)).toBe(true);
+    expect(view.cameraPosition()).not.toEqual(position);
+    expect(view.exitFreeCamera()).toBe(true);
+    expect(view.freeCameraActive).toBe(false);
+    expect(controlsOf(view).enabled).toBe(true);
+    view.cameraPosition().forEach((value, i) => expect(value).toBeCloseTo(position[i], 9));
+    view.cameraTarget().forEach((value, i) => expect(value).toBeCloseTo(target[i], 9));
+    view.dispose();
+  });
+
+  it('pose orbitale quelconque (hors préréglage) rendue à l’identique', () => {
+    const view = create();
+    view.stepCameraTransition(0);
+    // Pose déplacée à la main, hors préréglage.
+    (view as unknown as { setPose(p: CameraPose): void }).setPose({
+      position: [0.9, 0.7, 1.1],
+      target: [0.05, 0.2, 0],
+    });
+    (view as unknown as { preset: null }).preset = null;
+    const position = view.cameraPosition();
+    const target = view.cameraTarget();
+    view.enterFreeCamera();
+    view.stepFreeCamera({ forward: -1, strafe: 1, vertical: 1 }, 0.25);
+    view.exitFreeCamera();
+    view.cameraPosition().forEach((value, i) => expect(value).toBeCloseTo(position[i], 12));
+    view.cameraTarget().forEach((value, i) => expect(value).toBeCloseTo(target[i], 12));
+    view.dispose();
+  });
+
+  it('glisser à la souris oriente la vue sans déplacer la caméra', () => {
+    const view = create();
+    const canvas = (view as unknown as { canvas: HTMLCanvasElement }).canvas;
+    view.enterFreeCamera();
+    const changes: number[] = [];
+    view.onCameraChange(() => changes.push(1));
+    const position = view.cameraPosition();
+    const yaw = view.freeCameraState!.yaw;
+    canvas.dispatchEvent(pointer('pointerdown', 100, 100));
+    canvas.dispatchEvent(pointer('pointermove', 160, 80));
+    canvas.dispatchEvent(pointer('pointerup', 160, 80));
+    expect(view.freeCameraState!.yaw).toBeLessThan(yaw);
+    expect(view.cameraPosition()).toEqual(position);
+    expect(changes.length).toBe(1);
+    // Relâché : un mouvement ne tourne plus.
+    const after = view.freeCameraState!.yaw;
+    canvas.dispatchEvent(pointer('pointermove', 300, 80));
+    expect(view.freeCameraState!.yaw).toBe(after);
+    view.dispose();
+  });
+
+  it('orbite : glisser n’oriente rien (aucun état libre)', () => {
+    const view = create();
+    const canvas = (view as unknown as { canvas: HTMLCanvasElement }).canvas;
+    canvas.dispatchEvent(pointer('pointerdown', 100, 100));
+    canvas.dispatchEvent(pointer('pointermove', 160, 80));
+    expect(view.freeCameraState).toBeNull();
+    view.dispose();
+  });
+
+  it('un préréglage quitte la caméra libre ; masquer la pièce rend l’orbite', () => {
+    const view = create();
+    view.enterFreeCamera();
+    view.animateToPreset('top', 0.5);
+    expect(view.freeCameraActive).toBe(false);
+    expect(view.transitioning).toBe(true);
+    expect(controlsOf(view).enabled).toBe(true);
+    view.applyPreset('three-quarter');
+    const position = view.cameraPosition();
+    view.enterFreeCamera();
+    view.stepFreeCamera(FORWARD, 0.5);
+    view.setRoom({ shown: false, cabinetHeight: 0.75 });
+    expect(view.freeCameraActive).toBe(false);
+    view.cameraPosition().forEach((value, i) => expect(value).toBeCloseTo(position[i], 9));
+    view.dispose();
+  });
+
+  it('reste dans la pièce même en avançant longtemps', () => {
+    const view = create();
+    view.enterFreeCamera();
+    for (let i = 0; i < 600; i++) {
+      view.stepFreeCamera(FORWARD, 1 / 30);
+    }
+    const [, , z] = view.cameraPosition();
+    // Mur du fond derrière le bac : la caméra s'arrête devant le bac ou contre un mur.
+    expect(z).toBeGreaterThan(-0.5);
+    view.dispose();
+    expect(view.enterFreeCamera()).toBe(false);
+  });
+});

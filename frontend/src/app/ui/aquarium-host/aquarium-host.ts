@@ -57,6 +57,8 @@ import {
   type AquariumRendererFactory,
 } from '../../render/aquarium-view';
 import { CAMERA_TRANSITION_SECONDS } from '../../render/camera-presets';
+import { freeMoveAxes, freeMoveFor, type FreeMoveId } from '../../core/commands/commands';
+import { isTypingContext } from '../../core/keyboard/keyboard';
 import type { DecorPick } from '../../render/decor-pick';
 import {
   addDecorItem,
@@ -245,6 +247,8 @@ export const AQUARIUM_RENDERER_FACTORY = new InjectionToken<AquariumRendererFact
 
 /** Attribut du composant hôte exposant la position de la caméra aux tests de bout en bout. */
 export const CAMERA_ATTRIBUTE = 'data-aqfish-camera';
+/** Attribut du composant hôte : `true` en caméra libre dans la pièce (#343), `false` sinon. */
+export const FREE_CAMERA_ATTRIBUTE = 'data-aqfish-camera-libre';
 /** Attribut du composant hôte exposant la cible de la caméra (mis à jour avec la position). */
 export const CAMERA_TARGET_ATTRIBUTE = 'data-aqfish-target';
 /** Attribut du composant hôte exposant `world.tick` (mis à jour quand il change). */
@@ -672,6 +676,13 @@ export class AquariumHost {
    */
   readonly activePreset = signal<CameraPreset | null>(null);
 
+  /** Caméra libre dans la pièce en cours (#343) ; la barre des vues l'affiche. */
+  readonly freeCamera = signal(false);
+  /** Déplacements de la caméra libre enfoncés au clavier (#343). */
+  private readonly freeMoves = new Set<FreeMoveId>();
+  /** Préréglage suivi avant la caméra libre, rendu à la barre en revenant à l'orbite. */
+  private presetBeforeFree: CameraPreset | null = null;
+
   /**
    * Filtre de rendu courant (issue #33). Pixel art par défaut ; `filtre=` dans l'URL prime
    * sur le choix mémorisé (`aqfish.filtre`). Mis à jour à la bascule seulement.
@@ -861,6 +872,8 @@ export class AquariumHost {
     if (!view) {
       return;
     }
+    // Depuis la caméra libre (#343), la vue part de la pose libre vers le préréglage.
+    this.syncFreeCamera(false);
     this.activePreset.set(preset);
     view.animateToPreset(preset, this.capture ? 0 : CAMERA_TRANSITION_SECONDS);
     if (!view.transitioning) {
@@ -946,6 +959,61 @@ export class AquariumHost {
     view.setDecorVisible(visible);
     this.decorVisible.set(visible);
     this.host.nativeElement.setAttribute(DECOR_ATTRIBUTE, String(visible));
+    this.scheduleFrame();
+  }
+
+  /**
+   * Entre en caméra libre dans la pièce ou revient à l'orbite, pose d'avant rendue (#343,
+   * ADR 0084). Sans effet sans pièce affichée, en mode capture (`libre=`), en fond d'écran ou
+   * avant le démarrage.
+   */
+  toggleFreeCamera(): void {
+    const view = this.view;
+    if (!view || this.capture || this.wallpaper) {
+      return;
+    }
+    if (view.freeCameraActive) {
+      view.exitFreeCamera();
+      this.activePreset.set(this.presetBeforeFree);
+      this.syncFreeCamera(false);
+    } else if (view.enterFreeCamera()) {
+      this.presetBeforeFree = this.activePreset();
+      this.activePreset.set(null);
+      this.syncFreeCamera(true);
+    } else {
+      return;
+    }
+    this.exposeCamera();
+    this.scheduleFrame();
+  }
+
+  /** Aligne l'état exposé de la caméra libre sur `active` ; touches relâchées en sortant. */
+  private syncFreeCamera(active: boolean): void {
+    if (!active) {
+      this.freeMoves.clear();
+    }
+    this.freeCamera.set(active);
+    this.host.nativeElement.setAttribute(FREE_CAMERA_ATTRIBUTE, String(active));
+  }
+
+  /**
+   * Touches de déplacement de la caméra libre (#343) : tenues enfoncées, lues à chaque image.
+   * Hors caméra libre, dans un champ de saisie ou avec Ctrl, Alt, Meta : laissées au reste.
+   */
+  private onFreeMoveKey(event: KeyboardEvent, down: boolean): void {
+    const move = freeMoveFor(event.key);
+    if (move === null) {
+      return;
+    }
+    if (!down) {
+      this.freeMoves.delete(move);
+      return;
+    }
+    if (!this.freeCamera() || event.defaultPrevented || isTypingContext(event)) {
+      return;
+    }
+    event.preventDefault();
+    this.freeMoves.add(move);
     this.scheduleFrame();
   }
 
@@ -1780,6 +1848,12 @@ export class AquariumHost {
     this.view?.setRoom(room);
     const shown = this.view?.roomShown ?? false;
     this.host.nativeElement.setAttribute(ROOM_ATTRIBUTE, String(shown));
+    // Pièce masquée : la vue est revenue à l'orbite (#343).
+    if (this.freeCamera() && !this.view?.freeCameraActive) {
+      this.activePreset.set(this.presetBeforeFree);
+      this.syncFreeCamera(false);
+      this.exposeCamera();
+    }
     // Éditeur (#188) : la pièce n'est modifiable que dessinée ; sélection et outil suivent.
     this.roomEditable.set(shown);
     const count = room.items?.length ?? 0;
@@ -2548,9 +2622,38 @@ export class AquariumHost {
       this.exposeRoomSelection(roomSelection);
     }
 
+    // `libre=` (#343) : pose de la caméra libre, en capture, pièce affichée seulement.
+    const free = params.freeCamera;
+    if (params.capture && free !== null && this.view?.roomShown) {
+      const toRadians = Math.PI / 180;
+      if (
+        this.view.applyFreePose(
+          [free.x, free.y, free.z],
+          free.yawDeg * toRadians,
+          free.pitchDeg * toRadians,
+        )
+      ) {
+        this.activePreset.set(null);
+        this.exposeCamera();
+      }
+    }
+
     const onResize = () => this.scheduleFrame();
     win.addEventListener('resize', onResize);
     this.cleanups.push(() => win.removeEventListener('resize', onResize));
+    // Déplacements de la caméra libre (#343) : touches tenues ; tout relâché si la fenêtre
+    // perd le focus (le relâchement n'arriverait jamais).
+    const onKeyDown = (event: KeyboardEvent) => this.onFreeMoveKey(event, true);
+    const onKeyUp = (event: KeyboardEvent) => this.onFreeMoveKey(event, false);
+    const onBlur = () => this.freeMoves.clear();
+    this.document.addEventListener('keydown', onKeyDown);
+    this.document.addEventListener('keyup', onKeyUp);
+    win.addEventListener('blur', onBlur);
+    this.cleanups.push(() => {
+      this.document.removeEventListener('keydown', onKeyDown);
+      this.document.removeEventListener('keyup', onKeyUp);
+      win.removeEventListener('blur', onBlur);
+    });
 
     this.scheduleFrame();
   }
@@ -2660,6 +2763,8 @@ export class AquariumHost {
     view.setCatappa(world.water.catappa);
     this.litHour = null;
     this.activePreset.set(preset);
+    // Vue neuve : en orbite (#343).
+    this.syncFreeCamera(false);
     this.viewCleanups.push(view.onCameraChange(() => this.exposeCamera()));
     this.viewCleanups.push(view.onUserInteraction(() => this.activePreset.set(null)));
     view.setDecorDragEnabled(this.decorEditing());
@@ -2727,6 +2832,10 @@ export class AquariumHost {
       const realDt = this.advanceRealTime(timestamp);
       orbitDt = realDt;
       if (view.stepCameraTransition(realDt)) {
+        this.exposeCamera();
+      }
+      // Caméra libre (#343) : touches tenues, pas fixes du modèle de déplacement.
+      if (view.freeCameraActive && view.stepFreeCamera(freeMoveAxes(this.freeMoves), realDt)) {
         this.exposeCamera();
       }
       // Fondu du ciel couvert à la bascule de la pluie (#338) : jamais en capture.

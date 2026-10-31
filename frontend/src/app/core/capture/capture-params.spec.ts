@@ -51,7 +51,25 @@ describe('parseCaptureParams', () => {
       decorMode: false,
       wallpaper: false,
       fps: null,
+      freeCamera: null,
     });
+  });
+
+  it('lit la pose libre libre=x:y:z:cap:inclinaison (#343)', () => {
+    expect(parseCaptureParams('?capture=1&piece=1&libre=1.5:0.6:-0.1:30:-12.5').freeCamera).toEqual(
+      { x: 1.5, y: 0.6, z: -0.1, yawDeg: 30, pitchDeg: -12.5 },
+    );
+    expect(parseCaptureParams('?libre=0:0:0:0:0').freeCamera).toEqual({
+      x: 0,
+      y: 0,
+      z: 0,
+      yawDeg: 0,
+      pitchDeg: 0,
+    });
+    for (const value of ['', '1:2:3:4', '1:2:3:4:5:6', 'a:0:0:0:0', '1e3:0:0:0:0', '1.:0:0:0:0']) {
+      expect(parseCaptureParams(`?libre=${value}`).freeCamera, value).toBeNull();
+    }
+    expect(parseCaptureParams('?libre=1000:0:0:0:0').freeCamera).toBeNull();
   });
 
   it('lit la vue fond d’écran : fond=1 seulement, et fps= borné à [15, 60] (#279)', () => {

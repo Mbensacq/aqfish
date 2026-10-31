@@ -56,6 +56,18 @@ import { LilyPadLayer } from './lily-pad-layer';
 import { overcastBrightness, RAIN_TONES, stepOvercast } from './overcast';
 import { isObliqueView, RainLayer } from './rain-layer';
 import { RoomLayer } from './room-layer';
+import {
+  clampFreePitch,
+  constrainFreePosition,
+  freeCameraBounds,
+  freeCameraFromPose,
+  freeCameraPose,
+  stepFreeCamera,
+  turnFreeCamera,
+  type FreeCameraBounds,
+  type FreeCameraInput,
+  type FreeCameraState,
+} from './free-camera';
 import { isClick, toNormalizedDevice, waterSurfacePoint } from './food-pick';
 import {
   decorTintInto,
@@ -201,6 +213,8 @@ export class AquariumView {
   private readonly surfaceClickListeners = new Set<(x: number, z: number) => void>();
   /** Abonnés à tout clic sur le canvas (`onCanvasClick`), avant ceux de la surface. */
   private readonly canvasClickListeners = new Set<(clientX: number, clientY: number) => void>();
+  /** Abonnés aux mouvements de la caméra libre à la souris (`onCameraChange`, #343). */
+  private readonly cameraListeners = new Set<() => void>();
   /** Lancer de rayon de `pickDecor`, réutilisé. */
   private readonly raycaster = new Raycaster();
   /** Point visé en coordonnées normalisées, réutilisé par chaque lancer de rayon (#178). */
@@ -343,6 +357,10 @@ export class AquariumView {
   private preset: CameraPreset | null;
   /** Transition en cours vers un préréglage (`null` sinon), avancée par `stepCameraTransition`. */
   private transition: CameraTransition | null = null;
+  /** Caméra libre dans la pièce (#343, ADR 0084), `null` en orbite. */
+  private free: FreeMode | null = null;
+  /** Glissement d'orientation de la caméra libre en cours (pointeur et dernier point). */
+  private look: { readonly id: number; x: number; y: number } | null = null;
   /** Une interaction à la souris arrête de suivre le préréglage et annule la transition. */
   private readonly stopFollowingPreset = () => {
     this.preset = null;
@@ -435,6 +453,11 @@ export class AquariumView {
     // Glissement du décor (#168) : avant `OrbitControls`, qui écoute en phase de bouillonnement.
     options.canvas.addEventListener('pointerdown', this.onDragPointerDown, { capture: true });
     options.canvas.addEventListener('pointermove', this.onDragPointerMove);
+    // Orientation de la caméra libre (#343) : contrôles orbitaux coupés dans ce mode.
+    options.canvas.addEventListener('pointerdown', this.onLookPointerDown);
+    options.canvas.addEventListener('pointermove', this.onLookPointerMove);
+    options.canvas.addEventListener('pointerup', this.onLookPointerEnd);
+    options.canvas.addEventListener('pointercancel', this.onLookPointerEnd);
 
     this.preset = options.preset;
     this.applyPreset(options.preset);
@@ -451,6 +474,7 @@ export class AquariumView {
 
   /** Place la caméra sur un préréglage, cadré pour le rapport d'aspect courant (instantané). */
   applyPreset(preset: CameraPreset): void {
+    this.leaveFreeMode();
     this.transition = null;
     this.preset = preset;
     this.setPose(this.presetPose(preset));
@@ -469,10 +493,13 @@ export class AquariumView {
       this.applyPreset(preset);
       return;
     }
+    // Depuis la caméra libre (#343) : la transition part de la pose libre, vers l'orbite.
+    const from = this.currentPose();
+    this.leaveFreeMode();
     this.preset = null;
     this.transition = {
       preset,
-      from: this.currentPose(),
+      from,
       elapsed: 0,
       duration: durationSeconds,
     };
@@ -773,7 +800,7 @@ export class AquariumView {
       return;
     }
     this.drag = null;
-    this.controls.enabled = this.interactive && !this.disposed;
+    this.controls.enabled = this.interactive && !this.disposed && this.free === null;
     this.canvas.style.cursor = '';
     try {
       this.canvas.releasePointerCapture?.(drag.id);
@@ -954,6 +981,15 @@ export class AquariumView {
     if (!this.disposed) {
       this.room = room;
       this.previewRoom(room);
+      if (this.free !== null) {
+        // Pièce masquée : retour à l'orbite ; meuble changé : limites recalculées (#343).
+        if (!this.roomLayer.built) {
+          this.exitFreeCamera();
+        } else {
+          this.free.bounds = this.freeBounds();
+          this.applyFreeState(this.free.state);
+        }
+      }
     }
   }
 
@@ -1271,6 +1307,184 @@ export class AquariumView {
     return true;
   }
 
+  /** Vrai en caméra libre (#343). */
+  get freeCameraActive(): boolean {
+    return this.free !== null;
+  }
+
+  /**
+   * Passe en caméra libre dans la pièce (#343, ADR 0084) : même position (ramenée dans la
+   * pièce, hors du bac) et même visée que l'orbite, contrôles orbitaux coupés ; la pose et le
+   * préréglage suivis sont gardés pour `exitFreeCamera`. Refusé (renvoie `false`) sans pièce
+   * dessinée, en vue non interactive (capture, fond d'écran) ou déjà en caméra libre.
+   */
+  enterFreeCamera(): boolean {
+    if (this.disposed || !this.interactive || this.free !== null || !this.roomLayer.built) {
+      return false;
+    }
+    const saved = { pose: this.currentPose(), preset: this.preset };
+    this.transition = null;
+    this.preset = null;
+    const bounds = this.freeBounds();
+    this.free = {
+      bounds,
+      saved,
+      state: freeCameraFromPose(saved.pose, bounds),
+      carry: 0,
+      lookDistance: Math.max(
+        0.5,
+        Math.hypot(
+          saved.pose.position[0] - saved.pose.target[0],
+          saved.pose.position[1] - saved.pose.target[1],
+          saved.pose.position[2] - saved.pose.target[2],
+        ),
+      ),
+    };
+    this.controls.enabled = false;
+    this.applyFreeState(this.free.state);
+    return true;
+  }
+
+  /**
+   * Revient à l'orbite (#343) : pose d'avant la caméra libre rendue telle quelle, ou recadrée
+   * sur le préréglage qu'elle suivait. Renvoie `false` hors caméra libre.
+   */
+  exitFreeCamera(): boolean {
+    const free = this.free;
+    if (!free || this.disposed) {
+      return false;
+    }
+    this.leaveFreeMode();
+    if (free.saved.preset !== null) {
+      this.applyPreset(free.saved.preset);
+    } else {
+      this.setPose(free.saved.pose);
+    }
+    return true;
+  }
+
+  /**
+   * Avance la caméra libre de `dtSeconds` (temps réel) selon la consigne du clavier
+   * (`stepFreeCamera`, pas fixes). Renvoie `true` si la caméra a bougé.
+   */
+  stepFreeCamera(input: FreeCameraInput, dtSeconds: number): boolean {
+    const free = this.free;
+    if (!free || this.disposed) {
+      return false;
+    }
+    const next = stepFreeCamera(free.state, input, dtSeconds, free.bounds, free.carry);
+    free.carry = next.remainder;
+    if (next.state === free.state) {
+      return false;
+    }
+    const before = free.state.position;
+    free.state = next.state;
+    const after = next.state.position;
+    if (before[0] === after[0] && before[1] === after[1] && before[2] === after[2]) {
+      return false;
+    }
+    this.applyFreeState(next.state);
+    return true;
+  }
+
+  /**
+   * Pose libre instantanée (`libre=` du contrat de capture, #343) : caméra en `position`
+   * (ramenée dans la pièce, hors du bac), cap `yaw` et inclinaison `pitch` en radians
+   * (`freeCameraDirection`), sans passer en caméra libre ni toucher aux contrôles. Refusée
+   * (`false`) sans pièce dessinée : la pose du préréglage reste.
+   */
+  applyFreePose(position: Vec3, yaw: number, pitch: number): boolean {
+    if (this.disposed || !this.roomLayer.built) {
+      return false;
+    }
+    this.leaveFreeMode();
+    this.transition = null;
+    this.preset = null;
+    const bounds = this.freeBounds();
+    const state: FreeCameraState = {
+      position: constrainFreePosition(bounds, position),
+      yaw: Number.isFinite(yaw) ? yaw : 0,
+      pitch: clampFreePitch(pitch),
+      velocity: [0, 0, 0],
+    };
+    const center = tankCenter(this.world.dimensions);
+    const p = state.position;
+    const pose = freeCameraPose(
+      state,
+      Math.max(0.5, Math.hypot(p[0] - center[0], p[1] - center[1], p[2] - center[2])),
+    );
+    this.camera.position.set(pose.position[0], pose.position[1], pose.position[2]);
+    this.controls.target.set(pose.target[0], pose.target[1], pose.target[2]);
+    this.camera.lookAt(pose.target[0], pose.target[1], pose.target[2]);
+    return true;
+  }
+
+  /** État de la caméra libre (tests), `null` en orbite. */
+  get freeCameraState(): FreeCameraState | null {
+    return this.free?.state ?? null;
+  }
+
+  /** Limites de la caméra libre pour le bac et le meuble courants. */
+  private freeBounds(): FreeCameraBounds {
+    return freeCameraBounds(this.world.dimensions, clampRoom(this.room).cabinetHeight);
+  }
+
+  /**
+   * Place la caméra sur l'état libre, sans `controls.update()` : il ramènerait la distance et
+   * la cible dans les bornes de l'orbite. La cible des contrôles suit le point visé.
+   */
+  private applyFreeState(state: FreeCameraState): void {
+    const free = this.free;
+    if (!free) {
+      return;
+    }
+    const pose = freeCameraPose(state, free.lookDistance);
+    this.camera.position.set(pose.position[0], pose.position[1], pose.position[2]);
+    this.controls.target.set(pose.target[0], pose.target[1], pose.target[2]);
+    this.camera.lookAt(pose.target[0], pose.target[1], pose.target[2]);
+  }
+
+  /** Quitte la caméra libre sans toucher à la pose : contrôles orbitaux rendus. */
+  private leaveFreeMode(): void {
+    if (this.free === null) {
+      return;
+    }
+    this.free = null;
+    this.look = null;
+    this.controls.enabled = this.interactive && !this.disposed && this.drag === null;
+  }
+
+  private readonly onLookPointerDown = (event: PointerEvent) => {
+    if (!this.free || this.drag || this.look || event.button !== 0 || !event.isPrimary) {
+      return;
+    }
+    this.look = { id: event.pointerId, x: event.clientX, y: event.clientY };
+  };
+
+  private readonly onLookPointerMove = (event: PointerEvent) => {
+    const look = this.look;
+    const free = this.free;
+    if (!look || !free || look.id !== event.pointerId || this.drag) {
+      return;
+    }
+    const dx = event.clientX - look.x;
+    const dy = event.clientY - look.y;
+    look.x = event.clientX;
+    look.y = event.clientY;
+    const turned = turnFreeCamera(free.state, dx, dy);
+    if (turned !== free.state) {
+      free.state = turned;
+      this.applyFreeState(turned);
+      this.cameraListeners.forEach((listener) => listener());
+    }
+  };
+
+  private readonly onLookPointerEnd = (event: PointerEvent) => {
+    if (this.look?.id === event.pointerId) {
+      this.look = null;
+    }
+  };
+
   /** Position courante de la caméra (exposée pour les tests de bout en bout). */
   cameraPosition(): Vec3 {
     const p = this.camera.position;
@@ -1293,10 +1507,17 @@ export class AquariumView {
     return () => this.controls.removeEventListener('start', listener);
   }
 
-  /** Abonnement aux mouvements de caméra provoqués par l'utilisateur. Renvoie le désabonnement. */
+  /**
+   * Abonnement aux mouvements de caméra provoqués par l'utilisateur (orbite, ou orientation de
+   * la caméra libre à la souris, #343). Renvoie le désabonnement.
+   */
   onCameraChange(listener: () => void): () => void {
     this.controls.addEventListener('change', listener);
-    return () => this.controls.removeEventListener('change', listener);
+    this.cameraListeners.add(listener);
+    return () => {
+      this.controls.removeEventListener('change', listener);
+      this.cameraListeners.delete(listener);
+    };
   }
 
   dispose(): void {
@@ -1310,6 +1531,12 @@ export class AquariumView {
     this.canvas.removeEventListener('pointercancel', this.onPointerCancel);
     this.canvas.removeEventListener('pointerdown', this.onDragPointerDown, { capture: true });
     this.canvas.removeEventListener('pointermove', this.onDragPointerMove);
+    this.canvas.removeEventListener('pointerdown', this.onLookPointerDown);
+    this.canvas.removeEventListener('pointermove', this.onLookPointerMove);
+    this.canvas.removeEventListener('pointerup', this.onLookPointerEnd);
+    this.canvas.removeEventListener('pointercancel', this.onLookPointerEnd);
+    this.free = null;
+    this.look = null;
     this.drag = null;
     this.decorDragListener = null;
     this.roomDragListener = null;
@@ -1373,6 +1600,17 @@ interface OrbitBase {
   readonly aspect: number;
   readonly dimensions: TankDimensions;
   readonly pose: CameraPose;
+}
+
+/** Caméra libre en cours (#343) : état, limites et pose orbitale à rendre en sortant. */
+interface FreeMode {
+  bounds: FreeCameraBounds;
+  state: FreeCameraState;
+  /** Reste de temps réel, moins d'un pas fixe, reporté à l'image suivante. */
+  carry: number;
+  readonly saved: { readonly pose: CameraPose; readonly preset: CameraPreset | null };
+  /** Distance du point visé (cible des contrôles, échelle des granulés). */
+  readonly lookDistance: number;
 }
 
 interface CameraTransition {

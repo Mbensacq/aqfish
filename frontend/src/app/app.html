@@ -20,6 +20,9 @@
       (clockFrozenAt)="aquarium.freezeClockAt($event)"
       (fed)="aquarium.feedAtCenter()"
       (rainToggled)="aquarium.toggleRain()"
+      [freeCameraAvailable]="aquarium.roomEditable()"
+      [freeCamera]="aquarium.freeCamera()"
+      (freeCameraToggled)="aquarium.toggleFreeCamera()"
     />
     <!-- Indicateur du moment de la journée (#73). -->
     <app-day-indicator [phase]="aquarium.dayPhase()" />
