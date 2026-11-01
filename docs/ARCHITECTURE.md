@@ -163,6 +163,13 @@ simulation testable et les captures reproductibles.
   plancher) et couleurs ternies au rendu (`dullness`, attribut d'instance de `FishLayer`) ;
   à 1, nage et couleurs exactement celles d'avant. Champ `health` facultatif de la
   sauvegarde (1 par défaut).
+- **Points blancs** (#360, ADR 0088, `sim/disease.ts`) : `Fish.ich`, âge de l'infection
+  (absent : sain), avancé en fin de pas entre l'eau et la santé. Un bac stressé
+  (`ichStress` : écart ou choc de température, ammoniaque ou nitrites « mauvais ») et chaque
+  malade contagieux donnent un taux d'infection aux poissons nageurs d'eau douce ; le tirage
+  est un hachage sans état de (graine, pas, animal), calculé seulement si ce taux est non
+  nul : un bac sain avance au bit près comme avant. Stades visible et aggravé : causes de
+  santé (`ichHealthStress`). Champ `ich` facultatif de la sauvegarde.
 - **Compatibilité et rythme du jour** (#209, ADR 0055, `sim/compatibility.ts`,
   `sim/day-rhythm.ts`) : verdict pur par couple d'espèces (tempérament paisible, territorial
   ou prédateur). Entre poissons **nageurs** d'espèces incompatibles, évitement ajouté au

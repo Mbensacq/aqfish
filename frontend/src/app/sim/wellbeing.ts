@@ -1,3 +1,4 @@
+import { ichHealthStress } from './disease';
 import type { SpeciesDefinition } from './species';
 import { likesAcidWater, phOutOfTolerance } from './water-ph';
 
@@ -14,6 +15,9 @@ import { likesAcidWater, phOutOfTolerance } from './water-ph';
  * Un pH hors de la plage tolérée de l'espèce (`sim/water-ph.ts`, issue #236, ADR 0057) est
  * une cause de plus, de poids `PH_STRESS` : la santé baisse deux fois moins vite que pour
  * la faim ou l'eau mauvaise.
+ *
+ * Les points blancs aux stades visible et aggravé (`sim/disease.ts`, issue #360, ADR 0088)
+ * sont une cause de plus (`ichHealthStress`) ; un animal sain ou en incubation n'en a aucune.
  *
  * Effets : nage plus lente (`vigor`, facteur du déplacement) et couleurs ternies au rendu
  * (`dullness`). À santé 1, `vigor` vaut exactement 1 et `dullness` exactement 0 : un animal
@@ -126,6 +130,8 @@ export interface WellbeingSubject {
   readonly species: SpeciesDefinition['id'];
   hunger: number;
   health: number;
+  /** Âge de l'infection par les points blancs (`sim/disease.ts`) ; absent : sain. */
+  readonly ich?: number;
 }
 
 /**
@@ -134,7 +140,8 @@ export interface WellbeingSubject {
  * eau « mauvaise » pendant le pas ; `ph` : pH de l'eau (issue #236), comparé à la plage
  * tolérée de chaque espèce (absent : le pH ne compte pas) ; `catappa` : une feuille de catappa
  * agit (issue #239), la santé des espèces d'eau acide ne baisse plus sous
- * `CATAPPA_HEALTH_FLOOR`.
+ * `CATAPPA_HEALTH_FLOOR`. Les points blancs (`ich`, issue #360) ajoutent leur poids
+ * (`ichHealthStress`) aux autres causes.
  */
 export function stepWellbeingInPlace<S extends WellbeingSubject>(
   animals: readonly S[],
@@ -146,7 +153,9 @@ export function stepWellbeingInPlace<S extends WellbeingSubject>(
 ): void {
   for (const animal of animals) {
     const phOut = ph !== undefined && phOutOfTolerance(ph, animal.species);
-    const stress = healthStress(animal.hunger, speciesOf(animal.species), badWater, phOut);
+    const stress =
+      healthStress(animal.hunger, speciesOf(animal.species), badWater, phOut) +
+      ichHealthStress(animal.ich);
     const floor = catappa && likesAcidWater(animal.species) ? CATAPPA_HEALTH_FLOOR : HEALTH_FLOOR;
     animal.health = stepHealth(animal.health, stress, dt, floor);
   }
