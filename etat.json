@@ -4400,7 +4400,7 @@
       "type": "fonctionnalite",
       "issue": 366,
       "pr": 369,
-      "version": null,
+      "version": "v1.6.1",
       "phases": {
         "planif": {
           "statut": "termine",
