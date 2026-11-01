@@ -4529,10 +4529,10 @@
           "note": "Verdict OK, 0 bug, 113/113 captures identiques, unitaires + spec immersive locales vertes, verify complet impossible en local (e2e trop lent), CI verte, aucun e2e ajouté"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-01T12:59:50.567Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-01T13:58:27.973Z",
+          "note": "PR #376 fusionnée → v1.6.4 (release CI ok, main verte) ; #346 fermée, dette #377 ; suppression de la branche refusée par l'environnement (cycle/c123-immersif-toucher-nourriture reste à supprimer)"
         }
       },
       "metriques": {}
