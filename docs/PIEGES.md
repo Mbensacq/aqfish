@@ -72,6 +72,9 @@ haut de sa section.
   captures restant verts. Toute nouvelle commande du panneau doit être conditionnelle
   (ici : renommage dès deux bacs) ou remplacer une ligne ; lancer cette spec en local.
   (2026-10-29)
+  Depuis le cycle 121 (#362, onze espèces au bac tropical), la section « Population » défile
+  seule à ce format (`max-height: calc(100vh - 350px)`) : ajouter une espèce ne déborde plus,
+  mais toute autre section reste soumise à cette règle. `control-panel.scss` est à ~7,94 kB.
 - **Fonction déjà livrée sous le même nom** (cycle 101, #316) : `renameTank` existait dans
   `sim/room-state.ts` depuis le lot 2 (ADR 0073), sans être utilisée par l'interface ; en
   écrire une seconde a donné « Multiple exports with the same name » au build des tests.
