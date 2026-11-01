@@ -1,6 +1,6 @@
-# Captures du cycle 123
-- Branche : cycle/c123-immersif-toucher-nourriture (PR #376)
-- Commit : a2ff86f56cebd8c0e403b32dc15885220b018ef7
+# Captures du cycle 124
+- Branche : cycle/c124-soins-dette (PR #378)
+- Commit : 1bcf160693b5f4b331cc977318d83e173d020b59
 - Graine : celle de la suite de captures (par défaut)
-- Durée : ~15 min (rendu logiciel, Chromium local 1243)
-- 113 images, toutes identiques à l'octet à captures/latest (cycle 122).
+- Durée : ~11 min (rendu logiciel, Chromium local 1243 ; 2 reprises partielles après dépassement du délai de l'outil)
+- 113 images, toutes identiques à l'octet à captures/latest (cycle 123).
