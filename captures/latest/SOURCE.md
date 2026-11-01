@@ -1,6 +1,6 @@
-# Captures du cycle 124
-- Branche : cycle/c124-soins-dette (PR #378)
-- Commit : 1bcf160693b5f4b331cc977318d83e173d020b59
+# Captures du cycle 125
+- Branche : cycle/c125-equilibrage-e2e (PR #383)
+- Commit : 68a6048c1c0f99e28203b26dd058c7d66e6d2853
 - Graine : celle de la suite de captures (par défaut)
-- Durée : ~11 min (rendu logiciel, Chromium local 1243 ; 2 reprises partielles après dépassement du délai de l'outil)
-- 113 images, toutes identiques à l'octet à captures/latest (cycle 123).
+- Durée : ~11,6 min (rendu logiciel, Chromium 1243 local)
+- 113 images, toutes identiques à l'octet à captures/latest (cycle 124) ; `src/` intact.
