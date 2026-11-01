@@ -107,6 +107,8 @@ for (const viewport of [
       expect(box.width).toBe(viewport.width);
       expect(box.height).toBe(viewport.height);
       await page.waitForTimeout(500);
+      // Interface rendue pour l'image du rapport (elle se cache seule).
+      await ensureUi(page);
       const shotEstime = testInfo.outputPath(`immersif-${viewport.name}-estime.png`);
       await page.screenshot({ path: shotEstime });
       await testInfo.attach(`immersif-${viewport.name}-estime.png`, {
@@ -188,6 +190,8 @@ for (const viewport of [
       const stored = await page.evaluate(() => localStorage.getItem('aqfish.etalonnage-ecran'));
       expect(JSON.parse(stored!).pxPerMm).toBeCloseTo(pxPerMm, 9);
       await page.waitForTimeout(500);
+      // Interface rendue pour l'image du rapport (elle se cache seule).
+      await ensureUi(page);
       const shotEtalonne = testInfo.outputPath(`immersif-${viewport.name}-etalonne.png`);
       await page.screenshot({ path: shotEtalonne });
       await testInfo.attach(`immersif-${viewport.name}-etalonne.png`, {
