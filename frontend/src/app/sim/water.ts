@@ -170,6 +170,22 @@ export const MAX_MEDICATION = 1.5;
 export const SALT_TRACE = 0.05;
 export const MEDICATION_TRACE = 0.01;
 
+/** Produits de traitement présents dans l'eau, au-delà des traces (issue #374). */
+export interface WaterProducts {
+  /** Sel dissous (`WaterState.salt`, retiré sous `SALT_TRACE`). */
+  readonly salted: boolean;
+  /** Médicament dissous (`WaterState.medication`, retiré sous `MEDICATION_TRACE`). */
+  readonly medicated: boolean;
+}
+
+/** Produits de traitement présents dans `water` (sel, médicament), quelle que soit la dose. */
+export function waterProducts(water: Pick<WaterState, 'salt' | 'medication'>): WaterProducts {
+  return {
+    salted: (water.salt ?? 0) > 0,
+    medicated: (water.medication ?? 0) > 0,
+  };
+}
+
 /**
  * Eau saine de l'environnement `environment` : à sa température, sans composé azoté, filtre
  * neuf, au pH de l'eau neuve (`FRESH_PH`). Nouvel objet à chaque appel.

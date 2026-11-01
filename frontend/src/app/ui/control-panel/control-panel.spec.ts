@@ -1,6 +1,7 @@
 import type { FoodStyle } from '../../core/food-style/food-style';
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
-import type { TreatmentKind, TreatmentNotice, TreatmentReadout } from '../../sim/treatment';
+import type { TreatmentKind } from '../../sim/treatment';
+import type { TreatmentNotice, TreatmentReadout } from '../../sim/treatment-text';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 
 import type { EnvironmentId } from '../../sim/environment';
@@ -819,6 +820,40 @@ describe('ControlPanel', () => {
       expect(fixture.componentInstance.requests.at(-1)).toEqual({ species: 'triton', count: 0 });
       await fixture.whenStable();
       expect(addWarnings()).toEqual([]);
+    });
+
+    it('avertissement d’ajout (#374) : amphibien ajouté dans une eau traitée, poisson non', async () => {
+      fixture.componentInstance.environment.set('paludarium');
+      fixture.componentInstance.population.update((p) => ({ ...p, axolotl: 0, triton: 0 }));
+      fixture.componentInstance.populationMax.update((p) => ({ ...p, triton: 3 }));
+      fixture.componentInstance.water.set({
+        ...DEFAULT_WATER_READOUT,
+        products: { salted: true, medicated: true },
+      });
+      await openPanel();
+      stepButton('Ajouter un triton à ventre de feu').click();
+      fixture.componentInstance.population.update((p) => ({ ...p, triton: 1 }));
+      await fixture.whenStable();
+      expect(addWarnings()).toEqual([
+        "Eau traitée au sel et au médicament : toxique pour les tritons à ventre de feu (peau qui absorbe les produits). Changer l'eau pour diluer le produit ; voir la page « Produits et traitements » du wiki",
+      ]);
+      // Produit retiré par les changements d'eau : l'avertissement disparaît.
+      fixture.componentInstance.water.set(DEFAULT_WATER_READOUT);
+      await fixture.whenStable();
+      expect(addWarnings()).toEqual([]);
+      // Un poisson ajouté dans une eau salée n'est pas averti.
+      fixture.componentInstance.environment.set('tropical');
+      fixture.componentInstance.water.set({
+        ...DEFAULT_WATER_READOUT,
+        products: { salted: true, medicated: false },
+      });
+      fixture.componentInstance.population.update((p) => ({ ...p, neon: 0 }));
+      await fixture.whenStable();
+      stepButton('Ajouter un néon').click();
+      expect(fixture.componentInstance.requests.at(-1)).toEqual({ species: 'neon', count: 1 });
+      fixture.componentInstance.population.update((p) => ({ ...p, neon: 1 }));
+      await fixture.whenStable();
+      expect(addWarnings()).toEqual(['Groupe trop petit : 1 néon, 6 au moins conseillés']);
     });
   });
 

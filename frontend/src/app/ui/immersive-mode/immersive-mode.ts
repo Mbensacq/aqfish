@@ -54,7 +54,7 @@ import { AquariumView } from '../../render/aquarium-view';
 import { lightAt } from '../../sim/daylight';
 import { placeEnvironmentData } from '../../sim/environment';
 import { createFixedStepState, fixedStepInto, type FixedStepState } from '../../sim/fixed-step';
-import { glassPoint, tapGlassInPlace } from '../../sim/glass-tap';
+import { glassPoint } from '../../sim/glass-tap';
 import {
   IMMERSIVE_DEPTH_MM,
   clampDepthMm,
@@ -64,7 +64,7 @@ import {
   type ImmersiveLayout,
 } from '../../sim/immersive-tank';
 import { sameDimensions } from '../../sim/tank';
-import { advanceInPlace, feedInPlace, type MutableWorld } from '../../sim/world';
+import { advanceInPlace, feedInPlace, tapGlassInWorld, type MutableWorld } from '../../sim/world';
 import { AQUARIUM_RENDERER_FACTORY } from '../aquarium-host/aquarium-host';
 
 /** Graine du bac immersif (fixe : le bac est un décor, jamais sauvegardé). */
@@ -627,7 +627,7 @@ export class ImmersiveMode {
   /**
    * Toucher de la vitre au point (`clientX`, `clientY`) : dans la bande haute (`FEED_BAND`),
    * des granulés tombent à l'aplomb, à mi-chemin de la vitre et du milieu du bac ; ailleurs,
-   * les poissons proches réagissent (`tapGlassInPlace`). Sans effet avant le premier bac.
+   * les poissons proches réagissent (`tapGlassInWorld`). Sans effet avant le premier bac.
    */
   private touchGlass(clientX: number, clientY: number): void {
     const world = this.world;
@@ -647,7 +647,7 @@ export class ImmersiveMode {
     if (v < FEED_BAND) {
       feedInPlace(world, point.x, layout.dimensions.depth / 4);
     } else {
-      tapGlassInPlace(world.entities as Parameters<typeof tapGlassInPlace>[0], point);
+      tapGlassInWorld(world, point);
     }
   }
 

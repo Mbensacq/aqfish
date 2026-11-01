@@ -236,15 +236,15 @@ import {
   waterTurbidity,
   type WaterReadout,
 } from '../../sim/water-quality';
-import { waterLiters } from '../../sim/water';
+import { waterLiters, waterProducts } from '../../sim/water';
+import { TREATMENTS, type TreatmentKind } from '../../sim/treatment';
 import {
   sameTreatment,
-  TREATMENTS,
+  treatedWaterWarning,
   treatmentReadout,
-  type TreatmentKind,
   type TreatmentNotice,
   type TreatmentReadout,
-} from '../../sim/treatment';
+} from '../../sim/treatment-text';
 import { DEFAULT_WATER_SAMPLE, waterSample, type WaterSample } from '../../sim/water-dashboard';
 import {
   EMPTY_HEALTH_SUMMARY,
@@ -2253,6 +2253,11 @@ export class AquariumHost {
     const { singular, feminine } = SPECIES_LABELS[species];
     const moved = `${singular.charAt(0).toUpperCase()}${singular.slice(1)} transféré${feminine ? 'e' : ''}`;
     const warnings = result.warnings.map(addWarningText);
+    // Amphibien transféré dans une eau déjà traitée (#374) : le produit lui est toxique.
+    const treated = treatedWaterWarning(species, waterProducts(arrival.world.water));
+    if (treated !== null) {
+      warnings.push(treated);
+    }
     this.transferNotice.set({
       kind: 'info',
       text: [`${moved} dans « ${arrival.name} »`, ...warnings].join('. '),

@@ -1,7 +1,14 @@
 import { catappaTint } from './catappa';
 import { environmentById, type EnvironmentId } from './environment';
 import type { SpeciesId } from './species';
-import { freshWater, targetTemperature, WATER_TEMPERATURES, type WaterState } from './water';
+import {
+  freshWater,
+  targetTemperature,
+  WATER_TEMPERATURES,
+  waterProducts,
+  type WaterProducts,
+  type WaterState,
+} from './water';
 import { phBands, phZone, sameBands, type PhBands, type PhZone } from './water-ph';
 
 /**
@@ -142,6 +149,8 @@ export interface WaterReadout {
   readonly catappa: number;
   /** Teinte brun-thé de l'eau, 0 ou 1 (`catappaTint`, issue #239). */
   readonly tea: number;
+  /** Sel et médicament présents dans l'eau (`waterProducts`, issue #374). */
+  readonly products: WaterProducts;
 }
 
 /** Relevé d'une eau saine du bac tropical peuplé par défaut (valeur initiale de l'interface). */
@@ -174,6 +183,7 @@ export function waterReadout(
     phBands: bands,
     catappa: water.catappa?.length ?? 0,
     tea: catappaTint(water.catappa),
+    products: waterProducts(water),
   };
 }
 
@@ -190,7 +200,9 @@ export function sameReadout(a: WaterReadout, b: WaterReadout): boolean {
     a.phZone === b.phZone &&
     sameBands(a.phBands, b.phBands) &&
     a.catappa === b.catappa &&
-    a.tea === b.tea
+    a.tea === b.tea &&
+    a.products.salted === b.products.salted &&
+    a.products.medicated === b.products.medicated
   );
 }
 

@@ -2,7 +2,8 @@ import type { GuidePage } from './care-guide';
 import type { MixWarning } from './compatibility';
 import { HUNGRY_AVERAGE, type HealthSummary } from './health-summary';
 import { MIX_REASON_TEXT, SPECIES_LABELS } from './species-catalog';
-import { tenthText, type TreatmentReadout } from './treatment';
+import { tenthText } from './treatment';
+import { redoseText, type TreatmentReadout } from './treatment-text';
 import { WATER_CHANGE_SHARE, WATER_TEMPERATURES } from './water';
 import {
   compoundLevel,
@@ -285,16 +286,12 @@ export function treatmentAlert(treatment: TreatmentReadout | null): DashboardAle
   if (treatment === null) {
     return null;
   }
-  const redose =
-    treatment.medicationDays === null
-      ? ''
-      : ` ; redoser le médicament avant ${tenthText(treatment.medicationDays)} j`;
   return {
     id: 'treatment',
     severity: 'attention',
     message: 'Traitement en cours',
     cause: `${treatment.products} ; points blancs en recul`,
-    action: `Continuer encore ${tenthText(treatment.remainingDays)} j${redose} ; un changement d’eau retire une part du produit`,
+    action: `Continuer encore ${tenthText(treatment.remainingDays)} j${redoseText(treatment)} ; un changement d’eau retire une part du produit`,
     wiki: 'produits',
   };
 }
