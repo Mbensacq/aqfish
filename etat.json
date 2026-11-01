@@ -4593,6 +4593,12 @@
           "debut": "2026-11-01T17:38:00.820Z",
           "fin": "2026-11-01T19:22:56.501Z",
           "note": "PR #383 : parts e2e réparties par durée (scripts/parts-e2e.mjs, e2e/durees.json), CI verte ; partiel : max 29,3 min (écart des machines ±35 %, total ~130 min) ; pied d'attribution réinjecté dans le corps de #383"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-01T19:23:28.488Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
