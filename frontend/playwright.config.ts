@@ -33,7 +33,9 @@ export default defineConfig({
   workers: 1,
   timeout: 120_000,
   expect: { timeout: 60_000 },
-  reporter: isCI ? [['github'], ['html', { open: 'never' }]] : [['list']],
+  // `list` en CI : durée de chaque test dans le journal de la part, pour rééquilibrer les
+  // parts (#281, docs/PIEGES.md).
+  reporter: isCI ? [['github'], ['list'], ['html', { open: 'never' }]] : [['list']],
   use: {
     baseURL: BASE_URL,
     storageState: STORAGE_STATE,
