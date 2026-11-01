@@ -379,6 +379,9 @@ export const SILHOUETTES: Readonly<Record<SilhouetteId, FishTemplate>> = {
   gourami: GOURAMI_FISH,
 };
 
+/** Attribut de sommet du rang de taché (`voxelSpotRank`, points blancs, issue #366). */
+export const SPOT_ATTRIBUTE = 'aqfishSpot';
+
 /** Proportions des voxels : hauteur et épaisseur relatives à la longueur d'un voxel. */
 const VOXEL_HEIGHT_RATIO = 0.75;
 const VOXEL_DEPTH_RATIO = 0.7;
@@ -389,8 +392,28 @@ export interface VoxelMeshData {
   readonly normals: Float32Array;
   /** Couleurs par sommet, en espace linéaire (convention Three.js). */
   readonly colors: Float32Array;
+  /**
+   * Rang de taché de chaque sommet, dans [0, 1) : le même pour tous les sommets d'un voxel
+   * (`voxelSpotRank`), pour que les points blancs (issue #366) couvrent des voxels entiers.
+   */
+  readonly spots: Float32Array;
   /** Nombre de faces carrées émises. */
   readonly quads: number;
+}
+
+/**
+ * Rang de taché d'un voxel (issue #366), dans [0, 1) : hachage entier sans état de ses
+ * coordonnées dans le gabarit. Un poisson aux points blancs d'intensité `a` blanchit les
+ * voxels de rang inférieur à `a × ICH_SPOT_SHARE` (`render/fish-layer.ts`) : les mêmes voxels
+ * d'une image à l'autre, de plus en plus nombreux quand la maladie s'aggrave.
+ */
+export function voxelSpotRank(col: number, row: number, layer: number): number {
+  let h = Math.imul(col | 0, 0x27d4eb2d) ^ Math.imul(row | 0, 0x165667b1);
+  h = Math.imul(h ^ Math.imul(layer | 0, 0x9e3779b1), 0x85ebca6b);
+  h ^= h >>> 13;
+  h = Math.imul(h, 0xc2b2ae35);
+  h ^= h >>> 16;
+  return (h >>> 0) / 4294967296;
 }
 
 export interface VoxelSize {
@@ -475,6 +498,7 @@ export function buildVoxelMesh(
   const positions: number[] = [];
   const normals: number[] = [];
   const vertexColors: number[] = [];
+  const spots: number[] = [];
   let quads = 0;
 
   for (let row = 0; row < height; row++) {
@@ -492,6 +516,7 @@ export function buildVoxelMesh(
         const x0 = originX + col;
         const y0 = height / 2 - row - 1;
         const z0 = -depth / 2 + layer;
+        const spot = voxelSpotRank(col, row, layer);
         for (const face of FACES) {
           if (filled(col + face.dc, row - face.dy, layer + face.dz)) {
             continue;
@@ -505,6 +530,7 @@ export function buildVoxelMesh(
             );
             normals.push(face.normal[0], face.normal[1], face.normal[2]);
             vertexColors.push(color[0], color[1], color[2]);
+            spots.push(spot);
           }
         }
       }
@@ -538,6 +564,7 @@ export function buildVoxelMesh(
     const x0 = originX + col;
     const y0 = height / 2 - row - 1;
     const z0 = -depth / 2 + layer;
+    const spot = voxelSpotRank(col, row, layer);
     for (const face of FACES) {
       if (occupied(col + face.dc, row - face.dy, layer + face.dz)) {
         continue;
@@ -551,6 +578,7 @@ export function buildVoxelMesh(
         );
         normals.push(face.normal[0], face.normal[1], face.normal[2]);
         vertexColors.push(color[0], color[1], color[2]);
+        spots.push(spot);
       }
     }
   }
@@ -558,6 +586,7 @@ export function buildVoxelMesh(
     positions: new Float32Array(positions),
     normals: new Float32Array(normals),
     colors: new Float32Array(vertexColors),
+    spots: new Float32Array(spots),
     quads,
   };
 }
@@ -593,6 +622,7 @@ export function createFishGeometry(
   geometry.setAttribute('position', new BufferAttribute(data.positions, 3));
   geometry.setAttribute('normal', new BufferAttribute(data.normals, 3));
   geometry.setAttribute('color', new BufferAttribute(data.colors, 3));
+  geometry.setAttribute(SPOT_ATTRIBUTE, new BufferAttribute(data.spots, 1));
   geometry.computeBoundingSphere();
   return geometry;
 }
