@@ -93,11 +93,12 @@ test.describe('Vue fond d’écran (#279)', () => {
     await page.keyboard.press('Tab');
     expect(await page.evaluate(() => document.activeElement?.tagName)).toBe('BODY');
 
-    // Caméra automatique : la vue change d'une capture à l'autre, à 10 s d'écart.
+    // Caméra automatique : la vue change d'une capture à l'autre (attente sur l'état de la
+    // caméra plutôt que 10 s fixes, #281).
     const camera = () => hostEl(page).getAttribute('data-aqfish-camera');
     const first = await page.screenshot();
     const cameraBefore = await camera();
-    await page.waitForTimeout(10_000);
+    await expect.poll(camera, { timeout: 30_000 }).not.toBe(cameraBefore);
     const second = await page.screenshot({ path: testInfo.outputPath('fond-ecran.png') });
     expect(second.equals(first)).toBe(false);
     const cameraAfter = await camera();
