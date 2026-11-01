@@ -54,6 +54,7 @@ const OUT_OF_RANGE: readonly (readonly [string, AlertInput, AlertId])[] = [
   ['pH un peu basique', input({ ph: 7.8 }), 'ph'],
   ['animaux affamés', input({}, { starving: 2 }), 'hunger'],
   ['animaux malades', input({}, { sick: 1 }), 'health'],
+  ['points blancs', input({}, { sick: 1, ich: 1 }), 'ich'],
   [
     'mélange déconseillé',
     {

@@ -1,3 +1,4 @@
+import { ICH_AGGRAVATED_AT, ICH_VISIBLE_AT } from './disease';
 import type { SpeciesId } from './species';
 import {
   averageHealthLevel,
@@ -37,6 +38,8 @@ describe('synthèse de la santé (#260)', () => {
       weak: 0,
       starving: 0,
       distressed: 0,
+      ich: 0,
+      ichAggravated: 0,
     });
   });
 
@@ -162,5 +165,54 @@ describe('synthèse et alertes : lecture seule (#260)', () => {
     ]);
     expect(() => healthSummary(animals)).not.toThrow();
     expect(animals[0]).toEqual({ species: 'neon', health: 0.3, hunger: 1 });
+  });
+});
+
+describe('synthèse de la santé : points blancs (#366)', () => {
+  const visible = ICH_VISIBLE_AT + 1;
+
+  it('sans malade (champ absent, incubation, valeur invalide) : comptes à zéro, rien ne change', () => {
+    const base = [
+      { species: 'neon' as const, health: 1, hunger: 0.3 },
+      { species: 'guppy' as const, health: 0.9, hunger: 0.3 },
+    ];
+    const plain = healthSummary(base);
+    expect(plain).toMatchObject({ ich: 0, ichAggravated: 0, sick: 0 });
+    for (const ich of [0, ICH_VISIBLE_AT - 0.5, Number.NaN, -1, ICH_AGGRAVATED_AT + 1]) {
+      const summary = healthSummary(base.map((a) => ({ ...a, ich })));
+      expect(summary, `ich = ${ich}`).toEqual(plain);
+      expect(healthItems(summary), `ich = ${ich}`).toEqual(healthItems(plain));
+    }
+  });
+
+  it('points visibles et aggravés : comptés, et comptés malades une seule fois', () => {
+    const summary = healthSummary([
+      { species: 'neon', health: 1, hunger: 0.3, ich: visible },
+      { species: 'neon', health: 0.5, hunger: 0.3, ich: ICH_AGGRAVATED_AT },
+      { species: 'guppy', health: 0.5, hunger: 0.3 },
+      { species: 'guppy', health: 1, hunger: 0.3 },
+    ]);
+    expect(summary).toMatchObject({ animals: 4, ich: 2, ichAggravated: 1, sick: 3 });
+  });
+
+  it('ligne « Malades » : orange, et le texte lu nomme les points blancs', () => {
+    const summary = healthSummary([
+      { species: 'neon', health: 1, hunger: 0.3, ich: visible },
+      { species: 'neon', health: 1, hunger: 0.3, ich: visible },
+      { species: 'guppy', health: 1, hunger: 0.3 },
+    ]);
+    const sick = healthItems(summary).find((item) => item.id === 'sick');
+    expect(sick).toMatchObject({ value: '2', level: 'orange' });
+    expect(sick?.spoken).toBe(
+      'Animaux malades : 2 sur 3, dont 2 avec des points blancs, à surveiller',
+    );
+  });
+
+  it('synthèses égales seulement si les comptes de points blancs le sont', () => {
+    const a = healthSummary([{ species: 'neon', health: 1, hunger: 0.3, ich: visible }]);
+    const b = healthSummary([{ species: 'neon', health: 1, hunger: 0.3, ich: ICH_AGGRAVATED_AT }]);
+    expect(sameHealthSummary(a, b)).toBe(false);
+    const later = healthSummary([{ species: 'neon', health: 1, hunger: 0.3, ich: visible + 10 }]);
+    expect(sameHealthSummary(a, later)).toBe(true);
   });
 });

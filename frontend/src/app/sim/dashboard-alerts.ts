@@ -1,3 +1,4 @@
+import type { GuidePage } from './care-guide';
 import type { MixWarning } from './compatibility';
 import { HUNGRY_AVERAGE, type HealthSummary } from './health-summary';
 import { MIX_REASON_TEXT, SPECIES_LABELS } from './species-catalog';
@@ -25,7 +26,11 @@ import type { WaterCompound } from './water-quality';
  *   alerte « attention », une jauge rouge une alerte « critique », une jauge verte aucune ;
  * - **ordre** : critiques d'abord, puis à gravité égale l'ordre fixe `ALERT_ORDER` (causes
  *   dans l'eau, puis faim, puis santé, conséquence des autres) : stable d'un relevé à l'autre ;
- * - une valeur non finie donne une alerte critique « mesure invalide » (jamais rassurante).
+ * - une valeur non finie donne une alerte critique « mesure invalide » (jamais rassurante) ;
+ * - **points blancs** (issue #366, ADR 0089) : une alerte dès qu'un animal en montre les
+ *   signes (`HealthSummary.ich`), critique au stade aggravé, avec un lien vers la page
+ *   « Maladies » du wiki (`wiki`) ; ces animaux ne sont plus comptés dans l'alerte de santé,
+ *   qui ne parle que des autres malades.
  *
  * Les causes et actions sont des **textes de jeu** : elles décrivent le modèle de la
  * simulation (`sim/water.ts`, `sim/wellbeing.ts`), simplifié, pas une règle d'aquariophilie.
@@ -41,7 +46,7 @@ export const ALERT_SEVERITY_LABELS: Readonly<Record<AlertSeverity, string>> = {
 };
 
 /** Sujet d'une alerte (identifiant unique). */
-export type AlertId = WaterCompound | 'temperature' | 'ph' | 'hunger' | 'health' | 'mix';
+export type AlertId = WaterCompound | 'temperature' | 'ph' | 'ich' | 'hunger' | 'health' | 'mix';
 
 /** Ordre des alertes de même gravité. */
 export const ALERT_ORDER: readonly AlertId[] = [
@@ -49,6 +54,7 @@ export const ALERT_ORDER: readonly AlertId[] = [
   'nitrite',
   'temperature',
   'ph',
+  'ich',
   'hunger',
   'nitrate',
   'mix',
@@ -68,6 +74,8 @@ export interface DashboardAlert {
   readonly cause: string;
   /** Action conseillée (« Changer l'eau »). */
   readonly action: string;
+  /** Page du wiki à ouvrir depuis l'alerte (`sim/care-guide.ts`) ; absente : aucune. */
+  readonly wiki?: GuidePage;
 }
 
 /** Ce que les alertes lisent : eau exacte, zones du pH, santé, mélanges déconseillés. */
@@ -239,8 +247,34 @@ function hungerAlert(health: HealthSummary): DashboardAlert | null {
   return null;
 }
 
+/**
+ * Points blancs (issue #366) : animaux qui en montrent les signes, critique dès qu'un est au
+ * stade aggravé. Renvoie à la page « Maladies » du wiki. Pas encore de traitement dans le jeu
+ * (lot 2/2) : l'action ne promet pas de guérison.
+ */
+export function ichAlert(health: HealthSummary): DashboardAlert | null {
+  if (health.ich <= 0) {
+    return null;
+  }
+  const aggravated = health.ichAggravated > 0;
+  return {
+    id: 'ich',
+    severity: aggravated ? 'critique' : 'attention',
+    message: 'Points blancs',
+    cause:
+      `parasite (Ichthyophthirius) favorisé par une eau instable ; ${animalCount(health.ich)} touché${health.ich > 1 ? 's' : ''}` +
+      (aggravated ? `, dont ${health.ichAggravated} au stade aggravé` : ''),
+    action:
+      'Lire la page « Maladies » du wiki ; garder l’eau stable (température, ammoniaque, nitrites)',
+    wiki: 'maladies',
+  };
+}
+
 function healthAlert(health: HealthSummary, causes: readonly string[]): DashboardAlert | null {
-  if (health.sick === 0) {
+  // Les animaux aux points blancs ont leur propre alerte (`ichAlert`) : seuls les autres
+  // malades comptent ici.
+  const others = health.sick - health.ich;
+  if (others <= 0) {
     return null;
   }
   const weak = health.weak > 0;
@@ -250,8 +284,8 @@ function healthAlert(health: HealthSummary, causes: readonly string[]): Dashboar
     message: weak ? 'Animaux en détresse' : 'Animaux malades',
     cause:
       causes.length > 0
-        ? `santé usée par : ${causes.join(', ')} ; animaux touchés : ${health.sick}`
-        : `gêne passée, santé encore basse ; animaux touchés : ${health.sick}`,
+        ? `santé usée par : ${causes.join(', ')} ; animaux touchés : ${others}`
+        : `gêne passée, santé encore basse ; animaux touchés : ${others}`,
     action:
       causes.length > 0
         ? 'Corriger les autres alertes : la santé remonte seule ensuite'
@@ -322,6 +356,7 @@ export function dashboardAlerts(input: AlertInput): readonly DashboardAlert[] {
   push(compoundAlert('nitrite', sample.nitrite));
   push(temperatureAlert(sample));
   push(phAlert(sample.ph, phBands));
+  push(ichAlert(health));
   push(hungerAlert(health));
   push(compoundAlert('nitrate', sample.nitrate));
   push(mixAlert(mixes));
