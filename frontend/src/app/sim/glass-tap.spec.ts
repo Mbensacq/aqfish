@@ -11,7 +11,14 @@ import {
 import { createImmersiveWorld, immersiveLayout } from './immersive-tank';
 import { SPECIES, type SpeciesId } from './species';
 import type { Fish } from './swimmer';
-import { advance, advanceInPlace, createWorld, type MutableWorld, type World } from './world';
+import {
+  advance,
+  advanceInPlace,
+  createWorld,
+  tapGlassInWorld,
+  type MutableWorld,
+  type World,
+} from './world';
 
 type MutableFish = { -readonly [K in keyof Fish]: Fish[K] };
 
@@ -131,5 +138,24 @@ describe('glass-tap', () => {
     advanceInPlace(tapped, 60);
     expect(tapped.entities).not.toEqual(plain.entities);
     expect(advance(world(5), 60)).toEqual(plain);
+  });
+
+  it('tapGlassInWorld (#377) : même effet que tapGlassInPlace sur les poissons du monde', () => {
+    const viaWorld = world(9);
+    const viaFishes = world(9);
+    const tap = glassPoint(DIMS, 0.5, 0.5)!;
+    expect(tapGlassInWorld(viaWorld, tap, 10)).toBe(viaWorld.entities.length);
+    tapGlassInPlace(viaFishes.entities as MutableFish[], tap, 10);
+    expect(viaWorld).toEqual(viaFishes);
+    // Portée par défaut : `TAP_RADIUS` ; point invalide : aucun effet.
+    const near = world(9);
+    const defaultRadius = world(9);
+    expect(tapGlassInWorld(near, tap)).toBe(
+      tapGlassInPlace(defaultRadius.entities as MutableFish[], tap, TAP_RADIUS),
+    );
+    expect(near).toEqual(defaultRadius);
+    const untouched = world(9);
+    expect(tapGlassInWorld(untouched, { x: Number.NaN, y: 0, z: 0 })).toBe(0);
+    expect(untouched).toEqual(world(9));
   });
 });

@@ -19,6 +19,7 @@ import {
 import { coralLayout, coralObstacles, type CoralColony } from './corals';
 import { decorObstacles, parseDecorItems, type DecorItem } from './decor';
 import { ichStress, infectAllInPlace, isIchAge, stepIchInPlace } from './disease';
+import { TAP_RADIUS, tapGlassInPlace, type GlassPoint } from './glass-tap';
 import {
   DEFAULT_ENVIRONMENT_ID,
   environmentById,
@@ -614,6 +615,20 @@ export function feedInPlace(world: MutableWorld, x: number, z: number): number {
     );
   }
   return dropFoodInPlace(world as MutableWorld & { food: FoodPellet[] }, x, z, water);
+}
+
+/**
+ * Tapotement de la vitre au point `tap` (`tapGlassInPlace`, issue #346, ADR 0092), **en
+ * modifiant** les poissons de `world` à moins de `radius` mètres ; renvoie le nombre de
+ * poissons qui ont réagi. Réservé au propriétaire unique du monde (`ui/immersive-mode`), comme
+ * `feedInPlace`.
+ */
+export function tapGlassInWorld(
+  world: MutableWorld,
+  tap: GlassPoint,
+  radius: number = TAP_RADIUS,
+): number {
+  return tapGlassInPlace(world.entities as Mutable<Entity>[], tap, radius);
 }
 
 /** Point de dépôt ramené dans la forme du bassin (réutilisé, sans allocation). */
