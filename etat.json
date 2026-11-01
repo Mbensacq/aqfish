@@ -4491,6 +4491,12 @@
           "debut": "2026-11-01T08:06:58.134Z",
           "fin": "2026-11-01T08:29:59.682Z",
           "note": "Verdict OK, 0 bug, 113/113 captures identiques + front-soins, aucun e2e ajouté, pied d'attribution du corps de PR signalé"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-01T08:30:24.685Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
