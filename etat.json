@@ -4451,10 +4451,10 @@
           "note": "PR #371 : eau douce lot 2 (platy, danio, ancistrus, otocinclus, ADR 0090), CI verte au 2e essai (panneau 1280×720 : liste des espèces défilante) ; captures tropicales identiques à l'octet, 2 nouvelles"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-01T04:57:06.293Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-01T05:18:24.395Z",
+          "note": "Verdict RÉSERVES (ancistrus/otocinclus peu reconnaissables en capture), 0 bug, +1 e2e, captures c121 publiées (105/108 identiques)"
         }
       },
       "metriques": {}
