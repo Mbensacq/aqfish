@@ -4623,6 +4623,12 @@
           "debut": "2026-11-01T21:08:23.761Z",
           "fin": "2026-11-01T21:09:00.072Z",
           "note": "Issue #370 : lisibilité points blancs, alerte, ancistrus, otocinclus, panneau (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-01T21:09:34.459Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
