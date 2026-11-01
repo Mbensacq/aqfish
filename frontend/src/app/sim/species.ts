@@ -23,7 +23,11 @@ export type SpeciesId =
   | 'rasbora'
   | 'tetra'
   | 'kuhli'
-  | 'gourami';
+  | 'gourami'
+  | 'platy'
+  | 'danio'
+  | 'ancistrus'
+  | 'otocinclus';
 
 /**
  * Silhouette voxel d'une apparence : le rendu associe à chaque identifiant un gabarit de
@@ -44,6 +48,10 @@ export const SILHOUETTE_IDS = [
   'tetra',
   'kuhli',
   'gourami',
+  'platy',
+  'danio',
+  'ancistrus',
+  'otocinclus',
 ] as const;
 export type SilhouetteId = (typeof SILHOUETTE_IDS)[number];
 
@@ -1157,6 +1165,218 @@ export const GOURAMI: SpeciesDefinition = {
   },
 };
 
+/*
+ * Eau douce tropicale, lot 2 (issue #362, ADR 0090) : platy, danio zébré, ancistrus,
+ * otocinclus. Comme le lot 1 : proposés au bac tropical sans y être peuplés d'office, couleurs
+ * de la palette commune, tailles du modèle agrandies pour la lisibilité ; vitesses, virages,
+ * banc, profondeur et alimentation : **approximations de jeu** ; valeurs réelles et sources :
+ * `sim/species-sheet.ts`.
+ */
+
+/**
+ * Platy (Xiphophorus maculatus), forme « rouge à nageoires noires » du commerce : corps court
+ * et haut rouge orangé, nageoires et caudale noires ; vivipare paisible de pleine eau, sans banc
+ * (Seriously Fish : plusieurs femelles pour un mâle).
+ */
+export const PLATY: SpeciesDefinition = {
+  id: 'platy',
+  name: 'Platy',
+  scientificName: 'Xiphophorus maculatus',
+  bodyLength: 0.06,
+  cruiseSpeed: 0.04,
+  minSpeed: 0.018,
+  maxSpeed: 0.09,
+  wanderTurnRate: 0.9,
+  avoidTurnRate: 2.5,
+  maxPitch: 0.35,
+  wallMargin: 0.035,
+  tailBeatFrequency: 2,
+  defaultPopulation: 4,
+  maxPopulation: 12,
+  schooling: null,
+  silhouette: 'platy',
+  colors: {
+    stripe: '#d94a3a',
+    accent: '#f08a2c',
+    back: '#d94a3a',
+    belly: '#f08a2c',
+    fin: '#1c1c22',
+    eye: '#1c1c22',
+  },
+  // Pleine eau, entre 20 % et 80 % de la hauteur d'eau.
+  depth: {
+    minHeightRatio: 0.2,
+    maxHeightRatio: 0.8,
+    floorZone: 0.07, // portée commune des parois (`MAX_FLOOR_ZONE`)
+    ascentRate: 0,
+    ascentDuration: 1,
+  },
+  feeding: {
+    hungerRate: 1 / 160,
+    perceptionRadius: 0.32,
+    turnRate: 2.4,
+    minHeightRatio: 0.15,
+    maxHeightRatio: 1,
+  },
+};
+
+/**
+ * Danio zébré (Danio rerio) : corps fin, rayé dans la longueur de bleu et de clair ; banc
+ * rapide et actif dans la moitié haute (Seriously Fish : espèce active, groupe de 8 à 10 au
+ * moins).
+ */
+export const DANIO: SpeciesDefinition = {
+  id: 'danio',
+  name: 'Danio zébré',
+  scientificName: 'Danio rerio',
+  bodyLength: 0.06,
+  cruiseSpeed: 0.08,
+  minSpeed: 0.035,
+  maxSpeed: 0.16,
+  wanderTurnRate: 1.1,
+  avoidTurnRate: 3,
+  maxPitch: 0.3,
+  wallMargin: 0.035,
+  tailBeatFrequency: 3,
+  defaultPopulation: 8,
+  maxPopulation: 20,
+  schooling: {
+    neighborRadius: 0.3,
+    separationRadius: 0.06,
+    separationWeight: 1.1,
+    alignmentWeight: 1,
+    cohesionWeight: 0.9,
+    turnRate: 1.8,
+    minDistance: 0.03,
+  },
+  silhouette: 'danio',
+  colors: {
+    stripe: '#3fa9f5',
+    accent: '#f2ead8',
+    back: '#c9b38a',
+    belly: '#f2ead8',
+    fin: '#3fa9f5',
+    eye: '#1c1c22',
+  },
+  // Moitié haute, entre 50 % et 95 % de la hauteur d'eau.
+  depth: {
+    minHeightRatio: 0.5,
+    maxHeightRatio: 0.95,
+    floorZone: 0.07, // portée commune des parois (`MAX_FLOOR_ZONE`)
+    ascentRate: 0,
+    ascentDuration: 1,
+  },
+  feeding: {
+    hungerRate: 1 / 150,
+    perceptionRadius: 0.35,
+    turnRate: 2.8,
+    minHeightRatio: 0.4,
+    maxHeightRatio: 1,
+  },
+};
+
+/**
+ * Ancistrus commun (Ancistrus sp. « 3 » de Seriously Fish, vendu comme A. cirrhosus ou
+ * A. cf. cirrhosus : le nom binominal du commerce est gardé, l'identité réelle des sujets n'est
+ * pas établie, ADR 0090) : poisson-chat cuirassé
+ * aplati, brun sombre piqueté de clair, barbillons charnus sur le museau ; au ras du sable,
+ * lent, actif surtout la nuit (`DIURNAL`, approximation de jeu), seul ou en couple
+ * (Seriously Fish : territorial envers ses congénères).
+ */
+export const ANCISTRUS: SpeciesDefinition = {
+  id: 'ancistrus',
+  name: 'Ancistrus commun',
+  scientificName: 'Ancistrus cirrhosus',
+  bodyLength: 0.1,
+  cruiseSpeed: 0.02,
+  minSpeed: 0.008,
+  maxSpeed: 0.07,
+  wanderTurnRate: 0.8,
+  avoidTurnRate: 2.5,
+  maxPitch: 0.2,
+  wallMargin: 0.055,
+  tailBeatFrequency: 1.2,
+  defaultPopulation: 1,
+  maxPopulation: 3,
+  schooling: null,
+  silhouette: 'ancistrus',
+  colors: {
+    stripe: '#6e6a63',
+    accent: '#e3cf9e',
+    back: '#45423e',
+    belly: '#a8916a',
+    fin: '#45423e',
+    eye: '#1c1c22',
+  },
+  depth: {
+    maxHeightRatio: 0.06,
+    floorZone: 0.01,
+    ascentRate: 0,
+    ascentDuration: 1,
+  },
+  feeding: {
+    hungerRate: 1 / 260,
+    perceptionRadius: 0.35,
+    turnRate: 2,
+    minHeightRatio: 0,
+    maxHeightRatio: 0.1,
+  },
+};
+
+/**
+ * Otocinclus (Otocinclus macrospilus, espèce de la fiche de référence ; le commerce mêle
+ * plusieurs espèces du genre) : petit poisson-chat beige au ventre clair, bande noire du museau
+ * à la caudale ; groupe lâche dans le tiers bas, où il broute (Seriously Fish : 6 au moins).
+ */
+export const OTOCINCLUS: SpeciesDefinition = {
+  id: 'otocinclus',
+  name: 'Otocinclus',
+  scientificName: 'Otocinclus macrospilus',
+  bodyLength: 0.05,
+  cruiseSpeed: 0.025,
+  minSpeed: 0.01,
+  maxSpeed: 0.08,
+  wanderTurnRate: 1,
+  avoidTurnRate: 2.5,
+  maxPitch: 0.3,
+  wallMargin: 0.03,
+  tailBeatFrequency: 2.2,
+  defaultPopulation: 6,
+  maxPopulation: 12,
+  schooling: {
+    neighborRadius: 0.2,
+    separationRadius: 0.05,
+    separationWeight: 1.2,
+    alignmentWeight: 0.4,
+    cohesionWeight: 0.6,
+    turnRate: 1.2,
+    minDistance: 0.025,
+  },
+  silhouette: 'otocinclus',
+  colors: {
+    stripe: '#1c1c22',
+    accent: '#a8916a',
+    back: '#a8916a',
+    belly: '#f2ead8',
+    fin: '#c9b38a',
+    eye: '#1c1c22',
+  },
+  // Tiers bas de la colonne d'eau.
+  depth: {
+    maxHeightRatio: 0.3,
+    floorZone: 0.02,
+    ascentRate: 0,
+    ascentDuration: 1,
+  },
+  feeding: {
+    hungerRate: 1 / 200,
+    perceptionRadius: 0.3,
+    turnRate: 2,
+    minHeightRatio: 0,
+    maxHeightRatio: 0.35,
+  },
+};
+
 /** Toutes les espèces connues, par identifiant (ordre de déclaration = ordre de peuplement). */
 export const SPECIES: Readonly<Record<SpeciesId, SpeciesDefinition>> = {
   neon: NEON,
@@ -1172,6 +1392,10 @@ export const SPECIES: Readonly<Record<SpeciesId, SpeciesDefinition>> = {
   tetra: TETRA,
   kuhli: KUHLI,
   gourami: GOURAMI,
+  platy: PLATY,
+  danio: DANIO,
+  ancistrus: ANCISTRUS,
+  otocinclus: OTOCINCLUS,
 };
 
 /** Apparences d'une espèce : ses `variants`, ou son apparence par défaut seule. */

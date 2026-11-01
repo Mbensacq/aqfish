@@ -51,6 +51,8 @@ const RESTING_FOOD =
 /** Bois flotté ajouté au décor par défaut (#169) : `x:z:rotation:echelle:graine`. */
 const WOOD = 'bois=-0.02:0:-0.2:1.5:7';
 const FRESHWATER_LOT1 = 'population=neon:0,guppy:0,corydora:0,rasbora:8,tetra:8,kuhli:6,gourami:2';
+const FRESHWATER_LOT2 =
+  'population=neon:0,guppy:0,corydora:0,platy:4,danio:8,ancistrus:2,otocinclus:6';
 const OUTPUT_DIR = resolve(
   process.env['CAPTURE_DIR'] ?? join(__dirname, '..', '..', 'docs', 'captures', 'latest'),
 );
@@ -150,6 +152,9 @@ test.describe('Captures', () => {
     // Eau douce, lot 1 (#238) : rasboras, tétras citrons, loches kuhli et gouramis nains seuls.
     { name: 'three-quarter-eau-douce-lot1', query: FRESHWATER_LOT1 },
     { name: 'front-eau-douce-lot1', query: `${FRESHWATER_LOT1}&camera=front` },
+    // Eau douce, lot 2 (#362) : platys, danios zébrés, ancistrus et otocinclus seuls.
+    { name: 'three-quarter-eau-douce-lot2', query: FRESHWATER_LOT2 },
+    { name: 'front-eau-douce-lot2', query: `${FRESHWATER_LOT2}&camera=front` },
     // Éditeur de décor (#167) : rocher d'indice 2 sélectionné, contour clair.
     { name: 'three-quarter-edition', query: 'edition=2' },
     // Bois flotté à branches (#169) : un bois ajouté au décor par défaut, devant les rochers.

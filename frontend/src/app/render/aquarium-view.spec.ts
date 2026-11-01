@@ -144,6 +144,10 @@ describe('AquariumView (pipeline pixel art)', () => {
       'poissons-tetra',
       'poissons-kuhli',
       'poissons-gourami',
+      'poissons-platy',
+      'poissons-danio',
+      'poissons-ancistrus',
+      'poissons-otocinclus',
     ]);
   });
 

@@ -130,6 +130,10 @@ describe('koï (#88)', () => {
       'tetra',
       'kuhli',
       'gourami',
+      'platy',
+      'danio',
+      'ancistrus',
+      'otocinclus',
     ]);
     expect(livesIn('bassin', 'koi')).toBe(true);
     expect(livesIn('tropical', 'koi')).toBe(false);

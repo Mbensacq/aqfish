@@ -31,6 +31,11 @@ export const DIURNAL: Readonly<Record<SpeciesId, boolean>> = {
   // Loche kuhli : active surtout la nuit (approximation de jeu, ADR 0070).
   kuhli: false,
   gourami: true,
+  platy: true,
+  danio: true,
+  // Ancistrus : actif surtout la nuit (approximation de jeu, non dit par Seriously Fish, ADR 0090).
+  ancistrus: false,
+  otocinclus: true,
 };
 
 /** Ralentissement en pleine nuit : le déplacement y garde `1 − NIGHT_SLOWDOWN` de sa longueur. */

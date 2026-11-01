@@ -106,7 +106,10 @@ const ESPECES = 'docs/ESPECES.md';
 /** Fiche de soins secondaire du sonneur oriental (consultée le 2026-10-27, #270). */
 const ANAPSID = 'https://anapsid.org/bombina.html (secondaire)';
 
-/** Fiches Seriously Fish consultées le 2026-10-28 (#238, ADR 0070), suivies du nom de page. */
+/**
+ * Fiches Seriously Fish consultées le 2026-10-28 (lot 1, #238, ADR 0070) et le 2026-11-01
+ * (lot 2, #362, ADR 0090), suivies du nom de page.
+ */
 const SF = 'https://www.seriouslyfish.com/species/';
 
 function note(text: string, status: FieldStatus): SheetNote {
@@ -290,6 +293,59 @@ const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
       note(
         'Un couple plutôt qu’un groupe ; mâle parfois agressif envers les autres poissons à labyrinthe',
         source(`${SF}trichogaster-lalius`),
+      ),
+    ],
+  },
+  // Lot 2 d'eau douce (#362, ADR 0090) : fiches Seriously Fish consultées le 2026-11-01 ; tailles
+  // en longueur standard (SL), volumes donnés par la fiche pour la base minimale citée.
+  platy: {
+    adultSize: sourced(5, `${SF}xiphophorus-maculatus (SL)`),
+    temperaturePreferred: approx(range(22, 25)),
+    temperatureTolerated: sourced(range(20, 26), `${SF}xiphophorus-maculatus`),
+    diet: approx('omnivore'),
+    // Vivipare sans banc : un mâle et quelques femelles (aucun effectif chiffré par la fiche).
+    minGroup: approx(3),
+    minLiters: sourced(54, `${SF}xiphophorus-maculatus (base 60 × 30 cm)`),
+    notes: [
+      note(
+        'Plusieurs femelles pour un mâle, qui sinon les harcèle ; eau plutôt dure (pH 7 à 8,2)',
+        source(`${SF}xiphophorus-maculatus`),
+      ),
+    ],
+  },
+  danio: {
+    adultSize: sourced(5, `${SF}danio-rerio (SL)`),
+    temperaturePreferred: approx(range(21, 24)),
+    temperatureTolerated: sourced(range(18, 25), `${SF}danio-rerio`),
+    diet: approx('omnivore'),
+    minGroup: sourced(8, `${SF}danio-rerio (8 à 10 au moins)`),
+    minLiters: sourced(81, `${SF}danio-rerio (base 90 × 30 cm : espèce très active)`),
+  },
+  ancistrus: {
+    adultSize: sourced(12.5, `${SF}ancistrus-cf-cirrhosus (SL)`),
+    temperaturePreferred: approx(range(23, 25)),
+    temperatureTolerated: sourced(range(21, 26), `${SF}ancistrus-cf-cirrhosus`),
+    diet: approx('omnivore'),
+    minGroup: sourced(1, `${SF}ancistrus-cf-cirrhosus (seul ou en couple)`),
+    minLiters: sourced(54, `${SF}ancistrus-cf-cirrhosus (base 60 × 30 cm, un sujet ou un couple)`),
+    notes: [
+      note(
+        'Ne se nourrit pas seul d’algues : régime varié avec des légumes ; territorial envers ses congénères',
+        source(`${SF}ancistrus-cf-cirrhosus`),
+      ),
+    ],
+  },
+  otocinclus: {
+    adultSize: sourced(3.5, `${SF}otocinclus-macrospilus (SL)`),
+    temperaturePreferred: approx(range(23, 25)),
+    temperatureTolerated: sourced(range(21, 26), `${SF}otocinclus-macrospilus`),
+    diet: sourced('herbivore', `${SF}otocinclus-macrospilus (surtout végétal)`),
+    minGroup: sourced(6, `${SF}otocinclus-macrospilus (6 au moins)`),
+    minLiters: sourced(41, `${SF}otocinclus-macrospilus (base 45 × 30 cm)`),
+    notes: [
+      note(
+        'Pas pour un bac neuf : sujets presque tous prélevés dans la nature, fragiles à l’arrivée ; bac mûr, planté et riche en algues',
+        source(`${SF}otocinclus-macrospilus`),
       ),
     ],
   },

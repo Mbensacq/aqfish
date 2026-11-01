@@ -27,6 +27,10 @@ import {
   KUHLI,
   RASBORA,
   TETRA,
+  PLATY,
+  DANIO,
+  ANCISTRUS,
+  OTOCINCLUS,
 } from './species';
 import { waterVolume } from './tank';
 import {
@@ -69,6 +73,10 @@ describe('bornes de population', () => {
       'tetra',
       'kuhli',
       'gourami',
+      'platy',
+      'danio',
+      'ancistrus',
+      'otocinclus',
     ]);
   });
 
@@ -98,6 +106,10 @@ describe('bornes de population', () => {
       tetra: 0,
       kuhli: 0,
       gourami: 0,
+      platy: 0,
+      danio: 0,
+      ancistrus: 0,
+      otocinclus: 0,
     });
     expect(populationCounts(createWorld(42))).toEqual({
       neon: 0,
@@ -113,6 +125,10 @@ describe('bornes de population', () => {
       tetra: 0,
       kuhli: 0,
       gourami: 0,
+      platy: 0,
+      danio: 0,
+      ancistrus: 0,
+      otocinclus: 0,
     });
     expect(populationCounts(createWorld(42))).toEqual(NO_FISH);
   });
@@ -132,6 +148,10 @@ describe('bornes de population', () => {
       tetra: TETRA.maxPopulation,
       kuhli: KUHLI.maxPopulation,
       gourami: GOURAMI.maxPopulation,
+      platy: PLATY.maxPopulation,
+      danio: DANIO.maxPopulation,
+      ancistrus: ANCISTRUS.maxPopulation,
+      otocinclus: OTOCINCLUS.maxPopulation,
     });
   });
 
@@ -217,6 +237,10 @@ describe('setPopulation', () => {
       tetra: 0,
       kuhli: 0,
       gourami: 0,
+      platy: 0,
+      danio: 0,
+      ancistrus: 0,
+      otocinclus: 0,
     });
   });
 
@@ -252,6 +276,10 @@ describe('setPopulation', () => {
       tetra: 0,
       kuhli: 0,
       gourami: 0,
+      platy: 0,
+      danio: 0,
+      ancistrus: 0,
+      otocinclus: 0,
     });
     // Bac plein : plus aucun ajout possible, quelle que soit l'espèce.
     for (const id of SPECIES_IDS) {

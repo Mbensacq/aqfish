@@ -47,6 +47,10 @@ export const SPECIES_LABELS: Readonly<Record<SpeciesId, SpeciesLabels>> = {
   tetra: { singular: 'tétra citron', plural: 'tétras citrons', feminine: false },
   kuhli: { singular: 'loche kuhli', plural: 'loches kuhli', feminine: true },
   gourami: { singular: 'gourami nain', plural: 'gouramis nains', feminine: false },
+  platy: { singular: 'platy', plural: 'platys', feminine: false },
+  danio: { singular: 'danio zébré', plural: 'danios zébrés', feminine: false },
+  ancistrus: { singular: 'ancistrus commun', plural: 'ancistrus communs', feminine: false },
+  otocinclus: { singular: 'otocinclus', plural: 'otocinclus', feminine: false },
 };
 
 /** Entrée du catalogue d'un environnement. */

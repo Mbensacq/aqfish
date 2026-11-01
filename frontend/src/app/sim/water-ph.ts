@@ -89,6 +89,13 @@ export const SPECIES_PH: Readonly<Record<SpeciesId, SpeciesPh>> = {
   tetra: { tolerated: { min: 5, max: 7.5 }, ideal: { min: 6, max: 7.2 } },
   kuhli: { tolerated: { min: 5, max: 7.2 }, ideal: { min: 5.5, max: 6.8 } },
   gourami: { tolerated: { min: 6, max: 7.8 }, ideal: { min: 6.5, max: 7.5 } },
+  // approximations de jeu (ADR 0090), bornes tolérées proches de Seriously Fish (platy
+  // 7–8,2 abaissé à 6,8, le pH du bac baissant avec la charge ; danio 6–8 ; ancistrus et
+  // otocinclus 5,5–7,5).
+  platy: { tolerated: { min: 6.8, max: 8.2 }, ideal: { min: 7, max: 8 } },
+  danio: { tolerated: { min: 6, max: 8 }, ideal: { min: 6.5, max: 7.5 } },
+  ancistrus: { tolerated: { min: 5.5, max: 7.5 }, ideal: { min: 6, max: 7.2 } },
+  otocinclus: { tolerated: { min: 5.5, max: 7.5 }, ideal: { min: 6, max: 7.2 } },
 };
 
 /** pH de l'eau neuve de l'environnement `environment`. */

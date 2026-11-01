@@ -361,6 +361,80 @@ export const GOURAMI_FISH: FishTemplate = {
   tailDepth: 1,
 };
 
+/**
+ * Platy (#362) : corps court et haut, rouge (`s`, `k`) au ventre orangé (`b`), haute dorsale,
+ * anale et grande caudale noires (`f`) : la forme « rouge à nageoires noires » du commerce.
+ */
+export const PLATY_FISH: FishTemplate = {
+  body: [
+    // queue → tête
+    '....fff....',
+    '..kkkkkkk..',
+    '.ssssssssse',
+    'ssssssssss.',
+    '.bbbbbbbbb.',
+    '...ff......',
+  ],
+  tail: ['ff.', 'fff', 'fff', 'fff', 'ff.'],
+  bodyDepth: 2,
+  tailDepth: 1,
+};
+
+/**
+ * Danio zébré (#362) : corps fin et long, deux bandes bleues (`s`) séparées d'une bande claire
+ * (`a`) du museau à la caudale, rayée elle aussi ; dos beige (`k`), ventre clair.
+ */
+export const DANIO_FISH: FishTemplate = {
+  body: [
+    // queue → tête
+    '...kkkkkk...',
+    'ssssssssssse',
+    'aaaaaaaaaaa.',
+    'ssssssssss..',
+    '..bbbbbb....',
+  ],
+  tail: ['f.', 'ff', 'aa', 'ff', 'f.'],
+  bodyDepth: 2,
+  tailDepth: 1,
+};
+
+/**
+ * Ancistrus (#362) : poisson-chat aplati, large de tête (6 voxels vue de dessus, effilé vers la
+ * queue), dos brun sombre (`k`) piqueté de clair (`a`), haute dorsale (`f`), barbillons (`k`)
+ * dressés au bout du museau ; larges pectorales (`paired`) posées à plat de chaque côté.
+ */
+export const ANCISTRUS_FISH: FishTemplate = {
+  body: [
+    // queue → tête
+    '....fff....k',
+    '.kkakkakkakk',
+    'ssssasssasse',
+    'bbbbbbbbbbbb',
+  ],
+  tail: ['f.', 'ff', 'ff', 'f.'],
+  bodyDepth: 6,
+  tailDepth: 1,
+  bodyColumnDepths: [2, 2, 2, 4, 4, 4, 6, 6, 6, 6, 6, 6],
+  paired: [['............', '............', '............', '......fff...']],
+};
+
+/**
+ * Otocinclus (#362) : petit poisson-chat beige (`k`) au ventre clair (`b`), bande noire (`s`) du
+ * museau au pédoncule, prolongée par la tache noire de la caudale.
+ */
+export const OTOCINCLUS_FISH: FishTemplate = {
+  body: [
+    // queue → tête
+    '...kkkkk..',
+    'ssssssssse',
+    '.bbbbbbbb.',
+    '..bbbbb...',
+  ],
+  tail: ['f.', 'ff', 'sf', 'f.'],
+  bodyDepth: 2,
+  tailDepth: 1,
+};
+
 /** Gabarit de chaque silhouette déclarée par les espèces (`sim/species.ts`). */
 export const SILHOUETTES: Readonly<Record<SilhouetteId, FishTemplate>> = {
   fuseau: SLENDER_FISH,
@@ -377,6 +451,10 @@ export const SILHOUETTES: Readonly<Record<SilhouetteId, FishTemplate>> = {
   tetra: TETRA_FISH,
   kuhli: KUHLI_FISH,
   gourami: GOURAMI_FISH,
+  platy: PLATY_FISH,
+  danio: DANIO_FISH,
+  ancistrus: ANCISTRUS_FISH,
+  otocinclus: OTOCINCLUS_FISH,
 };
 
 /** Attribut de sommet du rang de taché (`voxelSpotRank`, points blancs, issue #366). */

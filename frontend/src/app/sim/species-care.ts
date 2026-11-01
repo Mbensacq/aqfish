@@ -143,6 +143,39 @@ const FEEDING: Readonly<Record<SpeciesId, FeedingGuide>> = {
     frequency: FISH_FREQUENCY,
     quantity: PRUDENT_QUANTITY,
   },
+  // Lot 2 (#362, ADR 0090) : fiches Seriously Fish consultées le 2026-11-01.
+  platy: {
+    foods: sourced(
+      'peu difficile : aliments secs, congelés ou vivants',
+      `${SERIOUSLY_FISH} xiphophorus-maculatus`,
+    ),
+    frequency: FISH_FREQUENCY,
+    quantity: PRUDENT_QUANTITY,
+  },
+  danio: {
+    foods: sourced(
+      'micro-prédateur en nature ; en bac, aliment sec de qualité et petites proies vivantes ou congelées (daphnies, artémias, vers de vase)',
+      `${SERIOUSLY_FISH} danio-rerio`,
+    ),
+    frequency: FISH_FREQUENCY,
+    quantity: PRUDENT_QUANTITY,
+  },
+  ancistrus: {
+    foods: sourced(
+      'régime varié : aliments secs coulants, proies congelées, légumes et fruits frais ; ne vit pas des seules algues',
+      `${SERIOUSLY_FISH} ancistrus-cf-cirrhosus`,
+    ),
+    frequency: FISH_FREQUENCY,
+    quantity: PRUDENT_QUANTITY,
+  },
+  otocinclus: {
+    foods: sourced(
+      'surtout végétal : algues du bac, légumes blanchis, aliments secs à base d’algues ; peu de proies',
+      `${SERIOUSLY_FISH} otocinclus-macrospilus`,
+    ),
+    frequency: FISH_FREQUENCY,
+    quantity: PRUDENT_QUANTITY,
+  },
 };
 
 /** Ligne affichée d'une section du wiki : intitulé, valeur, texte du statut. */

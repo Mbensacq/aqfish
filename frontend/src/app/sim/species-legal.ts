@@ -97,6 +97,16 @@ export const LEGAL_STATUS: Readonly<Record<SpeciesId, LegalStatus>> = {
   tetra: legal('a-verifier', 'non-verifie', ESPECES, 'aucune ligne de l’annexe 2 vérifiée'),
   kuhli: legal('a-verifier', 'non-verifie', ESPECES, 'aucune ligne de l’annexe 2 vérifiée'),
   gourami: legal('a-verifier', 'non-verifie', ESPECES, 'aucune ligne de l’annexe 2 vérifiée'),
+  // Lot 2 d'eau douce (#362, ADR 0090) : aucune ligne de l'annexe 2 lue pour ces espèces.
+  platy: legal('a-verifier', 'non-verifie', ESPECES, 'aucune ligne de l’annexe 2 vérifiée'),
+  danio: legal('a-verifier', 'non-verifie', ESPECES, 'aucune ligne de l’annexe 2 vérifiée'),
+  ancistrus: legal('a-verifier', 'non-verifie', ESPECES, 'aucune ligne de l’annexe 2 vérifiée'),
+  otocinclus: legal(
+    'a-verifier',
+    'non-verifie',
+    ESPECES,
+    'aucune ligne de l’annexe 2 vérifiée ; sujets presque tous prélevés dans la nature',
+  ),
 };
 
 /** Statut légal de l'espèce `id` (figé, partagé). */
