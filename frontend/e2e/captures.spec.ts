@@ -155,6 +155,12 @@ test.describe('Captures', () => {
     // Eau douce, lot 2 (#362) : platys, danios zébrés, ancistrus et otocinclus seuls.
     { name: 'three-quarter-eau-douce-lot2', query: FRESHWATER_LOT2 },
     { name: 'front-eau-douce-lot2', query: `${FRESHWATER_LOT2}&camera=front` },
+    // Lot 2 de près (#370) : caméra libre au ras du fond, ancistrus (tête large, barbillons
+    // clairs, dos piqueté) et otocinclus (bande noire) identifiables.
+    {
+      name: 'libre-eau-douce-lot2-fond',
+      query: `piece=1&${FRESHWATER_LOT2}&libre=-0.05:0.3:0.4:30:-30`,
+    },
     // Éditeur de décor (#167) : rocher d'indice 2 sélectionné, contour clair.
     { name: 'three-quarter-edition', query: 'edition=2' },
     // Bois flotté à branches (#169) : un bois ajouté au décor par défaut, devant les rochers.
