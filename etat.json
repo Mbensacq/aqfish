@@ -4601,10 +4601,10 @@
           "note": "Verdict RÉSERVES (critère « aucune part > 25 min » partiel, déjà déclaré), 0 bug, 113/113 captures identiques, lint/unitaires/e2e modifiés 7/7 verts, CI verte ; pied d'attribution réinjecté par l'environnement dans la revue"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-01T20:10:06.218Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-01T21:07:51.911Z",
+          "note": "PR #383 fusionnée → v1.6.6 (release CI ok avec zip, main verte sur c202a0a) ; #281 fermée, reste en dette #384 ; PR docs #382 fusionnée ; suppression de branche refusée (c125-equilibrage-e2e reste)"
         }
       },
       "metriques": {}
