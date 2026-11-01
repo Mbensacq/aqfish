@@ -54,6 +54,7 @@ import { AquariumView } from '../../render/aquarium-view';
 import { lightAt } from '../../sim/daylight';
 import { placeEnvironmentData } from '../../sim/environment';
 import { createFixedStepState, fixedStepInto, type FixedStepState } from '../../sim/fixed-step';
+import { glassPoint, tapGlassInPlace } from '../../sim/glass-tap';
 import {
   IMMERSIVE_DEPTH_MM,
   clampDepthMm,
@@ -63,7 +64,7 @@ import {
   type ImmersiveLayout,
 } from '../../sim/immersive-tank';
 import { sameDimensions } from '../../sim/tank';
-import { advanceInPlace, type MutableWorld } from '../../sim/world';
+import { advanceInPlace, feedInPlace, type MutableWorld } from '../../sim/world';
 import { AQUARIUM_RENDERER_FACTORY } from '../aquarium-host/aquarium-host';
 
 /** Graine du bac immersif (fixe : le bac est un décor, jamais sauvegardé). */
@@ -71,6 +72,24 @@ export const IMMERSIVE_SEED = 345;
 
 /** Images par seconde au plus en mode immersif (batterie, ADR 0087). */
 export const IMMERSIVE_MAX_FPS = 30;
+
+/** Durée d'un appui long qui affiche l'interface, en millisecondes (#346). */
+export const LONG_PRESS_MS = 500;
+
+/** Délai après lequel l'interface se cache seule, en millisecondes (#346). */
+export const UI_HIDE_MS = 5000;
+
+/**
+ * Images rendues au moins avant de cacher l'interface : sur un appareil qui peine (une image
+ * par seconde ou moins), elle reste le temps qu'on la voie et qu'on s'en serve.
+ */
+export const UI_HIDE_MIN_FRAMES = 15;
+
+/** Déplacement au-delà duquel un appui n'est plus un toucher, en pixels CSS. */
+export const TAP_SLOP_PX = 10;
+
+/** Part haute de l'écran où un toucher fait tomber de la nourriture (#346). */
+export const FEED_BAND = 0.2;
 
 /** Écart sous lequel la caméra n'est pas réappliquée, en mm d'œil (#355). */
 const EYE_EPSILON_MM = 0.05;
@@ -112,13 +131,24 @@ export const IMMERSIVE_STORAGE = new InjectionToken<CalibrationStorage | null>(
     '[attr.data-immersive-calibrated]': '!calibration().estimated',
     '[attr.data-immersive-screen-mm]': 'screenText()',
     '[attr.data-immersive-parallax]': 'parallax()',
-    '(document:keydown.escape)': 'onEscape()',
+    '[attr.data-immersive-ui]': "uiVisible() ? 'visible' : 'hidden'",
+    '[class.immersive--ui-hidden]': '!uiVisible()',
+    '(document:keydown)': 'onKey($event)',
     '(document:visibilitychange)': 'onVisibilityChange()',
     '(pointerdown)': 'onPointerDown($event)',
   },
   template: `
-    <canvas #canvas class="immersive__canvas" aria-hidden="true"></canvas>
-    <div class="immersive__bar">
+    <canvas
+      #canvas
+      class="immersive__canvas"
+      aria-hidden="true"
+      (pointerdown)="onPressStart($event)"
+      (pointermove)="onPressMove($event)"
+      (pointerup)="onPressEnd($event)"
+      (pointercancel)="cancelPress()"
+      (contextmenu)="$event.preventDefault()"
+    ></canvas>
+    <div class="immersive__bar" (focusin)="showUi()" (pointerdown)="showUi()">
       <p class="immersive__note" data-immersive-note>
         Mode décor : pas une simulation réaliste.
         @if (calibration().estimated) {
@@ -216,7 +246,7 @@ export const IMMERSIVE_STORAGE = new InjectionToken<CalibrationStorage | null>(
           <button type="button" class="immersive__button" (click)="resetCalibration()">
             Oublier
           </button>
-          <button type="button" class="immersive__button" (click)="calibrating.set(false)">
+          <button type="button" class="immersive__button" (click)="closeCalibration()">
             Annuler
           </button>
         </div>
@@ -250,6 +280,8 @@ export class ImmersiveMode {
   readonly cardMax = signal(Math.floor(CARD_WIDTH_MM * PX_PER_MM_LIMITS.max));
   /** Parallaxe : capteur absent, en attente de lecture, active ou refusée. */
   readonly parallax = signal<ParallaxStatus>('off');
+  /** Interface (barre) affichée : à l'entrée et après un appui long, cachée seule ensuite. */
+  readonly uiVisible = signal(true);
   readonly screenText = computed(() => {
     const s = this.screen();
     return s === null ? null : `${s.width.toFixed(1)}x${s.height.toFixed(1)}`;
@@ -284,10 +316,20 @@ export class ImmersiveMode {
   /** Nombre d'applications de la caméra immersive, lu par `cameraApplications` (#355). */
   private cameraApplied = 0;
   private readonly orientationHandler = (event: Event) => this.onOrientation(event);
+  /** Appui en cours sur la vitre : pointeur, point de départ, appui long déjà traité. */
+  private press: { id: number; x: number; y: number; long: boolean } | null = null;
+  private pressTimer: ReturnType<typeof setTimeout> | null = null;
+  private hideTimer: ReturnType<typeof setTimeout> | null = null;
+  /** Granulés affichés en dernier, exposés aux tests de bout en bout s'ils changent. */
+  private foodShown = -1;
+  /** Images rendues depuis que l'interface a été affichée ; délai de masquage écoulé. */
+  private framesShown = 0;
+  private hideDue = false;
 
   constructor() {
     afterNextRender(() => {
       this.scheduleFrame();
+      this.scheduleHide();
       void this.wakeLock.acquire();
       // Orientation sans autorisation à demander : écoutée tout de suite ; sinon (Safari,
       // Chromium récent), l'autorisation est demandée au premier toucher (ADR 0087).
@@ -301,6 +343,8 @@ export class ImmersiveMode {
         win.cancelAnimationFrame(this.frameId);
       }
       this.frameId = null;
+      this.clearPressTimer();
+      this.clearHideTimer();
       if (this.orientationListening) {
         win?.removeEventListener('deviceorientation', this.orientationHandler);
         this.orientationListening = false;
@@ -444,7 +488,7 @@ export class ImmersiveMode {
       const calibration = calibrationFromCard(this.cardPx());
       this.persisted.set(this.store.save(calibration));
       this.calibration.set(this.store.calibration);
-      this.calibrating.set(false);
+      this.closeCalibration();
       this.sizeKey = '';
     } catch {
       // Largeur hors bornes : le curseur ne le permet pas ; rien à faire.
@@ -455,7 +499,7 @@ export class ImmersiveMode {
     this.store.reset();
     this.calibration.set(this.store.calibration);
     this.cardPx.set(Math.round(cardWidthPx(this.calibration())));
-    this.calibrating.set(false);
+    this.closeCalibration();
     this.sizeKey = '';
   }
 
@@ -474,9 +518,136 @@ export class ImmersiveMode {
 
   onEscape(): void {
     if (this.calibrating()) {
-      this.calibrating.set(false);
+      this.closeCalibration();
     } else {
       this.closed.emit();
+    }
+  }
+
+  /** Échap : sortie (ou fin de l'étalonnage) ; toute autre touche affiche l'interface. */
+  onKey(event: KeyboardEvent): void {
+    if (event.key === 'Escape') {
+      this.onEscape();
+    } else {
+      this.showUi();
+    }
+  }
+
+  closeCalibration(): void {
+    this.calibrating.set(false);
+    this.scheduleHide();
+  }
+
+  /** Affiche l'interface et relance le délai après lequel elle se cache. */
+  showUi(): void {
+    this.uiVisible.set(true);
+    this.scheduleHide();
+  }
+
+  /**
+   * Cache l'interface après `UI_HIDE_MS` et au moins `UI_HIDE_MIN_FRAMES` images rendues,
+   * sauf pendant les réglages ou l'étalonnage (le délai repart quand ils se ferment).
+   */
+  private scheduleHide(): void {
+    this.clearHideTimer();
+    this.framesShown = 0;
+    this.hideDue = false;
+    this.hideTimer = setTimeout(() => {
+      this.hideTimer = null;
+      this.hideDue = true;
+      this.hideIfDue();
+    }, UI_HIDE_MS);
+  }
+
+  private hideIfDue(): void {
+    if (!this.hideDue || this.framesShown < UI_HIDE_MIN_FRAMES) {
+      return;
+    }
+    this.hideDue = false;
+    if (!this.settingsOpen() && !this.calibrating()) {
+      this.uiVisible.set(false);
+    }
+  }
+
+  private clearHideTimer(): void {
+    if (this.hideTimer !== null) {
+      clearTimeout(this.hideTimer);
+      this.hideTimer = null;
+    }
+  }
+
+  private clearPressTimer(): void {
+    if (this.pressTimer !== null) {
+      clearTimeout(this.pressTimer);
+      this.pressTimer = null;
+    }
+  }
+
+  /** Début d'un appui sur la vitre : un appui long (`LONG_PRESS_MS`) affichera l'interface. */
+  onPressStart(event: PointerEvent): void {
+    if (event.isPrimary === false) {
+      // Second doigt : ni toucher, ni appui long.
+      this.cancelPress();
+      return;
+    }
+    this.clearPressTimer();
+    const press = { id: event.pointerId, x: event.clientX, y: event.clientY, long: false };
+    this.press = press;
+    this.pressTimer = setTimeout(() => {
+      this.pressTimer = null;
+      press.long = true;
+      this.showUi();
+    }, LONG_PRESS_MS);
+  }
+
+  /** Un appui qui glisse au-delà de `TAP_SLOP_PX` n'est ni un toucher ni un appui long. */
+  onPressMove(event: PointerEvent): void {
+    const press = this.press;
+    if (press && press.id === event.pointerId && moved(press, event)) {
+      this.cancelPress();
+    }
+  }
+
+  /** Fin d'un appui bref et immobile : nourriture en haut de l'écran, tapotement ailleurs. */
+  onPressEnd(event: PointerEvent): void {
+    const press = this.press;
+    this.clearPressTimer();
+    this.press = null;
+    if (!press || press.id !== event.pointerId || press.long || moved(press, event)) {
+      return;
+    }
+    this.touchGlass(event.clientX, event.clientY);
+  }
+
+  cancelPress(): void {
+    this.clearPressTimer();
+    this.press = null;
+  }
+
+  /**
+   * Toucher de la vitre au point (`clientX`, `clientY`) : dans la bande haute (`FEED_BAND`),
+   * des granulés tombent à l'aplomb, à mi-chemin de la vitre et du milieu du bac ; ailleurs,
+   * les poissons proches réagissent (`tapGlassInPlace`). Sans effet avant le premier bac.
+   */
+  private touchGlass(clientX: number, clientY: number): void {
+    const world = this.world;
+    const layout = this.layout;
+    const canvas = this.canvasRef().nativeElement;
+    const width = canvas.clientWidth;
+    const height = canvas.clientHeight;
+    if (!world || !layout || width <= 0 || height <= 0) {
+      return;
+    }
+    const rect = canvas.getBoundingClientRect();
+    const v = (clientY - rect.top) / height;
+    const point = glassPoint(layout.dimensions, (clientX - rect.left) / width, v);
+    if (point === null) {
+      return;
+    }
+    if (v < FEED_BAND) {
+      feedInPlace(world, point.x, layout.dimensions.depth / 4);
+    } else {
+      tapGlassInPlace(world.entities as Parameters<typeof tapGlassInPlace>[0], point);
     }
   }
 
@@ -515,12 +686,24 @@ export class ImmersiveMode {
           screenAngleDeg: this.screenAngle(),
         });
         this.applyCamera(view, eyeDistanceMm);
+        view.updateFood(world.food);
+        this.exposeFood(world.food.length);
         view.updateFish(world.entities, this.clock.alpha, world.seed);
         view.renderFrame();
+        this.framesShown++;
+        this.hideIfDue();
       }
     }
     this.lastTime = time;
     this.scheduleFrame();
+  }
+
+  /** Nombre de granulés exposé aux tests de bout en bout, écrit seulement s'il change. */
+  private exposeFood(count: number): void {
+    if (count !== this.foodShown) {
+      this.foodShown = count;
+      this.hostRef.nativeElement.setAttribute('data-immersive-food', String(count));
+    }
   }
 
   /** Angle d'affichage de l'écran (0 si l'API manque). */
@@ -610,4 +793,9 @@ export class ImmersiveMode {
     this.world = world;
     this.view = view;
   }
+}
+
+/** Vrai si le pointeur s'est écarté de plus de `TAP_SLOP_PX` du point de départ. */
+function moved(start: { x: number; y: number }, event: PointerEvent): boolean {
+  return Math.hypot(event.clientX - start.x, event.clientY - start.y) > TAP_SLOP_PX;
 }

@@ -5,7 +5,9 @@ import { openScene } from './outils-decor';
 /**
  * Mode immersif, lot 1 (issue #345) : entrer depuis « Réglages », taille estimée signalée,
  * étalonner avec une carte ID-1, sortir, sans erreur ; au téléphone (390 px, portrait) et à
- * l'ordinateur. Lot 2 (#346) : parallaxe par orientation synthétique. Les images sont jointes au rapport (`immersif-*.png`).
+ * l'ordinateur. Lot 2 (#346) : parallaxe par orientation synthétique, nourriture en touchant le
+ * haut de l'écran (toucher synthétique), interface par appui long qui se cache seule. Les
+ * images sont jointes au rapport (`immersif-*.png`).
  */
 
 const overlay = (page: Page) => page.locator('app-immersive-mode');
@@ -19,6 +21,53 @@ async function setRange(page: Page, selector: string, value: number): Promise<vo
   }, value);
 }
 
+/** Appui long au point (x, y) : l'interface s'affiche (#346). */
+async function longPress(page: Page, x: number, y: number): Promise<void> {
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  await page.waitForTimeout(900);
+  await page.mouse.up();
+  await expect(overlay(page)).toHaveAttribute('data-immersive-ui', 'visible');
+}
+
+/**
+ * Rend l'interface si elle s'est cachée seule (après 5 s, vite atteintes en rendu logiciel) :
+ * une touche du clavier, sans toucher la vitre.
+ */
+async function ensureUi(page: Page): Promise<void> {
+  await page.keyboard.press('Shift');
+  await expect(overlay(page)).toHaveAttribute('data-immersive-ui', 'visible');
+}
+
+/** Clique un bouton de l'interface après l'avoir rendue (touche du clavier). */
+async function clickInUi(page: Page, selector: string): Promise<void> {
+  await ensureUi(page);
+  await page.locator(selector).click();
+}
+
+/**
+ * Toucher synthétique (pointeur `touch`) sur la vitre, au point (x, y). Les deux événements
+ * partent dans la même tâche : en rendu logiciel, une image lente entre les deux laisserait
+ * passer le délai de l'appui long.
+ */
+async function touch(page: Page, x: number, y: number): Promise<void> {
+  await page.locator('app-immersive-mode canvas').evaluate(
+    (canvas, [cx, cy]) => {
+      const init = {
+        bubbles: true,
+        pointerId: 7,
+        isPrimary: true,
+        pointerType: 'touch',
+        clientX: cx,
+        clientY: cy,
+      };
+      canvas.dispatchEvent(new PointerEvent('pointerdown', { ...init, buttons: 1 }));
+      canvas.dispatchEvent(new PointerEvent('pointerup', { ...init, buttons: 0 }));
+    },
+    [x, y],
+  );
+}
+
 for (const viewport of [
   { name: 'telephone', width: 390, height: 844 },
   { name: 'ordinateur', width: 1280, height: 720 },
@@ -27,7 +76,9 @@ for (const viewport of [
     page,
   }, testInfo) => {
     // Rendu logiciel lent (SwiftShader) : deux parcours complets du mode dans le même test.
-    test.setTimeout(240_000);
+    // Lot 2 (#346) : nourriture et interface ajoutent une vingtaine d'actions, de 2 à 3 s chacune
+    // à 1280 × 720.
+    test.setTimeout(420_000);
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
     const consoleErrors: string[] = [];
     page.on('console', (message) => {
@@ -46,7 +97,8 @@ for (const viewport of [
       await expect(page.locator('.control-panel')).toHaveCount(0);
       await expect(overlay(page)).toHaveAttribute('data-immersive-calibrated', 'false');
       await expect(overlay(page)).toHaveAttribute('data-immersive-screen-mm', /^[\d.]+x[\d.]+$/);
-      await expect(page.locator('[data-immersive-estimated]')).toBeVisible();
+      await ensureUi(page);
+      await expect(page.locator('[data-immersive-estimated]')).toBeAttached();
       await expect(page.locator('[data-immersive-note]')).toContainText(
         'pas une simulation réaliste',
       );
@@ -55,6 +107,8 @@ for (const viewport of [
       expect(box.width).toBe(viewport.width);
       expect(box.height).toBe(viewport.height);
       await page.waitForTimeout(500);
+      // Interface rendue pour l'image du rapport (elle se cache seule).
+      await ensureUi(page);
       const shotEstime = testInfo.outputPath(`immersif-${viewport.name}-estime.png`);
       await page.screenshot({ path: shotEstime });
       await testInfo.attach(`immersif-${viewport.name}-estime.png`, {
@@ -95,8 +149,33 @@ for (const viewport of [
         .toBeGreaterThan(-5);
     });
 
+    await test.step('nourriture (#346) : toucher le haut de l’écran', async () => {
+      await expect(overlay(page)).toHaveAttribute('data-immersive-food', '0');
+      await touch(page, viewport.width / 2, viewport.height * 0.05);
+      await expect
+        .poll(async () => Number(await overlay(page).getAttribute('data-immersive-food')))
+        .toBeGreaterThan(0);
+      // Plus bas, un toucher tapote la vitre : pas de nourriture en plus.
+      const food = Number(await overlay(page).getAttribute('data-immersive-food'));
+      await touch(page, viewport.width / 2, viewport.height * 0.6);
+      await page.waitForTimeout(300);
+      expect(Number(await overlay(page).getAttribute('data-immersive-food'))).toBeLessThanOrEqual(
+        food,
+      );
+    });
+
+    await test.step('interface (#346) : cachée seule, rendue par un appui long', async () => {
+      // 5 s et 15 images au moins : une image peut durer plusieurs secondes en rendu logiciel.
+      await expect(overlay(page)).toHaveAttribute('data-immersive-ui', 'hidden', {
+        timeout: 120_000,
+      });
+      await expect(page.locator('[data-immersive-exit]')).toBeHidden();
+      await longPress(page, viewport.width / 2, viewport.height / 2);
+      await expect(overlay(page)).not.toHaveClass(/immersive--ui-hidden/);
+    });
+
     await test.step('étalonner avec la carte', async () => {
-      await page.locator('[data-immersive-calibrate]').click();
+      await clickInUi(page, '[data-immersive-calibrate]');
       await expect(page.getByRole('group', { name: 'Étalonnage de l’écran' })).toBeVisible();
       await setRange(page, '[data-immersive-card-width]', 340);
       await expect(page.locator('[data-immersive-card]')).toHaveCSS('width', '340px');
@@ -111,6 +190,8 @@ for (const viewport of [
       const stored = await page.evaluate(() => localStorage.getItem('aqfish.etalonnage-ecran'));
       expect(JSON.parse(stored!).pxPerMm).toBeCloseTo(pxPerMm, 9);
       await page.waitForTimeout(500);
+      // Interface rendue pour l'image du rapport (elle se cache seule).
+      await ensureUi(page);
       const shotEtalonne = testInfo.outputPath(`immersif-${viewport.name}-etalonne.png`);
       await page.screenshot({ path: shotEtalonne });
       await testInfo.attach(`immersif-${viewport.name}-etalonne.png`, {
@@ -120,7 +201,7 @@ for (const viewport of [
     });
 
     await test.step('sortir, puis l’étalonnage est repris', async () => {
-      await page.locator('[data-immersive-exit]').click();
+      await clickInUi(page, '[data-immersive-exit]');
       await expect(overlay(page)).toHaveCount(0);
       // Le bac affiché reprend : le tick avance de nouveau.
       const host = page.locator('app-aquarium-host');

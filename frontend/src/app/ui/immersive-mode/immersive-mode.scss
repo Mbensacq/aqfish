@@ -14,6 +14,8 @@
   width: 100%;
   height: 100%;
   touch-action: none;
+  user-select: none;
+  -webkit-touch-callout: none; // appui long sur iOS : pas de menu
 }
 
 .immersive__bar {
@@ -101,4 +103,16 @@
   border: 2px dashed #f2c14e;
   border-radius: 3.18mm; // coins de la carte ID-1, à l'échelle CSS (indicatif)
   box-sizing: border-box;
+}
+
+// Interface cachée seule après quelques secondes, rendue par un appui long (#346).
+.immersive__bar {
+  transition:
+    opacity 0.3s ease,
+    visibility 0.3s;
+}
+
+:host(.immersive--ui-hidden) .immersive__bar {
+  visibility: hidden;
+  opacity: 0;
 }
