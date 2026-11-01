@@ -4428,6 +4428,24 @@
         }
       },
       "metriques": {}
+    },
+    "121": {
+      "numero": 121,
+      "date": "2026-11-01",
+      "debut": "2026-11-01T03:19:11.117Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-01T03:19:11.117Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
