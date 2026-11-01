@@ -4557,6 +4557,12 @@
           "debut": "2026-11-01T14:00:14.510Z",
           "fin": "2026-11-01T15:32:34.911Z",
           "note": "PR #378 : textes des soins dans treatment-text.ts, redoseText, tapGlassInWorld, avertissement amphibien en eau traitée (#374, #377) ; CI verte au 1er essai (e2e 2/6 lente, 39 min) ; 113 captures identiques à l'octet ; pied d'attribution réinjecté par l'environnement dans le corps de #378"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-01T15:33:01.106Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
