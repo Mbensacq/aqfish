@@ -18,7 +18,7 @@ import {
  * Les bacs sont importés simulation à l'arrêt (vitesse 0) : rien ne bouge avant le geste. Un
  * traitement complet dure 5 journées simulées (100 min à vitesse 1) : pour voir la fin, la
  * sauvegarde automatique est relue après le geste, la cure avancée à 99,95 % (3 s simulées
- * restantes), puis la page rechargée et la simulation relancée.
+ * restantes), puis la page rechargée avec cette sauvegarde, simulation à vitesse 4.
  */
 
 const hostEl = (page: Page) => page.locator('app-aquarium-host');
@@ -53,6 +53,8 @@ test.describe('Soins des points blancs (#361)', () => {
   test('provoquer la maladie, donner le médicament, voir l’alerte disparaître', async ({
     page,
   }) => {
+    // Deux chargements, un import et un rechargement en rendu logiciel : ~1,7 min en local.
+    test.setTimeout(240_000);
     const errors = await open(page);
     await openPanel(page);
     // Sans malade, pas de section « Soins ».
@@ -84,25 +86,27 @@ test.describe('Soins des points blancs (#361)', () => {
     await care(page).getByRole('button', { name: 'Ajouter 1 dose de médicament' }).click();
     await expect(care(page).locator('[data-treatment-message]')).toContainText('Surdosage');
 
-    // Fin du traitement : cure avancée dans la sauvegarde, puis simulation relancée.
+    // Fin du traitement : cure avancée dans la sauvegarde, puis simulation relancée. Le
+    // rechargement réécrit la sauvegarde en quittant la page (`pagehide`) : la version
+    // modifiée est reposée par un script d'initialisation, avant le démarrage de l'application.
     await page.evaluate(() => window.dispatchEvent(new Event('pagehide')));
-    await page.evaluate(() => {
-      const key = 'aqfish.sauvegarde';
-      const doc = JSON.parse(localStorage.getItem(key)!) as {
-        selectedTankId: number;
-        settings: { speed: number };
-        tanks: { id: number; world: { water: { ichCure?: number; medication?: number } } }[];
-      };
-      const water = doc.tanks.find((t) => t.id === doc.selectedTankId)!.world.water;
-      if (water.medication !== 1 || water.ichCure !== 0) {
-        throw new Error(`traitement non enregistré : ${JSON.stringify(water)}`);
-      }
-      water.ichCure = 0.9995;
-      doc.settings.speed = 1;
-      localStorage.setItem(key, JSON.stringify(doc));
-    });
+    const stored = await page.evaluate(() => localStorage.getItem('aqfish.sauvegarde'));
+    const doc = JSON.parse(stored!) as {
+      selectedTankId: number;
+      settings: { speed: number };
+      tanks: { id: number; world: { water: { ichCure?: number; medication?: number } } }[];
+    };
+    const water = doc.tanks.find((t) => t.id === doc.selectedTankId)!.world.water;
+    expect(water).toMatchObject({ medication: 1, ichCure: 0 });
+    water.ichCure = 0.9995;
+    doc.settings.speed = 4;
+    await page.addInitScript(
+      (text) => localStorage.setItem('aqfish.sauvegarde', text),
+      JSON.stringify(doc),
+    );
     await page.reload();
     await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-speed', '4');
     await expect(status(page).locator('[data-alert="ich"]')).toHaveCount(0, { timeout: 60_000 });
     await expect(status(page).locator('[data-alert="treatment"]')).toHaveCount(0, {
       timeout: 60_000,
