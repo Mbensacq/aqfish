@@ -310,9 +310,11 @@
   }
 
   // Onze espèces au bac tropical (#362) : la liste défile seule, pour que « Bacs » et
-  // « Sauvegarde » restent dans la deuxième colonne (voir docs/PIEGES.md).
+  // « Sauvegarde » restent dans la deuxième colonne (voir docs/PIEGES.md). Hauteur arrondie à
+  // un nombre entier de lignes d'espèce (#370) : pas de 46 px, 56 px de titre, de marges et
+  // d'écart (3 px sous la dernière ligne) ; aucune ligne coupée à mi-hauteur.
   [data-section='population'] {
-    max-height: calc(100vh - var(--soins, 350px));
+    max-height: calc(round(down, 100vh - var(--soins, 350px) - 56px, 46px) + 56px);
     overflow-y: auto;
   }
 }
