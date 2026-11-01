@@ -4475,10 +4475,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-01T06:32:50.767Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-01T06:33:22.646Z",
+          "note": "Issue #361 : soigner les points blancs lot 2/2 (M)"
         }
       },
       "metriques": {}
