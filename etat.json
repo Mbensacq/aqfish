@@ -4421,10 +4421,10 @@
           "note": "Verdict RÉSERVES (points blancs peu lisibles sur néons en capture front), 0 bug, captures c120 publiées (107/108 identiques)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-01T02:12:05.866Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-01T03:18:47.832Z",
+          "note": "PR #369 fusionnée → v1.6.1 (release CI ok, main verte) ; #366 fermée, dette #370 (lisibilité points blancs, réserve QA) ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
