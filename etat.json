@@ -4445,10 +4445,10 @@
           "note": "Issue #362 : nouvelles espèces d'eau douce lot 2 (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-01T03:20:06.133Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-01T04:56:42.834Z",
+          "note": "PR #371 : eau douce lot 2 (platy, danio, ancistrus, otocinclus, ADR 0090), CI verte au 2e essai (panneau 1280×720 : liste des espèces défilante) ; captures tropicales identiques à l'octet, 2 nouvelles"
         }
       },
       "metriques": {}
