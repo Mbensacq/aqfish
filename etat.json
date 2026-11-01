@@ -4493,10 +4493,10 @@
           "note": "Verdict OK, 0 bug, 113/113 captures identiques + front-soins, aucun e2e ajouté, pied d'attribution du corps de PR signalé"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-01T08:30:24.685Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-01T10:17:49.944Z",
+          "note": "PR #373 fusionnée → v1.6.3 (release CI ok, main verte) ; #361 fermée, dette #374, #372 complétée ; check frontend non rattachée au commit (relance du job) ; pied d'attribution réinjecté par l'environnement dans les corps GitHub, absent de main (squash à corps vide)"
         }
       },
       "metriques": {}
