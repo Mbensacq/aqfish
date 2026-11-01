@@ -4481,10 +4481,10 @@
           "note": "Issue #361 : soigner les points blancs lot 2/2 (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-01T06:33:47.539Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-01T08:06:23.601Z",
+          "note": "PR #373 : traitements des points blancs (chaleur, sel, médicament, ADR 0091), CI verte au 1er essai ; captures existantes identiques (3 comparées), front-soins ajoutée"
         }
       },
       "metriques": {}
