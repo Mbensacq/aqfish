@@ -237,14 +237,13 @@ import {
   type WaterReadout,
 } from '../../sim/water-quality';
 import { waterLiters } from '../../sim/water';
+import { TREATMENTS, type TreatmentKind } from '../../sim/treatment';
 import {
   sameTreatment,
-  TREATMENTS,
   treatmentReadout,
-  type TreatmentKind,
   type TreatmentNotice,
   type TreatmentReadout,
-} from '../../sim/treatment';
+} from '../../sim/treatment-text';
 import { DEFAULT_WATER_SAMPLE, waterSample, type WaterSample } from '../../sim/water-dashboard';
 import {
   EMPTY_HEALTH_SUMMARY,

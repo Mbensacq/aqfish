@@ -25,7 +25,7 @@ import { environmentById, DEFAULT_ENVIRONMENT_ID, type EnvironmentId } from '../
 import { NO_FISH, type PopulationCounts } from '../../sim/population';
 import { EMPTY_HEALTH_SUMMARY, healthItems, type HealthSummary } from '../../sim/health-summary';
 import { DEFAULT_WATER_SAMPLE, type GaugeLevel, type WaterSample } from '../../sim/water-dashboard';
-import type { TreatmentReadout } from '../../sim/treatment';
+import type { TreatmentReadout } from '../../sim/treatment-text';
 import { DEFAULT_WATER_READOUT, type WaterReadout } from '../../sim/water-quality';
 import {
   DASHBOARD_BACKGROUND_ALPHA,

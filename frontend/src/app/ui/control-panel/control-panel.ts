@@ -65,16 +65,14 @@ import {
 import { type SpeciesId } from '../../sim/species';
 import { addWarnings, addWarningText, sheetNotes, sheetRows } from '../../sim/species-sheet';
 import { MAX_HEATER_TEMPERATURE, MIN_HEATER_TEMPERATURE } from '../../sim/water';
+import { TREATMENT_KINDS, TREATMENTS, type TreatmentKind } from '../../sim/treatment';
 import {
-  TREATMENT_KINDS,
-  TREATMENTS,
   treatmentSourcesLine,
   treatmentSourceText,
   treatmentStatusText,
-  type TreatmentKind,
   type TreatmentNotice,
   type TreatmentReadout,
-} from '../../sim/treatment';
+} from '../../sim/treatment-text';
 import { formatTenth } from '../../sim/water-dashboard';
 import { DEFAULT_WATER_READOUT, type WaterReadout } from '../../sim/water-quality';
 

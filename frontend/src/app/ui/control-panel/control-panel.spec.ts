@@ -1,6 +1,7 @@
 import type { FoodStyle } from '../../core/food-style/food-style';
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
-import type { TreatmentKind, TreatmentNotice, TreatmentReadout } from '../../sim/treatment';
+import type { TreatmentKind } from '../../sim/treatment';
+import type { TreatmentNotice, TreatmentReadout } from '../../sim/treatment-text';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 
 import type { EnvironmentId } from '../../sim/environment';

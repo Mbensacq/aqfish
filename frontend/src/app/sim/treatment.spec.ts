@@ -10,19 +10,21 @@ import {
   MEDICATION_EFFECTIVE,
   MEDICATION_HALF_LIFE,
   medicationDaysLeft,
-  sameTreatment,
   stepTreatmentInPlace,
   TREATMENT_DAY_SECONDS,
   TREATMENT_KINDS,
   TREATMENTS,
   treatmentGroup,
   treatmentHazard,
+  type TreatmentContext,
+} from './treatment';
+import {
+  sameTreatment,
   treatmentReadout,
   treatmentSourcesLine,
   treatmentSourceText,
   treatmentStatusText,
-  type TreatmentContext,
-} from './treatment';
+} from './treatment-text';
 import {
   changeWaterInPlace,
   copyWater,
