@@ -4523,10 +4523,10 @@
           "note": "PR #376 : tapotement (sim/glass-tap, ADR 0092), nourriture en haut d'écran, interface par appui long ; CI verte au 1er essai ; partiel : choix du bac reporté en #375 ; pied d'attribution réinjecté par l'environnement dans les corps GitHub de #375/#376"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-01T11:58:48.269Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-01T12:59:24.230Z",
+          "note": "Verdict OK, 0 bug, 113/113 captures identiques, unitaires + spec immersive locales vertes, verify complet impossible en local (e2e trop lent), CI verte, aucun e2e ajouté"
         }
       },
       "metriques": {}
