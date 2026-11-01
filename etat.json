@@ -4559,10 +4559,10 @@
           "note": "PR #378 : textes des soins dans treatment-text.ts, redoseText, tapGlassInWorld, avertissement amphibien en eau traitée (#374, #377) ; CI verte au 1er essai (e2e 2/6 lente, 39 min) ; 113 captures identiques à l'octet ; pied d'attribution réinjecté par l'environnement dans le corps de #378"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-01T15:33:01.106Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-01T16:07:15.751Z",
+          "note": "Verdict OK, 0 bug, 113/113 captures identiques, unitaires/lint/build/e2e ciblés verts, CI verte, mutation treatment-text.ts 94,31 % (issue dette)"
         }
       },
       "metriques": {}
