@@ -56,6 +56,14 @@ const OUT_OF_RANGE: readonly (readonly [string, AlertInput, AlertId])[] = [
   ['animaux malades', input({}, { sick: 1 }), 'health'],
   ['points blancs', input({}, { sick: 1, ich: 1 }), 'ich'],
   [
+    'traitement en cours',
+    {
+      ...input(),
+      treatment: { products: 'sel 5,0 g/L', remainingDays: 2, medicationDays: null },
+    },
+    'treatment',
+  ],
+  [
     'mélange déconseillé',
     {
       ...input(),

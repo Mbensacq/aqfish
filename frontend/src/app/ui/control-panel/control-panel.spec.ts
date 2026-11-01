@@ -1,5 +1,6 @@
 import type { FoodStyle } from '../../core/food-style/food-style';
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+import type { TreatmentKind, TreatmentNotice, TreatmentReadout } from '../../sim/treatment';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 
 import type { EnvironmentId } from '../../sim/environment';
@@ -163,6 +164,10 @@ describe('fonctions du panneau de contrôle', () => {
     [populationMax]="populationMax()"
     [tankLiters]="tankLiters()"
     [water]="water()"
+    [ichCount]="ichCount()"
+    [treatment]="treatment()"
+    [treatmentNotice]="treatmentNotice()"
+    (treatmentRequested)="treatments.push($event)"
     [saveStatus]="saveStatus()"
     [saveMessage]="saveMessage()"
     (exportRequested)="exports = exports + 1"
@@ -248,6 +253,10 @@ class TestHost {
   });
   readonly tankLiters = signal<number | null>(288);
   readonly water = signal<WaterReadout>(DEFAULT_WATER_READOUT);
+  readonly ichCount = signal(0);
+  readonly treatment = signal<TreatmentReadout | null>(null);
+  readonly treatmentNotice = signal<TreatmentNotice | null>(null);
+  readonly treatments: TreatmentKind[] = [];
   waterChanges = 0;
   readonly events: [string, number | boolean][] = [];
   readonly requests: PopulationRequest[] = [];
@@ -1301,6 +1310,74 @@ describe('ControlPanel', () => {
       ]);
       expect(section().querySelector('[data-catappa-note]')?.textContent).toContain(
         'ne remplace pas un test de pH',
+      );
+    });
+  });
+
+  describe('soins des points blancs (#361)', () => {
+    const section = () => root().querySelector<HTMLElement>('[data-section="soins"]');
+
+    it('absente sans malade ni traitement, et en mode décor', async () => {
+      await openPanel();
+      expect(section()).toBeNull();
+      fixture.componentInstance.ichCount.set(3);
+      fixture.componentInstance.careMode.set('decor');
+      await fixture.whenStable();
+      expect(section()).toBeNull();
+    });
+
+    it('avec des points blancs : trois gestes, état, sources ; chaque bouton émet son traitement', async () => {
+      await openPanel();
+      fixture.componentInstance.ichCount.set(2);
+      await fixture.whenStable();
+      const buttons = [...section()!.querySelectorAll<HTMLButtonElement>('[data-treatment]')];
+      expect(buttons.map((b) => [b.textContent?.trim(), b.getAttribute('aria-label')])).toEqual([
+        ['Chaleur', 'Monter le chauffage de 1 °C'],
+        ['Sel', 'Ajouter 1 g/L de sel'],
+        ['Médicament', 'Ajouter 1 dose de médicament'],
+      ]);
+      for (const button of buttons) {
+        expect(button.getAttribute('title')).toMatch(/^Source : .+ ; niveau de preuve : /);
+        button.click();
+      }
+      expect(fixture.componentInstance.treatments).toEqual(['chaleur', 'sel', 'medicament']);
+      expect(section()!.querySelector('[data-treatment-status]')?.textContent?.trim()).toBe(
+        'Aucun traitement en cours.',
+      );
+      expect(section()!.querySelector('[data-treatment-sources]')?.textContent).toContain(
+        'chaleur, approximation de jeu (soutien)',
+      );
+    });
+
+    it('traitement en cours : état et jours restants, même guéris des signes ; message du geste', async () => {
+      await openPanel();
+      fixture.componentInstance.treatment.set({
+        products: 'médicament 0,6 dose',
+        remainingDays: 1.5,
+        medicationDays: 1.3,
+      });
+      fixture.componentInstance.treatmentNotice.set({
+        ok: false,
+        text: 'Surdosage refusé.',
+        warning: null,
+      });
+      await fixture.whenStable();
+      expect(section()!.querySelector('[data-treatment-status]')?.textContent?.trim()).toBe(
+        'En cours : médicament 0,6 dose, encore 1,5 j ; redoser le médicament avant 1,3 j.',
+      );
+      const message = section()!.querySelector('[data-treatment-message]')!;
+      expect(message.textContent?.trim()).toBe('Surdosage refusé.');
+      expect(message.classList).toContain('control-panel__message--error');
+      expect(section()!.querySelector('[data-treatment-sources]')).toBeNull();
+      fixture.componentInstance.treatmentNotice.set({
+        ok: true,
+        text: 'Sel : 1,0 g/L.',
+        warning: 'Prudence : néons.',
+      });
+      await fixture.whenStable();
+      expect(message.classList).not.toContain('control-panel__message--error');
+      expect(section()!.querySelector('[data-treatment-warning]')?.textContent?.trim()).toBe(
+        'Prudence : néons.',
       );
     });
   });

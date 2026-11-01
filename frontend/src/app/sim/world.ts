@@ -18,7 +18,7 @@ import {
 } from './anemones';
 import { coralLayout, coralObstacles, type CoralColony } from './corals';
 import { decorObstacles, parseDecorItems, type DecorItem } from './decor';
-import { ichStress, infectAllInPlace, stepIchInPlace } from './disease';
+import { ichStress, infectAllInPlace, isIchAge, stepIchInPlace } from './disease';
 import {
   DEFAULT_ENVIRONMENT_ID,
   environmentById,
@@ -67,6 +67,13 @@ import {
   type WaterState,
 } from './water';
 import { waterQuality } from './water-quality';
+import {
+  applyTreatmentInPlace,
+  ichProtected,
+  stepTreatmentInPlace,
+  type TreatmentKind,
+  type TreatmentOutcome,
+} from './treatment';
 import { starveInPlace, stepWellbeingInPlace } from './wellbeing';
 
 /**
@@ -758,7 +765,8 @@ function stepInPlace(world: MutableWorld, dt: number, clock: SimClock): void {
     targetTemperature(world.water, world.environment),
   );
   // Points blancs (issue #360) : sur l'eau de fin de pas ; aucun tirage sans stress ni
-  // malade, donc un bac sain avance exactement comme avant.
+  // malade, donc un bac sain avance exactement comme avant. Un traitement efficace dans
+  // l'eau (issue #361) empêche toute nouvelle infection, puis fait avancer la cure.
   stepIchInPlace(
     fishes,
     dt,
@@ -766,7 +774,9 @@ function stepInPlace(world: MutableWorld, dt: number, clock: SimClock): void {
     world.environment,
     world.seed,
     world.tick,
+    ichProtected(world.water),
   );
+  stepTreatmentInPlace(world.water as MutableWaterState, fishes, dt);
   // Santé (issue #208) : sur la faim de fin de pas (après les repas) et l'eau du pas (pH
   // compris, issue #236), sans hasard ; à santé pleine, la nage reste exactement celle d'avant.
   stepWellbeingInPlace(
@@ -830,6 +840,30 @@ export function starveWorldInPlace(world: MutableWorld): void {
  */
 export function infectWorldInPlace(world: MutableWorld): void {
   infectAllInPlace(world.entities as Mutable<Entity>[], world.environment);
+}
+
+/**
+ * Geste de soin contre les points blancs (`applyTreatmentInPlace`, issue #361), **en
+ * modifiant** l'eau de `world` s'il est accepté : quantité `amount` (°C, g/L ou dose) du
+ * traitement `kind`, avec les espèces et le nombre de malades du bac. Réservé au propriétaire
+ * unique du monde (`ui/aquarium-host`).
+ */
+export function treatWorldInPlace(
+  world: MutableWorld,
+  kind: TreatmentKind,
+  amount: number,
+): TreatmentOutcome {
+  let infected = 0;
+  for (const entity of world.entities) {
+    if (isIchAge(entity.ich)) {
+      infected += 1;
+    }
+  }
+  return applyTreatmentInPlace(world.water as MutableWaterState, kind, amount, {
+    environment: world.environment,
+    species: world.entities.map((entity) => entity.species),
+    infected,
+  });
 }
 
 /**

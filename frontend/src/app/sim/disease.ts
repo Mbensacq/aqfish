@@ -8,7 +8,7 @@ import { COMPOUND_THRESHOLDS, TEMPERATURE_THRESHOLDS } from './water-quality';
 /**
  * Maladie des points blancs, lot 1/2 (issue #360, ADR 0088) : apparition sous l'effet du
  * stress, cycle simplifié et contagion dans le bac. Le rendu des points et les alertes
- * viennent avec l'issue #366, les traitements avec le lot 2/2.
+ * viennent avec l'issue #366, les traitements avec le lot 2/2 (#361, `sim/treatment.ts`).
  *
  * État par animal : `ich`, âge de l'infection en secondes simulées, dans
  * [0, `ICH_AGGRAVATED_AT`] ; absent, l'animal est sain (cas de tous les animaux d'un bac
@@ -190,6 +190,9 @@ export interface IchSubject {
  * animaux. Un âge d'infection invalide (non fini, hors bornes : état corrompu) est effacé.
  * `stress` : causes de stress du bac (`ichStress`) ; une valeur non finie ou négative compte
  * pour 0. `seed`, `tick` : graine du monde et numéro du pas, pour les tirages (`ichDraw`).
+ * `treated` : vrai si un traitement efficace est dans l'eau (`ichProtected`,
+ * `sim/treatment.ts`, issue #361) : il tue les formes libres, donc aucune nouvelle infection
+ * (ni par le stress, ni par contagion) ; les infections en cours vieillissent toujours.
  * @throws RangeError si `dt` n'est pas un réel strictement positif (animaux inchangés).
  */
 export function stepIchInPlace(
@@ -199,6 +202,7 @@ export function stepIchInPlace(
   environment: EnvironmentId,
   seed: number,
   tick: number,
+  treated = false,
 ): void {
   assertTimeStep(dt);
   let contagious = 0;
@@ -217,7 +221,7 @@ export function stepIchInPlace(
     }
   }
   const causes = stress > 0 && Number.isFinite(stress) ? stress : 0;
-  const rate = causes * ICH_STRESS_RATE + contagious * ICH_CONTAGION_RATE;
+  const rate = treated ? 0 : causes * ICH_STRESS_RATE + contagious * ICH_CONTAGION_RATE;
   if (infected === 0 && rate === 0) {
     // Bac sain et sans stress : rien à faire, aucun tirage.
     return;

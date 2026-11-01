@@ -57,6 +57,21 @@ export interface WaterState {
    * [0, 1], au plus `MAX_CATAPPA_LEAVES` (`sim/catappa.ts`). Absent : aucune feuille.
    */
   readonly catappa?: readonly number[];
+  /**
+   * Sel non iodé dissous, en g/L, dans ]0, `MAX_SALT`] (issue #361, `sim/treatment.ts`).
+   * Absent : aucun sel. Ne part qu'avec les changements d'eau (`docs/SOINS.md` § 12).
+   */
+  readonly salt?: number;
+  /**
+   * Médicament contre les points blancs dissous, en doses d'étiquette, dans
+   * ]0, `MAX_MEDICATION`] (issue #361, `sim/treatment.ts`). Absent : aucun médicament.
+   */
+  readonly medication?: number;
+  /**
+   * Avancement du traitement des points blancs en cours, dans [0, 1[ (issue #361,
+   * `sim/treatment.ts`). Absent : aucun traitement en cours.
+   */
+  readonly ichCure?: number;
 }
 
 /** État de l'eau modifiable en place (propriétaire unique : le monde). */
@@ -138,6 +153,22 @@ export const TEMPERATURE_TIME_CONSTANT = 600;
 
 /** Part des composés dissous retirée par un changement d'eau. */
 export const WATER_CHANGE_SHARE = 0.3;
+
+/**
+ * Plafond du sel dissous, en g/L (issue #361) : la dose contre les points blancs, 5 g/L
+ * (Merck, `docs/SOINS.md` § 5.1) ; au-delà, l'ajout est refusé (surdosage, `sim/treatment.ts`).
+ */
+export const MAX_SALT = 5;
+
+/** Plafond du médicament dissous, en doses d'étiquette (issue #361, approximation de jeu). */
+export const MAX_MEDICATION = 1.5;
+
+/**
+ * Traces de sel (g/L) et de médicament (doses) en deçà desquelles le produit est considéré
+ * comme retiré : le champ disparaît de l'eau. Approximation de jeu.
+ */
+export const SALT_TRACE = 0.05;
+export const MEDICATION_TRACE = 0.01;
 
 /**
  * Eau saine de l'environnement `environment` : à sa température, sans composé azoté, filtre
@@ -252,6 +283,19 @@ export function changeWaterInPlace(
   water.nitrite *= keep;
   water.nitrate *= keep;
   water.ph = phAfterWaterChange(water.ph, freshPh(environment), WATER_CHANGE_SHARE);
+  // Sel et médicament (issue #361) : retirés par les changements d'eau (`docs/SOINS.md` § 12).
+  if (water.salt !== undefined) {
+    water.salt *= keep;
+    if (!(water.salt >= SALT_TRACE)) {
+      delete water.salt;
+    }
+  }
+  if (water.medication !== undefined) {
+    water.medication *= keep;
+    if (!(water.medication >= MEDICATION_TRACE)) {
+      delete water.medication;
+    }
+  }
   return water;
 }
 
@@ -276,7 +320,9 @@ export type ReadWaterResult =
  * (`heater`, issue #207 : absente, jamais réglée) et le pH facultatif (`ph`, issue #236 :
  * absent dans une sauvegarde antérieure, il reprend celui de l'eau neuve de
  * l'environnement) et les feuilles de catappa facultatives (`catappa`, issue #239 : absentes,
- * aucune feuille) ; seules les propriétés propres sont lues, les champs inconnus ignorés.
+ * aucune feuille), ainsi que le sel, le médicament et l'avancement d'un traitement des points
+ * blancs (`salt`, `medication`, `ichCure`, issue #361 : absents, aucun) ; seules les
+ * propriétés propres sont lues, les champs inconnus ignorés.
  * Renvoie une copie, ou la raison du refus. Ne lève jamais.
  */
 export function readWater(value: unknown, environment: EnvironmentId): ReadWaterResult {
@@ -286,7 +332,11 @@ export function readWater(value: unknown, environment: EnvironmentId): ReadWater
   const record = value as Record<string, unknown>;
   const read = (key: keyof WaterState): unknown =>
     Object.hasOwn(record, key) ? record[key] : undefined;
-  const fields: [Exclude<keyof WaterState, 'ph' | 'heater' | 'catappa'>, number, number][] = [
+  const fields: [
+    Exclude<keyof WaterState, 'ph' | 'heater' | 'catappa' | 'salt' | 'medication' | 'ichCure'>,
+    number,
+    number,
+  ][] = [
     ['temperature', MIN_WATER_TEMPERATURE, MAX_WATER_TEMPERATURE],
     ['ammonia', 0, MAX_CONCENTRATION],
     ['nitrite', 0, MAX_CONCENTRATION],
@@ -314,6 +364,25 @@ export function readWater(value: unknown, environment: EnvironmentId): ReadWater
   if (catappa !== null && !catappa.ok) {
     return { ok: false, error: catappa.error };
   }
+  const optional: ['salt' | 'medication' | 'ichCure', number, number][] = [
+    ['salt', 0, MAX_SALT],
+    ['medication', 0, MAX_MEDICATION],
+    ['ichCure', 0, 1],
+  ];
+  const extra: { salt?: number; medication?: number; ichCure?: number } = {};
+  for (const [key, min, max] of optional) {
+    const v = read(key);
+    if (v === undefined) {
+      continue;
+    }
+    if (!isIn(v, min, max) || (key === 'ichCure' && v === max)) {
+      return {
+        ok: false,
+        error: `eau : ${key} doit être un nombre dans [${min}, ${max}${key === 'ichCure' ? '[' : ']'}`,
+      };
+    }
+    extra[key] = v;
+  }
   return {
     ok: true,
     water: {
@@ -325,6 +394,7 @@ export function readWater(value: unknown, environment: EnvironmentId): ReadWater
       ph: (ph as number | undefined) ?? freshPh(environment),
       ...(heater === undefined ? {} : { heater }),
       ...(catappa === null || catappa.leaves.length === 0 ? {} : { catappa: catappa.leaves }),
+      ...extra,
     },
   };
 }

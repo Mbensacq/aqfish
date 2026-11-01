@@ -47,10 +47,11 @@
         [health]="aquarium.health()"
         [environment]="aquarium.environment()"
         [population]="aquarium.population()"
+        [treatment]="aquarium.treatment()"
         (wikiPageRequested)="onWikiPageRequested($event)"
       />
     }
-    <!-- Panneau de contrôle (#52) : environnement (#87) et pièce (#187), bacs et meubles (#305), vitesse, heure et pluie (#106), décor et granulés (#117), eau (#207), population (#69), sauvegarde (#70). Fermé par défaut. -->
+    <!-- Panneau de contrôle (#52) : environnement (#87) et pièce (#187), bacs et meubles (#305), vitesse, heure et pluie (#106), décor et granulés (#117), eau (#207), soins (#361), population (#69), sauvegarde (#70). Fermé par défaut. -->
     <app-control-panel
       #panel
       (opened)="onPanelOpened()"
@@ -72,6 +73,9 @@
       [populationMax]="aquarium.populationMax()"
       [tankLiters]="aquarium.tankLiters()"
       [water]="aquarium.water()"
+      [ichCount]="aquarium.health().ich"
+      [treatment]="aquarium.treatment()"
+      [treatmentNotice]="aquarium.treatmentNotice()"
       [saveStatus]="aquarium.saveStatus()"
       [saveMessage]="aquarium.saveMessage()"
       (environmentChanged)="aquarium.setEnvironment($event)"
@@ -97,6 +101,7 @@
       (heaterChanged)="aquarium.setHeater($event)"
       (catappaChanged)="aquarium.setCatappa($event)"
       (waterChangeRequested)="aquarium.changeWater()"
+      (treatmentRequested)="aquarium.treat($event)"
       (exportRequested)="aquarium.exportSave()"
       (importRequested)="aquarium.importSave($event)"
       (importRejected)="aquarium.rejectImport($event)"
