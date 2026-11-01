@@ -58,6 +58,17 @@ async function expectTankFramed(page: Page, dims: TankDimensions): Promise<void>
   }
 }
 
+/** Applique `dims` en mode édition, puis vérifie le cadrage sous chacun des 5 préréglages. */
+async function expectResizedAndFramed(page: Page, dims: TankDimensions): Promise<void> {
+  await setTank(page, dims);
+  // Toujours en mode édition, la population est conservée.
+  await expect(host(page)).toHaveAttribute('data-aqfish-editing', 'true');
+  for (const preset of CAMERA_PRESETS) {
+    await page.locator(`[data-preset="${preset}"]`).click();
+    await expectTankFramed(page, dims);
+  }
+}
+
 test.describe('Dimensions du bac (#171)', () => {
   // Rendu logiciel lent : chaque changement de dimensions recrée la vue (~20 s) ; fenêtre
   // réduite et délai élargi, comme `editeur-decor.spec.ts`.
@@ -66,7 +77,8 @@ test.describe('Dimensions du bac (#171)', () => {
     test.setTimeout(600_000);
   });
 
-  test('curseurs : bornes, valeurs par défaut, petit et grand bac recadrés sous les 5 angles', async ({
+  // Découpé en deux tests (#281) : un seul test de 5 min 20 en CI, le plus long de l'e2e.
+  test('curseurs : bornes, valeurs par défaut, petit bac recadré sous les 5 angles', async ({
     page,
   }) => {
     const errors = await openScene(page, '?seed=42');
@@ -78,15 +90,14 @@ test.describe('Dimensions du bac (#171)', () => {
       await expect(slider).toHaveAttribute('min', String(Math.round(TANK_LIMITS[key].min * 100)));
       await expect(slider).toHaveAttribute('max', String(Math.round(TANK_LIMITS[key].max * 100)));
     }
-    for (const dims of [SMALL, LARGE]) {
-      await setTank(page, dims);
-      // Toujours en mode édition, la population est conservée.
-      await expect(host(page)).toHaveAttribute('data-aqfish-editing', 'true');
-      for (const preset of CAMERA_PRESETS) {
-        await page.locator(`[data-preset="${preset}"]`).click();
-        await expectTankFramed(page, dims);
-      }
-    }
+    await expectResizedAndFramed(page, SMALL);
+    expect(errors).toEqual([]);
+  });
+
+  test('curseurs : grand bac (bornes maximales) recadré sous les 5 angles', async ({ page }) => {
+    const errors = await openScene(page, '?seed=42');
+    await startEditing(page);
+    await expectResizedAndFramed(page, LARGE);
     expect(errors).toEqual([]);
   });
 

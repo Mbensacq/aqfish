@@ -107,14 +107,32 @@ haut de sa section.
   retombe sur le bac tropical : les captures du nouvel environnement montraient le bac
   tropical, tests unitaires et e2e du panneau verts. D'où `eaufroide`. Regarder la première
   capture d'un nouvel environnement avant de conclure. (2026-10-27)
-- **Ajouter des tests e2e déplace les limites des parts de la CI** (cycle 81, #260) : les
-  parts (`--shard=N/4`, 6 parts depuis #248) sont des tranches de fichiers de taille égale en nombre de tests ;
-  quatre tests de plus ont fait glisser `meubles-qa.spec.ts` dans la part 2, déjà au ras de
-  son délai de 30 min (#248) : part 2 annulée deux fois, sans aucun test touché par la PR.
-  Comparer `npx playwright test --project=e2e --shard=2/4 --list` sur `main` et sur la
-  branche (worktree de `origin/main` avec un lien vers `node_modules`) ; regrouper les
-  vérifications en peu de tests (une boucle de largeurs dans un test, `test.step`) plutôt
-  qu'un test par largeur. (2026-10-27)
+- **Parts de la CI e2e : réparties par durée, pas par nombre de tests** (cycles 81 et 125,
+  #260, #281) : `playwright test --shard=N/M` coupe la liste en tranches contiguës de même
+  **nombre** de tests, fichiers entiers ; les fichiers lents se suivent dans l'ordre
+  alphabétique (`camera-libre…` à `environnement…`) : part 2 à 29 puis 37 min, part 6 à
+  12 min, sur la même CI (#248, #260). Depuis #281, `npm run e2e` passe par
+  `scripts/parts-e2e.mjs` : avec `--shard=N/M` (seule option que passe la CI), il répartit
+  les **fichiers** selon `e2e/durees.json` (plus long d'abord, dans la part la moins
+  chargée ; fichier inconnu = durée moyenne) et ne lance que ceux de la part N ; sans
+  `--shard`, ou avec des fichiers choisis, Playwright tel quel. La CI affiche la durée de
+  chaque test (rapporteur `list`) et, en tête de part, la liste et la durée estimée.
+  - **Remesurer** quand un fichier change beaucoup de durée ou qu'une part dépasse 25 min :
+    télécharger les journaux des 6 parts
+    (`gh api repos/{owner}/{repo}/actions/jobs/<id>/logs > p1.txt`, identifiants dans
+    `commits/<sha>/check-runs`), puis `node scripts/parts-e2e.mjs --mesurer p*.txt`
+    (réécrit `e2e/durees.json`) et le committer.
+  - **Vérifier une répartition** sans rien lancer :
+    `for i in 1 2 3 4 5 6; do npm run e2e -- --shard=$i/6 --list | tail -1; done` (total =
+    `npx playwright test --project=e2e --list`).
+  - Les machines de la CI varient de ±30 % pour un même lot de tests (part 2 : 28,9 puis
+    37,5 min, mêmes 63 tests) : viser ~21 min estimées par part (124 min au total au
+    cycle 125), pas le délai de 45 min.
+  - Un test très long reste à découper (`dimensions-bac.spec.ts` : 5 min 20 en un test,
+    deux depuis #281) ; une attente fixe qui attend un changement d'état devient
+    `expect.poll` (`fond-ecran.spec.ts`). Les attentes fixes qui vérifient que **rien ne
+    change** pendant une durée (`vues.spec.ts`, `panneau.spec.ts`) restent : sans elles, le
+    test ne vérifie plus rien. (2026-11-01)
 - **`DeviceOrientationEvent` en e2e : autorisation exigée ou non selon Chromium** (cycle 116,
   #346) : le Chromium local (1243) expose `DeviceOrientationEvent.requestPermission` (pas
   seulement Safari), celui de la CI non : un e2e ne doit supposer ni l'un ni l'autre. En
