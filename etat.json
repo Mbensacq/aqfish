@@ -4403,10 +4403,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-01T00:33:33.920Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-01T00:34:02.958Z",
+          "note": "Issue #366 : points blancs visibles, alerte et lien wiki (S)"
         }
       },
       "metriques": {}
