@@ -4415,10 +4415,10 @@
           "note": "PR #369 : points blancs visibles, alerte et lien wiki (ADR 0089), CI verte 1er essai ; 108 captures identiques à main, 3 nouvelles"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-01T01:50:43.845Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-01T02:11:35.074Z",
+          "note": "Verdict RÉSERVES (points blancs peu lisibles sur néons en capture front), 0 bug, captures c120 publiées (107/108 identiques)"
         }
       },
       "metriques": {}
