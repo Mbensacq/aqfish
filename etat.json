@@ -4631,10 +4631,10 @@
           "note": "PR #385 : lisibilité points blancs (voxels tachables, part 0,4), alerte santé (weakWithoutIch), ancistrus recoloré + capture libre-eau-douce-lot2-fond, liste Population sans ligne coupée ; CI verte ; 11 captures changées (voulu, listées) ; pied d'attribution réinjecté par l'environnement dans le corps de #385"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-01T22:57:10.228Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-01T23:42:37.430Z",
+          "note": "Verdict RÉSERVES (e2e complet non rejoué en local, CI verte), 0 bug, 114 captures c126 publiées, lint/unitaires verts"
         }
       },
       "metriques": {}
