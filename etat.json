@@ -4595,10 +4595,10 @@
           "note": "PR #383 : parts e2e réparties par durée (scripts/parts-e2e.mjs, e2e/durees.json), CI verte ; partiel : max 29,3 min (écart des machines ±35 %, total ~130 min) ; pied d'attribution réinjecté dans le corps de #383"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-01T19:23:28.488Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-01T20:09:41.970Z",
+          "note": "Verdict RÉSERVES (critère « aucune part > 25 min » partiel, déjà déclaré), 0 bug, 113/113 captures identiques, lint/unitaires/e2e modifiés 7/7 verts, CI verte ; pied d'attribution réinjecté par l'environnement dans la revue"
         }
       },
       "metriques": {}
