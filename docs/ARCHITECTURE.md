@@ -178,6 +178,11 @@ simulation testable et les captures reproductibles.
   (`applyTreatmentInPlace`, `treatWorldInPlace`) : refus de dose invalide, sans malade,
   toxique pour un amphibien ou un invertébré, surdosage, chaleur hors plage ou trop rapide.
   Section « Soins » des réglages (conditionnelle) et alerte « Traitement en cours ».
+  Relevé (`treatmentReadout`) et textes d'affichage (ligne d'état, sources, phrase de
+  redosage commune au panneau et au tableau de bord) dans `sim/treatment-text.ts` (#374).
+  Amphibien ou invertébré ajouté (panneau) ou transféré dans une eau qui contient déjà sel ou
+  médicament (`waterProducts`, `WaterReadout.products`) : avertissement
+  `treatedWaterWarning`, sans refus.
 - **Compatibilité et rythme du jour** (#209, ADR 0055, `sim/compatibility.ts`,
   `sim/day-rhythm.ts`) : verdict pur par couple d'espèces (tempérament paisible, territorial
   ou prédateur). Entre poissons **nageurs** d'espèces incompatibles, évitement ajouté au

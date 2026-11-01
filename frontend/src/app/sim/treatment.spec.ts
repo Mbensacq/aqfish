@@ -1,5 +1,6 @@
 import { ICH_AGGRAVATED_AT, ichStage, stepIchInPlace } from './disease';
-import type { SpeciesId } from './species';
+import { SPECIES_LABELS } from './species-catalog';
+import { SPECIES, type SpeciesId } from './species';
 import {
   applyTreatmentInPlace,
   heatCeiling,
@@ -19,7 +20,9 @@ import {
   type TreatmentContext,
 } from './treatment';
 import {
+  redoseText,
   sameTreatment,
+  treatedWaterWarning,
   treatmentReadout,
   treatmentSourcesLine,
   treatmentSourceText,
@@ -476,6 +479,55 @@ describe('traitements des points blancs (#361)', () => {
       expect(treatmentSourcesLine()).toBe(
         'Sources : chaleur, approximation de jeu (soutien) ; sel, Merck ; médicament, notice Sera (efficaces).',
       );
+    });
+  });
+
+  describe('animal ajouté dans une eau traitée (#374)', () => {
+    const SALT = { salted: true, medicated: false };
+    const MEDICATION = { salted: false, medicated: true };
+    const BOTH = { salted: true, medicated: true };
+    const NONE = { salted: false, medicated: false };
+
+    it('amphibien : avertissement nommant le produit, l’espèce et la page du wiki', () => {
+      expect(treatedWaterWarning('triton', SALT)).toBe(
+        `Eau traitée au sel : toxique pour les ${SPECIES_LABELS.triton.plural} (peau qui absorbe les produits). Changer l'eau pour diluer le produit ; voir la page « Produits et traitements » du wiki`,
+      );
+      expect(treatedWaterWarning('axolotl', MEDICATION)).toContain(
+        'Eau traitée au médicament : toxique pour les axolotls',
+      );
+      expect(treatedWaterWarning('grenouille', BOTH)).toContain(
+        'Eau traitée au sel et au médicament : toxique pour les sonneurs orientaux',
+      );
+    });
+
+    it('chaque amphibien du jeu est averti, aucun poisson ; eau sans produit : rien', () => {
+      for (const id of Object.keys(SPECIES) as SpeciesId[]) {
+        const warning = treatedWaterWarning(id, BOTH);
+        expect(warning === null).toBe(treatmentGroup(id) === 'poisson');
+        expect(treatedWaterWarning(id, NONE)).toBeNull();
+      }
+    });
+
+    it('invertébré : averti, sans la mention de la peau', () => {
+      const warning = treatedWaterWarning('neon', SALT, () => 'invertebre');
+      expect(warning).toContain('Eau traitée au sel : toxique pour les néons.');
+      expect(warning).not.toContain('peau');
+    });
+
+    it('cohérent avec le refus du geste : le produit refusé avec l’espèce l’avertit à l’ajout', () => {
+      for (const id of Object.keys(SPECIES) as SpeciesId[]) {
+        expect(treatmentHazard('sel', [id]) !== null).toBe(treatedWaterWarning(id, SALT) !== null);
+        expect(treatmentHazard('medicament', [id]) !== null).toBe(
+          treatedWaterWarning(id, MEDICATION) !== null,
+        );
+      }
+    });
+
+    it('redoseText : même phrase pour la ligne d’état et l’alerte, vide sans médicament', () => {
+      const readout = { products: 'médicament 1,0 dose', remainingDays: 2, medicationDays: 1.25 };
+      expect(redoseText(readout)).toBe(' ; redoser le médicament avant 1,3 j');
+      expect(redoseText({ ...readout, medicationDays: null })).toBe('');
+      expect(treatmentStatusText(readout)).toContain(redoseText(readout));
     });
   });
 });

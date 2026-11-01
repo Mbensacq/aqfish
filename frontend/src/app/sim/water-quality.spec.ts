@@ -173,6 +173,8 @@ describe('waterReadout et sameReadout', () => {
       // Aucune feuille de catappa (#239).
       catappa: 0,
       tea: 0,
+      // Ni sel ni médicament (#374).
+      products: { salted: false, medicated: false },
     });
   });
 
@@ -193,6 +195,8 @@ describe('waterReadout et sameReadout', () => {
       phBands: { tolerated: { min: 4, max: 9.5 }, ideal: { min: 4, max: 9.5 } },
       catappa: 0,
       tea: 0,
+      // Ni sel ni médicament (#374).
+      products: { salted: false, medicated: false },
     });
   });
 
@@ -208,6 +212,20 @@ describe('waterReadout et sameReadout', () => {
       expect(sameReadout(a, { ...a, [key]: a[key] + 0.1 })).toBe(false);
     }
     expect(sameReadout(a, { ...a, quality: 'mauvaise' })).toBe(false);
+  });
+
+  it('produits de traitement (#374) : sel et médicament présents, comparés par sameReadout', () => {
+    const plain = waterReadout(tropical({}), 'tropical');
+    expect(plain.products).toEqual({ salted: false, medicated: false });
+    const treated = waterReadout(tropical({ salt: 0.06, medication: 0.02 }), 'tropical');
+    expect(treated.products).toEqual({ salted: true, medicated: true });
+    expect(sameReadout(plain, treated)).toBe(false);
+    expect(sameReadout(plain, { ...plain, products: { salted: false, medicated: true } })).toBe(
+      false,
+    );
+    expect(sameReadout(plain, { ...plain, products: { salted: false, medicated: false } })).toBe(
+      true,
+    );
   });
 
   it('pH (#236) : au dixième, zone sur la valeur exacte pour les espèces présentes', () => {

@@ -22,6 +22,7 @@ import {
   WATER_TEMPERATURES,
   waterLiters,
   waterLoad,
+  waterProducts,
   type MutableWaterState,
   type WaterState,
 } from './water';
@@ -566,5 +567,18 @@ describe('readWater et pH (#236)', () => {
     ['NaN', Number.NaN],
   ])('refuse un pH %s', (_name, ph) => {
     expect(readWater({ ...freshWater('tropical'), ph }, 'tropical').ok).toBe(false);
+  });
+});
+
+describe('waterProducts (#374)', () => {
+  it('sel et médicament présents à toute dose ; absents après assez de changements d’eau', () => {
+    expect(waterProducts(freshWater('tropical'))).toEqual({ salted: false, medicated: false });
+    expect(waterProducts({ salt: 5 })).toEqual({ salted: true, medicated: false });
+    expect(waterProducts({ medication: 0.01 })).toEqual({ salted: false, medicated: true });
+    const water: MutableWaterState = { ...freshWater('tropical'), salt: 5, medication: 1 };
+    for (let i = 0; i < 40 && (water.salt !== undefined || water.medication !== undefined); i++) {
+      changeWaterInPlace(water, 'tropical');
+    }
+    expect(waterProducts(water)).toEqual({ salted: false, medicated: false });
   });
 });

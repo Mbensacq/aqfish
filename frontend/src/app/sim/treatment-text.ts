@@ -6,11 +6,15 @@ import {
   tenthText,
   TREATMENT_DAY_SECONDS,
   TREATMENT_KINDS,
+  treatmentGroup,
   TREATMENTS,
   type TreatmentEvidence,
+  type TreatmentGroup,
   type TreatmentKind,
 } from './treatment';
-import type { WaterState } from './water';
+import { SPECIES_LABELS } from './species-catalog';
+import type { SpeciesId } from './species';
+import type { WaterProducts, WaterState } from './water';
 
 /**
  * Relevés et textes d'affichage des traitements des points blancs (issue #374, découpés de
@@ -127,4 +131,27 @@ export interface TreatmentNotice {
   readonly ok: boolean;
   readonly text: string;
   readonly warning: string | null;
+}
+
+/**
+ * Avertissement à l'ajout d'un animal de l'espèce `species` dans une eau qui contient déjà un
+ * produit de traitement (`products`, issue #374), ou `null` : sel et médicament sont toxiques
+ * pour les amphibiens et les invertébrés (`treatmentHazard`, qui refuse le geste quand ils sont
+ * déjà dans le bac), qu'ils arrivent avant ou après le produit. Un poisson, ou une eau sans
+ * produit : `null`. `groupOf` donne le groupe de l'espèce (`treatmentGroup` par défaut).
+ */
+export function treatedWaterWarning(
+  species: SpeciesId,
+  products: WaterProducts,
+  groupOf: (species: SpeciesId) => TreatmentGroup = treatmentGroup,
+): string | null {
+  const group = groupOf(species);
+  if (group === 'poisson' || (!products.salted && !products.medicated)) {
+    return null;
+  }
+  const what = [products.salted ? 'au sel' : '', products.medicated ? 'au médicament' : '']
+    .filter((text) => text !== '')
+    .join(' et ');
+  const why = group === 'amphibien' ? ' (peau qui absorbe les produits)' : '';
+  return `Eau traitée ${what} : toxique pour les ${SPECIES_LABELS[species].plural}${why}. Changer l'eau pour diluer le produit ; voir la page « Produits et traitements » du wiki`;
 }

@@ -70,6 +70,7 @@ import {
   treatmentSourcesLine,
   treatmentSourceText,
   treatmentStatusText,
+  treatedWaterWarning,
   type TreatmentNotice,
   type TreatmentReadout,
 } from '../../sim/treatment-text';
@@ -1207,8 +1208,9 @@ export class ControlPanel {
     computation: () => null,
   });
   /**
-   * Avertissements de la dernière espèce ajoutée (#237), recalculés sur la population et le
-   * volume courants : ils disparaissent quand le bac convient de nouveau.
+   * Avertissements de la dernière espèce ajoutée (#237), recalculés sur la population, le
+   * volume et l'eau courants : ils disparaissent quand le bac convient de nouveau (produit de
+   * traitement toxique pour l'espèce, #374, compris).
    */
   protected readonly addTexts = computed(() => {
     const id = this.lastAdded();
@@ -1216,13 +1218,16 @@ export class ControlPanel {
       return [];
     }
     const population = this.population();
-    return addWarnings(
+    const texts = addWarnings(
       id,
       population[id],
       this.tankLiters() ?? Number.NaN,
       population,
       this.catalog().map((entry) => entry.species),
     ).map(addWarningText);
+    // Amphibien ajouté dans une eau déjà traitée (#374) : le produit lui est toxique.
+    const treated = treatedWaterWarning(id, this.water().products);
+    return treated === null ? texts : [...texts, treated];
   });
   protected readonly sheetRows = sheetRows;
   protected readonly sheetNotes = sheetNotes;

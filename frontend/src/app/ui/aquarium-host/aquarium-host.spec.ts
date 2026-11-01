@@ -1079,6 +1079,7 @@ describe('AquariumHost', () => {
         phBands: phBands(['neon', 'guppy', 'corydora']),
         catappa: 0,
         tea: 0,
+        products: { salted: false, medicated: false },
       });
       expect(waterAttr()).toBe('bonne;24;24;0;0;0');
       expect(phAttr()).toBe('7;ideal');
@@ -1773,6 +1774,24 @@ describe('AquariumHost', () => {
       host().selectTank(posed.id);
       expect(host().environment()).toBe('tropical');
       expect(host().transferNotice()?.text).toContain('pas encore sélectionnable');
+    });
+
+    it('transfert d’un amphibien vers une eau traitée (#374) : avertissement dans le message', async () => {
+      await create('?seed=8');
+      setCanvasSize(800, 600);
+      frames.flush(0);
+      host().setEnvironment('paludarium');
+      // Sel resté dans l'eau du paludarium (traitement antérieur), puis bac rangé.
+      (host().world!.water as { salt?: number }).salt = 5;
+      host().setEnvironment('eaufroide');
+      const palu = host()
+        .tankList()
+        .find((t) => t.environment === 'paludarium')!;
+      host().transferAnimal('axolotl', palu.id);
+      expect(host().transferNotice()?.kind).toBe('info');
+      expect(host().transferNotice()?.text).toContain(
+        'Eau traitée au sel : toxique pour les axolotls (peau qui absorbe les produits)',
+      );
     });
 
     it('transfert vers un bac rangé : l’animal y est au retour, santé gardée', async () => {

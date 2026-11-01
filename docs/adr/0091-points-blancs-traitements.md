@@ -87,3 +87,16 @@ style du panneau presque épuisé.
 - Une future espèce invertébrée s'ajoute à `INVERTEBRATES` : sel et médicament lui sont
   aussitôt refusés.
 - Les mondes sans produit avancent exactement comme avant (aucun champ écrit, aucun tirage).
+
+## Complément (cycle 124, #374)
+
+- Relevé et textes d'affichage déplacés dans `sim/treatment-text.ts` ; le modèle et les gestes
+  restent dans `sim/treatment.ts`, sans changement de comportement.
+- Le refus pour toxicité ne couvrait que l'ordre « amphibien présent, puis produit ». Dans
+  l'ordre inverse (produit déjà dans l'eau, puis amphibien ou invertébré ajouté depuis le
+  panneau ou transféré d'un autre bac), l'ajout est **accepté avec un avertissement**
+  (`treatedWaterWarning`) qui nomme le produit et invite à changer l'eau. Refuser l'ajout
+  aurait bloqué le joueur sans geste immédiat pour vider le produit (un changement d'eau n'en
+  retire qu'une part) ; l'avertissement suit le modèle des autres avertissements d'ajout
+  (volume, groupe, compatibilité).
+
