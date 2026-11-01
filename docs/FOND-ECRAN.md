@@ -13,6 +13,10 @@ bouton, aucun panneau ; la caméra tourne lentement autour du bac, sans fin.
 Le dossier `fond-ecran` contient tout le nécessaire : la page `index.html`, ses fichiers,
 une configuration d'exemple et une image d'aperçu.
 
+**Le plus simple** : téléchargez `aqfish-fond-ecran-vX.Y.Z.zip` sur la page des versions
+(https://github.com/Mbensacq/aqfish/releases/latest, section « Assets ») et décompressez-le :
+c'est ce dossier, joint automatiquement à chaque version (#330).
+
 Pour le produire depuis le code (Node.js 22) :
 
 ```bash

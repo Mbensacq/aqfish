@@ -55,7 +55,8 @@ gh api repos/{owner}/{repo}/pulls/13/reviews -f event=COMMENT -F body=@/tmp/revu
 
 # Fusionner (squash)
 gh api -X PUT repos/{owner}/{repo}/pulls/13/merge -f merge_method=squash \
-  -f commit_title="feat(render): caméra orbitale et préréglages (#13)" --jq .sha
+  -f commit_title="feat(render): caméra orbitale et préréglages (#13)" \
+  -f commit_message="Closes #12" --jq .sha   # corps jamais vide (#297)
 
 # Supprimer la branche après fusion
 git push origin --delete nuit/2026-10-20-camera-orbitale
