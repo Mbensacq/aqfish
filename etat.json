@@ -4457,10 +4457,10 @@
           "note": "Verdict RÉSERVES (ancistrus/otocinclus peu reconnaissables en capture), 0 bug, +1 e2e, captures c121 publiées (105/108 identiques)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-01T05:18:55.333Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-01T06:32:28.454Z",
+          "note": "PR #371 fusionnée → v1.6.2 (release CI ok, main verte) ; #362 fermée, dette #372 (lisibilité ancistrus/otocinclus, ligne coupée du panneau) ; pied d'attribution retiré du corps de la PR"
         }
       },
       "metriques": {}
