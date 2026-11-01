@@ -4619,10 +4619,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-01T21:08:23.761Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-01T21:09:00.072Z",
+          "note": "Issue #370 : lisibilité points blancs, alerte, ancistrus, otocinclus, panneau (M)"
         }
       },
       "metriques": {}
