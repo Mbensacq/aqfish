@@ -4536,6 +4536,24 @@
         }
       },
       "metriques": {}
+    },
+    "124": {
+      "numero": 124,
+      "date": "2026-11-01",
+      "debut": "2026-11-01T13:58:52.661Z",
+      "type": "dette",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-01T13:58:52.661Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
