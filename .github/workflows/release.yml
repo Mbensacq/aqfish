@@ -112,3 +112,41 @@ jobs:
           else
             gh release create "v$VERSION" --target "$GITHUB_SHA" --title "v$VERSION" --generate-notes
           fi
+
+  # Paquet Wallpaper Engine (#279, #330) : construit `dist/fond-ecran/`, le zippe et le joint à
+  # la release. Job séparé : un échec ici ne bloque ni le déploiement ni la release.
+  paquet-fond:
+    needs: [version, release]
+    if: needs.version.outputs.nouvelle == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci
+
+      - name: Installer Chromium pour Playwright (vérification et aperçu du paquet)
+        run: npx playwright install --with-deps chromium
+
+      - name: Construire le paquet fond d'écran
+        run: npm run paquet-fond
+
+      - name: Joindre le paquet à la release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          ARCHIVE="aqfish-fond-ecran-v$VERSION.zip"
+          (cd dist/fond-ecran && zip -qr "../../$ARCHIVE" .)
+          gh release upload "v$VERSION" "$ARCHIVE" --clobber

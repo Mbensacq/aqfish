@@ -62,8 +62,10 @@ Lire la revue `## QA — verdict`. `KO` : corrections demandées, sauf si le KO 
   elles une issue `dette`) :
   1. préparer la version **dans la PR** (étape 3) et attendre que la CI repasse au vert ;
   2. publier ta revue écrite `## Revue — fusion` (ce qui a été vérifié, en quelques lignes) ;
-  3. fusion squash en REST, titre = titre de la PR + ` (#N)`, **corps vide**
-     (`-f commit_message=''`, sinon GitHub y recopie les messages des commits), puis
+  3. fusion squash, titre = titre de la PR + ` (#N)`, **corps explicite** : `Closes #<issue>`
+     seul (`-f commit_message='Closes #<issue>'` en REST, ou le même texte avec l'outil GitHub
+     de l'environnement). Jamais de corps vide : GitHub y recopie alors les messages des
+     commits et l'outil de l'environnement ajoute une ligne `Co-authored-by` (#297). Puis
      supprimer la branche ;
   4. vérifier que l'issue liée est fermée (`Closes #N`) ; sinon la fermer en REST.
   **Si l'environnement refuse la fusion** (garde-fou de sécurité) : ne pas contourner.
