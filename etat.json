@@ -4470,7 +4470,7 @@
       "date": "2026-11-01",
       "debut": "2026-11-01T06:32:50.767Z",
       "type": "fonctionnalite",
-      "issue": null,
+      "issue": 361,
       "pr": null,
       "version": null,
       "phases": {
