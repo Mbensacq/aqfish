@@ -4599,6 +4599,12 @@
           "debut": "2026-11-01T19:23:28.488Z",
           "fin": "2026-11-01T20:09:41.970Z",
           "note": "Verdict RÉSERVES (critère « aucune part > 25 min » partiel, déjà déclaré), 0 bug, 113/113 captures identiques, lint/unitaires/e2e modifiés 7/7 verts, CI verte ; pied d'attribution réinjecté par l'environnement dans la revue"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-01T20:10:06.218Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
