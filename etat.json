@@ -4551,6 +4551,12 @@
           "debut": "2026-11-01T13:58:52.661Z",
           "fin": "2026-11-01T13:59:27.409Z",
           "note": "Issue #374 : traitements (texte séparé, doublon, amphibien après traitement) + #377 (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-01T14:00:14.510Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
