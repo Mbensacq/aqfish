@@ -4385,10 +4385,10 @@
           "note": "Verdict OK, 0 bug, captures c119 publiées (107/108 identiques, liste-bacs téléphone instable)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-10-31T23:34:43.039Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-01T00:33:07.291Z",
+          "note": "PR #367 fusionnée → v1.6.0 (release CI ok, main verte) ; #360 fermée, dette #368 ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
