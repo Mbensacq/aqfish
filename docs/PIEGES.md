@@ -6,6 +6,12 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **E2e qui modifie la sauvegarde puis recharge : l'application la réécrit en partant**
+  (cycle 122, #361) : `localStorage.setItem` puis `page.reload()` ne suffit pas, le
+  `pagehide` de la page quittée enregistre l'état courant par-dessus la modification (la page
+  rechargée était restée « Pause », cure à 0). Poser le texte modifié avec
+  `page.addInitScript((t) => localStorage.setItem('aqfish.sauvegarde', t), texte)` avant
+  `reload()` : il s'exécute dans le nouveau document, avant l'application. (2026-11-01)
 - **« Réglages » refermé reste dans le DOM** (cycle 114, #344) : après un second clic sur
   « Réglages », `.control-panel` existe encore (masqué) : `toHaveCount(0)` échoue au bout de
   60 s ; attendre `toBeHidden()`. `toHaveCount(0)` ne vaut que quand l'éditeur de décor l'a
@@ -75,6 +81,11 @@ haut de sa section.
   Depuis le cycle 121 (#362, onze espèces au bac tropical), la section « Population » défile
   seule à ce format (`max-height: calc(100vh - 350px)`) : ajouter une espèce ne déborde plus,
   mais toute autre section reste soumise à cette règle. `control-panel.scss` est à ~7,94 kB.
+  Depuis le cycle 122 (#361), la section « Soins » (conditionnelle : malades ou traitement)
+  raccourcit cette liste par la variable `--soins` posée sur le panneau
+  (`max-height: calc(100vh - var(--soins, 350px))`) : une variable plutôt qu'une règle, faute de
+  budget de style (~7,96 kB). Mesuré : panneau sans débord à 1280 × 720 avec la section
+  affichée et le plus long message (sel avec néons).
 - **Fonction déjà livrée sous le même nom** (cycle 101, #316) : `renameTank` existait dans
   `sim/room-state.ts` depuis le lot 2 (ADR 0073), sans être utilisée par l'interface ; en
   écrire une seconde a donné « Multiple exports with the same name » au build des tests.

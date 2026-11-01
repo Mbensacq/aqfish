@@ -312,7 +312,7 @@
   // Onze espèces au bac tropical (#362) : la liste défile seule, pour que « Bacs » et
   // « Sauvegarde » restent dans la deuxième colonne (voir docs/PIEGES.md).
   [data-section='population'] {
-    max-height: calc(100vh - 350px);
+    max-height: calc(100vh - var(--soins, 350px));
     overflow-y: auto;
   }
 }

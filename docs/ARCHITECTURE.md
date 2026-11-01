@@ -170,6 +170,14 @@ simulation testable et les captures reproductibles.
   est un hachage sans état de (graine, pas, animal), calculé seulement si ce taux est non
   nul : un bac sain avance au bit près comme avant. Stades visible et aggravé : causes de
   santé (`ichHealthStress`). Champ `ich` facultatif de la sauvegarde.
+- **Traitements des points blancs** (#361, ADR 0091, `sim/treatment.ts`) : sel et médicament
+  dans l'eau (`WaterState.salt`, `medication`, retirés à 30 % par un changement d'eau, le
+  médicament se dégradant aussi), avancement de la cure (`WaterState.ichCure`). Un bac protégé
+  (`ichProtected`) n'a plus de nouvelle infection ; la cure avance après la maladie, fait
+  reculer les points puis efface `ich` ; interrompue, elle s'efface. Gestes purs
+  (`applyTreatmentInPlace`, `treatWorldInPlace`) : refus de dose invalide, sans malade,
+  toxique pour un amphibien ou un invertébré, surdosage, chaleur hors plage ou trop rapide.
+  Section « Soins » des réglages (conditionnelle) et alerte « Traitement en cours ».
 - **Compatibilité et rythme du jour** (#209, ADR 0055, `sim/compatibility.ts`,
   `sim/day-rhythm.ts`) : verdict pur par couple d'espèces (tempérament paisible, territorial
   ou prédateur). Entre poissons **nageurs** d'espèces incompatibles, évitement ajouté au

@@ -25,6 +25,7 @@ import { environmentById, DEFAULT_ENVIRONMENT_ID, type EnvironmentId } from '../
 import { NO_FISH, type PopulationCounts } from '../../sim/population';
 import { EMPTY_HEALTH_SUMMARY, healthItems, type HealthSummary } from '../../sim/health-summary';
 import { DEFAULT_WATER_SAMPLE, type GaugeLevel, type WaterSample } from '../../sim/water-dashboard';
+import type { TreatmentReadout } from '../../sim/treatment';
 import { DEFAULT_WATER_READOUT, type WaterReadout } from '../../sim/water-quality';
 import {
   DASHBOARD_BACKGROUND_ALPHA,
@@ -212,6 +213,8 @@ export class DashboardStatus {
   readonly environment = input<EnvironmentId>(DEFAULT_ENVIRONMENT_ID);
   /** Effectif de chaque espèce (fourni par l'hôte) : mélanges déconseillés (#271). */
   readonly population = input<PopulationCounts>(NO_FISH);
+  /** Traitement des points blancs en cours (fourni par l'hôte, #361) ; `null` : aucun. */
+  readonly treatment = input<TreatmentReadout | null>(null);
 
   /** Bouton « Wiki » d'une alerte (#366) : l'application ouvre le wiki sur cette page. */
   readonly wikiPageRequested = output<GuidePage>();
@@ -242,6 +245,7 @@ export class DashboardStatus {
       phBands: this.readout().phBands,
       health: this.health(),
       mixes: mixWarnings(environmentById(this.environment()).species, this.population()),
+      treatment: this.treatment(),
     }),
   );
 

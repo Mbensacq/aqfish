@@ -4,6 +4,7 @@ import {
   animalCount,
   dashboardAlerts,
   ichAlert,
+  treatmentAlert,
   MAX_SHOWN_ALERTS,
   mixAlert,
   shownAlerts,
@@ -304,11 +305,33 @@ describe('alerte des points blancs (#366)', () => {
         message: 'Points blancs',
         cause: 'parasite (Ichthyophthirius) favorisé par une eau instable ; 1 animal touché',
         action:
-          'Lire la page « Maladies » du wiki ; garder l’eau stable (température, ammoniaque, nitrites)',
+          'Traiter plusieurs jours : Réglages, Soins ; garder l’eau stable (température, ammoniaque, nitrites)',
         wiki: 'maladies',
       },
     ]);
     expect(alertsAnnouncement(alerts)).toBe('1 alerte : Points blancs (attention).');
+  });
+
+  it('traitement en cours (#361) : attention, jours restants, délai avant de redoser', () => {
+    expect(treatmentAlert(null)).toBeNull();
+    const salted = { products: 'sel 5,0 g/L', remainingDays: 3.5, medicationDays: null };
+    expect(treatmentAlert(salted)).toEqual({
+      id: 'treatment',
+      severity: 'attention',
+      message: 'Traitement en cours',
+      cause: 'sel 5,0 g/L ; points blancs en recul',
+      action: 'Continuer encore 3,5 j ; un changement d’eau retire une part du produit',
+      wiki: 'produits',
+    });
+    const medicated = { products: 'médicament 0,8 dose', remainingDays: 2, medicationDays: 1.2 };
+    expect(treatmentAlert(medicated)?.action).toBe(
+      'Continuer encore 2,0 j ; redoser le médicament avant 1,2 j ; un changement d’eau retire une part du produit',
+    );
+    // Juste après les points blancs, à gravité égale.
+    const health = healthSummary([{ species: 'neon', health: 1, hunger: 0.2, ich: visible }]);
+    expect(
+      dashboardAlerts({ ...input({}, health), treatment: medicated }).map((a) => a.id),
+    ).toEqual(['ich', 'treatment']);
   });
 
   it('stade aggravé : critique, effectif des aggravés dans la cause', () => {

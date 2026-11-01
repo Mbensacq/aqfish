@@ -500,6 +500,20 @@ l'alcalinité ; **un bac récifal ne peut jamais recevoir de cuivre**.
    CuSO₄, interdit si alcalinité < 50 ; nitrification bloquée à 0,3 mg/L ; invertébrés tués à
    toute dose thérapeutique.
 
+**Traitements des points blancs dans le jeu** (issue #361, ADR 0091, `sim/treatment.ts`) :
+- sel 5 g/L, efficace seulement à 24 °C ou plus (Merck) ; refusé au-delà (surdosage) ;
+  prudence affichée pour tétras (UF/IFAS), corydoras et loches (non vérifié) ;
+- médicament « formol + vert de malachite » au rythme de la notice Sera (une dose tous les deux
+  jours) ; demi-vie d'une journée simulée, protection dès 0,2 dose, redosage refusé au-dessus de
+  0,5 dose : **approximations de jeu** ;
+- traitement complet : 5 cycles (Texas A&M), un cycle durant 1 jour à 24 °C et plus, 2 jours de
+  19 à 24 °C (aquariumscience.org, secondaire), 4 jours en dessous (fourchette 3–5 jours) ;
+- chaleur : +1 °C par geste, plafonnée à la température tolérée la plus basse des espèces, refusée
+  si l'eau est encore à 2 °C sous la consigne ; ne guérit pas seule (approximation de jeu) ;
+- sel et médicament refusés avec amphibiens (§ 8, prudence) ou invertébrés (non vérifié) ;
+- un changement d'eau retire 30 % des produits ; une protection interrompue fait reprendre la
+  maladie.
+
 **Fiche produit (structure suggérée)** : `id`, `nom`, `catégorie` ; `dose_efficace`,
 `dose_toxique`, `durée`, `fréquence_max` ; `effets_eau` {pH, KH, GH, Cl, O₂, couleur,
 NH₃_lié} ; `demi-vie` (souvent non vérifiée : « retiré par changements d'eau ou charbon » en

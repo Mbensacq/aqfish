@@ -65,6 +65,16 @@ import {
 import { type SpeciesId } from '../../sim/species';
 import { addWarnings, addWarningText, sheetNotes, sheetRows } from '../../sim/species-sheet';
 import { MAX_HEATER_TEMPERATURE, MIN_HEATER_TEMPERATURE } from '../../sim/water';
+import {
+  TREATMENT_KINDS,
+  TREATMENTS,
+  treatmentSourcesLine,
+  treatmentSourceText,
+  treatmentStatusText,
+  type TreatmentKind,
+  type TreatmentNotice,
+  type TreatmentReadout,
+} from '../../sim/treatment';
 import { formatTenth } from '../../sim/water-dashboard';
 import { DEFAULT_WATER_READOUT, type WaterReadout } from '../../sim/water-quality';
 
@@ -245,7 +255,14 @@ export interface NewTankRequest {
       Réglages
     </button>
     @if (open()) {
-      <section class="control-panel" [id]="panelId" aria-label="Réglages de l’aquarium">
+      <!-- Section « Soins » (#361) affichée : la liste des espèces défile plus tôt, pour que
+           « Sauvegarde » reste dans la deuxième colonne à 1280 × 720 (docs/PIEGES.md). -->
+      <section
+        class="control-panel"
+        [id]="panelId"
+        aria-label="Réglages de l’aquarium"
+        [style.--soins]="careShown() ? '450px' : null"
+      >
         <fieldset class="control-panel__section" data-section="environnement">
           <legend class="control-panel__legend">Environnement</legend>
           <!-- Pièce autour du bac (#187), bac tropical seulement : après la liste au clavier,
@@ -429,6 +446,51 @@ export interface NewTankRequest {
             Effet simplifié : ne remplace pas un test de pH.
           </p>
         </fieldset>
+
+        @if (careShown()) {
+          <!-- Soins (#361) : seulement avec des points blancs visibles ou un traitement en cours,
+               pour que le panneau ne grandisse pas dans le cas par défaut (docs/PIEGES.md). -->
+          <fieldset
+            class="control-panel__section"
+            data-section="soins"
+            aria-labelledby="panneau-soins-titre"
+          >
+            <legend class="control-panel__legend" id="panneau-soins-titre">
+              Soins : points blancs
+            </legend>
+            <div class="control-panel__row">
+              @for (kind of treatmentKinds; track kind) {
+                <button
+                  type="button"
+                  class="control-panel__button control-panel__button--compact"
+                  [attr.data-treatment]="kind"
+                  [attr.aria-label]="treatments[kind].aria"
+                  [attr.title]="treatmentSource(kind)"
+                  (click)="treatmentRequested.emit(kind)"
+                >
+                  {{ treatments[kind].button }}
+                </button>
+              }
+            </div>
+            <p class="control-panel__note" data-treatment-status>{{ treatmentStatus() }}</p>
+            @if (treatmentNotice(); as notice) {
+              <p
+                class="control-panel__message"
+                [class.control-panel__message--error]="!notice.ok"
+                data-treatment-message
+              >
+                {{ notice.text }}
+                @if (notice.warning; as warning) {
+                  <span class="control-panel__warning" data-treatment-warning>{{ warning }}</span>
+                }
+              </p>
+            } @else {
+              <!-- Sources et niveaux de preuve (infobulle de chaque bouton) ; le message d'un
+                   geste prend leur place, pour que le panneau tienne à 1280 × 720. -->
+              <p class="control-panel__note" data-treatment-sources>{{ treatmentSources }}</p>
+            }
+          </fieldset>
+        }
 
         <fieldset
           class="control-panel__section"
@@ -1033,6 +1095,12 @@ export class ControlPanel {
   readonly tankLiters = input<number | null>(null);
   /** Relevé de l'eau (fourni par l'hôte, #207). */
   readonly water = input<WaterReadout>(DEFAULT_WATER_READOUT);
+  /** Animaux aux points blancs visibles (fournis par l'hôte, #361) : section « Soins ». */
+  readonly ichCount = input(0);
+  /** Traitement des points blancs en cours (fourni par l'hôte, #361) ; `null` : aucun. */
+  readonly treatment = input<TreatmentReadout | null>(null);
+  /** Message du dernier geste de soin (fourni par l'hôte, #361) ; `null` : aucun. */
+  readonly treatmentNotice = input<TreatmentNotice | null>(null);
   /** État de la sauvegarde automatique (fourni par l'hôte, #70). */
   readonly saveStatus = input<SaveStatus | null>(null);
   /** Dernier message de la sauvegarde : import refusé, import réussi… (fourni par l'hôte). */
@@ -1089,6 +1157,8 @@ export class ControlPanel {
   readonly catappaChanged = output<number>();
   /** Bouton « Changer l'eau » (#207). */
   readonly waterChangeRequested = output<void>();
+  /** Bouton d'un traitement des points blancs (#361) : un geste de ce traitement. */
+  readonly treatmentRequested = output<TreatmentKind>();
   /** Bouton « Exporter » (#70). */
   readonly exportRequested = output<void>();
   /** Contenu du fichier choisi avec « Importer » (texte, pas encore validé ; #70). */
@@ -1186,6 +1256,15 @@ export class ControlPanel {
   protected readonly hourText = computed(() => formatHour(this.hour()));
   protected readonly statusText = computed(() => saveStatusText(this.saveStatus()));
   protected readonly heaterLabel = computed(() => heaterText(this.water()));
+  /** Section « Soins » (#361) : en mode soins, avec des points blancs ou un traitement. */
+  protected readonly careShown = computed(
+    () => this.careMode() !== 'decor' && (this.ichCount() > 0 || this.treatment() !== null),
+  );
+  protected readonly treatmentStatus = computed(() => treatmentStatusText(this.treatment()));
+  protected readonly treatmentKinds = TREATMENT_KINDS;
+  protected readonly treatments = TREATMENTS;
+  protected readonly treatmentSource = treatmentSourceText;
+  protected readonly treatmentSources = treatmentSourcesLine();
 
   protected supportName(kind: SupportKind): string {
     return SUPPORT_CATALOG[kind].name;

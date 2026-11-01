@@ -376,6 +376,22 @@ test.describe('Captures', () => {
     expect(errors).toEqual([]);
   });
 
+  // Soins des points blancs (#361) : bac malade (`points-blancs=1`), réglages ouverts, une
+  // dose de médicament donnée : section « Soins » avec le traitement en cours et alerte
+  // « Traitement en cours ». Simulation à l'arrêt dès t = 0, comme `front-panneau`.
+  test('angle front avec le panneau de soins', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    await page.goto(`/?seed=${SEED}&camera=front&heure=12&vitesse=0&points-blancs=1`);
+    await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+    await page.getByRole('button', { name: 'Réglages' }).click();
+    await page.getByRole('button', { name: 'Ajouter 1 dose de médicament' }).click();
+    await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-treatment', /^5;/);
+    await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-tick', '0');
+    await page.screenshot({ path: join(OUTPUT_DIR, 'front-soins.png'), animations: 'disabled' });
+    expect(errors).toEqual([]);
+  });
+
   // Mode décor (#278) : bac tropical avec des poissons d'autres milieux (clowns du récif, un
   // koï), contrat de capture (`mode=decor`), puis la même scène avec l'interface : badge à la
   // place du tableau de bord, simulation à l'arrêt dès t = 0.

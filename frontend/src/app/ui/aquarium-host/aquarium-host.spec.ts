@@ -1207,6 +1207,43 @@ describe('AquariumHost', () => {
       expect(waterAttr()).toBe('bonne;24;28;0;0;0');
     });
 
+    it('soins des points blancs (#361) : geste refusé ou accepté, état exposé et enregistré', async () => {
+      await create('?seed=42&points-blancs=1&vitesse=0');
+      const attr = () => fixture.nativeElement.getAttribute('data-aqfish-treatment');
+      expect(host().treatment()).toBeNull();
+      expect(attr()).toBeNull();
+      // Néons du bac : le sel est accepté avec une mise en garde, pas encore efficace.
+      host().treat('sel');
+      expect(host().world!.water.salt).toBe(1);
+      expect(host().treatmentNotice()).toMatchObject({
+        ok: true,
+        warning: expect.stringContaining('néons'),
+      });
+      host().treat('medicament');
+      expect(host().world!.water.medication).toBe(1);
+      expect(host().treatment()).toEqual({
+        products: 'médicament 1,0 dose',
+        remainingDays: 5,
+        medicationDays: 2.3,
+      });
+      expect(attr()).toBe('5;2.3');
+      host().treat('medicament');
+      expect(host().treatmentNotice()).toMatchObject({ ok: false });
+      expect(host().world!.water.medication).toBe(1);
+      const saved = parseSaveWorlds(saveStorage!.getItem(SAVE_STORAGE_KEY)!);
+      expect(saved.ok && saved.world.water).toMatchObject({ salt: 1, medication: 1, ichCure: 0 });
+      // Traitement inconnu : ignoré.
+      host().treat('inconnu' as never);
+      expect(host().treatmentNotice()).toMatchObject({ ok: false });
+    });
+
+    it('soins en capture : sans effet', async () => {
+      await create('?capture=1&seed=42&points-blancs=1');
+      host().treat('medicament');
+      expect(host().world!.water.medication).toBeUndefined();
+      expect(host().treatmentNotice()).toBeNull();
+    });
+
     it('eau= en capture : eau d’exemple, troublée si mauvaise ; boutons sans effet', async () => {
       await create('?capture=1&seed=42&eau=mauvaise');
       expect(host().world!.water.nitrate).toBe(50);

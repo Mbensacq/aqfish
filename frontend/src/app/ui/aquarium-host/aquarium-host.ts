@@ -196,6 +196,7 @@ import {
   acceptsSpecies,
   careModeOf,
   isCareMode,
+  isDecorMode,
   setCareModeInPlace,
   speciesShownIn,
   type CareMode,
@@ -221,6 +222,7 @@ import {
   setWorldCatappaInPlace,
   setWorldHeaterInPlace,
   starveWorldInPlace,
+  treatWorldInPlace,
   type Entity,
   type MutableWorld,
   type World,
@@ -235,6 +237,14 @@ import {
   type WaterReadout,
 } from '../../sim/water-quality';
 import { waterLiters } from '../../sim/water';
+import {
+  sameTreatment,
+  TREATMENTS,
+  treatmentReadout,
+  type TreatmentKind,
+  type TreatmentNotice,
+  type TreatmentReadout,
+} from '../../sim/treatment';
 import { DEFAULT_WATER_SAMPLE, waterSample, type WaterSample } from '../../sim/water-dashboard';
 import {
   EMPTY_HEALTH_SUMMARY,
@@ -297,6 +307,11 @@ export const WATER_ATTRIBUTE = 'data-aqfish-water';
 export const CATAPPA_ATTRIBUTE = 'data-aqfish-catappa';
 /** pH de l'eau et sa zone pour les espèces présentes, « 6.9;tolere » (#236). */
 export const PH_ATTRIBUTE = 'data-aqfish-ph';
+/**
+ * Traitement des points blancs en cours (#361) : « jours restants;jours avant de redoser »
+ * (`4.5;3.2`, second champ vide sans médicament) ; absent sans traitement.
+ */
+export const TREATMENT_ATTRIBUTE = 'data-aqfish-treatment';
 /** Pas de simulation entre deux relevés de l'eau dans la boucle (0,5 s simulée). */
 export const WATER_READOUT_TICKS = 30;
 /** Attribut du composant hôte exposant l'environnement courant (`tropical`, `bassin`, #87). */
@@ -759,6 +774,12 @@ export class AquariumHost {
    * (`exposeWater`) et remplacée seulement si ce qu'elle affiche change (`sameHealthSummary`).
    */
   readonly health = signal<HealthSummary>(EMPTY_HEALTH_SUMMARY, { equal: sameHealthSummary });
+  /** Traitement des points blancs en cours (#361), relevé avec l'eau ; `null` : aucun. */
+  readonly treatment = signal<TreatmentReadout | null>(null, { equal: sameTreatment });
+  /** Message du dernier geste de soin (#361) ; `null` : aucun depuis le dernier changement de bac. */
+  readonly treatmentNotice = signal<TreatmentNotice | null>(null);
+  /** Monde du dernier geste de soin : le message s'efface quand le bac affiché change. */
+  private noticeWorld: World | null = null;
   /** Pas du dernier relevé de l'eau (`exposeWater`). */
   private waterReadTick = Number.NEGATIVE_INFINITY;
   /** Instant (ms, horloge de `requestAnimationFrame`) du dernier relevé de la boucle. */
@@ -1149,6 +1170,30 @@ export class AquariumHost {
     this.exposeWater();
     this.saveNow();
     this.scheduleFrame();
+  }
+
+  /**
+   * Geste de soin contre les points blancs (#361) : un pas du traitement `kind` (`TREATMENTS`),
+   * accepté ou refusé avec un message (`treatmentNotice`) ; accepté, relevé et enregistrement.
+   * Sans effet en mode capture, en mode décor, avant le démarrage ou pour un traitement inconnu.
+   */
+  treat(kind: TreatmentKind): void {
+    const world = this.currentWorld;
+    if (!world || this.capture || isDecorMode(world) || !Object.hasOwn(TREATMENTS, kind)) {
+      return;
+    }
+    const outcome = treatWorldInPlace(world, kind, TREATMENTS[kind].step);
+    this.noticeWorld = world;
+    this.treatmentNotice.set({
+      ok: outcome.ok,
+      text: outcome.message,
+      warning: outcome.ok ? (outcome.warning ?? null) : null,
+    });
+    if (outcome.ok) {
+      this.exposeWater();
+      this.saveNow();
+      this.scheduleFrame();
+    }
   }
 
   /**
@@ -3103,6 +3148,20 @@ export class AquariumHost {
     this.exposeTankList();
     this.waterSample.set(waterSample(world.water, world.environment, world.tick));
     this.health.set(healthSummary(world.entities));
+    const treatment = treatmentReadout(world.water);
+    this.treatment.set(treatment);
+    if (this.noticeWorld !== null && this.noticeWorld !== world) {
+      this.noticeWorld = null;
+      this.treatmentNotice.set(null);
+    }
+    if (treatment === null) {
+      this.host.nativeElement.removeAttribute(TREATMENT_ATTRIBUTE);
+    } else {
+      this.host.nativeElement.setAttribute(
+        TREATMENT_ATTRIBUTE,
+        `${treatment.remainingDays};${treatment.medicationDays ?? ''}`,
+      );
+    }
     const readout = waterReadout(
       world.water,
       world.environment,

@@ -2,6 +2,7 @@ import type { GuidePage } from './care-guide';
 import type { MixWarning } from './compatibility';
 import { HUNGRY_AVERAGE, type HealthSummary } from './health-summary';
 import { MIX_REASON_TEXT, SPECIES_LABELS } from './species-catalog';
+import { tenthText, type TreatmentReadout } from './treatment';
 import { WATER_CHANGE_SHARE, WATER_TEMPERATURES } from './water';
 import {
   compoundLevel,
@@ -30,7 +31,9 @@ import type { WaterCompound } from './water-quality';
  * - **points blancs** (issue #366, ADR 0089) : une alerte dès qu'un animal en montre les
  *   signes (`HealthSummary.ich`), critique au stade aggravé, avec un lien vers la page
  *   « Maladies » du wiki (`wiki`) ; ces animaux ne sont plus comptés dans l'alerte de santé,
- *   qui ne parle que des autres malades.
+ *   qui ne parle que des autres malades ;
+ * - **traitement en cours** (issue #361, ADR 0091) : une alerte « attention » tant que la cure
+ *   avance, avec les jours restants et, pour le médicament, le délai avant de redoser.
  *
  * Les causes et actions sont des **textes de jeu** : elles décrivent le modèle de la
  * simulation (`sim/water.ts`, `sim/wellbeing.ts`), simplifié, pas une règle d'aquariophilie.
@@ -46,7 +49,8 @@ export const ALERT_SEVERITY_LABELS: Readonly<Record<AlertSeverity, string>> = {
 };
 
 /** Sujet d'une alerte (identifiant unique). */
-export type AlertId = WaterCompound | 'temperature' | 'ph' | 'ich' | 'hunger' | 'health' | 'mix';
+export type AlertId =
+  WaterCompound | 'temperature' | 'ph' | 'ich' | 'treatment' | 'hunger' | 'health' | 'mix';
 
 /** Ordre des alertes de même gravité. */
 export const ALERT_ORDER: readonly AlertId[] = [
@@ -55,6 +59,7 @@ export const ALERT_ORDER: readonly AlertId[] = [
   'temperature',
   'ph',
   'ich',
+  'treatment',
   'hunger',
   'nitrate',
   'mix',
@@ -88,6 +93,8 @@ export interface AlertInput {
    * absent ou vide : aucun (issue #271).
    */
   readonly mixes?: readonly MixWarning[];
+  /** Traitement des points blancs en cours (`treatmentReadout`, issue #361) ; absent : aucun. */
+  readonly treatment?: TreatmentReadout | null;
 }
 
 const SEVERITY_OF: Readonly<Record<GaugeLevel, AlertSeverity | null>> = {
@@ -249,8 +256,7 @@ function hungerAlert(health: HealthSummary): DashboardAlert | null {
 
 /**
  * Points blancs (issue #366) : animaux qui en montrent les signes, critique dès qu'un est au
- * stade aggravé. Renvoie à la page « Maladies » du wiki. Pas encore de traitement dans le jeu
- * (lot 2/2) : l'action ne promet pas de guérison.
+ * stade aggravé. Renvoie à la page « Maladies » du wiki ; l'action renvoie aux soins (#361).
  */
 export function ichAlert(health: HealthSummary): DashboardAlert | null {
   if (health.ich <= 0) {
@@ -265,8 +271,31 @@ export function ichAlert(health: HealthSummary): DashboardAlert | null {
       `parasite (Ichthyophthirius) favorisé par une eau instable ; ${animalCount(health.ich)} touché${health.ich > 1 ? 's' : ''}` +
       (aggravated ? `, dont ${health.ichAggravated} au stade aggravé` : ''),
     action:
-      'Lire la page « Maladies » du wiki ; garder l’eau stable (température, ammoniaque, nitrites)',
+      'Traiter plusieurs jours : Réglages, Soins ; garder l’eau stable (température, ammoniaque, nitrites)',
     wiki: 'maladies',
+  };
+}
+
+/**
+ * Traitement des points blancs en cours (issue #361) : jours restants à la température
+ * actuelle et, pour le médicament, le délai avant de redoser. Renvoie à la page « Produits et
+ * traitements » du wiki.
+ */
+export function treatmentAlert(treatment: TreatmentReadout | null): DashboardAlert | null {
+  if (treatment === null) {
+    return null;
+  }
+  const redose =
+    treatment.medicationDays === null
+      ? ''
+      : ` ; redoser le médicament avant ${tenthText(treatment.medicationDays)} j`;
+  return {
+    id: 'treatment',
+    severity: 'attention',
+    message: 'Traitement en cours',
+    cause: `${treatment.products} ; points blancs en recul`,
+    action: `Continuer encore ${tenthText(treatment.remainingDays)} j${redose} ; un changement d’eau retire une part du produit`,
+    wiki: 'produits',
   };
 }
 
@@ -345,7 +374,7 @@ function rank(alert: DashboardAlert): number {
  * bonne santé : aucune alerte.
  */
 export function dashboardAlerts(input: AlertInput): readonly DashboardAlert[] {
-  const { sample, phBands, health, mixes = [] } = input;
+  const { sample, phBands, health, mixes = [], treatment = null } = input;
   const found: DashboardAlert[] = [];
   const push = (alert: DashboardAlert | null) => {
     if (alert !== null && !found.some((a) => a.id === alert.id)) {
@@ -357,6 +386,7 @@ export function dashboardAlerts(input: AlertInput): readonly DashboardAlert[] {
   push(temperatureAlert(sample));
   push(phAlert(sample.ph, phBands));
   push(ichAlert(health));
+  push(treatmentAlert(treatment));
   push(hungerAlert(health));
   push(compoundAlert('nitrate', sample.nitrate));
   push(mixAlert(mixes));
