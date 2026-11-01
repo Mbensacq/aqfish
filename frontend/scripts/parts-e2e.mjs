@@ -9,7 +9,8 @@
 //   node scripts/parts-e2e.mjs [options Playwright]         (npm run e2e)
 //     avec --shard=N/M : lance les seuls fichiers de la part N ; sans : Playwright tel quel.
 //   node scripts/parts-e2e.mjs --mesurer journal1.txt …      (journaux du rapporteur `list`)
-//     réécrit e2e/durees.json à partir des journaux des parts de la CI.
+//     réécrit e2e/durees.json à partir des journaux des parts de la CI (plusieurs séries :
+//     moyenne par fichier).
 import { spawnSync } from 'node:child_process';
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -108,6 +109,27 @@ export function parseListDurations(text) {
   return sorted;
 }
 
+/**
+ * Moyenne, par fichier, des durées de plusieurs journaux (un journal = une part d'une série) :
+ * un fichier mesuré dans deux séries compte pour la moyenne des deux, ce qui lisse l'écart
+ * entre machines de la CI (±30 %). Secondes arrondies au dixième, clés triées.
+ */
+export function averageDurations(measures) {
+  const sums = {};
+  const counts = {};
+  for (const measure of measures) {
+    for (const [file, seconds] of Object.entries(measure)) {
+      sums[file] = (sums[file] ?? 0) + seconds;
+      counts[file] = (counts[file] ?? 0) + 1;
+    }
+  }
+  const average = {};
+  for (const file of Object.keys(sums).sort()) {
+    average[file] = Math.round((sums[file] / counts[file]) * 10) / 10;
+  }
+  return average;
+}
+
 function e2eFiles() {
   return readdirSync(E2E_DIR)
     .filter((f) => f.endsWith('.spec.ts') && !EXCLUDED.has(f))
@@ -139,11 +161,9 @@ function runPlaywright(args) {
 
 function main(argv) {
   if (argv[0] === '--mesurer') {
-    const text = argv
-      .slice(1)
-      .map((f) => readFileSync(f, 'utf8'))
-      .join('\n');
-    const durations = parseListDurations(text);
+    const durations = averageDurations(
+      argv.slice(1).map((f) => parseListDurations(readFileSync(f, 'utf8'))),
+    );
     const count = Object.keys(durations).length;
     if (count === 0) {
       throw new Error('aucune ligne du rapporteur `list` trouvée dans les journaux');

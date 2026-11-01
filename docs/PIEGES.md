@@ -121,13 +121,15 @@ haut de sa section.
     télécharger les journaux des 6 parts
     (`gh api repos/{owner}/{repo}/actions/jobs/<id>/logs > p1.txt`, identifiants dans
     `commits/<sha>/check-runs`), puis `node scripts/parts-e2e.mjs --mesurer p*.txt`
-    (réécrit `e2e/durees.json`) et le committer.
+    (réécrit `e2e/durees.json`) et le committer. Donner les journaux de **plusieurs séries**
+    (moyenne par fichier) : une seule série garde l'écart de sa machine la plus lente.
   - **Vérifier une répartition** sans rien lancer :
     `for i in 1 2 3 4 5 6; do npm run e2e -- --shard=$i/6 --list | tail -1; done` (total =
     `npx playwright test --project=e2e --list`).
   - Les machines de la CI varient de ±30 % pour un même lot de tests (part 2 : 28,9 puis
-    37,5 min, mêmes 63 tests) : viser ~21 min estimées par part (124 min au total au
-    cycle 125), pas le délai de 45 min.
+    37,5 min, mêmes 63 tests) : au cycle 125, ~130 min de tests au total, soit ~22 min par
+    part au mieux ; une part peut encore atteindre 26 min sur une machine lente. Sous 25 min
+    à coup sûr : alléger les tests ou ajouter des parts (`ci.yml`, zone protégée).
   - Un test très long reste à découper (`dimensions-bac.spec.ts` : 5 min 20 en un test,
     deux depuis #281) ; une attente fixe qui attend un changement d'état devient
     `expect.poll` (`fond-ecran.spec.ts`). Les attentes fixes qui vérifient que **rien ne

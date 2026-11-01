@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { distribute, parseListDurations, parseShard } from './parts-e2e.mjs';
+import { averageDurations, distribute, parseListDurations, parseShard } from './parts-e2e.mjs';
 
 test('parseShard : formes =N/M et N/M, autres arguments conservés dans l’ordre', () => {
   assert.deepEqual(parseShard(['--shard=2/6']), { shard: { current: 2, total: 6 }, rest: [] });
@@ -82,4 +82,11 @@ test('parseListDurations : lignes réussies et échouées, unités, tentatives a
   ].join('\r\n');
   assert.deepEqual(parseListDurations(log), { 'affames.spec.ts': 5.4, 'vues.spec.ts': 126.3 });
   assert.deepEqual(parseListDurations(''), {});
+});
+
+test('averageDurations : moyenne des séries où le fichier est mesuré, clés triées', () => {
+  const merged = averageDurations([{ b: 10, a: 30 }, { a: 50 }, { c: 0.25 }]);
+  assert.deepEqual(merged, { a: 40, b: 10, c: 0.3 });
+  assert.deepEqual(Object.keys(merged), ['a', 'b', 'c']);
+  assert.deepEqual(averageDurations([]), {});
 });
