@@ -4635,6 +4635,12 @@
           "debut": "2026-11-01T22:57:10.228Z",
           "fin": "2026-11-01T23:42:37.430Z",
           "note": "Verdict RÉSERVES (e2e complet non rejoué en local, CI verte), 0 bug, 114 captures c126 publiées, lint/unitaires verts"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-01T23:43:08.878Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
