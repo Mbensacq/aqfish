@@ -4625,10 +4625,10 @@
           "note": "Issue #370 : lisibilité points blancs, alerte, ancistrus, otocinclus, panneau (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-01T21:09:34.459Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-01T22:56:45.321Z",
+          "note": "PR #385 : lisibilité points blancs (voxels tachables, part 0,4), alerte santé (weakWithoutIch), ancistrus recoloré + capture libre-eau-douce-lot2-fond, liste Population sans ligne coupée ; CI verte ; 11 captures changées (voulu, listées) ; pied d'attribution réinjecté par l'environnement dans le corps de #385"
         }
       },
       "metriques": {}
