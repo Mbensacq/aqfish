@@ -4511,10 +4511,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-01T10:18:24.866Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-01T10:19:02.987Z",
+          "note": "Issue #346 : mode immersif lot 2/2, tapotement, nourriture et appui long (M)"
         }
       },
       "metriques": {}
