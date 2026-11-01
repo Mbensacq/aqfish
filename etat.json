@@ -4409,10 +4409,10 @@
           "note": "Issue #366 : points blancs visibles, alerte et lien wiki (S)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-01T00:34:32.486Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-01T01:50:19.025Z",
+          "note": "PR #369 : points blancs visibles, alerte et lien wiki (ADR 0089), CI verte 1er essai ; 108 captures identiques à main, 3 nouvelles"
         }
       },
       "metriques": {}
