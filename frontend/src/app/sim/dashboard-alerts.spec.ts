@@ -3,6 +3,7 @@ import {
   alertsAnnouncement,
   animalCount,
   dashboardAlerts,
+  ichAlert,
   MAX_SHOWN_ALERTS,
   mixAlert,
   shownAlerts,
@@ -10,6 +11,7 @@ import {
   type DashboardAlert,
 } from './dashboard-alerts';
 import { mixWarnings } from './compatibility';
+import { ICH_AGGRAVATED_AT, ICH_VISIBLE_AT } from './disease';
 import { EMPTY_HEALTH_SUMMARY, healthSummary, type HealthSummary } from './health-summary';
 import { freshWater, WATER_TEMPERATURES } from './water';
 import { waterSample, type WaterSample } from './water-dashboard';
@@ -273,5 +275,79 @@ describe('alerte de mélange déconseillé (#271)', () => {
     expect(ids(alerts)).toEqual(['nitrate', 'mix', 'health']);
     expect(alerts.find((a) => a.id === 'health')?.cause).not.toContain('mélange');
     expect(new Set(ALERT_ORDER).size).toBe(ALERT_ORDER.length);
+  });
+});
+
+describe('alerte des points blancs (#366)', () => {
+  const visible = ICH_VISIBLE_AT + 60;
+
+  it('sans animal aux points visibles (sains, en incubation) : aucune alerte ni lien', () => {
+    expect(ichAlert(HEALTHY)).toBeNull();
+    const incubating = healthSummary([
+      { species: 'neon', health: 1, hunger: 0.2, ich: 0 },
+      { species: 'neon', health: 1, hunger: 0.2, ich: ICH_VISIBLE_AT - 1 },
+    ]);
+    expect(ichAlert(incubating)).toBeNull();
+    expect(dashboardAlerts(input({}, incubating))).toEqual([]);
+  });
+
+  it('points visibles : « Points blancs », attention, lien vers la page « Maladies » du wiki', () => {
+    const health = healthSummary([
+      { species: 'neon', health: 1, hunger: 0.2, ich: visible },
+      { species: 'guppy', health: 1, hunger: 0.2 },
+    ]);
+    const alerts = dashboardAlerts(input({}, health));
+    expect(alerts).toEqual([
+      {
+        id: 'ich',
+        severity: 'attention',
+        message: 'Points blancs',
+        cause: 'parasite (Ichthyophthirius) favorisé par une eau instable ; 1 animal touché',
+        action:
+          'Lire la page « Maladies » du wiki ; garder l’eau stable (température, ammoniaque, nitrites)',
+        wiki: 'maladies',
+      },
+    ]);
+    expect(alertsAnnouncement(alerts)).toBe('1 alerte : Points blancs (attention).');
+  });
+
+  it('stade aggravé : critique, effectif des aggravés dans la cause', () => {
+    const health = healthSummary([
+      { species: 'neon', health: 1, hunger: 0.2, ich: visible },
+      { species: 'neon', health: 1, hunger: 0.2, ich: ICH_AGGRAVATED_AT },
+      { species: 'neon', health: 1, hunger: 0.2, ich: ICH_AGGRAVATED_AT },
+    ]);
+    const alert = ichAlert(health);
+    expect(alert).toMatchObject({ id: 'ich', severity: 'critique', wiki: 'maladies' });
+    expect(alert?.cause).toBe(
+      'parasite (Ichthyophthirius) favorisé par une eau instable ; 3 animaux touchés, dont 2 au stade aggravé',
+    );
+  });
+
+  it('les malades aux points blancs ne sont pas recomptés dans l’alerte de santé', () => {
+    const onlyIch = healthSummary([
+      { species: 'neon', health: 0.5, hunger: 0.2, ich: visible },
+      { species: 'guppy', health: 1, hunger: 0.2 },
+    ]);
+    expect(ids(dashboardAlerts(input({}, onlyIch)))).toEqual(['ich']);
+    const both = healthSummary([
+      { species: 'neon', health: 0.5, hunger: 0.2, ich: visible },
+      { species: 'guppy', health: 0.6, hunger: 0.2 },
+    ]);
+    const alerts = dashboardAlerts(input({}, both));
+    expect(ids(alerts)).toEqual(['ich', 'health']);
+    expect(alerts[1]?.cause).toBe('gêne passée, santé encore basse ; animaux touchés : 1');
+    // Seule l'alerte des points blancs porte un lien vers le wiki.
+    expect(alerts.filter((a) => a.wiki !== undefined).map((a) => a.id)).toEqual(['ich']);
+  });
+
+  it('ordre : après le pH, avant la faim, à gravité égale', () => {
+    const health = healthSummary([{ species: 'neon', health: 1, hunger: 1, ich: visible }]);
+    const alerts = dashboardAlerts(
+      input({ nitrite: COMPOUND_THRESHOLDS.nitrite.watch, nitrate: 50 }, health),
+    );
+    expect(ids(alerts).indexOf('ich')).toBeGreaterThan(ids(alerts).indexOf('nitrite'));
+    expect(ALERT_ORDER.indexOf('ich')).toBe(ALERT_ORDER.indexOf('ph') + 1);
+    expect(ALERT_ORDER.indexOf('ich')).toBeLessThan(ALERT_ORDER.indexOf('hunger'));
   });
 });

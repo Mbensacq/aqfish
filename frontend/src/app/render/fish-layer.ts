@@ -1,4 +1,5 @@
 import {
+  Color,
   DynamicDrawUsage,
   Euler,
   InstancedBufferAttribute,
@@ -20,8 +21,10 @@ import {
 } from '../sim/species';
 import { wrapAngle, type Fish } from '../sim/swimmer';
 import { undulationAt, undulationScale, type Undulation } from '../sim/undulation';
+import { ichSeverity, isIchContagious } from '../sim/disease';
 import { dullness } from '../sim/wellbeing';
-import { SILHOUETTES, createFishGeometry, modelBodyLength } from './fish-model';
+import { SILHOUETTES, SPOT_ATTRIBUTE, createFishGeometry, modelBodyLength } from './fish-model';
+import { PALETTE } from './palette';
 
 /** Nombre maximal de poissons d'une espèce affichés (capacité des `InstancedMesh`). */
 export const MAX_FISH_PER_SPECIES = 256;
@@ -48,6 +51,55 @@ export const DULL_DARKENING = 0.15;
 export const DULL_ATTRIBUTE = 'aqfishDull';
 
 const COLOR_VERTEX = '#include <color_vertex>';
+
+/**
+ * Points blancs (issue #366, ADR 0089) : part des voxels d'un poisson blanchis à l'intensité
+ * maximale (stade aggravé). Choisie sur capture (0,3 essayé d'abord : le néon perdait presque
+ * tout son bleu) : le néon, une dizaine de pixels de scène de long, montre deux ou trois
+ * points en vue de face sans cesser d'être reconnaissable.
+ */
+export const ICH_SPOT_SHARE = 0.25;
+/** Intensité des points dès leur apparition (début du stade visible), dans [0, 1]. */
+export const ICH_SPOT_MIN = 0.4;
+/** Couleur des points : blanc cassé de la palette (`koiBlanc`, `docs/DA.md`). */
+export const ICH_SPOT_COLOR = PALETTE.koiBlanc;
+/** Attribut d'instance de l'intensité des points blancs, dans [0, 1]. */
+export const ICH_ATTRIBUTE = 'aqfishIch';
+
+/**
+ * Intensité des points blancs d'un poisson (issue #366), dans [0, 1] : 0 sain ou en
+ * incubation (`ich` absent ou invalide compris), puis de `ICH_SPOT_MIN` au début du stade
+ * visible à 1 au stade aggravé (`ichSeverity`, `sim/disease.ts`).
+ */
+export function ichSpots(ich: number | undefined): number {
+  if (!isIchContagious(ich)) {
+    return 0;
+  }
+  return ICH_SPOT_MIN + (1 - ICH_SPOT_MIN) * ichSeverity(ich);
+}
+
+/**
+ * Ajoute les points blancs par instance au shader de sommets déjà terni (`withDullness`) :
+ * un voxel dont le rang de taché (`aqfishSpot`, `render/fish-model.ts`) est sous
+ * `intensité × ICH_SPOT_SHARE` prend la couleur `ICH_SPOT_COLOR`, après le ternissement (les
+ * points restent clairs sur un poisson terni). Intensité nulle : aucun sommet touché, rang
+ * dans [0, 1) (captures inchangées à l'octet).
+ * @throws Error si le shader n'a pas le point d'insertion attendu.
+ */
+export function withIchSpots(vertexShader: string): string {
+  if (!vertexShader.includes(COLOR_VERTEX)) {
+    throw new Error(`Shader de poissons sans ${COLOR_VERTEX}`);
+  }
+  const c = new Color(ICH_SPOT_COLOR);
+  const rgb = [c.r, c.g, c.b].map((v) => v.toFixed(4)).join(', ');
+  return `attribute float ${ICH_ATTRIBUTE};
+attribute float ${SPOT_ATTRIBUTE};
+${vertexShader.replace(
+  COLOR_VERTEX,
+  `${COLOR_VERTEX}
+	if ( ${SPOT_ATTRIBUTE} < ${ICH_ATTRIBUTE} * ${ICH_SPOT_SHARE.toFixed(4)} ) vColor.xyz = vec3( ${rgb} );`,
+)}`;
+}
 
 /**
  * Ajoute le ternissement par instance au shader de sommets d'un `MeshBasicMaterial` à
@@ -112,6 +164,8 @@ export class FishLayer {
   private readonly material: MeshBasicMaterial;
   /** Ternissement par instance (`dullness` de la santé), partagé par le corps et la queue. */
   private readonly dull: InstancedBufferAttribute;
+  /** Intensité des points blancs par instance (`ichSpots`, issue #366), idem. */
+  private readonly ich: InstancedBufferAttribute;
   private readonly geometries: BufferGeometry[];
   private readonly halfLength: number;
   private readonly pose: FishPose = { x: 0, y: 0, z: 0, yaw: 0, pitch: 0, phase: 0 };
@@ -152,15 +206,20 @@ export class FishLayer {
     // pleine) pour que leurs teintes ne les recouvrent pas (docs/PIEGES.md).
     this.material = new MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: 1 });
     this.material.onBeforeCompile = (shader) => {
-      shader.vertexShader = withDullness(shader.vertexShader);
+      // Chaque ajout s'insère juste après `color_vertex` : le dernier appliqué (ternissement)
+      // passe donc avant les points blancs dans le shader, qui restent clairs.
+      shader.vertexShader = withDullness(withIchSpots(shader.vertexShader));
     };
     const bodyGeometry = createFishGeometry(species, 'body', variant);
     const tailGeometry = createFishGeometry(species, 'tail', variant);
     this.geometries = [bodyGeometry, tailGeometry];
     this.dull = new InstancedBufferAttribute(new Float32Array(capacity), 1);
     this.dull.setUsage(DynamicDrawUsage);
+    this.ich = new InstancedBufferAttribute(new Float32Array(capacity), 1);
+    this.ich.setUsage(DynamicDrawUsage);
     for (const geometry of this.geometries) {
       geometry.setAttribute(DULL_ATTRIBUTE, this.dull);
+      geometry.setAttribute(ICH_ATTRIBUTE, this.ich);
     }
     this.body = new InstancedMesh(bodyGeometry, this.material, capacity);
     this.tail = new InstancedMesh(tailGeometry, this.material, capacity);
@@ -217,6 +276,7 @@ export class FishLayer {
       this.tailMatrix.multiplyMatrices(this.bodyMatrix, this.hinge).multiply(this.swing);
       this.tail.setMatrixAt(n, this.tailMatrix);
       this.dull.setX(n, dullness(fish.health));
+      this.ich.setX(n, ichSpots(fish.ich));
       n++;
     }
     this.body.count = n;
@@ -224,6 +284,7 @@ export class FishLayer {
     this.body.instanceMatrix.needsUpdate = true;
     this.tail.instanceMatrix.needsUpdate = true;
     this.dull.needsUpdate = true;
+    this.ich.needsUpdate = true;
   }
 
   /**
@@ -245,6 +306,11 @@ export class FishLayer {
   /** Ternissement d'une instance, dans [0, 1] (tests). */
   dullnessAt(index: number): number {
     return this.dull.getX(index);
+  }
+
+  /** Intensité des points blancs d'une instance, dans [0, 1] (tests). */
+  ichSpotsAt(index: number): number {
+    return this.ich.getX(index);
   }
 
   /** Lit la matrice d'une instance du corps (tests). */

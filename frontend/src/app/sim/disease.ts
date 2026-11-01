@@ -235,3 +235,17 @@ export function stepIchInPlace(
     }
   }
 }
+
+/**
+ * Points blancs au stade aggravé pour tous les animaux de `animals` qui peuvent les attraper
+ * dans l'environnement `environment` (`catchesIch`), **en place** : paramètre d'URL
+ * `points-blancs=1` (issue #366), pour l'e2e et les captures. Les autres animaux sont
+ * inchangés. Aucun tirage.
+ */
+export function infectAllInPlace(animals: readonly IchSubject[], environment: EnvironmentId): void {
+  for (const animal of animals) {
+    if (catchesIch(animal.species, environment)) {
+      animal.ich = ICH_AGGRAVATED_AT;
+    }
+  }
+}

@@ -22,11 +22,17 @@ import {
   DULL_DARKENING,
   DULL_DESATURATION,
   FishLayer,
+  ICH_ATTRIBUTE,
+  ICH_SPOT_MIN,
+  ICH_SPOT_SHARE,
+  ichSpots,
   interpolateFishPose,
   withDullness,
+  withIchSpots,
   type FishPose,
 } from './fish-layer';
-import { createFishGeometry } from './fish-model';
+import { createFishGeometry, SPOT_ATTRIBUTE } from './fish-model';
+import { ICH_AGGRAVATED_AT, ICH_VISIBLE_AT } from '../sim/disease';
 import { PIXEL_SIZE } from './pixel-art';
 
 const BOUNDS = swimBounds(NEON, waterVolume());
@@ -378,7 +384,7 @@ describe('FishLayer : couleurs ternies par la santé (#208)', () => {
       vertexShader: ShaderLib.basic.vertexShader,
     } as WebGLProgramParametersWithUniforms;
     material.onBeforeCompile(shader, null as unknown as WebGLRenderer);
-    expect(shader.vertexShader).toBe(withDullness(ShaderLib.basic.vertexShader));
+    expect(shader.vertexShader).toBe(withDullness(withIchSpots(ShaderLib.basic.vertexShader)));
     expect(shader.vertexShader).toContain(`attribute float ${DULL_ATTRIBUTE};`);
     const color = shader.vertexShader.indexOf('#include <color_vertex>');
     expect(shader.vertexShader.indexOf('vColor.xyz = mix(', color)).toBeGreaterThan(color);
@@ -389,5 +395,55 @@ describe('FishLayer : couleurs ternies par la santé (#208)', () => {
 
   it('withDullness refuse un shader sans point d’insertion', () => {
     expect(() => withDullness('void main() {}')).toThrow(/color_vertex/);
+  });
+});
+
+describe('FishLayer : points blancs (#366)', () => {
+  it('intensité : 0 sain, en incubation ou invalide ; du minimum à 1 pendant le stade visible', () => {
+    for (const ich of [undefined, 0, ICH_VISIBLE_AT - 1, Number.NaN, -5, ICH_AGGRAVATED_AT + 1]) {
+      expect(ichSpots(ich), `ich = ${ich}`).toBe(0);
+    }
+    expect(ichSpots(ICH_VISIBLE_AT)).toBe(ICH_SPOT_MIN);
+    expect(ichSpots(ICH_AGGRAVATED_AT)).toBe(1);
+    const mid = ichSpots((ICH_VISIBLE_AT + ICH_AGGRAVATED_AT) / 2);
+    expect(mid).toBeCloseTo((1 + ICH_SPOT_MIN) / 2, 9);
+  });
+
+  it('intensité par instance, dans l’ordre des instances ; 0 pour un poisson sain', () => {
+    const layer = new FishLayer(NEON, 4);
+    const healthy = fishAfterSteps(0, 1);
+    const sick: Fish = { ...fishAfterSteps(1, 1), ich: ICH_AGGRAVATED_AT };
+    layer.update([healthy, sick], 1);
+    expect(layer.ichSpotsAt(0)).toBe(0);
+    expect(layer.ichSpotsAt(1)).toBe(1);
+    layer.update([sick, healthy], 1);
+    expect(layer.ichSpotsAt(0)).toBe(1);
+    expect(layer.ichSpotsAt(1)).toBe(0);
+    layer.dispose();
+  });
+
+  it('corps et queue partagent l’attribut d’instance et portent le rang de taché des voxels', () => {
+    const layer = new FishLayer(NEON, 4);
+    const [body, tail] = layer.object.children as Mesh[];
+    expect(body.geometry.getAttribute(ICH_ATTRIBUTE)).toBe(
+      tail.geometry.getAttribute(ICH_ATTRIBUTE),
+    );
+    for (const mesh of [body, tail]) {
+      const spots = mesh.geometry.getAttribute(SPOT_ATTRIBUTE);
+      expect(spots.count).toBe(mesh.geometry.getAttribute('position').count);
+    }
+    layer.dispose();
+  });
+
+  it('shader : points après le ternissement, couleur de la palette, part des voxels', () => {
+    const shader = withDullness(withIchSpots(ShaderLib.basic.vertexShader));
+    expect(shader).toContain(`attribute float ${ICH_ATTRIBUTE};`);
+    expect(shader).toContain(`attribute float ${SPOT_ATTRIBUTE};`);
+    const dull = shader.indexOf('vColor.xyz = mix(');
+    const spots = shader.indexOf(`if ( ${SPOT_ATTRIBUTE} <`);
+    expect(dull).toBeGreaterThan(0);
+    expect(spots).toBeGreaterThan(dull);
+    expect(shader).toContain(ICH_SPOT_SHARE.toFixed(4));
+    expect(() => withIchSpots('void main() {}')).toThrow(/color_vertex/);
   });
 });

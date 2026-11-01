@@ -390,6 +390,23 @@ export class SpeciesWiki {
     }
   }
 
+  /**
+   * Ouvre le wiki directement sur la page transversale `id` (lien d'une alerte, #366), focus
+   * sur son bouton « Retour ». Signale l'ouverture (`opened`) s'il était fermé, pour que
+   * l'application replie les autres panneaux.
+   */
+  showPage(id: GuidePage): void {
+    const wasOpen = this.open();
+    this.selected.set(null);
+    this.lastAdded.set(null);
+    this.query.set('');
+    this.open.set(true);
+    if (!wasOpen) {
+      this.opened.emit();
+    }
+    this.openPage(id);
+  }
+
   /** Ferme le wiki (fiche et recherche oubliées) ; `focusToggle` rend le focus au bouton. */
   close(focusToggle = false): void {
     this.open.set(false);

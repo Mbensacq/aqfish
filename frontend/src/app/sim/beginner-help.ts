@@ -171,6 +171,7 @@ export const ALERT_TOPICS: Readonly<Record<AlertId, WhyTopicId>> = {
   nitrate: 'azote',
   temperature: 'temperature',
   ph: 'ph',
+  ich: 'sante',
   hunger: 'nourriture',
   health: 'sante',
   mix: 'cohabitation',

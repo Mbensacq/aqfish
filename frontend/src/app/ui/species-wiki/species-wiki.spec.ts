@@ -306,6 +306,29 @@ describe('SpeciesWiki, lot 2/2 (#291)', () => {
     guide.hide();
   });
 
+  it('showPage (lien d’une alerte, #366) : ouvre le wiki sur la page « Maladies », focus sur « Retour »', async () => {
+    let opened = 0;
+    fixture.componentInstance.opened.subscribe(() => opened++);
+    await click('[data-wiki-toggle]');
+    expect(q('#wiki-especes')).toBeNull();
+    fixture.componentInstance.showPage('maladies');
+    await fixture.whenStable();
+    expect(q('#wiki-especes')).not.toBeNull();
+    expect(opened).toBe(1);
+    expect(q('[data-wiki-page-view]')!.getAttribute('data-wiki-page-view')).toBe('maladies');
+    expect(q('[data-wiki-entry="points-blancs"]')!.textContent).toContain('Points blancs');
+    expect(document.activeElement).toBe(q('[data-wiki-back]'));
+    // Déjà ouvert sur une fiche : la page remplace la fiche, sans nouvel « opened ».
+    await click('[data-wiki-back]');
+    await click('[data-wiki-species="neon"]');
+    expect(q('[data-wiki-sheet]')).not.toBeNull();
+    fixture.componentInstance.showPage('maladies');
+    await fixture.whenStable();
+    expect(q('[data-wiki-sheet]')).toBeNull();
+    expect(q('[data-wiki-page-view]')!.getAttribute('data-wiki-page-view')).toBe('maladies');
+    expect(opened).toBe(1);
+  });
+
   it('fermer puis rouvrir : la liste, pas la page', async () => {
     await click('[data-wiki-page="produits"]');
     await click('[data-wiki-toggle]');

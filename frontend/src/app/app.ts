@@ -24,6 +24,7 @@ import { SpeciesWiki } from './ui/species-wiki/species-wiki';
 import { ViewPresetsBar } from './ui/view-presets-bar/view-presets-bar';
 import { FreeCameraPad } from './ui/free-camera-pad/free-camera-pad';
 import { ImmersiveMode } from './ui/immersive-mode/immersive-mode';
+import type { GuidePage } from './sim/care-guide';
 
 /**
  * Racine de l'application : le bac en 3D plein écran et, hors mode capture, l'interface
@@ -134,6 +135,14 @@ export class App {
     this.panel()?.close();
     this.help()?.fold();
     this.aquarium()?.setDecorEditing(false);
+  }
+
+  /**
+   * Bouton « Wiki » d'une alerte (#366, points blancs) : ouvre le wiki sur la page demandée ;
+   * le wiki signale son ouverture (`onWikiOpened`), qui replie les autres panneaux.
+   */
+  protected onWikiPageRequested(page: GuidePage): void {
+    this.wiki()?.showPage(page);
   }
 
   /** « Mode immersif » (#345) : replie les panneaux et quitte l'éditeur, puis ouvre le mode. */

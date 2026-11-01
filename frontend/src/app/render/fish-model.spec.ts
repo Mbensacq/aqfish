@@ -24,6 +24,7 @@ import {
   SLENDER_FISH,
   SURGEON_FISH,
   voxelSize,
+  voxelSpotRank,
 } from './fish-model';
 import { ENVIRONMENT_IDS, environmentById } from '../sim/environment';
 import {
@@ -524,5 +525,44 @@ describe('modèle du néon', () => {
     expect(tail.boundingBox!.min.x).toBeLessThan(0);
     body.dispose();
     tail.dispose();
+  });
+});
+
+describe('rang de taché des voxels (points blancs, #366)', () => {
+  it('dans [0, 1), déterministe, et varié d’un voxel à l’autre', () => {
+    const ranks: number[] = [];
+    for (let col = -2; col < 20; col++) {
+      for (let row = 0; row < 8; row++) {
+        for (let layer = -1; layer < 6; layer++) {
+          const rank = voxelSpotRank(col, row, layer);
+          expect(rank).toBeGreaterThanOrEqual(0);
+          expect(rank).toBeLessThan(1);
+          expect(voxelSpotRank(col, row, layer)).toBe(rank);
+          ranks.push(rank);
+        }
+      }
+    }
+    // Répartition grossièrement uniforme : environ 30 % sous 0,3.
+    const share = ranks.filter((r) => r < 0.3).length / ranks.length;
+    expect(share).toBeGreaterThan(0.2);
+    expect(share).toBeLessThan(0.4);
+  });
+
+  it('un même rang pour les sommets d’un même voxel (faces entières blanchies)', () => {
+    const mesh = buildVoxelMesh(
+      SLENDER_FISH.body,
+      SLENDER_FISH.bodyDepth,
+      NEON.colors,
+      UNIT,
+      'center',
+    );
+    expect(mesh.spots.length).toBe(mesh.positions.length / 3);
+    // Chaque face (6 sommets, deux triangles) a un seul rang.
+    const perFace = mesh.spots.length / mesh.quads;
+    for (let q = 0; q < mesh.quads; q++) {
+      const face = mesh.spots.slice(q * perFace, (q + 1) * perFace);
+      expect(new Set(face).size).toBe(1);
+    }
+    expect(new Set(mesh.spots).size).toBeGreaterThan(5);
   });
 });

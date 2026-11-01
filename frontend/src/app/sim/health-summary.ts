@@ -1,3 +1,4 @@
+import { ichStage } from './disease';
 import { SPECIES, type SpeciesId } from './species';
 import { feedsOnPellets, HEALTH_FLOOR, STARVING_HUNGER } from './wellbeing';
 import type { GaugeLevel } from './water-dashboard';
@@ -16,6 +17,10 @@ import type { GaugeLevel } from './water-dashboard';
  * - la faim ne compte que pour les espèces qui mangent les granulés (`feedsOnPellets`) : les
  *   autres ne peuvent pas être nourries, leur faim n'use pas leur santé.
  *
+ * Points blancs (issue #366, ADR 0089) : la synthèse compte aussi les animaux qui en
+ * montrent les signes (`ich`, `sim/disease.ts`, stades visible et aggravé) ; l'incubation,
+ * sans signe, n'est pas comptée.
+ *
  * Seuils : valeurs de jeu (approximations, pas des mesures).
  */
 
@@ -26,11 +31,13 @@ export const WEAK_HEALTH = 0.4;
 /** Faim moyenne à partir de laquelle (comprise) la jauge de faim passe « à surveiller ». */
 export const HUNGRY_AVERAGE = 0.7;
 
-/** Animal vu par la synthèse : espèce, faim et santé (`Fish`). */
+/** Animal vu par la synthèse : espèce, faim, santé et points blancs (`Fish`). */
 export interface HealthSubject {
   readonly species: SpeciesId;
   readonly hunger: number;
   readonly health: number;
+  /** Âge de l'infection par les points blancs (`sim/disease.ts`) ; absent : sain. */
+  readonly ich?: number;
 }
 
 /** Synthèse de la santé d'un bac. Objet de données pur. */
@@ -41,7 +48,10 @@ export interface HealthSummary {
   readonly averageHealth: number | null;
   /** Faim moyenne des animaux nourris aux granulés, dans [0, 1] ; `null` s'il n'y en a pas. */
   readonly averageHunger: number | null;
-  /** Animaux malades : santé au plus `SICK_HEALTH`. */
+  /**
+   * Animaux malades : santé au plus `SICK_HEALTH`, ou points blancs visibles (`ich`, issue
+   * #366) ; chacun compté une fois. `sick − ich` : malades sans points blancs visibles.
+   */
   readonly sick: number;
   /** Animaux faibles : santé au plus `WEAK_HEALTH` (plancher compris). */
   readonly weak: number;
@@ -49,6 +59,10 @@ export interface HealthSummary {
   readonly starving: number;
   /** Animaux en détresse : faibles ou affamés, chacun compté une fois. */
   readonly distressed: number;
+  /** Animaux qui montrent les points blancs (stades visible et aggravé, issue #366). */
+  readonly ich: number;
+  /** Parmi eux, animaux au stade aggravé. */
+  readonly ichAggravated: number;
 }
 
 /** Synthèse d'un bac sans animal. */
@@ -60,6 +74,8 @@ export const EMPTY_HEALTH_SUMMARY: HealthSummary = {
   weak: 0,
   starving: 0,
   distressed: 0,
+  ich: 0,
+  ichAggravated: 0,
 };
 
 /** Santé lue : non finie → 1, sinon bornée à [`HEALTH_FLOOR`, 1]. */
@@ -88,12 +104,16 @@ export function healthSummary(animals: Iterable<HealthSubject>): HealthSummary {
   let weak = 0;
   let starving = 0;
   let distressed = 0;
+  let ich = 0;
+  let ichAggravated = 0;
   for (const animal of animals) {
     count += 1;
     const health = readHealth(animal.health);
     healthSum += health;
     const isWeak = health <= WEAK_HEALTH;
-    if (health <= SICK_HEALTH) {
+    const stage = ichStage(animal.ich);
+    const spots = stage === 'visible' || stage === 'aggravee';
+    if (health <= SICK_HEALTH || spots) {
       sick += 1;
     }
     if (isWeak) {
@@ -112,6 +132,12 @@ export function healthSummary(animals: Iterable<HealthSubject>): HealthSummary {
     if (isWeak || isStarving) {
       distressed += 1;
     }
+    if (spots) {
+      ich += 1;
+      if (stage === 'aggravee') {
+        ichAggravated += 1;
+      }
+    }
   }
   if (count === 0) {
     return EMPTY_HEALTH_SUMMARY;
@@ -124,6 +150,8 @@ export function healthSummary(animals: Iterable<HealthSubject>): HealthSummary {
     weak,
     starving,
     distressed,
+    ich,
+    ichAggravated,
   };
 }
 
@@ -151,6 +179,8 @@ export function sameHealthSummary(a: HealthSummary, b: HealthSummary): boolean {
     a.weak === b.weak &&
     a.starving === b.starving &&
     a.distressed === b.distressed &&
+    a.ich === b.ich &&
+    a.ichAggravated === b.ichAggravated &&
     percent(a.averageHealth) === percent(b.averageHealth) &&
     percent(a.averageHunger) === percent(b.averageHunger)
   );
@@ -205,6 +235,11 @@ const SPOKEN_LEVELS: Readonly<Record<GaugeLevel, string>> = {
   rouge: 'critique',
 };
 
+/** « , dont 2 avec des points blancs » ; rien sans animal atteint. */
+function ichSpoken(count: number): string {
+  return count > 0 ? `, dont ${count} avec des points blancs` : '';
+}
+
 /** Lignes de la synthèse, dans l'ordre d'affichage : santé, faim, malades, détresse. */
 export function healthItems(summary: HealthSummary): readonly HealthItem[] {
   const healthPercent = percent(summary.averageHealth);
@@ -236,7 +271,7 @@ export function healthItems(summary: HealthSummary): readonly HealthItem[] {
       label: 'Malades',
       value: String(summary.sick),
       level: sickLevel,
-      spoken: `Animaux malades : ${summary.sick} sur ${summary.animals}, ${SPOKEN_LEVELS[sickLevel]}`,
+      spoken: `Animaux malades : ${summary.sick} sur ${summary.animals}${ichSpoken(summary.ich)}, ${SPOKEN_LEVELS[sickLevel]}`,
     },
     {
       id: 'distressed',

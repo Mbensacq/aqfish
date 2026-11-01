@@ -217,6 +217,7 @@ import {
   changeWorldWaterInPlace,
   createDefaultWorld,
   feedInPlace,
+  infectWorldInPlace,
   setWorldCatappaInPlace,
   setWorldHeaterInPlace,
   starveWorldInPlace,
@@ -2575,6 +2576,11 @@ export class AquariumHost {
       // Animaux affamés de `affames=1` (#208), en capture : à t = 0, avant d'avancer le monde.
       if (params.capture && params.starved) {
         starveWorldInPlace(world);
+      }
+      // Points blancs de `points-blancs=1` (#366), en capture comme hors capture : à t = 0,
+      // après `population=`, avant d'avancer le monde.
+      if (params.ich) {
+        infectWorldInPlace(world);
       }
       // Feuilles de catappa neuves de `catappa=` (#239), en capture : à t = 0.
       if (params.capture && params.catappa > 0) {
