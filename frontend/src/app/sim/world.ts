@@ -18,7 +18,7 @@ import {
 } from './anemones';
 import { coralLayout, coralObstacles, type CoralColony } from './corals';
 import { decorObstacles, parseDecorItems, type DecorItem } from './decor';
-import { ichStress, stepIchInPlace } from './disease';
+import { ichStress, infectAllInPlace, stepIchInPlace } from './disease';
 import {
   DEFAULT_ENVIRONMENT_ID,
   environmentById,
@@ -821,6 +821,15 @@ export function starveWorld(world: World): World {
 /** Comme `starveWorld`, **en modifiant** `world` (monde en construction, avant le rendu). */
 export function starveWorldInPlace(world: MutableWorld): void {
   starveInPlace(world.entities as Mutable<Entity>[]);
+}
+
+/**
+ * Points blancs au stade aggravé pour tous les poissons qui peuvent les attraper
+ * (`infectAllInPlace`, paramètre d'URL `points-blancs=1`, issue #366), **en modifiant**
+ * `world` (monde en construction, avant le rendu).
+ */
+export function infectWorldInPlace(world: MutableWorld): void {
+  infectAllInPlace(world.entities as Mutable<Entity>[], world.environment);
 }
 
 /**

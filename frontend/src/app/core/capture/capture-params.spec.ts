@@ -40,6 +40,7 @@ describe('parseCaptureParams', () => {
       water: null,
       shape: null,
       starved: false,
+      ich: false,
       catappa: 0,
       editSelection: null,
       editRoomSelection: null,
@@ -205,6 +206,16 @@ describe('parseCaptureParams', () => {
     expect(parseCaptureParams('?capture=1&eau=autre').water).toBe('autre');
     expect(parseCaptureParams('?capture=1').water).toBeNull();
     expect(DEFAULT_CAPTURE_PARAMS.water).toBeNull();
+  });
+
+  it('lit les points blancs : points-blancs=1 seulement, en capture comme hors capture (#366)', () => {
+    expect(parseCaptureParams('?capture=1&points-blancs=1').ich).toBe(true);
+    expect(parseCaptureParams('?seed=42&points-blancs=1').ich).toBe(true);
+    for (const value of ['0', 'oui', 'true', '', '2']) {
+      expect(parseCaptureParams(`?capture=1&points-blancs=${value}`).ich).toBe(false);
+    }
+    expect(parseCaptureParams('?capture=1').ich).toBe(false);
+    expect(DEFAULT_CAPTURE_PARAMS.ich).toBe(false);
   });
 
   it('lit les animaux affamés : affames=1 seulement, sinon nourris (#208)', () => {

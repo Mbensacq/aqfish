@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 
 import { ALERT_TOPICS, whyTopic } from '../../sim/beginner-help';
 
@@ -11,6 +19,7 @@ import {
   type AlertSeverity,
   type DashboardAlert,
 } from '../../sim/dashboard-alerts';
+import { GUIDE_PAGE_TITLES, type GuidePage } from '../../sim/care-guide';
 import { mixWarnings } from '../../sim/compatibility';
 import { environmentById, DEFAULT_ENVIRONMENT_ID, type EnvironmentId } from '../../sim/environment';
 import { NO_FISH, type PopulationCounts } from '../../sim/population';
@@ -36,6 +45,11 @@ export function alertWhyLabel(id: AlertId): string {
   return `Pourquoi ? ${whyTopic(ALERT_TOPICS[id]).title}`;
 }
 
+/** Libellé accessible du bouton « Wiki » d'une alerte (#366). */
+export function alertWikiLabel(page: GuidePage): string {
+  return `Ouvrir le wiki : page « ${GUIDE_PAGE_TITLES[page]} »`;
+}
+
 /** Niveau (icône et couleur) de chaque gravité d'alerte. */
 export const SEVERITY_LEVELS: Readonly<Record<AlertSeverity, GaugeLevel>> = {
   critique: 'rouge',
@@ -54,7 +68,8 @@ const ICONS: Readonly<Record<GaugeLevel, readonly (readonly [number, number])[]>
  * animaux, au-dessus de la barre des vues, jamais au centre du bac. Chaque alerte porte une
  * icône, sa gravité en texte et un message ; elle se déplie (souris, clavier) sur sa cause
  * probable, l'action conseillée et un bouton « Pourquoi ? » qui ouvre le guide du débutant
- * sur l'explication liée (#240). Au plus trois alertes, les autres comptées (« +N »).
+ * sur l'explication liée (#240) ; une alerte qui renvoie au wiki (points blancs, #366) y
+ * ajoute un bouton vers la page concernée (`wikiPageRequested`). Au plus trois alertes, les autres comptées (« +N »).
  * Une région `role="status"` annonce les alertes ; son texte ne change qu'avec elles (sujets
  * et gravités), donc rien n'est relu à chaque relevé. Aucune logique de simulation : il lit
  * les relevés de l'hôte (eau, santé) et en dérive les alertes par fonctions pures
@@ -159,6 +174,17 @@ const ICONS: Readonly<Record<GaugeLevel, readonly (readonly [number, number])[]>
         >
           Pourquoi ?
         </button>
+        @if (open.wiki; as page) {
+          <button
+            type="button"
+            class="status__why"
+            [attr.aria-label]="wikiLabel(page)"
+            [attr.data-alert-wiki]="page"
+            (click)="wikiPageRequested.emit(page)"
+          >
+            Wiki : {{ pageTitles[page] }}
+          </button>
+        }
       </p>
     }
   </section>`,
@@ -187,6 +213,9 @@ export class DashboardStatus {
   /** Effectif de chaque espèce (fourni par l'hôte) : mélanges déconseillés (#271). */
   readonly population = input<PopulationCounts>(NO_FISH);
 
+  /** Bouton « Wiki » d'une alerte (#366) : l'application ouvre le wiki sur cette page. */
+  readonly wikiPageRequested = output<GuidePage>();
+
   /** Alerte dépliée (une à la fois), `null` : aucune. */
   readonly expanded = signal<AlertId | null>(null);
 
@@ -197,6 +226,8 @@ export class DashboardStatus {
   protected readonly detailId = alertDetailId;
   protected readonly alertTopics = ALERT_TOPICS;
   protected readonly whyLabel = alertWhyLabel;
+  protected readonly wikiLabel = alertWikiLabel;
+  protected readonly pageTitles = GUIDE_PAGE_TITLES;
   /** « Pourquoi ? » sous une alerte : ouvre le guide sur l'explication liée (#240). */
   protected readonly guide = inject(BeginnerGuideState);
   protected readonly colors = DASHBOARD_COLORS;

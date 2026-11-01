@@ -174,6 +174,8 @@ test.describe('Captures', () => {
     { name: 'libre-interieur', query: 'piece=1&libre=2.5:1:2.6:44:-12' },
     { name: 'libre-fenetre', query: 'piece=1&libre=-0.6:0.9:2.2:21:3' },
     { name: 'libre-plafond', query: 'piece=1&libre=1.8:0.7:2.8:30:30' },
+    // Points blancs (#366) de près : caméra libre contre la vitre, néons et corydoras.
+    { name: 'libre-points-blancs', query: 'piece=1&points-blancs=1&libre=0:0.3:0.6:0:0' },
     // Pièce à deux bacs (#305, lot 2b) : une commode à droite du bac, un bac moyen posé dessus.
     { name: 'three-quarter-piece-deux-bacs', query: 'piece=1&bacs=commode,moyen@0' },
     { name: 'top-piece-deux-bacs', query: 'piece=1&bacs=commode,moyen@0&camera=top' },
@@ -198,6 +200,9 @@ test.describe('Captures', () => {
     // Animaux affamés de longue date (#208) : santé au plancher, couleurs ternies.
     { name: 'side-affames', query: 'affames=1&camera=side' },
     { name: 'three-quarter-affames', query: 'affames=1' },
+    // Points blancs (#366) : voxels clairs sur le corps et les nageoires des poissons malades.
+    { name: 'front-points-blancs', query: 'points-blancs=1&camera=front' },
+    { name: 'three-quarter-points-blancs', query: 'points-blancs=1' },
     // Feuilles de catappa (#239) : feuilles brunes au sol, eau teintée brun-thé.
     { name: 'three-quarter-catappa', query: 'catappa=3' },
     { name: 'top-catappa', query: 'catappa=5&camera=top' },

@@ -12,6 +12,7 @@ import {
   ichStage,
   ichStress,
   isIchAge,
+  infectAllInPlace,
   isIchContagious,
   stepIchInPlace,
   type IchSubject,
@@ -28,6 +29,7 @@ import {
   cloneWorld,
   createDefaultWorld,
   createWorld,
+  infectWorldInPlace,
   setWorldHeaterInPlace,
   type MutableWorld,
   type World,
@@ -400,5 +402,33 @@ describe('sauvegarde', () => {
     if (!result.ok) {
       expect(result.error).toContain('ich');
     }
+  });
+});
+
+describe('points-blancs=1 : tous les poissons concernés au stade aggravé (#366)', () => {
+  it('bac tropical : tous les poissons, au stade aggravé ; aucun tirage', () => {
+    const world = cloneWorld(createDefaultWorld(42));
+    const before = world.entities.map((f) => f.rng);
+    infectWorldInPlace(world);
+    expect(world.entities.length).toBeGreaterThan(0);
+    expect(world.entities.every((f) => f.ich === ICH_AGGRAVATED_AT)).toBe(true);
+    expect(world.entities.map((f) => f.rng)).toEqual(before);
+  });
+
+  it('paludarium et récif : amphibiens et espèces de récif épargnés', () => {
+    for (const environment of ['paludarium', 'recif', 'eaufroide', 'bassin'] as const) {
+      const world = cloneWorld(createDefaultWorld(42, environment));
+      infectWorldInPlace(world);
+      for (const fish of world.entities) {
+        const expected = catchesIch(fish.species, environment) ? ICH_AGGRAVATED_AT : undefined;
+        expect(fish.ich, `${environment} ${fish.species}`).toBe(expected);
+      }
+    }
+  });
+
+  it('liste vide : sans effet', () => {
+    const list: IchSubject[] = [];
+    infectAllInPlace(list, 'tropical');
+    expect(list).toEqual([]);
   });
 });

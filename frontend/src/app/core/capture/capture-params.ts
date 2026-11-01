@@ -48,6 +48,12 @@
  * date à t = 0 (faim maximale, santé au plancher : nage ralentie, couleurs ternies). Toute
  * autre valeur ou absent : animaux nourris et en bonne santé (séries existantes inchangées).
  *
+ * Paramètre facultatif `points-blancs=1` (issue #366) : poissons atteints des points blancs
+ * au stade aggravé à t = 0 (voxels clairs sur le corps et les nageoires, alerte du tableau de
+ * bord), en capture comme hors capture quand le monde est créé neuf (URL qui décrit le monde,
+ * ou aucune sauvegarde). Toute autre valeur ou absent : aucun malade (séries existantes
+ * inchangées).
+ *
  * Paramètre facultatif `catappa=n` (issue #239) : en mode capture, `n` feuilles de catappa
  * neuves (1 à 5) déposées à t = 0, qui teintent l'eau. Toute autre valeur ou absent : aucune
  * feuille (séries existantes inchangées).
@@ -163,6 +169,8 @@ export interface CaptureParams {
   readonly shape: string | null;
   /** Vrai pour `affames=1` : animaux affamés de longue date à t = 0 (issue #208). */
   readonly starved: boolean;
+  /** Vrai pour `points-blancs=1` : poissons atteints des points blancs à t = 0 (issue #366). */
+  readonly ich: boolean;
   /** Feuilles de catappa neuves de `catappa=` à t = 0 (issue #239), 0 si absent ou invalide. */
   readonly catappa: number;
   /** Élément du décor sélectionné par `edition=` (issue #167) ; `null` si absent ou invalide. */
@@ -288,6 +296,7 @@ export const DEFAULT_CAPTURE_PARAMS: CaptureParams = {
   water: null,
   shape: null,
   starved: false,
+  ich: false,
   catappa: 0,
   editSelection: null,
   editRoomSelection: null,
@@ -342,6 +351,7 @@ export function parseCaptureParams(search: string): CaptureParams {
     water: params.get('eau'),
     shape: params.get('forme'),
     starved: params.get('affames') === '1',
+    ich: params.get('points-blancs') === '1',
     catappa: parseCatappa(params.get('catappa')),
     editSelection: parseEditSelection(params.get('edition')),
     editRoomSelection: parseEditSelection(params.get('edition-meuble')),

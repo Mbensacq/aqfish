@@ -11,7 +11,15 @@ import { HEALTH_FLOOR } from '../../sim/wellbeing';
 import { DASHBOARD_COLORS, DASHBOARD_REST_OPACITY, DashboardFrame } from './dashboard-frame';
 import { ALERT_TOPICS } from '../../sim/beginner-help';
 import { BeginnerGuideState } from '../beginner-guide/beginner-guide-state';
-import { alertDetailId, alertWhyLabel, DashboardStatus, SEVERITY_LEVELS } from './dashboard-status';
+import {
+  alertDetailId,
+  alertWhyLabel,
+  alertWikiLabel,
+  DashboardStatus,
+  SEVERITY_LEVELS,
+} from './dashboard-status';
+import type { GuidePage } from '../../sim/care-guide';
+import { ICH_AGGRAVATED_AT } from '../../sim/disease';
 
 const STARVED: HealthSummary = healthSummary(
   Array.from({ length: 4 }, () => ({ species: 'neon' as const, health: HEALTH_FLOOR, hunger: 1 })),
@@ -26,10 +34,13 @@ const STARVED: HealthSummary = healthSummary(
     [health]="health()"
     [environment]="environment()"
     [population]="population()"
+    (wikiPageRequested)="wikiPages.push($event)"
   />`,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 class StatusHost {
+  /** Pages du wiki demandées par les alertes (#366). */
+  readonly wikiPages: GuidePage[] = [];
   readonly sample = signal<WaterSample>(DEFAULT_WATER_SAMPLE);
   readonly readout = DEFAULT_WATER_READOUT;
   readonly health = signal<HealthSummary>(EMPTY_HEALTH_SUMMARY);
@@ -150,6 +161,46 @@ describe('DashboardStatus (#260)', () => {
     expect(show).toHaveBeenCalledWith(ALERT_TOPICS.ammonia);
     expect(guide.topic()).toBe('azote');
     guide.hide();
+  });
+
+  it('points blancs : alerte avec un bouton « Wiki : Maladies » qui demande la page (#366)', async () => {
+    fixture.componentInstance.health.set(
+      healthSummary([
+        { species: 'neon', health: 1, hunger: 0.2, ich: ICH_AGGRAVATED_AT },
+        { species: 'neon', health: 1, hunger: 0.2 },
+      ]),
+    );
+    await fixture.whenStable();
+    expect(chips()).toHaveLength(1);
+    expect(chips()[0]!.textContent).toContain('Points blancs');
+    expect(root().querySelector('[data-alert="ich"]')?.getAttribute('data-severity')).toBe(
+      'critique',
+    );
+    expect(announcement()).toBe('1 alerte : Points blancs (critique).');
+    chips()[0]!.click();
+    await fixture.whenStable();
+    const link = root().querySelector<HTMLButtonElement>('[data-alert-wiki="maladies"]')!;
+    expect(link.textContent?.trim()).toBe('Wiki : Maladies');
+    expect(link.getAttribute('aria-label')).toBe(alertWikiLabel('maladies'));
+    expect(alertWikiLabel('maladies')).toBe('Ouvrir le wiki : page « Maladies »');
+    link.click();
+    expect(fixture.componentInstance.wikiPages).toEqual(['maladies']);
+    const sick = root().querySelector('[data-health="sick"]')!;
+    expect(sick.getAttribute('title')).toContain('dont 1 avec des points blancs');
+  });
+
+  it('alertes sans lien vers le wiki : aucun bouton « Wiki »', async () => {
+    fixture.componentInstance.alarm();
+    await fixture.whenStable();
+    const alertIds = [...root().querySelectorAll<HTMLElement>('[data-alert]')].map(
+      (alert) => alert.dataset['alert']!,
+    );
+    expect(alertIds.length).toBeGreaterThan(0);
+    for (const id of alertIds) {
+      root().querySelector<HTMLButtonElement>(`[data-alert="${id}"] .status__chip`)!.click();
+      await fixture.whenStable();
+      expect(root().querySelector('[data-alert-wiki]')).toBeNull();
+    }
   });
 
   it('alertes calculées depuis l’eau et la santé reçues, ordonnées par gravité', async () => {
