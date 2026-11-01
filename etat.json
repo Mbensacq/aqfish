@@ -4399,7 +4399,7 @@
       "debut": "2026-11-01T00:33:33.920Z",
       "type": "fonctionnalite",
       "issue": 366,
-      "pr": null,
+      "pr": 369,
       "version": null,
       "phases": {
         "planif": {
