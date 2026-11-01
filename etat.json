@@ -4517,10 +4517,10 @@
           "note": "Issue #346 : mode immersif lot 2/2, tapotement, nourriture et appui long (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-01T10:19:29.115Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-01T11:58:17.666Z",
+          "note": "PR #376 : tapotement (sim/glass-tap, ADR 0092), nourriture en haut d'écran, interface par appui long ; CI verte au 1er essai ; partiel : choix du bac reporté en #375 ; pied d'attribution réinjecté par l'environnement dans les corps GitHub de #375/#376"
         }
       },
       "metriques": {}
