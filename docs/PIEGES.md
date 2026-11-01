@@ -123,6 +123,20 @@ haut de sa section.
   geste (clic Playwright). Sans `localhost` ou HTTPS, l'API est absente (`about:blank` n'est
   pas un contexte sécurisé). `navigator.wakeLock.request` y est refusé (`NotAllowedError`).
   (2026-10-31)
+- **`pointercancel` en test unitaire : `releasePointerCapture` manquant** (cycle 123, #346) :
+  les contrôles d'orbite de Three.js écoutent `pointercancel` sur le canvas même désactivés,
+  et appellent `releasePointerCapture`, absent de jsdom (erreur non gérée de Vitest, tests
+  verts pourtant). Poser `canvas.releasePointerCapture = () => undefined` avant d'émettre
+  l'événement. Minuteries : `vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })`
+  et `setTimeout` global dans le composant (pas `defaultView.setTimeout`). (2026-11-01)
+- **Minuterie d'interface et rendu logiciel en e2e** (cycle 123, #346) : à 1280 × 720 sous
+  SwiftShader, une image du mode immersif peut durer plusieurs secondes ; une interface cachée
+  après 5 s seulement disparaissait entre deux assertions, et un appui (`pointerdown` puis
+  `pointerup` envoyés en deux appels Playwright) devenait un appui long. Exiger aussi un
+  nombre d'images rendues avant de cacher, envoyer les deux événements d'un toucher dans un
+  seul `evaluate`, et rendre l'interface par une touche du clavier avant de cliquer. Un clic
+  Playwright en délai court (`timeout: 5_000`) peut aussi échouer **après** avoir cliqué
+  (« waiting for scheduled navigations ») : ne pas le réessayer à l'aveugle. (2026-11-01)
 - **Deux vues WebGL à la fois : e2e en délai dépassé** (cycle 115, #345) : le mode immersif
   a sa propre `AquariumView` ; tant que l'hôte continuait de rendre derrière le plein cadre,
   le parcours à 1280 × 720 dépassait 2 min en rendu logiciel. Suspendre la boucle de l'hôte

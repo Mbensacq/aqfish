@@ -293,6 +293,11 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
   autorisation d'orientation, plein écran, Wake Lock, limite de 30 images par seconde), qui ne
   lèvent jamais. Le composant ne réapplique la caméra que si l'œil, la distance ou la vue ont
   changé (#355) et arrête sa boucle quand la page est masquée.
+- Mode immersif, fin du lot 2 (#346, ADR 0092) : un toucher bref de la vitre fait réagir les
+  poissons proches selon leur espèce (`sim/glass-tap.ts`, pur, sans tirage : fuite ou
+  curiosité, impulsion de cap et de vitesse) ; dans le haut de l'écran, il fait tomber de la
+  nourriture (`feedInPlace`). L'interface se cache seule après 5 s et revient par un appui
+  long ou une touche du clavier.
 - La position de la caméra est exposée aux tests de bout en bout par l'attribut
   `data-aqfish-camera="x,y,z"` de `app-aquarium-host`, sa cible par `data-aqfish-target`
   (mis à jour au mouvement, pas à chaque image). L'état de la simulation l'est par
@@ -344,6 +349,7 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
 | `sim/room-furniture.ts` | Meubles et plantes de la pièce (#188, ADR 0049) : catalogue voxel (`ROOM_CATALOG`), boîtes de collision au quart de tour, pose par gravité analytique (`dropRoomItem`, refus), retombée des éléments sans support (`settleRoomItems`, `removeRoomItem`), refus des gestes qui laisseraient un élément en l'air (`floatingRoomItems`), sauvegarde relue rendue cohérente (`tidyRoom`, ADR 0050), blocs à dessiner (`furnitureBlocks`, ou d'un seul élément) et boîtes de choix (`roomItemBounds`) |
 | `sim/pond-shape.ts` | Forme du bassin (#190, ADR 0080) : rectangle, ovale, haricot ; distance signée au bord (`shapeDistance`), normale, projection (`constrainToShape`, `keepInShape`), contour (`shapeContour`), purs et sans allocation. Portée par `World.shape?` et `TankPlace.shape?` (bassin seulement, `isPondShapeable`) et par les bornes de nage (`SwimBounds.outline`) |
 | `sim/pond-reshape.ts` | Réglage de la forme du bassin (#190) : `setPondShapeInPlace` ramène poissons et granulés dans la forme |
+| `sim/glass-tap.ts` | Tapoter la vitre en mode immersif (#346, ADR 0092) : point de la vitre avant sous une fraction d'écran (`glassPoint`), réaction par espèce (`TAP_REACTIONS` : fuite, curiosité ou aucune) des poissons à portée (`tapGlassInPlace`), sans tirage |
 | `sim/immersive-tank.ts` | Bac du mode immersif (#345, ADR 0086) : proportions exactes de l'écran au plus près de l'échelle réelle que permettent `IMMERSIVE_LIMITS` (`immersiveLayout`, échelle `scale`), profondeur bornée, plus petites espèces nageuses d'abord (`smallSwimmers`, `immersivePopulation`), monde en mode décor sans décor (`createImmersiveWorld`) |
 | `sim/tank-resize.ts` | Dimensions réglables du bac tropical (#171, ADR 0047) : `setTankDimensionsInPlace` borne les dimensions, ramène le décor (emprise), les poissons et les granulés dans le bac, recalcule les obstacles. Un monde porte ses dimensions (`World.dimensions?`) et sert de lieu (`Place`, `sim/environment.ts`) aux fonctions de géométrie |
 | `sim/environment.ts` | Environnements en données (#87, ADR 0026) : bac tropical, bassin, paludarium (#129), récif (#148, ADR 0039) et bac d'eau froide (#271, ADR 0065, axolotls seuls) (dimensions, niveau de l'eau, sol à berge `terrain` et ses mousses et racines `bankDecor` (#132), teintes de l'eau et du sol en noms de la palette, tons d'environnement `tones`, bordure, vue par défaut, bulles, caustiques, décor, espèces et population de départ, ADR 0027) ; `livesIn` ; `World.environment` choisit le volume d'eau des bornes de nage et des dépôts |

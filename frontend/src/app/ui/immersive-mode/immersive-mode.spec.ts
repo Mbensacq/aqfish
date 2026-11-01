@@ -7,9 +7,20 @@ import {
 import { CARD_WIDTH_MM } from '../../core/immersive/screen-calibration';
 import type { AquariumRenderer } from '../../render/aquarium-view';
 import { isDecorMode } from '../../sim/care-mode';
+import { TAP_REACTIONS } from '../../sim/glass-tap';
+import { SPECIES } from '../../sim/species';
+import type { Fish } from '../../sim/swimmer';
 import type { World } from '../../sim/world';
 import { AQUARIUM_RENDERER_FACTORY } from '../aquarium-host/aquarium-host';
-import { IMMERSIVE_STORAGE, ImmersiveMode } from './immersive-mode';
+import {
+  FEED_BAND,
+  IMMERSIVE_STORAGE,
+  ImmersiveMode,
+  LONG_PRESS_MS,
+  TAP_SLOP_PX,
+  UI_HIDE_MIN_FRAMES,
+  UI_HIDE_MS,
+} from './immersive-mode';
 
 class FakeRenderer implements AquariumRenderer {
   renders = 0;
@@ -392,6 +403,162 @@ describe('ImmersiveMode', () => {
       } finally {
         delete (document as unknown as { visibilityState?: string }).visibilityState;
       }
+    });
+  });
+
+  describe('toucher, nourriture et appui long (#346)', () => {
+    /** Événement de pointeur synthétique (jsdom n'a pas toujours `PointerEvent`). */
+    function press(type: string, x: number, y: number, extra: object = {}): Event {
+      return Object.assign(new Event(type, { bubbles: true }), {
+        pointerId: 1,
+        isPrimary: true,
+        pointerType: 'touch',
+        clientX: x,
+        clientY: y,
+        ...extra,
+      });
+    }
+
+    const canvas = (): HTMLCanvasElement => query<HTMLCanvasElement>('canvas')!;
+    const world = (): World => (fixture.componentInstance as unknown as { world: World }).world;
+
+    function tap(x: number, y: number): void {
+      canvas().dispatchEvent(press('pointerdown', x, y));
+      canvas().dispatchEvent(press('pointerup', x, y));
+      fixture.detectChanges();
+    }
+
+    /** Images à 30 par seconde, à partir de `time`. */
+    let time = 0;
+    function render(count: number): void {
+      for (let i = 0; i < count; i++) {
+        time += 1000 / 30;
+        frame(time);
+      }
+    }
+
+    /** Délai de masquage écoulé et assez d'images rendues : l'interface se cache. */
+    function waitHide(): void {
+      vi.advanceTimersByTime(UI_HIDE_MS);
+      render(UI_HIDE_MIN_FRAMES);
+    }
+
+    beforeEach(() => {
+      time = 0;
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    });
+    afterEach(() => vi.useRealTimers());
+
+    it('l’interface se cache seule, sauf pendant les réglages', async () => {
+      await create();
+      frame(0);
+      expect(host().getAttribute('data-immersive-ui')).toBe('visible');
+      render(UI_HIDE_MIN_FRAMES);
+      vi.advanceTimersByTime(UI_HIDE_MS - 1);
+      fixture.detectChanges();
+      expect(host().getAttribute('data-immersive-ui')).toBe('visible');
+      vi.advanceTimersByTime(1);
+      fixture.detectChanges();
+      expect(host().getAttribute('data-immersive-ui')).toBe('hidden');
+      // Appareil qui peine : délai écoulé, mais trop peu d'images rendues.
+      fixture.componentInstance.showUi();
+      render(UI_HIDE_MIN_FRAMES - 1);
+      vi.advanceTimersByTime(UI_HIDE_MS);
+      fixture.detectChanges();
+      expect(host().getAttribute('data-immersive-ui')).toBe('visible');
+      render(1);
+      expect(host().getAttribute('data-immersive-ui')).toBe('hidden');
+      expect(host().classList).toContain('immersive--ui-hidden');
+      // Réglages ouverts : l'interface reste ; refermés, le délai repart.
+      fixture.componentInstance.showUi();
+      fixture.componentInstance.toggleSettings();
+      waitHide();
+      waitHide();
+      expect(host().getAttribute('data-immersive-ui')).toBe('visible');
+      fixture.componentInstance.toggleSettings();
+      fixture.componentInstance.showUi();
+      waitHide();
+      expect(host().getAttribute('data-immersive-ui')).toBe('hidden');
+      // Une touche du clavier la rend (accès sans appui long).
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab' }));
+      fixture.detectChanges();
+      expect(host().getAttribute('data-immersive-ui')).toBe('visible');
+      expect(closed).toBe(0);
+    });
+
+    it('appui long : affiche l’interface, sans toucher la vitre', async () => {
+      await create();
+      frame(0);
+      waitHide();
+      expect(host().getAttribute('data-immersive-ui')).toBe('hidden');
+      const speeds = world().entities.map((f) => f.speed);
+      canvas().dispatchEvent(press('pointerdown', 195, 422));
+      vi.advanceTimersByTime(LONG_PRESS_MS - 1);
+      fixture.detectChanges();
+      expect(host().getAttribute('data-immersive-ui')).toBe('hidden');
+      vi.advanceTimersByTime(1);
+      fixture.detectChanges();
+      expect(host().getAttribute('data-immersive-ui')).toBe('visible');
+      canvas().dispatchEvent(press('pointerup', 195, 422));
+      expect(world().entities.map((f) => f.speed)).toEqual(speeds);
+      // Puis elle se cache de nouveau seule.
+      waitHide();
+      expect(host().getAttribute('data-immersive-ui')).toBe('hidden');
+    });
+
+    it('un appui qui glisse ou un second doigt n’est ni un toucher ni un appui long', async () => {
+      await create();
+      frame(0);
+      waitHide();
+      canvas().dispatchEvent(press('pointerdown', 100, 400));
+      canvas().dispatchEvent(press('pointermove', 100 + TAP_SLOP_PX + 1, 400));
+      vi.advanceTimersByTime(LONG_PRESS_MS);
+      canvas().dispatchEvent(press('pointerup', 100, 400));
+      canvas().dispatchEvent(press('pointerdown', 100, 400, { isPrimary: false }));
+      vi.advanceTimersByTime(LONG_PRESS_MS);
+      canvas().dispatchEvent(press('pointerdown', 100, 400));
+      // Les contrôles d'orbite écoutent aussi `pointercancel` ; jsdom n'a pas la capture.
+      canvas().releasePointerCapture = () => undefined;
+      canvas().dispatchEvent(new Event('pointercancel'));
+      vi.advanceTimersByTime(LONG_PRESS_MS);
+      canvas().dispatchEvent(press('pointerup', 100, 30));
+      fixture.detectChanges();
+      expect(host().getAttribute('data-immersive-ui')).toBe('hidden');
+      expect(world().food).toEqual([]);
+    });
+
+    it('toucher le haut fait tomber de la nourriture, rendue et exposée', async () => {
+      await create();
+      frame(0);
+      tap(195, FEED_BAND * size.height - 1);
+      expect(world().food.length).toBeGreaterThan(0);
+      const layout = fixture.componentInstance.currentLayout!;
+      for (const pellet of world().food) {
+        expect(Math.abs(pellet.x)).toBeLessThan(layout.dimensions.width / 2);
+      }
+      frame(1000 / 30);
+      expect(host().getAttribute('data-immersive-food')).toBe(String(world().food.length));
+      expect(fixture.componentInstance.immersiveView!.foodCount).toBe(world().food.length);
+    });
+
+    it('tapoter la vitre fait réagir les poissons proches, pas la nourriture', async () => {
+      await create();
+      // Avant le premier bac : un toucher ne fait rien et ne lève rien.
+      tap(195, 422);
+      frame(0);
+      const layout = fixture.componentInstance.currentLayout!;
+      const fish = world().entities[0] as { -readonly [K in keyof Fish]: Fish[K] };
+      // Poisson posé juste derrière la vitre, au milieu de l'écran.
+      fish.x = 0;
+      fish.y = layout.dimensions.height / 2;
+      fish.z = layout.dimensions.depth / 2 - 0.01;
+      fish.speed = SPECIES[fish.species].minSpeed;
+      const reaction = TAP_REACTIONS[fish.species];
+      tap(size.width / 2, size.height / 2);
+      expect(world().food).toEqual([]);
+      expect(fish.speed).toBe(
+        reaction === 'fuite' ? SPECIES[fish.species].maxSpeed : SPECIES[fish.species].cruiseSpeed,
+      );
     });
   });
 
