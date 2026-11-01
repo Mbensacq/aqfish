@@ -6,6 +6,7 @@ import type {
   SpeciesDefinition,
   SpeciesVariant,
 } from '../sim/species';
+import { PALETTE } from './palette';
 
 /**
  * Modèles voxel des poissons, générés par le code à partir des définitions d'espèces
@@ -400,13 +401,14 @@ export const DANIO_FISH: FishTemplate = {
 
 /**
  * Ancistrus (#362) : poisson-chat aplati, large de tête (6 voxels vue de dessus, effilé vers la
- * queue), dos brun sombre (`k`) piqueté de clair (`a`), haute dorsale (`f`), barbillons (`k`)
- * dressés au bout du museau ; larges pectorales (`paired`) posées à plat de chaque côté.
+ * queue), dos sombre (`k`) piqueté de clair (`a`), haute dorsale (`f`), barbillons clairs (`a`,
+ * #370 : sombres, ils se perdaient dans le dos) dressés au bout du museau ; larges pectorales
+ * (`paired`) posées à plat de chaque côté.
  */
 export const ANCISTRUS_FISH: FishTemplate = {
   body: [
     // queue → tête
-    '....fff....k',
+    '....fff....a',
     '.kkakkakkakk',
     'ssssasssasse',
     'bbbbbbbbbbbb',
@@ -471,8 +473,9 @@ export interface VoxelMeshData {
   /** Couleurs par sommet, en espace linéaire (convention Three.js). */
   readonly colors: Float32Array;
   /**
-   * Rang de taché de chaque sommet, dans [0, 1) : le même pour tous les sommets d'un voxel
-   * (`voxelSpotRank`), pour que les points blancs (issue #366) couvrent des voxels entiers.
+   * Rang de taché de chaque sommet, dans [0, 1] : le même pour tous les sommets d'un voxel
+   * (`voxelSpotRank`), pour que les points blancs (issue #366) couvrent des voxels entiers ;
+   * `UNSPOTTED_RANK` pour un voxel trop pâle pour qu'un point s'y voie (`spotContrasts`, #370).
    */
   readonly spots: Float32Array;
   /** Nombre de faces carrées émises. */
@@ -492,6 +495,38 @@ export function voxelSpotRank(col: number, row: number, layer: number): number {
   h = Math.imul(h, 0xc2b2ae35);
   h ^= h >>> 16;
   return (h >>> 0) / 4294967296;
+}
+
+/**
+ * Couleur des points blancs (issue #366) : blanc cassé de la palette (`koiBlanc`, `docs/DA.md`),
+ * reprise par `ICH_SPOT_COLOR` (`render/fish-layer.ts`).
+ */
+export const SPOT_COLOR = PALETTE.koiBlanc;
+
+/**
+ * Distance minimale (sRGB, composantes de 0 à 255) entre la couleur d'un voxel et `SPOT_COLOR`
+ * pour qu'il puisse porter un point blanc (issue #370). En dessous (ventre blanc cassé et
+ * nageoires menthe du néon, crème, rose pâle), un point blanc ne se verrait pas : il serait
+ * perdu pour la lecture de la maladie. Le sable (#c9b38a, distance 104) reste taché.
+ */
+export const SPOT_MIN_CONTRAST = 100;
+
+/** Rang de taché d'un voxel trop pâle : jamais sous `intensité × part` (au plus 1 × 0,25). */
+export const UNSPOTTED_RANK = 1;
+
+/**
+ * Vrai si un point blanc se voit sur la couleur `color` (issue #370) : distance à
+ * `SPOT_COLOR` d'au moins `SPOT_MIN_CONTRAST`.
+ */
+export function spotContrasts(color: string): boolean {
+  const a = new Color(color).getHex();
+  const b = new Color(SPOT_COLOR).getHex();
+  let sum = 0;
+  for (const shift of [16, 8, 0]) {
+    const d = ((a >> shift) & 0xff) - ((b >> shift) & 0xff);
+    sum += d * d;
+  }
+  return Math.sqrt(sum) >= SPOT_MIN_CONTRAST;
 }
 
 export interface VoxelSize {
@@ -559,10 +594,17 @@ export function buildVoxelMesh(
     layerEnd.push((depth + d) / 2);
   }
   const linear = new Map<string, [number, number, number]>();
+  // Rôles de couleur trop pâles pour qu'un point blanc s'y voie (issue #370).
+  const pale = new Set<string>();
   for (const [char, role] of Object.entries(ROLES)) {
     const c = new Color(colors[role]);
     linear.set(char, [c.r, c.g, c.b]);
+    if (!spotContrasts(colors[role])) {
+      pale.add(char);
+    }
   }
+  const spotRank = (char: string, col: number, row: number, layer: number): number =>
+    pale.has(char) ? UNSPOTTED_RANK : voxelSpotRank(col, row, layer);
   const filled = (col: number, row: number, layer: number): boolean =>
     col >= 0 &&
     col < width &&
@@ -594,7 +636,7 @@ export function buildVoxelMesh(
         const x0 = originX + col;
         const y0 = height / 2 - row - 1;
         const z0 = -depth / 2 + layer;
-        const spot = voxelSpotRank(col, row, layer);
+        const spot = spotRank(char, col, row, layer);
         for (const face of FACES) {
           if (filled(col + face.dc, row - face.dy, layer + face.dz)) {
             continue;
@@ -642,7 +684,7 @@ export function buildVoxelMesh(
     const x0 = originX + col;
     const y0 = height / 2 - row - 1;
     const z0 = -depth / 2 + layer;
-    const spot = voxelSpotRank(col, row, layer);
+    const spot = spotRank(char, col, row, layer);
     for (const face of FACES) {
       if (occupied(col + face.dc, row - face.dy, layer + face.dz)) {
         continue;
