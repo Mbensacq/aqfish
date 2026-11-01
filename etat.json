@@ -4547,10 +4547,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-01T13:58:52.661Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-01T13:59:27.409Z",
+          "note": "Issue #374 : traitements (texte séparé, doublon, amphibien après traitement) + #377 (S)"
         }
       },
       "metriques": {}
