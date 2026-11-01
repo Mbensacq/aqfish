@@ -4479,6 +4479,12 @@
           "debut": "2026-11-01T06:32:50.767Z",
           "fin": "2026-11-01T06:33:22.646Z",
           "note": "Issue #361 : soigner les points blancs lot 2/2 (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-01T06:33:47.539Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
