@@ -4521,6 +4521,12 @@
           "debut": "2026-11-01T10:19:29.115Z",
           "fin": "2026-11-01T11:58:17.666Z",
           "note": "PR #376 : tapotement (sim/glass-tap, ADR 0092), nourriture en haut d'écran, interface par appui long ; CI verte au 1er essai ; partiel : choix du bac reporté en #375 ; pied d'attribution réinjecté par l'environnement dans les corps GitHub de #375/#376"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-01T11:58:48.269Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
