@@ -77,6 +77,31 @@ test.describe('Compatibilité des espèces (#209)', () => {
     expect(errors).toEqual([]);
   });
 
+  test('espèces d’eau douce du lot 2 : cohabitation avec le bac tropical sans mélange déconseillé, effectifs réglables', async ({
+    page,
+  }) => {
+    const errors = await open(
+      page,
+      '?seed=42&population=platy:3,danio:5,ancistrus:1,otocinclus:3,neon:4,guppy:3,corydoras:3',
+    );
+    await toggle(page).click();
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /otocinclus:3/);
+    await expect(warnings(page)).toHaveCount(0);
+    // Les quatre curseurs existent au panneau, sans code d'interface propre à l'espèce.
+    for (const ofPlural of [
+      'de platys',
+      'de danios zébrés',
+      'd’ancistrus communs',
+      'd’otocinclus',
+    ]) {
+      await expect(slider(page, ofPlural)).toBeVisible();
+    }
+    await slider(page, 'de danios zébrés').fill('0');
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /danio:0/);
+    await expect(warnings(page)).toHaveCount(0);
+    expect(errors).toEqual([]);
+  });
+
   for (const environnement of ['tropical', 'bassin', 'recif', 'lagune']) {
     test(`${environnement} à minuit : aucun mélange déconseillé, aucune erreur`, async ({
       page,
