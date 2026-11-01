@@ -4563,6 +4563,12 @@
           "debut": "2026-11-01T15:33:01.106Z",
           "fin": "2026-11-01T16:07:15.751Z",
           "note": "Verdict OK, 0 bug, 113/113 captures identiques, unitaires/lint/build/e2e ciblés verts, CI verte, mutation treatment-text.ts 94,31 % (issue dette)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-01T16:08:00.354Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
