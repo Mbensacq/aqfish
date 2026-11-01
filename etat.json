@@ -4455,6 +4455,12 @@
           "debut": "2026-11-01T04:57:06.293Z",
           "fin": "2026-11-01T05:18:24.395Z",
           "note": "Verdict RÉSERVES (ancistrus/otocinclus peu reconnaissables en capture), 0 bug, +1 e2e, captures c121 publiées (105/108 identiques)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-01T05:18:55.333Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
