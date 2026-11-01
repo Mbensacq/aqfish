@@ -298,12 +298,12 @@ export function treatmentAlert(treatment: TreatmentReadout | null): DashboardAle
 
 function healthAlert(health: HealthSummary, causes: readonly string[]): DashboardAlert | null {
   // Les animaux aux points blancs ont leur propre alerte (`ichAlert`) : seuls les autres
-  // malades comptent ici.
+  // malades comptent ici, effectif comme gravité (issue #370).
   const others = health.sick - health.ich;
   if (others <= 0) {
     return null;
   }
-  const weak = health.weak > 0;
+  const weak = health.weakWithoutIch > 0;
   return {
     id: 'health',
     severity: weak ? 'critique' : 'attention',

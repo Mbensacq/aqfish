@@ -63,6 +63,11 @@ export interface HealthSummary {
   readonly ich: number;
   /** Parmi eux, animaux au stade aggravé. */
   readonly ichAggravated: number;
+  /**
+   * Animaux faibles sans points blancs visibles (issue #370) : la gravité de l'alerte de santé
+   * ne tient compte que d'eux, les points blancs ayant leur propre alerte.
+   */
+  readonly weakWithoutIch: number;
 }
 
 /** Synthèse d'un bac sans animal. */
@@ -76,6 +81,7 @@ export const EMPTY_HEALTH_SUMMARY: HealthSummary = {
   distressed: 0,
   ich: 0,
   ichAggravated: 0,
+  weakWithoutIch: 0,
 };
 
 /** Santé lue : non finie → 1, sinon bornée à [`HEALTH_FLOOR`, 1]. */
@@ -106,6 +112,7 @@ export function healthSummary(animals: Iterable<HealthSubject>): HealthSummary {
   let distressed = 0;
   let ich = 0;
   let ichAggravated = 0;
+  let weakWithoutIch = 0;
   for (const animal of animals) {
     count += 1;
     const health = readHealth(animal.health);
@@ -118,6 +125,9 @@ export function healthSummary(animals: Iterable<HealthSubject>): HealthSummary {
     }
     if (isWeak) {
       weak += 1;
+      if (!spots) {
+        weakWithoutIch += 1;
+      }
     }
     let isStarving = false;
     if (feedsOnPellets(SPECIES[animal.species])) {
@@ -152,6 +162,7 @@ export function healthSummary(animals: Iterable<HealthSubject>): HealthSummary {
     distressed,
     ich,
     ichAggravated,
+    weakWithoutIch,
   };
 }
 
@@ -181,6 +192,7 @@ export function sameHealthSummary(a: HealthSummary, b: HealthSummary): boolean {
     a.distressed === b.distressed &&
     a.ich === b.ich &&
     a.ichAggravated === b.ichAggravated &&
+    a.weakWithoutIch === b.weakWithoutIch &&
     percent(a.averageHealth) === percent(b.averageHealth) &&
     percent(a.averageHunger) === percent(b.averageHunger)
   );

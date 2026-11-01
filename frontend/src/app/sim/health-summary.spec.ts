@@ -40,6 +40,7 @@ describe('synthèse de la santé (#260)', () => {
       distressed: 0,
       ich: 0,
       ichAggravated: 0,
+      weakWithoutIch: 0,
     });
   });
 
