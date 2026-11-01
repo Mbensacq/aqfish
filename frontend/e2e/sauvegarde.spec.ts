@@ -56,7 +56,7 @@ test.describe('Sauvegarde (#70)', () => {
     await page.getByRole('button', { name: 'Ajouter un néon' }).click();
     await expect(hostEl(page)).toHaveAttribute(
       'data-aqfish-population',
-      'neon:13,guppy:4,corydora:6,rasbora:0,tetra:0,kuhli:0,gourami:0',
+      'neon:13,guppy:4,corydora:6,rasbora:0,tetra:0,kuhli:0,gourami:0,platy:0,danio:0,ancistrus:0,otocinclus:0',
     );
     await page.getByRole('slider', { name: 'Vitesse de la simulation' }).focus();
     await page.keyboard.press('ArrowRight');
@@ -69,7 +69,7 @@ test.describe('Sauvegarde (#70)', () => {
     await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
     await expect(hostEl(page)).toHaveAttribute(
       'data-aqfish-population',
-      'neon:13,guppy:4,corydora:6,rasbora:0,tetra:0,kuhli:0,gourami:0',
+      'neon:13,guppy:4,corydora:6,rasbora:0,tetra:0,kuhli:0,gourami:0,platy:0,danio:0,ancistrus:0,otocinclus:0',
     );
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-speed', '2');
     expect(await tick(page)).toBeGreaterThanOrEqual(before);
@@ -88,7 +88,8 @@ test.describe('Sauvegarde (#70)', () => {
     // Bac tropical modifié : un guppy de moins, un néon de plus.
     await page.getByRole('button', { name: 'Retirer un guppy' }).click();
     await page.getByRole('button', { name: 'Ajouter un néon' }).click();
-    const tropical = 'neon:13,guppy:5,corydora:6,rasbora:0,tetra:0,kuhli:0,gourami:0';
+    const tropical =
+      'neon:13,guppy:5,corydora:6,rasbora:0,tetra:0,kuhli:0,gourami:0,platy:0,danio:0,ancistrus:0,otocinclus:0';
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', tropical);
     await expect.poll(() => tick(page)).toBeGreaterThan(10);
 
@@ -123,7 +124,8 @@ test.describe('Sauvegarde (#70)', () => {
     const environment = page.getByRole('combobox', { name: 'Environnement' });
     await openPanel(page);
     await page.getByRole('button', { name: 'Ajouter un néon' }).click();
-    const tropical = 'neon:13,guppy:6,corydora:6,rasbora:0,tetra:0,kuhli:0,gourami:0';
+    const tropical =
+      'neon:13,guppy:6,corydora:6,rasbora:0,tetra:0,kuhli:0,gourami:0,platy:0,danio:0,ancistrus:0,otocinclus:0';
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', tropical);
     await expect.poll(() => tick(page)).toBeGreaterThan(10);
     const tickAtDeparture = await tick(page);
@@ -163,14 +165,14 @@ test.describe('Sauvegarde (#70)', () => {
     await page.getByRole('button', { name: 'Ajouter un néon' }).click();
     await expect(hostEl(page)).toHaveAttribute(
       'data-aqfish-population',
-      'neon:13,guppy:6,corydora:6,rasbora:0,tetra:0,kuhli:0,gourami:0',
+      'neon:13,guppy:6,corydora:6,rasbora:0,tetra:0,kuhli:0,gourami:0,platy:0,danio:0,ancistrus:0,otocinclus:0',
     );
     await page.evaluate(() => window.dispatchEvent(new Event('pagehide')));
     await page.goto('/?heure=3');
     await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
     await expect(hostEl(page)).toHaveAttribute(
       'data-aqfish-population',
-      'neon:13,guppy:6,corydora:6,rasbora:0,tetra:0,kuhli:0,gourami:0',
+      'neon:13,guppy:6,corydora:6,rasbora:0,tetra:0,kuhli:0,gourami:0,platy:0,danio:0,ancistrus:0,otocinclus:0',
     );
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-hour', '3.00');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-hour-frozen', 'true');
@@ -183,14 +185,14 @@ test.describe('Sauvegarde (#70)', () => {
     await page.getByRole('button', { name: 'Ajouter un néon' }).click();
     await expect(hostEl(page)).toHaveAttribute(
       'data-aqfish-population',
-      'neon:13,guppy:6,corydora:6,rasbora:0,tetra:0,kuhli:0,gourami:0',
+      'neon:13,guppy:6,corydora:6,rasbora:0,tetra:0,kuhli:0,gourami:0,platy:0,danio:0,ancistrus:0,otocinclus:0',
     );
     await page.evaluate(() => window.dispatchEvent(new Event('pagehide')));
     await page.goto('/?seed=42');
     await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
     await expect(hostEl(page)).toHaveAttribute(
       'data-aqfish-population',
-      'neon:12,guppy:6,corydora:6,rasbora:0,tetra:0,kuhli:0,gourami:0',
+      'neon:12,guppy:6,corydora:6,rasbora:0,tetra:0,kuhli:0,gourami:0,platy:0,danio:0,ancistrus:0,otocinclus:0',
     );
   });
 
@@ -329,7 +331,7 @@ test.describe('Sauvegarde (#70)', () => {
     await page.getByRole('button', { name: 'Ajouter un néon' }).click();
     await expect(hostEl(page)).toHaveAttribute(
       'data-aqfish-population',
-      'neon:13,guppy:6,corydora:6,rasbora:0,tetra:0,kuhli:0,gourami:0',
+      'neon:13,guppy:6,corydora:6,rasbora:0,tetra:0,kuhli:0,gourami:0,platy:0,danio:0,ancistrus:0,otocinclus:0',
     );
     // Quitter la page enregistre une dernière fois (`pagehide`), avant la page de capture.
     await page.goto('/?capture=1&camera=top');
@@ -338,7 +340,7 @@ test.describe('Sauvegarde (#70)', () => {
     expect(stored).toContain('"format":"aqfish"');
     await expect(hostEl(page)).toHaveAttribute(
       'data-aqfish-population',
-      'neon:12,guppy:6,corydora:6,rasbora:0,tetra:0,kuhli:0,gourami:0',
+      'neon:12,guppy:6,corydora:6,rasbora:0,tetra:0,kuhli:0,gourami:0,platy:0,danio:0,ancistrus:0,otocinclus:0',
     );
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-tick', '0');
     expect(await hostEl(page).getAttribute('data-aqfish-save')).toBeNull();
@@ -360,7 +362,7 @@ test.describe('Sauvegarde (#70)', () => {
     await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
     await expect(hostEl(page)).toHaveAttribute(
       'data-aqfish-population',
-      'neon:12,guppy:6,corydora:6,rasbora:0,tetra:0,kuhli:0,gourami:0',
+      'neon:12,guppy:6,corydora:6,rasbora:0,tetra:0,kuhli:0,gourami:0,platy:0,danio:0,ancistrus:0,otocinclus:0',
     );
     expect(errors).toEqual([]);
   });

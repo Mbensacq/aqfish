@@ -37,6 +37,12 @@ export const TEMPERAMENTS: Readonly<Record<SpeciesId, Temperament>> = {
   // Seriously Fish (Trichogaster lalius) : « timide et territorial », surtout envers les
   // autres poissons à labyrinthe ; règle de jeu inchangée (ADR 0070).
   gourami: 'territorial',
+  platy: 'paisible',
+  danio: 'paisible',
+  // Seriously Fish (Ancistrus sp. « 3 ») : « relativement paisible », territorial seulement
+  // envers ses congénères et les poissons de même forme, d'où `paisible` ici (ADR 0090).
+  ancistrus: 'paisible',
+  otocinclus: 'paisible',
 };
 
 /** Verdict pour un couple d'espèces. */

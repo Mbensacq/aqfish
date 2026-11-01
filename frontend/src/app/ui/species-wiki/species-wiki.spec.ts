@@ -86,7 +86,17 @@ describe('SpeciesWiki (#287)', () => {
     await openWiki();
     expect(names('present')).toEqual(['neon', 'corydora']);
     expect(item('neon').textContent).toContain('12');
-    expect(names('addable')).toEqual(['guppy', 'rasbora', 'tetra', 'kuhli', 'gourami']);
+    expect(names('addable')).toEqual([
+      'guppy',
+      'rasbora',
+      'tetra',
+      'kuhli',
+      'gourami',
+      'platy',
+      'danio',
+      'ancistrus',
+      'otocinclus',
+    ]);
   });
 
   it('recherche sans casse ni accents ; aucun résultat : « Aucune espèce »', async () => {
@@ -248,8 +258,8 @@ describe('SpeciesWiki, lot 2/2 (#291)', () => {
       'koi',
       'axolotl',
     ]);
-    // Guppy, corydoras et les quatre espèces du lot 1 d'eau douce (#238).
-    expect(all('[data-wiki-mate="together"]')).toHaveLength(6);
+    // Guppy, corydoras et les huit espèces des lots 1 et 2 d'eau douce (#238, #362).
+    expect(all('[data-wiki-mate="together"]')).toHaveLength(10);
     expect(all('[data-wiki-mate="elsewhere"]')).toHaveLength(1);
 
     // L'eau du bac change : la comparaison suit.

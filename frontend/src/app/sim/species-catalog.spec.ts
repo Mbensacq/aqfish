@@ -23,6 +23,10 @@ describe('catalogue d’espèces (#189)', () => {
       'tetra',
       'kuhli',
       'gourami',
+      'platy',
+      'danio',
+      'ancistrus',
+      'otocinclus',
     ]);
     expect(ids('bassin')).toEqual(['koi']);
     expect(ids('paludarium')).toEqual(['axolotl', 'grenouille', 'triton']);
@@ -64,8 +68,15 @@ describe('catalogue d’espèces (#189)', () => {
       const labels = SPECIES_LABELS[id];
       expect(labels.singular).toBe(SPECIES[id].name.toLowerCase());
       expect(labels.plural).toBe(labels.plural.toLowerCase());
-      expect(labels.plural).not.toBe(labels.singular);
+      // Pluriel distinct, sauf nom invariable terminé par -s, -x ou -z (« un otocinclus, des
+      // otocinclus », #362).
+      if (/[sxz]$/.test(labels.singular)) {
+        expect(labels.plural).toMatch(/[sxz]$/);
+      } else {
+        expect(labels.plural).not.toBe(labels.singular);
+      }
     }
+    expect(SPECIES_LABELS.otocinclus.plural).toBe('otocinclus');
     // Plus aucune espèce au nom féminin depuis #270 (« grenouille » → sonneur oriental).
     expect(SPECIES_LABELS.grenouille).toEqual({
       singular: 'sonneur oriental',

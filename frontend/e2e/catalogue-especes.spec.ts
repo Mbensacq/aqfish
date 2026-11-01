@@ -27,22 +27,22 @@ test.describe('Catalogue d’espèces (#189)', () => {
     // Sans paramètre de monde dans l'URL : le rechargement relit la sauvegarde automatique.
     const errors = await open(page, '');
     await toggle(page).click();
-    await expect(rows(page)).toHaveCount(7);
+    await expect(rows(page)).toHaveCount(11);
     await expect(hostEl(page)).toHaveAttribute(
       'data-aqfish-population',
-      'neon:12,guppy:6,corydora:6,rasbora:0,tetra:0,kuhli:0,gourami:0',
+      'neon:12,guppy:6,corydora:6,rasbora:0,tetra:0,kuhli:0,gourami:0,platy:0,danio:0,ancistrus:0,otocinclus:0',
     );
 
     // Plus de corydoras, moins de néons.
     await slider(page, 'de corydoras').fill('12');
     await expect(hostEl(page)).toHaveAttribute(
       'data-aqfish-population',
-      'neon:12,guppy:6,corydora:12,rasbora:0,tetra:0,kuhli:0,gourami:0',
+      'neon:12,guppy:6,corydora:12,rasbora:0,tetra:0,kuhli:0,gourami:0,platy:0,danio:0,ancistrus:0,otocinclus:0',
     );
     await slider(page, 'de néons').fill('4');
     await expect(hostEl(page)).toHaveAttribute(
       'data-aqfish-population',
-      'neon:4,guppy:6,corydora:12,rasbora:0,tetra:0,kuhli:0,gourami:0',
+      'neon:4,guppy:6,corydora:12,rasbora:0,tetra:0,kuhli:0,gourami:0,platy:0,danio:0,ancistrus:0,otocinclus:0',
     );
     // Le champ numérique suit le curseur.
     await expect(page.getByRole('spinbutton', { name: 'Nombre de néons' })).toHaveValue('4');
@@ -52,19 +52,19 @@ test.describe('Catalogue d’espèces (#189)', () => {
     await page.keyboard.press('ArrowRight');
     await expect(hostEl(page)).toHaveAttribute(
       'data-aqfish-population',
-      /corydora:13,rasbora:0,tetra:0,kuhli:0,gourami:0$/,
+      /corydora:13,rasbora:0,tetra:0,kuhli:0,gourami:0,platy:0,danio:0,ancistrus:0,otocinclus:0$/,
     );
     await page.keyboard.press('End');
     await expect(hostEl(page)).toHaveAttribute(
       'data-aqfish-population',
-      /corydora:16,rasbora:0,tetra:0,kuhli:0,gourami:0$/,
+      /corydora:16,rasbora:0,tetra:0,kuhli:0,gourami:0,platy:0,danio:0,ancistrus:0,otocinclus:0$/,
     );
 
     // À zéro : l'espèce disparaît du bac.
     await slider(page, 'de guppys').fill('0');
     await expect(hostEl(page)).toHaveAttribute(
       'data-aqfish-population',
-      'neon:4,guppy:0,corydora:16,rasbora:0,tetra:0,kuhli:0,gourami:0',
+      'neon:4,guppy:0,corydora:16,rasbora:0,tetra:0,kuhli:0,gourami:0,platy:0,danio:0,ancistrus:0,otocinclus:0',
     );
 
     // Rechargé : effectifs conservés par la sauvegarde automatique.
@@ -72,7 +72,7 @@ test.describe('Catalogue d’espèces (#189)', () => {
     await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
     await expect(hostEl(page)).toHaveAttribute(
       'data-aqfish-population',
-      'neon:4,guppy:0,corydora:16,rasbora:0,tetra:0,kuhli:0,gourami:0',
+      'neon:4,guppy:0,corydora:16,rasbora:0,tetra:0,kuhli:0,gourami:0,platy:0,danio:0,ancistrus:0,otocinclus:0',
     );
     expect(errors).toEqual([]);
   });

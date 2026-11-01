@@ -94,7 +94,7 @@ test.describe('Environnement', () => {
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'tropical');
     await expect(hostEl(page)).toHaveAttribute(
       'data-aqfish-population',
-      'neon:12,guppy:6,corydora:6,rasbora:0,tetra:0,kuhli:0,gourami:0',
+      'neon:12,guppy:6,corydora:6,rasbora:0,tetra:0,kuhli:0,gourami:0,platy:0,danio:0,ancistrus:0,otocinclus:0',
     );
     expect(errors).toEqual([]);
   });

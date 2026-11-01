@@ -72,6 +72,9 @@ haut de sa section.
   captures restant verts. Toute nouvelle commande du panneau doit être conditionnelle
   (ici : renommage dès deux bacs) ou remplacer une ligne ; lancer cette spec en local.
   (2026-10-29)
+  Depuis le cycle 121 (#362, onze espèces au bac tropical), la section « Population » défile
+  seule à ce format (`max-height: calc(100vh - 350px)`) : ajouter une espèce ne déborde plus,
+  mais toute autre section reste soumise à cette règle. `control-panel.scss` est à ~7,94 kB.
 - **Fonction déjà livrée sous le même nom** (cycle 101, #316) : `renameTank` existait dans
   `sim/room-state.ts` depuis le lot 2 (ADR 0073), sans être utilisée par l'interface ; en
   écrire une seconde a donné « Multiple exports with the same name » au build des tests.
@@ -681,6 +684,15 @@ haut de sa section.
   (identifiants 2 à 4) les faisait échouer ou changeait les individus observés. Filtrer par
   espèce, et construire le monde observé avec `createWorld(seed, [{ species, count }], [], [],
   environnement)` plutôt que `setPopulation(createDefaultWorld(…))`. (2026-10-22)
+- **Nouvelle espèce : tests transverses qui cassent hors des tables** (cycle 121, #362) : en
+  plus des listes d'espèces (`kuhli:0,gourami:0` à allonger d'un `sed`, comptes de lignes du
+  panneau 7 → 11), trois tests imposent des contraintes globales : le nom scientifique doit être
+  un binôme `Genre espèce` (`amphibiens-reels.spec.ts` : pas de « cf. » ni de « sp. ») ; le
+  libellé pluriel doit différer du singulier (`species-catalog.spec.ts`, sauf nom invariable en
+  -s, -x, -z depuis #362) ; le plus petit poisson (`bodyLength`) fixe la largeur du passage
+  entre branches de bois testée (`wood.spec.ts`, 5 cm) : une espèce plus petite casse ce test,
+  garder `bodyLength` ≥ 0,05 m. Une espèce de fond épaisse (ancistrus) a son centre vers 12 %
+  de la colonne même avec `maxHeightRatio` 0,06. (2026-11-01)
 - **Espèce ajoutable à un environnement : l'attribut de population s'allonge** (cycle 93,
   #238) : `data-aqfish-population` liste **toutes** les espèces de `Environment.species`,
   effectif nul compris. Ajouter quatre espèces au bac tropical sans les peupler change donc

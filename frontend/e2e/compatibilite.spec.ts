@@ -23,7 +23,7 @@ test.describe('Compatibilité des espèces (#209)', () => {
   test('bac tropical par défaut : aucun mélange déconseillé', async ({ page }) => {
     const errors = await open(page, '?seed=42');
     await toggle(page).click();
-    await expect(page.locator('[data-section="population"] [data-species]')).toHaveCount(7);
+    await expect(page.locator('[data-section="population"] [data-species]')).toHaveCount(11);
     await expect(warnings(page)).toHaveCount(0);
     expect(errors).toEqual([]);
   });
@@ -73,6 +73,31 @@ test.describe('Compatibilité des espèces (#209)', () => {
     await toggle(page).click();
     // Les nouvelles espèces cohabitent avec les anciennes : aucun avertissement.
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /gourami:2/);
+    await expect(warnings(page)).toHaveCount(0);
+    expect(errors).toEqual([]);
+  });
+
+  test('espèces d’eau douce du lot 2 : cohabitation avec le bac tropical sans mélange déconseillé, effectifs réglables', async ({
+    page,
+  }) => {
+    const errors = await open(
+      page,
+      '?seed=42&population=platy:3,danio:5,ancistrus:1,otocinclus:3,neon:4,guppy:3,corydoras:3',
+    );
+    await toggle(page).click();
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /otocinclus:3/);
+    await expect(warnings(page)).toHaveCount(0);
+    // Les quatre curseurs existent au panneau, sans code d'interface propre à l'espèce.
+    for (const ofPlural of [
+      'de platys',
+      'de danios zébrés',
+      'd’ancistrus communs',
+      'd’otocinclus',
+    ]) {
+      await expect(slider(page, ofPlural)).toBeVisible();
+    }
+    await slider(page, 'de danios zébrés').fill('0');
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /danio:0/);
     await expect(warnings(page)).toHaveCount(0);
     expect(errors).toEqual([]);
   });

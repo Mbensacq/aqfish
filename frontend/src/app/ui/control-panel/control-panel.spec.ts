@@ -222,6 +222,10 @@ class TestHost {
     tetra: 0,
     kuhli: 0,
     gourami: 0,
+    platy: 0,
+    danio: 0,
+    ancistrus: 0,
+    otocinclus: 0,
   });
   readonly populationMax = signal<PopulationCounts>({
     neon: 40,
@@ -237,6 +241,10 @@ class TestHost {
     tetra: 0,
     kuhli: 0,
     gourami: 0,
+    platy: 0,
+    danio: 0,
+    ancistrus: 0,
+    otocinclus: 0,
   });
   readonly tankLiters = signal<number | null>(288);
   readonly water = signal<WaterReadout>(DEFAULT_WATER_READOUT);
@@ -1003,9 +1011,9 @@ describe('ControlPanel', () => {
     // 5 contrôles de #52, « Éditer le décor » (#167), « Granulés » (#117), « Afficher la
     // pièce » (#187), « Changer l’eau » et le curseur du chauffage (#207), « − » et « + » des
     // feuilles de catappa (#239), puis « − », champ, « + » (#69), curseur (#189) et « Fiche »
-    // (#237) pour chacune des 7 espèces du bac tropical (#238), puis « Exporter » et
+    // (#237) pour chacune des 11 espèces du bac tropical (#238, #362), puis « Exporter » et
     // « Importer » (#70), le mode du bac (#278), et « Mode immersif » (#345).
-    expect(controls).toHaveLength(5 + 1 + 1 + 1 + 2 + 2 + 7 * 5 + 2 + 1 + 1);
+    expect(controls).toHaveLength(5 + 1 + 1 + 1 + 2 + 2 + 11 * 5 + 2 + 1 + 1);
     expect(root().querySelectorAll('input[type="file"]')).toHaveLength(1);
     for (const control of controls) {
       const name =
@@ -1076,6 +1084,10 @@ describe('ControlPanel', () => {
         'tetra',
         'kuhli',
         'gourami',
+        'platy',
+        'danio',
+        'ancistrus',
+        'otocinclus',
       ]);
       expect(rows.map((r) => r.querySelector('label')?.textContent?.trim())).toEqual([
         'Néon',
@@ -1085,6 +1097,10 @@ describe('ControlPanel', () => {
         'Tétra citron',
         'Loche kuhli',
         'Gourami nain',
+        'Platy',
+        'Danio zébré',
+        'Ancistrus commun',
+        'Otocinclus',
       ]);
       const neons = field('néons');
       expect(neons.type).toBe('number');
@@ -1110,6 +1126,10 @@ describe('ControlPanel', () => {
         tetra: 0,
         kuhli: 0,
         gourami: 0,
+        platy: 0,
+        danio: 0,
+        ancistrus: 0,
+        otocinclus: 0,
       });
       await fixture.whenStable();
       expect(neons.value).toBe('20');
