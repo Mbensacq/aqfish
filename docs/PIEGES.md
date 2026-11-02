@@ -619,6 +619,15 @@ haut de sa section.
   à l'octet), le score passe de 72 % à 100 %. Au passage : `MAX_VALUE + MAX_VALUE` vaut
   `Infinity` et `Infinity - Infinity` vaut `NaN`, qu'aucune comparaison ne rattrape ; un
   `Number.isFinite` final le ramène à 0. (2026-10-31)
+- **Mutation : garde rejetée en aval = survivant tant que le message n'est pas asserté**
+  (cycle 132, #398) : la garde de `maxNewAnimals` dans `switchEnvironment` survivait vidée
+  ou inversée parce que `capTotalPopulation` refusait ensuite la même valeur avec une autre
+  `RangeError` : `toThrow(RangeError)` ne voit pas la différence. Asserter le message
+  (`toThrow(new RangeError('…'))` ou `toThrow(/^maxNewAnimals /)`) et tester aussi le chemin
+  où l'aval ne contrôle rien (monde repris). Le `i >= 0` de la boucle de retrait de
+  `setPopulationInPlace` reste un mutant équivalent : l'effectif de l'espèce atteint la
+  cible avant que l'indice ne passe sous 0. Une égalité testée par un nombre **pair** de
+  retraits (6/6 → 5/5) ne distingue pas `>` de `>=` : en tester un nombre impair. (2026-11-02)
 - **Tests de mutation : délais explicites sous code instrumenté** (#66) : le code instrumenté
   par Stryker est ~5 à 10 fois plus lent. `testTimeout` ne suffit pas : un délai explicite
   (`it(nom, fn, 15_000)`, y compris `it.each(table)(nom, fn, 15_000)`) prime sur la

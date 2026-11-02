@@ -60,10 +60,12 @@ describe('switchEnvironment : état gardé par environnement (#277)', () => {
 
   it('refuse l’environnement déjà affiché et une table incohérente', () => {
     expect(() => switchEnvironment(createDefaultWorld(1), new Map(), 'tropical')).toThrow(
-      RangeError,
+      new RangeError('environnement déjà affiché (tropical)'),
     );
     const wrong = new Map<EnvironmentId, World>([['recif', createDefaultWorld(1, 'bassin')]]);
-    expect(() => switchEnvironment(createDefaultWorld(1), wrong, 'bassin')).toThrow(RangeError);
+    expect(() => switchEnvironment(createDefaultWorld(1), wrong, 'bassin')).toThrow(
+      new RangeError('monde bassin rangé sous l’environnement recif'),
+    );
   });
 });
 
@@ -99,9 +101,35 @@ describe('switchEnvironment : bac de départ sous le plafond de la pièce (#396)
   it('refuse une place invalide, sans rien changer', () => {
     for (const bad of [-1, 1.5, Number.NaN, Number.NEGATIVE_INFINITY]) {
       expect(() => switchEnvironment(createDefaultWorld(5), new Map(), 'bassin', bad)).toThrow(
-        RangeError,
+        new RangeError(`maxNewAnimals doit être un entier positif ou nul (reçu : ${bad})`),
       );
     }
+  });
+
+  it('place invalide refusée aussi vers un monde repris, et avant tout autre contrôle', () => {
+    const tropical = createDefaultWorld(5);
+    const stash = new Map<EnvironmentId, World>([['bassin', pond]]);
+    const copy = new Map(stash);
+    for (const bad of [-1, 0.5, Number.NaN, Number.NEGATIVE_INFINITY]) {
+      // Monde repris : la place n'est pas utilisée, mais une valeur invalide reste une erreur.
+      expect(() => switchEnvironment(tropical, stash, 'bassin', bad)).toThrow(/^maxNewAnimals /);
+      // Environnement déjà affiché : la place est contrôlée en premier.
+      expect(() => switchEnvironment(tropical, stash, 'tropical', bad)).toThrow(/^maxNewAnimals /);
+    }
+    expect(stash).toEqual(copy);
+  });
+
+  it('bornes valides : 0, 1 et un très grand entier sont acceptés', () => {
+    expect(
+      switchEnvironment(createDefaultWorld(5), new Map(), 'bassin', 1).world.entities,
+    ).toHaveLength(1);
+    const huge = switchEnvironment(
+      createDefaultWorld(5),
+      new Map(),
+      'bassin',
+      Number.MAX_SAFE_INTEGER,
+    );
+    expect(serializeWorld(huge.world)).toBe(serializeWorld(pond));
   });
 });
 
@@ -131,7 +159,11 @@ describe('stashedList / stashFromList', () => {
 
   it('refuse un environnement en double ou celui affiché', () => {
     const pond = createDefaultWorld(3, 'bassin');
-    expect(() => stashFromList([pond, pond], 'tropical')).toThrow(RangeError);
-    expect(() => stashFromList([pond], 'bassin')).toThrow(RangeError);
+    expect(() => stashFromList([pond, pond], 'tropical')).toThrow(
+      new RangeError('environnement en double (bassin)'),
+    );
+    expect(() => stashFromList([pond], 'bassin')).toThrow(
+      new RangeError('environnement en double (bassin)'),
+    );
   });
 });
