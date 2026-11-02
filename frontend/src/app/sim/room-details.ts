@@ -198,7 +198,9 @@ export function roomTrimBlocks(dims: TankDimensions, room: Room): RoomBlock[] {
       blocks.push({ box: b, part, shade: 1, shell });
     }
   };
-  add(box(minX, minX + d, floorY, top, minZ + d, maxZ - d), 'plinthe', 'gauche');
+  // Mur de gauche : vu de côté, sa plinthe passe derrière le bas de l'eau ; plus sombre
+  // (`plinthe-ombre`), elle ne vire pas l'eau au gris (`docs/PIEGES.md`).
+  add(box(minX, minX + d, floorY, top, minZ + d, maxZ - d), 'plinthe-ombre', 'gauche');
   add(box(maxX - d, maxX, floorY, top, minZ + d, door.minZ - DOOR_CASING), 'plinthe', 'droite');
   add(box(maxX - d, maxX, floorY, top, door.maxZ + DOOR_CASING, maxZ - d), 'plinthe', 'droite');
   add(box(minX, maxX, floorY, top, maxZ - d, maxZ), 'plinthe', 'avant');

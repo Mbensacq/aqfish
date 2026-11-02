@@ -233,6 +233,7 @@ export type RoomPart =
   // Détails de la pièce (#363, `sim/room-details.ts`) : moulure sous le plafond, porte du mur
   // de droite (chambranle, vantail et poignée réutilisent `porte` et `poignee`), applique.
   | 'moulure'
+  | 'plinthe-ombre'
   | 'chambranle'
   | 'applique'
   | 'abat-jour'

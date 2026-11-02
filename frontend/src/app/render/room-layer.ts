@@ -76,8 +76,8 @@ export const ROOM_COLORS: Readonly<Record<RoomPart, readonly [string, string]>> 
   mur: [PALETTE.koiNoir, PALETTE.fondScene],
   cimaise: [PALETTE.rocheSombre, PALETTE.rocheSombre],
   // Plinthe du fond éclairée (teinte 0) ; celles des trois autres murs (#363) en couleurs
-  // plates, comme leur mur (teinte 1).
-  plinthe: [PALETTE.sableOmbre, PALETTE.sableOmbre],
+  // plates, comme leur mur (teinte 1), du ton que prend la face éclairée de celle du fond.
+  plinthe: [PALETTE.sableOmbre, PALETTE.rocheSombre],
   plateau: [PALETTE.sableOmbre, PALETTE.sableOmbre],
   caisson: [PALETTE.sableOmbre, PALETTE.sableOmbre],
   // Portes du meuble (teinte 0) ; vantail de la porte de la pièce (#363) en teinte 1.
@@ -95,6 +95,8 @@ export const ROOM_COLORS: Readonly<Record<RoomPart, readonly [string, string]>> 
   // Détails (#363, ADR 0093) : moulure du ton du plafond, chambranle du bois de la fenêtre,
   // applique sombre, abat-jour clair et halo chaud teintés par la lampe (`lampColorsInto`).
   moulure: [PALETTE.rocheSombre, PALETTE.rocheSombre],
+  // Plinthe du mur de gauche, vue derrière l'eau en vue de côté : du ton de l'eau sombre.
+  'plinthe-ombre': [PALETTE.koiNoir, PALETTE.koiNoir],
   chambranle: [PALETTE.sableSombre, PALETTE.sableSombre],
   applique: [PALETTE.rocheSombre, PALETTE.rocheSombre],
   'abat-jour': [PALETTE.koiBlanc, PALETTE.koiBlanc],

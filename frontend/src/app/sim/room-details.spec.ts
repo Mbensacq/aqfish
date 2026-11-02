@@ -171,7 +171,9 @@ describe('détails de la pièce (#363)', () => {
 
     it('plinthes au pied des trois autres murs, sans recouvrement ni passage de porte', () => {
       const door = roomDoor(DEFAULT_TANK, SHOWN);
-      const plinths = roomTrimBlocks(DEFAULT_TANK, SHOWN).filter((b) => b.part === 'plinthe');
+      const plinths = roomTrimBlocks(DEFAULT_TANK, SHOWN).filter(
+        (b) => b.part === 'plinthe' || b.part === 'plinthe-ombre',
+      );
       expect(new Set(plinths.map((b) => b.shell))).toEqual(new Set(['gauche', 'droite', 'avant']));
       const back = roomBlocks(DEFAULT_TANK, SHOWN).filter((b) => b.part === 'plinthe');
       expect(back).toHaveLength(1);

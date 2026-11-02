@@ -829,7 +829,10 @@ haut de sa section.
   retire de `roomArea` (pose des meubles, choix d'un point du parquet, pose automatique du
   catalogue) ; un objet qui interdit une zone (passage devant la porte) y figure aussi
   (`area.door`). Les meubles relus d'une sauvegarde ne sont pas reposés : un meuble ancien
-  plaqué au mur garde sa place. (2026-11-02)
+  plaqué au mur garde sa place. Et la plinthe du mur de gauche, en vue de côté, passe derrière
+  le bas de l'eau : en `rocheSombre`, elle virait au gris quelques pixels d'eau du coin du
+  grand bac ; en `koiNoir`, l'eau ne change pas (vérifier au pixel la zone du bac, pas
+  seulement à l'œil). (2026-11-02)
 - **Halo d'une lampe en un seul carré : il se lit comme un panneau** (cycle 127, #363) : un
   bloc plat clair derrière l'applique faisait un tableau accroché au mur. Deux croix emboîtées
   en deux tons (la plus claire devant, d'un voxel) donnent une lueur en marches de pixel art.

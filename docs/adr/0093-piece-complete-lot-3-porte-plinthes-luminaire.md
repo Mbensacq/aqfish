@@ -33,7 +33,10 @@ secondaire par rapport à la lumière du bac.
   d'autre du chambranle) et d'en face, à la hauteur (8 cm) et à la saillie (2 cm au voxel) de
   celle du mur du fond ; les latérales s'arrêtent à celles du fond et d'en face (aucun
   recouvrement). **`roomArea` recule d'autant** sur les trois murs : un meuble plaqué contre un
-  mur reste devant sa plinthe.
+  mur reste devant sa plinthe. Couleurs plates : `rocheSombre` (le ton que prend la face
+  éclairée de la plinthe du fond) à droite et en face ; `koiNoir` à gauche (`plinthe-ombre`) :
+  en vue de côté, elle passe derrière le bas de l'eau, et en `rocheSombre` elle virait au gris
+  une dizaine de pixels d'eau du coin du bac (`side-piece-grand-bac`).
 - **Moulure** sous le plafond des quatre murs (5 cm de haut, 3 cm de saillie), du ton du
   plafond (`rocheSombre`) : elle prolonge le plafond sans nouveau repère clair sur les murs
   latéraux. Plinthes et moulure sont dans les parois de leur mur (couleurs plates, masquées avec
