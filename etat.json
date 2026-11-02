@@ -4644,6 +4644,24 @@
         }
       },
       "metriques": {}
+    },
+    "127": {
+      "numero": 127,
+      "date": "2026-11-02",
+      "debut": "2026-11-02T00:46:36.773Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-02T00:46:36.773Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
