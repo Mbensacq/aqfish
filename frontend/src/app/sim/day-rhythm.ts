@@ -36,6 +36,9 @@ export const DIURNAL: Readonly<Record<SpeciesId, boolean>> = {
   // Ancistrus : actif surtout la nuit (approximation de jeu, non dit par Seriously Fish, ADR 0090).
   ancistrus: false,
   otocinclus: true,
+  braise: true,
+  molly: true,
+  miel: true,
 };
 
 /** Ralentissement en pleine nuit : le déplacement y garde `1 − NIGHT_SLOWDOWN` de sa longueur. */

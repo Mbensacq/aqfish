@@ -684,6 +684,15 @@ haut de sa section.
 
 ## Simulation
 
+- **Une espèce plus petite change la population du mode immersif** (cycle 129, #391) : le bac
+  immersif se peuple des trois plus petites espèces nageuses de son environnement, triées par
+  `bodyLength` puis par identifiant (`smallSwimmers`, `sim/immersive-tank.ts`). Une nouvelle
+  espèce tropicale de `bodyLength` ≤ 0,055 (rasbora) entre dans ce trio, même à égalité si son
+  identifiant précède dans l'alphabet, et change la population par défaut du mode immersif et
+  ses captures. Le tétra braise (2 cm en vrai) a un modèle de 0,056 pour cette raison ; le
+  test `wood.spec.ts` épingle aussi la plus petite longueur (0,05). Vérifier
+  `immersivePopulation('tropical')` après tout ajout. (2026-11-02)
+
 - **Cache par monde dans l'hôte : un monde rangé a pu changer pendant qu'il était affiché**
   (cycle 100, #306) : `switchEnvironment` reprend l'**objet** rangé comme monde affiché, qui
   avance et change en place, puis le range de nouveau, toujours le même objet. Une valeur

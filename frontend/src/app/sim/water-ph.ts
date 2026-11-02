@@ -96,6 +96,12 @@ export const SPECIES_PH: Readonly<Record<SpeciesId, SpeciesPh>> = {
   danio: { tolerated: { min: 6, max: 8 }, ideal: { min: 6.5, max: 7.5 } },
   ancistrus: { tolerated: { min: 5.5, max: 7.5 }, ideal: { min: 6, max: 7.2 } },
   otocinclus: { tolerated: { min: 5.5, max: 7.5 }, ideal: { min: 6, max: 7.2 } },
+  // approximations de jeu (ADR 0095), bornes proches de Seriously Fish (tétra braise 5–7, borne
+  // haute relevée à 7,2 pour l'eau neuve à 7 ; molly 7–8,5 abaissé à 6,8 comme le platy, le pH
+  // du bac baissant avec la charge ; gourami miel 6–7,5).
+  braise: { tolerated: { min: 5, max: 7.2 }, ideal: { min: 5.5, max: 7 } },
+  molly: { tolerated: { min: 6.8, max: 8.5 }, ideal: { min: 7.2, max: 8.2 } },
+  miel: { tolerated: { min: 6, max: 7.5 }, ideal: { min: 6.5, max: 7.2 } },
 };
 
 /** pH de l'eau neuve de l'environnement `environment`. */

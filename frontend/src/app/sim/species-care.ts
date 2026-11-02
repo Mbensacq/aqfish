@@ -176,6 +176,31 @@ const FEEDING: Readonly<Record<SpeciesId, FeedingGuide>> = {
     frequency: FISH_FREQUENCY,
     quantity: PRUDENT_QUANTITY,
   },
+  // Lot 3 (#391, ADR 0095) : fiches Seriously Fish consultées le 2026-11-02.
+  braise: {
+    foods: sourced(
+      'aliments secs fins, et chaque jour de petites proies vivantes ou congelées (nauplies d’artémias, moinas)',
+      `${SERIOUSLY_FISH} hyphessobrycon-amandae`,
+    ),
+    frequency: FISH_FREQUENCY,
+    quantity: PRUDENT_QUANTITY,
+  },
+  molly: {
+    foods: sourced(
+      'omnivore : aliment sec de qualité, pastilles d’algues, en bonne part végétal (épinards blanchis, flocons végétaux)',
+      `${SERIOUSLY_FISH} poecilia-sphenops`,
+    ),
+    frequency: FISH_FREQUENCY,
+    quantity: PRUDENT_QUANTITY,
+  },
+  miel: {
+    foods: sourced(
+      'aliments secs, et régulièrement de petites proies vivantes ou congelées (daphnies, artémias, vers de vase)',
+      `${SERIOUSLY_FISH} trichogaster-chuna`,
+    ),
+    frequency: FISH_FREQUENCY,
+    quantity: PRUDENT_QUANTITY,
+  },
 };
 
 /** Ligne affichée d'une section du wiki : intitulé, valeur, texte du statut. */

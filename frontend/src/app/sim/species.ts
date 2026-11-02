@@ -27,7 +27,10 @@ export type SpeciesId =
   | 'platy'
   | 'danio'
   | 'ancistrus'
-  | 'otocinclus';
+  | 'otocinclus'
+  | 'braise'
+  | 'molly'
+  | 'miel';
 
 /**
  * Silhouette voxel d'une apparence : le rendu associe à chaque identifiant un gabarit de
@@ -52,6 +55,9 @@ export const SILHOUETTE_IDS = [
   'danio',
   'ancistrus',
   'otocinclus',
+  'braise',
+  'molly',
+  'miel',
 ] as const;
 export type SilhouetteId = (typeof SILHOUETTE_IDS)[number];
 
@@ -1380,6 +1386,167 @@ export const OTOCINCLUS: SpeciesDefinition = {
   },
 };
 
+/*
+ * Eau douce tropicale, lot 3 (issue #391, ADR 0095) : tétra braise, molly, gourami miel. Comme
+ * les lots 1 et 2 : proposés au bac tropical sans y être peuplés d'office, couleurs de la
+ * palette commune, tailles du modèle agrandies pour la lisibilité ; vitesses, virages, banc,
+ * profondeur et alimentation : **approximations de jeu** ; valeurs réelles et sources :
+ * `sim/species-sheet.ts`.
+ */
+
+/**
+ * Tétra braise (Hyphessobrycon amandae) : le plus petit poisson réel du bac (20 mm SL), orange
+ * rougeoyant ; banc serré dans la moitié et le haut de la colonne d'eau (Seriously Fish :
+ * « régions moyennes à hautes », groupe de 8 à 10 au moins).
+ */
+export const BRAISE: SpeciesDefinition = {
+  id: 'braise',
+  name: 'Tétra braise',
+  scientificName: 'Hyphessobrycon amandae',
+  // Modèle agrandi, juste au-dessus du rasbora (0,055) : le mode immersif peuple ses trois plus
+  // petites espèces nageuses (`sim/immersive-tank.ts`), sa population par défaut ne change pas.
+  bodyLength: 0.056,
+  cruiseSpeed: 0.05,
+  minSpeed: 0.02,
+  maxSpeed: 0.1,
+  wanderTurnRate: 1.1,
+  avoidTurnRate: 2.8,
+  maxPitch: 0.35,
+  wallMargin: 0.03,
+  tailBeatFrequency: 2.8,
+  defaultPopulation: 10,
+  maxPopulation: 30,
+  schooling: {
+    neighborRadius: 0.22,
+    separationRadius: 0.045,
+    separationWeight: 1.2,
+    alignmentWeight: 0.9,
+    cohesionWeight: 0.9,
+    turnRate: 1.6,
+    minDistance: 0.022,
+  },
+  silhouette: 'braise',
+  colors: {
+    stripe: '#e07a2f',
+    accent: '#d94a3a',
+    back: '#d94a3a',
+    belly: '#f08a2c',
+    fin: '#e07a2f',
+    eye: '#1c1c22',
+  },
+  // Milieu et haut de la colonne d'eau, entre 40 % et 85 % de la hauteur d'eau.
+  depth: {
+    minHeightRatio: 0.4,
+    maxHeightRatio: 0.85,
+    floorZone: 0.07, // portée commune des parois (`MAX_FLOOR_ZONE`)
+    ascentRate: 0,
+    ascentDuration: 1,
+  },
+  feeding: {
+    hungerRate: 1 / 170,
+    perceptionRadius: 0.28,
+    turnRate: 2.6,
+    minHeightRatio: 0.3,
+    maxHeightRatio: 1,
+  },
+};
+
+/**
+ * Molly (Poecilia sphenops), forme noire du commerce : le plus grand et le plus sombre des
+ * vivipares du bac, corps long et haut entièrement noir ; paisible, sans banc, plusieurs
+ * femelles par mâle (Seriously Fish). Eau dure et alcaline réclamée : voir `sim/water-ph.ts`.
+ */
+export const MOLLY: SpeciesDefinition = {
+  id: 'molly',
+  name: 'Molly',
+  scientificName: 'Poecilia sphenops',
+  bodyLength: 0.09,
+  cruiseSpeed: 0.04,
+  minSpeed: 0.018,
+  maxSpeed: 0.09,
+  wanderTurnRate: 0.8,
+  avoidTurnRate: 2.4,
+  maxPitch: 0.3,
+  wallMargin: 0.045,
+  tailBeatFrequency: 1.8,
+  defaultPopulation: 3,
+  maxPopulation: 8,
+  schooling: null,
+  silhouette: 'molly',
+  colors: {
+    stripe: '#1c1c22',
+    accent: '#45423e',
+    back: '#1c1c22',
+    belly: '#45423e',
+    fin: '#1c1c22',
+    eye: '#f2ead8',
+  },
+  // Haut de la colonne d'eau, entre 45 % et 90 % de la hauteur d'eau.
+  depth: {
+    minHeightRatio: 0.45,
+    maxHeightRatio: 0.9,
+    floorZone: 0.07, // portée commune des parois (`MAX_FLOOR_ZONE`)
+    ascentRate: 0,
+    ascentDuration: 1,
+  },
+  feeding: {
+    hungerRate: 1 / 150,
+    perceptionRadius: 0.34,
+    turnRate: 2.3,
+    minHeightRatio: 0.2,
+    maxHeightRatio: 1,
+  },
+};
+
+/**
+ * Gourami miel (Trichogaster chuna), mâle en livrée : corps ovale orange miel, gorge, ventre et
+ * anale sombres, dorsale bordée de jaune ; le plus haut du bac, juste sous la surface, sous les
+ * plantes flottantes, où il vient respirer l'air (Seriously Fish : couvert de surface, accès à
+ * l'air humide au-dessus de l'eau ; lent, vite intimidé).
+ */
+export const MIEL: SpeciesDefinition = {
+  id: 'miel',
+  name: 'Gourami miel',
+  scientificName: 'Trichogaster chuna',
+  bodyLength: 0.065,
+  cruiseSpeed: 0.03,
+  minSpeed: 0.012,
+  maxSpeed: 0.07,
+  wanderTurnRate: 0.6,
+  avoidTurnRate: 2.4,
+  maxPitch: 0.25,
+  wallMargin: 0.04,
+  tailBeatFrequency: 1.4,
+  defaultPopulation: 2,
+  maxPopulation: 6,
+  schooling: null,
+  silhouette: 'miel',
+  colors: {
+    stripe: '#f08a2c',
+    accent: '#ffd166',
+    back: '#f2c14e',
+    belly: '#1c1c22',
+    fin: '#ffd166',
+    eye: '#1c1c22',
+  },
+  // Sous la surface, entre 70 % et 96 % de la hauteur d'eau ; brève montée à l'air toutes les
+  // 75 s en moyenne (poisson à labyrinthe).
+  depth: {
+    minHeightRatio: 0.7,
+    maxHeightRatio: 0.96,
+    floorZone: 0.07, // portée commune des parois (`MAX_FLOOR_ZONE`)
+    ascentRate: 1 / 75,
+    ascentDuration: 4,
+  },
+  feeding: {
+    hungerRate: 1 / 200,
+    perceptionRadius: 0.3,
+    turnRate: 1.8,
+    minHeightRatio: 0.5,
+    maxHeightRatio: 1,
+  },
+};
+
 /** Toutes les espèces connues, par identifiant (ordre de déclaration = ordre de peuplement). */
 export const SPECIES: Readonly<Record<SpeciesId, SpeciesDefinition>> = {
   neon: NEON,
@@ -1399,6 +1566,9 @@ export const SPECIES: Readonly<Record<SpeciesId, SpeciesDefinition>> = {
   danio: DANIO,
   ancistrus: ANCISTRUS,
   otocinclus: OTOCINCLUS,
+  braise: BRAISE,
+  molly: MOLLY,
+  miel: MIEL,
 };
 
 /** Apparences d'une espèce : ses `variants`, ou son apparence par défaut seule. */

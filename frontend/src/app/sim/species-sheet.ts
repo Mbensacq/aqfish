@@ -107,8 +107,8 @@ const ESPECES = 'docs/ESPECES.md';
 const ANAPSID = 'https://anapsid.org/bombina.html (secondaire)';
 
 /**
- * Fiches Seriously Fish consultées le 2026-10-28 (lot 1, #238, ADR 0070) et le 2026-11-01
- * (lot 2, #362, ADR 0090), suivies du nom de page.
+ * Fiches Seriously Fish consultées le 2026-10-28 (lot 1, #238, ADR 0070), le 2026-11-01
+ * (lot 2, #362, ADR 0090) et le 2026-11-02 (lot 3, #391, ADR 0095), suivies du nom de page.
  */
 const SF = 'https://www.seriouslyfish.com/species/';
 
@@ -346,6 +346,61 @@ const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
       note(
         'Pas pour un bac neuf : sujets presque tous prélevés dans la nature, fragiles à l’arrivée ; bac mûr, planté et riche en algues',
         source(`${SF}otocinclus-macrospilus`),
+      ),
+    ],
+  },
+  // Lot 3 d'eau douce (#391, ADR 0095) : fiches Seriously Fish consultées le 2026-11-02 ; tailles
+  // en longueur standard (SL), volumes donnés par la fiche pour la base citée.
+  braise: {
+    adultSize: sourced(2, `${SF}hyphessobrycon-amandae (SL)`),
+    temperaturePreferred: approx(range(23, 26)),
+    temperatureTolerated: sourced(range(20, 28), `${SF}hyphessobrycon-amandae`),
+    // Micro-prédateur en nature (zooplancton), aliments secs et petites proies vivantes en bac.
+    diet: approx('carnivore'),
+    minGroup: sourced(8, `${SF}hyphessobrycon-amandae (8 à 10 au moins)`),
+    minLiters: sourced(41, `${SF}hyphessobrycon-amandae (base 45 × 30 cm)`),
+    notes: [
+      note(
+        'Très paisible mais minuscule : à éviter avec des poissons turbulents ou bien plus grands',
+        source(`${SF}hyphessobrycon-amandae`),
+      ),
+    ],
+  },
+  molly: {
+    adultSize: sourced(8, `${SF}poecilia-sphenops (SL)`),
+    temperaturePreferred: approx(range(23, 26)),
+    temperatureTolerated: sourced(range(21, 28), `${SF}poecilia-sphenops`),
+    diet: sourced('omnivore', `${SF}poecilia-sphenops (omnivore, part végétale importante)`),
+    // Vivipare sans banc : un mâle et plusieurs femelles (aucun effectif chiffré par la fiche).
+    minGroup: approx(3),
+    minLiters: sourced(81, `${SF}poecilia-sphenops (base 90 × 30 cm)`),
+    notes: [
+      note(
+        'Eau dure et alcaline (pH 7 à 8,5, 15 à 30 °dGH) : déconseillé en bac communautaire ordinaire ; lignées d’élevage souvent fragiles',
+        source(`${SF}poecilia-sphenops`),
+      ),
+      note(
+        'S’hybride avec le molly voile (P. latipinna) : une seule des deux espèces par bac',
+        source(`${SF}poecilia-sphenops`),
+      ),
+    ],
+  },
+  miel: {
+    adultSize: sourced(5.5, `${SF}trichogaster-chuna (SL)`),
+    temperaturePreferred: approx(range(24, 26)),
+    temperatureTolerated: sourced(range(22, 27), `${SF}trichogaster-chuna`),
+    // Insectivore probable en nature ; aliments secs et petites proies vivantes ou congelées.
+    diet: approx('carnivore'),
+    // La fiche se contredit (« au mieux en couple » et « 4 à 6 au moins ») : le couple est gardé.
+    minGroup: sourced(2, `${SF}trichogaster-chuna (au mieux en couple)`),
+    minLiters: sourced(
+      54,
+      `${SF}trichogaster-chuna (base 60 × 30 cm, un couple ou un petit groupe)`,
+    ),
+    notes: [
+      note(
+        'Lent, vite intimidé : éviter les espèces territoriales ou agressives ; couvert de plantes en surface et couvercle (il saute)',
+        source(`${SF}trichogaster-chuna`),
       ),
     ],
   },

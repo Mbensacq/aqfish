@@ -232,6 +232,9 @@ class TestHost {
     danio: 0,
     ancistrus: 0,
     otocinclus: 0,
+    braise: 0,
+    molly: 0,
+    miel: 0,
   });
   readonly populationMax = signal<PopulationCounts>({
     neon: 40,
@@ -251,6 +254,9 @@ class TestHost {
     danio: 0,
     ancistrus: 0,
     otocinclus: 0,
+    braise: 0,
+    molly: 0,
+    miel: 0,
   });
   readonly tankLiters = signal<number | null>(288);
   readonly water = signal<WaterReadout>(DEFAULT_WATER_READOUT);
@@ -1055,9 +1061,9 @@ describe('ControlPanel', () => {
     // 5 contrôles de #52, « Éditer le décor » (#167), « Granulés » (#117), « Afficher la
     // pièce » (#187), « Changer l’eau » et le curseur du chauffage (#207), « − » et « + » des
     // feuilles de catappa (#239), puis « − », champ, « + » (#69), curseur (#189) et « Fiche »
-    // (#237) pour chacune des 11 espèces du bac tropical (#238, #362), puis « Exporter » et
-    // « Importer » (#70), le mode du bac (#278), et « Mode immersif » (#345).
-    expect(controls).toHaveLength(5 + 1 + 1 + 1 + 2 + 2 + 11 * 5 + 2 + 1 + 1);
+    // (#237) pour chacune des 14 espèces du bac tropical (#238, #362, #391), puis « Exporter »
+    // et « Importer » (#70), le mode du bac (#278), et « Mode immersif » (#345).
+    expect(controls).toHaveLength(5 + 1 + 1 + 1 + 2 + 2 + 14 * 5 + 2 + 1 + 1);
     expect(root().querySelectorAll('input[type="file"]')).toHaveLength(1);
     for (const control of controls) {
       const name =
@@ -1132,6 +1138,9 @@ describe('ControlPanel', () => {
         'danio',
         'ancistrus',
         'otocinclus',
+        'braise',
+        'molly',
+        'miel',
       ]);
       expect(rows.map((r) => r.querySelector('label')?.textContent?.trim())).toEqual([
         'Néon',
@@ -1145,6 +1154,9 @@ describe('ControlPanel', () => {
         'Danio zébré',
         'Ancistrus commun',
         'Otocinclus',
+        'Tétra braise',
+        'Molly',
+        'Gourami miel',
       ]);
       const neons = field('néons');
       expect(neons.type).toBe('number');
@@ -1174,6 +1186,9 @@ describe('ControlPanel', () => {
         danio: 0,
         ancistrus: 0,
         otocinclus: 0,
+        braise: 0,
+        molly: 0,
+        miel: 0,
       });
       await fixture.whenStable();
       expect(neons.value).toBe('20');

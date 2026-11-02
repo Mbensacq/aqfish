@@ -74,6 +74,9 @@ describe('wiki des espèces : présentes et ajoutables (#287)', () => {
       'danio',
       'ancistrus',
       'otocinclus',
+      'braise',
+      'molly',
+      'miel',
     ]);
     expect(lists.addable[0]).toEqual({
       species: 'guppy',
@@ -111,6 +114,9 @@ describe('wiki des espèces : présentes et ajoutables (#287)', () => {
       'danio',
       'ancistrus',
       'otocinclus',
+      'braise',
+      'molly',
+      'miel',
     ]);
   });
 
@@ -200,6 +206,9 @@ describe('wiki des espèces : soins de la fiche (#291)', () => {
       'danio',
       'ancistrus',
       'otocinclus',
+      'braise',
+      'molly',
+      'miel',
     ]);
     expect(elsewhere).toEqual(
       ['grenouille', 'triton', 'clown', 'chirurgien'].map((id) => SPECIES[id as SpeciesId].name),

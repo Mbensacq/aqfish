@@ -96,6 +96,9 @@ describe('SpeciesWiki (#287)', () => {
       'danio',
       'ancistrus',
       'otocinclus',
+      'braise',
+      'molly',
+      'miel',
     ]);
   });
 
@@ -105,7 +108,7 @@ describe('SpeciesWiki (#287)', () => {
     expect(names('present')).toEqual(['neon']);
     expect(names('addable')).toEqual([]);
     await search('poecilia');
-    expect(names('addable')).toEqual(['guppy']);
+    expect(names('addable')).toEqual(['guppy', 'molly']);
     await search('requin');
     expect(root().querySelectorAll('.species-wiki__empty').length).toBe(2);
   });
@@ -258,8 +261,8 @@ describe('SpeciesWiki, lot 2/2 (#291)', () => {
       'koi',
       'axolotl',
     ]);
-    // Guppy, corydoras et les huit espèces des lots 1 et 2 d'eau douce (#238, #362).
-    expect(all('[data-wiki-mate="together"]')).toHaveLength(10);
+    // Guppy, corydoras et les onze espèces des lots 1 à 3 d'eau douce (#238, #362, #391).
+    expect(all('[data-wiki-mate="together"]')).toHaveLength(13);
     expect(all('[data-wiki-mate="elsewhere"]')).toHaveLength(1);
 
     // L'eau du bac change : la comparaison suit.

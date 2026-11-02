@@ -200,7 +200,7 @@ describe('eau douce, lot 2 (#362) : bac tropical et compatibilité', () => {
       expect(livesIn('recif', id)).toBe(false);
       expect(livesIn('bassin', id)).toBe(false);
     }
-    expect(TROPICAL_TANK.species).toEqual([...NATIVE, ...LOT1, ...NEW]);
+    expect(TROPICAL_TANK.species.slice(0, 11)).toEqual([...NATIVE, ...LOT1, ...NEW]);
     expect(TROPICAL_TANK.population.map((p) => p.species)).toEqual(NATIVE);
     const catalog = speciesCatalog('tropical');
     expect(catalog.filter((e) => NEW.includes(e.species)).map((e) => e.defaultCount)).toEqual([
@@ -209,7 +209,7 @@ describe('eau douce, lot 2 (#362) : bac tropical et compatibilité', () => {
     expect(
       wikiLists('tropical', { neon: 12, guppy: 6, corydora: 6 })
         .addable.map((e) => e.species)
-        .slice(-4),
+        .slice(-7, -3),
     ).toEqual(NEW);
   });
 

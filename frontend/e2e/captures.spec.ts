@@ -53,6 +53,7 @@ const WOOD = 'bois=-0.02:0:-0.2:1.5:7';
 const FRESHWATER_LOT1 = 'population=neon:0,guppy:0,corydora:0,rasbora:8,tetra:8,kuhli:6,gourami:2';
 const FRESHWATER_LOT2 =
   'population=neon:0,guppy:0,corydora:0,platy:4,danio:8,ancistrus:2,otocinclus:6';
+const FRESHWATER_LOT3 = 'population=neon:0,guppy:0,corydora:0,braise:12,molly:3,miel:2';
 const OUTPUT_DIR = resolve(
   process.env['CAPTURE_DIR'] ?? join(__dirname, '..', '..', 'docs', 'captures', 'latest'),
 );
@@ -155,6 +156,9 @@ test.describe('Captures', () => {
     // Eau douce, lot 2 (#362) : platys, danios zébrés, ancistrus et otocinclus seuls.
     { name: 'three-quarter-eau-douce-lot2', query: FRESHWATER_LOT2 },
     { name: 'front-eau-douce-lot2', query: `${FRESHWATER_LOT2}&camera=front` },
+    // Eau douce, lot 3 (#391) : tétras braise, mollys noirs et gouramis miel seuls.
+    { name: 'three-quarter-eau-douce-lot3', query: FRESHWATER_LOT3 },
+    { name: 'front-eau-douce-lot3', query: `${FRESHWATER_LOT3}&camera=front` },
     // Lot 2 de près (#370) : caméra libre au ras du fond, ancistrus (tête large, barbillons
     // clairs, dos piqueté) et otocinclus (bande noire) identifiables.
     {

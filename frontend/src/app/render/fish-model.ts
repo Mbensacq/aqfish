@@ -437,6 +437,66 @@ export const OTOCINCLUS_FISH: FishTemplate = {
   tailDepth: 1,
 };
 
+/**
+ * Tétra braise (#391) : le plus petit gabarit (9 colonnes), fin, dos rouge (`k`), flanc orange
+ * rougeoyant (`s`), ventre orangé (`b`), petite dorsale et anale (`f`).
+ */
+export const BRAISE_FISH: FishTemplate = {
+  body: [
+    // queue → tête
+    '....ff...',
+    '..kkkkkk.',
+    'sssssssse',
+    '.bbbbbbb.',
+    '...ff....',
+  ],
+  tail: ['f.', 'ff', 'ff', 'ff', 'f.'],
+  bodyDepth: 2,
+  tailDepth: 1,
+};
+
+/**
+ * Molly (#391) : grand vivipare long et haut, entièrement noir (`s`, `k`, `f`), ventre à peine
+ * plus clair (`b`), large dorsale, grande caudale arrondie, œil clair (`e`) pour lire la tête.
+ */
+export const MOLLY_FISH: FishTemplate = {
+  body: [
+    // queue → tête
+    '...fffff....',
+    '..kkkkkkkkk.',
+    'ssssssssssse',
+    'sssssssssss.',
+    '.bbbbbbbbbb.',
+    '..bbbbbbb...',
+    '...ff.......',
+  ],
+  tail: ['ff..', 'fff.', 'ffff', 'ffff', 'ffff', 'fff.', 'ff..'],
+  bodyDepth: 3,
+  tailDepth: 1,
+};
+
+/**
+ * Gourami miel (#391) : ovale haut, dos or (`k`), flanc orange miel (`s`), dorsale bordée de
+ * jaune (`a`), gorge, avant du ventre et anale sombres (`b`) du mâle en livrée, ventrales en
+ * filaments orange.
+ */
+export const MIEL_FISH: FishTemplate = {
+  body: [
+    // queue → tête
+    '....aaaa...',
+    '..kkkkkkkk.',
+    'sssssssssse',
+    'ssssssssbbb',
+    '.ssssbbbbb.',
+    '..bbbbbbb..',
+    '.......s...',
+    '......s....',
+  ],
+  tail: ['ff.', 'fff', '.ff', 'fff', 'ff.'],
+  bodyDepth: 2,
+  tailDepth: 1,
+};
+
 /** Gabarit de chaque silhouette déclarée par les espèces (`sim/species.ts`). */
 export const SILHOUETTES: Readonly<Record<SilhouetteId, FishTemplate>> = {
   fuseau: SLENDER_FISH,
@@ -457,6 +517,9 @@ export const SILHOUETTES: Readonly<Record<SilhouetteId, FishTemplate>> = {
   danio: DANIO_FISH,
   ancistrus: ANCISTRUS_FISH,
   otocinclus: OTOCINCLUS_FISH,
+  braise: BRAISE_FISH,
+  molly: MOLLY_FISH,
+  miel: MIEL_FISH,
 };
 
 /** Attribut de sommet du rang de taché (`voxelSpotRank`, points blancs, issue #366). */
