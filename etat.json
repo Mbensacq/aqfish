@@ -4659,6 +4659,12 @@
           "debut": "2026-11-02T00:46:36.773Z",
           "fin": "2026-11-02T00:47:18.069Z",
           "note": "Issue #363 : pièce complète lot 3/3, porte, plinthes, luminaire (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-02T00:48:02.040Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
