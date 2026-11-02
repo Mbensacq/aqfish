@@ -1,6 +1,5 @@
-# Captures du cycle 131
-
-- Branche : cycle/c131-plafonds-piece-dette (PR #397), commit 5aa3618db6e5fb6b4a6e814c0406ab8b6a5a452c
-- Graine : celle du mode capture (défaut)
-- 115 captures, Chromium local 1194 ; comparées à main (e335e63) générée dans un worktree avec le même Chromium : 114 identiques à l'octet, telephone-liste-bacs.png diffère de 21 pixels (bord du panneau défilant, animation derrière le panneau translucide), sans lien avec la PR.
-- Durée : ~10 min par série
+# Captures c132
+- Branche : cycle/c132-mutants-population, PR #401, commit 909ba5d
+- Graine : défaut des captures ; Chromium local 1243 (octets différents de la CI, voir PIEGES)
+- 115 captures sur 118 : l'exécution a été interrompue par le délai de session (tracés des trajectoires non produits)
+- PR de tests seuls : aucun changement d'apparence attendu
