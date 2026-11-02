@@ -4,12 +4,12 @@ import {
   createRoom,
   isCentimetric,
   MAX_ROOM_SUPPORTS,
-  MAX_ROOM_TANKS,
   moveTank,
   removeSupport,
   removeTank,
   renameTank,
   ROOM_FLOOR,
+  ROOM_TANK_CAP,
   roomLayoutProblems,
   stepRoom,
   SUPPORT_CATALOG,
@@ -216,9 +216,9 @@ describe('addTank : bac vide, posé au sol ou sur un meuble', () => {
     expect(c).toEqual({ ok: false, reason: 'chevauchement' });
   });
 
-  it('refuse au-delà de MAX_ROOM_TANKS et ne réutilise jamais un identifiant', () => {
+  it('refuse au-delà de ROOM_TANK_CAP (#392) et ne réutilise jamais un identifiant', () => {
     let room = createRoom(11);
-    for (let i = 1; i < MAX_ROOM_TANKS; i++) {
+    for (let i = 1; i < ROOM_TANK_CAP; i++) {
       const x = -3.6 + ((i - 1) % 8) * 0.65;
       const z = -2.6 + Math.floor((i - 1) / 8) * 0.5;
       room = ok(
@@ -229,7 +229,7 @@ describe('addTank : bac vide, posé au sol ou sur un meuble', () => {
         }),
       ).room;
     }
-    expect(room.tanks).toHaveLength(MAX_ROOM_TANKS);
+    expect(room.tanks).toHaveLength(ROOM_TANK_CAP);
     expect(
       addTank(room, { environment: 'tropical', size: 'petit', placement: floor(3, 2.6) }),
     ).toEqual({
@@ -240,7 +240,7 @@ describe('addTank : bac vide, posé au sol ou sur un meuble', () => {
     const again = ok(
       addTank(removed, { environment: 'tropical', size: 'petit', placement: floor(-1, -2.6) }),
     );
-    expect(again.id).toBe(MAX_ROOM_TANKS);
+    expect(again.id).toBe(ROOM_TANK_CAP);
     expect(roomLayoutProblems(again.room)).toEqual([]);
   });
 });
