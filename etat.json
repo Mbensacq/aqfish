@@ -4805,10 +4805,10 @@
           "note": "Issue #396 : plafonds de la pièce, e2e du plafond de bacs et bac de départ (S)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-02T15:10:15.651Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-02T16:27:25.498Z",
+          "note": "PR #397 : bac de départ ramené à la place restante + e2e plafond de bacs (sauvegarde 16 bacs injectée) + durees.json remesuré (parts e2e 22-31 min au lieu de 24-37), CI verte ; pied d'attribution réinjecté par l'environnement dans le corps de #397"
         }
       },
       "metriques": {}
