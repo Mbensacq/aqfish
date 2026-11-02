@@ -4767,6 +4767,12 @@
           "debut": "2026-11-02T11:52:04.749Z",
           "fin": "2026-11-02T11:52:50.925Z",
           "note": "Issue #392 : plafonds de performance, lot 4 de #264 (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-02T11:53:35.650Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
