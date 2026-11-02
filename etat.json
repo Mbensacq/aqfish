@@ -4773,6 +4773,12 @@
           "debut": "2026-11-02T11:53:35.650Z",
           "fin": "2026-11-02T13:14:12.127Z",
           "note": "PR #395 : plafonds de performance de la pièce (16 bacs, 240 animaux, ADR 0096, script de mesure), CI verte ; 119 captures identiques à main ; pied d'attribution réinjecté par l'environnement dans le corps de #395"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-02T13:14:43.933Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
