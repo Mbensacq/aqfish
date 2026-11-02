@@ -4853,10 +4853,10 @@
           "note": "Verdict OK, 0 bug, mutation 99,32 % remesurée, 115 captures c132 publiées"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-02T20:29:35.078Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-02T21:31:31.951Z",
+          "note": "PR #401 fusionnée → v1.7.6 (release CI ok, main verte sur 9d0f3d1) ; #398 fermée ; PR roadmap #400 fusionnée ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
