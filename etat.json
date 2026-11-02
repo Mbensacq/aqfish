@@ -4815,6 +4815,12 @@
           "debut": "2026-11-02T16:27:59.934Z",
           "fin": "2026-11-02T17:14:47.068Z",
           "note": "Verdict OK, 0 bug, 115 captures c131 (114 identiques à main), e2e du lot OK, mutation 89,1 % (issue dette)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-02T17:15:23.527Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
