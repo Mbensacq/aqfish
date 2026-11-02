@@ -166,7 +166,7 @@ test.describe('Panneau de contrôle', () => {
     await toggle(page).click();
     await expect(hostEl(page)).toHaveAttribute(
       'data-aqfish-population',
-      'neon:12,guppy:6,corydora:6,rasbora:0,tetra:0,kuhli:0,gourami:0,platy:0,danio:0,ancistrus:0,otocinclus:0',
+      'neon:12,guppy:6,corydora:6,rasbora:0,tetra:0,kuhli:0,gourami:0,platy:0,danio:0,ancistrus:0,otocinclus:0,braise:0,molly:0,miel:0',
     );
     await expect(count(page, 'néons')).toHaveValue('12');
     await expect.poll(() => tick(page)).toBeGreaterThan(30);
@@ -174,7 +174,7 @@ test.describe('Panneau de contrôle', () => {
     await page.getByRole('button', { name: 'Ajouter un néon' }).click();
     await expect(hostEl(page)).toHaveAttribute(
       'data-aqfish-population',
-      'neon:13,guppy:6,corydora:6,rasbora:0,tetra:0,kuhli:0,gourami:0,platy:0,danio:0,ancistrus:0,otocinclus:0',
+      'neon:13,guppy:6,corydora:6,rasbora:0,tetra:0,kuhli:0,gourami:0,platy:0,danio:0,ancistrus:0,otocinclus:0,braise:0,molly:0,miel:0',
     );
     await expect(count(page, 'néons')).toHaveValue('13');
     await page.getByRole('button', { name: 'Retirer un corydora' }).click();
@@ -182,7 +182,7 @@ test.describe('Panneau de contrôle', () => {
     await count(page, 'guppys').press('Enter');
     await expect(hostEl(page)).toHaveAttribute(
       'data-aqfish-population',
-      'neon:13,guppy:2,corydora:5,rasbora:0,tetra:0,kuhli:0,gourami:0,platy:0,danio:0,ancistrus:0,otocinclus:0',
+      'neon:13,guppy:2,corydora:5,rasbora:0,tetra:0,kuhli:0,gourami:0,platy:0,danio:0,ancistrus:0,otocinclus:0,braise:0,molly:0,miel:0',
     );
     // Hors bornes : ramené au maximum de l'espèce, affiché dans le champ.
     await count(page, 'néons').fill('500');
@@ -193,7 +193,7 @@ test.describe('Panneau de contrôle', () => {
       'true',
     );
     expect(await population(page)).toBe(
-      'neon:40,guppy:2,corydora:5,rasbora:0,tetra:0,kuhli:0,gourami:0,platy:0,danio:0,ancistrus:0,otocinclus:0',
+      'neon:40,guppy:2,corydora:5,rasbora:0,tetra:0,kuhli:0,gourami:0,platy:0,danio:0,ancistrus:0,otocinclus:0,braise:0,molly:0,miel:0',
     );
     // Le temps n'est pas remis à zéro, et la simulation continue.
     const after = await tick(page);
@@ -219,7 +219,7 @@ test.describe('Panneau de contrôle', () => {
     await page.keyboard.press('Enter');
     await expect(hostEl(page)).toHaveAttribute(
       'data-aqfish-population',
-      'neon:11,guppy:6,corydora:6,rasbora:0,tetra:0,kuhli:0,gourami:0,platy:0,danio:0,ancistrus:0,otocinclus:0',
+      'neon:11,guppy:6,corydora:6,rasbora:0,tetra:0,kuhli:0,gourami:0,platy:0,danio:0,ancistrus:0,otocinclus:0,braise:0,molly:0,miel:0',
     );
     // Curseur d'effectif (#189), entre « − » et le champ.
     await page.keyboard.press('Tab');
@@ -233,12 +233,12 @@ test.describe('Panneau de contrôle', () => {
     await expect(page.getByRole('button', { name: 'Ajouter un néon' })).toBeFocused();
     await expect(hostEl(page)).toHaveAttribute(
       'data-aqfish-population',
-      'neon:13,guppy:6,corydora:6,rasbora:0,tetra:0,kuhli:0,gourami:0,platy:0,danio:0,ancistrus:0,otocinclus:0',
+      'neon:13,guppy:6,corydora:6,rasbora:0,tetra:0,kuhli:0,gourami:0,platy:0,danio:0,ancistrus:0,otocinclus:0,braise:0,molly:0,miel:0',
     );
     await page.keyboard.press('Space');
     await expect(hostEl(page)).toHaveAttribute(
       'data-aqfish-population',
-      'neon:14,guppy:6,corydora:6,rasbora:0,tetra:0,kuhli:0,gourami:0,platy:0,danio:0,ancistrus:0,otocinclus:0',
+      'neon:14,guppy:6,corydora:6,rasbora:0,tetra:0,kuhli:0,gourami:0,platy:0,danio:0,ancistrus:0,otocinclus:0,braise:0,molly:0,miel:0',
     );
     // Les chiffres tapés dans le champ ne déclenchent pas les raccourcis de vue (1 à 5).
     const camera = await hostEl(page).getAttribute('data-aqfish-camera');
@@ -343,14 +343,27 @@ test.describe('Panneau de contrôle', () => {
     }
     // Population (#69) : chaque ligne entière dans le panneau, contrôles de taille tactile.
     const rows = page.locator('[data-section="population"] .control-panel__count');
-    // Bac tropical : trois espèces peuplées et huit ajoutables (#238, #362).
-    await expect(rows).toHaveCount(11);
-    for (let i = 0; i < 11; i++) {
-      const row = await box(rows.nth(i));
+    // Bac tropical : trois espèces peuplées et onze ajoutables (#238, #362, #391).
+    await expect(rows).toHaveCount(14);
+    // Toutes les boîtes relevées en un seul aller-retour : un `boundingBox` par contrôle
+    // (14 lignes × 5) dépassait le délai du test en rendu logiciel (#391).
+    const measured = await rows.evaluateAll((els) =>
+      els.map((row) => {
+        const box = (el: Element) => {
+          const r = el.getBoundingClientRect();
+          return { x: r.x, width: r.width, height: r.height };
+        };
+        return { row: box(row), controls: [...row.querySelectorAll('button, input')].map(box) };
+      }),
+    );
+    expect(measured).toHaveLength(14);
+    for (const { row, controls } of measured) {
+      expect(row.width).toBeGreaterThan(0);
       expect(row.x).toBeGreaterThanOrEqual(panel.x);
       expect(row.x + row.width).toBeLessThanOrEqual(panel.x + panel.width);
-      for (const control of await rows.nth(i).locator('button, input').all()) {
-        const b = await box(control);
+      expect(controls.length).toBeGreaterThan(0);
+      for (const b of controls) {
+        expect(b.width, 'contrôle visible').toBeGreaterThan(0);
         expect(b.x + b.width).toBeLessThanOrEqual(panel.x + panel.width);
         expect(b.height).toBeGreaterThanOrEqual(28);
       }

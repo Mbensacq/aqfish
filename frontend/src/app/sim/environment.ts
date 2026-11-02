@@ -8,6 +8,7 @@ import { assertLilyPadSettings, type LilyPadSettings } from './lily-pads';
 import {
   ANCISTRUS,
   AXOLOTL,
+  BRAISE,
   CHIRURGIEN,
   CLOWN,
   CORYDORA,
@@ -17,6 +18,8 @@ import {
   GUPPY,
   KOI,
   KUHLI,
+  MIEL,
+  MOLLY,
   NEON,
   OTOCINCLUS,
   PLATY,
@@ -157,6 +160,8 @@ const TROPICAL_SPECIES = [NEON, GUPPY, CORYDORA] as const;
 const TROPICAL_ADDABLE = [RASBORA, TETRA, KUHLI, GOURAMI] as const;
 /** Espèces du lot 2 d'eau douce (#362, ADR 0090), proposées de la même façon. */
 const TROPICAL_ADDABLE_LOT2 = [PLATY, DANIO, ANCISTRUS, OTOCINCLUS] as const;
+/** Espèces du lot 3 d'eau douce (#391, ADR 0095), proposées de la même façon. */
+const TROPICAL_ADDABLE_LOT3 = [BRAISE, MOLLY, MIEL] as const;
 
 /** Bac tropical : le bac d'avant l'issue #87, à l'identique. */
 export const TROPICAL_TANK: Environment = {
@@ -179,9 +184,12 @@ export const TROPICAL_TANK: Environment = {
   bankDecor: null,
   rain: false,
   floatingLeaves: false,
-  species: [...TROPICAL_SPECIES, ...TROPICAL_ADDABLE, ...TROPICAL_ADDABLE_LOT2].map(
-    (def) => def.id,
-  ),
+  species: [
+    ...TROPICAL_SPECIES,
+    ...TROPICAL_ADDABLE,
+    ...TROPICAL_ADDABLE_LOT2,
+    ...TROPICAL_ADDABLE_LOT3,
+  ].map((def) => def.id),
   population: defaultPopulation(TROPICAL_SPECIES),
 };
 

@@ -107,6 +107,20 @@ export const LEGAL_STATUS: Readonly<Record<SpeciesId, LegalStatus>> = {
     ESPECES,
     'aucune ligne de l’annexe 2 vérifiée ; sujets presque tous prélevés dans la nature',
   ),
+  // Lot 3 d'eau douce (#391, ADR 0095) : aucune ligne de l'annexe 2 lue pour ces espèces.
+  braise: legal('a-verifier', 'non-verifie', ESPECES, 'aucune ligne de l’annexe 2 vérifiée'),
+  molly: legal(
+    'a-verifier',
+    'non-verifie',
+    ESPECES,
+    'aucune ligne de l’annexe 2 vérifiée ; sujets du commerce issus d’élevages',
+  ),
+  miel: legal(
+    'a-verifier',
+    'non-verifie',
+    ESPECES,
+    'aucune ligne de l’annexe 2 vérifiée ; sujets du commerce issus d’élevages',
+  ),
 };
 
 /** Statut légal de l'espèce `id` (figé, partagé). */

@@ -39,6 +39,10 @@ export const TAP_REACTIONS: Readonly<Record<SpeciesId, TapReaction | null>> = {
   danio: 'fuite',
   ancistrus: 'fuite',
   otocinclus: 'fuite',
+  braise: 'fuite',
+  molly: 'curiosite',
+  // Gourami miel : lent et vite intimidé (Seriously Fish), d'où la fuite (approximation de jeu).
+  miel: 'fuite',
 };
 
 /** Portée du tapotement, en mètres simulés, autour du point touché sur la vitre. */

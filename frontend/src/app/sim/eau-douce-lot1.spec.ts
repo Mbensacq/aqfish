@@ -154,7 +154,7 @@ describe('eau douce, lot 1 (#238) : bac tropical et compatibilité', () => {
     ]);
     expect(
       wikiLists('tropical', { neon: 12, guppy: 6, corydora: 6 }).addable.map((e) => e.species),
-    ).toEqual([...NEW, 'platy', 'danio', 'ancistrus', 'otocinclus']);
+    ).toEqual([...NEW, 'platy', 'danio', 'ancistrus', 'otocinclus', 'braise', 'molly', 'miel']);
   });
 
   it('monde par défaut (graine 42) inchangé : seules les trois espèces d’avant', () => {
@@ -188,10 +188,12 @@ describe('eau douce, lot 1 (#238) : bac tropical et compatibilité', () => {
     const order = TROPICAL_TANK.species;
     const counts = { neon: 12, guppy: 6, corydora: 6, rasbora: 8, tetra: 8, kuhli: 6, gourami: 2 };
     expect(mixWarnings(order, counts)).toEqual([]);
+    // Gourami miel territorial depuis le lot 3 (#391, ADR 0095).
     expect(wikiCare('gourami').cohabitation.avoid.map((e) => e.species)).toEqual([
       'koi',
       'axolotl',
       'clown',
+      'miel',
     ]);
   });
 

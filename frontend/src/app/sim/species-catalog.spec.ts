@@ -27,6 +27,9 @@ describe('catalogue d’espèces (#189)', () => {
       'danio',
       'ancistrus',
       'otocinclus',
+      'braise',
+      'molly',
+      'miel',
     ]);
     expect(ids('bassin')).toEqual(['koi']);
     expect(ids('paludarium')).toEqual(['axolotl', 'grenouille', 'triton']);

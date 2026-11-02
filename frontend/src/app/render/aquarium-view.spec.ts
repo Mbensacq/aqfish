@@ -148,6 +148,9 @@ describe('AquariumView (pipeline pixel art)', () => {
       'poissons-danio',
       'poissons-ancistrus',
       'poissons-otocinclus',
+      'poissons-braise',
+      'poissons-molly',
+      'poissons-miel',
     ]);
   });
 

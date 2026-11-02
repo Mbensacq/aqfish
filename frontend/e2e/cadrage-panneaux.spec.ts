@@ -283,7 +283,7 @@ test.describe('liste « Population » du panneau « Réglages » (#370)', () => 
             }),
           };
         });
-        expect(scrolls, 'onze espèces : la liste défile à ce format').toBe(true);
+        expect(scrolls, 'quatorze espèces : la liste défile à ce format').toBe(true);
         expect(rows.length).toBeGreaterThan(0);
         let shown = 0;
         for (const [i, row] of rows.entries()) {

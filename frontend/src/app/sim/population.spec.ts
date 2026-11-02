@@ -31,6 +31,9 @@ import {
   DANIO,
   ANCISTRUS,
   OTOCINCLUS,
+  BRAISE,
+  MOLLY,
+  MIEL,
 } from './species';
 import { waterVolume } from './tank';
 import {
@@ -77,6 +80,9 @@ describe('bornes de population', () => {
       'danio',
       'ancistrus',
       'otocinclus',
+      'braise',
+      'molly',
+      'miel',
     ]);
   });
 
@@ -110,6 +116,9 @@ describe('bornes de population', () => {
       danio: 0,
       ancistrus: 0,
       otocinclus: 0,
+      braise: 0,
+      molly: 0,
+      miel: 0,
     });
     expect(populationCounts(createWorld(42))).toEqual({
       neon: 0,
@@ -129,6 +138,9 @@ describe('bornes de population', () => {
       danio: 0,
       ancistrus: 0,
       otocinclus: 0,
+      braise: 0,
+      molly: 0,
+      miel: 0,
     });
     expect(populationCounts(createWorld(42))).toEqual(NO_FISH);
   });
@@ -152,6 +164,9 @@ describe('bornes de population', () => {
       danio: DANIO.maxPopulation,
       ancistrus: ANCISTRUS.maxPopulation,
       otocinclus: OTOCINCLUS.maxPopulation,
+      braise: BRAISE.maxPopulation,
+      molly: MOLLY.maxPopulation,
+      miel: MIEL.maxPopulation,
     });
   });
 
@@ -241,6 +256,9 @@ describe('setPopulation', () => {
       danio: 0,
       ancistrus: 0,
       otocinclus: 0,
+      braise: 0,
+      molly: 0,
+      miel: 0,
     });
   });
 
@@ -280,6 +298,9 @@ describe('setPopulation', () => {
       danio: 0,
       ancistrus: 0,
       otocinclus: 0,
+      braise: 0,
+      molly: 0,
+      miel: 0,
     });
     // Bac plein : plus aucun ajout possible, quelle que soit l'espèce.
     for (const id of SPECIES_IDS) {

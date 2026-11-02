@@ -134,6 +134,9 @@ describe('koï (#88)', () => {
       'danio',
       'ancistrus',
       'otocinclus',
+      'braise',
+      'molly',
+      'miel',
     ]);
     expect(livesIn('bassin', 'koi')).toBe(true);
     expect(livesIn('tropical', 'koi')).toBe(false);

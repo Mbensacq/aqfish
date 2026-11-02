@@ -43,6 +43,12 @@ export const TEMPERAMENTS: Readonly<Record<SpeciesId, Temperament>> = {
   // envers ses congénères et les poissons de même forme, d'où `paisible` ici (ADR 0090).
   ancistrus: 'paisible',
   otocinclus: 'paisible',
+  braise: 'paisible',
+  molly: 'paisible',
+  // Seriously Fish (Trichogaster chuna) : les dominants chassent leurs rivaux au nourrissage ou
+  // autour d'un coin favori, « éviter les espèces territoriales ou agressives » : `territorial`,
+  // donc déconseillé avec le gourami nain (ADR 0095).
+  miel: 'territorial',
 };
 
 /** Verdict pour un couple d'espèces. */

@@ -51,6 +51,9 @@ export const SPECIES_LABELS: Readonly<Record<SpeciesId, SpeciesLabels>> = {
   danio: { singular: 'danio zébré', plural: 'danios zébrés', feminine: false },
   ancistrus: { singular: 'ancistrus commun', plural: 'ancistrus communs', feminine: false },
   otocinclus: { singular: 'otocinclus', plural: 'otocinclus', feminine: false },
+  braise: { singular: 'tétra braise', plural: 'tétras braise', feminine: false },
+  molly: { singular: 'molly', plural: 'mollys', feminine: false },
+  miel: { singular: 'gourami miel', plural: 'gouramis miel', feminine: false },
 };
 
 /** Entrée du catalogue d'un environnement. */
