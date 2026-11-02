@@ -4811,10 +4811,10 @@
           "note": "PR #397 : bac de départ ramené à la place restante + e2e plafond de bacs (sauvegarde 16 bacs injectée) + durees.json remesuré (parts e2e 22-31 min au lieu de 24-37), CI verte ; pied d'attribution réinjecté par l'environnement dans le corps de #397"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-02T16:27:59.934Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-02T17:14:47.068Z",
+          "note": "Verdict OK, 0 bug, 115 captures c131 (114 identiques à main), e2e du lot OK, mutation 89,1 % (issue dette)"
         }
       },
       "metriques": {}
