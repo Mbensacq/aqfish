@@ -4845,6 +4845,12 @@
           "debut": "2026-11-02T18:18:08.295Z",
           "fin": "2026-11-02T20:04:47.800Z",
           "note": "PR #401 : mutants de population.ts (98,9 %) et environment-worlds.ts (100 %), tests seuls, CI verte ; #26 partiel : swimmer.ts non mesurable en session (commentaire chiffré sur #26), e2e local non complet (PIEGES)"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-02T20:05:26.030Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
