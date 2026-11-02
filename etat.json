@@ -4824,6 +4824,24 @@
         }
       },
       "metriques": {}
+    },
+    "132": {
+      "numero": 132,
+      "date": "2026-11-02",
+      "debut": "2026-11-02T18:15:45.777Z",
+      "type": "retro",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-02T18:15:45.777Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
