@@ -4781,10 +4781,10 @@
           "note": "Verdict OK, 0 bug, 119 captures c130 publiées (identiques à main), spec e2e du lot OK, unitaires/build OK"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-02T14:01:55.747Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-02T15:08:26.711Z",
+          "note": "PR #395 fusionnée → v1.7.4 (release CI ok, main verte sur e335e63) ; #392 fermée ; dette #396 (e2e plafond de bacs, bac de départ au plafond) ; suppression de branche refusée ; pied d'attribution réinjecté dans le corps de #395 malgré correction"
         }
       },
       "metriques": {}
