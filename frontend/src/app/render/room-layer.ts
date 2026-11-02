@@ -9,7 +9,18 @@ import {
   Vector2,
 } from 'three';
 
-import type { DayLight } from '../sim/daylight';
+import type { DayLight, MutableRgb } from '../sim/daylight';
+import {
+  isDoorClear,
+  lampColorsInto,
+  lampIntensity,
+  roomDoor,
+  roomDoorBlocks,
+  roomLamp,
+  roomLampBlocks,
+  roomTrimBlocks,
+  type RoomDoor,
+} from '../sim/room-details';
 import { furnitureBlocks } from '../sim/room-furniture';
 import {
   isShellVisible,
@@ -49,6 +60,11 @@ import { FACES } from './rock-model';
  * jour (`setDaylight`, `windowLightInto`), en trois maillages ; bois et vitre masqués avec le
  * mur du fond et dès que le bac s'interpose (`isWindowClear`).
  *
+ * Détails (#363, ADR 0093) : plinthes et moulure dans les parois de leur mur ; porte du mur
+ * de droite et applique en maillages à part, masqués avec ce mur et dès que le bac s'interpose
+ * (`isDoorClear`) ; abat-jour et halo teintés par l'intensité de la lampe (`setDaylight`,
+ * `lampIntensity`), halo affiché seulement lampe allumée.
+ *
  * Masquée (pièce masquée ou environnement sans pièce), la couche n'a aucun maillage et sa
  * racine est invisible : la scène rendue est exactement celle d'avant (#187).
  */
@@ -59,10 +75,13 @@ export const ROOM_COLORS: Readonly<Record<RoomPart, readonly [string, string]>> 
   // Murs latéraux (#324) en teinte 1, le fond de la scène : l'eau y garde sa teinte (ADR 0048).
   mur: [PALETTE.koiNoir, PALETTE.fondScene],
   cimaise: [PALETTE.rocheSombre, PALETTE.rocheSombre],
-  plinthe: [PALETTE.sableOmbre, PALETTE.sableOmbre],
+  // Plinthe du fond éclairée (teinte 0) ; celles des trois autres murs (#363) en couleurs
+  // plates, comme leur mur (teinte 1), du ton que prend la face éclairée de celle du fond.
+  plinthe: [PALETTE.sableOmbre, PALETTE.rocheSombre],
   plateau: [PALETTE.sableOmbre, PALETTE.sableOmbre],
   caisson: [PALETTE.sableOmbre, PALETTE.sableOmbre],
-  porte: [PALETTE.sableSombre, PALETTE.sableSombre],
+  // Portes du meuble (teinte 0) ; vantail de la porte de la pièce (#363) en teinte 1.
+  porte: [PALETTE.sableSombre, PALETTE.sableOmbre],
   poignee: [PALETTE.rocheSombre, PALETTE.rocheSombre],
   socle: [PALETTE.rocheSombre, PALETTE.rocheSombre],
   // Enveloppe (#324, ADR 0081) : plafond sombre, poutres en deux tons de bois.
@@ -73,6 +92,15 @@ export const ROOM_COLORS: Readonly<Record<RoomPart, readonly [string, string]>> 
   fenetre: [PALETTE.sableSombre, PALETTE.sableOmbre],
   vitre: [PALETTE.koiBlanc, PALETTE.koiBlanc],
   lumiere: [PALETTE.sableSombre, PALETTE.sableOmbre],
+  // Détails (#363, ADR 0093) : moulure du ton du plafond, chambranle du bois de la fenêtre,
+  // applique sombre, abat-jour clair et halo chaud teintés par la lampe (`lampColorsInto`).
+  moulure: [PALETTE.rocheSombre, PALETTE.rocheSombre],
+  // Plinthe du mur de gauche, vue derrière l'eau en vue de côté : du ton de l'eau sombre.
+  'plinthe-ombre': [PALETTE.koiNoir, PALETTE.koiNoir],
+  chambranle: [PALETTE.sableSombre, PALETTE.sableSombre],
+  applique: [PALETTE.rocheSombre, PALETTE.rocheSombre],
+  'abat-jour': [PALETTE.koiBlanc, PALETTE.koiBlanc],
+  halo: [PALETTE.sableSombre, PALETTE.sableOmbre],
   // Meubles et plantes de la pièce (#188, ADR 0049).
   bois: [PALETTE.sableSombre, PALETTE.sableOmbre],
   livre: [PALETTE.koiRouge, PALETTE.neonBleu],
@@ -186,6 +214,18 @@ export class RoomLayer implements SceneLayer {
     polygonOffsetUnits: -1,
   });
   private readonly windowLight = createWindowLight();
+  /** Abat-jour et halo de l'applique (#363) : couleurs plates teintées par la lampe. */
+  private readonly shadeMaterial = new MeshBasicMaterial({ vertexColors: true });
+  private readonly haloMaterial = new MeshBasicMaterial({ vertexColors: true });
+  private readonly shadeColor: MutableRgb = [1, 1, 1];
+  private readonly haloColor: MutableRgb = [1, 1, 1];
+  private lamp = 0;
+  private door: RoomDoor | null = null;
+  private lampArea: RoomDoor | null = null;
+  /** Porte (#363) ; applique (platine, bras et abat-jour) ; halo. */
+  private doorMesh: Mesh | null = null;
+  private fixture: Mesh[] = [];
+  private halo: Mesh | null = null;
   /** Contour de l'élément sélectionné (#188), celui de la sélection du décor. */
   private readonly selectionMaterial = createOutlineMaterial(SELECTION_COLOR, SELECTION_WIDTH_PX);
   /** Maillage de chaque paroi de l'enveloppe construite (une paroi sans bloc n'en a pas). */
@@ -220,7 +260,9 @@ export class RoomLayer implements SceneLayer {
     layout: readonly RoomBlock[] = [],
   ): void {
     this.clear();
-    const base = available ? [...roomBlocks(dims, room), ...furnitureBlocks(room)] : [];
+    const base = available
+      ? [...roomBlocks(dims, room), ...roomTrimBlocks(dims, room), ...furnitureBlocks(room)]
+      : [];
     const blocks = base.length > 0 ? [...base, ...layout] : base;
     this.blockCount = blocks.length;
     if (blocks.length === 0) {
@@ -253,19 +295,35 @@ export class RoomLayer implements SceneLayer {
       this.patchMaterial,
       'piece-fenetre-lumiere',
     );
+    const doorBlocks = roomDoorBlocks(dims, room);
+    this.door = roomDoor(dims, room);
+    this.doorMesh = this.windowMesh(doorBlocks, null, this.wallMaterial, 'piece-porte');
+    const lampBlocks = roomLampBlocks(dims, room);
+    this.lampArea = roomLamp(dims, room).halo;
+    this.fixture = [
+      this.windowMesh(lampBlocks, 'applique', this.wallMaterial, 'piece-applique'),
+      this.windowMesh(lampBlocks, 'abat-jour', this.shadeMaterial, 'piece-abat-jour'),
+    ].filter((mesh): mesh is Mesh => mesh !== null);
+    this.halo = this.windowMesh(lampBlocks, 'halo', this.haloMaterial, 'piece-applique-halo');
+    if (this.halo) {
+      this.halo.visible = this.lamp > 0;
+    }
     this.object.visible = true;
     this.room = room;
     this.buildHull();
   }
 
-  /** Maillage des blocs `part` de la fenêtre, ajouté à la couche ; `null` s'il n'y en a pas. */
+  /**
+   * Maillage des blocs `part` (tous avec `null`) de la fenêtre, de la porte ou de l'applique,
+   * ajouté à la couche ; `null` s'il n'y en a pas.
+   */
   private windowMesh(
     blocks: readonly RoomBlock[],
-    part: RoomPart,
+    part: RoomPart | null,
     material: MeshBasicMaterial,
     name: string,
   ): Mesh | null {
-    const own = blocks.filter((b) => b.part === part);
+    const own = part === null ? blocks : blocks.filter((b) => b.part === part);
     if (own.length === 0) {
       return null;
     }
@@ -284,6 +342,28 @@ export class RoomLayer implements SceneLayer {
     const { glass, patch } = windowLightInto(light, overcast, this.windowLight);
     this.glassMaterial.color.setRGB(glass[0], glass[1], glass[2]);
     this.patchMaterial.color.setRGB(patch[0], patch[1], patch[2]);
+    this.lamp = lampIntensity(light.intensity);
+    lampColorsInto(this.lamp, this.shadeColor, this.haloColor);
+    this.shadeMaterial.color.setRGB(this.shadeColor[0], this.shadeColor[1], this.shadeColor[2]);
+    this.haloMaterial.color.setRGB(this.haloColor[0], this.haloColor[1], this.haloColor[2]);
+    if (this.halo && this.lamp <= 0) {
+      this.halo.visible = false;
+    }
+  }
+
+  /** Intensité courante de l'applique, de 0 (éteinte) à 1 (tests). */
+  get lampLevel(): number {
+    return this.lamp;
+  }
+
+  /** Vrai si la porte est affichée (tests). */
+  get doorVisible(): boolean {
+    return this.object.visible && (this.doorMesh?.visible ?? false);
+  }
+
+  /** Vrai si le halo de l'applique est affiché (tests). */
+  get haloVisible(): boolean {
+    return this.object.visible && (this.halo?.visible ?? false);
   }
 
   /** Multiplicateurs courants de la vitre et de la tache (tests). */
@@ -369,6 +449,19 @@ export class RoomLayer implements SceneLayer {
       this.glass.visible = shown;
       this.wood.visible = shown;
     }
+    const right = isShellVisible(interior, 'droite', x, y, z);
+    if (dims && this.door && this.doorMesh) {
+      this.doorMesh.visible = right && isDoorClear(dims, this.door, x, y, z);
+    }
+    if (dims && this.lampArea) {
+      const lampShown = right && isDoorClear(dims, this.lampArea, x, y, z);
+      for (const mesh of this.fixture) {
+        mesh.visible = lampShown;
+      }
+      if (this.halo) {
+        this.halo.visible = lampShown && this.lamp > 0;
+      }
+    }
   }
 
   /** Vrai si la pièce est construite (tests). */
@@ -397,6 +490,8 @@ export class RoomLayer implements SceneLayer {
     this.wallMaterial.dispose();
     this.glassMaterial.dispose();
     this.patchMaterial.dispose();
+    this.shadeMaterial.dispose();
+    this.haloMaterial.dispose();
     this.selectionMaterial.dispose();
   }
 
@@ -407,6 +502,9 @@ export class RoomLayer implements SceneLayer {
       this.wood,
       this.glass,
       this.patch,
+      this.doorMesh,
+      ...this.fixture,
+      this.halo,
       this.hull,
     ]) {
       if (mesh) {
@@ -421,6 +519,11 @@ export class RoomLayer implements SceneLayer {
     this.glass = null;
     this.window = null;
     this.patch = null;
+    this.doorMesh = null;
+    this.fixture = [];
+    this.halo = null;
+    this.door = null;
+    this.lampArea = null;
     this.hull = null;
     this.room = null;
     this.dims = null;

@@ -14,6 +14,7 @@ import {
   type RoomPart,
   type RoomQuarter,
 } from './room';
+import { doorClearance, PLINTH_DEPTH } from './room-details';
 import type { TankDimensions } from './tank';
 
 /**
@@ -278,6 +279,7 @@ export type RoomDropRefusal =
   | 'introuvable'
   | 'hors-piece'
   | 'meuble-bac'
+  | 'porte'
   | 'sur-plante'
   | 'chevauche'
   | 'trop-haut'
@@ -297,17 +299,18 @@ export interface RoomDropRequest {
 }
 
 /**
- * Limites de la pièce où une emprise peut se trouver (x, z, mètres), et emprise du meuble du
- * bac (`cabinet`, au sol) : bornes de la pose et du choix d'un point du parquet (#188).
+ * Limites de la pièce où une emprise peut se trouver (x, z, mètres), devant les plinthes des
+ * quatre murs (#363), emprise du meuble du bac (`cabinet`, au sol) et passage devant la porte
+ * (`door`, `doorClearance`) : bornes de la pose et du choix d'un point du parquet (#188).
  */
 export function roomArea(dims: TankDimensions) {
   const halfW = Math.ceil(dims.width / 2 / ROOM_VOXEL - 1e-9) * ROOM_VOXEL;
   const halfD = Math.ceil(dims.depth / 2 / ROOM_VOXEL - 1e-9) * ROOM_VOXEL;
   return {
-    minX: -halfW - ROOM_MARGIN,
-    maxX: halfW + ROOM_MARGIN,
+    minX: -halfW - ROOM_MARGIN + PLINTH_DEPTH,
+    maxX: halfW + ROOM_MARGIN - PLINTH_DEPTH,
     minZ: -halfD - WALL_GAP + BASEBOARD_DEPTH,
-    maxZ: halfD + ROOM_MARGIN,
+    maxZ: halfD + ROOM_MARGIN - PLINTH_DEPTH,
     cabinet: {
       minX: -halfW - CABINET_OVERHANG,
       maxX: halfW + CABINET_OVERHANG,
@@ -316,6 +319,7 @@ export function roomArea(dims: TankDimensions) {
       minZ: -halfD - CABINET_OVERHANG,
       maxZ: halfD + CABINET_OVERHANG,
     },
+    door: { ...doorClearance(dims), minY: 0, maxY: 0 },
   };
 }
 
@@ -378,7 +382,8 @@ function atElevation(item: RoomItem, elevation: number): RoomItem {
  * reposaient sur l'élément remplacé retombent (`settleRoomItems`).
  *
  * Refus : pièce pleine (`MAX_ROOM_ITEMS`), indice inconnu, emprise hors de la pièce (au-delà
- * des marges ou dans le mur), sur le meuble du bac (il est sous le bac), pose sur une plante,
+ * des marges, dans le mur ou ses plinthes), sur le meuble du bac (il est sous le bac), devant
+ * la porte (#363), pose sur une plante,
  * ou dessus plus haut que le dessous des poutres du plafond (`roomInterior`, #336). Ne
  * modifie jamais `room` ; même entrée, même résultat.
  */
@@ -419,6 +424,9 @@ export function dropRoomItem(
   }
   if (footprintsOverlap(box, bounds.cabinet)) {
     return { ok: false, reason: 'meuble-bac' };
+  }
+  if (footprintsOverlap(box, bounds.door)) {
+    return { ok: false, reason: 'porte' };
   }
   // Ce que portait l'élément remplacé ne l'arrête pas : il retombe ensuite sur sa nouvelle
   // pose, ou plus bas (rotation sur place : une plante posée sur l'étagère y reste).
