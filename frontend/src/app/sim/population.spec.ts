@@ -98,6 +98,12 @@ describe('bornes de population', () => {
     },
   );
 
+  it('isSpeciesId refuse une valeur non textuelle qui se convertit en identifiant connu', () => {
+    // Object.hasOwn convertit sa clé en texte : seul le contrôle de type les écarte.
+    expect(isSpeciesId({ toString: () => 'neon' })).toBe(false);
+    expect(isSpeciesId(['guppy'])).toBe(false);
+  });
+
   it('populationCounts compte chaque espèce, zéro compris', () => {
     expect(populationCounts(createDefaultWorld(42))).toEqual({
       neon: NEON.defaultPopulation,
@@ -315,8 +321,9 @@ describe('setPopulation', () => {
       const world = createDefaultWorld(42);
       const copy = structuredClone(world);
       const mutable = cloneWorld(world);
-      expect(() => setPopulation(world, 'neon', count)).toThrow(RangeError);
-      expect(() => setPopulationInPlace(mutable, 'neon', count)).toThrow(RangeError);
+      const error = new RangeError(`count doit être un entier positif ou nul (reçu : ${count})`);
+      expect(() => setPopulation(world, 'neon', count)).toThrow(error);
+      expect(() => setPopulationInPlace(mutable, 'neon', count)).toThrow(error);
       expect(mutable).toEqual(copy);
     },
   );
@@ -324,7 +331,9 @@ describe('setPopulation', () => {
   it.each(['requin', 'constructor'])('refuse l’espèce inconnue %s, monde inchangé', (id) => {
     const mutable = cloneWorld(createDefaultWorld(42));
     const copy = structuredClone(mutable);
-    expect(() => setPopulationInPlace(mutable, id as SpeciesId, 3)).toThrow(RangeError);
+    expect(() => setPopulationInPlace(mutable, id as SpeciesId, 3)).toThrow(
+      new RangeError(`espèce inconnue : ${id}`),
+    );
     expect(mutable).toEqual(copy);
   });
 
@@ -476,6 +485,12 @@ describe('capTotalPopulation (#396)', () => {
     expect(
       capped.entities.filter((fish) => fish.species === 'neon').map((fish) => fish.id),
     ).toEqual(neons.slice(0, 6));
+    // À égalité (6/6) : la première espèce de SPECIES_IDS perd un individu, pas la suivante.
+    expect(populationCounts(capTotalPopulation(world, 14))).toMatchObject({
+      neon: 5,
+      guppy: 6,
+      corydora: 3,
+    });
     // À égalité : la première espèce de SPECIES_IDS d'abord, puis en alternance.
     expect(populationCounts(capTotalPopulation(world, 13))).toMatchObject({
       neon: 5,
@@ -493,8 +508,18 @@ describe('capTotalPopulation (#396)', () => {
   });
 
   it('refuse un plafond invalide', () => {
-    for (const bad of [-1, 2.5, Number.NaN, Number.POSITIVE_INFINITY]) {
-      expect(() => capTotalPopulation(tropical(), bad)).toThrow(RangeError);
+    for (const bad of [-1, 2.5, Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY]) {
+      expect(() => capTotalPopulation(tropical(), bad)).toThrow(
+        new RangeError(`max doit être un entier positif ou nul (reçu : ${bad})`),
+      );
     }
+    // Monde vide : le plafond invalide est refusé même s'il n'y a rien à retirer.
+    const empty = setPopulation(
+      setPopulation(setPopulation(tropical(), 'neon', 0), 'guppy', 0),
+      'corydora',
+      0,
+    );
+    expect(empty.entities).toHaveLength(0);
+    expect(() => capTotalPopulation(empty, -1)).toThrow(/^max doit/);
   });
 });
