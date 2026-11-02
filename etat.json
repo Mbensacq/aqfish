@@ -4883,10 +4883,10 @@
           "note": "PR #402 : pixels e2e comptés dans Node + molly/miel agrandis, CI verte ; partiel : part 3 à 26,4 min (dimensions-bac, mode-decor), total e2e 149→110 min"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-02T22:45:12.832Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-02T23:22:02.304Z",
+          "note": "Verdict RÉSERVES (part e2e 3 à 26,4 min), 0 bug, 3723 tests verts, 118 captures c133 publiées"
         }
       },
       "metriques": {}
