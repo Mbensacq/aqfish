@@ -4716,6 +4716,24 @@
         }
       },
       "metriques": {}
+    },
+    "129": {
+      "numero": 129,
+      "date": "2026-11-02",
+      "debut": "2026-11-02T06:48:07.288Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-02T06:48:07.288Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
