@@ -24,6 +24,7 @@ import {
   DEFAULT_ENVIRONMENT_ID,
   environmentById,
   environmentWater,
+  isImmersiveEnvironment,
   isPondShapeable,
   isTankResizable,
   PLACE_CACHE_LIMIT,
@@ -248,12 +249,17 @@ function worldDimensions(place: Place): TankDimensions | undefined {
   if (typeof place === 'string' || place.dimensions === undefined) {
     return undefined;
   }
+  if (place.immersive === true) {
+    // Bac immersif (#375) : dimensions de l'écran, dans les environnements qui le proposent.
+    if (!isImmersiveEnvironment(place.environment)) {
+      throw new RangeError(`pas de bac immersif dans l’environnement ${place.environment}`);
+    }
+    return clampImmersiveDimensions(place.dimensions);
+  }
   if (!isTankResizable(place.environment)) {
     throw new RangeError(`dimensions non réglables dans l’environnement ${place.environment}`);
   }
-  return place.immersive === true
-    ? clampImmersiveDimensions(place.dimensions)
-    : clampTankDimensions(place.dimensions);
+  return clampTankDimensions(place.dimensions);
 }
 
 /**

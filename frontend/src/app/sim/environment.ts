@@ -472,6 +472,19 @@ export function isTankResizable(id: EnvironmentId): boolean {
   return RESIZABLE_ENVIRONMENTS.includes(id);
 }
 
+/**
+ * Environnements proposés au mode immersif (#375, ADR 0094) : bacs vitrés dont les espèces
+ * nagent en pleine eau, sans berge émergée ni margelle. Leurs dimensions suivent l'écran
+ * (`TankPlace.immersive`), même quand elles ne se règlent pas ailleurs.
+ */
+export const IMMERSIVE_ENVIRONMENTS = ['tropical', 'recif'] as const;
+export type ImmersiveEnvironmentId = (typeof IMMERSIVE_ENVIRONMENTS)[number];
+
+/** Vrai si `value` est un environnement proposé au mode immersif. */
+export function isImmersiveEnvironment(value: unknown): value is ImmersiveEnvironmentId {
+  return (IMMERSIVE_ENVIRONMENTS as readonly unknown[]).includes(value);
+}
+
 /** Environnements dont la forme se règle (issue #190 : le bassin seulement). */
 export const SHAPED_ENVIRONMENTS: readonly EnvironmentId[] = ['bassin'];
 

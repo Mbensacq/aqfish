@@ -202,6 +202,109 @@ describe('ImmersiveMode', () => {
     expect(fixture.componentInstance.currentLayout!.dimensions.depth).toBeGreaterThan(before);
   });
 
+  describe('choix du bac (#375)', () => {
+    const world = (): World => (fixture.componentInstance as unknown as { world: World }).world;
+    const choice = (id: string): HTMLInputElement =>
+      query<HTMLInputElement>(`[data-immersive-tank-choice="${id}"]`)!;
+
+    function choose(id: string): void {
+      const input = choice(id);
+      input.checked = true;
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+      fixture.detectChanges();
+    }
+
+    it('propose le bac tropical (coché) et le récif, en boutons radio nommés', async () => {
+      await create();
+      frame(0);
+      expect(query('[data-immersive-tanks] legend')!.textContent).toContain('Bac');
+      const inputs = host().querySelectorAll<HTMLInputElement>('[data-immersive-tank-choice]');
+      expect([...inputs].map((i) => i.type)).toEqual(['radio', 'radio']);
+      expect([...inputs].map((i) => i.closest('label')!.textContent!.trim())).toEqual([
+        'Bac tropical',
+        'Récif',
+      ]);
+      expect(choice('tropical').checked).toBe(true);
+      expect(host().getAttribute('data-immersive-tank')).toBe('tropical');
+      expect(world().environment).toBe('tropical');
+    });
+
+    it('recrée le bac choisi en gardant étalonnage, distance de l’œil et profondeur', async () => {
+      storage.data.set(CALIBRATION_STORAGE_KEY, JSON.stringify({ pxPerMm: 4 }));
+      await create();
+      frame(0);
+      const component = fixture.componentInstance;
+      component.toggleSettings();
+      fixture.detectChanges();
+      const eye = query<HTMLInputElement>('[data-immersive-eye]')!;
+      eye.value = '700';
+      eye.dispatchEvent(new Event('input'));
+      const depth = query<HTMLInputElement>('[data-immersive-depth]')!;
+      depth.value = '250';
+      depth.dispatchEvent(new Event('input'));
+      frame(16);
+      const calibration = component.calibration();
+      const layout = component.currentLayout!;
+      const first = renderers.at(-1)!;
+      const count = renderers.length;
+      choose('recif');
+      frame(32);
+      expect(host().getAttribute('data-immersive-tank')).toBe('recif');
+      expect(world().environment).toBe('recif');
+      expect(world().entities.every((f) => SPECIES[f.species].id !== 'otocinclus')).toBe(true);
+      expect(first.disposed).toBe(true);
+      expect(renderers.length).toBe(count + 1);
+      expect(component.calibration()).toEqual(calibration);
+      expect(component.eyeDistanceMm()).toBe(700);
+      expect(component.depthMm()).toBe(250);
+      expect(component.currentLayout!.dimensions).toEqual(layout.dimensions);
+      expect(component.immersiveView!.immersiveActive).toBe(true);
+      // Même bac rechoisi, ou valeur inconnue : rien n'est recréé.
+      component.selectEnvironment('recif');
+      component.selectEnvironment('paludarium');
+      component.selectEnvironment('constructor');
+      frame(48);
+      expect(renderers.length).toBe(count + 1);
+      expect(world().environment).toBe('recif');
+      // Retour au bac tropical.
+      choose('tropical');
+      frame(64);
+      expect(world().environment).toBe('tropical');
+      expect(component.depthMm()).toBe(250);
+    });
+
+    it('la sélection garde l’interface affichée : le délai de masquage repart', async () => {
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+      try {
+        await create();
+        let time = 0;
+        const render = (count: number): void => {
+          for (let i = 0; i < count; i++) {
+            time += 1000 / 30;
+            frame(time);
+          }
+        };
+        frame(0);
+        render(UI_HIDE_MIN_FRAMES);
+        vi.advanceTimersByTime(UI_HIDE_MS - 10);
+        // Clavier : la flèche (touche du document) puis le choix.
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight' }));
+        choose('recif');
+        render(UI_HIDE_MIN_FRAMES);
+        vi.advanceTimersByTime(UI_HIDE_MS - 1);
+        fixture.detectChanges();
+        expect(host().getAttribute('data-immersive-ui')).toBe('visible');
+        expect(world().environment).toBe('recif');
+        vi.advanceTimersByTime(1);
+        fixture.detectChanges();
+        expect(host().getAttribute('data-immersive-ui')).toBe('hidden');
+        expect(closed).toBe(0);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+  });
+
   describe('lot 2 (#346) : parallaxe, gardes d’API, batterie', () => {
     const win = window as unknown as { DeviceOrientationEvent?: unknown };
     let original: unknown;

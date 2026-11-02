@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { isDecorMode } from './care-mode';
 import {
+  ENVIRONMENT_IDS,
+  IMMERSIVE_ENVIRONMENTS,
+  isImmersiveEnvironment,
+  livesIn,
+  type ImmersiveEnvironmentId,
+} from './environment';
+import {
   IMMERSIVE_DEPTH_MM,
   clampDepthMm,
   createImmersiveWorld,
@@ -11,7 +18,7 @@ import {
 } from './immersive-tank';
 import { SPECIES } from './species';
 import { IMMERSIVE_LIMITS, TANK_LIMITS } from './tank';
-import { advance } from './world';
+import { advance, createWorld } from './world';
 
 const screens = [
   { width: 65, height: 140 }, // téléphone en portrait
@@ -121,5 +128,95 @@ describe('immersive-tank', () => {
     expect(advance(createImmersiveWorld(7, layout), 120)).toEqual(
       advance(createImmersiveWorld(7, layout), 120),
     );
+  });
+
+  describe('choix du bac (#375)', () => {
+    it('propose le bac tropical et le récif, pas les bacs à berge ou à margelle', () => {
+      expect([...IMMERSIVE_ENVIRONMENTS]).toEqual(['tropical', 'recif']);
+      for (const id of ENVIRONMENT_IDS) {
+        expect(isImmersiveEnvironment(id)).toBe(id === 'tropical' || id === 'recif');
+      }
+      for (const value of ['', 'constructor', null, undefined, 3]) {
+        expect(isImmersiveEnvironment(value)).toBe(false);
+      }
+    });
+
+    it('bac tropical par défaut : population inchangée (eau douce seulement)', () => {
+      expect(smallSwimmers()).toEqual(smallSwimmers('tropical'));
+      expect(immersivePopulation()).toEqual(immersivePopulation('tropical'));
+      expect(immersivePopulation('tropical')).toEqual([
+        { species: 'otocinclus', count: 8 },
+        { species: 'corydora', count: 5 },
+        { species: 'rasbora', count: 3 },
+      ]);
+    });
+
+    it('population cohérente avec l’environnement : aucune espèce d’ailleurs', () => {
+      for (const env of IMMERSIVE_ENVIRONMENTS) {
+        const population = immersivePopulation(env);
+        expect(population.length).toBeGreaterThan(0);
+        for (const { species, count } of population) {
+          expect(livesIn(env, species)).toBe(true);
+          expect(count).toBeGreaterThan(0);
+        }
+      }
+      // Pas de poisson marin en eau douce, ni l'inverse.
+      expect(immersivePopulation('tropical').some((e) => livesIn('recif', e.species))).toBe(false);
+      expect(immersivePopulation('recif').some((e) => livesIn('tropical', e.species))).toBe(false);
+      expect(immersivePopulation('recif').map((e) => e.species)).toEqual(['clown', 'chirurgien']);
+    });
+
+    it('refuse un environnement sans bac immersif', () => {
+      const layout = immersiveLayout({ width: 300, height: 190 }, 100);
+      for (const env of ['bassin', 'paludarium', 'eaufroide', 'mer']) {
+        expect(() => smallSwimmers(env as ImmersiveEnvironmentId)).toThrow(RangeError);
+        expect(() => createImmersiveWorld(1, layout, env as ImmersiveEnvironmentId)).toThrow(
+          RangeError,
+        );
+      }
+      expect(() =>
+        createWorld(1, [], [], [], {
+          environment: 'paludarium',
+          dimensions: layout.dimensions,
+          immersive: true,
+        }),
+      ).toThrow(RangeError);
+      // Hors mode immersif, le récif ne se redimensionne toujours pas.
+      expect(() =>
+        createWorld(1, [], [], [], { environment: 'recif', dimensions: layout.dimensions }),
+      ).toThrow(RangeError);
+    });
+
+    it('récif immersif : aux dimensions de l’écran, en mode décor, nage dans le bac', () => {
+      for (const screen of screens) {
+        const layout = immersiveLayout(screen, defaultDepthMm(screen));
+        const world = createImmersiveWorld(345, layout, 'recif');
+        expect(world.environment).toBe('recif');
+        expect(world.dimensions).toEqual(layout.dimensions);
+        expect(isDecorMode(world)).toBe(true);
+        expect(world.entities.every((f) => livesIn('recif', f.species))).toBe(true);
+        const later = advance(world, 600);
+        const { width, height, depth } = layout.dimensions;
+        for (const fish of later.entities) {
+          for (const v of [fish.x, fish.y, fish.z]) {
+            expect(Number.isFinite(v)).toBe(true);
+          }
+          expect(Math.abs(fish.x)).toBeLessThanOrEqual(width / 2);
+          expect(Math.abs(fish.z)).toBeLessThanOrEqual(depth / 2);
+          expect(fish.y).toBeGreaterThanOrEqual(0);
+          expect(fish.y).toBeLessThanOrEqual(height);
+        }
+      }
+    });
+
+    it('déterministe par environnement : même graine, même monde ; bacs différents', () => {
+      const layout = immersiveLayout({ width: 65, height: 140 }, 40);
+      expect(advance(createImmersiveWorld(9, layout, 'recif'), 120)).toEqual(
+        advance(createImmersiveWorld(9, layout, 'recif'), 120),
+      );
+      expect(createImmersiveWorld(9, layout, 'recif').entities.map((f) => f.species)).not.toEqual(
+        createImmersiveWorld(9, layout, 'tropical').entities.map((f) => f.species),
+      );
+    });
   });
 });

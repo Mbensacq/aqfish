@@ -1,4 +1,5 @@
 import { setCareModeInPlace } from './care-mode';
+import { isImmersiveEnvironment, livesIn, type ImmersiveEnvironmentId } from './environment';
 import { SPECIES, type SpeciesId } from './species';
 import { IMMERSIVE_LIMITS, clampImmersiveDimensions, type TankDimensions } from './tank';
 import { createWorld, type MutableWorld, type PopulationEntry, type World } from './world';
@@ -10,7 +11,8 @@ import { createWorld, type MutableWorld, type PopulationEntry, type World } from
  * la vue (distance de l'œil comprise) l'est d'autant ; l'image est la même qu'à l'échelle 1.
  *
  * Contenu : mode décor (#278, ADR 0077), sans eau à entretenir ni alerte, avec les plus
- * petites espèces nageuses d'abord. Ce n'est pas une simulation réaliste.
+ * petites espèces nageuses de l'environnement choisi d'abord (bac tropical ou récif, #375,
+ * ADR 0094). Ce n'est pas une simulation réaliste.
  */
 
 /** Profondeur physique du bac immersif, en millimètres : bornes. */
@@ -80,10 +82,23 @@ export function immersiveLayout(screen: ScreenMm, depthMm: number): ImmersiveLay
   return { dimensions, scale, aspectClamped };
 }
 
-/** Espèces nageuses (ni marcheuses ni amphibiennes), de la plus petite à la plus grande. */
-export function smallSwimmers(): readonly SpeciesId[] {
+/** Environnement du bac immersif à l'ouverture du mode. */
+export const DEFAULT_IMMERSIVE_ENVIRONMENT: ImmersiveEnvironmentId = 'tropical';
+
+/**
+ * Espèces nageuses (ni marcheuses ni amphibiennes) qui vivent dans `environment`
+ * (`livesIn`), de la plus petite à la plus grande.
+ * @throws RangeError si `environment` n'est pas proposé au mode immersif.
+ */
+export function smallSwimmers(
+  environment: ImmersiveEnvironmentId = DEFAULT_IMMERSIVE_ENVIRONMENT,
+): readonly SpeciesId[] {
+  assertImmersiveEnvironment(environment);
   return (Object.values(SPECIES) as (typeof SPECIES)[SpeciesId][])
-    .filter((def) => def.walker === undefined && def.amphibian === undefined)
+    .filter(
+      (def) =>
+        def.walker === undefined && def.amphibian === undefined && livesIn(environment, def.id),
+    )
     .sort((a, b) => a.bodyLength - b.bodyLength || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
     .map((def) => def.id);
 }
@@ -91,23 +106,41 @@ export function smallSwimmers(): readonly SpeciesId[] {
 /** Effectifs du bac immersif, des plus petites espèces aux plus grandes. */
 export const IMMERSIVE_COUNTS: readonly number[] = [8, 5, 3];
 
-/** Population par défaut du bac immersif : les plus petites espèces nageuses d'abord. */
-export function immersivePopulation(): readonly PopulationEntry[] {
-  return smallSwimmers()
+/**
+ * Population par défaut du bac immersif de `environment` : ses plus petites espèces
+ * nageuses d'abord, au plus `IMMERSIVE_COUNTS.length` espèces.
+ * @throws RangeError si `environment` n'est pas proposé au mode immersif.
+ */
+export function immersivePopulation(
+  environment: ImmersiveEnvironmentId = DEFAULT_IMMERSIVE_ENVIRONMENT,
+): readonly PopulationEntry[] {
+  return smallSwimmers(environment)
     .slice(0, IMMERSIVE_COUNTS.length)
     .map((species, i) => ({ species, count: IMMERSIVE_COUNTS[i] }));
 }
 
 /**
- * Monde du mode immersif : bac tropical aux dimensions `layout.dimensions`, sans décor, en
- * mode décor, peuplé par `immersivePopulation`. Jamais sauvegardé.
+ * Monde du mode immersif : bac de `environment` aux dimensions `layout.dimensions`, sans
+ * décor posé, en mode décor, peuplé par `immersivePopulation`. Jamais sauvegardé. Au récif,
+ * coraux et anémones sont tirés de la graine dans ces dimensions, comme pour tout récif.
+ * @throws RangeError si `environment` n'est pas proposé au mode immersif.
  */
-export function createImmersiveWorld(seed: number, layout: ImmersiveLayout): World {
-  const world = createWorld(seed, immersivePopulation(), [], [], {
-    environment: 'tropical',
+export function createImmersiveWorld(
+  seed: number,
+  layout: ImmersiveLayout,
+  environment: ImmersiveEnvironmentId = DEFAULT_IMMERSIVE_ENVIRONMENT,
+): World {
+  const world = createWorld(seed, immersivePopulation(environment), [], [], {
+    environment,
     dimensions: layout.dimensions,
     immersive: true,
   }) as MutableWorld;
   setCareModeInPlace(world, 'decor');
   return world;
+}
+
+function assertImmersiveEnvironment(environment: unknown): void {
+  if (!isImmersiveEnvironment(environment)) {
+    throw new RangeError(`pas de bac immersif dans l’environnement ${String(environment)}`);
+  }
 }
