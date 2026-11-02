@@ -4860,6 +4860,24 @@
         }
       },
       "metriques": {}
+    },
+    "133": {
+      "numero": 133,
+      "date": "2026-11-02",
+      "debut": "2026-11-02T21:32:00.095Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-02T21:32:00.095Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
