@@ -25,6 +25,13 @@ import { advance, createDefaultWorld, createWorld, type SimClock, type World } f
 /** Nombre maximal de bacs dans une pièce (borne de validation provisoire, ADR 0061). */
 export const MAX_ROOM_TANKS = 32;
 
+/**
+ * Plafond de performance des bacs (lot 4, ADR 0096) : `addTank` refuse d'aller au-delà. Plus
+ * bas que `MAX_ROOM_TANKS`, qui reste la borne de validation (une pièce plus grande, venue
+ * d'une ancienne sauvegarde, se charge toujours). Voir `sim/room-limits.ts`.
+ */
+export const ROOM_TANK_CAP = 16;
+
 /** Longueur maximale du nom d'un bac, en caractères. */
 export const MAX_TANK_NAME_LENGTH = 40;
 
@@ -612,12 +619,12 @@ export interface AddTankRequest {
 /**
  * Ajoute un bac **vide** (décor de départ de l'environnement, aucun animal) avec l'identifiant
  * `nextTankId` et la graine `tankSeed` : ajouter un bac ne change ni la graine ni l'état des
- * autres. Refus : pièce pleine (`MAX_ROOM_TANKS`), bassin (il est au jardin), pose refusée
+ * autres. Refus : pièce pleine (`ROOM_TANK_CAP`, ADR 0096), bassin (il est au jardin), pose refusée
  * (`tankPlacementRefusal`). Pur.
  * @throws RangeError si l'environnement est inconnu.
  */
 export function addTank(room: RoomState, request: AddTankRequest): RoomLayoutResult {
-  if (room.tanks.length >= MAX_ROOM_TANKS) {
+  if (room.tanks.length >= ROOM_TANK_CAP) {
     return { ok: false, reason: 'piece-pleine' };
   }
   const { environment } = request;

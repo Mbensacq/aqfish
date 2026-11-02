@@ -665,6 +665,12 @@ export interface NewTankRequest {
 
         <fieldset class="control-panel__section" data-section="population">
           <legend class="control-panel__legend">Population</legend>
+          <!-- Plafond d'animaux de la pièce (#392, ADR 0096) : pourquoi « + » ne fait plus rien. -->
+          @if (populationNotice(); as notice) {
+            <p class="control-panel__note control-panel__warning" role="status" data-room-cap>
+              {{ notice }}
+            </p>
+          }
           @for (entry of catalog(); track entry.species) {
             @let id = entry.species;
             <div class="control-panel__count" [attr.data-species]="id">
@@ -1090,6 +1096,8 @@ export class ControlPanel {
   readonly population = input<PopulationCounts>(NO_FISH);
   /** Effectif maximal de chaque espèce, compte tenu des autres (fourni par l'hôte). */
   readonly populationMax = input<PopulationCounts>(NO_FISH);
+  /** Plafond d'animaux de la pièce atteint (#392) : message de l'hôte, sinon `null`. */
+  readonly populationNotice = input<string | null>(null);
   /** Litres d'eau du bac courant (fournis par l'hôte, #237) ; `null` : inconnus. */
   readonly tankLiters = input<number | null>(null);
   /** Relevé de l'eau (fourni par l'hôte, #207). */

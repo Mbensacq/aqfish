@@ -111,7 +111,10 @@ simulation testable et les captures reproductibles.
   l'hôte avance en place le bac affiché à chaque image et rattrape les autres par lots
   (`stepRoom` avec `exceptTankId`) aux relevés de l'eau et avant changement de bac, transfert
   ou sauvegarde ; renommage depuis la liste (`renameTank`, `normalizeTankName`) ; faim
-  moyenne de chaque bac dans la liste (`data-tank-hunger`). L'hôte expose le
+  moyenne de chaque bac dans la liste (`data-tank-hunger`). Lot 4 (ADR 0096) : **plafonds
+  de performance** d'ajout (`sim/room-limits.ts` : `ROOM_TANK_CAP` bacs, `ROOM_ANIMAL_CAP`
+  animaux tous bacs confondus, message en clair ; `MAX_ROOM_TANKS` et `MAX_TOTAL_FISH`
+  restent les bornes de validation), mesurés par `scripts/mesure-piece.mjs`. L'hôte expose le
   **bac sélectionné** par ses signaux actuels : tableau de bord, alertes, fiches, wiki et
   actions lisent ces signaux et ne supposent jamais un bac unique ailleurs.
 - **Eau** (#206, ADR 0052, `sim/water.ts`) : `World.water` (température, ammoniaque,
@@ -334,6 +337,7 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
 | `sim/time-step.ts` | `assertTimeStep` : validation unique d'un pas de temps |
 | `sim/world.ts` | État du monde sérialisable (dont `decor`), `step`, `advance`, `advanceTo`, `advanceInPlace` (boucle d'affichage), `createDefaultWorld` (population et décor par défaut) |
 | `sim/save.ts` | Sauvegarde (#70, ADR 0028) : format JSON versionné (`saveData`, `serializeWorld`), relecture validée (`parseWorld`, `parseSaveData` : bornes, effectifs, propriétés propres seulement, champs inconnus ignorés, schéma inconnu refusé) ; mondes des autres environnements visités dans `others` (#277, ADR 0063) |
+| `sim/room-limits.ts` | Plafonds de performance de la pièce (#392, ADR 0096) : `ROOM_TANK_CAP` et `ROOM_ANIMAL_CAP` (ajouts refusés au-delà, avec message), animaux de la pièce (`roomAnimalCount`), coût déterministe d'un pas (`roomSimulationCost`, somme des carrés), place restante et limites par espèce du bac affiché (`roomAnimalRoom`, `roomAnimalCapRefusal`, `roomPopulationLimits`, `roomTankCapRefusal`) |
 | `sim/room-state.ts` | Pièce de N bacs (#264, ADR 0061 et 0069) : `RoomState` et `RoomTank` (identifiant, nom, lieu, monde), graines des bacs (`tankSeed`), pièce neuve (`createRoom`), pas commun sans lecture croisée (`stepRoom`, bac affiché exclu au lot 3b), nom saisi normalisé (`normalizeTankName`), bac sélectionné (`resolveSelectedTank`), passage aux mondes de l'hôte du lot 1 (`roomWorlds`, `syncRoom`) ; lot 2 (ADR 0073) : catalogue `TANK_SIZES` et `SUPPORT_CATALOG`, meubles supports et positions des bacs, pose analytique (`addSupport`, `removeSupport`, `addTank`, `moveTank`, `removeTank`, `renameTank`, `tankPlacementRefusal`, `roomLayoutProblems`) |
 | `sim/room-layout.ts` | Pièce de N bacs, lot 2b (#305, ADR 0074) : première place libre d'un meuble ou d'un bac ajouté (`findSupportSpot`, `findTankSpot`, dans l'aire de la pièce graphique, hors obstacles), blocs de rendu des meubles supports et des bacs posés (`roomLayoutBlocks`) |
 | `sim/tank-transfer.ts` | Transfert d'un animal entre deux bacs (#306, ADR 0075) : `transferRefusal` (bac, milieu `livesIn`, température tolérée de la fiche, `populationLimit`), `transferFish` (pur ; nouvel identifiant du bac d'arrivée, faim et santé gardées, avertissements d'ajout), `transferMessage` |
@@ -545,6 +549,8 @@ découpé entre deux machines : garder des fichiers de taille raisonnable.
   (`postbuild` : `scripts/verifier-bundle-initial.mjs`).
 - Objectif de fluidité : 60 images/s avec 200 poissons sur un portable de milieu de gamme,
   **mesuré par Mathis sur sa machine**, jamais dans l'environnement des agents.
+- Pièce de N bacs (ADR 0096) : 16 bacs et 240 animaux au plus après un ajout ; ordres de
+  grandeur du coût de simulation par `node --expose-gc scripts/mesure-piece.mjs` (hors CI).
 
 ## Backend
 

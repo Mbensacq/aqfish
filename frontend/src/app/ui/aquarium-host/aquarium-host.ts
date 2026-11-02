@@ -183,6 +183,11 @@ import {
   type TankSizeId,
 } from '../../sim/room-state';
 import {
+  roomAnimalCapRefusal,
+  roomPopulationLimits,
+  roomTankCapRefusal,
+} from '../../sim/room-limits';
+import {
   findSupportSpot,
   findTankSpot,
   roomLayoutBlocks,
@@ -760,8 +765,13 @@ export class AquariumHost {
   /** Effectif de chaque espèce (#69), mis à jour au démarrage et à chaque réglage. */
   readonly population = signal<PopulationCounts>(NO_FISH);
 
-  /** Effectif maximal de chaque espèce compte tenu des autres (`populationLimits`, #69). */
+  /**
+   * Effectif maximal de chaque espèce compte tenu des autres (`populationLimits`, #69) et du
+   * plafond d'animaux de la pièce (`roomPopulationLimits`, #392).
+   */
   readonly populationMax = signal<PopulationCounts>(NO_FISH);
+  /** Plafond d'animaux de la pièce atteint (#392, ADR 0096) : message en clair, sinon `null`. */
+  readonly populationNotice = signal<string | null>(null);
   /** Relevé de l'eau affiché par le tableau de bord et le panneau (#207, #256), au dixième. */
   readonly water = signal<WaterReadout>(DEFAULT_WATER_READOUT);
   /**
@@ -1152,7 +1162,11 @@ export class AquariumHost {
     ) {
       return;
     }
-    setPopulationInPlace(world, species, count);
+    // Plafond d'animaux de la pièce (#392, ADR 0096) : un ajout au-delà est ramené à la place
+    // restante, sans effet si elle est nulle ; retirer reste toujours possible.
+    const room = this.syncRoomState(world);
+    const limit = roomPopulationLimits(room, this.selectedTankId, world)[species];
+    setPopulationInPlace(world, species, Math.min(count, limit));
     this.exposePopulation();
     this.scheduleFrame();
   }
@@ -2348,6 +2362,11 @@ export class AquariumHost {
       return this.refuseRoomLayout('position-invalide');
     }
     const room = this.syncRoomState(world);
+    // Plafond de bacs (#392, ADR 0096) : message explicite plutôt que « pièce pleine ».
+    const capped = roomTankCapRefusal(room);
+    if (capped !== null) {
+      return this.exposeRoomCatalog(capped);
+    }
     const { area, obstacles } = this.roomFloor(world);
     const placement = findTankSpot(
       room,
@@ -3130,7 +3149,15 @@ export class AquariumHost {
     }
     const counts = populationCounts(world);
     this.population.set(counts);
-    this.populationMax.set(populationLimits(world));
+    // Pièce à jour pour ce monde (même objet) : plafond de la pièce ; sinon, celui du bac seul.
+    const room = this.roomState;
+    const shownTank = room?.tanks.find((tank) => tank.world === world);
+    this.populationMax.set(
+      room && shownTank ? roomPopulationLimits(room, shownTank.id, world) : populationLimits(world),
+    );
+    this.populationNotice.set(
+      room && shownTank ? roomAnimalCapRefusal(room, shownTank.id, 1, world) : null,
+    );
     this.health.set(healthSummary(world.entities));
     this.host.nativeElement.setAttribute(
       POPULATION_ATTRIBUTE,
