@@ -180,8 +180,8 @@ describe('pièce : pose par gravité (#188)', () => {
     }));
     const full = { ...ROOM, items };
     expect(dropRoomItem(full, DEFAULT_TANK, TABLE)).toEqual({ ok: false, reason: 'plein' });
-    // Remplacer reste possible.
-    expect(dropRoomItem(full, DEFAULT_TANK, { ...TABLE, x: -2, z: 3 }, 0).ok).toBe(true);
+    // Remplacer reste possible (devant la plinthe du mur d'en face, #363).
+    expect(dropRoomItem(full, DEFAULT_TANK, { ...TABLE, x: -2, z: 2.9 }, 0).ok).toBe(true);
   });
 
   it('refuse un indice de remplacement inconnu', () => {
