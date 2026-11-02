@@ -4752,6 +4752,24 @@
         }
       },
       "metriques": {}
+    },
+    "130": {
+      "numero": 130,
+      "date": "2026-11-02",
+      "debut": "2026-11-02T11:52:04.749Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-02T11:52:04.749Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
