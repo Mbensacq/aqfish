@@ -684,6 +684,16 @@ haut de sa section.
 
 ## Simulation
 
+- **Plafonds d'ajout ≠ bornes de validation** (cycle 130, #392, ADR 0096) : `ROOM_TANK_CAP`
+  (16) et `ROOM_ANIMAL_CAP` (240) ne refusent que les **ajouts** ; `MAX_ROOM_TANKS` (32) et
+  `MAX_TOTAL_FISH` (60 par bac) restent les bornes de lecture d'une sauvegarde. Baisser une
+  borne de validation rendrait illisibles des sauvegardes existantes. Changer d'environnement
+  crée encore son bac de départ, même au plafond d'animaux (pièce alors au-delà : plus aucun
+  ajout, retraits permis). (2026-11-02)
+- **Temps de `scripts/mesure-piece.mjs` instables** (cycle 130, #392) : d'une exécution à
+  l'autre, sur la même machine, les petites pièces varient du simple au double (1 bac de 10
+  animaux : 0,11 à 0,26 ms par pas). Comparer les colonnes déterministes (paires par pas,
+  sauvegarde, blocs) et ne retenir des temps que l'ordre de grandeur. (2026-11-02)
 - **Une espèce plus petite change la population du mode immersif** (cycle 129, #391) : le bac
   immersif se peuple des trois plus petites espèces nageuses de son environnement, triées par
   `bodyLength` puis par identifiant (`smallSwimmers`, `sim/immersive-tank.ts`). Une nouvelle
