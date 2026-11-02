@@ -4871,10 +4871,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-02T21:32:00.095Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-02T21:32:41.653Z",
+          "note": "Issue #394 : lisibilité du lot 3 et e2e plus rapide (S)"
         }
       },
       "metriques": {}
