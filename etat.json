@@ -4671,6 +4671,12 @@
           "debut": "2026-11-02T02:12:38.963Z",
           "fin": "2026-11-02T02:39:25.761Z",
           "note": "Verdict RÉSERVES (e2e complet non rejoué en local, ambiance de jour très sombre), 0 bug, 117 captures c127 publiées, +3 e2e"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-02T02:40:07.174Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
