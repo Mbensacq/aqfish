@@ -4830,7 +4830,7 @@
       "date": "2026-11-02",
       "debut": "2026-11-02T18:15:45.777Z",
       "type": "retro",
-      "issue": null,
+      "issue": 398,
       "pr": null,
       "version": null,
       "phases": {
