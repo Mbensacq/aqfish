@@ -4889,10 +4889,10 @@
           "note": "Verdict RÉSERVES (part e2e 3 à 26,4 min), 0 bug, 3723 tests verts, 118 captures c133 publiées"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-02T23:22:37.392Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-02T23:58:08.224Z",
+          "note": "PR #402 fusionnée → v1.8.0 (release CI ok) ; #394 fermée ; critère durée e2e partiel reporté sur #384 ; CI main en cours sur 169507f (arbre identique au commit testé vert) ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
