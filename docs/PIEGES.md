@@ -687,9 +687,15 @@ haut de sa section.
 - **Plafonds d'ajout ≠ bornes de validation** (cycle 130, #392, ADR 0096) : `ROOM_TANK_CAP`
   (16) et `ROOM_ANIMAL_CAP` (240) ne refusent que les **ajouts** ; `MAX_ROOM_TANKS` (32) et
   `MAX_TOTAL_FISH` (60 par bac) restent les bornes de lecture d'une sauvegarde. Baisser une
-  borne de validation rendrait illisibles des sauvegardes existantes. Changer d'environnement
-  crée encore son bac de départ, même au plafond d'animaux (pièce alors au-delà : plus aucun
-  ajout, retraits permis). (2026-11-02)
+  borne de validation rendrait illisibles des sauvegardes existantes. Changer pour un
+  environnement jamais visité crée son bac de départ **ramené à la place restante** (vide à la
+  pièce pleine, #396) et ajoute un bac même à 16 bacs (seul le catalogue applique
+  `ROOM_TANK_CAP`). (2026-11-02)
+- **Pièce de N bacs en e2e : injecter la sauvegarde** (cycle 131, #396) : créer 16 bacs par
+  le catalogue coûte plusieurs secondes par bac en rendu logiciel. Construire la pièce dans
+  le test avec `createRoom`/`addTank` (sim pur, importable depuis `e2e/`), `serializeRoom`,
+  puis `page.addInitScript` qui écrit `SAVE_STORAGE_KEY` avant `page.goto('/')`
+  (`e2e/plafond-bacs.spec.ts`). (2026-11-02)
 - **Temps de `scripts/mesure-piece.mjs` instables** (cycle 130, #392) : d'une exécution à
   l'autre, sur la même machine, les petites pièces varient du simple au double (1 bac de 10
   animaux : 0,11 à 0,26 ms par pas). Comparer les colonnes déterministes (paires par pas,

@@ -183,7 +183,9 @@ import {
   type TankSizeId,
 } from '../../sim/room-state';
 import {
+  ROOM_ANIMAL_CAP,
   roomAnimalCapRefusal,
+  roomAnimalCount,
   roomPopulationLimits,
   roomTankCapRefusal,
 } from '../../sim/room-limits';
@@ -1251,7 +1253,8 @@ export class AquariumHost {
    * Change d'environnement (#87, ADR 0026, #277, ADR 0063) : range le monde affiché, figé, et
    * reprend celui de l'environnement choisi tel qu'il avait été laissé (population, décor,
    * eau, nourriture, dimensions, temps) ; un environnement jamais visité part de son monde de
-   * départ avec la même graine. Puis recrée la vue, la caméra allant sur la vue par défaut de
+   * départ avec la même graine, ramené à la place restante sous le plafond d'animaux de la
+   * pièce (#396). Puis recrée la vue, la caméra allant sur la vue par défaut de
    * l'environnement. L'heure de la journée continue sans saut (`carryClock`) ; la vitesse, le
    * filtre et l'affichage du décor sont conservés. Le tout est enregistré aussitôt. Sans effet
    * en mode capture (`environnement=`), avant le démarrage, pour un environnement inconnu ou
@@ -1268,8 +1271,11 @@ export class AquariumHost {
     // Les autres bacs rattrapent le bac quitté avant l'échange (#316) ; le bac quitté garde
     // son identifiant dans la pièce, même jamais sauvegardé (#264).
     this.advanceBackgroundTanks();
-    this.syncRoomState(world);
-    const next = switchEnvironment(world, this.stash, id);
+    const room = this.syncRoomState(world);
+    // Bac de départ d'un environnement jamais visité ramené à la place restante sous le
+    // plafond d'animaux de la pièce (#396, ADR 0096) : vide si la pièce est pleine.
+    const free = Math.max(0, ROOM_ANIMAL_CAP - roomAnimalCount(room));
+    const next = switchEnvironment(world, this.stash, id, free);
     this.stash = next.stash;
     this.currentWorld = next.world as MutableWorld;
     // La liste des bacs (#306) suit aussitôt le bac affiché.
