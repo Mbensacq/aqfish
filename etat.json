@@ -4799,10 +4799,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-02T15:08:58.953Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-02T15:09:38.690Z",
+          "note": "Issue #396 : plafonds de la pièce, e2e du plafond de bacs et bac de départ (S)"
         }
       },
       "metriques": {}
