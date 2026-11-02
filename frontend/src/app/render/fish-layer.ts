@@ -23,8 +23,13 @@ import { wrapAngle, type Fish } from '../sim/swimmer';
 import { undulationAt, undulationScale, type Undulation } from '../sim/undulation';
 import { ichSeverity, isIchContagious } from '../sim/disease';
 import { dullness } from '../sim/wellbeing';
-import { SILHOUETTES, SPOT_ATTRIBUTE, createFishGeometry, modelBodyLength } from './fish-model';
-import { PALETTE } from './palette';
+import {
+  SILHOUETTES,
+  SPOT_ATTRIBUTE,
+  SPOT_COLOR,
+  createFishGeometry,
+  modelBodyLength,
+} from './fish-model';
 
 /** Nombre maximal de poissons d'une espèce affichés (capacité des `InstancedMesh`). */
 export const MAX_FISH_PER_SPECIES = 256;
@@ -53,16 +58,19 @@ export const DULL_ATTRIBUTE = 'aqfishDull';
 const COLOR_VERTEX = '#include <color_vertex>';
 
 /**
- * Points blancs (issue #366, ADR 0089) : part des voxels d'un poisson blanchis à l'intensité
- * maximale (stade aggravé). Choisie sur capture (0,3 essayé d'abord : le néon perdait presque
- * tout son bleu) : le néon, une dizaine de pixels de scène de long, montre deux ou trois
- * points en vue de face sans cesser d'être reconnaissable.
+ * Points blancs (issue #366, ADR 0089) : part des voxels **tachables** d'un poisson blanchis à
+ * l'intensité maximale (stade aggravé). Les voxels trop pâles pour qu'un point s'y voie (ventre
+ * blanc cassé et nageoires menthe du néon) ne sont jamais tachés (`spotContrasts`,
+ * `render/fish-model.ts`, issue #370) : à 0,25 de tous les voxels, la moitié des points du néon
+ * tombaient sur son ventre ou sa caudale et ne se voyaient pas. Choisie sur capture
+ * (`front-points-blancs`) : à 0,4 des voxels colorés, le néon montre des points blancs sur sa
+ * bande rouge et bleue sans cesser d'être reconnaissable.
  */
-export const ICH_SPOT_SHARE = 0.25;
+export const ICH_SPOT_SHARE = 0.4;
 /** Intensité des points dès leur apparition (début du stade visible), dans [0, 1]. */
 export const ICH_SPOT_MIN = 0.4;
 /** Couleur des points : blanc cassé de la palette (`koiBlanc`, `docs/DA.md`). */
-export const ICH_SPOT_COLOR = PALETTE.koiBlanc;
+export const ICH_SPOT_COLOR = SPOT_COLOR;
 /** Attribut d'instance de l'intensité des points blancs, dans [0, 1]. */
 export const ICH_ATTRIBUTE = 'aqfishIch';
 

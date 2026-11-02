@@ -1300,12 +1300,15 @@ export const ANCISTRUS: SpeciesDefinition = {
   maxPopulation: 3,
   schooling: null,
   silhouette: 'ancistrus',
+  // Dos sombre piqueté de blanc cassé, flancs brun olive, nageoires et barbillons noirs
+  // (#370) : avec les gris de la roche (`roche`) et des taches crème, il se fondait dans le
+  // décor et ses taches se lisaient comme du sable.
   colors: {
-    stripe: '#6e6a63',
-    accent: '#e3cf9e',
+    stripe: '#86765b',
+    accent: '#f2ead8',
     back: '#45423e',
     belly: '#a8916a',
-    fin: '#45423e',
+    fin: '#1c1c22',
     eye: '#1c1c22',
   },
   depth: {

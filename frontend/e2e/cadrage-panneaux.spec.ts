@@ -252,6 +252,53 @@ test.describe('panneau « Commandes » (#79)', () => {
   });
 });
 
+// #370 : à 1280 × 720, la liste « Population » défile seule ; sa hauteur est arrondie à un
+// nombre entier de lignes d'espèce, pour qu'aucune ne soit coupée à mi-hauteur. Avec la
+// section « Soins » (bac malade, `points-blancs=1`), la liste est plus courte : même règle.
+test.describe('liste « Population » du panneau « Réglages » (#370)', () => {
+  for (const font of FONTS) {
+    for (const search of ['?seed=42', '?seed=42&points-blancs=1']) {
+      test(`1280 × 720 : aucune ligne d’espèce coupée (${search}, police ${font ?? 'par défaut'})`, async ({
+        page,
+      }) => {
+        await page.setViewportSize({ width: 1280, height: 720 });
+        const errors = await openScene(page, search);
+        if (font) {
+          await page.addStyleTag({
+            content: `app-control-panel, app-control-panel * { font-family: '${font}' !important; }`,
+          });
+        }
+        const settings = PANELS.find((p) => p.name === 'Réglages')!;
+        await settings.open(page);
+        const list = settings.panel(page).locator("[data-section='population']");
+        const { visibleTop, visibleBottom, scrolls, rows } = await list.evaluate((el) => {
+          const top = el.getBoundingClientRect().top + el.clientTop;
+          return {
+            visibleTop: top,
+            visibleBottom: top + el.clientHeight,
+            scrolls: el.scrollHeight > el.clientHeight,
+            rows: [...el.querySelectorAll('.control-panel__count')].map((row) => {
+              const r = row.getBoundingClientRect();
+              return { top: r.top, bottom: r.bottom };
+            }),
+          };
+        });
+        expect(scrolls, 'onze espèces : la liste défile à ce format').toBe(true);
+        expect(rows.length).toBeGreaterThan(0);
+        let shown = 0;
+        for (const [i, row] of rows.entries()) {
+          const inside = row.top >= visibleTop && row.bottom <= visibleBottom;
+          const outside = row.top >= visibleBottom || row.bottom <= visibleTop;
+          expect(inside || outside, `ligne ${i + 1} coupée par le bas de la liste`).toBe(true);
+          shown += inside ? 1 : 0;
+        }
+        expect(shown, 'au moins trois espèces visibles sans défiler').toBeGreaterThanOrEqual(3);
+        expect(errors).toEqual([]);
+      });
+    }
+  }
+});
+
 // #322 : le badge du mode décor remplace le cadre haut du tableau de bord ; il prend sa place
 // à toutes les largeurs, marges du téléphone (8 px sous 480 px) comprises. Sur bureau, le
 // cadre et le badge commencent à 12 px après « Réglages » et finissent à 12 px avant

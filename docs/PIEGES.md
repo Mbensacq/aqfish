@@ -86,6 +86,10 @@ haut de sa section.
   (`max-height: calc(100vh - var(--soins, 350px))`) : une variable plutôt qu'une règle, faute de
   budget de style (~7,96 kB). Mesuré : panneau sans débord à 1280 × 720 avec la section
   affichée et le plus long message (sel avec néons).
+  Depuis le cycle 126 (#370), cette hauteur est arrondie à un nombre entier de lignes
+  d'espèce (`round(down, …, 46px)`, lignes de 40 px espacées de 6 px, mêmes hauteurs en
+  Inter et en DejaVu Sans) : changer la hauteur d'une ligne d'espèce oblige à reprendre ces
+  constantes ; `e2e/cadrage-panneaux.spec.ts` (« aucune ligne d'espèce coupée ») le voit.
 - **Fonction déjà livrée sous le même nom** (cycle 101, #316) : `renameTank` existait dans
   `sim/room-state.ts` depuis le lot 2 (ADR 0073), sans être utilisée par l'interface ; en
   écrire une seconde a donné « Multiple exports with the same name » au build des tests.
@@ -796,6 +800,17 @@ haut de sa section.
   n'interfère (`swimmer.spec.ts`). (2026-10-18)
 
 ## Rendu
+
+- **Points blancs invisibles sur un voxel déjà pâle** (cycle 126, #370) : le blanc cassé des
+  points (`koiBlanc`) est la couleur exacte du ventre du néon ; tirés au hasard sur tous les
+  voxels, la moitié des points du néon ne se voyaient pas et ceux du guppy mâle se perdaient
+  entre ses taches roses. Seuls les rôles de couleur à au moins `SPOT_MIN_CONTRAST` du blanc
+  cassé portent des points (`spotContrasts`, `render/fish-model.ts`). Une espèce toute pâle
+  (koï blanche, axolotl leucique) n'en montre donc aucun : normal. (2026-11-01)
+- **Couleur d'un poisson de fond égale à celle de la roche** (cycle 126, #370) : l'ancistrus
+  en `roche` / `rocheSombre` se fondait dans les rochers, ses taches crème se lisaient comme
+  du sable. Pour un animal posé sur le décor, éviter les tons exacts du décor voisin ; le
+  regarder de près en caméra libre (`libre-eau-douce-lot2-fond`). (2026-11-01)
 
 - **Objet clair sur le mur du fond : traverse l'eau en vue de côté et de trois-quarts** (cycle
   112, #342) : en vue `side`, le mur du fond se voit en enfilade derrière le bac ; une fenêtre

@@ -22,7 +22,11 @@ import {
   modelBodyLength,
   SILHOUETTES,
   SLENDER_FISH,
+  SPOT_COLOR,
+  SPOT_MIN_CONTRAST,
+  spotContrasts,
   SURGEON_FISH,
+  UNSPOTTED_RANK,
   voxelSize,
   voxelSpotRank,
 } from './fish-model';
@@ -564,5 +568,67 @@ describe('rang de taché des voxels (points blancs, #366)', () => {
       expect(new Set(face).size).toBe(1);
     }
     expect(new Set(mesh.spots).size).toBeGreaterThan(5);
+  });
+});
+
+describe('points blancs réservés aux voxels où ils se voient (#370)', () => {
+  it('contraste : la couleur du point et ses voisines pâles exclues, les couleurs vives gardées', () => {
+    expect(SPOT_COLOR).toBe(PALETTE.koiBlanc);
+    // Ventre du néon (le blanc cassé lui-même), nageoires menthe, crème : pas de point.
+    for (const pale of [PALETTE.koiBlanc, '#a8e6cf', '#e3cf9e', '#ffffff']) {
+      expect(spotContrasts(pale), pale).toBe(false);
+    }
+    // Bleu et rouge du néon, orange du guppy, gris, sable (distance 104) : points visibles.
+    for (const vivid of ['#3fa9f5', '#e63946', '#f08a2c', '#45423e', '#c9b38a', '#000000']) {
+      expect(spotContrasts(vivid), vivid).toBe(true);
+    }
+    // Seuil inclus : une couleur à exactement SPOT_MIN_CONTRAST du blanc cassé (#f2ead8) sur
+    // la composante bleue (0xd8 − 100 = 0x74) porte des points ; une unité de moins, non.
+    expect(spotContrasts('#f2ea74')).toBe(true);
+    expect(spotContrasts('#f2ea75')).toBe(false);
+    expect(SPOT_MIN_CONTRAST).toBe(100);
+  });
+
+  it('néon : ventre et nageoires jamais tachés, bande et dos tachés selon leur rang', () => {
+    const body = buildVoxelMesh(
+      SLENDER_FISH.body,
+      SLENDER_FISH.bodyDepth,
+      NEON.colors,
+      UNIT,
+      'center',
+    );
+    const belly = new Color(NEON.colors.belly);
+    let pale = 0;
+    let vivid = 0;
+    for (let v = 0; v < body.spots.length; v++) {
+      // Couleurs stockées en Float32 : comparer aux composantes arrondies de même.
+      const isBelly =
+        body.colors[v * 3] === Math.fround(belly.r) &&
+        body.colors[v * 3 + 1] === Math.fround(belly.g) &&
+        body.colors[v * 3 + 2] === Math.fround(belly.b);
+      if (isBelly) {
+        expect(body.spots[v]).toBe(UNSPOTTED_RANK);
+        pale++;
+      } else {
+        expect(body.spots[v]).toBeGreaterThanOrEqual(0);
+        expect(body.spots[v]).toBeLessThan(1);
+        vivid++;
+      }
+    }
+    expect(pale).toBeGreaterThan(0);
+    expect(vivid).toBeGreaterThan(pale);
+    // Caudale menthe (#a8e6cf) : aucun voxel taché.
+    const tail = buildVoxelMesh(
+      SLENDER_FISH.tail,
+      SLENDER_FISH.tailDepth,
+      NEON.colors,
+      UNIT,
+      'right',
+    );
+    expect(new Set(tail.spots)).toEqual(new Set([UNSPOTTED_RANK]));
+  });
+
+  it('rang des voxels pâles hors d’atteinte : au-dessus de toute part tachée (≤ 1)', () => {
+    expect(UNSPOTTED_RANK).toBeGreaterThanOrEqual(1);
   });
 });

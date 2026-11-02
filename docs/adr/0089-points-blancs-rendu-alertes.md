@@ -62,3 +62,24 @@ défaut), aucune allocation par image, couleurs de la palette (`docs/DA.md`).
 - Le lot 2/2 (#361) pourra faire disparaître les points en effaçant `Fish.ich`, sans toucher
   au rendu.
 - Toute alerte future peut renvoyer à une page du wiki par son champ `wiki`.
+
+## Révision (cycle 126, issue #370) : points sur les voxels où ils se voient
+
+Constat de la QA : à l'échelle du bac, les points blancs du néon ne se voyaient presque pas, et
+ceux du guppy mâle se confondaient avec ses taches roses. Cause : le blanc cassé des points est
+exactement celui du ventre du néon, et ses nageoires menthe en sont proches ; un quart des
+voxels tirés au hasard tombait donc pour moitié sur des voxels déjà pâles.
+
+- **Voxels tachables** : `buildVoxelMesh` donne le rang `UNSPOTTED_RANK` (1, jamais atteint)
+  aux rôles de couleur à moins de `SPOT_MIN_CONTRAST` (100, distance sRGB sur 0–255) de
+  `SPOT_COLOR` (`spotContrasts`, `render/fish-model.ts`) : ventre et nageoires du néon,
+  crème, rose pâle. Les autres gardent `voxelSpotRank`.
+- **Part portée à 0,4** des voxels tachables (`ICH_SPOT_SHARE`) : le néon montre des points
+  sur sa bande rouge et bleue sans cesser d'être reconnaissable (capture `front-points-blancs`).
+- **Gravité de l'alerte de santé** : `HealthSummary.weakWithoutIch` (faibles sans points
+  blancs visibles) décide seul de « critique » ; un néon faible aux points blancs n'en fait
+  plus une détresse en double de l'alerte « Points blancs ».
+
+Captures modifiées : `front-points-blancs`, `three-quarter-points-blancs`,
+`libre-points-blancs` et `front-soins` (panneau des soins), seules à montrer des
+poissons malades.

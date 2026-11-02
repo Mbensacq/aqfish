@@ -364,6 +364,34 @@ describe('alerte des points blancs (#366)', () => {
     expect(alerts.filter((a) => a.wiki !== undefined).map((a) => a.id)).toEqual(['ich']);
   });
 
+  it('gravité de l’alerte de santé : seuls les faibles sans points blancs comptent (#370)', () => {
+    // Néon faible aux points blancs + guppy malade sans être faible : « attention ».
+    const mixed = healthSummary([
+      { species: 'neon', health: HEALTH_FLOOR, hunger: 0.2, ich: ICH_AGGRAVATED_AT },
+      { species: 'guppy', health: 0.6, hunger: 0.2 },
+    ]);
+    expect(mixed).toMatchObject({ sick: 2, ich: 1, weak: 1, weakWithoutIch: 0 });
+    const health = dashboardAlerts(input({}, mixed)).find((a) => a.id === 'health');
+    expect(health).toMatchObject({ severity: 'attention', message: 'Animaux malades' });
+    expect(health?.cause).toBe('gêne passée, santé encore basse ; animaux touchés : 1');
+    // Le même guppy devenu faible : « critique », même avec le néon aux points blancs.
+    const weakOther = healthSummary([
+      { species: 'neon', health: HEALTH_FLOOR, hunger: 0.2, ich: ICH_AGGRAVATED_AT },
+      { species: 'guppy', health: HEALTH_FLOOR, hunger: 0.2 },
+    ]);
+    expect(weakOther).toMatchObject({ sick: 2, ich: 1, weak: 2, weakWithoutIch: 1 });
+    const critical = dashboardAlerts(input({}, weakOther)).find((a) => a.id === 'health');
+    expect(critical).toMatchObject({ severity: 'critique', message: 'Animaux en détresse' });
+    // Faible sous le seuil de visibilité des points : compté comme faible sans points blancs.
+    const hidden = healthSummary([
+      { species: 'neon', health: HEALTH_FLOOR, hunger: 0.2, ich: ICH_VISIBLE_AT - 1 },
+    ]);
+    expect(hidden).toMatchObject({ ich: 0, weakWithoutIch: 1 });
+    expect(dashboardAlerts(input({}, hidden)).find((a) => a.id === 'health')?.severity).toBe(
+      'critique',
+    );
+  });
+
   it('ordre : après le pH, avant la faim, à gravité égale', () => {
     const health = healthSummary([{ species: 'neon', health: 1, hunger: 1, ich: visible }]);
     const alerts = dashboardAlerts(
