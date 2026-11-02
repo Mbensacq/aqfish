@@ -4847,10 +4847,10 @@
           "note": "PR #401 : mutants de population.ts (98,9 %) et environment-worlds.ts (100 %), tests seuls, CI verte ; #26 partiel : swimmer.ts non mesurable en session (commentaire chiffré sur #26), e2e local non complet (PIEGES)"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-02T20:05:26.030Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-02T20:29:00.880Z",
+          "note": "Verdict OK, 0 bug, mutation 99,32 % remesurée, 115 captures c132 publiées"
         }
       },
       "metriques": {}
