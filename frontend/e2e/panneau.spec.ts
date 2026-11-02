@@ -345,12 +345,25 @@ test.describe('Panneau de contrôle', () => {
     const rows = page.locator('[data-section="population"] .control-panel__count');
     // Bac tropical : trois espèces peuplées et onze ajoutables (#238, #362, #391).
     await expect(rows).toHaveCount(14);
-    for (let i = 0; i < 14; i++) {
-      const row = await box(rows.nth(i));
+    // Toutes les boîtes relevées en un seul aller-retour : un `boundingBox` par contrôle
+    // (14 lignes × 5) dépassait le délai du test en rendu logiciel (#391).
+    const measured = await rows.evaluateAll((els) =>
+      els.map((row) => {
+        const box = (el: Element) => {
+          const r = el.getBoundingClientRect();
+          return { x: r.x, width: r.width, height: r.height };
+        };
+        return { row: box(row), controls: [...row.querySelectorAll('button, input')].map(box) };
+      }),
+    );
+    expect(measured).toHaveLength(14);
+    for (const { row, controls } of measured) {
+      expect(row.width).toBeGreaterThan(0);
       expect(row.x).toBeGreaterThanOrEqual(panel.x);
       expect(row.x + row.width).toBeLessThanOrEqual(panel.x + panel.width);
-      for (const control of await rows.nth(i).locator('button, input').all()) {
-        const b = await box(control);
+      expect(controls.length).toBeGreaterThan(0);
+      for (const b of controls) {
+        expect(b.width, 'contrôle visible').toBeGreaterThan(0);
         expect(b.x + b.width).toBeLessThanOrEqual(panel.x + panel.width);
         expect(b.height).toBeGreaterThanOrEqual(28);
       }
