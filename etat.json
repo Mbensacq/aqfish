@@ -4652,7 +4652,7 @@
       "type": "fonctionnalite",
       "issue": 363,
       "pr": 387,
-      "version": null,
+      "version": "v1.7.1",
       "phases": {
         "planif": {
           "statut": "termine",
