@@ -4707,6 +4707,12 @@
           "debut": "2026-11-02T05:11:24.952Z",
           "fin": "2026-11-02T05:46:12.482Z",
           "note": "Verdict RÉSERVES (verify/e2e complet non rejoué, 3 e2e immersifs OK), 0 bug, 116 captures c128 publiées"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-02T05:46:51.445Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
