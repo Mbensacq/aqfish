@@ -5031,6 +5031,10 @@
         "bugsOuverts": 0,
         "ciMain": "success",
         "mutation": 94.31
+      },
+      "rapport": {
+        "statut": "termine",
+        "note": "7 cycles, 0 alerte"
       }
     }
   }
