@@ -336,6 +336,16 @@ haut de sa section.
 
 ## Tests
 
+- **Compter des pixels en e2e : `locator('canvas').screenshot()` et décodage dans la page
+  sont lents** (cycle 133, #394) : en rendu logiciel (~0,5 s par image), une capture d'élément
+  du canevas prenait ~14 s en local (vérifications de stabilité de l'élément), et le décodage
+  dans la page (`page.evaluate`, `fetch` d'une URL `data:`, `createImageBitmap`) ~7 s, chaque
+  étape asynchrone attendant que le fil principal ait fini une image ; la boucle elle-même ne
+  coûte presque rien. Utiliser `e2e/outils-pixels.ts` : `canvasShot` (`page.screenshot({ clip
+  })` sur la boîte du canevas, mêmes pixels, ~5 s) et `countColors` (PNG décodé dans Node par
+  `node:zlib`, ~0,1 s, décomptes identiques à ceux du navigateur, vérifiés sur le récif). Les
+  actions de l'interface (clic, `fill`) coûtent aussi plusieurs images chacune : en grouper les
+  mesures (`evaluateAll`). (2026-11-02)
 - **`npm run verify` lancé en arrière-plan pendant qu'on code : l'e2e teste l'arbre modifié**
   (cycle 99, #305) : le serveur des e2e (`ng serve`) sert le dossier de travail, pas `main` ;
   un « verify de `main` » laissé tourner pendant les premières modifications mesure donc la

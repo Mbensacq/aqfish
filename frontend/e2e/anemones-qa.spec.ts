@@ -1,5 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
+import { canvasShot, countColors } from './outils-pixels';
+
 /** QA des anémones et des poissons-clowns du récif (#150) : présence à l'écran et isolation. */
 
 const toggle = (page: Page) => page.getByRole('button', { name: 'Réglages' });
@@ -23,30 +25,7 @@ async function open(page: Page, search: string): Promise<string[]> {
 
 /** Nombre de pixels de la capture du canevas pour chaque couleur exacte demandée. */
 async function count(page: Page, colors: string[]): Promise<number[]> {
-  const png = (await page.locator('canvas').screenshot({ animations: 'disabled' })).toString(
-    'base64',
-  );
-  return page.evaluate(
-    async ({ png, colors }) => {
-      const blob = await (await fetch(`data:image/png;base64,${png}`)).blob();
-      const bitmap = await createImageBitmap(blob);
-      const context = new OffscreenCanvas(bitmap.width, bitmap.height).getContext('2d');
-      if (!context) {
-        throw new Error('Contexte 2D indisponible');
-      }
-      context.drawImage(bitmap, 0, 0);
-      const d = context.getImageData(0, 0, bitmap.width, bitmap.height).data;
-      const totals = colors.map(() => 0);
-      for (let i = 0; i < d.length; i += 4) {
-        const hex =
-          '#' + [d[i], d[i + 1], d[i + 2]].map((v) => v.toString(16).padStart(2, '0')).join('');
-        const index = colors.indexOf(hex);
-        if (index >= 0) totals[index]++;
-      }
-      return totals;
-    },
-    { png, colors },
-  );
+  return countColors(await canvasShot(page), colors);
 }
 
 async function freeze(page: Page): Promise<void> {

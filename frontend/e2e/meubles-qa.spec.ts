@@ -1,5 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
+import { canvasShot } from './outils-pixels';
+
 /**
  * Meubles de la pièce (issue #188), parcours QA : mode capture avec `piece=1&meubles=…`.
  * Entrées extrêmes ou mal formées sans erreur, pièce masquée sans effet, petite fenêtre,
@@ -23,7 +25,7 @@ async function open(page: Page, search: string): Promise<string[]> {
   return errors;
 }
 
-const shot = (page: Page) => page.locator('canvas').screenshot({ animations: 'disabled' });
+const shot = (page: Page) => canvasShot(page);
 
 test.describe('Meubles de la pièce (#188), parcours QA', () => {
   test.setTimeout(180_000);

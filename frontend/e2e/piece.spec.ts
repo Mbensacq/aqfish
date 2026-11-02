@@ -4,6 +4,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 import { DEFAULT_SAVE_SETTINGS, serializeWorld } from '../src/app/sim/save';
 import { createDefaultWorld } from '../src/app/sim/world';
+import { canvasShot } from './outils-pixels';
 
 /**
  * Pièce autour du bac (issue #187) : case « Afficher la pièce » des réglages (bac tropical
@@ -29,10 +30,6 @@ async function open(page: Page, search = ''): Promise<string[]> {
 async function openPanel(page: Page): Promise<void> {
   await toggle(page).click();
   await expect(page.locator('section.control-panel')).toBeVisible();
-}
-
-async function canvasShot(page: Page): Promise<Buffer> {
-  return page.locator('canvas').screenshot({ animations: 'disabled' });
 }
 
 test.describe('Pièce autour du bac (#187)', () => {
