@@ -4667,10 +4667,10 @@
           "note": "PR #387 : porte (mur droit, passage interdit à la pose), plinthes 4 murs, moulure, applique allumée la nuit (sim/room-details.ts, ADR 0093) ; CI verte ; 5 angles bac seul identiques à l'octet, 14 captures pièce changées + 2 nouvelles (libre-porte, -minuit) ; pied d'attribution réinjecté par l'environnement dans le corps de #387"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-02T02:12:38.963Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-02T02:39:25.761Z",
+          "note": "Verdict RÉSERVES (e2e complet non rejoué en local, ambiance de jour très sombre), 0 bug, 117 captures c127 publiées, +3 e2e"
         }
       },
       "metriques": {}
