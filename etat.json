@@ -4745,10 +4745,10 @@
           "note": "Verdict OK, 0 bug, 117 captures c129 publiées (identiques à main hors liste Population), e2e ciblés OK"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-02T10:45:58.753Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-02T11:51:32.190Z",
+          "note": "PR #393 fusionnée → v1.7.3 (release CI ok, main verte sur 1168985) ; #391 fermée ; dette #394 (lisibilité lot 3 en front, part e2e 2/6 ~30 min) ; suppression de branche refusée"
         }
       },
       "metriques": {}
