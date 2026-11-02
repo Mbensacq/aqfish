@@ -4703,10 +4703,10 @@
           "note": "PR #389 : choix du bac en mode immersif (tropical/récif, ADR 0094), CI verte ; 116 captures identiques à l'octet à main en local ; +1 e2e ; pied d'attribution réinjecté par l'environnement dans le corps de #389"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-02T05:11:24.952Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-02T05:46:12.482Z",
+          "note": "Verdict RÉSERVES (verify/e2e complet non rejoué, 3 e2e immersifs OK), 0 bug, 116 captures c128 publiées"
         }
       },
       "metriques": {}
