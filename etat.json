@@ -4731,6 +4731,12 @@
           "debut": "2026-11-02T06:48:07.288Z",
           "fin": "2026-11-02T06:48:54.881Z",
           "note": "Issue #391 : espèces d'eau douce lot 3 (M) ; #392 lot 4 de #264 prêt pour c130"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-02T06:49:58.338Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
