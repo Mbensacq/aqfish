@@ -2,7 +2,7 @@ import { compatibility, mixWarnings, TEMPERAMENTS } from './compatibility';
 import { SIM_DT } from './constants';
 import { DIURNAL } from './day-rhythm';
 import { catchesIch } from './disease';
-import { environmentWater, livesIn, TROPICAL_TANK } from './environment';
+import { environmentWater, IMMERSIVE_ENVIRONMENTS, livesIn, TROPICAL_TANK } from './environment';
 import { TAP_REACTIONS } from './glass-tap';
 import { immersivePopulation } from './immersive-tank';
 import { addWarnings, sheetRows, speciesSheet } from './species-sheet';
@@ -178,6 +178,34 @@ describe('eau douce, lot 3 (#391) : catalogue complet', () => {
       );
     }
     expect(MIEL.depth?.ascentRate).toBeGreaterThan(0);
+  });
+
+  it('modèles du molly et du gourami miel agrandis pour la vue de face (#394), immersif inchangé', () => {
+    // Lisibles sans zoom : au moins 1,5 fois la taille réelle (SL, en cm → m).
+    expect(MOLLY.bodyLength).toBeGreaterThanOrEqual(
+      (1.5 * speciesSheet('molly').adultSize.value) / 100,
+    );
+    expect(MIEL.bodyLength).toBeGreaterThanOrEqual(
+      (1.5 * speciesSheet('miel').adultSize.value) / 100,
+    );
+    // Marges des parois : au moins la moitié du corps (`validateSpecies`).
+    for (const def of [MOLLY, MIEL]) {
+      expect(def.wallMargin, def.id).toBeGreaterThanOrEqual(def.bodyLength / 2);
+    }
+    // Le molly reste plus court que le koï, le plus grand modèle d'eau douce.
+    expect(MOLLY.bodyLength).toBeLessThan(SPECIES.koi.bodyLength);
+    // Population du mode immersif inchangée (ses trois plus petites espèces nageuses), dans
+    // chaque environnement.
+    expect(immersivePopulation('tropical')).toEqual([
+      { species: 'otocinclus', count: expect.any(Number) },
+      { species: 'corydora', count: expect.any(Number) },
+      { species: 'rasbora', count: expect.any(Number) },
+    ]);
+    for (const env of IMMERSIVE_ENVIRONMENTS) {
+      const species = immersivePopulation(env).map((e) => e.species);
+      expect(species, env).not.toContain('molly');
+      expect(species, env).not.toContain('miel');
+    }
   });
 
   it('gourami miel sous la surface, braise et molly dans le haut (graine 42, 60 s)', () => {
