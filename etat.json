@@ -4875,6 +4875,12 @@
           "debut": "2026-11-02T21:32:00.095Z",
           "fin": "2026-11-02T21:32:41.653Z",
           "note": "Issue #394 : lisibilité du lot 3 et e2e plus rapide (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-02T21:33:16.474Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
