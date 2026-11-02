@@ -1,4 +1,5 @@
 import { ENVIRONMENT_IDS, type EnvironmentId } from './environment';
+import { capTotalPopulation } from './population';
 import { createDefaultWorld, type World } from './world';
 
 /**
@@ -25,15 +26,28 @@ export interface EnvironmentSwitch {
 
 /**
  * Change d'environnement : range `current` et reprend le monde de `target` (rangé, ou neuf).
+ * `maxNewAnimals` : place restante sous le plafond d'animaux de la pièce (#396, ADR 0096) ;
+ * un monde **neuf** est ramené à ce nombre d'animaux (`capTotalPopulation`), un monde repris
+ * garde les siens (ce n'est pas un ajout). Sans limite par défaut.
  * Fonction pure : `stash` n'est pas modifié, une nouvelle table est renvoyée.
- * @throws RangeError si `target` est l'environnement de `current`, ou si `stash` contient un
- * monde rangé sous un autre environnement que le sien.
+ * @throws RangeError si `target` est l'environnement de `current`, si `stash` contient un
+ * monde rangé sous un autre environnement que le sien, ou si `maxNewAnimals` n'est ni un
+ * entier positif ou nul ni `Infinity`.
  */
 export function switchEnvironment(
   current: World,
   stash: StashedWorlds,
   target: EnvironmentId,
+  maxNewAnimals = Number.POSITIVE_INFINITY,
 ): EnvironmentSwitch {
+  if (
+    maxNewAnimals !== Number.POSITIVE_INFINITY &&
+    !(Number.isInteger(maxNewAnimals) && maxNewAnimals >= 0)
+  ) {
+    throw new RangeError(
+      `maxNewAnimals doit être un entier positif ou nul (reçu : ${maxNewAnimals})`,
+    );
+  }
   if (target === current.environment) {
     throw new RangeError(`environnement déjà affiché (${target})`);
   }
@@ -43,7 +57,11 @@ export function switchEnvironment(
   const kept = next.get(target);
   next.delete(target);
   return kept === undefined
-    ? { world: createDefaultWorld(current.seed, target), stash: next, resumed: false }
+    ? {
+        world: capFresh(createDefaultWorld(current.seed, target), maxNewAnimals),
+        stash: next,
+        resumed: false,
+      }
     : { world: kept, stash: next, resumed: true };
 }
 
@@ -76,6 +94,10 @@ export function stashFromList(worlds: readonly World[], shown: EnvironmentId): S
     stash.set(world.environment, world);
   }
   return stash;
+}
+
+function capFresh(world: World, max: number): World {
+  return max === Number.POSITIVE_INFINITY ? world : capTotalPopulation(world, max);
 }
 
 function assertStash(stash: StashedWorlds): void {

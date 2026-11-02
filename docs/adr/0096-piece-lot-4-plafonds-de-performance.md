@@ -98,12 +98,23 @@ poste de bureau).
 
 ## Conséquences
 
-- Changer d'environnement crée encore son bac de départ (jusqu'à 5 bacs, quelques animaux
-  chacun), même au plafond d'animaux : la pièce peut alors le dépasser de quelques animaux ;
-  plus aucun ajout tant qu'on n'en retire pas. Assumé : l'environnement n'est pas un ajout
-  d'animal choisi.
+- ~~Changer d'environnement crée encore son bac de départ, même au plafond d'animaux : la
+  pièce peut alors le dépasser de quelques animaux.~~ **Révisé au cycle 131 (#396)** : le bac
+  de départ d'un environnement **jamais visité** est ramené à la place restante sous
+  `ROOM_ANIMAL_CAP` (`switchEnvironment(…, maxNewAnimals)`, `capTotalPopulation` : l'espèce
+  la plus nombreuse perd d'abord ses individus les plus récents), vide si la pièce est
+  pleine. Décor, eau et graine restent ceux du monde de départ. Un bac **repris** garde ses
+  animaux (ce n'est pas un ajout) ; une pièce au-delà du plafond ne vient donc plus que d'une
+  ancienne sauvegarde. Écarté : refuser le changement d'environnement à la pièce pleine
+  (l'environnement est aussi un choix de vue, le bloquer surprendrait plus qu'un bac vide).
+- Le bac d'un environnement jamais visité s'ajoute même à 16 bacs (au plus 4 de plus, un par
+  environnement : 20 bacs, sous `MAX_ROOM_TANKS`) : seul le catalogue applique
+  `ROOM_TANK_CAP`. Assumé pour la même raison ; le coût fixe d'un bac est faible.
 - Les rattrapages des bacs non affichés restent par lots : au plafond, un lot de 15 pas coûte
   ~20 ms, 4 fois plus à vitesse ×4. À lisser (rattrapage étalé sur plusieurs images) si
   Mathis constate des saccades.
 - Les plafonds se changent en un seul endroit (`ROOM_TANK_CAP`, `ROOM_ANIMAL_CAP`) ; les
   messages et les tests les suivent.
+- Tests de bout en bout : `plafonds-piece.spec.ts` (plafond d'animaux) et
+  `plafond-bacs.spec.ts` (#396 : sauvegarde de 16 bacs injectée, message du catalogue, bac
+  de départ ramené à la place restante).

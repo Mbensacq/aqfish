@@ -40,7 +40,8 @@ import {
   MIEL,
 } from '../../sim/species';
 import { expiryAge, FOOD_PER_DROP } from '../../sim/food';
-import { setPopulation } from '../../sim/population';
+import { capTotalPopulation, setPopulation } from '../../sim/population';
+import { ROOM_ANIMAL_CAP } from '../../sim/room-limits';
 import {
   advance,
   advanceToWithFeedings,
@@ -909,6 +910,57 @@ describe('AquariumHost', () => {
       expect(host().world).toEqual(createDefaultWorld(4, 'paludarium'));
       host().setEnvironment('tropical');
       expect(host().population().guppy).toBe(1);
+    });
+
+    it('setEnvironment (#396) : bac de départ ramené à la place restante sous le plafond de la pièce', async () => {
+      await create('?seed=4&vitesse=0');
+      // Le catalogue ne relit le bac affiché qu'aux synchronisations : son effectif vient du monde.
+      const roomTotal = () =>
+        host()
+          .roomCatalog()
+          .tanks.reduce(
+            (sum, tank) => sum + (tank.shown ? host().world!.entities.length : tank.animals),
+            0,
+          );
+      const fill = () => {
+        host().setPopulation('neon', 99);
+        host().setPopulation('guppy', 99);
+      };
+      fill();
+      for (const id of ['recif', 'paludarium', 'eaufroide']) {
+        host().setEnvironment(id);
+        host().setCareMode('decor');
+        fill();
+      }
+      expect(roomTotal()).toBe(ROOM_ANIMAL_CAP);
+      // Trois places libérées : le bassin, jamais visité, part avec 3 koïs au lieu de 7.
+      host().setPopulation('neon', host().population().neon - 3);
+      expect(roomTotal()).toBe(ROOM_ANIMAL_CAP - 3);
+      expect(createDefaultWorld(4, 'bassin').entities.length).toBeGreaterThan(3);
+      host().setEnvironment('bassin');
+      expect(host().world).toEqual(capTotalPopulation(createDefaultWorld(4, 'bassin'), 3));
+      expect(host().population().koi).toBe(3);
+      expect(roomTotal()).toBe(ROOM_ANIMAL_CAP);
+      // Un bac repris garde ses animaux : ce n'est pas un ajout.
+      host().setEnvironment('tropical');
+      expect(host().population().neon).toBeGreaterThan(0);
+      host().setEnvironment('bassin');
+      expect(host().population().koi).toBe(3);
+    });
+
+    it('setEnvironment (#396) : pièce pleine, le bac de départ d’un environnement neuf est vide', async () => {
+      await create('?seed=4&vitesse=0');
+      host().setPopulation('neon', 99);
+      host().setPopulation('guppy', 99);
+      for (const id of ['recif', 'paludarium', 'eaufroide']) {
+        host().setEnvironment(id);
+        host().setCareMode('decor');
+        host().setPopulation('neon', 99);
+        host().setPopulation('guppy', 99);
+      }
+      host().setEnvironment('bassin');
+      expect(host().world!.entities).toHaveLength(0);
+      expect(host().world!.decor).toEqual(createDefaultWorld(4, 'bassin').decor);
     });
 
     it('setEnvironment : inconnu, identique, en capture ou avant le démarrage : sans effet', async () => {

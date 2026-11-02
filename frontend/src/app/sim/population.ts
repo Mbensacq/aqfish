@@ -133,6 +133,35 @@ export function setPopulationInPlace(
   return current;
 }
 
+/**
+ * Ramène le nombre total d'animaux de `world` à `max` au plus (#396, ADR 0096) : retire un à
+ * un un animal de l'espèce la plus nombreuse (à égalité, la première dans l'ordre de
+ * `SPECIES_IDS`), le plus récent de cette espèce (`setPopulationInPlace`). Les espèces
+ * gardent ainsi des effectifs équilibrés plutôt que d'en voir disparaître une entière.
+ * Fonction pure : renvoie `world` lui-même s'il est déjà sous `max`, sinon un nouvel état.
+ * @throws RangeError si `max` n'est pas un entier positif ou nul.
+ */
+export function capTotalPopulation(world: World, max: number): World {
+  if (!Number.isInteger(max) || max < 0) {
+    throw new RangeError(`max doit être un entier positif ou nul (reçu : ${max})`);
+  }
+  if (world.entities.length <= max) {
+    return world;
+  }
+  const next = cloneWorld(world);
+  const counts = { ...populationCounts(next) } as Record<SpeciesId, number>;
+  for (let total = next.entities.length; total > max; total--) {
+    let largest = SPECIES_IDS[0];
+    for (const id of SPECIES_IDS) {
+      if (counts[id] > counts[largest]) {
+        largest = id;
+      }
+    }
+    counts[largest] = setPopulationInPlace(next, largest, counts[largest] - 1);
+  }
+  return next;
+}
+
 function assertSpecies(species: SpeciesId): void {
   if (!isSpeciesId(species)) {
     throw new RangeError(`espèce inconnue : ${String(species)}`);

@@ -1,6 +1,7 @@
 import { DEFAULT_DECOR } from './decor';
 import { obstacleDistance } from './obstacles';
 import {
+  capTotalPopulation,
   isSpeciesId,
   MAX_TOTAL_FISH,
   NO_FISH,
@@ -447,4 +448,53 @@ describe('déterminisme', () => {
     }
     // Délai explicite (docs/PIEGES.md, « délai Vitest ») : aucune borne de durée mesurée.
   }, 15_000);
+});
+
+describe('capTotalPopulation (#396)', () => {
+  /** Bac tropical de départ, puis 12 néons, 6 guppys, 3 corydoras. */
+  function tropical(): World {
+    let world = createDefaultWorld(9);
+    world = setPopulation(world, 'neon', 12);
+    world = setPopulation(world, 'guppy', 6);
+    return setPopulation(world, 'corydora', 3);
+  }
+
+  it('déjà sous le plafond (ou pile dessus) : le même objet, inchangé', () => {
+    const world = tropical();
+    expect(capTotalPopulation(world, 21)).toBe(world);
+    expect(capTotalPopulation(world, 1000)).toBe(world);
+  });
+
+  it('retire d’abord l’espèce la plus nombreuse, ses individus les plus récents', () => {
+    const world = tropical();
+    const before = structuredClone(world);
+    const capped = capTotalPopulation(world, 15);
+    expect(world).toEqual(before);
+    // 12/6/3 → 6/6/3 : seuls les néons partent tant qu'ils sont les plus nombreux.
+    expect(populationCounts(capped)).toMatchObject({ neon: 6, guppy: 6, corydora: 3 });
+    const neons = world.entities.filter((fish) => fish.species === 'neon').map((fish) => fish.id);
+    expect(
+      capped.entities.filter((fish) => fish.species === 'neon').map((fish) => fish.id),
+    ).toEqual(neons.slice(0, 6));
+    // À égalité : la première espèce de SPECIES_IDS d'abord, puis en alternance.
+    expect(populationCounts(capTotalPopulation(world, 13))).toMatchObject({
+      neon: 5,
+      guppy: 5,
+      corydora: 3,
+    });
+  });
+
+  it('plafond nul : plus aucun animal, le reste du monde gardé', () => {
+    const world = tropical();
+    const capped = capTotalPopulation(world, 0);
+    expect(capped.entities).toHaveLength(0);
+    expect(capped.decor).toEqual(world.decor);
+    expect(capped.nextFishId).toBe(world.nextFishId);
+  });
+
+  it('refuse un plafond invalide', () => {
+    for (const bad of [-1, 2.5, Number.NaN, Number.POSITIVE_INFINITY]) {
+      expect(() => capTotalPopulation(tropical(), bad)).toThrow(RangeError);
+    }
+  });
 });

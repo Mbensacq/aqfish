@@ -1,5 +1,5 @@
 import { stashedList, stashFromList, switchEnvironment } from './environment-worlds';
-import { setPopulation } from './population';
+import { capTotalPopulation, setPopulation } from './population';
 import { serializeWorld } from './save';
 import { advance, createDefaultWorld, feed, type World } from './world';
 import type { EnvironmentId } from './environment';
@@ -64,6 +64,44 @@ describe('switchEnvironment : état gardé par environnement (#277)', () => {
     );
     const wrong = new Map<EnvironmentId, World>([['recif', createDefaultWorld(1, 'bassin')]]);
     expect(() => switchEnvironment(createDefaultWorld(1), wrong, 'bassin')).toThrow(RangeError);
+  });
+});
+
+describe('switchEnvironment : bac de départ sous le plafond de la pièce (#396)', () => {
+  const pond = createDefaultWorld(5, 'bassin');
+
+  it('monde neuf ramené à la place restante, au bit près comme capTotalPopulation', () => {
+    expect(pond.entities.length).toBeGreaterThan(2);
+    const next = switchEnvironment(createDefaultWorld(5), new Map(), 'bassin', 2);
+    expect(next.resumed).toBe(false);
+    expect(next.world.entities).toHaveLength(2);
+    expect(serializeWorld(next.world)).toBe(serializeWorld(capTotalPopulation(pond, 2)));
+  });
+
+  it('place nulle : bac de départ vide, décor gardé ; place suffisante ou illimitée : intact', () => {
+    const empty = switchEnvironment(createDefaultWorld(5), new Map(), 'bassin', 0).world;
+    expect(empty.entities).toHaveLength(0);
+    expect(empty.decor).toEqual(pond.decor);
+    for (const room of [pond.entities.length, 240, Number.POSITIVE_INFINITY]) {
+      const world = switchEnvironment(createDefaultWorld(5), new Map(), 'bassin', room).world;
+      expect(serializeWorld(world)).toBe(serializeWorld(pond));
+    }
+  });
+
+  it('monde repris : ses animaux sont gardés, même au-delà de la place restante', () => {
+    const tropical = tropicalPlayed(5);
+    const toPond = switchEnvironment(tropical, new Map(), 'bassin');
+    const back = switchEnvironment(toPond.world, toPond.stash, 'tropical', 0);
+    expect(back.resumed).toBe(true);
+    expect(back.world).toBe(tropical);
+  });
+
+  it('refuse une place invalide, sans rien changer', () => {
+    for (const bad of [-1, 1.5, Number.NaN, Number.NEGATIVE_INFINITY]) {
+      expect(() => switchEnvironment(createDefaultWorld(5), new Map(), 'bassin', bad)).toThrow(
+        RangeError,
+      );
+    }
   });
 });
 
