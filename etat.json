@@ -4673,10 +4673,10 @@
           "note": "Verdict RÉSERVES (e2e complet non rejoué en local, ambiance de jour très sombre), 0 bug, 117 captures c127 publiées, +3 e2e"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-02T02:40:07.174Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-02T03:52:28.551Z",
+          "note": "PR #387 fusionnée → v1.7.1 (release CI ok, main verte sur d5b4620) ; #363 fermée ; dette #388 (couleurs plates porte/plinthes, emprise door) ; suppression de branche refusée (c127-porte-plinthes-applique reste)"
         }
       },
       "metriques": {}
