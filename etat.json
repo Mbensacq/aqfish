@@ -4779,6 +4779,12 @@
           "debut": "2026-11-02T13:14:43.933Z",
           "fin": "2026-11-02T14:01:19.812Z",
           "note": "Verdict OK, 0 bug, 119 captures c130 publiées (identiques à main), spec e2e du lot OK, unitaires/build OK"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-02T14:01:55.747Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
