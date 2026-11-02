@@ -4695,6 +4695,12 @@
           "debut": "2026-11-02T03:52:57.187Z",
           "fin": "2026-11-02T03:53:29.191Z",
           "note": "Issue #375 : choix du bac en mode immersif (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-02T03:54:07.379Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
