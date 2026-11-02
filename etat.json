@@ -4637,10 +4637,10 @@
           "note": "Verdict RÉSERVES (e2e complet non rejoué en local, CI verte), 0 bug, 114 captures c126 publiées, lint/unitaires verts"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-01T23:43:08.878Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-02T00:46:08.741Z",
+          "note": "PR #385 fusionnée → v1.7.0 (release CI ok, main verte sur 836ae24) ; #370 fermée ; dette #386 (commentaire UNSPOTTED_RANK, repli CSS round()) ; suppression de branche refusée (c126-lisibilite-points-blancs reste)"
         }
       },
       "metriques": {}
