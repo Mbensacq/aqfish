@@ -52,10 +52,17 @@ import {
 } from '../../core/immersive/screen-calibration';
 import { AquariumView } from '../../render/aquarium-view';
 import { lightAt } from '../../sim/daylight';
-import { placeEnvironmentData } from '../../sim/environment';
+import {
+  ENVIRONMENTS,
+  IMMERSIVE_ENVIRONMENTS,
+  isImmersiveEnvironment,
+  placeEnvironmentData,
+  type ImmersiveEnvironmentId,
+} from '../../sim/environment';
 import { createFixedStepState, fixedStepInto, type FixedStepState } from '../../sim/fixed-step';
 import { glassPoint } from '../../sim/glass-tap';
 import {
+  DEFAULT_IMMERSIVE_ENVIRONMENT,
   IMMERSIVE_DEPTH_MM,
   clampDepthMm,
   createImmersiveWorld,
@@ -132,6 +139,7 @@ export const IMMERSIVE_STORAGE = new InjectionToken<CalibrationStorage | null>(
     '[attr.data-immersive-screen-mm]': 'screenText()',
     '[attr.data-immersive-parallax]': 'parallax()',
     '[attr.data-immersive-ui]': "uiVisible() ? 'visible' : 'hidden'",
+    '[attr.data-immersive-tank]': 'environment()',
     '[class.immersive--ui-hidden]': '!uiVisible()',
     '(document:keydown)': 'onKey($event)',
     '(document:visibilitychange)': 'onVisibilityChange()',
@@ -155,6 +163,22 @@ export const IMMERSIVE_STORAGE = new InjectionToken<CalibrationStorage | null>(
           <strong data-immersive-estimated>Taille de l’écran estimée</strong> : étalonnez-le.
         }
       </p>
+      <fieldset class="immersive__tanks" data-immersive-tanks>
+        <legend class="immersive__legend">Bac</legend>
+        @for (tank of tanks; track tank.id) {
+          <label class="immersive__tank">
+            <input
+              type="radio"
+              name="immersive-tank"
+              [value]="tank.id"
+              [checked]="environment() === tank.id"
+              (change)="onEnvironment($event)"
+              [attr.data-immersive-tank-choice]="tank.id"
+            />
+            {{ tank.name }}
+          </label>
+        }
+      </fieldset>
       <div class="immersive__actions">
         <button
           type="button"
@@ -272,6 +296,10 @@ export class ImmersiveMode {
   readonly eyeDistanceMm = signal<number>(EYE_DISTANCE_MM.desktop);
   readonly depthMm = signal<number>(IMMERSIVE_DEPTH_MM.min);
   readonly settingsOpen = signal(false);
+  /** Environnement du bac immersif (#375) : bac tropical à l'ouverture. */
+  readonly environment = signal<ImmersiveEnvironmentId>(DEFAULT_IMMERSIVE_ENVIRONMENT);
+  /** Bacs proposés dans l'interface, dans l'ordre de `IMMERSIVE_ENVIRONMENTS`. */
+  readonly tanks = IMMERSIVE_ENVIRONMENTS.map((id) => ({ id, name: ENVIRONMENTS[id].name }));
   readonly calibrating = signal(false);
   readonly cardPx = signal(cardWidthPx(this.calibration()));
   readonly persisted = signal(true);
@@ -516,6 +544,25 @@ export class ImmersiveMode {
     this.sizeKey = '';
   }
 
+  /**
+   * Choix du bac (#375) : le bac est recréé à la prochaine image, dans le même écran, avec
+   * l'étalonnage, la distance de l'œil et la profondeur en cours. L'interface reste affichée
+   * (le délai de masquage repart). Valeur inconnue ou bac déjà affiché : rien ne change.
+   */
+  onEnvironment(event: Event): void {
+    this.selectEnvironment((event.target as HTMLInputElement).value);
+  }
+
+  /** Choisit le bac `value` (voir `onEnvironment`). */
+  selectEnvironment(value: unknown): void {
+    this.showUi();
+    if (!isImmersiveEnvironment(value) || value === this.environment()) {
+      return;
+    }
+    this.environment.set(value);
+    this.sizeKey = '';
+  }
+
   onEscape(): void {
     if (this.calibrating()) {
       this.closeCalibration();
@@ -749,7 +796,10 @@ export class ImmersiveMode {
     }
   }
 
-  /** Recrée le bac et sa vue si la taille physique de l'écran ou la profondeur ont changé. */
+  /**
+   * Recrée le bac et sa vue si la taille physique de l'écran, la profondeur ou le bac choisi
+   * ont changé.
+   */
   private syncLayout(widthPx: number, heightPx: number): void {
     const calibration = this.calibration();
     const key = `${widthPx}x${heightPx}@${calibration.pxPerMm}`;
@@ -769,16 +819,18 @@ export class ImmersiveMode {
       this.depthMm.set(defaultDepthMm(screen));
     }
     const layout = immersiveLayout(screen, this.depthMm());
+    const environment = this.environment();
     if (
       this.layout !== null &&
       this.view !== null &&
+      this.world?.environment === environment &&
       sameDimensions(this.layout.dimensions, layout.dimensions)
     ) {
       this.layout = layout;
       return;
     }
     this.layout = layout;
-    const world = createImmersiveWorld(IMMERSIVE_SEED, layout) as MutableWorld;
+    const world = createImmersiveWorld(IMMERSIVE_SEED, layout, environment) as MutableWorld;
     this.view?.dispose();
     const view = new AquariumView({
       canvas: this.canvasRef().nativeElement,

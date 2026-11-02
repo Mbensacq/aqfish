@@ -303,6 +303,11 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
   curiosité, impulsion de cap et de vitesse) ; dans le haut de l'écran, il fait tomber de la
   nourriture (`feedInPlace`). L'interface se cache seule après 5 s et revient par un appui
   long ou une touche du clavier.
+- Mode immersif, choix du bac (#375, ADR 0094) : l'interface minimale propose les
+  environnements de `IMMERSIVE_ENVIRONMENTS` (bac tropical, récif) en boutons radio ; le
+  monde est recréé dans l'environnement choisi (`createImmersiveWorld(seed, layout, env)`),
+  peuplé de ses seules espèces nageuses (`livesIn`), à la même taille d'écran. Un lieu
+  `immersive: true` est accepté dans ces environnements même s'ils ne se redimensionnent pas.
 - La position de la caméra est exposée aux tests de bout en bout par l'attribut
   `data-aqfish-camera="x,y,z"` de `app-aquarium-host`, sa cible par `data-aqfish-target`
   (mis à jour au mouvement, pas à chaque image). L'état de la simulation l'est par
@@ -355,7 +360,7 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
 | `sim/pond-shape.ts` | Forme du bassin (#190, ADR 0080) : rectangle, ovale, haricot ; distance signée au bord (`shapeDistance`), normale, projection (`constrainToShape`, `keepInShape`), contour (`shapeContour`), purs et sans allocation. Portée par `World.shape?` et `TankPlace.shape?` (bassin seulement, `isPondShapeable`) et par les bornes de nage (`SwimBounds.outline`) |
 | `sim/pond-reshape.ts` | Réglage de la forme du bassin (#190) : `setPondShapeInPlace` ramène poissons et granulés dans la forme |
 | `sim/glass-tap.ts` | Tapoter la vitre en mode immersif (#346, ADR 0092) : point de la vitre avant sous une fraction d'écran (`glassPoint`), réaction par espèce (`TAP_REACTIONS` : fuite, curiosité ou aucune) des poissons à portée (`tapGlassInPlace`), sans tirage |
-| `sim/immersive-tank.ts` | Bac du mode immersif (#345, ADR 0086) : proportions exactes de l'écran au plus près de l'échelle réelle que permettent `IMMERSIVE_LIMITS` (`immersiveLayout`, échelle `scale`), profondeur bornée, plus petites espèces nageuses d'abord (`smallSwimmers`, `immersivePopulation`), monde en mode décor sans décor (`createImmersiveWorld`) |
+| `sim/immersive-tank.ts` | Bac du mode immersif (#345, ADR 0086) : proportions exactes de l'écran au plus près de l'échelle réelle que permettent `IMMERSIVE_LIMITS` (`immersiveLayout`, échelle `scale`), profondeur bornée, plus petites espèces nageuses de l'environnement choisi d'abord (`smallSwimmers`, `immersivePopulation`, bac tropical ou récif : `IMMERSIVE_ENVIRONMENTS`, #375, ADR 0094), monde en mode décor sans décor (`createImmersiveWorld`) |
 | `sim/tank-resize.ts` | Dimensions réglables du bac tropical (#171, ADR 0047) : `setTankDimensionsInPlace` borne les dimensions, ramène le décor (emprise), les poissons et les granulés dans le bac, recalcule les obstacles. Un monde porte ses dimensions (`World.dimensions?`) et sert de lieu (`Place`, `sim/environment.ts`) aux fonctions de géométrie |
 | `sim/environment.ts` | Environnements en données (#87, ADR 0026) : bac tropical, bassin, paludarium (#129), récif (#148, ADR 0039) et bac d'eau froide (#271, ADR 0065, axolotls seuls) (dimensions, niveau de l'eau, sol à berge `terrain` et ses mousses et racines `bankDecor` (#132), teintes de l'eau et du sol en noms de la palette, tons d'environnement `tones`, bordure, vue par défaut, bulles, caustiques, décor, espèces et population de départ, ADR 0027) ; `livesIn` ; `World.environment` choisit le volume d'eau des bornes de nage et des dépôts |
 | `sim/species.ts` | Définitions déclaratives des espèces (`NEON`, `GUPPY`, `CORYDORA`, `KOI`, `AXOLOTL`), espèces qui marchent sur le fond (`walker`, ADR 0035), apparences (`speciesVariants`, `speciesVariantIndex` en alternance ou tirées de la graine, ADR 0013 et 0027), préférence de profondeur (`depth`, ADR 0014 ; bande de mi-hauteur `minHeightRatio`, ADR 0042), `validateSpecies` |
