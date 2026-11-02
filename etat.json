@@ -4803,6 +4803,12 @@
           "debut": "2026-11-02T15:08:58.953Z",
           "fin": "2026-11-02T15:09:38.690Z",
           "note": "Issue #396 : plafonds de la pièce, e2e du plafond de bacs et bac de départ (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-02T15:10:15.651Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
