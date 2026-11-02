@@ -4835,10 +4835,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-02T18:15:45.777Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-02T18:17:28.315Z",
+          "note": "Rétro sprint 19 (#399), PR roadmap #400 ; travail de Dev : #398 (+ #26) (S)"
         }
       },
       "metriques": {}
