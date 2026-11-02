@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
 import { PALETTE } from '../src/app/render/palette';
+import { canvasShot, countColors } from './outils-pixels';
 
 /**
  * Panneau de contrôle (issue #52) : vitesse de simulation, heure de la journée, affichage
@@ -53,32 +54,8 @@ const VEGETATION = new Set<string>([
 
 /** Nombre de pixels de végétation (couleurs que les poissons n'ont pas) du canvas. */
 async function vegetationPixels(page: Page): Promise<number> {
-  const png = (await page.locator('canvas').screenshot({ animations: 'disabled' })).toString(
-    'base64',
-  );
-  return page.evaluate(
-    async ({ png, colors }) => {
-      const blob = await (await fetch(`data:image/png;base64,${png}`)).blob();
-      const bitmap = await createImageBitmap(blob);
-      const context = new OffscreenCanvas(bitmap.width, bitmap.height).getContext('2d');
-      if (!context) {
-        throw new Error('Contexte 2D indisponible');
-      }
-      context.drawImage(bitmap, 0, 0);
-      const d = context.getImageData(0, 0, bitmap.width, bitmap.height).data;
-      const set = new Set(colors);
-      let count = 0;
-      for (let i = 0; i < d.length; i += 4) {
-        const hex =
-          '#' + [d[i], d[i + 1], d[i + 2]].map((v) => v.toString(16).padStart(2, '0')).join('');
-        if (set.has(hex)) {
-          count++;
-        }
-      }
-      return count;
-    },
-    { png, colors: [...VEGETATION] },
-  );
+  const counts = countColors(await canvasShot(page), [...VEGETATION]);
+  return counts.reduce((sum, n) => sum + n, 0);
 }
 
 test.describe('Panneau de contrôle', () => {

@@ -1,5 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
+import { canvasShot, countColors } from './outils-pixels';
+
 /** QA des coraux du récif (#149) : présence à l'écran, case « Afficher le décor », autres environnements. */
 
 const hostEl = (page: Page) => page.locator('app-aquarium-host');
@@ -22,30 +24,8 @@ async function open(page: Page, search: string): Promise<string[]> {
 }
 
 async function violetPixels(page: Page): Promise<number> {
-  const png = (await page.locator('canvas').screenshot({ animations: 'disabled' })).toString(
-    'base64',
-  );
-  return page.evaluate(
-    async ({ png, colors }) => {
-      const blob = await (await fetch(`data:image/png;base64,${png}`)).blob();
-      const bitmap = await createImageBitmap(blob);
-      const context = new OffscreenCanvas(bitmap.width, bitmap.height).getContext('2d');
-      if (!context) {
-        throw new Error('Contexte 2D indisponible');
-      }
-      context.drawImage(bitmap, 0, 0);
-      const d = context.getImageData(0, 0, bitmap.width, bitmap.height).data;
-      const set = new Set(colors);
-      let count = 0;
-      for (let i = 0; i < d.length; i += 4) {
-        const hex =
-          '#' + [d[i], d[i + 1], d[i + 2]].map((v) => v.toString(16).padStart(2, '0')).join('');
-        if (set.has(hex)) count++;
-      }
-      return count;
-    },
-    { png, colors: VIOLETS },
-  );
+  const counts = countColors(await canvasShot(page), VIOLETS);
+  return counts.reduce((sum, n) => sum + n, 0);
 }
 
 async function freeze(page: Page): Promise<void> {
