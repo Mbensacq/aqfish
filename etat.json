@@ -4817,10 +4817,10 @@
           "note": "Verdict OK, 0 bug, 115 captures c131 (114 identiques à main), e2e du lot OK, mutation 89,1 % (issue dette)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-02T17:15:23.527Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-02T18:15:15.479Z",
+          "note": "PR #397 fusionnée → v1.7.5 (release CI ok, main verte sur a0ced96) ; #396 fermée ; indentation de PIEGES.md rétablie dans la PR ; suppression de branche refusée ; pied d'attribution réinjecté dans le corps de #397"
         }
       },
       "metriques": {}
