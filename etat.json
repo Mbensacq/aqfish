@@ -4851,6 +4851,12 @@
           "debut": "2026-11-02T20:05:26.030Z",
           "fin": "2026-11-02T20:29:00.880Z",
           "note": "Verdict OK, 0 bug, mutation 99,32 % remesurée, 115 captures c132 publiées"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-02T20:29:35.078Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
