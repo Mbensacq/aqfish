@@ -4701,6 +4701,12 @@
           "debut": "2026-11-02T03:54:07.379Z",
           "fin": "2026-11-02T05:10:57.262Z",
           "note": "PR #389 : choix du bac en mode immersif (tropical/récif, ADR 0094), CI verte ; 116 captures identiques à l'octet à main en local ; +1 e2e ; pied d'attribution réinjecté par l'environnement dans le corps de #389"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-02T05:11:24.952Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
