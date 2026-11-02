@@ -23,7 +23,7 @@ test.describe('Compatibilité des espèces (#209)', () => {
   test('bac tropical par défaut : aucun mélange déconseillé', async ({ page }) => {
     const errors = await open(page, '?seed=42');
     await toggle(page).click();
-    await expect(page.locator('[data-section="population"] [data-species]')).toHaveCount(11);
+    await expect(page.locator('[data-section="population"] [data-species]')).toHaveCount(14);
     await expect(warnings(page)).toHaveCount(0);
     expect(errors).toEqual([]);
   });
@@ -98,6 +98,26 @@ test.describe('Compatibilité des espèces (#209)', () => {
     }
     await slider(page, 'de danios zébrés').fill('0');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /danio:0/);
+    await expect(warnings(page)).toHaveCount(0);
+    expect(errors).toEqual([]);
+  });
+
+  test('espèces d’eau douce du lot 3 : gourami miel déconseillé avec le gourami nain, libellé qui suit les effectifs', async ({
+    page,
+  }) => {
+    const errors = await open(
+      page,
+      '?seed=42&population=braise:10,molly:3,miel:2,gourami:2,neon:4,guppy:0,corydoras:0',
+    );
+    await toggle(page).click();
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /miel:2/);
+    // Tétra braise et molly : paisibles ; seuls les deux gouramis territoriaux se disputent.
+    await expect(warnings(page)).toHaveCount(1);
+    for (const ofPlural of ['de tétras braise', 'de mollys', 'de gouramis miel']) {
+      await expect(slider(page, ofPlural)).toBeVisible();
+    }
+    await slider(page, 'de gouramis miel').fill('0');
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /miel:0/);
     await expect(warnings(page)).toHaveCount(0);
     expect(errors).toEqual([]);
   });

@@ -27,7 +27,7 @@ test.describe('Catalogue d’espèces (#189)', () => {
     // Sans paramètre de monde dans l'URL : le rechargement relit la sauvegarde automatique.
     const errors = await open(page, '');
     await toggle(page).click();
-    await expect(rows(page)).toHaveCount(11);
+    await expect(rows(page)).toHaveCount(14);
     await expect(hostEl(page)).toHaveAttribute(
       'data-aqfish-population',
       'neon:12,guppy:6,corydora:6,rasbora:0,tetra:0,kuhli:0,gourami:0,platy:0,danio:0,ancistrus:0,otocinclus:0,braise:0,molly:0,miel:0',

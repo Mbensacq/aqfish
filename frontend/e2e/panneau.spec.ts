@@ -343,9 +343,9 @@ test.describe('Panneau de contrôle', () => {
     }
     // Population (#69) : chaque ligne entière dans le panneau, contrôles de taille tactile.
     const rows = page.locator('[data-section="population"] .control-panel__count');
-    // Bac tropical : trois espèces peuplées et huit ajoutables (#238, #362).
-    await expect(rows).toHaveCount(11);
-    for (let i = 0; i < 11; i++) {
+    // Bac tropical : trois espèces peuplées et onze ajoutables (#238, #362, #391).
+    await expect(rows).toHaveCount(14);
+    for (let i = 0; i < 14; i++) {
       const row = await box(rows.nth(i));
       expect(row.x).toBeGreaterThanOrEqual(panel.x);
       expect(row.x + row.width).toBeLessThanOrEqual(panel.x + panel.width);
