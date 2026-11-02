@@ -4887,6 +4887,12 @@
           "debut": "2026-11-02T22:45:12.832Z",
           "fin": "2026-11-02T23:22:02.304Z",
           "note": "Verdict RÉSERVES (part e2e 3 à 26,4 min), 0 bug, 3723 tests verts, 118 captures c133 publiées"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-02T23:22:37.392Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
