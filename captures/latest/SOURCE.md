@@ -1,5 +1,8 @@
-# Captures c132
-- Branche : cycle/c132-mutants-population, PR #401, commit 909ba5d
-- Graine : défaut des captures ; Chromium local 1243 (octets différents de la CI, voir PIEGES)
-- 115 captures sur 118 : l'exécution a été interrompue par le délai de session (tracés des trajectoires non produits)
-- PR de tests seuls : aucun changement d'apparence attendu
+# Source des captures c133
+
+- Branche : cycle/c133-lisibilite-lot3-e2e
+- PR : #402
+- Commit : 906bd92
+- Graine : celle de captures.spec.ts (fixe)
+- Temps : 118 captures en 8,8 min (rendu logiciel)
+- Ecart a c132 : front-eau-douce-lot3, three-quarter-eau-douce-lot3 (attendus) ; interface-liste-bacs (octets differents, rendu visuellement identique, hors perimetre)
