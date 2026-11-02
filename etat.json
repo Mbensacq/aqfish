@@ -4739,10 +4739,10 @@
           "note": "PR #393 : eau douce lot 3 (tétra braise, molly, gourami miel, ADR 0095), CI verte ; 54 captures identiques à main ; e2e panneau 390 px accéléré (commit séparé) ; pied d'attribution réinjecté par l'environnement dans le corps de #393"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-02T09:11:52.753Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-02T10:45:28.661Z",
+          "note": "Verdict OK, 0 bug, 117 captures c129 publiées (identiques à main hors liste Population), e2e ciblés OK"
         }
       },
       "metriques": {}
