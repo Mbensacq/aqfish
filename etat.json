@@ -4709,10 +4709,10 @@
           "note": "Verdict RÉSERVES (verify/e2e complet non rejoué, 3 e2e immersifs OK), 0 bug, 116 captures c128 publiées"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-02T05:46:51.445Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-02T06:47:41.033Z",
+          "note": "PR #389 fusionnée → v1.7.2 (release CI ok, main verte sur 56d95fb) ; #375 fermée ; dette #390 (densité récif immersif, accent en dur, piège Chromium QA) ; suppression de branche refusée (c128-immersif-choix-bac reste)"
         }
       },
       "metriques": {}
