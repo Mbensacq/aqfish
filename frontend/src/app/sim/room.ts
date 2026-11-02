@@ -230,6 +230,13 @@ export type RoomPart =
   | 'fenetre'
   | 'vitre'
   | 'lumiere'
+  // Détails de la pièce (#363, `sim/room-details.ts`) : moulure sous le plafond, porte du mur
+  // de droite (chambranle, vantail et poignée réutilisent `porte` et `poignee`), applique.
+  | 'moulure'
+  | 'chambranle'
+  | 'applique'
+  | 'abat-jour'
+  | 'halo'
   // Meubles et plantes de la pièce (#188).
   | 'bois'
   | 'livre'
@@ -292,7 +299,8 @@ const DOOR_WIDTH = 0.4;
 const DOOR_GAP = 0.01;
 /** Saillie des portes, de la plinthe et des poignées. */
 const DOOR_DEPTH = 0.01;
-const BASEBOARD_HEIGHT = 0.08;
+/** Hauteur de la plinthe (mur du fond, puis les trois autres murs depuis #363). */
+export const BASEBOARD_HEIGHT = 0.08;
 /** Cimaise : baguette horizontale du mur, au-dessus du haut du bac (hauteur de son bas). */
 export const RAIL_RISE = 0.25;
 const RAIL_HEIGHT = 0.03;

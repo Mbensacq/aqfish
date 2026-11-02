@@ -296,9 +296,10 @@ const range: [number, number] = [0, 1];
 
 /**
  * Vrai si le segment de (`px`, `py`, `pz`) à (`qx`, `qy`, `qz`) traverse le volume d'un bac
- * `dims` (|x| ≤ longueur / 2, 0 ≤ y ≤ hauteur, |z| ≤ profondeur / 2, bords compris).
+ * `dims` (|x| ≤ longueur / 2, 0 ≤ y ≤ hauteur, |z| ≤ profondeur / 2, bords compris). Sans
+ * allocation ; sert aussi à la porte de la pièce (`isDoorClear`, #363).
  */
-function segmentHitsTank(
+export function segmentHitsTank(
   dims: TankDimensions,
   px: number,
   py: number,

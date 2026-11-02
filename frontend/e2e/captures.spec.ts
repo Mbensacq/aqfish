@@ -185,6 +185,10 @@ test.describe('Captures', () => {
     { name: 'libre-interieur', query: 'piece=1&libre=2.5:1:2.6:44:-12' },
     { name: 'libre-fenetre', query: 'piece=1&libre=-0.6:0.9:2.2:21:3' },
     { name: 'libre-plafond', query: 'piece=1&libre=1.8:0.7:2.8:30:30' },
+    // Détails de la pièce (#363) : porte et applique du mur de droite, de jour et de nuit
+    // (applique allumée, halo sur le mur).
+    { name: 'libre-porte', query: 'piece=1&libre=1.2:0.85:3:-55:-8' },
+    { name: 'libre-porte-minuit', query: 'piece=1&heure=0&libre=1.2:0.85:3:-55:-8' },
     // Points blancs (#366) de près : caméra libre contre la vitre, néons et corydoras.
     { name: 'libre-points-blancs', query: 'piece=1&points-blancs=1&libre=0:0.3:0.6:0:0' },
     // Pièce à deux bacs (#305, lot 2b) : une commode à droite du bac, un bac moyen posé dessus.

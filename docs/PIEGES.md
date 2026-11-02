@@ -6,6 +6,17 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **`npm run verify` sur `main` en arrière-plan pendant qu'on code : il lit le travail en
+  cours** (cycle 127, #363) : lancé sur `main` puis suivi de modifications dans le même clone,
+  le build (après formatage, lint et unitaires) a compilé les fichiers déjà modifiés et
+  échoué. Pour mesurer `main` sans attendre, un worktree séparé (`git worktree add <dossier>
+  origin/main`, `node_modules` en lien symbolique) ; il sert aussi aux captures « avant ».
+  (2026-11-02)
+- **Mesurer le temps d'image en local : ~0,6 s par image en 1280 × 720** (cycle 127, #363) :
+  le rendu logiciel du navigateur headless est si lent que les écarts d'une scène à l'autre se
+  perdent dans le bruit. Servir `dist/aqfish/browser` (`python3 -m http.server`), mesurer
+  l'intervalle moyen entre `requestAnimationFrame` sur 6 s en 640 × 360, trois fois par
+  scène (médiane), avant et après dans la même session. (2026-11-02)
 - **E2e qui modifie la sauvegarde puis recharge : l'application la réécrit en partant**
   (cycle 122, #361) : `localStorage.setItem` puis `page.reload()` ne suffit pas, le
   `pagehide` de la page quittée enregistre l'état courant par-dessus la modification (la page
@@ -812,6 +823,17 @@ haut de sa section.
   du sable. Pour un animal posé sur le décor, éviter les tons exacts du décor voisin ; le
   regarder de près en caméra libre (`libre-eau-douce-lot2-fond`). (2026-11-01)
 
+- **Objet posé contre un mur de la pièce : reculer l'aire de pose** (cycle 127, #363) : les
+  plinthes des murs latéraux et d'en face entraient d'un voxel dans l'aire du parquet
+  (`roomArea`) : un meuble plaqué au mur les aurait traversées. Toute saillie d'un mur se
+  retire de `roomArea` (pose des meubles, choix d'un point du parquet, pose automatique du
+  catalogue) ; un objet qui interdit une zone (passage devant la porte) y figure aussi
+  (`area.door`). Les meubles relus d'une sauvegarde ne sont pas reposés : un meuble ancien
+  plaqué au mur garde sa place. (2026-11-02)
+- **Halo d'une lampe en un seul carré : il se lit comme un panneau** (cycle 127, #363) : un
+  bloc plat clair derrière l'applique faisait un tableau accroché au mur. Deux croix emboîtées
+  en deux tons (la plus claire devant, d'un voxel) donnent une lueur en marches de pixel art.
+  (2026-11-02)
 - **Objet clair sur le mur du fond : traverse l'eau en vue de côté et de trois-quarts** (cycle
   112, #342) : en vue `side`, le mur du fond se voit en enfilade derrière le bac ; une fenêtre
   posée dessus, même à 1,5 m à gauche du bac, y traçait des traits clairs verticaux à travers
