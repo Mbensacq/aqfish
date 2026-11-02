@@ -1,7 +1,5 @@
-# Captures c126
-
-- Branche : cycle/c126-lisibilite-points-blancs
-- PR : #385
-- Commit : c6b8b2c
-- Graine : celle de captures.spec.ts
-- Temps : 114 captures en 10,3 min (Chromium local 1243, rendu logiciel)
+# Captures c127
+- Branche : cycle/c127-porte-plinthes-applique (PR #387), commit 85fd3d6
+- Graine : par défaut de captures.spec.ts ; Chromium headless 1243 (rendu logiciel)
+- Durée : série en deux passes (délai de 10 min dépassé) : 111 images puis tableau de bord et trajectoires
+- 5 angles du bac seul identiques à l'octet à la série précédente
