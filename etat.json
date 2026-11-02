@@ -4832,7 +4832,7 @@
       "type": "retro",
       "issue": 398,
       "pr": 401,
-      "version": null,
+      "version": "v1.7.6",
       "phases": {
         "planif": {
           "statut": "termine",
