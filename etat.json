@@ -5093,10 +5093,10 @@
           "note": "Rétro sprint 20 (#415), PR roadmap #416 ; travail de Dev : #40 (dette, S)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-03T14:57:15.402Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-03T16:35:11.381Z",
+          "note": "PR #417 : sans filtre en cible pleine résolution (#40), CI verte ; 3 903 tests unitaires verts, couverture non mesurée (sim non touché) ; 117/122 captures identiques à l'octet, 5 sans-filtre changées volontairement ; pied d'attribution réajouté par l'environnement à la PR"
         }
       },
       "metriques": {}
