@@ -5105,10 +5105,10 @@
           "note": "Verdict OK, 0 bug, 3 e2e ajoutés (sans filtre : redimensionnement, aller-retour, souris), CI verte, captures publiées (122 ; 117 identiques à c138, 5 sans-filtre changées voulu) ; pied d'attribution dans la description de la PR signalé"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-03T17:32:05.252Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-03T18:48:58.939Z",
+          "note": "PR #417 fusionnée → v1.8.6 (release CI ok), PR #416 roadmap fusionnée, CI main verte ; #40 fermée ; dette #418 ; suppression de branche refusée par l'environnement ; pied d'attribution ajouté par l'environnement aux PR/issues"
         }
       },
       "metriques": {}
