@@ -1,4 +1,12 @@
-import { MOUSE, TOUCH, Vector3, type Camera, type Scene, type WebGLRenderTarget } from 'three';
+import {
+  InstancedMesh,
+  MOUSE,
+  TOUCH,
+  Vector3,
+  type Camera,
+  type Scene,
+  type WebGLRenderTarget,
+} from 'three';
 import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 import { ORBIT_MOUSE_BUTTONS, ORBIT_TOUCHES } from '../core/commands/commands';
@@ -15,7 +23,15 @@ import {
 } from '../sim/environment';
 import { createImmersiveWorld, immersiveLayout } from '../sim/immersive-tank';
 import { lilyPadLayout } from '../sim/lily-pads';
-import { createDefaultWorld, createWorld, seededFeatures } from '../sim/world';
+import {
+  advanceInPlace,
+  createDefaultWorld,
+  createWorld,
+  seededFeatures,
+  type MutableWorld,
+} from '../sim/world';
+import { REDUCED_MOTION } from '../core/reduced-motion/reduced-motion';
+import { lightTime } from './water-light';
 import {
   AquariumView,
   ORBIT_MOUSE_ACTIONS,
@@ -1259,5 +1275,110 @@ describe('AquariumView (mode immersif, #345)', () => {
     }
     expect(view.immersiveActive).toBe(false);
     view.dispose();
+  });
+});
+
+describe('AquariumView (mouvements réduits, #406)', () => {
+  /** Double du renderer qui garde la première scène rendue (l'aquarium, avant la palette). */
+  class SceneRenderer extends RecordingRenderer {
+    scene: Scene | null = null;
+    override render(scene: Scene, camera: Camera): void {
+      this.scene ??= scene;
+      super.render(scene, camera);
+    }
+  }
+
+  function create(environment = TROPICAL_TANK, renderer = new SceneRenderer()): AquariumView {
+    const view = new AquariumView({
+      canvas: document.createElement('canvas'),
+      rendererFactory: () => renderer,
+      pixelRatio: 1,
+      preset: 'front',
+      interactive: false,
+      environment,
+    });
+    view.resize(320, 180);
+    return view;
+  }
+
+  /** Matrices des instances de poissons de la scène, dans l'ordre de parcours. */
+  function fishMatrices(scene: Scene): number[] {
+    const values: number[] = [];
+    scene.traverse((object) => {
+      if (
+        object instanceof InstancedMesh &&
+        object.count > 0 &&
+        /-corps$|-queue$/.test(object.name)
+      ) {
+        values.push(...object.instanceMatrix.array.slice(0, object.count * 16));
+      }
+    });
+    return values;
+  }
+
+  it('désactivé par défaut ; bascule dans les deux sens', () => {
+    const view = create();
+    expect(view.reducedMotion).toBe(false);
+    view.setReducedMotion(true);
+    expect(view.reducedMotion).toBe(true);
+    view.setReducedMotion(false);
+    expect(view.reducedMotion).toBe(false);
+    view.dispose();
+  });
+
+  it('caustiques et reflet : temps inchangé sans l’option, ralenti par waterWave avec', () => {
+    const view = create();
+    view.updateDecor(12);
+    expect(view.waterLightTime).toBe(lightTime(12));
+    view.setReducedMotion(true);
+    view.updateDecor(12);
+    expect(view.waterLightTime).toBeCloseTo(lightTime(12 * REDUCED_MOTION.waterWave), 10);
+    expect(view.waterLightTime).not.toBe(lightTime(12));
+    view.dispose();
+  });
+
+  it('pluie : temps ralenti par rainSpeed, bulles et feuilles mortes au temps simulé', () => {
+    const reduced = create(POND);
+    const slow = create(POND);
+    const world = createWorld(42, [], [], POND.decor, 'bassin');
+    for (const view of [reduced, slow]) {
+      view.setDecor(world.decor, world.seed);
+      view.setRain(true);
+    }
+    reduced.setReducedMotion(true);
+    const time = 37.3;
+    reduced.updateDecor(time);
+    slow.updateDecor(time * REDUCED_MOTION.rainSpeed);
+    expect(reduced.rainCounts).toEqual(slow.rainCounts);
+    // Feuilles mortes : temps simulé tel quel (seule la pluie change de temps).
+    const normal = create(POND);
+    normal.setDecor(world.decor, world.seed);
+    normal.updateDecor(time);
+    expect(reduced.floatingLeafCount).toBe(normal.floatingLeafCount);
+    for (const view of [reduced, slow, normal]) {
+      view.dispose();
+    }
+  });
+
+  it('simulation inchangée : mêmes poissons, au même endroit, avec ou sans l’option', () => {
+    const renderers = [new SceneRenderer(), new SceneRenderer()];
+    const views = renderers.map((renderer) => create(TROPICAL_TANK, renderer));
+    const worlds = [createDefaultWorld(1234), createDefaultWorld(1234)] as MutableWorld[];
+    views[1].setReducedMotion(true);
+    for (let frame = 1; frame <= 90; frame++) {
+      worlds.forEach((world, i) => {
+        advanceInPlace(world, 1);
+        views[i].updateDecor(frame / 30);
+        views[i].updateFish(world.entities, 1, world.seed);
+        views[i].renderFrame();
+      });
+    }
+    expect(worlds[1]).toEqual(worlds[0]);
+    const matrices = renderers.map((renderer) => fishMatrices(renderer.scene!));
+    expect(matrices[0].length).toBeGreaterThan(0);
+    expect(matrices[1]).toEqual(matrices[0]);
+    // Le décor, lui, diffère : l'option agit bien sur le rendu.
+    expect(views[1].waterLightTime).not.toBe(views[0].waterLightTime);
+    views.forEach((view) => view.dispose());
   });
 });

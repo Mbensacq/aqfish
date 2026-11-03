@@ -269,6 +269,11 @@ export class WaterLightLayer {
     this.surface.material.uniforms['uTime'].value = t;
   }
 
+  /** Temps des motifs posé par le dernier `update`, ramené à la période (tests). */
+  get time(): number {
+    return this.caustics.material.uniforms['uTime'].value as number;
+  }
+
   dispose(): void {
     for (const mesh of [this.caustics, this.surface]) {
       mesh.geometry.dispose();

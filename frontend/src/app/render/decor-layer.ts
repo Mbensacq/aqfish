@@ -326,12 +326,15 @@ export class DecorLayer {
     return hit ? voxels.indexOf(hit.object as Mesh) : null;
   }
 
-  /** Pose les plantes au temps simulé `time` (secondes), sans allocation. */
-  update(time: number): void {
+  /**
+   * Pose les plantes au temps simulé `time` (secondes), sans allocation. `swayScale` multiplie
+   * l'amplitude d'ondulation (1 : inchangée, #406 : atténuée si les mouvements sont réduits).
+   */
+  update(time: number, swayScale = 1): void {
     for (const plant of this.plants) {
       applyPlantSway(
         plant.data,
-        plant.amplitude,
+        plant.amplitude * swayScale,
         plant.rotation,
         time,
         plant.position.array as Float32Array,

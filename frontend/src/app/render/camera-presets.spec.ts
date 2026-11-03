@@ -3,12 +3,14 @@ import { PerspectiveCamera, Vector3 } from 'three';
 import { CAMERA_PRESETS, type CameraPreset } from '../core/capture/capture-params';
 import {
   CAMERA_FOV_DEG,
+  CAMERA_TRANSITION_SECONDS,
   cameraPresetPose,
   framingDistance,
   orbitDistanceLimits,
   orbitPose,
   orbitPositionInto,
   panTargetRadius,
+  presetTransitionSeconds,
   tankBoundingRadius,
   tankCenter,
   type TankDimensions,
@@ -259,5 +261,22 @@ describe('orbitPositionInto (fond d’écran sans allocation, #332)', () => {
     expect(out).toEqual(before);
     orbitPositionInto(base, 1, out);
     expect([...base.position]).toEqual(before);
+  });
+});
+
+describe('presetTransitionSeconds (mouvements réduits, #406)', () => {
+  it('transition habituelle sans l’option, au plus 0,6 s (issue #7)', () => {
+    expect(presetTransitionSeconds(false)).toBe(CAMERA_TRANSITION_SECONDS);
+    expect(presetTransitionSeconds(false)).toBeGreaterThan(0);
+    expect(presetTransitionSeconds(false)).toBeLessThanOrEqual(0.6);
+  });
+
+  it('saut direct (durée nulle) avec l’option', () => {
+    expect(presetTransitionSeconds(true)).toBe(0);
+  });
+
+  it('capture : saut direct dans tous les cas (contrat de capture)', () => {
+    expect(presetTransitionSeconds(false, true)).toBe(0);
+    expect(presetTransitionSeconds(true, true)).toBe(0);
   });
 });

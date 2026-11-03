@@ -53,6 +53,16 @@ describe('EffectLayer (issue #125)', () => {
     expect(hidden.times).toEqual([3]);
   });
 
+  it('temps propre par couche (#406) : seule la couche visée change de temps', () => {
+    const log: string[] = [];
+    const rain = new RecordingEffect('pluie', log);
+    const bubbles = new RecordingEffect('bulles', log);
+    updateVisibleEffects([bubbles, rain], 10, (layer, time) =>
+      layer === rain ? time * 0.4 : time,
+    );
+    expect(log).toEqual(['bulles 10', 'pluie 4']);
+  });
+
   it('liste vide : rien à faire', () => {
     expect(() => updateVisibleEffects([], 1)).not.toThrow();
   });

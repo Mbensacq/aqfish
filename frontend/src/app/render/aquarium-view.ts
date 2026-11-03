@@ -94,6 +94,11 @@ import {
 import { environmentTonePenalties, PalettePass } from './palette-pass';
 import { PIXEL_SIZE, type Size } from './pixel-art';
 import { WaterLightLayer } from './water-light';
+import {
+  FULL_MOTION,
+  motionFactors,
+  type MotionFactors,
+} from '../core/reduced-motion/reduced-motion';
 
 /**
  * Sous-ensemble de `WebGLRenderer` utilisé par la vue. Permet de remplacer le renderer
@@ -378,6 +383,11 @@ export class AquariumView {
   /** Taille de la cible basse résolution (tenue à jour dans les deux modes). */
   private targetSize: Size = { width: 1, height: 1 };
   private disposed = false;
+  /** Facteurs des mouvements décoratifs (#406) : `FULL_MOTION` sauf mouvements réduits. */
+  private motion: MotionFactors = FULL_MOTION;
+  /** Temps propre d'un effet (`updateVisibleEffects`) : pluie ralentie si mouvements réduits. */
+  private readonly effectTime = (layer: EffectLayer, time: number): number =>
+    layer === this.rainLayer ? time * this.motion.rainSpeed : time;
   /** Préréglage courant, recadré à chaque redimensionnement tant que l'utilisateur n'a pas bougé. */
   private preset: CameraPreset | null;
   /** Transition en cours vers un préréglage (`null` sinon), avancée par `stepCameraTransition`. */
@@ -660,12 +670,34 @@ export class AquariumView {
    */
   updateDecor(time: number): void {
     if (!this.disposed) {
-      this.decorLayer.update(time);
+      // Mouvements réduits (#406) : plantes moins amples, eau et pluie plus lentes. Les
+      // facteurs valent exactement 1 sinon (multiplications exactes : rendu inchangé).
+      const motion = this.motion;
+      const waterTime = time * motion.waterWave;
+      this.decorLayer.update(time, motion.plantSway);
       // Sous la pluie, les nénuphars frémissent (issue #106).
-      this.lilyPadLayer.update(time, this.rainLayer.isEnabled ? 1 : 0);
-      updateVisibleEffects(this.effects, time);
-      this.waterLight.update(time);
+      this.lilyPadLayer.update(waterTime, this.rainLayer.isEnabled ? 1 : 0);
+      updateVisibleEffects(this.effects, time, this.effectTime);
+      this.waterLight.update(waterTime);
     }
+  }
+
+  /**
+   * Réduit les mouvements décoratifs (`true`, #406, `core/reduced-motion`) ou les rétablit :
+   * effet au prochain `updateDecor`. N'agit que sur le rendu, jamais sur le monde.
+   */
+  setReducedMotion(reduced: boolean): void {
+    this.motion = motionFactors(reduced);
+  }
+
+  /** Vrai si les mouvements décoratifs sont réduits. */
+  get reducedMotion(): boolean {
+    return this.motion !== FULL_MOTION;
+  }
+
+  /** Temps des caustiques et du reflet posé par le dernier `updateDecor` (tests). */
+  get waterLightTime(): number {
+    return this.waterLight.time;
   }
 
   /** Pose les granulés de nourriture du monde (`World.food`). À appeler avant `renderFrame()`. */

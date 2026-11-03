@@ -336,6 +336,15 @@ haut de sa section.
 
 ## Tests
 
+- **`test.use({ reducedMotion: 'reduce' })` est ignoré sans erreur** (cycle 135, #406) :
+  `reducedMotion` n'est pas une option de test de Playwright 1.56 ; la page voit
+  `prefers-reduced-motion: no-preference`. Passer par le contexte :
+  `test.use({ contextOptions: { reducedMotion: 'reduce' } })` (vérifié : `matchMedia` vrai).
+- **Une transition de caméra de 0,5 s n'est pas observable en e2e** (cycle 135, #406) : en
+  rendu logiciel, une image dure ~0,5 s, donc la transition finit dès la première image après
+  le clic ; un test « arrivée immédiate » passe aussi sans saut. La durée se teste en
+  unitaire (`presetTransitionSeconds`, hôte avec `FrameQueue`).
+
 - **Compter des pixels en e2e : `locator('canvas').screenshot()` et décodage dans la page
   sont lents** (cycle 133, #394) : en rendu logiciel (~0,5 s par image), une capture d'élément
   du canevas prenait ~14 s en local (vérifications de stabilité de l'élément), et le décodage

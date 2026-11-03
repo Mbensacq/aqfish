@@ -8,6 +8,8 @@ import type { EnvironmentId } from '../../sim/environment';
 import type { PopulationCounts } from '../../sim/population';
 import type { SaveMessage, SaveStatus } from '../../core/save-storage/save-storage';
 import { MAX_SAVE_LENGTH } from '../../sim/save';
+import { REDUCED_MOTION_STORAGE_KEY } from '../../core/reduced-motion/reduced-motion';
+import { ReducedMotionState } from '../reduced-motion/reduced-motion-state';
 import { SIM_SPEEDS } from '../../sim/sim-speed';
 import { MAX_HEATER_TEMPERATURE, MIN_HEATER_TEMPERATURE } from '../../sim/water';
 import { DEFAULT_WATER_READOUT, type WaterReadout } from '../../sim/water-quality';
@@ -929,7 +931,7 @@ describe('ControlPanel', () => {
     expect(root().querySelector('section')).toBeNull();
   });
 
-  it('sections extensibles : environnement, simulation, journée, eau, décor, population, bacs, sauvegarde, chacune avec sa légende', async () => {
+  it('sections extensibles : environnement, simulation, journée, eau, décor, population, bacs, accessibilité, sauvegarde, chacune avec sa légende', async () => {
     await openPanel();
     const sections = [...root().querySelectorAll('fieldset')];
     expect(sections.map((s) => s.getAttribute('data-section'))).toEqual([
@@ -940,6 +942,7 @@ describe('ControlPanel', () => {
       'decor',
       'population',
       'bacs',
+      'accessibilite',
       'sauvegarde',
     ]);
     // Titre de la section : sa légende, ou l'élément qui la nomme (`aria-labelledby`) quand la
@@ -959,6 +962,7 @@ describe('ControlPanel', () => {
       'Décor',
       'Population',
       'Bacs',
+      'Accessibilité',
       'Sauvegarde',
     ]);
   });
@@ -1075,8 +1079,9 @@ describe('ControlPanel', () => {
     // pièce » (#187), « Changer l’eau » et le curseur du chauffage (#207), « − » et « + » des
     // feuilles de catappa (#239), puis « − », champ, « + » (#69), curseur (#189) et « Fiche »
     // (#237) pour chacune des 14 espèces du bac tropical (#238, #362, #391), puis « Exporter »
-    // et « Importer » (#70), le mode du bac (#278), et « Mode immersif » (#345).
-    expect(controls).toHaveLength(5 + 1 + 1 + 1 + 2 + 2 + 14 * 5 + 2 + 1 + 1);
+    // et « Importer » (#70), le mode du bac (#278), « Mode immersif » (#345), et « Réduire
+    // les mouvements » (#406).
+    expect(controls).toHaveLength(5 + 1 + 1 + 1 + 2 + 2 + 14 * 5 + 2 + 1 + 1 + 1);
     expect(root().querySelectorAll('input[type="file"]')).toHaveLength(1);
     for (const control of controls) {
       const name =
@@ -1445,6 +1450,39 @@ describe('ControlPanel', () => {
       expect(section()!.querySelector('[data-treatment-warning]')?.textContent?.trim()).toBe(
         'Prudence : néons.',
       );
+    });
+  });
+
+  describe('accessibilité : réduire les mouvements (#406)', () => {
+    afterEach(() => localStorage.removeItem(REDUCED_MOTION_STORAGE_KEY));
+
+    it('case décochée par défaut, cochée si l’état partagé est réduit', async () => {
+      await openPanel();
+      expect(checkbox('Réduire les mouvements')!.checked).toBe(false);
+      TestBed.inject(ReducedMotionState).system.set(true);
+      await fixture.whenStable();
+      expect(checkbox('Réduire les mouvements')!.checked).toBe(true);
+    });
+
+    it('cocher puis décocher règle et mémorise le choix', async () => {
+      await openPanel();
+      const state = TestBed.inject(ReducedMotionState);
+      const box = checkbox('Réduire les mouvements')!;
+      box.click();
+      await fixture.whenStable();
+      expect(state.reduced()).toBe(true);
+      expect(localStorage.getItem(REDUCED_MOTION_STORAGE_KEY)).toBe('reduits');
+      box.click();
+      await fixture.whenStable();
+      expect(state.reduced()).toBe(false);
+      expect(localStorage.getItem(REDUCED_MOTION_STORAGE_KEY)).toBe('normaux');
+    });
+
+    it('case décrite par une aide courte', async () => {
+      await openPanel();
+      const box = checkbox('Réduire les mouvements')!;
+      const help = root().querySelector(`#${box.getAttribute('aria-describedby')}`);
+      expect(help?.textContent).toMatch(/Caméra/);
     });
   });
 
