@@ -4,6 +4,7 @@ import {
   fillNoise,
   nextBubbleDelay,
   SILENT_LEVELS,
+  WATER_LFO_DEPTH,
   type AmbientLevels,
 } from '../../core/ambient-sound/ambient-sound';
 import type { Prng } from '../../core/random/prng';
@@ -16,8 +17,10 @@ import type { Prng } from '../../core/random/prng';
  * - **Bulles** : « blop » sinusoïdaux (fréquence qui monte, enveloppe courte), planifiés à
  *   intervalles irréguliers tirés du générateur propre au son.
  *
- * Tous les niveaux changent par fondu court (`setTargetAtTime`). Le contexte audio est fourni
- * déjà créé : c'est le service qui décide quand (au geste de l'utilisateur).
+ * Tous les niveaux changent par fondu court (`setTargetAtTime`). Le gain général passe par un
+ * limiteur doux (`LIMITER`) avant la sortie : filet de sécurité contre l'écrêtage, les niveaux
+ * reçus étant déjà bornés (`limitPeak`, #413). Le contexte audio est fourni déjà créé : c'est
+ * le service qui décide quand (au geste de l'utilisateur).
  */
 
 /** Durée du tampon de bruit en boucle (s). */
@@ -26,14 +29,25 @@ const NOISE_SECONDS = 2;
 export const FADE_SECONDS = 0.15;
 /** Fréquence de coupure du bruit « sous l'eau » (Hz). */
 const WATER_CUTOFF = 380;
-/** Fréquence et profondeur du lent va-et-vient de la filtration. */
+/** Fréquence du lent va-et-vient de la filtration (profondeur : `WATER_LFO_DEPTH`). */
 const WATER_LFO_HZ = 0.13;
-const WATER_LFO_DEPTH = 0.35;
 /** Fréquence de coupure basse du bruit de pluie (Hz). */
 const RAIN_CUTOFF = 1400;
 /** Durée d'un « blop » (s) et montée de sa fréquence (facteur). */
 const BUBBLE_SECONDS = 0.09;
 const BUBBLE_GLIDE = 1.8;
+
+/**
+ * Réglages du limiteur de fin de chaîne (#413, ADR 0100) : doux, pour ne pas changer le timbre.
+ * Seuil à -3 dBFS, genou de 6 dB, ratio 4:1, attaque 3 ms, relâchement 250 ms.
+ */
+export const LIMITER = Object.freeze({
+  threshold: -3,
+  knee: 6,
+  ratio: 4,
+  attack: 0.003,
+  release: 0.25,
+});
 
 /** Sous-ensemble de `AudioParam` utilisé. */
 export interface ParamLike {
@@ -77,6 +91,14 @@ export interface OscillatorLike extends SourceLike {
   readonly frequency: ParamLike;
 }
 
+export interface CompressorLike extends NodeLike {
+  readonly threshold: ParamLike;
+  readonly knee: ParamLike;
+  readonly ratio: ParamLike;
+  readonly attack: ParamLike;
+  readonly release: ParamLike;
+}
+
 export interface BufferLike {
   getChannelData(channel: number): Float32Array;
 }
@@ -91,6 +113,7 @@ export interface AudioContextLike {
   createBiquadFilter(): FilterLike;
   createBufferSource(): BufferSourceLike;
   createOscillator(): OscillatorLike;
+  createDynamicsCompressor(): CompressorLike;
   createBuffer(channels: number, length: number, sampleRate: number): BufferLike;
   resume(): Promise<void>;
   close(): Promise<void>;
@@ -105,6 +128,7 @@ export interface TimerLike {
 export class AmbientSoundEngine {
   private readonly prng: Prng = createAmbientPrng();
   private readonly master: GainLike;
+  private readonly limiter: CompressorLike;
   private readonly water: GainLike;
   private readonly rain: GainLike;
   private readonly bubbles: GainLike;
@@ -121,7 +145,14 @@ export class AmbientSoundEngine {
     const ctx = context;
     this.master = ctx.createGain();
     this.master.gain.value = 0;
-    this.master.connect(ctx.destination);
+    this.limiter = ctx.createDynamicsCompressor();
+    this.limiter.threshold.value = LIMITER.threshold;
+    this.limiter.knee.value = LIMITER.knee;
+    this.limiter.ratio.value = LIMITER.ratio;
+    this.limiter.attack.value = LIMITER.attack;
+    this.limiter.release.value = LIMITER.release;
+    this.master.connect(this.limiter);
+    this.limiter.connect(ctx.destination);
 
     const noise = ctx.createBuffer(1, Math.round(ctx.sampleRate * NOISE_SECONDS), ctx.sampleRate);
     fillNoise(noise.getChannelData(0), this.prng);
@@ -190,6 +221,7 @@ export class AmbientSoundEngine {
     }
     this.sources.length = 0;
     this.master.disconnect();
+    this.limiter.disconnect();
     try {
       await this.context.close();
     } catch {

@@ -11,6 +11,7 @@ import {
 import {
   ambientLevels,
   clampVolume,
+  limitPeak,
   DEFAULT_AMBIENT_VOLUME,
   readStoredAmbientSound,
   SILENT_LEVELS,
@@ -107,6 +108,11 @@ export class AmbientSoundState {
 
   /** Web Audio utilisable (faux sans `AudioContext` ou si sa création a échoué). */
   readonly available = signal(this.factory !== null);
+  /**
+   * Création du contexte audio refusée par le navigateur (#413) : `available` est alors faux
+   * alors que Web Audio existe ; le panneau l'explique autrement que l'absence de Web Audio.
+   */
+  readonly refused = signal(false);
   /** Case « Sons d'ambiance » cochée. */
   readonly enabled = signal(this.stored?.enabled === true && this.factory !== null);
   /** Volume général dans [0, 1]. */
@@ -118,13 +124,15 @@ export class AmbientSoundState {
   /** Moteur en marche (contexte audio créé). */
   readonly playing = signal(false);
 
-  /** Niveaux visés de chaque couche. */
+  /** Niveaux visés de chaque couche, crête de leur somme bornée (`limitPeak`, #413). */
   readonly levels = computed<AmbientLevels>(() => {
     const scene = this.scene();
     if (!scene || !this.enabled()) {
       return SILENT_LEVELS;
     }
-    return ambientLevels({ ...scene, silenced: scene.silenced || this.hidden() }, this.volume());
+    return limitPeak(
+      ambientLevels({ ...scene, silenced: scene.silenced || this.hidden() }, this.volume()),
+    );
   });
 
   constructor() {
@@ -204,6 +212,7 @@ export class AmbientSoundState {
       }
       this.engine = null;
       this.available.set(false);
+      this.refused.set(true);
       this.enabled.set(false);
       return;
     }

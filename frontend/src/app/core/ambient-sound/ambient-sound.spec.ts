@@ -11,14 +11,19 @@ import {
   ENVIRONMENT_SOUNDS,
   fillNoise,
   IDLE_BUBBLE_DELAY,
+  limitPeak,
+  MAX_PEAK,
   MIN_BUBBLE_DELAY,
   nextBubbleDelay,
   NIGHT_FACTOR,
+  peakLevel,
   phaseFactor,
   RAIN_LEVEL,
   readStoredAmbientSound,
   SILENT_LEVELS,
+  WATER_LFO_DEPTH,
   writeStoredAmbientSound,
+  type AmbientLevels,
   type AmbientScene,
   type AmbientSoundStorage,
 } from './ambient-sound';
@@ -239,6 +244,82 @@ describe('ambient-sound : niveaux des couches', () => {
     expect(Object.isFrozen(ENVIRONMENT_SOUNDS)).toBe(true);
     expect(Object.isFrozen(SILENT_LEVELS)).toBe(true);
     expect(Object.isFrozen(BUBBLER_SOUND)).toBe(true);
+  });
+});
+
+describe('ambient-sound : marge de niveau (#413)', () => {
+  const PHASES = ['jour', 'aube', 'crepuscule', 'nuit'];
+  const VOLUMES = [0, 0.05, 0.3, 0.5, 0.75, 0.9, 1];
+
+  /** Toutes les scènes possibles : environnements connus et inconnu, pluie, bulleur, moment. */
+  function* scenes(): Generator<AmbientScene> {
+    for (const environment of [...Object.keys(ENVIRONMENT_SOUNDS), 'inconnu']) {
+      for (const phase of PHASES) {
+        for (const rain of [false, true]) {
+          for (const bubbler of [false, true]) {
+            yield { environment, phase, rain, bubbler, silenced: false };
+          }
+        }
+      }
+    }
+  }
+
+  it('crête : eau au sommet du LFO + un blop + pluie', () => {
+    expect(WATER_LFO_DEPTH).toBe(0.35);
+    expect(peakLevel({ water: 0.4, bubbles: 0.2, bubbleRate: 3, rain: 0.1 })).toBeCloseTo(
+      0.4 * 1.35 + 0.2 + 0.1,
+      12,
+    );
+    expect(peakLevel(SILENT_LEVELS)).toBe(0);
+  });
+
+  it('sans limite, la somme dépasse la pleine échelle : pluie et bulleur à volume 100 %', () => {
+    // Raison d'être de `limitPeak` : récif sous la pluie avec bulleur, 0,45 × 1,35 + 0,4 + 0,6.
+    const loud = ambientLevels({ ...DAY, environment: 'recif', rain: true, bubbler: true }, 1);
+    expect(peakLevel(loud)).toBeCloseTo(1.6075, 12);
+    expect(peakLevel(loud)).toBeGreaterThan(MAX_PEAK);
+  });
+
+  it('somme des niveaux maximaux bornée à MAX_PEAK pour toute scène et tout volume', () => {
+    expect(MAX_PEAK).toBe(1);
+    let worst = 0;
+    for (const scene of scenes()) {
+      for (const volume of VOLUMES) {
+        const limited = limitPeak(ambientLevels(scene, volume));
+        const peak = peakLevel(limited);
+        expect(peak, `${JSON.stringify(scene)} @ ${volume}`).toBeLessThanOrEqual(MAX_PEAK + 1e-12);
+        worst = Math.max(worst, peak);
+      }
+    }
+    // La borne est atteinte (pas de marge gaspillée) au pire cas.
+    expect(worst).toBeCloseTo(MAX_PEAK, 12);
+  });
+
+  it('sous la borne : niveaux inchangés (même objet), réglage par défaut compris', () => {
+    for (const scene of scenes()) {
+      const levels = ambientLevels(scene, DEFAULT_AMBIENT_VOLUME);
+      expect(peakLevel(levels)).toBeLessThanOrEqual(MAX_PEAK);
+      expect(limitPeak(levels)).toBe(levels);
+    }
+    expect(limitPeak(SILENT_LEVELS)).toBe(SILENT_LEVELS);
+  });
+
+  it('au-dessus : toutes les couches réduites dans la même proportion, rythme intact', () => {
+    const loud: AmbientLevels = { water: 0.6, bubbles: 0.5, bubbleRate: 2.5, rain: 0.9 };
+    const limited = limitPeak(loud);
+    expect(peakLevel(limited)).toBeCloseTo(MAX_PEAK, 12);
+    const scale = limited.water / loud.water;
+    expect(scale).toBeGreaterThan(0);
+    expect(scale).toBeLessThan(1);
+    expect(limited.bubbles / loud.bubbles).toBeCloseTo(scale, 12);
+    expect(limited.rain / loud.rain).toBeCloseTo(scale, 12);
+    expect(limited.bubbleRate).toBe(loud.bubbleRate);
+    expect(loud.water).toBe(0.6);
+  });
+
+  it('niveaux non finis : rendus tels quels, sans lever', () => {
+    const odd: AmbientLevels = { water: NaN, bubbles: 0, bubbleRate: 0, rain: 0 };
+    expect(limitPeak(odd)).toBe(odd);
   });
 });
 
