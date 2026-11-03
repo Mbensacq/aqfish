@@ -4959,6 +4959,12 @@
           "debut": "2026-11-03T03:53:37.415Z",
           "fin": "2026-11-03T04:30:00.064Z",
           "note": "Verdict OK, 0 bug, 3801 tests verts, captures c135 publiées ; e2e complet non rejoué (3 specs ciblées vertes)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-03T04:30:24.163Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
