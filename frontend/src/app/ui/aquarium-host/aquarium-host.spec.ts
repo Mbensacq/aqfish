@@ -98,6 +98,7 @@ import {
   ROOM_ATTRIBUTE,
   ROOM_COUNT_ATTRIBUTE,
   ROOM_LAYOUT_MESSAGES,
+  supportPlaceLabel,
   ROOM_SUPPORTS_ATTRIBUTE,
   ROOM_TANKS_ATTRIBUTE,
   SELECTED_TANK_ATTRIBUTE,
@@ -1773,6 +1774,25 @@ describe('AquariumHost', () => {
       host().removeRoomSupport(0);
       expect(host().roomCatalog().message).toBe(ROOM_LAYOUT_MESSAGES['support-occupe']);
       expect(attr(ROOM_SUPPORTS_ATTRIBUTE)).toBe('1');
+    });
+
+    it('étagère d’animalerie : deux bacs sur deux niveaux, nommés par niveau (#419)', async () => {
+      await withRoom();
+      host().addRoomSupport('etagere-animalerie');
+      host().addRoomTank('tropical', 'moyen', 0);
+      host().addRoomTank('tropical', 'moyen', 0);
+      expect(host().roomCatalog().message).toBeNull();
+      expect(attr(ROOM_TANKS_ATTRIBUTE)).toBe('3');
+      expect(
+        host()
+          .roomCatalog()
+          .tanks.map((t) => t.on),
+      ).toEqual([null, 'Étagère d’animalerie 1, niveau 1', 'Étagère d’animalerie 1, niveau 2']);
+      expect(saved().tanks.map((t) => t.placement?.level ?? null)).toEqual([null, null, 1]);
+      expect(supportPlaceLabel({ id: 2, kind: 'commode', x: 0, z: 0, quarter: 0 }, 0)).toBe(
+        'Commode 3',
+      );
+      expect(ROOM_LAYOUT_MESSAGES['trop-haut']).toContain('trop haut');
     });
 
     it('refus : valeurs inconnues, plus de place, bac affiché ; pièce masquée : sans effet', async () => {

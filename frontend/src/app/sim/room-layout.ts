@@ -3,8 +3,12 @@ import { isTankResizable, placeDimensions } from './environment';
 import type { RoomBlock, RoomPart, RoomQuarter } from './room';
 import { rotateRect } from './room-furniture';
 import {
+  RACK_POST_CM,
+  RACK_SHELF_CM,
   SUPPORT_CATALOG,
   TANK_SIZES,
+  placementLevel,
+  supportLevel,
   supportRefusal,
   tankDimensionsOf,
   tankPlacementRefusal,
@@ -167,9 +171,10 @@ export function addedTankDimensions(environment: EnvironmentId, size: TankSizeId
 
 /**
  * Premier emplacement libre d'un bac `environment` de taille `size`, sur le meuble
- * `supportId` (en partant du centre du plateau) ou au sol (`null` : dans `area`, hors
- * `obstacles`), validé par `tankPlacementRefusal`. `null` s'il n'y en a aucun, si le meuble
- * est inconnu, ou si la pièce n'a aucun bac (modèle du bac sondé).
+ * `supportId` (niveau par niveau, du plus bas au plus haut, en partant du centre de chaque
+ * plateau) ou au sol (`null` : dans `area`, hors `obstacles`), validé par
+ * `tankPlacementRefusal`. `null` s'il n'y en a aucun, si le meuble est inconnu, ou si la
+ * pièce n'a aucun bac (modèle du bac sondé).
  */
 export function findTankSpot(
   room: RoomState,
@@ -194,22 +199,33 @@ export function findTankSpot(
   };
   const w = Math.round(dims.width * 100);
   const d = Math.round(dims.depth * 100);
-  let spots: (readonly [number, number])[];
+  // Emplacements candidats : centre (cm) et niveau du support.
+  let spots: (readonly [number, number, number])[];
   if (supportId === null) {
-    spots = candidates(area, w, d).filter(([x, z]) => !hitsObstacle(x, z, w, d, obstacles));
+    spots = candidates(area, w, d)
+      .filter(([x, z]) => !hitsObstacle(x, z, w, d, obstacles))
+      .map(([x, z]) => [x, z, 0] as const);
   } else {
     const support = room.furniture.find((item) => item.id === supportId);
     if (support === undefined) {
       return null;
     }
-    const m = SUPPORT_CATALOG[support.kind];
-    const [sw, sd] = support.quarter % 2 === 0 ? [m.width, m.depth] : [m.depth, m.width];
     const cx = Math.round(support.x * 100);
     const cz = Math.round(support.z * 100);
-    spots = plateauCandidates(sw, sd, w, d).map(([x, z]) => [cx + x, cz + z] as const);
+    spots = SUPPORT_CATALOG[support.kind].levels.flatMap((m, level) => {
+      const [sw, sd] = support.quarter % 2 === 0 ? [m.width, m.depth] : [m.depth, m.width];
+      return plateauCandidates(sw, sd, w, d).map(([x, z]) => [cx + x, cz + z, level] as const);
+    });
   }
-  for (const [x, z] of spots) {
-    const placement: TankPlacement = { supportId, x: x / 100, z: z / 100, quarter: 0 };
+  for (const [x, z, level] of spots) {
+    const placement: TankPlacement = {
+      supportId,
+      x: x / 100,
+      z: z / 100,
+      quarter: 0,
+      // Niveau 0 omis : position identique à celle d'avant les étagères à niveaux.
+      ...(level === 0 ? {} : { level }),
+    };
     if (tankPlacementRefusal(room, probe, placement) === null) {
       return placement;
     }
@@ -304,6 +320,9 @@ function supportLocalBlocks(kind: SupportKind): LocalBlock[] {
     }
     return blocks;
   }
+  if (kind === 'etagere-animalerie') {
+    return rackLocalBlocks(kind, hw, hd);
+  }
   // Étagère basse : plateau, deux montants, une tablette basse et un fond ; ouverte devant.
   return [
     { minX: -hw, maxX: hw, minY: top, maxY: height, minZ: -hd, maxZ: hd, part: 'plateau' },
@@ -313,6 +332,65 @@ function supportLocalBlocks(kind: SupportKind): LocalBlock[] {
     { minX: -hw + 3, maxX: hw - 3, minY: 7, maxY: top, minZ: -hd, maxZ: -hd + 2, part: 'porte' },
     { minX: -hw + 6, maxX: hw - 6, minY: 0, maxY: 4, minZ: -hd + 3, maxZ: hd - 5, part: 'socle' },
   ];
+}
+
+/**
+ * Étagère d'animalerie (ADR 0102) : quatre montants d'angle, une tablette par niveau (dessus
+ * à la hauteur du niveau) sur deux traverses, ouverte devant, derrière et sur les côtés.
+ */
+function rackLocalBlocks(kind: SupportKind, hw: number, hd: number): LocalBlock[] {
+  const { height, levels } = SUPPORT_CATALOG[kind];
+  const post = RACK_POST_CM;
+  const blocks: LocalBlock[] = [];
+  for (const [x0, z0] of [
+    [-hw, -hd],
+    [hw - post, -hd],
+    [-hw, hd - post],
+    [hw - post, hd - post],
+  ] as const) {
+    blocks.push({
+      minX: x0,
+      maxX: x0 + post,
+      minY: 0,
+      // Sous la tablette du haut, qui les couvre (pas de faces confondues).
+      maxY: height - RACK_SHELF_CM,
+      minZ: z0,
+      maxZ: z0 + post,
+      part: 'caisson',
+    });
+  }
+  levels.forEach((level, i) => {
+    const top = level.height;
+    const shelf = top - RACK_SHELF_CM;
+    // Tablette basse et intermédiaires entre les montants ; celle du haut les couvre.
+    const inset = i === levels.length - 1 ? 0 : post;
+    blocks.push({
+      minX: -hw + inset,
+      maxX: hw - inset,
+      minY: shelf,
+      maxY: top,
+      minZ: -hd,
+      maxZ: hd,
+      part: 'plateau',
+    });
+    // Traverses sous la tablette, devant et derrière, d'une teinte plus sombre.
+    for (const [z0, z1] of [
+      [hd - 2, hd],
+      [-hd, -hd + 2],
+    ] as const) {
+      blocks.push({
+        minX: -hw + post,
+        maxX: hw - post,
+        minY: shelf - 3,
+        maxY: shelf,
+        minZ: z0,
+        maxZ: z1,
+        part: 'caisson',
+        shade: 1,
+      });
+    }
+  });
+  return blocks;
 }
 
 /**
@@ -373,7 +451,9 @@ export function roomLayoutBlocks(room: RoomState, cabinetHeight: number): RoomBl
       placement.supportId === null
         ? undefined
         : room.furniture.find((item) => item.id === placement.supportId);
-    const base = floorY + (support === undefined ? 0 : SUPPORT_CATALOG[support.kind].height / 100);
+    const level =
+      support === undefined ? undefined : supportLevel(support.kind, placementLevel(placement));
+    const base = floorY + (level?.height ?? 0) / 100;
     place(
       tankLocalBlocks(tankDimensionsOf(tank)),
       placement.x,

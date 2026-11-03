@@ -22,6 +22,7 @@ import {
   isCentimetric,
   MAX_ROOM_SUPPORTS,
   MAX_ROOM_TANKS,
+  MAX_SUPPORT_LEVELS,
   MAX_TANK_NAME_LENGTH,
   placeOf,
   resolveSelectedTank,
@@ -424,7 +425,17 @@ function parsePlacement(value: unknown, found: string[]): TankPlacement | null {
   if (!isIntegerIn(quarter, 0, 3)) {
     found.push('placement.quarter doit être 0, 1, 2 ou 3');
   }
-  return found.length > before ? null : ({ supportId, x, z, quarter } as TankPlacement);
+  // Niveau du support (ADR 0102) : facultatif, absent dans les documents d'avant l'étagère
+  // d'animalerie ; sa validité pour le meuble est revue avec la disposition.
+  const level = own(value, 'level');
+  if (level !== undefined && !isIntegerIn(level, 0, MAX_SUPPORT_LEVELS - 1)) {
+    found.push(`placement.level doit être un entier de 0 à ${MAX_SUPPORT_LEVELS - 1}`);
+  }
+  if (found.length > before) {
+    return null;
+  }
+  const placement = { supportId, x, z, quarter } as TankPlacement;
+  return level === undefined ? placement : { ...placement, level: level as number };
 }
 
 /** Meubles du schéma 2 : liste d'au plus `MAX_ROOM_SUPPORTS` meubles valides, ou `null`. */

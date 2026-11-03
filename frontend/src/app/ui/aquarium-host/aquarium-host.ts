@@ -173,6 +173,7 @@ import {
   MAX_TANK_NAME_LENGTH,
   removeSupport,
   removeTank,
+  placementLevel,
   renameTank,
   stepRoom,
   SUPPORT_CATALOG,
@@ -183,6 +184,7 @@ import {
   tankResizeRefusal,
   type RoomLayoutRefusal,
   type RoomState,
+  type RoomSupport,
   type RoomTank,
   type SupportKind,
   type TankSizeId,
@@ -433,6 +435,7 @@ export const ROOM_LAYOUT_MESSAGES: Readonly<Record<RoomLayoutRefusal | 'aucune-p
   'hors-support': 'Le bac dépasse du meuble.',
   chevauchement: 'Un meuble ou un bac occupe déjà la place.',
   'support-occupe': 'Un bac repose sur ce meuble.',
+  'trop-haut': 'Le bac est trop haut pour cette place.',
   jardin: 'Le bassin se trouve au jardin.',
   'dernier-bac': 'La pièce garde au moins un bac.',
   'position-invalide': 'Choix invalide.',
@@ -472,6 +475,16 @@ export const SAVE_STORAGE = new InjectionToken<SaveStorage | null>('SAVE_STORAGE
     return win ? browserStorage(win) : null;
   },
 });
+
+/**
+ * Place d'un bac posé sur `support`, pour le catalogue « Bacs et meubles » : nom et rang du
+ * meuble, et le niveau (compté depuis 1) pour un meuble à plusieurs niveaux (ADR 0102).
+ */
+export function supportPlaceLabel(support: RoomSupport, level: number): string {
+  const model = SUPPORT_CATALOG[support.kind];
+  const name = `${model.name} ${support.id + 1}`;
+  return model.levels.length > 1 ? `${name}, niveau ${level + 1}` : name;
+}
 
 /**
  * Effectifs au format de `population=` et de `data-aqfish-population` : `neon:12,guppy:6`.
@@ -2318,7 +2331,7 @@ export class AquariumHost {
             ? null
             : support === undefined
               ? 'sol'
-              : `${SUPPORT_CATALOG[support.kind].name} ${support.id + 1}`,
+              : supportPlaceLabel(support, placementLevel(tank.placement)),
       };
     });
     this.roomCatalog.set({

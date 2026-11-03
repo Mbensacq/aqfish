@@ -76,6 +76,51 @@ test.describe('Pièce de N bacs : bacs et meubles (#305)', () => {
     expect(errors).toEqual([]);
   });
 
+  test('étagère d’animalerie : deux bacs sur deux niveaux, sélectionnés puis retirés (#419)', async ({
+    page,
+  }) => {
+    const errors = await open(page);
+    await openPanel(page);
+    await page.getByRole('slider', { name: 'Vitesse de la simulation' }).fill('0');
+    await showRoom(page);
+    await catalog(page).getByRole('button', { name: 'Étagère d’animalerie' }).click();
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-room-supports', '1');
+    const support = catalog(page).locator('[data-new-tank-support]');
+    await support.selectOption({ label: 'Étagère d’animalerie 1' });
+    await catalog(page).locator('[data-new-tank-size]').selectOption('moyen');
+    // Un bac moyen par niveau : le premier en bas, le second au niveau suivant.
+    for (const tanks of ['2', '3']) {
+      await catalog(page).getByRole('button', { name: 'Ajouter le bac' }).click();
+      await expect(hostEl(page)).toHaveAttribute('data-aqfish-room-tanks', tanks);
+    }
+    await expect(catalog(page).locator('[data-room-tank="1"]')).toContainText(
+      'posé sur Étagère d’animalerie 1, niveau 1',
+    );
+    await expect(catalog(page).locator('[data-room-tank="2"]')).toContainText(
+      'posé sur Étagère d’animalerie 1, niveau 2',
+    );
+    await expect(catalog(page).locator('[data-room-support="0"] button')).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    );
+
+    // Sélectionner chacun des deux bacs de l'étagère, puis revenir au bac de départ.
+    const list = page.locator('[data-section="bacs"]');
+    for (const id of ['1', '2', '0']) {
+      await list.locator(`[data-tank="${id}"] button`).click();
+      await expect(hostEl(page)).toHaveAttribute('data-aqfish-selected-tank', id);
+    }
+
+    // Retirer les deux bacs, puis l'étagère libérée.
+    for (const tanks of ['2', '1']) {
+      await catalog(page).getByRole('button', { name: 'Retirer Bac tropical' }).first().click();
+      await expect(hostEl(page)).toHaveAttribute('data-aqfish-room-tanks', tanks);
+    }
+    await catalog(page).getByRole('button', { name: 'Retirer Étagère d’animalerie 1' }).click();
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-room-supports', '0');
+    expect(errors).toEqual([]);
+  });
+
   test('retirer un bac peuplé demande une confirmation', async ({ page }) => {
     const errors = await open(page);
     await openPanel(page);
