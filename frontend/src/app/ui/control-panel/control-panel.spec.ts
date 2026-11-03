@@ -931,7 +931,7 @@ describe('ControlPanel', () => {
     expect(root().querySelector('section')).toBeNull();
   });
 
-  it('sections extensibles : environnement, simulation, journée, eau, décor, population, bacs, accessibilité, sauvegarde, chacune avec sa légende', async () => {
+  it('sections extensibles : environnement, simulation, journée, eau, décor, accessibilité, population, bacs, sauvegarde, chacune avec sa légende', async () => {
     await openPanel();
     const sections = [...root().querySelectorAll('fieldset')];
     expect(sections.map((s) => s.getAttribute('data-section'))).toEqual([
@@ -940,9 +940,9 @@ describe('ControlPanel', () => {
       'journee',
       'eau',
       'decor',
+      'accessibilite',
       'population',
       'bacs',
-      'accessibilite',
       'sauvegarde',
     ]);
     // Titre de la section : sa légende, ou l'élément qui la nomme (`aria-labelledby`) quand la
@@ -960,9 +960,9 @@ describe('ControlPanel', () => {
       'Journée',
       'Eau',
       'Décor',
+      'Accessibilité',
       'Population',
       'Bacs',
-      'Accessibilité',
       'Sauvegarde',
     ]);
   });
@@ -1476,13 +1476,6 @@ describe('ControlPanel', () => {
       await fixture.whenStable();
       expect(state.reduced()).toBe(false);
       expect(localStorage.getItem(REDUCED_MOTION_STORAGE_KEY)).toBe('normaux');
-    });
-
-    it('case décrite par une aide courte', async () => {
-      await openPanel();
-      const box = checkbox('Réduire les mouvements')!;
-      const help = root().querySelector(`#${box.getAttribute('aria-describedby')}`);
-      expect(help?.textContent).toMatch(/Caméra/);
     });
   });
 

@@ -227,6 +227,13 @@ haut de sa section.
   petit, mode édition fermé) et échoue sans raison apparente. Ne pas toucher `src/` pendant
   un e2e ou des captures (les `*.spec.ts` unitaires, `e2e/` et `docs/` ne déclenchent rien).
   (2026-10-24)
+- **Panneau « Réglages » à 1280 × 720 : une section de trop ouvre une troisième colonne**
+  (cycle 135, #406) : avec `column-count: 2` et une hauteur bornée, une section ajoutée avant
+  « Sauvegarde » (deuxième colonne déjà pleine) a poussé « Sauvegarde » dans une troisième
+  colonne hors du panneau (`scrollWidth` 789 > `clientWidth` 530 : `cadrage-panneaux` échoue).
+  Placée juste après « Décor », sans ligne d'aide, elle tient dans la première colonne
+  (~60 px de marge, Inter comme DejaVu Sans). Mesurer le bas de chaque `fieldset` des deux
+  colonnes (`getBoundingClientRect().bottom`) avant d'ajouter une section.
 - **Panneau « Réglages » à 1280 × 720 : plus de place pour une section** (cycle 71, #207) :
   avant la section « Eau », le contenu laissait ~12 px de marge ; elle en prend ~107. Le
   panneau passe sur deux colonnes (`column-count: 2`, sections `break-inside: avoid`) au-delà

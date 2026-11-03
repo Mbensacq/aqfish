@@ -532,6 +532,17 @@ export interface NewTankRequest {
           </div>
         </fieldset>
 
+        <!-- Accessibilité (#406) : initialisée sur la préférence système, choix mémorisé. Juste
+             après « Décor », dans la première colonne du panneau à 1280 × 720, où il reste de
+             la place (docs/PIEGES.md). -->
+        <fieldset class="control-panel__section" data-section="accessibilite">
+          <legend class="control-panel__legend">Accessibilité</legend>
+          <label class="control-panel__check" data-reduced-motion>
+            <input type="checkbox" [checked]="reducedMotion()" (change)="onReducedMotion($event)" />
+            Réduire les mouvements
+          </label>
+        </fieldset>
+
         @if (roomAvailable() && roomShown()) {
           <!-- Bacs et meubles de la pièce (#305, lot 2b) : ajout à la première place libre,
                retrait (confirmation si le bac est peuplé). Les bacs posés restent figés. Après
@@ -1026,23 +1037,6 @@ export interface NewTankRequest {
               {{ notice.text }}
             </p>
           }
-        </fieldset>
-
-        <!-- Accessibilité (#406) : initialisée sur la préférence système, choix mémorisé. -->
-        <fieldset class="control-panel__section" data-section="accessibilite">
-          <legend class="control-panel__legend">Accessibilité</legend>
-          <label class="control-panel__check" data-reduced-motion>
-            <input
-              type="checkbox"
-              [checked]="reducedMotion()"
-              aria-describedby="panneau-mouvements-aide"
-              (change)="onReducedMotion($event)"
-            />
-            Réduire les mouvements
-          </label>
-          <p class="control-panel__note" id="panneau-mouvements-aide">
-            Caméra sans glissement, eau, plantes et pluie plus calmes.
-          </p>
         </fieldset>
 
         <fieldset class="control-panel__section" data-section="sauvegarde">

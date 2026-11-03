@@ -20,7 +20,8 @@ la simulation ni aux soins, et des captures par défaut identiques à l'octet.
    inconnue, un stockage absent ou qui lève valent « pas de choix ».
 2. **État partagé** `ReducedMotionState` (`ui/reduced-motion`, service racine à signaux) :
    lu par l'hôte de l'aquarium et le mode immersif, réglé par la case « Réduire les
-   mouvements » d'une section « Accessibilité » des réglages. La préférence système est
+   mouvements » d'une section « Accessibilité » des réglages, juste après « Décor » (seule
+   place libre de la première colonne du panneau à 1280 × 720). La préférence système est
    suivie en direct (`change` de la requête média). Écriture refusée : le choix vaut pour la
    session (le signal le garde).
 3. **Rendu seulement**, par une table de facteurs (`FULL_MOTION` à 1, `REDUCED_MOTION`) :
