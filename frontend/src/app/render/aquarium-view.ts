@@ -92,6 +92,7 @@ import {
   type TonePenalties,
 } from './night-shade';
 import { environmentTonePenalties, PalettePass } from './palette-pass';
+import { DirectPass } from './direct-pass';
 import { PIXEL_SIZE, type Size } from './pixel-art';
 import { WaterLightLayer } from './water-light';
 import {
@@ -191,6 +192,8 @@ export class AquariumView {
   private readonly controls: OrbitControls;
   private readonly canvas: HTMLCanvasElement;
   private readonly pixelPass: PalettePass;
+  /** Cible pleine résolution du mode sans filtre (#40, ADR 0101). */
+  private readonly directPass = new DirectPass();
   /**
    * Une couche par apparence de chaque espèce de `SPECIES` (`speciesVariants`), dans l'ordre
    * de déclaration (aucun champ par espèce).
@@ -1368,8 +1371,12 @@ export class AquariumView {
       // Sans filtre, une bulle garde la taille d'un pixel de scène du mode pixel art.
       this.bubbleLayer.setPointScale(PIXEL_SIZE * this.pixelRatio);
       this.foodLayer.setPointScale(PIXEL_SIZE * this.pixelRatio);
-      this.renderer.setRenderTarget(null);
+      // Translucides mélangés en linéaire dans une cible, comme en pixel art (#40).
+      this.directPass.setSize(this.width, this.height, this.pixelRatio);
+      this.renderer.setRenderTarget(this.directPass.target);
       this.renderer.render(this.world.scene, this.camera);
+      this.renderer.setRenderTarget(null);
+      this.renderer.render(this.directPass.scene, this.directPass.camera);
       return true;
     }
     this.decorLayer.setResolution(this.targetSize.width, this.targetSize.height);
@@ -1777,6 +1784,7 @@ export class AquariumView {
     }
     this.world.dispose();
     this.pixelPass.dispose();
+    this.directPass.dispose();
     this.renderer.dispose();
   }
 

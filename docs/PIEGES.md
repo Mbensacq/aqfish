@@ -6,6 +6,14 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Captures faussées par un `ng serve` resté d'une autre campagne** (cycle 139, #40) : hors
+  CI, Playwright réutilise un serveur déjà ouvert sur le port (`reuseExistingServer`). Un
+  `ng serve` resté d'un essai précédent (compilation alors en erreur) a servi la première
+  capture (`top.png`) avec le voile d'erreur de Vite par-dessus : fausse différence avec
+  `main`. Pour comparer `main` et la branche, un worktree de `main` (lien vers
+  `node_modules`), un port par côté (`E2E_PORT=4320`, `4330`) et un `CAPTURE_DIR` par côté ;
+  relever les PID des serveurs restés (`ps aux | grep "[n]g serve"`) et les arrêter avant.
+  (2026-11-03)
 - **`pkill -f <motif>` tue aussi le shell de l'outil Bash** (cycle 138) : la ligne de
   commande du shell contient le motif (`ng `, `playwright test`…), il se tue lui-même (sortie
   144) et la suite de la commande n'est pas exécutée. Lancer les longues commandes avec
@@ -917,6 +925,13 @@ haut de sa section.
 
 ## Rendu
 
+- **`filtre=aucun` donne désormais l'entrée de la passe palette, en pleine résolution**
+  (cycle 139, #40, ADR 0101) : la scène passe par une cible sRGB 8 bits comme en pixel art,
+  donc les translucides s'y mélangent en linéaire. Une couleur lue sans filtre est celle que
+  la passe reçoit avant la réduction à la palette, aux pixels près (pleine résolution : bords,
+  points et couches dont la taille suit la résolution diffèrent). Les entrées plus bas qui
+  disent le contraire (« `filtre=aucun` ne donne pas l'entrée de la passe ») datent d'avant ;
+  pour un pixel précis, le court-circuit de la passe reste la mesure exacte. (2026-11-03)
 - **Les verts d'eau se confondent avec les reflets de la surface du récif** (cycle 134, #403) :
   un poisson `eauClaire` / `eauTresClaire` (#5fbfa3, #a8e6cf) nageant haut se lit en capture
   comme les taches vertes des reflets. Pour un poisson vert au récif, prendre

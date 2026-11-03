@@ -548,12 +548,37 @@ describe('AquariumView (filtre de rendu)', () => {
     expect(view.filter).toBe('pixel');
   });
 
-  it('filtre aucun : la scène est rendue directement à l’écran, sans passe palette', () => {
+  it('filtre aucun : scène rendue dans une cible pleine résolution, puis recopiée sans palette (#40)', () => {
     view = createView('aucun');
     view.resize(1280, 721);
     renderer.calls.length = 0;
     expect(view.renderFrame()).toBe(true);
-    expect(renderer.calls).toEqual(['cible écran', 'render PerspectiveCamera']);
+    // Translucides mélangés en linéaire dans la cible, comme en pixel art (ADR 0101).
+    expect(renderer.calls).toEqual([
+      'cible 1280x721',
+      'render PerspectiveCamera',
+      'cible écran',
+      'render OrthographicCamera',
+    ]);
+  });
+
+  it('filtre aucun : la cible suit le tampon d’affichage (pixels physiques)', () => {
+    view = new AquariumView({
+      canvas: document.createElement('canvas'),
+      rendererFactory: () => renderer,
+      pixelRatio: 1.5,
+      preset: 'three-quarter',
+      interactive: false,
+      filter: 'aucun',
+    });
+    view.resize(801, 601);
+    renderer.calls.length = 0;
+    view.renderFrame();
+    expect(renderer.calls[0]).toBe('cible 1201x901');
+    view.resize(400, 300);
+    renderer.calls.length = 0;
+    view.renderFrame();
+    expect(renderer.calls[0]).toBe('cible 600x450');
   });
 
   it('filtre aucun : rapport d’aspect du canvas (pleine résolution), pas de la cible', () => {
@@ -573,7 +598,12 @@ describe('AquariumView (filtre de rendu)', () => {
     expect(view.camera.aspect).toBeCloseTo(1280 / 721, 10);
     renderer.calls.length = 0;
     view.renderFrame();
-    expect(renderer.calls).toEqual(['cible écran', 'render PerspectiveCamera']);
+    expect(renderer.calls).toEqual([
+      'cible 1280x721',
+      'render PerspectiveCamera',
+      'cible écran',
+      'render OrthographicCamera',
+    ]);
 
     expect(view.setFilter('pixel')).toBe(true);
     expect(view.camera.aspect).toBeCloseTo(427 / 241, 10);
