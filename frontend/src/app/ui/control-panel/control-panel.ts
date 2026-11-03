@@ -579,7 +579,12 @@ export interface NewTankRequest {
           </div>
           @if (!soundAvailable()) {
             <p class="control-panel__message" id="panneau-son-indisponible">
-              Sons indisponibles : ce navigateur ne prend pas en charge Web Audio.
+              @if (soundRefused()) {
+                Sons indisponibles : le navigateur a refusé de démarrer l'audio. Recharger la page
+                pour réessayer.
+              } @else {
+                Sons indisponibles : ce navigateur ne prend pas en charge Web Audio.
+              }
             </p>
           }
         </fieldset>
@@ -1240,6 +1245,8 @@ export class ControlPanel {
   readonly soundEnabled = this.sound.enabled;
   /** Web Audio utilisable ; sinon case et curseur désactivés, avec une explication. */
   readonly soundAvailable = this.sound.available;
+  /** Web Audio présent mais création du contexte refusée (#413) : autre explication. */
+  readonly soundRefused = this.sound.refused;
   /** Volume en pour cent, pour le curseur. */
   readonly soundVolume = computed(() => Math.round(this.sound.volume() * 100));
 
@@ -1654,7 +1661,11 @@ export class ControlPanel {
 
   /** Case « Sons d'ambiance » (#411) : le `change` est un geste, le contexte audio peut naître. */
   protected onAmbientSound(event: Event): void {
-    this.sound.setEnabled((event.target as HTMLInputElement).checked);
+    const input = event.target as HTMLInputElement;
+    this.sound.setEnabled(input.checked);
+    // Démarrage refusé (#413) : `enabled` repasse à faux dans le même geste, sans changer de
+    // valeur pour la liaison `[checked]` ; la case est donc recalée à la main.
+    input.checked = this.sound.enabled();
   }
 
   /** Curseur du volume (#411), en pour cent ; sans Web Audio, il revient à sa valeur. */

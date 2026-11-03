@@ -2,6 +2,7 @@ import type {
   AudioContextLike,
   BufferLike,
   BufferSourceLike,
+  CompressorLike,
   FilterLike,
   GainLike,
   NodeLike,
@@ -80,6 +81,17 @@ class FakeSource extends FakeNode {
   }
 }
 
+export class FakeCompressor extends FakeNode implements CompressorLike {
+  readonly threshold = new FakeParam();
+  readonly knee = new FakeParam();
+  readonly ratio = new FakeParam();
+  readonly attack = new FakeParam();
+  readonly release = new FakeParam();
+  constructor() {
+    super('compressor');
+  }
+}
+
 export class FakeBufferSource extends FakeSource implements BufferSourceLike {
   buffer: unknown = null;
   loop = false;
@@ -120,6 +132,7 @@ export class FakeAudioContext implements AudioContextLike {
   readonly filters: FakeFilter[] = [];
   readonly bufferSources: FakeBufferSource[] = [];
   readonly oscillators: FakeOscillator[] = [];
+  readonly compressors: FakeCompressor[] = [];
   resumed = 0;
   closed = 0;
   createGain(): FakeGain {
@@ -140,6 +153,11 @@ export class FakeAudioContext implements AudioContextLike {
   createOscillator(): FakeOscillator {
     const node = new FakeOscillator();
     this.oscillators.push(node);
+    return node;
+  }
+  createDynamicsCompressor(): FakeCompressor {
+    const node = new FakeCompressor();
+    this.compressors.push(node);
     return node;
   }
   createBuffer(_channels: number, length: number): FakeBuffer {

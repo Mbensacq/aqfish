@@ -105,6 +105,32 @@ test.describe('sons d’ambiance', () => {
     expect(errors).toEqual([]);
   });
 
+  test('démarrage refusé (#413) : message dédié, case décochée à l’écran, case et curseur désactivés', async ({
+    page,
+  }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    await page.addInitScript(() => {
+      class Refused {
+        constructor() {
+          throw new DOMException('refusé', 'NotAllowedError');
+        }
+      }
+      window.AudioContext = Refused as unknown as typeof AudioContext;
+    });
+    await page.goto('/?vitesse=0');
+    await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+    await settings(page).click();
+    await expect(soundBox(page)).toBeEnabled();
+    await soundBox(page).click();
+    const message = page.locator('#panneau-son-indisponible');
+    await expect(message).toContainText("le navigateur a refusé de démarrer l'audio");
+    await expect(message).not.toContainText('ne prend pas en charge');
+    await expect(soundBox(page)).not.toBeChecked();
+    await expect(soundBox(page)).toBeDisabled();
+    expect(errors).toEqual([]);
+  });
+
   test('capture : rien ne démarre, même avec un choix « actif » mémorisé', async ({ page }) => {
     const errors = await openScene(page, '?capture=1&camera=front', 'actif:60');
     await page.mouse.click(400, 300);

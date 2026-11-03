@@ -1500,7 +1500,8 @@ describe('ControlPanel', () => {
       expect(box.getAttribute('aria-disabled')).toBe('true');
       expect(slider().getAttribute('aria-disabled')).toBe('true');
       const note = section().querySelector('#panneau-son-indisponible');
-      expect(note?.textContent).toContain('Web Audio');
+      expect(note?.textContent).toContain('ne prend pas en charge Web Audio');
+      expect(note?.textContent).not.toContain('refusé');
       expect(box.getAttribute('aria-describedby')).toBe('panneau-son-indisponible');
       expect(slider().getAttribute('aria-describedby')).toBe('panneau-son-indisponible');
       box.click();
@@ -1512,6 +1513,41 @@ describe('ControlPanel', () => {
       expect(slider().value).toBe('30');
       expect(TestBed.inject(AmbientSoundState).volume()).toBe(0.3);
       expect(localStorage.getItem(AMBIENT_SOUND_STORAGE_KEY)).toBeNull();
+    });
+
+    it('création du contexte refusée (#413) : explication propre à ce cas, liée, case inerte', async () => {
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        imports: [TestHost],
+        providers: [
+          {
+            provide: AUDIO_CONTEXT_FACTORY,
+            useValue: () => {
+              throw new Error('NotAllowedError');
+            },
+          },
+          { provide: AMBIENT_SOUND_TIMER, useValue: new FakeTimer() },
+        ],
+      });
+      fixture = TestBed.createComponent(TestHost);
+      await fixture.whenStable();
+      await openPanel();
+      const box = checkbox("Sons d'ambiance")!;
+      expect(box.hasAttribute('aria-disabled')).toBe(false);
+      expect(section().querySelector('#panneau-son-indisponible')).toBeNull();
+      box.click();
+      await fixture.whenStable();
+      expect(box.checked).toBe(false);
+      expect(box.getAttribute('aria-disabled')).toBe('true');
+      expect(slider().getAttribute('aria-disabled')).toBe('true');
+      const note = section().querySelector('#panneau-son-indisponible');
+      expect(note?.textContent).toContain('a refusé de démarrer l');
+      expect(note?.textContent).toContain('Recharger la page');
+      expect(note?.textContent).not.toContain('ne prend pas en charge');
+      expect(box.getAttribute('aria-describedby')).toBe('panneau-son-indisponible');
+      box.click();
+      await fixture.whenStable();
+      expect(box.checked).toBe(false);
     });
 
     it('avec Web Audio : décochée, 30 % ; cocher crée un contexte, le curseur règle le volume', async () => {

@@ -191,6 +191,45 @@ export function ambientLevels(scene: AmbientScene, volume: unknown): AmbientLeve
   };
 }
 
+/**
+ * Profondeur du lent va-et-vient de la filtration (LFO), en part du niveau « eau » : la couche
+ * oscille entre `water × (1 − 0,35)` et `water × (1 + 0,35)`.
+ */
+export const WATER_LFO_DEPTH = 0.35;
+
+/** Crête maximale de la somme des couches avant le limiteur (pleine échelle : 1). */
+export const MAX_PEAK = 1;
+
+/**
+ * Crête de la somme des couches pour des niveaux donnés : eau au sommet du LFO, plus un
+ * « blop » à son maximum (enveloppe à 1 ; deux bulles ne se chevauchent jamais, voir
+ * `MIN_BUBBLE_DELAY`), plus la pluie. Les bruits filtrés sont comptés à leur amplitude
+ * nominale : le limiteur du moteur rattrape le reste.
+ */
+export function peakLevel(levels: AmbientLevels): number {
+  return levels.water * (1 + WATER_LFO_DEPTH) + levels.bubbles + levels.rain;
+}
+
+/**
+ * Marge de niveau (#413) : si la crête de la somme des couches dépasse `MAX_PEAK` (volume
+ * fort, pluie et bulleur ensemble), toutes les couches sont réduites dans la même proportion
+ * pour la ramener à `MAX_PEAK` ; le mélange (rapport entre couches) est conservé. Sinon,
+ * niveaux rendus tels quels (même objet). Le rythme des bulles n'est jamais touché.
+ */
+export function limitPeak(levels: AmbientLevels): AmbientLevels {
+  const peak = peakLevel(levels);
+  if (!(peak > MAX_PEAK)) {
+    return levels;
+  }
+  const scale = MAX_PEAK / peak;
+  return {
+    water: levels.water * scale,
+    bubbles: levels.bubbles * scale,
+    bubbleRate: levels.bubbleRate,
+    rain: levels.rain * scale,
+  };
+}
+
 /** Délai minimal entre deux bulles (s) : deux « blop » ne se chevauchent pas. */
 export const MIN_BUBBLE_DELAY = 0.12;
 

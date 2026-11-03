@@ -1,4 +1,4 @@
-import { AmbientSoundEngine, FADE_SECONDS } from './ambient-sound-engine';
+import { AmbientSoundEngine, FADE_SECONDS, LIMITER } from './ambient-sound-engine';
 import { FakeAudioContext, FakeGain, FakeTimer } from './fake-audio-context';
 import { SILENT_LEVELS, type AmbientLevels } from '../../core/ambient-sound/ambient-sound';
 
@@ -11,11 +11,14 @@ function setup(): { ctx: FakeAudioContext; timer: FakeTimer; engine: AmbientSoun
 }
 
 describe('AmbientSoundEngine (#411)', () => {
-  it('graphe : gain général vers la sortie, eau en passe-bas, pluie en passe-haut', () => {
+  it('graphe : gain général vers la sortie par le limiteur, eau en passe-bas, pluie en passe-haut', () => {
     const { ctx } = setup();
     const master = ctx.gains[0];
     expect(ctx.destination.outputs).toEqual([]);
-    expect(master.outputs).toEqual([ctx.destination]);
+    expect(ctx.compressors).toHaveLength(1);
+    const [limiter] = ctx.compressors;
+    expect(master.outputs).toEqual([limiter]);
+    expect(limiter.outputs).toEqual([ctx.destination]);
     expect(ctx.filters.map((filter) => filter.type)).toEqual(['lowpass', 'highpass']);
     expect(ctx.filters[0].frequency.value).toBeLessThan(ctx.filters[1].frequency.value);
     // Deux sources de bruit en boucle, sur un même tampon, à deux endroits différents.
@@ -23,6 +26,17 @@ describe('AmbientSoundEngine (#411)', () => {
     expect(ctx.bufferSources.every((source) => source.loop && source.started === 0)).toBe(true);
     expect(ctx.bufferSources[0].buffer).toBe(ctx.bufferSources[1].buffer);
     expect(ctx.bufferSources[0].offset).not.toBe(ctx.bufferSources[1].offset);
+  });
+
+  it('limiteur doux (#413) : seuil -3 dB, ratio modéré, attaque brève', () => {
+    const { ctx } = setup();
+    const [limiter] = ctx.compressors;
+    expect(limiter.threshold.value).toBe(-3);
+    expect(limiter.knee.value).toBe(LIMITER.knee);
+    expect(limiter.ratio.value).toBe(4);
+    expect(limiter.attack.value).toBeLessThanOrEqual(0.01);
+    expect(limiter.release.value).toBe(LIMITER.release);
+    expect(Object.isFrozen(LIMITER)).toBe(true);
   });
 
   it('démarre muet : toutes les couches à 0, fondu d’entrée du gain général', () => {
@@ -96,6 +110,7 @@ describe('AmbientSoundEngine (#411)', () => {
     expect(ctx.bufferSources.every((source) => source.stopped !== null)).toBe(true);
     expect(ctx.oscillators[0].stopped).not.toBeNull();
     expect(ctx.gains[0].disconnected).toBe(true);
+    expect(ctx.compressors[0].disconnected).toBe(true);
     // Une fois fermé, plus rien ne bouge.
     engine.setLevels(LEVELS);
     expect(engine.current).toBe(SILENT_LEVELS);

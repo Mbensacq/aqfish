@@ -4,6 +4,8 @@ import {
   AMBIENT_SOUND_STORAGE_KEY,
   ambientLevels,
   DEFAULT_AMBIENT_VOLUME,
+  MAX_PEAK,
+  peakLevel,
   SILENT_LEVELS,
   type AmbientScene,
 } from '../../core/ambient-sound/ambient-sound';
@@ -206,6 +208,7 @@ describe('AmbientSoundState (#411)', () => {
     expect(state.enabled()).toBe(false);
     expect(() => state.setEnabled(true)).not.toThrow();
     expect(state.enabled()).toBe(false);
+    expect(state.refused()).toBe(false);
     expect(() => document.dispatchEvent(new Event('pointerdown'))).not.toThrow();
   });
 
@@ -215,8 +218,24 @@ describe('AmbientSoundState (#411)', () => {
     });
     expect(() => state.setEnabled(true)).not.toThrow();
     expect(state.available()).toBe(false);
+    expect(state.refused()).toBe(true);
     expect(state.enabled()).toBe(false);
     expect(state.playing()).toBe(false);
+  });
+
+  it('marge de niveau (#413) : volume 100 %, pluie et bulleur, crête ramenée à MAX_PEAK', () => {
+    const state = setup();
+    expect(state.refused()).toBe(false);
+    const loud: AmbientScene = { ...SCENE, environment: 'recif', bubbler: true };
+    state.setScene(loud);
+    state.setEnabled(true);
+    state.setVolume(1);
+    expect(peakLevel(ambientLevels(loud, 1))).toBeGreaterThan(MAX_PEAK);
+    expect(peakLevel(state.levels())).toBeCloseTo(MAX_PEAK, 12);
+    const [water, rain, bubbles] = layerTargets(contexts[0]);
+    expect(water).toBeCloseTo(state.levels().water, 12);
+    expect(rain).toBeCloseTo(state.levels().rain, 12);
+    expect(bubbles).toBeCloseTo(state.levels().bubbles, 12);
   });
 
   it('contexte créé mais moteur impossible à monter : contexte refermé', () => {
