@@ -5135,10 +5135,10 @@
           "note": "PR #420 : étagère d'animalerie à 3 niveaux (#419), CI verte ; partiel : bacs posés non sélectionnables (ADR 0075), e2e adapté ; 116 captures identiques à l'octet, 2 nouvelles ; pied d'attribution réajouté par l'environnement à la PR"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-03T21:36:37.683Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-03T22:28:54.476Z",
+          "note": "Verdict RÉSERVES, 0 bug, captures publiées (123 ; 121 identiques à c139, 2 nouvelles) ; cadrage three-quarter-piece-animalerie ne montre pas l'étagère pleine ; e2e piece-bacs 3/3, CI verte"
         }
       },
       "metriques": {}
