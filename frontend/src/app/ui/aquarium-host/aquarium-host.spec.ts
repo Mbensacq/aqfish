@@ -38,6 +38,9 @@ import {
   BRAISE,
   MOLLY,
   MIEL,
+  CHROMIS,
+  GOBIE,
+  GRAMMA,
 } from '../../sim/species';
 import { expiryAge, FOOD_PER_DROP } from '../../sim/food';
 import { capTotalPopulation, setPopulation } from '../../sim/population';
@@ -843,6 +846,9 @@ describe('AquariumHost', () => {
         braise: 0,
         molly: 0,
         miel: 0,
+        chromis: 0,
+        gobie: 0,
+        gramma: 0,
       });
       expect(element().getAttribute(POPULATION_ATTRIBUTE)).toBe(`koi:${KOI.defaultPopulation}`);
       expect(host().activePreset()).toBe('top');
@@ -2013,9 +2019,12 @@ describe('AquariumHost', () => {
         braise: 0,
         molly: 0,
         miel: 0,
+        chromis: 0,
+        gobie: 0,
+        gramma: 0,
       };
       expect(formatPopulation(counts)).toBe(
-        'neon:12,guppy:0,corydora:6,koi:2,axolotl:1,grenouille:3,triton:2,clown:0,chirurgien:0,rasbora:0,tetra:0,kuhli:0,gourami:0,platy:0,danio:0,ancistrus:0,otocinclus:0,braise:0,molly:0,miel:0',
+        'neon:12,guppy:0,corydora:6,koi:2,axolotl:1,grenouille:3,triton:2,clown:0,chirurgien:0,rasbora:0,tetra:0,kuhli:0,gourami:0,platy:0,danio:0,ancistrus:0,otocinclus:0,braise:0,molly:0,miel:0,chromis:0,gobie:0,gramma:0',
       );
       // Espèces d'un environnement (#88) : seulement elles, dans leur ordre.
       expect(formatPopulation(counts, ['koi'])).toBe('koi:2');
@@ -2101,6 +2110,9 @@ describe('AquariumHost', () => {
         braise: 0,
         molly: 0,
         miel: 0,
+        chromis: 0,
+        gobie: 0,
+        gramma: 0,
       });
       expect(host().populationMax()).toEqual({
         neon: NEON.maxPopulation,
@@ -2123,6 +2135,9 @@ describe('AquariumHost', () => {
         braise: BRAISE.maxPopulation,
         molly: MOLLY.maxPopulation,
         miel: MIEL.maxPopulation,
+        chromis: CHROMIS.maxPopulation,
+        gobie: GOBIE.maxPopulation,
+        gramma: GRAMMA.maxPopulation,
       });
     });
 

@@ -188,12 +188,14 @@ describe('eau douce, lot 1 (#238) : bac tropical et compatibilité', () => {
     const order = TROPICAL_TANK.species;
     const counts = { neon: 12, guppy: 6, corydora: 6, rasbora: 8, tetra: 8, kuhli: 6, gourami: 2 };
     expect(mixWarnings(order, counts)).toEqual([]);
-    // Gourami miel territorial depuis le lot 3 (#391, ADR 0095).
+    // Gourami miel territorial depuis le lot 3 (#391, ADR 0095), gramma royal depuis le lot 2
+    // du récif (#403, ADR 0097).
     expect(wikiCare('gourami').cohabitation.avoid.map((e) => e.species)).toEqual([
       'koi',
       'axolotl',
       'clown',
       'miel',
+      'gramma',
     ]);
   });
 

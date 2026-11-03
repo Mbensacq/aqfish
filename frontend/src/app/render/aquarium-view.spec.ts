@@ -151,6 +151,9 @@ describe('AquariumView (pipeline pixel art)', () => {
       'poissons-braise',
       'poissons-molly',
       'poissons-miel',
+      'poissons-chromis',
+      'poissons-gobie',
+      'poissons-gramma',
     ]);
   });
 

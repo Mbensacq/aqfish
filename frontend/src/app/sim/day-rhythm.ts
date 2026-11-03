@@ -39,6 +39,9 @@ export const DIURNAL: Readonly<Record<SpeciesId, boolean>> = {
   braise: true,
   molly: true,
   miel: true,
+  chromis: true,
+  gobie: true,
+  gramma: true,
 };
 
 /** Ralentissement en pleine nuit : le déplacement y garde `1 − NIGHT_SLOWDOWN` de sa longueur. */

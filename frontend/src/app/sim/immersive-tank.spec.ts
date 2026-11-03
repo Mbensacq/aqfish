@@ -163,7 +163,12 @@ describe('immersive-tank', () => {
       // Pas de poisson marin en eau douce, ni l'inverse.
       expect(immersivePopulation('tropical').some((e) => livesIn('recif', e.species))).toBe(false);
       expect(immersivePopulation('recif').some((e) => livesIn('tropical', e.species))).toBe(false);
-      expect(immersivePopulation('recif').map((e) => e.species)).toEqual(['clown', 'chirurgien']);
+      // Trois plus petites espèces nageuses du récif depuis son lot 2 (#403, ADR 0097).
+      expect(immersivePopulation('recif').map((e) => e.species)).toEqual([
+        'chromis',
+        'clown',
+        'gramma',
+      ]);
     });
 
     it('refuse un environnement sans bac immersif', () => {

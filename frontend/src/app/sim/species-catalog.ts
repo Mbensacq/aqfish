@@ -54,6 +54,13 @@ export const SPECIES_LABELS: Readonly<Record<SpeciesId, SpeciesLabels>> = {
   braise: { singular: 'tétra braise', plural: 'tétras braise', feminine: false },
   molly: { singular: 'molly', plural: 'mollys', feminine: false },
   miel: { singular: 'gourami miel', plural: 'gouramis miel', feminine: false },
+  chromis: { singular: 'chromis vert', plural: 'chromis verts', feminine: false },
+  gobie: {
+    singular: 'gobie à crevette jaune',
+    plural: 'gobies à crevette jaunes',
+    feminine: false,
+  },
+  gramma: { singular: 'gramma royal', plural: 'grammas royaux', feminine: false },
 };
 
 /** Entrée du catalogue d'un environnement. */

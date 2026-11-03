@@ -102,6 +102,10 @@ export const SPECIES_PH: Readonly<Record<SpeciesId, SpeciesPh>> = {
   braise: { tolerated: { min: 5, max: 7.2 }, ideal: { min: 5.5, max: 7 } },
   molly: { tolerated: { min: 6.8, max: 8.5 }, ideal: { min: 7.2, max: 8.2 } },
   miel: { tolerated: { min: 6, max: 7.5 }, ideal: { min: 6.5, max: 7.2 } },
+  // approximations de jeu : eau de mer, mêmes plages que le chirurgien (ADR 0097).
+  chromis: { tolerated: { min: 7.8, max: 8.6 }, ideal: { min: 8.1, max: 8.4 } },
+  gobie: { tolerated: { min: 7.8, max: 8.6 }, ideal: { min: 8.1, max: 8.4 } },
+  gramma: { tolerated: { min: 7.8, max: 8.6 }, ideal: { min: 8.1, max: 8.4 } },
 };
 
 /** pH de l'eau neuve de l'environnement `environment`. */

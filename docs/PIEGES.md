@@ -703,6 +703,12 @@ haut de sa section.
 
 ## Simulation
 
+- **Une espèce marine ajoutée change aussi le mode immersif du récif** (cycle 134, #403) : le
+  bac immersif du récif prend ses trois plus petites espèces nageuses (`smallSwimmers`), et il
+  n'en avait que deux. Toute espèce du récif, même plus grande que les autres, entre donc dans
+  sa population ; une plus petite que le chirurgien (0,11) l'en chasse. Mettre à jour
+  `immersive-tank.spec.ts` et `recif-lot2.spec.ts`, et le dire dans l'ADR. (2026-11-03)
+
 - **Plafonds d'ajout ≠ bornes de validation** (cycle 130, #392, ADR 0096) : `ROOM_TANK_CAP`
   (16) et `ROOM_ANIMAL_CAP` (240) ne refusent que les **ajouts** ; `MAX_ROOM_TANKS` (32) et
   `MAX_TOTAL_FISH` (60 par bac) restent les bornes de lecture d'une sauvegarde. Baisser une
@@ -855,6 +861,12 @@ haut de sa section.
   n'interfère (`swimmer.spec.ts`). (2026-10-18)
 
 ## Rendu
+
+- **Les verts d'eau se confondent avec les reflets de la surface du récif** (cycle 134, #403) :
+  un poisson `eauClaire` / `eauTresClaire` (#5fbfa3, #a8e6cf) nageant haut se lit en capture
+  comme les taches vertes des reflets. Pour un poisson vert au récif, prendre
+  `vegetationLumineuse` / `grenouilleVert` et le garder sous 75 % de la hauteur d'eau
+  (chromis). Recadrer et agrandir la capture (`PIL`, `Image.NEAREST`) pour en juger. (2026-11-03)
 
 - **Points blancs invisibles sur un voxel déjà pâle** (cycle 126, #370) : le blanc cassé des
   points (`koiBlanc`) est la couleur exacte du ventre du néon ; tirés au hasard sur tous les

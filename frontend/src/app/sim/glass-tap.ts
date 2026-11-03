@@ -43,6 +43,11 @@ export const TAP_REACTIONS: Readonly<Record<SpeciesId, TapReaction | null>> = {
   molly: 'curiosite',
   // Gourami miel : lent et vite intimidé (Seriously Fish), d'où la fuite (approximation de jeu).
   miel: 'fuite',
+  chromis: 'fuite',
+  // Gobie : rentre dans son terrier au moindre danger ; gramma : se réfugie dans les
+  // anfractuosités (FishBase) ; les deux fuient (approximation de jeu).
+  gobie: 'fuite',
+  gramma: 'fuite',
 };
 
 /** Portée du tapotement, en mètres simulés, autour du point touché sur la vitre. */
