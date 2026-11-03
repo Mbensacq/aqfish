@@ -1,8 +1,8 @@
-# Captures du cycle 139 (QA)
+# c140
 
-- Branche : cycle/c139-sans-filtre-lineaire
-- PR : #417 (issue #40)
-- Commit mesuré : 30f8fa3 (les commits suivants n'ajoutent qu'un test e2e)
-- Graine : celle du harnais (captures.spec.ts), temps figé par le harnais
-- Durée : 121 tests, 15,2 min (rendu logiciel local)
-- Constat : 122 images ; 117 identiques à captures/latest (c138) à l'octet, 5 « sans-filtre » changées (voulu).
+- Branche : cycle/c140-etagere-animalerie
+- PR : #420
+- Commit : 3e66244600f0993d885841dfac1298a6da696b6d
+- Graine : celle de captures.spec.ts (par défaut)
+- Temps : 123 captures en 12,1 min (1 worker, rendu logiciel)
+- Comparaison : 121 identiques à octet près à c139/latest, 2 nouvelles (three-quarter-piece-animalerie, libre-piece-animalerie)
