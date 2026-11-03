@@ -5091,6 +5091,12 @@
           "debut": "2026-11-03T14:55:37.200Z",
           "fin": "2026-11-03T14:56:47.732Z",
           "note": "Rétro sprint 20 (#415), PR roadmap #416 ; travail de Dev : #40 (dette, S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-03T14:57:15.402Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
