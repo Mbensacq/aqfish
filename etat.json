@@ -4968,6 +4968,24 @@
         }
       },
       "metriques": {}
+    },
+    "136": {
+      "numero": 136,
+      "date": "2026-11-03",
+      "debut": "2026-11-03T05:31:04.915Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-03T05:31:04.915Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
