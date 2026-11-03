@@ -30,7 +30,10 @@ export type SpeciesId =
   | 'otocinclus'
   | 'braise'
   | 'molly'
-  | 'miel';
+  | 'miel'
+  | 'chromis'
+  | 'gobie'
+  | 'gramma';
 
 /**
  * Silhouette voxel d'une apparence : le rendu associe à chaque identifiant un gabarit de
@@ -58,6 +61,9 @@ export const SILHOUETTE_IDS = [
   'braise',
   'molly',
   'miel',
+  'chromis',
+  'gobie',
+  'gramma',
 ] as const;
 export type SilhouetteId = (typeof SILHOUETTE_IDS)[number];
 
@@ -1550,6 +1556,167 @@ export const MIEL: SpeciesDefinition = {
   },
 };
 
+/*
+ * Récif, lot 2 (issue #403, ADR 0097) : chromis vert, gobie à crevette jaune, gramma royal.
+ * Proposés au récif sans y être peuplés d'office ; couleurs de la palette commune ou tons du
+ * récif ; tailles du modèle, vitesses, virages, banc, profondeur et alimentation :
+ * **approximations de jeu** ; valeurs réelles et sources : `sim/species-sheet.ts`.
+ */
+
+/**
+ * Chromis vert (Chromis viridis) : petit poisson vert pomme et bleu clair, en bancs au-dessus
+ * des coraux branchus (FishBase : grandes agrégations au-dessus des Acropora).
+ */
+export const CHROMIS: SpeciesDefinition = {
+  id: 'chromis',
+  name: 'Chromis vert',
+  scientificName: 'Chromis viridis',
+  // Le plus petit modèle du récif (10 cm en vrai, agrandi pour la lisibilité comme le clown) :
+  // premier du mode immersif du récif (ADR 0097).
+  bodyLength: 0.085,
+  cruiseSpeed: 0.055,
+  minSpeed: 0.025,
+  maxSpeed: 0.12,
+  wanderTurnRate: 1.1,
+  avoidTurnRate: 2.8,
+  maxPitch: 0.35,
+  wallMargin: 0.045,
+  tailBeatFrequency: 2.6,
+  defaultPopulation: 7,
+  maxPopulation: 15,
+  schooling: {
+    neighborRadius: 0.3,
+    separationRadius: 0.07,
+    separationWeight: 1.2,
+    alignmentWeight: 0.8,
+    cohesionWeight: 0.8,
+    turnRate: 1.5,
+    minDistance: 0.035,
+  },
+  silhouette: 'chromis',
+  // Vert pomme et vert grenouille, et non les verts d'eau (`eauClaire`, `eauTresClaire`) des
+  // reflets de la surface, qui le confondaient avec eux en capture.
+  colors: {
+    stripe: '#8fd16a',
+    accent: '#a8e6cf',
+    back: '#7bc950',
+    belly: '#a8e6cf',
+    fin: '#8fd16a',
+    eye: '#1c1c22',
+  },
+  // Au-dessus des coraux, sous les reflets de la surface : entre 45 % et 75 % de la hauteur
+  // d'eau.
+  depth: {
+    minHeightRatio: 0.45,
+    maxHeightRatio: 0.75,
+    floorZone: 0.07, // portée commune des parois (`MAX_FLOOR_ZONE`)
+    ascentRate: 0,
+    ascentDuration: 1,
+  },
+  feeding: {
+    hungerRate: 1 / 160,
+    perceptionRadius: 0.3,
+    turnRate: 2.6,
+    minHeightRatio: 0.3,
+    maxHeightRatio: 1,
+  },
+};
+
+/**
+ * Gobie à crevette jaune (Cryptocentrus cinctus), forme jaune : corps long et cylindrique
+ * jaune semé de points bleus, posé sur le sable, près de son terrier (FishBase : zones
+ * sableuses des lagons, terrier partagé avec des crevettes Alpheidae, non modélisées).
+ */
+export const GOBIE: SpeciesDefinition = {
+  id: 'gobie',
+  name: 'Gobie à crevette jaune',
+  scientificName: 'Cryptocentrus cinctus',
+  bodyLength: 0.105,
+  cruiseSpeed: 0.02,
+  minSpeed: 0.008,
+  maxSpeed: 0.08,
+  wanderTurnRate: 0.7,
+  avoidTurnRate: 2.4,
+  maxPitch: 0.2,
+  wallMargin: 0.055,
+  tailBeatFrequency: 1.2,
+  defaultPopulation: 1,
+  maxPopulation: 4,
+  schooling: null,
+  silhouette: 'gobie',
+  colors: {
+    stripe: '#ffd166',
+    accent: '#3fa9f5',
+    back: '#f2c14e',
+    belly: '#ffd166',
+    fin: '#f2c14e',
+    eye: '#1c1c22',
+  },
+  // Au ras du sable (sous 8 % de la hauteur d'eau), rares et brèves remontées.
+  depth: {
+    maxHeightRatio: 0.08,
+    floorZone: 0.015,
+    ascentRate: 1 / 200,
+    ascentDuration: 3,
+  },
+  // Mange près du fond : un granulé n'est remarqué que dans le bas du bac.
+  feeding: {
+    hungerRate: 1 / 220,
+    perceptionRadius: 0.2,
+    turnRate: 1.8,
+    minHeightRatio: 0,
+    maxHeightRatio: 0.3,
+  },
+};
+
+/**
+ * Gramma royal (Gramma loreto) : avant du corps violet, arrière jaune d'or ; reste près des
+ * roches, dans le bas et le milieu du bac (FishBase : grottes et surplombs, se réfugie dans
+ * les anfractuosités).
+ */
+export const GRAMMA: SpeciesDefinition = {
+  id: 'gramma',
+  name: 'Gramma royal',
+  scientificName: 'Gramma loreto',
+  // Modèle agrandi (8 cm en vrai) : à 0,088, il se perdait en vue de face (#403).
+  bodyLength: 0.1,
+  cruiseSpeed: 0.035,
+  minSpeed: 0.014,
+  maxSpeed: 0.08,
+  wanderTurnRate: 1,
+  avoidTurnRate: 2.5,
+  maxPitch: 0.35,
+  wallMargin: 0.05,
+  tailBeatFrequency: 2,
+  defaultPopulation: 1,
+  maxPopulation: 3,
+  schooling: null,
+  silhouette: 'gramma',
+  colors: {
+    stripe: '#7d4fb8',
+    accent: '#ffd166',
+    back: '#7d4fb8',
+    belly: '#7d4fb8',
+    fin: '#ffd166',
+    eye: '#1c1c22',
+  },
+  // Bas et milieu du bac, entre 12 % et 45 % de la hauteur d'eau.
+  depth: {
+    minHeightRatio: 0.12,
+    maxHeightRatio: 0.45,
+    floorZone: 0.04,
+    ascentRate: 0,
+    ascentDuration: 1,
+  },
+  feeding: {
+    hungerRate: 1 / 190,
+    perceptionRadius: 0.25,
+    turnRate: 2.2,
+    minHeightRatio: 0.1,
+    maxHeightRatio: 1,
+  },
+};
+
 /** Toutes les espèces connues, par identifiant (ordre de déclaration = ordre de peuplement). */
 export const SPECIES: Readonly<Record<SpeciesId, SpeciesDefinition>> = {
   neon: NEON,
@@ -1572,6 +1739,9 @@ export const SPECIES: Readonly<Record<SpeciesId, SpeciesDefinition>> = {
   braise: BRAISE,
   molly: MOLLY,
   miel: MIEL,
+  chromis: CHROMIS,
+  gobie: GOBIE,
+  gramma: GRAMMA,
 };
 
 /** Apparences d'une espèce : ses `variants`, ou son apparence par défaut seule. */

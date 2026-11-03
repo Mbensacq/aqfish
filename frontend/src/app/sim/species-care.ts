@@ -201,6 +201,30 @@ const FEEDING: Readonly<Record<SpeciesId, FeedingGuide>> = {
     frequency: FISH_FREQUENCY,
     quantity: PRUDENT_QUANTITY,
   },
+  chromis: {
+    foods: sourced(
+      'phytoplancton, zooplancton, algues, copépodes et amphipodes',
+      'https://en.wikipedia.org/wiki/Chromis_viridis (secondaire)',
+    ),
+    frequency: FISH_FREQUENCY,
+    quantity: PRUDENT_QUANTITY,
+  },
+  gobie: {
+    foods: sourced(
+      'granulés et flocons après sevrage ; invertébrés congelés (plancton marin, mysis, artémias, calmar haché)',
+      'https://www.proaquatix.com/?p=1705 (secondaire)',
+    ),
+    frequency: FISH_FREQUENCY,
+    quantity: PRUDENT_QUANTITY,
+  },
+  gramma: {
+    foods: sourced(
+      'zooplancton et petits crustacés ; en nature, aussi des parasites d’autres poissons',
+      'https://en.wikipedia.org/wiki/Royal_gramma ; https://www.fishbase.se/summary/5281',
+    ),
+    frequency: FISH_FREQUENCY,
+    quantity: PRUDENT_QUANTITY,
+  },
 };
 
 /** Ligne affichée d'une section du wiki : intitulé, valeur, texte du statut. */

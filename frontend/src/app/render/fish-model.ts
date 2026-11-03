@@ -497,6 +497,63 @@ export const MIEL_FISH: FishTemplate = {
   tailDepth: 1,
 };
 
+/**
+ * Chromis vert (#403) : ovale haut et court, dos vert (`k`), flanc vert pomme (`s`), ventre
+ * vert très clair (`b`), dorsale et anale (`f`), grande caudale profondément fourchue.
+ */
+export const CHROMIS_FISH: FishTemplate = {
+  body: [
+    // queue → tête
+    '...ffff...',
+    '..kkkkkkk.',
+    'ssssssssse',
+    'ssssssssss',
+    '.bbbbbbbb.',
+    '..fbbb....',
+  ],
+  tail: ['fff.', '.fff', '..ff', '..ff', '.fff', 'fff.'],
+  bodyDepth: 2,
+  tailDepth: 1,
+};
+
+/**
+ * Gobie à crevette jaune (#403) : corps long et bas, cylindrique, jaune (`s`, `b`), dos or
+ * (`k`) avec deux dorsales, quelques points bleus (`a`) sur le flanc et la tête, grosse tête à
+ * l'œil haut (`e`), caudale arrondie.
+ */
+export const GOBIE_FISH: FishTemplate = {
+  body: [
+    // queue → tête
+    '...ff..fff.....',
+    '.kkkkkkkkkkkkk.',
+    'sssassssassasse',
+    'sssssasssssasss',
+    '.bbbbbbbbbbbbb.',
+  ],
+  tail: ['ff', 'ff', 'ff', 'ff', 'f.'],
+  bodyDepth: 3,
+  tailDepth: 1,
+};
+
+/**
+ * Gramma royal (#403) : avant du corps violet (`s`, `k`, `b`), arrière jaune d'or (`a`, `f`)
+ * avec un passage en biais vers le milieu du corps, longues dorsale et anale, caudale jaune.
+ */
+export const GRAMMA_FISH: FishTemplate = {
+  body: [
+    // queue → tête
+    '.ffffkkkkk..',
+    'aaaaakkkkkk.',
+    'aaaaasssssse',
+    'aaaasssssss.',
+    '.aaabbbbbb..',
+    '.fff........',
+  ],
+  tail: ['ff.', 'fff', '.ff', 'fff', 'ff.'],
+  bodyDepth: 2,
+  tailDepth: 1,
+};
+
 /** Gabarit de chaque silhouette déclarée par les espèces (`sim/species.ts`). */
 export const SILHOUETTES: Readonly<Record<SilhouetteId, FishTemplate>> = {
   fuseau: SLENDER_FISH,
@@ -520,6 +577,9 @@ export const SILHOUETTES: Readonly<Record<SilhouetteId, FishTemplate>> = {
   braise: BRAISE_FISH,
   molly: MOLLY_FISH,
   miel: MIEL_FISH,
+  chromis: CHROMIS_FISH,
+  gobie: GOBIE_FISH,
+  gramma: GRAMMA_FISH,
 };
 
 /** Attribut de sommet du rang de taché (`voxelSpotRank`, points blancs, issue #366). */

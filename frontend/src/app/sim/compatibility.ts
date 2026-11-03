@@ -49,6 +49,12 @@ export const TEMPERAMENTS: Readonly<Record<SpeciesId, Temperament>> = {
   // autour d'un coin favori, « éviter les espèces territoriales ou agressives » : `territorial`,
   // donc déconseillé avec le gourami nain (ADR 0095).
   miel: 'territorial',
+  chromis: 'paisible',
+  gobie: 'paisible',
+  // Gramma royal : « délimite des territoires dans les roches et les anfractuosités »
+  // (Wikipédia, secondaire) : `territorial`, donc déconseillé avec le poisson-clown par la règle
+  // de jeu (ADR 0055) ; en réalité le mélange est courant en grand bac (ADR 0097).
+  gramma: 'territorial',
 };
 
 /** Verdict pour un couple d'espèces. */

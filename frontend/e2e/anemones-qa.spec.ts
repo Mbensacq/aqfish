@@ -76,7 +76,7 @@ test.describe('Anémones et poissons-clowns : parcours utilisateur', () => {
       const errors = await open(page, `?environnement=recif&seed=${seed}`);
       await expect(page.locator('app-aquarium-host')).toHaveAttribute(
         'data-aqfish-population',
-        'clown:3,chirurgien:4',
+        'clown:3,chirurgien:4,chromis:0,gobie:0,gramma:0',
       );
       await page.waitForTimeout(500);
       expect(errors).toEqual([]);

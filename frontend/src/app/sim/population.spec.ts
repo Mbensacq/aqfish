@@ -35,6 +35,9 @@ import {
   BRAISE,
   MOLLY,
   MIEL,
+  CHROMIS,
+  GOBIE,
+  GRAMMA,
 } from './species';
 import { waterVolume } from './tank';
 import {
@@ -84,6 +87,9 @@ describe('bornes de population', () => {
       'braise',
       'molly',
       'miel',
+      'chromis',
+      'gobie',
+      'gramma',
     ]);
   });
 
@@ -126,6 +132,9 @@ describe('bornes de population', () => {
       braise: 0,
       molly: 0,
       miel: 0,
+      chromis: 0,
+      gobie: 0,
+      gramma: 0,
     });
     expect(populationCounts(createWorld(42))).toEqual({
       neon: 0,
@@ -148,6 +157,9 @@ describe('bornes de population', () => {
       braise: 0,
       molly: 0,
       miel: 0,
+      chromis: 0,
+      gobie: 0,
+      gramma: 0,
     });
     expect(populationCounts(createWorld(42))).toEqual(NO_FISH);
   });
@@ -174,6 +186,9 @@ describe('bornes de population', () => {
       braise: BRAISE.maxPopulation,
       molly: MOLLY.maxPopulation,
       miel: MIEL.maxPopulation,
+      chromis: CHROMIS.maxPopulation,
+      gobie: GOBIE.maxPopulation,
+      gramma: GRAMMA.maxPopulation,
     });
   });
 
@@ -266,6 +281,9 @@ describe('setPopulation', () => {
       braise: 0,
       molly: 0,
       miel: 0,
+      chromis: 0,
+      gobie: 0,
+      gramma: 0,
     });
   });
 
@@ -308,6 +326,9 @@ describe('setPopulation', () => {
       braise: 0,
       molly: 0,
       miel: 0,
+      chromis: 0,
+      gobie: 0,
+      gramma: 0,
     });
     // Bac plein : plus aucun ajout possible, quelle que soit l'espèce.
     for (const id of SPECIES_IDS) {

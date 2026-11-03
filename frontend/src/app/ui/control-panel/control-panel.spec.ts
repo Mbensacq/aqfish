@@ -235,6 +235,9 @@ class TestHost {
     braise: 0,
     molly: 0,
     miel: 0,
+    chromis: 0,
+    gobie: 0,
+    gramma: 0,
   });
   readonly populationMax = signal<PopulationCounts>({
     neon: 40,
@@ -257,6 +260,9 @@ class TestHost {
     braise: 0,
     molly: 0,
     miel: 0,
+    chromis: 0,
+    gobie: 0,
+    gramma: 0,
   });
   readonly tankLiters = signal<number | null>(288);
   readonly water = signal<WaterReadout>(DEFAULT_WATER_READOUT);
@@ -869,7 +875,14 @@ describe('ControlPanel', () => {
     await fixture.whenStable();
     const section = root().querySelector('[data-section="population"]')!;
     const rows = [...section.querySelectorAll('[data-species]')];
-    expect(rows.map((r) => r.getAttribute('data-species'))).toEqual(['clown', 'chirurgien']);
+    // Lot 2 du récif (#403) : trois espèces proposées après les deux d'origine.
+    expect(rows.map((r) => r.getAttribute('data-species'))).toEqual([
+      'clown',
+      'chirurgien',
+      'chromis',
+      'gobie',
+      'gramma',
+    ]);
     expect(section.querySelector('[data-population-empty]')).toBeNull();
     expect(byLabel('Nombre de poissons-clowns')).not.toBeNull();
     expect(byLabel('Nombre de chirurgiens bleus')).not.toBeNull();
@@ -1189,6 +1202,9 @@ describe('ControlPanel', () => {
         braise: 0,
         molly: 0,
         miel: 0,
+        chromis: 0,
+        gobie: 0,
+        gramma: 0,
       });
       await fixture.whenStable();
       expect(neons.value).toBe('20');

@@ -121,6 +121,25 @@ export const LEGAL_STATUS: Readonly<Record<SpeciesId, LegalStatus>> = {
     ESPECES,
     'aucune ligne de l’annexe 2 vérifiée ; sujets du commerce issus d’élevages',
   ),
+  // Récif, lot 2 (#403, ADR 0097) : ni l'annexe 2 ni les annexes CITES lues pour ces espèces.
+  chromis: legal(
+    'a-verifier',
+    'non-verifie',
+    ESPECES,
+    'aucune ligne de l’annexe 2 ni de la CITES vérifiée ; origine des sujets du commerce non vérifiée',
+  ),
+  gobie: legal(
+    'a-verifier',
+    'non-verifie',
+    ESPECES,
+    'aucune ligne de l’annexe 2 ni de la CITES vérifiée ; existe en élevage, origine des sujets non vérifiée',
+  ),
+  gramma: legal(
+    'a-verifier',
+    'non-verifie',
+    ESPECES,
+    'aucune ligne de l’annexe 2 ni de la CITES vérifiée ; élevé en captivité, préférer ces sujets',
+  ),
 };
 
 /** Statut légal de l'espèce `id` (figé, partagé). */

@@ -33,7 +33,7 @@ describe('catalogue d’espèces (#189)', () => {
     ]);
     expect(ids('bassin')).toEqual(['koi']);
     expect(ids('paludarium')).toEqual(['axolotl', 'grenouille', 'triton']);
-    expect(ids('recif')).toEqual(['clown', 'chirurgien']);
+    expect(ids('recif')).toEqual(['clown', 'chirurgien', 'chromis', 'gobie', 'gramma']);
     for (const env of ENVIRONMENT_IDS) {
       expect(ids(env)).toEqual(environmentById(env).species);
     }

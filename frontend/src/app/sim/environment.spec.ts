@@ -164,7 +164,8 @@ describe('environnements', () => {
       'chirurgienBleu',
     ]);
     // Poissons-clowns (#150) et chirurgiens bleus (#151), avec leur population par défaut.
-    expect(REEF.species).toEqual(['clown', 'chirurgien']);
+    // Lot 2 du récif (#403, ADR 0097) : proposées sans être peuplées d'office.
+    expect(REEF.species).toEqual(['clown', 'chirurgien', 'chromis', 'gobie', 'gramma']);
     expect(REEF.population).toEqual([
       { species: 'clown', count: CLOWN.defaultPopulation },
       { species: 'chirurgien', count: CHIRURGIEN.defaultPopulation },

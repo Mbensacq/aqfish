@@ -112,6 +112,12 @@ const ANAPSID = 'https://anapsid.org/bombina.html (secondaire)';
  */
 const SF = 'https://www.seriouslyfish.com/species/';
 
+/** Fiches FishBase consultées le 2026-11-03 (récif, lot 2, #403, ADR 0097), suivies du numéro. */
+const FB = 'https://www.fishbase.se/summary/';
+
+/** Articles de Wikipédia en anglais consultés le 2026-11-03 (#403, sources secondaires). */
+const WP = 'https://en.wikipedia.org/wiki/';
+
 function note(text: string, status: FieldStatus): SheetNote {
   return Object.freeze({ text, status });
 }
@@ -401,6 +407,54 @@ const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
       note(
         'Lent, vite intimidé : éviter les espèces territoriales ou agressives ; couvert de plantes en surface et couvercle (il saute)',
         source(`${SF}trichogaster-chuna`),
+      ),
+    ],
+  },
+  // Récif, lot 2 (#403, ADR 0097) : FishBase pour les tailles et températures, Wikipédia
+  // (secondaire) pour le régime, les groupes et le volume du gramma.
+  chromis: {
+    adultSize: sourced(10, `${FB}5679 (Chromis viridis, longueur totale)`),
+    temperaturePreferred: approx(range(25, 27)),
+    // FishBase ne donne pas de plage de température : celle du récif de la simulation.
+    temperatureTolerated: approx(range(24, 28)),
+    diet: sourced('omnivore', `${WP}Chromis_viridis (phytoplancton, zooplancton, algues)`),
+    // « Gardés en petits groupes de nombre impair » (Wikipédia), sans effectif chiffré.
+    minGroup: approx(5),
+    minLiters: approx(200),
+    notes: [
+      note(
+        'Vit en groupe ; proie des grands poissons prédateurs',
+        source(`${WP}Chromis_viridis (secondaire)`),
+      ),
+    ],
+  },
+  gobie: {
+    adultSize: sourced(10, `${FB}7208 (Cryptocentrus cinctus, longueur standard)`),
+    temperaturePreferred: approx(range(25, 27)),
+    temperatureTolerated: sourced(range(22, 28), `${FB}7208`),
+    // Régime non donné par FishBase ; en bac, proies congelées (mysis, artémias) et granulés.
+    diet: approx('carnivore'),
+    minGroup: approx(1),
+    minLiters: approx(100),
+    notes: [
+      note(
+        'Vit dans un terrier qu’il partage avec une crevette Alpheus : sable profond nécessaire',
+        source(`${FB}7208 ; https://www.proaquatix.com/?p=1705 (secondaire)`),
+      ),
+    ],
+  },
+  gramma: {
+    adultSize: sourced(8, `${FB}5281 (Gramma loreto, longueur totale)`),
+    temperaturePreferred: approx(range(25, 27)),
+    temperatureTolerated: sourced(range(22, 27), `${FB}5281`),
+    diet: sourced('carnivore', `${WP}Royal_gramma (planctonophage : zooplancton, crustacés)`),
+    minGroup: approx(1),
+    // 30 gallons américains au moins (Wikipédia, secondaire), environ 114 L.
+    minLiters: sourced(114, `${WP}Royal_gramma (30 gallons au moins, secondaire)`),
+    notes: [
+      note(
+        'Territorial dans les roches ; agressif envers ses voisins en petit bac',
+        source(`${WP}Royal_gramma (secondaire)`),
       ),
     ],
   },

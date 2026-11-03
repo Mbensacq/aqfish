@@ -54,6 +54,7 @@ const FRESHWATER_LOT1 = 'population=neon:0,guppy:0,corydora:0,rasbora:8,tetra:8,
 const FRESHWATER_LOT2 =
   'population=neon:0,guppy:0,corydora:0,platy:4,danio:8,ancistrus:2,otocinclus:6';
 const FRESHWATER_LOT3 = 'population=neon:0,guppy:0,corydora:0,braise:12,molly:3,miel:2';
+const REEF_LOT2 = 'population=clown:3,chirurgien:4,chromis:7,gobie:2,gramma:2';
 const OUTPUT_DIR = resolve(
   process.env['CAPTURE_DIR'] ?? join(__dirname, '..', '..', 'docs', 'captures', 'latest'),
 );
@@ -323,6 +324,10 @@ test.describe('Captures', () => {
     { name: 'recif-three-quarter-minuit', query: 'environnement=recif&heure=0' },
     // Coraux (#149) : mêmes teintes sans le filtre pixel art (cf. #40).
     { name: 'recif-three-quarter-sans-filtre', query: 'environnement=recif&filtre=aucun' },
+    // Récif, lot 2 (#403) : chromis verts, gobie à crevette jaune et grammas royaux mêlés aux
+    // poissons-clowns et aux chirurgiens.
+    { name: 'recif-three-quarter-lot2', query: `environnement=recif&${REEF_LOT2}` },
+    { name: 'recif-front-lot2', query: `environnement=recif&${REEF_LOT2}&camera=front` },
   ] as const;
   for (const { name, query } of REEF_CAPTURES) {
     test(`angle ${name}`, async ({ page }) => {
