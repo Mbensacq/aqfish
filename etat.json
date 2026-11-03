@@ -5040,6 +5040,24 @@
         }
       },
       "metriques": {}
+    },
+    "138": {
+      "numero": 138,
+      "date": "2026-11-03",
+      "debut": "2026-11-03T11:10:12.625Z",
+      "type": "dette",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-03T11:10:12.625Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
