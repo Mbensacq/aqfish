@@ -4940,7 +4940,7 @@
       "type": "fonctionnalite",
       "issue": 406,
       "pr": 408,
-      "version": null,
+      "version": "v1.8.2",
       "phases": {
         "planif": {
           "statut": "termine",
