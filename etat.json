@@ -5057,10 +5057,10 @@
           "note": "Issue #413 : dette des sons d'ambiance (limiteur, commentaire, message d'indisponibilité) (S)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-03T11:11:19.297Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-03T12:31:36.417Z",
+          "note": "PR #414 : marge de niveau (limitPeak + limiteur), commentaire stop(), message de refus audio (+ case recalée), CI verte ; 122 captures identiques à l'octet"
         }
       },
       "metriques": {}
