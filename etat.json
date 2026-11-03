@@ -5033,10 +5033,10 @@
           "note": "Verdict OK, 0 bug, 3886 tests verts, e2e ciblés verts, captures publiées (série partielle)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-03T10:06:07.828Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-03T11:09:38.256Z",
+          "note": "PR #412 fusionnée → v1.8.4 (release CI ok, CI main verte) ; #411 fermée ; dette #413 ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
