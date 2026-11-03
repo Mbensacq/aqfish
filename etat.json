@@ -5099,10 +5099,10 @@
           "note": "PR #417 : sans filtre en cible pleine résolution (#40), CI verte ; 3 903 tests unitaires verts, couverture non mesurée (sim non touché) ; 117/122 captures identiques à l'octet, 5 sans-filtre changées volontairement ; pied d'attribution réajouté par l'environnement à la PR"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-03T16:35:47.979Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-03T17:31:10.381Z",
+          "note": "Verdict OK, 0 bug, 3 e2e ajoutés (sans filtre : redimensionnement, aller-retour, souris), CI verte, captures publiées (122 ; 117 identiques à c138, 5 sans-filtre changées voulu) ; pied d'attribution dans la description de la PR signalé"
         }
       },
       "metriques": {}
