@@ -6,6 +6,11 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **`pkill -f <motif>` tue aussi le shell de l'outil Bash** (cycle 138) : la ligne de
+  commande du shell contient le motif (`ng `, `playwright test`…), il se tue lui-même (sortie
+  144) et la suite de la commande n'est pas exécutée. Lancer les longues commandes avec
+  `nohup sh -c '… > journal 2>&1' &` et, pour arrêter, viser des PID relevés à part
+  (`ps aux | grep "[p]laywright"`). (2026-11-03)
 - **Écrire un signal dans le `stop()` de l'hôte (destruction) : une image de plus en
   attente** (cycle 137, #411) : sans zone, `signal.set()` planifie une détection de
   changements par `requestAnimationFrame` ; deux tests de l'hôte (« libère tout à la
@@ -371,6 +376,12 @@ haut de sa section.
 
 ## Tests
 
+- **Case `[checked]="signal()"` qui reste cochée après un refus** (cycle 138, #413) : si le
+  gestionnaire de `change` passe le signal à vrai puis le ramène à faux dans le même geste
+  (démarrage refusé), sa valeur ne change pas pour la liaison et Angular ne réécrit pas
+  `checked` : la case native reste cochée. Recaler l'élément dans le gestionnaire
+  (`input.checked = state.enabled()`), et le tester par un clic réel dans `TestBed`.
+  (2026-11-03)
 - **`test.use({ reducedMotion: 'reduce' })` est ignoré sans erreur** (cycle 135, #406) :
   `reducedMotion` n'est pas une option de test de Playwright 1.56 ; la page voit
   `prefers-reduced-motion: no-preference`. Passer par le contexte :
