@@ -41,6 +41,19 @@ import { flattenPalette, hexToRgb, lowResolutionSize, PIXEL_SIZE, type Size } fr
  * La couleur écrite est la valeur sRGB exacte de la palette : le shader n'inclut pas
  * `colorspace_fragment`, Three.js n'y ajoute donc aucune conversion.
  */
+/**
+ * Composante linéaire → sRGB en GLSL, même formule que `linearToSrgb` (`render/pixel-art.ts`).
+ * Partagée par la passe palette et la passe directe (`render/direct-pass.ts`).
+ */
+export const LINEAR_TO_SRGB_GLSL = /* glsl */ `
+vec3 linearToSrgb(vec3 c) {
+  c = clamp(c, 0.0, 1.0);
+  vec3 low = c * 12.92;
+  vec3 high = 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055;
+  return mix(high, low, vec3(lessThanEqual(c, vec3(0.0031308))));
+}
+`;
+
 const VERTEX_SHADER = /* glsl */ `
 void main() {
   gl_Position = vec4(position.xy, 0.0, 1.0);
@@ -72,12 +85,7 @@ float penalty(int i) {
   return i < FOOD_START ? uEnvironmentPenalty[i - ENVIRONMENT_START] : foodPenalty;
 }
 
-vec3 linearToSrgb(vec3 c) {
-  c = clamp(c, 0.0, 1.0);
-  vec3 low = c * 12.92;
-  vec3 high = 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055;
-  return mix(high, low, vec3(lessThanEqual(c, vec3(0.0031308))));
-}
+${LINEAR_TO_SRGB_GLSL}
 
 void main() {
   ivec2 texel = ivec2(floor(gl_FragCoord.xy / uPixelScale));

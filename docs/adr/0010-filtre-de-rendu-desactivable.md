@@ -1,6 +1,6 @@
 # 0010 — Filtre de rendu désactivable : pixel art ou rendu direct
 
-- Statut : acceptée
+- Statut : acceptée ; rendu direct à l'écran remplacé par 0101 (cible pleine résolution)
 - Date : 2026-10-18
 - Auteur : Dev, cycle 7, issue #33 (idée de Mathis)
 

@@ -238,9 +238,10 @@ y écrivent un marqueur (`FOOD_ALPHA_MARKER`, mélange qui remplace couleur et o
 rien d'autre n'écrit d'opacité inférieure à 1 dans la cible, dont les autres pixels restent
 ramenés à la palette sans ces tons.
 
-**Filtre désactivable** (ADR 0010) : avec le filtre `aucun`, `renderFrame()` rend la scène
-directement à l'écran en pleine résolution, sans passe palette, et la caméra prend le
-rapport d'aspect du canvas. `AquariumView.setFilter()` bascule à chaud sans toucher à la
+**Filtre désactivable** (ADR 0010, ADR 0101) : avec le filtre `aucun`, `renderFrame()` rend
+la scène en pleine résolution dans la cible de `render/direct-pass.ts` (même format sRGB
+8 bits que la cible du pixel art : translucides mélangés en linéaire), puis la recopie à
+l'écran sans passe palette ; la caméra prend le rapport d'aspect du canvas. `AquariumView.setFilter()` bascule à chaud sans toucher à la
 caméra ni à la scène. Le pixel art reste le mode par défaut.
 
 ### Caméra
