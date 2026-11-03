@@ -4923,6 +4923,12 @@
           "debut": "2026-11-03T01:15:53.929Z",
           "fin": "2026-11-03T01:33:42.676Z",
           "note": "Verdict RÉSERVES (gobie/gramma très petits), 0 bug, 3768 tests verts, 120 captures c134 publiées ; e2e complet non rejoué"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-03T01:34:09.620Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
