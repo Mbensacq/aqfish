@@ -1,8 +1,8 @@
-# Source des captures c133
+# Source des captures c134
 
-- Branche : cycle/c133-lisibilite-lot3-e2e
-- PR : #402
-- Commit : 906bd92
+- Branche : cycle/c134-recif-lot2
+- PR : #404
+- Commit : 0f45203
 - Graine : celle de captures.spec.ts (fixe)
-- Temps : 118 captures en 8,8 min (rendu logiciel)
-- Ecart a c132 : front-eau-douce-lot3, three-quarter-eau-douce-lot3 (attendus) ; interface-liste-bacs (octets differents, rendu visuellement identique, hors perimetre)
+- Temps : 120 captures en 8,5 min (rendu logiciel)
+- Ecart a c133 : recif-front-lot2, recif-three-quarter-lot2 (attendus). Captures recif/tropical existantes identiques a l'octet.
