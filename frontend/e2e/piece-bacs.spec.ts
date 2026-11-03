@@ -76,7 +76,7 @@ test.describe('Pièce de N bacs : bacs et meubles (#305)', () => {
     expect(errors).toEqual([]);
   });
 
-  test('étagère d’animalerie : deux bacs sur deux niveaux, sélectionnés puis retirés (#419)', async ({
+  test('étagère d’animalerie : deux bacs sur deux niveaux, listés puis retirés (#419)', async ({
     page,
   }) => {
     const errors = await open(page);
@@ -104,12 +104,16 @@ test.describe('Pièce de N bacs : bacs et meubles (#305)', () => {
       'true',
     );
 
-    // Sélectionner chacun des deux bacs de l'étagère, puis revenir au bac de départ.
+    // Liste des bacs : les deux bacs de l'étagère y figurent ; un bac posé n'est pas encore
+    // sélectionnable (ADR 0075), le bac de départ reste affiché.
     const list = page.locator('[data-section="bacs"]');
-    for (const id of ['1', '2', '0']) {
-      await list.locator(`[data-tank="${id}"] button`).click();
-      await expect(hostEl(page)).toHaveAttribute('data-aqfish-selected-tank', id);
+    for (const id of ['1', '2']) {
+      const button = list.locator(`[data-tank="${id}"] button`);
+      await expect(button).toHaveAttribute('aria-disabled', 'true');
+      await expect(button).toHaveAttribute('aria-label', /posé, pas encore sélectionnable/);
     }
+    await expect(list.locator('[data-tank="0"] button')).toHaveAttribute('aria-pressed', 'true');
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-selected-tank', '0');
 
     // Retirer les deux bacs, puis l'étagère libérée.
     for (const tanks of ['2', '1']) {
