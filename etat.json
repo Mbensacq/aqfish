@@ -5097,6 +5097,12 @@
           "debut": "2026-11-03T14:57:15.402Z",
           "fin": "2026-11-03T16:35:11.381Z",
           "note": "PR #417 : sans filtre en cible pleine résolution (#40), CI verte ; 3 903 tests unitaires verts, couverture non mesurée (sim non touché) ; 117/122 captures identiques à l'octet, 5 sans-filtre changées volontairement ; pied d'attribution réajouté par l'environnement à la PR"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-03T16:35:47.979Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
