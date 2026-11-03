@@ -5148,6 +5148,24 @@
         }
       },
       "metriques": {}
+    },
+    "141": {
+      "numero": 141,
+      "date": "2026-11-04",
+      "debut": "2026-11-03T23:40:12.705Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-03T23:40:12.705Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
