@@ -204,6 +204,11 @@ test.describe('Captures', () => {
       name: 'three-quarter-piece-animalerie',
       query: 'piece=1&bacs=etagere-animalerie,moyen@0,moyen@0,moyen@0',
     },
+    // La même, de face et de plus près (caméra libre) : les trois niveaux lisibles.
+    {
+      name: 'libre-piece-animalerie',
+      query: 'piece=1&bacs=etagere-animalerie,moyen@0,moyen@0,moyen@0&libre=0.3:0.45:3:-22:-6',
+    },
     // Meubles et plantes de la pièce (#188) : chaque élément du catalogue seul, puis une
     // plante posée par gravité sur l'étagère et une autre sur la table basse.
     { name: 'three-quarter-meuble-etagere', query: `piece=1&meubles=${SHELF}` },
