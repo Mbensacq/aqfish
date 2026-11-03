@@ -5012,7 +5012,7 @@
       "type": "fonctionnalite",
       "issue": 411,
       "pr": 412,
-      "version": null,
+      "version": "v1.8.4",
       "phases": {
         "planif": {
           "statut": "termine",
