@@ -5063,10 +5063,10 @@
           "note": "PR #414 : marge de niveau (limitPeak + limiteur), commentaire stop(), message de refus audio (+ case recalée), CI verte ; 122 captures identiques à l'octet"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-03T12:32:06.786Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-03T13:52:22.162Z",
+          "note": "Verdict OK, 0 bug, 1 e2e ajouté (refus audio), CI verte, captures publiées (122, identiques à c137) ; mutation non mesurée (test triton hors délai 30 s au run initial, machine lente)"
         }
       },
       "metriques": {}
