@@ -5004,6 +5004,24 @@
         }
       },
       "metriques": {}
+    },
+    "137": {
+      "numero": 137,
+      "date": "2026-11-03",
+      "debut": "2026-11-03T08:18:23.020Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-03T08:18:23.020Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
