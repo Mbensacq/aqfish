@@ -1,0 +1,1 @@
+Branche cycle/c136-clavier-focus-contrastes, PR #410, commit c2eb35f, graine par défaut. 5 angles identiques à l'octet à latest (c135). Série partielle (délai local) ; focus : dev/front-focus-reglages.png.
