@@ -9,6 +9,13 @@ import type { PopulationCounts } from '../../sim/population';
 import type { SaveMessage, SaveStatus } from '../../core/save-storage/save-storage';
 import { MAX_SAVE_LENGTH } from '../../sim/save';
 import { REDUCED_MOTION_STORAGE_KEY } from '../../core/reduced-motion/reduced-motion';
+import { AMBIENT_SOUND_STORAGE_KEY } from '../../core/ambient-sound/ambient-sound';
+import {
+  AMBIENT_SOUND_TIMER,
+  AmbientSoundState,
+  AUDIO_CONTEXT_FACTORY,
+} from '../ambient-sound/ambient-sound-state';
+import { FakeAudioContext, FakeTimer } from '../ambient-sound/fake-audio-context';
 import { ReducedMotionState } from '../reduced-motion/reduced-motion-state';
 import { SIM_SPEEDS } from '../../sim/sim-speed';
 import { MAX_HEATER_TEMPERATURE, MIN_HEATER_TEMPERATURE } from '../../sim/water';
@@ -931,7 +938,7 @@ describe('ControlPanel', () => {
     expect(root().querySelector('section')).toBeNull();
   });
 
-  it('sections extensibles : environnement, simulation, journée, eau, décor, accessibilité, population, bacs, sauvegarde, chacune avec sa légende', async () => {
+  it('sections extensibles : environnement, simulation, journée, eau, décor, accessibilité, son, population, bacs, sauvegarde, chacune avec sa légende', async () => {
     await openPanel();
     const sections = [...root().querySelectorAll('fieldset')];
     expect(sections.map((s) => s.getAttribute('data-section'))).toEqual([
@@ -941,6 +948,7 @@ describe('ControlPanel', () => {
       'eau',
       'decor',
       'accessibilite',
+      'son',
       'population',
       'bacs',
       'sauvegarde',
@@ -961,6 +969,7 @@ describe('ControlPanel', () => {
       'Eau',
       'Décor',
       'Accessibilité',
+      'Son',
       'Population',
       'Bacs',
       'Sauvegarde',
@@ -1079,9 +1088,9 @@ describe('ControlPanel', () => {
     // pièce » (#187), « Changer l’eau » et le curseur du chauffage (#207), « − » et « + » des
     // feuilles de catappa (#239), puis « − », champ, « + » (#69), curseur (#189) et « Fiche »
     // (#237) pour chacune des 14 espèces du bac tropical (#238, #362, #391), puis « Exporter »
-    // et « Importer » (#70), le mode du bac (#278), « Mode immersif » (#345), et « Réduire
-    // les mouvements » (#406).
-    expect(controls).toHaveLength(5 + 1 + 1 + 1 + 2 + 2 + 14 * 5 + 2 + 1 + 1 + 1);
+    // et « Importer » (#70), le mode du bac (#278), « Mode immersif » (#345), « Réduire
+    // les mouvements » (#406), puis la case « Sons d'ambiance » et son volume (#411).
+    expect(controls).toHaveLength(5 + 1 + 1 + 1 + 2 + 2 + 14 * 5 + 2 + 1 + 1 + 1 + 2);
     expect(root().querySelectorAll('input[type="file"]')).toHaveLength(1);
     for (const control of controls) {
       const name =
@@ -1476,6 +1485,79 @@ describe('ControlPanel', () => {
       await fixture.whenStable();
       expect(state.reduced()).toBe(false);
       expect(localStorage.getItem(REDUCED_MOTION_STORAGE_KEY)).toBe('normaux');
+    });
+  });
+
+  describe('son : sons d’ambiance (#411)', () => {
+    const section = () => root().querySelector<HTMLElement>('[data-section="son"]')!;
+    const slider = () => section().querySelector<HTMLInputElement>('[data-ambient-volume]')!;
+
+    afterEach(() => localStorage.removeItem(AMBIENT_SOUND_STORAGE_KEY));
+
+    it('sans Web Audio (jsdom) : case et curseur désactivés, inertes, explication liée', async () => {
+      await openPanel();
+      const box = checkbox("Sons d'ambiance")!;
+      expect(box.getAttribute('aria-disabled')).toBe('true');
+      expect(slider().getAttribute('aria-disabled')).toBe('true');
+      const note = section().querySelector('#panneau-son-indisponible');
+      expect(note?.textContent).toContain('Web Audio');
+      expect(box.getAttribute('aria-describedby')).toBe('panneau-son-indisponible');
+      expect(slider().getAttribute('aria-describedby')).toBe('panneau-son-indisponible');
+      box.click();
+      await fixture.whenStable();
+      expect(box.checked).toBe(false);
+      slider().value = '80';
+      slider().dispatchEvent(new Event('input'));
+      await fixture.whenStable();
+      expect(slider().value).toBe('30');
+      expect(TestBed.inject(AmbientSoundState).volume()).toBe(0.3);
+      expect(localStorage.getItem(AMBIENT_SOUND_STORAGE_KEY)).toBeNull();
+    });
+
+    it('avec Web Audio : décochée, 30 % ; cocher crée un contexte, le curseur règle le volume', async () => {
+      const contexts: FakeAudioContext[] = [];
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        imports: [TestHost],
+        providers: [
+          {
+            provide: AUDIO_CONTEXT_FACTORY,
+            useValue: () => {
+              const ctx = new FakeAudioContext();
+              contexts.push(ctx);
+              return ctx;
+            },
+          },
+          { provide: AMBIENT_SOUND_TIMER, useValue: new FakeTimer() },
+        ],
+      });
+      fixture = TestBed.createComponent(TestHost);
+      await fixture.whenStable();
+      await openPanel();
+      const box = checkbox("Sons d'ambiance")!;
+      expect(box.hasAttribute('aria-disabled')).toBe(false);
+      expect(box.checked).toBe(false);
+      expect(box.hasAttribute('aria-describedby')).toBe(false);
+      expect(section().querySelector('#panneau-son-indisponible')).toBeNull();
+      expect(slider().value).toBe('30');
+      expect(slider().getAttribute('aria-valuetext')).toBe('30 %');
+      expect(slider().getAttribute('aria-label')).toBe("Volume des sons d'ambiance");
+      expect(contexts).toHaveLength(0);
+      box.click();
+      await fixture.whenStable();
+      expect(contexts).toHaveLength(1);
+      const state = TestBed.inject(AmbientSoundState);
+      expect(state.enabled()).toBe(true);
+      slider().value = '65';
+      slider().dispatchEvent(new Event('input'));
+      await fixture.whenStable();
+      expect(state.volume()).toBe(0.65);
+      expect(slider().getAttribute('aria-valuetext')).toBe('65 %');
+      expect(localStorage.getItem(AMBIENT_SOUND_STORAGE_KEY)).toBe('actif:65');
+      box.click();
+      await fixture.whenStable();
+      expect(contexts[0].closed).toBe(1);
+      expect(state.enabled()).toBe(false);
     });
   });
 

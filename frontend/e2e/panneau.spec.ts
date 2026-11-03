@@ -191,6 +191,11 @@ test.describe('Panneau de contrôle', () => {
     // Section « Accessibilité » (#406), entre « Décor » et « Population ».
     await page.keyboard.press('Tab');
     await expect(page.getByRole('checkbox', { name: 'Réduire les mouvements' })).toBeFocused();
+    // Section « Son » (#411) : la case puis le volume, sur la même ligne.
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('checkbox', { name: "Sons d'ambiance" })).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('slider', { name: "Volume des sons d'ambiance" })).toBeFocused();
     // Bouton « Fiche » (#237), sur la ligne du nom, avant « − ».
     await page.keyboard.press('Tab');
     await expect(page.getByRole('button', { name: 'Fiche : Néon' })).toBeFocused();

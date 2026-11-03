@@ -6,6 +6,23 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Écrire un signal dans le `stop()` de l'hôte (destruction) : une image de plus en
+  attente** (cycle 137, #411) : sans zone, `signal.set()` planifie une détection de
+  changements par `requestAnimationFrame` ; deux tests de l'hôte (« libère tout à la
+  destruction », « sans effet après la destruction ») vérifient qu'aucune image n'attend après
+  `fixture.destroy()` et échouent (`frames.pending.size` 1). Appeler le service directement
+  (`ambientSound.setScene(null)`) sans toucher aux signaux du composant. (2026-11-03)
+- **Compter les `AudioContext` en e2e** (cycle 137, #411) : Chromium headless crée un
+  contexte sans périphérique audio, sans erreur. Remplacer `window.AudioContext` par une
+  sous-classe qui compte créations et `close()`, posée par `page.addInitScript` avant
+  l'application (`e2e/sons-ambiance.spec.ts`) ; ne jamais vérifier le signal. Un clic sur
+  « Réglages » est déjà un geste : un choix « actif » mémorisé crée le contexte à ce clic.
+  (2026-11-03)
+- **Lire la source d'un module `.ts` dans un test unitaire** (cycle 137, #411) : `import src
+  from './m.ts' with { loader: 'text' }` fonctionne sous `ng test` comme pour une feuille
+  SCSS, mais TypeScript refuse l'import d'un `.ts` : le précéder de `// @ts-expect-error`
+  (voir `core/ambient-sound/ambient-sound.spec.ts`, qui vérifie qu'aucun import ne vient de
+  `sim/`). (2026-11-03)
 - **Parcours e2e à la touche Tab : une image par appui** (cycle 136, #407) : sous le rendu
   logiciel, `page.keyboard.press('Tab')` attend une image (~1,8 s en 1280 × 720, ~1 s en
   800 × 600), et chaque `page.evaluate` en coûte une autre. Un parcours des ~100 contrôles

@@ -586,6 +586,25 @@ test.describe('Captures', () => {
     expect(errors).toEqual([]);
   });
 
+  // Section « Son » (#411), trois-quarts, 1280 × 720 : panneau ouvert, section amenée en vue,
+  // simulation à l'arrêt dès t = 0. Son désactivé (défaut) : rien ne démarre.
+  test('angle three-quarter avec la section « Son » ouverte', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    await page.goto(`/?seed=${SEED}&camera=three-quarter&heure=12&vitesse=0`);
+    await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+    await page.getByRole('button', { name: 'Réglages' }).click();
+    await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-speed', '0');
+    await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-tick', '0');
+    await page.locator('[data-section="son"]').scrollIntoViewIfNeeded();
+    await expect(page.getByRole('checkbox', { name: "Sons d'ambiance" })).not.toBeChecked();
+    await page.screenshot({
+      path: join(OUTPUT_DIR, 'three-quarter-panneau-son.png'),
+      animations: 'disabled',
+    });
+    expect(errors).toEqual([]);
+  });
+
   // Tableau de bord (#256, #260) en bordure, trois-quarts, bureau, tablette et téléphone :
   // panneaux fermés (« Commandes » à son état par défaut), simulation à l'arrêt dès t = 0.
   // Avec `alerte`, bac importé à l'eau mauvaise (ammoniaque 6, nitrites 2,5, nitrates 50) et
