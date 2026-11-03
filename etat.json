@@ -5087,10 +5087,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-03T14:55:37.200Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-03T14:56:47.732Z",
+          "note": "Rétro sprint 20 (#415), PR roadmap #416 ; travail de Dev : #40 (dette, S)"
         }
       },
       "metriques": {}
