@@ -5103,6 +5103,12 @@
           "debut": "2026-11-03T16:35:47.979Z",
           "fin": "2026-11-03T17:31:10.381Z",
           "note": "Verdict OK, 0 bug, 3 e2e ajoutés (sans filtre : redimensionnement, aller-retour, souris), CI verte, captures publiées (122 ; 117 identiques à c138, 5 sans-filtre changées voulu) ; pied d'attribution dans la description de la PR signalé"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-03T17:32:05.252Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
