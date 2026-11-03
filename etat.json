@@ -4904,7 +4904,7 @@
       "type": "fonctionnalite",
       "issue": 403,
       "pr": 404,
-      "version": null,
+      "version": "v1.8.1",
       "phases": {
         "planif": {
           "statut": "termine",
