@@ -5021,10 +5021,10 @@
           "note": "Issue #411 : Sons d'ambiance optionnels (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-03T08:19:45.167Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-03T09:38:08.783Z",
+          "note": "PR #412 : sons d'ambiance synthétisés (ADR 0100), CI verte ; e2e touchés rejoués en local ; captures panneau ouvert changées (nouvelle section), scène inchangée ; capture c137/dev"
         }
       },
       "metriques": {}
