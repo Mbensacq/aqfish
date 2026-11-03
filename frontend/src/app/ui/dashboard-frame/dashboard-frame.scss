@@ -13,6 +13,7 @@
 // Couleurs et opacités : variables posées par le composant (`DASHBOARD_COLORS`), celles que
 // le test de contraste vérifie. Police et surface communes au bandeau bas
 // (`_dashboard-surface.scss`, #265).
+@use '../panel-layout' as layout;
 @use 'dashboard-surface' as dashboard;
 
 :host {
@@ -54,8 +55,7 @@
   cursor: pointer;
 
   &:focus-visible {
-    outline: 2px solid var(--dashboard-vert);
-    outline-offset: 1px;
+    @include layout.focus-ring(1px, var(--dashboard-vert));
   }
 }
 

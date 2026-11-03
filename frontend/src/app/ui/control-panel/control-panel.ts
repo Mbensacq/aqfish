@@ -231,7 +231,8 @@ function toNumber(value: string | number): number {
  *
  * Clavier : bouton « Réglages » (Entrée ou Espace), puis Tab d'un contrôle à l'autre ; les
  * curseurs se règlent aux flèches. Les raccourcis de la barre des vues sont ignorés tant
- * que le focus est dans un curseur ou une case (`isTypingContext`).
+ * que le focus est dans un curseur ou une case (`isTypingContext`). Échap replie le panneau
+ * et rend le focus au bouton (#407).
  * Absent en mode capture (c'est l'application qui ne l'affiche pas).
  */
 /** Bac vide demandé au catalogue « Bacs et meubles » (#305), validé par l'hôte. */
@@ -1074,6 +1075,7 @@ export interface NewTankRequest {
     }`,
   styleUrl: './control-panel.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { '(keydown.escape)': 'onEscape($event)' },
 })
 export class ControlPanel {
   /** Environnement affiché (fourni par l'hôte). */
@@ -1513,6 +1515,20 @@ export class ControlPanel {
   /** Replie le panneau pour laisser la place à un autre (#136). */
   close(): void {
     this.open.set(false);
+  }
+
+  /**
+   * Échap dans le panneau ou sur son bouton (#407) : replie le panneau et rend le focus au
+   * bouton « Réglages ». Une fiche ouverte ou une confirmation se ferme d'abord (elles
+   * arrêtent l'événement) ; un Échap déjà traité (`defaultPrevented`) est ignoré.
+   */
+  protected onEscape(event: Event): void {
+    if (!this.open() || event.defaultPrevented) {
+      return;
+    }
+    event.preventDefault();
+    this.open.set(false);
+    this.host.nativeElement.querySelector<HTMLElement>('.control-panel__toggle')?.focus();
   }
 
   protected environmentName(id: EnvironmentId): string {

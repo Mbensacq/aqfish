@@ -1479,6 +1479,71 @@ describe('ControlPanel', () => {
     });
   });
 
+  describe('accessibilité : Échap (#407)', () => {
+    const escape = (target: EventTarget) => {
+      const event = new KeyboardEvent('keydown', {
+        key: 'Escape',
+        bubbles: true,
+        cancelable: true,
+      });
+      target.dispatchEvent(event);
+      return event;
+    };
+
+    beforeEach(() => document.body.append(root()));
+    afterEach(() => fixture.destroy());
+
+    it('dans le panneau : le replie et rend le focus au bouton « Réglages »', async () => {
+      await openPanel();
+      const field = root().querySelector<HTMLSelectElement>('#panneau-environnement')!;
+      field.focus();
+      const event = escape(field);
+      await fixture.whenStable();
+      expect(event.defaultPrevented).toBe(true);
+      expect(root().querySelector('.control-panel')).toBeNull();
+      expect(toggle().getAttribute('aria-expanded')).toBe('false');
+      expect(document.activeElement).toBe(toggle());
+    });
+
+    it('sur le bouton « Réglages » ouvert : le replie aussi', async () => {
+      await openPanel();
+      toggle().focus();
+      escape(toggle());
+      await fixture.whenStable();
+      expect(root().querySelector('.control-panel')).toBeNull();
+      expect(document.activeElement).toBe(toggle());
+    });
+
+    it('fiche ouverte : Échap ferme la fiche d’abord, le panneau ensuite', async () => {
+      await openPanel();
+      const button = root().querySelector<HTMLButtonElement>('[data-sheet-toggle="neon"]')!;
+      button.click();
+      await fixture.whenStable();
+      escape(button);
+      await fixture.whenStable();
+      expect(root().querySelector('[data-species-sheet]')).toBeNull();
+      expect(root().querySelector('.control-panel')).not.toBeNull();
+      escape(button);
+      await fixture.whenStable();
+      expect(root().querySelector('.control-panel')).toBeNull();
+    });
+
+    it('panneau fermé, ou Échap déjà traité : rien ne change', async () => {
+      const closed = escape(toggle());
+      expect(closed.defaultPrevented).toBe(false);
+      await openPanel();
+      const handled = new KeyboardEvent('keydown', {
+        key: 'Escape',
+        bubbles: true,
+        cancelable: true,
+      });
+      handled.preventDefault();
+      toggle().dispatchEvent(handled);
+      await fixture.whenStable();
+      expect(root().querySelector('.control-panel')).not.toBeNull();
+    });
+  });
+
   describe('sauvegarde (#70)', () => {
     const section = () => root().querySelector<HTMLElement>('[data-section="sauvegarde"]')!;
     const button = (text: string) =>

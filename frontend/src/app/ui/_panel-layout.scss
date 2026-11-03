@@ -24,3 +24,43 @@ $settings-button-end: $control-panel-left + $settings-button-width;
 
 /// Largeur de l'aide-mémoire déplié (`.commands-help`).
 $commands-help-width: 300px;
+
+// Couleurs partagées des panneaux (#407) : fond sombre translucide, encre claire, accent.
+// `src/app/ui/panel-contrast.spec.ts` lit ces valeurs dans ce fichier et vérifie leurs
+// contrastes WCAG (texte ≥ 4,5:1 et focus ≥ 3:1) sur une scène de jour comme de nuit :
+// changer une couleur ici sans relancer les tests unitaires n'est pas possible.
+
+/// Fond des panneaux et des boutons (`render/palette.ts` : fondScene).
+$panel-background: #141418;
+
+/// Opacité minimale du fond d'un bouton posé sur la scène (barre des vues, « Réglages »…).
+$panel-button-alpha: 72%;
+
+/// Opacité minimale du fond d'un panneau déplié (réglages, aide-mémoire, wiki…).
+$panel-alpha: 88%;
+
+/// Encre du texte des panneaux.
+$panel-ink: #e8e6e3;
+
+/// Opacité minimale de l'encre d'un texte secondaire, sur un panneau déplié seulement.
+$panel-muted-alpha: 62%;
+
+/// Accent (bouton actif, liens, curseurs), aussi lu comme texte sur un panneau déplié.
+$panel-accent: #5fbfa3;
+
+/// Anneau de focus : couleur, épaisseur, et halo sombre de part et d'autre de l'anneau, pour
+/// qu'il garde son contraste sur un fond clair (scène de jour) comme sombre.
+$focus-ring-color: $panel-accent;
+$focus-ring-width: 2px;
+$focus-halo: $panel-background;
+$focus-halo-width: 2px;
+
+/// Anneau de focus de tous les contrôles, posé une fois pour toutes sur `:focus-visible`
+/// dans `src/styles.scss`. Un contrôle ne l'inclut lui-même que pour changer l'écart
+/// (curseurs : 2 px) ou la couleur (tableau de bord, mode immersif), jamais l'épaisseur.
+/// Aucun mouvement ni transition (option « Réduire les mouvements », #406).
+@mixin focus-ring($offset: 1px, $color: $focus-ring-color) {
+  outline: $focus-ring-width solid $color;
+  outline-offset: $offset;
+  box-shadow: 0 0 0 ($offset + $focus-ring-width + $focus-halo-width) $focus-halo;
+}

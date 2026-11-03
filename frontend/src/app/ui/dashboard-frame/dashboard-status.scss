@@ -3,6 +3,7 @@
 // téléphone), jamais au centre du bac. Couleurs et opacités : variables posées par le cadre
 // (`DASHBOARD_COLORS`), héritées. Hôte transparent au pointeur, comme le cadre ; même police
 // et même surface (`_dashboard-surface.scss`, #265).
+@use '../panel-layout' as layout;
 @use 'dashboard-surface' as dashboard;
 
 :host {
@@ -72,8 +73,7 @@
   cursor: pointer;
 
   &:focus-visible {
-    outline: 2px solid var(--dashboard-ink);
-    outline-offset: 1px;
+    @include layout.focus-ring(1px, var(--dashboard-ink));
   }
 }
 
@@ -125,11 +125,6 @@
   font-weight: 600;
   text-decoration: underline;
   cursor: pointer;
-
-  &:focus-visible {
-    outline: 2px solid #5fbfa3;
-    outline-offset: 1px;
-  }
 }
 
 .visually-hidden {

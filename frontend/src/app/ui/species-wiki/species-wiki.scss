@@ -2,6 +2,8 @@
 // de la barre des vues ; panneau sombre translucide à droite, sous la ligne des boutons du
 // haut et au-dessus de la barre. L'hôte n'est pas positionné : il n'occupe aucune place et
 // ne capte aucun clic (#112) ; seuls le bouton et le panneau sont fixés.
+@use '../panel-layout' as layout;
+
 :host {
   color: #e8e6e3;
   font:
@@ -18,11 +20,6 @@
   color: inherit;
   font: inherit;
   cursor: pointer;
-
-  &:focus-visible {
-    outline: 2px solid #5fbfa3;
-    outline-offset: 1px;
-  }
 }
 
 .species-wiki__toggle {
@@ -120,7 +117,7 @@
     font: inherit;
 
     &:focus-visible {
-      outline: 2px solid #5fbfa3;
+      @include layout.focus-ring(0);
     }
   }
 }

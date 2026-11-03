@@ -1,5 +1,7 @@
 // Guide du débutant (#240, docs/DA.md, « Interface ») : dialogue modal sombre translucide,
 // centré, au-dessus de tous les panneaux (z-index 1) ; voile qui atténue le bac.
+@use '../panel-layout' as layout;
+
 :host {
   color: #e8e6e3;
   font:
@@ -31,8 +33,7 @@
   transform: translate(-50%, -50%);
 
   &:focus-visible {
-    outline: 2px solid #5fbfa3;
-    outline-offset: 2px;
+    @include layout.focus-ring(2px);
   }
 
   p {
@@ -128,11 +129,6 @@
 
   &:hover {
     background: rgb(232 230 227 / 12%);
-  }
-
-  &:focus-visible {
-    outline: 2px solid #5fbfa3;
-    outline-offset: 1px;
   }
 }
 

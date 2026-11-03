@@ -1,4 +1,13 @@
-import { ChangeDetectionStrategy, Component, inject, output, signal } from '@angular/core';
+import {
+  afterNextRender,
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  inject,
+  Injector,
+  output,
+  signal,
+} from '@angular/core';
 
 import { helpSections, keyCommand, keyCommandFor } from '../../core/commands/commands';
 import { isTypingContext } from '../../core/keyboard/keyboard';
@@ -31,6 +40,7 @@ export function initialOpen(stored: string | null, defaultOpen: boolean): boolea
  * (`localStorage`, repli en mémoire). Ouvert par défaut, pour qu'on le découvre, sauf sur
  * un écran étroit où il masquerait le bac (`COMMANDS_HELP_DEFAULT_OPEN`). Sur un tel écran,
  * l'application le replie quand « Réglages » s'ouvre, et inversement (`opened`, `fold`, #136).
+ * Échap, le focus dans le panneau, le replie et rend le focus au bouton « Commandes » (#407).
  * Absent en mode capture (c'est l'application qui ne l'affiche pas).
  */
 @Component({
@@ -85,10 +95,15 @@ export function initialOpen(stored: string | null, defaultOpen: boolean): boolea
     }`,
   styleUrl: './commands-help.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { '(document:keydown)': 'onKeydown($event)' },
+  host: {
+    '(document:keydown)': 'onKeydown($event)',
+    '(keydown.escape)': 'onEscape($event)',
+  },
 })
 export class CommandsHelp {
   private readonly store = inject(COMMANDS_HELP_STORE);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly injector = inject(Injector);
 
   /** Aide-mémoire déplié. */
   readonly open = signal(
@@ -119,6 +134,25 @@ export class CommandsHelp {
    */
   fold(): void {
     this.open.set(false);
+  }
+
+  /**
+   * Échap dans le panneau déplié (#407) : le replie (choix de l'utilisateur, mémorisé) et
+   * rend le focus au bouton « Commandes » qui le remplace, une fois la vue à jour.
+   */
+  protected onEscape(event: Event): void {
+    if (!this.open() || event.defaultPrevented) {
+      return;
+    }
+    event.preventDefault();
+    this.toggle();
+    afterNextRender(
+      () =>
+        this.host.nativeElement
+          .querySelector<HTMLElement>('.commands-help__toggle--folded')
+          ?.focus({ preventScroll: true }),
+      { injector: this.injector },
+    );
   }
 
   protected onKeydown(event: KeyboardEvent): void {

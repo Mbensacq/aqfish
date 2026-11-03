@@ -1,4 +1,6 @@
 // Mode immersif (#345) : plein cadre au-dessus de toute l'application.
+@use '../panel-layout' as layout;
+
 :host {
   position: fixed;
   inset: 0;
@@ -78,8 +80,7 @@
   }
 
   &:has(input:focus-visible) {
-    outline: 2px solid #f2c14e;
-    outline-offset: 2px;
+    @include layout.focus-ring(2px, #f2c14e);
   }
 }
 
@@ -100,8 +101,7 @@
   cursor: pointer;
 
   &:focus-visible {
-    outline: 2px solid #f2c14e;
-    outline-offset: 2px;
+    @include layout.focus-ring(2px, #f2c14e);
   }
 }
 

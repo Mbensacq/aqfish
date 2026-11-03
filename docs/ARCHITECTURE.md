@@ -527,6 +527,11 @@ maximal : 60 s par angle), et **aucune mesure de performance** ne doit y être f
   à la destruction du composant (`DestroyRef`).
 - Textes d'interface en français. Chaque contrôle a un libellé accessible et une alternative
   au clavier.
+- **Focus et contrastes** (#407, ADR 0099) : un seul anneau de focus, posé sur `:focus-visible`
+  dans `src/styles.scss` (mixin `focus-ring` de `ui/_panel-layout.scss`, halo sombre qui le
+  garde à ≥ 3:1 sur toute scène) ; couleurs des panneaux en jetons dans `_panel-layout.scss`,
+  contrastes vérifiés par `ui/panel-contrast.spec.ts` (texte ≥ 4,5:1, jour et nuit). Un
+  panneau ouvrable se ferme à Échap et rend le focus à son bouton.
 - Raccourcis clavier et gestes : déclarés une seule fois dans `core/commands` (ADR 0020).
   Tout nouveau raccourci y est déclaré avant d'être géré ; l'aide-mémoire (`?`) suit sans
   autre modification, et un test d'exhaustivité échoue si une touche gérée n'est pas

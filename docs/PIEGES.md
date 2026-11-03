@@ -6,6 +6,17 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Parcours e2e à la touche Tab : une image par appui** (cycle 136, #407) : sous le rendu
+  logiciel, `page.keyboard.press('Tab')` attend une image (~1,8 s en 1280 × 720, ~1 s en
+  800 × 600), et chaque `page.evaluate` en coûte une autre. Un parcours des ~100 contrôles
+  (réglages ouverts) relu à chaque appui dépassait 4 min. Consigner le focus dans la page par
+  un écouteur `focusin` posé avec `page.addInitScript` (styles calculés compris), lire le
+  journal une seule fois à la fin, et parcourir en 800 × 600 (`e2e/clavier-focus.spec.ts`,
+  1,9 min). (2026-11-03)
+- **Lire une feuille SCSS dans un test unitaire** (cycle 136, #407) : pas de `node:fs` dans
+  `ng test` (pas de types Node, bundle esbuild). `import x from './_f.scss' with { loader:
+  'text' }` fonctionne (attribut d'import du builder Angular), avec la déclaration de module
+  `ui/scss-text.d.ts`. Voir `ui/panel-contrast.spec.ts`. (2026-11-03)
 - **`npm run verify` sur `main` en arrière-plan pendant qu'on code : il lit le travail en
   cours** (cycle 127, #363) : lancé sur `main` puis suivi de modifications dans le même clone,
   le build (après formatage, lint et unitaires) a compilé les fichiers déjà modifiés et
