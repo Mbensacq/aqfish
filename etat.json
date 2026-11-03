@@ -5082,7 +5082,7 @@
       "date": "2026-11-03",
       "debut": "2026-11-03T14:55:37.200Z",
       "type": "retro",
-      "issue": null,
+      "issue": 40,
       "pr": null,
       "version": null,
       "phases": {
