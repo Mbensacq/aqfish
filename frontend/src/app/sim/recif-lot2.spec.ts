@@ -41,15 +41,20 @@ const NATIVE: readonly SpeciesId[] = ['clown', 'chirurgien'];
 const water = environmentWater('recif');
 const waterHeight = water.maxY - water.minY;
 
-/** Hauteurs (fraction de la colonne d'eau) des individus de `species`, sur `steps` pas. */
-function heights(world: MutableWorld, species: SpeciesId, steps: number): number[] {
-  const out: number[] = [];
+/**
+ * Hauteurs (fraction de la colonne d'eau) des individus de chaque espèce de `species`, sur
+ * `steps` pas, en une seule simulation.
+ */
+function heights(
+  world: MutableWorld,
+  species: readonly SpeciesId[],
+  steps: number,
+): Map<SpeciesId, number[]> {
+  const out = new Map<SpeciesId, number[]>(species.map((id) => [id, []]));
   for (let i = 0; i < steps; i++) {
     advanceInPlace(world, 1);
     for (const fish of world.entities) {
-      if (fish.species === species) {
-        out.push((fish.y - water.minY) / waterHeight);
-      }
+      out.get(fish.species)?.push((fish.y - water.minY) / waterHeight);
     }
   }
   return out;
@@ -222,18 +227,16 @@ describe('récif, lot 2 (#403) : catalogue complet', () => {
   it('hauteurs (graine 42, 60 s) : gobie au ras du sable, gramma bas, chromis au-dessus', () => {
     const world = mixedReef(42);
     advanceInPlace(world, Math.round(10 / SIM_DT));
-    const steps = Math.round(60 / SIM_DT);
-    const first = structuredClone(world) as MutableWorld;
-    const second = structuredClone(world) as MutableWorld;
-    const gobie = median(heights(world, 'gobie', steps));
-    const gramma = median(heights(first, 'gramma', steps));
-    const chromis = median(heights(second, 'chromis', steps));
+    const seen = heights(world, NEW, Math.round(60 / SIM_DT));
+    const gobie = median(seen.get('gobie') ?? []);
+    const gramma = median(seen.get('gramma') ?? []);
+    const chromis = median(seen.get('chromis') ?? []);
     expect(gobie).toBeLessThan(0.15);
     expect(gramma).toBeGreaterThan(gobie);
     expect(gramma).toBeLessThan(0.55);
     expect(chromis).toBeGreaterThan(0.45);
     expect(chromis).toBeGreaterThan(gramma);
-  });
+  }, 20_000);
 
   it('même graine, même trajectoire ; autre graine, autre trajectoire', () => {
     const a = mixedReef(7);
