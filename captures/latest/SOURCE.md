@@ -1,8 +1,8 @@
-# Source des captures c134
+# Source des captures c135
 
-- Branche : cycle/c134-recif-lot2
-- PR : #404
-- Commit : 0f45203
-- Graine : celle de captures.spec.ts (fixe)
-- Temps : 120 captures en 8,5 min (rendu logiciel)
-- Ecart a c133 : recif-front-lot2, recif-three-quarter-lot2 (attendus). Captures recif/tropical existantes identiques a l'octet.
+- Branche : cycle/c135-reduire-mouvements
+- PR : #408
+- Commit : 8cc37b0
+- Graine : par défaut du script de captures
+- Temps : 2026-11-03
+- Supplément : front-mouvements-reduits.png (prefers-reduced-motion, graine 42, 2 s)
