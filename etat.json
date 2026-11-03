@@ -5019,6 +5019,12 @@
           "debut": "2026-11-03T08:18:23.020Z",
           "fin": "2026-11-03T08:19:12.417Z",
           "note": "Issue #411 : Sons d'ambiance optionnels (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-03T08:19:45.167Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
