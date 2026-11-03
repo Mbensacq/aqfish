@@ -5123,10 +5123,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-03T18:50:46.816Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-03T18:53:27.675Z",
+          "note": "Issue #419 : étagère d'animalerie multi-niveaux, solde de #264 (M) ; audit #264/#340 commenté, #340 livrée"
         }
       },
       "metriques": {}
