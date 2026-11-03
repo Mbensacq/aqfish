@@ -5061,6 +5061,12 @@
           "debut": "2026-11-03T11:11:19.297Z",
           "fin": "2026-11-03T12:31:36.417Z",
           "note": "PR #414 : marge de niveau (limitPeak + limiteur), commentaire stop(), message de refus audio (+ case recalée), CI verte ; 122 captures identiques à l'octet"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-03T12:32:06.786Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
