@@ -21,6 +21,12 @@ qu'après un geste de l'utilisateur (politique d'autoplay).
      [320, 720) Hz et montant de × 1,8, attaque de 5 ms ; intervalles tirés d'une loi
      exponentielle (moyenne `1 / rythme`, au moins 120 ms).
      Tous les niveaux changent par fondu court (`setTargetAtTime`, constante 0,15 s).
+   - **marge de niveau** (#413) : la crête de la somme des couches (eau × 1,35 au sommet du
+     LFO + un « blop » + pluie) est bornée à 1 par `limitPeak` (`core`), qui réduit toutes
+     les couches dans la même proportion au-delà (volume fort, pluie et bulleur) et ne change
+     rien en dessous (dont le réglage par défaut, 30 %). En fin de chaîne, un limiteur doux
+     (`DynamicsCompressorNode` : seuil -3 dBFS, genou 6 dB, ratio 4:1, attaque 3 ms,
+     relâchement 250 ms) sert de filet de sécurité pour les crêtes des bruits filtrés.
 2. **Logique pure** (`core/ambient-sound`) : table « scène → niveaux », bornes du volume
    (`[0, 1]`, non fini → 30 %), lecture et écriture du choix. Valeurs de jeu, à volume 1 :
 
@@ -55,7 +61,8 @@ qu'après un geste de l'utilisateur (politique d'autoplay).
    défile, y cède une ligne (`e2e/cadrage-panneaux.spec.ts` : ni débord ni ligne coupée).
    Sans Web Audio, ou si la création du contexte échoue, case et curseur restent atteignables
    au clavier mais inertes (`aria-disabled`, comme « Éditer le décor ») et une phrase
-   l'explique.
+   l'explique, propre à chaque cas (#413) : absence de Web Audio, ou démarrage de l'audio
+   refusé par le navigateur (recharger la page pour réessayer).
 
 La « pluie » ne sonne que si la pluie est active : elle n'existe que dans le bassin.
 

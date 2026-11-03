@@ -3395,7 +3395,9 @@ export class AquariumHost {
   private stop(): void {
     this.stopped = true;
     // Plus d'aquarium affiché : plus de scène sonore (le service, racine, survit à l'hôte).
-    // Pas d'écriture de signal ici : elle planifierait une détection de changements.
+    // Seule écriture de signal ici : `scene` du service, qu'aucun gabarit ni effet ne lit (il
+    // n'est consulté que par `apply()`, qui règle le moteur) ; elle ne planifie donc aucune
+    // détection de changements.
     this.ambientSound.setScene(null);
     if (this.frameId !== null) {
       this.document.defaultView?.cancelAnimationFrame(this.frameId);
