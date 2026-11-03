@@ -5025,6 +5025,12 @@
           "debut": "2026-11-03T08:19:45.167Z",
           "fin": "2026-11-03T09:38:08.783Z",
           "note": "PR #412 : sons d'ambiance synthétisés (ADR 0100), CI verte ; e2e touchés rejoués en local ; captures panneau ouvert changées (nouvelle section), scène inchangée ; capture c137/dev"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-03T09:38:45.304Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
