@@ -5163,6 +5163,12 @@
           "debut": "2026-11-03T23:40:12.705Z",
           "fin": "2026-11-03T23:41:01.845Z",
           "note": "Issue #422 : récif lot 3, #405 + invertébré + poisson de roche (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-03T23:41:43.141Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
