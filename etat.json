@@ -4939,7 +4939,7 @@
       "debut": "2026-11-03T02:09:17.918Z",
       "type": "fonctionnalite",
       "issue": 406,
-      "pr": null,
+      "pr": 408,
       "version": null,
       "phases": {
         "planif": {
