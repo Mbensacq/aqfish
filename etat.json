@@ -5139,6 +5139,12 @@
           "debut": "2026-11-03T21:36:37.683Z",
           "fin": "2026-11-03T22:28:54.476Z",
           "note": "Verdict RÉSERVES, 0 bug, captures publiées (123 ; 121 identiques à c139, 2 nouvelles) ; cadrage three-quarter-piece-animalerie ne montre pas l'étagère pleine ; e2e piece-bacs 3/3, CI verte"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-03T22:29:41.913Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
