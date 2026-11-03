@@ -59,11 +59,6 @@
     background: rgb(232 230 227 / 12%);
   }
 
-  &:focus-visible {
-    outline: 2px solid #5fbfa3;
-    outline-offset: 1px;
-  }
-
   &[aria-disabled='true'] {
     opacity: 0.45;
     cursor: default;
@@ -166,7 +161,6 @@
   accent-color: #5fbfa3;
 
   &:focus-visible {
-    outline: 2px solid #5fbfa3;
-    outline-offset: 2px;
+    @include layout.focus-ring(2px);
   }
 }

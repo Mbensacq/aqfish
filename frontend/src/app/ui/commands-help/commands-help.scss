@@ -124,11 +124,6 @@
     background: rgb(232 230 227 / 10%);
   }
 
-  &:focus-visible {
-    outline: 2px solid #5fbfa3;
-    outline-offset: 1px;
-  }
-
   // Replié : une petite pastille, atténuée comme la barre des préréglages.
   &--folded {
     min-height: 32px;

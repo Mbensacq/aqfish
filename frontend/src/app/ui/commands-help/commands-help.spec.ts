@@ -65,6 +65,55 @@ describe('CommandsHelp (#74)', () => {
     document.querySelectorAll('[data-test-field]').forEach((el) => el.remove());
   });
 
+  describe('Échap (#407)', () => {
+    afterEach(() => fixture.destroy());
+
+    it('dans le panneau déplié : le replie, mémorise et rend le focus au bouton « Commandes »', async () => {
+      await create(COMMANDS_HELP_OPEN);
+      document.body.append(fixture.nativeElement as HTMLElement);
+      const fold = toggleButton();
+      fold.focus();
+      const event = press('Escape', {}, fold);
+      await fixture.whenStable();
+      expect(event.defaultPrevented).toBe(true);
+      expect(panel()).toBeNull();
+      expect(store.writes.at(-1)).toEqual([COMMANDS_HELP_STORAGE_KEY, COMMANDS_HELP_FOLDED]);
+      const folded = toggleButton();
+      expect(folded.getAttribute('aria-expanded')).toBe('false');
+      expect(document.activeElement).toBe(folded);
+    });
+
+    it('replié : Échap ne change rien', async () => {
+      await create(COMMANDS_HELP_FOLDED);
+      document.body.append(fixture.nativeElement as HTMLElement);
+      const event = press('Escape', {}, toggleButton());
+      await fixture.whenStable();
+      expect(event.defaultPrevented).toBe(false);
+      expect(panel()).toBeNull();
+      expect(store.writes).toEqual([]);
+    });
+
+    it('Échap déjà traité : le panneau reste déplié', async () => {
+      await create(COMMANDS_HELP_OPEN);
+      const handled = new KeyboardEvent('keydown', {
+        key: 'Escape',
+        bubbles: true,
+        cancelable: true,
+      });
+      handled.preventDefault();
+      toggleButton().dispatchEvent(handled);
+      await fixture.whenStable();
+      expect(panel()).not.toBeNull();
+    });
+
+    it('Échap ailleurs dans la page ne replie pas l’aide-mémoire', async () => {
+      await create(COMMANDS_HELP_OPEN);
+      press('Escape');
+      await fixture.whenStable();
+      expect(panel()).not.toBeNull();
+    });
+  });
+
   it('ouvert par défaut : liste chaque touche déclarée, avec sa description', async () => {
     await create();
     expect(panel()).not.toBeNull();

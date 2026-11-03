@@ -54,11 +54,6 @@
     opacity: 1;
   }
 
-  &:focus-visible {
-    outline: 2px solid #5fbfa3;
-    outline-offset: 1px;
-  }
-
   &--open {
     border-color: #5fbfa3;
     color: #5fbfa3;
@@ -130,8 +125,7 @@
   accent-color: #5fbfa3;
 
   &:focus-visible {
-    outline: 2px solid #5fbfa3;
-    outline-offset: 2px;
+    @include layout.focus-ring(2px);
   }
 }
 
@@ -148,11 +142,6 @@
   font:
     600 14px / 1 system-ui,
     sans-serif;
-
-  &:focus-visible {
-    outline: 2px solid #5fbfa3;
-    outline-offset: 1px;
-  }
 }
 
 .control-panel__check {
@@ -170,8 +159,7 @@
   }
 
   input:focus-visible {
-    outline: 2px solid #5fbfa3;
-    outline-offset: 2px;
+    @include layout.focus-ring(2px);
   }
 }
 
@@ -248,11 +236,6 @@
   font:
     600 14px / 1 system-ui,
     sans-serif;
-
-  &:focus-visible {
-    outline: 2px solid #5fbfa3;
-    outline-offset: 1px;
-  }
 }
 
 .control-panel__step {
@@ -396,11 +379,6 @@
   &:hover {
     background: rgb(232 230 227 / 12%);
   }
-
-  &:focus-visible {
-    outline: 2px solid #5fbfa3;
-    outline-offset: 1px;
-  }
 }
 
 // Champ de fichier natif masqué : le bouton « Importer » l'ouvre (libellé et style communs).
@@ -433,11 +411,6 @@
 
   &:hover {
     background: rgb(95 191 163 / 16%);
-  }
-
-  &:focus-visible {
-    outline: 2px solid #5fbfa3;
-    outline-offset: 1px;
   }
 
   &[aria-disabled='true'] {
@@ -553,11 +526,6 @@
   &[aria-disabled='true'] {
     cursor: default;
     opacity: 0.7;
-  }
-
-  &:focus-visible {
-    outline: 2px solid #5fbfa3;
-    outline-offset: 1px;
   }
 
   .control-panel__sheet-status {

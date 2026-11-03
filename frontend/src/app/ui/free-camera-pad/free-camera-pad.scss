@@ -46,11 +46,6 @@
     border-color: #5fbfa3;
     color: #5fbfa3;
   }
-
-  &:focus-visible {
-    outline: 2px solid #5fbfa3;
-    outline-offset: 1px;
-  }
 }
 
 @media (max-width: 480px) {

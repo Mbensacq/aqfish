@@ -172,4 +172,7 @@ devant lui garde son vert ; aucune couleur ajoutée à la palette.
   bac ; niveaux vert (`#a8e6cf`), orange (`#f0d68a`) et rouge (`#f2a39a`) toujours doublés
   d'un texte et d'une icône pixel art (coche, point d'exclamation, croix) ; opacité 0,85 au
   repos, texte lu toujours à 4,5:1 au moins.
+- Focus clavier (#407, ADR 0099) : anneau turquoise `#5fbfa3` de 2 px cerné d'un halo
+  `#141418`, le même sur tous les contrôles ; texte des panneaux à 4,5:1 au moins sur une
+  scène de jour comme de nuit (fond à 72 % au moins sous un bouton, 88 % sous un panneau).
 - Textes en français.
