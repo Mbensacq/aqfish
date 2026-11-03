@@ -5015,10 +5015,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-03T08:18:23.020Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-03T08:19:12.417Z",
+          "note": "Issue #411 : Sons d'ambiance optionnels (M)"
         }
       },
       "metriques": {}
