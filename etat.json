@@ -5141,10 +5141,10 @@
           "note": "Verdict RÉSERVES, 0 bug, captures publiées (123 ; 121 identiques à c139, 2 nouvelles) ; cadrage three-quarter-piece-animalerie ne montre pas l'étagère pleine ; e2e piece-bacs 3/3, CI verte"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-03T22:29:41.913Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-03T23:39:36.938Z",
+          "note": "PR #420 fusionnée → v1.9.0 (release CI ok), CI main verte ; #419 fermée ; dette #421 (cadrage capture trois quarts, MAX_SUPPORT_LEVELS, choix du niveau) ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
