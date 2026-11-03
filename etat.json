@@ -4943,10 +4943,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-03T02:09:17.918Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-03T02:09:58.601Z",
+          "note": "Issue #406 : Accessibilité, réduire les mouvements (M) ; #407 préparée pour c136"
         }
       },
       "metriques": {}
