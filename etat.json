@@ -4913,10 +4913,10 @@
           "note": "Issue #403 : Récif lot 2, espèces marines distinctes (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-02T23:59:56.802Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-03T01:15:24.604Z",
+          "note": "PR #404 : récif lot 2 (chromis, gobie, gramma), CI verte ; captures récif/tropical identiques à l'octet ; immersif récif = chromis, clown, gramma (ADR 0097)"
         }
       },
       "metriques": {}
