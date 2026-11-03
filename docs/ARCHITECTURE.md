@@ -532,6 +532,13 @@ maximal : 60 s par angle), et **aucune mesure de performance** ne doit y être f
   garde à ≥ 3:1 sur toute scène) ; couleurs des panneaux en jetons dans `_panel-layout.scss`,
   contrastes vérifiés par `ui/panel-contrast.spec.ts` (texte ≥ 4,5:1, jour et nuit). Un
   panneau ouvrable se ferme à Échap et rend le focus à son bouton.
+- **Sons d'ambiance** (#411, ADR 0100) : désactivés par défaut, synthétisés par Web Audio
+  (aucun fichier audio). Niveaux des couches et choix mémorisé (`aqfish.sons`) dans
+  `core/ambient-sound` (pur, hasard à graine propre, rien de `sim/`) ; moteur
+  (`ui/ambient-sound/ambient-sound-engine.ts`) et service racine `AmbientSoundState`. L'hôte
+  ne lui donne qu'une scène (environnement, moment de la journée, pluie, pause), jamais le
+  monde ; en capture, `forbid()` interdit tout contexte audio. Le contexte n'est créé qu'au
+  geste de l'utilisateur.
 - Raccourcis clavier et gestes : déclarés une seule fois dans `core/commands` (ADR 0020).
   Tout nouveau raccourci y est déclaré avant d'être géré ; l'aide-mémoire (`?`) suit sans
   autre modification, et un test d'exhaustivité échoue si une touche gérée n'est pas

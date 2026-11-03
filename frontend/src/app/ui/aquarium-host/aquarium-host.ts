@@ -60,6 +60,8 @@ import {
 } from '../../render/aquarium-view';
 import { presetTransitionSeconds } from '../../render/camera-presets';
 import { ReducedMotionState } from '../reduced-motion/reduced-motion-state';
+import { AmbientSoundState } from '../ambient-sound/ambient-sound-state';
+import type { AmbientScene } from '../../core/ambient-sound/ambient-sound';
 import { freeMoveAxesInto, freeMoveFor, type FreeMoveId } from '../../core/commands/commands';
 import { isTypingContext } from '../../core/keyboard/keyboard';
 import {
@@ -636,6 +638,10 @@ export class AquariumHost {
   private readonly physicsLoader = inject(DECOR_PHYSICS_LOADER);
   /** Option « Réduire les mouvements » (#406), partagée avec les réglages et le mode immersif. */
   private readonly motionState = inject(ReducedMotionState);
+  /** Sons d'ambiance (#411) : l'hôte fournit la scène, le service décide du reste. */
+  private readonly ambientSound = inject(AmbientSoundState);
+  /** Scène sonore autorisée : après le démarrage, hors capture. */
+  private readonly soundAllowed = signal(false);
   /** Moteur de chute, une fois chargé (#170). */
   private dropper: DecorDropper | null = null;
   /** Chute affichée (#170) : trajectoire de la base de l'élément `index`, temps écoulé (s). */
@@ -2529,6 +2535,21 @@ export class AquariumHost {
       this.motionState.reduced();
       untracked(() => this.applyReducedMotion());
     });
+    // Sons d'ambiance (#411) : la scène suit l'environnement, le moment de la journée, la
+    // pluie et la pause ; jamais en capture (aucune scène, donc silence). Le son ne lit que ces
+    // signaux d'affichage, jamais le monde.
+    effect(() => {
+      const scene: AmbientScene | null = this.soundAllowed()
+        ? {
+            environment: this.environment(),
+            phase: this.dayPhase(),
+            rain: this.rain(),
+            bubbler: environmentById(this.environment()).bubbles,
+            silenced: this.speed() === 0,
+          }
+        : null;
+      untracked(() => this.ambientSound.setScene(scene));
+    });
   }
 
   /**
@@ -2557,6 +2578,10 @@ export class AquariumHost {
     }
     const params = parseCaptureParams(win.location.search);
     this.capture = params.capture;
+    this.soundAllowed.set(!params.capture);
+    if (params.capture) {
+      this.ambientSound.forbid();
+    }
     // Vue fond d'écran (#279) : `fond=1`, ou la globale `aqfishFond` du paquet. En capture,
     // seule l'interface est masquée (contrat de capture inchangé).
     const global = readWallpaperGlobal(win);
@@ -3369,6 +3394,9 @@ export class AquariumHost {
 
   private stop(): void {
     this.stopped = true;
+    // Plus d'aquarium affiché : plus de scène sonore (le service, racine, survit à l'hôte).
+    // Pas d'écriture de signal ici : elle planifierait une détection de changements.
+    this.ambientSound.setScene(null);
     if (this.frameId !== null) {
       this.document.defaultView?.cancelAnimationFrame(this.frameId);
       this.frameId = null;

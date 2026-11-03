@@ -4,6 +4,7 @@ import { isCaptureReady, resetCaptureReady } from '../../core/capture/capture-re
 import { RENDER_FILTER_STORAGE_KEY } from '../../core/render-filter/render-filter';
 import { FREE_CAMERA_STORAGE_KEY } from '../../core/free-camera-pref/free-camera-pref';
 import { REDUCED_MOTION_STORAGE_KEY } from '../../core/reduced-motion/reduced-motion';
+import { AmbientSoundState } from '../ambient-sound/ambient-sound-state';
 import { ReducedMotionState } from '../reduced-motion/reduced-motion-state';
 import {
   LEGACY_SAVE_STORAGE_KEY,
@@ -1153,6 +1154,57 @@ describe('AquariumHost', () => {
       early.componentInstance.toggleRain();
       expect(early.componentInstance.rain()).toBe(false);
       early.destroy();
+    });
+  });
+
+  describe('sons d’ambiance (#411)', () => {
+    const host = () => fixture.componentInstance;
+    const scene = () => TestBed.inject(AmbientSoundState).scene();
+
+    async function settle(): Promise<void> {
+      fixture.detectChanges();
+      await fixture.whenStable();
+    }
+
+    it('scène : environnement, bulleur, pluie, nuit et pause suivis ; vidée à la destruction', async () => {
+      await create('?seed=4&heure=12');
+      setCanvasSize(800, 600);
+      frames.flush(0);
+      await settle();
+      expect(scene()).toEqual({
+        environment: 'tropical',
+        phase: 'jour',
+        rain: false,
+        bubbler: true,
+        silenced: false,
+      });
+      host().setEnvironment('bassin');
+      host().setRain(true);
+      await settle();
+      expect(scene()).toMatchObject({ environment: 'bassin', bubbler: false, rain: true });
+      host().freezeClockAt(0);
+      frames.flush(16);
+      await settle();
+      expect(scene()?.phase).toBe('nuit');
+      host().setSpeed(0);
+      await settle();
+      expect(scene()?.silenced).toBe(true);
+      host().setSpeed(1);
+      await settle();
+      expect(scene()?.silenced).toBe(false);
+      fixture.destroy();
+      expect(scene()).toBeNull();
+    });
+
+    it('capture : aucune scène, son interdit pour la session', async () => {
+      await create('?capture=1&camera=front');
+      setCanvasSize(800, 600);
+      frames.flush();
+      await settle();
+      expect(scene()).toBeNull();
+      const state = TestBed.inject(AmbientSoundState);
+      state.setEnabled(true);
+      expect(state.playing()).toBe(false);
     });
   });
 

@@ -27,6 +27,7 @@ import {
 } from '../../sim/pond-shape';
 import { MAX_CATAPPA_LEAVES } from '../../sim/catappa';
 import { ReducedMotionState } from '../reduced-motion/reduced-motion-state';
+import { AmbientSoundState } from '../ambient-sound/ambient-sound-state';
 import { formatHour, HOUR_SLIDER_STEP, HOURS_PER_DAY, NOON_HOUR } from '../../sim/daylight';
 import { NO_FISH, type PopulationCounts } from '../../sim/population';
 import type { SaveMessage, SaveStatus } from '../../core/save-storage/save-storage';
@@ -542,6 +543,44 @@ export interface NewTankRequest {
             <input type="checkbox" [checked]="reducedMotion()" (change)="onReducedMotion($event)" />
             Réduire les mouvements
           </label>
+        </fieldset>
+
+        <!-- Son (#411, ADR 0100) : désactivé par défaut, case et volume sur une seule ligne,
+             juste après « Accessibilité » dans la première colonne (docs/PIEGES.md). -->
+        <fieldset class="control-panel__section" data-section="son">
+          <legend class="control-panel__legend">Son</legend>
+          <div class="control-panel__row">
+            <label class="control-panel__check" data-ambient-sound>
+              <input
+                type="checkbox"
+                [checked]="soundEnabled()"
+                [attr.aria-disabled]="soundAvailable() ? null : 'true'"
+                [attr.aria-describedby]="soundAvailable() ? null : 'panneau-son-indisponible'"
+                (click)="onAmbientSoundClick($event)"
+                (change)="onAmbientSound($event)"
+              />
+              Sons d'ambiance
+            </label>
+            <input
+              class="control-panel__range control-panel__count-range"
+              type="range"
+              min="0"
+              max="100"
+              step="5"
+              aria-label="Volume des sons d'ambiance"
+              data-ambient-volume
+              [value]="soundVolume()"
+              [attr.aria-valuetext]="soundVolume() + ' %'"
+              [attr.aria-disabled]="soundAvailable() ? null : 'true'"
+              [attr.aria-describedby]="soundAvailable() ? null : 'panneau-son-indisponible'"
+              (input)="onAmbientVolume($event)"
+            />
+          </div>
+          @if (!soundAvailable()) {
+            <p class="control-panel__message" id="panneau-son-indisponible">
+              Sons indisponibles : ce navigateur ne prend pas en charge Web Audio.
+            </p>
+          }
         </fieldset>
 
         @if (roomAvailable() && roomShown()) {
@@ -1194,6 +1233,14 @@ export class ControlPanel {
   private readonly motionState = inject(ReducedMotionState);
   /** État effectif de l'option (choix des réglages, sinon préférence système). */
   readonly reducedMotion = this.motionState.reduced;
+  /** Sons d'ambiance (#411), partagés avec l'hôte de l'aquarium qui fournit la scène. */
+  private readonly sound = inject(AmbientSoundState);
+  /** Case « Sons d'ambiance » cochée. */
+  readonly soundEnabled = this.sound.enabled;
+  /** Web Audio utilisable ; sinon case et curseur désactivés, avec une explication. */
+  readonly soundAvailable = this.sound.available;
+  /** Volume en pour cent, pour le curseur. */
+  readonly soundVolume = computed(() => Math.round(this.sound.volume() * 100));
 
   /** Panneau déplié (fermé par défaut : captures et premier regard inchangés). */
   readonly open = signal(false);
@@ -1592,6 +1639,31 @@ export class ControlPanel {
   /** Case « Réduire les mouvements » (#406) : réglée et mémorisée dans l'état partagé. */
   protected onReducedMotion(event: Event): void {
     this.motionState.setReduced((event.target as HTMLInputElement).checked);
+  }
+
+  /**
+   * Sans Web Audio, la case reste atteignable au clavier (`aria-disabled`, comme « Éditer le
+   * décor ») mais ne se coche pas : le clic est annulé.
+   */
+  protected onAmbientSoundClick(event: Event): void {
+    if (!this.soundAvailable()) {
+      event.preventDefault();
+    }
+  }
+
+  /** Case « Sons d'ambiance » (#411) : le `change` est un geste, le contexte audio peut naître. */
+  protected onAmbientSound(event: Event): void {
+    this.sound.setEnabled((event.target as HTMLInputElement).checked);
+  }
+
+  /** Curseur du volume (#411), en pour cent ; sans Web Audio, il revient à sa valeur. */
+  protected onAmbientVolume(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!this.soundAvailable()) {
+      input.value = String(this.soundVolume());
+      return;
+    }
+    this.sound.setVolume(Number(input.value) / 100);
   }
 
   protected onRoom(event: Event): void {
