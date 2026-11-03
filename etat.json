@@ -5069,10 +5069,10 @@
           "note": "Verdict OK, 0 bug, 1 e2e ajouté (refus audio), CI verte, captures publiées (122, identiques à c137) ; mutation non mesurée (test triton hors délai 30 s au run initial, machine lente)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-03T13:52:58.117Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-03T14:55:08.117Z",
+          "note": "PR #414 fusionnée → v1.8.5 (release CI ok, CI main verte) ; #413 fermée ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
