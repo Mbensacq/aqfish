@@ -4925,10 +4925,10 @@
           "note": "Verdict RÉSERVES (gobie/gramma très petits), 0 bug, 3768 tests verts, 120 captures c134 publiées ; e2e complet non rejoué"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-03T01:34:09.620Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-03T02:08:46.763Z",
+          "note": "PR #404 fusionnée → v1.8.1 (release CI ok) ; #403 fermée ; dette #405 (lisibilité gobie/gramma) ; CI main en cours sur b2cd514 (arbre identique au commit testé vert) ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
