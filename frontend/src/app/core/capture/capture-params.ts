@@ -91,7 +91,7 @@
  * Paramètre facultatif `bacs=` (issue #305, lot 2b) : en mode capture, avec `piece=1`,
  * meubles supports et bacs posés ajoutés à la pièce de N bacs dans l'ordre de l'URL, séparés
  * par des virgules, chacun à la première place libre : un type de meuble (`commode`,
- * `etagere-bacs`), ou un bac tropical vide `taille@meuble` (taille du catalogue, meuble par
+ * `etagere-bacs`, `etagere-animalerie`), ou un bac tropical vide `taille@meuble` (taille du catalogue, meuble par
  * son rang parmi ceux de `bacs=`, ou `sol`). Exemple : `bacs=commode,moyen@0`. Entrée mal
  * formée ignorée ici ; type, taille ou pose refusés ignorés par l'application ; absent, pièce
  * d'un seul bac (séries existantes inchangées).

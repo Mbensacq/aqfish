@@ -314,22 +314,92 @@ export const TANK_SIZES: Readonly<Record<TankSizeId, TankSize>> = {
 };
 
 /** Types de meubles supports. */
-export const SUPPORT_KINDS = ['commode', 'etagere-bacs'] as const;
+export const SUPPORT_KINDS = ['commode', 'etagere-bacs', 'etagere-animalerie'] as const;
 export type SupportKind = (typeof SUPPORT_KINDS)[number];
 
-/** Modèle d'un meuble support : emprise et hauteur du plateau, en centimètres entiers. */
+/**
+ * Hauteur sous plafond retenue pour la pose (cm) : aucun bac ne dépasse ce niveau. Sous le
+ * plus bas plafond de la pièce graphique (meuble implicite de 60 cm, bac de 45 cm, murs de
+ * 1,2 m au-dessus du bac : 2,25 m ; ADR 0102).
+ */
+export const ROOM_CEILING_CM = 220;
+
+/**
+ * Niveau d'un meuble support (ADR 0102) : hauteur de sa tablette depuis le parquet, plateau
+ * utilisable (emprise du meuble moins ses montants, avant le quart de tour) et hauteur libre
+ * au-dessus (`null` : jusqu'au plafond, `ROOM_CEILING_CM`), en centimètres entiers.
+ */
+export interface SupportLevel {
+  readonly height: number;
+  readonly width: number;
+  readonly depth: number;
+  readonly clearance: number | null;
+}
+
+/**
+ * Modèle d'un meuble support : emprise et hauteur du plateau supérieur, en centimètres
+ * entiers, et ses niveaux, du bas vers le haut (le dernier est le plateau supérieur).
+ */
 export interface SupportModel {
   readonly name: string;
   readonly width: number;
   readonly depth: number;
   readonly height: number;
+  readonly levels: readonly SupportLevel[];
 }
 
-/** Catalogue des meubles supports (un seul niveau par meuble au lot 2, ADR 0073). */
+/** Épaisseur des tablettes de l'étagère d'animalerie (cm). */
+export const RACK_SHELF_CM = 3;
+
+/** Largeur des montants de l'étagère d'animalerie (cm), de chaque côté. */
+export const RACK_POST_CM = 4;
+
+/**
+ * Catalogue des meubles supports (ADR 0073). L'étagère d'animalerie (ADR 0102) a trois
+ * niveaux : tablettes à 10, 76 et 142 cm, 63 cm libres sous les deux tablettes du haut
+ * (approximation de jeu des étagères de bacs du commerce, de 1,4 à 1,8 m de haut) ; ses
+ * montants réduisent le plateau des niveaux bas.
+ */
 export const SUPPORT_CATALOG: Readonly<Record<SupportKind, SupportModel>> = {
-  commode: { name: 'Commode', width: 120, depth: 50, height: 75 },
-  'etagere-bacs': { name: 'Étagère basse', width: 160, depth: 45, height: 40 },
+  commode: {
+    name: 'Commode',
+    width: 120,
+    depth: 50,
+    height: 75,
+    levels: [{ height: 75, width: 120, depth: 50, clearance: null }],
+  },
+  'etagere-bacs': {
+    name: 'Étagère basse',
+    width: 160,
+    depth: 45,
+    height: 40,
+    levels: [{ height: 40, width: 160, depth: 45, clearance: null }],
+  },
+  'etagere-animalerie': {
+    name: 'Étagère d’animalerie',
+    width: 130,
+    depth: 50,
+    height: 142,
+    levels: [
+      { height: 10, width: 130 - 2 * RACK_POST_CM, depth: 50, clearance: 76 - RACK_SHELF_CM - 10 },
+      {
+        height: 76,
+        width: 130 - 2 * RACK_POST_CM,
+        depth: 50,
+        clearance: 142 - RACK_SHELF_CM - 76,
+      },
+      { height: 142, width: 130, depth: 50, clearance: null },
+    ],
+  },
 };
+
+/** Plus grand nombre de niveaux d'un meuble du catalogue (validation de la sauvegarde). */
+export const MAX_SUPPORT_LEVELS = 3;
+
+/** Niveau `level` (0 : le plus bas) du meuble `kind`, ou `undefined` s'il n'existe pas. */
+export function supportLevel(kind: SupportKind, level: number): SupportLevel | undefined {
+  return Number.isInteger(level) ? SUPPORT_CATALOG[kind].levels[level] : undefined;
+}
 
 /** Meuble support posé au sol : centre de son emprise (mètres, au centimètre) et quart de tour. */
 export interface RoomSupport {
@@ -342,13 +412,20 @@ export interface RoomSupport {
 
 /**
  * Position d'un bac dans la pièce : support (`null` : le sol), centre de son emprise
- * (mètres, au centimètre, repère de la pièce) et quart de tour.
+ * (mètres, au centimètre, repère de la pièce), quart de tour et niveau du support (ADR 0102,
+ * 0 le plus bas ; absent : 0, seul niveau des meubles à un plateau et du sol).
  */
 export interface TankPlacement {
   readonly supportId: number | null;
   readonly x: number;
   readonly z: number;
   readonly quarter: RoomQuarter;
+  readonly level?: number;
+}
+
+/** Niveau d'une position (`level` absent : 0). */
+export function placementLevel(placement: TankPlacement): number {
+  return placement.level ?? 0;
 }
 
 /** Raisons d'un refus de pose, d'ajout ou de retrait. */
@@ -360,6 +437,7 @@ export type RoomLayoutRefusal =
   | 'hors-support'
   | 'chevauchement'
   | 'support-occupe'
+  | 'trop-haut'
   | 'jardin'
   | 'dernier-bac'
   | 'position-invalide';
@@ -476,7 +554,11 @@ function tankBox(room: RoomState, tank: RoomTank, placement = tank.placement): C
     placement.supportId === null
       ? null
       : room.furniture.find((item) => item.id === placement.supportId);
-  const base = support === undefined || support === null ? 0 : SUPPORT_CATALOG[support.kind].height;
+  const level =
+    support === undefined || support === null
+      ? undefined
+      : supportLevel(support.kind, placementLevel(placement));
+  const base = level?.height ?? 0;
   return footprintBox(
     placement.x,
     placement.z,
@@ -491,8 +573,10 @@ function tankBox(room: RoomState, tank: RoomTank, placement = tank.placement): C
 /**
  * Raison du refus de poser le bac `tank` à `placement` dans `room` (le bac lui-même, s'il y
  * est déjà, est ignoré), ou `null` si la pose est permise : coordonnées au centimètre, support
- * existant, emprise entièrement sur le plateau du support (ou sur le sol de la pièce), aucun
- * chevauchement avec un meuble ou un autre bac (se toucher est permis).
+ * existant et niveau de ce support (0 au sol), emprise entièrement sur le plateau du niveau
+ * (ou sur le sol de la pièce), bac sous la tablette du dessus et sous le plafond
+ * (`trop-haut`), aucun chevauchement avec un autre meuble ou un autre bac (se toucher est
+ * permis).
  */
 export function tankPlacementRefusal(
   room: RoomState,
@@ -505,25 +589,48 @@ export function tankPlacementRefusal(
   if (!isCentimetric(placement.x) || !isCentimetric(placement.z) || !isQuarter(placement.quarter)) {
     return 'position-invalide';
   }
+  const levelIndex = placementLevel(placement);
   let support: RoomSupport | null = null;
+  let level: SupportLevel | null = null;
   if (placement.supportId !== null) {
     support = room.furniture.find((item) => item.id === placement.supportId) ?? null;
     if (support === null) {
       return 'meuble-inconnu';
     }
+    level = supportLevel(support.kind, levelIndex) ?? null;
+    if (level === null) {
+      return 'position-invalide';
+    }
+  } else if (levelIndex !== 0) {
+    return 'position-invalide';
   }
   const box = tankBox(room, tank, placement) as CmBox;
   if (!insideFloor(box)) {
     return 'hors-piece';
   }
-  if (support !== null) {
-    const top = supportBox(support);
+  if (support !== null && level !== null) {
+    const top = footprintBox(
+      support.x,
+      support.z,
+      level.width,
+      level.depth,
+      support.quarter,
+      0,
+      level.height,
+    );
     if (box.minX < top.minX || box.maxX > top.maxX || box.minZ < top.minZ || box.maxZ > top.maxZ) {
       return 'hors-support';
     }
+    if (level.clearance !== null && box.maxY > (level.height + level.clearance) * 2) {
+      return 'trop-haut';
+    }
+  }
+  if (box.maxY > ROOM_CEILING_CM * 2) {
+    return 'trop-haut';
   }
   for (const item of room.furniture) {
-    if (overlaps(box, supportBox(item))) {
+    // Son propre meuble ne gêne pas : plateau et hauteur libre sont vérifiés ci-dessus.
+    if (item.id !== support?.id && overlaps(box, supportBox(item))) {
       return 'chevauchement';
     }
   }

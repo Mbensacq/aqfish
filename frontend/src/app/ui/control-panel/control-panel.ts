@@ -595,7 +595,7 @@ export interface NewTankRequest {
                « Décor » : l'ordre au clavier des sections précédentes ne change pas. -->
           <fieldset class="control-panel__section" data-section="bacs-meubles">
             <legend class="control-panel__legend">Bacs et meubles</legend>
-            <div class="control-panel__row">
+            <div class="control-panel__row control-panel__row--wrap">
               @for (kind of supportKinds; track kind) {
                 <button
                   type="button"

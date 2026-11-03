@@ -355,6 +355,12 @@
   gap: 8px;
 }
 
+// Boutons du catalogue « Bacs et meubles » (#419) : à la ligne plutôt que hors du panneau.
+.control-panel__row--wrap {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+
 // Deux champs de même largeur (renommage d'un bac, #316).
 .control-panel__row--halves > * {
   flex: 1 1 0;

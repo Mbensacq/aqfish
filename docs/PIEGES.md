@@ -6,6 +6,13 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Un bouton de plus dans une rangée du panneau : il sort de sa colonne, sans erreur** (cycle
+  140, #419) : `.control-panel__row` ne passe pas à la ligne ; le troisième bouton de « Bacs et
+  meubles » débordait sous la section « Population » et l'e2e attendait 5 min un clic
+  « intercepté » (`subtree intercepts pointer events`), tests unitaires, build et
+  `cadrage-panneaux` verts (ce dernier n'ouvre pas la pièce). Modificateur
+  `control-panel__row--wrap` ; regarder le panneau pièce affichée à 1280 × 720 après tout
+  ajout au catalogue. (2026-11-03)
 - **Captures faussées par un `ng serve` resté d'une autre campagne** (cycle 139, #40) : hors
   CI, Playwright réutilise un serveur déjà ouvert sur le port (`reuseExistingServer`). Un
   `ng serve` resté d'un essai précédent (compilation alors en erreur) a servi la première
