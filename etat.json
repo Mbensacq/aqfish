@@ -5159,10 +5159,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-03T23:40:12.705Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-03T23:41:01.845Z",
+          "note": "Issue #422 : récif lot 3, #405 + invertébré + poisson de roche (M)"
         }
       },
       "metriques": {}
