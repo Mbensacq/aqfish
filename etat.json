@@ -4961,10 +4961,10 @@
           "note": "Verdict OK, 0 bug, 3801 tests verts, captures c135 publiées ; e2e complet non rejoué (3 specs ciblées vertes)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-03T04:30:24.163Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-03T05:30:40.182Z",
+          "note": "PR #408 fusionnée → v1.8.2 (release CI ok, CI main verte) ; #406 fermée ; dette #409 ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
