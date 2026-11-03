@@ -5010,7 +5010,7 @@
       "date": "2026-11-03",
       "debut": "2026-11-03T08:18:23.020Z",
       "type": "fonctionnalite",
-      "issue": null,
+      "issue": 411,
       "pr": null,
       "version": null,
       "phases": {
