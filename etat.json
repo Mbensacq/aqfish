@@ -4997,10 +4997,10 @@
           "note": "Verdict OK, 0 bug, 3830 tests verts, e2e clavier-focus verts, captures c136 publiées ; e2e complet non rejoué (CI 6 lots verte)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-03T07:17:07.740Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-03T08:17:55.204Z",
+          "note": "PR #410 fusionnée → v1.8.3 (release CI ok, CI main verte) ; #407 fermée ; pas de dette ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
