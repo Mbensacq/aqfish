@@ -1,4 +1,5 @@
 import type { CameraPreset } from '../core/capture/capture-params';
+import { motionFactors } from '../core/reduced-motion/reduced-motion';
 import type { TankDimensions } from '../sim/tank';
 
 export type { TankDimensions } from '../sim/tank';
@@ -144,6 +145,14 @@ function assertPositiveDimensions(dims: TankDimensions): void {
 
 /** Durée des transitions de caméra vers un préréglage, en secondes (issue #7 : ≤ 0,6 s). */
 export const CAMERA_TRANSITION_SECONDS = 0.5;
+
+/**
+ * Durée d'une transition vers un préréglage (#406) : `CAMERA_TRANSITION_SECONDS` en temps
+ * normal, 0 (saut direct) si les mouvements sont réduits ; 0 aussi en mode capture.
+ */
+export function presetTransitionSeconds(reducedMotion: boolean, capture = false): number {
+  return capture ? 0 : CAMERA_TRANSITION_SECONDS * motionFactors(reducedMotion).cameraTransition;
+}
 
 /** Lissage d'Hermite (`smoothstep`) de `t`, borné à [0, 1] : départ et arrivée en douceur. */
 export function smoothstep(t: number): number {

@@ -119,6 +119,34 @@ describe('DecorLayer', () => {
       layer.dispose();
     });
 
+    it('mouvements réduits (#406) : amplitude multipliée par swayScale, au repos à 0', () => {
+      const layer = new DecorLayer();
+      layer.setDecor([PLANT]);
+      const rest = Float32Array.from(positions(layer, 'plante-0-voxels'));
+      const maxMove = (scale: number): number => {
+        let max = 0;
+        for (const time of [0.4, 3.7, 12.25]) {
+          layer.update(time, scale);
+          const now = positions(layer, 'plante-0-voxels');
+          for (let n = 0; n < now.length; n += 3) {
+            max = Math.max(max, Math.hypot(now[n] - rest[n], now[n + 2] - rest[n + 2]));
+          }
+        }
+        return max;
+      };
+      const full = maxMove(1);
+      expect(full).toBeGreaterThan(0);
+      // Facteur 1 par défaut : même pose qu'un appel sans facteur.
+      layer.update(3.7);
+      const byDefault = Float32Array.from(positions(layer, 'plante-0-voxels'));
+      layer.update(3.7, 1);
+      expect(positions(layer, 'plante-0-voxels')).toEqual(byDefault);
+      expect(maxMove(0.3)).toBeLessThanOrEqual(0.3 * full + 1e-6);
+      expect(maxMove(0.3)).toBeGreaterThan(0);
+      expect(maxMove(0)).toBeLessThanOrEqual(1e-6);
+      layer.dispose();
+    });
+
     it('les rochers ne bougent pas, un décor sans plante ne fait rien à update', () => {
       const layer = new DecorLayer();
       const rock = DEFAULT_DECOR.find((d) => d.kind === 'rock') as DecorItem;

@@ -227,6 +227,13 @@ haut de sa section.
   petit, mode édition fermé) et échoue sans raison apparente. Ne pas toucher `src/` pendant
   un e2e ou des captures (les `*.spec.ts` unitaires, `e2e/` et `docs/` ne déclenchent rien).
   (2026-10-24)
+- **Panneau « Réglages » à 1280 × 720 : une section de trop ouvre une troisième colonne**
+  (cycle 135, #406) : avec `column-count: 2` et une hauteur bornée, une section ajoutée avant
+  « Sauvegarde » (deuxième colonne déjà pleine) a poussé « Sauvegarde » dans une troisième
+  colonne hors du panneau (`scrollWidth` 789 > `clientWidth` 530 : `cadrage-panneaux` échoue).
+  Placée juste après « Décor », sans ligne d'aide, elle tient dans la première colonne
+  (~60 px de marge, Inter comme DejaVu Sans). Mesurer le bas de chaque `fieldset` des deux
+  colonnes (`getBoundingClientRect().bottom`) avant d'ajouter une section.
 - **Panneau « Réglages » à 1280 × 720 : plus de place pour une section** (cycle 71, #207) :
   avant la section « Eau », le contenu laissait ~12 px de marge ; elle en prend ~107. Le
   panneau passe sur deux colonnes (`column-count: 2`, sections `break-inside: avoid`) au-delà
@@ -335,6 +342,15 @@ haut de sa section.
   aussi à la commande du shell qui l'exécute, qui se tue elle-même (code 144). (2026-10-21)
 
 ## Tests
+
+- **`test.use({ reducedMotion: 'reduce' })` est ignoré sans erreur** (cycle 135, #406) :
+  `reducedMotion` n'est pas une option de test de Playwright 1.56 ; la page voit
+  `prefers-reduced-motion: no-preference`. Passer par le contexte :
+  `test.use({ contextOptions: { reducedMotion: 'reduce' } })` (vérifié : `matchMedia` vrai).
+- **Une transition de caméra de 0,5 s n'est pas observable en e2e** (cycle 135, #406) : en
+  rendu logiciel, une image dure ~0,5 s, donc la transition finit dès la première image après
+  le clic ; un test « arrivée immédiate » passe aussi sans saut. La durée se teste en
+  unitaire (`presetTransitionSeconds`, hôte avec `FrameQueue`).
 
 - **Compter des pixels en e2e : `locator('canvas').screenshot()` et décodage dans la page
   sont lents** (cycle 133, #394) : en rendu logiciel (~0,5 s par image), une capture d'élément

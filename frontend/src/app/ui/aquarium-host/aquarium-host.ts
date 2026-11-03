@@ -4,10 +4,12 @@ import {
   Component,
   DestroyRef,
   DOCUMENT,
+  effect,
   ElementRef,
   inject,
   InjectionToken,
   signal,
+  untracked,
   viewChild,
 } from '@angular/core';
 
@@ -56,7 +58,8 @@ import {
   createWebGLRenderer,
   type AquariumRendererFactory,
 } from '../../render/aquarium-view';
-import { CAMERA_TRANSITION_SECONDS } from '../../render/camera-presets';
+import { presetTransitionSeconds } from '../../render/camera-presets';
+import { ReducedMotionState } from '../reduced-motion/reduced-motion-state';
 import { freeMoveAxesInto, freeMoveFor, type FreeMoveId } from '../../core/commands/commands';
 import { isTypingContext } from '../../core/keyboard/keyboard';
 import {
@@ -271,6 +274,8 @@ export const AQUARIUM_RENDERER_FACTORY = new InjectionToken<AquariumRendererFact
 export const CAMERA_ATTRIBUTE = 'data-aqfish-camera';
 /** Attribut du composant hôte : `true` en caméra libre dans la pièce (#343), `false` sinon. */
 export const FREE_CAMERA_ATTRIBUTE = 'data-aqfish-camera-libre';
+/** Attribut du composant hôte : `true` si les mouvements décoratifs sont réduits (#406). */
+export const REDUCED_MOTION_ATTRIBUTE = 'data-aqfish-mouvements-reduits';
 /** Attribut du composant hôte exposant la cible de la caméra (mis à jour avec la position). */
 export const CAMERA_TARGET_ATTRIBUTE = 'data-aqfish-target';
 /** Attribut du composant hôte exposant `world.tick` (mis à jour quand il change). */
@@ -629,6 +634,8 @@ export class AquariumHost {
   private readonly rendererFactory = inject(AQUARIUM_RENDERER_FACTORY);
   private readonly saveStorage = inject(SAVE_STORAGE);
   private readonly physicsLoader = inject(DECOR_PHYSICS_LOADER);
+  /** Option « Réduire les mouvements » (#406), partagée avec les réglages et le mode immersif. */
+  private readonly motionState = inject(ReducedMotionState);
   /** Moteur de chute, une fois chargé (#170). */
   private dropper: DecorDropper | null = null;
   /** Chute affichée (#170) : trajectoire de la base de l'élément `index`, temps écoulé (s). */
@@ -921,7 +928,7 @@ export class AquariumHost {
     }
     this.syncFreeCamera(false);
     this.activePreset.set(preset);
-    view.animateToPreset(preset, this.capture ? 0 : CAMERA_TRANSITION_SECONDS);
+    view.animateToPreset(preset, presetTransitionSeconds(this.reducedMotion(), this.capture));
     if (!view.transitioning) {
       this.exposeCamera();
     }
@@ -2516,6 +2523,31 @@ export class AquariumHost {
   constructor() {
     afterNextRender(() => this.start());
     inject(DestroyRef).onDestroy(() => this.stop());
+    // Option « Réduire les mouvements » (#406) : appliquée à chaud à la vue affichée.
+    effect(() => {
+      this.motionState.system();
+      this.motionState.reduced();
+      untracked(() => this.applyReducedMotion());
+    });
+  }
+
+  /**
+   * Mouvements réduits (#406) : l'option des réglages, ou la préférence système. En capture,
+   * le choix mémorisé est ignoré (images reproductibles) : seule la préférence système compte,
+   * que Playwright peut émuler (`reducedMotion: 'reduce'`) pour une capture avec l'option.
+   */
+  private reducedMotion(): boolean {
+    return this.capture ? this.motionState.system() : this.motionState.reduced();
+  }
+
+  /** Pose l'état des mouvements sur la vue et l'expose aux tests de bout en bout. */
+  private applyReducedMotion(): void {
+    const reduced = this.reducedMotion();
+    this.host.nativeElement.setAttribute(REDUCED_MOTION_ATTRIBUTE, String(reduced));
+    if (this.view) {
+      this.view.setReducedMotion(reduced);
+      this.scheduleFrame();
+    }
   }
 
   private start(): void {
@@ -2913,6 +2945,7 @@ export class AquariumHost {
     // Feuilles de catappa et eau brun-thé (#239).
     view.setWaterTea(this.water().tea);
     view.setCatappa(world.water.catappa);
+    this.applyReducedMotion();
     this.litHour = null;
     this.activePreset.set(preset);
     // Vue neuve : en orbite (#343).

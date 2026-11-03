@@ -26,6 +26,7 @@ import {
   type PondShape,
 } from '../../sim/pond-shape';
 import { MAX_CATAPPA_LEAVES } from '../../sim/catappa';
+import { ReducedMotionState } from '../reduced-motion/reduced-motion-state';
 import { formatHour, HOUR_SLIDER_STEP, HOURS_PER_DAY, NOON_HOUR } from '../../sim/daylight';
 import { NO_FISH, type PopulationCounts } from '../../sim/population';
 import type { SaveMessage, SaveStatus } from '../../core/save-storage/save-storage';
@@ -529,6 +530,17 @@ export interface NewTankRequest {
               Granulés : {{ foodStyle() }}
             </button>
           </div>
+        </fieldset>
+
+        <!-- Accessibilité (#406) : initialisée sur la préférence système, choix mémorisé. Juste
+             après « Décor », dans la première colonne du panneau à 1280 × 720, où il reste de
+             la place (docs/PIEGES.md). -->
+        <fieldset class="control-panel__section" data-section="accessibilite">
+          <legend class="control-panel__legend">Accessibilité</legend>
+          <label class="control-panel__check" data-reduced-motion>
+            <input type="checkbox" [checked]="reducedMotion()" (change)="onReducedMotion($event)" />
+            Réduire les mouvements
+          </label>
         </fieldset>
 
         @if (roomAvailable() && roomShown()) {
@@ -1176,6 +1188,10 @@ export class ControlPanel {
   readonly opened = output<void>();
 
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  /** Option « Réduire les mouvements » (#406), partagée avec l'aquarium et le mode immersif. */
+  private readonly motionState = inject(ReducedMotionState);
+  /** État effectif de l'option (choix des réglages, sinon préférence système). */
+  readonly reducedMotion = this.motionState.reduced;
 
   /** Panneau déplié (fermé par défaut : captures et premier regard inchangés). */
   readonly open = signal(false);
@@ -1555,6 +1571,11 @@ export class ControlPanel {
 
   protected onRain(event: Event): void {
     this.rainChanged.emit((event.target as HTMLInputElement).checked);
+  }
+
+  /** Case « Réduire les mouvements » (#406) : réglée et mémorisée dans l'état partagé. */
+  protected onReducedMotion(event: Event): void {
+    this.motionState.setReduced((event.target as HTMLInputElement).checked);
   }
 
   protected onRoom(event: Event): void {

@@ -73,6 +73,8 @@ import {
 import { sameDimensions } from '../../sim/tank';
 import { advanceInPlace, feedInPlace, tapGlassInWorld, type MutableWorld } from '../../sim/world';
 import { AQUARIUM_RENDERER_FACTORY } from '../aquarium-host/aquarium-host';
+import { ReducedMotionState } from '../reduced-motion/reduced-motion-state';
+import { motionFactors } from '../../core/reduced-motion/reduced-motion';
 
 /** Graine du bac immersif (fixe : le bac est un décor, jamais sauvegardé). */
 export const IMMERSIVE_SEED = 345;
@@ -290,6 +292,8 @@ export class ImmersiveMode {
   private readonly hostRef = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly rendererFactory = inject(AQUARIUM_RENDERER_FACTORY);
   private readonly store = new CalibrationStore(inject(IMMERSIVE_STORAGE));
+  /** Option « Réduire les mouvements » (#406) : parallaxe coupée si elle est active. */
+  private readonly motionState = inject(ReducedMotionState);
 
   readonly calibration = signal<ScreenCalibration>(this.store.calibration);
   readonly screen = signal<ScreenSizeMm | null>(null);
@@ -394,9 +398,16 @@ export class ImmersiveMode {
     return this.cameraApplied;
   }
 
-  /** Décalage courant de l'œil, en mm (tests). */
+  /** Décalage courant de l'œil, en mm, parallaxe réduite comprise (tests). */
   get eyeOffsetMm(): { readonly x: number; readonly y: number } {
-    return { x: this.parallaxState.eyeX, y: this.parallaxState.eyeY };
+    const k = this.parallaxScale();
+    // `+ 0` : un œil coupé vaut 0, pas −0.
+    return { x: this.parallaxState.eyeX * k + 0, y: this.parallaxState.eyeY * k + 0 };
+  }
+
+  /** Part de la parallaxe appliquée : 1, ou 0 si les mouvements sont réduits (#406). */
+  private parallaxScale(): number {
+    return motionFactors(this.motionState.reduced()).parallax;
   }
 
   /**
@@ -767,7 +778,10 @@ export class ImmersiveMode {
    * à paramètres identiques, ni objet neuf, ni tronc, ni matrice.
    */
   private applyCamera(view: AquariumView, eyeDistanceMm: number): void {
-    const { eyeX, eyeY } = this.parallaxState;
+    // Mouvements réduits (#406) : l'œil reste au centre, l'inclinaison ne déplace plus la vue.
+    const k = this.parallaxScale();
+    const eyeX = this.parallaxState.eyeX * k + 0;
+    const eyeY = this.parallaxState.eyeY * k + 0;
     const applied = this.applied;
     if (
       applied.view === view &&

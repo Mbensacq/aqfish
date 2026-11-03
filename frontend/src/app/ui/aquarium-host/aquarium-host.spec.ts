@@ -3,6 +3,8 @@ import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { isCaptureReady, resetCaptureReady } from '../../core/capture/capture-ready';
 import { RENDER_FILTER_STORAGE_KEY } from '../../core/render-filter/render-filter';
 import { FREE_CAMERA_STORAGE_KEY } from '../../core/free-camera-pref/free-camera-pref';
+import { REDUCED_MOTION_STORAGE_KEY } from '../../core/reduced-motion/reduced-motion';
+import { ReducedMotionState } from '../reduced-motion/reduced-motion-state';
 import {
   LEGACY_SAVE_STORAGE_KEY,
   SAVE_STORAGE_KEY,
@@ -83,6 +85,7 @@ import {
   SAVE_FILE_NAME,
   SAVE_STORAGE,
   CAMERA_ATTRIBUTE,
+  REDUCED_MOTION_ATTRIBUTE,
   FREE_CAMERA_ATTRIBUTE,
   ENVIRONMENT_ATTRIBUTE,
   WALLPAPER_ATTRIBUTE,
@@ -388,6 +391,36 @@ describe('AquariumHost', () => {
       expect(camera()[0]).toBeCloseTo(0, 3);
       frames.flush();
       expect(renderers[0].renders).toBe(renders + 1);
+    });
+
+    it('mouvements réduits (#406) : saut direct sur le préréglage, sans transition', async () => {
+      await create('?camera=front');
+      setCanvasSize(800, 600);
+      frames.flush(0);
+      const element = fixture.nativeElement as HTMLElement;
+      expect(element.getAttribute(REDUCED_MOTION_ATTRIBUTE)).toBe('false');
+      TestBed.inject(ReducedMotionState).setReduced(true);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      expect(element.getAttribute(REDUCED_MOTION_ATTRIBUTE)).toBe('true');
+      (fixture.componentInstance as AquariumHost).goToPreset('top');
+      // Arrivé tout de suite, avant toute image.
+      expect(camera()[0]).toBeCloseTo(0, 3);
+      expect(camera()[1]).toBeGreaterThan(0.6);
+      localStorage.removeItem(REDUCED_MOTION_STORAGE_KEY);
+    });
+
+    it('capture : le choix mémorisé est ignoré (images reproductibles, #406)', async () => {
+      localStorage.setItem(REDUCED_MOTION_STORAGE_KEY, 'reduits');
+      try {
+        await create('?capture=1&camera=front');
+        setCanvasSize(800, 600);
+        frames.flush();
+        const element = fixture.nativeElement as HTMLElement;
+        expect(element.getAttribute(REDUCED_MOTION_ATTRIBUTE)).toBe('false');
+      } finally {
+        localStorage.removeItem(REDUCED_MOTION_STORAGE_KEY);
+      }
     });
 
     it('préréglage actif : celui de l’URL, puis celui choisi, null après un geste (#23)', async () => {

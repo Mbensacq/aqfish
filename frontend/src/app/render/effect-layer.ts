@@ -34,12 +34,17 @@ export interface EffectLayer extends SceneLayer {
 /**
  * Pose au temps `time` les couches **affichées** de `layers`, dans l'ordre de la liste. Une
  * couche masquée (`object.visible` faux : bulles hors du bac tropical, pluie arrêtée) n'est
- * pas posée : elle ne calcule rien tant qu'on ne la voit pas.
+ * pas posée : elle ne calcule rien tant qu'on ne la voit pas. `timeOf`, s'il est donné, donne
+ * le temps propre de chaque couche (pluie ralentie si les mouvements sont réduits, #406).
  */
-export function updateVisibleEffects(layers: readonly EffectLayer[], time: number): void {
+export function updateVisibleEffects(
+  layers: readonly EffectLayer[],
+  time: number,
+  timeOf?: (layer: EffectLayer, time: number) => number,
+): void {
   for (const layer of layers) {
     if (layer.object.visible) {
-      layer.update(time);
+      layer.update(timeOf ? timeOf(layer, time) : time);
     }
   }
 }

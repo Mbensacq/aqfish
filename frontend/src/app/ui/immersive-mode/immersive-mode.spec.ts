@@ -12,6 +12,8 @@ import { SPECIES } from '../../sim/species';
 import type { Fish } from '../../sim/swimmer';
 import type { World } from '../../sim/world';
 import { AQUARIUM_RENDERER_FACTORY } from '../aquarium-host/aquarium-host';
+import { ReducedMotionState } from '../reduced-motion/reduced-motion-state';
+import { REDUCED_MOTION_STORAGE_KEY } from '../../core/reduced-motion/reduced-motion';
 import {
   FEED_BAND,
   IMMERSIVE_STORAGE,
@@ -378,6 +380,29 @@ describe('ImmersiveMode', () => {
       fixture.destroy();
       // Écouteur retiré : plus aucun effet après la destruction.
       expect(() => orientation(60, 20)).not.toThrow();
+    });
+
+    it('mouvements réduits (#406) : parallaxe coupée, œil et caméra au centre', async () => {
+      win.DeviceOrientationEvent = function DeviceOrientationEvent() {
+        /* factice */
+      };
+      TestBed.inject(ReducedMotionState).setReduced(true);
+      await create();
+      frame(0);
+      orientation(60, 0);
+      const t = frames(200, 2);
+      orientation(60, 8);
+      frames(t, 15);
+      // Le capteur est lu (état « on »), mais l'inclinaison ne déplace plus la vue.
+      expect(host().getAttribute('data-immersive-parallax')).toBe('on');
+      expect(fixture.componentInstance.eyeOffsetMm).toEqual({ x: 0, y: 0 });
+      const view = fixture.componentInstance.immersiveView!;
+      expect(view.cameraPosition()[0]).toBeCloseTo(0, 6);
+      // L'option retirée : la parallaxe reprend à l'image suivante.
+      TestBed.inject(ReducedMotionState).setReduced(false);
+      frames(t + 1000, 5);
+      expect(fixture.componentInstance.eyeOffsetMm.x).toBeLessThan(-1);
+      localStorage.removeItem(REDUCED_MOTION_STORAGE_KEY);
     });
 
     it('autorisation exigée : demandée au premier toucher ; refus → repli signalé', async () => {
