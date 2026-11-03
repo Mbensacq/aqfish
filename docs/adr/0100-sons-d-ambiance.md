@@ -50,9 +50,12 @@ qu'après un geste de l'utilisateur (politique d'autoplay).
    hors de la sauvegarde du monde comme ADR 0098. Valeur inconnue, stockage absent ou qui
    lève : pas de choix (désactivé, 30 %) ; écriture refusée : choix valable pour la session.
 6. **Interface** : section « Son » juste après « Accessibilité », case et curseur sur une
-   même ligne (place de la première colonne à 1280 × 720, ADR 0098 point 2), classes
-   existantes du panneau (budget de style). Sans Web Audio, ou si la création du contexte
-   échoue, case et curseur sont désactivés et une phrase l'explique.
+   même ligne, classes existantes du panneau (budget de style). À 1280 × 720, la première
+   colonne étant pleine, elle ouvre la deuxième colonne ; la liste « Population », qui
+   défile, y cède une ligne (`e2e/cadrage-panneaux.spec.ts` : ni débord ni ligne coupée).
+   Sans Web Audio, ou si la création du contexte échoue, case et curseur restent atteignables
+   au clavier mais inertes (`aria-disabled`, comme « Éditer le décor ») et une phrase
+   l'explique.
 
 La « pluie » ne sonne que si la pluie est active : elle n'existe que dans le bassin.
 

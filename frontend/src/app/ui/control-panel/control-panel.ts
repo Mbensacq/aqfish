@@ -546,7 +546,8 @@ export interface NewTankRequest {
         </fieldset>
 
         <!-- Son (#411, ADR 0100) : désactivé par défaut, case et volume sur une seule ligne,
-             juste après « Accessibilité » dans la première colonne (docs/PIEGES.md). -->
+             juste après « Accessibilité » ; à 1280 × 720, en tête de la deuxième colonne, la
+             liste « Population » (qui défile) cède une ligne (docs/PIEGES.md). -->
         <fieldset class="control-panel__section" data-section="son">
           <legend class="control-panel__legend">Son</legend>
           <div class="control-panel__row">
