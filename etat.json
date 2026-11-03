@@ -5051,10 +5051,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-03T11:10:12.625Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-03T11:10:48.455Z",
+          "note": "Issue #413 : dette des sons d'ambiance (limiteur, commentaire, message d'indisponibilité) (S)"
         }
       },
       "metriques": {}
