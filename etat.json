@@ -5076,6 +5076,24 @@
         }
       },
       "metriques": {}
+    },
+    "139": {
+      "numero": 139,
+      "date": "2026-11-03",
+      "debut": "2026-11-03T14:55:37.200Z",
+      "type": "retro",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-03T14:55:37.200Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
