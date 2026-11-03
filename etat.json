@@ -5027,10 +5027,10 @@
           "note": "PR #412 : sons d'ambiance synthétisés (ADR 0100), CI verte ; e2e touchés rejoués en local ; captures panneau ouvert changées (nouvelle section), scène inchangée ; capture c137/dev"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-03T09:38:45.304Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-03T10:05:35.299Z",
+          "note": "Verdict OK, 0 bug, 3886 tests verts, e2e ciblés verts, captures publiées (série partielle)"
         }
       },
       "metriques": {}
