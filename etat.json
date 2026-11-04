@@ -5415,6 +5415,12 @@
           "debut": "2026-11-04T23:57:26.679Z",
           "fin": "2026-11-04T23:57:55.733Z",
           "note": "Issue #440 : dette lot 3/6, tests, mutants et durée des parts e2e (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-04T23:58:32.240Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
