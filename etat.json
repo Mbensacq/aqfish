@@ -5375,10 +5375,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-04T21:14:11.792Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-04T21:14:40.314Z",
+          "note": "Issue #439 : dette lot 2/6, allocations par image, caches et passe directe (M)"
         }
       },
       "metriques": {}
