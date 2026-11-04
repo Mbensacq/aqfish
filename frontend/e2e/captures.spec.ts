@@ -48,6 +48,8 @@ const TIME_SECONDS = Number(process.env['CAPTURE_TIME'] ?? 30);
  */
 const RESTING_FOOD =
   'population=neon:0,guppy:0,corydora:0&nourrir=0,0:0.3:0.03,0:-0.15:0.1,0:-0.4:0.15';
+/** Granulés pour la fouille des corydoras (#427) : posés et pas encore mangés à 30 s. */
+const FORAGE_FOOD = 'nourrir=8:-0.4:0.15,8:0.4:0.1,8:0:0.15,8:-0.15:-0.1';
 /** Bois flotté ajouté au décor par défaut (#169) : `x:z:rotation:echelle:graine`. */
 const WOOD = 'bois=-0.02:0:-0.2:1.5:7';
 const FRESHWATER_LOT1 = 'population=neon:0,guppy:0,corydora:0,rasbora:8,tetra:8,kuhli:6,gourami:2';
@@ -149,6 +151,10 @@ test.describe('Captures', () => {
       name: 'front-nourriture-voxels',
       query: 'nourrir=0,0:0.3:0.03,24:-0.15:0.1&camera=front&granules=voxels',
     },
+    // Fouille des corydoras (#427, ADR 0106) : quatre dépôts à 8 s, encore posés au temps de
+    // capture ; les corydoras en épisode ont le nez au sable (vue de face : la vue de côté
+    // les cache derrière les plantes).
+    { name: 'front-fouille', query: `${FORAGE_FOOD}&camera=front` },
     // Population réglée (#69) : 12 néons, 2 guppys, aucun corydora.
     { name: 'three-quarter-population', query: 'population=neon:12,guppy:2,corydora:0' },
     // Catalogue d'espèces (#189) : plus de corydoras, moins de néons.

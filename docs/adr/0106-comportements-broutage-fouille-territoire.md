@@ -65,8 +65,10 @@ populations par défaut, avec une ligne « Comportement » dans les fiches.
 
 ## Conséquences
 
-- Captures changées, voulues : celles où une espèce concernée est présente (lots 1 et 2 d'eau
-  douce, récif lots 2 et 3) et celles du bac tropical nourri (`nourrir=`) où un granulé est
-  posé. Les autres sont identiques à l'octet.
+- Captures changées, voulues (comparées à `main`, graine 42, 30 s) : `three-quarter-` et
+  `front-eau-douce-lot1` (gouramis), `three-quarter-`, `front-` et `libre-eau-douce-lot2(-fond)`
+  (ancistrus, otocinclus), `recif-three-quarter-` et `recif-front-lot2`, `-lot3` (grammas),
+  `trajectoires-nourriture-top` (fouille). Nouvelle : `front-fouille`. Les séries `nourriture`
+  sont identiques : à 30 s, aucun granulé n'y est posé. Les autres sont identiques à l'octet.
 - Tout nouveau comportement s'ajoute à `SPECIES_BEHAVIORS` et à `SPECIES_BEHAVIOR_TEXT`, avec
   un geste qui passe par `MotionFactors`.
