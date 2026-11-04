@@ -5262,7 +5262,7 @@
       "date": "2026-11-04",
       "debut": "2026-11-04T09:41:53.009Z",
       "type": "fonctionnalite",
-      "issue": null,
+      "issue": 427,
       "pr": null,
       "version": null,
       "phases": {
