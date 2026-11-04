@@ -5249,10 +5249,10 @@
           "note": "Verdict RÉSERVES, 0 bug, 2 défauts mineurs (bannière de refus mobile, message unique), captures publiées ; unitaires 4039/4039, e2e partage 3/3, CI verte"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-04T08:37:13.096Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-04T09:41:00.896Z",
+          "note": "PR #430 fusionnée → v1.9.3 (release CI ok), CI main verte ; #426 fermée ; dette #431 (bandeau mobile, messages de refus, décompte) ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
