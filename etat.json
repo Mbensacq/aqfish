@@ -5309,10 +5309,10 @@
           "note": "Issue #433 : dette comportements, allocations et cache du territoire (S)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "echec",
           "debut": "2026-11-04T14:07:53.380Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-04T17:41:31.403Z",
+          "note": "bloquée plus de 3 h, close par Relance"
         }
       },
       "metriques": {}
