@@ -5303,10 +5303,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-04T14:06:29.061Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-04T14:07:05.664Z",
+          "note": "Issue #433 : dette comportements, allocations et cache du territoire (S)"
         }
       },
       "metriques": {}
