@@ -5315,10 +5315,10 @@
           "note": "bloquée plus de 3 h, close par Relance"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-04T17:42:03.443Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-04T18:20:37.044Z",
+          "note": "Pas de PR (dev en échec), verdict sans objet, 0 bug, captures de main publiées (124 images), mutation non terminée (essai initial >20 min, abandonné)"
         }
       },
       "metriques": {}
