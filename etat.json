@@ -5263,7 +5263,7 @@
       "debut": "2026-11-04T09:41:53.009Z",
       "type": "fonctionnalite",
       "issue": 427,
-      "pr": null,
+      "pr": 432,
       "version": null,
       "phases": {
         "planif": {
