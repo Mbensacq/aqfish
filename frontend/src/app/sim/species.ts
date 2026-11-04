@@ -35,7 +35,10 @@ export type SpeciesId =
   | 'gobie'
   | 'gramma'
   | 'crevette'
-  | 'blennie';
+  | 'blennie'
+  | 'xipho'
+  | 'cerise'
+  | 'neritine';
 
 /**
  * Silhouette voxel d'une apparence : le rendu associe à chaque identifiant un gabarit de
@@ -68,6 +71,9 @@ export const SILHOUETTE_IDS = [
   'gramma',
   'crevette',
   'blennie',
+  'xipho',
+  'cerise',
+  'neritine',
 ] as const;
 export type SilhouetteId = (typeof SILHOUETTE_IDS)[number];
 
@@ -1847,6 +1853,168 @@ export const BLENNIE: SpeciesDefinition = {
   },
 };
 
+/*
+ * Eau douce, lot 4 (issue #425, ADR 0104) : xipho, crevette cerise et néritine zèbre.
+ * Proposés au bac tropical sans y être peuplés d'office ; couleurs de la palette commune ;
+ * tailles du modèle, vitesses, virages, durées et profondeurs : **approximations de jeu** ;
+ * valeurs réelles et sources : `sim/species-sheet.ts`.
+ */
+
+/**
+ * Xipho (Xiphophorus hellerii), forme verte proche du sauvage (FishKeeper) : corps fuselé vert
+ * clair, bande latérale rouge, et surtout l'**épée** du mâle, prolongement du bas de la
+ * caudale, jaune bordé de noir : silhouette absente du bac. Nageur actif de pleine eau et du
+ * haut, sans banc.
+ */
+export const XIPHO: SpeciesDefinition = {
+  id: 'xipho',
+  name: 'Xipho',
+  scientificName: 'Xiphophorus hellerii',
+  // 14 cm de longueur totale pour le mâle, épée comprise (FishBase) ; modèle de 12 cm, comme le
+  // molly (le plus long nageur du bac avec lui). `wallMargin` ≥ demi-longueur.
+  bodyLength: 0.12,
+  cruiseSpeed: 0.05,
+  minSpeed: 0.02,
+  maxSpeed: 0.11,
+  wanderTurnRate: 0.9,
+  avoidTurnRate: 2.5,
+  maxPitch: 0.3,
+  wallMargin: 0.06,
+  tailBeatFrequency: 2,
+  defaultPopulation: 3,
+  maxPopulation: 8,
+  schooling: null,
+  silhouette: 'xipho',
+  colors: {
+    stripe: '#d94a3a',
+    accent: '#ffd166',
+    back: '#4e9a4a',
+    belly: '#7bc950',
+    fin: '#1c1c22',
+    eye: '#1c1c22',
+  },
+  // Pleine eau et haut du bac, entre 35 % et 85 % de la hauteur d'eau.
+  depth: {
+    minHeightRatio: 0.35,
+    maxHeightRatio: 0.85,
+    floorZone: 0.07,
+    ascentRate: 0,
+    ascentDuration: 1,
+  },
+  feeding: {
+    hungerRate: 1 / 150,
+    perceptionRadius: 0.32,
+    turnRate: 2.4,
+    minHeightRatio: 0.15,
+    maxHeightRatio: 1,
+  },
+};
+
+/**
+ * Crevette cerise (Neocaridina davidi), forme rouge du commerce : invertébré du fond, rouge,
+ * en colonie. Marche sur le sable et contourne le décor, courtes nages par à-coups : le
+ * mécanisme des marcheurs du fond (`walker`, `sim/axolotl.ts`) de la crevette nettoyeuse
+ * (ADR 0103). Ni banc, ni recherche de granulés.
+ */
+export const CERISE: SpeciesDefinition = {
+  id: 'cerise',
+  name: 'Crevette cerise',
+  scientificName: 'Neocaridina davidi',
+  // 3 cm en vrai (FishKeeper) ; modèle de 10 cm, antennes comprises, pour rester lisible en vue
+  // de face (#424 : la crevette nettoyeuse de 12 cm, dans un bac plus grand, était la moins
+  // lisible du récif).
+  bodyLength: 0.1,
+  cruiseSpeed: 0.016,
+  minSpeed: 0.005,
+  maxSpeed: 0.06,
+  wanderTurnRate: 1,
+  avoidTurnRate: 2.4,
+  maxPitch: 0.6,
+  wallMargin: 0.05,
+  tailBeatFrequency: 1.8,
+  defaultPopulation: 6,
+  maxPopulation: 20,
+  schooling: null,
+  silhouette: 'cerise',
+  colors: {
+    stripe: '#d94a3a',
+    accent: '#f4978e',
+    back: '#e63946',
+    belly: '#f4978e',
+    fin: '#d94a3a',
+    eye: '#1c1c22',
+  },
+  feeding: {
+    hungerRate: 1 / 300,
+    perceptionRadius: 0.2,
+    turnRate: 1.2,
+    minHeightRatio: 0,
+    maxHeightRatio: 0.3,
+  },
+  walker: {
+    // Demi-hauteur du modèle : les pattes posées sur le sable, pas dedans.
+    clearance: 0.019,
+    surfaceMargin: 0.02,
+    walkSpeed: 0.012,
+    slotDuration: 9,
+    weights: { marche: 0.85, nage: 0.15, remontee: 0 },
+    burstPeriod: 1.6,
+    climbSpeed: 0.035,
+    avoidsObstacles: true,
+  },
+};
+
+/**
+ * Néritine zèbre (Neritina natalensis « zèbre ») : escargot à coquille ronde et haute, jaune
+ * or rayée de noir (FishKeeper). Avance lentement sur le sable et contourne le décor, sans
+ * jamais nager : marcheur du fond dont les poids n'ont que la marche.
+ */
+export const NERITINE: SpeciesDefinition = {
+  id: 'neritine',
+  name: 'Néritine zèbre',
+  scientificName: 'Neritina natalensis',
+  // 2,5 cm en vrai (FishKeeper) ; modèle de 8 cm pour rester lisible en vue de face.
+  bodyLength: 0.08,
+  cruiseSpeed: 0.004,
+  minSpeed: 0.002,
+  maxSpeed: 0.01,
+  wanderTurnRate: 0.4,
+  avoidTurnRate: 1.2,
+  maxPitch: 0.6,
+  wallMargin: 0.04,
+  tailBeatFrequency: 0.3,
+  defaultPopulation: 2,
+  maxPopulation: 6,
+  schooling: null,
+  silhouette: 'neritine',
+  colors: {
+    stripe: '#1c1c22',
+    accent: '#f2c14e',
+    back: '#ffd166',
+    belly: '#a8916a',
+    fin: '#c9b38a',
+    eye: '#1c1c22',
+  },
+  feeding: {
+    hungerRate: 1 / 400,
+    perceptionRadius: 0.1,
+    turnRate: 0.6,
+    minHeightRatio: 0,
+    maxHeightRatio: 0.2,
+  },
+  walker: {
+    // Demi-hauteur du modèle : le pied posé sur le sable, la coquille entière visible.
+    clearance: 0.018,
+    surfaceMargin: 0.02,
+    walkSpeed: 0.004,
+    slotDuration: 20,
+    weights: { marche: 1, nage: 0, remontee: 0 },
+    burstPeriod: 3,
+    climbSpeed: 0.004,
+    avoidsObstacles: true,
+  },
+};
+
 /** Toutes les espèces connues, par identifiant (ordre de déclaration = ordre de peuplement). */
 export const SPECIES: Readonly<Record<SpeciesId, SpeciesDefinition>> = {
   neon: NEON,
@@ -1874,6 +2042,9 @@ export const SPECIES: Readonly<Record<SpeciesId, SpeciesDefinition>> = {
   gramma: GRAMMA,
   crevette: CREVETTE,
   blennie: BLENNIE,
+  xipho: XIPHO,
+  cerise: CERISE,
+  neritine: NERITINE,
 };
 
 /** Apparences d'une espèce : ses `variants`, ou son apparence par défaut seule. */

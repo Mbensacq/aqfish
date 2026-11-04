@@ -36,6 +36,9 @@ import {
   MOLLY,
   MIEL,
   BLENNIE,
+  CERISE,
+  NERITINE,
+  XIPHO,
   CHROMIS,
   CREVETTE,
   GOBIE,
@@ -94,6 +97,9 @@ describe('bornes de population', () => {
       'gramma',
       'crevette',
       'blennie',
+      'xipho',
+      'cerise',
+      'neritine',
     ]);
   });
 
@@ -141,6 +147,9 @@ describe('bornes de population', () => {
       gramma: 0,
       crevette: 0,
       blennie: 0,
+      xipho: 0,
+      cerise: 0,
+      neritine: 0,
     });
     expect(populationCounts(createWorld(42))).toEqual({
       neon: 0,
@@ -168,6 +177,9 @@ describe('bornes de population', () => {
       gramma: 0,
       crevette: 0,
       blennie: 0,
+      xipho: 0,
+      cerise: 0,
+      neritine: 0,
     });
     expect(populationCounts(createWorld(42))).toEqual(NO_FISH);
   });
@@ -199,6 +211,9 @@ describe('bornes de population', () => {
       gramma: GRAMMA.maxPopulation,
       crevette: CREVETTE.maxPopulation,
       blennie: BLENNIE.maxPopulation,
+      xipho: XIPHO.maxPopulation,
+      cerise: CERISE.maxPopulation,
+      neritine: NERITINE.maxPopulation,
     });
   });
 
@@ -296,6 +311,9 @@ describe('setPopulation', () => {
       gramma: 0,
       crevette: 0,
       blennie: 0,
+      xipho: 0,
+      cerise: 0,
+      neritine: 0,
     });
   });
 
@@ -343,6 +361,9 @@ describe('setPopulation', () => {
       gramma: 0,
       crevette: 0,
       blennie: 0,
+      xipho: 0,
+      cerise: 0,
+      neritine: 0,
     });
     // Bac plein : plus aucun ajout possible, quelle que soit l'espèce.
     for (const id of SPECIES_IDS) {

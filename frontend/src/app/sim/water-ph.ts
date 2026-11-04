@@ -109,6 +109,12 @@ export const SPECIES_PH: Readonly<Record<SpeciesId, SpeciesPh>> = {
   // approximations de jeu : eau de mer, mêmes plages que le chirurgien (ADR 0103).
   crevette: { tolerated: { min: 7.8, max: 8.6 }, ideal: { min: 8.1, max: 8.4 } },
   blennie: { tolerated: { min: 7.8, max: 8.6 }, ideal: { min: 8.1, max: 8.4 } },
+  // approximations de jeu (ADR 0104), bornes proches des sources : xipho 7–8 (FishBase) et
+  // néritine 7,2–8,2 (FishKeeper) abaissés à 6,8 comme le platy, le pH du bac baissant avec la
+  // charge ; crevette cerise 6–8 (FishKeeper).
+  xipho: { tolerated: { min: 6.8, max: 8 }, ideal: { min: 7, max: 7.8 } },
+  cerise: { tolerated: { min: 6, max: 8 }, ideal: { min: 6.5, max: 7.5 } },
+  neritine: { tolerated: { min: 6.8, max: 8.2 }, ideal: { min: 7.2, max: 8 } },
 };
 
 /** pH de l'eau neuve de l'environnement `environment`. */

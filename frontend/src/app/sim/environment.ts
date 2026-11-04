@@ -10,6 +10,7 @@ import {
   AXOLOTL,
   BLENNIE,
   BRAISE,
+  CERISE,
   CHIRURGIEN,
   CHROMIS,
   CLOWN,
@@ -26,11 +27,13 @@ import {
   MIEL,
   MOLLY,
   NEON,
+  NERITINE,
   OTOCINCLUS,
   PLATY,
   RASBORA,
   TETRA,
   TRITON,
+  XIPHO,
   type SpeciesId,
 } from './species';
 import { assertTerrainSettings, type TerrainSettings } from './terrain';
@@ -167,6 +170,8 @@ const TROPICAL_ADDABLE = [RASBORA, TETRA, KUHLI, GOURAMI] as const;
 const TROPICAL_ADDABLE_LOT2 = [PLATY, DANIO, ANCISTRUS, OTOCINCLUS] as const;
 /** Espèces du lot 3 d'eau douce (#391, ADR 0095), proposées de la même façon. */
 const TROPICAL_ADDABLE_LOT3 = [BRAISE, MOLLY, MIEL] as const;
+/** Espèces du lot 4 d'eau douce (#425, ADR 0104), proposées de la même façon. */
+const TROPICAL_ADDABLE_LOT4 = [XIPHO, CERISE, NERITINE] as const;
 
 /** Bac tropical : le bac d'avant l'issue #87, à l'identique. */
 export const TROPICAL_TANK: Environment = {
@@ -194,6 +199,7 @@ export const TROPICAL_TANK: Environment = {
     ...TROPICAL_ADDABLE,
     ...TROPICAL_ADDABLE_LOT2,
     ...TROPICAL_ADDABLE_LOT3,
+    ...TROPICAL_ADDABLE_LOT4,
   ].map((def) => def.id),
   population: defaultPopulation(TROPICAL_SPECIES),
 };

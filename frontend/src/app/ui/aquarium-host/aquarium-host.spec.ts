@@ -46,6 +46,9 @@ import {
   CREVETTE,
   GOBIE,
   GRAMMA,
+  XIPHO,
+  CERISE,
+  NERITINE,
 } from '../../sim/species';
 import { expiryAge, FOOD_PER_DROP } from '../../sim/food';
 import { capTotalPopulation, setPopulation } from '../../sim/population';
@@ -888,6 +891,9 @@ describe('AquariumHost', () => {
         gramma: 0,
         crevette: 0,
         blennie: 0,
+        xipho: 0,
+        cerise: 0,
+        neritine: 0,
       });
       expect(element().getAttribute(POPULATION_ATTRIBUTE)).toBe(`koi:${KOI.defaultPopulation}`);
       expect(host().activePreset()).toBe('top');
@@ -2133,9 +2139,12 @@ describe('AquariumHost', () => {
         gramma: 0,
         crevette: 0,
         blennie: 0,
+        xipho: 0,
+        cerise: 0,
+        neritine: 0,
       };
       expect(formatPopulation(counts)).toBe(
-        'neon:12,guppy:0,corydora:6,koi:2,axolotl:1,grenouille:3,triton:2,clown:0,chirurgien:0,rasbora:0,tetra:0,kuhli:0,gourami:0,platy:0,danio:0,ancistrus:0,otocinclus:0,braise:0,molly:0,miel:0,chromis:0,gobie:0,gramma:0,crevette:0,blennie:0',
+        'neon:12,guppy:0,corydora:6,koi:2,axolotl:1,grenouille:3,triton:2,clown:0,chirurgien:0,rasbora:0,tetra:0,kuhli:0,gourami:0,platy:0,danio:0,ancistrus:0,otocinclus:0,braise:0,molly:0,miel:0,chromis:0,gobie:0,gramma:0,crevette:0,blennie:0,xipho:0,cerise:0,neritine:0',
       );
       // Espèces d'un environnement (#88) : seulement elles, dans leur ordre.
       expect(formatPopulation(counts, ['koi'])).toBe('koi:2');
@@ -2198,7 +2207,7 @@ describe('AquariumHost', () => {
     it('expose les effectifs et leurs maximums au démarrage', async () => {
       await create('?seed=3');
       expect(exposed()).toBe(
-        `neon:${NEON.defaultPopulation},guppy:${GUPPY.defaultPopulation},corydora:${CORYDORA.defaultPopulation},rasbora:0,tetra:0,kuhli:0,gourami:0,platy:0,danio:0,ancistrus:0,otocinclus:0,braise:0,molly:0,miel:0`,
+        `neon:${NEON.defaultPopulation},guppy:${GUPPY.defaultPopulation},corydora:${CORYDORA.defaultPopulation},rasbora:0,tetra:0,kuhli:0,gourami:0,platy:0,danio:0,ancistrus:0,otocinclus:0,braise:0,molly:0,miel:0,xipho:0,cerise:0,neritine:0`,
       );
       expect(host().population()).toEqual({
         neon: NEON.defaultPopulation,
@@ -2226,6 +2235,9 @@ describe('AquariumHost', () => {
         gramma: 0,
         crevette: 0,
         blennie: 0,
+        xipho: 0,
+        cerise: 0,
+        neritine: 0,
       });
       expect(host().populationMax()).toEqual({
         neon: NEON.maxPopulation,
@@ -2253,6 +2265,9 @@ describe('AquariumHost', () => {
         gramma: GRAMMA.maxPopulation,
         crevette: CREVETTE.maxPopulation,
         blennie: BLENNIE.maxPopulation,
+        xipho: XIPHO.maxPopulation,
+        cerise: CERISE.maxPopulation,
+        neritine: NERITINE.maxPopulation,
       });
     });
 
@@ -2274,7 +2289,7 @@ describe('AquariumHost', () => {
       expect(world.decor).toEqual(before.decor);
       expect(world).toEqual(setPopulation(setPopulation(before, 'neon', 15), 'corydora', 0));
       expect(exposed()).toBe(
-        `neon:15,guppy:${GUPPY.defaultPopulation},corydora:0,rasbora:0,tetra:0,kuhli:0,gourami:0,platy:0,danio:0,ancistrus:0,otocinclus:0,braise:0,molly:0,miel:0`,
+        `neon:15,guppy:${GUPPY.defaultPopulation},corydora:0,rasbora:0,tetra:0,kuhli:0,gourami:0,platy:0,danio:0,ancistrus:0,otocinclus:0,braise:0,molly:0,miel:0,xipho:0,cerise:0,neritine:0`,
       );
       expect(host().population().neon).toBe(15);
     }, 15_000);
@@ -2357,7 +2372,7 @@ describe('AquariumHost', () => {
       expected = setPopulation(setPopulation(expected, 'guppy', 0), 'corydora', 1);
       expect(host().world).toEqual(advance(expected, 120));
       expect(exposed()).toBe(
-        'neon:3,guppy:0,corydora:1,rasbora:0,tetra:0,kuhli:0,gourami:0,platy:0,danio:0,ancistrus:0,otocinclus:0,braise:0,molly:0,miel:0',
+        'neon:3,guppy:0,corydora:1,rasbora:0,tetra:0,kuhli:0,gourami:0,platy:0,danio:0,ancistrus:0,otocinclus:0,braise:0,molly:0,miel:0,xipho:0,cerise:0,neritine:0',
       );
     });
 

@@ -241,6 +241,31 @@ const FEEDING: Readonly<Record<SpeciesId, FeedingGuide>> = {
     frequency: FISH_FREQUENCY,
     quantity: PRUDENT_QUANTITY,
   },
+  // Eau douce, lot 4 (#425, ADR 0104) : FishKeeper.
+  xipho: {
+    foods: sourced(
+      'flocons (dont végétaux), granulés, pastilles d’algues et proies congelées (larves de moustique, artémias, daphnies) ; broute algues et biofilm',
+      'https://fishkeeper.co.uk/fish/freshwater/livebearers/swordtail',
+    ),
+    frequency: FISH_FREQUENCY,
+    quantity: PRUDENT_QUANTITY,
+  },
+  cerise: {
+    foods: sourced(
+      'broute les algues ; aussi flocons, granulés, pastilles d’algues, aliments congelés et épinards blanchis',
+      'https://www.fishkeeper.co.uk/fish/freshwater/miscellaneous/cherry-shrimp',
+    ),
+    frequency: FISH_FREQUENCY,
+    quantity: PRUDENT_QUANTITY,
+  },
+  neritine: {
+    foods: sourced(
+      'pastilles d’algues et de spiruline, légumes (concombre, épinards blanchis) ; peu d’aliments riches en protéines',
+      'https://www.fishkeeper.co.uk/fish/freshwater/miscellaneous/zebra-snail',
+    ),
+    frequency: FISH_FREQUENCY,
+    quantity: PRUDENT_QUANTITY,
+  },
 };
 
 /** Ligne affichée d'une section du wiki : intitulé, valeur, texte du statut. */

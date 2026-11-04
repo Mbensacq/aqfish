@@ -209,7 +209,7 @@ describe('eau douce, lot 2 (#362) : bac tropical et compatibilité', () => {
     expect(
       wikiLists('tropical', { neon: 12, guppy: 6, corydora: 6 })
         .addable.map((e) => e.species)
-        .slice(-7, -3),
+        .slice(-10, -6),
     ).toEqual(NEW);
   });
 

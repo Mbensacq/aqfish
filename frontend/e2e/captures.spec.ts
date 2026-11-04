@@ -54,6 +54,7 @@ const FRESHWATER_LOT1 = 'population=neon:0,guppy:0,corydora:0,rasbora:8,tetra:8,
 const FRESHWATER_LOT2 =
   'population=neon:0,guppy:0,corydora:0,platy:4,danio:8,ancistrus:2,otocinclus:6';
 const FRESHWATER_LOT3 = 'population=neon:0,guppy:0,corydora:0,braise:12,molly:3,miel:2';
+const FRESHWATER_LOT4 = 'population=neon:0,guppy:0,corydora:0,xipho:3,cerise:8,neritine:3';
 const REEF_LOT2 = 'population=clown:3,chirurgien:4,chromis:7,gobie:2,gramma:2';
 const REEF_LOT3 = 'population=clown:3,chirurgien:4,chromis:7,gobie:2,gramma:2,crevette:2,blennie:1';
 const OUTPUT_DIR = resolve(
@@ -161,6 +162,9 @@ test.describe('Captures', () => {
     // Eau douce, lot 3 (#391) : tétras braise, mollys noirs et gouramis miel seuls.
     { name: 'three-quarter-eau-douce-lot3', query: FRESHWATER_LOT3 },
     { name: 'front-eau-douce-lot3', query: `${FRESHWATER_LOT3}&camera=front` },
+    // Eau douce, lot 4 (#425) : xiphos, crevettes cerises et néritines zèbres seuls.
+    { name: 'three-quarter-eau-douce-lot4', query: FRESHWATER_LOT4 },
+    { name: 'front-eau-douce-lot4', query: `${FRESHWATER_LOT4}&camera=front` },
     // Lot 2 de près (#370) : caméra libre au ras du fond, ancistrus (tête large, barbillons
     // clairs, dos piqueté) et otocinclus (bande noire) identifiables.
     {

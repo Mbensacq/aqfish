@@ -172,6 +172,9 @@ describe('AquariumView (pipeline pixel art)', () => {
       'poissons-gramma',
       'poissons-crevette',
       'poissons-blennie',
+      'poissons-xipho',
+      'poissons-cerise',
+      'poissons-neritine',
     ]);
   });
 

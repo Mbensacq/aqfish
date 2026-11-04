@@ -133,9 +133,15 @@ export type TreatmentGroup = 'poisson' | 'amphibien' | 'invertebre';
 
 /**
  * Espèces invertébrées (crevettes, escargots) : la crevette nettoyeuse du récif (#422, ADR
- * 0103) ; toute future espèce invertébrée s'ajoute ici, et sel et médicament lui sont refusés.
+ * 0103), la crevette cerise et la néritine zèbre (#425, ADR 0104 : « intolérantes aux
+ * médicaments à base de cuivre », FishKeeper) ; toute future espèce invertébrée s'ajoute ici,
+ * et sel et médicament lui sont refusés.
  */
-export const INVERTEBRATES: ReadonlySet<SpeciesId> = new Set<SpeciesId>(['crevette']);
+export const INVERTEBRATES: ReadonlySet<SpeciesId> = new Set<SpeciesId>([
+  'crevette',
+  'cerise',
+  'neritine',
+]);
 
 /** Groupe de l'espèce `species` : amphibien (marcheur ou amphibie), invertébré ou poisson. */
 export function treatmentGroup(species: SpeciesId): TreatmentGroup {

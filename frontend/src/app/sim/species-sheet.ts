@@ -121,6 +121,13 @@ const WP = 'https://en.wikipedia.org/wiki/';
 /** Fiche Reeflex de la crevette nettoyeuse, consultée le 2026-11-04 (#422, secondaire). */
 const REEFLEX = 'https://en.reeflex.net/tiere/1180_Lysmata_amboinensis.htm';
 
+/** Fiches FishKeeper consultées le 2026-11-04 (eau douce, lot 4, #425, ADR 0104). */
+const FK_XIPHO = 'https://fishkeeper.co.uk/fish/freshwater/livebearers/swordtail';
+const FK_CERISE = 'https://www.fishkeeper.co.uk/fish/freshwater/miscellaneous/cherry-shrimp';
+const FK_NERITINE = 'https://www.fishkeeper.co.uk/fish/freshwater/miscellaneous/zebra-snail';
+/** Fiche FishBase du xipho, consultée le 2026-11-04 (#425). */
+const FB_XIPHO = 'https://www.fishbase.org/summary/3231';
+
 function note(text: string, status: FieldStatus): SheetNote {
   return Object.freeze({ text, status });
 }
@@ -494,6 +501,68 @@ const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
       note(
         'Solitaire ; vit dans des tubes abandonnés, sur des roches couvertes d’algues',
         source(`${FB}6033`),
+      ),
+    ],
+  }, // Eau douce, lot 4 (#425, ADR 0104) : FishBase et FishKeeper pour le xipho, FishKeeper pour
+  // la crevette cerise et la néritine zèbre.
+  xipho: {
+    adultSize: sourced(14, `${FB_XIPHO} (longueur totale du mâle, épée comprise)`),
+    temperaturePreferred: approx(range(23, 26)),
+    temperatureTolerated: sourced(range(22, 28), `${FB_XIPHO} (tropical, 22–28 °C)`),
+    diet: sourced('omnivore', `${FB_XIPHO} (vers, crustacés, insectes et végétaux)`),
+    // Un mâle pour plusieurs femelles dans un petit bac (FishKeeper) : trois sujets au moins.
+    minGroup: approx(3),
+    // FishKeeper demande un bac de 90 cm de long au moins, sans volume : 90 × 30 × 37 cm.
+    minLiters: approx(100),
+    notes: [
+      note(
+        'Bac de 90 cm de long au moins ; un seul mâle dans un petit bac, les mâles se disputent ; plus de femelles que de mâles',
+        source(FK_XIPHO),
+      ),
+      note(
+        'Poisson communautaire, mais sans très petites espèces : mange alevins et crevettes naines',
+        source(FK_XIPHO),
+      ),
+      note(
+        'Eau dure (pH 7 à 8, 8 à 20 °dH) ; nuisible potentiel hors de son aire : ne jamais relâcher',
+        source(FB_XIPHO),
+      ),
+    ],
+  },
+  cerise: {
+    adultSize: sourced(3, `${FK_CERISE} (3 cm)`),
+    temperaturePreferred: approx(range(20, 25)),
+    temperatureTolerated: sourced(range(12, 28), `${FK_CERISE} (12–28 °C)`),
+    diet: sourced('omnivore', `${FK_CERISE} (broute les algues, accepte flocons et congelés)`),
+    // « Au mieux en grandes colonies », sans effectif chiffré.
+    minGroup: approx(6),
+    minLiters: approx(20),
+    notes: [
+      note(
+        'Seulement avec de petits poissons paisibles : les compagnons plus grands la prennent pour un en-cas',
+        source(FK_CERISE),
+      ),
+      note(
+        'Intolérante aux médicaments à base de cuivre et aux nitrates élevés',
+        source(FK_CERISE),
+      ),
+    ],
+  },
+  neritine: {
+    adultSize: sourced(2.5, `${FK_NERITINE} (2,5 cm)`),
+    temperaturePreferred: approx(range(23, 25)),
+    temperatureTolerated: sourced(range(22, 26), `${FK_NERITINE} (22–26 °C)`),
+    diet: sourced('herbivore', `${FK_NERITINE} (pastilles d’algues, spiruline, légumes)`),
+    minGroup: approx(1),
+    minLiters: approx(30),
+    notes: [
+      note(
+        'Eau dure et alcaline (pH 7,2 à 8,2) pour protéger la coquille ; intolérante au cuivre',
+        source(FK_NERITINE),
+      ),
+      note(
+        'Pond sur le décor, mais les œufs n’éclosent pas en eau douce ; bac bien couvert, elle sort de l’eau',
+        source(FK_NERITINE),
       ),
     ],
   },

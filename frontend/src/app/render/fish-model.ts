@@ -596,6 +596,68 @@ export const BLENNIE_FISH: FishTemplate = {
   tailDepth: 1,
 };
 
+/**
+ * Xipho (#425) : corps fuselé vert (`k`, `b`), bande latérale rouge (`s`), courte dorsale,
+ * caudale verte dont le lobe bas se prolonge en **épée** jaune (`a`) bordée de noir (`f`), le
+ * trait qui le distingue de tout autre poisson du bac.
+ */
+export const XIPHO_FISH: FishTemplate = {
+  body: [
+    // queue → tête
+    '....kkkk....',
+    '.kkkkkkkkkk.',
+    'ssssssssssse',
+    'bbbbbbbbbbb.',
+    '.bbbbbbbbb..',
+    '...ff.......',
+  ],
+  tail: ['......kk', '.....kkk', '....kkkk', '.....kkk', 'aaaaaakk', 'ffffff..'],
+  bodyDepth: 2,
+  tailDepth: 1,
+};
+
+/**
+ * Crevette cerise (#425) : corps arqué rouge (`s`, `k`), ventre rose (`b`), pattes rouges (`f`)
+ * sous le corps, antennes roses (`a`) relevées vers l'avant, éventail de queue rouge ; plus
+ * haute que la crevette nettoyeuse pour rester lisible (#424).
+ */
+export const CERISE_FISH: FishTemplate = {
+  body: [
+    // queue → tête (antennes comprises)
+    '.........aaa',
+    '..kkkkkkka..',
+    '.sssssssssea',
+    'sssssssss...',
+    '.bbbbbbbb...',
+    '..f.f.f.f...',
+  ],
+  tail: ['f.', 'ff', 'ff', 'f.'],
+  bodyDepth: 4,
+  bodyColumnDepths: [2, 2, 4, 4, 4, 4, 4, 4, 4, 2, 2, 2],
+  tailDepth: 1,
+};
+
+/**
+ * Néritine zèbre (#425) : coquille ronde et haute, jaune or (`k`) rayée de noir (`s`) en
+ * diagonale, pied beige (`b`) qui dépasse à l'avant sous l'œil (`e`), deux tentacules (`f`) ;
+ * pas de nageoire : la « queue » n'est que l'arrière du pied.
+ */
+export const NERITINE_FISH: FishTemplate = {
+  body: [
+    // arrière → avant
+    '..kkskk...',
+    '.kskkskk..',
+    'kskkskksk.',
+    'skkskkskkf',
+    'bbbbbbbbbe',
+    '.bbbbbbbb.',
+  ],
+  tail: ['b', 'b'],
+  bodyDepth: 4,
+  bodyColumnDepths: [2, 4, 4, 4, 4, 4, 4, 4, 2, 2],
+  tailDepth: 2,
+};
+
 /** Gabarit de chaque silhouette déclarée par les espèces (`sim/species.ts`). */
 export const SILHOUETTES: Readonly<Record<SilhouetteId, FishTemplate>> = {
   fuseau: SLENDER_FISH,
@@ -624,6 +686,9 @@ export const SILHOUETTES: Readonly<Record<SilhouetteId, FishTemplate>> = {
   gramma: GRAMMA_FISH,
   crevette: CREVETTE_FISH,
   blennie: BLENNIE_FISH,
+  xipho: XIPHO_FISH,
+  cerise: CERISE_FISH,
+  neritine: NERITINE_FISH,
 };
 
 /** Attribut de sommet du rang de taché (`voxelSpotRank`, points blancs, issue #366). */

@@ -249,6 +249,9 @@ class TestHost {
     gramma: 0,
     crevette: 0,
     blennie: 0,
+    xipho: 0,
+    cerise: 0,
+    neritine: 0,
   });
   readonly populationMax = signal<PopulationCounts>({
     neon: 40,
@@ -276,6 +279,9 @@ class TestHost {
     gramma: 0,
     crevette: 0,
     blennie: 0,
+    xipho: 0,
+    cerise: 0,
+    neritine: 0,
   });
   readonly tankLiters = signal<number | null>(288);
   readonly water = signal<WaterReadout>(DEFAULT_WATER_READOUT);
@@ -1093,10 +1099,10 @@ describe('ControlPanel', () => {
     // 5 contrôles de #52, « Éditer le décor » (#167), « Granulés » (#117), « Afficher la
     // pièce » (#187), « Changer l’eau » et le curseur du chauffage (#207), « − » et « + » des
     // feuilles de catappa (#239), puis « − », champ, « + » (#69), curseur (#189) et « Fiche »
-    // (#237) pour chacune des 14 espèces du bac tropical (#238, #362, #391), puis « Exporter »
+    // (#237) pour chacune des 17 espèces du bac tropical (#238, #362, #391, #425), puis « Exporter »
     // et « Importer » (#70), le mode du bac (#278), « Mode immersif » (#345), « Réduire
     // les mouvements » (#406), puis la case « Sons d'ambiance » et son volume (#411).
-    expect(controls).toHaveLength(5 + 1 + 1 + 1 + 2 + 2 + 14 * 5 + 2 + 1 + 1 + 1 + 2);
+    expect(controls).toHaveLength(5 + 1 + 1 + 1 + 2 + 2 + 17 * 5 + 2 + 1 + 1 + 1 + 2);
     expect(root().querySelectorAll('input[type="file"]')).toHaveLength(1);
     for (const control of controls) {
       const name =
@@ -1174,6 +1180,9 @@ describe('ControlPanel', () => {
         'braise',
         'molly',
         'miel',
+        'xipho',
+        'cerise',
+        'neritine',
       ]);
       expect(rows.map((r) => r.querySelector('label')?.textContent?.trim())).toEqual([
         'Néon',
@@ -1190,6 +1199,9 @@ describe('ControlPanel', () => {
         'Tétra braise',
         'Molly',
         'Gourami miel',
+        'Xipho',
+        'Crevette cerise',
+        'Néritine zèbre',
       ]);
       const neons = field('néons');
       expect(neons.type).toBe('number');
@@ -1227,6 +1239,9 @@ describe('ControlPanel', () => {
         gramma: 0,
         crevette: 0,
         blennie: 0,
+        xipho: 0,
+        cerise: 0,
+        neritine: 0,
       });
       await fixture.whenStable();
       expect(neons.value).toBe('20');
