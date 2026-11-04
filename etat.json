@@ -5283,6 +5283,12 @@
           "debut": "2026-11-04T11:15:34.959Z",
           "fin": "2026-11-04T11:55:16.106Z",
           "note": "Verdict OK, 0 bug, captures publiées (120/128, délai), 1 e2e ajouté (wiki Comportement), CI verte"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-04T11:55:52.440Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
