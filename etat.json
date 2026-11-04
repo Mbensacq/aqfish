@@ -5381,10 +5381,10 @@
           "note": "Issue #439 : dette lot 2/6, allocations par image, caches et passe directe (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-04T21:15:16.634Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-04T22:20:20.699Z",
+          "note": "PR #448 : dette lot 2/6 (6 points, 7 issues fermées), captures identiques à l'octet, CI verte"
         }
       },
       "metriques": {}
