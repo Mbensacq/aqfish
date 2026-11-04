@@ -74,6 +74,17 @@ Mise à jour à la rétro du sprint 10 : l'éditeur (pièce, catalogue d'espèce
 | v1.9 | Enrichir et partager | Sprint 21 (cycles 140 à 146) : audit et solde de #264 et #340, récif lot 3 avec #405, espèces d'eau douce lot 4, partage d'un aquarium par fichier ou lien (sans backend sans ADR), comportements plus riches. Cycle 145 : dette (#384 et #405 d'abord) ; cycle 146 : rétro |
 | v1.x | L'ambiance et la mise en ligne | Prévue au sprint 12, repoussée (la numérotation `v1.0.0` a été atteinte au c77) : sons d'ambiance, accessibilité, performances, partage par lien si la sauvegarde locale le permet ; hébergement choisi ; les 3 derniers cycles sans nouvelle fonctionnalité |
 
+## Sprint de consolidation (décision de Mathis du 2026-11-04)
+
+Cycles 146 à 153 : **aucune nouvelle fonctionnalité**, résorption de la dette (#436). Cycle 146
+(rétro) : tri des issues `dette` (fermer les périmées et les doublons, regrouper le reste en lots
+par zone, les ordonner) ; cycles 147 à 152 : un lot par cycle ; cycle 153 (rétro) : bilan chiffré,
+puis reprise des priorités ci-dessous. Objectif : 30 issues `dette` ouvertes ou moins.
+
+**Règle permanente** : quand plus de 30 issues `dette` sont ouvertes, le prochain cycle de type
+`fonctionnalite` traite un lot de dette au lieu d'une fonctionnalité (hors `bug` bloquant),
+jusqu'à revenir sous le seuil.
+
 ## Priorités de Mathis (2026-10-26)
 
 Le projet reste **centré sur l'aquarium**, à la fois éducatif et agréable : une personne qui n'a
