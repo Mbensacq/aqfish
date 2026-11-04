@@ -5387,10 +5387,10 @@
           "note": "PR #448 : dette lot 2/6 (6 points, 7 issues fermées), captures identiques à l'octet, CI verte"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-04T22:21:05.632Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-04T22:46:15.828Z",
+          "note": "Verdict OK, 0 bug, captures publiées (c147, 129 identiques), e2e ciblés verts (23), CI 10/10"
         }
       },
       "metriques": {}
