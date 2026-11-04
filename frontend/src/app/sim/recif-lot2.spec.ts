@@ -201,13 +201,15 @@ describe('récif, lot 2 (#403) : catalogue complet', () => {
     expect(GRAMMA.depth?.maxHeightRatio ?? 1).toBeLessThanOrEqual(
       CHROMIS.depth?.minHeightRatio ?? 0,
     );
-    // Modèles : chromis le plus petit du récif, aucun plus grand que le chirurgien.
+    // Modèles : chromis le plus petit du récif, aucun plus grand que le chirurgien, sauf le
+    // gobie, agrandi pour la lisibilité (#405, ADR 0103).
     for (const id of REEF.species.filter((s) => s !== 'chromis')) {
       expect(CHROMIS.bodyLength, id).toBeLessThan(SPECIES[id].bodyLength);
     }
     for (const id of NEW) {
-      expect(SPECIES[id].bodyLength, id).toBeLessThan(CHIRURGIEN.bodyLength);
       expect(SPECIES[id].wallMargin, id).toBeGreaterThanOrEqual(SPECIES[id].bodyLength / 2);
+      if (id === 'gobie') continue;
+      expect(SPECIES[id].bodyLength, id).toBeLessThan(CHIRURGIEN.bodyLength);
     }
   });
 
@@ -286,7 +288,8 @@ describe('récif, lot 2 (#403) : récif, milieu et compatibilité', () => {
       expect(livesIn('tropical', id)).toBe(false);
       expect(livesIn('eaufroide', id)).toBe(false);
     }
-    expect(REEF.species).toEqual([...NATIVE, ...NEW]);
+    // Lot 3 (#422) : ses espèces suivent celles du lot 2.
+    expect(REEF.species.slice(0, NATIVE.length + NEW.length)).toEqual([...NATIVE, ...NEW]);
     expect(REEF.population).toEqual([
       { species: 'clown', count: CLOWN.defaultPopulation },
       { species: 'chirurgien', count: CHIRURGIEN.defaultPopulation },
@@ -298,7 +301,7 @@ describe('récif, lot 2 (#403) : récif, milieu et compatibilité', () => {
     expect(
       wikiLists('recif', { clown: 3, chirurgien: 4 })
         .addable.map((e) => e.species)
-        .slice(-3),
+        .filter((id) => NEW.includes(id)),
     ).toEqual(NEW);
   });
 
