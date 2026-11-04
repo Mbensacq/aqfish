@@ -5177,10 +5177,10 @@
           "note": "Verdict RÉSERVES, 0 bug, captures publiées (127) ; espèces lot 3 trop petites pour être reconnues sans zoom (front, three-quarter) ; e2e ciblés 15/15, e2e complet en CI"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-04T01:41:55.370Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-04T02:47:56.114Z",
+          "note": "PR #423 fusionnée → v1.9.1 (release CI ok), CI main verte ; #422 et #405 fermées ; dette #424 (lisibilité lot 3, chromis, blennie, avoidsObstacles axolotl) ; suppression de branche refusée, pied d'attribution réajouté par l'environnement à la PR"
         }
       },
       "metriques": {}
