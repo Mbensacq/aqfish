@@ -1,7 +1,5 @@
-# Captures c143
-
-- Branche : cycle/c143-partage-lien
-- PR : #430
-- Commit : 9d6e5ffe4d168924ef16c73d05b75a354a47b645
-- Graine : par défaut (captures.spec.ts), temps fixe du contrat de capture
-- Généré le : 2026-11-04T08:36:23Z
+# Captures du cycle 144
+- Branche : cycle/c144-comportements, PR #432, commit c71257c
+- Graine : celle de chaque scénario de e2e/captures.spec.ts
+- Temps : fixé par chaque scénario (déterministe)
+- Série : 120 images sur ~128 (la commande a atteint la limite de 560 s ; les dernières scènes d'interface n'ont pas été produites)
