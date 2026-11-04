@@ -5271,6 +5271,12 @@
           "debut": "2026-11-04T09:41:53.009Z",
           "fin": "2026-11-04T09:43:10.098Z",
           "note": "Issue #427 : comportements plus riches, broutage, fouille et territoire (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-04T09:43:57.147Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
