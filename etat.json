@@ -5243,10 +5243,10 @@
           "note": "PR #430 : partage d'un bac par lien (#426), CI verte ; e2e ciblés en local, complets en CI ; ajuster bouton Sauvegarde (cadrage DejaVu) ; pied d'attribution réajouté par l'environnement à la PR"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-04T08:11:29.820Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-04T08:36:36.221Z",
+          "note": "Verdict RÉSERVES, 0 bug, 2 défauts mineurs (bannière de refus mobile, message unique), captures publiées ; unitaires 4039/4039, e2e partage 3/3, CI verte"
         }
       },
       "metriques": {}
