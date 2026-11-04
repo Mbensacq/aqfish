@@ -5357,10 +5357,10 @@
           "note": "Verdict OK, 0 bug, captures publiées (c146), e2e ciblés verts, e2e complet non rejoué en local"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-04T20:00:34.523Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-04T21:13:40.235Z",
+          "note": "PR #447 fusionnée → v1.9.5 (CI main verte, release créée) ; suppression de la branche refusée par l'environnement"
         }
       },
       "metriques": {}
