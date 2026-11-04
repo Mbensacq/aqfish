@@ -320,7 +320,7 @@ describe('avertissement d’ajout (#237)', () => {
       Object.entries(SPECIES_LABELS)
         .filter(([, l]) => l.feminine)
         .map(([id]) => id),
-    ).toEqual(['kuhli', 'crevette', 'blennie']);
+    ).toEqual(['kuhli', 'crevette', 'blennie', 'cerise', 'neritine']);
     const labels = {
       ...SPECIES_LABELS,
       neon: { singular: 'raie', plural: 'raies', feminine: true },

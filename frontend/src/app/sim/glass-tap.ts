@@ -52,6 +52,11 @@ export const TAP_REACTIONS: Readonly<Record<SpeciesId, TapReaction | null>> = {
   // blennie : rentre dans son trou (approximation de jeu).
   crevette: null,
   blennie: 'fuite',
+  // Eau douce, lot 4 (#425, ADR 0104) : le xipho fuit (approximation de jeu) ; crevette cerise
+  // et néritine, marcheuses, sans réaction au tapotement (comme les autres marcheurs).
+  xipho: 'fuite',
+  cerise: null,
+  neritine: null,
 };
 
 /** Portée du tapotement, en mètres simulés, autour du point touché sur la vitre. */

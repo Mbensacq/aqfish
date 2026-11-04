@@ -99,6 +99,9 @@ describe('SpeciesWiki (#287)', () => {
       'braise',
       'molly',
       'miel',
+      'xipho',
+      'cerise',
+      'neritine',
     ]);
   });
 
@@ -261,8 +264,9 @@ describe('SpeciesWiki, lot 2/2 (#291)', () => {
       'koi',
       'axolotl',
     ]);
-    // Guppy, corydoras et les onze espèces des lots 1 à 3 d'eau douce (#238, #362, #391).
-    expect(all('[data-wiki-mate="together"]')).toHaveLength(13);
+    // Guppy, corydoras et les quatorze espèces des lots 1 à 4 d'eau douce (#238, #362, #391,
+    // #425).
+    expect(all('[data-wiki-mate="together"]')).toHaveLength(16);
     expect(all('[data-wiki-mate="elsewhere"]')).toHaveLength(1);
 
     // L'eau du bac change : la comparaison suit.

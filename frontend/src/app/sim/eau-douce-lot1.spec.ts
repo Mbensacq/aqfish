@@ -154,7 +154,19 @@ describe('eau douce, lot 1 (#238) : bac tropical et compatibilité', () => {
     ]);
     expect(
       wikiLists('tropical', { neon: 12, guppy: 6, corydora: 6 }).addable.map((e) => e.species),
-    ).toEqual([...NEW, 'platy', 'danio', 'ancistrus', 'otocinclus', 'braise', 'molly', 'miel']);
+    ).toEqual([
+      ...NEW,
+      'platy',
+      'danio',
+      'ancistrus',
+      'otocinclus',
+      'braise',
+      'molly',
+      'miel',
+      'xipho',
+      'cerise',
+      'neritine',
+    ]);
   });
 
   it('monde par défaut (graine 42) inchangé : seules les trois espèces d’avant', () => {

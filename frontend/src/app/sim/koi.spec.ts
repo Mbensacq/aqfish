@@ -137,6 +137,9 @@ describe('koï (#88)', () => {
       'braise',
       'molly',
       'miel',
+      'xipho',
+      'cerise',
+      'neritine',
     ]);
     expect(livesIn('bassin', 'koi')).toBe(true);
     expect(livesIn('tropical', 'koi')).toBe(false);

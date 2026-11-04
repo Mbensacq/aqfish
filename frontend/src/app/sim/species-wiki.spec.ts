@@ -77,6 +77,9 @@ describe('wiki des espèces : présentes et ajoutables (#287)', () => {
       'braise',
       'molly',
       'miel',
+      'xipho',
+      'cerise',
+      'neritine',
     ]);
     expect(lists.addable[0]).toEqual({
       species: 'guppy',
@@ -117,6 +120,9 @@ describe('wiki des espèces : présentes et ajoutables (#287)', () => {
       'braise',
       'molly',
       'miel',
+      'xipho',
+      'cerise',
+      'neritine',
     ]);
   });
 
@@ -209,6 +215,9 @@ describe('wiki des espèces : soins de la fiche (#291)', () => {
       'braise',
       'molly',
       'miel',
+      'xipho',
+      'cerise',
+      'neritine',
     ]);
     expect(elsewhere).toEqual(
       [

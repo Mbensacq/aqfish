@@ -63,6 +63,9 @@ export const SPECIES_LABELS: Readonly<Record<SpeciesId, SpeciesLabels>> = {
   gramma: { singular: 'gramma royal', plural: 'grammas royaux', feminine: false },
   crevette: { singular: 'crevette nettoyeuse', plural: 'crevettes nettoyeuses', feminine: true },
   blennie: { singular: 'blennie bicolore', plural: 'blennies bicolores', feminine: true },
+  xipho: { singular: 'xipho', plural: 'xiphos', feminine: false },
+  cerise: { singular: 'crevette cerise', plural: 'crevettes cerises', feminine: true },
+  neritine: { singular: 'néritine zèbre', plural: 'néritines zèbres', feminine: true },
 };
 
 /** Entrée du catalogue d'un environnement. */

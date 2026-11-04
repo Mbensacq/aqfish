@@ -45,6 +45,11 @@ export const DIURNAL: Readonly<Record<SpeciesId, boolean>> = {
   // Crevette nettoyeuse : marcheuse du fond, sans repos dans ce cycle (comme l'axolotl).
   crevette: false,
   blennie: true,
+  // Eau douce, lot 4 (#425, ADR 0104) : xipho diurne ; crevette cerise et néritine, marcheuses
+  // du fond, sans repos dans ce cycle (comme les autres marcheurs).
+  xipho: true,
+  cerise: false,
+  neritine: false,
 };
 
 /** Ralentissement en pleine nuit : le déplacement y garde `1 − NIGHT_SLOWDOWN` de sa longueur. */

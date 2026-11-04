@@ -153,6 +153,26 @@ export const LEGAL_STATUS: Readonly<Record<SpeciesId, LegalStatus>> = {
     ESPECES,
     'aucune ligne de l’annexe 2 ni de la CITES vérifiée (FishBase : CITES « non évaluée ») ; origine des sujets non vérifiée',
   ),
+  // Eau douce, lot 4 (#425, ADR 0104) : ni l'annexe 2 ni la liste des espèces exotiques
+  // envahissantes de l'Union relues pour ces espèces.
+  xipho: legal(
+    'a-verifier',
+    'non-verifie',
+    ESPECES,
+    'aucune ligne de l’annexe 2 ni de la liste de l’Union vérifiée ; sujets du commerce surtout issus d’élevages ; nuisible potentiel hors de son aire (FishBase) : ne jamais relâcher',
+  ),
+  cerise: legal(
+    'a-verifier',
+    'non-verifie',
+    ESPECES,
+    'aucune ligne de l’annexe 2 ni de la liste de l’Union vérifiée ; origine des sujets non vérifiée ; ne jamais relâcher',
+  ),
+  neritine: legal(
+    'a-verifier',
+    'non-verifie',
+    ESPECES,
+    'aucune ligne de l’annexe 2 ni de la liste de l’Union vérifiée ; sujets sauvages probables (ne se reproduit pas en eau douce), origine non vérifiée',
+  ),
 };
 
 /** Statut légal de l'espèce `id` (figé, partagé). */

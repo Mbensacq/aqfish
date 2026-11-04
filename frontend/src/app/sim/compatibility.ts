@@ -61,7 +61,29 @@ export const TEMPERAMENTS: Readonly<Record<SpeciesId, Temperament>> = {
   // Blennie bicolore : défend son trou dans la roche (usage amateur, **non sourcé**) :
   // `territorial`, approximation de jeu, donc déconseillée avec le gramma et le clown.
   blennie: 'territorial',
+  // Eau douce, lot 4 (#425, ADR 0104). Xipho : « poisson communautaire, sans très petites
+  // espèces » ; les mâles se disputent entre eux seulement (FishKeeper) : `paisible`.
+  xipho: 'paisible',
+  // Crevette cerise et néritine zèbre : invertébrés paisibles (FishKeeper).
+  cerise: 'paisible',
+  neritine: 'paisible',
 };
+
+/**
+ * Proies hors de la règle des prédateurs (#425, ADR 0104) : pour chaque espèce, les espèces
+ * **non prédatrices** qui la mangent quand même. Crevette cerise : « les compagnons plus grands
+ * la prennent pour un en-cas » (FishKeeper) ; le xipho, plus grand nageur du bac avec le molly
+ * et mangeur de crustacés (FishBase), y figure. **Approximation de jeu** : la liste n'est pas
+ * exhaustive (molly et gouramis non évalués, ADR 0104).
+ */
+export const EXTRA_PREDATORS: Readonly<Partial<Record<SpeciesId, readonly SpeciesId[]>>> = {
+  cerise: ['xipho'],
+};
+
+/** Vrai si `predator` mange `prey` d'après `EXTRA_PREDATORS`. */
+function eatsAsExtra(predator: SpeciesId, prey: SpeciesId): boolean {
+  return EXTRA_PREDATORS[prey]?.includes(predator) ?? false;
+}
 
 /** Verdict pour un couple d'espèces. */
 export type Compatibility = 'compatible' | 'predateur' | 'territorial';
@@ -76,6 +98,7 @@ function known(id: string): id is SpeciesId {
  *
  * - même espèce, ou espèce inconnue (aucune information) : `'compatible'` ;
  * - un prédateur et une espèce **strictement** plus petite (`bodyLength`) : `'predateur'` ;
+ * - une proie et une espèce qui la mange d'après `EXTRA_PREDATORS` : `'predateur'` ;
  * - deux espèces territoriales différentes : `'territorial'` ;
  * - sinon `'compatible'`.
  *
@@ -89,7 +112,12 @@ export function compatibility(a: string, b: string): Compatibility {
   const tb = TEMPERAMENTS[b];
   const la = SPECIES[a].bodyLength;
   const lb = SPECIES[b].bodyLength;
-  if ((ta === 'predateur' && lb < la) || (tb === 'predateur' && la < lb)) {
+  if (
+    (ta === 'predateur' && lb < la) ||
+    (tb === 'predateur' && la < lb) ||
+    eatsAsExtra(a, b) ||
+    eatsAsExtra(b, a)
+  ) {
     return 'predateur';
   }
   if (ta === 'territorial' && tb === 'territorial') {

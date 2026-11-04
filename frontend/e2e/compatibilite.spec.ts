@@ -23,7 +23,7 @@ test.describe('Compatibilité des espèces (#209)', () => {
   test('bac tropical par défaut : aucun mélange déconseillé', async ({ page }) => {
     const errors = await open(page, '?seed=42');
     await toggle(page).click();
-    await expect(page.locator('[data-section="population"] [data-species]')).toHaveCount(14);
+    await expect(page.locator('[data-section="population"] [data-species]')).toHaveCount(17);
     await expect(warnings(page)).toHaveCount(0);
     expect(errors).toEqual([]);
   });
@@ -118,6 +118,23 @@ test.describe('Compatibilité des espèces (#209)', () => {
     }
     await slider(page, 'de gouramis miel').fill('0');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /miel:0/);
+    await expect(warnings(page)).toHaveCount(0);
+    expect(errors).toEqual([]);
+  });
+
+  test('espèces d’eau douce du lot 4 : xipho déconseillé avec la crevette cerise, néritine paisible', async ({
+    page,
+  }) => {
+    const errors = await open(
+      page,
+      '?seed=42&population=xipho:3,cerise:8,neritine:2,neon:4,guppy:0,corydora:0',
+    );
+    await toggle(page).click();
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /cerise:8/);
+    // Le xipho mange les crevettes naines (#425) ; la néritine ne gêne personne.
+    await expect(warnings(page)).toHaveCount(1);
+    await slider(page, 'de xiphos').fill('0');
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /xipho:0/);
     await expect(warnings(page)).toHaveCount(0);
     expect(errors).toEqual([]);
   });

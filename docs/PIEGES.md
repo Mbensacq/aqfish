@@ -773,6 +773,11 @@ haut de sa section.
 
 ## Simulation
 
+- **Marcheur du fond enfoncé dans le sable** (cycle 142, #425) : la marche pose le **centre** du
+  modèle à `walker.clearance` au-dessus du fond. Avec une `clearance` plus petite que la
+  demi-hauteur du modèle (`lignes du gabarit × bodyLength / colonnes × 0,75 / 2`), pattes et
+  pied disparaissent sous le sable : la néritine de 6 cm à `clearance` 0,004 ne montrait que le
+  haut de sa coquille en vue `front`. Prendre `clearance` ≈ demi-hauteur. (2026-11-04)
 - **Égalité de taille : l'identifiant départage le mode immersif** (cycle 141, #422) : à
   `bodyLength` égal, `smallSwimmers` range par identifiant ; une blennie (`blennie`) de 0,1
   serait passée devant le gramma (0,1) et l'aurait chassé du mode immersif du récif. Lui donner
