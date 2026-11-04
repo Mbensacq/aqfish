@@ -5241,6 +5241,12 @@
           "debut": "2026-11-04T05:50:32.355Z",
           "fin": "2026-11-04T08:10:59.290Z",
           "note": "PR #430 : partage d'un bac par lien (#426), CI verte ; e2e ciblés en local, complets en CI ; ajuster bouton Sauvegarde (cadrage DejaVu) ; pied d'attribution réajouté par l'environnement à la PR"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-04T08:11:29.820Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
