@@ -211,9 +211,17 @@ describe('wiki des espèces : soins de la fiche (#291)', () => {
       'miel',
     ]);
     expect(elsewhere).toEqual(
-      ['grenouille', 'triton', 'clown', 'chirurgien', 'chromis', 'gobie', 'gramma'].map(
-        (id) => SPECIES[id as SpeciesId].name,
-      ),
+      [
+        'grenouille',
+        'triton',
+        'clown',
+        'chirurgien',
+        'chromis',
+        'gobie',
+        'gramma',
+        'crevette',
+        'blennie',
+      ].map((id) => SPECIES[id as SpeciesId].name),
     );
   });
 });

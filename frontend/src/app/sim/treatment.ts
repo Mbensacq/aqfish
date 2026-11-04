@@ -132,10 +132,10 @@ export const TREATMENTS: Readonly<Record<TreatmentKind, TreatmentInfo>> = {
 export type TreatmentGroup = 'poisson' | 'amphibien' | 'invertebre';
 
 /**
- * Espèces invertébrées (crevettes, escargots) : aucune dans le jeu pour l'instant ; toute
- * future espèce invertébrée s'ajoute ici, et sel et médicament lui sont refusés.
+ * Espèces invertébrées (crevettes, escargots) : la crevette nettoyeuse du récif (#422, ADR
+ * 0103) ; toute future espèce invertébrée s'ajoute ici, et sel et médicament lui sont refusés.
  */
-export const INVERTEBRATES: ReadonlySet<SpeciesId> = new Set<SpeciesId>();
+export const INVERTEBRATES: ReadonlySet<SpeciesId> = new Set<SpeciesId>(['crevette']);
 
 /** Groupe de l'espèce `species` : amphibien (marcheur ou amphibie), invertébré ou poisson. */
 export function treatmentGroup(species: SpeciesId): TreatmentGroup {

@@ -170,6 +170,8 @@ describe('AquariumView (pipeline pixel art)', () => {
       'poissons-chromis',
       'poissons-gobie',
       'poissons-gramma',
+      'poissons-crevette',
+      'poissons-blennie',
     ]);
   });
 

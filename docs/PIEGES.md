@@ -773,6 +773,22 @@ haut de sa section.
 
 ## Simulation
 
+- **Égalité de taille : l'identifiant départage le mode immersif** (cycle 141, #422) : à
+  `bodyLength` égal, `smallSwimmers` range par identifiant ; une blennie (`blennie`) de 0,1
+  serait passée devant le gramma (0,1) et l'aurait chassé du mode immersif du récif. Lui donner
+  une longueur strictement plus grande (0,106). Une espèce marcheuse (`walker`) n'y entre
+  jamais, quelle que soit sa taille. (2026-11-04)
+- **Agrandir un poisson du fond le remonte** (cycle 141, #405) : la marge des parois
+  (`wallMargin` ≥ demi-longueur) borne aussi le sol ; le gobie passé de 0,105 à 0,13 nage
+  donc un peu plus haut (médiane vers 14 % de la hauteur d'eau au lieu de 8 %). Vérifier les
+  tests de hauteur et les captures après tout agrandissement. (2026-11-04)
+- **Les marcheurs du fond traversent les obstacles** (cycle 141, #422) : `stepWalker` ne
+  regarde que le sol ; au récif, une crevette aurait traversé coraux et rochers. Le
+  contournement (pas, montée ou descente vers un obstacle refusés, sauf pour s'en éloigner) est
+  **opt-in** (`walker.avoidsObstacles`, crevette seulement) : l'activer pour l'axolotl change
+  les captures du bac d'eau froide, dont les rochers sont des obstacles (un axolotl s'y pose
+  sur un rocher au lieu de le traverser). (2026-11-04)
+
 - **Une espèce marine ajoutée change aussi le mode immersif du récif** (cycle 134, #403) : le
   bac immersif du récif prend ses trois plus petites espèces nageuses (`smallSwimmers`), et il
   n'en avait que deux. Toute espèce du récif, même plus grande que les autres, entre donc dans

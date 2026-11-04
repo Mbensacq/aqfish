@@ -42,6 +42,9 @@ export const DIURNAL: Readonly<Record<SpeciesId, boolean>> = {
   chromis: true,
   gobie: true,
   gramma: true,
+  // Crevette nettoyeuse : marcheuse du fond, sans repos dans ce cycle (comme l'axolotl).
+  crevette: false,
+  blennie: true,
 };
 
 /** Ralentissement en pleine nuit : le déplacement y garde `1 − NIGHT_SLOWDOWN` de sa longueur. */

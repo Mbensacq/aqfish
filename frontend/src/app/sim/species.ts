@@ -33,7 +33,9 @@ export type SpeciesId =
   | 'miel'
   | 'chromis'
   | 'gobie'
-  | 'gramma';
+  | 'gramma'
+  | 'crevette'
+  | 'blennie';
 
 /**
  * Silhouette voxel d'une apparence : le rendu associe à chaque identifiant un gabarit de
@@ -64,6 +66,8 @@ export const SILHOUETTE_IDS = [
   'chromis',
   'gobie',
   'gramma',
+  'crevette',
+  'blennie',
 ] as const;
 export type SilhouetteId = (typeof SILHOUETTE_IDS)[number];
 
@@ -204,6 +208,12 @@ export interface BottomWalkerParams {
   readonly burstPeriod: number;
   /** Vitesse verticale maximale de la remontée, en m/s (> 0). */
   readonly climbSpeed: number;
+  /**
+   * Vrai si la marche contourne les obstacles (coraux, rochers, décor) et ne monte ni ne
+   * descend dans l'un d'eux (crevette nettoyeuse, #422, ADR 0103) ; absent : les obstacles sont
+   * ignorés en marche, comme avant (axolotl, dont les bacs restent identiques à l'octet).
+   */
+  readonly avoidsObstacles?: boolean;
 }
 
 /**
@@ -1631,25 +1641,30 @@ export const GOBIE: SpeciesDefinition = {
   id: 'gobie',
   name: 'Gobie à crevette jaune',
   scientificName: 'Cryptocentrus cinctus',
-  bodyLength: 0.105,
+  // #405 : 0,105 le perdait en vue de face, au ras du sable devant les coraux jaunes ; agrandi
+  // (10 cm de longueur standard en vrai, 13 cm environ en tout), seul du récif plus long que le
+  // chirurgien. Marges suivies (`wallMargin` ≥ demi-longueur).
+  bodyLength: 0.13,
   cruiseSpeed: 0.02,
   minSpeed: 0.008,
   maxSpeed: 0.08,
   wanderTurnRate: 0.7,
   avoidTurnRate: 2.4,
   maxPitch: 0.2,
-  wallMargin: 0.055,
+  wallMargin: 0.065,
   tailBeatFrequency: 1.2,
   defaultPopulation: 1,
   maxPopulation: 4,
   schooling: null,
   silhouette: 'gobie',
+  // #405 : selles brunes (`f`, « cinctus » : ceinturé) et ventre clair, pour ne plus le
+  // confondre avec l'arrière jaune du gramma ni avec les coraux jaunes.
   colors: {
     stripe: '#ffd166',
     accent: '#3fa9f5',
     back: '#f2c14e',
-    belly: '#ffd166',
-    fin: '#f2c14e',
+    belly: '#f2ead8',
+    fin: '#86765b',
     eye: '#1c1c22',
   },
   // Au ras du sable (sous 8 % de la hauteur d'eau), rares et brèves remontées.
@@ -1692,17 +1707,20 @@ export const GRAMMA: SpeciesDefinition = {
   maxPopulation: 3,
   schooling: null,
   silhouette: 'gramma',
+  // #405 : avant violet clair (`corailVioletClair`) bordé de violet, et non violet sombre
+  // perdu sur l'eau bleue ; arrière or soutenu (`coeurFleur`) et non le jaune du gobie.
   colors: {
-    stripe: '#7d4fb8',
-    accent: '#ffd166',
+    stripe: '#b58be6',
+    accent: '#ffb703',
     back: '#7d4fb8',
-    belly: '#7d4fb8',
-    fin: '#ffd166',
+    belly: '#b58be6',
+    fin: '#ffb703',
     eye: '#1c1c22',
   },
-  // Bas et milieu du bac, entre 12 % et 45 % de la hauteur d'eau.
+  // Milieu du bas, entre 25 % et 45 % de la hauteur d'eau : au-dessus des coraux, sur l'eau
+  // bleue plutôt que devant le corail violet (#405 ; 12 % auparavant).
   depth: {
-    minHeightRatio: 0.12,
+    minHeightRatio: 0.25,
     maxHeightRatio: 0.45,
     floorZone: 0.04,
     ascentRate: 0,
@@ -1714,6 +1732,118 @@ export const GRAMMA: SpeciesDefinition = {
     turnRate: 2.2,
     minHeightRatio: 0.1,
     maxHeightRatio: 1,
+  },
+};
+
+/*
+ * Récif, lot 3 (issue #422, ADR 0103) : crevette nettoyeuse et blennie bicolore. Proposées au
+ * récif sans y être peuplées d'office ; couleurs de la palette commune ou tons du récif ;
+ * tailles du modèle, vitesses, virages, durées et profondeurs : **approximations de jeu** ;
+ * valeurs réelles et sources : `sim/species-sheet.ts`.
+ */
+
+/**
+ * Crevette nettoyeuse (Lysmata amboinensis) : invertébré du fond, flancs rouges, bande dorsale
+ * blanche de la tête au début de la queue, longues antennes blanches (Reeflex). Marche sur le
+ * sable et les pentes, nage brièvement par à-coups, sans remonter à la surface : le mécanisme
+ * des marcheurs du fond (`walker`, axolotl, `sim/axolotl.ts`), qui contournent les coraux et
+ * les rochers (ADR 0103). Ni banc, ni recherche de granulés (comme l'axolotl).
+ */
+export const CREVETTE: SpeciesDefinition = {
+  id: 'crevette',
+  name: 'Crevette nettoyeuse',
+  scientificName: 'Lysmata amboinensis',
+  // 6 cm en vrai ; modèle de 12 cm antennes comprises (un tiers de sa longueur), agrandi pour
+  // la lisibilité en vue de face. Marcheuse : hors du mode immersif (`smallSwimmers`), quelle
+  // que soit sa taille.
+  bodyLength: 0.12,
+  cruiseSpeed: 0.02,
+  minSpeed: 0.006,
+  maxSpeed: 0.07,
+  wanderTurnRate: 0.9,
+  avoidTurnRate: 2.4,
+  maxPitch: 0.6,
+  wallMargin: 0.06,
+  tailBeatFrequency: 1.6,
+  defaultPopulation: 2,
+  // « Pas plus de deux » : elles s'entretuent au-delà, surtout à la mue (Reeflex).
+  maxPopulation: 2,
+  schooling: null,
+  silhouette: 'crevette',
+  colors: {
+    stripe: '#d94a3a',
+    accent: '#f2ead8',
+    back: '#f2ead8',
+    belly: '#ffd166',
+    fin: '#d94a3a',
+    eye: '#1c1c22',
+  },
+  feeding: {
+    hungerRate: 1 / 300,
+    perceptionRadius: 0.2,
+    turnRate: 1.2,
+    minHeightRatio: 0,
+    maxHeightRatio: 0.3,
+  },
+  walker: {
+    clearance: 0.014,
+    surfaceMargin: 0.02,
+    walkSpeed: 0.014,
+    slotDuration: 10,
+    weights: { marche: 0.8, nage: 0.2, remontee: 0 },
+    burstPeriod: 1.8,
+    climbSpeed: 0.04,
+    avoidsObstacles: true,
+  },
+};
+
+/**
+ * Blennie bicolore (Ecsenius bicolor), phase « bicolore » : avant du corps brun-noir, arrière
+ * orange (FishBase), corps long et bas, tête ronde et haute, longue dorsale continue. Poisson
+ * de roche : seul, près des roches et des coraux du bas du bac (FishBase : vit dans des tubes
+ * abandonnés, sur des roches couvertes d'algues), au-dessus du gobie, sous le gramma.
+ */
+export const BLENNIE: SpeciesDefinition = {
+  id: 'blennie',
+  name: 'Blennie bicolore',
+  scientificName: 'Ecsenius bicolor',
+  // 11 cm en vrai (longueur totale). Au-dessus du gramma (0,1), sinon elle entrerait dans le
+  // mode immersif du récif à sa place (`smallSwimmers`, ordre alphabétique à égalité).
+  bodyLength: 0.106,
+  cruiseSpeed: 0.022,
+  minSpeed: 0.008,
+  maxSpeed: 0.09,
+  wanderTurnRate: 1.2,
+  avoidTurnRate: 2.6,
+  maxPitch: 0.4,
+  wallMargin: 0.055,
+  tailBeatFrequency: 1.8,
+  defaultPopulation: 1,
+  maxPopulation: 2,
+  schooling: null,
+  silhouette: 'blennie',
+  colors: {
+    stripe: '#45423e',
+    accent: '#e07a2f',
+    back: '#1c1c22',
+    belly: '#6e6a63',
+    fin: '#e07a2f',
+    eye: '#f2ead8',
+  },
+  // Près des roches : entre 6 % et 24 % de la hauteur d'eau, au-dessus du gobie.
+  depth: {
+    minHeightRatio: 0.06,
+    maxHeightRatio: 0.24,
+    floorZone: 0.03,
+    ascentRate: 1 / 120,
+    ascentDuration: 2,
+  },
+  feeding: {
+    hungerRate: 1 / 200,
+    perceptionRadius: 0.22,
+    turnRate: 2,
+    minHeightRatio: 0,
+    maxHeightRatio: 0.5,
   },
 };
 
@@ -1742,6 +1872,8 @@ export const SPECIES: Readonly<Record<SpeciesId, SpeciesDefinition>> = {
   chromis: CHROMIS,
   gobie: GOBIE,
   gramma: GRAMMA,
+  crevette: CREVETTE,
+  blennie: BLENNIE,
 };
 
 /** Apparences d'une espèce : ses `variants`, ou son apparence par défaut seule. */

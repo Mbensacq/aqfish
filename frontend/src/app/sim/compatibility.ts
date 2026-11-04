@@ -55,6 +55,12 @@ export const TEMPERAMENTS: Readonly<Record<SpeciesId, Temperament>> = {
   // (Wikipédia, secondaire) : `territorial`, donc déconseillé avec le poisson-clown par la règle
   // de jeu (ADR 0055) ; en réalité le mélange est courant en grand bac (ADR 0097).
   gramma: 'territorial',
+  // Récif, lot 3 (#422, ADR 0103). Crevette nettoyeuse : agressive envers ses congénères
+  // seulement (Reeflex), plafonnée à deux par bac : `paisible` pour les autres espèces.
+  crevette: 'paisible',
+  // Blennie bicolore : défend son trou dans la roche (usage amateur, **non sourcé**) :
+  // `territorial`, approximation de jeu, donc déconseillée avec le gramma et le clown.
+  blennie: 'territorial',
 };
 
 /** Verdict pour un couple d'espèces. */

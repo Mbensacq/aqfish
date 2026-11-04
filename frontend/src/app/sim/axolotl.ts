@@ -192,7 +192,8 @@ type Mutable<T> = { -readonly [K in keyof T]: T[K] };
  * même sous-générateur, même tirage du cap et de la phase), puis posé sur le fond, à un
  * point tiré au-dessus d'une eau assez profonde (au plus `MAX_SPAWN_TRIES` tirages, puis le
  * point le plus profond d'une grille), à au moins `wallMargin` des obstacles. En marche, les
- * obstacles ne sont pas encore contournés : le paludarium n'en a pas sous l'eau (décor #132).
+ * obstacles (coraux, rochers, décor) sont contournés comme un fond trop haut par les espèces
+ * qui le déclarent (`BottomWalkerParams.avoidsObstacles`, `stepWalker`, issue #422).
  * @throws RangeError si l'espèce ne marche pas sur le fond.
  */
 export function createWalker(
@@ -258,6 +259,9 @@ function placeOnDeepestPoint(fish: Mutable<Fish>, bounds: SwimBounds, ground: Wa
   }
 }
 
+/** Aucun obstacle (marcheurs qui les ignorent). */
+const NO_OBSTACLES: readonly Obstacle[] = [];
+
 const PHASE: WalkerPhase = { mode: 'marche', slot: 0, progress: 0, height: 0 };
 
 /**
@@ -276,9 +280,12 @@ export function stepWalker(
   time: number,
   bounds: SwimBounds,
   ground: WalkerGround,
+  obstacles: readonly Obstacle[] = [],
 ): void {
   const def = SPECIES[fish.species];
   const walker = def.walker!;
+  // Obstacles contournés seulement par les espèces qui le déclarent (crevette, #422).
+  const blockers = walker.avoidsObstacles === true ? obstacles : NO_OBSTACLES;
   const { hard } = bounds;
   savePrevious(fish);
   fish.hunger = growHunger(fish.hunger, def, dt);
@@ -297,24 +304,21 @@ export function stepWalker(
     def.maxSpeed,
   );
 
-  // Cap : errance, sauf si le fond devant remonte trop (berge) ou si une vitre approche :
-  // virage franc du côté le plus profond.
+  // Cap : errance, sauf si le fond devant remonte trop (berge), si une vitre approche ou si un
+  // obstacle est devant (issue #422) : virage franc du côté le plus dégagé.
   let turn =
     fish.turn * (1 - WANDER_DAMPING * dt) +
     (random(fish) * 2 - 1) * WANDER_JITTER * def.wanderTurnRate * dt;
   const reach = def.bodyLength / 2 + Math.max(MIN_PROBE, fish.speed * LOOKAHEAD_SECONDS);
   let yaw = fish.yaw;
+  const aheadX = fish.x + Math.cos(yaw) * reach;
+  const aheadZ = fish.z + Math.sin(yaw) * reach;
   if (
-    !walkerCanStand(
-      fish.x + Math.cos(yaw) * reach,
-      fish.z + Math.sin(yaw) * reach,
-      def,
-      bounds,
-      ground,
-    )
+    !walkerCanStand(aheadX, aheadZ, def, bounds, ground) ||
+    obstacleClearance(aheadX, fish.y, aheadZ, blockers) < def.wallMargin
   ) {
-    const left = openness(fish, yaw + SIDE_PROBE_ANGLE, reach, def, bounds, ground);
-    const right = openness(fish, yaw - SIDE_PROBE_ANGLE, reach, def, bounds, ground);
+    const left = openness(fish, yaw + SIDE_PROBE_ANGLE, reach, def, bounds, ground, blockers);
+    const right = openness(fish, yaw - SIDE_PROBE_ANGLE, reach, def, bounds, ground, blockers);
     const side = left > right ? 1 : left < right ? -1 : fish.turn >= 0 ? 1 : -1;
     yaw += side * def.avoidTurnRate * dt;
     turn = side * def.wanderTurnRate;
@@ -324,12 +328,16 @@ export function stepWalker(
   fish.turn = clamp(turn, -def.wanderTurnRate, def.wanderTurnRate);
   fish.yaw = wrapAngle(yaw);
 
-  // Déplacement horizontal, refusé s'il mène hors des bornes ou au-dessus d'un fond trop haut.
+  // Déplacement horizontal, refusé s'il mène hors des bornes, au-dessus d'un fond trop haut ou
+  // trop près d'un obstacle (sauf s'il s'en éloigne : un individu né contre un corail repart).
   // Santé basse (issue #208) : pas réduit par `vigor`, exactement 1 à santé pleine.
   const step = fish.speed * dt * vigor(fish.health);
   const nx = clamp(fish.x + Math.cos(fish.yaw) * step, hard.minX, hard.maxX);
   const nz = clamp(fish.z + Math.sin(fish.yaw) * step, hard.minZ, hard.maxZ);
-  if (walkerCanStand(nx, nz, def, bounds, ground)) {
+  if (
+    walkerCanStand(nx, nz, def, bounds, ground) &&
+    clearOfObstacles(fish, nx, nz, def, blockers)
+  ) {
     fish.x = nx;
     fish.z = nz;
   }
@@ -363,7 +371,16 @@ export function stepWalker(
       break;
   }
   const vy = clamp((goal - fish.y) * VERTICAL_GAIN, -vertical, vertical);
-  fish.y = clamp(fish.y + vy * dt, floor, ceiling);
+  // Montée ou descente refusée si elle mène dans un obstacle (issue #422) : posée sur un corail
+  // qu'elle survolait, la crevette y reste jusqu'à en sortir à l'horizontale.
+  let ny = fish.y + vy * dt;
+  if (blockers.length > 0) {
+    const next = obstacleClearance(fish.x, ny, fish.z, blockers);
+    if (next < def.wallMargin && next < obstacleClearance(fish.x, fish.y, fish.z, blockers)) {
+      ny = fish.y;
+    }
+  }
+  fish.y = clamp(ny, floor, ceiling);
 
   // Inclinaison : celle du déplacement (pente suivie, montée, descente), lissée, bornée par la
   // place autour du corps.
@@ -397,8 +414,43 @@ export function stepWalker(
 }
 
 /**
+ * Plus petite distance du point (`x`, `y`, `z`) aux surfaces des obstacles, en mètres
+ * (+∞ sans obstacle). Sans allocation.
+ */
+export function obstacleClearance(
+  x: number,
+  y: number,
+  z: number,
+  obstacles: readonly Obstacle[],
+): number {
+  let best = Number.POSITIVE_INFINITY;
+  for (const o of obstacles) {
+    best = Math.min(best, obstacleDistance(o, x, y, z, SCRATCH_NORMAL));
+  }
+  return best;
+}
+
+/**
+ * Vrai si le pas vers (`nx`, `nz`) laisse le centre à au moins `wallMargin` des obstacles, ou
+ * l'en éloigne (individu déjà trop près, qui ne doit pas rester bloqué).
+ */
+function clearOfObstacles(
+  fish: Fish,
+  nx: number,
+  nz: number,
+  def: SpeciesDefinition,
+  obstacles: readonly Obstacle[],
+): boolean {
+  if (obstacles.length === 0) {
+    return true;
+  }
+  const next = obstacleClearance(nx, fish.y, nz, obstacles);
+  return next >= def.wallMargin || next >= obstacleClearance(fish.x, fish.y, fish.z, obstacles);
+}
+
+/**
  * Profondeur d'eau libre à `reach` mètres dans la direction `yaw` (plafond moins fond plus
- * `clearance`), ou −1 hors des bornes horizontales.
+ * `clearance`), ou −1 hors des bornes horizontales ou trop près d'un obstacle.
  */
 function openness(
   fish: Fish,
@@ -407,11 +459,15 @@ function openness(
   def: SpeciesDefinition,
   bounds: SwimBounds,
   ground: WalkerGround,
+  obstacles: readonly Obstacle[],
 ): number {
   const x = fish.x + Math.cos(yaw) * reach;
   const z = fish.z + Math.sin(yaw) * reach;
   const { hard } = bounds;
   if (x < hard.minX || x > hard.maxX || z < hard.minZ || z > hard.maxZ) {
+    return -1;
+  }
+  if (obstacleClearance(x, fish.y, z, obstacles) < def.wallMargin) {
     return -1;
   }
   return hard.maxY - (groundHeight(x, z, ground) + def.walker!.clearance);
