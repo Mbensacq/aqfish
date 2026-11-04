@@ -5411,10 +5411,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-04T23:57:26.679Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-04T23:57:55.733Z",
+          "note": "Issue #440 : dette lot 3/6, tests, mutants et durée des parts e2e (M)"
         }
       },
       "metriques": {}
