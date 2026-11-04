@@ -5319,6 +5319,12 @@
           "debut": "2026-11-04T17:42:03.443Z",
           "fin": "2026-11-04T18:20:37.044Z",
           "note": "Pas de PR (dev en échec), verdict sans objet, 0 bug, captures de main publiées (124 images), mutation non terminée (essai initial >20 min, abandonné)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-04T18:21:21.167Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
