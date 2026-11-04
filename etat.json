@@ -5321,10 +5321,10 @@
           "note": "Pas de PR (dev en échec), verdict sans objet, 0 bug, captures de main publiées (124 images), mutation non terminée (essai initial >20 min, abandonné)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-04T18:21:21.167Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-04T18:21:51.999Z",
+          "note": "Pas de PR du cycle (dev en échec) ; #437 (zone protégée) revue, laissée à Mathis (validation-mathis) ; main inchangée, aucune version"
         }
       },
       "metriques": {}
