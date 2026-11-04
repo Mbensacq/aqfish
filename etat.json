@@ -5256,6 +5256,24 @@
         }
       },
       "metriques": {}
+    },
+    "144": {
+      "numero": 144,
+      "date": "2026-11-04",
+      "debut": "2026-11-04T09:41:53.009Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-04T09:41:53.009Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
