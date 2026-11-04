@@ -1,3 +1,7 @@
-# Captures c142
-Branche cycle/c142-eau-douce-lot-4, PR #428, commit 2d42db8, graine 42, Playwright 1.56 (navigateur 1243 sous le nom 1194).
-Écarts avec c141 : interface-liste-bacs, telephone-liste-bacs (attendus : catalogue plus long) ; nouvelles : front-eau-douce-lot4, three-quarter-eau-douce-lot4. Le reste identique à l'octet.
+# Captures c143
+
+- Branche : cycle/c143-partage-lien
+- PR : #430
+- Commit : 9d6e5ffe4d168924ef16c73d05b75a354a47b645
+- Graine : par défaut (captures.spec.ts), temps fixe du contrat de capture
+- Généré le : 2026-11-04T08:36:23Z
