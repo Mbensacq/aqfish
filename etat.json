@@ -5355,6 +5355,12 @@
           "debut": "2026-11-04T19:23:33.935Z",
           "fin": "2026-11-04T19:59:52.200Z",
           "note": "Verdict OK, 0 bug, captures publiées (c146), e2e ciblés verts, e2e complet non rejoué en local"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-04T20:00:34.523Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
