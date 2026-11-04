@@ -1085,8 +1085,19 @@ export interface NewTankRequest {
           }
         </fieldset>
 
-        <fieldset class="control-panel__section" data-section="sauvegarde">
-          <legend class="control-panel__legend">Sauvegarde</legend>
+        <!-- « Partager ce bac » (#426) sur la ligne du titre, comme « Changer l'eau » : aucune
+             ligne de plus, « Sauvegarde » reste dans la deuxième colonne à 1280 × 720. -->
+        <fieldset
+          class="control-panel__section"
+          data-section="sauvegarde"
+          aria-labelledby="panneau-sauvegarde-titre"
+        >
+          <legend class="control-panel__legend control-panel__legend--row">
+            <span id="panneau-sauvegarde-titre">Sauvegarde</span>
+            <button type="button" class="control-panel__edit" (click)="shareRequested.emit()">
+              Partager ce bac
+            </button>
+          </legend>
           <p class="control-panel__note" data-save-status>{{ statusText() }}</p>
           <div class="control-panel__buttons">
             <button type="button" class="control-panel__button" (click)="exportRequested.emit()">
@@ -1105,12 +1116,7 @@ export interface NewTankRequest {
               (change)="onFile($event)"
             />
           </div>
-          <!-- Partage (#426) : lien du bac affiché seul, copié et affiché ci-dessous. -->
-          <div class="control-panel__buttons">
-            <button type="button" class="control-panel__button" (click)="shareRequested.emit()">
-              Partager ce bac
-            </button>
-          </div>
+          <!-- Lien de partage (#426) : celui du bac affiché seul, après « Partager ce bac ». -->
           @if (shareLink(); as link) {
             <input
               class="control-panel__share-link"
