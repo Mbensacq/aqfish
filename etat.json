@@ -5235,6 +5235,12 @@
           "debut": "2026-11-04T05:49:27.701Z",
           "fin": "2026-11-04T05:49:53.314Z",
           "note": "Issue #426 : partage d'un aquarium par lien ou fichier (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-04T05:50:32.355Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
