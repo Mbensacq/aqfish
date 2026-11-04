@@ -5195,10 +5195,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-04T02:48:26.128Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-04T02:49:41.861Z",
+          "note": "Issue #425 : espèces d'eau douce lot 4 (M) ; backlog : #426 partage, #427 comportements"
         }
       },
       "metriques": {}
