@@ -5364,6 +5364,24 @@
         }
       },
       "metriques": {}
+    },
+    "147": {
+      "numero": 147,
+      "date": "2026-11-04",
+      "debut": "2026-11-04T21:14:11.792Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-04T21:14:11.792Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
