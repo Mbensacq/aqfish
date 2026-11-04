@@ -244,3 +244,29 @@ test.describe('Wiki des espèces (#287)', () => {
     });
   }
 });
+
+test.describe('Wiki des espèces : ligne « Comportement » (#427)', () => {
+  test('gourami : la fiche porte la ligne, marquée approximation de jeu ; néon : aucune', async ({
+    page,
+  }) => {
+    const errors = await open(page, '?seed=42&vitesse=0');
+    await toggle(page).click();
+    await expect(wiki(page)).toBeVisible();
+
+    await search(page).fill('gourami');
+    await wiki(page).locator('[data-wiki-species="gourami"]').first().click();
+    await expect(sheet(page)).toHaveAttribute('data-wiki-sheet', 'gourami');
+    const row = sheet(page).locator('[data-wiki-field="behavior"]');
+    await expect(row).toHaveCount(1);
+    await expect(row).toContainText('Comportement');
+    await expect(row).toContainText('territoire');
+    await expect(row).toContainText(/approximation de jeu/i);
+
+    await sheet(page).getByRole('button', { name: 'Retour à la liste' }).click();
+    await search(page).fill('néon');
+    await wiki(page).locator('[data-wiki-species="neon"]').first().click();
+    await expect(sheet(page)).toHaveAttribute('data-wiki-sheet', 'neon');
+    await expect(sheet(page).locator('[data-wiki-field="behavior"]')).toHaveCount(0);
+    expect(errors).toEqual([]);
+  });
+});
