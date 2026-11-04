@@ -5192,7 +5192,7 @@
       "type": "fonctionnalite",
       "issue": 425,
       "pr": 428,
-      "version": null,
+      "version": "v1.9.2",
       "phases": {
         "planif": {
           "statut": "termine",
