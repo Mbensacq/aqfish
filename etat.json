@@ -5213,10 +5213,10 @@
           "note": "Verdict RÉSERVES, 0 bug, captures publiées (125) ; néritine trop petite pour être reconnue (#424) ; unitaires 4014/4014, CI verte dont e2e complets"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-04T04:44:48.776Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-04T05:48:56.307Z",
+          "note": "PR #428 fusionnée → v1.9.2 (release CI ok), CI main verte ; #425 fermée ; dette #429 (prédation molly/gouramis sur crevette cerise, commentaire, néritine) ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
