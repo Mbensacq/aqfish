@@ -5379,6 +5379,12 @@
           "debut": "2026-11-04T21:14:11.792Z",
           "fin": "2026-11-04T21:14:40.314Z",
           "note": "Issue #439 : dette lot 2/6, allocations par image, caches et passe directe (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-04T21:15:16.634Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
