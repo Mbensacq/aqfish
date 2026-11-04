@@ -1,4 +1,4 @@
-import { Mesh, MeshLambertMaterial } from 'three';
+import { BoxGeometry, Mesh, MeshLambertMaterial } from 'three';
 
 import { POND_DIMENSIONS } from '../sim/environment';
 import {
@@ -98,6 +98,19 @@ describe('createStoneBorder', () => {
     expect(border.object.name).toBe('margelle');
     expect(border.object.children).toHaveLength(stoneBorderBlocks(POND_DIMENSIONS).length);
     expect(border.object.children.every((c) => c instanceof Mesh)).toBe(true);
+  });
+
+  it('partage la géométrie des blocs de mêmes dimensions (#97), aux bonnes tailles', () => {
+    const blocks = stoneBorderBlocks(POND_DIMENSIONS);
+    const meshes = createStoneBorder(POND_DIMENSIONS).object.children as Mesh[];
+    const geometries = new Set(meshes.map((m) => m.geometry));
+    const sizes = new Set(blocks.map((b) => `${b.width}|${b.height}|${b.depth}`));
+    expect(geometries.size).toBe(sizes.size);
+    expect(geometries.size).toBeLessThan(blocks.length);
+    meshes.forEach((mesh, i) => {
+      const { width, height, depth } = (mesh.geometry as BoxGeometry).parameters;
+      expect([width, height, depth]).toEqual([blocks[i].width, blocks[i].height, blocks[i].depth]);
+    });
   });
 
   it('masque les blocs des côtés retirés (vue en coupe), et les rend ensuite', () => {

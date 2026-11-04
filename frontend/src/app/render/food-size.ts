@@ -97,11 +97,14 @@ export const FOOD_SHAPE_PROPORTIONS: Readonly<
  * facteur de taille `sizeFactor` : les proportions de la forme appliquées au côté du grain,
  * chaque dimension ramenée à au moins un pixel de scène (plancher de `foodVoxelSide`) pour
  * qu'aucune face ne disparaisse en dézoomé. Un facteur non fini ou non positif vaut 1.
+ * Écrit dans `out` et le renvoie : la couche de la nourriture passe un tampon réutilisé (pas
+ * d'allocation par granulé et par image, #246) ; sans `out`, un nouveau tableau.
  */
 export function foodVoxelDimensions(
   shape: FoodShape,
   sizeFactor: number,
   pixelsPerMeter: number,
+  out: [number, number, number] = [0, 0, 0],
 ): [number, number, number] {
   const factor = Number.isFinite(sizeFactor) && sizeFactor > 0 ? sizeFactor : 1;
   const base = FOOD_PELLET_DIAMETER * factor;
@@ -110,5 +113,8 @@ export function foodVoxelDimensions(
       ? FOOD_MIN_SCENE_PIXELS / pixelsPerMeter
       : 0;
   const [x, y, z] = FOOD_SHAPE_PROPORTIONS[shape];
-  return [Math.max(floor, base * x), Math.max(floor, base * y), Math.max(floor, base * z)];
+  out[0] = Math.max(floor, base * x);
+  out[1] = Math.max(floor, base * y);
+  out[2] = Math.max(floor, base * z);
+  return out;
 }

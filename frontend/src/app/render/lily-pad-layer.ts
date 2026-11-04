@@ -28,7 +28,6 @@ import {
   LOTUS_STALK_HEIGHT,
   PETAL_RINGS,
   petalTilt,
-  type PetalRing,
   type PrismData,
 } from './lily-flower-model';
 import {
@@ -133,7 +132,8 @@ export function createLilyPadOutlineMaterial(): ShaderMaterial {
 
 interface Petal {
   readonly tilt: Group;
-  readonly ring: PetalRing;
+  /** Rang de la couronne dans `PETAL_RINGS`. */
+  readonly ring: number;
 }
 
 interface PlacedPad {
@@ -180,6 +180,8 @@ export class LilyPadLayer {
   private readonly coreGeometry = toGeometry(buildFlowerCore());
   private readonly stalkGeometry = toGeometry(buildLotusStalk());
   private petals: Petal[] = [];
+  /** Inclinaison de chaque couronne, réécrite par `setOpenness` (aucune allocation). */
+  private readonly ringTilts = new Float64Array(PETAL_RINGS.length);
   private flowers = 0;
   private openness = 1;
   private readonly surfaceY: number;
@@ -251,11 +253,14 @@ export class LilyPadLayer {
    * @throws RangeError si `openness` n'est pas dans [0, 1].
    */
   setOpenness(openness: number): void {
-    const tilts = PETAL_RINGS.map((ring) => petalTilt(ring, openness));
+    const tilts = this.ringTilts;
+    for (let r = 0; r < PETAL_RINGS.length; r++) {
+      tilts[r] = petalTilt(PETAL_RINGS[r], openness);
+    }
     this.openness = openness;
-    for (const { tilt, ring } of this.petals) {
+    for (const petal of this.petals) {
       // Rotation autour de Z négative : le pétale (le long de +Y) penche vers l'extérieur (+X).
-      tilt.rotation.z = -tilts[PETAL_RINGS.indexOf(ring)];
+      petal.tilt.rotation.z = -tilts[petal.ring];
     }
   }
 
@@ -292,7 +297,7 @@ export class LilyPadLayer {
         this.addOutlined(tilt, this.petalGeometries[r], this.petalMaterial, `${name}-petale`);
         pivot.add(tilt);
         flower.add(pivot);
-        this.petals.push({ tilt, ring });
+        this.petals.push({ tilt, ring: r });
       }
     });
     root.add(flower);

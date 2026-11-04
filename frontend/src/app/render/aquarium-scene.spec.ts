@@ -435,6 +435,23 @@ describe('createAquariumScene : environnements (#87)', () => {
     expect(hiddenNames()).toEqual([]);
   });
 
+  it('point de vue répété (#122) : la coupe n’est réappliquée qu’au changement des côtés', () => {
+    const world = createAquariumScene(POND);
+    const stone = world.scene.getObjectByName('pierre-0') as Mesh;
+    world.setViewpoint(0, 0.2, -3.4); // côté -z retiré : pierre-0 (premier bloc, -z) masquée
+    expect(stone.visible).toBe(false);
+    // Une modification extérieure n'est pas écrasée tant que les côtés retirés ne changent pas :
+    // preuve que rien n'est réappliqué (ni parcouru) aux images suivantes.
+    stone.visible = true;
+    world.setViewpoint(0.1, 0.25, -3.5);
+    world.setViewpoint(0, 0.2, -3.4);
+    expect(stone.visible).toBe(true);
+    // Les côtés changent : la coupe est réappliquée.
+    world.setViewpoint(1.8, 1.6, 2.4);
+    world.setViewpoint(0, 0.2, -3.4);
+    expect(stone.visible).toBe(false);
+  });
+
   it('le point de vue ne change rien au bac tropical', () => {
     const world = createAquariumScene(TROPICAL_TANK);
     world.setViewpoint(3, 0.1, 0);

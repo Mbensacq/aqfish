@@ -111,4 +111,20 @@ describe('render/food-size', () => {
     const [, y] = foodVoxelDimensions('flocon', 1, 500);
     expect(y).toBeCloseTo(FOOD_PELLET_DIAMETER * FOOD_SHAPE_PROPORTIONS.flocon[1], 12);
   });
+
+  it('tampon fourni (#246) : écrit en place et renvoyé, mêmes valeurs que sans tampon', () => {
+    const out: [number, number, number] = [9, 9, 9];
+    for (const shape of FOOD_SHAPES) {
+      for (const [factor, ppm] of [
+        [1, 0],
+        [0.85, 40],
+        [1.15, 500],
+        [Number.NaN, 148],
+      ] as const) {
+        const written = foodVoxelDimensions(shape, factor, ppm, out);
+        expect(written).toBe(out);
+        expect([...written]).toEqual(foodVoxelDimensions(shape, factor, ppm));
+      }
+    }
+  });
 });

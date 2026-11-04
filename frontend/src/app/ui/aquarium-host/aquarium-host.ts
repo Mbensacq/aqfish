@@ -698,6 +698,8 @@ export class AquariumHost {
   private readonly document = inject(DOCUMENT);
   private readonly rendererFactory = inject(AQUARIUM_RENDERER_FACTORY);
   private readonly saveStorage = inject(SAVE_STORAGE);
+  /** Contexte des gestes passé à `updateFish`, réécrit à chaque image (#433). */
+  private readonly behaviorFrame = { time: 0, landedFood: false };
   private readonly physicsLoader = inject(DECOR_PHYSICS_LOADER);
   /** Option « Réduire les mouvements » (#406), partagée avec les réglages et le mode immersif. */
   private readonly motionState = inject(ReducedMotionState);
@@ -3270,11 +3272,14 @@ export class AquariumHost {
       const time = this.renderTime();
       // Gestes des comportements (#427) : au temps affiché, fouille seulement s'il y a un
       // granulé posé (`sim/behaviors.ts`).
+      // Objet de l'instance réécrit à chaque image (#433) : aucune allocation.
+      this.behaviorFrame.time = time;
+      this.behaviorFrame.landedFood = hasLandedFood(this.currentWorld.food);
       view.updateFish(
         this.currentWorld.entities,
         this.capture ? 1 : this.clock.alpha,
         this.currentWorld.seed,
-        { time, landedFood: hasLandedFood(this.currentWorld.food) },
+        this.behaviorFrame,
       );
       view.updateFood(this.currentWorld.food);
       view.updateDecor(time);

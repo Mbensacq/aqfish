@@ -205,6 +205,8 @@ export class FoodLayer {
   private readonly matrix = new Matrix4();
   private readonly translation = new Vector3();
   private readonly scale = new Vector3();
+  /** Dimensions d’un voxel, réécrites pour chaque granulé (`foodVoxelDimensions`, #246). */
+  private readonly voxelDims: [number, number, number] = [0, 0, 0];
   private readonly rotation = new Quaternion();
   private readonly up = new Vector3(0, 1, 0);
   private readonly instanceCounts = new Array<number>(FOOD_SHAPES.length).fill(0);
@@ -414,11 +416,15 @@ export class FoodLayer {
       const shapeIndex = this.shapes[i];
       const mesh = this.voxels[shapeIndex];
       const slot = this.instanceCounts[shapeIndex]++;
-      const [sx, sy, sz] = foodVoxelDimensions(
+      const dims = foodVoxelDimensions(
         FOOD_SHAPES[shapeIndex],
         this.sizes[i],
         this.pixelsPerMeter,
+        this.voxelDims,
       );
+      const sx = dims[0];
+      const sy = dims[1];
+      const sz = dims[2];
       this.translation.set(array[3 * i], array[3 * i + 1] + sy / 2, array[3 * i + 2]);
       this.rotation.setFromAxisAngle(this.up, this.turns[i]);
       this.matrix.compose(this.translation, this.rotation, this.scale.set(sx, sy, sz));
