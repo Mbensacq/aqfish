@@ -5393,10 +5393,10 @@
           "note": "Verdict OK, 0 bug, captures publiées (c147, 129 identiques), e2e ciblés verts (23), CI 10/10"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-04T22:46:58.816Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-04T23:56:56.500Z",
+          "note": "PR #448 fusionnée → v1.10.0 (CI main verte, release créée) ; suppression de la branche refusée par l'environnement ; pied de page d'attribution réinséré par l'environnement dans le corps de PR"
         }
       },
       "metriques": {}
