@@ -5231,10 +5231,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-04T05:49:27.701Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-04T05:49:53.314Z",
+          "note": "Issue #426 : partage d'un aquarium par lien ou fichier (M)"
         }
       },
       "metriques": {}
