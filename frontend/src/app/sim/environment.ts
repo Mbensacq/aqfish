@@ -1,5 +1,5 @@
 import { DEFAULT_POND_SHAPE, type PondShape } from './pond-shape';
-import type { CameraPreset } from '../core/capture/capture-params';
+import type { CameraPreset } from '../core/camera-preset/camera-preset';
 import { assertAnemoneSettings, type AnemoneSettings } from './anemones';
 import { assertBankDecorSettings, type BankDecorSettings } from './bank-decor';
 import { assertCoralSettings, type CoralSettings } from './corals';

@@ -3,6 +3,7 @@ import {
   behaviorGesture,
   behaviorTarget,
   boutRemaining,
+  cachedTerritoryHome,
   CHARGE_STOP_LENGTHS,
   DISPLAY_QUIVER,
   FORAGE_BOB,
@@ -12,6 +13,7 @@ import {
   SPECIES_BEHAVIORS,
   TERRITORY_RADIUS,
   territoryHome,
+  territoryHomeComputations,
   type BehaviorContext,
   type BehaviorGesture,
   type BehaviorParams,
@@ -23,7 +25,14 @@ import { FULL_MOTION, REDUCED_MOTION } from '../core/reduced-motion/reduced-moti
 import type { Obstacle } from './obstacles';
 import { SPECIES, type SpeciesId } from './species';
 import { swimBounds, type Fish, type SwimBounds } from './swimmer';
-import { advanceInPlace, createWorld, feedInPlace, type MutableWorld, type World } from './world';
+import {
+  advanceInPlace,
+  createWorld,
+  feedInPlace,
+  step,
+  type MutableWorld,
+  type World,
+} from './world';
 import { MAX_TOTAL_FISH } from './population';
 import { sheetRows, SPECIES_BEHAVIOR_TEXT } from './species-sheet';
 
@@ -260,6 +269,61 @@ describe('comportements : points visés (#427)', () => {
     expect(Math.hypot(moved!.x - a.x, moved!.y - a.y, moved!.z - a.z)).toBeGreaterThan(0.05);
   });
 
+  it('territoire, cache (#433) : même résultat qu’un calcul direct, recalculé au changement', () => {
+    const b = bounds('gourami');
+    const obstacles: Obstacle[] = [{ id: 0, shape: 'sphere', x: 0, y: 0.1, z: 0, radius: 0.05 }];
+    const out = { x: 0, y: 0, z: 0 };
+    const direct = (seed: number, id: number, bb: SwimBounds, obs: readonly Obstacle[], m = 0.04) =>
+      territoryHome(seed, id, bb, obs, m, { x: 0, y: 0, z: 0 });
+    const cached = (
+      seed: number,
+      id: number,
+      bb: SwimBounds,
+      obs: readonly Obstacle[],
+      m = 0.04,
+    ) => {
+      const home = cachedTerritoryHome(seed, id, bb, obs, m, out);
+      return home === null ? null : { ...home };
+    };
+    for (const seed of SEEDS) {
+      for (const id of [0, 1, 2, 17]) {
+        expect(cached(seed, id, b, obstacles)).toEqual(direct(seed, id, b, obstacles));
+      }
+    }
+    // Lectures répétées : aucun recalcul, résultat écrit dans `out`.
+    const first = cached(9, 2, b, obstacles);
+    const count = territoryHomeComputations();
+    for (let i = 0; i < 5; i++) {
+      expect(cachedTerritoryHome(9, 2, b, obstacles, 0.04, out)).toBe(out);
+      expect(out).toEqual(first);
+    }
+    expect(territoryHomeComputations()).toBe(count);
+    // Nouveau tableau d'obstacles (changement de décor) : recalcul, nouveau résultat.
+    const rock: Obstacle = {
+      id: 1,
+      shape: 'sphere',
+      x: first!.x,
+      y: first!.y,
+      z: first!.z,
+      radius: 0.05,
+    };
+    const moved = [...obstacles, rock];
+    expect(cached(9, 2, b, moved)).toEqual(direct(9, 2, b, moved));
+    expect(cached(9, 2, b, moved)).not.toEqual(first);
+    expect(territoryHomeComputations()).toBe(count + 1);
+    // Autres bornes, autre marge, autre graine : recalcul.
+    const other = bounds('gramma', 'recif');
+    expect(cached(9, 2, other, moved)).toEqual(direct(9, 2, other, moved));
+    expect(cached(9, 2, other, moved, 0.1)).toEqual(direct(9, 2, other, moved, 0.1));
+    expect(cached(10, 2, other, moved, 0.1)).toEqual(direct(10, 2, other, moved, 0.1));
+    expect(territoryHomeComputations()).toBe(count + 4);
+    // Aucun centre possible : `null` mémorisé, toujours `null`.
+    const huge: Obstacle[] = [{ id: 0, shape: 'sphere', x: 0, y: 0.2, z: 0, radius: 5 }];
+    expect(cachedTerritoryHome(9, 2, b, huge, 0.04, out)).toBeNull();
+    expect(cachedTerritoryHome(9, 2, b, huge, 0.04, out)).toBeNull();
+    expect(territoryHomeComputations()).toBe(count + 5);
+  });
+
   it('territoire : bac encombré (obstacle partout), aucune cible', () => {
     const b = bounds('gourami');
     const huge: Obstacle = { id: 0, shape: 'sphere', x: 0, y: 0.2, z: 0, radius: 5 };
@@ -338,6 +402,22 @@ function runWorld(world: MutableWorld, steps: number, each: (w: World) => void):
 }
 
 describe('comportements dans le monde (#427)', () => {
+  it('cache du territoire (#433) : pas en place (cache servi) et pas purs (recopiés) identiques', () => {
+    const world = createWorld(7, [
+      { species: 'gourami', count: 3 },
+      { species: 'neon', count: 4 },
+    ]);
+    const inPlace = structuredClone(world) as MutableWorld;
+    let copied: World = world;
+    const steps = Math.round(40 / SIM_DT);
+    advanceInPlace(inPlace, steps);
+    // `step` recopie le monde à chaque pas : nouveau tableau d'obstacles, cache vidé à chaque pas.
+    for (let i = 0; i < steps; i++) {
+      copied = step(copied);
+    }
+    expect(inPlace.entities).toEqual(copied.entities);
+  });
+
   it('broutage : collé à la vitre pendant l’épisode, plus loin hors épisode', () => {
     for (const seed of [1, 42, 777]) {
       const world = createWorld(seed, [

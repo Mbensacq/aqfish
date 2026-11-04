@@ -120,6 +120,13 @@ export function hasLandedFood(food: readonly FoodPellet[]): boolean {
 /**
  * Comportement en cours d'un poisson (épisode actif, et granulé posé pour la fouille), ou
  * `null`. Lu par le rendu pour le geste ; la simulation y ajoute les conditions de cible.
+ *
+ * Choix assumé (#433) : le geste suit l'**épisode**, pas la cible effective. Il peut donc
+ * s'afficher sans point visé (nourriture prioritaire, broutage dans un bassin non
+ * rectangulaire, territoire sans intrus) : il se lit alors comme une courte agitation sur
+ * place. Aligner le geste sur la cible obligerait le rendu à recalculer `behaviorTarget`
+ * (obstacles, bornes, autres poissons) à chaque image, ou la simulation à publier un état de
+ * plus dans le monde (sauvegardes) ; les deux coûtent plus que l'écart visuel, qui est faible.
  */
 export function activeBehavior(
   fish: Fish,
@@ -202,6 +209,84 @@ export function territoryHome(
   return null;
 }
 
+/** Centre de territoire mémorisé d'un poisson (`cachedTerritoryHome`). */
+interface HomeEntry {
+  bounds: SwimBounds;
+  margin: number;
+  found: boolean;
+  x: number;
+  y: number;
+  z: number;
+}
+
+/**
+ * Cache des centres de territoire (#433) : `territoryHome` ne dépend que de la graine, de
+ * l'identifiant, des bornes, des obstacles et de la marge. Les obstacles d'un monde ne sont
+ * jamais modifiés en place (un changement de décor donne un nouveau tableau) : un autre tableau
+ * ou une autre graine vide le cache ; d'autres bornes ou une autre marge recalculent l'entrée.
+ */
+const HOME_CACHE = {
+  seed: Number.NaN,
+  obstacles: null as readonly Obstacle[] | null,
+  entries: new Map<number, HomeEntry>(),
+};
+/** Au-delà, le cache est vidé (poissons nés puis disparus au fil d'une longue session). */
+const HOME_CACHE_LIMIT = 512;
+let homeComputations = 0;
+
+/** Nombre de calculs de `territoryHome` faits par `cachedTerritoryHome` (tests : cache). */
+export function territoryHomeComputations(): number {
+  return homeComputations;
+}
+
+/**
+ * `territoryHome` mis en cache : même résultat, recalculé seulement quand la graine, les
+ * obstacles (tableau), les bornes (objet) ou la marge changent. Aucune allocation une fois
+ * l'entrée du poisson créée : appelée à chaque pas pour chaque poisson territorial.
+ */
+export function cachedTerritoryHome(
+  seed: number,
+  fishId: number,
+  bounds: SwimBounds,
+  obstacles: readonly Obstacle[],
+  margin: number,
+  out: Vec3,
+): Vec3 | null {
+  if (HOME_CACHE.seed !== seed || HOME_CACHE.obstacles !== obstacles) {
+    HOME_CACHE.seed = seed;
+    HOME_CACHE.obstacles = obstacles;
+    HOME_CACHE.entries.clear();
+  }
+  let entry = HOME_CACHE.entries.get(fishId);
+  if (entry === undefined || entry.bounds !== bounds || entry.margin !== margin) {
+    homeComputations += 1;
+    const home = territoryHome(seed, fishId, bounds, obstacles, margin, out);
+    if (entry === undefined) {
+      if (HOME_CACHE.entries.size >= HOME_CACHE_LIMIT) {
+        HOME_CACHE.entries.clear();
+      }
+      entry = { bounds, margin, found: false, x: 0, y: 0, z: 0 };
+      HOME_CACHE.entries.set(fishId, entry);
+    }
+    entry.bounds = bounds;
+    entry.margin = margin;
+    entry.found = home !== null;
+    if (home !== null) {
+      entry.x = home.x;
+      entry.y = home.y;
+      entry.z = home.z;
+    }
+    return home;
+  }
+  if (!entry.found) {
+    return null;
+  }
+  out.x = entry.x;
+  out.y = entry.y;
+  out.z = entry.z;
+  return out;
+}
+
 /** Contexte d'un pas, commun à tous les poissons. */
 export interface BehaviorContext {
   readonly seed: number;
@@ -282,7 +367,7 @@ export function behaviorTarget(
       return out;
     }
     case 'territoire': {
-      const home = territoryHome(ctx.seed, fish.id, bounds, ctx.obstacles, wallMargin, out);
+      const home = cachedTerritoryHome(ctx.seed, fish.id, bounds, ctx.obstacles, wallMargin, out);
       if (home === null) {
         return null;
       }

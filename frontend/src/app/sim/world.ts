@@ -831,6 +831,19 @@ let behaviorPoints = new Float64Array(0);
 let behaviorFlags = new Uint8Array(0);
 const BEHAVIOR_TARGET: Vec3 = { x: 0, y: 0, z: 0 };
 const BEHAVIOR_SCRATCH: Vec3 = { x: 0, y: 0, z: 0 };
+const NO_FISHES: readonly Entity[] = Object.freeze([]);
+const NO_OBSTACLES: readonly Obstacle[] = Object.freeze([]);
+/**
+ * Contexte des comportements, réécrit à chaque pas (#433) plutôt que recréé ; vidé de ses
+ * tableaux après usage pour ne pas retenir le dernier monde.
+ */
+const BEHAVIOR_CTX: { -readonly [K in keyof BehaviorContext]: BehaviorContext[K] } = {
+  seed: 0,
+  time: 0,
+  landedFood: false,
+  fishes: NO_FISHES,
+  obstacles: NO_OBSTACLES,
+};
 
 /**
  * Remplit `behaviorPoints` et `behaviorFlags` pour les poissons nageurs dont l'espèce a un
@@ -857,13 +870,12 @@ function computeBehaviorTargets(
     behaviorFlags = new Uint8Array(2 * fishes.length);
     behaviorPoints = new Float64Array(6 * fishes.length);
   }
-  const ctx: BehaviorContext = {
-    seed: world.seed,
-    time: world.time,
-    landedFood: hasLandedFood(world.food),
-    fishes,
-    obstacles: world.obstacles,
-  };
+  const ctx = BEHAVIOR_CTX;
+  ctx.seed = world.seed;
+  ctx.time = world.time;
+  ctx.landedFood = hasLandedFood(world.food);
+  ctx.fishes = fishes;
+  ctx.obstacles = world.obstacles;
   for (let i = 0; i < fishes.length; i++) {
     const fish = fishes[i];
     const def = SPECIES[fish.species];
@@ -891,6 +903,8 @@ function computeBehaviorTargets(
       behaviorPoints[3 * i + 2] = point.z;
     }
   }
+  ctx.fishes = NO_FISHES;
+  ctx.obstacles = NO_OBSTACLES;
   return true;
 }
 
@@ -1106,13 +1120,15 @@ function bandOfFish(fish: Entity): FeedingBand {
 
 /**
  * Valeur par espèce et par lieu (`placeKey`), calculée une fois : deux tables imbriquées, pour
- * qu'une lecture n'alloue rien (pas de clé composée).
+ * qu'une lecture n'alloue rien (pas de clé composée). `compute` est une fonction de module
+ * (pas de fermeture créée à chaque lecture) ; une seule lecture des tables par appel (#97).
  */
 function cached<T>(
   cache: Map<string, Map<SpeciesId, T>>,
   species: SpeciesId,
+  place: Place,
   key: string,
-  compute: () => T,
+  compute: (species: SpeciesId, place: Place) => T,
 ): T {
   let perSpecies = cache.get(key);
   if (!perSpecies) {
@@ -1122,7 +1138,7 @@ function cached<T>(
   }
   let value = perSpecies.get(species);
   if (value === undefined) {
-    value = compute();
+    value = compute(species, place);
     perSpecies.set(species, value);
   }
   return value;
@@ -1131,14 +1147,12 @@ function cached<T>(
 /** Tranches d'eau de l'alimentation par espèce et par lieu. */
 const BAND_CACHE = new Map<string, Map<SpeciesId, FeedingBand>>();
 
+function computeBand(species: SpeciesId, place: Place): FeedingBand {
+  return feedingBand(SPECIES[species].feeding, environmentWater(place));
+}
+
 function bandFor(species: SpeciesId, place: Place, key: string): FeedingBand {
-  const band = BAND_CACHE.get(key)?.get(species);
-  return (
-    band ??
-    cached(BAND_CACHE, species, key, () =>
-      feedingBand(SPECIES[species].feeding, environmentWater(place)),
-    )
-  );
+  return cached(BAND_CACHE, species, place, key, computeBand);
 }
 
 /** Tampon de pilotage réutilisé d'un pas à l'autre ; réalloué seulement si la population croît. */
@@ -1165,14 +1179,12 @@ export function boundsFor(
   return boundsAt(species, environment, placeKey(environment));
 }
 
+function computeBounds(species: SpeciesId, place: Place): SwimBounds {
+  return swimBounds(SPECIES[species], environmentWater(place), placeShape(place));
+}
+
 function boundsAt(species: SpeciesId, place: Place, key: string): SwimBounds {
-  const bounds = BOUNDS_CACHE.get(key)?.get(species);
-  return (
-    bounds ??
-    cached(BOUNDS_CACHE, species, key, () =>
-      swimBounds(SPECIES[species], environmentWater(place), placeShape(place)),
-    )
-  );
+  return cached(BOUNDS_CACHE, species, place, key, computeBounds);
 }
 
 /** Copie profonde d'un monde, modifiable (aucune donnée partagée avec `world`). */
