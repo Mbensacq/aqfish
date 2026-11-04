@@ -983,9 +983,9 @@ haut de sa section.
   (cycle 139, #40, ADR 0101) : la scène passe par une cible sRGB 8 bits comme en pixel art,
   donc les translucides s'y mélangent en linéaire. Une couleur lue sans filtre est celle que
   la passe reçoit avant la réduction à la palette, aux pixels près (pleine résolution : bords,
-  points et couches dont la taille suit la résolution diffèrent). Les entrées plus bas qui
-  disent le contraire (« `filtre=aucun` ne donne pas l'entrée de la passe ») datent d'avant ;
-  pour un pixel précis, le court-circuit de la passe reste la mesure exacte. (2026-11-03)
+  points et couches dont la taille suit la résolution diffèrent). Les entrées plus anciennes
+  ont été corrigées en ce sens (cycle 147, #418) ; pour un pixel précis, le court-circuit de
+  la passe reste la mesure exacte. (2026-11-03)
 - **Les verts d'eau se confondent avec les reflets de la surface du récif** (cycle 134, #403) :
   un poisson `eauClaire` / `eauTresClaire` (#5fbfa3, #a8e6cf) nageant haut se lit en capture
   comme les taches vertes des reflets. Pour un poisson vert au récif, prendre
@@ -1063,8 +1063,8 @@ haut de sa section.
   (`eauSombre` → `vegetation` → `verreSombre` pour le volume, `eauMoyenne` →
   `vegetation` ou `vegetationClaire` pour la surface), sans nuance entre ; une surface trop
   claire tombe même sur `roche` (gris). Essais à la capture, une valeur à la fois, en
-  mesurant quelques pixels (Pillow) : `filtre=aucun` ne donne pas l'entrée de la passe. Un
-  serveur `ng serve` séparé (`--port 4310`) recharge la teinte en ~10 s. (2026-10-25)
+  mesurant quelques pixels (Pillow) : `filtre=aucun` donne l'entrée de la passe depuis le
+  cycle 139 (ADR 0101, voir plus haut), aux pixels de bord près. Un serveur `ng serve` séparé (`--port 4310`) recharge la teinte en ~10 s. (2026-10-25)
 - **Un fond derrière l'eau change la couleur de l'eau** (cycle 64, #187) : l'eau est
   translucide ; vue devant un mur `roche` ou même `rocheSombre` éclairé, la passe palette la
   ramenait à `roche` (eau grise), alors que sur le fond de la scène (`fondScene`) elle tombe
@@ -1086,10 +1086,11 @@ haut de sa section.
   ton ne l'emporte sur une couleur de jour que si l'entrée est **plus loin** de celle-ci que
   √0,0083 : ajouter un ton mauve à côté d'une roche grise ne sert à rien tant que l'entrée
   reste grise. Il faut d'abord déplacer l'entrée (teinte du décor, ciel de crépuscule), puis
-  poser le ton sur la couleur mesurée (passe court-circuitée, voir plus bas). La capture
-  `filtre=aucun` **n'est pas** l'entrée de la passe (rendu pleine résolution) : pour mesurer,
-  court-circuiter la passe (`gl_FragColor = vec4(color, 1.0)`), et vérifier le choix par
-  `nameAt` dans `palette.spec.ts`, qui applique les vraies pénalités. (2026-10-24)
+  poser le ton sur la couleur mesurée (passe court-circuitée, voir plus bas). Depuis le
+  cycle 139 (ADR 0101), la capture `filtre=aucun` donne l'entrée de la passe en pleine
+  résolution ; pour un pixel précis, court-circuiter la passe (`gl_FragColor = vec4(color,
+  1.0)`), et vérifier le choix par `nameAt` dans `palette.spec.ts`, qui applique les vraies
+  pénalités. (2026-10-24, corrigé le 2026-11-04)
 - **Éditeur : un élément ajouté au bord était posé sans tenir compte de son emprise**
   (cycle 62, #59) : `addDecorItem` ne bornait que le point cliqué (`DECOR_EDGE_MARGIN`,
   4 cm), et `settleDecorItem` garde la position du lâcher quand l'élément retombe libre sur
@@ -1261,8 +1262,9 @@ haut de sa section.
 
 - **Rendu sans filtre (`filtre=aucun`) : peu de couleurs, teintes différentes** : la scène est
   en couleurs plates sans anticrénelage, donc une vingtaine de couleurs seulement (un test
-  « plus de couleurs que la palette » échoue) ; et les translucides s'y mélangent en sRGB à
-  l'écran, d'où un sable plus vert et une eau plus sombre qu'en pixel art. Distinguer les
+  « plus de couleurs que la palette » échoue). Jusqu'au cycle 139, les translucides s'y
+  mélangeaient en sRGB à l'écran (sable plus vert, eau plus sombre qu'en pixel art) ; depuis
+  l'ADR 0101 ils se mélangent dans une cible sRGB 8 bits, comme en pixel art. Distinguer les
   deux modes par les couleurs hors palette et les blocs de `PIXEL_SIZE` rompus
   (`e2e/filtre.spec.ts`). (2026-10-18)
 - **Petits objets et surfaces translucides** : un poisson de 2 à 4 pixels de scène change de

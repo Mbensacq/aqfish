@@ -53,6 +53,8 @@ export class DirectPass {
   readonly camera = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
   private readonly geometry = new PlaneGeometry(2, 2);
   private readonly material: ShaderMaterial;
+  /** Taille renvoyée par `setSize`, réutilisée d'une image à l'autre. */
+  private readonly size: { width: number; height: number } = { width: 1, height: 1 };
 
   constructor() {
     this.target = new WebGLRenderTarget(1, 1, {
@@ -82,15 +84,20 @@ export class DirectPass {
    * pixels physiques par pixel CSS, arrondis à l'entier inférieur comme le fait
    * `WebGLRenderer.setSize`. Taille minimale 1 × 1 (surface nulle, négative ou non finie).
    * Renvoie la taille de la cible ; sans changement de taille, la cible n'est pas réallouée.
+   * Appelée à chaque image sans filtre : n'alloue rien quand la taille ne change pas (l'objet
+   * renvoyé est toujours le même, mis à jour en place : ne pas le conserver).
    */
   setSize(width: number, height: number, pixelRatio: number): Size {
     const ratio = Number.isFinite(pixelRatio) && pixelRatio > 0 ? pixelRatio : 1;
-    const size = { width: physical(width, ratio), height: physical(height, ratio) };
-    if (size.width !== this.target.width || size.height !== this.target.height) {
-      this.target.setSize(size.width, size.height);
-      this.material.uniforms['uSceneSize'].value = [size.width, size.height];
+    const w = physical(width, ratio);
+    const h = physical(height, ratio);
+    if (w !== this.target.width || h !== this.target.height) {
+      this.target.setSize(w, h);
+      this.material.uniforms['uSceneSize'].value = [w, h];
     }
-    return size;
+    this.size.width = w;
+    this.size.height = h;
+    return this.size;
   }
 
   /** Taille de la scène lue par le shader (tests). */

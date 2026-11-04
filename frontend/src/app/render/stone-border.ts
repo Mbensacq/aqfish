@@ -104,7 +104,8 @@ export interface StoneBorder {
 
 /**
  * Margelle prête à ajouter à la scène : un `Mesh` par bloc, dessus clair (deux tons en
- * alternance), côtés `rocheSombre`. Matériaux éclairés, partagés entre les blocs.
+ * alternance), côtés `rocheSombre`. Matériaux éclairés, partagés entre les blocs, comme les
+ * géométries des blocs de mêmes dimensions.
  */
 export function createStoneBorder(dims: TankDimensions): StoneBorder {
   const object = new Object3D();
@@ -113,17 +114,22 @@ export function createStoneBorder(dims: TankDimensions): StoneBorder {
   const side = new MeshLambertMaterial({ color: PALETTE.rocheSombre });
   const materials = [...tops, side];
   const meshes: { readonly mesh: Mesh; readonly side: PondSide }[] = [];
+  // Une géométrie par jeu de dimensions, partagée par les blocs identiques (#97) : les côtés
+  // ne prennent que quelques longueurs et le motif de hauteurs se répète.
+  const geometries = new Map<string, BoxGeometry>();
+  const boxFor = (block: StoneBlock): BoxGeometry => {
+    const key = `${block.width}|${block.height}|${block.depth}`;
+    let geometry = geometries.get(key);
+    if (!geometry) {
+      geometry = new BoxGeometry(block.width, block.height, block.depth);
+      geometries.set(key, geometry);
+    }
+    return geometry;
+  };
   for (const block of stoneBorderBlocks(dims)) {
     const top = tops[block.index % tops.length];
     // Ordre des faces d'une BoxGeometry : +X, -X, +Y, -Y, +Z, -Z.
-    const mesh = new Mesh(new BoxGeometry(block.width, block.height, block.depth), [
-      side,
-      side,
-      top,
-      side,
-      side,
-      side,
-    ]);
+    const mesh = new Mesh(boxFor(block), [side, side, top, side, side, side]);
     mesh.name = `pierre-${block.index}`;
     mesh.position.set(block.x, block.y, block.z);
     object.add(mesh);

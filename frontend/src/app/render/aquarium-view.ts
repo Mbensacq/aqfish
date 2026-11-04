@@ -50,7 +50,7 @@ import { planePoint, sandHit, type DecorPick } from './decor-pick';
 import { pickRoom } from './room-pick';
 import { type EffectLayer, type SceneLayer, updateVisibleEffects } from './effect-layer';
 import { FloatingLeafLayer } from './floating-leaf-layer';
-import { FishLayer, MAX_FISH_PER_SPECIES } from './fish-layer';
+import { FishLayer, MAX_FISH_PER_SPECIES, type BehaviorFrame } from './fish-layer';
 import { FoodLayer } from './food-layer';
 import { scenePixelsPerMeter } from './food-size';
 import { LilyPadLayer } from './lily-pad-layer';
@@ -388,6 +388,12 @@ export class AquariumView {
   private disposed = false;
   /** Facteurs des mouvements décoratifs (#406) : `FULL_MOTION` sauf mouvements réduits. */
   private motion: MotionFactors = FULL_MOTION;
+  /** Contexte des gestes passé aux couches de poissons, réécrit par `updateFish` (#433). */
+  private readonly behaviorFrame: { -readonly [K in keyof BehaviorFrame]: BehaviorFrame[K] } = {
+    time: 0,
+    landedFood: false,
+    motion: 1,
+  };
   /** Temps propre d'un effet (`updateVisibleEffects`) : pluie ralentie si mouvements réduits. */
   private readonly effectTime = (layer: EffectLayer, time: number): number =>
     layer === this.rainLayer ? time * this.motion.rainSpeed : time;
@@ -667,14 +673,15 @@ export class AquariumView {
       return;
     }
     // Gestes des comportements (#427) : leur part mobile suit « Réduire les mouvements ».
-    const frame =
-      behavior === null
-        ? null
-        : {
-            time: behavior.time,
-            landedFood: behavior.landedFood,
-            motion: this.motion.behaviorGesture,
-          };
+    // Objet de l'instance réécrit à chaque appel (#433) : aucune allocation par image.
+    let frame: BehaviorFrame | null = null;
+    if (behavior !== null) {
+      const reused = this.behaviorFrame;
+      reused.time = behavior.time;
+      reused.landedFood = behavior.landedFood;
+      reused.motion = this.motion.behaviorGesture;
+      frame = reused;
+    }
     for (const layer of this.fishLayers) {
       layer.update(entities, alpha, seed, frame);
     }

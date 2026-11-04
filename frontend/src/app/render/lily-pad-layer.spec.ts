@@ -237,6 +237,23 @@ describe('LilyPadLayer : fleurs (issue #104)', () => {
     tilts().forEach((t, i) => expect(t).toBeCloseTo(expected(0.5)[i], 12));
   });
 
+  it('setOpenness (#118) : aucun tableau créé (ni map ni indexOf), même aux appels répétés', () => {
+    const map = vi.spyOn(Array.prototype, 'map');
+    const indexOf = vi.spyOn(Array.prototype, 'indexOf');
+    let calls: number[];
+    try {
+      layer.setOpenness(0.2);
+      layer.setOpenness(0.7);
+      // Relevé avant toute assertion : `expect` lui-même appelle `indexOf`.
+      calls = [map.mock.calls.length, indexOf.mock.calls.length];
+    } finally {
+      map.mockRestore();
+      indexOf.mockRestore();
+    }
+    expect(calls).toEqual([0, 0]);
+    expect(layer.flowerOpenness).toBe(0.7);
+  });
+
   it('refuse une ouverture hors de [0, 1] sans rien changer', () => {
     layer.setOpenness(0.25);
     expect(() => layer.setOpenness(1.5)).toThrow(RangeError);

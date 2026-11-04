@@ -125,13 +125,13 @@
  * Voir docs/ARCHITECTURE.md, section « Contrat de capture ».
  */
 
+import { CAMERA_PRESETS, type CameraPreset } from '../camera-preset/camera-preset';
 import { isFoodStyle, type FoodStyle } from '../food-style/food-style';
 import { isRenderFilter, type RenderFilter } from '../render-filter/render-filter';
 import { parseWallpaperFps } from '../wallpaper/wallpaper';
 
-export const CAMERA_PRESETS = ['top', 'bottom', 'front', 'side', 'three-quarter'] as const;
-
-export type CameraPreset = (typeof CAMERA_PRESETS)[number];
+// Points de vue : définis dans un module neutre (#97), réexportés pour les appelants du contrat.
+export { CAMERA_PRESETS, type CameraPreset } from '../camera-preset/camera-preset';
 
 export interface CaptureParams {
   /** true quand l'URL contient capture=1 : simulation figée, interface masquée. */

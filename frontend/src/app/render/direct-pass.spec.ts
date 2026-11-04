@@ -67,6 +67,19 @@ describe('DirectPass (filtre aucun, #40)', () => {
     pass.dispose();
   });
 
+  it('appels répétés (chaque image) : aucune allocation, même objet et mêmes uniformes', () => {
+    const pass = new DirectPass();
+    const first = pass.setSize(640, 480, 1);
+    const scene = pass.sceneSize;
+    const again = pass.setSize(640, 480, 1);
+    expect(again).toBe(first);
+    expect(pass.sceneSize).toBe(scene);
+    // Le même objet suit la nouvelle taille.
+    expect(pass.setSize(320, 200, 2)).toBe(first);
+    expect(first).toEqual({ width: 640, height: 400 });
+    pass.dispose();
+  });
+
   it('shader : lit la cible pixel pour pixel, même conversion sRGB que la passe palette, sans palette', () => {
     const pass = new DirectPass();
     const m = material(pass);

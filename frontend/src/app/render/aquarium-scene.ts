@@ -29,7 +29,7 @@ import {
 } from '../sim/tank';
 import { createBankDecorObject } from './bank-decor-mesh';
 import { INPUT_TONES, PALETTE, type PaletteColorName } from './palette';
-import { cutawaySides } from './pond-cutaway';
+import { cutawayMask, sidesOfMask } from './pond-cutaway';
 import { createPondGround, pondGroundTop } from './pond-ground';
 import { createPondShapeBank } from './pond-shape-bank';
 import { createStoneBorder } from './stone-border';
@@ -233,6 +233,8 @@ export function createAquariumScene(environment: Environment = TROPICAL_TANK): A
   let overcast = 1;
   let turbidity = 0;
   let tea = 0;
+  /** Masque des côtés retirés (`cutawayMask`) ; -1 : jamais appliqué. */
+  let cutaway = -1;
   // Teinte brun-thé puis trouble ; `lerpColors(a, b, 0)` vaut exactement `a`.
   const mixWaterTints = (): void => {
     waterColors.tintedBody.lerpColors(waterColors.dayBody, waterColors.teaBody, TEA_BODY_MIX * tea);
@@ -323,7 +325,14 @@ export function createAquariumScene(environment: Environment = TROPICAL_TANK): A
     },
     setViewpoint: (x, y, z) => {
       if (pondGround) {
-        const hidden = cutawaySides([x, y, z], dims, pondGroundTop(dims));
+        // Appelée à chaque image : rien n'est alloué ni réappliqué tant que les côtés
+        // retirés ne changent pas (#122).
+        const mask = cutawayMask(x, y, z, dims, pondGroundTop(dims));
+        if (mask === cutaway) {
+          return;
+        }
+        cutaway = mask;
+        const hidden = sidesOfMask(mask);
         stones?.setHiddenSides(hidden);
         bank?.setCutaway(hidden.size > 0);
         pondGround.setHiddenSides(hidden);
