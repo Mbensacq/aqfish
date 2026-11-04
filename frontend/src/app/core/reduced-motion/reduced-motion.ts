@@ -106,6 +106,11 @@ export interface MotionFactors {
   readonly rainSpeed: number;
   /** Part du décalage de l'œil dû à l'inclinaison de l'appareil (mode immersif). */
   readonly parallax: number;
+  /**
+   * Amplitude des gestes de comportement (#427, `sim/behaviors.ts`) : hochement de la fouille,
+   * râpe du broutage, frémissement de la défense. La posture (museau baissé) reste.
+   */
+  readonly behaviorGesture: number;
 }
 
 /** Mouvements normaux : rien ne change. */
@@ -115,6 +120,7 @@ export const FULL_MOTION: MotionFactors = Object.freeze({
   plantSway: 1,
   rainSpeed: 1,
   parallax: 1,
+  behaviorGesture: 1,
 });
 
 /**
@@ -127,6 +133,7 @@ export const REDUCED_MOTION: MotionFactors = Object.freeze({
   plantSway: 0.3,
   rainSpeed: 0.4,
   parallax: 0,
+  behaviorGesture: 0,
 });
 
 /** Facteurs de l'état `reduced`. */

@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { ENVIRONMENT_IDS, environmentById } from './environment';
 import { SPECIES, type SpeciesId } from './species';
-import { SHEET_FIELD_LABELS, SHEET_FIELDS, speciesSheet, statusText } from './species-sheet';
+import {
+  BEHAVIOR_LABEL,
+  SHEET_FIELD_LABELS,
+  SHEET_FIELDS,
+  SPECIES_BEHAVIOR_TEXT,
+  speciesSheet,
+  statusText,
+} from './species-sheet';
 import { matchesWikiSearch, searchKey, wikiCare, wikiLists, wikiSheet } from './species-wiki';
 
 const IDS = Object.keys(SPECIES) as SpeciesId[];
@@ -157,10 +164,19 @@ describe('wiki des espèces : modèle de vue d’une fiche (#287)', () => {
     expect(view.species).toBe(id);
     expect(view.name).toBe(SPECIES[id].name);
     expect(view.scientificName).toBe(SPECIES[id].scientificName);
-    expect(view.rows.map((row) => row.field)).toEqual([...SHEET_FIELDS]);
+    // Ligne « Comportement » en dernier pour les espèces qui en ont un (#427).
+    const behavior = SPECIES_BEHAVIOR_TEXT[id];
+    expect(view.rows.map((row) => row.field)).toEqual(
+      behavior === undefined ? [...SHEET_FIELDS] : [...SHEET_FIELDS, 'behavior'],
+    );
     for (const row of view.rows) {
-      expect(row.label).toBe(SHEET_FIELD_LABELS[row.field]);
       expect(row.value.trim(), `${id}.${row.field}`).not.toBe('');
+      if (row.field === 'behavior') {
+        expect(row.label).toBe(BEHAVIOR_LABEL);
+        expect(row.status).toBe(statusText(behavior!.status));
+        continue;
+      }
+      expect(row.label).toBe(SHEET_FIELD_LABELS[row.field]);
       // Le statut affiché est celui de la fiche (source avec référence, ou approximation).
       expect(row.status.startsWith(statusText(sheet[row.field].status)), row.field).toBe(true);
     }

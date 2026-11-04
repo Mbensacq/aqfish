@@ -39,6 +39,7 @@ import {
   writeStoredRenderFilter,
 } from '../../core/render-filter/render-filter';
 import { markCaptureReady, resetCaptureReady } from '../../core/capture/capture-ready';
+import { hasLandedFood } from '../../sim/behaviors';
 import {
   createShare,
   hasShareFragment,
@@ -3258,13 +3259,16 @@ export class AquariumHost {
     }
     if (this.currentWorld) {
       // En capture, l'image montre exactement l'état au temps demandé (alpha = 1).
+      const time = this.renderTime();
+      // Gestes des comportements (#427) : au temps affiché, fouille seulement s'il y a un
+      // granulé posé (`sim/behaviors.ts`).
       view.updateFish(
         this.currentWorld.entities,
         this.capture ? 1 : this.clock.alpha,
         this.currentWorld.seed,
+        { time, landedFood: hasLandedFood(this.currentWorld.food) },
       );
       view.updateFood(this.currentWorld.food);
-      const time = this.renderTime();
       view.updateDecor(time);
       this.updateLight(view, time);
     }

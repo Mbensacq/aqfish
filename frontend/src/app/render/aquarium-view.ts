@@ -657,12 +657,26 @@ export class AquariumView {
    * (`alpha` ∈ [0, 1] : 0 = pas précédent, 1 = pas courant), avec la graine du monde `seed`
    * (robes des koïs, `speciesVariantIndex`). À appeler avant `renderFrame()`.
    */
-  updateFish(entities: readonly Fish[], alpha: number, seed = 0): void {
+  updateFish(
+    entities: readonly Fish[],
+    alpha: number,
+    seed = 0,
+    behavior: { readonly time: number; readonly landedFood: boolean } | null = null,
+  ): void {
     if (this.disposed) {
       return;
     }
+    // Gestes des comportements (#427) : leur part mobile suit « Réduire les mouvements ».
+    const frame =
+      behavior === null
+        ? null
+        : {
+            time: behavior.time,
+            landedFood: behavior.landedFood,
+            motion: this.motion.behaviorGesture,
+          };
     for (const layer of this.fishLayers) {
-      layer.update(entities, alpha, seed);
+      layer.update(entities, alpha, seed, frame);
     }
   }
 

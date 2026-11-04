@@ -20,6 +20,7 @@ import {
   type SpeciesVariant,
 } from '../sim/species';
 import { wrapAngle, type Fish } from '../sim/swimmer';
+import { activeBehavior, behaviorGesture, type BehaviorGesture } from '../sim/behaviors';
 import { undulationAt, undulationScale, type Undulation } from '../sim/undulation';
 import { ichSeverity, isIchContagious } from '../sim/disease';
 import { dullness } from '../sim/wellbeing';
@@ -160,6 +161,17 @@ export function interpolateFishPose(fish: Fish, alpha: number, out: FishPose): F
 }
 
 /**
+ * Contexte des gestes de comportement (issue #427, `sim/behaviors.ts`) : temps simulé du monde
+ * affiché, présence d'un granulé posé (fouille), et facteur des mouvements (1 normal, 0 :
+ * « Réduire les mouvements », ADR 0098).
+ */
+export interface BehaviorFrame {
+  readonly time: number;
+  readonly landedFood: boolean;
+  readonly motion: number;
+}
+
+/**
  * Couche des poissons d'une apparence d'espèce (`speciesVariants`, par exemple les guppys
  * mâles) : deux `InstancedMesh` (corps et queue) partageant les mêmes instances. Une espèce
  * sans variantes a une seule couche. `update()` recalcule les matrices à partir de l'état
@@ -178,6 +190,7 @@ export class FishLayer {
   private readonly halfLength: number;
   private readonly pose: FishPose = { x: 0, y: 0, z: 0, yaw: 0, pitch: 0, phase: 0 };
   private readonly undulation: Undulation = { bodySway: 0, tailSwing: 0 };
+  private readonly gesture: BehaviorGesture = { pitch: 0, yaw: 0 };
   private readonly bodyMatrix = new Matrix4();
   private readonly tailMatrix = new Matrix4();
   private readonly hinge = new Matrix4();
@@ -252,9 +265,15 @@ export class FishLayer {
   /**
    * Place une instance par poisson de l'espèce et de l'apparence de la couche, interpolée avec
    * `alpha` ∈ [0, 1] ; `seed` (graine du monde) répartit les apparences des espèces à
-   * `variantDraw: 'graine'` (`speciesVariantIndex`).
+   * `variantDraw: 'graine'` (`speciesVariantIndex`). Avec `behavior`, un poisson en plein
+   * comportement (`activeBehavior`) reçoit son geste (`behaviorGesture`) ; sans, pose d'avant.
    */
-  update(entities: readonly Fish[], alpha: number, seed = 0): void {
+  update(
+    entities: readonly Fish[],
+    alpha: number,
+    seed = 0,
+    behavior: BehaviorFrame | null = null,
+  ): void {
     let n = 0;
     for (let i = 0; i < entities.length && n < this.capacity; i++) {
       const fish = entities[i];
@@ -274,7 +293,14 @@ export class FishLayer {
 
       // Modèle orienté vers +X : inclinaison autour de Z, puis cap autour de Y
       // (cap mesuré de +X vers +Z, d'où le signe moins ; voir sim/swimmer.ts).
-      this.euler.set(0, -pose.yaw + sway, pose.pitch);
+      const kind =
+        behavior === null ? null : activeBehavior(fish, seed, behavior.time, behavior.landedFood);
+      if (kind === null || behavior === null) {
+        this.euler.set(0, -pose.yaw + sway, pose.pitch);
+      } else {
+        const g = behaviorGesture(kind, behavior.time, fish.id, behavior.motion, this.gesture);
+        this.euler.set(0, -(pose.yaw + g.yaw) + sway, pose.pitch + g.pitch);
+      }
       this.rotation.setFromEuler(this.euler);
       this.position.set(pose.x, pose.y, pose.z);
       this.bodyMatrix.compose(this.position, this.rotation, this.unitScale);
