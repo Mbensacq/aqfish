@@ -5345,10 +5345,10 @@
           "note": "Rétro #445 : tri de 62 dettes en 6 lots (#438 à #443), Dev prend #438 (M) ; fermetures en masse refusées par l'environnement"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-04T18:28:38.694Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-04T19:23:04.975Z",
+          "note": "PR #447 : dette lot 1/6 (8 issues sur 10), reste reporté dans #446, CI verte"
         }
       },
       "metriques": {}
