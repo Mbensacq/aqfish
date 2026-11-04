@@ -5169,6 +5169,12 @@
           "debut": "2026-11-03T23:41:43.141Z",
           "fin": "2026-11-04T01:04:17.737Z",
           "note": "PR #423 : récif lot 3 (crevette nettoyeuse, blennie bicolore, #405 gobie/gramma), CI verte ; récif défaut et tropical identiques à l'octet, interface-liste-bacs 2 px ; e2e complet en CI seulement ; pied d'attribution réajouté par l'environnement à la PR"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-04T01:04:53.155Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
