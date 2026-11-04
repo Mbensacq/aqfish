@@ -5307,6 +5307,12 @@
           "debut": "2026-11-04T14:06:29.061Z",
           "fin": "2026-11-04T14:07:05.664Z",
           "note": "Issue #433 : dette comportements, allocations et cache du territoire (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-04T14:07:53.380Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
