@@ -6,11 +6,11 @@ import { ShareOffer, shareOfferText } from './share-offer';
 describe('shareOfferText (#426)', () => {
   it('nomme l’environnement, compte les animaux et prévient du remplacement', () => {
     expect(shareOfferText({ kind: 'offre', environment: 'Bassin', animals: 7, tanks: 1 })).toBe(
-      'Aquarium partagé : Bassin, 7 animaux. L’importer remplace votre bac actuel ; exportez-les d’abord pour les garder.',
+      'Aquarium partagé : Bassin, 7 animaux. L’importer remplace votre bac actuel ; exportez-le d’abord pour le garder.',
     );
     const text = shareOfferText({ kind: 'offre', environment: 'Récif', animals: 1, tanks: 3 });
     expect(text).toContain('1 animal.');
-    expect(text).toContain('vos 3 bacs actuels');
+    expect(text).toContain('vos 3 bacs actuels ; exportez-les d’abord pour les garder.');
     expect(shareOfferText({ kind: 'offre', environment: 'Bac', animals: 0, tanks: 1 })).toContain(
       '0 animaux',
     );

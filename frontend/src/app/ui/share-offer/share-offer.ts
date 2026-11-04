@@ -6,8 +6,11 @@ import { DASHBOARD_COLORS } from '../dashboard-frame/dashboard-frame';
 /** Texte de la proposition d'import d'un aquarium partagé (#426). */
 export function shareOfferText(offer: Extract<ShareOfferData, { kind: 'offre' }>): string {
   const animals = offer.animals === 1 ? '1 animal' : `${offer.animals} animaux`;
-  const tanks = offer.tanks === 1 ? 'votre bac actuel' : `vos ${offer.tanks} bacs actuels`;
-  return `Aquarium partagé : ${offer.environment}, ${animals}. L’importer remplace ${tanks} ; exportez-les d’abord pour les garder.`;
+  const tanks =
+    offer.tanks === 1
+      ? 'votre bac actuel ; exportez-le d’abord pour le garder'
+      : `vos ${offer.tanks} bacs actuels ; exportez-les d’abord pour les garder`;
+  return `Aquarium partagé : ${offer.environment}, ${animals}. L’importer remplace ${tanks}.`;
 }
 
 /**
