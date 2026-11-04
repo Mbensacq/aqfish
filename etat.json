@@ -5273,10 +5273,10 @@
           "note": "Issue #427 : comportements plus riches, broutage, fouille et territoire (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-04T09:43:57.147Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-04T11:14:56.023Z",
+          "note": "PR #432 : broutage, fouille et territoire (#427), CI verte ; 3 comportements, 11 captures changées voulues + front-fouille ; pied d'attribution réajouté par l'environnement à la PR"
         }
       },
       "metriques": {}
