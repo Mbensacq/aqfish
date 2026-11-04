@@ -5279,10 +5279,10 @@
           "note": "PR #432 : broutage, fouille et territoire (#427), CI verte ; 3 comportements, 11 captures changées voulues + front-fouille ; pied d'attribution réajouté par l'environnement à la PR"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-04T11:15:34.959Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-04T11:55:16.106Z",
+          "note": "Verdict OK, 0 bug, captures publiées (120/128, délai), 1 e2e ajouté (wiki Comportement), CI verte"
         }
       },
       "metriques": {}
