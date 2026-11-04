@@ -123,6 +123,24 @@ describe('releaseUnsupportedDecor', () => {
     expect(decorElevation(result.decor[0])).toBe(0);
   });
 
+  it('borne : au plus 2 × N chutes en tout pour N éléments, pas deux par élément (#196)', () => {
+    // Chute qui ne fait descendre que d'un centimètre : l'élément reste en l'air.
+    const fall: DecorFall = (decor, index) => ({
+      decor: decor.map((item, n) =>
+        n === index ? withElevation(item, decorElevation(item) - 0.01) : item,
+      ),
+      path: [],
+    });
+    const high = (x: number, elevation: number): DecorItem =>
+      withElevation({ ...base, x, seed: 3 }, elevation);
+    expect(releaseUnsupportedDecor([high(0, 0.2)], fall).falls).toHaveLength(2);
+    // Trois éléments : six chutes en tout, toujours le plus bas d'abord ; le plus bas
+    // retombe plus de deux fois.
+    const result = releaseUnsupportedDecor([high(-0.3, 0.1), high(0, 0.2), high(0.3, 0.25)], fall);
+    expect(result.falls).toHaveLength(6);
+    expect(result.falls.filter((f) => f.index === 0).length).toBeGreaterThan(2);
+  });
+
   it('chute sans effet (moins d’un millimètre) : pose gardée à l’octet', () => {
     const floating = stacked()[1];
     const fall: DecorFall = (decor, index) => ({

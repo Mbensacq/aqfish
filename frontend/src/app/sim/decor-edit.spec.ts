@@ -94,6 +94,18 @@ describe('addDecorItem', () => {
     expect(rotations.size).toBe(5);
   });
 
+  it('chevauchement à l’ajout : accepté ici, résolu par la pose de l’hôte (#194)', () => {
+    // Un rocher posé sur un rocher existant, ou poussé contre lui par le bord : ajouté
+    // tel quel (même emprise), les voisins inchangés ; `isDecorPoseAllowed` et la chute de
+    // l'hôte décident ensuite (`AquariumHost.editAt`, #167).
+    const rock = DEFAULT_DECOR.find((item) => item.kind === 'rock')!;
+    const decor = addDecorItem(DEFAULT_DECOR, 'rock', rock.x, rock.z, 42, 'tropical');
+    expect(decor).not.toBeNull();
+    expect(decor!.slice(0, DEFAULT_DECOR.length)).toEqual(DEFAULT_DECOR);
+    expect(decor!.at(-1)).toMatchObject({ x: rock.x, z: rock.z });
+    expect(decorItemsOverlap(decor!.at(-1)!, rock)).toBe(true);
+  });
+
   it('n’ajoute rien hors des bornes du bac, marge comprise', () => {
     const edge = HALF_W - DECOR_EDGE_MARGIN;
     expect(addDecorItem([], 'rock', edge, 0, 1, 'tropical')).not.toBeNull();

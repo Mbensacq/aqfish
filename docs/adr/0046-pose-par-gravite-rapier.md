@@ -70,7 +70,8 @@ enregistrées (ADR 0003 : `sim/` reste pur, sans moteur).
   sur le décor par défaut) : 706 jugées soutenues ; à 2 mm de jeu, une plante posée à 6 mm
   de son support était jugée en l'air. La chute part de la **pose actuelle** (`decorFallScene`),
   pas du dessus du décor : ce que porte l'élément ne l'arrête pas. Le plus bas d'abord, puis
-  de nouveau (cascade : ce qu'il portait retombe à son tour), au plus deux chutes par élément.
+  de nouveau (cascade : ce qu'il portait retombe à son tour), au plus 2 × N chutes en tout
+  pour N éléments (borne du total : un même élément peut retomber plus de deux fois, #196).
   Une chute qui déplace l'élément de moins de 1 mm (`SUPPORT_SAME_POSE`, élément calé sans
   appui assez vertical) est ignorée : un élément soutenu garde sa pose **à l'octet**. Pose
   refusée par `isDecorPoseAllowed`, ou moteur absent : posé sur le sable si c'est permis,

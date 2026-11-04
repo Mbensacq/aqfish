@@ -20,7 +20,9 @@ import {
   type FoodPellet,
   type FoodState,
 } from './food';
+import { environmentWater, PALUDARIUM } from './environment';
 import { SAND_THICKNESS, waterVolume } from './tank';
+import { terrainHeightAt } from './terrain';
 import {
   advance,
   advanceTo,
@@ -164,6 +166,28 @@ describe('sim/food : sol', () => {
       SAND_THICKNESS + FOOD_RADIUS,
       12,
     );
+  });
+
+  it('paludarium : posé sur la pente immergée, pas sous elle (#140)', () => {
+    const world = createDefaultWorld(42, 'paludarium') as MutableWorld;
+    const water = environmentWater(world);
+    const terrain = PALUDARIUM.terrain!;
+    // Juste après le rivage (eau vers +X) : la pente est au-dessus du fond.
+    const x = 0.06;
+    const ground = terrainHeightAt(x, 0, terrain, water);
+    expect(ground).toBeGreaterThan(water.minY + 0.01);
+    expect(ground).toBeLessThan(water.maxY);
+    expect(restHeightAt([], x, 0, terrain, water)).toBeCloseTo(ground + FOOD_RADIUS, 12);
+    // Sans sol : la dalle de sable (comportement des bacs plats inchangé).
+    expect(restHeightAt([], x, 0, null, water)).toBeCloseTo(SAND_THICKNESS + FOOD_RADIUS, 12);
+
+    world.food = [];
+    expect(feedInPlace(world, x, 0)).toBeGreaterThan(0);
+    for (const pellet of world.food) {
+      const below = terrainHeightAt(pellet.x, pellet.z, terrain, water);
+      expect(pellet.restY).toBeCloseTo(Math.min(pellet.floatY, below + FOOD_RADIUS), 12);
+      expect(pellet.restY).toBeGreaterThan(SAND_THICKNESS + FOOD_RADIUS);
+    }
   });
 
   it('les plantes sont traversées (seuls les rochers retiennent la nourriture)', () => {

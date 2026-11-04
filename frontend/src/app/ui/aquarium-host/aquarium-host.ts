@@ -410,7 +410,10 @@ export interface RoomCatalogTank {
   readonly id: number;
   readonly name: string;
   readonly animals: number;
-  /** Bac affiché (non retirable). */
+  /**
+   * Bac affiché (non retirable). Calculé depuis le bac sélectionné (`selectedTankId`) : c'est
+   * la même notion, le bac sélectionné de la pièce est toujours celui du monde affiché (#313).
+   */
   readonly shown: boolean;
   /** Support du bac posé (nom), « sol », ou `null` : position historique. */
   readonly on: string | null;
@@ -1468,7 +1471,8 @@ export class AquariumHost {
   }
 
   /**
-   * Entre en mode édition du décor ou en sort (#167). En sortant, la sélection est effacée.
+   * Entre en mode édition du décor ou en sort (#167). En sortant, la sélection est effacée ;
+   * en entrant, un décor masqué est réaffiché (#176 : on ne pose pas d'obstacle invisible).
    * Sans effet en mode capture (`edition=`), avant le démarrage, ou pour entrer dans un
    * environnement dont le décor n'est pas modifiable (`isDecorEditable`).
    */
@@ -1480,6 +1484,9 @@ export class AquariumHost {
     if (!editing) {
       this.selectDecor(null);
     } else {
+      if (!this.decorVisible()) {
+        this.setDecorVisible(true);
+      }
       this.loadDecorPhysics();
     }
     this.applyDecorEditing(editing);
@@ -1679,7 +1686,8 @@ export class AquariumHost {
   /**
    * Clic en mode édition (#167) : un élément touché est sélectionné ; un point du sable reçoit
    * l'élément de l'outil courant (qui est alors sélectionné), ou, avec l'outil `select`,
-   * désélectionne ; un clic hors du bac désélectionne. Sans effet hors du mode édition.
+   * désélectionne ; un clic hors du bac désélectionne. Décor masqué (masqué pendant
+   * l'édition) : rien n'est posé (#176). Sans effet hors du mode édition.
    */
   editAt(pick: DecorPick): void {
     const world = this.currentWorld;
@@ -1707,7 +1715,7 @@ export class AquariumHost {
       }
       return;
     }
-    if (tool === 'select' || isRoomTool(tool)) {
+    if (tool === 'select' || isRoomTool(tool) || !this.decorVisible()) {
       this.selectDecor(null);
       return;
     }

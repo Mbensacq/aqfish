@@ -3168,6 +3168,22 @@ describe('AquariumHost', () => {
       expect(host().world!.decor.length).toBe(DEFAULT_DECOR.length + 2);
     });
 
+    it('décor masqué : réaffiché en entrant en édition ; masqué pendant l’édition, rien n’est posé (#176)', async () => {
+      await create('?seed=42');
+      host().setDecorVisible(false);
+      host().setDecorEditing(true);
+      expect(host().decorVisible()).toBe(true);
+      expect(element().getAttribute(DECOR_ATTRIBUTE)).toBe('true');
+      host().setDecorVisible(false);
+      host().editAt({ kind: 'sand', x: 0, z: 0.1 });
+      expect(host().world!.decor).toEqual(DEFAULT_DECOR);
+      expect(host().world!.obstacles.length).toBe(DEFAULT_DECOR.length);
+      expect(host().decorSelection()).toBeNull();
+      host().setDecorVisible(true);
+      host().editAt({ kind: 'sand', x: 0, z: 0.1 });
+      expect(host().world!.decor.length).toBe(DEFAULT_DECOR.length + 1);
+    });
+
     it('supprime la sélection et enregistre aussitôt le décor édité', async () => {
       await create();
       host().setDecorEditing(true);
