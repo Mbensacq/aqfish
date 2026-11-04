@@ -192,8 +192,8 @@ type Mutable<T> = { -readonly [K in keyof T]: T[K] };
  * même sous-générateur, même tirage du cap et de la phase), puis posé sur le fond, à un
  * point tiré au-dessus d'une eau assez profonde (au plus `MAX_SPAWN_TRIES` tirages, puis le
  * point le plus profond d'une grille), à au moins `wallMargin` des obstacles. En marche, les
- * obstacles (coraux, rochers, décor) sont contournés comme un fond trop haut (`stepWalker`,
- * issue #422).
+ * obstacles (coraux, rochers, décor) sont contournés comme un fond trop haut par les espèces
+ * qui le déclarent (`BottomWalkerParams.avoidsObstacles`, `stepWalker`, issue #422).
  * @throws RangeError si l'espèce ne marche pas sur le fond.
  */
 export function createWalker(
@@ -259,6 +259,9 @@ function placeOnDeepestPoint(fish: Mutable<Fish>, bounds: SwimBounds, ground: Wa
   }
 }
 
+/** Aucun obstacle (marcheurs qui les ignorent). */
+const NO_OBSTACLES: readonly Obstacle[] = [];
+
 const PHASE: WalkerPhase = { mode: 'marche', slot: 0, progress: 0, height: 0 };
 
 /**
@@ -281,6 +284,8 @@ export function stepWalker(
 ): void {
   const def = SPECIES[fish.species];
   const walker = def.walker!;
+  // Obstacles contournés seulement par les espèces qui le déclarent (crevette, #422).
+  const blockers = walker.avoidsObstacles === true ? obstacles : NO_OBSTACLES;
   const { hard } = bounds;
   savePrevious(fish);
   fish.hunger = growHunger(fish.hunger, def, dt);
@@ -310,10 +315,10 @@ export function stepWalker(
   const aheadZ = fish.z + Math.sin(yaw) * reach;
   if (
     !walkerCanStand(aheadX, aheadZ, def, bounds, ground) ||
-    obstacleClearance(aheadX, fish.y, aheadZ, obstacles) < def.wallMargin
+    obstacleClearance(aheadX, fish.y, aheadZ, blockers) < def.wallMargin
   ) {
-    const left = openness(fish, yaw + SIDE_PROBE_ANGLE, reach, def, bounds, ground, obstacles);
-    const right = openness(fish, yaw - SIDE_PROBE_ANGLE, reach, def, bounds, ground, obstacles);
+    const left = openness(fish, yaw + SIDE_PROBE_ANGLE, reach, def, bounds, ground, blockers);
+    const right = openness(fish, yaw - SIDE_PROBE_ANGLE, reach, def, bounds, ground, blockers);
     const side = left > right ? 1 : left < right ? -1 : fish.turn >= 0 ? 1 : -1;
     yaw += side * def.avoidTurnRate * dt;
     turn = side * def.wanderTurnRate;
@@ -331,7 +336,7 @@ export function stepWalker(
   const nz = clamp(fish.z + Math.sin(fish.yaw) * step, hard.minZ, hard.maxZ);
   if (
     walkerCanStand(nx, nz, def, bounds, ground) &&
-    clearOfObstacles(fish, nx, nz, def, obstacles)
+    clearOfObstacles(fish, nx, nz, def, blockers)
   ) {
     fish.x = nx;
     fish.z = nz;
@@ -369,9 +374,9 @@ export function stepWalker(
   // Montée ou descente refusée si elle mène dans un obstacle (issue #422) : posée sur un corail
   // qu'elle survolait, la crevette y reste jusqu'à en sortir à l'horizontale.
   let ny = fish.y + vy * dt;
-  if (obstacles.length > 0) {
-    const next = obstacleClearance(fish.x, ny, fish.z, obstacles);
-    if (next < def.wallMargin && next < obstacleClearance(fish.x, fish.y, fish.z, obstacles)) {
+  if (blockers.length > 0) {
+    const next = obstacleClearance(fish.x, ny, fish.z, blockers);
+    if (next < def.wallMargin && next < obstacleClearance(fish.x, fish.y, fish.z, blockers)) {
       ny = fish.y;
     }
   }

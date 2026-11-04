@@ -208,6 +208,12 @@ export interface BottomWalkerParams {
   readonly burstPeriod: number;
   /** Vitesse verticale maximale de la remontée, en m/s (> 0). */
   readonly climbSpeed: number;
+  /**
+   * Vrai si la marche contourne les obstacles (coraux, rochers, décor) et ne monte ni ne
+   * descend dans l'un d'eux (crevette nettoyeuse, #422, ADR 0103) ; absent : les obstacles sont
+   * ignorés en marche, comme avant (axolotl, dont les bacs restent identiques à l'octet).
+   */
+  readonly avoidsObstacles?: boolean;
 }
 
 /**
@@ -1787,6 +1793,7 @@ export const CREVETTE: SpeciesDefinition = {
     weights: { marche: 0.8, nage: 0.2, remontee: 0 },
     burstPeriod: 1.8,
     climbSpeed: 0.04,
+    avoidsObstacles: true,
   },
 };
 

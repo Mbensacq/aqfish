@@ -29,10 +29,12 @@ tropical identiques à l'octet (graine 42), palette commune ou tons du récif (A
    comportement lourd. Elle reprend le **mécanisme des marcheurs du fond** de l'axolotl
    (`walker`, ADR 0035 ; l'issue citait la crevette cerise de l'ADR 0095, qui n'a jamais été
    implémentée) : marche sur le sable (80 % des créneaux), courtes nages par à-coups (20 %),
-   jamais de remontée à la surface. Seul ajout : `stepWalker` **contourne les obstacles**
-   (coraux, rochers, décor) comme un fond trop haut, et refuse une montée ou une descente vers un
-   obstacle, sauf pour s'en éloigner. Sans obstacle, la marche est identique au bit près (le
-   paludarium par défaut n'en a pas). Modèle : corps rouge, bande dorsale blanche, ventre jaune,
+   jamais de remontée à la surface. Seul ajout : avec `walker.avoidsObstacles`, `stepWalker`
+   **contourne les obstacles** (coraux, rochers, décor) comme un fond trop haut, et refuse une
+   montée ou une descente vers un obstacle, sauf pour s'en éloigner. **Opt-in** : activé pour
+   tous les marcheurs, il changeait les captures du bac d'eau froide (un axolotl posé sur un
+   rocher au lieu de le traverser) ; l'axolotl garde donc sa marche d'avant, au bit près.
+   Modèle : corps rouge, bande dorsale blanche, ventre jaune,
    pattes, longues antennes blanches (12 cm antennes comprises, approximation de jeu pour la
    lisibilité). Groupe `invertebre` des traitements : sel et médicament refusés. Au plus **deux**
    par bac (« elles s'entretuent au-delà », Reeflex). Ni banc, ni recherche de granulés, ni
@@ -89,5 +91,7 @@ tropical identiques à l'octet (graine 42), palette commune ou tons du récif (A
   plus (`…,crevette:0,blennie:0`).
 - Captures `recif-front-lot2` et `recif-three-quarter-lot2` modifiées (gobie et gramma) ;
   `recif-front-lot3` et `recif-three-quarter-lot3` ajoutées.
+- Suite possible : activer `avoidsObstacles` pour l'axolotl (bac d'eau froide), avec ses
+  captures.
 - `recif-lot2.spec.ts` : la règle « aucune espèce du lot plus grande que le chirurgien » excepte
   le gobie, et la liste des espèces du récif est comparée par préfixe.

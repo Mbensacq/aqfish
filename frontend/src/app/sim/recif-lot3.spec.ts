@@ -179,6 +179,9 @@ describe('récif, lot 3 (#422) : catalogue complet', () => {
     expect(treatmentGroup('blennie')).toBe('poisson');
     expect(CREVETTE.walker).toBeDefined();
     expect(CREVETTE.walker?.weights.remontee).toBe(0);
+    // Contournement des obstacles propre à la crevette : l'axolotl marche comme avant.
+    expect(CREVETTE.walker?.avoidsObstacles).toBe(true);
+    expect(SPECIES.axolotl.walker?.avoidsObstacles).toBeUndefined();
     expect(CREVETTE.depth).toBeUndefined();
     expect(CREVETTE.schooling).toBeNull();
     expect(CREVETTE.maxPopulation).toBe(2);
