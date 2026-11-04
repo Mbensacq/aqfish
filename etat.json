@@ -5211,6 +5211,12 @@
           "debut": "2026-11-04T04:05:31.873Z",
           "fin": "2026-11-04T04:44:17.704Z",
           "note": "Verdict RÉSERVES, 0 bug, captures publiées (125) ; néritine trop petite pour être reconnue (#424) ; unitaires 4014/4014, CI verte dont e2e complets"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-04T04:44:48.776Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
