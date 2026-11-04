@@ -181,6 +181,8 @@ describe('fonctions du panneau de contrôle', () => {
     [saveStatus]="saveStatus()"
     [saveMessage]="saveMessage()"
     (exportRequested)="exports = exports + 1"
+    [shareLink]="shareLink()"
+    (shareRequested)="shares = shares + 1"
     (importRequested)="imports.push($event)"
     (importRejected)="rejections.push($event)"
     (populationChanged)="requests.push($event)"
@@ -294,6 +296,8 @@ class TestHost {
   readonly requests: PopulationRequest[] = [];
   readonly saveStatus = signal<SaveStatus | null>('active');
   readonly saveMessage = signal<SaveMessage | null>(null);
+  readonly shareLink = signal<string | null>(null);
+  shares = 0;
   exports = 0;
   readonly imports: string[] = [];
   readonly rejections: string[] = [];
@@ -1100,9 +1104,10 @@ describe('ControlPanel', () => {
     // pièce » (#187), « Changer l’eau » et le curseur du chauffage (#207), « − » et « + » des
     // feuilles de catappa (#239), puis « − », champ, « + » (#69), curseur (#189) et « Fiche »
     // (#237) pour chacune des 17 espèces du bac tropical (#238, #362, #391, #425), puis « Exporter »
-    // et « Importer » (#70), le mode du bac (#278), « Mode immersif » (#345), « Réduire
-    // les mouvements » (#406), puis la case « Sons d'ambiance » et son volume (#411).
-    expect(controls).toHaveLength(5 + 1 + 1 + 1 + 2 + 2 + 17 * 5 + 2 + 1 + 1 + 1 + 2);
+    // et « Importer » (#70), « Partager ce bac » (#426), le mode du bac (#278), « Mode
+    // immersif » (#345), « Réduire les mouvements » (#406), puis la case « Sons d'ambiance »
+    // et son volume (#411). Le champ du lien de partage n'apparaît qu'avec un lien.
+    expect(controls).toHaveLength(5 + 1 + 1 + 1 + 2 + 2 + 17 * 5 + 2 + 1 + 1 + 1 + 1 + 2);
     expect(root().querySelectorAll('input[type="file"]')).toHaveLength(1);
     for (const control of controls) {
       const name =
@@ -1718,6 +1723,19 @@ describe('ControlPanel', () => {
       expect(button('Importer').type).toBe('button');
       button('Exporter').click();
       expect(fixture.componentInstance.exports).toBe(1);
+    });
+
+    it('« Partager ce bac » émet une demande ; le lien reçu s’affiche en lecture seule (#426)', async () => {
+      await openPanel();
+      expect(section().querySelector('[data-share-link]')).toBeNull();
+      button('Partager ce bac').click();
+      expect(fixture.componentInstance.shares).toBe(1);
+      fixture.componentInstance.shareLink.set('https://exemple.test/#partage=1.z.AAAA');
+      await fixture.whenStable();
+      const field = section().querySelector<HTMLInputElement>('[data-share-link]');
+      expect(field?.readOnly).toBe(true);
+      expect(field?.value).toBe('https://exemple.test/#partage=1.z.AAAA');
+      expect(field?.getAttribute('aria-label')).toBe('Lien de partage');
     });
 
     it('« Importer » ouvre le choix de fichier (champ JSON masqué)', async () => {

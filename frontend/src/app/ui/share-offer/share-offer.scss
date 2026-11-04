@@ -1,0 +1,66 @@
+// Bandeau d'un lien partagé (#426) : au-dessus de la scène et des panneaux, centré sous la
+// ligne des boutons, couleurs de l'interface (`DASHBOARD_COLORS`) sur fond presque opaque
+// (texte lisible quelle que soit la scène derrière).
+@use '../dashboard-frame/dashboard-surface' as dashboard;
+
+/// Opacité du fond : presque opaque, le texte est long.
+$background-alpha: 94%;
+/// Opacité de la bordure (encre de l'interface).
+$border-alpha: 24%;
+
+:host {
+  position: fixed;
+  z-index: 2;
+  top: 64px;
+  left: 50%;
+  width: min(440px, calc(100vw - 32px));
+  transform: translateX(-50%);
+
+  @include dashboard.font;
+}
+
+.share-offer {
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--dashboard-ink) $border-alpha, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--dashboard-background) $background-alpha, transparent);
+  color: var(--dashboard-ink);
+}
+
+.share-offer__text {
+  margin: 0 0 10px;
+  font-size: 14px;
+  line-height: 1.4;
+
+  &--error {
+    color: var(--dashboard-error);
+  }
+}
+
+.share-offer__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.share-offer__button {
+  flex: 1 1 auto;
+  min-height: 36px;
+  padding: 4px 12px;
+  border: 1px solid color-mix(in srgb, var(--dashboard-ink) 30%, transparent);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--dashboard-ink) 10%, transparent);
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    background: color-mix(in srgb, var(--dashboard-ink) 18%, transparent);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--dashboard-ink);
+    outline-offset: 2px;
+  }
+}

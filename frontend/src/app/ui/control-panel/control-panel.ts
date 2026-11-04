@@ -1105,6 +1105,23 @@ export interface NewTankRequest {
               (change)="onFile($event)"
             />
           </div>
+          <!-- Partage (#426) : lien du bac affiché seul, copié et affiché ci-dessous. -->
+          <div class="control-panel__buttons">
+            <button type="button" class="control-panel__button" (click)="shareRequested.emit()">
+              Partager ce bac
+            </button>
+          </div>
+          @if (shareLink(); as link) {
+            <input
+              class="control-panel__share-link"
+              type="text"
+              readonly
+              aria-label="Lien de partage"
+              data-share-link
+              [value]="link"
+              (focus)="selectAll($event)"
+            />
+          }
           @if (saveMessage(); as message) {
             <p
               class="control-panel__message"
@@ -1171,6 +1188,8 @@ export class ControlPanel {
   readonly saveStatus = input<SaveStatus | null>(null);
   /** Dernier message de la sauvegarde : import refusé, import réussi… (fourni par l'hôte). */
   readonly saveMessage = input<SaveMessage | null>(null);
+  /** Dernier lien de partage (#426, fourni par l'hôte), `null` sinon. */
+  readonly shareLink = input<string | null>(null);
 
   /** Environnement choisi dans la liste. */
   readonly environmentChanged = output<EnvironmentId>();
@@ -1227,6 +1246,8 @@ export class ControlPanel {
   readonly treatmentRequested = output<TreatmentKind>();
   /** Bouton « Exporter » (#70). */
   readonly exportRequested = output<void>();
+  /** Bouton « Partager ce bac » (#426). */
+  readonly shareRequested = output<void>();
   /** Contenu du fichier choisi avec « Importer » (texte, pas encore validé ; #70). */
   readonly importRequested = output<string>();
   /** Fichier choisi refusé avant lecture (trop gros, illisible) : raison, en français. */
@@ -1557,6 +1578,11 @@ export class ControlPanel {
       return;
     }
     this.importRequested.emit(text);
+  }
+
+  /** Champ du lien de partage (#426) : tout sélectionné au focus, prêt à copier. */
+  protected selectAll(event: Event): void {
+    (event.target as HTMLInputElement).select();
   }
 
   toggle(): void {

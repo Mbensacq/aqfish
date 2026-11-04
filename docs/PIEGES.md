@@ -771,6 +771,21 @@ haut de sa section.
   Isoler la logique pure (calculs) pour la tester en unitaire, et couvrir le rendu par le
   bout en bout et les captures. (2026-10-16)
 
+- **Un monde avancé sous Node ne rend pas la même image que le même monde avancé par
+  Chromium** (cycle 143, #426) : la capture `?capture=1&seed=42&time=30` et celle d'un bac
+  partagé fabriqué dans l'e2e (Node : `createDefaultWorld(42)` puis `advanceToWithFeedings`
+  jusqu'à 30 s) différaient de 441 pixels (les corydoras), alors qu'à `time=0` elles étaient
+  identiques et que l'aller-retour sauvegarde → monde est exact sous Node. Les calculs
+  flottants de Node et du Chromium de Playwright divergent au fil de 1 800 pas. Pour comparer
+  deux captures à l'octet, produire l'état **dans la page** (ici `shareTank()` appelé par
+  `ng.getComponent`, `e2e/partage.spec.ts`) plutôt qu'en Node ; un état à t = 0 fabriqué en
+  Node reste sûr. (2026-11-04)
+- **`Blob.prototype.stream` absent sous `ng test` (jsdom)** (cycle 143) : `new Blob([…]).stream()`
+  lève « stream is not a function » dans les tests unitaires alors qu'il marche dans le
+  navigateur et sous Vitest seul. Construire le flux avec `new ReadableStream({ start })`
+  (`core/share-codec`) ; le type à passer à `pipeThrough(new CompressionStream(…))` est
+  `ReadableStream<BufferSource>`. (2026-11-04)
+
 ## Simulation
 
 - **Marcheur du fond enfoncé dans le sable** (cycle 142, #425) : la marche pose le **centre** du
