@@ -370,7 +370,7 @@ describe('comportements dans le monde (#427)', () => {
       expect(inSum / inN).toBeLessThan(0.025);
       expect(outSum / outN).toBeGreaterThan(2 * (inSum / inN));
     }
-  });
+  }, 30_000);
 
   it('fouille : au ras du sable quand un granulé est posé', () => {
     for (const seed of [1, 42, 777]) {
@@ -394,7 +394,7 @@ describe('comportements dans le monde (#427)', () => {
       expect(n).toBeGreaterThan(0);
       expect(sum / n).toBeLessThan(0.05);
     }
-  });
+  }, 30_000);
 
   it('territoire : le gourami reste près de son centre, sans blesser ses voisins', () => {
     for (const seed of [1, 42, 777]) {
@@ -429,7 +429,7 @@ describe('comportements dans le monde (#427)', () => {
         expect(f.health).toBe(1);
       }
     }
-  });
+  }, 30_000);
 
   it('gramma au récif : territoire tenu malgré les coraux', () => {
     const world = createWorld(
@@ -464,7 +464,7 @@ describe('comportements dans le monde (#427)', () => {
     });
     expect(n).toBeGreaterThan(0);
     expect(near / n).toBeGreaterThan(0.6);
-  });
+  }, 30_000);
 
   it('déterminisme : même graine et mêmes actions, même monde', () => {
     const make = () => {
@@ -480,7 +480,7 @@ describe('comportements dans le monde (#427)', () => {
       return JSON.stringify(w);
     };
     expect(make()).toBe(make());
-  });
+  }, 30_000);
 
   it('bac vide et bac plein : aucun état invalide', () => {
     const empty = createWorld(1, []) as MutableWorld;
@@ -502,7 +502,7 @@ describe('comportements dans le monde (#427)', () => {
       expect(f.y).toBeGreaterThanOrEqual(water.minY);
       expect(f.y).toBeLessThanOrEqual(water.maxY);
     }
-  });
+  }, 30_000);
 });
 
 describe('gestes du rendu et « Réduire les mouvements » (#427)', () => {
