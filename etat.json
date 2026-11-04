@@ -5313,6 +5313,12 @@
           "debut": "2026-11-04T14:07:53.380Z",
           "fin": "2026-11-04T17:41:31.403Z",
           "note": "bloquée plus de 3 h, close par Relance"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-04T17:42:03.443Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
