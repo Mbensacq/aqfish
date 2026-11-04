@@ -5205,6 +5205,12 @@
           "debut": "2026-11-04T02:50:11.523Z",
           "fin": "2026-11-04T04:05:05.924Z",
           "note": "PR #428 : eau douce lot 4 (xipho, crevette cerise, néritine), CI verte ; bac tropical par défaut identique à l'octet ; e2e ciblés 74/74 en local ; pied d'attribution réajouté par l'environnement à la PR"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-04T04:05:31.873Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
