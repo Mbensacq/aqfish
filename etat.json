@@ -5328,6 +5328,24 @@
         }
       },
       "metriques": {}
+    },
+    "146": {
+      "numero": 146,
+      "date": "2026-11-04",
+      "debut": "2026-11-04T18:22:22.190Z",
+      "type": "retro",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-04T18:22:22.190Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
