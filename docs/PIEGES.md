@@ -282,6 +282,9 @@ haut de sa section.
   Placée juste après « Décor », sans ligne d'aide, elle tient dans la première colonne
   (~60 px de marge, Inter comme DejaVu Sans). Mesurer le bas de chaque `fieldset` des deux
   colonnes (`getBoundingClientRect().bottom`) avant d'ajouter une section.
+  Cycle 143 (#426) : une simple ligne de bouton ajoutée dans « Sauvegarde » a suffi à
+  déborder **en CI seulement** (Inter local : 11 px de marge) ; le bouton est passé sur la
+  ligne du titre (`control-panel__legend--row`, comme « Changer l'eau »), sans ligne de plus.
 - **Panneau « Réglages » à 1280 × 720 : plus de place pour une section** (cycle 71, #207) :
   avant la section « Eau », le contenu laissait ~12 px de marge ; elle en prend ~107. Le
   panneau passe sur deux colonnes (`column-count: 2`, sections `break-inside: avoid`) au-delà
