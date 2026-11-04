@@ -107,7 +107,9 @@ export function canPlaceDecorAt(x: number, z: number, environment: Place): boole
  * Décor `decor` augmenté d'un élément `choice` posé en (x, z), à l'échelle 1 et tourné d'un
  * angle tiré de sa graine (`nextDecorSeed`). Le point est ensuite ramené là où l'emprise de
  * l'élément tient dans le bac (`clampDecorPosition`, issue #59) : un rocher posé contre une
- * vitre n'en dépasse pas. `null` (rien n'est ajouté) si le décor n'est pas éditable, s'il est
+ * vitre n'en dépasse pas. Le chevauchement avec un voisin n'est pas contrôlé ici (#194) :
+ * l'hôte pose l'élément par gravité et ne garde la chute que si elle est permise
+ * (`isDecorPoseAllowed`, #167). `null` (rien n'est ajouté) si le décor n'est pas éditable, s'il est
  * plein (`MAX_DECOR_ITEMS`), si le point est hors des bornes (`canPlaceDecorAt`) ou si
  * l'élément obtenu est invalide (`validateDecorItem`).
  */

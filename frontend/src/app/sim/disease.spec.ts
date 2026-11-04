@@ -394,6 +394,28 @@ describe('sauvegarde', () => {
     expect(result.world.entities.every((f) => !('ich' in f))).toBe(true);
   });
 
+  it('animal qui n’attrape pas la maladie : âge ignoré à la relecture (#368)', () => {
+    for (const environment of ['paludarium', 'recif'] as const) {
+      const world = cloneWorld(createDefaultWorld(42, environment));
+      const data = JSON.parse(serializeWorld(world)) as { fish: Record<string, unknown>[] };
+      for (const fish of data.fish) {
+        fish['ich'] = ICH_VISIBLE_AT;
+      }
+      const result = parseWorld(JSON.stringify(data));
+      if (!result.ok) {
+        throw new Error(result.error);
+      }
+      const spared = result.world.entities.filter((f) => !catchesIch(f.species, environment));
+      expect(spared.length, environment).toBeGreaterThan(0);
+      expect(spared.every((f) => !('ich' in f))).toBe(true);
+      for (const fish of result.world.entities) {
+        if (catchesIch(fish.species, environment)) {
+          expect(fish.ich).toBe(ICH_VISIBLE_AT);
+        }
+      }
+    }
+  });
+
   it.each([[-1], [ICH_AGGRAVATED_AT + 1], ['300'], [null]])('âge invalide %s : refusé', (ich) => {
     const data = JSON.parse(serializeWorld(sickWorld())) as { fish: Record<string, unknown>[] };
     data.fish[1]['ich'] = ich;

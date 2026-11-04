@@ -603,7 +603,7 @@ export function feed(world: World, x: number, z: number): World {
  * propriétaire unique du monde (`ui/aquarium-host`), comme `advanceInPlace`.
  */
 export function feedInPlace(world: MutableWorld, x: number, z: number): number {
-  const water = environmentWater(world);
+  const { water, terrain } = groundFor(world);
   if (world.shape !== undefined && Number.isFinite(x) && Number.isFinite(z)) {
     // Bassin non rectangulaire (issue #190) : rien sur la berge ; dans l'eau, le centre du
     // dépôt est écarté du bord pour que tous les granulés y tombent.
@@ -619,9 +619,10 @@ export function feedInPlace(world: MutableWorld, x: number, z: number): number {
       FEED_POINT.x,
       FEED_POINT.z,
       water,
+      terrain,
     );
   }
-  return dropFoodInPlace(world as MutableWorld & { food: FoodPellet[] }, x, z, water);
+  return dropFoodInPlace(world as MutableWorld & { food: FoodPellet[] }, x, z, water, terrain);
 }
 
 /**

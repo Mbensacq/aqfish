@@ -319,6 +319,18 @@ describe('coralBox : obstacle d’une colonie', () => {
 describe('coraux dans le monde', () => {
   const n: Vec3 = { x: 0, y: 0, z: 0 };
 
+  it('récif : `count` est un nombre visé, pas garanti (#159) ; graine 42 des captures : 6 colonies', () => {
+    // Décor, anémones et marges occupent le fond : des colonies sont omises après
+    // `CORAL_ATTEMPTS` essais. Le nombre obtenu ne dépasse jamais `count.max`.
+    const world = createDefaultWorld(42, 'recif');
+    expect(seededFeatures(42, 'recif', world.decor).corals.length).toBe(6);
+    for (const seed of SEEDS.slice(0, 40)) {
+      const colonies = seededFeatures(seed, 'recif', REEF.decor).corals;
+      expect(colonies.length, `graine ${seed}`).toBeGreaterThanOrEqual(3);
+      expect(colonies.length, `graine ${seed}`).toBeLessThanOrEqual(SETTINGS.count.max);
+    }
+  });
+
   it('récif : boîtes des coraux après le décor ; autres environnements sans corail', () => {
     const world = createDefaultWorld(42, 'recif');
     // Les coraux du monde évitent les anémones (#150, ADR 0041), dont les boîtes les suivent.

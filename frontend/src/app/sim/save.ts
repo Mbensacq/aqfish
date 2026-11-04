@@ -4,7 +4,7 @@ import { SIM_DT } from './constants';
 import { acceptsSavedSpecies, isCareMode, type CareMode } from './care-mode';
 import { createDayClock, DEFAULT_DAY_CLOCK, HOURS_PER_DAY, type DayClock } from './daylight';
 import { parseDecorItems, type DecorItem } from './decor';
-import { ICH_AGGRAVATED_AT, isIchAge } from './disease';
+import { catchesIch, ICH_AGGRAVATED_AT, isIchAge } from './disease';
 import {
   ENVIRONMENT_IDS,
   environmentWater,
@@ -621,9 +621,10 @@ export function parseSettings(value: unknown, problems: string[]): SaveSettings 
   const room =
     roomValue === undefined ? { ok: true as const, room: DEFAULT_ROOM } : readRoom(roomValue);
   if (!room.ok) {
-    found.push(room.error);
+    problems.push(...found, room.error);
+    return null;
   }
-  if (found.length > 0 || !room.ok) {
+  if (found.length > 0) {
     problems.push(...found);
     return null;
   }
@@ -762,14 +763,17 @@ function parseFish(
     }
   }
   // Points blancs (issue #360) : facultatif, absent pour un animal sain et dans toute
-  // sauvegarde antérieure ; présent, âge d'infection dans [0, ICH_AGGRAVATED_AT].
+  // sauvegarde antérieure ; présent, âge d'infection dans [0, ICH_AGGRAVATED_AT]. Ignoré
+  // (sauvegarde modifiée à la main) pour un animal qui ne l'attrape pas ici (#368).
   const ich = own(item, 'ich');
   if (ich !== undefined) {
     if (!isIchAge(ich)) {
       report(`ich hors de [0, ${ICH_AGGRAVATED_AT}]`);
       return null;
     }
-    fish['ich'] = ich;
+    if (catchesIch(species, envId)) {
+      fish['ich'] = ich;
+    }
   }
   const f = fish as unknown as Fish;
   const def = SPECIES[species];

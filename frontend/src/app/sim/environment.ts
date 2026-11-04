@@ -354,6 +354,8 @@ export const REEF: Environment = {
     ]`,
     REEF_DIMENSIONS,
   ),
+  // Nombre de colonies visé : le fond occupé (décor, anémones) en fait omettre, 4 à 6 en
+  // général (6 pour la graine 42 des captures, #159, test dans `corals.spec.ts`).
   corals: assertCoralSettings({ count: { min: 7, max: 9 }, scale: { min: 1, max: 1.5 } }),
   anemones: assertAnemoneSettings({ count: { min: 2, max: 2 }, scale: { min: 1.2, max: 1.4 } }),
   lilyPads: null,

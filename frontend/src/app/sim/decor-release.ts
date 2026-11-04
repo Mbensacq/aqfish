@@ -159,7 +159,8 @@ function nextUnsupported(decor: readonly DecorItem[], kept: ReadonlySet<number>)
 /**
  * Fait retomber chaque élément non soutenu de `decor` (#182), le plus bas d'abord, puis
  * recommence : un élément porté par un élément qui tombe retombe à son tour (cascade). Au plus
- * deux chutes par élément en tout (borne). `fall` : chute par le moteur depuis la pose
+ * 2 × N chutes en tout pour N éléments (borne du total, #196 : un même élément peut en compter
+ * plus de deux). `fall` : chute par le moteur depuis la pose
  * (`decorFallScene`) ; `null` (moteur absent), l'élément est posé sur le sable. Les éléments
  * soutenus, ou qu'aucune pose permise ne fait bouger, sont rendus tels quels (mêmes objets).
  * Même décor, même `fall` : même résultat.

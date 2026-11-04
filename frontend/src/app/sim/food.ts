@@ -10,6 +10,7 @@ import {
 } from './decor';
 import { woodModel } from './wood';
 import { SAND_THICKNESS, waterVolume, type Box3 } from './tank';
+import { terrainHeightAt, type TerrainSettings } from './terrain';
 
 /**
  * Nourriture déposée au clic (issue #67, ADR 0022) : des granulés qui flottent un instant à
@@ -147,11 +148,18 @@ function voxelTopAt(
 }
 
 /**
- * Altitude où se pose un granulé tombé à la verticale de (x, z) : le plus haut du sable et
- * des rochers et des bois flottés du décor, plus `FOOD_RADIUS`. Les plantes sont traversées.
+ * Altitude où se pose un granulé tombé à la verticale de (x, z) : le plus haut du sol (sable,
+ * ou berge `terrain` de l'eau `water` au paludarium, #140) et des rochers et des bois flottés
+ * du décor, plus `FOOD_RADIUS`. Les plantes sont traversées.
  */
-export function restHeightAt(decor: readonly DecorItem[], x: number, z: number): number {
-  let ground = SAND_THICKNESS;
+export function restHeightAt(
+  decor: readonly DecorItem[],
+  x: number,
+  z: number,
+  terrain: TerrainSettings | null = null,
+  water: Box3 = DEFAULT_WATER,
+): number {
+  let ground = terrain === null ? SAND_THICKNESS : terrainHeightAt(x, z, terrain, water);
   for (const item of decor) {
     if (item.kind === 'plant') {
       continue;
@@ -181,7 +189,8 @@ export interface FoodState {
  * Dépose jusqu'à `FOOD_PER_DROP` granulés autour de (x, z), à la surface, **en modifiant**
  * `state` (`food` et `nextFoodId`), et renvoie le nombre de granulés ajoutés. Un point hors
  * du bac est ignoré (0) ; bac plein : seuls les granulés qui tiennent sous `MAX_FOOD` sont
- * ajoutés. Les granulés restent dans l'eau (dispersion ramenée à l'intérieur des vitres).
+ * ajoutés. Les granulés restent dans l'eau (dispersion ramenée à l'intérieur des vitres) et se
+ * posent sur le sol `terrain` s'il y en a un (`restHeightAt`).
  * @throws RangeError si `x` ou `z` n'est pas un réel fini.
  */
 export function dropFoodInPlace(
@@ -189,6 +198,7 @@ export function dropFoodInPlace(
   x: number,
   z: number,
   water: Box3 = DEFAULT_WATER,
+  terrain: TerrainSettings | null = null,
 ): number {
   if (!Number.isFinite(x) || !Number.isFinite(z)) {
     throw new RangeError(`point de dépôt invalide (reçu : ${x}, ${z})`);
@@ -228,7 +238,7 @@ export function dropFoodInPlace(
       age: 0,
       floatY,
       floatTime,
-      restY: Math.min(floatY, restHeightAt(state.decor, px, pz)),
+      restY: Math.min(floatY, restHeightAt(state.decor, px, pz, terrain, water)),
     });
   }
   return count;
