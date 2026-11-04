@@ -5339,10 +5339,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-04T18:22:22.190Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-04T18:28:00.326Z",
+          "note": "Rétro #445 : tri de 62 dettes en 6 lots (#438 à #443), Dev prend #438 (M) ; fermetures en masse refusées par l'environnement"
         }
       },
       "metriques": {}
