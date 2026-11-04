@@ -194,7 +194,7 @@ test.describe('Environnement', () => {
     // Poissons-clowns (#150) et chirurgiens bleus (#151), espèces du récif.
     await expect(hostEl(page)).toHaveAttribute(
       'data-aqfish-population',
-      'clown:3,chirurgien:4,chromis:0,gobie:0,gramma:0',
+      'clown:3,chirurgien:4,chromis:0,gobie:0,gramma:0,crevette:0,blennie:0',
     );
     await expect(page.locator('[data-population-empty]')).toHaveCount(0);
     await toggle(page).click();
@@ -248,7 +248,7 @@ test.describe('Environnement', () => {
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'recif');
     await expect(hostEl(page)).toHaveAttribute(
       'data-aqfish-population',
-      'clown:3,chirurgien:4,chromis:0,gobie:0,gramma:0',
+      'clown:3,chirurgien:4,chromis:0,gobie:0,gramma:0,crevette:0,blennie:0',
     );
     // Trois-quarts : devant (+Z), à droite (+X), au-dessus du bac.
     const [x, y, z] = (await hostEl(page).getAttribute('data-aqfish-camera'))!

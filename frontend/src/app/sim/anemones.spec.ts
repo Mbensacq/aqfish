@@ -202,7 +202,15 @@ describe('poisson-clown (#150)', () => {
     expect(CLOWN.schooling).not.toBeNull();
     expect(CLOWN.variants).toBeUndefined();
     // Lot 2 du récif (#403, ADR 0097) : trois espèces proposées après le clown et le chirurgien.
-    expect(REEF.species).toEqual(['clown', 'chirurgien', 'chromis', 'gobie', 'gramma']);
+    expect(REEF.species).toEqual([
+      'clown',
+      'chirurgien',
+      'chromis',
+      'gobie',
+      'gramma',
+      'crevette',
+      'blennie',
+    ]);
     expect(populationCounts(createDefaultWorld(42, 'recif')).clown).toBe(CLOWN.defaultPopulation);
   });
 

@@ -517,17 +517,18 @@ export const CHROMIS_FISH: FishTemplate = {
 };
 
 /**
- * Gobie à crevette jaune (#403) : corps long et bas, cylindrique, jaune (`s`, `b`), dos or
- * (`k`) avec deux dorsales, quelques points bleus (`a`) sur le flanc et la tête, grosse tête à
- * l'œil haut (`e`), caudale arrondie.
+ * Gobie à crevette jaune (#403) : corps long et bas, cylindrique, jaune (`s`), dos or (`k`)
+ * avec deux dorsales, quelques points bleus (`a`) sur le flanc et la tête, grosse tête à l'œil
+ * haut (`e`), caudale arrondie. #405 : trois selles brunes (`f`) sur le dos et le flanc, ventre
+ * clair (`b`), pour le distinguer du gramma et des coraux jaunes.
  */
 export const GOBIE_FISH: FishTemplate = {
   body: [
     // queue → tête
     '...ff..fff.....',
-    '.kkkkkkkkkkkkk.',
-    'sssassssassasse',
-    'sssssasssssasss',
+    '.kkffkkkffkkfk.',
+    'sssfasssfsasfse',
+    'ssssfsssssfasss',
     '.bbbbbbbbbbbbb.',
   ],
   tail: ['ff', 'ff', 'ff', 'ff', 'f.'],
@@ -550,6 +551,47 @@ export const GRAMMA_FISH: FishTemplate = {
     '.fff........',
   ],
   tail: ['ff.', 'fff', '.ff', 'fff', 'ff.'],
+  bodyDepth: 2,
+  tailDepth: 1,
+};
+
+/**
+ * Crevette nettoyeuse (#422) : corps arqué rouge (`s`), bande dorsale blanche (`k`), ventre
+ * jaune (`b`), pattes rouges (`f`) sous le corps, longues antennes blanches (`a`) vers l'avant
+ * et le haut, éventail de queue rouge.
+ */
+export const CREVETTE_FISH: FishTemplate = {
+  body: [
+    // queue → tête (antennes comprises)
+    '...........aaaaa',
+    '..kkkkkkkkkka...',
+    '.sssssssssssseaa',
+    'sssssssssssss...',
+    '.bbbbbbbbbbbb...',
+    '..f..f..f..f....',
+  ],
+  tail: ['f.', 'ff', 'ff', 'f.'],
+  bodyDepth: 4,
+  bodyColumnDepths: [2, 2, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 2, 2, 2, 2],
+  tailDepth: 1,
+};
+
+/**
+ * Blennie bicolore (#422) : corps long et bas, tête ronde et haute ; avant brun-noir (`k`, `s`),
+ * arrière orange (`a`, `f`), longue dorsale continue, ventre gris (`b`), œil clair (`e`),
+ * caudale orange arrondie.
+ */
+export const BLENNIE_FISH: FishTemplate = {
+  body: [
+    // queue → tête
+    '.fffffkkkkk...',
+    'aaaaaakkkkkkk.',
+    'aaaaasssssssse',
+    'aaaaasssssssss',
+    '.aaaabbbbbbbb.',
+    '..fff.........',
+  ],
+  tail: ['ff', 'ff', 'ff', 'ff'],
   bodyDepth: 2,
   tailDepth: 1,
 };
@@ -580,6 +622,8 @@ export const SILHOUETTES: Readonly<Record<SilhouetteId, FishTemplate>> = {
   chromis: CHROMIS_FISH,
   gobie: GOBIE_FISH,
   gramma: GRAMMA_FISH,
+  crevette: CREVETTE_FISH,
+  blennie: BLENNIE_FISH,
 };
 
 /** Attribut de sommet du rang de taché (`voxelSpotRank`, points blancs, issue #366). */

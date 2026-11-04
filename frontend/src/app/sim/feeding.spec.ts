@@ -483,6 +483,8 @@ describe('sim/feeding : banc et espèces', () => {
       chromis: [],
       gobie: [],
       gramma: [],
+      crevette: [],
+      blennie: [],
     };
     for (const species of ['neon', 'guppy', 'corydora'] as const) {
       for (const seed of [42, 7, 123]) {

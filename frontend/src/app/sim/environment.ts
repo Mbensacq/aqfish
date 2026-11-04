@@ -8,11 +8,13 @@ import { assertLilyPadSettings, type LilyPadSettings } from './lily-pads';
 import {
   ANCISTRUS,
   AXOLOTL,
+  BLENNIE,
   BRAISE,
   CHIRURGIEN,
   CHROMIS,
   CLOWN,
   CORYDORA,
+  CREVETTE,
   DANIO,
   GOBIE,
   GOURAMI,
@@ -296,8 +298,11 @@ export const PALUDARIUM: Environment = {
   population: defaultPopulation([GRENOUILLE, TRITON]),
 };
 
-/** Espèces du lot 2 du récif (#403, ADR 0097), proposées sans être peuplées d'office. */
-const REEF_ADDABLE = [CHROMIS, GOBIE, GRAMMA] as const;
+/**
+ * Espèces des lots 2 (#403, ADR 0097) et 3 (#422, ADR 0103) du récif, proposées sans être
+ * peuplées d'office.
+ */
+const REEF_ADDABLE = [CHROMIS, GOBIE, GRAMMA, CREVETTE, BLENNIE] as const;
 
 /** Récif : 1,5 m × 60 cm, 65 cm de haut, plus long, plus large et plus haut que le bac. */
 export const REEF_DIMENSIONS: TankDimensions = { width: 1.5, height: 0.65, depth: 0.6 };
@@ -349,8 +354,9 @@ export const REEF: Environment = {
   bankDecor: null,
   rain: false,
   floatingLeaves: false,
-  // Lot 2 (#403, ADR 0097) : chromis vert, gobie et gramma royal proposés au récif sans y être
-  // peuplés d'office (récif par défaut inchangé).
+  // Lots 2 (#403, ADR 0097) et 3 (#422, ADR 0103) : chromis vert, gobie, gramma royal,
+  // crevette nettoyeuse et blennie bicolore proposés au récif sans y être peuplés d'office
+  // (récif par défaut inchangé).
   species: [CLOWN, CHIRURGIEN, ...REEF_ADDABLE].map((def) => def.id),
   population: defaultPopulation([CLOWN, CHIRURGIEN]),
 };

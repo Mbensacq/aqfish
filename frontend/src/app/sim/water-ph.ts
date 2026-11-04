@@ -106,6 +106,9 @@ export const SPECIES_PH: Readonly<Record<SpeciesId, SpeciesPh>> = {
   chromis: { tolerated: { min: 7.8, max: 8.6 }, ideal: { min: 8.1, max: 8.4 } },
   gobie: { tolerated: { min: 7.8, max: 8.6 }, ideal: { min: 8.1, max: 8.4 } },
   gramma: { tolerated: { min: 7.8, max: 8.6 }, ideal: { min: 8.1, max: 8.4 } },
+  // approximations de jeu : eau de mer, mêmes plages que le chirurgien (ADR 0103).
+  crevette: { tolerated: { min: 7.8, max: 8.6 }, ideal: { min: 8.1, max: 8.4 } },
+  blennie: { tolerated: { min: 7.8, max: 8.6 }, ideal: { min: 8.1, max: 8.4 } },
 };
 
 /** pH de l'eau neuve de l'environnement `environment`. */

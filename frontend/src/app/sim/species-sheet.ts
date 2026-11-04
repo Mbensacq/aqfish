@@ -118,6 +118,9 @@ const FB = 'https://www.fishbase.se/summary/';
 /** Articles de Wikipédia en anglais consultés le 2026-11-03 (#403, sources secondaires). */
 const WP = 'https://en.wikipedia.org/wiki/';
 
+/** Fiche Reeflex de la crevette nettoyeuse, consultée le 2026-11-04 (#422, secondaire). */
+const REEFLEX = 'https://en.reeflex.net/tiere/1180_Lysmata_amboinensis.htm';
+
 function note(text: string, status: FieldStatus): SheetNote {
   return Object.freeze({ text, status });
 }
@@ -455,6 +458,42 @@ const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
       note(
         'Territorial dans les roches ; agressif envers ses voisins en petit bac',
         source(`${WP}Royal_gramma (secondaire)`),
+      ),
+    ],
+  },
+  // Récif, lot 3 (#422, ADR 0103) : Reeflex (secondaire) pour la crevette, FishBase pour la
+  // blennie.
+  crevette: {
+    adultSize: sourced(6, `${REEFLEX} (secondaire, environ 6 cm)`),
+    temperaturePreferred: approx(range(25, 27)),
+    // 21,9–28,8 °C (Reeflex), arrondis au degré vers l'intérieur.
+    temperatureTolerated: sourced(range(22, 28), `${REEFLEX} (secondaire, 21,9–28,8 °C)`),
+    diet: sourced('omnivore', `${REEFLEX} (secondaire)`),
+    minGroup: approx(1),
+    minLiters: sourced(112, `${REEFLEX} (secondaire, environ 112 L)`),
+    notes: [
+      note(
+        'Nettoie les poissons de leurs parasites ; pas plus de deux par bac, elles s’entretuent à la mue',
+        source(`${REEFLEX} (secondaire)`),
+      ),
+      note(
+        'Sensible aux variations de salinité : acclimatation lente ; jamais de sel ni de médicament',
+        source(`${REEFLEX} (secondaire)`),
+      ),
+    ],
+  },
+  blennie: {
+    adultSize: sourced(11, `${FB}6033 (Ecsenius bicolor, longueur totale)`),
+    temperaturePreferred: approx(range(25, 27)),
+    // FishBase ne donne pas de plage de température : celle du récif de la simulation.
+    temperatureTolerated: approx(range(24, 28)),
+    diet: sourced('herbivore', `${FB}6033 (niveau trophique 2,0)`),
+    minGroup: approx(1),
+    minLiters: approx(100),
+    notes: [
+      note(
+        'Solitaire ; vit dans des tubes abandonnés, sur des roches couvertes d’algues',
+        source(`${FB}6033`),
       ),
     ],
   },

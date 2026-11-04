@@ -225,6 +225,22 @@ const FEEDING: Readonly<Record<SpeciesId, FeedingGuide>> = {
     frequency: FISH_FREQUENCY,
     quantity: PRUDENT_QUANTITY,
   },
+  crevette: {
+    foods: sourced(
+      'mysis, artémias, copépodes, krill, œufs de poisson, flocons et granulés ; en nature, parasites, peau morte et détritus',
+      'https://en.reeflex.net/tiere/1180_Lysmata_amboinensis.htm (secondaire)',
+    ),
+    frequency: FISH_FREQUENCY,
+    quantity: PRUDENT_QUANTITY,
+  },
+  blennie: {
+    foods: sourced(
+      'surtout végétal : algues et détritus (niveau trophique 2,0)',
+      'https://www.fishbase.se/summary/6033',
+    ),
+    frequency: FISH_FREQUENCY,
+    quantity: PRUDENT_QUANTITY,
+  },
 };
 
 /** Ligne affichée d'une section du wiki : intitulé, valeur, texte du statut. */

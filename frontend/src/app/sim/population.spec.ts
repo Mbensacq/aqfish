@@ -35,7 +35,9 @@ import {
   BRAISE,
   MOLLY,
   MIEL,
+  BLENNIE,
   CHROMIS,
+  CREVETTE,
   GOBIE,
   GRAMMA,
 } from './species';
@@ -90,6 +92,8 @@ describe('bornes de population', () => {
       'chromis',
       'gobie',
       'gramma',
+      'crevette',
+      'blennie',
     ]);
   });
 
@@ -135,6 +139,8 @@ describe('bornes de population', () => {
       chromis: 0,
       gobie: 0,
       gramma: 0,
+      crevette: 0,
+      blennie: 0,
     });
     expect(populationCounts(createWorld(42))).toEqual({
       neon: 0,
@@ -160,6 +166,8 @@ describe('bornes de population', () => {
       chromis: 0,
       gobie: 0,
       gramma: 0,
+      crevette: 0,
+      blennie: 0,
     });
     expect(populationCounts(createWorld(42))).toEqual(NO_FISH);
   });
@@ -189,6 +197,8 @@ describe('bornes de population', () => {
       chromis: CHROMIS.maxPopulation,
       gobie: GOBIE.maxPopulation,
       gramma: GRAMMA.maxPopulation,
+      crevette: CREVETTE.maxPopulation,
+      blennie: BLENNIE.maxPopulation,
     });
   });
 
@@ -284,6 +294,8 @@ describe('setPopulation', () => {
       chromis: 0,
       gobie: 0,
       gramma: 0,
+      crevette: 0,
+      blennie: 0,
     });
   });
 
@@ -329,6 +341,8 @@ describe('setPopulation', () => {
       chromis: 0,
       gobie: 0,
       gramma: 0,
+      crevette: 0,
+      blennie: 0,
     });
     // Bac plein : plus aucun ajout possible, quelle que soit l'espèce.
     for (const id of SPECIES_IDS) {

@@ -22,7 +22,7 @@ test.describe('Récif : parcours utilisateur', () => {
       await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'recif');
       await expect(hostEl(page)).toHaveAttribute(
         'data-aqfish-population',
-        'clown:3,chirurgien:4,chromis:0,gobie:0,gramma:0',
+        'clown:3,chirurgien:4,chromis:0,gobie:0,gramma:0,crevette:0,blennie:0',
       );
       expect(errors).toEqual([]);
     });
@@ -35,7 +35,7 @@ test.describe('Récif : parcours utilisateur', () => {
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'recif');
     await expect(hostEl(page)).toHaveAttribute(
       'data-aqfish-population',
-      'clown:3,chirurgien:4,chromis:0,gobie:0,gramma:0',
+      'clown:3,chirurgien:4,chromis:0,gobie:0,gramma:0,crevette:0,blennie:0',
     );
     expect(errors).toEqual([]);
   });

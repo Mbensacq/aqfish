@@ -48,6 +48,10 @@ export const TAP_REACTIONS: Readonly<Record<SpeciesId, TapReaction | null>> = {
   // anfractuosités (FishBase) ; les deux fuient (approximation de jeu).
   gobie: 'fuite',
   gramma: 'fuite',
+  // Crevette nettoyeuse : marcheuse, sans réaction au tapotement (comme l'axolotl) ;
+  // blennie : rentre dans son trou (approximation de jeu).
+  crevette: null,
+  blennie: 'fuite',
 };
 
 /** Portée du tapotement, en mètres simulés, autour du point touché sur la vitre. */

@@ -140,6 +140,19 @@ export const LEGAL_STATUS: Readonly<Record<SpeciesId, LegalStatus>> = {
     ESPECES,
     'aucune ligne de l’annexe 2 ni de la CITES vérifiée ; élevé en captivité, préférer ces sujets',
   ),
+  // Récif, lot 3 (#422, ADR 0103) : ni l'annexe 2 ni les annexes CITES lues.
+  crevette: legal(
+    'a-verifier',
+    'non-verifie',
+    ESPECES,
+    'aucune ligne de l’annexe 2 ni de la CITES vérifiée ; élevage possible mais rare dans le commerce, origine des sujets non vérifiée',
+  ),
+  blennie: legal(
+    'a-verifier',
+    'non-verifie',
+    ESPECES,
+    'aucune ligne de l’annexe 2 ni de la CITES vérifiée (FishBase : CITES « non évaluée ») ; origine des sujets non vérifiée',
+  ),
 };
 
 /** Statut légal de l'espèce `id` (figé, partagé). */

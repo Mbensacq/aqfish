@@ -55,6 +55,7 @@ const FRESHWATER_LOT2 =
   'population=neon:0,guppy:0,corydora:0,platy:4,danio:8,ancistrus:2,otocinclus:6';
 const FRESHWATER_LOT3 = 'population=neon:0,guppy:0,corydora:0,braise:12,molly:3,miel:2';
 const REEF_LOT2 = 'population=clown:3,chirurgien:4,chromis:7,gobie:2,gramma:2';
+const REEF_LOT3 = 'population=clown:3,chirurgien:4,chromis:7,gobie:2,gramma:2,crevette:2,blennie:1';
 const OUTPUT_DIR = resolve(
   process.env['CAPTURE_DIR'] ?? join(__dirname, '..', '..', 'docs', 'captures', 'latest'),
 );
@@ -338,6 +339,10 @@ test.describe('Captures', () => {
     // poissons-clowns et aux chirurgiens.
     { name: 'recif-three-quarter-lot2', query: `environnement=recif&${REEF_LOT2}` },
     { name: 'recif-front-lot2', query: `environnement=recif&${REEF_LOT2}&camera=front` },
+    // Récif, lot 3 (#422) : crevettes nettoyeuses et blennie bicolore en plus du lot 2, gobie et
+    // gramma plus lisibles (#405).
+    { name: 'recif-three-quarter-lot3', query: `environnement=recif&${REEF_LOT3}` },
+    { name: 'recif-front-lot3', query: `environnement=recif&${REEF_LOT3}&camera=front` },
   ] as const;
   for (const { name, query } of REEF_CAPTURES) {
     test(`angle ${name}`, async ({ page }) => {
