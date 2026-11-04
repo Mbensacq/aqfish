@@ -5351,10 +5351,10 @@
           "note": "PR #447 : dette lot 1/6 (8 issues sur 10), reste reporté dans #446, CI verte"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-04T19:23:33.935Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-04T19:59:52.200Z",
+          "note": "Verdict OK, 0 bug, captures publiées (c146), e2e ciblés verts, e2e complet non rejoué en local"
         }
       },
       "metriques": {}
