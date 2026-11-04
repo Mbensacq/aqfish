@@ -5175,6 +5175,12 @@
           "debut": "2026-11-04T01:04:53.155Z",
           "fin": "2026-11-04T01:41:22.487Z",
           "note": "Verdict RÉSERVES, 0 bug, captures publiées (127) ; espèces lot 3 trop petites pour être reconnues sans zoom (front, three-quarter) ; e2e ciblés 15/15, e2e complet en CI"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-04T01:41:55.370Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
