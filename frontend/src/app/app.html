@@ -104,9 +104,17 @@
       (waterChangeRequested)="aquarium.changeWater()"
       (treatmentRequested)="aquarium.treat($event)"
       (exportRequested)="aquarium.exportSave()"
+      [shareLink]="aquarium.shareLink()"
+      (shareRequested)="aquarium.shareTank()"
       (importRequested)="aquarium.importSave($event)"
       (importRejected)="aquarium.rejectImport($event)"
       (immersiveRequested)="onImmersiveRequested()"
+    />
+    <!-- Lien partagé (#426) : proposition d'import (rien n'est remplacé sans confirmation) ou refus. -->
+    <app-share-offer
+      [offer]="aquarium.shareOffer()"
+      (accepted)="aquarium.acceptShare()"
+      (dismissed)="aquarium.dismissShare()"
     />
     <!-- Mode immersif (#345) : plein cadre au-dessus de tout, l'écran devient la vitre. -->
     @if (immersive()) {

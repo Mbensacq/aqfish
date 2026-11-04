@@ -282,6 +282,9 @@ haut de sa section.
   Placée juste après « Décor », sans ligne d'aide, elle tient dans la première colonne
   (~60 px de marge, Inter comme DejaVu Sans). Mesurer le bas de chaque `fieldset` des deux
   colonnes (`getBoundingClientRect().bottom`) avant d'ajouter une section.
+  Cycle 143 (#426) : une simple ligne de bouton ajoutée dans « Sauvegarde » a suffi à
+  déborder **en CI seulement** (Inter local : 11 px de marge) ; le bouton est passé sur la
+  ligne du titre (`control-panel__legend--row`, comme « Changer l'eau »), sans ligne de plus.
 - **Panneau « Réglages » à 1280 × 720 : plus de place pour une section** (cycle 71, #207) :
   avant la section « Eau », le contenu laissait ~12 px de marge ; elle en prend ~107. Le
   panneau passe sur deux colonnes (`column-count: 2`, sections `break-inside: avoid`) au-delà
@@ -770,6 +773,21 @@ haut de sa section.
 - **jsdom n'a pas WebGL** : tout code qui crée un `WebGLRenderer` échoue dans `ng test`.
   Isoler la logique pure (calculs) pour la tester en unitaire, et couvrir le rendu par le
   bout en bout et les captures. (2026-10-16)
+
+- **Un monde avancé sous Node ne rend pas la même image que le même monde avancé par
+  Chromium** (cycle 143, #426) : la capture `?capture=1&seed=42&time=30` et celle d'un bac
+  partagé fabriqué dans l'e2e (Node : `createDefaultWorld(42)` puis `advanceToWithFeedings`
+  jusqu'à 30 s) différaient de 441 pixels (les corydoras), alors qu'à `time=0` elles étaient
+  identiques et que l'aller-retour sauvegarde → monde est exact sous Node. Les calculs
+  flottants de Node et du Chromium de Playwright divergent au fil de 1 800 pas. Pour comparer
+  deux captures à l'octet, produire l'état **dans la page** (ici `shareTank()` appelé par
+  `ng.getComponent`, `e2e/partage.spec.ts`) plutôt qu'en Node ; un état à t = 0 fabriqué en
+  Node reste sûr. (2026-11-04)
+- **`Blob.prototype.stream` absent sous `ng test` (jsdom)** (cycle 143) : `new Blob([…]).stream()`
+  lève « stream is not a function » dans les tests unitaires alors qu'il marche dans le
+  navigateur et sous Vitest seul. Construire le flux avec `new ReadableStream({ start })`
+  (`core/share-codec`) ; le type à passer à `pipeThrough(new CompressionStream(…))` est
+  `ReadableStream<BufferSource>`. (2026-11-04)
 
 ## Simulation
 

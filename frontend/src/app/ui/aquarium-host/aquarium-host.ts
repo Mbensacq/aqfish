@@ -40,6 +40,12 @@ import {
 } from '../../core/render-filter/render-filter';
 import { markCaptureReady, resetCaptureReady } from '../../core/capture/capture-ready';
 import {
+  createShare,
+  hasShareFragment,
+  readShare,
+  type ParseShareResult,
+} from '../../sim/share-link';
+import {
   chooseWallpaperConfig,
   clampWallpaperFps,
   DEFAULT_WALLPAPER_FPS,
@@ -464,6 +470,46 @@ interface RestoredSave {
 /** Nom proposé pour le fichier exporté (#70). */
 export const SAVE_FILE_NAME = 'aqfish-sauvegarde.json';
 
+/** Aquarium reçu par un lien partagé (#426) : proposition d'import, ou refus lisible. */
+export type ShareOffer =
+  | {
+      readonly kind: 'offre';
+      /** Nom de l'environnement du bac reçu. */
+      readonly environment: string;
+      /** Nombre d'animaux du bac reçu. */
+      readonly animals: number;
+      /** Nombre de bacs de la pièce actuelle, remplacée si l'import est accepté. */
+      readonly tanks: number;
+    }
+  | { readonly kind: 'erreur'; readonly text: string };
+
+/** Délai au-delà duquel la copie dans le presse-papiers est tenue pour refusée (#426). */
+const CLIPBOARD_TIMEOUT_MS = 1500;
+
+/** Copie `text` dans le presse-papiers ; `false` si refusé, absent ou sans réponse. Ne lève jamais. */
+async function copyText(win: Window, text: string): Promise<boolean> {
+  const clipboard = win.navigator.clipboard as Clipboard | undefined;
+  if (!clipboard || typeof clipboard.writeText !== 'function') {
+    return false;
+  }
+  let timer = 0;
+  const timeout = new Promise<boolean>((resolve) => {
+    timer = win.setTimeout(() => resolve(false), CLIPBOARD_TIMEOUT_MS);
+  });
+  try {
+    return await Promise.race([clipboard.writeText(text).then(() => true), timeout]);
+  } catch {
+    return false;
+  } finally {
+    win.clearTimeout(timer);
+  }
+}
+
+/** Adresse de la page sans requête ni fragment : base d'un lien partagé (#426). */
+export function shareBase(href: string): string {
+  return href.split('#')[0]!.split('?')[0]!;
+}
+
 /**
  * Stockage de la sauvegarde automatique (#70) : `localStorage` s'il est accessible, `null`
  * sinon. Remplaçable dans les tests par un stockage en mémoire.
@@ -831,6 +877,12 @@ export class AquariumHost {
 
   /** Dernier message de la section « Sauvegarde » (import refusé, import réussi…). */
   readonly saveMessage = signal<SaveMessage | null>(null);
+  /** Dernier lien de partage produit par « Partager » (#426), `null` sinon. */
+  readonly shareLink = signal<string | null>(null);
+  /** Aquarium reçu par un lien (#426) : proposition d'import ou refus lisible, `null` sinon. */
+  readonly shareOffer = signal<ShareOffer | null>(null);
+  /** Aquarium relu du lien, en attente de confirmation (jamais appliqué sans elle). */
+  private pendingShare: Extract<ParseShareResult, { ok: true }> | null = null;
 
   /** Mode édition du décor (#167) : les clics sur le bac posent ou choisissent un élément. */
   readonly decorEditing = signal(false);
@@ -2065,15 +2117,120 @@ export class AquariumHost {
       this.saveMessage.set({ kind: 'erreur', text: `Import refusé : ${result.error}.` });
       return false;
     }
+    this.applyImported(result, 'Aquarium importé.');
+    return true;
+  }
+
+  /** Remplace la pièce par une sauvegarde relue et validée (import, lien partagé), puis enregistre. */
+  private applyImported(result: Extract<ParseShareResult, { ok: true }>, message: string): void {
     this.roomState = result.room;
     this.selectedTankId = result.selectedTankId;
     this.loadWorld(result.world as MutableWorld, result.settings, result.others);
     this.createView(environmentById(result.world.environment).defaultCamera);
     this.exposeCamera();
     this.scheduleFrame();
-    this.saveMessage.set({ kind: 'info', text: 'Aquarium importé.' });
+    this.saveMessage.set({ kind: 'info', text: message });
     this.saveNow();
-    return true;
+  }
+
+  /**
+   * Bouton « Partager » (#426, ADR 0105) : lien dont le fragment contient le bac affiché
+   * (seul), compressé ; copié dans le presse-papiers si le navigateur l'accepte, et exposé
+   * dans `shareLink`. Au-delà de `MAX_SHARE_LINK_LENGTH`, aucun lien : le message propose le
+   * fichier (« Exporter »). Sans effet en mode capture ou avant le démarrage ; ne lève jamais.
+   */
+  async shareTank(): Promise<void> {
+    const world = this.currentWorld;
+    const win = this.document.defaultView;
+    if (!world || !win || this.capture) {
+      return;
+    }
+    let outcome: Awaited<ReturnType<typeof createShare>>;
+    try {
+      // Texte écrit avant le premier `await` : l'état partagé est celui du clic.
+      outcome = await createShare(shareBase(win.location.href), world, this.settings());
+    } catch {
+      this.shareLink.set(null);
+      this.saveMessage.set({ kind: 'erreur', text: 'Partage impossible pour ce bac.' });
+      return;
+    }
+    if (outcome.kind === 'fichier') {
+      this.shareLink.set(null);
+      this.saveMessage.set({
+        kind: 'info',
+        text: `Aquarium trop riche pour un lien (${outcome.reason}) : partagez plutôt le fichier avec « Exporter ».`,
+      });
+      return;
+    }
+    this.shareLink.set(outcome.url);
+    // Presse-papiers refusé, absent ou sans réponse (demande d'autorisation laissée en
+    // suspens) : le lien reste affiché, à copier à la main.
+    const copied = await copyText(win, outcome.url);
+    this.saveMessage.set({
+      kind: 'info',
+      text: copied
+        ? 'Lien de partage copié dans le presse-papiers.'
+        : 'Lien de partage prêt : copiez-le ci-dessous.',
+    });
+  }
+
+  /**
+   * Lit le lien partagé du fragment de l'adresse (#426) : propose l'import (rien n'est
+   * remplacé avant `acceptShare`) ou affiche la raison du refus. Ne lève jamais.
+   */
+  private async offerShare(win: Window): Promise<void> {
+    const hash = win.location.hash;
+    if (!hasShareFragment(hash)) {
+      return;
+    }
+    const result = await readShare(hash);
+    if (this.stopped || win.location.hash !== hash) {
+      return;
+    }
+    if (!result.ok) {
+      this.pendingShare = null;
+      this.shareOffer.set({ kind: 'erreur', text: `Lien de partage refusé : ${result.error}.` });
+      return;
+    }
+    this.pendingShare = result;
+    this.shareOffer.set({
+      kind: 'offre',
+      environment: environmentById(result.world.environment).name,
+      animals: result.world.entities.length,
+      tanks: this.roomState?.tanks.length ?? 1,
+    });
+  }
+
+  /** « Importer cet aquarium » (#426) : remplace la pièce par le bac reçu, puis enregistre. */
+  acceptShare(): void {
+    const result = this.pendingShare;
+    if (!result || !this.currentWorld || !this.view || this.capture) {
+      return;
+    }
+    this.pendingShare = null;
+    this.shareOffer.set(null);
+    this.clearShareFragment();
+    this.applyImported(result, 'Aquarium partagé importé.');
+  }
+
+  /** « Ignorer » ou « Fermer » (#426) : la sauvegarde en cours reste intacte. */
+  dismissShare(): void {
+    this.pendingShare = null;
+    this.shareOffer.set(null);
+    this.clearShareFragment();
+  }
+
+  /** Retire `#partage=…` de l'adresse, sans recharger ni ajouter d'entrée d'historique. */
+  private clearShareFragment(): void {
+    const win = this.document.defaultView;
+    if (!win || !hasShareFragment(win.location.hash)) {
+      return;
+    }
+    try {
+      win.history.replaceState(win.history.state, '', win.location.href.split('#')[0]);
+    } catch {
+      // Historique indisponible (bac à sable) : le fragment reste, sans effet.
+    }
   }
 
   /**
@@ -2614,6 +2771,16 @@ export class AquariumHost {
       });
       return;
     }
+    // Lien partagé en capture (#426) : le bac du lien est affiché tel quel (même graine, même
+    // temps), sans confirmation ; un lien invalide donne le monde de l'URL.
+    if (params.capture && hasShareFragment(win.location.hash)) {
+      void readShare(win.location.hash).then((result) => {
+        if (!this.stopped) {
+          this.begin(win, params, result.ok ? result : null);
+        }
+      });
+      return;
+    }
     this.begin(win, params, undefined);
   }
 
@@ -2752,6 +2919,7 @@ export class AquariumHost {
     if (!params.capture && !this.wallpaper) {
       this.saveStatus.set('active');
       this.startAutosave(win);
+      this.startShareListener(win);
     }
     if (this.wallpaper && !params.capture) {
       this.startWallpaperPause();
@@ -2924,6 +3092,17 @@ export class AquariumHost {
     onVisibility();
     this.document.addEventListener('visibilitychange', onVisibility);
     this.cleanups.push(() => this.document.removeEventListener('visibilitychange', onVisibility));
+  }
+
+  /**
+   * Liens partagés (#426) : celui de l'adresse au démarrage, puis tout lien collé dans le même
+   * onglet (`hashchange`, sans rechargement).
+   */
+  private startShareListener(win: Window): void {
+    const onHash = () => void this.offerShare(win);
+    win.addEventListener('hashchange', onHash);
+    this.cleanups.push(() => win.removeEventListener('hashchange', onHash));
+    void this.offerShare(win);
   }
 
   /**

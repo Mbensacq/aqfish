@@ -20,6 +20,7 @@ import { DayIndicator } from './ui/day-indicator/day-indicator';
 import { DecorBadge } from './ui/decor-badge/decor-badge';
 import { DecorEditor } from './ui/decor-editor/decor-editor';
 import { EXCLUSIVE_PANELS } from './ui/exclusive-panels/exclusive-panels';
+import { ShareOffer } from './ui/share-offer/share-offer';
 import { SpeciesWiki } from './ui/species-wiki/species-wiki';
 import { ViewPresetsBar } from './ui/view-presets-bar/view-presets-bar';
 import { FreeCameraPad } from './ui/free-camera-pad/free-camera-pad';
@@ -50,6 +51,7 @@ import type { GuidePage } from './sim/care-guide';
     DayIndicator,
     DecorBadge,
     DecorEditor,
+    ShareOffer,
     SpeciesWiki,
     ViewPresetsBar,
     FreeCameraPad,
