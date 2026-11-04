@@ -405,6 +405,9 @@ export function createFish(
  * l'inclinaison visée glisse vers la descente avec un poids `rest`, et l'attrait vers la
  * hauteur minimale d'une espèce de mi-hauteur faiblit d'autant. À 0 : nage d'avant, au bit
  * près (aucun tirage en plus ou en moins).
+ *
+ * `hugWalls` (broutage, issue #427, `sim/behaviors.ts`) : avec un point visé, l'évitement des
+ * parois est annulé (celui des obstacles reste) ; faux par défaut, nage d'avant au bit près.
  */
 export function stepFish(
   fish: Mutable<Fish>,
@@ -416,6 +419,7 @@ export function stepFish(
   obstacles: readonly Obstacle[] = NO_OBSTACLES,
   food: Vec3 | null = null,
   rest = 0,
+  hugWalls = false,
 ): void {
   const def = SPECIES[fish.species];
   const { hard } = bounds;
@@ -512,6 +516,13 @@ export function stepFish(
   const probeY = fish.y + headY * lookahead;
   const probeZ = fish.z + headZ * lookahead;
   const wall = wallAvoidance(probeX, probeY, probeZ, bounds.avoid, AVOID_ZONE, SCRATCH_WALL);
+  if (hugWalls && food !== null) {
+    // Broutage d'une vitre (issue #427) : les parois ne repoussent plus le point visé, collé
+    // à l'une d'elles ; les obstacles et la boîte `hard` gardent le poisson dans l'eau.
+    wall.x = 0;
+    wall.y = 0;
+    wall.z = 0;
+  }
   if (bounds.outline !== undefined) {
     // Bord du bassin non rectangulaire (issue #190) : repousse comme une paroi verticale.
     const d = shapeDistance(bounds.outline, probeX, probeZ) - def.wallMargin;

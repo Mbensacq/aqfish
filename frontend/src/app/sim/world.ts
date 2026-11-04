@@ -1,6 +1,7 @@
 import { assertSeed } from '../core/random/prng';
 import { createWalker, stepWalker, type WalkerGround } from './axolotl';
 import { createFrog, stepFrog } from './frog';
+import { behaviorTarget, hasLandedFood, speciesBehavior, type BehaviorContext } from './behaviors';
 import { bubbleSourceFor, fillBubbles, type BubbleBuffer } from './bubbles';
 import { addRivalSteering, enforceRivalDistance, hasRivals } from './compatibility';
 import type { CareMode } from './care-mode';
@@ -719,6 +720,9 @@ function stepInPlace(world: MutableWorld, dt: number, clock: SimClock): void {
   // Anémones (issue #150) : points d'attache des poissons-clowns, aucun hors du récif.
   const homes = worldAnemoneHomes(world);
   let bondRank = 0;
+  // Comportements de l'espèce (issue #427) : points visés calculés, comme le banc, sur les
+  // positions du début du pas. Sans espèce concernée, aucun calcul (nage d'avant, au bit près).
+  const behaving = computeBehaviorTargets(world, fishes, place, key);
   // Ordre stable : celui du tableau, c'est-à-dire des identifiants.
   for (let i = 0; i < fishes.length; i++) {
     const fish = fishes[i];
@@ -752,6 +756,15 @@ function stepInPlace(world: MutableWorld, dt: number, clock: SimClock): void {
       target = bondTarget(fish, bond, homeForRank(homes, bond, bondRank), food, target);
       bondRank += 1;
     }
+    let grazing = false;
+    if (target === null && behaving && behaviorFlags[i] === 1) {
+      // La nourriture en vue l'emporte ; sinon, le point visé du comportement.
+      BEHAVIOR_TARGET.x = behaviorPoints[3 * i];
+      BEHAVIOR_TARGET.y = behaviorPoints[3 * i + 1];
+      BEHAVIOR_TARGET.z = behaviorPoints[3 * i + 2];
+      target = BEHAVIOR_TARGET;
+      grazing = speciesBehavior(fish.species)?.kind === 'broutage';
+    }
     stepFish(
       fish,
       dt,
@@ -762,6 +775,7 @@ function stepInPlace(world: MutableWorld, dt: number, clock: SimClock): void {
       world.obstacles,
       target,
       nightRest(fish.species, intensity),
+      grazing,
     );
   }
   currentPlace = place;
@@ -808,6 +822,75 @@ function stepInPlace(world: MutableWorld, dt: number, clock: SimClock): void {
     world.water.ph,
     catappaActive(world.water.catappa),
   );
+}
+
+/** Points visés des comportements (issue #427), réutilisés d'un pas à l'autre. */
+let behaviorPoints = new Float64Array(0);
+/** 1 : le poisson de même rang a un point visé de comportement à ce pas. */
+let behaviorFlags = new Uint8Array(0);
+const BEHAVIOR_TARGET: Vec3 = { x: 0, y: 0, z: 0 };
+const BEHAVIOR_SCRATCH: Vec3 = { x: 0, y: 0, z: 0 };
+
+/**
+ * Remplit `behaviorPoints` et `behaviorFlags` pour les poissons nageurs dont l'espèce a un
+ * comportement (`sim/behaviors.ts`), sur les positions du début du pas ; renvoie `false` sans
+ * rien calculer si aucun poisson n'est concerné. Tampons de module, comme `hungerKept`.
+ */
+function computeBehaviorTargets(
+  world: World,
+  fishes: readonly Entity[],
+  place: Place,
+  key: string,
+): boolean {
+  let any = false;
+  for (const fish of fishes) {
+    if (speciesBehavior(fish.species) !== null) {
+      any = true;
+      break;
+    }
+  }
+  if (!any) {
+    return false;
+  }
+  if (behaviorFlags.length < fishes.length) {
+    behaviorFlags = new Uint8Array(2 * fishes.length);
+    behaviorPoints = new Float64Array(6 * fishes.length);
+  }
+  const ctx: BehaviorContext = {
+    seed: world.seed,
+    time: world.time,
+    landedFood: hasLandedFood(world.food),
+    fishes,
+    obstacles: world.obstacles,
+  };
+  for (let i = 0; i < fishes.length; i++) {
+    const fish = fishes[i];
+    const def = SPECIES[fish.species];
+    behaviorFlags[i] = 0;
+    if (
+      speciesBehavior(fish.species) === null ||
+      def.walker !== undefined ||
+      def.amphibian !== undefined
+    ) {
+      continue;
+    }
+    const bounds = boundsAt(fish.species, place, key);
+    const point = behaviorTarget(
+      fish,
+      def.bodyLength,
+      def.wallMargin,
+      bounds,
+      ctx,
+      BEHAVIOR_SCRATCH,
+    );
+    if (point !== null) {
+      behaviorFlags[i] = 1;
+      behaviorPoints[3 * i] = point.x;
+      behaviorPoints[3 * i + 1] = point.y;
+      behaviorPoints[3 * i + 2] = point.z;
+    }
+  }
+  return true;
 }
 
 /**

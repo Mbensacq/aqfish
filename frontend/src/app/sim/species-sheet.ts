@@ -677,9 +677,26 @@ export function statusText(status: FieldStatus): string {
     : 'Approximation de jeu';
 }
 
+/**
+ * Ligne « Comportement » des espèces qui en ont un (issue #427, `sim/behaviors.ts`, ADR 0106).
+ * Comportements connus des aquariophiles, décrits qualitativement ; aucune source n'a pu être
+ * consultée pendant le cycle : marqués `approximation de jeu`, comme leurs durées et rayons.
+ */
+export const SPECIES_BEHAVIOR_TEXT: Readonly<Partial<Record<SpeciesId, SheetField<string>>>> =
+  Object.freeze({
+    corydora: approx('fouille le sable à la recherche de la nourriture tombée'),
+    ancistrus: approx('broute les algues des vitres'),
+    otocinclus: approx('broute les algues des vitres'),
+    gourami: approx('défend un petit territoire, sans blesser ses voisins'),
+    gramma: approx('défend un petit territoire, sans blesser ses voisins'),
+  });
+
+/** Intitulé de la ligne « Comportement ». */
+export const BEHAVIOR_LABEL = 'Comportement';
+
 /** Ligne affichée d'une fiche. */
 export interface SheetRow {
-  readonly field: SheetFieldName;
+  readonly field: SheetFieldName | 'behavior';
   readonly label: string;
   readonly value: string;
   readonly status: string;
@@ -714,10 +731,25 @@ function fieldValue(sheet: SpeciesSheet, field: SheetFieldName): string {
   }
 }
 
-/** Lignes affichées de la fiche de `id`, dans l'ordre de `SHEET_FIELDS`. */
+/**
+ * Lignes affichées de la fiche de `id`, dans l'ordre de `SHEET_FIELDS`, suivies de la ligne
+ * « Comportement » pour les espèces qui en ont un (#427).
+ */
 export function sheetRows(id: SpeciesId): readonly SheetRow[] {
   const sheet = SHEETS[id];
-  return SHEET_FIELDS.map((field) => ({
+  const behavior = SPECIES_BEHAVIOR_TEXT[id];
+  const extra: SheetRow[] =
+    behavior === undefined
+      ? []
+      : [
+          {
+            field: 'behavior',
+            label: BEHAVIOR_LABEL,
+            value: behavior.value,
+            status: statusText(behavior.status),
+          },
+        ];
+  const rows: SheetRow[] = SHEET_FIELDS.map((field) => ({
     field,
     label: SHEET_FIELD_LABELS[field],
     value: fieldValue(sheet, field),
@@ -726,6 +758,7 @@ export function sheetRows(id: SpeciesId): readonly SheetRow[] {
         ? `${statusText(sheet.legal.status)} ; ${confidenceText(sheet.legal.value.confidence)}`
         : statusText(sheet[field].status),
   }));
+  return [...rows, ...extra];
 }
 
 /** Mises en garde affichées de la fiche de `id` (#269), avec le texte de leur statut. */

@@ -791,6 +791,14 @@ haut de sa section.
 
 ## Simulation
 
+- **Point visé collé à une vitre : l'évitement des parois le tient à 5 cm** (cycle 144, #427) :
+  un point visé sur la limite `hard` est repoussé par `wallAvoidance` (portée `AVOID_ZONE`) ;
+  le poisson brouteur restait à ~5 cm de la limite de nage au lieu de la vitre. D'où
+  `stepFish(…, hugWalls)` (évitement des parois annulé, obstacles gardés). Autre surprise :
+  pour l'ancistrus, `preferredMaxY` est **sous** `hard.minY` (corps épais, `maxHeightRatio`
+  0,06) ; toute hauteur bornée par `preferredMaxY` doit d'abord la ramener à `hard.minY`, et un
+  point visé au-dessus le fait monter durablement (descente lente : test « au ras du sable »
+  de `eau-douce-lot2.spec.ts` rouge). (2026-11-04)
 - **Marcheur du fond enfoncé dans le sable** (cycle 142, #425) : la marche pose le **centre** du
   modèle à `walker.clearance` au-dessus du fond. Avec une `clearance` plus petite que la
   demi-hauteur du modèle (`lignes du gabarit × bodyLength / colonnes × 0,75 / 2`), pattes et
