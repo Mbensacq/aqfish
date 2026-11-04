@@ -1,5 +1,2 @@
-# Captures du cycle 145
-- Branche : main (pas de PR : dev en échec), commit a6682f2
-- Graine : celle de chaque scénario de e2e/captures.spec.ts
-- Temps : fixé par chaque scénario (déterministe)
-- Série : 124 images (la commande a atteint la limite de 600 s ; quelques scènes finales manquent)
+Cycle 146 : branche cycle/c146-dette-sim-lot1, PR #447, commit 1a5491a, graine 42, 128 specs de capture (Chromium local 1243 via lien 1194).
+Ecarts d'octets avec latest : interface-liste-bacs, tableau-de-bord-alerte (x3), trajectoires (x2) ; aucun lien avec le diff (pas de changement de simulation du bac tropical), Chromium local different de la CI.
