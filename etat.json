@@ -5627,10 +5627,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-05T20:03:01.566Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-05T20:03:53.234Z",
+          "note": "Issue #453 : lot de dette rendu (plinthes, tapotement, koï/feuille, contrastes) (M)"
         }
       },
       "metriques": {}
