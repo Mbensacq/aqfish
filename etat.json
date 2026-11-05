@@ -5580,6 +5580,24 @@
         }
       },
       "metriques": {}
+    },
+    "153": {
+      "numero": 153,
+      "date": "2026-11-05",
+      "debut": "2026-11-05T15:08:45.601Z",
+      "type": "retro",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-05T15:08:45.601Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
