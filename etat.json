@@ -5451,6 +5451,12 @@
           "debut": "2026-11-05T03:41:37.319Z",
           "fin": "2026-11-05T03:42:10.089Z",
           "note": "Issue #441 : dette lot 4/6, interface et panneaux (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-05T03:42:56.934Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
