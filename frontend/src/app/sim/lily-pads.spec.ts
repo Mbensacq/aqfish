@@ -279,7 +279,7 @@ describe('nénuphars : ouverture des fleurs', () => {
 });
 
 describe('nénuphars : dérive', () => {
-  it('pose déterministe, égale à l’ancre au repos des sinus', () => {
+  it('pose déterministe : ne dépend pas du contenu du tampon de sortie `out`', () => {
     const pad = pondLayout(42)[0];
     const a = lilyPadPose(pad, 12.5, { x: 0, z: 0, rotation: 0 });
     const b = lilyPadPose(pad, 12.5, { x: 9, z: 9, rotation: 9 });
