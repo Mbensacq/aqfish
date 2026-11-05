@@ -34,7 +34,11 @@ export const MOSS_COLORS = {
 /** Couleurs des racines : dessus, flancs, nœuds sombres. */
 export const ROOT_COLORS = {
   top: PALETTE.sableOmbre,
-  side: PALETTE.rocheSombre,
+  // Flancs adoucis (#155) : en `rocheSombre`, les racines se lisaient sous l'eau comme des
+  // échelles dures, sombres sur le sable. Un brun (`sableOmbre` ou `sableSombre`) a été essayé :
+  // sous l'eau peu profonde, la passe palette ramenait le dessus au vert lumineux
+  // (`docs/PIEGES.md`). `roche`, plus clair, se fond dans l'eau claire sans tache verte.
+  side: PALETTE.roche,
 } as const;
 
 /** Part des cellules d'un tapis qui portent un coussin (un voxel de plus), loin du bord. */

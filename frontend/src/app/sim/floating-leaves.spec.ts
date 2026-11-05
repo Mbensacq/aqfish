@@ -9,6 +9,7 @@ import {
   LEAF_EDGE_MARGIN,
   LEAF_LENGTH,
   LEAF_LIFETIME,
+  LEAF_OCHRE_SHARE,
   LEAF_SETTLE_TIME,
   LEAF_SHAPE_COUNT,
   LEAF_SINK_TIME,
@@ -138,6 +139,24 @@ describe('feuilles mortes : déterminisme (#107)', () => {
     }
     // Les deux teintes et plusieurs formes apparaissent.
     expect(seen.size).toBeGreaterThanOrEqual(6);
+  });
+
+  it('teinte ocre la plus fréquente (#138), proche de LEAF_OCHRE_SHARE', () => {
+    let ochre = 0;
+    let total = 0;
+    for (const seed of SEEDS) {
+      for (let t = 0; t < 1800; t += 7) {
+        for (const leaf of leavesAt(seed, t)) {
+          total++;
+          ochre += leaf[5] === 1 ? 1 : 0;
+        }
+      }
+    }
+    expect(total).toBeGreaterThan(200);
+    expect(ochre / total).toBeGreaterThan(LEAF_OCHRE_SHARE - 0.15);
+    expect(ochre / total).toBeLessThan(LEAF_OCHRE_SHARE + 0.15);
+    expect(LEAF_OCHRE_SHARE).toBeGreaterThan(0.5);
+    expect(LEAF_OCHRE_SHARE).toBeLessThan(1);
   });
 });
 

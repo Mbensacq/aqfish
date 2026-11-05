@@ -14,6 +14,7 @@ import {
   ROOT_VOXEL,
   rootCells,
 } from './bank-decor-mesh';
+import { PALETTE } from './palette';
 import { terrainGrid } from './terrain-mesh';
 
 const TERRAIN = PALUDARIUM.terrain as TerrainSettings;
@@ -123,5 +124,8 @@ describe('createBankDecorObject', () => {
 
   it('couleurs des racines : dessus et flancs distincts', () => {
     expect(ROOT_COLORS.top).not.toBe(ROOT_COLORS.side);
+    // Flancs adoucis (#155) : plus le ton sombre qui dessinait des échelles dures sous l'eau.
+    expect(Object.values(ROOT_COLORS)).not.toContain(PALETTE.rocheSombre);
+    expect(ROOT_COLORS).toEqual({ top: PALETTE.sableOmbre, side: PALETTE.roche });
   });
 });
