@@ -6,8 +6,8 @@ import { DEFAULT_TANK, TANK_LIMITS, type TankDimensions } from '../src/app/sim/t
 import {
   host,
   openScene,
-  projectToScreen,
   savedDecor,
+  screenProjector,
   startEditing,
   vec3Attribute,
 } from './outils-decor';
@@ -45,10 +45,13 @@ async function expectTankFramed(page: Page, dims: TankDimensions): Promise<void>
     })
     .toBeLessThan(1e-3);
   const box = (await page.locator('app-aquarium-host canvas').boundingBox())!;
+  // Caméra lue une fois pour les huit coins (#384) : trois allers-retours avec la page au lieu
+  // de vingt-quatre, chacun attendant une image en rendu logiciel.
+  const project = await screenProjector(page);
   for (const x of [-dims.width / 2, dims.width / 2]) {
     for (const y of [0, dims.height]) {
       for (const z of [-dims.depth / 2, dims.depth / 2]) {
-        const [sx, sy] = await projectToScreen(page, [x, y, z]);
+        const [sx, sy] = project([x, y, z]);
         expect(sx).toBeGreaterThanOrEqual(box.x - 1);
         expect(sx).toBeLessThanOrEqual(box.x + box.width + 1);
         expect(sy).toBeGreaterThanOrEqual(box.y - 1);

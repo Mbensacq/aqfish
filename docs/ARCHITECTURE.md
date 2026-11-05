@@ -563,7 +563,11 @@ maximal : 60 s par angle), et **aucune mesure de performance** ne doit y être f
 | Mutation | StrykerJS (`npm run test:mutation`, à la demande, hors CI) | `src/app/sim` : détecter les tests qui ne testent rien (score suivi dans `equipe/mutation/`) |
 
 Le code qui exige WebGL n'est pas testable en unitaire (jsdom) : il est couvert par le bout
-en bout et les captures. Cible de couverture : **≥ 80 % des lignes de `src/app/sim`**.
+en bout et les captures. Une aide commune à plusieurs specs va dans un dossier `testing/`
+(`src/app/sim/testing/amphibian-pitch.ts`, #235) : pas une spec (l'importer n'enregistre
+aucun test), exclue du build de l'application (`tsconfig.app.json`) et des mutants. Les
+outils Node des tests (`scripts/*.mjs`, `e2e/outils-pixels.ts`) ont leurs tests unitaires
+dans `scripts/*.test.mjs` (`npm run test:outils`, Node lit le TypeScript sans compilation). Cible de couverture : **≥ 80 % des lignes de `src/app/sim`**.
 
 En CI (`.github/workflows/ci.yml`), les tests de bout en bout sont répartis sur 6 machines
 en parallèle (`npm run e2e -- --shard=N/6`, délai de 45 min par part, #248), à côté d'un job pour formatage, lint, tests

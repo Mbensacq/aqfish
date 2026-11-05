@@ -6,6 +6,20 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Test de mutation d'un gros fichier de `sim` : hors de portée d'une session** (cycle 148,
+  #235) : `npx stryker run --mutate src/app/sim/frog.ts` instrumente 466 mutants, et les
+  tests qui les couvrent (`frog.spec.ts`, `triton.spec.ts`, ~36 s à eux deux sans
+  instrumentation, plusieurs simulations de 20 000 pas) tournent pour presque chacun : bien
+  plus d'une heure sur 2 cœurs. Lancer d'abord la mesure en arrière-plan, sur une plage de
+  lignes (`--mutate src/app/sim/frog.ts:1-150`) par session, et consigner le score de
+  chaque plage. Un petit fichier (`treatment-text.ts`, 123 mutants) prend ~30 s. (2026-11-05)
+- **Tests Node d'un outil écrit en TypeScript** (cycle 148, #384) : `scripts/*.test.mjs` peut
+  importer `../e2e/outils-pixels.ts` directement (Node 22 efface les types, `import type`
+  compris) ; Node affiche l'avertissement `MODULE_TYPELESS_PACKAGE_JSON` (paquet sans
+  `"type": "module"`), sans effet sur le résultat. Ajouter `"type": "module"` à `package.json`
+  pour le faire taire changerait la lecture de tous les `.js` du projet : pas pour un
+  avertissement. (2026-11-05)
+
 - **Un bouton de plus dans une rangée du panneau : il sort de sa colonne, sans erreur** (cycle
   140, #419) : `.control-panel__row` ne passe pas à la ligne ; le troisième bouton de « Bacs et
   meubles » débordait sous la section « Population » et l'e2e attendait 5 min un clic
@@ -393,6 +407,13 @@ haut de sa section.
   aussi à la commande du shell qui l'exécute, qui se tue elle-même (code 144). (2026-10-21)
 
 ## Tests
+
+- **E2e : `projectToScreen` dans une boucle = trois allers-retours par point** (cycle 148,
+  #384) : chaque appel relit la caméra, la cible et la boîte du canevas (deux
+  `getAttribute`, un `boundingBox`), et chacun attend une image en rendu logiciel. Huit coins
+  sous cinq préréglages : 120 allers-retours par test (`dimensions-bac.spec.ts`, 3,3 min en
+  CI). Pour plusieurs points sous la même caméra, `screenProjector(page)` une fois puis la
+  fonction rendue (mêmes calculs, aucune assertion en moins). (2026-11-05)
 
 - **Case `[checked]="signal()"` qui reste cochée après un refus** (cycle 138, #413) : si le
   gestionnaire de `change` passe le signal à vrai puis le ramène à faux dans le même geste
