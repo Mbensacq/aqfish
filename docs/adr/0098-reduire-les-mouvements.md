@@ -63,3 +63,20 @@ la simulation ni aux soins, et des captures par défaut identiques à l'octet.
 - Le balancement lent de la caméra du fond d'écran (`wallpaperOrbitAngle`) n'est pas touché :
   le fond d'écran est un mode choisi exprès, hors périmètre.
 - Toute nouvelle animation décorative du rendu doit passer par `MotionFactors`.
+
+## Révision (cycle 154, #409 pt 2)
+
+La revue de #408 demandait d'atténuer le **rendu** de la « secousse » de tapotement, ou de
+consigner que ce n'est pas souhaité. Décision : **pas d'atténuation**, consignée ici.
+
+- Le rendu n'a toujours aucune secousse propre : ni décalage de caméra, ni tremblement de la
+  vitre ou du bac. Ce qui bouge après un tapotement, ce sont les poissons (fuite ou
+  curiosité, `sim/glass-tap.ts`, ADR 0092) : un état simulé, que le rendu dessine tel quel.
+- Atténuer ce mouvement à l'affichage seulement (poissons dessinés ailleurs que là où la
+  simulation les place) désynchroniserait le dessin du monde : la sélection d'un poisson, la
+  fiche suivie et les captures ne désigneraient plus le même endroit.
+- Le tapotement est un geste volontaire et ponctuel, et la réaction des poissons est brève :
+  rien d'un mouvement décoratif continu, que l'option vise.
+
+Si une réaction visuelle propre au rendu est ajoutée un jour (onde sur la vitre, léger choc
+de caméra), elle passera par `MotionFactors` comme toute animation décorative.
