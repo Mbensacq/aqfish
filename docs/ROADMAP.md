@@ -72,11 +72,13 @@ Mise à jour à la rétro du sprint 10 : l'éditeur (pièce, catalogue d'espèce
 | v1.7 | Lisibilité et pièce complète | Livré au sprint 19 (v1.7.0 à v1.7.5) : lisibilité des points blancs, de l'ancistrus et de la liste Population (#370, #372), pièce complète lot 3/3 (#363), choix du bac en mode immersif (#375), espèces d'eau douce lot 3 (#391), pièce aux aquariums lot 4, plafonds de performance (#392), correctifs du bac de départ (#396). Détail dans la rétro du sprint 19 (#399) |
 | v1.8 | Aquarium vivant et accessible | Livré au sprint 20 (v1.8.0 à v1.8.6) : lisibilité du lot 3 et e2e plus rapide (#394), récif lot 2 (#403), accessibilité : réduire les mouvements, clavier, focus et contrastes (#406, #407), sons d'ambiance optionnels (#411), dette des sons (#413), mode sans filtre en cible pleine résolution (#40, cycle 139). Cycle 138 : dette fraîche au lieu de #40, soldée au c139 ; l'audit du reliquat de #264 et #340 passe au sprint 21. Détail dans la rétro du sprint 20 (#415) |
 | v1.9 | Enrichir et partager | Sprint 21 (cycles 140 à 146) : audit et solde de #264 et #340, récif lot 3 avec #405, espèces d'eau douce lot 4, partage d'un aquarium par fichier ou lien (sans backend sans ADR), comportements plus riches. Cycle 145 : dette (#384 et #405 d'abord) ; cycle 146 : rétro |
+| v1.10 | Consolidation | Sprint 22 (v1.10.0 à v1.10.5) : six lots de dette (simulation, allocations et caches, tests et mutants, interface, rendu, documentation, pièce). Bilan : 62 → 40 issues `dette` (objectif 30 non atteint), 0 bug, 0 échec de phase. Détail dans la rétro du sprint 22 (#462) |
+| v1.11 | Reproduction et alevins | Sprint 23 (cycles 154 à 160) : fin de la consolidation (#453, #456 avec #446, #450) tant que la dette dépasse 30, puis alevins de guppy (#459), biotope de rivière à courant (#460), audit et solde des épopées de Mathis (#461). Cycle 160 : rétro |
 | v1.x | L'ambiance et la mise en ligne | Prévue au sprint 12, repoussée (la numérotation `v1.0.0` a été atteinte au c77) : sons d'ambiance, accessibilité, performances, partage par lien si la sauvegarde locale le permet ; hébergement choisi ; les 3 derniers cycles sans nouvelle fonctionnalité |
 
 ## Sprint de consolidation (décision de Mathis du 2026-11-04)
 
-Cycles 146 à 153 : **aucune nouvelle fonctionnalité**, résorption de la dette (#436). Cycle 146
+Cycles 146 à 153 (prolongé jusqu'à ce que la dette repasse sous 30, voir la rétro #462) : **aucune nouvelle fonctionnalité**, résorption de la dette (#436). Cycle 146
 (rétro) : tri des issues `dette` (fermer les périmées et les doublons, regrouper le reste en lots
 par zone, les ordonner) ; cycles 147 à 152 : un lot par cycle ; cycle 153 (rétro) : bilan chiffré,
 puis reprise des priorités ci-dessous. Objectif : 30 issues `dette` ouvertes ou moins.
