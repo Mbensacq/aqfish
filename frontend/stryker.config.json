@@ -4,7 +4,7 @@
   "vitest": {
     "configFile": "vitest.mutation.config.ts"
   },
-  "mutate": ["src/app/sim/**/*.ts", "!src/app/sim/**/*.spec.ts"],
+  "mutate": ["src/app/sim/**/*.ts", "!src/app/sim/**/*.spec.ts", "!src/app/sim/testing/**"],
   "reporters": ["clear-text", "json"],
   "jsonReporter": {
     "fileName": "reports/mutation/mutation.json"
