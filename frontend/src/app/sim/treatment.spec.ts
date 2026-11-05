@@ -470,6 +470,46 @@ describe('traitements des points blancs (#361)', () => {
       expect(medicationDaysLeft(0.4)).toBeCloseTo(1, 10);
     });
 
+    it('relevé : le sel qui ne protège plus n’est pas listé (#380)', () => {
+      const medicated = { ...freshWater('tropical'), medication: 1, ichCure: 0.5 };
+      // Médicament seul, sel sous la dose qui agit, sel dosé mais eau trop froide.
+      for (const water of [
+        medicated,
+        { ...medicated, salt: MAX_SALT - 0.5 },
+        { ...medicated, salt: MAX_SALT, temperature: 20 },
+      ]) {
+        expect(treatmentReadout(water)!.products).toBe('médicament 1,0 dose');
+      }
+    });
+
+    it('sameTreatment compare chaque champ, et un relevé n’égale jamais null (#380)', () => {
+      const a = treatmentReadout({
+        ...freshWater('tropical'),
+        salt: 5,
+        medication: 1,
+        ichCure: 0.2,
+      })!;
+      expect(sameTreatment(a, { ...a, products: 'sel 5,0 g/L' })).toBe(false);
+      expect(sameTreatment(a, { ...a, remainingDays: a.remainingDays + 0.1 })).toBe(false);
+      expect(sameTreatment(a, { ...a, medicationDays: null })).toBe(false);
+      expect(sameTreatment(a, { ...a, medicationDays: 0.5 })).toBe(false);
+      expect(sameTreatment(null, a)).toBe(false);
+      expect(sameTreatment(a, null)).toBe(false);
+      expect(sameTreatment(a, a)).toBe(true);
+    });
+
+    it('niveau de preuve affiché mot pour mot (#380)', () => {
+      expect(treatmentSourceText('chaleur')).toBe(
+        `Source : ${TREATMENTS.chaleur.source} ; niveau de preuve : soutien, ne guérit pas seul.`,
+      );
+      expect(treatmentSourceText('sel')).toBe(
+        `Source : ${TREATMENTS.sel.source} ; niveau de preuve : efficace.`,
+      );
+      expect(treatmentSourceText('medicament')).toBe(
+        `Source : ${TREATMENTS.medicament.source} ; niveau de preuve : efficace.`,
+      );
+    });
+
     it('chaque traitement affiche sa source (ou « approximation de jeu ») et son niveau de preuve', () => {
       for (const kind of TREATMENT_KINDS) {
         expect(treatmentSourceText(kind)).toContain(TREATMENTS[kind].source);
