@@ -5555,10 +5555,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-05T12:04:39.004Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-05T12:05:26.809Z",
+          "note": "Issue #446 : dette, tests et cas limites de la pièce + #455 (S)"
         }
       },
       "metriques": {}
