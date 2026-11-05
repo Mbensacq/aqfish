@@ -1,2 +1,8 @@
-Cycle 150 — branche cycle/c150-dette-rendu-lot5, PR #454, commit e660f70, graine par défaut des captures, temps fixés par le contrat de capture.
-128 captures régénérées : 125 identiques à c149 ; libre-porte et libre-porte-minuit changent (voulu, #388) ; interface-liste-bacs diffère à l'octet mais est identique à l'œil (instabilité de rendu de l'interface).
+# Captures c151
+
+- Branche : cycle/c151-dette-documentation
+- PR : #457
+- Commit : 008ed10
+- Graine : 42, temps : 30 (contrat de capture)
+- Navigateur : chromium headless shell 1243 (lien 1194, PIEGES.md)
+- Écart avec latest : interface-liste-bacs (2 pixels, invisible) ; 128/129 identiques
