@@ -2518,7 +2518,8 @@ export class AquariumHost {
 
   /**
    * Aire libre de la pièce graphique autour du bac affiché et obstacles (meubles de la pièce
-   * graphique, ADR 0073, et passage devant la porte, #363) : la pose automatique du catalogue (#305) y cherche une place.
+   * graphique, ADR 0073, et passage devant la porte, #363) : la pose automatique du
+   * catalogue (#305) y cherche une place.
    */
   private roomFloor(world: World): { area: FloorRect; obstacles: FloorRect[] } {
     const area = roomArea(placeDimensions(world));

@@ -103,25 +103,55 @@ export function smallSwimmers(
     .map((def) => def.id);
 }
 
-/** Effectifs du bac immersif, des plus petites espèces aux plus grandes. */
+/** Effectifs du bac immersif, des plus petites espèces aux plus grandes (au plus). */
 export const IMMERSIVE_COUNTS: readonly number[] = [8, 5, 3];
 
 /**
+ * Surface de vitre avant laissée à chaque poisson, en carrés de sa longueur (#390) : sur un
+ * petit écran (téléphone), les espèces plus grandes du récif sont moins nombreuses, pour ne
+ * pas s'entasser. Les petites espèces du bac tropical gardent leurs effectifs dès le plus
+ * petit bac immersif (`IMMERSIVE_LIMITS`).
+ */
+export const IMMERSIVE_FRONT_AREA_PER_FISH = 6;
+
+/**
+ * Effectif de `species` au rang `rank` dans un bac `dimensions` : `IMMERSIVE_COUNTS[rank]`
+ * au plus, autant que la vitre avant en loge (`IMMERSIVE_FRONT_AREA_PER_FISH`), 1 au moins.
+ */
+export function immersiveCount(
+  species: SpeciesId,
+  rank: number,
+  dimensions?: TankDimensions,
+): number {
+  const max = IMMERSIVE_COUNTS[rank];
+  if (!dimensions) {
+    return max;
+  }
+  const length = SPECIES[species].bodyLength;
+  const room =
+    (dimensions.width * dimensions.height) / (IMMERSIVE_FRONT_AREA_PER_FISH * length ** 2);
+  const fits = Number.isFinite(room) ? Math.floor(room + 1e-9) : max;
+  return Math.max(1, Math.min(max, fits));
+}
+
+/**
  * Population par défaut du bac immersif de `environment` : ses plus petites espèces
- * nageuses d'abord, au plus `IMMERSIVE_COUNTS.length` espèces.
+ * nageuses d'abord, au plus `IMMERSIVE_COUNTS.length` espèces. Avec `dimensions` (bac de
+ * l'écran), les effectifs sont limités à ce que la vitre avant loge (`immersiveCount`).
  * @throws RangeError si `environment` n'est pas proposé au mode immersif.
  */
 export function immersivePopulation(
   environment: ImmersiveEnvironmentId = DEFAULT_IMMERSIVE_ENVIRONMENT,
+  dimensions?: TankDimensions,
 ): readonly PopulationEntry[] {
   return smallSwimmers(environment)
     .slice(0, IMMERSIVE_COUNTS.length)
-    .map((species, i) => ({ species, count: IMMERSIVE_COUNTS[i] }));
+    .map((species, i) => ({ species, count: immersiveCount(species, i, dimensions) }));
 }
 
 /**
  * Monde du mode immersif : bac de `environment` aux dimensions `layout.dimensions`, sans
- * décor posé, en mode décor, peuplé par `immersivePopulation`. Jamais sauvegardé. Au récif,
+ * décor posé, en mode décor, peuplé par `immersivePopulation` à ces dimensions. Jamais sauvegardé. Au récif,
  * coraux et anémones sont tirés de la graine dans ces dimensions, comme pour tout récif.
  * @throws RangeError si `environment` n'est pas proposé au mode immersif.
  */
@@ -130,7 +160,7 @@ export function createImmersiveWorld(
   layout: ImmersiveLayout,
   environment: ImmersiveEnvironmentId = DEFAULT_IMMERSIVE_ENVIRONMENT,
 ): World {
-  const world = createWorld(seed, immersivePopulation(environment), [], [], {
+  const world = createWorld(seed, immersivePopulation(environment, layout.dimensions), [], [], {
     environment,
     dimensions: layout.dimensions,
     immersive: true,

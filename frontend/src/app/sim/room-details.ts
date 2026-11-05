@@ -1,7 +1,9 @@
 import {
+  clampIntensity,
   DAY_PHASE_MIN_INTENSITY,
   mix,
   NIGHT_PHASE_MAX_INTENSITY,
+  type DayLight,
   type MutableRgb,
 } from './daylight';
 import {
@@ -342,4 +344,28 @@ export function isDoorClear(
     }
   }
   return true;
+}
+
+/**
+ * Clarté de la porte et de son chambranle (#388), part de leurs couleurs de palette : en
+ * plein jour, assez sombre pour ne pas ressortir en aplat clair sur le mur presque noir ;
+ * la nuit, plus sombre encore (seule la lampe et la lune éclairent la pièce).
+ */
+export const DOOR_DAY_LIGHT = 0.7;
+export const DOOR_NIGHT_LIGHT = 0.35;
+
+/**
+ * Multiplicateur de couleur de la porte sous la lumière du jour `light` et le ciel couvert
+ * `overcast` (1 : dégagé) : de `DOOR_NIGHT_LIGHT` (nuit) à `DOOR_DAY_LIGHT` (plein jour),
+ * teinté par le ciel (ambiante) et multiplié par le ciel couvert. Intensité et ciel couvert
+ * ramenés dans [0, 1] (non fini : 1). Écrit dans `out` et le renvoie, sans allocation.
+ */
+export function doorLightInto(light: DayLight, overcast: number, out: MutableRgb): MutableRgb {
+  const level = mix(DOOR_NIGHT_LIGHT, DOOR_DAY_LIGHT, clampIntensity(light.intensity));
+  const sky = clampIntensity(overcast);
+  for (let k = 0; k < 3; k++) {
+    const tint = Number.isFinite(light.sky[k]) ? Math.min(1, Math.max(0, light.sky[k])) : 1;
+    out[k] = level * tint * sky;
+  }
+  return out;
 }
