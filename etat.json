@@ -5483,10 +5483,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-05T06:04:02.866Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-05T06:04:37.494Z",
+          "note": "Issue #442 : dette lot 5/6, rendu (M)"
         }
       },
       "metriques": {}
