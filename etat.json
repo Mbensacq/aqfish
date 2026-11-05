@@ -5531,10 +5531,10 @@
           "note": "PR #457 : dette lot 6/6 (#329, #214, #250 pt2, #284 pt1, #429), CI verte ; #286 pt3 et lisibilité sonneur reportés → #456 (l'axolotl n'évite pas les obstacles) ; captures identiques (1 diff invisible sur interface-liste-bacs) ; pied d'attribution réinséré par l'environnement dans les corps de PR et d'issue"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-05T10:08:19.593Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-05T10:58:52.766Z",
+          "note": "Verdict RÉSERVES (Closes #286 à retirer de la PR), 0 bug, captures publiées (c151, 128/129 identiques), e2e ciblés verts (13), unitaires 4098"
         }
       },
       "metriques": {}
