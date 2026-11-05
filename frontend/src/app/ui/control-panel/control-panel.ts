@@ -43,7 +43,7 @@ import {
   type SupportKind,
   type TankSizeId,
 } from '../../sim/room-state';
-import type { RoomCatalog, RoomCatalogTank, TransferNotice } from '../aquarium-host/aquarium-host';
+import type { RoomCatalog, RoomCatalogTank, TankNotice } from '../aquarium-host/aquarium-host';
 import { ALERT_SEVERITY_LABELS } from '../../sim/dashboard-alerts';
 import { animalCountText, tankListDetail, type TankListEntry } from '../../sim/tank-list';
 import { MAX_SAVE_LENGTH } from '../../sim/save';
@@ -1035,7 +1035,7 @@ export interface NewTankRequest {
               Renommer
             </button>
           }
-          @if (transferNotice(); as notice) {
+          @if (tankNotice(); as notice) {
             <p
               class="control-panel__message"
               [class.control-panel__message--error]="notice.kind === 'erreur'"
@@ -1135,7 +1135,7 @@ export class ControlPanel {
   /** Mode du bac affiché (#278) : catalogue complet et aucun avertissement en décor. */
   readonly careMode = input<CareMode>('soins');
   /** Message du dernier transfert d'animal (fourni par l'hôte, #306). */
-  readonly transferNotice = input<TransferNotice | null>(null);
+  readonly tankNotice = input<TankNotice | null>(null);
   /** Effectif de chaque espèce (fourni par l'hôte). */
   readonly population = input<PopulationCounts>(NO_FISH);
   /** Effectif maximal de chaque espèce, compte tenu des autres (fourni par l'hôte). */

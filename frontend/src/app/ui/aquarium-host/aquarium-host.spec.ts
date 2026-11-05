@@ -1920,12 +1920,12 @@ describe('AquariumHost', () => {
       await twoTanks();
       const before = host().population().neon;
       host().transferAnimal('neon', 1);
-      expect(host().transferNotice()?.kind).toBe('erreur');
-      expect(host().transferNotice()?.text).toContain('Les néons ne vivent pas');
+      expect(host().tankNotice()?.kind).toBe('erreur');
+      expect(host().tankNotice()?.text).toContain('Les néons ne vivent pas');
       expect(host().population().neon).toBe(before);
       // Espèce absente du bac affiché.
       host().transferAnimal('clown', 1);
-      expect(host().transferNotice()?.text).toBe('Aucun animal de cette espèce ici');
+      expect(host().tankNotice()?.text).toBe('Aucun animal de cette espèce ici');
     });
 
     it('transfert accepté vers un bac posé : départ en place, arrivée enregistrée', async () => {
@@ -1938,8 +1938,8 @@ describe('AquariumHost', () => {
       const world = host().world!;
       const before = host().population().neon;
       host().transferAnimal('neon', posed.id);
-      expect(host().transferNotice()?.kind).toBe('info');
-      expect(host().transferNotice()?.text).toContain('Néon transféré dans « Bac tropical »');
+      expect(host().tankNotice()?.kind).toBe('info');
+      expect(host().tankNotice()?.text).toContain('Néon transféré dans « Bac tropical »');
       expect(host().world).toBe(world);
       expect(host().population().neon).toBe(before - 1);
       const entry = host()
@@ -1952,7 +1952,7 @@ describe('AquariumHost', () => {
       // Un bac posé ne se sélectionne pas encore (lot 3b).
       host().selectTank(posed.id);
       expect(host().environment()).toBe('tropical');
-      expect(host().transferNotice()?.text).toContain('pas encore sélectionnable');
+      expect(host().tankNotice()?.text).toContain('pas encore sélectionnable');
     });
 
     it('transfert d’un amphibien vers une eau traitée (#374) : avertissement dans le message', async () => {
@@ -1967,8 +1967,8 @@ describe('AquariumHost', () => {
         .tankList()
         .find((t) => t.environment === 'paludarium')!;
       host().transferAnimal('axolotl', palu.id);
-      expect(host().transferNotice()?.kind).toBe('info');
-      expect(host().transferNotice()?.text).toContain(
+      expect(host().tankNotice()?.kind).toBe('info');
+      expect(host().tankNotice()?.text).toContain(
         'Eau traitée au sel : toxique pour les axolotls (peau qui absorbe les produits)',
       );
     });
@@ -1989,7 +1989,7 @@ describe('AquariumHost', () => {
       const last = entities.filter((e) => e.species === 'axolotl').at(-1)!;
       last.health = 0.3;
       host().transferAnimal('axolotl', palu.id);
-      expect(host().transferNotice()?.kind).toBe('info');
+      expect(host().tankNotice()?.kind).toBe('info');
       expect(host().population().axolotl).toBe(axolotls - 1);
       host().selectTank(palu.id);
       expect(host().environment()).toBe('paludarium');
@@ -2090,14 +2090,14 @@ describe('AquariumHost', () => {
       expect(host().tankList()[1].name).toBe('Récif du salon');
       expect(saved().room.tanks[1].name).toBe('Récif du salon');
       host().renameTank(1, '   ');
-      expect(host().transferNotice()).toEqual({
+      expect(host().tankNotice()).toEqual({
         kind: 'erreur',
         text: 'Nom refusé : de 1 à 40 caractères',
       });
       host().renameTank(1, 'x'.repeat(41));
       expect(host().tankList()[1].name).toBe('Récif du salon');
       host().renameTank(9, 'Bac');
-      expect(host().transferNotice()?.kind).toBe('erreur');
+      expect(host().tankNotice()?.kind).toBe('erreur');
       // Le nom survit au changement de bac et au rechargement de la sauvegarde.
       host().selectTank(1);
       host().selectTank(0);

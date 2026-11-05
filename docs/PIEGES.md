@@ -6,6 +6,17 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Remplacer les couleurs en dur des panneaux par les jetons : garder `rgb(20 20 24 / NN%)`**
+  (cycle 153, #92) : `ui/panel-contrast.spec.ts` lit les feuilles en texte et relève les fonds
+  translucides par le motif littéral `background: rgb(20 20 24 / NN%)` pour vérifier leur
+  opacité. Les écrire `rgba(layout.$panel-background, …)` ferait passer le test sans plus rien
+  vérifier. Seuls les hex pleins (`#141418`, `#e8e6e3`, `#5fbfa3`) passent par
+  `layout.$panel-…` ; le CSS produit est le même. (2026-11-05)
+- **Règle de téléphone d'un composant placée avant la règle commune** (cycle 153, #318) : le
+  bloc `@media (max-width: 480px)` de `control-panel.scss` est au milieu de la feuille ; une
+  règle de même spécificité écrite plus bas (`.control-panel__row--halves > *`) l'emporte
+  malgré la requête média. Doubler la classe (`.control-panel__row.control-panel__row--halves`)
+  ou écrire la règle après la règle commune. (2026-11-05)
 - **Sortir un morceau de gabarit dans un composant enfant : les classes du parent ne s'y
   appliquent plus** (cycle 149, #255) : avec l'encapsulation émulée, les sélecteurs de
   `control-panel.scss` portent l'attribut du panneau ; la fiche d'espèce sortie dans

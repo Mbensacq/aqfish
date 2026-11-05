@@ -109,7 +109,7 @@ describe('catalogue d’espèces (#189)', () => {
     expect(normalizedCount(2.6)).toBe(3);
     expect(normalizedCount(-5)).toBe(0);
     expect(normalizedCount(1e9)).toBe(1e9);
-    for (const value of [Number.NaN, Infinity, -Infinity, '3' as unknown as number]) {
+    for (const value of [Number.NaN, Infinity, -Infinity, '3', null, undefined] as number[]) {
       expect(normalizedCount(value)).toBeNull();
     }
   });

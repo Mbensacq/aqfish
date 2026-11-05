@@ -5,8 +5,8 @@ body {
   margin: 0;
   height: 100%;
   overflow: hidden;
-  background: #141418; // render/palette.ts : fondScene
-  color: #e8e6e3;
+  background: layout.$panel-background; // render/palette.ts : fondScene
+  color: layout.$panel-ink;
 }
 
 // Focus visible de tous les contrôles (#407) : un seul anneau, couleur et épaisseur dans

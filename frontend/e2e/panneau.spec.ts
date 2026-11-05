@@ -353,6 +353,19 @@ test.describe('Panneau de contrôle', () => {
         expect(b.height).toBeGreaterThanOrEqual(28);
       }
     }
+    // Curseurs (#92) : zone de saisie d'au moins 24 px de haut, vitesse et heure comprises.
+    const ranges = await page
+      .locator('section.control-panel input.control-panel__range')
+      .evaluateAll((els) =>
+        els
+          .map((el) => el.getBoundingClientRect())
+          .filter((r) => r.width > 0)
+          .map((r) => r.height),
+      );
+    expect(ranges.length).toBeGreaterThanOrEqual(5);
+    for (const height of ranges) {
+      expect(height, 'cible tactile du curseur').toBeGreaterThanOrEqual(24);
+    }
     // Aucun débordement horizontal à l'intérieur du panneau.
     const scroll = await page
       .locator('section.control-panel')
