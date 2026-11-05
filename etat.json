@@ -5565,6 +5565,12 @@
           "debut": "2026-11-05T12:06:13.041Z",
           "fin": "2026-11-05T13:10:17.819Z",
           "note": "PR #458 : dette tests et cas limites de la pièce (#455, #200 pt1, #313 pt2, #194 pt2), CI verte ; 129 captures identiques à c151 ; #62 pt2 et #159 pt1 restent dans #446 ; pied d'attribution réinséré par l'environnement dans le corps de PR"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-05T13:10:59.371Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
