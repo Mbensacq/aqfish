@@ -1365,10 +1365,28 @@ describe('AquariumView (mouvements réduits, #406)', () => {
     const view = create();
     view.updateDecor(12);
     expect(view.waterLightTime).toBe(lightTime(12));
+    view.dispose();
+    // Option active dès le départ : le temps de l'eau est le temps simulé ralenti.
+    const reduced = create();
+    reduced.setReducedMotion(true);
+    reduced.updateDecor(12);
+    expect(reduced.waterLightTime).toBeCloseTo(lightTime(12 * REDUCED_MOTION.waterWave), 10);
+    expect(reduced.waterLightTime).not.toBe(lightTime(12));
+    reduced.dispose();
+  });
+
+  it('bascule en cours de route : pas de saut de phase de l’eau (#409)', () => {
+    const view = create();
+    view.updateDecor(30);
+    const before = view.waterLightTime;
     view.setReducedMotion(true);
-    view.updateDecor(12);
-    expect(view.waterLightTime).toBeCloseTo(lightTime(12 * REDUCED_MOTION.waterWave), 10);
-    expect(view.waterLightTime).not.toBe(lightTime(12));
+    view.updateDecor(30);
+    expect(view.waterLightTime).toBe(before);
+    view.updateDecor(40);
+    expect(view.waterLightTime).toBeCloseTo(lightTime(30 + 10 * REDUCED_MOTION.waterWave), 10);
+    view.setReducedMotion(false);
+    view.updateDecor(40);
+    expect(view.waterLightTime).toBeCloseTo(lightTime(30 + 10 * REDUCED_MOTION.waterWave), 10);
     view.dispose();
   });
 
