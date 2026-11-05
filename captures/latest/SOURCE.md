@@ -1,6 +1,5 @@
-# Captures c152
-- Branche : cycle/c152-dette-tests-piece
-- PR : #458
-- Commit : c3bc313
-- Graine : 42 (défaut)
-- Temps : 128 tests de capture, 17,5 min ; 129 images, toutes identiques à c151 (cmp)
+# Captures c153
+- Branche : cycle/c153-restes-interface (PR #464)
+- Commit : 6d7dfa1a90e85c9c76be64d72cfc8c77200375e3
+- Graine : par défaut de captures.spec.ts ; rendu logiciel, Chromium headless
+- Généré le 2026-11-05 (129 images ; 11 différentes de c152 : panneaux, bacs, tableau de bord)
