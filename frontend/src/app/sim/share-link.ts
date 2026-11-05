@@ -131,15 +131,20 @@ export function splitShareFragment(hash: string): SplitShareResult {
     return refusal('ce lien ne contient pas d’aquarium partagé');
   }
   const parts = text.slice(SHARE_KEY.length + 1).split('.');
-  if (parts.length !== 3) {
-    return refusal('lien de partage tronqué ou mal formé');
-  }
-  const [version, codec, data] = parts as [string, string, string];
-  if (version !== String(SHARE_VERSION)) {
+  // Version d'abord (#431) : un préfixe inconnu (`v1.…`, `9`, `2.z`) vient d'une autre version
+  // de l'application, même si la suite n'a pas trois parties ; seul un fragment vide
+  // (`partage=`) reste « tronqué ».
+  const version = parts[0] as string;
+  const empty = parts.length === 1 && version === '';
+  if (!empty && version !== String(SHARE_VERSION)) {
     return refusal(
       `version de lien inconnue (${version.slice(0, 8) || 'vide'}, version ${SHARE_VERSION} attendue) : mettez l’application à jour`,
     );
   }
+  if (parts.length !== 3) {
+    return refusal('lien de partage tronqué ou mal formé');
+  }
+  const [, codec, data] = parts as [string, string, string];
   if (codec !== 'z' && codec !== 'j') {
     return refusal(`codage de lien inconnu (${codec.slice(0, 8) || 'vide'})`);
   }
@@ -190,6 +195,14 @@ export function parseSharedText(text: string): ParseShareResult {
     return refusal(`trop d’animaux (${animals}, ${ROOM_ANIMAL_CAP} au plus)`);
   }
   return result;
+}
+
+/**
+ * Nombre d'animaux d'un aquarium reçu (#431) : le décompte du plafond (`roomAnimalCount`),
+ * pour que le bandeau d'offre et le refus « trop d'animaux » comptent la même chose.
+ */
+export function sharedAnimalCount(result: Extract<ParseShareResult, { ok: true }>): number {
+  return roomAnimalCount(result.room);
 }
 
 /** Texte partagé du bac `world` : sa sauvegarde au schéma 1, seul, avec `settings`. */

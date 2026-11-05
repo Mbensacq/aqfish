@@ -1,0 +1,86 @@
+// Fiche d'espèce (#237), sortie du panneau de réglages (#255) : mêmes valeurs qu'avant
+// l'extraction (budget de style de `control-panel.scss`, #216). La police est héritée du
+// panneau ; l'anneau de focus du bouton vient de `src/styles.scss`.
+@use '../panel-layout' as layout;
+
+$ink: layout.$panel-ink;
+
+:host {
+  display: block;
+  margin: 4px 0 6px;
+  padding: 8px 10px;
+  border: 1px solid rgba($ink, 0.16);
+  border-radius: 8px;
+  background: rgba($ink, 0.05);
+  break-inside: avoid;
+}
+
+.species-sheet__title {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 16px;
+}
+
+.species-sheet__latin {
+  display: block;
+  font-size: 11px;
+  font-style: italic;
+  font-weight: 400;
+}
+
+// Mise en garde : ton des avertissements du panneau (`control-panel__warning`).
+.species-sheet__note {
+  margin: 0;
+  color: #f2c09a;
+  font-size: 12px;
+}
+
+.species-sheet__status {
+  display: block;
+  color: rgba($ink, 0.62);
+  font-size: 10px;
+  line-height: 13px;
+}
+
+.species-sheet__list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  gap: 4px 8px;
+  margin: 0 0 8px;
+  font-size: 12px;
+  line-height: 15px;
+}
+
+.species-sheet__row {
+  display: contents;
+
+  dt {
+    color: rgba($ink, 0.75);
+  }
+
+  dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+}
+
+// « Fermer la fiche » : bouton compact du panneau (`control-panel__button--compact`).
+.species-sheet__close {
+  min-width: 0;
+  min-height: 28px;
+  padding: 2px 8px;
+  border: 1px solid rgba($ink, 0.16);
+  border-radius: 6px;
+  background: rgba($ink, 0.06);
+  color: inherit;
+  font:
+    600 12px / 1.2 system-ui,
+    sans-serif;
+  white-space: nowrap;
+  cursor: pointer;
+
+  &:hover {
+    background: rgba($ink, 0.12);
+  }
+}

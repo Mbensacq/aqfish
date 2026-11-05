@@ -4,8 +4,8 @@
 
 :host {
   position: fixed;
-  top: 12px;
-  right: 12px;
+  top: layout.$edge;
+  right: layout.$edge;
   z-index: 1;
   color: #e8e6e3;
   // Interligne resserré (1,25) : à 1280 × 720, tout le panneau tient sans défiler (#79).
@@ -18,7 +18,7 @@
   box-sizing: border-box;
   // Largeur lue aussi par le tableau de bord, qui se place à sa gauche (#322).
   width: layout.$commands-help-width;
-  max-width: calc(100vw - 24px);
+  max-width: calc(100vw - #{2 * layout.$edge});
   // Ne jamais descendre jusqu'à la barre des préréglages (bas : 16 px + ~42 px de haut).
   // À 1280 × 720, le contenu tient entier sous cette hauteur, section « Aide » comprise
   // (#79, `e2e/cadrage-panneaux.spec.ts`) : ajouter des lignes peut de nouveau le rogner.
@@ -164,13 +164,13 @@
 // Petit écran : panneau resserré contre le bord.
 @media (max-width: 480px) {
   :host {
-    top: 8px;
-    right: 8px;
+    top: layout.$edge-phone;
+    right: layout.$edge-phone;
   }
 
   .commands-help {
     width: 280px;
-    max-width: calc(100vw - 16px);
+    max-width: calc(100vw - #{2 * layout.$edge-phone});
     // Ouvert, il descend sous la ligne des boutons du haut (32 px + 6 px d'écart, comme le
     // panneau de réglages) : sinon il passe sous le bouton « Réglages », qui en masque le
     // titre et le chevauche dès 390 px de large (#112).

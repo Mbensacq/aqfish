@@ -339,3 +339,42 @@ test.describe('badge du mode décor à la place du cadre haut (#322)', () => {
     });
   }
 });
+
+// #257 : « Réglages » ouvert passe par-dessus le cadre du tableau de bord (ADR 0059). Le
+// panneau est opaque, et chaque élément visible du cadre qu'il croise est bien dessous : au
+// centre de la partie recouverte, le point appartient au panneau.
+test('1280 × 720 : « Réglages » ouvert masque entièrement le cadre qu’il recouvre (#257)', async ({
+  page,
+}) => {
+  const errors = await openScene(page, '?seed=42&vitesse=0');
+  await page.getByRole('button', { name: 'Réglages' }).click();
+  await expect(page.locator('.control-panel')).toBeVisible();
+  const result = await page.evaluate(() => {
+    const panel = document.querySelector('.control-panel')!;
+    const rect = panel.getBoundingClientRect();
+    const background = getComputedStyle(panel).backgroundColor;
+    let crossed = 0;
+    const seen: string[] = [];
+    for (const el of document.querySelectorAll('app-dashboard-frame *')) {
+      const box = el.getBoundingClientRect();
+      const left = Math.max(box.left, rect.left);
+      const right = Math.min(box.right, rect.right);
+      const top = Math.max(box.top, rect.top);
+      const bottom = Math.min(box.bottom, rect.bottom);
+      if (right - left < 1 || bottom - top < 1) {
+        continue;
+      }
+      crossed++;
+      const hit = document.elementFromPoint((left + right) / 2, (top + bottom) / 2);
+      if (!hit || !panel.contains(hit)) {
+        seen.push(`${el.tagName.toLowerCase()}.${el.className}`);
+      }
+    }
+    return { background, crossed, seen };
+  });
+  // Le panneau croise bien le cadre à ce format, sinon le test ne prouverait rien.
+  expect(result.crossed).toBeGreaterThan(0);
+  expect(result.seen).toEqual([]);
+  expect(result.background).toBe('rgb(20, 20, 24)');
+  expect(errors).toEqual([]);
+});
