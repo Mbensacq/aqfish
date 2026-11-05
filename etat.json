@@ -5459,10 +5459,10 @@
           "note": "PR #452 : dette lot 4/6 partiel (#216 7,74→7,34 kB, #255 fiche extraite, #257 panneau opaque, #386, #431, #327), CI verte ; reste → #451 ; pied d'attribution réinséré par l'environnement dans les corps de PR et d'issue"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-05T04:32:44.454Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-05T05:03:02.007Z",
+          "note": "Verdict OK, 0 bug, captures publiées (c149, 119/129 identiques, 10 voulues), e2e ciblés verts (33), CI 10/10"
         }
       },
       "metriques": {}
