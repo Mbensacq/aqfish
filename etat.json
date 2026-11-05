@@ -5667,6 +5667,12 @@
           "debut": "2026-11-05T22:40:50.743Z",
           "fin": "2026-11-05T22:41:31.393Z",
           "note": "Issue #456 : lot dette rendu amphibiens/feuilles de nuit, avec #466 (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-05T22:42:17.928Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
