@@ -5535,6 +5535,12 @@
           "debut": "2026-11-05T10:08:19.593Z",
           "fin": "2026-11-05T10:58:52.766Z",
           "note": "Verdict RÉSERVES (Closes #286 à retirer de la PR), 0 bug, captures publiées (c151, 128/129 identiques), e2e ciblés verts (13), unitaires 4098"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-05T10:59:26.898Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
