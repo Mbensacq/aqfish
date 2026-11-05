@@ -5550,7 +5550,7 @@
       "date": "2026-11-05",
       "debut": "2026-11-05T12:04:39.004Z",
       "type": "dette",
-      "issue": null,
+      "issue": 446,
       "pr": null,
       "version": null,
       "phases": {
