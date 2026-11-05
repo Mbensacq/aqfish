@@ -5529,6 +5529,12 @@
           "debut": "2026-11-05T08:46:07.360Z",
           "fin": "2026-11-05T10:07:42.686Z",
           "note": "PR #457 : dette lot 6/6 (#329, #214, #250 pt2, #284 pt1, #429), CI verte ; #286 pt3 et lisibilité sonneur reportés → #456 (l'axolotl n'évite pas les obstacles) ; captures identiques (1 diff invisible sur interface-liste-bacs) ; pied d'attribution réinséré par l'environnement dans les corps de PR et d'issue"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-05T10:08:19.593Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
