@@ -5417,10 +5417,10 @@
           "note": "Issue #440 : dette lot 3/6, tests, mutants et durée des parts e2e (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-04T23:58:32.240Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-05T01:44:15.062Z",
+          "note": "PR #449 : dette lot 3/6 (treatment-text 100 %, followExits partagé, parts-e2e et PNG testés, dimensions-bac 334→157 s), CI verte ; mutants frog.ts partiels → #450 ; pied d'attribution réinséré par l'environnement dans le corps de PR"
         }
       },
       "metriques": {}
