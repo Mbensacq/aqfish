@@ -1031,6 +1031,18 @@ haut de sa section.
 
 ## Rendu
 
+- **Éclaircir un décor posé sous l'eau peu profonde : la passe palette peut le virer au vert**
+  (cycle 154, #155) : les flancs des racines du paludarium passés de `rocheSombre` à un brun
+  (`sableOmbre`, dessus `sableSombre`) donnaient, sous la lame d'eau claire de la berge, des
+  tirets `vegetationLumineuse` (brun clair mélangé à l'eau claire, plus proche du vert que de
+  `eauClaire`) : on aurait dit des algues. Regarder la zone d'eau peu profonde de
+  `paludarium-three-quarter` après tout changement de teinte d'un décor de berge ; compter les
+  couples de couleurs avant / après (Pillow) plutôt que de se fier à la vignette. (2026-11-05)
+- **Captures après une modification du code : `ng serve` resté ouvert sert l'ancien paquet**
+  (cycle 154) : une capture relancée sur le port d'une campagne encore en cours
+  (`reuseExistingServer`) est sortie identique à l'octet à la précédente malgré la
+  modification. Arrêter les serveurs (`ps aux | grep "[n]g serve"`, PID) avant de relancer
+  une capture d'essai. (2026-11-05)
 - **`filtre=aucun` donne désormais l'entrée de la passe palette, en pleine résolution**
   (cycle 139, #40, ADR 0101) : la scène passe par une cible sRGB 8 bits comme en pixel art,
   donc les translucides s'y mélangent en linéaire. Une couleur lue sans filtre est celle que
