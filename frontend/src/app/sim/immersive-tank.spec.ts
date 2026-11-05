@@ -13,7 +13,9 @@ import {
   createImmersiveWorld,
   defaultDepthMm,
   immersiveLayout,
+  immersiveCount,
   immersivePopulation,
+  IMMERSIVE_COUNTS,
   smallSwimmers,
 } from './immersive-tank';
 import { SPECIES } from './species';
@@ -212,6 +214,43 @@ describe('immersive-tank', () => {
           expect(fish.y).toBeLessThanOrEqual(height);
         }
       }
+    });
+
+    it('effectifs selon la vitre (#390) : récif moins dense au téléphone, tropical inchangé', () => {
+      const counts = (env: ImmersiveEnvironmentId, screen: { width: number; height: number }) =>
+        createImmersiveWorld(7, immersiveLayout(screen, defaultDepthMm(screen)), env).entities
+          .length;
+      const phone = immersiveLayout({ width: 65, height: 140 }, 40).dimensions;
+      // Tropical : effectifs pleins dès le plus petit bac immersif.
+      for (const screen of screens) {
+        expect(counts('tropical', screen), `${screen.width}`).toBe(8 + 5 + 3);
+      }
+      expect(immersivePopulation('tropical', phone)).toEqual(immersivePopulation('tropical'));
+      // Récif au téléphone : moins de poissons qu'au maximum, au moins un par espèce.
+      const reef = immersivePopulation('recif', phone);
+      expect(reef.map((e) => e.count)).toEqual([4, 3, 3]);
+      expect(counts('recif', { width: 65, height: 140 })).toBe(10);
+      // Plus grande vitre (bac simulé), plus de poissons, jamais au-delà des maximums.
+      const front = (screen: { width: number; height: number }) => {
+        const { width, height } = immersiveLayout(screen, defaultDepthMm(screen)).dimensions;
+        return width * height;
+      };
+      let previous = 0;
+      for (const screen of [...screens].sort((a, b) => front(a) - front(b))) {
+        const total = counts('recif', screen);
+        expect(total).toBeGreaterThanOrEqual(previous);
+        expect(total).toBeLessThanOrEqual(8 + 5 + 3);
+        previous = total;
+      }
+      expect(counts('recif', { width: 1200, height: 680 })).toBe(8 + 5 + 3);
+    });
+
+    it('immersiveCount : bornes (sans dimensions, bac minuscule, bac immense, non fini)', () => {
+      expect(immersiveCount('clown', 1)).toBe(IMMERSIVE_COUNTS[1]);
+      expect(immersiveCount('clown', 0, { width: 0.01, height: 0.01, depth: 0.25 })).toBe(1);
+      expect(immersiveCount('clown', 0, { width: 2, height: 1.5, depth: 0.9 })).toBe(8);
+      expect(immersiveCount('clown', 2, { width: Infinity, height: 1, depth: 1 })).toBe(3);
+      expect(immersiveCount('gramma', 0, { width: 0.3, height: 0.4, depth: 0.25 })).toBe(2);
     });
 
     it('déterministe par environnement : même graine, même monde ; bacs différents', () => {

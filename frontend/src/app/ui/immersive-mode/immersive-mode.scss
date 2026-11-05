@@ -1,6 +1,9 @@
 // Mode immersif (#345) : plein cadre au-dessus de toute l'application.
 @use '../panel-layout' as layout;
 
+// Couleur d'accent du mode (cases à cocher, focus, carte d'étalonnage), #390.
+$accent: #f2c14e;
+
 :host {
   position: fixed;
   inset: 0;
@@ -76,11 +79,11 @@
     width: 20px;
     height: 20px;
     margin: 0;
-    accent-color: #f2c14e;
+    accent-color: $accent;
   }
 
   &:has(input:focus-visible) {
-    @include layout.focus-ring(2px, #f2c14e);
+    @include layout.focus-ring(2px, $accent);
   }
 }
 
@@ -101,7 +104,7 @@
   cursor: pointer;
 
   &:focus-visible {
-    @include layout.focus-ring(2px, #f2c14e);
+    @include layout.focus-ring(2px, $accent);
   }
 }
 
@@ -138,7 +141,7 @@
 }
 
 .immersive__card {
-  border: 2px dashed #f2c14e;
+  border: 2px dashed $accent;
   border-radius: 3.18mm; // coins de la carte ID-1, à l'échelle CSS (indicatif)
   box-sizing: border-box;
 }
