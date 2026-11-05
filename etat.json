@@ -5544,6 +5544,24 @@
         }
       },
       "metriques": {}
+    },
+    "152": {
+      "numero": 152,
+      "date": "2026-11-05",
+      "debut": "2026-11-05T12:04:39.004Z",
+      "type": "dette",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-05T12:04:39.004Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
