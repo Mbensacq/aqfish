@@ -5573,10 +5573,10 @@
           "note": "Verdict OK, 0 bug, captures publiées (c152, 129 identiques à c151), tests ciblés 260 verts, CI verte ; mutation room-furniture non terminée (671 mutants)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-05T14:02:20.454Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-05T15:07:29.965Z",
+          "note": "PR #458 fusionnée → v1.10.5 (CI main verte, release créée) ; suppression de la branche refusée par l'environnement ; pied d'attribution réinséré par l'environnement dans le corps de PR"
         }
       },
       "metriques": {}
