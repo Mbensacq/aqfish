@@ -5552,7 +5552,7 @@
       "type": "dette",
       "issue": 446,
       "pr": 458,
-      "version": null,
+      "version": "v1.10.5",
       "phases": {
         "planif": {
           "statut": "termine",
