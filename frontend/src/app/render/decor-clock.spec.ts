@@ -14,6 +14,15 @@ describe('DecorClock (#409)', () => {
     expect(clock.at(0)).toBe(0);
   });
 
+  it('sans bascule : exactement `time · rate` en flottant, quelle que soit la vitesse (#455)', () => {
+    for (const rate of [1, 0.4, 0.1, 1 / 3, 2.5]) {
+      const clock = new DecorClock(rate);
+      for (const time of [0, 0.1, 12, 37.3, 1e6, -4, 1 / 7]) {
+        expect(clock.at(time)).toBe(time * rate);
+      }
+    }
+  });
+
   it('bascule sans saut : même valeur à l’instant de la bascule, puis nouvelle vitesse', () => {
     const clock = new DecorClock();
     clock.setRate(0.5, 20);

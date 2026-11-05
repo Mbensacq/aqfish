@@ -5,8 +5,9 @@
  *
  * Le temps rendu vaut `base + (time − from) · rate` : changer de vitesse au temps `t`
  * reprend la valeur atteinte en `t` comme nouvelle base. Tant que la vitesse n'a jamais
- * changé (`base = from = 0`), le temps rendu vaut exactement `time · rate`, donc `time`
- * pour une vitesse de 1 (captures inchangées à l'octet). Module pur, sans Three.js.
+ * changé (`base = from = 0`), la formule vaut exactement `time · rate` en flottant
+ * (`0 + (time − 0) · rate`), donc `time` pour une vitesse de 1 (captures inchangées à
+ * l'octet). Module pur, sans Three.js.
  */
 export class DecorClock {
   private base = 0;
@@ -16,9 +17,7 @@ export class DecorClock {
 
   /** Temps décoratif au temps simulé `time`, en secondes. */
   at(time: number): number {
-    return this.base === 0 && this.from === 0
-      ? time * this.rate
-      : this.base + (time - this.from) * this.rate;
+    return this.base + (time - this.from) * this.rate;
   }
 
   /** Vitesse courante (multiplicateur du temps simulé). */
