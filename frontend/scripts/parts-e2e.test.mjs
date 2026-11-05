@@ -2,7 +2,13 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { averageDurations, distribute, parseListDurations, parseShard } from './parts-e2e.mjs';
+import {
+  averageDurations,
+  distribute,
+  hasChosenFiles,
+  parseListDurations,
+  parseShard,
+} from './parts-e2e.mjs';
 
 test('parseShard : formes =N/M et N/M, autres arguments conservés dans l’ordre', () => {
   assert.deepEqual(parseShard(['--shard=2/6']), { shard: { current: 2, total: 6 }, rest: [] });
@@ -89,4 +95,17 @@ test('averageDurations : moyenne des séries où le fichier est mesuré, clés t
   assert.deepEqual(merged, { a: 40, b: 10, c: 0.3 });
   assert.deepEqual(Object.keys(merged), ['a', 'b', 'c']);
   assert.deepEqual(averageDurations([]), {});
+});
+
+test('hasChosenFiles : la valeur d’une option en deux mots n’est pas un fichier (#384)', () => {
+  assert.equal(hasChosenFiles([]), false);
+  assert.equal(hasChosenFiles(['--reporter', 'list']), false);
+  assert.equal(hasChosenFiles(['--grep', 'vue', '--workers', '1', '-g', 'x', '-j', '2']), false);
+  assert.equal(hasChosenFiles(['--reporter=list', '--list', '--headed']), false);
+  assert.equal(hasChosenFiles(['e2e/ph.spec.ts']), true);
+  assert.equal(hasChosenFiles(['--reporter', 'list', 'ph']), true);
+  // Une option sans valeur ne prend pas l’argument suivant.
+  assert.equal(hasChosenFiles(['--list', 'ph']), true);
+  // Option à valeur en dernier, sans valeur : pas de fichier.
+  assert.equal(hasChosenFiles(['--grep']), false);
 });

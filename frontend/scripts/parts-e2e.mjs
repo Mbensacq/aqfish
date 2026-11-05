@@ -83,6 +83,53 @@ export function distribute(files, durations, total) {
   return parts;
 }
 
+/**
+ * Options de `playwright test` suivies d'une valeur en deux mots (`--grep vue`) : la valeur
+ * n'est pas un fichier choisi (#384). Les options à valeur facultative (`--update-snapshots`,
+ * `--only-changed`) n'en font pas partie : leur écrire `--option=valeur`.
+ */
+const VALUE_OPTIONS = new Set([
+  '-c',
+  '--config',
+  '-g',
+  '--grep',
+  '-gv',
+  '--grep-invert',
+  '-j',
+  '--workers',
+  '--global-timeout',
+  '--max-failures',
+  '--output',
+  '--project',
+  '--repeat-each',
+  '--reporter',
+  '--retries',
+  '--test-list',
+  '--test-list-invert',
+  '--timeout',
+  '--trace',
+  '--tsconfig',
+  '--ui-host',
+  '--ui-port',
+  '--update-source-method',
+]);
+
+/**
+ * Vrai si `args` (sans `--shard`) désigne des fichiers ou des filtres de fichiers choisis à la
+ * main : un argument qui n'est ni une option ni la valeur d'une option de `VALUE_OPTIONS`.
+ */
+export function hasChosenFiles(args) {
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (VALUE_OPTIONS.has(arg)) {
+      i++;
+    } else if (!arg.startsWith('-')) {
+      return true;
+    }
+  }
+  return false;
+}
+
 const LIST_LINE =
   /[✓✘]\s+\d+ \[e2e\] › e2e\/([\w.-]+\.spec\.ts):\d+:\d+ › .* \((\d+(?:\.\d+)?)(ms|s|m)\)\s*$/;
 
@@ -174,7 +221,7 @@ function main(argv) {
   }
   const { shard, rest } = parseShard(argv);
   // Sans part, ou avec des fichiers choisis à la main : Playwright tel quel.
-  if (!shard || rest.some((arg) => !arg.startsWith('-'))) {
+  if (!shard || hasChosenFiles(rest)) {
     return runPlaywright(argv);
   }
   const parts = distribute(e2eFiles(), readDurations(), shard.total);
