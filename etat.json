@@ -5631,6 +5631,12 @@
           "debut": "2026-11-05T20:03:01.566Z",
           "fin": "2026-11-05T20:03:53.234Z",
           "note": "Issue #453 : lot de dette rendu (plinthes, tapotement, koï/feuille, contrastes) (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-05T20:04:39.766Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
