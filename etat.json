@@ -5537,10 +5537,10 @@
           "note": "Verdict RÉSERVES (Closes #286 à retirer de la PR), 0 bug, captures publiées (c151, 128/129 identiques), e2e ciblés verts (13), unitaires 4098"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-05T10:59:26.898Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-05T12:03:58.411Z",
+          "note": "PR #457 fusionnée → v1.10.4 (CI main verte, release créée) ; réserve QA (Closes #286) jugée infondée, point repris dans #456 ; suppression de la branche refusée par l'environnement ; pied d'attribution réinséré par l'environnement dans le corps de PR"
         }
       },
       "metriques": {}
