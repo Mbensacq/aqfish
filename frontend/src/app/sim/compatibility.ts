@@ -72,12 +72,16 @@ export const TEMPERAMENTS: Readonly<Record<SpeciesId, Temperament>> = {
 /**
  * Proies hors de la règle des prédateurs (#425, ADR 0104) : pour chaque espèce, les espèces
  * **non prédatrices** qui la mangent quand même. Crevette cerise : « les compagnons plus grands
- * la prennent pour un en-cas » (FishKeeper) ; le xipho, plus grand nageur du bac avec le molly
- * et mangeur de crustacés (FishBase), y figure. **Approximation de jeu** : la liste n'est pas
- * exhaustive (molly et gouramis non évalués, ADR 0104).
+ * la prennent pour un en-cas » (FishKeeper) ; y figurent les deux plus grands nageurs du bac :
+ * - le xipho, mangeur de crustacés (FishBase) ;
+ * - le molly (#429), omnivore qui fouille le zoobenthos (Seriously Fish) ; aucune source lue ne
+ *   le cite face à la crevette : **approximation de jeu** par la règle « plus grands ».
+ * Les gouramis en sont exclus (#429) : Seriously Fish conseille la crevette cerise avec le
+ * gourami nain ; le gourami miel, petit et timide, n'est cité nulle part (approximation de jeu).
+ * La liste n'est pas exhaustive (ADR 0104).
  */
 export const EXTRA_PREDATORS: Readonly<Partial<Record<SpeciesId, readonly SpeciesId[]>>> = {
-  cerise: ['xipho'],
+  cerise: ['xipho', 'molly'],
 };
 
 /** Vrai si `predator` mange `prey` d'après `EXTRA_PREDATORS`. */

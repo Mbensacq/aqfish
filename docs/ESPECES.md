@@ -318,6 +318,15 @@ l'intersection. Conséquence : le paludarium d'avant #271 (axolotl + grenouille 
 n'était pas cohérent avec ces sources (#262) ; depuis l'ADR 0065, l'axolotl a son bac d'eau
 froide.
 
+**Crevette cerise face aux grands omnivores du bac tropical** (#429, 2026-11-05) : FishKeeper
+réserve la crevette aux bacs de « petits poissons paisibles », les plus grands la prenant pour
+un en-cas, sans nommer d'espèce. Décision du jeu (`EXTRA_PREDATORS`, `sim/compatibility.ts`) :
+- **xipho** ❌ (ADR 0104 : FishBase compte les crustacés dans son régime) ;
+- **molly** ❌, **approximation de jeu** : l'un des deux plus grands nageurs du bac, omnivore
+  du zoobenthos [63], aucune source lue ne le cite face à la crevette ;
+- **gourami nain** ✅ : Seriously Fish cite la crevette cerise comme compagne possible [62] ;
+- **gourami miel** ✅, approximation de jeu : petit et timide, aucune mention [64].
+
 ## Espèces candidates (à sourcer une par une avant ajout)
 
 - **Vérifié partiellement** : poisson-mandarin (*Synchiropus splendidus*) : larves dépendantes
@@ -366,6 +375,12 @@ lue. Rien n'est relevé ni présenté comme confirmé.
 | Cohabitation sonneur oriental / triton à ventre de feu, #286 point 2 | Source primaire (étude, fiche universitaire ou vétérinaire) | **Toujours non vérifiable** : aucune source primaire trouvée sur ce couple ; seule reste [60] (témoignages, faible). ADR 0065 inchangée |
 
 À reprendre par une session qui aura accès à Légifrance et à AmphibiaWeb (ou par Mathis).
+
+### Nouvel essai du 2026-11-05 (cycle 151, #284 point 1)
+
+| Point | Source visée | Résultat au 2026-11-05 |
+|---|---|---|
+| Lignes « Autres Anoures » (*Bombina orientalis*) et « Autres Caudata » (*Cynops orientalis*) de l'annexe 2 | Légifrance, version consolidée de l'arrêté du 8 octobre 2018 | **Toujours non vérifiable** : Légifrance n'a pas été lisible. Copie préfectorale du texte initial lue (préfecture de Maine-et-Loire, PDF « arrete_du_8_octobre_2018… », [61]) : son article 14 fixe bien le seuil d'autorisation des amphibiens adultes au-delà de **40** animaux, cohérent avec « 1 à 40 sans formalité » ; l'extraction du PDF s'arrête dans l'annexe 2 avant les amphibiens, les deux lignes n'ont donc pas été lues. Texte initial seulement, pas la version consolidée (arrêté modificatif du 5 septembre 2025 non repris). Confiances inchangées dans `sim/species-legal.ts` |
 
 ## Non vérifié et désaccords
 
@@ -448,3 +463,7 @@ remplacer par une source primaire.
 58. *Hoplisoma sterbai* — https://en.wikipedia.org/wiki/Sterba%27s_corydoras *(secondaire)*
 59. *Bombina orientalis*, fiche de soins — https://anapsid.org/bombina.html *(secondaire, consultée le 2026-10-27, #270)*
 60. Caudata.org, fil « FB Newts + FB Toad = ?? » (avril 2007) — https://www.caudata.org/threads/fb-newts-fb-toad.3236/ *(témoignages, faible, consulté le 2026-10-27, #271)*
+61. Arrêté du 8 octobre 2018 fixant les règles générales de détention d'animaux d'espèces non domestiques, copie préfectorale (texte initial) — https://www.maine-et-loire.gouv.fr/contenu/telechargement/9307/72734/file/arrete_du_8_octobre_2018_fixant_les_regles_generales_de_detention_d_animaux_d_especes_non_domestiques_.pdf *(officielle, non consolidée, consultée le 2026-11-05, #284)*
+62. Seriously Fish, *Trichogaster lalius* — https://www.seriouslyfish.com/species/trichogaster-lalius *(consultée le 2026-11-05, #429 : la crevette cerise y est citée comme compagne possible du gourami nain)*
+63. Seriously Fish, *Poecilia sphenops* — https://www.seriouslyfish.com/species/poecilia-sphenops *(consultée le 2026-11-05, #429 : omnivore, zoobenthos et détritus ; aucune mention des crevettes)*
+64. Seriously Fish, *Trichogaster chuna* — https://www.seriouslyfish.com/species/trichogaster-chuna *(consultée le 2026-11-05, #429 : petits invertébrés dans la nature ; aucune mention des crevettes)*

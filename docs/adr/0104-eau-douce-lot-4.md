@@ -103,9 +103,8 @@ baisse ensuite (ADR 0057), bac par défaut identique à l'octet (graine 42), pal
 
 ## Non vérifié
 
-- **Molly et gouramis** face à la crevette cerise : non évalués (aucune source lue) ; ils
-  restent compatibles par la règle de jeu. À compléter dans `EXTRA_PREDATORS` si une source le
-  dit.
+- **Molly et gouramis** face à la crevette cerise : évalués au cycle 151 (#429, voir le
+  complément ci-dessous).
 - **Robe du xipho** : forme verte « proche du sauvage » (FishKeeper) ; les formes rouges du
   commerce ne sont pas modélisées. L'épée est celle du mâle ; la femelle n'en a pas.
 - **Néritine** : l'identité spécifique exacte des « néritines zèbres » vendues n'est pas
@@ -121,3 +120,18 @@ baisse ensuite (ADR 0057), bac par défaut identique à l'octet (graine 42), pal
 - `compatibility` consulte `EXTRA_PREDATORS` : une future proie hors de la règle de taille
   (alevins, autres invertébrés) s'y ajoute sans changer la règle.
 - Captures `three-quarter-eau-douce-lot4` et `front-eau-douce-lot4` ajoutées.
+
+## Complément (cycle 151, #429) : molly et gouramis face à la crevette cerise
+
+Fiches Seriously Fish lues le 2026-11-05 (`docs/ESPECES.md`, [62] à [64]) :
+
+- **Molly** ajouté à `EXTRA_PREDATORS` (`cerise: ['xipho', 'molly']`) : omnivore qui fouille
+  le zoobenthos, l'un des deux plus grands nageurs du bac avec le xipho (même taille de jeu,
+  0,12) ; aucune source lue ne le cite face à la crevette, c'est la règle « les compagnons plus
+  grands la prennent pour un en-cas » (FishKeeper) appliquée : **approximation de jeu**.
+  Nouvelle paire incompatible : molly et crevette cerise (avertissement d'ajout, wiki).
+- **Gourami nain** exclu : Seriously Fish cite la crevette cerise parmi les compagnons possibles.
+- **Gourami miel** exclu : petit (5,5 cm), timide, facilement intimidé (Seriously Fish) ;
+  aucune mention des crevettes : approximation de jeu.
+
+Test : `sim/eau-douce-lot4.spec.ts` (« molly et gouramis face à la crevette cerise »).

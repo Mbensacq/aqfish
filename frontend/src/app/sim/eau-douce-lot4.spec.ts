@@ -296,7 +296,7 @@ describe('eau douce, lot 4 (#425) : bac tropical et compatibilité', () => {
 
   it('paire incompatible nouvelle : le xipho mange la crevette cerise (symétrique)', () => {
     expect(TEMPERAMENTS.xipho).toBe('paisible');
-    expect(EXTRA_PREDATORS.cerise).toEqual(['xipho']);
+    expect(EXTRA_PREDATORS.cerise).toEqual(['xipho', 'molly']);
     expect(compatibility('xipho', 'cerise')).toBe('predateur');
     expect(compatibility('cerise', 'xipho')).toBe('predateur');
     expect(mixWarnings(TROPICAL_TANK.species, { neon: 8, xipho: 3, cerise: 8 })).toEqual([
@@ -306,6 +306,25 @@ describe('eau douce, lot 4 (#425) : bac tropical et compatibilité', () => {
     // Le koï, prédateur plus grand, mange chacune.
     for (const id of NEW) {
       expect(compatibility('koi', id), id).toBe('predateur');
+    }
+  });
+
+  it('molly et gouramis face à la crevette cerise (#429) : le molly la mange, pas les gouramis', () => {
+    expect(TEMPERAMENTS.molly).toBe('paisible');
+    expect(compatibility('molly', 'cerise')).toBe('predateur');
+    expect(compatibility('cerise', 'molly')).toBe('predateur');
+    for (const gourami of ['gourami', 'miel'] as const) {
+      expect(compatibility('cerise', gourami), gourami).toBe('compatible');
+      expect(compatibility(gourami, 'cerise'), gourami).toBe('compatible');
+    }
+    expect(mixWarnings(TROPICAL_TANK.species, { molly: 3, cerise: 8 })).toEqual([
+      { first: 'molly', second: 'cerise', reason: 'predateur' },
+    ]);
+    expect(mixWarnings(TROPICAL_TANK.species, { gourami: 2, cerise: 8 })).toEqual([]);
+    expect(mixWarnings(TROPICAL_TANK.species, { miel: 4, cerise: 8 })).toEqual([]);
+    // Le molly reste compatible avec les poissons du bac.
+    for (const b of TROPICAL_TANK.species.filter((s) => s !== 'cerise')) {
+      expect(compatibility('molly', b), `molly/${b}`).toBe('compatible');
     }
   });
 
