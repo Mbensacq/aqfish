@@ -5429,10 +5429,10 @@
           "note": "Verdict OK, 0 bug, captures publiées (c148, 128/129 identiques), e2e ciblés verts (7), CI 10/10"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-05T02:37:39.122Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-05T03:41:04.334Z",
+          "note": "PR #449 fusionnée → v1.10.1 (CI main verte, release créée) ; suppression de la branche refusée par l'environnement ; pied d'attribution réinséré par l'environnement dans le corps de PR"
         }
       },
       "metriques": {}
