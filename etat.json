@@ -5601,6 +5601,12 @@
           "debut": "2026-11-05T15:22:33.774Z",
           "fin": "2026-11-05T17:49:01.786Z",
           "note": "PR #464 : restes du lot 4 interface (#92, #372, #268 faits ; #318 pts 2-3, #204 pt 2, #421 pt 2 ; reste reporté), CI verte ; test fps à délai explicite ; pied d'attribution réinséré par l'environnement dans le corps de PR"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-05T17:49:36.125Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
