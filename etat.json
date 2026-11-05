@@ -5669,10 +5669,10 @@
           "note": "Issue #456 : lot dette rendu amphibiens/feuilles de nuit, avec #466 (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-05T22:42:17.928Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-05T23:51:23.503Z",
+          "note": "PR #467 : dette amphibiens/feuilles de nuit (#466 teinte de nuit, #456 axolotl contourne + décor eaufroide, pattes du sonneur), CI verte ; 11 captures changées (voulues) ; pied d'attribution réinséré par l'environnement dans le corps de PR"
         }
       },
       "metriques": {}
