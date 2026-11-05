@@ -328,10 +328,12 @@ describe('eau douce, lot 3 (#391) : bac tropical et compatibilité', () => {
 
   it('paires compatibles : braise et molly avec tout le bac tropical, miel sauf le gourami nain', () => {
     const all = TROPICAL_TANK.species;
-    for (const a of ['braise', 'molly'] as const) {
-      for (const b of all) {
-        expect(compatibility(a, b), `${a}/${b}`).toBe('compatible');
-      }
+    for (const b of all) {
+      expect(compatibility('braise', b), `braise/${b}`).toBe('compatible');
+    }
+    // Le molly mange la crevette cerise depuis #429 (lot 4, ADR 0104) : seule exception.
+    for (const b of all.filter((s) => s !== 'cerise')) {
+      expect(compatibility('molly', b), `molly/${b}`).toBe('compatible');
     }
     for (const b of all.filter((s) => s !== 'gourami')) {
       expect(compatibility('miel', b), `miel/${b}`).toBe('compatible');

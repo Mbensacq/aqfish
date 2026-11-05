@@ -42,12 +42,14 @@ import {
  * fonctions pures (`serializeWorld`, `parseWorld`).
  *
  * Ce qui est enregistré : graine, environnement, dimensions réglées du bac (issue #171,
- * facultatives : absentes, ce sont celles de l'environnement), compteur de pas (le temps simulé en dérive,
- * `tick · SIM_DT`), décor, poissons (état complet, sous-générateur compris), granulés,
- * compteurs d'identifiants, état de l'eau (issue #206, facultatif : absent, eau saine), et les réglages de vitesse, d'heure et de rendu des granulés.
+ * facultatives : absentes, ce sont celles de l'environnement), compteur de pas (le temps
+ * simulé en dérive, `tick · SIM_DT`), décor, poissons (état complet, sous-générateur
+ * compris), granulés, compteurs d'identifiants, état de l'eau (issue #206, facultatif :
+ * absent, eau saine), et les réglages de vitesse, d'heure et de rendu des granulés.
  * Les mondes des autres environnements visités (issue #277, ADR 0063) sont écrits à côté,
- * dans `others` (facultatif : absent, aucun), avec le même corps que le monde affiché. Les obstacles ne sont pas
- * enregistrés : ils sont recalculés à partir du décor (`createWorld`), comme à la création.
+ * dans `others` (facultatif : absent, aucun), avec le même corps que le monde affiché. Les
+ * obstacles ne sont pas enregistrés : ils sont recalculés à partir du décor (`createWorld`),
+ * comme à la création.
  * Les robes des koïs dérivent de la graine et de l'identifiant (ADR 0027) : rien à stocker.
  *
  * Validation à la lecture : tout est vérifié (types, bornes, nombres finis, effectifs,
@@ -124,7 +126,10 @@ export interface SaveSettings {
   readonly room?: Room;
 }
 
-/** Réglages par défaut (vitesse ×1, départ à midi, heure en marche, granulés en points, pièce masquée). */
+/**
+ * Réglages par défaut (vitesse ×1, départ à midi, heure en marche, granulés en points, pièce
+ * masquée).
+ */
 export const DEFAULT_SAVE_SETTINGS: SaveSettings = {
   speed: DEFAULT_SIM_SPEED,
   clock: DEFAULT_DAY_CLOCK,
@@ -235,8 +240,9 @@ const FOOD_NUMBER_KEYS = [
  * Contenu de la sauvegarde de `world`, de `settings` et des mondes `others` des autres
  * environnements visités (objet de données, copié : rien n'est partagé avec les mondes).
  * `others` est écrit dans l'ordre de `ENVIRONMENT_IDS`, et omis s'il est vide.
- * @throws RangeError si un monde a des obstacles explicites (hors décor et coraux), non enregistrables
- * dans le schéma 1, si un réglage est invalide, ou si deux mondes ont le même environnement.
+ * @throws RangeError si un monde a des obstacles explicites (hors décor et coraux), non
+ * enregistrables dans le schéma 1, si un réglage est invalide, ou si deux mondes ont le même
+ * environnement.
  */
 export function saveData(
   world: World,
@@ -878,7 +884,10 @@ export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-/** Propriété propre seulement : les clés héritées (`constructor`, `__proto__`…) valent `undefined`. */
+/**
+ * Propriété propre seulement : les clés héritées (`constructor`, `__proto__`…) valent
+ * `undefined`.
+ */
 export function own(record: Record<string, unknown>, key: string): unknown {
   return Object.hasOwn(record, key) ? record[key] : undefined;
 }
