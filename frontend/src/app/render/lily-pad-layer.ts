@@ -36,7 +36,7 @@ import {
   buildLilyPadShadow,
   LILY_PAD_THICKNESS,
 } from './lily-pad-model';
-import { PALETTE } from './palette';
+import { NIGHT_TONES, PALETTE } from './palette';
 
 /**
  * Couche des nénuphars (issue #103, ADR 0029) : une feuille, sa coque de contour et son
@@ -70,6 +70,38 @@ export const LILY_PAD_SHADOW_LIFT = 0.003;
 export const LILY_PAD_SHADOW_OFFSET = { x: -0.009, z: -0.044 } as const;
 /** Couleur de l'ombre : l'eau, plus sombre au-dessus de l'ombre. */
 export const LILY_PAD_SHADOW_COLOR = PALETTE.eauProfonde;
+/**
+ * Couleur de l'ombre en pleine nuit (#115) : un bleu nuit des tons de nuit (`NIGHT_TONES`), plus sombre que l'eau
+ * sous la lune (`eauLune`). L'eau profonde multipliée par la teinte de nuit du décor virait
+ * au vert sombre sur l'eau bleue.
+ */
+export const LILY_PAD_NIGHT_SHADOW_COLOR = NIGHT_TONES.rocheLuneSombre;
+
+const SHADOW_DAY = new Color(LILY_PAD_SHADOW_COLOR);
+const SHADOW_NIGHT = new Color(LILY_PAD_NIGHT_SHADOW_COLOR);
+
+/**
+ * Couleur de l'ombre (composantes linéaires) sous la teinte du décor `tint` et l'intensité du
+ * jour `intensity` (ramenée dans [0, 1], non finie : plein jour) : l'eau profonde multipliée
+ * par la teinte en plein jour (exactement `LILY_PAD_SHADOW_COLOR` sous une teinte blanche),
+ * `LILY_PAD_NIGHT_SHADOW_COLOR` multipliée par le ciel couvert `overcast` en pleine nuit,
+ * linéaire entre les deux. Écrit dans `out` et le renvoie, sans allocation.
+ */
+export function lilyPadShadowInto(
+  tint: readonly [number, number, number],
+  intensity: number,
+  overcast: number,
+  out: Color,
+): Color {
+  const i = Number.isFinite(intensity) ? Math.min(1, Math.max(0, intensity)) : 1;
+  const sky = Number.isFinite(overcast) ? Math.min(1, Math.max(0, overcast)) : 1;
+  out.setRGB(
+    SHADOW_NIGHT.r * sky + (SHADOW_DAY.r * tint[0] - SHADOW_NIGHT.r * sky) * i,
+    SHADOW_NIGHT.g * sky + (SHADOW_DAY.g * tint[1] - SHADOW_NIGHT.g * sky) * i,
+    SHADOW_NIGHT.b * sky + (SHADOW_DAY.b * tint[2] - SHADOW_NIGHT.b * sky) * i,
+  );
+  return out;
+}
 /**
  * Ordre de rendu de l'ombre : après le volume d'eau (1), avant les rides de la surface
  * (`SURFACE_RENDER_ORDER`, 1,5), qui restent ainsi visibles par-dessus.
@@ -165,7 +197,6 @@ export class LilyPadLayer {
     opacity: 1,
     depthWrite: false,
   });
-  private readonly shadowBase = new Color(LILY_PAD_SHADOW_COLOR);
   /** Fleurs : géométries et matériaux partagés par toutes les fleurs (couleurs pleines). */
   private readonly flowerOutlineMaterial = withoutDepthWrite(createOutlineMaterial());
   private readonly petalMaterial = flatMaterial(LILY_FLOWER_COLORS.petal);
@@ -339,14 +370,13 @@ export class LilyPadLayer {
 
   /**
    * Teinte (facteur linéaire par canal, comme `DecorLayer.setTint`) : multiplie les couleurs
-   * des feuilles et de l'ombre. Blanc en plein jour : couleurs d'origine.
+   * des feuilles et des fleurs. Blanc en plein jour : couleurs d'origine. L'ombre suit
+   * `lilyPadShadowInto` avec l'intensité du jour `intensity` et le ciel couvert `overcast`
+   * (#115) : eau profonde multipliée par la teinte le jour, bleu nuit la nuit.
    */
-  setTint(tint: readonly [number, number, number]): void {
+  setTint(tint: readonly [number, number, number], intensity = 1, overcast = 1): void {
     this.material.color.setRGB(tint[0], tint[1], tint[2]);
-    this.shadowMaterial.color.copy(this.shadowBase);
-    this.shadowMaterial.color.r *= tint[0];
-    this.shadowMaterial.color.g *= tint[1];
-    this.shadowMaterial.color.b *= tint[2];
+    lilyPadShadowInto(tint, intensity, overcast, this.shadowMaterial.color);
     for (const [material, base] of this.flowerBases) {
       material.color.setRGB(base.r * tint[0], base.g * tint[1], base.b * tint[2]);
     }
