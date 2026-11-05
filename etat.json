@@ -5645,10 +5645,10 @@
           "note": "Verdict OK, 0 bug, captures publiées (c154, 21 différentes de c153 dans les zones touchées, 5 angles du bac seul identiques), CI verte"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-05T21:33:59.403Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-05T22:40:07.628Z",
+          "note": "PR #465 fusionnée → v1.11.0 (CI main verte, release créée) ; #453 rouverte (points hors lot) ; dette #466 ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
