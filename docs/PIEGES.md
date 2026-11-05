@@ -6,6 +6,23 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Passer un conteneur flex `row wrap` en colonne : préciser `nowrap`** (cycle 153, #268) :
+  `flex-direction: column` seul garde `flex-wrap: wrap` ; un enfant à `flex-basis: 100%`
+  (détail d'une alerte du bandeau bas) part alors dans une seconde colonne, à droite, sous
+  l'aide-mémoire : « Pourquoi ? » n'était plus cliquable (e2e `guide-debutant.spec.ts` rouge
+  en CI, captures et autres e2e verts). Écrire `flex-flow: column nowrap` et remettre la base
+  de l'enfant à `auto`. (2026-11-05)
+- **Remplacer les couleurs en dur des panneaux par les jetons : garder `rgb(20 20 24 / NN%)`**
+  (cycle 153, #92) : `ui/panel-contrast.spec.ts` lit les feuilles en texte et relève les fonds
+  translucides par le motif littéral `background: rgb(20 20 24 / NN%)` pour vérifier leur
+  opacité. Les écrire `rgba(layout.$panel-background, …)` ferait passer le test sans plus rien
+  vérifier. Seuls les hex pleins (`#141418`, `#e8e6e3`, `#5fbfa3`) passent par
+  `layout.$panel-…` ; le CSS produit est le même. (2026-11-05)
+- **Règle de téléphone d'un composant placée avant la règle commune** (cycle 153, #318) : le
+  bloc `@media (max-width: 480px)` de `control-panel.scss` est au milieu de la feuille ; une
+  règle de même spécificité écrite plus bas (`.control-panel__row--halves > *`) l'emporte
+  malgré la requête média. Doubler la classe (`.control-panel__row.control-panel__row--halves`)
+  ou écrire la règle après la règle commune. (2026-11-05)
 - **Sortir un morceau de gabarit dans un composant enfant : les classes du parent ne s'y
   appliquent plus** (cycle 149, #255) : avec l'encapsulation émulée, les sélecteurs de
   `control-panel.scss` portent l'attribut du panneau ; la fiche d'espèce sortie dans
@@ -416,6 +433,12 @@ haut de sa section.
 
 ## Tests
 
+- **Test unitaire de l'hôte qui rend des centaines d'images : délai de 5 s dépassé en CI**
+  (cycle 153) : « limite les images par seconde (fps=, 30 par défaut) »
+  (`aquarium-host.spec.ts`) crée deux hôtes et pousse 1 200 images ; il a pris 5,09 s sur la
+  CI et échoué au délai par défaut de Vitest, sans rapport avec la PR. Un tel test reçoit un
+  délai explicite (`it(…, async () => { … }, 20_000)`), sans toucher à ses assertions.
+  (2026-11-05)
 - **E2e : `projectToScreen` dans une boucle = trois allers-retours par point** (cycle 148,
   #384) : chaque appel relit la caméra, la cible et la boîte du canevas (deux
   `getAttribute`, un `boundingBox`), et chacun attend une image en rendu logiciel. Huit coins

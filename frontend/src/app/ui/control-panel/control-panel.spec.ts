@@ -21,7 +21,7 @@ import { SIM_SPEEDS } from '../../sim/sim-speed';
 import { MAX_HEATER_TEMPERATURE, MIN_HEATER_TEMPERATURE } from '../../sim/water';
 import { DEFAULT_WATER_READOUT, type WaterReadout } from '../../sim/water-quality';
 import { SPECIES_LABELS } from '../../sim/species-catalog';
-import type { RoomCatalog, TransferNotice } from '../aquarium-host/aquarium-host';
+import type { RoomCatalog, TankNotice } from '../aquarium-host/aquarium-host';
 import type { TankListEntry } from '../../sim/tank-list';
 import type { CareMode } from '../../sim/care-mode';
 import {
@@ -161,7 +161,7 @@ describe('fonctions du panneau de contrôle', () => {
     [roomShown]="room()"
     [roomCatalog]="catalog()"
     [tankList]="tanks()"
-    [transferNotice]="notice()"
+    [tankNotice]="notice()"
     (tankSelected)="layout.push(['selection', $event])"
     (animalTransferred)="layout.push(['transfert', $event])"
     (tankRenamed)="layout.push(['renommage', $event])"
@@ -219,7 +219,7 @@ class TestHost {
   readonly layout: [string, unknown][] = [];
   readonly tanks = signal<readonly TankListEntry[]>([]);
   readonly careMode = signal<CareMode>('soins');
-  readonly notice = signal<TransferNotice | null>(null);
+  readonly notice = signal<TankNotice | null>(null);
   readonly foodStyle = signal<FoodStyle>('points');
   foodToggles = 0;
   readonly editable = signal(true);

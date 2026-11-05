@@ -393,8 +393,13 @@ export const SUPPORT_CATALOG: Readonly<Record<SupportKind, SupportModel>> = {
   },
 };
 
-/** Plus grand nombre de niveaux d'un meuble du catalogue (validation de la sauvegarde). */
-export const MAX_SUPPORT_LEVELS = 3;
+/**
+ * Plus grand nombre de niveaux d'un meuble du catalogue (validation de la sauvegarde),
+ * dérivé du catalogue (#421) : un meuble ajouté avec plus de niveaux le relève de lui-même.
+ */
+export const MAX_SUPPORT_LEVELS = Math.max(
+  ...SUPPORT_KINDS.map((kind) => SUPPORT_CATALOG[kind].levels.length),
+);
 
 /** Niveau `level` (0 : le plus bas) du meuble `kind`, ou `undefined` s'il n'existe pas. */
 export function supportLevel(kind: SupportKind, level: number): SupportLevel | undefined {

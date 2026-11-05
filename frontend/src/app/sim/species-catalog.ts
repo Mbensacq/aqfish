@@ -144,9 +144,12 @@ function catalogEntry(id: EnvironmentId, species: SpeciesId): CatalogEntry {
 /**
  * Effectif demandé ramené à un entier positif ou nul (arrondi au plus proche), `null` s'il
  * n'est pas un nombre fini. La borne haute est celle de `setPopulationInPlace`.
+ * `Number.isFinite` (sans conversion, contrairement à `isFinite`) refuse aussi une valeur
+ * qui n'est pas un nombre malgré le type (sauvegarde importée, valeur d'un champ) : le test
+ * `typeof` qui le doublait est retiré (#204).
  */
 export function normalizedCount(count: number): number | null {
-  if (typeof count !== 'number' || !Number.isFinite(count)) {
+  if (!Number.isFinite(count)) {
     return null;
   }
   return Math.max(0, Math.round(count));

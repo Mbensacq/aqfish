@@ -16,7 +16,7 @@
   flex-direction: column;
   align-items: flex-start;
   gap: 6px;
-  color: #e8e6e3;
+  color: layout.$panel-ink;
   font:
     400 13px / 1.3 system-ui,
     sans-serif;
@@ -36,7 +36,7 @@
   padding: 4px 10px;
   border: 1px solid rgb(232 230 227 / 8%);
   border-radius: 8px;
-  background: rgb(20 20 24 / 72%); // #141418
+  background: rgb(20 20 24 / 72%); // #141418, écrit en clair : lu par panel-contrast.spec
   color: inherit;
   font:
     500 14px / 1.2 system-ui,
@@ -55,8 +55,8 @@
   }
 
   &--open {
-    border-color: #5fbfa3;
-    color: #5fbfa3;
+    border-color: layout.$panel-accent;
+    color: layout.$panel-accent;
   }
 }
 
@@ -96,7 +96,7 @@
 .control-panel__legend {
   padding: 0;
   margin-bottom: 4px;
-  color: #5fbfa3;
+  color: layout.$panel-accent;
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -123,7 +123,7 @@
 .control-panel__range {
   width: 100%;
   margin: 4px 0;
-  accent-color: #5fbfa3;
+  accent-color: layout.$panel-accent;
 
   &:focus-visible {
     @include layout.focus-ring(2px);
@@ -138,7 +138,7 @@
   padding: 0 8px;
   border: 1px solid rgb(232 230 227 / 16%);
   border-radius: 6px;
-  background: #141418;
+  background: layout.$panel-background;
   color: inherit;
   font:
     600 14px / 1 system-ui,
@@ -156,7 +156,7 @@
     width: 16px;
     height: 16px;
     margin: 0;
-    accent-color: #5fbfa3;
+    accent-color: layout.$panel-accent;
   }
 
   input:focus-visible {
@@ -323,6 +323,23 @@
     // Barre des préréglages sur deux lignes (bas : 16 px + deux lignes de ~40 px).
     max-height: calc(100vh - 8px - 38px - 120px);
   }
+
+  // Cible tactile de 24 px au moins (#92) : la piste garde sa taille, la marge passe dans la
+  // zone de saisie (16 + 2 × 4 px), la ligne ne grandit pas. Population : 28 px (plus haut).
+  .control-panel__range {
+    min-height: 24px;
+    margin: 0;
+  }
+
+  // Renommage (#318) : « Bac » et « Nouveau nom » l'un sous l'autre, nom du bac entier.
+  // Double classe : la règle commune des deux moitiés vient plus bas dans la feuille.
+  .control-panel__row.control-panel__row--halves {
+    flex-wrap: wrap;
+
+    > * {
+      flex-basis: 100%;
+    }
+  }
 }
 
 // Sauvegarde (#70) : état, boutons « Exporter » et « Importer », message d'import.
@@ -339,7 +356,7 @@
 }
 
 .control-panel__message {
-  color: #5fbfa3;
+  color: layout.$panel-accent;
 
   &--error {
     color: #f2a39a;
@@ -423,10 +440,10 @@
   margin: -5px 0;
   min-height: 22px;
   padding: 1px 8px;
-  border: 1px solid #5fbfa3;
+  border: 1px solid layout.$panel-accent;
   border-radius: 6px;
   background: transparent;
-  color: #5fbfa3;
+  color: layout.$panel-accent;
   font:
     600 11px / 1.2 system-ui,
     sans-serif;
@@ -459,7 +476,7 @@
   cursor: pointer;
 
   &[aria-expanded='true'] {
-    border-color: #5fbfa3;
+    border-color: layout.$panel-accent;
   }
 }
 
@@ -511,7 +528,7 @@
   cursor: pointer;
 
   &[aria-pressed='true'] {
-    border-color: #5fbfa3;
+    border-color: layout.$panel-accent;
     background: rgb(95 191 163 / 16%);
   }
 
@@ -552,9 +569,9 @@
   box-sizing: border-box;
   width: min(360px, calc(100vw - 24px));
   padding: 12px;
-  border: 1px solid #5fbfa3;
+  border: 1px solid layout.$panel-accent;
   border-radius: 8px;
-  background: #141418;
+  background: layout.$panel-background;
   transform: translate(-50%, -50%);
   // Lot 2 : la liste des animaux inadaptés défile, le dialogue tient à l'écran.
   max-height: calc(100vh - 24px);

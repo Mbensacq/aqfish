@@ -401,8 +401,11 @@ export const WALLPAPER_CAMERA_EXPOSE_SECONDS = 1;
 /** Pas de temps réel maximal versé à la caméra automatique (pas de saut après une pause). */
 const WALLPAPER_MAX_ORBIT_STEP_SECONDS = 0.25;
 
-/** Message du dernier transfert d'animal (#306) : réussite ou refus. */
-export interface TransferNotice {
+/**
+ * Message du dernier geste sur un bac (#306) : transfert d'animal ou renommage (#316), réussite
+ * ou refus. Nommé pour les deux depuis #318 (`transferNotice` auparavant).
+ */
+export interface TankNotice {
   readonly kind: 'info' | 'erreur';
   readonly text: string;
 }
@@ -921,8 +924,8 @@ export class AquariumHost {
   /** Mode du bac affiché (#278) : `decor` remplace le tableau de bord par le badge. */
   readonly careMode = signal<CareMode>('soins');
 
-  /** Message du dernier transfert d'animal (#306), `null` avant tout transfert. */
-  readonly transferNotice = signal<TransferNotice | null>(null);
+  /** Message du dernier transfert ou renommage (#306, #318), `null` avant tout geste. */
+  readonly tankNotice = signal<TankNotice | null>(null);
 
   /** Indice de l'élément de décor sélectionné (#167), `null` sinon. */
   readonly decorSelection = signal<number | null>(null);
@@ -2353,7 +2356,7 @@ export class AquariumHost {
   /**
    * Renomme le bac `id` de la liste (#316, `renameTank`) : nom normalisé, non vide, de
    * `MAX_TANK_NAME_LENGTH` caractères au plus ; enregistré aussitôt. Refus : message dans
-   * `transferNotice`, nom inchangé. Sans effet en capture ou avant le démarrage.
+   * `tankNotice`, nom inchangé. Sans effet en capture ou avant le démarrage.
    */
   renameTank(id: number, name: string): void {
     const world = this.currentWorld;
@@ -2362,7 +2365,7 @@ export class AquariumHost {
     }
     const renamed = renameTank(this.syncRoomState(world), id, name);
     if (renamed === null) {
-      this.transferNotice.set({
+      this.tankNotice.set({
         kind: 'erreur',
         text: `Nom refusé : de 1 à ${MAX_TANK_NAME_LENGTH} caractères`,
       });
@@ -2370,7 +2373,7 @@ export class AquariumHost {
       return;
     }
     this.roomState = renamed;
-    this.transferNotice.set(null);
+    this.tankNotice.set(null);
     this.syncRoomState(world);
     this.saveNow();
   }
@@ -2426,13 +2429,13 @@ export class AquariumHost {
       return;
     }
     if (tank.placement !== null) {
-      this.transferNotice.set({
+      this.tankNotice.set({
         kind: 'erreur',
         text: `« ${tank.name} » est posé dans la pièce : pas encore sélectionnable`,
       });
       return;
     }
-    this.transferNotice.set(null);
+    this.tankNotice.set(null);
     this.setEnvironment(tank.world.environment);
   }
 
@@ -2441,7 +2444,7 @@ export class AquariumHost {
    * `toId` (#306, `transferFish`) : le plus récent de cette espèce, comme le retrait de la
    * population. Le bac affiché perd l'animal en place ; le bac d'arrivée (rangé ou posé)
    * reçoit le nouvel animal, avec sa faim et sa santé. Refus (milieu, température, bac plein)
-   * ou réussite : message dans `transferNotice`. Enregistré aussitôt. Sans effet en capture
+   * ou réussite : message dans `tankNotice`. Enregistré aussitôt. Sans effet en capture
    * ou avant le démarrage.
    */
   transferAnimal(species: string, toId: number): void {
@@ -2458,12 +2461,12 @@ export class AquariumHost {
     }
     const fish = world.entities[index];
     if (fish === undefined) {
-      this.transferNotice.set({ kind: 'erreur', text: 'Aucun animal de cette espèce ici' });
+      this.tankNotice.set({ kind: 'erreur', text: 'Aucun animal de cette espèce ici' });
       return;
     }
     const result = transferFish(room, this.selectedTankId, toId, fish.id);
     if (!result.ok) {
-      this.transferNotice.set({ kind: 'erreur', text: result.message });
+      this.tankNotice.set({ kind: 'erreur', text: result.message });
       return;
     }
     // Une chute en cours se termine d'abord, comme avant tout changement du monde affiché.
@@ -2490,7 +2493,7 @@ export class AquariumHost {
     if (treated !== null) {
       warnings.push(treated);
     }
-    this.transferNotice.set({
+    this.tankNotice.set({
       kind: 'info',
       text: [`${moved} dans « ${arrival.name} »`, ...warnings].join('. '),
     });

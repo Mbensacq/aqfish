@@ -1,5 +1,7 @@
 // Barre flottante discrète (docs/DA.md, « Interface ») : sombre, translucide, coins arrondis,
-// atténuée tant qu'on ne l'utilise pas.
+// atténuée tant qu'on ne l'utilise pas. Couleurs : `ui/_panel-layout.scss` (#92).
+@use '../panel-layout' as layout;
+
 :host {
   position: fixed;
   bottom: 16px;
@@ -13,8 +15,8 @@
   gap: 4px;
   padding: 4px;
   border-radius: 10px;
-  background: rgb(20 20 24 / 72%); // #141418
-  color: #e8e6e3;
+  background: rgb(20 20 24 / 72%); // #141418, écrit en clair : lu par panel-contrast.spec
+  color: layout.$panel-ink;
   font:
     500 14px / 1.2 system-ui,
     sans-serif;
@@ -59,8 +61,8 @@
   }
 
   &--active {
-    border-color: #5fbfa3;
-    color: #5fbfa3;
+    border-color: layout.$panel-accent;
+    color: layout.$panel-accent;
   }
 }
 
