@@ -5597,10 +5597,10 @@
           "note": "Rétro #462 ; issue du cycle #451 (dette, restes interface, M) ; #459 #460 #461 créées ; PR roadmap ; dette 40"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-05T15:22:33.774Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-05T17:49:01.786Z",
+          "note": "PR #464 : restes du lot 4 interface (#92, #372, #268 faits ; #318 pts 2-3, #204 pt 2, #421 pt 2 ; reste reporté), CI verte ; test fps à délai explicite ; pied d'attribution réinséré par l'environnement dans le corps de PR"
         }
       },
       "metriques": {}
