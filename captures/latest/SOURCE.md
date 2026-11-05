@@ -1,8 +1,5 @@
-# Série c147
-
-- Branche : cycle/c147-dette-lot-2
-- PR : #448
-- Commit : 14c7ba2
-- Graine : 42
-- Temps : 9,2 min (128 specs)
-- Comparaison : 129 PNG identiques à l'octet à la série c146
+Branche : cycle/c148-dette-tests-mutants-e2e
+PR : #449
+Commit : 773ae6e
+Graine : celle des captures (par défaut)
+Temps : captures en 15,3 min, 128 tests ; 129 PNG, 128 identiques à c147, interface-liste-bacs.png diffère d un détail d animation (regardée, visuellement identique)
