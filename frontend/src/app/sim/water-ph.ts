@@ -21,9 +21,11 @@ export const MAX_PH = 9.5;
 
 /**
  * pH de l'eau neuve de chaque environnement. **Approximations de jeu** (ADR 0057) : eau
- * douce un peu acide à neutre pour le bac tropical, légèrement basique pour le bassin, neutre
- * pour le paludarium, eau de mer pour le récif, eau dure légèrement basique pour le bac d'eau
- * froide (axolotl : idéal 7,4–7,6, `docs/ESPECES.md`). Le type impose une entrée pour tout
+ * douce neutre pour le bac tropical (7, seule valeur commune au néon ≤ 7 et au guppy ≥ 7 de
+ * `docs/SOINS.md`), légèrement basique pour le bassin (un dixième au-dessus des 7–7,4 cités
+ * pour la koï), neutre pour le paludarium, eau de mer pour le récif (8,1–8,3 préférable,
+ * Holmes-Farley), eau dure légèrement basique pour le bac d'eau froide (axolotl : idéal
+ * 7,4–7,6, Loh, `docs/SOINS.md` et `docs/ESPECES.md`). Le type impose une entrée pour tout
  * nouvel environnement.
  */
 export const FRESH_PH: Readonly<Record<EnvironmentId, number>> = {
@@ -57,12 +59,15 @@ export interface SpeciesPh {
 }
 
 /**
- * Plages de pH de chaque espèce. **Toutes des approximations de jeu** (ADR 0057) : ordres de
- * grandeur de l'aquariophilie, non recoupés avec une source consultable pendant le cycle 78
- * (réseau limité aux registres de paquets). Seule contrainte vérifiée par les tests : le pH
- * de l'eau neuve de chaque environnement est dans la plage tolérée de chaque espèce qui y
- * vit, pour qu'un bac neuf n'use la santé de personne. Le type impose une entrée pour toute
- * nouvelle espèce.
+ * Plages de pH de chaque espèce. **Approximations de jeu** (ADR 0057), recoupées le 2026-11-05
+ * avec `docs/SOINS.md` (#250, tableau du complément de l'ADR 0057) : toléré de l'axolotl
+ * conforme à Loh, récif et poisson-clown proches de Holmes-Farley ; néon, guppy et corydoras
+ * élargis par rapport à leurs sources pour l'eau neuve à 7 et un idéal commun ; grenouille et
+ * triton sans source. Les espèces des lots suivants ont leurs bornes rapprochées de Seriously
+ * Fish, FishBase ou FishKeeper (commentaires ci-dessous). Seule contrainte vérifiée par les
+ * tests : le pH de l'eau neuve de chaque environnement est dans la plage tolérée de chaque
+ * espèce qui y vit, pour qu'un bac neuf n'use la santé de personne. Le type impose une entrée
+ * pour toute nouvelle espèce.
  */
 export const SPECIES_PH: Readonly<Record<SpeciesId, SpeciesPh>> = {
   // approximation de jeu : eau douce acide à neutre.

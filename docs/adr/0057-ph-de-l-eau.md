@@ -6,8 +6,7 @@
 
 ## Contexte
 
-L'épopée v0.12 « L'aquarium éducatif » commence par le pH : le modèle d'eau (ADR 0052,
-0053) a température, azote, filtre et changement d'eau, mais pas de pH. L'issue #236 demande
+L'épopée v0.12 « L'aquarium éducatif » commence par le pH : le modèle d'eau (ADR 0052, 0053) a température, azote, filtre et changement d'eau, mais pas de pH. L'issue #236 demande
 un pH simulé (pur, déterministe) qui dérive avec la charge organique et revient vers l'eau
 neuve au changement d'eau, une plage tolérée et une plage idéale par espèce, une usure lente
 de la santé hors plage tolérée, une jauge « pH » à zones dans la section « Eau », et une
@@ -113,3 +112,29 @@ environment)`), toujours écrit. Absent : pH de l'eau neuve de l'environnement d
 - Captures sans panneau identiques à l'octet (rien ne change au rendu) ; les captures avec
   panneau (`front-panneau`, `telephone-eau`) montrent la quatrième jauge.
 - Feuilles de catappa, dureté et fiches d'espèces liront `SPECIES_PH` et `water.ph`.
+
+## Complément (cycle 151, #250 point 2) : recoupement avec `docs/SOINS.md`
+
+`docs/SOINS.md` (§ 8 à 11) donne depuis le cycle 77 des pH cibles sourcés pour une partie des
+espèces. Recoupement fait le 2026-11-05, **sans changer aucune valeur** (le lot de dette ne
+change pas le comportement ; un écart conservé est dit ici) :
+
+| Espèce / bac              | `SOINS.md`                                                          | `SPECIES_PH` / `FRESH_PH`         | Verdict                                                                                                               |
+| ------------------------- | ------------------------------------------------------------------- | --------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| néon                      | 5,0 – 7,0 (FishBase)                                                | toléré 5,0 – 7,8, idéal 6,0 – 7,2 | borne basse conforme ; bornes hautes relevées pour l'eau neuve à 7,0 et l'idéal commun avec le guppy (voir plus haut) |
+| guppy                     | 7,0 – 8,0 (FishBase), 7,0 – 8,5 (SF)                                | toléré 6,5 – 8,5, idéal 6,8 – 8,0 | borne haute conforme à SF ; borne basse abaissée (le pH du bac baisse avec la charge)                                 |
+| corydoras                 | 6,0 – 7,0 (SF)                                                      | toléré 5,8 – 8,0, idéal 6,5 – 7,5 | plus large que la source : approximation conservée                                                                    |
+| koï                       | éviter < 5,5 et > 8,5 ; 7,0 – 7,4 cité (VIN/WSAVA)                  | toléré 6,5 – 9,0, idéal 7,0 – 8,0 | **écart** : borne haute tolérée 9,0 au-delà de 8,5 ; inatteignable en jeu (le pH ne fait que baisser depuis 7,5)      |
+| axolotl                   | 7,4 – 7,6, tolérance 6,5 – 8,0 (Loh) ; 7,1 – 7,6 (UKY)              | toléré 6,5 – 8,0, idéal 7,0 – 7,6 | toléré **conforme** (Loh) ; idéal un peu plus large que UKY                                                           |
+| grenouille, triton        | non vérifié                                                         | toléré 6,0 – 8,0, idéal 6,5 – 7,5 | approximation de jeu, aucune source                                                                                   |
+| poisson-clown             | 8,3 (TFH)                                                           | toléré 7,8 – 8,6, idéal 8,0 – 8,4 | conforme                                                                                                              |
+| chirurgien et récif       | 7,8 – 8,5, 8,1 – 8,3 préférable (Holmes-Farley) ; 7,8 – 8,3 (Merck) | toléré 7,8 – 8,6, idéal 8,1 – 8,4 | borne haute tolérée 8,6 au-delà de 8,5, inatteignable (eau neuve 8,2)                                                 |
+| `FRESH_PH` récif 8,2      | 8,1 – 8,3 préférable                                                | —                                 | conforme                                                                                                              |
+| `FRESH_PH` eau froide 7,5 | 7,4 – 7,6 (Loh)                                                     | —                                 | conforme                                                                                                              |
+| `FRESH_PH` bassin 7,5     | 7,0 – 7,4 cité pour la koï                                          | —                                 | un dixième au-dessus de l'optimum cité, dans la plage tolérée                                                         |
+| `FRESH_PH` tropical 7,0   | néon ≤ 7,0, guppy ≥ 7,0                                             | —                                 | à la jonction des deux sources : seule valeur commune                                                                 |
+
+Les espèces ajoutées depuis (ADR 0070, 0090, 0095, 0097, 0103, 0104) ont déjà leurs bornes
+rapprochées de Seriously Fish, FishBase ou FishKeeper dans le code ; `docs/SOINS.md` ne les
+traite pas. Les lignes « approximation de jeu » de `water-ph.ts` le restent pour les valeurs
+qui s'écartent des sources.
