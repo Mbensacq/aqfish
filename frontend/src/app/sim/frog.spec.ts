@@ -189,6 +189,10 @@ describe('grenouille : milieu voulu et créneaux de saut', () => {
     expect(() => wantsWater(PARAMS, -1, 0, 0)).toThrow(RangeError);
     expect(() => hopDrawAt(-1, 0, 0)).toThrow(RangeError);
     expect(() => hopSlotAt(PARAMS, 1, 1.5, 0)).toThrow(RangeError);
+    // Message lu tel quel par qui appelle mal la fonction (mutant survivant, #235).
+    expect(() => wantsWater(PARAMS, 1, 0, -1)).toThrow(
+      'time doit être un réel positif ou nul (reçu : -1)',
+    );
   });
 });
 
