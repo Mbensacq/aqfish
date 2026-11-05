@@ -2,7 +2,8 @@ import { expect, type Page } from '@playwright/test';
 
 import { CAMERA_FOV_DEG } from '../src/app/render/camera-presets';
 import { SAVE_STORAGE_KEY } from '../src/app/core/save-storage/save-storage';
-import { DEFAULT_DECOR } from '../src/app/sim/decor';
+import { DEFAULT_DECOR, type DecorItem } from '../src/app/sim/decor';
+import { addDecorItem, type DecorChoiceId } from '../src/app/sim/decor-edit';
 import { DEFAULT_TANK, SAND_THICKNESS } from '../src/app/sim/tank';
 import { selectedTankWorld } from './outils-sauvegarde';
 
@@ -111,6 +112,42 @@ export async function savedDecor(page: Page): Promise<SavedItem[]> {
   const text = await page.evaluate((key) => localStorage.getItem(key), SAVE_STORAGE_KEY);
   expect(text).not.toBeNull();
   return selectedTankWorld<{ decor: SavedItem[] }>(text!).decor;
+}
+
+/** Graine du monde du bac sélectionné, lue dans la sauvegarde locale. */
+export async function savedWorldSeed(page: Page): Promise<number> {
+  const text = await page.evaluate((key) => localStorage.getItem(key), SAVE_STORAGE_KEY);
+  expect(text).not.toBeNull();
+  return selectedTankWorld<{ seed: number }>(text!).seed;
+}
+
+/**
+ * Élément attendu après l'ajout de `choice` en (x, z) au décor `before` d'un monde de graine
+ * `worldSeed` (bac tropical) : calculé depuis le catalogue (graine, rotation, emprise), non
+ * depuis la sauvegarde (#194, point 2).
+ */
+export function expectedAddedItem(
+  before: readonly DecorItem[],
+  choice: DecorChoiceId,
+  x: number,
+  z: number,
+  worldSeed: number,
+): DecorItem {
+  const decor = addDecorItem(before, choice, x, z, worldSeed, 'tropical');
+  expect(decor).not.toBeNull();
+  return decor!.at(-1)!;
+}
+
+/**
+ * Vérifie l'élément ajouté `added` contre l'attendu du catalogue `expected` : même type, même
+ * graine et même rotation, centre à moins de 2 cm (le point cliqué est relu à l'écran).
+ */
+export function expectAddedItem(added: SavedItem, expected: DecorItem): void {
+  expect(added.kind).toBe(expected.kind);
+  expect(added.seed).toBe(expected.seed);
+  expect(added.rotation).toBeCloseTo(expected.rotation, 6);
+  expect(Math.abs(added.x - expected.x)).toBeLessThan(0.02);
+  expect(Math.abs(added.z - expected.z)).toBeLessThan(0.02);
 }
 
 /** Glisser à la souris de `from` à `to` (points du bac), en plusieurs pas. */

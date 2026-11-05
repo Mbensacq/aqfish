@@ -261,10 +261,13 @@ export function roomItemBox(item: RoomItem): FurnitureBox {
   };
 }
 
-/** Vrai si les emprises au sol de `a` et `b` ont un intérieur commun (se toucher est permis). */
-/** Emprise au sol d'une boîte (x, z), sans hauteur : passage devant la porte (#388). */
-type Footprint = Pick<FurnitureBox, 'minX' | 'maxX' | 'minZ' | 'maxZ'>;
+/**
+ * Emprise au sol d'une boîte (x, z), sans hauteur : passage devant la porte (#388), meubles
+ * supports et bacs posés (#313).
+ */
+export type Footprint = Pick<FurnitureBox, 'minX' | 'maxX' | 'minZ' | 'maxZ'>;
 
+/** Vrai si les emprises au sol de `a` et `b` ont un intérieur commun (se toucher est permis). */
 function footprintsOverlap(a: Footprint, b: Footprint): boolean {
   return (
     a.minX < b.maxX - EPS && a.maxX > b.minX + EPS && a.minZ < b.maxZ - EPS && a.maxZ > b.minZ + EPS
@@ -282,6 +285,7 @@ export type RoomDropRefusal =
   | 'introuvable'
   | 'hors-piece'
   | 'meuble-bac'
+  | 'meuble-support'
   | 'porte'
   | 'sur-plante'
   | 'chevauche'
@@ -388,7 +392,8 @@ function atElevation(item: RoomItem, elevation: number): RoomItem {
  *
  * Refus : pièce pleine (`MAX_ROOM_ITEMS`), indice inconnu, emprise hors de la pièce (au-delà
  * des marges, dans le mur ou ses plinthes), sur le meuble du bac (il est sous le bac), devant
- * la porte (#363), pose sur une plante,
+ * la porte (#363), sur l'emprise au sol d'un meuble support ou d'un bac posé de la pièce de
+ * N bacs (`obstacles`, `layoutFootprints`, #313), pose sur une plante,
  * ou dessus plus haut que le dessous des poutres du plafond (`roomInterior`, #336). Ne
  * modifie jamais `room` ; même entrée, même résultat.
  */
@@ -397,6 +402,7 @@ export function dropRoomItem(
   dims: TankDimensions,
   request: RoomDropRequest,
   replace?: number,
+  obstacles: readonly Footprint[] = [],
 ): RoomDropResult {
   const items = room.items ?? [];
   if (replace === undefined && items.length >= MAX_ROOM_ITEMS) {
@@ -432,6 +438,9 @@ export function dropRoomItem(
   }
   if (footprintsOverlap(box, bounds.door)) {
     return { ok: false, reason: 'porte' };
+  }
+  if (obstacles.some((o) => footprintsOverlap(box, o))) {
+    return { ok: false, reason: 'meuble-support' };
   }
   // Ce que portait l'élément remplacé ne l'arrête pas : il retombe ensuite sur sa nouvelle
   // pose, ou plus bas (rotation sur place : une plante posée sur l'étagère y reste).
@@ -545,7 +554,8 @@ export function tidyRoomItems(items: readonly RoomItem[]): readonly RoomItem[] {
  * Fait retomber les éléments qui ne reposent plus sur rien (support retiré ou déplacé,
  * #182 transposé à la pièce) : du plus bas au plus haut (cascade), chacun descend jusqu'au
  * plus haut dessus chevauché sous sa base, ou jusqu'au parquet. S'il tomberait sur une
- * plante, il va au parquet si rien ne l'y gêne, sinon il reste en place. Un élément soutenu
+ * plante, il descend sur la plus haute surface porteuse plus basse (dessus d'un meuble, ou
+ * parquet) où rien ne le gêne (`freeSurfaceBelow`), sinon il reste en place. Un élément soutenu
  * garde sa pose à l'identique. Nouvelle liste, dans le même ordre ; ne modifie pas `items`.
  */
 export function settleRoomItems(items: readonly RoomItem[]): readonly RoomItem[] {
@@ -567,13 +577,41 @@ export function settleRoomItems(items: readonly RoomItem[]): readonly RoomItem[]
       work[i] = atElevation(item, elevation);
       continue;
     }
-    const grounded = atElevation(item, 0);
-    const groundedBox = roomItemBox(grounded);
-    if (!others.some((other) => boxesOverlap(groundedBox, roomItemBox(other)))) {
-      work[i] = grounded;
+    const below = freeSurfaceBelow(item, others, elevation);
+    if (below !== null) {
+      work[i] = atElevation(item, below);
     }
   }
   return work;
+}
+
+/**
+ * Plus haute surface libre sous `item` quand sa chute l'arrêterait sur une plante à la hauteur
+ * `plantTop` (#200, cas 1) : dessus d'un élément porteur chevauché plus bas, ou le parquet,
+ * où il se pose sans pénétrer aucun élément de `others` (il passe à côté de la plante).
+ * `null` s'il n'y en a aucune : l'élément reste en place, en l'air (geste refusé par
+ * l'appelant, `floatingRoomItems`).
+ */
+function freeSurfaceBelow(
+  item: RoomItem,
+  others: readonly RoomItem[],
+  plantTop: number,
+): number | null {
+  const box = roomItemBox(item);
+  const heights = new Set<number>([0]);
+  for (const other of others) {
+    const b = roomItemBox(other);
+    if (ROOM_CATALOG[other.kind].supports && footprintsOverlap(box, b) && b.maxY < plantTop - EPS) {
+      heights.add(snap(b.maxY));
+    }
+  }
+  for (const h of [...heights].sort((a, b) => b - a)) {
+    const placed = roomItemBox(atElevation(item, h));
+    if (!others.some((other) => boxesOverlap(placed, roomItemBox(other)))) {
+      return h;
+    }
+  }
+  return null;
 }
 
 /** Blocs voxels de l'élément `item`, base à la hauteur `floorY` + élévation (repère du bac). */

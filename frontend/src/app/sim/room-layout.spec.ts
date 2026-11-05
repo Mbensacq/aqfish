@@ -2,11 +2,13 @@ import {
   addedTankDimensions,
   findSupportSpot,
   findTankSpot,
+  layoutFootprints,
   roomLayoutBlocks,
   SUPPORT_GAP_CM,
   type FloorRect,
 } from './room-layout';
-import { roomArea } from './room-furniture';
+import { ROOM_ITEM_KINDS, type Room, type RoomQuarter } from './room';
+import { dropRoomItem, roomArea, roomItemBox } from './room-furniture';
 import {
   addSupport,
   addTank,
@@ -238,5 +240,133 @@ describe('pièce à 3 bacs et 2 meubles : hôte du lot 2b', () => {
     expect(tankResizeRefusal(room, 1, TANK_SIZES.grand.dimensions)).toBe('hors-support');
     expect(tankResizeRefusal(room, 1, TANK_SIZES.petit.dimensions)).toBeNull();
     expect(tankResizeRefusal(room, 9, TANK_SIZES.petit.dimensions)).toBe('bac-inconnu');
+  });
+});
+
+describe('pièce graphique et pièce de N bacs : aucun chevauchement (#313, ADR 0074)', () => {
+  /** Commode et étagère, un bac sur la commode, un petit bac au sol. */
+  function furnished(): RoomState {
+    let room = withCommode();
+    const shelf = findSupportSpot(room, 'etagere-bacs', AREA)!;
+    room = ok(addSupport(room, 'etagere-bacs', shelf.x, shelf.z)).room;
+    const onCommode = findTankSpot(room, 'tropical', 'moyen', 0, AREA)!;
+    room = ok(addTank(room, { environment: 'tropical', size: 'moyen', placement: onCommode })).room;
+    const onFloor = findTankSpot(room, 'tropical', 'petit', null, AREA, layoutFootprints(room))!;
+    return ok(addTank(room, { environment: 'tropical', size: 'petit', placement: onFloor })).room;
+  }
+
+  const inside = (a: FloorRect, b: FloorRect) =>
+    a.minX < b.maxX - 1e-6 &&
+    b.minX < a.maxX - 1e-6 &&
+    a.minZ < b.maxZ - 1e-6 &&
+    b.minZ < a.maxZ - 1e-6;
+
+  it('emprises au sol : meubles et bac posé au sol, pas le bac sur la commode ni le bac affiché', () => {
+    const room = furnished();
+    const rects = layoutFootprints(room);
+    expect(rects).toHaveLength(3);
+    const commode = room.furniture[0];
+    expect(rects[0]).toEqual({
+      minX: commode.x - SUPPORT_CATALOG.commode.width / 200,
+      maxX: commode.x + SUPPORT_CATALOG.commode.width / 200,
+      minZ: commode.z - SUPPORT_CATALOG.commode.depth / 200,
+      maxZ: commode.z + SUPPORT_CATALOG.commode.depth / 200,
+    });
+    expect(layoutFootprints(createRoom(42))).toEqual([]);
+  });
+
+  it('un meuble de la pièce graphique ne se pose jamais sur un meuble support ou un bac posé', () => {
+    const room = furnished();
+    const obstacles = layoutFootprints(room);
+    const dims = createDefaultWorld(1).dimensions ?? TANK_SIZES.moyen.dimensions;
+    const graphic: Room = { shown: true, cabinetHeight: 0.75 };
+    let accepted = 0;
+    let refused = 0;
+    for (const kind of ROOM_ITEM_KINDS) {
+      for (let x = AREA.minX; x <= AREA.maxX; x += 0.15) {
+        for (let z = AREA.minZ; z <= AREA.maxZ; z += 0.15) {
+          for (const quarter of [0, 1] as RoomQuarter[]) {
+            const result = dropRoomItem(
+              graphic,
+              dims,
+              { kind, x, z, quarter },
+              undefined,
+              obstacles,
+            );
+            if (!result.ok) {
+              refused += result.reason === 'meuble-support' ? 1 : 0;
+              continue;
+            }
+            accepted += 1;
+            const box = roomItemBox(result.items[result.index]);
+            expect(obstacles.some((o) => inside(box, o))).toBe(false);
+          }
+        }
+      }
+    }
+    // Le balayage touche les deux cas : des poses acceptées et des refus sur les meubles.
+    expect(accepted).toBeGreaterThan(0);
+    expect(refused).toBeGreaterThan(0);
+  });
+
+  it('dans l’autre sens : un meuble support ajouté évite les meubles de la pièce graphique', () => {
+    const dims = createDefaultWorld(1).dimensions ?? TANK_SIZES.moyen.dimensions;
+    // Étagère de la pièce graphique à la place que prendrait la commode dans une pièce vide.
+    const free = findSupportSpot(createRoom(42), 'commode', AREA)!;
+    const first = dropRoomItem({ shown: true, cabinetHeight: 0.75 }, dims, {
+      kind: 'etagere',
+      x: free.x,
+      z: free.z,
+      quarter: 0,
+    });
+    expect(first.ok).toBe(true);
+    const items = first.ok ? first.items : [];
+    const obstacles = items.map((item) => roomItemBox(item));
+    let room = createRoom(42);
+    for (const kind of ['commode', 'etagere-bacs'] as const) {
+      const spot = findSupportSpot(room, kind, AREA, obstacles)!;
+      room = ok(addSupport(room, kind, spot.x, spot.z)).room;
+    }
+    expect(room.furniture[0].x).not.toBe(free.x);
+    for (const rect of layoutFootprints(room)) {
+      expect(obstacles.some((o) => inside(rect, o))).toBe(false);
+    }
+  });
+
+  it('déplacer un meuble de la pièce graphique sur un meuble support est refusé', () => {
+    const room = furnished();
+    const obstacles = layoutFootprints(room);
+    const dims = createDefaultWorld(1).dimensions ?? TANK_SIZES.moyen.dimensions;
+    const commode = room.furniture[0];
+    const placed = dropRoomItem(
+      { shown: true, cabinetHeight: 0.75 },
+      dims,
+      {
+        kind: 'plante-pot',
+        x: -1.4,
+        z: 0.6,
+        quarter: 0,
+      },
+      undefined,
+      obstacles,
+    );
+    expect(placed.ok).toBe(true);
+    const graphic: Room = {
+      shown: true,
+      cabinetHeight: 0.75,
+      items: placed.ok ? placed.items : [],
+    };
+    const request = {
+      kind: 'plante-pot' as const,
+      x: commode.x,
+      z: commode.z,
+      quarter: 0 as const,
+    };
+    expect(dropRoomItem(graphic, dims, request, 0, obstacles)).toEqual({
+      ok: false,
+      reason: 'meuble-support',
+    });
+    // Sans obstacles (comportement d'avant #313), la plante s'y posait.
+    expect(dropRoomItem(graphic, dims, request, 0).ok).toBe(true);
   });
 });

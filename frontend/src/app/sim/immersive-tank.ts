@@ -151,8 +151,9 @@ export function immersivePopulation(
 
 /**
  * Monde du mode immersif : bac de `environment` aux dimensions `layout.dimensions`, sans
- * décor posé, en mode décor, peuplé par `immersivePopulation` à ces dimensions. Jamais sauvegardé. Au récif,
- * coraux et anémones sont tirés de la graine dans ces dimensions, comme pour tout récif.
+ * décor posé, en mode décor, peuplé par `immersivePopulation` à ces dimensions. Jamais
+ * sauvegardé. Au récif, coraux et anémones sont tirés de la graine dans ces dimensions,
+ * comme pour tout récif.
  * @throws RangeError si `environment` n'est pas proposé au mode immersif.
  */
 export function createImmersiveWorld(

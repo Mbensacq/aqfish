@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
 import { DEFAULT_DECOR, type DecorItem } from '../src/app/sim/decor';
-import { clampDecorPosition, isDecorPoseAllowed } from '../src/app/sim/decor-edit';
+import { isDecorPoseAllowed } from '../src/app/sim/decor-edit';
 import { SAND_THICKNESS } from '../src/app/sim/tank';
 import {
   blockEngine,
@@ -9,11 +9,14 @@ import {
   count,
   dragTank,
   ENGINE_MARKER,
+  expectAddedItem,
+  expectedAddedItem,
   FREE_SAND,
   host,
   openScene,
   ROCK_2,
   savedDecor,
+  savedWorldSeed,
   startEditing,
 } from './outils-decor';
 
@@ -71,15 +74,11 @@ test.describe('Pose par gravité (#170)', () => {
     );
     const added = (await savedDecor(page)).at(-1)!;
     expect(added.elevation).toBeUndefined();
-    const expected = clampDecorPosition(
-      added as DecorItem,
-      FREE_SAND[0],
-      FREE_SAND[2],
-      'tropical',
-    )!;
-    expect(added.x).toBeCloseTo(expected.x, 2);
-    expect(added.z).toBeCloseTo(expected.z, 2);
-    expect(Math.abs(added.z - FREE_SAND[2])).toBeLessThan(0.02);
+    const seed = await savedWorldSeed(page);
+    expectAddedItem(
+      added,
+      expectedAddedItem(DEFAULT_DECOR, 'rock', FREE_SAND[0], FREE_SAND[2], seed),
+    );
     expect(errors).toEqual([]);
   });
 
