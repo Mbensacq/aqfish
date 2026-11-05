@@ -113,12 +113,50 @@ test.describe('Mode décor (#278)', () => {
     await expect(confirmBox(page)).toBeVisible();
   }
 
-  test('retour en soins : « Tout retirer » retire exactement les animaux listés (#278, lot 2)', async ({
+  /**
+   * Dialogue du retour en soins lisible dans une fenêtre `size` : dans l'écran, sans débord
+   * horizontal, boutons visibles ; capture jointe au rapport.
+   */
+  async function expectReadableDialog(
+    page: Page,
+    size: { readonly width: number; readonly height: number },
+  ): Promise<void> {
+    const box = await confirmBox(page).boundingBox();
+    expect(box).not.toBeNull();
+    expect(box!.x).toBeGreaterThanOrEqual(0);
+    expect(box!.y).toBeGreaterThanOrEqual(0);
+    expect(box!.x + box!.width).toBeLessThanOrEqual(size.width);
+    expect(box!.y + box!.height).toBeLessThanOrEqual(size.height);
+    // Aucun débord horizontal du dialogue ni de ses lignes.
+    const overflow = await confirmBox(page).evaluate((el) =>
+      [el, ...el.querySelectorAll('li, button')].some(
+        (node) => node.scrollWidth > node.clientWidth + 1,
+      ),
+    );
+    expect(overflow).toBe(false);
+    for (const button of ['Tout retirer', 'Tout garder', 'Annuler']) {
+      await expect(confirmBox(page).getByRole('button', { name: button })).toBeInViewport();
+    }
+    // Capture jointe au rapport (vue de face, critère « lisible à chaque largeur »).
+    const shot = test.info().outputPath(`retour-soins-${size.width}.png`);
+    await page.screenshot({ path: shot });
+    await test.info().attach(`retour-soins-${size.width}`, {
+      path: shot,
+      contentType: 'image/png',
+    });
+  }
+
+  // Regroupés (#384) : « Tout retirer » et la lisibilité à 1280 px ouvraient chacun la même
+  // scène dans la même fenêtre (1280 × 720, celle par défaut) ; une seule ouverture suffit.
+  test('retour en soins : liste lisible sans débord à 1280 px, puis « Tout retirer » retire exactement les animaux listés (#278, lot 2)', async ({
     page,
   }) => {
+    const size = { width: 1280, height: 720 };
+    await page.setViewportSize(size);
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
     await decorWithStrangers(page);
+    await expectReadableDialog(page, size);
     const neons = await count(page, 'neon');
     const guppys = await count(page, 'guppy');
     await expect(confirmBox(page).locator('[data-unsuitable]')).toHaveCount(2);
@@ -140,36 +178,10 @@ test.describe('Mode décor (#278)', () => {
     expect(errors).toEqual([]);
   });
 
-  for (const size of [
-    { width: 1280, height: 720 },
-    { width: 390, height: 844 },
-  ]) {
-    test(`retour en soins : liste lisible sans débord à ${size.width} px`, async ({ page }) => {
-      await page.setViewportSize(size);
-      await decorWithStrangers(page);
-      const box = await confirmBox(page).boundingBox();
-      expect(box).not.toBeNull();
-      expect(box!.x).toBeGreaterThanOrEqual(0);
-      expect(box!.y).toBeGreaterThanOrEqual(0);
-      expect(box!.x + box!.width).toBeLessThanOrEqual(size.width);
-      expect(box!.y + box!.height).toBeLessThanOrEqual(size.height);
-      // Aucun débord horizontal du dialogue ni de ses lignes.
-      const overflow = await confirmBox(page).evaluate((el) =>
-        [el, ...el.querySelectorAll('li, button')].some(
-          (node) => node.scrollWidth > node.clientWidth + 1,
-        ),
-      );
-      expect(overflow).toBe(false);
-      for (const button of ['Tout retirer', 'Tout garder', 'Annuler']) {
-        await expect(confirmBox(page).getByRole('button', { name: button })).toBeInViewport();
-      }
-      // Capture jointe au rapport (vue de face, critère « lisible à chaque largeur »).
-      const shot = test.info().outputPath(`retour-soins-${size.width}.png`);
-      await page.screenshot({ path: shot });
-      await test.info().attach(`retour-soins-${size.width}`, {
-        path: shot,
-        contentType: 'image/png',
-      });
-    });
-  }
+  test('retour en soins : liste lisible sans débord à 390 px', async ({ page }) => {
+    const size = { width: 390, height: 844 };
+    await page.setViewportSize(size);
+    await decorWithStrangers(page);
+    await expectReadableDialog(page, size);
+  });
 });
