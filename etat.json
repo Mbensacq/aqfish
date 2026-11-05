@@ -5609,10 +5609,10 @@
           "note": "Verdict OK, 0 bug, captures publiées (c153, 11 différentes de c152, interface seulement), unitaires 4106 verts, CI verte"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-05T18:23:07.015Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-05T20:02:24.248Z",
+          "note": "PR #464 fusionnée → v1.10.6 (CI main verte, release créée) ; PR #463 (roadmap) fusionnée ; #255 laissée ouverte (pt 3) ; suppression de branche refusée par l'environnement ; pied d'attribution réinséré par l'environnement dans le corps de PR"
         }
       },
       "metriques": {}
