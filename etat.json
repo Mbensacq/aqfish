@@ -5595,6 +5595,12 @@
           "debut": "2026-11-05T15:08:45.601Z",
           "fin": "2026-11-05T15:21:54.311Z",
           "note": "Rétro #462 ; issue du cycle #451 (dette, restes interface, M) ; #459 #460 #461 créées ; PR roadmap ; dette 40"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-05T15:22:33.774Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
