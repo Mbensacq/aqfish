@@ -95,6 +95,7 @@ import { environmentTonePenalties, PalettePass } from './palette-pass';
 import { DirectPass } from './direct-pass';
 import { PIXEL_SIZE, type Size } from './pixel-art';
 import { WaterLightLayer } from './water-light';
+import { DecorClock } from './decor-clock';
 import {
   FULL_MOTION,
   motionFactors,
@@ -394,9 +395,14 @@ export class AquariumView {
     landedFood: false,
     motion: 1,
   };
+  /** Horloges de l'eau et de la pluie (#409) : ralenties sans saut de phase à la bascule. */
+  private readonly waterClock = new DecorClock();
+  private readonly rainClock = new DecorClock();
+  /** Dernier temps simulé passé à `updateDecor` : instant de bascule des horloges. */
+  private decorTime = 0;
   /** Temps propre d'un effet (`updateVisibleEffects`) : pluie ralentie si mouvements réduits. */
   private readonly effectTime = (layer: EffectLayer, time: number): number =>
-    layer === this.rainLayer ? time * this.motion.rainSpeed : time;
+    layer === this.rainLayer ? this.rainClock.at(time) : time;
   /** Préréglage courant, recadré à chaque redimensionnement tant que l'utilisateur n'a pas bougé. */
   private preset: CameraPreset | null;
   /** Transition en cours vers un préréglage (`null` sinon), avancée par `stepCameraTransition`. */
@@ -694,11 +700,12 @@ export class AquariumView {
    */
   updateDecor(time: number): void {
     if (!this.disposed) {
-      // Mouvements réduits (#406) : plantes moins amples, eau et pluie plus lentes. Les
-      // facteurs valent exactement 1 sinon (multiplications exactes : rendu inchangé).
-      const motion = this.motion;
-      const waterTime = time * motion.waterWave;
-      this.decorLayer.update(time, motion.plantSway);
+      // Mouvements réduits (#406) : plantes moins amples, eau et pluie plus lentes, par des
+      // horloges propres (#409) : la bascule ne fait pas sauter la phase. Sans bascule, les
+      // horloges rendent exactement le temps simulé (rendu inchangé).
+      this.decorTime = time;
+      const waterTime = this.waterClock.at(time);
+      this.decorLayer.update(time, this.motion.plantSway);
       // Sous la pluie, les nénuphars frémissent (issue #106).
       this.lilyPadLayer.update(waterTime, this.rainLayer.isEnabled ? 1 : 0);
       updateVisibleEffects(this.effects, time, this.effectTime);
@@ -712,6 +719,8 @@ export class AquariumView {
    */
   setReducedMotion(reduced: boolean): void {
     this.motion = motionFactors(reduced);
+    this.waterClock.setRate(this.motion.waterWave, this.decorTime);
+    this.rainClock.setRate(this.motion.rainSpeed, this.decorTime);
   }
 
   /** Vrai si les mouvements décoratifs sont réduits. */
