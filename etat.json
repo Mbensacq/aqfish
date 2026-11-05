@@ -5447,10 +5447,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-05T03:41:37.319Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-05T03:42:10.089Z",
+          "note": "Issue #441 : dette lot 4/6, interface et panneaux (M)"
         }
       },
       "metriques": {}
