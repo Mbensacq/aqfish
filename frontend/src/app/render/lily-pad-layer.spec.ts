@@ -1,20 +1,22 @@
-import { Mesh, ShaderMaterial, Vector2, type MeshBasicMaterial } from 'three';
+import { Color, Mesh, ShaderMaterial, Vector2, type MeshBasicMaterial } from 'three';
 
 import { environmentWater, POND } from '../sim/environment';
 import { MAX_SEED } from '../core/random/prng';
 import { LILY_PAD_EDGE_MARGIN, lilyPadLayout, lilyPadPose } from '../sim/lily-pads';
 import { SAND_THICKNESS, WATER_LEVEL_RATIO } from '../sim/tank';
 import { DECOR_RENDER_ORDER, OUTLINE_COLOR, OUTLINE_WIDTH_PX } from './decor-layer';
-import { FISH_RENDER_ORDER } from './fish-layer';
+import { FISH_RENDER_ORDER, FishLayer } from './fish-layer';
 import {
   createLilyPadOutlineMaterial,
   FLOWER_OUTLINE_RENDER_ORDER,
   FLOWER_RENDER_ORDER,
   LILY_PAD_LIFT,
+  LILY_PAD_NIGHT_SHADOW_COLOR,
   LILY_PAD_SHADOW_COLOR,
   LILY_PAD_SHADOW_OFFSET,
   LILY_PAD_SHADOW_RENDER_ORDER,
   LilyPadLayer,
+  lilyPadShadowInto,
 } from './lily-pad-layer';
 import {
   FLOWER_OFFSET_RATIO,
@@ -25,7 +27,7 @@ import {
   PETAL_RINGS,
 } from './lily-flower-model';
 import { LILY_PAD_THICKNESS } from './lily-pad-model';
-import { PALETTE_COLORS } from './palette';
+import { NIGHT_TONES, PALETTE_COLORS } from './palette';
 import { SURFACE_RENDER_ORDER } from './water-light';
 
 const PADS = lilyPadLayout(42, environmentWater('bassin'), POND.lilyPads);
@@ -110,6 +112,60 @@ describe('LilyPadLayer', () => {
     expect(shadowMaterial.color.getHexString()).not.toBe(LILY_PAD_SHADOW_COLOR.slice(1));
     layer.setTint([1, 1, 1]);
     expect(`#${shadowMaterial.color.getHexString()}`).toBe(LILY_PAD_SHADOW_COLOR);
+  });
+
+  it('ombre de nuit (#115) : bleu nuit de la palette, pas l’eau profonde multipliée', () => {
+    const shadow = layer.object.getObjectByName('nenuphar-0-ombre') as Mesh;
+    const color = (shadow.material as MeshBasicMaterial).color;
+    layer.setTint([0.4, 0.5, 1.2], 0);
+    expect(`#${color.getHexString()}`).toBe(LILY_PAD_NIGHT_SHADOW_COLOR);
+    expect(LILY_PAD_NIGHT_SHADOW_COLOR).toBe(NIGHT_TONES.rocheLuneSombre);
+    // Bleu : la composante bleue domine (l'ancienne ombre virait au vert sombre).
+    expect(color.b).toBeGreaterThan(color.g);
+    layer.setTint([1, 1, 1], 1);
+    expect(`#${color.getHexString()}`).toBe(LILY_PAD_SHADOW_COLOR);
+  });
+
+  it('lilyPadShadowInto : plein jour inchangé, nuit sous le ciel couvert, bornes', () => {
+    const out = new Color();
+    const day = new Color(LILY_PAD_SHADOW_COLOR);
+    const night = new Color(LILY_PAD_NIGHT_SHADOW_COLOR);
+    expect(lilyPadShadowInto([0.5, 0.5, 0.5], 1, 0.3, out)).toBe(out);
+    expect(out.r).toBeCloseTo(day.r * 0.5, 12);
+    lilyPadShadowInto([0.4, 0.5, 1.2], 0, 0.5, out);
+    expect(out.b).toBeCloseTo(night.b * 0.5, 12);
+    // Mi-transition : entre les deux ; valeurs hors bornes ramenées, non finies : plein jour.
+    lilyPadShadowInto([1, 1, 1], 0.5, 1, out);
+    expect(out.g).toBeCloseTo((day.g + night.g) / 2, 12);
+    lilyPadShadowInto([1, 1, 1], -3, 7, out);
+    expect(out.equals(night)).toBe(true);
+    lilyPadShadowInto([1, 1, 1], NaN, NaN, out);
+    expect(out.equals(day)).toBe(true);
+  });
+
+  it('ordre de profondeur (#115) : la feuille masque le poisson dessous', () => {
+    // Feuilles dessinées avant les poissons, en écrivant une profondeur rapprochée de la
+    // caméra : un poisson sous une feuille échoue au test de profondeur sur toute la feuille.
+    const meshes = PADS.map(
+      (_, n) => layer.object.getObjectByName(`nenuphar-${n}-feuille`) as Mesh,
+    );
+    for (const mesh of meshes) {
+      const material = mesh.material as MeshBasicMaterial;
+      expect(mesh.renderOrder).toBeLessThan(FISH_RENDER_ORDER);
+      expect(material.depthTest && material.depthWrite).toBe(true);
+      expect(material.polygonOffset).toBe(true);
+      expect(material.polygonOffsetFactor).toBeLessThan(0);
+      expect(material.polygonOffsetUnits).toBeLessThan(0);
+    }
+    const fish = new FishLayer(undefined, 4);
+    fish.object.traverse((o) => {
+      if (o instanceof Mesh) {
+        const material = o.material as MeshBasicMaterial;
+        expect(o.renderOrder).toBe(FISH_RENDER_ORDER);
+        expect(material.depthTest).toBe(true);
+      }
+    });
+    fish.dispose();
   });
 
   it('setPads remplace les feuilles ; une liste vide les retire toutes', () => {

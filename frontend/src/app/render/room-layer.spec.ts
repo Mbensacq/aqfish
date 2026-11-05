@@ -1,7 +1,7 @@
 import { Color, Mesh } from 'three';
 
 import { DEFAULT_ROOM, roomBlocks, roomInterior, type Room } from '../sim/room';
-import { roomTrimBlocks } from '../sim/room-details';
+import { roomTrimBlocks, trimLightInto } from '../sim/room-details';
 import { lightAt } from '../sim/daylight';
 import { furnitureBlocks, ROOM_CATALOG } from '../sim/room-furniture';
 import { createWindowLight, roomWindowBlocks, windowLightInto } from '../sim/room-window';
@@ -259,9 +259,13 @@ describe('RoomLayer (#187)', () => {
       ...roomBlocks(DEFAULT_TANK, SHOWN),
       ...roomTrimBlocks(DEFAULT_TANK, SHOWN),
     ].filter((b) => b.shell === 'fond');
-    expect(byName.get('piece-mur')!.geometry.getAttribute('position').array.length).toBe(
-      wallBlocks.length * 36 * 3,
-    );
+    // Mur du fond et sa moulure, en maillage enfant depuis #388 : tous les blocs de la paroi.
+    const wall = byName.get('piece-mur')!;
+    const trim = wall.getObjectByName('piece-mur-moulures') as Mesh;
+    expect(
+      wall.geometry.getAttribute('position').array.length +
+        trim.geometry.getAttribute('position').array.length,
+    ).toBe(wallBlocks.length * 36 * 3);
     expect(byName.get('piece-fenetre-bois')!.geometry.getAttribute('position').array.length).toBe(
       count('fenetre'),
     );
@@ -309,6 +313,44 @@ describe('RoomLayer (#187)', () => {
     layer.setDaylight(lightAt(12));
     expect(layer.windowColors.glass).toEqual([1, 1, 1]);
     expect(layer.windowColors.patch).toEqual([1, 1, 1]);
+    layer.dispose();
+  });
+
+  it('plinthes et moulures (#388) : maillage enfant de leur paroi, teinté par la lumière du jour', () => {
+    const layer = new RoomLayer();
+    layer.setRoom(DEFAULT_TANK, SHOWN, true);
+    const byName = new Map(layer.object.children.map((c) => [c.name, c as Mesh]));
+    const trims = ['piece-mur', 'piece-mur-gauche', 'piece-mur-droit', 'piece-mur-avant'].map(
+      (name) => byName.get(name)!.getObjectByName(`${name}-moulures`) as Mesh,
+    );
+    expect(byName.get('piece-plafond')!.children).toEqual([]);
+    // Toutes les plinthes et moulures des parois, et elles seules (36 sommets par bloc).
+    const trimBlocks = roomTrimBlocks(DEFAULT_TANK, SHOWN).filter(
+      (b) => b.part === 'plinthe' || b.part === 'moulure',
+    );
+    const trimVertices = trims.reduce((n, m) => n + m.geometry.getAttribute('position').count, 0);
+    expect(trimVertices).toBe(trimBlocks.length * 36);
+    const material = trims[0].material;
+    for (const trim of trims) {
+      expect(trim.material).toBe(material);
+      expect(trim.material).not.toBe(byName.get('piece-mur')!.material);
+    }
+    // Masquée avec sa paroi.
+    layer.setViewpoint(0, 1.2, -2);
+    expect(byName.get('piece-mur')!.visible).toBe(false);
+    expect(layer.trimColorValue).toEqual([1, 1, 1]);
+    const night = lightAt(0);
+    layer.setDaylight(night, 0.8);
+    const expected = trimLightInto(night, 0.8, [0, 0, 0]);
+    for (let k = 0; k < 3; k++) {
+      expect(layer.trimColorValue[k]).toBeCloseTo(expected[k], 12);
+      expect(layer.trimColorValue[k]).toBeLessThan(0.6);
+    }
+    // Gardée à la reconstruction ; anciennes géométries libérées.
+    const dispose = vi.spyOn(trims[0].geometry, 'dispose');
+    layer.setRoom(DEFAULT_TANK, { ...SHOWN, cabinetHeight: 0.9 }, true);
+    expect(dispose).toHaveBeenCalled();
+    expect(layer.trimColorValue[0]).toBeCloseTo(expected[0], 12);
     layer.dispose();
   });
 

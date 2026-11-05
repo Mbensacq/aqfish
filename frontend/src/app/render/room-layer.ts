@@ -20,6 +20,7 @@ import {
   roomLamp,
   roomLampBlocks,
   roomTrimBlocks,
+  trimLightInto,
   type RoomDoor,
 } from '../sim/room-details';
 import { furnitureBlocks } from '../sim/room-furniture';
@@ -61,7 +62,8 @@ import { FACES } from './rock-model';
  * jour (`setDaylight`, `windowLightInto`), en trois maillages ; bois et vitre masqués avec le
  * mur du fond et dès que le bac s'interpose (`isWindowClear`).
  *
- * Détails (#363, ADR 0093) : plinthes et moulure dans les parois de leur mur ; porte du mur
+ * Détails (#363, ADR 0093) : plinthes et moulure des parois en maillage enfant de leur paroi
+ * (masqué avec elle), teinté par la lumière du jour (#388, `trimLightInto`) ; porte du mur
  * de droite et applique en maillages à part, masqués avec ce mur et dès que le bac s'interpose
  * (`isDoorClear`) ; abat-jour et halo teintés par l'intensité de la lampe (`setDaylight`,
  * `lampIntensity`), halo affiché seulement lampe allumée.
@@ -114,6 +116,9 @@ export const ROOM_COLORS: Readonly<Record<RoomPart, readonly [string, string]>> 
   eau: [PALETTE.eauMoyenne, PALETTE.eauSombre],
   substrat: [PALETTE.sable, PALETTE.sable],
 };
+
+/** Parties des parois dessinées à part, teintées par la lumière du jour (#388). */
+const TRIM_PARTS: ReadonlySet<RoomPart> = new Set<RoomPart>(['plinthe', 'moulure']);
 
 /** Nom de l'objet Three.js de chaque paroi de l'enveloppe (le mur du fond garde le sien). */
 const SHELL_NAMES: Readonly<Record<RoomShell, string>> = {
@@ -221,6 +226,9 @@ export class RoomLayer implements SceneLayer {
   /** Porte et chambranle (#388) : couleurs plates teintées par la lumière du jour. */
   private readonly doorMaterial = new MeshBasicMaterial({ vertexColors: true });
   private readonly doorColor: MutableRgb = [1, 1, 1];
+  /** Plinthes et moulures des parois (#388) : couleurs plates teintées par la lumière du jour. */
+  private readonly trimMaterial = new MeshBasicMaterial({ vertexColors: true });
+  private readonly trimColor: MutableRgb = [1, 1, 1];
   private readonly shadeColor: MutableRgb = [1, 1, 1];
   private readonly haloColor: MutableRgb = [1, 1, 1];
   private lamp = 0;
@@ -283,8 +291,15 @@ export class RoomLayer implements SceneLayer {
     for (const shell of ROOM_SHELLS) {
       const part = blocks.filter((b) => b.shell === shell);
       if (part.length > 0) {
-        const mesh = new Mesh(createGeometry(buildRoomMesh(part)), this.wallMaterial);
+        const wall = part.filter((b) => !TRIM_PARTS.has(b.part));
+        const trim = part.filter((b) => TRIM_PARTS.has(b.part));
+        const mesh = new Mesh(createGeometry(buildRoomMesh(wall)), this.wallMaterial);
         mesh.name = SHELL_NAMES[shell];
+        if (trim.length > 0) {
+          const child = new Mesh(createGeometry(buildRoomMesh(trim)), this.trimMaterial);
+          child.name = `${SHELL_NAMES[shell]}-moulures`;
+          mesh.add(child);
+        }
         this.shells.push({ shell, mesh });
         this.object.add(mesh);
       }
@@ -338,7 +353,8 @@ export class RoomLayer implements SceneLayer {
   }
 
   /**
-   * Teinte la vitre et la tache de lumière de la fenêtre, et la porte (#388, `doorLightInto`),
+   * Teinte la vitre et la tache de lumière de la fenêtre, la porte (#388, `doorLightInto`)
+   * et les plinthes et moulures des parois (#388, `trimLightInto`),
    * selon la lumière du jour `light` et le ciel couvert `overcast` (`windowLightInto`) ;
    * gardée quand la pièce est reconstruite.
    * Appelée à chaque changement de lumière : aucune allocation.
@@ -349,6 +365,8 @@ export class RoomLayer implements SceneLayer {
     this.patchMaterial.color.setRGB(patch[0], patch[1], patch[2]);
     doorLightInto(light, overcast, this.doorColor);
     this.doorMaterial.color.setRGB(this.doorColor[0], this.doorColor[1], this.doorColor[2]);
+    trimLightInto(light, overcast, this.trimColor);
+    this.trimMaterial.color.setRGB(this.trimColor[0], this.trimColor[1], this.trimColor[2]);
     this.lamp = lampIntensity(light.intensity);
     lampColorsInto(this.lamp, this.shadeColor, this.haloColor);
     this.shadeMaterial.color.setRGB(this.shadeColor[0], this.shadeColor[1], this.shadeColor[2]);
@@ -361,6 +379,11 @@ export class RoomLayer implements SceneLayer {
   /** Intensité courante de l'applique, de 0 (éteinte) à 1 (tests). */
   get lampLevel(): number {
     return this.lamp;
+  }
+
+  /** Multiplicateur courant des plinthes et moulures des parois (tests). */
+  get trimColorValue(): readonly number[] {
+    return this.trimMaterial.color.toArray();
   }
 
   /** Vrai si la porte est affichée (tests). */
@@ -497,6 +520,7 @@ export class RoomLayer implements SceneLayer {
     this.wallMaterial.dispose();
     this.glassMaterial.dispose();
     this.doorMaterial.dispose();
+    this.trimMaterial.dispose();
     this.patchMaterial.dispose();
     this.shadeMaterial.dispose();
     this.haloMaterial.dispose();
@@ -518,6 +542,9 @@ export class RoomLayer implements SceneLayer {
       if (mesh) {
         this.object.remove(mesh);
         mesh.geometry.dispose();
+        for (const child of mesh.children) {
+          (child as Mesh).geometry.dispose();
+        }
       }
     }
     this.shells.length = 0;

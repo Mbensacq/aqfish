@@ -1,18 +1,24 @@
 import { woodModel } from '../sim/wood';
 import { PALETTE } from './palette';
 import { ROCK_COLORS } from './rock-model';
-import { buildWoodMesh, WOOD_COLORS, woodFaceColor } from './wood-model';
+import { buildWoodMesh, KNOT_SHARE, WOOD_COLORS, woodFaceColor } from './wood-model';
 
 describe('buildWoodMesh : bois flotté en voxels', () => {
   const model = woodModel(7, 1);
 
-  it('trois tons bruns de la palette, aucun gris de rocher', () => {
+  it('tons bruns de la palette, aucun gris de rocher ; roche sombre au seul contact (#180)', () => {
     expect(Object.values(WOOD_COLORS)).toEqual([
+      PALETTE.sableClair,
       PALETTE.sableSombre,
       PALETTE.sableOmbre,
       PALETTE.rocheSombre,
     ]);
     expect(Object.values(WOOD_COLORS)).not.toContain(ROCK_COLORS.top);
+    for (const cell of model.cells) {
+      if (cell.j > 0) {
+        expect(woodFaceColor(7, cell, false)).not.toBe(PALETTE.rocheSombre);
+      }
+    }
     const used = new Set<string>();
     for (const cell of model.cells) {
       used.add(woodFaceColor(7, cell, true));
@@ -28,6 +34,22 @@ describe('buildWoodMesh : bois flotté en voxels', () => {
         expect(woodFaceColor(7, cell, false)).toBe(WOOD_COLORS.shade);
       }
     }
+  });
+
+  it('nœuds (#180) : une part des flancs proche de KNOT_SHARE, sur plusieurs graines', () => {
+    let knots = 0;
+    let sides = 0;
+    for (const seed of [1, 7, 42, 1234]) {
+      for (const cell of woodModel(seed, 1).cells) {
+        if (cell.j > 0) {
+          sides++;
+          knots += woodFaceColor(seed, cell, false) === WOOD_COLORS.knot ? 1 : 0;
+        }
+      }
+    }
+    expect(sides).toBeGreaterThan(50);
+    expect(knots / sides).toBeGreaterThan(KNOT_SHARE / 2);
+    expect(knots / sides).toBeLessThan(KNOT_SHARE * 2);
   });
 
   // Délai explicite (#244, docs/PIEGES.md) : ≈ 0,4 s en local, bien plus en CI lente.

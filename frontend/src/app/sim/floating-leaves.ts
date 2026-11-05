@@ -67,6 +67,12 @@ export const LEAF_EDGE_MARGIN = 0.03;
 export const LEAF_SHAPE_COUNT = 6;
 /** Teintes : 0 brune, 1 ocre. */
 export const LEAF_TINT_COUNT = 2;
+/**
+ * Part des feuilles ocre (#138) : la teinte brune se distingue mal des rochers vue de dessus,
+ * l'ocre est la plus fréquente. Tirée du même nombre aléatoire que l'ancien tirage uniforme :
+ * positions, formes et durées des feuilles inchangées.
+ */
+export const LEAF_OCHRE_SHARE = 0.7;
 
 /** Champs par feuille dans `FloatingLeafBuffer.leaves`. */
 export const LEAF_STRIDE = 6;
@@ -151,7 +157,7 @@ function leafAt(seed: number, slot: number, time: number, water: Box3, out: Floa
   }
   const length = LEAF_LENGTH.min + (LEAF_LENGTH.max - LEAF_LENGTH.min) * next();
   const shape = Math.floor(next() * LEAF_SHAPE_COUNT);
-  const tint = Math.floor(next() * LEAF_TINT_COUNT);
+  const tint = next() < LEAF_OCHRE_SHARE ? 1 : 0;
   const inset = floatingLeafInset();
   const minX = water.minX + inset;
   const maxX = water.maxX - inset;

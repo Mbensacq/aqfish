@@ -102,13 +102,14 @@ irrégulier, brunes (`sableSombre`, `sableOmbre`) ou ocre (`tritonOrange`, `sabl
 deux tons de part et d'autre de la nervure, contour `koiNoir`. Elles se posent par vagues
 faibles, jamais plus de **8** à la fois (1 à 2 en moyenne), dérivent lentement au-dessus des
 nénuphars et coulent au bout de 52 s. Des gris de la roche, essayés d'abord, les faisaient
-confondre avec les pierres.
+confondre avec les pierres ; depuis #138, l'ocre est la plus fréquente (7 feuilles sur 10),
+la brune restant proche des rochers vue de dessus.
 
 Le **bois flotté** du bac tropical (#169, ADR 0045) : tronc couché sur le sable, un bout
 relevé, deux ou trois branches d'un voxel d'épaisseur au bout qui montent en s'écartant de part
-et d'autre, parfois fourchues. Trois bruns de la palette : dessus clair de bois blanchi
-(`sableSombre`), flancs `sableOmbre`, nœuds et rangée posée sur le sable en `rocheSombre` ;
-contour `koiNoir` comme le reste du décor. Aucun gris de rocher : bois et pierre restent
+et d'autre, parfois fourchues. Bruns de la palette, éclaircis par #180 : dessus de bois blanchi
+(`sableClair`), flancs `sableSombre`, nœuds (un flanc sur huit environ) en `sableOmbre`, seule
+la rangée posée sur le sable en `rocheSombre` ; contour `koiNoir` comme le reste du décor. Aucun gris de rocher : bois et pierre restent
 distincts au premier coup d'œil.
 
 Le **récif** (#148, ADR 0039) : bac vitré plus grand que le bac tropical, eau d'un bleu franc
@@ -152,7 +153,8 @@ La **pièce** autour du bac tropical (#187, ADR 0048), facultative : une pièce 
 bac est la source de lumière. Meuble support en bois clair (`sableOmbre`, portes
 `sableSombre`, poignées et socle `rocheSombre`), parquet sombre à lames de deux teintes
 (`rocheSombre`, `koiNoir`), mur presque noir (`koiNoir`, couleurs plates) avec cimaise
-`rocheSombre` au-dessus du bac et plinthe `sableOmbre`. Le mur reste sombre pour que l'eau vue
+`rocheSombre` au-dessus du bac et plinthe `sableOmbre`. Plinthes et moulures des murs suivent la
+lumière du jour (#388), comme la porte : couleur de palette en plein jour, à moitié la nuit. Le mur reste sombre pour que l'eau vue
 devant lui garde son vert ; aucune couleur ajoutée à la palette.
 
 ## Interface
