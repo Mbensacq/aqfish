@@ -85,3 +85,20 @@ et _Cynops_ « pas avec des amphibiens plus grands ». Le panneau l'affichait d�
 - Restent à faire : sourcer à une source primaire la cohabitation sonneur / triton (ou
   séparer les deux espèces si elle se révèle déconseillée) ; contournement des obstacles par
   l'axolotl, qui permettrait un décor au centre du bac d'eau froide.
+
+## Amendement (cycle 155, issue #456) : l'axolotl contourne les obstacles
+
+- **Décision** : l'axolotl active le contournement des obstacles en marche
+  (`BottomWalkerParams.avoidsObstacles`, introduit pour la crevette nettoyeuse en #422,
+  ADR 0103). Rien ne justifiait plus de l'en priver : le mécanisme est générique (obstacle
+  devant traité comme un fond trop haut, virage du côté le plus dégagé) et testé.
+- **Décor** : le bac d'eau froide reçoit au milieu une racine, une pierre et deux touffes
+  (`COLD_TANK.decor`), le devant restant dégagé pour voir les axolotls. Les éléments du fond
+  sont inchangés.
+- **Conséquences** : trajectoires des axolotls changées, dans le bac d'eau froide et au
+  paludarium (où ils ne sont plus peuplés par défaut : captures du paludarium inchangées par
+  ce point). Captures `eaufroide-*` changées (décor et trajectoires), changement voulu. Le test
+  de `recif-lot3.spec.ts` qui vérifiait l'absence du contournement chez l'axolotl est mis à
+  jour en connaissance de cause ; `axolotl.spec.ts` vérifie que l'axolotl ne rentre jamais dans
+  un obstacle (trois graines, 180 s).
+- Ce point « Restent à faire » est soldé.
