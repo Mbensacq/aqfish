@@ -156,4 +156,45 @@ test.describe('Partage par lien (#426)', () => {
     expect(actual.equals(expected)).toBe(true);
     expect([...original.errors, ...shared.errors]).toEqual([]);
   });
+
+  test('téléphone : le refus ne recouvre ni le tableau de bord ni la barre des vues (#431)', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    const opened = await open(page, '/#partage=9.z.AAAA');
+    const error = page.locator('[data-share-error]');
+    await expect(error).toContainText('version de lien inconnue');
+    // Boîtes visibles des enfants directs : les hôtes fixes peuvent couvrir plus large.
+    const overlaps = await page.evaluate(() => {
+      const banner = document.querySelector('[data-share-error]')!.getBoundingClientRect();
+      const hosts = ['app-dashboard-frame', 'app-dashboard-status', 'app-view-presets-bar'];
+      const found: string[] = [];
+      for (const selector of hosts) {
+        for (const el of document.querySelectorAll(`${selector} *`)) {
+          const box = el.getBoundingClientRect();
+          const style = getComputedStyle(el);
+          if (box.width === 0 || box.height === 0 || style.visibility === 'hidden') {
+            continue;
+          }
+          const apart =
+            box.right <= banner.left ||
+            box.left >= banner.right ||
+            box.bottom <= banner.top ||
+            box.top >= banner.bottom;
+          if (!apart) {
+            found.push(`${selector} ${el.tagName.toLowerCase()}.${el.className}`);
+          }
+        }
+      }
+      return found;
+    });
+    expect(overlaps).toEqual([]);
+    await expect(page.locator('app-dashboard-frame').first()).toBeVisible();
+    const box = (await error.boundingBox())!;
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(390);
+    // Image jointe au rapport du test, à regarder (#431).
+    await page.screenshot({ path: test.info().outputPath('telephone-refus-partage.png') });
+    expect(opened.errors).toEqual([]);
+  });
 });

@@ -65,7 +65,8 @@ import {
   type SpeciesLabels,
 } from '../../sim/species-catalog';
 import { type SpeciesId } from '../../sim/species';
-import { addWarnings, addWarningText, sheetNotes, sheetRows } from '../../sim/species-sheet';
+import { addWarnings, addWarningText } from '../../sim/species-sheet';
+import { SpeciesSheet } from './species-sheet';
 import { MAX_HEATER_TEMPERATURE, MIN_HEATER_TEMPERATURE } from '../../sim/water';
 import { TREATMENT_KINDS, TREATMENTS, type TreatmentKind } from '../../sim/treatment';
 import {
@@ -246,6 +247,7 @@ export interface NewTankRequest {
 
 @Component({
   selector: 'app-control-panel',
+  imports: [SpeciesSheet],
   template: `<button
       type="button"
       class="control-panel__toggle"
@@ -807,49 +809,9 @@ export interface NewTankRequest {
                 </p>
               }
             }
-            <!-- Fiche de l'espèce (#237). -->
+            <!-- Fiche de l'espèce (#237), composant à part (#255). -->
             @if (openSheet() === id) {
-              <section
-                class="control-panel__sheet"
-                role="region"
-                [id]="'fiche-' + id"
-                [attr.aria-labelledby]="'fiche-titre-' + id"
-                [attr.data-species-sheet]="id"
-                (keydown.escape)="closeSheet(id, $event)"
-              >
-                <h3 class="control-panel__sheet-title" [id]="'fiche-titre-' + id">
-                  Fiche : {{ entry.name }}
-                  <span class="control-panel__sheet-latin">{{ entry.scientificName }}</span>
-                </h3>
-                <!-- Mises en garde de la fiche (#269) : non vérifiée, pas pour débutant… -->
-                @for (item of sheetNotes(id); track item.text) {
-                  <p class="control-panel__note control-panel__warning" data-sheet-note>
-                    {{ item.text }}
-                    <small class="control-panel__sheet-status">{{ item.status }}</small>
-                  </p>
-                }
-                <dl class="control-panel__sheet-list">
-                  @for (row of sheetRows(id); track row.field) {
-                    <div class="control-panel__sheet-row" [attr.data-sheet-field]="row.field">
-                      <dt>{{ row.label }}</dt>
-                      <dd>
-                        {{ row.value }}
-                        <small class="control-panel__sheet-status" data-sheet-status>{{
-                          row.status
-                        }}</small>
-                      </dd>
-                    </div>
-                  }
-                </dl>
-                <button
-                  type="button"
-                  class="control-panel__button control-panel__button--compact"
-                  data-sheet-close
-                  (click)="closeSheet(id)"
-                >
-                  Fermer la fiche
-                </button>
-              </section>
+              <app-species-sheet [entry]="entry" (closed)="closeSheet(id, $event)" />
             }
           } @empty {
             <p class="control-panel__note" data-population-empty>Aucune espèce pour l’instant.</p>
@@ -1337,8 +1299,6 @@ export class ControlPanel {
     const treated = treatedWaterWarning(id, this.water().products);
     return treated === null ? texts : [...texts, treated];
   });
-  protected readonly sheetRows = sheetRows;
-  protected readonly sheetNotes = sheetNotes;
   protected readonly environmentIds = ENVIRONMENT_IDS;
   /** Case « Pluie » proposée seulement là où il peut pleuvoir (le bassin, #106). */
   protected readonly rainAvailable = computed(() => environmentById(this.environment()).rain);

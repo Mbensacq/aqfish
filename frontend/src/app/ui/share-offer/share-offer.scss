@@ -17,6 +17,14 @@ $border-alpha: 24%;
   transform: translateX(-50%);
 
   @include dashboard.font;
+
+  // Téléphone (#431) : le cadre du tableau de bord passe sous la ligne des boutons (48 px) et
+  // occupe le haut ; le bandeau bas et la barre des vues le bas. Le bandeau se centre dans la
+  // hauteur, entre les deux, sans rien recouvrir (`e2e/partage.spec.ts`).
+  @media (max-width: 480px) {
+    top: 50%;
+    transform: translate(-50%, -50%);
+  }
 }
 
 .share-offer {

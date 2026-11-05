@@ -31,7 +31,7 @@ import {
   withIchSpots,
   type FishPose,
 } from './fish-layer';
-import { createFishGeometry, SPOT_ATTRIBUTE } from './fish-model';
+import { createFishGeometry, SPOT_ATTRIBUTE, UNSPOTTED_RANK } from './fish-model';
 import { ICH_AGGRAVATED_AT, ICH_VISIBLE_AT } from '../sim/disease';
 import { PIXEL_SIZE } from './pixel-art';
 
@@ -445,5 +445,11 @@ describe('FishLayer : points blancs (#366)', () => {
     expect(spots).toBeGreaterThan(dull);
     expect(shader).toContain(ICH_SPOT_SHARE.toFixed(4));
     expect(() => withIchSpots('void main() {}')).toThrow(/color_vertex/);
+  });
+
+  it('un voxel trop pâle n’est jamais taché, même à intensité maximale (#386)', () => {
+    // Rang `UNSPOTTED_RANK` contre le seuil `1 × ICH_SPOT_SHARE` : strictement au-dessus.
+    expect(ICH_SPOT_SHARE).toBeGreaterThan(0);
+    expect(ICH_SPOT_SHARE).toBeLessThan(UNSPOTTED_RANK);
   });
 });

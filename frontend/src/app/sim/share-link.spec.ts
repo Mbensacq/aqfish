@@ -2,6 +2,7 @@ import { compressText } from '../core/share-codec/share-codec';
 import { createDayClock } from './daylight';
 import { ENVIRONMENT_IDS } from './environment';
 import { MAX_TOTAL_FISH } from './population';
+import { roomAnimalCount } from './room-limits';
 import { DEFAULT_SAVE_SETTINGS, MAX_SAVE_LENGTH, serializeWorld, type SaveSettings } from './save';
 import {
   createShare,
@@ -12,6 +13,7 @@ import {
   readShare,
   shareFragment,
   shareOutcome,
+  sharedAnimalCount,
   sharedText,
   splitShareFragment,
   toBase64Url,
@@ -121,6 +123,19 @@ describe('lien de partage : aller-retour (#426)', () => {
     expect((outcome as { url: string }).url.length).toBeLessThan(MAX_SHARE_LINK_LENGTH / 2);
   });
 
+  it('décompte du bandeau : celui du plafond de la pièce (#431)', async () => {
+    for (const environment of ['tropical', 'paludarium'] as const) {
+      const world = createDefaultWorld(9, environment);
+      const read = await readShare(fragmentOf(await createShare(BASE, world, SETTINGS)));
+      expect(read.ok).toBe(true);
+      if (read.ok) {
+        expect(sharedAnimalCount(read)).toBe(roomAnimalCount(read.room));
+        expect(sharedAnimalCount(read)).toBe(world.entities.length);
+        expect(sharedAnimalCount(read)).toBeGreaterThan(0);
+      }
+    }
+  });
+
   it('accepte le fragment avec ou sans « # »', async () => {
     const fragment = fragmentOf(await createShare(BASE, createDefaultWorld(3), SETTINGS));
     expect(hasShareFragment(fragment)).toBe(true);
@@ -175,6 +190,28 @@ describe('lien de partage : contenus refusés sans exception (#426)', () => {
       /texte illisible/,
     );
     await expectRefused('#ailleurs=1', /ne contient pas/);
+  });
+
+  it('préfixe de version inconnu, quel que soit le découpage (#431)', async () => {
+    for (const hash of [
+      '#partage=v1.z.AAAA',
+      '#partage=9',
+      '#partage=2.z',
+      '#partage=v1',
+      '#partage=1x.z.AAAA',
+      '#partage=0.z.AAAA.BBBB',
+    ]) {
+      await expectRefused(hash, /version de lien inconnue/);
+    }
+    const split = splitShareFragment('#partage=v1.z');
+    expect(split.ok).toBe(false);
+    expect(!split.ok && split.error).toContain('(v1, version 1 attendue)');
+    await expectRefused('#partage=.z.AAAA', /version de lien inconnue \(vide,/);
+    await expectRefused('#partage=.', /version de lien inconnue \(vide,/);
+    // Bonne version ou fragment vide : le découpage décide.
+    await expectRefused('#partage=', /tronqué ou mal formé/);
+    await expectRefused('#partage=1.z.AAAA.BBBB', /tronqué ou mal formé/);
+    await expectRefused('#partage=1', /tronqué ou mal formé/);
   });
 
   it('schéma futur (lien ou contenu) et sauvegarde de pièce', async () => {

@@ -6,6 +6,14 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Sortir un morceau de gabarit dans un composant enfant : les classes du parent ne s'y
+  appliquent plus** (cycle 149, #255) : avec l'encapsulation émulée, les sélecteurs de
+  `control-panel.scss` portent l'attribut du panneau ; la fiche d'espèce sortie dans
+  `species-sheet.ts` n'aurait gardé ni `control-panel__note`, ni `__button--compact`, ni
+  `__sheet-status`. Recopier dans la feuille de l'enfant les seules valeurs utiles (classes
+  propres `species-sheet__…`), poser `display: block` sur l'hôte (élément personnalisé
+  `inline` par défaut) et garder les attributs de l'ancienne racine sur l'hôte (`role`,
+  `id`, `data-…`) pour que tests et e2e ne changent pas. (2026-11-05)
 - **Test de mutation d'un gros fichier de `sim` : hors de portée d'une session** (cycle 148,
   #235) : `npx stryker run --mutate src/app/sim/frog.ts` instrumente 466 mutants, et les
   tests qui les couvrent (`frog.spec.ts`, `triton.spec.ts`, ~36 s à eux deux sans

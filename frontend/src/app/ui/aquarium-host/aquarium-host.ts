@@ -44,6 +44,7 @@ import {
   createShare,
   hasShareFragment,
   readShare,
+  sharedAnimalCount,
   type ParseShareResult,
 } from '../../sim/share-link';
 import {
@@ -2207,7 +2208,7 @@ export class AquariumHost {
     this.shareOffer.set({
       kind: 'offre',
       environment: environmentById(result.world.environment).name,
-      animals: result.world.entities.length,
+      animals: sharedAnimalCount(result),
       tanks: this.roomState?.tanks.length ?? 1,
     });
   }

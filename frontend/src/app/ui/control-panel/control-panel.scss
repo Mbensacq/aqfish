@@ -9,7 +9,7 @@
 :host {
   pointer-events: none;
   position: fixed;
-  top: 12px;
+  top: layout.$edge;
   left: layout.$control-panel-left;
   z-index: 1;
   display: flex;
@@ -63,7 +63,7 @@
 .control-panel {
   box-sizing: border-box;
   width: 260px;
-  // Jamais hors de la fenêtre, à 390 px compris (59 px à gauche, 12 px de marge à droite).
+  // Jamais hors de la fenêtre, à 390 px compris (`$control-panel-left` à gauche, `$edge` à droite).
   max-width: calc(100vw - #{layout.$control-panel-left} - #{layout.$edge});
   // Jamais jusqu'à la barre des préréglages (bas : 16 px + une ligne de ~40 px, plus un
   // écart de 24 px) ; à 1280 × 720, la section « Sauvegarde » tient entière (#101, voir les
@@ -74,8 +74,9 @@
   padding: 6px 12px 10px;
   border: 1px solid rgb(232 230 227 / 8%);
   border-radius: 10px;
-  // Assez opaque pour rester lisible par-dessus le bac (sable clair, eau).
-  background: rgb(20 20 24 / 88%); // #141418
+  // Opaque (#257, ADR 0059) : le panneau ouvert passe par-dessus le cadre du tableau de bord,
+  // dont le texte ne doit pas se deviner dessous (`e2e/cadrage-panneaux.spec.ts`).
+  background: layout.$panel-background;
 }
 
 .control-panel__section {
@@ -296,7 +297,9 @@
   // « Sauvegarde » restent dans la deuxième colonne (voir docs/PIEGES.md). Hauteur arrondie à
   // un nombre entier de lignes d'espèce (#370) : pas de 46 px, 56 px de titre, de marges et
   // d'écart (3 px sous la dernière ligne) ; aucune ligne coupée à mi-hauteur.
+  // Repli (#386) : sans `round()`, la déclaration suivante est ignorée ; celle-ci reste.
   [data-section='population'] {
+    max-height: calc(100vh - var(--soins, 350px));
     max-height: calc(round(down, 100vh - var(--soins, 350px) - 56px, 46px) + 56px);
     overflow-y: auto;
   }
@@ -447,7 +450,8 @@
   font-size: 12px;
 }
 
-// Fiches d'espèces (#237) : bouton discret à côté du nom, fiche sous la ligne de l'espèce.
+// Fiches d'espèces (#237) : bouton discret à côté du nom ; la fiche elle-même a ses styles
+// (`species-sheet.scss`, #255). La liste et le statut servent aussi à la pièce (#306).
 .control-panel__sheet-toggle {
   flex: none;
   padding: 0 8px;
@@ -457,29 +461,6 @@
   &[aria-expanded='true'] {
     border-color: #5fbfa3;
   }
-}
-
-.control-panel__sheet {
-  margin: 4px 0 6px;
-  padding: 8px 10px;
-  border: 1px solid rgb(232 230 227 / 16%);
-  border-radius: 8px;
-  background: rgb(232 230 227 / 5%);
-  break-inside: avoid;
-}
-
-.control-panel__sheet-title {
-  margin: 0 0 6px;
-  font-size: 13px;
-  font-weight: 700;
-  line-height: 16px;
-}
-
-.control-panel__sheet-latin {
-  display: block;
-  font-size: 11px;
-  font-style: italic;
-  font-weight: 400;
 }
 
 .control-panel__sheet-list {
@@ -493,15 +474,6 @@
 
 .control-panel__sheet-row {
   display: contents;
-
-  dt {
-    color: rgb(232 230 227 / 75%);
-  }
-
-  dd {
-    margin: 0;
-    overflow-wrap: anywhere;
-  }
 }
 
 .control-panel__sheet-status {

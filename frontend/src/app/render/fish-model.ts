@@ -743,7 +743,10 @@ export const SPOT_COLOR = PALETTE.koiBlanc;
  */
 export const SPOT_MIN_CONTRAST = 100;
 
-/** Rang de taché d'un voxel trop pâle : jamais sous `intensité × part` (au plus 1 × 0,25). */
+/**
+ * Rang de taché d'un voxel trop pâle : jamais sous `intensité × ICH_SPOT_SHARE` (au plus
+ * 1 × `ICH_SPOT_SHARE` < 1, vérifié par `fish-layer.spec.ts`).
+ */
 export const UNSPOTTED_RANK = 1;
 
 /**

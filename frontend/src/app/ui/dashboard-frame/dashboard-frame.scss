@@ -1,8 +1,8 @@
 // Tableau de bord de l'eau (#256, ADR 0059, docs/DA.md « Interface ») : sombre translucide
 // aux coins arrondis, sur le bord haut, jamais au centre du bac.
 // - Bureau (≥ 1100 px) : barre haute dans la ligne des boutons, entre « Réglages » (qui
-//   finit à 143 px) et l'aide-mémoire déplié (300 px à 12 px du bord droit), largeurs lues
-//   dans `../_panel-layout.scss`.
+//   finit à `$settings-button-end`) et l'aide-mémoire déplié (`$commands-help-width` à `$edge`
+//   du bord droit), valeurs lues dans `../_panel-layout.scss`.
 // - Tablette (640 à 1099 px) : bandeau sous la ligne des boutons ; l'aide-mémoire, déplié par
 //   défaut, descend sous le bandeau (commands-help.scss).
 // - Téléphone (≤ 639 px) : bandeau compact sous les boutons, bouton « Eau » au-dessus des

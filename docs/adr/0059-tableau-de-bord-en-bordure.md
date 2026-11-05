@@ -44,6 +44,12 @@ Place existante (mesurée à 1280 × 720 et 768 × 1024) : indicateur du jour et
   tablette). Le cadre n'entre pas dans l'exclusivité de `ui/exclusive-panels` : il ne se
   replie pas tout seul et ne replie personne. L'hôte est transparent au pointeur
   (`pointer-events: none`, contenu `auto`) : le canvas reçoit les gestes autour du cadre.
+  Complément (cycle 149, #257) : le panneau « Réglages » ouvert a un fond **opaque**
+  (`$panel-background`), pour qu'aucun texte du cadre ne se devine dessous (docs/DA.md : des
+  textes de panneaux ne se mélangent jamais). Décaler ou masquer les jauges recouvertes
+  aurait caché l'eau au moment où l'on règle le chauffage ou un traitement ; le panneau
+  opaque ne masque que la partie qu'il couvre déjà. `e2e/cadrage-panneaux.spec.ts` le
+  vérifie à 1280 × 720 (fond opaque, cadre sous le panneau en chaque point recouvert).
 - **Contenu** : bouton « Eau » (indicateur global en texte et icône, `aria-expanded`,
   `aria-controls`), puis une jauge par grandeur : nom court (« Temp. », « NH₃/NH₄⁺ »,
   « NO₂⁻ », « NO₃⁻ », « pH »), valeur au dixième, unité, flèche de tendance, barre, niveau
