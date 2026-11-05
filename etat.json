@@ -5652,6 +5652,24 @@
         }
       },
       "metriques": {}
+    },
+    "155": {
+      "numero": 155,
+      "date": "2026-11-05",
+      "debut": "2026-11-05T22:40:50.743Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-05T22:40:50.743Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
