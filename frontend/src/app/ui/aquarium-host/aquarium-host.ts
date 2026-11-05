@@ -2316,11 +2316,6 @@ export class AquariumHost {
   }
 
   /**
-   * Renomme le bac `id` de la liste (#316, `renameTank`) : nom normalisé, non vide, de
-   * `MAX_TANK_NAME_LENGTH` caractères au plus ; enregistré aussitôt. Refus : message dans
-   * `transferNotice`, nom inchangé. Sans effet en capture ou avant le démarrage.
-   */
-  /**
    * « Tout retirer » au retour en soins (#278, lot 2) : retire du bac affiché tous les animaux
    * des espèces `remove` (celles que la confirmation a listées comme inadaptées), puis le
    * repasse en mode soins ; les autres animaux et l'eau reprennent où ils en étaient. Sans
@@ -2338,6 +2333,11 @@ export class AquariumHost {
     this.scheduleFrame();
   }
 
+  /**
+   * Renomme le bac `id` de la liste (#316, `renameTank`) : nom normalisé, non vide, de
+   * `MAX_TANK_NAME_LENGTH` caractères au plus ; enregistré aussitôt. Refus : message dans
+   * `transferNotice`, nom inchangé. Sans effet en capture ou avant le démarrage.
+   */
   renameTank(id: number, name: string): void {
     const world = this.currentWorld;
     if (!world || this.capture) {

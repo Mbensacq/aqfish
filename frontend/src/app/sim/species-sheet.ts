@@ -503,7 +503,8 @@ const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
         source(`${FB}6033`),
       ),
     ],
-  }, // Eau douce, lot 4 (#425, ADR 0104) : FishBase et FishKeeper pour le xipho, FishKeeper pour
+  },
+  // Eau douce, lot 4 (#425, ADR 0104) : FishBase et FishKeeper pour le xipho, FishKeeper pour
   // la crevette cerise et la néritine zèbre.
   xipho: {
     adultSize: sourced(14, `${FB_XIPHO} (longueur totale du mâle, épée comprise)`),
