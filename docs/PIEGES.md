@@ -427,6 +427,12 @@ haut de sa section.
 
 ## Tests
 
+- **Test unitaire de l'hôte qui rend des centaines d'images : délai de 5 s dépassé en CI**
+  (cycle 153) : « limite les images par seconde (fps=, 30 par défaut) »
+  (`aquarium-host.spec.ts`) crée deux hôtes et pousse 1 200 images ; il a pris 5,09 s sur la
+  CI et échoué au délai par défaut de Vitest, sans rapport avec la PR. Un tel test reçoit un
+  délai explicite (`it(…, async () => { … }, 20_000)`), sans toucher à ses assertions.
+  (2026-11-05)
 - **E2e : `projectToScreen` dans une boucle = trois allers-retours par point** (cycle 148,
   #384) : chaque appel relit la caméra, la cible et la boîte du canevas (deux
   `getAttribute`, un `boundingBox`), et chacun attend une image en rendu logiciel. Huit coins

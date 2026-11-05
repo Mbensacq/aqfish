@@ -3604,7 +3604,8 @@ describe('AquariumHost', () => {
         frames.flush((i * 1000) / 60);
       }
       expect(Math.abs(renderers[1].renders - 150)).toBeLessThanOrEqual(2);
-    });
+      // Deux hôtes et 1 200 images : ~5 s sur la CI, au ras du délai par défaut (#451).
+    }, 20_000);
 
     it('page masquée : aucune image demandée ; visible : la boucle repart', async () => {
       serveConfig(null);
