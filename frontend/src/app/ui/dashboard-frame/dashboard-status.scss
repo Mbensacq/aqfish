@@ -145,11 +145,13 @@
     justify-content: flex-start;
   }
 
+  // Sans retour à la ligne : en colonne, il placerait le détail dans une seconde colonne.
   .status {
-    flex-direction: column;
+    flex-flow: column nowrap;
   }
 
   .status__detail {
+    flex-basis: auto;
     width: 0;
     min-width: 100%;
   }
