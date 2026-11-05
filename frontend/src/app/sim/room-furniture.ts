@@ -262,7 +262,10 @@ export function roomItemBox(item: RoomItem): FurnitureBox {
 }
 
 /** Vrai si les emprises au sol de `a` et `b` ont un intérieur commun (se toucher est permis). */
-function footprintsOverlap(a: FurnitureBox, b: FurnitureBox): boolean {
+/** Emprise au sol d'une boîte (x, z), sans hauteur : passage devant la porte (#388). */
+type Footprint = Pick<FurnitureBox, 'minX' | 'maxX' | 'minZ' | 'maxZ'>;
+
+function footprintsOverlap(a: Footprint, b: Footprint): boolean {
   return (
     a.minX < b.maxX - EPS && a.maxX > b.minX + EPS && a.minZ < b.maxZ - EPS && a.maxZ > b.minZ + EPS
   );
@@ -319,7 +322,9 @@ export function roomArea(dims: TankDimensions) {
       minZ: -halfD - CABINET_OVERHANG,
       maxZ: halfD + CABINET_OVERHANG,
     },
-    door: { ...doorClearance(dims), minY: 0, maxY: 0 },
+    // Passage devant la porte : un rectangle au sol (x, z), sans hauteur. Tout ce qui s'y
+    // pose est refusé, quelle que soit sa hauteur (#388).
+    door: doorClearance(dims),
   };
 }
 
