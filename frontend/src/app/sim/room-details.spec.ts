@@ -18,11 +18,14 @@ import {
   DOOR_CASING,
   DOOR_CASING_DEPTH,
   DOOR_CLEARANCE,
+  DOOR_DAY_LIGHT,
   DOOR_FRONT_GAP,
   DOOR_HEADROOM,
   DOOR_HEIGHT,
   DOOR_WIDTH,
   doorClearance,
+  doorLightInto,
+  DOOR_NIGHT_LIGHT,
   isDoorClear,
   LAMP_FULL_BELOW,
   LAMP_OFF_ABOVE,
@@ -386,5 +389,39 @@ describe('détails de la pièce (#363)', () => {
       const c = [-k * door.wallX, 0.25 - k * (y - 0.25), -k * z];
       expect(isDoorClear(dims, door, c[0], c[1], c[2])).toBe(false);
     });
+  });
+});
+
+describe('doorLightInto (#388)', () => {
+  const at = (hour: number, overcast = 1): number[] => [
+    ...doorLightInto(lightAt(hour), overcast, [0, 0, 0]),
+  ];
+
+  it('plein jour : clarté de jour, neutre ; minuit : plus sombre', () => {
+    for (const v of at(12)) {
+      expect(v).toBeCloseTo(DOOR_DAY_LIGHT * lightAt(12).sky[0], 9);
+    }
+    const night = at(0);
+    for (let k = 0; k < 3; k++) {
+      expect(night[k]).toBeLessThan(at(12)[k]);
+      expect(night[k]).toBeLessThanOrEqual(DOOR_NIGHT_LIGHT + 1e-9);
+    }
+    expect(DOOR_DAY_LIGHT).toBeLessThan(1);
+    expect(DOOR_NIGHT_LIGHT).toBeLessThan(DOOR_DAY_LIGHT);
+  });
+
+  it('ciel couvert : plus sombre ; valeurs non finies ramenées dans [0, 1]', () => {
+    expect(at(12, 0.5)[0]).toBeCloseTo(at(12)[0] * 0.5, 9);
+    const odd = doorLightInto(
+      { intensity: NaN, tint: [1, 1, 1], sky: [NaN, 2, -1] },
+      NaN,
+      [0, 0, 0],
+    );
+    expect(odd).toEqual([DOOR_DAY_LIGHT, DOOR_DAY_LIGHT, 0]);
+  });
+
+  it('écrit dans le tampon fourni et le renvoie', () => {
+    const out: MutableRgb = [0, 0, 0];
+    expect(doorLightInto(lightAt(7), 1, out)).toBe(out);
   });
 });

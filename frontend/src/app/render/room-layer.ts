@@ -11,6 +11,7 @@ import {
 
 import type { DayLight, MutableRgb } from '../sim/daylight';
 import {
+  doorLightInto,
   isDoorClear,
   lampColorsInto,
   lampIntensity,
@@ -217,6 +218,9 @@ export class RoomLayer implements SceneLayer {
   /** Abat-jour et halo de l'applique (#363) : couleurs plates teintées par la lampe. */
   private readonly shadeMaterial = new MeshBasicMaterial({ vertexColors: true });
   private readonly haloMaterial = new MeshBasicMaterial({ vertexColors: true });
+  /** Porte et chambranle (#388) : couleurs plates teintées par la lumière du jour. */
+  private readonly doorMaterial = new MeshBasicMaterial({ vertexColors: true });
+  private readonly doorColor: MutableRgb = [1, 1, 1];
   private readonly shadeColor: MutableRgb = [1, 1, 1];
   private readonly haloColor: MutableRgb = [1, 1, 1];
   private lamp = 0;
@@ -297,7 +301,7 @@ export class RoomLayer implements SceneLayer {
     );
     const doorBlocks = roomDoorBlocks(dims, room);
     this.door = roomDoor(dims, room);
-    this.doorMesh = this.windowMesh(doorBlocks, null, this.wallMaterial, 'piece-porte');
+    this.doorMesh = this.windowMesh(doorBlocks, null, this.doorMaterial, 'piece-porte');
     const lampBlocks = roomLampBlocks(dims, room);
     this.lampArea = roomLamp(dims, room).halo;
     this.fixture = [
@@ -334,14 +338,17 @@ export class RoomLayer implements SceneLayer {
   }
 
   /**
-   * Teinte la vitre et la tache de lumière de la fenêtre selon la lumière du jour `light` et
-   * le ciel couvert `overcast` (`windowLightInto`) ; gardée quand la pièce est reconstruite.
+   * Teinte la vitre et la tache de lumière de la fenêtre, et la porte (#388, `doorLightInto`),
+   * selon la lumière du jour `light` et le ciel couvert `overcast` (`windowLightInto`) ;
+   * gardée quand la pièce est reconstruite.
    * Appelée à chaque changement de lumière : aucune allocation.
    */
   setDaylight(light: DayLight, overcast = 1): void {
     const { glass, patch } = windowLightInto(light, overcast, this.windowLight);
     this.glassMaterial.color.setRGB(glass[0], glass[1], glass[2]);
     this.patchMaterial.color.setRGB(patch[0], patch[1], patch[2]);
+    doorLightInto(light, overcast, this.doorColor);
+    this.doorMaterial.color.setRGB(this.doorColor[0], this.doorColor[1], this.doorColor[2]);
     this.lamp = lampIntensity(light.intensity);
     lampColorsInto(this.lamp, this.shadeColor, this.haloColor);
     this.shadeMaterial.color.setRGB(this.shadeColor[0], this.shadeColor[1], this.shadeColor[2]);
@@ -489,6 +496,7 @@ export class RoomLayer implements SceneLayer {
     this.material.dispose();
     this.wallMaterial.dispose();
     this.glassMaterial.dispose();
+    this.doorMaterial.dispose();
     this.patchMaterial.dispose();
     this.shadeMaterial.dispose();
     this.haloMaterial.dispose();
