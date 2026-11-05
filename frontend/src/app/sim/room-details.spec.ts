@@ -40,6 +40,9 @@ import {
   roomLamp,
   roomLampBlocks,
   roomTrimBlocks,
+  TRIM_DAY_LIGHT,
+  TRIM_NIGHT_LIGHT,
+  trimLightInto,
 } from './room-details';
 import { dropRoomItem, roomArea, ROOM_CATALOG } from './room-furniture';
 import { roomWindowBlocks } from './room-window';
@@ -423,5 +426,43 @@ describe('doorLightInto (#388)', () => {
   it('écrit dans le tampon fourni et le renvoie', () => {
     const out: MutableRgb = [0, 0, 0];
     expect(doorLightInto(lightAt(7), 1, out)).toBe(out);
+  });
+});
+
+describe('trimLightInto (#388)', () => {
+  const at = (hour: number, overcast = 1): number[] => [
+    ...trimLightInto(lightAt(hour), overcast, [0, 0, 0]),
+  ];
+
+  it('plein jour : couleur de palette telle quelle, teintée par le ciel ; nuit : plus sombre', () => {
+    for (let k = 0; k < 3; k++) {
+      expect(at(12)[k]).toBeCloseTo(TRIM_DAY_LIGHT * lightAt(12).sky[k], 9);
+      expect(at(0)[k]).toBeLessThan(at(12)[k]);
+      expect(at(0)[k]).toBeLessThanOrEqual(TRIM_NIGHT_LIGHT + 1e-9);
+      expect(at(0)[k]).toBeGreaterThan(0);
+    }
+    expect(TRIM_DAY_LIGHT).toBe(1);
+    expect(TRIM_NIGHT_LIGHT).toBeCloseTo(DOOR_NIGHT_LIGHT / DOOR_DAY_LIGHT, 12);
+  });
+
+  it('même courbe que la porte, à l’échelle près', () => {
+    for (const hour of [0, 5, 7, 12, 18, 21]) {
+      const door = doorLightInto(lightAt(hour), 0.8, [0, 0, 0]);
+      const trim = trimLightInto(lightAt(hour), 0.8, [0, 0, 0]);
+      for (let k = 0; k < 3; k++) {
+        expect(trim[k]).toBeCloseTo(door[k] / DOOR_DAY_LIGHT, 9);
+      }
+    }
+  });
+
+  it('valeurs non finies ramenées dans [0, 1] ; écrit dans le tampon fourni', () => {
+    const odd = trimLightInto(
+      { intensity: NaN, tint: [1, 1, 1], sky: [NaN, 2, -1] },
+      NaN,
+      [0, 0, 0],
+    );
+    expect(odd).toEqual([1, 1, 0]);
+    const out: MutableRgb = [0, 0, 0];
+    expect(trimLightInto(lightAt(7), 1, out)).toBe(out);
   });
 });

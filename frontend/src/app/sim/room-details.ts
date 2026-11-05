@@ -361,7 +361,35 @@ export const DOOR_NIGHT_LIGHT = 0.35;
  * ramenés dans [0, 1] (non fini : 1). Écrit dans `out` et le renvoie, sans allocation.
  */
 export function doorLightInto(light: DayLight, overcast: number, out: MutableRgb): MutableRgb {
-  const level = mix(DOOR_NIGHT_LIGHT, DOOR_DAY_LIGHT, clampIntensity(light.intensity));
+  return wallLightInto(light, overcast, DOOR_NIGHT_LIGHT, DOOR_DAY_LIGHT, out);
+}
+
+/**
+ * Clarté des plinthes et des moulures des quatre murs (#388), part de leurs couleurs de
+ * palette : en plein jour, leur couleur telle quelle (le ton que prend la face éclairée de la
+ * plinthe du fond, ADR 0093) ; la nuit, le même rapport nuit / jour que la porte.
+ */
+export const TRIM_DAY_LIGHT = 1;
+export const TRIM_NIGHT_LIGHT = DOOR_NIGHT_LIGHT / DOOR_DAY_LIGHT;
+
+/**
+ * Multiplicateur de couleur des plinthes et des moulures (#388), comme `doorLightInto` : de
+ * `TRIM_NIGHT_LIGHT` (nuit) à `TRIM_DAY_LIGHT` (plein jour), teinté par le ciel et multiplié
+ * par le ciel couvert. Écrit dans `out` et le renvoie, sans allocation.
+ */
+export function trimLightInto(light: DayLight, overcast: number, out: MutableRgb): MutableRgb {
+  return wallLightInto(light, overcast, TRIM_NIGHT_LIGHT, TRIM_DAY_LIGHT, out);
+}
+
+/** Clarté de `night` à `day` selon l'intensité du jour, teintée par le ciel et le ciel couvert. */
+function wallLightInto(
+  light: DayLight,
+  overcast: number,
+  night: number,
+  day: number,
+  out: MutableRgb,
+): MutableRgb {
+  const level = mix(night, day, clampIntensity(light.intensity));
   const sky = clampIntensity(overcast);
   for (let k = 0; k < 3; k++) {
     const tint = Number.isFinite(light.sky[k]) ? Math.min(1, Math.max(0, light.sky[k])) : 1;
