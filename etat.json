@@ -5519,10 +5519,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-05T08:44:46.948Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-05T08:45:18.607Z",
+          "note": "Issue #443 : dette lot 6/6, documentation et sources (S)"
         }
       },
       "metriques": {}
