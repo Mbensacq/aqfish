@@ -1,5 +1,2 @@
-Branche : cycle/c149-dette-interface
-PR : #452
-Commit : c794bad
-Graine : celle des captures (par défaut)
-Temps : captures en 15,4 min, 128 tests ; 129 PNG, 119 identiques à c148, 10 différents (panneau « Réglages » opaque, voulu : front-panneau, front-soins, interface-liste-bacs, telephone-catalogue, telephone-eau, telephone-fiche-espece, telephone-liste-bacs, three-quarter-fiche-chirurgien, three-quarter-panneau-eau, three-quarter-panneau-son), regardées
+Cycle 150 — branche cycle/c150-dette-rendu-lot5, PR #454, commit e660f70, graine par défaut des captures, temps fixés par le contrat de capture.
+128 captures régénérées : 125 identiques à c149 ; libre-porte et libre-porte-minuit changent (voulu, #388) ; interface-liste-bacs diffère à l'octet mais est identique à l'œil (instabilité de rendu de l'interface).
