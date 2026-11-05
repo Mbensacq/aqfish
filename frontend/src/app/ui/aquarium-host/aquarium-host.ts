@@ -207,6 +207,7 @@ import {
 import {
   findSupportSpot,
   findTankSpot,
+  layoutFootprints,
   roomLayoutBlocks,
   type FloorRect,
 } from '../../sim/room-layout';
@@ -1886,7 +1887,13 @@ export class AquariumHost {
    * refusée (`decorRefused`) : place prise, hors de la pièce, pièce pleine…
    */
   private addRoomItem(kind: RoomItemKind, x: number, z: number): void {
-    const result = dropRoomItem(this.room(), this.roomDimensions(), { kind, x, z, quarter: 0 });
+    const result = dropRoomItem(
+      this.room(),
+      this.roomDimensions(),
+      { kind, x, z, quarter: 0 },
+      undefined,
+      this.roomObstacles(),
+    );
     if (!result.ok) {
       this.selectDecor(null);
       this.decorRefused.set(true);
@@ -1908,6 +1915,7 @@ export class AquariumHost {
       this.roomDimensions(),
       { kind: item.kind, x: item.x, z: item.z, quarter },
       index,
+      this.roomObstacles(),
     );
     if (!result.ok) {
       this.decorRefused.set(true);
@@ -1942,6 +1950,7 @@ export class AquariumHost {
       this.roomDimensions(),
       { kind: item.kind, x, z, quarter: item.quarter },
       index,
+      this.roomObstacles(),
     );
     if (result.ok) {
       drag.preview = result.items;
@@ -1972,6 +1981,14 @@ export class AquariumHost {
   /** Dimensions du bac autour duquel la pièce est posée. */
   private roomDimensions(): TankDimensions {
     return this.currentWorld ? placeDimensions(this.currentWorld) : DEFAULT_TANK;
+  }
+
+  /**
+   * Emprises au sol des meubles supports et des bacs posés de la pièce de N bacs : un élément
+   * de la pièce graphique ne s'y pose pas (#313, limite de l'ADR 0074 levée).
+   */
+  private roomObstacles(): FloorRect[] {
+    return this.roomState === null ? [] : layoutFootprints(this.roomState);
   }
 
   /**

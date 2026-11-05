@@ -164,6 +164,48 @@ export function findSupportSpot(
   return null;
 }
 
+/** Emprise au sol (mètres) d'une emprise `width` × `depth` (cm) centrée en (x, z), tournée. */
+function floorRect(
+  x: number,
+  z: number,
+  width: number,
+  depth: number,
+  quarter: RoomQuarter,
+): FloorRect {
+  const [w, d] = quarter % 2 === 0 ? [width, depth] : [depth, width];
+  return { minX: x - w / 200, maxX: x + w / 200, minZ: z - d / 200, maxZ: z + d / 200 };
+}
+
+/**
+ * Emprises au sol (mètres) de ce qui occupe le parquet de la pièce de N bacs : meubles
+ * supports et bacs posés au sol (un bac posé sur un meuble tient sur son plateau, le bac à
+ * la position historique est le bac affiché, sur le meuble implicite). Obstacles des
+ * meubles de la pièce graphique (`dropRoomItem`, #313). Pur.
+ */
+export function layoutFootprints(room: RoomState): FloorRect[] {
+  const out = room.furniture.map((support) => {
+    const model = SUPPORT_CATALOG[support.kind];
+    return floorRect(support.x, support.z, model.width, model.depth, support.quarter);
+  });
+  for (const tank of room.tanks) {
+    const placement = tank.placement;
+    if (placement === null || placement.supportId !== null || tank.place === 'jardin') {
+      continue;
+    }
+    const dims = tankDimensionsOf(tank);
+    out.push(
+      floorRect(
+        placement.x,
+        placement.z,
+        Math.round(dims.width * 100),
+        Math.round(dims.depth * 100),
+        placement.quarter,
+      ),
+    );
+  }
+  return out;
+}
+
 /** Dimensions d'un bac ajouté : la taille du catalogue si l'environnement est réglable. */
 export function addedTankDimensions(environment: EnvironmentId, size: TankSizeId): TankDimensions {
   return isTankResizable(environment) ? TANK_SIZES[size].dimensions : placeDimensions(environment);

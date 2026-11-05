@@ -61,6 +61,9 @@ une `TypeError`.
 - Les meubles de la pièce graphique posés **après** un meuble support peuvent le chevaucher
   (ils ne connaissent pas `RoomState`) ; le lot 3, qui dessinera la pièce depuis `RoomState`,
   unifiera les deux.
+  *Levée au cycle 152 (#313, point 2)* : `dropRoomItem` reçoit les emprises au sol des
+  meubles supports et des bacs posés au sol (`layoutFootprints`) et refuse d'y poser
+  (`meuble-support`) ; la réciproque était déjà assurée par la pose automatique.
 - Un bac posé est vide à l'ajout et figé : on ne peut pas encore le peupler (lot 3).
 - Une pièce sans aucun bac à la position historique ne peut pas être affichée (`roomWorlds`
   lève, l'import est refusé) ; l'interface ne permet pas d'y arriver.
