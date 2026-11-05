@@ -136,16 +136,22 @@
   white-space: nowrap;
 }
 
-// Bureau (≥ 1100 px, #268) : bandeau calé à gauche de sa place, aussi large que ses lignes
-// (640 px au plus) au lieu de toute la place : il ne recouvre plus l'angle avant droit du bac
-// en vue trois-quarts (x ≈ 840 px, y ≈ 600 px à 1280 × 720), plus bas à gauche.
+// Bureau (≥ 1100 px, #268) : bandeau calé à gauche de sa place et aussi large que sa plus
+// longue ligne (santé, alertes) au lieu de toute la place : il ne recouvre plus l'angle avant
+// droit du bac en vue trois-quarts (x ≈ 840 px, y ≈ 600 px à 1280 × 720), plus bas à gauche.
+// Le détail d'une alerte ne compte pas dans cette largeur (`width: 0`) mais la remplit.
 @media (min-width: 1100px) {
   :host {
     justify-content: flex-start;
   }
 
   .status {
-    max-width: 640px;
+    flex-direction: column;
+  }
+
+  .status__detail {
+    width: 0;
+    min-width: 100%;
   }
 }
 
