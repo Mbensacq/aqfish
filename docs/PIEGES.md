@@ -6,6 +6,12 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Passer un conteneur flex `row wrap` en colonne : préciser `nowrap`** (cycle 153, #268) :
+  `flex-direction: column` seul garde `flex-wrap: wrap` ; un enfant à `flex-basis: 100%`
+  (détail d'une alerte du bandeau bas) part alors dans une seconde colonne, à droite, sous
+  l'aide-mémoire : « Pourquoi ? » n'était plus cliquable (e2e `guide-debutant.spec.ts` rouge
+  en CI, captures et autres e2e verts). Écrire `flex-flow: column nowrap` et remettre la base
+  de l'enfant à `auto`. (2026-11-05)
 - **Remplacer les couleurs en dur des panneaux par les jetons : garder `rgb(20 20 24 / NN%)`**
   (cycle 153, #92) : `ui/panel-contrast.spec.ts` lit les feuilles en texte et relève les fonds
   translucides par le motif littéral `background: rgb(20 20 24 / NN%)` pour vérifier leur
