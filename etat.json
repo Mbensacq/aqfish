@@ -5571,6 +5571,12 @@
           "debut": "2026-11-05T13:10:59.371Z",
           "fin": "2026-11-05T14:01:49.100Z",
           "note": "Verdict OK, 0 bug, captures publiées (c152, 129 identiques à c151), tests ciblés 260 verts, CI verte ; mutation room-furniture non terminée (671 mutants)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-05T14:02:20.454Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
