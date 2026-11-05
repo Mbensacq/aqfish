@@ -5643,6 +5643,12 @@
           "debut": "2026-11-05T21:13:42.531Z",
           "fin": "2026-11-05T21:33:22.817Z",
           "note": "Verdict OK, 0 bug, captures publiées (c154, 21 différentes de c153 dans les zones touchées, 5 angles du bac seul identiques), CI verte"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-05T21:33:59.403Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
