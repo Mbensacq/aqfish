@@ -289,6 +289,61 @@ describe('pièce : support retiré, déplacé ou tourné (#188, #182 transposé)
     ]);
   });
 
+  describe('tombé sur une plante, parquet occupé (#200, cas 1)', () => {
+    // Table basse au sol ; étagère à sa gauche, bord contre bord ; plante posée sur l'étagère,
+    // en porte-à-faux au-dessus de la table.
+    const table: RoomItem = { kind: 'table-basse', x: -1.45, z: 0.55, quarter: 0 };
+    const shelf: RoomItem = { kind: 'etagere', x: -2.35, z: 0.55, quarter: 0 };
+    const potOnShelf: RoomItem = {
+      kind: 'plante-pot',
+      x: -1.98,
+      z: 0.55,
+      quarter: 0,
+      elevation: 0.8,
+    };
+
+    it('descend sur la plus haute surface porteuse libre sous la plante (dessus de la table)', () => {
+      // Plante lâchée en l'air : sa chute l'arrêterait sur la plante de l'étagère, le parquet
+      // sous elle est pris par la table ; elle passe à côté et se pose sur la table.
+      const falling: RoomItem = {
+        kind: 'plante-pot',
+        x: -1.78,
+        z: 0.55,
+        quarter: 0,
+        elevation: 1.2,
+      };
+      const settled = settleRoomItems([table, shelf, potOnShelf, falling]);
+      expect(settled).toEqual([table, shelf, potOnShelf, { ...falling, elevation: 0.4 }]);
+      expect(floatingRoomItems(settled)).toEqual([]);
+      expect(noOverlap(settled)).toBe(true);
+    });
+
+    it('reste en place si aucune surface plus basse n’est libre', () => {
+      // Table lâchée au-dessus de la plante de l'étagère : sur l'étagère, la plante la gêne ;
+      // sur la table basse, elle pénètrerait l'étagère ; au parquet, la table et l'étagère.
+      const wide: RoomItem = { kind: 'table-basse', x: -1.6, z: 0.55, quarter: 0, elevation: 1.2 };
+      const settled = settleRoomItems([table, shelf, potOnShelf, wide]);
+      expect(settled[3]).toEqual(wide);
+      expect(floatingRoomItems(settled)).toEqual([3]);
+    });
+
+    it('sauvegarde relue : l’élément est reposé sur la table au lieu d’être écarté', () => {
+      const falling: RoomItem = {
+        kind: 'plante-pot',
+        x: -1.78,
+        z: 0.55,
+        quarter: 0,
+        elevation: 1.2,
+      };
+      expect(tidyRoomItems([table, shelf, potOnShelf, falling])).toEqual([
+        table,
+        shelf,
+        potOnShelf,
+        { ...falling, elevation: 0.4 },
+      ]);
+    });
+  });
+
   it('refuse l’indice inconnu à la suppression', () => {
     expect(removeRoomItem([], 0)).toBeNull();
     expect(removeRoomItem(dropAll([SHELF]).items ?? [], 3)).toBeNull();
