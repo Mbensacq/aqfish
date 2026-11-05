@@ -5453,10 +5453,10 @@
           "note": "Issue #441 : dette lot 4/6, interface et panneaux (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-05T03:42:56.934Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-05T04:32:14.364Z",
+          "note": "PR #452 : dette lot 4/6 partiel (#216 7,74→7,34 kB, #255 fiche extraite, #257 panneau opaque, #386, #431, #327), CI verte ; reste → #451 ; pied d'attribution réinséré par l'environnement dans les corps de PR et d'issue"
         }
       },
       "metriques": {}
