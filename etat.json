@@ -5633,10 +5633,10 @@
           "note": "Issue #453 : lot de dette rendu (plinthes, tapotement, koï/feuille, contrastes) (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-05T20:04:39.766Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-05T21:13:00.289Z",
+          "note": "PR #465 : dette rendu (plinthes #388, ombre nénuphars #115, ADR tapotement #409, contrastes #138 #155 #180), CI verte ; e2e locaux trop lents, vérifiés en CI ; pied d'attribution réinséré par l'environnement dans le corps de PR"
         }
       },
       "metriques": {}
