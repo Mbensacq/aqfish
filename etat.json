@@ -5421,6 +5421,12 @@
           "debut": "2026-11-04T23:58:32.240Z",
           "fin": "2026-11-05T01:44:15.062Z",
           "note": "PR #449 : dette lot 3/6 (treatment-text 100 %, followExits partagé, parts-e2e et PNG testés, dimensions-bac 334→157 s), CI verte ; mutants frog.ts partiels → #450 ; pied d'attribution réinséré par l'environnement dans le corps de PR"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-05T01:44:48.239Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
