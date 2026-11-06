@@ -5675,10 +5675,10 @@
           "note": "PR #467 : dette amphibiens/feuilles de nuit (#466 teinte de nuit, #456 axolotl contourne + décor eaufroide, pattes du sonneur), CI verte ; 11 captures changées (voulues) ; pied d'attribution réinséré par l'environnement dans le corps de PR"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-05T23:51:58.187Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-06T00:10:26.115Z",
+          "note": "Verdict OK, 0 bug, captures publiées (c155, 12 différentes de c154 dont 11 voulues), CI verte"
         }
       },
       "metriques": {}
