@@ -5855,10 +5855,10 @@
           "note": "PR #482 : mutants de bubbles.ts 76,1 % → 94,8 % (7 équivalents dans PIEGES), CI verte ; e2e local impossible (navigateur), CI fait foi"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-06T14:23:49.777Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-06T14:43:56.704Z",
+          "note": "Verdict OK, 0 bug, captures c160 publiées (5 angles identiques à c159)"
         }
       },
       "metriques": {}
