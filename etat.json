@@ -5660,7 +5660,7 @@
       "type": "fonctionnalite",
       "issue": 456,
       "pr": 467,
-      "version": null,
+      "version": "v1.11.1",
       "phases": {
         "planif": {
           "statut": "termine",
