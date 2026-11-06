@@ -5904,6 +5904,24 @@
         }
       },
       "metriques": {}
+    },
+    "162": {
+      "numero": 162,
+      "date": "2026-11-06",
+      "debut": "2026-11-06T18:15:36.643Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-06T18:15:36.643Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
