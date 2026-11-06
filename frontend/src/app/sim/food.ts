@@ -248,9 +248,16 @@ export function dropFoodInPlace(
  * Fait vieillir les granulés de `dt` secondes, **en place** et sans allocation : flottaison,
  * chute à vitesse constante, arrêt à `restY`, puis retrait après `FOOD_GROUND_SECONDS`.
  * L'altitude est une fonction fermée de l'âge (aucun cumul d'erreur sur la position).
- * L'ordre des granulés restants est conservé.
+ * L'ordre des granulés restants est conservé. Courant (issue #460) : avec `water`, un granulé
+ * qui flotte ou coule dérive à la vitesse de l'eau (`currentX`, `currentZ`, m/s), dans `water`.
  */
-export function stepFoodInPlace(food: FoodPellet[], dt: number): void {
+export function stepFoodInPlace(
+  food: FoodPellet[],
+  dt: number,
+  currentX = 0,
+  currentZ = 0,
+  water: Box3 | null = null,
+): void {
   let kept = 0;
   // Compactage en place : `kept` ne dépasse jamais l'indice lu.
   for (const item of food) {
@@ -263,6 +270,11 @@ export function stepFoodInPlace(food: FoodPellet[], dt: number): void {
     const sinking = pellet.age > pellet.floatTime && pellet.floatY - fall > pellet.restY;
     pellet.y = Math.max(pellet.restY, pellet.floatY - fall);
     pellet.vy = sinking ? -FOOD_SINK_SPEED : 0;
+    if (water !== null && pellet.y > pellet.restY) {
+      // Courant (issue #460) : le granulé qui flotte ou coule suit l'eau ; posé, il reste.
+      pellet.x = clamp(pellet.x + currentX * dt, water.minX, water.maxX);
+      pellet.z = clamp(pellet.z + currentZ * dt, water.minZ, water.maxZ);
+    }
     food[kept++] = pellet;
   }
   food.length = kept;

@@ -37,6 +37,7 @@ import {
   type SpeciesId,
 } from './species';
 import { assertTerrainSettings, type TerrainSettings } from './terrain';
+import { NO_CURRENT, type CurrentField } from './water-current';
 import {
   DEFAULT_TANK,
   SAND_THICKNESS,
@@ -145,6 +146,11 @@ export interface Environment {
    */
   readonly floatingLeaves: boolean;
   /**
+   * Champ de courant (issue #460, `sim/water-current.ts`, ADR 0108) : direction de l'eau et
+   * force par défaut, coupée partout (le réglage du bac, `World.current`, la change).
+   */
+  readonly current: CurrentField;
+  /**
    * Espèces qui vivent dans l'environnement, dans l'ordre du panneau (issue #88) : seules
    * celles-ci sont proposées au réglage de population et exposées.
    */
@@ -194,6 +200,7 @@ export const TROPICAL_TANK: Environment = {
   bankDecor: null,
   rain: false,
   floatingLeaves: false,
+  current: NO_CURRENT,
   species: [
     ...TROPICAL_SPECIES,
     ...TROPICAL_ADDABLE,
@@ -243,6 +250,7 @@ export const POND: Environment = {
   bankDecor: null,
   rain: true,
   floatingLeaves: true,
+  current: { direction: 0.5, level: 'coupe' },
   species: [KOI.id],
   population: defaultPopulation([KOI]),
 };
@@ -300,6 +308,7 @@ export const PALUDARIUM: Environment = {
   }),
   rain: false,
   floatingLeaves: false,
+  current: { direction: Math.PI / 2, level: 'coupe' },
   species: [AXOLOTL.id, GRENOUILLE.id, TRITON.id],
   population: defaultPopulation([GRENOUILLE, TRITON]),
 };
@@ -362,6 +371,7 @@ export const REEF: Environment = {
   bankDecor: null,
   rain: false,
   floatingLeaves: false,
+  current: NO_CURRENT,
   // Lots 2 (#403, ADR 0097) et 3 (#422, ADR 0103) : chromis vert, gobie, gramma royal,
   // crevette nettoyeuse et blennie bicolore proposés au récif sans y être peuplés d'office
   // (récif par défaut inchangé).
@@ -414,6 +424,7 @@ export const COLD_TANK: Environment = {
   bankDecor: null,
   rain: false,
   floatingLeaves: false,
+  current: NO_CURRENT,
   species: [AXOLOTL.id],
   population: defaultPopulation([AXOLOTL]),
 };

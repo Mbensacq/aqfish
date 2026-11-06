@@ -1053,6 +1053,11 @@ haut de sa section.
 
 ## Rendu
 
+- **Indicateur à montrer sur capture : l'interface Angular est masquée en mode capture**
+  (cycle 158, #460) : `app.html` ne dessine ni panneau, ni badge, ni tableau de bord avec
+  `capture=1` ; un repère en HTML n'apparaîtrait sur aucune capture. Le repère du courant est
+  donc une couche de la scène (`render/current-indicator-layer.ts`), posée au temps simulé,
+  et tourne avec la caméra. (2026-11-06)
 - **Éclaircir un décor posé sous l'eau peu profonde : la passe palette peut le virer au vert**
   (cycle 154, #155) : les flancs des racines du paludarium passés de `rocheSombre` à un brun
   (`sableOmbre`, dessus `sableSombre`) donnaient, sous la lame d'eau claire de la berge, des

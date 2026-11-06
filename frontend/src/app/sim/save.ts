@@ -2,6 +2,7 @@ import { DEFAULT_FOOD_STYLE, isFoodStyle, type FoodStyle } from '../core/food-st
 import { MAX_SEED } from '../core/random/prng';
 import { SIM_DT } from './constants';
 import { acceptsSavedSpecies, isCareMode, type CareMode } from './care-mode';
+import { isCurrentLevel, type CurrentLevel } from './water-current';
 import { createDayClock, DEFAULT_DAY_CLOCK, HOURS_PER_DAY, type DayClock } from './daylight';
 import { parseDecorItems, type DecorItem } from './decor';
 import { catchesIch, ICH_AGGRAVATED_AT, isIchAge } from './disease';
@@ -175,6 +176,11 @@ export interface SavedWorld {
    * passé par le mode décor), mode soins. Présent, le bac admet toute espèce.
    */
   readonly careMode?: CareMode;
+  /**
+   * Force du courant (issue #460, ADR 0108). Facultative : absente (anciennes sauvegardes,
+   * courant coupé), celle de l'environnement ; jamais écrite coupée.
+   */
+  readonly current?: Exclude<CurrentLevel, 'coupe'>;
 }
 
 /** Contenu d'une sauvegarde (schéma 1). */
@@ -331,6 +337,7 @@ export function savedWorld(world: World): SavedWorld {
     food: world.food.map((pellet) => ({ ...pellet })),
     water: copyWater(world.water),
     ...(world.careMode === undefined ? {} : { careMode: world.careMode }),
+    ...(world.current === undefined ? {} : { current: world.current }),
   };
 }
 
@@ -519,6 +526,13 @@ export function parseWorldBody(
     problems.push(`mode de bac inconnu (${describe(careModeValue)})`);
   }
   const careMode = isCareMode(careModeValue) ? careModeValue : undefined;
+  // Courant (#460) : absent, celui de l'environnement ; « coupe » n'est jamais écrit.
+  const currentValue = own(value, 'current');
+  if (currentValue !== undefined && (!isCurrentLevel(currentValue) || currentValue === 'coupe')) {
+    problems.push(`force de courant inconnue (${describe(currentValue)})`);
+  }
+  const current =
+    isCurrentLevel(currentValue) && currentValue !== 'coupe' ? currentValue : undefined;
   const fish = parseFishList(own(value, 'fish'), place, nextFishId, problems, careMode);
   const food = parseFoodList(own(value, 'food'), place, nextFoodId, problems);
   // Eau (#206) : absente, eau saine (celle de `createWorld`) ; présente, validée (pH absent :
@@ -544,6 +558,9 @@ export function parseWorldBody(
   }
   if (careMode !== undefined) {
     world.careMode = careMode;
+  }
+  if (current !== undefined) {
+    world.current = current;
   }
   return world;
 }

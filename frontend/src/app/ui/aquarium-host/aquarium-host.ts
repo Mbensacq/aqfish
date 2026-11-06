@@ -244,6 +244,9 @@ import {
   feedInPlace,
   infectWorldInPlace,
   setWorldCatappaInPlace,
+  setWorldCurrentInPlace,
+  worldCurrentLevel,
+  worldCurrentVelocity,
   setWorldHeaterInPlace,
   starveWorldInPlace,
   treatWorldInPlace,
@@ -251,6 +254,13 @@ import {
   type MutableWorld,
   type World,
 } from '../../sim/world';
+import { CHEVRON_COUNTS } from '../../render/current-indicator-layer';
+import {
+  isCurrentLevel,
+  nextCurrentLevel,
+  type CurrentLevel,
+  type CurrentVelocity,
+} from '../../sim/water-current';
 import {
   DEFAULT_WATER_READOUT,
   isWaterQuality,
@@ -388,6 +398,8 @@ export const ROOM_SUPPORTS_ATTRIBUTE = 'data-aqfish-room-supports';
 export const SELECTED_TANK_ATTRIBUTE = 'data-aqfish-selected-tank';
 /** Mode du bac affiché (#278) : `soins` ou `decor`. */
 export const CARE_MODE_ATTRIBUTE = 'data-aqfish-mode';
+/** Force du courant du bac affiché (#460) : `coupe`, `doux` ou `fort`. */
+export const CURRENT_ATTRIBUTE = 'data-aqfish-current';
 /**
  * Vue fond d'écran (#279) : source de la scène (`fichier`, `script`, `sauvegarde`, `defaut`),
  * absent hors fond d'écran.
@@ -924,6 +936,8 @@ export class AquariumHost {
   readonly tankList = signal<readonly TankListEntry[]>([]);
   /** Mode du bac affiché (#278) : `decor` remplace le tableau de bord par le badge. */
   readonly careMode = signal<CareMode>('soins');
+  /** Force du courant du bac affiché (#460). */
+  readonly current = signal<CurrentLevel>('coupe');
 
   /** Message du dernier transfert ou renommage (#306, #318), `null` avant tout geste. */
   readonly tankNotice = signal<TankNotice | null>(null);
@@ -1228,6 +1242,42 @@ export class AquariumHost {
     this.saveNow();
     this.scheduleFrame();
   }
+
+  /**
+   * Règle la force du courant du bac (#460, ADR 0108), puis enregistre. Sans effet en mode
+   * capture (le courant passe par `courant=`), avant le démarrage ou pour une force inconnue.
+   */
+  setCurrent(level: CurrentLevel): void {
+    const world = this.currentWorld;
+    if (!world || this.capture || !isCurrentLevel(level)) {
+      return;
+    }
+    setWorldCurrentInPlace(world, level);
+    this.exposeCurrent(world);
+    this.saveNow();
+    this.scheduleFrame();
+  }
+
+  /** Force suivante du courant (bouton du panneau, #460) : coupé, doux, fort. */
+  cycleCurrent(): void {
+    this.setCurrent(nextCurrentLevel(this.current()));
+  }
+
+  /** Expose la force du courant de `world` et la donne à la vue (bulles, feuilles, repère). */
+  private exposeCurrent(world: World): void {
+    const level = worldCurrentLevel(world);
+    this.current.set(level);
+    this.host.nativeElement.setAttribute(CURRENT_ATTRIBUTE, level);
+    const v = worldCurrentVelocity(world, this.currentScratch);
+    this.view?.setWaterCurrent(
+      v.x,
+      v.z,
+      environmentById(world.environment).current.direction,
+      level === 'coupe' ? 0 : CHEVRON_COUNTS[level],
+    );
+  }
+
+  private readonly currentScratch: CurrentVelocity = { x: 0, z: 0 };
 
   /** Alterne entre granulés en points et en voxels (bouton du panneau, #117). */
   toggleFoodStyle(): void {
@@ -2929,6 +2979,10 @@ export class AquariumHost {
       if (params.ich) {
         infectWorldInPlace(world);
       }
+      // Courant de `courant=` (#460), en capture : à t = 0, avant d'avancer le monde.
+      if (params.capture && isCurrentLevel(params.current)) {
+        setWorldCurrentInPlace(world, params.current);
+      }
       // Alevins de `alevins=1` (#459), en capture : à t = 0, après `population=`.
       if (params.capture && params.fry) {
         broodWorldInPlace(world);
@@ -3200,6 +3254,7 @@ export class AquariumHost {
     // Feuilles de catappa et eau brun-thé (#239).
     view.setWaterTea(this.water().tea);
     view.setCatappa(world.water.catappa);
+    this.exposeCurrent(world);
     this.applyReducedMotion();
     this.litHour = null;
     this.activePreset.set(preset);
@@ -3466,6 +3521,7 @@ export class AquariumHost {
     const mode = careModeOf(world);
     this.careMode.set(mode);
     this.host.nativeElement.setAttribute(CARE_MODE_ATTRIBUTE, mode);
+    this.exposeCurrent(world);
   }
 
   /**

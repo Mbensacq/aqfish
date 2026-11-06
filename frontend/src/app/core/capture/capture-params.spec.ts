@@ -42,6 +42,7 @@ describe('parseCaptureParams', () => {
       starved: false,
       ich: false,
       fry: false,
+      current: null,
       catappa: 0,
       editSelection: null,
       editRoomSelection: null,
@@ -207,6 +208,12 @@ describe('parseCaptureParams', () => {
     expect(parseCaptureParams('?capture=1&eau=autre').water).toBe('autre');
     expect(parseCaptureParams('?capture=1').water).toBeNull();
     expect(DEFAULT_CAPTURE_PARAMS.water).toBeNull();
+  });
+
+  it('lit la force du courant de courant= telle quelle, null si absente (#460)', () => {
+    expect(parseCaptureParams('?capture=1&courant=fort').current).toBe('fort');
+    expect(parseCaptureParams('?capture=1&courant=x').current).toBe('x');
+    expect(parseCaptureParams('?capture=1').current).toBeNull();
   });
 
   it('lit les alevins : alevins=1 seulement (#459)', () => {

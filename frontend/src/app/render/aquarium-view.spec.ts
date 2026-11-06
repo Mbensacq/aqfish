@@ -178,8 +178,26 @@ describe('AquariumView (pipeline pixel art)', () => {
     ]);
   });
 
-  it('parcourt les couches d’effets (bulles, pluie, feuilles mortes) dans une liste (#125, #107)', () => {
-    expect(view.effectLayerNames).toEqual(['bulles', 'pluie', 'feuilles-mortes']);
+  it('parcourt les couches d’effets (bulles, pluie, feuilles mortes, courant) dans une liste (#125, #107, #460)', () => {
+    expect(view.effectLayerNames).toEqual(['bulles', 'pluie', 'feuilles-mortes', 'courant']);
+  });
+
+  it('courant (#460) : repère masqué par défaut, chevrons qui glissent sauf mouvements réduits', () => {
+    expect(view.currentIndicator[0]).toBe(0);
+    view.setWaterCurrent(0.07, 0, 0, 3);
+    view.updateDecor(0);
+    expect(view.currentIndicator[0]).toBe(3);
+    const start = view.currentIndicator[1];
+    view.updateDecor(1);
+    expect(view.currentIndicator[1]).toBeGreaterThan(start);
+    view.setReducedMotion(true);
+    view.updateDecor(1);
+    expect(view.currentIndicator[1]).toBeCloseTo(start, 12);
+    view.updateDecor(1.5);
+    expect(view.currentIndicator[1]).toBeCloseTo(start, 12);
+    view.setReducedMotion(false);
+    view.setWaterCurrent(0, 0, 0, 0);
+    expect(view.currentIndicator[0]).toBe(0);
   });
 
   it('place les poissons du monde avant le rendu ; ignore les appels après destruction', () => {

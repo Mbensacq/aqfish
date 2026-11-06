@@ -104,6 +104,9 @@ export class FloatingLeafLayer {
   private readonly hulls: readonly BufferGeometry[];
   private readonly slots: readonly Slot[];
   private seed = 0;
+  /** Vitesse de l'eau (issue #460, m/s) : les feuilles la suivent. */
+  private currentX = 0;
+  private currentZ = 0;
   private visibleLeaves = 0;
   private brightnessFactor = 1;
 
@@ -154,9 +157,22 @@ export class FloatingLeafLayer {
     this.seed = seed;
   }
 
+  /** Vitesse de l'eau (issue #460, `worldCurrentVelocity`), en m/s ; (0, 0) : eau immobile. */
+  setCurrent(x: number, z: number): void {
+    this.currentX = Number.isFinite(x) ? x : 0;
+    this.currentZ = Number.isFinite(z) ? z : 0;
+  }
+
   /** Pose les feuilles au temps simulé `time` (secondes), sans allocation. */
   update(time: number): void {
-    const count = fillFloatingLeaves(this.seed, Math.max(0, time), this.water, this.buffer);
+    const count = fillFloatingLeaves(
+      this.seed,
+      Math.max(0, time),
+      this.water,
+      this.buffer,
+      this.currentX,
+      this.currentZ,
+    );
     const data = this.buffer.leaves;
     for (let i = 0; i < this.slots.length; i++) {
       const { leaf, outline, body } = this.slots[i];

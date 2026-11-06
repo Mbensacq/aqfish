@@ -48,6 +48,10 @@
  * date à t = 0 (faim maximale, santé au plancher : nage ralentie, couleurs ternies). Toute
  * autre valeur ou absent : animaux nourris et en bonne santé (séries existantes inchangées).
  *
+ * Paramètre facultatif `courant=doux|fort` (issue #460) : en mode capture, courant de cette
+ * force à t = 0 (`setWorldCurrentInPlace`). La force n'est pas vérifiée ici : l'application
+ * ignore une valeur inconnue ; absent, courant coupé (séries existantes inchangées).
+ *
  * Paramètre facultatif `alevins=1` (issue #459) : en mode capture, chaque femelle de guppy
  * met bas sa première portée à t = 0, alevins répartis entre les quatre jalons de croissance
  * (`broodWorldInPlace`). Toute autre valeur ou absent : aucun alevin (séries existantes
@@ -178,6 +182,8 @@ export interface CaptureParams {
   readonly ich: boolean;
   /** Vrai pour `alevins=1` : alevins de guppy à t = 0, en capture (issue #459). */
   readonly fry: boolean;
+  /** Force du courant de `courant=` (issue #460), non vérifiée ; `null` si absent. */
+  readonly current: string | null;
   /** Feuilles de catappa neuves de `catappa=` à t = 0 (issue #239), 0 si absent ou invalide. */
   readonly catappa: number;
   /** Élément du décor sélectionné par `edition=` (issue #167) ; `null` si absent ou invalide. */
@@ -305,6 +311,7 @@ export const DEFAULT_CAPTURE_PARAMS: CaptureParams = {
   starved: false,
   ich: false,
   fry: false,
+  current: null,
   catappa: 0,
   editSelection: null,
   editRoomSelection: null,
@@ -361,6 +368,7 @@ export function parseCaptureParams(search: string): CaptureParams {
     starved: params.get('affames') === '1',
     ich: params.get('points-blancs') === '1',
     fry: params.get('alevins') === '1',
+    current: params.get('courant'),
     catappa: parseCatappa(params.get('catappa')),
     editSelection: parseEditSelection(params.get('edition')),
     editRoomSelection: parseEditSelection(params.get('edition-meuble')),
