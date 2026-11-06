@@ -5796,6 +5796,24 @@
         }
       },
       "metriques": {}
+    },
+    "159": {
+      "numero": 159,
+      "date": "2026-11-06",
+      "debut": "2026-11-06T10:14:26.881Z",
+      "type": "dette",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-06T10:14:26.881Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
