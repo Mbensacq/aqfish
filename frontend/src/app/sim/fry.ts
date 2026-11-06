@@ -170,9 +170,22 @@ export function birthBounds(bounds: SwimBounds, mother: Vec3): SwimBounds {
   return { ...bounds, spawn: { minX, maxX, minY, maxY, minZ, maxZ } };
 }
 
-/** Plantes du décor (cachettes des alevins), dans l'ordre du décor. */
-export function fryPlants(decor: readonly DecorItem[]): DecorItem[] {
-  return decor.filter((item) => item.kind === 'plant');
+/** Plantes de chaque tableau de décor déjà vu (les tableaux de décor ne sont jamais modifiés). */
+const PLANTS_CACHE = new WeakMap<readonly DecorItem[], readonly DecorItem[]>();
+
+/**
+ * Plantes du décor (cachettes des alevins), dans l'ordre du décor, figées et mises en cache
+ * par tableau de décor : le pas réutilise le même tableau tant que le décor ne change pas
+ * (aucune allocation par pas, issue #470).
+ */
+export function fryPlants(decor: readonly DecorItem[]): readonly DecorItem[] {
+  const hit = PLANTS_CACHE.get(decor);
+  if (hit !== undefined) {
+    return hit;
+  }
+  const plants = Object.freeze(decor.filter((item) => item.kind === 'plant'));
+  PLANTS_CACHE.set(decor, plants);
+  return plants;
 }
 
 /** Plante la plus proche de `(x, z)` à l'horizontale (la première à égalité), ou `null`. */
@@ -254,11 +267,27 @@ export function isPredator(fish: Fish): boolean {
   return !isFry(fish) && def.walker === undefined && def.amphibian === undefined;
 }
 
+/** Vrai si un adulte nageur de `fishes` est à une distance au carré sous `r2` de `fry`. */
+function isCaught(fishes: readonly Fish[], fry: Fish, r2: number): boolean {
+  for (let j = 0; j < fishes.length; j++) {
+    const other = fishes[j];
+    if (
+      isPredator(other) &&
+      (other.x - fry.x) ** 2 + (other.y - fry.y) ** 2 + (other.z - fry.z) ** 2 < r2
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
 /**
  * Prédation, **en place** : retire de `fishes` chaque alevin d'au moins `FRY_SAFE_AGE`, non
  * caché (`isHidden`), à moins de
  * `FRY_EAT_RADIUS` d'un adulte nageur (`isPredator`), dans l'ordre du tableau. Renvoie le
  * nombre d'alevins mangés. Sans alevin, ne parcourt le tableau qu'une fois.
+ *
+ * Coût en O(alevins × animaux), borné par `MAX_TOTAL_FISH` (ADR 0107) ; aucune allocation.
  */
 export function eatFryInPlace(fishes: Fish[], plants: readonly DecorItem[]): number {
   if (!fishes.some(isFry)) {
@@ -271,12 +300,7 @@ export function eatFryInPlace(fishes: Fish[], plants: readonly DecorItem[]): num
     if (fry.growth === undefined || fry.growth < FRY_SAFE_AGE || isHidden(plants, fry.x, fry.z)) {
       continue;
     }
-    const caught = fishes.some(
-      (other) =>
-        isPredator(other) &&
-        (other.x - fry.x) ** 2 + (other.y - fry.y) ** 2 + (other.z - fry.z) ** 2 < r2,
-    );
-    if (caught) {
+    if (isCaught(fishes, fry, r2)) {
       fishes.splice(i, 1);
       eaten += 1;
     }

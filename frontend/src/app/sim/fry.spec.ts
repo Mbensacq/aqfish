@@ -35,6 +35,7 @@ import type { Fish } from './swimmer';
 import { SPECIES } from './species';
 import { speciesSheet } from './species-sheet';
 import {
+  advance,
   birthFryInPlace,
   boundsFor,
   broodWorldInPlace,
@@ -358,6 +359,28 @@ describe('alevins : cachettes et prédation', () => {
     expect(isHidden([a], -0.3, FRY_HIDE_RADIUS * 1.01)).toBe(false);
     const rock = { kind: 'rock', x: 0, z: 0, rotation: 0, scale: 1, seed: 1 } as DecorItem;
     expect(fryPlants([rock, a, b])).toEqual([a, b]);
+  });
+
+  it('plantes du décor : un seul tableau figé par décor, réutilisé d’un pas à l’autre (#470)', () => {
+    const a = { ...PLANT, x: -0.3 };
+    const rock = { kind: 'rock', x: 0, z: 0, rotation: 0, scale: 1, seed: 1 } as DecorItem;
+    const decor = Object.freeze([rock, a]);
+    const plants = fryPlants(decor);
+    expect(plants).toEqual([a]);
+    expect(Object.isFrozen(plants)).toBe(true);
+    expect(fryPlants(decor)).toBe(plants);
+    // Un autre tableau de décor (décor modifié) : nouvelles plantes, sans toucher au premier.
+    const edited = Object.freeze([a, { ...PLANT, x: 0.3 }]);
+    expect(fryPlants(edited)).toHaveLength(2);
+    expect(fryPlants(decor)).toBe(plants);
+    // Pas en place avec des alevins : le décor du monde garde le même tableau de plantes.
+    const world = cloneWorld(createDefaultWorld(42));
+    expect(broodWorldInPlace(world)).toBeGreaterThan(0);
+    const before = fryPlants(world.decor);
+    const next = advance(world, 120);
+    const cached = fryPlants(next.decor);
+    expect(fryPlants(next.decor)).toBe(cached);
+    expect(cached).toEqual(before);
   });
 
   it('un alevin vise un point près de la plante la plus proche, bas dans l’eau', () => {

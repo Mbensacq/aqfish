@@ -17,7 +17,7 @@ le plafond de population tienne ; que sauvegarde, export et lien les conservent 
 1. **Un alevin est un poisson de l'espèce** avec un champ facultatif `Fish.growth` (âge en
    secondes simulées, dans [0, `FRY_GROWTH_TIME`)). Il passe par le même pas, le même banc,
    la même santé que les adultes ; à `FRY_GROWTH_TIME` (1 200 s), le champ disparaît : c'est
-   un adulte. Le rendu applique `fryScale` (0,45, 0,6, 0,75, 0,9 aux 4 jalons) à la matrice
+   un adulte. Le rendu applique `fryScale` (`FRY_SCALES` : 0,5, 0,65, 0,8, 0,9 aux 4 jalons) à la matrice
    de l'instance ; à 1 pour un adulte, la matrice est celle d'avant.
 2. **Mise bas sans état** (`sim/fry.ts`, `stepBroodInPlace` dans `sim/world.ts`) : le temps
    est découpé en portées de `BROOD_PERIOD` (300 s) ; au dernier pas de chaque portée, chaque
@@ -34,6 +34,12 @@ le plafond de population tienne ; que sauvegarde, export et lien les conservent 
    un adulte nageur (ni marcheur ni amphibie) à moins de `FRY_EAT_RADIUS` (4 cm) d'un alevin
    à plus de `FRY_HIDE_RADIUS` (12 cm, à l'horizontale) de toute plante le mange. En mode
    décor, croissance, prédation et mise bas sont en pause comme l'eau et la santé.
+   La prédation (`eatFryInPlace`) compare chaque alevin à chaque animal : coût en
+   O(alevins × animaux), borné par `MAX_TOTAL_FISH` (60 animaux, au plus 3 600 distances
+   par pas), sans grille. Elle ne tourne qu'en présence d'alevins et n'alloue rien : les
+   plantes du décor (`fryPlants`) sont figées et mises en cache par tableau de décor (un
+   décor modifié est un nouveau tableau), et la recherche du prédateur est une boucle
+   (issue #470).
 5. **Sauvegarde** : `growth` est écrit seulement pour un alevin et relu facultatif (schéma
    inchangé) ; une ancienne sauvegarde se relit sans alevin. Un âge hors bornes, ou un alevin
    d'une espèce non vivipare, est refusé.
