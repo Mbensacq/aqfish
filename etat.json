@@ -5807,10 +5807,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-06T10:14:26.881Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-06T10:15:00.208Z",
+          "note": "Issue #473 : bulles bornées à la boîte d'eau (S)"
         }
       },
       "metriques": {}
