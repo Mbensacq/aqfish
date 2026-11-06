@@ -6,6 +6,18 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Mutants de `frog.ts` (lignes 141 à 300) : survivants équivalents et cas construits**
+  (cycle 157, #450) : la plage passe de 55,2 % à 98,2 % (163 mutants : 160 tués, 3 équivalents ; ~10 min sur 2 cœurs).
+  Restent trois mutants équivalents : `<=` au lieu de `<` dans la garde de l'arc de `canHop`
+  et `>` au lieu de `>=` dans la distance aux obstacles de `createFrog` (une égalité exacte de
+  réels calculés, hors de portée d'un test honnête), et l'objet `DRAW` vidé (`{}`), dont
+  `hopDrawAt` réécrit les trois champs avant toute lecture. Les tests de naissance et de
+  grille (`frog.spec.ts`, « #450 ») reposent sur des cas trouvés par une recherche jetable
+  (graines 1 et 7, bornes `hard` modifiées, terrain à `waterSide: -1`) : un changement du
+  tirage de `createFish` ou du terrain du paludarium peut les rendre caducs, le test le dit
+  alors par son assertion de départ (`isOnLand`, `firstLand`). Piège rencontré : une grille
+  de pas 1/8 et une de pas 1/10 partagent des points (4/8 = 5/10) ; choisir un premier point
+  émergé hors de ces points communs. (2026-11-06)
 - **Passer un conteneur flex `row wrap` en colonne : préciser `nowrap`** (cycle 153, #268) :
   `flex-direction: column` seul garde `flex-wrap: wrap` ; un enfant à `flex-basis: 100%`
   (détail d'une alerte du bandeau bas) part alors dans une seconde colonne, à droite, sous

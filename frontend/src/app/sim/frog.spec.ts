@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
 import { groundHeight, type WalkerGround } from './axolotl';
+import type { Box3 } from './tank';
 import { environmentWater, livesIn, PALUDARIUM, POND, TROPICAL_TANK } from './environment';
 import {
   canHop,
   createFrog,
   frogModeOf,
+  HOP_SAMPLES,
   hopArc,
   hopDrawAt,
   hopSlotAt,
@@ -22,7 +24,8 @@ import { followExits } from './testing/amphibian-pitch';
 import { populationLimit, setPopulation } from './population';
 import { parseWorld, serializeWorld } from './save';
 import { AXOLOTL, GRENOUILLE, NEON, validateSpecies, type SpeciesDefinition } from './species';
-import type { Fish } from './swimmer';
+import { sphereObstacle } from './obstacles';
+import { createFish, random, type Fish, type SwimBounds } from './swimmer';
 import { shoreLineX, type TerrainSettings } from './terrain';
 import {
   advance,
@@ -638,5 +641,201 @@ describe('grenouille : sens de l’eau porté par le terrain (#142)', () => {
     }
     expect(maxCos).toBeGreaterThan(0.99);
     expect(fish.x).toBeGreaterThanOrEqual(shoreLineX(fish.z, FLIPPED));
+  });
+});
+
+/** Bornes de `BOUNDS` dont la boîte `hard` est modifiée. */
+function hardBounds(hard: Partial<Box3>): SwimBounds {
+  return { ...BOUNDS, hard: { ...BOUNDS.hard, ...hard } };
+}
+
+// Mutants de `frog.ts`, lignes 141 à 300 (#450) : `canHop`, `createFrog`, `placeOnGrid`.
+describe('grenouille : canHop, bords exacts et contrôle de l’arc (#450)', () => {
+  /** Fond plat (sans berge) et bornes dyadiques : les arrivées tombent pile sur les bords. */
+  const FLAT: WalkerGround = { water: WATER, terrain: null };
+  const DYADIC: SwimBounds = {
+    ...BOUNDS,
+    hard: { minX: -0.25, maxX: 0.25, minY: 0.0625, maxY: 1, minZ: -0.125, maxZ: 0.125 },
+  };
+  const FLAT_ARC = { ...PARAMS, hopHeight: 0 };
+
+  it('arrivée pile sur un bord du bac : saut permis ; au-delà : refusé', () => {
+    expect(canHop(0, 0, 0, 0.25, 'libre', PARAMS, DYADIC, FLAT)).toBe(true);
+    expect(canHop(0, 0, Math.PI, 0.25, 'libre', PARAMS, DYADIC, FLAT)).toBe(true);
+    expect(canHop(0, 0, Math.PI / 2, 0.125, 'libre', PARAMS, DYADIC, FLAT)).toBe(true);
+    expect(canHop(0, 0, -Math.PI / 2, 0.125, 'libre', PARAMS, DYADIC, FLAT)).toBe(true);
+    expect(canHop(0.2, 0, 0, 0.09, 'libre', PARAMS, DYADIC, FLAT)).toBe(false);
+    expect(canHop(0, 0.1, Math.PI / 2, 0.09, 'libre', PARAMS, DYADIC, FLAT)).toBe(false);
+  });
+
+  it('sommet de l’arc : pile au plafond, permis ; un cheveu au-dessus, refusé', () => {
+    const rest = restHeight(0, 0, FLAT_ARC, FLAT);
+    const at = (maxY: number) => ({ ...DYADIC, hard: { ...DYADIC.hard, maxY } });
+    expect(canHop(0, 0, 0, 0.09, 'libre', FLAT_ARC, at(rest), FLAT)).toBe(true);
+    expect(canHop(0, 0, 0, 0.09, 'libre', FLAT_ARC, at(rest - 1e-6), FLAT)).toBe(false);
+    // Parabole de saut : le sommet dépasse un plafond que le repos ne dépasse pas.
+    const top = hopArc(rest, rest, PARAMS.hopHeight, 0.5);
+    expect(canHop(0, 0, 0, 0.09, 'libre', PARAMS, at(top + 1e-6), FLAT)).toBe(true);
+    expect(canHop(0, 0, 0, 0.09, 'libre', PARAMS, at(top - 1e-3), FLAT)).toBe(false);
+  });
+
+  it('le dernier point de l’arc (l’arrivée) est vérifié aussi', () => {
+    // Saut sans parabole de la berge vers le haut : l'arc monte jusqu'à l'arrivée, seule au-dessus
+    // d'un plafond placé entre l'avant-dernier point et elle.
+    const [x, z, yaw, range] = [-0.4, -0.1, (7 * Math.PI) / 4, 0.04];
+    const x1 = x + Math.cos(yaw) * range;
+    const z1 = z + Math.sin(yaw) * range;
+    const y0 = restHeight(x, z, FLAT_ARC, GROUND);
+    const y1 = restHeight(x1, z1, FLAT_ARC, GROUND);
+    const before = hopArc(y0, y1, 0, (HOP_SAMPLES - 1) / HOP_SAMPLES);
+    expect(y1).toBeGreaterThan(before + 1e-4);
+    expect(canHop(x, z, yaw, range, 'libre', FLAT_ARC, hardBounds({ maxY: 1 }), GROUND)).toBe(true);
+    const ceiling = hardBounds({ maxY: (y1 + before) / 2 });
+    expect(canHop(x, z, yaw, range, 'libre', FLAT_ARC, ceiling, GROUND)).toBe(false);
+  });
+
+  it('refuse un arc qui passe sous le sol plus la garde, dans le sens du saut', () => {
+    // Saut vers −Z le long de la berge : un relief du sol dépasse l'arc de moins de `clearance`.
+    const [x, z, yaw, range] = [-0.4, -0.11, (3 * Math.PI) / 2, PARAMS.hopMaxRange];
+    expect(canHop(x, z, yaw, range, 'libre', PARAMS, BOUNDS, GROUND)).toBe(false);
+    const dx = Math.cos(yaw) * range;
+    const dz = Math.sin(yaw) * range;
+    const y0 = restHeight(x, z, PARAMS, GROUND);
+    const y1 = restHeight(x + dx, z + dz, PARAMS, GROUND);
+    let lowest = Infinity;
+    for (let k = 1; k <= HOP_SAMPLES; k++) {
+      const s = k / HOP_SAMPLES;
+      const y = hopArc(y0, y1, PARAMS.hopHeight, s);
+      lowest = Math.min(lowest, y - groundHeight(x + dx * s, z + dz * s, GROUND));
+      expect(y).toBeLessThanOrEqual(BOUNDS.hard.maxY);
+    }
+    // Au-dessus du sol, mais de moins que la garde : c'est la garde qui refuse le saut.
+    expect(lowest).toBeGreaterThan(0);
+    expect(lowest).toBeLessThan(PARAMS.clearance);
+    // Le même saut vers +Z passe : le contrôle suit bien la trajectoire, pas son symétrique.
+    expect(canHop(x, z, Math.PI / 2, range, 'libre', PARAMS, BOUNDS, GROUND)).toBe(true);
+  });
+});
+
+describe('grenouille : naissance sur la terre émergée (#450)', () => {
+  type Rng = Mutable<Fish>;
+  const FAR = sphereObstacle(0, 0.3, 0.1, 0, 0.01);
+
+  it('refuse une espèce non amphibie, en la nommant', () => {
+    expect(() => createFrog(1, 0, 'neon', BOUNDS, GROUND)).toThrow(/neon n’est pas amphibie/);
+  });
+
+  it('point tiré par le poisson déjà sur la terre et libre : gardé, sans autre tirage', () => {
+    const fish = createFish(1, 0, 'grenouille', BOUNDS, [FAR]) as Rng;
+    expect(isOnLand(fish.x, fish.z, GROUND)).toBe(true);
+    const frog = createFrog(1, 0, 'grenouille', BOUNDS, GROUND, [FAR]);
+    expect([frog.x, frog.z]).toEqual([fish.x, fish.z]);
+    expect(frog.rng).toBe(fish.rng);
+  });
+
+  it('plafond du bac : un point pile au plafond est gardé, un point au-dessus est retiré', () => {
+    const fish = createFish(1, 0, 'grenouille', BOUNDS, []);
+    const rest = restHeight(fish.x, fish.z, PARAMS, GROUND);
+    const kept = createFrog(1, 0, 'grenouille', hardBounds({ maxY: rest }), GROUND);
+    expect([kept.x, kept.z]).toEqual([fish.x, fish.z]);
+    const moved = createFrog(1, 0, 'grenouille', hardBounds({ maxY: rest - 1e-6 }), GROUND);
+    expect([moved.x, moved.z]).not.toEqual([fish.x, fish.z]);
+    expect(restHeight(moved.x, moved.z, PARAMS, GROUND)).toBeLessThanOrEqual(rest - 1e-6);
+  });
+
+  it('obstacle trop proche du point tiré : un autre point, loin de chaque obstacle', () => {
+    const fish = createFish(1, 0, 'grenouille', BOUNDS, []);
+    const near = sphereObstacle(
+      1,
+      fish.x,
+      restHeight(fish.x, fish.z, PARAMS, GROUND),
+      fish.z,
+      0.005,
+    );
+    const ref = createFish(1, 0, 'grenouille', BOUNDS, [FAR, near]);
+    expect([ref.x, ref.z]).toEqual([fish.x, fish.z]);
+    const frog = createFrog(1, 0, 'grenouille', BOUNDS, GROUND, [FAR, near]);
+    expect([frog.x, frog.z]).not.toEqual([fish.x, fish.z]);
+    expect(isOnLand(frog.x, frog.z, GROUND)).toBe(true);
+    const gap = Math.hypot(frog.x - near.x, frog.y - near.y, frog.z - near.z) - near.radius;
+    expect(gap).toBeGreaterThanOrEqual(GRENOUILLE.wallMargin);
+  });
+
+  it('point du poisson dans l’eau : premier tirage sur la terre gardé, deux tirages', () => {
+    const ref = createFish(7, 0, 'grenouille', BOUNDS, []) as Rng;
+    expect(isOnLand(ref.x, ref.z, GROUND)).toBe(false);
+    const { hard } = BOUNDS;
+    const x = hard.minX + (hard.maxX - hard.minX) * random(ref);
+    const z = hard.minZ + (hard.maxZ - hard.minZ) * random(ref);
+    const frog = createFrog(7, 0, 'grenouille', BOUNDS, GROUND);
+    expect([frog.x, frog.z]).toEqual([x, z]);
+    expect(frog.rng).toBe(ref.rng);
+  });
+
+  it('sans terre : 32 tirages (64 nombres), puis le centre de bornes non centrées', () => {
+    const flat: WalkerGround = { water: WATER, terrain: null };
+    const bounds = hardBounds({ minX: -0.45, maxX: 0.25, minZ: -0.2, maxZ: 0.1 });
+    const ref = createFish(5, 0, 'grenouille', bounds, []) as Rng;
+    for (let k = 0; k < 64; k++) {
+      random(ref);
+    }
+    const frog = createFrog(5, 0, 'grenouille', bounds, flat);
+    expect(frog.rng).toBe(ref.rng);
+    expect(frog.x).toBeCloseTo(-0.1, 12);
+    expect(frog.z).toBeCloseTo(-0.05, 12);
+  });
+
+  describe('repli sur la grille de 9 × 9 points', () => {
+    // Eau du côté des x négatifs : la terre émergée est à droite. Plafond sous toute la terre
+    // (repos à au moins surface + garde) : aucun tirage ne convient, la grille décide.
+    const LEFT: WalkerGround = {
+      water: WATER,
+      terrain: { ...PALUDARIUM.terrain!, waterSide: -1 },
+    };
+    const LOW = SURFACE + PARAMS.clearance - 0.002;
+
+    /** Premier point de la grille `n × n` (pas de 1/8 de la boîte) sur la terre, ou `null`. */
+    function firstLand(hard: Box3, n: number): [number, number] | null {
+      for (let i = 0; i < n; i++) {
+        for (let j = 0; j < n; j++) {
+          const x = hard.minX + ((hard.maxX - hard.minX) * i) / 8;
+          const z = hard.minZ + ((hard.maxZ - hard.minZ) * j) / 8;
+          if (isOnLand(x, z, LEFT)) {
+            return [x, z];
+          }
+        }
+      }
+      return null;
+    }
+
+    it('premier point émergé, colonne par colonne puis ligne par ligne', () => {
+      const bounds = hardBounds({ minX: -0.3, minZ: -0.05, maxY: LOW });
+      const expected = firstLand(bounds.hard, 9)!;
+      // Ni la première colonne ni la première ligne, et hors d'une grille de pas 1/10 : le
+      // parcours et le pas de la grille sont vérifiés.
+      expect(expected[0]).toBeGreaterThan(bounds.hard.minX);
+      expect(expected[1]).toBeGreaterThan(bounds.hard.minZ);
+      const frog = createFrog(1, 0, 'grenouille', bounds, LEFT);
+      expect([frog.x, frog.z]).toEqual(expected);
+      expect(frog.y).toBe(LOW);
+    });
+
+    it('la grille s’arrête au bord : terre au-delà de la dernière colonne → centre', () => {
+      const bounds = hardBounds({ minZ: -0.05, maxX: -0.03, maxY: LOW });
+      expect(firstLand(bounds.hard, 9)).toBeNull();
+      expect(firstLand(bounds.hard, 10)).not.toBeNull();
+      const frog = createFrog(1, 0, 'grenouille', bounds, LEFT);
+      expect(frog.x).toBeCloseTo((-0.45 - 0.03) / 2, 12);
+      expect(frog.z).toBeCloseTo((-0.05 + 0.2) / 2, 12);
+    });
+
+    it('la grille s’arrête au bord : terre au-delà de la dernière ligne → centre', () => {
+      const bounds = hardBounds({ minX: -0.04, maxX: 0.01, minZ: 0, maxZ: 0.06, maxY: LOW });
+      expect(firstLand(bounds.hard, 9)).toBeNull();
+      expect(firstLand(bounds.hard, 10)).not.toBeNull();
+      const frog = createFrog(1, 0, 'grenouille', bounds, LEFT);
+      expect(frog.x).toBeCloseTo(-0.015, 12);
+      expect(frog.z).toBeCloseTo(0.03, 12);
+    });
   });
 });
