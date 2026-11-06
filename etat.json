@@ -5885,10 +5885,10 @@
           "note": "Issue #461 : audit et solde des épopées de Mathis (S)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-06T16:01:25.185Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-06T16:49:28.107Z",
+          "note": "PR #486 : audit des 8 épopées (5 soldées, restes #483-#485), CI verte ; e2e local impossible (navigateur)"
         }
       },
       "metriques": {}
