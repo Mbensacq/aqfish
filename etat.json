@@ -5717,10 +5717,10 @@
           "note": "Verdict OK, 0 bug, captures publiées (c156), e2e alevins-qa ajouté"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-06T02:42:41.328Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-06T03:51:24.284Z",
+          "note": "PR #469 fusionnée → v1.11.2 (CI main verte, release créée) ; #459 fermée ; dette #470 ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
