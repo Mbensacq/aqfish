@@ -5840,7 +5840,7 @@
       "type": "retro",
       "issue": 475,
       "pr": 482,
-      "version": null,
+      "version": "v1.11.6",
       "phases": {
         "planif": {
           "statut": "termine",
