@@ -1,3 +1,4 @@
+import { algaeCoverage } from './algae';
 import type { EnvironmentId } from './environment';
 import {
   MAX_HEATER_TEMPERATURE,
@@ -153,6 +154,11 @@ export interface WaterSample {
   readonly nitrite: number;
   readonly nitrate: number;
   readonly ph: number;
+  /**
+   * Couverture moyenne des algues, dans [0, 1] (`algaeCoverage`, issue #476) ; facultative :
+   * absente, aucune algue.
+   */
+  readonly algae?: number;
 }
 
 /** Relevé exact de l'eau `water` d'un bac de l'environnement `environment` au pas `tick`. */
@@ -169,6 +175,7 @@ export function waterSample(
     nitrite: water.nitrite,
     nitrate: water.nitrate,
     ph: water.ph,
+    ...(water.algae === undefined ? {} : { algae: algaeCoverage(water.algae) }),
   };
 }
 

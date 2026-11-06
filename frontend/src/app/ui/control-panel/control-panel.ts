@@ -1,3 +1,4 @@
+import { DEFAULT_LIGHTING_HOURS, MAX_LIGHTING_HOURS, MIN_LIGHTING_HOURS } from '../../sim/algae';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -172,6 +173,20 @@ export function speciesSliderLabel(species: SpeciesId): string {
 export const HEATER_SLIDER_STEP = 0.5;
 
 /** Température lue sur le curseur du chauffage (une chaîne), `null` hors des bornes. */
+/** Libellé de la durée d'éclairage (#476) : « 8 h par jour ». */
+export function lightingText(hours: number): string {
+  return `${hours} h par jour`;
+}
+
+/**
+ * Durée d'éclairage lue sur le curseur (#476) : entier dans [`MIN_LIGHTING_HOURS`,
+ * `MAX_LIGHTING_HOURS`], `null` sinon.
+ */
+export function sliderLighting(value: string | number): number | null {
+  const h = toNumber(value);
+  return Number.isInteger(h) && h >= MIN_LIGHTING_HOURS && h <= MAX_LIGHTING_HOURS ? h : null;
+}
+
 export function sliderHeater(value: string | number): number | null {
   const t = toNumber(value);
   return Number.isFinite(t) && t >= MIN_HEATER_TEMPERATURE && t <= MAX_HEATER_TEMPERATURE
@@ -428,6 +443,35 @@ export interface NewTankRequest {
               (input)="onHeater($event)"
             />
           </label>
+          <!-- Éclairage (#476) : heures par jour ; au-delà de 10 h, les algues poussent. -->
+          <label class="control-panel__field" for="panneau-eclairage">
+            <span class="control-panel__label">
+              Éclairage <output class="control-panel__value">{{ lightingLabel() }}</output>
+            </span>
+            <input
+              id="panneau-eclairage"
+              class="control-panel__range"
+              aria-label="Durée d’éclairage par jour"
+              type="range"
+              min="0"
+              max="24"
+              step="1"
+              data-lighting
+              [value]="lighting()"
+              [attr.aria-valuetext]="lightingLabel()"
+              (input)="onLighting($event)"
+            />
+          </label>
+          <!-- Raclette (#476) : en main, un clic sur une vitre retire la plaque d'algues visée. -->
+          <button
+            type="button"
+            class="control-panel__edit"
+            data-scraper
+            [attr.aria-pressed]="scraping()"
+            (click)="scraperToggled.emit()"
+          >
+            {{ scraping() ? 'Poser la raclette' : 'Raclette : cliquer sur les algues' }}
+          </button>
           <!-- Feuilles de catappa (#239) : « − », nombre, « + », puis le rappel que l'effet est
                simplifié (approximation de jeu, ADR 0071). -->
           <div class="control-panel__count" data-catappa>
@@ -1162,6 +1206,10 @@ export class ControlPanel {
   readonly water = input<WaterReadout>(DEFAULT_WATER_READOUT);
   /** Animaux aux points blancs visibles (fournis par l'hôte, #361) : section « Soins ». */
   readonly ichCount = input(0);
+  /** Durée d'éclairage du bac, en heures par jour (fournie par l'hôte, #476). */
+  readonly lighting = input(DEFAULT_LIGHTING_HOURS);
+  /** Raclette en main (fournie par l'hôte, #476). */
+  readonly scraping = input(false);
   /** Traitement des points blancs en cours (fourni par l'hôte, #361) ; `null` : aucun. */
   readonly treatment = input<TreatmentReadout | null>(null);
   /** Message du dernier geste de soin (fourni par l'hôte, #361) ; `null` : aucun. */
@@ -1222,6 +1270,10 @@ export class ControlPanel {
   readonly populationChanged = output<PopulationRequest>();
   /** Consigne du chauffage choisie au curseur, en °C (#207). */
   readonly heaterChanged = output<number>();
+  /** Durée d'éclairage demandée (#476), en heures entières dans [0, 24]. */
+  readonly lightingChanged = output<number>();
+  /** Bouton « Raclette » (#476) : prendre ou poser la raclette. */
+  readonly scraperToggled = output<void>();
   /** Nombre de feuilles de catappa demandé (#239), dans [0, `MAX_CATAPPA_LEAVES`]. */
   readonly catappaChanged = output<number>();
   /** Bouton « Changer l'eau » (#207). */
@@ -1343,6 +1395,7 @@ export class ControlPanel {
   protected readonly hourText = computed(() => formatHour(this.hour()));
   protected readonly statusText = computed(() => saveStatusText(this.saveStatus()));
   protected readonly heaterLabel = computed(() => heaterText(this.water()));
+  protected readonly lightingLabel = computed(() => lightingText(this.lighting()));
   /** Section « Soins » (#361) : en mode soins, avec des points blancs ou un traitement. */
   protected readonly careShown = computed(
     () => this.careMode() !== 'decor' && (this.ichCount() > 0 || this.treatment() !== null),
@@ -1617,6 +1670,13 @@ export class ControlPanel {
     const hour = sliderHour((event.target as HTMLInputElement).value);
     if (hour !== null) {
       this.hourChanged.emit(hour);
+    }
+  }
+
+  protected onLighting(event: Event): void {
+    const hours = sliderLighting((event.target as HTMLInputElement).value);
+    if (hours !== null) {
+      this.lightingChanged.emit(hours);
     }
   }
 

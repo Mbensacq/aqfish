@@ -457,6 +457,12 @@ haut de sa section.
 
 ## Tests
 
+- **Clic sur le bac en e2e : refermer le panneau d'abord** (cycle 162, #476) : le panneau
+  « Réglages » ouvert recouvre une partie du canvas et le tableau de bord ; Playwright attend
+  alors indéfiniment que l'élément visé ne soit plus masqué (« subtree intercepts pointer
+  events »), jusqu'au délai du test. Refermer le panneau (bouton « Réglages ») avant de
+  cliquer sur le canvas ou sur une alerte. (2026-11-06)
+
 - **Test unitaire de l'hôte qui rend des centaines d'images : délai de 5 s dépassé en CI**
   (cycle 153) : « limite les images par seconde (fps=, 30 par défaut) »
   (`aquarium-host.spec.ts`) crée deux hôtes et pousse 1 200 images ; il a pris 5,09 s sur la
@@ -867,6 +873,12 @@ haut de sa section.
 
 ## Simulation
 
+- **Nouvel état dans l'eau : le copier dans `copyWater`** (cycle 162, #476) : `copyWater`
+  ne recopiait que le tableau `catappa` ; un autre tableau ajouté à `WaterState` (couvertures
+  des algues) serait partagé entre le monde et sa copie (`cloneWorld`, sauvegarde), et un
+  pas sur l'une changerait l'autre. Tout champ tableau de l'eau doit y être recopié (test
+  « copie de l'eau » de `algae.spec.ts`). (2026-11-06)
+
 - **Alevin né près de sa mère : mangé au premier pas** (cycle 156, #459) : né à moins de 4 cm
   d'elle, hors des plantes, un alevin est dans le rayon de prédation de tous les adultes du
   banc ; sur la graine 42, 7 des 13 alevins d'exemple disparaissaient dès le premier pas.
@@ -1069,6 +1081,13 @@ haut de sa section.
   (`bubbles.spec.ts`, issue #473). (2026-11-06)
 
 ## Rendu
+
+- **Vert sombre sous l'eau : ramené au bleu-vert de l'eau** (cycle 162, #476) : une tache
+  plate opaque dans l'eau (plaque d'algues) en `vegetationSombre` ou `vegetationOmbre` sort
+  de la passe palette en `eauSombre`/`eauMoyenne`, couleurs de l'eau voisine : le contour se
+  confond avec le fond. `vegetation` (contour) donne un liseré `eauMoyenne` visible autour du
+  cœur `vegetationClaire`. Regarder un recadrage agrandi (`PIL`, `Image.NEAREST`) avant de
+  conclure. (2026-11-06)
 
 - **Indicateur à montrer sur capture : l'interface Angular est masquée en mode capture**
   (cycle 158, #460) : `app.html` ne dessine ni panneau, ni badge, ni tableau de bord avec

@@ -31,6 +31,8 @@ import {
   HEATER_SLIDER_STEP,
   heaterText,
   sliderHeater,
+  sliderLighting,
+  lightingText,
   populationInput,
   type PopulationRequest,
   saveStatusText,
@@ -86,6 +88,16 @@ describe('fonctions du panneau de contrôle', () => {
     for (const value of ['', ' ', 'abc', 'Infinity', Number.NaN]) {
       expect(populationInput(value, 40)).toBeNull();
     }
+  });
+
+  it('sliderLighting : heures entières de 0 à 24, sinon null (#476)', () => {
+    expect(sliderLighting('0')).toBe(0);
+    expect(sliderLighting(24)).toBe(24);
+    expect(sliderLighting('12')).toBe(12);
+    for (const value of ['-1', '25', '7.5', '', 'abc', 'Infinity', Number.NaN]) {
+      expect(sliderLighting(value)).toBeNull();
+    }
+    expect(lightingText(8)).toBe('8 h par jour');
   });
 
   it('sliderHeater : consigne dans les bornes du chauffage, sinon null (#207)', () => {

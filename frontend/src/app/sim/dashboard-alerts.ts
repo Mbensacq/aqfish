@@ -1,3 +1,4 @@
+import { algaeLevel } from './algae';
 import type { GuidePage } from './care-guide';
 import type { MixWarning } from './compatibility';
 import { HUNGRY_AVERAGE, type HealthSummary } from './health-summary';
@@ -51,7 +52,15 @@ export const ALERT_SEVERITY_LABELS: Readonly<Record<AlertSeverity, string>> = {
 
 /** Sujet d'une alerte (identifiant unique). */
 export type AlertId =
-  WaterCompound | 'temperature' | 'ph' | 'ich' | 'treatment' | 'hunger' | 'health' | 'mix';
+  | WaterCompound
+  | 'temperature'
+  | 'ph'
+  | 'ich'
+  | 'treatment'
+  | 'hunger'
+  | 'health'
+  | 'mix'
+  | 'algae';
 
 /** Ordre des alertes de même gravité. */
 export const ALERT_ORDER: readonly AlertId[] = [
@@ -63,6 +72,7 @@ export const ALERT_ORDER: readonly AlertId[] = [
   'treatment',
   'hunger',
   'nitrate',
+  'algae',
   'mix',
   'health',
 ];
@@ -341,6 +351,33 @@ export function mixAlert(mixes: readonly MixWarning[]): DashboardAlert | null {
   };
 }
 
+/**
+ * Prolifération d'algues (issue #476) : « attention » dès que la couverture moyenne atteint
+ * `ALGAE_WATCH_COVERAGE`, « critique » à `ALGAE_BAD_COVERAGE` ; une couverture non finie est
+ * critique. Renvoie à la page « Entretien » du wiki. Les algues ne font pas souffrir les
+ * animaux dans le jeu : elles signalent un éclairage trop long ou des nitrates élevés.
+ */
+export function algaeAlert(coverage: number | undefined): DashboardAlert | null {
+  if (coverage === undefined) {
+    return null;
+  }
+  const level = algaeLevel(coverage);
+  if (level === 'aucune') {
+    return null;
+  }
+  const percent = Number.isFinite(coverage) ? `${Math.round(coverage * 100)} %` : '';
+  return {
+    id: 'algae',
+    severity: level === 'grave' ? 'critique' : 'attention',
+    message: level === 'grave' ? 'Algues envahissantes' : 'Algues en prolifération',
+    cause: Number.isFinite(coverage)
+      ? `éclairage trop long ou nitrates élevés ; vitres couvertes à ${percent}`
+      : INVALID_CAUSE,
+    action: 'Passer la raclette (Réglages, Soins), réduire l’éclairage et changer l’eau',
+    wiki: 'entretien',
+  };
+}
+
 /** Causes de souffrance actives, d'après les autres alertes (`sim/wellbeing.ts`). */
 function activeCauses(alerts: readonly DashboardAlert[]): string[] {
   const causes: string[] = [];
@@ -386,6 +423,7 @@ export function dashboardAlerts(input: AlertInput): readonly DashboardAlert[] {
   push(treatmentAlert(treatment));
   push(hungerAlert(health));
   push(compoundAlert('nitrate', sample.nitrate));
+  push(algaeAlert(sample.algae));
   push(mixAlert(mixes));
   push(healthAlert(health, activeCauses(found)));
   return found.sort((a, b) => rank(a) - rank(b));

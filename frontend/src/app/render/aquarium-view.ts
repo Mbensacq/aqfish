@@ -33,6 +33,7 @@ import {
 } from './camera-presets';
 import { SPECIES, speciesVariants, type SpeciesId } from '../sim/species';
 import type { Fish } from '../sim/swimmer';
+import type { AlgaePatch } from '../sim/algae';
 import { createDayLight, type DayLight } from '../sim/daylight';
 import { bubbleSourceFor } from '../sim/bubbles';
 import { environmentDataWater, type Environment } from '../sim/environment';
@@ -44,6 +45,7 @@ import type { FoodPellet } from '../sim/food';
 import { clampRoom, DEFAULT_ROOM, isRoomAvailable, type Room, type RoomBlock } from '../sim/room';
 import { SAND_THICKNESS } from '../sim/tank';
 import { BubbleLayer } from './bubble-layer';
+import { AlgaeLayer } from './algae-layer';
 import { CatappaLayer } from './catappa-layer';
 import { DecorLayer } from './decor-layer';
 import { planePoint, sandHit, type DecorPick } from './decor-pick';
@@ -238,6 +240,8 @@ export class AquariumView {
   private readonly floatingLeafLayer: FloatingLeafLayer;
   /** Feuilles de catappa sur le sol (issue #239). */
   private readonly catappaLayer: CatappaLayer;
+  /** Plaques d'algues sur les vitres (issue #476). */
+  private readonly algaeLayer = new AlgaeLayer();
   /**
    * Effets animés au contrat commun `EffectLayer` (issue #125) : bulles, pluie, puis feuilles
    * mortes. Parcourus
@@ -489,6 +493,7 @@ export class AquariumView {
       this.floatingLeafLayer,
       this.currentLayer,
       this.catappaLayer,
+      this.algaeLayer,
       this.roomLayer,
     ];
     for (const layer of this.sceneLayers) {
@@ -996,6 +1001,7 @@ export class AquariumView {
     }
     this.foodLayer.setBrightness(brightness);
     this.catappaLayer.setBrightness(brightness);
+    this.algaeLayer.setBrightness(brightness);
     const tint = decorTintInto(light.intensity, this.decorTint);
     for (let k = 0; k < 3; k++) {
       tint[k] *= overcast;
@@ -1260,6 +1266,48 @@ export class AquariumView {
     if (!this.disposed) {
       this.catappaLayer.setLeaves(leaves);
     }
+  }
+
+  /**
+   * Algues des vitres (issue #476) : plaques `patches` (`worldAlgaePatches`) à leur
+   * couverture `algae` (`WaterState.algae`, même ordre). Sans effet après `dispose`.
+   */
+  setAlgae(patches: readonly AlgaePatch[], algae: readonly number[] | undefined): void {
+    if (!this.disposed) {
+      this.algaeLayer.setAlgae(patches, algae);
+    }
+  }
+
+  /** Plaques d'algues affichées (tests). */
+  get algaeCount(): number {
+    return this.algaeLayer.count;
+  }
+
+  /**
+   * Rayon de la caméra sous le point de l'écran (`clientX`, `clientY`, pixels CSS), dans le
+   * repère du bac : origine et direction (raclette, issue #476). `null` hors du canvas ou
+   * après `dispose`.
+   */
+  pickRay(
+    clientX: number,
+    clientY: number,
+  ): {
+    readonly origin: readonly [number, number, number];
+    readonly direction: readonly [number, number, number];
+  } | null {
+    if (this.disposed) {
+      return null;
+    }
+    const ndc = toNormalizedDevice(clientX, clientY, this.canvas.getBoundingClientRect());
+    if (!ndc) {
+      return null;
+    }
+    const origin = this.camera.position;
+    const direction = new Vector3(ndc.x, ndc.y, 0.5).unproject(this.camera).sub(origin);
+    return {
+      origin: [origin.x, origin.y, origin.z],
+      direction: [direction.x, direction.y, direction.z],
+    };
   }
 
   /**

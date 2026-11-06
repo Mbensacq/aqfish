@@ -8,12 +8,13 @@ import {
 } from './care-guide';
 
 describe('pages « Produits et traitements » et « Maladies » (#291)', () => {
-  it('deux pages titrées, non vides', () => {
-    expect(GUIDE_PAGES).toEqual(['produits', 'maladies']);
+  it('trois pages titrées, non vides (« Entretien » ajoutée par #476)', () => {
+    expect(GUIDE_PAGES).toEqual(['produits', 'maladies', 'entretien']);
     for (const page of GUIDE_PAGES) {
       expect(GUIDE_PAGE_TITLES[page].trim()).not.toBe('');
-      expect(guideEntries(page).length).toBeGreaterThanOrEqual(8);
+      expect(guideEntries(page).length).toBeGreaterThanOrEqual(page === 'entretien' ? 1 : 8);
     }
+    expect(guideEntries('entretien').map((e) => e.id)).toContain('algues');
     expect(CARE_DISCLAIMER).toMatch(/pas un avis vétérinaire/);
   });
 

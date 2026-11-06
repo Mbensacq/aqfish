@@ -44,6 +44,10 @@
  * elle est mauvaise. Le niveau n'est pas vérifié ici : l'application ignore une valeur
  * inconnue ; absent, eau saine (séries existantes inchangées).
  *
+ * Paramètre facultatif `algues=<couverture>` (issue #476) : en mode capture, toutes les
+ * plaques d'algues à cette couverture (réel dans ]0, 1]) à t = 0 ; absent ou invalide, aucune
+ * algue (séries existantes inchangées).
+ *
  * Paramètre facultatif `affames=1` (issue #208) : en mode capture, animaux affamés de longue
  * date à t = 0 (faim maximale, santé au plancher : nage ralentie, couleurs ternies). Toute
  * autre valeur ou absent : animaux nourris et en bonne santé (séries existantes inchangées).
@@ -174,6 +178,11 @@ export interface CaptureParams {
   readonly room: boolean;
   /** Niveau de l'eau d'exemple de `eau=` (issue #207), non vérifié ; `null` si absent. */
   readonly water: string | null;
+  /**
+   * Couverture des algues d'exemple de `algues=` (issue #476), dans ]0, 1] ; 0 si absente ou
+   * invalide (aucune algue).
+   */
+  readonly algae: number;
   /** Forme du bassin de `forme=` (issue #190), non vérifiée ; `null` si absente. */
   readonly shape: string | null;
   /** Vrai pour `affames=1` : animaux affamés de longue date à t = 0 (issue #208). */
@@ -307,6 +316,7 @@ export const DEFAULT_CAPTURE_PARAMS: CaptureParams = {
   rain: false,
   room: false,
   water: null,
+  algae: 0,
   shape: null,
   starved: false,
   ich: false,
@@ -364,6 +374,7 @@ export function parseCaptureParams(search: string): CaptureParams {
     rain: params.get('pluie') === '1',
     room: params.get('piece') === '1',
     water: params.get('eau'),
+    algae: parseAlgae(params.get('algues')),
     shape: params.get('forme'),
     starved: params.get('affames') === '1',
     ich: params.get('points-blancs') === '1',
@@ -621,4 +632,13 @@ function parsePopulation(raw: string | null): readonly CapturePopulation[] {
 /** Nombre de feuilles de `catappa=` (issue #239) : un chiffre de 1 à 5, sinon 0. */
 function parseCatappa(raw: string | null): number {
   return raw !== null && /^[1-5]$/.test(raw) ? Number(raw) : 0;
+}
+
+/** Couverture de `algues=` : réel dans ]0, 1], sinon 0 (aucune algue). */
+function parseAlgae(value: string | null): number {
+  if (value === null || value.trim() === '') {
+    return 0;
+  }
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 && n <= 1 ? n : 0;
 }

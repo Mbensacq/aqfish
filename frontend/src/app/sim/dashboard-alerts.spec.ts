@@ -1,5 +1,6 @@
 import {
   ALERT_ORDER,
+  algaeAlert,
   alertsAnnouncement,
   animalCount,
   dashboardAlerts,
@@ -11,6 +12,7 @@ import {
   type AlertInput,
   type DashboardAlert,
 } from './dashboard-alerts';
+import { ALGAE_BAD_COVERAGE, ALGAE_WATCH_COVERAGE } from './algae';
 import { mixWarnings } from './compatibility';
 import { ICH_AGGRAVATED_AT, ICH_VISIBLE_AT } from './disease';
 import { EMPTY_HEALTH_SUMMARY, healthSummary, type HealthSummary } from './health-summary';
@@ -400,5 +402,49 @@ describe('alerte des points blancs (#366)', () => {
     expect(ids(alerts).indexOf('ich')).toBeGreaterThan(ids(alerts).indexOf('nitrite'));
     expect(ALERT_ORDER.indexOf('ich')).toBe(ALERT_ORDER.indexOf('ph') + 1);
     expect(ALERT_ORDER.indexOf('ich')).toBeLessThan(ALERT_ORDER.indexOf('hunger'));
+  });
+});
+
+describe('alerte des algues (#476)', () => {
+  it('aucune algue ou couverture sous le seuil : aucune alerte', () => {
+    expect(algaeAlert(undefined)).toBeNull();
+    expect(algaeAlert(0)).toBeNull();
+    expect(dashboardAlerts(input({ algae: ALGAE_WATCH_COVERAGE - 0.01 }))).toEqual([]);
+  });
+
+  it('prolifération au seuil (compris), avec lien vers la page « Entretien » du wiki', () => {
+    const alerts = dashboardAlerts(input({ algae: ALGAE_WATCH_COVERAGE }));
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0]).toMatchObject({
+      id: 'algae',
+      severity: 'attention',
+      message: 'Algues en prolifération',
+      wiki: 'entretien',
+    });
+    expect(alerts[0].cause).toContain('25 %');
+    expect(alerts[0].action).toMatch(/raclette/);
+  });
+
+  it('grave au second seuil ; couverture non finie : critique, mesure invalide', () => {
+    expect(algaeAlert(ALGAE_BAD_COVERAGE)).toMatchObject({
+      severity: 'critique',
+      message: 'Algues envahissantes',
+    });
+    expect(algaeAlert(Number.NaN)).toMatchObject({ severity: 'critique' });
+    expect(algaeAlert(Number.NaN)?.cause).toMatch(/invalide/);
+  });
+
+  it('rangée après les nitrates, sa cause ; une seule alerte', () => {
+    expect(ALERT_ORDER.indexOf('algae')).toBe(ALERT_ORDER.indexOf('nitrate') + 1);
+    const alerts = dashboardAlerts(
+      input({ algae: ALGAE_WATCH_COVERAGE, nitrate: COMPOUND_THRESHOLDS.nitrate.watch }),
+    );
+    expect(ids(alerts)).toEqual(['nitrate', 'algae']);
+  });
+
+  it('relevé de l’eau : couverture moyenne seulement si des algues existent', () => {
+    expect(waterSample(freshWater('tropical'), 'tropical', 0).algae).toBeUndefined();
+    const water = { ...freshWater('tropical'), algae: [0.2, 0.4] };
+    expect(waterSample(water, 'tropical', 0).algae).toBeCloseTo(0.3, 12);
   });
 });
