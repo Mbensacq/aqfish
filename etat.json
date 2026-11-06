@@ -5861,10 +5861,10 @@
           "note": "Verdict OK, 0 bug, captures c160 publiées (5 angles identiques à c159)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-06T14:44:26.929Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-06T15:59:26.711Z",
+          "note": "PR #482 fusionnée → v1.11.6 (release créée, CI main verte) ; PR #481 roadmap fusionnée ; #475 fermée ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
