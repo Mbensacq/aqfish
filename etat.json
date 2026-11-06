@@ -5819,10 +5819,10 @@
           "note": "PR #474 : bulles bornées (borne déjà présente, constat de l'issue inexact) verrouillée par 3 tests, CI verte ; e2e local trop lent (navigateur relié, cf. PIEGES), CI fait foi"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-06T11:13:56.490Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-06T11:52:01.009Z",
+          "note": "Verdict OK, 0 bug, captures c159 (5 angles identiques à c158), mutation bubbles.ts 76,12 % → #475"
         }
       },
       "metriques": {}
