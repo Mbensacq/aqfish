@@ -5940,6 +5940,24 @@
         }
       },
       "metriques": {}
+    },
+    "163": {
+      "numero": 163,
+      "date": "2026-11-06",
+      "debut": "2026-11-06T22:11:27.354Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-06T22:11:27.354Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
