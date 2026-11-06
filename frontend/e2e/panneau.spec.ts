@@ -277,8 +277,12 @@ test.describe('Panneau de contrôle', () => {
     await page.keyboard.press('Space');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-hour-frozen', 'false');
 
-    // Section « Eau » (#207) : « Changer l’eau », sur la ligne du titre, puis le chauffage et
-    // les feuilles de catappa (#239).
+    // Section « Eau » (#207) : « Courant » (#460) et « Changer l’eau », sur la ligne du titre,
+    // puis le chauffage et les feuilles de catappa (#239).
+    await page.keyboard.press('Tab');
+    await expect(
+      page.getByRole('button', { name: 'Courant : coupé, changer de force' }),
+    ).toBeFocused();
     await page.keyboard.press('Tab');
     await expect(page.getByRole('button', { name: 'Changer l’eau' })).toBeFocused();
     await page.keyboard.press('Tab');
