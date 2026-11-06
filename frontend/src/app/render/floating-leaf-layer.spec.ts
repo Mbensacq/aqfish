@@ -1,4 +1,4 @@
-import { Group, Mesh, ShaderMaterial, Vector2, type BufferGeometry } from 'three';
+import { Color, Group, Mesh, ShaderMaterial, Vector2, type BufferGeometry } from 'three';
 
 import { environmentWater } from '../sim/environment';
 import {
@@ -14,7 +14,13 @@ import {
   FLOATING_LEAF_OUTLINE_MIN_LENGTH,
   FLOATING_LEAF_RENDER_ORDER,
   FloatingLeafLayer,
+  floatingLeafTintInto,
+  LEAF_NIGHT_TINT,
 } from './floating-leaf-layer';
+import { FLOATING_LEAF_COLORS } from './floating-leaf-model';
+import { NIGHT_FLAT_BRIGHTNESS } from './night-shade';
+import { NIGHT_TONE_COLORS, PALETTE, PALETTE_COLORS } from './palette';
+import { hexToRgb, linearToSrgb, nearestPaletteIndex } from './pixel-art';
 import { FISH_RENDER_ORDER } from './fish-layer';
 import { FLOWER_RENDER_ORDER, LILY_PAD_LIFT } from './lily-pad-layer';
 import { LILY_PAD_THICKNESS } from './lily-pad-model';
@@ -112,18 +118,71 @@ describe('FloatingLeafLayer (#107)', () => {
     expect(shared.size).toBeGreaterThan(4);
   });
 
-  it('luminosité : couleurs exactes à 1, assombries la nuit, valeur invalide ignorée', () => {
+  it('luminosité : couleurs exactes à 1, teinte de nuit (#466), valeur invalide ignorée', () => {
     expect(layer.brightness).toBe(1);
     expect(layer.color.getHex()).toBe(0xffffff);
-    layer.setBrightness(0.5);
-    expect(layer.brightness).toBe(0.5);
-    expect(layer.color.r).toBeCloseTo(0.5, 12);
+    layer.setBrightness(NIGHT_FLAT_BRIGHTNESS);
+    expect(layer.brightness).toBe(NIGHT_FLAT_BRIGHTNESS);
+    expect(layer.color.r).toBeCloseTo(LEAF_NIGHT_TINT[0], 12);
+    expect(layer.color.g).toBeCloseTo(LEAF_NIGHT_TINT[1], 12);
+    expect(layer.color.b).toBeCloseTo(LEAF_NIGHT_TINT[2], 12);
     for (const bad of [NaN, -1, Infinity]) {
       layer.setBrightness(bad);
-      expect(layer.brightness).toBe(0.5);
+      expect(layer.brightness).toBe(NIGHT_FLAT_BRIGHTNESS);
     }
     layer.setBrightness(1);
     expect(layer.color.getHex()).toBe(0xffffff);
+  });
+
+  it('teinte de nuit (#466) : blanche le jour, linéaire, bornée la nuit et au-delà', () => {
+    const out = new Color();
+    expect(floatingLeafTintInto(1, out)).toBe(out);
+    expect(out.getHex()).toBe(0xffffff);
+    // Au-delà de 1 (jamais en pratique) : reste blanche.
+    expect(floatingLeafTintInto(1.5, out).getHex()).toBe(0xffffff);
+    const half = (1 + NIGHT_FLAT_BRIGHTNESS) / 2;
+    floatingLeafTintInto(half, out);
+    expect(out.r).toBeCloseTo((1 + LEAF_NIGHT_TINT[0]) / 2, 12);
+    expect(out.g).toBeCloseTo((1 + LEAF_NIGHT_TINT[1]) / 2, 12);
+    expect(out.b).toBeCloseTo((1 + LEAF_NIGHT_TINT[2]) / 2, 12);
+    for (const b of [NIGHT_FLAT_BRIGHTNESS, 0]) {
+      floatingLeafTintInto(b, out);
+      expect([out.r, out.g, out.b]).toEqual([...LEAF_NIGHT_TINT]);
+    }
+  });
+
+  it('teinte de nuit (#466) : la feuille ocre ne retombe plus sur les tons des koïs', () => {
+    const palette = [...PALETTE_COLORS, ...NIGHT_TONE_COLORS];
+    const rgbs = palette.map(hexToRgb);
+    const fishTones = [
+      PALETTE.koiRouge,
+      PALETTE.koiOrange,
+      PALETTE.koiOr,
+      PALETTE.tritonOrange,
+      PALETTE.neonRouge,
+    ];
+    const tint = floatingLeafTintInto(NIGHT_FLAT_BRIGHTNESS, new Color());
+    const shown = (hex: string): string => {
+      // Couleur de sommet (linéaire) × matériau, puis passe palette en sRGB.
+      const c = new Color(hex);
+      const rgb = [c.r * tint.r, c.g * tint.g, c.b * tint.b].map(linearToSrgb) as [
+        number,
+        number,
+        number,
+      ];
+      return palette[nearestPaletteIndex(rgb, rgbs)];
+    };
+    for (const colors of FLOATING_LEAF_COLORS) {
+      for (const hex of colors) {
+        expect(fishTones).not.toContain(shown(hex));
+      }
+    }
+    // Les deux teintes restent distinctes sous la lune (dessus clair).
+    expect(shown(FLOATING_LEAF_COLORS[0][0])).not.toBe(shown(FLOATING_LEAF_COLORS[1][0]));
+    // Témoin : un simple assombrissement ramenait l'ocre sur koiRouge.
+    const dimmed = new Color(PALETTE.tritonOrange).multiplyScalar(NIGHT_FLAT_BRIGHTNESS);
+    const dimmedRgb = [dimmed.r, dimmed.g, dimmed.b].map(linearToSrgb) as [number, number, number];
+    expect(palette[nearestPaletteIndex(dimmedRgb, rgbs)]).toBe(PALETTE.koiRouge);
   });
 
   it('temps négatif ramené à 0 ; résolution du contour bornée à 1 pixel', () => {

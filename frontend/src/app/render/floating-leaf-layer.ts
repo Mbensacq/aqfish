@@ -26,6 +26,35 @@ import {
 } from './floating-leaf-model';
 import { createLilyPadOutlineMaterial, LILY_PAD_LIFT } from './lily-pad-layer';
 import { LILY_PAD_THICKNESS } from './lily-pad-model';
+import { NIGHT_FLAT_BRIGHTNESS } from './night-shade';
+
+/**
+ * Facteur (linéaire, par canal) des couleurs des feuilles mortes en pleine nuit (#466) : clair
+ * de lune, comme le décor (`DECOR_NIGHT_TINT`) mais sans bleu poussé. Un simple assombrissement
+ * (`NIGHT_FLAT_BRIGHTNESS`) ramenait le dessus ocre (`tritonOrange`) sur `koiRouge` après la
+ * passe palette : les feuilles se confondaient avec les koïs rouges. Avec ce facteur, la feuille
+ * ocre tombe sur `sableOmbre`, `roche` et `sableLuneOmbre` (ton de nuit), la brune sur `roche`,
+ * `sableLuneOmbre` et `rocheLuneSombre` : brun chaud sous la lune, distinct des koïs et de
+ * l'eau. Les koïs, en couleurs plates simplement assombries, ne sont pas touchés.
+ */
+export const LEAF_NIGHT_TINT: readonly [number, number, number] = [0.4, 0.5, 0.8];
+
+/**
+ * Couleur du matériau des feuilles (multiplie les couleurs de sommet) pour la luminosité des
+ * couleurs plates `brightness` (`flatBrightness`, de `NIGHT_FLAT_BRIGHTNESS` la nuit à 1 le
+ * jour) : exactement blanche à 1 (couleurs d'origine, captures de jour inchangées),
+ * `LEAF_NIGHT_TINT` à `NIGHT_FLAT_BRIGHTNESS` et en deçà, linéaire entre les deux. Écrit dans
+ * `out` et le renvoie, sans allocation.
+ */
+export function floatingLeafTintInto(brightness: number, out: Color): Color {
+  const night = Math.min(1, Math.max(0, (1 - brightness) / (1 - NIGHT_FLAT_BRIGHTNESS)));
+  out.setRGB(
+    1 + (LEAF_NIGHT_TINT[0] - 1) * night,
+    1 + (LEAF_NIGHT_TINT[1] - 1) * night,
+    1 + (LEAF_NIGHT_TINT[2] - 1) * night,
+  );
+  return out;
+}
 
 /**
  * Hauteur du dessous d'une feuille morte au-dessus de la surface de l'eau, en mètres : juste
@@ -152,14 +181,16 @@ export class FloatingLeafLayer {
 
   /**
    * Luminosité des couleurs plates (`render/night-shade.ts`), comme les bulles et la pluie :
-   * 1 en plein jour (couleurs d'origine, exactement). Valeur non finie ou négative ignorée.
+   * 1 en plein jour (couleurs d'origine, exactement) ; la nuit, teinte propre aux feuilles
+   * (`floatingLeafTintInto`, #466) plutôt qu'un simple assombrissement. Valeur non finie ou
+   * négative ignorée.
    */
   setBrightness(factor: number): void {
     if (!Number.isFinite(factor) || factor < 0) {
       return;
     }
     this.brightnessFactor = factor;
-    this.material.color.setScalar(factor);
+    floatingLeafTintInto(factor, this.material.color);
   }
 
   /** Luminosité appliquée (tests). */

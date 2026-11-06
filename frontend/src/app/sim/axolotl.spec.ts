@@ -4,6 +4,7 @@ import { SIM_DT } from './constants';
 import {
   createWalker,
   groundHeight,
+  obstacleClearance,
   stepWalker,
   WADE_ROOM,
   walkerCanStand,
@@ -391,6 +392,55 @@ describe('axolotl : sauvegarde et autres environnements (#130)', () => {
         walker: { ...WALKER, weights: { marche: -1, nage: 1, remontee: 1 } },
       }).some((p) => p.includes('positifs ou nuls')),
     ).toBe(true);
+  });
+});
+
+describe('axolotl : contourne le décor du bac d’eau froide (#456, ADR 0065)', () => {
+  it('le décor du bac d’eau froide a des obstacles au milieu du bac, pas seulement au fond', () => {
+    const middle = COLD_TANK.decor.filter((d) => Math.abs(d.z) < 0.08 && Math.abs(d.x) < 0.35);
+    expect(middle.length).toBeGreaterThanOrEqual(3);
+    expect(middle.map((d) => d.kind)).toEqual(expect.arrayContaining(['rock', 'wood', 'plant']));
+    expect(createDefaultWorld(42, 'eaufroide').obstacles.length).toBe(COLD_TANK.decor.length);
+  });
+
+  it.each([42, 7, 1234])(
+    'graine %i : en marche, l’axolotl ne rentre jamais dans un obstacle (180 s)',
+    (seed) => {
+      const world = createDefaultWorld(seed, 'eaufroide');
+      expect(world.obstacles.length).toBeGreaterThan(0);
+      let worst = Number.POSITIVE_INFINITY;
+      for (let i = 0; i < Math.round(180 / SIM_DT); i++) {
+        advanceInPlace(world, 1);
+        for (const e of axolotls(world)) {
+          worst = Math.min(worst, obstacleClearance(e.x, e.y, e.z, world.obstacles));
+        }
+      }
+      expect(worst).toBeGreaterThan(0);
+    },
+    60_000,
+  );
+
+  it('premier pas : les obstacles devant font tourner l’axolotl, pas le marcheur qui les ignore', () => {
+    const world = createDefaultWorld(42, 'eaufroide');
+    const bounds = boundsFor('axolotl', 'eaufroide');
+    const water = environmentWater('eaufroide');
+    const ground: WalkerGround = { water, terrain: null };
+    const wood = COLD_TANK.decor.find((d) => d.kind === 'wood')!;
+    // Face à la racine, à faible distance, en marche.
+    const start = (): Fish => {
+      const fish = structuredClone(axolotls(world)[0]);
+      Object.assign(fish, { x: wood.x + 0.12, z: wood.z, yaw: Math.PI, turn: 0 });
+      return fish;
+    };
+    const avoiding = start();
+    const ignoring = start();
+    for (let i = 0; i < 30; i++) {
+      stepWalker(avoiding, SIM_DT, 42, i * SIM_DT, bounds, ground, world.obstacles);
+      stepWalker(ignoring, SIM_DT, 42, i * SIM_DT, bounds, ground, []);
+    }
+    const yawChange = (f: Fish) =>
+      Math.abs(Math.atan2(Math.sin(f.yaw - Math.PI), Math.cos(f.yaw - Math.PI)));
+    expect(yawChange(avoiding)).toBeGreaterThan(yawChange(ignoring));
   });
 });
 

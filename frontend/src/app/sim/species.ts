@@ -216,8 +216,8 @@ export interface BottomWalkerParams {
   readonly climbSpeed: number;
   /**
    * Vrai si la marche contourne les obstacles (coraux, rochers, décor) et ne monte ni ne
-   * descend dans l'un d'eux (crevette nettoyeuse, #422, ADR 0103) ; absent : les obstacles sont
-   * ignorés en marche, comme avant (axolotl, dont les bacs restent identiques à l'octet).
+   * descend dans l'un d'eux (crevette nettoyeuse, #422, ADR 0103 ; axolotl depuis #456,
+   * ADR 0065) ; absent : les obstacles sont ignorés en marche.
    */
   readonly avoidsObstacles?: boolean;
 }
@@ -722,6 +722,9 @@ export const AXOLOTL: SpeciesDefinition = {
     weights: { marche: 0.5, nage: 0.35, remontee: 0.15 },
     burstPeriod: 2.4,
     climbSpeed: 0.06,
+    // Contourne rochers, racines et plantes en marchant (#456, ADR 0065) : décor au milieu
+    // du bac d'eau froide.
+    avoidsObstacles: true,
   },
 };
 
@@ -764,7 +767,9 @@ export const GRENOUILLE: SpeciesDefinition = {
     accent: '#1c1c22',
     back: '#7bc950',
     belly: '#d94a3a',
-    fin: '#4e9a4a',
+    // Pattes du vert du dos (#456) : le vert sombre `vegetationClaire` se perdait sur la roche
+    // grise du paludarium en vue de face.
+    fin: '#7bc950',
     eye: '#1c1c22',
   },
   feeding: {

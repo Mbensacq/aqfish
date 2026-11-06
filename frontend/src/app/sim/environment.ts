@@ -376,9 +376,10 @@ export const COLD_TANK_DIMENSIONS: TankDimensions = { width: 1, height: 0.45, de
  * Bac d'eau froide (issue #271, ADR 0065) : l'axolotl, seul avec ses congénères (« seul ou
  * entre axolotls », `docs/ESPECES.md`), dans une eau fraîche (`WATER_TEMPERATURES`) sans
  * courant (ni diffuseur ni bulles). Fond plat de sable, eau plus sombre que le bac tropical,
- * sans caustiques ; quelques plantes et deux pierres au fond, le long de la vitre arrière :
- * l'axolotl ne contourne pas encore les obstacles en marchant (`sim/axolotl.ts`), le devant
- * reste dégagé.
+ * sans caustiques ; quelques plantes et deux pierres au fond, le long de la vitre arrière, et
+ * au milieu du bac une racine, une pierre et deux touffes (issue #456) : l'axolotl contourne
+ * les obstacles en marchant (`BottomWalkerParams.avoidsObstacles`, ADR 0065). Le devant reste
+ * dégagé pour le voir.
  */
 export const COLD_TANK: Environment = {
   id: 'eaufroide',
@@ -399,7 +400,11 @@ export const COLD_TANK: Environment = {
       { "kind": "rock", "x": 0.34, "z": -0.16, "rotation": 3.4, "scale": 0.8, "seed": 72 },
       { "kind": "plant", "form": "tall", "x": -0.22, "z": -0.17, "rotation": 1.1, "scale": 0.9, "seed": 171 },
       { "kind": "plant", "form": "tall", "x": 0.05, "z": -0.18, "rotation": 2.7, "scale": 1, "seed": 272 },
-      { "kind": "plant", "form": "tall", "x": 0.42, "z": -0.17, "rotation": 4.6, "scale": 0.75, "seed": 373 }
+      { "kind": "plant", "form": "tall", "x": 0.42, "z": -0.17, "rotation": 4.6, "scale": 0.75, "seed": 373 },
+      { "kind": "wood", "x": -0.1, "z": 0.0, "rotation": 0.35, "scale": 0.9, "seed": 456 },
+      { "kind": "rock", "x": 0.2, "z": 0.03, "rotation": 1.9, "scale": 0.75, "seed": 457 },
+      { "kind": "plant", "form": "tuft", "x": -0.3, "z": 0.05, "rotation": 2.2, "scale": 0.9, "seed": 458 },
+      { "kind": "plant", "form": "tuft", "x": 0.08, "z": -0.06, "rotation": 5.1, "scale": 0.8, "seed": 459 }
     ]`,
     COLD_TANK_DIMENSIONS,
   ),

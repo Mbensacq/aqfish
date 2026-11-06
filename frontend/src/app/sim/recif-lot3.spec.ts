@@ -179,9 +179,10 @@ describe('récif, lot 3 (#422) : catalogue complet', () => {
     expect(treatmentGroup('blennie')).toBe('poisson');
     expect(CREVETTE.walker).toBeDefined();
     expect(CREVETTE.walker?.weights.remontee).toBe(0);
-    // Contournement des obstacles propre à la crevette : l'axolotl marche comme avant.
+    // Contournement des obstacles : la crevette (#422), puis l'axolotl depuis #456 (décor au
+    // milieu du bac d'eau froide, ADR 0065).
     expect(CREVETTE.walker?.avoidsObstacles).toBe(true);
-    expect(SPECIES.axolotl.walker?.avoidsObstacles).toBeUndefined();
+    expect(SPECIES.axolotl.walker?.avoidsObstacles).toBe(true);
     expect(CREVETTE.depth).toBeUndefined();
     expect(CREVETTE.schooling).toBeNull();
     expect(CREVETTE.maxPopulation).toBe(2);
