@@ -5711,10 +5711,10 @@
           "note": "PR #469 : alevins de guppy (naissance, 4 jalons, cachettes, sauvegarde, capture alevins=1), CI verte ; 5 angles par défaut identiques à l'octet ; pied d'attribution réinséré par l'environnement dans le corps de PR"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-06T02:24:28.979Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-06T02:42:07.395Z",
+          "note": "Verdict OK, 0 bug, captures publiées (c156), e2e alevins-qa ajouté"
         }
       },
       "metriques": {}
