@@ -5813,10 +5813,10 @@
           "note": "Issue #473 : bulles bornées à la boîte d'eau (S)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-06T10:15:31.197Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-06T11:13:23.838Z",
+          "note": "PR #474 : bulles bornées (borne déjà présente, constat de l'issue inexact) verrouillée par 3 tests, CI verte ; e2e local trop lent (navigateur relié, cf. PIEGES), CI fait foi"
         }
       },
       "metriques": {}
