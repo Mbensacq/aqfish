@@ -5915,10 +5915,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-06T18:15:36.643Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-06T18:16:33.256Z",
+          "note": "Issue #476 : algues, lumière et nitrates (M)"
         }
       },
       "metriques": {}
