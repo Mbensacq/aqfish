@@ -281,7 +281,7 @@ export interface NewTankRequest {
         class="control-panel"
         [id]="panelId"
         aria-label="Réglages de l’aquarium"
-        [style.--soins]="careShown() ? '450px' : null"
+        [style.--soins]="careShown() ? '570px' : null"
       >
         <fieldset class="control-panel__section" data-section="environnement">
           <legend class="control-panel__legend">Environnement</legend>
@@ -468,9 +468,12 @@ export interface NewTankRequest {
             class="control-panel__edit"
             data-scraper
             [attr.aria-pressed]="scraping()"
+            [attr.aria-label]="
+              scraping() ? 'Poser la raclette' : 'Raclette : cliquer sur les algues'
+            "
             (click)="scraperToggled.emit()"
           >
-            {{ scraping() ? 'Poser la raclette' : 'Raclette : cliquer sur les algues' }}
+            {{ scraping() ? 'Poser la raclette' : 'Raclette' }}
           </button>
           <!-- Feuilles de catappa (#239) : « − », nombre, « + », puis le rappel que l'effet est
                simplifié (approximation de jeu, ADR 0071). -->

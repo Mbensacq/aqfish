@@ -299,8 +299,8 @@
   // d'écart (3 px sous la dernière ligne) ; aucune ligne coupée à mi-hauteur.
   // Repli (#386) : sans `round()`, la déclaration suivante est ignorée ; celle-ci reste.
   [data-section='population'] {
-    max-height: calc(100vh - var(--soins, 350px));
-    max-height: calc(round(down, 100vh - var(--soins, 350px) - 56px, 46px) + 56px);
+    max-height: calc(100vh - var(--soins, 470px));
+    max-height: calc(round(down, 100vh - var(--soins, 470px) - 56px, 46px) + 56px);
     overflow-y: auto;
   }
 }

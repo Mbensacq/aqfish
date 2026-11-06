@@ -348,6 +348,12 @@ haut de sa section.
   Cycle 143 (#426) : une simple ligne de bouton ajoutée dans « Sauvegarde » a suffi à
   déborder **en CI seulement** (Inter local : 11 px de marge) ; le bouton est passé sur la
   ligne du titre (`control-panel__legend--row`, comme « Changer l'eau »), sans ligne de plus.
+  Cycle 162 (#476) : l'éclairage et la raclette (deux lignes, +67 px dans « Eau ») ont fait
+  passer « Accessibilité » en deuxième colonne et « Sauvegarde » en troisième. Compensé en
+  raccourcissant la liste « Population » d'une hauteur de deux lignes d'espèce (`--soins` par
+  défaut 470 px au lieu de 350, 570 px au lieu de 450 avec la section « Soins ») : quatre
+  lignes visibles à 1280 × 720, la liste défile. Avec « Soins » affichée, « Sauvegarde » était
+  déjà en troisième colonne sur `main` (non testé par `cadrage-panneaux`).
 - **Panneau « Réglages » à 1280 × 720 : plus de place pour une section** (cycle 71, #207) :
   avant la section « Eau », le contenu laissait ~12 px de marge ; elle en prend ~107. Le
   panneau passe sur deux colonnes (`column-count: 2`, sections `break-inside: avoid`) au-delà
