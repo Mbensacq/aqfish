@@ -5921,10 +5921,10 @@
           "note": "Issue #476 : algues, lumière et nitrates (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-06T18:17:10.996Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-06T20:23:00.853Z",
+          "note": "PR #487 : algues, éclairage et raclette, CI verte (2e passage : panneau 1280×720 corrigé) ; e2e local partiel"
         }
       },
       "metriques": {}
