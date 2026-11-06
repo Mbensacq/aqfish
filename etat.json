@@ -5951,10 +5951,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-06T22:11:27.354Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-06T22:12:06.970Z",
+          "note": "Issue #488 : lot de dette, finitions des algues (M)"
         }
       },
       "metriques": {}
