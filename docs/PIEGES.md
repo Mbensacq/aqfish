@@ -6,6 +6,18 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Mutants de `bubbles.ts` : survivants équivalents** (cycle 160, #475) : le score passe de
+  76,1 % à 94,8 % (134 mutants : 126 tués, 1 en délai dépassé, 7 équivalents ; 10 à 12 min
+  sur 2 cœurs). Les tirages sont verrouillés par un tirage de référence réécrit dans
+  `bubbles.spec.ts` (« #475 ») : changer l'ordre ou les intervalles de `bubbleTraits` le fait échouer, c'est
+  voulu. Restent sept mutants équivalents : `<=` au lieu de `<` dans les deux tirages à seuil
+  (signe du zigzag, grosse bulle : égalité exacte d'un tirage, probabilité 2⁻³²) ; la fenêtre
+  de numéros élargie (`water.maxY + BUBBLE_START_Y`, epsilon de `first` inversé) : les bulles
+  en plus sont déjà sorties et sautées par `p.y >= water.maxY` ; la garde du courant forcée à
+  `true` (ajouter `0 · age` ne change aucun octet) ; les objets de travail `scratchTraits` et
+  `scratchPoint` vidés (`{}`), réécrits en entier avant toute lecture. Les messages des
+  `RangeError` sont vérifiés par motif : sans cela, un tableau typé de taille invalide ou
+  `deriveSeed` lèvent aussi une `RangeError` et les gardes semblent inutiles. (2026-11-06)
 - **Mutants de `frog.ts` (lignes 141 à 300) : survivants équivalents et cas construits**
   (cycle 157, #450) : la plage passe de 55,2 % à 98,2 % (163 mutants : 160 tués, 3 équivalents ; ~10 min sur 2 cœurs).
   Restent trois mutants équivalents : `<=` au lieu de `<` dans la garde de l'arc de `canHop`

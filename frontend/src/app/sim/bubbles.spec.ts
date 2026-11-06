@@ -1,12 +1,19 @@
-import { MAX_SEED } from '../core/random/prng';
+import { createPrng, deriveSeed, MAX_SEED } from '../core/random/prng';
 import {
   BUBBLE_EMIT_PERIOD,
   BUBBLE_LARGE_RATIO,
+  BUBBLE_MAX_DRIFT,
+  BUBBLE_MAX_JITTER,
   BUBBLE_MAX_LIFETIME,
   BUBBLE_MAX_SPEED,
   BUBBLE_MAX_SPREAD,
+  BUBBLE_MAX_WOBBLE,
+  BUBBLE_MAX_WOBBLE_RATE,
   BUBBLE_MIN_SPEED,
+  BUBBLE_MIN_WOBBLE,
+  BUBBLE_MIN_WOBBLE_RATE,
   BUBBLE_START_Y,
+  BUBBLE_STREAM,
   bubblePosition,
   bubbleSourceFor,
   bubbleTraits,
@@ -383,5 +390,187 @@ describe('bulles emportées par le courant (issue #473)', () => {
         expect(cut.sizes.subarray(0, cut.count)).toEqual(plain.sizes.subarray(0, plain.count));
       }
     }
+  });
+});
+
+describe('bulles : cas construits (issue #475)', () => {
+  /** Tirage de référence, réécrit d'après la documentation : ordre et intervalles. */
+  function referenceTraits(seed: number, index: number): BubbleTraits {
+    const rng = createPrng(deriveSeed(deriveSeed(seed, BUBBLE_STREAM), index));
+    const between = (a: number, b: number) => a + (b - a) * rng.next();
+    const speed = between(BUBBLE_MIN_SPEED, BUBBLE_MAX_SPEED);
+    const amplitude = between(BUBBLE_MIN_WOBBLE, BUBBLE_MAX_WOBBLE);
+    const wobble = rng.next() < 0.5 ? -amplitude : amplitude;
+    return {
+      speed,
+      wobble,
+      wobbleRate: between(BUBBLE_MIN_WOBBLE_RATE, BUBBLE_MAX_WOBBLE_RATE),
+      driftX: between(-BUBBLE_MAX_DRIFT, BUBBLE_MAX_DRIFT),
+      driftZ: between(-BUBBLE_MAX_DRIFT, BUBBLE_MAX_DRIFT),
+      jitterX: between(-BUBBLE_MAX_JITTER, BUBBLE_MAX_JITTER),
+      jitterZ: between(-BUBBLE_MAX_JITTER, BUBBLE_MAX_JITTER),
+      size: rng.next() < BUBBLE_LARGE_RATIO ? 2 : 1,
+    };
+  }
+
+  it('paramètres : identiques au tirage de référence, sur des graines extrêmes', () => {
+    for (const seed of [0, 1, 42, MAX_SEED]) {
+      for (const k of [0, 1, 2, 3, 17, 1000, MAX_SEED]) {
+        expect(traits(seed, k)).toEqual(referenceTraits(seed, k));
+      }
+    }
+  });
+
+  it('paramètres : dérive, émission et zigzag couvrent leur intervalle, des deux signes', () => {
+    const n = 2000;
+    let negativeWobble = 0;
+    const range = { driftX: [0, 0], driftZ: [0, 0], jitterX: [0, 0], jitterZ: [0, 0] };
+    for (let k = 0; k < n; k++) {
+      const t = traits(42, k);
+      expect(Math.abs(t.wobble)).toBeGreaterThanOrEqual(BUBBLE_MIN_WOBBLE);
+      expect(Math.abs(t.wobble)).toBeLessThan(BUBBLE_MAX_WOBBLE);
+      expect(t.wobbleRate).toBeGreaterThanOrEqual(BUBBLE_MIN_WOBBLE_RATE);
+      expect(t.wobbleRate).toBeLessThan(BUBBLE_MAX_WOBBLE_RATE);
+      negativeWobble += t.wobble < 0 ? 1 : 0;
+      for (const key of ['driftX', 'driftZ', 'jitterX', 'jitterZ'] as const) {
+        range[key][0] = Math.min(range[key][0], t[key]);
+        range[key][1] = Math.max(range[key][1], t[key]);
+      }
+    }
+    expect(negativeWobble / n).toBeGreaterThan(0.45);
+    expect(negativeWobble / n).toBeLessThan(0.55);
+    for (const [key, max] of [
+      ['driftX', BUBBLE_MAX_DRIFT],
+      ['driftZ', BUBBLE_MAX_DRIFT],
+      ['jitterX', BUBBLE_MAX_JITTER],
+      ['jitterZ', BUBBLE_MAX_JITTER],
+    ] as const) {
+      expect(range[key][0]).toBeGreaterThanOrEqual(-max);
+      expect(range[key][0]).toBeLessThan(-0.95 * max);
+      expect(range[key][1]).toBeLessThan(max);
+      expect(range[key][1]).toBeGreaterThan(0.95 * max);
+    }
+  });
+
+  it('trajectoire : dérive et zigzag signés, valeurs exactes', () => {
+    const source = { x: 0.1, z: -0.05 };
+    const t: BubbleTraits = {
+      speed: 0.12,
+      wobble: 0.004,
+      wobbleRate: Math.PI / 2,
+      driftX: 0.005,
+      driftZ: -0.003,
+      jitterX: 0.001,
+      jitterZ: -0.002,
+      size: 1,
+    };
+    // Âge 1 s : phase π/2, sin = 1 et 1 − cos = 1.
+    const p = bubblePosition(t, 1, source, { x: 0, y: 0, z: 0 });
+    expect(p.x).toBeCloseTo(0.1 + 0.001 + 0.005 + 0.004, 12);
+    expect(p.y).toBeCloseTo(BUBBLE_START_Y + 0.12, 12);
+    expect(p.z).toBeCloseTo(-0.05 - 0.002 - 0.003 + 0.002, 12);
+    // Âge 4 s : phase 2π, le zigzag est revenu à zéro, seule la dérive compte.
+    const q = bubblePosition(t, 4, source, { x: 0, y: 0, z: 0 });
+    expect(q.x).toBeCloseTo(0.1 + 0.001 + 0.02, 12);
+    expect(q.z).toBeCloseTo(-0.05 - 0.002 - 0.012, 12);
+  });
+
+  /** Bulles vivantes de référence, sans fenêtre de numéros : toutes depuis la n° 0. */
+  function referenceBubbles(
+    seed: number,
+    time: number,
+    source: { x: number; z: number },
+    water: ReturnType<typeof waterVolume>,
+    cx: number,
+    cz: number,
+  ): number[] {
+    const out: number[] = [];
+    for (let k = 0; k * BUBBLE_EMIT_PERIOD <= time + 1e-12; k++) {
+      const age = time - k * BUBBLE_EMIT_PERIOD;
+      const p = bubblePosition(traits(seed, k), age, source, { x: 0, y: 0, z: 0 });
+      const x = p.x + cx * age;
+      const z = p.z + cz * age;
+      if (p.y < water.maxY) {
+        out.push(
+          Math.min(water.maxX, Math.max(water.minX, x)),
+          p.y,
+          Math.min(water.maxZ, Math.max(water.minZ, z)),
+        );
+      }
+    }
+    return out;
+  }
+
+  it.each([
+    [0, 0.004],
+    [0, -0.004],
+    [0.004, 0],
+    [-0.004, 0],
+    [0.003, -0.002],
+  ])('courant (%s, %s) m/s : chaque bulle est emportée dans son sens', (cx, cz) => {
+    const water = waterVolume(MAX_TANK);
+    const source = bubbleSourceFor(MAX_TANK);
+    const buffer = createBubbleBuffer();
+    const plain = createBubbleBuffer();
+    for (const time of [0, 1, 3.3, 12.75]) {
+      fillBubbles(42, time, buffer, source, water, cx, cz);
+      fillBubbles(42, time, plain, source, water);
+      const expected = referenceBubbles(42, time, source, water, cx, cz);
+      const actual = snapshot(buffer);
+      expect(actual.length).toBe(expected.length);
+      actual.forEach((v, i) => expect(v).toBeCloseTo(expected[i], 12));
+      // Sens du déplacement par rapport aux mêmes bulles sans courant (bac assez grand pour
+      // qu'aucune ne touche une vitre).
+      expect(buffer.count).toBe(plain.count);
+      let moved = 0;
+      for (let i = 0; i < buffer.count; i++) {
+        const dx = buffer.positions[3 * i] - plain.positions[3 * i];
+        const dz = buffer.positions[3 * i + 2] - plain.positions[3 * i + 2];
+        expect(cx === 0 ? dx === 0 : dx * cx >= 0).toBe(true);
+        expect(cz === 0 ? dz === 0 : dz * cz >= 0).toBe(true);
+        moved += Math.abs(dx) + Math.abs(dz) > 1e-6 ? 1 : 0;
+      }
+      if (time > 0) {
+        expect(moved).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it('dernier numéro de bulle représentable : accepté, la plus récente est sur le diffuseur', () => {
+    const buffer = createBubbleBuffer();
+    const time = MAX_SEED * BUBBLE_EMIT_PERIOD;
+    expect(fillBubbles(42, time, buffer)).toBeGreaterThan(0);
+    const newest = buffer.count - 1;
+    expect(buffer.positions[3 * newest + 1]).toBe(BUBBLE_START_Y);
+    const t = traits(42, MAX_SEED);
+    expect(buffer.positions[3 * newest]).toBe(DEFAULT_BUBBLE_SOURCE.x + t.jitterX);
+    expect(buffer.sizes[newest]).toBe(t.size);
+    expect(() => fillBubbles(42, (MAX_SEED + 1) * BUBBLE_EMIT_PERIOD, buffer)).toThrow(RangeError);
+  });
+
+  it('naissance à l’instant exact de son émission, à toute cadence', () => {
+    const buffer = createBubbleBuffer();
+    for (const k of [1, 3, 7, 40, 123]) {
+      fillBubbles(42, k * BUBBLE_EMIT_PERIOD, buffer);
+      expect(buffer.positions[3 * (buffer.count - 1) + 1]).toBe(BUBBLE_START_Y);
+    }
+  });
+
+  it('refus explicites : le message nomme la valeur fautive (pas une erreur de tableau)', () => {
+    expect(() => createBubbleBuffer(-1)).toThrow(/capacity doit être un entier/);
+    expect(() => createBubbleBuffer(1.5)).toThrow(/capacity doit être un entier/);
+    expect(() => fillBubbles(42, -1, createBubbleBuffer())).toThrow(/time doit être un réel/);
+    expect(() =>
+      fillBubbles(42, (MAX_SEED + 1) * BUBBLE_EMIT_PERIOD, createBubbleBuffer()),
+    ).toThrow(/time trop grand/);
+  });
+
+  it('diffuseur par défaut au fond à gauche, durée de vie maximale de la bulle la plus lente', () => {
+    expect(DEFAULT_BUBBLE_SOURCE.x).toBeLessThan(0);
+    expect(DEFAULT_BUBBLE_SOURCE.z).toBeLessThan(0);
+    expect(DEFAULT_BUBBLE_SOURCE.x).toBeGreaterThan(WATER.minX);
+    expect(DEFAULT_BUBBLE_SOURCE.z).toBeGreaterThan(WATER.minZ);
+    // La bulle la plus lente atteint la surface au bout de BUBBLE_MAX_LIFETIME.
+    expect(BUBBLE_START_Y + BUBBLE_MIN_SPEED * BUBBLE_MAX_LIFETIME).toBeCloseTo(WATER.maxY, 12);
   });
 });
