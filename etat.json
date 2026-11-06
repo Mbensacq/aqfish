@@ -5811,6 +5811,12 @@
           "debut": "2026-11-06T10:14:26.881Z",
           "fin": "2026-11-06T10:15:00.208Z",
           "note": "Issue #473 : bulles bornées à la boîte d'eau (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-06T10:15:31.197Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
