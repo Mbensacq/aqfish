@@ -1,5 +1,6 @@
-# Captures c155
-- Branche : cycle/c155-dette-amphibiens-feuilles (PR #467), commit aef0ade
-- Graine : par défaut de captures.spec.ts ; rendu logiciel, Chromium headless
-- Généré le 2026-11-06 : 128 images régénérées (8,9 min), aucune reprise.
-- Différentes de c154 : bassin-*-minuit (2, feuilles), eaufroide-* (3, décor et axolotl), paludarium-* (6, pattes du sonneur), interface-liste-bacs (1, hors périmètre annoncé : bac tropical affiché, probablement bruit d'animation, aucun bug visible). 5 angles du bac seul identiques.
+Cycle 156 — QA
+Branche : cycle/c156-alevins-guppy
+PR : #469
+Commit : abada70
+Graine : 42, temps de capture : 0 s
+Les 5 angles par défaut sont identiques à l'octet à la série c155 ; seule three-quarter-alevins est nouvelle.
