@@ -1050,6 +1050,11 @@ haut de sa section.
   36 cm en 15 s). Pour tester un comportement géométrique (contourner un rocher), remettre
   `fish.turn = 0` avant chaque pas, et placer la scène dans un grand bac pour qu'aucune paroi
   n'interfère (`swimmer.spec.ts`). (2026-10-18)
+- **Test « tout reste dans la boîte » sur des milliers de points : trop d'`expect`** : un
+  `expect` par coordonnée (3 graines × 8 directions × 400 instants × ~40 bulles × 6 bornes)
+  dépasse le délai de 5 s de Vitest. Accumuler les écarts dans un tableau de messages et finir
+  par un seul `expect(ecarts).toEqual([])` : plus rapide, et l'échec liste les cas fautifs
+  (`bubbles.spec.ts`, issue #473). (2026-11-06)
 
 ## Rendu
 

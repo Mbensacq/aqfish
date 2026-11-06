@@ -8,6 +8,7 @@ import {
   BUBBLE_MIN_SPEED,
   BUBBLE_START_Y,
   bubblePosition,
+  bubbleSourceFor,
   bubbleTraits,
   createBubbleBuffer,
   DEFAULT_BUBBLE_SOURCE,
@@ -16,7 +17,8 @@ import {
   type BubbleBuffer,
   type BubbleTraits,
 } from './bubbles';
-import { MAX_TANK, waterVolume } from './tank';
+import { MAX_TANK, waterVolume, type TankDimensions } from './tank';
+import { CURRENT_SPEEDS } from './water-current';
 import { advance, createDefaultWorld, worldBubbles } from './world';
 
 const WATER = waterVolume();
@@ -269,5 +271,117 @@ describe('bulles du monde', () => {
       worldBubbles(w, buffer);
     }
     expect(w).toEqual(advance(createDefaultWorld(42), 300));
+  });
+});
+
+describe('bulles emportées par le courant (issue #473)', () => {
+  // Petit bac haut : la bulle la plus lente vit ~7,3 s et dérive de ~0,51 m au courant fort,
+  // alors que le diffuseur n'est qu'à 0,42 m de la vitre aval.
+  const SMALL_TALL: TankDimensions = { width: 0.6, height: 0.9, depth: 0.5 };
+  const water = waterVolume(SMALL_TALL);
+  const source = bubbleSourceFor(SMALL_TALL);
+  const speed = CURRENT_SPEEDS.fort;
+
+  it('aucune bulle ne sort de l’eau sur toute sa vie, courant fort, dans 8 directions', () => {
+    const buffer = createBubbleBuffer();
+    let touched = 0;
+    const outside: string[] = [];
+    for (const seed of [0, 42, MAX_SEED]) {
+      for (let d = 0; d < 8; d++) {
+        const angle = (d * Math.PI) / 4;
+        const cx = Math.cos(angle) * speed;
+        const cz = Math.sin(angle) * speed;
+        // Plus d'une durée de vie maximale, au pas de 0,05 s : chaque bulle de la fenêtre
+        // est suivie de sa naissance à son éclatement.
+        for (let time = 0; time < 20; time += 0.05) {
+          fillBubbles(seed, time, buffer, source, water, cx, cz);
+          if (buffer.count === 0) {
+            outside.push(`graine ${seed}, direction ${d}, t = ${time.toFixed(2)} : aucune bulle`);
+          }
+          for (let i = 0; i < buffer.count; i++) {
+            const [x, y, z] = buffer.positions.subarray(3 * i, 3 * i + 3);
+            const inside =
+              x >= water.minX &&
+              x <= water.maxX &&
+              y >= water.minY &&
+              y < water.maxY &&
+              z >= water.minZ &&
+              z <= water.maxZ;
+            if (!inside) {
+              outside.push(
+                `graine ${seed}, direction ${d}, t = ${time.toFixed(2)} : ${x}, ${y}, ${z}`,
+              );
+            }
+            if (x === water.minX || x === water.maxX || z === water.minZ || z === water.maxZ) {
+              touched++;
+            }
+          }
+        }
+      }
+    }
+    expect(outside).toEqual([]);
+    // Le cas visé se produit bien : des bulles atteignent la vitre (et la longent).
+    expect(touched).toBeGreaterThan(0);
+  });
+
+  it('une bulle arrêtée contre la vitre aval la longe en montant jusqu’à la surface', () => {
+    const buffer = createBubbleBuffer();
+    const seed = 42;
+    // Bulle la plus lente parmi les 40 premières : c'est elle qui atteint la vitre.
+    let slowest = 0;
+    for (let k = 1; k < 40; k++) {
+      if (traits(seed, k).speed < traits(seed, slowest).speed) {
+        slowest = k;
+      }
+    }
+    const t = traits(seed, slowest);
+    const lifetime = (water.maxY - BUBBLE_START_Y) / t.speed;
+    const birth = slowest * BUBBLE_EMIT_PERIOD;
+    let previousY = -Infinity;
+    let atGlass = false;
+    let lastX = 0;
+    for (let age = 0; age < lifetime - 0.01; age += 0.1) {
+      fillBubbles(seed, birth + age, buffer, source, water, speed, 0);
+      // La bulle suivie est la plus ancienne vivante née à `birth` : on la retrouve par son y.
+      const expectedY = BUBBLE_START_Y + t.speed * age;
+      let found = -1;
+      for (let i = 0; i < buffer.count; i++) {
+        if (Math.abs(buffer.positions[3 * i + 1] - expectedY) < 1e-9) {
+          found = i;
+        }
+      }
+      expect(found).toBeGreaterThanOrEqual(0);
+      const y = buffer.positions[3 * found + 1];
+      expect(y).toBeGreaterThan(previousY);
+      previousY = y;
+      lastX = buffer.positions[3 * found];
+      if (buffer.positions[3 * found] === water.maxX) {
+        atGlass = true;
+      }
+    }
+    expect(atGlass).toBe(true);
+    // Juste avant la surface, elle est toujours plaquée contre la vitre.
+    expect(lastX).toBe(water.maxX);
+  });
+
+  it('courant coupé : sortie identique à l’octet à celle sans courant', () => {
+    const plain = createBubbleBuffer();
+    const cut = createBubbleBuffer();
+    const signedZero = createBubbleBuffer();
+    for (const seed of [0, 42, MAX_SEED]) {
+      for (let time = 0; time < 30; time += 0.37) {
+        fillBubbles(seed, time, plain);
+        fillBubbles(seed, time, cut, DEFAULT_BUBBLE_SOURCE, WATER, 0, 0);
+        fillBubbles(seed, time, signedZero, DEFAULT_BUBBLE_SOURCE, WATER, -0, -0);
+        expect(cut.count).toBe(plain.count);
+        expect(signedZero.count).toBe(plain.count);
+        const bytes = new Uint8Array(plain.positions.buffer, 0, plain.count * 24);
+        expect(new Uint8Array(cut.positions.buffer, 0, cut.count * 24)).toEqual(bytes);
+        expect(new Uint8Array(signedZero.positions.buffer, 0, signedZero.count * 24)).toEqual(
+          bytes,
+        );
+        expect(cut.sizes.subarray(0, cut.count)).toEqual(plain.sizes.subarray(0, plain.count));
+      }
+    }
   });
 });
