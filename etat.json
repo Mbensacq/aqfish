@@ -5699,10 +5699,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-06T01:22:12.757Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-06T01:22:49.418Z",
+          "note": "Issue #459 : alevins de guppy (M)"
         }
       },
       "metriques": {}
