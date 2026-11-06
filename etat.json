@@ -5760,6 +5760,24 @@
         }
       },
       "metriques": {}
+    },
+    "158": {
+      "numero": 158,
+      "date": "2026-11-06",
+      "debut": "2026-11-06T06:48:02.563Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-06T06:48:02.563Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
