@@ -5787,6 +5787,12 @@
           "debut": "2026-11-06T08:44:08.116Z",
           "fin": "2026-11-06T09:05:36.055Z",
           "note": "Verdict OK, 0 bug, captures c158 publiées (série partielle, 5 angles identiques à c157)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-06T09:06:04.591Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
