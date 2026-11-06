@@ -5955,6 +5955,12 @@
           "debut": "2026-11-06T22:11:27.354Z",
           "fin": "2026-11-06T22:12:06.970Z",
           "note": "Issue #488 : lot de dette, finitions des algues (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-06T22:12:40.939Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
