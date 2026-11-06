@@ -59,6 +59,7 @@ import {
   changeWorldWater,
   createDefaultWorld,
   setWorldHeater,
+  worldAlgaePatches,
 } from '../../sim/world';
 import { freshWater } from '../../sim/water';
 import { phBands } from '../../sim/water-ph';
@@ -1366,6 +1367,46 @@ describe('AquariumHost', () => {
       expect(host().world!.water.heater).toBe(28);
       expect(host().water().target).toBe(28);
       expect(waterAttr()).toBe('bonne;24;28;0;0;0');
+    });
+
+    it('éclairage et raclette (#476) : réglage enregistré, plaque raclée, poissons intacts', async () => {
+      await create('?seed=42&vitesse=0');
+      const algaeAttr = () => fixture.nativeElement.getAttribute('data-aqfish-algae');
+      expect(algaeAttr()).toBe('0;0;8');
+      host().setLighting(14);
+      expect(host().world!.water.lighting).toBe(14);
+      expect(host().lighting()).toBe(14);
+      host().setLighting(30);
+      expect(host().world!.water.lighting).toBe(14);
+      expect(algaeAttr()).toBe('0;0;14');
+      const world = host().world! as { water: object };
+      world.water = { ...world.water, algae: [1, 1, 1, 1, 1, 1, 1, 1] };
+      const fishes = JSON.stringify(host().world!.entities);
+      const patch = worldAlgaePatches(host().world!)[0];
+      host().toggleScraper();
+      expect(host().scraping()).toBe(true);
+      expect(fixture.nativeElement.getAttribute('data-aqfish-scraper')).toBe('true');
+      const from: [number, number, number] =
+        patch.wall === 'gauche'
+          ? [-3, patch.y, patch.z]
+          : patch.wall === 'droite'
+            ? [3, patch.y, patch.z]
+            : [patch.x, patch.y, 3];
+      const to: [number, number, number] = [
+        patch.x - from[0],
+        patch.y - from[1],
+        patch.z - from[2],
+      ];
+      expect(host().scrapeAlong(from, to)).toBeGreaterThanOrEqual(0);
+      expect(algaeAttr()).toMatch(/^7;88;14$/);
+      expect(JSON.stringify(host().world!.entities)).toBe(fishes);
+      expect(host().scrapeAlong([0, 9, 0], [0, 1, 0])).toBe(-1);
+      host().toggleScraper();
+      expect(host().scraping()).toBe(false);
+      fixture.destroy();
+      await create();
+      expect(host().world!.water.lighting).toBe(14);
+      expect(host().world!.water.algae?.filter((c) => c === 0)).toHaveLength(1);
     });
 
     it('soins des points blancs (#361) : geste refusé ou accepté, état exposé et enregistré', async () => {

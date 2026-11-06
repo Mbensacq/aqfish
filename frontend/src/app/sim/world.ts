@@ -10,6 +10,17 @@ import { MAX_TOTAL_FISH, SIM_DT } from './constants';
 import { dayIntensityAt, hourAt, type DayClock } from './daylight';
 import { nightRest } from './day-rhythm';
 import {
+  algaeGrowth,
+  cachedAlgaePatches,
+  hasAlgae,
+  lightingOf,
+  scrapeAlgaeInPlace,
+  scrapedPatch,
+  setLightingInPlace,
+  stepAlgaeInPlace,
+  type AlgaePatch,
+} from './algae';
+import {
   anemoneFootprints,
   anemoneHomes,
   anemoneLayout,
@@ -898,6 +909,18 @@ function stepInPlace(world: MutableWorld, dt: number, clock: SimClock): void {
     waterLiters(environmentWater(place)),
     targetTemperature(world.water, world.environment),
   );
+  // Algues (issue #476) : sans hasard, sur les nitrates de fin de pas ; sans pousse (éclairage
+  // normal, eau propre), rien n'est calculé ni écrit.
+  if (
+    hasAlgae(world.environment) &&
+    algaeGrowth(lightingOf(world.water), world.water.nitrate) > 0
+  ) {
+    stepAlgaeInPlace(
+      world.water as MutableWaterState,
+      dt,
+      cachedAlgaePatches(world.seed, environmentWater(place)),
+    );
+  }
   // Points blancs (issue #360) : sur l'eau de fin de pas ; aucun tirage sans stress ni
   // malade, donc un bac sain avance exactement comme avant. Un traitement efficace dans
   // l'eau (issue #361) empêche toute nouvelle infection, puis fait avancer la cure.
@@ -1220,6 +1243,38 @@ export function setWorldHeater(world: World, temperature: number): World {
  */
 export function setWorldHeaterInPlace(world: MutableWorld, temperature: number): number {
   return setHeaterInPlace(world.water as MutableWaterState, temperature);
+}
+
+/**
+ * Durée d'éclairage du bac (issue #476, `setLightingInPlace`), **en modifiant** `world` :
+ * heures entières par jour, valeur par défaut non écrite. Renvoie faux, sans rien changer,
+ * hors de [`MIN_LIGHTING_HOURS`, `MAX_LIGHTING_HOURS`].
+ */
+export function setWorldLightingInPlace(world: MutableWorld, hours: number): boolean {
+  return setLightingInPlace(world.water as MutableWaterState, hours);
+}
+
+/** Plaques d'algues du bac de `world` (`algaePatches`), vides hors des bacs à algues. */
+export function worldAlgaePatches(world: World): readonly AlgaePatch[] {
+  return hasAlgae(world.environment)
+    ? cachedAlgaePatches(world.seed, environmentWater(world))
+    : NO_ALGAE_PATCHES;
+}
+
+const NO_ALGAE_PATCHES: readonly AlgaePatch[] = Object.freeze([]);
+
+/**
+ * Raclette (issue #476), **en modifiant** `world` : retire la plaque d'algues visible
+ * touchée la première par le rayon (`origin`, `direction`, repère du bac). Ne touche ni aux
+ * poissons ni au reste de l'eau. Renvoie l'indice de la plaque retirée, `-1` si aucune.
+ */
+export function scrapeWorldAlgaeInPlace(
+  world: MutableWorld,
+  origin: readonly [number, number, number],
+  direction: readonly [number, number, number],
+): number {
+  const index = scrapedPatch(worldAlgaePatches(world), world.water.algae, origin, direction);
+  return index >= 0 && scrapeAlgaeInPlace(world.water as MutableWaterState, index) ? index : -1;
 }
 
 /**

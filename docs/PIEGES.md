@@ -348,6 +348,12 @@ haut de sa section.
   Cycle 143 (#426) : une simple ligne de bouton ajoutée dans « Sauvegarde » a suffi à
   déborder **en CI seulement** (Inter local : 11 px de marge) ; le bouton est passé sur la
   ligne du titre (`control-panel__legend--row`, comme « Changer l'eau »), sans ligne de plus.
+  Cycle 162 (#476) : l'éclairage et la raclette (deux lignes, +67 px dans « Eau ») ont fait
+  passer « Accessibilité » en deuxième colonne et « Sauvegarde » en troisième. Compensé en
+  raccourcissant la liste « Population » d'une hauteur de deux lignes d'espèce (`--soins` par
+  défaut 470 px au lieu de 350, 570 px au lieu de 450 avec la section « Soins ») : quatre
+  lignes visibles à 1280 × 720, la liste défile. Avec « Soins » affichée, « Sauvegarde » était
+  déjà en troisième colonne sur `main` (non testé par `cadrage-panneaux`).
 - **Panneau « Réglages » à 1280 × 720 : plus de place pour une section** (cycle 71, #207) :
   avant la section « Eau », le contenu laissait ~12 px de marge ; elle en prend ~107. Le
   panneau passe sur deux colonnes (`column-count: 2`, sections `break-inside: avoid`) au-delà
@@ -456,6 +462,12 @@ haut de sa section.
   aussi à la commande du shell qui l'exécute, qui se tue elle-même (code 144). (2026-10-21)
 
 ## Tests
+
+- **Clic sur le bac en e2e : refermer le panneau d'abord** (cycle 162, #476) : le panneau
+  « Réglages » ouvert recouvre une partie du canvas et le tableau de bord ; Playwright attend
+  alors indéfiniment que l'élément visé ne soit plus masqué (« subtree intercepts pointer
+  events »), jusqu'au délai du test. Refermer le panneau (bouton « Réglages ») avant de
+  cliquer sur le canvas ou sur une alerte. (2026-11-06)
 
 - **Test unitaire de l'hôte qui rend des centaines d'images : délai de 5 s dépassé en CI**
   (cycle 153) : « limite les images par seconde (fps=, 30 par défaut) »
@@ -867,6 +879,12 @@ haut de sa section.
 
 ## Simulation
 
+- **Nouvel état dans l'eau : le copier dans `copyWater`** (cycle 162, #476) : `copyWater`
+  ne recopiait que le tableau `catappa` ; un autre tableau ajouté à `WaterState` (couvertures
+  des algues) serait partagé entre le monde et sa copie (`cloneWorld`, sauvegarde), et un
+  pas sur l'une changerait l'autre. Tout champ tableau de l'eau doit y être recopié (test
+  « copie de l'eau » de `algae.spec.ts`). (2026-11-06)
+
 - **Alevin né près de sa mère : mangé au premier pas** (cycle 156, #459) : né à moins de 4 cm
   d'elle, hors des plantes, un alevin est dans le rayon de prédation de tous les adultes du
   banc ; sur la graine 42, 7 des 13 alevins d'exemple disparaissaient dès le premier pas.
@@ -1069,6 +1087,13 @@ haut de sa section.
   (`bubbles.spec.ts`, issue #473). (2026-11-06)
 
 ## Rendu
+
+- **Vert sombre sous l'eau : ramené au bleu-vert de l'eau** (cycle 162, #476) : une tache
+  plate opaque dans l'eau (plaque d'algues) en `vegetationSombre` ou `vegetationOmbre` sort
+  de la passe palette en `eauSombre`/`eauMoyenne`, couleurs de l'eau voisine : le contour se
+  confond avec le fond. `vegetation` (contour) donne un liseré `eauMoyenne` visible autour du
+  cœur `vegetationClaire`. Regarder un recadrage agrandi (`PIL`, `Image.NEAREST`) avant de
+  conclure. (2026-11-06)
 
 - **Indicateur à montrer sur capture : l'interface Angular est masquée en mode capture**
   (cycle 158, #460) : `app.html` ne dessine ni panneau, ni badge, ni tableau de bord avec

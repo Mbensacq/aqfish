@@ -25,13 +25,18 @@ export interface GuideEntry {
 }
 
 /** Page transversale du wiki. */
-export type GuidePage = 'produits' | 'maladies';
+export type GuidePage = 'produits' | 'maladies' | 'entretien';
 
-export const GUIDE_PAGES = ['produits', 'maladies'] as const satisfies readonly GuidePage[];
+export const GUIDE_PAGES = [
+  'produits',
+  'maladies',
+  'entretien',
+] as const satisfies readonly GuidePage[];
 
 export const GUIDE_PAGE_TITLES: Readonly<Record<GuidePage, string>> = {
   produits: 'Produits et traitements',
   maladies: 'Maladies',
+  entretien: 'Entretien',
 };
 
 /** Rappel affiché en tête des deux pages (`docs/SOINS.md`, recommandation 5). */
@@ -338,9 +343,33 @@ const DISEASES: readonly GuideEntry[] = [
   ),
 ];
 
+/**
+ * Entretien courant (issue #476, `docs/SOINS.md` § 12, « Algues dans le jeu ») : les règles
+ * du jeu sont des approximations, dites comme telles.
+ */
+const MAINTENANCE: readonly GuideEntry[] = [
+  entry(
+    'algues',
+    'Algues vertes sur les vitres',
+    [
+      ['Causes', 'éclairage trop long (plus de 10 h par jour dans le jeu) ou nitrates élevés'],
+      [
+        'Gestes',
+        'passer la raclette sur les vitres, réduire l’éclairage, changer l’eau pour baisser les nitrates',
+      ],
+      [
+        'Dans le jeu',
+        'approximation de jeu : sans lumière, aucune pousse ; la plaque ne recule qu’à la raclette',
+      ],
+    ],
+    `${S} 12 (approximation de jeu ; durée d’éclairage non vérifiée)`,
+  ),
+];
+
 const PAGES: Readonly<Record<GuidePage, readonly GuideEntry[]>> = Object.freeze({
   produits: Object.freeze(PRODUCTS),
   maladies: Object.freeze(DISEASES),
+  entretien: Object.freeze(MAINTENANCE),
 });
 
 /** Entrées de la page `page`, dans l'ordre d'affichage. */

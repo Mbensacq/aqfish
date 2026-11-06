@@ -176,6 +176,7 @@ export const ALERT_TOPICS: Readonly<Record<AlertId, WhyTopicId>> = {
   hunger: 'nourriture',
   health: 'sante',
   mix: 'cohabitation',
+  algae: 'azote',
 };
 
 /** Les cinq étapes du guide, dans l'ordre. */

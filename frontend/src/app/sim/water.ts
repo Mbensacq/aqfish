@@ -1,3 +1,4 @@
+import { MAX_LIGHTING_HOURS, MIN_LIGHTING_HOURS, readAlgae } from './algae';
 import { catappaPh, catappaStrength, readCatappa, stepCatappaInPlace } from './catappa';
 import type { EnvironmentId } from './environment';
 import { SPECIES, type SpeciesId } from './species';
@@ -72,6 +73,17 @@ export interface WaterState {
    * `sim/treatment.ts`). Absent : aucun traitement en cours.
    */
   readonly ichCure?: number;
+  /**
+   * Durée d'éclairage du bac, en heures entières par jour, dans [`MIN_LIGHTING_HOURS`,
+   * `MAX_LIGHTING_HOURS`] (issue #476, `sim/algae.ts`). Absente : `DEFAULT_LIGHTING_HOURS`.
+   * Réglage d'un appareil, comme la consigne du chauffage : le changement d'eau n'y touche pas.
+   */
+  readonly lighting?: number;
+  /**
+   * Couverture de chaque plaque d'algues, dans [0, 1], au plus `ALGAE_PATCH_COUNT` (issue
+   * #476, `sim/algae.ts`). Absente : aucune algue. Seule la raclette la fait baisser.
+   */
+  readonly algae?: readonly number[];
 }
 
 /** État de l'eau modifiable en place (propriétaire unique : le monde). */
@@ -322,7 +334,14 @@ export function changeWater(water: WaterState, environment: EnvironmentId): Wate
 
 /** Copie de `water`, feuilles de catappa comprises (le tableau n'est jamais partagé). */
 export function copyWater(water: WaterState): MutableWaterState {
-  return water.catappa === undefined ? { ...water } : { ...water, catappa: [...water.catappa] };
+  const copy: MutableWaterState = { ...water };
+  if (water.catappa !== undefined) {
+    copy.catappa = [...water.catappa];
+  }
+  if (water.algae !== undefined) {
+    copy.algae = [...water.algae];
+  }
+  return copy;
 }
 
 /** Résultat de `readWater`. */
@@ -349,7 +368,10 @@ export function readWater(value: unknown, environment: EnvironmentId): ReadWater
   const read = (key: keyof WaterState): unknown =>
     Object.hasOwn(record, key) ? record[key] : undefined;
   const fields: [
-    Exclude<keyof WaterState, 'ph' | 'heater' | 'catappa' | 'salt' | 'medication' | 'ichCure'>,
+    Exclude<
+      keyof WaterState,
+      'ph' | 'heater' | 'catappa' | 'salt' | 'medication' | 'ichCure' | 'lighting' | 'algae'
+    >,
     number,
     number,
   ][] = [
@@ -379,6 +401,21 @@ export function readWater(value: unknown, environment: EnvironmentId): ReadWater
   const catappa = catappaValue === undefined ? null : readCatappa(catappaValue);
   if (catappa !== null && !catappa.ok) {
     return { ok: false, error: catappa.error };
+  }
+  const lighting = read('lighting');
+  if (
+    lighting !== undefined &&
+    (!isIn(lighting, MIN_LIGHTING_HOURS, MAX_LIGHTING_HOURS) || !Number.isInteger(lighting))
+  ) {
+    return {
+      ok: false,
+      error: `eau : lighting doit être un entier dans [${MIN_LIGHTING_HOURS}, ${MAX_LIGHTING_HOURS}]`,
+    };
+  }
+  const algaeValue = read('algae');
+  const algae = algaeValue === undefined ? null : readAlgae(algaeValue);
+  if (algae !== null && !algae.ok) {
+    return { ok: false, error: algae.error };
   }
   const optional: ['salt' | 'medication' | 'ichCure', number, number][] = [
     ['salt', 0, MAX_SALT],
@@ -411,6 +448,8 @@ export function readWater(value: unknown, environment: EnvironmentId): ReadWater
       ...(heater === undefined ? {} : { heater }),
       ...(catappa === null || catappa.leaves.length === 0 ? {} : { catappa: catappa.leaves }),
       ...extra,
+      ...(lighting === undefined ? {} : { lighting }),
+      ...(algae === null || algae.algae.every((c) => c === 0) ? {} : { algae: algae.algae }),
     },
   };
 }

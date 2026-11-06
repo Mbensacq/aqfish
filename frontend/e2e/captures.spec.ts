@@ -255,6 +255,9 @@ test.describe('Captures', () => {
     // Feuilles de catappa (#239) : feuilles brunes au sol, eau teintée brun-thé.
     { name: 'three-quarter-catappa', query: 'catappa=3' },
     { name: 'top-catappa', query: 'catappa=5&camera=top' },
+    // Algues (#476) : plaques vertes sur les vitres (fond, côtés, bas de la vitre avant).
+    { name: 'front-algues', query: 'algues=0.8&camera=front' },
+    { name: 'three-quarter-algues', query: 'algues=0.8' },
   ] as const;
   for (const { name, query } of DAY_CAPTURES) {
     test(`angle ${name}`, async ({ page }) => {

@@ -278,7 +278,7 @@ test.describe('Panneau de contrôle', () => {
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-hour-frozen', 'false');
 
     // Section « Eau » (#207) : « Courant » (#460) et « Changer l’eau », sur la ligne du titre,
-    // puis le chauffage et les feuilles de catappa (#239).
+    // puis le chauffage, l'éclairage et la raclette (#476), les feuilles de catappa (#239).
     await page.keyboard.press('Tab');
     await expect(
       page.getByRole('button', { name: 'Courant : coupé, changer de force' }),
@@ -289,6 +289,15 @@ test.describe('Panneau de contrôle', () => {
     await expect(page.getByRole('slider', { name: 'Consigne du chauffage' })).toBeFocused();
     await page.keyboard.press('ArrowRight');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-water', /^[a-z-]+;[\d.]+;24\.5;/);
+    // Éclairage et raclette (#476), sous le chauffage.
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('slider', { name: 'Durée d’éclairage par jour' })).toBeFocused();
+    await page.keyboard.press('ArrowRight');
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-algae', /;9$/);
+    await page.keyboard.press('Tab');
+    await expect(
+      page.getByRole('button', { name: 'Raclette : cliquer sur les algues' }),
+    ).toBeFocused();
     // Feuilles de catappa (#239) : « − » (désactivé, mais atteignable au clavier) puis « + ».
     await page.keyboard.press('Tab');
     await expect(

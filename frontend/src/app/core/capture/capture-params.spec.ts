@@ -38,6 +38,7 @@ describe('parseCaptureParams', () => {
       rain: false,
       room: false,
       water: null,
+      algae: 0,
       shape: null,
       starved: false,
       ich: false,
@@ -201,6 +202,15 @@ describe('parseCaptureParams', () => {
     }
     expect(parseCaptureParams('?capture=1').rain).toBe(false);
     expect(DEFAULT_CAPTURE_PARAMS.rain).toBe(false);
+  });
+
+  it('lit la couverture d’algues d’exemple : algues=… dans ]0, 1], sinon 0 (#476)', () => {
+    expect(parseCaptureParams('?capture=1&algues=0.8').algae).toBe(0.8);
+    expect(parseCaptureParams('?capture=1&algues=1').algae).toBe(1);
+    for (const bad of ['0', '-0.5', '1.5', 'abc', '', 'NaN']) {
+      expect(parseCaptureParams(`?capture=1&algues=${bad}`).algae).toBe(0);
+    }
+    expect(parseCaptureParams('?capture=1').algae).toBe(0);
   });
 
   it('lit le niveau d’eau d’exemple : eau=…, non vérifié ici ; absent, null (#207)', () => {

@@ -514,6 +514,22 @@ l'alcalinité ; **un bac récifal ne peut jamais recevoir de cuivre**.
 - un changement d'eau retire 30 % des produits ; une protection interrompue fait reprendre la
   maladie.
 
+**Algues dans le jeu** (issue #476, ADR 0109, `sim/algae.ts`) : toutes **approximations de
+jeu**, sauf mention.
+- Durée d'éclairage par bac, de 0 à 24 h par jour, 8 h par défaut ; au-delà de 10 h, les
+  algues poussent (8 à 10 h par jour est l'ordre de grandeur courant de l'aquariophilie :
+  **non vérifié** dans une source primaire, à sourcer).
+- Nitrates au-delà du seuil « à surveiller » de la jauge (20 unités de jeu) : les algues
+  poussent, à plein au plein de la jauge (60). Le lien nitrates–algues est courant en
+  aquariophilie ; sa quantification ici est une approximation de jeu.
+- Sans lumière, aucune pousse ; à éclairage normal et eau propre, aucune pousse.
+- Huit plaques fixes par bac (vitres du fond, des côtés, bas de la vitre avant), vigueur tirée
+  de la graine ; une plaque se couvre entièrement en 2 jours simulés à pousse maximale.
+- Une plaque ne recule pas seule : la raclette la retire ; le changement d'eau n'y touche pas
+  (il agit sur les nitrates). Les algues ne font pas souffrir les animaux dans le jeu.
+- Alerte « algues » : attention à 25 % de couverture moyenne, critique à 60 %.
+- Ni bassin ni récif (hors périmètre de l'issue).
+
 **Fiche produit (structure suggérée)** : `id`, `nom`, `catégorie` ; `dose_efficace`,
 `dose_toxique`, `durée`, `fréquence_max` ; `effets_eau` {pH, KH, GH, Cl, O₂, couleur,
 NH₃_lié} ; `demi-vie` (souvent non vérifiée : « retiré par changements d'eau ou charbon » en

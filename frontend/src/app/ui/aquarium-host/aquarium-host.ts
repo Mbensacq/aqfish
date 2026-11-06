@@ -248,6 +248,9 @@ import {
   worldCurrentLevel,
   worldCurrentVelocity,
   setWorldHeaterInPlace,
+  setWorldLightingInPlace,
+  scrapeWorldAlgaeInPlace,
+  worldAlgaePatches,
   starveWorldInPlace,
   treatWorldInPlace,
   type Entity,
@@ -280,6 +283,14 @@ import {
   type TreatmentReadout,
 } from '../../sim/treatment-text';
 import { DEFAULT_WATER_SAMPLE, waterSample, type WaterSample } from '../../sim/water-dashboard';
+import {
+  ALGAE_VISIBLE_COVERAGE,
+  algaeCoverage,
+  DEFAULT_LIGHTING_HOURS,
+  hasAlgae,
+  lightingOf,
+  sampleAlgae,
+} from '../../sim/algae';
 import {
   EMPTY_HEALTH_SUMMARY,
   healthSummary,
@@ -341,6 +352,13 @@ export const WATER_ATTRIBUTE = 'data-aqfish-water';
  * eau brun-thé), mis à jour avec le relevé de l'eau.
  */
 export const CATAPPA_ATTRIBUTE = 'data-aqfish-catappa';
+/**
+ * Algues du bac (#476) : « plaques visibles;couverture moyenne en %;éclairage en h »,
+ * `0;0;8` sans algue, mis à jour avec le relevé de l'eau.
+ */
+export const ALGAE_ATTRIBUTE = 'data-aqfish-algae';
+/** Raclette en main (#476) : `true` ou `false`. */
+export const SCRAPER_ATTRIBUTE = 'data-aqfish-scraper';
 /** pH de l'eau et sa zone pour les espèces présentes, « 6.9;tolere » (#236). */
 export const PH_ATTRIBUTE = 'data-aqfish-ph';
 /**
@@ -877,6 +895,10 @@ export class AquariumHost {
    * (`exposeWater`), donc au plus 4 fois par seconde dans la boucle (`refreshDue`).
    */
   readonly waterSample = signal<WaterSample>(DEFAULT_WATER_SAMPLE);
+  /** Durée d'éclairage du bac affiché, en heures par jour (#476). */
+  readonly lighting = signal(DEFAULT_LIGHTING_HOURS);
+  /** Vrai tant que la raclette est en main (#476) : un clic sur le bac racle. */
+  readonly scraping = signal(false);
   /**
    * Synthèse de la santé des animaux lue par le tableau de bord (#260), relevée avec l'eau
    * (`exposeWater`) et remplacée seulement si ce qu'elle affiche change (`sameHealthSummary`).
@@ -1359,6 +1381,46 @@ export class AquariumHost {
    */
   setHeater(temperature: number): void {
     this.applyWaterSetting((world) => setWorldHeaterInPlace(world, temperature));
+  }
+
+  /**
+   * Durée d'éclairage du bac (#476), en heures entières par jour, de 0 à 24 : au-delà de 10 h,
+   * les algues poussent. Enregistrée avec l'eau. Sans effet en mode capture, avant le
+   * démarrage ou hors bornes.
+   */
+  setLighting(hours: number): void {
+    this.applyWaterSetting((world) => {
+      if (!setWorldLightingInPlace(world, hours)) {
+        throw new RangeError('éclairage hors bornes');
+      }
+    });
+  }
+
+  /**
+   * Prend ou pose la raclette (#476) : tant qu'elle est en main, un clic sur le bac retire la
+   * plaque d'algues visée au lieu de nourrir. Sans effet en mode capture.
+   */
+  toggleScraper(): void {
+    if (!this.capture) {
+      this.scraping.update((on) => !on);
+      this.host.nativeElement.setAttribute(SCRAPER_ATTRIBUTE, String(this.scraping()));
+    }
+  }
+
+  /**
+   * Raclette (#476) : retire la plaque d'algues touchée la première par le rayon (`origin`,
+   * `direction`, repère du bac), sans toucher aux poissons. Renvoie l'indice de la plaque
+   * retirée, `-1` si aucune (ou en mode capture, avant le démarrage).
+   */
+  scrapeAlong(
+    origin: readonly [number, number, number],
+    direction: readonly [number, number, number],
+  ): number {
+    let index = -1;
+    this.applyWaterSetting((world) => {
+      index = scrapeWorldAlgaeInPlace(world, origin, direction);
+    });
+    return index;
   }
 
   /**
@@ -2970,6 +3032,11 @@ export class AquariumHost {
       if (params.capture && isWaterQuality(params.water)) {
         world.water = sampleWater(world.environment, params.water);
       }
+      // Algues d'exemple de `algues=` (#476), en capture : à t = 0, après l'eau d'exemple.
+      const algae = params.capture ? sampleAlgae(params.algae) : undefined;
+      if (algae !== undefined && hasAlgae(world.environment)) {
+        world.water = { ...world.water, algae };
+      }
       // Animaux affamés de `affames=1` (#208), en capture : à t = 0, avant d'avancer le monde.
       if (params.capture && params.starved) {
         starveWorldInPlace(world);
@@ -3254,6 +3321,7 @@ export class AquariumHost {
     // Feuilles de catappa et eau brun-thé (#239).
     view.setWaterTea(this.water().tea);
     view.setCatappa(world.water.catappa);
+    this.exposeAlgae(world);
     this.exposeCurrent(world);
     this.applyReducedMotion();
     this.litHour = null;
@@ -3282,12 +3350,18 @@ export class AquariumHost {
       view.onCanvasClick((x, y) => {
         if (this.decorEditing()) {
           this.editAt(view.pickDecor(x, y));
+        } else if (this.scraping()) {
+          const ray = view.pickRay(x, y);
+          if (ray) {
+            this.scrapeAlong(ray.origin, ray.direction);
+          }
         }
       }),
     );
+    // Raclette en main (#476) : un clic racle au lieu de nourrir.
     this.viewCleanups.push(
       view.onSurfaceClick((x, z) => {
-        if (!this.decorEditing()) {
+        if (!this.decorEditing() && !this.scraping()) {
           this.feed(x, z);
         }
       }),
@@ -3578,6 +3652,17 @@ export class AquariumHost {
     this.view?.setWaterTurbidity(waterTurbidity(readout.quality));
     this.view?.setWaterTea(readout.tea);
     this.view?.setCatappa(world.water.catappa);
+    this.exposeAlgae(world);
+  }
+
+  /** Algues du bac (#476) : vue, signal de l'éclairage et `ALGAE_ATTRIBUTE`. */
+  private exposeAlgae(world: World): void {
+    this.view?.setAlgae(worldAlgaePatches(world), world.water.algae);
+    const hours = lightingOf(world.water);
+    this.lighting.set(hours);
+    const visible = (world.water.algae ?? []).filter((c) => c >= ALGAE_VISIBLE_COVERAGE).length;
+    const percent = Math.round(algaeCoverage(world.water.algae) * 100);
+    this.host.nativeElement.setAttribute(ALGAE_ATTRIBUTE, `${visible};${percent};${hours}`);
   }
 
   /**
