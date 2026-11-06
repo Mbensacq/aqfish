@@ -5789,10 +5789,10 @@
           "note": "Verdict OK, 0 bug, captures c158 publiées (série partielle, 5 angles identiques à c157)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-06T09:06:04.591Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-06T10:13:56.592Z",
+          "note": "PR #472 fusionnée → v1.11.4 (CI main verte, release créée) ; #460 fermée ; dette #473 (bulles non bornées) ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
