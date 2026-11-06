@@ -5957,10 +5957,10 @@
           "note": "Issue #488 : lot de dette, finitions des algues (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-06T22:12:40.939Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-06T23:18:18.303Z",
+          "note": "PR #489 : finitions des algues (5 points de #488), CI verte ; e2e local partiel ; dette #490 (message de traitement à 1280×720)"
         }
       },
       "metriques": {}
