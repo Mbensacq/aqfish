@@ -5931,6 +5931,12 @@
           "debut": "2026-11-06T20:23:44.447Z",
           "fin": "2026-11-06T21:04:10.397Z",
           "note": "Verdict OK, 0 bug, 5 angles identiques à c161, captures c162 publiées (e2e local partiel, CI verte)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-06T21:04:43.399Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
