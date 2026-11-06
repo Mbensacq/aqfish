@@ -5847,6 +5847,12 @@
           "debut": "2026-11-06T13:10:24.386Z",
           "fin": "2026-11-06T13:11:54.442Z",
           "note": "Rétro #480 ; issue #475 mutants bubbles.ts (S) ; sprint 24 : #461 #476-#479 ; PR roadmap ouverte"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-06T13:12:26.070Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
