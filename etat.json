@@ -5910,7 +5910,7 @@
       "date": "2026-11-06",
       "debut": "2026-11-06T18:15:36.643Z",
       "type": "fonctionnalite",
-      "issue": null,
+      "issue": 476,
       "pr": null,
       "version": null,
       "phases": {
