@@ -14,25 +14,36 @@ import { PALETTE } from './palette';
 
 /**
  * Plaques d'algues vertes sur les vitres (issue #476, ADR 0109) : une tache plate de pixels
- * carrés par plaque (`sim/algae.ts`), contour sombre et cœur clair, posée contre la face
- * intérieure de sa vitre. Sa taille suit la couverture (rayon dessiné `drawnRadius`) ; sous
- * `ALGAE_VISIBLE_COVERAGE`, elle est masquée.
+ * carrés par plaque (`sim/algae.ts`), posée contre la face intérieure de sa vitre. Sa taille
+ * suit la couverture (rayon dessiné `drawnRadius`) ; sous `ALGAE_VISIBLE_COVERAGE`, elle est
+ * masquée.
  *
- * Couleurs : les verts de la végétation de la palette (`vegetation` pour le contour,
- * `vegetationClaire` pour le cœur, quelques pixels `vegetationLumineuse`), voilés par l'eau comme les plantes : aucune couleur
- * ajoutée à la palette. Sans algue, la couche est masquée : images inchangées, à l'octet près.
+ * Aspect (#488) : un voile terne et filamenteux, pour ne pas ressembler aux plantes (contour
+ * sombre, feuilles claires et reflets lumineux). Fond `vegetation` (vert moyen, sans reflet),
+ * filaments verticaux `vegetationOmbre` une colonne sur deux, coupés par endroits ; bord
+ * tramé (une case sur deux) au lieu d'un contour, pour un bord flou où l'eau transparaît.
+ * Couleurs de la végétation de la palette, voilées par l'eau comme les plantes : aucune
+ * couleur ajoutée à la palette. Sans algue, la couche est masquée : images inchangées, à
+ * l'octet près.
  */
 
 /** Côté d'un pixel de plaque, en mètres (comme les voxels des feuilles de catappa). */
 export const ALGAE_PIXEL = 0.01;
 /** Retrait de la plaque vers l'intérieur du bac, en mètres : devant la vitre, sans la toucher. */
 export const ALGAE_INSET = 0.003;
-/** Couleurs du contour et du cœur. */
+/** Couleurs du voile et de ses filaments (#488 : ni contour sombre, ni reflet clair). */
 export const ALGAE_COLORS = {
-  contour: PALETTE.vegetation,
-  coeur: PALETTE.vegetationClaire,
-  reflet: PALETTE.vegetationLumineuse,
+  voile: PALETTE.vegetation,
+  filament: PALETTE.vegetationOmbre,
 } as const;
+
+/**
+ * Vrai si la case (`r`, `c`) d'une plaque de variante `variant` porte un filament : une
+ * colonne sur deux, coupée une case sur cinq environ (motif fixe, sans hasard).
+ */
+export function isFilament(r: number, c: number, variant: number): boolean {
+  return (c + variant) % 2 === 0 && (r * 3 + c * 7 + variant) % 5 !== 0;
+}
 
 /**
  * Forme d'une plaque de rayon `cells` pixels : les cases dont le centre tombe dans un disque
@@ -57,7 +68,10 @@ export function algaeMask(cells: number, variant: number): boolean[][] {
   return mask;
 }
 
-/** Triangles d'une plaque (plan local XY, centré), contour dans `contour`, cœur dans `coeur`. */
+/**
+ * Triangles d'une plaque (plan local XY, centré) : voile `voile` et filaments `filament`
+ * (`isFilament`) ; au bord, une case sur deux seulement (trame), sans contour.
+ */
 export function buildAlgaePatch(
   cells: number,
   variant: number,
@@ -65,9 +79,8 @@ export function buildAlgaePatch(
   const mask = algaeMask(cells, variant);
   const size = mask.length;
   const filled = (r: number, c: number) => r >= 0 && r < size && c >= 0 && c < size && mask[r][c];
-  const contour = new Color(ALGAE_COLORS.contour);
-  const coeur = new Color(ALGAE_COLORS.coeur);
-  const reflet = new Color(ALGAE_COLORS.reflet);
+  const voile = new Color(ALGAE_COLORS.voile);
+  const filament = new Color(ALGAE_COLORS.filament);
   const positions: number[] = [];
   const colors: number[] = [];
   const p = ALGAE_PIXEL;
@@ -78,9 +91,11 @@ export function buildAlgaePatch(
         continue;
       }
       const edge = !filled(r - 1, c) || !filled(r + 1, c) || !filled(r, c - 1) || !filled(r, c + 1);
-      // Quelques pixels clairs, toujours aux mêmes cases (motif fixe, sans hasard).
-      const speck = (r * 7 + c * 3 + variant) % 11 === 0;
-      const color = edge ? contour : speck ? reflet : coeur;
+      // Bord tramé : une case sur deux, l'eau passe entre (bord flou, pas de contour).
+      if (edge && (r + c) % 2 === 1) {
+        continue;
+      }
+      const color = isFilament(r, c, variant) ? filament : voile;
       const x0 = c * p - half;
       const y0 = half - (r + 1) * p;
       const x1 = x0 + p;
