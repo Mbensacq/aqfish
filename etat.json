@@ -5912,7 +5912,7 @@
       "type": "fonctionnalite",
       "issue": 476,
       "pr": 487,
-      "version": null,
+      "version": "v1.12.1",
       "phases": {
         "planif": {
           "statut": "termine",
