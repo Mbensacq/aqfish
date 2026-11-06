@@ -155,6 +155,14 @@ const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
     diet: approx('omnivore'),
     minGroup: approx(3),
     minLiters: approx(60),
+    // Reproduction (#459) : vivipare ; rythme et nombre d'alevins choisis pour le jeu
+    // (`sim/fry.ts`), la gestation réelle dure environ quatre semaines.
+    notes: [
+      note(
+        'Reproduction : vivipare, la femelle nourrie dans une eau saine met bas 2 à 6 alevins, qui grandissent cachés dans les plantes',
+        APPROXIMATION,
+      ),
+    ],
   },
   corydora: {
     adultSize: approx(7),

@@ -16,6 +16,7 @@ import {
   type EnvironmentId,
   type Place,
 } from './environment';
+import { FRY_GROWTH_TIME, hasFry, isFryAge } from './fry';
 import { FOOD_MAX_FLOAT_SECONDS, FOOD_MIN_FLOAT_SECONDS, FOOD_SINK_SPEED, MAX_FOOD } from './food';
 import type { FoodPellet } from './food';
 import { isSpeciesId, MAX_TOTAL_FISH } from './population';
@@ -320,6 +321,10 @@ export function savedWorld(world: World): SavedWorld {
       if (fish.ich !== undefined) {
         // Points blancs (issue #360) : écrits seulement pour un animal malade.
         saved['ich'] = fish.ich;
+      }
+      if (fish.growth !== undefined) {
+        // Alevin (issue #459) : âge écrit seulement pour un alevin.
+        saved['growth'] = fish.growth;
       }
       return saved as unknown as SavedFish;
     }),
@@ -780,6 +785,20 @@ function parseFish(
     if (catchesIch(species, envId)) {
       fish['ich'] = ich;
     }
+  }
+  // Alevin (issue #459) : facultatif, absent pour un adulte et dans toute sauvegarde
+  // antérieure ; présent, âge dans [0, FRY_GROWTH_TIME), pour une espèce vivipare seulement.
+  const growth = own(item, 'growth');
+  if (growth !== undefined) {
+    if (!hasFry(species)) {
+      report(`l’espèce ${species} n’a pas d’alevins`);
+      return null;
+    }
+    if (!isFryAge(growth)) {
+      report(`growth hors de [0, ${FRY_GROWTH_TIME}[`);
+      return null;
+    }
+    fish['growth'] = growth;
   }
   const f = fish as unknown as Fish;
   const def = SPECIES[species];

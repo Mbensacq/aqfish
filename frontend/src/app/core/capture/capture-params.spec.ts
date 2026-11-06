@@ -41,6 +41,7 @@ describe('parseCaptureParams', () => {
       shape: null,
       starved: false,
       ich: false,
+      fry: false,
       catappa: 0,
       editSelection: null,
       editRoomSelection: null,
@@ -206,6 +207,15 @@ describe('parseCaptureParams', () => {
     expect(parseCaptureParams('?capture=1&eau=autre').water).toBe('autre');
     expect(parseCaptureParams('?capture=1').water).toBeNull();
     expect(DEFAULT_CAPTURE_PARAMS.water).toBeNull();
+  });
+
+  it('lit les alevins : alevins=1 seulement (#459)', () => {
+    expect(parseCaptureParams('?capture=1&alevins=1').fry).toBe(true);
+    for (const value of ['0', 'oui', 'true', '', '2']) {
+      expect(parseCaptureParams(`?capture=1&alevins=${value}`).fry).toBe(false);
+    }
+    expect(parseCaptureParams('?capture=1').fry).toBe(false);
+    expect(DEFAULT_CAPTURE_PARAMS.fry).toBe(false);
   });
 
   it('lit les points blancs : points-blancs=1 seulement, en capture comme hors capture (#366)', () => {
