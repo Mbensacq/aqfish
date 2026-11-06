@@ -5751,6 +5751,12 @@
           "debut": "2026-11-06T05:27:59.341Z",
           "fin": "2026-11-06T05:37:03.299Z",
           "note": "Verdict OK, 0 bug, captures c157 publiées (série partielle, identiques à c156)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-06T05:37:36.534Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
