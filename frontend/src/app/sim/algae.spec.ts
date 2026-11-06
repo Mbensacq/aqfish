@@ -184,7 +184,31 @@ describe('algues (#476)', () => {
     it('moyenne des plaques ; aucune algue : 0', () => {
       expect(algaeCoverage(undefined)).toBe(0);
       expect(algaeCoverage([])).toBe(0);
-      expect(algaeCoverage([0.2, 0.4])).toBeCloseTo(0.3, 12);
+      expect(algaeCoverage(new Array(ALGAE_PATCH_COUNT).fill(0.5))).toBeCloseTo(0.5, 12);
+      const mixed = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8];
+      expect(algaeCoverage(mixed)).toBeCloseTo(0.45, 12);
+    });
+
+    it('sauvegarde courte (#488) : divisée par le nombre de plaques, pas par sa longueur', () => {
+      // Une seule plaque pleine : 1/8 du bac, pas un bac entier.
+      expect(algaeCoverage([1])).toBeCloseTo(1 / ALGAE_PATCH_COUNT, 12);
+      expect(algaeCoverage([0.2, 0.4])).toBeCloseTo(0.6 / ALGAE_PATCH_COUNT, 12);
+      // Sous le seuil de prolifération, alors que l'ancienne moyenne (1) était « grave ».
+      expect(algaeLevel(algaeCoverage([1]))).toBe('aucune');
+      // Relue d'une sauvegarde : même règle.
+      const read = readAlgae([1, 1]);
+      expect(read.ok).toBe(true);
+      expect(algaeCoverage(read.ok ? read.algae : undefined)).toBeCloseTo(0.25, 12);
+    });
+
+    it('valeurs au-delà du nombre de plaques ignorées ; couverture jamais au-dessus de 1', () => {
+      const long = new Array(ALGAE_PATCH_COUNT + 4).fill(1);
+      expect(algaeCoverage(long)).toBe(1);
+      expect(algaeCoverage([...new Array(ALGAE_PATCH_COUNT).fill(0), 1, 1])).toBe(0);
+    });
+
+    it('valeur non finie : couverture non finie (jamais rassurante)', () => {
+      expect(algaeCoverage([Number.NaN])).toBeNaN();
     });
 
     it('niveaux aux seuils, non fini grave', () => {

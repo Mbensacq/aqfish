@@ -373,7 +373,7 @@ export function algaeAlert(coverage: number | undefined): DashboardAlert | null 
     cause: Number.isFinite(coverage)
       ? `éclairage trop long ou nitrates élevés ; vitres couvertes à ${percent}`
       : INVALID_CAUSE,
-    action: 'Passer la raclette (Réglages, Soins), réduire l’éclairage et changer l’eau',
+    action: 'Passer la raclette (Réglages, Eau), réduire l’éclairage et changer l’eau',
     wiki: 'entretien',
   };
 }

@@ -231,16 +231,22 @@ export function stepAlgaeInPlace<T extends AlgaeWater>(
   return water;
 }
 
-/** Couverture moyenne des plaques, dans [0, 1] (0 sans algues, non fini si l'état l'est). */
+/**
+ * Couverture moyenne des `ALGAE_PATCH_COUNT` plaques du bac, dans [0, 1] (0 sans algues, non
+ * fini si l'état l'est). Moyenne sur le nombre de plaques, pas sur la longueur de la liste
+ * (#488) : une valeur absente (sauvegarde courte) compte pour une plaque nue ; au-delà de
+ * `ALGAE_PATCH_COUNT`, les valeurs en trop sont ignorées.
+ */
 export function algaeCoverage(algae: readonly number[] | undefined): number {
-  if (algae === undefined || algae.length === 0) {
+  if (algae === undefined) {
     return 0;
   }
+  const n = Math.min(algae.length, ALGAE_PATCH_COUNT);
   let sum = 0;
-  for (const c of algae) {
-    sum += c;
+  for (let i = 0; i < n; i++) {
+    sum += algae[i];
   }
-  return sum / algae.length;
+  return sum / ALGAE_PATCH_COUNT;
 }
 
 /** Niveau d'une prolifération, d'après la couverture moyenne. */

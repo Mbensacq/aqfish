@@ -423,6 +423,10 @@ describe('alerte des algues (#476)', () => {
     });
     expect(alerts[0].cause).toContain('25 %');
     expect(alerts[0].action).toMatch(/raclette/);
+    // #488 : la raclette est dans la section « Eau » (« Soins » n'apparaît qu'avec des points
+    // blancs).
+    expect(alerts[0].action).toContain('Passer la raclette (Réglages, Eau)');
+    expect(alerts[0].action).not.toContain('Soins');
   });
 
   it('grave au second seuil ; couverture non finie : critique, mesure invalide', () => {
@@ -444,7 +448,10 @@ describe('alerte des algues (#476)', () => {
 
   it('relevé de l’eau : couverture moyenne seulement si des algues existent', () => {
     expect(waterSample(freshWater('tropical'), 'tropical', 0).algae).toBeUndefined();
-    const water = { ...freshWater('tropical'), algae: [0.2, 0.4] };
+    const water = { ...freshWater('tropical'), algae: [0.2, 0.4, 0.6, 0.8, 0, 0, 0, 0.4] };
     expect(waterSample(water, 'tropical', 0).algae).toBeCloseTo(0.3, 12);
+    // Sauvegarde courte (#488) : moyenne sur les huit plaques du bac.
+    const short = { ...freshWater('tropical'), algae: [0.8, 0.4] };
+    expect(waterSample(short, 'tropical', 0).algae).toBeCloseTo(0.15, 12);
   });
 });

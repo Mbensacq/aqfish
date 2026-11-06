@@ -193,6 +193,9 @@ const TOUCH_DESCRIPTIONS: Readonly<
 /** Clic (ou toucher) sans glisser sur l'eau : nourrissage (issue #67, `AquariumView`). */
 const FEED_DESCRIPTION = 'Déposer des granulés à cet endroit';
 
+/** Clic sur le bac, raclette en main : retire une plaque d'algues (issue #476, #488). */
+const SCRAPE_DESCRIPTION = 'Raclette en main : gratter les algues';
+
 /** Geste de la souris ou de l'écran tactile, tel qu'affiché dans l'aide-mémoire. */
 export interface GestureCommand {
   readonly id: string;
@@ -316,6 +319,12 @@ export function orbitGestures(
     id: 'souris-clic',
     gesture: 'Clic sur l’eau',
     description: FEED_DESCRIPTION,
+    group: 'souris',
+  });
+  mouse.push({
+    id: 'souris-raclette',
+    gesture: 'Clic sur le bac',
+    description: SCRAPE_DESCRIPTION,
     group: 'souris',
   });
   return [
