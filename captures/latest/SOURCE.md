@@ -1,2 +1,6 @@
-Cycle 158 — branche cycle/c158-courant-riviere, PR #472, commit 4b82abc.
-Graine et temps par défaut (captures.spec.ts). Série partielle : 5 angles, sans-filtre, panneaux, three-quarter-courant et top-courant. 5 angles + sans-filtre identiques à c157 à l'octet ; front-panneau diffère (nouveau bouton Courant).
+# Captures c159
+
+- Branche : cycle/c159-bulles-bornees (PR #474), commit c600131
+- Graine : celle par défaut du contrat de capture ; temps : défaut
+- Série : 5 angles du bac par défaut (top, bottom, front, side, three-quarter), identiques à l’octet à la série précédente (c158)
+- Navigateur : coquille Chromium 1243 via PLAYWRIGHT_BROWSERS_PATH (le 1194 attendu est absent)
