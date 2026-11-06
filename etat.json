@@ -5853,6 +5853,12 @@
           "debut": "2026-11-06T13:12:26.070Z",
           "fin": "2026-11-06T14:23:09.245Z",
           "note": "PR #482 : mutants de bubbles.ts 76,1 % → 94,8 % (7 équivalents dans PIEGES), CI verte ; e2e local impossible (navigateur), CI fait foi"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-06T14:23:49.777Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
