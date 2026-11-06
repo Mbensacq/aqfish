@@ -5832,6 +5832,24 @@
         }
       },
       "metriques": {}
+    },
+    "160": {
+      "numero": 160,
+      "date": "2026-11-06",
+      "debut": "2026-11-06T13:10:24.386Z",
+      "type": "retro",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-06T13:10:24.386Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
