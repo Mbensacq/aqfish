@@ -6,7 +6,7 @@ import { bubbleSourceFor, fillBubbles, type BubbleBuffer } from './bubbles';
 import { addRivalSteering, enforceRivalDistance, hasRivals } from './compatibility';
 import type { CareMode } from './care-mode';
 import { catappaActive, withCatappaCount } from './catappa';
-import { SIM_DT } from './constants';
+import { MAX_TOTAL_FISH, SIM_DT } from './constants';
 import { dayIntensityAt, hourAt, type DayClock } from './daylight';
 import { nightRest } from './day-rhythm';
 import {
@@ -37,6 +37,22 @@ import {
   type Place,
 } from './environment';
 import { eatInPlace, feedingBand, foodTarget, type FeedingBand } from './feeding';
+import {
+  birthBounds,
+  broodIndexAt,
+  broodSize,
+  canBreed,
+  eatFryInPlace,
+  FRY_GROWTH_TIME,
+  FRY_STAGES,
+  fryPlants,
+  fryTarget,
+  growFryInPlace,
+  hasFry,
+  isFemale,
+  isFry,
+  type BroodConditions,
+} from './fry';
 import { computeSchoolSteering, enforceMinDistance, type Vec3 } from './flocking';
 import {
   dropFoodInPlace,
@@ -69,6 +85,7 @@ import {
   type MutableWaterState,
   type WaterState,
 } from './water';
+import { phOutOfTolerance } from './water-ph';
 import { waterQuality } from './water-quality';
 import {
   applyTreatmentInPlace,
@@ -724,6 +741,9 @@ function stepInPlace(world: MutableWorld, dt: number, clock: SimClock): void {
   // Comportements de l'espèce (issue #427) : points visés calculés, comme le banc, sur les
   // positions du début du pas. Sans espèce concernée, aucun calcul (nage d'avant, au bit près).
   const behaving = computeBehaviorTargets(world, fishes, place, key);
+  // Alevins (issue #459) : ils nagent près des plantes. Sans alevin, rien ne change.
+  const fryPresent = fishes.some(isFry);
+  const plants = fryPresent ? fryPlants(world.decor) : NO_PLANTS;
   // Ordre stable : celui du tableau, c'est-à-dire des identifiants.
   for (let i = 0; i < fishes.length; i++) {
     const fish = fishes[i];
@@ -766,6 +786,9 @@ function stepInPlace(world: MutableWorld, dt: number, clock: SimClock): void {
       target = BEHAVIOR_TARGET;
       grazing = speciesBehavior(fish.species)?.kind === 'broutage';
     }
+    if (target === null && fryPresent && fish.growth !== undefined) {
+      target = fryTarget(fish, plants, world.time, bounds, FRY_TARGET);
+    }
     stepFish(
       fish,
       dt,
@@ -791,6 +814,12 @@ function stepInPlace(world: MutableWorld, dt: number, clock: SimClock): void {
     // Mode décor (#278) : faim rendue telle qu'au début du pas ; eau et santé en pause.
     restoreHunger(fishes);
     return;
+  }
+  // Alevins (issue #459) : croissance, puis prédation des alevins hors des plantes. En mode
+  // décor, en pause comme l'eau et la santé.
+  if (fryPresent) {
+    growFryInPlace(fishes, dt);
+    eatFryInPlace(fishes, plants);
   }
   // Eau (issue #206) : sans hasard, après les poissons ; ne change rien à leur nage.
   stepWaterInPlace(
@@ -823,6 +852,107 @@ function stepInPlace(world: MutableWorld, dt: number, clock: SimClock): void {
     world.water.ph,
     catappaActive(world.water.catappa),
   );
+  // Mise bas (issue #459) : au dernier pas de chaque portée seulement, sur la santé et l'eau
+  // de fin de pas ; aucun tirage pris aux générateurs des poissons.
+  stepBroodInPlace(world);
+}
+
+const NO_PLANTS: readonly DecorItem[] = Object.freeze([]);
+const FRY_TARGET: Vec3 = { x: 0, y: 0, z: 0 };
+
+/**
+ * Mise bas d'une portée (`sim/fry.ts`, issue #459), **en modifiant** `world` : si le pas
+ * courant achève une portée (`broodIndexAt`), chaque mère possible (`canBreed`), dans l'ordre
+ * des identifiants, met bas `broodSize` alevins, tant que le plafond de l'espèce et celui du
+ * bac le permettent (`birthFryInPlace`). Renvoie le nombre de naissances.
+ */
+export function stepBroodInPlace(world: MutableWorld): number {
+  const brood = broodIndexAt(world.tick);
+  if (brood < 0 || !world.entities.some((fish) => hasFry(fish.species))) {
+    return 0;
+  }
+  const conditions: BroodConditions = {
+    goodWater: waterQuality(world.water, world.environment) === 'bonne',
+    phOut: (species) => phOutOfTolerance(world.water.ph, species),
+  };
+  const mothers = world.entities.filter((fish) => canBreed(fish, world.seed, conditions));
+  let born = 0;
+  for (const mother of mothers) {
+    const size = broodSize(world.seed, mother.id, brood);
+    for (let k = 0; k < size; k++) {
+      if (birthFryInPlace(world, mother) === null) {
+        return born;
+      }
+      born += 1;
+    }
+  }
+  return born;
+}
+
+/**
+ * Fait naître un alevin de `mother`, **en modifiant** `world` : identifiant
+ * `world.nextFishId`, né près du point `near` (sa mère par défaut, `birthBounds`), âge 0,
+ * ajouté en fin de tableau.
+ * Renvoie l'alevin, ou `null` sans le créer si l'espèce est à `maxPopulation` ou le bac à
+ * `MAX_TOTAL_FISH` (plafond de performance, alevins compris).
+ */
+export function birthFryInPlace(
+  world: MutableWorld,
+  mother: Entity,
+  near: Vec3 = mother,
+): Entity | null {
+  const species = mother.species;
+  let same = 0;
+  for (const fish of world.entities) {
+    if (fish.species === species) {
+      same += 1;
+    }
+  }
+  if (same >= SPECIES[species].maxPopulation || world.entities.length >= MAX_TOTAL_FISH) {
+    return null;
+  }
+  const bounds = birthBounds(boundsFor(species, world), near);
+  const fry: Mutable<Entity> = createFish(
+    world.seed,
+    world.nextFishId,
+    species,
+    bounds,
+    world.obstacles,
+  );
+  fry.growth = 0;
+  (world.entities as Entity[]).push(fry);
+  world.nextFishId += 1;
+  return fry;
+}
+
+/**
+ * Alevins d'exemple (paramètre d'URL `alevins=1`, issue #459), **en modifiant** `world`
+ * (monde en construction, avant le rendu) : chaque femelle d'une espèce vivipare met bas sa
+ * première portée, sans condition de santé ni d'eau, dans la limite des plafonds, près de la
+ * plante la plus proche (déjà à couvert) ; les alevins sont répartis entre les `FRY_STAGES`
+ * jalons de croissance pour qu'ils se voient tous.
+ * Renvoie le nombre d'alevins.
+ */
+export function broodWorldInPlace(world: MutableWorld): number {
+  const mothers = world.entities.filter(
+    (fish) => hasFry(fish.species) && !isFry(fish) && isFemale(fish, world.seed),
+  );
+  const plants = fryPlants(world.decor);
+  let born = 0;
+  for (const mother of mothers) {
+    const size = broodSize(world.seed, mother.id, 0);
+    const bounds = boundsFor(mother.species, world);
+    const near = fryTarget(mother, plants, 0, bounds, { x: 0, y: 0, z: 0 }) ?? mother;
+    for (let k = 0; k < size; k++) {
+      const fry = birthFryInPlace(world, mother, near) as Mutable<Entity> | null;
+      if (fry === null) {
+        return born;
+      }
+      fry.growth = ((born % FRY_STAGES) * FRY_GROWTH_TIME) / FRY_STAGES;
+      born += 1;
+    }
+  }
+  return born;
 }
 
 /** Points visés des comportements (issue #427), réutilisés d'un pas à l'autre. */

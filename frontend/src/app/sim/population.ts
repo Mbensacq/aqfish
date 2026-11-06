@@ -1,3 +1,4 @@
+import { MAX_TOTAL_FISH } from './constants';
 import { SPECIES, type SpeciesId } from './species';
 import {
   bondedCount,
@@ -28,8 +29,8 @@ import {
  *   ajouter ou retirer une espèce ne change pas les trajectoires des autres.
  */
 
-/** Nombre maximal de poissons du bac, toutes espèces confondues. */
-export const MAX_TOTAL_FISH = 60;
+/** Nombre maximal de poissons du bac, toutes espèces confondues (`sim/constants.ts`). */
+export { MAX_TOTAL_FISH };
 
 /** Effectif de chaque espèce, dans l'ordre de `SPECIES`. */
 export type PopulationCounts = Readonly<Record<SpeciesId, number>>;

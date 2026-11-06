@@ -24,6 +24,7 @@ import { activeBehavior, behaviorGesture, type BehaviorGesture } from '../sim/be
 import { undulationAt, undulationScale, type Undulation } from '../sim/undulation';
 import { ichSeverity, isIchContagious } from '../sim/disease';
 import { dullness } from '../sim/wellbeing';
+import { fryScale } from '../sim/fry';
 import {
   SILHOUETTES,
   SPOT_ATTRIBUTE,
@@ -198,7 +199,8 @@ export class FishLayer {
   private readonly position = new Vector3();
   private readonly rotation = new Quaternion();
   private readonly euler = new Euler(0, 0, 0, 'YZX');
-  private readonly unitScale = new Vector3(1, 1, 1);
+  /** Échelle de l'instance : 1 pour un adulte, `fryScale` pour un alevin (issue #459). */
+  private readonly scale = new Vector3(1, 1, 1);
 
   /** Apparence affichée par cette couche. */
   readonly variant: SpeciesVariant;
@@ -303,7 +305,8 @@ export class FishLayer {
       }
       this.rotation.setFromEuler(this.euler);
       this.position.set(pose.x, pose.y, pose.z);
-      this.bodyMatrix.compose(this.position, this.rotation, this.unitScale);
+      this.scale.setScalar(fryScale(fish.growth));
+      this.bodyMatrix.compose(this.position, this.rotation, this.scale);
       this.body.setMatrixAt(n, this.bodyMatrix);
 
       this.swing.makeRotationY(swing);

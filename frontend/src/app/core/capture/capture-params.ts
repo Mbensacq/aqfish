@@ -48,6 +48,11 @@
  * date à t = 0 (faim maximale, santé au plancher : nage ralentie, couleurs ternies). Toute
  * autre valeur ou absent : animaux nourris et en bonne santé (séries existantes inchangées).
  *
+ * Paramètre facultatif `alevins=1` (issue #459) : en mode capture, chaque femelle de guppy
+ * met bas sa première portée à t = 0, alevins répartis entre les quatre jalons de croissance
+ * (`broodWorldInPlace`). Toute autre valeur ou absent : aucun alevin (séries existantes
+ * inchangées).
+ *
  * Paramètre facultatif `points-blancs=1` (issue #366) : poissons atteints des points blancs
  * au stade aggravé à t = 0 (voxels clairs sur le corps et les nageoires, alerte du tableau de
  * bord), en capture comme hors capture quand le monde est créé neuf (URL qui décrit le monde,
@@ -171,6 +176,8 @@ export interface CaptureParams {
   readonly starved: boolean;
   /** Vrai pour `points-blancs=1` : poissons atteints des points blancs à t = 0 (issue #366). */
   readonly ich: boolean;
+  /** Vrai pour `alevins=1` : alevins de guppy à t = 0, en capture (issue #459). */
+  readonly fry: boolean;
   /** Feuilles de catappa neuves de `catappa=` à t = 0 (issue #239), 0 si absent ou invalide. */
   readonly catappa: number;
   /** Élément du décor sélectionné par `edition=` (issue #167) ; `null` si absent ou invalide. */
@@ -297,6 +304,7 @@ export const DEFAULT_CAPTURE_PARAMS: CaptureParams = {
   shape: null,
   starved: false,
   ich: false,
+  fry: false,
   catappa: 0,
   editSelection: null,
   editRoomSelection: null,
@@ -352,6 +360,7 @@ export function parseCaptureParams(search: string): CaptureParams {
     shape: params.get('forme'),
     starved: params.get('affames') === '1',
     ich: params.get('points-blancs') === '1',
+    fry: params.get('alevins') === '1',
     catappa: parseCatappa(params.get('catappa')),
     editSelection: parseEditSelection(params.get('edition')),
     editRoomSelection: parseEditSelection(params.get('edition-meuble')),

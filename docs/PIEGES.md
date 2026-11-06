@@ -843,6 +843,16 @@ haut de sa section.
 
 ## Simulation
 
+- **Alevin né près de sa mère : mangé au premier pas** (cycle 156, #459) : né à moins de 4 cm
+  d'elle, hors des plantes, un alevin est dans le rayon de prédation de tous les adultes du
+  banc ; sur la graine 42, 7 des 13 alevins d'exemple disparaissaient dès le premier pas.
+  D'où un âge de grâce (`FRY_SAFE_AGE`) et des alevins d'exemple (`alevins=1`) nés près de la
+  plante la plus proche. Tester la survie sur le bac par défaut avancé, pas seulement la règle
+  de prédation isolée. (2026-11-06)
+- **Nouvel animal en cours de partie : le banc de son espèce change** (cycle 156, #459) : des
+  alevins ajoutés au bac déplacent aussi les adultes de leur espèce (banc par espèce), donc
+  une capture avec alevins n'est pas « la capture par défaut plus des petits poissons ». Les
+  angles par défaut, sans alevin, restent identiques à l'octet (vérifié par `cmp`). (2026-11-06)
 - **Point visé collé à une vitre : l'évitement des parois le tient à 5 cm** (cycle 144, #427) :
   un point visé sur la limite `hard` est repoussé par `wallAvoidance` (portée `AVOID_ZONE`) ;
   le poisson brouteur restait à ~5 cm de la limite de nage au lieu de la vitre. D'où

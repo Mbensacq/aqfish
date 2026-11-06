@@ -244,6 +244,8 @@ test.describe('Captures', () => {
     // Points blancs (#366) : voxels clairs sur le corps et les nageoires des poissons malades.
     { name: 'front-points-blancs', query: 'points-blancs=1&camera=front' },
     { name: 'three-quarter-points-blancs', query: 'points-blancs=1' },
+    // Alevins de guppy (#459) : chaque femelle met bas, alevins aux quatre jalons de croissance.
+    { name: 'three-quarter-alevins', query: 'alevins=1' },
     // Feuilles de catappa (#239) : feuilles brunes au sol, eau teintée brun-thé.
     { name: 'three-quarter-catappa', query: 'catappa=3' },
     { name: 'top-catappa', query: 'catappa=5&camera=top' },

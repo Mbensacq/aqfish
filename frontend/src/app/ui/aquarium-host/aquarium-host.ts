@@ -238,6 +238,7 @@ import { decorBaseY, decorElevation, validateDecorItem, type DecorItem } from '.
 import {
   advanceInPlace,
   advanceToWithFeedings,
+  broodWorldInPlace,
   changeWorldWaterInPlace,
   createDefaultWorld,
   feedInPlace,
@@ -2927,6 +2928,10 @@ export class AquariumHost {
       // après `population=`, avant d'avancer le monde.
       if (params.ich) {
         infectWorldInPlace(world);
+      }
+      // Alevins de `alevins=1` (#459), en capture : à t = 0, après `population=`.
+      if (params.capture && params.fry) {
+        broodWorldInPlace(world);
       }
       // Feuilles de catappa neuves de `catappa=` (#239), en capture : à t = 0.
       if (params.capture && params.catappa > 0) {

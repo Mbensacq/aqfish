@@ -74,6 +74,11 @@ export interface Fish {
    * pour le rendu (`ichStage`, `ichSeverity`).
    */
   readonly ich?: number;
+  /**
+   * Âge de l'alevin, en secondes simulées, dans [0, `FRY_GROWTH_TIME`) (`sim/fry.ts`, issue
+   * #459) ; absent : adulte. Lecture seule pour le rendu (`fryScale`).
+   */
+  readonly growth?: number;
   /** État du sous-générateur de l'entité (mulberry32, voir `prngNextState`). */
   readonly rng: number;
   // État au pas précédent (interpolation du rendu).
