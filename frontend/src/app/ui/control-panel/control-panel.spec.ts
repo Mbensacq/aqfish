@@ -1123,9 +1123,9 @@ describe('ControlPanel', () => {
     // (#237) pour chacune des 17 espèces du bac tropical (#238, #362, #391, #425), puis « Exporter »
     // et « Importer » (#70), « Partager ce bac » (#426), le mode du bac (#278), « Mode
     // immersif » (#345), « Réduire les mouvements » (#406), puis la case « Sons d'ambiance »
-    // et son volume (#411), « Courant » (#460). Le champ du lien de partage n'apparaît
-    // qu'avec un lien.
-    expect(controls).toHaveLength(5 + 1 + 1 + 1 + 2 + 2 + 17 * 5 + 2 + 1 + 1 + 1 + 1 + 2 + 1);
+    // et son volume (#411), « Courant » (#460), le curseur de l'éclairage et la raclette
+    // (#476). Le champ du lien de partage n'apparaît qu'avec un lien.
+    expect(controls).toHaveLength(5 + 1 + 1 + 1 + 2 + 2 + 17 * 5 + 2 + 1 + 1 + 1 + 1 + 2 + 1 + 2);
     expect(root().querySelectorAll('input[type="file"]')).toHaveLength(1);
     for (const control of controls) {
       const name =
@@ -1407,6 +1407,8 @@ describe('ControlPanel', () => {
         'Courant : coupé, changer de force',
         'Changer l’eau',
         'Consigne du chauffage',
+        'Durée d’éclairage par jour',
+        'Raclette : cliquer sur les algues',
         'Retirer une feuille de catappa',
         'Ajouter une feuille de catappa',
       ]);

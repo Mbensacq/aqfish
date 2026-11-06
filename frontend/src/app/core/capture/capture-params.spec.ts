@@ -38,6 +38,7 @@ describe('parseCaptureParams', () => {
       rain: false,
       room: false,
       water: null,
+      algae: 0,
       shape: null,
       starved: false,
       ich: false,

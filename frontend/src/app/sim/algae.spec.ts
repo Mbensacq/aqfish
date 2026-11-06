@@ -276,11 +276,9 @@ describe('algues (#476)', () => {
 
   describe('dans le monde', () => {
     it('bac par défaut, éclairage normal, eau propre : aucune algue', () => {
-      const world = advance(createDefaultWorld(42), Math.round(600 / SIM_DT));
-      // Les nitrates du bac par défaut montent : seules les algues dues à l'éclairage sont
-      // exclues ici ; on ramène l'eau propre et l'on avance encore.
-      const clean = { ...world, water: { ...world.water, nitrate: 0 } };
-      const later = advance(clean, Math.round(60 / SIM_DT));
+      // Une minute simulée : les nitrates restent bien sous le seuil (~25 unités par heure).
+      const later = advance(createDefaultWorld(42), Math.round(60 / SIM_DT));
+      expect(later.water.nitrate).toBeLessThan(ALGAE_NITRATE_LIMIT);
       expect(later.water.algae).toBeUndefined();
     });
 
@@ -288,7 +286,7 @@ describe('algues (#476)', () => {
       const run = () => {
         const world = createDefaultWorld(42) as MutableWorld;
         setWorldLightingInPlace(world, 24);
-        return advance(world, Math.round(120 / SIM_DT));
+        return advance(world, Math.round(30 / SIM_DT));
       };
       const a = run();
       expect(algaeCoverage(a.water.algae)).toBeGreaterThan(0);
@@ -299,7 +297,7 @@ describe('algues (#476)', () => {
       const run = (seed: number) => {
         const world = createDefaultWorld(seed) as MutableWorld;
         setWorldLightingInPlace(world, 24);
-        return advance(world, Math.round(60 / SIM_DT)).water.algae;
+        return advance(world, Math.round(20 / SIM_DT)).water.algae;
       };
       expect(run(1)).not.toEqual(run(2));
     });

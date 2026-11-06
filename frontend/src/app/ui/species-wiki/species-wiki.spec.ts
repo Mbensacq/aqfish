@@ -285,10 +285,11 @@ describe('SpeciesWiki, lot 2/2 (#291)', () => {
     expect(style.getPropertyValue('--wiki-fit-hors-plage')).toBe(PH_ZONE_COLORS.horsPlage);
   });
 
-  it('pages « Produits et traitements » et « Maladies » : ouvrir, retour, Échap', async () => {
+  it('pages « Produits et traitements », « Maladies », « Entretien » : ouvrir, retour, Échap', async () => {
     expect(all('[data-wiki-page]').map((b) => b.textContent?.trim())).toEqual([
       'Produits et traitements',
       'Maladies',
+      'Entretien',
     ]);
     await click('[data-wiki-page="maladies"]');
     expect(q('[data-wiki-page-view]')!.getAttribute('data-wiki-page-view')).toBe('maladies');
