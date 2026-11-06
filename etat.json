@@ -5883,6 +5883,12 @@
           "debut": "2026-11-06T16:00:01.664Z",
           "fin": "2026-11-06T16:00:44.781Z",
           "note": "Issue #461 : audit et solde des épopées de Mathis (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-06T16:01:25.185Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
