@@ -5783,10 +5783,10 @@
           "note": "PR #472 : courant de rivière réglable (coupé/doux/fort), rhéotaxie, particules emportées, repère de chevrons, ADR 0108, CI verte (2e essai : ordre clavier e2e) ; 5 angles identiques à l'octet ; pied d'attribution réinséré par l'environnement dans le corps de PR"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-06T08:44:08.116Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-06T09:05:36.055Z",
+          "note": "Verdict OK, 0 bug, captures c158 publiées (série partielle, 5 angles identiques à c157)"
         }
       },
       "metriques": {}
