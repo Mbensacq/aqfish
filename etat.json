@@ -5735,10 +5735,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-06T03:51:58.682Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-06T03:52:43.766Z",
+          "note": "Issue #470 : lot dette alevins (ADR, allocations) + mutants frog.ts 141-300 (M)"
         }
       },
       "metriques": {}
