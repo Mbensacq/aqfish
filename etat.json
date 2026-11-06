@@ -5747,10 +5747,10 @@
           "note": "PR #471 : alevins sans allocation par pas + ADR 0107 alignée + mutants frog.ts 141-300 (55,2 % → 98,2 %), CI verte ; captures identiques à l'octet ; pied d'attribution réinséré par l'environnement dans le corps de PR"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-06T05:27:59.341Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-06T05:37:03.299Z",
+          "note": "Verdict OK, 0 bug, captures c157 publiées (série partielle, identiques à c156)"
         }
       },
       "metriques": {}
