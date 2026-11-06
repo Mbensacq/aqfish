@@ -9,6 +9,7 @@ import {
   FRY_EAT_RADIUS,
   FRY_GROWTH_TIME,
   FRY_HIDE_RADIUS,
+  FRY_SAFE_AGE,
   FRY_SCALES,
   FRY_STAGES,
   fryPlants,
@@ -287,13 +288,25 @@ describe('alevins : cachettes et prédation', () => {
   }
 
   it('un adulte mange un alevin hors des plantes', () => {
-    const fishes = [animal(0, 'neon', 0.5), animal(1, 'guppy', 0.5 + FRY_EAT_RADIUS / 2, 0)];
+    const fishes = [
+      animal(0, 'neon', 0.5),
+      animal(1, 'guppy', 0.5 + FRY_EAT_RADIUS / 2, FRY_SAFE_AGE),
+    ];
     expect(eatFryInPlace(fishes, [])).toBe(1);
     expect(fishes.map((f) => f.id)).toEqual([0]);
   });
 
+  it('un nouveau-né n’est pas encore mangé (le temps de gagner les plantes)', () => {
+    const fishes = [animal(0, 'neon', 0.5), animal(1, 'guppy', 0.5, FRY_SAFE_AGE - 0.01)];
+    expect(eatFryInPlace(fishes, [])).toBe(0);
+    expect(fishes).toHaveLength(2);
+  });
+
   it('une plante dans le rayon protège l’alevin', () => {
-    const fishes = [animal(0, 'neon', 0.5), animal(1, 'guppy', 0.5 + FRY_EAT_RADIUS / 2, 0)];
+    const fishes = [
+      animal(0, 'neon', 0.5),
+      animal(1, 'guppy', 0.5 + FRY_EAT_RADIUS / 2, FRY_SAFE_AGE),
+    ];
     const plant = { ...PLANT, x: 0.5 + FRY_HIDE_RADIUS / 2 };
     expect(eatFryInPlace(fishes, [plant])).toBe(0);
     expect(fishes).toHaveLength(2);
@@ -307,7 +320,7 @@ describe('alevins : cachettes et prédation', () => {
       animal(0, 'guppy', 0.5, 10),
       animal(1, 'axolotl', 0.5),
       animal(2, 'neon', 0.5 + 2 * FRY_EAT_RADIUS),
-      animal(3, 'guppy', 0.5, 0),
+      animal(3, 'guppy', 0.5, FRY_SAFE_AGE),
     ];
     expect(isPredator(fishes[1])).toBe(false);
     expect(isPredator(fishes[0])).toBe(false);
@@ -330,6 +343,7 @@ describe('alevins : cachettes et prédation', () => {
       (neon as Mutable<Fish>).x = PLANT.x;
       (neon as Mutable<Fish>).z = PLANT.z;
       fry.y = neon.y;
+      fry.growth = FRY_SAFE_AGE;
       const next = step(world);
       expect(next.entities.some(isFry)).toBe(survives);
     }
@@ -429,6 +443,21 @@ describe('alevins d’exemple (`alevins=1`)', () => {
     const again = cloneWorld(createDefaultWorld(42));
     broodWorldInPlace(again);
     expect(serializeWorld(again)).toBe(serializeWorld(world));
+  });
+
+  it('nés à couvert, la plupart sont encore là et cachés après 30 s', () => {
+    const world = cloneWorld(createDefaultWorld(42));
+    const born = broodWorldInPlace(world);
+    let next: World = world;
+    for (let i = 0; i < 30 * 60; i++) {
+      next = step(next);
+    }
+    const fry = fryOf(next);
+    expect(fry.length).toBeGreaterThanOrEqual(born / 2);
+    const plants = fryPlants(next.decor);
+    expect(fry.filter((f) => isHidden(plants, f.x, f.z)).length).toBeGreaterThanOrEqual(
+      fry.length / 2,
+    );
   });
 
   it('s’arrête au plafond', () => {

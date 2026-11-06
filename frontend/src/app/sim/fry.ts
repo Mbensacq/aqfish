@@ -19,8 +19,9 @@ import type { Fish, SwimBounds } from './swimmer';
  *   naissance). Il grandit en `FRY_STAGES` jalons (`fryStage`, rendu à l'échelle `fryScale`)
  *   et devient adulte au bout de `FRY_GROWTH_TIME` : le champ disparaît. Il nage près des
  *   plantes (`fryTarget`).
- * - **Prédation** : un adulte nageur à moins de `FRY_EAT_RADIUS` d'un alevin qui n'est à moins
- *   de `FRY_HIDE_RADIUS` d'aucune plante (à l'horizontale) le mange.
+ * - **Prédation** : un adulte nageur à moins de `FRY_EAT_RADIUS` d'un alevin d'au moins
+ *   `FRY_SAFE_AGE` qui n'est à moins de `FRY_HIDE_RADIUS` d'aucune plante (à l'horizontale)
+ *   le mange.
  *
  * Toutes les valeurs sont des **approximations de jeu** : la gestation réelle du guppy dure
  * environ quatre semaines, la croissance plusieurs mois.
@@ -44,10 +45,15 @@ export const FRY_GROWTH_TIME = 1200;
 /** Nombre de jalons de croissance. */
 export const FRY_STAGES = 4;
 /** Échelle du modèle à chaque jalon (l'adulte est à 1). */
-export const FRY_SCALES: readonly number[] = Object.freeze([0.45, 0.6, 0.75, 0.9]);
+export const FRY_SCALES: readonly number[] = Object.freeze([0.5, 0.65, 0.8, 0.9]);
 
 /** Distance horizontale à une plante sous laquelle un alevin est caché, en mètres. */
 export const FRY_HIDE_RADIUS = 0.12;
+/**
+ * Âge sous lequel un alevin n'est pas encore mangé, en secondes : le temps de gagner les
+ * plantes après sa naissance près de sa mère (approximation de jeu).
+ */
+export const FRY_SAFE_AGE = 30;
 /** Distance entre centres sous laquelle un adulte mange un alevin non caché, en mètres. */
 export const FRY_EAT_RADIUS = 0.04;
 /** Rayon du cercle décrit par un alevin autour de sa plante, en mètres. */
@@ -55,7 +61,7 @@ export const FRY_CIRCLE_RADIUS = 0.07;
 /** Vitesse angulaire de ce cercle, en rad/s. */
 const FRY_CIRCLE_RATE = 0.15;
 /** Hauteur visée, en fraction de la hauteur de nage au-dessus du fond. */
-const FRY_HEIGHT_RATIO = 0.3;
+const FRY_HEIGHT_RATIO = 0.45;
 
 const UINT32_RANGE = 4294967296;
 const BROOD_SALT = 0xa1e7;
@@ -249,7 +255,8 @@ export function isPredator(fish: Fish): boolean {
 }
 
 /**
- * Prédation, **en place** : retire de `fishes` chaque alevin non caché (`isHidden`) à moins de
+ * Prédation, **en place** : retire de `fishes` chaque alevin d'au moins `FRY_SAFE_AGE`, non
+ * caché (`isHidden`), à moins de
  * `FRY_EAT_RADIUS` d'un adulte nageur (`isPredator`), dans l'ordre du tableau. Renvoie le
  * nombre d'alevins mangés. Sans alevin, ne parcourt le tableau qu'une fois.
  */
@@ -261,7 +268,7 @@ export function eatFryInPlace(fishes: Fish[], plants: readonly DecorItem[]): num
   let eaten = 0;
   for (let i = fishes.length - 1; i >= 0; i--) {
     const fry = fishes[i];
-    if (!isFry(fry) || isHidden(plants, fry.x, fry.z)) {
+    if (fry.growth === undefined || fry.growth < FRY_SAFE_AGE || isHidden(plants, fry.x, fry.z)) {
       continue;
     }
     const caught = fishes.some(

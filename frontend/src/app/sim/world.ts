@@ -891,11 +891,16 @@ export function stepBroodInPlace(world: MutableWorld): number {
 
 /**
  * Fait naître un alevin de `mother`, **en modifiant** `world` : identifiant
- * `world.nextFishId`, né près de sa mère (`birthBounds`), âge 0, ajouté en fin de tableau.
+ * `world.nextFishId`, né près du point `near` (sa mère par défaut, `birthBounds`), âge 0,
+ * ajouté en fin de tableau.
  * Renvoie l'alevin, ou `null` sans le créer si l'espèce est à `maxPopulation` ou le bac à
  * `MAX_TOTAL_FISH` (plafond de performance, alevins compris).
  */
-export function birthFryInPlace(world: MutableWorld, mother: Entity): Entity | null {
+export function birthFryInPlace(
+  world: MutableWorld,
+  mother: Entity,
+  near: Vec3 = mother,
+): Entity | null {
   const species = mother.species;
   let same = 0;
   for (const fish of world.entities) {
@@ -906,7 +911,7 @@ export function birthFryInPlace(world: MutableWorld, mother: Entity): Entity | n
   if (same >= SPECIES[species].maxPopulation || world.entities.length >= MAX_TOTAL_FISH) {
     return null;
   }
-  const bounds = birthBounds(boundsFor(species, world), mother);
+  const bounds = birthBounds(boundsFor(species, world), near);
   const fry: Mutable<Entity> = createFish(
     world.seed,
     world.nextFishId,
@@ -923,19 +928,23 @@ export function birthFryInPlace(world: MutableWorld, mother: Entity): Entity | n
 /**
  * Alevins d'exemple (paramètre d'URL `alevins=1`, issue #459), **en modifiant** `world`
  * (monde en construction, avant le rendu) : chaque femelle d'une espèce vivipare met bas sa
- * première portée, sans condition de santé ni d'eau, dans la limite des plafonds ; les
- * alevins sont répartis entre les `FRY_STAGES` jalons de croissance pour qu'ils se voient tous.
+ * première portée, sans condition de santé ni d'eau, dans la limite des plafonds, près de la
+ * plante la plus proche (déjà à couvert) ; les alevins sont répartis entre les `FRY_STAGES`
+ * jalons de croissance pour qu'ils se voient tous.
  * Renvoie le nombre d'alevins.
  */
 export function broodWorldInPlace(world: MutableWorld): number {
   const mothers = world.entities.filter(
     (fish) => hasFry(fish.species) && !isFry(fish) && isFemale(fish, world.seed),
   );
+  const plants = fryPlants(world.decor);
   let born = 0;
   for (const mother of mothers) {
     const size = broodSize(world.seed, mother.id, 0);
+    const bounds = boundsFor(mother.species, world);
+    const near = fryTarget(mother, plants, 0, bounds, { x: 0, y: 0, z: 0 }) ?? mother;
     for (let k = 0; k < size; k++) {
-      const fry = birthFryInPlace(world, mother) as Mutable<Entity> | null;
+      const fry = birthFryInPlace(world, mother, near) as Mutable<Entity> | null;
       if (fry === null) {
         return born;
       }
