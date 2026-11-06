@@ -5777,10 +5777,10 @@
           "note": "Issue #460 : Biotope de rivière, courant (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-06T06:49:22.762Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-06T08:43:33.276Z",
+          "note": "PR #472 : courant de rivière réglable (coupé/doux/fort), rhéotaxie, particules emportées, repère de chevrons, ADR 0108, CI verte (2e essai : ordre clavier e2e) ; 5 angles identiques à l'octet ; pied d'attribution réinséré par l'environnement dans le corps de PR"
         }
       },
       "metriques": {}
