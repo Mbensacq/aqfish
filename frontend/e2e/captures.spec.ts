@@ -249,7 +249,7 @@ test.describe('Captures', () => {
     // Alevins de guppy (#459) : chaque femelle met bas, alevins aux quatre jalons de croissance.
     { name: 'three-quarter-alevins', query: 'alevins=1' },
     // Courant fort (#460) : danios zébrés et xiphos face au courant, néons emportés, bulles
-    // déviées vers l'aval, chevrons clairs sur le sable le long de la vitre avant.
+    // déviées vers l'aval, chevrons sombres sur le sable le long de la vitre avant.
     { name: 'three-quarter-courant', query: RIVER },
     { name: 'top-courant', query: `${RIVER}&camera=top` },
     // Feuilles de catappa (#239) : feuilles brunes au sol, eau teintée brun-thé.

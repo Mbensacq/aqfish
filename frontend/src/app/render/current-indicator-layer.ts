@@ -12,26 +12,29 @@ import type { EffectLayer } from './effect-layer';
 import { DECOR_RENDER_ORDER } from './decor-layer';
 import { PALETTE } from './palette';
 
-/** Couleur des chevrons : l'eau la plus claire, comme les bulles (docs/DA.md, palette). */
-export const CURRENT_INDICATOR_COLOR = PALETTE.eauTresClaire;
+/**
+ * Couleur des chevrons : l’ombre du sable, comme des rides creusées par l'eau (docs/DA.md,
+ * palette). Plus clair, il se confondrait avec les caustiques du sable vu de dessus.
+ */
+export const CURRENT_INDICATOR_COLOR = PALETTE.sableOmbre;
 /** Demi-envergure d'un chevron (mètres). */
-export const CHEVRON_HALF_SPAN = 0.018;
+export const CHEVRON_HALF_SPAN = 0.04;
 /** Épaisseur d'une branche de chevron (mètres). */
-export const CHEVRON_THICKNESS = 0.006;
+export const CHEVRON_THICKNESS = 0.016;
 /** Écart entre deux chevrons consécutifs (mètres). */
-export const CHEVRON_GAP = 0.022;
+export const CHEVRON_GAP = 0.05;
 /** Nombre de chevrons visibles de chaque force (doux, fort). */
 export const CHEVRON_COUNTS = { doux: 2, fort: 3 } as const;
 /** Glissement des chevrons vers l'aval (mètres) et période (secondes du temps simulé). */
 export const CHEVRON_SLIDE = 0.012;
 export const CHEVRON_SLIDE_PERIOD = 2;
 /** Distance du repère à la vitre avant (mètres), posé juste au-dessus du sable. */
-export const INDICATOR_FRONT_INSET = 0.045;
+export const INDICATOR_FRONT_INSET = 0.06;
 const INDICATOR_LIFT = 0.002;
 
 /**
  * Indicateur discret du sens du courant (issue #460, ADR 0108) : deux ou trois chevrons
- * clairs posés sur le sable, le long de la vitre avant, pointés vers l'aval. Ils glissent
+ * couleur d’ombre du sable posés sur le sable, le long de la vitre avant, pointés vers l'aval. Ils glissent
  * doucement dans le sens de l'eau au temps simulé (contrat de capture) ; mouvements réduits,
  * ils restent immobiles. Masqué courant coupé. Géométrie partagée, allouée à la construction.
  */

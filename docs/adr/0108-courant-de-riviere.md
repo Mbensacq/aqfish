@@ -45,8 +45,9 @@ mouvements » ; et les 5 angles du bac tropical par défaut identiques à l'octe
    (comme « Changer l'eau »), qui passe à doux, fort, puis coupé ; aucune ligne de plus dans
    le panneau à 1280 × 720 (`docs/PIEGES.md`). Capture : paramètre `courant=doux|fort`.
 7. **Indicateur** (`render/current-indicator-layer.ts`) : deux (doux) ou trois (fort)
-   chevrons clairs (`eauTresClaire`) posés sur le sable le long de la vitre avant, pointés
-   vers l'aval, qui glissent de 12 mm sur 2 s au temps simulé (contrat de capture). En
+   chevrons couleur d'ombre du sable (`sableOmbre`, comme des rides creusées par l'eau ; plus
+   clairs, ils se confondaient avec les caustiques vus de dessus), posés sur le sable le long
+   de la vitre avant, pointés vers l'aval, qui glissent de 12 mm sur 2 s au temps simulé (contrat de capture). En
    mouvements réduits, ils restent immobiles. Dans la scène plutôt que dans l'interface :
    l'interface est masquée en capture, et le repère tourne avec la caméra.
 
