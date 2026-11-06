@@ -18,6 +18,7 @@ import {
 import { FakeAudioContext, FakeTimer } from '../ambient-sound/fake-audio-context';
 import { ReducedMotionState } from '../reduced-motion/reduced-motion-state';
 import { SIM_SPEEDS } from '../../sim/sim-speed';
+import type { CurrentLevel } from '../../sim/water-current';
 import { MAX_HEATER_TEMPERATURE, MIN_HEATER_TEMPERATURE } from '../../sim/water';
 import { DEFAULT_WATER_READOUT, type WaterReadout } from '../../sim/water-quality';
 import { SPECIES_LABELS } from '../../sim/species-catalog';
@@ -203,6 +204,8 @@ describe('fonctions du panneau de contrôle', () => {
     (heaterChanged)="events.push(['chauffage', $event])"
     (catappaChanged)="events.push(['catappa', $event])"
     (waterChangeRequested)="waterChanges = waterChanges + 1"
+    [current]="current()"
+    (currentToggled)="currentToggles = currentToggles + 1"
   />`,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -292,6 +295,8 @@ class TestHost {
   readonly treatmentNotice = signal<TreatmentNotice | null>(null);
   readonly treatments: TreatmentKind[] = [];
   waterChanges = 0;
+  readonly current = signal<CurrentLevel>('coupe');
+  currentToggles = 0;
   readonly events: [string, number | boolean][] = [];
   readonly requests: PopulationRequest[] = [];
   readonly saveStatus = signal<SaveStatus | null>('active');
@@ -1106,8 +1111,9 @@ describe('ControlPanel', () => {
     // (#237) pour chacune des 17 espèces du bac tropical (#238, #362, #391, #425), puis « Exporter »
     // et « Importer » (#70), « Partager ce bac » (#426), le mode du bac (#278), « Mode
     // immersif » (#345), « Réduire les mouvements » (#406), puis la case « Sons d'ambiance »
-    // et son volume (#411). Le champ du lien de partage n'apparaît qu'avec un lien.
-    expect(controls).toHaveLength(5 + 1 + 1 + 1 + 2 + 2 + 17 * 5 + 2 + 1 + 1 + 1 + 1 + 2);
+    // et son volume (#411), « Courant » (#460). Le champ du lien de partage n'apparaît
+    // qu'avec un lien.
+    expect(controls).toHaveLength(5 + 1 + 1 + 1 + 2 + 2 + 17 * 5 + 2 + 1 + 1 + 1 + 1 + 2 + 1);
     expect(root().querySelectorAll('input[type="file"]')).toHaveLength(1);
     for (const control of controls) {
       const name =
@@ -1377,7 +1383,8 @@ describe('ControlPanel', () => {
       expect(section().querySelectorAll('[data-gauge], meter, [role="meter"]')).toHaveLength(0);
       expect(section().textContent).not.toContain('Mauvaise');
       expect(section().textContent).not.toContain('Nitrates');
-      // Restent : le changement d'eau, le chauffage et les feuilles de catappa (#239).
+      // Restent : le courant (#460), le changement d'eau, le chauffage et les feuilles de
+      // catappa (#239).
       expect(section().querySelector('[data-water-change]')).not.toBeNull();
       expect(heater()).not.toBeNull();
       expect(
@@ -1385,11 +1392,25 @@ describe('ControlPanel', () => {
           (el) => el.getAttribute('aria-label') ?? el.textContent?.trim(),
         ),
       ).toEqual([
+        'Courant : coupé, changer de force',
         'Changer l’eau',
         'Consigne du chauffage',
         'Retirer une feuille de catappa',
         'Ajouter une feuille de catappa',
       ]);
+    });
+
+    it('courant (#460) : bouton sur la ligne du titre, libellé de la force, émet la demande', async () => {
+      await openPanel();
+      const button = section().querySelector<HTMLButtonElement>('legend [data-current]')!;
+      expect(button.textContent?.trim()).toBe('Courant : coupé');
+      expect(button.getAttribute('data-level')).toBe('coupe');
+      button.click();
+      expect(fixture.componentInstance.currentToggles).toBe(1);
+      fixture.componentInstance.current.set('fort');
+      await fixture.whenStable();
+      expect(button.textContent?.trim()).toBe('Courant : fort');
+      expect(button.getAttribute('aria-label')).toBe('Courant : fort, changer de force');
     });
 
     it('feuilles de catappa (#239) : « + » et « − » émettent le nombre voulu, bornés à [0, 5]', async () => {

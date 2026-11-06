@@ -57,6 +57,8 @@ const FRESHWATER_LOT2 =
   'population=neon:0,guppy:0,corydora:0,platy:4,danio:8,ancistrus:2,otocinclus:6';
 const FRESHWATER_LOT3 = 'population=neon:0,guppy:0,corydora:0,braise:12,molly:3,miel:2';
 const FRESHWATER_LOT4 = 'population=neon:0,guppy:0,corydora:0,xipho:3,cerise:8,neritine:3';
+/** Courant fort au bac tropical (#460) : poissons de rivière et néons. */
+const RIVER = 'courant=fort&population=neon:8,guppy:0,corydora:0,danio:8,xipho:3';
 const REEF_LOT2 = 'population=clown:3,chirurgien:4,chromis:7,gobie:2,gramma:2';
 const REEF_LOT3 = 'population=clown:3,chirurgien:4,chromis:7,gobie:2,gramma:2,crevette:2,blennie:1';
 const OUTPUT_DIR = resolve(
@@ -246,6 +248,10 @@ test.describe('Captures', () => {
     { name: 'three-quarter-points-blancs', query: 'points-blancs=1' },
     // Alevins de guppy (#459) : chaque femelle met bas, alevins aux quatre jalons de croissance.
     { name: 'three-quarter-alevins', query: 'alevins=1' },
+    // Courant fort (#460) : danios zébrés et xiphos face au courant, néons emportés, bulles
+    // déviées vers l'aval, chevrons sombres sur le sable le long de la vitre avant.
+    { name: 'three-quarter-courant', query: RIVER },
+    { name: 'top-courant', query: `${RIVER}&camera=top` },
     // Feuilles de catappa (#239) : feuilles brunes au sol, eau teintée brun-thé.
     { name: 'three-quarter-catappa', query: 'catappa=3' },
     { name: 'top-catappa', query: 'catappa=5&camera=top' },

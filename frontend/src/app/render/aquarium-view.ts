@@ -49,6 +49,7 @@ import { DecorLayer } from './decor-layer';
 import { planePoint, sandHit, type DecorPick } from './decor-pick';
 import { pickRoom } from './room-pick';
 import { type EffectLayer, type SceneLayer, updateVisibleEffects } from './effect-layer';
+import { CurrentIndicatorLayer } from './current-indicator-layer';
 import { FloatingLeafLayer } from './floating-leaf-layer';
 import { FishLayer, MAX_FISH_PER_SPECIES, type BehaviorFrame } from './fish-layer';
 import { FoodLayer } from './food-layer';
@@ -211,6 +212,8 @@ export class AquariumView {
   private readonly light = createDayLight();
   /** Bulles du diffuseur (ADR 0017), selon la graine fixée par `setDecor`. */
   private readonly bubbleLayer: BubbleLayer;
+  /** Repère du sens du courant (issue #460), masqué courant coupé. */
+  private readonly currentLayer: CurrentIndicatorLayer;
   /** Granulés de nourriture (issue #67), posés par `updateFood`. */
   private readonly foodLayer = new FoodLayer();
   /** Caustiques sur le sable et reflet de surface (ADR 0017). */
@@ -472,7 +475,8 @@ export class AquariumView {
     this.applyTonePenalties();
     this.floatingLeafLayer = new FloatingLeafLayer(environmentDataWater(this.world.environment));
     this.floatingLeafLayer.object.visible = this.world.environment.floatingLeaves;
-    this.effects = [this.bubbleLayer, this.rainLayer, this.floatingLeafLayer];
+    this.currentLayer = new CurrentIndicatorLayer(environmentDataWater(this.world.environment));
+    this.effects = [this.bubbleLayer, this.rainLayer, this.floatingLeafLayer, this.currentLayer];
     this.catappaLayer = new CatappaLayer(environmentDataWater(this.world.environment));
     this.sceneLayers = [
       ...this.fishLayers,
@@ -483,6 +487,7 @@ export class AquariumView {
       this.lilyPadLayer,
       this.rainLayer,
       this.floatingLeafLayer,
+      this.currentLayer,
       this.catappaLayer,
       this.roomLayer,
     ];
@@ -719,6 +724,7 @@ export class AquariumView {
    */
   setReducedMotion(reduced: boolean): void {
     this.motion = motionFactors(reduced);
+    this.currentLayer.setStill(reduced);
     this.waterClock.setRate(this.motion.waterWave, this.decorTime);
     this.rainClock.setRate(this.motion.rainSpeed, this.decorTime);
   }
@@ -1254,6 +1260,24 @@ export class AquariumView {
     if (!this.disposed) {
       this.catappaLayer.setLeaves(leaves);
     }
+  }
+
+  /**
+   * Courant d'eau (issue #460, `sim/water-current.ts`) : vitesse de l'eau (m/s) que suivent
+   * bulles et feuilles mortes, direction et nombre de chevrons du repère (0 : masqué). Sans
+   * effet après `dispose`.
+   */
+  setWaterCurrent(x: number, z: number, direction: number, chevrons: number): void {
+    if (!this.disposed) {
+      this.bubbleLayer.setCurrent(x, z);
+      this.floatingLeafLayer.setCurrent(x, z);
+      this.currentLayer.setCurrent(direction, chevrons);
+    }
+  }
+
+  /** Chevrons du repère du courant posés, et abscisse du premier (tests). */
+  get currentIndicator(): readonly [number, number] {
+    return [this.currentLayer.count, this.currentLayer.firstOffset];
   }
 
   /** Feuilles de catappa affichées, puis celles qui sont épuisées (tests). */

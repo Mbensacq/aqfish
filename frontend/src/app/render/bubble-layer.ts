@@ -60,6 +60,9 @@ export class BubbleLayer {
   private readonly bubbleColor = new Color(BUBBLE_COLOR);
   private brightnessFactor = 1;
   private seed = 0;
+  /** Vitesse de l'eau (issue #460, m/s) : les bulles la suivent. */
+  private currentX = 0;
+  private currentZ = 0;
   /** Pixels de la cible par pixel de scène (1 en pixel art, PIXEL_SIZE × ratio sans filtre). */
   private pointScale = 1;
 
@@ -87,6 +90,12 @@ export class BubbleLayer {
   /** Graine du monde affiché : à appeler une fois par monde. */
   setSeed(seed: number): void {
     this.seed = seed;
+  }
+
+  /** Vitesse de l'eau (issue #460, `worldCurrentVelocity`), en m/s ; (0, 0) : eau immobile. */
+  setCurrent(x: number, z: number): void {
+    this.currentX = Number.isFinite(x) ? x : 0;
+    this.currentZ = Number.isFinite(z) ? z : 0;
   }
 
   /** Taille d'un pixel de scène en pixels de la surface de rendu. */
@@ -124,7 +133,15 @@ export class BubbleLayer {
   /** Pose les bulles au temps simulé `time` (secondes), sans allocation. */
   update(time: number): void {
     const { positions, sizes } = this.buffer;
-    const count = fillBubbles(this.seed, Math.max(0, time), this.buffer, this.source, this.water);
+    const count = fillBubbles(
+      this.seed,
+      Math.max(0, time),
+      this.buffer,
+      this.source,
+      this.water,
+      this.currentX,
+      this.currentZ,
+    );
     for (const cloud of this.clouds) {
       cloud.count = 0;
     }

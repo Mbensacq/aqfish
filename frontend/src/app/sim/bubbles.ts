@@ -179,7 +179,8 @@ const scratchPoint: BubblePoint = { x: 0, y: 0, z: 0 };
  * ancienne à la plus récente, et renvoie leur nombre. Une bulle est vivante de sa naissance
  * (comprise) jusqu'à ce qu'elle atteigne la surface `water.maxY` (exclue). Au-delà de la
  * capacité de `out`, les bulles les plus récentes sont ignorées (jamais le cas avec
- * `MAX_BUBBLES` dans le bac par défaut).
+ * `MAX_BUBBLES` dans le bac par défaut). Courant (issue #460, `sim/water-current.ts`) : la
+ * bulle est emportée à la vitesse de l'eau (`currentX`, `currentZ`, m/s) depuis sa naissance.
  * @throws RangeError si la graine est invalide, si `time` n'est pas un réel positif ou nul,
  * ou si `time` dépasse le dernier numéro de bulle représentable.
  */
@@ -189,6 +190,8 @@ export function fillBubbles(
   out: BubbleBuffer,
   source: BubbleSource = DEFAULT_BUBBLE_SOURCE,
   water: Box3 = DEFAULT_WATER,
+  currentX = 0,
+  currentZ = 0,
 ): number {
   assertSeed(seed);
   if (!Number.isFinite(time) || time < 0) {
@@ -206,6 +209,10 @@ export function fillBubbles(
     const traits = bubbleTraits(seed, k, scratchTraits);
     const age = Math.max(0, time - k * BUBBLE_EMIT_PERIOD);
     const p = bubblePosition(traits, age, source, scratchPoint);
+    if (currentX !== 0 || currentZ !== 0) {
+      p.x += currentX * age;
+      p.z += currentZ * age;
+    }
     if (p.y >= water.maxY) {
       continue;
     }

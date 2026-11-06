@@ -142,7 +142,15 @@ const scratch = new Float64Array(LEAF_STRIDE);
  * Écrit dans `out` (`LEAF_STRIDE` valeurs) la feuille du créneau `slot` au temps `time`, et
  * renvoie vrai si elle existe et vit à cet instant (née, pas encore disparue).
  */
-function leafAt(seed: number, slot: number, time: number, water: Box3, out: Float64Array): boolean {
+function leafAt(
+  seed: number,
+  slot: number,
+  time: number,
+  water: Box3,
+  out: Float64Array,
+  currentX: number,
+  currentZ: number,
+): boolean {
   if (time < slot * LEAF_SLOT_PERIOD) {
     return false;
   }
@@ -171,14 +179,21 @@ function leafAt(seed: number, slot: number, time: number, water: Box3, out: Floa
   const rotation0 = next() * 2 * Math.PI;
   const spin = LEAF_SPIN * (2 * next() - 1);
 
-  const dx = Math.cos(heading);
-  const dz = Math.sin(heading);
+  let dx = Math.cos(heading);
+  let dz = Math.sin(heading);
+  let pace = speed;
+  if (currentX !== 0 || currentZ !== 0) {
+    // Courant (issue #460) : la vitesse de l'eau s'ajoute à celle de la brise.
+    const vx = dx * speed + currentX;
+    const vz = dz * speed + currentZ;
+    pace = Math.sqrt(vx * vx + vz * vz);
+    if (pace > 1e-12) {
+      dx = vx / pace;
+      dz = vz / pace;
+    }
+  }
   // La feuille avance jusqu'au bord de la surface rétrécie, puis s'y arrête.
-  const travel = Math.min(
-    speed * age,
-    rayToEdge(x0, dx, minX, maxX),
-    rayToEdge(z0, dz, minZ, maxZ),
-  );
+  const travel = Math.min(pace * age, rayToEdge(x0, dx, minX, maxX), rayToEdge(z0, dz, minZ, maxZ));
   const wobble = LEAF_WOBBLE * Math.sin((2 * Math.PI * age) / LEAF_WOBBLE_PERIOD + wobblePhase);
   const envelope = Math.min(1, age / LEAF_SETTLE_TIME, (LEAF_LIFETIME - age) / LEAF_SINK_TIME);
   out[0] = clamp(x0 + dx * travel - dz * wobble, water.minX, water.maxX);
@@ -194,7 +209,8 @@ function leafAt(seed: number, slot: number, time: number, water: Box3, out: Floa
  * Écrit dans `out` les feuilles vivantes au temps simulé `time` (secondes) sur la surface
  * `water` (bornes en X et Z), de la plus ancienne à la plus récente, et renvoie leur nombre.
  * Au-delà de la capacité de `out`, les plus récentes sont ignorées (jamais le cas avec la
- * capacité par défaut).
+ * capacité par défaut). Courant (issue #460) : la vitesse de l'eau (`currentX`, `currentZ`,
+ * m/s) s'ajoute à la dérive de chaque feuille.
  * @throws RangeError si la graine est invalide, si `time` n'est pas un réel positif ou nul,
  * ou si `time` dépasse le dernier numéro de créneau représentable.
  */
@@ -203,6 +219,8 @@ export function fillFloatingLeaves(
   time: number,
   water: Box3,
   out: FloatingLeafBuffer,
+  currentX = 0,
+  currentZ = 0,
 ): number {
   assertSeed(seed);
   if (!Number.isFinite(time) || time < 0) {
@@ -216,7 +234,7 @@ export function fillFloatingLeaves(
   const capacity = Math.floor(out.leaves.length / LEAF_STRIDE);
   let count = 0;
   for (let slot = first; slot <= last && count < capacity; slot++) {
-    if (leafAt(seed, slot, time, water, scratch)) {
+    if (leafAt(seed, slot, time, water, scratch, currentX, currentZ)) {
       out.leaves.set(scratch, count * LEAF_STRIDE);
       count++;
     }

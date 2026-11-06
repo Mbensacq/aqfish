@@ -95,6 +95,14 @@ import {
   type TreatmentOutcome,
 } from './treatment';
 import { starveInPlace, stepWellbeingInPlace } from './wellbeing';
+import {
+  applyCurrentInPlace,
+  currentVelocity,
+  isCurrentLevel,
+  isRiverSpecies,
+  type CurrentLevel,
+  type CurrentVelocity,
+} from './water-current';
 
 /**
  * Entité de la simulation. Seuls les poissons existent pour l'instant (`sim/swimmer.ts`).
@@ -173,6 +181,11 @@ export interface World {
    * passé par le mode décor. En mode `decor`, l'eau, la faim et la santé sont en pause.
    */
   readonly careMode?: CareMode;
+  /**
+   * Force du courant (issue #460, `sim/water-current.ts`, ADR 0108) : absente, celle de
+   * l'environnement (`Environment.current`, coupée partout) ; jamais enregistrée coupée.
+   */
+  readonly current?: Exclude<CurrentLevel, 'coupe'>;
 }
 
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
@@ -591,17 +604,55 @@ export function worldBubbles(world: World, out: BubbleBuffer): number {
     out.count = 0;
     return 0;
   }
-  if (world.dimensions === undefined) {
+  const v = worldCurrentVelocity(world, CURRENT_SCRATCH);
+  if (world.dimensions === undefined && v.x === 0 && v.z === 0) {
     return fillBubbles(world.seed, world.time, out);
   }
   return fillBubbles(
     world.seed,
     world.time,
     out,
-    bubbleSourceFor(world.dimensions),
+    world.dimensions === undefined ? undefined : bubbleSourceFor(world.dimensions),
     environmentWater(world),
+    v.x,
+    v.z,
   );
 }
+
+/** Force du courant du bac de `world` : la sienne, sinon celle de son environnement. */
+export function worldCurrentLevel(world: Pick<World, 'current' | 'environment'>): CurrentLevel {
+  return world.current ?? environmentById(world.environment).current.level;
+}
+
+/**
+ * Écrit dans `out` la vitesse de l'eau du bac de `world` (`currentVelocity`) et renvoie `out` :
+ * (0, 0) exactement, courant coupé.
+ */
+export function worldCurrentVelocity(
+  world: Pick<World, 'current' | 'environment'>,
+  out: CurrentVelocity,
+): CurrentVelocity {
+  return currentVelocity(environmentById(world.environment).current, worldCurrentLevel(world), out);
+}
+
+/**
+ * Règle la force du courant du bac, **en modifiant** `world` : coupé, le champ est retiré
+ * (sauvegardes et captures inchangées).
+ * @throws RangeError si la force est inconnue (monde inchangé).
+ */
+export function setWorldCurrentInPlace(world: MutableWorld, level: CurrentLevel): void {
+  if (!isCurrentLevel(level)) {
+    throw new RangeError(`force de courant inconnue : ${String(level)}`);
+  }
+  if (level === 'coupe') {
+    delete world.current;
+  } else {
+    world.current = level;
+  }
+}
+
+/** Vitesse de l'eau du pas ou des bulles (réutilisée, sans allocation). */
+const CURRENT_SCRATCH: CurrentVelocity = { x: 0, z: 0 };
 
 /**
  * Dépose des granulés autour de (x, z), à la surface (`sim/food.ts`). Fonction pure : renvoie
@@ -744,6 +795,9 @@ function stepInPlace(world: MutableWorld, dt: number, clock: SimClock): void {
   // Alevins (issue #459) : ils nagent près des plantes. Sans alevin, rien ne change.
   const fryPresent = fishes.some(isFry);
   const plants = fryPresent ? fryPlants(world.decor) : NO_PLANTS;
+  // Courant (issue #460) : coupé, aucun calcul (nage d'avant, au bit près).
+  const flow = worldCurrentVelocity(world, CURRENT_SCRATCH);
+  const flowing = flow.x !== 0 || flow.z !== 0;
   // Ordre stable : celui du tableau, c'est-à-dire des identifiants.
   for (let i = 0; i < fishes.length; i++) {
     const fish = fishes[i];
@@ -801,6 +855,17 @@ function stepInPlace(world: MutableWorld, dt: number, clock: SimClock): void {
       nightRest(fish.species, intensity),
       grazing,
     );
+    if (flowing) {
+      applyCurrentInPlace(
+        fish,
+        flow.x,
+        flow.z,
+        dt,
+        isRiverSpecies(fish.species),
+        bounds,
+        SPECIES[fish.species].wallMargin,
+      );
+    }
   }
   currentPlace = place;
   currentKey = key;
@@ -809,7 +874,11 @@ function stepInPlace(world: MutableWorld, dt: number, clock: SimClock): void {
     enforceRivalDistance(fishes, boundsOfFish);
   }
   eatInPlace(fishes, food, bandOfFish, hardOfFish);
-  stepFoodInPlace(food, dt);
+  if (flowing) {
+    stepFoodInPlace(food, dt, flow.x, flow.z, environmentWater(place));
+  } else {
+    stepFoodInPlace(food, dt);
+  }
   if (decor) {
     // Mode décor (#278) : faim rendue telle qu'au début du pas ; eau et santé en pause.
     restoreHunger(fishes);

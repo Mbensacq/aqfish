@@ -50,6 +50,7 @@ import { MAX_SAVE_LENGTH } from '../../sim/save';
 import { DEFAULT_SIM_SPEED, SIM_SPEEDS, speedLabel, type SimSpeed } from '../../sim/sim-speed';
 import { mixWarnings } from '../../sim/compatibility';
 import { CARE_MODE_LABELS, type CareMode } from '../../sim/care-mode';
+import { CURRENT_LEVEL_LABELS, type CurrentLevel } from '../../sim/water-current';
 import {
   unsuitableAnimals,
   unsuitableLine,
@@ -389,6 +390,17 @@ export interface NewTankRequest {
         >
           <legend class="control-panel__legend control-panel__legend--row">
             <span id="panneau-eau-titre">Eau</span>
+            <!-- Courant (#460) : sur la ligne du titre, le panneau ne grandit pas (docs/PIEGES.md). -->
+            <button
+              type="button"
+              class="control-panel__edit"
+              data-current
+              [attr.data-level]="current()"
+              [attr.aria-label]="'Courant : ' + currentLabels[current()] + ', changer de force'"
+              (click)="currentToggled.emit()"
+            >
+              Courant : {{ currentLabels[current()] }}
+            </button>
             <button
               type="button"
               class="control-panel__edit"
@@ -1126,6 +1138,8 @@ export class ControlPanel {
   readonly decorEditable = input(false);
   /** Rendu des granulés, `points` ou `voxels` (fourni par l'hôte, #117). */
   readonly foodStyle = input<FoodStyle>(DEFAULT_FOOD_STYLE);
+  /** Force du courant du bac (#460) : coupé, doux ou fort. */
+  readonly current = input<CurrentLevel>('coupe');
   /** Vrai si la pièce autour du bac est affichée (fourni par l'hôte, #187). */
   readonly roomShown = input(false);
   /** Bacs et meubles supports de la pièce de N bacs (fournis par l'hôte, #305). */
@@ -1202,6 +1216,8 @@ export class ControlPanel {
   readonly animalTransferred = output<{ readonly species: SpeciesId; readonly toId: number }>();
   /** Bouton « Granulés » : passer à l'autre rendu (#117). */
   readonly foodStyleToggled = output<void>();
+  /** Force suivante du courant demandée (#460). */
+  readonly currentToggled = output<void>();
   /** Effectif demandé pour une espèce (déjà borné à [0, maximum]). */
   readonly populationChanged = output<PopulationRequest>();
   /** Consigne du chauffage choisie au curseur, en °C (#207). */
@@ -1418,6 +1434,7 @@ export class ControlPanel {
   }
 
   protected readonly careModeLabels = CARE_MODE_LABELS;
+  protected readonly currentLabels = CURRENT_LEVEL_LABELS;
   /** Confirmation du changement de mode en cours (#278) : mode demandé, ou `null`. */
   protected readonly confirmMode = signal<CareMode | null>(null);
   /** Nom du bac affiché, pour le texte de la confirmation. */
