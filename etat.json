@@ -5753,10 +5753,10 @@
           "note": "Verdict OK, 0 bug, captures c157 publiées (série partielle, identiques à c156)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-06T05:37:36.534Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-06T06:47:31.818Z",
+          "note": "PR #471 fusionnée → v1.11.3 (CI main verte, release créée) ; #470 fermée ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
