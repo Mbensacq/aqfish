@@ -5849,10 +5849,10 @@
           "note": "Rétro #480 ; issue #475 mutants bubbles.ts (S) ; sprint 24 : #461 #476-#479 ; PR roadmap ouverte"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-06T13:12:26.070Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-06T14:23:09.245Z",
+          "note": "PR #482 : mutants de bubbles.ts 76,1 % → 94,8 % (7 équivalents dans PIEGES), CI verte ; e2e local impossible (navigateur), CI fait foi"
         }
       },
       "metriques": {}
