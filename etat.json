@@ -5775,6 +5775,12 @@
           "debut": "2026-11-06T06:48:02.563Z",
           "fin": "2026-11-06T06:48:50.289Z",
           "note": "Issue #460 : Biotope de rivière, courant (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-06T06:49:22.762Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
