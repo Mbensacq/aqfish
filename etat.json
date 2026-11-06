@@ -5859,6 +5859,12 @@
           "debut": "2026-11-06T14:23:49.777Z",
           "fin": "2026-11-06T14:43:56.704Z",
           "note": "Verdict OK, 0 bug, captures c160 publiées (5 angles identiques à c159)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-06T14:44:26.929Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
