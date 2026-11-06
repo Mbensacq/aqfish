@@ -5933,10 +5933,10 @@
           "note": "Verdict OK, 0 bug, 5 angles identiques à c161, captures c162 publiées (e2e local partiel, CI verte)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-06T21:04:43.399Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-06T22:10:52.076Z",
+          "note": "PR #487 fusionnée → v1.12.1 (release créée, CI main verte) ; #476 fermée, dette #488 ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
