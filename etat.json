@@ -5963,10 +5963,10 @@
           "note": "PR #489 : finitions des algues (5 points de #488), CI verte ; e2e local partiel ; dette #490 (message de traitement à 1280×720)"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-06T23:18:49.803Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-06T23:51:20.709Z",
+          "note": "Verdict OK, 0 bug, captures c163 publiées (e2e local ciblé, CI verte)"
         }
       },
       "metriques": {}
