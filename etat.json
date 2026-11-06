@@ -5709,6 +5709,12 @@
           "debut": "2026-11-06T01:23:20.558Z",
           "fin": "2026-11-06T02:23:58.759Z",
           "note": "PR #469 : alevins de guppy (naissance, 4 jalons, cachettes, sauvegarde, capture alevins=1), CI verte ; 5 angles par défaut identiques à l'octet ; pied d'attribution réinséré par l'environnement dans le corps de PR"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-06T02:24:28.979Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
