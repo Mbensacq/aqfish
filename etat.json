@@ -5843,10 +5843,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-06T13:10:24.386Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-06T13:11:54.442Z",
+          "note": "Rétro #480 ; issue #475 mutants bubbles.ts (S) ; sprint 24 : #461 #476-#479 ; PR roadmap ouverte"
         }
       },
       "metriques": {}
