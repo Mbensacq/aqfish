@@ -5681,10 +5681,10 @@
           "note": "Verdict OK, 0 bug, captures publiées (c155, 12 différentes de c154 dont 11 voulues), CI verte"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-06T00:10:59.262Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-06T01:21:45.031Z",
+          "note": "PR #467 fusionnée → v1.11.1 (CI main verte, release créée) ; #456 et #466 fermées ; dette #468 (sonneur) ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
