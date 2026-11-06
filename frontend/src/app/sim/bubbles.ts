@@ -180,7 +180,8 @@ const scratchPoint: BubblePoint = { x: 0, y: 0, z: 0 };
  * (comprise) jusqu'à ce qu'elle atteigne la surface `water.maxY` (exclue). Au-delà de la
  * capacité de `out`, les bulles les plus récentes sont ignorées (jamais le cas avec
  * `MAX_BUBBLES` dans le bac par défaut). Courant (issue #460, `sim/water-current.ts`) : la
- * bulle est emportée à la vitesse de l'eau (`currentX`, `currentZ`, m/s) depuis sa naissance.
+ * bulle est emportée à la vitesse de l'eau (`currentX`, `currentZ`, m/s) depuis sa naissance,
+ * sans jamais sortir de `water` : arrêtée contre la vitre, elle la longe (issue #473).
  * @throws RangeError si la graine est invalide, si `time` n'est pas un réel positif ou nul,
  * ou si `time` dépasse le dernier numéro de bulle représentable.
  */
@@ -216,8 +217,11 @@ export function fillBubbles(
     if (p.y >= water.maxY) {
       continue;
     }
-    // Dans un bac étroit (issue #171), la dérive pourrait atteindre la vitre : la bulle la
-    // longe. Jamais le cas dans le bac par défaut (écart maximal ~4 cm, vitre à 5 cm).
+    // Borne à la boîte d'eau (issues #171 et #473) : une bulle qui atteint une vitre s'y
+    // arrête et la longe en montant jusqu'à la surface. Deux causes : la dérive dans un bac
+    // étroit, et surtout le courant (fort : ~0,5 m de dérive pour la bulle la plus lente d'un
+    // bac de 90 cm de haut). Jamais atteinte dans le bac par défaut sans courant (écart
+    // maximal ~4 cm, vitre à 5 cm) : sa sortie est inchangée. Ni allocation ni tirage.
     out.positions[3 * count] = Math.min(water.maxX, Math.max(water.minX, p.x));
     out.positions[3 * count + 1] = p.y;
     out.positions[3 * count + 2] = Math.min(water.maxZ, Math.max(water.minZ, p.z));
