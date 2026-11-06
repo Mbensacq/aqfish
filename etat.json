@@ -5679,6 +5679,12 @@
           "debut": "2026-11-05T23:51:58.187Z",
           "fin": "2026-11-06T00:10:26.115Z",
           "note": "Verdict OK, 0 bug, captures publiées (c155, 12 différentes de c154 dont 11 voulues), CI verte"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-06T00:10:59.262Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
