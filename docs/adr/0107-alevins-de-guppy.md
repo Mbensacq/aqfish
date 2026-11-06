@@ -17,8 +17,8 @@ le plafond de population tienne ; que sauvegarde, export et lien les conservent 
 1. **Un alevin est un poisson de l'espèce** avec un champ facultatif `Fish.growth` (âge en
    secondes simulées, dans [0, `FRY_GROWTH_TIME`)). Il passe par le même pas, le même banc,
    la même santé que les adultes ; à `FRY_GROWTH_TIME` (1 200 s), le champ disparaît : c'est
-   un adulte. Le rendu applique `fryScale` (`FRY_SCALES` : 0,5, 0,65, 0,8, 0,9 aux 4 jalons) à la matrice
-   de l'instance ; à 1 pour un adulte, la matrice est celle d'avant.
+   un adulte. Le rendu applique `fryScale` (`FRY_SCALES` : 0,5, 0,65, 0,8, 0,9 aux 4
+   jalons) à la matrice de l'instance ; à 1 pour un adulte, la matrice est celle d'avant.
 2. **Mise bas sans état** (`sim/fry.ts`, `stepBroodInPlace` dans `sim/world.ts`) : le temps
    est découpé en portées de `BROOD_PERIOD` (300 s) ; au dernier pas de chaque portée, chaque
    femelle adulte (apparence `femelle`, `speciesVariantIndex`) à santé pleine, sans points

@@ -269,8 +269,7 @@ export function isPredator(fish: Fish): boolean {
 
 /** Vrai si un adulte nageur de `fishes` est à une distance au carré sous `r2` de `fry`. */
 function isCaught(fishes: readonly Fish[], fry: Fish, r2: number): boolean {
-  for (let j = 0; j < fishes.length; j++) {
-    const other = fishes[j];
+  for (const other of fishes) {
     if (
       isPredator(other) &&
       (other.x - fry.x) ** 2 + (other.y - fry.y) ** 2 + (other.z - fry.z) ** 2 < r2
