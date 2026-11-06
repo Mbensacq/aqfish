@@ -128,6 +128,105 @@ La roadmap continue : Planif propose de nouvelles épopées `v1.x` cohérentes a
 performances, accessibilité, finitions visuelles), en privilégiant ce qui rend l'aquarium plus
 beau et plus vivant.
 
+## Audit des épopées de Mathis (cycle 161, #461)
+
+Bilan, point par point, des huit épopées `idee-mathis` encore ouvertes au sprint 24. Sources :
+issues de lot fermées, PR fusionnées (`Closes #N`) et notes de `docs/versions/`. Une épopée
+entièrement livrée est fermée par la PR de l'audit ; Mathis reste libre de la rouvrir. Le reste
+d'une épopée partielle est copié dans une issue `fonctionnalite` prête ; l'épopée reste
+ouverte jusqu'à ce que ces issues soient livrées.
+
+### #227 — Pièce complète autour du bac : livrée
+
+| Point attendu | Livré par | Reste |
+|---|---|---|
+| Pièce fermée : sol, quatre murs, plafond à poutres | #324, PR #335 (v1.4.3) | — |
+| Fenêtre et lumière du jour suivant `sim/daylight` | #342, PR #350 (v1.5.0) | — |
+| Porte, plinthes, moulure, applique | #363, PR #387 (v1.7.1) | — |
+| Aménagement existant (meubles, plantes, pose par gravité) dans la pièce | #188, PR #199 (v0.10.2) ; #305, PR #310 et #312 (v1.3.0, v1.3.1) | — |
+| Sauvegarde compatible, captures du bac seul identiques | #324, #342, #363 (ADR 0093) | — |
+
+### #228 — Caméra libre dans la pièce : livrée
+
+| Point attendu | Livré par | Reste |
+|---|---|---|
+| Mode libre activable, retour à l'orbite, touche listée dans « Commandes » | #343, PR #351 (v1.5.1) | — |
+| Déplacement, orientation, limites de la pièce et du bac | #343, PR #351 (v1.5.1) | — |
+| Tactile, sélection et édition dans les deux modes | #344, PR #353 (v1.5.2) | — |
+| Préréglages et captures inchangés | #343, #344 | — |
+
+### #251 — Interface en bordure (tableau de bord) : partielle
+
+| Point attendu | Livré par | Reste |
+|---|---|---|
+| Cadre en bordure, repli, aucune interface en capture | #256, PR #258 (v1.0.3) | — |
+| Jauges d'eau permanentes (température, NH₃/NH₄⁺, nitrite, nitrate, pH), zones et tendance | #256, PR #258 (v1.0.3) ; pH #236, PR #249 (v1.0.1) | — |
+| Santé, faim, heure, vitesse, alertes avec cause et action | #260, PR #261 (v1.0.4) | — |
+| « Réglages » ne garde que ce qui se règle | #256 (ADR 0059) | — |
+| Montrer l'alerte sur les animaux concernés (lot 3/3) | — | #483 |
+| Oxygène, chlore, KH/GH, salinité « quand ils existent dans le modèle » | — | Absents du modèle ; dureté dans #484 |
+
+### #252 — Wiki des espèces : partielle
+
+| Point attendu | Livré par | Reste |
+|---|---|---|
+| Bouton en bas à droite, recherche, liste « dans le bac » et « ajoutables », « Ajouter » | #287, PR #288 (v1.1.4) | — |
+| Alimentation, cohabitation avec raisons, comparaison avec le bac | #291, PR #295 (v1.2.0) | — |
+| Guides « Produits et traitements » et « Maladies » | #291, PR #295 (v1.2.0) | — |
+| Statut légal et sourçage de chaque valeur | #269, PR #275 (v1.1.0) | — |
+| Dureté, tolérances azotées, durée de vie dans la fiche | — | #484 |
+
+### #262 — Espèces en règle : livrée
+
+| Point attendu | Livré par | Reste |
+|---|---|---|
+| Statut légal en France dans chaque fiche, rappels DDPP et « ne jamais relâcher » | #269, PR #275 (v1.1.0) | — |
+| Liste d'exclusion testée (*Xenopus*, Pipidae, *Triturus*, espèces protégées) | #269, PR #275 (v1.1.0) | — |
+| Corrections de fiches (koï, chirurgien, clown, *Hoplisoma paleatum*) | #269, PR #275 (v1.1.0) | — |
+| Triton (*Cynops orientalis*) et grenouille (sonneur oriental) réels | #270, PR #283 (v1.1.2) | — |
+| Environnements par défaut compatibles et migration | #271, PR #285 (v1.1.3) | — |
+
+Statuts légaux non confirmés sur le texte consolidé : affichés « à vérifier auprès de la
+DDPP », comme le demande l'issue (pas un reste de fonctionnalité).
+
+### #264 — Pièce aux aquariums : livrée
+
+| Point attendu | Livré par | Reste |
+|---|---|---|
+| ADR pièce de N bacs, sauvegarde au schéma 2 et migration | ADR 0061 (PR #274) ; #292, PR #298 (v1.2.1) | — |
+| Catalogue de bacs et meubles, pose sans chevauchement | #305, PR #310 et #312 (v1.3.0, v1.3.1) | — |
+| Étagère d'animalerie à plusieurs niveaux | #419, PR #420 (v1.9.0) | — |
+| Bac sélectionné, liste des bacs, transfert avec rappel d'acclimatation | #306, PR #314 (v1.3.2) | — |
+| Tous les bacs vivants, renommage | #316, PR #317 (v1.3.3) | — |
+| Plafonds de performance mesurés (16 bacs, 240 animaux) | #392, PR #395 (v1.7.4) | — |
+| Caméra libre entre les bacs | #343, #344 (v1.5.1, v1.5.2) | — |
+
+Le jardin du bassin à koïs (aménagement extérieur) est hors périmètre de l'épopée, décision de
+Mathis du 2026-10-27.
+
+### #340 — Mode immersif : livrée
+
+| Point attendu | Livré par | Reste |
+|---|---|---|
+| Étalonnage à la carte ID-1, taille réelle, projection décentrée | #345, PR #354 (v1.5.3) | — |
+| Parallaxe à l'orientation, plein écran, Wake Lock, limite d'images | #346, PR #356 (v1.5.4) | — |
+| Tapoter la vitre, nourrir par le haut, interface par appui long | #346, PR #376 (v1.6.4) | — |
+| Choix du bac | #375, PR #389 (v1.7.2) | — |
+
+### #229 — Aquarium éducatif : partielle
+
+| Point attendu | Livré par | Reste |
+|---|---|---|
+| Beaucoup plus d'espèces, chacune avec sa fiche (28 espèces) | #237, PR #254 (v1.0.2) ; #238, PR #299 (v1.2.2) ; #362, PR #371 (v1.6.2) ; #391, PR #393 (v1.7.3) ; #425, PR #428 (v1.9.2) ; récif #403, PR #404 (v1.8.1) et #422, PR #423 (v1.9.1) | — |
+| pH simulé, plage par espèce, jauge | #236, PR #249 (v1.0.1) | — |
+| Dureté « si utile » | — | #484 |
+| Catappa | #239, PR #300 (v1.2.3) | — |
+| Points blancs : apparition, symptômes, traitements, guérison | #360, PR #367 (v1.6.0) ; #366, PR #369 (v1.6.1) ; #361, PR #373 (v1.6.3) | — |
+| Autres maladies simulées | — | #485 (pourriture des nageoires) ; velours, champignons, hydropisie… ensuite |
+| Produits simulés (conditionneur, bactéries, régulateurs, charbon, tests) | Guides du wiki seulement (#291) | À découper par Planif après #485 |
+| Aides au débutant, alertes, guide | #240, PR #301 (v1.2.4) ; #260, PR #261 (v1.0.4) | — |
+| Rigueur des données (source ou « approximation de jeu ») | #237, #269, chaque lot d'espèces | — |
+
 ## Backlog
 
 Le backlog est l'ensemble des issues ouvertes `fonctionnalite`, `bug` et `dette`. Planif
