@@ -5823,6 +5823,12 @@
           "debut": "2026-11-06T11:13:56.490Z",
           "fin": "2026-11-06T11:52:01.009Z",
           "note": "Verdict OK, 0 bug, captures c159 (5 angles identiques à c158), mutation bubbles.ts 76,12 % → #475"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-06T11:52:42.434Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
