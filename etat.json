@@ -5967,6 +5967,12 @@
           "debut": "2026-11-06T23:18:49.803Z",
           "fin": "2026-11-06T23:51:20.709Z",
           "note": "Verdict OK, 0 bug, captures c163 publiées (e2e local ciblé, CI verte)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-06T23:52:02.415Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
