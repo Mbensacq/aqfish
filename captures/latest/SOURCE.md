@@ -1,11 +1,5 @@
-# Captures c154
-- Branche : cycle/c154 (PR #465), commit 7aaf746
+# Captures c155
+- Branche : cycle/c155-dette-amphibiens-feuilles (PR #467), commit aef0ade
 - Graine : par défaut de captures.spec.ts ; rendu logiciel, Chromium headless
-- Généré le 2026-11-05 : 122 images régénérées (délai de 10 min atteint), 7 reprises de c153 (marquées ci-dessous). 5 angles du bac seul identiques à c153 ; 21 images différentes : bassin, paludarium, bois, porte de nuit (changements voulus).
-reprise tablette-tableau-de-bord-alerte.png
-reprise tablette-tableau-de-bord.png
-reprise telephone-tableau-de-bord-alerte.png
-reprise telephone-tableau-de-bord.png
-reprise three-quarter-tableau-de-bord-alerte.png
-reprise trajectoires-nourriture-top.png
-reprise trajectoires-top.png
+- Généré le 2026-11-06 : 128 images régénérées (8,9 min), aucune reprise.
+- Différentes de c154 : bassin-*-minuit (2, feuilles), eaufroide-* (3, décor et axolotl), paludarium-* (6, pattes du sonneur), interface-liste-bacs (1, hors périmètre annoncé : bac tropical affiché, probablement bruit d'animation, aucun bug visible). 5 angles du bac seul identiques.
