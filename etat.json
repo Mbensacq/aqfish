@@ -5715,6 +5715,12 @@
           "debut": "2026-11-06T02:24:28.979Z",
           "fin": "2026-11-06T02:42:07.395Z",
           "note": "Verdict OK, 0 bug, captures publiées (c156), e2e alevins-qa ajouté"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-06T02:42:41.328Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
