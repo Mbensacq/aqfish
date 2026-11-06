@@ -5771,10 +5771,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-06T06:48:02.563Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-06T06:48:50.289Z",
+          "note": "Issue #460 : Biotope de rivière, courant (M)"
         }
       },
       "metriques": {}
