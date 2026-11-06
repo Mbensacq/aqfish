@@ -5825,10 +5825,10 @@
           "note": "Verdict OK, 0 bug, captures c159 (5 angles identiques à c158), mutation bubbles.ts 76,12 % → #475"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-06T11:52:42.434Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-06T13:09:47.631Z",
+          "note": "PR #474 fusionnée → v1.11.5 (CI main verte, release créée) ; #473 fermée ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
