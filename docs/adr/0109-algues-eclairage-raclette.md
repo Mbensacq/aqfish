@@ -43,6 +43,15 @@ identiques à l'octet. Aucun réglage de durée d'éclairage n'existait.
    cœur aux verts de la végétation de la palette, quelques pixels clairs à motif fixe, posée
    à 3 mm de la vitre ; taille selon la racine de la couverture ; masquée sous 5 %. Sans
    algue, la couche est masquée : images inchangées.
+   **Révisé au cycle 163 (#488)** : les plaques ressemblaient aux plantes en vue trois-quarts
+   (contour sombre, cœur clair, reflets). Elles sont désormais un voile terne et
+   filamenteux : fond `vegetation`, filaments verticaux `vegetationOmbre` une colonne sur
+   deux, coupés par endroits, bord tramé (une case sur deux) au lieu d'un contour ; ni
+   `vegetationClaire` ni `vegetationLumineuse`. Voilées par l'eau, elles virent au vert-bleu
+   strié, distinct des feuilles.
+7. **Couverture moyenne** (`algaeCoverage`, révisé au cycle 163, #488) : somme des
+   couvertures divisée par `ALGAE_PATCH_COUNT`, pas par la longueur de la liste enregistrée ;
+   une liste courte compte ses plaques absentes comme nues.
 
 ## Conséquences
 
