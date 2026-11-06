@@ -5961,6 +5961,12 @@
           "debut": "2026-11-06T22:12:40.939Z",
           "fin": "2026-11-06T23:18:18.303Z",
           "note": "PR #489 : finitions des algues (5 points de #488), CI verte ; e2e local partiel ; dette #490 (message de traitement à 1280×720)"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-06T23:18:49.803Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
