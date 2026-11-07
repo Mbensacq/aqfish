@@ -293,16 +293,23 @@ export function eatEggsInPlace(eggs: Egg[], fishes: readonly Fish[]): number {
 
 /**
  * Fait vieillir les œufs de `dt` secondes, **en place**, et retire ceux qui éclosent ; chaque
- * œuf éclos est passé à `hatch`, dans l'ordre du tableau. Renvoie le nombre d'éclosions.
+ * œuf éclos est passé à `hatch` avec `context` (le monde, pour l'appelant de `sim/world.ts`),
+ * dans l'ordre du tableau. Le contexte passé en paramètre évite à la fois une fermeture
+ * allouée à chaque pas et un état de module (#501). Renvoie le nombre d'éclosions.
  */
-export function ageEggsInPlace(eggs: MutableEgg[], dt: number, hatch: (egg: Egg) => void): number {
+export function ageEggsInPlace<C>(
+  eggs: MutableEgg[],
+  dt: number,
+  context: C,
+  hatch: (context: C, egg: Egg) => void,
+): number {
   let hatched = 0;
   let write = 0;
   // Réécriture en place derrière la lecture (`write` ≤ rang lu) : sans effet sur le parcours.
   for (const egg of eggs) {
     egg.age += dt;
     if (egg.age >= EGG_HATCH_TIME) {
-      hatch(egg);
+      hatch(context, egg);
       hatched += 1;
     } else {
       eggs[write++] = egg;

@@ -278,8 +278,8 @@ describe('œufs : éclosion et prédation', () => {
   it('un œuf éclôt au bout de EGG_HATCH_TIME, pas avant', () => {
     const eggs = [egg({ age: EGG_HATCH_TIME - 2 * SIM_DT }), egg({ age: 1 })];
     const hatched: Egg[] = [];
-    expect(ageEggsInPlace(eggs, SIM_DT, (e) => hatched.push(e))).toBe(0);
-    expect(ageEggsInPlace(eggs, SIM_DT, (e) => hatched.push(e))).toBe(1);
+    expect(ageEggsInPlace(eggs, SIM_DT, hatched, (list, e) => list.push(e))).toBe(0);
+    expect(ageEggsInPlace(eggs, SIM_DT, hatched, (list, e) => list.push(e))).toBe(1);
     expect(hatched).toHaveLength(1);
     expect(eggs).toHaveLength(1);
     expect(eggs[0].age).toBeCloseTo(1 + 2 * SIM_DT, 9);
