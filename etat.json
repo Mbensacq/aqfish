@@ -6243,6 +6243,12 @@
           "debut": "2026-11-07T22:10:17.517Z",
           "fin": "2026-11-07T22:11:04.499Z",
           "note": "Issue #505 : lot de dette (#505, #503, #501), 31 > 30 dette (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-07T22:11:36.741Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
