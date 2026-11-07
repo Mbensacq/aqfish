@@ -6177,6 +6177,12 @@
           "debut": "2026-11-07T16:10:25.064Z",
           "fin": "2026-11-07T17:44:23.616Z",
           "note": "PR #502 : photo du bac en PNG pixel art (ADR 0112), 5 angles identiques à l'octet, CI verte (test e2e filtre 390 px passé à 8 boutons, commit séparé)"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-07T17:44:54.531Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
