@@ -6111,6 +6111,12 @@
           "debut": "2026-11-07T12:00:25.307Z",
           "fin": "2026-11-07T12:11:27.090Z",
           "note": "Verdict OK, 0 bug, captures c167 publiées (5 angles identiques à c166), pas d'e2e ajouté (sim pure)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-07T12:12:16.420Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
