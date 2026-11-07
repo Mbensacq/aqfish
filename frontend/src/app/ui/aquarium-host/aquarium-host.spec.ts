@@ -1241,6 +1241,8 @@ describe('AquariumHost', () => {
         catappa: 0,
         tea: 0,
         products: { salted: false, medicated: false },
+        gh: 10,
+        kh: 6,
       });
       expect(waterAttr()).toBe('bonne;24;24;0;0;0');
       expect(phAttr()).toBe('7;ideal');
