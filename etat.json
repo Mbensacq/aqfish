@@ -6183,6 +6183,12 @@
           "debut": "2026-11-07T17:44:54.531Z",
           "fin": "2026-11-07T18:08:23.458Z",
           "note": "Verdict OK, 0 bug, captures c169 publiées (5 angles identiques à c168), e2e photo+filtre 8/8, verify complet non terminé localement (lenteur)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-07T18:08:55.255Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
