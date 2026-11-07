@@ -6101,10 +6101,10 @@
           "note": "Rétro #496 ; issue #446 lot dette (S) ; sprint 25 : #478 #479 #484 #485 #483 ; PR roadmap #497"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-07T10:53:34.051Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-07T11:59:52.933Z",
+          "note": "PR #499 : gravité des meubles jusqu'au point fixe (lot #446 déjà livré par #458, cas restant de #200 trouvé par propriétés), CI verte ; reste hors lot → #498"
         }
       },
       "metriques": {}
