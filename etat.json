@@ -6048,6 +6048,24 @@
         }
       },
       "metriques": {}
+    },
+    "166": {
+      "numero": 166,
+      "date": "2026-11-07",
+      "debut": "2026-11-07T07:14:42.776Z",
+      "type": "dette",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-07T07:14:42.776Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
