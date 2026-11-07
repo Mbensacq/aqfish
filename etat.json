@@ -6245,10 +6245,10 @@
           "note": "Issue #505 : lot de dette (#505, #503, #501), 31 > 30 dette (S)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-07T22:11:36.741Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-07T23:30:23.581Z",
+          "note": "PR #506 : lot de dette c171 (#505, #503, #501), CI verte ; reliquat #505 pt 1 (durées de vie sourcées, web inaccessible) ; 5 angles identiques à main, vues -oeufs changées"
         }
       },
       "metriques": {}
