@@ -6029,10 +6029,10 @@
           "note": "Issue #477 : plantes qui poussent et se taillent (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-07T03:55:50.658Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-07T05:31:55.795Z",
+          "note": "PR #493 : plantes à tige qui poussent et se taillent au sécateur (#477), CI verte ; captures de scène identiques à main, e2e local ciblé"
         }
       },
       "metriques": {}
