@@ -5991,6 +5991,12 @@
           "debut": "2026-11-07T01:05:51.362Z",
           "fin": "2026-11-07T01:06:38.702Z",
           "note": "Issue #490 : lot de dette, panneau Réglages, fiche d'espèce, liste des bacs (#255, #318) (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-07T01:07:24.758Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
