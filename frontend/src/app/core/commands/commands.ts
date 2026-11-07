@@ -190,14 +190,20 @@ const TOUCH_DESCRIPTIONS: Readonly<
   'dolly-rotate': 'Pincer pour zoomer, glisser pour tourner',
 };
 
-/** Clic (ou toucher) sans glisser sur l'eau : nourrissage (issue #67, `AquariumView`). */
-const FEED_DESCRIPTION = 'Déposer des granulés à cet endroit';
+/**
+ * Clic (ou toucher) sans glisser sur l'eau : nourrissage (issue #67, `AquariumView`). Une
+ * seule ligne (#494) : la place gagnée accueille le sécateur sans faire défiler le panneau.
+ */
+const FEED_DESCRIPTION = 'Déposer des granulés';
 
 /** Clic sur le bac, raclette en main : retire une plaque d'algues (issue #476, #488). */
 const SCRAPE_DESCRIPTION = 'Raclette en main : gratter les algues';
 
-/** Clic (ou toucher) sur une plante haute, sécateur en main : la taille (issue #477, #494). */
-const PRUNE_DESCRIPTION = 'Sécateur en main : tailler une plante';
+/**
+ * Clic (ou toucher) sur une plante haute, sécateur en main : la taille (issue #477, #494).
+ * Courte, sur une ligne : à 1280 × 720, le panneau tient sans défiler (#79).
+ */
+const PRUNE_DESCRIPTION = 'Tailler au sécateur';
 
 /** Geste de la souris ou de l'écran tactile, tel qu'affiché dans l'aide-mémoire. */
 export interface GestureCommand {
