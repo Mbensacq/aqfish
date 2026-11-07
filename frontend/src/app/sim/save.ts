@@ -18,6 +18,15 @@ import {
   type Place,
 } from './environment';
 import { FRY_GROWTH_TIME, hasFry, isFryAge } from './fry';
+import {
+  EGG_HATCH_TIME,
+  EGG_SURFACES,
+  isEggAge,
+  laysEggs,
+  MAX_EGGS,
+  type Egg,
+  type EggSurface,
+} from './eggs';
 import { FOOD_MAX_FLOAT_SECONDS, FOOD_MIN_FLOAT_SECONDS, FOOD_SINK_SPEED, MAX_FOOD } from './food';
 import type { FoodPellet } from './food';
 import { isSpeciesId, MAX_TOTAL_FISH } from './population';
@@ -181,6 +190,11 @@ export interface SavedWorld {
    * courant coupé), celle de l'environnement ; jamais écrite coupée.
    */
   readonly current?: Exclude<CurrentLevel, 'coupe'>;
+  /**
+   * Œufs collés (issue #478, ADR 0111). Facultatifs : absents (anciennes sauvegardes, bac
+   * sans œuf), aucun ; jamais écrits vides.
+   */
+  readonly eggs?: readonly Egg[];
 }
 
 /** Contenu d'une sauvegarde (schéma 1). */
@@ -338,6 +352,9 @@ export function savedWorld(world: World): SavedWorld {
     water: copyWater(world.water),
     ...(world.careMode === undefined ? {} : { careMode: world.careMode }),
     ...(world.current === undefined ? {} : { current: world.current }),
+    ...(world.eggs === undefined || world.eggs.length === 0
+      ? {}
+      : { eggs: world.eggs.map((egg) => ({ ...egg })) }),
   };
 }
 
@@ -535,6 +552,7 @@ export function parseWorldBody(
     isCurrentLevel(currentValue) && currentValue !== 'coupe' ? currentValue : undefined;
   const fish = parseFishList(own(value, 'fish'), place, nextFishId, problems, careMode);
   const food = parseFoodList(own(value, 'food'), place, nextFoodId, problems);
+  const eggs = parseEggList(own(value, 'eggs'), place, problems);
   // Eau (#206) : absente, eau saine (celle de `createWorld`) ; présente, validée (pH absent :
   // celui de l'eau neuve de l'environnement, #236).
   const waterValue = own(value, 'water');
@@ -561,6 +579,9 @@ export function parseWorldBody(
   }
   if (current !== undefined) {
     world.current = current;
+  }
+  if (eggs.length > 0) {
+    world.eggs = eggs;
   }
   return world;
 }
@@ -804,10 +825,11 @@ function parseFish(
     }
   }
   // Alevin (issue #459) : facultatif, absent pour un adulte et dans toute sauvegarde
-  // antérieure ; présent, âge dans [0, FRY_GROWTH_TIME), pour une espèce vivipare seulement.
+  // antérieure ; présent, âge dans [0, FRY_GROWTH_TIME), pour une espèce vivipare ou ovipare
+  // (alevin éclos d'un œuf, issue #478) seulement.
   const growth = own(item, 'growth');
   if (growth !== undefined) {
-    if (!hasFry(species)) {
+    if (!hasFry(species) && !laysEggs(species)) {
       report(`l’espèce ${species} n’a pas d’alevins`);
       return null;
     }
@@ -909,6 +931,63 @@ function parseFoodList(
     food.push(p);
   });
   return food;
+}
+
+/**
+ * Œufs d'une sauvegarde (issue #478) : absents, aucun ; présents, une liste d'au plus
+ * `MAX_EGGS` œufs d'une espèce ovipare, dans l'eau, d'âge dans [0, `EGG_HATCH_TIME`), sur une
+ * surface connue. Seuls les champs connus sont copiés.
+ */
+function parseEggList(value: unknown, place: Place, problems: string[]): Egg[] {
+  if (value === undefined) {
+    return [];
+  }
+  if (!Array.isArray(value)) {
+    problems.push('eggs doit être une liste');
+    return [];
+  }
+  if (value.length > MAX_EGGS) {
+    problems.push(`trop d’œufs (${value.length}, ${MAX_EGGS} au plus)`);
+    return [];
+  }
+  const water = environmentWater(place);
+  const eggs: Egg[] = [];
+  value.forEach((item: unknown, i) => {
+    const report = (p: string) => problems.push(`œuf ${i} : ${p}`);
+    if (!isRecord(item)) {
+      report('doit être un objet');
+      return;
+    }
+    const species = own(item, 'species');
+    if (!isSpeciesId(species) || !laysEggs(species)) {
+      report(`espèce sans œufs (${describe(species)})`);
+      return;
+    }
+    const x = own(item, 'x');
+    const y = own(item, 'y');
+    const z = own(item, 'z');
+    if (
+      typeof x !== 'number' ||
+      typeof y !== 'number' ||
+      typeof z !== 'number' ||
+      !insideBox(water, x, y, z)
+    ) {
+      report('position hors de l’eau');
+      return;
+    }
+    const age = own(item, 'age');
+    if (!isEggAge(age)) {
+      report(`age hors de [0, ${EGG_HATCH_TIME}[`);
+      return;
+    }
+    const surface = own(item, 'surface');
+    if (!EGG_SURFACES.includes(surface as EggSurface)) {
+      report(`surface inconnue (${describe(surface)})`);
+      return;
+    }
+    eggs.push({ species, x, y, z, age, surface: surface as EggSurface });
+  });
+  return eggs;
 }
 
 function failure(error: string): ParseWorldResult {

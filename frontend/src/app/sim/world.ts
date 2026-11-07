@@ -73,6 +73,22 @@ import {
   isFry,
   type BroodConditions,
 } from './fry';
+import {
+  ageEggsInPlace,
+  clutchSize,
+  eatEggsInPlace,
+  EGG_HATCH_TIME,
+  EGG_SPECIES,
+  eggRoom,
+  fitSpawners,
+  layClutch,
+  SPAWN_MIN_ADULTS,
+  spawnIndexAt,
+  waterAllowsSpawn,
+  type Egg,
+  type MutableEgg,
+  type SpawnConditions,
+} from './eggs';
 import { computeSchoolSteering, enforceMinDistance, type Vec3 } from './flocking';
 import {
   dropFoodInPlace,
@@ -206,6 +222,11 @@ export interface World {
    * l'environnement (`Environment.current`, coupée partout) ; jamais enregistrée coupée.
    */
   readonly current?: Exclude<CurrentLevel, 'coupe'>;
+  /**
+   * Œufs collés sur les vitres et les plantes (issue #478, `sim/eggs.ts`, ADR 0111) : absents
+   * tant qu'aucune ponte n'a eu lieu, et retirés quand le dernier œuf a éclos ou a été mangé.
+   */
+  readonly eggs?: readonly Egg[];
 }
 
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
@@ -970,6 +991,122 @@ function stepInPlace(world: MutableWorld, dt: number, clock: SimClock): void {
   // Mise bas (issue #459) : au dernier pas de chaque portée seulement, sur la santé et l'eau
   // de fin de pas ; aucun tirage pris aux générateurs des poissons.
   stepBroodInPlace(world);
+  // Ponte des corydoras (issue #478) : prédation et éclosion des œufs du bac, puis ponte au
+  // dernier pas de chaque période ; sans œuf ni ponte, rien n'est écrit.
+  stepEggsInPlace(world, dt);
+}
+
+/** Monde dont les œufs éclosent au pas courant (`hatchEgg`), vidé après usage. */
+let hatchingWorld: MutableWorld | null = null;
+const HATCH_POINT: Vec3 = { x: 0, y: 0, z: 0 };
+
+function hatchEgg(egg: Egg): void {
+  if (hatchingWorld !== null) {
+    HATCH_POINT.x = egg.x;
+    HATCH_POINT.y = egg.y;
+    HATCH_POINT.z = egg.z;
+    birthYoungInPlace(hatchingWorld, egg.species, HATCH_POINT);
+  }
+}
+
+/**
+ * Œufs du bac (`sim/eggs.ts`, issue #478), **en modifiant** `world` : les adultes nageurs
+ * mangent les œufs de la vitre à leur portée, les œufs vieillissent de `dt` et ceux qui
+ * atteignent `EGG_HATCH_TIME` éclosent en alevins (`birthYoungInPlace`, dans la limite des
+ * plafonds : sinon l'œuf disparaît), puis la ponte de la période a lieu si le pas en achève
+ * une (`spawnEggsInPlace`). Le champ `eggs` disparaît quand il ne reste aucun œuf.
+ */
+export function stepEggsInPlace(world: MutableWorld, dt: number): void {
+  const eggs = world.eggs as MutableEgg[] | undefined;
+  if (eggs !== undefined) {
+    eatEggsInPlace(eggs, world.entities);
+    hatchingWorld = world;
+    ageEggsInPlace(eggs, dt, hatchEgg);
+    hatchingWorld = null;
+  }
+  spawnEggsInPlace(world);
+  if (world.eggs !== undefined && world.eggs.length === 0) {
+    delete world.eggs;
+  }
+}
+
+/**
+ * Ponte (issue #478), **en modifiant** `world` : si le pas courant achève une période de
+ * ponte (`spawnIndexAt`), chaque espèce ovipare qui compte au moins `SPAWN_MIN_ADULTS` adultes
+ * en forme, dans une eau qui le permet (`waterAllowsSpawn`), pond `clutchSize` œufs, dans la
+ * limite des plafonds (`eggRoom`). Renvoie le nombre d'œufs pondus.
+ */
+export function spawnEggsInPlace(world: MutableWorld): number {
+  const spawn = spawnIndexAt(world.tick);
+  if (spawn < 0) {
+    return 0;
+  }
+  let laid = 0;
+  for (const species of EGG_SPECIES) {
+    if (fitSpawners(world.entities, species) < SPAWN_MIN_ADULTS) {
+      continue;
+    }
+    const conditions: SpawnConditions = {
+      goodWater: waterQuality(world.water, world.environment) === 'bonne',
+      temperature: world.water.temperature,
+      phOut: (id) => phOutOfTolerance(world.water.ph, id),
+    };
+    if (!waterAllowsSpawn(species, conditions)) {
+      continue;
+    }
+    laid += layEggsInPlace(world, species, spawn, clutchSize(world.seed, species, spawn));
+  }
+  return laid;
+}
+
+/**
+ * Pond au plus `count` œufs de la ponte `spawn` de `species` dans `world` (`layClutch`, dans
+ * la limite de `eggRoom`), **en modifiant** `world`. Renvoie le nombre d'œufs pondus.
+ */
+function layEggsInPlace(
+  world: MutableWorld,
+  species: SpeciesId,
+  spawn: number,
+  count: number,
+): number {
+  const eggs = (world.eggs ?? []) as MutableEgg[];
+  const room = Math.min(count, eggRoom(world.entities, eggs, species));
+  const clutch = layClutch(
+    world.seed,
+    species,
+    spawn,
+    room,
+    environmentWater(world),
+    fryPlants(world.decor),
+  );
+  if (clutch.length > 0) {
+    eggs.push(...clutch);
+    world.eggs = eggs;
+  }
+  return clutch.length;
+}
+
+/**
+ * Œufs d'exemple (paramètre d'URL `oeufs=1`, issue #478), **en modifiant** `world` (monde en
+ * construction, avant le rendu) : chaque espèce ovipare présente pond sa première ponte, sans
+ * condition de santé ni d'eau, dans la limite des plafonds ; les âges sont répartis sur
+ * l'incubation pour que les éclosions s'étalent. Renvoie le nombre d'œufs.
+ */
+export function layEggsWorldInPlace(world: MutableWorld): number {
+  let laid = 0;
+  for (const species of EGG_SPECIES) {
+    if (!world.entities.some((fish) => fish.species === species)) {
+      continue;
+    }
+    const before = world.eggs?.length ?? 0;
+    const count = layEggsInPlace(world, species, 0, clutchSize(world.seed, species, 0));
+    const eggs = world.eggs as MutableEgg[] | undefined;
+    for (let k = 0; k < count && eggs !== undefined; k++) {
+      eggs[before + k].age = (k / Math.max(1, count)) * EGG_HATCH_TIME * 0.5;
+    }
+    laid += count;
+  }
+  return laid;
 }
 
 const NO_PLANTS: readonly DecorItem[] = Object.freeze([]);
@@ -1016,7 +1153,19 @@ export function birthFryInPlace(
   mother: Entity,
   near: Vec3 = mother,
 ): Entity | null {
-  const species = mother.species;
+  return birthYoungInPlace(world, mother.species, near);
+}
+
+/**
+ * Fait naître un alevin de `species` près du point `near`, **en modifiant** `world` (comme
+ * `birthFryInPlace`) : mise bas d'une mère ou éclosion d'un œuf (issue #478). Renvoie
+ * l'alevin, ou `null` sans le créer si un plafond est atteint.
+ */
+export function birthYoungInPlace(
+  world: MutableWorld,
+  species: SpeciesId,
+  near: Vec3,
+): Entity | null {
   let same = 0;
   for (const fish of world.entities) {
     if (fish.species === species) {

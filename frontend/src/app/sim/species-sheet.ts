@@ -174,6 +174,14 @@ const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
     diet: approx('omnivore'),
     minGroup: approx(6),
     minLiters: approx(100),
+    // Reproduction (#478) : ovipare ; rythme, nombre d'œufs et incubation choisis pour le jeu
+    // (`sim/eggs.ts`), l'éclosion réelle prend plusieurs jours.
+    notes: [
+      note(
+        'Reproduction : ovipare, un groupe nourri dans une eau saine pond 4 à 10 œufs sur la vitre et les plantes ; les adultes mangent ceux de la vitre, les autres éclosent en alevins',
+        APPROXIMATION,
+      ),
+    ],
   },
   koi: {
     adultSize: approx(60),
