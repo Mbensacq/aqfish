@@ -6199,7 +6199,7 @@
       "debut": "2026-11-07T19:16:08.226Z",
       "type": "fonctionnalite",
       "issue": 484,
-      "pr": null,
+      "pr": 504,
       "version": null,
       "phases": {
         "planif": {
