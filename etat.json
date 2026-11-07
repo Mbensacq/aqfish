@@ -6135,6 +6135,12 @@
           "debut": "2026-11-07T13:16:06.414Z",
           "fin": "2026-11-07T13:16:48.350Z",
           "note": "Issue #478 : ponte et œufs des corydoras (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-07T13:17:26.664Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
