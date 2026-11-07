@@ -175,8 +175,12 @@ describe('stepRoom sauf le bac affiché (#316, lot 3b)', () => {
     const withRoom = advance(stepped.tanks[0]!.world, 600, clock);
     expect(hashWorld(withRoom)).toBe(hashWorld(alone));
     // Empreinte relevée sur `main` avant le lot 3b (v1.3.2) : la boucle du bac affiché n'a
-    // pas changé.
-    expect(hashWorld(alone)).toBe(GOLDEN_HASH);
+    // pas changé. La pousse des plantes (#477, `water.plantGrowth`) est un état ajouté
+    // depuis : retirée de l'empreinte, et vérifiée à part, tout le reste est identique.
+    const { plantGrowth, ...water } = alone.water;
+    expect(plantGrowth).toBeDefined();
+    expect(Object.values(plantGrowth!).every((g) => g > 0 && g < 1)).toBe(true);
+    expect(hashWorld({ ...alone, water })).toBe(GOLDEN_HASH);
   });
 
   it('un identifiant inconnu avance tous les bacs', () => {
