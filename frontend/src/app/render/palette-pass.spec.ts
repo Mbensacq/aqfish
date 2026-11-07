@@ -82,6 +82,40 @@ describe('PalettePass', () => {
     expect(disposed.sort()).toEqual(['cible', 'geometrie', 'materiau']);
   });
 
+  it('photo (#479) : cible à la taille de la scène, sans lissage, réutilisée et libérée', () => {
+    const pass = new PalettePass();
+    pass.setSize(1280, 720, 2);
+    const photo = pass.photoTarget();
+    expect([photo.width, photo.height]).toEqual([427, 240]);
+    expect(photo.texture.minFilter).toBe(NearestFilter);
+    expect(photo.texture.magFilter).toBe(NearestFilter);
+    expect(photo.texture.generateMipmaps).toBe(false);
+    expect(photo.depthBuffer).toBe(false);
+    expect(photo.samples).toBe(0);
+    pass.setSize(300, 150, 1);
+    expect(pass.photoTarget()).toBe(photo);
+    expect([photo.width, photo.height]).toEqual([100, 50]);
+    let disposed = false;
+    photo.addEventListener('dispose', () => (disposed = true));
+    pass.dispose();
+    expect(disposed).toBe(true);
+  });
+
+  it('photo (#479) : échelle du quad réglable puis rétablie, jamais sous 1', () => {
+    const pass = new PalettePass();
+    pass.setSize(600, 300, 2);
+    const scale = () => material(pass).uniforms['uPixelScale'].value as number;
+    expect(pass.setPixelScale(1)).toBe(PIXEL_SIZE * 2);
+    expect(scale()).toBe(1);
+    expect(pass.setPixelScale(PIXEL_SIZE * 2)).toBe(1);
+    expect(scale()).toBe(PIXEL_SIZE * 2);
+    pass.setPixelScale(0.5);
+    expect(scale()).toBe(1);
+    pass.setPixelScale(Number.NaN);
+    expect(scale()).toBe(1);
+    pass.dispose();
+  });
+
   it('refuse une palette vide', () => {
     expect(() => new PalettePass([])).toThrow(/Palette vide/);
   });

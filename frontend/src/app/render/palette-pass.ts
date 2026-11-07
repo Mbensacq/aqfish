@@ -127,6 +127,8 @@ export class PalettePass {
   readonly camera = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
   private readonly geometry = new PlaneGeometry(2, 2);
   private readonly material: ShaderMaterial;
+  /** Cible de la photo (#479), créée à la demande par `photoTarget`. */
+  private photo: WebGLRenderTarget | null = null;
 
   /** Nombre de tons d'environnement (fin de la palette du shader). */
   private readonly environmentToneCount: number;
@@ -246,8 +248,39 @@ export class PalettePass {
     return size;
   }
 
+  /**
+   * Cible de la photo (#479, ADR 0112) : même taille que `target`, où le quad écrit l'image
+   * déjà ramenée à la palette, un pixel par pixel de scène (voir `setPixelScale`). Créée à la
+   * première photo, puis réutilisée ; NearestFilter, sans mipmaps ni profondeur.
+   */
+  photoTarget(): WebGLRenderTarget {
+    if (this.photo === null) {
+      this.photo = new WebGLRenderTarget(1, 1, {
+        minFilter: NearestFilter,
+        magFilter: NearestFilter,
+        generateMipmaps: false,
+        depthBuffer: false,
+      });
+    }
+    this.photo.setSize(this.target.width, this.target.height);
+    return this.photo;
+  }
+
+  /**
+   * Pixels d'affichage par pixel de scène du quad (`uPixelScale`) : 1 pour la photo, qui
+   * écrit la palette à la taille de la cible. Renvoie l'échelle précédente, à rétablir.
+   * Une échelle non finie ou inférieure à 1 est ramenée à 1.
+   */
+  setPixelScale(scale: number): number {
+    const uniform = this.material.uniforms['uPixelScale'];
+    const previous = uniform.value as number;
+    uniform.value = Number.isFinite(scale) && scale >= 1 ? scale : 1;
+    return previous;
+  }
+
   dispose(): void {
     this.target.dispose();
+    this.photo?.dispose();
     this.geometry.dispose();
     this.material.dispose();
   }

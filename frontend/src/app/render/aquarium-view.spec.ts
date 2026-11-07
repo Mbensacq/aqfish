@@ -1,6 +1,7 @@
 import {
   InstancedMesh,
   MOUSE,
+  NearestFilter,
   TOUCH,
   Vector3,
   type Camera,
@@ -1451,5 +1452,112 @@ describe('AquariumView (mouvements réduits, #406)', () => {
     // Le décor, lui, diffère : l'option agit bien sur le rendu.
     expect(views[1].waterLightTime).not.toBe(views[0].waterLightTime);
     views.forEach((view) => view.dispose());
+  });
+});
+
+describe('AquariumView (photo, #479)', () => {
+  /** Renderer qui sait relire une cible : remplit le tampon d'un motif et consigne l'appel. */
+  class ReadingRenderer extends RecordingRenderer {
+    readonly reads: { target: WebGLRenderTarget; size: [number, number] }[] = [];
+    readRenderTargetPixels(
+      target: WebGLRenderTarget,
+      _x: number,
+      _y: number,
+      width: number,
+      height: number,
+      buffer: Uint8Array,
+    ): void {
+      this.calls.push(`lecture ${width}x${height}`);
+      this.reads.push({ target, size: [width, height] });
+      buffer.fill(7);
+    }
+  }
+
+  let renderer: ReadingRenderer;
+  let view: AquariumView;
+
+  beforeEach(() => {
+    renderer = new ReadingRenderer();
+    view = new AquariumView({
+      canvas: document.createElement('canvas'),
+      rendererFactory: () => renderer,
+      pixelRatio: 2,
+      preset: 'three-quarter',
+      interactive: false,
+    });
+  });
+
+  afterEach(() => view.dispose());
+
+  it('relit la vue ramenée à la palette, à la taille native de la cible, sans toucher à l’écran', () => {
+    view.resize(1280, 721);
+    renderer.calls.length = 0;
+    const photo = view.takePhoto();
+    expect(renderer.calls).toEqual([
+      'cible 427x241',
+      'render PerspectiveCamera',
+      'cible 427x241',
+      'render OrthographicCamera',
+      'lecture 427x241',
+      'cible écran',
+    ]);
+    expect(photo?.width).toBe(427);
+    expect(photo?.height).toBe(241);
+    expect(photo?.data.length).toBe(427 * 241 * 4);
+    expect(photo?.data[0]).toBe(7);
+    // Cible de la photo : sans lissage.
+    expect(renderer.reads[0].target.texture.minFilter).toBe(NearestFilter);
+    expect(renderer.reads[0].target.texture.magFilter).toBe(NearestFilter);
+  });
+
+  it('rétablit l’échelle de la passe : l’image suivante est rendue comme avant', () => {
+    view.resize(600, 300);
+    view.takePhoto();
+    renderer.calls.length = 0;
+    view.renderFrame();
+    expect(renderer.calls).toEqual([
+      'cible 200x100',
+      'render PerspectiveCamera',
+      'cible écran',
+      'render OrthographicCamera',
+    ]);
+  });
+
+  it('ne déplace pas la caméra', () => {
+    view.resize(900, 600);
+    const before = view.camera.position.toArray();
+    const aspect = view.camera.aspect;
+    view.takePhoto();
+    expect(view.camera.position.toArray()).toEqual(before);
+    expect(view.camera.aspect).toBe(aspect);
+  });
+
+  it('reste en pixel art quand le filtre est coupé', () => {
+    view.resize(600, 300);
+    view.setFilter('aucun');
+    const photo = view.takePhoto();
+    expect([photo?.width, photo?.height]).toEqual([200, 100]);
+    expect(renderer.reads[0].size).toEqual([200, 100]);
+  });
+
+  it('refusée sans taille, après libération, ou si le renderer ne sait pas relire', () => {
+    expect(view.takePhoto()).toBeNull();
+    view.resize(600, 300);
+    view.dispose();
+    expect(view.takePhoto()).toBeNull();
+
+    const plain = new RecordingRenderer();
+    const other = new AquariumView({
+      canvas: document.createElement('canvas'),
+      rendererFactory: () => plain,
+      pixelRatio: 1,
+      preset: 'front',
+      interactive: false,
+    });
+    other.resize(600, 300);
+    plain.calls.length = 0;
+    expect(other.takePhoto()).toBeNull();
+    expect(plain.calls).toEqual([]);
+    other.dispose();
   });
 });

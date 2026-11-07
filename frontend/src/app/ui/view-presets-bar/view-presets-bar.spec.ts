@@ -11,6 +11,7 @@ import {
   isPixelArtKey,
   isRainKey,
   NIGHT_KEY,
+  PHOTO_BUTTON_LABEL,
   presetForKey,
   VIEW_PRESET_BUTTONS,
   ViewPresetsBar,
@@ -239,6 +240,27 @@ describe('ViewPresetsBar', () => {
       for (const key of ['h', 'n', 'f', '']) {
         expect(isFeedKey(key)).toBe(false);
       }
+    });
+  });
+
+  describe('photo (#479)', () => {
+    const photoButton = (): HTMLButtonElement =>
+      (fixture.nativeElement as HTMLElement).querySelector(
+        'button[data-action="photo"]',
+      ) as HTMLButtonElement;
+
+    it('bouton « Photo » nommé, sans touche, hors de la barre des préréglages', () => {
+      let photos = 0;
+      fixture.componentInstance.photoRequested.subscribe(() => photos++);
+      const button = photoButton();
+      expect(button.type).toBe('button');
+      expect(button.textContent?.trim()).toBe('Photo');
+      expect(button.getAttribute('aria-label')).toBe(PHOTO_BUTTON_LABEL);
+      expect(button.hasAttribute('aria-keyshortcuts')).toBe(false);
+      expect(button.closest('[role="toolbar"]')).toBeNull();
+      button.click();
+      expect(photos).toBe(1);
+      expect(emitted).toEqual([]);
     });
   });
 
