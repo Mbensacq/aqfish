@@ -6019,7 +6019,7 @@
       "debut": "2026-11-07T03:54:47.284Z",
       "type": "fonctionnalite",
       "issue": 477,
-      "pr": null,
+      "pr": 493,
       "version": null,
       "phases": {
         "planif": {
