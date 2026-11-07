@@ -5993,10 +5993,10 @@
           "note": "Issue #490 : lot de dette, panneau Réglages, fiche d'espèce, liste des bacs (#255, #318) (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-07T01:07:24.758Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-07T02:18:33.957Z",
+          "note": "PR #491 : bulle du message de soin à 1280×720 (#490), faim des bacs en clair (#318) ; #255 et #318 pts 2-3 déjà livrés ; CI verte, e2e local ciblé"
         }
       },
       "metriques": {}
