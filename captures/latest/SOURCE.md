@@ -1,5 +1,8 @@
-# Captures c169
-- Branche : cycle/c169-photo-png (PR #502), commit caef595
-- Graine : par défaut du contrat de capture
-- 5 angles (front, side, top, bottom, three-quarter) identiques à l'octet à c168 ; vues œufs conservées
-- Série tronquée par le délai de 550 s ; les 5 angles et les vues œufs sont complets
+# Captures c170
+
+- Branche : cycle/c170-durete-eau
+- PR : #504
+- Commit : 84a96d5
+- Graine : celle par défaut des captures
+- Durée : ~9,7 min (135 captures)
+- 5 angles identiques à l'octet à latest (c169)
