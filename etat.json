@@ -6023,10 +6023,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-07T03:54:47.284Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-07T03:55:21.375Z",
+          "note": "Issue #477 : plantes qui poussent et se taillent (M)"
         }
       },
       "metriques": {}
