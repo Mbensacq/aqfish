@@ -6167,10 +6167,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-07T16:09:01.324Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-07T16:09:54.022Z",
+          "note": "Issue #479 : photo de l'aquarium en PNG pixel art (S)"
         }
       },
       "metriques": {}
