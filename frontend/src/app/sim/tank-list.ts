@@ -8,6 +8,8 @@ import type { RoomTank } from './room-state';
 import { waterLiters } from './water';
 import { waterSample } from './water-dashboard';
 import { waterReadout } from './water-quality';
+import { SPECIES } from './species';
+import { feedsOnPellets } from './wellbeing';
 import type { World } from './world';
 
 /**
@@ -30,6 +32,11 @@ export interface TankListEntry {
    * pas (#316 : montre qu'un bac non affiché vit).
    */
   readonly hunger: number | null;
+  /**
+   * Animaux nourris aux granulés (#492) : ceux que compte `hunger`. 0 avec des animaux
+   * (Paludarium : grenouilles, tritons) : la ligne l'indique au lieu de rester muette.
+   */
+  readonly pelletFed: number;
   /** Mode du bac (#278) : `soins` ou `decor`. */
   readonly mode: CareMode;
   /** Pire gravité d'alerte du bac, `null` sans alerte (toujours en mode décor). */
@@ -78,6 +85,7 @@ export function tankListEntry(
     liters: Math.round(waterLiters(environmentWater(world))),
     animals: world.entities.length,
     hunger: hungerPercent(world),
+    pelletFed: pelletFedCount(world),
     mode: careModeOf(world),
     worst,
     selected: tank.id === selectedTankId,
@@ -103,12 +111,44 @@ export function hungerText(hunger: number | null): string | null {
  * faim, quand elle est connue, montre qu'un bac non affiché vit (#318).
  */
 export function tankListDetail(
-  entry: Pick<TankListEntry, 'animals' | 'liters'> & Partial<Pick<TankListEntry, 'hunger'>>,
+  entry: Pick<TankListEntry, 'animals' | 'liters'> &
+    Partial<Pick<TankListEntry, 'hunger' | 'pelletFed'>>,
 ): string {
   const hunger = hungerText(entry.hunger ?? null);
-  return [`${animalCountText(entry.animals)} · ${entry.liters} L`, hunger]
+  return [
+    `${animalCountText(entry.animals)} · ${entry.liters} L`,
+    hunger ?? (withoutPellets(entry) ? NO_PELLETS_TEXT : null),
+  ]
     .filter((part) => part !== null)
     .join(' · ');
+}
+
+/** Indicateur d'un bac habité dont aucun animal ne mange de granulés (#492, Paludarium). */
+export const NO_PELLETS_TEXT = 'sans granulés';
+
+/** Vrai si le bac a des animaux et qu'aucun ne mange de granulés (`pelletFed` connu et nul). */
+function withoutPellets(entry: Partial<Pick<TankListEntry, 'animals' | 'pelletFed'>>): boolean {
+  return entry.pelletFed === 0 && (entry.animals ?? 0) > 0;
+}
+
+/**
+ * Infobulle d'une ligne (#492) : explique l'absence de faim (aucun animal nourri aux granulés)
+ * ou une faim qui ne compte qu'une partie des animaux (bac mixte) ; `null` sinon.
+ */
+export function tankListHint(
+  entry: Pick<TankListEntry, 'animals' | 'hunger' | 'pelletFed'>,
+): string | null {
+  if (withoutPellets(entry)) {
+    return 'Aucun animal de ce bac ne mange de granulés : pas de faim à suivre.';
+  }
+  if (entry.hunger !== null && entry.pelletFed < entry.animals) {
+    return `Faim moyenne des seuls animaux nourris aux granulés (${entry.pelletFed} sur ${entry.animals}).`;
+  }
+  return null;
+}
+
+function pelletFedCount(world: World): number {
+  return world.entities.filter((entity) => feedsOnPellets(SPECIES[entity.species])).length;
 }
 
 function hungerPercent(world: World): number | null {

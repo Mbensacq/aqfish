@@ -355,6 +355,7 @@ describe('ControlPanel', () => {
       liters: 288,
       animals: 18,
       hunger: 20,
+      pelletFed: over.animals ?? 18,
       mode: 'soins',
       worst: null,
       selected: true,
@@ -397,6 +398,28 @@ describe('ControlPanel', () => {
       expect(tankButton(2).textContent).toContain('vide · 90 L · posé');
       expect(tankButton(2).textContent).not.toContain('faim');
       expect(tankButton(2).getAttribute('aria-disabled')).toBe('true');
+    });
+
+    it('Paludarium (#492) : « sans granulés » et infobulle, aucune infobulle sinon', async () => {
+      fixture.componentInstance.tanks.set([
+        entry({}),
+        entry({
+          id: 1,
+          name: 'Paludarium',
+          environment: 'paludarium',
+          environmentName: 'Paludarium',
+          liters: 105,
+          animals: 5,
+          hunger: null,
+          pelletFed: 0,
+          selected: false,
+        }),
+      ]);
+      await openPanel();
+      expect(tankButton(1).textContent).toContain('5 animaux · 105 L · sans granulés');
+      expect(tankButton(1).getAttribute('title')).toMatch(/granulés/);
+      expect(tankButton(1).getAttribute('aria-label')).toContain('sans granulés');
+      expect(tankButton(0).hasAttribute('title')).toBe(false);
     });
 
     it('cliquer un bac le sélectionne ; ni le bac sélectionné ni un bac posé', async () => {

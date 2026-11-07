@@ -196,6 +196,9 @@ const FEED_DESCRIPTION = 'Déposer des granulés à cet endroit';
 /** Clic sur le bac, raclette en main : retire une plaque d'algues (issue #476, #488). */
 const SCRAPE_DESCRIPTION = 'Raclette en main : gratter les algues';
 
+/** Clic (ou toucher) sur une plante haute, sécateur en main : la taille (issue #477, #494). */
+const PRUNE_DESCRIPTION = 'Sécateur en main : tailler une plante';
+
 /** Geste de la souris ou de l'écran tactile, tel qu'affiché dans l'aide-mémoire. */
 export interface GestureCommand {
   readonly id: string;
@@ -327,12 +330,24 @@ export function orbitGestures(
     description: SCRAPE_DESCRIPTION,
     group: 'souris',
   });
+  mouse.push({
+    id: 'souris-secateur',
+    gesture: 'Clic sur une plante',
+    description: PRUNE_DESCRIPTION,
+    group: 'souris',
+  });
   return [
     ...mouse,
     {
       id: 'tactile-toucher',
       gesture: 'Toucher l’eau',
       description: FEED_DESCRIPTION,
+      group: 'tactile',
+    },
+    {
+      id: 'tactile-secateur',
+      gesture: 'Toucher une plante',
+      description: PRUNE_DESCRIPTION,
       group: 'tactile',
     },
     {

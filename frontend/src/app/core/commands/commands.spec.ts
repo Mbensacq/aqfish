@@ -131,6 +131,28 @@ describe('commandes (#74)', () => {
       expect(ids.indexOf('souris-raclette')).toBe(ids.indexOf('souris-clic') + 1);
     });
 
+    it('sécateur (#477, #494) : un clic ou un toucher sur une plante, sécateur en main, la taille', () => {
+      const byId = new Map(GESTURE_COMMANDS.map((gesture) => [gesture.id, gesture]));
+      const mouse = byId.get('souris-secateur');
+      const touch = byId.get('tactile-secateur');
+      expect(mouse?.group).toBe('souris');
+      expect(mouse?.gesture).toBe('Clic sur une plante');
+      expect(touch?.group).toBe('tactile');
+      expect(touch?.gesture).toBe('Toucher une plante');
+      for (const gesture of [mouse, touch]) {
+        expect(gesture?.description).toMatch(/sécateur en main/i);
+        expect(gesture?.description).toMatch(/tailler/);
+        expect(gesture?.description.length).toBeLessThanOrEqual(38);
+      }
+      const sections = helpSections();
+      const souris = sections.find((section) => section.id === 'souris');
+      const ids = souris?.entries.map((entry) => entry.id) ?? [];
+      expect(ids.indexOf('souris-secateur')).toBe(ids.indexOf('souris-raclette') + 1);
+      const tactile = sections.find((section) => section.id === 'tactile');
+      const touchIds = tactile?.entries.map((entry) => entry.id) ?? [];
+      expect(touchIds.indexOf('tactile-secateur')).toBe(touchIds.indexOf('tactile-toucher') + 1);
+    });
+
     it('les libellés suivent le réglage des boutons (pas de description en dur)', () => {
       const swapped = orbitGestures(
         { left: 'pan', middle: 'dolly', right: 'rotate' },

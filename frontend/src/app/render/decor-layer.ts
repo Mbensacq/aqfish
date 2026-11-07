@@ -448,7 +448,10 @@ export class DecorLayer {
    * Teinte du décor (facteur linéaire par canal, `render/night-shade.ts`, `decorTintInto`) :
    * multiplie les couleurs de sommet des plantes et des rochers. Blanc (1, 1, 1) en plein
    * jour : couleurs d'origine, à l'octet près. `factor` (ombre des plantes hautes, #477)
-   * multiplie les trois canaux ; 1 : sans effet.
+   * multiplie les trois canaux ; 1 : sans effet. Décision #494 : l'ombre tombe sur **tout** le
+   * décor posé au fond (plantes, rochers, bois, qui partagent une seule matière), voulu ainsi :
+   * la canopée assombrit le fond du bac, pas seulement les plantes ; animaux et eau n'y sont
+   * pas soumis.
    */
   setTint(tint: readonly [number, number, number], factor = 1): void {
     this.material.color.setRGB(tint[0] * factor, tint[1] * factor, tint[2] * factor);

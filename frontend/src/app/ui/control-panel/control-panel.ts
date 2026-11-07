@@ -46,7 +46,12 @@ import {
 } from '../../sim/room-state';
 import type { RoomCatalog, RoomCatalogTank, TankNotice } from '../aquarium-host/aquarium-host';
 import { ALERT_SEVERITY_LABELS } from '../../sim/dashboard-alerts';
-import { animalCountText, tankListDetail, type TankListEntry } from '../../sim/tank-list';
+import {
+  animalCountText,
+  tankListDetail,
+  tankListHint,
+  type TankListEntry,
+} from '../../sim/tank-list';
 import { MAX_SAVE_LENGTH } from '../../sim/save';
 import { DEFAULT_SIM_SPEED, SIM_SPEEDS, speedLabel, type SimSpeed } from '../../sim/sim-speed';
 import { mixWarnings } from '../../sim/compatibility';
@@ -1013,6 +1018,7 @@ export interface NewTankRequest {
                   [attr.aria-pressed]="tank.selected"
                   [attr.aria-disabled]="!tank.selectable"
                   [attr.aria-label]="tankLabel(tank)"
+                  [attr.title]="tankHint(tank)"
                   (click)="tank.selectable && !tank.selected && tankSelected.emit(tank.id)"
                 >
                   <span class="control-panel__tank-name">{{ tank.name }}</span>
@@ -1509,6 +1515,11 @@ export class ControlPanel {
     ]
       .filter((part) => part !== null)
       .join(' · ');
+  }
+
+  /** Infobulle d'une ligne (#492) : absence de faim ou faim partielle expliquée. */
+  protected tankHint(tank: TankListEntry): string | null {
+    return tankListHint(tank);
   }
 
   protected readonly careModeLabels = CARE_MODE_LABELS;

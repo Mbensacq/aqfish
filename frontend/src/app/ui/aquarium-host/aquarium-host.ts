@@ -815,6 +815,8 @@ export class AquariumHost {
   /** Tampon de la lumière du jour, réécrit à chaque recalcul (aucune allocation). */
   private readonly light = createDayLight();
   private exposedHour: string | null = null;
+  /** Valeur de `PLANTS_ATTRIBUTE` écrite en dernier (`exposePlants`, réécrite si elle change). */
+  private exposedPlants: string | null = null;
   private readonly onFrame: FrameRequestCallback = (timestamp) => this.frame(timestamp);
   private readonly cleanups: (() => void)[] = [];
   /** Désabonnements liés à la vue courante (refaits à chaque changement d'environnement). */
@@ -3718,7 +3720,12 @@ export class AquariumHost {
     });
     const shade = worldPlantShade(world);
     view?.setPlantShade(shade);
-    this.host.nativeElement.setAttribute(PLANTS_ATTRIBUTE, `${shown};${Math.round(shade * 100)}`);
+    // Attribut réécrit seulement s'il change (#494), comme `exposedTick` et `exposedHour`.
+    const exposed = `${shown};${Math.round(shade * 100)}`;
+    if (exposed !== this.exposedPlants) {
+      this.exposedPlants = exposed;
+      this.host.nativeElement.setAttribute(PLANTS_ATTRIBUTE, exposed);
+    }
   }
 
   /** Algues du bac (#476) : vue, signal de l'éclairage et `ALGAE_ATTRIBUTE`. */

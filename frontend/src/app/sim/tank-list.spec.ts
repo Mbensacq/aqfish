@@ -6,6 +6,7 @@ import {
   tankList,
   tankListDetail,
   tankListEntry,
+  tankListHint,
   worstAlert,
 } from './tank-list';
 import { advance, type World } from './world';
@@ -67,6 +68,51 @@ describe('liste des bacs (#306)', () => {
     expect(tankListDetail(empty)).toMatch(/^vide · \d+ L$/);
     const lived = tankListEntry(room.tanks[0], 0);
     expect(tankListDetail(lived)).toMatch(/ · faim \d+ %$/);
+  });
+
+  it('Paludarium (#492) : « sans granulés » et infobulle à la place de la faim', () => {
+    const room = createRoom(42, ['tropical', 'paludarium']);
+    const palu = tankListEntry(room.tanks[1], 0);
+    expect(palu.animals).toBeGreaterThan(0);
+    expect(palu.pelletFed).toBe(0);
+    expect(palu.hunger).toBeNull();
+    expect(tankListDetail(palu)).toBe(`${palu.animals} animaux · ${palu.liters} L · sans granulés`);
+    expect(tankListHint(palu)).toMatch(/aucun animal .* granulés/i);
+    // Bac tropical : tous nourris aux granulés, faim affichée, aucune infobulle.
+    const tropical = tankListEntry(room.tanks[0], 0);
+    expect(tropical.pelletFed).toBe(tropical.animals);
+    expect(tankListDetail(tropical)).toMatch(/ · faim \d+ %$/);
+    expect(tankListHint(tropical)).toBeNull();
+    // Paludarium vidé : « vide », ni indicateur ni infobulle.
+    const empty = tankListEntry(
+      { ...room.tanks[1], world: { ...room.tanks[1].world, entities: [] } },
+      0,
+    );
+    expect(tankListDetail(empty)).toMatch(/^vide · \d+ L$/);
+    expect(tankListHint(empty)).toBeNull();
+  });
+
+  it('bac mixte (#492) : faim des seuls nourris aux granulés, expliquée dans l’infobulle', () => {
+    const room = createRoom(42, ['tropical', 'paludarium']);
+    const [tropical, palu] = room.tanks;
+    const mixed = tankListEntry(
+      {
+        ...tropical,
+        world: {
+          ...tropical.world,
+          entities: [...tropical.world.entities, ...palu.world.entities],
+        },
+      },
+      0,
+    );
+    expect(mixed.pelletFed).toBe(tropical.world.entities.length);
+    expect(mixed.animals).toBe(mixed.pelletFed + palu.world.entities.length);
+    expect(mixed.hunger).toBe(tankListEntry(tropical, 0).hunger);
+    expect(tankListDetail(mixed)).toMatch(/ · faim \d+ %$/);
+    expect(tankListDetail(mixed)).not.toContain('sans granulés');
+    expect(tankListHint(mixed)).toBe(
+      `Faim moyenne des seuls animaux nourris aux granulés (${mixed.pelletFed} sur ${mixed.animals}).`,
+    );
   });
 
   it('« vide », « 1 animal », « N animaux » (#316)', () => {
