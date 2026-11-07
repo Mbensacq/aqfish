@@ -6120,6 +6120,24 @@
         }
       },
       "metriques": {}
+    },
+    "168": {
+      "numero": 168,
+      "date": "2026-11-07",
+      "debut": "2026-11-07T13:16:06.414Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-07T13:16:06.414Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
