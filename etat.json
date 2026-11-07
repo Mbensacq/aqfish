@@ -6107,10 +6107,10 @@
           "note": "PR #499 : gravité des meubles jusqu'au point fixe (lot #446 déjà livré par #458, cas restant de #200 trouvé par propriétés), CI verte ; reste hors lot → #498"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-07T12:00:25.307Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-07T12:11:27.090Z",
+          "note": "Verdict OK, 0 bug, captures c167 publiées (5 angles identiques à c166), pas d'e2e ajouté (sim pure)"
         }
       },
       "metriques": {}
