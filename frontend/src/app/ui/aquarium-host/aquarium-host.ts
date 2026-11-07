@@ -263,6 +263,7 @@ import {
   type World,
 } from '../../sim/world';
 import { CHEVRON_COUNTS } from '../../render/current-indicator-layer';
+import { photoFileName, photoScale, upscalePhoto } from '../../render/photo-capture';
 import {
   isCurrentLevel,
   nextCurrentLevel,
@@ -2198,6 +2199,54 @@ export class AquariumHost {
   /** Dépose des granulés au centre du bac (bouton « Nourrir », touche `G`). */
   feedAtCenter(): void {
     this.feed(0, 0);
+  }
+
+  /**
+   * Télécharge une photo PNG du bac dans la vue courante (bouton « Photo », #479, ADR 0112) :
+   * cible pixel art relue par la vue, agrandie par un facteur entier sans lissage
+   * (`render/photo-capture.ts`), encodée par un canvas 2D hors du document, sans interface
+   * ni curseur. Le monde et l'horloge ne bougent pas. Renvoie `true` si la photo a été
+   * produite (le téléchargement suit, asynchrone) ; sans effet en mode capture, avant le
+   * démarrage ou si le navigateur ne sait pas relire ou encoder l'image. Ne lève jamais.
+   */
+  takePhoto(): boolean {
+    const view = this.view;
+    const win = this.document.defaultView;
+    if (!view || !win || this.capture) {
+      return false;
+    }
+    try {
+      const pixels = view.takePhoto();
+      if (!pixels) {
+        return false;
+      }
+      const image = upscalePhoto(pixels, photoScale(pixels.width, pixels.height));
+      const canvas = this.document.createElement('canvas');
+      canvas.width = image.width;
+      canvas.height = image.height;
+      const context = canvas.getContext('2d');
+      if (!context) {
+        return false;
+      }
+      const imageData = context.createImageData(image.width, image.height);
+      imageData.data.set(image.data);
+      context.putImageData(imageData, 0, 0);
+      const name = photoFileName(new Date());
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          return;
+        }
+        const url = win.URL.createObjectURL(blob);
+        const link = this.document.createElement('a');
+        link.href = url;
+        link.download = name;
+        link.click();
+        win.setTimeout(() => win.URL.revokeObjectURL(url), 0);
+      }, 'image/png');
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   /** Réglages enregistrés avec le monde : vitesse, horloge et rendu des granulés. */

@@ -94,6 +94,9 @@ export function isFreeCameraKey(key: string): boolean {
   return key.toLowerCase() === FREE_CAMERA_KEY;
 }
 
+/** Nom accessible du bouton « Photo » (#479). */
+export const PHOTO_BUTTON_LABEL = 'Photo du bac : télécharger une image PNG de la vue';
+
 /** Préréglage associé à une touche (`1` à `5`), `null` sinon. */
 export function presetForKey(key: string): CameraPreset | null {
   return VIEW_PRESET_BUTTONS.find((button) => button.key === key)?.preset ?? null;
@@ -115,6 +118,8 @@ export function presetForKey(key: string): CameraPreset | null {
  * Bouton « Libre » (pièce affichée seulement, `freeCameraAvailable`) et touche `L` (issue
  * #343) : demandent d'entrer en caméra libre ou de revenir à l'orbite (sans pièce, l'hôte
  * refuse) ; l'état affiché (`freeCamera`) vient de l'hôte.
+ * Bouton « Photo » (issue #479, sans touche) : demande à l'hôte de télécharger une image PNG
+ * du bac dans la vue courante.
  * Absente en mode capture (c'est l'application qui ne l'affiche pas).
  */
 @Component({
@@ -176,6 +181,15 @@ export function presetForKey(key: string): CameraPreset | null {
       <span class="view-presets-bar__key" aria-hidden="true">{{ feedKey }}</span>
       Nourrir
     </button>
+    <button
+      type="button"
+      class="view-presets-bar__button"
+      [attr.aria-label]="photoDescription"
+      data-action="photo"
+      (click)="photo()"
+    >
+      Photo
+    </button>
   </div>`,
   styleUrl: './view-presets-bar.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -233,6 +247,16 @@ export class ViewPresetsBar {
 
   protected feed(): void {
     this.fed.emit();
+  }
+
+  /** Demande de photo du bac (bouton « Photo », issue #479). */
+  readonly photoRequested = output<void>();
+
+  /** Nom accessible du bouton « Photo ». */
+  protected readonly photoDescription = PHOTO_BUTTON_LABEL;
+
+  protected photo(): void {
+    this.photoRequested.emit();
   }
 
   /** Touche du filtre pixel art telle qu'affichée (`P`). */

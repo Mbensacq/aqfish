@@ -914,6 +914,12 @@ DEFAULT_DECOR)`), sinon les trajectoires divergent dès la naissance. (2026-10-1
   (`core/share-codec`) ; le type à passer à `pipeThrough(new CompressionStream(…))` est
   `ReadableStream<BufferSource>`. (2026-11-04)
 
+- **Un `expect` par pixel bloque Playwright** (cycle 169, #479) : vérifier l'opacité d'un PNG
+  de 1869 × 1400 avec `expect(rgba[i + 3]).toBe(255)` dans la boucle crée 2,6 millions
+  d'étapes de test ; le test ne finit pas en 10 min (pas même au délai de 2 min), alors que la
+  même vérification comptée dans une variable puis testée une fois prend 14 s. Compter dans la
+  boucle, un seul `expect` après. (2026-11-07)
+
 ## Simulation
 
 - **Un objet collé à une vitre n'est jamais à portée d'un nageur** (cycle 168, #478) : les

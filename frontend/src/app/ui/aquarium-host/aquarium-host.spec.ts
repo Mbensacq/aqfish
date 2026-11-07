@@ -3024,6 +3024,95 @@ describe('AquariumHost', () => {
       host().exportSave();
       expect(host().saveMessage()?.kind).toBe('erreur');
     });
+
+    it('takePhoto (#479) : PNG agrandi par un entier, monde et horloge inchangés', async () => {
+      await create('?seed=6');
+      setCanvasSize(600, 300);
+      frames.flush(0);
+      frames.flush(100);
+      const renderer = renderers[renderers.length - 1] as FakeRenderer & {
+        readRenderTargetPixels: AquariumRenderer['readRenderTargetPixels'];
+      };
+      const reads: [number, number][] = [];
+      renderer.readRenderTargetPixels = (_t, _x, _y, width, height, buffer) => {
+        reads.push([width, height]);
+        buffer.fill(200);
+      };
+      const put = vi.fn();
+      let created: [number, number] | null = null;
+      const getContext = vi
+        .spyOn(HTMLCanvasElement.prototype, 'getContext')
+        .mockImplementation(function (this: HTMLCanvasElement) {
+          return {
+            createImageData: (w: number, h: number) => {
+              created = [w, h];
+              return { data: new Uint8ClampedArray(w * h * 4) };
+            },
+            putImageData: put,
+          } as unknown as CanvasRenderingContext2D;
+        });
+      let sizes: [number, number] | null = null;
+      const toBlob = vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation(function (
+        this: HTMLCanvasElement,
+        cb: BlobCallback,
+        type?: string,
+      ) {
+        sizes = [this.width, this.height];
+        expect(type).toBe('image/png');
+        cb(new Blob(['png'], { type: 'image/png' }));
+      });
+      Object.assign(window.URL, {
+        createObjectURL: vi.fn(() => 'blob:photo'),
+        revokeObjectURL: vi.fn(),
+      });
+      const names: string[] = [];
+      const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (
+        this: HTMLAnchorElement,
+      ) {
+        names.push(this.download);
+      });
+      const world = structuredClone(host().world);
+      const tick = element().getAttribute(TICK_ATTRIBUTE);
+      const clock = host().clockHour();
+
+      expect(host().takePhoto()).toBe(true);
+
+      // Cible 200 × 100 (600 × 300 / PIXEL_SIZE), agrandie par 10 → bornée à 8.
+      expect(reads).toEqual([[200, 100]]);
+      expect(created).toEqual([1600, 800]);
+      expect(sizes).toEqual([1600, 800]);
+      expect(put).toHaveBeenCalledOnce();
+      expect(click).toHaveBeenCalledOnce();
+      expect(names[0]).toMatch(/^aqfish-\d{4}-\d{2}-\d{2}-\d{6}\.png$/);
+      expect(host().world).toEqual(world);
+      expect(element().getAttribute(TICK_ATTRIBUTE)).toBe(tick);
+      expect(host().clockHour()).toBe(clock);
+      getContext.mockRestore();
+      toBlob.mockRestore();
+      click.mockRestore();
+      delete (window.URL as unknown as Record<string, unknown>)['createObjectURL'];
+      delete (window.URL as unknown as Record<string, unknown>)['revokeObjectURL'];
+    });
+
+    it('takePhoto (#479) : refusée sans relecture possible, sans canvas 2D, ou en capture', async () => {
+      await create('?seed=6');
+      setCanvasSize(600, 300);
+      frames.flush(0);
+      // Le double de renderer ne sait pas relire une cible.
+      expect(host().takePhoto()).toBe(false);
+      const renderer = renderers[renderers.length - 1] as FakeRenderer & {
+        readRenderTargetPixels: AquariumRenderer['readRenderTargetPixels'];
+      };
+      renderer.readRenderTargetPixels = () => undefined;
+      const getContext = vi
+        .spyOn(HTMLCanvasElement.prototype, 'getContext')
+        .mockImplementation(() => null);
+      expect(host().takePhoto()).toBe(false);
+      getContext.mockRestore();
+      fixture.destroy();
+      await create('?capture=1&seed=6');
+      expect(host().takePhoto()).toBe(false);
+    });
   });
 
   describe('édition de la pièce (#188)', () => {

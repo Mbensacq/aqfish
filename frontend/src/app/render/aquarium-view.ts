@@ -99,6 +99,7 @@ import {
 import { environmentTonePenalties, PalettePass } from './palette-pass';
 import { DirectPass } from './direct-pass';
 import { PIXEL_SIZE, type Size } from './pixel-art';
+import type { PhotoPixels } from './photo-capture';
 import { WaterLightLayer } from './water-light';
 import { DecorClock } from './decor-clock';
 import {
@@ -116,6 +117,18 @@ export interface AquariumRenderer {
   setSize(width: number, height: number, updateStyle?: boolean): void;
   setRenderTarget(target: WebGLRenderTarget | null): void;
   render(scene: Scene, camera: Camera): void;
+  /**
+   * Relit les pixels d'une cible (photo, #479). Facultatif : un double de test peut s'en
+   * passer, la photo est alors refusée.
+   */
+  readRenderTargetPixels?(
+    target: WebGLRenderTarget,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    buffer: Uint8Array,
+  ): void;
   dispose(): void;
 }
 
@@ -1494,25 +1507,7 @@ export class AquariumView {
     if (this.disposed || !this.hasSize()) {
       return false;
     }
-    // Bassin enterré (#105) : coupe du sol et de la margelle si la caméra passe sous le sol.
-    this.world.setViewpoint(this.camera.position.x, this.camera.position.y, this.camera.position.z);
-    // Pièce (#187, #324) : rien ne cache le bac, la caméra passât-elle sous le bac ou hors de
-    // la pièce (chaque mur franchi et le plafond sont masqués).
-    this.roomLayer.setViewpoint(
-      this.camera.position.x,
-      this.camera.position.y,
-      this.camera.position.z,
-    );
-    // Taille des granulés selon le zoom (#117) : échelle à la distance de la cible.
-    this.foodLayer.setPixelsPerMeter(
-      scenePixelsPerMeter(
-        this.camera.position.distanceTo(this.controls.target),
-        this.camera.fov,
-        this.targetSize.height,
-      ),
-    );
-    // Ronds de pluie vus de biais (#125) : rond extérieur seul, plus clair.
-    this.rainLayer.setObliqueView(isObliqueView(this.cameraPosition(), this.cameraTarget()));
+    this.prepareFrame();
     if (this.currentFilter === 'aucun') {
       this.decorLayer.setResolution(this.width * this.pixelRatio, this.height * this.pixelRatio);
       this.roomLayer.setResolution(this.width * this.pixelRatio, this.height * this.pixelRatio);
@@ -1532,6 +1527,64 @@ export class AquariumView {
       this.renderer.render(this.directPass.scene, this.directPass.camera);
       return true;
     }
+    this.renderPixelScene();
+    this.renderer.setRenderTarget(null);
+    this.renderer.render(this.pixelPass.scene, this.pixelPass.camera);
+    return true;
+  }
+
+  /**
+   * Photo du bac (#479, ADR 0112) : rend la vue courante dans la cible basse résolution, la
+   * ramène à la palette dans une cible de même taille (un pixel par pixel de scène, sans
+   * lissage) et relit ses pixels, lignes de bas en haut (`render/photo-capture.ts` les
+   * agrandit et les retourne). Toujours en pixel art, quel que soit le filtre affiché.
+   * Rien n'est dessiné à l'écran et ni le monde ni l'horloge n'avancent ; la relecture suit
+   * le rendu dans le même appel (la cible ne dépend pas de `preserveDrawingBuffer`).
+   * Renvoie `null` si la vue est libérée, sans taille, ou si le renderer ne sait pas relire.
+   */
+  takePhoto(): PhotoPixels | null {
+    if (this.disposed || !this.hasSize() || !this.renderer.readRenderTargetPixels) {
+      return null;
+    }
+    this.prepareFrame();
+    this.renderPixelScene();
+    const target = this.pixelPass.photoTarget();
+    const previousScale = this.pixelPass.setPixelScale(1);
+    this.renderer.setRenderTarget(target);
+    this.renderer.render(this.pixelPass.scene, this.pixelPass.camera);
+    const { width, height } = this.targetSize;
+    const data = new Uint8Array(width * height * 4);
+    this.renderer.readRenderTargetPixels(target, 0, 0, width, height, data);
+    this.renderer.setRenderTarget(null);
+    this.pixelPass.setPixelScale(previousScale);
+    return { width, height, data };
+  }
+
+  /** Réglages de la scène qui dépendent de la caméra, communs à l'image et à la photo. */
+  private prepareFrame(): void {
+    // Bassin enterré (#105) : coupe du sol et de la margelle si la caméra passe sous le sol.
+    this.world.setViewpoint(this.camera.position.x, this.camera.position.y, this.camera.position.z);
+    // Pièce (#187, #324) : rien ne cache le bac, la caméra passât-elle sous le bac ou hors de
+    // la pièce (chaque mur franchi et le plafond sont masqués).
+    this.roomLayer.setViewpoint(
+      this.camera.position.x,
+      this.camera.position.y,
+      this.camera.position.z,
+    );
+    // Taille des granulés selon le zoom (#117) : échelle à la distance de la cible.
+    this.foodLayer.setPixelsPerMeter(
+      scenePixelsPerMeter(
+        this.camera.position.distanceTo(this.controls.target),
+        this.camera.fov,
+        this.targetSize.height,
+      ),
+    );
+    // Ronds de pluie vus de biais (#125) : rond extérieur seul, plus clair.
+    this.rainLayer.setObliqueView(isObliqueView(this.cameraPosition(), this.cameraTarget()));
+  }
+
+  /** Rend la scène dans la cible basse résolution du pixel art (sans la passe palette). */
+  private renderPixelScene(): void {
     this.decorLayer.setResolution(this.targetSize.width, this.targetSize.height);
     this.roomLayer.setResolution(this.targetSize.width, this.targetSize.height);
     this.lilyPadLayer.setResolution(this.targetSize.width, this.targetSize.height);
@@ -1540,9 +1593,6 @@ export class AquariumView {
     this.foodLayer.setPointScale(1);
     this.renderer.setRenderTarget(this.pixelPass.target);
     this.renderer.render(this.world.scene, this.camera);
-    this.renderer.setRenderTarget(null);
-    this.renderer.render(this.pixelPass.scene, this.pixelPass.camera);
-    return true;
   }
 
   /** Vrai en caméra libre (#343). */
