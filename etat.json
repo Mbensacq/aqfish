@@ -6137,10 +6137,10 @@
           "note": "Issue #478 : ponte et œufs des corydoras (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-07T13:17:26.664Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-07T14:24:15.334Z",
+          "note": "PR #500 : ponte et œufs des corydoras (ADR 0111, captures front/three-quarter-oeufs, 5 angles identiques à l'octet), CI verte"
         }
       },
       "metriques": {}
