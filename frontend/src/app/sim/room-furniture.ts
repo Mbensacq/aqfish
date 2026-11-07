@@ -556,7 +556,8 @@ export function tidyRoomItems(items: readonly RoomItem[]): readonly RoomItem[] {
  * plus haut dessus chevauché sous sa base, ou jusqu'au parquet. S'il tomberait sur une
  * plante, il descend sur la plus haute surface porteuse plus basse (dessus d'un meuble, ou
  * parquet) où rien ne le gêne (`freeSurfaceBelow`), sinon il reste en place ; passes répétées
- * jusqu'à ce que plus rien ne bouge (#446). Un élément soutenu garde sa pose à l'identique. Nouvelle liste, dans le même ordre ; ne modifie pas `items`.
+ * jusqu'à ce que plus rien ne bouge (#446). Un élément soutenu garde sa pose à l'identique.
+ * Nouvelle liste, dans le même ordre ; ne modifie pas `items`.
  */
 export function settleRoomItems(items: readonly RoomItem[]): readonly RoomItem[] {
   // Un élément resté en l'air faute de place peut en trouver une quand un élément traité
