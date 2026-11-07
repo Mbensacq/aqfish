@@ -117,6 +117,20 @@ describe('commandes (#74)', () => {
       expect(keyCommand('nourrir').group).toBe('nourriture');
     });
 
+    it('raclette (#476, #488) : un clic sur le bac, raclette en main, gratte les algues', () => {
+      const byId = new Map(GESTURE_COMMANDS.map((gesture) => [gesture.id, gesture]));
+      const scrape = byId.get('souris-raclette');
+      expect(scrape?.group).toBe('souris');
+      expect(scrape?.gesture).toBe('Clic sur le bac');
+      expect(scrape?.description).toMatch(/raclette en main/i);
+      expect(scrape?.description).toMatch(/algues/);
+      // Une ligne de l'aide-mémoire, comme les autres descriptions.
+      expect(scrape?.description.length).toBeLessThanOrEqual(38);
+      const souris = helpSections().find((section) => section.id === 'souris');
+      const ids = souris?.entries.map((entry) => entry.id) ?? [];
+      expect(ids.indexOf('souris-raclette')).toBe(ids.indexOf('souris-clic') + 1);
+    });
+
     it('les libellés suivent le réglage des boutons (pas de description en dur)', () => {
       const swapped = orbitGestures(
         { left: 'pan', middle: 'dolly', right: 'rotate' },

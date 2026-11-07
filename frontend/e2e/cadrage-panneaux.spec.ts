@@ -48,6 +48,17 @@ const PANELS: readonly PanelCase[] = [
     },
   },
   {
+    // Section « Soins » affichée (bac malade, #488) : à 1280 × 720, « Sauvegarde » passait
+    // dans une troisième colonne, hors du panneau (débordement horizontal).
+    name: 'Réglages (soins)',
+    search: '?seed=42&points-blancs=1',
+    panel: (page) => page.locator('.control-panel'),
+    open: async (page) => {
+      await page.getByRole('button', { name: 'Réglages' }).click();
+      await expect(page.locator(".control-panel [data-section='soins']")).toBeVisible();
+    },
+  },
+  {
     name: 'Commandes',
     panel: (page) => page.locator('#aide-commandes'),
     open: async (page) => {

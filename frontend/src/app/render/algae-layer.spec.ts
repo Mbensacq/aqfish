@@ -1,9 +1,16 @@
 import { Color, type Mesh } from 'three';
 
-import { ALGAE_COLORS, ALGAE_INSET, AlgaeLayer, algaeMask, buildAlgaePatch } from './algae-layer';
+import {
+  ALGAE_COLORS,
+  ALGAE_INSET,
+  AlgaeLayer,
+  algaeMask,
+  buildAlgaePatch,
+  isFilament,
+} from './algae-layer';
 import { ALGAE_PATCH_COUNT, ALGAE_VISIBLE_COVERAGE, algaePatches } from '../sim/algae';
 import { waterVolume } from '../sim/tank';
-import { PALETTE_COLORS } from './palette';
+import { PALETTE, PALETTE_COLORS } from './palette';
 
 const WATER = waterVolume();
 const PATCHES = algaePatches(42, WATER);
@@ -83,24 +90,50 @@ describe('plaque d’algues en pixels (#476)', () => {
     expect(algaeMask(0, 0)).toHaveLength(2);
   });
 
-  it('contour et cœur aux couleurs de la palette', () => {
+  it('voile et filaments aux couleurs de la palette, sans le vert clair des plantes (#488)', () => {
     for (const color of Object.values(ALGAE_COLORS)) {
       expect(PALETTE_COLORS).toContain(color);
     }
+    // Ni le vert clair ni le vert lumineux des feuilles : les plaques ne ressemblent pas aux
+    // plantes en vue trois-quarts (réserve QA du cycle 162).
+    expect(Object.values(ALGAE_COLORS)).not.toContain(PALETTE.vegetationClaire);
+    expect(Object.values(ALGAE_COLORS)).not.toContain(PALETTE.vegetationLumineuse);
     const data = buildAlgaePatch(5, 1);
     expect(data.positions.length % 18).toBe(0);
     expect(data.colors.length).toBe(data.positions.length);
-    const contour = new Color(ALGAE_COLORS.contour);
-    let edges = 0;
+    const filament = new Color(ALGAE_COLORS.filament);
+    const voile = new Color(ALGAE_COLORS.voile);
+    let threads = 0;
+    let film = 0;
     for (let k = 0; k < data.colors.length; k += 3) {
-      if (
-        data.colors[k] === Math.fround(contour.r) &&
-        data.colors[k + 1] === Math.fround(contour.g)
-      ) {
-        edges++;
+      const g = data.colors[k + 1];
+      if (data.colors[k] === Math.fround(filament.r) && g === Math.fround(filament.g)) {
+        threads++;
+      } else if (data.colors[k] === Math.fround(voile.r) && g === Math.fround(voile.g)) {
+        film++;
       }
     }
-    expect(edges).toBeGreaterThan(0);
-    expect(edges).toBeLessThan(data.colors.length / 3);
+    expect(threads).toBeGreaterThan(0);
+    expect(film).toBeGreaterThan(0);
+    expect(threads + film).toBe(data.colors.length / 3);
+  });
+
+  it('filaments : une colonne sur deux, coupés par endroits, déterministes', () => {
+    const column = Array.from({ length: 20 }, (_, r) => isFilament(r, 0, 0));
+    expect(column.filter(Boolean).length).toBeGreaterThan(10);
+    expect(column.some((v) => !v)).toBe(true);
+    for (let r = 0; r < 20; r++) {
+      expect(isFilament(r, 1, 0)).toBe(false);
+      expect(isFilament(r, 0, 1)).toBe(false);
+    }
+  });
+
+  it('bord tramé : une case de bord sur deux, le centre plein', () => {
+    const cells = 6;
+    const mask = algaeMask(cells, 2);
+    const full = mask.flat().filter(Boolean).length;
+    const drawn = buildAlgaePatch(cells, 2).positions.length / 18;
+    expect(drawn).toBeLessThan(full);
+    expect(drawn).toBeGreaterThan(full / 2);
   });
 });
