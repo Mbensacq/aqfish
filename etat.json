@@ -6209,10 +6209,10 @@
           "note": "Issue #484 : dureté de l'eau (GH/KH) et fiches complètes (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-07T19:17:08.158Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-07T20:34:58.769Z",
+          "note": "PR #504 : dureté GH/KH et fiches complètes (ADR 0113), CI verte ; captures sans interface identiques à c169 ; e2e locaux : navigateur Playwright absent, contourné (PIEGES)"
         }
       },
       "metriques": {}
