@@ -6003,6 +6003,12 @@
           "debut": "2026-11-07T02:19:05.372Z",
           "fin": "2026-11-07T02:49:26.617Z",
           "note": "Verdict OK, 0 bug (1 remarque mineure : Paludarium sans faim), captures c164 publiées (e2e local indisponible, CI verte)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-07T02:50:05.638Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
