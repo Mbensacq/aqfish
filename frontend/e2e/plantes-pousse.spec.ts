@@ -66,8 +66,7 @@ test.describe('plantes qui poussent (#477)', () => {
     const box = await page.locator('canvas').first().boundingBox();
     expect(box).not.toBeNull();
     const { x, y, width, height } = box!;
-    const pruned = async (): Promise<boolean> =>
-      (await growths(page)).some((g, n) => g < caps[n]);
+    const pruned = async (): Promise<boolean> => (await growths(page)).some((g, n) => g < caps[n]);
     for (const [fx, fy] of [
       [0.3, 0.4],
       [0.55, 0.4],
