@@ -6,6 +6,14 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Un état qui évolue à chaque pas dans l'eau du bac : deux tests de référence changent**
+  (cycle 165, #477) : `room-state.spec.ts` (« reste identique à l'avant-lot », empreinte
+  dorée du monde sérialisé) et `water.spec.ts` (« l'eau suit le modèle », `toEqual` sur l'eau
+  entière) comparent toute l'eau. Un champ qui change dès le premier pas (pousse des plantes,
+  `plantGrowth`) les fait échouer, sans régression. Retirer ce seul champ de la comparaison et
+  le vérifier à part (voir ces deux tests), dans un commit `test` séparé expliqué dans la PR ;
+  ne jamais réécrire l'empreinte dorée. Les algues (#476) n'y touchaient pas : rien n'est
+  écrit sans pousse. (2026-11-07)
 - **Section « Soins » du panneau à 1280 × 720 : « Sauvegarde » en troisième colonne, hors
   du panneau** (cycle 163, #488) : en deux colonnes (`column-count: 2` et `max-height`), une
   section qui ne tient plus dans la deuxième colonne en ouvre une troisième, à droite, hors de
