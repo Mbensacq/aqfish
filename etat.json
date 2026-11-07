@@ -6147,6 +6147,12 @@
           "debut": "2026-11-07T14:24:48.769Z",
           "fin": "2026-11-07T15:04:21.399Z",
           "note": "Verdict OK, 0 bug, captures c168 publiées (5 angles identiques à c167 + vues œufs), e2e complet non rejoué localement (lenteur), CI verte"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-07T15:04:58.087Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
