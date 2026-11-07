@@ -5987,10 +5987,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-07T01:05:51.362Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-07T01:06:38.702Z",
+          "note": "Issue #490 : lot de dette, panneau Réglages, fiche d'espèce, liste des bacs (#255, #318) (M)"
         }
       },
       "metriques": {}
