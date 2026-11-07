@@ -6207,6 +6207,12 @@
           "debut": "2026-11-07T19:16:08.226Z",
           "fin": "2026-11-07T19:16:35.658Z",
           "note": "Issue #484 : dureté de l'eau (GH/KH) et fiches complètes (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-07T19:17:08.158Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
