@@ -6162,7 +6162,7 @@
       "date": "2026-11-07",
       "debut": "2026-11-07T16:09:01.324Z",
       "type": "fonctionnalite",
-      "issue": null,
+      "issue": 479,
       "pr": null,
       "version": null,
       "phases": {
