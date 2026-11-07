@@ -6063,6 +6063,12 @@
           "debut": "2026-11-07T07:14:42.776Z",
           "fin": "2026-11-07T07:15:13.777Z",
           "note": "Issue #494 : lot dette finitions sécateur + faim Paludarium #492 (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-07T07:15:48.492Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
