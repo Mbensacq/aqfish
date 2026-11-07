@@ -34,6 +34,7 @@ import {
 import { SPECIES, speciesVariants, type SpeciesId } from '../sim/species';
 import type { Fish } from '../sim/swimmer';
 import type { AlgaePatch } from '../sim/algae';
+import type { Egg } from '../sim/eggs';
 import { createDayLight, type DayLight } from '../sim/daylight';
 import { bubbleSourceFor } from '../sim/bubbles';
 import { environmentDataWater, type Environment } from '../sim/environment';
@@ -54,6 +55,7 @@ import { type EffectLayer, type SceneLayer, updateVisibleEffects } from './effec
 import { CurrentIndicatorLayer } from './current-indicator-layer';
 import { FloatingLeafLayer } from './floating-leaf-layer';
 import { FishLayer, MAX_FISH_PER_SPECIES, type BehaviorFrame } from './fish-layer';
+import { EggLayer } from './egg-layer';
 import { FoodLayer } from './food-layer';
 import { scenePixelsPerMeter } from './food-size';
 import { LilyPadLayer } from './lily-pad-layer';
@@ -218,6 +220,8 @@ export class AquariumView {
   private readonly currentLayer: CurrentIndicatorLayer;
   /** Granulés de nourriture (issue #67), posés par `updateFood`. */
   private readonly foodLayer = new FoodLayer();
+  /** Œufs des corydoras (issue #478) : masqués tant qu'il n'y en a aucun. */
+  private readonly eggLayer = new EggLayer();
   /** Caustiques sur le sable et reflet de surface (ADR 0017). */
   private readonly waterLight: WaterLightLayer;
   /** Nénuphars (issue #103), tirés de la graine fixée par `setDecor`. */
@@ -489,6 +493,7 @@ export class AquariumView {
       this.decorLayer,
       this.bubbleLayer,
       this.foodLayer,
+      this.eggLayer,
       this.waterLight,
       this.lilyPadLayer,
       this.rainLayer,
@@ -753,6 +758,21 @@ export class AquariumView {
     }
   }
 
+  /**
+   * Pose les œufs du monde (`World.eggs`, issue #478), `hatchTime` étant la durée
+   * d'incubation (teinte des œufs mûrs). À appeler avant `renderFrame()`.
+   */
+  updateEggs(eggs: readonly Egg[] | undefined, hatchTime: number): void {
+    if (!this.disposed) {
+      this.eggLayer.update(eggs, hatchTime);
+    }
+  }
+
+  /** Nombre d'œufs posés par le dernier `updateEggs` (tests). */
+  get eggCount(): number {
+    return this.eggLayer.count;
+  }
+
   /** Nombre de granulés posés par le dernier `updateFood` (tests). */
   get foodCount(): number {
     return this.foodLayer.count;
@@ -1002,6 +1022,7 @@ export class AquariumView {
       layer.setBrightness(brightness);
     }
     this.foodLayer.setBrightness(brightness);
+    this.eggLayer.setBrightness(brightness);
     this.catappaLayer.setBrightness(brightness);
     this.algaeLayer.setBrightness(brightness);
     const tint = decorTintInto(light.intensity, this.decorTint);

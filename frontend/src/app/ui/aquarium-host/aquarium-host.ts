@@ -103,6 +103,7 @@ import {
   type DecorPhysicsLoader,
 } from '../../core/decor-physics/load-decor-physics';
 import { SIM_DT } from '../../sim/constants';
+import { EGG_HATCH_TIME } from '../../sim/eggs';
 import {
   carryClock,
   createDayClock,
@@ -239,6 +240,7 @@ import {
   advanceInPlace,
   advanceToWithFeedings,
   broodWorldInPlace,
+  layEggsWorldInPlace,
   changeWorldWaterInPlace,
   createDefaultWorld,
   feedInPlace,
@@ -3099,6 +3101,10 @@ export class AquariumHost {
       if (params.capture && params.fry) {
         broodWorldInPlace(world);
       }
+      // Œufs de `oeufs=1` (#478), en capture : à t = 0, après `population=`.
+      if (params.capture && params.eggs) {
+        layEggsWorldInPlace(world);
+      }
       // Feuilles de catappa neuves de `catappa=` (#239), en capture : à t = 0.
       if (params.capture && params.catappa > 0) {
         setWorldCatappaInPlace(world, params.catappa);
@@ -3489,6 +3495,7 @@ export class AquariumHost {
         this.behaviorFrame,
       );
       view.updateFood(this.currentWorld.food);
+      view.updateEggs(this.currentWorld.eggs, EGG_HATCH_TIME);
       view.updateDecor(time);
       this.updateLight(view, time);
     }
