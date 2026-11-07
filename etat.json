@@ -6163,7 +6163,7 @@
       "debut": "2026-11-07T16:09:01.324Z",
       "type": "fonctionnalite",
       "issue": 479,
-      "pr": null,
+      "pr": 502,
       "version": null,
       "phases": {
         "planif": {
