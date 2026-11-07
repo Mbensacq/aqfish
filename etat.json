@@ -5969,10 +5969,10 @@
           "note": "Verdict OK, 0 bug, captures c163 publiées (e2e local ciblé, CI verte)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-06T23:52:02.415Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-07T01:05:21.528Z",
+          "note": "PR #489 fusionnée → v1.12.2 (release créée, CI main verte) ; #488 fermée ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
