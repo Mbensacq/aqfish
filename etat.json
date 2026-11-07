@@ -6092,7 +6092,7 @@
       "type": "retro",
       "issue": 446,
       "pr": 499,
-      "version": null,
+      "version": "v1.12.6",
       "phases": {
         "planif": {
           "statut": "termine",
