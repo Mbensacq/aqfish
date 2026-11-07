@@ -5982,7 +5982,7 @@
       "date": "2026-11-07",
       "debut": "2026-11-07T01:05:51.362Z",
       "type": "fonctionnalite",
-      "issue": null,
+      "issue": 490,
       "pr": null,
       "version": null,
       "phases": {
