@@ -6131,10 +6131,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-07T13:16:06.414Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-07T13:16:48.350Z",
+          "note": "Issue #478 : ponte et œufs des corydoras (M)"
         }
       },
       "metriques": {}
