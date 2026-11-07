@@ -6149,10 +6149,10 @@
           "note": "Verdict OK, 0 bug, captures c168 publiées (5 angles identiques à c167 + vues œufs), e2e complet non rejoué localement (lenteur), CI verte"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-07T15:04:58.087Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-07T16:08:29.306Z",
+          "note": "PR #500 fusionnée → v1.13.0 (release CI, CI main verte) ; #478 fermée ; dette #501 ; footer d'attribution retiré de la PR ; suppression de branche refusée"
         }
       },
       "metriques": {}
