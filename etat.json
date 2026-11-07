@@ -6095,10 +6095,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-07T10:51:53.231Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-07T10:52:59.779Z",
+          "note": "Rétro #496 ; issue #446 lot dette (S) ; sprint 25 : #478 #479 #484 #485 #483 ; PR roadmap #497"
         }
       },
       "metriques": {}
