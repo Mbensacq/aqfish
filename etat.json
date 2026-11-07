@@ -6084,6 +6084,24 @@
         }
       },
       "metriques": {}
+    },
+    "167": {
+      "numero": 167,
+      "date": "2026-11-07",
+      "debut": "2026-11-07T10:51:53.231Z",
+      "type": "retro",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-07T10:51:53.231Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
