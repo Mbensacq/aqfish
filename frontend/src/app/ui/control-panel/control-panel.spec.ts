@@ -218,6 +218,8 @@ describe('fonctions du panneau de contrôle', () => {
     (waterChangeRequested)="waterChanges = waterChanges + 1"
     [current]="current()"
     (currentToggled)="currentToggles = currentToggles + 1"
+    [pruning]="pruning()"
+    (prunerToggled)="prunerToggles = prunerToggles + 1"
   />`,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -309,6 +311,8 @@ class TestHost {
   waterChanges = 0;
   readonly current = signal<CurrentLevel>('coupe');
   currentToggles = 0;
+  readonly pruning = signal(false);
+  prunerToggles = 0;
   readonly events: [string, number | boolean][] = [];
   readonly requests: PopulationRequest[] = [];
   readonly saveStatus = signal<SaveStatus | null>('active');
@@ -1127,8 +1131,10 @@ describe('ControlPanel', () => {
     // et « Importer » (#70), « Partager ce bac » (#426), le mode du bac (#278), « Mode
     // immersif » (#345), « Réduire les mouvements » (#406), puis la case « Sons d'ambiance »
     // et son volume (#411), « Courant » (#460), le curseur de l'éclairage et la raclette
-    // (#476). Le champ du lien de partage n'apparaît qu'avec un lien.
-    expect(controls).toHaveLength(5 + 1 + 1 + 1 + 2 + 2 + 17 * 5 + 2 + 1 + 1 + 1 + 1 + 2 + 1 + 2);
+    // (#476), le sécateur (#477). Le champ du lien de partage n'apparaît qu'avec un lien.
+    expect(controls).toHaveLength(
+      5 + 1 + 1 + 1 + 2 + 2 + 17 * 5 + 2 + 1 + 1 + 1 + 1 + 2 + 1 + 2 + 1,
+    );
     expect(root().querySelectorAll('input[type="file"]')).toHaveLength(1);
     for (const control of controls) {
       const name =
@@ -1412,9 +1418,26 @@ describe('ControlPanel', () => {
         'Consigne du chauffage',
         'Durée d’éclairage par jour',
         'Raclette : cliquer sur les algues',
+        'Sécateur : cliquer sur une plante haute',
         'Retirer une feuille de catappa',
         'Ajouter une feuille de catappa',
       ]);
+    });
+
+    it('sécateur (#477) : à côté de la raclette, état pressé fourni par l’hôte, émet la demande', async () => {
+      await openPanel();
+      const pruner = section().querySelector<HTMLButtonElement>('[data-pruner]')!;
+      const scraper = section().querySelector<HTMLButtonElement>('[data-scraper]')!;
+      expect(pruner.parentElement).toBe(scraper.parentElement);
+      expect(pruner.parentElement?.getAttribute('aria-label')).toBe('Outils d’entretien');
+      expect(pruner.textContent?.trim()).toBe('Sécateur');
+      expect(pruner.getAttribute('aria-pressed')).toBe('false');
+      pruner.click();
+      expect(fixture.componentInstance.prunerToggles).toBe(1);
+      fixture.componentInstance.pruning.set(true);
+      fixture.detectChanges();
+      expect(pruner.textContent?.trim()).toBe('Poser le sécateur');
+      expect(pruner.getAttribute('aria-pressed')).toBe('true');
     });
 
     it('courant (#460) : bouton sur la ligne du titre, libellé de la force, émet la demande', async () => {

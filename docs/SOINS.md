@@ -530,6 +530,18 @@ jeu**, sauf mention.
 - Alerte « algues » : attention à 25 % de couverture moyenne, critique à 60 %.
 - Ni bassin ni récif (hors périmètre de l'issue).
 
+**Plantes qui poussent dans le jeu** (issue #477, ADR 0110, `sim/plant-growth.ts`) : toutes
+**approximations de jeu**, aucune tirée d'une source.
+- Seules les grandes plantes à tige poussent, dans les bacs vitrés d'eau douce (tropical,
+  eau froide, paludarium) ; ni touffes, ni bassin, ni récif.
+- Rythme moyen de 6 voxels (environ 5 cm à l'échelle 1) par jour simulé, vigueur de 0,7 à 1,3
+  tirée de la graine de la plante ; la vitesse de simulation l'accélère. En pause en mode décor.
+- Plafond : la pointe reste un voxel sous la surface de l'eau.
+- Taille au sécateur (section « Eau ») : la plante garde 80 % de sa hauteur totale, jamais
+  moins que sa hauteur d'origine. Le changement d'eau n'y touche pas.
+- Chaque plante arrivée au plafond retire 4 % de la lumière du décor du fond, 12 % au plus.
+  Les plantes n'ont pas d'autre effet sur l'eau ni sur les animaux dans le jeu.
+
 **Fiche produit (structure suggérée)** : `id`, `nom`, `catégorie` ; `dose_efficace`,
 `dose_toxique`, `durée`, `fréquence_max` ; `effets_eau` {pH, KH, GH, Cl, O₂, couleur,
 NH₃_lié} ; `demi-vie` (souvent non vérifiée : « retiré par changements d'eau ou charbon » en

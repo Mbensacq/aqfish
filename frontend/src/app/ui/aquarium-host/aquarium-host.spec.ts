@@ -1409,6 +1409,33 @@ describe('AquariumHost', () => {
       expect(host().world!.water.algae?.filter((c) => c === 0)).toHaveLength(1);
     });
 
+    it('sécateur (#477) : pousse exposée, plante taillée, outil exclusif de la raclette', async () => {
+      await create('?seed=42&vitesse=0');
+      const plantsAttr = () => fixture.nativeElement.getAttribute('data-aqfish-plants');
+      expect(plantsAttr()).toBe('0,0,0;100');
+      const decor = host().world!.decor;
+      const index = decor.findIndex((d) => d.kind === 'plant' && d.form === 'tall');
+      const world = host().world! as { water: object };
+      world.water = { ...world.water, plantGrowth: { [String(decor[index].seed)]: 9.5 } };
+      expect(host().prunePlant(index)).toBe(true);
+      expect(plantsAttr()).toMatch(/^\d+,0,0;100$/);
+      const after = Number(plantsAttr()!.split(',')[0]);
+      expect(after).toBeLessThan(9);
+      expect(host().prunePlant(decor.findIndex((d) => d.kind === 'rock'))).toBe(false);
+      host().toggleScraper();
+      host().togglePruner();
+      expect(host().pruning()).toBe(true);
+      expect(host().scraping()).toBe(false);
+      expect(fixture.nativeElement.getAttribute('data-aqfish-pruner')).toBe('true');
+      host().toggleScraper();
+      expect(host().pruning()).toBe(false);
+      expect(host().scraping()).toBe(true);
+      fixture.destroy();
+      await create();
+      const saved = host().world!.water.plantGrowth;
+      expect(saved?.[String(decor[index].seed)] ?? 0).toBe(after);
+    });
+
     it('soins des points blancs (#361) : geste refusé ou accepté, état exposé et enregistré', async () => {
       await create('?seed=42&points-blancs=1&vitesse=0');
       const attr = () => fixture.nativeElement.getAttribute('data-aqfish-treatment');

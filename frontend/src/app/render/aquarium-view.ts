@@ -229,6 +229,8 @@ export class AquariumView {
    * ou en route vers lui pendant un fondu (`setRain(…, true)`, `stepOvercast`, issue #338).
    */
   private overcast = 1;
+  /** Lumière gardée au fond sous les plantes hautes (issue #477, `plantShade`), 1 sans ombre. */
+  private plantShade = 1;
   /**
    * Pose de base de la caméra du fond d'écran (`applyOrbit`, #332), recalculée seulement si
    * le préréglage, le rapport d'aspect ou le bac changent ; `null` avant le premier appel.
@@ -1006,7 +1008,8 @@ export class AquariumView {
     for (let k = 0; k < 3; k++) {
       tint[k] *= overcast;
     }
-    this.decorLayer.setTint(tint);
+    // Ombre des plantes hautes (#477) : sur le seul décor du fond ; × 1 sans ombre.
+    this.decorLayer.setTint(tint, this.plantShade);
     this.lilyPadLayer.setTint(tint, light.intensity, overcast);
     this.roomLayer.setDaylight(light, overcast);
     // Pénalités tirées de la seule intensité du jour : jamais de tons du soir à midi.
@@ -1281,6 +1284,32 @@ export class AquariumView {
   /** Plaques d'algues affichées (tests). */
   get algaeCount(): number {
     return this.algaeLayer.count;
+  }
+
+  /**
+   * Pousse affichée de la plante d'indice `index` du décor (issue #477, voxels entiers,
+   * `DecorLayer.setPlantGrowth`). Sans effet après `dispose`.
+   */
+  setPlantGrowth(index: number, growth: number): void {
+    if (!this.disposed) {
+      this.decorLayer.setPlantGrowth(index, growth);
+    }
+  }
+
+  /** Pousse affichée de la plante d'indice `index`, `null` pour un autre élément (tests). */
+  plantGrowth(index: number): number | null {
+    return this.decorLayer.plantGrowth(index);
+  }
+
+  /**
+   * Lumière gardée au fond sous les plantes hautes (issue #477, `plantShade`), dans ]0, 1] :
+   * multiplie la teinte du décor. Sans effet après `dispose` ou si elle ne change pas.
+   */
+  setPlantShade(shade: number): void {
+    if (!this.disposed && shade !== this.plantShade && shade > 0 && shade <= 1) {
+      this.plantShade = shade;
+      this.applyLight();
+    }
   }
 
   /**

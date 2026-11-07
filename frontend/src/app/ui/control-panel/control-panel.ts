@@ -463,19 +463,39 @@ export interface NewTankRequest {
               (input)="onLighting($event)"
             />
           </label>
-          <!-- Raclette (#476) : en main, un clic sur une vitre retire la plaque d'algues visée. -->
-          <button
-            type="button"
-            class="control-panel__edit"
-            data-scraper
-            [attr.aria-pressed]="scraping()"
-            [attr.aria-label]="
-              scraping() ? 'Poser la raclette' : 'Raclette : cliquer sur les algues'
-            "
-            (click)="scraperToggled.emit()"
+          <!-- Outils d'entretien, côte à côte (le panneau ne grandit pas, docs/PIEGES.md) :
+               raclette (#476), un clic sur une vitre retire la plaque d'algues visée ; sécateur
+               (#477), un clic sur une plante à tige la taille. -->
+          <div
+            class="control-panel__row control-panel__row--halves"
+            role="group"
+            aria-label="Outils d’entretien"
           >
-            {{ scraping() ? 'Poser la raclette' : 'Raclette' }}
-          </button>
+            <button
+              type="button"
+              class="control-panel__edit"
+              data-scraper
+              [attr.aria-pressed]="scraping()"
+              [attr.aria-label]="
+                scraping() ? 'Poser la raclette' : 'Raclette : cliquer sur les algues'
+              "
+              (click)="scraperToggled.emit()"
+            >
+              {{ scraping() ? 'Poser la raclette' : 'Raclette' }}
+            </button>
+            <button
+              type="button"
+              class="control-panel__edit"
+              data-pruner
+              [attr.aria-pressed]="pruning()"
+              [attr.aria-label]="
+                pruning() ? 'Poser le sécateur' : 'Sécateur : cliquer sur une plante haute'
+              "
+              (click)="prunerToggled.emit()"
+            >
+              {{ pruning() ? 'Poser le sécateur' : 'Sécateur' }}
+            </button>
+          </div>
           <!-- Feuilles de catappa (#239) : « − », nombre, « + », puis le rappel que l'effet est
                simplifié (approximation de jeu, ADR 0071). -->
           <div class="control-panel__count" data-catappa>
@@ -1211,6 +1231,8 @@ export class ControlPanel {
   readonly lighting = input(DEFAULT_LIGHTING_HOURS);
   /** Raclette en main (fournie par l'hôte, #476). */
   readonly scraping = input(false);
+  /** Sécateur en main (fourni par l'hôte, #477). */
+  readonly pruning = input(false);
   /** Traitement des points blancs en cours (fourni par l'hôte, #361) ; `null` : aucun. */
   readonly treatment = input<TreatmentReadout | null>(null);
   /** Message du dernier geste de soin (fourni par l'hôte, #361) ; `null` : aucun. */
@@ -1275,6 +1297,8 @@ export class ControlPanel {
   readonly lightingChanged = output<number>();
   /** Bouton « Raclette » (#476) : prendre ou poser la raclette. */
   readonly scraperToggled = output<void>();
+  /** Bouton « Sécateur » (#477) : prendre ou poser le sécateur. */
+  readonly prunerToggled = output<void>();
   /** Nombre de feuilles de catappa demandé (#239), dans [0, `MAX_CATAPPA_LEAVES`]. */
   readonly catappaChanged = output<number>();
   /** Bouton « Changer l'eau » (#207). */

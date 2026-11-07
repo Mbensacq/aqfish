@@ -1,4 +1,5 @@
 import { MAX_LIGHTING_HOURS, MIN_LIGHTING_HOURS, readAlgae } from './algae';
+import { readPlantGrowth, type PlantGrowth } from './plant-growth';
 import { catappaPh, catappaStrength, readCatappa, stepCatappaInPlace } from './catappa';
 import type { EnvironmentId } from './environment';
 import { SPECIES, type SpeciesId } from './species';
@@ -84,6 +85,12 @@ export interface WaterState {
    * #476, `sim/algae.ts`). Absente : aucune algue. Seule la raclette la fait baisser.
    */
   readonly algae?: readonly number[];
+  /**
+   * Pousse des plantes à tige, en voxels, par graine de plante (issue #477,
+   * `sim/plant-growth.ts`). Absente : toutes les plantes à leur hauteur d'origine. Seule la
+   * taille la fait baisser ; le changement d'eau n'y touche pas.
+   */
+  readonly plantGrowth?: PlantGrowth;
 }
 
 /** État de l'eau modifiable en place (propriétaire unique : le monde). */
@@ -341,6 +348,9 @@ export function copyWater(water: WaterState): MutableWaterState {
   if (water.algae !== undefined) {
     copy.algae = [...water.algae];
   }
+  if (water.plantGrowth !== undefined) {
+    copy.plantGrowth = { ...water.plantGrowth };
+  }
   return copy;
 }
 
@@ -370,7 +380,15 @@ export function readWater(value: unknown, environment: EnvironmentId): ReadWater
   const fields: [
     Exclude<
       keyof WaterState,
-      'ph' | 'heater' | 'catappa' | 'salt' | 'medication' | 'ichCure' | 'lighting' | 'algae'
+      | 'ph'
+      | 'heater'
+      | 'catappa'
+      | 'salt'
+      | 'medication'
+      | 'ichCure'
+      | 'lighting'
+      | 'algae'
+      | 'plantGrowth'
     >,
     number,
     number,
@@ -417,6 +435,11 @@ export function readWater(value: unknown, environment: EnvironmentId): ReadWater
   if (algae !== null && !algae.ok) {
     return { ok: false, error: algae.error };
   }
+  const growthValue = read('plantGrowth');
+  const plantGrowth = growthValue === undefined ? null : readPlantGrowth(growthValue);
+  if (plantGrowth !== null && !plantGrowth.ok) {
+    return { ok: false, error: plantGrowth.error };
+  }
   const optional: ['salt' | 'medication' | 'ichCure', number, number][] = [
     ['salt', 0, MAX_SALT],
     ['medication', 0, MAX_MEDICATION],
@@ -450,6 +473,9 @@ export function readWater(value: unknown, environment: EnvironmentId): ReadWater
       ...extra,
       ...(lighting === undefined ? {} : { lighting }),
       ...(algae === null || algae.algae.every((c) => c === 0) ? {} : { algae: algae.algae }),
+      ...(plantGrowth === null || Object.keys(plantGrowth.growth).length === 0
+        ? {}
+        : { plantGrowth: plantGrowth.growth }),
     },
   };
 }

@@ -28,7 +28,7 @@ import { buildAnemoneMesh } from './anemone-model';
 import { buildCoralMesh } from './coral-model';
 import { FISH_RENDER_ORDER } from './fish-layer';
 import { PALETTE } from './palette';
-import { applyPlantSway, buildPlantMesh, type PlantMeshData } from './plant-model';
+import { applyPlantSway, buildPlantMesh, cachedPlantMesh, type PlantMeshData } from './plant-model';
 import {
   buildRockMesh,
   createOutlineGeometry,
@@ -111,10 +111,18 @@ export function createOutlineMaterial(
 
 /** Plante affichée : ses données d'ondulation et l'attribut de positions partagé. */
 interface SwayingPlant {
-  readonly data: PlantMeshData;
-  readonly amplitude: number;
+  data: PlantMeshData;
+  amplitude: number;
   readonly rotation: number;
-  readonly position: BufferAttribute;
+  position: BufferAttribute;
+}
+
+/** Plante du décor (`World.decor`) dont la hauteur suit la pousse (issue #477). */
+interface GrowingPlant {
+  readonly sway: SwayingPlant;
+  readonly item: DecorItem;
+  /** Pousse affichée, en voxels entiers. */
+  growth: number;
 }
 
 /**
@@ -138,6 +146,11 @@ export class DecorLayer {
   private items: { readonly voxels: Mesh; readonly hull: Mesh }[] = [];
   private selected: number | null = null;
   private plants: SwayingPlant[] = [];
+  /** Plante de chaque élément de `World.decor` (`undefined` pour un rocher ou un bois). */
+  private growing: (GrowingPlant | undefined)[] = [];
+  /** Temps et facteur de la dernière ondulation (`update`), repris après un changement de pousse. */
+  private swayTime = 0;
+  private swayScale = 1;
   private corals = 0;
   private anemones = 0;
 
@@ -208,6 +221,7 @@ export class DecorLayer {
       }
       this.object.add(group);
       this.items.push({ voxels: mesh, hull });
+      this.growing.push(sway && { sway, item, growth: 0 });
     });
     corals.forEach((colony, n) => {
       const model = coralModel(colony.form, colony.seed, colony.scale);
@@ -327,10 +341,60 @@ export class DecorLayer {
   }
 
   /**
+   * Pousse affichée de la plante d'indice `index` de `World.decor` (issue #477), en voxels
+   * entiers : son maillage est remplacé par celui de cette hauteur (`cachedPlantMesh`, un
+   * maillage par palier) seulement si la pousse change ; sinon rien n'est alloué. Renvoie vrai
+   * si le maillage a changé. Sans effet pour un autre élément ou une pousse invalide.
+   */
+  setPlantGrowth(index: number, growth: number): boolean {
+    const plant = this.growing[index];
+    if (!plant || plant.growth === growth || !Number.isInteger(growth) || growth < 0) {
+      return false;
+    }
+    const { item, sway } = plant;
+    const { model, mesh } = cachedPlantMesh(item.seed, item.scale, item.form as PlantForm, growth);
+    const position = new BufferAttribute(mesh.positions, 3);
+    position.setUsage(DynamicDrawUsage);
+    const geometry = createRockGeometry(mesh);
+    const outline = createOutlineGeometry(mesh);
+    geometry.setAttribute('position', position);
+    outline.setAttribute('position', position);
+    const { voxels, hull } = this.items[index];
+    for (const [m, next] of [
+      [voxels, geometry],
+      [hull, outline],
+    ] as const) {
+      const old = m.geometry;
+      old.dispose();
+      this.geometries[this.geometries.indexOf(old)] = next;
+      m.geometry = next;
+    }
+    sway.data = mesh;
+    sway.amplitude = model.amplitude;
+    sway.position = position;
+    plant.growth = growth;
+    applyPlantSway(
+      mesh,
+      model.amplitude * this.swayScale,
+      sway.rotation,
+      this.swayTime,
+      mesh.positions,
+    );
+    return true;
+  }
+
+  /** Pousse affichée de la plante d'indice `index`, `null` pour un autre élément (tests). */
+  plantGrowth(index: number): number | null {
+    return this.growing[index]?.growth ?? null;
+  }
+
+  /**
    * Pose les plantes au temps simulé `time` (secondes), sans allocation. `swayScale` multiplie
    * l'amplitude d'ondulation (1 : inchangée, #406 : atténuée si les mouvements sont réduits).
    */
   update(time: number, swayScale = 1): void {
+    this.swayTime = time;
+    this.swayScale = swayScale;
     for (const plant of this.plants) {
       applyPlantSway(
         plant.data,
@@ -346,10 +410,11 @@ export class DecorLayer {
   /**
    * Teinte du décor (facteur linéaire par canal, `render/night-shade.ts`, `decorTintInto`) :
    * multiplie les couleurs de sommet des plantes et des rochers. Blanc (1, 1, 1) en plein
-   * jour : couleurs d'origine, à l'octet près.
+   * jour : couleurs d'origine, à l'octet près. `factor` (ombre des plantes hautes, #477)
+   * multiplie les trois canaux ; 1 : sans effet.
    */
-  setTint(tint: readonly [number, number, number]): void {
-    this.material.color.setRGB(tint[0], tint[1], tint[2]);
+  setTint(tint: readonly [number, number, number], factor = 1): void {
+    this.material.color.setRGB(tint[0] * factor, tint[1] * factor, tint[2] * factor);
   }
 
   /** Teinte courante du décor (tests). */
@@ -400,6 +465,7 @@ export class DecorLayer {
     this.geometries.forEach((g) => g.dispose());
     this.geometries = [];
     this.plants = [];
+    this.growing = [];
     this.items = [];
     this.selected = null;
     this.corals = 0;

@@ -273,3 +273,61 @@ describe('poissons et plantes', () => {
     15_000,
   );
 });
+
+describe('plantModel : pousse (#477)', () => {
+  it('pousse nulle : le modèle d’avant, à l’identique', () => {
+    for (const seed of [101, 204, 303, 31]) {
+      expect(plantModel(seed, 1, 'tall', 0)).toEqual(plantModel(seed, 1, 'tall'));
+    }
+  });
+
+  it('la pousse allonge chaque tige d’autant de voxels, la pointe en haut', () => {
+    const base = plantModel(101, 1.2, 'tall');
+    for (const growth of [1, 5, 12]) {
+      const grown = plantModel(101, 1.2, 'tall', growth);
+      expect(grown.height).toBe(base.height + growth);
+      expect(grown.strands).toBe(base.strands);
+      expect(grown.phase).toBe(base.phase);
+      const stemTops = (m: PlantModel): number[] =>
+        Array.from({ length: m.strands }, (_, s) =>
+          m.cells.reduce((h, c) => (c.part === 'stem' && c.strand === s ? Math.max(h, c.j) : h), 0),
+        );
+      expect(stemTops(grown)).toEqual(stemTops(base).map((t) => t + growth));
+      const tips = grown.cells.filter((c) => c.part === 'stem' && c.tip);
+      expect(tips.map((c) => c.j)).toEqual(
+        stemTops(grown)
+          .slice()
+          .sort((a, b) => a - b),
+      );
+    }
+  });
+
+  it('une plante qui grandit garde ses voxels (hors pointes des tiges, qui montent)', () => {
+    const kept = (m: PlantModel): string[] =>
+      keys({ ...m, cells: m.cells.filter((c) => !(c.part === 'stem' && c.tip)) });
+    for (const [from, to] of [
+      [0, 7],
+      [6, 14],
+      [1, 2],
+    ]) {
+      const grown = new Set(
+        keys(plantModel(204, 1, 'tall', to)).map((k) => k.replace(/,true$/, ',false')),
+      );
+      for (const key of kept(plantModel(204, 1, 'tall', from))) {
+        expect(grown.has(key.replace(/,true$/, ',false')) || grown.has(key)).toBe(true);
+      }
+    }
+  });
+
+  it('la pousse porte des feuilles ; une touffe ne pousse pas', () => {
+    const base = plantModel(303, 1, 'tall');
+    const grown = plantModel(303, 1, 'tall', 12);
+    const leavesAbove = grown.cells.filter((c) => c.part === 'leaf' && c.j > base.height);
+    expect(leavesAbove.length).toBeGreaterThan(0);
+    expect(plantModel(404, 1, 'tuft', 9)).toEqual(plantModel(404, 1, 'tuft'));
+  });
+
+  it.each([-1, 1.5, Number.NaN, Infinity])('refuse la pousse %s', (growth) => {
+    expect(() => plantModel(101, 1, 'tall', growth)).toThrow(RangeError);
+  });
+});

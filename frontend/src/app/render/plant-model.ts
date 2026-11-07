@@ -1,5 +1,5 @@
-import type { PlantCell, PlantModel } from '../sim/plant';
-import { STRAND_PHASE_STEP } from '../sim/plant';
+import type { PlantCell, PlantForm, PlantModel } from '../sim/plant';
+import { plantModel, STRAND_PHASE_STEP } from '../sim/plant';
 import { plantSway, type SwayOffset } from '../sim/plant-sway';
 import { PALETTE } from './palette';
 import { buildVoxelMesh, cellHash, type VoxelMeshData } from './rock-model';
@@ -90,4 +90,47 @@ export function applyPlantSway(
     out[p + 1] = rest[p + 1];
     out[p + 2] = rest[p + 2] + s * offset.x + c * offset.z;
   }
+}
+
+/** Nombre de maillages de plante gardés en cache (`cachedPlantMesh`), toutes pousses confondues. */
+export const PLANT_MESH_CACHE_LIMIT = 64;
+
+/** Modèle et maillage au repos d'une plante, par graine, échelle, forme et pousse. */
+const PLANT_MESHES = new Map<
+  string,
+  { readonly model: PlantModel; readonly mesh: PlantMeshData }
+>();
+
+/** Nombre de maillages de plante construits par `cachedPlantMesh` (tests). */
+let plantMeshBuilds = 0;
+
+/** Nombre de maillages de plante construits par `cachedPlantMesh` depuis le chargement (tests). */
+export function plantMeshBuildCount(): number {
+  return plantMeshBuilds;
+}
+
+/**
+ * Modèle et maillage d'une plante de pousse `growth` (voxels entiers, issue #477) : construits
+ * une fois par palier d'un voxel, puis repris du cache (au plus `PLANT_MESH_CACHE_LIMIT`
+ * entrées, vidé quand il est plein). Les positions rendues sont une copie propre à l'appelant
+ * (l'ondulation les réécrit) ; le reste du maillage est partagé, en lecture seule.
+ */
+export function cachedPlantMesh(
+  seed: number,
+  scale: number,
+  form: PlantForm,
+  growth: number,
+): { readonly model: PlantModel; readonly mesh: PlantMeshData } {
+  const key = `${seed}|${scale}|${form}|${growth}`;
+  let hit = PLANT_MESHES.get(key);
+  if (!hit) {
+    const model = plantModel(seed, scale, form, growth);
+    hit = { model, mesh: buildPlantMesh(model, seed) };
+    plantMeshBuilds++;
+    if (PLANT_MESHES.size >= PLANT_MESH_CACHE_LIMIT) {
+      PLANT_MESHES.clear();
+    }
+    PLANT_MESHES.set(key, hit);
+  }
+  return { model: hit.model, mesh: { ...hit.mesh, positions: hit.mesh.rest.slice() } };
 }

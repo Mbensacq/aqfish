@@ -22,6 +22,7 @@ import {
   SELECTION_WIDTH_PX,
 } from './decor-layer';
 import { FISH_RENDER_ORDER } from './fish-layer';
+import { cachedPlantMesh, PLANT_MESH_CACHE_LIMIT, plantMeshBuildCount } from './plant-model';
 import { PALETTE_COLORS } from './palette';
 
 describe('DecorLayer', () => {
@@ -360,6 +361,104 @@ describe('DecorLayer', () => {
       expect(layer.itemPosition(99)).toBeNull();
       expect(layer.itemPosition(0)).toEqual({ x: DEFAULT_DECOR[0].x, z: DEFAULT_DECOR[0].z });
       layer.dispose();
+    });
+  });
+
+  describe('pousse des plantes (#477)', () => {
+    const tallIndex = DEFAULT_DECOR.findIndex((d) => d.kind === 'plant' && d.form === 'tall');
+    const rockIndex = DEFAULT_DECOR.findIndex((d) => d.kind === 'rock');
+
+    function voxels(layer: DecorLayer, index: number): Mesh {
+      return layer.object.children[index].children[1] as Mesh;
+    }
+
+    it('une plante à tige suit la pousse : maillage plus haut, mêmes positions pour la coque', () => {
+      const layer = new DecorLayer();
+      layer.setDecor(DEFAULT_DECOR);
+      layer.update(3);
+      const item = DEFAULT_DECOR[tallIndex];
+      const before = voxels(layer, tallIndex).geometry;
+      expect(layer.plantGrowth(tallIndex)).toBe(0);
+      expect(layer.setPlantGrowth(tallIndex, 6)).toBe(true);
+      const mesh = voxels(layer, tallIndex);
+      const hull = layer.object.children[tallIndex].children[0] as Mesh;
+      expect(mesh.geometry).not.toBe(before);
+      expect(mesh.geometry.getAttribute('position')).toBe(hull.geometry.getAttribute('position'));
+      const model = plantModel(item.seed, item.scale, 'tall', 6);
+      const top = Math.max(
+        ...(mesh.geometry.getAttribute('position').array as Float32Array).filter(
+          (_, n) => n % 3 === 1,
+        ),
+      );
+      expect(top).toBeCloseTo(model.height * model.voxelSize, 6);
+      expect(layer.plantGrowth(tallIndex)).toBe(6);
+    });
+
+    it('même pousse : rien n’est reconstruit ni alloué ; rocher ou pousse invalide sans effet', () => {
+      const layer = new DecorLayer();
+      layer.setDecor(DEFAULT_DECOR);
+      layer.setPlantGrowth(tallIndex, 3);
+      const geometry = voxels(layer, tallIndex).geometry;
+      const builds = plantMeshBuildCount();
+      for (let n = 0; n < 20; n++) {
+        expect(layer.setPlantGrowth(tallIndex, 3)).toBe(false);
+      }
+      expect(voxels(layer, tallIndex).geometry).toBe(geometry);
+      expect(plantMeshBuildCount()).toBe(builds);
+      expect(layer.setPlantGrowth(rockIndex, 3)).toBe(false);
+      expect(layer.plantGrowth(rockIndex)).toBeNull();
+      expect(layer.setPlantGrowth(tallIndex, -1)).toBe(false);
+      expect(layer.setPlantGrowth(tallIndex, 1.5)).toBe(false);
+      expect(layer.setPlantGrowth(99, 1)).toBe(false);
+    });
+
+    it('cache par palier : un maillage par pousse, positions propres à chaque appelant', () => {
+      const builds = plantMeshBuildCount();
+      const a = cachedPlantMesh(9001, 1, 'tall', 4);
+      const b = cachedPlantMesh(9001, 1, 'tall', 4);
+      expect(plantMeshBuildCount()).toBe(builds + 1);
+      expect(b.model).toBe(a.model);
+      expect(b.mesh.colors).toBe(a.mesh.colors);
+      expect(b.mesh.positions).not.toBe(a.mesh.positions);
+      expect(Array.from(b.mesh.positions)).toEqual(Array.from(a.mesh.rest));
+      cachedPlantMesh(9001, 1, 'tall', 5);
+      expect(plantMeshBuildCount()).toBe(builds + 2);
+    });
+
+    it('cache borné : au plus PLANT_MESH_CACHE_LIMIT maillages gardés', () => {
+      for (let g = 0; g < PLANT_MESH_CACHE_LIMIT + 2; g++) {
+        cachedPlantMesh(9002, 0.5, 'tall', g);
+      }
+      const builds = plantMeshBuildCount();
+      cachedPlantMesh(9002, 0.5, 'tall', 0);
+      expect(plantMeshBuildCount()).toBe(builds + 1);
+    });
+
+    it('revenir à la pousse nulle redonne le maillage d’origine ; l’ondulation continue', () => {
+      const fresh = new DecorLayer();
+      fresh.setDecor(DEFAULT_DECOR);
+      fresh.update(2);
+      const layer = new DecorLayer();
+      layer.setDecor(DEFAULT_DECOR);
+      layer.setPlantGrowth(tallIndex, 8);
+      layer.update(2);
+      layer.setPlantGrowth(tallIndex, 0);
+      const array = (m: Mesh): number[] =>
+        Array.from(m.geometry.getAttribute('position').array as Float32Array);
+      expect(array(voxels(layer, tallIndex))).toEqual(array(voxels(fresh, tallIndex)));
+      const geometry = voxels(layer, tallIndex).geometry;
+      layer.update(4);
+      expect(voxels(layer, tallIndex).geometry).toBe(geometry);
+      expect(array(voxels(layer, tallIndex))).not.toEqual(array(voxels(fresh, tallIndex)));
+    });
+
+    it('ombre des plantes hautes : facteur sur la teinte, 1 sans effet', () => {
+      const layer = new DecorLayer();
+      layer.setTint([0.5, 0.6, 0.7]);
+      expect(layer.tint).toEqual([0.5, 0.6, 0.7]);
+      layer.setTint([0.5, 0.6, 0.7], 0.9);
+      expect(layer.tint[0]).toBeCloseTo(0.45, 6);
+      expect(layer.tint[2]).toBeCloseTo(0.63, 6);
     });
   });
 });

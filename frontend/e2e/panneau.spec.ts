@@ -298,6 +298,11 @@ test.describe('Panneau de contrôle', () => {
     await expect(
       page.getByRole('button', { name: 'Raclette : cliquer sur les algues' }),
     ).toBeFocused();
+    // Sécateur (#477), à côté de la raclette.
+    await page.keyboard.press('Tab');
+    await expect(
+      page.getByRole('button', { name: 'Sécateur : cliquer sur une plante haute' }),
+    ).toBeFocused();
     // Feuilles de catappa (#239) : « − » (désactivé, mais atteignable au clavier) puis « + ».
     await page.keyboard.press('Tab');
     await expect(
