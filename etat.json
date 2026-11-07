@@ -6005,10 +6005,10 @@
           "note": "Verdict OK, 0 bug (1 remarque mineure : Paludarium sans faim), captures c164 publiées (e2e local indisponible, CI verte)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-07T02:50:05.638Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-07T03:54:09.894Z",
+          "note": "PR #491 fusionnée → v1.12.3 (release créée, CI main verte) ; #490, #255, #318 fermées ; dette #492 ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
