@@ -1,6 +1,13 @@
 import { setPopulation } from './population';
 import { createRoom, type RoomState, type RoomTank } from './room-state';
-import { animalCountText, tankList, tankListDetail, tankListEntry, worstAlert } from './tank-list';
+import {
+  animalCountText,
+  hungerText,
+  tankList,
+  tankListDetail,
+  tankListEntry,
+  worstAlert,
+} from './tank-list';
 import { advance, type World } from './world';
 
 function withWorld(room: RoomState, id: number, world: World): RoomState {
@@ -39,6 +46,27 @@ describe('liste des bacs (#306)', () => {
     expect(tankListDetail(entry)).toMatch(/^vide · \d+ L$/);
     expect(tankListDetail({ animals: 1, liters: 54 })).toBe('1 animal · 54 L');
     expect(tankListDetail({ animals: 12, liters: 200 })).toBe('12 animaux · 200 L');
+  });
+
+  it('faim en clair dans la ligne (#318), absente sans animal nourri', () => {
+    expect(hungerText(40)).toBe('faim 40 %');
+    expect(hungerText(0)).toBe('faim 0 %');
+    expect(hungerText(100)).toBe('faim 100 %');
+    expect(hungerText(null)).toBeNull();
+    expect(hungerText(Number.NaN)).toBeNull();
+    expect(tankListDetail({ animals: 3, liters: 54, hunger: 40 })).toBe(
+      '3 animaux · 54 L · faim 40 %',
+    );
+    expect(tankListDetail({ animals: 3, liters: 54, hunger: null })).toBe('3 animaux · 54 L');
+    // Bac sans animal : moyenne nulle, pas de division par zéro ni de « NaN ».
+    const room = createRoom(7, ['tropical']);
+    const empty = tankListEntry(
+      { ...room.tanks[0], world: { ...room.tanks[0].world, entities: [] } },
+      0,
+    );
+    expect(tankListDetail(empty)).toMatch(/^vide · \d+ L$/);
+    const lived = tankListEntry(room.tanks[0], 0);
+    expect(tankListDetail(lived)).toMatch(/ · faim \d+ %$/);
   });
 
   it('« vide », « 1 animal », « N animaux » (#316)', () => {

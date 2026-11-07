@@ -374,7 +374,7 @@ describe('ControlPanel', () => {
           worst: 'critique',
           selected: false,
         }),
-        entry({ id: 2, animals: 0, liters: 90, selected: false, selectable: false }),
+        entry({ id: 2, animals: 0, hunger: null, liters: 90, selected: false, selectable: false }),
       ]);
     });
 
@@ -387,8 +387,11 @@ describe('ControlPanel', () => {
       expect(section().querySelector('[data-tank="1"]')!.getAttribute('data-tank-alert')).toBe(
         'critique',
       );
-      expect(tankButton(0).textContent).toContain('18 animaux · 288 L');
+      expect(tankButton(0).textContent).toContain('18 animaux · 288 L · faim 20 %');
+      expect(tankButton(0).getAttribute('aria-label')).toContain('faim 20 %');
+      // Bac vide (#318) : pas de faim affichée.
       expect(tankButton(2).textContent).toContain('vide · 90 L · posé');
+      expect(tankButton(2).textContent).not.toContain('faim');
       expect(tankButton(2).getAttribute('aria-disabled')).toBe('true');
     });
 

@@ -11,9 +11,13 @@ haut de sa section.
   section qui ne tient plus dans la deuxième colonne en ouvre une troisième, à droite, hors de
   la largeur du panneau (débordement horizontal, sans erreur). Avec « Soins » affichée, la note
   des sources est masquée à ce format (elle reste dans l'infobulle de chaque bouton) : la
-  section tient sous « Eau ». Cas couvert par `cadrage-panneaux` (« Réglages (soins) »). Un
-  message de traitement long (avertissement compris) prend la place de la note et peut encore
-  repousser la section. (2026-11-06)
+  section tient sous « Eau ». Cas couvert par `cadrage-panneaux` (« Réglages (soins) »).
+  Depuis le cycle 164 (#490), le message d'un geste de soin n'est plus une ligne de la
+  section à ce format : `app-treatment-notice` le pose en bulle (position absolue) à droite du
+  panneau, alignée sur son bas ; son bloc conteneur est l'hôte fixe du panneau, donc le
+  défilement du panneau ne la rogne pas. Ne pas positionner (`position: relative`) le
+  panneau ni la section, sinon la bulle y est enfermée et rognée. Cas « Réglages (soins,
+  message) » et « message de soin à 1280 × 720 (#490) ». (2026-11-06)
 - **Aide-mémoire des commandes à 1280 × 720 : une ligne de plus le fait défiler** (cycle 163,
   #488) : la ligne de la raclette dépassait de 17 px (police par défaut et DejaVu Sans). Gagné
   sur les espacements (`row-gap: 0`, titres de groupe à 4 px au-dessus) ; pour une ligne de
@@ -890,6 +894,13 @@ DEFAULT_DECOR)`), sinon les trajectoires divergent dès la naissance. (2026-10-1
 
 ## Simulation
 
+- **Horloge du jour d'un bac rangé** (cycle 164, #318 point 4, ADR 0076 « Limite connue ») :
+  l'horloge du jour (`DayClock`) est celle du bac affiché, mais chaque monde la lit à son
+  propre `time` ; un bac rangé dont le temps diffère de celui du bac affiché voit une autre
+  heure (rythme jour/nuit décalé). Sans effet sur l'eau, la faim ni la liste des bacs (faim en
+  clair depuis #318). À reprendre si un écart se voit à l'écran (bac posé rendu dans son
+  repère, lot 3c) ou si la pièce passe à un jour commun : partir de `stepRoom` (ADR 0076).
+  (2026-11-07)
 - **Nouvel état dans l'eau : le copier dans `copyWater`** (cycle 162, #476) : `copyWater`
   ne recopiait que le tableau `catappa` ; un autre tableau ajouté à `WaterState` (couvertures
   des algues) serait partagé entre le monde et sa copie (`cloneWorld`, sauvegarde), et un
