@@ -1436,6 +1436,28 @@ describe('AquariumHost', () => {
       expect(saved?.[String(decor[index].seed)] ?? 0).toBe(after);
     });
 
+    it('pousse des plantes (#494) : data-aqfish-plants réécrit seulement s’il change', async () => {
+      await create('?seed=42&vitesse=0');
+      const element = fixture.nativeElement as HTMLElement;
+      const exposeWater = () => (host() as unknown as { exposeWater: () => void }).exposeWater();
+      const setAttribute = vi.spyOn(element, 'setAttribute');
+      const plantWrites = () =>
+        setAttribute.mock.calls.filter(([name]) => name === 'data-aqfish-plants').length;
+      exposeWater();
+      exposeWater();
+      expect(plantWrites()).toBe(0);
+      expect(element.getAttribute('data-aqfish-plants')).toBe('0,0,0;100');
+      const decor = host().world!.decor;
+      const index = decor.findIndex((d) => d.kind === 'plant' && d.form === 'tall');
+      const world = host().world! as { water: object };
+      world.water = { ...world.water, plantGrowth: { [String(decor[index].seed)]: 4 } };
+      exposeWater();
+      exposeWater();
+      expect(plantWrites()).toBe(1);
+      expect(element.getAttribute('data-aqfish-plants')).toMatch(/^[1-9]\d*,0,0;100$/);
+      setAttribute.mockRestore();
+    });
+
     it('soins des points blancs (#361) : geste refusé ou accepté, état exposé et enregistré', async () => {
       await create('?seed=42&points-blancs=1&vitesse=0');
       const attr = () => fixture.nativeElement.getAttribute('data-aqfish-treatment');

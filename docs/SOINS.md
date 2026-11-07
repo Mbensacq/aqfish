@@ -540,6 +540,9 @@ jeu**, sauf mention.
 - Taille au sécateur (section « Eau ») : la plante garde 80 % de sa hauteur totale, jamais
   moins que sa hauteur d'origine. Le changement d'eau n'y touche pas.
 - Chaque plante arrivée au plafond retire 4 % de la lumière du décor du fond, 12 % au plus.
+  Cette ombre tombe sur **tout** le décor posé au fond (plantes, rochers, bois flotté), voulu
+  ainsi (issue #494) : la canopée assombrit le fond du bac ; ni les animaux, ni l'eau, ni les
+  nénuphars n'y sont soumis.
   Les plantes n'ont pas d'autre effet sur l'eau ni sur les animaux dans le jeu.
 
 **Fiche produit (structure suggérée)** : `id`, `nom`, `catégorie` ; `dose_efficace`,

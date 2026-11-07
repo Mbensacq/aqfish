@@ -1008,7 +1008,8 @@ export class AquariumView {
     for (let k = 0; k < 3; k++) {
       tint[k] *= overcast;
     }
-    // Ombre des plantes hautes (#477) : sur le seul décor du fond ; × 1 sans ombre.
+    // Ombre des plantes hautes (#477, #494) : sur tout le décor posé au fond (plantes, rochers,
+    // bois, une seule matière), ni sur les animaux ni sur l'eau ; × 1 sans ombre.
     this.decorLayer.setTint(tint, this.plantShade);
     this.lilyPadLayer.setTint(tint, light.intensity, overcast);
     this.roomLayer.setDaylight(light, overcast);

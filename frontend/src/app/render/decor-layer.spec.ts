@@ -2,6 +2,7 @@ import {
   BufferAttribute,
   BufferGeometry,
   Mesh,
+  MeshBasicMaterial,
   Raycaster,
   ShaderMaterial,
   Vector2,
@@ -493,6 +494,28 @@ describe('DecorLayer', () => {
       layer.setTint([0.5, 0.6, 0.7], 0.9);
       expect(layer.tint[0]).toBeCloseTo(0.45, 6);
       expect(layer.tint[2]).toBeCloseTo(0.63, 6);
+    });
+
+    it('ombre des plantes hautes (#494) : tout le décor posé au fond, plantes, rochers et bois', () => {
+      const wood: DecorItem = { kind: 'wood', x: 0.1, z: -0.1, rotation: 1.2, scale: 1, seed: 7 };
+      const layer = new DecorLayer();
+      layer.setDecor([...DEFAULT_DECOR, wood]);
+      layer.setTint([1, 1, 1], 0.88);
+      const voxels: Mesh[] = [];
+      layer.object.traverse((child) => {
+        if (child.name.endsWith('-voxels')) {
+          voxels.push(child as Mesh);
+        }
+      });
+      const kinds = new Set(voxels.map((mesh) => mesh.name.split('-')[0]));
+      expect(kinds).toEqual(new Set(['plante', 'rocher', 'bois']));
+      // Décision #494 : une seule matière pour tout le décor, donc une seule teinte.
+      for (const mesh of voxels) {
+        const color = (mesh.material as MeshBasicMaterial).color;
+        expect([color.r, color.g, color.b]).toEqual(layer.tint);
+      }
+      expect(layer.tint[0]).toBeCloseTo(0.88, 6);
+      layer.dispose();
     });
   });
 });
