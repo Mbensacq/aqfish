@@ -6203,10 +6203,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-07T19:16:08.226Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-07T19:16:35.658Z",
+          "note": "Issue #484 : dureté de l'eau (GH/KH) et fiches complètes (M)"
         }
       },
       "metriques": {}
