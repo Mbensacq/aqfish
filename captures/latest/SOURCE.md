@@ -1,6 +1,4 @@
-# Captures c163 (QA)
-
-- Branche : cycle/c163-finitions-algues, PR #489
-- Commit : 50f30bad7d4dbb3a5d9b85378b81c3edc45e01c5
-- Graine : 42 (graine par défaut des captures), temps simulé fixe du contrat de capture
-- Chromium headless shell 141 (Playwright 1.56.1), 133 vues
+# Captures c164
+- Branche : cycle/c164-dette-panneau-reglages, PR #491, commit eac1727
+- Graine : celle par défaut de la série de captures ; temps : 12:00 figé (contrat de capture)
+- Chromium local 1243 (liaison symbolique vers l'attendu 1194, hors dépôt)
