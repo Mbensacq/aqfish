@@ -306,11 +306,16 @@ describe('SpeciesWiki, lot 2/2 (#291)', () => {
     const row = () => q('[data-wiki-compare="hardness"]')!;
     expect(row().textContent).toContain('Bac : 10,0 °dGH');
     expect(row().textContent).toContain('dans la plage');
+    // Une seule plage de dureté (#505) : « Plage », jamais « Préférée ».
+    expect(row().textContent).toContain('Plage : 1 – 12 °dGH');
+    expect(row().textContent).not.toContain('Préférée');
+    expect(q('[data-wiki-compare="temperature"]')!.textContent).toContain('Préférée : ');
     fixture.componentRef.setInput('waterGh', 16);
     await fixture.whenStable();
     expect(row().getAttribute('data-fit')).toBe('hors-plage');
     expect(row().textContent).toContain('hors plage');
-    expect(row().textContent).toContain('4 °dGH au-dessus de la plage préférée');
+    expect(row().textContent).toContain('4 °dGH au-dessus de la plage');
+    expect(row().textContent).not.toContain('préférée');
   });
 
   it('couleurs de l’avis : celles des zones de la jauge pH, une seule définition (#296)', () => {

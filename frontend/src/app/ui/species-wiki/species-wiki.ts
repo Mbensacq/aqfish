@@ -106,7 +106,7 @@ export function wikiAddCount(
                     Bac : {{ row.tank }} ;
                     <strong class="species-wiki__fit">{{ row.fitLabel }}</strong>
                     <small class="species-wiki__status"
-                      >Préférée : {{ row.preferred }}
+                      >{{ row.rangeLabel }} : {{ row.preferred }}
                       @if (row.fit !== 'dans-la-plage') {
                         ; {{ row.gap }}
                       }
