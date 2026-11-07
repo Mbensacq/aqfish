@@ -6077,10 +6077,10 @@
           "note": "Verdict OK, 0 bug, captures c166 publiées (5 angles identiques à c165), e2e ajouté, mutation tank-list 96,4 %"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-07T09:44:17.589Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-07T10:51:24.017Z",
+          "note": "PR #495 fusionnée → v1.12.5 (release CI, CI main verte) ; #494 et #492 fermées ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
