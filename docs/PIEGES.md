@@ -916,6 +916,13 @@ DEFAULT_DECOR)`), sinon les trajectoires divergent dès la naissance. (2026-10-1
 
 ## Simulation
 
+- **Un objet collé à une vitre n'est jamais à portée d'un nageur** (cycle 168, #478) : les
+  bornes de nage (`boundsFor(...).hard`) sont à 3 cm des vitres pour le corydoras (4 cm pour
+  le néon), et la marge aux parois les en éloigne encore. Avec une distance brute de 5 cm, les
+  adultes ne mangeaient qu'1 œuf de vitre sur 51 en 180 s (neuf graines). Diminuer l'écart
+  vers la vitre d'une portée (`EGG_GLASS_REACH`, `eggReachDistance2`) : 13 sur 51. Même
+  remarque pour tout futur geste « contre la vitre » (broutage, nettoyage). (2026-11-07)
+
 - **Horloge du jour d'un bac rangé** (cycle 164, #318 point 4, ADR 0076 « Limite connue ») :
   l'horloge du jour (`DayClock`) est celle du bac affiché, mais chaque monde la lit à son
   propre `time` ; un bac rangé dont le temps diffère de celui du bac affiché voit une autre
@@ -1131,6 +1138,16 @@ environnement)` plutôt que `setPopulation(createDefaultWorld(…))`. (2026-10-2
   (`bubbles.spec.ts`, issue #473). (2026-11-06)
 
 ## Rendu
+
+- **Petit objet crème dans l'eau : un pixel et l'ombrage par face le font disparaître**
+  (cycle 168, #478) : un œuf de 7 mm (un pixel de scène) ombré par face comme les granulés
+  (`shadedVoxelGeometry`) tombait, vu de face, sur le ton du sable (flanc à 0,72) et ne se
+  distinguait plus du rocher voisin. Couleur plate sur toutes les faces, 13 mm de côté et un
+  liseré `koiNoir` (maillage plus grand dessiné avant, sans écrire la profondeur, puis le
+  cœur) : la grappe se lit en trois-quarts ; derrière plus d'eau (œufs des plantes), la passe
+  palette la tire vers `eauTresClaire`. Vérifier sur une capture recadrée et agrandie (PIL,
+  `Image.NEAREST`) : la différence avec la capture sans œuf tient en quelques pixels.
+  (2026-11-07)
 
 - **Vert sombre sous l'eau : ramené au bleu-vert de l'eau** (cycle 162, #476) : une tache
   plate opaque dans l'eau (plaque d'algues) en `vegetationSombre` ou `vegetationOmbre` sort

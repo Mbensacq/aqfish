@@ -61,6 +61,10 @@
  * (`broodWorldInPlace`). Toute autre valeur ou absent : aucun alevin (séries existantes
  * inchangées).
  *
+ * Paramètre facultatif `oeufs=1` (issue #478) : en mode capture, les corydoras pondent leur
+ * première ponte à t = 0, âges étalés sur l'incubation (`layEggsWorldInPlace`). Toute autre
+ * valeur ou absent : aucun œuf (séries existantes inchangées).
+ *
  * Paramètre facultatif `points-blancs=1` (issue #366) : poissons atteints des points blancs
  * au stade aggravé à t = 0 (voxels clairs sur le corps et les nageoires, alerte du tableau de
  * bord), en capture comme hors capture quand le monde est créé neuf (URL qui décrit le monde,
@@ -191,6 +195,8 @@ export interface CaptureParams {
   readonly ich: boolean;
   /** Vrai pour `alevins=1` : alevins de guppy à t = 0, en capture (issue #459). */
   readonly fry: boolean;
+  /** Vrai pour `oeufs=1` : œufs de corydoras à t = 0, en capture (issue #478). */
+  readonly eggs: boolean;
   /** Force du courant de `courant=` (issue #460), non vérifiée ; `null` si absent. */
   readonly current: string | null;
   /** Feuilles de catappa neuves de `catappa=` à t = 0 (issue #239), 0 si absent ou invalide. */
@@ -321,6 +327,7 @@ export const DEFAULT_CAPTURE_PARAMS: CaptureParams = {
   starved: false,
   ich: false,
   fry: false,
+  eggs: false,
   current: null,
   catappa: 0,
   editSelection: null,
@@ -379,6 +386,7 @@ export function parseCaptureParams(search: string): CaptureParams {
     starved: params.get('affames') === '1',
     ich: params.get('points-blancs') === '1',
     fry: params.get('alevins') === '1',
+    eggs: params.get('oeufs') === '1',
     current: params.get('courant'),
     catappa: parseCatappa(params.get('catappa')),
     editSelection: parseEditSelection(params.get('edition')),

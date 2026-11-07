@@ -43,6 +43,7 @@ describe('parseCaptureParams', () => {
       starved: false,
       ich: false,
       fry: false,
+      eggs: false,
       current: null,
       catappa: 0,
       editSelection: null,
@@ -233,6 +234,15 @@ describe('parseCaptureParams', () => {
     }
     expect(parseCaptureParams('?capture=1').fry).toBe(false);
     expect(DEFAULT_CAPTURE_PARAMS.fry).toBe(false);
+  });
+
+  it('lit les œufs : oeufs=1 seulement (#478)', () => {
+    expect(parseCaptureParams('?capture=1&oeufs=1').eggs).toBe(true);
+    for (const value of ['0', 'oui', 'true', '', '2']) {
+      expect(parseCaptureParams(`?capture=1&oeufs=${value}`).eggs).toBe(false);
+    }
+    expect(parseCaptureParams('?capture=1').eggs).toBe(false);
+    expect(DEFAULT_CAPTURE_PARAMS.eggs).toBe(false);
   });
 
   it('lit les points blancs : points-blancs=1 seulement, en capture comme hors capture (#366)', () => {
