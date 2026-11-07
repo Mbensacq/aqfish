@@ -6065,10 +6065,10 @@
           "note": "Issue #494 : lot dette finitions sécateur + faim Paludarium #492 (S)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-07T07:15:48.492Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-07T09:00:43.119Z",
+          "note": "PR #495 : finitions sécateur + « sans granulés » au Paludarium (#494, #492), CI verte ; scènes identiques à c165, aide-mémoire raccourci pour tenir à 1280×720"
         }
       },
       "metriques": {}
