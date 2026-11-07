@@ -6027,6 +6027,12 @@
           "debut": "2026-11-07T03:54:47.284Z",
           "fin": "2026-11-07T03:55:21.375Z",
           "note": "Issue #477 : plantes qui poussent et se taillent (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-07T03:55:50.658Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
