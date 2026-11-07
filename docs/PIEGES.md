@@ -931,6 +931,14 @@ DEFAULT_DECOR)`), sinon les trajectoires divergent dès la naissance. (2026-10-1
 
 ## Simulation
 
+- **`delete` sur l'état d'eau du monde (`changeWaterInPlace`)** (cycle 171, #505) :
+  `sim/water.ts` retire la dureté (`gh`, `kh`) de `world.water` par `delete water[key]` quand
+  un changement d'eau la ramène à celle du robinet, comme le sel. Décision : on garde ce
+  `delete` (action ponctuelle de l'utilisateur, jamais dans la boucle de pas ; l'absence du
+  champ est le contrat de la sauvegarde et des empreintes de référence). À reconsidérer
+  seulement si l'eau devient un objet lu ou écrit à chaque pas par le moteur : un `delete` y
+  change la forme de l'objet (accès moins optimisés) ; préférer alors des champs toujours
+  présents, `undefined` exclu de la sérialisation. (2026-11-07)
 - **Un objet collé à une vitre n'est jamais à portée d'un nageur** (cycle 168, #478) : les
   bornes de nage (`boundsFor(...).hard`) sont à 3 cm des vitres pour le corydoras (4 cm pour
   le néon), et la marge aux parois les en éloigne encore. Avec une distance brute de 5 cm, les

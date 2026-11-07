@@ -263,7 +263,13 @@ import {
   type World,
 } from '../../sim/world';
 import { CHEVRON_COUNTS } from '../../render/current-indicator-layer';
-import { photoFileName, photoScale, upscalePhoto } from '../../render/photo-capture';
+import {
+  PHOTO_FAILED_MESSAGE,
+  PHOTO_NOTICE_MS,
+  photoFileName,
+  photoScale,
+  upscalePhoto,
+} from '../../render/photo-capture';
 import {
   isCurrentLevel,
   nextCurrentLevel,
@@ -2207,7 +2213,8 @@ export class AquariumHost {
    * (`render/photo-capture.ts`), encodée par un canvas 2D hors du document, sans interface
    * ni curseur. Le monde et l'horloge ne bougent pas. Renvoie `true` si la photo a été
    * produite (le téléchargement suit, asynchrone) ; sans effet en mode capture, avant le
-   * démarrage ou si le navigateur ne sait pas relire ou encoder l'image. Ne lève jamais.
+   * démarrage ou si le navigateur ne sait pas relire ou encoder l'image. Ne lève jamais ; un
+   * échec (relecture, canvas 2D ou encodage) affiche un message bref (`photoNotice`, #503).
    */
   takePhoto(): boolean {
     const view = this.view;
@@ -2215,9 +2222,11 @@ export class AquariumHost {
     if (!view || !win || this.capture) {
       return false;
     }
+    this.setPhotoNotice(null);
     try {
       const pixels = view.takePhoto();
       if (!pixels) {
+        this.photoFailed();
         return false;
       }
       const image = upscalePhoto(pixels, photoScale(pixels.width, pixels.height));
@@ -2226,6 +2235,7 @@ export class AquariumHost {
       canvas.height = image.height;
       const context = canvas.getContext('2d');
       if (!context) {
+        this.photoFailed();
         return false;
       }
       const imageData = context.createImageData(image.width, image.height);
@@ -2234,6 +2244,8 @@ export class AquariumHost {
       const name = photoFileName(new Date());
       canvas.toBlob((blob) => {
         if (!blob) {
+          // Encodage refusé (mémoire, canvas trop grand…) : le dire plutôt que rien (#503).
+          this.photoFailed();
           return;
         }
         const url = win.URL.createObjectURL(blob);
@@ -2245,8 +2257,29 @@ export class AquariumHost {
       }, 'image/png');
       return true;
     } catch {
+      this.photoFailed();
       return false;
     }
+  }
+
+  /** Message bref de la photo (#503) : effacé à la photo suivante ou après `PHOTO_NOTICE_MS`. */
+  readonly photoNotice = signal<string | null>(null);
+  private photoNoticeTimer: ReturnType<typeof setTimeout> | null = null;
+
+  private photoFailed(): void {
+    if (this.stopped) {
+      return;
+    }
+    this.setPhotoNotice(PHOTO_FAILED_MESSAGE);
+    this.photoNoticeTimer = setTimeout(() => this.setPhotoNotice(null), PHOTO_NOTICE_MS);
+  }
+
+  private setPhotoNotice(message: string | null): void {
+    if (this.photoNoticeTimer !== null) {
+      clearTimeout(this.photoNoticeTimer);
+      this.photoNoticeTimer = null;
+    }
+    this.photoNotice.set(message);
   }
 
   /** Réglages enregistrés avec le monde : vitesse, horloge et rendu des granulés. */
@@ -3905,6 +3938,10 @@ export class AquariumHost {
     // n'est consulté que par `apply()`, qui règle le moteur) ; elle ne planifie donc aucune
     // détection de changements.
     this.ambientSound.setScene(null);
+    if (this.photoNoticeTimer !== null) {
+      clearTimeout(this.photoNoticeTimer);
+      this.photoNoticeTimer = null;
+    }
     if (this.frameId !== null) {
       this.document.defaultView?.cancelAnimationFrame(this.frameId);
       this.frameId = null;

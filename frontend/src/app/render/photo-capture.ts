@@ -9,6 +9,12 @@
 /** Côté le plus long visé pour la photo (pixels) : le facteur entier est choisi pour s'en approcher sans le dépasser. */
 export const PHOTO_MAX_SIDE = 2048;
 
+/** Message bref affiché quand la photo n'a pas pu être produite ou encodée (#503). */
+export const PHOTO_FAILED_MESSAGE = 'Photo impossible : le navigateur n’a pas pu créer l’image.';
+
+/** Durée d'affichage de ce message, en millisecondes. */
+export const PHOTO_NOTICE_MS = 4000;
+
 /** Facteur d'agrandissement maximal (une cible minuscule ne donne pas une image floue de pavés géants). */
 export const PHOTO_MAX_FACTOR = 8;
 
