@@ -555,10 +555,28 @@ export function tidyRoomItems(items: readonly RoomItem[]): readonly RoomItem[] {
  * #182 transposé à la pièce) : du plus bas au plus haut (cascade), chacun descend jusqu'au
  * plus haut dessus chevauché sous sa base, ou jusqu'au parquet. S'il tomberait sur une
  * plante, il descend sur la plus haute surface porteuse plus basse (dessus d'un meuble, ou
- * parquet) où rien ne le gêne (`freeSurfaceBelow`), sinon il reste en place. Un élément soutenu
- * garde sa pose à l'identique. Nouvelle liste, dans le même ordre ; ne modifie pas `items`.
+ * parquet) où rien ne le gêne (`freeSurfaceBelow`), sinon il reste en place ; passes répétées
+ * jusqu'à ce que plus rien ne bouge (#446). Un élément soutenu garde sa pose à l'identique.
+ * Nouvelle liste, dans le même ordre ; ne modifie pas `items`.
  */
 export function settleRoomItems(items: readonly RoomItem[]): readonly RoomItem[] {
+  // Un élément resté en l'air faute de place peut en trouver une quand un élément traité
+  // après lui est descendu (cascade dans le désordre, #446) : on reprend jusqu'au point fixe.
+  // Chaque passe ne fait que descendre, vers un nombre fini de hauteurs : au plus
+  // `length + 1` passes.
+  let current = items;
+  for (let pass = 0; pass <= items.length; pass++) {
+    const next = settlePass(current);
+    if (next.every((item, i) => item === current[i])) {
+      return next;
+    }
+    current = next;
+  }
+  return current;
+}
+
+/** Une passe de `settleRoomItems`, du plus bas au plus haut ; garde l'objet d'un élément immobile. */
+function settlePass(items: readonly RoomItem[]): readonly RoomItem[] {
   const work = [...items];
   const order = work
     .map((item, i) => ({ i, elevation: item.elevation ?? 0 }))
