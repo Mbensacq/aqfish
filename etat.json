@@ -6090,7 +6090,7 @@
       "date": "2026-11-07",
       "debut": "2026-11-07T10:51:53.231Z",
       "type": "retro",
-      "issue": null,
+      "issue": 446,
       "pr": null,
       "version": null,
       "phases": {
