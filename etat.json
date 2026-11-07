@@ -6113,10 +6113,10 @@
           "note": "Verdict OK, 0 bug, captures c167 publiées (5 angles identiques à c166), pas d'e2e ajouté (sim pure)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-07T12:12:16.420Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-07T13:15:35.933Z",
+          "note": "PR #499 fusionnée → v1.12.6 (release CI, CI main verte) ; PR #497 (roadmap) fusionnée ; #446 fermée ; suppression de branche refusée"
         }
       },
       "metriques": {}
