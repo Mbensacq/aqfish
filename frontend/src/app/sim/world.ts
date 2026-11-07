@@ -10,6 +10,15 @@ import { MAX_TOTAL_FISH, SIM_DT } from './constants';
 import { dayIntensityAt, hourAt, type DayClock } from './daylight';
 import { nightRest } from './day-rhythm';
 import {
+  hasPlantGrowth,
+  isGrowingPlant,
+  plantShade,
+  prunePlantInPlace,
+  shownGrowth,
+  stepPlantGrowthInPlace,
+  type MutablePlantGrowth,
+} from './plant-growth';
+import {
   algaeGrowth,
   cachedAlgaePatches,
   hasAlgae,
@@ -921,6 +930,20 @@ function stepInPlace(world: MutableWorld, dt: number, clock: SimClock): void {
       cachedAlgaePatches(world.seed, environmentWater(place)),
     );
   }
+  // Plantes à tige (issue #477) : pousse sans hasard, jusqu'à la surface ; en pause en mode
+  // décor comme l'eau.
+  if (hasPlantGrowth(world.environment)) {
+    const water = world.water as MutableWaterState;
+    const growth = stepPlantGrowthInPlace(
+      water.plantGrowth as MutablePlantGrowth | undefined,
+      world.decor,
+      dt,
+      environmentWater(place).maxY,
+    );
+    if (growth !== undefined && water.plantGrowth === undefined) {
+      water.plantGrowth = growth;
+    }
+  }
   // Points blancs (issue #360) : sur l'eau de fin de pas ; aucun tirage sans stress ni
   // malade, donc un bac sain avance exactement comme avant. Un traitement efficace dans
   // l'eau (issue #361) empêche toute nouvelle infection, puis fait avancer la cure.
@@ -1275,6 +1298,41 @@ export function scrapeWorldAlgaeInPlace(
 ): number {
   const index = scrapedPatch(worldAlgaePatches(world), world.water.algae, origin, direction);
   return index >= 0 && scrapeAlgaeInPlace(world.water as MutableWaterState, index) ? index : -1;
+}
+
+/**
+ * Taille (issue #477), **en modifiant** `world` : ramène la plante à tige d'indice `index` de
+ * `World.decor` à sa hauteur de repli (`prunePlantInPlace`). Renvoie vrai si elle a raccourci
+ * (faux pour un autre élément, une plante sans pousse visible ou un bac où rien ne pousse).
+ */
+export function pruneWorldPlantInPlace(world: MutableWorld, index: number): boolean {
+  const item = world.decor[index];
+  if (!item || !isGrowingPlant(item) || !hasPlantGrowth(world.environment)) {
+    return false;
+  }
+  return prunePlantInPlace(
+    world.water.plantGrowth as MutablePlantGrowth | undefined,
+    item,
+    environmentWater(world).maxY,
+  );
+}
+
+/**
+ * Pousse affichée (voxels entiers, `shownGrowth`, #477) de l'élément d'indice `index` de
+ * `World.decor` : 0 pour un autre élément, ou dans un bac où rien ne pousse.
+ */
+export function worldShownPlantGrowth(world: World, index: number): number {
+  const item = world.decor[index];
+  return item && isGrowingPlant(item) && hasPlantGrowth(world.environment)
+    ? shownGrowth(world.water.plantGrowth, item, environmentWater(world).maxY)
+    : 0;
+}
+
+/** Lumière gardée au fond du bac de `world` sous les plantes hautes (`plantShade`, #477). */
+export function worldPlantShade(world: World): number {
+  return hasPlantGrowth(world.environment)
+    ? plantShade(world.water.plantGrowth, world.decor, environmentWater(world).maxY)
+    : 1;
 }
 
 /**

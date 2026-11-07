@@ -1,4 +1,4 @@
-import { createPrng } from '../core/random/prng';
+import { createPrng, deriveSeed } from '../core/random/prng';
 
 /**
  * Plantes voxel du décor (issue #49, ADR 0016) : modèle généré depuis une graine, pur et
@@ -77,13 +77,26 @@ const DIRECTIONS: readonly (readonly [number, number])[] = [
   [0, -1],
 ];
 
+/** Sel du sous-générateur des feuilles de la pousse d'une tige (issue #477). */
+const GROWTH_LEAF_SALT = 0x9e77;
+
 /**
  * Modèle voxel d'une plante tiré de sa graine (même graine, même forme, même phase).
- * @throws RangeError si la forme est inconnue ou si l'échelle n'est pas un réel > 0.
+ *
+ * `growth` (issue #477, `sim/plant-growth.ts`) : pousse en voxels entiers, ajoutée au haut de
+ * chaque tige d'une plante `tall` (sans effet sur une touffe). Le bas de la plante est tiré
+ * exactement comme sans pousse (mêmes tirages, dans le même ordre) : à `growth = 0`, le
+ * modèle est celui d'avant, à l'octet ; la pousse porte ses propres feuilles, tirées d'un
+ * sous-générateur par tige, donc une plante qui grandit garde ses feuilles d'en dessous.
+ * @throws RangeError si la forme est inconnue, si l'échelle n'est pas un réel > 0 ou si la
+ * pousse n'est pas un entier positif ou nul.
  */
-export function plantModel(seed: number, scale: number, form: PlantForm): PlantModel {
+export function plantModel(seed: number, scale: number, form: PlantForm, growth = 0): PlantModel {
   if (!(scale > 0) || !Number.isFinite(scale)) {
     throw new RangeError(`scale doit être un réel strictement positif (reçu : ${scale})`);
+  }
+  if (!Number.isInteger(growth) || growth < 0) {
+    throw new RangeError(`growth doit être un entier positif ou nul (reçu : ${growth})`);
   }
   if (!(PLANT_FORMS as readonly unknown[]).includes(form)) {
     throw new RangeError(`forme de plante inconnue : ${String(form)}`);
@@ -111,9 +124,11 @@ export function plantModel(seed: number, scale: number, form: PlantForm): PlantM
       height: 30 + Math.floor(rng.next() * 16),
       dir: Math.floor(rng.next() * 4),
     }));
+    const extra = growth;
     stems.forEach((stem, s) => {
-      for (let j = 0; j < stem.height; j++) {
-        add({ i: stem.x, j, k: stem.z, part: 'stem', strand: s, tip: j === stem.height - 1 });
+      const top = stem.height + extra;
+      for (let j = 0; j < top; j++) {
+        add({ i: stem.x, j, k: stem.z, part: 'stem', strand: s, tip: j === top - 1 });
       }
     });
     stems.forEach((stem, s) => {
@@ -131,6 +146,25 @@ export function plantModel(seed: number, scale: number, form: PlantForm): PlantM
             strand: s,
             tip: n === length,
           });
+        }
+      }
+      // Pousse (issue #477) : feuilles courtes, à la suite de celles d'origine.
+      if (extra > 0) {
+        const grow = createPrng(deriveSeed(seed, GROWTH_LEAF_SALT + s));
+        const top = stem.height + extra;
+        for (let j = stem.height + 1; j < top - 2; j += 3 + Math.floor(grow.next() * 2)) {
+          const [dx, dz] = DIRECTIONS[dir % 4];
+          dir += 1 + Math.floor(grow.next() * 2);
+          for (let n = 1; n <= 2; n++) {
+            add({
+              i: stem.x + dx * n,
+              j: j + Math.floor(n / 2),
+              k: stem.z + dz * n,
+              part: 'leaf',
+              strand: s,
+              tip: n === 2,
+            });
+          }
         }
       }
     });

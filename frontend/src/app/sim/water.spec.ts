@@ -1,5 +1,6 @@
 import { SIM_DT } from './constants';
 import { ENVIRONMENT_IDS, environmentWater } from './environment';
+import { stepPlantGrowthInPlace, type MutablePlantGrowth } from './plant-growth';
 import { setPopulation } from './population';
 import { SPECIES } from './species';
 import {
@@ -425,7 +426,15 @@ describe('eau du monde', () => {
   it('avancé pas à pas, l’eau suit le modèle avec la charge et le volume du bac', () => {
     const world = createDefaultWorld(42);
     const expected = run(world.water, 600, waterLoad(world.entities));
-    expect(advance(world, 600).water).toEqual(expected);
+    // La pousse des plantes (#477) est rangée dans l'eau sans dépendre du modèle de l'eau :
+    // comparée à part, à la pousse des plantes à tige du décor.
+    const { plantGrowth, ...water } = advance(world, 600).water;
+    expect(water).toEqual(expected);
+    let growth: MutablePlantGrowth | undefined;
+    for (let n = 0; n < 600; n++) {
+      growth = stepPlantGrowthInPlace(growth, world.decor, SIM_DT, environmentWater(world).maxY);
+    }
+    expect(plantGrowth).toEqual(growth);
   });
 
   it('advanceInPlace : l’état de l’eau est mis à jour sur place (même objet)', () => {

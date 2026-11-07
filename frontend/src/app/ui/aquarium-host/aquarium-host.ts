@@ -250,6 +250,9 @@ import {
   setWorldHeaterInPlace,
   setWorldLightingInPlace,
   scrapeWorldAlgaeInPlace,
+  pruneWorldPlantInPlace,
+  worldPlantShade,
+  worldShownPlantGrowth,
   worldAlgaePatches,
   starveWorldInPlace,
   treatWorldInPlace,
@@ -359,6 +362,13 @@ export const CATAPPA_ATTRIBUTE = 'data-aqfish-catappa';
 export const ALGAE_ATTRIBUTE = 'data-aqfish-algae';
 /** Raclette en main (#476) : `true` ou `false`. */
 export const SCRAPER_ATTRIBUTE = 'data-aqfish-scraper';
+/** Sécateur en main (#477) : `true` ou `false`. */
+export const PRUNER_ATTRIBUTE = 'data-aqfish-pruner';
+/**
+ * Pousse affichée des plantes à tige (#477), en voxels entiers, dans l'ordre du décor,
+ * séparées par des virgules (vide sans plante à tige), puis « ;lumière du fond en % ».
+ */
+export const PLANTS_ATTRIBUTE = 'data-aqfish-plants';
 /** pH de l'eau et sa zone pour les espèces présentes, « 6.9;tolere » (#236). */
 export const PH_ATTRIBUTE = 'data-aqfish-ph';
 /**
@@ -899,6 +909,8 @@ export class AquariumHost {
   readonly lighting = signal(DEFAULT_LIGHTING_HOURS);
   /** Vrai tant que la raclette est en main (#476) : un clic sur le bac racle. */
   readonly scraping = signal(false);
+  /** Vrai tant que le sécateur est en main (#477) : un clic sur une plante à tige la taille. */
+  readonly pruning = signal(false);
   /**
    * Synthèse de la santé des animaux lue par le tableau de bord (#260), relevée avec l'eau
    * (`exposeWater`) et remplacée seulement si ce qu'elle affiche change (`sameHealthSummary`).
@@ -1404,7 +1416,37 @@ export class AquariumHost {
     if (!this.capture) {
       this.scraping.update((on) => !on);
       this.host.nativeElement.setAttribute(SCRAPER_ATTRIBUTE, String(this.scraping()));
+      if (this.scraping() && this.pruning()) {
+        this.togglePruner();
+      }
     }
+  }
+
+  /**
+   * Prend ou pose le sécateur (#477) : tant qu'il est en main, un clic sur une plante à tige la
+   * taille au lieu de nourrir ; prendre le sécateur pose la raclette. Sans effet en mode capture.
+   */
+  togglePruner(): void {
+    if (!this.capture) {
+      this.pruning.update((on) => !on);
+      this.host.nativeElement.setAttribute(PRUNER_ATTRIBUTE, String(this.pruning()));
+      if (this.pruning() && this.scraping()) {
+        this.toggleScraper();
+      }
+    }
+  }
+
+  /**
+   * Taille (#477) la plante à tige d'indice `index` du décor : renvoie vrai si elle a
+   * raccourci (faux pour un autre élément, une plante sans pousse visible, en mode capture ou
+   * avant le démarrage). Enregistré avec l'eau.
+   */
+  prunePlant(index: number): boolean {
+    let pruned = false;
+    this.applyWaterSetting((world) => {
+      pruned = pruneWorldPlantInPlace(world, index);
+    });
+    return pruned;
   }
 
   /**
@@ -2141,6 +2183,7 @@ export class AquariumHost {
     }
     this.decorRefused.set(false);
     view.replaceDecorItems(world.decor, world.seed);
+    this.exposePlants(world);
     this.exposeDecorCount();
     view.setDecorSelection(selection);
     this.exposeDecorSelection(selection);
@@ -3322,6 +3365,7 @@ export class AquariumHost {
     view.setWaterTea(this.water().tea);
     view.setCatappa(world.water.catappa);
     this.exposeAlgae(world);
+    this.exposePlants(world);
     this.exposeCurrent(world);
     this.applyReducedMotion();
     this.litHour = null;
@@ -3350,6 +3394,11 @@ export class AquariumHost {
       view.onCanvasClick((x, y) => {
         if (this.decorEditing()) {
           this.editAt(view.pickDecor(x, y));
+        } else if (this.pruning()) {
+          const pick = view.pickDecor(x, y);
+          if (pick?.kind === 'item') {
+            this.prunePlant(pick.index);
+          }
         } else if (this.scraping()) {
           const ray = view.pickRay(x, y);
           if (ray) {
@@ -3361,7 +3410,7 @@ export class AquariumHost {
     // Raclette en main (#476) : un clic racle au lieu de nourrir.
     this.viewCleanups.push(
       view.onSurfaceClick((x, z) => {
-        if (!this.decorEditing() && !this.scraping()) {
+        if (!this.decorEditing() && !this.scraping() && !this.pruning()) {
           this.feed(x, z);
         }
       }),
@@ -3653,6 +3702,23 @@ export class AquariumHost {
     this.view?.setWaterTea(readout.tea);
     this.view?.setCatappa(world.water.catappa);
     this.exposeAlgae(world);
+    this.exposePlants(world);
+  }
+
+  /** Pousse des plantes à tige (#477) : vue (hauteur, ombre du fond) et `PLANTS_ATTRIBUTE`. */
+  private exposePlants(world: World): void {
+    const view = this.view;
+    let shown = '';
+    world.decor.forEach((item, n) => {
+      if (item.kind === 'plant' && item.form === 'tall') {
+        const growth = worldShownPlantGrowth(world, n);
+        view?.setPlantGrowth(n, growth);
+        shown += shown === '' ? String(growth) : `,${growth}`;
+      }
+    });
+    const shade = worldPlantShade(world);
+    view?.setPlantShade(shade);
+    this.host.nativeElement.setAttribute(PLANTS_ATTRIBUTE, `${shown};${Math.round(shade * 100)}`);
   }
 
   /** Algues du bac (#476) : vue, signal de l'éclairage et `ALGAE_ATTRIBUTE`. */
