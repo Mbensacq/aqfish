@@ -1,7 +1,7 @@
 import { environmentById, type EnvironmentId } from './environment';
 import { SPECIES_LABELS } from './species-catalog';
 import { cohabitation, COHABITATION_STATUS, feedingRows, type CareRow } from './species-care';
-import { sheetNotes, sheetRows, type SheetRow } from './species-sheet';
+import { detailRows, sheetNotes, sheetRows, type DetailRow, type SheetRow } from './species-sheet';
 import { SPECIES, type SpeciesId } from './species';
 
 /**
@@ -40,6 +40,8 @@ export interface WikiSheet {
   readonly scientificName: string;
   /** Lignes de la fiche (`sheetRows`), chacune avec le texte de son statut de sourçage. */
   readonly rows: readonly SheetRow[];
+  /** Fiche complète (#484) : dureté, durée de vie, seuils azotés du jeu (`detailRows`). */
+  readonly details: readonly DetailRow[];
   /** Mises en garde de la fiche (`sheetNotes`). */
   readonly notes: readonly { readonly text: string; readonly status: string }[];
 }
@@ -131,6 +133,7 @@ export function wikiSheet(id: SpeciesId): WikiSheet {
     name,
     scientificName,
     rows: sheetRows(id),
+    details: detailRows(id),
     notes: sheetNotes(id),
   });
 }

@@ -6,6 +6,15 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Tous les e2e échouent en 3 ms en local : navigateur de Playwright introuvable** (cycle
+  170, #484) : `browserType.launch: Executable doesn't exist at
+  /opt/pw-browsers/chromium_headless_shell-1194/…`. L'environnement fournit un Chromium plus
+  récent (`chromium_headless_shell-1243`) que celui attendu par Playwright 1.56 ; sans réseau
+  vers le dépôt des navigateurs, `npx playwright install` échoue. Lien symbolique, hors du
+  dépôt : `mkdir -p /opt/pw-browsers/chromium_headless_shell-1194/chrome-linux && ln -sf
+  /opt/pw-browsers/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell
+  /opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell`. La CI, elle,
+  installe son navigateur. (2026-11-07)
 - **Remplacer la géométrie d'un maillage en cours de partie : `fond-ecran` compte les
   `WebGLBuffer`** (cycle 165, #477) : l'e2e d'endurance de la vue fond d'écran exige qu'aucun
   `WebGLBuffer` de plus ne soit vivant après une minute (`Runtime.queryObjects` après

@@ -6,6 +6,14 @@ import { SPECIES, type SpeciesId } from './species';
 import type { Box3 } from './tank';
 import { assertTimeStep } from './time-step';
 import { freshPh, MAX_PH, MIN_PH, phAfterWaterChange, stepPh } from './water-ph';
+import {
+  HARDNESS_TRACE,
+  hardnessAfterWaterChange,
+  isHardness,
+  MAX_HARDNESS,
+  MIN_HARDNESS,
+  tapHardness,
+} from './water-hardness';
 
 /**
  * Modèle d'eau (issue #206, ADR 0052) : température, ammoniaque, nitrites, nitrates et
@@ -91,6 +99,14 @@ export interface WaterState {
    * taille la fait baisser ; le changement d'eau n'y touche pas.
    */
   readonly plantGrowth?: PlantGrowth;
+  /**
+   * Dureté générale, en °dGH, dans [`MIN_HARDNESS`, `MAX_HARDNESS`] (issue #484,
+   * `sim/water-hardness.ts`). Absente : celle de l'eau du robinet de l'environnement
+   * (`TAP_HARDNESS`). Seul le changement d'eau la fait bouger.
+   */
+  readonly gh?: number;
+  /** Dureté carbonatée, en °dKH (issue #484), même convention que `gh`. */
+  readonly kh?: number;
 }
 
 /** État de l'eau modifiable en place (propriétaire unique : le monde). */
@@ -318,6 +334,21 @@ export function changeWaterInPlace(
   water.nitrite *= keep;
   water.nitrate *= keep;
   water.ph = phAfterWaterChange(water.ph, freshPh(environment), WATER_CHANGE_SHARE);
+  // Dureté (issue #484) : rapprochée de celle de l'eau du robinet ; revenue à celle-ci, le
+  // champ disparaît (une eau jamais modifiée n'en porte pas).
+  const tap = tapHardness(environment);
+  for (const key of ['gh', 'kh'] as const) {
+    const value = water[key];
+    if (value === undefined) {
+      continue;
+    }
+    const next = hardnessAfterWaterChange(value, tap[key], WATER_CHANGE_SHARE);
+    if (Math.abs(next - tap[key]) < HARDNESS_TRACE) {
+      delete water[key];
+    } else {
+      water[key] = next;
+    }
+  }
   // Sel et médicament (issue #361) : retirés par les changements d'eau (`docs/SOINS.md` § 12).
   if (water.salt !== undefined) {
     water.salt *= keep;
@@ -366,7 +397,8 @@ export type ReadWaterResult =
  * absent dans une sauvegarde antérieure, il reprend celui de l'eau neuve de
  * l'environnement) et les feuilles de catappa facultatives (`catappa`, issue #239 : absentes,
  * aucune feuille), ainsi que le sel, le médicament et l'avancement d'un traitement des points
- * blancs (`salt`, `medication`, `ichCure`, issue #361 : absents, aucun) ; seules les
+ * blancs (`salt`, `medication`, `ichCure`, issue #361 : absents, aucun) et la dureté (`gh`,
+ * `kh`, issue #484 : absente, celle de l'eau du robinet de l'environnement) ; seules les
  * propriétés propres sont lues, les champs inconnus ignorés.
  * Renvoie une copie, ou la raison du refus. Ne lève jamais.
  */
@@ -389,6 +421,8 @@ export function readWater(value: unknown, environment: EnvironmentId): ReadWater
       | 'lighting'
       | 'algae'
       | 'plantGrowth'
+      | 'gh'
+      | 'kh'
     >,
     number,
     number,
@@ -440,6 +474,20 @@ export function readWater(value: unknown, environment: EnvironmentId): ReadWater
   if (plantGrowth !== null && !plantGrowth.ok) {
     return { ok: false, error: plantGrowth.error };
   }
+  const hardness: { gh?: number; kh?: number } = {};
+  for (const key of ['gh', 'kh'] as const) {
+    const v = read(key);
+    if (v === undefined) {
+      continue;
+    }
+    if (!isHardness(v)) {
+      return {
+        ok: false,
+        error: `eau : ${key} doit être un nombre dans [${MIN_HARDNESS}, ${MAX_HARDNESS}]`,
+      };
+    }
+    hardness[key] = v;
+  }
   const optional: ['salt' | 'medication' | 'ichCure', number, number][] = [
     ['salt', 0, MAX_SALT],
     ['medication', 0, MAX_MEDICATION],
@@ -476,6 +524,7 @@ export function readWater(value: unknown, environment: EnvironmentId): ReadWater
       ...(plantGrowth === null || Object.keys(plantGrowth.growth).length === 0
         ? {}
         : { plantGrowth: plantGrowth.growth }),
+      ...hardness,
     },
   };
 }

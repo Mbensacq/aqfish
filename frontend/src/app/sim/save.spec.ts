@@ -4,6 +4,7 @@ import { createDayClock } from './daylight';
 import { EMPTY_HEALTH_SUMMARY } from './health-summary';
 import { waterSample } from './water-dashboard';
 import { phBands } from './water-ph';
+import { tapHardness, waterHardness } from './water-hardness';
 import { DEFAULT_DECOR } from './decor';
 import { addDecorItem, removeDecorItem, withDecor } from './decor-edit';
 import { MAX_FOOD } from './food';
@@ -324,6 +325,29 @@ describe('serializeWorld / parseWorld : aller-retour', () => {
     delete data.water['ph'];
     const { world: back } = restored(parseSaveData(data));
     expect(back.water).toEqual({ ...world.water, ph: freshWater('bassin').ph });
+  });
+
+  it('dureté (#484) : absente, relue avec celle de l’eau du robinet ; écrite, restituée', () => {
+    const world = advance(createDefaultWorld(42, 'eaufroide'), 60);
+    const data = saveData(world);
+    expect(data.water !== undefined && 'gh' in data.water).toBe(false);
+    const { world: back } = restored(parseSaveData(structuredClone(data)));
+    expect(waterHardness(back.water, 'eaufroide')).toEqual(tapHardness('eaufroide'));
+    const hard = structuredClone(data) as unknown as { water: Record<string, unknown> };
+    hard.water['gh'] = 21.5;
+    hard.water['kh'] = 2;
+    const { world: read } = restored(parseSaveData(hard));
+    expect(waterHardness(read.water, 'eaufroide')).toEqual({ gh: 21.5, kh: 2 });
+    const { world: again } = restored(parseWorld(serializeWorld(read)));
+    expect(again.water.gh).toBe(21.5);
+    expect(again.water.kh).toBe(2);
+    expect(advance(again, 600)).toEqual(advance(read, 600));
+  });
+
+  it('refuse une dureté hors de [0 ; 400] (#484)', () => {
+    const data = validData();
+    data['water'] = { ...freshWater('tropical'), kh: -1 };
+    expect(refusal(parseSaveData(data))).toMatch(/^eau : kh/);
   });
 
   it('refuse un pH hors de [4 ; 9,5] (#236)', () => {

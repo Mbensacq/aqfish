@@ -471,7 +471,7 @@ l'alcalinité ; **un bac récifal ne peut jamais recevoir de cuivre**.
 
 | Espèce / groupe | Température | pH | Dureté | NH₃ / NO₂ / NO₃ | Salinité | Source |
 |---|---|---|---|---|---|---|
-| Néon (Paracheirodon innesi) | 20–26 °C | 5,0–7,0 | dH 1–2 | 0 / 0 / < 20 mg/L (Merck, eau douce) | Ne tolère pas le sel (tétras, UF/IFAS) | FishBase |
+| Néon (Paracheirodon innesi) | 20–26 °C | 5,0–7,0 | dH 1–2 (FishBase, sujets sauvages) ; 1–12 dGH (Seriously Fish, `docs/ESPECES.md`, retenu par le jeu, #484) | 0 / 0 / < 20 mg/L (Merck, eau douce) | Ne tolère pas le sel (tétras, UF/IFAS) | FishBase |
 | Guppy (Poecilia reticulata) | 18–28 °C (FishBase) ; 17–28 °C (Seriously Fish) | 7,0–8,0 (FishBase) ; 7,0–8,5 (SF) | dH 9–19 (FishBase) ; 8–30 dGH (SF) | idem | Tolère l'eau saumâtre | FishBase ; Seriously Fish |
 | Corydoras paleatus | 22–26 °C (Seriously Fish) ; d'autres sites : 18–24 °C (désaccord) | 6,0–7,0 | 0–12 dGH | idem | Sensibilité au sel non vérifiée | Seriously Fish |
 | Koï (Cyprinus carpio) | 18–25 °C optimum | éviter < 5,5 et > 8,5 ; 7,0–7,4 cité | non vérifié | idem | 0,1–0,3 % temporaire | VIN/WSAVA |
@@ -703,3 +703,13 @@ remplacer par une source primaire.
 61. Texas A&M, Cryptocaryon irritans — https://extension.rwfm.tamu.edu/wp-content/uploads/sites/8/2013/09/Cryptocaryon-irritans-Infections-Marine-White-Spot-Disease-in-Fish.pdf
 62. Reef Central, forum — https://reefcentral.com/forums/showthread.php?t=2383310 *(secondaire : forum)*
 63. Reefs.com, magazine — https://reefs.com/magazine/aquarium-fish-news-from-the-warfront-with-cryptocaryon-irritans-part-three-of-five/ *(secondaire)*
+
+**Dureté de l'eau dans le jeu** (issue #484, ADR 0113, `sim/water-hardness.ts`) :
+- GH et KH de l'eau du robinet du jeu : **approximations de jeu** (tropical 10 / 6, bassin
+  12 / 8, paludarium 8 / 5, eau froide 14 / 8), sauf le KH du récif (8, dans les 7–11 dKH de
+  Holmes-Farley, § 3) ; GH du récif : ordre de grandeur de l'eau de mer (350 °dGH).
+- La dureté ne dérive pas et n'agit ni sur la santé ni sur le pH (pouvoir tampon non simulé) ;
+  le changement d'eau la rapproche de celle du robinet.
+- Plages de dureté des fiches sourcées : néon 1–12, guppy 8–30, corydoras 0–12 dGH (Seriously
+  Fish), molly 15–30 dGH (Seriously Fish), xipho 8–20 °dH (FishBase), récif 7–11 dKH ; les
+  autres et toutes les durées de vie sont des approximations de jeu.
