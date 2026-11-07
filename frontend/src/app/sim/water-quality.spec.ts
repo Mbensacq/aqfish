@@ -157,6 +157,23 @@ describe('waterTurbidity', () => {
   });
 });
 
+describe('waterReadout et dureté (#484)', () => {
+  it('dureté écrite dans l’eau, au dixième ; sinon celle de l’eau du robinet du lieu', () => {
+    expect(waterReadout(tropical({ gh: 12.34, kh: 3.96 }), 'tropical')).toMatchObject({
+      gh: 12.3,
+      kh: 4,
+    });
+    expect(waterReadout(freshWater('recif'), 'recif')).toMatchObject({ gh: 350, kh: 8 });
+  });
+
+  it('sameReadout distingue la GH et le KH', () => {
+    const plain = waterReadout(tropical({}), 'tropical');
+    expect(sameReadout(plain, { ...plain, gh: 10.1 })).toBe(false);
+    expect(sameReadout(plain, { ...plain, kh: 6.1 })).toBe(false);
+    expect(sameReadout(plain, { ...plain })).toBe(true);
+  });
+});
+
 describe('waterReadout et sameReadout', () => {
   it('eau saine : bonne, valeurs entières ; relevé par défaut du bac tropical', () => {
     expect(DEFAULT_WATER_READOUT).toEqual({
@@ -175,6 +192,9 @@ describe('waterReadout et sameReadout', () => {
       tea: 0,
       // Ni sel ni médicament (#374).
       products: { salted: false, medicated: false },
+      // Dureté de l'eau du robinet du bac tropical (#484).
+      gh: 10,
+      kh: 6,
     });
   });
 
@@ -197,6 +217,9 @@ describe('waterReadout et sameReadout', () => {
       tea: 0,
       // Ni sel ni médicament (#374).
       products: { salted: false, medicated: false },
+      // Dureté de l'eau du robinet du bac tropical (#484).
+      gh: 10,
+      kh: 6,
     });
   });
 

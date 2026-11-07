@@ -3,6 +3,7 @@ import { SPECIES_LABELS, type SpeciesLabels } from './species-catalog';
 import { confidenceText, legalStatus, legalText, type LegalStatus } from './species-legal';
 import { SPECIES, type SpeciesId } from './species';
 import { SPECIES_PH, type PhRange } from './water-ph';
+import { COMPOUND_THRESHOLDS, type WaterCompound } from './water-quality';
 
 /**
  * Fiches d'espèces (issue #237, ADR 0058) : ce dont chaque espèce a besoin, lisible avant de
@@ -31,6 +32,15 @@ export interface ValueRange {
   readonly max: number;
 }
 
+/**
+ * Plage de dureté d'une espèce (issue #484), bornes comprises : dureté générale (`gh`, en
+ * °dGH) pour l'eau douce, carbonatée (`kh`, en °dKH) pour le récif, où la GH de l'eau de mer
+ * n'a pas de sens pour l'aquariophile (`sim/water-hardness.ts`).
+ */
+export interface HardnessRange extends ValueRange {
+  readonly kind: 'gh' | 'kh';
+}
+
 /** Régime alimentaire. */
 export type Diet = 'omnivore' | 'carnivore' | 'herbivore';
 
@@ -54,6 +64,10 @@ export interface SpeciesSheet {
   readonly minGroup: SheetField<number>;
   /** Volume d'eau conseillé, en litres. */
   readonly minLiters: SheetField<number>;
+  /** Dureté conseillée (issue #484) : GH en eau douce, KH en eau de mer. */
+  readonly hardness: SheetField<HardnessRange>;
+  /** Durée de vie en captivité, en années (issue #484). */
+  readonly lifespan: SheetField<ValueRange>;
   /** Espèces à éviter (`compatibility`), dans l'ordre de `SPECIES`. */
   readonly avoid: SheetField<readonly SpeciesId[]>;
   /** Statut légal en France (`sim/species-legal.ts`, #269, ADR 0062). */
@@ -86,6 +100,24 @@ function range(min: number, max: number): ValueRange {
   return Object.freeze({ min, max });
 }
 
+function gh(min: number, max: number): HardnessRange {
+  return Object.freeze({ kind: 'gh', min, max });
+}
+
+/**
+ * Alcalinité du récif, 7–11 dKH (Holmes-Farley, `docs/SOINS.md` § 3), commune à toutes les
+ * espèces de récif du jeu : paramètre de bac, pas propre à l'espèce.
+ */
+const REEF_KH: SheetField<HardnessRange> = sourced(
+  Object.freeze({ kind: 'kh', min: 7, max: 11 }),
+  'docs/SOINS.md § 3 (Holmes-Farley, alcalinité du récif)',
+);
+
+/** Durée de vie, approximation de jeu : ordre de grandeur, en années (issue #484). */
+function years(min: number, max: number): SheetField<ValueRange> {
+  return approx(range(min, max));
+}
+
 /** Références de `docs/SOINS.md` § 11 (paramètres cibles par espèce, bibliographie du document). */
 const SOINS = 'docs/SOINS.md § 11';
 
@@ -97,6 +129,8 @@ interface SheetData {
   readonly diet: SheetField<Diet>;
   readonly minGroup: SheetField<number>;
   readonly minLiters: SheetField<number>;
+  readonly hardness: SheetField<HardnessRange>;
+  readonly lifespan: SheetField<ValueRange>;
   readonly notes?: readonly SheetNote[];
 }
 
@@ -147,6 +181,8 @@ const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
     diet: approx('omnivore'),
     minGroup: approx(6),
     minLiters: approx(60),
+    hardness: sourced(gh(1, 12), `${ESPECES} (Seriously Fish ; FishBase : dH 1–2, désaccord)`),
+    lifespan: years(3, 5),
   },
   guppy: {
     adultSize: approx(5),
@@ -155,6 +191,8 @@ const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
     diet: approx('omnivore'),
     minGroup: approx(3),
     minLiters: approx(60),
+    hardness: sourced(gh(8, 30), `${ESPECES} (Seriously Fish ; FishBase : dH 9–19)`),
+    lifespan: years(2, 3),
     // Reproduction (#459) : vivipare ; rythme et nombre d'alevins choisis pour le jeu
     // (`sim/fry.ts`), la gestation réelle dure environ quatre semaines.
     notes: [
@@ -174,6 +212,8 @@ const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
     diet: approx('omnivore'),
     minGroup: approx(6),
     minLiters: approx(100),
+    hardness: sourced(gh(0, 12), `${ESPECES} (Seriously Fish)`),
+    lifespan: years(5, 10),
     // Reproduction (#478) : ovipare ; rythme, nombre d'œufs et incubation choisis pour le jeu
     // (`sim/eggs.ts`), l'éclosion réelle prend plusieurs jours.
     notes: [
@@ -192,6 +232,8 @@ const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
     diet: approx('omnivore'),
     minGroup: approx(3),
     minLiters: approx(800),
+    hardness: approx(gh(6, 20)),
+    lifespan: years(25, 35),
     notes: [
       note(
         'Fiche non vérifiée : aucun paramètre chiffré confirmé (FishBase et source vétérinaire à consulter)',
@@ -206,6 +248,8 @@ const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
     diet: approx('carnivore'),
     minGroup: approx(1),
     minLiters: approx(75),
+    hardness: approx(gh(7, 20)),
+    lifespan: years(10, 15),
   },
   // Sonneur oriental (#270, ADR 0064) : source secondaire unique, consultée au cycle 86.
   grenouille: {
@@ -215,6 +259,8 @@ const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
     diet: sourced('carnivore', `${ANAPSID} (insectes, vers, petites proies)`),
     minGroup: approx(1),
     minLiters: approx(40),
+    hardness: approx(gh(4, 15)),
+    lifespan: years(10, 15),
     notes: [
       note(
         'Semi-aquatique : un quart de berge sèche environ, eau peu profonde (une dizaine de cm)',
@@ -234,6 +280,8 @@ const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
     diet: sourced('carnivore', `${ESPECES} (Caudata Culture : vers, insectes, crustacés)`),
     minGroup: approx(1),
     minLiters: approx(40),
+    hardness: approx(gh(4, 15)),
+    lifespan: years(10, 15),
     notes: [
       note(
         'Sans poissons ; éviter au-dessus de 23 °C ; préférer les sujets nés en captivité',
@@ -248,6 +296,8 @@ const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
     diet: approx('omnivore'),
     minGroup: approx(1),
     minLiters: approx(100),
+    hardness: REEF_KH,
+    lifespan: years(10, 20),
     notes: [
       note(
         'Vit très bien sans anémone ; les anémones hôtes sont déconseillées au débutant',
@@ -268,6 +318,8 @@ const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
       300,
       `${ESPECES} (OATA via un revendeur, secondaire ; 700 L selon ReefApp, désaccord)`,
     ),
+    hardness: REEF_KH,
+    lifespan: years(8, 20),
     notes: [
       note(
         'Pas pour débutant : 31 cm adulte, 300 L au moins, sujets surtout prélevés dans la nature',
@@ -287,6 +339,8 @@ const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
     diet: approx('omnivore'),
     minGroup: sourced(8, `${SF}trigonostigma-heteromorpha (8 à 10 au moins)`),
     minLiters: sourced(54, `${SF}trigonostigma-heteromorpha (base 60 × 30 cm)`),
+    hardness: approx(gh(2, 12)),
+    lifespan: years(4, 6),
   },
   tetra: {
     adultSize: sourced(4, `${SF}hyphessobrycon-pulchripinnis (SL)`),
@@ -296,6 +350,8 @@ const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
     minGroup: sourced(8, `${SF}hyphessobrycon-pulchripinnis (8 à 10 au moins)`),
     // Base 80 × 30 cm citée ; le volume en litres est une estimation.
     minLiters: approx(85),
+    hardness: approx(gh(4, 12)),
+    lifespan: years(3, 5),
   },
   kuhli: {
     adultSize: sourced(10, `${SF}pangio-kuhlii (SL)`),
@@ -304,6 +360,8 @@ const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
     diet: sourced('carnivore', `${SF}pangio-kuhlii (micro-prédateur)`),
     minGroup: sourced(5, `${SF}pangio-kuhlii (5 ou 6 au moins)`),
     minLiters: sourced(54, `${SF}pangio-kuhlii (base 60 × 30 cm)`),
+    hardness: approx(gh(2, 10)),
+    lifespan: years(8, 10),
     notes: [
       note(
         'Se cache dans le sable et les racines : sol fin et cachettes indispensables',
@@ -321,6 +379,8 @@ const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
     diet: sourced('omnivore', `${SF}trichogaster-lalius`),
     minGroup: sourced(2, `${SF}trichogaster-lalius (un couple)`),
     minLiters: sourced(56, `${SF}trichogaster-lalius (pour un couple)`),
+    hardness: approx(gh(4, 15)),
+    lifespan: years(3, 4),
     notes: [
       note(
         'Un couple plutôt qu’un groupe ; mâle parfois agressif envers les autres poissons à labyrinthe',
@@ -338,6 +398,8 @@ const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
     // Vivipare sans banc : un mâle et quelques femelles (aucun effectif chiffré par la fiche).
     minGroup: approx(3),
     minLiters: sourced(54, `${SF}xiphophorus-maculatus (base 60 × 30 cm)`),
+    hardness: approx(gh(10, 25)),
+    lifespan: years(2, 4),
     notes: [
       note(
         'Plusieurs femelles pour un mâle, qui sinon les harcèle ; eau plutôt dure (pH 7 à 8,2)',
@@ -352,6 +414,8 @@ const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
     diet: approx('omnivore'),
     minGroup: sourced(8, `${SF}danio-rerio (8 à 10 au moins)`),
     minLiters: sourced(81, `${SF}danio-rerio (base 90 × 30 cm : espèce très active)`),
+    hardness: approx(gh(5, 19)),
+    lifespan: years(3, 5),
   },
   ancistrus: {
     adultSize: sourced(12.5, `${SF}ancistrus-cf-cirrhosus (SL)`),
@@ -360,6 +424,8 @@ const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
     diet: approx('omnivore'),
     minGroup: sourced(1, `${SF}ancistrus-cf-cirrhosus (seul ou en couple)`),
     minLiters: sourced(54, `${SF}ancistrus-cf-cirrhosus (base 60 × 30 cm, un sujet ou un couple)`),
+    hardness: approx(gh(4, 15)),
+    lifespan: years(8, 12),
     notes: [
       note(
         'Ne se nourrit pas seul d’algues : régime varié avec des légumes ; territorial envers ses congénères',
@@ -374,6 +440,8 @@ const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
     diet: sourced('herbivore', `${SF}otocinclus-macrospilus (surtout végétal)`),
     minGroup: sourced(6, `${SF}otocinclus-macrospilus (6 au moins)`),
     minLiters: sourced(41, `${SF}otocinclus-macrospilus (base 45 × 30 cm)`),
+    hardness: approx(gh(2, 12)),
+    lifespan: years(3, 5),
     notes: [
       note(
         'Pas pour un bac neuf : sujets presque tous prélevés dans la nature, fragiles à l’arrivée ; bac mûr, planté et riche en algues',
@@ -391,6 +459,8 @@ const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
     diet: approx('carnivore'),
     minGroup: sourced(8, `${SF}hyphessobrycon-amandae (8 à 10 au moins)`),
     minLiters: sourced(41, `${SF}hyphessobrycon-amandae (base 45 × 30 cm)`),
+    hardness: approx(gh(2, 12)),
+    lifespan: years(3, 5),
     notes: [
       note(
         'Très paisible mais minuscule : à éviter avec des poissons turbulents ou bien plus grands',
@@ -406,6 +476,8 @@ const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
     // Vivipare sans banc : un mâle et plusieurs femelles (aucun effectif chiffré par la fiche).
     minGroup: approx(3),
     minLiters: sourced(81, `${SF}poecilia-sphenops (base 90 × 30 cm)`),
+    hardness: sourced(gh(15, 30), `${SF}poecilia-sphenops (15 à 30 °dGH)`),
+    lifespan: years(3, 5),
     notes: [
       note(
         'Eau dure et alcaline (pH 7 à 8,5, 15 à 30 °dGH) : déconseillé en bac communautaire ordinaire ; lignées d’élevage souvent fragiles',
@@ -429,6 +501,8 @@ const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
       54,
       `${SF}trichogaster-chuna (base 60 × 30 cm, un couple ou un petit groupe)`,
     ),
+    hardness: approx(gh(4, 15)),
+    lifespan: years(4, 5),
     notes: [
       note(
         'Lent, vite intimidé : éviter les espèces territoriales ou agressives ; couvert de plantes en surface et couvercle (il saute)',
@@ -447,6 +521,8 @@ const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
     // « Gardés en petits groupes de nombre impair » (Wikipédia), sans effectif chiffré.
     minGroup: approx(5),
     minLiters: approx(200),
+    hardness: REEF_KH,
+    lifespan: years(5, 8),
     notes: [
       note(
         'Vit en groupe ; proie des grands poissons prédateurs',
@@ -462,6 +538,8 @@ const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
     diet: approx('carnivore'),
     minGroup: approx(1),
     minLiters: approx(100),
+    hardness: REEF_KH,
+    lifespan: years(5, 8),
     notes: [
       note(
         'Vit dans un terrier qu’il partage avec une crevette Alpheus : sable profond nécessaire',
@@ -477,6 +555,8 @@ const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
     minGroup: approx(1),
     // 30 gallons américains au moins (Wikipédia, secondaire), environ 114 L.
     minLiters: sourced(114, `${WP}Royal_gramma (30 gallons au moins, secondaire)`),
+    hardness: REEF_KH,
+    lifespan: years(5, 8),
     notes: [
       note(
         'Territorial dans les roches ; agressif envers ses voisins en petit bac',
@@ -494,6 +574,8 @@ const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
     diet: sourced('omnivore', `${REEFLEX} (secondaire)`),
     minGroup: approx(1),
     minLiters: sourced(112, `${REEFLEX} (secondaire, environ 112 L)`),
+    hardness: REEF_KH,
+    lifespan: years(3, 5),
     notes: [
       note(
         'Nettoie les poissons de leurs parasites ; pas plus de deux par bac, elles s’entretuent à la mue',
@@ -513,6 +595,8 @@ const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
     diet: sourced('herbivore', `${FB}6033 (niveau trophique 2,0)`),
     minGroup: approx(1),
     minLiters: approx(100),
+    hardness: REEF_KH,
+    lifespan: years(3, 5),
     notes: [
       note(
         'Solitaire ; vit dans des tubes abandonnés, sur des roches couvertes d’algues',
@@ -531,6 +615,8 @@ const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
     minGroup: approx(3),
     // FishKeeper demande un bac de 90 cm de long au moins, sans volume : 90 × 30 × 37 cm.
     minLiters: approx(100),
+    hardness: sourced(gh(8, 20), `${FB_XIPHO} (8 à 20 °dH)`),
+    lifespan: years(3, 5),
     notes: [
       note(
         'Bac de 90 cm de long au moins ; un seul mâle dans un petit bac, les mâles se disputent ; plus de femelles que de mâles',
@@ -554,6 +640,8 @@ const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
     // « Au mieux en grandes colonies », sans effectif chiffré.
     minGroup: approx(6),
     minLiters: approx(20),
+    hardness: approx(gh(4, 14)),
+    lifespan: years(1, 2),
     notes: [
       note(
         'Seulement avec de petits poissons paisibles : les compagnons plus grands la prennent pour un en-cas',
@@ -572,6 +660,8 @@ const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
     diet: sourced('herbivore', `${FK_NERITINE} (pastilles d’algues, spiruline, légumes)`),
     minGroup: approx(1),
     minLiters: approx(30),
+    hardness: approx(gh(8, 18)),
+    lifespan: years(1, 2),
     notes: [
       note(
         'Eau dure et alcaline (pH 7,2 à 8,2) pour protéger la coquille ; intolérante au cuivre',
@@ -776,6 +866,86 @@ export function sheetRows(id: SpeciesId): readonly SheetRow[] {
         : statusText(sheet[field].status),
   }));
   return [...rows, ...extra];
+}
+
+/** Champs de la fiche complète du wiki (issue #484), absents de la fiche du panneau. */
+export const DETAIL_FIELDS = [
+  'hardness',
+  'lifespan',
+  'ammonia',
+  'nitrite',
+  'nitrate',
+] as const satisfies readonly (keyof SpeciesSheet | WaterCompound)[];
+
+export type DetailFieldName = (typeof DETAIL_FIELDS)[number];
+
+/** Ligne de la fiche complète du wiki. */
+export interface DetailRow {
+  readonly field: DetailFieldName;
+  readonly label: string;
+  readonly value: string;
+  readonly status: string;
+}
+
+/** Unité affichée d'une plage de dureté. */
+export function hardnessUnit(range: Pick<HardnessRange, 'kind'>): string {
+  return range.kind === 'gh' ? '°dGH' : '°dKH';
+}
+
+/** Intitulé de la ligne de dureté selon sa nature (GH en eau douce, KH en eau de mer). */
+export function hardnessLabel(range: Pick<HardnessRange, 'kind'>): string {
+  return range.kind === 'gh' ? 'Dureté (GH)' : 'Dureté carbonatée (KH)';
+}
+
+const COMPOUND_LABELS: Readonly<Record<WaterCompound, string>> = {
+  ammonia: 'Ammoniaque',
+  nitrite: 'Nitrite',
+  nitrate: 'Nitrate',
+};
+
+/**
+ * Seuils des composés azotés, communs à toutes les espèces (`COMPOUND_THRESHOLDS`, unités de
+ * jeu de `sim/water.ts`) : approximations de jeu (ADR 0052). Au seuil « mauvaise », l'eau use
+ * la santé des habitants (`sim/wellbeing.ts`).
+ */
+export function thresholdText(compound: WaterCompound): string {
+  const { watch, bad } = COMPOUND_THRESHOLDS[compound];
+  return `à surveiller dès ${frenchNumber(watch)}, eau mauvaise dès ${frenchNumber(bad)} (unités de jeu, toutes espèces)`;
+}
+
+/** Statut des seuils azotés (valeurs de jeu, ADR 0052). */
+const THRESHOLD_STATUS = `${statusText(APPROXIMATION)} (ADR 0052)`;
+
+/**
+ * Lignes de la fiche complète de `id` (issue #484), dans l'ordre de `DETAIL_FIELDS` : dureté,
+ * durée de vie, puis seuils d'ammoniaque, de nitrite et de nitrate du jeu.
+ */
+export function detailRows(id: SpeciesId): readonly DetailRow[] {
+  const sheet = SHEETS[id];
+  const hardness = sheet.hardness.value;
+  const { min, max } = sheet.lifespan.value;
+  return Object.freeze([
+    Object.freeze({
+      field: 'hardness',
+      label: hardnessLabel(hardness),
+      value: frenchRange(hardness, hardnessUnit(hardness)),
+      status: statusText(sheet.hardness.status),
+    }),
+    Object.freeze({
+      field: 'lifespan',
+      label: 'Durée de vie',
+      value: `${min === max ? frenchNumber(min) : `${frenchNumber(min)} à ${frenchNumber(max)}`} ans`,
+      status: statusText(sheet.lifespan.status),
+    }),
+    ...(['ammonia', 'nitrite', 'nitrate'] as const).map((compound) =>
+      Object.freeze({
+        field: compound,
+        label: `${COMPOUND_LABELS[compound]} (seuils du jeu)`,
+        value: thresholdText(compound),
+        status: THRESHOLD_STATUS,
+      }),
+    ),
+  ]);
 }
 
 /** Mises en garde affichées de la fiche de `id` (#269), avec le texte de leur statut. */

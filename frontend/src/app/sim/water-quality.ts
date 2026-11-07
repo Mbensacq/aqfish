@@ -9,6 +9,7 @@ import {
   type WaterProducts,
   type WaterState,
 } from './water';
+import { waterHardness } from './water-hardness';
 import { phBands, phZone, sameBands, type PhBands, type PhZone } from './water-ph';
 
 /**
@@ -151,6 +152,10 @@ export interface WaterReadout {
   readonly tea: number;
   /** Sel et médicament présents dans l'eau (`waterProducts`, issue #374). */
   readonly products: WaterProducts;
+  /** Dureté générale de l'eau, en °dGH, au dixième (issue #484, `waterHardness`). */
+  readonly gh: number;
+  /** Dureté carbonatée de l'eau, en °dKH, au dixième (issue #484). */
+  readonly kh: number;
 }
 
 /** Relevé d'une eau saine du bac tropical peuplé par défaut (valeur initiale de l'interface). */
@@ -171,6 +176,7 @@ export function waterReadout(
   species: Iterable<SpeciesId> = [],
 ): WaterReadout {
   const bands = phBands(species);
+  const hardness = waterHardness(water, environment);
   return {
     quality: waterQuality(water, environment),
     temperature: tenth(water.temperature),
@@ -184,6 +190,8 @@ export function waterReadout(
     catappa: water.catappa?.length ?? 0,
     tea: catappaTint(water.catappa),
     products: waterProducts(water),
+    gh: tenth(hardness.gh),
+    kh: tenth(hardness.kh),
   };
 }
 
@@ -202,7 +210,9 @@ export function sameReadout(a: WaterReadout, b: WaterReadout): boolean {
     a.catappa === b.catappa &&
     a.tea === b.tea &&
     a.products.salted === b.products.salted &&
-    a.products.medicated === b.products.medicated
+    a.products.medicated === b.products.medicated &&
+    a.gh === b.gh &&
+    a.kh === b.kh
   );
 }
 

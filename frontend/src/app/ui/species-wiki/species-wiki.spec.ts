@@ -247,13 +247,17 @@ describe('SpeciesWiki, lot 2/2 (#291)', () => {
     fixture.componentRef.setInput('populationMax', counts({ neon: 30, guppy: 20, corydora: 10 }));
     fixture.componentRef.setInput('waterTemperature', 24);
     fixture.componentRef.setInput('waterPh', 7);
+    fixture.componentRef.setInput('waterGh', 10);
+    fixture.componentRef.setInput('waterKh', 6);
     await fixture.whenStable();
     await click('[data-wiki-toggle]');
   });
 
   it('fiche : comparaison avec le bac, alimentation, cohabitation', async () => {
     await click('[data-wiki-species="neon"]');
+    // Température, pH et dureté (#484).
     expect(all('[data-wiki-compare]').map((r) => r.getAttribute('data-fit'))).toEqual([
+      'dans-la-plage',
       'dans-la-plage',
       'dans-la-plage',
     ]);
@@ -276,6 +280,37 @@ describe('SpeciesWiki, lot 2/2 (#291)', () => {
     expect(q('[data-wiki-compare="temperature"]')!.textContent).toContain(
       '5 °C au-dessus de la plage préférée',
     );
+  });
+
+  it('fiche complète (#484) : dureté, durée de vie et seuils azotés, chacun avec son statut', async () => {
+    await click('[data-wiki-species="neon"]');
+    expect(all('[data-wiki-detail]').map((r) => r.getAttribute('data-wiki-detail'))).toEqual([
+      'hardness',
+      'lifespan',
+      'ammonia',
+      'nitrite',
+      'nitrate',
+    ]);
+    const hardness = q('[data-wiki-detail="hardness"]')!;
+    expect(hardness.textContent).toContain('Dureté (GH)');
+    expect(hardness.textContent).toContain('1 – 12 °dGH');
+    expect(hardness.querySelector('[data-wiki-detail-status]')!.textContent).toMatch(/^Source : /);
+    expect(q('[data-wiki-detail="lifespan"]')!.textContent).toContain('3 à 5 ans');
+    expect(q('[data-wiki-detail="ammonia"]')!.textContent).toContain('eau mauvaise dès 5');
+    // Les champs de la fiche du panneau ne changent pas.
+    expect(all('[data-wiki-field]')).toHaveLength(11);
+  });
+
+  it('comparaison de la dureté (#484) : texte en plus de la couleur, suit l’eau du bac', async () => {
+    await click('[data-wiki-species="neon"]');
+    const row = () => q('[data-wiki-compare="hardness"]')!;
+    expect(row().textContent).toContain('Bac : 10,0 °dGH');
+    expect(row().textContent).toContain('dans la plage');
+    fixture.componentRef.setInput('waterGh', 16);
+    await fixture.whenStable();
+    expect(row().getAttribute('data-fit')).toBe('hors-plage');
+    expect(row().textContent).toContain('hors plage');
+    expect(row().textContent).toContain('4 °dGH au-dessus de la plage préférée');
   });
 
   it('couleurs de l’avis : celles des zones de la jauge pH, une seule définition (#296)', () => {

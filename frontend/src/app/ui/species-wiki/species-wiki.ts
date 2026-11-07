@@ -126,6 +126,17 @@ export function wikiAddCount(
                   </dd>
                 </div>
               }
+              @for (row of view.details; track row.field) {
+                <div class="species-wiki__row" [attr.data-wiki-detail]="row.field">
+                  <dt>{{ row.label }}</dt>
+                  <dd>
+                    {{ row.value }}
+                    <small class="species-wiki__status" data-wiki-detail-status>{{
+                      row.status
+                    }}</small>
+                  </dd>
+                </div>
+              }
             </dl>
             @if (care(); as care) {
               <h4 class="species-wiki__section">Alimentation</h4>
@@ -313,6 +324,10 @@ export class SpeciesWiki {
   readonly waterTemperature = input<number>(Number.NaN);
   /** pH de l'eau du bac (`NaN` : inconnu), pour la comparaison (#291). */
   readonly waterPh = input<number>(Number.NaN);
+  /** Dureté générale de l'eau du bac, en °dGH (#484) ; inconnue par défaut. */
+  readonly waterGh = input<number>(Number.NaN);
+  /** Dureté carbonatée de l'eau du bac, en °dKH (#484) ; inconnue par défaut. */
+  readonly waterKh = input<number>(Number.NaN);
 
   /** « Ajouter au bac » : un individu de plus (borné par `populationMax`). */
   readonly populationChanged = output<PopulationRequest>();
@@ -354,7 +369,12 @@ export class SpeciesWiki {
   /** Comparaison de l'espèce affichée avec l'eau du bac (#291). */
   protected readonly comparison = computed(() => {
     const id = this.selected();
-    return id === null ? [] : tankComparison(id, this.waterTemperature(), this.waterPh());
+    return id === null
+      ? []
+      : tankComparison(id, this.waterTemperature(), this.waterPh(), {
+          gh: this.waterGh(),
+          kh: this.waterKh(),
+        });
   });
   /** Alimentation et cohabitation de l'espèce affichée (#291). */
   protected readonly care = computed(() => {

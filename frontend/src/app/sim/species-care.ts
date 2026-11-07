@@ -3,12 +3,15 @@ import { ENVIRONMENTS } from './environment';
 import { SPECIES_LABELS } from './species-catalog';
 import {
   frenchNumber,
+  hardnessLabel,
+  hardnessUnit,
   speciesSheet,
   statusText,
   type FieldStatus,
   type SheetField,
   type ValueRange,
 } from './species-sheet';
+import type { Hardness } from './water-hardness';
 import { SPECIES, type SpeciesId } from './species';
 import { formatTenth } from './water-dashboard';
 
@@ -404,7 +407,7 @@ export function tankFit(value: number, preferred: ValueRange, tolerated: ValueRa
 
 /** Ligne de la comparaison avec le bac. */
 export interface TankComparisonRow {
-  readonly parameter: 'temperature' | 'ph';
+  readonly parameter: 'temperature' | 'ph' | 'hardness';
   readonly label: string;
   /** Valeur du bac au dixième, comme le tableau de bord (« 7,0 », « 24,0 °C » ; « inconnue » si non finie). */
   readonly tank: string;
@@ -468,15 +471,18 @@ function comparisonRow(
 
 /**
  * Comparaison des besoins de `id` avec l'eau du bac courant, à `temperature` °C et au pH
- * `ph` : plages préférée et tolérée de la fiche (`speciesSheet`).
+ * `ph` : plages préférée et tolérée de la fiche (`speciesSheet`) ; avec la dureté `hardness`
+ * du bac (#484), une troisième ligne compare sa GH (eau douce) ou son KH (récif) à la plage de
+ * dureté de la fiche.
  */
 export function tankComparison(
   id: SpeciesId,
   temperature: number,
   ph: number,
+  hardness?: Hardness,
 ): readonly TankComparisonRow[] {
   const sheet = speciesSheet(id);
-  return Object.freeze([
+  const rows = [
     comparisonRow(
       'temperature',
       'Température',
@@ -486,5 +492,21 @@ export function tankComparison(
       '°C',
     ),
     comparisonRow('ph', 'pH', ph, sheet.phPreferred.value, sheet.phTolerated.value, ''),
-  ]);
+  ];
+  if (hardness !== undefined) {
+    // Dureté (#484) : une seule plage, préférée et tolérée à la fois (« dans la plage » ou
+    // « hors plage », jamais « limite ») ; GH en eau douce, KH en eau de mer.
+    const range = sheet.hardness.value;
+    rows.push(
+      comparisonRow(
+        'hardness',
+        hardnessLabel(range),
+        hardness[range.kind],
+        range,
+        range,
+        hardnessUnit(range),
+      ),
+    );
+  }
+  return Object.freeze(rows);
 }
