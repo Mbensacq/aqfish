@@ -131,7 +131,9 @@ export function wikiAddCount(
                   <dt>{{ row.label }}</dt>
                   <dd>
                     {{ row.value }}
-                    <small class="species-wiki__status" data-wiki-status>{{ row.status }}</small>
+                    <small class="species-wiki__status" data-wiki-detail-status>{{
+                      row.status
+                    }}</small>
                   </dd>
                 </div>
               }

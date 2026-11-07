@@ -181,6 +181,7 @@ test.describe('Wiki des espèces (#287)', () => {
         await expect(hardness).toHaveAttribute('data-fit', 'dans-la-plage');
         await expect(hardness).toContainText('Bac : 10,0 °dGH');
         await expect(sheet(page).locator('[data-wiki-detail]')).toHaveCount(5);
+        await expect(sheet(page).locator('[data-wiki-detail-status]')).toHaveCount(5);
         await expect(sheet(page).locator('[data-wiki-detail="lifespan"]')).toContainText('ans');
         await expect(sheet(page).locator('[data-wiki-feeding]')).toHaveCount(4);
         await expect(sheet(page).locator('[data-wiki-mate="avoid"]')).toHaveCount(2);
