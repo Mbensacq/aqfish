@@ -492,6 +492,11 @@ origin/main`, `node_modules` en lien symbolique) ; il sert aussi aux captures «
   code (identiques à l'octet, à tort). Vérifier `ps -eo pid,args | grep '[n]g serve'` et
   l'arrêter avant de comparer. Ne pas utiliser `pkill -f "ng serve"` : le motif correspond
   aussi à la commande du shell qui l'exécute, qui se tue elle-même (code 144). (2026-10-21)
+- **`npx prettier --write` sur `docs/*.md` réaligne tous les tableaux** (cycle 166) : passer
+  Prettier sur `docs/SOINS.md` a réécrit ~100 lignes de tableaux sans rapport avec le
+  changement. `npm run format` ne vise que `frontend/` : ne pas y ajouter `../docs`
+  et remettre un document touché par erreur avec `git checkout HEAD -- <doc>` avant
+  d'y refaire la seule modification voulue. (2026-11-07)
 
 ## Tests
 
