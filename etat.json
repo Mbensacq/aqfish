@@ -6041,10 +6041,10 @@
           "note": "Verdict OK, 0 bug, captures c165 publiées (5 angles identiques à c164)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-07T05:58:01.269Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-07T07:14:16.469Z",
+          "note": "PR #493 fusionnée → v1.12.4 (release et tag créés par la CI, CI main verte) ; #477 fermée ; dette #494 ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
