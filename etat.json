@@ -6035,10 +6035,10 @@
           "note": "PR #493 : plantes à tige qui poussent et se taillent au sécateur (#477), CI verte ; captures de scène identiques à main, e2e local ciblé"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-07T05:32:22.941Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-07T05:57:21.448Z",
+          "note": "Verdict OK, 0 bug, captures c165 publiées (5 angles identiques à c164)"
         }
       },
       "metriques": {}
