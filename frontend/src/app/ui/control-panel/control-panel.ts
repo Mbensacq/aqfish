@@ -69,6 +69,7 @@ import {
 import { type SpeciesId } from '../../sim/species';
 import { addWarnings, addWarningText } from '../../sim/species-sheet';
 import { SpeciesSheet } from './species-sheet';
+import { TreatmentNotice as TreatmentNoticeView } from './treatment-notice';
 import { MAX_HEATER_TEMPERATURE, MIN_HEATER_TEMPERATURE } from '../../sim/water';
 import { TREATMENT_KINDS, TREATMENTS, type TreatmentKind } from '../../sim/treatment';
 import {
@@ -263,7 +264,7 @@ export interface NewTankRequest {
 
 @Component({
   selector: 'app-control-panel',
-  imports: [SpeciesSheet],
+  imports: [SpeciesSheet, TreatmentNoticeView],
   template: `<button
       type="button"
       class="control-panel__toggle"
@@ -537,16 +538,13 @@ export interface NewTankRequest {
             </div>
             <p class="control-panel__note" data-treatment-status>{{ treatmentStatus() }}</p>
             @if (treatmentNotice(); as notice) {
-              <p
+              <!-- Bulle à droite du panneau en deux colonnes (#490, treatment-notice.ts). -->
+              <app-treatment-notice
                 class="control-panel__message"
                 [class.control-panel__message--error]="!notice.ok"
                 data-treatment-message
-              >
-                {{ notice.text }}
-                @if (notice.warning; as warning) {
-                  <span class="control-panel__warning" data-treatment-warning>{{ warning }}</span>
-                }
-              </p>
+                [notice]="notice"
+              />
             } @else {
               <!-- Sources et niveaux de preuve (infobulle de chaque bouton) ; le message d'un
                    geste prend leur place, pour que le panneau tienne à 1280 × 720. -->

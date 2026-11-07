@@ -90,9 +90,25 @@ export function animalCountText(animals: number): string {
   return animals === 0 ? 'vide' : `${animals} anima${animals === 1 ? 'l' : 'ux'}`;
 }
 
-/** Libellé court d'une ligne (« 3 animaux · 240 L »). */
-export function tankListDetail(entry: Pick<TankListEntry, 'animals' | 'liters'>): string {
-  return `${animalCountText(entry.animals)} · ${entry.liters} L`;
+/**
+ * Faim moyenne en clair (#318) : « faim 40 % », ou `null` sans animal nourri aux granulés
+ * (bac vide, crevettes seules : aucune moyenne, aucune division par zéro).
+ */
+export function hungerText(hunger: number | null): string | null {
+  return hunger === null || !Number.isFinite(hunger) ? null : `faim ${hunger} %`;
+}
+
+/**
+ * Libellé court d'une ligne (« 3 animaux · 240 L », « 3 animaux · 240 L · faim 40 % ») : la
+ * faim, quand elle est connue, montre qu'un bac non affiché vit (#318).
+ */
+export function tankListDetail(
+  entry: Pick<TankListEntry, 'animals' | 'liters'> & Partial<Pick<TankListEntry, 'hunger'>>,
+): string {
+  const hunger = hungerText(entry.hunger ?? null);
+  return [`${animalCountText(entry.animals)} · ${entry.liters} L`, hunger]
+    .filter((part) => part !== null)
+    .join(' · ');
 }
 
 function hungerPercent(world: World): number | null {

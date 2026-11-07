@@ -59,6 +59,20 @@ const PANELS: readonly PanelCase[] = [
     },
   },
   {
+    // Message d'un geste de soin affiché (#490) : en deux colonnes, il passe dans une bulle à
+    // droite du panneau, la section « Soins » ne grandit pas et « Sauvegarde » reste visible.
+    name: 'Réglages (soins, message)',
+    search: '?seed=42&points-blancs=1',
+    panel: (page) => page.locator('.control-panel'),
+    open: async (page) => {
+      await page.getByRole('button', { name: 'Réglages' }).click();
+      await page.getByRole('button', { name: 'Ajouter 1 g/L de sel' }).click();
+      await expect(page.locator('.control-panel [data-treatment-message]')).toContainText(
+        'Prudence',
+      );
+    },
+  },
+  {
     name: 'Commandes',
     panel: (page) => page.locator('#aide-commandes'),
     open: async (page) => {
@@ -261,6 +275,56 @@ test.describe('panneau « Commandes » (#79)', () => {
     await expect(panel.locator('[data-command="aide"] dd')).toBeInViewport();
     expect(errors).toEqual([]);
   });
+});
+
+// #490 : à 1280 × 720, un message de soin (le plus long : sel avec néons et corydoras, mise
+// en garde comprise) agrandissait la section « Soins », qui passait en deuxième colonne et
+// poussait « Sauvegarde » dans une troisième, hors du panneau. Le message est désormais une
+// bulle à droite du panneau : chaque section reste entière dans le cadre, deux colonnes.
+test.describe('message de soin à 1280 × 720 (#490)', () => {
+  for (const font of FONTS) {
+    test(`toutes les sections visibles, bulle dans la fenêtre (police ${font ?? 'par défaut'})`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width: 1280, height: 720 });
+      const errors = await openScene(page, '?seed=42&points-blancs=1');
+      if (font) {
+        await page.addStyleTag({
+          content: `app-control-panel, app-control-panel * { font-family: '${font}' !important; }`,
+        });
+      }
+      const settings = PANELS.find((p) => p.name === 'Réglages (soins, message)')!;
+      await settings.open(page);
+      const panel = settings.panel(page);
+      expect(await panel.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+      const panelBox = await box(panel);
+      const sections = await panel.evaluate((el) =>
+        [...el.querySelectorAll<HTMLElement>(':scope > fieldset')].map((f) => {
+          const r = f.getBoundingClientRect();
+          return { name: f.dataset['section'], left: r.left, right: r.right, bottom: r.bottom };
+        }),
+      );
+      expect(sections.map((s) => s.name)).toContain('sauvegarde');
+      for (const section of sections) {
+        expect(section.right, `section « ${section.name} » hors du panneau`).toBeLessThanOrEqual(
+          panelBox.x + panelBox.width,
+        );
+        expect(section.bottom, `section « ${section.name} » coupée`).toBeLessThanOrEqual(
+          panelBox.y + panelBox.height,
+        );
+      }
+      const lefts = new Set(sections.map((s) => Math.round(s.left)));
+      expect(lefts.size, 'deux colonnes, pas trois').toBe(2);
+      const bubble = await box(panel.locator('[data-treatment-message]'));
+      const bar = await box(page.locator('.view-presets-bar'));
+      expect(bubble.x).toBeGreaterThanOrEqual(panelBox.x + panelBox.width);
+      expect(bubble.x + bubble.width).toBeLessThanOrEqual(1280);
+      expect(bubble.y + bubble.height).toBeLessThanOrEqual(720);
+      expect(overlaps(bubble, bar), 'la bulle recouvre la barre des vues').toBe(false);
+      expect(await coveredButtons(panel), 'boutons d’interface recouverts').toEqual([]);
+      expect(errors).toEqual([]);
+    });
+  }
 });
 
 // #370 : à 1280 × 720, la liste « Population » défile seule ; sa hauteur est arrondie à un

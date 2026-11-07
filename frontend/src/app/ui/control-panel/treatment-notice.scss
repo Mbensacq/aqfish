@@ -1,0 +1,31 @@
+// Message d'un geste de soin (#490) : voir `treatment-notice.ts`. Couleurs et taille du
+// texte : celles du panneau (`control-panel__message`, posées sur l'hôte par le panneau).
+@use '../panel-layout' as layout;
+
+:host {
+  display: block;
+}
+
+// Même ton que les mises en garde du panneau (`control-panel__warning`).
+.treatment-notice__warning {
+  color: #f2c09a;
+}
+
+// Panneau en deux colonnes (mêmes bornes que `control-panel.scss`) : bulle hors du flux, à
+// droite du panneau, alignée sur son bas. Le bloc conteneur est l'hôte du panneau (position
+// fixe, aussi large que le panneau) : ni la section ni le panneau ne sont positionnés, et le
+// défilement du panneau ne la rogne pas.
+@media (min-width: 900px) and (max-height: 900px) {
+  :host {
+    position: absolute;
+    bottom: 0;
+    left: calc(100% + #{layout.$edge});
+    box-sizing: border-box;
+    width: 240px;
+    padding: 6px 10px;
+    border: 1px solid rgb(232 230 227 / 8%);
+    border-radius: 10px;
+    background: layout.$panel-background;
+    pointer-events: auto;
+  }
+}
