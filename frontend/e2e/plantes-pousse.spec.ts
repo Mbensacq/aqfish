@@ -67,14 +67,14 @@ test.describe('plantes qui poussent (#477)', () => {
     expect(box).not.toBeNull();
     const { x, y, width, height } = box!;
     const pruned = async (): Promise<boolean> => (await growths(page)).some((g, n) => g < caps[n]);
+    // Points visés : tiges des deux grandes plantes du fond en vue trois-quarts (1280 × 720).
     for (const [fx, fy] of [
-      [0.3, 0.4],
-      [0.55, 0.4],
-      [0.6, 0.35],
-      [0.25, 0.3],
-      [0.5, 0.3],
-      [0.58, 0.45],
-      [0.3, 0.5],
+      [0.414, 0.42],
+      [0.58, 0.47],
+      [0.412, 0.36],
+      [0.575, 0.55],
+      [0.42, 0.48],
+      [0.585, 0.4],
     ]) {
       await page.mouse.click(x + fx * width, y + fy * height);
       if (await pruned()) {
