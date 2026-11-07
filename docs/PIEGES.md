@@ -6,6 +6,15 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Remplacer la géométrie d'un maillage en cours de partie : `fond-ecran` compte les
+  `WebGLBuffer`** (cycle 165, #477) : l'e2e d'endurance de la vue fond d'écran exige qu'aucun
+  `WebGLBuffer` de plus ne soit vivant après une minute (`Runtime.queryObjects` après
+  ramassage). Une plante qui grandissait d'un voxel recevait une géométrie neuve (l'ancienne
+  `dispose()`) : +4 tampons par plante en CI (470 contre 458), le `dispose` ne suffisant pas à
+  faire disparaître les objets JS des tampons. Allouer les tampons une fois avec de la marge
+  et les réécrire en place (`needsUpdate`, `setDrawRange`), voir `render/plant-model.ts`
+  (`paddedPlantMesh`). Pour mesurer en local : importer une sauvegarde juste sous un palier,
+  compter les `WebGLBuffer` avant et après le palier. (2026-11-07)
 - **Un état qui évolue à chaque pas dans l'eau du bac : deux tests de référence changent**
   (cycle 165, #477) : `room-state.spec.ts` (« reste identique à l'avant-lot », empreinte
   dorée du monde sérialisé) et `water.spec.ts` (« l'eau suit le modèle », `toEqual` sur l'eau

@@ -23,12 +23,21 @@ import {
   type DecorItem,
 } from '../sim/decor';
 import { plantModel, type PlantForm } from '../sim/plant';
+import { isGrowingPlant } from '../sim/plant-growth';
 import { woodModel } from '../sim/wood';
 import { buildAnemoneMesh } from './anemone-model';
 import { buildCoralMesh } from './coral-model';
 import { FISH_RENDER_ORDER } from './fish-layer';
 import { PALETTE } from './palette';
-import { applyPlantSway, buildPlantMesh, cachedPlantMesh, type PlantMeshData } from './plant-model';
+import {
+  applyPlantSway,
+  buildPlantMesh,
+  cachedPlantMesh,
+  paddedPlantMesh,
+  plantVertexCapacity,
+  writePlantMesh,
+  type PlantMeshData,
+} from './plant-model';
 import {
   buildRockMesh,
   createOutlineGeometry,
@@ -123,6 +132,8 @@ interface GrowingPlant {
   readonly item: DecorItem;
   /** Pousse affichée, en voxels entiers. */
   growth: number;
+  /** Tableaux rendus, à la taille prévue pour la pousse (`paddedPlantMesh`). */
+  buffers: PlantMeshData;
 }
 
 /**
@@ -176,14 +187,17 @@ export class DecorLayer {
       if (item.kind === 'plant') {
         const model = plantModel(item.seed, item.scale, item.form as PlantForm);
         const plant = buildPlantMesh(model, item.seed);
-        data = plant;
+        // Plante à tige (#477) : tampons prévus pour sa pousse, dessinés sur ses seuls sommets.
+        data = isGrowingPlant(item)
+          ? paddedPlantMesh(plant, plantVertexCapacity(item.seed, item.scale, 'tall'))
+          : plant;
         baseY = plantBaseY(model.voxelSize);
         name = `plante-${n}`;
         sway = {
           data: plant,
           amplitude: model.amplitude,
           rotation: item.rotation,
-          position: new BufferAttribute(plant.positions, 3),
+          position: new BufferAttribute(data.positions, 3),
         };
         this.plants.push(sway);
       } else if (item.kind === 'wood') {
@@ -221,7 +235,16 @@ export class DecorLayer {
       }
       this.object.add(group);
       this.items.push({ voxels: mesh, hull });
-      this.growing.push(sway && { sway, item, growth: 0 });
+      if (sway && data !== sway.data) {
+        const count = sway.data.heights.length;
+        geometry.setDrawRange(0, count);
+        outline.setDrawRange(0, count);
+      }
+      this.growing.push(
+        sway && data !== sway.data
+          ? { sway, item, growth: 0, buffers: data as PlantMeshData }
+          : undefined,
+      );
     });
     corals.forEach((colony, n) => {
       const model = coralModel(colony.form, colony.seed, colony.scale);
@@ -353,32 +376,46 @@ export class DecorLayer {
     }
     const { item, sway } = plant;
     const { model, mesh } = cachedPlantMesh(item.seed, item.scale, item.form as PlantForm, growth);
-    const position = new BufferAttribute(mesh.positions, 3);
-    position.setUsage(DynamicDrawUsage);
-    const geometry = createRockGeometry(mesh);
-    const outline = createOutlineGeometry(mesh);
-    geometry.setAttribute('position', position);
-    outline.setAttribute('position', position);
     const { voxels, hull } = this.items[index];
-    for (const [m, next] of [
-      [voxels, geometry],
-      [hull, outline],
-    ] as const) {
-      const old = m.geometry;
-      old.dispose();
-      this.geometries[this.geometries.indexOf(old)] = next;
-      m.geometry = next;
+    if (writePlantMesh(mesh, plant.buffers)) {
+      // Mêmes tampons, réécrits en place : aucun objet WebGL créé ni détruit.
+      for (const name of ['position', 'normal', 'color'] as const) {
+        voxels.geometry.getAttribute(name).needsUpdate = true;
+      }
+      hull.geometry.getAttribute('normal').needsUpdate = true;
+    } else {
+      // Au-delà de la pousse prévue (`PLANT_GROWTH_HEADROOM`) : nouveaux tampons.
+      const buffers = paddedPlantMesh(mesh, 0);
+      const position = new BufferAttribute(buffers.positions, 3);
+      position.setUsage(DynamicDrawUsage);
+      const geometry = createRockGeometry(buffers);
+      const outline = createOutlineGeometry(buffers);
+      geometry.setAttribute('position', position);
+      outline.setAttribute('position', position);
+      for (const [m, next] of [
+        [voxels, geometry],
+        [hull, outline],
+      ] as const) {
+        const old = m.geometry;
+        old.dispose();
+        this.geometries[this.geometries.indexOf(old)] = next;
+        m.geometry = next;
+      }
+      plant.buffers = buffers;
+      sway.position = position;
     }
+    const count = mesh.heights.length;
+    voxels.geometry.setDrawRange(0, count);
+    hull.geometry.setDrawRange(0, count);
     sway.data = mesh;
     sway.amplitude = model.amplitude;
-    sway.position = position;
     plant.growth = growth;
     applyPlantSway(
       mesh,
       model.amplitude * this.swayScale,
       sway.rotation,
       this.swayTime,
-      mesh.positions,
+      plant.buffers.positions,
     );
     return true;
   }

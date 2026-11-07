@@ -22,7 +22,12 @@ import {
   SELECTION_WIDTH_PX,
 } from './decor-layer';
 import { FISH_RENDER_ORDER } from './fish-layer';
-import { cachedPlantMesh, PLANT_MESH_CACHE_LIMIT, plantMeshBuildCount } from './plant-model';
+import {
+  cachedPlantMesh,
+  PLANT_GROWTH_HEADROOM,
+  PLANT_MESH_CACHE_LIMIT,
+  plantMeshBuildCount,
+} from './plant-model';
 import { PALETTE_COLORS } from './palette';
 
 describe('DecorLayer', () => {
@@ -382,8 +387,12 @@ describe('DecorLayer', () => {
       expect(layer.setPlantGrowth(tallIndex, 6)).toBe(true);
       const mesh = voxels(layer, tallIndex);
       const hull = layer.object.children[tallIndex].children[0] as Mesh;
-      expect(mesh.geometry).not.toBe(before);
+      // Mêmes tampons, réécrits en place (aucun objet WebGL créé), dessinés sur plus de sommets.
+      expect(mesh.geometry).toBe(before);
       expect(mesh.geometry.getAttribute('position')).toBe(hull.geometry.getAttribute('position'));
+      const count = cachedPlantMesh(item.seed, item.scale, 'tall', 6).mesh.heights.length;
+      expect(mesh.geometry.drawRange.count).toBe(count);
+      expect(hull.geometry.drawRange.count).toBe(count);
       const model = plantModel(item.seed, item.scale, 'tall', 6);
       const top = Math.max(
         ...(mesh.geometry.getAttribute('position').array as Float32Array).filter(
@@ -425,6 +434,23 @@ describe('DecorLayer', () => {
       expect(plantMeshBuildCount()).toBe(builds + 2);
     });
 
+    it('au-delà de la pousse prévue, nouveaux tampons ; l’ancienne géométrie est libérée', () => {
+      const layer = new DecorLayer();
+      layer.setDecor(DEFAULT_DECOR);
+      const before = voxels(layer, tallIndex).geometry;
+      let disposed = 0;
+      before.addEventListener('dispose', () => disposed++);
+      expect(layer.setPlantGrowth(tallIndex, PLANT_GROWTH_HEADROOM + 3)).toBe(true);
+      expect(voxels(layer, tallIndex).geometry).not.toBe(before);
+      expect(disposed).toBe(1);
+      const hull = layer.object.children[tallIndex].children[0] as Mesh;
+      expect(hull.geometry.getAttribute('position')).toBe(
+        voxels(layer, tallIndex).geometry.getAttribute('position'),
+      );
+      expect(layer.setPlantGrowth(tallIndex, 2)).toBe(true);
+      expect(layer.plantGrowth(tallIndex)).toBe(2);
+    });
+
     it('cache borné : au plus PLANT_MESH_CACHE_LIMIT maillages gardés', () => {
       for (let g = 0; g < PLANT_MESH_CACHE_LIMIT + 2; g++) {
         cachedPlantMesh(9002, 0.5, 'tall', g);
@@ -444,7 +470,15 @@ describe('DecorLayer', () => {
       layer.update(2);
       layer.setPlantGrowth(tallIndex, 0);
       const array = (m: Mesh): number[] =>
-        Array.from(m.geometry.getAttribute('position').array as Float32Array);
+        Array.from(
+          (m.geometry.getAttribute('position').array as Float32Array).subarray(
+            0,
+            3 * m.geometry.drawRange.count,
+          ),
+        );
+      expect(voxels(layer, tallIndex).geometry.drawRange.count).toBe(
+        voxels(fresh, tallIndex).geometry.drawRange.count,
+      );
       expect(array(voxels(layer, tallIndex))).toEqual(array(voxels(fresh, tallIndex)));
       const geometry = voxels(layer, tallIndex).geometry;
       layer.update(4);

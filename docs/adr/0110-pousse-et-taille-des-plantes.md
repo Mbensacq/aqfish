@@ -39,12 +39,15 @@ identiques à l'octet.
    le panneau ne grandit pas) ; en main, un clic sur une plante à tige (`pickDecor`) la ramène
    à 80 % de sa hauteur totale, jamais sous sa hauteur d'origine (`prunedGrowth`). Raclette et
    sécateur s'excluent ; le clic ne nourrit pas.
-6. **Rendu** : `DecorLayer.setPlantGrowth(index, growth)` remplace le maillage d'une plante
+6. **Rendu** : `DecorLayer.setPlantGrowth(index, growth)` change le maillage d'une plante
    seulement quand sa pousse **entière** change (paliers d'un voxel) ; les maillages par
    (graine, échelle, forme, pousse) sont gardés dans un cache borné à 64 entrées
-   (`cachedPlantMesh`), chaque plante affichée ayant sa propre copie des positions (l'ondulation
-   les réécrit). L'hôte expose la pousse avec le relevé de l'eau (4 fois par seconde au plus),
-   jamais à chaque image.
+   (`cachedPlantMesh`). Les tampons d'une plante à tige sont alloués une fois, à `setDecor`,
+   avec la place de 64 voxels de pousse (`paddedPlantMesh`, `PLANT_GROWTH_HEADROOM`), et
+   dessinés sur leurs seuls sommets (`setDrawRange`) : un palier réécrit ces tampons en place
+   (`writePlantMesh`), sans créer ni détruire d'objet WebGL. Au-delà seulement, de nouveaux
+   tampons remplacent les anciens. L'hôte expose la pousse avec le relevé de l'eau (4 fois par
+   seconde au plus), jamais à chaque image.
 7. **Ombre** (`plantShade`) : chaque plante au plafond retire 4 % de la teinte du décor
    (rochers, plantes, bois), 12 % au plus ; facteur exactement 1 sans plante au plafond.
 

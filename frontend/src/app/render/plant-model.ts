@@ -134,3 +134,52 @@ export function cachedPlantMesh(
   }
   return { model: hit.model, mesh: { ...hit.mesh, positions: hit.mesh.rest.slice() } };
 }
+
+/**
+ * Pousse prévue d'avance par les tampons d'une plante à tige affichée (issue #477) : au-delà,
+ * la couche du décor doit remplacer ses tampons (nouveaux objets WebGL). Plus haut que la
+ * pousse possible dans le plus haut bac réglable.
+ */
+export const PLANT_GROWTH_HEADROOM = 64;
+
+/**
+ * Copie de `mesh` dont les tableaux rendus (positions, normales, couleurs, normales lissées,
+ * voxel de chaque sommet) ont la place de `capacity` sommets (au moins ceux de `mesh`), les
+ * sommets de `mesh` en tête : une plante qui pousse réécrit ces tableaux en place au lieu d'en
+ * allouer de nouveaux (`writePlantMesh`). Hauteurs, phases et repos gardent la taille de `mesh`.
+ */
+export function paddedPlantMesh(mesh: PlantMeshData, capacity: number): PlantMeshData {
+  const size = Math.max(capacity, mesh.positions.length / 3);
+  const out: PlantMeshData = {
+    ...mesh,
+    positions: new Float32Array(3 * size),
+    normals: new Float32Array(3 * size),
+    colors: new Float32Array(3 * size),
+    smoothNormals: new Float32Array(3 * size),
+    vertexCells: new Uint32Array(size),
+  };
+  writePlantMesh(mesh, out);
+  return out;
+}
+
+/**
+ * Écrit les sommets de `mesh` en tête des tableaux de `target` (positions au repos) ; renvoie
+ * faux, sans rien écrire, s'ils n'y tiennent pas.
+ */
+export function writePlantMesh(mesh: PlantMeshData, target: PlantMeshData): boolean {
+  if (mesh.positions.length > target.positions.length) {
+    return false;
+  }
+  target.positions.set(mesh.rest);
+  target.normals.set(mesh.normals);
+  target.colors.set(mesh.colors);
+  target.smoothNormals.set(mesh.smoothNormals);
+  target.vertexCells.set(mesh.vertexCells);
+  return true;
+}
+
+/** Nombre de sommets prévus pour une plante à tige affichée (`PLANT_GROWTH_HEADROOM`). */
+export function plantVertexCapacity(seed: number, scale: number, form: PlantForm): number {
+  const grown = cachedPlantMesh(seed, scale, form, PLANT_GROWTH_HEADROOM).mesh;
+  return grown.rest.length / 3;
+}
