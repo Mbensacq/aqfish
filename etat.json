@@ -6185,10 +6185,10 @@
           "note": "Verdict OK, 0 bug, captures c169 publiées (5 angles identiques à c168), e2e photo+filtre 8/8, verify complet non terminé localement (lenteur)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-07T18:08:55.255Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-07T19:15:38.861Z",
+          "note": "PR #502 fusionnée → v1.13.1 (release CI, CI main verte) ; #479 fermée ; dette #503 ; suppression de branche refusée par le proxy"
         }
       },
       "metriques": {}
