@@ -6533,10 +6533,10 @@
           "note": "Issue #512 : parcours guidé « Mon premier aquarium » (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-08T20:14:56.151Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-08T22:02:25.730Z",
+          "note": "PR #526 : parcours « Mon premier aquarium » (#512), CI verte ; 5 angles identiques à l'octet, 17 captures d'interface changent (languette) ; e2e locaux ciblés (41), suite complète en CI"
         }
       },
       "metriques": {}
