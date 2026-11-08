@@ -6323,10 +6323,10 @@
           "note": "PR #510 : côtés des œufs sans allocation (#507), CI verte ; captures -oeufs identiques à l'octet à c171 ; e2e locaux partiels (lenteur), suite complète verte en CI"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-08T04:29:47.668Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-08T04:49:42.193Z",
+          "note": "Verdict OK, 0 bug, captures c173 publiées (5 angles + oeufs identiques), CI verte, mutation non menée à terme"
         }
       },
       "metriques": {}
