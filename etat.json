@@ -6419,10 +6419,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-08T11:29:14.787Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-08T11:29:50.976Z",
+          "note": "Issue #513 : calendrier d'entretien et rappels par bac (S)"
         }
       },
       "metriques": {}
