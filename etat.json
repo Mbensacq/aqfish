@@ -6558,7 +6558,7 @@
       "date": "2026-11-09",
       "debut": "2026-11-08T23:32:54.108Z",
       "type": "dette",
-      "issue": null,
+      "issue": 527,
       "pr": null,
       "version": null,
       "phases": {
