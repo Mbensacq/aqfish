@@ -6,6 +6,10 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Effet à durée en temps réel : invisible sur une capture en rendu logiciel** (cycle 175,
+  #483) : une image peut prendre plusieurs secondes, les 6 s de `ALERT_HIGHLIGHT_MS` sont
+  écoulées avant la photo. `e2e/alerte-animaux.spec.ts` allonge ce délai quand `CAPTURE_DIR`
+  est défini. (2026-11-08)
 - **Tous les e2e échouent en 3 ms en local : navigateur de Playwright introuvable** (cycle
   170, #484) : `browserType.launch: Executable doesn't exist at
   /opt/pw-browsers/chromium_headless_shell-1194/…`. L'environnement fournit un Chromium plus
