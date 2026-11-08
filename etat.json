@@ -6383,10 +6383,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-08T08:35:46.049Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-08T08:36:12.870Z",
+          "note": "Issue #483 : tableau de bord 3/3, animaux concernés par une alerte (S)"
         }
       },
       "metriques": {}
