@@ -6287,10 +6287,10 @@
           "note": "PR #508 : pourriture des nageoires (#485), CI verte ; 5 angles identiques à main ; e2e locaux partiels (lenteur), suite complète verte en CI"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-08T02:05:11.098Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-08T02:25:10.652Z",
+          "note": "Verdict OK, 0 bug, captures c172 publiées (5 angles identiques, 3 vues pourriture), CI verte, e2e ciblés 6/6, suite e2e complète non menée à terme en local"
         }
       },
       "metriques": {}
