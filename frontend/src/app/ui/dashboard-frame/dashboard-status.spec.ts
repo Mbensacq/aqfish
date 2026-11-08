@@ -18,6 +18,14 @@ import {
   DashboardStatus,
   SEVERITY_LEVELS,
 } from './dashboard-status';
+import {
+  initialMaintenance,
+  MAINTENANCE_DAY_SECONDS,
+  maintenanceDone,
+  maintenanceReadout,
+  type MaintenanceReadout,
+  type MaintenanceTask,
+} from '../../sim/maintenance';
 import { NO_ALERT_TARGETS, type AlertTargets } from '../../sim/alert-animals';
 import type { GuidePage } from '../../sim/care-guide';
 import { ICH_AGGRAVATED_AT } from '../../sim/disease';
@@ -37,6 +45,8 @@ const STARVED: HealthSummary = healthSummary(
     [population]="population()"
     [targets]="targets()"
     [highlighted]="highlighted()"
+    [maintenance]="maintenance()"
+    (maintenanceDone)="done.push($event)"
     (showAnimalsRequested)="shown.push($event)"
     (wikiPageRequested)="wikiPages.push($event)"
   />`,
@@ -47,6 +57,8 @@ class StatusHost {
   readonly wikiPages: GuidePage[] = [];
   /** Animaux dont la mise en évidence a été demandée (#483). */
   readonly shown: (readonly number[])[] = [];
+  readonly done: MaintenanceTask[] = [];
+  readonly maintenance = signal<MaintenanceReadout | null>(null);
   readonly targets = signal<AlertTargets>(NO_ALERT_TARGETS);
   readonly highlighted = signal(0);
   readonly sample = signal<WaterSample>(DEFAULT_WATER_SAMPLE);
@@ -66,6 +78,51 @@ class StatusHost {
     this.health.set(STARVED);
   }
 }
+
+describe('rappel d’entretien (#513)', () => {
+  const DAY = MAINTENANCE_DAY_SECONDS;
+
+  function mount(): { host: StatusHost; root: HTMLElement; flush: () => void } {
+    const fixture = TestBed.createComponent(StatusHost);
+    const flush = (): void => {
+      fixture.changeDetectorRef.markForCheck();
+      fixture.detectChanges();
+    };
+    flush();
+    return { host: fixture.componentInstance, root: fixture.nativeElement as HTMLElement, flush };
+  }
+
+  it('sans calendrier (capture), aucun rappel', () => {
+    const { root } = mount();
+    expect(root.querySelector('[data-maintenance]')).toBeNull();
+  });
+
+  it('affiche un rappel en texte et icône, sans créer d’alerte', () => {
+    const { host, root, flush } = mount();
+    host.maintenance.set(maintenanceReadout(initialMaintenance(0), 7 * DAY, ['waterChange']));
+    flush();
+    const chip = root.querySelector('[data-maintenance]')!;
+    expect(chip.textContent).toContain('changement d’eau');
+    expect(chip.querySelector('svg')).not.toBeNull();
+    expect(chip.getAttribute('data-level')).toBeNull();
+    expect(root.querySelector('[data-alert-none]')).not.toBeNull();
+  });
+
+  it('déplie tâches et journal ; « Fait » seulement sans geste dans le jeu', () => {
+    const { host, root, flush } = mount();
+    const state = maintenanceDone(initialMaintenance(0), 'waterChange', DAY);
+    host.maintenance.set(maintenanceReadout(state, 2 * DAY));
+    flush();
+    root.querySelector<HTMLElement>('[data-maintenance]')!.click();
+    flush();
+    expect(root.querySelector('[data-maintenance-log]')!.textContent).toContain(
+      'Jour 2 : Changement d’eau',
+    );
+    expect(root.querySelector('[data-maintenance-done="waterChange"]')).toBeNull();
+    root.querySelector<HTMLElement>('[data-maintenance-done="filter"]')!.click();
+    expect(host.done).toEqual(['filter']);
+  });
+});
 
 describe('DashboardStatus (#260)', () => {
   let fixture: ComponentFixture<StatusHost>;

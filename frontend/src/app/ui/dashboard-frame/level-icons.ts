@@ -23,3 +23,12 @@ export function levelIconPixels(level: GaugeLevel): readonly (readonly [number, 
     [...row].flatMap((cell, x) => (cell === '#' ? [[x, y] as const] : [])),
   );
 }
+
+/** Icône du rappel d'entretien (calendrier) : forme distincte des trois niveaux (#513). */
+export const MAINTENANCE_ICON_PIXELS: readonly (readonly [number, number])[] = [
+  '#####',
+  '#...#',
+  '#.#.#',
+  '#...#',
+  '#####',
+].flatMap((row, y) => [...row].flatMap((cell, x) => (cell === '#' ? [[x, y] as const] : [])));

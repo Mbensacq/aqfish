@@ -569,6 +569,8 @@ maximal : 60 s par angle), et **aucune mesure de performance** ne doit y être f
   déclarée.
   Les animaux concernés par une alerte (`sim/alert-animals.ts`, ADR 0115) se montrent par
   `render/alert-highlight-layer.ts`, masquée sans désignation.
+  Le calendrier d'entretien (`sim/maintenance.ts`, `World.maintenance`, ADR 0116) est un rappel
+  neutre du bandeau, jamais une alerte ; absent en capture.
 
 ## Tests
 

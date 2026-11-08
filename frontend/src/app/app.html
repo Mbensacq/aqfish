@@ -52,6 +52,8 @@
         [treatment]="aquarium.treatment()"
         [targets]="aquarium.alertAnimals()"
         [highlighted]="aquarium.highlightedAnimals()"
+        [maintenance]="aquarium.maintenance()"
+        (maintenanceDone)="aquarium.markMaintenanceDone($event)"
         (showAnimalsRequested)="aquarium.highlightAlertAnimals($event)"
         (wikiPageRequested)="onWikiPageRequested($event)"
       />

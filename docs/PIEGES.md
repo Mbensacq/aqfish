@@ -6,6 +6,11 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Écrire dans le monde depuis un relevé de l'hôte : `aquarium-host.spec` compare au bit près**
+  (cycle 176, #513) : `exposeWater` tourne aussi après un import ou à monde figé ; y poser un
+  champ optionnel casse `toEqual(world)` et `serializeWorld(host.world) === serializeWorld(advance(…))`.
+  Garder l'état dérivé à part (`WeakMap` par monde) et n'écrire qu'à une action ou à la sauvegarde
+  automatique. `ng test --include=…` échoue sur les `.scss` : lancer la suite. (2026-11-08)
 - **Effet à durée en temps réel : invisible sur une capture en rendu logiciel** (cycle 175,
   #483) : une image peut prendre plusieurs secondes, les 6 s de `ALERT_HIGHLIGHT_MS` sont
   écoulées avant la photo. `e2e/alerte-animaux.spec.ts` allonge ce délai quand `CAPTURE_DIR`
