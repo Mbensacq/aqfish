@@ -6336,6 +6336,24 @@
         }
       },
       "metriques": {}
+    },
+    "174": {
+      "numero": 174,
+      "date": "2026-11-08",
+      "debut": "2026-11-08T05:53:12.572Z",
+      "type": "retro",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-08T05:53:12.572Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
