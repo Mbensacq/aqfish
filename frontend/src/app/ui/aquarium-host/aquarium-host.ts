@@ -297,6 +297,7 @@ import {
   type MaintenanceReadout,
   type MaintenanceTask,
 } from '../../sim/maintenance';
+import { worldReview, type ReviewPoint } from '../../sim/bilan';
 import { TREATMENTS, type TreatmentKind } from '../../sim/treatment';
 import {
   sameTreatment,
@@ -830,6 +831,9 @@ export class AquariumHost {
   private frozenWorst = new WeakMap<World, AlertSeverity | null>();
   /** Temps du premier relevé d'entretien de chaque monde sans calendrier (#513). */
   private maintenanceStart = new WeakMap<World, number>();
+  /** Bilan du bac affiché (#514), lu à la demande par le tableau de bord. */
+  readonly reviewOfWorld = (): readonly ReviewPoint[] =>
+    this.currentWorld ? worldReview(this.currentWorld) : [];
   /**
    * Rattrapage des bacs non affichés (#316, ADR 0076) : monde affiché et son `tick` au dernier
    * rattrapage. Un autre monde affiché (changement de bac, import) repart de zéro.
