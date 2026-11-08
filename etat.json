@@ -6527,10 +6527,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-08T20:13:34.453Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-08T20:14:20.673Z",
+          "note": "Issue #512 : parcours guidé « Mon premier aquarium » (M)"
         }
       },
       "metriques": {}
