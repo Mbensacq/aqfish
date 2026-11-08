@@ -6567,6 +6567,12 @@
           "debut": "2026-11-08T23:32:54.108Z",
           "fin": "2026-11-08T23:33:29.897Z",
           "note": "Issue #527 : lot dette languette/Échap/ADR/partage (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-08T23:34:06.677Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
