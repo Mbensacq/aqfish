@@ -6522,7 +6522,7 @@
       "date": "2026-11-08",
       "debut": "2026-11-08T20:13:34.453Z",
       "type": "fonctionnalite",
-      "issue": null,
+      "issue": 512,
       "pr": null,
       "version": null,
       "phases": {
