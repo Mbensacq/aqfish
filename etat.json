@@ -6501,6 +6501,12 @@
           "debut": "2026-11-08T17:50:27.383Z",
           "fin": "2026-11-08T18:45:06.428Z",
           "note": "PR #523 : courbes d'historique de l'eau (#511), CI verte ; 121/139 captures identiques à l'octet, 18 diff attendues avec tableau de bord ; e2e locaux ciblés, suite complète en CI"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-08T18:45:36.228Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
