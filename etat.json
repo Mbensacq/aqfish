@@ -6563,10 +6563,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-08T23:32:54.108Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-08T23:33:29.897Z",
+          "note": "Issue #527 : lot dette languette/Échap/ADR/partage (S)"
         }
       },
       "metriques": {}
