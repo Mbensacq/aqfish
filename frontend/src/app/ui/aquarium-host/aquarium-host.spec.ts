@@ -1,3 +1,4 @@
+import { WATER_HISTORY_INTERVAL_TICKS } from '../../sim/water-history';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 
 import { isCaptureReady, resetCaptureReady } from '../../core/capture/capture-ready';
@@ -610,6 +611,47 @@ describe('AquariumHost', () => {
       await create();
       fixture.destroy();
       expect(host().world).toBeNull();
+    });
+  });
+
+  describe('historique de l’eau (#511)', () => {
+    const host = (): AquariumHost => fixture.componentInstance;
+
+    /** Fait tourner l'application jusqu'au pas `tick` au moins. */
+    function runTo(tick: number): void {
+      setCanvasSize(640, 480);
+      for (let now = 0; (host().world?.tick ?? 0) < tick && now < 60_000; now += 20) {
+        frames.flush(now);
+      }
+    }
+
+    it('relève aux frontières, hors du monde ; la sauvegarde l’écrit', async () => {
+      await create('?seed=42');
+      const world = host().world!;
+      runTo(WATER_HISTORY_INTERVAL_TICKS + 1);
+      expect(host().world).toBe(world);
+      expect(world.waterHistory).toBeUndefined();
+
+      host().saveNow();
+      const saved = JSON.parse(saveStorage!.getItem(SAVE_STORAGE_KEY)!);
+      expect(saved.tanks[0].world.waterHistory.samples).toHaveLength(5);
+      expect(saved.tanks[0].world.waterHistory.lastSlot).toBe(1);
+    }, 30_000);
+
+    it('changement d’eau : marqué dans la vue publiée', async () => {
+      await create('?seed=42&vitesse=0');
+      setCanvasSize(640, 480);
+      frames.flush(0);
+      host().changeWater();
+      expect(host().waterHistory()?.marks).toEqual([0]);
+    });
+
+    it('en capture : aucun historique', async () => {
+      await create('?capture=1&seed=42&time=1');
+      setCanvasSize(640, 480);
+      frames.flush(0);
+      expect(host().waterHistory()).toBeNull();
+      expect(host().world?.waterHistory).toBeUndefined();
     });
   });
 

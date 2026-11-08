@@ -2,6 +2,8 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  ElementRef,
+  inject,
   input,
   linkedSignal,
   signal,
@@ -24,9 +26,11 @@ import {
   type TrendState,
   type WaterSample,
 } from '../../sim/water-dashboard';
+import type { WaterHistoryView } from '../../sim/water-history';
 import { MAX_PH, MIN_PH, type PhBands } from '../../sim/water-ph';
 import { DAY_PHASE_LABELS, dayIconPixels, DAY_ICON_GRID } from '../day-indicator/day-indicator';
 import { LEVEL_ICON_GRID, levelIconPixels } from './level-icons';
+import { WaterHistoryChart } from './water-history-chart';
 import {
   DEFAULT_WATER_READOUT,
   GAUGE_MAX,
@@ -38,6 +42,8 @@ export { LEVEL_ICON_GRID, levelIconPixels } from './level-icons';
 
 /** Identifiant de la liste des jauges (cible de `aria-controls`). */
 export const DASHBOARD_GAUGES_ID = 'tableau-de-bord-jauges';
+/** Identifiant de la courbe dépliée d'une jauge (cible de `aria-controls`). */
+export const DASHBOARD_CURVE_ID = 'tableau-de-bord-courbe';
 
 /**
  * Couleurs du cadre (docs/DA.md, « Interface ») : fond sombre translucide, texte clair,
@@ -180,7 +186,20 @@ const ICONS: Readonly<Record<GaugeLevel, readonly (readonly [number, number])[]>
             [attr.data-trend]="gauge.trend"
             [attr.title]="gauge.spoken"
           >
-            <span class="dashboard__name" aria-hidden="true">{{ gauge.label }}</span>
+            <button
+              type="button"
+              class="dashboard__curve-toggle"
+              [attr.aria-label]="'Courbe sur 24 h : ' + gauge.name"
+              [attr.aria-expanded]="curve() === gauge.id"
+              [attr.aria-controls]="curve() === gauge.id ? curveId : null"
+              [attr.data-curve-toggle]="gauge.id"
+              (click)="toggleCurve(gauge.id)"
+            >
+              <span class="dashboard__name" aria-hidden="true">{{ gauge.label }}</span>
+              <span class="dashboard__curve-chevron" aria-hidden="true">{{
+                curve() === gauge.id ? '▴' : '▾'
+              }}</span>
+            </button>
             <span class="dashboard__reading" aria-hidden="true">
               <span class="dashboard__value" [attr.data-gauge-value]="gauge.id">{{
                 gauge.value
@@ -224,6 +243,17 @@ const ICONS: Readonly<Record<GaugeLevel, readonly (readonly [number, number])[]>
           </li>
         }
       </ul>
+      @if (curve(); as id) {
+        <app-water-history-chart
+          class="dashboard__curve"
+          [id]="curveId"
+          [gauge]="id"
+          [history]="history()"
+          [sample]="sample()"
+          [bands]="readout().phBands"
+          (keydown.escape)="closeCurve()"
+        />
+      }
     }
     <p
       class="dashboard__sim"
@@ -255,6 +285,7 @@ const ICONS: Readonly<Record<GaugeLevel, readonly (readonly [number, number])[]>
     </p>
   </section>`,
   styleUrl: './dashboard-frame.scss',
+  imports: [WaterHistoryChart],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '[style.--dashboard-background]': 'colors.background',
@@ -268,10 +299,15 @@ const ICONS: Readonly<Record<GaugeLevel, readonly (readonly [number, number])[]>
   },
 })
 export class DashboardFrame {
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+
   /** Relevé exact de l'eau (fourni par l'hôte, au plus 4 fois par seconde). */
   readonly sample = input<WaterSample>(DEFAULT_WATER_SAMPLE);
   /** Relevé arrondi de l'eau (fourni par l'hôte) : indicateur global et zone du pH. */
   readonly readout = input<WaterReadout>(DEFAULT_WATER_READOUT);
+
+  /** Historique de l'eau du bac affiché (#511) ; `null` : aucun. */
+  readonly history = input<WaterHistoryView | null>(null);
 
   /** Moment de la journée (indicateur du jour, #73). */
   readonly phase = input<DayPhase>('jour');
@@ -282,8 +318,11 @@ export class DashboardFrame {
 
   /** Jauges dépliées (oui au départ : le cadre est fait pour être vu). */
   readonly expanded = signal(true);
+  /** Jauge dont la courbe des dernières 24 h est dépliée (#511). */
+  readonly curve = signal<DashboardGaugeId | null>(null);
 
   protected readonly gaugesId = DASHBOARD_GAUGES_ID;
+  protected readonly curveId = DASHBOARD_CURVE_ID;
   protected readonly iconGrid = LEVEL_ICON_GRID;
   protected readonly icons = ICONS;
   protected readonly arrows = TREND_ARROWS;
@@ -326,6 +365,18 @@ export class DashboardFrame {
   /** Replie ou déplie les jauges. */
   toggle(): void {
     this.expanded.update((open) => !open);
+  }
+
+  /** Déplie la courbe de la jauge `id`, ou la replie si elle est déjà dépliée. */
+  toggleCurve(id: DashboardGaugeId): void {
+    this.curve.update((open) => (open === id ? null : id));
+  }
+
+  /** Échap : replie la courbe, le focus revient sur le bouton de sa jauge. */
+  protected closeCurve(): void {
+    const id = this.curve();
+    this.curve.set(null);
+    this.host.nativeElement.querySelector<HTMLElement>(`[data-curve-toggle="${id}"]`)?.focus();
   }
 
   /** Valeur exacte lue d'une jauge (`aria-valuenow`), absente si elle n'est pas finie. */

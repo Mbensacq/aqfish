@@ -29,6 +29,7 @@ import {
   type EggSurface,
 } from './eggs';
 import { copyMaintenance, readMaintenance, type MaintenanceState } from './maintenance';
+import { copySavedWaterHistory, readWaterHistory, type SavedWaterHistory } from './water-history';
 import { FOOD_MAX_FLOAT_SECONDS, FOOD_MIN_FLOAT_SECONDS, FOOD_SINK_SPEED, MAX_FOOD } from './food';
 import type { FoodPellet } from './food';
 import { isSpeciesId, MAX_TOTAL_FISH } from './population';
@@ -199,6 +200,8 @@ export interface SavedWorld {
   readonly eggs?: readonly Egg[];
   /** Calendrier d'entretien (#513) : absent des sauvegardes antérieures, suivi repris au chargement. */
   readonly maintenance?: MaintenanceState;
+  /** Historique de l'eau (#511) : absent des sauvegardes antérieures, repris à vide. */
+  readonly waterHistory?: SavedWaterHistory;
 }
 
 /** Contenu d'une sauvegarde (schéma 1). */
@@ -364,6 +367,9 @@ export function savedWorld(world: World): SavedWorld {
       ? {}
       : { eggs: world.eggs.map((egg) => ({ ...egg })) }),
     ...(world.maintenance === undefined ? {} : { maintenance: copyMaintenance(world.maintenance) }),
+    ...(world.waterHistory === undefined
+      ? {}
+      : { waterHistory: copySavedWaterHistory(world.waterHistory) }),
   };
 }
 
@@ -565,6 +571,8 @@ export function parseWorldBody(
   const maintenanceValue = own(value, 'maintenance');
   const maintenance =
     maintenanceValue === undefined ? null : readMaintenance(maintenanceValue, problems);
+  const historyValue = own(value, 'waterHistory');
+  const waterHistory = historyValue === undefined ? null : readWaterHistory(historyValue, problems);
   // Eau (#206) : absente, eau saine (celle de `createWorld`) ; présente, validée (pH absent :
   // celui de l'eau neuve de l'environnement, #236).
   const waterValue = own(value, 'water');
@@ -594,6 +602,9 @@ export function parseWorldBody(
   }
   if (maintenance !== null) {
     world.maintenance = maintenance;
+  }
+  if (waterHistory !== null) {
+    world.waterHistory = waterHistory;
   }
   if (eggs.length > 0) {
     world.eggs = eggs;

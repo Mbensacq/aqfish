@@ -290,6 +290,17 @@ import {
 } from '../../sim/water-quality';
 import { waterLiters, waterProducts } from '../../sim/water';
 import {
+  createWaterHistory,
+  markWaterChange,
+  recordWaterHistory,
+  restoreWaterHistory,
+  savedWaterHistory,
+  ticksToNextWaterSample,
+  waterHistoryView,
+  type WaterHistory,
+  type WaterHistoryView,
+} from '../../sim/water-history';
+import {
   initialMaintenance,
   MAINTENANCE_TASKS,
   maintenanceReadout,
@@ -831,6 +842,11 @@ export class AquariumHost {
   private frozenWorst = new WeakMap<World, AlertSeverity | null>();
   /** Temps du premier relevé d'entretien de chaque monde sans calendrier (#513). */
   private maintenanceStart = new WeakMap<World, number>();
+  /** Historique de l'eau de chaque monde affiché (#511), hors du monde pendant la partie. */
+  private waterHistories = new WeakMap<World, WaterHistory>();
+  /** Tampon et version du dernier historique exposé. */
+  private exposedHistory: WaterHistory | null = null;
+  private exposedHistoryVersion = -1;
   /** Bilan du bac affiché (#514), lu à la demande par le tableau de bord. */
   readonly reviewOfWorld = (): readonly ReviewPoint[] =>
     this.currentWorld ? worldReview(this.currentWorld) : [];
@@ -969,6 +985,8 @@ export class AquariumHost {
   readonly maintenance = signal<MaintenanceReadout | null>(null, {
     equal: sameMaintenanceReadout,
   });
+  /** Historique de l'eau du bac affiché (#511), recopié à chaque relevé nouveau ; `null` en capture. */
+  readonly waterHistory = signal<WaterHistoryView | null>(null);
   /** Message du dernier geste de soin (#361) ; `null` : aucun depuis le dernier changement de bac. */
   readonly treatmentNotice = signal<TreatmentNotice | null>(null);
   /** Monde du dernier geste de soin : le message s'efface quand le bac affiché change. */
@@ -1409,6 +1427,7 @@ export class AquariumHost {
     }
     changeWorldWaterInPlace(world);
     this.recordMaintenance(world, 'waterChange');
+    markWaterChange(this.waterHistoryOf(world), world.water, world.tick);
     this.exposeWater();
     this.saveNow();
     this.scheduleFrame();
@@ -2562,6 +2581,7 @@ export class AquariumHost {
    * @throws RangeError comme `serializeRoom`.
    */
   private saveText(world: World): string {
+    this.keepWaterHistory(world);
     this.advanceBackgroundTanks();
     const room = this.syncRoomState(world);
     return serializeRoom(room, this.selectedTankId, this.settings());
@@ -2727,6 +2747,7 @@ export class AquariumHost {
       return;
     }
     this.tankNotice.set(null);
+    this.keepWaterHistory(world);
     this.setEnvironment(tank.world.environment);
   }
 
@@ -3725,8 +3746,7 @@ export class AquariumHost {
       maxStepsForSpeed(speed),
     );
     if (clock.steps > 0 && this.currentWorld) {
-      // Rythme du jour (#209) : la simulation lit l'horloge de la journée.
-      advanceInPlace(this.currentWorld, clock.steps, this.dayClock);
+      this.advanceAndRecord(this.currentWorld, clock.steps);
       this.exposeTick();
       this.exposeFood();
       // Au plus 4 relevés par seconde de temps réel, quelle que soit la vitesse (#256).
@@ -3889,6 +3909,58 @@ export class AquariumHost {
     );
   }
 
+  /**
+   * Avance le bac affiché de `steps` pas, coupés aux frontières de relevé (#511) : l'historique
+   * ne dépend pas de la cadence d'affichage. Rythme du jour (#209) : `dayClock`.
+   */
+  private advanceAndRecord(world: MutableWorld, steps: number): void {
+    const history = this.waterHistoryOf(world);
+    let left = steps;
+    while (left > 0) {
+      const count = Math.min(left, ticksToNextWaterSample(world.tick));
+      advanceInPlace(world, count, this.dayClock);
+      left -= count;
+      recordWaterHistory(history, world.water, world.tick);
+    }
+  }
+
+  /** Tampon d'historique de `world`, repris de sa sauvegarde au premier accès (#511). */
+  private waterHistoryOf(world: World): WaterHistory {
+    let history = this.waterHistories.get(world);
+    if (history === undefined) {
+      history =
+        world.waterHistory === undefined
+          ? createWaterHistory()
+          : restoreWaterHistory(world.waterHistory);
+      this.waterHistories.set(world, history);
+    }
+    return history;
+  }
+
+  /**
+   * Inscrit l'historique dans le monde, à la sauvegarde ou au changement de bac seulement
+   * (#511) : un bac sans relevé nouveau reste identique à sa sauvegarde, au bit près.
+   */
+  private keepWaterHistory(world: MutableWorld): void {
+    const history = this.waterHistories.get(world);
+    if (history !== undefined && history.count > 0) {
+      world.waterHistory = savedWaterHistory(history);
+    }
+  }
+
+  /** Publie l'historique du bac affiché s'il a changé (#511) ; jamais en capture. */
+  private exposeWaterHistory(world: World): void {
+    if (this.capture) {
+      return;
+    }
+    const history = this.waterHistoryOf(world);
+    if (history !== this.exposedHistory || history.version !== this.exposedHistoryVersion) {
+      this.exposedHistory = history;
+      this.exposedHistoryVersion = history.version;
+      this.waterHistory.set(waterHistoryView(history));
+    }
+  }
+
   private exposeWater(): void {
     const world = this.currentWorld;
     if (!world) {
@@ -3900,6 +3972,7 @@ export class AquariumHost {
     this.health.set(healthSummary(world.entities));
     this.exposeAlertAnimals(world);
     this.exposeMaintenance(world);
+    this.exposeWaterHistory(world);
     const treatment = treatmentReadout(world.water);
     this.treatment.set(treatment);
     if (this.noticeWorld !== null && this.noticeWorld !== world) {

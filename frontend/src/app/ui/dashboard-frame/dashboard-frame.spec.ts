@@ -14,6 +14,7 @@ import { parseHex, fadedContrast, type Rgb } from './contrast';
 import {
   DASHBOARD_BACKGROUND_ALPHA,
   DASHBOARD_COLORS,
+  DASHBOARD_CURVE_ID,
   DASHBOARD_GAUGES_ID,
   DASHBOARD_MUTED_ALPHA,
   DASHBOARD_REST_OPACITY,
@@ -285,5 +286,59 @@ describe('DashboardFrame (#256)', () => {
     expect(Number(host.style.getPropertyValue('--dashboard-background-alpha'))).toBe(
       DASHBOARD_BACKGROUND_ALPHA,
     );
+  });
+});
+
+describe('tableau de bord : courbe d’une jauge (#511)', () => {
+  function render() {
+    const fixture = TestBed.createComponent(DashboardFrame);
+    fixture.detectChanges();
+    return { fixture, root: fixture.nativeElement as HTMLElement };
+  }
+  const toggle = (root: HTMLElement, id: string) =>
+    root.querySelector<HTMLButtonElement>(`[data-curve-toggle="${id}"]`)!;
+
+  it('se déplie, change de jauge et se replie au clic', () => {
+    const { fixture, root } = render();
+    expect(root.querySelector('[data-water-curve]')).toBeNull();
+    expect(toggle(root, 'nitrate').getAttribute('aria-expanded')).toBe('false');
+
+    toggle(root, 'nitrate').click();
+    fixture.detectChanges();
+    expect(root.querySelector('[data-water-curve]')?.getAttribute('data-gauge')).toBe('nitrate');
+    expect(toggle(root, 'nitrate').getAttribute('aria-expanded')).toBe('true');
+    expect(toggle(root, 'nitrate').getAttribute('aria-controls')).toBe(DASHBOARD_CURVE_ID);
+
+    toggle(root, 'ph').click();
+    fixture.detectChanges();
+    expect(root.querySelector('[data-water-curve]')?.getAttribute('data-gauge')).toBe('ph');
+    expect(toggle(root, 'nitrate').getAttribute('aria-expanded')).toBe('false');
+
+    toggle(root, 'ph').click();
+    fixture.detectChanges();
+    expect(root.querySelector('[data-water-curve]')).toBeNull();
+  });
+
+  it('Échap replie la courbe et rend le focus au bouton de la jauge', () => {
+    const { fixture, root } = render();
+    document.body.appendChild(root);
+    toggle(root, 'ammonia').click();
+    fixture.detectChanges();
+    root
+      .querySelector('app-water-history-chart')!
+      .dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    fixture.detectChanges();
+    expect(root.querySelector('[data-water-curve]')).toBeNull();
+    expect(document.activeElement).toBe(toggle(root, 'ammonia'));
+    root.remove();
+  });
+
+  it('jauges repliées : pas de courbe', () => {
+    const { fixture, root } = render();
+    toggle(root, 'nitrate').click();
+    fixture.detectChanges();
+    fixture.componentInstance.toggle();
+    fixture.detectChanges();
+    expect(root.querySelector('[data-water-curve]')).toBeNull();
   });
 });

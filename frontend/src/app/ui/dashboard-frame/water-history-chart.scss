@@ -1,0 +1,58 @@
+// Mini-courbe d'une jauge d'eau (#511, ADR 0117), sous le cadre haut ; mêmes variables que lui.
+@use 'dashboard-surface' as dashboard;
+
+:host {
+  display: block;
+  width: min(308px, calc(100vw - 24px));
+}
+
+.curve {
+  display: block;
+  padding: 6px 8px;
+  color: var(--dashboard-ink);
+
+  @include dashboard.surface;
+
+  opacity: 1;
+}
+
+.curve p {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0;
+}
+
+.curve__head {
+  font-weight: 600;
+}
+
+.curve__now {
+  font-variant-numeric: tabular-nums;
+}
+
+.curve__plot {
+  display: block;
+  width: 100%;
+  height: 72px;
+  margin: 4px 0 2px;
+  background: rgb(232 230 227 / 8%);
+  color: var(--dashboard-vert);
+}
+
+.curve__band {
+  opacity: 0.45;
+}
+
+.curve__mark {
+  fill: var(--dashboard-orange);
+}
+
+.curve__line {
+  fill: var(--dashboard-ink);
+}
+
+.curve__scale,
+.curve__legend {
+  font-size: 11px;
+}
