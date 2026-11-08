@@ -6379,7 +6379,7 @@
       "debut": "2026-11-08T08:35:46.049Z",
       "type": "fonctionnalite",
       "issue": 483,
-      "pr": null,
+      "pr": 518,
       "version": null,
       "phases": {
         "planif": {
