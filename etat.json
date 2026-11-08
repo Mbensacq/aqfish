@@ -6291,6 +6291,12 @@
           "debut": "2026-11-08T02:05:11.098Z",
           "fin": "2026-11-08T02:25:10.652Z",
           "note": "Verdict OK, 0 bug, captures c172 publiées (5 angles identiques, 3 vues pourriture), CI verte, e2e ciblés 6/6, suite e2e complète non menée à terme en local"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-08T02:25:52.162Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
