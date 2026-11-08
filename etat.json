@@ -6264,6 +6264,24 @@
         }
       },
       "metriques": {}
+    },
+    "172": {
+      "numero": 172,
+      "date": "2026-11-08",
+      "debut": "2026-11-08T01:00:07.269Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-08T01:00:07.269Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
