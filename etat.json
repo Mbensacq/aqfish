@@ -6435,6 +6435,12 @@
           "debut": "2026-11-08T13:26:10.753Z",
           "fin": "2026-11-08T13:45:52.143Z",
           "note": "Verdict OK, 0 bug, 2 remarques mineures, captures c176 publiées (138 tests, 18 diff dashboard attendues), CI verte, e2e entretien verts"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-08T13:46:24.769Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
