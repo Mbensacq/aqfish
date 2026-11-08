@@ -6539,10 +6539,10 @@
           "note": "PR #526 : parcours « Mon premier aquarium » (#512), CI verte ; 5 angles identiques à l'octet, 17 captures d'interface changent (languette) ; e2e locaux ciblés (41), suite complète en CI"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-08T22:02:57.341Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-08T22:25:47.768Z",
+          "note": "Verdict OK, 0 bug, 1 remarque mineure, captures c179 publiées (5 angles identiques + parcours-premier-bac), CI verte, e2e parcours 3/3"
         }
       },
       "metriques": {}
