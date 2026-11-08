@@ -6281,10 +6281,10 @@
           "note": "Issue #485 : pourriture des nageoires (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-08T01:01:14.200Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-08T02:04:42.534Z",
+          "note": "PR #508 : pourriture des nageoires (#485), CI verte ; 5 angles identiques à main ; e2e locaux partiels (lenteur), suite complète verte en CI"
         }
       },
       "metriques": {}
