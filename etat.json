@@ -6270,7 +6270,7 @@
       "date": "2026-11-08",
       "debut": "2026-11-08T01:00:07.269Z",
       "type": "fonctionnalite",
-      "issue": null,
+      "issue": 485,
       "pr": null,
       "version": null,
       "phases": {
