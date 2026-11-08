@@ -1,7 +1,9 @@
 import {
   InstancedMesh,
+  Mesh,
   MOUSE,
   NearestFilter,
+  ShaderMaterial,
   TOUCH,
   Vector3,
   type Camera,
@@ -1521,6 +1523,49 @@ describe('AquariumView (photo, #479)', () => {
       'cible écran',
       'render OrthographicCamera',
     ]);
+  });
+
+  it('rétablit l’échelle et l’écran même si la relecture lève (#503)', () => {
+    /** Renderer dont la relecture échoue ; consigne `uPixelScale` à chaque passe palette. */
+    class FailingRenderer extends ReadingRenderer {
+      readonly scales: number[] = [];
+      override render(scene: Scene, camera: Camera): void {
+        super.render(scene, camera);
+        if (camera.type === 'OrthographicCamera') {
+          const quad = scene.children.find((child) => child instanceof Mesh) as Mesh | undefined;
+          const material = quad?.material as ShaderMaterial | undefined;
+          this.scales.push(material?.uniforms['uPixelScale'].value as number);
+        }
+      }
+      override readRenderTargetPixels(): void {
+        throw new Error('relecture impossible');
+      }
+    }
+    const failing = new FailingRenderer();
+    const other = new AquariumView({
+      canvas: document.createElement('canvas'),
+      rendererFactory: () => failing,
+      pixelRatio: 2,
+      preset: 'three-quarter',
+      interactive: false,
+    });
+    other.resize(600, 300);
+    other.renderFrame();
+    const screenScale = failing.scales.at(-1);
+    expect(screenScale).toBeGreaterThan(1);
+    expect(() => other.takePhoto()).toThrow('relecture impossible');
+    expect(failing.calls.at(-1)).toBe('cible écran');
+    failing.calls.length = 0;
+    failing.scales.length = 0;
+    other.renderFrame();
+    expect(failing.calls).toEqual([
+      'cible 200x100',
+      'render PerspectiveCamera',
+      'cible écran',
+      'render OrthographicCamera',
+    ]);
+    expect(failing.scales).toEqual([screenScale]);
+    other.dispose();
   });
 
   it('ne déplace pas la caméra', () => {

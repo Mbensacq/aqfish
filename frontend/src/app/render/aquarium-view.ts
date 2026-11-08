@@ -1547,17 +1547,22 @@ export class AquariumView {
       return null;
     }
     this.prepareFrame();
-    this.renderPixelScene();
     const target = this.pixelPass.photoTarget();
     const previousScale = this.pixelPass.setPixelScale(1);
-    this.renderer.setRenderTarget(target);
-    this.renderer.render(this.pixelPass.scene, this.pixelPass.camera);
-    const { width, height } = this.targetSize;
-    const data = new Uint8Array(width * height * 4);
-    this.renderer.readRenderTargetPixels(target, 0, 0, width, height, data);
-    this.renderer.setRenderTarget(null);
-    this.pixelPass.setPixelScale(previousScale);
-    return { width, height, data };
+    // Une erreur du rendu ou de la relecture (#503) ne doit laisser ni la passe palette à
+    // l'échelle 1 ni la cible de la photo branchée : l'image suivante serait faussée.
+    try {
+      this.renderPixelScene();
+      this.renderer.setRenderTarget(target);
+      this.renderer.render(this.pixelPass.scene, this.pixelPass.camera);
+      const { width, height } = this.targetSize;
+      const data = new Uint8Array(width * height * 4);
+      this.renderer.readRenderTargetPixels(target, 0, 0, width, height, data);
+      return { width, height, data };
+    } finally {
+      this.renderer.setRenderTarget(null);
+      this.pixelPass.setPixelScale(previousScale);
+    }
   }
 
   /** Réglages de la scène qui dépendent de la caméra, communs à l'image et à la photo. */
@@ -1578,6 +1583,13 @@ export class AquariumView {
         this.camera.fov,
         this.targetSize.height,
       ),
+    );
+    // Œufs (#501) : au moins `EGG_MIN_PIXELS` pixels de scène, même loin de la caméra.
+    this.eggLayer.setViewpoint(
+      this.camera.position.x,
+      this.camera.position.y,
+      this.camera.position.z,
+      scenePixelsPerMeter(1, this.camera.fov, this.targetSize.height),
     );
     // Ronds de pluie vus de biais (#125) : rond extérieur seul, plus clair.
     this.rainLayer.setObliqueView(isObliqueView(this.cameraPosition(), this.cameraTarget()));

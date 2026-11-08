@@ -262,6 +262,22 @@ describe('ViewPresetsBar', () => {
       expect(photos).toBe(1);
       expect(emitted).toEqual([]);
     });
+
+    it('message de la photo (#503) : région annoncée toujours présente, vide sans message', async () => {
+      const notice = (): HTMLElement =>
+        (fixture.nativeElement as HTMLElement).querySelector('[data-photo-notice]') as HTMLElement;
+      expect(notice().getAttribute('role')).toBe('status');
+      expect(notice().textContent?.trim()).toBe('');
+      expect(notice().classList).not.toContain('view-presets-bar__notice--shown');
+      fixture.componentRef.setInput('photoNotice', 'Photo impossible');
+      await fixture.whenStable();
+      expect(notice().textContent?.trim()).toBe('Photo impossible');
+      expect(notice().classList).toContain('view-presets-bar__notice--shown');
+      fixture.componentRef.setInput('photoNotice', null);
+      await fixture.whenStable();
+      expect(notice().textContent?.trim()).toBe('');
+      expect(notice().classList).not.toContain('view-presets-bar__notice--shown');
+    });
   });
 
   describe('pluie (#106)', () => {

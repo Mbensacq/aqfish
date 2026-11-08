@@ -66,6 +66,25 @@
   }
 }
 
+// Message de la photo (#503) : au-dessus de la barre, hors du flux (la barre ne bouge pas) ;
+// vide, il ne se voit pas mais reste une région annoncée.
+.view-presets-bar__notice {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  margin: 0;
+  border-radius: 6px;
+  color: layout.$panel-ink;
+  font-size: 13px;
+  white-space: nowrap;
+  transform: translateX(-50%);
+
+  &--shown {
+    padding: 4px 10px;
+    background: rgb(20 20 24 / 88%); // #141418, écrit en clair : lu par panel-contrast.spec
+  }
+}
+
 .view-presets-bar__key {
   min-width: 1.1em;
   padding: 0 3px;

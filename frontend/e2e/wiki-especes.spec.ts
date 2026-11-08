@@ -180,6 +180,9 @@ test.describe('Wiki des espèces (#287)', () => {
         const hardness = sheet(page).locator('[data-wiki-compare="hardness"]');
         await expect(hardness).toHaveAttribute('data-fit', 'dans-la-plage');
         await expect(hardness).toContainText('Bac : 10,0 °dGH');
+        // Une seule plage de dureté (#505) : « Plage », pas « Préférée ».
+        await expect(hardness).toContainText('Plage : 1 – 12 °dGH');
+        await expect(hardness).not.toContainText('Préférée');
         await expect(sheet(page).locator('[data-wiki-detail]')).toHaveCount(5);
         await expect(sheet(page).locator('[data-wiki-detail-status]')).toHaveCount(5);
         await expect(sheet(page).locator('[data-wiki-detail="lifespan"]')).toContainText('ans');

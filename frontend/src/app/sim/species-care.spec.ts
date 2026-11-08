@@ -198,6 +198,23 @@ describe('soins du wiki : comparaison avec le bac (#291)', () => {
     expect(gapText(18, preferred, '°C')).toBe('4 °C en dessous de la plage préférée');
     expect(gapText(5.8, { min: 6, max: 7.2 }, '')).toBe('0,2 en dessous de la plage préférée');
     expect(gapText(Number.NaN, preferred, '°C')).toBe('valeur du bac inconnue');
+    // Plage unique (#505) : nommée « plage ».
+    expect(gapText(16, { min: 1, max: 12 }, '°dGH', 'plage')).toBe('4 °dGH au-dessus de la plage');
+    expect(gapText(0, { min: 1, max: 12 }, '°dGH', 'plage')).toBe('1 °dGH en dessous de la plage');
+    expect(gapText(5, { min: 1, max: 12 }, '°dGH', 'plage')).toBe('dans la plage');
+  });
+
+  it('dureté (#505) : « Plage », pas « Préférée » ; température et pH gardent « Préférée »', () => {
+    for (const id of IDS) {
+      const range = speciesSheet(id).hardness.value;
+      const rows = tankComparison(id, 24, 7, { gh: range.max + 4, kh: range.max + 4 });
+      expect(
+        rows.map((r) => r.rangeLabel),
+        id,
+      ).toEqual(['Préférée', 'Préférée', 'Plage']);
+      expect(rows[2].fit, id).toBe('hors-plage');
+      expect(rows[2].gap, id).toMatch(/ au-dessus de la plage$/);
+    }
   });
 
   it('néon dans le bac tropical à 24 °C et pH 7 : dans la plage', () => {

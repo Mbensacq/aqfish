@@ -18,6 +18,7 @@ import { DEFAULT_SAVE_SETTINGS, serializeWorld } from '../../sim/save';
 import { DEFAULT_ROOM } from '../../sim/room';
 import type { AquariumRenderer, AquariumView } from '../../render/aquarium-view';
 import { OVERCAST_FADE_SECONDS, RAIN_OVERCAST_BRIGHTNESS } from '../../render/overcast';
+import { PHOTO_FAILED_MESSAGE, PHOTO_NOTICE_MS } from '../../render/photo-capture';
 import { MAX_STEPS_PER_FRAME } from '../../sim/constants';
 import { DEFAULT_SIM_SPEED } from '../../sim/sim-speed';
 import {
@@ -3094,6 +3095,74 @@ describe('AquariumHost', () => {
       click.mockRestore();
       delete (window.URL as unknown as Record<string, unknown>)['createObjectURL'];
       delete (window.URL as unknown as Record<string, unknown>)['revokeObjectURL'];
+    });
+
+    it('takePhoto (#503) : encodage refusé (toBlob rend null), message bref puis effacé', async () => {
+      await create('?seed=6');
+      setCanvasSize(600, 300);
+      frames.flush(0);
+      const renderer = renderers[renderers.length - 1] as FakeRenderer & {
+        readRenderTargetPixels: AquariumRenderer['readRenderTargetPixels'];
+      };
+      renderer.readRenderTargetPixels = () => undefined;
+      const getContext = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(
+        () =>
+          ({
+            createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }),
+            putImageData: () => undefined,
+          }) as unknown as CanvasRenderingContext2D,
+      );
+      let pending: BlobCallback | null = null;
+      const toBlob = vi
+        .spyOn(HTMLCanvasElement.prototype, 'toBlob')
+        .mockImplementation((cb: BlobCallback) => {
+          pending = cb;
+        });
+      const click = vi.spyOn(HTMLAnchorElement.prototype, 'click');
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+      try {
+        expect(host().photoNotice()).toBeNull();
+        // La photo est produite ; l'encodage, asynchrone, échoue ensuite.
+        expect(host().takePhoto()).toBe(true);
+        expect(host().photoNotice()).toBeNull();
+        pending!(null);
+        expect(host().photoNotice()).toBe(PHOTO_FAILED_MESSAGE);
+        expect(click).not.toHaveBeenCalled();
+        vi.advanceTimersByTime(PHOTO_NOTICE_MS - 1);
+        expect(host().photoNotice()).toBe(PHOTO_FAILED_MESSAGE);
+        vi.advanceTimersByTime(1);
+        expect(host().photoNotice()).toBeNull();
+        // Un nouvel échec, puis une nouvelle photo : le message est effacé dès la demande.
+        expect(host().takePhoto()).toBe(true);
+        pending!(null);
+        expect(host().photoNotice()).toBe(PHOTO_FAILED_MESSAGE);
+        expect(host().takePhoto()).toBe(true);
+        expect(host().photoNotice()).toBeNull();
+        // Hôte détruit avant la fin de l'encodage : aucun message, aucune minuterie.
+        fixture.destroy();
+        pending!(null);
+        expect(vi.getTimerCount()).toBe(0);
+      } finally {
+        vi.useRealTimers();
+        getContext.mockRestore();
+        toBlob.mockRestore();
+        click.mockRestore();
+      }
+    });
+
+    it('takePhoto (#503) : relecture qui lève, message bref ; la vue reste utilisable', async () => {
+      await create('?seed=6');
+      setCanvasSize(600, 300);
+      frames.flush(0);
+      const renderer = renderers[renderers.length - 1] as FakeRenderer & {
+        readRenderTargetPixels: AquariumRenderer['readRenderTargetPixels'];
+      };
+      renderer.readRenderTargetPixels = () => {
+        throw new Error('contexte perdu');
+      };
+      expect(host().takePhoto()).toBe(false);
+      expect(host().photoNotice()).toBe(PHOTO_FAILED_MESSAGE);
+      expect(() => frames.flush(100)).not.toThrow();
     });
 
     it('takePhoto (#479) : refusée sans relecture possible, sans canvas 2D, ou en capture', async () => {

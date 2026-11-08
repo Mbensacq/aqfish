@@ -411,11 +411,16 @@ export interface TankComparisonRow {
   readonly label: string;
   /** Valeur du bac au dixième, comme le tableau de bord (« 7,0 », « 24,0 °C » ; « inconnue » si non finie). */
   readonly tank: string;
-  /** Plage préférée de l'espèce. */
+  /** Plage préférée de l'espèce (seule plage pour la dureté). */
   readonly preferred: string;
+  /**
+   * Nom affiché de cette plage (#505) : « Préférée » quand l'espèce a aussi une plage tolérée
+   * plus large, « Plage » quand elle n'en a qu'une (dureté : préférée et tolérée confondues).
+   */
+  readonly rangeLabel: 'Préférée' | 'Plage';
   readonly fit: TankFit;
   readonly fitLabel: string;
-  /** Écart lisible à la plage préférée. */
+  /** Écart lisible à la plage préférée (ou à la plage unique). */
   readonly gap: string;
 }
 
@@ -434,19 +439,27 @@ function tenth(value: number): number {
   return Math.round(value * 10) / 10;
 }
 
-/** Écart de `value` à la plage `preferred`, arrondi au dixième. */
-export function gapText(value: number, preferred: ValueRange, unit: string): string {
+/**
+ * Écart de `value` à la plage `preferred`, arrondi au dixième ; `rangeName` nomme la plage
+ * (« plage préférée » par défaut, « plage » pour une plage unique, #505).
+ */
+export function gapText(
+  value: number,
+  preferred: ValueRange,
+  unit: string,
+  rangeName = 'plage préférée',
+): string {
   if (!Number.isFinite(value)) {
     return 'valeur du bac inconnue';
   }
   const suffix = unit === '' ? '' : ` ${unit}`;
   if (value > preferred.max) {
-    return `${frenchNumber(tenth(value - preferred.max))}${suffix} au-dessus de la plage préférée`;
+    return `${frenchNumber(tenth(value - preferred.max))}${suffix} au-dessus de la ${rangeName}`;
   }
   if (value < preferred.min) {
-    return `${frenchNumber(tenth(preferred.min - value))}${suffix} en dessous de la plage préférée`;
+    return `${frenchNumber(tenth(preferred.min - value))}${suffix} en dessous de la ${rangeName}`;
   }
-  return 'dans la plage préférée';
+  return `dans la ${rangeName}`;
 }
 
 function comparisonRow(
@@ -456,6 +469,7 @@ function comparisonRow(
   preferred: ValueRange,
   tolerated: ValueRange,
   unit: string,
+  single = false,
 ): TankComparisonRow {
   const fit = tankFit(value, preferred, tolerated);
   return Object.freeze({
@@ -463,9 +477,10 @@ function comparisonRow(
     label,
     tank: Number.isFinite(value) ? withUnit(formatTenth(value), unit) : 'inconnue',
     preferred: rangeText(preferred, unit),
+    rangeLabel: single ? 'Plage' : 'Préférée',
     fit,
     fitLabel: TANK_FIT_LABELS[fit],
-    gap: gapText(value, preferred, unit),
+    gap: gapText(value, preferred, unit, single ? 'plage' : 'plage préférée'),
   });
 }
 
@@ -495,7 +510,8 @@ export function tankComparison(
   ];
   if (hardness !== undefined) {
     // Dureté (#484) : une seule plage, préférée et tolérée à la fois (« dans la plage » ou
-    // « hors plage », jamais « limite ») ; GH en eau douce, KH en eau de mer.
+    // « hors plage », jamais « limite »), affichée « Plage » et non « Préférée » (#505) ; GH en
+    // eau douce, KH en eau de mer.
     const range = sheet.hardness.value;
     rows.push(
       comparisonRow(
@@ -505,6 +521,7 @@ export function tankComparison(
         range,
         range,
         hardnessUnit(range),
+        true,
       ),
     );
   }

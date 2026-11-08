@@ -119,7 +119,7 @@ export function presetForKey(key: string): CameraPreset | null {
  * #343) : demandent d'entrer en caméra libre ou de revenir à l'orbite (sans pièce, l'hôte
  * refuse) ; l'état affiché (`freeCamera`) vient de l'hôte.
  * Bouton « Photo » (issue #479, sans touche) : demande à l'hôte de télécharger une image PNG
- * du bac dans la vue courante.
+ * du bac dans la vue courante ; un échec est dit au-dessus de la barre (`photoNotice`, #503).
  * Absente en mode capture (c'est l'application qui ne l'affiche pas).
  */
 @Component({
@@ -190,6 +190,15 @@ export function presetForKey(key: string): CameraPreset | null {
     >
       Photo
     </button>
+    <!-- Message bref de la photo (#503) : région toujours présente, annoncée quand elle change. -->
+    <p
+      class="view-presets-bar__notice"
+      [class.view-presets-bar__notice--shown]="photoNotice() !== null"
+      role="status"
+      data-photo-notice
+    >
+      {{ photoNotice() ?? '' }}
+    </p>
   </div>`,
   styleUrl: './view-presets-bar.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -251,6 +260,9 @@ export class ViewPresetsBar {
 
   /** Demande de photo du bac (bouton « Photo », issue #479). */
   readonly photoRequested = output<void>();
+
+  /** Message bref de la photo (échec, #503), fourni par l'hôte ; `null` : rien à dire. */
+  readonly photoNotice = input<string | null>(null);
 
   /** Nom accessible du bouton « Photo ». */
   protected readonly photoDescription = PHOTO_BUTTON_LABEL;

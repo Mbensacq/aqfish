@@ -142,23 +142,24 @@ describe('comparaison de la dureté avec le bac (#484)', () => {
       label: 'Dureté (GH)',
       tank: '10,0 °dGH',
       preferred: '1 – 12 °dGH',
+      rangeLabel: 'Plage',
       fit: 'dans-la-plage',
       fitLabel: 'dans la plage',
     });
   });
 
-  it('bornes comprises ; au-delà, « hors plage » (jamais « limite »), écart en texte', () => {
+  it('bornes comprises ; au-delà, « hors plage » (jamais « limite »), écart à « la plage » (#505)', () => {
     expect(tankComparison('molly', 24, 7, { gh: 15, kh: 0 })[2].fit).toBe('dans-la-plage');
     expect(tankComparison('molly', 24, 7, { gh: 30, kh: 0 })[2].fit).toBe('dans-la-plage');
     const soft = tankComparison('molly', 24, 7, { gh: 10, kh: 6 })[2];
     expect(soft).toMatchObject({
       fit: 'hors-plage',
       fitLabel: 'hors plage',
-      gap: '5 °dGH en dessous de la plage préférée',
+      gap: '5 °dGH en dessous de la plage',
     });
     const hard = tankComparison('neon', 24, 7, { gh: 12.5, kh: 6 })[2];
     expect(hard.fit).toBe('hors-plage');
-    expect(hard.gap).toBe('0,5 °dGH au-dessus de la plage préférée');
+    expect(hard.gap).toBe('0,5 °dGH au-dessus de la plage');
   });
 
   it('récif : le KH du bac est comparé, pas la GH', () => {

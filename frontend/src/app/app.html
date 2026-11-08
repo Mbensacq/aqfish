@@ -20,6 +20,7 @@
       (clockFrozenAt)="aquarium.freezeClockAt($event)"
       (fed)="aquarium.feedAtCenter()"
       (photoRequested)="aquarium.takePhoto()"
+      [photoNotice]="aquarium.photoNotice()"
       (rainToggled)="aquarium.toggleRain()"
       [freeCameraAvailable]="aquarium.roomEditable()"
       [freeCamera]="aquarium.freeCamera()"

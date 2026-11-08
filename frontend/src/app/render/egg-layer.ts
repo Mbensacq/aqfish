@@ -40,6 +40,15 @@ export const EGG_OUTLINE = 0.008;
 /** Couleur du liseré. */
 export const EGG_OUTLINE_COLOR = PALETTE.koiNoir;
 /**
+ * Plancher du cœur d'un œuf, en pixels de scène (#501) : un œuf loin de la caméra (vue
+ * trois-quarts, plantes du fond) tombait à un ou deux pixels et se confondait avec les
+ * paillettes du sable ; son côté grandit alors pour garder au moins trois pixels. Les œufs
+ * proches (vitre avant, vue de face) gardent leur taille de base.
+ */
+export const EGG_MIN_PIXELS = 3;
+/** Plancher du liseré, en pixels de scène, des deux côtés ensemble : un pixel de chaque côté. */
+export const EGG_MIN_OUTLINE_PIXELS = 2;
+/**
  * Ordres de rendu : après le décor et les poissons opaques (0), le liseré d'abord, sans écrire
  * la profondeur, puis le cœur, qui le recouvre au centre ; tous deux testés contre la scène.
  */
@@ -74,6 +83,12 @@ export class EggLayer implements SceneLayer {
     EGG_VOXEL + EGG_OUTLINE,
   );
   private brightnessFactor = 1;
+  /** Derniers œufs posés (relus quand le point de vue change) et leur durée d'incubation. */
+  private eggs: readonly Egg[] | undefined;
+  private hatchTime = 1;
+  /** Point de vue : position de la caméra et pixels de scène par mètre à un mètre (0 : inconnu). */
+  private readonly viewpoint = new Vector3();
+  private pixelsPerMeterAtUnit = 0;
 
   constructor() {
     this.object.name = 'oeufs';
@@ -94,6 +109,47 @@ export class EggLayer implements SceneLayer {
 
   /** Pose les œufs du monde (au plus `MAX_EGGS`), sans allocation ; masquée sans œuf. */
   update(eggs: readonly Egg[] | undefined, hatchTime: number): void {
+    this.eggs = eggs;
+    this.hatchTime = hatchTime;
+    this.layout();
+  }
+
+  /**
+   * Point de vue de l'image (#501) : position de la caméra et pixels de scène par mètre à un
+   * mètre de distance (`scenePixelsPerMeter(1, fov, hauteur)`). Un œuf dont le côté ferait
+   * moins de `EGG_MIN_PIXELS` à sa distance est agrandi, liseré compris. Valeur invalide ou
+   * nulle : tailles de base. Les œufs déjà posés sont replacés si le point de vue change.
+   */
+  setViewpoint(x: number, y: number, z: number, pixelsPerMeterAtUnit: number): void {
+    const k =
+      Number.isFinite(pixelsPerMeterAtUnit) && pixelsPerMeterAtUnit > 0 ? pixelsPerMeterAtUnit : 0;
+    if (
+      k === this.pixelsPerMeterAtUnit &&
+      x === this.viewpoint.x &&
+      y === this.viewpoint.y &&
+      z === this.viewpoint.z
+    ) {
+      return;
+    }
+    this.pixelsPerMeterAtUnit = k;
+    this.viewpoint.set(x, y, z);
+    this.layout();
+  }
+
+  /** Côté du cœur et du liseré d'un œuf à cette distance de la caméra, en mètres. */
+  private sides(distance: number): readonly [number, number] {
+    const ppm =
+      this.pixelsPerMeterAtUnit > 0 && distance > 0 ? this.pixelsPerMeterAtUnit / distance : 0;
+    if (ppm === 0) {
+      return [EGG_VOXEL, EGG_VOXEL + EGG_OUTLINE];
+    }
+    const core = Math.max(EGG_VOXEL, EGG_MIN_PIXELS / ppm);
+    return [core, core + Math.max(EGG_OUTLINE, EGG_MIN_OUTLINE_PIXELS / ppm)];
+  }
+
+  private layout(): void {
+    const eggs = this.eggs;
+    const hatchTime = this.hatchTime;
     const count = Math.min(eggs?.length ?? 0, MAX_EGGS);
     if (count === 0 && this.mesh.count === 0) {
       return;
@@ -101,6 +157,9 @@ export class EggLayer implements SceneLayer {
     for (let i = 0; i < count; i++) {
       const egg = eggs![i];
       this.position.set(egg.x, egg.y, egg.z);
+      const [core, outline] = this.sides(this.position.distanceTo(this.viewpoint));
+      this.scale.setScalar(core);
+      this.outlineScale.setScalar(outline);
       this.matrix.compose(this.position, this.rotation, this.scale);
       this.mesh.setMatrixAt(i, this.matrix);
       this.matrix.compose(this.position, this.rotation, this.outlineScale);

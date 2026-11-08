@@ -996,17 +996,18 @@ function stepInPlace(world: MutableWorld, dt: number, clock: SimClock): void {
   stepEggsInPlace(world, dt);
 }
 
-/** Monde dont les œufs éclosent au pas courant (`hatchEgg`), vidé après usage. */
-let hatchingWorld: MutableWorld | null = null;
+/**
+ * Point d'éclosion réutilisé par `hatchEgg` (aucune allocation par œuf) : tampon de calcul
+ * écrit puis lu aussitôt, jamais conservé (`birthYoungInPlace` en recopie les coordonnées).
+ */
 const HATCH_POINT: Vec3 = { x: 0, y: 0, z: 0 };
 
-function hatchEgg(egg: Egg): void {
-  if (hatchingWorld !== null) {
-    HATCH_POINT.x = egg.x;
-    HATCH_POINT.y = egg.y;
-    HATCH_POINT.z = egg.z;
-    birthYoungInPlace(hatchingWorld, egg.species, HATCH_POINT);
-  }
+/** Éclosion d'un œuf dans `world` (rappel de `ageEggsInPlace`, le monde en contexte, #501). */
+function hatchEgg(world: MutableWorld, egg: Egg): void {
+  HATCH_POINT.x = egg.x;
+  HATCH_POINT.y = egg.y;
+  HATCH_POINT.z = egg.z;
+  birthYoungInPlace(world, egg.species, HATCH_POINT);
 }
 
 /**
@@ -1020,9 +1021,7 @@ export function stepEggsInPlace(world: MutableWorld, dt: number): void {
   const eggs = world.eggs as MutableEgg[] | undefined;
   if (eggs !== undefined) {
     eatEggsInPlace(eggs, world.entities);
-    hatchingWorld = world;
-    ageEggsInPlace(eggs, dt, hatchEgg);
-    hatchingWorld = null;
+    ageEggsInPlace(eggs, dt, world, hatchEgg);
   }
   spawnEggsInPlace(world);
   if (world.eggs !== undefined && world.eggs.length === 0) {
