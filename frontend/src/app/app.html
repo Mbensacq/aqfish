@@ -53,6 +53,7 @@
         [targets]="aquarium.alertAnimals()"
         [highlighted]="aquarium.highlightedAnimals()"
         [maintenance]="aquarium.maintenance()"
+        [reviewOf]="aquarium.reviewOfWorld"
         (maintenanceDone)="aquarium.markMaintenanceDone($event)"
         (showAnimalsRequested)="aquarium.highlightAlertAnimals($event)"
         (wikiPageRequested)="onWikiPageRequested($event)"

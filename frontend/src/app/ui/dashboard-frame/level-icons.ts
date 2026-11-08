@@ -32,3 +32,12 @@ export const MAINTENANCE_ICON_PIXELS: readonly (readonly [number, number])[] = [
   '#...#',
   '#####',
 ].flatMap((row, y) => [...row].flatMap((cell, x) => (cell === '#' ? [[x, y] as const] : [])));
+
+/** Icône du bilan du bac (#514) : une liste de trois lignes. */
+export const REVIEW_ICON_PIXELS: readonly (readonly [number, number])[] = [
+  '#.###',
+  '.....',
+  '#.###',
+  '.....',
+  '#.###',
+].flatMap((row, y) => [...row].flatMap((cell, x) => (cell === '#' ? [[x, y] as const] : [])));

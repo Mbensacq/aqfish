@@ -26,6 +26,7 @@ import {
   type MaintenanceReadout,
   type MaintenanceTask,
 } from '../../sim/maintenance';
+import type { ReviewPoint } from '../../sim/bilan';
 import { NO_ALERT_TARGETS, type AlertTargets } from '../../sim/alert-animals';
 import type { GuidePage } from '../../sim/care-guide';
 import { ICH_AGGRAVATED_AT } from '../../sim/disease';
@@ -46,6 +47,7 @@ const STARVED: HealthSummary = healthSummary(
     [targets]="targets()"
     [highlighted]="highlighted()"
     [maintenance]="maintenance()"
+    [reviewOf]="reviewOf()"
     (maintenanceDone)="done.push($event)"
     (showAnimalsRequested)="shown.push($event)"
     (wikiPageRequested)="wikiPages.push($event)"
@@ -59,6 +61,7 @@ class StatusHost {
   readonly shown: (readonly number[])[] = [];
   readonly done: MaintenanceTask[] = [];
   readonly maintenance = signal<MaintenanceReadout | null>(null);
+  readonly reviewOf = signal<(() => readonly ReviewPoint[]) | null>(null);
   readonly targets = signal<AlertTargets>(NO_ALERT_TARGETS);
   readonly highlighted = signal(0);
   readonly sample = signal<WaterSample>(DEFAULT_WATER_SAMPLE);
@@ -121,6 +124,52 @@ describe('rappel d’entretien (#513)', () => {
     expect(root.querySelector('[data-maintenance-done="waterChange"]')).toBeNull();
     root.querySelector<HTMLElement>('[data-maintenance-done="filter"]')!.click();
     expect(host.done).toEqual(['filter']);
+  });
+
+  it('bilan du bac (#514) : absent sans source, jamais déplié sans demande', () => {
+    const { host, root, flush } = mount();
+    expect(root.querySelector('[data-review]')).toBeNull();
+    let calls = 0;
+    const point: ReviewPoint = {
+      id: 'density',
+      severity: 'attention',
+      title: 'Trop d’animaux pour ce bac',
+      measure: '60 animaux dans 288 L',
+      action: 'Retirer des animaux',
+    };
+    host.reviewOf.set(() => {
+      calls++;
+      return [point];
+    });
+    flush();
+    const button = root.querySelector<HTMLElement>('[data-review]')!;
+    expect(button.getAttribute('aria-expanded')).toBe('false');
+    expect(root.querySelector('[data-review-detail]')).toBeNull();
+    expect(calls).toBe(0);
+    button.click();
+    flush();
+    expect(button.getAttribute('aria-expanded')).toBe('true');
+    expect(button.getAttribute('aria-controls')).toBe('bilan-detail');
+    const detail = root.querySelector('#bilan-detail')!;
+    expect(detail.getAttribute('role')).toBe('group');
+    expect(detail.textContent).toContain('60 animaux dans 288 L');
+    expect(detail.textContent).toContain('À faire');
+    button.click();
+    flush();
+    expect(root.querySelector('[data-review-detail]')).toBeNull();
+  });
+
+  it('bilan vide : le dit ; le déplier replie le calendrier', () => {
+    const { host, root, flush } = mount();
+    host.maintenance.set(maintenanceReadout(initialMaintenance(0), DAY));
+    host.reviewOf.set(() => []);
+    flush();
+    root.querySelector<HTMLElement>('[data-maintenance]')!.click();
+    flush();
+    root.querySelector<HTMLElement>('[data-review]')!.click();
+    flush();
+    expect(root.querySelector('[data-review-empty]')).not.toBeNull();
+    expect(root.querySelector('[data-maintenance-detail]')).toBeNull();
   });
 });
 

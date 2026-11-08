@@ -571,6 +571,8 @@ maximal : 60 s par angle), et **aucune mesure de performance** ne doit y être f
   `render/alert-highlight-layer.ts`, masquée sans désignation.
   Le calendrier d'entretien (`sim/maintenance.ts`, `World.maintenance`, ADR 0116) est un rappel
   neutre du bandeau, jamais une alerte ; absent en capture.
+  Le bilan du bac (`sim/bilan.ts`, ADR 0117) n'est calculé qu'à la demande, déplié depuis le
+  bandeau ; il n'écrit rien dans le monde.
 
 ## Tests
 

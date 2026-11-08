@@ -41,7 +41,13 @@ import {
   DASHBOARD_REST_OPACITY,
 } from './dashboard-frame';
 import { BeginnerGuideState } from '../beginner-guide/beginner-guide-state';
-import { levelIconPixels, LEVEL_ICON_GRID, MAINTENANCE_ICON_PIXELS } from './level-icons';
+import {
+  levelIconPixels,
+  LEVEL_ICON_GRID,
+  MAINTENANCE_ICON_PIXELS,
+  REVIEW_ICON_PIXELS,
+} from './level-icons';
+import type { ReviewPoint } from '../../sim/bilan';
 import {
   maintenanceSummary,
   type MaintenanceReadout,
@@ -151,6 +157,30 @@ const ICONS: Readonly<Record<GaugeLevel, readonly (readonly [number, number])[]>
           </button>
         </li>
       }
+      @if (reviewOf()) {
+        <li class="status__item status__review-item">
+          <button
+            type="button"
+            class="status__chip status__review"
+            data-review
+            [attr.aria-controls]="reviewOpen() ? 'bilan-detail' : null"
+            [attr.aria-expanded]="reviewOpen()"
+            (click)="toggleReview()"
+          >
+            <svg
+              class="status__icon"
+              aria-hidden="true"
+              [attr.viewBox]="'0 0 ' + iconGrid + ' ' + iconGrid"
+              shape-rendering="crispEdges"
+            >
+              @for (pixel of reviewIcon; track $index) {
+                <rect [attr.x]="pixel[0]" [attr.y]="pixel[1]" width="1" height="1" />
+              }
+            </svg>
+            <span class="status__review-name">Bilan du bac</span>
+          </button>
+        </li>
+      }
     </ul>
     <p class="visually-hidden" role="status" data-alerts-announcement>{{ announcement() }}</p>
     <p class="visually-hidden" aria-live="polite" data-alert-highlight-announcement>
@@ -243,6 +273,28 @@ const ICONS: Readonly<Record<GaugeLevel, readonly (readonly [number, number])[]>
         </div>
       </div>
     }
+    @if (review(); as points) {
+      <div
+        class="status__review-detail"
+        id="bilan-detail"
+        role="group"
+        aria-label="Bilan du bac"
+        data-review-detail
+      >
+        @if (points.length > 0) {
+          <ol class="status__review-list">
+            @for (point of points; track point.id) {
+              <li [attr.data-review-point]="point.id" [attr.data-severity]="point.severity">
+                <b>{{ severityLabels[point.severity] }} : {{ point.title }}.</b>
+                {{ point.measure }}. <b>À faire :</b> {{ point.action }}.
+              </li>
+            }
+          </ol>
+        } @else {
+          <p class="status__review-list" data-review-empty>Rien à améliorer pour l’instant.</p>
+        }
+      </div>
+    }
     @if (detail(); as open) {
       <p class="status__detail" [id]="detailId(open.id)" [attr.data-alert-detail]="open.id">
         <span><b>Cause probable :</b> {{ open.cause }}.</span>
@@ -333,12 +385,25 @@ export class DashboardStatus {
   /** Calendrier d'entretien déplié (#513) ; une alerte dépliée le replie, et inversement. */
   readonly maintenanceOpen = signal(false);
 
+  /** Bilan du bac (fourni par l'hôte, #514), lu à la demande ; `null` : pas de bilan. */
+  readonly reviewOf = input<(() => readonly ReviewPoint[]) | null>(null);
+
+  /** Bilan déplié (#514) : il n'apparaît jamais sans demande. */
+  readonly reviewOpen = signal(false);
+
   /** Alerte dépliée (une à la fois), `null` : aucune. */
   readonly expanded = signal<AlertId | null>(null);
 
   protected readonly iconGrid = LEVEL_ICON_GRID;
   protected readonly maintenanceIcon = MAINTENANCE_ICON_PIXELS;
+  protected readonly reviewIcon = REVIEW_ICON_PIXELS;
   protected readonly summary = maintenanceSummary;
+  /** Points du bilan déplié, relus à chaque relevé de l'eau ; `null` : replié. */
+  protected readonly review = computed(() => {
+    this.sample();
+    const source = this.reviewOf();
+    return this.reviewOpen() && source !== null ? source() : null;
+  });
   /** Calendrier affiché s'il est déplié et disponible. */
   protected readonly maintenanceDetail = computed(() =>
     this.maintenanceOpen() ? this.maintenance() : null,
@@ -396,12 +461,21 @@ export class DashboardStatus {
   toggle(id: AlertId): void {
     this.expanded.update((open) => (open === id ? null : id));
     this.maintenanceOpen.set(false);
+    this.reviewOpen.set(false);
   }
 
   /** Déplie ou replie le calendrier d'entretien. */
   toggleMaintenance(): void {
     this.maintenanceOpen.update((open) => !open);
     this.expanded.set(null);
+    this.reviewOpen.set(false);
+  }
+
+  /** Déplie ou replie le bilan du bac (#514). */
+  toggleReview(): void {
+    this.reviewOpen.update((open) => !open);
+    this.expanded.set(null);
+    this.maintenanceOpen.set(false);
   }
 
   /** Vrai pour une tâche sans geste dans le jeu, marquée à la main (#513). */
