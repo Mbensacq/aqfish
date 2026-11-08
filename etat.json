@@ -6251,10 +6251,10 @@
           "note": "PR #506 : lot de dette c171 (#505, #503, #501), CI verte ; reliquat #505 pt 1 (durées de vie sourcées, web inaccessible) ; 5 angles identiques à main, vues -oeufs changées"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-07T23:30:53.025Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-08T00:00:50.090Z",
+          "note": "Verdict OK, 0 bug, captures c171 publiées (5 angles identiques, œufs plus lisibles), CI verte, e2e locaux partiels (délai)"
         }
       },
       "metriques": {}
