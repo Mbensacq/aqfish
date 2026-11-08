@@ -290,6 +290,15 @@ import {
 } from '../../sim/water-quality';
 import { waterLiters, waterProducts } from '../../sim/water';
 import {
+  advanceFirstTankPath,
+  createFirstTankPath,
+  firstTankFacts,
+  firstTankPathAvailable,
+  firstTankPathView,
+  type FirstTankPathState,
+  type FirstTankPathView,
+} from '../../sim/first-tank-path';
+import {
   createWaterHistory,
   markWaterChange,
   recordWaterHistory,
@@ -844,6 +853,10 @@ export class AquariumHost {
   private maintenanceStart = new WeakMap<World, number>();
   /** Historique de l'eau de chaque monde affiché (#511), hors du monde pendant la partie. */
   private waterHistories = new WeakMap<World, WaterHistory>();
+  /** Parcours guidé de chaque monde (#512), hors du monde pendant la partie. */
+  private firstTankPaths = new WeakMap<World, FirstTankPathState>();
+  /** Dernier état de parcours publié dans `firstTankPath` (`null` : aucun). */
+  private exposedFirstTankPath: FirstTankPathState | null = null;
   /** Tampon et version du dernier historique exposé. */
   private exposedHistory: WaterHistory | null = null;
   private exposedHistoryVersion = -1;
@@ -987,6 +1000,8 @@ export class AquariumHost {
   });
   /** Historique de l'eau du bac affiché (#511), recopié à chaque relevé nouveau ; `null` en capture. */
   readonly waterHistory = signal<WaterHistoryView | null>(null);
+  /** Parcours « Mon premier aquarium » du bac affiché (#512) ; `null` : non proposé. */
+  readonly firstTankPath = signal<FirstTankPathView | null>(null);
   /** Message du dernier geste de soin (#361) ; `null` : aucun depuis le dernier changement de bac. */
   readonly treatmentNotice = signal<TreatmentNotice | null>(null);
   /** Monde du dernier geste de soin : le message s'efface quand le bac affiché change. */
@@ -1707,6 +1722,7 @@ export class AquariumHost {
     }
     if (feedInPlace(world, x, z) > 0) {
       this.exposeFood();
+      this.exposeFirstTankPath(world);
       this.scheduleFrame();
     }
   }
@@ -2431,6 +2447,7 @@ export class AquariumHost {
       return;
     }
     try {
+      this.keepFirstTankPath(world);
       const text = this.saveText(world);
       const url = win.URL.createObjectURL(new Blob([text], { type: 'application/json' }));
       const link = this.document.createElement('a');
@@ -2748,6 +2765,7 @@ export class AquariumHost {
     }
     this.tankNotice.set(null);
     this.keepWaterHistory(world);
+    this.keepFirstTankPath(world);
     this.setEnvironment(tank.world.environment);
   }
 
@@ -3482,6 +3500,9 @@ export class AquariumHost {
   private startAutosave(win: Window): void {
     const save = () => {
       this.keepMaintenanceStart();
+      if (this.currentWorld) {
+        this.keepFirstTankPath(this.currentWorld);
+      }
       this.saveNow();
     };
     const onVisibility = () => {
@@ -3961,6 +3982,44 @@ export class AquariumHost {
     }
   }
 
+  /**
+   * Avance et publie le parcours du bac affiché (#512), jamais en capture (monde inchangé) ni
+   * en mode décor (eau en pause). Hors du monde (piège du cycle 176), sans allocation de vue
+   * tant qu'aucune étape ne change.
+   */
+  private exposeFirstTankPath(world: World): void {
+    if (this.capture) {
+      return;
+    }
+    if (!firstTankPathAvailable(world.environment) || world.careMode === 'decor') {
+      this.exposedFirstTankPath = null;
+      this.firstTankPath.set(null);
+      return;
+    }
+    const facts = firstTankFacts(world);
+    const state = advanceFirstTankPath(
+      this.firstTankPaths.get(world) ?? world.firstTankPath ?? createFirstTankPath(facts),
+      facts,
+    );
+    this.firstTankPaths.set(world, state);
+    if (state !== this.exposedFirstTankPath) {
+      this.exposedFirstTankPath = state;
+      this.firstTankPath.set(firstTankPathView(state));
+    }
+  }
+
+  /**
+   * Inscrit le parcours dans le monde, à la sauvegarde automatique, à l'export ou au changement
+   * de bac seulement, une fois le bac avancé (#512), comme le début du suivi d'entretien : un
+   * bac relu et sans pas nouveau reste identique, au bit près.
+   */
+  private keepFirstTankPath(world: MutableWorld): void {
+    const state = this.firstTankPaths.get(world);
+    if (state !== undefined && world.time > state.startedAt) {
+      world.firstTankPath = state;
+    }
+  }
+
   private exposeWater(): void {
     const world = this.currentWorld;
     if (!world) {
@@ -3973,6 +4032,7 @@ export class AquariumHost {
     this.exposeAlertAnimals(world);
     this.exposeMaintenance(world);
     this.exposeWaterHistory(world);
+    this.exposeFirstTankPath(world);
     const treatment = treatmentReadout(world.water);
     this.treatment.set(treatment);
     if (this.noticeWorld !== null && this.noticeWorld !== world) {

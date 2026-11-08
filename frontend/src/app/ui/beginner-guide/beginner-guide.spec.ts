@@ -3,6 +3,10 @@ import { TestBed, type ComponentFixture } from '@angular/core/testing';
 
 import { GUIDE_STEPS, WHY_TOPIC_ORDER } from '../../sim/beginner-help';
 import type { KeyValueStore } from '../commands-help/commands-help-store';
+import {
+  FIRST_TANK_PATH_STORAGE_KEY,
+  FirstTankPathPrefs,
+} from '../first-tank-path/first-tank-path-prefs';
 import { BEGINNER_GUIDE_TITLE_ID, BeginnerGuide, whyTextId } from './beginner-guide';
 import {
   BEGINNER_GUIDE_SEEN,
@@ -227,6 +231,21 @@ describe('Guide du débutant (#240)', () => {
     await create();
     expect(() => state.hide()).not.toThrow();
     expect(state.open()).toBe(false);
+  });
+
+  it('propose de reprendre le parcours seulement s’il a été masqué (#512)', async () => {
+    await create();
+    const prefs = TestBed.inject(FirstTankPathPrefs);
+    state.show();
+    await fixture.whenStable();
+    const resume = () =>
+      (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('[data-guide-path-resume]');
+    expect(resume()).toBeNull();
+    prefs.setMode('masque');
+    await fixture.whenStable();
+    resume()?.click();
+    expect(prefs.mode()).toBe('ouvert');
+    window.localStorage.removeItem(FIRST_TANK_PATH_STORAGE_KEY);
   });
 
   it('magasin par défaut adossé à localStorage', () => {

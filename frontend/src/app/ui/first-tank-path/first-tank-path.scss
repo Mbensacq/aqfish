@@ -1,0 +1,93 @@
+// Parcours « Mon premier aquarium » (#512, docs/DA.md, « Interface ») : languette sombre
+// translucide en bordure gauche, sous les panneaux (aucun z-index), sans voile.
+@use '../panel-layout' as layout;
+
+:host {
+  position: fixed;
+  bottom: 124px;
+  left: layout.$edge;
+  display: block;
+  color: layout.$panel-ink;
+  font:
+    400 13px / 1.35 system-ui,
+    sans-serif;
+}
+
+.path {
+  width: 248px;
+  max-width: calc(100vw - 24px);
+}
+
+.path__toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 5px 9px;
+  border: 1px solid rgb(232 230 227 / 12%);
+  border-radius: 8px;
+  background: rgb(20 20 24 / 72%);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.path__count {
+  color: layout.$panel-accent;
+  font-variant-numeric: tabular-nums;
+}
+
+.path__body {
+  box-sizing: border-box;
+  margin-top: 4px;
+  padding: 8px 10px 10px;
+  border: 1px solid rgb(232 230 227 / 12%);
+  border-radius: 8px;
+  background: rgb(20 20 24 / 92%);
+
+  p {
+    margin: 4px 0;
+  }
+}
+
+.path__title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.path__why {
+  color: rgb(232 230 227 / 78%);
+}
+
+.path__link,
+.path__hide {
+  display: block;
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+}
+
+.path__link {
+  color: layout.$panel-accent;
+  text-decoration: underline;
+}
+
+.path__hide {
+  margin-top: 4px;
+  color: rgb(232 230 227 / 70%);
+  font-size: 12px;
+}
+
+@media (max-width: 480px) {
+  :host {
+    bottom: 164px;
+    left: layout.$edge-phone;
+  }
+
+  .path {
+    max-width: calc(100vw - 16px);
+  }
+}

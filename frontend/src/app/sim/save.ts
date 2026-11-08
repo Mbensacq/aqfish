@@ -28,6 +28,7 @@ import {
   type Egg,
   type EggSurface,
 } from './eggs';
+import { copyFirstTankPath, readFirstTankPath, type FirstTankPathState } from './first-tank-path';
 import { copyMaintenance, readMaintenance, type MaintenanceState } from './maintenance';
 import { copySavedWaterHistory, readWaterHistory, type SavedWaterHistory } from './water-history';
 import { FOOD_MAX_FLOAT_SECONDS, FOOD_MIN_FLOAT_SECONDS, FOOD_SINK_SPEED, MAX_FOOD } from './food';
@@ -202,6 +203,8 @@ export interface SavedWorld {
   readonly maintenance?: MaintenanceState;
   /** Historique de l'eau (#511) : absent des sauvegardes antérieures, repris à vide. */
   readonly waterHistory?: SavedWaterHistory;
+  /** Parcours « Mon premier aquarium » (#512) : absent des sauvegardes antérieures, repris à zéro. */
+  readonly firstTankPath?: FirstTankPathState;
 }
 
 /** Contenu d'une sauvegarde (schéma 1). */
@@ -370,6 +373,9 @@ export function savedWorld(world: World): SavedWorld {
     ...(world.waterHistory === undefined
       ? {}
       : { waterHistory: copySavedWaterHistory(world.waterHistory) }),
+    ...(world.firstTankPath === undefined
+      ? {}
+      : { firstTankPath: copyFirstTankPath(world.firstTankPath) }),
   };
 }
 
@@ -573,6 +579,8 @@ export function parseWorldBody(
     maintenanceValue === undefined ? null : readMaintenance(maintenanceValue, problems);
   const historyValue = own(value, 'waterHistory');
   const waterHistory = historyValue === undefined ? null : readWaterHistory(historyValue, problems);
+  const pathValue = own(value, 'firstTankPath');
+  const firstTankPath = pathValue === undefined ? null : readFirstTankPath(pathValue, problems);
   // Eau (#206) : absente, eau saine (celle de `createWorld`) ; présente, validée (pH absent :
   // celui de l'eau neuve de l'environnement, #236).
   const waterValue = own(value, 'water');
@@ -605,6 +613,9 @@ export function parseWorldBody(
   }
   if (waterHistory !== null) {
     world.waterHistory = waterHistory;
+  }
+  if (firstTankPath !== null) {
+    world.firstTankPath = firstTankPath;
   }
   if (eggs.length > 0) {
     world.eggs = eggs;
