@@ -6401,10 +6401,10 @@
           "note": "Verdict OK, 0 bug, captures c175 publiées (138, 0 diff vs c174, 4 nouvelles), CI verte, e2e locaux ciblés verts"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-08T10:22:08.827Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-08T11:28:46.015Z",
+          "note": "PR #518 fusionnée → v1.14.0 (release CI, CI main verte) ; #483 fermée ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
