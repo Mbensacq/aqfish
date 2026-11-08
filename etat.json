@@ -6351,6 +6351,12 @@
           "debut": "2026-11-08T05:53:12.572Z",
           "fin": "2026-11-08T05:55:09.308Z",
           "note": "Rétro #515 ; issue #509 (+#468) lisibilité des espèces (S) ; sprint 26 : #483 #513 #514 #511 #512 ; PR roadmap #516"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-08T05:55:42.835Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
