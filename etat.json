@@ -6491,10 +6491,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-08T17:49:12.898Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-08T17:49:52.047Z",
+          "note": "Issue #511 : courbes d'historique de l'eau (M)"
         }
       },
       "metriques": {}
