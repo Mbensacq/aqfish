@@ -1,4 +1,5 @@
 import { ichStage } from './disease';
+import { finRotStage } from './fin-rot';
 import { SPECIES, type SpeciesId } from './species';
 import { feedsOnPellets, HEALTH_FLOOR, STARVING_HUNGER } from './wellbeing';
 import type { GaugeLevel } from './water-dashboard';
@@ -19,7 +20,8 @@ import type { GaugeLevel } from './water-dashboard';
  *
  * Points blancs (issue #366, ADR 0089) : la synthèse compte aussi les animaux qui en
  * montrent les signes (`ich`, `sim/disease.ts`, stades visible et aggravé) ; l'incubation,
- * sans signe, n'est pas comptée.
+ * sans signe, n'est pas comptée. Pourriture des nageoires (issue #485, ADR 0114) : de même, les
+ * animaux aux nageoires effilochées (`finRot`, `sim/fin-rot.ts`) ; le début, sans signe, non.
  *
  * Seuils : valeurs de jeu (approximations, pas des mesures).
  */
@@ -38,6 +40,8 @@ export interface HealthSubject {
   readonly health: number;
   /** Âge de l'infection par les points blancs (`sim/disease.ts`) ; absent : sain. */
   readonly ich?: number;
+  /** Progression de la pourriture des nageoires (`sim/fin-rot.ts`) ; absente : sain. */
+  readonly finRot?: number;
 }
 
 /** Synthèse de la santé d'un bac. Objet de données pur. */
@@ -68,6 +72,18 @@ export interface HealthSummary {
    * ne tient compte que d'eux, les points blancs ayant leur propre alerte.
    */
   readonly weakWithoutIch: number;
+  /** Animaux aux nageoires effilochées (stades effiloché et avancé, issue #485). */
+  readonly finRot: number;
+  /** Parmi eux, animaux au stade avancé. */
+  readonly finRotAdvanced: number;
+  /**
+   * Animaux qui montrent les signes d'une maladie (points blancs ou nageoires effilochées),
+   * chacun compté une fois : ils ont leurs propres alertes, l'alerte de santé parle des autres
+   * malades (`sick − diseased`).
+   */
+  readonly diseased: number;
+  /** Animaux faibles sans signe de maladie : gravité de l'alerte de santé (issue #485). */
+  readonly weakWithoutDisease: number;
 }
 
 /** Synthèse d'un bac sans animal. */
@@ -82,6 +98,10 @@ export const EMPTY_HEALTH_SUMMARY: HealthSummary = {
   ich: 0,
   ichAggravated: 0,
   weakWithoutIch: 0,
+  finRot: 0,
+  finRotAdvanced: 0,
+  diseased: 0,
+  weakWithoutDisease: 0,
 };
 
 /** Santé lue : non finie → 1, sinon bornée à [`HEALTH_FLOOR`, 1]. */
@@ -113,6 +133,10 @@ export function healthSummary(animals: Iterable<HealthSubject>): HealthSummary {
   let ich = 0;
   let ichAggravated = 0;
   let weakWithoutIch = 0;
+  let finRot = 0;
+  let finRotAdvanced = 0;
+  let diseased = 0;
+  let weakWithoutDisease = 0;
   for (const animal of animals) {
     count += 1;
     const health = readHealth(animal.health);
@@ -120,13 +144,28 @@ export function healthSummary(animals: Iterable<HealthSubject>): HealthSummary {
     const isWeak = health <= WEAK_HEALTH;
     const stage = ichStage(animal.ich);
     const spots = stage === 'visible' || stage === 'aggravee';
-    if (health <= SICK_HEALTH || spots) {
+    const rot = finRotStage(animal.finRot);
+    const frayed = rot === 'effilochee' || rot === 'avancee';
+    const signs = spots || frayed;
+    if (health <= SICK_HEALTH || signs) {
       sick += 1;
+    }
+    if (signs) {
+      diseased += 1;
+    }
+    if (frayed) {
+      finRot += 1;
+      if (rot === 'avancee') {
+        finRotAdvanced += 1;
+      }
     }
     if (isWeak) {
       weak += 1;
       if (!spots) {
         weakWithoutIch += 1;
+      }
+      if (!signs) {
+        weakWithoutDisease += 1;
       }
     }
     let isStarving = false;
@@ -163,6 +202,10 @@ export function healthSummary(animals: Iterable<HealthSubject>): HealthSummary {
     ich,
     ichAggravated,
     weakWithoutIch,
+    finRot,
+    finRotAdvanced,
+    diseased,
+    weakWithoutDisease,
   };
 }
 
@@ -193,6 +236,10 @@ export function sameHealthSummary(a: HealthSummary, b: HealthSummary): boolean {
     a.ich === b.ich &&
     a.ichAggravated === b.ichAggravated &&
     a.weakWithoutIch === b.weakWithoutIch &&
+    a.finRot === b.finRot &&
+    a.finRotAdvanced === b.finRotAdvanced &&
+    a.diseased === b.diseased &&
+    a.weakWithoutDisease === b.weakWithoutDisease &&
     percent(a.averageHealth) === percent(b.averageHealth) &&
     percent(a.averageHunger) === percent(b.averageHunger)
   );

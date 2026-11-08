@@ -245,6 +245,7 @@ import {
   createDefaultWorld,
   feedInPlace,
   infectWorldInPlace,
+  rotWorldFinsInPlace,
   setWorldCatappaInPlace,
   setWorldCurrentInPlace,
   worldCurrentLevel,
@@ -3174,6 +3175,10 @@ export class AquariumHost {
       // après `population=`, avant d'avancer le monde.
       if (params.ich) {
         infectWorldInPlace(world);
+      }
+      // Nageoires effilochées de `pourriture=1` (#485), dans les mêmes conditions.
+      if (params.finRot) {
+        rotWorldFinsInPlace(world);
       }
       // Courant de `courant=` (#460), en capture : à t = 0, avant d'avancer le monde.
       if (params.capture && isCurrentLevel(params.current)) {

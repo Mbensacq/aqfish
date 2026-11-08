@@ -694,6 +694,50 @@ export const SILHOUETTES: Readonly<Record<SilhouetteId, FishTemplate>> = {
 /** Attribut de sommet du rang de taché (`voxelSpotRank`, points blancs, issue #366). */
 export const SPOT_ATTRIBUTE = 'aqfishSpot';
 
+/**
+ * Attribut de sommet du rang d'effilochage (`voxelFrayRank`, pourriture des nageoires,
+ * issue #485).
+ */
+export const FRAY_ATTRIBUTE = 'aqfishFray';
+
+/** Rang d'effilochage d'un voxel qui n'est pas une nageoire : jamais effiloché. */
+export const UNFRAYED_RANK = 1;
+
+/** Part du rang d'effilochage de la caudale donnée par la distance au corps (le reste : hasard). */
+const FRAY_TAIL_DISTANCE = 0.4;
+/** Rang minimal d'un voxel de nageoire du corps : la caudale s'effiloche avant les autres. */
+const FRAY_BODY_MIN = 0.3;
+
+/**
+ * Rang d'effilochage d'un voxel (issue #485), dans [0, 1] : un poisson aux nageoires
+ * effilochées d'intensité `a` perd les voxels de rang inférieur à `a × FIN_ROT_LOSS_SHARE` et
+ * pâlit ceux juste au-dessus (`render/fish-layer.ts`). Caudale (`tail`) : le bout (colonne 0,
+ * loin du corps) d'abord, mêlé d'un hachage pour un bord irrégulier. Corps : seuls les voxels
+ * de nageoire (`f`) au bord du profil s'effilochent, après la caudale ; les autres jamais
+ * (`UNFRAYED_RANK`), pour ne pas trouer le corps.
+ */
+export function voxelFrayRank(
+  part: 'body' | 'tail',
+  rows: readonly string[],
+  col: number,
+  row: number,
+  layer: number,
+): number {
+  const noise = voxelSpotRank(col + 101, row + 37, layer + 7);
+  const width = rows[0].length;
+  if (part === 'tail') {
+    return FRAY_TAIL_DISTANCE * (col / width) + (1 - FRAY_TAIL_DISTANCE) * noise;
+  }
+  if (rows[row][col] !== 'f') {
+    return UNFRAYED_RANK;
+  }
+  const empty = (c: number, r: number): boolean =>
+    c < 0 || c >= width || r < 0 || r >= rows.length || rows[r][c] === '.';
+  const edge =
+    empty(col - 1, row) || empty(col + 1, row) || empty(col, row - 1) || empty(col, row + 1);
+  return edge ? FRAY_BODY_MIN + (1 - FRAY_BODY_MIN) * noise : UNFRAYED_RANK;
+}
+
 /** Proportions des voxels : hauteur et épaisseur relatives à la longueur d'un voxel. */
 const VOXEL_HEIGHT_RATIO = 0.75;
 const VOXEL_DEPTH_RATIO = 0.7;
@@ -710,6 +754,11 @@ export interface VoxelMeshData {
    * `UNSPOTTED_RANK` pour un voxel trop pâle pour qu'un point s'y voie (`spotContrasts`, #370).
    */
   readonly spots: Float32Array;
+  /**
+   * Rang d'effilochage de chaque sommet, dans [0, 1] (`voxelFrayRank`, issue #485), le même
+   * pour tous les sommets d'un voxel ; `UNFRAYED_RANK` hors des nageoires.
+   */
+  readonly frays: Float32Array;
   /** Nombre de faces carrées émises. */
   readonly quads: number;
 }
@@ -799,6 +848,7 @@ export function modelBodyLength(
  * l'épaisseur de chaque colonne, centrée (absent : `depth` partout).
  * @throws Error si un caractère du gabarit n'a pas de rôle, si les rangées sont inégales ou
  * si `columnDepths` est invalide (longueur, valeur hors de [1, depth], parité).
+ * `part` choisit les rangs d'effilochage (`voxelFrayRank`) ; les parties paires n'en ont pas.
  */
 export function buildVoxelMesh(
   rows: readonly string[],
@@ -808,6 +858,7 @@ export function buildVoxelMesh(
   anchor: 'center' | 'right',
   columnDepths?: readonly number[],
   paired: readonly (readonly string[])[] = [],
+  part: 'body' | 'tail' = anchor === 'right' ? 'tail' : 'body',
 ): VoxelMeshData {
   const width = templateWidth(rows);
   const height = rows.length;
@@ -854,6 +905,7 @@ export function buildVoxelMesh(
   const normals: number[] = [];
   const vertexColors: number[] = [];
   const spots: number[] = [];
+  const frays: number[] = [];
   let quads = 0;
 
   for (let row = 0; row < height; row++) {
@@ -872,6 +924,7 @@ export function buildVoxelMesh(
         const y0 = height / 2 - row - 1;
         const z0 = -depth / 2 + layer;
         const spot = spotRank(char, col, row, layer);
+        const fray = voxelFrayRank(part, rows, col, row, layer);
         for (const face of FACES) {
           if (filled(col + face.dc, row - face.dy, layer + face.dz)) {
             continue;
@@ -886,6 +939,7 @@ export function buildVoxelMesh(
             normals.push(face.normal[0], face.normal[1], face.normal[2]);
             vertexColors.push(color[0], color[1], color[2]);
             spots.push(spot);
+            frays.push(fray);
           }
         }
       }
@@ -934,6 +988,7 @@ export function buildVoxelMesh(
         normals.push(face.normal[0], face.normal[1], face.normal[2]);
         vertexColors.push(color[0], color[1], color[2]);
         spots.push(spot);
+        frays.push(UNFRAYED_RANK);
       }
     }
   }
@@ -942,6 +997,7 @@ export function buildVoxelMesh(
     normals: new Float32Array(normals),
     colors: new Float32Array(vertexColors),
     spots: new Float32Array(spots),
+    frays: new Float32Array(frays),
     quads,
   };
 }
@@ -978,6 +1034,7 @@ export function createFishGeometry(
   geometry.setAttribute('normal', new BufferAttribute(data.normals, 3));
   geometry.setAttribute('color', new BufferAttribute(data.colors, 3));
   geometry.setAttribute(SPOT_ATTRIBUTE, new BufferAttribute(data.spots, 1));
+  geometry.setAttribute(FRAY_ATTRIBUTE, new BufferAttribute(data.frays, 1));
   geometry.computeBoundingSphere();
   return geometry;
 }

@@ -71,6 +71,11 @@
  * ou aucune sauvegarde). Toute autre valeur ou absent : aucun malade (séries existantes
  * inchangées).
  *
+ * Paramètre facultatif `pourriture=1` (issue #485) : poissons aux nageoires effilochées au
+ * stade maximal à t = 0 (voxels perdus au bout de la caudale, alerte du tableau de bord), dans
+ * les mêmes conditions que `points-blancs=1`. Toute autre valeur ou absent : aucun malade
+ * (séries existantes inchangées).
+ *
  * Paramètre facultatif `catappa=n` (issue #239) : en mode capture, `n` feuilles de catappa
  * neuves (1 à 5) déposées à t = 0, qui teintent l'eau. Toute autre valeur ou absent : aucune
  * feuille (séries existantes inchangées).
@@ -193,6 +198,8 @@ export interface CaptureParams {
   readonly starved: boolean;
   /** Vrai pour `points-blancs=1` : poissons atteints des points blancs à t = 0 (issue #366). */
   readonly ich: boolean;
+  /** Vrai pour `pourriture=1` : nageoires effilochées à t = 0 (issue #485). */
+  readonly finRot: boolean;
   /** Vrai pour `alevins=1` : alevins de guppy à t = 0, en capture (issue #459). */
   readonly fry: boolean;
   /** Vrai pour `oeufs=1` : œufs de corydoras à t = 0, en capture (issue #478). */
@@ -326,6 +333,7 @@ export const DEFAULT_CAPTURE_PARAMS: CaptureParams = {
   shape: null,
   starved: false,
   ich: false,
+  finRot: false,
   fry: false,
   eggs: false,
   current: null,
@@ -385,6 +393,7 @@ export function parseCaptureParams(search: string): CaptureParams {
     shape: params.get('forme'),
     starved: params.get('affames') === '1',
     ich: params.get('points-blancs') === '1',
+    finRot: params.get('pourriture') === '1',
     fry: params.get('alevins') === '1',
     eggs: params.get('oeufs') === '1',
     current: params.get('courant'),

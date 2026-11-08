@@ -34,6 +34,9 @@ import type { WaterCompound } from './water-quality';
  *   signes (`HealthSummary.ich`), critique au stade aggravé, avec un lien vers la page
  *   « Maladies » du wiki (`wiki`) ; ces animaux ne sont plus comptés dans l'alerte de santé,
  *   qui ne parle que des autres malades ;
+ * - **pourriture des nageoires** (issue #485, ADR 0114) : de même, une alerte dès qu'un animal
+ *   a les nageoires effilochées (`HealthSummary.finRot`), critique au stade avancé, avec sa
+ *   cause (eau trop chargée) et l'action (changer l'eau), et le lien « Maladies » ;
  * - **traitement en cours** (issue #361, ADR 0091) : une alerte « attention » tant que la cure
  *   avance, avec les jours restants et, pour le médicament, le délai avant de redoser.
  *
@@ -56,6 +59,7 @@ export type AlertId =
   | 'temperature'
   | 'ph'
   | 'ich'
+  | 'finRot'
   | 'treatment'
   | 'hunger'
   | 'health'
@@ -69,6 +73,7 @@ export const ALERT_ORDER: readonly AlertId[] = [
   'temperature',
   'ph',
   'ich',
+  'finRot',
   'treatment',
   'hunger',
   'nitrate',
@@ -288,6 +293,28 @@ export function ichAlert(health: HealthSummary): DashboardAlert | null {
 }
 
 /**
+ * Pourriture des nageoires (issue #485) : animaux aux nageoires effilochées, critique dès qu'un
+ * est au stade avancé. Cause : l'eau ; action : la corriger (changer l'eau), la guérison suit
+ * seule. Renvoie à la page « Maladies » du wiki.
+ */
+export function finRotAlert(health: HealthSummary): DashboardAlert | null {
+  if (health.finRot <= 0) {
+    return null;
+  }
+  const advanced = health.finRotAdvanced > 0;
+  return {
+    id: 'finRot',
+    severity: advanced ? 'critique' : 'attention',
+    message: 'Nageoires effilochées',
+    cause:
+      `eau trop chargée (ammoniaque ou nitrites) : bactéries de la pourriture des nageoires ; ${animalCount(health.finRot)} touché${health.finRot > 1 ? 's' : ''}` +
+      (advanced ? `, dont ${health.finRotAdvanced} au stade avancé` : ''),
+    action: `${CHANGE_WATER} et nourrir moins : les nageoires repoussent une fois l’eau propre`,
+    wiki: 'maladies',
+  };
+}
+
+/**
  * Traitement des points blancs en cours (issue #361) : jours restants à la température
  * actuelle et, pour le médicament, le délai avant de redoser. Renvoie à la page « Produits et
  * traitements » du wiki.
@@ -307,13 +334,14 @@ export function treatmentAlert(treatment: TreatmentReadout | null): DashboardAle
 }
 
 function healthAlert(health: HealthSummary, causes: readonly string[]): DashboardAlert | null {
-  // Les animaux aux points blancs ont leur propre alerte (`ichAlert`) : seuls les autres
-  // malades comptent ici, effectif comme gravité (issue #370).
-  const others = health.sick - health.ich;
+  // Les animaux aux points blancs ou aux nageoires effilochées ont leurs propres alertes
+  // (`ichAlert`, `finRotAlert`) : seuls les autres malades comptent ici, effectif comme
+  // gravité (issues #370, #485).
+  const others = health.sick - health.diseased;
   if (others <= 0) {
     return null;
   }
-  const weak = health.weakWithoutIch > 0;
+  const weak = health.weakWithoutDisease > 0;
   return {
     id: 'health',
     severity: weak ? 'critique' : 'attention',
@@ -420,6 +448,7 @@ export function dashboardAlerts(input: AlertInput): readonly DashboardAlert[] {
   push(temperatureAlert(sample));
   push(phAlert(sample.ph, phBands));
   push(ichAlert(health));
+  push(finRotAlert(health));
   push(treatmentAlert(treatment));
   push(hungerAlert(health));
   push(compoundAlert('nitrate', sample.nitrate));

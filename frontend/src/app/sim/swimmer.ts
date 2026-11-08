@@ -75,6 +75,12 @@ export interface Fish {
    */
   readonly ich?: number;
   /**
+   * Progression de la pourriture des nageoires, en secondes simulées, dans
+   * [0, `FIN_ROT_MAX`] (`sim/fin-rot.ts`, issue #485) ; absent : sain. Lecture seule pour le
+   * rendu (`finRotSeverity`).
+   */
+  readonly finRot?: number;
+  /**
    * Âge de l'alevin, en secondes simulées, dans [0, `FRY_GROWTH_TIME`) (`sim/fry.ts`, issue
    * #459) ; absent : adulte. Lecture seule pour le rendu (`fryScale`).
    */

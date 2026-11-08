@@ -4,6 +4,7 @@ import {
   alertsAnnouncement,
   animalCount,
   dashboardAlerts,
+  finRotAlert,
   ichAlert,
   treatmentAlert,
   MAX_SHOWN_ALERTS,
@@ -15,6 +16,7 @@ import {
 import { ALGAE_BAD_COVERAGE, ALGAE_WATCH_COVERAGE } from './algae';
 import { mixWarnings } from './compatibility';
 import { ICH_AGGRAVATED_AT, ICH_VISIBLE_AT } from './disease';
+import { FIN_ROT_ADVANCED_AT, FIN_ROT_VISIBLE_AT } from './fin-rot';
 import { EMPTY_HEALTH_SUMMARY, healthSummary, type HealthSummary } from './health-summary';
 import { freshWater, WATER_TEMPERATURES } from './water';
 import { waterSample, type WaterSample } from './water-dashboard';
@@ -453,5 +455,67 @@ describe('alerte des algues (#476)', () => {
     // Sauvegarde courte (#488) : moyenne sur les huit plaques du bac.
     const short = { ...freshWater('tropical'), algae: [0.8, 0.4] };
     expect(waterSample(short, 'tropical', 0).algae).toBeCloseTo(0.15, 12);
+  });
+});
+
+describe('alerte de la pourriture des nageoires (#485)', () => {
+  const frayed = FIN_ROT_VISIBLE_AT + 30;
+
+  it('sans nageoires effilochées (sains, au début) : aucune alerte', () => {
+    expect(finRotAlert(HEALTHY)).toBeNull();
+    const early = healthSummary([{ species: 'neon', health: 1, hunger: 0.2, finRot: 10 }]);
+    expect(finRotAlert(early)).toBeNull();
+    expect(dashboardAlerts(input({}, early))).toEqual([]);
+  });
+
+  it('nageoires effilochées : cause probable, action, lien « Maladies »', () => {
+    const health = healthSummary([
+      { species: 'neon', health: 1, hunger: 0.2, finRot: frayed },
+      { species: 'guppy', health: 1, hunger: 0.2 },
+    ]);
+    const alerts = dashboardAlerts(input({}, health));
+    expect(alerts).toEqual([
+      {
+        id: 'finRot',
+        severity: 'attention',
+        message: 'Nageoires effilochées',
+        cause:
+          'eau trop chargée (ammoniaque ou nitrites) : bactéries de la pourriture des nageoires ; 1 animal touché',
+        action:
+          'Changer l’eau (30 % renouvelés) et nourrir moins : les nageoires repoussent une fois l’eau propre',
+        wiki: 'maladies',
+      },
+    ]);
+  });
+
+  it('stade avancé : critique ; malades exclus de l’alerte de santé, même faibles', () => {
+    const health = healthSummary([
+      { species: 'neon', health: HEALTH_FLOOR, hunger: 0.2, finRot: FIN_ROT_ADVANCED_AT },
+      { species: 'neon', health: HEALTH_FLOOR, hunger: 0.2, finRot: frayed },
+    ]);
+    const alert = finRotAlert(health);
+    expect(alert?.severity).toBe('critique');
+    expect(alert?.cause).toContain('2 animaux touchés, dont 1 au stade avancé');
+    expect(ids(dashboardAlerts(input({}, health)))).toEqual(['finRot']);
+  });
+
+  it('points blancs et nageoires effilochées sur le même animal : compté une fois parmi les malades', () => {
+    const health = healthSummary([
+      { species: 'neon', health: 0.5, hunger: 0.2, ich: ICH_VISIBLE_AT, finRot: frayed },
+      { species: 'neon', health: 0.5, hunger: 0.2 },
+    ]);
+    expect(health.sick).toBe(2);
+    expect(health.diseased).toBe(1);
+    expect(health.ich).toBe(1);
+    expect(health.finRot).toBe(1);
+    const found = dashboardAlerts(input({}, health));
+    expect(ids(found)).toEqual(['ich', 'finRot', 'health']);
+    expect(found.find((a) => a.id === 'health')?.cause).toContain('animaux touchés : 1');
+  });
+
+  it('eau chargée et nageoires effilochées : l’ammoniaque d’abord', () => {
+    const health = healthSummary([{ species: 'neon', health: 1, hunger: 0.2, finRot: frayed }]);
+    const alerts = dashboardAlerts(input({ ammonia: COMPOUND_THRESHOLDS.ammonia.bad + 1 }, health));
+    expect(ids(alerts).slice(0, 2)).toEqual(['ammonia', 'finRot']);
   });
 });

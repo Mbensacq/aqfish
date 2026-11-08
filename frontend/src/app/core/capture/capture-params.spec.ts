@@ -42,6 +42,7 @@ describe('parseCaptureParams', () => {
       shape: null,
       starved: false,
       ich: false,
+      finRot: false,
       fry: false,
       eggs: false,
       current: null,

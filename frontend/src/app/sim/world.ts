@@ -40,6 +40,7 @@ import {
 import { coralLayout, coralObstacles, type CoralColony } from './corals';
 import { decorObstacles, parseDecorItems, type DecorItem } from './decor';
 import { ichStress, infectAllInPlace, isIchAge, stepIchInPlace } from './disease';
+import { finRotCauses, rotAllFinsInPlace, stepFinRotInPlace } from './fin-rot';
 import { TAP_RADIUS, tapGlassInPlace, type GlassPoint } from './glass-tap';
 import {
   DEFAULT_ENVIRONMENT_ID,
@@ -978,6 +979,16 @@ function stepInPlace(world: MutableWorld, dt: number, clock: SimClock): void {
     ichProtected(world.water),
   );
   stepTreatmentInPlace(world.water as MutableWaterState, fishes, dt);
+  // Pourriture des nageoires (issue #485) : sur l'ammoniaque et les nitrites de fin de pas ;
+  // tirage d'apparition seulement en eau chargée, guérison sans tirage en eau corrigée.
+  stepFinRotInPlace(
+    fishes,
+    dt,
+    finRotCauses(world.water),
+    world.environment,
+    world.seed,
+    world.tick,
+  );
   // Santé (issue #208) : sur la faim de fin de pas (après les repas) et l'eau du pas (pH
   // compris, issue #236), sans hasard ; à santé pleine, la nage reste exactement celle d'avant.
   stepWellbeingInPlace(
@@ -1352,6 +1363,15 @@ export function starveWorldInPlace(world: MutableWorld): void {
  */
 export function infectWorldInPlace(world: MutableWorld): void {
   infectAllInPlace(world.entities as Mutable<Entity>[], world.environment);
+}
+
+/**
+ * Pourriture des nageoires au stade maximal pour tous les poissons qui peuvent l'attraper
+ * (`rotAllFinsInPlace`, paramètre d'URL `pourriture=1`, issue #485), **en modifiant**
+ * `world` (monde en construction, avant le rendu).
+ */
+export function rotWorldFinsInPlace(world: MutableWorld): void {
+  rotAllFinsInPlace(world.entities as Mutable<Entity>[], world.environment);
 }
 
 /**

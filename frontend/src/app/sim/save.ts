@@ -6,6 +6,7 @@ import { isCurrentLevel, type CurrentLevel } from './water-current';
 import { createDayClock, DEFAULT_DAY_CLOCK, HOURS_PER_DAY, type DayClock } from './daylight';
 import { parseDecorItems, type DecorItem } from './decor';
 import { catchesIch, ICH_AGGRAVATED_AT, isIchAge } from './disease';
+import { catchesFinRot, FIN_ROT_MAX, isFinRotProgress } from './fin-rot';
 import {
   ENVIRONMENT_IDS,
   environmentWater,
@@ -341,6 +342,10 @@ export function savedWorld(world: World): SavedWorld {
       if (fish.ich !== undefined) {
         // Points blancs (issue #360) : écrits seulement pour un animal malade.
         saved['ich'] = fish.ich;
+      }
+      if (fish.finRot !== undefined) {
+        // Pourriture des nageoires (issue #485) : écrite seulement pour un animal malade.
+        saved['finRot'] = fish.finRot;
       }
       if (fish.growth !== undefined) {
         // Alevin (issue #459) : âge écrit seulement pour un alevin.
@@ -822,6 +827,19 @@ function parseFish(
     }
     if (catchesIch(species, envId)) {
       fish['ich'] = ich;
+    }
+  }
+  // Pourriture des nageoires (issue #485) : facultative, absente pour un animal sain et dans
+  // toute sauvegarde antérieure ; présente, progression dans [0, FIN_ROT_MAX]. Ignorée pour
+  // un animal qui ne l'attrape pas ici, comme `ich`.
+  const finRot = own(item, 'finRot');
+  if (finRot !== undefined) {
+    if (!isFinRotProgress(finRot)) {
+      report(`finRot hors de [0, ${FIN_ROT_MAX}]`);
+      return null;
+    }
+    if (catchesFinRot(species, envId)) {
+      fish['finRot'] = finRot;
     }
   }
   // Alevin (issue #459) : facultatif, absent pour un adulte et dans toute sauvegarde

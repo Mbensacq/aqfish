@@ -272,8 +272,12 @@ const DISEASES: readonly GuideEntry[] = [
       ],
       ['Cause', 'bactérie la plus courante en eau douce ; stress et mauvaise eau'],
       [
+        'Dans le jeu',
+        'nageoires effilochées quand l’ammoniaque ou les nitrites restent trop hauts ; elles repoussent une fois l’eau corrigée, sans médicament ; délais : approximation de jeu',
+      ],
+      [
         'Gestes',
-        'antibiotique choisi par un vétérinaire après un test ; hydropisie avancée : pronostic réservé',
+        'corriger l’eau d’abord (changements d’eau, moins de nourriture) ; antibiotique choisi par un vétérinaire après un test, sur ordonnance dans l’UE ; hydropisie avancée : pronostic réservé',
       ],
     ],
     `${S} 5.7 (Merck)`,

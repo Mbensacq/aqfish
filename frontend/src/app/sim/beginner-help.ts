@@ -172,6 +172,7 @@ export const ALERT_TOPICS: Readonly<Record<AlertId, WhyTopicId>> = {
   temperature: 'temperature',
   ph: 'ph',
   ich: 'sante',
+  finRot: 'sante',
   treatment: 'sante',
   hunger: 'nourriture',
   health: 'sante',

@@ -1,4 +1,5 @@
 import { ichHealthStress } from './disease';
+import { finRotHealthStress } from './fin-rot';
 import type { SpeciesDefinition } from './species';
 import { likesAcidWater, phOutOfTolerance } from './water-ph';
 
@@ -132,6 +133,8 @@ export interface WellbeingSubject {
   health: number;
   /** Âge de l'infection par les points blancs (`sim/disease.ts`) ; absent : sain. */
   readonly ich?: number;
+  /** Progression de la pourriture des nageoires (`sim/fin-rot.ts`, issue #485). */
+  readonly finRot?: number;
 }
 
 /**
@@ -141,7 +144,8 @@ export interface WellbeingSubject {
  * tolérée de chaque espèce (absent : le pH ne compte pas) ; `catappa` : une feuille de catappa
  * agit (issue #239), la santé des espèces d'eau acide ne baisse plus sous
  * `CATAPPA_HEALTH_FLOOR`. Les points blancs (`ich`, issue #360) ajoutent leur poids
- * (`ichHealthStress`) aux autres causes.
+ * (`ichHealthStress`) aux autres causes, la pourriture des nageoires (`finRot`, issue #485)
+ * aussi (`finRotHealthStress`).
  */
 export function stepWellbeingInPlace<S extends WellbeingSubject>(
   animals: readonly S[],
@@ -155,7 +159,8 @@ export function stepWellbeingInPlace<S extends WellbeingSubject>(
     const phOut = ph !== undefined && phOutOfTolerance(ph, animal.species);
     const stress =
       healthStress(animal.hunger, speciesOf(animal.species), badWater, phOut) +
-      ichHealthStress(animal.ich);
+      ichHealthStress(animal.ich) +
+      finRotHealthStress(animal.finRot);
     const floor = catappa && likesAcidWater(animal.species) ? CATAPPA_HEALTH_FLOOR : HEALTH_FLOOR;
     animal.health = stepHealth(animal.health, stress, dt, floor);
   }
