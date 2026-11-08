@@ -6467,10 +6467,10 @@
           "note": "PR #521 : bilan du bac (#514), CI verte ; 121/139 captures identiques à l'octet, 18 diff attendues avec tableau de bord ; e2e locaux ciblés, suite complète en CI"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-08T16:01:19.306Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-08T16:38:34.302Z",
+          "note": "Verdict OK, 0 bug, 1 remarque mineure, captures c177 publiées (138 captures, 18 diff dashboard attendues), CI verte, e2e bilan verts ; Chromium 1243 relié pour Playwright 1.56"
         }
       },
       "metriques": {}
