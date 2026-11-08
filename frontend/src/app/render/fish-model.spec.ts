@@ -3,6 +3,7 @@ import { Color } from 'three';
 import {
   AXOLOTL,
   CORYDORA,
+  GRENOUILLE,
   GUPPY,
   KOI,
   NEON,
@@ -16,6 +17,7 @@ import {
   CLOWN_FISH,
   CORYDORA_FISH,
   createFishGeometry,
+  FROG_FISH,
   GUPPY_FEMALE_FISH,
   GUPPY_MALE_FISH,
   KOI_FISH,
@@ -630,5 +632,22 @@ describe('points blancs réservés aux voxels où ils se voient (#370)', () => {
 
   it('rang des voxels pâles hors d’atteinte : au-dessus de toute part tachée (≤ 1)', () => {
     expect(UNSPOTTED_RANK).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe('modèle du sonneur oriental (#468)', () => {
+  it('le ventre rouge remonte sur le bas des flancs, taché de noir, au-dessus de la rangée du ventre', () => {
+    const rows = FROG_FISH.body;
+    const flank = rows[rows.length - 2];
+    // Rangée juste au-dessus du ventre : à fleur d'eau quand le sonneur flotte (vue de face).
+    expect([...flank].filter((c) => c === 'b').length).toBeGreaterThanOrEqual(4);
+    expect(flank).toContain('a');
+    expect(GRENOUILLE.colors.belly).toBe('#d94a3a');
+    expect(GRENOUILLE.colors.accent).toBe('#1c1c22');
+  });
+
+  it('taille adulte réelle : 6 cm', () => {
+    expect(GRENOUILLE.bodyLength).toBe(0.06);
+    expect(modelBodyLength(GRENOUILLE, FROG_FISH)).toBeCloseTo(0.06, 9);
   });
 });
