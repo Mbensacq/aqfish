@@ -6300,6 +6300,24 @@
         }
       },
       "metriques": {}
+    },
+    "173": {
+      "numero": 173,
+      "date": "2026-11-08",
+      "debut": "2026-11-08T03:39:24.598Z",
+      "type": "dette",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-08T03:39:24.598Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
