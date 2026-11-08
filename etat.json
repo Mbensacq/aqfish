@@ -6329,10 +6329,10 @@
           "note": "Verdict OK, 0 bug, captures c173 publiées (5 angles + oeufs identiques), CI verte, mutation non menée à terme"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-08T04:50:12.473Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-08T05:52:41.849Z",
+          "note": "PR #510 fusionnée → v1.13.5 (release CI, CI main verte) ; #507 fermée ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
