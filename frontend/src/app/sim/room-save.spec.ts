@@ -6,6 +6,7 @@ import {
   maintenanceReadout,
 } from './maintenance';
 import { DEFAULT_ROOM } from './room';
+import { createWaterHistory, markWaterChange, savedWaterHistory } from './water-history';
 import {
   MAX_ROOM_SAVE_LENGTH,
   migrateSchema1,
@@ -511,5 +512,45 @@ describe('calendrier d’entretien dans la sauvegarde (#513)', () => {
     const read = parseSave(JSON.stringify(data));
     expect(read.ok).toBe(false);
     expect(!read.ok && read.error).toContain('maintenance');
+  });
+});
+
+describe('historique de l’eau dans la sauvegarde (#511)', () => {
+  const roomOf = (world: World): RoomState => {
+    const room = createRoom(42, ['tropical']);
+    return { ...room, tick: world.tick, tanks: [{ ...room.tanks[0]!, world }] };
+  };
+  const withHistory = (): MutableWorld => {
+    const world: MutableWorld = createWorld(42);
+    const history = createWaterHistory();
+    markWaterChange(history, world.water, 0);
+    world.waterHistory = savedWaterHistory(history);
+    return world;
+  };
+
+  it('est relu à l’identique, en schémas 1 et 2', () => {
+    const world = withHistory();
+    for (const text of [serializeWorld(world), serializeRoom(roomOf(world), 0)]) {
+      const read = parseSave(text);
+      expect(read.ok && read.room.tanks[0]!.world.waterHistory).toEqual(world.waterHistory);
+    }
+  });
+
+  it('une sauvegarde sans historique (schéma 1 ou 2) reste valide, sans historique', () => {
+    const world = createWorld(42);
+    for (const text of [serializeWorld(world), serializeRoom(roomOf(world), 0)]) {
+      expect(text).not.toContain('waterHistory');
+      const read = parseSave(text);
+      expect(read.ok).toBe(true);
+      expect(read.ok && read.room.tanks[0]!.world.waterHistory).toBeUndefined();
+    }
+  });
+
+  it('refuse un historique invalide en le nommant', () => {
+    const data = JSON.parse(serializeRoom(roomOf(withHistory()), 0));
+    data.tanks[0].world.waterHistory.samples = [1];
+    const read = parseSave(JSON.stringify(data));
+    expect(read.ok).toBe(false);
+    expect(!read.ok && read.error).toContain('waterHistory');
   });
 });

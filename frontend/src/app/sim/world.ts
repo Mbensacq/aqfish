@@ -117,6 +117,7 @@ import {
   type MaintenanceState,
   type MaintenanceTask,
 } from './maintenance';
+import type { SavedWaterHistory } from './water-history';
 import {
   changeWaterInPlace,
   freshWater,
@@ -239,6 +240,11 @@ export interface World {
    * l'application n'a pas commencé le suivi de ce bac (monde neuf, ancienne sauvegarde).
    */
   readonly maintenance?: MaintenanceState;
+  /**
+   * Historique de l'eau (issue #511, `sim/water-history.ts`, ADR 0117), écrit à la sauvegarde
+   * seulement : la partie le tient hors du monde, aucun pas n'y touche.
+   */
+  readonly waterHistory?: SavedWaterHistory;
 }
 
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };

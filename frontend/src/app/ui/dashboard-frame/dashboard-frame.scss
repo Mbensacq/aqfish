@@ -30,6 +30,7 @@
 }
 
 .dashboard {
+  position: relative;
   display: flex;
   align-items: stretch;
   gap: 8px;
@@ -133,6 +134,36 @@
   font-size: 11px;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+// Nom de jauge, bouton qui déplie sa courbe (#511).
+.dashboard__curve-toggle {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+
+  &:focus-visible {
+    @include layout.focus-ring(1px, var(--dashboard-vert));
+  }
+}
+
+.dashboard__curve-chevron {
+  flex: none;
+  font-size: 8px;
+}
+
+.dashboard__curve {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .dashboard__reading {
