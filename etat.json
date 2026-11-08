@@ -6285,6 +6285,12 @@
           "debut": "2026-11-08T01:01:14.200Z",
           "fin": "2026-11-08T02:04:42.534Z",
           "note": "PR #508 : pourriture des nageoires (#485), CI verte ; 5 angles identiques à main ; e2e locaux partiels (lenteur), suite complète verte en CI"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-08T02:05:11.098Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
