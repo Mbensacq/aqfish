@@ -6531,6 +6531,12 @@
           "debut": "2026-11-08T20:13:34.453Z",
           "fin": "2026-11-08T20:14:20.673Z",
           "note": "Issue #512 : parcours guidé « Mon premier aquarium » (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-08T20:14:56.151Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
