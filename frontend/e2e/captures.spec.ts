@@ -209,6 +209,8 @@ test.describe('Captures', () => {
     { name: 'libre-porte-minuit', query: 'piece=1&heure=0&libre=1.2:0.85:3:-55:-8' },
     // Points blancs (#366) de près : caméra libre contre la vitre, néons et corydoras.
     { name: 'libre-points-blancs', query: 'piece=1&points-blancs=1&libre=0:0.3:0.6:0:0' },
+    // Pourriture des nageoires (#485) de près, même cadrage : caudales effilochées.
+    { name: 'libre-pourriture', query: 'piece=1&pourriture=1&libre=0:0.3:0.6:0:0' },
     // Pièce à deux bacs (#305, lot 2b) : une commode à droite du bac, un bac moyen posé dessus.
     { name: 'three-quarter-piece-deux-bacs', query: 'piece=1&bacs=commode,moyen@0' },
     { name: 'top-piece-deux-bacs', query: 'piece=1&bacs=commode,moyen@0&camera=top' },
@@ -246,6 +248,9 @@ test.describe('Captures', () => {
     // Points blancs (#366) : voxels clairs sur le corps et les nageoires des poissons malades.
     { name: 'front-points-blancs', query: 'points-blancs=1&camera=front' },
     { name: 'three-quarter-points-blancs', query: 'points-blancs=1' },
+    // Pourriture des nageoires (#485) : caudales effilochées, liseré gris de tissu abîmé.
+    { name: 'side-pourriture', query: 'pourriture=1&camera=side' },
+    { name: 'front-pourriture', query: 'pourriture=1&camera=front' },
     // Alevins de guppy (#459) : chaque femelle met bas, alevins aux quatre jalons de croissance.
     { name: 'three-quarter-alevins', query: 'alevins=1' },
     // Œufs de corydoras (#478) : une ponte collée sur la vitre et dans les plantes.

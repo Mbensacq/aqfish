@@ -292,6 +292,11 @@ Facteur favorisant sourcé : une température basse ou inadaptée (Merck).
   pour les Gram+.
 - Pour le jeu : l'hydropisie avancée est un stade terminal à pronostic réservé. Enseigner que la
   cause est le stress et l'eau, et que le traitement réel passe par un vétérinaire.
+- Statut France/UE : les antibiotiques vétérinaires sont délivrés sur ordonnance (règlement
+  (UE) 2019/6 ; référence non consultée en ligne, à confirmer).
+- Dans le jeu (issue #485, ADR 0114) : pourriture des nageoires quand l'ammoniaque ou les
+  nitrites restent au seuil « mauvais » ; guérison quand l'eau est corrigée, sans médicament.
+  Délais et vitesses : approximations de jeu (aucune source consultée ne les chiffre).
 
 ### 5.8 Exophtalmie et yeux troubles : la question du « collyre »
 Il n'existe **pas de collyre standard** pour poissons dans les sources vétérinaires consultées.

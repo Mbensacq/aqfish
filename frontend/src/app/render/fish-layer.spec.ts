@@ -21,6 +21,12 @@ import {
   DULL_ATTRIBUTE,
   DULL_DARKENING,
   DULL_DESATURATION,
+  FIN_ROT_ATTRIBUTE,
+  FIN_ROT_EDGE,
+  FIN_ROT_EDGE_COLOR,
+  FIN_ROT_LOSS_SHARE,
+  FIN_ROT_MIN,
+  finRotFray,
   FishLayer,
   ICH_ATTRIBUTE,
   ICH_SPOT_MIN,
@@ -28,10 +34,19 @@ import {
   ichSpots,
   interpolateFishPose,
   withDullness,
+  withFinRot,
   withIchSpots,
   type FishPose,
 } from './fish-layer';
-import { createFishGeometry, SPOT_ATTRIBUTE, UNSPOTTED_RANK } from './fish-model';
+import {
+  createFishGeometry,
+  FRAY_ATTRIBUTE,
+  SPOT_ATTRIBUTE,
+  UNFRAYED_RANK,
+  UNSPOTTED_RANK,
+} from './fish-model';
+import { FIN_ROT_MAX, FIN_ROT_VISIBLE_AT } from '../sim/fin-rot';
+import { PALETTE } from './palette';
 import { ICH_AGGRAVATED_AT, ICH_VISIBLE_AT } from '../sim/disease';
 import { PIXEL_SIZE } from './pixel-art';
 
@@ -384,7 +399,9 @@ describe('FishLayer : couleurs ternies par la santé (#208)', () => {
       vertexShader: ShaderLib.basic.vertexShader,
     } as WebGLProgramParametersWithUniforms;
     material.onBeforeCompile(shader, null as unknown as WebGLRenderer);
-    expect(shader.vertexShader).toBe(withDullness(withIchSpots(ShaderLib.basic.vertexShader)));
+    expect(shader.vertexShader).toBe(
+      withDullness(withIchSpots(withFinRot(ShaderLib.basic.vertexShader))),
+    );
     expect(shader.vertexShader).toContain(`attribute float ${DULL_ATTRIBUTE};`);
     const color = shader.vertexShader.indexOf('#include <color_vertex>');
     expect(shader.vertexShader.indexOf('vColor.xyz = mix(', color)).toBeGreaterThan(color);
@@ -451,5 +468,56 @@ describe('FishLayer : points blancs (#366)', () => {
     // Rang `UNSPOTTED_RANK` contre le seuil `1 × ICH_SPOT_SHARE` : strictement au-dessus.
     expect(ICH_SPOT_SHARE).toBeGreaterThan(0);
     expect(ICH_SPOT_SHARE).toBeLessThan(UNSPOTTED_RANK);
+  });
+});
+
+describe('FishLayer : pourriture des nageoires (#485)', () => {
+  it('intensité : 0 sain, au début ou invalide ; du minimum à 1 ensuite', () => {
+    for (const finRot of [undefined, 0, FIN_ROT_VISIBLE_AT - 1, Number.NaN, -5, FIN_ROT_MAX + 1]) {
+      expect(finRotFray(finRot), `finRot = ${finRot}`).toBe(0);
+    }
+    expect(finRotFray(FIN_ROT_VISIBLE_AT)).toBe(FIN_ROT_MIN);
+    expect(finRotFray(FIN_ROT_MAX)).toBe(1);
+  });
+
+  it('intensité par instance, partagée par le corps et la queue', () => {
+    const layer = new FishLayer(NEON, 4);
+    const healthy = fishAfterSteps(0, 1);
+    const sick: Fish = { ...fishAfterSteps(1, 1), finRot: FIN_ROT_MAX };
+    layer.update([healthy, sick], 1);
+    expect(layer.finRotFrayAt(0)).toBe(0);
+    expect(layer.finRotFrayAt(1)).toBe(1);
+    const [body, tail] = layer.object.children as Mesh[];
+    expect(body.geometry.getAttribute(FIN_ROT_ATTRIBUTE)).toBe(
+      tail.geometry.getAttribute(FIN_ROT_ATTRIBUTE),
+    );
+    layer.dispose();
+  });
+
+  it('rangs d’effilochage : la caudale s’effiloche, le corps hors nageoires jamais', () => {
+    const tail = createFishGeometry(NEON, 'tail').getAttribute(FRAY_ATTRIBUTE);
+    const body = createFishGeometry(NEON, 'body').getAttribute(FRAY_ATTRIBUTE);
+    const tailRanks = Array.from({ length: tail.count }, (_, i) => tail.getX(i));
+    const bodyRanks = Array.from({ length: body.count }, (_, i) => body.getX(i));
+    // Une part de la caudale disparaît au maximum, pas toute.
+    expect(tailRanks.some((r) => r < FIN_ROT_LOSS_SHARE)).toBe(true);
+    expect(tailRanks.some((r) => r >= FIN_ROT_LOSS_SHARE)).toBe(true);
+    // Le néon n'a pas de voxel `f` dans le corps : aucun voxel du corps ne disparaît.
+    expect(bodyRanks.every((r) => r === UNFRAYED_RANK)).toBe(true);
+    // Un voxel jamais effiloché reste hors du seuil du liseré, même au maximum.
+    expect(FIN_ROT_LOSS_SHARE + FIN_ROT_EDGE).toBeLessThan(UNFRAYED_RANK);
+  });
+
+  it('shader : voxels perdus et liseré gardés par une intensité non nulle, couleur de la palette', () => {
+    const shader = withFinRot(ShaderLib.basic.vertexShader);
+    expect(shader).toContain(`attribute float ${FIN_ROT_ATTRIBUTE};`);
+    expect(shader).toContain(`attribute float ${FRAY_ATTRIBUTE};`);
+    const begin = shader.indexOf('#include <begin_vertex>');
+    expect(shader.indexOf('transformed = vec3( 0.0 )', begin)).toBeGreaterThan(begin);
+    expect(shader.match(new RegExp(`${FIN_ROT_ATTRIBUTE} > 0\\.0`, 'g'))?.length).toBe(2);
+    expect(shader).toContain(FIN_ROT_LOSS_SHARE.toFixed(4));
+    expect(FIN_ROT_EDGE_COLOR).toBe(PALETTE.roche);
+    expect(() => withFinRot('#include <color_vertex>')).toThrow(/begin_vertex/);
+    expect(() => withFinRot('#include <begin_vertex>')).toThrow(/color_vertex/);
   });
 });

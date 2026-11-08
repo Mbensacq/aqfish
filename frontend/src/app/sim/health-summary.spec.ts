@@ -41,6 +41,10 @@ describe('synthèse de la santé (#260)', () => {
       ich: 0,
       ichAggravated: 0,
       weakWithoutIch: 0,
+      finRot: 0,
+      finRotAdvanced: 0,
+      diseased: 0,
+      weakWithoutDisease: 0,
     });
   });
 

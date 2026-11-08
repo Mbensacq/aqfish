@@ -78,3 +78,29 @@ test.describe('Points blancs visibles (#366)', () => {
     }
   });
 });
+
+test.describe('Pourriture des nageoires (#485)', () => {
+  test('pourriture=1 : alerte critique, cause et action, lien « Maladies » ; capture sans erreur', async ({
+    page,
+  }) => {
+    const errors = await open(page, '?seed=42&vitesse=0&pourriture=1');
+    const alert = status(page).locator('[data-alert="finRot"]');
+    await expect(alert).toBeVisible();
+    await expect(alert).toHaveAttribute('data-severity', 'critique');
+    await expect(alert).toContainText('Nageoires effilochées');
+    await expect(status(page).locator('[data-alert="ich"]')).toHaveCount(0);
+
+    await alert.locator('.status__chip').click();
+    const detail = status(page).locator('[data-alert-detail="finRot"]');
+    await expect(detail).toContainText('eau trop chargée');
+    await expect(detail).toContainText('Changer l’eau');
+    await detail.locator('[data-alert-wiki="maladies"]').click();
+    await expect(
+      page.locator('[data-wiki-page-view="maladies"] [data-wiki-entry="aeromonas"]'),
+    ).toContainText('Dans le jeu');
+    expect(errors).toEqual([]);
+
+    const captureErrors = await open(page, '?capture=1&seed=42&time=30&pourriture=1&camera=side');
+    expect(captureErrors).toEqual([]);
+  });
+});

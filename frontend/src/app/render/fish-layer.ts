@@ -23,9 +23,12 @@ import { wrapAngle, type Fish } from '../sim/swimmer';
 import { activeBehavior, behaviorGesture, type BehaviorGesture } from '../sim/behaviors';
 import { undulationAt, undulationScale, type Undulation } from '../sim/undulation';
 import { ichSeverity, isIchContagious } from '../sim/disease';
+import { finRotSeverity, showsFinRot } from '../sim/fin-rot';
 import { dullness } from '../sim/wellbeing';
 import { fryScale } from '../sim/fry';
+import { PALETTE } from './palette';
 import {
+  FRAY_ATTRIBUTE,
   SILHOUETTES,
   SPOT_ATTRIBUTE,
   SPOT_COLOR,
@@ -58,6 +61,7 @@ export const DULL_DARKENING = 0.15;
 export const DULL_ATTRIBUTE = 'aqfishDull';
 
 const COLOR_VERTEX = '#include <color_vertex>';
+const BEGIN_VERTEX = '#include <begin_vertex>';
 
 /**
  * Points blancs (issue #366, ADR 0089) : part des voxels **tachables** d'un poisson blanchis à
@@ -109,6 +113,72 @@ ${vertexShader.replace(
   `${COLOR_VERTEX}
 	if ( ${SPOT_ATTRIBUTE} < ${ICH_ATTRIBUTE} * ${ICH_SPOT_SHARE.toFixed(4)} ) vColor.xyz = vec3( ${rgb} );`,
 )}`;
+}
+
+/**
+ * Pourriture des nageoires (issue #485, ADR 0114) : à l'intensité maximale, part du rang
+ * d'effilochage (`voxelFrayRank`, `render/fish-model.ts`) dont les voxels disparaissent :
+ * le bout de la caudale et quelques voxels du bord des nageoires, en dents irrégulières.
+ * Choisie sur capture (`cote-pourriture`).
+ */
+export const FIN_ROT_LOSS_SHARE = 0.3;
+/**
+ * Largeur, en rang d'effilochage, du liseré de tissu abîmé gardé juste au-delà des voxels
+ * perdus : il prend `FIN_ROT_EDGE_COLOR`.
+ */
+export const FIN_ROT_EDGE = 0.15;
+/** Intensité dès les premiers signes (début du stade effiloché), dans [0, 1]. */
+export const FIN_ROT_MIN = 0.35;
+/**
+ * Couleur du liseré abîmé : gris de roche de la palette (`docs/DA.md`), distinct du blanc des
+ * points blancs pour ne pas confondre les deux maladies.
+ */
+export const FIN_ROT_EDGE_COLOR = PALETTE.roche;
+/** Attribut d'instance de l'intensité de la pourriture des nageoires, dans [0, 1]. */
+export const FIN_ROT_ATTRIBUTE = 'aqfishFinRot';
+
+/**
+ * Intensité de la pourriture des nageoires d'un poisson (issue #485), dans [0, 1] : 0 sain ou
+ * au début (progression absente ou invalide comprise), puis de `FIN_ROT_MIN` aux premiers
+ * signes à 1 au maximum (`finRotSeverity`, `sim/fin-rot.ts`).
+ */
+export function finRotFray(finRot: number | undefined): number {
+  if (!showsFinRot(finRot)) {
+    return 0;
+  }
+  return FIN_ROT_MIN + (1 - FIN_ROT_MIN) * finRotSeverity(finRot);
+}
+
+/**
+ * Ajoute la pourriture des nageoires par instance au shader de sommets : un sommet dont le
+ * rang d'effilochage (`aqfishFray`) est sous `intensité × FIN_ROT_LOSS_SHARE` est ramené à
+ * l'origine du modèle (triangles dégénérés : le voxel disparaît), un sommet juste au-delà
+ * (`FIN_ROT_EDGE`) prend `FIN_ROT_EDGE_COLOR`. Intensité nulle : aucun sommet touché
+ * (garde explicite, captures inchangées à l'octet).
+ * @throws Error si le shader n'a pas les points d'insertion attendus.
+ */
+export function withFinRot(vertexShader: string): string {
+  for (const chunk of [COLOR_VERTEX, BEGIN_VERTEX]) {
+    if (!vertexShader.includes(chunk)) {
+      throw new Error(`Shader de poissons sans ${chunk}`);
+    }
+  }
+  const c = new Color(FIN_ROT_EDGE_COLOR);
+  const rgb = [c.r, c.g, c.b].map((v) => v.toFixed(4)).join(', ');
+  const loss = `${FIN_ROT_ATTRIBUTE} * ${FIN_ROT_LOSS_SHARE.toFixed(4)}`;
+  return `attribute float ${FIN_ROT_ATTRIBUTE};
+attribute float ${FRAY_ATTRIBUTE};
+${vertexShader
+  .replace(
+    COLOR_VERTEX,
+    `${COLOR_VERTEX}
+	if ( ${FIN_ROT_ATTRIBUTE} > 0.0 && ${FRAY_ATTRIBUTE} < ${loss} + ${FIN_ROT_EDGE.toFixed(4)} ) vColor.xyz = vec3( ${rgb} );`,
+  )
+  .replace(
+    BEGIN_VERTEX,
+    `${BEGIN_VERTEX}
+	if ( ${FIN_ROT_ATTRIBUTE} > 0.0 && ${FRAY_ATTRIBUTE} < ${loss} ) transformed = vec3( 0.0 );`,
+  )}`;
 }
 
 /**
@@ -187,6 +257,8 @@ export class FishLayer {
   private readonly dull: InstancedBufferAttribute;
   /** Intensité des points blancs par instance (`ichSpots`, issue #366), idem. */
   private readonly ich: InstancedBufferAttribute;
+  /** Intensité de la pourriture des nageoires par instance (`finRotFray`, issue #485), idem. */
+  private readonly finRot: InstancedBufferAttribute;
   private readonly geometries: BufferGeometry[];
   private readonly halfLength: number;
   private readonly pose: FishPose = { x: 0, y: 0, z: 0, yaw: 0, pitch: 0, phase: 0 };
@@ -231,7 +303,8 @@ export class FishLayer {
     this.material.onBeforeCompile = (shader) => {
       // Chaque ajout s'insère juste après `color_vertex` : le dernier appliqué (ternissement)
       // passe donc avant les points blancs dans le shader, qui restent clairs.
-      shader.vertexShader = withDullness(withIchSpots(shader.vertexShader));
+      // Liseré de la pourriture des nageoires après les points blancs (#485).
+      shader.vertexShader = withDullness(withIchSpots(withFinRot(shader.vertexShader)));
     };
     const bodyGeometry = createFishGeometry(species, 'body', variant);
     const tailGeometry = createFishGeometry(species, 'tail', variant);
@@ -240,9 +313,12 @@ export class FishLayer {
     this.dull.setUsage(DynamicDrawUsage);
     this.ich = new InstancedBufferAttribute(new Float32Array(capacity), 1);
     this.ich.setUsage(DynamicDrawUsage);
+    this.finRot = new InstancedBufferAttribute(new Float32Array(capacity), 1);
+    this.finRot.setUsage(DynamicDrawUsage);
     for (const geometry of this.geometries) {
       geometry.setAttribute(DULL_ATTRIBUTE, this.dull);
       geometry.setAttribute(ICH_ATTRIBUTE, this.ich);
+      geometry.setAttribute(FIN_ROT_ATTRIBUTE, this.finRot);
     }
     this.body = new InstancedMesh(bodyGeometry, this.material, capacity);
     this.tail = new InstancedMesh(tailGeometry, this.material, capacity);
@@ -314,6 +390,7 @@ export class FishLayer {
       this.tail.setMatrixAt(n, this.tailMatrix);
       this.dull.setX(n, dullness(fish.health));
       this.ich.setX(n, ichSpots(fish.ich));
+      this.finRot.setX(n, finRotFray(fish.finRot));
       n++;
     }
     this.body.count = n;
@@ -322,6 +399,7 @@ export class FishLayer {
     this.tail.instanceMatrix.needsUpdate = true;
     this.dull.needsUpdate = true;
     this.ich.needsUpdate = true;
+    this.finRot.needsUpdate = true;
   }
 
   /**
@@ -348,6 +426,11 @@ export class FishLayer {
   /** Intensité des points blancs d'une instance, dans [0, 1] (tests). */
   ichSpotsAt(index: number): number {
     return this.ich.getX(index);
+  }
+
+  /** Intensité de la pourriture des nageoires d'une instance, dans [0, 1] (tests). */
+  finRotFrayAt(index: number): number {
+    return this.finRot.getX(index);
   }
 
   /** Lit la matrice d'une instance du corps (tests). */

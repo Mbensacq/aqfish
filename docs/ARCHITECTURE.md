@@ -183,6 +183,14 @@ simulation testable et les captures reproductibles.
   Section « Soins » des réglages (conditionnelle) et alerte « Traitement en cours ».
   Relevé (`treatmentReadout`) et textes d'affichage (ligne d'état, sources, phrase de
   redosage commune au panneau et au tableau de bord) dans `sim/treatment-text.ts` (#374).
+- **Pourriture des nageoires** (#485, ADR 0114, `sim/fin-rot.ts`) : `Fish.finRot`,
+  progression en secondes (absente : sain), avancée après les traitements. Ammoniaque ou
+  nitrites « mauvais » (`finRotCauses`) : les malades progressent, les poissons nageurs d'eau
+  douce sains tombent malades par un hachage sans état de (graine, pas, animal) à sel propre ;
+  eau corrigée : la progression redescend et le champ s'efface (guérison sans bouton ni
+  médicament). Stades effiloché et avancé : causes de santé (`finRotHealthStress`), alerte
+  « Nageoires effilochées », caudale effilochée au rendu (rang `aqfishFray` des voxels,
+  `withFinRot` de `render/fish-layer.ts`). Champ `finRot` facultatif de la sauvegarde.
   Amphibien ou invertébré ajouté (panneau) ou transféré dans une eau qui contient déjà sel ou
   médicament (`waterProducts`, `WaterReadout.products`) : avertissement
   `treatedWaterWarning`, sans refus.
