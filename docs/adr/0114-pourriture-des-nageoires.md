@@ -41,11 +41,30 @@ sauvegardes anciennes relues telles quelles, aucun bouton « guérir ».
   d'abord, mêlé d'un hachage ; voxels de nageoire (`f`) au bord du profil du corps ensuite ;
   le reste jamais. Le shader ramène à l'origine les sommets sous `intensité × 0,5` (voxel
   perdu) et teinte en gris de roche (`PALETTE.roche`) une bande de 0,2 au-dessus. Garde
-  `intensité > 0` : rendu inchangé pour un poisson sain.
+  `intensité > 0` : rendu inchangé pour un poisson sain. Valeurs revues au cycle 174 (voir
+  « Lisibilité en vue de côté »).
 - **Sauvegarde** : champ `finRot` écrit seulement pour un malade, relu s'il est dans
   [0, 1200], refusé sinon, ignoré pour un animal qui ne l'attrape pas ; pas de changement de
   schéma.
 - **Capture** : paramètre `pourriture=1` (tous les poissons concernés au maximum à t = 0).
+
+## Lisibilité en vue de côté (cycle 174, issue #509)
+
+Sur les captures du cycle 172, à l'échelle du bac entier (`side-pourriture`,
+`front-pourriture`), le liseré gris de roche se confondait avec l'eau sombre et les voxels
+perdus de la caudale se voyaient à peine. Valeurs choisies sur capture, en comparant à
+`main` :
+
+| Valeur               | Cycle 172         | Cycle 174              | Effet                                                                                       |
+| -------------------- | ----------------- | ---------------------- | ------------------------------------------------------------------------------------------- |
+| `FIN_ROT_LOSS_SHARE` | 0,3               | 0,35                   | caudale un peu plus rongée ; à 0,5, elle disparaissait presque et il ne restait rien à voir |
+| `FIN_ROT_EDGE`       | 0,15              | 0,3                    | le liseré couvre le reste de la caudale et le bord des nageoires du corps (rang ≥ 0,3)      |
+| `FIN_ROT_EDGE_COLOR` | `roche` `#6e6a63` | `sableClair` `#e3cf9e` | tissu pâli, net sur l'eau ; distinct du blanc `koiBlanc` des points blancs                  |
+
+Résultat : en vue de côté et de face, chaque poisson malade porte une queue courte, pâle et
+déchiquetée, et les nageoires du corps (corydoras) un bord pâle. Seules les captures
+`-pourriture` changent ; les captures par défaut restent identiques à l'octet (garde
+`intensité > 0`).
 
 ## Valeurs : sources et approximations
 
