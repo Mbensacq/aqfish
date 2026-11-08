@@ -6372,6 +6372,24 @@
         }
       },
       "metriques": {}
+    },
+    "175": {
+      "numero": 175,
+      "date": "2026-11-08",
+      "debut": "2026-11-08T08:35:46.049Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-08T08:35:46.049Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
