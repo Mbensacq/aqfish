@@ -6353,10 +6353,10 @@
           "note": "Rétro #515 ; issue #509 (+#468) lisibilité des espèces (S) ; sprint 26 : #483 #513 #514 #511 #512 ; PR roadmap #516"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-08T05:55:42.835Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-08T07:15:58.662Z",
+          "note": "PR #517 : pourriture des nageoires (#509) et sonneur (#468) lisibles, CI verte ; seules 9 captures pourriture/paludarium changent, 129 identiques à l'octet ; e2e locaux partiels (paludarium/sonneur)"
         }
       },
       "metriques": {}
