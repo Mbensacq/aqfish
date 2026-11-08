@@ -6272,7 +6272,7 @@
       "type": "fonctionnalite",
       "issue": 485,
       "pr": 508,
-      "version": null,
+      "version": "v1.13.4",
       "phases": {
         "planif": {
           "statut": "termine",
