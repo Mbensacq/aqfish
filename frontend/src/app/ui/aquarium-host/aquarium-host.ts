@@ -3879,10 +3879,6 @@ export class AquariumHost {
     this.host.nativeElement.removeAttribute(ALERT_HIGHLIGHT_ATTRIBUTE);
   }
 
-  /**
-   * Relevé de l'eau (#207) : signal `water` et `data-aqfish-water` mis à jour seulement s'il
-   * change, trouble de l'eau de la vue suivant le niveau.
-   */
   /** Temps du premier relevé d'un monde sans calendrier : début de son suivi (#513). */
   private maintenanceStartOf(world: World): number {
     let start = this.maintenanceStart.get(world);
@@ -4020,6 +4016,10 @@ export class AquariumHost {
     }
   }
 
+  /**
+   * Relevé de l'eau (#207) : signal `water` et `data-aqfish-water` mis à jour seulement s'il
+   * change, trouble de l'eau de la vue suivant le niveau.
+   */
   private exposeWater(): void {
     const world = this.currentWorld;
     if (!world) {

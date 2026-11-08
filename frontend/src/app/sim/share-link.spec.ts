@@ -20,6 +20,7 @@ import {
   type ShareOutcome,
 } from './share-link';
 import { advance, createDefaultWorld, type World } from './world';
+import { createWaterHistory, markWaterChange, savedWaterHistory } from './water-history';
 
 const BASE = 'https://exemple.test/aqfish/';
 const SETTINGS: SaveSettings = {
@@ -143,6 +144,33 @@ describe('lien de partage : aller-retour (#426)', () => {
     expect((await readShare(fragment.slice(1))).ok).toBe(true);
     expect(hasShareFragment('#autre=1')).toBe(false);
     expect(hasShareFragment('')).toBe(false);
+  });
+});
+
+describe('lien de partage : sans historique de l’eau (#524)', () => {
+  const withHistory = (): World => {
+    const world = advance(createDefaultWorld(11), 20);
+    const history = createWaterHistory();
+    markWaterChange(history, world.water, 0);
+    return { ...world, waterHistory: savedWaterHistory(history) };
+  };
+
+  it('le texte partagé ne contient pas l’historique, la sauvegarde si', () => {
+    const world = withHistory();
+    expect(serializeWorld(world, SETTINGS)).toContain('waterHistory');
+    expect(sharedText(world, SETTINGS)).not.toContain('waterHistory');
+    expect(world.waterHistory).toBeDefined();
+  });
+
+  it('le lien a la même longueur avec ou sans historique', async () => {
+    const world = withHistory();
+    const bare: World = { ...world, waterHistory: undefined };
+    const [a, b] = await Promise.all([
+      createShare(BASE, world, SETTINGS, false),
+      createShare(BASE, bare, SETTINGS, false),
+    ]);
+    expect(a).toEqual(b);
+    expect(sharedText(world, SETTINGS).length).toBe(sharedText(bare, SETTINGS).length);
   });
 });
 

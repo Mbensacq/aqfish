@@ -179,7 +179,34 @@ export function sameMaintenanceReadout(
   a: MaintenanceReadout | null,
   b: MaintenanceReadout | null,
 ): boolean {
-  return a === b || (a !== null && b !== null && JSON.stringify(a) === JSON.stringify(b));
+  if (a === b) {
+    return true;
+  }
+  return (
+    a !== null &&
+    b !== null &&
+    sameList(a.items, b.items, sameMaintenanceItem) &&
+    sameList(a.due, b.due, (x, y) => x === y) &&
+    sameList(a.log, b.log, sameMaintenanceLogLine)
+  );
+}
+
+function sameList<T>(a: readonly T[], b: readonly T[], same: (x: T, y: T) => boolean): boolean {
+  return a.length === b.length && a.every((item, index) => same(item, b[index]!));
+}
+
+function sameMaintenanceItem(a: MaintenanceItem, b: MaintenanceItem): boolean {
+  return (
+    a.task === b.task &&
+    a.label === b.label &&
+    a.overdue === b.overdue &&
+    a.days === b.days &&
+    a.text === b.text
+  );
+}
+
+function sameMaintenanceLogLine(a: MaintenanceLogLine, b: MaintenanceLogLine): boolean {
+  return a.task === b.task && a.label === b.label && a.day === b.day;
 }
 
 /** Copie d'un calendrier (sauvegarde). */

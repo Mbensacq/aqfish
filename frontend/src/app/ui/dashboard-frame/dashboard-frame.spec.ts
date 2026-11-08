@@ -333,6 +333,35 @@ describe('tableau de bord : courbe d’une jauge (#511)', () => {
     root.remove();
   });
 
+  it('Échap depuis le bouton focalisé de la jauge : courbe repliée, focus conservé (#524)', () => {
+    const { fixture, root } = render();
+    document.body.appendChild(root);
+    const button = toggle(root, 'nitrate');
+    button.focus();
+    button.click();
+    fixture.detectChanges();
+    expect(root.querySelector('[data-water-curve]')).not.toBeNull();
+    expect(document.activeElement).toBe(button);
+    document.activeElement!.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
+    );
+    fixture.detectChanges();
+    expect(root.querySelector('[data-water-curve]')).toBeNull();
+    expect(document.activeElement).toBe(toggle(root, 'nitrate'));
+    root.remove();
+  });
+
+  it('Échap sans courbe dépliée : le focus ne bouge pas (#524)', () => {
+    const { fixture, root } = render();
+    document.body.appendChild(root);
+    const button = toggle(root, 'nitrate');
+    button.focus();
+    button.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    fixture.detectChanges();
+    expect(document.activeElement).toBe(button);
+    root.remove();
+  });
+
   it('jauges repliées : pas de courbe', () => {
     const { fixture, root } = render();
     toggle(root, 'nitrate').click();

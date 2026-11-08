@@ -251,7 +251,6 @@ const ICONS: Readonly<Record<GaugeLevel, readonly (readonly [number, number])[]>
           [history]="history()"
           [sample]="sample()"
           [bands]="readout().phBands"
-          (keydown.escape)="closeCurve()"
         />
       }
     }
@@ -288,6 +287,7 @@ const ICONS: Readonly<Record<GaugeLevel, readonly (readonly [number, number])[]>
   imports: [WaterHistoryChart],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
+    '(keydown.escape)': 'closeCurve()',
     '[style.--dashboard-background]': 'colors.background',
     '[style.--dashboard-ink]': 'colors.ink',
     '[style.--dashboard-vert]': 'colors.vert',
@@ -372,9 +372,15 @@ export class DashboardFrame {
     this.curve.update((open) => (open === id ? null : id));
   }
 
-  /** Échap : replie la courbe, le focus revient sur le bouton de sa jauge. */
+  /**
+   * Échap, écouté sur tout le cadre (#524) : le focus reste sur le bouton de la jauge, hors de
+   * la courbe. Replie la courbe, le focus revient ou reste sur ce bouton ; sans courbe, rien.
+   */
   protected closeCurve(): void {
     const id = this.curve();
+    if (id === null) {
+      return;
+    }
     this.curve.set(null);
     this.host.nativeElement.querySelector<HTMLElement>(`[data-curve-toggle="${id}"]`)?.focus();
   }
