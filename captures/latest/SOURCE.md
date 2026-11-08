@@ -1,1 +1,4 @@
-Branche cycle/c171-lot-dette-photo-oeufs, PR #506, commit 40910026c294649d462d6b17e18bbdd28759ee77, graine par défaut. 5 angles par défaut identiques à c170 ; front-oeufs et three-quarter-oeufs changés (œuf plus lisible). Série interrompue par le délai (128 images sur 137, fin de la liste des angles d'interface).
+# Captures c172
+- Branche : cycle/c172-pourriture-nageoires, PR #508, commit 9d9b3c5
+- Graine : celle des captures par défaut ; temps : 118 scénarios (npm run captures)
+- 5 angles par défaut identiques à la série précédente ; 3 nouvelles vues « pourriture » (front, side, libre)
