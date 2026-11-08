@@ -6495,6 +6495,12 @@
           "debut": "2026-11-08T17:49:12.898Z",
           "fin": "2026-11-08T17:49:52.047Z",
           "note": "Issue #511 : courbes d'historique de l'eau (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-08T17:50:27.383Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
