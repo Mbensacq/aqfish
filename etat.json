@@ -6275,10 +6275,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-08T01:00:07.269Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-08T01:00:32.172Z",
+          "note": "Issue #485 : pourriture des nageoires (M)"
         }
       },
       "metriques": {}
