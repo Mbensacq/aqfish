@@ -6315,6 +6315,12 @@
           "debut": "2026-11-08T03:39:24.598Z",
           "fin": "2026-11-08T03:39:51.772Z",
           "note": "Issue #507 : côtés des œufs sans allocation par image (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-08T03:40:27.753Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
