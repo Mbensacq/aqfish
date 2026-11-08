@@ -6342,7 +6342,7 @@
       "date": "2026-11-08",
       "debut": "2026-11-08T05:53:12.572Z",
       "type": "retro",
-      "issue": null,
+      "issue": 509,
       "pr": null,
       "version": null,
       "phases": {
