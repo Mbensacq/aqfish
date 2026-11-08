@@ -6516,6 +6516,24 @@
         }
       },
       "metriques": {}
+    },
+    "179": {
+      "numero": 179,
+      "date": "2026-11-08",
+      "debut": "2026-11-08T20:13:34.453Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-08T20:13:34.453Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
