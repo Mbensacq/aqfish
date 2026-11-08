@@ -117,6 +117,7 @@ import {
   type MaintenanceState,
   type MaintenanceTask,
 } from './maintenance';
+import type { FirstTankPathState } from './first-tank-path';
 import type { SavedWaterHistory } from './water-history';
 import {
   changeWaterInPlace,
@@ -245,6 +246,11 @@ export interface World {
    * seulement : la partie le tient hors du monde, aucun pas n'y touche.
    */
   readonly waterHistory?: SavedWaterHistory;
+  /**
+   * Parcours « Mon premier aquarium » (issue #512, `sim/first-tank-path.ts`, ADR 0119), écrit
+   * à la sauvegarde seulement : la partie le tient hors du monde, aucun pas n'y touche.
+   */
+  readonly firstTankPath?: FirstTankPathState;
 }
 
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };

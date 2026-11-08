@@ -655,6 +655,50 @@ describe('AquariumHost', () => {
     });
   });
 
+  describe('parcours « Mon premier aquarium » (#512)', () => {
+    const host = (): AquariumHost => fixture.componentInstance;
+
+    it('valide le poisson déjà là, reste hors du monde ; la sauvegarde l’écrit une fois avancé', async () => {
+      await create('?seed=42');
+      setCanvasSize(640, 480);
+      for (let now = 0; (host().world?.tick ?? 0) < 40 && now < 10_000; now += 20) {
+        frames.flush(now);
+      }
+      expect(host().firstTankPath()?.doneCount).toBe(1);
+      expect(host().firstTankPath()?.current?.id).toBe('cycle');
+      expect(host().world?.firstTankPath).toBeUndefined();
+
+      window.dispatchEvent(new Event('pagehide'));
+      const saved = JSON.parse(saveStorage!.getItem(SAVE_STORAGE_KEY)!);
+      expect(saved.tanks[0].world.firstTankPath.done).toEqual(['first-fish']);
+    }, 30_000);
+
+    it('à monde figé : le bac reste identique, gestes validés aussitôt', async () => {
+      await create('?seed=42&vitesse=0');
+      setCanvasSize(640, 480);
+      frames.flush(0);
+      host().feedAtCenter();
+      host().changeWater();
+      expect(host().firstTankPath()?.doneCount).toBe(3);
+      host().saveNow();
+      expect(host().world?.firstTankPath).toBeUndefined();
+    });
+
+    it('rien en capture', async () => {
+      await create('?capture=1&seed=42&time=1');
+      setCanvasSize(640, 480);
+      frames.flush(0);
+      expect(host().firstTankPath()).toBeNull();
+    });
+
+    it('rien pour le récif', async () => {
+      await create('?seed=42&environnement=recif&vitesse=0');
+      setCanvasSize(640, 480);
+      frames.flush(0);
+      expect(host().firstTankPath()).toBeNull();
+    });
+  });
+
   describe('nourriture (#67)', () => {
     function host(): AquariumHost {
       return fixture.componentInstance;

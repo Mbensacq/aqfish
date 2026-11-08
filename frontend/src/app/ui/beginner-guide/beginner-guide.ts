@@ -11,6 +11,7 @@ import {
 } from '@angular/core';
 
 import { GUIDE_STEPS, helpStatusText, whyTopics, type WhyTopicId } from '../../sim/beginner-help';
+import { FirstTankPathPrefs } from '../first-tank-path/first-tank-path-prefs';
 import { BeginnerGuideState } from './beginner-guide-state';
 
 /** Identifiant du titre du dialogue (cible de `aria-labelledby`). */
@@ -97,6 +98,16 @@ const FOCUSABLE = 'button:not([disabled]), [href], input, select, textarea, [tab
           </li>
         }
       </ul>
+      @if (pathPrefs.mode() === 'masque') {
+        <button
+          type="button"
+          class="guide__button"
+          data-guide-path-resume
+          (click)="pathPrefs.setMode('ouvert')"
+        >
+          Reprendre le parcours « Mon premier aquarium »
+        </button>
+      }
       <p class="guide__disclaimer">
         Ce jeu n’est pas un avis vétérinaire : un animal réellement malade justifie un vétérinaire.
       </p>
@@ -111,6 +122,7 @@ const FOCUSABLE = 'button:not([disabled]), [href], input, select, textarea, [tab
 })
 export class BeginnerGuide {
   protected readonly state = inject(BeginnerGuideState);
+  protected readonly pathPrefs = inject(FirstTankPathPrefs);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly injector = inject(Injector);
 

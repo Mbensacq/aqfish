@@ -6,6 +6,12 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Champ du monde écrit à la sauvegarde : pas dans `saveText`** (cycle 179, #512) :
+  `setEnvironment` sauvegarde en quittant le bac ; un champ posé dans `saveText` dès que
+  `world.time` a avancé casse `setEnvironment (#277, #316)` (texte du bac repris différent).
+  Comme `keepMaintenanceStart` : l'écrire à la sauvegarde automatique, à l'export et au changement
+  de bac. Pour faire avancer une étape au temps simulé en e2e, importer un bac au `tick` assez
+  grand : un temps de départ négatif refuse toute la sauvegarde, sans erreur visible. (2026-11-08)
 - **Écrire dans le monde depuis un relevé de l'hôte : `aquarium-host.spec` compare au bit près**
   (cycle 176, #513) : `exposeWater` tourne aussi après un import ou à monde figé ; y poser un
   champ optionnel casse `toEqual(world)` et `serializeWorld(host.world) === serializeWorld(advance(…))`.
