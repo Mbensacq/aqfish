@@ -1,0 +1,1 @@
+Branche cycle/c171-lot-dette-photo-oeufs, PR #506, commit 40910026c294649d462d6b17e18bbdd28759ee77, graine par défaut. 5 angles par défaut identiques à c170 ; front-oeufs et three-quarter-oeufs changés (œuf plus lisible). Série interrompue par le délai (128 images sur 137, fin de la liste des angles d'interface).

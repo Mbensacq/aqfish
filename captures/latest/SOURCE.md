@@ -1,8 +1,1 @@
-# Captures c170
-
-- Branche : cycle/c170-durete-eau
-- PR : #504
-- Commit : 84a96d5
-- Graine : celle par défaut des captures
-- Durée : ~9,7 min (135 captures)
-- 5 angles identiques à l'octet à latest (c169)
+Branche cycle/c171-lot-dette-photo-oeufs, PR #506, commit 40910026c294649d462d6b17e18bbdd28759ee77, graine par défaut. 5 angles par défaut identiques à c170 ; front-oeufs et three-quarter-oeufs changés (œuf plus lisible). Série interrompue par le délai (128 images sur 137, fin de la liste des angles d'interface).
