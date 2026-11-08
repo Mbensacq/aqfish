@@ -6473,10 +6473,10 @@
           "note": "Verdict OK, 0 bug, 1 remarque mineure, captures c177 publiées (138 captures, 18 diff dashboard attendues), CI verte, e2e bilan verts ; Chromium 1243 relié pour Playwright 1.56"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-08T16:39:04.636Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-08T17:48:37.040Z",
+          "note": "PR #521 fusionnée → v1.14.2 (release CI, CI main verte) ; #514 fermée ; dette #522 ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
