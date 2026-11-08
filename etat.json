@@ -6425,10 +6425,10 @@
           "note": "Issue #513 : calendrier d'entretien et rappels par bac (S)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-08T11:30:34.363Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-08T13:25:39.200Z",
+          "note": "PR #519 : calendrier d'entretien par bac (#513), CI verte ; 103 captures identiques à l'octet ; e2e locaux ciblés, suite complète en CI ; git reset --hard du lancement refusé par l'environnement, main mise à jour en avance rapide"
         }
       },
       "metriques": {}
