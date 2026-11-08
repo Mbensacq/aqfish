@@ -6365,10 +6365,10 @@
           "note": "Verdict OK, 0 bug, captures c174 publiées (133/138, angles par défaut complets), CI verte, verify local non rejoué"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-08T07:30:54.135Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-08T08:35:17.023Z",
+          "note": "PR #517 fusionnée → v1.13.6 (release CI, CI main verte) ; #509 et #468 fermées ; PR #516 (roadmap) fusionnée sans version ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
