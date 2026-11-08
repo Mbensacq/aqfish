@@ -6455,10 +6455,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-08T14:58:04.707Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-08T14:58:36.995Z",
+          "note": "Issue #514 : bilan du bac, les trois points à améliorer (S)"
         }
       },
       "metriques": {}
