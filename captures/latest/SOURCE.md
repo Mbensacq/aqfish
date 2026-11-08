@@ -1,4 +1,6 @@
-# Captures c172
-- Branche : cycle/c172-pourriture-nageoires, PR #508, commit 9d9b3c5
-- Graine : celle des captures par défaut ; temps : 118 scénarios (npm run captures)
-- 5 angles par défaut identiques à la série précédente ; 3 nouvelles vues « pourriture » (front, side, libre)
+Cycle 173
+Branche : cycle/c173-oeufs-sans-allocation
+PR : #510
+Commit : 4d75f62
+Graine : défaut des captures
+Temps : série partielle (5 angles + 2 vues -oeufs) ; reste de latest/ conservé de c172
