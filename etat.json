@@ -6311,10 +6311,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-08T03:39:24.598Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-08T03:39:51.772Z",
+          "note": "Issue #507 : côtés des œufs sans allocation par image (S)"
         }
       },
       "metriques": {}
