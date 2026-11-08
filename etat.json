@@ -6393,6 +6393,12 @@
           "debut": "2026-11-08T08:36:41.508Z",
           "fin": "2026-11-08T09:49:57.719Z",
           "note": "PR #518 : animaux concernés par une alerte (#483), CI verte ; 130 captures identiques à l'octet ; e2e locaux partiels ; playwright install lancé par erreur malgré PIEGES, téléchargement hors dépôt supprimé, lien symbolique documenté appliqué"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-08T09:50:26.380Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
