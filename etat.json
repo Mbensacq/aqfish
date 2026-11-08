@@ -6461,10 +6461,10 @@
           "note": "Issue #514 : bilan du bac, les trois points à améliorer (S)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-08T14:59:10.940Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-08T16:00:48.378Z",
+          "note": "PR #521 : bilan du bac (#514), CI verte ; 121/139 captures identiques à l'octet, 18 diff attendues avec tableau de bord ; e2e locaux ciblés, suite complète en CI"
         }
       },
       "metriques": {}
