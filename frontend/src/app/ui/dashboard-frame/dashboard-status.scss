@@ -81,6 +81,39 @@
   color: var(--dashboard-ink);
 }
 
+// Rappel d'entretien (#513) : encre neutre, jamais la couleur d'une alerte.
+.status__maintenance {
+  color: var(--dashboard-ink);
+
+  &[data-maintenance-due='0'] {
+    border-color: transparent;
+  }
+}
+
+.status__calendar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 24px;
+  flex-basis: 100%;
+  max-height: 40vh;
+  overflow-y: auto;
+  color: var(--dashboard-ink);
+}
+
+.status__tasks,
+.status__log {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.status__tasks li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 24px;
+}
+
 .status__icon {
   flex: none;
   width: 10px;
@@ -150,7 +183,8 @@
     flex-flow: column nowrap;
   }
 
-  .status__detail {
+  .status__detail,
+  .status__calendar {
     flex-basis: auto;
     width: 0;
     min-width: 100%;
@@ -207,6 +241,15 @@
   // Le niveau reste lu (icône, couleur, lecteur d'écran) mais n'est plus écrit : le message
   // tient sur sa demi-ligne (« Traitement en cours » tronqué à 390 px, #372).
   .status__severity {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  // Le mot « Entretien » reste lu : l'icône et le résumé tiennent sur la ligne de la santé.
+  .status__maintenance-name {
     position: absolute;
     width: 1px;
     height: 1px;

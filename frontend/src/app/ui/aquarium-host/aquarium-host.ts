@@ -254,6 +254,8 @@ import {
   setWorldLightingInPlace,
   scrapeWorldAlgaeInPlace,
   pruneWorldPlantInPlace,
+  recordWorldMaintenanceInPlace,
+  worldHasPrunablePlants,
   worldPlantShade,
   worldShownPlantGrowth,
   worldAlgaePatches,
@@ -287,6 +289,14 @@ import {
   type WaterReadout,
 } from '../../sim/water-quality';
 import { waterLiters, waterProducts } from '../../sim/water';
+import {
+  initialMaintenance,
+  MAINTENANCE_TASKS,
+  maintenanceReadout,
+  sameMaintenanceReadout,
+  type MaintenanceReadout,
+  type MaintenanceTask,
+} from '../../sim/maintenance';
 import { TREATMENTS, type TreatmentKind } from '../../sim/treatment';
 import {
   sameTreatment,
@@ -818,6 +828,8 @@ export class AquariumHost {
    * entre deux rattrapages (`advanceBackgroundTanks`), qui en créent de nouveaux.
    */
   private frozenWorst = new WeakMap<World, AlertSeverity | null>();
+  /** Temps du premier relevé d'entretien de chaque monde sans calendrier (#513). */
+  private maintenanceStart = new WeakMap<World, number>();
   /**
    * Rattrapage des bacs non affichés (#316, ADR 0076) : monde affiché et son `tick` au dernier
    * rattrapage. Un autre monde affiché (changement de bac, import) repart de zéro.
@@ -949,6 +961,10 @@ export class AquariumHost {
   private highlightWorld: World | null = null;
   /** Traitement des points blancs en cours (#361), relevé avec l'eau ; `null` : aucun. */
   readonly treatment = signal<TreatmentReadout | null>(null, { equal: sameTreatment });
+  /** Calendrier d'entretien du bac affiché (#513) ; `null` en capture. */
+  readonly maintenance = signal<MaintenanceReadout | null>(null, {
+    equal: sameMaintenanceReadout,
+  });
   /** Message du dernier geste de soin (#361) ; `null` : aucun depuis le dernier changement de bac. */
   readonly treatmentNotice = signal<TreatmentNotice | null>(null);
   /** Monde du dernier geste de soin : le message s'efface quand le bac affiché change. */
@@ -1388,9 +1404,15 @@ export class AquariumHost {
       return;
     }
     changeWorldWaterInPlace(world);
+    this.recordMaintenance(world, 'waterChange');
     this.exposeWater();
     this.saveNow();
     this.scheduleFrame();
+  }
+
+  /** Marque faite une tâche d'entretien sans geste dans le jeu (filtre, test de l'eau, #513). */
+  markMaintenanceDone(task: MaintenanceTask): void {
+    this.applyWaterSetting((world) => this.recordMaintenance(world, task));
   }
 
   /**
@@ -1476,6 +1498,9 @@ export class AquariumHost {
     let pruned = false;
     this.applyWaterSetting((world) => {
       pruned = pruneWorldPlantInPlace(world, index);
+      if (pruned) {
+        this.recordMaintenance(world, 'prune');
+      }
     });
     return pruned;
   }
@@ -3431,6 +3456,7 @@ export class AquariumHost {
    */
   private startAutosave(win: Window): void {
     const save = () => {
+      this.keepMaintenanceStart();
       this.saveNow();
     };
     const onVisibility = () => {
@@ -3812,6 +3838,53 @@ export class AquariumHost {
    * Relevé de l'eau (#207) : signal `water` et `data-aqfish-water` mis à jour seulement s'il
    * change, trouble de l'eau de la vue suivant le niveau.
    */
+  /** Temps du premier relevé d'un monde sans calendrier : début de son suivi (#513). */
+  private maintenanceStartOf(world: World): number {
+    let start = this.maintenanceStart.get(world);
+    if (start === undefined) {
+      start = world.time;
+      this.maintenanceStart.set(world, start);
+    }
+    return start;
+  }
+
+  /** Enregistre une tâche faite ; le suivi commence au premier relevé du monde. */
+  private recordMaintenance(world: MutableWorld, task: MaintenanceTask): void {
+    world.maintenance ??= initialMaintenance(this.maintenanceStartOf(world));
+    recordWorldMaintenanceInPlace(world, task);
+  }
+
+  /**
+   * Inscrit dans le monde le début du suivi une fois le bac avancé, à la sauvegarde
+   * automatique seulement (#513) : la simulation et un bac relu restent identiques au bit près.
+   */
+  private keepMaintenanceStart(): void {
+    const world = this.currentWorld;
+    if (world && !this.capture && world.maintenance === undefined) {
+      const start = this.maintenanceStartOf(world);
+      if (world.time > start) {
+        world.maintenance = initialMaintenance(start);
+      }
+    }
+  }
+
+  /** Calendrier d'entretien du bac affiché (#513) ; jamais en capture (monde inchangé). */
+  private exposeMaintenance(world: MutableWorld): void {
+    if (this.capture) {
+      return;
+    }
+    const state = world.maintenance ?? initialMaintenance(this.maintenanceStartOf(world));
+    this.maintenance.set(
+      maintenanceReadout(
+        state,
+        world.time,
+        worldHasPrunablePlants(world)
+          ? MAINTENANCE_TASKS
+          : MAINTENANCE_TASKS.filter((task) => task !== 'prune'),
+      ),
+    );
+  }
+
   private exposeWater(): void {
     const world = this.currentWorld;
     if (!world) {
@@ -3822,6 +3895,7 @@ export class AquariumHost {
     this.waterSample.set(waterSample(world.water, world.environment, world.tick));
     this.health.set(healthSummary(world.entities));
     this.exposeAlertAnimals(world);
+    this.exposeMaintenance(world);
     const treatment = treatmentReadout(world.water);
     this.treatment.set(treatment);
     if (this.noticeWorld !== null && this.noticeWorld !== world) {

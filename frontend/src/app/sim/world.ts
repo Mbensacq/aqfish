@@ -112,6 +112,12 @@ import { createFish, stepFish, swimBounds, type Fish, type SwimBounds } from './
 import { clampImmersiveDimensions, clampTankDimensions, type TankDimensions } from './tank';
 import { assertTimeStep } from './time-step';
 import {
+  initialMaintenance,
+  maintenanceDone,
+  type MaintenanceState,
+  type MaintenanceTask,
+} from './maintenance';
+import {
   changeWaterInPlace,
   freshWater,
   setHeaterInPlace,
@@ -228,6 +234,11 @@ export interface World {
    * tant qu'aucune ponte n'a eu lieu, et retirés quand le dernier œuf a éclos ou a été mangé.
    */
   readonly eggs?: readonly Egg[];
+  /**
+   * Calendrier d'entretien (issue #513, `sim/maintenance.ts`, ADR 0116) : absent tant que
+   * l'application n'a pas commencé le suivi de ce bac (monde neuf, ancienne sauvegarde).
+   */
+  readonly maintenance?: MaintenanceState;
 }
 
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
@@ -1483,6 +1494,24 @@ export function pruneWorldPlantInPlace(world: MutableWorld, index: number): bool
     item,
     environmentWater(world).maxY,
   );
+}
+
+/**
+ * Commence le suivi de l'entretien de `world` au temps courant s'il n'a pas encore de
+ * calendrier (#513) : un bac neuf ou une ancienne sauvegarde ne part pas en retard.
+ */
+export function ensureWorldMaintenanceInPlace(world: MutableWorld): MaintenanceState {
+  return (world.maintenance ??= initialMaintenance(world.time));
+}
+
+/** Enregistre la tâche d'entretien `task` faite maintenant, **en modifiant** `world` (#513). */
+export function recordWorldMaintenanceInPlace(world: MutableWorld, task: MaintenanceTask): void {
+  world.maintenance = maintenanceDone(ensureWorldMaintenanceInPlace(world), task, world.time);
+}
+
+/** Vrai si le bac a une plante à tige à tailler (#513). */
+export function worldHasPrunablePlants(world: World): boolean {
+  return hasPlantGrowth(world.environment) && world.decor.some(isGrowingPlant);
 }
 
 /**

@@ -1,4 +1,10 @@
 import { createDayClock } from './daylight';
+import {
+  initialMaintenance,
+  MAINTENANCE_DAY_SECONDS,
+  maintenanceDone,
+  maintenanceReadout,
+} from './maintenance';
 import { DEFAULT_ROOM } from './room';
 import {
   MAX_ROOM_SAVE_LENGTH,
@@ -33,7 +39,15 @@ import {
 } from './save';
 import { MAX_TANK } from './tank';
 import { environmentById } from './environment';
-import { advance, createDefaultWorld, createWorld, feed, type World } from './world';
+import {
+  advance,
+  createDefaultWorld,
+  createWorld,
+  ensureWorldMaintenanceInPlace,
+  feed,
+  type MutableWorld,
+  type World,
+} from './world';
 
 type Loaded = Extract<ParseSaveResult, { ok: true }>;
 
@@ -458,5 +472,44 @@ describe('schéma 2, lot 2 : meubles et position des bacs (ADR 0073)', () => {
     const room = furnished();
     const bad: RoomState = { ...room, nextFurnitureId: 1 };
     expect(() => serializeRoom(bad, 0)).toThrow(/nextFurnitureId/);
+  });
+});
+
+describe('calendrier d’entretien dans la sauvegarde (#513)', () => {
+  const time = 9 * MAINTENANCE_DAY_SECONDS;
+  const roomOf = (world: World): RoomState => {
+    const room = createRoom(42, ['tropical']);
+    return { ...room, tick: world.tick, tanks: [{ ...room.tanks[0]!, world }] };
+  };
+
+  it('est relu à l’identique au schéma 2', () => {
+    const world: MutableWorld = createWorld(42);
+    world.maintenance = maintenanceDone(initialMaintenance(0), 'filter', 12);
+    const room = roomOf(world);
+    const read = parseSave(serializeRoom(room, 0));
+    expect(read.ok && read.room.tanks[0]!.world.maintenance).toEqual(world.maintenance);
+  });
+
+  it('une sauvegarde sans calendrier (schéma 1 ou 2) reste valide et ne part pas en retard', () => {
+    const world = { ...createWorld(42), tick: Math.round(time * 60), time } as MutableWorld;
+    for (const text of [serializeWorld(world), serializeRoom(roomOf(world), 0)]) {
+      expect(JSON.parse(text)).not.toHaveProperty('maintenance');
+      const read = parseSave(text);
+      expect(read.ok).toBe(true);
+      if (read.ok) {
+        const loaded = read.room.tanks[0]!.world as MutableWorld;
+        expect(loaded.maintenance).toBeUndefined();
+        const state = ensureWorldMaintenanceInPlace(loaded);
+        expect(maintenanceReadout(state, loaded.time).due).toEqual([]);
+      }
+    }
+  });
+
+  it('refuse un calendrier invalide en nommant le bac', () => {
+    const data = JSON.parse(serializeRoom(roomOf(createWorld(42)), 0));
+    data.tanks[0].world.maintenance = { lastDone: {}, log: [] };
+    const read = parseSave(JSON.stringify(data));
+    expect(read.ok).toBe(false);
+    expect(!read.ok && read.error).toContain('maintenance');
   });
 });

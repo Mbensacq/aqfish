@@ -41,7 +41,12 @@ import {
   DASHBOARD_REST_OPACITY,
 } from './dashboard-frame';
 import { BeginnerGuideState } from '../beginner-guide/beginner-guide-state';
-import { levelIconPixels, LEVEL_ICON_GRID } from './level-icons';
+import { levelIconPixels, LEVEL_ICON_GRID, MAINTENANCE_ICON_PIXELS } from './level-icons';
+import {
+  maintenanceSummary,
+  type MaintenanceReadout,
+  type MaintenanceTask,
+} from '../../sim/maintenance';
 
 /** Identifiant du détail d'une alerte (cible de `aria-controls`). */
 export function alertDetailId(id: AlertId): string {
@@ -115,6 +120,32 @@ const ICONS: Readonly<Record<GaugeLevel, readonly (readonly [number, number])[]>
           <span class="visually-hidden">{{ item.spoken }}</span>
         </li>
       }
+      @if (maintenance(); as calendar) {
+        <li class="status__item">
+          <button
+            type="button"
+            class="status__chip status__maintenance"
+            data-maintenance
+            [attr.data-maintenance-due]="calendar.due.length"
+            [attr.aria-controls]="maintenanceOpen() ? 'entretien-detail' : null"
+            [attr.aria-expanded]="maintenanceOpen()"
+            (click)="toggleMaintenance()"
+          >
+            <svg
+              class="status__icon"
+              aria-hidden="true"
+              [attr.viewBox]="'0 0 ' + iconGrid + ' ' + iconGrid"
+              shape-rendering="crispEdges"
+            >
+              @for (pixel of maintenanceIcon; track $index) {
+                <rect [attr.x]="pixel[0]" [attr.y]="pixel[1]" width="1" height="1" />
+              }
+            </svg>
+            <span class="status__maintenance-name">Entretien :</span>
+            <span class="status__message" data-maintenance-summary>{{ summary(calendar) }}</span>
+          </button>
+        </li>
+      }
     </ul>
     <p class="visually-hidden" role="status" data-alerts-announcement>{{ announcement() }}</p>
     <p class="visually-hidden" aria-live="polite" data-alert-highlight-announcement>
@@ -171,6 +202,42 @@ const ICONS: Readonly<Record<GaugeLevel, readonly (readonly [number, number])[]>
         </li>
       }
     </ul>
+    @if (maintenanceDetail(); as calendar) {
+      <div class="status__calendar" id="entretien-detail" data-maintenance-detail>
+        <ul class="status__tasks" aria-label="Tâches d’entretien">
+          @for (item of calendar.items; track item.task) {
+            <li [attr.data-maintenance-task]="item.task" [attr.data-overdue]="item.overdue">
+              <span
+                >{{ item.label }} : <b>{{ item.text }}</b></span
+              >
+              @if (manual(item.task)) {
+                <button
+                  type="button"
+                  class="status__why"
+                  [attr.aria-label]="item.label + ' : marquer comme fait'"
+                  [attr.data-maintenance-done]="item.task"
+                  (click)="maintenanceDone.emit(item.task)"
+                >
+                  Fait
+                </button>
+              }
+            </li>
+          }
+        </ul>
+        <div>
+          <b>Dernières actions</b>
+          @if (calendar.log.length > 0) {
+            <ol class="status__log" data-maintenance-log>
+              @for (line of calendar.log; track $index) {
+                <li>Jour {{ line.day }} : {{ line.label }}</li>
+              }
+            </ol>
+          } @else {
+            <p class="status__log" data-maintenance-log>Aucune action pour l’instant</p>
+          }
+        </div>
+      </div>
+    }
     @if (detail(); as open) {
       <p class="status__detail" [id]="detailId(open.id)" [attr.data-alert-detail]="open.id">
         <span><b>Cause probable :</b> {{ open.cause }}.</span>
@@ -252,10 +319,25 @@ export class DashboardStatus {
   /** Bouton « Wiki » d'une alerte (#366) : l'application ouvre le wiki sur cette page. */
   readonly wikiPageRequested = output<GuidePage>();
 
+  /** Calendrier d'entretien du bac (fourni par l'hôte, #513) ; `null` : pas de rappel. */
+  readonly maintenance = input<MaintenanceReadout | null>(null);
+
+  /** Bouton « Fait » d'une tâche sans geste dans le jeu (filtre, test de l'eau, #513). */
+  readonly maintenanceDone = output<MaintenanceTask>();
+
+  /** Calendrier d'entretien déplié (#513) ; une alerte dépliée le replie, et inversement. */
+  readonly maintenanceOpen = signal(false);
+
   /** Alerte dépliée (une à la fois), `null` : aucune. */
   readonly expanded = signal<AlertId | null>(null);
 
   protected readonly iconGrid = LEVEL_ICON_GRID;
+  protected readonly maintenanceIcon = MAINTENANCE_ICON_PIXELS;
+  protected readonly summary = maintenanceSummary;
+  /** Calendrier affiché s'il est déplié et disponible. */
+  protected readonly maintenanceDetail = computed(() =>
+    this.maintenanceOpen() ? this.maintenance() : null,
+  );
   protected readonly icons = ICONS;
   protected readonly levels = SEVERITY_LEVELS;
   protected readonly severityLabels = ALERT_SEVERITY_LABELS;
@@ -308,5 +390,17 @@ export class DashboardStatus {
   /** Déplie l'alerte `id` (repliant l'autre), ou la replie si elle l'était. */
   toggle(id: AlertId): void {
     this.expanded.update((open) => (open === id ? null : id));
+    this.maintenanceOpen.set(false);
+  }
+
+  /** Déplie ou replie le calendrier d'entretien. */
+  toggleMaintenance(): void {
+    this.maintenanceOpen.update((open) => !open);
+    this.expanded.set(null);
+  }
+
+  /** Vrai pour une tâche sans geste dans le jeu, marquée à la main (#513). */
+  protected manual(task: MaintenanceTask): boolean {
+    return task === 'filter' || task === 'waterTest';
   }
 }
