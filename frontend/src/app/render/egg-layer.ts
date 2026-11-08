@@ -136,15 +136,21 @@ export class EggLayer implements SceneLayer {
     this.layout();
   }
 
-  /** Côté du cœur et du liseré d'un œuf à cette distance de la caméra, en mètres. */
-  private sides(distance: number): readonly [number, number] {
+  /**
+   * Côtés du cœur et du liseré d'un œuf à cette distance de la caméra, en mètres, écrits dans
+   * `scale` et `outlineScale` (réutilisés : aucune allocation par œuf ni par image, #507).
+   */
+  private applySides(distance: number): void {
     const ppm =
       this.pixelsPerMeterAtUnit > 0 && distance > 0 ? this.pixelsPerMeterAtUnit / distance : 0;
     if (ppm === 0) {
-      return [EGG_VOXEL, EGG_VOXEL + EGG_OUTLINE];
+      this.scale.setScalar(EGG_VOXEL);
+      this.outlineScale.setScalar(EGG_VOXEL + EGG_OUTLINE);
+      return;
     }
     const core = Math.max(EGG_VOXEL, EGG_MIN_PIXELS / ppm);
-    return [core, core + Math.max(EGG_OUTLINE, EGG_MIN_OUTLINE_PIXELS / ppm)];
+    this.scale.setScalar(core);
+    this.outlineScale.setScalar(core + Math.max(EGG_OUTLINE, EGG_MIN_OUTLINE_PIXELS / ppm));
   }
 
   private layout(): void {
@@ -157,9 +163,7 @@ export class EggLayer implements SceneLayer {
     for (let i = 0; i < count; i++) {
       const egg = eggs![i];
       this.position.set(egg.x, egg.y, egg.z);
-      const [core, outline] = this.sides(this.position.distanceTo(this.viewpoint));
-      this.scale.setScalar(core);
-      this.outlineScale.setScalar(outline);
+      this.applySides(this.position.distanceTo(this.viewpoint));
       this.matrix.compose(this.position, this.rotation, this.scale);
       this.mesh.setMatrixAt(i, this.matrix);
       this.matrix.compose(this.position, this.rotation, this.outlineScale);
