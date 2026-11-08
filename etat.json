@@ -6543,6 +6543,12 @@
           "debut": "2026-11-08T22:02:57.341Z",
           "fin": "2026-11-08T22:25:47.768Z",
           "note": "Verdict OK, 0 bug, 1 remarque mineure, captures c179 publiées (5 angles identiques + parcours-premier-bac), CI verte, e2e parcours 3/3"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-08T22:26:16.396Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
