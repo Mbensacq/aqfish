@@ -60,3 +60,21 @@ test('changement d’eau : rappel remis à zéro, journal rempli, aucune erreur'
   await expect(page.locator('[data-maintenance-log]')).toContainText('Jour 9 : Changement d’eau');
   expect(errors).toEqual([]);
 });
+
+test('390 × 844 : le rappel reste dans l’écran et se déplie', async ({ page }, testInfo) => {
+  testInfo.setTimeout(120_000);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/?seed=42&vitesse=0');
+  await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+  const chip = page.locator('[data-maintenance]');
+  await expect(chip).toBeVisible();
+  const box = await chip.boundingBox();
+  expect(box!.x).toBeGreaterThanOrEqual(0);
+  expect(box!.x + box!.width).toBeLessThanOrEqual(390 * 0.2);
+  await chip.click();
+  await expect(page.locator('[data-maintenance-detail]')).toBeVisible();
+  const captureDir = process.env['CAPTURE_DIR'];
+  if (captureDir) {
+    await page.screenshot({ path: `${captureDir}/entretien-390.png` });
+  }
+});

@@ -121,7 +121,7 @@ const ICONS: Readonly<Record<GaugeLevel, readonly (readonly [number, number])[]>
         </li>
       }
       @if (maintenance(); as calendar) {
-        <li class="status__item">
+        <li class="status__item status__maintenance-item">
           <button
             type="button"
             class="status__chip status__maintenance"
@@ -143,6 +143,11 @@ const ICONS: Readonly<Record<GaugeLevel, readonly (readonly [number, number])[]>
             </svg>
             <span class="status__maintenance-name">Entretien :</span>
             <span class="status__message" data-maintenance-summary>{{ summary(calendar) }}</span>
+            @if (calendar.due.length > 0) {
+              <span class="status__maintenance-count" aria-hidden="true">{{
+                calendar.due.length
+              }}</span>
+            }
           </button>
         </li>
       }

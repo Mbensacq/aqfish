@@ -81,6 +81,12 @@
   color: var(--dashboard-ink);
 }
 
+// Nombre de tâches échues : affiché sur téléphone seulement, à la place du résumé.
+.status__maintenance-count {
+  display: none;
+  font-weight: 600;
+}
+
 // Rappel d'entretien (#513) : encre neutre, jamais la couleur d'une alerte.
 .status__maintenance {
   color: var(--dashboard-ink);
@@ -248,13 +254,29 @@
     clip-path: inset(50%);
   }
 
-  // Le mot « Entretien » reste lu : l'icône et le résumé tiennent sur la ligne de la santé.
-  .status__maintenance-name {
+  // Icône et nombre de tâches échues seulement : le bandeau garde sa hauteur (centre du bac
+  // dégagé, #265). Le mot et le résumé restent lus.
+  .status__maintenance-name,
+  .status__maintenance .status__message {
     position: absolute;
     width: 1px;
     height: 1px;
     overflow: hidden;
     clip-path: inset(50%);
+  }
+
+  .status__maintenance-count {
+    display: inline;
+  }
+
+  // Hors du bandeau, dont la hauteur est comptée : dans la marge gauche, juste au-dessus,
+  // à côté du centre du bac (60 % de la largeur) qui reste dégagé.
+  .status__maintenance-item {
+    position: absolute;
+    bottom: calc(100% + 4px);
+    left: 0;
+
+    @include dashboard.surface;
   }
 
   // Cible tactile de 24 px (#265), comme sur bureau.
