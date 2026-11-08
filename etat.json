@@ -6777,6 +6777,10 @@
         "bugsOuverts": 0,
         "ciMain": "success",
         "mutation": null
+      },
+      "rapport": {
+        "statut": "termine",
+        "note": "9 cycles, 0 alerte bloquante"
       }
     }
   }
