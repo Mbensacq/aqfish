@@ -6552,6 +6552,24 @@
         }
       },
       "metriques": {}
+    },
+    "180": {
+      "numero": 180,
+      "date": "2026-11-09",
+      "debut": "2026-11-08T23:32:54.108Z",
+      "type": "dette",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-08T23:32:54.108Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
