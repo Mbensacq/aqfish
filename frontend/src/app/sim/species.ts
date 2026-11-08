@@ -736,10 +736,12 @@ export const AXOLOTL: SpeciesDefinition = {
  *
  * - Couleurs : dos vert grenouille `#7bc950` de la palette « Amphibiens » de docs/DA.md,
  *   taches noires `#1c1c22`, ventre rouge `#d94a3a` (le « ventre de feu », rangée basse
- *   du gabarit), pattes vert sombre `#4e9a4a`, œil `#1c1c22` : couleurs existantes de la
- *   palette. Teintes : approximation de jeu d'après la description courante de l'espèce.
- * - `bodyLength` (5 cm) : proche de la taille adulte réelle, environ 6 cm (anapsid.org,
- *   Bombina orientalis, source secondaire, consultée le 2026-10-27).
+ *   du gabarit, qui remonte sur le bas des flancs depuis #468), pattes du vert du dos
+ *   (#456), œil `#1c1c22` : couleurs existantes de la palette. Teintes : approximation de
+ *   jeu d'après la description courante de l'espèce.
+ * - `bodyLength` (6 cm depuis #468, 5 cm avant) : la taille adulte réelle, environ 6 cm
+ *   (anapsid.org, Bombina orientalis, source secondaire, consultée le 2026-10-27) ; à 5 cm,
+ *   le sonneur se lisait à peine en vue de face du paludarium.
  * - Durées, portées et hauteur des sauts, vitesse de nage, part du temps dans l'eau :
  *   **approximations de jeu**, pour des sauts lisibles à l'échelle du bac.
  * - Solitaire (pas de banc). Ne cherche pas la nourriture (nourrissage hors périmètre de #131).
@@ -749,7 +751,7 @@ export const GRENOUILLE: SpeciesDefinition = {
   id: 'grenouille',
   name: 'Sonneur oriental',
   scientificName: 'Bombina orientalis',
-  bodyLength: 0.05,
+  bodyLength: 0.06,
   cruiseSpeed: 0.05,
   minSpeed: 0.01,
   maxSpeed: 0.2,

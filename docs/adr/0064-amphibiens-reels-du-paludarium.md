@@ -63,6 +63,19 @@ Anoures ».
      Les comportements (sauts, nage, part du temps dans l'eau) ne changent pas : les tests de
      déplacement terre/eau (`frog.spec.ts`, `triton.spec.ts`) sont inchangés.
 
+## Complément : sonneur lisible en vue de face (cycle 174, issue #468)
+
+Sur `paludarium-front`, le sonneur flotte à fleur d'eau : seul le dos vert dépassait, le
+ventre rouge et les taches noires restaient sous la surface. Deux changements, sans sortir
+de la palette « Amphibiens » :
+
+- `bodyLength` passe de 5 à 6 cm, la taille adulte réelle déjà citée (anapsid.org) ;
+- la rangée du gabarit juste au-dessus du ventre (`ssassssss` → `sbabbabbs`) montre le rouge
+  du ventre, taché de noir, sur le bas des flancs : c'est la rangée à fleur d'eau.
+
+Captures regardées avant et après (`paludarium-front`, `paludarium-three-quarter`) ; hors
+paludarium, captures identiques à l'octet.
+
 ## Conséquences
 
 - Les autres environnements ne changent pas (captures identiques à l'octet).

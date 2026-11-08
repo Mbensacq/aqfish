@@ -119,21 +119,24 @@ ${vertexShader.replace(
  * Pourriture des nageoires (issue #485, ADR 0114) : à l'intensité maximale, part du rang
  * d'effilochage (`voxelFrayRank`, `render/fish-model.ts`) dont les voxels disparaissent :
  * le bout de la caudale et quelques voxels du bord des nageoires, en dents irrégulières.
- * Choisie sur capture (`cote-pourriture`).
+ * Choisie sur capture (`side-pourriture`) : 0,3 au cycle 172 ; 0,35 depuis #509, assez pour
+ * que la caudale se lise rongée en vue de côté sans disparaître sous le liseré.
  */
-export const FIN_ROT_LOSS_SHARE = 0.3;
+export const FIN_ROT_LOSS_SHARE = 0.35;
 /**
  * Largeur, en rang d'effilochage, du liseré de tissu abîmé gardé juste au-delà des voxels
- * perdus : il prend `FIN_ROT_EDGE_COLOR`.
+ * perdus : il prend `FIN_ROT_EDGE_COLOR`. 0,15 au cycle 172 ; 0,3 depuis #509 : le reste de
+ * la caudale et le bord des nageoires du corps (rang ≥ 0,3, `voxelFrayRank`) sont touchés.
  */
-export const FIN_ROT_EDGE = 0.15;
+export const FIN_ROT_EDGE = 0.3;
 /** Intensité dès les premiers signes (début du stade effiloché), dans [0, 1]. */
 export const FIN_ROT_MIN = 0.35;
 /**
- * Couleur du liseré abîmé : gris de roche de la palette (`docs/DA.md`), distinct du blanc des
- * points blancs pour ne pas confondre les deux maladies.
+ * Couleur du liseré abîmé : sable clair de la palette (`docs/DA.md`), tissu pâli et effiloché,
+ * distinct du blanc des points blancs pour ne pas confondre les deux maladies. Gris de roche au
+ * cycle 172 : trop proche de l'eau sombre, il ne se lisait pas en vue de côté (#509).
  */
-export const FIN_ROT_EDGE_COLOR = PALETTE.roche;
+export const FIN_ROT_EDGE_COLOR = PALETTE.sableClair;
 /** Attribut d'instance de l'intensité de la pourriture des nageoires, dans [0, 1]. */
 export const FIN_ROT_ATTRIBUTE = 'aqfishFinRot';
 

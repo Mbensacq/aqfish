@@ -186,7 +186,8 @@ export const AXOLOTL_FISH: FishTemplate = {
 
 /**
  * Grenouille (issue #131 ; sonneur oriental depuis #270, ADR 0064) : corps court et trapu,
- * dos vert `#7bc950` taché de noir (`a`), ventre rouge (`b`), tête bombée. Parties paires : yeux noirs de chaque côté du haut de la tête, cuisses repliées le long de l'arrière du corps et pieds écartés (`f`), pattes avant sous la
+ * dos vert `#7bc950` taché de noir (`a`), ventre rouge (`b`) qui remonte sur le bas des flancs,
+ * taché de noir (rangée `s`/`b`/`a`, #468 : lisible à fleur d'eau en vue de face), tête bombée. Parties paires : yeux noirs de chaque côté du haut de la tête, cuisses repliées le long de l'arrière du corps et pieds écartés (`f`), pattes avant sous la
  * tête. La « queue » est la paire de pieds arrière, qui bat à la nage et pendant le saut.
  */
 export const FROG_FISH: FishTemplate = {
@@ -195,7 +196,7 @@ export const FROG_FISH: FishTemplate = {
     '......kk.',
     '.kkakkkkk',
     'kkkkkakkk',
-    'ssassssss',
+    'sbabbabbs',
     '.bbbbbbb.',
   ],
   tail: ['.f', 'ff'],

@@ -10,7 +10,7 @@ import {
   type WebGLRenderer,
 } from 'three';
 
-import { GUPPY, KOI, NEON, speciesVariantIndex } from '../sim/species';
+import { CORYDORA, GUPPY, KOI, NEON, speciesVariantIndex } from '../sim/species';
 import { createFish, stepFish, swimBounds, type Fish } from '../sim/swimmer';
 import { DEFAULT_TANK, waterVolume } from '../sim/tank';
 import { TAIL_LAG } from '../sim/undulation';
@@ -508,6 +508,16 @@ describe('FishLayer : pourriture des nageoires (#485)', () => {
     expect(FIN_ROT_LOSS_SHARE + FIN_ROT_EDGE).toBeLessThan(UNFRAYED_RANK);
   });
 
+  it('au maximum, le liseré touche aussi le bord des nageoires du corps (#509)', () => {
+    // Corydora : voxels de nageoire (`f`) au bord du profil du corps.
+    const body = createFishGeometry(CORYDORA, 'body').getAttribute(FRAY_ATTRIBUTE);
+    const ranks = Array.from({ length: body.count }, (_, i) => body.getX(i));
+    const edge = FIN_ROT_LOSS_SHARE + FIN_ROT_EDGE;
+    expect(ranks.some((r) => r < edge)).toBe(true);
+    // Le corps n'est jamais troué : la plupart des voxels du corps restent hors du seuil.
+    expect(ranks.filter((r) => r < FIN_ROT_LOSS_SHARE).length).toBeLessThan(ranks.length / 10);
+  });
+
   it('shader : voxels perdus et liseré gardés par une intensité non nulle, couleur de la palette', () => {
     const shader = withFinRot(ShaderLib.basic.vertexShader);
     expect(shader).toContain(`attribute float ${FIN_ROT_ATTRIBUTE};`);
@@ -516,7 +526,7 @@ describe('FishLayer : pourriture des nageoires (#485)', () => {
     expect(shader.indexOf('transformed = vec3( 0.0 )', begin)).toBeGreaterThan(begin);
     expect(shader.match(new RegExp(`${FIN_ROT_ATTRIBUTE} > 0\\.0`, 'g'))?.length).toBe(2);
     expect(shader).toContain(FIN_ROT_LOSS_SHARE.toFixed(4));
-    expect(FIN_ROT_EDGE_COLOR).toBe(PALETTE.roche);
+    expect(FIN_ROT_EDGE_COLOR).toBe(PALETTE.sableClair);
     expect(() => withFinRot('#include <color_vertex>')).toThrow(/begin_vertex/);
     expect(() => withFinRot('#include <begin_vertex>')).toThrow(/color_vertex/);
   });

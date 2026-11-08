@@ -213,7 +213,7 @@ describe('forme de collision du bois (sphères fines le long des branches)', () 
   }, 30_000);
 
   it('entre deux branches écartées, un passage libre d’au moins la largeur du plus petit poisson', () => {
-    expect(SMALLEST_FISH).toBe(0.05); // grenouille (5 cm)
+    expect(SMALLEST_FISH).toBe(0.05); // otocinclus (5 cm ; le sonneur passe à 6 cm, #468)
     for (const seed of SEEDS) {
       const model = woodModel(seed, 1);
       expect(widestPassage(model) * model.voxelSize).toBeGreaterThanOrEqual(SMALLEST_FISH);
