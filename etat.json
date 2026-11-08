@@ -6359,10 +6359,10 @@
           "note": "PR #517 : pourriture des nageoires (#509) et sonneur (#468) lisibles, CI verte ; seules 9 captures pourriture/paludarium changent, 129 identiques à l'octet ; e2e locaux partiels (paludarium/sonneur)"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-08T07:16:26.611Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-08T07:30:28.651Z",
+          "note": "Verdict OK, 0 bug, captures c174 publiées (133/138, angles par défaut complets), CI verte, verify local non rejoué"
         }
       },
       "metriques": {}
