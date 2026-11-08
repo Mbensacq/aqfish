@@ -6363,6 +6363,12 @@
           "debut": "2026-11-08T07:16:26.611Z",
           "fin": "2026-11-08T07:30:28.651Z",
           "note": "Verdict OK, 0 bug, captures c174 publiées (133/138, angles par défaut complets), CI verte, verify local non rejoué"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-08T07:30:54.135Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
