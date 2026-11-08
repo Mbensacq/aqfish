@@ -6509,10 +6509,10 @@
           "note": "Verdict OK, 0 bug, 1 remarque mineure, captures c178 publiées (138 + courbe-eau), CI verte, e2e courbe verts ; Chromium 1243 relié"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-08T19:19:26.062Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-08T20:13:02.492Z",
+          "note": "PR #523 fusionnée → v1.14.3 (release CI OK) ; CI main rouge : timeout test catappa sans lien (arbre identique à la PR verte), pas de revert, voir issue bug ; e2e main encore en cours ; dette #524 ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
