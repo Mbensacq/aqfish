@@ -305,6 +305,13 @@ import {
   sampleAlgae,
 } from '../../sim/algae';
 import {
+  alertTargets,
+  NO_ALERT_TARGETS,
+  sameAlertTargets,
+  type AlertTargets,
+} from '../../sim/alert-animals';
+import { mixWarnings } from '../../sim/compatibility';
+import {
   EMPTY_HEALTH_SUMMARY,
   healthSummary,
   sameHealthSummary,
@@ -360,6 +367,10 @@ export const POPULATION_ATTRIBUTE = 'data-aqfish-population';
  * change.
  */
 export const WATER_ATTRIBUTE = 'data-aqfish-water';
+/** Animaux mis en évidence depuis une alerte (#483) : nombre ; absent : aucun. */
+export const ALERT_HIGHLIGHT_ATTRIBUTE = 'data-aqfish-animaux-signales';
+/** Durée de la mise en évidence depuis une alerte (#483), en millisecondes de temps réel. */
+export const ALERT_HIGHLIGHT_MS = 6000;
 /**
  * Feuilles de catappa du bac et teinte de l'eau (#239) : « nombre;teinte », `3;1` (teinte 1 :
  * eau brun-thé), mis à jour avec le relevé de l'eau.
@@ -928,6 +939,14 @@ export class AquariumHost {
    * (`exposeWater`) et remplacée seulement si ce qu'elle affiche change (`sameHealthSummary`).
    */
   readonly health = signal<HealthSummary>(EMPTY_HEALTH_SUMMARY, { equal: sameHealthSummary });
+  /** Animaux désignés par chaque alerte (#483), relevés avec l'eau, remplacés s'ils changent. */
+  readonly alertAnimals = signal<AlertTargets>(NO_ALERT_TARGETS, { equal: sameAlertTargets });
+  /** Nombre d'animaux mis en évidence depuis une alerte (#483) ; 0 : aucun. */
+  readonly highlightedAnimals = signal(0);
+  /** Fin de la mise en évidence en cours (#483). */
+  private highlightTimer: ReturnType<typeof setTimeout> | null = null;
+  /** Monde de la mise en évidence : elle cesse si le bac affiché change. */
+  private highlightWorld: World | null = null;
   /** Traitement des points blancs en cours (#361), relevé avec l'eau ; `null` : aucun. */
   readonly treatment = signal<TreatmentReadout | null>(null, { equal: sameTreatment });
   /** Message du dernier geste de soin (#361) ; `null` : aucun depuis le dernier changement de bac. */
@@ -2974,7 +2993,10 @@ export class AquariumHost {
 
   constructor() {
     afterNextRender(() => this.start());
-    inject(DestroyRef).onDestroy(() => this.stop());
+    inject(DestroyRef).onDestroy(() => {
+      this.clearAlertHighlight();
+      this.stop();
+    });
     // Option « Réduire les mouvements » (#406) : appliquée à chaud à la vue affichée.
     effect(() => {
       this.motionState.system();
@@ -3733,6 +3755,7 @@ export class AquariumHost {
       room && shownTank ? roomAnimalCapRefusal(room, shownTank.id, 1, world) : null,
     );
     this.health.set(healthSummary(world.entities));
+    this.exposeAlertAnimals(world);
     this.host.nativeElement.setAttribute(
       POPULATION_ATTRIBUTE,
       formatPopulation(counts, speciesShownIn(environmentById(world.environment).species, counts)),
@@ -3741,6 +3764,48 @@ export class AquariumHost {
     this.careMode.set(mode);
     this.host.nativeElement.setAttribute(CARE_MODE_ATTRIBUTE, mode);
     this.exposeCurrent(world);
+  }
+
+  /** Animaux désignés par chaque alerte (#483) ; la mise en évidence cesse au changement de bac. */
+  private exposeAlertAnimals(world: World): void {
+    this.alertAnimals.set(
+      alertTargets(world.entities, {
+        temperature: world.water.temperature,
+        ph: world.water.ph,
+        mixes: mixWarnings(environmentById(world.environment).species, this.population()),
+      }),
+    );
+    if (this.highlightWorld !== null && this.highlightWorld !== world) {
+      this.clearAlertHighlight();
+    }
+  }
+
+  /**
+   * Met en évidence dans la scène les animaux `ids` pendant `ALERT_HIGHLIGHT_MS` (#483). Temps
+   * réel : la mise en évidence vaut aussi simulation en pause. Rien n'est écrit dans le monde.
+   */
+  highlightAlertAnimals(ids: readonly number[]): void {
+    const world = this.currentWorld;
+    if (!world || this.capture || ids.length === 0) {
+      return;
+    }
+    this.clearAlertHighlight();
+    this.highlightWorld = world;
+    this.view?.setAlertHighlight(ids);
+    this.highlightedAnimals.set(ids.length);
+    this.host.nativeElement.setAttribute(ALERT_HIGHLIGHT_ATTRIBUTE, String(ids.length));
+    this.highlightTimer = setTimeout(() => this.clearAlertHighlight(), ALERT_HIGHLIGHT_MS);
+  }
+
+  private clearAlertHighlight(): void {
+    if (this.highlightTimer !== null) {
+      clearTimeout(this.highlightTimer);
+      this.highlightTimer = null;
+    }
+    this.highlightWorld = null;
+    this.view?.setAlertHighlight([]);
+    this.highlightedAnimals.set(0);
+    this.host.nativeElement.removeAttribute(ALERT_HIGHLIGHT_ATTRIBUTE);
   }
 
   /**
@@ -3756,6 +3821,7 @@ export class AquariumHost {
     this.exposeTankList();
     this.waterSample.set(waterSample(world.water, world.environment, world.tick));
     this.health.set(healthSummary(world.entities));
+    this.exposeAlertAnimals(world);
     const treatment = treatmentReadout(world.water);
     this.treatment.set(treatment);
     if (this.noticeWorld !== null && this.noticeWorld !== world) {

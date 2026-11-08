@@ -11,8 +11,15 @@ import {
 import { ALERT_TOPICS, whyTopic } from '../../sim/beginner-help';
 
 import {
+  alertAnimalsText,
+  NO_ALERT_TARGETS,
+  targetOfAlert,
+  type AlertTargets,
+} from '../../sim/alert-animals';
+import {
   ALERT_SEVERITY_LABELS,
   alertsAnnouncement,
+  animalCount,
   dashboardAlerts,
   shownAlerts,
   type AlertId,
@@ -110,6 +117,9 @@ const ICONS: Readonly<Record<GaugeLevel, readonly (readonly [number, number])[]>
       }
     </ul>
     <p class="visually-hidden" role="status" data-alerts-announcement>{{ announcement() }}</p>
+    <p class="visually-hidden" aria-live="polite" data-alert-highlight-announcement>
+      {{ highlightAnnouncement() }}
+    </p>
     <ul class="status__alerts" aria-label="Alertes">
       @for (alert of visible().shown; track alert.id) {
         <li
@@ -165,6 +175,21 @@ const ICONS: Readonly<Record<GaugeLevel, readonly (readonly [number, number])[]>
       <p class="status__detail" [id]="detailId(open.id)" [attr.data-alert-detail]="open.id">
         <span><b>Cause probable :</b> {{ open.cause }}.</span>
         <span><b>À faire :</b> {{ open.action }}.</span>
+        @if (openTarget(); as target) {
+          <span [attr.data-alert-animals]="open.id"
+            ><b>Animaux concernés :</b> {{ animalsText(target.groups) }}.</span
+          >
+          @if (target.ids.length > 0) {
+            <button
+              type="button"
+              class="status__why"
+              [attr.data-alert-show]="open.id"
+              (click)="showAnimalsRequested.emit(target.ids)"
+            >
+              Montrer les animaux
+            </button>
+          }
+        }
         <button
           type="button"
           class="status__why"
@@ -216,6 +241,14 @@ export class DashboardStatus {
   /** Traitement des points blancs en cours (fourni par l'hôte, #361) ; `null` : aucun. */
   readonly treatment = input<TreatmentReadout | null>(null);
 
+  /** Animaux désignés par chaque alerte (fournis par l'hôte, #483). */
+  readonly targets = input<AlertTargets>(NO_ALERT_TARGETS);
+  /** Nombre d'animaux mis en évidence dans la scène (fourni par l'hôte, #483). */
+  readonly highlighted = input(0);
+
+  /** Bouton « Montrer les animaux » (#483) : l'application les met en évidence dans la scène. */
+  readonly showAnimalsRequested = output<readonly number[]>();
+
   /** Bouton « Wiki » d'une alerte (#366) : l'application ouvre le wiki sur cette page. */
   readonly wikiPageRequested = output<GuidePage>();
 
@@ -256,6 +289,17 @@ export class DashboardStatus {
   protected readonly detail = computed(
     () => this.visible().shown.find((alert) => alert.id === this.expanded()) ?? null,
   );
+  protected readonly animalsText = alertAnimalsText;
+  /** Animaux désignés par l'alerte dépliée ; `null` si elle n'en désigne jamais (#483). */
+  protected readonly openTarget = computed(() => {
+    const open = this.detail();
+    return open === null ? null : targetOfAlert(this.targets(), open.id);
+  });
+  /** Annonce de la mise en évidence ; vide une fois terminée (#483). */
+  protected readonly highlightAnnouncement = computed(() => {
+    const count = this.highlighted();
+    return count > 0 ? `${animalCount(count)} mis en évidence dans le bac.` : '';
+  });
   protected readonly hiddenLabel = computed(() => {
     const hidden = this.visible().hidden;
     return `${hidden} ${hidden > 1 ? 'autres alertes' : 'autre alerte'}`;

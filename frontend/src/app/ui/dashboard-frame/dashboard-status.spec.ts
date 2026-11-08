@@ -18,6 +18,7 @@ import {
   DashboardStatus,
   SEVERITY_LEVELS,
 } from './dashboard-status';
+import { NO_ALERT_TARGETS, type AlertTargets } from '../../sim/alert-animals';
 import type { GuidePage } from '../../sim/care-guide';
 import { ICH_AGGRAVATED_AT } from '../../sim/disease';
 
@@ -34,6 +35,9 @@ const STARVED: HealthSummary = healthSummary(
     [health]="health()"
     [environment]="environment()"
     [population]="population()"
+    [targets]="targets()"
+    [highlighted]="highlighted()"
+    (showAnimalsRequested)="shown.push($event)"
     (wikiPageRequested)="wikiPages.push($event)"
   />`,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -41,6 +45,10 @@ const STARVED: HealthSummary = healthSummary(
 class StatusHost {
   /** Pages du wiki demandées par les alertes (#366). */
   readonly wikiPages: GuidePage[] = [];
+  /** Animaux dont la mise en évidence a été demandée (#483). */
+  readonly shown: (readonly number[])[] = [];
+  readonly targets = signal<AlertTargets>(NO_ALERT_TARGETS);
+  readonly highlighted = signal(0);
   readonly sample = signal<WaterSample>(DEFAULT_WATER_SAMPLE);
   readonly readout = DEFAULT_WATER_READOUT;
   readonly health = signal<HealthSummary>(EMPTY_HEALTH_SUMMARY);
@@ -69,6 +77,39 @@ describe('DashboardStatus (#260)', () => {
     TestBed.configureTestingModule({ imports: [StatusHost] });
     fixture = TestBed.createComponent(StatusHost);
     await fixture.whenStable();
+  });
+
+  it('alerte de faim dépliée : espèces nommées, bouton qui demande la mise en évidence (#483)', async () => {
+    const host = fixture.componentInstance;
+    host.alarm();
+    host.targets.set({
+      ...NO_ALERT_TARGETS,
+      hunger: { ids: [1, 2, 7], groups: [{ species: 'neon', count: 3 }] },
+    });
+    await fixture.whenStable();
+    root().querySelector<HTMLButtonElement>('[data-alert="hunger"] .status__chip')!.click();
+    await fixture.whenStable();
+    expect(root().querySelector('[data-alert-animals="hunger"]')!.textContent).toContain('3 néons');
+    root().querySelector<HTMLButtonElement>('[data-alert-show="hunger"]')!.click();
+    expect(host.shown).toEqual([[1, 2, 7]]);
+    host.highlighted.set(3);
+    await fixture.whenStable();
+    expect(root().querySelector('[data-alert-highlight-announcement]')!.textContent).toContain(
+      '3 animaux mis en évidence',
+    );
+  });
+
+  it('alerte sans animal désigné : pas de bouton ; composé de l’eau : pas de ligne (#483)', async () => {
+    const host = fixture.componentInstance;
+    host.alarm();
+    await fixture.whenStable();
+    root().querySelector<HTMLButtonElement>('[data-alert="hunger"] .status__chip')!.click();
+    await fixture.whenStable();
+    expect(root().querySelector('[data-alert-animals="hunger"]')!.textContent).toContain('aucun');
+    expect(root().querySelector('[data-alert-show]')).toBeNull();
+    root().querySelector<HTMLButtonElement>('[data-alert="ammonia"] .status__chip')!.click();
+    await fixture.whenStable();
+    expect(root().querySelector('[data-alert-animals]')).toBeNull();
   });
 
   it('bac sans alerte : « Aucune alerte » avec icône, annoncé sobrement', () => {

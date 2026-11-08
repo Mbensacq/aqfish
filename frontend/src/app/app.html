@@ -50,6 +50,9 @@
         [environment]="aquarium.environment()"
         [population]="aquarium.population()"
         [treatment]="aquarium.treatment()"
+        [targets]="aquarium.alertAnimals()"
+        [highlighted]="aquarium.highlightedAnimals()"
+        (showAnimalsRequested)="aquarium.highlightAlertAnimals($event)"
         (wikiPageRequested)="onWikiPageRequested($event)"
       />
     }

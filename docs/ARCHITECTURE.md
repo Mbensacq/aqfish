@@ -567,6 +567,8 @@ maximal : 60 s par angle), et **aucune mesure de performance** ne doit y être f
   Tout nouveau raccourci y est déclaré avant d'être géré ; l'aide-mémoire (`?`) suit sans
   autre modification, et un test d'exhaustivité échoue si une touche gérée n'est pas
   déclarée.
+  Les animaux concernés par une alerte (`sim/alert-animals.ts`, ADR 0115) se montrent par
+  `render/alert-highlight-layer.ts`, masquée sans désignation.
 
 ## Tests
 

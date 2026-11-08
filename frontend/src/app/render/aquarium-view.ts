@@ -46,6 +46,7 @@ import type { FoodPellet } from '../sim/food';
 import { clampRoom, DEFAULT_ROOM, isRoomAvailable, type Room, type RoomBlock } from '../sim/room';
 import { SAND_THICKNESS } from '../sim/tank';
 import { BubbleLayer } from './bubble-layer';
+import { AlertHighlightLayer } from './alert-highlight-layer';
 import { AlgaeLayer } from './algae-layer';
 import { CatappaLayer } from './catappa-layer';
 import { DecorLayer } from './decor-layer';
@@ -261,6 +262,8 @@ export class AquariumView {
   private readonly catappaLayer: CatappaLayer;
   /** Plaques d'algues sur les vitres (issue #476). */
   private readonly algaeLayer = new AlgaeLayer();
+  /** Repères des animaux désignés par une alerte (#483), masqués par défaut. */
+  private readonly alertHighlightLayer = new AlertHighlightLayer();
   /**
    * Effets animés au contrat commun `EffectLayer` (issue #125) : bulles, pluie, puis feuilles
    * mortes. Parcourus
@@ -514,6 +517,7 @@ export class AquariumView {
       this.currentLayer,
       this.catappaLayer,
       this.algaeLayer,
+      this.alertHighlightLayer,
       this.roomLayer,
     ];
     for (const layer of this.sceneLayers) {
@@ -720,6 +724,14 @@ export class AquariumView {
     }
     for (const layer of this.fishLayers) {
       layer.update(entities, alpha, seed, frame);
+    }
+    this.alertHighlightLayer.update(entities, alpha);
+  }
+
+  /** Met en évidence les animaux `ids` (#483) ; vide : aucun. */
+  setAlertHighlight(ids: readonly number[]): void {
+    if (!this.disposed) {
+      this.alertHighlightLayer.setAnimals(ids);
     }
   }
 
