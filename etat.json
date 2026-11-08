@@ -6357,6 +6357,12 @@
           "debut": "2026-11-08T05:55:42.835Z",
           "fin": "2026-11-08T07:15:58.662Z",
           "note": "PR #517 : pourriture des nageoires (#509) et sonneur (#468) lisibles, CI verte ; seules 9 captures pourriture/paludarium changent, 129 identiques à l'octet ; e2e locaux partiels (paludarium/sonneur)"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-08T07:16:26.611Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
