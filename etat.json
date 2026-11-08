@@ -6507,6 +6507,12 @@
           "debut": "2026-11-08T18:45:36.228Z",
           "fin": "2026-11-08T19:18:56.058Z",
           "note": "Verdict OK, 0 bug, 1 remarque mineure, captures c178 publiées (138 + courbe-eau), CI verte, e2e courbe verts ; Chromium 1243 relié"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-08T19:19:26.062Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
