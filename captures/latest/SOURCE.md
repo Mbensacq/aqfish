@@ -1,5 +1,2 @@
-# Captures c178
-- Branche : cycle/c178-courbes-eau (PR #523), commit a3c620111d20f1db0f867f79c3ade41790abb20c
-- Graine : 42 (défaut des captures), vitesse 0
-- Généré le 2026-11-08T19:18:42Z ; 138 captures + courbe-eau.png
-- 17 captures d'interface diffèrent de la série précédente (tableau de bord / courbe) ; les captures sans interface sont identiques à l'octet.
+Cycle 179 — branche cycle/c179-parcours-premier-bac, PR #526, commit 7e5323c61be8aa16aa21e16703836019d32939a1, graine 42 (défaut), 2026-11-08T22:25:35Z.
+5 angles standard identiques à l'octet à la série précédente ; parcours-premier-bac.png = panneau d'étape (étape 2, temps accéléré).
