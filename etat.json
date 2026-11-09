@@ -6789,6 +6789,12 @@
           "debut": "2026-11-09T22:39:19.501Z",
           "fin": "2026-11-09T23:36:26.707Z",
           "note": "PR #545 : e2e clavier du panneau découpé par section (#544), CI verte ; e2e local partiel (panneau seul)"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-09T23:37:04.263Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
