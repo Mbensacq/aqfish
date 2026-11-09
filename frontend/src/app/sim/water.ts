@@ -10,6 +10,12 @@ import type { EnvironmentId } from './environment';
 import { SPECIES, type SpeciesId } from './species';
 import type { Box3 } from './tank';
 import { assertTimeStep } from './time-step';
+import {
+  AMMONIA_BINDER_SECONDS,
+  chlorineAfterWaterChangeInPlace,
+  MAX_CHLORINE,
+  stepAmmoniaBinderInPlace,
+} from './water-conditioner';
 import { freshPh, MAX_PH, MIN_PH, phAfterWaterChange, stepPh } from './water-ph';
 import {
   HARDNESS_TRACE,
@@ -117,6 +123,15 @@ export interface WaterState {
    * (issue #529, `sim/bacteria-starter.ts`). Absente : aucune amorce, le filtre ne bouge pas.
    */
   readonly bacteriaStarter?: number;
+  /**
+   * Chlore, en mg/L, dans ]0, `MAX_CHLORINE`] (issue #530, `sim/water-conditioner.ts`).
+   * Absent : aucun chlore.
+   */
+  readonly chlorine?: number;
+  /** Changements d'eau à l'eau du robinet non traitée (issue #530) ; absent : eau traitée. */
+  readonly untreatedTap?: true;
+  /** Secondes restantes de protection de l'ammoniaque liée (issue #530) ; absent : aucune. */
+  readonly ammoniaBinder?: number;
 }
 
 /** État de l'eau modifiable en place (propriétaire unique : le monde). */
@@ -308,6 +323,7 @@ export function stepWaterInPlace(
   );
   water.filter = filter;
   stepBacteriaStarterInPlace(water, dt);
+  stepAmmoniaBinderInPlace(water, dt);
   water.ph = stepPh(water.ph, dt, load, liters);
   const leaves = water.catappa as number[] | undefined;
   if (leaves !== undefined && leaves.length > 0) {
@@ -380,6 +396,8 @@ export function changeWaterInPlace(
       delete water.bacteriaStarter;
     }
   }
+  // Chlore (issue #530) : dilué, et apporté par l'eau du robinet si elle n'est pas traitée.
+  chlorineAfterWaterChangeInPlace(water, WATER_CHANGE_SHARE);
   return water;
 }
 
@@ -436,6 +454,9 @@ export function readWater(value: unknown, environment: EnvironmentId): ReadWater
       | 'salt'
       | 'medication'
       | 'bacteriaStarter'
+      | 'chlorine'
+      | 'untreatedTap'
+      | 'ammoniaBinder'
       | 'ichCure'
       | 'lighting'
       | 'algae'
@@ -507,17 +528,25 @@ export function readWater(value: unknown, environment: EnvironmentId): ReadWater
     }
     hardness[key] = v;
   }
-  const optional: ['salt' | 'medication' | 'ichCure' | 'bacteriaStarter', number, number][] = [
+  const optional: [
+    'salt' | 'medication' | 'ichCure' | 'bacteriaStarter' | 'chlorine' | 'ammoniaBinder',
+    number,
+    number,
+  ][] = [
     ['salt', 0, MAX_SALT],
     ['medication', 0, MAX_MEDICATION],
     ['ichCure', 0, 1],
     ['bacteriaStarter', 0, MAX_BACTERIA_STARTER],
+    ['chlorine', 0, MAX_CHLORINE],
+    ['ammoniaBinder', 0, AMMONIA_BINDER_SECONDS],
   ];
   const extra: {
     salt?: number;
     medication?: number;
     ichCure?: number;
     bacteriaStarter?: number;
+    chlorine?: number;
+    ammoniaBinder?: number;
   } = {};
   for (const [key, min, max] of optional) {
     const v = read(key);
@@ -532,6 +561,10 @@ export function readWater(value: unknown, environment: EnvironmentId): ReadWater
     }
     extra[key] = v;
   }
+  const untreatedTap = read('untreatedTap');
+  if (untreatedTap !== undefined && untreatedTap !== true) {
+    return { ok: false, error: 'eau : untreatedTap doit valoir true ou être absent' };
+  }
   return {
     ok: true,
     water: {
@@ -544,6 +577,7 @@ export function readWater(value: unknown, environment: EnvironmentId): ReadWater
       ...(heater === undefined ? {} : { heater }),
       ...(catappa === null || catappa.leaves.length === 0 ? {} : { catappa: catappa.leaves }),
       ...extra,
+      ...(untreatedTap === true ? { untreatedTap } : {}),
       ...(lighting === undefined ? {} : { lighting }),
       ...(algae === null || algae.algae.every((c) => c === 0) ? {} : { algae: algae.algae }),
       ...(plantGrowth === null || Object.keys(plantGrowth.growth).length === 0

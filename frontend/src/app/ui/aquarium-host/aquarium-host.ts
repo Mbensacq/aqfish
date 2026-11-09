@@ -262,6 +262,8 @@ import {
   starveWorldInPlace,
   treatWorldInPlace,
   doseWorldBacteriaStarterInPlace,
+  doseWorldConditionerInPlace,
+  setWorldUntreatedTapInPlace,
   type Entity,
   type MutableWorld,
   type World,
@@ -290,6 +292,7 @@ import {
   type WaterReadout,
 } from '../../sim/water-quality';
 import { waterLiters, waterProducts } from '../../sim/water';
+import type { ConditionerKind } from '../../sim/water-conditioner';
 import {
   advanceFirstTankPath,
   createFirstTankPath,
@@ -974,6 +977,8 @@ export class AquariumHost {
    * (`exposeWater`), donc au plus 4 fois par seconde dans la boucle (`refreshDue`).
    */
   readonly waterSample = signal<WaterSample>(DEFAULT_WATER_SAMPLE);
+  /** Vrai si les changements d'eau du bac affiché versent de l'eau non traitée (#530). */
+  readonly untreatedTap = signal(false);
   /** Durée d'éclairage du bac affiché, en heures par jour (#476). */
   readonly lighting = signal(DEFAULT_LIGHTING_HOURS);
   /** Vrai tant que la raclette est en main (#476) : un clic sur le bac racle. */
@@ -1483,6 +1488,32 @@ export class AquariumHost {
    * (`treatmentNotice`) ; acceptée, relevé et enregistrement. Sans effet en mode capture, en
    * mode décor ou avant le démarrage.
    */
+  doseConditioner(kind: ConditionerKind): void {
+    const world = this.currentWorld;
+    if (!world || this.capture || isDecorMode(world)) {
+      return;
+    }
+    const outcome = doseWorldConditionerInPlace(world, kind);
+    this.noticeWorld = world;
+    this.treatmentNotice.set({ ok: outcome.ok, text: outcome.message, warning: null });
+    if (outcome.ok) {
+      this.exposeWater();
+      this.saveNow();
+      this.scheduleFrame();
+    }
+  }
+
+  /** Bascule l'eau du robinet entre traitée et non traitée (#530), enregistrée avec le bac. */
+  toggleUntreatedTap(): void {
+    const world = this.currentWorld;
+    if (!world || this.capture || isDecorMode(world)) {
+      return;
+    }
+    setWorldUntreatedTapInPlace(world, world.water.untreatedTap !== true);
+    this.exposeWater();
+    this.saveNow();
+  }
+
   doseBacteriaStarter(): void {
     const world = this.currentWorld;
     if (!world || this.capture || isDecorMode(world)) {
@@ -4049,6 +4080,7 @@ export class AquariumHost {
     this.waterReadTick = world.tick;
     this.exposeTankList();
     this.waterSample.set(waterSample(world.water, world.environment, world.tick));
+    this.untreatedTap.set(world.water.untreatedTap === true);
     this.health.set(healthSummary(world.entities));
     this.exposeAlertAnimals(world);
     this.exposeMaintenance(world);

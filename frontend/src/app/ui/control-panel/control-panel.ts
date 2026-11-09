@@ -85,6 +85,7 @@ import {
   type TreatmentNotice,
   type TreatmentReadout,
 } from '../../sim/treatment-text';
+import type { ConditionerKind } from '../../sim/water-conditioner';
 import { formatTenth } from '../../sim/water-dashboard';
 import { DEFAULT_WATER_READOUT, type WaterReadout } from '../../sim/water-quality';
 
@@ -511,6 +512,37 @@ export interface NewTankRequest {
                 (click)="bacteriaStarterRequested.emit()"
               >
                 Bactéries
+              </button>
+              <!-- Chlore (#530) : eau versée au changement d'eau, puis conditionneurs. -->
+              <button
+                type="button"
+                class="control-panel__edit"
+                data-untreated-tap
+                [attr.aria-pressed]="untreatedTap()"
+                title="Non traitée : chaque changement d’eau ajoute du chlore (docs/SOINS.md § 2 ; teneur : approximation de jeu)."
+                (click)="untreatedTapToggled.emit()"
+              >
+                Eau du robinet non traitée
+              </button>
+              <button
+                type="button"
+                class="control-panel__edit"
+                data-conditioner="thiosulfate"
+                aria-label="Verser du conditionneur au thiosulfate (chlore)"
+                title="Source : docs/SOINS.md § 2 (Merck)."
+                (click)="conditionerRequested.emit('thiosulfate')"
+              >
+                Conditionneur
+              </button>
+              <button
+                type="button"
+                class="control-panel__edit"
+                data-conditioner="liant"
+                aria-label="Verser du conditionneur liant l’ammoniaque"
+                title="Source : docs/SOINS.md § 2 (étiquette via revendeurs, secondaire) ; 48 h revendiquées, non vérifiées."
+                (click)="conditionerRequested.emit('liant')"
+              >
+                Conditionneur liant
               </button>
             }
           </div>
@@ -1265,6 +1297,8 @@ export class ControlPanel {
   readonly treatment = input<TreatmentReadout | null>(null);
   /** Message du dernier geste de soin (fourni par l'hôte, #361) ; `null` : aucun. */
   readonly treatmentNotice = input<TreatmentNotice | null>(null);
+  /** Vrai si les changements d'eau versent de l'eau non traitée (#530). */
+  readonly untreatedTap = input(false);
   /** État de la sauvegarde automatique (fourni par l'hôte, #70). */
   readonly saveStatus = input<SaveStatus | null>(null);
   /** Dernier message de la sauvegarde : import refusé, import réussi… (fourni par l'hôte). */
@@ -1335,6 +1369,10 @@ export class ControlPanel {
   readonly treatmentRequested = output<TreatmentKind>();
   /** Dose d'amorce de bactéries demandée (#529). */
   readonly bacteriaStarterRequested = output<void>();
+  /** Dose de conditionneur demandée (#530). */
+  readonly conditionerRequested = output<ConditionerKind>();
+  /** Bascule de l'eau du robinet entre traitée et non traitée (#530). */
+  readonly untreatedTapToggled = output<void>();
   /** Bouton « Exporter » (#70). */
   readonly exportRequested = output<void>();
   /** Bouton « Partager ce bac » (#426). */

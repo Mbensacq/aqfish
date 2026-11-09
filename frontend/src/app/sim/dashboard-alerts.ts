@@ -6,6 +6,7 @@ import { MIX_REASON_TEXT, SPECIES_LABELS } from './species-catalog';
 import { tenthText } from './treatment';
 import { redoseText, type TreatmentReadout } from './treatment-text';
 import { WATER_CHANGE_SHARE, WATER_TEMPERATURES } from './water';
+import { CHLORINE_HARMFUL } from './water-conditioner';
 import {
   compoundLevel,
   temperatureLevel,
@@ -37,6 +38,7 @@ import type { WaterCompound } from './water-quality';
  * - **pourriture des nageoires** (issue #485, ADR 0114) : de même, une alerte dès qu'un animal
  *   a les nageoires effilochées (`HealthSummary.finRot`), critique au stade avancé, avec sa
  *   cause (eau trop chargée) et l'action (changer l'eau), et le lien « Maladies » ;
+ * - **chlore** (issue #530) : absent tant que le chlore est à 0 ; critique dès qu'il nuit ;
  * - **traitement en cours** (issue #361, ADR 0091) : une alerte « attention » tant que la cure
  *   avance, avec les jours restants et, pour le médicament, le délai avant de redoser.
  *
@@ -56,6 +58,7 @@ export const ALERT_SEVERITY_LABELS: Readonly<Record<AlertSeverity, string>> = {
 /** Sujet d'une alerte (identifiant unique). */
 export type AlertId =
   | WaterCompound
+  | 'chlorine'
   | 'temperature'
   | 'ph'
   | 'ich'
@@ -68,6 +71,7 @@ export type AlertId =
 
 /** Ordre des alertes de même gravité. */
 export const ALERT_ORDER: readonly AlertId[] = [
+  'chlorine',
   'ammonia',
   'nitrite',
   'temperature',
@@ -158,6 +162,24 @@ function compoundAlert(compound: WaterCompound, value: number): DashboardAlert |
     message: texts.message,
     cause: Number.isFinite(value) ? texts.cause : INVALID_CAUSE,
     action: texts.action,
+  };
+}
+
+/**
+ * Chlore (issue #530) : aucune alerte sans chlore, « attention » sous le seuil de nocivité,
+ * « critique » au-delà. Renvoie à la page « Produits et traitements » du wiki.
+ */
+export function chlorineAlert(chlorine: number | undefined): DashboardAlert | null {
+  if (chlorine === undefined || chlorine === 0) {
+    return null;
+  }
+  return {
+    id: 'chlorine',
+    severity: Number.isFinite(chlorine) && chlorine < CHLORINE_HARMFUL ? 'attention' : 'critique',
+    message: 'Chlore dans l’eau',
+    cause: Number.isFinite(chlorine) ? 'eau du robinet versée sans conditionneur' : INVALID_CAUSE,
+    action: 'Verser du conditionneur : Réglages, Eau',
+    wiki: 'produits',
   };
 }
 
@@ -413,7 +435,9 @@ function activeCauses(alerts: readonly DashboardAlert[]): string[] {
     alerts.some((a) => a.id === id && (severity === undefined || a.severity === severity));
   // Eau « mauvaise » (`waterQuality`) : un composé ou la température au rouge.
   if (
-    (['ammonia', 'nitrite', 'nitrate', 'temperature'] as const).some((id) => has(id, 'critique'))
+    (['chlorine', 'ammonia', 'nitrite', 'nitrate', 'temperature'] as const).some((id) =>
+      has(id, 'critique'),
+    )
   ) {
     causes.push('eau mauvaise');
   }
@@ -443,6 +467,7 @@ export function dashboardAlerts(input: AlertInput): readonly DashboardAlert[] {
       found.push(alert);
     }
   };
+  push(chlorineAlert(sample.chlorine));
   push(compoundAlert('ammonia', sample.ammonia));
   push(compoundAlert('nitrite', sample.nitrite));
   push(temperatureAlert(sample));

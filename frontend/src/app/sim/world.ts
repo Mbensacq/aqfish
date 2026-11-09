@@ -136,6 +136,11 @@ import {
   type WaterState,
 } from './water';
 import { phOutOfTolerance } from './water-ph';
+import {
+  doseConditionerInPlace,
+  type ConditionerKind,
+  type ConditionerOutcome,
+} from './water-conditioner';
 import { waterQuality } from './water-quality';
 import {
   applyTreatmentInPlace,
@@ -1432,6 +1437,27 @@ export function treatWorldInPlace(
  */
 export function doseWorldBacteriaStarterInPlace(world: MutableWorld): BacteriaStarterOutcome {
   return doseBacteriaStarterInPlace(world.water as MutableWaterState, BACTERIA_STARTER_DOSE);
+}
+
+/**
+ * Dose de conditionneur (issue #530, `doseConditionerInPlace`), **en modifiant** `world`.
+ * Réservé au propriétaire unique du monde (`ui/aquarium-host`).
+ */
+export function doseWorldConditionerInPlace(
+  world: MutableWorld,
+  kind: ConditionerKind,
+): ConditionerOutcome {
+  return doseConditionerInPlace(world.water as MutableWaterState, kind, 1);
+}
+
+/** Active ou non les changements d'eau à l'eau non traitée (issue #530), **en modifiant**. */
+export function setWorldUntreatedTapInPlace(world: MutableWorld, untreated: boolean): void {
+  const water = world.water as MutableWaterState;
+  if (untreated) {
+    water.untreatedTap = true;
+  } else {
+    delete water.untreatedTap;
+  }
 }
 
 /**

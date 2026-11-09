@@ -9,6 +9,7 @@ import {
   type WaterProducts,
   type WaterState,
 } from './water';
+import { CHLORINE_HARMFUL, toxicAmmonia } from './water-conditioner';
 import { waterHardness } from './water-hardness';
 import { phBands, phZone, sameBands, type PhBands, type PhZone } from './water-ph';
 
@@ -93,7 +94,8 @@ export function worseQuality(a: WaterQuality, b: WaterQuality): WaterQuality {
 /**
  * Indicateur global de l'eau `water` d'un bac de l'environnement `environment` : le pire
  * niveau parmi l'ammoniaque, les nitrites, les nitrates et l'écart de température à celle
- * de l'environnement. Le filtre n'y entre pas : ses effets passent par les composés.
+ * de l'environnement. Le filtre n'y entre pas : ses effets passent par les composés. Le chlore
+ * nocif (issue #530) rend l'eau mauvaise ; l'ammoniaque liée par un conditionneur ne compte pas.
  */
 export function waterQuality(water: WaterState, environment: EnvironmentId): WaterQuality {
   let quality = levelOf(
@@ -101,9 +103,10 @@ export function waterQuality(water: WaterState, environment: EnvironmentId): Wat
     TEMPERATURE_THRESHOLDS,
   );
   for (const compound of WATER_COMPOUNDS) {
-    quality = worseQuality(quality, levelOf(water[compound], COMPOUND_THRESHOLDS[compound]));
+    const value = compound === 'ammonia' ? toxicAmmonia(water) : water[compound];
+    quality = worseQuality(quality, levelOf(value, COMPOUND_THRESHOLDS[compound]));
   }
-  return quality;
+  return (water.chlorine ?? 0) >= CHLORINE_HARMFUL ? 'mauvaise' : quality;
 }
 
 /**

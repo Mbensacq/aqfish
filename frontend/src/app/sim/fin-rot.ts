@@ -4,6 +4,7 @@ import type { EnvironmentId } from './environment';
 import type { SpeciesId } from './species';
 import { assertTimeStep } from './time-step';
 import type { WaterState } from './water';
+import { toxicAmmonia } from './water-conditioner';
 import { COMPOUND_THRESHOLDS } from './water-quality';
 
 /**
@@ -76,8 +77,12 @@ export function catchesFinRot(species: SpeciesId, environment: EnvironmentId): b
  * `FIN_ROT_NITRITE`. Une valeur non finie ne compte pas (la maladie ne naît que d'une eau
  * chargée avérée).
  */
-export function finRotCauses(water: Pick<WaterState, 'ammonia' | 'nitrite'>): number {
-  return (water.ammonia >= FIN_ROT_AMMONIA ? 1 : 0) + (water.nitrite >= FIN_ROT_NITRITE ? 1 : 0);
+export function finRotCauses(
+  water: Pick<WaterState, 'ammonia' | 'nitrite' | 'ammoniaBinder'>,
+): number {
+  return (
+    (toxicAmmonia(water) >= FIN_ROT_AMMONIA ? 1 : 0) + (water.nitrite >= FIN_ROT_NITRITE ? 1 : 0)
+  );
 }
 
 /** Progression valide (nombre fini dans [0, `FIN_ROT_MAX`]). */
