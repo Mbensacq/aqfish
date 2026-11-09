@@ -6639,6 +6639,12 @@
           "debut": "2026-11-09T05:16:54.214Z",
           "fin": "2026-11-09T05:17:28.389Z",
           "note": "Issue #529 : Amorce de bactéries nitrifiantes (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-09T05:18:03.561Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
