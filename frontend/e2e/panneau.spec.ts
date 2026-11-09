@@ -27,6 +27,14 @@ async function open(page: Page, search = '?seed=42'): Promise<string[]> {
   return errors;
 }
 
+/** Ouvre la page puis le panneau « Réglages » d'un clic. */
+async function openPanel(page: Page): Promise<string[]> {
+  const errors = await open(page);
+  await toggle(page).click();
+  await expect(toggle(page)).toHaveAttribute('aria-expanded', 'true');
+  return errors;
+}
+
 async function tick(page: Page): Promise<number> {
   return Number(await hostEl(page).getAttribute('data-aqfish-tick'));
 }
@@ -234,17 +242,37 @@ test.describe('Panneau de contrôle', () => {
     expect(errors).toEqual([]);
   });
 
-  test('au clavier : Tab jusqu’au bouton, Entrée, puis chaque contrôle', async ({ page }) => {
-    // Une vingtaine de touches, chacune suivie d'une image en rendu logiciel : avec la section
-    // « Eau » (#207), le parcours dépasse le délai par défaut de 2 min en local.
+  // Parcours de l'ordre de Tab découpé par section (#544) : chaque appui coûte une image en
+  // rendu logiciel, et un seul test pour tout le panneau approchait son délai de 4 min à chaque
+  // nouveau contrôle. Chaque test reprend par focus direct sur le dernier contrôle vérifié par
+  // le précédent : la chaîne de Tab reste vérifiée de bout en bout, maillon par maillon.
+  test('au clavier : Tab jusqu’au bouton, Entrée, puis la section « Simulation »', async ({
+    page,
+  }) => {
+    // Le chemin jusqu'au bouton « Réglages » passe par la barre des vues, les jauges et l'aide
+    // (~20 appuis) : relu à chaque appui, il coûtait à lui seul plus de 2 min en local. Les
+    // éléments qui reçoivent le focus sont consignés dans la page et relus tous les quatre
+    // appuis ; les appuis de trop sont défaits à Maj+Tab. D'où un délai encore relevé, mais
+    // indépendant du nombre de contrôles du panneau, qui sont dans les tests suivants.
     test.setTimeout(240_000);
+    await page.addInitScript(() => {
+      const log: Element[] = [];
+      (window as unknown as { aqfishFocusLog: Element[] }).aqfishFocusLog = log;
+      document.addEventListener('focusin', (event) => log.push(event.target as Element));
+    });
     const errors = await open(page);
-    let reached = false;
-    for (let i = 0; i < 40 && !reached; i++) {
-      await page.keyboard.press('Tab');
-      reached = await toggle(page).evaluate((el) => el === document.activeElement);
+    let pressed = 0;
+    let [at, length] = [-1, 0];
+    while (pressed < 40 && at < 0) {
+      for (let k = 0; k < 4; k++, pressed++) await page.keyboard.press('Tab');
+      [at, length] = await toggle(page).evaluate((el) => {
+        const log = (window as unknown as { aqfishFocusLog: Element[] }).aqfishFocusLog;
+        return [log.lastIndexOf(el), log.length];
+      });
     }
-    expect(reached, 'bouton « Réglages » atteint par Tab').toBe(true);
+    expect(at, 'bouton « Réglages » atteint par Tab').toBeGreaterThanOrEqual(0);
+    for (let k = at + 1; k < length; k++) await page.keyboard.press('Shift+Tab');
+    await expect(toggle(page)).toBeFocused();
     await page.keyboard.press('Enter');
     await expect(toggle(page)).toHaveAttribute('aria-expanded', 'true');
 
@@ -276,6 +304,13 @@ test.describe('Panneau de contrôle', () => {
     await expect(autoHour(page)).toBeFocused();
     await page.keyboard.press('Space');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-hour-frozen', 'false');
+    expect(errors).toEqual([]);
+  });
+
+  test('au clavier : section « Eau », du courant à l’amorce de bactéries', async ({ page }) => {
+    const errors = await openPanel(page);
+    // Reprise sur le dernier contrôle de la section « Simulation » (test précédent).
+    await autoHour(page).focus();
 
     // Section « Eau » (#207) : « Courant » (#460) et « Changer l’eau », sur la ligne du titre,
     // puis le chauffage, l'éclairage et la raclette (#476), les feuilles de catappa (#239).
@@ -308,6 +343,18 @@ test.describe('Panneau de contrôle', () => {
     await expect(
       page.getByRole('button', { name: 'Verser une dose d’amorce de bactéries nitrifiantes' }),
     ).toBeFocused();
+    expect(errors).toEqual([]);
+  });
+
+  test('au clavier : section « Eau », des conditionneurs au catappa, puis « Décor »', async ({
+    page,
+  }) => {
+    const errors = await openPanel(page);
+    // Reprise sur l'amorce de bactéries, dernier contrôle vérifié par le test précédent.
+    await page
+      .getByRole('button', { name: 'Verser une dose d’amorce de bactéries nitrifiantes' })
+      .focus();
+
     // Eau non traitée et conditionneurs (#530).
     for (const name of [
       'Eau du robinet non traitée',

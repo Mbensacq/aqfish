@@ -534,6 +534,19 @@ origin/main`, `node_modules` en lien symbolique) ; il sert aussi aux captures «
 
 ## Tests
 
+- **Parcours Tab d'un panneau qui grossit : un test par section, repris par focus direct**
+  (cycle 186, #544) : « au clavier : Tab jusqu'au bouton… » (`e2e/panneau.spec.ts`) tenait
+  tout le panneau en un test ; chaque contrôle ajouté à « Eau » coûtait deux images (Tab, puis
+  `toBeFocused`), et le test a dépassé deux fois son délai relevé à 4 min dans la CI de
+  `main`. Relever encore le délai ne fait que reculer l'échéance. Découper par section : chaque
+  test ouvre le panneau d'un clic, donne le focus (`locator.focus()`) au dernier contrôle
+  vérifié par le test précédent, puis enchaîne les Tab ; la chaîne reste vérifiée maillon par
+  maillon. Un nouveau contrôle va dans le test de sa section ; si une section dépasse ~15
+  appuis, la couper à son tour. Le chemin depuis le haut de la page jusqu'à « Réglages » (~20
+  appuis) ne relit plus le focus à chaque appui : journal `focusin` posé par
+  `page.addInitScript`, relu tous les quatre appuis, appuis de trop défaits à Maj+Tab (3,2 →
+  2,4 min sur une machine lente) ; il garde son délai de 4 min, avec seulement la courte section
+  « Simulation » derrière lui. (2026-11-09)
 - **Délai de 5 s de Vitest : la durée locale ne protège pas** (cycle 181, #525) : `catappa.spec.ts`
   (4 × 1 200 pas, ~0,6 s en local) a dépassé 5 s sur un runner chargé de la CI, code hors de
   cause. Une simulation dans un test (~1 000 pas d'un monde peuplé, ou ≥ 0,4 s en local) reçoit
