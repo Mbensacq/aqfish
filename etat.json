@@ -6779,10 +6779,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-09T22:37:58.423Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-09T22:38:42.050Z",
+          "note": "Issue #544 : e2e clavier du panneau trop lent (dette 31>30, S)"
         }
       },
       "metriques": {}
