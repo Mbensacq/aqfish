@@ -6635,10 +6635,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-09T05:16:54.214Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-09T05:17:28.389Z",
+          "note": "Issue #529 : Amorce de bactéries nitrifiantes (S)"
         }
       },
       "metriques": {}
