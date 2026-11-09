@@ -6653,10 +6653,10 @@
           "note": "Verdict OK, 0 bug, 1 remarque (attribution dans description PR), captures c182 publiées (5 angles identiques)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-09T08:32:48.680Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-09T09:42:01.386Z",
+          "note": "PR #537 fusionnée → v1.15.0 (release CI OK, CI main verte) ; dette #538 (maturation du filtre) ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
