@@ -308,6 +308,15 @@ test.describe('Panneau de contrôle', () => {
     await expect(
       page.getByRole('button', { name: 'Verser une dose d’amorce de bactéries nitrifiantes' }),
     ).toBeFocused();
+    // Eau non traitée et conditionneurs (#530).
+    for (const name of [
+      'Eau du robinet non traitée',
+      'Verser du conditionneur au thiosulfate (chlore)',
+      'Verser du conditionneur liant l’ammoniaque',
+    ]) {
+      await page.keyboard.press('Tab');
+      await expect(page.getByRole('button', { name })).toBeFocused();
+    }
     // Feuilles de catappa (#239) : « − » (désactivé, mais atteignable au clavier) puis « + ».
     await page.keyboard.press('Tab');
     await expect(

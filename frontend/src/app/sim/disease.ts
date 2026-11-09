@@ -3,6 +3,7 @@ import { livesIn, type EnvironmentId } from './environment';
 import { SPECIES, type SpeciesId } from './species';
 import { assertTimeStep } from './time-step';
 import { WATER_TEMPERATURES, targetTemperature, type WaterState } from './water';
+import { toxicAmmonia } from './water-conditioner';
 import { COMPOUND_THRESHOLDS, TEMPERATURE_THRESHOLDS } from './water-quality';
 
 /**
@@ -112,7 +113,7 @@ export function ichStress(water: WaterState, environment: EnvironmentId): number
   if (Math.abs(t - targetTemperature(water, environment)) >= ICH_SHOCK_GAP) {
     causes += 1;
   }
-  if (water.ammonia >= ICH_AMMONIA) {
+  if (toxicAmmonia(water) >= ICH_AMMONIA) {
     causes += 1;
   }
   if (water.nitrite >= ICH_NITRITE) {

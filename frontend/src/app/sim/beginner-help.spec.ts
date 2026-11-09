@@ -45,6 +45,7 @@ function high(compound: WaterCompound): number {
 
 /** États hors plage, un par sujet d'alerte, avec l'alerte attendue. */
 const OUT_OF_RANGE: readonly (readonly [string, AlertInput, AlertId])[] = [
+  ['chlore dans l’eau', input({ chlorine: 0.15 }), 'chlorine'],
   ['ammoniaque haute', input({ ammonia: high('ammonia') }), 'ammonia'],
   ['nitrites hauts', input({ nitrite: high('nitrite') }), 'nitrite'],
   ['nitrates hauts', input({ nitrate: high('nitrate') }), 'nitrate'],

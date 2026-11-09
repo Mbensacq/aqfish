@@ -697,6 +697,36 @@ test.describe('Captures', () => {
     });
   }
 
+  // Alerte chlore (#530) : eau non traitée versée sans conditionneur, vue de face.
+  test('tableau de bord : front-tableau-de-bord-chlore', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await page.goto(`/?seed=${SEED}&camera=front&heure=12&vitesse=0`);
+    await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+    const world: MutableWorld = createDefaultWorld(SEED);
+    world.water = { ...freshWater('tropical'), chlorine: 0.15, untreatedTap: true };
+    const settings = page.getByRole('button', { name: 'Réglages' });
+    await settings.click();
+    await page.locator('[data-section="sauvegarde"] input[type="file"]').setInputFiles({
+      name: 'chlore.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(
+        serializeWorld(world, { speed: 0, clock: createDayClock(12, 1200, true) }),
+      ),
+    });
+    await expect(page.locator('[data-dashboard-status] [data-alert]').first()).toContainText(
+      'Chlore',
+    );
+    await settings.click();
+    await expect(page.locator('.control-panel')).toHaveCount(0);
+    // L'import remet la caméra du bac : revenir à la vue de face.
+    await page.getByRole('button', { name: 'Face' }).click();
+    await page.mouse.move(640, 360);
+    await page.screenshot({
+      path: join(OUTPUT_DIR, 'front-tableau-de-bord-chlore.png'),
+      animations: 'disabled',
+    });
+  });
+
   test('tracé des trajectoires, vue de dessus', async ({ page }) => {
     const svg = trajectorySvg(SEED, TRACE_SECONDS);
     await page.setViewportSize({ width: svg.width, height: svg.height });
