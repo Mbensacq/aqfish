@@ -6761,10 +6761,10 @@
           "note": "Verdict OK, 0 bug, captures c185 publiées (5 angles identiques à c184), e2e alerte chlore ajouté"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-09T20:14:13.349Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-09T22:37:24.524Z",
+          "note": "PR #543 fusionnée → v1.15.3 (release CI OK, CI main verte après relance d'un e2e lent, dette #544) ; suppression de la branche refusée par l'environnement"
         }
       },
       "metriques": {}
