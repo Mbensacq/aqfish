@@ -1,3 +1,8 @@
+import {
+  BACTERIA_STARTER_DOSE,
+  doseBacteriaStarterInPlace,
+  type BacteriaStarterOutcome,
+} from './bacteria-starter';
 import { assertSeed } from '../core/random/prng';
 import { createWalker, stepWalker, type WalkerGround } from './axolotl';
 import { createFrog, stepFrog } from './frog';
@@ -1419,6 +1424,14 @@ export function treatWorldInPlace(
     species: world.entities.map((entity) => entity.species),
     infected,
   });
+}
+
+/**
+ * Dose d'amorce de bactéries (issue #529, `doseBacteriaStarterInPlace`), **en modifiant**
+ * `world`. Réservé au propriétaire unique du monde (`ui/aquarium-host`).
+ */
+export function doseWorldBacteriaStarterInPlace(world: MutableWorld): BacteriaStarterOutcome {
+  return doseBacteriaStarterInPlace(world.water as MutableWaterState, BACTERIA_STARTER_DOSE);
 }
 
 /**

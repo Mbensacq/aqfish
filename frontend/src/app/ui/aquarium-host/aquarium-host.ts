@@ -261,6 +261,7 @@ import {
   worldAlgaePatches,
   starveWorldInPlace,
   treatWorldInPlace,
+  doseWorldBacteriaStarterInPlace,
   type Entity,
   type MutableWorld,
   type World,
@@ -1470,6 +1471,26 @@ export class AquariumHost {
       text: outcome.message,
       warning: outcome.ok ? (outcome.warning ?? null) : null,
     });
+    if (outcome.ok) {
+      this.exposeWater();
+      this.saveNow();
+      this.scheduleFrame();
+    }
+  }
+
+  /**
+   * Verse une dose d'amorce de bactéries (#529), acceptée ou refusée avec un message
+   * (`treatmentNotice`) ; acceptée, relevé et enregistrement. Sans effet en mode capture, en
+   * mode décor ou avant le démarrage.
+   */
+  doseBacteriaStarter(): void {
+    const world = this.currentWorld;
+    if (!world || this.capture || isDecorMode(world)) {
+      return;
+    }
+    const outcome = doseWorldBacteriaStarterInPlace(world);
+    this.noticeWorld = world;
+    this.treatmentNotice.set({ ok: outcome.ok, text: outcome.message, warning: null });
     if (outcome.ok) {
       this.exposeWater();
       this.saveNow();
