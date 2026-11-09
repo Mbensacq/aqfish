@@ -213,7 +213,7 @@ describe('feuilles de catappa (#239)', () => {
       // Graine différente : eau identique (aucun hasard dans l'eau).
       const other = advance(setWorldCatappa(createDefaultWorld(12), 4), steps);
       expect(other.water.catappa).toEqual(ra.water.catappa);
-    });
+    }, 30_000);
 
     it('sauvegarde : aller-retour avec feuilles', () => {
       const world: MutableWorld = createDefaultWorld(5);
@@ -226,7 +226,7 @@ describe('feuilles de catappa (#239)', () => {
         expect(back.world.water.catappa).toEqual(world.water.catappa);
         expect(back.world.water.ph).toBe(world.water.ph);
       }
-    });
+    }, 30_000);
 
     it('ancienne sauvegarde sans feuilles : chargée sans erreur, aucune feuille', () => {
       const world = createDefaultWorld(5);
@@ -237,7 +237,7 @@ describe('feuilles de catappa (#239)', () => {
       if (back.ok) {
         expect(back.world.water.catappa).toBeUndefined();
       }
-    });
+    }, 30_000);
 
     it('relecture : liste vide oubliée, valeurs invalides refusées', () => {
       const base = freshWater('tropical');
@@ -251,6 +251,6 @@ describe('feuilles de catappa (#239)', () => {
         expect(readWater({ ...base, catappa: bad }, 'tropical').ok).toBe(false);
       }
       expect(readCatappa([0, 1])).toEqual({ ok: true, leaves: [0, 1] });
-    });
+    }, 30_000);
   });
 });

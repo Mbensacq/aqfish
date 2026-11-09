@@ -524,6 +524,13 @@ origin/main`, `node_modules` en lien symbolique) ; il sert aussi aux captures «
 
 ## Tests
 
+- **Délai de 5 s de Vitest : la durée locale ne protège pas** (cycle 181, #525) : `catappa.spec.ts`
+  (4 × 1 200 pas, ~0,6 s en local) a dépassé 5 s sur un runner chargé de la CI, code hors de
+  cause. Une simulation dans un test (~1 000 pas d'un monde peuplé, ou ≥ 0,4 s en local) reçoit
+  un délai explicite dès l'écriture (`it(…, () => { … }, 30_000)`), sans toucher aux assertions.
+  Le relevé `npx vitest run --globals --reporter=json --outputFile=… src/app/sim` donne les
+  durées par test (~3 min). (2026-11-09)
+
 - **Clic sur le bac en e2e : refermer le panneau d'abord** (cycle 162, #476) : le panneau
   « Réglages » ouvert recouvre une partie du canvas et le tableau de bord ; Playwright attend
   alors indéfiniment que l'élément visé ne soit plus masqué (« subtree intercepts pointer

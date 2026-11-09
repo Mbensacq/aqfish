@@ -284,7 +284,7 @@ describe('pousse des plantes (#477)', () => {
         expect(worldPlantShade(world)).toBe(1);
         expect(pruneWorldPlantInPlace(world, 0)).toBe(false);
       }
-    });
+    }, 30_000);
 
     it('taille d’une plante du monde ; le changement d’eau n’y touche pas', () => {
       const world = emptyTank();

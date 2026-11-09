@@ -304,7 +304,7 @@ describe('algues (#476)', () => {
       const later = advance(createDefaultWorld(42), Math.round(60 / SIM_DT));
       expect(later.water.nitrate).toBeLessThan(ALGAE_NITRATE_LIMIT);
       expect(later.water.algae).toBeUndefined();
-    });
+    }, 30_000);
 
     it('éclairage de 24 h : les algues poussent, de façon déterministe', () => {
       const run = () => {

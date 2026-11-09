@@ -404,7 +404,7 @@ describe('alevins : cachettes et prédation', () => {
     expect(fry.length).toBeGreaterThan(0);
     const near = fry.filter((f) => isHidden([PLANT], f.x, f.z)).length;
     expect(near / fry.length).toBeGreaterThan(0.5);
-  });
+  }, 30_000);
 });
 
 describe('alevins : sauvegarde, export et partage', () => {
@@ -481,7 +481,7 @@ describe('alevins d’exemple (`alevins=1`)', () => {
     expect(fry.filter((f) => isHidden(plants, f.x, f.z)).length).toBeGreaterThanOrEqual(
       fry.length / 2,
     );
-  });
+  }, 30_000);
 
   it('s’arrête au plafond', () => {
     const world = cloneWorld(

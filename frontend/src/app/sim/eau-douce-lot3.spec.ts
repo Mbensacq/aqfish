@@ -230,7 +230,7 @@ describe('eau douce, lot 3 (#391) : catalogue complet', () => {
     expect(braise).toBeGreaterThan(0.35);
     expect(braise).toBeLessThan(miel);
     expect(median(heights(second, 'molly', steps))).toBeGreaterThan(0.4);
-  });
+  }, 30_000);
 
   it('même graine, même trajectoire ; autre graine, autre trajectoire', () => {
     const make = (seed: number) =>

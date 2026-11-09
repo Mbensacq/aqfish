@@ -390,7 +390,7 @@ describe('bulles emportées par le courant (issue #473)', () => {
         expect(cut.sizes.subarray(0, cut.count)).toEqual(plain.sizes.subarray(0, plain.count));
       }
     }
-  });
+  }, 30_000);
 });
 
 describe('bulles : cas construits (issue #475)', () => {
