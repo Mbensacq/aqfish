@@ -6707,10 +6707,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-09T13:18:21.440Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-09T13:19:07.758Z",
+          "note": "Issue #531 : charbon actif et régulateur de pH (S)"
         }
       },
       "metriques": {}
