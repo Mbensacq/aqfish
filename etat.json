@@ -6677,10 +6677,10 @@
           "note": "Issue #530 : Chlore et conditionneur d'eau (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-09T09:43:42.199Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-09T11:31:45.750Z",
+          "note": "PR #539 : chlore et conditionneurs, CI verte ; verify local partiel (e2e via CI), seule la capture front comparée à c182"
         }
       },
       "metriques": {}
