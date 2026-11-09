@@ -6581,10 +6581,10 @@
           "note": "Verdict OK, 0 bug, 1 remarque mineure (attribution dans la description PR), mutation maintenance.ts 90→100 %, e2e languette ajouté, captures c180 publiées (5 angles identiques)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-09T01:25:09.383Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-09T02:43:18.905Z",
+          "note": "PR #528 fusionnée → v1.14.5 (release CI OK, CI main verte) ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
