@@ -6617,10 +6617,10 @@
           "note": "Verdict OK, 0 bug, 1 remarque mineure (attribution dans la description PR), captures c181 publiées (134/138, 5 angles identiques)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-09T04:00:53.488Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-09T05:16:26.361Z",
+          "note": "PR #536 fusionnée → v1.14.6 (release CI OK, CI main verte), PR #535 roadmap fusionnée ; suppression de branches refusée par l'environnement"
         }
       },
       "metriques": {}
