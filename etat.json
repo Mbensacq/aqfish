@@ -6651,6 +6651,12 @@
           "debut": "2026-11-09T08:17:39.437Z",
           "fin": "2026-11-09T08:32:17.409Z",
           "note": "Verdict OK, 0 bug, 1 remarque (attribution dans description PR), captures c182 publiées (5 angles identiques)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-09T08:32:48.680Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
