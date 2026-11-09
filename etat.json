@@ -6717,6 +6717,12 @@
           "debut": "2026-11-09T13:19:48.189Z",
           "fin": "2026-11-09T15:15:21.704Z",
           "note": "PR #541 : charbon actif et régulateur de pH, CI verte ; verify local partiel (e2e via CI), captures par défaut identiques à c183"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-09T15:15:52.288Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
