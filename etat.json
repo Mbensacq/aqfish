@@ -6605,10 +6605,10 @@
           "note": "Rétro #534 ; issue #525 (bug CI timeout, S) ; plan sprint 27 #529-#533 ; PR roadmap #535"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-09T02:46:15.923Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-09T03:35:07.000Z",
+          "note": "PR #536 : délai 30 s sur 11 tests de simulation longue (#525), CI verte"
         }
       },
       "metriques": {}
