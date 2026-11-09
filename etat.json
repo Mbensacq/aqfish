@@ -6645,6 +6645,12 @@
           "debut": "2026-11-09T05:18:03.561Z",
           "fin": "2026-11-09T08:16:56.233Z",
           "note": "PR #537 : amorce de bactéries, CI verte ; filtre toujours à 1 en jeu (bouton refusé hors import), maturation à planifier ; verify local partiel (e2e via CI)"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-09T08:17:39.437Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
