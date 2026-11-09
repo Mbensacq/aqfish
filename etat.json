@@ -6759,6 +6759,12 @@
           "debut": "2026-11-09T19:30:05.883Z",
           "fin": "2026-11-09T20:13:40.625Z",
           "note": "Verdict OK, 0 bug, captures c185 publiées (5 angles identiques à c184), e2e alerte chlore ajouté"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-09T20:14:13.349Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
