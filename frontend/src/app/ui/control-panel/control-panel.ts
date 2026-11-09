@@ -519,10 +519,11 @@ export interface NewTankRequest {
                 class="control-panel__edit"
                 data-untreated-tap
                 [attr.aria-pressed]="untreatedTap()"
+                aria-label="Eau du robinet non traitée"
                 title="Non traitée : chaque changement d’eau ajoute du chlore (docs/SOINS.md § 2 ; teneur : approximation de jeu)."
                 (click)="untreatedTapToggled.emit()"
               >
-                Eau du robinet non traitée
+                Robinet
               </button>
               <button
                 type="button"
@@ -532,7 +533,7 @@ export interface NewTankRequest {
                 title="Source : docs/SOINS.md § 2 (Merck)."
                 (click)="conditionerRequested.emit('thiosulfate')"
               >
-                Conditionneur
+                Déchlorer
               </button>
               <button
                 type="button"
@@ -542,7 +543,7 @@ export interface NewTankRequest {
                 title="Source : docs/SOINS.md § 2 (étiquette via revendeurs, secondaire) ; 48 h revendiquées, non vérifiées."
                 (click)="conditionerRequested.emit('liant')"
               >
-                Conditionneur liant
+                Liant
               </button>
             }
           </div>
