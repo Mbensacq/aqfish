@@ -1,2 +1,2 @@
-Cycle 180 — branche cycle/c180-dette-languette-echap, PR #528, commit 45d5b27751558f60524c9d7ca8ed104b213a5ab7, graine 42 (défaut), 2026-11-09T01:17:15Z.
-5 angles standard identiques à l'octet à c179 ; front-panneau.png change (languette masquée avec Réglages ouvert). parcours-premier-bac.png (produit par l'e2e, pas par la série captures) : voir c179.
+Cycle 181 — branche cycle/c181-delais-tests-longs, PR #536, commit 207fb9f, graine par défaut.
+Série partielle : 134 captures sur 138 (le délai de 580 s a interrompu les 4 dernières : tableau de bord alerte, parcours, trajectoires). Les 5 angles de base et toutes les autres captures présentes sont identiques à l'octet à la série précédente.
