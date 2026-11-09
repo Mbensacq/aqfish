@@ -6689,10 +6689,10 @@
           "note": "Verdict OK, 0 bug, CI verte, captures c183 publiées (5 angles identiques à c182 + capture chlore)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-09T12:09:47.622Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-09T13:17:47.979Z",
+          "note": "PR #539 fusionnée → v1.15.1 (release CI OK, CI main verte) ; dette #540"
         }
       },
       "metriques": {}
