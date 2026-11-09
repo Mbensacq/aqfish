@@ -6740,7 +6740,7 @@
       "type": "fonctionnalite",
       "issue": 540,
       "pr": 543,
-      "version": null,
+      "version": "v1.15.3",
       "phases": {
         "planif": {
           "statut": "termine",
