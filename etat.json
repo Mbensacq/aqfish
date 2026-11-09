@@ -6579,6 +6579,12 @@
           "debut": "2026-11-09T00:31:53.481Z",
           "fin": "2026-11-09T01:24:38.183Z",
           "note": "Verdict OK, 0 bug, 1 remarque mineure (attribution dans la description PR), mutation maintenance.ts 90→100 %, e2e languette ajouté, captures c180 publiées (5 angles identiques)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-09T01:25:09.383Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
