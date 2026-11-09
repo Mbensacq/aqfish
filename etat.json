@@ -6609,6 +6609,12 @@
           "debut": "2026-11-09T02:46:15.923Z",
           "fin": "2026-11-09T03:35:07.000Z",
           "note": "PR #536 : délai 30 s sur 11 tests de simulation longue (#525), CI verte"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-09T03:35:36.255Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
