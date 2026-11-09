@@ -6702,7 +6702,7 @@
       "date": "2026-11-09",
       "debut": "2026-11-09T13:18:21.440Z",
       "type": "fonctionnalite",
-      "issue": null,
+      "issue": 531,
       "pr": null,
       "version": null,
       "phases": {
