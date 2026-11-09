@@ -514,7 +514,16 @@ export interface NewTankRequest {
               >
                 Bactéries
               </button>
-              <!-- Chlore (#530) : eau versée au changement d'eau, puis conditionneurs. -->
+            }
+          </div>
+          @if (careMode() !== 'decor') {
+            <!-- Chlore (#530) : eau versée au changement d'eau, puis conditionneurs. Rangée à part :
+                 six boutons sur une ligne se chevauchent (docs/PIEGES.md). -->
+            <div
+              class="control-panel__row control-panel__row--halves"
+              role="group"
+              aria-label="Eau du robinet et conditionneurs"
+            >
               <button
                 type="button"
                 class="control-panel__edit"
@@ -546,10 +555,8 @@ export interface NewTankRequest {
               >
                 Liant
               </button>
-            }
-          </div>
-          @if (careMode() !== 'decor') {
-            <!-- Charbon actif et régulateur de pH (#531) : rangée à part, la précédente ne passe
+            </div>
+            <!-- Charbon actif et régulateur de pH (#531) : rangée à part : la précédente ne passe
                  pas à la ligne (docs/PIEGES.md). -->
             <div
               class="control-panel__row control-panel__row--halves"

@@ -21,6 +21,8 @@ haut de sa section.
   champ optionnel casse `toEqual(world)` et `serializeWorld(host.world) === serializeWorld(advance(…))`.
   Garder l'état dérivé à part (`WeakMap` par monde) et n'écrire qu'à une action ou à la sauvegarde
   automatique. `ng test --include=…` échoue sur les `.scss` : lancer la suite. (2026-11-08)
+- **Boutons d'une rangée `--halves` : trois au plus** (cycle 184, #531) : à six, les libellés se
+  chevauchent sans erreur (visible sur `front-soins.png`) ; ouvrir une rangée de plus. (2026-11-09)
 - **Rangée « Outils d'entretien » du panneau : libellés courts obligatoires** (cycle 183, #530) :
   la rangée ne passe pas à la ligne ; un libellé long fait déborder le panneau en largeur à
   1280 × 720 (`e2e/cadrage-panneaux.spec.ts`). Mettre le nom complet dans `aria-label`.
