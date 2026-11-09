@@ -55,7 +55,7 @@ export const FIRST_TANK_STEPS: readonly FirstTankStep[] = [
     id: 'cycle',
     title: 'Laisser le bac se cycler',
     action: 'Laissez tourner le bac : la vitesse ×4 raccourcit l’attente (Réglages, Vitesse).',
-    why: 'Le filtre doit éliminer ammoniaque et nitrites. Dans un vrai bac, cela prend 6 à 8 semaines ; ici, quelques heures de jeu.',
+    why: 'Le filtre doit éliminer ammoniaque et nitrites. Dans un vrai bac, cela prend 6 à 8 semaines ; ici, quelques heures de jeu. Du chlore dans l’eau bloque cette étape : versez du conditionneur (Réglages, Eau).',
     link: { kind: 'wiki', page: 'entretien', label: 'Wiki : entretien' },
   },
   {
@@ -110,7 +110,7 @@ export interface FirstTankFacts {
   readonly animals: number;
   /** Compteur de granulés déposés depuis la création du bac. */
   readonly foodDropped: number;
-  /** Ammoniaque et nitrites au niveau « bonne », filtre en marche. */
+  /** Ammoniaque et nitrites au niveau « bonne », aucun chlore, filtre en marche. */
   readonly waterCycled: boolean;
   /** Journal d'entretien, le plus récent d'abord. */
   readonly log: readonly MaintenanceLogEntry[];
@@ -130,11 +130,15 @@ export function firstTankPathAvailable(environment: EnvironmentId): boolean {
   return environment !== 'recif' && environment !== 'paludarium';
 }
 
-/** Vrai si l'eau est assez saine et le filtre assez efficace pour accueillir des animaux. */
+/**
+ * Vrai si l'eau est assez saine et le filtre assez efficace pour accueillir des animaux : tant
+ * que du chlore reste dans l'eau (#540), ce n'est pas le cas, quel que soit le reste.
+ */
 export function isWaterCycled(water: WaterState): boolean {
   return (
     levelOf(water.ammonia, COMPOUND_THRESHOLDS.ammonia) === 'bonne' &&
     levelOf(water.nitrite, COMPOUND_THRESHOLDS.nitrite) === 'bonne' &&
+    (water.chlorine ?? 0) === 0 &&
     Number.isFinite(water.filter) &&
     water.filter >= CYCLE_MIN_FILTER
   );
