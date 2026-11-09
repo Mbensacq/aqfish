@@ -6632,7 +6632,7 @@
       "type": "fonctionnalite",
       "issue": 529,
       "pr": 537,
-      "version": null,
+      "version": "v1.15.0",
       "phases": {
         "planif": {
           "statut": "termine",
