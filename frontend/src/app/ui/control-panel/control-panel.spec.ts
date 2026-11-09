@@ -1154,9 +1154,10 @@ describe('ControlPanel', () => {
     // et « Importer » (#70), « Partager ce bac » (#426), le mode du bac (#278), « Mode
     // immersif » (#345), « Réduire les mouvements » (#406), puis la case « Sons d'ambiance »
     // et son volume (#411), « Courant » (#460), le curseur de l'éclairage et la raclette
-    // (#476), le sécateur (#477). Le champ du lien de partage n'apparaît qu'avec un lien.
+    // (#476), le sécateur (#477), l'amorce de bactéries (#529). Le champ du lien de partage
+    // n'apparaît qu'avec un lien.
     expect(controls).toHaveLength(
-      5 + 1 + 1 + 1 + 2 + 2 + 17 * 5 + 2 + 1 + 1 + 1 + 1 + 2 + 1 + 2 + 1,
+      5 + 1 + 1 + 1 + 2 + 2 + 17 * 5 + 2 + 1 + 1 + 1 + 1 + 2 + 1 + 2 + 1 + 1,
     );
     expect(root().querySelectorAll('input[type="file"]')).toHaveLength(1);
     for (const control of controls) {
@@ -1442,6 +1443,7 @@ describe('ControlPanel', () => {
         'Durée d’éclairage par jour',
         'Raclette : cliquer sur les algues',
         'Sécateur : cliquer sur une plante haute',
+        'Verser une dose d’amorce de bactéries nitrifiantes',
         'Retirer une feuille de catappa',
         'Ajouter une feuille de catappa',
       ]);
