@@ -6641,10 +6641,10 @@
           "note": "Issue #529 : Amorce de bactéries nitrifiantes (S)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-09T05:18:03.561Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-09T08:16:56.233Z",
+          "note": "PR #537 : amorce de bactéries, CI verte ; filtre toujours à 1 en jeu (bouton refusé hors import), maturation à planifier ; verify local partiel (e2e via CI)"
         }
       },
       "metriques": {}
