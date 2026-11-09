@@ -6687,6 +6687,12 @@
           "debut": "2026-11-09T11:32:20.360Z",
           "fin": "2026-11-09T12:09:14.562Z",
           "note": "Verdict OK, 0 bug, CI verte, captures c183 publiées (5 angles identiques à c182 + capture chlore)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-09T12:09:47.622Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
