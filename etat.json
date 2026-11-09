@@ -6749,10 +6749,10 @@
           "note": "Issue #540 + #542 : lot de dette aide débutant (32 dette > 30), velours #532 décalé (S)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-09T17:56:38.747Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-09T19:29:32.345Z",
+          "note": "PR #543 : aide produits et cycle sans chlore, CI verte après relance de 3 jobs abandonnés par GitHub (e2e 1-2, captures) ; e2e local partiel, captures identiques à c184 ; #520 pts 1-2 déjà faits"
         }
       },
       "metriques": {}
