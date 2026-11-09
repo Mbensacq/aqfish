@@ -303,6 +303,11 @@ test.describe('Panneau de contrôle', () => {
     await expect(
       page.getByRole('button', { name: 'Sécateur : cliquer sur une plante haute' }),
     ).toBeFocused();
+    // Amorce de bactéries (#529), à côté du sécateur.
+    await page.keyboard.press('Tab');
+    await expect(
+      page.getByRole('button', { name: 'Verser une dose d’amorce de bactéries nitrifiantes' }),
+    ).toBeFocused();
     // Feuilles de catappa (#239) : « − » (désactivé, mais atteignable au clavier) puis « + ».
     await page.keyboard.press('Tab');
     await expect(
