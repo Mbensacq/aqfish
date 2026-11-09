@@ -6785,10 +6785,10 @@
           "note": "Issue #544 : e2e clavier du panneau trop lent (dette 31>30, S)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-09T22:39:19.501Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-09T23:36:26.707Z",
+          "note": "PR #545 : e2e clavier du panneau découpé par section (#544), CI verte ; e2e local partiel (panneau seul)"
         }
       },
       "metriques": {}
