@@ -6647,10 +6647,10 @@
           "note": "PR #537 : amorce de bactéries, CI verte ; filtre toujours à 1 en jeu (bouton refusé hors import), maturation à planifier ; verify local partiel (e2e via CI)"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-09T08:17:39.437Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-09T08:32:17.409Z",
+          "note": "Verdict OK, 0 bug, 1 remarque (attribution dans description PR), captures c182 publiées (5 angles identiques)"
         }
       },
       "metriques": {}
