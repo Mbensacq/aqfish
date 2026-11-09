@@ -1,3 +1,8 @@
+import {
+  BACTERIA_STARTER_TRACE,
+  MAX_BACTERIA_STARTER,
+  stepBacteriaStarterInPlace,
+} from './bacteria-starter';
 import { MAX_LIGHTING_HOURS, MIN_LIGHTING_HOURS, readAlgae } from './algae';
 import { readPlantGrowth, type PlantGrowth } from './plant-growth';
 import { catappaPh, catappaStrength, readCatappa, stepCatappaInPlace } from './catappa';
@@ -107,6 +112,11 @@ export interface WaterState {
   readonly gh?: number;
   /** Dureté carbonatée, en °dKH (issue #484), même convention que `gh`. */
   readonly kh?: number;
+  /**
+   * Réserve d'amorce de bactéries nitrifiantes, en doses, dans ]0, `MAX_BACTERIA_STARTER`]
+   * (issue #529, `sim/bacteria-starter.ts`). Absente : aucune amorce, le filtre ne bouge pas.
+   */
+  readonly bacteriaStarter?: number;
 }
 
 /** État de l'eau modifiable en place (propriétaire unique : le monde). */
@@ -297,6 +307,7 @@ export function stepWaterInPlace(
     MAX_WATER_TEMPERATURE,
   );
   water.filter = filter;
+  stepBacteriaStarterInPlace(water, dt);
   water.ph = stepPh(water.ph, dt, load, liters);
   const leaves = water.catappa as number[] | undefined;
   if (leaves !== undefined && leaves.length > 0) {
@@ -362,6 +373,13 @@ export function changeWaterInPlace(
       delete water.medication;
     }
   }
+  // Amorce de bactéries (issue #529) : diluée comme les autres produits (`docs/SOINS.md` § 12).
+  if (water.bacteriaStarter !== undefined) {
+    water.bacteriaStarter *= keep;
+    if (!(water.bacteriaStarter >= BACTERIA_STARTER_TRACE)) {
+      delete water.bacteriaStarter;
+    }
+  }
   return water;
 }
 
@@ -417,6 +435,7 @@ export function readWater(value: unknown, environment: EnvironmentId): ReadWater
       | 'catappa'
       | 'salt'
       | 'medication'
+      | 'bacteriaStarter'
       | 'ichCure'
       | 'lighting'
       | 'algae'
@@ -488,12 +507,18 @@ export function readWater(value: unknown, environment: EnvironmentId): ReadWater
     }
     hardness[key] = v;
   }
-  const optional: ['salt' | 'medication' | 'ichCure', number, number][] = [
+  const optional: ['salt' | 'medication' | 'ichCure' | 'bacteriaStarter', number, number][] = [
     ['salt', 0, MAX_SALT],
     ['medication', 0, MAX_MEDICATION],
     ['ichCure', 0, 1],
+    ['bacteriaStarter', 0, MAX_BACTERIA_STARTER],
   ];
-  const extra: { salt?: number; medication?: number; ichCure?: number } = {};
+  const extra: {
+    salt?: number;
+    medication?: number;
+    ichCure?: number;
+    bacteriaStarter?: number;
+  } = {};
   for (const [key, min, max] of optional) {
     const v = read(key);
     if (v === undefined) {

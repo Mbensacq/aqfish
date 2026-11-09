@@ -127,6 +127,7 @@
       (catappaChanged)="aquarium.setCatappa($event)"
       (waterChangeRequested)="aquarium.changeWater()"
       (treatmentRequested)="aquarium.treat($event)"
+      (bacteriaStarterRequested)="aquarium.doseBacteriaStarter()"
       (exportRequested)="aquarium.exportSave()"
       [shareLink]="aquarium.shareLink()"
       (shareRequested)="aquarium.shareTank()"

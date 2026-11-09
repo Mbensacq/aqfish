@@ -500,7 +500,29 @@ export interface NewTankRequest {
             >
               {{ pruning() ? 'Poser le sécateur' : 'Sécateur' }}
             </button>
+            @if (careMode() !== 'decor') {
+              <!-- Amorce de bactéries (#529) : un produit, sur la rangée des outils. -->
+              <button
+                type="button"
+                class="control-panel__edit"
+                data-bacteria-starter
+                aria-label="Verser une dose d’amorce de bactéries nitrifiantes"
+                title="Source : docs/SOINS.md § 1.1 (étiquette Stability, secondaire) ; gain du filtre : approximation de jeu."
+                (click)="bacteriaStarterRequested.emit()"
+              >
+                Bactéries
+              </button>
+            }
           </div>
+          @if (!careShown() && treatmentNotice(); as notice) {
+            <!-- Sans section « Soins », le message du produit s'affiche ici (même bulle, #490). -->
+            <app-treatment-notice
+              class="control-panel__message"
+              [class.control-panel__message--error]="!notice.ok"
+              data-starter-message
+              [notice]="notice"
+            />
+          }
           <!-- Feuilles de catappa (#239) : « − », nombre, « + », puis le rappel que l'effet est
                simplifié (approximation de jeu, ADR 0071). -->
           <div class="control-panel__count" data-catappa>
@@ -1311,6 +1333,8 @@ export class ControlPanel {
   readonly waterChangeRequested = output<void>();
   /** Bouton d'un traitement des points blancs (#361) : un geste de ce traitement. */
   readonly treatmentRequested = output<TreatmentKind>();
+  /** Dose d'amorce de bactéries demandée (#529). */
+  readonly bacteriaStarterRequested = output<void>();
   /** Bouton « Exporter » (#70). */
   readonly exportRequested = output<void>();
   /** Bouton « Partager ce bac » (#426). */

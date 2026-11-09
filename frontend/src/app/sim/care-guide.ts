@@ -94,6 +94,10 @@ const PRODUCTS: readonly GuideEntry[] = [
     [
       ['Usage', 'accélérer le cyclage d’un bac neuf (6 à 8 semaines sans aide)'],
       ['Risques', 'efficacité variable, non vérifiée de façon indépendante'],
+      [
+        'Dans le jeu',
+        'bouton « Bactéries » des réglages : 7 journées simulées (étiquette Stability), gain du filtre en approximation de jeu',
+      ],
     ],
     `${S} 1.1 et § 14 (étiquettes via revendeurs, secondaire ; UF/IFAS)`,
   ),
