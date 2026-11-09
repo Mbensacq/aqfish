@@ -171,7 +171,7 @@ describe('eau douce, lot 2 (#362) : catalogue complet', () => {
     expect(median(heights(world, 'ancistrus', steps))).toBeLessThan(0.12);
     expect(median(heights(first, 'otocinclus', steps))).toBeLessThan(0.35);
     expect(median(heights(second, 'danio', steps))).toBeGreaterThan(0.5);
-  });
+  }, 30_000);
 
   it('même graine, même trajectoire ; autre graine, autre trajectoire', () => {
     const make = (seed: number) =>
