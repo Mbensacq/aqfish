@@ -141,6 +141,12 @@ import {
   type ConditionerKind,
   type ConditionerOutcome,
 } from './water-conditioner';
+import { setCarbonInPlace, type CarbonOutcome } from './water-carbon';
+import {
+  dosePhRegulatorInPlace,
+  type PhRegulatorDirection,
+  type PhRegulatorOutcome,
+} from './ph-regulator';
 import { waterQuality } from './water-quality';
 import {
   applyTreatmentInPlace,
@@ -1448,6 +1454,19 @@ export function doseWorldConditionerInPlace(
   kind: ConditionerKind,
 ): ConditionerOutcome {
   return doseConditionerInPlace(world.water as MutableWaterState, kind, 1);
+}
+
+/** Place ou retire le charbon actif (issue #531), **en modifiant** `world`. */
+export function setWorldCarbonInPlace(world: MutableWorld, present: boolean): CarbonOutcome {
+  return setCarbonInPlace(world.water as MutableWaterState, present);
+}
+
+/** Dose de régulateur de pH (issue #531), **en modifiant** `world`. */
+export function doseWorldPhRegulatorInPlace(
+  world: MutableWorld,
+  direction: PhRegulatorDirection,
+): PhRegulatorOutcome {
+  return dosePhRegulatorInPlace(world.water as MutableWaterState, direction);
 }
 
 /** Active ou non les changements d'eau à l'eau non traitée (issue #530), **en modifiant**. */

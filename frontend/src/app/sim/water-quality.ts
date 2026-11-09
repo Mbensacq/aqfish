@@ -191,7 +191,7 @@ export function waterReadout(
     phZone: phZone(water.ph, bands),
     phBands: bands,
     catappa: water.catappa?.length ?? 0,
-    tea: catappaTint(water.catappa),
+    tea: water.carbon === true ? 0 : catappaTint(water.catappa),
     products: waterProducts(water),
     gh: tenth(hardness.gh),
     kh: tenth(hardness.kh),

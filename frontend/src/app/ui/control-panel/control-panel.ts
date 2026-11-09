@@ -85,6 +85,7 @@ import {
   type TreatmentNotice,
   type TreatmentReadout,
 } from '../../sim/treatment-text';
+import type { PhRegulatorDirection } from '../../sim/ph-regulator';
 import type { ConditionerKind } from '../../sim/water-conditioner';
 import { formatTenth } from '../../sim/water-dashboard';
 import { DEFAULT_WATER_READOUT, type WaterReadout } from '../../sim/water-quality';
@@ -513,7 +514,16 @@ export interface NewTankRequest {
               >
                 Bactéries
               </button>
-              <!-- Chlore (#530) : eau versée au changement d'eau, puis conditionneurs. -->
+            }
+          </div>
+          @if (careMode() !== 'decor') {
+            <!-- Chlore (#530) : eau versée au changement d'eau, puis conditionneurs. Rangée à part :
+                 six boutons sur une ligne se chevauchent (docs/PIEGES.md). -->
+            <div
+              class="control-panel__row control-panel__row--halves"
+              role="group"
+              aria-label="Eau du robinet et conditionneurs"
+            >
               <button
                 type="button"
                 class="control-panel__edit"
@@ -545,8 +555,47 @@ export interface NewTankRequest {
               >
                 Liant
               </button>
-            }
-          </div>
+            </div>
+            <!-- Charbon actif et régulateur de pH (#531) : rangée à part : la précédente ne passe
+                 pas à la ligne (docs/PIEGES.md). -->
+            <div
+              class="control-panel__row control-panel__row--halves"
+              role="group"
+              aria-label="Charbon actif et régulateur de pH"
+            >
+              <button
+                type="button"
+                class="control-panel__edit"
+                data-carbon
+                [attr.aria-pressed]="carbon()"
+                aria-label="Charbon actif dans le filtre"
+                title="Retire médicaments et couleur des tanins ; à enlever pendant un traitement (docs/SOINS.md, Merck)."
+                (click)="carbonToggled.emit()"
+              >
+                Charbon
+              </button>
+              <button
+                type="button"
+                class="control-panel__edit"
+                data-ph-regulator="-1"
+                aria-label="Baisser le pH d’un cran"
+                title="Au plus 0,3 de pH par jour : les variations brusques stressent les animaux (approximation de jeu)."
+                (click)="phRegulatorRequested.emit(-1)"
+              >
+                pH −
+              </button>
+              <button
+                type="button"
+                class="control-panel__edit"
+                data-ph-regulator="1"
+                aria-label="Monter le pH d’un cran"
+                title="Au plus 0,3 de pH par jour : les variations brusques stressent les animaux (approximation de jeu)."
+                (click)="phRegulatorRequested.emit(1)"
+              >
+                pH +
+              </button>
+            </div>
+          }
           @if (!careShown() && treatmentNotice(); as notice) {
             <!-- Sans section « Soins », le message du produit s'affiche ici (même bulle, #490). -->
             <app-treatment-notice
@@ -559,7 +608,12 @@ export interface NewTankRequest {
           <!-- Feuilles de catappa (#239) : « − », nombre, « + », puis le rappel que l'effet est
                simplifié (approximation de jeu, ADR 0071). -->
           <div class="control-panel__count" data-catappa>
-            <span class="control-panel__count-label" id="panneau-catappa">Feuilles de catappa</span>
+            <span
+              class="control-panel__count-label"
+              id="panneau-catappa"
+              title="Effet simplifié : ne remplace pas un test de pH."
+              >Feuilles de catappa</span
+            >
             <button
               type="button"
               class="control-panel__step"
@@ -1300,6 +1354,8 @@ export class ControlPanel {
   readonly treatmentNotice = input<TreatmentNotice | null>(null);
   /** Vrai si les changements d'eau versent de l'eau non traitée (#530). */
   readonly untreatedTap = input(false);
+  /** Vrai si du charbon actif est dans le filtre (#531). */
+  readonly carbon = input(false);
   /** État de la sauvegarde automatique (fourni par l'hôte, #70). */
   readonly saveStatus = input<SaveStatus | null>(null);
   /** Dernier message de la sauvegarde : import refusé, import réussi… (fourni par l'hôte). */
@@ -1374,6 +1430,10 @@ export class ControlPanel {
   readonly conditionerRequested = output<ConditionerKind>();
   /** Bascule de l'eau du robinet entre traitée et non traitée (#530). */
   readonly untreatedTapToggled = output<void>();
+  /** Bascule du charbon actif (#531). */
+  readonly carbonToggled = output<void>();
+  /** Dose de régulateur de pH demandée (#531). */
+  readonly phRegulatorRequested = output<PhRegulatorDirection>();
   /** Bouton « Exporter » (#70). */
   readonly exportRequested = output<void>();
   /** Bouton « Partager ce bac » (#426). */

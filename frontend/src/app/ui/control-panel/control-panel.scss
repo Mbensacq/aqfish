@@ -299,6 +299,12 @@
     display: none;
   }
 
+  // Note des feuilles de catappa (#531) : reprise dans l'infobulle ; sa place revient aux rangées
+  // de produits de la section « Eau », pour rester sur deux colonnes (docs/PIEGES.md).
+  [data-catappa-note] {
+    display: none;
+  }
+
   // Onze espèces au bac tropical (#362) : la liste défile seule, pour que « Bacs » et
   // « Sauvegarde » restent dans la deuxième colonne (voir docs/PIEGES.md). Hauteur arrondie à
   // un nombre entier de lignes d'espèce (#370) : pas de 46 px, 56 px de titre, de marges et

@@ -6,6 +6,10 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Relever des processus avec `ps | grep` puis `kill` : même danger que `pkill -f`** (cycle 184,
+  #531) : la ligne du shell de l'outil Bash contient le motif (`npm run verify`…), il se tue
+  (sortie 144). Viser des PID relevés dans un appel à part. Ne pas non plus modifier l'arbre de
+  travail pendant un `verify` lancé sur `main` : le résultat ne vaut plus pour `main`. (2026-11-09)
 - **Champ du monde écrit à la sauvegarde : pas dans `saveText`** (cycle 179, #512) :
   `setEnvironment` sauvegarde en quittant le bac ; un champ posé dans `saveText` dès que
   `world.time` a avancé casse `setEnvironment (#277, #316)` (texte du bac repris différent).
@@ -17,6 +21,8 @@ haut de sa section.
   champ optionnel casse `toEqual(world)` et `serializeWorld(host.world) === serializeWorld(advance(…))`.
   Garder l'état dérivé à part (`WeakMap` par monde) et n'écrire qu'à une action ou à la sauvegarde
   automatique. `ng test --include=…` échoue sur les `.scss` : lancer la suite. (2026-11-08)
+- **Boutons d'une rangée `--halves` : trois au plus** (cycle 184, #531) : à six, les libellés se
+  chevauchent sans erreur (visible sur `front-soins.png`) ; ouvrir une rangée de plus. (2026-11-09)
 - **Rangée « Outils d'entretien » du panneau : libellés courts obligatoires** (cycle 183, #530) :
   la rangée ne passe pas à la ligne ; un libellé long fait déborder le panneau en largeur à
   1280 × 720 (`e2e/cadrage-panneaux.spec.ts`). Mettre le nom complet dans `aria-label`.

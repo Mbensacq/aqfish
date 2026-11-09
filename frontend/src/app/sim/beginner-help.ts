@@ -167,6 +167,7 @@ export function whyTopics(): readonly WhyTopic[] {
 /** Explication liée à chaque alerte du tableau de bord (`sim/dashboard-alerts.ts`). */
 export const ALERT_TOPICS: Readonly<Record<AlertId, WhyTopicId>> = {
   chlorine: 'azote',
+  carbon: 'azote',
   ammonia: 'azote',
   nitrite: 'azote',
   nitrate: 'azote',

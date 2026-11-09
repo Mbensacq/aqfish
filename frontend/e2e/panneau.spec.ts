@@ -313,6 +313,9 @@ test.describe('Panneau de contrôle', () => {
       'Eau du robinet non traitée',
       'Verser du conditionneur au thiosulfate (chlore)',
       'Verser du conditionneur liant l’ammoniaque',
+      'Charbon actif dans le filtre',
+      'Baisser le pH d’un cran',
+      'Monter le pH d’un cran',
     ]) {
       await page.keyboard.press('Tab');
       await expect(page.getByRole('button', { name })).toBeFocused();
