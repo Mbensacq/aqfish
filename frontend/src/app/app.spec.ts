@@ -189,7 +189,7 @@ describe('App', () => {
         button.click();
         await fixture.whenStable();
       };
-      return { settingsButton, helpButton, settings, help, click };
+      return { root, settingsButton, helpButton, settings, help, click };
     }
 
     it('écran étroit : ouvrir l’un replie l’autre, dans les deux sens', async () => {
@@ -212,6 +212,18 @@ describe('App', () => {
       await ui.click(ui.settingsButton());
       expect(ui.settings()).not.toBeNull();
       expect(ui.help()).not.toBeNull();
+    });
+
+    it('la languette du parcours se masque avec « Réglages » ouvert et revient (#527)', async () => {
+      const ui = await render();
+      const path = () => ui.root.querySelector('app-first-tank-path');
+      expect(path()).not.toBeNull();
+      await ui.click(ui.settingsButton());
+      expect(ui.settings()).not.toBeNull();
+      expect(path()).toBeNull();
+      await ui.click(ui.settingsButton());
+      expect(ui.settings()).toBeNull();
+      expect(path()).not.toBeNull();
     });
 
     it('replier l’un ne touche pas à l’autre', async () => {

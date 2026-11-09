@@ -81,6 +81,29 @@ test('replié par défaut, masquable, repris depuis le guide', async ({ page }, 
   await expect(page.locator('[data-first-tank-body]')).toBeVisible();
 });
 
+test('Réglages ouvert : la languette se masque, revient à la fermeture dans le même état (#527)', async ({
+  page,
+}, testInfo) => {
+  testInfo.setTimeout(120_000);
+  await page.addInitScript(() => {
+    localStorage.setItem('aqfish.guide-debutant.v1', 'vu');
+    localStorage.setItem('aqfish.parcours-premier-bac.v1', 'ouvert');
+  });
+  await page.goto('/?seed=42&vitesse=0');
+  await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+
+  const path = page.locator('[data-first-tank-path]');
+  const settings = page.getByRole('button', { name: 'Réglages' });
+  await expect(path).toBeVisible();
+  await expect(page.locator('[data-first-tank-body]')).toBeVisible();
+
+  await settings.click();
+  await expect(path).toHaveCount(0);
+  await settings.click();
+  await expect(path).toBeVisible();
+  await expect(page.locator('[data-first-tank-body]')).toBeVisible();
+});
+
 test('390 × 844 : le panneau déplié reste dans l’écran', async ({ page }, testInfo) => {
   testInfo.setTimeout(120_000);
   await page.setViewportSize({ width: 390, height: 844 });

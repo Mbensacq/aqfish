@@ -11,6 +11,7 @@ import {
   maintenanceSummary,
   readMaintenance,
   sameMaintenanceReadout,
+  type MaintenanceReadout,
 } from './maintenance';
 
 describe('calendrier d’entretien (#513)', () => {
@@ -92,6 +93,49 @@ describe('calendrier d’entretien (#513)', () => {
     expect(
       sameMaintenanceReadout(maintenanceReadout(state, 0), maintenanceReadout(state, DAY)),
     ).toBe(false);
+  });
+
+  it('compare chaque champ du relevé (#520)', () => {
+    const base = maintenanceReadout(state, 0);
+    const item = base.items[0]!;
+    const line = { task: item.task, label: item.label, day: 1 };
+    const withLog = { ...base, log: [line] };
+    const changes: MaintenanceReadout[] = [
+      { ...base, items: [{ ...item, label: 'x' }, ...base.items.slice(1)] },
+      { ...base, items: [{ ...item, overdue: !item.overdue }, ...base.items.slice(1)] },
+      { ...base, items: [{ ...item, days: item.days + 1 }, ...base.items.slice(1)] },
+      { ...base, items: [{ ...item, text: 'x' }, ...base.items.slice(1)] },
+      { ...base, items: base.items.slice(1) },
+      { ...base, due: [item.task] },
+    ];
+    for (const change of changes) {
+      expect(sameMaintenanceReadout(base, change)).toBe(false);
+    }
+    expect(sameMaintenanceReadout(withLog, { ...base, log: [{ ...line, day: 2 }] })).toBe(false);
+    expect(sameMaintenanceReadout(withLog, { ...base, log: [{ ...line, label: 'x' }] })).toBe(
+      false,
+    );
+    expect(sameMaintenanceReadout(withLog, { ...base, log: [{ ...line }] })).toBe(true);
+  });
+
+  it('compare aussi la tâche des éléments et du journal, et la liste des tâches dues (#520)', () => {
+    const base = maintenanceReadout(state, 0);
+    const [first, second] = base.items;
+    const line = { task: first!.task, label: first!.label, day: 1 };
+    const withLog = { ...base, log: [line] };
+    expect(sameMaintenanceReadout(base, null)).toBe(false);
+    expect(
+      sameMaintenanceReadout(base, {
+        ...base,
+        items: [{ ...first!, task: second!.task }, ...base.items.slice(1)],
+      }),
+    ).toBe(false);
+    expect(
+      sameMaintenanceReadout(withLog, { ...base, log: [{ ...line, task: second!.task }] }),
+    ).toBe(false);
+    const dueA = { ...base, due: [first!.task] };
+    expect(sameMaintenanceReadout(dueA, { ...base, due: [second!.task] })).toBe(false);
+    expect(sameMaintenanceReadout(dueA, { ...base, due: [first!.task] })).toBe(true);
   });
 
   it('relit un calendrier valide et refuse le reste', () => {

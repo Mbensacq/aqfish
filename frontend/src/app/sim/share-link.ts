@@ -205,9 +205,13 @@ export function sharedAnimalCount(result: Extract<ParseShareResult, { ok: true }
   return roomAnimalCount(result.room);
 }
 
-/** Texte partagé du bac `world` : sa sauvegarde au schéma 1, seul, avec `settings`. */
+/**
+ * Texte partagé du bac `world` : sa sauvegarde au schéma 1, seul, avec `settings`, sans
+ * l'historique de l'eau (#524) : ces ~3 Kio ne disent rien à celui qui reçoit le bac et
+ * rapprocheraient le lien de `MAX_SHARE_LINK_LENGTH`.
+ */
 export function sharedText(world: World, settings: SaveSettings): string {
-  return serializeWorld(world, settings);
+  return serializeWorld({ ...world, waterHistory: undefined }, settings);
 }
 
 /** Issue d'une demande de partage. */

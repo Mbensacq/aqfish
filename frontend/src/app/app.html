@@ -60,10 +60,12 @@
         (wikiPageRequested)="onWikiPageRequested($event)"
       />
       <!-- Parcours « Mon premier aquarium » (#512) : languette en bordure, jamais bloquante. -->
-      <app-first-tank-path
-        [view]="aquarium.firstTankPath()"
-        (wikiPageRequested)="onWikiPageRequested($event)"
-      />
+      @if (firstTankPathShown()) {
+        <app-first-tank-path
+          [view]="aquarium.firstTankPath()"
+          (wikiPageRequested)="onWikiPageRequested($event)"
+        />
+      }
     }
     <!-- Panneau de contrôle (#52) : environnement (#87) et pièce (#187), bacs et meubles (#305), vitesse, heure et pluie (#106), décor et granulés (#117), eau (#207), soins (#361), population (#69), sauvegarde (#70). Fermé par défaut. -->
     <app-control-panel

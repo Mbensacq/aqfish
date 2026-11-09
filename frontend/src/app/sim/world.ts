@@ -242,7 +242,7 @@ export interface World {
    */
   readonly maintenance?: MaintenanceState;
   /**
-   * Historique de l'eau (issue #511, `sim/water-history.ts`, ADR 0117), écrit à la sauvegarde
+   * Historique de l'eau (issue #511, `sim/water-history.ts`, ADR 0118), écrit à la sauvegarde
    * seulement : la partie le tient hors du monde, aucun pas n'y touche.
    */
   readonly waterHistory?: SavedWaterHistory;

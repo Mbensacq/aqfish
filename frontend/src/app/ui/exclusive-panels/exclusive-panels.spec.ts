@@ -5,6 +5,7 @@ import {
   EXCLUSIVE_PANELS,
   EXCLUSIVE_PANELS_MAX_WIDTH,
   exclusivePanelsQuery,
+  firstTankPathVisible,
   matchesQuery,
 } from './exclusive-panels';
 
@@ -36,6 +37,11 @@ describe('panneaux exclusifs (#136)', () => {
     [1280, false],
   ])('largeur %i px : exclusifs = %s', (value, expected) => {
     expect(matchesQuery(fakeWindow({ value }), exclusivePanelsQuery())).toBe(expected);
+  });
+
+  it('languette du parcours : masquée tant que « Réglages » est ouvert (#527)', () => {
+    expect(firstTankPathVisible(false)).toBe(true);
+    expect(firstTankPathVisible(true)).toBe(false);
   });
 
   it('sans fenêtre ou sans matchMedia : jamais exclusifs', () => {

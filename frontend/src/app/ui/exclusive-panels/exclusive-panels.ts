@@ -35,3 +35,13 @@ export const EXCLUSIVE_PANELS = new InjectionToken<() => boolean>('EXCLUSIVE_PAN
     return () => matchesQuery(win, query);
   },
 });
+
+/**
+ * Vrai si la languette « Mon premier aquarium » s'affiche (#527) : elle occupe la bordure
+ * gauche, sous « Réglages » (59 à 319 px du bord), qui la recouvrirait en partie à toute
+ * largeur. Elle se masque donc tant que « Réglages » est ouvert, et revient à sa fermeture
+ * dans le même état (replié ou déplié, retenu par ses préférences).
+ */
+export function firstTankPathVisible(settingsOpen: boolean): boolean {
+  return !settingsOpen;
+}
