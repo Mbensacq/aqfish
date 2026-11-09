@@ -6743,10 +6743,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-09T17:54:59.609Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-09T17:56:02.492Z",
+          "note": "Issue #540 + #542 : lot de dette aide débutant (32 dette > 30), velours #532 décalé (S)"
         }
       },
       "metriques": {}
