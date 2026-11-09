@@ -39,6 +39,16 @@ async function withAlerts(page: Page): Promise<void> {
   }, text);
 }
 
+/** Bac à l'eau chlorée (chlore 1) : l'alerte « chlore » dès le démarrage (#540). */
+async function withChlorine(page: Page): Promise<void> {
+  const world: MutableWorld = createDefaultWorld(42);
+  world.water = { ...freshWater('tropical'), chlorine: 1 };
+  const text = serializeWorld(world, { speed: 0, clock: createDayClock(12, 1200, true) });
+  await page.addInitScript((saved) => {
+    window.localStorage.setItem('aqfish.sauvegarde', saved);
+  }, text);
+}
+
 async function shot(page: Page, name: string): Promise<void> {
   const path = test.info().outputPath(`${name}.png`);
   await page.screenshot({ path });
@@ -132,6 +142,21 @@ test.describe('guide ouvert à la demande (#240)', () => {
     await guide(page).getByRole('button', { name: 'Fermer' }).click();
     await expect(guide(page)).toHaveCount(0);
     await expect(page.locator('[data-alert-why="ammonia"]')).toBeFocused();
+    expect(errors).toEqual([]);
+  });
+});
+
+test.describe('alerte chlore (#540)', () => {
+  test('« Pourquoi ? » mène à « Les produits de l’eau », qui parle du chlore', async ({ page }) => {
+    await withChlorine(page);
+    const errors = await open(page);
+    await page.locator('[data-alert="chlorine"] button').click();
+    await page.locator('[data-alert-why="chlorine"]').click();
+    await expect(guide(page)).toBeVisible();
+    const toggle = guide(page).locator('[data-why-toggle="produits"]');
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    await expect(guide(page)).toContainText('Les produits de l’eau');
+    await expect(guide(page)).toContainText('chlore');
     expect(errors).toEqual([]);
   });
 });
