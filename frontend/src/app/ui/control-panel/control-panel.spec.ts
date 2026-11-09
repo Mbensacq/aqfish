@@ -1155,10 +1155,11 @@ describe('ControlPanel', () => {
     // immersif » (#345), « Réduire les mouvements » (#406), puis la case « Sons d'ambiance »
     // et son volume (#411), « Courant » (#460), le curseur de l'éclairage et la raclette
     // (#476), le sécateur (#477), l'amorce de bactéries (#529),
-    // l'eau non traitée et les deux conditionneurs (#530). Le champ du lien de partage
+    // l'eau non traitée et les deux conditionneurs (#530), le charbon et les deux régulateurs
+    // de pH (#531). Le champ du lien de partage
     // n'apparaît qu'avec un lien.
     expect(controls).toHaveLength(
-      5 + 1 + 1 + 1 + 2 + 2 + 17 * 5 + 2 + 1 + 1 + 1 + 1 + 2 + 1 + 2 + 1 + 1 + 3,
+      5 + 1 + 1 + 1 + 2 + 2 + 17 * 5 + 2 + 1 + 1 + 1 + 1 + 2 + 1 + 2 + 1 + 1 + 3 + 3,
     );
     expect(root().querySelectorAll('input[type="file"]')).toHaveLength(1);
     for (const control of controls) {
@@ -1448,6 +1449,9 @@ describe('ControlPanel', () => {
         'Eau du robinet non traitée',
         'Verser du conditionneur au thiosulfate (chlore)',
         'Verser du conditionneur liant l’ammoniaque',
+        'Charbon actif dans le filtre',
+        'Baisser le pH d’un cran',
+        'Monter le pH d’un cran',
         'Retirer une feuille de catappa',
         'Ajouter une feuille de catappa',
       ]);

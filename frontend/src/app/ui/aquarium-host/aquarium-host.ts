@@ -263,6 +263,8 @@ import {
   treatWorldInPlace,
   doseWorldBacteriaStarterInPlace,
   doseWorldConditionerInPlace,
+  doseWorldPhRegulatorInPlace,
+  setWorldCarbonInPlace,
   setWorldUntreatedTapInPlace,
   type Entity,
   type MutableWorld,
@@ -293,6 +295,7 @@ import {
 } from '../../sim/water-quality';
 import { waterLiters, waterProducts } from '../../sim/water';
 import type { ConditionerKind } from '../../sim/water-conditioner';
+import type { PhRegulatorDirection } from '../../sim/ph-regulator';
 import {
   advanceFirstTankPath,
   createFirstTankPath,
@@ -979,6 +982,8 @@ export class AquariumHost {
   readonly waterSample = signal<WaterSample>(DEFAULT_WATER_SAMPLE);
   /** Vrai si les changements d'eau du bac affiché versent de l'eau non traitée (#530). */
   readonly untreatedTap = signal(false);
+  /** Vrai si du charbon actif est dans le filtre du bac affiché (#531). */
+  readonly carbon = signal(false);
   /** Durée d'éclairage du bac affiché, en heures par jour (#476). */
   readonly lighting = signal(DEFAULT_LIGHTING_HOURS);
   /** Vrai tant que la raclette est en main (#476) : un clic sur le bac racle. */
@@ -1512,6 +1517,44 @@ export class AquariumHost {
     setWorldUntreatedTapInPlace(world, world.water.untreatedTap !== true);
     this.exposeWater();
     this.saveNow();
+  }
+
+  /** Place ou retire le charbon actif (#531), avec un message, enregistré avec le bac. */
+  toggleCarbon(): void {
+    const world = this.currentWorld;
+    if (!world || this.capture || isDecorMode(world)) {
+      return;
+    }
+    const outcome = setWorldCarbonInPlace(world, world.water.carbon !== true);
+    this.noticeWorld = world;
+    this.treatmentNotice.set({
+      ok: true,
+      text: outcome.message,
+      warning: outcome.warning ?? null,
+    });
+    this.exposeWater();
+    this.saveNow();
+    this.scheduleFrame();
+  }
+
+  /** Dose de régulateur de pH (#531), acceptée ou refusée avec un message. */
+  dosePhRegulator(direction: PhRegulatorDirection): void {
+    const world = this.currentWorld;
+    if (!world || this.capture || isDecorMode(world)) {
+      return;
+    }
+    const outcome = doseWorldPhRegulatorInPlace(world, direction);
+    this.noticeWorld = world;
+    this.treatmentNotice.set({
+      ok: outcome.ok,
+      text: outcome.message,
+      warning: outcome.ok ? outcome.warning : null,
+    });
+    if (outcome.ok) {
+      this.exposeWater();
+      this.saveNow();
+      this.scheduleFrame();
+    }
   }
 
   doseBacteriaStarter(): void {
@@ -4081,6 +4124,7 @@ export class AquariumHost {
     this.exposeTankList();
     this.waterSample.set(waterSample(world.water, world.environment, world.tick));
     this.untreatedTap.set(world.water.untreatedTap === true);
+    this.carbon.set(world.water.carbon === true);
     this.health.set(healthSummary(world.entities));
     this.exposeAlertAnimals(world);
     this.exposeMaintenance(world);

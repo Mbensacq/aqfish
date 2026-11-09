@@ -64,6 +64,7 @@ export type AlertId =
   | 'ich'
   | 'finRot'
   | 'treatment'
+  | 'carbon'
   | 'hunger'
   | 'health'
   | 'mix'
@@ -79,6 +80,7 @@ export const ALERT_ORDER: readonly AlertId[] = [
   'ich',
   'finRot',
   'treatment',
+  'carbon',
   'hunger',
   'nitrate',
   'algae',
@@ -355,6 +357,21 @@ export function treatmentAlert(treatment: TreatmentReadout | null): DashboardAle
   };
 }
 
+/** Charbon actif avec un médicament dans l'eau (issue #531) : le soin est retiré. */
+export function carbonAlert(active: true | undefined): DashboardAlert | null {
+  if (active !== true) {
+    return null;
+  }
+  return {
+    id: 'carbon',
+    severity: 'attention',
+    message: 'Charbon actif pendant un traitement',
+    cause: 'le charbon retire le médicament de l’eau',
+    action: 'Retirer le charbon : Réglages, Eau',
+    wiki: 'produits',
+  };
+}
+
 function healthAlert(health: HealthSummary, causes: readonly string[]): DashboardAlert | null {
   // Les animaux aux points blancs ou aux nageoires effilochées ont leurs propres alertes
   // (`ichAlert`, `finRotAlert`) : seuls les autres malades comptent ici, effectif comme
@@ -475,6 +492,7 @@ export function dashboardAlerts(input: AlertInput): readonly DashboardAlert[] {
   push(ichAlert(health));
   push(finRotAlert(health));
   push(treatmentAlert(treatment));
+  push(carbonAlert(sample.carbonAgainstMedication));
   push(hungerAlert(health));
   push(compoundAlert('nitrate', sample.nitrate));
   push(algaeAlert(sample.algae));

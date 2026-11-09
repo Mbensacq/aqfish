@@ -5,6 +5,7 @@ import { SPECIES_LABELS } from './species-catalog';
 import { speciesSheet } from './species-sheet';
 import { SPECIES, type SpeciesId } from './species';
 import { assertTimeStep } from './time-step';
+import { CARBON_MEDICATION_HALF_LIFE, CARBON_TREATMENT_WARNING } from './water-carbon';
 import {
   MAX_HEATER_TEMPERATURE,
   MAX_MEDICATION,
@@ -291,7 +292,8 @@ export function stepTreatmentInPlace(
   assertTimeStep(dt);
   const shielded = ichProtected(water);
   if (water.medication !== undefined) {
-    water.medication *= Math.exp((-Math.LN2 * dt) / MEDICATION_HALF_LIFE);
+    const halfLife = water.carbon === true ? CARBON_MEDICATION_HALF_LIFE : MEDICATION_HALF_LIFE;
+    water.medication *= Math.exp((-Math.LN2 * dt) / halfLife);
     if (!(water.medication >= MEDICATION_TRACE)) {
       delete water.medication;
     }
@@ -409,6 +411,9 @@ export function applyTreatmentInPlace(
   // simulation à l'arrêt).
   if (outcome.ok && water.ichCure === undefined && ichProtected(water)) {
     water.ichCure = 0;
+  }
+  if (outcome.ok && kind === 'medicament' && water.carbon === true) {
+    return { ...outcome, warning: CARBON_TREATMENT_WARNING };
   }
   return outcome;
 }

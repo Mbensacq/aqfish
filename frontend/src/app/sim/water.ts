@@ -16,6 +16,7 @@ import {
   MAX_CHLORINE,
   stepAmmoniaBinderInPlace,
 } from './water-conditioner';
+import { PH_REGULATOR_WAIT_SECONDS, stepPhRegulatorInPlace } from './ph-regulator';
 import { freshPh, MAX_PH, MIN_PH, phAfterWaterChange, stepPh } from './water-ph';
 import {
   HARDNESS_TRACE,
@@ -132,6 +133,10 @@ export interface WaterState {
   readonly untreatedTap?: true;
   /** Secondes restantes de protection de l'ammoniaque liée (issue #530) ; absent : aucune. */
   readonly ammoniaBinder?: number;
+  /** Charbon actif dans le filtre (issue #531, `sim/water-carbon.ts`) ; absent : aucun. */
+  readonly carbon?: true;
+  /** Secondes d'attente avant la prochaine dose de régulateur de pH (issue #531) ; absent : aucune. */
+  readonly phRegulatorWait?: number;
 }
 
 /** État de l'eau modifiable en place (propriétaire unique : le monde). */
@@ -324,6 +329,7 @@ export function stepWaterInPlace(
   water.filter = filter;
   stepBacteriaStarterInPlace(water, dt);
   stepAmmoniaBinderInPlace(water, dt);
+  stepPhRegulatorInPlace(water, dt);
   water.ph = stepPh(water.ph, dt, load, liters);
   const leaves = water.catappa as number[] | undefined;
   if (leaves !== undefined && leaves.length > 0) {
@@ -457,6 +463,8 @@ export function readWater(value: unknown, environment: EnvironmentId): ReadWater
       | 'chlorine'
       | 'untreatedTap'
       | 'ammoniaBinder'
+      | 'carbon'
+      | 'phRegulatorWait'
       | 'ichCure'
       | 'lighting'
       | 'algae'
@@ -529,7 +537,15 @@ export function readWater(value: unknown, environment: EnvironmentId): ReadWater
     hardness[key] = v;
   }
   const optional: [
-    'salt' | 'medication' | 'ichCure' | 'bacteriaStarter' | 'chlorine' | 'ammoniaBinder',
+    (
+      | 'salt'
+      | 'medication'
+      | 'ichCure'
+      | 'bacteriaStarter'
+      | 'chlorine'
+      | 'ammoniaBinder'
+      | 'phRegulatorWait'
+    ),
     number,
     number,
   ][] = [
@@ -539,6 +555,7 @@ export function readWater(value: unknown, environment: EnvironmentId): ReadWater
     ['bacteriaStarter', 0, MAX_BACTERIA_STARTER],
     ['chlorine', 0, MAX_CHLORINE],
     ['ammoniaBinder', 0, AMMONIA_BINDER_SECONDS],
+    ['phRegulatorWait', 0, PH_REGULATOR_WAIT_SECONDS],
   ];
   const extra: {
     salt?: number;
@@ -547,6 +564,7 @@ export function readWater(value: unknown, environment: EnvironmentId): ReadWater
     bacteriaStarter?: number;
     chlorine?: number;
     ammoniaBinder?: number;
+    phRegulatorWait?: number;
   } = {};
   for (const [key, min, max] of optional) {
     const v = read(key);
@@ -565,6 +583,10 @@ export function readWater(value: unknown, environment: EnvironmentId): ReadWater
   if (untreatedTap !== undefined && untreatedTap !== true) {
     return { ok: false, error: 'eau : untreatedTap doit valoir true ou être absent' };
   }
+  const carbon = read('carbon');
+  if (carbon !== undefined && carbon !== true) {
+    return { ok: false, error: 'eau : carbon doit valoir true ou être absent' };
+  }
   return {
     ok: true,
     water: {
@@ -578,6 +600,7 @@ export function readWater(value: unknown, environment: EnvironmentId): ReadWater
       ...(catappa === null || catappa.leaves.length === 0 ? {} : { catappa: catappa.leaves }),
       ...extra,
       ...(untreatedTap === true ? { untreatedTap } : {}),
+      ...(carbon === true ? { carbon } : {}),
       ...(lighting === undefined ? {} : { lighting }),
       ...(algae === null || algae.algae.every((c) => c === 0) ? {} : { algae: algae.algae }),
       ...(plantGrowth === null || Object.keys(plantGrowth.growth).length === 0

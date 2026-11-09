@@ -1,3 +1,4 @@
+import { carbonAgainstMedication } from './water-carbon';
 import { algaeCoverage } from './algae';
 import type { EnvironmentId } from './environment';
 import {
@@ -161,6 +162,8 @@ export interface WaterSample {
   readonly algae?: number;
   /** Chlore, en mg/L (issue #530) ; facultatif : absent, aucun chlore. */
   readonly chlorine?: number;
+  /** Charbon actif avec un médicament dans l'eau (issue #531) ; absent : non. */
+  readonly carbonAgainstMedication?: true;
 }
 
 /** Relevé exact de l'eau `water` d'un bac de l'environnement `environment` au pas `tick`. */
@@ -179,6 +182,7 @@ export function waterSample(
     ph: water.ph,
     ...(water.algae === undefined ? {} : { algae: algaeCoverage(water.algae) }),
     ...(water.chlorine === undefined ? {} : { chlorine: water.chlorine }),
+    ...(carbonAgainstMedication(water) ? { carbonAgainstMedication: true as const } : {}),
   };
 }
 

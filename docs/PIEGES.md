@@ -6,6 +6,10 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Relever des processus avec `ps | grep` puis `kill` : même danger que `pkill -f`** (cycle 184,
+  #531) : la ligne du shell de l'outil Bash contient le motif (`npm run verify`…), il se tue
+  (sortie 144). Viser des PID relevés dans un appel à part. Ne pas non plus modifier l'arbre de
+  travail pendant un `verify` lancé sur `main` : le résultat ne vaut plus pour `main`. (2026-11-09)
 - **Champ du monde écrit à la sauvegarde : pas dans `saveText`** (cycle 179, #512) :
   `setEnvironment` sauvegarde en quittant le bac ; un champ posé dans `saveText` dès que
   `world.time` a avancé casse `setEnvironment (#277, #316)` (texte du bac repris différent).
