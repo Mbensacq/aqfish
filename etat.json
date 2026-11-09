@@ -6755,10 +6755,10 @@
           "note": "PR #543 : aide produits et cycle sans chlore, CI verte après relance de 3 jobs abandonnés par GitHub (e2e 1-2, captures) ; e2e local partiel, captures identiques à c184 ; #520 pts 1-2 déjà faits"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-09T19:30:05.883Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-09T20:13:40.625Z",
+          "note": "Verdict OK, 0 bug, captures c185 publiées (5 angles identiques à c184), e2e alerte chlore ajouté"
         }
       },
       "metriques": {}
