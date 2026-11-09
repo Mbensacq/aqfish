@@ -6560,7 +6560,7 @@
       "type": "dette",
       "issue": 527,
       "pr": 528,
-      "version": null,
+      "version": "v1.14.5",
       "phases": {
         "planif": {
           "statut": "termine",
