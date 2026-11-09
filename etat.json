@@ -6696,6 +6696,24 @@
         }
       },
       "metriques": {}
+    },
+    "184": {
+      "numero": 184,
+      "date": "2026-11-09",
+      "debut": "2026-11-09T13:18:21.440Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-09T13:18:21.440Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
