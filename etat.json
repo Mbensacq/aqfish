@@ -6723,6 +6723,12 @@
           "debut": "2026-11-09T15:15:52.288Z",
           "fin": "2026-11-09T16:26:22.101Z",
           "note": "Verdict OK, 0 bug, CI verte, captures c184 publiées (5 angles identiques à c183), e2e charbon-ph ajouté"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-09T16:26:53.823Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
