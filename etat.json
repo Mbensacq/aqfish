@@ -6725,10 +6725,10 @@
           "note": "Verdict OK, 0 bug, CI verte, captures c184 publiées (5 angles identiques à c183), e2e charbon-ph ajouté"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-09T16:26:53.823Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-09T17:54:26.380Z",
+          "note": "PR #541 fusionnée → v1.15.2 (release CI OK, CI main verte) ; dette #542"
         }
       },
       "metriques": {}
