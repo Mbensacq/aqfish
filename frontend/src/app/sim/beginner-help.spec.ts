@@ -110,6 +110,16 @@ describe('aides pour débutant (#240)', () => {
       expect(dashboardAlerts(state)).toEqual([] as DashboardAlert[]);
     });
 
+    it('l’alerte chlore renvoie à une explication qui parle du chlore (#540)', () => {
+      expect(ALERT_TOPICS.chlorine).toBe('produits');
+      expect(whyTopic(ALERT_TOPICS.chlorine).paragraphs.join(' ')).toContain('chlore');
+    });
+
+    it('l’alerte charbon renvoie aux produits, jamais à l’azote (#542)', () => {
+      expect(ALERT_TOPICS.carbon).toBe('produits');
+      expect(whyTopic(ALERT_TOPICS.carbon).paragraphs.join(' ')).toContain('charbon');
+    });
+
     it('toute alerte a une explication, et la table ne vise que des sujets existants', () => {
       for (const id of ALERT_ORDER) {
         expect(WHY_TOPIC_ORDER, id).toContain(ALERT_TOPICS[id]);

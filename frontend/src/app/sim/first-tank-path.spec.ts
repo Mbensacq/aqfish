@@ -201,6 +201,8 @@ describe('parcours « Mon premier aquarium » (#512)', () => {
     expect(isWaterCycled({ ...water, nitrite: 5 })).toBe(false);
     expect(isWaterCycled({ ...water, filter: 0.49 })).toBe(false);
     expect(isWaterCycled({ ...water, filter: Number.NaN })).toBe(false);
+    expect(isWaterCycled({ ...water, chlorine: 0.01 })).toBe(false);
+    expect(isWaterCycled({ ...water, chlorine: Number.NaN })).toBe(false);
   });
 
   it('lit le monde sans le modifier', () => {

@@ -26,6 +26,7 @@ export type WhyTopicId =
   | 'acclimatation'
   | 'nourriture'
   | 'sante'
+  | 'produits'
   | 'cohabitation';
 
 /** Explication « Pourquoi ? » : quelques lignes et leur statut. */
@@ -76,6 +77,7 @@ export const WHY_TOPIC_ORDER: readonly WhyTopicId[] = [
   'acclimatation',
   'nourriture',
   'sante',
+  'produits',
   'cohabitation',
 ];
 
@@ -144,6 +146,16 @@ const TOPICS: Readonly<Record<WhyTopicId, WhyTopic>> = {
     ],
     status: SIMPLIFICATION,
   },
+  produits: {
+    id: 'produits',
+    title: 'Les produits de l’eau',
+    paragraphs: [
+      'Le chlore de l’eau du robinet est très toxique pour les poissons, même en faible quantité. Un conditionneur le neutralise : dans le jeu, le chlore tombe à zéro d’un coup.',
+      'Le charbon actif retire de l’eau les médicaments comme les impuretés : il faut l’enlever pendant tout traitement, sinon le médicament n’agit plus.',
+      'Un régulateur de pH corrige l’eau par petites doses, à utiliser avec prudence : un pH qui change brusquement fait du tort aux animaux. Le wiki détaille chaque produit à la page « Produits et traitements ».',
+    ],
+    status: source(`${SOINS} § 2 et § 3 et § 6 (Merck)`),
+  },
   cohabitation: {
     id: 'cohabitation',
     title: 'Mélanger les espèces',
@@ -166,8 +178,8 @@ export function whyTopics(): readonly WhyTopic[] {
 
 /** Explication liée à chaque alerte du tableau de bord (`sim/dashboard-alerts.ts`). */
 export const ALERT_TOPICS: Readonly<Record<AlertId, WhyTopicId>> = {
-  chlorine: 'azote',
-  carbon: 'azote',
+  chlorine: 'produits',
+  carbon: 'produits',
   ammonia: 'azote',
   nitrite: 'azote',
   nitrate: 'azote',
