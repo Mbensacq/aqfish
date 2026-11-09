@@ -6753,6 +6753,12 @@
           "debut": "2026-11-09T17:56:38.747Z",
           "fin": "2026-11-09T19:29:32.345Z",
           "note": "PR #543 : aide produits et cycle sans chlore, CI verte après relance de 3 jobs abandonnés par GitHub (e2e 1-2, captures) ; e2e local partiel, captures identiques à c184 ; #520 pts 1-2 déjà faits"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-09T19:30:05.883Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
