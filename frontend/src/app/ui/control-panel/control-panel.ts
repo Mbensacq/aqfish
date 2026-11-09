@@ -608,7 +608,12 @@ export interface NewTankRequest {
           <!-- Feuilles de catappa (#239) : « − », nombre, « + », puis le rappel que l'effet est
                simplifié (approximation de jeu, ADR 0071). -->
           <div class="control-panel__count" data-catappa>
-            <span class="control-panel__count-label" id="panneau-catappa">Feuilles de catappa</span>
+            <span
+              class="control-panel__count-label"
+              id="panneau-catappa"
+              title="Effet simplifié : ne remplace pas un test de pH."
+              >Feuilles de catappa</span
+            >
             <button
               type="button"
               class="control-panel__step"
