@@ -6666,7 +6666,7 @@
       "date": "2026-11-09",
       "debut": "2026-11-09T09:42:32.905Z",
       "type": "fonctionnalite",
-      "issue": null,
+      "issue": 530,
       "pr": null,
       "version": null,
       "phases": {
