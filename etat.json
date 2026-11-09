@@ -6603,6 +6603,12 @@
           "debut": "2026-11-09T02:43:49.565Z",
           "fin": "2026-11-09T02:45:38.197Z",
           "note": "Rétro #534 ; issue #525 (bug CI timeout, S) ; plan sprint 27 #529-#533 ; PR roadmap #535"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-09T02:46:15.923Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
