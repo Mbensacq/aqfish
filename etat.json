@@ -6575,10 +6575,10 @@
           "note": "PR #528 : lot dette languette/Échap/ADR/partage (#527, #524, #520 pts 1-2), CI verte ; 5 angles identiques à l'octet, front-panneau change (languette masquée) ; e2e locaux ciblés, suite complète en CI"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-09T00:31:53.481Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-09T01:24:38.183Z",
+          "note": "Verdict OK, 0 bug, 1 remarque mineure (attribution dans la description PR), mutation maintenance.ts 90→100 %, e2e languette ajouté, captures c180 publiées (5 angles identiques)"
         }
       },
       "metriques": {}
