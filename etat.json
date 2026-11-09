@@ -6681,6 +6681,12 @@
           "debut": "2026-11-09T09:43:42.199Z",
           "fin": "2026-11-09T11:31:45.750Z",
           "note": "PR #539 : chlore et conditionneurs, CI verte ; verify local partiel (e2e via CI), seule la capture front comparée à c182"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-09T11:32:20.360Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
