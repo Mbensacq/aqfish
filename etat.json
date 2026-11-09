@@ -6783,6 +6783,12 @@
           "debut": "2026-11-09T22:37:58.423Z",
           "fin": "2026-11-09T22:38:42.050Z",
           "note": "Issue #544 : e2e clavier du panneau trop lent (dette 31>30, S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-09T22:39:19.501Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
