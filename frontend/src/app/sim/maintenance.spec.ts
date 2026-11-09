@@ -118,6 +118,26 @@ describe('calendrier d’entretien (#513)', () => {
     expect(sameMaintenanceReadout(withLog, { ...base, log: [{ ...line }] })).toBe(true);
   });
 
+  it('compare aussi la tâche des éléments et du journal, et la liste des tâches dues (#520)', () => {
+    const base = maintenanceReadout(state, 0);
+    const [first, second] = base.items;
+    const line = { task: first!.task, label: first!.label, day: 1 };
+    const withLog = { ...base, log: [line] };
+    expect(sameMaintenanceReadout(base, null)).toBe(false);
+    expect(
+      sameMaintenanceReadout(base, {
+        ...base,
+        items: [{ ...first!, task: second!.task }, ...base.items.slice(1)],
+      }),
+    ).toBe(false);
+    expect(
+      sameMaintenanceReadout(withLog, { ...base, log: [{ ...line, task: second!.task }] }),
+    ).toBe(false);
+    const dueA = { ...base, due: [first!.task] };
+    expect(sameMaintenanceReadout(dueA, { ...base, due: [second!.task] })).toBe(false);
+    expect(sameMaintenanceReadout(dueA, { ...base, due: [first!.task] })).toBe(true);
+  });
+
   it('relit un calendrier valide et refuse le reste', () => {
     const saved = JSON.parse(JSON.stringify(maintenanceDone(state, 'prune', 5)));
     expect(readMaintenance(saved, [])).toEqual(saved);
