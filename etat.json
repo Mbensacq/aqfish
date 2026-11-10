@@ -6923,10 +6923,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-10T10:43:46.277Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-10T10:44:32.286Z",
+          "note": "Issue #533 : pharmacie du bac (S)"
         }
       },
       "metriques": {}
