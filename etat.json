@@ -7031,10 +7031,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-10T21:21:11.603Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-10T21:21:51.031Z",
+          "note": "Issue #548 : champignons (Saprolegnia) (M)"
         }
       },
       "metriques": {}
