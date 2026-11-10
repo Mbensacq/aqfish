@@ -598,3 +598,10 @@
     flex-wrap: wrap;
   }
 }
+
+// Bac de quarantaine (#547) : bac soigné, gestes, retour ; durée conseillée en note.
+.control-panel__quarantine {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
