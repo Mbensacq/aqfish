@@ -227,6 +227,17 @@ import {
 } from '../../sim/care-mode';
 import { returnToCareInPlace } from '../../sim/care-return';
 import { transferFish } from '../../sim/tank-transfer';
+import {
+  QUARANTINE_ACCLIMATION_REMINDER,
+  QUARANTINE_TANK_NAME,
+  QUARANTINE_TANK_SIZE,
+  EMPTY_QUARANTINE,
+  quarantineEnvironment,
+  quarantineView,
+  sameQuarantine,
+  treatTank as treatRoomTank,
+  type QuarantineView,
+} from '../../sim/quarantine';
 import { applySpeciesCountsInPlace, SPECIES_LABELS } from '../../sim/species-catalog';
 import {
   DEFAULT_FOOD_STYLE,
@@ -1076,6 +1087,8 @@ export class AquariumHost {
    * gravité d'alerte de chaque bac, bac sélectionné compris (relevé à chaque relevé de l'eau).
    */
   readonly tankList = signal<readonly TankListEntry[]>([]);
+  /** Bacs de quarantaine possibles et malades du bac affiché (#547), relevés avec la liste. */
+  readonly quarantine = signal<QuarantineView>(EMPTY_QUARANTINE, { equal: sameQuarantine });
   /** Mode du bac affiché (#278) : `decor` remplace le tableau de bord par le badge. */
   readonly careMode = signal<CareMode>('soins');
   /** Force du courant du bac affiché (#460). */
@@ -2858,6 +2871,7 @@ export class AquariumHost {
         entry.selected ? { ...entry, animals: world.entities.length } : entry,
       ),
     );
+    this.quarantine.set(quarantineView(room, selected, { world }));
     this.host.nativeElement.setAttribute(SELECTED_TANK_ATTRIBUTE, String(selected));
   }
 
@@ -2946,6 +2960,142 @@ export class AquariumHost {
     this.tankNotice.set({
       kind: 'info',
       text: [`${moved} dans « ${arrival.name} »`, ...warnings].join('. '),
+    });
+    this.exposePopulation();
+    this.exposeWater();
+    this.saveNow();
+    this.scheduleFrame();
+  }
+
+  /**
+   * Installe un bac de quarantaine (#547) : petit bac vide de l'environnement du bac affiché,
+   * nommé « Quarantaine », posé au sol à la première place libre (comme le catalogue « Bacs et
+   * meubles », la pièce peut rester masquée). Refus (jardin, plafond, aucune place) : message
+   * dans `tankNotice`. Sans effet en capture ou avant le démarrage.
+   */
+  installQuarantine(): void {
+    const world = this.currentWorld;
+    if (!world || this.capture) {
+      return;
+    }
+    const environment = quarantineEnvironment(world.environment);
+    if (environment === null) {
+      this.tankNotice.set({
+        kind: 'erreur',
+        text: 'Le bassin est au jardin : installez la quarantaine depuis un bac de la pièce',
+      });
+      return;
+    }
+    const room = this.syncRoomState(world);
+    const capped = roomTankCapRefusal(room);
+    const { area, obstacles } = this.roomFloor(world);
+    const placement =
+      capped === null
+        ? findTankSpot(room, environment, QUARANTINE_TANK_SIZE, null, area, obstacles)
+        : null;
+    const result =
+      placement === null
+        ? null
+        : addTank(room, {
+            environment,
+            size: QUARANTINE_TANK_SIZE,
+            placement,
+            name: QUARANTINE_TANK_NAME,
+          });
+    if (result === null || !result.ok) {
+      this.tankNotice.set({
+        kind: 'erreur',
+        text: capped ?? 'Aucune place libre au sol pour la quarantaine',
+      });
+      return;
+    }
+    this.tankNotice.set({
+      kind: 'info',
+      text: `Bac « ${QUARANTINE_TANK_NAME} » installé : laissez mûrir son filtre avant d’y mettre un animal`,
+    });
+    this.commitRoomLayout(result.room, null);
+    this.syncRoomState(world);
+  }
+
+  /**
+   * Soigne un bac posé de la liste (#547, quarantaine) : un geste du traitement `kind` dans ce
+   * bac **seul** (`treatTank`), le bac affiché n'est pas touché. Le bac est d'abord mis à
+   * l'heure (#316). Réussite ou refus : message dans `tankNotice`. Sans effet en capture, avant
+   * le démarrage, pour le bac affiché ou un bac à la position historique.
+   */
+  treatPlacedTank(id: number, kind: TreatmentKind): void {
+    const world = this.currentWorld;
+    if (!world || this.capture || id === this.selectedTankId) {
+      return;
+    }
+    this.advanceBackgroundTanks();
+    const room = this.syncRoomState(world);
+    const tank = findTank(room, id);
+    if (tank === undefined || tank.placement === null) {
+      return;
+    }
+    const result = treatRoomTank(room, id, kind);
+    if (!result.ok) {
+      this.tankNotice.set({ kind: 'erreur', text: result.message });
+      return;
+    }
+    this.roomState = result.room;
+    this.syncRoomState(world);
+    const { message, warning } = result.outcome as { message: string; warning?: string };
+    this.tankNotice.set({
+      kind: 'info',
+      text: [`« ${tank.name} » : ${message}`, warning].filter((t) => t !== undefined).join(' '),
+    });
+    this.saveNow();
+  }
+
+  /**
+   * Ramène à l'épuisette un animal de l'espèce `species` du bac posé `fromId` dans le bac
+   * affiché (#547, retour de quarantaine) : le plus récent de cette espèce, faim, santé et
+   * maladies gardées (`transferFish`). Le bac affiché gagne l'animal en place ; message avec le
+   * rappel d'acclimatation. Refus (milieu, température, bac plein) : message dans `tankNotice`.
+   */
+  returnAnimal(fromId: number, species: string): void {
+    const world = this.currentWorld;
+    if (!world || this.capture || !isSpeciesId(species) || fromId === this.selectedTankId) {
+      return;
+    }
+    this.advanceBackgroundTanks();
+    const room = this.syncRoomState(world);
+    const from = findTank(room, fromId);
+    const fish = from?.world.entities.filter((entity) => entity.species === species).pop();
+    if (from === undefined || from.placement === null || fish === undefined) {
+      this.tankNotice.set({ kind: 'erreur', text: 'Aucun animal de cette espèce ici' });
+      return;
+    }
+    const result = transferFish(room, fromId, this.selectedTankId, fish.id);
+    if (!result.ok) {
+      this.tankNotice.set({ kind: 'erreur', text: result.message });
+      return;
+    }
+    this.finishDropAnimation();
+    // Le bac affiché reste le même objet (avancé en place par la boucle) : il reçoit l'animal
+    // créé par le transfert et le compteur d'identifiants.
+    const arrival = (findTank(result.room, this.selectedTankId) as RoomTank).world;
+    (world.entities as Entity[]).push(arrival.entities[arrival.entities.length - 1]);
+    (world as MutableWorld).nextFishId = arrival.nextFishId;
+    this.roomState = {
+      ...result.room,
+      tanks: result.room.tanks.map((tank) =>
+        tank.id === this.selectedTankId ? { ...tank, world } : tank,
+      ),
+    };
+    this.syncRoomState(world);
+    const { singular, feminine } = SPECIES_LABELS[species];
+    const moved = `${singular.charAt(0).toUpperCase()}${singular.slice(1)} ramené${feminine ? 'e' : ''}`;
+    const name = findTank(this.roomState, this.selectedTankId)?.name ?? 'ce bac';
+    this.tankNotice.set({
+      kind: 'info',
+      text: [
+        `${moved} dans « ${name} »`,
+        QUARANTINE_ACCLIMATION_REMINDER,
+        ...result.warnings.map(addWarningText),
+      ].join('. '),
     });
     this.exposePopulation();
     this.exposeWater();

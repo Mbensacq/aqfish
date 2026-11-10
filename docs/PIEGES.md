@@ -57,6 +57,15 @@ haut de sa section.
   le vérifier à part (voir ces deux tests), dans un commit `test` séparé expliqué dans la PR ;
   ne jamais réécrire l'empreinte dorée. Les algues (#476) n'y touchaient pas : rien n'est
   écrit sans pousse. (2026-11-07)
+- **Bac malade à 1280 × 720 : la première colonne du panneau est pleine** (cycle 192, #547) :
+  avec « Soins » affichée, la colonne 1 finit à ~553 px pour une hauteur de 564 px ; une ligne
+  de plus dans « Soins » (même un quatrième bouton qui passe à la ligne) envoie « Sauvegarde »
+  en troisième colonne. La colonne 2 garde ~50 px libres : y mettre la ligne (ici, section
+  « Bacs »). Mesurer plutôt que deviner : script Playwright qui ouvre `?seed=42&points-blancs=1`
+  à 1280 × 720 (clé `aqfish.guide-debutant.v1` à `vu` dans le stockage, sinon le guide
+  intercepte le clic) et relève `getBoundingClientRect` de chaque `.control-panel__section`.
+  Forcer aussi `DejaVu Sans` (police de la CI, plus large) : « Installer un bac de quarantaine »
+  (bouton `nowrap`) passait en local et débordait en CI à 390 et 320 px. (2026-11-10)
 - **Section « Soins » du panneau à 1280 × 720 : « Sauvegarde » en troisième colonne, hors
   du panneau** (cycle 163, #488) : en deux colonnes (`column-count: 2` et `max-height`), une
   section qui ne tient plus dans la deuxième colonne en ouvre une troisième, à droite, hors de

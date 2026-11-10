@@ -106,7 +106,7 @@ simulation testable et les captures reproductibles.
   garde) ; `bacs=` en capture. Lot 3a (ADR 0075) : liste des bacs des réglages (section
   « Bacs » : nom, environnement, litrage, animaux, pire gravité d'alerte, `sim/tank-list.ts`),
   sélection d'un bac à la position historique, transfert d'un animal à l'épuisette
-  (`sim/tank-transfer.ts` : milieu, température, bac plein ; faim et santé gardées). Les bacs
+  (`sim/tank-transfer.ts` : milieu, température, bac plein ; faim, santé et maladies gardées, #547). Les bacs
   posés restent non sélectionnables (lot 3c). Lot 3b (ADR 0076) : **tous les bacs vivent** ;
   l'hôte avance en place le bac affiché à chaque image et rattrape les autres par lots
   (`stepRoom` avec `exceptTankId`) aux relevés de l'eau et avant changement de bac, transfert
@@ -363,6 +363,7 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
 | `sim/fixed-step.ts` | Accumulateur de la boucle à pas fixe (`fixedStep`, pure ; `fixedStepInto`, sans allocation) |
 | `sim/pharmacy.ts` | Pharmacie du bac (#533, ADR 0125) : produits existants (`PHARMACY_PRODUCTS`, libellé, usage, emplacement), produit en cours dans l'eau (`productActive`, `activeProducts`), mémoire des produits utilisés (`usedProducts`, tenue hors du monde par l'hôte), état « disponible / en cours / terminé » (`productStatus`), conseil pour l'alerte la plus grave (`pharmacyAdvice`) |
 | `sim/side-effects.ts` | Effets secondaires des traitements (#549, ADR 0126) : effets déclarés par produit (`SIDE_EFFECTS`, cible, texte, source ou approximation de jeu), avertissement en une phrase (`sideEffectWarning`), facteurs appliqués par la simulation : pousse des plantes ralentie par le sel (`plantGrowthFactor`), maturation d'un filtre jeune ralentie par le médicament (`filterMaturationFactor`) ; exactement 1 sans produit |
+| `sim/quarantine.ts` | Bac de quarantaine (#547, ADR 0127) : un bac posé ordinaire (petit bac, `QUARANTINE_TANK_NAME`), bacs possibles (`quarantineTanks`), geste de soin dans un seul bac de la pièce (`treatTank`, pur, les autres bacs gardent le même objet), vue de la liste (`quarantineView` : espèces et malades par bac, malades du bac affiché), durée conseillée sourcée (`QUARANTINE_DURATION_TEXT`) et rappel d'acclimatation ; la maladie suit l'animal par `transferFish` |
 | `sim/sim-speed.ts` | Vitesse de simulation (#52, ADR 0024) : `SIM_SPEEDS` (0 à ×4), `scaledDt`, `maxStepsForSpeed` |
 | `sim/time-step.ts` | `assertTimeStep` : validation unique d'un pas de temps |
 | `sim/behaviors.ts` | Comportements propres à l'espèce (#427, ADR 0106) : calendrier d'épisodes sans état (`boutRemaining`), points visés de la fouille, du broutage et du territoire (`behaviorTarget`, calculés au début du pas par `world.ts`), gestes du rendu atténués par « Réduire les mouvements » (`behaviorGesture`) |

@@ -214,6 +214,11 @@ test.describe('Captures', () => {
     // Pièce à deux bacs (#305, lot 2b) : une commode à droite du bac, un bac moyen posé dessus.
     { name: 'three-quarter-piece-deux-bacs', query: 'piece=1&bacs=commode,moyen@0' },
     { name: 'top-piece-deux-bacs', query: 'piece=1&bacs=commode,moyen@0&camera=top' },
+    // Bac de quarantaine (#547) : bac principal malade, petit bac (60 cm) posé sur une commode.
+    {
+      name: 'three-quarter-piece-quarantaine',
+      query: 'piece=1&points-blancs=1&bacs=commode,petit@0',
+    },
     // Animalerie (#419, ADR 0102) : étagère à trois niveaux, un bac moyen sur chacun.
     {
       name: 'three-quarter-piece-animalerie',
