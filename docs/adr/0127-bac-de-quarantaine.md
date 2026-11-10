@@ -29,7 +29,7 @@ bac affiché. Enfin le transfert gardait la santé de l'animal, mais pas ses mal
   ne compte que ses propres malades (`stepIchInPlace`, `stepVelvetInPlace`) : elle cesse au
   départ du dernier contagieux, sans code de plus. Un animal sain n'emporte aucun champ (mondes
   identiques au bit près à avant pour un transfert sain).
-- **Interface** : section « Bacs » des réglages. Bouton « Installer un bac de quarantaine »
+- **Interface** : section « Bacs » des réglages. Bouton « Isoler en quarantaine » (nom accessible « Installer un bac de quarantaine »)
   dès un malade dans le bac affiché tant qu'aucun bac posé n'existe (pièce masquée possible ;
   la durée sourcée est sa description). Puis groupe « Quarantaine », dès qu'un bac posé existe :
   choix du bac (nombre de malades), les trois gestes de soin pour ce bac seul, « Ramener dans le

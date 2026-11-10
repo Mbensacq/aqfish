@@ -1189,15 +1189,17 @@ export interface NewTankRequest {
           }
           @if (quarantineOffered()) {
             <!-- Quarantaine (#547) : proposée dès un malade dans le bac affiché ; la durée
-                 sourcée est la description du bouton (aucune ligne de plus à 1280 × 720). -->
+                 sourcée est la description du bouton. Libellé court : il ne passe pas à la
+                 ligne et doit tenir à 320 px avec DejaVu Sans (CI). -->
             <button
               type="button"
               class="control-panel__button"
               data-quarantine-install
+              aria-label="Installer un bac de quarantaine"
               [attr.title]="quarantineDuration"
               (click)="quarantineInstalled.emit()"
             >
-              Installer un bac de quarantaine
+              Isoler en quarantaine
             </button>
           }
           @if (quarantineShown()) {
@@ -1263,7 +1265,7 @@ export interface NewTankRequest {
                     data-quarantine-return
                     (click)="onQuarantineReturn(chosen.id)"
                   >
-                    Ramener dans le bac affiché
+                    Ramener au bac affiché
                   </button>
                 }
               }
@@ -1499,7 +1501,7 @@ export class ControlPanel {
   readonly quarantineInstalled = output<void>();
   /** Un geste de soin dans le bac de quarantaine `id` seul (#547). */
   readonly quarantineTreated = output<{ readonly id: number; readonly kind: TreatmentKind }>();
-  /** « Ramener dans le bac affiché » (#547) : bac de quarantaine et espèce. */
+  /** « Ramener au bac affiché » (#547) : bac de quarantaine et espèce. */
   readonly quarantineReturned = output<{ readonly fromId: number; readonly species: SpeciesId }>();
   /** Bouton « Granulés » : passer à l'autre rendu (#117). */
   readonly foodStyleToggled = output<void>();
