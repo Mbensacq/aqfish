@@ -6984,6 +6984,24 @@
         }
       },
       "metriques": {}
+    },
+    "192": {
+      "numero": 192,
+      "date": "2026-11-10",
+      "debut": "2026-11-10T17:10:11.111Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-10T17:10:11.111Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
