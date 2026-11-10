@@ -6825,6 +6825,12 @@
           "debut": "2026-11-10T01:29:44.017Z",
           "fin": "2026-11-10T02:17:33.796Z",
           "note": "PR #546 : dureté par paramètre + espèces comptées + classe bilan vide (#522 pts 1,2,4), CI verte ; #520 pts 1-2 déjà faits (#528) ; e2e local partiel (bilan)"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-10T02:18:11.039Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
