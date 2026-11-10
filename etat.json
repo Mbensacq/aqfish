@@ -6812,7 +6812,7 @@
       "type": "dette",
       "issue": 522,
       "pr": 546,
-      "version": null,
+      "version": "v1.15.5",
       "phases": {
         "planif": {
           "statut": "termine",
