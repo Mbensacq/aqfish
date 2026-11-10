@@ -261,6 +261,10 @@ microscopique d'un raclage de mucus ou d'une biopsie de branchie.
 ### 5.2 Velours (Oodinium / Piscinoodinium ; Amyloodinium en mer)
 En mer : cuivre libre 0,15–0,20 mg/L (UF/IFAS FA165). En eau douce : traitements spécifiques
 non vérifiés.
+- Dans le jeu (issue #532, ADR 0124) : voile doré après une incubation, sous l'effet du même
+  stress que les points blancs, contagion lente ; seul le médicament du panneau « Soins » le
+  fait reculer (aucun produit propre au velours en eau douce n'est vérifié). Sel et chaleur
+  n'agissent pas : approximation de jeu, pour distinguer les deux maladies. Délais : approximations.
 
 ### 5.3 Costia, Chilodonella, Trichodina
 Signes : respiration rapide, « piping » en surface, excès de mucus, frottements (flashing),

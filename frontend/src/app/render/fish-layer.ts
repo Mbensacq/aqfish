@@ -24,6 +24,7 @@ import { activeBehavior, behaviorGesture, type BehaviorGesture } from '../sim/be
 import { undulationAt, undulationScale, type Undulation } from '../sim/undulation';
 import { ichSeverity, isIchContagious } from '../sim/disease';
 import { finRotSeverity, showsFinRot } from '../sim/fin-rot';
+import { showsVelvet, velvetSeverity } from '../sim/velvet';
 import { dullness } from '../sim/wellbeing';
 import { fryScale } from '../sim/fry';
 import { PALETTE } from './palette';
@@ -62,6 +63,15 @@ export const DULL_ATTRIBUTE = 'aqfishDull';
 
 const COLOR_VERTEX = '#include <color_vertex>';
 const BEGIN_VERTEX = '#include <begin_vertex>';
+
+/**
+ * Déclare l'attribut `name` en tête du shader s'il ne l'est pas déjà : points blancs et velours
+ * lisent le même rang de taché (`aqfishSpot`), qu'une double déclaration rendrait invalide.
+ */
+function declareAttribute(vertexShader: string, name: string): string {
+  const line = `attribute float ${name};`;
+  return vertexShader.includes(line) ? vertexShader : `${line}\n${vertexShader}`;
+}
 
 /**
  * Points blancs (issue #366, ADR 0089) : part des voxels **tachables** d'un poisson blanchis à
@@ -107,11 +117,68 @@ export function withIchSpots(vertexShader: string): string {
   const c = new Color(ICH_SPOT_COLOR);
   const rgb = [c.r, c.g, c.b].map((v) => v.toFixed(4)).join(', ');
   return `attribute float ${ICH_ATTRIBUTE};
-attribute float ${SPOT_ATTRIBUTE};
-${vertexShader.replace(
+${declareAttribute(vertexShader, SPOT_ATTRIBUTE).replace(
   COLOR_VERTEX,
   `${COLOR_VERTEX}
 	if ( ${SPOT_ATTRIBUTE} < ${ICH_ATTRIBUTE} * ${ICH_SPOT_SHARE.toFixed(4)} ) vColor.xyz = vec3( ${rgb} );`,
+)}`;
+}
+
+/**
+ * Velours (issue #532, ADR 0124) : voile fin doré. À l'intensité maximale, chaque voxel du
+ * corps et des nageoires se mêle à peine à `VELVET_COLOR` (`VELVET_VEIL`), et la part
+ * `VELVET_DUST_SHARE` des voxels tachables, prise à l'autre bout du rang de taché que les points
+ * blancs, devient une poussière dorée (`VELVET_DUST_MIX`). Valeurs choisies sur capture
+ * (`side-velours`, `front-velours`) : un voile plus fort (0,45, puis 0,2) faisait basculer le
+ * rouge et le bleu du néon vers l'orange et le menthe à la passe palette.
+ */
+export const VELVET_VEIL = 0.08;
+export const VELVET_DUST_SHARE = 0.5;
+export const VELVET_DUST_MIX = 1;
+/** Intensité dès l'apparition du voile, dans [0, 1]. */
+export const VELVET_MIN = 0.4;
+/**
+ * Couleur du voile : or koï de la palette (`docs/DA.md`), « poussière dorée » des descriptions
+ * du velours ; distinct du blanc des points blancs et du sable pâle de la pourriture.
+ */
+export const VELVET_COLOR = PALETTE.koiOr;
+/** Attribut d'instance de l'intensité du velours, dans [0, 1]. */
+export const VELVET_ATTRIBUTE = 'aqfishVelvet';
+
+/**
+ * Intensité du velours d'un poisson, dans [0, 1] : 0 sain ou en incubation (progression
+ * absente ou invalide comprise), puis de `VELVET_MIN` à l'apparition du voile à 1 au maximum.
+ */
+export function velvetVeil(velvet: number | undefined): number {
+  if (!showsVelvet(velvet)) {
+    return 0;
+  }
+  return VELVET_MIN + (1 - VELVET_MIN) * velvetSeverity(velvet);
+}
+
+/**
+ * Ajoute le velours par instance au shader de sommets : voile doré sur tous les voxels, et
+ * poussière dorée sur les voxels dont le rang de taché dépasse `1 − intensité ×
+ * VELVET_DUST_SHARE` (les voxels trop pâles, rang hors de [0, 1), n'en reçoivent pas).
+ * Intensité nulle : garde explicite, aucun sommet touché (captures inchangées à l'octet).
+ * @throws Error si le shader n'a pas le point d'insertion attendu.
+ */
+export function withVelvet(vertexShader: string): string {
+  if (!vertexShader.includes(COLOR_VERTEX)) {
+    throw new Error(`Shader de poissons sans ${COLOR_VERTEX}`);
+  }
+  const c = new Color(VELVET_COLOR);
+  const rgb = [c.r, c.g, c.b].map((v) => v.toFixed(4)).join(', ');
+  const v = VELVET_ATTRIBUTE;
+  const s = SPOT_ATTRIBUTE;
+  return `attribute float ${v};
+${declareAttribute(vertexShader, s).replace(
+  COLOR_VERTEX,
+  `${COLOR_VERTEX}
+	if ( ${v} > 0.0 ) {
+		vColor.xyz = mix( vColor.xyz, vec3( ${rgb} ), ${v} * ${VELVET_VEIL.toFixed(4)} );
+		if ( ${s} < 1.0 && ${s} >= 1.0 - ${v} * ${VELVET_DUST_SHARE.toFixed(4)} ) vColor.xyz = mix( vColor.xyz, vec3( ${rgb} ), ${VELVET_DUST_MIX.toFixed(4)} );
+	}`,
 )}`;
 }
 
@@ -262,6 +329,8 @@ export class FishLayer {
   private readonly ich: InstancedBufferAttribute;
   /** Intensité de la pourriture des nageoires par instance (`finRotFray`, issue #485), idem. */
   private readonly finRot: InstancedBufferAttribute;
+  /** Intensité du velours par instance (`velvetVeil`, issue #532), idem. */
+  private readonly velvet: InstancedBufferAttribute;
   private readonly geometries: BufferGeometry[];
   private readonly halfLength: number;
   private readonly pose: FishPose = { x: 0, y: 0, z: 0, yaw: 0, pitch: 0, phase: 0 };
@@ -307,7 +376,8 @@ export class FishLayer {
       // Chaque ajout s'insère juste après `color_vertex` : le dernier appliqué (ternissement)
       // passe donc avant les points blancs dans le shader, qui restent clairs.
       // Liseré de la pourriture des nageoires après les points blancs (#485).
-      shader.vertexShader = withDullness(withIchSpots(withFinRot(shader.vertexShader)));
+      // Velours (#532) entre les points blancs et le liseré de la pourriture.
+      shader.vertexShader = withDullness(withIchSpots(withVelvet(withFinRot(shader.vertexShader))));
     };
     const bodyGeometry = createFishGeometry(species, 'body', variant);
     const tailGeometry = createFishGeometry(species, 'tail', variant);
@@ -318,10 +388,13 @@ export class FishLayer {
     this.ich.setUsage(DynamicDrawUsage);
     this.finRot = new InstancedBufferAttribute(new Float32Array(capacity), 1);
     this.finRot.setUsage(DynamicDrawUsage);
+    this.velvet = new InstancedBufferAttribute(new Float32Array(capacity), 1);
+    this.velvet.setUsage(DynamicDrawUsage);
     for (const geometry of this.geometries) {
       geometry.setAttribute(DULL_ATTRIBUTE, this.dull);
       geometry.setAttribute(ICH_ATTRIBUTE, this.ich);
       geometry.setAttribute(FIN_ROT_ATTRIBUTE, this.finRot);
+      geometry.setAttribute(VELVET_ATTRIBUTE, this.velvet);
     }
     this.body = new InstancedMesh(bodyGeometry, this.material, capacity);
     this.tail = new InstancedMesh(tailGeometry, this.material, capacity);
@@ -394,6 +467,7 @@ export class FishLayer {
       this.dull.setX(n, dullness(fish.health));
       this.ich.setX(n, ichSpots(fish.ich));
       this.finRot.setX(n, finRotFray(fish.finRot));
+      this.velvet.setX(n, velvetVeil(fish.velvet));
       n++;
     }
     this.body.count = n;
@@ -403,6 +477,7 @@ export class FishLayer {
     this.dull.needsUpdate = true;
     this.ich.needsUpdate = true;
     this.finRot.needsUpdate = true;
+    this.velvet.needsUpdate = true;
   }
 
   /**
@@ -434,6 +509,11 @@ export class FishLayer {
   /** Intensité de la pourriture des nageoires d'une instance, dans [0, 1] (tests). */
   finRotFrayAt(index: number): number {
     return this.finRot.getX(index);
+  }
+
+  /** Intensité du velours d'une instance, dans [0, 1] (tests). */
+  velvetVeilAt(index: number): number {
+    return this.velvet.getX(index);
   }
 
   /** Lit la matrice d'une instance du corps (tests). */

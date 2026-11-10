@@ -7,6 +7,7 @@ import { createDayClock, DEFAULT_DAY_CLOCK, HOURS_PER_DAY, type DayClock } from 
 import { parseDecorItems, type DecorItem } from './decor';
 import { catchesIch, ICH_AGGRAVATED_AT, isIchAge } from './disease';
 import { catchesFinRot, FIN_ROT_MAX, isFinRotProgress } from './fin-rot';
+import { catchesVelvet, isVelvetProgress, VELVET_MAX } from './velvet';
 import {
   ENVIRONMENT_IDS,
   environmentWater,
@@ -355,6 +356,10 @@ export function savedWorld(world: World): SavedWorld {
       if (fish.finRot !== undefined) {
         // Pourriture des nageoires (issue #485) : écrite seulement pour un animal malade.
         saved['finRot'] = fish.finRot;
+      }
+      if (fish.velvet !== undefined) {
+        // Velours (issue #532) : écrit seulement pour un animal malade.
+        saved['velvet'] = fish.velvet;
       }
       if (fish.growth !== undefined) {
         // Alevin (issue #459) : âge écrit seulement pour un alevin.
@@ -872,6 +877,19 @@ function parseFish(
     }
     if (catchesFinRot(species, envId)) {
       fish['finRot'] = finRot;
+    }
+  }
+  // Velours (issue #532) : facultatif, absent pour un animal sain et dans toute sauvegarde
+  // antérieure ; présent, progression dans [0, VELVET_MAX]. Ignoré pour un animal qui ne
+  // l'attrape pas ici, comme `ich`.
+  const velvet = own(item, 'velvet');
+  if (velvet !== undefined) {
+    if (!isVelvetProgress(velvet)) {
+      report(`velvet hors de [0, ${VELVET_MAX}]`);
+      return null;
+    }
+    if (catchesVelvet(species, envId)) {
+      fish['velvet'] = velvet;
     }
   }
   // Alevin (issue #459) : facultatif, absent pour un adulte et dans toute sauvegarde

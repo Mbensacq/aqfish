@@ -71,6 +71,15 @@ describe('pages « Produits et traitements » et « Maladies » (#291)', () => {
     }
   });
 
+  it('velours (#532) : fiche avec ses gestes dans le jeu, distincts des points blancs', () => {
+    const velvet = guideEntries('maladies').find((e) => e.id === 'velours');
+    expect(velvet?.name).toBe('Velours (Oodinium)');
+    const game = velvet?.lines.find((l) => l.label === 'Dans le jeu')?.text ?? '';
+    expect(game).toMatch(/médicament/);
+    expect(game).toMatch(/sel/);
+    expect(velvet?.status).toEqual({ kind: 'source', reference: expect.stringContaining('5.2') });
+  });
+
   it('chaque produit dit son usage', () => {
     for (const entry of guideEntries('produits')) {
       expect(entry.lines[0].label, entry.id).toBe('Usage');

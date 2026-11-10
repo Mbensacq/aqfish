@@ -2,6 +2,7 @@ import type { MixWarning } from './compatibility';
 import type { AlertId } from './dashboard-alerts';
 import { ichStage } from './disease';
 import { finRotStage } from './fin-rot';
+import { showsVelvet } from './velvet';
 import {
   HUNGRY_AVERAGE,
   readHealth,
@@ -24,7 +25,7 @@ import { feedsOnPellets, STARVING_HUNGER } from './wellbeing';
  * - `health` : malades (santé au plus `SICK_HEALTH`) sans signe de maladie, qui ont leur alerte ;
  * - `hunger` : les affamés s'il y en a, sinon ceux qui ont faim (`HUNGRY_AVERAGE`), parmi les
  *   espèces nourries aux granulés ;
- * - `ich`, `finRot` : animaux qui montrent les signes ;
+ * - `ich`, `finRot`, `velvet` : animaux qui montrent les signes ;
  * - `temperature` : espèces hors de leur plage tolérée (fiche d'espèce) ;
  * - `ph` : espèces hors de leur plage tolérée s'il y en a, sinon hors de leur plage idéale
  *   (zone « tolérée » du bac) ;
@@ -41,6 +42,7 @@ export const TARGETED_ALERTS = [
   'hunger',
   'ich',
   'finRot',
+  'velvet',
   'temperature',
   'ph',
   'mix',
@@ -86,6 +88,7 @@ export const NO_ALERT_TARGETS: AlertTargets = {
   hunger: NO_TARGET,
   ich: NO_TARGET,
   finRot: NO_TARGET,
+  velvet: NO_TARGET,
   temperature: NO_TARGET,
   ph: NO_TARGET,
   mix: NO_TARGET,
@@ -99,6 +102,10 @@ function showsIch(animal: AlertAnimal): boolean {
 function showsFinRot(animal: AlertAnimal): boolean {
   const stage = finRotStage(animal.finRot);
   return stage === 'effilochee' || stage === 'avancee';
+}
+
+function showsVeil(animal: AlertAnimal): boolean {
+  return showsVelvet(animal.velvet);
 }
 
 function hungerSelection(animals: readonly AlertAnimal[]): AlertAnimal[] {
@@ -156,11 +163,15 @@ export function alertTargets(
   }
   return {
     health: targetOf(
-      animals.filter((a) => readHealth(a.health) <= SICK_HEALTH && !showsIch(a) && !showsFinRot(a)),
+      animals.filter(
+        (a) =>
+          readHealth(a.health) <= SICK_HEALTH && !showsIch(a) && !showsFinRot(a) && !showsVeil(a),
+      ),
     ),
     hunger: targetOf(hungerSelection(animals)),
     ich: targetOf(animals.filter(showsIch)),
     finRot: targetOf(animals.filter(showsFinRot)),
+    velvet: targetOf(animals.filter(showsVeil)),
     temperature: targetOf(temperatureSelection(animals, context.temperature)),
     ph: targetOf(phSelection(animals, context.ph)),
     mix: targetOf(mixSelection(animals, context.mixes)),

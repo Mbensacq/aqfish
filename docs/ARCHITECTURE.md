@@ -191,6 +191,13 @@ simulation testable et les captures reproductibles.
   médicament). Stades effiloché et avancé : causes de santé (`finRotHealthStress`), alerte
   « Nageoires effilochées », caudale effilochée au rendu (rang `aqfishFray` des voxels,
   `withFinRot` de `render/fish-layer.ts`). Champ `finRot` facultatif de la sauvegarde.
+- **Velours** (#532, ADR 0124, `sim/velvet.ts`) : `Fish.velvet`, progression en secondes
+  (absente : sain), avancée avant les traitements. Même stress que les points blancs
+  (`ichStress`) et contagion lente, hachage sans état à sel propre ; sous médicament
+  (`medicationProtects`), aucune infection et le voile recule jusqu'à la guérison ; sel et
+  chaleur n'agissent pas (mise en garde `VELVET_WRONG_TREATMENT`). Alerte « Velours »,
+  voile doré au rendu (`withVelvet`, rang `aqfishSpot` partagé avec les points blancs).
+  Champ `velvet` facultatif de la sauvegarde ; paramètre de capture `velours=1`.
   Amphibien ou invertébré ajouté (panneau) ou transféré dans une eau qui contient déjà sel ou
   médicament (`waterProducts`, `WaterReadout.products`) : avertissement
   `treatedWaterWarning`, sans refus.

@@ -29,12 +29,20 @@ import {
   finRotFray,
   FishLayer,
   ICH_ATTRIBUTE,
+  ICH_SPOT_COLOR,
   ICH_SPOT_MIN,
   ICH_SPOT_SHARE,
   ichSpots,
   interpolateFishPose,
   withDullness,
   withFinRot,
+  withVelvet,
+  velvetVeil,
+  VELVET_ATTRIBUTE,
+  VELVET_COLOR,
+  VELVET_DUST_SHARE,
+  VELVET_MIN,
+  VELVET_VEIL,
   withIchSpots,
   type FishPose,
 } from './fish-layer';
@@ -46,6 +54,7 @@ import {
   UNSPOTTED_RANK,
 } from './fish-model';
 import { FIN_ROT_MAX, FIN_ROT_VISIBLE_AT } from '../sim/fin-rot';
+import { VELVET_MAX, VELVET_VISIBLE_AT } from '../sim/velvet';
 import { PALETTE } from './palette';
 import { ICH_AGGRAVATED_AT, ICH_VISIBLE_AT } from '../sim/disease';
 import { PIXEL_SIZE } from './pixel-art';
@@ -400,7 +409,7 @@ describe('FishLayer : couleurs ternies par la santé (#208)', () => {
     } as WebGLProgramParametersWithUniforms;
     material.onBeforeCompile(shader, null as unknown as WebGLRenderer);
     expect(shader.vertexShader).toBe(
-      withDullness(withIchSpots(withFinRot(ShaderLib.basic.vertexShader))),
+      withDullness(withIchSpots(withVelvet(withFinRot(ShaderLib.basic.vertexShader)))),
     );
     expect(shader.vertexShader).toContain(`attribute float ${DULL_ATTRIBUTE};`);
     const color = shader.vertexShader.indexOf('#include <color_vertex>');
@@ -529,5 +538,47 @@ describe('FishLayer : pourriture des nageoires (#485)', () => {
     expect(FIN_ROT_EDGE_COLOR).toBe(PALETTE.sableClair);
     expect(() => withFinRot('#include <color_vertex>')).toThrow(/begin_vertex/);
     expect(() => withFinRot('#include <begin_vertex>')).toThrow(/color_vertex/);
+  });
+});
+
+describe('FishLayer : velours (#532)', () => {
+  it('intensité : 0 sain, en incubation ou invalide ; du minimum à 1 ensuite', () => {
+    for (const velvet of [undefined, 0, VELVET_VISIBLE_AT - 1, Number.NaN, -5, VELVET_MAX + 1]) {
+      expect(velvetVeil(velvet), `velvet = ${velvet}`).toBe(0);
+    }
+    expect(velvetVeil(VELVET_VISIBLE_AT)).toBe(VELVET_MIN);
+    expect(velvetVeil(VELVET_MAX)).toBe(1);
+  });
+
+  it('intensité par instance, partagée par le corps et la queue', () => {
+    const layer = new FishLayer(NEON, 4);
+    const healthy = fishAfterSteps(0, 1);
+    const sick: Fish = { ...fishAfterSteps(1, 1), velvet: VELVET_MAX };
+    layer.update([healthy, sick], 1);
+    expect(layer.velvetVeilAt(0)).toBe(0);
+    expect(layer.velvetVeilAt(1)).toBe(1);
+    const [body, tail] = layer.object.children as Mesh[];
+    expect(body.geometry.getAttribute(VELVET_ATTRIBUTE)).toBe(
+      tail.geometry.getAttribute(VELVET_ATTRIBUTE),
+    );
+    layer.dispose();
+  });
+
+  it('shader : voile gardé par une intensité non nulle, rang de taché déclaré une seule fois', () => {
+    const shader = withVelvet(ShaderLib.basic.vertexShader);
+    expect(shader).toContain(`attribute float ${VELVET_ATTRIBUTE};`);
+    expect(shader.match(new RegExp(`${VELVET_ATTRIBUTE} > 0\\.0`, 'g'))?.length).toBe(1);
+    expect(shader).toContain(VELVET_VEIL.toFixed(4));
+    expect(shader).toContain(VELVET_DUST_SHARE.toFixed(4));
+    const both = withIchSpots(withVelvet(ShaderLib.basic.vertexShader));
+    expect(both.match(new RegExp(`attribute float ${SPOT_ATTRIBUTE};`, 'g'))?.length).toBe(1);
+    expect(() => withVelvet('void main() {}')).toThrow(/color_vertex/);
+  });
+
+  it('poussière dorée à l’autre bout du rang que les points blancs ; couleur distincte', () => {
+    expect(ICH_SPOT_SHARE).toBeLessThanOrEqual(1 - VELVET_DUST_SHARE);
+    expect(VELVET_COLOR).toBe(PALETTE.koiOr);
+    expect(VELVET_COLOR).not.toBe(ICH_SPOT_COLOR);
+    expect(VELVET_COLOR).not.toBe(FIN_ROT_EDGE_COLOR);
   });
 });

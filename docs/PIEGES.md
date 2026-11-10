@@ -1207,6 +1207,12 @@ environnement)` plutôt que `setPopulation(createDefaultWorld(…))`. (2026-10-2
 
 ## Rendu
 
+- **Teinter un poisson par mélange de couleur : la passe palette change l'espèce** (cycle 189,
+  #532) : un voile doré mêlé à 45 % (puis 20 %) à toutes les couleurs du néon faisait retomber
+  son rouge et son bleu sur l'orange et le menthe de la palette ; tous les poissons malades
+  devenaient jaunes et indiscernables. Pour un signe de maladie, préférer des voxels pleins
+  (poussière, points) sur une part des voxels et un mélange global très faible (≤ 10 %), puis
+  comparer sur capture zoomée (`front-velours`). (2026-11-10)
 - **Petit objet crème dans l'eau : un pixel et l'ombrage par face le font disparaître**
   (cycle 168, #478) : un œuf de 7 mm (un pixel de scène) ombré par face comme les granulés
   (`shadedVoxelGeometry`) tombait, vu de face, sur le ton du sable (flanc à 0,72) et ne se

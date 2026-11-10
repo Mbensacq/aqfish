@@ -5,6 +5,7 @@ import {
   animalCount,
   dashboardAlerts,
   finRotAlert,
+  velvetAlert,
   ichAlert,
   treatmentAlert,
   MAX_SHOWN_ALERTS,
@@ -17,6 +18,7 @@ import { ALGAE_BAD_COVERAGE, ALGAE_WATCH_COVERAGE } from './algae';
 import { mixWarnings } from './compatibility';
 import { ICH_AGGRAVATED_AT, ICH_VISIBLE_AT } from './disease';
 import { FIN_ROT_ADVANCED_AT, FIN_ROT_VISIBLE_AT } from './fin-rot';
+import { VELVET_ADVANCED_AT, VELVET_VISIBLE_AT } from './velvet';
 import { EMPTY_HEALTH_SUMMARY, healthSummary, type HealthSummary } from './health-summary';
 import { freshWater, WATER_TEMPERATURES } from './water';
 import { waterSample, type WaterSample } from './water-dashboard';
@@ -517,5 +519,36 @@ describe('alerte de la pourriture des nageoires (#485)', () => {
     const health = healthSummary([{ species: 'neon', health: 1, hunger: 0.2, finRot: frayed }]);
     const alerts = dashboardAlerts(input({ ammonia: COMPOUND_THRESHOLDS.ammonia.bad + 1 }, health));
     expect(ids(alerts).slice(0, 2)).toEqual(['ammonia', 'finRot']);
+  });
+});
+
+describe('alerte du velours (#532)', () => {
+  it('sain ou en incubation : aucune alerte', () => {
+    expect(velvetAlert(HEALTHY)).toBeNull();
+    const early = healthSummary([{ species: 'neon', health: 1, hunger: 0.2, velvet: 10 }]);
+    expect(dashboardAlerts(input({}, early))).toEqual([]);
+  });
+
+  it('voile visible : remède du jeu (médicament, pas le sel), lien « Maladies »', () => {
+    const health = healthSummary([
+      { species: 'neon', health: 1, hunger: 0.2, velvet: VELVET_VISIBLE_AT },
+      { species: 'neon', health: 1, hunger: 0.2, velvet: VELVET_ADVANCED_AT },
+    ]);
+    const [alert] = dashboardAlerts(input({}, health));
+    expect(alert.id).toBe('velvet');
+    expect(alert.severity).toBe('critique');
+    expect(alert.message).toBe('Velours (voile doré)');
+    expect(alert.cause).toContain('2 animaux touchés, dont 1 au stade avancé');
+    expect(alert.action).toContain('Médicament');
+    expect(alert.action).toContain('le sel et la chaleur n’y font rien');
+    expect(alert.wiki).toBe('maladies');
+  });
+
+  it('points blancs et velours : deux alertes distinctes, dans l’ordre fixe', () => {
+    const health = healthSummary([
+      { species: 'neon', health: 1, hunger: 0.2, ich: ICH_VISIBLE_AT },
+      { species: 'neon', health: 1, hunger: 0.2, velvet: VELVET_VISIBLE_AT },
+    ]);
+    expect(ids(dashboardAlerts(input({}, health)))).toEqual(['ich', 'velvet']);
   });
 });

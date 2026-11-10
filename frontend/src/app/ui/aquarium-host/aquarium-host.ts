@@ -246,6 +246,7 @@ import {
   feedInPlace,
   infectWorldInPlace,
   rotWorldFinsInPlace,
+  velvetWorldInPlace,
   setWorldCatappaInPlace,
   setWorldCurrentInPlace,
   worldCurrentLevel,
@@ -3369,6 +3370,10 @@ export class AquariumHost {
       // Nageoires effilochées de `pourriture=1` (#485), dans les mêmes conditions.
       if (params.finRot) {
         rotWorldFinsInPlace(world);
+      }
+      // Voile doré de `velours=1` (#532), dans les mêmes conditions.
+      if (params.velvet) {
+        velvetWorldInPlace(world);
       }
       // Courant de `courant=` (#460), en capture : à t = 0, avant d'avancer le monde.
       if (params.capture && isCurrentLevel(params.current)) {

@@ -38,6 +38,9 @@ import type { WaterCompound } from './water-quality';
  * - **pourriture des nageoires** (issue #485, ADR 0114) : de même, une alerte dès qu'un animal
  *   a les nageoires effilochées (`HealthSummary.finRot`), critique au stade avancé, avec sa
  *   cause (eau trop chargée) et l'action (changer l'eau), et le lien « Maladies » ;
+ * - **velours** (issue #532, ADR 0124) : de même, une alerte dès qu'un animal porte le voile
+ *   doré (`HealthSummary.velvet`), critique au stade avancé, avec le bon remède (le
+ *   médicament, pas le sel) et le lien « Maladies » ;
  * - **chlore** (issue #530) : absent tant que le chlore est à 0 ; critique dès qu'il nuit ;
  * - **traitement en cours** (issue #361, ADR 0091) : une alerte « attention » tant que la cure
  *   avance, avec les jours restants et, pour le médicament, le délai avant de redoser.
@@ -63,6 +66,7 @@ export type AlertId =
   | 'ph'
   | 'ich'
   | 'finRot'
+  | 'velvet'
   | 'treatment'
   | 'carbon'
   | 'hunger'
@@ -79,6 +83,7 @@ export const ALERT_ORDER: readonly AlertId[] = [
   'ph',
   'ich',
   'finRot',
+  'velvet',
   'treatment',
   'carbon',
   'hunger',
@@ -339,6 +344,29 @@ export function finRotAlert(health: HealthSummary): DashboardAlert | null {
 }
 
 /**
+ * Velours (issue #532) : animaux au voile doré, critique dès qu'un est au stade avancé. L'action
+ * nomme le seul remède du jeu (le médicament) pour ne pas le confondre avec les points blancs.
+ * Renvoie à la page « Maladies » du wiki.
+ */
+export function velvetAlert(health: HealthSummary): DashboardAlert | null {
+  if (health.velvet <= 0) {
+    return null;
+  }
+  const advanced = health.velvetAdvanced > 0;
+  return {
+    id: 'velvet',
+    severity: advanced ? 'critique' : 'attention',
+    message: 'Velours (voile doré)',
+    cause:
+      `parasite (Oodinium) favorisé par le stress, contagieux ; ${animalCount(health.velvet)} touché${health.velvet > 1 ? 's' : ''}` +
+      (advanced ? `, dont ${health.velvetAdvanced} au stade avancé` : ''),
+    action:
+      'Médicament tous les deux jours jusqu’à la disparition du voile : Réglages, Soins ; le sel et la chaleur n’y font rien',
+    wiki: 'maladies',
+  };
+}
+
+/**
  * Traitement des points blancs en cours (issue #361) : jours restants à la température
  * actuelle et, pour le médicament, le délai avant de redoser. Renvoie à la page « Produits et
  * traitements » du wiki.
@@ -374,8 +402,8 @@ export function carbonAlert(active: true | undefined): DashboardAlert | null {
 
 function healthAlert(health: HealthSummary, causes: readonly string[]): DashboardAlert | null {
   // Les animaux aux points blancs ou aux nageoires effilochées ont leurs propres alertes
-  // (`ichAlert`, `finRotAlert`) : seuls les autres malades comptent ici, effectif comme
-  // gravité (issues #370, #485).
+  // (`ichAlert`, `finRotAlert`, `velvetAlert`) : seuls les autres malades comptent ici,
+  // effectif comme gravité (issues #370, #485, #532).
   const others = health.sick - health.diseased;
   if (others <= 0) {
     return null;
@@ -491,6 +519,7 @@ export function dashboardAlerts(input: AlertInput): readonly DashboardAlert[] {
   push(phAlert(sample.ph, phBands));
   push(ichAlert(health));
   push(finRotAlert(health));
+  push(velvetAlert(health));
   push(treatmentAlert(treatment));
   push(carbonAlert(sample.carbonAgainstMedication));
   push(hungerAlert(health));

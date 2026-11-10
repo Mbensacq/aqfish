@@ -43,6 +43,8 @@ describe('synthèse de la santé (#260)', () => {
       weakWithoutIch: 0,
       finRot: 0,
       finRotAdvanced: 0,
+      velvet: 0,
+      velvetAdvanced: 0,
       diseased: 0,
       weakWithoutDisease: 0,
     });

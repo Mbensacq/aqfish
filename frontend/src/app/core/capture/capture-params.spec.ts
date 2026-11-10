@@ -43,6 +43,7 @@ describe('parseCaptureParams', () => {
       starved: false,
       ich: false,
       finRot: false,
+      velvet: false,
       fry: false,
       eggs: false,
       current: null,
@@ -254,6 +255,14 @@ describe('parseCaptureParams', () => {
     }
     expect(parseCaptureParams('?capture=1').ich).toBe(false);
     expect(DEFAULT_CAPTURE_PARAMS.ich).toBe(false);
+  });
+
+  it('lit le velours : velours=1 seulement (#532)', () => {
+    expect(parseCaptureParams('?capture=1&velours=1').velvet).toBe(true);
+    for (const value of ['0', 'oui', '']) {
+      expect(parseCaptureParams(`?capture=1&velours=${value}`).velvet).toBe(false);
+    }
+    expect(DEFAULT_CAPTURE_PARAMS.velvet).toBe(false);
   });
 
   it('lit les animaux affamés : affames=1 seulement, sinon nourris (#208)', () => {
