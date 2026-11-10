@@ -7043,10 +7043,10 @@
           "note": "PR #561 : champignons (Saprolegnia), CI verte (2e tentative : délai de test unitaire en CI) ; e2e locaux sur fichiers touchés"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-10T22:52:36.358Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-10T23:33:03.439Z",
+          "note": "Verdict OK, 0 bug, captures publiées (c193)"
         }
       },
       "metriques": {}
