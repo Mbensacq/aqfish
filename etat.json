@@ -6920,7 +6920,7 @@
       "type": "fonctionnalite",
       "issue": 533,
       "pr": 557,
-      "version": null,
+      "version": "v1.16.1",
       "phases": {
         "planif": {
           "statut": "termine",
