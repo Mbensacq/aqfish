@@ -112,8 +112,9 @@
   padding: 0 0 0 16px;
 }
 
-p.status__review-list {
-  padding: 0;
+/* Bilan sans point (#522) : même marge que la liste, sans retrait. */
+.status__review-empty {
+  margin: 0;
 }
 
 .status__calendar {

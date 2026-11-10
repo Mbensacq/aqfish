@@ -12,7 +12,7 @@ import { environmentById, environmentWater } from './environment';
 import { populationCounts } from './population';
 import { type SpeciesId } from './species';
 import { MIX_REASON_TEXT, SPECIES_LABELS } from './species-catalog';
-import { tankComparison } from './species-care';
+import { comparisonRowOf, tankComparison, type TankComparisonRow } from './species-care';
 import {
   AMMONIA_PER_LOAD_LITER,
   NITRITE_CONVERSION,
@@ -247,6 +247,10 @@ function compatibilityPoint(mixes: readonly MixWarning[]): ReviewPoint | null {
   };
 }
 
+/**
+ * Dureté (#484) : les espèces du bac hors de leur plage de dureté, toutes comptées (#522) ;
+ * une seule est nommée avec sa plage, plusieurs sont comptées puis nommées avec la leur.
+ */
 function hardnessPoint(
   species: readonly SpeciesId[],
   hardness: Hardness | undefined,
@@ -255,23 +259,38 @@ function hardnessPoint(
   if (hardness === undefined) {
     return null;
   }
+  const outside: { readonly id: SpeciesId; readonly row: TankComparisonRow }[] = [];
   for (const id of species) {
-    const row = tankComparison(id, sample.temperature, sample.ph, hardness)[2];
-    if (row === undefined || row.fit !== 'hors-plage') {
-      continue;
+    const row = comparisonRowOf(
+      tankComparison(id, sample.temperature, sample.ph, hardness),
+      'hardness',
+    );
+    if (row !== undefined && row.fit === 'hors-plage') {
+      outside.push({ id, row });
     }
-    return {
-      id: 'hardness',
-      severity: row.tank === 'inconnue' ? 'critique' : 'attention',
-      title: 'Dureté de l’eau mal adaptée',
-      measure:
-        row.tank === 'inconnue'
-          ? INVALID
-          : `${row.label} (minéraux dissous) à ${row.tank}, ${SPECIES_LABELS[id].plural} : ${row.preferred}`,
-      action: 'Choisir des espèces adaptées à cette eau (Réglages, Population)',
-    };
   }
-  return null;
+  const first = outside[0];
+  if (first === undefined) {
+    return null;
+  }
+  const invalid = outside.some(({ row }) => row.tank === 'inconnue');
+  const water = `${first.row.label} (minéraux dissous) à ${first.row.tank}`;
+  const ranges = outside.map(({ id, row }) =>
+    outside.length === 1
+      ? `${SPECIES_LABELS[id].plural} : ${row.preferred}`
+      : `${SPECIES_LABELS[id].plural} (${row.preferred})`,
+  );
+  return {
+    id: 'hardness',
+    severity: invalid ? 'critique' : 'attention',
+    title: 'Dureté de l’eau mal adaptée',
+    measure: invalid
+      ? INVALID
+      : outside.length === 1
+        ? `${water}, ${ranges[0]}`
+        : `${water}, ${outside.length} espèces hors plage : ${ranges.join(' ; ')}`,
+    action: 'Choisir des espèces adaptées à cette eau (Réglages, Population)',
+  };
 }
 
 function temperaturePoint(sample: WaterSample): ReviewPoint | null {

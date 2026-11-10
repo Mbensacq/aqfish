@@ -291,7 +291,7 @@ const ICONS: Readonly<Record<GaugeLevel, readonly (readonly [number, number])[]>
             }
           </ol>
         } @else {
-          <p class="status__review-list" data-review-empty>Rien à améliorer pour l’instant.</p>
+          <p class="status__review-empty" data-review-empty>Rien à améliorer pour l’instant.</p>
         }
       </div>
     }
