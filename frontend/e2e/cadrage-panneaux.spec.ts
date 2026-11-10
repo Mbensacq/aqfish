@@ -95,6 +95,16 @@ const PANELS: readonly PanelCase[] = [
       await expect(page.locator('#wiki-especes [data-wiki-sheet]')).toBeVisible();
     },
   },
+  {
+    // Pharmacie du bac (#533), bac malade : conseil le plus long (médicament ou sel).
+    name: 'Pharmacie du bac',
+    search: '?seed=42&points-blancs=1',
+    panel: (page) => page.locator('#pharmacie-bac'),
+    open: async (page) => {
+      await page.getByRole('button', { name: 'Pharmacie du bac' }).click();
+      await expect(page.locator('#pharmacie-bac [data-pharmacy-advice]')).toBeVisible();
+    },
+  },
 ];
 
 const VIEWPORTS = [
