@@ -7013,10 +7013,10 @@
           "note": "Verdict OK, 0 bug, captures publiées (cadrage quarantaine à la marge)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-10T20:10:36.848Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-10T21:20:36.632Z",
+          "note": "PR #559 fusionnée → v1.16.3 (release CI OK, CI main verte) ; dette #560 ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
