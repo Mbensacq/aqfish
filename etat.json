@@ -6941,10 +6941,10 @@
           "note": "Verdict OK, 0 bug, captures publiées"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-10T12:29:18.569Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-10T13:37:49.524Z",
+          "note": "PR #557 fusionnée → v1.16.1 (release CI OK, CI main verte) ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
