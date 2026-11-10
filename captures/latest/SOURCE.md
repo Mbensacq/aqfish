@@ -1,8 +1,8 @@
-# Captures c190
+# Captures c191
 
-- Branche : cycle/c190-pharmacie-du-bac
-- PR : #557
-- Commit : c89a802
-- Graine : 42
-- Date : 2026-11-10T12:28:28Z
-- Cinq angles de base identiques à latest/ (cmp binaire).
+- Branche : cycle/c191-effets-secondaires
+- PR : #558 (effets secondaires des traitements, #549)
+- Commit : ee600f5bbd9e5c6e0048a064bb5368d99e09d5ff
+- Graine : par défaut du contrat de capture
+- Date : 2026-11-10
+- Résultat : front, three-quarter, side, top, bottom identiques à la série précédente (octet pour octet) ; front-pharmacie nouvelle (avertissements).
