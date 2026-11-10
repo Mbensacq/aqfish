@@ -7035,6 +7035,12 @@
           "debut": "2026-11-10T21:21:11.603Z",
           "fin": "2026-11-10T21:21:51.031Z",
           "note": "Issue #548 : champignons (Saprolegnia) (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-10T21:22:45.254Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
