@@ -351,6 +351,14 @@ import {
 } from '../../sim/alert-animals';
 import { mixWarnings } from '../../sim/compatibility';
 import {
+  EMPTY_PHARMACY,
+  pharmacyState,
+  samePharmacy,
+  usedProducts,
+  type PharmacyProduct,
+  type PharmacyState,
+} from '../../sim/pharmacy';
+import {
   EMPTY_HEALTH_SUMMARY,
   healthSummary,
   sameHealthSummary,
@@ -863,6 +871,8 @@ export class AquariumHost {
   private waterHistories = new WeakMap<World, WaterHistory>();
   /** Parcours guidé de chaque monde (#512), hors du monde pendant la partie. */
   private firstTankPaths = new WeakMap<World, FirstTankPathState>();
+  /** Produits déjà utilisés dans chaque bac depuis le chargement (#533), hors du monde. */
+  private pharmacyUsed = new WeakMap<World, readonly PharmacyProduct[]>();
   /** Dernier état de parcours publié dans `firstTankPath` (`null` : aucun). */
   private exposedFirstTankPath: FirstTankPathState | null = null;
   /** Tampon et version du dernier historique exposé. */
@@ -1006,6 +1016,8 @@ export class AquariumHost {
   private highlightWorld: World | null = null;
   /** Traitement des points blancs en cours (#361), relevé avec l'eau ; `null` : aucun. */
   readonly treatment = signal<TreatmentReadout | null>(null, { equal: sameTreatment });
+  /** Produits de la pharmacie du bac affiché (#533), relevés avec l'eau. */
+  readonly pharmacy = signal<PharmacyState>(EMPTY_PHARMACY, { equal: samePharmacy });
   /** Calendrier d'entretien du bac affiché (#513) ; `null` en capture. */
   readonly maintenance = signal<MaintenanceReadout | null>(null, {
     equal: sameMaintenanceReadout,
@@ -1500,6 +1512,13 @@ export class AquariumHost {
       return;
     }
     const outcome = doseWorldConditionerInPlace(world, kind);
+    if (outcome.ok) {
+      // Le conditionneur simple agit à l'instant : la pharmacie le garde « terminé » (#533).
+      this.pharmacyUsed.set(
+        world,
+        usedProducts(this.pharmacyUsed.get(world) ?? [], ['conditionneur']),
+      );
+    }
     this.noticeWorld = world;
     this.treatmentNotice.set({ ok: outcome.ok, text: outcome.message, warning: null });
     if (outcome.ok) {
@@ -4142,6 +4161,9 @@ export class AquariumHost {
     this.exposeFirstTankPath(world);
     const treatment = treatmentReadout(world.water);
     this.treatment.set(treatment);
+    const pharmacy = pharmacyState(world.water, this.pharmacyUsed.get(world) ?? []);
+    this.pharmacyUsed.set(world, pharmacy.used);
+    this.pharmacy.set(pharmacy);
     if (this.noticeWorld !== null && this.noticeWorld !== world) {
       this.noticeWorld = null;
       this.treatmentNotice.set(null);
