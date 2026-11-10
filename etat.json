@@ -6867,6 +6867,12 @@
           "debut": "2026-11-10T05:40:43.886Z",
           "fin": "2026-11-10T06:25:26.062Z",
           "note": "Verdict RÉSERVES, 1 bug (#553 : bac posé non sélectionnable, filtre neuf inaccessible), captures publiées, 1 e2e ajouté"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-10T06:26:11.269Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
