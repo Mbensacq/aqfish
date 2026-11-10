@@ -485,6 +485,17 @@ function comparisonRow(
 }
 
 /**
+ * Ligne `parameter` d'une comparaison (`tankComparison`), retrouvée par son paramètre et non
+ * par sa position (#522) ; `undefined` si absente (dureté sans relevé).
+ */
+export function comparisonRowOf(
+  rows: readonly TankComparisonRow[],
+  parameter: TankComparisonRow['parameter'],
+): TankComparisonRow | undefined {
+  return rows.find((row) => row.parameter === parameter);
+}
+
+/**
  * Comparaison des besoins de `id` avec l'eau du bac courant, à `temperature` °C et au pH
  * `ph` : plages préférée et tolérée de la fiche (`speciesSheet`) ; avec la dureté `hardness`
  * du bac (#484), une troisième ligne compare sa GH (eau douce) ou son KH (récif) à la plage de

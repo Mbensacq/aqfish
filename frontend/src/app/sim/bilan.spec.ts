@@ -151,6 +151,28 @@ describe('tankReview (#514)', () => {
     expect(tankReview(input({ hardness: { gh: NaN, kh: 4 } }))[0].severity).toBe('critique');
   });
 
+  it('dureté : compte les espèces hors plage (0, 1, plusieurs) (#522)', () => {
+    // Néons 1 – 12 °dGH, mollys 15 – 30 °dGH.
+    expect(
+      tankReview(input({ species: ['neon', 'molly'], hardness: { gh: 14, kh: 4 } })),
+    ).toHaveLength(1);
+    expect(tankReview(input({ species: ['neon'], hardness: { gh: 6, kh: 4 } }))).toEqual([]);
+    const one = tankReview(input({ species: ['neon', 'molly'], hardness: { gh: 20, kh: 4 } }))[0];
+    expect(one.measure).toBe('Dureté (GH) (minéraux dissous) à 20,0 °dGH, néons : 1 – 12 °dGH');
+    const two = tankReview(input({ species: ['neon', 'molly'], hardness: { gh: 13, kh: 4 } }))[0];
+    expect(two.id).toBe('hardness');
+    expect(two.severity).toBe('attention');
+    expect(two.title).toBe('Dureté de l’eau mal adaptée');
+    expect(two.action).toBe('Choisir des espèces adaptées à cette eau (Réglages, Population)');
+    expect(two.measure).toBe(
+      'Dureté (GH) (minéraux dissous) à 13,0 °dGH, 2 espèces hors plage : néons (1 – 12 °dGH) ; mollys (15 – 30 °dGH)',
+    );
+    const unknown = tankReview(
+      input({ species: ['neon', 'molly'], hardness: { gh: NaN, kh: 4 } }),
+    )[0];
+    expect(unknown.severity).toBe('critique');
+  });
+
   it('compatibilité : compte les mélanges', () => {
     const point = tankReview(
       input({

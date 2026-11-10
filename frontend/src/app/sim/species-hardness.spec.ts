@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { environmentById, ENVIRONMENT_IDS } from './environment';
 import { SPECIES, type SpeciesId } from './species';
-import { tankComparison } from './species-care';
+import { comparisonRowOf, tankComparison } from './species-care';
 import {
   DETAIL_FIELDS,
   detailRows,
@@ -133,6 +133,14 @@ describe('detailRows (#484)', () => {
 describe('comparaison de la dureté avec le bac (#484)', () => {
   it('sans dureté : deux lignes, comme avant', () => {
     expect(tankComparison('neon', 24, 7)).toHaveLength(2);
+  });
+
+  it('ligne retrouvée par son paramètre, quel que soit l’ordre (#522)', () => {
+    const rows = tankComparison('neon', 24, 7, { gh: 10, kh: 6 });
+    const reversed = [...rows].reverse();
+    expect(comparisonRowOf(reversed, 'hardness')).toBe(rows[2]);
+    expect(comparisonRowOf(reversed, 'temperature')).toBe(rows[0]);
+    expect(comparisonRowOf(tankComparison('neon', 24, 7), 'hardness')).toBeUndefined();
   });
 
   it('eau douce : GH du bac dans la plage, au dixième', () => {
