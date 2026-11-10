@@ -6927,6 +6927,12 @@
           "debut": "2026-11-10T10:43:46.277Z",
           "fin": "2026-11-10T10:44:32.286Z",
           "note": "Issue #533 : pharmacie du bac (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-10T10:45:27.522Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
