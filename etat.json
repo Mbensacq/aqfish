@@ -7037,10 +7037,10 @@
           "note": "Issue #548 : champignons (Saprolegnia) (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-10T21:22:45.254Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-10T22:52:03.209Z",
+          "note": "PR #561 : champignons (Saprolegnia), CI verte (2e tentative : délai de test unitaire en CI) ; e2e locaux sur fichiers touchés"
         }
       },
       "metriques": {}
