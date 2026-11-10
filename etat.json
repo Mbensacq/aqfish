@@ -6905,10 +6905,10 @@
           "note": "Verdict RÉSERVES (rendu : néon masqué par le voile), 0 bug, CI PR verte, captures publiées"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-10T09:32:32.960Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-10T10:42:59.151Z",
+          "note": "PR #555 fusionnée → v1.16.0 (release CI OK, CI main verte) ; dette #556 (néon masqué par le velours) ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
