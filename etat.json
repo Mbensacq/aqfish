@@ -6831,6 +6831,12 @@
           "debut": "2026-11-10T02:18:11.039Z",
           "fin": "2026-11-10T03:07:35.038Z",
           "note": "Verdict OK, 0 bug, e2e bilan verts, 140 captures c187 identiques à c186, mutation hardnessPoint 91,3 % (1 test ajouté)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-10T03:08:17.131Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
