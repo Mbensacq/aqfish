@@ -58,6 +58,7 @@ const OUT_OF_RANGE: readonly (readonly [string, AlertInput, AlertId])[] = [
   ['animaux malades', input({}, { sick: 1 }), 'health'],
   ['points blancs', input({}, { sick: 1, ich: 1 }), 'ich'],
   ['nageoires effilochées', input({}, { sick: 1, finRot: 1, diseased: 1 }), 'finRot'],
+  ['velours', input({}, { sick: 1, velvet: 1, diseased: 1 }), 'velvet'],
   [
     'traitement en cours',
     {

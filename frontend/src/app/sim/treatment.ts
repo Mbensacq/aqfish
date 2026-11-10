@@ -196,9 +196,18 @@ export interface TreatmentContext {
   readonly environment: EnvironmentId;
   /** Espèces des animaux présents (doublons permis). */
   readonly species: readonly SpeciesId[];
-  /** Animaux atteints de points blancs (incubation comprise). */
+  /** Animaux atteints de points blancs ou de velours (incubation comprise), comptés une fois. */
   readonly infected: number;
+  /** Parmi eux, animaux atteints de velours (issue #532) ; absent : aucun. */
+  readonly velvet?: number;
 }
+
+/**
+ * Mise en garde d'un sel ou d'une chaleur donnés à un bac qui compte un cas de velours
+ * (issue #532) : dans le jeu, seul le médicament le fait reculer.
+ */
+export const VELVET_WRONG_TREATMENT =
+  'Velours : le sel et la chaleur ne le soignent pas ; seul le médicament le fait reculer (approximation de jeu).';
 
 const PRODUCTS_PAGE = 'voir la page « Produits et traitements » du wiki';
 
@@ -414,6 +423,16 @@ export function applyTreatmentInPlace(
   }
   if (outcome.ok && kind === 'medicament' && water.carbon === true) {
     return { ...outcome, warning: CARBON_TREATMENT_WARNING };
+  }
+  // Erreur de traitement (issue #532) : sel ou chaleur contre le velours.
+  if (outcome.ok && kind !== 'medicament' && (context.velvet ?? 0) > 0) {
+    return {
+      ...outcome,
+      warning:
+        outcome.warning === undefined
+          ? VELVET_WRONG_TREATMENT
+          : `${outcome.warning} ${VELVET_WRONG_TREATMENT}`,
+    };
   }
   return outcome;
 }

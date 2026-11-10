@@ -46,6 +46,7 @@ import { coralLayout, coralObstacles, type CoralColony } from './corals';
 import { decorObstacles, parseDecorItems, type DecorItem } from './decor';
 import { ichStress, infectAllInPlace, isIchAge, stepIchInPlace } from './disease';
 import { finRotCauses, rotAllFinsInPlace, stepFinRotInPlace } from './fin-rot';
+import { isVelvetProgress, stepVelvetInPlace, velvetAllInPlace } from './velvet';
 import { TAP_RADIUS, tapGlassInPlace, type GlassPoint } from './glass-tap';
 import {
   DEFAULT_ENVIRONMENT_ID,
@@ -151,6 +152,7 @@ import { waterQuality } from './water-quality';
 import {
   applyTreatmentInPlace,
   ichProtected,
+  medicationProtects,
   stepTreatmentInPlace,
   type TreatmentKind,
   type TreatmentOutcome,
@@ -1017,6 +1019,18 @@ function stepInPlace(world: MutableWorld, dt: number, clock: SimClock): void {
     world.tick,
     ichProtected(world.water),
   );
+  // Velours (issue #532) : même stress que les points blancs, contagion lente ; le médicament
+  // (sur l'eau du début du pas, avant sa dégradation) le fait reculer. Aucun tirage sans stress
+  // ni malade.
+  stepVelvetInPlace(
+    fishes,
+    dt,
+    ichStress(world.water, world.environment),
+    world.environment,
+    world.seed,
+    world.tick,
+    medicationProtects(world.water),
+  );
   stepTreatmentInPlace(world.water as MutableWaterState, fishes, dt);
   // Pourriture des nageoires (issue #485) : sur l'ammoniaque et les nitrites de fin de pas ;
   // tirage d'apparition seulement en eau chargée, guérison sans tirage en eau corrigée.
@@ -1414,8 +1428,16 @@ export function rotWorldFinsInPlace(world: MutableWorld): void {
 }
 
 /**
- * Geste de soin contre les points blancs (`applyTreatmentInPlace`, issue #361), **en
- * modifiant** l'eau de `world` s'il est accepté : quantité `amount` (°C, g/L ou dose) du
+ * Velours au maximum pour tous les poissons qui peuvent l'attraper (`velvetAllInPlace`,
+ * paramètre d'URL `velours=1`, issue #532), **en modifiant** `world` (monde en construction).
+ */
+export function velvetWorldInPlace(world: MutableWorld): void {
+  velvetAllInPlace(world.entities as Mutable<Entity>[], world.environment);
+}
+
+/**
+ * Geste de soin contre les points blancs et le velours (`applyTreatmentInPlace`, issues #361,
+ * #532), **en modifiant** l'eau de `world` s'il est accepté : quantité `amount` (°C, g/L ou dose) du
  * traitement `kind`, avec les espèces et le nombre de malades du bac. Réservé au propriétaire
  * unique du monde (`ui/aquarium-host`).
  */
@@ -1425,15 +1447,22 @@ export function treatWorldInPlace(
   amount: number,
 ): TreatmentOutcome {
   let infected = 0;
+  let velvet = 0;
   for (const entity of world.entities) {
-    if (isIchAge(entity.ich)) {
+    const ich = isIchAge(entity.ich);
+    const veil = isVelvetProgress(entity.velvet);
+    if (ich || veil) {
       infected += 1;
+    }
+    if (veil) {
+      velvet += 1;
     }
   }
   return applyTreatmentInPlace(world.water as MutableWaterState, kind, amount, {
     environment: world.environment,
     species: world.entities.map((entity) => entity.species),
     infected,
+    velvet,
   });
 }
 

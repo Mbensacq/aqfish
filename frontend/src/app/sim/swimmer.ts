@@ -81,6 +81,11 @@ export interface Fish {
    */
   readonly finRot?: number;
   /**
+   * Progression du velours, en secondes simulées, dans [0, `VELVET_MAX`] (`sim/velvet.ts`,
+   * issue #532) ; absent : sain. Lecture seule pour le rendu (`velvetSeverity`).
+   */
+  readonly velvet?: number;
+  /**
    * Âge de l'alevin, en secondes simulées, dans [0, `FRY_GROWTH_TIME`) (`sim/fry.ts`, issue
    * #459) ; absent : adulte. Lecture seule pour le rendu (`fryScale`).
    */

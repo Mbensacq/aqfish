@@ -218,6 +218,26 @@ const DISEASES: readonly GuideEntry[] = [
     `${S} 5.1 et § 14 (Merck ; Texas A&M CIR920 ; UF/IFAS FA006)`,
   ),
   entry(
+    'velours',
+    'Velours (Oodinium)',
+    [
+      [
+        'Symptômes',
+        'voile fin doré ou poussière dorée sur la peau et les nageoires (description d’usage, non vérifiée)',
+      ],
+      ['Cause', 'parasite (dinoflagellé), contagieux ; favorisé par le stress'],
+      [
+        'Dans le jeu',
+        'apparaît dans une eau instable et passe lentement d’un poisson à l’autre ; seul le médicament le fait reculer, le sel et la chaleur des points blancs n’y font rien ; délais : approximation de jeu',
+      ],
+      [
+        'Gestes',
+        'en mer : cuivre libre 0,15 à 0,20 mg/L ; en eau douce : traitements spécifiques non vérifiés, suivre la notice d’un produit contre le velours',
+      ],
+    ],
+    `${S} 5.2 (UF/IFAS FA165)`,
+  ),
+  entry(
     'protozoaires',
     'Costia, Chilodonella, Trichodina',
     [

@@ -104,3 +104,26 @@ test.describe('Pourriture des nageoires (#485)', () => {
     expect(captureErrors).toEqual([]);
   });
 });
+
+test.describe('Velours (#532)', () => {
+  test('velours=1 : alerte critique distincte des points blancs, remède, fiche du wiki', async ({
+    page,
+  }) => {
+    const errors = await open(page, '?seed=42&vitesse=0&velours=1');
+    const alert = status(page).locator('[data-alert="velvet"]');
+    await expect(alert).toBeVisible();
+    await expect(alert).toHaveAttribute('data-severity', 'critique');
+    await expect(alert).toContainText('Velours');
+    await expect(status(page).locator('[data-alert="ich"]')).toHaveCount(0);
+
+    await alert.locator('.status__chip').click();
+    const detail = status(page).locator('[data-alert-detail="velvet"]');
+    await expect(detail).toContainText('Oodinium');
+    await expect(detail).toContainText('Médicament');
+    await detail.locator('[data-alert-wiki="maladies"]').click();
+    await expect(
+      page.locator('[data-wiki-page-view="maladies"] [data-wiki-entry="velours"]'),
+    ).toContainText('Dans le jeu');
+    expect(errors).toEqual([]);
+  });
+});
