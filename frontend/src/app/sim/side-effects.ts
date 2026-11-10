@@ -48,7 +48,7 @@ export const MEDICATION_FILTER_SLOWDOWN = 0.25;
 const INVERTEBRATES_REFUSED: SideEffect = {
   target: 'invertebres',
   text: 'toxique, refusé si le bac en compte',
-  source: 'prudence, non vérifié : docs/SOINS.md § 12',
+  source: 'prudence, non vérifié',
 };
 
 /** Effets secondaires déclarés, par produit ; un produit absent n'en a pas. */

@@ -68,12 +68,12 @@ describe('effets secondaires des traitements (#549)', () => {
       for (const effects of Object.values(SIDE_EFFECTS)) {
         for (const effect of effects) {
           const text = sideEffectText(effect);
-          expect(text).toMatch(/\((approximation de jeu|.*docs\/SOINS\.md.*)\)$/);
+          expect(text).toMatch(/\((approximation de jeu|.*non vérifié|.*Merck.*)\)$/);
         }
       }
       expect(sideEffectWarning('sel')).toBe(
         'Effets secondaires : Plantes : pousse ralentie de 10 % par g/L (approximation de jeu) ; ' +
-          'Invertébrés : toxique, refusé si le bac en compte (prudence, non vérifié : docs/SOINS.md § 12).',
+          'Invertébrés : toxique, refusé si le bac en compte (prudence, non vérifié).',
       );
     });
   });
