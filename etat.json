@@ -6995,10 +6995,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-10T17:10:11.111Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-10T17:10:46.027Z",
+          "note": "Issue #547 : bac de quarantaine (M)"
         }
       },
       "metriques": {}
