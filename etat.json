@@ -6851,10 +6851,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-10T04:17:49.703Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-10T04:19:30.263Z",
+          "note": "Rétro #550 ; plan sprint 28 (#547-#549 créées) ; Dev c188 : dette #538 ; PR roadmap #551"
         }
       },
       "metriques": {}
