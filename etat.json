@@ -6795,6 +6795,12 @@
           "debut": "2026-11-09T23:37:04.263Z",
           "fin": "2026-11-10T00:18:25.529Z",
           "note": "Verdict OK, 0 bug, e2e clavier découpés vérifiés en local, captures c186 publiées (140 images, identiques à c185)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-10T00:19:12.936Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
