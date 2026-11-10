@@ -143,6 +143,8 @@ export function shownGrowth(
  * Fait pousser de `dt` secondes les plantes `tall` de `decor`, **en modifiant** `growth`
  * (créé au premier voxel de pousse) ; la surface de l'eau est à l'altitude `surface`.
  * Renvoie la pousse (même objet, ou `undefined` si rien ne pousse : aucun champ écrit).
+ * `factor` (dans [0, 1], 1 par défaut) ralentit la pousse : sel dans l'eau (effet secondaire,
+ * `sim/side-effects.ts`) ; à 0, rien ne pousse.
  * @throws RangeError si `dt` n'est pas un pas de temps valide.
  */
 export function stepPlantGrowthInPlace(
@@ -150,8 +152,12 @@ export function stepPlantGrowthInPlace(
   decor: readonly DecorItem[],
   dt: number,
   surface: number,
+  factor = 1,
 ): MutablePlantGrowth | undefined {
   assertTimeStep(dt);
+  if (!(factor > 0)) {
+    return growth;
+  }
   let out = growth;
   for (const item of decor) {
     if (!isGrowingPlant(item)) {
@@ -163,7 +169,7 @@ export function stepPlantGrowthInPlace(
       continue;
     }
     out ??= {};
-    out[key] = Math.min(cap, now + rate * dt);
+    out[key] = Math.min(cap, now + (factor === 1 ? rate * dt : rate * factor * dt));
   }
   return out;
 }
