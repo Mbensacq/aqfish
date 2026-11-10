@@ -6827,10 +6827,10 @@
           "note": "PR #546 : dureté par paramètre + espèces comptées + classe bilan vide (#522 pts 1,2,4), CI verte ; #520 pts 1-2 déjà faits (#528) ; e2e local partiel (bilan)"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-10T02:18:11.039Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-10T03:07:35.038Z",
+          "note": "Verdict OK, 0 bug, e2e bilan verts, 140 captures c187 identiques à c186, mutation hardnessPoint 91,3 % (1 test ajouté)"
         }
       },
       "metriques": {}
