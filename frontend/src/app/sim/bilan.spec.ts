@@ -162,6 +162,8 @@ describe('tankReview (#514)', () => {
     const two = tankReview(input({ species: ['neon', 'molly'], hardness: { gh: 13, kh: 4 } }))[0];
     expect(two.id).toBe('hardness');
     expect(two.severity).toBe('attention');
+    expect(two.title).toBe('Dureté de l’eau mal adaptée');
+    expect(two.action).toBe('Choisir des espèces adaptées à cette eau (Réglages, Population)');
     expect(two.measure).toBe(
       'Dureté (GH) (minéraux dissous) à 13,0 °dGH, 2 espèces hors plage : néons (1 – 12 °dGH) ; mollys (15 – 30 °dGH)',
     );
