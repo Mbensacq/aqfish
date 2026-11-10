@@ -6939,6 +6939,12 @@
           "debut": "2026-11-10T12:12:38.683Z",
           "fin": "2026-11-10T12:28:34.043Z",
           "note": "Verdict OK, 0 bug, captures publiées"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-10T12:29:18.569Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
