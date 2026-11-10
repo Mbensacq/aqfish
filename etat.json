@@ -6869,10 +6869,10 @@
           "note": "Verdict RÉSERVES, 1 bug (#553 : bac posé non sélectionnable, filtre neuf inaccessible), captures publiées, 1 e2e ajouté"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-10T06:26:11.269Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-10T07:39:53.370Z",
+          "note": "PR #552 fusionnée → v1.15.6 (release CI OK, CI main verte) ; PR #551 (roadmap v1.16) fusionnée sans version ; dette #554 (lien wiki) ; suppression de branches refusée par l'environnement"
         }
       },
       "metriques": {}
