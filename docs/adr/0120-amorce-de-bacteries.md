@@ -32,3 +32,6 @@ pas de courbe de maturation à accélérer.
 Tant que les bacs du jeu démarrent à `filter: 1`, le bouton répond « filtre déjà mûr » en partie
 normale : le produit n'agit que sur un bac importé avec un filtre plus faible. La maturation
 réelle du filtre reste à livrer pour qu'il serve.
+
+Mise à jour (cycle 188, ADR 0123) : les bacs ajoutés par le joueur démarrent avec un filtre
+immature qui mûrit seul ; l'amorce y sert en partie normale.
