@@ -1,7 +1,5 @@
-# Captures c187
-- Branche : cycle/c187-bilan-durete-comptage
-- PR : #546 (issue #522)
-- Commit : 4905091
-- Graine : 42 (harnais de captures)
-- Temps : valeurs du harnais (time fixé par capture)
-- Résultat : 140 images, toutes identiques octet pour octet à c186.
+# Captures c188
+- Branche : cycle/c188-maturation-filtre (PR #552), commit bac3a06
+- Graine : celle de captures.spec.ts (défaut du projet) ; rendu logiciel Chromium, 18,2 min
+- 138 captures sur 139 régénérées, toutes identiques octet pour octet à c187 sauf telephone-fiche-espece.png (écart d'animation, rendu visuellement identique)
+- trajectoires-top.png : échec technique de page.screenshot (Protocol error) sur une page SVG statique ; fichier repris de c187
