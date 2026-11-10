@@ -6963,6 +6963,12 @@
           "debut": "2026-11-10T13:38:30.281Z",
           "fin": "2026-11-10T13:39:18.208Z",
           "note": "Issue #549 : effets secondaires des traitements (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-10T13:40:04.030Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
