@@ -113,6 +113,7 @@ import {
   shapeOutline,
   type PondShape,
 } from './pond-shape';
+import { plantGrowthFactor } from './side-effects';
 import { SPECIES, type AnemoneBondParams, type SpeciesDefinition, type SpeciesId } from './species';
 import { createFish, stepFish, swimBounds, type Fish, type SwimBounds } from './swimmer';
 import { clampImmersiveDimensions, clampTankDimensions, type TankDimensions } from './tank';
@@ -993,8 +994,8 @@ function stepInPlace(world: MutableWorld, dt: number, clock: SimClock): void {
       cachedAlgaePatches(world.seed, environmentWater(place)),
     );
   }
-  // Plantes à tige (issue #477) : pousse sans hasard, jusqu'à la surface ; en pause en mode
-  // décor comme l'eau.
+  // Plantes à tige (issue #477) : pousse sans hasard, jusqu'à la surface, ralentie par le sel
+  // (effet secondaire, #549) ; en pause en mode décor comme l'eau.
   if (hasPlantGrowth(world.environment)) {
     const water = world.water as MutableWaterState;
     const growth = stepPlantGrowthInPlace(
@@ -1002,6 +1003,7 @@ function stepInPlace(world: MutableWorld, dt: number, clock: SimClock): void {
       world.decor,
       dt,
       environmentWater(place).maxY,
+      plantGrowthFactor(water),
     );
     if (growth !== undefined && water.plantGrowth === undefined) {
       water.plantGrowth = growth;

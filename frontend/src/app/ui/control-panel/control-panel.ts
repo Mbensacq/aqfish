@@ -53,6 +53,7 @@ import {
   type TankListEntry,
 } from '../../sim/tank-list';
 import { MAX_SAVE_LENGTH } from '../../sim/save';
+import { sideEffectWarning } from '../../sim/side-effects';
 import { DEFAULT_SIM_SPEED, SIM_SPEEDS, speedLabel, type SimSpeed } from '../../sim/sim-speed';
 import { mixWarnings } from '../../sim/compatibility';
 import { CARE_MODE_LABELS, type CareMode } from '../../sim/care-mode';
@@ -663,7 +664,7 @@ export interface NewTankRequest {
                   class="control-panel__button control-panel__button--compact"
                   [attr.data-treatment]="kind"
                   [attr.aria-label]="treatments[kind].aria"
-                  [attr.title]="treatmentSource(kind)"
+                  [attr.title]="treatmentTitle(kind)"
                   (click)="treatmentRequested.emit(kind)"
                 >
                   {{ treatments[kind].button }}
@@ -1557,7 +1558,16 @@ export class ControlPanel {
   protected readonly treatmentStatus = computed(() => treatmentStatusText(this.treatment()));
   protected readonly treatmentKinds = TREATMENT_KINDS;
   protected readonly treatments = TREATMENTS;
-  protected readonly treatmentSource = treatmentSourceText;
+
+  /**
+   * Infobulle d'un geste de soin, description accessible du bouton (lue au focus, avant le
+   * geste) : sa source, puis les effets secondaires du produit (#549).
+   */
+  protected treatmentTitle(kind: TreatmentKind): string {
+    const warning = kind === 'chaleur' ? null : sideEffectWarning(kind);
+    const source = treatmentSourceText(kind);
+    return warning === null ? source : `${source} ${warning}`;
+  }
   protected readonly treatmentSources = treatmentSourcesLine();
 
   protected supportName(kind: SupportKind): string {

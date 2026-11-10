@@ -1,4 +1,5 @@
 import { DEFAULT_DAY_LENGTH_SECONDS } from './daylight';
+import { filterMaturationFactor } from './side-effects';
 import type { MutableWaterState, WaterState } from './water';
 
 /**
@@ -58,14 +59,16 @@ export function startFilterCyclingInPlace(water: MutableWaterState): void {
 /**
  * Un pas de `dt` secondes de maturation du filtre de `water`, **en le modifiant**. Sans marque
  * `cycling`, ne fait rien. Une fois `FILTER_MATURE_AT` atteint (seul ou grâce à l'amorce), le
- * filtre vaut 1 et la marque disparaît. `dt` est validé par `stepWaterInPlace`.
+ * filtre vaut 1 et la marque disparaît. Le médicament dans l'eau la ralentit (effet secondaire,
+ * `sim/side-effects.ts`). `dt` est validé par `stepWaterInPlace`.
  */
 export function stepFilterMaturationInPlace(water: MutableWaterState, dt: number): void {
   if (water.cycling !== true) {
     return;
   }
   const f = Math.max(FILTER_SEED, Math.min(1, water.filter));
-  const grow = Math.exp(FILTER_GROWTH_RATE * dt);
+  const factor = filterMaturationFactor(water);
+  const grow = Math.exp(factor === 1 ? FILTER_GROWTH_RATE * dt : FILTER_GROWTH_RATE * factor * dt);
   const next = (f * grow) / (1 - f + f * grow);
   if (next >= FILTER_MATURE_AT) {
     water.filter = 1;

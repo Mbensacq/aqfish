@@ -76,3 +76,46 @@ test('pharmacie : exclusive avec le wiki et « Réglages »', async ({ page }) =
   await expect(page.locator('.control-panel')).toBeVisible();
   await expect(page.locator(panel)).toHaveCount(0);
 });
+
+test('effets secondaires (#549) : avertissement affiché, lu au clavier avant le geste', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto('/?seed=42&camera=front&heure=12&vitesse=0&points-blancs=1');
+  await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+
+  // Pharmacie ouverte au clavier : le conseil (médicament) et ses effets décrivent le dialogue.
+  await page.locator(toggle).focus();
+  await page.keyboard.press('Enter');
+  const dialog = page.getByRole('dialog', { name: 'Pharmacie du bac' });
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toHaveAccessibleDescription(
+    /Médicament.*Effets secondaires : Filtre : un filtre jeune mûrit 25 % moins vite/,
+  );
+  await expect(page.locator('[data-pharmacy-advice-warning]')).toBeVisible();
+  await expect(page.locator('[data-pharmacy-warning]')).toHaveCount(2);
+  await expect(page.locator('[data-pharmacy-product="sel"] [data-pharmacy-warning]')).toContainText(
+    'Plantes : pousse ralentie',
+  );
+  await page.keyboard.press('Escape');
+  await expect(page.locator(panel)).toHaveCount(0);
+
+  // Geste dans « Réglages, Soins » : la description du bouton, lue au focus, porte
+  // l'avertissement ; rien n'est versé avant la touche Entrée.
+  await page.getByRole('button', { name: 'Réglages' }).click();
+  const medication = page.locator('[data-treatment="medicament"]');
+  await expect(medication).toBeVisible();
+  await medication.focus();
+  await expect(medication).toBeFocused();
+  await expect(medication).toHaveAccessibleDescription(
+    /Effets secondaires : Filtre : .* ; Invertébrés : toxique/,
+  );
+  await expect(page.locator('[data-treatment="chaleur"]')).not.toHaveAccessibleDescription(
+    /Effets secondaires/,
+  );
+  await expect(page.locator('[data-treatment-message]')).toHaveCount(0);
+  await page.keyboard.press('Enter');
+  await expect(page.locator('[data-treatment-message]')).toBeVisible();
+  expect(errors).toEqual([]);
+});

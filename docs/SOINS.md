@@ -528,6 +528,17 @@ l'alcalinité ; **un bac récifal ne peut jamais recevoir de cuivre**.
 - un changement d'eau retire 30 % des produits ; une protection interrompue fait reprendre la
   maladie.
 
+**Effets secondaires des traitements dans le jeu** (issue #549, ADR 0126,
+`sim/side-effects.ts`) : affichés dans la pharmacie et au focus des boutons « Sel » et
+« Médicament », avant le geste.
+- Sel → plantes : pousse des plantes à tige ralentie de 10 % par g/L, moitié à 5 g/L
+  (sensibilité affirmée par des sources amateurs, § 4, non vérifiée : **approximation de jeu**).
+- Médicament → filtre : un filtre encore en maturation mûrit 25 % moins vite tant que le
+  médicament est dans l'eau ; un filtre mûr n'est pas touché. Le Merck juge l'effet du formol à
+  dose de traitement minime (§ 6) : ralentissement modéré, **approximation de jeu**.
+- Sel et médicament → invertébrés : refusés quand le bac en compte (ci-dessus, non vérifié).
+- Conditionneur, amorce, charbon, régulateur de pH, catappa : aucun effet secondaire déclaré.
+
 **Algues dans le jeu** (issue #476, ADR 0109, `sim/algae.ts`) : toutes **approximations de
 jeu**, sauf mention.
 - Durée d'éclairage par bac, de 0 à 24 h par jour, 8 h par défaut ; au-delà de 10 h, les

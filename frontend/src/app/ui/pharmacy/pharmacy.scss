@@ -135,6 +135,13 @@
   opacity: 0.75;
 }
 
+.pharmacy__warning {
+  display: block;
+  grid-column: 1 / -1;
+  // Même ton que les mises en garde du panneau (`control-panel__warning`).
+  color: #f2c09a;
+}
+
 .pharmacy__state {
   opacity: 0.75;
 
