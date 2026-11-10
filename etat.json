@@ -7011,6 +7011,12 @@
           "debut": "2026-11-10T19:22:48.294Z",
           "fin": "2026-11-10T20:09:48.042Z",
           "note": "Verdict OK, 0 bug, captures publiées (cadrage quarantaine à la marge)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-10T20:10:36.848Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
