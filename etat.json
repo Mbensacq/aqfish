@@ -6819,6 +6819,12 @@
           "debut": "2026-11-10T01:28:22.029Z",
           "fin": "2026-11-10T01:29:02.356Z",
           "note": "Issue #522 : remarques mineures bilan + entretien (#520 pts 1-2), dette S"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-10T01:29:44.017Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
