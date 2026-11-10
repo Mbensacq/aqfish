@@ -6903,6 +6903,12 @@
           "debut": "2026-11-10T08:58:27.713Z",
           "fin": "2026-11-10T09:31:47.348Z",
           "note": "Verdict RÉSERVES (rendu : néon masqué par le voile), 0 bug, CI PR verte, captures publiées"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-10T09:32:32.960Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
