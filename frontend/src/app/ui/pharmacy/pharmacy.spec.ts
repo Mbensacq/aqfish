@@ -94,6 +94,39 @@ describe('Pharmacy (#533)', () => {
     expect(status('sel')).toBe('disponible');
   });
 
+  it('effets secondaires (#549) : sous le sel et le médicament seulement', async () => {
+    await openPharmacy();
+    const warned = [...root().querySelectorAll('[data-pharmacy-warning]')].map((el) =>
+      el.closest('[data-pharmacy-product]')?.getAttribute('data-pharmacy-product'),
+    );
+    expect(warned).toEqual(['medicament', 'sel']);
+    const salt = root().querySelector('[data-pharmacy-product="sel"] [data-pharmacy-warning]');
+    expect(salt?.textContent).toContain('Plantes : pousse ralentie');
+    // Sans alerte, pas d'avertissement sous le conseil.
+    expect(root().querySelector('[data-pharmacy-advice-warning]')).toBeNull();
+  });
+
+  it('points blancs : avertissement du médicament sous le conseil, qui décrit le panneau', async () => {
+    fixture.componentRef.setInput('health', {
+      ...EMPTY_HEALTH_SUMMARY,
+      sick: 1,
+      diseased: 1,
+      ich: 1,
+    });
+    await openPharmacy();
+    expect(advice().getAttribute('data-product')).toBe('medicament');
+    const warning = root().querySelector('[data-pharmacy-advice-warning]');
+    expect(warning?.textContent).toContain('Filtre : un filtre jeune mûrit 25 % moins vite');
+    expect(warning?.textContent).toContain('Invertébrés');
+    expect(panel()?.getAttribute('aria-describedby')).toBe(advice().id);
+  });
+
+  it('conseil sans effet secondaire (conditionneur) : aucun avertissement', async () => {
+    fixture.componentRef.setInput('sample', { ...DEFAULT_WATER_SAMPLE, chlorine: 0.5 });
+    await openPharmacy();
+    expect(root().querySelector('[data-pharmacy-advice-warning]')).toBeNull();
+  });
+
   it('Tab et Maj+Tab tournent en boucle dans le panneau', async () => {
     await openPharmacy();
     const buttons = [...panel()!.querySelectorAll<HTMLButtonElement>('button')];

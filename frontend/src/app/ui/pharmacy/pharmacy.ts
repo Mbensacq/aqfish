@@ -23,15 +23,22 @@ import {
   PHARMACY_STATUS_LABELS,
   pharmacyAdvice,
   productStatus,
+  type PharmacyProduct,
   type PharmacyState,
 } from '../../sim/pharmacy';
 import { NO_FISH, type PopulationCounts } from '../../sim/population';
+import { sideEffectWarning } from '../../sim/side-effects';
 import type { TreatmentReadout } from '../../sim/treatment-text';
 import { DEFAULT_WATER_SAMPLE, type WaterSample } from '../../sim/water-dashboard';
 import { DEFAULT_WATER_READOUT, type WaterReadout } from '../../sim/water-quality';
 
 /** Identifiant du panneau (cible de `aria-controls`). */
 export const PHARMACY_ID = 'pharmacie-bac';
+
+/** Avertissement de chaque produit, ou `null` sans effet secondaire (#549). */
+const WARNINGS = Object.fromEntries(
+  PHARMACY_PRODUCTS.map((product) => [product, sideEffectWarning(product)]),
+) as Readonly<Record<PharmacyProduct, string | null>>;
 
 /** Éléments qui peuvent recevoir le focus au clavier (piège du focus). */
 const FOCUSABLE = 'button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])';
@@ -41,7 +48,9 @@ const FOCUSABLE = 'button:not([disabled]), [href], [tabindex]:not([tabindex="-1"
  * `dialog`) qui liste les produits existants et leur état dans le bac affiché, et conseille
  * celui qui répond à l'alerte la plus grave (`sim/pharmacy.ts`, mêmes alertes que le tableau
  * de bord). Elle n'agit sur rien : les gestes restent dans « Réglages » ; un lien ouvre la page
- * « Produits et traitements » du wiki.
+ * « Produits et traitements » du wiki. Les effets secondaires d'un produit (#549) sont écrits
+ * sous son nom et sous le conseil ; le conseil décrit le panneau (`aria-describedby`), lu à
+ * l'ouverture.
  *
  * Clavier : le focus entre sur le titre du panneau à l'ouverture, Tab et Maj+Tab y tournent en
  * boucle, Échap ferme ; le focus revient alors au bouton « Pharmacie ». Exclusive avec les
@@ -67,6 +76,7 @@ const FOCUSABLE = 'button:not([disabled]), [href], [tabindex]:not([tabindex="-1"
         [id]="panelId"
         role="dialog"
         aria-labelledby="pharmacie-bac-titre"
+        aria-describedby="pharmacie-bac-conseil"
         (keydown)="trap($event)"
       >
         <div class="pharmacy__header">
@@ -75,7 +85,12 @@ const FOCUSABLE = 'button:not([disabled]), [href], [tabindex]:not([tabindex="-1"
             Fermer
           </button>
         </div>
-        <div class="pharmacy__advice" data-pharmacy-advice [attr.data-product]="advice()?.product">
+        <div
+          class="pharmacy__advice"
+          id="pharmacie-bac-conseil"
+          data-pharmacy-advice
+          [attr.data-product]="advice()?.product"
+        >
           @if (advice(); as view) {
             <p class="pharmacy__alert">
               Alerte : <strong>{{ view.message }}</strong>
@@ -90,6 +105,10 @@ const FOCUSABLE = 'button:not([disabled]), [href], [tabindex]:not([tabindex="-1"
               }
               {{ view.text }}
             </p>
+            @if (view.product !== null && warnings[view.product]; as warning) {
+              <!-- Effets secondaires du produit conseillé, lus à l'ouverture (#549). -->
+              <p class="pharmacy__warning" data-pharmacy-advice-warning>{{ warning }}</p>
+            }
           } @else {
             <p>Aucune alerte : aucun produit à verser.</p>
           }
@@ -108,6 +127,9 @@ const FOCUSABLE = 'button:not([disabled]), [href], [tabindex]:not([tabindex="-1"
                 row.statusLabel
               }}</small>
               <small class="pharmacy__use">{{ row.use }} ; {{ row.where }}</small>
+              @if (row.warning !== null) {
+                <small class="pharmacy__warning" data-pharmacy-warning>{{ row.warning }}</small>
+              }
             </li>
           }
         </ul>
@@ -147,6 +169,8 @@ export class Pharmacy {
   readonly open = signal(false);
   protected readonly panelId = PHARMACY_ID;
   protected readonly info = PHARMACY_INFO;
+  /** Effets secondaires déclarés de chaque produit (`sim/side-effects.ts`, #549). */
+  protected readonly warnings = WARNINGS;
 
   /** Conseil pour l'alerte la plus grave (mêmes alertes que le tableau de bord). */
   protected readonly advice = computed(() =>
@@ -172,6 +196,7 @@ export class Pharmacy {
         ...PHARMACY_INFO[product],
         status,
         statusLabel: PHARMACY_STATUS_LABELS[status],
+        warning: WARNINGS[product],
       };
     });
   });
