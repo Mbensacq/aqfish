@@ -1,4 +1,5 @@
 import { DEFAULT_DAY_LENGTH_SECONDS } from './daylight';
+import { filterMaturityPercent } from './filter-maturation';
 import type { MutableWaterState, WaterState } from './water';
 
 /**
@@ -9,7 +10,8 @@ import type { MutableWaterState, WaterState } from './water';
  *
  * Modèle : la réserve (`WaterState.bacteriaStarter`, en doses) se vide à vitesse constante et
  * chaque dose consommée rend `STARTER_FILTER_GAIN` de filtre. La vitesse ne dépend pas de la
- * réserve : surdoser n'accélère rien. Sans réserve, le filtre ne bouge pas.
+ * réserve : surdoser n'accélère rien. Sans réserve, le filtre ne bouge que s'il mûrit seul (bac
+ * neuf, `sim/filter-maturation.ts`, issue #538).
  *
  * Valeurs : la durée reprend les 7 jours de l'étiquette Stability (`docs/SOINS.md` § 1.1,
  * source secondaire, temps compressé) ; le gain, le plafond et le seuil de redosage sont des
@@ -74,7 +76,7 @@ export function doseBacteriaStarterInPlace(
   water.bacteriaStarter = Math.min(MAX_BACTERIA_STARTER, reserve + amount);
   return {
     ok: true,
-    message: `Amorce de bactéries versée : le filtre mûrit plus vite, sans effet immédiat sur l’eau (${PRODUCTS_PAGE}).`,
+    message: `Amorce de bactéries versée : le filtre (efficace à ${filterMaturityPercent(water)} %) mûrit plus vite, sans effet immédiat sur l’eau (${PRODUCTS_PAGE}).`,
   };
 }
 

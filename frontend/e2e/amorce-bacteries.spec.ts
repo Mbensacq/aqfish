@@ -34,4 +34,6 @@ test('amorce de bactéries : clavier et annonce (#529)', async ({ page }) => {
   await button.focus();
   await page.keyboard.press('Enter');
   await expect(message).toContainText('Amorce de bactéries versée');
+  // Efficacité du filtre affichée (#538).
+  await expect(message).toContainText('efficace à 20 %');
 });

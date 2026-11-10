@@ -146,6 +146,11 @@ efficaces sous 20 mg/L d'alcalinité totale. La nitrification produit des ions H
 l'alcalinité : baisse progressive du pH (« old tank syndrome »). En cas d'ammoniaque : réduire
 ou arrêter la nourriture 1 à 3 jours, changer 25–50 % de l'eau, garder l'oxygène > 5 mg/L.
 
+Pour le jeu (issue #538, ADR 0123) : un bac ajouté démarre avec un filtre à 5 % d'efficacité, qui
+suit une courbe logistique (approximation de jeu) : environ 90 % à 5,5 semaines, 95 % à 6, mûr à
+8 semaines simulées. Le bac de départ est déjà cyclé. Simplification : la croissance ne dépend ni
+de l'ammoniaque disponible ni de l'oxygène ; l'amorce de bactéries (§ 1.1) l'accélère.
+
 ## 3. pH, KH, GH, conductivité
 
 **Plages cibles.** Eau douce 6,5–9,0, eau de mer 7,8–8,3 (Merck) ; récif 7,8–8,5, idéalement

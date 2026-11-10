@@ -8,6 +8,8 @@ import {
 } from './environment';
 import type { RoomQuarter } from './room';
 import type { TankDimensions } from './tank';
+import { startFilterCyclingInPlace } from './filter-maturation';
+import type { MutableWaterState } from './water';
 import { withTankDimensions } from './tank-resize';
 import { advance, createDefaultWorld, createWorld, type SimClock, type World } from './world';
 
@@ -729,7 +731,8 @@ export interface AddTankRequest {
 }
 
 /**
- * Ajoute un bac **vide** (décor de départ de l'environnement, aucun animal) avec l'identifiant
+ * Ajoute un bac **vide** (décor de départ de l'environnement, aucun animal, filtre neuf en
+ * maturation, issue #538) avec l'identifiant
  * `nextTankId` et la graine `tankSeed` : ajouter un bac ne change ni la graine ni l'état des
  * autres. Refus : pièce pleine (`ROOM_TANK_CAP`, ADR 0096), bassin (il est au jardin), pose refusée
  * (`tankPlacementRefusal`). Pur.
@@ -750,6 +753,8 @@ export function addTank(room: RoomState, request: AddTankRequest): RoomLayoutRes
   }
   const id = room.nextTankId;
   const empty = createWorld(tankSeed(room.seed, id), [], [], env.decor, environment);
+  // Bac neuf (#538) : filtre presque vide, qui mûrit seul (`sim/filter-maturation.ts`).
+  startFilterCyclingInPlace(empty.water as MutableWaterState);
   const world = isTankResizable(environment)
     ? (withTankDimensions(empty, TANK_SIZES[request.size].dimensions) as World)
     : empty;

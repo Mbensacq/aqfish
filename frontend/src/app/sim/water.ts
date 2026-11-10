@@ -3,6 +3,7 @@ import {
   MAX_BACTERIA_STARTER,
   stepBacteriaStarterInPlace,
 } from './bacteria-starter';
+import { stepFilterMaturationInPlace } from './filter-maturation';
 import { MAX_LIGHTING_HOURS, MIN_LIGHTING_HOURS, readAlgae } from './algae';
 import { readPlantGrowth, type PlantGrowth } from './plant-growth';
 import { catappaPh, catappaStrength, readCatappa, stepCatappaInPlace } from './catappa';
@@ -121,9 +122,15 @@ export interface WaterState {
   readonly kh?: number;
   /**
    * Réserve d'amorce de bactéries nitrifiantes, en doses, dans ]0, `MAX_BACTERIA_STARTER`]
-   * (issue #529, `sim/bacteria-starter.ts`). Absente : aucune amorce, le filtre ne bouge pas.
+   * (issue #529, `sim/bacteria-starter.ts`). Absente : aucune amorce.
    */
   readonly bacteriaStarter?: number;
+  /**
+   * Filtre en cours de maturation (issue #538, `sim/filter-maturation.ts`) : posé sur un bac
+   * ajouté par le joueur, retiré une fois le filtre mûr. Absent : le filtre ne mûrit pas seul.
+   * Le changement d'eau n'y touche pas (les bactéries vivent dans le filtre).
+   */
+  readonly cycling?: true;
   /**
    * Chlore, en mg/L, dans ]0, `MAX_CHLORINE`] (issue #530, `sim/water-conditioner.ts`).
    * Absent : aucun chlore.
@@ -328,6 +335,7 @@ export function stepWaterInPlace(
   );
   water.filter = filter;
   stepBacteriaStarterInPlace(water, dt);
+  stepFilterMaturationInPlace(water, dt);
   stepAmmoniaBinderInPlace(water, dt);
   stepPhRegulatorInPlace(water, dt);
   water.ph = stepPh(water.ph, dt, load, liters);
@@ -462,6 +470,7 @@ export function readWater(value: unknown, environment: EnvironmentId): ReadWater
       | 'bacteriaStarter'
       | 'chlorine'
       | 'untreatedTap'
+      | 'cycling'
       | 'ammoniaBinder'
       | 'carbon'
       | 'phRegulatorWait'
@@ -583,6 +592,10 @@ export function readWater(value: unknown, environment: EnvironmentId): ReadWater
   if (untreatedTap !== undefined && untreatedTap !== true) {
     return { ok: false, error: 'eau : untreatedTap doit valoir true ou être absent' };
   }
+  const cycling = read('cycling');
+  if (cycling !== undefined && cycling !== true) {
+    return { ok: false, error: 'eau : cycling doit valoir true ou être absent' };
+  }
   const carbon = read('carbon');
   if (carbon !== undefined && carbon !== true) {
     return { ok: false, error: 'eau : carbon doit valoir true ou être absent' };
@@ -601,6 +614,7 @@ export function readWater(value: unknown, environment: EnvironmentId): ReadWater
       ...extra,
       ...(untreatedTap === true ? { untreatedTap } : {}),
       ...(carbon === true ? { carbon } : {}),
+      ...(cycling === true ? { cycling } : {}),
       ...(lighting === undefined ? {} : { lighting }),
       ...(algae === null || algae.algae.every((c) => c === 0) ? {} : { algae: algae.algae }),
       ...(plantGrowth === null || Object.keys(plantGrowth.growth).length === 0
