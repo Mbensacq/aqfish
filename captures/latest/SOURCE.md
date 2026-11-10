@@ -1,5 +1,7 @@
-# Captures c185
-- Branche : cycle/c185-finitions-chlore-conditionneurs, PR #543, commit 72d20fd
-- Graine : 42 (bac par défaut), commande `npm run captures` (139 tests passés)
-- Durée : environ 16 min
-- 5 angles identiques octet pour octet à c184 (cmp)
+# Captures c186
+- Branche : cycle/c186-e2e-clavier-par-section
+- PR : #545 (issue #544)
+- Commit : 21cd15c
+- Graine : 42 (harnais de captures)
+- Temps : valeurs du harnais (time fixé par capture)
+- Résultat : 140 images, 139 identiques octet pour octet à c185 ; seule telephone-fiche-espece.png diffère par des pixels de bord (visuellement identique).
