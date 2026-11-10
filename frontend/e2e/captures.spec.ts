@@ -458,6 +458,26 @@ test.describe('Captures', () => {
     expect(errors).toEqual([]);
   });
 
+  // Pharmacie du bac (#533) : bac malade (`points-blancs=1`), pharmacie ouverte, conseil du
+  // médicament ; simulation à l'arrêt dès t = 0, comme `front-panneau`.
+  test('angle front avec la pharmacie du bac ouverte', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    await page.goto(`/?seed=${SEED}&camera=front&heure=12&vitesse=0&points-blancs=1`);
+    await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+    await page.locator('[data-pharmacy-toggle]').click();
+    await expect(page.locator('[data-pharmacy-advice]')).toHaveAttribute(
+      'data-product',
+      'medicament',
+    );
+    await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-tick', '0');
+    await page.screenshot({
+      path: join(OUTPUT_DIR, 'front-pharmacie.png'),
+      animations: 'disabled',
+    });
+    expect(errors).toEqual([]);
+  });
+
   // Mode décor (#278) : bac tropical avec des poissons d'autres milieux (clowns du récif, un
   // koï), contrat de capture (`mode=decor`), puis la même scène avec l'interface : badge à la
   // place du tableau de bord, simulation à l'arrêt dès t = 0.

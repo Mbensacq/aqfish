@@ -22,6 +22,7 @@ import { DecorBadge } from './ui/decor-badge/decor-badge';
 import { DecorEditor } from './ui/decor-editor/decor-editor';
 import { EXCLUSIVE_PANELS, firstTankPathVisible } from './ui/exclusive-panels/exclusive-panels';
 import { FirstTankPath } from './ui/first-tank-path/first-tank-path';
+import { Pharmacy } from './ui/pharmacy/pharmacy';
 import { ShareOffer } from './ui/share-offer/share-offer';
 import { SpeciesWiki } from './ui/species-wiki/species-wiki';
 import { ViewPresetsBar } from './ui/view-presets-bar/view-presets-bar';
@@ -35,6 +36,7 @@ import type { GuidePage } from './sim/care-guide';
  * journée, tableau de bord (eau et simulation en haut, santé et alertes en bas), panneau de contrôle et aide-mémoire des commandes).
  * Sur écran étroit, « Réglages » et « Commandes » sont exclusifs : ouvrir l'un replie
  * l'autre, pour que leurs textes ne se superposent pas (#136, `EXCLUSIVE_PANELS`).
+ * La pharmacie du bac (#533) l'est de même.
  * Le wiki des espèces (#287) est exclusif avec tous les autres panneaux, à toute largeur : il
  * occupe la droite de l'écran, comme « Commandes », et la place de « Réglages » sur téléphone.
  * À la première visite, le « Guide du débutant » s'ouvre une fois (#240, ADR 0072).
@@ -54,6 +56,7 @@ import type { GuidePage } from './sim/care-guide';
     DecorBadge,
     DecorEditor,
     FirstTankPath,
+    Pharmacy,
     ShareOffer,
     SpeciesWiki,
     ViewPresetsBar,
@@ -88,6 +91,7 @@ export class App {
   );
   private readonly aquarium = viewChild<AquariumHost>('aquarium');
   private readonly wiki = viewChild<SpeciesWiki>('wiki');
+  private readonly pharmacy = viewChild<Pharmacy>('pharmacy');
   /** Mode immersif ouvert (#345). */
   protected readonly immersive = signal(false);
 
@@ -105,6 +109,7 @@ export class App {
    */
   protected onHelpOpened(): void {
     this.wiki()?.close();
+    this.pharmacy()?.close();
     if (this.exclusivePanels()) {
       this.panel()?.close();
       this.aquarium()?.setDecorEditing(false);
@@ -117,6 +122,7 @@ export class App {
    */
   protected onPanelOpened(): void {
     this.wiki()?.close();
+    this.pharmacy()?.close();
     this.aquarium()?.setDecorEditing(false);
     if (this.exclusivePanels()) {
       this.help()?.fold();
@@ -129,6 +135,7 @@ export class App {
    */
   protected onEditRequested(): void {
     this.wiki()?.close();
+    this.pharmacy()?.close();
     this.panel()?.close();
     if (this.exclusivePanels()) {
       this.help()?.fold();
@@ -141,6 +148,7 @@ export class App {
    * repli) et quitte l'éditeur de décor, à toute largeur.
    */
   protected onWikiOpened(): void {
+    this.pharmacy()?.close();
     this.panel()?.close();
     this.help()?.fold();
     this.aquarium()?.setDecorEditing(false);
@@ -154,10 +162,22 @@ export class App {
     this.wiki()?.showPage(page);
   }
 
+  /**
+   * Pharmacie du bac dépliée (#533) : exclusive avec tous les autres panneaux, comme le wiki,
+   * dont elle occupe la place.
+   */
+  protected onPharmacyOpened(): void {
+    this.wiki()?.close();
+    this.panel()?.close();
+    this.help()?.fold();
+    this.aquarium()?.setDecorEditing(false);
+  }
+
   /** « Mode immersif » (#345) : replie les panneaux et quitte l'éditeur, puis ouvre le mode. */
   protected onImmersiveRequested(): void {
     this.panel()?.close();
     this.wiki()?.close();
+    this.pharmacy()?.close();
     this.aquarium()?.setDecorEditing(false);
     // Le bac affiché ne se rend plus derrière le plein cadre (un seul contexte WebGL actif).
     this.aquarium()?.setRenderingSuspended(true);

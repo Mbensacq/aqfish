@@ -165,6 +165,19 @@
       [waterKh]="aquarium.water().kh"
       (populationChanged)="aquarium.setPopulation($event.species, $event.count)"
     />
+    <!-- Pharmacie du bac (#533) : bouton à côté de « Wiki », panneau exclusif avec les autres. -->
+    <app-pharmacy
+      #pharmacy
+      (opened)="onPharmacyOpened()"
+      [sample]="aquarium.waterSample()"
+      [readout]="aquarium.water()"
+      [health]="aquarium.health()"
+      [environment]="aquarium.environment()"
+      [population]="aquarium.population()"
+      [treatment]="aquarium.treatment()"
+      [products]="aquarium.pharmacy()"
+      (wikiPageRequested)="onWikiPageRequested($event)"
+    />
     <!-- Éditeur de décor (#167) et de la pièce (#188) : en mode édition, à la place de « Réglages ». -->
     @if (aquarium.decorEditing()) {
       <app-decor-editor
