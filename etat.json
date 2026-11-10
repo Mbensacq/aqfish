@@ -6848,7 +6848,7 @@
       "type": "retro",
       "issue": 538,
       "pr": 552,
-      "version": null,
+      "version": "v1.15.6",
       "phases": {
         "planif": {
           "statut": "termine",
