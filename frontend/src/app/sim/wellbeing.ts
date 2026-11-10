@@ -1,6 +1,7 @@
 import { ichHealthStress } from './disease';
 import { finRotHealthStress } from './fin-rot';
 import { velvetHealthStress } from './velvet';
+import { fungusHealthStress } from './fungus';
 import type { SpeciesDefinition } from './species';
 import { likesAcidWater, phOutOfTolerance } from './water-ph';
 
@@ -138,6 +139,8 @@ export interface WellbeingSubject {
   readonly finRot?: number;
   /** Progression du velours (`sim/velvet.ts`, issue #532). */
   readonly velvet?: number;
+  /** Progression des champignons (`sim/fungus.ts`, issue #548). */
+  readonly fungus?: number;
 }
 
 /**
@@ -148,7 +151,8 @@ export interface WellbeingSubject {
  * agit (issue #239), la santé des espèces d'eau acide ne baisse plus sous
  * `CATAPPA_HEALTH_FLOOR`. Les points blancs (`ich`, issue #360) ajoutent leur poids
  * (`ichHealthStress`) aux autres causes, la pourriture des nageoires (`finRot`, issue #485)
- * aussi (`finRotHealthStress`), comme le velours (`velvet`, issue #532, `velvetHealthStress`).
+ * aussi (`finRotHealthStress`), comme le velours (`velvet`, issue #532, `velvetHealthStress`) et les champignons (`fungus`,
+ * issue #548, `fungusHealthStress`).
  */
 export function stepWellbeingInPlace<S extends WellbeingSubject>(
   animals: readonly S[],
@@ -164,7 +168,8 @@ export function stepWellbeingInPlace<S extends WellbeingSubject>(
       healthStress(animal.hunger, speciesOf(animal.species), badWater, phOut) +
       ichHealthStress(animal.ich) +
       finRotHealthStress(animal.finRot) +
-      velvetHealthStress(animal.velvet);
+      velvetHealthStress(animal.velvet) +
+      fungusHealthStress(animal.fungus);
     const floor = catappa && likesAcidWater(animal.species) ? CATAPPA_HEALTH_FLOOR : HEALTH_FLOOR;
     animal.health = stepHealth(animal.health, stress, dt, floor);
   }

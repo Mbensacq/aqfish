@@ -259,6 +259,9 @@ test.describe('Captures', () => {
     // Velours (#532) : voile et poussière dorés sur le corps et les nageoires.
     { name: 'side-velours', query: 'velours=1&camera=side' },
     { name: 'front-velours', query: 'velours=1&camera=front' },
+    // Champignons (#548) : touffes de coton blanc grisâtre sur la caudale et les nageoires.
+    { name: 'side-champignons', query: 'champignons=1&camera=side' },
+    { name: 'front-champignons', query: 'champignons=1&camera=front' },
     // Alevins de guppy (#459) : chaque femelle met bas, alevins aux quatre jalons de croissance.
     { name: 'three-quarter-alevins', query: 'alevins=1' },
     // Œufs de corydoras (#478) : une ponte collée sur la vitre et dans les plantes.

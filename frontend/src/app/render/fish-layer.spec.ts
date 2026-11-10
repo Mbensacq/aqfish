@@ -38,6 +38,13 @@ import {
   withFinRot,
   withVelvet,
   velvetVeil,
+  withFungus,
+  fungusTufts,
+  FUNGUS_ATTRIBUTE,
+  FUNGUS_COLOR,
+  FUNGUS_MIN,
+  FUNGUS_PATCH_SHARE,
+  FUNGUS_TUFT_SHARE,
   VELVET_ATTRIBUTE,
   VELVET_COLOR,
   VELVET_DUST_SHARE,
@@ -55,6 +62,7 @@ import {
 } from './fish-model';
 import { FIN_ROT_MAX, FIN_ROT_VISIBLE_AT } from '../sim/fin-rot';
 import { VELVET_MAX, VELVET_VISIBLE_AT } from '../sim/velvet';
+import { FUNGUS_MAX, FUNGUS_VISIBLE_AT } from '../sim/fungus';
 import { PALETTE } from './palette';
 import { ICH_AGGRAVATED_AT, ICH_VISIBLE_AT } from '../sim/disease';
 import { PIXEL_SIZE } from './pixel-art';
@@ -409,7 +417,7 @@ describe('FishLayer : couleurs ternies par la santé (#208)', () => {
     } as WebGLProgramParametersWithUniforms;
     material.onBeforeCompile(shader, null as unknown as WebGLRenderer);
     expect(shader.vertexShader).toBe(
-      withDullness(withIchSpots(withVelvet(withFinRot(ShaderLib.basic.vertexShader)))),
+      withDullness(withIchSpots(withVelvet(withFinRot(withFungus(ShaderLib.basic.vertexShader))))),
     );
     expect(shader.vertexShader).toContain(`attribute float ${DULL_ATTRIBUTE};`);
     const color = shader.vertexShader.indexOf('#include <color_vertex>');
@@ -580,5 +588,49 @@ describe('FishLayer : velours (#532)', () => {
     expect(VELVET_COLOR).toBe(PALETTE.koiOr);
     expect(VELVET_COLOR).not.toBe(ICH_SPOT_COLOR);
     expect(VELVET_COLOR).not.toBe(FIN_ROT_EDGE_COLOR);
+  });
+});
+
+describe('FishLayer : champignons (#548)', () => {
+  it('intensité : 0 sain, au début ou invalide ; du minimum à 1 ensuite', () => {
+    for (const fungus of [undefined, 0, FUNGUS_VISIBLE_AT - 1, Number.NaN, -5, FUNGUS_MAX + 1]) {
+      expect(fungusTufts(fungus), `fungus = ${fungus}`).toBe(0);
+    }
+    expect(fungusTufts(FUNGUS_VISIBLE_AT)).toBe(FUNGUS_MIN);
+    expect(fungusTufts(FUNGUS_MAX)).toBe(1);
+  });
+
+  it('intensité par instance, partagée par le corps et la queue', () => {
+    const layer = new FishLayer(NEON, 4);
+    const healthy = fishAfterSteps(0, 1);
+    const sick: Fish = { ...fishAfterSteps(1, 1), fungus: FUNGUS_MAX };
+    layer.update([healthy, sick], 1);
+    expect(layer.fungusTuftsAt(0)).toBe(0);
+    expect(layer.fungusTuftsAt(1)).toBe(1);
+    const [body, tail] = layer.object.children as Mesh[];
+    expect(body.geometry.getAttribute(FUNGUS_ATTRIBUTE)).toBe(
+      tail.geometry.getAttribute(FUNGUS_ATTRIBUTE),
+    );
+    layer.dispose();
+  });
+
+  it('shader : coton gardé par une intensité non nulle, rangs déclarés une seule fois', () => {
+    const shader = withFungus(ShaderLib.basic.vertexShader);
+    expect(shader).toContain(`attribute float ${FUNGUS_ATTRIBUTE};`);
+    expect(shader.match(new RegExp(`${FUNGUS_ATTRIBUTE} > 0\\.0`, 'g'))?.length).toBe(1);
+    expect(shader).toContain(FUNGUS_TUFT_SHARE.toFixed(4));
+    expect(shader).toContain(FUNGUS_PATCH_SHARE.toFixed(4));
+    const all = withIchSpots(withVelvet(withFinRot(withFungus(ShaderLib.basic.vertexShader))));
+    expect(all.match(new RegExp(`attribute float ${SPOT_ATTRIBUTE};`, 'g'))?.length).toBe(1);
+    expect(all.match(new RegExp(`attribute float ${FRAY_ATTRIBUTE};`, 'g'))?.length).toBe(1);
+    expect(() => withFungus('void main() {}')).toThrow(/color_vertex/);
+  });
+
+  it('coton juste au-dessus des points blancs dans le rang ; couleur distincte', () => {
+    expect(ICH_SPOT_SHARE + FUNGUS_PATCH_SHARE).toBeLessThanOrEqual(1);
+    expect(FUNGUS_COLOR).toBe(PALETTE.texteInterface);
+    for (const other of [ICH_SPOT_COLOR, FIN_ROT_EDGE_COLOR, VELVET_COLOR]) {
+      expect(FUNGUS_COLOR).not.toBe(other);
+    }
   });
 });

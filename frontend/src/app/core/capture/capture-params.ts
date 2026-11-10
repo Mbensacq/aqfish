@@ -80,6 +80,10 @@
  * maximum à t = 0, dans les mêmes conditions que `points-blancs=1`. Toute autre valeur ou
  * absent : aucun malade (séries existantes inchangées).
  *
+ * Paramètre facultatif `champignons=1` (issue #548) : poissons couverts du coton blanc des
+ * champignons au maximum à t = 0, dans les mêmes conditions que `points-blancs=1`. Toute autre
+ * valeur ou absent : aucun malade (séries existantes inchangées).
+ *
  * Paramètre facultatif `catappa=n` (issue #239) : en mode capture, `n` feuilles de catappa
  * neuves (1 à 5) déposées à t = 0, qui teintent l'eau. Toute autre valeur ou absent : aucune
  * feuille (séries existantes inchangées).
@@ -206,6 +210,8 @@ export interface CaptureParams {
   readonly finRot: boolean;
   /** Vrai pour `velours=1` : velours au maximum à t = 0 (issue #532). */
   readonly velvet: boolean;
+  /** Vrai pour `champignons=1` : champignons au maximum à t = 0 (issue #548). */
+  readonly fungus: boolean;
   /** Vrai pour `alevins=1` : alevins de guppy à t = 0, en capture (issue #459). */
   readonly fry: boolean;
   /** Vrai pour `oeufs=1` : œufs de corydoras à t = 0, en capture (issue #478). */
@@ -341,6 +347,7 @@ export const DEFAULT_CAPTURE_PARAMS: CaptureParams = {
   ich: false,
   finRot: false,
   velvet: false,
+  fungus: false,
   fry: false,
   eggs: false,
   current: null,
@@ -402,6 +409,7 @@ export function parseCaptureParams(search: string): CaptureParams {
     ich: params.get('points-blancs') === '1',
     finRot: params.get('pourriture') === '1',
     velvet: params.get('velours') === '1',
+    fungus: params.get('champignons') === '1',
     fry: params.get('alevins') === '1',
     eggs: params.get('oeufs') === '1',
     current: params.get('courant'),

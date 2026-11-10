@@ -58,7 +58,7 @@ const CARE = 'Réglages, Soins (animal malade)';
 export const PHARMACY_INFO: Readonly<Record<PharmacyProduct, PharmacyProductInfo>> = {
   conditionneur: { label: 'Conditionneur', use: 'neutralise le chlore', where: WATER },
   amorce: { label: 'Amorce de bactéries', use: 'fait mûrir le filtre', where: WATER },
-  medicament: { label: 'Médicament', use: 'points blancs et velours', where: CARE },
+  medicament: { label: 'Médicament', use: 'points blancs, velours et champignons', where: CARE },
   sel: { label: 'Sel', use: 'points blancs (5 g/L, 24 °C)', where: CARE },
   charbon: { label: 'Charbon actif', use: 'retire les produits de l’eau', where: WATER },
   'regulateur-ph': { label: 'Régulateur de pH', use: 'corrige le pH pas à pas', where: WATER },
@@ -239,6 +239,7 @@ function productAdvice(
     case 'ich':
       return diseaseAdvice(state, true);
     case 'velvet':
+    case 'fungus':
       return diseaseAdvice(state, false);
     case 'treatment':
       return diseaseAdvice(state, true);

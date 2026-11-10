@@ -258,6 +258,7 @@ import {
   infectWorldInPlace,
   rotWorldFinsInPlace,
   velvetWorldInPlace,
+  fungusWorldInPlace,
   setWorldCatappaInPlace,
   setWorldCurrentInPlace,
   worldCurrentLevel,
@@ -3543,6 +3544,10 @@ export class AquariumHost {
       // Voile doré de `velours=1` (#532), dans les mêmes conditions.
       if (params.velvet) {
         velvetWorldInPlace(world);
+      }
+      // Coton blanc de `champignons=1` (#548), dans les mêmes conditions.
+      if (params.fungus) {
+        fungusWorldInPlace(world);
       }
       // Courant de `courant=` (#460), en capture : à t = 0, avant d'avancer le monde.
       if (params.capture && isCurrentLevel(params.current)) {

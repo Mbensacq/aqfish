@@ -80,6 +80,16 @@ describe('pages « Produits et traitements » et « Maladies » (#291)', () => {
     expect(velvet?.status).toEqual({ kind: 'source', reference: expect.stringContaining('5.2') });
   });
 
+  it('champignons (#548) : fiche avec la porte d’entrée et le traitement du jeu', () => {
+    const fungus = guideEntries('maladies').find((e) => e.id === 'champignons');
+    expect(fungus?.name).toBe('Champignons (Saprolegnia)');
+    expect(fungus?.lines.find((l) => l.label === 'Symptômes')?.text).toMatch(/coton/);
+    const game = fungus?.lines.find((l) => l.label === 'Dans le jeu')?.text ?? '';
+    expect(game).toMatch(/jamais sur un animal sain/);
+    expect(game).toMatch(/médicament dans une eau propre/);
+    expect(fungus?.status).toEqual({ kind: 'source', reference: expect.stringContaining('5.6') });
+  });
+
   it('chaque produit dit son usage', () => {
     for (const entry of guideEntries('produits')) {
       expect(entry.lines[0].label, entry.id).toBe('Usage');

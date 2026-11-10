@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   chlorineAlert,
   dashboardAlerts,
+  fungusAlert,
   ichAlert,
   velvetAlert,
   type DashboardAlert,
@@ -165,8 +166,15 @@ describe('pharmacie : conseil selon l’alerte (#533)', () => {
     expect(advice?.text).toContain('le sel et la chaleur n’y font rien');
   });
 
+  it('champignons (#548) : le médicament, jamais le sel', () => {
+    const fungus = fungusAlert(sick({ fungus: 1, sick: 1, diseased: 1 }))!;
+    const advice = pharmacyAdvice([fungus], state({ active: ['sel'] }));
+    expect(advice).toMatchObject({ alert: 'fungus', product: 'medicament', inProgress: false });
+    expect(advice?.text).toContain('le sel et la chaleur n’y font rien');
+  });
+
   it('maladie, traitement déjà en cours : redoser plutôt que reverser', () => {
-    for (const id of ['ich', 'velvet', 'treatment'] as const) {
+    for (const id of ['ich', 'velvet', 'fungus', 'treatment'] as const) {
       const advice = pharmacyAdvice([alert(id)], state({ active: ['medicament'] }));
       expect(advice).toMatchObject({ product: 'medicament', inProgress: true });
       expect(advice?.text).toMatch(/^Médicament déjà dans l’eau/);

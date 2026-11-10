@@ -198,6 +198,13 @@ simulation testable et les captures reproductibles.
   chaleur n'agissent pas (mise en garde `VELVET_WRONG_TREATMENT`). Alerte « Velours »,
   voile doré au rendu (`withVelvet`, rang `aqfishSpot` partagé avec les points blancs).
   Champ `velvet` facultatif de la sauvegarde ; paramètre de capture `velours=1`.
+- **Champignons** (#548, ADR 0128, `sim/fungus.ts`) : `Fish.fungus`, progression en secondes
+  (absente : sain), avancée après le velours. Jamais spontanés : seulement sur un animal blessé
+  (signes visibles d'une autre maladie) ou affaibli (santé < 0,5), `fungusCauses` ; aucun tirage
+  sans cause, pas de contagion. Médicament en eau propre : le coton recule ; en eau chargée :
+  figé ; sel et chaleur : mise en garde `FUNGUS_WRONG_TREATMENT`. Alerte « Champignons », coton
+  blanc grisâtre au rendu (`withFungus`, rangs `aqfishFray` et `aqfishSpot`). Champ `fungus`
+  facultatif de la sauvegarde ; paramètre de capture `champignons=1`.
   Amphibien ou invertébré ajouté (panneau) ou transféré dans une eau qui contient déjà sel ou
   médicament (`waterProducts`, `WaterReadout.products`) : avertissement
   `treatedWaterWarning`, sans refus.

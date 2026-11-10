@@ -6,6 +6,7 @@ import { speciesSheet } from './species-sheet';
 import { SPECIES, type SpeciesId } from './species';
 import { assertTimeStep } from './time-step';
 import { CARBON_MEDICATION_HALF_LIFE, CARBON_TREATMENT_WARNING } from './water-carbon';
+import { FUNGUS_WRONG_TREATMENT } from './fungus';
 import {
   MAX_HEATER_TEMPERATURE,
   MAX_MEDICATION,
@@ -200,6 +201,8 @@ export interface TreatmentContext {
   readonly infected: number;
   /** Parmi eux, animaux atteints de velours (issue #532) ; absent : aucun. */
   readonly velvet?: number;
+  /** Parmi eux, animaux atteints de champignons (issue #548) ; absent : aucun. */
+  readonly fungus?: number;
 }
 
 /**
@@ -424,15 +427,17 @@ export function applyTreatmentInPlace(
   if (outcome.ok && kind === 'medicament' && water.carbon === true) {
     return { ...outcome, warning: CARBON_TREATMENT_WARNING };
   }
-  // Erreur de traitement (issue #532) : sel ou chaleur contre le velours.
-  if (outcome.ok && kind !== 'medicament' && (context.velvet ?? 0) > 0) {
-    return {
-      ...outcome,
-      warning:
-        outcome.warning === undefined
-          ? VELVET_WRONG_TREATMENT
-          : `${outcome.warning} ${VELVET_WRONG_TREATMENT}`,
-    };
+  // Erreurs de traitement (issues #532, #548) : sel ou chaleur contre le velours ou les
+  // champignons.
+  if (outcome.ok && kind !== 'medicament') {
+    const warnings = [
+      outcome.warning,
+      (context.velvet ?? 0) > 0 ? VELVET_WRONG_TREATMENT : undefined,
+      (context.fungus ?? 0) > 0 ? FUNGUS_WRONG_TREATMENT : undefined,
+    ].filter((w): w is string => w !== undefined);
+    if (warnings.length > 0) {
+      return { ...outcome, warning: warnings.join(' ') };
+    }
   }
   return outcome;
 }
