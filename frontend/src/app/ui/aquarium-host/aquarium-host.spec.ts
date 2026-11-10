@@ -1577,6 +1577,27 @@ describe('AquariumHost', () => {
       expect(host().treatmentNotice()).toMatchObject({ ok: false });
     });
 
+    it('pharmacie (#533) : produits en cours, puis terminés, sans rien écrire dans le monde', async () => {
+      await create('?seed=42&points-blancs=1&vitesse=0');
+      expect(host().pharmacy()).toEqual({ active: [], used: [], filterMature: true });
+      host().treat('medicament');
+      expect(host().pharmacy()).toMatchObject({ active: ['medicament'], used: ['medicament'] });
+      // Médicament épuisé (dégradé, ou retiré par les changements d'eau).
+      const water: Record<string, unknown> = { ...host().world!.water };
+      delete water['medication'];
+      (host().world! as { water: object }).water = water;
+      const before = JSON.stringify(host().world);
+      (host() as unknown as { exposeWater: () => void }).exposeWater();
+      expect(host().pharmacy()).toMatchObject({ active: [], used: ['medicament'] });
+      expect(JSON.stringify(host().world)).toBe(before);
+      // Conditionneur simple : il agit à l'instant, la pharmacie le garde « terminé ».
+      host().toggleUntreatedTap();
+      host().changeWater();
+      host().doseConditioner('thiosulfate');
+      expect(host().pharmacy().used).toEqual(['conditionneur', 'medicament']);
+      expect(host().pharmacy().active).not.toContain('conditionneur');
+    });
+
     it('soins en capture : sans effet', async () => {
       await create('?capture=1&seed=42&points-blancs=1');
       host().treat('medicament');
