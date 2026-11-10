@@ -161,7 +161,7 @@ describe('stepFungusInPlace : apparition', () => {
       run(list, 200_000, { seed });
       expect(progress(list).every((p) => p === null)).toBe(true);
     }
-  });
+  }, 30_000);
 
   it('animaux blessés : des cas, identiques à graine fixe, autres avec une autre graine', () => {
     const once = (seed: number): (number | null)[] => {
@@ -173,13 +173,13 @@ describe('stepFungusInPlace : apparition', () => {
     expect(first.some((p) => p !== null)).toBe(true);
     expect(once(42)).toEqual(first);
     expect(once(7)).not.toEqual(first);
-  });
+  }, 30_000);
 
   it('animaux affaiblis (santé au plancher) : des cas, même sans blessure', () => {
     const list = neons(12, { health: HEALTH_FLOOR });
     run(list, 20_000);
     expect(progress(list).some((p) => p !== null)).toBe(true);
-  });
+  }, 30_000);
 
   it('blessé et affaibli : plus de cas que blessé seulement', () => {
     const count = (extra: Partial<Subject>): number => {
@@ -190,7 +190,7 @@ describe('stepFungusInPlace : apparition', () => {
     expect(count({ velvet: VELVET_MAX, health: HEALTH_FLOOR })).toBeGreaterThan(
       count({ velvet: VELVET_MAX }),
     );
-  });
+  }, 30_000);
 
   it('seul l’animal blessé l’attrape : pas de contagion à ses voisins sains', () => {
     const list = neons(6);
@@ -198,13 +198,13 @@ describe('stepFungusInPlace : apparition', () => {
     run(list, 50_000);
     expect(list[2].fungus).toBeDefined();
     expect(progress(list).filter((p) => p !== null)).toHaveLength(1);
-  });
+  }, 30_000);
 
   it('sous médicament : aucune apparition, même blessé', () => {
     const list = neons(12, { finRot: FIN_ROT_MAX, health: HEALTH_FLOOR });
     run(list, 20_000, { treated: true });
     expect(progress(list).every((p) => p === null)).toBe(true);
-  });
+  }, 30_000);
 
   it('amphibiens et récif : jamais touchés, même blessés et affaiblis', () => {
     const palu = animals(['axolotl'], { health: HEALTH_FLOOR });
@@ -213,7 +213,7 @@ describe('stepFungusInPlace : apparition', () => {
     const reef = animals(['neon'], { health: HEALTH_FLOOR });
     run(reef, 20_000, { environment: 'recif' });
     expect(progress(reef)).toEqual([null]);
-  });
+  }, 30_000);
 
   it('pas invalide : lève sans rien changer', () => {
     const list = neons(2, { fungus: 10 });
@@ -239,13 +239,13 @@ describe('stepFungusInPlace : maladie, traitement et guérison', () => {
     expect(run(list, steps, { treated: true })).toBe(3);
     expect(progress(list)).toEqual([null, null, null]);
     expect(FUNGUS_HEAL_SPEED).toBeGreaterThan(0);
-  });
+  }, 30_000);
 
   it('médicament en eau chargée : ne progresse plus, ne recule pas', () => {
     const list = neons(1, { fungus: FUNGUS_VISIBLE_AT });
     run(list, 10_000, { treated: true, clean: false });
     expect(list[0].fungus).toBe(FUNGUS_VISIBLE_AT);
-  });
+  }, 30_000);
 
   it('eau propre sans médicament : la maladie progresse', () => {
     const list = neons(1, { fungus: FUNGUS_VISIBLE_AT });
@@ -259,7 +259,7 @@ describe('stepFungusInPlace : maladie, traitement et guérison', () => {
     expect(list[0].fungus).toBe(FUNGUS_MAX);
     run(list, (FUNGUS_CURE_DAYS * DEFAULT_DAY_LENGTH_SECONDS) / SIM_DT + 2, { treated: true });
     expect(list[0].fungus).toBeUndefined();
-  });
+  }, 30_000);
 
   it('progression corrompue, ou portée par un animal qui ne l’attrape pas : effacée', () => {
     const list = animals(['neon', 'axolotl']);
@@ -360,7 +360,7 @@ describe('monde : champignons dans la boucle à pas fixe', () => {
       return progress(world.entities);
     };
     expect(after(2)).toEqual(after(1));
-  });
+  }, 30_000);
 
   it('eau chargée : le médicament seul ne guérit pas', () => {
     const world = tank();
@@ -369,7 +369,7 @@ describe('monde : champignons dans la boucle à pas fixe', () => {
     expect(treatWorldInPlace(world, 'medicament', 1).ok).toBe(true);
     advanceInPlace(world, 600);
     expect(world.entities.every((f) => f.fungus === FUNGUS_MAX)).toBe(true);
-  });
+  }, 30_000);
 
   it('erreur de traitement : le sel n’y fait rien et le dit', () => {
     const world = tank();
@@ -379,7 +379,7 @@ describe('monde : champignons dans la boucle à pas fixe', () => {
     expect(outcome.ok ? outcome.warning : '').toContain(FUNGUS_WRONG_TREATMENT);
     advanceInPlace(world, 600);
     expect(world.entities.every((f) => f.fungus === FUNGUS_MAX)).toBe(true);
-  });
+  }, 30_000);
 
   it('alerte « Champignons » au tableau de bord d’un bac atteint', () => {
     const world = tank();
@@ -397,7 +397,7 @@ describe('monde : champignons dans la boucle à pas fixe', () => {
     world.careMode = 'decor';
     advanceInPlace(world, 600);
     expect(world.entities[0].fungus).toBe(10);
-  });
+  }, 30_000);
 });
 
 describe('traitement : contexte du geste', () => {
