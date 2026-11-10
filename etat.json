@@ -6999,6 +6999,12 @@
           "debut": "2026-11-10T17:10:11.111Z",
           "fin": "2026-11-10T17:10:46.027Z",
           "note": "Issue #547 : bac de quarantaine (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-10T17:11:27.265Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
