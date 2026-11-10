@@ -19,7 +19,7 @@ import {
  * et 0075). Seule action de la simulation qui lit deux bacs : elle retire l'animal du bac de
  * départ et l'ajoute au bac d'arrivée comme un ajout ordinaire (`spawnEntity`, nouvel
  * identifiant `nextFishId` et sous-générateur dérivés de la graine du bac d'arrivée), en
- * gardant sa faim et sa santé. Fonctions pures et déterministes.
+ * gardant sa faim, sa santé et ses maladies (#547). Fonctions pures et déterministes.
  */
 
 /** Raison d'un transfert refusé. */
@@ -83,7 +83,8 @@ export function transferRefusal(
  * Transfère l'animal `fishId` du bac `fromId` au bac `toId` (contrôles de
  * `transferRefusal`). Le bac de départ perd l'animal ; le bac d'arrivée gagne un animal de la
  * même espèce, d'identifiant `nextFishId`, né dans sa zone de naissance comme à un ajout, avec
- * la faim et la santé de l'animal transféré (un animal malade le reste). Les autres bacs, la
+ * la faim, la santé et les maladies de l'animal transféré (un animal malade le reste, avec
+ * l'avancement de sa maladie, #547). Les autres bacs, la
  * graine et le compteur de la pièce ne changent pas. Fonction pure : `room` n'est pas modifiée.
  */
 export function transferFish(
@@ -113,7 +114,7 @@ export function transferFish(
     arrival.obstacles,
     homeForRank(worldAnemoneHomes(arrival), SPECIES[fish.species].anemone, bondedCount(entities)),
   );
-  entities.push({ ...spawned, hunger: fish.hunger, health: fish.health });
+  entities.push({ ...spawned, hunger: fish.hunger, health: fish.health, ...diseasesOf(fish) });
   arrival.nextFishId = id + 1;
   const counts = populationCounts(arrival);
   const warnings = addWarnings(
@@ -131,6 +132,24 @@ export function transferFish(
         : tank,
   );
   return { ok: true, room: { ...room, tanks }, id, warnings };
+}
+
+/**
+ * Maladies portées par l'animal (#547) : points blancs, velours, pourriture des nageoires, avec
+ * leur avancement ; un animal sain n'en porte aucune (aucun champ ajouté).
+ */
+function diseasesOf(fish: Entity): Pick<Entity, 'ich' | 'velvet' | 'finRot'> {
+  const carried: { ich?: number; velvet?: number; finRot?: number } = {};
+  if (fish.ich !== undefined) {
+    carried.ich = fish.ich;
+  }
+  if (fish.velvet !== undefined) {
+    carried.velvet = fish.velvet;
+  }
+  if (fish.finRot !== undefined) {
+    carried.finRot = fish.finRot;
+  }
+  return carried;
 }
 
 /** Message affiché d'un transfert refusé (`fish` et `to` absents si inconnus). */
