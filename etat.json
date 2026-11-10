@@ -6912,6 +6912,24 @@
         }
       },
       "metriques": {}
+    },
+    "190": {
+      "numero": 190,
+      "date": "2026-11-10",
+      "debut": "2026-11-10T10:43:46.277Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-10T10:43:46.277Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
