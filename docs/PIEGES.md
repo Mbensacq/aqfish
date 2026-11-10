@@ -64,7 +64,8 @@ haut de sa section.
   « Bacs »). Mesurer plutôt que deviner : script Playwright qui ouvre `?seed=42&points-blancs=1`
   à 1280 × 720 (clé `aqfish.guide-debutant.v1` à `vu` dans le stockage, sinon le guide
   intercepte le clic) et relève `getBoundingClientRect` de chaque `.control-panel__section`.
-  (2026-11-10)
+  Forcer aussi `DejaVu Sans` (police de la CI, plus large) : « Installer un bac de quarantaine »
+  (bouton `nowrap`) passait en local et débordait en CI à 390 et 320 px. (2026-11-10)
 - **Section « Soins » du panneau à 1280 × 720 : « Sauvegarde » en troisième colonne, hors
   du panneau** (cycle 163, #488) : en deux colonnes (`column-count: 2` et `max-height`), une
   section qui ne tient plus dans la deuxième colonne en ouvre une troisième, à droite, hors de
