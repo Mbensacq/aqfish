@@ -7056,6 +7056,24 @@
         }
       },
       "metriques": {}
+    },
+    "194": {
+      "numero": 194,
+      "date": "2026-11-11",
+      "debut": "2026-11-11T00:48:08.611Z",
+      "type": "dette",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-11T00:48:08.611Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
