@@ -7187,10 +7187,10 @@
           "note": "PR #575 : lot de dette #574+#572+#554 (GH · KH, lien wiki de l'amorce, quarantaine), CI verte"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-11T11:45:47.639Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-11T12:21:10.225Z",
+          "note": "Verdict OK, 0 bug, captures publiées (c197), e2e pharmacie/amorce/cadrage OK"
         }
       },
       "metriques": {}
