@@ -7170,7 +7170,7 @@
       "date": "2026-11-11",
       "debut": "2026-11-11T09:55:56.904Z",
       "type": "fonctionnalite",
-      "issue": null,
+      "issue": 574,
       "pr": null,
       "version": null,
       "phases": {
