@@ -181,3 +181,26 @@ test('kit de test de l’eau : `test-eau=` donne un résultat prêt au chargemen
   await expect(page.locator('[data-water-test]')).toHaveAttribute('data-state', 'termine');
   await expect(page.locator('[data-water-result]')).toHaveText(/^pH ≈ \d,?\d?$/);
 });
+
+test('kit de test de l’eau : téléphone (390 × 844), dureté lue sans débordement', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/?seed=42&vitesse=0&test-eau=durete');
+  await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+  await page.locator(toggle).click();
+  await expect(page.locator('[data-water-test]')).toHaveAttribute('data-state', 'termine');
+  await expect(page.locator('[data-water-result]')).toHaveCount(2);
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
+  expect(overflow).toBeLessThanOrEqual(0);
+  // Un kit inconnu dans l’URL est ignoré : aucun résultat, aucune erreur.
+  await page.goto('/?seed=42&vitesse=0&test-eau=nimporte');
+  await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+  await page.locator(toggle).click();
+  await expect(page.locator('[data-water-test]')).toHaveAttribute('data-state', 'aucun');
+  expect(errors).toEqual([]);
+});
