@@ -7265,10 +7265,10 @@
           "note": "Verdict OK, 0 bug, captures publiées (c199), 3 e2e ajoutés, CI e2e 6/6 verte"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-11T19:21:56.395Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-11T21:03:32.206Z",
+          "note": "PR #576 fusionnée → v1.17.2 (CI relancée, panne runner passée) ; corrections demandées sur #578 (trop d'attributs de shader avec l'hydropisie, v1.17.3 préparée) ; branche c198 non supprimée (refus env.)"
         }
       },
       "metriques": {}
