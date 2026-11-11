@@ -32,8 +32,8 @@ bac affiché. Enfin le transfert gardait la santé de l'animal, mais pas ses mal
 - **Interface** : section « Bacs » des réglages. Bouton « Isoler en quarantaine » (nom accessible « Installer un bac de quarantaine »)
   dès un malade dans le bac affiché tant qu'aucun bac posé n'existe (pièce masquée possible ;
   la durée sourcée est sa description). Puis groupe « Quarantaine », dès qu'un bac posé existe :
-  choix du bac (nombre de malades), les trois gestes de soin pour ce bac seul, « Ramener dans le
-  bac affiché » (le plus récent de l'espèce choisie) avec le rappel d'acclimatation de l'aide,
+  choix du bac (nombre de malades), les trois gestes de soin pour ce bac seul, « Ramener au bac
+  affiché » (le plus récent de l'espèce choisie) avec le rappel d'acclimatation de l'aide,
   durée en note. L'aller passe par le transfert existant. Messages dans `data-transfer-notice`.
   Bac par défaut inchangé ; à 1280 × 720 bac malade, une seule ligne de plus, dans la deuxième
   colonne (mesurée : « Sauvegarde » y tient encore) ; un quatrième bouton sur la ligne des gestes
