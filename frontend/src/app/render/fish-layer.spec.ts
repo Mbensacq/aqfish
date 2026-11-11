@@ -39,6 +39,9 @@ import {
   withVelvet,
   velvetVeil,
   withFungus,
+  withFryPallor,
+  FRY_PALE_ATTRIBUTE,
+  FRY_PALE_COLOR,
   fungusTufts,
   FUNGUS_ATTRIBUTE,
   FUNGUS_COLOR,
@@ -64,6 +67,7 @@ import {
 import { FIN_ROT_MAX, FIN_ROT_VISIBLE_AT } from '../sim/fin-rot';
 import { VELVET_MAX, VELVET_VISIBLE_AT } from '../sim/velvet';
 import { FUNGUS_MAX, FUNGUS_VISIBLE_AT } from '../sim/fungus';
+import { FRY_GROWTH_TIME, FRY_PALLORS, FRY_SCALES, FRY_STAGES } from '../sim/fry';
 import { PALETTE } from './palette';
 import { ICH_AGGRAVATED_AT, ICH_VISIBLE_AT } from '../sim/disease';
 import { PIXEL_SIZE } from './pixel-art';
@@ -418,7 +422,11 @@ describe('FishLayer : couleurs ternies par la santé (#208)', () => {
     } as WebGLProgramParametersWithUniforms;
     material.onBeforeCompile(shader, null as unknown as WebGLRenderer);
     expect(shader.vertexShader).toBe(
-      withDullness(withIchSpots(withVelvet(withFinRot(withFungus(ShaderLib.basic.vertexShader))))),
+      withFryPallor(
+        withDullness(
+          withIchSpots(withVelvet(withFinRot(withFungus(ShaderLib.basic.vertexShader)))),
+        ),
+      ),
     );
     expect(shader.vertexShader).toContain(`attribute float ${DULL_ATTRIBUTE};`);
     const color = shader.vertexShader.indexOf('#include <color_vertex>');
@@ -640,5 +648,44 @@ describe('FishLayer : champignons (#548)', () => {
     for (const other of [ICH_SPOT_COLOR, FIN_ROT_EDGE_COLOR, VELVET_COLOR]) {
       expect(FUNGUS_COLOR).not.toBe(other);
     }
+  });
+});
+
+describe('FishLayer : alevins (#459, #566)', () => {
+  it('pâleur par instance : alevin pâle qui se colore, adulte à 0 ; échelle par jalon', () => {
+    const layer = new FishLayer(NEON, 8);
+    const base = fishAfterSteps(0, 1);
+    const stage = FRY_GROWTH_TIME / FRY_STAGES;
+    const fishes: Fish[] = [
+      base,
+      ...[0, 1, 2].map((s) => ({ ...fishAfterSteps(s + 1, 1), growth: s * stage })),
+    ];
+    layer.update(fishes, 1);
+    expect(layer.fryPallorAt(0)).toBe(0);
+    const pallors = [1, 2, 3].map((i) => layer.fryPallorAt(i));
+    expect(pallors).toEqual(FRY_PALLORS.map((p) => Math.fround(p)));
+    expect(pallors[0]).toBeGreaterThan(pallors[1]);
+    expect(pallors[1]).toBeGreaterThan(pallors[2]);
+    const scales = [1, 2, 3].map((i) => {
+      const m = layer.bodyMatrixAt(i, new Matrix4());
+      return new Vector3().setFromMatrixColumn(m, 0).length();
+    });
+    scales.forEach((s, i) => expect(s).toBeCloseTo(FRY_SCALES[i], 6));
+    const [body, tail] = layer.object.children as Mesh[];
+    expect(body.geometry.getAttribute(FRY_PALE_ATTRIBUTE)).toBe(
+      tail.geometry.getAttribute(FRY_PALE_ATTRIBUTE),
+    );
+    layer.dispose();
+  });
+
+  it('shader : mélange au sable gardé par une pâleur non nulle, exécuté avant le ternissement', () => {
+    expect(FRY_PALE_COLOR).toBe(PALETTE.sable);
+    const shader = withFryPallor(withDullness(ShaderLib.basic.vertexShader));
+    expect(shader).toContain(`attribute float ${FRY_PALE_ATTRIBUTE};`);
+    expect(shader.match(new RegExp(`${FRY_PALE_ATTRIBUTE} > 0\\.0`, 'g'))?.length).toBe(1);
+    expect(shader.indexOf(FRY_PALE_ATTRIBUTE + ' > 0.0')).toBeLessThan(
+      shader.indexOf(`${DULL_ATTRIBUTE} *`),
+    );
+    expect(() => withFryPallor('void main() {}')).toThrow(/color_vertex/);
   });
 });
