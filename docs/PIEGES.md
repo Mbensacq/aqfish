@@ -57,6 +57,11 @@ haut de sa section.
   le vérifier à part (voir ces deux tests), dans un commit `test` séparé expliqué dans la PR ;
   ne jamais réécrire l'empreinte dorée. Les algues (#476) n'y touchaient pas : rien n'est
   écrit sans pousse. (2026-11-07)
+- **Quarantaine installée à 1280 × 720 : panneau en quatre colonnes** (cycle 195, #553) : bac
+  malade et groupe « Quarantaine » affichés, « Bacs » part en troisième colonne et
+  « Sauvegarde » en quatrième (`scrollWidth` 1048 pour 530, DejaVu Sans), déjà sur `main` ;
+  `cadrage-panneaux` ne couvre pas ce cas. Le panneau défile en largeur. Mesuré par un script
+  Playwright jetable (`?seed=42&points-blancs=1`, puis « Isoler en quarantaine »). (2026-11-11)
 - **Bac malade à 1280 × 720 : la première colonne du panneau est pleine** (cycle 192, #547) :
   avec « Soins » affichée, la colonne 1 finit à ~553 px pour une hauteur de 564 px ; une ligne
   de plus dans « Soins » (même un quatrième bouton qui passe à la ligne) envoie « Sauvegarde »
@@ -1227,6 +1232,10 @@ environnement)` plutôt que `setPopulation(createDefaultWorld(…))`. (2026-10-2
   devenaient jaunes et indiscernables. Pour un signe de maladie, préférer des voxels pleins
   (poussière, points) sur une part des voxels et un mélange global très faible (≤ 10 %), puis
   comparer sur capture zoomée (`front-velours`). (2026-11-10)
+  Cycle 195 (#556) : la poussière (voxels pleins) suffisait encore à cacher le néon, ses voxels
+  tachables étant justement le rouge et le bleu (ventre et nageoires, trop pâles, ne le sont
+  jamais). Épargner les voxels saturés dans le shader (écart max − min des composantes linéaires
+  ≥ `VELVET_SPARED_SATURATION`) : rouge et bleu restent, la poussière tombe sur le reste.
 - **Petit objet crème dans l'eau : un pixel et l'ombrage par face le font disparaître**
   (cycle 168, #478) : un œuf de 7 mm (un pixel de scène) ombré par face comme les granulés
   (`shadedVoxelGeometry`) tombait, vu de face, sur le ton du sable (flanc à 0,72) et ne se

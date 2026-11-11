@@ -235,6 +235,7 @@ import {
   quarantineEnvironment,
   quarantineView,
   sameQuarantine,
+  doseTankStarter,
   treatTank as treatRoomTank,
   type QuarantineView,
 } from '../../sim/quarantine';
@@ -3047,6 +3048,34 @@ export class AquariumHost {
       kind: 'info',
       text: [`« ${tank.name} » : ${message}`, warning].filter((t) => t !== undefined).join(' '),
     });
+    this.saveNow();
+  }
+
+  /**
+   * Verse une dose d'amorce de bactéries dans le bac posé `id` (#553) : son filtre neuf (#538)
+   * mûrit plus vite, le bac affiché n'est pas touché (`doseTankStarter`). Le bac est d'abord
+   * mis à l'heure (#316). Réussite ou refus : message dans `tankNotice`. Sans effet en capture,
+   * avant le démarrage, pour le bac affiché ou un bac à la position historique.
+   */
+  doseStarterInPlacedTank(id: number): void {
+    const world = this.currentWorld;
+    if (!world || this.capture || id === this.selectedTankId) {
+      return;
+    }
+    this.advanceBackgroundTanks();
+    const room = this.syncRoomState(world);
+    const tank = findTank(room, id);
+    if (tank === undefined || tank.placement === null) {
+      return;
+    }
+    const result = doseTankStarter(room, id);
+    if (!result.ok) {
+      this.tankNotice.set({ kind: 'erreur', text: `« ${tank.name} » : ${result.message}` });
+      return;
+    }
+    this.roomState = result.room;
+    this.syncRoomState(world);
+    this.tankNotice.set({ kind: 'info', text: `« ${tank.name} » : ${result.outcome.message}` });
     this.saveNow();
   }
 

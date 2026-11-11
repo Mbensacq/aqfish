@@ -24,6 +24,7 @@ import { DEFAULT_WATER_READOUT, type WaterReadout } from '../../sim/water-qualit
 import { SPECIES_LABELS } from '../../sim/species-catalog';
 import type { RoomCatalog, TankNotice } from '../aquarium-host/aquarium-host';
 import type { TankListEntry } from '../../sim/tank-list';
+import { EMPTY_QUARANTINE, type QuarantineView } from '../../sim/quarantine';
 import type { CareMode } from '../../sim/care-mode';
 import {
   CONTROL_PANEL_ID,
@@ -178,6 +179,8 @@ describe('fonctions du panneau de contrôle', () => {
     (tankSelected)="layout.push(['selection', $event])"
     (animalTransferred)="layout.push(['transfert', $event])"
     (tankRenamed)="layout.push(['renommage', $event])"
+    [quarantine]="quarantine()"
+    (quarantineStarter)="layout.push(['amorce', $event])"
     [careMode]="careMode()"
     (careModeChanged)="layout.push(['mode', $event])"
     (careReturned)="layout.push(['retour-soins', $event])"
@@ -235,6 +238,7 @@ class TestHost {
   readonly catalog = signal<RoomCatalog>({ tanks: [], supports: [], message: null });
   readonly layout: [string, unknown][] = [];
   readonly tanks = signal<readonly TankListEntry[]>([]);
+  readonly quarantine = signal<QuarantineView>(EMPTY_QUARANTINE);
   readonly careMode = signal<CareMode>('soins');
   readonly notice = signal<TankNotice | null>(null);
   readonly foodStyle = signal<FoodStyle>('points');
@@ -398,6 +402,30 @@ describe('ControlPanel', () => {
       expect(tankButton(2).textContent).toContain('vide · 90 L · posé');
       expect(tankButton(2).textContent).not.toContain('faim');
       expect(tankButton(2).getAttribute('aria-disabled')).toBe('true');
+    });
+
+    it('filtre neuf d’un bac posé (#553) : avancement et amorce, rien une fois mûr', async () => {
+      const posed = { id: 2, name: 'Quarantaine', species: [], sick: 0 };
+      fixture.componentInstance.quarantine.set({
+        tanks: [{ ...posed, filter: 12 }],
+        sickHere: 0,
+      });
+      await openPanel();
+      const starter = () => section().querySelector<HTMLButtonElement>('[data-quarantine-starter]');
+      expect(section().querySelector('[data-quarantine-filter]')!.textContent).toContain(
+        'Filtre neuf : efficace à 12 %',
+      );
+      expect(starter()!.getAttribute('aria-label')).toContain('amorce de bactéries');
+      expect(starter()!.getAttribute('title')).toContain('approximation de jeu');
+      starter()!.click();
+      expect(fixture.componentInstance.layout).toContainEqual(['amorce', 2]);
+      fixture.componentInstance.quarantine.set({
+        tanks: [{ ...posed, filter: null }],
+        sickHere: 0,
+      });
+      await fixture.whenStable();
+      expect(starter()).toBeNull();
+      expect(section().querySelector('[data-quarantine-filter]')).toBeNull();
     });
 
     it('Paludarium (#492) : « sans granulés » et infobulle, aucune infobulle sinon', async () => {

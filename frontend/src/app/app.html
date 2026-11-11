@@ -114,6 +114,7 @@
       (animalTransferred)="aquarium.transferAnimal($event.species, $event.toId)"
       (quarantineInstalled)="aquarium.installQuarantine()"
       (quarantineTreated)="aquarium.treatPlacedTank($event.id, $event.kind)"
+      (quarantineStarter)="aquarium.doseStarterInPlacedTank($event)"
       (quarantineReturned)="aquarium.returnAnimal($event.fromId, $event.species)"
       (tankRenamed)="aquarium.renameTank($event.id, $event.name)"
       (careModeChanged)="aquarium.setCareMode($event)"

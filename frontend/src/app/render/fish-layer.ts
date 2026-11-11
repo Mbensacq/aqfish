@@ -136,6 +136,14 @@ ${declareAttribute(vertexShader, SPOT_ATTRIBUTE).replace(
 export const VELVET_VEIL = 0.08;
 export const VELVET_DUST_SHARE = 0.5;
 export const VELVET_DUST_MIX = 1;
+/**
+ * Voxels épargnés par la poussière (#556) : ceux dont la couleur est saturée (écart entre la plus
+ * forte et la plus faible composante, en couleur linéaire, d'au moins cette valeur). Le rouge
+ * (~0,75) et le bleu (~0,86) du néon gardent leur couleur, la poussière tombe sur le ventre et le
+ * dos, plus ternes ; sur un poisson orange, la poussière dorée se serait de toute façon confondue
+ * avec lui. Valeur choisie sur capture (`front-velours`, `side-velours`).
+ */
+export const VELVET_SPARED_SATURATION = 0.55;
 /** Intensité dès l'apparition du voile, dans [0, 1]. */
 export const VELVET_MIN = 0.4;
 /**
@@ -160,7 +168,8 @@ export function velvetVeil(velvet: number | undefined): number {
 /**
  * Ajoute le velours par instance au shader de sommets : voile doré sur tous les voxels, et
  * poussière dorée sur les voxels dont le rang de taché dépasse `1 − intensité ×
- * VELVET_DUST_SHARE` (les voxels trop pâles, rang hors de [0, 1), n'en reçoivent pas).
+ * VELVET_DUST_SHARE` (les voxels trop pâles, rang hors de [0, 1), n'en reçoivent pas), sauf
+ * les voxels saturés (`VELVET_SPARED_SATURATION`, #556).
  * Intensité nulle : garde explicite, aucun sommet touché (captures inchangées à l'octet).
  * @throws Error si le shader n'a pas le point d'insertion attendu.
  */
@@ -177,8 +186,9 @@ ${declareAttribute(vertexShader, s).replace(
   COLOR_VERTEX,
   `${COLOR_VERTEX}
 	if ( ${v} > 0.0 ) {
+		float aqfishVelvetSat = max( max( vColor.r, vColor.g ), vColor.b ) - min( min( vColor.r, vColor.g ), vColor.b );
 		vColor.xyz = mix( vColor.xyz, vec3( ${rgb} ), ${v} * ${VELVET_VEIL.toFixed(4)} );
-		if ( ${s} < 1.0 && ${s} >= 1.0 - ${v} * ${VELVET_DUST_SHARE.toFixed(4)} ) vColor.xyz = mix( vColor.xyz, vec3( ${rgb} ), ${VELVET_DUST_MIX.toFixed(4)} );
+		if ( ${s} < 1.0 && ${s} >= 1.0 - ${v} * ${VELVET_DUST_SHARE.toFixed(4)} && aqfishVelvetSat < ${VELVET_SPARED_SATURATION.toFixed(4)} ) vColor.xyz = mix( vColor.xyz, vec3( ${rgb} ), ${VELVET_DUST_MIX.toFixed(4)} );
 	}`,
 )}`;
 }
