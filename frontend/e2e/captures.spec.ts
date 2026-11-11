@@ -263,8 +263,11 @@ test.describe('Captures', () => {
     // Champignons (#548) : touffes de coton blanc grisâtre sur la caudale et les nageoires.
     { name: 'side-champignons', query: 'champignons=1&camera=side' },
     { name: 'front-champignons', query: 'champignons=1&camera=front' },
-    // Alevins de guppy (#459) : chaque femelle met bas, alevins aux quatre jalons de croissance.
+    // Alevins de guppy (#459) : chaque femelle met bas, alevins aux trois jalons de croissance
+    // (#566 : nouveau-né pâle, juvénile, subadulte presque coloré).
     { name: 'three-quarter-alevins', query: 'alevins=1' },
+    { name: 'front-alevins', query: 'alevins=1&camera=front' },
+    { name: 'top-alevins', query: 'alevins=1&camera=top' },
     // Œufs de corydoras (#478) : une ponte collée sur la vitre et dans les plantes.
     { name: 'front-oeufs', query: 'oeufs=1&camera=front' },
     { name: 'three-quarter-oeufs', query: 'oeufs=1' },

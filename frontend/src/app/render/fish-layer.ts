@@ -27,7 +27,7 @@ import { finRotSeverity, showsFinRot } from '../sim/fin-rot';
 import { showsVelvet, velvetSeverity } from '../sim/velvet';
 import { fungusSeverity, showsFungus } from '../sim/fungus';
 import { dullness } from '../sim/wellbeing';
-import { fryScale } from '../sim/fry';
+import { fryPallor, fryScale } from '../sim/fry';
 import { PALETTE } from './palette';
 import {
   FRAY_ATTRIBUTE,
@@ -335,6 +335,36 @@ ${vertexShader.replace(
 )}`;
 }
 
+/**
+ * Couleur d'un alevin presque translucide (issue #566) : sable de la palette (`docs/DA.md`),
+ * un gris chaud qui se lit sur l'eau sans passer pour un poisson malade (le ternissement tire
+ * vers le gris froid et assombrit).
+ */
+export const FRY_PALE_COLOR = PALETTE.sable;
+/** Attribut d'instance de la pâleur d'alevin (`fryPallor`), dans [0, 1]. */
+export const FRY_PALE_ATTRIBUTE = 'aqfishFryPale';
+
+/**
+ * Ajoute la pâleur des alevins au shader de sommets : la couleur du voxel se mêle à
+ * `FRY_PALE_COLOR` dans la part `aqfishFryPale`, **avant** le ternissement et les maladies
+ * (insérée en dernier, donc exécutée en premier). Pâleur nulle (adulte) : aucun sommet
+ * touché (captures inchangées à l'octet).
+ * @throws Error si le shader n'a pas le point d'insertion attendu.
+ */
+export function withFryPallor(vertexShader: string): string {
+  if (!vertexShader.includes(COLOR_VERTEX)) {
+    throw new Error(`Shader de poissons sans ${COLOR_VERTEX}`);
+  }
+  const c = new Color(FRY_PALE_COLOR);
+  const rgb = [c.r, c.g, c.b].map((v) => v.toFixed(4)).join(', ');
+  return `attribute float ${FRY_PALE_ATTRIBUTE};
+${vertexShader.replace(
+  COLOR_VERTEX,
+  `${COLOR_VERTEX}
+	if ( ${FRY_PALE_ATTRIBUTE} > 0.0 ) vColor.xyz = mix( vColor.xyz, vec3( ${rgb} ), ${FRY_PALE_ATTRIBUTE} );`,
+)}`;
+}
+
 /** Pose interpolée d'un poisson, en repère du bac. */
 export interface FishPose {
   x: number;
@@ -398,6 +428,7 @@ export class FishLayer {
   private readonly velvet: InstancedBufferAttribute;
   /** Intensité des champignons par instance (`fungusTufts`, issue #548), idem. */
   private readonly fungus: InstancedBufferAttribute;
+  private readonly fryPale: InstancedBufferAttribute;
   private readonly geometries: BufferGeometry[];
   private readonly halfLength: number;
   private readonly pose: FishPose = { x: 0, y: 0, z: 0, yaw: 0, pitch: 0, phase: 0 };
@@ -445,8 +476,9 @@ export class FishLayer {
       // Liseré de la pourriture des nageoires après les points blancs (#485).
       // Velours (#532) entre les points blancs et le liseré de la pourriture.
       // Champignons (#548) en dernier : le coton recouvre le liseré de la pourriture.
-      shader.vertexShader = withDullness(
-        withIchSpots(withVelvet(withFinRot(withFungus(shader.vertexShader)))),
+      // Pâleur des alevins (#566) avant tout le reste : un alevin malade ternit aussi.
+      shader.vertexShader = withFryPallor(
+        withDullness(withIchSpots(withVelvet(withFinRot(withFungus(shader.vertexShader))))),
       );
     };
     const bodyGeometry = createFishGeometry(species, 'body', variant);
@@ -462,12 +494,15 @@ export class FishLayer {
     this.velvet.setUsage(DynamicDrawUsage);
     this.fungus = new InstancedBufferAttribute(new Float32Array(capacity), 1);
     this.fungus.setUsage(DynamicDrawUsage);
+    this.fryPale = new InstancedBufferAttribute(new Float32Array(capacity), 1);
+    this.fryPale.setUsage(DynamicDrawUsage);
     for (const geometry of this.geometries) {
       geometry.setAttribute(DULL_ATTRIBUTE, this.dull);
       geometry.setAttribute(ICH_ATTRIBUTE, this.ich);
       geometry.setAttribute(FIN_ROT_ATTRIBUTE, this.finRot);
       geometry.setAttribute(VELVET_ATTRIBUTE, this.velvet);
       geometry.setAttribute(FUNGUS_ATTRIBUTE, this.fungus);
+      geometry.setAttribute(FRY_PALE_ATTRIBUTE, this.fryPale);
     }
     this.body = new InstancedMesh(bodyGeometry, this.material, capacity);
     this.tail = new InstancedMesh(tailGeometry, this.material, capacity);
@@ -542,6 +577,7 @@ export class FishLayer {
       this.finRot.setX(n, finRotFray(fish.finRot));
       this.velvet.setX(n, velvetVeil(fish.velvet));
       this.fungus.setX(n, fungusTufts(fish.fungus));
+      this.fryPale.setX(n, fryPallor(fish.growth));
       n++;
     }
     this.body.count = n;
@@ -553,6 +589,7 @@ export class FishLayer {
     this.finRot.needsUpdate = true;
     this.velvet.needsUpdate = true;
     this.fungus.needsUpdate = true;
+    this.fryPale.needsUpdate = true;
   }
 
   /**
@@ -594,6 +631,11 @@ export class FishLayer {
   /** Intensité des champignons de l'instance `index` (tests). */
   fungusTuftsAt(index: number): number {
     return this.fungus.getX(index);
+  }
+
+  /** Lit la pâleur d'alevin d'une instance (tests). */
+  fryPallorAt(index: number): number {
+    return this.fryPale.getX(index);
   }
 
   /** Lit la matrice d'une instance du corps (tests). */

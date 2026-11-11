@@ -1029,6 +1029,12 @@ DEFAULT_DECOR)`), sinon les trajectoires divergent dès la naissance. (2026-10-1
   pas sur l'une changerait l'autre. Tout champ tableau de l'eau doit y être recopié (test
   « copie de l'eau » de `algae.spec.ts`). (2026-11-06)
 
+- **Échelles d'alevin trop proches : invisibles en pixel art** (cycle 199, #566) : à quelques
+  pixels de scène, un poisson à 0,8 et un à 0,9 de l'adulte ont la même silhouette. Garder au
+  moins 0,15 d'écart entre jalons (test `trois tailles lisibles`) et regarder la vue `front`
+  (`front-alevins`) : vue de dessus, un alevin pâle sur le sable ne se distingue presque pas.
+  Teinte de pâleur : le sable (`PALETTE.sable`) ; la teinte d'eau claire passe pour un reflet.
+  (2026-11-11)
 - **Alevin né près de sa mère : mangé au premier pas** (cycle 156, #459) : né à moins de 4 cm
   d'elle, hors des plantes, un alevin est dans le rayon de prédation de tous les adultes du
   banc ; sur la graine 42, 7 des 13 alevins d'exemple disparaissaient dès le premier pas.
