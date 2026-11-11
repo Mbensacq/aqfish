@@ -7229,10 +7229,10 @@
           "note": "Verdict OK, 0 bug, captures publiées (c198), e2e hydropisie OK en local, CI e2e rouge côté runner"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-11T16:01:35.205Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-11T16:37:45.516Z",
+          "note": "PR #576 revue OK, v1.17.2 préparée, fusion différée : CI e2e rouge (panne DNS/apt du runner, 3 essais) ; issue #577"
         }
       },
       "metriques": {}
