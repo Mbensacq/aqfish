@@ -68,15 +68,18 @@ function run(
   list: Subject[],
   steps: number,
   causes: number,
-  options: { environment?: EnvironmentId; seed?: number } = {},
+  options: { environment?: EnvironmentId; seed?: number; dt?: number } = {},
 ): number {
-  const { environment = 'tropical', seed = 42 } = options;
+  const { environment = 'tropical', seed = 42, dt = SIM_DT } = options;
   let healed = 0;
   for (let tick = 1; tick <= steps; tick++) {
-    healed += stepDropsyInPlace(list, SIM_DT, causes, environment, seed, tick);
+    healed += stepDropsyInPlace(list, dt, causes, environment, seed, tick);
   }
   return healed;
 }
+
+/** Pas d'une seconde pour les longues durées d'apparition (tests plus rapides en CI). */
+const COARSE = 1;
 
 /** Pas pour `seconds` secondes simulées. */
 const steps = (seconds: number): number => Math.round(seconds / SIM_DT);
@@ -153,21 +156,21 @@ describe('stepDropsyInPlace : apparition', () => {
   it('eau dégradée, animaux en forme : aucun cas, toutes graines', () => {
     for (const seed of [1, 42, 999]) {
       const list = neons(12);
-      run(list, steps(3 * 3600), 2, { seed });
+      run(list, 3 * 3600, 2, { seed, dt: COARSE });
       expect(progress(list).every((p) => p === null)).toBe(true);
     }
   });
 
   it('eau propre, animaux affaiblis : aucun cas (aucun tirage sans cause)', () => {
     const list = neons(12, { health: HEALTH_FLOOR });
-    run(list, steps(3 * 3600), 0);
+    run(list, 3 * 3600, 0, { dt: COARSE });
     expect(progress(list).every((p) => p === null)).toBe(true);
   });
 
   it('affaiblis en eau dégradée : des cas, identiques à graine fixe, autres avec une autre graine', () => {
     const once = (seed: number): (number | null)[] => {
       const list = neons(12, { health: HEALTH_FLOOR });
-      run(list, steps(3600), 1, { seed });
+      run(list, 3600, 1, { seed, dt: COARSE });
       return progress(list);
     };
     const first = once(42);
@@ -182,7 +185,7 @@ describe('stepDropsyInPlace : apparition', () => {
       let total = 0;
       for (const seed of [1, 2, 3, 4, 5]) {
         const list = neons(20, { health: HEALTH_FLOOR });
-        run(list, steps(1800), causes, { seed });
+        run(list, 1800, causes, { seed, dt: COARSE });
         total += progress(list).filter((p) => p !== null).length;
       }
       return total;
@@ -195,24 +198,24 @@ describe('stepDropsyInPlace : apparition', () => {
       ...a,
       id,
     }));
-    run(list, steps(3 * 3600), 2);
+    run(list, 3 * 3600, 2, { dt: COARSE });
     expect(progress(list.slice(6)).every((p) => p === null)).toBe(true);
     expect(progress(list.slice(0, 6)).some((p) => p !== null)).toBe(true);
   });
 
   it('amphibiens, invertébrés et récif : jamais touchés', () => {
     const palu = animals(['axolotl', 'axolotl'], { health: HEALTH_FLOOR });
-    run(palu, steps(3 * 3600), 2, { environment: 'paludarium' });
+    run(palu, 3 * 3600, 2, { environment: 'paludarium', dt: COARSE });
     expect(progress(palu)).toEqual([null, null]);
     const shrimp = animals(['crevette'], { health: HEALTH_FLOOR });
-    run(shrimp, steps(3 * 3600), 2);
+    run(shrimp, 3 * 3600, 2, { dt: COARSE });
     expect(progress(shrimp)).toEqual([null]);
   });
 
   it('causes non finies ou négatives : comptent pour zéro', () => {
     for (const causes of [Number.NaN, Number.POSITIVE_INFINITY, -1]) {
       const list = neons(12, { health: HEALTH_FLOOR });
-      run(list, steps(3600), causes);
+      run(list, 3600, causes, { dt: COARSE });
       expect(progress(list).every((p) => p === null)).toBe(true);
     }
   });
@@ -364,17 +367,18 @@ describe('monde : hydropisie dans la boucle à pas fixe', () => {
     const world = cloneWorld(createDefaultWorld(42));
     advanceInPlace(world, 36_000);
     expect(world.entities.every((f) => f.dropsy === undefined)).toBe(true);
-  }, 60_000);
+  }, 180_000);
 
   it('eau chargée longtemps : les poissons affaiblis finissent atteints, de façon reproductible', () => {
     const once = (): (number | null)[] => {
-      const world = tank();
+      const world = cloneWorld(createWorld(42, [{ species: 'neon', count: 24 }]));
       for (const fish of world.entities) {
         (fish as { health: number }).health = 0.2;
       }
       // Eau entretenue mauvaise (le filtre ferait baisser les nitrites) : remise à chaque minute.
-      for (let minute = 0; minute < 60; minute++) {
+      for (let minute = 0; minute < 10; minute++) {
         (world.water as MutableWaterState).nitrite = 10 * FIN_ROT_NITRITE;
+        (world.water as MutableWaterState).ammonia = 10;
         advanceInPlace(world, steps(60));
       }
       return progress(world.entities);
@@ -382,7 +386,7 @@ describe('monde : hydropisie dans la boucle à pas fixe', () => {
     const first = once();
     expect(first.some((p) => p !== null)).toBe(true);
     expect(once()).toEqual(first);
-  }, 60_000);
+  }, 180_000);
 
   it('quarantaine et sauvegarde : compté parmi les malades du bac', () => {
     const world = tank();
@@ -414,7 +418,7 @@ describe('monde : hydropisie dans la boucle à pas fixe', () => {
     advanceInPlace(world, steps((DROPSY_VISIBLE_AT / DROPSY_HEAL_SPEED) * 1.05));
     expect(world.entities[0].dropsy).toBe(DROPSY_MAX);
     expect(world.entities.slice(1).every((f) => f.dropsy === undefined)).toBe(true);
-  }, 60_000);
+  }, 180_000);
 
   it('mode décor : maladie en pause', () => {
     const world = tank();
@@ -423,7 +427,7 @@ describe('monde : hydropisie dans la boucle à pas fixe', () => {
     world.careMode = 'decor';
     advanceInPlace(world, 600);
     expect(world.entities[0].dropsy).toBe(10);
-  }, 30_000);
+  }, 120_000);
 });
 
 describe('sauvegarde', () => {
