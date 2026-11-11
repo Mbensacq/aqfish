@@ -7077,6 +7077,12 @@
           "debut": "2026-11-11T00:49:23.854Z",
           "fin": "2026-11-11T02:12:30.237Z",
           "note": "PR #563 : table des maladies (ADR 0129) + finitions quarantaine (#562, #560), CI verte ; 145 autres captures identiques à l'octet en local ; point 4 de #562 (facultatif) non traité"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-11T02:13:03.261Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
