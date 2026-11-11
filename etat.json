@@ -7151,10 +7151,10 @@
           "note": "PR #573 : kits de test de l'eau (#564, ADR 0131), CI verte"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-11T08:11:03.122Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-11T08:40:39.523Z",
+          "note": "Verdict OK, 0 bug bloquant, captures publiées (c196), e2e mobile ajouté"
         }
       },
       "metriques": {}
