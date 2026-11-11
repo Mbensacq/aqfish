@@ -7243,7 +7243,7 @@
       "debut": "2026-11-11T16:38:18.940Z",
       "type": "fonctionnalite",
       "issue": 566,
-      "pr": null,
+      "pr": 578,
       "version": null,
       "phases": {
         "planif": {
