@@ -7191,6 +7191,12 @@
           "debut": "2026-11-11T11:45:47.639Z",
           "fin": "2026-11-11T12:21:10.225Z",
           "note": "Verdict OK, 0 bug, captures publiées (c197), e2e pharmacie/amorce/cadrage OK"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-11T12:21:51.718Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
