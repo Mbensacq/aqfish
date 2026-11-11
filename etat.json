@@ -7071,6 +7071,12 @@
           "debut": "2026-11-11T00:48:08.611Z",
           "fin": "2026-11-11T00:48:38.714Z",
           "note": "Issue #562 : lot dette suites revues #561/#559 avec #560 (S/M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-11T00:49:23.854Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
