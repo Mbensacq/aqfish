@@ -7121,10 +7121,10 @@
           "note": "Verdict OK, 0 bug, captures publiées (c195)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-11T05:49:20.098Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-11T07:00:09.799Z",
+          "note": "PR #570 fusionnée → v1.16.6 (release CI OK, CI main verte) ; #553/#556 fermées ; PR #569 (roadmap) fusionnée ; dette #572"
         }
       },
       "metriques": {}
