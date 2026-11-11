@@ -1,8 +1,9 @@
 import { isDecorMode } from './care-mode';
+import { isSick } from './diseases';
 import { findTank, placeOf, type RoomState, type RoomTank, type TankSizeId } from './room-state';
 import type { EnvironmentId } from './environment';
 import type { SpeciesId } from './species';
-import { TREATMENTS, type TreatmentKind, type TreatmentOutcome } from './treatment';
+import { TREATMENTS, type AcceptedTreatment, type TreatmentKind } from './treatment';
 import { cloneWorld, treatWorldInPlace } from './world';
 
 /**
@@ -59,7 +60,7 @@ export function quarantineTanks(room: RoomState, selectedTankId: number): RoomTa
 
 /** Résultat d'un soin donné à un bac de la pièce. */
 export type TankTreatmentResult =
-  | { readonly ok: true; readonly room: RoomState; readonly outcome: TreatmentOutcome }
+  | { readonly ok: true; readonly room: RoomState; readonly outcome: AcceptedTreatment }
   | { readonly ok: false; readonly room: RoomState; readonly message: string };
 
 /**
@@ -94,17 +95,11 @@ export function treatTank(
 }
 
 /**
- * Nombre d'animaux malades (points blancs, velours, pourriture des nageoires ou champignons)
- * d'un bac.
+ * Nombre d'animaux malades (au moins une maladie de la table `DISEASES` : points blancs,
+ * velours, pourriture des nageoires ou champignons) d'un bac.
  */
 export function sickCount(tank: Pick<RoomTank, 'world'>): number {
-  return tank.world.entities.filter(
-    (e) =>
-      e.ich !== undefined ||
-      e.velvet !== undefined ||
-      e.finRot !== undefined ||
-      e.fungus !== undefined,
-  ).length;
+  return tank.world.entities.filter(isSick).length;
 }
 
 /** Un bac de quarantaine possible, vu par la liste des bacs (#547). */

@@ -3042,7 +3042,7 @@ export class AquariumHost {
     }
     this.roomState = result.room;
     this.syncRoomState(world);
-    const { message, warning } = result.outcome as { message: string; warning?: string };
+    const { message, warning } = result.outcome;
     this.tankNotice.set({
       kind: 'info',
       text: [`« ${tank.name} » : ${message}`, warning].filter((t) => t !== undefined).join(' '),

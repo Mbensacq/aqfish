@@ -192,6 +192,9 @@ export type TreatmentOutcome =
       readonly message: string;
     };
 
+/** Geste accepté (`TreatmentOutcome` de succès) : message et mise en garde éventuelle. */
+export type AcceptedTreatment = Extract<TreatmentOutcome, { readonly ok: true }>;
+
 /** Ce que le geste lit du bac : environnement, espèces présentes, nombre de malades. */
 export interface TreatmentContext {
   readonly environment: EnvironmentId;
