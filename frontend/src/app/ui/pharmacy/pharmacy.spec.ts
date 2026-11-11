@@ -3,6 +3,12 @@ import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import type { GuidePage } from '../../sim/care-guide';
 import { EMPTY_HEALTH_SUMMARY } from '../../sim/health-summary';
 import { DEFAULT_WATER_SAMPLE } from '../../sim/water-dashboard';
+import {
+  startWaterTest,
+  WATER_TEST_TICKS,
+  waterTestView,
+  type WaterKit,
+} from '../../sim/water-test';
 import { Pharmacy } from './pharmacy';
 
 describe('Pharmacy (#533)', () => {
@@ -175,5 +181,44 @@ describe('Pharmacy (#533)', () => {
     fixture.componentInstance.close();
     await fixture.whenStable();
     expect(panel()).toBeNull();
+  });
+
+  describe('kits de test de l’eau (#564)', () => {
+    const SAMPLE = { ph: 7.13, ammonia: 3.5, nitrite: 0, nitrate: 0, gh: 10, kh: 4 };
+    const kit = (name: string) =>
+      root().querySelector<HTMLButtonElement>(`[data-water-kit="${name}"]`)!;
+    const result = () => root().querySelector<HTMLElement>('[data-water-test]')!;
+
+    it('un bouton par kit, qui demande le test', async () => {
+      const kits: WaterKit[] = [];
+      fixture.componentInstance.waterTestRequested.subscribe((k) => kits.push(k));
+      await openPharmacy();
+      expect(root().querySelectorAll('[data-water-kit]').length).toBe(5);
+      expect(result().getAttribute('data-state')).toBe('aucun');
+      kit('nitrates').click();
+      expect(kits).toEqual(['nitrates']);
+    });
+
+    it('en cours : kits désactivés, secondes restantes', async () => {
+      fixture.componentRef.setInput('waterTest', waterTestView(startWaterTest('ph', SAMPLE, 0), 0));
+      await openPharmacy();
+      expect(result().getAttribute('data-state')).toBe('en-cours');
+      expect(result().textContent).toContain('résultat dans 10 s');
+      expect(kit('ph').disabled).toBe(true);
+    });
+
+    it('terminé : valeur arrondie et conseil', async () => {
+      fixture.componentRef.setInput(
+        'waterTest',
+        waterTestView(startWaterTest('ammoniaque', SAMPLE, 0), WATER_TEST_TICKS),
+      );
+      await openPharmacy();
+      expect(result().getAttribute('data-state')).toBe('termine');
+      expect(root().querySelector('[data-water-result]')?.textContent).toContain('≈ 4 u.');
+      expect(root().querySelector('[data-water-test-advice]')?.textContent).toContain(
+        'à surveiller',
+      );
+      expect(kit('ph').disabled).toBe(false);
+    });
   });
 });

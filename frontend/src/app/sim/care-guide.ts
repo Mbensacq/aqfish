@@ -108,6 +108,10 @@ const PRODUCTS: readonly GuideEntry[] = [
       ['Usage', 'mesurer ammoniaque, nitrite, nitrate, pH, KH, GH, chlore, cuivre'],
       ['Conseil', 'pour l’ammoniaque, préférer le salicylate au Nessler'],
       ['Non vérifié', 'fiabilité comparée des bandelettes et des réactifs'],
+      [
+        'Dans le jeu',
+        'kits pH, ammoniaque, nitrites, nitrates et dureté dans la pharmacie : résultat après 10 s simulées, arrondi aux paliers de couleur du kit (approximation de jeu)',
+      ],
     ],
     `${S} 1.5 et § 6 (UF/IFAS FA16 ; Merck)`,
   ),

@@ -206,6 +206,11 @@ export interface CaptureParams {
   readonly starved: boolean;
   /** Vrai pour `points-blancs=1` : poissons atteints des points blancs à t = 0 (issue #366). */
   readonly ich: boolean;
+  /**
+   * Kit de `test-eau=` (issue #564) : résultat d'un test de ce kit déjà prêt au chargement,
+   * hors capture (pharmacie affichée) ; non vérifié ici, `null` si absent.
+   */
+  readonly waterTest: string | null;
   /** Vrai pour `pourriture=1` : nageoires effilochées à t = 0 (issue #485). */
   readonly finRot: boolean;
   /** Vrai pour `velours=1` : velours au maximum à t = 0 (issue #532). */
@@ -345,6 +350,7 @@ export const DEFAULT_CAPTURE_PARAMS: CaptureParams = {
   shape: null,
   starved: false,
   ich: false,
+  waterTest: null,
   finRot: false,
   velvet: false,
   fungus: false,
@@ -407,6 +413,7 @@ export function parseCaptureParams(search: string): CaptureParams {
     shape: params.get('forme'),
     starved: params.get('affames') === '1',
     ich: params.get('points-blancs') === '1',
+    waterTest: params.get('test-eau'),
     finRot: params.get('pourriture') === '1',
     velvet: params.get('velours') === '1',
     fungus: params.get('champignons') === '1',

@@ -487,6 +487,23 @@ test.describe('Captures', () => {
     expect(errors).toEqual([]);
   });
 
+  // Kit de test de l'eau (#564) : bac par défaut, résultat du kit pH prêt au chargement
+  // (`test-eau=ph`), pharmacie ouverte ; simulation à l'arrêt dès t = 0.
+  test('angle three-quarter avec le kit de test de l’eau', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    await page.goto(`/?seed=${SEED}&camera=three-quarter&heure=12&vitesse=0&test-eau=ph`);
+    await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+    await page.locator('[data-pharmacy-toggle]').click();
+    await expect(page.locator('[data-water-test]')).toHaveAttribute('data-state', 'termine');
+    await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-tick', '0');
+    await page.screenshot({
+      path: join(OUTPUT_DIR, 'three-quarter-kit-eau.png'),
+      animations: 'disabled',
+    });
+    expect(errors).toEqual([]);
+  });
+
   // Mode décor (#278) : bac tropical avec des poissons d'autres milieux (clowns du récif, un
   // koï), contrat de capture (`mode=decor`), puis la même scène avec l'interface : badge à la
   // place du tableau de bord, simulation à l'arrêt dès t = 0.

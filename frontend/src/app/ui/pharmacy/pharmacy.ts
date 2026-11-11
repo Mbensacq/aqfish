@@ -11,7 +11,7 @@ import {
   signal,
 } from '@angular/core';
 
-import type { GuidePage } from '../../sim/care-guide';
+import { guideEntries, type GuidePage } from '../../sim/care-guide';
 import { mixWarnings } from '../../sim/compatibility';
 import { dashboardAlerts } from '../../sim/dashboard-alerts';
 import { DEFAULT_ENVIRONMENT_ID, environmentById, type EnvironmentId } from '../../sim/environment';
@@ -31,6 +31,12 @@ import { sideEffectWarning } from '../../sim/side-effects';
 import type { TreatmentReadout } from '../../sim/treatment-text';
 import { DEFAULT_WATER_SAMPLE, type WaterSample } from '../../sim/water-dashboard';
 import { DEFAULT_WATER_READOUT, type WaterReadout } from '../../sim/water-quality';
+import {
+  WATER_KIT_INFO,
+  WATER_KITS,
+  type WaterKit,
+  type WaterTestView,
+} from '../../sim/water-test';
 
 /** Identifiant du panneau (cible de `aria-controls`). */
 export const PHARMACY_ID = 'pharmacie-bac';
@@ -39,6 +45,12 @@ export const PHARMACY_ID = 'pharmacie-bac';
 const WARNINGS = Object.fromEntries(
   PHARMACY_PRODUCTS.map((product) => [product, sideEffectWarning(product)]),
 ) as Readonly<Record<PharmacyProduct, string | null>>;
+
+/** Conseil du wiki sur les tests d'eau (`sim/care-guide.ts`, entrée « tests »), lu une fois. */
+const TEST_GUIDE_ADVICE =
+  guideEntries('produits')
+    .find((entry) => entry.id === 'tests')
+    ?.lines.find((line) => line.label === 'Conseil')?.text ?? null;
 
 /** Éléments qui peuvent recevoir le focus au clavier (piège du focus). */
 const FOCUSABLE = 'button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])';
@@ -113,6 +125,56 @@ const FOCUSABLE = 'button:not([disabled]), [href], [tabindex]:not([tabindex="-1"
             <p>Aucune alerte : aucun produit à verser.</p>
           }
         </div>
+        <h3 class="pharmacy__section">Tests de l’eau</h3>
+        <div class="pharmacy__kits" role="group" aria-label="Lancer un test de l’eau">
+          @for (kit of kits; track kit) {
+            <button
+              type="button"
+              class="pharmacy__button pharmacy__kit"
+              [attr.data-water-kit]="kit"
+              [disabled]="testRunning()"
+              (click)="waterTestRequested.emit(kit)"
+            >
+              {{ kitInfo[kit].label }}
+            </button>
+          }
+        </div>
+        <div
+          class="pharmacy__test"
+          data-water-test
+          [attr.data-state]="
+            waterTest() === null ? 'aucun' : waterTest()!.done ? 'termine' : 'en-cours'
+          "
+          [attr.data-kit]="waterTest()?.kit"
+          aria-live="polite"
+        >
+          @if (waterTest(); as test) {
+            @if (test.done) {
+              <p>
+                Test {{ kitInfo[test.kit].label }} :
+                @for (result of test.results; track result.label) {
+                  <strong class="pharmacy__result" data-water-result
+                    >{{ result.label }} ≈ {{ result.text }}</strong
+                  >
+                }
+              </p>
+              <p data-water-test-advice>{{ test.advice }}</p>
+            } @else {
+              <p>
+                Test {{ kitInfo[test.kit].label }} en cours : résultat dans
+                {{ test.remainingSeconds }} s.
+              </p>
+            }
+          } @else {
+            <p>Choisir un kit : le résultat arrive après quelques secondes de simulation.</p>
+          }
+          @if (testGuideAdvice !== null) {
+            <small class="pharmacy__use" data-water-test-guide
+              >Wiki : {{ testGuideAdvice }}. Lecture arrondie aux paliers de couleur du kit
+              (approximation de jeu).</small
+            >
+          }
+        </div>
         <h3 class="pharmacy__section">Produits</h3>
         <ul class="pharmacy__list">
           @for (row of rows(); track row.product) {
@@ -156,11 +218,15 @@ export class Pharmacy {
   readonly treatment = input<TreatmentReadout | null>(null);
   /** Produits du bac affiché (`pharmacyState`, relevé par l'hôte). */
   readonly products = input<PharmacyState>(EMPTY_PHARMACY);
+  /** Test de l'eau du bac affiché (#564), relevé par l'hôte ; `null` : aucun. */
+  readonly waterTest = input<WaterTestView | null>(null);
 
   /** Ouverte par l'utilisateur : l'application replie les autres panneaux. */
   readonly opened = output<void>();
   /** Lien « Produits et traitements » : l'application ouvre le wiki sur cette page. */
   readonly wikiPageRequested = output<GuidePage>();
+  /** Kit choisi : l'hôte lance le test (`startWaterTest`). */
+  readonly waterTestRequested = output<WaterKit>();
 
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly injector = inject(Injector);
@@ -171,6 +237,14 @@ export class Pharmacy {
   protected readonly info = PHARMACY_INFO;
   /** Effets secondaires déclarés de chaque produit (`sim/side-effects.ts`, #549). */
   protected readonly warnings = WARNINGS;
+  protected readonly kits = WATER_KITS;
+  protected readonly kitInfo = WATER_KIT_INFO;
+  protected readonly testGuideAdvice = TEST_GUIDE_ADVICE;
+  /** Un test court : les kits attendent son résultat. */
+  protected readonly testRunning = computed(() => {
+    const test = this.waterTest();
+    return test !== null && !test.done;
+  });
 
   /** Conseil pour l'alerte la plus grave (mêmes alertes que le tableau de bord). */
   protected readonly advice = computed(() =>

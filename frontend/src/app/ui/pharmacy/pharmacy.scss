@@ -155,6 +155,37 @@
   opacity: 0.75;
 }
 
+// Kits de test de l'eau (#564) : une ligne de boutons courts, résultat dessous.
+.pharmacy__kits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.pharmacy__kit {
+  min-height: 28px;
+  padding: 2px 8px;
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.5;
+  }
+}
+
+.pharmacy__test {
+  display: grid;
+  margin-top: 6px;
+
+  p {
+    margin: 0 0 2px;
+  }
+}
+
+.pharmacy__result {
+  margin-left: 4px;
+  color: #5fbfa3;
+}
+
 // Entre 900 et 1099 px, la barre des vues arrive près de « Wiki » : ligne des boutons du haut,
 // après « Réglages » (le tableau de bord commence plus bas à ces largeurs).
 @media (min-width: 900px) and (max-width: 1099px) {

@@ -113,7 +113,7 @@ ionisée) reproduit la table de Boyd à l'arrondi près (ex. 26 °C, pH 8,0 : 0,
 | Produit | Usage | Dose | Effet sur l'eau | Risques | Source |
 |---|---|---|---|---|---|
 | Charbon actif | Retirer médicaments, colorants, tanins, chlore | — | ↓ médicaments, ↓ couleur | À retirer pendant tout traitement | Merck (amphibiens) ; PubMed 18817004 |
-| Tests réactifs liquides / bandelettes | Mesurer NH₃/NH₄⁺, NO₂, NO₃, pH, KH, GH, Cl₂, Cu | — | — | Nessler faussé par formol et conditionneurs ; préférer salicylate | UF/IFAS FA16 ; Merck |
+| Tests réactifs liquides / bandelettes | Mesurer NH₃/NH₄⁺, NO₂, NO₃, pH, KH, GH, Cl₂, Cu | — | — | Nessler faussé par formol et conditionneurs ; préférer salicylate. Dans le jeu (#564, ADR 0131) : kits pH, ammoniaque, nitrites, nitrates et dureté dans la pharmacie, résultat après 10 s simulées arrondi aux paliers de couleur (approximation de jeu) | UF/IFAS FA16 ; Merck |
 | Aération / pompe à air | O₂, dégazage du CO₂ | — | ↑ O₂, ↓ CO₂, ↑ pH léger | Sursaturation si fuite d'air côté aspiration | Merck |
 | Chauffage / refroidisseur | Température stable | — | — | Panne de thermostat : mortalité | Merck |
 | Stérilisateur UV | Eau verte, pathogènes libres | non vérifié | — | Peut dégrader certains médicaments (non vérifié) | non vérifié |
