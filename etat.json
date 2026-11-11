@@ -7107,6 +7107,12 @@
           "debut": "2026-11-11T04:09:46.292Z",
           "fin": "2026-11-11T04:11:26.943Z",
           "note": "Rétro #568 ; plan sprint 29 (#564-#567 créées) ; PR roadmap #569 ; Dev c195 : bug #553"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-11T04:11:56.098Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
