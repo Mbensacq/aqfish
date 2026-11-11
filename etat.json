@@ -7185,6 +7185,12 @@
           "debut": "2026-11-11T09:57:31.384Z",
           "fin": "2026-11-11T11:45:06.917Z",
           "note": "PR #575 : lot de dette #574+#572+#554 (GH · KH, lien wiki de l'amorce, quarantaine), CI verte"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-11T11:45:47.639Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
