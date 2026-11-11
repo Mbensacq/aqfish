@@ -7223,10 +7223,10 @@
           "note": "PR #576 : hydropisie ; unitaires/lint/build verts, e2e CI bloqués par une panne apt du runner (2 essais)"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-11T15:32:44.781Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-11T16:00:53.156Z",
+          "note": "Verdict OK, 0 bug, captures publiées (c198), e2e hydropisie OK en local, CI e2e rouge côté runner"
         }
       },
       "metriques": {}
