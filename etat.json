@@ -7145,10 +7145,10 @@
           "note": "Issue #564 : kits de test de l'eau (S)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-11T07:01:57.033Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-11T08:10:28.267Z",
+          "note": "PR #573 : kits de test de l'eau (#564, ADR 0131), CI verte"
         }
       },
       "metriques": {}
