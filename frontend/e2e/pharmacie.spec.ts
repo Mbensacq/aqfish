@@ -182,6 +182,20 @@ test('kit de test de l’eau : `test-eau=` donne un résultat prêt au chargemen
   await expect(page.locator('[data-water-result]')).toHaveText(/^pH ≈ \d,?\d?$/);
 });
 
+test('kit de dureté à 1280 × 720 : GH et KH sur une ligne, séparés (#574)', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto('/?seed=42&vitesse=0&test-eau=durete');
+  await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+  await page.locator(toggle).click();
+  const values = page.locator('[data-water-result]');
+  await expect(values).toHaveCount(2);
+  await expect(page.locator('[data-water-test] p').first()).toContainText(/gouttes · KH ≈/);
+  const [gh, kh] = await Promise.all([values.nth(0).boundingBox(), values.nth(1).boundingBox()]);
+  // Même ligne, KH après GH, avec un écart (le séparateur) entre les deux.
+  expect(Math.abs(gh!.y - kh!.y)).toBeLessThan(2);
+  expect(kh!.x - (gh!.x + gh!.width)).toBeGreaterThan(6);
+});
+
 test('kit de test de l’eau : téléphone (390 × 844), dureté lue sans débordement', async ({
   page,
 }) => {
@@ -193,6 +207,8 @@ test('kit de test de l’eau : téléphone (390 × 844), dureté lue sans débor
   await page.locator(toggle).click();
   await expect(page.locator('[data-water-test]')).toHaveAttribute('data-state', 'termine');
   await expect(page.locator('[data-water-result]')).toHaveCount(2);
+  // GH et KH séparés (#574) : « GH ≈ … · KH ≈ … », le point entre les deux valeurs.
+  await expect(page.locator('[data-water-test] p').first()).toContainText(/gouttes · KH ≈/);
   const overflow = await page.evaluate(
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
   );

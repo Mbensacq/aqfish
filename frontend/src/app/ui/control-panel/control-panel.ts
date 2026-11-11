@@ -93,6 +93,7 @@ import {
 } from '../../sim/treatment-text';
 import type { PhRegulatorDirection } from '../../sim/ph-regulator';
 import type { ConditionerKind } from '../../sim/water-conditioner';
+import type { GuidePage } from '../../sim/care-guide';
 import { formatTenth } from '../../sim/water-dashboard';
 import { DEFAULT_WATER_READOUT, type WaterReadout } from '../../sim/water-quality';
 
@@ -609,6 +610,7 @@ export interface NewTankRequest {
               [class.control-panel__message--error]="!notice.ok"
               data-starter-message
               [notice]="notice"
+              (wikiPageRequested)="wikiPageRequested.emit($event)"
             />
           }
           <!-- Feuilles de catappa (#239) : « − », nombre, « + », puis le rappel que l'effet est
@@ -684,6 +686,7 @@ export interface NewTankRequest {
                 [class.control-panel__message--error]="!notice.ok"
                 data-treatment-message
                 [notice]="notice"
+                (wikiPageRequested)="wikiPageRequested.emit($event)"
               />
             } @else {
               <!-- Sources et niveaux de preuve (infobulle de chaque bouton) ; le message d'un
@@ -1257,7 +1260,9 @@ export interface NewTankRequest {
                       type="button"
                       class="control-panel__button control-panel__button--compact"
                       data-quarantine-starter
-                      aria-label="Quarantaine : verser une dose d’amorce de bactéries nitrifiantes"
+                      [attr.aria-label]="
+                        chosen.name + ' : verser une dose d’amorce de bactéries nitrifiantes'
+                      "
                       title="Source : docs/SOINS.md § 1.1 (étiquette Stability, secondaire) ; gain du filtre : approximation de jeu."
                       (click)="quarantineStarter.emit(chosen.id)"
                     >
@@ -1525,9 +1530,9 @@ export class ControlPanel {
   readonly quarantineInstalled = output<void>();
   /** Un geste de soin dans le bac de quarantaine `id` seul (#547). */
   readonly quarantineTreated = output<{ readonly id: number; readonly kind: TreatmentKind }>();
-  /** « Ramener au bac affiché » (#547) : bac de quarantaine et espèce. */
   /** Dose d'amorce de bactéries dans le bac posé choisi (#553), par son identifiant. */
   readonly quarantineStarter = output<number>();
+  /** « Ramener au bac affiché » (#547) : bac de quarantaine et espèce. */
   readonly quarantineReturned = output<{ readonly fromId: number; readonly species: SpeciesId }>();
   /** Bouton « Granulés » : passer à l'autre rendu (#117). */
   readonly foodStyleToggled = output<void>();
@@ -1551,6 +1556,8 @@ export class ControlPanel {
   readonly treatmentRequested = output<TreatmentKind>();
   /** Dose d'amorce de bactéries demandée (#529). */
   readonly bacteriaStarterRequested = output<void>();
+  /** Lien « Produits et traitements » d'un message de soin (#554) : page du wiki à ouvrir. */
+  readonly wikiPageRequested = output<GuidePage>();
   /** Dose de conditionneur demandée (#530). */
   readonly conditionerRequested = output<ConditionerKind>();
   /** Bascule de l'eau du robinet entre traitée et non traitée (#530). */

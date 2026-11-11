@@ -152,7 +152,11 @@ const FOCUSABLE = 'button:not([disabled]), [href], [tabindex]:not([tabindex="-1"
             @if (test.done) {
               <p>
                 Test {{ kitInfo[test.kit].label }} :
-                @for (result of test.results; track result.label) {
+                <!-- Plusieurs grandeurs (dureté : GH puis KH, #574) : séparées par « · ». -->
+                @for (result of test.results; track result.label; let first = $first) {
+                  @if (!first) {
+                    <span class="pharmacy__separator">{{ ' · ' }}</span>
+                  }
                   <strong class="pharmacy__result" data-water-result
                     >{{ result.label }} ≈ {{ result.text }}</strong
                   >

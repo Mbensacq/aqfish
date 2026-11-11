@@ -232,10 +232,10 @@ import {
   QUARANTINE_TANK_NAME,
   QUARANTINE_TANK_SIZE,
   EMPTY_QUARANTINE,
+  doseTankStarter,
   quarantineEnvironment,
   quarantineView,
   sameQuarantine,
-  doseTankStarter,
   treatTank as treatRoomTank,
   type QuarantineView,
 } from '../../sim/quarantine';

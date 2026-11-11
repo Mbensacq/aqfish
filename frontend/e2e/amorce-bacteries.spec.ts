@@ -6,7 +6,8 @@ import { createDefaultWorld, type MutableWorld } from '../src/app/sim/world';
 
 /**
  * Amorce de bactéries (issue #529) : le bouton s'atteint au clavier et le geste est annoncé,
- * refusé sur un filtre mûr puis accepté sur un filtre importé plus faible.
+ * refusé sur un filtre mûr puis accepté sur un filtre importé plus faible. Le renvoi au wiki
+ * du message ouvre la page « Produits et traitements » (#554).
  */
 test('amorce de bactéries : clavier et annonce (#529)', async ({ page }) => {
   test.setTimeout(180_000);
@@ -21,6 +22,12 @@ test('amorce de bactéries : clavier et annonce (#529)', async ({ page }) => {
   await page.keyboard.press('Enter');
   await expect(message).toHaveAttribute('role', 'status');
   await expect(message).toContainText('Filtre déjà mûr');
+  // Le renvoi au wiki est un lien (#554) : il ouvre la page « Produits et traitements ».
+  const link = message.locator('[data-products-link]');
+  await expect(link).toHaveText('Produits et traitements');
+  await link.click();
+  await expect(page.locator('[data-wiki-page-view="produits"]')).toBeVisible();
+  await page.getByRole('button', { name: 'Réglages' }).click();
 
   const world = createDefaultWorld(11, 'tropical') as MutableWorld;
   world.water = { ...world.water, filter: 0.2 };

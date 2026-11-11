@@ -186,6 +186,17 @@
   color: #5fbfa3;
 }
 
+// Entre deux grandeurs d'un même kit (GH · KH, #574) : de vrais espaces autour du point,
+// lus aussi par les lecteurs d'écran, d'où aucune marge sur la valeur qui suit.
+.pharmacy__separator {
+  color: rgb(232 230 227 / 60%);
+  white-space: pre;
+
+  + .pharmacy__result {
+    margin-left: 0;
+  }
+}
+
 // Entre 900 et 1099 px, la barre des vues arrive près de « Wiki » : ligne des boutons du haut,
 // après « Réglages » (le tableau de bord commence plus bas à ces largeurs).
 @media (min-width: 900px) and (max-width: 1099px) {
