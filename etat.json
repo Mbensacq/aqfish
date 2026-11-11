@@ -7157,10 +7157,10 @@
           "note": "Verdict OK, 0 bug bloquant, captures publiées (c196), e2e mobile ajouté"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-11T08:41:09.546Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-11T09:55:16.867Z",
+          "note": "PR #573 fusionnée → v1.17.0 (release CI OK, CI main verte) ; #564 fermée ; dette #574"
         }
       },
       "metriques": {}
