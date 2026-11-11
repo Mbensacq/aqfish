@@ -1,10 +1,12 @@
+import { isFilterMature, type BacteriaStarterOutcome } from './bacteria-starter';
 import { isDecorMode } from './care-mode';
 import { isSick } from './diseases';
+import { filterMaturityPercent } from './filter-maturation';
 import { findTank, placeOf, type RoomState, type RoomTank, type TankSizeId } from './room-state';
 import type { EnvironmentId } from './environment';
 import type { SpeciesId } from './species';
 import { TREATMENTS, type AcceptedTreatment, type TreatmentKind } from './treatment';
-import { cloneWorld, treatWorldInPlace } from './world';
+import { cloneWorld, doseWorldBacteriaStarterInPlace, treatWorldInPlace } from './world';
 
 /**
  * Bac de quarantaine (issue #547, épopée v1.16, ADR 0127) : un petit bac posé dans la pièce où
@@ -94,6 +96,45 @@ export function treatTank(
   return { ok: true, room: { ...room, tanks }, outcome };
 }
 
+/** Résultat d'une dose d'amorce de bactéries versée dans un bac de la pièce (#553). */
+export type TankStarterResult =
+  | { readonly ok: true; readonly room: RoomState; readonly outcome: BacteriaStarterOutcome }
+  | { readonly ok: false; readonly room: RoomState; readonly message: string };
+
+/**
+ * Une dose d'amorce de bactéries (`doseWorldBacteriaStarterInPlace`, issue #529) dans le bac
+ * `tankId` **seul** (#553) : le filtre neuf d'un bac posé (#538), qui n'est pas sélectionnable
+ * (ADR 0075), devient amorçable depuis la liste des bacs, comme on y soigne la quarantaine. Le
+ * monde de ce bac est copié puis dosé ; les autres bacs gardent le même objet. Refus sans
+ * changement : bac inconnu, bac en mode décor, dose refusée (filtre déjà mûr, amorce encore
+ * active). Fonction pure : `room` n'est pas modifiée.
+ */
+export function doseTankStarter(room: RoomState, tankId: number): TankStarterResult {
+  const tank = findTank(room, tankId);
+  if (tank === undefined) {
+    return { ok: false, room, message: 'Bac introuvable' };
+  }
+  if (isDecorMode(tank.world)) {
+    return { ok: false, room, message: `« ${tank.name} » est en mode décor : pas de soins` };
+  }
+  const world = cloneWorld(tank.world);
+  const outcome = doseWorldBacteriaStarterInPlace(world);
+  if (!outcome.ok) {
+    return { ok: false, room, message: outcome.message };
+  }
+  const tanks = room.tanks.map((t) => (t.id === tankId ? { ...t, world } : t));
+  return { ok: true, room: { ...room, tanks }, outcome };
+}
+
+/**
+ * Avancement du filtre d'un bac tant qu'il n'est pas mûr (#553), en pour cent entier
+ * (`filterMaturityPercent`) ; `null` une fois mûr : rien à amorcer.
+ */
+export function immatureFilterPercent(tank: Pick<RoomTank, 'world'>): number | null {
+  const { water } = tank.world;
+  return isFilterMature(water) ? null : filterMaturityPercent(water);
+}
+
 /**
  * Nombre d'animaux malades (au moins une maladie de la table `DISEASES` : points blancs,
  * velours, pourriture des nageoires ou champignons) d'un bac.
@@ -110,6 +151,8 @@ export interface QuarantineEntry {
   readonly species: readonly SpeciesId[];
   /** Animaux malades du bac (`sickCount`). */
   readonly sick: number;
+  /** Filtre pas encore mûr : son efficacité en pour cent (#553) ; `null` s'il est mûr. */
+  readonly filter: number | null;
 }
 
 /** Ce que la liste des bacs montre de la quarantaine (#547). */
@@ -138,6 +181,7 @@ export function quarantineView(
       name: tank.name,
       species: [...new Set(tank.world.entities.map((e) => e.species))],
       sick: sickCount(tank),
+      filter: immatureFilterPercent(tank),
     })),
     sickHere: sickCount(selected),
   };
@@ -154,6 +198,7 @@ export function sameQuarantine(a: QuarantineView, b: QuarantineView): boolean {
         t.id === u.id &&
         t.name === u.name &&
         t.sick === u.sick &&
+        t.filter === u.filter &&
         t.species.length === u.species.length &&
         t.species.every((s, j) => s === u.species[j])
       );

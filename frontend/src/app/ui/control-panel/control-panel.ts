@@ -1244,6 +1244,30 @@ export interface NewTankRequest {
                     </button>
                   }
                 </div>
+                @if (chosen.filter !== null) {
+                  <!-- Filtre neuf du bac posé (#553, #538) : l'amorce de bactéries s'y verse
+                       d'ici, le bac posé n'étant pas sélectionnable (ADR 0075). Une ligne, tant
+                       que le filtre n'est pas mûr. -->
+                  <div
+                    class="control-panel__row"
+                    role="group"
+                    aria-label="Filtre de la quarantaine"
+                  >
+                    <button
+                      type="button"
+                      class="control-panel__button control-panel__button--compact"
+                      data-quarantine-starter
+                      aria-label="Quarantaine : verser une dose d’amorce de bactéries nitrifiantes"
+                      title="Source : docs/SOINS.md § 1.1 (étiquette Stability, secondaire) ; gain du filtre : approximation de jeu."
+                      (click)="quarantineStarter.emit(chosen.id)"
+                    >
+                      Bactéries
+                    </button>
+                    <span class="control-panel__note" data-quarantine-filter>
+                      Filtre neuf : efficace à {{ chosen.filter }} %
+                    </span>
+                  </div>
+                }
                 @if (chosen.species.length > 0) {
                   <label class="control-panel__field">
                     <span class="control-panel__label">Animal à ramener</span>
@@ -1502,6 +1526,8 @@ export class ControlPanel {
   /** Un geste de soin dans le bac de quarantaine `id` seul (#547). */
   readonly quarantineTreated = output<{ readonly id: number; readonly kind: TreatmentKind }>();
   /** « Ramener au bac affiché » (#547) : bac de quarantaine et espèce. */
+  /** Dose d'amorce de bactéries dans le bac posé choisi (#553), par son identifiant. */
+  readonly quarantineStarter = output<number>();
   readonly quarantineReturned = output<{ readonly fromId: number; readonly species: SpeciesId }>();
   /** Bouton « Granulés » : passer à l'autre rendu (#117). */
   readonly foodStyleToggled = output<void>();

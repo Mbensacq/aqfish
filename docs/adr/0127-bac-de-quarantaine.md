@@ -56,4 +56,5 @@ bac affiché. Enfin le transfert gardait la santé de l'animal, mais pas ses mal
 - Le bac de quarantaine n'est pas regardé : on suit ses malades dans la liste (gravité, nombre
   de malades) et dans les messages des gestes.
 - Le filtre neuf du bac de quarantaine (#538) mûrit seul ; l'amorce de bactéries reste réservée
-  au bac affiché (#553).
+  au bac affiché (#553). Depuis l'ADR 0130, elle se verse aussi dans un bac posé, depuis ce
+  groupe.

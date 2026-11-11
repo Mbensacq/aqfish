@@ -1,8 +1,13 @@
 import { setCareModeInPlace } from './care-mode';
 import { ICH_AGGRAVATED_AT, ICH_VISIBLE_AT, ichStress, stepIchInPlace } from './disease';
 import { setPopulation } from './population';
+import { BACTERIA_STARTER_SECONDS } from './bacteria-starter';
+import { SIM_DT } from './constants';
+import { NEW_TANK_FILTER } from './filter-maturation';
 import {
+  doseTankStarter,
   EMPTY_QUARANTINE,
+  immatureFilterPercent,
   QUARANTINE_DURATION_TEXT,
   QUARANTINE_TANK_SIZE,
   quarantineEnvironment,
@@ -262,7 +267,7 @@ describe('quarantaine : vue de la liste des bacs (#547)', () => {
     const main = findTank(moved.room, 0) as RoomTank;
     const view = quarantineView(moved.room, 0, main);
     expect(view).toEqual({
-      tanks: [{ id: 1, name: 'Quarantaine', species: ['neon'], sick: 1 }],
+      tanks: [{ id: 1, name: 'Quarantaine', species: ['neon'], sick: 1, filter: 5 }],
       sickHere: 1,
     });
     expect(sameQuarantine(view, quarantineView(moved.room, 0, main))).toBe(true);
@@ -276,5 +281,82 @@ describe('quarantaine : vue de la liste des bacs (#547)', () => {
       sameQuarantine(view, { ...view, tanks: [{ ...view.tanks[0], species: ['guppy'] }] }),
     ).toBe(false);
     expect(sameQuarantine(view, { ...view, tanks: [{ ...view.tanks[0], name: 'X' }] })).toBe(false);
+    expect(sameQuarantine(view, { ...view, tanks: [{ ...view.tanks[0], filter: null }] })).toBe(
+      false,
+    );
+  });
+});
+
+describe('amorce de bactéries d’un bac posé (#553)', () => {
+  it('filtre neuf du bac posé : amorcé seul, le bac principal garde son eau au bit près', () => {
+    const room = roomWithQuarantine();
+    const mainBefore = serializeWorld(worldOf(room, 0));
+    expect(worldOf(room, 1).water.filter).toBe(NEW_TANK_FILTER);
+    const result = doseTankStarter(room, 1);
+    if (!result.ok) throw new Error(result.message);
+    expect(result.outcome.message).toContain('Amorce de bactéries versée');
+    expect(result.outcome.message).toContain('5 %');
+    expect(worldOf(result.room, 1).water.bacteriaStarter).toBe(1);
+    // Le bac principal est le même objet ; la pièce d'origine n'est pas modifiée.
+    expect(worldOf(result.room, 0)).toBe(worldOf(room, 0));
+    expect(serializeWorld(worldOf(result.room, 0))).toBe(mainBefore);
+    expect(worldOf(room, 1).water.bacteriaStarter).toBeUndefined();
+  });
+
+  it('le filtre amorcé mûrit plus vite que sans amorce', () => {
+    const room = roomWithQuarantine();
+    const dosed = doseTankStarter(room, 1);
+    if (!dosed.ok) throw new Error(dosed.message);
+    const steps = Math.round(BACTERIA_STARTER_SECONDS / 4 / SIM_DT);
+    const plain = advance(worldOf(room, 1), steps);
+    const helped = advance(worldOf(dosed.room, 1), steps);
+    expect(helped.water.filter).toBeGreaterThan(plain.water.filter + 0.05);
+  }, 30_000);
+
+  it('refus sans changement : bac inconnu, filtre mûr, amorce encore active, mode décor', () => {
+    const room = roomWithQuarantine();
+    const unknown = doseTankStarter(room, 99);
+    expect(unknown).toEqual({ ok: false, room, message: 'Bac introuvable' });
+    // Bac de départ : filtre mûr.
+    const mature = doseTankStarter(room, 0);
+    expect(mature.ok).toBe(false);
+    expect(mature.room).toBe(room);
+    if (!mature.ok) expect(mature.message).toContain('Filtre déjà mûr');
+    // Deuxième dose aussitôt : refusée.
+    const first = doseTankStarter(room, 1);
+    if (!first.ok) throw new Error(first.message);
+    const second = doseTankStarter(first.room, 1);
+    expect(second.ok).toBe(false);
+    expect(second.room).toBe(first.room);
+    if (!second.ok) expect(second.message).toContain('Amorce encore active');
+    // Mode décor : refus.
+    const decor = cloneWorld(worldOf(room, 1));
+    setCareModeInPlace(decor, 'decor');
+    const decorRoom = withWorld(room, 1, decor);
+    const refused = doseTankStarter(decorRoom, 1);
+    expect(refused).toEqual({
+      ok: false,
+      room: decorRoom,
+      message: '« Quarantaine » est en mode décor : pas de soins',
+    });
+  });
+
+  it('avancement du filtre : en pour cent tant qu’il n’est pas mûr, puis null', () => {
+    const room = roomWithQuarantine();
+    expect(immatureFilterPercent(findTank(room, 1) as RoomTank)).toBe(5);
+    expect(immatureFilterPercent(findTank(room, 0) as RoomTank)).toBeNull();
+    const half = cloneWorld(worldOf(room, 1));
+    (half.water as { filter: number }).filter = 0.29;
+    expect(immatureFilterPercent({ world: half })).toBe(29);
+    (half.water as { filter: number }).filter = 1;
+    expect(immatureFilterPercent({ world: half })).toBeNull();
+    // Graine différente : même filtre neuf.
+    const other = addTank(createRoom(7, ['tropical']), {
+      environment: 'tropical',
+      size: QUARANTINE_TANK_SIZE,
+      placement: { supportId: null, x: 2.5, z: 2, quarter: 0 },
+    });
+    if (!other.ok) throw new Error(other.reason);
+    expect(immatureFilterPercent(findTank(other.room, 1) as RoomTank)).toBe(5);
   });
 });

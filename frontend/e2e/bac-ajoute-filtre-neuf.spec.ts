@@ -1,11 +1,12 @@
 import { expect, test } from '@playwright/test';
 
 /**
- * Filtre d'un bac ajouté (issue #538) : ajouter un bac ne touche pas le filtre mûr du bac de
- * départ, et le bac ajouté (posé) reste non sélectionnable. Le filtre neuf lui-même est couvert
- * par `sim/filter-maturation.spec.ts`.
+ * Filtre d'un bac ajouté (issues #538 et #553) : ajouter un bac ne touche pas le filtre mûr du
+ * bac de départ ; le bac ajouté (posé) reste non sélectionnable, mais son filtre neuf s'amorce
+ * depuis la liste des bacs (groupe « Quarantaine »). La maturation elle-même est couverte par
+ * `sim/filter-maturation.spec.ts`, l'amorce d'un bac posé par `sim/quarantine.spec.ts`.
  */
-test('bac ajouté : bac de départ inchangé, bac posé non sélectionnable (#538)', async ({
+test('bac ajouté : filtre neuf amorcé depuis la liste, bac de départ inchangé (#538, #553)', async ({
   page,
 }) => {
   test.setTimeout(300_000);
@@ -29,9 +30,19 @@ test('bac ajouté : bac de départ inchangé, bac posé non sélectionnable (#53
   const host = page.locator('app-aquarium-host');
   await expect(host).toHaveAttribute('data-aqfish-room-tanks', '2');
 
-  // Un bac posé figure dans la liste mais n'est pas sélectionnable (ADR 0075) : son filtre neuf
-  // n'est donc pas encore observable par l'amorce ; le bac de départ garde son filtre mûr.
-  await expect(page.locator('[data-section="bacs"] [data-tank="1"] button')).toBeDisabled();
+  // Un bac posé figure dans la liste sans être sélectionnable (ADR 0075) ; son filtre neuf
+  // s'amorce d'ici (#553), sans toucher au filtre mûr du bac de départ.
+  const list = page.locator('[data-section="bacs"]');
+  await expect(list.locator('[data-tank="1"] button')).toBeDisabled();
+  await expect(list.locator('[data-quarantine-filter]')).toContainText(
+    'Filtre neuf : efficace à 5 %',
+  );
+  const starter = list.locator('[data-quarantine-starter]');
+  const notice = list.locator('[data-transfer-notice]');
+  await starter.click();
+  await expect(notice).toContainText('Amorce de bactéries versée');
+  await starter.click();
+  await expect(notice).toContainText('Amorce encore active');
   await button.click();
   await expect(message).toContainText('Filtre déjà mûr');
   expect(errors).toEqual([]);
