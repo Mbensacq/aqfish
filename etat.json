@@ -7115,10 +7115,10 @@
           "note": "PR #570 : amorce du filtre d'un bac posé (#553, ADR 0130) + velours lisible sur le néon (#556), CI verte ; bug préexistant #571 (panneau 4 colonnes avec quarantaine)"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-11T05:22:25.570Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-11T05:48:41.580Z",
+          "note": "Verdict OK, 0 bug, captures publiées (c195)"
         }
       },
       "metriques": {}
