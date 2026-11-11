@@ -7253,10 +7253,10 @@
           "note": "Issue #566 : Les alevins grandissent jusqu'à l'âge adulte (S)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-11T17:41:32.079Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-11T18:42:43.128Z",
+          "note": "PR #578 : alevins en trois étapes de taille et de couleur, CI verte"
         }
       },
       "metriques": {}
