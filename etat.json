@@ -7263,6 +7263,12 @@
           "debut": "2026-11-11T18:43:15.896Z",
           "fin": "2026-11-11T19:21:26.136Z",
           "note": "Verdict OK, 0 bug, captures publiées (c199), 3 e2e ajoutés, CI e2e 6/6 verte"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-11T19:21:56.395Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
