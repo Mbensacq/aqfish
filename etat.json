@@ -7149,6 +7149,12 @@
           "debut": "2026-11-11T07:01:57.033Z",
           "fin": "2026-11-11T08:10:28.267Z",
           "note": "PR #573 : kits de test de l'eau (#564, ADR 0131), CI verte"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-11T08:11:03.122Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
