@@ -7193,10 +7193,10 @@
           "note": "Verdict OK, 0 bug, captures publiées (c197), e2e pharmacie/amorce/cadrage OK"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-11T12:21:51.718Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-11T13:32:50.073Z",
+          "note": "PR #575 fusionnée → v1.17.1 (release CI OK, CI main verte) ; #574 #572 #554 fermées ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
