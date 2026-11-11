@@ -548,6 +548,12 @@ origin/main`, `node_modules` en lien symbolique) ; il sert aussi aux captures «
 
 ## Tests
 
+- **Éléments en ligne d'un `@for` : aucun espace entre eux dans le texte** (cycle 197, #574) :
+  Angular retire les nœuds de texte faits seulement d'espaces entre deux éléments (option
+  `preserveWhitespaces` à `false`). Deux `<strong>` successifs d'un `@for` s'affichent espacés
+  par leur marge, mais `textContent` et les lecteurs d'écran lisent « 10 gouttesKH ≈ 6 ». Un
+  séparateur doit porter ses propres espaces en interpolation (`{{ ' · ' }}`, avec
+  `white-space: pre`) ; tester `textContent`, pas seulement la capture. (2026-11-11)
 - **Parcours Tab d'un panneau qui grossit : un test par section, repris par focus direct**
   (cycle 186, #544) : « au clavier : Tab jusqu'au bouton… » (`e2e/panneau.spec.ts`) tenait
   tout le panneau en un test ; chaque contrôle ajouté à « Eau » coûtait deux images (Tab, puis

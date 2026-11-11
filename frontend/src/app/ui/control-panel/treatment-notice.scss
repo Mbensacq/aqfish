@@ -29,3 +29,14 @@
     pointer-events: auto;
   }
 }
+
+// Renvoi au wiki (#554) : un bouton qui se lit comme le texte, souligné comme un lien.
+.treatment-notice__link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: layout.$panel-accent;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}

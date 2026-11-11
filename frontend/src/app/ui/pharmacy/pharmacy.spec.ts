@@ -220,5 +220,36 @@ describe('Pharmacy (#533)', () => {
       );
       expect(kit('ph').disabled).toBe(false);
     });
+
+    it('dureté : GH et KH séparés par « · », un seul séparateur (#574)', async () => {
+      fixture.componentRef.setInput(
+        'waterTest',
+        waterTestView(startWaterTest('durete', SAMPLE, 0), WATER_TEST_TICKS),
+      );
+      await openPharmacy();
+      const values = [...root().querySelectorAll('[data-water-result]')].map((e) =>
+        e.textContent?.trim(),
+      );
+      expect(values).toHaveLength(2);
+      expect(values[0]).toMatch(/^GH ≈/);
+      expect(values[1]).toMatch(/^KH ≈/);
+      const separators = result().querySelectorAll('.pharmacy__separator');
+      expect(separators.length).toBe(1);
+      // Le séparateur est entre les deux valeurs.
+      expect(separators[0].previousElementSibling?.textContent).toMatch(/^GH/);
+      expect(separators[0].nextElementSibling?.textContent).toMatch(/^KH/);
+      // De vrais espaces autour du point : texte lu « GH ≈ … · KH ≈ … ».
+      expect(result().textContent).toMatch(/GH ≈ \d+ gouttes · KH ≈ \d+ gouttes/);
+    });
+
+    it('une seule grandeur : aucun séparateur', async () => {
+      fixture.componentRef.setInput(
+        'waterTest',
+        waterTestView(startWaterTest('ph', SAMPLE, 0), WATER_TEST_TICKS),
+      );
+      await openPharmacy();
+      expect(root().querySelectorAll('[data-water-result]').length).toBe(1);
+      expect(result().querySelector('.pharmacy__separator')).toBeNull();
+    });
   });
 });

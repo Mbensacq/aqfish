@@ -181,6 +181,7 @@ describe('fonctions du panneau de contrôle', () => {
     (tankRenamed)="layout.push(['renommage', $event])"
     [quarantine]="quarantine()"
     (quarantineStarter)="layout.push(['amorce', $event])"
+    (wikiPageRequested)="layout.push(['wiki', $event])"
     [careMode]="careMode()"
     (careModeChanged)="layout.push(['mode', $event])"
     (careReturned)="layout.push(['retour-soins', $event])"
@@ -415,10 +416,21 @@ describe('ControlPanel', () => {
       expect(section().querySelector('[data-quarantine-filter]')!.textContent).toContain(
         'Filtre neuf : efficace à 12 %',
       );
-      expect(starter()!.getAttribute('aria-label')).toContain('amorce de bactéries');
+      expect(starter()!.getAttribute('aria-label')).toBe(
+        'Quarantaine : verser une dose d’amorce de bactéries nitrifiantes',
+      );
       expect(starter()!.getAttribute('title')).toContain('approximation de jeu');
       starter()!.click();
       expect(fixture.componentInstance.layout).toContainEqual(['amorce', 2]);
+      // Bac posé renommé (#572) : son nom dans le libellé lu.
+      fixture.componentInstance.quarantine.set({
+        tanks: [{ ...posed, name: 'Bac du salon', filter: 30 }],
+        sickHere: 0,
+      });
+      await fixture.whenStable();
+      expect(starter()!.getAttribute('aria-label')).toBe(
+        'Bac du salon : verser une dose d’amorce de bactéries nitrifiantes',
+      );
       fixture.componentInstance.quarantine.set({
         tanks: [{ ...posed, filter: null }],
         sickHere: 0,
@@ -1609,6 +1621,26 @@ describe('ControlPanel', () => {
       expect(section()!.querySelector('[data-treatment-warning]')?.textContent?.trim()).toBe(
         'Prudence : néons.',
       );
+    });
+
+    it('renvoi « Produits et traitements » d’un message : lien vers la page du wiki (#554)', async () => {
+      await openPanel();
+      const text = 'Filtre déjà mûr (voir la page « Produits et traitements » du wiki).';
+      // Sans section « Soins » : message sous les outils de l'eau (amorce de bactéries).
+      fixture.componentInstance.treatmentNotice.set({ ok: false, text, warning: null });
+      await fixture.whenStable();
+      expect(section()).toBeNull();
+      const starter = root().querySelector<HTMLElement>('[data-starter-message]')!;
+      expect(starter.textContent?.replace(/\s+/g, ' ').trim()).toBe(text);
+      starter.querySelector<HTMLButtonElement>('[data-products-link]')!.click();
+      expect(fixture.componentInstance.layout).toContainEqual(['wiki', 'produits']);
+      // Dans la section « Soins » : même lien.
+      fixture.componentInstance.ichCount.set(3);
+      await fixture.whenStable();
+      section()!
+        .querySelector<HTMLButtonElement>('[data-treatment-message] [data-products-link]')!
+        .click();
+      expect(fixture.componentInstance.layout.filter(([kind]) => kind === 'wiki')).toHaveLength(2);
     });
   });
 

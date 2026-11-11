@@ -16,9 +16,15 @@ describe('parseCaptureParams', () => {
     expect(parseCaptureParams('')).toEqual(DEFAULT_CAPTURE_PARAMS);
   });
 
-  it('lit forme= tel quel (vérifié par l’application, #190)', () => {
+  it('lit test-eau= tel quel (kit vérifié par l’application, #564)', () => {
     expect(parseCaptureParams('?test-eau=ph').waterTest).toBe('ph');
+    expect(parseCaptureParams('?capture=1&test-eau=durete').waterTest).toBe('durete');
     expect(parseCaptureParams('?test-eau=').waterTest).toBe('');
+    expect(parseCaptureParams('?test-eau=inconnu').waterTest).toBe('inconnu');
+    expect(parseCaptureParams('?capture=1').waterTest).toBeNull();
+  });
+
+  it('lit forme= tel quel (vérifié par l’application, #190)', () => {
     expect(parseCaptureParams('?capture=1&forme=ovale').shape).toBe('ovale');
     expect(parseCaptureParams('?capture=1&forme=haricot').shape).toBe('haricot');
     expect(parseCaptureParams('?capture=1').shape).toBeNull();
