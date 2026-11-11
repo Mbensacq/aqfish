@@ -263,6 +263,10 @@ test.describe('Captures', () => {
     // Champignons (#548) : touffes de coton blanc grisâtre sur la caudale et les nageoires.
     { name: 'side-champignons', query: 'champignons=1&camera=side' },
     { name: 'front-champignons', query: 'champignons=1&camera=front' },
+    // Hydropisie (#565) : ventre gonflé, puis écailles hérissées au stade avancé.
+    { name: 'side-hydropisie', query: 'hydropisie=1&camera=side' },
+    { name: 'front-hydropisie', query: 'hydropisie=1&camera=front' },
+    { name: 'side-hydropisie-gonfle', query: 'hydropisie=gonfle&camera=side' },
     // Alevins de guppy (#459) : chaque femelle met bas, alevins aux trois jalons de croissance
     // (#566 : nouveau-né pâle, juvénile, subadulte presque coloré).
     { name: 'three-quarter-alevins', query: 'alevins=1' },

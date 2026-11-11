@@ -1238,6 +1238,14 @@ environnement)` plutôt que `setPopulation(createDefaultWorld(…))`. (2026-10-2
 
 ## Rendu
 
+- **Shader des poissons : un attribut de plus et plus aucun poisson** (cycle 198, #565) : le
+  matériau des poissons lit déjà position, couleur, `instanceMatrix` (4 emplacements), rangs de
+  taché et d'effilochage et un attribut d'instance par maladie. Un attribut de sommet `vec2` et un
+  attribut d'instance de plus : `Too many attributes (aqfishSpot)` dans la console, programme
+  invalide, **aucun poisson** sur les captures (sans échec de test). Regrouper les valeurs dans un
+  `vec2`/`vec4`, ou calculer dans le shader à partir de `position` et d'un uniforme par matériau
+  (`shader.uniforms` dans `onBeforeCompile`) ; regarder les captures après tout ajout
+  d'attribut. (2026-11-11)
 - **Teinter un poisson par mélange de couleur : la passe palette change l'espèce** (cycle 189,
   #532) : un voile doré mêlé à 45 % (puis 20 %) à toutes les couleurs du néon faisait retomber
   son rouge et son bleu sur l'orange et le menthe de la palette ; tous les poissons malades

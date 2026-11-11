@@ -2,6 +2,7 @@ import { ichStage } from './disease';
 import { finRotStage } from './fin-rot';
 import { velvetStage } from './velvet';
 import { fungusStage } from './fungus';
+import { dropsyStage } from './dropsy';
 import { SPECIES, type SpeciesId } from './species';
 import { feedsOnPellets, HEALTH_FLOOR, STARVING_HUNGER } from './wellbeing';
 import type { GaugeLevel } from './water-dashboard';
@@ -26,6 +27,7 @@ import type { GaugeLevel } from './water-dashboard';
  * animaux aux nageoires effilochées (`finRot`, `sim/fin-rot.ts`) ; le début, sans signe, non.
  * Velours (issue #532, ADR 0124) : de même, les animaux au voile visible (`velvet`).
  * Champignons (issue #548, ADR 0128) : de même, les animaux au coton visible (`fungus`).
+ * Hydropisie (issue #565, ADR 0132) : de même, les animaux au ventre gonflé (`dropsy`).
  *
  * Seuils : valeurs de jeu (approximations, pas des mesures).
  */
@@ -50,6 +52,8 @@ export interface HealthSubject {
   readonly velvet?: number;
   /** Progression des champignons (`sim/fungus.ts`, issue #548) ; absente : sain. */
   readonly fungus?: number;
+  /** Progression de l'hydropisie (`sim/dropsy.ts`, issue #565) ; absente : sain. */
+  readonly dropsy?: number;
 }
 
 /** Synthèse de la santé d'un bac. Objet de données pur. */
@@ -92,9 +96,13 @@ export interface HealthSummary {
   readonly fungus: number;
   /** Parmi eux, animaux au stade avancé. */
   readonly fungusAdvanced: number;
+  /** Animaux au ventre gonflé par l'hydropisie (ventre gonflé et stade avancé, issue #565). */
+  readonly dropsy: number;
+  /** Parmi eux, animaux aux écailles hérissées (stade avancé). */
+  readonly dropsyAdvanced: number;
   /**
    * Animaux qui montrent les signes d'une maladie (points blancs, nageoires effilochées, velours,
-   * champignons),
+   * champignons, hydropisie),
    * chacun compté une fois : ils ont leurs propres alertes, l'alerte de santé parle des autres
    * malades (`sick − diseased`).
    */
@@ -121,6 +129,8 @@ export const EMPTY_HEALTH_SUMMARY: HealthSummary = {
   velvetAdvanced: 0,
   fungus: 0,
   fungusAdvanced: 0,
+  dropsy: 0,
+  dropsyAdvanced: 0,
   diseased: 0,
   weakWithoutDisease: 0,
 };
@@ -160,6 +170,8 @@ export function healthSummary(animals: Iterable<HealthSubject>): HealthSummary {
   let velvetAdvanced = 0;
   let fungus = 0;
   let fungusAdvanced = 0;
+  let dropsy = 0;
+  let dropsyAdvanced = 0;
   let diseased = 0;
   let weakWithoutDisease = 0;
   for (const animal of animals) {
@@ -175,7 +187,9 @@ export function healthSummary(animals: Iterable<HealthSubject>): HealthSummary {
     const veiled = veil === 'voile' || veil === 'avance';
     const cotton = fungusStage(animal.fungus);
     const tufted = cotton === 'coton' || cotton === 'avance';
-    const signs = spots || frayed || veiled || tufted;
+    const belly = dropsyStage(animal.dropsy);
+    const swollen = belly === 'gonfle' || belly === 'herisse';
+    const signs = spots || frayed || veiled || tufted || swollen;
     if (health <= SICK_HEALTH || signs) {
       sick += 1;
     }
@@ -198,6 +212,12 @@ export function healthSummary(animals: Iterable<HealthSubject>): HealthSummary {
       fungus += 1;
       if (cotton === 'avance') {
         fungusAdvanced += 1;
+      }
+    }
+    if (swollen) {
+      dropsy += 1;
+      if (belly === 'herisse') {
+        dropsyAdvanced += 1;
       }
     }
     if (isWeak) {
@@ -249,6 +269,8 @@ export function healthSummary(animals: Iterable<HealthSubject>): HealthSummary {
     velvetAdvanced,
     fungus,
     fungusAdvanced,
+    dropsy,
+    dropsyAdvanced,
     diseased,
     weakWithoutDisease,
   };
@@ -287,6 +309,8 @@ export function sameHealthSummary(a: HealthSummary, b: HealthSummary): boolean {
     a.velvetAdvanced === b.velvetAdvanced &&
     a.fungus === b.fungus &&
     a.fungusAdvanced === b.fungusAdvanced &&
+    a.dropsy === b.dropsy &&
+    a.dropsyAdvanced === b.dropsyAdvanced &&
     a.diseased === b.diseased &&
     a.weakWithoutDisease === b.weakWithoutDisease &&
     percent(a.averageHealth) === percent(b.averageHealth) &&

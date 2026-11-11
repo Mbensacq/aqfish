@@ -48,6 +48,7 @@ import { ichStress, infectAllInPlace, isIchAge, stepIchInPlace } from './disease
 import { finRotCauses, rotAllFinsInPlace, stepFinRotInPlace } from './fin-rot';
 import { isVelvetProgress, stepVelvetInPlace, velvetAllInPlace } from './velvet';
 import { fungusAllInPlace, isFungusProgress, stepFungusInPlace } from './fungus';
+import { dropsyAllInPlace, isDropsyProgress, stepDropsyInPlace } from './dropsy';
 import { TAP_RADIUS, tapGlassInPlace, type GlassPoint } from './glass-tap';
 import {
   DEFAULT_ENVIRONMENT_ID,
@@ -1057,6 +1058,17 @@ function stepInPlace(world: MutableWorld, dt: number, clock: SimClock): void {
     world.seed,
     world.tick,
   );
+  // Hydropisie (issue #565) : sur l'eau de fin de pas et la santé de début de pas ; tirage
+  // d'apparition seulement pour un animal affaibli en eau chargée, recul sans tirage en eau
+  // propre avant le stade avancé.
+  stepDropsyInPlace(
+    fishes,
+    dt,
+    finRotCauses(world.water),
+    world.environment,
+    world.seed,
+    world.tick,
+  );
   // Santé (issue #208) : sur la faim de fin de pas (après les repas) et l'eau du pas (pH
   // compris, issue #236), sans hasard ; à santé pleine, la nage reste exactement celle d'avant.
   stepWellbeingInPlace(
@@ -1460,6 +1472,15 @@ export function fungusWorldInPlace(world: MutableWorld): void {
 }
 
 /**
+ * Hydropisie pour tous les poissons qui peuvent l'attraper (`dropsyAllInPlace`, paramètre
+ * d'URL `hydropisie=1`, issue #565), **en modifiant** `world` (monde en construction) :
+ * `progress` donne le stade (par défaut le maximum, écailles hérissées).
+ */
+export function dropsyWorldInPlace(world: MutableWorld, progress?: number): void {
+  dropsyAllInPlace(world.entities as Mutable<Entity>[], world.environment, progress);
+}
+
+/**
  * Geste de soin contre les points blancs, le velours et les champignons
  * (`applyTreatmentInPlace`, issues #361, #532, #548), **en modifiant** l'eau de `world` s'il
  * est accepté : quantité `amount` (°C, g/L ou dose) du traitement `kind`, avec les espèces et
@@ -1473,6 +1494,7 @@ export function treatWorldInPlace(
   let infected = 0;
   let velvet = 0;
   let fungus = 0;
+  let dropsy = 0;
   for (const entity of world.entities) {
     const ich = isIchAge(entity.ich);
     const veil = isVelvetProgress(entity.velvet);
@@ -1486,6 +1508,9 @@ export function treatWorldInPlace(
     if (cotton) {
       fungus += 1;
     }
+    if (isDropsyProgress(entity.dropsy)) {
+      dropsy += 1;
+    }
   }
   return applyTreatmentInPlace(world.water as MutableWaterState, kind, amount, {
     environment: world.environment,
@@ -1493,6 +1518,7 @@ export function treatWorldInPlace(
     infected,
     velvet,
     fungus,
+    dropsy,
   });
 }
 

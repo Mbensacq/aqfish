@@ -205,6 +205,14 @@ simulation testable et les captures reproductibles.
   figé ; sel et chaleur : mise en garde `FUNGUS_WRONG_TREATMENT`. Alerte « Champignons », coton
   blanc grisâtre au rendu (`withFungus`, rangs `aqfishFray` et `aqfishSpot`). Champ `fungus`
   facultatif de la sauvegarde ; paramètre de capture `champignons=1`.
+- **Hydropisie** (#565, ADR 0132, `sim/dropsy.ts`) : `Fish.dropsy`, progression en secondes
+  (absente : sain), avancée après la pourriture des nageoires sur l'eau de fin de pas. Seulement
+  chez un animal affaibli (santé < 0,5) en eau dégradée (`finRotCauses`), taux bas, pas de
+  contagion. Eau propre : recul lent avant le stade avancé, plus ensuite ; aucun produit ne la
+  soigne (mise en garde `DROPSY_WRONG_TREATMENT`). Alerte « Hydropisie » (euthanasie en conseil
+  au stade avancé), ventre gonflé et écailles hérissées au rendu (`withDropsy`, attribut
+  d'instance `vec2` sur le corps seul, uniforme de demi-longueur). Champ `dropsy` facultatif de
+  la sauvegarde (table `DISEASES`) ; paramètre de capture `hydropisie=1` ou `hydropisie=gonfle`.
 - **Table des maladies** (#562, ADR 0129, `sim/diseases.ts`) : `DISEASES` liste, dans l'ordre de
   la sauvegarde, le champ, la borne, la validation et les espèces touchées de chaque maladie.
   Sauvegarde (écriture et relecture), transfert entre bacs (`diseasesOf`) et malades de
@@ -380,7 +388,7 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
 | `sim/sim-speed.ts` | Vitesse de simulation (#52, ADR 0024) : `SIM_SPEEDS` (0 à ×4), `scaledDt`, `maxStepsForSpeed` |
 | `sim/time-step.ts` | `assertTimeStep` : validation unique d'un pas de temps |
 | `sim/behaviors.ts` | Comportements propres à l'espèce (#427, ADR 0106) : calendrier d'épisodes sans état (`boutRemaining`), points visés de la fouille, du broutage et du territoire (`behaviorTarget`, calculés au début du pas par `world.ts`), gestes du rendu atténués par « Réduire les mouvements » (`behaviorGesture`) |
-| `sim/fry.ts` | Alevins (#459, ADR 0107) : calendrier de portées sans état (`broodIndexAt`, `broodSize`, `canBreed`), âge `Fish.growth` en 3 jalons de taille et de couleur (`fryStage`, `fryScale` et `fryPallor` lus par le rendu, ADR 0132), point visé près des plantes (`fryTarget`), prédation hors cachette (`eatFryInPlace`) ; mise bas dans `world.ts` (`stepBroodInPlace`, `birthFryInPlace`, capture `broodWorldInPlace`) |
+| `sim/fry.ts` | Alevins (#459, ADR 0107) : calendrier de portées sans état (`broodIndexAt`, `broodSize`, `canBreed`), âge `Fish.growth` en 3 jalons de taille et de couleur (`fryStage`, `fryScale` et `fryPallor` lus par le rendu, ADR 0133), point visé près des plantes (`fryTarget`), prédation hors cachette (`eatFryInPlace`) ; mise bas dans `world.ts` (`stepBroodInPlace`, `birthFryInPlace`, capture `broodWorldInPlace`) |
 | `sim/eggs.ts` | Ponte et œufs des corydoras (#478, ADR 0111) : calendrier de pontes sans état (`spawnIndexAt`, `clutchSize`, `spawnDraw`), conditions (`isFitSpawner`, `waterAllowsSpawn`, `SPAWN_TEMPERATURE`), plafonds (`eggRoom`), placement sur la vitre ou près d'une plante (`layClutch`), prédation des œufs de la vitre (`eatEggsInPlace`, `eggReachDistance2`), incubation (`ageEggsInPlace`) ; œufs dans `World.eggs` ; dans `world.ts`, pas de simulation des œufs (`stepEggsInPlace`, `spawnEggsInPlace`, éclosion par `birthYoungInPlace`, capture `layEggsWorldInPlace`) |
 | `sim/water-current.ts` | Courant de rivière (#460, ADR 0108) : forces `coupe`/`doux`/`fort` (`CURRENT_SPEEDS`), champ uniforme par environnement (`Environment.current`, coupé par défaut) et force du bac (`World.current`, absente coupée) ; rhéotaxie des espèces de rivière et dérive des autres nageurs (`applyCurrentInPlace`, sans tirage) ; bulles, granulés et feuilles mortes emportés |
 | `sim/world.ts` | État du monde sérialisable (dont `decor`), `step`, `advance`, `advanceTo`, `advanceInPlace` (boucle d'affichage), `createDefaultWorld` (population et décor par défaut) |

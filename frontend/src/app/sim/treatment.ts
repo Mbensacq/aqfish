@@ -7,6 +7,7 @@ import { SPECIES, type SpeciesId } from './species';
 import { assertTimeStep } from './time-step';
 import { CARBON_MEDICATION_HALF_LIFE, CARBON_TREATMENT_WARNING } from './water-carbon';
 import { FUNGUS_WRONG_TREATMENT } from './fungus';
+import { DROPSY_WRONG_TREATMENT } from './dropsy';
 import {
   MAX_HEATER_TEMPERATURE,
   MAX_MEDICATION,
@@ -206,6 +207,11 @@ export interface TreatmentContext {
   readonly velvet?: number;
   /** Parmi eux, animaux atteints de champignons (issue #548) ; absent : aucun. */
   readonly fungus?: number;
+  /**
+   * Animaux atteints d'hydropisie (issue #565), comptés à part : ils ne sont pas dans
+   * `infected` (aucun traitement du panneau ne la soigne) ; absent : aucun.
+   */
+  readonly dropsy?: number;
 }
 
 /**
@@ -441,6 +447,16 @@ export function applyTreatmentInPlace(
     if (warnings.length > 0) {
       return { ...outcome, warning: warnings.join(' ') };
     }
+  }
+  // Hydropisie (issue #565) : aucun produit du panneau ne la soigne, médicament compris.
+  if (outcome.ok && (context.dropsy ?? 0) > 0) {
+    return {
+      ...outcome,
+      warning:
+        outcome.warning === undefined
+          ? DROPSY_WRONG_TREATMENT
+          : `${outcome.warning} ${DROPSY_WRONG_TREATMENT}`,
+    };
   }
   return outcome;
 }

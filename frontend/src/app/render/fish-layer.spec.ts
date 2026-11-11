@@ -43,6 +43,18 @@ import {
   FRY_PALE_ATTRIBUTE,
   FRY_PALE_COLOR,
   fungusTufts,
+  withDropsy,
+  dropsyBelly,
+  dropsyRaisedScales,
+  BODY_HALF_UNIFORM,
+  DROPSY_ATTRIBUTE,
+  DROPSY_BELLY_SWELL,
+  DROPSY_MIN,
+  DROPSY_SCALE_COLOR,
+  DROPSY_SCALE_LOW,
+  DROPSY_SCALE_MIN,
+  DROPSY_SCALE_SHARE,
+  DROPSY_WIDTH_SWELL,
   FUNGUS_ATTRIBUTE,
   FUNGUS_COLOR,
   FUNGUS_MIN,
@@ -68,6 +80,7 @@ import { FIN_ROT_MAX, FIN_ROT_VISIBLE_AT } from '../sim/fin-rot';
 import { VELVET_MAX, VELVET_VISIBLE_AT } from '../sim/velvet';
 import { FUNGUS_MAX, FUNGUS_VISIBLE_AT } from '../sim/fungus';
 import { FRY_GROWTH_TIME, FRY_PALLORS, FRY_SCALES, FRY_STAGES } from '../sim/fry';
+import { DROPSY_ADVANCED_AT, DROPSY_MAX, DROPSY_VISIBLE_AT } from '../sim/dropsy';
 import { PALETTE } from './palette';
 import { ICH_AGGRAVATED_AT, ICH_VISIBLE_AT } from '../sim/disease';
 import { PIXEL_SIZE } from './pixel-art';
@@ -419,15 +432,19 @@ describe('FishLayer : couleurs ternies par la santé (#208)', () => {
     const material = (layer.object.children[0] as Mesh).material as MeshBasicMaterial;
     const shader = {
       vertexShader: ShaderLib.basic.vertexShader,
-    } as WebGLProgramParametersWithUniforms;
+      uniforms: {},
+    } as unknown as WebGLProgramParametersWithUniforms;
     material.onBeforeCompile(shader, null as unknown as WebGLRenderer);
     expect(shader.vertexShader).toBe(
       withFryPallor(
         withDullness(
-          withIchSpots(withVelvet(withFinRot(withFungus(ShaderLib.basic.vertexShader)))),
+          withIchSpots(
+            withVelvet(withFinRot(withFungus(withDropsy(ShaderLib.basic.vertexShader)))),
+          ),
         ),
       ),
     );
+    expect(shader.uniforms[BODY_HALF_UNIFORM].value).toBeGreaterThan(0);
     expect(shader.vertexShader).toContain(`attribute float ${DULL_ATTRIBUTE};`);
     const color = shader.vertexShader.indexOf('#include <color_vertex>');
     expect(shader.vertexShader.indexOf('vColor.xyz = mix(', color)).toBeGreaterThan(color);
@@ -687,5 +704,65 @@ describe('FishLayer : alevins (#459, #566)', () => {
       shader.indexOf(`${DULL_ATTRIBUTE} *`),
     );
     expect(() => withFryPallor('void main() {}')).toThrow(/color_vertex/);
+  });
+});
+
+describe('FishLayer : hydropisie (#565)', () => {
+  it('gonflement : 0 sain, au début ou invalide ; du minimum à 1 au stade avancé', () => {
+    for (const dropsy of [undefined, 0, DROPSY_VISIBLE_AT - 1, Number.NaN, -5, DROPSY_MAX + 1]) {
+      expect(dropsyBelly(dropsy), `dropsy = ${dropsy}`).toBe(0);
+    }
+    expect(dropsyBelly(DROPSY_VISIBLE_AT)).toBe(DROPSY_MIN);
+    expect(dropsyBelly(DROPSY_ADVANCED_AT)).toBe(1);
+    expect(dropsyBelly(DROPSY_MAX)).toBe(1);
+  });
+
+  it('écailles : 0 avant le stade avancé, du minimum à 1 ensuite', () => {
+    for (const dropsy of [undefined, 0, DROPSY_ADVANCED_AT - 1, Number.NaN, DROPSY_MAX + 1]) {
+      expect(dropsyRaisedScales(dropsy), `dropsy = ${dropsy}`).toBe(0);
+    }
+    expect(dropsyRaisedScales(DROPSY_ADVANCED_AT)).toBe(DROPSY_SCALE_MIN);
+    expect(dropsyRaisedScales(DROPSY_MAX)).toBe(1);
+  });
+
+  it('par instance sur le corps ; la queue lit des zéros', () => {
+    const layer = new FishLayer(NEON, 4);
+    const healthy = fishAfterSteps(0, 1);
+    const sick: Fish = { ...fishAfterSteps(1, 1), dropsy: DROPSY_MAX };
+    layer.update([healthy, sick], 1);
+    expect(layer.dropsyAt(0)).toEqual([0, 0]);
+    expect(layer.dropsyAt(1)).toEqual([1, 1]);
+    const [body, tail] = layer.object.children as Mesh[];
+    const bodyAttr = body.geometry.getAttribute(DROPSY_ATTRIBUTE);
+    const tailAttr = tail.geometry.getAttribute(DROPSY_ATTRIBUTE);
+    expect(bodyAttr).not.toBe(tailAttr);
+    expect(bodyAttr.itemSize).toBe(2);
+    expect(Array.from(tailAttr.array as Float32Array).every((v) => v === 0)).toBe(true);
+    layer.dispose();
+  });
+
+  it('shader : gardes non nulles, ventre et écailles, sans attribut de sommet de plus', () => {
+    const shader = withDropsy(ShaderLib.basic.vertexShader);
+    expect(shader).toContain(`attribute vec2 ${DROPSY_ATTRIBUTE};`);
+    expect(shader).toContain(`uniform float ${BODY_HALF_UNIFORM};`);
+    expect(shader).toContain(`${DROPSY_ATTRIBUTE}.x > 0.0`);
+    expect(shader).toContain(`${DROPSY_ATTRIBUTE}.y > 0.0`);
+    expect(shader).toContain(DROPSY_BELLY_SWELL.toFixed(4));
+    expect(shader).toContain(DROPSY_WIDTH_SWELL.toFixed(4));
+    expect(shader).toContain(DROPSY_SCALE_SHARE.toFixed(4));
+    expect(shader.match(/^attribute /gm)?.length).toBe(
+      (ShaderLib.basic.vertexShader.match(/^attribute /gm)?.length ?? 0) + 2,
+    );
+    expect(() => withDropsy('void main() {}')).toThrow(/color_vertex/);
+    expect(() => withDropsy('#include <color_vertex>')).toThrow(/begin_vertex/);
+  });
+
+  it('écailles au-dessus des bandes des points blancs et des champignons ; couleur distincte', () => {
+    expect(DROPSY_SCALE_LOW).toBe(ICH_SPOT_SHARE + FUNGUS_PATCH_SHARE);
+    expect(DROPSY_SCALE_LOW + DROPSY_SCALE_SHARE).toBeLessThanOrEqual(1);
+    expect(DROPSY_SCALE_COLOR).toBe(PALETTE.sableSombre);
+    for (const other of [ICH_SPOT_COLOR, FIN_ROT_EDGE_COLOR, VELVET_COLOR, FUNGUS_COLOR]) {
+      expect(DROPSY_SCALE_COLOR).not.toBe(other);
+    }
   });
 });

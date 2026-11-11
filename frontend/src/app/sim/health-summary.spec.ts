@@ -47,6 +47,8 @@ describe('synthèse de la santé (#260)', () => {
       velvetAdvanced: 0,
       fungus: 0,
       fungusAdvanced: 0,
+      dropsy: 0,
+      dropsyAdvanced: 0,
       diseased: 0,
       weakWithoutDisease: 0,
     });
