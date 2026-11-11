@@ -205,6 +205,14 @@ simulation testable et les captures reproductibles.
   figé ; sel et chaleur : mise en garde `FUNGUS_WRONG_TREATMENT`. Alerte « Champignons », coton
   blanc grisâtre au rendu (`withFungus`, rangs `aqfishFray` et `aqfishSpot`). Champ `fungus`
   facultatif de la sauvegarde ; paramètre de capture `champignons=1`.
+- **Hydropisie** (#565, ADR 0132, `sim/dropsy.ts`) : `Fish.dropsy`, progression en secondes
+  (absente : sain), avancée après la pourriture des nageoires sur l'eau de fin de pas. Seulement
+  chez un animal affaibli (santé < 0,5) en eau dégradée (`finRotCauses`), taux bas, pas de
+  contagion. Eau propre : recul lent avant le stade avancé, plus ensuite ; aucun produit ne la
+  soigne (mise en garde `DROPSY_WRONG_TREATMENT`). Alerte « Hydropisie » (euthanasie en conseil
+  au stade avancé), ventre gonflé et écailles hérissées au rendu (`withDropsy`, attribut
+  d'instance `vec2` sur le corps seul, uniforme de demi-longueur). Champ `dropsy` facultatif de
+  la sauvegarde (table `DISEASES`) ; paramètre de capture `hydropisie=1` ou `hydropisie=gonfle`.
 - **Table des maladies** (#562, ADR 0129, `sim/diseases.ts`) : `DISEASES` liste, dans l'ordre de
   la sauvegarde, le champ, la borne, la validation et les espèces touchées de chaque maladie.
   Sauvegarde (écriture et relecture), transfert entre bacs (`diseasesOf`) et malades de

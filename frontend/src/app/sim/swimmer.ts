@@ -92,6 +92,12 @@ export interface Fish {
    */
   readonly fungus?: number;
   /**
+   * Progression de l'hydropisie, en secondes simulées, dans [0, `DROPSY_MAX`]
+   * (`sim/dropsy.ts`, issue #565) ; absent : sain. Lecture seule pour le rendu
+   * (`dropsySwelling`, `dropsyScales`).
+   */
+  readonly dropsy?: number;
+  /**
    * Âge de l'alevin, en secondes simulées, dans [0, `FRY_GROWTH_TIME`) (`sim/fry.ts`, issue
    * #459) ; absent : adulte. Lecture seule pour le rendu (`fryScale`).
    */

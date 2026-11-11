@@ -90,6 +90,21 @@ describe('pages « Produits et traitements » et « Maladies » (#291)', () => {
     expect(fungus?.status).toEqual({ kind: 'source', reference: expect.stringContaining('5.6') });
   });
 
+  it('hydropisie (#565) : fiche à part, cause, stade avancé et conseil vétérinaire', () => {
+    const dropsy = guideEntries('maladies').find((e) => e.id === 'hydropisie');
+    expect(dropsy?.name).toBe('Hydropisie');
+    expect(dropsy?.lines.find((l) => l.label === 'Symptômes')?.text).toMatch(/pomme de pin/);
+    const game = dropsy?.lines.find((l) => l.label === 'Dans le jeu')?.text ?? '';
+    expect(game).toMatch(/affaibli/);
+    expect(game).toMatch(/plus de recul/);
+    const gestures = dropsy?.lines.find((l) => l.label === 'Gestes')?.text ?? '';
+    expect(gestures).toMatch(/quarantaine/);
+    expect(gestures).toMatch(/euthanasie sans souffrance/);
+    expect(dropsy?.status).toEqual({ kind: 'source', reference: expect.stringContaining('5.7') });
+    const aeromonas = guideEntries('maladies').find((e) => e.id === 'aeromonas');
+    expect(aeromonas?.name).not.toMatch(/hydropisie/);
+  });
+
   it('chaque produit dit son usage', () => {
     for (const entry of guideEntries('produits')) {
       expect(entry.lines[0].label, entry.id).toBe('Usage');
