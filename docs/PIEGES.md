@@ -1238,6 +1238,17 @@ environnement)` plutôt que `setPopulation(createDefaultWorld(…))`. (2026-10-2
 
 ## Rendu
 
+- **Trop d'attributs de sommet pour les poissons : une maladie = un attribut ne passe plus
+  l'échelle** (cycle 200, #578) : hydropisie (#565) et pâleur des alevins (#566), fusionnées
+  l'une après l'autre, portaient le matériau à 15 emplacements comptés (position, couleur,
+  `instanceMatrix` ×4, rangs de taché et d'effilochage, 7 attributs d'instance) : sous
+  Chromium (`MAX_VERTEX_ATTRIBS` = 16 pourtant), `Too many attributes (aqfishSpot)`, programme
+  invalide, erreur de page dans tous les e2e qui dessinent un poisson. Chaque PR seule passait.
+  Les intensités d'instance sont désormais groupées en deux `vec4` (`SIGNS_A_ATTRIBUTE`,
+  `SIGNS_B_ATTRIBUTE`, `render/fish-layer.ts`) : 10 emplacements. Un nouveau signe prend une
+  composante libre (il n'y en a plus : ouvrir un troisième `vec4`), jamais un `float` à part ;
+  `fish-layer.spec.ts` compte les emplacements du shader complet (≤ 12). Un signe propre au
+  corps (comme l'hydropisie) passe à zéro dans le tampon de la queue. (2026-11-11)
 - **Shader des poissons : un attribut de plus et plus aucun poisson** (cycle 198, #565) : le
   matériau des poissons lit déjà position, couleur, `instanceMatrix` (4 emplacements), rangs de
   taché et d'effilochage et un attribut d'instance par maladie. Un attribut de sommet `vec2` et un

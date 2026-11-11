@@ -18,17 +18,20 @@ import { HEALTH_FLOOR } from '../sim/wellbeing';
 import { createDefaultWorld } from '../sim/world';
 import { CAMERA_FOV_DEG, framingDistance } from './camera-presets';
 import {
-  DULL_ATTRIBUTE,
+  attributeSlots,
+  DULL_SIGN,
+  SIGNS_A_ATTRIBUTE,
+  SIGNS_B_ATTRIBUTE,
   DULL_DARKENING,
   DULL_DESATURATION,
-  FIN_ROT_ATTRIBUTE,
+  FIN_ROT_SIGN,
   FIN_ROT_EDGE,
   FIN_ROT_EDGE_COLOR,
   FIN_ROT_LOSS_SHARE,
   FIN_ROT_MIN,
   finRotFray,
   FishLayer,
-  ICH_ATTRIBUTE,
+  ICH_SIGN,
   ICH_SPOT_COLOR,
   ICH_SPOT_MIN,
   ICH_SPOT_SHARE,
@@ -40,14 +43,15 @@ import {
   velvetVeil,
   withFungus,
   withFryPallor,
-  FRY_PALE_ATTRIBUTE,
+  FRY_PALE_SIGN,
   FRY_PALE_COLOR,
   fungusTufts,
   withDropsy,
   dropsyBelly,
   dropsyRaisedScales,
   BODY_HALF_UNIFORM,
-  DROPSY_ATTRIBUTE,
+  DROPSY_BELLY_SIGN,
+  DROPSY_SCALES_SIGN,
   DROPSY_BELLY_SWELL,
   DROPSY_MIN,
   DROPSY_SCALE_COLOR,
@@ -55,12 +59,12 @@ import {
   DROPSY_SCALE_MIN,
   DROPSY_SCALE_SHARE,
   DROPSY_WIDTH_SWELL,
-  FUNGUS_ATTRIBUTE,
+  FUNGUS_SIGN,
   FUNGUS_COLOR,
   FUNGUS_MIN,
   FUNGUS_PATCH_SHARE,
   FUNGUS_TUFT_SHARE,
-  VELVET_ATTRIBUTE,
+  VELVET_SIGN,
   VELVET_COLOR,
   VELVET_DUST_SHARE,
   VELVET_MIN,
@@ -417,13 +421,15 @@ describe('FishLayer : couleurs ternies par la santé (#208)', () => {
     layer.dispose();
   });
 
-  it('corps et queue partagent l’attribut de ternissement', () => {
+  it('corps et queue partagent l’attribut groupé du ternissement', () => {
     const layer = new FishLayer(NEON, 4);
     const [body, tail] = layer.object.children as Mesh[];
-    expect(body.geometry.getAttribute(DULL_ATTRIBUTE)).toBe(
-      tail.geometry.getAttribute(DULL_ATTRIBUTE),
+    expect(body.geometry.getAttribute(SIGNS_A_ATTRIBUTE)).toBe(
+      tail.geometry.getAttribute(SIGNS_A_ATTRIBUTE),
     );
-    expect(body.geometry.getAttribute(DULL_ATTRIBUTE).count).toBe(4);
+    expect(body.geometry.getAttribute(SIGNS_A_ATTRIBUTE).count).toBe(4);
+    expect(body.geometry.getAttribute(SIGNS_A_ATTRIBUTE).itemSize).toBe(4);
+    expect(DULL_SIGN).toBe(`${SIGNS_A_ATTRIBUTE}.x`);
     layer.dispose();
   });
 
@@ -445,12 +451,46 @@ describe('FishLayer : couleurs ternies par la santé (#208)', () => {
       ),
     );
     expect(shader.uniforms[BODY_HALF_UNIFORM].value).toBeGreaterThan(0);
-    expect(shader.vertexShader).toContain(`attribute float ${DULL_ATTRIBUTE};`);
+    expect(shader.vertexShader).toContain(`attribute vec4 ${SIGNS_A_ATTRIBUTE};`);
     const color = shader.vertexShader.indexOf('#include <color_vertex>');
     expect(shader.vertexShader.indexOf('vColor.xyz = mix(', color)).toBeGreaterThan(color);
     expect(shader.vertexShader).toContain(DULL_DESATURATION.toFixed(4));
     expect(shader.vertexShader).toContain(DULL_DARKENING.toFixed(4));
     layer.dispose();
+  });
+
+  it('le shader complet reste sous la limite WebGL de 16 attributs de sommet (#578)', () => {
+    const layer = new FishLayer(NEON, 4);
+    const material = (layer.object.children[0] as Mesh).material as MeshBasicMaterial;
+    const shader = {
+      vertexShader: ShaderLib.basic.vertexShader,
+      uniforms: {},
+    } as unknown as WebGLProgramParametersWithUniforms;
+    material.onBeforeCompile(shader, null as unknown as WebGLRenderer);
+    // Attributs actifs déclarés par three.js hors du chunk : position, couleur de sommet et
+    // matrice d'instance (4 emplacements). Le reste est déclaré par nos ajouts.
+    const builtIns = 1 + 1 + 4;
+    const slots = builtIns + attributeSlots(shader.vertexShader);
+    // Limite WebGL : 16. Mais 15 emplacements ainsi comptés (un attribut par maladie, avant
+    // #578) échouaient déjà sous Chromium (« Too many attributes ») : garder une marge.
+    expect(slots).toBeLessThanOrEqual(12);
+    // Chaque attribut propre aux poissons posé sur les maillages est bien compté.
+    for (const mesh of layer.object.children as Mesh[]) {
+      for (const name of Object.keys(mesh.geometry.attributes)) {
+        if (name === 'position' || name === 'color' || name === 'normal') {
+          continue;
+        }
+        expect(shader.vertexShader, name).toMatch(new RegExp(`^attribute \\w+ ${name};`, 'm'));
+      }
+    }
+    layer.dispose();
+  });
+
+  it('attributeSlots compte 1 par float ou vecN et 4 par mat4', () => {
+    expect(attributeSlots('void main() {}')).toBe(0);
+    expect(
+      attributeSlots('attribute float a;\nattribute vec4 b;\n  attribute mat4 c;\n// attribute x'),
+    ).toBe(6);
   });
 
   it('withDullness refuse un shader sans point d’insertion', () => {
@@ -485,9 +525,10 @@ describe('FishLayer : points blancs (#366)', () => {
   it('corps et queue partagent l’attribut d’instance et portent le rang de taché des voxels', () => {
     const layer = new FishLayer(NEON, 4);
     const [body, tail] = layer.object.children as Mesh[];
-    expect(body.geometry.getAttribute(ICH_ATTRIBUTE)).toBe(
-      tail.geometry.getAttribute(ICH_ATTRIBUTE),
+    expect(body.geometry.getAttribute(SIGNS_A_ATTRIBUTE)).toBe(
+      tail.geometry.getAttribute(SIGNS_A_ATTRIBUTE),
     );
+    expect(ICH_SIGN).toBe(`${SIGNS_A_ATTRIBUTE}.y`);
     for (const mesh of [body, tail]) {
       const spots = mesh.geometry.getAttribute(SPOT_ATTRIBUTE);
       expect(spots.count).toBe(mesh.geometry.getAttribute('position').count);
@@ -497,7 +538,8 @@ describe('FishLayer : points blancs (#366)', () => {
 
   it('shader : points après le ternissement, couleur de la palette, part des voxels', () => {
     const shader = withDullness(withIchSpots(ShaderLib.basic.vertexShader));
-    expect(shader).toContain(`attribute float ${ICH_ATTRIBUTE};`);
+    expect(shader).toContain(`attribute vec4 ${SIGNS_A_ATTRIBUTE};`);
+    expect(shader).toContain(`${ICH_SIGN} * ${ICH_SPOT_SHARE.toFixed(4)}`);
     expect(shader).toContain(`attribute float ${SPOT_ATTRIBUTE};`);
     const dull = shader.indexOf('vColor.xyz = mix(');
     const spots = shader.indexOf(`if ( ${SPOT_ATTRIBUTE} <`);
@@ -531,9 +573,10 @@ describe('FishLayer : pourriture des nageoires (#485)', () => {
     expect(layer.finRotFrayAt(0)).toBe(0);
     expect(layer.finRotFrayAt(1)).toBe(1);
     const [body, tail] = layer.object.children as Mesh[];
-    expect(body.geometry.getAttribute(FIN_ROT_ATTRIBUTE)).toBe(
-      tail.geometry.getAttribute(FIN_ROT_ATTRIBUTE),
+    expect(body.geometry.getAttribute(SIGNS_A_ATTRIBUTE)).toBe(
+      tail.geometry.getAttribute(SIGNS_A_ATTRIBUTE),
     );
+    expect(FIN_ROT_SIGN).toBe(`${SIGNS_A_ATTRIBUTE}.w`);
     layer.dispose();
   });
 
@@ -563,11 +606,11 @@ describe('FishLayer : pourriture des nageoires (#485)', () => {
 
   it('shader : voxels perdus et liseré gardés par une intensité non nulle, couleur de la palette', () => {
     const shader = withFinRot(ShaderLib.basic.vertexShader);
-    expect(shader).toContain(`attribute float ${FIN_ROT_ATTRIBUTE};`);
+    expect(shader).toContain(`attribute vec4 ${SIGNS_A_ATTRIBUTE};`);
     expect(shader).toContain(`attribute float ${FRAY_ATTRIBUTE};`);
     const begin = shader.indexOf('#include <begin_vertex>');
     expect(shader.indexOf('transformed = vec3( 0.0 )', begin)).toBeGreaterThan(begin);
-    expect(shader.match(new RegExp(`${FIN_ROT_ATTRIBUTE} > 0\\.0`, 'g'))?.length).toBe(2);
+    expect(shader.split(`${FIN_ROT_SIGN} > 0.0`).length - 1).toBe(2);
     expect(shader).toContain(FIN_ROT_LOSS_SHARE.toFixed(4));
     expect(FIN_ROT_EDGE_COLOR).toBe(PALETTE.sableClair);
     expect(() => withFinRot('#include <color_vertex>')).toThrow(/begin_vertex/);
@@ -592,22 +635,23 @@ describe('FishLayer : velours (#532)', () => {
     expect(layer.velvetVeilAt(0)).toBe(0);
     expect(layer.velvetVeilAt(1)).toBe(1);
     const [body, tail] = layer.object.children as Mesh[];
-    expect(body.geometry.getAttribute(VELVET_ATTRIBUTE)).toBe(
-      tail.geometry.getAttribute(VELVET_ATTRIBUTE),
+    expect(body.geometry.getAttribute(SIGNS_A_ATTRIBUTE)).toBe(
+      tail.geometry.getAttribute(SIGNS_A_ATTRIBUTE),
     );
+    expect(VELVET_SIGN).toBe(`${SIGNS_A_ATTRIBUTE}.z`);
     layer.dispose();
   });
 
   it('shader : voile gardé par une intensité non nulle, rang de taché déclaré une seule fois', () => {
     const shader = withVelvet(ShaderLib.basic.vertexShader);
-    expect(shader).toContain(`attribute float ${VELVET_ATTRIBUTE};`);
-    expect(shader.match(new RegExp(`${VELVET_ATTRIBUTE} > 0\\.0`, 'g'))?.length).toBe(1);
+    expect(shader).toContain(`attribute vec4 ${SIGNS_A_ATTRIBUTE};`);
+    expect(shader.split(`${VELVET_SIGN} > 0.0`).length - 1).toBe(1);
     expect(shader).toContain(VELVET_VEIL.toFixed(4));
     expect(shader).toContain(VELVET_DUST_SHARE.toFixed(4));
     // #556 : la poussière épargne les voxels saturés (rouge et bleu du néon), dans la garde.
     expect(shader).toContain(`< ${VELVET_SPARED_SATURATION.toFixed(4)}`);
     expect(shader.indexOf('aqfishVelvetSat')).toBeGreaterThan(
-      shader.indexOf(`${VELVET_ATTRIBUTE} > 0.0`),
+      shader.indexOf(`${VELVET_SIGN} > 0.0`),
     );
     expect(VELVET_SPARED_SATURATION).toBeGreaterThan(0);
     expect(VELVET_SPARED_SATURATION).toBeLessThan(0.75);
@@ -641,20 +685,25 @@ describe('FishLayer : champignons (#548)', () => {
     expect(layer.fungusTuftsAt(0)).toBe(0);
     expect(layer.fungusTuftsAt(1)).toBe(1);
     const [body, tail] = layer.object.children as Mesh[];
-    expect(body.geometry.getAttribute(FUNGUS_ATTRIBUTE)).toBe(
-      tail.geometry.getAttribute(FUNGUS_ATTRIBUTE),
-    );
+    expect(FUNGUS_SIGN).toBe(`${SIGNS_B_ATTRIBUTE}.x`);
+    // Champignons aussi sur la queue (tampon à part, même intensité).
+    const tailSigns = tail.geometry.getAttribute(SIGNS_B_ATTRIBUTE);
+    expect(body.geometry.getAttribute(SIGNS_B_ATTRIBUTE).getX(1)).toBe(1);
+    expect(tailSigns.getX(1)).toBe(1);
+    expect(tailSigns.getX(0)).toBe(0);
     layer.dispose();
   });
 
   it('shader : coton gardé par une intensité non nulle, rangs déclarés une seule fois', () => {
     const shader = withFungus(ShaderLib.basic.vertexShader);
-    expect(shader).toContain(`attribute float ${FUNGUS_ATTRIBUTE};`);
-    expect(shader.match(new RegExp(`${FUNGUS_ATTRIBUTE} > 0\\.0`, 'g'))?.length).toBe(1);
+    expect(shader).toContain(`attribute vec4 ${SIGNS_B_ATTRIBUTE};`);
+    expect(shader.split(`${FUNGUS_SIGN} > 0.0`).length - 1).toBe(1);
     expect(shader).toContain(FUNGUS_TUFT_SHARE.toFixed(4));
     expect(shader).toContain(FUNGUS_PATCH_SHARE.toFixed(4));
     const all = withIchSpots(withVelvet(withFinRot(withFungus(ShaderLib.basic.vertexShader))));
     expect(all.match(new RegExp(`attribute float ${SPOT_ATTRIBUTE};`, 'g'))?.length).toBe(1);
+    expect(all.split(`attribute vec4 ${SIGNS_A_ATTRIBUTE};`).length - 1).toBe(1);
+    expect(all.split(`attribute vec4 ${SIGNS_B_ATTRIBUTE};`).length - 1).toBe(1);
     expect(all.match(new RegExp(`attribute float ${FRAY_ATTRIBUTE};`, 'g'))?.length).toBe(1);
     expect(() => withFungus('void main() {}')).toThrow(/color_vertex/);
   });
@@ -689,20 +738,20 @@ describe('FishLayer : alevins (#459, #566)', () => {
     });
     scales.forEach((s, i) => expect(s).toBeCloseTo(FRY_SCALES[i], 6));
     const [body, tail] = layer.object.children as Mesh[];
-    expect(body.geometry.getAttribute(FRY_PALE_ATTRIBUTE)).toBe(
-      tail.geometry.getAttribute(FRY_PALE_ATTRIBUTE),
-    );
+    expect(FRY_PALE_SIGN).toBe(`${SIGNS_B_ATTRIBUTE}.y`);
+    // La queue pâlit comme le corps (tampon à part, même pâleur).
+    const tailSigns = tail.geometry.getAttribute(SIGNS_B_ATTRIBUTE);
+    const bodySigns = body.geometry.getAttribute(SIGNS_B_ATTRIBUTE);
+    [0, 1, 2, 3].forEach((i) => expect(tailSigns.getY(i)).toBe(bodySigns.getY(i)));
     layer.dispose();
   });
 
   it('shader : mélange au sable gardé par une pâleur non nulle, exécuté avant le ternissement', () => {
     expect(FRY_PALE_COLOR).toBe(PALETTE.sable);
     const shader = withFryPallor(withDullness(ShaderLib.basic.vertexShader));
-    expect(shader).toContain(`attribute float ${FRY_PALE_ATTRIBUTE};`);
-    expect(shader.match(new RegExp(`${FRY_PALE_ATTRIBUTE} > 0\\.0`, 'g'))?.length).toBe(1);
-    expect(shader.indexOf(FRY_PALE_ATTRIBUTE + ' > 0.0')).toBeLessThan(
-      shader.indexOf(`${DULL_ATTRIBUTE} *`),
-    );
+    expect(shader).toContain(`attribute vec4 ${SIGNS_B_ATTRIBUTE};`);
+    expect(shader.split(`${FRY_PALE_SIGN} > 0.0`).length - 1).toBe(1);
+    expect(shader.indexOf(FRY_PALE_SIGN + ' > 0.0')).toBeLessThan(shader.indexOf(`${DULL_SIGN} *`));
     expect(() => withFryPallor('void main() {}')).toThrow(/color_vertex/);
   });
 });
@@ -733,25 +782,32 @@ describe('FishLayer : hydropisie (#565)', () => {
     expect(layer.dropsyAt(0)).toEqual([0, 0]);
     expect(layer.dropsyAt(1)).toEqual([1, 1]);
     const [body, tail] = layer.object.children as Mesh[];
-    const bodyAttr = body.geometry.getAttribute(DROPSY_ATTRIBUTE);
-    const tailAttr = tail.geometry.getAttribute(DROPSY_ATTRIBUTE);
+    const bodyAttr = body.geometry.getAttribute(SIGNS_B_ATTRIBUTE);
+    const tailAttr = tail.geometry.getAttribute(SIGNS_B_ATTRIBUTE);
     expect(bodyAttr).not.toBe(tailAttr);
-    expect(bodyAttr.itemSize).toBe(2);
-    expect(Array.from(tailAttr.array as Float32Array).every((v) => v === 0)).toBe(true);
+    expect(bodyAttr.itemSize).toBe(4);
+    expect([DROPSY_BELLY_SIGN, DROPSY_SCALES_SIGN]).toEqual([
+      `${SIGNS_B_ATTRIBUTE}.z`,
+      `${SIGNS_B_ATTRIBUTE}.w`,
+    ]);
+    for (let i = 0; i < 4; i++) {
+      expect([tailAttr.getZ(i), tailAttr.getW(i)]).toEqual([0, 0]);
+    }
     layer.dispose();
   });
 
   it('shader : gardes non nulles, ventre et écailles, sans attribut de sommet de plus', () => {
     const shader = withDropsy(ShaderLib.basic.vertexShader);
-    expect(shader).toContain(`attribute vec2 ${DROPSY_ATTRIBUTE};`);
+    expect(shader).toContain(`attribute vec4 ${SIGNS_B_ATTRIBUTE};`);
     expect(shader).toContain(`uniform float ${BODY_HALF_UNIFORM};`);
-    expect(shader).toContain(`${DROPSY_ATTRIBUTE}.x > 0.0`);
-    expect(shader).toContain(`${DROPSY_ATTRIBUTE}.y > 0.0`);
+    expect(shader).toContain(`${DROPSY_BELLY_SIGN} > 0.0`);
+    expect(shader).toContain(`${DROPSY_SCALES_SIGN} > 0.0`);
     expect(shader).toContain(DROPSY_BELLY_SWELL.toFixed(4));
     expect(shader).toContain(DROPSY_WIDTH_SWELL.toFixed(4));
     expect(shader).toContain(DROPSY_SCALE_SHARE.toFixed(4));
+    // Rang de taché et les deux attributs groupés des signes.
     expect(shader.match(/^attribute /gm)?.length).toBe(
-      (ShaderLib.basic.vertexShader.match(/^attribute /gm)?.length ?? 0) + 2,
+      (ShaderLib.basic.vertexShader.match(/^attribute /gm)?.length ?? 0) + 3,
     );
     expect(() => withDropsy('void main() {}')).toThrow(/color_vertex/);
     expect(() => withDropsy('#include <color_vertex>')).toThrow(/begin_vertex/);

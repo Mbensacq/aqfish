@@ -20,8 +20,12 @@ sourcé ou annoncé comme approximation de jeu.
    l'autre et avec l'adulte (test).
 2. **Pâleur par jalon** (`FRY_PALLORS` : 0,7, 0,4, 0,15 ; `fryPallor`, 0 pour l'adulte),
    fonction pure de l'âge dans `sim/fry.ts`. Le rendu mêle la couleur de chaque voxel au
-   sable de la palette (`FRY_PALE_COLOR`) par un attribut d'instance (`aqfishFryPale`,
-   `withFryPallor`), avant le ternissement et les maladies. Pâleur nulle : branche non
+   sable de la palette (`FRY_PALE_COLOR`) par une composante d'instance (`FRY_PALE_SIGN`,
+   `withFryPallor`), avant le ternissement et les maladies. Les intensités d'instance des
+   poissons (ternissement, maladies, pâleur) sont groupées en deux `vec4`
+   (`SIGNS_A_ATTRIBUTE`, `SIGNS_B_ATTRIBUTE`) : un attribut `float` de plus par signe
+   dépassait la limite d'attributs de sommet de WebGL une fois l'hydropisie fusionnée
+   (`docs/PIEGES.md`, cycle 200). Pâleur nulle : branche non
    prise, captures sans alevin identiques à l'octet.
 3. **Âge adulte = âge reproducteur**, inchangé (1 200 s) : approximation de jeu, annoncée
    dans `sim/fry.ts` et la fiche du guppy ; les guides d'élevage situent la maturité

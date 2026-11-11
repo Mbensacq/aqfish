@@ -60,19 +60,55 @@ export const FISH_RENDER_ORDER = 2.5;
 export const DULL_DESATURATION = 0.3;
 export const DULL_DARKENING = 0.15;
 
-/** Attribut d'instance du ternissement, dans [0, 1]. */
-export const DULL_ATTRIBUTE = 'aqfishDull';
+/** Composante d'instance du ternissement, dans [0, 1]. */
+export const DULL_SIGN = 'aqfishSignsA.x';
 
 const COLOR_VERTEX = '#include <color_vertex>';
 const BEGIN_VERTEX = '#include <begin_vertex>';
 
 /**
  * Déclare l'attribut `name` en tête du shader s'il ne l'est pas déjà : points blancs et velours
- * lisent le même rang de taché (`aqfishSpot`), qu'une double déclaration rendrait invalide.
+ * lisent le même rang de taché (`aqfishSpot`), et toutes les maladies lisent les mêmes
+ * attributs groupés (`SIGNS_A_ATTRIBUTE`, `SIGNS_B_ATTRIBUTE`), qu'une double déclaration
+ * rendrait invalide.
  */
-function declareAttribute(vertexShader: string, name: string): string {
-  const line = `attribute float ${name};`;
+function declareAttribute(vertexShader: string, name: string, type = 'float'): string {
+  const line = `attribute ${type} ${name};`;
   return vertexShader.includes(line) ? vertexShader : `${line}\n${vertexShader}`;
+}
+
+/**
+ * Attributs d'instance groupés des signes visibles d'un poisson (#578) : WebGL n'accepte que
+ * 16 attributs de sommet (`instanceMatrix` en prend 4) ; un attribut `float` par maladie
+ * dépassait la limite (« Too many attributes », `docs/PIEGES.md`). Quatre intensités par `vec4`,
+ * chacune dans [0, 1] :
+ * - `SIGNS_A_ATTRIBUTE` : (ternissement, points blancs, velours, pourriture des nageoires),
+ *   partagé par le corps et la queue ;
+ * - `SIGNS_B_ATTRIBUTE` : (champignons, pâleur d'alevin, gonflement d'hydropisie, écailles
+ *   hérissées), un tampon par maillage : celui de la queue garde l'hydropisie à zéro.
+ */
+export const SIGNS_A_ATTRIBUTE = 'aqfishSignsA';
+export const SIGNS_B_ATTRIBUTE = 'aqfishSignsB';
+
+/** Déclare les deux attributs groupés des signes visibles. */
+function declareSigns(vertexShader: string): string {
+  return declareAttribute(
+    declareAttribute(vertexShader, SIGNS_A_ATTRIBUTE, 'vec4'),
+    SIGNS_B_ATTRIBUTE,
+    'vec4',
+  );
+}
+
+/**
+ * Nombre d'emplacements d'attributs de sommet qu'un shader déclare (`attribute <type> <nom>;`) :
+ * 1 par `float` ou `vecN`, 4 par `mat4` (tests de la limite WebGL).
+ */
+export function attributeSlots(vertexShader: string): number {
+  let slots = 0;
+  for (const match of vertexShader.matchAll(/^\s*attribute\s+(\w+)\s+\w+\s*;/gm)) {
+    slots += match[1] === 'mat4' ? 4 : match[1] === 'mat3' ? 3 : match[1] === 'mat2' ? 2 : 1;
+  }
+  return slots;
 }
 
 /**
@@ -89,8 +125,8 @@ export const ICH_SPOT_SHARE = 0.4;
 export const ICH_SPOT_MIN = 0.4;
 /** Couleur des points : blanc cassé de la palette (`koiBlanc`, `docs/DA.md`). */
 export const ICH_SPOT_COLOR = SPOT_COLOR;
-/** Attribut d'instance de l'intensité des points blancs, dans [0, 1]. */
-export const ICH_ATTRIBUTE = 'aqfishIch';
+/** Composante d'instance de l'intensité des points blancs, dans [0, 1]. */
+export const ICH_SIGN = 'aqfishSignsA.y';
 
 /**
  * Intensité des points blancs d'un poisson (issue #366), dans [0, 1] : 0 sain ou en
@@ -118,12 +154,11 @@ export function withIchSpots(vertexShader: string): string {
   }
   const c = new Color(ICH_SPOT_COLOR);
   const rgb = [c.r, c.g, c.b].map((v) => v.toFixed(4)).join(', ');
-  return `attribute float ${ICH_ATTRIBUTE};
-${declareAttribute(vertexShader, SPOT_ATTRIBUTE).replace(
-  COLOR_VERTEX,
-  `${COLOR_VERTEX}
-	if ( ${SPOT_ATTRIBUTE} < ${ICH_ATTRIBUTE} * ${ICH_SPOT_SHARE.toFixed(4)} ) vColor.xyz = vec3( ${rgb} );`,
-)}`;
+  return `${declareSigns(declareAttribute(vertexShader, SPOT_ATTRIBUTE)).replace(
+    COLOR_VERTEX,
+    `${COLOR_VERTEX}
+	if ( ${SPOT_ATTRIBUTE} < ${ICH_SIGN} * ${ICH_SPOT_SHARE.toFixed(4)} ) vColor.xyz = vec3( ${rgb} );`,
+  )}`;
 }
 
 /**
@@ -152,8 +187,8 @@ export const VELVET_MIN = 0.4;
  * du velours ; distinct du blanc des points blancs et du sable pâle de la pourriture.
  */
 export const VELVET_COLOR = PALETTE.koiOr;
-/** Attribut d'instance de l'intensité du velours, dans [0, 1]. */
-export const VELVET_ATTRIBUTE = 'aqfishVelvet';
+/** Composante d'instance de l'intensité du velours, dans [0, 1]. */
+export const VELVET_SIGN = 'aqfishSignsA.z';
 
 /**
  * Intensité du velours d'un poisson, dans [0, 1] : 0 sain ou en incubation (progression
@@ -180,18 +215,17 @@ export function withVelvet(vertexShader: string): string {
   }
   const c = new Color(VELVET_COLOR);
   const rgb = [c.r, c.g, c.b].map((v) => v.toFixed(4)).join(', ');
-  const v = VELVET_ATTRIBUTE;
+  const v = VELVET_SIGN;
   const s = SPOT_ATTRIBUTE;
-  return `attribute float ${v};
-${declareAttribute(vertexShader, s).replace(
-  COLOR_VERTEX,
-  `${COLOR_VERTEX}
+  return `${declareSigns(declareAttribute(vertexShader, s)).replace(
+    COLOR_VERTEX,
+    `${COLOR_VERTEX}
 	if ( ${v} > 0.0 ) {
 		float aqfishVelvetSat = max( max( vColor.r, vColor.g ), vColor.b ) - min( min( vColor.r, vColor.g ), vColor.b );
 		vColor.xyz = mix( vColor.xyz, vec3( ${rgb} ), ${v} * ${VELVET_VEIL.toFixed(4)} );
 		if ( ${s} < 1.0 && ${s} >= 1.0 - ${v} * ${VELVET_DUST_SHARE.toFixed(4)} && aqfishVelvetSat < ${VELVET_SPARED_SATURATION.toFixed(4)} ) vColor.xyz = mix( vColor.xyz, vec3( ${rgb} ), ${VELVET_DUST_MIX.toFixed(4)} );
 	}`,
-)}`;
+  )}`;
 }
 
 /**
@@ -216,8 +250,8 @@ export const FIN_ROT_MIN = 0.35;
  * cycle 172 : trop proche de l'eau sombre, il ne se lisait pas en vue de côté (#509).
  */
 export const FIN_ROT_EDGE_COLOR = PALETTE.sableClair;
-/** Attribut d'instance de l'intensité de la pourriture des nageoires, dans [0, 1]. */
-export const FIN_ROT_ATTRIBUTE = 'aqfishFinRot';
+/** Composante d'instance de l'intensité de la pourriture des nageoires, dans [0, 1]. */
+export const FIN_ROT_SIGN = 'aqfishSignsA.w';
 
 /**
  * Intensité de la pourriture des nageoires d'un poisson (issue #485), dans [0, 1] : 0 sain ou
@@ -247,19 +281,18 @@ export function withFinRot(vertexShader: string): string {
   }
   const c = new Color(FIN_ROT_EDGE_COLOR);
   const rgb = [c.r, c.g, c.b].map((v) => v.toFixed(4)).join(', ');
-  const loss = `${FIN_ROT_ATTRIBUTE} * ${FIN_ROT_LOSS_SHARE.toFixed(4)}`;
-  return `attribute float ${FIN_ROT_ATTRIBUTE};
-${declareAttribute(vertexShader, FRAY_ATTRIBUTE)
-  .replace(
-    COLOR_VERTEX,
-    `${COLOR_VERTEX}
-	if ( ${FIN_ROT_ATTRIBUTE} > 0.0 && ${FRAY_ATTRIBUTE} < ${loss} + ${FIN_ROT_EDGE.toFixed(4)} ) vColor.xyz = vec3( ${rgb} );`,
-  )
-  .replace(
-    BEGIN_VERTEX,
-    `${BEGIN_VERTEX}
-	if ( ${FIN_ROT_ATTRIBUTE} > 0.0 && ${FRAY_ATTRIBUTE} < ${loss} ) transformed = vec3( 0.0 );`,
-  )}`;
+  const loss = `${FIN_ROT_SIGN} * ${FIN_ROT_LOSS_SHARE.toFixed(4)}`;
+  return `${declareSigns(declareAttribute(vertexShader, FRAY_ATTRIBUTE))
+    .replace(
+      COLOR_VERTEX,
+      `${COLOR_VERTEX}
+	if ( ${FIN_ROT_SIGN} > 0.0 && ${FRAY_ATTRIBUTE} < ${loss} + ${FIN_ROT_EDGE.toFixed(4)} ) vColor.xyz = vec3( ${rgb} );`,
+    )
+    .replace(
+      BEGIN_VERTEX,
+      `${BEGIN_VERTEX}
+	if ( ${FIN_ROT_SIGN} > 0.0 && ${FRAY_ATTRIBUTE} < ${loss} ) transformed = vec3( 0.0 );`,
+    )}`;
 }
 
 /**
@@ -279,8 +312,8 @@ export const FUNGUS_MIN = 0.4;
  * la saprolégniose ; distinct du blanc crème des points blancs et du sable de la pourriture.
  */
 export const FUNGUS_COLOR = PALETTE.texteInterface;
-/** Attribut d'instance de l'intensité des champignons, dans [0, 1]. */
-export const FUNGUS_ATTRIBUTE = 'aqfishFungus';
+/** Composante d'instance de l'intensité des champignons, dans [0, 1]. */
+export const FUNGUS_SIGN = 'aqfishSignsB.x';
 
 /**
  * Intensité des champignons d'un poisson, dans [0, 1] : 0 sain ou au début (progression absente
@@ -306,15 +339,16 @@ export function withFungus(vertexShader: string): string {
   }
   const c = new Color(FUNGUS_COLOR);
   const rgb = [c.r, c.g, c.b].map((v) => v.toFixed(4)).join(', ');
-  const f = FUNGUS_ATTRIBUTE;
+  const f = FUNGUS_SIGN;
   const s = SPOT_ATTRIBUTE;
   const low = ICH_SPOT_SHARE.toFixed(4);
-  return `attribute float ${f};
-${declareAttribute(declareAttribute(vertexShader, s), FRAY_ATTRIBUTE).replace(
-  COLOR_VERTEX,
-  `${COLOR_VERTEX}
+  return `${declareSigns(
+    declareAttribute(declareAttribute(vertexShader, s), FRAY_ATTRIBUTE),
+  ).replace(
+    COLOR_VERTEX,
+    `${COLOR_VERTEX}
 	if ( ${f} > 0.0 && ( ${FRAY_ATTRIBUTE} < ${f} * ${FUNGUS_TUFT_SHARE.toFixed(4)} || ( ${s} >= ${low} && ${s} < ${low} + ${f} * ${FUNGUS_PATCH_SHARE.toFixed(4)} ) ) ) vColor.xyz = vec3( ${rgb} );`,
-)}`;
+  )}`;
 }
 
 /**
@@ -326,7 +360,7 @@ ${declareAttribute(declareAttribute(vertexShader, s), FRAY_ATTRIBUTE).replace(
  *   sans fente.
  * - Écailles : au stade avancé, une bande `DROPSY_SCALE_SHARE` du rang de taché (prise au-dessus
  *   de celles des points blancs et des champignons) prend `DROPSY_SCALE_COLOR` sur le corps.
- * La queue reçoit une hydropisie toujours nulle (attribut d'instance à part) : ni gonflée ni
+ * La queue reçoit une hydropisie toujours nulle (tampon `SIGNS_B_ATTRIBUTE` à part) : ni gonflée ni
  * hérissée. Valeurs choisies sur capture
  * (`side-hydropisie`, `front-hydropisie`).
  */
@@ -345,12 +379,13 @@ export const DROPSY_SCALE_MIN = 0.5;
  * points blancs et des champignons et de l'or du velours.
  */
 export const DROPSY_SCALE_COLOR = PALETTE.sableSombre;
-/** Attribut d'instance de l'hydropisie : (gonflement, écailles), chacun dans [0, 1]. */
-export const DROPSY_ATTRIBUTE = 'aqfishDropsy';
+/** Composantes d'instance de l'hydropisie : gonflement et écailles, chacun dans [0, 1]. */
+export const DROPSY_BELLY_SIGN = 'aqfishSignsB.z';
+export const DROPSY_SCALES_SIGN = 'aqfishSignsB.w';
 /**
  * Uniforme de la demi-longueur du corps (unités du modèle), propre à chaque couche : le poids de
  * ventre se calcule dans le shader, sans attribut de sommet de plus (WebGL limite le nombre
- * d'attributs : un de plus faisait échouer l'édition des liens du programme, `docs/PIEGES.md`).
+ * d'attributs, `docs/PIEGES.md`).
  */
 export const BODY_HALF_UNIFORM = 'aqfishBodyHalf';
 
@@ -386,26 +421,26 @@ export function withDropsy(vertexShader: string): string {
   }
   const c = new Color(DROPSY_SCALE_COLOR);
   const rgb = [c.r, c.g, c.b].map((v) => v.toFixed(4)).join(', ');
-  const d = DROPSY_ATTRIBUTE;
+  const belly = DROPSY_BELLY_SIGN;
+  const scales = DROPSY_SCALES_SIGN;
   const h = BODY_HALF_UNIFORM;
   const s = SPOT_ATTRIBUTE;
   const low = DROPSY_SCALE_LOW.toFixed(4);
   const bell = `max( 0.0, 1.0 - pow( position.x / max( ${h}, 1e-6 ), 2.0 ) )`;
-  return `attribute vec2 ${d};
-uniform float ${h};
-${declareAttribute(vertexShader, s)
+  return `uniform float ${h};
+${declareSigns(declareAttribute(vertexShader, s))
   .replace(
     COLOR_VERTEX,
     `${COLOR_VERTEX}
-	if ( ${d}.y > 0.0 && ${bell} > 0.0 && ${s} >= ${low} && ${s} < ${low} + ${d}.y * ${DROPSY_SCALE_SHARE.toFixed(4)} ) vColor.xyz = vec3( ${rgb} );`,
+	if ( ${scales} > 0.0 && ${bell} > 0.0 && ${s} >= ${low} && ${s} < ${low} + ${scales} * ${DROPSY_SCALE_SHARE.toFixed(4)} ) vColor.xyz = vec3( ${rgb} );`,
   )
   .replace(
     BEGIN_VERTEX,
     `${BEGIN_VERTEX}
-	if ( ${d}.x > 0.0 ) {
+	if ( ${belly} > 0.0 ) {
 		float aqfishBell = ${bell};
-		if ( transformed.y < 0.0 ) transformed.y *= 1.0 + ${d}.x * ${DROPSY_BELLY_SWELL.toFixed(4)} * aqfishBell;
-		transformed.z *= 1.0 + ${d}.x * ${DROPSY_WIDTH_SWELL.toFixed(4)} * aqfishBell;
+		if ( transformed.y < 0.0 ) transformed.y *= 1.0 + ${belly} * ${DROPSY_BELLY_SWELL.toFixed(4)} * aqfishBell;
+		transformed.z *= 1.0 + ${belly} * ${DROPSY_WIDTH_SWELL.toFixed(4)} * aqfishBell;
 	}`,
   )}`;
 }
@@ -421,12 +456,11 @@ export function withDullness(vertexShader: string): string {
   if (!vertexShader.includes(COLOR_VERTEX)) {
     throw new Error(`Shader de poissons sans ${COLOR_VERTEX}`);
   }
-  return `attribute float ${DULL_ATTRIBUTE};
-${vertexShader.replace(
-  COLOR_VERTEX,
-  `${COLOR_VERTEX}
-	vColor.xyz = mix( vColor.xyz, vec3( dot( vColor.xyz, vec3( 0.2126, 0.7152, 0.0722 ) ) ), ${DULL_ATTRIBUTE} * ${DULL_DESATURATION.toFixed(4)} ) * ( 1.0 - ${DULL_ATTRIBUTE} * ${DULL_DARKENING.toFixed(4)} );`,
-)}`;
+  return `${declareSigns(vertexShader).replace(
+    COLOR_VERTEX,
+    `${COLOR_VERTEX}
+	vColor.xyz = mix( vColor.xyz, vec3( dot( vColor.xyz, vec3( 0.2126, 0.7152, 0.0722 ) ) ), ${DULL_SIGN} * ${DULL_DESATURATION.toFixed(4)} ) * ( 1.0 - ${DULL_SIGN} * ${DULL_DARKENING.toFixed(4)} );`,
+  )}`;
 }
 
 /**
@@ -435,12 +469,12 @@ ${vertexShader.replace(
  * vers le gris froid et assombrit).
  */
 export const FRY_PALE_COLOR = PALETTE.sable;
-/** Attribut d'instance de la pâleur d'alevin (`fryPallor`), dans [0, 1]. */
-export const FRY_PALE_ATTRIBUTE = 'aqfishFryPale';
+/** Composante d'instance de la pâleur d'alevin (`fryPallor`), dans [0, 1]. */
+export const FRY_PALE_SIGN = 'aqfishSignsB.y';
 
 /**
  * Ajoute la pâleur des alevins au shader de sommets : la couleur du voxel se mêle à
- * `FRY_PALE_COLOR` dans la part `aqfishFryPale`, **avant** le ternissement et les maladies
+ * `FRY_PALE_COLOR` dans la part `FRY_PALE_SIGN`, **avant** le ternissement et les maladies
  * (insérée en dernier, donc exécutée en premier). Pâleur nulle (adulte) : aucun sommet
  * touché (captures inchangées à l'octet).
  * @throws Error si le shader n'a pas le point d'insertion attendu.
@@ -451,12 +485,11 @@ export function withFryPallor(vertexShader: string): string {
   }
   const c = new Color(FRY_PALE_COLOR);
   const rgb = [c.r, c.g, c.b].map((v) => v.toFixed(4)).join(', ');
-  return `attribute float ${FRY_PALE_ATTRIBUTE};
-${vertexShader.replace(
-  COLOR_VERTEX,
-  `${COLOR_VERTEX}
-	if ( ${FRY_PALE_ATTRIBUTE} > 0.0 ) vColor.xyz = mix( vColor.xyz, vec3( ${rgb} ), ${FRY_PALE_ATTRIBUTE} );`,
-)}`;
+  return `${declareSigns(vertexShader).replace(
+    COLOR_VERTEX,
+    `${COLOR_VERTEX}
+	if ( ${FRY_PALE_SIGN} > 0.0 ) vColor.xyz = mix( vColor.xyz, vec3( ${rgb} ), ${FRY_PALE_SIGN} );`,
+  )}`;
 }
 
 /** Pose interpolée d'un poisson, en repère du bac. */
@@ -512,21 +545,21 @@ export class FishLayer {
   private readonly body: InstancedMesh;
   private readonly tail: InstancedMesh;
   private readonly material: MeshBasicMaterial;
-  /** Ternissement par instance (`dullness` de la santé), partagé par le corps et la queue. */
-  private readonly dull: InstancedBufferAttribute;
-  /** Intensité des points blancs par instance (`ichSpots`, issue #366), idem. */
-  private readonly ich: InstancedBufferAttribute;
-  /** Intensité de la pourriture des nageoires par instance (`finRotFray`, issue #485), idem. */
-  private readonly finRot: InstancedBufferAttribute;
-  /** Intensité du velours par instance (`velvetVeil`, issue #532), idem. */
-  private readonly velvet: InstancedBufferAttribute;
-  /** Intensité des champignons par instance (`fungusTufts`, issue #548), idem. */
-  private readonly fungus: InstancedBufferAttribute;
-  /** Hydropisie par instance (`dropsyBelly`, `dropsyRaisedScales`, issue #565), idem. */
-  private readonly dropsy: InstancedBufferAttribute;
+  /**
+   * Signes par instance (`SIGNS_A_ATTRIBUTE`) : ternissement (`dullness`, #208), points blancs
+   * (`ichSpots`, #366), velours (`velvetVeil`, #532), pourriture (`finRotFray`, #485) ;
+   * partagé par le corps et la queue.
+   */
+  private readonly signsA: InstancedBufferAttribute;
+  /**
+   * Signes par instance du corps (`SIGNS_B_ATTRIBUTE`) : champignons (`fungusTufts`, #548),
+   * pâleur d'alevin (`fryPallor`, #566), hydropisie (`dropsyBelly`, `dropsyRaisedScales`, #565).
+   */
+  private readonly signsB: InstancedBufferAttribute;
+  /** Idem pour la queue, hydropisie toujours nulle (ni gonflée ni hérissée). */
+  private readonly tailSignsB: InstancedBufferAttribute;
   /** Demi-longueur du corps, en unités du modèle (uniforme `BODY_HALF_UNIFORM`). */
   private readonly bodyHalf: number;
-  private readonly fryPale: InstancedBufferAttribute;
   private readonly geometries: BufferGeometry[];
   private readonly halfLength: number;
   private readonly pose: FishPose = { x: 0, y: 0, z: 0, yaw: 0, pitch: 0, phase: 0 };
@@ -586,37 +619,20 @@ export class FishLayer {
     const bodyGeometry = createFishGeometry(species, 'body', variant);
     const tailGeometry = createFishGeometry(species, 'tail', variant);
     this.geometries = [bodyGeometry, tailGeometry];
-    this.dull = new InstancedBufferAttribute(new Float32Array(capacity), 1);
-    this.dull.setUsage(DynamicDrawUsage);
-    this.ich = new InstancedBufferAttribute(new Float32Array(capacity), 1);
-    this.ich.setUsage(DynamicDrawUsage);
-    this.finRot = new InstancedBufferAttribute(new Float32Array(capacity), 1);
-    this.finRot.setUsage(DynamicDrawUsage);
-    this.velvet = new InstancedBufferAttribute(new Float32Array(capacity), 1);
-    this.velvet.setUsage(DynamicDrawUsage);
-    this.fungus = new InstancedBufferAttribute(new Float32Array(capacity), 1);
-    this.fungus.setUsage(DynamicDrawUsage);
-    this.dropsy = new InstancedBufferAttribute(new Float32Array(capacity * 2), 2);
-    this.dropsy.setUsage(DynamicDrawUsage);
+    this.signsA = new InstancedBufferAttribute(new Float32Array(capacity * 4), 4);
+    this.signsB = new InstancedBufferAttribute(new Float32Array(capacity * 4), 4);
+    this.tailSignsB = new InstancedBufferAttribute(new Float32Array(capacity * 4), 4);
+    for (const attribute of [this.signsA, this.signsB, this.tailSignsB]) {
+      attribute.setUsage(DynamicDrawUsage);
+    }
     bodyGeometry.computeBoundingBox();
     const box = bodyGeometry.boundingBox;
     this.bodyHalf = box === null ? 0 : Math.max(Math.abs(box.min.x), Math.abs(box.max.x));
-    this.fryPale = new InstancedBufferAttribute(new Float32Array(capacity), 1);
-    this.fryPale.setUsage(DynamicDrawUsage);
-    for (const geometry of this.geometries) {
-      geometry.setAttribute(DULL_ATTRIBUTE, this.dull);
-      geometry.setAttribute(ICH_ATTRIBUTE, this.ich);
-      geometry.setAttribute(FIN_ROT_ATTRIBUTE, this.finRot);
-      geometry.setAttribute(VELVET_ATTRIBUTE, this.velvet);
-      geometry.setAttribute(FUNGUS_ATTRIBUTE, this.fungus);
-      geometry.setAttribute(FRY_PALE_ATTRIBUTE, this.fryPale);
-    }
-    // Hydropisie : le corps seul ; la queue lit des zéros jamais mis à jour.
-    bodyGeometry.setAttribute(DROPSY_ATTRIBUTE, this.dropsy);
-    tailGeometry.setAttribute(
-      DROPSY_ATTRIBUTE,
-      new InstancedBufferAttribute(new Float32Array(capacity * 2), 2),
-    );
+    bodyGeometry.setAttribute(SIGNS_A_ATTRIBUTE, this.signsA);
+    tailGeometry.setAttribute(SIGNS_A_ATTRIBUTE, this.signsA);
+    // Hydropisie : le corps seul ; la queue a son propre tampon, hydropisie à zéro.
+    bodyGeometry.setAttribute(SIGNS_B_ATTRIBUTE, this.signsB);
+    tailGeometry.setAttribute(SIGNS_B_ATTRIBUTE, this.tailSignsB);
     this.body = new InstancedMesh(bodyGeometry, this.material, capacity);
     this.tail = new InstancedMesh(tailGeometry, this.material, capacity);
     this.body.name = `${this.object.name}-corps`;
@@ -685,26 +701,32 @@ export class FishLayer {
       this.swing.makeRotationY(swing);
       this.tailMatrix.multiplyMatrices(this.bodyMatrix, this.hinge).multiply(this.swing);
       this.tail.setMatrixAt(n, this.tailMatrix);
-      this.dull.setX(n, dullness(fish.health));
-      this.ich.setX(n, ichSpots(fish.ich));
-      this.finRot.setX(n, finRotFray(fish.finRot));
-      this.velvet.setX(n, velvetVeil(fish.velvet));
-      this.fungus.setX(n, fungusTufts(fish.fungus));
-      this.dropsy.setXY(n, dropsyBelly(fish.dropsy), dropsyRaisedScales(fish.dropsy));
-      this.fryPale.setX(n, fryPallor(fish.growth));
+      this.signsA.setXYZW(
+        n,
+        dullness(fish.health),
+        ichSpots(fish.ich),
+        velvetVeil(fish.velvet),
+        finRotFray(fish.finRot),
+      );
+      const fungus = fungusTufts(fish.fungus);
+      const pale = fryPallor(fish.growth);
+      this.signsB.setXYZW(
+        n,
+        fungus,
+        pale,
+        dropsyBelly(fish.dropsy),
+        dropsyRaisedScales(fish.dropsy),
+      );
+      this.tailSignsB.setXYZW(n, fungus, pale, 0, 0);
       n++;
     }
     this.body.count = n;
     this.tail.count = n;
     this.body.instanceMatrix.needsUpdate = true;
     this.tail.instanceMatrix.needsUpdate = true;
-    this.dull.needsUpdate = true;
-    this.ich.needsUpdate = true;
-    this.finRot.needsUpdate = true;
-    this.velvet.needsUpdate = true;
-    this.fungus.needsUpdate = true;
-    this.dropsy.needsUpdate = true;
-    this.fryPale.needsUpdate = true;
+    this.signsA.needsUpdate = true;
+    this.signsB.needsUpdate = true;
+    this.tailSignsB.needsUpdate = true;
   }
 
   /**
@@ -725,37 +747,37 @@ export class FishLayer {
 
   /** Ternissement d'une instance, dans [0, 1] (tests). */
   dullnessAt(index: number): number {
-    return this.dull.getX(index);
+    return this.signsA.getX(index);
   }
 
   /** Intensité des points blancs d'une instance, dans [0, 1] (tests). */
   ichSpotsAt(index: number): number {
-    return this.ich.getX(index);
+    return this.signsA.getY(index);
   }
 
   /** Intensité de la pourriture des nageoires d'une instance, dans [0, 1] (tests). */
   finRotFrayAt(index: number): number {
-    return this.finRot.getX(index);
+    return this.signsA.getW(index);
   }
 
   /** Intensité du velours d'une instance, dans [0, 1] (tests). */
   velvetVeilAt(index: number): number {
-    return this.velvet.getX(index);
+    return this.signsA.getZ(index);
   }
 
   /** Hydropisie de l'instance `index` : (gonflement, écailles) (tests). */
   dropsyAt(index: number): readonly [number, number] {
-    return [this.dropsy.getX(index), this.dropsy.getY(index)];
+    return [this.signsB.getZ(index), this.signsB.getW(index)];
   }
 
   /** Intensité des champignons de l'instance `index` (tests). */
   fungusTuftsAt(index: number): number {
-    return this.fungus.getX(index);
+    return this.signsB.getX(index);
   }
 
   /** Lit la pâleur d'alevin d'une instance (tests). */
   fryPallorAt(index: number): number {
-    return this.fryPale.getX(index);
+    return this.signsB.getY(index);
   }
 
   /** Lit la matrice d'une instance du corps (tests). */
