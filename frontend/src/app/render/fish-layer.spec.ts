@@ -49,6 +49,7 @@ import {
   VELVET_COLOR,
   VELVET_DUST_SHARE,
   VELVET_MIN,
+  VELVET_SPARED_SATURATION,
   VELVET_VEIL,
   withIchSpots,
   type FishPose,
@@ -578,6 +579,13 @@ describe('FishLayer : velours (#532)', () => {
     expect(shader.match(new RegExp(`${VELVET_ATTRIBUTE} > 0\\.0`, 'g'))?.length).toBe(1);
     expect(shader).toContain(VELVET_VEIL.toFixed(4));
     expect(shader).toContain(VELVET_DUST_SHARE.toFixed(4));
+    // #556 : la poussière épargne les voxels saturés (rouge et bleu du néon), dans la garde.
+    expect(shader).toContain(`< ${VELVET_SPARED_SATURATION.toFixed(4)}`);
+    expect(shader.indexOf('aqfishVelvetSat')).toBeGreaterThan(
+      shader.indexOf(`${VELVET_ATTRIBUTE} > 0.0`),
+    );
+    expect(VELVET_SPARED_SATURATION).toBeGreaterThan(0);
+    expect(VELVET_SPARED_SATURATION).toBeLessThan(0.75);
     const both = withIchSpots(withVelvet(ShaderLib.basic.vertexShader));
     expect(both.match(new RegExp(`attribute float ${SPOT_ATTRIBUTE};`, 'g'))?.length).toBe(1);
     expect(() => withVelvet('void main() {}')).toThrow(/color_vertex/);
