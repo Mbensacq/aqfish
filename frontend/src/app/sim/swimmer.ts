@@ -86,6 +86,12 @@ export interface Fish {
    */
   readonly velvet?: number;
   /**
+   * Progression des champignons (Saprolegnia), en secondes simulées, dans [0, `FUNGUS_MAX`]
+   * (`sim/fungus.ts`, issue #548) ; absent : sain. Lecture seule pour le rendu
+   * (`fungusSeverity`).
+   */
+  readonly fungus?: number;
+  /**
    * Âge de l'alevin, en secondes simulées, dans [0, `FRY_GROWTH_TIME`) (`sim/fry.ts`, issue
    * #459) ; absent : adulte. Lecture seule pour le rendu (`fryScale`).
    */

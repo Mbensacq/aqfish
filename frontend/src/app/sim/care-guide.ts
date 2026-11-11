@@ -280,11 +280,24 @@ const DISEASES: readonly GuideEntry[] = [
     'champignons',
     'Champignons (Saprolegnia)',
     [
-      ['Symptômes', 'non vérifié'],
-      ['Cause', 'oomycètes ; favorisés par une température basse ou inadaptée'],
-      ['Gestes', 'formol (une certaine efficacité) ; acriflavine'],
+      [
+        'Symptômes',
+        'touffes blanches cotonneuses sur la peau ou les nageoires (description d’usage, non vérifiée)',
+      ],
+      [
+        'Cause',
+        'oomycètes opportunistes : peau abîmée, animal affaibli ; favorisés par une température basse ou inadaptée',
+      ],
+      [
+        'Dans le jeu',
+        'jamais sur un animal sain : seulement sur un animal blessé (points blancs, nageoires effilochées, velours) ou affaibli ; le médicament dans une eau propre les fait reculer, le sel et la chaleur n’y font rien ; délais : approximation de jeu',
+      ],
+      [
+        'Gestes',
+        'formol (une certaine efficacité) ; acriflavine ; soigner la cause (eau, blessure)',
+      ],
     ],
-    `${S} 5.6 (Merck ; notice Sera)`,
+    `${S} 5.6 et § 5.12 (Merck ; notice Sera)`,
   ),
   entry(
     'aeromonas',

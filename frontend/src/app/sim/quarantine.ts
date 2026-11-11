@@ -93,10 +93,17 @@ export function treatTank(
   return { ok: true, room: { ...room, tanks }, outcome };
 }
 
-/** Nombre d'animaux malades (points blancs, velours ou pourriture des nageoires) d'un bac. */
+/**
+ * Nombre d'animaux malades (points blancs, velours, pourriture des nageoires ou champignons)
+ * d'un bac.
+ */
 export function sickCount(tank: Pick<RoomTank, 'world'>): number {
   return tank.world.entities.filter(
-    (e) => e.ich !== undefined || e.velvet !== undefined || e.finRot !== undefined,
+    (e) =>
+      e.ich !== undefined ||
+      e.velvet !== undefined ||
+      e.finRot !== undefined ||
+      e.fungus !== undefined,
   ).length;
 }
 

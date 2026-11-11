@@ -45,6 +45,8 @@ describe('synthèse de la santé (#260)', () => {
       finRotAdvanced: 0,
       velvet: 0,
       velvetAdvanced: 0,
+      fungus: 0,
+      fungusAdvanced: 0,
       diseased: 0,
       weakWithoutDisease: 0,
     });

@@ -1,6 +1,7 @@
 import { ichStage } from './disease';
 import { finRotStage } from './fin-rot';
 import { velvetStage } from './velvet';
+import { fungusStage } from './fungus';
 import { SPECIES, type SpeciesId } from './species';
 import { feedsOnPellets, HEALTH_FLOOR, STARVING_HUNGER } from './wellbeing';
 import type { GaugeLevel } from './water-dashboard';
@@ -24,6 +25,7 @@ import type { GaugeLevel } from './water-dashboard';
  * sans signe, n'est pas comptée. Pourriture des nageoires (issue #485, ADR 0114) : de même, les
  * animaux aux nageoires effilochées (`finRot`, `sim/fin-rot.ts`) ; le début, sans signe, non.
  * Velours (issue #532, ADR 0124) : de même, les animaux au voile visible (`velvet`).
+ * Champignons (issue #548, ADR 0128) : de même, les animaux au coton visible (`fungus`).
  *
  * Seuils : valeurs de jeu (approximations, pas des mesures).
  */
@@ -46,6 +48,8 @@ export interface HealthSubject {
   readonly finRot?: number;
   /** Progression du velours (`sim/velvet.ts`, issue #532) ; absente : sain. */
   readonly velvet?: number;
+  /** Progression des champignons (`sim/fungus.ts`, issue #548) ; absente : sain. */
+  readonly fungus?: number;
 }
 
 /** Synthèse de la santé d'un bac. Objet de données pur. */
@@ -84,8 +88,13 @@ export interface HealthSummary {
   readonly velvet: number;
   /** Parmi eux, animaux au stade avancé. */
   readonly velvetAdvanced: number;
+  /** Animaux couverts du coton des champignons (stades coton et avancé, issue #548). */
+  readonly fungus: number;
+  /** Parmi eux, animaux au stade avancé. */
+  readonly fungusAdvanced: number;
   /**
-   * Animaux qui montrent les signes d'une maladie (points blancs, nageoires effilochées, velours),
+   * Animaux qui montrent les signes d'une maladie (points blancs, nageoires effilochées, velours,
+   * champignons),
    * chacun compté une fois : ils ont leurs propres alertes, l'alerte de santé parle des autres
    * malades (`sick − diseased`).
    */
@@ -110,6 +119,8 @@ export const EMPTY_HEALTH_SUMMARY: HealthSummary = {
   finRotAdvanced: 0,
   velvet: 0,
   velvetAdvanced: 0,
+  fungus: 0,
+  fungusAdvanced: 0,
   diseased: 0,
   weakWithoutDisease: 0,
 };
@@ -147,6 +158,8 @@ export function healthSummary(animals: Iterable<HealthSubject>): HealthSummary {
   let finRotAdvanced = 0;
   let velvet = 0;
   let velvetAdvanced = 0;
+  let fungus = 0;
+  let fungusAdvanced = 0;
   let diseased = 0;
   let weakWithoutDisease = 0;
   for (const animal of animals) {
@@ -160,7 +173,9 @@ export function healthSummary(animals: Iterable<HealthSubject>): HealthSummary {
     const frayed = rot === 'effilochee' || rot === 'avancee';
     const veil = velvetStage(animal.velvet);
     const veiled = veil === 'voile' || veil === 'avance';
-    const signs = spots || frayed || veiled;
+    const cotton = fungusStage(animal.fungus);
+    const tufted = cotton === 'coton' || cotton === 'avance';
+    const signs = spots || frayed || veiled || tufted;
     if (health <= SICK_HEALTH || signs) {
       sick += 1;
     }
@@ -177,6 +192,12 @@ export function healthSummary(animals: Iterable<HealthSubject>): HealthSummary {
       velvet += 1;
       if (veil === 'avance') {
         velvetAdvanced += 1;
+      }
+    }
+    if (tufted) {
+      fungus += 1;
+      if (cotton === 'avance') {
+        fungusAdvanced += 1;
       }
     }
     if (isWeak) {
@@ -226,6 +247,8 @@ export function healthSummary(animals: Iterable<HealthSubject>): HealthSummary {
     finRotAdvanced,
     velvet,
     velvetAdvanced,
+    fungus,
+    fungusAdvanced,
     diseased,
     weakWithoutDisease,
   };
@@ -262,6 +285,8 @@ export function sameHealthSummary(a: HealthSummary, b: HealthSummary): boolean {
     a.finRotAdvanced === b.finRotAdvanced &&
     a.velvet === b.velvet &&
     a.velvetAdvanced === b.velvetAdvanced &&
+    a.fungus === b.fungus &&
+    a.fungusAdvanced === b.fungusAdvanced &&
     a.diseased === b.diseased &&
     a.weakWithoutDisease === b.weakWithoutDisease &&
     percent(a.averageHealth) === percent(b.averageHealth) &&

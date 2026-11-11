@@ -47,6 +47,7 @@ import { decorObstacles, parseDecorItems, type DecorItem } from './decor';
 import { ichStress, infectAllInPlace, isIchAge, stepIchInPlace } from './disease';
 import { finRotCauses, rotAllFinsInPlace, stepFinRotInPlace } from './fin-rot';
 import { isVelvetProgress, stepVelvetInPlace, velvetAllInPlace } from './velvet';
+import { fungusAllInPlace, isFungusProgress, stepFungusInPlace } from './fungus';
 import { TAP_RADIUS, tapGlassInPlace, type GlassPoint } from './glass-tap';
 import {
   DEFAULT_ENVIRONMENT_ID,
@@ -1033,6 +1034,18 @@ function stepInPlace(world: MutableWorld, dt: number, clock: SimClock): void {
     world.tick,
     medicationProtects(world.water),
   );
+  // Champignons (issue #548) : seulement sur un animal blessé (signes d'une autre maladie) ou
+  // affaibli, jamais spontanés ; le médicament (eau du début du pas) les fait reculer dans une
+  // eau propre. Aucun tirage pour un animal sans porte d'entrée.
+  stepFungusInPlace(
+    fishes,
+    dt,
+    world.environment,
+    world.seed,
+    world.tick,
+    medicationProtects(world.water),
+    finRotCauses(world.water) === 0,
+  );
   stepTreatmentInPlace(world.water as MutableWaterState, fishes, dt);
   // Pourriture des nageoires (issue #485) : sur l'ammoniaque et les nitrites de fin de pas ;
   // tirage d'apparition seulement en eau chargée, guérison sans tirage en eau corrigée.
@@ -1438,7 +1451,16 @@ export function velvetWorldInPlace(world: MutableWorld): void {
 }
 
 /**
- * Geste de soin contre les points blancs et le velours (`applyTreatmentInPlace`, issues #361,
+ * Champignons au maximum pour tous les poissons qui peuvent les attraper (`fungusAllInPlace`,
+ * paramètre d'URL `champignons=1`, issue #548), **en modifiant** `world` (monde en
+ * construction).
+ */
+export function fungusWorldInPlace(world: MutableWorld): void {
+  fungusAllInPlace(world.entities as Mutable<Entity>[], world.environment);
+}
+
+/**
+ * Geste de soin contre les points blancs, le velours et les champignons (`applyTreatmentInPlace`, issues #361,
  * #532), **en modifiant** l'eau de `world` s'il est accepté : quantité `amount` (°C, g/L ou dose) du
  * traitement `kind`, avec les espèces et le nombre de malades du bac. Réservé au propriétaire
  * unique du monde (`ui/aquarium-host`).
@@ -1450,14 +1472,19 @@ export function treatWorldInPlace(
 ): TreatmentOutcome {
   let infected = 0;
   let velvet = 0;
+  let fungus = 0;
   for (const entity of world.entities) {
     const ich = isIchAge(entity.ich);
     const veil = isVelvetProgress(entity.velvet);
-    if (ich || veil) {
+    const cotton = isFungusProgress(entity.fungus);
+    if (ich || veil || cotton) {
       infected += 1;
     }
     if (veil) {
       velvet += 1;
+    }
+    if (cotton) {
+      fungus += 1;
     }
   }
   return applyTreatmentInPlace(world.water as MutableWaterState, kind, amount, {
@@ -1465,6 +1492,7 @@ export function treatWorldInPlace(
     species: world.entities.map((entity) => entity.species),
     infected,
     velvet,
+    fungus,
   });
 }
 

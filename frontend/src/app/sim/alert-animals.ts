@@ -3,6 +3,7 @@ import type { AlertId } from './dashboard-alerts';
 import { ichStage } from './disease';
 import { finRotStage } from './fin-rot';
 import { showsVelvet } from './velvet';
+import { showsFungus } from './fungus';
 import {
   HUNGRY_AVERAGE,
   readHealth,
@@ -25,7 +26,7 @@ import { feedsOnPellets, STARVING_HUNGER } from './wellbeing';
  * - `health` : malades (santé au plus `SICK_HEALTH`) sans signe de maladie, qui ont leur alerte ;
  * - `hunger` : les affamés s'il y en a, sinon ceux qui ont faim (`HUNGRY_AVERAGE`), parmi les
  *   espèces nourries aux granulés ;
- * - `ich`, `finRot`, `velvet` : animaux qui montrent les signes ;
+ * - `ich`, `finRot`, `velvet`, `fungus` : animaux qui montrent les signes ;
  * - `temperature` : espèces hors de leur plage tolérée (fiche d'espèce) ;
  * - `ph` : espèces hors de leur plage tolérée s'il y en a, sinon hors de leur plage idéale
  *   (zone « tolérée » du bac) ;
@@ -43,6 +44,7 @@ export const TARGETED_ALERTS = [
   'ich',
   'finRot',
   'velvet',
+  'fungus',
   'temperature',
   'ph',
   'mix',
@@ -89,6 +91,7 @@ export const NO_ALERT_TARGETS: AlertTargets = {
   ich: NO_TARGET,
   finRot: NO_TARGET,
   velvet: NO_TARGET,
+  fungus: NO_TARGET,
   temperature: NO_TARGET,
   ph: NO_TARGET,
   mix: NO_TARGET,
@@ -106,6 +109,10 @@ function showsFinRot(animal: AlertAnimal): boolean {
 
 function showsVeil(animal: AlertAnimal): boolean {
   return showsVelvet(animal.velvet);
+}
+
+function showsCotton(animal: AlertAnimal): boolean {
+  return showsFungus(animal.fungus);
 }
 
 function hungerSelection(animals: readonly AlertAnimal[]): AlertAnimal[] {
@@ -165,13 +172,18 @@ export function alertTargets(
     health: targetOf(
       animals.filter(
         (a) =>
-          readHealth(a.health) <= SICK_HEALTH && !showsIch(a) && !showsFinRot(a) && !showsVeil(a),
+          readHealth(a.health) <= SICK_HEALTH &&
+          !showsIch(a) &&
+          !showsFinRot(a) &&
+          !showsVeil(a) &&
+          !showsCotton(a),
       ),
     ),
     hunger: targetOf(hungerSelection(animals)),
     ich: targetOf(animals.filter(showsIch)),
     finRot: targetOf(animals.filter(showsFinRot)),
     velvet: targetOf(animals.filter(showsVeil)),
+    fungus: targetOf(animals.filter(showsCotton)),
     temperature: targetOf(temperatureSelection(animals, context.temperature)),
     ph: targetOf(phSelection(animals, context.ph)),
     mix: targetOf(mixSelection(animals, context.mixes)),

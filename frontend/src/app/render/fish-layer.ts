@@ -25,6 +25,7 @@ import { undulationAt, undulationScale, type Undulation } from '../sim/undulatio
 import { ichSeverity, isIchContagious } from '../sim/disease';
 import { finRotSeverity, showsFinRot } from '../sim/fin-rot';
 import { showsVelvet, velvetSeverity } from '../sim/velvet';
+import { fungusSeverity, showsFungus } from '../sim/fungus';
 import { dullness } from '../sim/wellbeing';
 import { fryScale } from '../sim/fry';
 import { PALETTE } from './palette';
@@ -237,8 +238,7 @@ export function withFinRot(vertexShader: string): string {
   const rgb = [c.r, c.g, c.b].map((v) => v.toFixed(4)).join(', ');
   const loss = `${FIN_ROT_ATTRIBUTE} * ${FIN_ROT_LOSS_SHARE.toFixed(4)}`;
   return `attribute float ${FIN_ROT_ATTRIBUTE};
-attribute float ${FRAY_ATTRIBUTE};
-${vertexShader
+${declareAttribute(vertexShader, FRAY_ATTRIBUTE)
   .replace(
     COLOR_VERTEX,
     `${COLOR_VERTEX}
@@ -249,6 +249,61 @@ ${vertexShader
     `${BEGIN_VERTEX}
 	if ( ${FIN_ROT_ATTRIBUTE} > 0.0 && ${FRAY_ATTRIBUTE} < ${loss} ) transformed = vec3( 0.0 );`,
   )}`;
+}
+
+/**
+ * Champignons (Saprolegnia, issue #548, ADR 0128) : touffes de coton blanc grisâtre. À
+ * l'intensité maximale, la part `FUNGUS_TUFT_SHARE` du rang d'effilochage (bout et bord de la
+ * caudale, bord des nageoires du corps, `voxelFrayRank`) et une bande `FUNGUS_PATCH_SHARE` du
+ * rang de taché (prise juste au-dessus de celle des points blancs, `ICH_SPOT_SHARE`) prennent
+ * `FUNGUS_COLOR`. Des voxels pleins plutôt qu'un mélange, pour que la passe palette ne change
+ * pas l'espèce (`docs/PIEGES.md`, cycle 189). Valeurs choisies sur capture (`front-champignons`).
+ */
+export const FUNGUS_TUFT_SHARE = 0.6;
+export const FUNGUS_PATCH_SHARE = 0.2;
+/** Intensité dès l'apparition du coton, dans [0, 1]. */
+export const FUNGUS_MIN = 0.4;
+/**
+ * Couleur du coton : blanc grisâtre de l'interface (`docs/DA.md`), « coton » des descriptions de
+ * la saprolégniose ; distinct du blanc crème des points blancs et du sable de la pourriture.
+ */
+export const FUNGUS_COLOR = PALETTE.texteInterface;
+/** Attribut d'instance de l'intensité des champignons, dans [0, 1]. */
+export const FUNGUS_ATTRIBUTE = 'aqfishFungus';
+
+/**
+ * Intensité des champignons d'un poisson, dans [0, 1] : 0 sain ou au début (progression absente
+ * ou invalide comprise), puis de `FUNGUS_MIN` à l'apparition du coton à 1 au maximum.
+ */
+export function fungusTufts(fungus: number | undefined): number {
+  if (!showsFungus(fungus)) {
+    return 0;
+  }
+  return FUNGUS_MIN + (1 - FUNGUS_MIN) * fungusSeverity(fungus);
+}
+
+/**
+ * Ajoute les champignons par instance au shader de sommets : coton sur les voxels de rang
+ * d'effilochage sous `intensité × FUNGUS_TUFT_SHARE` et sur ceux dont le rang de taché est dans
+ * [`ICH_SPOT_SHARE`, `ICH_SPOT_SHARE` + `intensité × FUNGUS_PATCH_SHARE`). Intensité nulle :
+ * garde explicite, aucun sommet touché (captures inchangées à l'octet).
+ * @throws Error si le shader n'a pas le point d'insertion attendu.
+ */
+export function withFungus(vertexShader: string): string {
+  if (!vertexShader.includes(COLOR_VERTEX)) {
+    throw new Error(`Shader de poissons sans ${COLOR_VERTEX}`);
+  }
+  const c = new Color(FUNGUS_COLOR);
+  const rgb = [c.r, c.g, c.b].map((v) => v.toFixed(4)).join(', ');
+  const f = FUNGUS_ATTRIBUTE;
+  const s = SPOT_ATTRIBUTE;
+  const low = ICH_SPOT_SHARE.toFixed(4);
+  return `attribute float ${f};
+${declareAttribute(declareAttribute(vertexShader, s), FRAY_ATTRIBUTE).replace(
+  COLOR_VERTEX,
+  `${COLOR_VERTEX}
+	if ( ${f} > 0.0 && ( ${FRAY_ATTRIBUTE} < ${f} * ${FUNGUS_TUFT_SHARE.toFixed(4)} || ( ${s} >= ${low} && ${s} < ${low} + ${f} * ${FUNGUS_PATCH_SHARE.toFixed(4)} ) ) ) vColor.xyz = vec3( ${rgb} );`,
+)}`;
 }
 
 /**
@@ -331,6 +386,8 @@ export class FishLayer {
   private readonly finRot: InstancedBufferAttribute;
   /** Intensité du velours par instance (`velvetVeil`, issue #532), idem. */
   private readonly velvet: InstancedBufferAttribute;
+  /** Intensité des champignons par instance (`fungusTufts`, issue #548), idem. */
+  private readonly fungus: InstancedBufferAttribute;
   private readonly geometries: BufferGeometry[];
   private readonly halfLength: number;
   private readonly pose: FishPose = { x: 0, y: 0, z: 0, yaw: 0, pitch: 0, phase: 0 };
@@ -377,7 +434,10 @@ export class FishLayer {
       // passe donc avant les points blancs dans le shader, qui restent clairs.
       // Liseré de la pourriture des nageoires après les points blancs (#485).
       // Velours (#532) entre les points blancs et le liseré de la pourriture.
-      shader.vertexShader = withDullness(withIchSpots(withVelvet(withFinRot(shader.vertexShader))));
+      // Champignons (#548) en dernier : le coton recouvre le liseré de la pourriture.
+      shader.vertexShader = withDullness(
+        withIchSpots(withVelvet(withFinRot(withFungus(shader.vertexShader)))),
+      );
     };
     const bodyGeometry = createFishGeometry(species, 'body', variant);
     const tailGeometry = createFishGeometry(species, 'tail', variant);
@@ -390,11 +450,14 @@ export class FishLayer {
     this.finRot.setUsage(DynamicDrawUsage);
     this.velvet = new InstancedBufferAttribute(new Float32Array(capacity), 1);
     this.velvet.setUsage(DynamicDrawUsage);
+    this.fungus = new InstancedBufferAttribute(new Float32Array(capacity), 1);
+    this.fungus.setUsage(DynamicDrawUsage);
     for (const geometry of this.geometries) {
       geometry.setAttribute(DULL_ATTRIBUTE, this.dull);
       geometry.setAttribute(ICH_ATTRIBUTE, this.ich);
       geometry.setAttribute(FIN_ROT_ATTRIBUTE, this.finRot);
       geometry.setAttribute(VELVET_ATTRIBUTE, this.velvet);
+      geometry.setAttribute(FUNGUS_ATTRIBUTE, this.fungus);
     }
     this.body = new InstancedMesh(bodyGeometry, this.material, capacity);
     this.tail = new InstancedMesh(tailGeometry, this.material, capacity);
@@ -468,6 +531,7 @@ export class FishLayer {
       this.ich.setX(n, ichSpots(fish.ich));
       this.finRot.setX(n, finRotFray(fish.finRot));
       this.velvet.setX(n, velvetVeil(fish.velvet));
+      this.fungus.setX(n, fungusTufts(fish.fungus));
       n++;
     }
     this.body.count = n;
@@ -478,6 +542,7 @@ export class FishLayer {
     this.ich.needsUpdate = true;
     this.finRot.needsUpdate = true;
     this.velvet.needsUpdate = true;
+    this.fungus.needsUpdate = true;
   }
 
   /**
@@ -514,6 +579,11 @@ export class FishLayer {
   /** Intensité du velours d'une instance, dans [0, 1] (tests). */
   velvetVeilAt(index: number): number {
     return this.velvet.getX(index);
+  }
+
+  /** Intensité des champignons de l'instance `index` (tests). */
+  fungusTuftsAt(index: number): number {
+    return this.fungus.getX(index);
   }
 
   /** Lit la matrice d'une instance du corps (tests). */

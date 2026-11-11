@@ -8,6 +8,7 @@ import { parseDecorItems, type DecorItem } from './decor';
 import { catchesIch, ICH_AGGRAVATED_AT, isIchAge } from './disease';
 import { catchesFinRot, FIN_ROT_MAX, isFinRotProgress } from './fin-rot';
 import { catchesVelvet, isVelvetProgress, VELVET_MAX } from './velvet';
+import { catchesFungus, FUNGUS_MAX, isFungusProgress } from './fungus';
 import {
   ENVIRONMENT_IDS,
   environmentWater,
@@ -360,6 +361,10 @@ export function savedWorld(world: World): SavedWorld {
       if (fish.velvet !== undefined) {
         // Velours (issue #532) : écrit seulement pour un animal malade.
         saved['velvet'] = fish.velvet;
+      }
+      if (fish.fungus !== undefined) {
+        // Champignons (issue #548) : écrits seulement pour un animal malade.
+        saved['fungus'] = fish.fungus;
       }
       if (fish.growth !== undefined) {
         // Alevin (issue #459) : âge écrit seulement pour un alevin.
@@ -890,6 +895,19 @@ function parseFish(
     }
     if (catchesVelvet(species, envId)) {
       fish['velvet'] = velvet;
+    }
+  }
+  // Champignons (issue #548) : facultatif, absent pour un animal sain et dans toute sauvegarde
+  // antérieure ; présent, progression dans [0, FUNGUS_MAX]. Ignoré pour un animal qui ne les
+  // attrape pas ici, comme `velvet`.
+  const fungus = own(item, 'fungus');
+  if (fungus !== undefined) {
+    if (!isFungusProgress(fungus)) {
+      report(`fungus hors de [0, ${FUNGUS_MAX}]`);
+      return null;
+    }
+    if (catchesFungus(species, envId)) {
+      fish['fungus'] = fungus;
     }
   }
   // Alevin (issue #459) : facultatif, absent pour un adulte et dans toute sauvegarde

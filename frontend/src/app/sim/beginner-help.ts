@@ -188,6 +188,7 @@ export const ALERT_TOPICS: Readonly<Record<AlertId, WhyTopicId>> = {
   ich: 'sante',
   finRot: 'sante',
   velvet: 'sante',
+  fungus: 'sante',
   treatment: 'sante',
   hunger: 'nourriture',
   health: 'sante',

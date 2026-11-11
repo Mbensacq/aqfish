@@ -985,6 +985,11 @@ DEFAULT_DECOR)`), sinon les trajectoires divergent dès la naissance. (2026-10-1
 
 ## Simulation
 
+- **Maladie liée à la santé : un bac jamais nourri tombe malade** (cycle 193, #548) : les
+  champignons naissent sur un animal affaibli (santé < 0,5) ; or le bac par défaut, jamais
+  nourri, passe sous 0,5 vers 5 minutes simulées (faim). Un test « bac par défaut sain sur
+  10 minutes » échoue donc pour une maladie qui dépend de la santé : borner la durée (santé
+  encore haute) ou nourrir, et tester la chaîne faim → faiblesse → maladie à part. (2026-11-10)
 - **`delete` sur l'état d'eau du monde (`changeWaterInPlace`)** (cycle 171, #505) :
   `sim/water.ts` retire la dureté (`gh`, `kh`) de `world.water` par `delete water[key]` quand
   un changement d'eau la ramène à celle du robinet, comme le sel. Décision : on garde ce

@@ -288,6 +288,11 @@ sur eux.
 Formol : « une certaine efficacité » (Merck) ; peroxyde d'hydrogène approuvé par la FDA contre
 la saprolégniose des œufs (Merck) ; acriflavine (Sera mycopur : 1 mL/20 L/jour, 3 jours).
 Facteur favorisant sourcé : une température basse ou inadaptée (Merck).
+- Dans le jeu (issue #548, ADR 0128) : touffes de coton blanc grisâtre (description d'usage,
+  non vérifiée), seulement sur un animal blessé (signes d'une autre maladie) ou affaibli
+  (santé basse), jamais sur un animal sain en eau propre ; pas de contagion. Le médicament du
+  panneau « Soins », dans une eau propre, les fait reculer ; sel et chaleur n'agissent pas.
+  Délais et taux : approximations de jeu. La basse température n'est pas modélisée.
 
 ### 5.7 Pourriture des nageoires, columnaris, Aeromonas, hydropisie
 - Aeromonas est l'infection bactérienne la plus courante des poissons d'aquarium d'eau douce

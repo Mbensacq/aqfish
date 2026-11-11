@@ -127,3 +127,24 @@ test.describe('Velours (#532)', () => {
     expect(errors).toEqual([]);
   });
 });
+
+test.describe('Champignons (#548)', () => {
+  test('champignons=1 : alerte critique, remède, fiche du wiki', async ({ page }) => {
+    const errors = await open(page, '?seed=42&vitesse=0&champignons=1');
+    const alert = status(page).locator('[data-alert="fungus"]');
+    await expect(alert).toBeVisible();
+    await expect(alert).toHaveAttribute('data-severity', 'critique');
+    await expect(alert).toContainText('Champignons');
+    await expect(status(page).locator('[data-alert="velvet"]')).toHaveCount(0);
+
+    await alert.locator('.status__chip').click();
+    const detail = status(page).locator('[data-alert-detail="fungus"]');
+    await expect(detail).toContainText('Saprolegnia');
+    await expect(detail).toContainText('eau propre');
+    await detail.locator('[data-alert-wiki="maladies"]').click();
+    await expect(
+      page.locator('[data-wiki-page-view="maladies"] [data-wiki-entry="champignons"]'),
+    ).toContainText('Dans le jeu');
+    expect(errors).toEqual([]);
+  });
+});

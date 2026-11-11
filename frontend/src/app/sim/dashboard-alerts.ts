@@ -41,6 +41,9 @@ import type { WaterCompound } from './water-quality';
  * - **velours** (issue #532, ADR 0124) : de même, une alerte dès qu'un animal porte le voile
  *   doré (`HealthSummary.velvet`), critique au stade avancé, avec le bon remède (le
  *   médicament, pas le sel) et le lien « Maladies » ;
+ * - **champignons** (issue #548, ADR 0128) : de même, une alerte dès qu'un animal porte le coton
+ *   blanc (`HealthSummary.fungus`), critique au stade avancé, avec la cause (blessure ou
+ *   faiblesse), le remède (médicament et eau propre) et le lien « Maladies » ;
  * - **chlore** (issue #530) : absent tant que le chlore est à 0 ; critique dès qu'il nuit ;
  * - **traitement en cours** (issue #361, ADR 0091) : une alerte « attention » tant que la cure
  *   avance, avec les jours restants et, pour le médicament, le délai avant de redoser.
@@ -67,6 +70,7 @@ export type AlertId =
   | 'ich'
   | 'finRot'
   | 'velvet'
+  | 'fungus'
   | 'treatment'
   | 'carbon'
   | 'hunger'
@@ -84,6 +88,7 @@ export const ALERT_ORDER: readonly AlertId[] = [
   'ich',
   'finRot',
   'velvet',
+  'fungus',
   'treatment',
   'carbon',
   'hunger',
@@ -367,6 +372,29 @@ export function velvetAlert(health: HealthSummary): DashboardAlert | null {
 }
 
 /**
+ * Champignons (issue #548) : animaux au coton blanc, critique dès qu'un est au stade avancé.
+ * L'action nomme le remède du jeu (médicament, eau propre) et la cause à soigner aussi.
+ * Renvoie à la page « Maladies » du wiki.
+ */
+export function fungusAlert(health: HealthSummary): DashboardAlert | null {
+  if (health.fungus <= 0) {
+    return null;
+  }
+  const advanced = health.fungusAdvanced > 0;
+  return {
+    id: 'fungus',
+    severity: advanced ? 'critique' : 'attention',
+    message: 'Champignons (coton blanc)',
+    cause:
+      `Saprolegnia sur un animal blessé ou affaibli ; ${animalCount(health.fungus)} touché${health.fungus > 1 ? 's' : ''}` +
+      (advanced ? `, dont ${health.fungusAdvanced} au stade avancé` : ''),
+    action:
+      'Médicament tous les deux jours et eau propre (changer l’eau) jusqu’à la disparition du coton : Réglages, Soins',
+    wiki: 'maladies',
+  };
+}
+
+/**
  * Traitement des points blancs en cours (issue #361) : jours restants à la température
  * actuelle et, pour le médicament, le délai avant de redoser. Renvoie à la page « Produits et
  * traitements » du wiki.
@@ -402,8 +430,8 @@ export function carbonAlert(active: true | undefined): DashboardAlert | null {
 
 function healthAlert(health: HealthSummary, causes: readonly string[]): DashboardAlert | null {
   // Les animaux aux points blancs ou aux nageoires effilochées ont leurs propres alertes
-  // (`ichAlert`, `finRotAlert`, `velvetAlert`) : seuls les autres malades comptent ici,
-  // effectif comme gravité (issues #370, #485, #532).
+  // (`ichAlert`, `finRotAlert`, `velvetAlert`, `fungusAlert`) : seuls les autres malades
+  // comptent ici, effectif comme gravité (issues #370, #485, #532, #548).
   const others = health.sick - health.diseased;
   if (others <= 0) {
     return null;
@@ -520,6 +548,7 @@ export function dashboardAlerts(input: AlertInput): readonly DashboardAlert[] {
   push(ichAlert(health));
   push(finRotAlert(health));
   push(velvetAlert(health));
+  push(fungusAlert(health));
   push(treatmentAlert(treatment));
   push(carbonAlert(sample.carbonAgainstMedication));
   push(hungerAlert(health));

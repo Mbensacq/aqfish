@@ -44,6 +44,7 @@ describe('parseCaptureParams', () => {
       ich: false,
       finRot: false,
       velvet: false,
+      fungus: false,
       fry: false,
       eggs: false,
       current: null,
@@ -263,6 +264,14 @@ describe('parseCaptureParams', () => {
       expect(parseCaptureParams(`?capture=1&velours=${value}`).velvet).toBe(false);
     }
     expect(DEFAULT_CAPTURE_PARAMS.velvet).toBe(false);
+  });
+
+  it('lit les champignons : champignons=1 seulement (#548)', () => {
+    expect(parseCaptureParams('?capture=1&champignons=1').fungus).toBe(true);
+    for (const value of ['0', 'oui', '']) {
+      expect(parseCaptureParams(`?capture=1&champignons=${value}`).fungus).toBe(false);
+    }
+    expect(DEFAULT_CAPTURE_PARAMS.fungus).toBe(false);
   });
 
   it('lit les animaux affamés : affames=1 seulement, sinon nourris (#208)', () => {

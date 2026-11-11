@@ -135,11 +135,12 @@ export function transferFish(
 }
 
 /**
- * Maladies portées par l'animal (#547) : points blancs, velours, pourriture des nageoires, avec
+ * Maladies portées par l'animal (#547) : points blancs, velours, pourriture des nageoires,
+ * champignons (#548), avec
  * leur avancement ; un animal sain n'en porte aucune (aucun champ ajouté).
  */
-function diseasesOf(fish: Entity): Pick<Entity, 'ich' | 'velvet' | 'finRot'> {
-  const carried: { ich?: number; velvet?: number; finRot?: number } = {};
+function diseasesOf(fish: Entity): Pick<Entity, 'ich' | 'velvet' | 'finRot' | 'fungus'> {
+  const carried: { ich?: number; velvet?: number; finRot?: number; fungus?: number } = {};
   if (fish.ich !== undefined) {
     carried.ich = fish.ich;
   }
@@ -148,6 +149,9 @@ function diseasesOf(fish: Entity): Pick<Entity, 'ich' | 'velvet' | 'finRot'> {
   }
   if (fish.finRot !== undefined) {
     carried.finRot = fish.finRot;
+  }
+  if (fish.fungus !== undefined) {
+    carried.fungus = fish.fungus;
   }
   return carried;
 }
