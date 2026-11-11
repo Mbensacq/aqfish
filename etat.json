@@ -7257,6 +7257,12 @@
           "debut": "2026-11-11T17:41:32.079Z",
           "fin": "2026-11-11T18:42:43.128Z",
           "note": "PR #578 : alevins en trois étapes de taille et de couleur, CI verte"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-11T18:43:15.896Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
