@@ -7155,6 +7155,12 @@
           "debut": "2026-11-11T08:11:03.122Z",
           "fin": "2026-11-11T08:40:39.523Z",
           "note": "Verdict OK, 0 bug bloquant, captures publiées (c196), e2e mobile ajouté"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-11T08:41:09.546Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
