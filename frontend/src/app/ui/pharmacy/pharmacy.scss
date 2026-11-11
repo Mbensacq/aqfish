@@ -184,6 +184,8 @@
 .pharmacy__result {
   margin-left: 4px;
   color: #5fbfa3;
+  // Une valeur ne se coupe pas (« KH ≈ 6 » puis « gouttes » à la ligne, #574).
+  white-space: nowrap;
 }
 
 // Entre deux grandeurs d'un même kit (GH · KH, #574) : de vrais espaces autour du point,

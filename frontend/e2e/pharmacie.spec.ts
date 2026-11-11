@@ -182,7 +182,9 @@ test('kit de test de l’eau : `test-eau=` donne un résultat prêt au chargemen
   await expect(page.locator('[data-water-result]')).toHaveText(/^pH ≈ \d,?\d?$/);
 });
 
-test('kit de dureté à 1280 × 720 : GH et KH sur une ligne, séparés (#574)', async ({ page }) => {
+test('kit de dureté à 1280 × 720 : GH et KH séparés, chacun d’un tenant (#574)', async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto('/?seed=42&vitesse=0&test-eau=durete');
   await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
@@ -190,10 +192,17 @@ test('kit de dureté à 1280 × 720 : GH et KH sur une ligne, séparés (#574)',
   const values = page.locator('[data-water-result]');
   await expect(values).toHaveCount(2);
   await expect(page.locator('[data-water-test] p').first()).toContainText(/gouttes · KH ≈/);
-  const [gh, kh] = await Promise.all([values.nth(0).boundingBox(), values.nth(1).boundingBox()]);
-  // Même ligne, KH après GH, avec un écart (le séparateur) entre les deux.
-  expect(Math.abs(gh!.y - kh!.y)).toBeLessThan(2);
-  expect(kh!.x - (gh!.x + gh!.width)).toBeGreaterThan(6);
+  const lineHeight = await values.first().evaluate((e) => e.getClientRects()[0].height);
+  for (const value of await values.all()) {
+    // Une seule boîte de ligne par valeur : « KH ≈ 6 gouttes » n'est jamais coupé.
+    expect(await value.evaluate((e) => e.getClientRects().length)).toBe(1);
+    expect((await value.boundingBox())!.height).toBeLessThanOrEqual(lineHeight + 1);
+  }
+  // Panneau sans débord horizontal.
+  const overflow = await page
+    .locator('#pharmacie-bac')
+    .evaluate((e) => e.scrollWidth - e.clientWidth);
+  expect(overflow).toBeLessThanOrEqual(0);
 });
 
 test('kit de test de l’eau : téléphone (390 × 844), dureté lue sans débordement', async ({
