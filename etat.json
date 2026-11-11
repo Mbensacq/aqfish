@@ -7062,7 +7062,7 @@
       "date": "2026-11-11",
       "debut": "2026-11-11T00:48:08.611Z",
       "type": "dette",
-      "issue": null,
+      "issue": 562,
       "pr": null,
       "version": null,
       "phases": {
