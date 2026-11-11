@@ -7049,10 +7049,10 @@
           "note": "Verdict OK, 0 bug, captures publiées (c193)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-10T23:33:39.598Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-11T00:47:36.503Z",
+          "note": "PR #561 fusionnée → v1.16.4 (release CI OK, CI main verte) ; dette #562 ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
