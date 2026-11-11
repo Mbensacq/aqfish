@@ -7227,6 +7227,12 @@
           "debut": "2026-11-11T15:32:44.781Z",
           "fin": "2026-11-11T16:00:53.156Z",
           "note": "Verdict OK, 0 bug, captures publiées (c198), e2e hydropisie OK en local, CI e2e rouge côté runner"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-11T16:01:35.205Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
