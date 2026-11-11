@@ -7172,7 +7172,7 @@
       "type": "fonctionnalite",
       "issue": 574,
       "pr": 575,
-      "version": null,
+      "version": "v1.17.1",
       "phases": {
         "planif": {
           "statut": "termine",
