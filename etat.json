@@ -7211,10 +7211,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-11T13:33:27.229Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-11T13:34:01.244Z",
+          "note": "Issue #565 : Hydropisie, sixième maladie simulée (M)"
         }
       },
       "metriques": {}
