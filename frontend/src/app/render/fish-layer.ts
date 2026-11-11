@@ -26,6 +26,7 @@ import { ichSeverity, isIchContagious } from '../sim/disease';
 import { finRotSeverity, showsFinRot } from '../sim/fin-rot';
 import { showsVelvet, velvetSeverity } from '../sim/velvet';
 import { fungusSeverity, showsFungus } from '../sim/fungus';
+import { dropsyScales, dropsyStage, dropsySwelling, showsDropsy } from '../sim/dropsy';
 import { dullness } from '../sim/wellbeing';
 import { fryScale } from '../sim/fry';
 import { PALETTE } from './palette';
@@ -317,6 +318,99 @@ ${declareAttribute(declareAttribute(vertexShader, s), FRAY_ATTRIBUTE).replace(
 }
 
 /**
+ * Hydropisie (issue #565, ADR 0132) : ventre gonflé puis écailles hérissées « en pomme de pin ».
+ * - Ventre : les sommets du corps sous la ligne médiane descendent (`DROPSY_BELLY_SWELL` de leur
+ *   hauteur au milieu du corps, rien aux deux bouts) et le corps s'élargit
+ *   (`DROPSY_WIDTH_SWELL`), selon un poids en cloche `b = max(0, 1 − (x / demi-longueur)²)`,
+ *   fonction de la seule position du sommet : deux voxels voisins gardent leurs coins communs,
+ *   sans fente.
+ * - Écailles : au stade avancé, une bande `DROPSY_SCALE_SHARE` du rang de taché (prise au-dessus
+ *   de celles des points blancs et des champignons) prend `DROPSY_SCALE_COLOR` sur le corps.
+ * La queue reçoit une hydropisie toujours nulle (attribut d'instance à part) : ni gonflée ni
+ * hérissée. Valeurs choisies sur capture
+ * (`side-hydropisie`, `front-hydropisie`).
+ */
+export const DROPSY_BELLY_SWELL = 0.7;
+export const DROPSY_WIDTH_SWELL = 0.6;
+/** Gonflement dès l'apparition des signes, dans [0, 1]. */
+export const DROPSY_MIN = 0.5;
+export const DROPSY_SCALE_SHARE = 0.2;
+/** Bas de la bande des écailles dans le rang de taché (au-delà des champignons). */
+export const DROPSY_SCALE_LOW = ICH_SPOT_SHARE + FUNGUS_PATCH_SHARE;
+/** Écailles dès l'entrée au stade avancé, dans [0, 1]. */
+export const DROPSY_SCALE_MIN = 0.5;
+/**
+ * Couleur des écailles hérissées : sable sombre de la palette (`docs/DA.md`), bords d'écailles
+ * soulevés qui accrochent la lumière ; distinct du sable clair de la pourriture, du blanc des
+ * points blancs et des champignons et de l'or du velours.
+ */
+export const DROPSY_SCALE_COLOR = PALETTE.sableSombre;
+/** Attribut d'instance de l'hydropisie : (gonflement, écailles), chacun dans [0, 1]. */
+export const DROPSY_ATTRIBUTE = 'aqfishDropsy';
+/**
+ * Uniforme de la demi-longueur du corps (unités du modèle), propre à chaque couche : le poids de
+ * ventre se calcule dans le shader, sans attribut de sommet de plus (WebGL limite le nombre
+ * d'attributs : un de plus faisait échouer l'édition des liens du programme, `docs/PIEGES.md`).
+ */
+export const BODY_HALF_UNIFORM = 'aqfishBodyHalf';
+
+/**
+ * Gonflement du ventre d'un poisson, dans [0, 1] : 0 sain ou au début, puis de `DROPSY_MIN` à
+ * l'apparition des signes à 1 au stade avancé (`dropsySwelling`, `sim/dropsy.ts`).
+ */
+export function dropsyBelly(dropsy: number | undefined): number {
+  if (!showsDropsy(dropsy)) {
+    return 0;
+  }
+  return DROPSY_MIN + (1 - DROPSY_MIN) * dropsySwelling(dropsy);
+}
+
+/** Écailles hérissées d'un poisson, dans [0, 1] : 0 avant le stade avancé. */
+export function dropsyRaisedScales(dropsy: number | undefined): number {
+  if (dropsyStage(dropsy) !== 'herisse') {
+    return 0;
+  }
+  return DROPSY_SCALE_MIN + (1 - DROPSY_SCALE_MIN) * dropsyScales(dropsy);
+}
+
+/**
+ * Ajoute l'hydropisie par instance au shader de sommets (voir `DROPSY_BELLY_SWELL`).
+ * Intensité nulle : gardes explicites, aucun sommet touché (captures inchangées à l'octet).
+ * @throws Error si le shader n'a pas les points d'insertion attendus.
+ */
+export function withDropsy(vertexShader: string): string {
+  for (const chunk of [COLOR_VERTEX, BEGIN_VERTEX]) {
+    if (!vertexShader.includes(chunk)) {
+      throw new Error(`Shader de poissons sans ${chunk}`);
+    }
+  }
+  const c = new Color(DROPSY_SCALE_COLOR);
+  const rgb = [c.r, c.g, c.b].map((v) => v.toFixed(4)).join(', ');
+  const d = DROPSY_ATTRIBUTE;
+  const h = BODY_HALF_UNIFORM;
+  const s = SPOT_ATTRIBUTE;
+  const low = DROPSY_SCALE_LOW.toFixed(4);
+  const bell = `max( 0.0, 1.0 - pow( position.x / max( ${h}, 1e-6 ), 2.0 ) )`;
+  return `attribute vec2 ${d};
+uniform float ${h};
+${declareAttribute(vertexShader, s)
+  .replace(
+    COLOR_VERTEX,
+    `${COLOR_VERTEX}
+	if ( ${d}.y > 0.0 && ${bell} > 0.0 && ${s} >= ${low} && ${s} < ${low} + ${d}.y * ${DROPSY_SCALE_SHARE.toFixed(4)} ) vColor.xyz = vec3( ${rgb} );`,
+  )
+  .replace(
+    BEGIN_VERTEX,
+    `${BEGIN_VERTEX}
+	if ( ${d}.x > 0.0 ) {
+		float aqfishBell = ${bell};
+		if ( transformed.y < 0.0 ) transformed.y *= 1.0 + ${d}.x * ${DROPSY_BELLY_SWELL.toFixed(4)} * aqfishBell;
+		transformed.z *= 1.0 + ${d}.x * ${DROPSY_WIDTH_SWELL.toFixed(4)} * aqfishBell;
+	}`,
+  )}`;
+}
+
+/**
  * Ajoute le ternissement par instance au shader de sommets d'un `MeshBasicMaterial` à
  * couleurs de sommet, juste après le calcul de `vColor`. À ternissement nul, `mix(c, g, 0)`
  * puis `× 1` rendent exactement la couleur d'avant (captures inchangées à l'octet).
@@ -398,6 +492,10 @@ export class FishLayer {
   private readonly velvet: InstancedBufferAttribute;
   /** Intensité des champignons par instance (`fungusTufts`, issue #548), idem. */
   private readonly fungus: InstancedBufferAttribute;
+  /** Hydropisie par instance (`dropsyBelly`, `dropsyRaisedScales`, issue #565), idem. */
+  private readonly dropsy: InstancedBufferAttribute;
+  /** Demi-longueur du corps, en unités du modèle (uniforme `BODY_HALF_UNIFORM`). */
+  private readonly bodyHalf: number;
   private readonly geometries: BufferGeometry[];
   private readonly halfLength: number;
   private readonly pose: FishPose = { x: 0, y: 0, z: 0, yaw: 0, pitch: 0, phase: 0 };
@@ -445,8 +543,10 @@ export class FishLayer {
       // Liseré de la pourriture des nageoires après les points blancs (#485).
       // Velours (#532) entre les points blancs et le liseré de la pourriture.
       // Champignons (#548) en dernier : le coton recouvre le liseré de la pourriture.
+      // Hydropisie (#565) en premier : ses écailles passent sous les autres signes.
+      shader.uniforms[BODY_HALF_UNIFORM] = { value: this.bodyHalf };
       shader.vertexShader = withDullness(
-        withIchSpots(withVelvet(withFinRot(withFungus(shader.vertexShader)))),
+        withIchSpots(withVelvet(withFinRot(withFungus(withDropsy(shader.vertexShader))))),
       );
     };
     const bodyGeometry = createFishGeometry(species, 'body', variant);
@@ -462,6 +562,11 @@ export class FishLayer {
     this.velvet.setUsage(DynamicDrawUsage);
     this.fungus = new InstancedBufferAttribute(new Float32Array(capacity), 1);
     this.fungus.setUsage(DynamicDrawUsage);
+    this.dropsy = new InstancedBufferAttribute(new Float32Array(capacity * 2), 2);
+    this.dropsy.setUsage(DynamicDrawUsage);
+    bodyGeometry.computeBoundingBox();
+    const box = bodyGeometry.boundingBox;
+    this.bodyHalf = box === null ? 0 : Math.max(Math.abs(box.min.x), Math.abs(box.max.x));
     for (const geometry of this.geometries) {
       geometry.setAttribute(DULL_ATTRIBUTE, this.dull);
       geometry.setAttribute(ICH_ATTRIBUTE, this.ich);
@@ -469,6 +574,12 @@ export class FishLayer {
       geometry.setAttribute(VELVET_ATTRIBUTE, this.velvet);
       geometry.setAttribute(FUNGUS_ATTRIBUTE, this.fungus);
     }
+    // Hydropisie : le corps seul ; la queue lit des zéros jamais mis à jour.
+    bodyGeometry.setAttribute(DROPSY_ATTRIBUTE, this.dropsy);
+    tailGeometry.setAttribute(
+      DROPSY_ATTRIBUTE,
+      new InstancedBufferAttribute(new Float32Array(capacity * 2), 2),
+    );
     this.body = new InstancedMesh(bodyGeometry, this.material, capacity);
     this.tail = new InstancedMesh(tailGeometry, this.material, capacity);
     this.body.name = `${this.object.name}-corps`;
@@ -542,6 +653,7 @@ export class FishLayer {
       this.finRot.setX(n, finRotFray(fish.finRot));
       this.velvet.setX(n, velvetVeil(fish.velvet));
       this.fungus.setX(n, fungusTufts(fish.fungus));
+      this.dropsy.setXY(n, dropsyBelly(fish.dropsy), dropsyRaisedScales(fish.dropsy));
       n++;
     }
     this.body.count = n;
@@ -553,6 +665,7 @@ export class FishLayer {
     this.finRot.needsUpdate = true;
     this.velvet.needsUpdate = true;
     this.fungus.needsUpdate = true;
+    this.dropsy.needsUpdate = true;
   }
 
   /**
@@ -589,6 +702,11 @@ export class FishLayer {
   /** Intensité du velours d'une instance, dans [0, 1] (tests). */
   velvetVeilAt(index: number): number {
     return this.velvet.getX(index);
+  }
+
+  /** Hydropisie de l'instance `index` : (gonflement, écailles) (tests). */
+  dropsyAt(index: number): readonly [number, number] {
+    return [this.dropsy.getX(index), this.dropsy.getY(index)];
   }
 
   /** Intensité des champignons de l'instance `index` (tests). */

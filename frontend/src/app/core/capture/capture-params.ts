@@ -84,6 +84,11 @@
  * champignons au maximum à t = 0, dans les mêmes conditions que `points-blancs=1`. Toute autre
  * valeur ou absent : aucun malade (séries existantes inchangées).
  *
+ * Paramètre facultatif `hydropisie=1` (issue #565) : poissons à l'hydropisie au stade avancé
+ * (ventre gonflé, écailles hérissées) à t = 0, dans les mêmes conditions que `points-blancs=1` ;
+ * `hydropisie=gonfle` : ventre gonflé seul, juste avant le stade avancé. Toute autre valeur ou
+ * absent : aucun malade (séries existantes inchangées).
+ *
  * Paramètre facultatif `catappa=n` (issue #239) : en mode capture, `n` feuilles de catappa
  * neuves (1 à 5) déposées à t = 0, qui teintent l'eau. Toute autre valeur ou absent : aucune
  * feuille (séries existantes inchangées).
@@ -217,6 +222,11 @@ export interface CaptureParams {
   readonly velvet: boolean;
   /** Vrai pour `champignons=1` : champignons au maximum à t = 0 (issue #548). */
   readonly fungus: boolean;
+  /**
+   * Stade de l'hydropisie à t = 0 : `herisse` pour `hydropisie=1`, `gonfle` pour
+   * `hydropisie=gonfle`, `null` sinon (issue #565).
+   */
+  readonly dropsy: 'gonfle' | 'herisse' | null;
   /** Vrai pour `alevins=1` : alevins de guppy à t = 0, en capture (issue #459). */
   readonly fry: boolean;
   /** Vrai pour `oeufs=1` : œufs de corydoras à t = 0, en capture (issue #478). */
@@ -354,6 +364,7 @@ export const DEFAULT_CAPTURE_PARAMS: CaptureParams = {
   finRot: false,
   velvet: false,
   fungus: false,
+  dropsy: null,
   fry: false,
   eggs: false,
   current: null,
@@ -417,6 +428,12 @@ export function parseCaptureParams(search: string): CaptureParams {
     finRot: params.get('pourriture') === '1',
     velvet: params.get('velours') === '1',
     fungus: params.get('champignons') === '1',
+    dropsy:
+      params.get('hydropisie') === '1'
+        ? 'herisse'
+        : params.get('hydropisie') === 'gonfle'
+          ? 'gonfle'
+          : null,
     fry: params.get('alevins') === '1',
     eggs: params.get('oeufs') === '1',
     current: params.get('courant'),

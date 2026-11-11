@@ -260,6 +260,7 @@ import {
   rotWorldFinsInPlace,
   velvetWorldInPlace,
   fungusWorldInPlace,
+  dropsyWorldInPlace,
   setWorldCatappaInPlace,
   setWorldCurrentInPlace,
   worldCurrentLevel,
@@ -284,6 +285,7 @@ import {
   type MutableWorld,
   type World,
 } from '../../sim/world';
+import { DROPSY_ADVANCED_AT, DROPSY_MAX } from '../../sim/dropsy';
 import { CHEVRON_COUNTS } from '../../render/current-indicator-layer';
 import {
   PHOTO_FAILED_MESSAGE,
@@ -3618,6 +3620,10 @@ export class AquariumHost {
       // Coton blanc de `champignons=1` (#548), dans les mêmes conditions.
       if (params.fungus) {
         fungusWorldInPlace(world);
+      }
+      // Hydropisie de `hydropisie=1` ou `hydropisie=gonfle` (#565), dans les mêmes conditions.
+      if (params.dropsy !== null) {
+        dropsyWorldInPlace(world, params.dropsy === 'gonfle' ? DROPSY_ADVANCED_AT - 1 : DROPSY_MAX);
       }
       // Courant de `courant=` (#460), en capture : à t = 0, avant d'avancer le monde.
       if (params.capture && isCurrentLevel(params.current)) {

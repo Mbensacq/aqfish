@@ -1,5 +1,6 @@
 import { catchesIch, ICH_AGGRAVATED_AT } from './disease';
 import { DISEASES, diseasesOf, isSick, type DiseaseField } from './diseases';
+import { catchesDropsy, DROPSY_MAX } from './dropsy';
 import { catchesFinRot, FIN_ROT_MAX } from './fin-rot';
 import { catchesFungus, FUNGUS_MAX } from './fungus';
 import { catchesVelvet, VELVET_MAX } from './velvet';
@@ -7,8 +8,8 @@ import { ENVIRONMENT_IDS } from './environment';
 import { SPECIES_IDS } from './population';
 
 describe('table des maladies (#562)', () => {
-  it('liste les quatre maladies dans l’ordre de la sauvegarde', () => {
-    expect(DISEASES.map((d) => d.field)).toEqual(['ich', 'finRot', 'velvet', 'fungus']);
+  it('liste les cinq maladies dans l’ordre de la sauvegarde', () => {
+    expect(DISEASES.map((d) => d.field)).toEqual(['ich', 'finRot', 'velvet', 'fungus', 'dropsy']);
   });
 
   it('reprend la borne de chaque module', () => {
@@ -18,6 +19,7 @@ describe('table des maladies (#562)', () => {
       finRot: FIN_ROT_MAX,
       velvet: VELVET_MAX,
       fungus: FUNGUS_MAX,
+      dropsy: DROPSY_MAX,
     });
   });
 
@@ -41,6 +43,7 @@ describe('table des maladies (#562)', () => {
       finRot: catchesFinRot,
       velvet: catchesVelvet,
       fungus: catchesFungus,
+      dropsy: catchesDropsy,
     };
     for (const d of DISEASES) {
       for (const env of ENVIRONMENT_IDS) {
@@ -68,8 +71,16 @@ describe('diseasesOf et isSick (#562)', () => {
   });
 
   it('copie toutes les maladies portées et ignore les autres champs', () => {
-    const fish = { ich: 12, finRot: 30, velvet: 900, fungus: 1, health: 0.4, species: 'neon' };
-    expect(diseasesOf(fish)).toEqual({ ich: 12, finRot: 30, velvet: 900, fungus: 1 });
+    const fish = {
+      ich: 12,
+      finRot: 30,
+      velvet: 900,
+      fungus: 1,
+      dropsy: 700,
+      health: 0.4,
+      species: 'neon',
+    };
+    expect(diseasesOf(fish)).toEqual({ ich: 12, finRot: 30, velvet: 900, fungus: 1, dropsy: 700 });
     expect(isSick(fish)).toBe(true);
   });
 

@@ -305,7 +305,7 @@ const DISEASES: readonly GuideEntry[] = [
   ),
   entry(
     'aeromonas',
-    'Aeromonas, pourriture des nageoires, hydropisie',
+    'Aeromonas, pourriture des nageoires',
     [
       [
         'Symptômes',
@@ -319,6 +319,26 @@ const DISEASES: readonly GuideEntry[] = [
       [
         'Gestes',
         'corriger l’eau d’abord (changements d’eau, moins de nourriture) ; antibiotique choisi par un vétérinaire après un test, sur ordonnance dans l’UE ; hydropisie avancée : pronostic réservé',
+      ],
+    ],
+    `${S} 5.7 (Merck)`,
+  ),
+  entry(
+    'hydropisie',
+    'Hydropisie',
+    [
+      [
+        'Symptômes',
+        'abdomen gonflé, puis écailles hérissées « en pomme de pin » ; signe d’une infection interne (Aeromonas le plus souvent)',
+      ],
+      ['Cause', 'stress et mauvaise eau : un poisson affaibli, pas une contagion'],
+      [
+        'Dans le jeu',
+        'seulement chez un poisson affaibli dans une eau où l’ammoniaque ou les nitrites restent trop hauts ; ventre gonflé, puis écailles hérissées ; prise tôt, une eau propre la fait reculer lentement ; au stade avancé, plus de recul ; sel, chaleur et médicament n’y font rien ; délais : approximation de jeu',
+      ],
+      [
+        'Gestes',
+        'isoler en quarantaine et corriger l’eau ; vrai traitement par un vétérinaire (antibiotique sur ordonnance dans l’UE) ; stade avancé : pronostic réservé, l’euthanasie sans souffrance se décide avec un vétérinaire',
       ],
     ],
     `${S} 5.7 (Merck)`,

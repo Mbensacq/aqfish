@@ -54,6 +54,7 @@ describe('parseCaptureParams', () => {
       finRot: false,
       velvet: false,
       fungus: false,
+      dropsy: null,
       fry: false,
       eggs: false,
       current: null,
@@ -281,6 +282,16 @@ describe('parseCaptureParams', () => {
       expect(parseCaptureParams(`?capture=1&champignons=${value}`).fungus).toBe(false);
     }
     expect(DEFAULT_CAPTURE_PARAMS.fungus).toBe(false);
+  });
+
+  it('lit l’hydropisie : hydropisie=1 (avancée) ou gonfle, sinon aucune (#565)', () => {
+    expect(parseCaptureParams('?capture=1&hydropisie=1').dropsy).toBe('herisse');
+    expect(parseCaptureParams('?capture=1&hydropisie=gonfle').dropsy).toBe('gonfle');
+    for (const value of ['0', 'oui', '', 'herisse', 'GONFLE']) {
+      expect(parseCaptureParams(`?capture=1&hydropisie=${value}`).dropsy).toBeNull();
+    }
+    expect(parseCaptureParams('?capture=1').dropsy).toBeNull();
+    expect(DEFAULT_CAPTURE_PARAMS.dropsy).toBeNull();
   });
 
   it('lit les animaux affamés : affames=1 seulement, sinon nourris (#208)', () => {

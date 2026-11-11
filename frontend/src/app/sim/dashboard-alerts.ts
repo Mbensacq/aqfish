@@ -44,6 +44,10 @@ import type { WaterCompound } from './water-quality';
  * - **champignons** (issue #548, ADR 0128) : de même, une alerte dès qu'un animal porte le coton
  *   blanc (`HealthSummary.fungus`), critique au stade avancé, avec la cause (blessure ou
  *   faiblesse), le remède (médicament et eau propre) et le lien « Maladies » ;
+ * - **hydropisie** (issue #565, ADR 0132) : de même, une alerte dès qu'un animal a le ventre
+ *   gonflé (`HealthSummary.dropsy`), critique au stade avancé (écailles hérissées), avec la
+ *   cause (eau dégradée longtemps), les gestes (quarantaine, eau propre) et, au stade avancé,
+ *   le conseil d'euthanasie sans souffrance ; lien « Maladies » ;
  * - **chlore** (issue #530) : absent tant que le chlore est à 0 ; critique dès qu'il nuit ;
  * - **traitement en cours** (issue #361, ADR 0091) : une alerte « attention » tant que la cure
  *   avance, avec les jours restants et, pour le médicament, le délai avant de redoser.
@@ -71,6 +75,7 @@ export type AlertId =
   | 'finRot'
   | 'velvet'
   | 'fungus'
+  | 'dropsy'
   | 'treatment'
   | 'carbon'
   | 'hunger'
@@ -89,6 +94,7 @@ export const ALERT_ORDER: readonly AlertId[] = [
   'finRot',
   'velvet',
   'fungus',
+  'dropsy',
   'treatment',
   'carbon',
   'hunger',
@@ -395,6 +401,31 @@ export function fungusAlert(health: HealthSummary): DashboardAlert | null {
 }
 
 /**
+ * Hydropisie (issue #565) : animaux au ventre gonflé, critique dès qu'un a les écailles
+ * hérissées (stade avancé, pronostic réservé). L'action nomme les gestes du jeu (quarantaine,
+ * eau propre, tôt) et, au stade avancé, le conseil d'euthanasie sans souffrance (aucun geste
+ * du jeu). Renvoie à la page « Maladies » du wiki.
+ */
+export function dropsyAlert(health: HealthSummary): DashboardAlert | null {
+  if (health.dropsy <= 0) {
+    return null;
+  }
+  const advanced = health.dropsyAdvanced > 0;
+  return {
+    id: 'dropsy',
+    severity: advanced ? 'critique' : 'attention',
+    message: advanced ? 'Hydropisie (écailles hérissées)' : 'Hydropisie (ventre gonflé)',
+    cause:
+      `infection interne d’un animal affaibli par une eau mauvaise longtemps ; ${animalCount(health.dropsy)} touché${health.dropsy > 1 ? 's' : ''}` +
+      (advanced ? `, dont ${health.dropsyAdvanced} au stade avancé` : ''),
+    action: advanced
+      ? 'Stade avancé, pronostic réservé : isoler en quarantaine, eau propre ; un vétérinaire peut conseiller une euthanasie sans souffrance'
+      : 'Isoler en quarantaine et garder l’eau propre (changements d’eau) : seul un cas pris tôt guérit, lentement',
+    wiki: 'maladies',
+  };
+}
+
+/**
  * Traitement des points blancs en cours (issue #361) : jours restants à la température
  * actuelle et, pour le médicament, le délai avant de redoser. Renvoie à la page « Produits et
  * traitements » du wiki.
@@ -430,7 +461,7 @@ export function carbonAlert(active: true | undefined): DashboardAlert | null {
 
 function healthAlert(health: HealthSummary, causes: readonly string[]): DashboardAlert | null {
   // Les animaux aux points blancs ou aux nageoires effilochées ont leurs propres alertes
-  // (`ichAlert`, `finRotAlert`, `velvetAlert`, `fungusAlert`) : seuls les autres malades
+  // (`ichAlert`, `finRotAlert`, `velvetAlert`, `fungusAlert`, `dropsyAlert`) : seuls les autres malades
   // comptent ici, effectif comme gravité (issues #370, #485, #532, #548).
   const others = health.sick - health.diseased;
   if (others <= 0) {
@@ -549,6 +580,7 @@ export function dashboardAlerts(input: AlertInput): readonly DashboardAlert[] {
   push(finRotAlert(health));
   push(velvetAlert(health));
   push(fungusAlert(health));
+  push(dropsyAlert(health));
   push(treatmentAlert(treatment));
   push(carbonAlert(sample.carbonAgainstMedication));
   push(hungerAlert(health));

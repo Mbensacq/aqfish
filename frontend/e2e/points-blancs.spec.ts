@@ -148,3 +148,33 @@ test.describe('Champignons (#548)', () => {
     expect(errors).toEqual([]);
   });
 });
+
+test.describe('Hydropisie (#565)', () => {
+  test('hydropisie=1 : alerte critique, conseil, fiche du wiki', async ({ page }) => {
+    const errors = await open(page, '?seed=42&vitesse=0&hydropisie=1');
+    const alert = status(page).locator('[data-alert="dropsy"]');
+    await expect(alert).toBeVisible();
+    await expect(alert).toHaveAttribute('data-severity', 'critique');
+    await expect(alert).toContainText('Hydropisie');
+    await expect(status(page).locator('[data-alert="fungus"]')).toHaveCount(0);
+
+    await alert.locator('.status__chip').click();
+    const detail = status(page).locator('[data-alert-detail="dropsy"]');
+    await expect(detail).toContainText('quarantaine');
+    await expect(detail).toContainText('euthanasie sans souffrance');
+    await detail.locator('[data-alert-wiki="maladies"]').click();
+    await expect(
+      page.locator('[data-wiki-page-view="maladies"] [data-wiki-entry="hydropisie"]'),
+    ).toContainText('Dans le jeu');
+    expect(errors).toEqual([]);
+  });
+
+  test('hydropisie=gonfle : alerte « attention », ventre gonflé', async ({ page }) => {
+    const errors = await open(page, '?seed=42&vitesse=0&hydropisie=gonfle');
+    const alert = status(page).locator('[data-alert="dropsy"]');
+    await expect(alert).toBeVisible();
+    await expect(alert).toHaveAttribute('data-severity', 'attention');
+    await expect(alert).toContainText('ventre gonflé');
+    expect(errors).toEqual([]);
+  });
+});
