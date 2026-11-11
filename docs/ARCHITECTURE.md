@@ -205,6 +205,11 @@ simulation testable et les captures reproductibles.
   figé ; sel et chaleur : mise en garde `FUNGUS_WRONG_TREATMENT`. Alerte « Champignons », coton
   blanc grisâtre au rendu (`withFungus`, rangs `aqfishFray` et `aqfishSpot`). Champ `fungus`
   facultatif de la sauvegarde ; paramètre de capture `champignons=1`.
+- **Table des maladies** (#562, ADR 0129, `sim/diseases.ts`) : `DISEASES` liste, dans l'ordre de
+  la sauvegarde, le champ, la borne, la validation et les espèces touchées de chaque maladie.
+  Sauvegarde (écriture et relecture), transfert entre bacs (`diseasesOf`) et malades de
+  quarantaine (`isSick`, `sickCount`) la parcourent ; stades, signes, santé, rendu, alertes et
+  traitements restent dans le module de chaque maladie.
   Amphibien ou invertébré ajouté (panneau) ou transféré dans une eau qui contient déjà sel ou
   médicament (`waterProducts`, `WaterReadout.products`) : avertissement
   `treatedWaterWarning`, sans refus.

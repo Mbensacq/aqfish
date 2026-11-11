@@ -151,8 +151,8 @@ export interface WellbeingSubject {
  * agit (issue #239), la santé des espèces d'eau acide ne baisse plus sous
  * `CATAPPA_HEALTH_FLOOR`. Les points blancs (`ich`, issue #360) ajoutent leur poids
  * (`ichHealthStress`) aux autres causes, la pourriture des nageoires (`finRot`, issue #485)
- * aussi (`finRotHealthStress`), comme le velours (`velvet`, issue #532, `velvetHealthStress`) et les champignons (`fungus`,
- * issue #548, `fungusHealthStress`).
+ * aussi (`finRotHealthStress`), comme le velours (`velvet`, issue #532, `velvetHealthStress`)
+ * et les champignons (`fungus`, issue #548, `fungusHealthStress`).
  */
 export function stepWellbeingInPlace<S extends WellbeingSubject>(
   animals: readonly S[],

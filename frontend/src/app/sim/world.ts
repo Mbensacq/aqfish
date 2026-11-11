@@ -1460,10 +1460,10 @@ export function fungusWorldInPlace(world: MutableWorld): void {
 }
 
 /**
- * Geste de soin contre les points blancs, le velours et les champignons (`applyTreatmentInPlace`, issues #361,
- * #532), **en modifiant** l'eau de `world` s'il est accepté : quantité `amount` (°C, g/L ou dose) du
- * traitement `kind`, avec les espèces et le nombre de malades du bac. Réservé au propriétaire
- * unique du monde (`ui/aquarium-host`).
+ * Geste de soin contre les points blancs, le velours et les champignons
+ * (`applyTreatmentInPlace`, issues #361, #532, #548), **en modifiant** l'eau de `world` s'il
+ * est accepté : quantité `amount` (°C, g/L ou dose) du traitement `kind`, avec les espèces et
+ * le nombre de malades du bac. Réservé au propriétaire unique du monde (`ui/aquarium-host`).
  */
 export function treatWorldInPlace(
   world: MutableWorld,
