@@ -7287,6 +7287,12 @@
           "debut": "2026-11-11T21:04:04.709Z",
           "fin": "2026-11-11T21:04:39.601Z",
           "note": "Issue #567 : Rayons de lumière dans l'eau (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-11T21:05:12.995Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
