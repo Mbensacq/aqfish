@@ -7200,6 +7200,24 @@
         }
       },
       "metriques": {}
+    },
+    "198": {
+      "numero": 198,
+      "date": "2026-11-11",
+      "debut": "2026-11-11T13:33:27.229Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-11T13:33:27.229Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
