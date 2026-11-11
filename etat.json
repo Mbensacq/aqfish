@@ -7143,6 +7143,12 @@
           "debut": "2026-11-11T07:00:43.117Z",
           "fin": "2026-11-11T07:01:23.365Z",
           "note": "Issue #564 : kits de test de l'eau (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-11T07:01:57.033Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
