@@ -7083,6 +7083,12 @@
           "debut": "2026-11-11T02:13:03.261Z",
           "fin": "2026-11-11T02:58:39.622Z",
           "note": "Verdict OK, 0 bug, captures publiées (c194)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-11T02:59:25.942Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
