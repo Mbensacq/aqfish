@@ -7221,6 +7221,12 @@
           "debut": "2026-11-11T13:34:31.541Z",
           "fin": "2026-11-11T15:32:04.424Z",
           "note": "PR #576 : hydropisie ; unitaires/lint/build verts, e2e CI bloqués par une panne apt du runner (2 essais)"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-11T15:32:44.781Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
