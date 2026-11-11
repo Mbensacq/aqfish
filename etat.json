@@ -7028,7 +7028,7 @@
       "type": "fonctionnalite",
       "issue": 548,
       "pr": 561,
-      "version": null,
+      "version": "v1.16.4",
       "phases": {
         "planif": {
           "statut": "termine",
