@@ -371,6 +371,19 @@ import {
   type PharmacyProduct,
   type PharmacyState,
 } from '../../sim/pharmacy';
+import { waterHardness } from '../../sim/water-hardness';
+import {
+  isWaterKit,
+  sameWaterTestView,
+  startWaterTest,
+  WATER_TEST_TICKS,
+  waterTestDone,
+  waterTestView,
+  type WaterKit,
+  type WaterTest,
+  type WaterTestSample,
+  type WaterTestView,
+} from '../../sim/water-test';
 import {
   EMPTY_HEALTH_SUMMARY,
   healthSummary,
@@ -459,6 +472,12 @@ export const PH_ATTRIBUTE = 'data-aqfish-ph';
 export const TREATMENT_ATTRIBUTE = 'data-aqfish-treatment';
 /** Pas de simulation entre deux relevés de l'eau dans la boucle (0,5 s simulée). */
 export const WATER_READOUT_TICKS = 30;
+
+/** Échantillon d'un test de l'eau (#564) : valeurs exactes du bac, dureté résolue. */
+function testSample(world: World): WaterTestSample {
+  const { ph, ammonia, nitrite, nitrate } = world.water;
+  return { ph, ammonia, nitrite, nitrate, ...waterHardness(world.water, world.environment) };
+}
 /** Attribut du composant hôte exposant l'environnement courant (`tropical`, `bassin`, #87). */
 export const ENVIRONMENT_ATTRIBUTE = 'data-aqfish-environment';
 
@@ -886,6 +905,8 @@ export class AquariumHost {
   private firstTankPaths = new WeakMap<World, FirstTankPathState>();
   /** Produits déjà utilisés dans chaque bac depuis le chargement (#533), hors du monde. */
   private pharmacyUsed = new WeakMap<World, readonly PharmacyProduct[]>();
+  /** Dernier test de l'eau lancé dans chaque bac (#564), hors du monde : rien n'est sauvegardé. */
+  private waterTests = new WeakMap<World, WaterTest>();
   /** Dernier état de parcours publié dans `firstTankPath` (`null` : aucun). */
   private exposedFirstTankPath: FirstTankPathState | null = null;
   /** Tampon et version du dernier historique exposé. */
@@ -1031,6 +1052,8 @@ export class AquariumHost {
   readonly treatment = signal<TreatmentReadout | null>(null, { equal: sameTreatment });
   /** Produits de la pharmacie du bac affiché (#533), relevés avec l'eau. */
   readonly pharmacy = signal<PharmacyState>(EMPTY_PHARMACY, { equal: samePharmacy });
+  /** Test de l'eau du bac affiché (#564), relevé avec l'eau ; `null` : aucun test lancé. */
+  readonly waterTest = signal<WaterTestView | null>(null, { equal: sameWaterTestView });
   /** Calendrier d'entretien du bac affiché (#513) ; `null` en capture. */
   readonly maintenance = signal<MaintenanceReadout | null>(null, {
     equal: sameMaintenanceReadout,
@@ -1514,6 +1537,24 @@ export class AquariumHost {
       this.saveNow();
       this.scheduleFrame();
     }
+  }
+
+  /**
+   * Lance un test de l'eau `kit` (#564) sur le bac affiché : échantillon pris maintenant,
+   * résultat après `WATER_TEST_TICKS` pas de simulation. Refusé tant qu'un test court dans ce
+   * bac ; sans effet en mode capture ou avant le démarrage.
+   */
+  startWaterTest(kit: WaterKit): void {
+    const world = this.currentWorld;
+    if (!world || this.capture) {
+      return;
+    }
+    const running = this.waterTests.get(world);
+    if (running !== undefined && !waterTestDone(running, world.tick)) {
+      return;
+    }
+    this.waterTests.set(world, startWaterTest(kit, testSample(world), world.tick));
+    this.exposeWater();
   }
 
   /**
@@ -3597,6 +3638,15 @@ export class AquariumHost {
       this.currentWorld = params.capture
         ? advanceToWithFeedings(world, params.time, params.feedings, this.dayClock)
         : world;
+      // Test de l'eau de `test-eau=` (#564), hors capture : lancé avant le chargement, résultat
+      // prêt (captures de la pharmacie reproductibles, simulation à l'arrêt).
+      if (!params.capture && isWaterKit(params.waterTest)) {
+        const current = this.currentWorld;
+        this.waterTests.set(
+          current,
+          startWaterTest(params.waterTest, testSample(current), current.tick - WATER_TEST_TICKS),
+        );
+      }
     }
     // Pièce de N bacs (#305) : bacs et meubles exposés au catalogue dès le démarrage ;
     // `bacs=` en capture, avec `piece=1`, y ajoute meubles supports et bacs posés.
@@ -4348,6 +4398,8 @@ export class AquariumHost {
     const pharmacy = pharmacyState(world.water, this.pharmacyUsed.get(world) ?? []);
     this.pharmacyUsed.set(world, pharmacy.used);
     this.pharmacy.set(pharmacy);
+    const test = this.waterTests.get(world);
+    this.waterTest.set(test === undefined ? null : waterTestView(test, world.tick));
     if (this.noticeWorld !== null && this.noticeWorld !== world) {
       this.noticeWorld = null;
       this.treatmentNotice.set(null);

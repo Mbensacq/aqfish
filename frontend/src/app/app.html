@@ -181,7 +181,9 @@
       [population]="aquarium.population()"
       [treatment]="aquarium.treatment()"
       [products]="aquarium.pharmacy()"
+      [waterTest]="aquarium.waterTest()"
       (wikiPageRequested)="onWikiPageRequested($event)"
+      (waterTestRequested)="aquarium.startWaterTest($event)"
     />
     <!-- Éditeur de décor (#167) et de la pièce (#188) : en mode édition, à la place de « Réglages ». -->
     @if (aquarium.decorEditing()) {

@@ -30,9 +30,14 @@ test('pharmacie : ouverte et parcourue au clavier, focus rendu à la fermeture',
   await expect(page.locator('[data-pharmacy-advice]')).toContainText('Points blancs');
   await expect(page.locator('[data-pharmacy-product]')).toHaveCount(7);
 
-  // Tab : « Fermer », puis le lien du wiki, puis retour à « Fermer » (focus gardé).
+  // Tab : « Fermer », les cinq kits de test de l'eau (#564), le lien du wiki, puis retour à
+  // « Fermer » (focus gardé).
   await page.keyboard.press('Tab');
   await expect(page.locator('[data-pharmacy-close]')).toBeFocused();
+  for (const kit of ['ph', 'ammoniaque', 'nitrites', 'nitrates', 'durete']) {
+    await page.keyboard.press('Tab');
+    await expect(page.locator(`[data-water-kit="${kit}"]`)).toBeFocused();
+  }
   await page.keyboard.press('Tab');
   await expect(page.locator('[data-pharmacy-wiki]')).toBeFocused();
   await page.keyboard.press('Tab');
@@ -117,5 +122,85 @@ test('effets secondaires (#549) : avertissement affiché, lu au clavier avant le
   await expect(page.locator('[data-treatment-message]')).toHaveCount(0);
   await page.keyboard.press('Enter');
   await expect(page.locator('[data-treatment-message]')).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test('kit de test de l’eau (#564) : résultat arrondi après le délai, avec le conseil', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  // Simulation à ×4 : les 10 s simulées du test passent en 2,5 s environ.
+  await page.goto('/?seed=42&camera=front&heure=12&vitesse=4');
+  await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+
+  await page.locator(toggle).click();
+  const result = page.locator('[data-water-test]');
+  await expect(result).toHaveAttribute('data-state', 'aucun');
+  await expect(page.locator('[data-water-test-guide]')).toContainText('salicylate');
+
+  await page.locator('[data-water-kit="ammoniaque"]').click();
+  await expect(result).toHaveAttribute('data-state', 'en-cours');
+  await expect(result).toHaveAttribute('data-kit', 'ammoniaque');
+  await expect(result).toContainText('en cours');
+  // Un seul test à la fois : les kits attendent le résultat.
+  await expect(page.locator('[data-water-kit="ph"]')).toBeDisabled();
+
+  await expect(result).toHaveAttribute('data-state', 'termine', { timeout: 15_000 });
+  await expect(page.locator('[data-water-result]')).toHaveText('NH₃/NH₄⁺ ≈ 0 u.');
+  await expect(page.locator('[data-water-test-advice]')).toContainText('Rien à signaler');
+  await expect(page.locator('[data-water-test-guide]')).toContainText('salicylate');
+  await expect(page.locator('[data-water-kit="ph"]')).toBeEnabled();
+
+  // Nouveau test : la dureté se lit en gouttes (GH et KH).
+  await page.locator('[data-water-kit="durete"]').click();
+  await expect(result).toHaveAttribute('data-state', 'termine', { timeout: 15_000 });
+  await expect(page.locator('[data-water-result]')).toHaveCount(2);
+  await expect(page.locator('[data-water-result]').first()).toContainText('gouttes');
+  expect(errors).toEqual([]);
+});
+
+test('kit de test de l’eau : simulation à l’arrêt, le test n’avance pas', async ({ page }) => {
+  await page.goto('/?seed=42&camera=front&heure=12&vitesse=0');
+  await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+  await page.locator(toggle).click();
+  await page.locator('[data-water-kit="ph"]').click();
+  const result = page.locator('[data-water-test]');
+  await expect(result).toContainText('résultat dans 10 s');
+  await page.waitForTimeout(1000);
+  await expect(result).toHaveAttribute('data-state', 'en-cours');
+  await expect(result).toContainText('résultat dans 10 s');
+});
+
+test('kit de test de l’eau : `test-eau=` donne un résultat prêt au chargement', async ({
+  page,
+}) => {
+  await page.goto('/?seed=42&camera=front&heure=12&vitesse=0&test-eau=ph');
+  await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+  await page.locator(toggle).click();
+  await expect(page.locator('[data-water-test]')).toHaveAttribute('data-state', 'termine');
+  await expect(page.locator('[data-water-result]')).toHaveText(/^pH ≈ \d,?\d?$/);
+});
+
+test('kit de test de l’eau : téléphone (390 × 844), dureté lue sans débordement', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/?seed=42&vitesse=0&test-eau=durete');
+  await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+  await page.locator(toggle).click();
+  await expect(page.locator('[data-water-test]')).toHaveAttribute('data-state', 'termine');
+  await expect(page.locator('[data-water-result]')).toHaveCount(2);
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
+  expect(overflow).toBeLessThanOrEqual(0);
+  // Un kit inconnu dans l’URL est ignoré : aucun résultat, aucune erreur.
+  await page.goto('/?seed=42&vitesse=0&test-eau=nimporte');
+  await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+  await page.locator(toggle).click();
+  await expect(page.locator('[data-water-test]')).toHaveAttribute('data-state', 'aucun');
   expect(errors).toEqual([]);
 });
