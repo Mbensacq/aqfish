@@ -7355,10 +7355,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-12T04:34:02.653Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-12T04:35:45.867Z",
+          "note": "Issue #571 (bug panneau quarantaine, S) ; rétro #585, sprint 30 : #581-#584, PR roadmap #586"
         }
       },
       "metriques": {}
