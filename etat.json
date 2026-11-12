@@ -7499,10 +7499,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-12T20:14:39.511Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-12T20:15:14.265Z",
+          "note": "Issue #583 : Distributeur de nourriture automatique (S)"
         }
       },
       "metriques": {}
