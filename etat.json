@@ -7479,6 +7479,12 @@
           "debut": "2026-11-12T18:17:52.531Z",
           "fin": "2026-11-12T18:58:45.088Z",
           "note": "Verdict OK, 0 bug, 2 réserves mineures (budgets SCSS, pas de capture lampe), captures publiées (c205)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-12T18:59:29.575Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
