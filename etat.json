@@ -7316,7 +7316,7 @@
       "type": "dette",
       "issue": 450,
       "pr": 580,
-      "version": null,
+      "version": "v1.17.4",
       "phases": {
         "planif": {
           "statut": "termine",
