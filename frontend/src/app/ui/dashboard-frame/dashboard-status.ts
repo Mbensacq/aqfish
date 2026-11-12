@@ -33,6 +33,8 @@ import { NO_FISH, type PopulationCounts } from '../../sim/population';
 import { EMPTY_HEALTH_SUMMARY, healthItems, type HealthSummary } from '../../sim/health-summary';
 import { DEFAULT_WATER_SAMPLE, type GaugeLevel, type WaterSample } from '../../sim/water-dashboard';
 import type { LampReadout } from '../../sim/lamp';
+import { FEEDER_DEFAULT_HOURS, type FeederReadout } from '../../sim/auto-feeder';
+import { formatHour } from '../../sim/daylight';
 import type { TreatmentReadout } from '../../sim/treatment-text';
 import { DEFAULT_WATER_READOUT, type WaterReadout } from '../../sim/water-quality';
 import {
@@ -266,6 +268,74 @@ const ICONS: Readonly<Record<GaugeLevel, readonly (readonly [number, number])[]>
             Lampe : <b>{{ l.hours }} h par jour</b>, {{ l.schedule }} — {{ l.text }}
           </p>
         }
+        @if (feederAvailable()) {
+          <!-- Distributeur automatique (#583) : réserve, heures des rations, remplissage. -->
+          <div
+            class="status__feeder"
+            role="group"
+            aria-label="Distributeur automatique"
+            data-feeder-panel
+          >
+            @if (feeder(); as f) {
+              <span data-feeder [attr.data-feeder-empty]="f.empty"
+                >Distributeur : <b>{{ f.stock }} / {{ f.capacity }} rations</b
+                >{{ f.empty ? ' (vide)' : '' }}</span
+              >
+              <label class="status__feeder-field"
+                >Par jour
+                <select
+                  class="status__feeder-select"
+                  data-feeder-count
+                  (change)="onFeederCount($event)"
+                >
+                  @for (n of feederCounts; track n) {
+                    <option [value]="n" [selected]="n === f.hours.length">{{ n }}</option>
+                  }
+                </select>
+              </label>
+              @for (hour of f.hours; track $index) {
+                <select
+                  class="status__feeder-select"
+                  [attr.data-feeder-hour]="$index"
+                  [attr.aria-label]="'Heure de la ration ' + ($index + 1)"
+                  (change)="onFeederHour($index, $event)"
+                >
+                  @for (h of dayHours; track h) {
+                    <option [value]="h" [selected]="h === hour">{{ hourText(h) }}</option>
+                  }
+                </select>
+              }
+              <button
+                type="button"
+                class="status__why"
+                data-feeder-refill
+                aria-label="Remplir le distributeur (14 rations)"
+                (click)="feederRefilled.emit()"
+              >
+                Remplir
+              </button>
+              <button
+                type="button"
+                class="status__why"
+                data-feeder-remove
+                aria-label="Retirer le distributeur"
+                (click)="feederChanged.emit(null)"
+              >
+                Retirer
+              </button>
+            } @else {
+              <span data-feeder>Distributeur : aucun</span>
+              <button
+                type="button"
+                class="status__why"
+                data-feeder-install
+                (click)="feederChanged.emit(defaultFeederHours)"
+              >
+                Poser un distributeur
+              </button>
+            }
+          </div>
+        }
         <div>
           <b>Dernières actions</b>
           @if (calendar.log.length > 0) {
@@ -428,6 +498,15 @@ export class DashboardStatus {
    */
   readonly lamp = input<LampReadout | null>(null);
 
+  /** Distributeur automatique du bac (fourni par l'hôte, #583) ; `null` : aucun posé. */
+  readonly feeder = input<FeederReadout | null>(null);
+  /** Vrai si un distributeur peut être posé dans ce bac (#583) : sinon, rien n'est affiché. */
+  readonly feederAvailable = input(false);
+  /** Pose (heures), change les heures ou retire (`null`) le distributeur (#583). */
+  readonly feederChanged = output<readonly number[] | null>();
+  /** Bouton « Remplir » du distributeur (#583). */
+  readonly feederRefilled = output<void>();
+
   /** Bouton « Fait » d'une tâche sans geste dans le jeu (filtre, test de l'eau, #513). */
   readonly maintenanceDone = output<MaintenanceTask>();
 
@@ -494,6 +573,7 @@ export class DashboardStatus {
       health: this.health(),
       mixes: mixWarnings(environmentById(this.environment()).species, this.population()),
       treatment: this.treatment(),
+      feederEmpty: this.feeder()?.empty === true,
     }),
   );
 
@@ -543,6 +623,31 @@ export class DashboardStatus {
   }
 
   /** Vrai pour une tâche sans geste dans le jeu, marquée à la main (#513). */
+  /** Choix du nombre de rations par jour (#583). */
+  protected readonly feederCounts = [1, 2, 3, 4] as const;
+  /** Heures proposées pour une ration (#583). */
+  protected readonly dayHours = Array.from({ length: 24 }, (_, h) => h);
+  protected readonly defaultFeederHours = FEEDER_DEFAULT_HOURS[1];
+  protected readonly hourText = formatHour;
+
+  /** Nombre de rations par jour changé : heures proposées pour ce nombre (#583). */
+  protected onFeederCount(event: Event): void {
+    const n = Number((event.target as HTMLSelectElement).value);
+    if (n === 1 || n === 2 || n === 3 || n === 4) {
+      this.feederChanged.emit(FEEDER_DEFAULT_HOURS[n]);
+    }
+  }
+
+  /** Heure d'une ration changée (#583) : deux rations à la même heure n'en font qu'une. */
+  protected onFeederHour(index: number, event: Event): void {
+    const feeder = this.feeder();
+    const hour = Number((event.target as HTMLSelectElement).value);
+    if (feeder === null || !Number.isInteger(hour)) {
+      return;
+    }
+    this.feederChanged.emit(feeder.hours.map((h, i) => (i === index ? hour : h)));
+  }
+
   protected manual(task: MaintenanceTask): boolean {
     return task === 'filter' || task === 'waterTest';
   }

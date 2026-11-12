@@ -559,6 +559,9 @@ jeu**, sauf mention.
   sauvegardes gardent 0 à 24 h), allumée chaque jour à une heure réglée (10 h par défaut),
   fondu d'une demi-heure à l'allumage et à l'extinction. Sous 8 h, les plantes à tige poussent
   proportionnellement moins vite (4 h : moitié). Le tableau de bord conseille 8 à 10 h.
+- Distributeur automatique (issue #583, ADR 0136, `sim/auto-feeder.ts`) : 1 à 4 rations par
+  jour aux heures choisies, réserve de 14 rations (deux semaines à une ration par jour) ; une
+  ration vaut un clic de nourrissage. Valeurs de jeu, pas celles d'un appareil réel.
 - Nitrates au-delà du seuil « à surveiller » de la jauge (20 unités de jeu) : les algues
   poussent, à plein au plein de la jauge (60). Le lien nitrates–algues est courant en
   aquariophilie ; sa quantification ici est une approximation de jeu.

@@ -285,6 +285,9 @@ test.describe('Captures', () => {
     // Algues (#476) : plaques vertes sur les vitres (fond, côtés, bas de la vitre avant).
     { name: 'front-algues', query: 'algues=0.8&camera=front' },
     { name: 'three-quarter-algues', query: 'algues=0.8' },
+    // Distributeur automatique (#583) : petit boîtier gris sur le bord arrière gauche du bac.
+    { name: 'three-quarter-distributeur', query: 'distributeur=9,18' },
+    { name: 'side-distributeur', query: 'distributeur=9,18&camera=side' },
   ] as const;
   for (const { name, query } of DAY_CAPTURES) {
     test(`angle ${name}`, async ({ page }) => {

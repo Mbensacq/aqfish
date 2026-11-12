@@ -192,6 +192,7 @@ export const ALERT_TOPICS: Readonly<Record<AlertId, WhyTopicId>> = {
   dropsy: 'sante',
   treatment: 'sante',
   hunger: 'nourriture',
+  feeder: 'nourriture',
   health: 'sante',
   mix: 'cohabitation',
   algae: 'azote',

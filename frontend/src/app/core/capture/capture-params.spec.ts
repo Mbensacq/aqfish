@@ -59,6 +59,7 @@ describe('parseCaptureParams', () => {
       eggs: false,
       current: null,
       catappa: 0,
+      feeder: null,
       editSelection: null,
       editRoomSelection: null,
       woods: [],
@@ -301,6 +302,15 @@ describe('parseCaptureParams', () => {
     }
     expect(parseCaptureParams('?capture=1').starved).toBe(false);
     expect(DEFAULT_CAPTURE_PARAMS.starved).toBe(false);
+  });
+
+  it('lit le distributeur : distributeur=h1,h2… (1 à 4 heures), sinon aucun (#583)', () => {
+    expect(parseCaptureParams('?capture=1&distributeur=9').feeder).toEqual([9]);
+    expect(parseCaptureParams('?capture=1&distributeur=18,9,9').feeder).toEqual([9, 18]);
+    for (const value of ['', '24', '9,', '1,2,3,4,5', 'a', '-1', '9.5']) {
+      expect(parseCaptureParams(`?capture=1&distributeur=${value}`).feeder).toBeNull();
+    }
+    expect(parseCaptureParams('?capture=1').feeder).toBeNull();
   });
 
   it('lit les feuilles de catappa : catappa=1 à 5, sinon aucune (#239)', () => {

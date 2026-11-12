@@ -146,6 +146,25 @@
   overflow-wrap: anywhere;
 }
 
+.status__feeder {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  flex-basis: 100%;
+}
+
+.status__feeder-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.status__feeder-select {
+  font: inherit;
+  min-height: 24px;
+}
+
 .status__tasks,
 .status__log {
   margin: 0;

@@ -16,6 +16,16 @@ import { dayIntensityAt, hourAt, type DayClock } from './daylight';
 import { nightRest } from './day-rhythm';
 import { setLampOnInPlace } from './lamp';
 import {
+  createFeeder,
+  feederHours,
+  feederSpot,
+  hasFeeder,
+  rationsDue,
+  refillFeederInPlace,
+  takeRationsInPlace,
+  type FeederState,
+} from './auto-feeder';
+import {
   hasPlantGrowth,
   isGrowingPlant,
   plantShade,
@@ -280,6 +290,11 @@ export interface World {
    * à la sauvegarde seulement : la partie le tient hors du monde, aucun pas n'y touche.
    */
   readonly firstTankPath?: FirstTankPathState;
+  /**
+   * Distributeur de nourriture automatique (issue #583, `sim/auto-feeder.ts`) : absent, aucun
+   * (bac par défaut, anciennes sauvegardes) ; le monde avance alors exactement comme avant.
+   */
+  readonly feeder?: FeederState;
 }
 
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
@@ -801,6 +816,58 @@ export function tapGlassInWorld(
   return tapGlassInPlace(world.entities as Mutable<Entity>[], tap, radius);
 }
 
+/**
+ * Lâche les rations du distributeur dues entre `startTime` et `world.time` (`rationsDue`),
+ * dans la limite de sa réserve, au point de chute sous l'appareil (`feederSpot`).
+ */
+function dropFeederRations(world: MutableWorld, clock: DayClock, startTime: number): void {
+  const feeder = world.feeder!;
+  const due = rationsDue(clock, startTime, world.time, feeder.hours);
+  if (due === 0) {
+    return;
+  }
+  const taken = takeRationsInPlace(feeder, due);
+  const spot = feederSpot(environmentWater(world));
+  for (let n = 0; n < taken; n++) {
+    feedInPlace(world, spot.x, spot.z);
+  }
+}
+
+/**
+ * Pose, règle ou retire le distributeur automatique du bac (issue #583), **en modifiant**
+ * `world` : `null` le retire ; des heures (1 à 4, normalisées par `feederHours`) le posent,
+ * plein, ou changent les heures d'un distributeur déjà posé sans toucher à sa réserve.
+ * Renvoie faux, sans rien changer, pour des heures invalides ou un bac sans distributeur
+ * possible (`hasFeeder`).
+ */
+export function setWorldFeederInPlace(
+  world: MutableWorld,
+  hours: readonly number[] | null,
+): boolean {
+  if (hours === null) {
+    delete world.feeder;
+    return true;
+  }
+  const normalized = feederHours(hours);
+  if (normalized === null || !hasFeeder(world.environment)) {
+    return false;
+  }
+  world.feeder =
+    world.feeder === undefined
+      ? createFeeder(normalized)
+      : { hours: normalized, stock: world.feeder.stock };
+  return true;
+}
+
+/** Remplit le distributeur du bac (issue #583), **en modifiant** `world` ; faux sans distributeur. */
+export function refillWorldFeederInPlace(world: MutableWorld): boolean {
+  if (world.feeder === undefined) {
+    return false;
+  }
+  refillFeederInPlace(world.feeder);
+  return true;
+}
+
 /** Point de dépôt ramené dans la forme du bassin (réutilisé, sans allocation). */
 const FEED_POINT = { x: 0, z: 0 };
 /** Marge du centre d'un dépôt au bord d'un bassin non rectangulaire, en mètres. */
@@ -853,6 +920,7 @@ export function advanceTo(world: World, time: number, clock: SimClock = null): W
 }
 
 function stepInPlace(world: MutableWorld, dt: number, clock: SimClock): void {
+  const startTime = world.time;
   world.tick += 1;
   // Pas nominal : temps dérivé du compteur (exact, sans cumul d'erreur flottante).
   // Pas libre (`step(world, dt)`, tests) : temps cumulé.
@@ -863,6 +931,12 @@ function stepInPlace(world: MutableWorld, dt: number, clock: SimClock): void {
   const decor = world.careMode === 'decor';
   if (decor) {
     keepHunger(fishes);
+  }
+  // Distributeur automatique (issue #583) : rations des heures passées pendant le pas, lâchées
+  // comme un clic de nourrissage ; en pause en mode décor, comme la faim. Sans distributeur ni
+  // horloge, rien n'est calculé.
+  if (world.feeder !== undefined && clock !== null && !decor) {
+    dropFeederRations(world, clock, startTime);
   }
   // Lieu du pas : une seule clé calculée par pas, lue par toutes les tables (`placeKey`).
   const place: Place = world;

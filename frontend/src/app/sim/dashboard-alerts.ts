@@ -50,7 +50,9 @@ import type { WaterCompound } from './water-quality';
  *   le conseil d'euthanasie sans souffrance ; lien « Maladies » ;
  * - **chlore** (issue #530) : absent tant que le chlore est à 0 ; critique dès qu'il nuit ;
  * - **traitement en cours** (issue #361, ADR 0091) : une alerte « attention » tant que la cure
- *   avance, avec les jours restants et, pour le médicament, le délai avant de redoser.
+ *   avance, avec les jours restants et, pour le médicament, le délai avant de redoser ;
+ * - **distributeur vide** (issue #583) : une alerte « attention » tant que la réserve du
+ *   distributeur automatique est vide.
  *
  * Les causes et actions sont des **textes de jeu** : elles décrivent le modèle de la
  * simulation (`sim/water.ts`, `sim/wellbeing.ts`), simplifié, pas une règle d'aquariophilie.
@@ -81,7 +83,8 @@ export type AlertId =
   | 'hunger'
   | 'health'
   | 'mix'
-  | 'algae';
+  | 'algae'
+  | 'feeder';
 
 /** Ordre des alertes de même gravité. */
 export const ALERT_ORDER: readonly AlertId[] = [
@@ -98,6 +101,7 @@ export const ALERT_ORDER: readonly AlertId[] = [
   'treatment',
   'carbon',
   'hunger',
+  'feeder',
   'nitrate',
   'algae',
   'mix',
@@ -133,6 +137,8 @@ export interface AlertInput {
   readonly mixes?: readonly MixWarning[];
   /** Traitement des points blancs en cours (`treatmentReadout`, issue #361) ; absent : aucun. */
   readonly treatment?: TreatmentReadout | null;
+  /** Vrai si le distributeur automatique du bac est vide (issue #583) ; absent : aucun. */
+  readonly feederEmpty?: boolean;
 }
 
 const SEVERITY_OF: Readonly<Record<GaugeLevel, AlertSeverity | null>> = {
@@ -511,6 +517,24 @@ export function mixAlert(mixes: readonly MixWarning[]): DashboardAlert | null {
  * critique. Renvoie à la page « Entretien » du wiki. Les algues ne font pas souffrir les
  * animaux dans le jeu : elles signalent un éclairage trop long ou des nitrates élevés.
  */
+/**
+ * Distributeur automatique vide (issue #583) : une alerte « attention » tant qu'il n'est pas
+ * rempli ; plus aucune ration ne tombe.
+ */
+export function feederAlert(empty: boolean): DashboardAlert | null {
+  if (!empty) {
+    return null;
+  }
+  return {
+    id: 'feeder',
+    severity: 'attention',
+    message: 'Distributeur vide',
+    cause: 'les 14 rations ont été distribuées ; plus aucune ne tombe',
+    action: 'Remplir le distributeur (Entretien) ou nourrir à la main',
+    wiki: 'entretien',
+  };
+}
+
 export function algaeAlert(coverage: number | undefined): DashboardAlert | null {
   if (coverage === undefined) {
     return null;
@@ -564,7 +588,7 @@ function rank(alert: DashboardAlert): number {
  * bonne santé : aucune alerte.
  */
 export function dashboardAlerts(input: AlertInput): readonly DashboardAlert[] {
-  const { sample, phBands, health, mixes = [], treatment = null } = input;
+  const { sample, phBands, health, mixes = [], treatment = null, feederEmpty = false } = input;
   const found: DashboardAlert[] = [];
   const push = (alert: DashboardAlert | null) => {
     if (alert !== null && !found.some((a) => a.id === alert.id)) {
@@ -584,6 +608,7 @@ export function dashboardAlerts(input: AlertInput): readonly DashboardAlert[] {
   push(treatmentAlert(treatment));
   push(carbonAlert(sample.carbonAgainstMedication));
   push(hungerAlert(health));
+  push(feederAlert(feederEmpty));
   push(compoundAlert('nitrate', sample.nitrate));
   push(algaeAlert(sample.algae));
   push(mixAlert(mixes));

@@ -28,6 +28,7 @@ import {
 } from '../../sim/maintenance';
 import type { ReviewPoint } from '../../sim/bilan';
 import { lampReadout, type LampReadout } from '../../sim/lamp';
+import { feederReadout, type FeederReadout } from '../../sim/auto-feeder';
 import type { JournalLine } from '../../sim/journal';
 import { NO_ALERT_TARGETS, type AlertTargets } from '../../sim/alert-animals';
 import type { GuidePage } from '../../sim/care-guide';
@@ -50,9 +51,13 @@ const STARVED: HealthSummary = healthSummary(
     [highlighted]="highlighted()"
     [maintenance]="maintenance()"
     [lamp]="lamp()"
+    [feeder]="feeder()"
+    [feederAvailable]="feederAvailable()"
     [reviewOf]="reviewOf()"
     [journal]="journal()"
     (maintenanceDone)="done.push($event)"
+    (feederChanged)="feederChanges.push($event)"
+    (feederRefilled)="refills = refills + 1"
     (showAnimalsRequested)="shown.push($event)"
     (wikiPageRequested)="wikiPages.push($event)"
   />`,
@@ -66,6 +71,10 @@ class StatusHost {
   readonly done: MaintenanceTask[] = [];
   readonly maintenance = signal<MaintenanceReadout | null>(null);
   readonly lamp = signal<LampReadout | null>(null);
+  readonly feeder = signal<FeederReadout | null>(null);
+  readonly feederAvailable = signal(false);
+  readonly feederChanges: (readonly number[] | null)[] = [];
+  refills = 0;
   readonly reviewOf = signal<(() => readonly ReviewPoint[]) | null>(null);
   readonly journal = signal<readonly JournalLine[] | null>(null);
   readonly targets = signal<AlertTargets>(NO_ALERT_TARGETS);
@@ -146,6 +155,49 @@ describe('rappel d’entretien (#513)', () => {
     expect(line.textContent).toContain('12 h par jour');
     expect(line.textContent).toContain('20:00 → 08:00');
     expect(line.textContent).toContain('conseillé : 8 à 10 h, approximation de jeu');
+  });
+
+  it('distributeur (#583) : poser, régler, remplir, retirer depuis le calendrier', () => {
+    const { host, root, flush } = mount();
+    host.maintenance.set(maintenanceReadout(initialMaintenance(0), DAY));
+    flush();
+    root.querySelector<HTMLElement>('[data-maintenance]')!.click();
+    flush();
+    // Bac sans distributeur possible : rien.
+    expect(root.querySelector('[data-feeder-panel]')).toBeNull();
+    host.feederAvailable.set(true);
+    flush();
+    expect(root.querySelector('[data-feeder]')!.textContent).toContain('aucun');
+    root.querySelector<HTMLElement>('[data-feeder-install]')!.click();
+    expect(host.feederChanges).toEqual([[9]]);
+    host.feeder.set(feederReadout({ hours: [9, 18], stock: 12 }));
+    flush();
+    expect(root.querySelector('[data-feeder]')!.textContent).toContain('12 / 14 rations');
+    const count = root.querySelector<HTMLSelectElement>('[data-feeder-count]')!;
+    expect(count.value).toBe('2');
+    count.value = '3';
+    count.dispatchEvent(new Event('change'));
+    expect(host.feederChanges.at(-1)).toEqual([8, 13, 18]);
+    const second = root.querySelector<HTMLSelectElement>('[data-feeder-hour="1"]')!;
+    expect(second.value).toBe('18');
+    second.value = '20';
+    second.dispatchEvent(new Event('change'));
+    expect(host.feederChanges.at(-1)).toEqual([9, 20]);
+    root.querySelector<HTMLElement>('[data-feeder-refill]')!.click();
+    expect(host.refills).toBe(1);
+    root.querySelector<HTMLElement>('[data-feeder-remove]')!.click();
+    expect(host.feederChanges.at(-1)).toBeNull();
+  });
+
+  it('distributeur vide (#583) : alerte « Distributeur vide »', () => {
+    const { host, root, flush } = mount();
+    host.feederAvailable.set(true);
+    host.feeder.set(feederReadout({ hours: [9], stock: 3 }));
+    flush();
+    expect(root.querySelector('[data-alert="feeder"]')).toBeNull();
+    host.feeder.set(feederReadout({ hours: [9], stock: 0 }));
+    flush();
+    expect(root.querySelector('[data-alert="feeder"]')!.textContent).toContain('Distributeur vide');
   });
 
   it('bilan du bac (#514) : absent sans source, jamais déplié sans demande', () => {

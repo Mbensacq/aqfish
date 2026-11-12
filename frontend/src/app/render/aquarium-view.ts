@@ -49,6 +49,7 @@ import { BubbleLayer } from './bubble-layer';
 import { AlertHighlightLayer } from './alert-highlight-layer';
 import { AlgaeLayer } from './algae-layer';
 import { CatappaLayer } from './catappa-layer';
+import { FeederLayer } from './feeder-layer';
 import { DecorLayer } from './decor-layer';
 import { planePoint, sandHit, type DecorPick } from './decor-pick';
 import { pickRoom } from './room-pick';
@@ -267,6 +268,8 @@ export class AquariumView {
   private readonly floatingLeafLayer: FloatingLeafLayer;
   /** Feuilles de catappa sur le sol (issue #239). */
   private readonly catappaLayer: CatappaLayer;
+  /** Distributeur de nourriture automatique, sur le bord du bac (issue #583). */
+  private readonly feederLayer: FeederLayer;
   /** Plaques d'algues sur les vitres (issue #476). */
   private readonly algaeLayer = new AlgaeLayer();
   /** Repères des animaux désignés par une alerte (#483), masqués par défaut. */
@@ -518,6 +521,7 @@ export class AquariumView {
     this.currentLayer = new CurrentIndicatorLayer(environmentDataWater(this.world.environment));
     this.effects = [this.bubbleLayer, this.rainLayer, this.floatingLeafLayer, this.currentLayer];
     this.catappaLayer = new CatappaLayer(environmentDataWater(this.world.environment));
+    this.feederLayer = new FeederLayer(this.world.dimensions);
     this.sceneLayers = [
       ...this.fishLayers,
       this.decorLayer,
@@ -531,6 +535,7 @@ export class AquariumView {
       this.floatingLeafLayer,
       this.currentLayer,
       this.catappaLayer,
+      this.feederLayer,
       this.algaeLayer,
       this.alertHighlightLayer,
       this.roomLayer,
@@ -1077,6 +1082,7 @@ export class AquariumView {
     this.foodLayer.setBrightness(brightness);
     this.eggLayer.setBrightness(brightness);
     this.catappaLayer.setBrightness(brightness);
+    this.feederLayer.setBrightness(brightness);
     this.algaeLayer.setBrightness(brightness);
     const tint = decorTintInto(light.intensity, this.decorTint);
     for (let k = 0; k < 3; k++) {
@@ -1364,6 +1370,18 @@ export class AquariumView {
     if (!this.disposed) {
       this.catappaLayer.setLeaves(leaves);
     }
+  }
+
+  /** Distributeur automatique (issue #583) : montré s'il est posé. Sans effet après `dispose`. */
+  setFeeder(installed: boolean): void {
+    if (!this.disposed) {
+      this.feederLayer.setVisible(installed);
+    }
+  }
+
+  /** Vrai si le distributeur est affiché (tests). */
+  get feederShown(): boolean {
+    return this.feederLayer.visible;
   }
 
   /**
