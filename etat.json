@@ -7427,10 +7427,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-12T11:45:39.532Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-12T11:46:19.603Z",
+          "note": "Issue #581 : Journal du bac (S)"
         }
       },
       "metriques": {}
