@@ -7488,6 +7488,24 @@
         }
       },
       "metriques": {}
+    },
+    "206": {
+      "numero": 206,
+      "date": "2026-11-12",
+      "debut": "2026-11-12T20:14:39.511Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-12T20:14:39.511Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
