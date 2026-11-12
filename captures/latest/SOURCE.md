@@ -1,2 +1,5 @@
-Cycle 199 — branche cycle/c199-croissance-alevins, PR #578, commit 91ee55c, graine 42, 2026-11-11T19:21:13Z.
-Les 5 angles par défaut sont identiques à l'octet à la série précédente (cmp).
+# Captures du cycle 200
+- Branche : main (pas de PR : phase Dev en échec, issue #567 non implémentée)
+- Commit : c0691d7 (v1.17.2)
+- Graine : celle de captures.spec.ts (par défaut)
+- Génération : 2026-11-12, run interrompu par le délai à la fin de la série (137 fichiers)
