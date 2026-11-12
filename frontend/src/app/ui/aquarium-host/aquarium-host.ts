@@ -422,6 +422,12 @@ export const FOOD_STYLE_ATTRIBUTE = 'data-aqfish-food-style';
 
 /** Attribut du composant hôte exposant l'heure de la journée affichée (2 décimales). */
 export const HOUR_ATTRIBUTE = 'data-aqfish-hour';
+/**
+ * Attribut du composant hôte exposant les rayons de lumière (#567) : `force;temps` (force
+ * dans [0, 1] au centième, 0 s'ils sont masqués ; temps du mouvement en secondes entières,
+ * fixe sous « Réduire les mouvements »).
+ */
+export const LIGHT_RAYS_ATTRIBUTE = 'data-aqfish-rayons';
 /** Attribut du composant hôte : `true` si l'heure est figée, `false` sinon. */
 export const HOUR_FROZEN_ATTRIBUTE = 'data-aqfish-hour-frozen';
 
@@ -935,6 +941,8 @@ export class AquariumHost {
   /** Tampon de la lumière du jour, réécrit à chaque recalcul (aucune allocation). */
   private readonly light = createDayLight();
   private exposedHour: string | null = null;
+  /** Dernière valeur exposée des rayons de lumière (`LIGHT_RAYS_ATTRIBUTE`). */
+  private exposedRays: string | null = null;
   /** Valeur de `PLANTS_ATTRIBUTE` écrite en dernier (`exposePlants`, réécrite si elle change). */
   private exposedPlants: string | null = null;
   private readonly onFrame: FrameRequestCallback = (timestamp) => this.frame(timestamp);
@@ -4092,6 +4100,18 @@ export class AquariumHost {
   }
 
   /**
+   * Expose les rayons de lumière (#567) aux tests de bout en bout : `force;temps`, force au
+   * centième et temps du mouvement à la seconde entière (au plus une écriture par seconde).
+   */
+  private exposeLightRays(view: AquariumView): void {
+    const exposed = `${view.lightRaysStrength.toFixed(2)};${Math.floor(view.lightRaysTime)}`;
+    if (exposed !== this.exposedRays) {
+      this.exposedRays = exposed;
+      this.host.nativeElement.setAttribute(LIGHT_RAYS_ATTRIBUTE, exposed);
+    }
+  }
+
+  /**
    * Éclairage de l'heure courante, recalculé seulement si l'heure a bougé d'au moins
    * `LIGHT_HOUR_STEP` (ou après une bascule de l'horloge) ; l'heure exposée suit.
    */
@@ -4101,9 +4121,11 @@ export class AquariumHost {
       this.litHour = hour;
       view.updateLight(lightAtInto(hour, this.light));
       view.updateFlowers(hour);
+      view.updateLightRays(hour);
       this.dayPhase.set(dayPhaseAt(hour));
       this.clockHour.set(snapHour(hour));
     }
+    this.exposeLightRays(view);
     // Une heure comme 23,999 s'arrondit à « 24.00 » : affichée « 0.00 ».
     const rounded = hour.toFixed(2);
     const exposed = rounded === '24.00' ? '0.00' : rounded;
