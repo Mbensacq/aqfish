@@ -7329,6 +7329,12 @@
           "debut": "2026-11-12T01:35:46.691Z",
           "fin": "2026-11-12T02:48:02.861Z",
           "note": "PR #580 : mutants frog.ts 141-300 (98,16 %) + #520 tests, CI verte"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-12T02:48:33.981Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
