@@ -6,6 +6,12 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Un curseur de plus dans la section « Eau » : `cadrage-panneaux` rouge à 1280 × 720**
+  (cycle 205, #584) : le panneau « Réglages » n'a plus de marge en hauteur ; un champ de
+  réglage pleine largeur (≈ 50 px) le fait dépasser de la fenêtre ou recouvrir la barre des
+  vues (cas « Réglages », « soins », « message de soin »), à 390 et 320 px rien ne se voit (le
+  panneau défile). Mettre le nouveau curseur à côté d'un autre (`control-panel__row--halves`,
+  valeur courte à l'écran, phrase entière en `aria-valuetext`). (2026-11-12)
 - **Bouton de plus dans le bandeau santé et alertes : il casse les e2e de clic sur le bac**
   (cycle 204, #581) : le bandeau s'allonge (centré sous 1100 px, calé à gauche au-delà) et
   couvre des points que `editeur-decor` (`OUTSIDE` à 800 × 500) et `editeur-piece` (parquet

@@ -474,43 +474,49 @@ export interface NewTankRequest {
             />
           </label>
           <!-- Éclairage (#476, lampe #584) : 4 à 14 h par jour ; au-delà de 10 h, les algues
-               poussent, sous 8 h les plantes ralentissent. Puis l'heure d'allumage. -->
-          <label class="control-panel__field" for="panneau-eclairage">
-            <span class="control-panel__label">
-              Éclairage <output class="control-panel__value">{{ lightingLabel() }}</output>
-            </span>
-            <input
-              id="panneau-eclairage"
-              class="control-panel__range"
-              aria-label="Durée d’éclairage par jour"
-              type="range"
-              min="4"
-              max="14"
-              step="1"
-              data-lighting
-              [value]="lighting()"
-              [attr.aria-valuetext]="lightingLabel()"
-              (input)="onLighting($event)"
-            />
-          </label>
-          <label class="control-panel__field" for="panneau-lampe">
-            <span class="control-panel__label">
-              Lampe <output class="control-panel__value">{{ lampOnLabel() }}</output>
-            </span>
-            <input
-              id="panneau-lampe"
-              class="control-panel__range"
-              aria-label="Heure d’allumage de la lampe"
-              type="range"
-              min="0"
-              max="23"
-              step="1"
-              data-lamp-on
-              [value]="lampOn()"
-              [attr.aria-valuetext]="lampOnLabel()"
-              (input)="onLampOn($event)"
-            />
-          </label>
+               poussent, sous 8 h les plantes ralentissent. Puis l'heure d'allumage, sur la même
+               ligne (le panneau ne grandit pas à 1280 × 720, docs/PIEGES.md) : valeurs courtes à
+               l'écran, phrases entières pour les lecteurs d'écran. -->
+          <div class="control-panel__row control-panel__row--halves">
+            <label class="control-panel__field" for="panneau-eclairage">
+              <span class="control-panel__label">
+                Éclairage
+                <output class="control-panel__value" aria-hidden="true">{{ lighting() }} h</output>
+              </span>
+              <input
+                id="panneau-eclairage"
+                class="control-panel__range"
+                aria-label="Durée d’éclairage par jour"
+                type="range"
+                min="4"
+                max="14"
+                step="1"
+                data-lighting
+                [value]="lighting()"
+                [attr.aria-valuetext]="lightingLabel()"
+                (input)="onLighting($event)"
+              />
+            </label>
+            <label class="control-panel__field" for="panneau-lampe">
+              <span class="control-panel__label">
+                Lampe
+                <output class="control-panel__value" aria-hidden="true">{{ lampOnShort() }}</output>
+              </span>
+              <input
+                id="panneau-lampe"
+                class="control-panel__range"
+                aria-label="Heure d’allumage de la lampe"
+                type="range"
+                min="0"
+                max="23"
+                step="1"
+                data-lamp-on
+                [value]="lampOn()"
+                [attr.aria-valuetext]="lampOnLabel()"
+                (input)="onLampOn($event)"
+              />
+            </label>
+          </div>
           <!-- Outils d'entretien, côte à côte (le panneau ne grandit pas, docs/PIEGES.md) :
                raclette (#476), un clic sur une vitre retire la plaque d'algues visée ; sécateur
                (#477), un clic sur une plante à tige la taille. -->
@@ -1722,6 +1728,7 @@ export class ControlPanel {
   protected readonly heaterLabel = computed(() => heaterText(this.water()));
   protected readonly lightingLabel = computed(() => lightingText(this.lighting()));
   protected readonly lampOnLabel = computed(() => lampOnText(this.lampOn()));
+  protected readonly lampOnShort = computed(() => formatHour(this.lampOn()));
   /** Section « Soins » (#361) : en mode soins, avec des points blancs ou un traitement. */
   protected readonly careShown = computed(
     () => this.careMode() !== 'decor' && (this.ichCount() > 0 || this.treatment() !== null),

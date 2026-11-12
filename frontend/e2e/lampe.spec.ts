@@ -61,7 +61,8 @@ test.describe('lampe du bac (#584)', () => {
       await expect(lampOn).toHaveAttribute('aria-valuetext', 'allumée à 10:00');
       await lampOn.scrollIntoViewIfNeeded();
       await expect(lampOn).toBeInViewport();
-      await expect(section(page).getByText('allumée à 10:00')).toBeVisible();
+      await expect(section(page).locator('label[for="panneau-lampe"]')).toContainText('10:00');
+      await expect(section(page).locator('label[for="panneau-eclairage"]')).toContainText('8 h');
       expect(await noHorizontalOverflow(page)).toBe(true);
       // Allumage à 20 h : à midi, la lampe est éteinte.
       await lampOn.fill('20');
