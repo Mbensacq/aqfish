@@ -4,14 +4,18 @@ import {
   BROOD_TICKS,
   broodIndexAt,
   broodSize,
+  canBreed,
   eatFryInPlace,
   FED_HUNGER,
   FRY_EAT_RADIUS,
   FRY_GROWTH_TIME,
   FRY_HIDE_RADIUS,
   FRY_SAFE_AGE,
+  FRY_PALLORS,
   FRY_SCALES,
+  FRY_STAGE_NAMES,
   FRY_STAGES,
+  fryPallor,
   fryPlants,
   fryScale,
   fryStage,
@@ -213,24 +217,63 @@ describe('alevins : naissance (sim/fry.ts, #459)', () => {
 });
 
 describe('alevins : croissance', () => {
-  it('quatre jalons, puis adulte', () => {
-    const quarter = FRY_GROWTH_TIME / FRY_STAGES;
+  it('trois jalons (nouveau-né, juvénile, subadulte), puis adulte', () => {
+    expect(FRY_STAGES).toBe(3);
+    expect(FRY_STAGE_NAMES).toEqual(['nouveau-né', 'juvénile', 'subadulte']);
+    const stage = FRY_GROWTH_TIME / FRY_STAGES;
     expect(fryStage(0)).toBe(0);
     expect(fryStage(-1)).toBe(0);
-    expect(fryStage(quarter - 1e-9)).toBe(0);
-    expect(fryStage(quarter)).toBe(1);
-    expect(fryStage(2 * quarter)).toBe(2);
-    expect(fryStage(3 * quarter)).toBe(3);
+    expect(fryStage(stage - 1e-9)).toBe(0);
+    expect(fryStage(stage)).toBe(1);
+    expect(fryStage(2 * stage)).toBe(2);
+    expect(fryStage(FRY_GROWTH_TIME - 1e-9)).toBe(2);
     expect(fryStage(FRY_GROWTH_TIME)).toBe(FRY_STAGES);
+    expect(fryStage(Number.POSITIVE_INFINITY)).toBe(FRY_STAGES);
     expect(fryStage(undefined)).toBe(FRY_STAGES);
     expect(fryStage(Number.NaN)).toBe(FRY_STAGES);
-    expect([0, 1, 2, 3].map((s) => fryScale(s * quarter))).toEqual(FRY_SCALES);
+    expect([0, 1, 2].map((s) => fryScale(s * stage))).toEqual(FRY_SCALES);
     expect(fryScale(undefined)).toBe(1);
     // Taille croissante, toujours plus petite que l'adulte.
     for (let s = 1; s < FRY_STAGES; s++) {
       expect(FRY_SCALES[s]).toBeGreaterThan(FRY_SCALES[s - 1]);
     }
     expect(FRY_SCALES.at(-1)).toBeLessThan(1);
+  });
+
+  it('trois tailles lisibles : au moins 0,15 d’écart entre jalons et avec l’adulte (#566)', () => {
+    const sizes = [...FRY_SCALES, 1];
+    for (let s = 1; s < sizes.length; s++) {
+      expect(sizes[s] - sizes[s - 1]).toBeGreaterThanOrEqual(0.15 - 1e-9);
+    }
+  });
+
+  it('couleur : pâle à la naissance, se colore à chaque jalon, couleurs d’origine adulte', () => {
+    const stage = FRY_GROWTH_TIME / FRY_STAGES;
+    expect(FRY_PALLORS.length).toBe(FRY_STAGES);
+    expect([0, 1, 2].map((s) => fryPallor(s * stage + 1))).toEqual(FRY_PALLORS);
+    for (let s = 1; s < FRY_STAGES; s++) {
+      expect(FRY_PALLORS[s]).toBeLessThan(FRY_PALLORS[s - 1]);
+    }
+    for (const p of FRY_PALLORS) {
+      expect(p).toBeGreaterThan(0);
+      expect(p).toBeLessThanOrEqual(1);
+    }
+    expect(fryPallor(undefined)).toBe(0);
+    expect(fryPallor(FRY_GROWTH_TIME)).toBe(0);
+    expect(fryPallor(Number.NaN)).toBe(0);
+    expect(fryPallor(-5)).toBe(FRY_PALLORS[0]);
+  });
+
+  it('reproducteur seulement adulte : un alevin femelle nourri ne met pas bas, l’adulte oui', () => {
+    const world = fedGuppies(5);
+    const mother = females(world)[0] as Mutable<Fish>;
+    const conditions = { goodWater: true, phOut: () => false };
+    expect(canBreed(mother, world.seed, conditions)).toBe(true);
+    mother.growth = FRY_GROWTH_TIME - SIM_DT / 2;
+    expect(canBreed(mother, world.seed, conditions)).toBe(false);
+    growFryInPlace([mother], SIM_DT);
+    expect(isFry(mother)).toBe(false);
+    expect(canBreed(mother, world.seed, conditions)).toBe(true);
   });
 
   it('âge valide : réel dans [0, FRY_GROWTH_TIME[', () => {
@@ -261,6 +304,40 @@ describe('alevins : croissance', () => {
     // Les autres alevins ont vieilli d'un pas.
     const other = after.entities.find((f) => isFry(f))!;
     expect(other.growth).toBeCloseTo(SIM_DT, 12);
+  });
+
+  it('plafonds : portées et passages à l’âge adulte ne dépassent jamais l’espèce ni le bac', () => {
+    let world: MutableWorld = fedGuppies(9, 6, [PLANT]);
+    const max = SPECIES.guppy.maxPopulation;
+    for (let brood = 0; brood < 15; brood++) {
+      world.tick = (brood + 1) * BROOD_TICKS - 1;
+      world.time = world.tick * SIM_DT;
+      for (const fish of world.entities as Mutable<Fish>[]) {
+        fish.hunger = 0.1;
+        fish.health = 1;
+        if (fish.growth !== undefined) {
+          fish.growth = FRY_GROWTH_TIME - SIM_DT / 2;
+        }
+      }
+      world = cloneWorld(step(world));
+      expect(populationCounts(world).guppy ?? 0).toBeLessThanOrEqual(max);
+      expect(world.entities.length).toBeLessThanOrEqual(MAX_TOTAL_FISH);
+    }
+    // Des alevins sont devenus adultes, et le bac s'arrête au plafond de l'espèce.
+    expect(world.entities.filter((f) => !isFry(f)).length).toBeGreaterThan(6);
+    expect(populationCounts(world).guppy).toBe(max);
+  });
+
+  it('performance : grandir parcourt le tableau une fois, sans allocation ni animal ajouté', () => {
+    const fishes = Array.from({ length: MAX_TOTAL_FISH }, (_, i) =>
+      i % 2 === 0 ? ({ growth: i } as Mutable<Fish>) : ({} as Mutable<Fish>),
+    );
+    const ref = fishes.slice();
+    for (let i = 0; i < 1000; i++) {
+      growFryInPlace(fishes, SIM_DT);
+    }
+    expect(fishes.length).toBe(MAX_TOTAL_FISH);
+    fishes.forEach((f, i) => expect(f).toBe(ref[i]));
   });
 
   it('croissance déterministe : même monde, même avenir', () => {
@@ -453,7 +530,7 @@ describe('alevins : sauvegarde, export et partage', () => {
 });
 
 describe('alevins d’exemple (`alevins=1`)', () => {
-  it('chaque femelle de guppy met bas, alevins répartis sur les quatre jalons', () => {
+  it('chaque femelle de guppy met bas, alevins répartis sur les trois jalons', () => {
     const world = cloneWorld(createDefaultWorld(42));
     const before = world.entities.length;
     const mothers = females(world).filter((f) => f.species === 'guppy');
@@ -461,7 +538,7 @@ describe('alevins d’exemple (`alevins=1`)', () => {
     expect(born).toBe(mothers.reduce((n, m) => n + broodSize(42, m.id, 0), 0));
     expect(world.entities.length).toBe(before + born);
     const stages = new Set(fryOf(world).map((f) => fryStage(f.growth)));
-    expect([...stages].sort()).toEqual([0, 1, 2, 3]);
+    expect([...stages].sort()).toEqual([0, 1, 2]);
     // Même graine, mêmes alevins.
     const again = cloneWorld(createDefaultWorld(42));
     broodWorldInPlace(again);

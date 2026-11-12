@@ -33,4 +33,19 @@ test.describe('Alevins de guppy', () => {
     const population = await open(page, '&alevins=1');
     expect(guppyCount(population)).toBeGreaterThan(0);
   });
+
+  for (const camera of ['front', 'top', 'bottom']) {
+    test(`alevins=1 : vue « ${camera} » sans erreur, autre graine (#566)`, async ({ page }) => {
+      const errors: string[] = [];
+      page.on('pageerror', (error) => errors.push(error.message));
+      await page.goto(`/?capture=1&seed=7&camera=${camera}&time=0&alevins=1`);
+      await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+      const population = await page
+        .locator('[data-aqfish-population]')
+        .first()
+        .getAttribute('data-aqfish-population');
+      expect(guppyCount(population)).toBeGreaterThan(0);
+      expect(errors).toEqual([]);
+    });
+  }
 });

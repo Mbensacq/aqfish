@@ -57,7 +57,7 @@
  * ignore une valeur inconnue ; absent, courant coupé (séries existantes inchangées).
  *
  * Paramètre facultatif `alevins=1` (issue #459) : en mode capture, chaque femelle de guppy
- * met bas sa première portée à t = 0, alevins répartis entre les quatre jalons de croissance
+ * met bas sa première portée à t = 0, alevins répartis entre les trois jalons de croissance
  * (`broodWorldInPlace`). Toute autre valeur ou absent : aucun alevin (séries existantes
  * inchangées).
  *

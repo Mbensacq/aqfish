@@ -24,7 +24,9 @@ import type { Fish, SwimBounds } from './swimmer';
  *   le mange.
  *
  * Toutes les valeurs sont des **approximations de jeu** : la gestation réelle du guppy dure
- * environ quatre semaines, la croissance plusieurs mois.
+ * environ quatre semaines, et les guides d'élevage situent sa maturité sexuelle vers deux à
+ * trois mois (un peu plus tôt chez le mâle). Le jeu garde l'ordre des étapes (alevin pâle et
+ * minuscule, juvénile qui se colore, subadulte presque à taille) sur 20 minutes simulées.
  */
 
 /** Espèces vivipares qui mettent bas des alevins dans la simulation. */
@@ -40,12 +42,32 @@ export const MAX_BROOD = 6;
 /** Faim strictement sous laquelle une femelle est « nourrie » (départ : 0,5). */
 export const FED_HUNGER = 0.5;
 
-/** Temps de croissance d'un alevin jusqu'à l'âge adulte, en secondes simulées. */
+/**
+ * Temps de croissance d'un alevin jusqu'à l'âge adulte, en secondes simulées : c'est aussi
+ * l'âge où il devient reproducteur (`canBreed`, `sim/eggs.ts`). Approximation de jeu : la
+ * maturité réelle vient vers deux à trois mois (issue #566).
+ */
 export const FRY_GROWTH_TIME = 1200;
-/** Nombre de jalons de croissance. */
-export const FRY_STAGES = 4;
+/**
+ * Nombre de jalons de croissance (issue #566) : nouveau-né, juvénile, subadulte. Quatre tailles
+ * (0,5 à 0,9) ne se distinguaient pas à quelques pixels de scène ; trois suffisent, bien
+ * séparées.
+ */
+export const FRY_STAGES = 3;
+/** Nom de chaque jalon, pour la documentation et les tests. */
+export const FRY_STAGE_NAMES: readonly string[] = Object.freeze([
+  'nouveau-né',
+  'juvénile',
+  'subadulte',
+]);
 /** Échelle du modèle à chaque jalon (l'adulte est à 1). */
-export const FRY_SCALES: readonly number[] = Object.freeze([0.5, 0.65, 0.8, 0.9]);
+export const FRY_SCALES: readonly number[] = Object.freeze([0.45, 0.65, 0.85]);
+/**
+ * Pâleur à chaque jalon, dans [0, 1] (issue #566) : part de la couleur mêlée au gris sable
+ * d'un alevin presque translucide ; l'adulte est à 0 (couleurs d'origine). Le guppy et le
+ * corydoras naissent ternes et prennent leurs couleurs en grandissant.
+ */
+export const FRY_PALLORS: readonly number[] = Object.freeze([0.7, 0.4, 0.15]);
 
 /** Distance horizontale à une plante sous laquelle un alevin est caché, en mètres. */
 export const FRY_HIDE_RADIUS = 0.12;
@@ -108,6 +130,12 @@ export function fryStage(growth: number | undefined): number {
 export function fryScale(growth: number | undefined): number {
   const stage = fryStage(growth);
   return stage >= FRY_STAGES ? 1 : FRY_SCALES[stage];
+}
+
+/** Pâleur du modèle rendu pour un âge, dans [0, 1] (0 pour un adulte, issue #566). */
+export function fryPallor(growth: number | undefined): number {
+  const stage = fryStage(growth);
+  return stage >= FRY_STAGES ? 0 : FRY_PALLORS[stage];
 }
 
 /** Rang de la portée qui s'achève au pas `tick`, ou -1 si `tick` n'achève aucune portée. */

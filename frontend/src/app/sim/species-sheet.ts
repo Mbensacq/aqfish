@@ -197,7 +197,7 @@ const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
     // (`sim/fry.ts`), la gestation réelle dure environ quatre semaines.
     notes: [
       note(
-        'Reproduction : vivipare, la femelle nourrie dans une eau saine met bas 2 à 6 alevins, qui grandissent cachés dans les plantes',
+        'Reproduction : vivipare, la femelle nourrie dans une eau saine met bas 2 à 6 alevins, qui grandissent cachés dans les plantes en trois étapes, pâles puis colorés, et se reproduisent adultes',
         APPROXIMATION,
       ),
     ],

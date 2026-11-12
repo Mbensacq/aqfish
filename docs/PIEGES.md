@@ -1029,6 +1029,12 @@ DEFAULT_DECOR)`), sinon les trajectoires divergent dès la naissance. (2026-10-1
   pas sur l'une changerait l'autre. Tout champ tableau de l'eau doit y être recopié (test
   « copie de l'eau » de `algae.spec.ts`). (2026-11-06)
 
+- **Échelles d'alevin trop proches : invisibles en pixel art** (cycle 199, #566) : à quelques
+  pixels de scène, un poisson à 0,8 et un à 0,9 de l'adulte ont la même silhouette. Garder au
+  moins 0,15 d'écart entre jalons (test `trois tailles lisibles`) et regarder la vue `front`
+  (`front-alevins`) : vue de dessus, un alevin pâle sur le sable ne se distingue presque pas.
+  Teinte de pâleur : le sable (`PALETTE.sable`) ; la teinte d'eau claire passe pour un reflet.
+  (2026-11-11)
 - **Alevin né près de sa mère : mangé au premier pas** (cycle 156, #459) : né à moins de 4 cm
   d'elle, hors des plantes, un alevin est dans le rayon de prédation de tous les adultes du
   banc ; sur la graine 42, 7 des 13 alevins d'exemple disparaissaient dès le premier pas.
@@ -1232,6 +1238,17 @@ environnement)` plutôt que `setPopulation(createDefaultWorld(…))`. (2026-10-2
 
 ## Rendu
 
+- **Trop d'attributs de sommet pour les poissons : une maladie = un attribut ne passe plus
+  l'échelle** (cycle 200, #578) : hydropisie (#565) et pâleur des alevins (#566), fusionnées
+  l'une après l'autre, portaient le matériau à 15 emplacements comptés (position, couleur,
+  `instanceMatrix` ×4, rangs de taché et d'effilochage, 7 attributs d'instance) : sous
+  Chromium (`MAX_VERTEX_ATTRIBS` = 16 pourtant), `Too many attributes (aqfishSpot)`, programme
+  invalide, erreur de page dans tous les e2e qui dessinent un poisson. Chaque PR seule passait.
+  Les intensités d'instance sont désormais groupées en deux `vec4` (`SIGNS_A_ATTRIBUTE`,
+  `SIGNS_B_ATTRIBUTE`, `render/fish-layer.ts`) : 10 emplacements. Un nouveau signe prend une
+  composante libre (il n'y en a plus : ouvrir un troisième `vec4`), jamais un `float` à part ;
+  `fish-layer.spec.ts` compte les emplacements du shader complet (≤ 12). Un signe propre au
+  corps (comme l'hydropisie) passe à zéro dans le tampon de la queue. (2026-11-11)
 - **Shader des poissons : un attribut de plus et plus aucun poisson** (cycle 198, #565) : le
   matériau des poissons lit déjà position, couleur, `instanceMatrix` (4 emplacements), rangs de
   taché et d'effilochage et un attribut d'instance par maladie. Un attribut de sommet `vec2` et un
