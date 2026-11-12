@@ -7443,6 +7443,12 @@
           "debut": "2026-11-12T14:32:48.092Z",
           "fin": "2026-11-12T15:00:07.692Z",
           "note": "Verdict OK, 0 bug, 1 réserve mineure (pastille mobile), captures publiées (c204)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-12T15:00:59.498Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
