@@ -5,6 +5,7 @@ import {
 } from './bacteria-starter';
 import { stepFilterMaturationInPlace } from './filter-maturation';
 import { MAX_LIGHTING_HOURS, MIN_LIGHTING_HOURS, readAlgae } from './algae';
+import { isLampOnHour } from './lamp';
 import { readPlantGrowth, type PlantGrowth } from './plant-growth';
 import { catappaPh, catappaStrength, readCatappa, stepCatappaInPlace } from './catappa';
 import type { EnvironmentId } from './environment';
@@ -101,6 +102,11 @@ export interface WaterState {
    * Réglage d'un appareil, comme la consigne du chauffage : le changement d'eau n'y touche pas.
    */
   readonly lighting?: number;
+  /**
+   * Heure d'allumage de la lampe du bac, heure entière dans [0, 23] (issue #584,
+   * `sim/lamp.ts`). Absente : `DEFAULT_LAMP_ON_HOUR`. Réglage d'un appareil, comme `lighting`.
+   */
+  readonly lampOn?: number;
   /**
    * Couverture de chaque plaque d'algues, dans [0, 1], au plus `ALGAE_PATCH_COUNT` (issue
    * #476, `sim/algae.ts`). Absente : aucune algue. Seule la raclette la fait baisser.
@@ -476,6 +482,7 @@ export function readWater(value: unknown, environment: EnvironmentId): ReadWater
       | 'phRegulatorWait'
       | 'ichCure'
       | 'lighting'
+      | 'lampOn'
       | 'algae'
       | 'plantGrowth'
       | 'gh'
@@ -520,6 +527,10 @@ export function readWater(value: unknown, environment: EnvironmentId): ReadWater
       ok: false,
       error: `eau : lighting doit être un entier dans [${MIN_LIGHTING_HOURS}, ${MAX_LIGHTING_HOURS}]`,
     };
+  }
+  const lampOn = read('lampOn');
+  if (lampOn !== undefined && !isLampOnHour(lampOn)) {
+    return { ok: false, error: 'eau : lampOn doit être un entier dans [0, 23]' };
   }
   const algaeValue = read('algae');
   const algae = algaeValue === undefined ? null : readAlgae(algaeValue);
@@ -616,6 +627,7 @@ export function readWater(value: unknown, environment: EnvironmentId): ReadWater
       ...(carbon === true ? { carbon } : {}),
       ...(cycling === true ? { cycling } : {}),
       ...(lighting === undefined ? {} : { lighting }),
+      ...(lampOn === undefined ? {} : { lampOn }),
       ...(algae === null || algae.algae.every((c) => c === 0) ? {} : { algae: algae.algae }),
       ...(plantGrowth === null || Object.keys(plantGrowth.growth).length === 0
         ? {}

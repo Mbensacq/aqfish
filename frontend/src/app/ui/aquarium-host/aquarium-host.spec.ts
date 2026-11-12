@@ -1546,6 +1546,25 @@ describe('AquariumHost', () => {
       expect(host().world!.water.algae?.filter((c) => c === 0)).toHaveLength(1);
     });
 
+    it('lampe (#584) : allumage enregistré, relevé du tableau de bord, intensité exposée', async () => {
+      await create('?seed=42&vitesse=0');
+      expect(host().lampOn()).toBe(10);
+      expect(host().lampReadout()?.schedule).toBe('10:00 → 18:00');
+      host().setLampOn(20);
+      expect(host().world!.water.lampOn).toBe(20);
+      expect(host().lampOn()).toBe(20);
+      host().setLampOn(24);
+      host().setLampOn(7.5);
+      expect(host().world!.water.lampOn).toBe(20);
+      host().setLighting(12);
+      expect(host().lampReadout()?.schedule).toBe('20:00 → 08:00');
+      expect(host().lampReadout()?.advice).toBe('longue');
+      fixture.destroy();
+      await create();
+      expect(host().world!.water.lampOn).toBe(20);
+      expect(host().lampOn()).toBe(20);
+    });
+
     it('sécateur (#477) : pousse exposée, plante taillée, outil exclusif de la raclette', async () => {
       await create('?seed=42&vitesse=0');
       const plantsAttr = () => fixture.nativeElement.getAttribute('data-aqfish-plants');

@@ -140,6 +140,12 @@
   color: var(--dashboard-ink);
 }
 
+.status__lamp {
+  flex-basis: 100%;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
 .status__tasks,
 .status__log {
   margin: 0;

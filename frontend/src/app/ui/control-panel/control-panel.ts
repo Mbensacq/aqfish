@@ -1,4 +1,5 @@
-import { DEFAULT_LIGHTING_HOURS, MAX_LIGHTING_HOURS, MIN_LIGHTING_HOURS } from '../../sim/algae';
+import { DEFAULT_LIGHTING_HOURS } from '../../sim/algae';
+import { DEFAULT_LAMP_ON_HOUR, LAMP_MAX_HOURS, LAMP_MIN_HOURS, isLampOnHour } from '../../sim/lamp';
 import {
   afterNextRender,
   ChangeDetectionStrategy,
@@ -196,12 +197,23 @@ export function lightingText(hours: number): string {
 }
 
 /**
- * Durée d'éclairage lue sur le curseur (#476) : entier dans [`MIN_LIGHTING_HOURS`,
- * `MAX_LIGHTING_HOURS`], `null` sinon.
+ * Durée d'éclairage lue sur le curseur (#476, #584) : entier dans [`LAMP_MIN_HOURS`,
+ * `LAMP_MAX_HOURS`] (4 à 14 h), `null` sinon.
  */
 export function sliderLighting(value: string | number): number | null {
   const h = toNumber(value);
-  return Number.isInteger(h) && h >= MIN_LIGHTING_HOURS && h <= MAX_LIGHTING_HOURS ? h : null;
+  return Number.isInteger(h) && h >= LAMP_MIN_HOURS && h <= LAMP_MAX_HOURS ? h : null;
+}
+
+/** Heure d'allumage de la lampe lue sur le curseur (#584) : entier de 0 à 23, `null` sinon. */
+export function sliderLampOn(value: string | number): number | null {
+  const h = toNumber(value);
+  return isLampOnHour(h) ? h : null;
+}
+
+/** Libellé de l'heure d'allumage (#584) : « allumée à 10:00 ». */
+export function lampOnText(hour: number): string {
+  return `allumée à ${formatHour(hour)}`;
 }
 
 export function sliderHeater(value: string | number): number | null {
@@ -461,25 +473,50 @@ export interface NewTankRequest {
               (input)="onHeater($event)"
             />
           </label>
-          <!-- Éclairage (#476) : heures par jour ; au-delà de 10 h, les algues poussent. -->
-          <label class="control-panel__field" for="panneau-eclairage">
-            <span class="control-panel__label">
-              Éclairage <output class="control-panel__value">{{ lightingLabel() }}</output>
-            </span>
-            <input
-              id="panneau-eclairage"
-              class="control-panel__range"
-              aria-label="Durée d’éclairage par jour"
-              type="range"
-              min="0"
-              max="24"
-              step="1"
-              data-lighting
-              [value]="lighting()"
-              [attr.aria-valuetext]="lightingLabel()"
-              (input)="onLighting($event)"
-            />
-          </label>
+          <!-- Éclairage (#476, lampe #584) : 4 à 14 h par jour ; au-delà de 10 h, les algues
+               poussent, sous 8 h les plantes ralentissent. Puis l'heure d'allumage, sur la même
+               ligne (le panneau ne grandit pas à 1280 × 720, docs/PIEGES.md) : valeurs courtes à
+               l'écran, phrases entières pour les lecteurs d'écran. -->
+          <div class="control-panel__row control-panel__row--halves">
+            <label class="control-panel__field" for="panneau-eclairage">
+              <span class="control-panel__label">
+                Éclairage
+                <output class="control-panel__value" aria-hidden="true">{{ lighting() }} h</output>
+              </span>
+              <input
+                id="panneau-eclairage"
+                class="control-panel__range"
+                aria-label="Durée d’éclairage par jour"
+                type="range"
+                min="4"
+                max="14"
+                step="1"
+                data-lighting
+                [value]="lighting()"
+                [attr.aria-valuetext]="lightingLabel()"
+                (input)="onLighting($event)"
+              />
+            </label>
+            <label class="control-panel__field" for="panneau-lampe">
+              <span class="control-panel__label">
+                Lampe
+                <output class="control-panel__value" aria-hidden="true">{{ lampOnShort() }}</output>
+              </span>
+              <input
+                id="panneau-lampe"
+                class="control-panel__range"
+                aria-label="Heure d’allumage de la lampe"
+                type="range"
+                min="0"
+                max="23"
+                step="1"
+                data-lamp-on
+                [value]="lampOn()"
+                [attr.aria-valuetext]="lampOnLabel()"
+                (input)="onLampOn($event)"
+              />
+            </label>
+          </div>
           <!-- Outils d'entretien, côte à côte (le panneau ne grandit pas, docs/PIEGES.md) :
                raclette (#476), un clic sur une vitre retire la plaque d'algues visée ; sécateur
                (#477), un clic sur une plante à tige la taille. -->
@@ -1467,6 +1504,8 @@ export class ControlPanel {
   readonly ichCount = input(0);
   /** Durée d'éclairage du bac, en heures par jour (fournie par l'hôte, #476). */
   readonly lighting = input(DEFAULT_LIGHTING_HOURS);
+  /** Heure d'allumage de la lampe (fournie par l'hôte, #584). */
+  readonly lampOn = input(DEFAULT_LAMP_ON_HOUR);
   /** Raclette en main (fournie par l'hôte, #476). */
   readonly scraping = input(false);
   /** Sécateur en main (fourni par l'hôte, #477). */
@@ -1545,8 +1584,10 @@ export class ControlPanel {
   readonly populationChanged = output<PopulationRequest>();
   /** Consigne du chauffage choisie au curseur, en °C (#207). */
   readonly heaterChanged = output<number>();
-  /** Durée d'éclairage demandée (#476), en heures entières dans [0, 24]. */
+  /** Durée d'éclairage demandée (#476, #584), en heures entières dans [4, 14]. */
   readonly lightingChanged = output<number>();
+  /** Heure d'allumage de la lampe demandée (#584), heure entière dans [0, 23]. */
+  readonly lampOnChanged = output<number>();
   /** Bouton « Raclette » (#476) : prendre ou poser la raclette. */
   readonly scraperToggled = output<void>();
   /** Bouton « Sécateur » (#477) : prendre ou poser le sécateur. */
@@ -1686,6 +1727,8 @@ export class ControlPanel {
   protected readonly statusText = computed(() => saveStatusText(this.saveStatus()));
   protected readonly heaterLabel = computed(() => heaterText(this.water()));
   protected readonly lightingLabel = computed(() => lightingText(this.lighting()));
+  protected readonly lampOnLabel = computed(() => lampOnText(this.lampOn()));
+  protected readonly lampOnShort = computed(() => formatHour(this.lampOn()));
   /** Section « Soins » (#361) : en mode soins, avec des points blancs ou un traitement. */
   protected readonly careShown = computed(
     () => this.careMode() !== 'decor' && (this.ichCount() > 0 || this.treatment() !== null),
@@ -2030,6 +2073,13 @@ export class ControlPanel {
     const hours = sliderLighting((event.target as HTMLInputElement).value);
     if (hours !== null) {
       this.lightingChanged.emit(hours);
+    }
+  }
+
+  protected onLampOn(event: Event): void {
+    const hour = sliderLampOn((event.target as HTMLInputElement).value);
+    if (hour !== null) {
+      this.lampOnChanged.emit(hour);
     }
   }
 

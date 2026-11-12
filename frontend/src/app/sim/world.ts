@@ -14,11 +14,13 @@ import { catappaActive, withCatappaCount } from './catappa';
 import { MAX_TOTAL_FISH, SIM_DT } from './constants';
 import { dayIntensityAt, hourAt, type DayClock } from './daylight';
 import { nightRest } from './day-rhythm';
+import { setLampOnInPlace } from './lamp';
 import {
   hasPlantGrowth,
   isGrowingPlant,
   plantShade,
   prunePlantInPlace,
+  plantLightFactor,
   shownGrowth,
   stepPlantGrowthInPlace,
   type MutablePlantGrowth,
@@ -1003,7 +1005,8 @@ function stepInPlace(world: MutableWorld, dt: number, clock: SimClock): void {
     );
   }
   // Plantes à tige (issue #477) : pousse sans hasard, jusqu'à la surface, ralentie par le sel
-  // (effet secondaire, #549) ; en pause en mode décor comme l'eau.
+  // (effet secondaire, #549) et par un éclairage court (lampe, #584) ; en pause en mode décor
+  // comme l'eau.
   if (hasPlantGrowth(world.environment)) {
     const water = world.water as MutableWaterState;
     const growth = stepPlantGrowthInPlace(
@@ -1011,7 +1014,7 @@ function stepInPlace(world: MutableWorld, dt: number, clock: SimClock): void {
       world.decor,
       dt,
       environmentWater(place).maxY,
-      plantGrowthFactor(water),
+      plantGrowthFactor(water) * plantLightFactor(lightingOf(water)),
     );
     if (growth !== undefined && water.plantGrowth === undefined) {
       water.plantGrowth = growth;
@@ -1615,6 +1618,15 @@ export function setWorldHeaterInPlace(world: MutableWorld, temperature: number):
  */
 export function setWorldLightingInPlace(world: MutableWorld, hours: number): boolean {
   return setLightingInPlace(world.water as MutableWaterState, hours);
+}
+
+/**
+ * Heure d'allumage de la lampe du bac (issue #584, `setLampOnInPlace`), **en modifiant**
+ * `world` : heure entière de 0 à 23, valeur par défaut non écrite. Renvoie faux, sans rien
+ * changer, hors de ces heures.
+ */
+export function setWorldLampOnInPlace(world: MutableWorld, hour: number): boolean {
+  return setLampOnInPlace(world.water as MutableWaterState, hour);
 }
 
 /** Plaques d'algues du bac de `world` (`algaePatches`), vides hors des bacs à algues. */
