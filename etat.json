@@ -7289,10 +7289,10 @@
           "note": "Issue #567 : Rayons de lumière dans l'eau (S)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "echec",
           "debut": "2026-11-11T21:05:12.995Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-12T00:41:37.160Z",
+          "note": "bloquée plus de 3 h, close par Relance"
         }
       },
       "metriques": {}
