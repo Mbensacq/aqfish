@@ -143,6 +143,12 @@ haut de sa section.
   propres `species-sheet__…`), poser `display: block` sur l'hôte (élément personnalisé
   `inline` par défaut) et garder les attributs de l'ancienne racine sur l'hôte (`role`,
   `id`, `data-…`) pour que tests et e2e ne changent pas. (2026-11-05)
+- **Mutation hebdomadaire en CI** (décision de Mathis du 2026-11-12, #444) : le workflow
+  `Mutation hebdomadaire` mute tout `src/app/sim` chaque dimanche en 12 lots et publie le bilan
+  par fichier sur la branche `equipe` (`mutation/hebdo/AAAA-MM-JJ.md`, `dernier.json`, trié du
+  plus faible score au plus fort). Pour un cycle de dette sur la mutation : partir de ce bilan
+  plutôt que de relancer Stryker sur un gros fichier ; pour vérifier un correctif, ne muter que
+  les fonctions touchées. Mathis peut aussi lancer le workflow à la main sur une liste de fichiers.
 - **Test de mutation d'un gros fichier de `sim` : hors de portée d'une session** (cycle 148,
   #235) : `npx stryker run --mutate src/app/sim/frog.ts` instrumente 466 mutants, et les
   tests qui les couvrent (`frog.spec.ts`, `triton.spec.ts`, ~36 s à eux deux sans
@@ -338,13 +344,13 @@ origin/main`, `node_modules` en lien symbolique) ; il sert aussi aux captures «
   `--shard`, ou avec des fichiers choisis, Playwright tel quel. La CI affiche la durée de
   chaque test (rapporteur `list`) et, en tête de part, la liste et la durée estimée.
   - **Remesurer** quand un fichier change beaucoup de durée ou qu'une part dépasse 25 min :
-    télécharger les journaux des 6 parts
+    télécharger les journaux des 7 parts
     (`gh api repos/{owner}/{repo}/actions/jobs/<id>/logs > p1.txt`, identifiants dans
     `commits/<sha>/check-runs`), puis `node scripts/parts-e2e.mjs --mesurer p*.txt`
     (réécrit `e2e/durees.json`) et le committer. Donner les journaux de **plusieurs séries**
     (moyenne par fichier) : une seule série garde l'écart de sa machine la plus lente.
   - **Vérifier une répartition** sans rien lancer :
-    `for i in 1 2 3 4 5 6; do npm run e2e -- --shard=$i/6 --list | tail -1; done` (total =
+    `for i in 1 2 3 4 5 6 7; do npm run e2e -- --shard=$i/7 --list | tail -1; done` (total =
     `npx playwright test --project=e2e --list`).
   - Les machines de la CI varient de ±30 % pour un même lot de tests (part 2 : 28,9 puis
     37,5 min, mêmes 63 tests) : au cycle 125, ~130 min de tests au total, soit ~22 min par

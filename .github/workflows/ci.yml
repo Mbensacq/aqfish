@@ -48,7 +48,7 @@ jobs:
         run: npm run build
 
   e2e:
-    name: e2e ${{ matrix.shard }}/6
+    name: e2e ${{ matrix.shard }}/7
     runs-on: ubuntu-latest
     # L'installation de Chromium (paquets système) prend parfois 8 à 12 min sur certains
     # runners (#248) : marge de 45 min et 6 parts pour rester loin du délai.
@@ -56,7 +56,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5, 6]
+        shard: [1, 2, 3, 4, 5, 6, 7]
     defaults:
       run:
         working-directory: frontend
@@ -73,10 +73,17 @@ jobs:
         run: npm ci
 
       - name: Installer Chromium pour Playwright
-        run: npx playwright install --with-deps chromium
+        run: |
+          # Les miroirs apt du runner tombent parfois (DNS, #577) : trois essais espacés.
+          for essai in 1 2 3; do
+            npx playwright install --with-deps chromium && exit 0
+            echo "::warning::Installation de Chromium en échec (essai $essai sur 3), nouvel essai dans 30 s"
+            sleep 30
+          done
+          exit 1
 
-      - name: Tests de bout en bout (part ${{ matrix.shard }} sur 6)
-        run: npm run e2e -- --shard=${{ matrix.shard }}/6
+      - name: Tests de bout en bout (part ${{ matrix.shard }} sur 7)
+        run: npm run e2e -- --shard=${{ matrix.shard }}/7
 
       - name: Publier le rapport Playwright
         if: failure()
@@ -107,7 +114,14 @@ jobs:
         run: npm ci
 
       - name: Installer Chromium pour Playwright
-        run: npx playwright install --with-deps chromium
+        run: |
+          # Les miroirs apt du runner tombent parfois (DNS, #577) : trois essais espacés.
+          for essai in 1 2 3; do
+            npx playwright install --with-deps chromium && exit 0
+            echo "::warning::Installation de Chromium en échec (essai $essai sur 3), nouvel essai dans 30 s"
+            sleep 30
+          done
+          exit 1
 
       - name: Captures sous 5 angles
         run: npm run captures

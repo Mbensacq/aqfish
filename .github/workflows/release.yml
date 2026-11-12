@@ -137,7 +137,14 @@ jobs:
       - run: npm ci
 
       - name: Installer Chromium pour Playwright (vérification et aperçu du paquet)
-        run: npx playwright install --with-deps chromium
+        run: |
+          # Les miroirs apt du runner tombent parfois (DNS, #577) : trois essais espacés.
+          for essai in 1 2 3; do
+            npx playwright install --with-deps chromium && exit 0
+            echo "::warning::Installation de Chromium en échec (essai $essai sur 3), nouvel essai dans 30 s"
+            sleep 30
+          done
+          exit 1
 
       - name: Construire le paquet fond d'écran
         run: npm run paquet-fond

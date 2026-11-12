@@ -1,0 +1,207 @@
+# Tests de mutation hebdomadaires de `src/app/sim` (décision de Mathis du 2026-11-12, #444, #26).
+#
+# Un fichier comme `swimmer.ts` ou `frog.ts` dépasse la durée d'une session d'agent : la mutation
+# tourne donc ici, chaque semaine, sur les machines gratuites de GitHub (dépôt public). Les
+# fichiers de `src/app/sim` sont répartis en lots de taille voisine, mutés en parallèle, puis un
+# bilan par fichier est écrit dans le résumé de l'exécution et publié sur la branche `equipe`
+# (`mutation/hebdo/AAAA-MM-JJ.md` et `mutation/hebdo/dernier.json`), où les agents le lisent.
+name: Mutation hebdomadaire
+
+on:
+  schedule:
+    # Dimanche 02:17 UTC, hors des heures pleines.
+    - cron: '17 2 * * 0'
+  workflow_dispatch:
+    inputs:
+      fichiers:
+        description: 'Globs à muter, séparés par des virgules (vide : tout src/app/sim en lots)'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mutation
+  cancel-in-progress: false
+
+jobs:
+  lots:
+    name: répartition en lots
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      matrice: ${{ steps.repartir.outputs.matrice }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Répartir les fichiers de src/app/sim
+        id: repartir
+        env:
+          FICHIERS: ${{ github.event.inputs.fichiers }}
+        working-directory: frontend
+        run: |
+          node --input-type=module <<'EOF' >> "$GITHUB_OUTPUT"
+          import { readdirSync, readFileSync, statSync } from 'node:fs';
+          import { join } from 'node:path';
+
+          const LOTS = 12;
+          const choisis = (process.env.FICHIERS ?? '').trim();
+          if (choisis) {
+            console.log(`matrice=${JSON.stringify([{ lot: 1, mutate: choisis }])}`);
+            process.exit(0);
+          }
+          const fichiers = [];
+          const parcourir = (dossier) => {
+            for (const nom of readdirSync(dossier)) {
+              const chemin = join(dossier, nom);
+              if (statSync(chemin).isDirectory()) {
+                if (nom !== 'testing') parcourir(chemin);
+              } else if (nom.endsWith('.ts') && !nom.endsWith('.spec.ts')) {
+                fichiers.push({ chemin, lignes: readFileSync(chemin, 'utf8').split('\n').length });
+              }
+            }
+          };
+          parcourir('src/app/sim');
+          // Plus gros fichiers d'abord, chacun dans le lot le moins chargé.
+          fichiers.sort((a, b) => b.lignes - a.lignes || a.chemin.localeCompare(b.chemin));
+          const lots = Array.from({ length: LOTS }, () => ({ fichiers: [], lignes: 0 }));
+          for (const f of fichiers) {
+            const lot = lots.reduce((min, l) => (l.lignes < min.lignes ? l : min));
+            lot.fichiers.push(f.chemin);
+            lot.lignes += f.lignes;
+          }
+          const matrice = lots
+            .filter((l) => l.fichiers.length > 0)
+            .map((l, i) => ({ lot: i + 1, mutate: l.fichiers.sort().join(',') }));
+          console.log(`matrice=${JSON.stringify(matrice)}`);
+          EOF
+
+  muter:
+    name: mutation, lot ${{ matrix.lot }}
+    needs: lots
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.lots.outputs.matrice) }}
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci
+
+      - name: StrykerJS sur le lot
+        env:
+          MUTATE: ${{ matrix.mutate }}
+        run: npx stryker run --mutate "$MUTATE"
+
+      - name: Garder le rapport du lot
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: mutation-lot-${{ matrix.lot }}
+          path: frontend/reports/mutation/mutation.json
+          if-no-files-found: warn
+          retention-days: 30
+
+  bilan:
+    name: bilan
+    needs: muter
+    if: always() && needs.muter.result != 'skipped'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: equipe
+          path: equipe
+
+      - uses: actions/download-artifact@v7
+        with:
+          pattern: mutation-lot-*
+          path: rapports
+
+      - name: Calculer le bilan par fichier
+        run: |
+          node --input-type=module <<'EOF'
+          import { readdirSync, readFileSync, writeFileSync, mkdirSync, existsSync, appendFileSync } from 'node:fs';
+          import { join } from 'node:path';
+
+          const detectes = new Set(['Killed', 'Timeout']);
+          const nonDetectes = new Set(['Survived', 'NoCoverage']);
+          const parFichier = {};
+          const lotsLus = [];
+          for (const dossier of existsSync('rapports') ? readdirSync('rapports') : []) {
+            const chemin = join('rapports', dossier, 'mutation.json');
+            if (!existsSync(chemin)) continue;
+            lotsLus.push(dossier);
+            const rapport = JSON.parse(readFileSync(chemin, 'utf8'));
+            for (const [fichier, contenu] of Object.entries(rapport.files ?? {})) {
+              const f = (parFichier[fichier] ??= { detectes: 0, survivants: 0, sansCouverture: 0 });
+              for (const m of contenu.mutants ?? []) {
+                if (detectes.has(m.status)) f.detectes++;
+                else if (m.status === 'Survived') f.survivants++;
+                else if (m.status === 'NoCoverage') f.sansCouverture++;
+              }
+            }
+          }
+          const lignes = Object.entries(parFichier).map(([fichier, f]) => {
+            const valides = f.detectes + f.survivants + f.sansCouverture;
+            const score = valides ? Math.round((f.detectes / valides) * 10000) / 100 : null;
+            return { fichier, score, ...f, valides };
+          });
+          lignes.sort((a, b) => (a.score ?? 101) - (b.score ?? 101) || a.fichier.localeCompare(b.fichier));
+          const total = lignes.reduce(
+            (t, l) => ({ detectes: t.detectes + l.detectes, valides: t.valides + l.valides }),
+            { detectes: 0, valides: 0 },
+          );
+          const scoreGlobal = total.valides ? Math.round((total.detectes / total.valides) * 10000) / 100 : null;
+          const jour = new Date().toISOString().slice(0, 10);
+          const md = [
+            `# Mutation hebdomadaire du ${jour}`,
+            '',
+            `Score global de \`src/app/sim\` : **${scoreGlobal ?? 'n/d'} %** (${total.detectes} mutants détectés sur ${total.valides}). Lots lus : ${lotsLus.length}.`,
+            '',
+            '| Fichier | Score | Survivants | Sans couverture | Mutants valides |',
+            '|---|---|---|---|---|',
+            ...lignes.map((l) => `| \`${l.fichier}\` | ${l.score ?? 'n/d'} % | ${l.survivants} | ${l.sansCouverture} | ${l.valides} |`),
+            '',
+          ].join('\n');
+          appendFileSync(process.env.GITHUB_STEP_SUMMARY, md);
+          mkdirSync('equipe/mutation/hebdo', { recursive: true });
+          writeFileSync(`equipe/mutation/hebdo/${jour}.md`, md);
+          writeFileSync(
+            'equipe/mutation/hebdo/dernier.json',
+            JSON.stringify({ jour, score: scoreGlobal, detectes: total.detectes, valides: total.valides, fichiers: lignes }, null, 2) + '\n',
+          );
+          EOF
+
+      - name: Publier le bilan sur la branche equipe
+        working-directory: equipe
+        run: |
+          git config user.name "Mathis BENSACQ"
+          git config user.email "126905623+Mbensacq@users.noreply.github.com"
+          git add mutation/hebdo
+          if git diff --cached --quiet; then
+            echo "Rien à publier."
+            exit 0
+          fi
+          git commit -q -m "mutation: bilan hebdomadaire du $(date -u +%F)"
+          # La branche equipe est aussi écrite par les agents : rejouer sur la dernière version.
+          for essai in 1 2 3 4 5; do
+            git pull -q --rebase origin equipe && git push -q origin HEAD:equipe && exit 0
+            sleep 10
+          done
+          exit 1
