@@ -7423,7 +7423,7 @@
       "debut": "2026-11-12T11:45:39.532Z",
       "type": "fonctionnalite",
       "issue": 581,
-      "pr": null,
+      "pr": 591,
       "version": null,
       "phases": {
         "planif": {
