@@ -7373,10 +7373,10 @@
           "note": "Verdict OK, 0 bug, captures publiées (c202)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-12T07:04:43.834Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-12T08:20:27.127Z",
+          "note": "PR #587 fusionnée → v1.17.5, PR #586 (roadmap) fusionnée, CI main et release vertes ; #588 (bug recouvrement 900×700) créée ; #579 en validation-mathis"
         }
       },
       "metriques": {}
