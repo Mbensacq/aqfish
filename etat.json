@@ -7325,10 +7325,10 @@
           "note": "Issue #450 : mutants de sim/frog.ts 141-300 + #520 pts 1-2 (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-12T01:35:46.691Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-12T02:48:02.861Z",
+          "note": "PR #580 : mutants frog.ts 141-300 (98,16 %) + #520 tests, CI verte"
         }
       },
       "metriques": {}
