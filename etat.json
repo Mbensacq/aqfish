@@ -7467,6 +7467,12 @@
           "debut": "2026-11-12T16:11:42.124Z",
           "fin": "2026-11-12T16:12:10.764Z",
           "note": "Issue #584 : Lampe du bac et durée d'éclairage (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-12T16:12:46.462Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
