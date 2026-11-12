@@ -1252,6 +1252,14 @@ environnement)` plutôt que `setPopulation(createDefaultWorld(…))`. (2026-10-2
 
 ## Rendu
 
+- **Effet translucide d'une couleur « locale » : la passe palette la renvoie ailleurs**
+  (cycle 203, #567) : au récif, des rayons en `eauRecifClaire` à 30 % sur l'eau bleue
+  retombaient exactement sur l'eau (invisibles), et en `koiBlanc` sur le violet des coraux
+  (`corailVioletClair`). Le mélange est classé par la passe, pas la couleur d'entrée : essayer
+  la couleur sur chaque environnement concerné et regarder les captures ; une couleur déjà
+  employée au même endroit (le reflet `eauTresClaire`) est la valeur sûre. Autre leçon : un
+  tramage ordonné épars sur toute une surface se lit comme du bruit à basse résolution ; des
+  traits continus au bout tramé se lisent comme des rayons. (2026-11-12)
 - **Trop d'attributs de sommet pour les poissons : une maladie = un attribut ne passe plus
   l'échelle** (cycle 200, #578) : hydropisie (#565) et pâleur des alevins (#566), fusionnées
   l'une après l'autre, portaient le matériau à 15 emplacements comptés (position, couleur,

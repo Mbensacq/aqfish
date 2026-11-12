@@ -35,6 +35,8 @@ import {
 } from '../sim/world';
 import { REDUCED_MOTION } from '../core/reduced-motion/reduced-motion';
 import { lightTime } from './water-light';
+import { rayTime } from './light-rays-layer';
+import { lightRaysAt } from '../sim/light-rays';
 import {
   AquariumView,
   ORBIT_MOUSE_ACTIONS,
@@ -865,6 +867,51 @@ describe('AquariumView (ciel couvert sous la pluie, #123)', () => {
   });
 });
 
+describe('AquariumView (rayons de lumière, #567)', () => {
+  function viewIn(environment = TROPICAL_TANK): AquariumView {
+    const view = new AquariumView({
+      canvas: document.createElement('canvas'),
+      rendererFactory: () => new RecordingRenderer(),
+      pixelRatio: 1,
+      preset: 'front',
+      interactive: false,
+      environment,
+    });
+    view.resize(320, 180);
+    return view;
+  }
+
+  it('suivent l’heure : pleins à midi, éteints à minuit, partiels à l’aube', () => {
+    const view = viewIn();
+    view.updateLightRays(12);
+    expect(view.lightRaysStrength).toBe(1);
+    view.updateLightRays(0);
+    expect(view.lightRaysStrength).toBe(0);
+    view.updateLightRays(6);
+    expect(view.lightRaysStrength).toBeCloseTo(lightRaysAt(6).strength, 12);
+    expect(() => view.updateLightRays(Number.NaN)).toThrow(RangeError);
+    view.dispose();
+    expect(() => view.updateLightRays(12)).not.toThrow();
+  });
+
+  it('atténués sous la pluie du bassin, rétablis après', () => {
+    const view = viewIn(POND);
+    view.updateLightRays(12);
+    view.setRain(true);
+    expect(view.lightRaysStrength).toBeCloseTo(lightRaysAt(12, 1).strength, 12);
+    view.setRain(false);
+    expect(view.lightRaysStrength).toBe(1);
+    view.dispose();
+  });
+
+  it('absents du paludarium', () => {
+    const view = viewIn(PALUDARIUM);
+    view.updateLightRays(12);
+    expect(view.lightRaysStrength).toBe(0);
+    view.dispose();
+  });
+});
+
 describe('AquariumView (caméra du fond d’écran, #332)', () => {
   it('applyOrbit : pose de base calculée une fois par taille, position de orbitPose', () => {
     const view = new AquariumView({
@@ -1394,6 +1441,21 @@ describe('AquariumView (mouvements réduits, #406)', () => {
     expect(reduced.waterLightTime).toBeCloseTo(lightTime(12 * REDUCED_MOTION.waterWave), 10);
     expect(reduced.waterLightTime).not.toBe(lightTime(12));
     reduced.dispose();
+  });
+
+  it('rayons de lumière fixes avec l’option, animés sans (#567)', () => {
+    const view = create();
+    view.updateDecor(12);
+    expect(view.lightRaysTime).toBe(rayTime(12));
+    view.setReducedMotion(true);
+    view.updateDecor(12);
+    const frozen = view.lightRaysTime;
+    view.updateDecor(40);
+    expect(view.lightRaysTime).toBe(frozen);
+    view.setReducedMotion(false);
+    view.updateDecor(50);
+    expect(view.lightRaysTime).toBeCloseTo(rayTime(12 + 10), 10);
+    view.dispose();
   });
 
   it('bascule en cours de route : pas de saut de phase de l’eau (#409)', () => {

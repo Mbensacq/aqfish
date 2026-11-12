@@ -60,7 +60,7 @@ import { EggLayer } from './egg-layer';
 import { FoodLayer } from './food-layer';
 import { scenePixelsPerMeter } from './food-size';
 import { LilyPadLayer } from './lily-pad-layer';
-import { overcastBrightness, RAIN_TONES, stepOvercast } from './overcast';
+import { overcastBrightness, RAIN_OVERCAST_BRIGHTNESS, RAIN_TONES, stepOvercast } from './overcast';
 import { isObliqueView, RainLayer } from './rain-layer';
 import { RoomLayer } from './room-layer';
 import {
@@ -102,6 +102,8 @@ import { DirectPass } from './direct-pass';
 import { PIXEL_SIZE, type Size } from './pixel-art';
 import type { PhotoPixels } from './photo-capture';
 import { WaterLightLayer } from './water-light';
+import { LightRaysLayer, LIGHT_RAY_ENVIRONMENTS } from './light-rays-layer';
+import { createLightRays, lightRaysInto } from '../sim/light-rays';
 import { DecorClock } from './decor-clock';
 import {
   FULL_MOTION,
@@ -238,6 +240,11 @@ export class AquariumView {
   private readonly eggLayer = new EggLayer();
   /** Caustiques sur le sable et reflet de surface (ADR 0017). */
   private readonly waterLight: WaterLightLayer;
+  /** Rayons de lumière dans l'eau (issue #567, ADR 0134). */
+  private readonly lightRaysLayer: LightRaysLayer;
+  /** Heure des rayons (`updateLightRays`) et tampon des rayons, réutilisé. */
+  private raysHour = 12;
+  private readonly rays = createLightRays();
   /** Nénuphars (issue #103), tirés de la graine fixée par `setDecor`. */
   private readonly lilyPadLayer: LilyPadLayer;
   /** Pluie (issue #106), possible dans un environnement qui en a (`Environment.rain`). */
@@ -427,6 +434,8 @@ export class AquariumView {
   /** Horloges de l'eau et de la pluie (#409) : ralenties sans saut de phase à la bascule. */
   private readonly waterClock = new DecorClock();
   private readonly rainClock = new DecorClock();
+  /** Horloge des rayons de lumière (#567) : arrêtée si mouvements réduits (rayons fixes). */
+  private readonly raysClock = new DecorClock();
   /** Dernier temps simulé passé à `updateDecor` : instant de bascule des horloges. */
   private decorTime = 0;
   /** Temps propre d'un effet (`updateVisibleEffects`) : pluie ralentie si mouvements réduits. */
@@ -494,6 +503,11 @@ export class AquariumView {
       this.world.environment.caustics,
       surfaceY,
     );
+    this.lightRaysLayer = new LightRaysLayer(
+      this.world.dimensions,
+      LIGHT_RAY_ENVIRONMENTS.includes(this.world.environment.id),
+      surfaceY,
+    );
     this.lilyPadLayer = new LilyPadLayer(this.world.dimensions, surfaceY);
     this.rainLayer = new RainLayer(environmentDataWater(this.world.environment));
     // Tons propres à l'environnement (eau du récif, ADR 0039) : écartés ailleurs. Après la
@@ -511,6 +525,7 @@ export class AquariumView {
       this.foodLayer,
       this.eggLayer,
       this.waterLight,
+      this.lightRaysLayer,
       this.lilyPadLayer,
       this.rainLayer,
       this.floatingLeafLayer,
@@ -752,6 +767,7 @@ export class AquariumView {
       this.lilyPadLayer.update(waterTime, this.rainLayer.isEnabled ? 1 : 0);
       updateVisibleEffects(this.effects, time, this.effectTime);
       this.waterLight.update(waterTime);
+      this.lightRaysLayer.update(this.raysClock.at(time));
     }
   }
 
@@ -764,11 +780,22 @@ export class AquariumView {
     this.currentLayer.setStill(reduced);
     this.waterClock.setRate(this.motion.waterWave, this.decorTime);
     this.rainClock.setRate(this.motion.rainSpeed, this.decorTime);
+    this.raysClock.setRate(this.motion.lightRays, this.decorTime);
   }
 
   /** Vrai si les mouvements décoratifs sont réduits. */
   get reducedMotion(): boolean {
     return this.motion !== FULL_MOTION;
+  }
+
+  /** Temps des rayons de lumière posé par le dernier `updateDecor`, ramené à la période. */
+  get lightRaysTime(): number {
+    return this.lightRaysLayer.time;
+  }
+
+  /** Force des rayons de lumière appliquée (0 la nuit ; 0 aussi s'ils sont masqués). */
+  get lightRaysStrength(): number {
+    return this.lightRaysLayer.object.visible ? this.lightRaysLayer.raysStrength : 0;
   }
 
   /** Temps des caustiques et du reflet posé par le dernier `updateDecor` (tests). */
@@ -1037,6 +1064,7 @@ export class AquariumView {
     this.world.setOvercast(overcast);
     this.world.setDaylight(light);
     this.waterLight.setDaylight(light.intensity);
+    this.applyLightRays();
     // Poissons, bulles, gouttes et granulés (couleurs plates) gardent leur clarté : vus à
     // travers l'eau assombrie, et des koïs ou des gouttes assombris changeraient de couleur.
     const brightness = flatBrightness(light.intensity);
@@ -1073,6 +1101,26 @@ export class AquariumView {
     if (!this.disposed) {
       this.lilyPadLayer.setOpenness(flowerOpenness(hour));
     }
+  }
+
+  /**
+   * Oriente les rayons de lumière selon l'heure `hour` (`sim/light-rays.ts`, issue #567) : à
+   * appeler avec `updateLight`, à la même heure. Le ciel couvert de la pluie les atténue.
+   * @throws RangeError si `hour` n'est pas un réel fini.
+   */
+  updateLightRays(hour: number): void {
+    if (!this.disposed) {
+      lightRaysInto(hour, 0, this.rays);
+      this.raysHour = hour;
+      this.applyLightRays();
+    }
+  }
+
+  /** Rayons de l'heure `raysHour` sous le ciel couvert courant (1 − facteur, ramené à [0, 1]). */
+  private applyLightRays(): void {
+    const cloudiness = (1 - this.overcast) / (1 - RAIN_OVERCAST_BRIGHTNESS);
+    lightRaysInto(this.raysHour, cloudiness, this.rays);
+    this.lightRaysLayer.setRays(this.rays.strength, this.rays.tilt);
   }
 
   /** Ouverture courante des fleurs des nénuphars (tests). */

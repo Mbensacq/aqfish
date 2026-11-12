@@ -111,6 +111,8 @@ export interface MotionFactors {
    * râpe du broutage, frémissement de la défense. La posture (museau baissé) reste.
    */
   readonly behaviorGesture: number;
+  /** Vitesse du balancement et du scintillement des rayons de lumière (#567) ; 0 : fixes. */
+  readonly lightRays: number;
 }
 
 /** Mouvements normaux : rien ne change. */
@@ -121,6 +123,7 @@ export const FULL_MOTION: MotionFactors = Object.freeze({
   rainSpeed: 1,
   parallax: 1,
   behaviorGesture: 1,
+  lightRays: 1,
 });
 
 /**
@@ -134,6 +137,7 @@ export const REDUCED_MOTION: MotionFactors = Object.freeze({
   rainSpeed: 0.4,
   parallax: 0,
   behaviorGesture: 0,
+  lightRays: 0,
 });
 
 /** Facteurs de l'état `reduced`. */

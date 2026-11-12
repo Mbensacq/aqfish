@@ -127,10 +127,11 @@ describe('reduced-motion : facteurs', () => {
     }
   });
 
-  it('mouvements réduits : caméra qui saute et parallaxe coupée', () => {
+  it('mouvements réduits : caméra qui saute, parallaxe coupée, rayons de lumière fixes', () => {
     expect(motionFactors(true)).toBe(REDUCED_MOTION);
     expect(REDUCED_MOTION.cameraTransition).toBe(0);
     expect(REDUCED_MOTION.parallax).toBe(0);
+    expect(REDUCED_MOTION.lightRays).toBe(0);
   });
 
   it('mouvements réduits : eau, plantes et pluie fortement atténuées, pas supprimées', () => {
