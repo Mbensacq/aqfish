@@ -7535,10 +7535,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-12T23:48:46.030Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-12T23:49:29.515Z",
+          "note": "Issue #597 : lot de dette #597+#595+#592 (M)"
         }
       },
       "metriques": {}
