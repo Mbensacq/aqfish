@@ -313,7 +313,8 @@ test.describe('Panneau de contrôle', () => {
     await autoHour(page).focus();
 
     // Section « Eau » (#207) : « Courant » (#460) et « Changer l’eau », sur la ligne du titre,
-    // puis le chauffage, l'éclairage et la raclette (#476), les feuilles de catappa (#239).
+    // puis le chauffage, l'éclairage (#476), la lampe (#584) et la raclette (#476), les
+    // feuilles de catappa (#239).
     await page.keyboard.press('Tab');
     await expect(
       page.getByRole('button', { name: 'Courant : coupé, changer de force' }),
@@ -329,6 +330,12 @@ test.describe('Panneau de contrôle', () => {
     await expect(page.getByRole('slider', { name: 'Durée d’éclairage par jour' })).toBeFocused();
     await page.keyboard.press('ArrowRight');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-algae', /;9$/);
+    // Heure d'allumage de la lampe (#584), à côté de l'éclairage.
+    await page.keyboard.press('Tab');
+    const lampOn = page.getByRole('slider', { name: 'Heure d’allumage de la lampe' });
+    await expect(lampOn).toBeFocused();
+    await page.keyboard.press('ArrowRight');
+    await expect(lampOn).toHaveAttribute('aria-valuetext', 'allumée à 11:00');
     await page.keyboard.press('Tab');
     await expect(
       page.getByRole('button', { name: 'Raclette : cliquer sur les algues' }),
