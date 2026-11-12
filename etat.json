@@ -7530,7 +7530,7 @@
       "date": "2026-11-13",
       "debut": "2026-11-12T23:48:46.030Z",
       "type": "fonctionnalite",
-      "issue": null,
+      "issue": 597,
       "pr": null,
       "version": null,
       "phases": {
