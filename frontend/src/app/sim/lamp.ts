@@ -2,7 +2,7 @@ import { lightingOf } from './algae';
 import { HOURS_PER_DAY, formatHour, mix, normalizeHour, type MutableDayLight } from './daylight';
 
 /**
- * Lampe du bac (issue #584, ADR 0133) : une lampe allumée chaque jour à une heure réglée,
+ * Lampe du bac (issue #584, ADR 0135) : une lampe allumée chaque jour à une heure réglée,
  * pendant la durée d'éclairage du bac (`WaterState.lighting`, `sim/algae.ts`), avec un fondu
  * à l'allumage et à l'extinction. Fonctions pures et déterministes : l'heure vient de
  * l'horloge de journée (`sim/daylight.ts`, temps simulé), jamais de l'horloge murale.
