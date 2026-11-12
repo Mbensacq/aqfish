@@ -2,6 +2,7 @@ import {
   afterNextRender,
   ChangeDetectionStrategy,
   Component,
+  computed,
   DestroyRef,
   DOCUMENT,
   effect,
@@ -266,6 +267,7 @@ import {
   worldCurrentLevel,
   worldCurrentVelocity,
   setWorldHeaterInPlace,
+  setWorldLampOnInPlace,
   setWorldLightingInPlace,
   scrapeWorldAlgaeInPlace,
   pruneWorldPlantInPlace,
@@ -373,6 +375,15 @@ import {
   sampleAlgae,
 } from '../../sim/algae';
 import {
+  DEFAULT_LAMP_ON_HOUR,
+  LAMP_FADE_HOURS,
+  lampOnOf,
+  lampReadout,
+  waterLampAt,
+  withLampInto,
+  type LampReadout,
+} from '../../sim/lamp';
+import {
   alertTargets,
   NO_ALERT_TARGETS,
   sameAlertTargets,
@@ -442,6 +453,11 @@ export const HOUR_ATTRIBUTE = 'data-aqfish-hour';
  * fixe sous « Réduire les mouvements »).
  */
 export const LIGHT_RAYS_ATTRIBUTE = 'data-aqfish-rayons';
+/**
+ * Attribut du composant hôte exposant l'intensité de la lampe du bac (#584), dans [0, 1] au
+ * centième : 0 éteinte ou bac sans lampe, 1 allumée, entre les deux pendant un fondu.
+ */
+export const LAMP_ATTRIBUTE = 'data-aqfish-lamp';
 /** Attribut du composant hôte : `true` si l'heure est figée, `false` sinon. */
 export const HOUR_FROZEN_ATTRIBUTE = 'data-aqfish-hour-frozen';
 
@@ -960,6 +976,9 @@ export class AquariumHost {
   private litHour: number | null = null;
   /** Tampon de la lumière du jour, réécrit à chaque recalcul (aucune allocation). */
   private readonly light = createDayLight();
+  /** Intensité de la lampe appliquée en dernier (`updateLight`). */
+  private litLamp: number | null = null;
+  private exposedLamp: string | null = null;
   private exposedHour: string | null = null;
   /** Dernière valeur exposée des rayons de lumière (`LIGHT_RAYS_ATTRIBUTE`). */
   private exposedRays: string | null = null;
@@ -1061,6 +1080,14 @@ export class AquariumHost {
   readonly carbon = signal(false);
   /** Durée d'éclairage du bac affiché, en heures par jour (#476). */
   readonly lighting = signal(DEFAULT_LIGHTING_HOURS);
+  /** Heure d'allumage de la lampe du bac affiché (#584). */
+  readonly lampOn = signal(DEFAULT_LAMP_ON_HOUR);
+  /** Ligne « Lampe » du tableau de bord (#584) ; `null` pour un bac sans lampe réglable. */
+  readonly lampReadout = computed<LampReadout | null>(() =>
+    hasAlgae(this.environment())
+      ? lampReadout({ lighting: this.lighting(), lampOn: this.lampOn() })
+      : null,
+  );
   /** Vrai tant que la raclette est en main (#476) : un clic sur le bac racle. */
   readonly scraping = signal(false);
   /** Vrai tant que le sécateur est en main (#477) : un clic sur une plante à tige la taille. */
@@ -1697,7 +1724,7 @@ export class AquariumHost {
   }
 
   /**
-   * Durée d'éclairage du bac (#476), en heures entières par jour, de 0 à 24 : au-delà de 10 h,
+   * Durée d'éclairage du bac (#476), en heures entières par jour (0 à 24 ; 4 à 14 au panneau, #584) : au-delà de 10 h,
    * les algues poussent. Enregistrée avec l'eau. Sans effet en mode capture, avant le
    * démarrage ou hors bornes.
    */
@@ -1705,6 +1732,19 @@ export class AquariumHost {
     this.applyWaterSetting((world) => {
       if (!setWorldLightingInPlace(world, hours)) {
         throw new RangeError('éclairage hors bornes');
+      }
+    });
+  }
+
+  /**
+   * Heure d'allumage de la lampe du bac (#584), heure entière de 0 à 23 : la lampe reste
+   * allumée pendant la durée d'éclairage. Enregistrée avec l'eau. Sans effet en mode capture,
+   * avant le démarrage ou hors bornes.
+   */
+  setLampOn(hour: number): void {
+    this.applyWaterSetting((world) => {
+      if (!setWorldLampOnInPlace(world, hour)) {
+        throw new RangeError('heure d’allumage hors bornes');
       }
     });
   }
@@ -4143,15 +4183,27 @@ export class AquariumHost {
    */
   private updateLight(view: AquariumView, time: number): void {
     const hour = hourAt(this.dayClock, time);
-    if (this.litHour === null || Math.abs(hour - this.litHour) >= LIGHT_HOUR_STEP) {
+    const lamp = this.lampAt(hour);
+    if (
+      this.litHour === null ||
+      Math.abs(hour - this.litHour) >= LIGHT_HOUR_STEP ||
+      lamp !== this.litLamp
+    ) {
       this.litHour = hour;
-      view.updateLight(lightAtInto(hour, this.light));
+      this.litLamp = lamp;
+      // Lampe du bac (#584) : ajoutée à la lumière du jour, sans jamais l'assombrir.
+      view.updateLight(withLampInto(lightAtInto(hour, this.light), lamp));
       view.updateFlowers(hour);
       view.updateLightRays(hour);
       this.dayPhase.set(dayPhaseAt(hour));
       this.clockHour.set(snapHour(hour));
     }
     this.exposeLightRays(view);
+    const exposedLamp = lamp.toFixed(2);
+    if (exposedLamp !== this.exposedLamp) {
+      this.exposedLamp = exposedLamp;
+      this.host.nativeElement.setAttribute(LAMP_ATTRIBUTE, exposedLamp);
+    }
     // Une heure comme 23,999 s'arrondit à « 24.00 » : affichée « 0.00 ».
     const rounded = hour.toFixed(2);
     const exposed = rounded === '24.00' ? '0.00' : rounded;
@@ -4159,6 +4211,20 @@ export class AquariumHost {
       this.exposedHour = exposed;
       this.host.nativeElement.setAttribute(HOUR_ATTRIBUTE, exposed);
     }
+  }
+
+  /**
+   * Intensité de la lampe du bac affiché à l'heure `hour` (#584), arrondie au centième (pas de
+   * recalcul de l'éclairage pour un écart invisible) : 0 hors des bacs à lampe. « Réduire les
+   * mouvements » : changement net, sans fondu.
+   */
+  private lampAt(hour: number): number {
+    const world = this.currentWorld;
+    if (!world || !hasAlgae(world.environment)) {
+      return 0;
+    }
+    const fade = this.reducedMotion() ? 0 : LAMP_FADE_HOURS;
+    return Math.round(waterLampAt(world.water, hour, fade) * 100) / 100;
   }
 
   /**
@@ -4570,6 +4636,7 @@ export class AquariumHost {
     this.view?.setAlgae(worldAlgaePatches(world), world.water.algae);
     const hours = lightingOf(world.water);
     this.lighting.set(hours);
+    this.lampOn.set(lampOnOf(world.water));
     const visible = (world.water.algae ?? []).filter((c) => c >= ALGAE_VISIBLE_COVERAGE).length;
     const percent = Math.round(algaeCoverage(world.water.algae) * 100);
     this.host.nativeElement.setAttribute(ALGAE_ATTRIBUTE, `${visible};${percent};${hours}`);

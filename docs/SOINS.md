@@ -555,6 +555,10 @@ jeu**, sauf mention.
 - Durée d'éclairage par bac, de 0 à 24 h par jour, 8 h par défaut ; au-delà de 10 h, les
   algues poussent (8 à 10 h par jour est l'ordre de grandeur courant de l'aquariophilie :
   **non vérifié** dans une source primaire, à sourcer).
+- Lampe du bac (issue #584, ADR 0135, `sim/lamp.ts`) : durée réglable de 4 à 14 h (les
+  sauvegardes gardent 0 à 24 h), allumée chaque jour à une heure réglée (10 h par défaut),
+  fondu d'une demi-heure à l'allumage et à l'extinction. Sous 8 h, les plantes à tige poussent
+  proportionnellement moins vite (4 h : moitié). Le tableau de bord conseille 8 à 10 h.
 - Nitrates au-delà du seuil « à surveiller » de la jauge (20 unités de jeu) : les algues
   poussent, à plein au plein de la jauge (60). Le lien nitrates–algues est courant en
   aquariophilie ; sa quantification ici est une approximation de jeu.

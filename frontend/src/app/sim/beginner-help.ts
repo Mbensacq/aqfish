@@ -235,7 +235,8 @@ export const GUIDE_STEPS: readonly GuideStep[] = [
     id: 'entretenir',
     title: 'Entretenir',
     text: 'Changer une partie de l’eau quand les nitrates montent, jamais toute l’eau d’un coup, et lire les alertes : chacune dit quoi faire.',
-    inGame: 'Réglages : Eau, « Changer l’eau » ; alertes au-dessus de la barre des vues.',
+    inGame:
+      'Réglages : Eau, « Changer l’eau » ; alertes au-dessus de la barre des vues. La lampe s’y règle aussi : 8 à 10 h par jour (approximation de jeu) ; au-delà, les algues poussent, en deçà, les plantes ralentissent.',
     topic: 'azote',
     status: source(`${SOINS} § 14 (UF/IFAS)`),
   },

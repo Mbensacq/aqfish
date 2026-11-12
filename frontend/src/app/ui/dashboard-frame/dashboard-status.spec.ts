@@ -27,6 +27,7 @@ import {
   type MaintenanceTask,
 } from '../../sim/maintenance';
 import type { ReviewPoint } from '../../sim/bilan';
+import { lampReadout, type LampReadout } from '../../sim/lamp';
 import type { JournalLine } from '../../sim/journal';
 import { NO_ALERT_TARGETS, type AlertTargets } from '../../sim/alert-animals';
 import type { GuidePage } from '../../sim/care-guide';
@@ -48,6 +49,7 @@ const STARVED: HealthSummary = healthSummary(
     [targets]="targets()"
     [highlighted]="highlighted()"
     [maintenance]="maintenance()"
+    [lamp]="lamp()"
     [reviewOf]="reviewOf()"
     [journal]="journal()"
     (maintenanceDone)="done.push($event)"
@@ -63,6 +65,7 @@ class StatusHost {
   readonly shown: (readonly number[])[] = [];
   readonly done: MaintenanceTask[] = [];
   readonly maintenance = signal<MaintenanceReadout | null>(null);
+  readonly lamp = signal<LampReadout | null>(null);
   readonly reviewOf = signal<(() => readonly ReviewPoint[]) | null>(null);
   readonly journal = signal<readonly JournalLine[] | null>(null);
   readonly targets = signal<AlertTargets>(NO_ALERT_TARGETS);
@@ -127,6 +130,22 @@ describe('rappel d’entretien (#513)', () => {
     expect(root.querySelector('[data-maintenance-done="waterChange"]')).toBeNull();
     root.querySelector<HTMLElement>('[data-maintenance-done="filter"]')!.click();
     expect(host.done).toEqual(['filter']);
+  });
+
+  it('lampe (#584) : durée, plage et conseil dans le calendrier déplié', () => {
+    const { host, root, flush } = mount();
+    host.maintenance.set(maintenanceReadout(initialMaintenance(0), DAY));
+    flush();
+    root.querySelector<HTMLElement>('[data-maintenance]')!.click();
+    flush();
+    expect(root.querySelector('[data-lamp]')).toBeNull();
+    host.lamp.set(lampReadout({ lighting: 12, lampOn: 20 }));
+    flush();
+    const line = root.querySelector('[data-lamp]')!;
+    expect(line.getAttribute('data-lamp-advice')).toBe('longue');
+    expect(line.textContent).toContain('12 h par jour');
+    expect(line.textContent).toContain('20:00 → 08:00');
+    expect(line.textContent).toContain('conseillé : 8 à 10 h, approximation de jeu');
   });
 
   it('bilan du bac (#514) : absent sans source, jamais déplié sans demande', () => {

@@ -33,6 +33,8 @@ import {
   heaterText,
   sliderHeater,
   sliderLighting,
+  sliderLampOn,
+  lampOnText,
   lightingText,
   populationInput,
   type PopulationRequest,
@@ -89,6 +91,17 @@ describe('fonctions du panneau de contrôle', () => {
     for (const value of ['', ' ', 'abc', 'Infinity', Number.NaN]) {
       expect(populationInput(value, 40)).toBeNull();
     }
+  });
+
+  it('sliderLampOn : heures entières de 0 à 23, sinon null (#584)', () => {
+    expect(sliderLampOn('0')).toBe(0);
+    expect(sliderLampOn(23)).toBe(23);
+    expect(sliderLampOn('10')).toBe(10);
+    for (const value of ['-1', '24', '9.5', '', 'abc', 'Infinity', Number.NaN]) {
+      expect(sliderLampOn(value)).toBeNull();
+    }
+    expect(lampOnText(10)).toBe('allumée à 10:00');
+    expect(lampOnText(0)).toBe('allumée à 00:00');
   });
 
   it('sliderLighting : heures entières de 0 à 24, sinon null (#476)', () => {

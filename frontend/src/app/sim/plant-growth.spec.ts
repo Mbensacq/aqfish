@@ -36,6 +36,7 @@ import {
   createDefaultWorld,
   createWorld,
   pruneWorldPlantInPlace,
+  setWorldLightingInPlace,
   worldPlantShade,
   worldShownPlantGrowth,
   type MutableWorld,
@@ -231,6 +232,26 @@ describe('pousse des plantes (#477)', () => {
   });
 
   describe('dans le monde', () => {
+    it('éclairage court (lampe, #584) : pousse ralentie d’autant ; 8 h ou plus : inchangée', () => {
+      const tall = DEFAULT_DECOR.filter(isGrowingPlant)[0];
+      const steps = Math.round(DAY / 4 / SIM_DT);
+      const grown = (hours: number | null) => {
+        const world = emptyTank();
+        if (hours !== null) {
+          expect(setWorldLightingInPlace(world, hours)).toBe(true);
+        }
+        advanceInPlace(world, steps);
+        return growthOf(world.water.plantGrowth, tall.seed);
+      };
+      const byDefault = grown(null);
+      expect(byDefault).toBeGreaterThan(0);
+      expect(grown(8)).toBe(byDefault);
+      expect(grown(14)).toBe(byDefault);
+      expect(grown(4)).toBeCloseTo(byDefault / 2, 6);
+      expect(grown(6)).toBeCloseTo(byDefault * 0.75, 6);
+      expect(grown(0)).toBe(0);
+    });
+
     it('bacs d’eau douce vitrés seulement', () => {
       expect(hasPlantGrowth('tropical')).toBe(true);
       expect(hasPlantGrowth('eaufroide')).toBe(true);

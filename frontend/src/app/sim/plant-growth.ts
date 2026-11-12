@@ -1,4 +1,5 @@
 import { createPrng, deriveSeed } from '../core/random/prng';
+import { DEFAULT_LIGHTING_HOURS } from './algae';
 import { DEFAULT_DAY_LENGTH_SECONDS } from './daylight';
 import { decorElevation, plantBaseY, type DecorItem } from './decor';
 import type { EnvironmentId } from './environment';
@@ -269,4 +270,19 @@ export function readPlantGrowth(value: unknown): ReadPlantGrowthResult {
     }
   }
   return { ok: true, growth };
+}
+
+/** Durée d'éclairage à laquelle les plantes poussent à plein : la durée par défaut. */
+export const PLANT_FULL_LIGHT_HOURS = DEFAULT_LIGHTING_HOURS;
+
+/**
+ * Facteur de pousse des plantes selon la durée d'éclairage (lampe du bac, issue #584) `hours`, dans [0, 1] : 1 dès
+ * `PLANT_FULL_LIGHT_HOURS` (bac par défaut inchangé), proportionnel en dessous, 0 sans
+ * lumière (valeur non finie ou négative comprise).
+ */
+export function plantLightFactor(hours: number): number {
+  if (!(hours > 0) || !Number.isFinite(hours)) {
+    return 0;
+  }
+  return Math.min(1, hours / PLANT_FULL_LIGHT_HOURS);
 }

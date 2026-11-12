@@ -32,6 +32,7 @@ import { environmentById, DEFAULT_ENVIRONMENT_ID, type EnvironmentId } from '../
 import { NO_FISH, type PopulationCounts } from '../../sim/population';
 import { EMPTY_HEALTH_SUMMARY, healthItems, type HealthSummary } from '../../sim/health-summary';
 import { DEFAULT_WATER_SAMPLE, type GaugeLevel, type WaterSample } from '../../sim/water-dashboard';
+import type { LampReadout } from '../../sim/lamp';
 import type { TreatmentReadout } from '../../sim/treatment-text';
 import { DEFAULT_WATER_READOUT, type WaterReadout } from '../../sim/water-quality';
 import {
@@ -260,6 +261,11 @@ const ICONS: Readonly<Record<GaugeLevel, readonly (readonly [number, number])[]>
             </li>
           }
         </ul>
+        @if (lamp(); as l) {
+          <p class="status__lamp" data-lamp [attr.data-lamp-advice]="l.advice">
+            Lampe : <b>{{ l.hours }} h par jour</b>, {{ l.schedule }} — {{ l.text }}
+          </p>
+        }
         <div>
           <b>Dernières actions</b>
           @if (calendar.log.length > 0) {
@@ -415,6 +421,12 @@ export class DashboardStatus {
 
   /** Calendrier d'entretien du bac (fourni par l'hôte, #513) ; `null` : pas de rappel. */
   readonly maintenance = input<MaintenanceReadout | null>(null);
+
+  /**
+   * Lampe du bac (fournie par l'hôte, #584) : durée, plage et avis, lus dans le calendrier
+   * d'entretien déplié ; `null` : bac sans lampe réglable.
+   */
+  readonly lamp = input<LampReadout | null>(null);
 
   /** Bouton « Fait » d'une tâche sans geste dans le jeu (filtre, test de l'eau, #513). */
   readonly maintenanceDone = output<MaintenanceTask>();
