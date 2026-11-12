@@ -7409,10 +7409,10 @@
           "note": "Verdict OK, 0 bug, captures publiées (c203)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-12T10:33:07.822Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-12T11:44:59.755Z",
+          "note": "PR #589 fusionnée → v1.18.0, CI main et release vertes ; dette #590 créée ; suppression de la branche cycle/c203-rayons-lumiere refusée par l'environnement (à supprimer)"
         }
       },
       "metriques": {}
