@@ -1,5 +1,3 @@
-# Captures du cycle 200
-- Branche : main (pas de PR : phase Dev en échec, issue #567 non implémentée)
-- Commit : c0691d7 (v1.17.2)
-- Graine : celle de captures.spec.ts (par défaut)
-- Génération : 2026-11-12, run interrompu par le délai à la fin de la série (137 fichiers)
+Branche : cycle/c201-mutants-grenouille — PR #580 — commit cd2e2a9 (base main v1.17.3)
+Graine : celle par défaut de `npm run captures` — Cycle 201 (QA), 2026-11-12
+Aucun code applicatif modifié (tests et docs seulement) : rendu identique à main.
