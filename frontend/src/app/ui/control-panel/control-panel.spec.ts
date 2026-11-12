@@ -104,11 +104,23 @@ describe('fonctions du panneau de contrôle', () => {
     expect(lampOnText(0)).toBe('allumée à 00:00');
   });
 
-  it('sliderLighting : heures entières de 0 à 24, sinon null (#476)', () => {
-    expect(sliderLighting('0')).toBe(0);
-    expect(sliderLighting(24)).toBe(24);
+  it('sliderLighting : heures entières de 4 à 14, sinon null (#476, #584)', () => {
+    expect(sliderLighting('4')).toBe(4);
+    expect(sliderLighting(14)).toBe(14);
     expect(sliderLighting('12')).toBe(12);
-    for (const value of ['-1', '25', '7.5', '', 'abc', 'Infinity', Number.NaN]) {
+    for (const value of [
+      '0',
+      '3',
+      '15',
+      '24',
+      '-1',
+      '25',
+      '7.5',
+      '',
+      'abc',
+      'Infinity',
+      Number.NaN,
+    ]) {
       expect(sliderLighting(value)).toBeNull();
     }
     expect(lightingText(8)).toBe('8 h par jour');
@@ -1237,10 +1249,10 @@ describe('ControlPanel', () => {
     // et son volume (#411), « Courant » (#460), le curseur de l'éclairage et la raclette
     // (#476), le sécateur (#477), l'amorce de bactéries (#529),
     // l'eau non traitée et les deux conditionneurs (#530), le charbon et les deux régulateurs
-    // de pH (#531). Le champ du lien de partage
+    // de pH (#531), le curseur de l'allumage de la lampe (#584). Le champ du lien de partage
     // n'apparaît qu'avec un lien.
     expect(controls).toHaveLength(
-      5 + 1 + 1 + 1 + 2 + 2 + 17 * 5 + 2 + 1 + 1 + 1 + 1 + 2 + 1 + 2 + 1 + 1 + 3 + 3,
+      5 + 1 + 1 + 1 + 2 + 2 + 17 * 5 + 2 + 1 + 1 + 1 + 1 + 2 + 1 + 2 + 1 + 1 + 3 + 3 + 1,
     );
     expect(root().querySelectorAll('input[type="file"]')).toHaveLength(1);
     for (const control of controls) {
@@ -1524,6 +1536,7 @@ describe('ControlPanel', () => {
         'Changer l’eau',
         'Consigne du chauffage',
         'Durée d’éclairage par jour',
+        'Heure d’allumage de la lampe',
         'Raclette : cliquer sur les algues',
         'Sécateur : cliquer sur une plante haute',
         'Verser une dose d’amorce de bactéries nitrifiantes',
