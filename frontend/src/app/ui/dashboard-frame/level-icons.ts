@@ -41,12 +41,3 @@ export const REVIEW_ICON_PIXELS: readonly (readonly [number, number])[] = [
   '.....',
   '#.###',
 ].flatMap((row, y) => [...row].flatMap((cell, x) => (cell === '#' ? [[x, y] as const] : [])));
-
-/** Icône du journal du bac (#581) : un livre ouvert. */
-export const JOURNAL_ICON_PIXELS: readonly (readonly [number, number])[] = [
-  '##.##',
-  '#.#.#',
-  '#.#.#',
-  '#.#.#',
-  '##.##',
-].flatMap((row, y) => [...row].flatMap((cell, x) => (cell === '#' ? [[x, y] as const] : [])));

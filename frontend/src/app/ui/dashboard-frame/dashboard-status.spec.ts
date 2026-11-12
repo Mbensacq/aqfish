@@ -162,23 +162,27 @@ describe('rappel d’entretien (#513)', () => {
     expect(root.querySelector('[data-review-detail]')).toBeNull();
   });
 
-  it('journal (#581) : absent sans journal ; vide, le dit ; rempli, liste datée', () => {
+  it('journal (#581) : dans le bilan déplié ; vide, le dit ; rempli, liste datée', () => {
     const { host, root, flush } = mount();
-    flush();
-    expect(root.querySelector('[data-journal]')).toBeNull();
-    host.journal.set([]);
     host.reviewOf.set(() => []);
     flush();
-    const button = root.querySelector<HTMLElement>('[data-journal]')!;
-    expect(button.getAttribute('aria-expanded')).toBe('false');
     root.querySelector<HTMLElement>('[data-review]')!.click();
     flush();
-    button.click();
+    // Sans journal : bilan seul, sans bouton.
+    expect(root.querySelector('[data-journal]')).toBeNull();
+    host.journal.set([]);
     flush();
-    expect(button.getAttribute('aria-expanded')).toBe('true');
-    expect(button.getAttribute('aria-controls')).toBe('journal-detail');
+    const tab = root.querySelector<HTMLElement>('[data-journal]')!;
+    expect(tab.getAttribute('aria-pressed')).toBe('false');
+    expect(root.querySelector('[data-review-empty]')).not.toBeNull();
+    tab.click();
+    flush();
+    expect(tab.getAttribute('aria-pressed')).toBe('true');
+    expect(root.querySelector('[data-review-detail]')!.getAttribute('aria-label')).toBe(
+      'Journal du bac',
+    );
     expect(root.querySelector('[data-journal-empty]')).not.toBeNull();
-    expect(root.querySelector('[data-review-detail]')).toBeNull();
+    expect(root.querySelector('[data-review-empty]')).toBeNull();
     host.journal.set([
       { kind: 'ponte', day: 2, text: 'Ponte : 3 œufs (Corydora)' },
       { kind: 'changementEau', day: 1, text: 'Changement d’eau' },
@@ -189,9 +193,19 @@ describe('rappel d’entretien (#513)', () => {
       'Jour 2 : Ponte : 3 œufs (Corydora)',
       'Jour 1 : Changement d’eau',
     ]);
-    button.click();
+    root.querySelector<HTMLElement>('[data-review-tab]')!.click();
     flush();
     expect(root.querySelector('[data-journal-detail]')).toBeNull();
+    expect(root.querySelector('[data-review-empty]')).not.toBeNull();
+    // Replié puis rouvert : le bilan d'abord.
+    root.querySelector<HTMLElement>('[data-journal]')!.click();
+    root.querySelector<HTMLElement>('[data-review]')!.click();
+    flush();
+    expect(root.querySelector('[data-review-detail]')).toBeNull();
+    root.querySelector<HTMLElement>('[data-review]')!.click();
+    flush();
+    expect(root.querySelector('[data-journal-detail]')).toBeNull();
+    expect(root.querySelector('[data-journal]')!.getAttribute('aria-pressed')).toBe('false');
   });
 
   it('bilan vide : le dit ; le déplier replie le calendrier', () => {

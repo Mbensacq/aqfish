@@ -46,7 +46,6 @@ import {
   LEVEL_ICON_GRID,
   MAINTENANCE_ICON_PIXELS,
   REVIEW_ICON_PIXELS,
-  JOURNAL_ICON_PIXELS,
 } from './level-icons';
 import type { ReviewPoint } from '../../sim/bilan';
 import type { JournalLine } from '../../sim/journal';
@@ -183,31 +182,6 @@ const ICONS: Readonly<Record<GaugeLevel, readonly (readonly [number, number])[]>
           </button>
         </li>
       }
-      @if (journal() !== null) {
-        <li class="status__item status__journal-item">
-          <button
-            type="button"
-            class="status__chip status__review"
-            data-journal
-            aria-label="Journal du bac"
-            [attr.aria-controls]="journalOpen() ? 'journal-detail' : null"
-            [attr.aria-expanded]="journalOpen()"
-            (click)="toggleJournal()"
-          >
-            <svg
-              class="status__icon"
-              aria-hidden="true"
-              [attr.viewBox]="'0 0 ' + iconGrid + ' ' + iconGrid"
-              shape-rendering="crispEdges"
-            >
-              @for (pixel of journalIcon; track $index) {
-                <rect [attr.x]="pixel[0]" [attr.y]="pixel[1]" width="1" height="1" />
-              }
-            </svg>
-            <span class="status__review-name" aria-hidden="true">Journal</span>
-          </button>
-        </li>
-      }
     </ul>
     <p class="visually-hidden" role="status" data-alerts-announcement>{{ announcement() }}</p>
     <p class="visually-hidden" aria-live="polite" data-alert-highlight-announcement>
@@ -305,10 +279,46 @@ const ICONS: Readonly<Record<GaugeLevel, readonly (readonly [number, number])[]>
         class="status__review-detail"
         id="bilan-detail"
         role="group"
-        aria-label="Bilan du bac"
+        [attr.aria-label]="journalShown() === null ? 'Bilan du bac' : 'Journal du bac'"
         data-review-detail
       >
-        @if (points.length > 0) {
+        @if (journal() !== null) {
+          <p class="status__tabs">
+            <button
+              type="button"
+              class="status__why"
+              data-review-tab
+              [attr.aria-pressed]="journalShown() === null"
+              (click)="journalTab.set(false)"
+            >
+              Bilan
+            </button>
+            <button
+              type="button"
+              class="status__why"
+              data-journal
+              [attr.aria-pressed]="journalShown() !== null"
+              (click)="journalTab.set(true)"
+            >
+              Journal
+            </button>
+          </p>
+        }
+        @if (journalShown(); as lines) {
+          <div data-journal-detail>
+            @if (lines.length > 0) {
+              <ol class="status__review-list">
+                @for (line of lines; track $index) {
+                  <li [attr.data-journal-kind]="line.kind">
+                    <b>Jour {{ line.day }} :</b> {{ line.text }}
+                  </li>
+                }
+              </ol>
+            } @else {
+              <p class="status__review-empty" data-journal-empty>Aucun événement pour l’instant.</p>
+            }
+          </div>
+        } @else if (points.length > 0) {
           <ol class="status__review-list">
             @for (point of points; track point.id) {
               <li [attr.data-review-point]="point.id" [attr.data-severity]="point.severity">
@@ -319,27 +329,6 @@ const ICONS: Readonly<Record<GaugeLevel, readonly (readonly [number, number])[]>
           </ol>
         } @else {
           <p class="status__review-empty" data-review-empty>Rien à améliorer pour l’instant.</p>
-        }
-      </div>
-    }
-    @if (journalShown(); as lines) {
-      <div
-        class="status__review-detail"
-        id="journal-detail"
-        role="group"
-        aria-label="Journal du bac"
-        data-journal-detail
-      >
-        @if (lines.length > 0) {
-          <ol class="status__review-list status__journal-list">
-            @for (line of lines; track $index) {
-              <li [attr.data-journal-kind]="line.kind">
-                <b>Jour {{ line.day }} :</b> {{ line.text }}
-              </li>
-            }
-          </ol>
-        } @else {
-          <p class="status__review-empty" data-journal-empty>Aucun événement pour l’instant.</p>
         }
       </div>
     }
@@ -440,13 +429,14 @@ export class DashboardStatus {
   readonly reviewOpen = signal(false);
 
   /**
-   * Journal du bac affiché (fourni par l'hôte, #581), du plus récent au plus ancien ; `null` :
-   * pas de journal (bouton absent).
+   * Journal du bac affiché (fourni par l'hôte, #581), du plus récent au plus ancien, lu dans le
+   * bilan déplié (bouton « Journal ») ; `null` : pas de journal. Pas de bouton de plus dans le
+   * bandeau : il s'allongerait sur le bac, là où l'on clique (docs/PIEGES.md).
    */
   readonly journal = input<readonly JournalLine[] | null>(null);
 
-  /** Journal déplié (#581) : il n'apparaît jamais sans demande. */
-  readonly journalOpen = signal(false);
+  /** Journal affiché dans le bilan déplié au lieu de ses points (#581). */
+  readonly journalTab = signal(false);
 
   /** Alerte dépliée (une à la fois), `null` : aucune. */
   readonly expanded = signal<AlertId | null>(null);
@@ -454,9 +444,10 @@ export class DashboardStatus {
   protected readonly iconGrid = LEVEL_ICON_GRID;
   protected readonly maintenanceIcon = MAINTENANCE_ICON_PIXELS;
   protected readonly reviewIcon = REVIEW_ICON_PIXELS;
-  protected readonly journalIcon = JOURNAL_ICON_PIXELS;
   /** Lignes du journal déplié ; `null` : replié ou sans journal. */
-  protected readonly journalShown = computed(() => (this.journalOpen() ? this.journal() : null));
+  protected readonly journalShown = computed(() =>
+    this.reviewOpen() && this.journalTab() && this.reviewOf() !== null ? this.journal() : null,
+  );
   protected readonly summary = maintenanceSummary;
   /** Points du bilan déplié, relus à chaque relevé de l'eau ; `null` : replié. */
   protected readonly review = computed(() => {
@@ -522,7 +513,6 @@ export class DashboardStatus {
     this.expanded.update((open) => (open === id ? null : id));
     this.maintenanceOpen.set(false);
     this.reviewOpen.set(false);
-    this.journalOpen.set(false);
   }
 
   /** Déplie ou replie le calendrier d'entretien. */
@@ -530,23 +520,14 @@ export class DashboardStatus {
     this.maintenanceOpen.update((open) => !open);
     this.expanded.set(null);
     this.reviewOpen.set(false);
-    this.journalOpen.set(false);
   }
 
   /** Déplie ou replie le bilan du bac (#514). */
   toggleReview(): void {
     this.reviewOpen.update((open) => !open);
+    this.journalTab.set(false);
     this.expanded.set(null);
     this.maintenanceOpen.set(false);
-    this.journalOpen.set(false);
-  }
-
-  /** Déplie ou replie le journal du bac (#581). */
-  toggleJournal(): void {
-    this.journalOpen.update((open) => !open);
-    this.expanded.set(null);
-    this.maintenanceOpen.set(false);
-    this.reviewOpen.set(false);
   }
 
   /** Vrai pour une tâche sans geste dans le jeu, marquée à la main (#513). */
