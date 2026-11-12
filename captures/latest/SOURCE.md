@@ -1,3 +1,7 @@
-Branche : cycle/c201-mutants-grenouille — PR #580 — commit cd2e2a9 (base main v1.17.3)
-Graine : celle par défaut de `npm run captures` — Cycle 201 (QA), 2026-11-12
-Aucun code applicatif modifié (tests et docs seulement) : rendu identique à main.
+# Captures du cycle 202
+
+- Branche : cycle/c202-quarantaine-panneau (PR #587, issue #571)
+- Commit : 1e49c30
+- Graine : 42 (harnais de captures)
+- Série : 151 images sur 153 (le harnais a atteint le délai de 15 min, rendu logiciel lent ; les 2 dernières captures du tableau de bord ne sont pas produites)
+- Particularité : dev-quarantaine-1280x720.png et dev-quarantaine-900x700.png montrent le panneau des réglages sur une colonne avec la quarantaine installée
