@@ -7295,10 +7295,10 @@
           "note": "bloquée plus de 3 h, close par Relance"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "saute",
           "debut": "2026-11-12T00:42:15.160Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-12T00:56:41.477Z",
+          "note": "Pas de PR (Dev en échec, #567 non faite) ; captures de main publiées (c200), 0 bug"
         }
       },
       "metriques": {}
