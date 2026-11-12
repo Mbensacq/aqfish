@@ -7503,6 +7503,12 @@
           "debut": "2026-11-12T20:14:39.511Z",
           "fin": "2026-11-12T20:15:14.265Z",
           "note": "Issue #583 : Distributeur de nourriture automatique (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-12T20:15:45.908Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
