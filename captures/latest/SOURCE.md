@@ -1,3 +1,8 @@
-Cycle 203, QA. Branche cycle/c203-rayons-lumiere, PR #589, commit 80bf2ba.
-Graine par défaut, temps fixe du mode capture. Chromium local 1243 (lien vers 1194, PIEGES).
-Série partielle : coupée par le délai à 141 captures (les 5 angles de base sont présents).
+# Captures c204
+
+- Branche : cycle/c204-journal-du-bac
+- PR : #591
+- Commit : 53f0bcc
+- Graine : par défaut du harnais
+- Série complète : 139 images (l'exécution locale a atteint le délai de 9 min avant la dernière capture ; three-quarter, top, side, front, bottom présentes)
+- Observation : three-quarter.png identique octet pour octet à la série c203
