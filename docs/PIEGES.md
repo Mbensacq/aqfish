@@ -143,6 +143,13 @@ haut de sa section.
   plus d'une heure sur 2 cœurs. Lancer d'abord la mesure en arrière-plan, sur une plage de
   lignes (`--mutate src/app/sim/frog.ts:1-150`) par session, et consigner le score de
   chaque plage. Un petit fichier (`treatment-text.ts`, 123 mutants) prend ~30 s. (2026-11-05)
+  Scores par plage : `1-140` → 95,24 % (cycle 148) ; `141-300` → **98,16 %** (cycle 201 :
+  163 mutants, 155 tués, 5 délais, 12 min 16 sur 2 cœurs). Survivants de `141-300` : la
+  tolérance `- 1e-9` de `canHop` (`<` → `<=`) et la borne `>= wallMargin` de `createFrog`,
+  tués en construisant l'égalité exacte en flottant (milieu de l'arc à s = 1/2 avec
+  `hopHeight` négatif ; sphère décalée sur un seul axe, rayon `d - wallMargin` exact quand
+  `wallMargin ≥ d / 2`) ; l'objet par défaut `DRAW` (l. 293) est **équivalent** : ses trois
+  champs sont réécrits par `hopDrawAt` avant toute lecture. Reste `301-521`.
 - **Tests Node d'un outil écrit en TypeScript** (cycle 148, #384) : `scripts/*.test.mjs` peut
   importer `../e2e/outils-pixels.ts` directement (Node 22 efface les types, `import type`
   compris) ; Node affiche l'avertissement `MODULE_TYPELESS_PACKAGE_JSON` (paquet sans
