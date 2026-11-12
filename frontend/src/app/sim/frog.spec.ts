@@ -694,6 +694,18 @@ describe('grenouille : canHop, bords exacts et contrôle de l’arc (#450)', () 
     expect(canHop(x, z, yaw, range, 'libre', FLAT_ARC, ceiling, GROUND)).toBe(false);
   });
 
+  it('arc pile sur le sol plus la garde (tolérance de 1e-9 comprise) : permis ; dessous : refusé', () => {
+    // Repos au sol plus la garde (flottaison plus profonde que l'eau), parabole négative : le
+    // milieu du saut (s = 1/2, échantillon exact) descend de |hopHeight| sous le repos.
+    const deep = { ...PARAMS, floatDepth: 10 };
+    const rest = restHeight(0, 0, deep, FLAT);
+    expect(rest).toBe(groundHeight(0, 0, FLAT) + deep.clearance);
+    const sunk = (hopHeight: number) => ({ ...deep, hopHeight });
+    expect(hopArc(rest, rest, -1e-9, 0.5)).toBe(groundHeight(0, 0, FLAT) + deep.clearance - 1e-9);
+    expect(canHop(0, 0, 0, 0.09, 'libre', sunk(-1e-9), DYADIC, FLAT)).toBe(true);
+    expect(canHop(0, 0, 0, 0.09, 'libre', sunk(-2e-9), DYADIC, FLAT)).toBe(false);
+  });
+
   it('refuse un arc qui passe sous le sol plus la garde, dans le sens du saut', () => {
     // Saut vers −Z le long de la berge : un relief du sol dépasse l'arc de moins de `clearance`.
     const [x, z, yaw, range] = [-0.4, -0.11, (3 * Math.PI) / 2, PARAMS.hopMaxRange];
@@ -759,6 +771,26 @@ describe('grenouille : naissance sur la terre émergée (#450)', () => {
     expect(isOnLand(frog.x, frog.z, GROUND)).toBe(true);
     const gap = Math.hypot(frog.x - near.x, frog.y - near.y, frog.z - near.z) - near.radius;
     expect(gap).toBeGreaterThanOrEqual(GRENOUILLE.wallMargin);
+  });
+
+  it('obstacle exactement à wallMargin du point tiré : point gardé (borne incluse)', () => {
+    const fish = createFish(1, 0, 'grenouille', BOUNDS, []);
+    const y = restHeight(fish.x, fish.z, PARAMS, GROUND);
+    // Centre décalé en z seulement : la distance au centre vaut |dz| exactement, et le rayon
+    // d - wallMargin est exact (wallMargin ≥ d / 2), donc la distance à la surface aussi.
+    const cz = fish.z - 1.5 * GRENOUILLE.wallMargin;
+    const d = Math.abs(fish.z - cz);
+    const edge = sphereObstacle(1, fish.x, y, cz, d - GRENOUILLE.wallMargin);
+    const gap = Math.hypot(0, 0, fish.z - cz) - edge.radius;
+    expect(gap).toBe(GRENOUILLE.wallMargin);
+    const ref = createFish(1, 0, 'grenouille', BOUNDS, [FAR, edge]);
+    expect([ref.x, ref.z]).toEqual([fish.x, fish.z]);
+    const kept = createFrog(1, 0, 'grenouille', BOUNDS, GROUND, [FAR, edge]);
+    expect([kept.x, kept.z]).toEqual([fish.x, fish.z]);
+    // Un cheveu plus près : le point est retiré.
+    const closer = sphereObstacle(1, fish.x, y, cz, edge.radius + 1e-9);
+    const moved = createFrog(1, 0, 'grenouille', BOUNDS, GROUND, [FAR, closer]);
+    expect([moved.x, moved.z]).not.toEqual([fish.x, fish.z]);
   });
 
   it('point du poisson dans l’eau : premier tirage sur la terre gardé, deux tirages', () => {
