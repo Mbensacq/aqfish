@@ -7299,6 +7299,12 @@
           "debut": "2026-11-12T00:42:15.160Z",
           "fin": "2026-11-12T00:56:41.477Z",
           "note": "Pas de PR (Dev en échec, #567 non faite) ; captures de main publiées (c200), 0 bug"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-12T00:57:25.736Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
