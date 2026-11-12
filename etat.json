@@ -7280,7 +7280,7 @@
       "type": "fonctionnalite",
       "issue": 567,
       "pr": null,
-      "version": null,
+      "version": "v1.17.3",
       "phases": {
         "planif": {
           "statut": "termine",
