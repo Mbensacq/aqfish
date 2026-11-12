@@ -28,6 +28,7 @@ import {
   type SaveSettings,
 } from './save';
 import { DEFAULT_ROOM } from './room';
+import { JOURNAL_VERSION, waterChangeEntry } from './journal';
 import { ENVIRONMENT_IDS, environmentById, type EnvironmentId } from './environment';
 import { SPECIES } from './species';
 import { CHIRURGIEN } from './species';
@@ -381,6 +382,29 @@ describe('serializeWorld / parseWorld : aller-retour', () => {
     const data = validData();
     data['water'] = water;
     expect(refusal(parseSaveData(data))).toMatch(/^eau : /);
+  });
+
+  it('journal du bac (#581) : aller-retour ; ancienne sauvegarde sans journal chargée sans', () => {
+    const data = validData();
+    expect(data['journal']).toBeUndefined();
+    expect(restored(parseSaveData(data)).world.journal).toBeUndefined();
+    const journal = {
+      version: JOURNAL_VERSION,
+      entries: [waterChangeEntry(3), { time: 9, kind: 'ponte', detail: 'corydora', count: 5 }],
+    };
+    data['journal'] = journal;
+    const { world } = restored(parseSaveData(data));
+    expect(world.journal).toEqual(journal);
+    const again = restored(
+      parseSaveData(JSON.parse(serializeWorld(world)) as Record<string, unknown>),
+    );
+    expect(again.world.journal).toEqual(journal);
+  });
+
+  it('refuse un journal invalide (#581)', () => {
+    const data = validData();
+    data['journal'] = { version: JOURNAL_VERSION, entries: [{ time: -1, kind: 'ponte' }] };
+    expect(refusal(parseSaveData(data))).toMatch(/journal/);
   });
 
   it('accepte une ancienne sauvegarde sans rendu des granulés (#117) : voxels (#226)', () => {

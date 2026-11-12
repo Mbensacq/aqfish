@@ -655,6 +655,54 @@ describe('AquariumHost', () => {
     });
   });
 
+  describe('journal du bac (#581)', () => {
+    const host = (): AquariumHost => fixture.componentInstance;
+
+    it('changement d’eau et traitement écrits, hors du monde jusqu’à la sauvegarde', async () => {
+      await create('?seed=42&points-blancs=1&vitesse=0');
+      setCanvasSize(640, 480);
+      frames.flush(0);
+      // Premier regard sur un bac déjà malade : rien d'écrit.
+      expect(host().journal()).toEqual([]);
+      const before = JSON.stringify(host().world);
+      (host() as unknown as { exposeWater: () => void }).exposeWater();
+      expect(JSON.stringify(host().world)).toBe(before);
+      host().changeWater();
+      host().treat('medicament');
+      host().treat('medicament'); // refusé : rien de plus.
+      expect(
+        host()
+          .journal()
+          .map((line) => line.kind),
+      ).toEqual(['traitement', 'changementEau']);
+      const saved = JSON.parse(saveStorage!.getItem(SAVE_STORAGE_KEY)!);
+      expect(saved.tanks[0].world.journal.entries).toEqual([
+        { time: 0, kind: 'changementEau' },
+        { time: 0, kind: 'traitement', detail: 'medicament' },
+      ]);
+    });
+
+    it('maladie déclarée observée au relevé suivant', async () => {
+      await create('?seed=42&vitesse=0');
+      setCanvasSize(640, 480);
+      frames.flush(0);
+      const world = host().world! as unknown as { entities: Record<string, unknown>[] };
+      world.entities[0] = { ...world.entities[0], ich: 1 };
+      (host() as unknown as { exposeWater: () => void }).exposeWater();
+      expect(host().journal()).toEqual([
+        { kind: 'maladie', day: 1, text: 'Maladie déclarée : points blancs (1 animal)' },
+      ]);
+    });
+
+    it('en capture : aucun journal', async () => {
+      await create('?capture=1&seed=42&time=1');
+      setCanvasSize(640, 480);
+      frames.flush(0);
+      expect(host().journal()).toEqual([]);
+      expect(host().world?.journal).toBeUndefined();
+    });
+  });
+
   describe('parcours « Mon premier aquarium » (#512)', () => {
     const host = (): AquariumHost => fixture.componentInstance;
 

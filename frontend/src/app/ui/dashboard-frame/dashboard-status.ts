@@ -48,6 +48,7 @@ import {
   REVIEW_ICON_PIXELS,
 } from './level-icons';
 import type { ReviewPoint } from '../../sim/bilan';
+import type { JournalLine } from '../../sim/journal';
 import {
   maintenanceSummary,
   type MaintenanceReadout,
@@ -278,10 +279,46 @@ const ICONS: Readonly<Record<GaugeLevel, readonly (readonly [number, number])[]>
         class="status__review-detail"
         id="bilan-detail"
         role="group"
-        aria-label="Bilan du bac"
+        [attr.aria-label]="journalShown() === null ? 'Bilan du bac' : 'Journal du bac'"
         data-review-detail
       >
-        @if (points.length > 0) {
+        @if (journal() !== null) {
+          <p class="status__tabs">
+            <button
+              type="button"
+              class="status__why"
+              data-review-tab
+              [attr.aria-pressed]="journalShown() === null"
+              (click)="journalTab.set(false)"
+            >
+              Bilan
+            </button>
+            <button
+              type="button"
+              class="status__why"
+              data-journal
+              [attr.aria-pressed]="journalShown() !== null"
+              (click)="journalTab.set(true)"
+            >
+              Journal
+            </button>
+          </p>
+        }
+        @if (journalShown(); as lines) {
+          <div data-journal-detail>
+            @if (lines.length > 0) {
+              <ol class="status__review-list">
+                @for (line of lines; track $index) {
+                  <li [attr.data-journal-kind]="line.kind">
+                    <b>Jour {{ line.day }} :</b> {{ line.text }}
+                  </li>
+                }
+              </ol>
+            } @else {
+              <p class="status__review-empty" data-journal-empty>Aucun événement pour l’instant.</p>
+            }
+          </div>
+        } @else if (points.length > 0) {
           <ol class="status__review-list">
             @for (point of points; track point.id) {
               <li [attr.data-review-point]="point.id" [attr.data-severity]="point.severity">
@@ -391,12 +428,26 @@ export class DashboardStatus {
   /** Bilan déplié (#514) : il n'apparaît jamais sans demande. */
   readonly reviewOpen = signal(false);
 
+  /**
+   * Journal du bac affiché (fourni par l'hôte, #581), du plus récent au plus ancien, lu dans le
+   * bilan déplié (bouton « Journal ») ; `null` : pas de journal. Pas de bouton de plus dans le
+   * bandeau : il s'allongerait sur le bac, là où l'on clique (docs/PIEGES.md).
+   */
+  readonly journal = input<readonly JournalLine[] | null>(null);
+
+  /** Journal affiché dans le bilan déplié au lieu de ses points (#581). */
+  readonly journalTab = signal(false);
+
   /** Alerte dépliée (une à la fois), `null` : aucune. */
   readonly expanded = signal<AlertId | null>(null);
 
   protected readonly iconGrid = LEVEL_ICON_GRID;
   protected readonly maintenanceIcon = MAINTENANCE_ICON_PIXELS;
   protected readonly reviewIcon = REVIEW_ICON_PIXELS;
+  /** Lignes du journal déplié ; `null` : replié ou sans journal. */
+  protected readonly journalShown = computed(() =>
+    this.reviewOpen() && this.journalTab() && this.reviewOf() !== null ? this.journal() : null,
+  );
   protected readonly summary = maintenanceSummary;
   /** Points du bilan déplié, relus à chaque relevé de l'eau ; `null` : replié. */
   protected readonly review = computed(() => {
@@ -474,6 +525,7 @@ export class DashboardStatus {
   /** Déplie ou replie le bilan du bac (#514). */
   toggleReview(): void {
     this.reviewOpen.update((open) => !open);
+    this.journalTab.set(false);
     this.expanded.set(null);
     this.maintenanceOpen.set(false);
   }

@@ -117,6 +117,21 @@ const PANELS: readonly PanelCase[] = [
       await expect(page.locator('#pharmacie-bac [data-pharmacy-advice]')).toBeVisible();
     },
   },
+  {
+    // Journal du bac (#581), dans le bilan déplié, après un traitement et un changement d'eau.
+    name: 'Journal du bac',
+    search: '?seed=42&points-blancs=1',
+    panel: (page) => page.locator('[data-review-detail]'),
+    open: async (page) => {
+      await page.getByRole('button', { name: 'Réglages' }).click();
+      await page.getByRole('button', { name: 'Ajouter 1 g/L de sel' }).click();
+      await page.getByRole('button', { name: 'Changer l’eau' }).click();
+      await page.getByRole('button', { name: 'Réglages' }).click();
+      await page.locator('[data-review]').click();
+      await page.locator('[data-journal]').click();
+      await expect(page.locator('[data-journal-detail] li')).toHaveCount(2);
+    },
+  },
 ];
 
 const VIEWPORTS = [

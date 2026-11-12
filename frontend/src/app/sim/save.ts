@@ -30,6 +30,7 @@ import {
 import { copyFirstTankPath, readFirstTankPath, type FirstTankPathState } from './first-tank-path';
 import { copyMaintenance, readMaintenance, type MaintenanceState } from './maintenance';
 import { copySavedWaterHistory, readWaterHistory, type SavedWaterHistory } from './water-history';
+import { copySavedJournal, readJournal, type SavedJournal } from './journal';
 import { FOOD_MAX_FLOAT_SECONDS, FOOD_MIN_FLOAT_SECONDS, FOOD_SINK_SPEED, MAX_FOOD } from './food';
 import type { FoodPellet } from './food';
 import { isSpeciesId, MAX_TOTAL_FISH } from './population';
@@ -202,6 +203,8 @@ export interface SavedWorld {
   readonly maintenance?: MaintenanceState;
   /** Historique de l'eau (#511) : absent des sauvegardes antérieures, repris à vide. */
   readonly waterHistory?: SavedWaterHistory;
+  /** Journal du bac (#581) : absent des sauvegardes antérieures, repris vide. */
+  readonly journal?: SavedJournal;
   /** Parcours « Mon premier aquarium » (#512) : absent des sauvegardes antérieures, repris à zéro. */
   readonly firstTankPath?: FirstTankPathState;
 }
@@ -371,6 +374,7 @@ export function savedWorld(world: World): SavedWorld {
     ...(world.waterHistory === undefined
       ? {}
       : { waterHistory: copySavedWaterHistory(world.waterHistory) }),
+    ...(world.journal === undefined ? {} : { journal: copySavedJournal(world.journal) }),
     ...(world.firstTankPath === undefined
       ? {}
       : { firstTankPath: copyFirstTankPath(world.firstTankPath) }),
@@ -577,6 +581,8 @@ export function parseWorldBody(
     maintenanceValue === undefined ? null : readMaintenance(maintenanceValue, problems);
   const historyValue = own(value, 'waterHistory');
   const waterHistory = historyValue === undefined ? null : readWaterHistory(historyValue, problems);
+  const journalValue = own(value, 'journal');
+  const journal = journalValue === undefined ? null : readJournal(journalValue, problems);
   const pathValue = own(value, 'firstTankPath');
   const firstTankPath = pathValue === undefined ? null : readFirstTankPath(pathValue, problems);
   // Eau (#206) : absente, eau saine (celle de `createWorld`) ; présente, validée (pH absent :
@@ -611,6 +617,9 @@ export function parseWorldBody(
   }
   if (waterHistory !== null) {
     world.waterHistory = waterHistory;
+  }
+  if (journal !== null) {
+    world.journal = journal;
   }
   if (firstTankPath !== null) {
     world.firstTankPath = firstTankPath;

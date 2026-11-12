@@ -112,6 +112,19 @@
   padding: 0 0 0 16px;
 }
 
+// Bilan ou journal du bac (#581), au-dessus du contenu.
+.status__tabs {
+  display: flex;
+  gap: 6px;
+  margin: 0 0 4px;
+}
+
+// Vue affichée : en gras, sans soulignement (`aria-pressed` porte l'état lu).
+.status__tabs [aria-pressed='true'] {
+  font-weight: 700;
+  text-decoration: none;
+}
+
 /* Bilan sans point (#522) : même marge que la liste, sans retrait. */
 .status__review-empty {
   margin: 0;

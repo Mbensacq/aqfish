@@ -211,7 +211,7 @@ export function sharedAnimalCount(result: Extract<ParseShareResult, { ok: true }
  * rapprocheraient le lien de `MAX_SHARE_LINK_LENGTH`.
  */
 export function sharedText(world: World, settings: SaveSettings): string {
-  return serializeWorld({ ...world, waterHistory: undefined }, settings);
+  return serializeWorld({ ...world, waterHistory: undefined, journal: undefined }, settings);
 }
 
 /** Issue d'une demande de partage. */

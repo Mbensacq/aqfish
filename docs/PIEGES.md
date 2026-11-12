@@ -6,6 +6,12 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Bouton de plus dans le bandeau santé et alertes : il casse les e2e de clic sur le bac**
+  (cycle 204, #581) : le bandeau s'allonge (centré sous 1100 px, calé à gauche au-delà) et
+  couvre des points que `editeur-decor` (`OUTSIDE` à 800 × 500) et `editeur-piece` (parquet
+  dans x 700–1100, y 450–650 à 1280 × 720) cliquent comme libres ; `cadrage-panneaux` ne le voit
+  pas. Mettre la commande dans un détail déjà déplié (le journal est un bouton du bilan). Un
+  bouton toujours affiché casserait aussi `chips()` de `dashboard-status.spec`. (2026-11-12)
 - **Relever des processus avec `ps | grep` puis `kill` : même danger que `pkill -f`** (cycle 184,
   #531) : la ligne du shell de l'outil Bash contient le motif (`npm run verify`…), il se tue
   (sortie 144). Viser des PID relevés dans un appel à part. Ne pas non plus modifier l'arbre de
