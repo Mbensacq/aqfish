@@ -315,6 +315,13 @@
     max-height: calc(round(down, 100vh - var(--soins, 470px) - 56px, 46px) + 56px);
     overflow-y: auto;
   }
+
+  // Quarantaine installée (#571) : « Bacs » ne tient plus dans deux colonnes ; une seule
+  // colonne qui défile, comme sur un écran plus haut, plutôt qu'une troisième hors du cadre.
+  .control-panel--single-column {
+    width: 260px;
+    column-count: auto;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

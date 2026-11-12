@@ -73,6 +73,18 @@ const PANELS: readonly PanelCase[] = [
     },
   },
   {
+    // Quarantaine installée (#571) : à 1280 × 720, « Bacs » partait en troisième colonne et
+    // « Sauvegarde » en quatrième ; le panneau passe sur une colonne qui défile.
+    name: 'Réglages (quarantaine)',
+    search: '?seed=42&points-blancs=1',
+    panel: (page) => page.locator('.control-panel'),
+    open: async (page) => {
+      await page.getByRole('button', { name: 'Réglages' }).click();
+      await page.getByRole('button', { name: 'Installer un bac de quarantaine' }).click();
+      await expect(page.locator('.control-panel [data-quarantine]')).toBeVisible();
+    },
+  },
+  {
     name: 'Commandes',
     panel: (page) => page.locator('#aide-commandes'),
     open: async (page) => {
@@ -462,4 +474,45 @@ test('1280 × 720 : « Réglages » ouvert masque entièrement le cadre qu’il 
   expect(result.seen).toEqual([]);
   expect(result.background).toBe('rgb(20, 20, 24)');
   expect(errors).toEqual([]);
+});
+
+// #571 : quarantaine installée, le panneau ne déborde pas en largeur, aussi à 900 × 700 (plus
+// petit format à deux colonnes) et avec DejaVu Sans (police de la CI, plus large) ; le choix du
+// bac de quarantaine reçoit le focus et reste visible dans le panneau qui défile.
+test.describe('quarantaine installée (#571)', () => {
+  for (const viewport of [
+    { width: 1280, height: 720 },
+    { width: 900, height: 700 },
+  ]) {
+    for (const font of FONTS) {
+      test(`${viewport.width} × ${viewport.height} : sans débord, bac de quarantaine visible (police ${font ?? 'par défaut'})`, async ({
+        page,
+      }) => {
+        await page.setViewportSize(viewport);
+        const errors = await openScene(page, '?seed=42&points-blancs=1');
+        if (font) {
+          await page.addStyleTag({
+            content: `app-control-panel, app-control-panel * { font-family: '${font}' !important; }`,
+          });
+        }
+        await PANELS.find((p) => p.name === 'Réglages (quarantaine)')!.open(page);
+        const panel = page.locator('.control-panel');
+        expect(await panel.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+        const panelBox = await box(panel);
+        expect(panelBox.x + panelBox.width).toBeLessThanOrEqual(viewport.width);
+        expect(panelBox.y + panelBox.height).toBeLessThanOrEqual(viewport.height);
+        const select = panel.locator('[data-quarantine-tank]');
+        await expect(select).toBeFocused();
+        const selectBox = await box(select);
+        expect(selectBox.y).toBeGreaterThanOrEqual(panelBox.y);
+        expect(selectBox.y + selectBox.height).toBeLessThanOrEqual(panelBox.y + panelBox.height);
+        // « Sauvegarde » reste atteignable en défilant, dans la largeur du panneau.
+        const save = panel.locator("[data-section='sauvegarde']");
+        await save.scrollIntoViewIfNeeded();
+        const saveBox = await box(save);
+        expect(saveBox.x + saveBox.width).toBeLessThanOrEqual(panelBox.x + panelBox.width);
+        expect(errors).toEqual([]);
+      });
+    }
+  }
 });

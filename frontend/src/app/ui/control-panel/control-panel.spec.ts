@@ -181,6 +181,7 @@ describe('fonctions du panneau de contrôle', () => {
     (tankRenamed)="layout.push(['renommage', $event])"
     [quarantine]="quarantine()"
     (quarantineStarter)="layout.push(['amorce', $event])"
+    (quarantineInstalled)="onQuarantineInstalled()"
     (wikiPageRequested)="layout.push(['wiki', $event])"
     [careMode]="careMode()"
     (careModeChanged)="layout.push(['mode', $event])"
@@ -240,6 +241,15 @@ class TestHost {
   readonly layout: [string, unknown][] = [];
   readonly tanks = signal<readonly TankListEntry[]>([]);
   readonly quarantine = signal<QuarantineView>(EMPTY_QUARANTINE);
+
+  /** Comme l'hôte : le bac de quarantaine est posé dès le clic (#547). */
+  onQuarantineInstalled(): void {
+    this.layout.push(['quarantaine', null]);
+    this.quarantine.set({
+      tanks: [{ id: 1, name: 'Quarantaine', species: [], sick: 0, filter: 5 }],
+      sickHere: 0,
+    });
+  }
   readonly careMode = signal<CareMode>('soins');
   readonly notice = signal<TankNotice | null>(null);
   readonly foodStyle = signal<FoodStyle>('points');
@@ -438,6 +448,24 @@ describe('ControlPanel', () => {
       await fixture.whenStable();
       expect(starter()).toBeNull();
       expect(section().querySelector('[data-quarantine-filter]')).toBeNull();
+    });
+
+    it('quarantaine installée (#571) : panneau sur une colonne, focus au bac de quarantaine', async () => {
+      fixture.componentInstance.quarantine.set({ tanks: [], sickHere: 3 });
+      await openPanel();
+      const panel = () => root().querySelector<HTMLElement>('.control-panel')!;
+      expect(panel().classList).not.toContain('control-panel--single-column');
+      section().querySelector<HTMLButtonElement>('[data-quarantine-install]')!.click();
+      await fixture.whenStable();
+      expect(fixture.componentInstance.layout).toContainEqual(['quarantaine', null]);
+      expect(panel().classList).toContain('control-panel--single-column');
+      const select = section().querySelector('[data-quarantine-tank]');
+      expect(select).not.toBeNull();
+      expect(document.activeElement).toBe(select);
+      // Plus de bac posé : retour aux deux colonnes.
+      fixture.componentInstance.quarantine.set({ tanks: [], sickHere: 0 });
+      await fixture.whenStable();
+      expect(panel().classList).not.toContain('control-panel--single-column');
     });
 
     it('Paludarium (#492) : « sans granulés » et infobulle, aucune infobulle sinon', async () => {
