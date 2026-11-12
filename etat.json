@@ -7391,10 +7391,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-12T08:21:07.722Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-12T08:21:46.596Z",
+          "note": "Issue #567 : Rayons de lumière dans l'eau (S)"
         }
       },
       "metriques": {}
