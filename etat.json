@@ -7452,6 +7452,24 @@
         }
       },
       "metriques": {}
+    },
+    "205": {
+      "numero": 205,
+      "date": "2026-11-12",
+      "debut": "2026-11-12T16:11:42.124Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-12T16:11:42.124Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
