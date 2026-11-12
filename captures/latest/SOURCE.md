@@ -1,8 +1,4 @@
-# Captures c204
-
-- Branche : cycle/c204-journal-du-bac
-- PR : #591
-- Commit : 53f0bcc
-- Graine : par défaut du harnais
-- Série complète : 139 images (l'exécution locale a atteint le délai de 9 min avant la dernière capture ; three-quarter, top, side, front, bottom présentes)
-- Observation : three-quarter.png identique octet pour octet à la série c203
+# Captures c205
+- Branche : cycle/c205-lampe-du-bac, PR #594, commit b00835f
+- Graine : par défaut ; série partielle (88 premières captures, run interrompu par le temps)
+- Constat : bac par défaut inchangé (89/89 identiques à la série précédente)
