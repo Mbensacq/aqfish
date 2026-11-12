@@ -7352,7 +7352,7 @@
       "type": "retro",
       "issue": 571,
       "pr": 587,
-      "version": null,
+      "version": "v1.17.5",
       "phases": {
         "planif": {
           "statut": "termine",
