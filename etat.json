@@ -7301,10 +7301,10 @@
           "note": "Pas de PR (Dev en échec, #567 non faite) ; captures de main publiées (c200), 0 bug"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-12T00:57:25.736Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-12T01:34:12.267Z",
+          "note": "PR #578 (c199) fusionnée → v1.17.3, CI main et release vertes ; cycle 200 sans PR (#567 reste ouverte) ; branche c199 non supprimée (refus env.)"
         }
       },
       "metriques": {}
