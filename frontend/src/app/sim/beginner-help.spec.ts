@@ -78,6 +78,7 @@ const OUT_OF_RANGE: readonly (readonly [string, AlertInput, AlertId])[] = [
     'mix',
   ],
   ['algues en prolifération', input({ algae: 0.5 }), 'algae'],
+  ['distributeur vide', { ...input(), feederEmpty: true }, 'feeder'],
   ['mesure invalide', input({ nitrite: Number.NaN }), 'nitrite'],
 ];
 

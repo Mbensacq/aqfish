@@ -268,6 +268,8 @@ import {
   worldCurrentVelocity,
   setWorldHeaterInPlace,
   setWorldLampOnInPlace,
+  setWorldFeederInPlace,
+  refillWorldFeederInPlace,
   setWorldLightingInPlace,
   scrapeWorldAlgaeInPlace,
   pruneWorldPlantInPlace,
@@ -374,6 +376,7 @@ import {
   lightingOf,
   sampleAlgae,
 } from '../../sim/algae';
+import { feederReadout, hasFeeder, type FeederReadout } from '../../sim/auto-feeder';
 import {
   DEFAULT_LAMP_ON_HOUR,
   LAMP_FADE_HOURS,
@@ -458,6 +461,11 @@ export const LIGHT_RAYS_ATTRIBUTE = 'data-aqfish-rayons';
  * centième : 0 éteinte ou bac sans lampe, 1 allumée, entre les deux pendant un fondu.
  */
 export const LAMP_ATTRIBUTE = 'data-aqfish-lamp';
+/**
+ * Attribut du composant hôte exposant le distributeur automatique (#583) : `aucun`, ou la
+ * réserve et les heures (`12;9,18`).
+ */
+export const FEEDER_ATTRIBUTE = 'data-aqfish-feeder';
 /** Attribut du composant hôte : `true` si l'heure est figée, `false` sinon. */
 export const HOUR_FROZEN_ATTRIBUTE = 'data-aqfish-hour-frozen';
 
@@ -979,6 +987,8 @@ export class AquariumHost {
   /** Intensité de la lampe appliquée en dernier (`updateLight`). */
   private litLamp: number | null = null;
   private exposedLamp: string | null = null;
+  /** Dernière valeur exposée du distributeur (`FEEDER_ATTRIBUTE`). */
+  private exposedFeeder: string | null = null;
   private exposedHour: string | null = null;
   /** Dernière valeur exposée des rayons de lumière (`LIGHT_RAYS_ATTRIBUTE`). */
   private exposedRays: string | null = null;
@@ -1082,6 +1092,10 @@ export class AquariumHost {
   readonly lighting = signal(DEFAULT_LIGHTING_HOURS);
   /** Heure d'allumage de la lampe du bac affiché (#584). */
   readonly lampOn = signal(DEFAULT_LAMP_ON_HOUR);
+  /** Distributeur automatique du bac affiché (#583) ; `null` : aucun. */
+  readonly feeder = signal<FeederReadout | null>(null);
+  /** Vrai si un distributeur peut être posé dans le bac affiché (#583). */
+  readonly feederAvailable = computed(() => hasFeeder(this.environment()));
   /** Ligne « Lampe » du tableau de bord (#584) ; `null` pour un bac sans lampe réglable. */
   readonly lampReadout = computed<LampReadout | null>(() =>
     hasAlgae(this.environment())
@@ -1746,6 +1760,27 @@ export class AquariumHost {
       if (!setWorldLampOnInPlace(world, hour)) {
         throw new RangeError('heure d’allumage hors bornes');
       }
+    });
+  }
+
+  /**
+   * Pose, règle ou retire le distributeur automatique (#583) : `null` le retire ; 1 à 4 heures
+   * entières le posent plein, ou changent ses heures sans toucher à sa réserve. Enregistré
+   * avec le bac. Sans effet en mode capture, avant le démarrage, hors bornes ou dans un bac
+   * sans distributeur possible.
+   */
+  setFeeder(hours: readonly number[] | null): void {
+    this.applyWaterSetting((world) => {
+      if (!setWorldFeederInPlace(world, hours)) {
+        throw new RangeError('distributeur impossible');
+      }
+    });
+  }
+
+  /** Remplit le distributeur automatique (#583) : 14 rations. Sans effet sans distributeur. */
+  refillFeeder(): void {
+    this.applyWaterSetting((world) => {
+      refillWorldFeederInPlace(world);
     });
   }
 
@@ -3715,6 +3750,10 @@ export class AquariumHost {
       if (params.capture && params.catappa > 0) {
         setWorldCatappaInPlace(world, params.catappa);
       }
+      // Distributeur de `distributeur=` (#583), en capture : posé plein à t = 0.
+      if (params.capture && params.feeder !== null) {
+        setWorldFeederInPlace(world, params.feeder);
+      }
       this.currentWorld = params.capture
         ? advanceToWithFeedings(world, params.time, params.feedings, this.dayClock)
         : world;
@@ -3992,6 +4031,7 @@ export class AquariumHost {
     view.setWaterTea(this.water().tea);
     view.setCatappa(world.water.catappa);
     this.exposeAlgae(world);
+    this.exposeFeeder(world);
     this.exposePlants(world);
     this.exposeCurrent(world);
     this.applyReducedMotion();
@@ -4607,6 +4647,7 @@ export class AquariumHost {
     this.view?.setWaterTea(readout.tea);
     this.view?.setCatappa(world.water.catappa);
     this.exposeAlgae(world);
+    this.exposeFeeder(world);
     this.exposePlants(world);
   }
 
@@ -4628,6 +4669,18 @@ export class AquariumHost {
     if (exposed !== this.exposedPlants) {
       this.exposedPlants = exposed;
       this.host.nativeElement.setAttribute(PLANTS_ATTRIBUTE, exposed);
+    }
+  }
+
+  /** Distributeur automatique (#583) : vue, signal du tableau de bord et `FEEDER_ATTRIBUTE`. */
+  private exposeFeeder(world: World): void {
+    const feeder = world.feeder;
+    this.view?.setFeeder(feeder !== undefined);
+    const exposed = feeder === undefined ? 'aucun' : `${feeder.stock};${feeder.hours.join(',')}`;
+    if (exposed !== this.exposedFeeder) {
+      this.exposedFeeder = exposed;
+      this.feeder.set(feeder === undefined ? null : feederReadout(feeder));
+      this.host.nativeElement.setAttribute(FEEDER_ATTRIBUTE, exposed);
     }
   }
 

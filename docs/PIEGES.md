@@ -6,6 +6,18 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Vitesse de simulation : ×4 au plus, pas ×8** (cycle 206, #583) : `SIM_SPEEDS` vaut
+  `[0, 0.5, 1, 2, 4]` et `scaledDt(dt, 8)` lève une `RangeError`. Un critère « vitesse ×8 » se
+  teste sur une fonction pure qui reçoit la vitesse en nombre (`rationsInFrame`), ou en
+  avançant le monde par images de 8 fois plus de pas. (2026-11-12)
+- **e2e de sauvegarde : pas de `seed=` dans l'adresse avant un rechargement** (cycle 206,
+  #583) : `?seed=42` part d'un monde neuf à chaque chargement, le bac enregistré n'est pas
+  repris ; ouvrir `/` (sans requête) pour vérifier qu'un réglage survit au rechargement.
+  (2026-11-12)
+- **Tests de monde sur plusieurs journées : horloge courte et bac vide** (cycle 206, #583) :
+  une journée par défaut fait 72 000 pas ; avec la population par défaut, un test de 5 jours
+  dépasse les 5 s de Vitest. `createDayClock(h, 48)` (2 s par heure) et `createWorld(seed)`
+  (sans poisson) suffisent pour une logique d'horaire. (2026-11-12)
 - **Un curseur de plus dans la section « Eau » : `cadrage-panneaux` rouge à 1280 × 720**
   (cycle 205, #584) : le panneau « Réglages » n'a plus de marge en hauteur ; un champ de
   réglage pleine largeur (≈ 50 px) le fait dépasser de la fenêtre ou recouvrir la barre des

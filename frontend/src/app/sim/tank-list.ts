@@ -1,4 +1,5 @@
 import { careModeOf, isDecorMode, type CareMode } from './care-mode';
+import { isFeederEmpty } from './auto-feeder';
 import { mixWarnings } from './compatibility';
 import { dashboardAlerts, type AlertSeverity } from './dashboard-alerts';
 import { environmentById, environmentWater, type EnvironmentId } from './environment';
@@ -62,6 +63,7 @@ export function worstAlert(world: World): AlertSeverity | null {
     phBands: waterReadout(world.water, world.environment, species).phBands,
     health: healthSummary(world.entities),
     mixes: mixWarnings(environmentById(world.environment).species, populationCounts(world)),
+    feederEmpty: isFeederEmpty(world.feeder),
   });
   // `dashboardAlerts` trie par gravité : la première est la pire.
   return alerts[0]?.severity ?? null;

@@ -55,9 +55,13 @@
         [highlighted]="aquarium.highlightedAnimals()"
         [maintenance]="aquarium.maintenance()"
         [lamp]="aquarium.lampReadout()"
+        [feeder]="aquarium.feeder()"
+        [feederAvailable]="aquarium.feederAvailable()"
         [reviewOf]="aquarium.reviewOfWorld"
         [journal]="aquarium.journal()"
         (maintenanceDone)="aquarium.markMaintenanceDone($event)"
+        (feederChanged)="aquarium.setFeeder($event)"
+        (feederRefilled)="aquarium.refillFeeder()"
         (showAnimalsRequested)="aquarium.highlightAlertAnimals($event)"
         (wikiPageRequested)="onWikiPageRequested($event)"
       />

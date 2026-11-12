@@ -93,6 +93,11 @@
  * neuves (1 à 5) déposées à t = 0, qui teintent l'eau. Toute autre valeur ou absent : aucune
  * feuille (séries existantes inchangées).
  *
+ * Paramètre facultatif `distributeur=h1,h2…` (issue #583) : en mode capture, un distributeur
+ * automatique plein, posé sur le bord du bac à t = 0, aux heures données (1 à 4 heures
+ * entières de 0 à 23). Toute autre valeur ou absent : aucun distributeur (séries existantes
+ * inchangées).
+ *
  * Paramètre facultatif `piece=1` (issue #187) : en mode capture, la pièce autour du bac
  * (sol, mur, meuble support) est affichée, dans le bac tropical seulement ; toute autre
  * valeur ou absent, pièce masquée (séries existantes inchangées).
@@ -164,6 +169,7 @@ import { CAMERA_PRESETS, type CameraPreset } from '../camera-preset/camera-prese
 import { isFoodStyle, type FoodStyle } from '../food-style/food-style';
 import { isRenderFilter, type RenderFilter } from '../render-filter/render-filter';
 import { parseWallpaperFps } from '../wallpaper/wallpaper';
+import { feederHours } from '../../sim/auto-feeder';
 
 // Points de vue : définis dans un module neutre (#97), réexportés pour les appelants du contrat.
 export { CAMERA_PRESETS, type CameraPreset } from '../camera-preset/camera-preset';
@@ -235,6 +241,8 @@ export interface CaptureParams {
   readonly current: string | null;
   /** Feuilles de catappa neuves de `catappa=` à t = 0 (issue #239), 0 si absent ou invalide. */
   readonly catappa: number;
+  /** Heures du distributeur de `distributeur=` (issue #583) ; `null` si absent ou invalide. */
+  readonly feeder: readonly number[] | null;
   /** Élément du décor sélectionné par `edition=` (issue #167) ; `null` si absent ou invalide. */
   readonly editSelection: number | null;
   /** Élément de la pièce sélectionné par `edition-meuble=` (issue #188) ; `null` sinon. */
@@ -369,6 +377,7 @@ export const DEFAULT_CAPTURE_PARAMS: CaptureParams = {
   eggs: false,
   current: null,
   catappa: 0,
+  feeder: null,
   editSelection: null,
   editRoomSelection: null,
   woods: [],
@@ -438,6 +447,7 @@ export function parseCaptureParams(search: string): CaptureParams {
     eggs: params.get('oeufs') === '1',
     current: params.get('courant'),
     catappa: parseCatappa(params.get('catappa')),
+    feeder: parseFeeder(params.get('distributeur')),
     editSelection: parseEditSelection(params.get('edition')),
     editRoomSelection: parseEditSelection(params.get('edition-meuble')),
     woods: parseWoods(params.get('bois')),
@@ -689,6 +699,14 @@ function parsePopulation(raw: string | null): readonly CapturePopulation[] {
 /** Nombre de feuilles de `catappa=` (issue #239) : un chiffre de 1 à 5, sinon 0. */
 function parseCatappa(raw: string | null): number {
   return raw !== null && /^[1-5]$/.test(raw) ? Number(raw) : 0;
+}
+
+/** Heures de `distributeur=` (issue #583) : 1 à 4 heures entières de 0 à 23, sinon `null`. */
+function parseFeeder(raw: string | null): readonly number[] | null {
+  if (raw === null || !/^\d{1,2}(,\d{1,2}){0,3}$/.test(raw)) {
+    return null;
+  }
+  return feederHours(raw.split(',').map(Number));
 }
 
 /** Couverture de `algues=` : réel dans ]0, 1], sinon 0 (aucune algue). */

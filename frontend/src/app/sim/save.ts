@@ -29,6 +29,7 @@ import {
 } from './eggs';
 import { copyFirstTankPath, readFirstTankPath, type FirstTankPathState } from './first-tank-path';
 import { copyMaintenance, readMaintenance, type MaintenanceState } from './maintenance';
+import { copyFeeder, hasFeeder, readFeeder, type FeederState } from './auto-feeder';
 import { copySavedWaterHistory, readWaterHistory, type SavedWaterHistory } from './water-history';
 import { copySavedJournal, readJournal, type SavedJournal } from './journal';
 import { FOOD_MAX_FLOAT_SECONDS, FOOD_MIN_FLOAT_SECONDS, FOOD_SINK_SPEED, MAX_FOOD } from './food';
@@ -207,6 +208,8 @@ export interface SavedWorld {
   readonly journal?: SavedJournal;
   /** Parcours « Mon premier aquarium » (#512) : absent des sauvegardes antérieures, repris à zéro. */
   readonly firstTankPath?: FirstTankPathState;
+  /** Distributeur automatique (#583) : absent des sauvegardes antérieures et sans distributeur. */
+  readonly feeder?: FeederState;
 }
 
 /** Contenu d'une sauvegarde (schéma 1). */
@@ -378,6 +381,7 @@ export function savedWorld(world: World): SavedWorld {
     ...(world.firstTankPath === undefined
       ? {}
       : { firstTankPath: copyFirstTankPath(world.firstTankPath) }),
+    ...(world.feeder === undefined ? {} : { feeder: copyFeeder(world.feeder) }),
   };
 }
 
@@ -585,6 +589,12 @@ export function parseWorldBody(
   const journal = journalValue === undefined ? null : readJournal(journalValue, problems);
   const pathValue = own(value, 'firstTankPath');
   const firstTankPath = pathValue === undefined ? null : readFirstTankPath(pathValue, problems);
+  // Distributeur (#583) : absent, aucun ; refusé dans un bac où il ne peut pas être posé.
+  const feederValue = own(value, 'feeder');
+  const feeder = feederValue === undefined ? null : readFeeder(feederValue, problems);
+  if (feeder !== null && !hasFeeder(environment)) {
+    problems.push(`distributeur impossible dans l’environnement ${environment}`);
+  }
   // Eau (#206) : absente, eau saine (celle de `createWorld`) ; présente, validée (pH absent :
   // celui de l'eau neuve de l'environnement, #236).
   const waterValue = own(value, 'water');
@@ -620,6 +630,9 @@ export function parseWorldBody(
   }
   if (journal !== null) {
     world.journal = journal;
+  }
+  if (feeder !== null) {
+    world.feeder = feeder;
   }
   if (firstTankPath !== null) {
     world.firstTankPath = firstTankPath;
