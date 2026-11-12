@@ -322,6 +322,20 @@ import {
   type FirstTankPathView,
 } from '../../sim/first-tank-path';
 import {
+  addJournalEntry,
+  createJournal,
+  journalLines,
+  observeJournal,
+  restoreJournal,
+  savedJournal,
+  treatmentEntry,
+  watchJournal,
+  waterChangeEntry,
+  type Journal,
+  type JournalLine,
+  type JournalWatch,
+} from '../../sim/journal';
+import {
   createWaterHistory,
   markWaterChange,
   recordWaterHistory,
@@ -909,6 +923,12 @@ export class AquariumHost {
   private maintenanceStart = new WeakMap<World, number>();
   /** Historique de l'eau de chaque monde affiché (#511), hors du monde pendant la partie. */
   private waterHistories = new WeakMap<World, WaterHistory>();
+  /** Journal de chaque monde affiché (#581), hors du monde pendant la partie. */
+  private journals = new WeakMap<World, Journal>();
+  /** Dernière observation du journal de chaque monde affiché (#581). */
+  private journalWatches = new WeakMap<World, JournalWatch>();
+  private exposedJournal: Journal | null = null;
+  private exposedJournalVersion = -1;
   /** Parcours guidé de chaque monde (#512), hors du monde pendant la partie. */
   private firstTankPaths = new WeakMap<World, FirstTankPathState>();
   /** Produits déjà utilisés dans chaque bac depuis le chargement (#533), hors du monde. */
@@ -1070,6 +1090,8 @@ export class AquariumHost {
   });
   /** Historique de l'eau du bac affiché (#511), recopié à chaque relevé nouveau ; `null` en capture. */
   readonly waterHistory = signal<WaterHistoryView | null>(null);
+  /** Journal du bac affiché (#581), du plus récent au plus ancien ; vide en capture. */
+  readonly journal = signal<readonly JournalLine[]>([]);
   /** Parcours « Mon premier aquarium » du bac affiché (#512) ; `null` : non proposé. */
   readonly firstTankPath = signal<FirstTankPathView | null>(null);
   /** Message du dernier geste de soin (#361) ; `null` : aucun depuis le dernier changement de bac. */
@@ -1515,6 +1537,7 @@ export class AquariumHost {
     changeWorldWaterInPlace(world);
     this.recordMaintenance(world, 'waterChange');
     markWaterChange(this.waterHistoryOf(world), world.water, world.tick);
+    addJournalEntry(this.journalOf(world), waterChangeEntry(world.time));
     this.exposeWater();
     this.saveNow();
     this.scheduleFrame();
@@ -1543,6 +1566,7 @@ export class AquariumHost {
       warning: outcome.ok ? (outcome.warning ?? null) : null,
     });
     if (outcome.ok) {
+      addJournalEntry(this.journalOf(world), treatmentEntry(world.time, kind));
       this.exposeWater();
       this.saveNow();
       this.scheduleFrame();
@@ -2785,6 +2809,7 @@ export class AquariumHost {
    */
   private saveText(world: World): string {
     this.keepWaterHistory(world);
+    this.keepJournal(world);
     this.advanceBackgroundTanks();
     const room = this.syncRoomState(world);
     return serializeRoom(room, this.selectedTankId, this.settings());
@@ -2952,6 +2977,7 @@ export class AquariumHost {
     }
     this.tankNotice.set(null);
     this.keepWaterHistory(world);
+    this.keepJournal(world);
     this.keepFirstTankPath(world);
     this.setEnvironment(tank.world.environment);
   }
@@ -4351,6 +4377,52 @@ export class AquariumHost {
     }
   }
 
+  /** Journal de `world`, repris de sa sauvegarde au premier accès (#581). */
+  private journalOf(world: World): Journal {
+    let journal = this.journals.get(world);
+    if (journal === undefined) {
+      journal = world.journal === undefined ? createJournal() : restoreJournal(world.journal);
+      this.journals.set(world, journal);
+    }
+    return journal;
+  }
+
+  /**
+   * Inscrit le journal dans le monde, à la sauvegarde ou au changement de bac seulement
+   * (#581) : un bac sans événement nouveau reste identique à sa sauvegarde, au bit près.
+   */
+  private keepJournal(world: MutableWorld): void {
+    const journal = this.journals.get(world);
+    if (journal !== undefined && journal.entries.length > 0) {
+      world.journal = savedJournal(journal);
+    }
+  }
+
+  /**
+   * Observe le bac affiché au rythme des relevés (#581) : maladies, guérisons, pontes et
+   * éclosions survenues depuis la dernière observation entrent au journal (le premier regard
+   * sur un bac n'écrit rien), puis publie le journal s'il a changé. Jamais en capture.
+   */
+  private exposeJournal(world: World): void {
+    if (this.capture) {
+      return;
+    }
+    const journal = this.journalOf(world);
+    const watch = this.journalWatches.get(world);
+    if (watch === undefined) {
+      this.journalWatches.set(world, watchJournal(world));
+    } else {
+      for (const entry of observeJournal(watch, world)) {
+        addJournalEntry(journal, entry);
+      }
+    }
+    if (journal !== this.exposedJournal || journal.version !== this.exposedJournalVersion) {
+      this.exposedJournal = journal;
+      this.exposedJournalVersion = journal.version;
+      this.journal.set(journalLines(journal));
+    }
+  }
+
   /** Publie l'historique du bac affiché s'il a changé (#511) ; jamais en capture. */
   private exposeWaterHistory(world: World): void {
     if (this.capture) {
@@ -4420,6 +4492,7 @@ export class AquariumHost {
     this.exposeAlertAnimals(world);
     this.exposeMaintenance(world);
     this.exposeWaterHistory(world);
+    this.exposeJournal(world);
     this.exposeFirstTankPath(world);
     const treatment = treatmentReadout(world.water);
     this.treatment.set(treatment);

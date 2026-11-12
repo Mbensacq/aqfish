@@ -128,6 +128,7 @@ import {
 } from './maintenance';
 import type { FirstTankPathState } from './first-tank-path';
 import type { SavedWaterHistory } from './water-history';
+import type { SavedJournal } from './journal';
 import {
   changeWaterInPlace,
   freshWater,
@@ -267,6 +268,11 @@ export interface World {
    * seulement : la partie le tient hors du monde, aucun pas n'y touche.
    */
   readonly waterHistory?: SavedWaterHistory;
+  /**
+   * Journal du bac (issue #581, `sim/journal.ts`), écrit à la sauvegarde seulement : la partie
+   * le tient hors du monde, aucun pas n'y touche.
+   */
+  readonly journal?: SavedJournal;
   /**
    * Parcours « Mon premier aquarium » (issue #512, `sim/first-tank-path.ts`, ADR 0119), écrit
    * à la sauvegarde seulement : la partie le tient hors du monde, aucun pas n'y touche.

@@ -27,6 +27,7 @@ import {
   type MaintenanceTask,
 } from '../../sim/maintenance';
 import type { ReviewPoint } from '../../sim/bilan';
+import type { JournalLine } from '../../sim/journal';
 import { NO_ALERT_TARGETS, type AlertTargets } from '../../sim/alert-animals';
 import type { GuidePage } from '../../sim/care-guide';
 import { ICH_AGGRAVATED_AT } from '../../sim/disease';
@@ -48,6 +49,7 @@ const STARVED: HealthSummary = healthSummary(
     [highlighted]="highlighted()"
     [maintenance]="maintenance()"
     [reviewOf]="reviewOf()"
+    [journal]="journal()"
     (maintenanceDone)="done.push($event)"
     (showAnimalsRequested)="shown.push($event)"
     (wikiPageRequested)="wikiPages.push($event)"
@@ -62,6 +64,7 @@ class StatusHost {
   readonly done: MaintenanceTask[] = [];
   readonly maintenance = signal<MaintenanceReadout | null>(null);
   readonly reviewOf = signal<(() => readonly ReviewPoint[]) | null>(null);
+  readonly journal = signal<readonly JournalLine[] | null>(null);
   readonly targets = signal<AlertTargets>(NO_ALERT_TARGETS);
   readonly highlighted = signal(0);
   readonly sample = signal<WaterSample>(DEFAULT_WATER_SAMPLE);
@@ -157,6 +160,38 @@ describe('rappel d’entretien (#513)', () => {
     button.click();
     flush();
     expect(root.querySelector('[data-review-detail]')).toBeNull();
+  });
+
+  it('journal (#581) : absent sans journal ; vide, le dit ; rempli, liste datée', () => {
+    const { host, root, flush } = mount();
+    flush();
+    expect(root.querySelector('[data-journal]')).toBeNull();
+    host.journal.set([]);
+    host.reviewOf.set(() => []);
+    flush();
+    const button = root.querySelector<HTMLElement>('[data-journal]')!;
+    expect(button.getAttribute('aria-expanded')).toBe('false');
+    root.querySelector<HTMLElement>('[data-review]')!.click();
+    flush();
+    button.click();
+    flush();
+    expect(button.getAttribute('aria-expanded')).toBe('true');
+    expect(button.getAttribute('aria-controls')).toBe('journal-detail');
+    expect(root.querySelector('[data-journal-empty]')).not.toBeNull();
+    expect(root.querySelector('[data-review-detail]')).toBeNull();
+    host.journal.set([
+      { kind: 'ponte', day: 2, text: 'Ponte : 3 œufs (Corydora)' },
+      { kind: 'changementEau', day: 1, text: 'Changement d’eau' },
+    ]);
+    flush();
+    const items = [...root.querySelectorAll('[data-journal-detail] li')];
+    expect(items.map((item) => item.textContent!.trim())).toEqual([
+      'Jour 2 : Ponte : 3 œufs (Corydora)',
+      'Jour 1 : Changement d’eau',
+    ]);
+    button.click();
+    flush();
+    expect(root.querySelector('[data-journal-detail]')).toBeNull();
   });
 
   it('bilan vide : le dit ; le déplier replie le calendrier', () => {

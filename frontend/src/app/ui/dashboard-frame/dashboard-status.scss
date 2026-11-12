@@ -311,6 +311,15 @@
     @include dashboard.surface;
   }
 
+  // Journal du bac (#581) : à gauche du bilan, dans la même marge.
+  .status__journal-item {
+    position: absolute;
+    right: 36px;
+    bottom: calc(100% + 4px);
+
+    @include dashboard.surface;
+  }
+
   // Cible tactile de 24 px (#265), comme sur bureau.
   .status__chip {
     min-width: 0;
