@@ -7515,6 +7515,12 @@
           "debut": "2026-11-12T21:52:41.380Z",
           "fin": "2026-11-12T22:32:24.395Z",
           "note": "Verdict OK, 0 bug, e2e distributeur/entretien verts, captures partielles publiées (c206)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-12T22:32:57.159Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
