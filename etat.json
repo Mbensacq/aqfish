@@ -7319,10 +7319,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-12T01:34:42.763Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-12T01:35:17.875Z",
+          "note": "Issue #450 : mutants de sim/frog.ts 141-300 + #520 pts 1-2 (M)"
         }
       },
       "metriques": {}
