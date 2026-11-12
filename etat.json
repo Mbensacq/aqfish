@@ -7524,6 +7524,24 @@
         }
       },
       "metriques": {}
+    },
+    "207": {
+      "numero": 207,
+      "date": "2026-11-13",
+      "debut": "2026-11-12T23:48:46.030Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-12T23:48:46.030Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
