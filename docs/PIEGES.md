@@ -62,6 +62,13 @@ haut de sa section.
   « Sauvegarde » en quatrième (`scrollWidth` 1048 pour 530, DejaVu Sans), déjà sur `main` ;
   `cadrage-panneaux` ne couvre pas ce cas. Le panneau défile en largeur. Mesuré par un script
   Playwright jetable (`?seed=42&points-blancs=1`, puis « Isoler en quarantaine »). (2026-11-11)
+  Corrigé au cycle 202 (#571) : « Bacs » mesurait 572 px (deux bacs, transfert, quarantaine,
+  renommage, message) pour ~240 px libres en deuxième colonne ; aucun rognage n'y suffisait
+  (~410 px de trop, avant même « Animal à ramener »). Quarantaine affichée, le panneau passe
+  sur **une colonne de 260 px qui défile** (`control-panel--single-column`), et le focus va au
+  choix du bac de quarantaine pour l'amener à l'écran. Cas « Réglages (quarantaine) » et
+  « quarantaine installée (#571) » de `cadrage-panneaux` (1280 × 720 et 900 × 700, DejaVu Sans).
+  Même recours pour tout autre état qui ne tiendrait plus en deux colonnes. (2026-11-12)
 - **Bac malade à 1280 × 720 : la première colonne du panneau est pleine** (cycle 192, #547) :
   avec « Soins » affichée, la colonne 1 finit à ~553 px pour une hauteur de 564 px ; une ligne
   de plus dans « Soins » (même un quatrième bouton qui passe à la ligne) envoie « Sauvegarde »

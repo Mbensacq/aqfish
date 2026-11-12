@@ -1,10 +1,12 @@
 import { DEFAULT_LIGHTING_HOURS, MAX_LIGHTING_HOURS, MIN_LIGHTING_HOURS } from '../../sim/algae';
 import {
+  afterNextRender,
   ChangeDetectionStrategy,
   Component,
   computed,
   ElementRef,
   inject,
+  Injector,
   input,
   linkedSignal,
   output,
@@ -297,6 +299,7 @@ export interface NewTankRequest {
         [id]="panelId"
         aria-label="Réglages de l’aquarium"
         [style.--soins]="careShown() ? '570px' : null"
+        [class.control-panel--single-column]="quarantineShown()"
       >
         <fieldset class="control-panel__section" data-section="environnement">
           <legend class="control-panel__legend">Environnement</legend>
@@ -1200,7 +1203,7 @@ export interface NewTankRequest {
               data-quarantine-install
               aria-label="Installer un bac de quarantaine"
               [attr.title]="quarantineDuration"
-              (click)="quarantineInstalled.emit()"
+              (click)="onQuarantineInstall()"
             >
               Isoler en quarantaine
             </button>
@@ -1578,6 +1581,7 @@ export class ControlPanel {
   readonly opened = output<void>();
 
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly injector = inject(Injector);
   /** Option « Réduire les mouvements » (#406), partagée avec l'aquarium et le mode immersif. */
   private readonly motionState = inject(ReducedMotionState);
   /** État effectif de l'option (choix des réglages, sinon préférence système). */
@@ -1783,6 +1787,20 @@ export class ControlPanel {
     const wanted = this.quarantineSpecies();
     return list.find((id) => id === wanted) ?? list[0] ?? null;
   });
+
+  /**
+   * « Isoler en quarantaine » (#547) : le bouton disparaît une fois le bac posé ; le focus va
+   * au choix du bac de quarantaine, ce qui l'amène à l'écran quand le panneau passe sur une
+   * colonne qui défile (#571).
+   */
+  protected onQuarantineInstall(): void {
+    this.quarantineInstalled.emit();
+    afterNextRender(
+      () =>
+        this.host.nativeElement.querySelector<HTMLSelectElement>('[data-quarantine-tank]')?.focus(),
+      { injector: this.injector },
+    );
+  }
 
   protected onQuarantineReturn(fromId: number): void {
     const species = this.quarantineSpeciesChoice();
