@@ -7416,6 +7416,24 @@
         }
       },
       "metriques": {}
+    },
+    "204": {
+      "numero": 204,
+      "date": "2026-11-12",
+      "debut": "2026-11-12T11:45:39.532Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-12T11:45:39.532Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
