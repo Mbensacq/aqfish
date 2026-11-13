@@ -7589,10 +7589,10 @@
           "note": "Verdict OK, 0 bug, unitaires 5126 verts, CI verte, captures publiées (c208) ; mutation journal.ts non terminée en session (>9 min), bilan hebdo en CI"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-13T04:28:48.196Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-13T05:40:09.273Z",
+          "note": "PR #601 fusionnée → v1.18.5, CI main et release vertes ; dette #602 (finitions journal) ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
