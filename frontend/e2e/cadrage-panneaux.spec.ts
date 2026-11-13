@@ -316,14 +316,17 @@ test.describe('panneau « Commandes » (#79)', () => {
 
 // #588 : à 900 × 700, « Réglages » en deux colonnes (532 px, de 59 à 591 px) recouvrait
 // l'aide-mémoire « Commandes » déplié (300 px, à 12 px du bord droit : dès 588 px). Le panneau
-// ne passe en deux colonnes qu'à partir de 915 px de large ; plus étroit, une colonne. Les
-// deux panneaux ouverts ensemble restent séparés d'au moins 12 px, de part et d'autre du seuil.
+// ne passe en deux colonnes qu'à partir de 1167 px de large (915 px avant #610, qui y ajoute la
+// bulle de soin) ; plus étroit, une colonne. Les deux panneaux ouverts ensemble restent séparés
+// d'au moins 12 px, de part et d'autre de l'ancien seuil comme du nouveau.
 test.describe('« Réglages » et « Commandes » ouverts ensemble (#588)', () => {
   for (const viewport of [
     { width: 900, height: 700 },
     { width: 914, height: 700 },
     { width: 915, height: 700 },
     { width: 1024, height: 700 },
+    { width: 1166, height: 700 },
+    { width: 1167, height: 700 },
     { width: 1280, height: 720 },
   ]) {
     for (const search of ['?seed=42', '?seed=42&points-blancs=1']) {
@@ -343,6 +346,83 @@ test.describe('« Réglages » et « Commandes » ouverts ensemble (#588)', () =
         expect(
           await page.locator('.control-panel').evaluate((el) => el.scrollWidth <= el.clientWidth),
         ).toBe(true);
+        expect(errors).toEqual([]);
+      });
+    }
+  }
+});
+
+// #610 : en deux colonnes, la bulle d'un geste de soin (240 px, à droite de « Réglages »)
+// recouvrait « Commandes » déplié sous 1155 px de large. Le panneau ne passe en deux colonnes
+// qu'à partir de 1167 px (panneau, bulle et aide-mémoire côte à côte) ; plus étroit, le message
+// reste une ligne de la section, dans le panneau. Mesuré de part et d'autre du seuil.
+test.describe('bulle de soin et « Commandes » ouverts ensemble (#610)', () => {
+  for (const viewport of [
+    { width: 915, height: 700 },
+    { width: 1024, height: 700 },
+    { width: 1154, height: 700 },
+    { width: 1166, height: 700 },
+    { width: 1167, height: 700 },
+    { width: 1280, height: 720 },
+  ]) {
+    for (const font of FONTS) {
+      test(`${viewport.width} × ${viewport.height} : sans se recouvrir (police ${font ?? 'par défaut'})`, async ({
+        page,
+      }) => {
+        await page.setViewportSize(viewport);
+        const errors = await openScene(page, '?seed=42&points-blancs=1');
+        if (font) {
+          await page.addStyleTag({ content: `* { font-family: '${font}' !important; }` });
+        }
+        await PANELS.find((p) => p.name === 'Commandes')!.open(page);
+        await PANELS.find((p) => p.name === 'Réglages (soins, message)')!.open(page);
+        await expect(page.locator('#aide-commandes')).toBeVisible();
+        const settings = await box(page.locator('.control-panel'));
+        const bubble = await box(page.locator('.control-panel [data-treatment-message]'));
+        const commands = await box(page.locator('#aide-commandes'));
+        expect(overlaps(bubble, commands), 'la bulle recouvre « Commandes »').toBe(false);
+        expect(overlaps(settings, commands), '« Réglages » recouvre « Commandes »').toBe(false);
+        // Bulle hors du panneau en deux colonnes seulement, à 12 px au moins de « Commandes ».
+        const outside = bubble.x >= settings.x + settings.width;
+        expect(outside).toBe(viewport.width >= 1167);
+        if (outside) {
+          expect(commands.x - (bubble.x + bubble.width)).toBeGreaterThanOrEqual(12);
+        }
+        expect(errors).toEqual([]);
+      });
+    }
+  }
+});
+
+// #610 : sous 1100 px, le bandeau bas (santé, alertes) occupe toute la largeur ; à 900 × 700,
+// le bas de « Commandes » déplié touchait sa ligne. L'aide-mémoire s'arrête au-dessus, quelle
+// que soit la hauteur du bandeau (une à trois lignes selon la largeur et la police).
+test.describe('« Commandes » au-dessus du bandeau bas (#610)', () => {
+  for (const viewport of [
+    { width: 640, height: 700 },
+    { width: 768, height: 700 },
+    { width: 900, height: 700 },
+    { width: 1024, height: 700 },
+  ]) {
+    for (const font of FONTS) {
+      test(`${viewport.width} × ${viewport.height} : sans toucher le bandeau (police ${font ?? 'par défaut'})`, async ({
+        page,
+      }) => {
+        await page.setViewportSize(viewport);
+        const errors = await openScene(page, '?seed=42&points-blancs=1');
+        if (font) {
+          await page.addStyleTag({ content: `* { font-family: '${font}' !important; }` });
+        }
+        await PANELS.find((p) => p.name === 'Commandes')!.open(page);
+        const status = page.locator('app-dashboard-status .status');
+        // La hauteur publiée suit le bandeau (police changée : il peut passer à la ligne).
+        await expect
+          .poll(async () => {
+            const [commands, bar] = [await box(page.locator('#aide-commandes')), await box(status)];
+            return bar.y - (commands.y + commands.height);
+          })
+          .toBeGreaterThanOrEqual(8);
+        await expect(page.locator('#aide-commandes [data-command="aide"] dd')).toBeAttached();
         expect(errors).toEqual([]);
       });
     }

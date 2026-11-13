@@ -210,8 +210,8 @@ export function watchJournal(world: JournalSubject): JournalWatch {
  * alerte suivie (`JOURNAL_ALERT_LABELS`) qui apparaît, ou passe d'« attention » à
  * « critique », est notée avec sa gravité (#592) ; une alerte qui s'apaise ou disparaît
  * n'écrit rien, et une alerte revenue moins de `JOURNAL_ALERT_REPEAT_SECONDS` après sa dernière
- * entrée de même gravité n'est pas renotée (#599). Ordre stable : maladies dans l'ordre de `DISEASES`, puis pontes, puis
- * éclosions, puis alertes dans l'ordre de `JOURNAL_ALERT_LABELS`.
+ * entrée de même gravité n'est pas renotée (#599). Ordre stable : maladies dans l'ordre de
+ * `DISEASES`, puis pontes, puis éclosions, puis alertes dans l'ordre de `JOURNAL_ALERT_LABELS`.
  */
 export function observeJournal(watch: JournalWatch, world: JournalSubject): JournalEntry[] {
   const time = world.time;

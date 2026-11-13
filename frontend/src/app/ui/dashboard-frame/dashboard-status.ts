@@ -1,7 +1,11 @@
 import {
+  afterNextRender,
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
+  DOCUMENT,
+  ElementRef,
   inject,
   input,
   output,
@@ -72,6 +76,12 @@ export function alertWhyLabel(id: AlertId): string {
 export function alertWikiLabel(page: GuidePage): string {
   return `Ouvrir le wiki : page « ${GUIDE_PAGE_TITLES[page]} »`;
 }
+
+/**
+ * Propriété CSS de la racine du document qui porte la hauteur du bandeau replié, en pixels
+ * (#610) : l'aide-mémoire « Commandes », sous 1100 px, s'arrête au-dessus (commands-help.scss).
+ */
+export const STATUS_HEIGHT_PROPERTY = '--aqfish-status-height';
 
 /** Niveau (icône et couleur) de chaque gravité d'alerte. */
 export const SEVERITY_LEVELS: Readonly<Record<AlertSeverity, GaugeLevel>> = {
@@ -552,6 +562,34 @@ export class DashboardStatus {
     const hidden = this.visible().hidden;
     return `${hidden} ${hidden > 1 ? 'autres alertes' : 'autre alerte'}`;
   });
+
+  constructor() {
+    // Hauteur du bandeau publiée à la racine (#610) : elle varie avec la largeur (une à trois
+    // lignes entre 640 et 1099 px) et la police, que le CSS de l'aide-mémoire ne connaît pas.
+    // Un détail déplié (alerte, bilan, calendrier) n'est pas compté : il passe sous les
+    // panneaux, comme ailleurs, et l'aide-mémoire ne rétrécit pas à chaque dépliage.
+    const host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+    const root = inject(DOCUMENT).documentElement;
+    let observer: ResizeObserver | null = null;
+    afterNextRender(() => {
+      if (typeof ResizeObserver === 'undefined') {
+        return;
+      }
+      observer = new ResizeObserver(() => {
+        if (!this.detailOpen()) {
+          root.style.setProperty(
+            STATUS_HEIGHT_PROPERTY,
+            `${host.getBoundingClientRect().height}px`,
+          );
+        }
+      });
+      observer.observe(host);
+    });
+    inject(DestroyRef).onDestroy(() => {
+      observer?.disconnect();
+      root.style.removeProperty(STATUS_HEIGHT_PROPERTY);
+    });
+  }
 
   /** Déplie l'alerte `id` (repliant l'autre), ou la replie si elle l'était. */
   toggle(id: AlertId): void {

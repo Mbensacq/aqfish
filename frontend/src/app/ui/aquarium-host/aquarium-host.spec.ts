@@ -497,7 +497,7 @@ describe('AquariumHost', () => {
       expect(renderers[0].renders).toBe(0);
       expect(host().world?.tick).toBe(1800);
       expect(host().world?.seed).toBe(42);
-    });
+    }, 15_000); // 30 s simulées avant l'assertion (#611, docs/PIEGES.md « Test de performance »)
 
     it('en mode capture : le monde reste figé quel que soit le temps réel', async () => {
       await create('?capture=1&time=1');
@@ -572,7 +572,7 @@ describe('AquariumHost', () => {
       const el = fixture.nativeElement as HTMLElement;
       expect(el.getAttribute(SEED_ATTRIBUTE)).toBe('42');
       expect(el.getAttribute(TICK_ATTRIBUTE)).toBe('1800');
-    });
+    }, 15_000); // 30 s simulées avant l'assertion (#611)
 
     it('hors capture : le tick exposé suit le monde', async () => {
       await create('?seed=5');
@@ -839,7 +839,7 @@ describe('AquariumHost', () => {
       expect(host().hour).toBe(12);
       expect(attr(HOUR_ATTRIBUTE)).toBe('12.00');
       expect(attr(HOUR_FROZEN_ATTRIBUTE)).toBe('true');
-    });
+    }, 30_000); // 90 s simulées : 5,26 s vues en CI contre 5 s par défaut (#611)
 
     it('heure= fige l’heure, hors capture comme en capture ; valeur invalide ignorée', async () => {
       await create('?heure=21.5');

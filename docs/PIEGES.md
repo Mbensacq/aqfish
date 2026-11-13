@@ -32,10 +32,21 @@ haut de sa section.
   (cycle 209, #588) : `cadrage-panneaux` contrôle chaque panneau seul ; « Réglages » en deux
   colonnes (532 px dès 900 px de large) recouvrait l'aide-mémoire déplié à 900 × 700 sans
   qu'aucun test ne le voie. Le seuil des deux colonnes est calculé dans `_panel-layout.scss`
-  (`$control-panel-two-columns-query`, 915 px) ; tout changement de largeur de « Réglages » ou
-  de « Commandes » le déplace, et le cas « ouverts ensemble (#588) » le vérifie. La bulle d'un
-  geste de soin (240 px à droite du panneau) peut encore passer sur l'aide-mémoire sous
-  ~1155 px. (2026-11-13)
+  (`$control-panel-two-columns-query`) ; tout changement de largeur de « Réglages » ou
+  de « Commandes » le déplace, et le cas « ouverts ensemble (#588) » le vérifie. (2026-11-13)
+- **Bulle d'un geste de soin et bandeau bas face à « Commandes » (suite de #588)** (cycle
+  210, #610) : deux recouvrements que `cadrage-panneaux` ne voyait pas. (1) En deux colonnes,
+  la bulle du message de soin (240 px à droite de « Réglages ») passait sur l'aide-mémoire
+  déplié sous ~1155 px : le seuil des deux colonnes compte désormais la bulle en plus du
+  panneau et de l'aide-mémoire (`$control-panel-two-columns-min-width`, 1167 px au lieu de
+  915) ; plus étroit, une colonne où le message reste une ligne de la section. Toute nouvelle
+  colonne ou bulle à droite du panneau entre dans ce calcul. (2) Sous 1100 px, le bandeau bas
+  (santé, alertes) occupe toute la largeur à 64 px du bas ; à 900 × 700, le bas de
+  « Commandes » déplié le touchait. Sa hauteur varie (34 à 90 px selon la largeur et la
+  police), que le CSS de l'aide-mémoire ne connaît pas : `dashboard-status` la publie à la
+  racine (`--aqfish-status-height`, `ResizeObserver`, hors jsdom) et l'aide-mémoire s'arrête
+  8 px au-dessus. Un détail déplié (alerte, bilan) n'est pas compté : il passe sous les
+  panneaux comme ailleurs. (2026-11-13)
 - **Un curseur de plus dans la section « Eau » : `cadrage-panneaux` rouge à 1280 × 720**
   (cycle 205, #584) : le panneau « Réglages » n'a plus de marge en hauteur ; un champ de
   réglage pleine largeur (≈ 50 px) le fait dépasser de la fenêtre ou recouvrir la barre des

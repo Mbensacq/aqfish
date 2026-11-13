@@ -281,8 +281,9 @@
 
 // Écran large mais peu haut (1280 × 720) : sections sur deux colonnes, pour que tout tienne
 // sans défiler, « Sauvegarde » comprise, malgré la section « Eau » (#207, #101). Plus haut,
-// une colonne suffit et masque moins le bac. Plus étroit que 915 px, le panneau large
-// recouvrirait l'aide-mémoire déplié (#588) : une colonne qui défile.
+// une colonne suffit et masque moins le bac. Plus étroit que 1167 px, le panneau large ou la
+// bulle d'un geste de soin recouvrirait l'aide-mémoire déplié (#588, #610) : une colonne qui
+// défile.
 @media #{layout.$control-panel-two-columns-query} {
   .control-panel {
     width: layout.$control-panel-two-columns-width;
