@@ -617,7 +617,10 @@ maximal : 60 s par angle), et **aucune mesure de performance** ne doit y être f
   Les animaux concernés par une alerte (`sim/alert-animals.ts`, ADR 0115) se montrent par
   `render/alert-highlight-layer.ts`, masquée sans désignation.
   Le calendrier d'entretien (`sim/maintenance.ts`, `World.maintenance`, ADR 0116) est un rappel
-  neutre du bandeau, jamais une alerte ; absent en capture.
+  neutre du bandeau, jamais une alerte ; absent en capture. La séance d'entretien guidée
+  (`sim/care-session.ts`, `ui/care-session`, ADR 0138) est une machine à états pure gardée hors
+  du monde (clé `aqfish.seance-entretien`) ; à l'étape « vitres », la vue autorise un passage
+  de raclette (`AquariumView.setStrokeEnabled`, `onStroke`) qui coupe la caméra le temps du geste.
   Le bilan du bac (`sim/bilan.ts`, ADR 0117) n'est calculé qu'à la demande, déplié depuis le
   bandeau ; il n'écrit rien dans le monde.
 

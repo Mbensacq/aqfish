@@ -61,6 +61,7 @@
         [reviewOf]="aquarium.reviewOfWorld"
         [journal]="aquarium.journal()"
         (maintenanceDone)="aquarium.markMaintenanceDone($event)"
+        (careSessionRequested)="aquarium.openCareSession()"
         (feederChanged)="aquarium.setFeeder($event)"
         (feederRefilled)="aquarium.refillFeeder()"
         (showAnimalsRequested)="aquarium.highlightAlertAnimals($event)"
@@ -155,6 +156,14 @@
       (importRequested)="aquarium.importSave($event)"
       (importRejected)="aquarium.rejectImport($event)"
       (immersiveRequested)="onImmersiveRequested()"
+    />
+    <!-- Séance d'entretien guidée (#604) : carte non modale, le bac reste manipulable. -->
+    <app-care-session
+      [session]="aquarium.careSession()"
+      [visibleAlgae]="aquarium.visibleAlgae()"
+      (completed)="aquarium.completeCareSessionStep()"
+      (skipped)="aquarium.skipCareSessionStep()"
+      (closed)="aquarium.closeCareSession()"
     />
     <!-- Lien partagé (#426) : proposition d'import (rien n'est remplacé sans confirmation) ou refus. -->
     <app-share-offer

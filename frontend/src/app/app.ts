@@ -24,6 +24,7 @@ import { EXCLUSIVE_PANELS, firstTankPathVisible } from './ui/exclusive-panels/ex
 import { FirstTankPath } from './ui/first-tank-path/first-tank-path';
 import { Pharmacy } from './ui/pharmacy/pharmacy';
 import { ShareOffer } from './ui/share-offer/share-offer';
+import { CareSessionPanel } from './ui/care-session/care-session';
 import { SpeciesWiki } from './ui/species-wiki/species-wiki';
 import { ViewPresetsBar } from './ui/view-presets-bar/view-presets-bar';
 import { FreeCameraPad } from './ui/free-camera-pad/free-camera-pad';
@@ -58,6 +59,7 @@ import type { GuidePage } from './sim/care-guide';
     FirstTankPath,
     Pharmacy,
     ShareOffer,
+    CareSessionPanel,
     SpeciesWiki,
     ViewPresetsBar,
     FreeCameraPad,

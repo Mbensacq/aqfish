@@ -275,6 +275,7 @@ import {
   refillWorldFeederInPlace,
   setWorldLightingInPlace,
   scrapeWorldAlgaeInPlace,
+  scrapeWorldAlgaeAlongInPlace,
   pruneWorldPlantInPlace,
   recordWorldMaintenanceInPlace,
   worldHasPrunablePlants,
@@ -427,6 +428,16 @@ import {
   type HealthSummary,
 } from '../../sim/health-summary';
 import { refreshDue } from '../dashboard-frame/refresh-pace';
+import {
+  careSessionFinished,
+  careStepTask,
+  completeCareStep,
+  readCareSession,
+  serializeCareSession,
+  skipCareStep,
+  startCareSession,
+  type CareSession,
+} from '../../sim/care-session';
 
 /** Fabrique du renderer, remplaçable dans les tests (jsdom n'a pas WebGL). */
 export const AQUARIUM_RENDERER_FACTORY = new InjectionToken<AquariumRendererFactory>(
@@ -508,6 +519,10 @@ export const CATAPPA_ATTRIBUTE = 'data-aqfish-catappa';
 export const ALGAE_ATTRIBUTE = 'data-aqfish-algae';
 /** Raclette en main (#476) : `true` ou `false`. */
 export const SCRAPER_ATTRIBUTE = 'data-aqfish-scraper';
+/** Étape de la séance d'entretien affichée (#604), absent hors séance. */
+export const CARE_SESSION_ATTRIBUTE = 'data-aqfish-care-session';
+/** Clé de la séance d'entretien interrompue (#604), distincte de la sauvegarde du monde. */
+export const CARE_SESSION_STORAGE_KEY = 'aqfish.seance-entretien';
 /** Corps dans le bac affiché (#582) : nombre ; absent : aucun. */
 export const DEAD_ATTRIBUTE = 'data-aqfish-morts';
 /** Sécateur en main (#477) : `true` ou `false`. */
@@ -1112,6 +1127,10 @@ export class AquariumHost {
   );
   /** Vrai tant que la raclette est en main (#476) : un clic sur le bac racle. */
   readonly scraping = signal(false);
+  /** Séance d'entretien guidée affichée (#604), `null` hors séance. */
+  readonly careSession = signal<CareSession | null>(null);
+  /** Plaques d'algues visibles, pour la consigne de l'étape « vitres » (#604). */
+  readonly visibleAlgae = signal(0);
   /** Vrai si le dernier clic sur le canvas a retiré un corps (#582) : il ne nourrit pas. */
   private netted = false;
   /** Corps exposés au dernier relevé (#582) : un décès depuis relève aussi les effectifs. */
@@ -1854,6 +1873,106 @@ export class AquariumHost {
       index = scrapeWorldAlgaeInPlace(world, origin, direction);
     });
     return index;
+  }
+
+  /**
+   * Ouvre la séance d'entretien guidée (#604, ADR 0138), ou reprend celle qui avait été
+   * interrompue, à son étape. Sans effet en capture, en mode décor ou avant le démarrage.
+   */
+  openCareSession(): void {
+    const world = this.currentWorld;
+    if (!world || this.capture || isDecorMode(world)) {
+      return;
+    }
+    this.showCareSession(readCareSession(this.readStoredCareSession()) ?? startCareSession());
+  }
+
+  /** Termine l'étape affichée : sa tâche entre au calendrier d'entretien (#604). */
+  completeCareSessionStep(): void {
+    const session = this.careSession();
+    if (!session) {
+      return;
+    }
+    const task = careStepTask(session.step);
+    if (task) {
+      this.applyWaterSetting((world) => this.recordMaintenance(world, task));
+    }
+    this.showCareSession(completeCareStep(session));
+  }
+
+  /** Saute l'étape affichée (#604) : rien n'est enregistré au calendrier. */
+  skipCareSessionStep(): void {
+    const session = this.careSession();
+    if (session) {
+      this.showCareSession(skipCareStep(session));
+    }
+  }
+
+  /**
+   * Ferme la séance (#604) : interrompue, elle reprendra à la même étape ; finie (bilan),
+   * elle est oubliée.
+   */
+  closeCareSession(): void {
+    const session = this.careSession();
+    if (session && careSessionFinished(session)) {
+      this.writeStoredCareSession(null);
+    }
+    this.careSession.set(null);
+    this.applyCareSessionTool(null);
+  }
+
+  private showCareSession(session: CareSession): void {
+    this.careSession.set(session);
+    this.writeStoredCareSession(careSessionFinished(session) ? null : session);
+    this.applyCareSessionTool(session);
+  }
+
+  /** Raclette en main et passage autorisé à l'étape « vitres », rien sinon. */
+  private applyCareSessionTool(session: CareSession | null): void {
+    const glass = session?.step === 'vitres';
+    if (glass !== this.scraping()) {
+      this.toggleScraper();
+    }
+    this.view?.setStrokeEnabled(glass);
+    if (session) {
+      this.host.nativeElement.setAttribute(CARE_SESSION_ATTRIBUTE, session.step);
+    } else {
+      this.host.nativeElement.removeAttribute(CARE_SESSION_ATTRIBUTE);
+    }
+  }
+
+  /** Passage de raclette (#604) : retire les plaques sous le point, enregistre s'il y en a. */
+  private scrapeStrokeAt(clientX: number, clientY: number): void {
+    const world = this.currentWorld;
+    const ray = this.view?.pickRay(clientX, clientY);
+    if (!world || !ray || this.capture) {
+      return;
+    }
+    if (scrapeWorldAlgaeAlongInPlace(world, [ray]).length > 0) {
+      this.exposeWater();
+      this.saveNow();
+      this.scheduleFrame();
+    }
+  }
+
+  private readStoredCareSession(): string | null {
+    try {
+      return this.saveStorage?.getItem(CARE_SESSION_STORAGE_KEY) ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  private writeStoredCareSession(session: CareSession | null): void {
+    try {
+      // Séance finie : texte vide, relu comme « aucune séance » (`readCareSession`).
+      this.saveStorage?.setItem(
+        CARE_SESSION_STORAGE_KEY,
+        session ? serializeCareSession(session) : '',
+      );
+    } catch {
+      // Stockage plein ou refusé : la séance reste affichée, sans reprise.
+    }
   }
 
   /**
@@ -4088,6 +4207,9 @@ export class AquariumHost {
     this.viewCleanups.push(view.onCameraChange(() => this.exposeCamera()));
     this.viewCleanups.push(view.onUserInteraction(() => this.activePreset.set(null)));
     view.setDecorDragEnabled(this.decorEditing());
+    // Séance d'entretien (#604) : glisser racle à l'étape « vitres ».
+    view.setStrokeEnabled(this.careSession()?.step === 'vitres');
+    this.viewCleanups.push(view.onStroke((x, y) => this.scrapeStrokeAt(x, y)));
     this.decorDrag = null;
     this.roomDrag = null;
     this.viewCleanups.push(
@@ -4409,6 +4531,9 @@ export class AquariumHost {
       formatPopulation(counts, speciesShownIn(environmentById(world.environment).species, counts)),
     );
     const mode = careModeOf(world);
+    if (mode === 'decor' && this.careSession()) {
+      this.closeCareSession();
+    }
     this.careMode.set(mode);
     this.host.nativeElement.setAttribute(CARE_MODE_ATTRIBUTE, mode);
     this.exposeCurrent(world);
@@ -4769,6 +4894,7 @@ export class AquariumHost {
     this.lighting.set(hours);
     this.lampOn.set(lampOnOf(world.water));
     const visible = (world.water.algae ?? []).filter((c) => c >= ALGAE_VISIBLE_COVERAGE).length;
+    this.visibleAlgae.set(visible);
     const percent = Math.round(algaeCoverage(world.water.algae) * 100);
     this.host.nativeElement.setAttribute(ALGAE_ATTRIBUTE, `${visible};${percent};${hours}`);
   }

@@ -306,6 +306,54 @@ export class AquariumView {
   private room: Room = DEFAULT_ROOM;
   /** Blocs des meubles supports et des bacs posés (`setRoomLayout`, #305). */
   private roomLayout: readonly RoomBlock[] = [];
+  /** Passage de raclette possible (séance d'entretien, #604, `setStrokeEnabled`). */
+  private strokeEnabled = false;
+  private strokeListener: ((clientX: number, clientY: number) => void) | null = null;
+  /** Passage de raclette en cours : pointeur et dernier point transmis (`null` sinon). */
+  private stroke: { readonly id: number; last: { x: number; y: number } } | null = null;
+  /**
+   * Appui en mode raclette (#604) : écouté en phase de capture, avant `OrbitControls`, coupés
+   * pour tout le geste ; chaque point du glissé (tous les `STROKE_STEP_PX` au plus) est
+   * transmis à l'abonné, souris comme doigt.
+   */
+  private readonly onStrokePointerDown = (event: PointerEvent) => {
+    const listener = this.strokeListener;
+    if (
+      !listener ||
+      !this.strokeEnabled ||
+      !this.interactive ||
+      this.drag ||
+      this.stroke ||
+      event.button !== 0 ||
+      !event.isPrimary
+    ) {
+      return;
+    }
+    this.stroke = { id: event.pointerId, last: { x: event.clientX, y: event.clientY } };
+    this.controls.enabled = false;
+    try {
+      this.canvas.setPointerCapture?.(event.pointerId);
+    } catch {
+      // Pointeur déjà relâché : le passage s'arrêtera au prochain relâchement.
+    }
+    listener(event.clientX, event.clientY);
+  };
+  private readonly onStrokePointerMove = (event: PointerEvent) => {
+    const stroke = this.stroke;
+    if (!stroke || stroke.id !== event.pointerId) {
+      return;
+    }
+    const to = { x: event.clientX, y: event.clientY };
+    for (const point of strokePoints(stroke.last, to, STROKE_STEP_PX)) {
+      this.strokeListener?.(point.x, point.y);
+    }
+    stroke.last = to;
+  };
+  private readonly onStrokePointerEnd = (event: PointerEvent) => {
+    if (this.stroke?.id === event.pointerId) {
+      this.endStroke();
+    }
+  };
   /** Glissement en cours d'un élément du décor ou de la pièce (`null` sinon). */
   private drag: {
     readonly id: number;
@@ -578,6 +626,11 @@ export class AquariumView {
     // Glissement du décor (#168) : avant `OrbitControls`, qui écoute en phase de bouillonnement.
     options.canvas.addEventListener('pointerdown', this.onDragPointerDown, { capture: true });
     options.canvas.addEventListener('pointermove', this.onDragPointerMove);
+    // Passage de raclette (#604) : comme le glissement du décor, avant `OrbitControls`.
+    options.canvas.addEventListener('pointerdown', this.onStrokePointerDown, { capture: true });
+    options.canvas.addEventListener('pointermove', this.onStrokePointerMove);
+    options.canvas.addEventListener('pointerup', this.onStrokePointerEnd);
+    options.canvas.addEventListener('pointercancel', this.onStrokePointerEnd);
     // Orientation de la caméra libre (#343) : contrôles orbitaux coupés dans ce mode.
     options.canvas.addEventListener('pointerdown', this.onLookPointerDown);
     options.canvas.addEventListener('pointermove', this.onLookPointerMove);
@@ -948,6 +1001,51 @@ export class AquariumView {
     this.decorDragEnabled = enabled;
     if (!enabled && this.drag) {
       this.endDrag(false);
+    }
+  }
+
+  /**
+   * Autorise ou non le passage de raclette (#604) : tant qu'il est autorisé, glisser le
+   * pointeur principal sur le canvas transmet ses points à `onStroke` au lieu de tourner la
+   * caméra. Le couper pendant un passage l'arrête et rend la main à la caméra.
+   */
+  setStrokeEnabled(enabled: boolean): void {
+    this.strokeEnabled = enabled;
+    if (!enabled) {
+      this.endStroke();
+    }
+  }
+
+  /** Vrai pendant un passage de raclette (tests). */
+  get stroking(): boolean {
+    return this.stroke !== null;
+  }
+
+  /**
+   * Abonnement (unique) aux points d'un passage de raclette (#604), en pixels CSS, appui
+   * compris. Renvoie le désabonnement.
+   */
+  onStroke(listener: (clientX: number, clientY: number) => void): () => void {
+    this.strokeListener = listener;
+    return () => {
+      if (this.strokeListener === listener) {
+        this.strokeListener = null;
+      }
+    };
+  }
+
+  /** Termine le passage de raclette en cours : caméra rendue. */
+  private endStroke(): void {
+    const stroke = this.stroke;
+    if (!stroke) {
+      return;
+    }
+    this.stroke = null;
+    this.controls.enabled = this.interactive && !this.disposed && this.free === null;
+    try {
+      this.canvas.releasePointerCapture?.(stroke.id);
+    } catch {
+      // Capture déjà relâchée par le navigateur.
     }
   }
 
@@ -1866,7 +1964,7 @@ export class AquariumView {
    * de geste, #344) ; un second doigt transforme le geste en pincement (avancer, reculer).
    */
   private readonly onLookPointerDown = (event: PointerEvent) => {
-    if (!this.free || this.drag) {
+    if (!this.free || this.drag || this.stroke) {
       return;
     }
     if (event.pointerType === 'touch') {
@@ -2062,6 +2160,12 @@ export class AquariumView {
     this.canvas.removeEventListener('pointercancel', this.onPointerCancel);
     this.canvas.removeEventListener('pointerdown', this.onDragPointerDown, { capture: true });
     this.canvas.removeEventListener('pointermove', this.onDragPointerMove);
+    this.canvas.removeEventListener('pointerdown', this.onStrokePointerDown, { capture: true });
+    this.canvas.removeEventListener('pointermove', this.onStrokePointerMove);
+    this.canvas.removeEventListener('pointerup', this.onStrokePointerEnd);
+    this.canvas.removeEventListener('pointercancel', this.onStrokePointerEnd);
+    this.stroke = null;
+    this.strokeListener = null;
     this.canvas.removeEventListener('pointerdown', this.onLookPointerDown);
     this.canvas.removeEventListener('pointermove', this.onLookPointerMove);
     this.canvas.removeEventListener('pointerup', this.onLookPointerEnd);
@@ -2154,4 +2258,30 @@ interface CameraTransition {
   readonly from: CameraPose;
   elapsed: number;
   readonly duration: number;
+}
+
+/** Écart maximal entre deux points transmis d'un passage de raclette, en pixels CSS (#604). */
+export const STROKE_STEP_PX = 6;
+
+/**
+ * Points de `from` (exclu) à `to` (inclus), espacés de `step` pixels au plus : un geste rapide
+ * ne saute pas une plaque entre deux événements du pointeur. Aucun point si rien n'a bougé
+ * ou si une coordonnée n'est pas finie.
+ */
+export function strokePoints(
+  from: { readonly x: number; readonly y: number },
+  to: { readonly x: number; readonly y: number },
+  step: number,
+): { x: number; y: number }[] {
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const length = Math.hypot(dx, dy);
+  if (!Number.isFinite(length) || length === 0 || !(step > 0)) {
+    return [];
+  }
+  const count = Math.ceil(length / step);
+  return Array.from({ length: count }, (_, i) => ({
+    x: from.x + (dx * (i + 1)) / count,
+    y: from.y + (dy * (i + 1)) / count,
+  }));
 }
