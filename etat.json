@@ -8110,6 +8110,19 @@
         "statut": "termine",
         "note": "7 cycles, 2 alertes"
       }
+    },
+    "2026-11-13": {
+      "metriques": {
+        "cycles": 8,
+        "livres": 7,
+        "version": "v1.18.5",
+        "tests": 5126,
+        "couvertureLignes": 96.69,
+        "lignesCode": 128118,
+        "bugsOuverts": 1,
+        "ciMain": "success",
+        "mutation": 98.16
+      }
     }
   }
 }
