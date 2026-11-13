@@ -7659,6 +7659,12 @@
           "debut": "2026-11-13T11:30:41.748Z",
           "fin": "2026-11-13T12:22:49.903Z",
           "note": "Verdict OK, 0 bug, CI verte, specs cadrage #610 vertes en local, captures publiées (c210, identiques à c209)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-13T12:23:30.512Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
