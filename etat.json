@@ -7719,6 +7719,12 @@
           "debut": "2026-11-13T17:57:23.071Z",
           "fin": "2026-11-13T17:57:55.878Z",
           "note": "Issue #604 : Entretien lot 1, séance guidée et raclette de vitre (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-13T17:58:39.075Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
