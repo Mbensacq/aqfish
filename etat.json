@@ -7587,6 +7587,12 @@
           "debut": "2026-11-13T03:50:06.501Z",
           "fin": "2026-11-13T04:28:15.311Z",
           "note": "Verdict OK, 0 bug, unitaires 5126 verts, CI verte, captures publiées (c208) ; mutation journal.ts non terminée en session (>9 min), bilan hebdo en CI"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-13T04:28:48.196Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
