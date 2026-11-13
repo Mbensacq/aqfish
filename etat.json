@@ -7731,6 +7731,12 @@
           "debut": "2026-11-13T20:44:37.402Z",
           "fin": "2026-11-13T20:59:59.265Z",
           "note": "Verdict OK, 0 bug, e2e séance 4/4 en local, captures c212 publiées (5 angles identiques, +séance vitres avant/après)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-13T21:00:34.882Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
