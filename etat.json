@@ -7602,7 +7602,7 @@
       "date": "2026-11-13",
       "debut": "2026-11-13T05:40:39.889Z",
       "type": "retro",
-      "issue": null,
+      "issue": 588,
       "pr": null,
       "version": null,
       "phases": {
