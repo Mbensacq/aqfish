@@ -1,3 +1,4 @@
+import type { AlertId, AlertSeverity } from './dashboard-alerts';
 import { DEFAULT_DAY_LENGTH_SECONDS } from './daylight';
 import { DISEASES, type DiseaseField } from './diseases';
 import type { Egg } from './eggs';
@@ -8,7 +9,7 @@ import { TREATMENT_KINDS, TREATMENTS, type TreatmentKind } from './treatment';
 
 /**
  * Journal du bac (issue #581) : événements datés en temps simulé (maladie déclarée, guérison,
- * traitement, ponte, éclosion, changement d'eau), gardés dans l'ordre chronologique et plafonnés
+ * traitement, ponte, éclosion, changement d'eau, alerte franchie — #592), gardés dans l'ordre chronologique et plafonnés
  * à `JOURNAL_CAPACITY` entrées (les plus anciennes partent). Fonctions pures de ce qu'on leur
  * donne, sans hasard ni horloge réelle.
  *
@@ -31,6 +32,7 @@ export const JOURNAL_KINDS = [
   'ponte',
   'eclosion',
   'changementEau',
+  'alerte',
 ] as const;
 
 export type JournalKind = (typeof JOURNAL_KINDS)[number];
@@ -46,9 +48,11 @@ export interface JournalEntry {
   /**
    * Précision selon la sorte : maladie (`DiseaseField`) pour `maladie` et `guerison`, sorte de
    * traitement (`TreatmentKind`) pour `traitement`, espèce (`SpeciesId`) pour `ponte` et
-   * `eclosion` ; absente pour `changementEau`.
+   * `eclosion`, alerte (`JournalAlertId`) pour `alerte` ; absente pour `changementEau`.
    */
   readonly detail?: string;
+  /** Gravité atteinte, pour `alerte` seulement (#592). */
+  readonly severity?: AlertSeverity;
   /** Nombre d'animaux ou d'œufs concernés (≥ 1) ; absent : sans objet. */
   readonly count?: number;
 }
@@ -83,6 +87,33 @@ export const JOURNAL_DISEASE_LABELS: Readonly<Record<DiseaseField, string>> = {
   fungus: 'champignons',
   dropsy: 'hydropisie',
 };
+
+/**
+ * Alertes du tableau de bord écrites au journal quand elles apparaissent ou s'aggravent
+ * (#592). Les alertes de maladie, de traitement et de santé générale n'y sont pas : le journal
+ * note déjà la maladie déclarée et le geste de soin.
+ */
+export const JOURNAL_ALERT_LABELS = {
+  chlorine: 'chlore dans l’eau',
+  ammonia: 'ammoniaque',
+  nitrite: 'nitrites',
+  nitrate: 'nitrates',
+  temperature: 'température',
+  ph: 'pH',
+  carbon: 'charbon actif pendant un traitement',
+  hunger: 'faim',
+  feeder: 'distributeur vide',
+  mix: 'mélange déconseillé',
+  algae: 'algues',
+} as const satisfies Partial<Record<AlertId, string>>;
+
+export type JournalAlertId = keyof typeof JOURNAL_ALERT_LABELS;
+
+/** Ce que le journal lit d'une alerte du tableau de bord. */
+export interface JournalAlert {
+  readonly id: AlertId;
+  readonly severity: AlertSeverity;
+}
 
 /** Journal vide. */
 export function createJournal(): Journal {
@@ -128,6 +159,8 @@ export function treatmentEntry(time: number, kind: TreatmentKind): JournalEntry 
 export interface JournalWatch {
   readonly diseases: Map<number, number>;
   eggs: Map<SpeciesId, number>;
+  /** Alertes suivies présentes, avec leur gravité (#592). */
+  alerts: Map<JournalAlertId, AlertSeverity>;
 }
 
 /** Ce qu'`observeJournal` lit du monde. */
@@ -135,6 +168,8 @@ export interface JournalSubject {
   readonly time: number;
   readonly entities: readonly Fish[];
   readonly eggs?: readonly Egg[];
+  /** Alertes du tableau de bord du bac (#592) ; absentes : aucune. */
+  readonly alerts?: readonly JournalAlert[];
 }
 
 /**
@@ -146,15 +181,18 @@ export function watchJournal(world: JournalSubject): JournalWatch {
   for (const fish of world.entities) {
     diseases.set(fish.id, diseaseMask(fish));
   }
-  return { diseases, eggs: eggCounts(world.eggs) };
+  return { diseases, eggs: eggCounts(world.eggs), alerts: alertLevels(world.alerts) };
 }
 
 /**
  * Compare le bac à la dernière observation et renvoie les événements survenus, au temps
  * courant du monde (`watch` mis à jour) : maladie déclarée ou guérie (animal toujours présent),
  * ponte (œufs d'une espèce en hausse), éclosion (alevins nouveaux). Un animal apparu adulte
- * (ajout au panneau, transfert) est retenu sans événement, sauf s'il arrive malade. Ordre
- * stable : maladies dans l'ordre de `DISEASES`, puis pontes, puis éclosions.
+ * (ajout au panneau, transfert) est retenu sans événement, sauf s'il arrive malade. Une
+ * alerte suivie (`JOURNAL_ALERT_LABELS`) qui apparaît, ou passe d'« attention » à
+ * « critique », est notée avec sa gravité (#592) ; une alerte qui s'apaise ou disparaît
+ * n'écrit rien. Ordre stable : maladies dans l'ordre de `DISEASES`, puis pontes, puis
+ * éclosions, puis alertes dans l'ordre de `JOURNAL_ALERT_LABELS`.
  */
 export function observeJournal(watch: JournalWatch, world: JournalSubject): JournalEntry[] {
   const time = world.time;
@@ -206,7 +244,36 @@ export function observeJournal(watch: JournalWatch, world: JournalSubject): Jour
   for (const [species, count] of hatched) {
     events.push({ time, kind: 'eclosion', detail: species, count });
   }
+  const alerts = alertLevels(world.alerts);
+  for (const [id, severity] of alerts) {
+    const before = watch.alerts.get(id);
+    if (before === undefined || (before === 'attention' && severity === 'critique')) {
+      events.push({ time, kind: 'alerte', detail: id, severity });
+    }
+  }
+  watch.alerts = alerts;
   return events;
+}
+
+/**
+ * Reporte la dernière observation d'un bac sur le nouvel objet monde de ce bac (#592) : un
+ * bac rangé avance hors de l'écran par copie (`stepRoom`, transfert). Sans ce report, le
+ * retour sur le bac repartirait d'un premier regard muet et ce qui s'y est passé entre-temps
+ * ne serait jamais noté ; avec lui, la première observation au retour l'écrit (au temps du
+ * retour). Un bac jamais observé (premier affichage) reste sans observation. `pairs` donne,
+ * pour chaque bac, son ancien et son nouveau monde.
+ */
+export function carryJournalWatches<T extends object>(
+  watches: WeakMap<T, JournalWatch>,
+  pairs: Iterable<readonly [T, T]>,
+): void {
+  for (const [before, after] of pairs) {
+    const watch = watches.get(before);
+    if (watch !== undefined && before !== after) {
+      watches.set(after, watch);
+      watches.delete(before);
+    }
+  }
 }
 
 /** Lignes de l'interface, de la plus récente à la plus ancienne. */
@@ -241,6 +308,8 @@ export function journalText(entry: JournalEntry): string {
       return `Éclosion : ${count} alevin${count > 1 ? 's' : ''} (${speciesLabel(entry.detail)})`;
     case 'changementEau':
       return 'Changement d’eau';
+    case 'alerte':
+      return `Alerte ${entry.severity === 'critique' ? 'critique' : 'attention'} : ${alertLabel(entry.detail)}`;
   }
 }
 
@@ -291,19 +360,20 @@ function readEntry(value: unknown): JournalEntry | null {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
     return null;
   }
-  const { time, kind, detail, count } = value as Record<string, unknown>;
+  const { time, kind, detail, count, severity } = value as Record<string, unknown>;
   const entry: JournalEntry = {
     time: time as number,
     kind: kind as JournalKind,
     ...(detail === undefined ? {} : { detail: detail as string }),
     ...(count === undefined ? {} : { count: count as number }),
+    ...(severity === undefined ? {} : { severity: severity as AlertSeverity }),
   };
   return isEntry(entry) ? entry : null;
 }
 
 /** Vrai pour une entrée valide : temps, sorte, précision attendue et effectif borné. */
 function isEntry(entry: JournalEntry): boolean {
-  const { time, kind, detail, count } = entry;
+  const { time, kind, detail, count, severity } = entry;
   if (typeof time !== 'number' || !Number.isFinite(time) || time < 0) {
     return false;
   }
@@ -311,6 +381,17 @@ function isEntry(entry: JournalEntry): boolean {
     return false;
   }
   if (count !== undefined && (!Number.isSafeInteger(count) || count < 1 || count > MAX_COUNT)) {
+    return false;
+  }
+  if (kind === 'alerte') {
+    return (
+      count === undefined &&
+      typeof detail === 'string' &&
+      Object.hasOwn(JOURNAL_ALERT_LABELS, detail) &&
+      (severity === 'attention' || severity === 'critique')
+    );
+  }
+  if (severity !== undefined) {
     return false;
   }
   switch (kind) {
@@ -325,6 +406,23 @@ function isEntry(entry: JournalEntry): boolean {
     case 'changementEau':
       return detail === undefined;
   }
+}
+
+function alertLevels(
+  alerts: readonly JournalAlert[] | undefined,
+): Map<JournalAlertId, AlertSeverity> {
+  const levels = new Map<JournalAlertId, AlertSeverity>();
+  for (const id of Object.keys(JOURNAL_ALERT_LABELS) as JournalAlertId[]) {
+    const alert = alerts?.find((a) => a.id === id);
+    if (alert !== undefined) {
+      levels.set(id, alert.severity);
+    }
+  }
+  return levels;
+}
+
+function alertLabel(detail: string | undefined): string {
+  return JOURNAL_ALERT_LABELS[detail as JournalAlertId] ?? 'alerte';
 }
 
 function diseaseMask(fish: Fish): number {

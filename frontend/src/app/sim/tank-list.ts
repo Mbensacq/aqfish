@@ -1,7 +1,7 @@
 import { careModeOf, isDecorMode, type CareMode } from './care-mode';
 import { isFeederEmpty } from './auto-feeder';
 import { mixWarnings } from './compatibility';
-import { dashboardAlerts, type AlertSeverity } from './dashboard-alerts';
+import { dashboardAlerts, type AlertSeverity, type DashboardAlert } from './dashboard-alerts';
 import { environmentById, environmentWater, type EnvironmentId } from './environment';
 import { healthSummary } from './health-summary';
 import { populationCounts } from './population';
@@ -51,22 +51,28 @@ export interface TankListEntry {
   readonly selectable: boolean;
 }
 
-/** Pire gravité des alertes du tableau de bord pour le monde `world`, `null` s'il n'y en a pas. */
-export function worstAlert(world: World): AlertSeverity | null {
+/**
+ * Alertes du tableau de bord pour le monde `world`, triées par gravité (sans l'alerte de
+ * traitement, qui dépend du relevé de l'hôte) ; aucune en mode décor (#278).
+ */
+export function worldAlerts(world: World): readonly DashboardAlert[] {
   if (isDecorMode(world)) {
-    // Mode décor (#278) : aucune alerte.
-    return null;
+    return [];
   }
   const species = world.entities.map((entity) => entity.species);
-  const alerts = dashboardAlerts({
+  return dashboardAlerts({
     sample: waterSample(world.water, world.environment, world.tick),
     phBands: waterReadout(world.water, world.environment, species).phBands,
     health: healthSummary(world.entities),
     mixes: mixWarnings(environmentById(world.environment).species, populationCounts(world)),
     feederEmpty: isFeederEmpty(world.feeder),
   });
+}
+
+/** Pire gravité des alertes du tableau de bord pour le monde `world`, `null` s'il n'y en a pas. */
+export function worstAlert(world: World): AlertSeverity | null {
   // `dashboardAlerts` trie par gravité : la première est la pire.
-  return alerts[0]?.severity ?? null;
+  return worldAlerts(world)[0]?.severity ?? null;
 }
 
 /**

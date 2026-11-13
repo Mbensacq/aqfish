@@ -512,12 +512,6 @@ export function mixAlert(mixes: readonly MixWarning[]): DashboardAlert | null {
 }
 
 /**
- * Prolifération d'algues (issue #476) : « attention » dès que la couverture moyenne atteint
- * `ALGAE_WATCH_COVERAGE`, « critique » à `ALGAE_BAD_COVERAGE` ; une couverture non finie est
- * critique. Renvoie à la page « Entretien » du wiki. Les algues ne font pas souffrir les
- * animaux dans le jeu : elles signalent un éclairage trop long ou des nitrates élevés.
- */
-/**
  * Distributeur automatique vide (issue #583) : une alerte « attention » tant qu'il n'est pas
  * rempli ; plus aucune ration ne tombe.
  */
@@ -535,6 +529,12 @@ export function feederAlert(empty: boolean): DashboardAlert | null {
   };
 }
 
+/**
+ * Prolifération d'algues (issue #476) : « attention » dès que la couverture moyenne atteint
+ * `ALGAE_WATCH_COVERAGE`, « critique » à `ALGAE_BAD_COVERAGE` ; une couverture non finie est
+ * critique. Renvoie à la page « Entretien » du wiki. Les algues ne font pas souffrir les
+ * animaux dans le jeu : elles signalent un éclairage trop long ou des nitrates élevés.
+ */
 export function algaeAlert(coverage: number | undefined): DashboardAlert | null {
   if (coverage === undefined) {
     return null;

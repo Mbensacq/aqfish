@@ -3,6 +3,7 @@ import {
   JOURNAL_CAPACITY,
   JOURNAL_VERSION,
   addJournalEntry,
+  carryJournalWatches,
   copySavedJournal,
   createJournal,
   journalDay,
@@ -15,8 +16,10 @@ import {
   treatmentEntry,
   watchJournal,
   waterChangeEntry,
+  type JournalAlert,
   type JournalEntry,
   type JournalSubject,
+  type JournalWatch,
 } from './journal';
 import type { Fish } from './swimmer';
 import { createDefaultWorld } from './world';
@@ -192,6 +195,143 @@ describe('journal du bac (#581)', () => {
         { time: 90, kind: 'eclosion', detail: entities[0]!.species, count: 2 },
       ]);
       expect(observeJournal(watch, subject([...entities, fry(900), fry(901)], 95))).toEqual([]);
+    });
+  });
+
+  describe('alertes franchies (#592)', () => {
+    const at = (time: number, alerts: JournalAlert[]): JournalSubject => ({
+      time,
+      entities: [],
+      alerts,
+    });
+
+    it('premier regard : une alerte déjà présente n’est pas écrite', () => {
+      const watch = watchJournal(at(0, [{ id: 'ammonia', severity: 'critique' }]));
+      expect(observeJournal(watch, at(5, [{ id: 'ammonia', severity: 'critique' }]))).toEqual([]);
+    });
+
+    it('apparition, puis aggravation attention → critique ; apaisement : rien', () => {
+      const watch = watchJournal(at(0, []));
+      expect(observeJournal(watch, at(10, [{ id: 'nitrite', severity: 'attention' }]))).toEqual([
+        { time: 10, kind: 'alerte', detail: 'nitrite', severity: 'attention' },
+      ]);
+      expect(observeJournal(watch, at(20, [{ id: 'nitrite', severity: 'critique' }]))).toEqual([
+        { time: 20, kind: 'alerte', detail: 'nitrite', severity: 'critique' },
+      ]);
+      expect(observeJournal(watch, at(30, [{ id: 'nitrite', severity: 'attention' }]))).toEqual([]);
+      expect(observeJournal(watch, at(40, []))).toEqual([]);
+      // Revenue après avoir disparu : notée de nouveau.
+      expect(observeJournal(watch, at(50, [{ id: 'nitrite', severity: 'attention' }]))).toEqual([
+        { time: 50, kind: 'alerte', detail: 'nitrite', severity: 'attention' },
+      ]);
+    });
+
+    it('alertes de maladie, de traitement et de santé : déjà au journal autrement', () => {
+      const watch = watchJournal(at(0, []));
+      const others: JournalAlert[] = [
+        { id: 'ich', severity: 'critique' },
+        { id: 'treatment', severity: 'attention' },
+        { id: 'health', severity: 'critique' },
+      ];
+      expect(observeJournal(watch, at(1, others))).toEqual([]);
+    });
+
+    it('plusieurs alertes : ordre stable de JOURNAL_ALERT_LABELS, après les autres événements', () => {
+      const entities = fishes();
+      const watch = watchJournal(subject(entities));
+      entities[0] = { ...entities[0]!, ich: 1 };
+      const events = observeJournal(watch, {
+        time: 3,
+        entities,
+        alerts: [
+          { id: 'algae', severity: 'attention' },
+          { id: 'chlorine', severity: 'critique' },
+        ],
+      });
+      expect(events.map((e) => [e.kind, e.detail])).toEqual([
+        ['maladie', 'ich'],
+        ['alerte', 'chlorine'],
+        ['alerte', 'algae'],
+      ]);
+    });
+
+    it('textes, et refus des entrées d’alerte mal formées à la relecture', () => {
+      expect(
+        journalText({ time: 0, kind: 'alerte', detail: 'ammonia', severity: 'critique' }),
+      ).toBe('Alerte critique : ammoniaque');
+      expect(
+        journalText({ time: 0, kind: 'alerte', detail: 'feeder', severity: 'attention' }),
+      ).toBe('Alerte attention : distributeur vide');
+      const journal = createJournal();
+      expect(
+        addJournalEntry(journal, { time: 0, kind: 'alerte', detail: 'ich', severity: 'critique' }),
+      ).toBe(false);
+      expect(addJournalEntry(journal, { time: 0, kind: 'alerte', detail: 'ph' })).toBe(false);
+      expect(
+        addJournalEntry(journal, {
+          time: 0,
+          kind: 'alerte',
+          detail: 'ph',
+          severity: 'attention',
+          count: 2,
+        }),
+      ).toBe(false);
+      expect(
+        addJournalEntry(journal, { time: 0, kind: 'changementEau', severity: 'attention' }),
+      ).toBe(false);
+      expect(
+        addJournalEntry(journal, { time: 0, kind: 'alerte', detail: 'ph', severity: 'critique' }),
+      ).toBe(true);
+      const problems: string[] = [];
+      expect(readJournal(savedJournal(journal), problems)?.entries).toEqual([
+        { time: 0, kind: 'alerte', detail: 'ph', severity: 'critique' },
+      ]);
+      expect(problems).toEqual([]);
+      expect(
+        readJournal(
+          {
+            version: JOURNAL_VERSION,
+            entries: [{ time: 0, kind: 'alerte', detail: 'ph', severity: 'grave' }],
+          },
+          problems,
+        ),
+      ).toBeNull();
+    });
+  });
+
+  describe('bac rangé puis retrouvé (#592)', () => {
+    it('observation reportée : la maladie déclarée pendant l’absence est notée au retour', () => {
+      const watches = new WeakMap<object, JournalWatch>();
+      const shown = { id: 'avant' };
+      const back = { id: 'après' };
+      const entities = fishes();
+      watches.set(shown, watchJournal(subject(entities, 0)));
+      carryJournalWatches(watches, [[shown, back]]);
+      expect(watches.has(shown)).toBe(false);
+      const watch = watches.get(back);
+      expect(watch).toBeDefined();
+      entities[1] = { ...entities[1]!, velvet: 1 };
+      expect(observeJournal(watch!, subject(entities, 600, [egg()]))).toEqual([
+        { time: 600, kind: 'maladie', detail: 'velvet', count: 1 },
+        { time: 600, kind: 'ponte', detail: 'corydora', count: 1 },
+      ]);
+    });
+
+    it('cas limite, premier affichage : aucun report, le bac reste à un premier regard muet', () => {
+      const watches = new WeakMap<object, JournalWatch>();
+      const before = {};
+      const after = {};
+      carryJournalWatches(watches, [[before, after]]);
+      expect(watches.has(after)).toBe(false);
+    });
+
+    it('même monde des deux côtés (bac affiché non avancé) : l’observation reste en place', () => {
+      const watches = new WeakMap<object, JournalWatch>();
+      const world = {};
+      const watch = watchJournal(subject(fishes()));
+      watches.set(world, watch);
+      carryJournalWatches(watches, [[world, world]]);
+      expect(watches.get(world)).toBe(watch);
     });
   });
 

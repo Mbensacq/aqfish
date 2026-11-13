@@ -85,9 +85,13 @@ export class App {
   // `ControlPanel` comme valeur le chargerait hors du bloc `@defer`.
   private readonly help = viewChild<CommandsHelp>('help');
   private readonly panel = viewChild<ControlPanel>('panel');
-  /** Languette du parcours : masquée tant que « Réglages » est ouvert (#527). */
+  private readonly status = viewChild<DashboardStatus>('status');
+  /**
+   * Languette du parcours : masquée tant que « Réglages » est ouvert (#527) ou qu'un détail
+   * du bandeau santé et alertes est déplié (#592).
+   */
   protected readonly firstTankPathShown = computed(() =>
-    firstTankPathVisible(this.panel()?.open() ?? false),
+    firstTankPathVisible(this.panel()?.open() ?? false, this.status()?.detailOpen() ?? false),
   );
   private readonly aquarium = viewChild<AquariumHost>('aquarium');
   private readonly wiki = viewChild<SpeciesWiki>('wiki');
