@@ -7625,10 +7625,10 @@
           "note": "Verdict OK, 0 bug, CI verte, cadrage-panneaux 57/57 en local, captures publiées (c209)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-13T07:55:35.891Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-13T09:23:34.324Z",
+          "note": "PR #609 fusionnée → v1.18.6 (release OK), #608 roadmap fusionnée, CI main verte ; dette #610, test instable #611 ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
