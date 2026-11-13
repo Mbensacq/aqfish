@@ -7710,7 +7710,7 @@
       "date": "2026-11-13",
       "debut": "2026-11-13T17:57:23.071Z",
       "type": "fonctionnalite",
-      "issue": null,
+      "issue": 604,
       "pr": null,
       "version": null,
       "phases": {
