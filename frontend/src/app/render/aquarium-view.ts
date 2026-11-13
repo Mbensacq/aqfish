@@ -728,6 +728,7 @@ export class AquariumView {
     alpha: number,
     seed = 0,
     behavior: { readonly time: number; readonly landedFood: boolean } | null = null,
+    dead?: readonly Fish[],
   ): void {
     if (this.disposed) {
       return;
@@ -743,7 +744,8 @@ export class AquariumView {
       frame = reused;
     }
     for (const layer of this.fishLayers) {
-      layer.update(entities, alpha, seed, frame);
+      // Corps (#582) après les vivants, grisés et retournés.
+      layer.update(entities, alpha, seed, frame, dead);
     }
     this.alertHighlightLayer.update(entities, alpha);
   }

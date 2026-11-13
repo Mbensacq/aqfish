@@ -258,6 +258,9 @@ import {
   createDefaultWorld,
   feedInPlace,
   infectWorldInPlace,
+  killWorldAnimalInPlace,
+  removeDeadInPlace,
+  setWorldMortalityInPlace,
   rotWorldFinsInPlace,
   velvetWorldInPlace,
   fungusWorldInPlace,
@@ -289,6 +292,7 @@ import {
   type MutableWorld,
   type World,
 } from '../../sim/world';
+import { netTarget } from '../../sim/mortality';
 import { DROPSY_ADVANCED_AT, DROPSY_MAX } from '../../sim/dropsy';
 import { CHEVRON_COUNTS } from '../../render/current-indicator-layer';
 import {
@@ -504,6 +508,8 @@ export const CATAPPA_ATTRIBUTE = 'data-aqfish-catappa';
 export const ALGAE_ATTRIBUTE = 'data-aqfish-algae';
 /** Raclette en main (#476) : `true` ou `false`. */
 export const SCRAPER_ATTRIBUTE = 'data-aqfish-scraper';
+/** Corps dans le bac affiché (#582) : nombre ; absent : aucun. */
+export const DEAD_ATTRIBUTE = 'data-aqfish-morts';
 /** Sécateur en main (#477) : `true` ou `false`. */
 export const PRUNER_ATTRIBUTE = 'data-aqfish-pruner';
 /**
@@ -1106,6 +1112,10 @@ export class AquariumHost {
   );
   /** Vrai tant que la raclette est en main (#476) : un clic sur le bac racle. */
   readonly scraping = signal(false);
+  /** Vrai si le dernier clic sur le canvas a retiré un corps (#582) : il ne nourrit pas. */
+  private netted = false;
+  /** Corps exposés au dernier relevé (#582) : un décès depuis relève aussi les effectifs. */
+  private exposedDead = 0;
   /** Vrai tant que le sécateur est en main (#477) : un clic sur une plante à tige la taille. */
   readonly pruning = signal(false);
   /**
@@ -1844,6 +1854,26 @@ export class AquariumHost {
       index = scrapeWorldAlgaeInPlace(world, origin, direction);
     });
     return index;
+  }
+
+  /**
+   * Épuisette (#582) : retire le corps touché le premier par le rayon (`origin`, `direction`,
+   * repère du bac), ce qui arrête sa pollution. Renvoie vrai si un corps a été retiré (jamais
+   * en mode capture, ni avant le démarrage).
+   */
+  netAlong(
+    origin: readonly [number, number, number],
+    direction: readonly [number, number, number],
+  ): boolean {
+    let removed = false;
+    this.applyWaterSetting((world) => {
+      const id = netTarget(world.dead, origin, direction);
+      removed = id !== null && removeDeadInPlace(world, id);
+    });
+    if (removed) {
+      this.exposePopulation();
+    }
+    return removed;
   }
 
   /**
@@ -3742,6 +3772,14 @@ export class AquariumHost {
       if (params.dropsy !== null) {
         dropsyWorldInPlace(world, params.dropsy === 'gonfle' ? DROPSY_ADVANCED_AT - 1 : DROPSY_MAX);
       }
+      // Animal mort de `mort=1` (#582), dans les mêmes conditions, après les maladies.
+      if (params.dead) {
+        setWorldMortalityInPlace(world, true);
+        const first = world.entities[0];
+        if (first !== undefined) {
+          killWorldAnimalInPlace(world, first.id);
+        }
+      }
       // Courant de `courant=` (#460), en capture : à t = 0, avant d'avancer le monde.
       if (params.capture && isCurrentLevel(params.current)) {
         setWorldCurrentInPlace(world, params.current);
@@ -4079,13 +4117,19 @@ export class AquariumHost {
           if (ray) {
             this.scrapeAlong(ray.origin, ray.direction);
           }
+        } else if (this.currentWorld?.dead !== undefined) {
+          // Épuisette (#582) : un clic sur un corps le retire au lieu de nourrir.
+          const ray = view.pickRay(x, y);
+          this.netted = ray !== null && this.netAlong(ray.origin, ray.direction);
         }
       }),
     );
     // Raclette en main (#476) : un clic racle au lieu de nourrir.
     this.viewCleanups.push(
       view.onSurfaceClick((x, z) => {
-        if (!this.decorEditing() && !this.scraping() && !this.pruning()) {
+        const netted = this.netted;
+        this.netted = false;
+        if (!netted && !this.decorEditing() && !this.scraping() && !this.pruning()) {
           this.feed(x, z);
         }
       }),
@@ -4160,6 +4204,7 @@ export class AquariumHost {
         this.capture ? 1 : this.clock.alpha,
         this.currentWorld.seed,
         this.behaviorFrame,
+        this.currentWorld.dead,
       );
       view.updateFood(this.currentWorld.food);
       view.updateEggs(this.currentWorld.eggs, EGG_HATCH_TIME);
@@ -4352,6 +4397,12 @@ export class AquariumHost {
       room && shownTank ? roomAnimalCapRefusal(room, shownTank.id, 1, world) : null,
     );
     this.health.set(healthSummary(world.entities));
+    this.exposedDead = world.dead?.length ?? 0;
+    if (this.exposedDead === 0) {
+      this.host.nativeElement.removeAttribute(DEAD_ATTRIBUTE);
+    } else {
+      this.host.nativeElement.setAttribute(DEAD_ATTRIBUTE, String(this.exposedDead));
+    }
     this.exposeAlertAnimals(world);
     this.host.nativeElement.setAttribute(
       POPULATION_ATTRIBUTE,
@@ -4361,6 +4412,16 @@ export class AquariumHost {
     this.careMode.set(mode);
     this.host.nativeElement.setAttribute(CARE_MODE_ATTRIBUTE, mode);
     this.exposeCurrent(world);
+  }
+
+  /**
+   * Corps du bac (#582) : un décès depuis le relevé précédent relève les effectifs (l'animal
+   * mort n'y compte plus) et l'attribut `DEAD_ATTRIBUTE`.
+   */
+  private exposeDead(world: World): void {
+    if ((world.dead?.length ?? 0) !== this.exposedDead) {
+      this.exposePopulation();
+    }
   }
 
   /** Animaux désignés par chaque alerte (#483) ; la mise en évidence cesse au changement de bac. */
@@ -4611,6 +4672,7 @@ export class AquariumHost {
     this.untreatedTap.set(world.water.untreatedTap === true);
     this.carbon.set(world.water.carbon === true);
     this.health.set(healthSummary(world.entities));
+    this.exposeDead(world);
     this.exposeAlertAnimals(world);
     this.exposeMaintenance(world);
     this.exposeWaterHistory(world);

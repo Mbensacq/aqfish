@@ -89,6 +89,11 @@
  * `hydropisie=gonfle` : ventre gonflé seul, juste avant le stade avancé. Toute autre valeur ou
  * absent : aucun malade (séries existantes inchangées).
  *
+ * Paramètre facultatif `mort=1` (issue #582) : mortalité activée et premier animal du bac (plus
+ * petit identifiant) mort à t = 0 (corps grisé, retourné, qui flotte ou repose au fond), dans
+ * les mêmes conditions que `points-blancs=1`. Toute autre valeur ou absent : aucun mort (séries
+ * existantes inchangées).
+ *
  * Paramètre facultatif `catappa=n` (issue #239) : en mode capture, `n` feuilles de catappa
  * neuves (1 à 5) déposées à t = 0, qui teintent l'eau. Toute autre valeur ou absent : aucune
  * feuille (séries existantes inchangées).
@@ -226,6 +231,8 @@ export interface CaptureParams {
   readonly finRot: boolean;
   /** Vrai pour `velours=1` : velours au maximum à t = 0 (issue #532). */
   readonly velvet: boolean;
+  /** Vrai pour `mort=1` : mortalité activée et premier animal mort à t = 0 (issue #582). */
+  readonly dead: boolean;
   /** Vrai pour `champignons=1` : champignons au maximum à t = 0 (issue #548). */
   readonly fungus: boolean;
   /**
@@ -371,6 +378,7 @@ export const DEFAULT_CAPTURE_PARAMS: CaptureParams = {
   waterTest: null,
   finRot: false,
   velvet: false,
+  dead: false,
   fungus: false,
   dropsy: null,
   fry: false,
@@ -436,6 +444,7 @@ export function parseCaptureParams(search: string): CaptureParams {
     waterTest: params.get('test-eau'),
     finRot: params.get('pourriture') === '1',
     velvet: params.get('velours') === '1',
+    dead: params.get('mort') === '1',
     fungus: params.get('champignons') === '1',
     dropsy:
       params.get('hydropisie') === '1'

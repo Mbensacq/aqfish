@@ -3,6 +3,7 @@ import {
   Matrix4,
   Mesh,
   Object3D,
+  Quaternion,
   ShaderLib,
   Vector3,
   type MeshBasicMaterial,
@@ -71,6 +72,8 @@ import {
   VELVET_SPARED_SATURATION,
   VELVET_VEIL,
   withIchSpots,
+  DEAD_DULLNESS,
+  DEAD_FLOAT_ROLL,
   type FishPose,
 } from './fish-layer';
 import {
@@ -401,6 +404,46 @@ describe('FishLayer : apparences (guppy mâle et femelle)', () => {
     expect(layer.brightness).toBe(0.6);
     layer.setBrightness(1);
     expect(material.color.getHex()).toBe(0xffffff);
+    layer.dispose();
+  });
+});
+
+describe('FishLayer : corps des animaux morts (#582)', () => {
+  it('après les vivants : grisés, sans autre signe, ventre en l’air, queue droite', () => {
+    const layer = new FishLayer(NEON, 4);
+    const alive = fishAfterSteps(0, 1);
+    const dead: Fish = { ...fishAfterSteps(1, 1), ich: ICH_AGGRAVATED_AT, pitch: 0, ppitch: 0 };
+    layer.update([alive], 1, 0, null, [dead]);
+    expect(layer.count).toBe(2);
+    expect(layer.dullnessAt(0)).toBe(0);
+    expect(layer.dullnessAt(1)).toBe(DEAD_DULLNESS);
+    expect(layer.ichSpotsAt(1)).toBe(0);
+    expect(DEAD_DULLNESS * DULL_DESATURATION).toBeLessThanOrEqual(1);
+    const m = layer.bodyMatrixAt(1, new Matrix4());
+    const position = new Vector3();
+    const rotation = new Quaternion();
+    m.decompose(position, rotation, new Vector3());
+    expect(position.x).toBeCloseTo(dead.x, 6);
+    expect(position.y).toBeCloseTo(dead.y, 6);
+    // Ventre en l'air : le haut du modèle (+Y) pointe vers le bas.
+    const up = new Vector3(0, 1, 0).applyQuaternion(rotation);
+    expect(up.y).toBeCloseTo(Math.cos(DEAD_FLOAT_ROLL), 6);
+    layer.dispose();
+  });
+
+  it('sans corps : exactement les vivants, comme avant', () => {
+    const layer = new FishLayer(NEON, 4);
+    layer.update([fishAfterSteps(0, 1)], 1, 0, null, []);
+    expect(layer.count).toBe(1);
+    layer.update([fishAfterSteps(0, 1)], 1);
+    expect(layer.count).toBe(1);
+    layer.dispose();
+  });
+
+  it('capacité : les corps ne dépassent pas le nombre d’instances', () => {
+    const layer = new FishLayer(NEON, 1);
+    layer.update([fishAfterSteps(0, 1)], 1, 0, null, [fishAfterSteps(1, 1)]);
+    expect(layer.count).toBe(1);
     layer.dispose();
   });
 });

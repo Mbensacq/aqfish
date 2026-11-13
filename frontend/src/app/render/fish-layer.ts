@@ -28,6 +28,7 @@ import { showsVelvet, velvetSeverity } from '../sim/velvet';
 import { fungusSeverity, showsFungus } from '../sim/fungus';
 import { dropsyScales, dropsyStage, dropsySwelling, showsDropsy } from '../sim/dropsy';
 import { dullness } from '../sim/wellbeing';
+import { floatsWhenDead } from '../sim/mortality';
 import { fryPallor, fryScale } from '../sim/fry';
 import { PALETTE } from './palette';
 import {
@@ -41,6 +42,9 @@ import {
 
 /** Nombre maximal de poissons d'une espèce affichés (capacité des `InstancedMesh`). */
 export const MAX_FISH_PER_SPECIES = 256;
+
+/** Aucun corps (valeur par défaut de `FishLayer.update`, sans allocation). */
+const NO_DEAD: readonly Fish[] = [];
 
 const TWO_PI = Math.PI * 2;
 
@@ -62,6 +66,16 @@ export const DULL_DARKENING = 0.15;
 
 /** Composante d'instance du ternissement, dans [0, 1]. */
 export const DULL_SIGN = 'aqfishSignsA.x';
+/**
+ * Ternissement d'un animal mort (issue #582) : au-delà de 1, le même mélange pousse la
+ * couleur presque au gris (`DULL_DESATURATION` · 3 = 0,9) et l'assombrit (0,45). Doit rester
+ * sous `1 / DULL_DESATURATION` (mélange borné).
+ */
+export const DEAD_DULLNESS = 3;
+/** Roulis d'un nageur mort (ventre en l'air, à la surface), en radians. */
+export const DEAD_FLOAT_ROLL = Math.PI;
+/** Roulis d'un marcheur ou d'un amphibien mort (couché sur le flanc, au fond), en radians. */
+export const DEAD_GROUND_ROLL = Math.PI / 2;
 
 const COLOR_VERTEX = '#include <color_vertex>';
 const BEGIN_VERTEX = '#include <begin_vertex>';
@@ -664,6 +678,7 @@ export class FishLayer {
     alpha: number,
     seed = 0,
     behavior: BehaviorFrame | null = null,
+    dead: readonly Fish[] = NO_DEAD,
   ): void {
     let n = 0;
     for (let i = 0; i < entities.length && n < this.capacity; i++) {
@@ -720,6 +735,7 @@ export class FishLayer {
       this.tailSignsB.setXYZW(n, fungus, pale, 0, 0);
       n++;
     }
+    n = this.placeDead(dead, alpha, seed, n);
     this.body.count = n;
     this.tail.count = n;
     this.body.instanceMatrix.needsUpdate = true;
@@ -727,6 +743,39 @@ export class FishLayer {
     this.signsA.needsUpdate = true;
     this.signsB.needsUpdate = true;
     this.tailSignsB.needsUpdate = true;
+  }
+
+  /**
+   * Corps de l'espèce et de l'apparence de la couche (issue #582) après les vivants, à partir
+   * de l'instance `start` : immobiles (queue droite), retournés (`DEAD_FLOAT_ROLL` ou
+   * `DEAD_GROUND_ROLL`) et grisés (`DEAD_DULLNESS`), sans autre signe. Renvoie le compte.
+   */
+  private placeDead(dead: readonly Fish[], alpha: number, seed: number, start: number): number {
+    let n = start;
+    for (let i = 0; i < dead.length && n < this.capacity; i++) {
+      const body = dead[i];
+      if (
+        body.species !== this.species.id ||
+        speciesVariantIndex(this.species, body.id, seed) !== this.variantIndex
+      ) {
+        continue;
+      }
+      const pose = interpolateFishPose(body, alpha, this.pose);
+      const roll = floatsWhenDead(body.species) ? DEAD_FLOAT_ROLL : DEAD_GROUND_ROLL;
+      this.euler.set(roll, -pose.yaw, 0);
+      this.rotation.setFromEuler(this.euler);
+      this.position.set(pose.x, pose.y, pose.z);
+      this.scale.setScalar(fryScale(body.growth));
+      this.bodyMatrix.compose(this.position, this.rotation, this.scale);
+      this.body.setMatrixAt(n, this.bodyMatrix);
+      this.tailMatrix.multiplyMatrices(this.bodyMatrix, this.hinge);
+      this.tail.setMatrixAt(n, this.tailMatrix);
+      this.signsA.setXYZW(n, DEAD_DULLNESS, 0, 0, 0);
+      this.signsB.setXYZW(n, 0, 0, 0, 0);
+      this.tailSignsB.setXYZW(n, 0, 0, 0, 0);
+      n++;
+    }
+    return n;
   }
 
   /**
