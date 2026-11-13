@@ -6,6 +6,14 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Glisser en e2e sous le rendu logiciel : quelques passages courts, pas un balayage**
+  (cycle 212, #604) : chaque `page.mouse.move` (ou `Input.dispatchTouchEvent`) attend une
+  image, qui prend plusieurs secondes ; 10 lignes de 12 pas dépassaient les 3 min du test.
+  Trois lignes de 8 pas au milieu du bac suffisent à retirer les 8 plaques d'algues
+  (`e2e/seance-entretien.spec.ts`, 420 s de budget). Pour le doigt, Playwright n'a que
+  `tap` : envoyer `touchStart` / `touchMove` / `touchEnd` par une session CDP, Chromium en
+  tire des événements `pointer` de type `touch`. Ne pas lancer d'e2e pendant les tests
+  unitaires du même arbre : l'application ralentit au point de dépasser les délais. (2026-11-13)
 - **Coder pendant le `npm run verify` de `main` : un second arbre de travail** (cycle 211,
   #582) : `git worktree add ../aqfish-cNNN -b cycle/cNNN-… origin/main` puis
   `cp -al frontend/node_modules ../aqfish-cNNN/frontend/` (liens physiques : quelques
