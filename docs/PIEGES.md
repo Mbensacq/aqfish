@@ -28,6 +28,14 @@ haut de sa section.
   une journée par défaut fait 72 000 pas ; avec la population par défaut, un test de 5 jours
   dépasse les 5 s de Vitest. `createDayClock(h, 48)` (2 s par heure) et `createWorld(seed)`
   (sans poisson) suffisent pour une logique d'horaire. (2026-11-12)
+- **Largeur d'un panneau qui coexiste avec un autre : vérifier les deux ouverts ensemble**
+  (cycle 209, #588) : `cadrage-panneaux` contrôle chaque panneau seul ; « Réglages » en deux
+  colonnes (532 px dès 900 px de large) recouvrait l'aide-mémoire déplié à 900 × 700 sans
+  qu'aucun test ne le voie. Le seuil des deux colonnes est calculé dans `_panel-layout.scss`
+  (`$control-panel-two-columns-query`, 915 px) ; tout changement de largeur de « Réglages » ou
+  de « Commandes » le déplace, et le cas « ouverts ensemble (#588) » le vérifie. La bulle d'un
+  geste de soin (240 px à droite du panneau) peut encore passer sur l'aide-mémoire sous
+  ~1155 px. (2026-11-13)
 - **Un curseur de plus dans la section « Eau » : `cadrage-panneaux` rouge à 1280 × 720**
   (cycle 205, #584) : le panneau « Réglages » n'a plus de marge en hauteur ; un champ de
   réglage pleine largeur (≈ 50 px) le fait dépasser de la fenêtre ou recouvrir la barre des

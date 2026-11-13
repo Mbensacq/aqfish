@@ -314,6 +314,41 @@ test.describe('panneau « Commandes » (#79)', () => {
   });
 });
 
+// #588 : à 900 × 700, « Réglages » en deux colonnes (532 px, de 59 à 591 px) recouvrait
+// l'aide-mémoire « Commandes » déplié (300 px, à 12 px du bord droit : dès 588 px). Le panneau
+// ne passe en deux colonnes qu'à partir de 915 px de large ; plus étroit, une colonne. Les
+// deux panneaux ouverts ensemble restent séparés d'au moins 12 px, de part et d'autre du seuil.
+test.describe('« Réglages » et « Commandes » ouverts ensemble (#588)', () => {
+  for (const viewport of [
+    { width: 900, height: 700 },
+    { width: 914, height: 700 },
+    { width: 915, height: 700 },
+    { width: 1024, height: 700 },
+    { width: 1280, height: 720 },
+  ]) {
+    for (const search of ['?seed=42', '?seed=42&points-blancs=1']) {
+      test(`${viewport.width} × ${viewport.height} : sans se recouvrir (${search})`, async ({
+        page,
+      }) => {
+        await page.setViewportSize(viewport);
+        const errors = await openScene(page, search);
+        await PANELS.find((p) => p.name === 'Commandes')!.open(page);
+        await PANELS.find((p) => p.name === 'Réglages')!.open(page);
+        // Au-delà de 639 px, ouvrir « Réglages » ne replie pas « Commandes » (#136).
+        await expect(page.locator('#aide-commandes')).toBeVisible();
+        const settings = await box(page.locator('.control-panel'));
+        const commands = await box(page.locator('#aide-commandes'));
+        expect(overlaps(settings, commands), '« Réglages » recouvre « Commandes »').toBe(false);
+        expect(commands.x - (settings.x + settings.width)).toBeGreaterThanOrEqual(12);
+        expect(
+          await page.locator('.control-panel').evaluate((el) => el.scrollWidth <= el.clientWidth),
+        ).toBe(true);
+        expect(errors).toEqual([]);
+      });
+    }
+  }
+});
+
 // #490 : à 1280 × 720, un message de soin (le plus long : sel avec néons et corydoras, mise
 // en garde comprise) agrandissait la section « Soins », qui passait en deuxième colonne et
 // poussait « Sauvegarde » dans une troisième, hors du panneau. Le message est désormais une
@@ -491,8 +526,8 @@ test('1280 × 720 : « Réglages » ouvert masque entièrement le cadre qu’il 
   expect(errors).toEqual([]);
 });
 
-// #571 : quarantaine installée, le panneau ne déborde pas en largeur, aussi à 900 × 700 (plus
-// petit format à deux colonnes) et avec DejaVu Sans (police de la CI, plus large) ; le choix du
+// #571 : quarantaine installée, le panneau ne déborde pas en largeur, aussi à 900 × 700 (une
+// colonne depuis #588 ; plus petit format à deux colonnes jusque-là) et avec DejaVu Sans (police de la CI, plus large) ; le choix du
 // bac de quarantaine reçoit le focus et reste visible dans le panneau qui défile.
 test.describe('quarantaine installée (#571)', () => {
   for (const viewport of [

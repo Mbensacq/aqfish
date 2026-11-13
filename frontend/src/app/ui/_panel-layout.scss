@@ -25,6 +25,19 @@ $settings-button-end: $control-panel-left + $settings-button-width;
 /// Largeur de l'aide-mémoire déplié (`.commands-help`).
 $commands-help-width: 300px;
 
+/// Largeur du panneau « Réglages » en deux colonnes (deux colonnes de 260 px, écart de 12 px).
+$control-panel-two-columns-width: 532px;
+
+/// Largeur d'écran à partir de laquelle « Réglages » passe en deux colonnes (écran peu haut,
+/// ≤ 900 px) : il faut que le panneau large et l'aide-mémoire déplié tiennent côte à côte,
+/// séparés de `$edge` (#588). 59 + 532 + 12 + 300 + 12 = 915 px. À 900 px (ancien seuil), le
+/// panneau finissait à 591 px et l'aide-mémoire commençait à 588 px : ils se recouvraient.
+$control-panel-two-columns-min-width: $control-panel-left + $control-panel-two-columns-width +
+  $edge + $commands-help-width + $edge;
+
+/// Requête média du panneau « Réglages » en deux colonnes, partagée par la bulle des soins.
+$control-panel-two-columns-query: '(min-width: #{$control-panel-two-columns-min-width}) and (max-height: 900px)';
+
 // Couleurs partagées des panneaux (#407) : fond sombre translucide, encre claire, accent.
 // `src/app/ui/panel-contrast.spec.ts` lit ces valeurs dans ce fichier et vérifie leurs
 // contrastes WCAG (texte ≥ 4,5:1 et focus ≥ 3:1) sur une scène de jour comme de nuit :
