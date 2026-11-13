@@ -647,6 +647,10 @@ découpé entre deux machines : garder des fichiers de taille raisonnable.
 ## Budgets
 
 - Bundle initial : avertissement à 500 kB, erreur à 1 MB (`angular.json`).
+- Feuille de style d'un composant : avertissement à 8 kB, erreur à 12 kB (`angular.json`,
+  révisés au #595 : le panneau « Réglages » pesait 7,7 kB, à 300 octets de l'ancienne erreur à
+  8 kB, et le bandeau santé et alertes 4,9 kB ; ces deux composants portent la plupart des
+  commandes de l'interface). Au-delà de 8 kB, découper le composant plutôt que relever le seuil.
 - Moteur physique de l'éditeur (Rapier, ADR 0046) : hors du bundle initial, fragment chargé à
   la demande d'environ 4,3 MB (1,2 MB compressé). `npm run build` le vérifie
   (`postbuild` : `scripts/verifier-bundle-initial.mjs`).

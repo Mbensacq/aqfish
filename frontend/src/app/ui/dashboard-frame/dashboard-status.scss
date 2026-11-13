@@ -119,10 +119,19 @@
   margin: 0 0 4px;
 }
 
-// Vue affichée : en gras, sans soulignement (`aria-pressed` porte l'état lu).
+// Vue affichée : pastille claire en négatif, sans soulignement (#592 : en gras seul, les deux
+// onglets se distinguaient mal) ; `aria-pressed` porte l'état lu.
 .status__tabs [aria-pressed='true'] {
+  background: var(--dashboard-ink);
+  color: var(--dashboard-background);
   font-weight: 700;
   text-decoration: none;
+}
+
+// Journal (#592) : liste sans puce ni numéro, le jour en tête de chaque ligne.
+.status__journal-list {
+  padding-left: 0;
+  list-style: none;
 }
 
 /* Bilan sans point (#522) : même marge que la liste, sans retrait. */
@@ -152,17 +161,6 @@
   align-items: center;
   gap: 4px 8px;
   flex-basis: 100%;
-}
-
-.status__feeder-field {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.status__feeder-select {
-  font: inherit;
-  min-height: 24px;
 }
 
 .status__tasks,

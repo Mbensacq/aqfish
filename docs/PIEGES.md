@@ -6,6 +6,16 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Bac rangé : son monde est un nouvel objet à chaque rattrapage** (cycle 207, #592) :
+  `stepRoom` (et un transfert) recopie le monde de chaque bac rangé ; un état de l'hôte gardé
+  dans une `WeakMap<World, …>` (observation du journal, cache) est perdu au retour sur le bac.
+  Le reporter sur le nouvel objet au moment de la copie (`carryJournalWatches` dans
+  `advanceBackgroundTanks` et `transferAnimal`). (2026-11-13)
+- **Détail du bandeau santé et alertes déplié : il monte sur la languette du parcours**
+  (cycle 207, #592) : la languette « Mon premier aquarium » a un bas fixe (124 px) et le bandeau
+  grandit vers le haut (bilan, journal jusqu'à 40 vh) ; aucune position fixe ne suffit. La
+  languette se masque tant qu'un détail est déplié (`DashboardStatus.detailOpen`,
+  `firstTankPathVisible`). (2026-11-13)
 - **Vitesse de simulation : ×4 au plus, pas ×8** (cycle 206, #583) : `SIM_SPEEDS` vaut
   `[0, 0.5, 1, 2, 4]` et `scaledDt(dt, 8)` lève une `RangeError`. Un critère « vitesse ×8 » se
   teste sur une fonction pure qui reçoit la vitesse en nombre (`rationsInFrame`), ou en

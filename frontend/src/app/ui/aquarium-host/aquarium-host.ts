@@ -216,7 +216,7 @@ import {
 import type { SaveSettings } from '../../sim/save';
 import type { AlertSeverity } from '../../sim/dashboard-alerts';
 import { addWarningText } from '../../sim/species-sheet';
-import { tankList, worstAlert, type TankListEntry } from '../../sim/tank-list';
+import { tankList, worldAlerts, worstAlert, type TankListEntry } from '../../sim/tank-list';
 import {
   acceptsSpecies,
   careModeOf,
@@ -327,6 +327,7 @@ import {
 } from '../../sim/first-tank-path';
 import {
   addJournalEntry,
+  carryJournalWatches,
   createJournal,
   journalLines,
   observeJournal,
@@ -2921,6 +2922,11 @@ export class AquariumHost {
     }
     const synced = syncRoom(this.roomState, world, stashedList(this.stash, world.environment));
     const room = stepRoom(synced.room, pending, this.dayClock, synced.selectedTankId);
+    // Le bac rangé garde sa dernière observation du journal sous son nouveau monde (#592).
+    carryJournalWatches(
+      this.journalWatches,
+      synced.room.tanks.map((tank, i) => [tank.world, room.tanks[i]!.world] as const),
+    );
     this.stash = stashFromList(
       room.tanks
         .filter((tank) => tank.placement === null && tank.id !== synced.selectedTankId)
@@ -3091,6 +3097,10 @@ export class AquariumHost {
     this.finishDropAnimation();
     (world.entities as Entity[]).splice(index, 1);
     const arrival = findTank(result.room, toId) as RoomTank;
+    const departure = findTank(room, toId);
+    if (departure !== undefined) {
+      carryJournalWatches(this.journalWatches, [[departure.world, arrival.world]]);
+    }
     if (arrival.placement === null) {
       const stash = new Map(this.stash);
       stash.set(arrival.world.environment, arrival.world);
@@ -4505,9 +4515,11 @@ export class AquariumHost {
   }
 
   /**
-   * Observe le bac affiché au rythme des relevés (#581) : maladies, guérisons, pontes et
-   * éclosions survenues depuis la dernière observation entrent au journal (le premier regard
-   * sur un bac n'écrit rien), puis publie le journal s'il a changé. Jamais en capture.
+   * Observe le bac affiché au rythme des relevés (#581) : maladies, guérisons, pontes,
+   * éclosions et alertes franchies (#592) survenues depuis la dernière observation entrent au
+   * journal (le premier regard sur un bac n'écrit rien ; un bac rangé garde sa dernière
+   * observation, reportée par `carryJournalWatches`), puis publie le journal s'il a changé.
+   * Jamais en capture.
    */
   private exposeJournal(world: World): void {
     if (this.capture) {
@@ -4515,10 +4527,16 @@ export class AquariumHost {
     }
     const journal = this.journalOf(world);
     const watch = this.journalWatches.get(world);
+    const subject = {
+      time: world.time,
+      entities: world.entities,
+      ...(world.eggs === undefined ? {} : { eggs: world.eggs }),
+      alerts: worldAlerts(world),
+    };
     if (watch === undefined) {
-      this.journalWatches.set(world, watchJournal(world));
+      this.journalWatches.set(world, watchJournal(subject));
     } else {
-      for (const entry of observeJournal(watch, world)) {
+      for (const entry of observeJournal(watch, subject)) {
         addJournalEntry(journal, entry);
       }
     }

@@ -33,8 +33,7 @@ import { NO_FISH, type PopulationCounts } from '../../sim/population';
 import { EMPTY_HEALTH_SUMMARY, healthItems, type HealthSummary } from '../../sim/health-summary';
 import { DEFAULT_WATER_SAMPLE, type GaugeLevel, type WaterSample } from '../../sim/water-dashboard';
 import type { LampReadout } from '../../sim/lamp';
-import { FEEDER_DEFAULT_HOURS, type FeederReadout } from '../../sim/auto-feeder';
-import { formatHour } from '../../sim/daylight';
+import type { FeederReadout } from '../../sim/auto-feeder';
 import type { TreatmentReadout } from '../../sim/treatment-text';
 import { DEFAULT_WATER_READOUT, type WaterReadout } from '../../sim/water-quality';
 import {
@@ -43,6 +42,7 @@ import {
   DASHBOARD_MUTED_ALPHA,
   DASHBOARD_REST_OPACITY,
 } from './dashboard-frame';
+import { FeederPanel } from './feeder-panel';
 import { BeginnerGuideState } from '../beginner-guide/beginner-guide-state';
 import {
   levelIconPixels,
@@ -270,71 +270,15 @@ const ICONS: Readonly<Record<GaugeLevel, readonly (readonly [number, number])[]>
         }
         @if (feederAvailable()) {
           <!-- Distributeur automatique (#583) : réserve, heures des rations, remplissage. -->
-          <div
+          <app-feeder-panel
             class="status__feeder"
             role="group"
             aria-label="Distributeur automatique"
             data-feeder-panel
-          >
-            @if (feeder(); as f) {
-              <span data-feeder [attr.data-feeder-empty]="f.empty"
-                >Distributeur : <b>{{ f.stock }} / {{ f.capacity }} rations</b
-                >{{ f.empty ? ' (vide)' : '' }}</span
-              >
-              <label class="status__feeder-field"
-                >Par jour
-                <select
-                  class="status__feeder-select"
-                  data-feeder-count
-                  (change)="onFeederCount($event)"
-                >
-                  @for (n of feederCounts; track n) {
-                    <option [value]="n" [selected]="n === f.hours.length">{{ n }}</option>
-                  }
-                </select>
-              </label>
-              @for (hour of f.hours; track $index) {
-                <select
-                  class="status__feeder-select"
-                  [attr.data-feeder-hour]="$index"
-                  [attr.aria-label]="'Heure de la ration ' + ($index + 1)"
-                  (change)="onFeederHour($index, $event)"
-                >
-                  @for (h of dayHours; track h) {
-                    <option [value]="h" [selected]="h === hour">{{ hourText(h) }}</option>
-                  }
-                </select>
-              }
-              <button
-                type="button"
-                class="status__why"
-                data-feeder-refill
-                aria-label="Remplir le distributeur (14 rations)"
-                (click)="feederRefilled.emit()"
-              >
-                Remplir
-              </button>
-              <button
-                type="button"
-                class="status__why"
-                data-feeder-remove
-                aria-label="Retirer le distributeur"
-                (click)="feederChanged.emit(null)"
-              >
-                Retirer
-              </button>
-            } @else {
-              <span data-feeder>Distributeur : aucun</span>
-              <button
-                type="button"
-                class="status__why"
-                data-feeder-install
-                (click)="feederChanged.emit(defaultFeederHours)"
-              >
-                Poser un distributeur
-              </button>
-            }
-          </div>
+            [feeder]="feeder()"
+            (changed)="feederChanged.emit($event)"
+            (refilled)="feederRefilled.emit()"
+          />
         }
         <div>
           <b>Dernières actions</b>
@@ -383,13 +327,14 @@ const ICONS: Readonly<Record<GaugeLevel, readonly (readonly [number, number])[]>
         @if (journalShown(); as lines) {
           <div data-journal-detail>
             @if (lines.length > 0) {
-              <ol class="status__review-list">
+              <!-- Sans numéro (#592) : la liste va du plus récent au plus ancien, le jour date. -->
+              <ul class="status__review-list status__journal-list">
                 @for (line of lines; track $index) {
                   <li [attr.data-journal-kind]="line.kind">
                     <b>Jour {{ line.day }} :</b> {{ line.text }}
                   </li>
                 }
-              </ol>
+              </ul>
             } @else {
               <p class="status__review-empty" data-journal-empty>Aucun événement pour l’instant.</p>
             }
@@ -451,6 +396,7 @@ const ICONS: Readonly<Record<GaugeLevel, readonly (readonly [number, number])[]>
       </p>
     }
   </section>`,
+  imports: [FeederPanel],
   styleUrl: './dashboard-status.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
@@ -584,6 +530,13 @@ export class DashboardStatus {
   protected readonly detail = computed(
     () => this.visible().shown.find((alert) => alert.id === this.expanded()) ?? null,
   );
+  /**
+   * Vrai si un détail est déplié (alerte, calendrier d'entretien ou bilan) : le bandeau monte
+   * alors sur la bordure gauche et l'application masque la languette du parcours (#592).
+   */
+  readonly detailOpen = computed(
+    () => this.detail() !== null || this.maintenanceDetail() !== null || this.review() !== null,
+  );
   protected readonly animalsText = alertAnimalsText;
   /** Animaux désignés par l'alerte dépliée ; `null` si elle n'en désigne jamais (#483). */
   protected readonly openTarget = computed(() => {
@@ -623,31 +576,6 @@ export class DashboardStatus {
   }
 
   /** Vrai pour une tâche sans geste dans le jeu, marquée à la main (#513). */
-  /** Choix du nombre de rations par jour (#583). */
-  protected readonly feederCounts = [1, 2, 3, 4] as const;
-  /** Heures proposées pour une ration (#583). */
-  protected readonly dayHours = Array.from({ length: 24 }, (_, h) => h);
-  protected readonly defaultFeederHours = FEEDER_DEFAULT_HOURS[1];
-  protected readonly hourText = formatHour;
-
-  /** Nombre de rations par jour changé : heures proposées pour ce nombre (#583). */
-  protected onFeederCount(event: Event): void {
-    const n = Number((event.target as HTMLSelectElement).value);
-    if (n === 1 || n === 2 || n === 3 || n === 4) {
-      this.feederChanged.emit(FEEDER_DEFAULT_HOURS[n]);
-    }
-  }
-
-  /** Heure d'une ration changée (#583) : deux rations à la même heure n'en font qu'une. */
-  protected onFeederHour(index: number, event: Event): void {
-    const feeder = this.feeder();
-    const hour = Number((event.target as HTMLSelectElement).value);
-    if (feeder === null || !Number.isInteger(hour)) {
-      return;
-    }
-    this.feederChanged.emit(feeder.hours.map((h, i) => (i === index ? hour : h)));
-  }
-
   protected manual(task: MaintenanceTask): boolean {
     return task === 'filter' || task === 'waterTest';
   }

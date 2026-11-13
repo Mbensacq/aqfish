@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 
 import type { DayPhase } from '../../sim/daylight';
 import type { EnvironmentId } from '../../sim/environment';
@@ -100,14 +101,27 @@ class StatusHost {
 describe('rappel d’entretien (#513)', () => {
   const DAY = MAINTENANCE_DAY_SECONDS;
 
-  function mount(): { host: StatusHost; root: HTMLElement; flush: () => void } {
+  function mount(): {
+    host: StatusHost;
+    root: HTMLElement;
+    flush: () => void;
+    status: () => DashboardStatus;
+  } {
     const fixture = TestBed.createComponent(StatusHost);
     const flush = (): void => {
       fixture.changeDetectorRef.markForCheck();
       fixture.detectChanges();
     };
     flush();
-    return { host: fixture.componentInstance, root: fixture.nativeElement as HTMLElement, flush };
+    const status = (): DashboardStatus =>
+      fixture.debugElement.query(By.directive(DashboardStatus))
+        .componentInstance as DashboardStatus;
+    return {
+      host: fixture.componentInstance,
+      root: fixture.nativeElement as HTMLElement,
+      flush,
+      status,
+    };
   }
 
   it('sans calendrier (capture), aucun rappel', () => {
@@ -264,6 +278,9 @@ describe('rappel d’entretien (#513)', () => {
       'Jour 2 : Ponte : 3 œufs (Corydora)',
       'Jour 1 : Changement d’eau',
     ]);
+    // Liste sans numéro (#592) : 1 ne désigne pas le premier événement.
+    expect(root.querySelector('[data-journal-detail] ol')).toBeNull();
+    expect(root.querySelector('[data-journal-detail] ul')).not.toBeNull();
     root.querySelector<HTMLElement>('[data-review-tab]')!.click();
     flush();
     expect(root.querySelector('[data-journal-detail]')).toBeNull();
@@ -277,6 +294,23 @@ describe('rappel d’entretien (#513)', () => {
     flush();
     expect(root.querySelector('[data-journal-detail]')).toBeNull();
     expect(root.querySelector('[data-journal]')!.getAttribute('aria-pressed')).toBe('false');
+  });
+
+  it('detailOpen (#592) : vrai tant qu’une alerte, le calendrier ou le bilan est déplié', () => {
+    const { host, root, flush, status } = mount();
+    host.maintenance.set(maintenanceReadout(initialMaintenance(0), DAY));
+    host.reviewOf.set(() => []);
+    flush();
+    expect(status().detailOpen()).toBe(false);
+    root.querySelector<HTMLElement>('[data-review]')!.click();
+    flush();
+    expect(status().detailOpen()).toBe(true);
+    root.querySelector<HTMLElement>('[data-maintenance]')!.click();
+    flush();
+    expect(status().detailOpen()).toBe(true);
+    root.querySelector<HTMLElement>('[data-maintenance]')!.click();
+    flush();
+    expect(status().detailOpen()).toBe(false);
   });
 
   it('bilan vide : le dit ; le déplier replie le calendrier', () => {

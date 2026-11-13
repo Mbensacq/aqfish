@@ -239,3 +239,11 @@ Le backlog est l'ensemble des issues ouvertes `fonctionnalite`, `bug` et `dette`
 le maintient : chaque issue a un titre court, un contexte, des **critères d'acceptation
 vérifiables** et une estimation (`S` : un cycle facile, `M` : un cycle plein, `L` : à
 découper).
+
+### Idées notées hors issue
+
+- **Nourriture non mangée qui pollue l'eau** (écart de #583, écarté du lot de dette #597) :
+  aujourd'hui, une ration du distributeur automatique que personne ne mange reste sans
+  conséquence (modèle existant de la nourriture). Idée de fonctionnalité : la nourriture
+  restante se décompose et ajoute de l'ammoniaque, puis des nitrates. À ouvrir en issue
+  `fonctionnalite` par Planif.

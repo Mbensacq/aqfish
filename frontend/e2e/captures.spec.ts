@@ -477,6 +477,33 @@ test.describe('Captures', () => {
     expect(errors).toEqual([]);
   });
 
+  // Lampe du bac (#584, #595) : allumée à 20 h pour 8 h, vue de face à minuit (heure figée,
+  // `heure=0`) : la lampe éclaire le bac en pleine nuit. Pas de paramètre d'adresse pour la
+  // lampe : réglée au curseur « Lampe » de la section « Eau », puis « Réglages » refermé.
+  // Simulation à l'arrêt dès t = 0, comme `front-panneau`.
+  test('angle front à minuit, lampe allumée à 20 h', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    await page.goto(`/?seed=${SEED}&camera=front&heure=0&vitesse=0`);
+    await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+    const host = page.locator('app-aquarium-host');
+    await expect(host).toHaveAttribute('data-aqfish-lamp', '0.00');
+    const settings = page.getByRole('button', { name: 'Réglages' });
+    await settings.click();
+    const lampOn = page.locator('[data-section="eau"] [data-lamp-on]');
+    await lampOn.fill('20');
+    await expect(lampOn).toHaveAttribute('aria-valuetext', 'allumée à 20:00');
+    await settings.click();
+    await expect(page.locator('.control-panel')).toHaveCount(0);
+    await expect(host).toHaveAttribute('data-aqfish-lamp', '1.00');
+    await expect(host).toHaveAttribute('data-aqfish-tick', '0');
+    await page.screenshot({
+      path: join(OUTPUT_DIR, 'front-minuit-lampe-20h.png'),
+      animations: 'disabled',
+    });
+    expect(errors).toEqual([]);
+  });
+
   // Pharmacie du bac (#533) : bac malade (`points-blancs=1`), pharmacie ouverte, conseil du
   // médicament ; simulation à l'arrêt dès t = 0, comme `front-panneau`.
   test('angle front avec la pharmacie du bac ouverte', async ({ page }) => {

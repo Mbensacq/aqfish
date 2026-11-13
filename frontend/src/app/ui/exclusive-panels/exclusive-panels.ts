@@ -40,8 +40,10 @@ export const EXCLUSIVE_PANELS = new InjectionToken<() => boolean>('EXCLUSIVE_PAN
  * Vrai si la languette « Mon premier aquarium » s'affiche (#527) : elle occupe la bordure
  * gauche, sous « Réglages » (59 à 319 px du bord), qui la recouvrirait en partie à toute
  * largeur. Elle se masque donc tant que « Réglages » est ouvert, et revient à sa fermeture
- * dans le même état (replié ou déplié, retenu par ses préférences).
+ * dans le même état (replié ou déplié, retenu par ses préférences). De même tant qu'un détail
+ * du bandeau santé et alertes est déplié (`dashboardDetailOpen`, #592) : le bandeau grandit
+ * vers le haut et, à 390 px, sa ligne Santé/Faim passait sous la languette.
  */
-export function firstTankPathVisible(settingsOpen: boolean): boolean {
-  return !settingsOpen;
+export function firstTankPathVisible(settingsOpen: boolean, dashboardDetailOpen = false): boolean {
+  return !settingsOpen && !dashboardDetailOpen;
 }

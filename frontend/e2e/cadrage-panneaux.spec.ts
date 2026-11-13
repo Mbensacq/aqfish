@@ -531,3 +531,40 @@ test.describe('quarantaine installée (#571)', () => {
     }
   }
 });
+
+// Bilan déplié à 390 × 844 (#592) : le bandeau santé et alertes grandit vers le haut et sa
+// ligne Santé/Faim passait sous la languette « Mon premier aquarium » (bas fixe à 124 px).
+// La languette se masque tant qu'un détail du bandeau est déplié, et revient à sa fermeture ;
+// repliée, elle ne recouvre aucune ligne du bandeau.
+test('390 × 844 : bilan et journal dépliés, la languette du parcours ne recouvre pas le bandeau (#592)', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const errors = await openScene(page, '?seed=42&vitesse=0');
+  const path = page.locator('app-first-tank-path');
+  const items = page.locator('[data-dashboard-status] .status__item');
+  const free = async () => {
+    if ((await path.count()) === 0) {
+      return;
+    }
+    const pathBox = await box(path.locator('.path__toggle'));
+    for (const item of await items.all()) {
+      expect(overlaps(pathBox, await box(item)), 'languette sur une ligne du bandeau').toBe(false);
+    }
+  };
+  await expect(path).toBeVisible();
+  await free();
+  const review = page.getByRole('button', { name: 'Bilan du bac' });
+  await review.click();
+  await expect(page.locator('[data-review-detail]')).toBeVisible();
+  await expect(path).toHaveCount(0);
+  await free();
+  await page.locator('[data-journal]').click();
+  await expect(page.locator('[data-journal-detail]')).toBeVisible();
+  await expect(path).toHaveCount(0);
+  await review.click();
+  await expect(page.locator('[data-review-detail]')).toHaveCount(0);
+  await expect(path).toBeVisible();
+  await free();
+  expect(errors).toEqual([]);
+});

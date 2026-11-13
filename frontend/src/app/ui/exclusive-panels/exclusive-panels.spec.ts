@@ -42,6 +42,10 @@ describe('panneaux exclusifs (#136)', () => {
   it('languette du parcours : masquée tant que « Réglages » est ouvert (#527)', () => {
     expect(firstTankPathVisible(false)).toBe(true);
     expect(firstTankPathVisible(true)).toBe(false);
+    // Détail du bandeau santé et alertes déplié (#592) : masquée aussi.
+    expect(firstTankPathVisible(false, true)).toBe(false);
+    expect(firstTankPathVisible(true, true)).toBe(false);
+    expect(firstTankPathVisible(false, false)).toBe(true);
   });
 
   it('sans fenêtre ou sans matchMedia : jamais exclusifs', () => {
