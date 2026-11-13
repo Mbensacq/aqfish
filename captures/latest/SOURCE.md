@@ -1,7 +1,2 @@
-# Captures c211
-
-- Branche : cycle/c211-mortalite
-- PR : #614
-- Commit : b9dc70134d438ddface7ecda3c07ac3fd11bfaaf
-- Graine : celle par défaut des captures
-- Chromium local 1243 (lien symbolique PIEGES.md) ; les 5 angles par défaut sont identiques à l'octet à la série précédente ; nouvelles : front-mort, side-mort
+Branche cycle/c212-seance-entretien, PR #616, commit d7e5795, graine 42 (voir captures.spec.ts), rendu logiciel local.
+5 angles identiques à l'octet à la série précédente ; + seance-vitres-avant/apres (e2e seance-entretien).
