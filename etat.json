@@ -7623,6 +7623,12 @@
           "debut": "2026-11-13T06:56:00.936Z",
           "fin": "2026-11-13T07:55:07.524Z",
           "note": "Verdict OK, 0 bug, CI verte, cadrage-panneaux 57/57 en local, captures publiées (c209)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-13T07:55:35.891Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
