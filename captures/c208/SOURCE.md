@@ -1,0 +1,12 @@
+# Captures c208
+- Branche : cycle/c208-journal-hysteresis, PR #601, commit ccaab1e
+- 5 angles (bassin, eau froide, paludarium, récif) régénérés : 144 images identiques octet pour octet à la série c207 (le journal est hors rendu).
+- Le délai de 9 min a coupé la série : 7 images reprises de c207 (non régénérées) :
+  - SOURCE.md
+  - tablette-tableau-de-bord.png
+  - telephone-tableau-de-bord.png
+  - three-quarter-panneau-eau.png
+  - three-quarter-panneau-son.png
+  - three-quarter-tableau-de-bord-alerte.png
+  - three-quarter-tableau-de-bord.png
+- Graine par défaut. CI de la PR : job « captures sous 5 angles » vert.

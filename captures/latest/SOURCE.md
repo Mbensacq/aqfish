@@ -1,7 +1,12 @@
-# Captures c207
-- Branche : cycle/c207-lot-dette-tableau-de-bord
-- PR : #598
-- Commit : 5670b473c401dd4594b47d347f681d2d505aee83
-- Graine : 42 (harnais de contrat de capture)
-- Date : 2026-11-13, rendu logiciel SwiftShader
-- Angles principaux (three-quarter, front, side, top) identiques octet pour octet à latest (c206).
+# Captures c208
+- Branche : cycle/c208-journal-hysteresis, PR #601, commit ccaab1e
+- 5 angles (bassin, eau froide, paludarium, récif) régénérés : 144 images identiques octet pour octet à la série c207 (le journal est hors rendu).
+- Le délai de 9 min a coupé la série : 7 images reprises de c207 (non régénérées) :
+  - SOURCE.md
+  - tablette-tableau-de-bord.png
+  - telephone-tableau-de-bord.png
+  - three-quarter-panneau-eau.png
+  - three-quarter-panneau-son.png
+  - three-quarter-tableau-de-bord-alerte.png
+  - three-quarter-tableau-de-bord.png
+- Graine par défaut. CI de la PR : job « captures sous 5 angles » vert.
