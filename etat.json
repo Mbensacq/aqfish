@@ -7611,6 +7611,12 @@
           "debut": "2026-11-13T05:40:39.889Z",
           "fin": "2026-11-13T05:42:17.271Z",
           "note": "Rétro #603 ; issue #588 (bug 900×700, S) ; sprint 31 planifié (#604-#607) ; PR roadmap ouverte"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-13T05:42:48.142Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
