@@ -7571,10 +7571,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-13T02:43:45.751Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-13T02:44:11.125Z",
+          "note": "Issue #599 : journal, hystérésis des alertes, appariement des bacs (S)"
         }
       },
       "metriques": {}
