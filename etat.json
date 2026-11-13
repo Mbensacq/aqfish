@@ -7712,7 +7712,7 @@
       "type": "fonctionnalite",
       "issue": 604,
       "pr": 616,
-      "version": null,
+      "version": "v1.19.2",
       "phases": {
         "planif": {
           "statut": "termine",
