@@ -53,6 +53,7 @@ describe('parseCaptureParams', () => {
       waterTest: null,
       finRot: false,
       velvet: false,
+      dead: false,
       fungus: false,
       dropsy: null,
       fry: false,
@@ -267,6 +268,15 @@ describe('parseCaptureParams', () => {
     }
     expect(parseCaptureParams('?capture=1').ich).toBe(false);
     expect(DEFAULT_CAPTURE_PARAMS.ich).toBe(false);
+  });
+
+  it('lit le corps : mort=1 seulement (#582)', () => {
+    expect(parseCaptureParams('?capture=1&mort=1').dead).toBe(true);
+    expect(parseCaptureParams('?mort=1').dead).toBe(true);
+    for (const value of ['0', 'oui', '', '2']) {
+      expect(parseCaptureParams(`?capture=1&mort=${value}`).dead).toBe(false);
+    }
+    expect(parseCaptureParams('?capture=1').dead).toBe(false);
   });
 
   it('lit le velours : velours=1 seulement (#532)', () => {

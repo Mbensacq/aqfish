@@ -429,6 +429,25 @@ const MAINTENANCE: readonly GuideEntry[] = [
     ],
     `${S} 12 (approximation de jeu ; durée d’éclairage non vérifiée)`,
   ),
+  entry(
+    'animal-mort',
+    'Animal mort',
+    [
+      [
+        'Causes',
+        'avec l’option « Mortalité », un animal resté longtemps très affaibli : maladie non soignée, faim, ammoniaque ou nitrites trop hauts',
+      ],
+      [
+        'Éviter',
+        'soigner dès les premiers signes, nourrir peu mais régulièrement, garder l’eau propre',
+      ],
+      [
+        'Gestes',
+        'retirer le corps à l’épuisette (un clic dessus) : laissé dans l’eau, il fait monter l’ammoniaque',
+      ],
+    ],
+    'approximation de jeu (délais et pollution non vérifiés dans docs/SOINS.md)',
+  ),
 ];
 
 const PAGES: Readonly<Record<GuidePage, readonly GuideEntry[]>> = Object.freeze({

@@ -30,6 +30,7 @@ import {
 import { copyFirstTankPath, readFirstTankPath, type FirstTankPathState } from './first-tank-path';
 import { copyMaintenance, readMaintenance, type MaintenanceState } from './maintenance';
 import { copyFeeder, hasFeeder, readFeeder, type FeederState } from './auto-feeder';
+import { DEAD_MAX_AGE, isDeadAge, type DeadAnimal } from './mortality';
 import { copySavedWaterHistory, readWaterHistory, type SavedWaterHistory } from './water-history';
 import { copySavedJournal, readJournal, type SavedJournal } from './journal';
 import { FOOD_MAX_FLOAT_SECONDS, FOOD_MIN_FLOAT_SECONDS, FOOD_SINK_SPEED, MAX_FOOD } from './food';
@@ -210,6 +211,10 @@ export interface SavedWorld {
   readonly firstTankPath?: FirstTankPathState;
   /** Distributeur automatique (#583) : absent des sauvegardes antérieures et sans distributeur. */
   readonly feeder?: FeederState;
+  /** Mortalité activée (#582) : absente des sauvegardes antérieures, jamais écrite à faux. */
+  readonly mortality?: true;
+  /** Corps des animaux morts (#582) : absents des sauvegardes antérieures, jamais écrits vides. */
+  readonly dead?: readonly (SavedFish & { readonly deadFor: number })[];
 }
 
 /** Contenu d'une sauvegarde (schéma 1). */
@@ -347,25 +352,7 @@ export function savedWorld(world: World): SavedWorld {
     nextFishId: world.nextFishId,
     nextFoodId: world.nextFoodId,
     decor: world.decor.map((item) => ({ ...item })),
-    fish: world.entities.map((fish) => {
-      const saved: Record<string, number | string> = { id: fish.id, species: fish.species };
-      for (const key of FISH_NUMBER_KEYS) {
-        saved[key] = fish[key];
-      }
-      saved['health'] = fish.health;
-      for (const { field } of DISEASES) {
-        // Maladies (table `DISEASES`, issue #562) : écrites seulement pour un animal malade.
-        const progress = fish[field];
-        if (progress !== undefined) {
-          saved[field] = progress;
-        }
-      }
-      if (fish.growth !== undefined) {
-        // Alevin (issue #459) : âge écrit seulement pour un alevin.
-        saved['growth'] = fish.growth;
-      }
-      return saved as unknown as SavedFish;
-    }),
+    fish: world.entities.map(savedFish),
     food: world.food.map((pellet) => ({ ...pellet })),
     water: copyWater(world.water),
     ...(world.careMode === undefined ? {} : { careMode: world.careMode }),
@@ -382,7 +369,34 @@ export function savedWorld(world: World): SavedWorld {
       ? {}
       : { firstTankPath: copyFirstTankPath(world.firstTankPath) }),
     ...(world.feeder === undefined ? {} : { feeder: copyFeeder(world.feeder) }),
+    ...(world.mortality === true ? { mortality: true } : {}),
+    ...(world.dead === undefined || world.dead.length === 0
+      ? {}
+      : {
+          dead: world.dead.map((body) => ({ ...savedFish(body), deadFor: body.deadFor })),
+        }),
   };
+}
+
+/** Poisson enregistré (schéma 1) : champs numériques, santé, maladies et âge d'alevin. */
+function savedFish(fish: Fish): SavedFish {
+  const saved: Record<string, number | string> = { id: fish.id, species: fish.species };
+  for (const key of FISH_NUMBER_KEYS) {
+    saved[key] = fish[key];
+  }
+  saved['health'] = fish.health;
+  for (const { field } of DISEASES) {
+    // Maladies (table `DISEASES`, issue #562) : écrites seulement pour un animal malade.
+    const progress = fish[field];
+    if (progress !== undefined) {
+      saved[field] = progress;
+    }
+  }
+  if (fish.growth !== undefined) {
+    // Alevin (issue #459) : âge écrit seulement pour un alevin.
+    saved['growth'] = fish.growth;
+  }
+  return saved as unknown as SavedFish;
 }
 
 /**
@@ -595,6 +609,12 @@ export function parseWorldBody(
   if (feeder !== null && !hasFeeder(environment)) {
     problems.push(`distributeur impossible dans l’environnement ${environment}`);
   }
+  // Mortalité (#582) : option absente, aucun décès ; corps absents, aucun.
+  const mortalityValue = own(value, 'mortality');
+  if (mortalityValue !== undefined && mortalityValue !== true) {
+    problems.push(`mortality doit valoir true (reçu : ${describe(mortalityValue)})`);
+  }
+  const dead = parseDeadList(own(value, 'dead'), place, nextFishId, problems, careMode);
   // Eau (#206) : absente, eau saine (celle de `createWorld`) ; présente, validée (pH absent :
   // celui de l'eau neuve de l'environnement, #236).
   const waterValue = own(value, 'water');
@@ -640,7 +660,44 @@ export function parseWorldBody(
   if (eggs.length > 0) {
     world.eggs = eggs;
   }
+  if (mortalityValue === true) {
+    world.mortality = true;
+  }
+  if (dead.length > 0) {
+    world.dead = dead;
+  }
   return world;
+}
+
+/**
+ * Corps d'une sauvegarde (#582) : liste facultative de poissons enregistrés (mêmes règles que
+ * `fish`) portant chacun un âge `deadFor` valide (`isDeadAge`).
+ */
+function parseDeadList(
+  value: unknown,
+  place: Place,
+  nextFishId: unknown,
+  problems: string[],
+  careMode: CareMode | undefined,
+): DeadAnimal[] {
+  if (value === undefined) {
+    return [];
+  }
+  const before = problems.length;
+  const bodies = parseFishList(value, place, nextFishId, problems, careMode);
+  if (problems.length > before) {
+    return [];
+  }
+  const dead: DeadAnimal[] = [];
+  (value as unknown[]).forEach((item, i) => {
+    const age = own(item as Record<string, unknown>, 'deadFor');
+    if (!isDeadAge(age)) {
+      problems.push(`corps ${i} : deadFor hors de [0, ${DEAD_MAX_AGE}]`);
+      return;
+    }
+    dead.push({ ...bodies[i], deadFor: age });
+  });
+  return dead;
 }
 
 /**

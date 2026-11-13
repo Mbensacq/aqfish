@@ -288,6 +288,9 @@ test.describe('Captures', () => {
     // Distributeur automatique (#583) : petit boîtier gris sur le bord arrière gauche du bac.
     { name: 'three-quarter-distributeur', query: 'distributeur=9,18' },
     { name: 'side-distributeur', query: 'distributeur=9,18&camera=side' },
+    // Animal mort (#582) : corps grisé, ventre en l'air, remonté flotter sous la surface.
+    { name: 'side-mort', query: 'mort=1&camera=side' },
+    { name: 'front-mort', query: 'mort=1&camera=front' },
   ] as const;
   for (const { name, query } of DAY_CAPTURES) {
     test(`angle ${name}`, async ({ page }) => {

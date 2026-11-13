@@ -142,6 +142,7 @@ const TOPICS: Readonly<Record<WhyTopicId, WhyTopic>> = {
     title: 'La santé des animaux',
     paragraphs: [
       'Dans le jeu, la santé baisse quand quelque chose ne va pas (eau mauvaise, faim, pH hors plage) et remonte seule quand tout est corrigé.',
+      'Avec l’option « Mortalité », un animal resté longtemps très affaibli peut mourir : soigner tôt, nourrir et garder l’eau propre l’évite. Un corps laissé dans l’eau la pollue : le retirer d’un clic, à l’épuisette.',
       'Un animal réellement malade justifie un vétérinaire : ce jeu n’est pas un avis vétérinaire.',
     ],
     status: SIMPLIFICATION,

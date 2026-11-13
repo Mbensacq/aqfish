@@ -6,6 +6,14 @@ import {
 import { assertSeed } from '../core/random/prng';
 import { createWalker, stepWalker, type WalkerGround } from './axolotl';
 import { createFrog, stepFrog } from './frog';
+import {
+  deadBody,
+  deadLoad,
+  diesThisStep,
+  stepDeadInPlace,
+  toxicWater,
+  type DeadAnimal,
+} from './mortality';
 import { behaviorTarget, hasLandedFood, speciesBehavior, type BehaviorContext } from './behaviors';
 import { bubbleSourceFor, fillBubbles, type BubbleBuffer } from './bubbles';
 import { addRivalSteering, enforceRivalDistance, hasRivals } from './compatibility';
@@ -295,6 +303,17 @@ export interface World {
    * (bac par défaut, anciennes sauvegardes) ; le monde avance alors exactement comme avant.
    */
   readonly feeder?: FeederState;
+  /**
+   * Mortalité activée (issue #582, `sim/mortality.ts`, ADR 0137) : absente, aucun animal ne
+   * meurt et le monde avance exactement comme avant ; jamais enregistrée à `false`.
+   */
+  readonly mortality?: true;
+  /**
+   * Corps des animaux morts (issue #582), dans l'ordre des décès : ils ne nagent plus,
+   * flottent ou reposent au fond et polluent l'eau jusqu'à leur retrait (`removeDeadInPlace`).
+   * Absents tant qu'aucun corps n'est dans le bac.
+   */
+  readonly dead?: readonly DeadAnimal[];
 }
 
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
@@ -1062,7 +1081,7 @@ function stepInPlace(world: MutableWorld, dt: number, clock: SimClock): void {
   stepWaterInPlace(
     world.water as MutableWaterState,
     dt,
-    waterLoad(fishes),
+    waterLoad(fishes) + deadLoad(world.dead),
     waterLiters(environmentWater(place)),
     targetTemperature(world.water, world.environment),
   );
@@ -1162,12 +1181,95 @@ function stepInPlace(world: MutableWorld, dt: number, clock: SimClock): void {
     world.water.ph,
     catappaActive(world.water.catappa),
   );
+  // Mortalité (issue #582) : corps du bac, puis décès sur la santé de fin de pas ; sans corps
+  // ni mortalité activée, rien n'est calculé (monde d'avant au bit près).
+  if (world.dead !== undefined) {
+    stepDeadInPlace(world.dead, dt, (body) => boundsAt(body.species, place, key).hard.maxY);
+  }
+  if (world.mortality === true) {
+    stepMortalityInPlace(world, dt);
+  }
   // Mise bas (issue #459) : au dernier pas de chaque portée seulement, sur la santé et l'eau
   // de fin de pas ; aucun tirage pris aux générateurs des poissons.
   stepBroodInPlace(world);
   // Ponte des corydoras (issue #478) : prédation et éclosion des œufs du bac, puis ponte au
   // dernier pas de chaque période ; sans œuf ni ponte, rien n'est écrit.
   stepEggsInPlace(world, dt);
+}
+
+/**
+ * Décès du pas (`diesThisStep`, `sim/mortality.ts`), **en modifiant** `world` : chaque animal
+ * qui meurt passe de `entities` à `dead` (`deadBody`). Aucune allocation si personne ne meurt.
+ */
+function stepMortalityInPlace(world: MutableWorld, dt: number): void {
+  const toxic = toxicWater(world.water);
+  const fishes = world.entities;
+  let deaths = 0;
+  for (const fish of fishes) {
+    if (diesThisStep(fish, toxic, dt, world.seed, world.tick)) {
+      deaths += 1;
+    }
+  }
+  if (deaths === 0) {
+    return;
+  }
+  const living: Entity[] = [];
+  const dead = world.dead === undefined ? [] : [...world.dead];
+  for (const fish of fishes) {
+    if (diesThisStep(fish, toxic, dt, world.seed, world.tick)) {
+      dead.push(deadBody(fish));
+    } else {
+      living.push(fish);
+    }
+  }
+  world.entities = living;
+  world.dead = dead;
+}
+
+/**
+ * Active ou coupe la mortalité (issue #582), **en modifiant** `world`. Coupée, les corps déjà
+ * présents restent jusqu'à leur retrait.
+ */
+export function setWorldMortalityInPlace(world: MutableWorld, enabled: boolean): void {
+  if (enabled) {
+    world.mortality = true;
+  } else {
+    delete world.mortality;
+  }
+}
+
+/**
+ * Fait mourir sur-le-champ l'animal d'identifiant `id` (paramètre de capture `mort=1`, tests),
+ * **en modifiant** `world` ; renvoie faux si aucun animal vivant ne porte cet identifiant.
+ */
+export function killWorldAnimalInPlace(world: MutableWorld, id: number): boolean {
+  const index = world.entities.findIndex((fish) => fish.id === id);
+  if (index < 0) {
+    return false;
+  }
+  const fish = world.entities[index];
+  world.entities = world.entities.filter((_, i) => i !== index);
+  world.dead = [...(world.dead ?? []), deadBody(fish)];
+  return true;
+}
+
+/**
+ * Retire à l'épuisette le corps d'identifiant `id` (issue #582), **en modifiant** `world` :
+ * sa pollution cesse aussitôt. Renvoie faux si aucun corps ne porte cet identifiant. Le champ
+ * `dead` disparaît avec le dernier corps.
+ */
+export function removeDeadInPlace(world: MutableWorld, id: number): boolean {
+  const dead = world.dead;
+  if (dead === undefined || !dead.some((body) => body.id === id)) {
+    return false;
+  }
+  const rest = dead.filter((body) => body.id !== id);
+  if (rest.length === 0) {
+    delete world.dead;
+  } else {
+    world.dead = rest;
+  }
+  return true;
 }
 
 /**
