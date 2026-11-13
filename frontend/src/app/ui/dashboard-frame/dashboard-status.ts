@@ -302,6 +302,15 @@ const ICONS: Readonly<Record<GaugeLevel, readonly (readonly [number, number])[]>
             <p class="status__log" data-maintenance-log>Aucune action pour l’instant</p>
           }
         </div>
+        <!-- Séance guidée (#604) : dans le détail déjà déplié, pas dans le bandeau (PIEGES). -->
+        <button
+          type="button"
+          class="status__why status__session"
+          data-care-session-open
+          (click)="openCareSession()"
+        >
+          Entretenir le bac
+        </button>
       </div>
     }
     @if (review(); as points) {
@@ -465,6 +474,8 @@ export class DashboardStatus {
 
   /** Bouton « Fait » d'une tâche sans geste dans le jeu (filtre, test de l'eau, #513). */
   readonly maintenanceDone = output<MaintenanceTask>();
+  /** « Entretenir le bac » (#604) : ouvre la séance d'entretien guidée. */
+  readonly careSessionRequested = output<void>();
 
   /** Calendrier d'entretien déplié (#513) ; une alerte dépliée le replie, et inversement. */
   readonly maintenanceOpen = signal(false);
@@ -596,6 +607,12 @@ export class DashboardStatus {
     this.expanded.update((open) => (open === id ? null : id));
     this.maintenanceOpen.set(false);
     this.reviewOpen.set(false);
+  }
+
+  /** « Entretenir le bac » (#604) : replie le calendrier pour laisser voir le bac. */
+  openCareSession(): void {
+    this.maintenanceOpen.set(false);
+    this.careSessionRequested.emit();
   }
 
   /** Déplie ou replie le calendrier d'entretien. */

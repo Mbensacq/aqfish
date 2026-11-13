@@ -1,0 +1,91 @@
+// Séance d'entretien guidée (#604) : carte non modale à gauche, sous « Réglages », là où la
+// scène est vide sur grand écran (le bac reste visible pour la raclette) ; couleurs de
+// l'interface (`DASHBOARD_COLORS`). Plus étroit, centrée à mi-hauteur, comme le bandeau d'un
+// lien partagé.
+@use '../dashboard-frame/dashboard-surface' as dashboard;
+
+:host {
+  position: fixed;
+  z-index: 2;
+  top: 96px;
+  left: 16px;
+  width: min(320px, calc(100vw - 32px));
+
+  @include dashboard.font;
+
+  @media (max-width: 1100px) {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+}
+
+.care-session {
+  padding: 10px 14px 12px;
+  border: 1px solid color-mix(in srgb, var(--dashboard-ink) 24%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--dashboard-background) 92%, transparent);
+  color: var(--dashboard-ink);
+}
+
+.care-session__count {
+  margin: 0;
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.care-session__title {
+  margin: 2px 0 4px;
+  font-size: 16px;
+}
+
+.care-session__why,
+.care-session__hint {
+  margin: 0 0 8px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.care-session__hint {
+  font-weight: 600;
+}
+
+.care-session__summary {
+  margin: 0 0 8px;
+  padding-left: 18px;
+  font-size: 13px;
+}
+
+.care-session__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.care-session__button {
+  flex: 1 1 auto;
+  min-height: 36px;
+  padding: 4px 10px;
+  border: 1px solid color-mix(in srgb, var(--dashboard-ink) 30%, transparent);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--dashboard-ink) 10%, transparent);
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    background: color-mix(in srgb, var(--dashboard-ink) 18%, transparent);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--dashboard-ink);
+    outline-offset: 2px;
+  }
+
+  &--quiet {
+    flex: 0 0 auto;
+    background: transparent;
+    font-weight: 400;
+  }
+}

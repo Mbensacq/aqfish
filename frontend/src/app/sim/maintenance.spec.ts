@@ -188,3 +188,40 @@ describe('calendrier d’entretien (#513)', () => {
     }
   });
 });
+
+describe('calendrier : vitres suivies après une séance (#604)', () => {
+  it('calendrier sans vitres : relu tel quel, vitres ni affichées ni échues', () => {
+    const problems: string[] = [];
+    const old = readMaintenance(JSON.parse(JSON.stringify(initialMaintenance(0))), problems);
+    expect(problems).toEqual([]);
+    expect(old?.lastDone).not.toHaveProperty('glass');
+    const readout = maintenanceReadout(old!, 100 * DAY);
+    expect(readout.items.map((item) => item.task)).not.toContain('glass');
+  });
+
+  it('vitres échues 14 jours après leur nettoyage, affichées en dernier', () => {
+    const state = maintenanceDone(initialMaintenance(0), 'glass', DAY);
+    const items = maintenanceReadout(state, 15 * DAY, ['waterChange']).items;
+    expect(items.map((item) => item.task)).toEqual(['waterChange', 'glass']);
+    expect(items[1]).toMatchObject({ overdue: true, text: 'À faire' });
+    expect(maintenanceReadout(state, 2 * DAY, ['glass']).items).toHaveLength(1);
+  });
+
+  it('temps des vitres invalide : calendrier refusé', () => {
+    for (const glass of [-1, 'demain', Number.NaN, null]) {
+      const problems: string[] = [];
+      const saved = {
+        ...initialMaintenance(0),
+        lastDone: { ...initialMaintenance(0).lastDone, glass },
+      };
+      expect(readMaintenance(saved, problems)).toBeNull();
+      expect(problems).toEqual(['maintenance.lastDone.glass doit être un temps']);
+    }
+  });
+
+  it('journal : une action « vitres » se relit', () => {
+    const problems: string[] = [];
+    const saved = { ...initialMaintenance(0), log: [{ task: 'glass', time: 5 }] };
+    expect(readMaintenance(saved, problems)?.log).toEqual([{ task: 'glass', time: 5 }]);
+  });
+});

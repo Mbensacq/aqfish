@@ -50,6 +50,8 @@ import {
   lightingOf,
   scrapeAlgaeInPlace,
   scrapedPatch,
+  scrapedPatchesAlong,
+  type ScraperRay,
   setLightingInPlace,
   stepAlgaeInPlace,
   type AlgaePatch,
@@ -1826,6 +1828,22 @@ export function scrapeWorldAlgaeInPlace(
 ): number {
   const index = scrapedPatch(worldAlgaePatches(world), world.water.algae, origin, direction);
   return index >= 0 && scrapeAlgaeInPlace(world.water as MutableWaterState, index) ? index : -1;
+}
+
+/**
+ * Passage de raclette le long d'une trajectoire (#604), **en modifiant** `world` : chaque
+ * plaque visible touchée par l'un des rayons `rays` est retirée (`scrapedPatchesAlong`).
+ * Renvoie les indices des plaques retirées, dans l'ordre du passage.
+ */
+export function scrapeWorldAlgaeAlongInPlace(
+  world: MutableWorld,
+  rays: readonly ScraperRay[],
+): number[] {
+  const touched = scrapedPatchesAlong(worldAlgaePatches(world), world.water.algae, rays);
+  for (const index of touched) {
+    scrapeAlgaeInPlace(world.water as MutableWaterState, index);
+  }
+  return touched;
 }
 
 /**
