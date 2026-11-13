@@ -6,6 +6,12 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Coder pendant le `npm run verify` de `main` : un second arbre de travail** (cycle 211,
+  #582) : `git worktree add ../aqfish-cNNN -b cycle/cNNN-… origin/main` puis
+  `cp -al frontend/node_modules ../aqfish-cNNN/frontend/` (liens physiques : quelques
+  secondes, aucun `npm ci`) ; tests unitaires et build y tournent en parallèle. Les e2e et
+  captures partagent le port 4300 : arrêter le `ng serve` de l'autre arbre avant d'en lancer
+  (`pkill -f 'ng serve'`), sinon Playwright teste l'autre code. (2026-11-13)
 - **Bac rangé : son monde est un nouvel objet à chaque rattrapage** (cycle 207, #592) :
   `stepRoom` (et un transfert) recopie le monde de chaque bac rangé ; un état de l'hôte gardé
   dans une `WeakMap<World, …>` (observation du journal, cache) est perdu au retour sur le bac.
