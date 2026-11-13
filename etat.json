@@ -7661,10 +7661,10 @@
           "note": "Verdict OK, 0 bug, CI verte, specs cadrage #610 vertes en local, captures publiées (c210, identiques à c209)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-13T12:23:30.512Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-13T13:59:26.003Z",
+          "note": "PR #613 fusionnée → v1.19.0 (release+deploy OK) ; e2e 3/7 relancé (plafond 45 min, #600) ; 4 issues fermées ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
