@@ -7704,6 +7704,24 @@
         }
       },
       "metriques": {}
+    },
+    "212": {
+      "numero": 212,
+      "date": "2026-11-13",
+      "debut": "2026-11-13T17:57:23.071Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-13T17:57:23.071Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
