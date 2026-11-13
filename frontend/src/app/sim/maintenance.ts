@@ -10,16 +10,26 @@ import { DEFAULT_DAY_LENGTH_SECONDS } from './daylight';
  * `sim/dashboard-alerts.ts`. Une valeur non finie ne donne ni retard ni action enregistrée.
  */
 
-/** Tâche d'entretien. */
-export type MaintenanceTask = 'waterChange' | 'filter' | 'waterTest' | 'prune';
+/** Tâche suivie dès le début du calendrier. */
+export type CoreMaintenanceTask = 'waterChange' | 'filter' | 'waterTest' | 'prune';
 
-/** Tâches, dans l'ordre d'affichage. */
-export const MAINTENANCE_TASKS: readonly MaintenanceTask[] = [
+/**
+ * Tâche d'entretien. `glass` (vitres, #604) n'est suivie qu'après une première séance
+ * guidée (`sim/care-session.ts`) : absente d'un calendrier, elle n'est ni affichée ni échue,
+ * et les sauvegardes d'avant restent valides.
+ */
+export type MaintenanceTask = CoreMaintenanceTask | 'glass';
+
+/** Tâches suivies dès le début, dans l'ordre d'affichage. */
+export const MAINTENANCE_TASKS: readonly CoreMaintenanceTask[] = [
   'waterChange',
   'filter',
   'waterTest',
   'prune',
 ];
+
+/** Toutes les tâches connues (journal, relecture). */
+export const ALL_MAINTENANCE_TASKS: readonly MaintenanceTask[] = [...MAINTENANCE_TASKS, 'glass'];
 
 /** Libellé affiché de chaque tâche. */
 export const MAINTENANCE_LABELS: Readonly<Record<MaintenanceTask, string>> = {
@@ -27,6 +37,7 @@ export const MAINTENANCE_LABELS: Readonly<Record<MaintenanceTask, string>> = {
   filter: 'Nettoyage du filtre',
   waterTest: 'Test de l’eau',
   prune: 'Taille des plantes',
+  glass: 'Nettoyage des vitres',
 };
 
 /**
@@ -38,6 +49,7 @@ export const MAINTENANCE_PERIOD_DAYS: Readonly<Record<MaintenanceTask, number>> 
   filter: 30,
   waterTest: 7,
   prune: 14,
+  glass: 14,
 };
 
 /** Durée d'un jour de jeu, en secondes simulées (celle des traitements). */
@@ -55,8 +67,11 @@ export interface MaintenanceLogEntry {
 
 /** Calendrier d'un bac. */
 export interface MaintenanceState {
-  /** Temps simulé de la dernière fois que chaque tâche a été faite (ou du début du suivi). */
-  readonly lastDone: Readonly<Record<MaintenanceTask, number>>;
+  /**
+   * Temps simulé de la dernière fois que chaque tâche a été faite (ou du début du suivi) ;
+   * `glass` seulement après un premier nettoyage des vitres (#604).
+   */
+  readonly lastDone: Readonly<Record<CoreMaintenanceTask, number>> & { readonly glass?: number };
   /** Dernières actions, de la plus récente à la plus ancienne. */
   readonly log: readonly MaintenanceLogEntry[];
 }
@@ -90,7 +105,7 @@ export interface MaintenanceReadout {
 
 /** Vrai si `task` est une tâche connue. */
 export function isMaintenanceTask(task: unknown): task is MaintenanceTask {
-  return typeof task === 'string' && (MAINTENANCE_TASKS as readonly string[]).includes(task);
+  return typeof task === 'string' && (ALL_MAINTENANCE_TASKS as readonly string[]).includes(task);
 }
 
 /** Calendrier neuf : le suivi de chaque tâche commence au temps `time`. */
@@ -126,7 +141,8 @@ export function maintenanceItem(
   task: MaintenanceTask,
   time: number,
 ): MaintenanceItem {
-  const elapsed = time - state.lastDone[task];
+  // Tâche jamais suivie (vitres avant la première séance) : comptée depuis maintenant.
+  const elapsed = time - (state.lastDone[task] ?? time);
   const period = MAINTENANCE_PERIOD_DAYS[task] * MAINTENANCE_DAY_SECONDS;
   const label = MAINTENANCE_LABELS[task];
   // Non fini (ou horloge antérieure à l'action) : ni retard, ni échéance avancée.
@@ -145,13 +161,20 @@ export function maintenanceItem(
   };
 }
 
-/** Relevé du calendrier au temps `time`, pour les tâches `tasks` qui concernent ce bac. */
+/**
+ * Relevé du calendrier au temps `time`, pour les tâches `tasks` qui concernent ce bac, plus
+ * les vitres si elles sont suivies (`lastDone.glass`, #604), en dernier.
+ */
 export function maintenanceReadout(
   state: MaintenanceState,
   time: number,
   tasks: readonly MaintenanceTask[] = MAINTENANCE_TASKS,
 ): MaintenanceReadout {
-  const items = tasks.map((task) => maintenanceItem(state, task, time));
+  const shown =
+    state.lastDone.glass !== undefined && !tasks.includes('glass')
+      ? [...tasks, 'glass' as const]
+      : tasks;
+  const items = shown.map((task) => maintenanceItem(state, task, time));
   return {
     items,
     due: items.filter((item) => item.overdue).map((item) => item.task),
@@ -234,6 +257,11 @@ export function readMaintenance(value: unknown, problems: string[]): Maintenance
     problems.push('maintenance.lastDone doit donner un temps à chaque tâche');
     return null;
   }
+  const glass = saved['glass'];
+  if (glass !== undefined && !isTime(glass)) {
+    problems.push('maintenance.lastDone.glass doit être un temps');
+    return null;
+  }
   if (!Array.isArray(log) || log.length > MAINTENANCE_LOG_SIZE) {
     problems.push(`maintenance.log doit être une liste de ${MAINTENANCE_LOG_SIZE} actions au plus`);
     return null;
@@ -258,6 +286,7 @@ export function readMaintenance(value: unknown, problems: string[]): Maintenance
       filter: saved['filter'] as number,
       waterTest: saved['waterTest'] as number,
       prune: saved['prune'] as number,
+      ...(glass === undefined ? {} : { glass }),
     },
     log: entries,
   };

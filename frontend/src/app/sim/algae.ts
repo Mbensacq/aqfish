@@ -303,6 +303,43 @@ export function scrapedPatch(
   return best;
 }
 
+/** Rayon de la caméra, repère du bac : origine et direction. */
+export interface ScraperRay {
+  readonly origin: readonly [number, number, number];
+  readonly direction: readonly [number, number, number];
+}
+
+/**
+ * Plaques touchées par un passage de raclette (#604) : la trajectoire est la suite des rayons
+ * `rays` (un par point du geste), chacun retirant la plaque visible qu'il touche la première
+ * (`scrapedPatch`, portée `SCRAPER_REACH`). Une plaque retirée ne compte qu'une fois et ne
+ * cache plus celle qui est derrière. Indices dans l'ordre du passage ; ne modifie rien.
+ */
+export function scrapedPatchesAlong(
+  patches: readonly AlgaePatch[],
+  algae: readonly number[] | undefined,
+  rays: readonly ScraperRay[],
+): number[] {
+  const touched: number[] = [];
+  if (algae === undefined) {
+    return touched;
+  }
+  const cover = [...algae];
+  for (const ray of rays) {
+    const index = scrapedPatch(patches, cover, ray.origin, ray.direction);
+    if (index >= 0) {
+      touched.push(index);
+      cover[index] = 0;
+    }
+  }
+  return touched;
+}
+
+/** Nombre de plaques visibles (couverture d'au moins `ALGAE_VISIBLE_COVERAGE`). */
+export function visibleAlgaeCount(algae: readonly number[] | undefined): number {
+  return algae === undefined ? 0 : algae.filter((c) => c >= ALGAE_VISIBLE_COVERAGE).length;
+}
+
 /** Rayon dessiné d'une plaque de couverture `cover` : croît comme la racine de la surface. */
 export function drawnRadius(patch: AlgaePatch, cover: number): number {
   return patch.radius * Math.sqrt(clamp01(cover));
