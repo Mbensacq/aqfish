@@ -7683,6 +7683,12 @@
           "debut": "2026-11-13T14:00:03.643Z",
           "fin": "2026-11-13T14:00:27.516Z",
           "note": "Issue #582 : mortalité et épuisette lot 1 (M), dette 29 ≤ 30"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-13T14:01:00.923Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
