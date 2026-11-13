@@ -333,6 +333,7 @@ import {
   observeJournal,
   restoreJournal,
   savedJournal,
+  tankWorldPairs,
   treatmentEntry,
   watchJournal,
   waterChangeEntry,
@@ -2923,10 +2924,7 @@ export class AquariumHost {
     const synced = syncRoom(this.roomState, world, stashedList(this.stash, world.environment));
     const room = stepRoom(synced.room, pending, this.dayClock, synced.selectedTankId);
     // Le bac rangé garde sa dernière observation du journal sous son nouveau monde (#592).
-    carryJournalWatches(
-      this.journalWatches,
-      synced.room.tanks.map((tank, i) => [tank.world, room.tanks[i]!.world] as const),
-    );
+    carryJournalWatches(this.journalWatches, tankWorldPairs(synced.room.tanks, room.tanks));
     this.stash = stashFromList(
       room.tanks
         .filter((tank) => tank.placement === null && tank.id !== synced.selectedTankId)

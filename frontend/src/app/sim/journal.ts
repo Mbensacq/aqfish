@@ -9,9 +9,9 @@ import { TREATMENT_KINDS, TREATMENTS, type TreatmentKind } from './treatment';
 
 /**
  * Journal du bac (issue #581) : événements datés en temps simulé (maladie déclarée, guérison,
- * traitement, ponte, éclosion, changement d'eau, alerte franchie — #592), gardés dans l'ordre chronologique et plafonnés
- * à `JOURNAL_CAPACITY` entrées (les plus anciennes partent). Fonctions pures de ce qu'on leur
- * donne, sans hasard ni horloge réelle.
+ * traitement, ponte, éclosion, changement d'eau, alerte franchie — #592), gardés dans l'ordre
+ * chronologique et plafonnés à `JOURNAL_CAPACITY` entrées (les plus anciennes partent).
+ * Fonctions pures de ce qu'on leur donne, sans hasard ni horloge réelle.
  *
  * Comme l'historique de l'eau (ADR 0118), le journal vit hors du monde pendant la partie
  * (aucun pas n'y touche, la simulation reste identique au bit près) ; sa forme de données
@@ -20,6 +20,14 @@ import { TREATMENT_KINDS, TREATMENTS, type TreatmentKind } from './treatment';
 
 /** Nombre maximal d'entrées gardées. */
 export const JOURNAL_CAPACITY = 200;
+
+/**
+ * Délai, en secondes simulées, avant qu'une alerte revenue soit notée de nouveau avec la même
+ * gravité (#599) : un jour simulé. Une alerte qui oscille (faim entre deux repas, température
+ * au bord d'une bande) écrit ainsi au plus une entrée par gravité et par jour, et ne chasse
+ * pas du journal les événements marquants.
+ */
+export const JOURNAL_ALERT_REPEAT_SECONDS = DEFAULT_DAY_LENGTH_SECONDS;
 
 /** Version du champ `journal` de la sauvegarde. */
 export const JOURNAL_VERSION = 1;
@@ -161,6 +169,11 @@ export interface JournalWatch {
   eggs: Map<SpeciesId, number>;
   /** Alertes suivies présentes, avec leur gravité (#592). */
   alerts: Map<JournalAlertId, AlertSeverity>;
+  /**
+   * Temps de la dernière entrée écrite pour chaque alerte et gravité (#599), clé
+   * `alerte:gravité` : retient les retours trop rapprochés (`JOURNAL_ALERT_REPEAT_SECONDS`).
+   */
+  readonly alertNoted: Map<string, number>;
 }
 
 /** Ce qu'`observeJournal` lit du monde. */
@@ -181,7 +194,12 @@ export function watchJournal(world: JournalSubject): JournalWatch {
   for (const fish of world.entities) {
     diseases.set(fish.id, diseaseMask(fish));
   }
-  return { diseases, eggs: eggCounts(world.eggs), alerts: alertLevels(world.alerts) };
+  return {
+    diseases,
+    eggs: eggCounts(world.eggs),
+    alerts: alertLevels(world.alerts),
+    alertNoted: new Map(),
+  };
 }
 
 /**
@@ -191,7 +209,8 @@ export function watchJournal(world: JournalSubject): JournalWatch {
  * (ajout au panneau, transfert) est retenu sans événement, sauf s'il arrive malade. Une
  * alerte suivie (`JOURNAL_ALERT_LABELS`) qui apparaît, ou passe d'« attention » à
  * « critique », est notée avec sa gravité (#592) ; une alerte qui s'apaise ou disparaît
- * n'écrit rien. Ordre stable : maladies dans l'ordre de `DISEASES`, puis pontes, puis
+ * n'écrit rien, et une alerte revenue moins de `JOURNAL_ALERT_REPEAT_SECONDS` après sa dernière
+ * entrée de même gravité n'est pas renotée (#599). Ordre stable : maladies dans l'ordre de `DISEASES`, puis pontes, puis
  * éclosions, puis alertes dans l'ordre de `JOURNAL_ALERT_LABELS`.
  */
 export function observeJournal(watch: JournalWatch, world: JournalSubject): JournalEntry[] {
@@ -248,7 +267,13 @@ export function observeJournal(watch: JournalWatch, world: JournalSubject): Jour
   for (const [id, severity] of alerts) {
     const before = watch.alerts.get(id);
     if (before === undefined || (before === 'attention' && severity === 'critique')) {
-      events.push({ time, kind: 'alerte', detail: id, severity });
+      const key = `${id}:${severity}`;
+      const noted = watch.alertNoted.get(key);
+      // Un temps revenu en arrière (bac rechargé) ne retient rien.
+      if (noted === undefined || time < noted || time - noted >= JOURNAL_ALERT_REPEAT_SECONDS) {
+        events.push({ time, kind: 'alerte', detail: id, severity });
+        watch.alertNoted.set(key, time);
+      }
     }
   }
   watch.alerts = alerts;
@@ -274,6 +299,25 @@ export function carryJournalWatches<T extends object>(
       watches.delete(before);
     }
   }
+}
+
+/**
+ * Paires (ancien monde, nouveau monde) pour `carryJournalWatches`, appariées par identifiant
+ * de bac (#599) et non par rang : un bac absent de l'une des listes n'a pas de paire (sa
+ * veille n'est pas reportée, le bac repart d'un premier regard muet).
+ */
+export function tankWorldPairs<T>(
+  before: readonly { readonly id: number; readonly world: T }[],
+  after: readonly { readonly id: number; readonly world: T }[],
+): (readonly [T, T])[] {
+  const next = new Map(after.map((tank) => [tank.id, tank.world] as const));
+  const pairs: (readonly [T, T])[] = [];
+  for (const tank of before) {
+    if (next.has(tank.id)) {
+      pairs.push([tank.world, next.get(tank.id)!] as const);
+    }
+  }
+  return pairs;
 }
 
 /** Lignes de l'interface, de la plus récente à la plus ancienne. */

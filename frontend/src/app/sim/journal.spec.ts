@@ -1,6 +1,7 @@
 import type { Egg } from './eggs';
 import {
   JOURNAL_CAPACITY,
+  JOURNAL_ALERT_REPEAT_SECONDS,
   JOURNAL_VERSION,
   addJournalEntry,
   carryJournalWatches,
@@ -13,6 +14,7 @@ import {
   readJournal,
   restoreJournal,
   savedJournal,
+  tankWorldPairs,
   treatmentEntry,
   watchJournal,
   waterChangeEntry,
@@ -220,10 +222,75 @@ describe('journal du bac (#581)', () => {
       ]);
       expect(observeJournal(watch, at(30, [{ id: 'nitrite', severity: 'attention' }]))).toEqual([]);
       expect(observeJournal(watch, at(40, []))).toEqual([]);
-      // Revenue après avoir disparu : notée de nouveau.
-      expect(observeJournal(watch, at(50, [{ id: 'nitrite', severity: 'attention' }]))).toEqual([
-        { time: 50, kind: 'alerte', detail: 'nitrite', severity: 'attention' },
+      // Revenue le même jour après avoir disparu : pas renotée (#599).
+      expect(observeJournal(watch, at(50, [{ id: 'nitrite', severity: 'attention' }]))).toEqual([]);
+      expect(observeJournal(watch, at(60, []))).toEqual([]);
+      // Revenue un jour simulé après sa dernière entrée : notée de nouveau.
+      const later = 10 + JOURNAL_ALERT_REPEAT_SECONDS;
+      expect(observeJournal(watch, at(later, [{ id: 'nitrite', severity: 'attention' }]))).toEqual([
+        { time: later, kind: 'alerte', detail: 'nitrite', severity: 'attention' },
       ]);
+    });
+
+    describe('hystérésis des alertes qui oscillent (#599)', () => {
+      it('oscillation rapide sur trois jours : une entrée par jour simulé, au plus', () => {
+        const watch = watchJournal(at(0, []));
+        const journal = createJournal();
+        const days = 3;
+        const end = days * JOURNAL_ALERT_REPEAT_SECONDS;
+        for (let time = 1, on = true; time < end; time += 30, on = !on) {
+          const alerts: JournalAlert[] = on ? [{ id: 'hunger', severity: 'attention' }] : [];
+          for (const entry of observeJournal(watch, at(time, alerts))) {
+            addJournalEntry(journal, entry);
+          }
+        }
+        expect(journal.entries.length).toBe(days);
+        const perDay = new Map<number, number>();
+        for (const entry of journal.entries) {
+          const day = journalDay(entry.time);
+          perDay.set(day, (perDay.get(day) ?? 0) + 1);
+        }
+        expect([...perDay.values()].every((n) => n <= 1)).toBe(true);
+      });
+
+      it('gravités distinctes : l’aggravation reste notée le jour même, une seule fois', () => {
+        const watch = watchJournal(at(0, []));
+        const attention: JournalAlert[] = [{ id: 'temperature', severity: 'attention' }];
+        const critique: JournalAlert[] = [{ id: 'temperature', severity: 'critique' }];
+        expect(observeJournal(watch, at(1, attention)).map((e) => e.severity)).toEqual([
+          'attention',
+        ]);
+        expect(observeJournal(watch, at(2, critique)).map((e) => e.severity)).toEqual(['critique']);
+        expect(observeJournal(watch, at(3, attention))).toEqual([]);
+        expect(observeJournal(watch, at(4, critique))).toEqual([]);
+        expect(observeJournal(watch, at(5, []))).toEqual([]);
+        expect(observeJournal(watch, at(6, critique))).toEqual([]);
+      });
+
+      it('alertes distinctes : chacune a son propre délai', () => {
+        const watch = watchJournal(at(0, []));
+        expect(observeJournal(watch, at(1, [{ id: 'ph', severity: 'attention' }]))).toHaveLength(1);
+        expect(observeJournal(watch, at(2, []))).toEqual([]);
+        expect(
+          observeJournal(watch, at(3, [{ id: 'nitrate', severity: 'attention' }])),
+        ).toHaveLength(1);
+      });
+
+      it('cas limites : pile un jour après, notée ; temps revenu en arrière, notée', () => {
+        const watch = watchJournal(at(0, []));
+        const alert: JournalAlert[] = [{ id: 'algae', severity: 'attention' }];
+        const t0 = 100;
+        expect(observeJournal(watch, at(t0, alert))).toHaveLength(1);
+        expect(observeJournal(watch, at(t0 + 1, []))).toEqual([]);
+        expect(observeJournal(watch, at(t0 + JOURNAL_ALERT_REPEAT_SECONDS - 1, alert))).toEqual([]);
+        // Dernière entrée à t0 : un jour plein est passé depuis.
+        const back = watchJournal(at(0, []));
+        expect(observeJournal(back, at(t0, alert))).toHaveLength(1);
+        expect(observeJournal(back, at(t0 + 1, []))).toEqual([]);
+        expect(observeJournal(back, at(t0 + JOURNAL_ALERT_REPEAT_SECONDS, alert))).toHaveLength(1);
+        expect(observeJournal(back, at(t0 + JOURNAL_ALERT_REPEAT_SECONDS + 1, []))).toEqual([]);
+        expect(observeJournal(back, at(5, alert))).toHaveLength(1);
+      });
     });
 
     it('alertes de maladie, de traitement et de santé : déjà au journal autrement', () => {
@@ -315,6 +382,37 @@ describe('journal du bac (#581)', () => {
         { time: 600, kind: 'maladie', detail: 'velvet', count: 1 },
         { time: 600, kind: 'ponte', detail: 'corydora', count: 1 },
       ]);
+    });
+
+    it('appariement par identifiant de bac (#599) : ordre changé, bac retiré ou ajouté', () => {
+      const [a, b, c, d] = [{}, {}, {}, {}];
+      const [a2, b2, d2] = [{}, {}, {}];
+      const pairs = tankWorldPairs(
+        [
+          { id: 0, world: a },
+          { id: 1, world: b },
+          { id: 2, world: c },
+        ],
+        [
+          { id: 1, world: b2 },
+          { id: 0, world: a2 },
+          { id: 3, world: d2 },
+        ],
+      );
+      expect(pairs).toEqual([
+        [a, a2],
+        [b, b2],
+      ]);
+      expect(pairs[0]![0]).toBe(a);
+      expect(pairs[0]![1]).toBe(a2);
+      expect(pairs[1]![1]).toBe(b2);
+      expect(tankWorldPairs([], [{ id: 0, world: d }])).toEqual([]);
+      const watches = new WeakMap<object, JournalWatch>();
+      const watch = watchJournal(subject(fishes()));
+      watches.set(b, watch);
+      carryJournalWatches(watches, pairs);
+      expect(watches.get(b2)).toBe(watch);
+      expect(watches.has(a2)).toBe(false);
     });
 
     it('cas limite, premier affichage : aucun report, le bac reste à un premier regard muet', () => {
