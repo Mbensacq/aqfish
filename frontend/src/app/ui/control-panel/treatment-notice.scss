@@ -21,7 +21,7 @@
     bottom: 0;
     left: calc(100% + #{layout.$edge});
     box-sizing: border-box;
-    width: 240px;
+    width: layout.$treatment-notice-width;
     padding: 6px 10px;
     border: 1px solid rgb(232 230 227 / 8%);
     border-radius: 10px;

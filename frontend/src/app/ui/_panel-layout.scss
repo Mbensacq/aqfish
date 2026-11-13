@@ -28,12 +28,17 @@ $commands-help-width: 300px;
 /// Largeur du panneau « Réglages » en deux colonnes (deux colonnes de 260 px, écart de 12 px).
 $control-panel-two-columns-width: 532px;
 
+/// Largeur de la bulle d'un geste de soin, posée à droite du panneau en deux colonnes (#490).
+$treatment-notice-width: 240px;
+
 /// Largeur d'écran à partir de laquelle « Réglages » passe en deux colonnes (écran peu haut,
-/// ≤ 900 px) : il faut que le panneau large et l'aide-mémoire déplié tiennent côte à côte,
-/// séparés de `$edge` (#588). 59 + 532 + 12 + 300 + 12 = 915 px. À 900 px (ancien seuil), le
-/// panneau finissait à 591 px et l'aide-mémoire commençait à 588 px : ils se recouvraient.
+/// ≤ 900 px) : il faut que le panneau large, la bulle d'un geste de soin et l'aide-mémoire
+/// déplié tiennent côte à côte, séparés de `$edge` (#588, #610).
+/// 59 + 532 + 12 + 240 + 12 + 300 + 12 = 1167 px. À 900 px (seuil d'avant #588), le panneau
+/// recouvrait l'aide-mémoire ; de 915 à 1166 px (seuil de #588), la bulle le recouvrait.
+/// Plus étroit, une colonne qui défile, où le message reste une ligne de la section.
 $control-panel-two-columns-min-width: $control-panel-left + $control-panel-two-columns-width +
-  $edge + $commands-help-width + $edge;
+  $edge + $treatment-notice-width + $edge + $commands-help-width + $edge;
 
 /// Requête média du panneau « Réglages » en deux colonnes, partagée par la bulle des soins.
 $control-panel-two-columns-query: '(min-width: #{$control-panel-two-columns-min-width}) and (max-height: 900px)';

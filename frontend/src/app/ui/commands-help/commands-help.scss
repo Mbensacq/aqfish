@@ -144,14 +144,17 @@
 
 // Tablette (640 à 1099 px) : le tableau de bord de l'eau occupe la ligne sous les boutons
 // (12 + 44 px, haut de 67 px, dashboard-frame.scss) ; l'aide-mémoire, déplié par défaut,
-// commence dessous pour ne pas le masquer (#256, ADR 0059).
+// commence dessous pour ne pas le masquer (#256, ADR 0059). Le bandeau bas (santé, alertes)
+// y occupe toute la largeur, à 64 px du bas : l'aide-mémoire s'arrête 8 px au-dessus (#610).
+// Sa hauteur (34 à 90 px selon la largeur et la police) est publiée par le bandeau
+// (`--aqfish-status-height`, dashboard-status.ts) ; sans elle, l'ancienne marge (12 px).
 @media (min-width: 640px) and (max-width: 1099px) {
   :host {
     top: 129px;
   }
 
   .commands-help {
-    max-height: calc(100vh - 129px - 76px);
+    max-height: max(120px, calc(100vh - 129px - 64px - var(--aqfish-status-height, 4px) - 8px));
   }
 }
 

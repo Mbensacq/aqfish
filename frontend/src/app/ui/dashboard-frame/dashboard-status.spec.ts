@@ -18,6 +18,7 @@ import {
   alertWikiLabel,
   DashboardStatus,
   SEVERITY_LEVELS,
+  STATUS_HEIGHT_PROPERTY,
 } from './dashboard-status';
 import {
   initialMaintenance,
@@ -616,5 +617,94 @@ describe('DashboardFrame : simulation et alertes (#260)', () => {
     fixture.componentInstance.hour.set(Number.NaN);
     await fixture.whenStable();
     expect(sim().querySelector('[data-dashboard-hour]')!.textContent!.trim()).toBe('–');
+  });
+});
+
+describe('hauteur du bandeau publiée pour « Commandes » (#610)', () => {
+  /** Observateur factice : jsdom n'a pas de `ResizeObserver` ; le rappel est appelé à la main. */
+  class FakeObserver {
+    static last: FakeObserver | null = null;
+    readonly observed: Element[] = [];
+    disconnected = false;
+    constructor(readonly callback: () => void) {
+      FakeObserver.last = this;
+    }
+    observe(target: Element): void {
+      this.observed.push(target);
+    }
+    disconnect(): void {
+      this.disconnected = true;
+    }
+  }
+
+  const root = (): CSSStyleDeclaration => document.documentElement.style;
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    FakeObserver.last = null;
+    root().removeProperty(STATUS_HEIGHT_PROPERTY);
+  });
+
+  async function mount(): Promise<{
+    fixture: ComponentFixture<StatusHost>;
+    element: HTMLElement;
+    flush: () => void;
+  }> {
+    const fixture = TestBed.createComponent(StatusHost);
+    const flush = (): void => {
+      fixture.changeDetectorRef.markForCheck();
+      fixture.detectChanges();
+    };
+    flush();
+    await fixture.whenStable();
+    const element = fixture.debugElement.query(By.directive(DashboardStatus))
+      .nativeElement as HTMLElement;
+    return { fixture, element, flush };
+  }
+
+  it('publie la hauteur du bandeau replié à la racine, et la retire à la destruction', async () => {
+    vi.stubGlobal('ResizeObserver', FakeObserver);
+    const { fixture, element } = await mount();
+    const observer = FakeObserver.last!;
+    expect(observer.observed).toEqual([element]);
+    vi.spyOn(element, 'getBoundingClientRect').mockReturnValue(new DOMRect(12, 602, 876, 34));
+    observer.callback();
+    expect(root().getPropertyValue(STATUS_HEIGHT_PROPERTY)).toBe('34px');
+    // Deux lignes (largeur plus petite, police plus large) : la valeur suit.
+    vi.spyOn(element, 'getBoundingClientRect').mockReturnValue(new DOMRect(12, 574, 876, 62));
+    observer.callback();
+    expect(root().getPropertyValue(STATUS_HEIGHT_PROPERTY)).toBe('62px');
+    fixture.destroy();
+    expect(observer.disconnected).toBe(true);
+    expect(root().getPropertyValue(STATUS_HEIGHT_PROPERTY)).toBe('');
+  });
+
+  it('un détail déplié (bilan) ne change pas la hauteur publiée', async () => {
+    vi.stubGlobal('ResizeObserver', FakeObserver);
+    const { fixture, element, flush } = await mount();
+    const observer = FakeObserver.last!;
+    const rect = vi.spyOn(element, 'getBoundingClientRect');
+    rect.mockReturnValue(new DOMRect(12, 602, 876, 34));
+    observer.callback();
+    fixture.componentInstance.reviewOf.set(() => []);
+    flush();
+    element.querySelector<HTMLElement>('[data-review]')!.click();
+    flush();
+    rect.mockReturnValue(new DOMRect(12, 300, 876, 336));
+    observer.callback();
+    expect(root().getPropertyValue(STATUS_HEIGHT_PROPERTY)).toBe('34px');
+    element.querySelector<HTMLElement>('[data-review]')!.click();
+    flush();
+    rect.mockReturnValue(new DOMRect(12, 574, 876, 62));
+    observer.callback();
+    expect(root().getPropertyValue(STATUS_HEIGHT_PROPERTY)).toBe('62px');
+  });
+
+  it('sans ResizeObserver (jsdom), rien n’est publié ni levé', async () => {
+    vi.stubGlobal('ResizeObserver', undefined);
+    const { fixture } = await mount();
+    expect(root().getPropertyValue(STATUS_HEIGHT_PROPERTY)).toBe('');
+    fixture.destroy();
+    expect(root().getPropertyValue(STATUS_HEIGHT_PROPERTY)).toBe('');
   });
 });
