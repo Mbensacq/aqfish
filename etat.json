@@ -7751,10 +7751,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-13T23:46:13.593Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-13T23:46:50.998Z",
+          "note": "Issue #617 : lot de dette #617 + #615 (suites de revue c211/c212), 31 dette > 30 (S)"
         }
       },
       "metriques": {}
