@@ -399,12 +399,11 @@ describe('journal du bac (#581)', () => {
           { id: 3, world: d2 },
         ],
       );
-      expect(pairs).toEqual([
-        [a, a2],
-        [b, b2],
-      ]);
+      // Mondes factices vides, donc égaux entre eux : seule l'identité prouve l'appariement (#602).
+      expect(pairs).toHaveLength(2);
       expect(pairs[0]![0]).toBe(a);
       expect(pairs[0]![1]).toBe(a2);
+      expect(pairs[1]![0]).toBe(b);
       expect(pairs[1]![1]).toBe(b2);
       expect(tankWorldPairs([], [{ id: 0, world: d }])).toEqual([]);
       const watches = new WeakMap<object, JournalWatch>();
