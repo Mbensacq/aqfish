@@ -7841,10 +7841,10 @@
           "note": "Verdict OK, 0 bug, unitaires+build OK, e2e séance 5/5 (verify complet trop long), 5 angles identiques, captures c215 publiées ; revue PR non postée (refus de l'environnement)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-14T13:07:13.397Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-14T14:30:32.454Z",
+          "note": "PR #621 fusionnée → v1.19.5 (release+deploy OK, CI main verte) ; dette #622 ; suppression de branche refusée"
         }
       },
       "metriques": {}
