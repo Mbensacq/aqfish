@@ -75,5 +75,5 @@ export function rinseFilterInPlace(
 
 /** Consigne de l'étape « filtre » : efficacité actuelle et choix à faire. */
 export function filterStepHint(water: Pick<WaterState, 'filter'>): string {
-  return `Bactéries du filtre : ${filterMaturityPercent(water)} %. Où rincer l’éponge ?`;
+  return `Bactéries du filtre : ${filterMaturityPercent(water)} %. Où rincer l’éponge\u00a0?`;
 }
