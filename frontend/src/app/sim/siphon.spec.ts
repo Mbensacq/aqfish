@@ -25,6 +25,7 @@ import {
   freshWaterStepHint,
   freshWaterWarnings,
   freshWaterWarningTexts,
+  hasWaterToSiphon,
   MAX_SIPHON_SHARE,
   pouredShare,
   sharePercent,
@@ -93,33 +94,45 @@ describe('point du sol visé par le tuyau (#605)', () => {
 
 describe('volume siphonné et jauge (#605)', () => {
   it('zéro point : rien retiré, jauge à 0 %', () => {
-    expect(siphonedShare(0, 0, 60)).toBe(0);
-    expect(sharePercent(siphonedShare(0, 0, 60))).toBe(0);
+    expect(siphonedShare(0, 0, true)).toBe(0);
+    expect(sharePercent(siphonedShare(0, 0, true))).toBe(0);
     expect(siphonStepHint(0)).toContain('Promenez le tuyau');
   });
 
   it('chaque point retire une part fixe ; jauge en pourcentage entier', () => {
-    const share = siphonedShare(0, 100, 60);
+    const share = siphonedShare(0, 100, true);
     expect(share).toBeCloseTo(100 * SIPHON_SHARE_PER_POINT, 10);
     expect(sharePercent(share)).toBe(Math.round(100 * SIPHON_SHARE_PER_POINT * 100));
-    expect(siphonedShare(share, 50, 60)).toBeCloseTo(150 * SIPHON_SHARE_PER_POINT, 10);
+    expect(siphonedShare(share, 50, true)).toBeCloseTo(150 * SIPHON_SHARE_PER_POINT, 10);
   });
 
   it('plafond : jamais plus que MAX_SIPHON_SHARE', () => {
-    expect(siphonedShare(0, 1e9, 60)).toBe(MAX_SIPHON_SHARE);
-    expect(siphonedShare(MAX_SIPHON_SHARE, 10, 60)).toBe(MAX_SIPHON_SHARE);
-    expect(siphonedShare(5, 0, 60)).toBe(MAX_SIPHON_SHARE);
+    expect(siphonedShare(0, 1e9, true)).toBe(MAX_SIPHON_SHARE);
+    expect(siphonedShare(MAX_SIPHON_SHARE, 10, true)).toBe(MAX_SIPHON_SHARE);
+    expect(siphonedShare(5, 0, true)).toBe(MAX_SIPHON_SHARE);
   });
 
   it('bac vide (sans eau) : rien retiré', () => {
     for (const liters of [0, -1, Number.NaN, Number.POSITIVE_INFINITY]) {
-      expect(siphonedShare(0.2, 100, liters)).toBe(0);
+      expect(hasWaterToSiphon(liters)).toBe(false);
+      expect(siphonedShare(0.2, 100, hasWaterToSiphon(liters))).toBe(0);
     }
+    expect(siphonedShare(0.2, 100, false)).toBe(0);
+  });
+
+  it('bac avec eau : même petit volume, le siphon retire sa part (#620)', () => {
+    for (const liters of [Number.MIN_VALUE, 0.5, 60, 1e6]) {
+      expect(hasWaterToSiphon(liters)).toBe(true);
+    }
+    expect(siphonedShare(0, 10, hasWaterToSiphon(0.5))).toBeCloseTo(
+      10 * SIPHON_SHARE_PER_POINT,
+      10,
+    );
   });
 
   it('entrées invalides : ni NaN ni recul', () => {
-    expect(siphonedShare(Number.NaN, 10, 60)).toBeCloseTo(10 * SIPHON_SHARE_PER_POINT, 10);
-    expect(siphonedShare(0.1, -5, 60)).toBe(0.1);
+    expect(siphonedShare(Number.NaN, 10, true)).toBeCloseTo(10 * SIPHON_SHARE_PER_POINT, 10);
+    expect(siphonedShare(0.1, -5, true)).toBe(0.1);
     expect(sharePercent(Number.NaN)).toBe(0);
     expect(sharePercent(2)).toBe(100);
   });

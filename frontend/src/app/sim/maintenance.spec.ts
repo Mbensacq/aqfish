@@ -118,6 +118,15 @@ describe('calendrier d’entretien (#513)', () => {
     expect(sameMaintenanceReadout(withLog, { ...base, log: [{ ...line }] })).toBe(true);
   });
 
+  it('listes vides : égales entre elles, différentes d’une liste non vide (#520)', () => {
+    const empty: MaintenanceReadout = { items: [], due: [], log: [] };
+    const base = maintenanceReadout(state, 0);
+    expect(sameMaintenanceReadout(empty, { items: [], due: [], log: [] })).toBe(true);
+    expect(sameMaintenanceReadout(empty, { ...empty, items: base.items })).toBe(false);
+    expect(sameMaintenanceReadout({ ...empty, items: base.items }, empty)).toBe(false);
+    expect(sameMaintenanceReadout(empty, { ...empty, due: [base.items[0]!.task] })).toBe(false);
+  });
+
   it('distingue une tâche changée ou une entrée absente (#520)', () => {
     const base = maintenanceReadout(state, 0);
     const item = base.items[0]!;

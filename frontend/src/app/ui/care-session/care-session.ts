@@ -16,13 +16,14 @@ import {
   siphonWarning,
 } from '../../sim/siphon';
 
+import { DASHBOARD_COLORS } from '../dashboard-frame/dashboard-frame';
+
 /** Températures proposées pour le seau, en écart avec le bac (°C, #605). */
 const BUCKET_GAPS = [
   { gap: -6, label: 'Froide (6 °C de moins)' },
   { gap: 0, label: 'À la température du bac' },
   { gap: 6, label: 'Chaude (6 °C de plus)' },
 ] as const;
-import { DASHBOARD_COLORS } from '../dashboard-frame/dashboard-frame';
 
 /**
  * Séance d'entretien guidée (#604, ADR 0138) : étape affichée (numéro, titre court, phrase
