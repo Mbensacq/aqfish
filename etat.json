@@ -7776,6 +7776,24 @@
         }
       },
       "metriques": {}
+    },
+    "214": {
+      "numero": 214,
+      "date": "2026-11-14",
+      "debut": "2026-11-14T05:24:34.787Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-14T05:24:34.787Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
