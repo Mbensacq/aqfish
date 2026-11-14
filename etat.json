@@ -7911,6 +7911,12 @@
           "debut": "2026-11-14T17:33:42.387Z",
           "fin": "2026-11-14T18:09:42.919Z",
           "note": "Verdict OK, 0 bug, CI 11/11, 135 captures identiques à c216, publiées (c217)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-14T18:10:19.632Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
