@@ -36,8 +36,9 @@ s'enlevaient jusqu'ici qu'une par clic.
    d'effacement partiel, la couverture reste une valeur par plaque.
 5. **Interface** : « Entretenir le bac » est dans le calendrier d'entretien déplié du tableau
    de bord (aucun bouton de plus dans le bandeau ni dans « Réglages », `docs/PIEGES.md`) ; la
-   séance est une carte non modale en haut au centre, le bac reste manipulable. Absente en
-   mode décor (le tableau de bord y est remplacé par le badge) et en capture.
+   séance est une carte non modale en haut à gauche (captures du cycle 212, #617), le bac
+   reste manipulable. Absente en mode décor (le tableau de bord y est remplacé par le badge)
+   et en capture.
 
 ## Options écartées
 

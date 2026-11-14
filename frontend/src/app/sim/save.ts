@@ -614,7 +614,7 @@ export function parseWorldBody(
   if (mortalityValue !== undefined && mortalityValue !== true) {
     problems.push(`mortality doit valoir true (reçu : ${describe(mortalityValue)})`);
   }
-  const dead = parseDeadList(own(value, 'dead'), place, nextFishId, problems, careMode);
+  const dead = parseDeadList(own(value, 'dead'), place, nextFishId, problems, careMode, fish);
   // Eau (#206) : absente, eau saine (celle de `createWorld`) ; présente, validée (pH absent :
   // celui de l'eau neuve de l'environnement, #236).
   const waterValue = own(value, 'water');
@@ -679,6 +679,7 @@ function parseDeadList(
   nextFishId: unknown,
   problems: string[],
   careMode: CareMode | undefined,
+  living: readonly { readonly id: number }[],
 ): DeadAnimal[] {
   if (value === undefined) {
     return [];
@@ -688,11 +689,18 @@ function parseDeadList(
   if (problems.length > before) {
     return [];
   }
+  // `netTarget` et `removeDeadInPlace` travaillent par identifiant (#615) : un corps ne peut
+  // pas porter celui d'un animal vivant.
+  const livingIds = new Set(living.map((animal) => animal.id));
   const dead: DeadAnimal[] = [];
   (value as unknown[]).forEach((item, i) => {
     const age = own(item as Record<string, unknown>, 'deadFor');
     if (!isDeadAge(age)) {
       problems.push(`corps ${i} : deadFor hors de [0, ${DEAD_MAX_AGE}]`);
+      return;
+    }
+    if (livingIds.has(bodies[i].id)) {
+      problems.push(`corps ${i} : identifiant ${bodies[i].id} déjà porté par un animal vivant`);
       return;
     }
     dead.push({ ...bodies[i], deadFor: age });

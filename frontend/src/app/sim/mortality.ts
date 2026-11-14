@@ -147,6 +147,41 @@ export function diesThisStep(
   return chance > 0 && mortalityDraw(seed, tick, animal.id) < chance;
 }
 
+/** Partage des animaux d'un pas où au moins un meurt (`splitDeaths`). */
+export interface DeathSplit<T> {
+  readonly living: T[];
+  readonly dying: T[];
+}
+
+/**
+ * Décès du pas (#615) : un seul tirage `dies` par animal (`diesThisStep` par défaut, ordre de
+ * `animals`). `null`, sans aucune allocation, si personne ne meurt ; sinon les vivants et les
+ * mourants, chacun dans l'ordre d'origine.
+ */
+export function splitDeaths<T extends MortalitySubject>(
+  animals: readonly T[],
+  toxic: boolean,
+  dt: number,
+  seed: number,
+  tick: number,
+  dies: typeof diesThisStep = diesThisStep,
+): DeathSplit<T> | null {
+  let first = 0;
+  while (first < animals.length && !dies(animals[first], toxic, dt, seed, tick)) {
+    first += 1;
+  }
+  if (first === animals.length) {
+    return null;
+  }
+  const living = animals.slice(0, first);
+  const dying = [animals[first]];
+  for (let i = first + 1; i < animals.length; i++) {
+    const animal = animals[i];
+    (dies(animal, toxic, dt, seed, tick) ? dying : living).push(animal);
+  }
+  return { living, dying };
+}
+
 /**
  * Corps de `fish`, mort à l'instant : à plat (inclinaison nulle), position précédente égale à
  * la position. Vitesse et virage sont gardés tels quels (bornes de la sauvegarde) mais ne

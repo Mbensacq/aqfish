@@ -66,6 +66,7 @@ import {
   AquariumView,
   createWebGLRenderer,
   type AquariumRendererFactory,
+  type StrokePoint,
 } from '../../render/aquarium-view';
 import { presetTransitionSeconds } from '../../render/camera-presets';
 import { ReducedMotionState } from '../reduced-motion/reduced-motion-state';
@@ -376,12 +377,13 @@ import {
 } from '../../sim/treatment-text';
 import { DEFAULT_WATER_SAMPLE, waterSample, type WaterSample } from '../../sim/water-dashboard';
 import {
-  ALGAE_VISIBLE_COVERAGE,
   algaeCoverage,
   DEFAULT_LIGHTING_HOURS,
   hasAlgae,
   lightingOf,
   sampleAlgae,
+  visibleAlgaeCount,
+  type ScraperRay,
 } from '../../sim/algae';
 import { feederReadout, hasFeeder, type FeederReadout } from '../../sim/auto-feeder';
 import {
@@ -1941,14 +1943,24 @@ export class AquariumHost {
     }
   }
 
-  /** Passage de raclette (#604) : retire les plaques sous le point, enregistre s'il y en a. */
-  private scrapeStrokeAt(clientX: number, clientY: number): void {
+  /**
+   * Passage de raclette (#604) : retire les plaques sous les points d'un événement du geste
+   * (un seul appel à `scrapeWorldAlgaeAlongInPlace`, #617), enregistre s'il y en a.
+   */
+  private scrapeStroke(points: readonly StrokePoint[]): void {
     const world = this.currentWorld;
-    const ray = this.view?.pickRay(clientX, clientY);
-    if (!world || !ray || this.capture) {
+    const view = this.view;
+    if (!world || !view || this.capture) {
       return;
     }
-    if (scrapeWorldAlgaeAlongInPlace(world, [ray]).length > 0) {
+    const rays: ScraperRay[] = [];
+    for (const point of points) {
+      const ray = view.pickRay(point.x, point.y);
+      if (ray) {
+        rays.push(ray);
+      }
+    }
+    if (rays.length > 0 && scrapeWorldAlgaeAlongInPlace(world, rays).length > 0) {
       this.exposeWater();
       this.saveNow();
       this.scheduleFrame();
@@ -4209,7 +4221,7 @@ export class AquariumHost {
     view.setDecorDragEnabled(this.decorEditing());
     // Séance d'entretien (#604) : glisser racle à l'étape « vitres ».
     view.setStrokeEnabled(this.careSession()?.step === 'vitres');
-    this.viewCleanups.push(view.onStroke((x, y) => this.scrapeStrokeAt(x, y)));
+    this.viewCleanups.push(view.onStroke((points) => this.scrapeStroke(points)));
     this.decorDrag = null;
     this.roomDrag = null;
     this.viewCleanups.push(
@@ -4893,7 +4905,7 @@ export class AquariumHost {
     const hours = lightingOf(world.water);
     this.lighting.set(hours);
     this.lampOn.set(lampOnOf(world.water));
-    const visible = (world.water.algae ?? []).filter((c) => c >= ALGAE_VISIBLE_COVERAGE).length;
+    const visible = visibleAlgaeCount(world.water.algae);
     this.visibleAlgae.set(visible);
     const percent = Math.round(algaeCoverage(world.water.algae) * 100);
     this.host.nativeElement.setAttribute(ALGAE_ATTRIBUTE, `${visible};${percent};${hours}`);

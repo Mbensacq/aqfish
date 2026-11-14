@@ -9,7 +9,7 @@ import { createFrog, stepFrog } from './frog';
 import {
   deadBody,
   deadLoad,
-  diesThisStep,
+  splitDeaths,
   stepDeadInPlace,
   toxicWater,
   type DeadAnimal,
@@ -1200,32 +1200,17 @@ function stepInPlace(world: MutableWorld, dt: number, clock: SimClock): void {
 }
 
 /**
- * Décès du pas (`diesThisStep`, `sim/mortality.ts`), **en modifiant** `world` : chaque animal
- * qui meurt passe de `entities` à `dead` (`deadBody`). Aucune allocation si personne ne meurt.
+ * Décès du pas (`splitDeaths`, `sim/mortality.ts`), **en modifiant** `world` : chaque animal
+ * qui meurt passe de `entities` à `dead` (`deadBody`), un seul tirage par animal. Aucune
+ * allocation si personne ne meurt.
  */
 function stepMortalityInPlace(world: MutableWorld, dt: number): void {
-  const toxic = toxicWater(world.water);
-  const fishes = world.entities;
-  let deaths = 0;
-  for (const fish of fishes) {
-    if (diesThisStep(fish, toxic, dt, world.seed, world.tick)) {
-      deaths += 1;
-    }
-  }
-  if (deaths === 0) {
+  const split = splitDeaths(world.entities, toxicWater(world.water), dt, world.seed, world.tick);
+  if (split === null) {
     return;
   }
-  const living: Entity[] = [];
-  const dead = world.dead === undefined ? [] : [...world.dead];
-  for (const fish of fishes) {
-    if (diesThisStep(fish, toxic, dt, world.seed, world.tick)) {
-      dead.push(deadBody(fish));
-    } else {
-      living.push(fish);
-    }
-  }
-  world.entities = living;
-  world.dead = dead;
+  world.entities = split.living;
+  world.dead = [...(world.dead ?? []), ...split.dying.map(deadBody)];
 }
 
 /**
