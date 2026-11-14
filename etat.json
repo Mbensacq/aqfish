@@ -7823,10 +7823,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-14T10:24:37.210Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-14T10:25:00.591Z",
+          "note": "Issue #620 : lot dette entretien (suites #619 + #520 pts 1-2) (S)"
         }
       },
       "metriques": {}
