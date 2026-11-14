@@ -7803,6 +7803,12 @@
           "debut": "2026-11-14T07:08:06.971Z",
           "fin": "2026-11-14T07:50:12.258Z",
           "note": "Verdict OK, 0 bug, unitaires 5227 OK, e2e séance 5/5, 5 angles identiques à c213, captures c214 publiées (5 angles)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-14T07:50:46.130Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
