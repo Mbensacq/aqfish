@@ -7848,6 +7848,24 @@
         }
       },
       "metriques": {}
+    },
+    "216": {
+      "numero": 216,
+      "date": "2026-11-14",
+      "debut": "2026-11-14T14:31:06.901Z",
+      "type": "retro",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-14T14:31:06.901Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
