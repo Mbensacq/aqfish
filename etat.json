@@ -7899,6 +7899,12 @@
           "debut": "2026-11-14T16:41:28.479Z",
           "fin": "2026-11-14T16:41:57.893Z",
           "note": "Issue #629 : CI Playwright vs Ubuntu 26.04, bug bloquant (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-14T16:42:30.951Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
