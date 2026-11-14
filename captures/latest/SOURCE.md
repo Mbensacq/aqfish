@@ -1,7 +1,7 @@
-# Captures c215
+# Captures c216
 
-- Branche : cycle/c215-dette-entretien
-- PR : #621
-- Commit : 7d49114
+- Branche : cycle/c216-glisse-tactile
+- PR : #628
+- Commit : 52280b9
 - Graine : celle de captures.spec.ts (défaut)
-- Série complète (145 captures) ; 5 angles identiques à latest ; seule interface-liste-bacs.png diffère au pixel, visuellement identique.
+- Série complète (138 captures) ; 5 angles identiques à latest ; deux captures nouvelles (panneau-eau, panneau-son) sans équivalent précédent.
