@@ -1,5 +1,7 @@
-Branche : cycle/c213-dette-seance-mortalite
-PR : #618
-Commit : 185b121
-Graine : celle de npm run captures (identique à c212)
-Série partielle : 143 images sur 151 (npm run captures interrompu au plafond de temps local) ; les 5 angles principaux sont complets et identiques à c212 à l'octet.
+# Série c214
+
+- Branche : cycle/c214-siphon-eau-neuve
+- PR : #619
+- Commit : 3294b2f
+- Graine : 7 (contrat de capture)
+- Série : 5 angles seulement (suite complète trop longue sur 2 cœurs), identiques octet pour octet à latest (c213)
