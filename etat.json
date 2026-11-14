@@ -7920,6 +7920,24 @@
         }
       },
       "metriques": {}
+    },
+    "218": {
+      "numero": 218,
+      "date": "2026-11-14",
+      "debut": "2026-11-14T20:52:52.351Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-14T20:52:52.351Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
