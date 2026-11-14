@@ -7787,10 +7787,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-14T05:24:34.787Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-14T05:24:56.161Z",
+          "note": "Issue #605 : Entretien lot 2, siphon et eau neuve (S)"
         }
       },
       "metriques": {}
