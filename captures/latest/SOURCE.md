@@ -1,7 +1,7 @@
-# Série c214
+# Captures c215
 
-- Branche : cycle/c214-siphon-eau-neuve
-- PR : #619
-- Commit : 3294b2f
-- Graine : 7 (contrat de capture)
-- Série : 5 angles seulement (suite complète trop longue sur 2 cœurs), identiques octet pour octet à latest (c213)
+- Branche : cycle/c215-dette-entretien
+- PR : #621
+- Commit : 7d49114
+- Graine : celle de captures.spec.ts (défaut)
+- Série complète (145 captures) ; 5 angles identiques à latest ; seule interface-liste-bacs.png diffère au pixel, visuellement identique.
