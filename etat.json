@@ -7827,6 +7827,12 @@
           "debut": "2026-11-14T10:24:37.210Z",
           "fin": "2026-11-14T10:25:00.591Z",
           "note": "Issue #620 : lot dette entretien (suites #619 + #520 pts 1-2) (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-14T10:25:41.267Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
