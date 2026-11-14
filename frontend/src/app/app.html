@@ -161,6 +161,11 @@
     <app-care-session
       [session]="aquarium.careSession()"
       [visibleAlgae]="aquarium.visibleAlgae()"
+      [conditioner]="aquarium.careConditioner()"
+      [bucketGap]="aquarium.careBucketGap()"
+      (bucketPoured)="aquarium.pourCareBucket()"
+      (conditionerChanged)="aquarium.careConditioner.set($event)"
+      (bucketGapChanged)="aquarium.careBucketGap.set($event)"
       (completed)="aquarium.completeCareSessionStep()"
       (skipped)="aquarium.skipCareSessionStep()"
       (closed)="aquarium.closeCareSession()"

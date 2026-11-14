@@ -6,6 +6,12 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Jauge affichée en pourcentage, bouton décidé sur la part brute** (cycle 214, #605) : les
+  seaux d'eau neuve (0,1 chacun) et la part siphonnée (0,002 par point) ne tombent jamais juste ;
+  « 40 % sur 40 % » pouvait cacher « Verser un seau » (pourcentages égaux) alors que la part
+  versée restait sous la part retirée, et « Le bac est plein » n'apparaissait jamais. Comparer
+  les parts brutes (`poured() < siphoned()`), plafonnées l'une par l'autre (`pouredShare`) ;
+  n'arrondir que pour l'affichage. (2026-11-14)
 - **Glisser en e2e sous le rendu logiciel : quelques passages courts, pas un balayage**
   (cycle 212, #604) : chaque `page.mouse.move` (ou `Input.dispatchTouchEvent`) attend une
   image, qui prend plusieurs secondes ; 10 lignes de 12 pas dépassaient les 3 min du test.

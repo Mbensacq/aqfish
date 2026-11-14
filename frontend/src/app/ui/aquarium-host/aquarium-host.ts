@@ -277,6 +277,8 @@ import {
   setWorldLightingInPlace,
   scrapeWorldAlgaeInPlace,
   scrapeWorldAlgaeAlongInPlace,
+  siphonWorldInPlace,
+  refillWorldWaterInPlace,
   pruneWorldPlantInPlace,
   recordWorldMaintenanceInPlace,
   worldHasPrunablePlants,
@@ -438,8 +440,11 @@ import {
   serializeCareSession,
   skipCareStep,
   startCareSession,
+  withPoured,
+  withSiphoned,
   type CareSession,
 } from '../../sim/care-session';
+import { pouredShare, siphonedShare } from '../../sim/siphon';
 
 /** Fabrique du renderer, remplaçable dans les tests (jsdom n'a pas WebGL). */
 export const AQUARIUM_RENDERER_FACTORY = new InjectionToken<AquariumRendererFactory>(
@@ -1133,6 +1138,10 @@ export class AquariumHost {
   readonly careSession = signal<CareSession | null>(null);
   /** Plaques d'algues visibles, pour la consigne de l'étape « vitres » (#604). */
   readonly visibleAlgae = signal(0);
+  /** Conditionneur versé dans le seau à l'étape « eau neuve » (#605). */
+  readonly careConditioner = signal(true);
+  /** Écart de température du seau avec le bac à l'étape « eau neuve », en °C (#605). */
+  readonly careBucketGap = signal(0);
   /** Vrai si le dernier clic sur le canvas a retiré un corps (#582) : il ne nourrit pas. */
   private netted = false;
   /** Corps exposés au dernier relevé (#582) : un décès depuis relève aussi les effectifs. */
@@ -1895,11 +1904,44 @@ export class AquariumHost {
     if (!session) {
       return;
     }
-    const task = careStepTask(session.step);
-    if (task) {
-      this.applyWaterSetting((world) => this.recordMaintenance(world, task));
+    if (session.step === 'eau') {
+      this.refillFromCareSession(session.poured ?? 0);
+    } else {
+      const task = careStepTask(session.step);
+      if (task) {
+        this.applyWaterSetting((world) => this.recordMaintenance(world, task));
+      }
     }
     this.showCareSession(completeCareStep(session));
+  }
+
+  /** Un seau d'eau neuve de plus (#605), jusqu'à remplacer l'eau retirée au siphon. */
+  pourCareBucket(): void {
+    const session = this.careSession();
+    if (session?.step === 'eau') {
+      this.showCareSession(
+        withPoured(session, pouredShare(session.poured ?? 0, session.siphoned ?? 0)),
+      );
+    }
+  }
+
+  /**
+   * Eau neuve versée (#605) : la part `share` est remplacée par l'eau du seau (conditionneur,
+   * écart de température choisis), puis calendrier, historique et journal comme le bouton
+   * « Changer l'eau ». Rien n'est versé : rien n'est enregistré.
+   */
+  private refillFromCareSession(share: number): void {
+    if (!(share > 0)) {
+      return;
+    }
+    const conditioner = this.careConditioner();
+    const gap = this.careBucketGap();
+    this.applyWaterSetting((world) => {
+      refillWorldWaterInPlace(world, share, conditioner, world.water.temperature + gap);
+      this.recordMaintenance(world, 'waterChange');
+      markWaterChange(this.waterHistoryOf(world), world.water, world.tick);
+      addJournalEntry(this.journalOf(world), waterChangeEntry(world.time));
+    });
   }
 
   /** Saute l'étape affichée (#604) : rien n'est enregistré au calendrier. */
@@ -1929,13 +1971,18 @@ export class AquariumHost {
     this.applyCareSessionTool(session);
   }
 
-  /** Raclette en main et passage autorisé à l'étape « vitres », rien sinon. */
+  /** Raclette en main à l'étape « vitres », passage autorisé aux vitres et au siphon. */
   private applyCareSessionTool(session: CareSession | null): void {
     const glass = session?.step === 'vitres';
     if (glass !== this.scraping()) {
       this.toggleScraper();
     }
-    this.view?.setStrokeEnabled(glass);
+    this.view?.setStrokeEnabled(strokeStep(session));
+    if (session?.step === 'eau' && session.poured === undefined) {
+      // Seau neuf : conditionneur versé, eau à la température du bac.
+      this.careConditioner.set(true);
+      this.careBucketGap.set(0);
+    }
     if (session) {
       this.host.nativeElement.setAttribute(CARE_SESSION_ATTRIBUTE, session.step);
     } else {
@@ -1962,6 +2009,48 @@ export class AquariumHost {
     }
     if (rays.length > 0 && scrapeWorldAlgaeAlongInPlace(world, rays).length > 0) {
       this.exposeWater();
+      this.saveNow();
+      this.scheduleFrame();
+    }
+  }
+
+  /** Geste de la séance (#604, #605) : raclette aux vitres, tuyau au siphon. */
+  private careStroke(points: readonly StrokePoint[]): void {
+    if (this.careSession()?.step === 'siphon') {
+      this.siphonStroke(points);
+    } else {
+      this.scrapeStroke(points);
+    }
+  }
+
+  /**
+   * Passage du siphon (#605) : aspire les granulés posés sous les points et compte l'eau
+   * retirée dans la séance (jauge), sans toucher à l'eau du bac avant l'eau neuve.
+   */
+  private siphonStroke(points: readonly StrokePoint[]): void {
+    const world = this.currentWorld;
+    const view = this.view;
+    const session = this.careSession();
+    if (!world || !view || this.capture || session?.step !== 'siphon') {
+      return;
+    }
+    const rays: ScraperRay[] = [];
+    for (const point of points) {
+      const ray = view.pickRay(point.x, point.y);
+      if (ray) {
+        rays.push(ray);
+      }
+    }
+    const pass = siphonWorldInPlace(world, rays);
+    if (pass.points === 0) {
+      return;
+    }
+    const liters = waterLiters(environmentWater(world));
+    this.showCareSession(
+      withSiphoned(session, siphonedShare(session.siphoned ?? 0, pass.points, liters)),
+    );
+    if (pass.food > 0) {
+      this.exposeFood();
       this.saveNow();
       this.scheduleFrame();
     }
@@ -4220,8 +4309,8 @@ export class AquariumHost {
     this.viewCleanups.push(view.onUserInteraction(() => this.activePreset.set(null)));
     view.setDecorDragEnabled(this.decorEditing());
     // Séance d'entretien (#604) : glisser racle à l'étape « vitres ».
-    view.setStrokeEnabled(this.careSession()?.step === 'vitres');
-    this.viewCleanups.push(view.onStroke((points) => this.scrapeStroke(points)));
+    view.setStrokeEnabled(strokeStep(this.careSession()));
+    this.viewCleanups.push(view.onStroke((points) => this.careStroke(points)));
     this.decorDrag = null;
     this.roomDrag = null;
     this.viewCleanups.push(
@@ -4263,7 +4352,9 @@ export class AquariumHost {
       view.onSurfaceClick((x, z) => {
         const netted = this.netted;
         this.netted = false;
-        if (!netted && !this.decorEditing() && !this.scraping() && !this.pruning()) {
+        // Tuyau du siphon en main (#605) : un clic n'ajoute pas de nourriture à aspirer.
+        const siphoning = this.careSession()?.step === 'siphon';
+        if (!netted && !siphoning && !this.decorEditing() && !this.scraping() && !this.pruning()) {
           this.feed(x, z);
         }
       }),
@@ -5040,4 +5131,9 @@ export class AquariumHost {
       resetCaptureReady(this.document);
     }
   }
+}
+
+/** Vrai à une étape de séance qui se fait d'un geste glissé (vitres, siphon). */
+function strokeStep(session: CareSession | null): boolean {
+  return session?.step === 'vitres' || session?.step === 'siphon';
 }
