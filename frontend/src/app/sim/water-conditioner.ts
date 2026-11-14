@@ -76,10 +76,15 @@ export function doseConditionerInPlace(
 
 /**
  * Part de changement d'eau `share` appliquée au chlore de `water`, **en le modifiant** : le
- * chlore présent est dilué ; avec l'eau non traitée, celle du robinet en apporte.
+ * chlore présent est dilué ; avec l'eau non traitée (`untreated`, par défaut le réglage
+ * `untreatedTap` du bac ; un seau sans conditionneur, #605), celle du robinet en apporte.
  */
-export function chlorineAfterWaterChangeInPlace(water: MutableWaterState, share: number): void {
-  const added = water.untreatedTap === true ? share * TAP_CHLORINE : 0;
+export function chlorineAfterWaterChangeInPlace(
+  water: MutableWaterState,
+  share: number,
+  untreated: boolean = water.untreatedTap === true,
+): void {
+  const added = untreated ? share * TAP_CHLORINE : 0;
   const next = Math.min(MAX_CHLORINE, (water.chlorine ?? 0) * (1 - share) + added);
   if (next >= CHLORINE_TRACE) {
     water.chlorine = next;

@@ -2,8 +2,9 @@ import { expect, test, type Page } from '@playwright/test';
 
 import { ALGAE_PATCH_COUNT } from '../src/app/sim/algae';
 import { createDayClock } from '../src/app/sim/daylight';
+import { landingAge } from '../src/app/sim/food';
 import { serializeWorld } from '../src/app/sim/save';
-import { createDefaultWorld, type MutableWorld } from '../src/app/sim/world';
+import { createDefaultWorld, feedInPlace, type MutableWorld } from '../src/app/sim/world';
 
 /**
  * Séance d'entretien guidée, lot 1 (issue #604, ADR 0138) : « Entretenir le bac » dans le
@@ -39,6 +40,35 @@ async function importAlgaeTank(page: Page): Promise<void> {
   await expect(hostEl(page)).toHaveAttribute('data-aqfish-speed', '0');
   await settings.click();
 }
+
+/**
+ * Importe le bac tropical par défaut avec des restes de nourriture posés sur une ligne du sol
+ * (z = 0) et des nitrates, simulation en pause, midi figé (siphon et eau neuve, #605).
+ */
+async function importDirtyTank(page: Page): Promise<void> {
+  const world: MutableWorld = createDefaultWorld(42);
+  for (const x of [-0.2, -0.1, 0, 0.1, 0.2]) {
+    feedInPlace(world, x, 0);
+  }
+  world.food = world.food.map((p) => ({ ...p, age: landingAge(p) + 1, y: p.restY, vy: 0 }));
+  world.water = { ...world.water, nitrate: 40 };
+  const text = serializeWorld(world, { speed: 0, clock: createDayClock(12, 1200, true) });
+  const settings = page.getByRole('button', { name: 'Réglages' });
+  await settings.click();
+  await page.locator('[data-section="sauvegarde"] input[type="file"]').setInputFiles({
+    name: 'restes.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(text),
+  });
+  await expect(hostEl(page)).toHaveAttribute('data-aqfish-speed', '0');
+  await settings.click();
+}
+
+const foodCount = async (page: Page) => Number(await hostEl(page).getAttribute('data-aqfish-food'));
+const nitrate = async (page: Page) =>
+  Number(((await hostEl(page).getAttribute('data-aqfish-water')) ?? '').split(';')[5]);
+const siphonPercent = async (page: Page) =>
+  Number(await card(page).locator('[data-care-siphon]').getAttribute('data-care-siphon'));
 
 async function visiblePatches(page: Page): Promise<number> {
   const raw = (await hostEl(page).getAttribute('data-aqfish-algae')) ?? '';
@@ -155,11 +185,80 @@ test.describe('séance d’entretien (#604)', () => {
   });
 });
 
+test.describe('séance d’entretien : siphon et eau neuve (#605)', () => {
+  test('souris : siphon des restes, eau neuve sans conditionneur et froide, calendrier', async ({
+    page,
+  }, testInfo) => {
+    testInfo.setTimeout(420_000);
+    const errors = await open(page);
+    await importDirtyTank(page);
+    const food = await foodCount(page);
+    expect(food).toBeGreaterThan(10);
+    expect(await nitrate(page)).toBe(40);
+    await openSession(page);
+    await card(page).locator('[data-care-skip]').click();
+    await expect(card(page)).toHaveAttribute('data-step', 'siphon');
+    await expect(card(page)).toContainText('Promenez le tuyau');
+    await expect(card(page).locator('[data-care-done]')).toHaveCount(0);
+    const population = await hostEl(page).getAttribute('data-aqfish-population');
+
+    // Vue de dessus : le tuyau passe sur la ligne de restes.
+    await page.locator('[data-preset="top"]').click();
+    await sweepMouse(page);
+    await expect.poll(() => foodCount(page)).toBeLessThan(food);
+    await expect.poll(() => siphonPercent(page)).toBeGreaterThan(0);
+    await expect(card(page).locator('[data-care-hint]')).toContainText('% de l’eau retirée');
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', population!);
+    // L'eau retirée ne change pas les concentrations : seule l'eau neuve dilue.
+    expect(await nitrate(page)).toBe(40);
+    const captureDir = process.env['CAPTURE_DIR'];
+    await page.locator('[data-preset="side"]').click();
+    if (captureDir) {
+      await page.screenshot({ path: `${captureDir}/seance-siphon-side.png` });
+    }
+    const siphoned = await siphonPercent(page);
+
+    await card(page).locator('[data-care-done]').click();
+    await expect(card(page)).toHaveAttribute('data-step', 'filtre');
+    await card(page).locator('[data-care-skip]').click();
+    await expect(card(page)).toHaveAttribute('data-step', 'eau');
+    await expect(card(page)).toContainText(`0 % sur ${siphoned} %`);
+    await card(page).locator('[data-care-conditioner]').uncheck();
+    await card(page).locator('[data-care-bucket]').selectOption('-6');
+    await expect(card(page).locator('[data-care-warning]')).toHaveCount(2);
+    await expect(card(page)).toContainText('chlore du robinet');
+    await expect(card(page)).toContainText('plus froide que le bac de 6 °C');
+    while ((await card(page).locator('[data-care-pour]').count()) > 0) {
+      await card(page).locator('[data-care-pour]').click();
+    }
+    await expect(card(page)).toContainText('Le bac est plein');
+    await card(page).locator('[data-care-done]').click();
+    await expect(card(page)).toHaveAttribute('data-step', 'taille');
+    await expect.poll(() => nitrate(page)).toBeLessThan(40);
+    if (captureDir) {
+      await page.screenshot({ path: `${captureDir}/seance-eau-apres.png` });
+    }
+    await card(page).locator('[data-care-skip]').click();
+    await expect(card(page).locator('[data-care-summary]')).toContainText('Le siphon : fait');
+    await expect(card(page).locator('[data-care-summary]')).toContainText('L’eau neuve : fait');
+    await card(page).locator('[data-care-close]').click();
+
+    await page.locator('[data-maintenance]').click();
+    await expect(page.locator('[data-maintenance-task="siphon"]')).toContainText(
+      'Siphon du sol : Dans 7 j',
+    );
+    await expect(page.locator('[data-maintenance-task="waterChange"]')).toContainText(
+      'Changement d’eau : Dans 7 j',
+    );
+    expect(errors).toEqual([]);
+  });
+});
+
 test.describe('séance d’entretien au toucher (#604)', () => {
   test.use({ hasTouch: true });
 
-  test('au doigt : raclette sur la vitre, étape passée', async ({ page }, testInfo) => {
-    testInfo.setTimeout(300_000);
+  test('au doigt : raclette, siphon et eau neuve', async ({ page }, testInfo) => {
+    testInfo.setTimeout(420_000);
     const errors = await open(page);
     await importAlgaeTank(page);
     await openSession(page, true);
@@ -178,6 +277,21 @@ test.describe('séance d’entretien au toucher (#604)', () => {
     await expect.poll(() => visiblePatches(page)).toBeLessThan(ALGAE_PATCH_COUNT);
     await card(page).locator('[data-care-skip]').tap();
     await expect(card(page)).toHaveAttribute('data-step', 'siphon');
+    // Siphon au doigt (#605), puis un seau d'eau neuve jusqu'à l'étape suivante.
+    const y = box.y + box.height * 0.5;
+    const at = (x: number) => [{ x: box.x + box.width * x, y, id: 1 }];
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: at(0.3) });
+    for (const x of [0.4, 0.5, 0.6, 0.7]) {
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: at(x) });
+    }
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await expect.poll(() => siphonPercent(page)).toBeGreaterThan(0);
+    await card(page).locator('[data-care-done]').tap();
+    await card(page).locator('[data-care-skip]').tap();
+    await expect(card(page)).toHaveAttribute('data-step', 'eau');
+    await card(page).locator('[data-care-pour]').tap();
+    await card(page).locator('[data-care-done]').tap();
+    await expect(card(page)).toHaveAttribute('data-step', 'taille');
     expect(errors).toEqual([]);
   });
 });

@@ -128,6 +128,7 @@ import {
   stepFoodInPlace,
   type FoodPellet,
 } from './food';
+import { siphonedFood, siphonFloorPoint, type FloorPoint } from './siphon';
 import { validateObstacle, type Obstacle } from './obstacles';
 import {
   DEFAULT_POND_SHAPE,
@@ -1752,6 +1753,54 @@ export function changeWorldWater(world: World): World {
  */
 export function changeWorldWaterInPlace(world: MutableWorld): void {
   changeWaterInPlace(world.water as MutableWaterState, world.environment);
+}
+
+/** Résultat d'un passage de siphon (#605). */
+export interface SiphonPass {
+  /** Points du geste tombés dans l'eau (chacun retire un peu d'eau, `siphonedShare`). */
+  readonly points: number;
+  /** Granulés posés aspirés. */
+  readonly food: number;
+}
+
+/**
+ * Passage du siphon (#605), **en modifiant** `world` : chaque rayon `rays` vise un point du
+ * sol (`siphonFloorPoint`) ; les granulés posés autour sont retirés (`siphonedFood`). L'eau
+ * retirée n'est pas appliquée ici : la séance la compte et l'eau neuve dilue
+ * (`refillWorldWaterInPlace`).
+ */
+export function siphonWorldInPlace(world: MutableWorld, rays: readonly ScraperRay[]): SiphonPass {
+  const { water } = groundFor(world);
+  const points: FloorPoint[] = [];
+  for (const ray of rays) {
+    const point = siphonFloorPoint(ray, water);
+    if (point !== null) {
+      points.push(point);
+    }
+  }
+  const touched = siphonedFood(world.food, points);
+  if (touched.length > 0) {
+    const gone = new Set(touched);
+    world.food = world.food.filter((_, index) => !gone.has(index));
+  }
+  return { points: points.length, food: touched.length };
+}
+
+/**
+ * Eau neuve versée au seau (#605), **en modifiant** `world` : la part `share` est remplacée
+ * (`changeWaterInPlace`) par de l'eau à `temperature` °C, avec le chlore du robinet si le
+ * conditionneur a été oublié (`conditioner` faux).
+ */
+export function refillWorldWaterInPlace(
+  world: MutableWorld,
+  share: number,
+  conditioner: boolean,
+  temperature: number,
+): void {
+  changeWaterInPlace(world.water as MutableWaterState, world.environment, share, {
+    untreated: !conditioner,
+    temperature,
+  });
 }
 
 /**

@@ -365,22 +365,34 @@ export function stepWater(
   return stepWaterInPlace(copyWater(water), dt, load, liters, temperature);
 }
 
+/** Eau neuve versée à la main (séance d'entretien, #605) : traitement et température. */
+export interface FreshWaterOptions {
+  /** Vrai si le conditionneur a été oublié : l'eau du robinet apporte son chlore. */
+  readonly untreated: boolean;
+  /** Température de l'eau versée, en °C : celle du bac devient le mélange des deux. */
+  readonly temperature: number;
+}
+
 /**
- * Changement d'eau **en modifiant** `water`, bac de l'environnement `environment` : retire
- * `WATER_CHANGE_SHARE` de chaque composé dissous (nitrates, et aussi ammoniaque et nitrites,
- * dilués de même) et rapproche d'autant le pH de celui de l'eau neuve (`FRESH_PH`, issue
- * #236). La température et le filtre ne changent pas (eau neuve à la température du bac).
- * Renvoie `water`.
+ * Changement d'eau **en modifiant** `water`, bac de l'environnement `environment` : retire la
+ * part `share` (par défaut `WATER_CHANGE_SHARE`, ramenée dans [0, 1]) de chaque composé
+ * dissous (nitrates, et aussi ammoniaque et nitrites, dilués de même) et rapproche d'autant le
+ * pH de celui de l'eau neuve (`FRESH_PH`, issue #236). Sans `fresh`, la température et le
+ * filtre ne changent pas (eau neuve à la température du bac) et le chlore suit le réglage
+ * `untreatedTap` ; avec `fresh` (#605), ils suivent l'eau versée. Renvoie `water`.
  */
 export function changeWaterInPlace(
   water: MutableWaterState,
   environment: EnvironmentId,
+  share: number = WATER_CHANGE_SHARE,
+  fresh: FreshWaterOptions | null = null,
 ): MutableWaterState {
-  const keep = 1 - WATER_CHANGE_SHARE;
+  const part = Number.isFinite(share) ? clamp(share, 0, 1) : 0;
+  const keep = 1 - part;
   water.ammonia *= keep;
   water.nitrite *= keep;
   water.nitrate *= keep;
-  water.ph = phAfterWaterChange(water.ph, freshPh(environment), WATER_CHANGE_SHARE);
+  water.ph = phAfterWaterChange(water.ph, freshPh(environment), part);
   // Dureté (issue #484) : rapprochée de celle de l'eau du robinet ; revenue à celle-ci, le
   // champ disparaît (une eau jamais modifiée n'en porte pas).
   const tap = tapHardness(environment);
@@ -389,7 +401,7 @@ export function changeWaterInPlace(
     if (value === undefined) {
       continue;
     }
-    const next = hardnessAfterWaterChange(value, tap[key], WATER_CHANGE_SHARE);
+    const next = hardnessAfterWaterChange(value, tap[key], part);
     if (Math.abs(next - tap[key]) < HARDNESS_TRACE) {
       delete water[key];
     } else {
@@ -417,7 +429,14 @@ export function changeWaterInPlace(
     }
   }
   // Chlore (issue #530) : dilué, et apporté par l'eau du robinet si elle n'est pas traitée.
-  chlorineAfterWaterChangeInPlace(water, WATER_CHANGE_SHARE);
+  chlorineAfterWaterChangeInPlace(water, part, fresh?.untreated);
+  if (fresh !== null && Number.isFinite(fresh.temperature)) {
+    water.temperature = clamp(
+      water.temperature * keep + fresh.temperature * part,
+      MIN_WATER_TEMPERATURE,
+      MAX_WATER_TEMPERATURE,
+    );
+  }
   return water;
 }
 

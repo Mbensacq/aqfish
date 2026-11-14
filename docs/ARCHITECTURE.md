@@ -621,6 +621,9 @@ maximal : 60 s par angle), et **aucune mesure de performance** ne doit y être f
   (`sim/care-session.ts`, `ui/care-session`, ADR 0138) est une machine à états pure gardée hors
   du monde (clé `aqfish.seance-entretien`) ; à l'étape « vitres », la vue autorise un passage
   de raclette (`AquariumView.setStrokeEnabled`, `onStroke`) qui coupe la caméra le temps du geste.
+  Au siphon, le même passage promène le tuyau sur le sol (`sim/siphon.ts`, ADR 0139) : il aspire
+  les granulés posés et compte l'eau retirée dans la séance ; l'eau neuve dilue le bac à la part
+  versée (`changeWaterInPlace` avec `share` et `fresh`).
   Le bilan du bac (`sim/bilan.ts`, ADR 0117) n'est calculé qu'à la demande, déplié depuis le
   bandeau ; il n'écrit rien dans le monde.
 

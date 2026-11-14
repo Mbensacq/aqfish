@@ -89,3 +89,43 @@
     font-weight: 400;
   }
 }
+
+// Jauges du siphon et de l'eau neuve (#605) : barre pleine largeur, ambre au-delà du seuil.
+.care-session__gauge {
+  height: 10px;
+  margin: 0 0 6px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--dashboard-ink) 30%, transparent);
+  border-radius: 5px;
+
+  span {
+    display: block;
+    height: 100%;
+    background: var(--dashboard-vert);
+  }
+
+  &--warning span {
+    background: var(--dashboard-orange);
+  }
+}
+
+.care-session__field {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin: 0 0 6px;
+  font-size: 13px;
+
+  select {
+    flex: 1 1 auto;
+    min-height: 28px;
+    font: inherit;
+  }
+}
+
+.care-session__warning {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dashboard-orange);
+}
