@@ -17,7 +17,8 @@ import {
  * retire les plaques d'algues là où elle passe ; « Étape terminée » inscrit les vitres au
  * calendrier ; chaque étape se passe ; « Plus tard » interrompt, la séance reprend à son étape,
  * même après un rechargement. Bac tropical couvert d'algues, simulation en pause. Siphon et eau
- * neuve : `seance-siphon.spec.ts` ; au doigt : `seance-toucher.spec.ts` (#620).
+ * neuve : `seance-siphon.spec.ts` ; filtre : `seance-filtre.spec.ts` ; au doigt :
+ * `seance-toucher.spec.ts` (#620).
  */
 test.describe('séance d’entretien (#604)', () => {
   test('souris : raclette, étape terminée au calendrier, étapes passées, bilan', async ({
@@ -67,6 +68,8 @@ test.describe('séance d’entretien (#604)', () => {
       'Nettoyage des vitres : Dans 14 j',
     );
     await expect(page.locator('[data-maintenance-log]')).toContainText('Nettoyage des vitres');
+    // Filtre passé (#606) : rien au journal d'entretien.
+    await expect(page.locator('[data-maintenance-log]')).not.toContainText('Nettoyage du filtre');
     // Séance finie : la suivante repart des vitres.
     await page.locator('[data-care-session-open]').click();
     await expect(card(page)).toHaveAttribute('data-step', 'vitres');

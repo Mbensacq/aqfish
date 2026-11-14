@@ -163,6 +163,8 @@
       [visibleAlgae]="aquarium.visibleAlgae()"
       [conditioner]="aquarium.careConditioner()"
       [bucketGap]="aquarium.careBucketGap()"
+      [filterEfficiency]="aquarium.careFilter()"
+      (rinseChosen)="aquarium.chooseCareRinse($event)"
       (bucketPoured)="aquarium.pourCareBucket()"
       (conditionerChanged)="aquarium.careConditioner.set($event)"
       (bucketGapChanged)="aquarium.careBucketGap.set($event)"

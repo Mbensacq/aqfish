@@ -151,6 +151,12 @@ suit une courbe logistique (approximation de jeu) : environ 90 % à 5,5 semaines
 8 semaines simulées. Le bac de départ est déjà cyclé. Simplification : la croissance ne dépend ni
 de l'ammoniaque disponible ni de l'oxygène ; l'amorce de bactéries (§ 1.1) l'accélère.
 
+Éponge du filtre (issue #606, ADR 0140) : on la rince dans de l'eau retirée du bac, jamais au
+robinet, dont le chlore (§ 2 « Chlore et chloramine ») est un désinfectant qui tue aussi les
+bactéries nitrifiantes. Pour le jeu, un rinçage au robinet tue 50 % des bactéries
+(**approximation de jeu**, non sourcée) : le filtre repart en maturation et l'ammoniaque monte les
+jours suivants.
+
 ## 3. pH, KH, GH, conductivité
 
 **Plages cibles.** Eau douce 6,5–9,0, eau de mer 7,8–8,3 (Merck) ; récif 7,8–8,5, idéalement

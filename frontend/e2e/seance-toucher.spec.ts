@@ -12,13 +12,14 @@ import {
 } from './outils-seance';
 
 /**
- * Séance d'entretien guidée au doigt (#604, #605) : raclette, siphon et un seau d'eau neuve par
+ * Séance d'entretien guidée au doigt (#604, #605, #606) : raclette, siphon, éponge du filtre et
+ * un seau d'eau neuve par
  * des événements tactiles envoyés en CDP (docs/PIEGES.md).
  */
 test.describe('séance d’entretien au toucher (#604)', () => {
   test.use({ hasTouch: true });
 
-  test('au doigt : raclette, siphon et eau neuve', async ({ page }, testInfo) => {
+  test('au doigt : raclette, siphon, filtre et eau neuve', async ({ page }, testInfo) => {
     testInfo.setTimeout(420_000);
     const errors = await open(page);
     await importAlgaeTank(page);
@@ -35,7 +36,11 @@ test.describe('séance d’entretien au toucher (#604)', () => {
     await swipeTouch(cdp, box, 0.5, [0.3, 0.4, 0.5, 0.6, 0.7]);
     await expect.poll(() => siphonPercent(page)).toBeGreaterThan(0);
     await card(page).locator('[data-care-done]').tap();
-    await card(page).locator('[data-care-skip]').tap();
+    // Éponge du filtre au doigt (#606) : rincée dans l'eau du bac, phrase « pourquoi ».
+    await expect(card(page)).toHaveAttribute('data-step', 'filtre');
+    await card(page).locator('[data-care-rinse="bac"]').tap();
+    await expect(card(page).locator('[data-care-rinse-why]')).toContainText('pas de chlore');
+    await card(page).locator('[data-care-done]').tap();
     await expect(card(page)).toHaveAttribute('data-step', 'eau');
     await card(page).locator('[data-care-pour]').tap();
     await card(page).locator('[data-care-done]').tap();

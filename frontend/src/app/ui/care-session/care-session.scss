@@ -129,3 +129,21 @@
   font-weight: 600;
   color: var(--dashboard-orange);
 }
+
+// Rinçage de l'éponge (#606) : deux choix côte à côte, le choix retenu bordé de vert ; la phrase
+// du rinçage au robinet en ambre.
+.care-session__choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 8px;
+}
+
+.care-session__choice[aria-pressed='true'] {
+  border: 2px solid var(--dashboard-vert);
+  background: color-mix(in srgb, var(--dashboard-vert) 22%, transparent);
+}
+
+.care-session__hint[data-care-rinse-why][data-warning] {
+  color: var(--dashboard-orange);
+}
