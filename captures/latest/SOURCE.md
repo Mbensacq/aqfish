@@ -1,4 +1,1 @@
-# Captures c217
-- Branche : cycle/c217-playwright-ubuntu-26 (PR #630), commit 6d08847
-- Graine : celle de `npm run captures` (inchangée) ; Playwright 1.63.0, Chromium 153
-- Résultat : 135 captures, identiques octet pour octet à la série c216
+Branche cycle/c218-eponge-filtre, PR #631, commit 5d087e1, graine par défaut, captures 135 identiques à c217 (+ seance-filtre.png)
