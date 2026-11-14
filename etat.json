@@ -7767,6 +7767,12 @@
           "debut": "2026-11-14T02:08:58.045Z",
           "fin": "2026-11-14T02:50:49.494Z",
           "note": "Verdict OK, 0 bug, unitaires 5204 OK, e2e ciblés 22/22, 5 angles identiques à c212, captures c213 publiées (série partielle 143/151)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-14T02:51:25.032Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
