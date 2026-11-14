@@ -16,8 +16,11 @@ haut de sa section.
   (cycle 212, #604) : chaque `page.mouse.move` (ou `Input.dispatchTouchEvent`) attend une
   image, qui prend plusieurs secondes ; 10 lignes de 12 pas dépassaient les 3 min du test.
   Trois lignes de 8 pas au milieu du bac suffisent à retirer les 8 plaques d'algues
-  (`e2e/seance-entretien.spec.ts`, 420 s de budget). Pour le doigt, Playwright n'a que
-  `tap` : envoyer `touchStart` / `touchMove` / `touchEnd` par une session CDP, Chromium en
+  (`e2e/seance-entretien.spec.ts`, 420 s de budget) ; une seule ligne suffit quand le test
+  ne vérifie qu'une baisse (siphon des restes, raclette au doigt : #620). Un fichier e2e de
+  plus de 5 min pèse seul sur sa part de CI (les parts répartissent des fichiers) : le scinder,
+  outils communs dans `e2e/outils-*.ts` (`seance-entretien`, `-siphon`, `-toucher`). Pour
+  le doigt, Playwright n'a que `tap` : envoyer `touchStart` / `touchMove` / `touchEnd` par une session CDP, Chromium en
   tire des événements `pointer` de type `touch`. Ne pas lancer d'e2e pendant les tests
   unitaires du même arbre : l'application ralentit au point de dépasser les délais. (2026-11-13)
 - **Coder pendant le `npm run verify` de `main` : un second arbre de travail** (cycle 211,
