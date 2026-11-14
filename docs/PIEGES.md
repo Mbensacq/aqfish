@@ -6,6 +6,17 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **CI : `Playwright does not support chromium on ubuntu26.04-x64`** (cycle 217, #629) :
+  `ubuntu-latest` bascule peu à peu vers Ubuntu 26.04 ; avec Playwright 1.56, l'étape
+  « Installer Chromium pour Playwright » échoue sur ces runners (trois essais, même erreur)
+  alors que les autres tranches du même jour, encore en 24.04, passent. `playwright-core` ne
+  connaît Ubuntu 26.04 qu'à partir de 1.61. `@playwright/test` est épinglé en version exacte
+  **1.63.0** : il attend le navigateur 1243, celui que fournit `/opt/pw-browsers` dans
+  l'environnement des agents, donc plus aucun lien symbolique `…-1194` n'est nécessaire en
+  local. Avant toute montée de Playwright, vérifier dans
+  `node_modules/playwright-core/browsers.json` que la révision de `chromium-headless-shell`
+  existe dans `/opt/pw-browsers`, sinon tous les e2e locaux échouent en quelques ms.
+  (2026-11-14)
 - **Jauge affichée en pourcentage, bouton décidé sur la part brute** (cycle 214, #605) : les
   seaux d'eau neuve (0,1 chacun) et la part siphonnée (0,002 par point) ne tombent jamais juste ;
   « 40 % sur 40 % » pouvait cacher « Verser un seau » (pourcentages égaux) alors que la part
@@ -115,7 +126,7 @@ haut de sa section.
   dépôt : `mkdir -p /opt/pw-browsers/chromium_headless_shell-1194/chrome-linux && ln -sf
   /opt/pw-browsers/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell
   /opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell`. La CI, elle,
-  installe son navigateur. (2026-11-07)
+  installe son navigateur. (2026-11-07) Obsolète depuis le cycle 217 (#629) : Playwright 1.63 attend directement la révision 1243.
 - **Remplacer la géométrie d'un maillage en cours de partie : `fond-ecran` compte les
   `WebGLBuffer`** (cycle 165, #477) : l'e2e d'endurance de la vue fond d'écran exige qu'aucun
   `WebGLBuffer` de plus ne soit vivant après une minute (`Runtime.queryObjects` après
@@ -487,7 +498,7 @@ origin/main`, `node_modules` en lien symbolique) ; il sert aussi aux captures «
   formatage, lint, tests unitaires, build et captures, puis seulement les specs e2e touchées
   (`npx playwright test --project=e2e e2e/ph.spec.ts …`) ; la suite complète tourne en CI
   (4 lots). Le dire dans la PR. Le lien `chromium_headless_shell-1194` (plus bas) est à
-  recréer à chaque session. (2026-10-26)
+  recréer à chaque session. (2026-10-26) Obsolète depuis le cycle 217 (#629) : Playwright 1.63 attend directement la révision 1243.
 - **Lancer une seule spec unitaire pendant un `verify`** (cycle 75, #233) : `ng test`
   reconstruit tout et dure ~3 min, et un second `ng` en parallèle du `verify` se dispute le
   cache. Pour une spec de `src/app/sim`, lancer Vitest directement depuis `frontend/` :
@@ -565,7 +576,7 @@ origin/main`, `node_modules` en lien symbolique) ; il sert aussi aux captures «
   télécharger, créer le dossier attendu et un lien vers le binaire fourni (`mkdir -p
 …-1194/chrome-linux && ln -s …-1243/chrome-headless-shell-linux64/chrome-headless-shell
 …-1194/chrome-linux/headless_shell`), plus les fichiers vides `INSTALLATION_COMPLETE` et
-  `DEPENDENCIES_VALIDATED`. Captures et e2e passent ensuite normalement. (2026-10-23)
+  `DEPENDENCIES_VALIDATED`. Captures et e2e passent ensuite normalement. (2026-10-23) Obsolète depuis le cycle 217 (#629) : Playwright 1.63 attend directement la révision 1243.
 - **`git checkout <fichier>` pour retirer un essai jetable efface aussi le travail en cours**
   (cycle 50) : le court-circuit de la passe palette (`vec4(color, 1.0)`, voir « Rendu ») posé
   par `sed` sur `render/palette-pass.ts` puis retiré par `git checkout` a ramené le fichier à
@@ -601,7 +612,7 @@ origin/main`, `node_modules` en lien symbolique) ; il sert aussi aux captures «
 - **WebGL en rendu logiciel** (SwiftShader) dans Chromium sans écran : fonctionne, mais
   lent. Ne jamais mesurer de performances ici ; garder les scènes de capture légères.
   (2026-10-16)
-- **Navigateurs Playwright** préinstallés dans `/opt/pw-browsers` pour Playwright 1.56 : ne
+- **Navigateurs Playwright** préinstallés dans `/opt/pw-browsers` (révision 1243, celle de Playwright 1.63) : ne
   pas lancer `playwright install` dans l'environnement des agents, ni changer la version de
   `@playwright/test` sans vérifier que le navigateur correspondant existe. (2026-10-16)
 
