@@ -7839,6 +7839,12 @@
           "debut": "2026-11-14T12:33:43.705Z",
           "fin": "2026-11-14T13:06:45.639Z",
           "note": "Verdict OK, 0 bug, unitaires+build OK, e2e séance 5/5 (verify complet trop long), 5 angles identiques, captures c215 publiées ; revue PR non postée (refus de l'environnement)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-14T13:07:13.397Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
