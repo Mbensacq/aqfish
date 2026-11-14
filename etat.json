@@ -7859,10 +7859,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-14T14:31:06.901Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-14T14:32:13.906Z",
+          "note": "Rétro #626, issue #622 (dette, S) ; sprint 32 : #606 #607 #623 #624 #625 ; PR roadmap #627"
         }
       },
       "metriques": {}
