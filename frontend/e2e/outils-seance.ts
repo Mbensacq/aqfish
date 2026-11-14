@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, type CDPSession, type Page } from '@playwright/test';
 
 import { ALGAE_PATCH_COUNT } from '../src/app/sim/algae';
 import { createDayClock } from '../src/app/sim/daylight';
@@ -105,4 +105,24 @@ export async function sweepMouse(
     await page.mouse.move(box.x + box.width * 0.8, y, { steps: 8 });
     await page.mouse.up();
   }
+}
+
+/**
+ * Glissé tactile en CDP (docs/PIEGES.md) : un doigt posé à `xs[0]` puis déplacé sur chacune des
+ * positions suivantes (parts de la largeur), à la hauteur `row` (part de la hauteur), puis levé.
+ */
+export async function swipeTouch(
+  cdp: CDPSession,
+  box: { x: number; y: number; width: number; height: number },
+  row: number,
+  xs: readonly number[],
+): Promise<void> {
+  const y = box.y + box.height * row;
+  const at = (x: number) => [{ x: box.x + box.width * x, y, id: 1 }];
+  const [first, ...moves] = xs;
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: at(first) });
+  for (const x of moves) {
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: at(x) });
+  }
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
 }
