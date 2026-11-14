@@ -16,6 +16,7 @@ import {
   mortalityChance,
   mortalityDraw,
   mortalityRate,
+  splitDeaths,
   stepDeadInPlace,
   toxicWater,
   type DeadAnimal,
@@ -331,5 +332,68 @@ describe('mortalité dans le monde', { timeout: 60_000 }, () => {
     expect(parseWorld(JSON.stringify(data)).ok).toBe(true);
     (data.world ?? data).mortality = 'oui';
     expect(parseWorld(JSON.stringify(data)).ok).toBe(false);
+  });
+
+  it('sauvegarde : corps portant l’identifiant d’un vivant refusé (#615)', () => {
+    const world = cloneWorld(createWorld(21, [{ species: 'neon', count: 3 }]));
+    killWorldAnimalInPlace(world, 1);
+    const data = JSON.parse(serializeWorld(world));
+    const body = (data.world ?? data).dead[0];
+    // Identifiants disjoints : acceptée.
+    expect(parseWorld(JSON.stringify(data)).ok).toBe(true);
+    body.id = 2;
+    const parsed = parseWorld(JSON.stringify(data));
+    expect(parsed.ok).toBe(false);
+    expect(parsed.ok ? '' : parsed.error).toContain('identifiant 2');
+    body.id = 0;
+    expect(parseWorld(JSON.stringify(data)).ok).toBe(false);
+  });
+});
+
+describe('splitDeaths (#615)', () => {
+  const animals = [0, 1, 2, 3, 4].map((id) => weak({ id }));
+  const counting = (dying: readonly number[]) => {
+    const calls: number[] = [];
+    const dies = (animal: MortalitySubject) => {
+      calls.push(animal.id);
+      return dying.includes(animal.id);
+    };
+    return { calls, dies };
+  };
+
+  it('personne ne meurt : null, un tirage par animal', () => {
+    const { calls, dies } = counting([]);
+    expect(splitDeaths(animals, false, 1, 7, 3, dies)).toBeNull();
+    expect(calls).toEqual([0, 1, 2, 3, 4]);
+  });
+
+  it('décès : un seul tirage par animal, ordre d’origine gardé', () => {
+    for (const dying of [[0], [4], [1, 3], [0, 1, 2, 3, 4]]) {
+      const { calls, dies } = counting(dying);
+      const split = splitDeaths(animals, false, 1, 7, 3, dies);
+      expect(calls).toEqual([0, 1, 2, 3, 4]);
+      expect(split?.dying.map((a) => a.id)).toEqual(dying);
+      expect(split?.living.map((a) => a.id)).toEqual(
+        [0, 1, 2, 3, 4].filter((id) => !dying.includes(id)),
+      );
+    }
+  });
+
+  it('aucun animal : null, aucun tirage', () => {
+    const { calls, dies } = counting([0]);
+    expect(splitDeaths([], true, 1, 7, 3, dies)).toBeNull();
+    expect(calls).toEqual([]);
+  });
+
+  it('par défaut, même verdict que diesThisStep', () => {
+    const subjects = Array.from({ length: 40 }, (_, id) =>
+      weak({ id, health: HEALTH_FLOOR, hunger: STARVING_HUNGER }),
+    );
+    for (const tick of [0, 1, 99, 4096]) {
+      const expected = subjects.filter((a) => diesThisStep(a, true, 600, 11, tick));
+      const split = splitDeaths(subjects, true, 600, 11, tick);
+      expect(split?.dying ?? []).toEqual(expected);
+      expect(split?.living ?? subjects).toEqual(subjects.filter((a) => !expected.includes(a)));
+    }
   });
 });

@@ -308,13 +308,13 @@ export class AquariumView {
   private roomLayout: readonly RoomBlock[] = [];
   /** Passage de raclette possible (séance d'entretien, #604, `setStrokeEnabled`). */
   private strokeEnabled = false;
-  private strokeListener: ((clientX: number, clientY: number) => void) | null = null;
+  private strokeListener: ((points: readonly StrokePoint[]) => void) | null = null;
   /** Passage de raclette en cours : pointeur et dernier point transmis (`null` sinon). */
   private stroke: { readonly id: number; last: { x: number; y: number } } | null = null;
   /**
    * Appui en mode raclette (#604) : écouté en phase de capture, avant `OrbitControls`, coupés
-   * pour tout le geste ; chaque point du glissé (tous les `STROKE_STEP_PX` au plus) est
-   * transmis à l'abonné, souris comme doigt.
+   * pour tout le geste ; les points du glissé (tous les `STROKE_STEP_PX` au plus) sont
+   * transmis à l'abonné, groupés par événement (#617), souris comme doigt.
    */
   private readonly onStrokePointerDown = (event: PointerEvent) => {
     const listener = this.strokeListener;
@@ -336,7 +336,7 @@ export class AquariumView {
     } catch {
       // Pointeur déjà relâché : le passage s'arrêtera au prochain relâchement.
     }
-    listener(event.clientX, event.clientY);
+    listener([{ x: event.clientX, y: event.clientY }]);
   };
   private readonly onStrokePointerMove = (event: PointerEvent) => {
     const stroke = this.stroke;
@@ -344,8 +344,9 @@ export class AquariumView {
       return;
     }
     const to = { x: event.clientX, y: event.clientY };
-    for (const point of strokePoints(stroke.last, to, STROKE_STEP_PX)) {
-      this.strokeListener?.(point.x, point.y);
+    const points = strokePoints(stroke.last, to, STROKE_STEP_PX);
+    if (points.length > 0) {
+      this.strokeListener?.(points);
     }
     stroke.last = to;
   };
@@ -1023,9 +1024,10 @@ export class AquariumView {
 
   /**
    * Abonnement (unique) aux points d'un passage de raclette (#604), en pixels CSS, appui
-   * compris. Renvoie le désabonnement.
+   * compris : un appel par événement du pointeur, avec ses points dans l'ordre du geste
+   * (jamais vide). Renvoie le désabonnement.
    */
-  onStroke(listener: (clientX: number, clientY: number) => void): () => void {
+  onStroke(listener: (points: readonly StrokePoint[]) => void): () => void {
     this.strokeListener = listener;
     return () => {
       if (this.strokeListener === listener) {
@@ -2263,14 +2265,20 @@ interface CameraTransition {
 /** Écart maximal entre deux points transmis d'un passage de raclette, en pixels CSS (#604). */
 export const STROKE_STEP_PX = 6;
 
+/** Point d'un passage de raclette (#604), en pixels CSS du client. */
+export interface StrokePoint {
+  readonly x: number;
+  readonly y: number;
+}
+
 /**
  * Points de `from` (exclu) à `to` (inclus), espacés de `step` pixels au plus : un geste rapide
  * ne saute pas une plaque entre deux événements du pointeur. Aucun point si rien n'a bougé
  * ou si une coordonnée n'est pas finie.
  */
 export function strokePoints(
-  from: { readonly x: number; readonly y: number },
-  to: { readonly x: number; readonly y: number },
+  from: StrokePoint,
+  to: StrokePoint,
   step: number,
 ): { x: number; y: number }[] {
   const dx = to.x - from.x;

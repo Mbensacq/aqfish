@@ -75,7 +75,11 @@ describe('AquariumView : passage de raclette (#604)', () => {
     it(`${kind} : glisser transmet les points et coupe la caméra le temps du geste`, () => {
       const { view, canvas } = create();
       const points: [number, number][] = [];
-      view.onStroke((x, y) => points.push([x, y]));
+      const calls: number[] = [];
+      view.onStroke((batch) => {
+        calls.push(batch.length);
+        points.push(...batch.map((p): [number, number] => [p.x, p.y]));
+      });
       view.setStrokeEnabled(true);
       canvas.dispatchEvent(pointer('pointerdown', 100, 100, kind));
       expect(view.stroking).toBe(true);
@@ -87,17 +91,31 @@ describe('AquariumView : passage de raclette (#604)', () => {
       expect(points[0]).toEqual([100, 100]);
       expect(points.at(-1)).toEqual([130, 100]);
       expect(points.length).toBe(1 + Math.ceil(30 / STROKE_STEP_PX));
+      // Un appel par événement (#617) : l'appui, puis tous les points du glissé ensemble.
+      expect(calls).toEqual([1, Math.ceil(30 / STROKE_STEP_PX)]);
       // Relâché : un mouvement ne transmet plus rien.
       canvas.dispatchEvent(pointer('pointermove', 200, 100, kind));
       expect(points.at(-1)).toEqual([130, 100]);
+      expect(calls).toHaveLength(2);
       view.dispose();
     });
   }
 
+  it('mouvement sur place : aucun appel (jamais de lot vide, #617)', () => {
+    const { view, canvas } = create();
+    const calls: number[] = [];
+    view.onStroke((batch) => calls.push(batch.length));
+    view.setStrokeEnabled(true);
+    canvas.dispatchEvent(pointer('pointerdown', 100, 100));
+    canvas.dispatchEvent(pointer('pointermove', 100, 100));
+    expect(calls).toEqual([1]);
+    view.dispose();
+  });
+
   it('non autorisé : glisser tourne la caméra comme avant, rien n’est transmis', () => {
     const { view, canvas } = create();
     const points: number[] = [];
-    view.onStroke((x) => points.push(x));
+    view.onStroke((batch) => points.push(...batch.map((p) => p.x)));
     canvas.dispatchEvent(pointer('pointerdown', 100, 100));
     canvas.dispatchEvent(pointer('pointermove', 150, 100));
     expect(points).toEqual([]);
@@ -129,7 +147,7 @@ describe('AquariumView : passage de raclette (#604)', () => {
   it('vue sans contrôles (capture) : aucun passage', () => {
     const { view, canvas } = create(false);
     const points: number[] = [];
-    view.onStroke((x) => points.push(x));
+    view.onStroke((batch) => points.push(...batch.map((p) => p.x)));
     view.setStrokeEnabled(true);
     canvas.dispatchEvent(pointer('pointerdown', 100, 100));
     expect(view.stroking).toBe(false);
@@ -140,7 +158,7 @@ describe('AquariumView : passage de raclette (#604)', () => {
   it('désabonné : plus aucun point', () => {
     const { view, canvas } = create();
     const points: number[] = [];
-    const off = view.onStroke((x) => points.push(x));
+    const off = view.onStroke((batch) => points.push(...batch.map((p) => p.x)));
     view.setStrokeEnabled(true);
     off();
     canvas.dispatchEvent(pointer('pointerdown', 100, 100));
