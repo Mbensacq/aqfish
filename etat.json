@@ -7805,10 +7805,10 @@
           "note": "Verdict OK, 0 bug, unitaires 5227 OK, e2e séance 5/5, 5 angles identiques à c213, captures c214 publiées (5 angles)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-14T07:50:46.130Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-14T10:24:05.782Z",
+          "note": "PR #619 fusionnée → v1.19.4 (release+deploy OK) ; CI main verte après 2 relances e2e 4/7 (plafond 45 min, 130 tests 0 échec, #600 commenté, priorité dette) ; dette #620 ; suppression de branche refusée"
         }
       },
       "metriques": {}
