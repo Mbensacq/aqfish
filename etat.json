@@ -7791,6 +7791,12 @@
           "debut": "2026-11-14T05:24:34.787Z",
           "fin": "2026-11-14T05:24:56.161Z",
           "note": "Issue #605 : Entretien lot 2, siphon et eau neuve (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-14T05:25:28.069Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
