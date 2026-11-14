@@ -7947,6 +7947,12 @@
           "debut": "2026-11-14T22:18:29.801Z",
           "fin": "2026-11-14T22:52:50.896Z",
           "note": "Verdict OK, 0 bug, unitaires/build verts, e2e séances verts, 135 captures identiques, publiées (c218)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-14T22:53:24.187Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
