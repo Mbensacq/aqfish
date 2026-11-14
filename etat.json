@@ -7895,10 +7895,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-14T16:41:28.479Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-14T16:41:57.893Z",
+          "note": "Issue #629 : CI Playwright vs Ubuntu 26.04, bug bloquant (S)"
         }
       },
       "metriques": {}
