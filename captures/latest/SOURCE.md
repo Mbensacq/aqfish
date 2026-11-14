@@ -1,7 +1,4 @@
-# Captures c216
-
-- Branche : cycle/c216-glisse-tactile
-- PR : #628
-- Commit : 52280b9
-- Graine : celle de captures.spec.ts (défaut)
-- Série complète (138 captures) ; 5 angles identiques à latest ; deux captures nouvelles (panneau-eau, panneau-son) sans équivalent précédent.
+# Captures c217
+- Branche : cycle/c217-playwright-ubuntu-26 (PR #630), commit 6d08847
+- Graine : celle de `npm run captures` (inchangée) ; Playwright 1.63.0, Chromium 153
+- Résultat : 135 captures, identiques octet pour octet à la série c216
