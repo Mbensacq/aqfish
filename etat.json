@@ -7913,10 +7913,10 @@
           "note": "Verdict OK, 0 bug, CI 11/11, 135 captures identiques à c216, publiées (c217)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-14T18:10:19.632Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-14T20:52:18.014Z",
+          "note": "PR #628 fusionnée (intègre #630, CI #630 annulée 3× tranche e2e 3/7 au plafond 45 min #600) → v1.20.1 publiée ; #630 fermée ; #627 OK non fusionnée (CI 3/7 hors délai) ; CI main ee8ba7e en cours ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
