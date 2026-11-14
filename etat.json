@@ -7931,10 +7931,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-14T20:52:52.351Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-14T20:53:17.166Z",
+          "note": "Issue #606 : éponge du filtre, eau du bac ou du robinet (S)"
         }
       },
       "metriques": {}
