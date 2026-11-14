@@ -88,12 +88,17 @@ export function siphonFloorPoint(ray: ScraperRay, water: Box3): FloorPoint | nul
   };
 }
 
+/** Vrai si un bac de `liters` litres contient de l'eau à siphonner (volume positif et fini). */
+export function hasWaterToSiphon(liters: number): boolean {
+  return liters > 0 && Number.isFinite(liters);
+}
+
 /**
  * Part de l'eau retirée après `points` points de siphon de plus, en partant de `share` :
- * plafonnée à `MAX_SIPHON_SHARE`. Bac sans eau (`liters` nul, négatif ou non fini) : 0.
+ * plafonnée à `MAX_SIPHON_SHARE`. Bac sans eau (`hasWater` faux, voir `hasWaterToSiphon`) : 0.
  */
-export function siphonedShare(share: number, points: number, liters: number): number {
-  if (!(liters > 0) || !Number.isFinite(liters)) {
+export function siphonedShare(share: number, points: number, hasWater: boolean): number {
+  if (!hasWater) {
     return 0;
   }
   const start = Number.isFinite(share) ? clamp(share, 0, MAX_SIPHON_SHARE) : 0;

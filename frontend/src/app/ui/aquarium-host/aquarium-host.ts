@@ -444,7 +444,7 @@ import {
   withSiphoned,
   type CareSession,
 } from '../../sim/care-session';
-import { pouredShare, siphonedShare } from '../../sim/siphon';
+import { hasWaterToSiphon, pouredShare, siphonedShare } from '../../sim/siphon';
 
 /** Fabrique du renderer, remplaçable dans les tests (jsdom n'a pas WebGL). */
 export const AQUARIUM_RENDERER_FACTORY = new InjectionToken<AquariumRendererFactory>(
@@ -2045,9 +2045,9 @@ export class AquariumHost {
     if (pass.points === 0) {
       return;
     }
-    const liters = waterLiters(environmentWater(world));
+    const hasWater = hasWaterToSiphon(waterLiters(environmentWater(world)));
     this.showCareSession(
-      withSiphoned(session, siphonedShare(session.siphoned ?? 0, pass.points, liters)),
+      withSiphoned(session, siphonedShare(session.siphoned ?? 0, pass.points, hasWater)),
     );
     if (pass.food > 0) {
       this.exposeFood();
