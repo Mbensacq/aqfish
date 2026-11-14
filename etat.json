@@ -7820,7 +7820,7 @@
       "type": "dette",
       "issue": 620,
       "pr": 621,
-      "version": null,
+      "version": "v1.19.5",
       "phases": {
         "planif": {
           "statut": "termine",
