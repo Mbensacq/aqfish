@@ -7877,10 +7877,10 @@
           "note": "Verdict OK, 0 bug, e2e seance-toucher 1/1, format+lint OK, 5 angles identiques, captures c216 publiées (138)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-14T15:38:51.986Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-14T16:40:58.217Z",
+          "note": "PR #628 et #627 relues OK, non fusionnées : CI rouge d'infra (e2e 3/7 hors délai #600, puis runners Ubuntu 26.04 sans Chromium Playwright 1.56, bug #629 bloque) ; v1.19.6 préparée dans #628"
         }
       },
       "metriques": {}
