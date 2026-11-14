@@ -623,7 +623,9 @@ maximal : 60 s par angle), et **aucune mesure de performance** ne doit y être f
   de raclette (`AquariumView.setStrokeEnabled`, `onStroke`) qui coupe la caméra le temps du geste.
   Au siphon, le même passage promène le tuyau sur le sol (`sim/siphon.ts`, ADR 0139) : il aspire
   les granulés posés et compte l'eau retirée dans la séance ; l'eau neuve dilue le bac à la part
-  versée (`changeWaterInPlace` avec `share` et `fresh`).
+  versée (`changeWaterInPlace` avec `share` et `fresh`). Au filtre, l'eau de rinçage choisie
+  (`CareSession.rinse`, `sim/filter-rinse.ts`, ADR 0140) s'applique quand l'étape est terminée :
+  au robinet, le filtre perd une part de ses bactéries et repart en maturation.
   Le bilan du bac (`sim/bilan.ts`, ADR 0117) n'est calculé qu'à la demande, déplié depuis le
   bandeau ; il n'écrit rien dans le monde.
 

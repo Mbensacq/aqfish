@@ -73,6 +73,7 @@
   "sauvegarde.spec.ts": 449.7,
   "scene.spec.ts": 170.1,
   "seance-entretien.spec.ts": 277,
+  "seance-filtre.spec.ts": 90,
   "seance-siphon.spec.ts": 222,
   "seance-toucher.spec.ts": 111,
   "simulation.spec.ts": 88.9,
