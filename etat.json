@@ -8540,6 +8540,19 @@
         "statut": "termine",
         "note": "6 cycles, 2 alertes"
       }
+    },
+    "2026-11-15": {
+      "metriques": {
+        "cycles": 7,
+        "livres": 6,
+        "version": "v1.20.3",
+        "tests": 5247,
+        "couvertureLignes": 96.16,
+        "lignesCode": 131897,
+        "bugsOuverts": 0,
+        "ciMain": "success",
+        "mutation": 98.16
+      }
     }
   }
 }
