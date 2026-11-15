@@ -8093,10 +8093,10 @@
           "note": "Verdict OK, 0 bug, PR docs seule, captures c221 reprises, mutation non mesurée (délai)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-15T12:07:54.679Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-15T13:19:27.141Z",
+          "note": "PR #636 fusionnée → v1.20.5 (release CI), CI main 45a8595 verte ; dette #637 ; suppression de branche refusée par le proxy"
         }
       },
       "metriques": {}
