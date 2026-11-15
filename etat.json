@@ -8180,7 +8180,7 @@
       "type": "fonctionnalite",
       "issue": 624,
       "pr": 645,
-      "version": null,
+      "version": "v1.21.1",
       "phases": {
         "planif": {
           "statut": "termine",
