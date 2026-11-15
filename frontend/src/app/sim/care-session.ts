@@ -12,7 +12,9 @@ import { MAX_SIPHON_SHARE } from './siphon';
  * retirée (`siphoned`), l'eau neuve l'eau versée (`poured`, `sim/siphon.ts`). Lot 3 (#606) :
  * le filtre retient l'eau de rinçage choisie (`rinse`, `sim/filter-rinse.ts`). Lot 5 (#623) :
  * la taille compte les coupes (`cuts`) ; elle est sautée d'office dans un bac sans plante à
- * tailler (`skipAbsentCareSteps`) et n'a alors pas de ligne au bilan.
+ * tailler (`skipAbsentCareSteps`) et n'a alors pas de ligne au bilan. Lot 6 (#624) : le bilan
+ * compare l'avant et l'après (`careSessionCompared`) ; les images restent hors de la séance
+ * enregistrée.
  */
 
 /** Étape d'une séance, dans l'ordre. */
@@ -205,6 +207,14 @@ export function careSessionSummary(
     title: CARE_SESSION_TEXT[step].title,
     outcome: session.outcomes[step] ?? null,
   }));
+}
+
+/**
+ * Vrai si le bilan doit montrer l'avant et l'après de la séance (#624) : séance au bilan avec
+ * au moins une étape faite. Une séance sautée entièrement n'a rien à comparer.
+ */
+export function careSessionCompared(session: CareSession): boolean {
+  return careSessionFinished(session) && Object.values(session.outcomes).includes('fait');
 }
 
 /**

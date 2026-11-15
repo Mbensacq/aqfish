@@ -471,7 +471,7 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
 | `render/palette.ts` | Palette unique (32 à 48 couleurs), nommées par usage ; tons de nuit (`NIGHT_TONES`) et du crépuscule (`TWILIGHT_TONES`), palette étendue de la passe (ADR 0021) ; tons d'environnement (`ENVIRONMENT_TONES`, ADR 0039) ; tons de la nourriture (`FOOD_TONES`, ADR 0056) |
 | `render/pixel-art.ts` | `PIXEL_SIZE`, taille de la cible basse résolution, couleur la plus proche avec pénalités facultatives (fonctions pures, même métrique que le shader) |
 | `render/palette-pass.ts` | Cible basse résolution et passe plein écran palette (`ShaderMaterial`) ; pénalités des tons de l'heure et des tons d'environnement (`environmentTonePenalties`), tons de la nourriture selon l'opacité du pixel (`FOOD_ALPHA_THRESHOLD`) ; libération; cible de la photo à la taille native (`photoTarget`, `setPixelScale`, #479) |
-| `render/photo-capture.ts` | Photo du bac (#479, ADR 0112), fonctions pures : facteur entier (`photoScale`), agrandissement au plus proche voisin et retournement des lignes relues (`upscalePhoto`), nom de fichier daté (`photoFileName`) ; relecture par `AquariumView.takePhoto`, encodage PNG par l'hôte |
+| `render/photo-capture.ts` | Photo du bac (#479, ADR 0112), fonctions pures : facteur entier (`photoScale`), agrandissement au plus proche voisin et retournement des lignes relues (`upscalePhoto`), nom de fichier daté (`photoFileName`) ; avant / après côte à côte d'une séance (`sideBySidePhotos`, `comparisonFileName`, #624) ; relecture par `AquariumView.takePhoto`, encodage PNG par l'hôte |
 | `render/camera-presets.ts` | Dimensions du bac, préréglages de caméra, interpolation des transitions (fonctions pures) |
 | `render/free-camera.ts` | Caméra libre dans la pièce (#343, ADR 0084) : limites (`freeCameraBounds` : pièce et obstacle bac + meuble), position permise (`constrainFreePosition`), départ d'une pose orbitale (`freeCameraFromPose`), orientation (`turnFreeCamera`), déplacement à pas fixes et vitesse amortie, glissant le long des parois (`stepFreeCamera`, pure ; `stepFreeCameraInPlace`, même calcul en place sans allocation pour la boucle d'affichage, #352) ; fonctions pures sauf la variante en place |
 | `render/free-camera-touch.ts` | Gestes de la caméra libre (#344, ADR 0085) : seuil du glisser d'orientation (`beginLook`, `moveLook`), pincement à deux doigts (`beginPinch`, `movePinch`), poussée et son amortissement (`pinchThrust`, `decayThrust`, `combinedForward`) ; fonctions pures, états mutés en place |
@@ -634,6 +634,11 @@ maximal : 60 s par angle), et **aucune mesure de performance** ne doit y être f
   coupée) et compte la coupe (`CareSession.cuts`) ; la tâche `prune` n'entre au calendrier qu'à
   « Étape terminée » après une coupe. Bac sans plante à tailler : étape sautée d'office
   (`skipAbsentCareSteps`), sans ligne au bilan.
+  Avant / après (ADR 0143) : l'hôte relit la vue (`AquariumView.takePhoto`) à l'ouverture d'une
+  séance neuve puis au bilan si une étape au moins est faite (`careSessionCompared`) ; les deux
+  relevés restent en mémoire (`AquariumHost.careComparison`, jamais dans la sauvegarde ni la
+  séance enregistrée) et sont libérés à la fin ou à l'interruption. La photo enregistrée les
+  pose côte à côte (`sideBySidePhotos`) avant l'agrandissement entier de la photo.
   Le bilan du bac (`sim/bilan.ts`, ADR 0117) n'est calculé qu'à la demande, déplié depuis le
   bandeau ; il n'écrit rien dans le monde.
 

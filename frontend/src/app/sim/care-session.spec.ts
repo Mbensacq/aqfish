@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   CARE_SESSION_STEPS,
   CARE_SESSION_TEXT,
+  careSessionCompared,
   careSessionFinished,
   careSessionSummary,
   careStepTask,
@@ -63,6 +64,29 @@ describe('séance d’entretien guidée (#604)', () => {
     }
     expect(careSessionFinished(session)).toBe(true);
     expect(careSessionSummary(session).every((line) => line.outcome === 'saute')).toBe(true);
+  });
+
+  it('avant / après (#624) : seulement au bilan, et s’il y a au moins une étape faite', () => {
+    let skipped = startCareSession();
+    for (let i = 0; i < 5; i++) {
+      expect(careSessionCompared(skipped)).toBe(false);
+      skipped = skipCareStep(skipped);
+    }
+    // Séance sautée entièrement : rien à comparer.
+    expect(careSessionFinished(skipped)).toBe(true);
+    expect(careSessionCompared(skipped)).toBe(false);
+    // Une seule étape faite, en premier ou en dernier, suffit.
+    let first = completeCareStep(startCareSession());
+    expect(careSessionCompared(first)).toBe(false);
+    let last = startCareSession();
+    for (let i = 0; i < 4; i++) {
+      first = skipCareStep(first);
+      last = skipCareStep(last);
+    }
+    expect(careSessionCompared(first)).toBe(true);
+    expect(careSessionCompared(completeCareStep(last))).toBe(true);
+    // Séance relue après rechargement : même règle.
+    expect(careSessionCompared(readCareSession(serializeCareSession(skipped))!)).toBe(false);
   });
 
   it('au bilan, terminer ou sauter ne change plus rien', () => {

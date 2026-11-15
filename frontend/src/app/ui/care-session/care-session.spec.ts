@@ -184,4 +184,58 @@ describe('CareSessionPanel (#604)', () => {
     expect(el.querySelector('[data-care-rinse-why]')?.textContent).toContain('pas de chlore');
     expect(el.querySelector('[data-care-rinse-why]')?.hasAttribute('data-warning')).toBe(false);
   });
+
+  it('bilan avec avant / après (#624) : images, curseur et « Enregistrer la photo »', () => {
+    let session = completeCareStep(startCareSession());
+    for (let i = 0; i < 4; i++) {
+      session = skipCareStep(session);
+    }
+    const fixture = render(session);
+    const el = fixture.nativeElement as HTMLElement;
+    // Sans images (séance sautée, relecture impossible) : ni comparaison ni bouton.
+    expect(el.querySelector('[data-care-compare]')).toBeNull();
+    expect(el.querySelector('[data-care-save-compare]')).toBeNull();
+
+    fixture.componentRef.setInput('comparison', {
+      before: 'data:image/png;base64,QVZBTlQ=',
+      after: 'data:image/png;base64,QVBSRVM=',
+    });
+    fixture.detectChanges();
+    expect(el.querySelector('[data-care-before]')?.getAttribute('src')).toContain('QVZBTlQ=');
+    expect(el.querySelector('[data-care-after]')?.getAttribute('alt')).toBe(
+      'Le bac après la séance',
+    );
+    const slider = el.querySelector('[data-care-compare] input[type="range"]') as HTMLInputElement;
+    expect(slider.getAttribute('aria-label')).toBe('Curseur avant / après');
+    expect(slider.getAttribute('data-care-split')).toBe('50');
+    expect(slider.getAttribute('aria-valuetext')).toBe('Avant 50 %, après 50 %');
+    const frames = el.querySelector('.care-session__frames') as HTMLElement;
+    expect(frames.style.getPropertyValue('--care-split')).toBe('50%');
+
+    for (const [value, text] of [
+      ['0', 'Après seulement'],
+      ['100', 'Avant seulement'],
+      ['25', 'Avant 25 %, après 75 %'],
+    ] as const) {
+      slider.value = value;
+      slider.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+      expect(slider.getAttribute('aria-valuetext')).toBe(text);
+      expect(frames.style.getPropertyValue('--care-split')).toBe(`${value}%`);
+    }
+
+    let saved = 0;
+    fixture.componentInstance.comparisonSaved.subscribe(() => saved++);
+    (el.querySelector('[data-care-save-compare]') as HTMLButtonElement).click();
+    expect(saved).toBe(1);
+
+    // Nouvelle comparaison : le curseur revient au milieu.
+    fixture.componentRef.setInput('comparison', { before: 'data:a', after: 'data:b' });
+    fixture.detectChanges();
+    expect(slider.getAttribute('data-care-split')).toBe('50');
+    // Hors bilan : pas de comparaison même si des images sont données.
+    fixture.componentRef.setInput('session', startCareSession());
+    fixture.detectChanges();
+    expect(el.querySelector('[data-care-compare]')).toBeNull();
+  });
 });

@@ -165,6 +165,8 @@
       [bucketGap]="aquarium.careBucketGap()"
       [filterEfficiency]="aquarium.careFilter()"
       [prunable]="aquarium.carePrunable()"
+      [comparison]="aquarium.careComparison()"
+      (comparisonSaved)="aquarium.saveCareComparison()"
       (rinseChosen)="aquarium.chooseCareRinse($event)"
       (bucketPoured)="aquarium.pourCareBucket()"
       (conditionerChanged)="aquarium.careConditioner.set($event)"
