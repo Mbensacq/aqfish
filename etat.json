@@ -8007,6 +8007,12 @@
           "debut": "2026-11-15T04:54:10.362Z",
           "fin": "2026-11-15T04:54:34.260Z",
           "note": "Issue #607 : encrassement visible (S), débloquée par #633"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-15T04:55:07.375Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
