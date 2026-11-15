@@ -7962,7 +7962,7 @@
       "date": "2026-11-15",
       "debut": "2026-11-15T01:10:25.028Z",
       "type": "fonctionnalite",
-      "issue": null,
+      "issue": 600,
       "pr": null,
       "version": null,
       "phases": {
