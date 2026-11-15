@@ -81,6 +81,12 @@ const PHASE_SEED = 0.37;
 /**
  * Rayons du bac en fractions de ses dimensions : centre (x de −0,5 à 0,5, z de −0,5 à 0,5),
  * demi-largeur (fraction de la largeur du bac), phase. Disposition fixe, sans tirage.
+ *
+ * Le dernier faisceau, le plus proche de la vitre de côté (+x, caméra `side`), est le plus
+ * étroit et placé en z entre ses voisins (#590) : vu de côté, la perspective grossit ses cases
+ * et, posé devant un autre faisceau, les deux traits translucides s'empilaient en un bloc
+ * plus clair. Au bac par défaut, il ne chevauche aucun autre faisceau dans cette vue, et sa
+ * phase alterne colonnes à trait et colonnes vides (`columnSeed`) : traits séparés.
  */
 export const RAY_LAYOUT: readonly {
   readonly x: number;
@@ -92,7 +98,7 @@ export const RAY_LAYOUT: readonly {
   { x: -0.12, z: 0.26, halfWidth: 0.03, phase: 2.1 },
   { x: 0.06, z: -0.06, halfWidth: 0.055, phase: 4.0 },
   { x: 0.24, z: 0.34, halfWidth: 0.035, phase: 1.3 },
-  { x: 0.39, z: -0.22, halfWidth: 0.03, phase: 5.2 },
+  { x: 0.39, z: 0.13, halfWidth: 0.02, phase: 4.46 },
 ];
 
 /** Temps ramené dans [0, RAY_TIME_PERIOD) ; non fini : 0. */

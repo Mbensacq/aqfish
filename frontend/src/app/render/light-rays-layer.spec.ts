@@ -186,6 +186,34 @@ describe('LightRaysLayer (#567)', () => {
     geometry.dispose();
   });
 
+  it('vue de côté du bac par défaut : le faisceau proche de la vitre ne chevauche aucun autre (#590)', () => {
+    const near = RAY_LAYOUT.reduce((a, b) => (b.x > a.x ? b : a));
+    expect(near.halfWidth).toBe(Math.min(...RAY_LAYOUT.map((r) => r.halfWidth)));
+    // Vu de +x, chaque faisceau occupe en z son centre ± sa demi-largeur (en m).
+    const span = (r: (typeof RAY_LAYOUT)[number]): [number, number] => {
+      const z = r.z * DEFAULT_TANK.depth;
+      const hw = r.halfWidth * DEFAULT_TANK.width;
+      return [z - hw, z + hw];
+    };
+    const [lo, hi] = span(near);
+    for (const other of RAY_LAYOUT.filter((r) => r !== near)) {
+      const [a, b] = span(other);
+      expect(b <= lo || a >= hi).toBe(true);
+    }
+    // Traits séparés : jamais deux colonnes à trait côte à côte.
+    const hw = near.halfWidth * DEFAULT_TANK.width;
+    const lit: number[] = [];
+    for (let c = Math.floor(-hw / RAY_CELL); c * RAY_CELL < hw; c++) {
+      if (rayLength((c + 0.5) * RAY_CELL, hw, near.phase, 0, 1) > 0) {
+        lit.push(c);
+      }
+    }
+    expect(lit.length).toBeGreaterThanOrEqual(2);
+    for (let i = 1; i < lit.length; i++) {
+      expect(lit[i] - lit[i - 1]).toBeGreaterThan(1);
+    }
+  });
+
   it('couleur de la palette, opacité fixe, ordre de rendu après l’eau', () => {
     const layer = new LightRaysLayer();
     expect(PALETTE_COLORS).toContain(RAY_COLOR);
