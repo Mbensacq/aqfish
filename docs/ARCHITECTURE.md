@@ -613,6 +613,9 @@ maximal : 60 s par angle), et **aucune mesure de performance** ne doit y être f
   ne lui donne qu'une scène (environnement, moment de la journée, pluie, pause), jamais le
   monde ; en capture, `forbid()` interdit tout contexte audio. Le contexte n'est créé qu'au
   geste de l'utilisateur.
+  Bruitages de la séance d'entretien (#625, ADR 0144) : paramètres purs dans
+  `core/care-sound` (raclette, siphon, seau, clic) ; `AmbientSoundState.playCareSound` les
+  joue dans le moteur déjà en marche, sans jamais créer de contexte (son coupé : aucun nœud).
 - Raccourcis clavier et gestes : déclarés une seule fois dans `core/commands` (ADR 0020).
   Tout nouveau raccourci y est déclaré avant d'être géré ; l'aide-mémoire (`?`) suit sans
   autre modification, et un test d'exhaustivité échoue si une touche gérée n'est pas

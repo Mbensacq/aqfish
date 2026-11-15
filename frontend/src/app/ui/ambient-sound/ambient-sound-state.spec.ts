@@ -10,6 +10,11 @@ import {
   type AmbientScene,
 } from '../../core/ambient-sound/ambient-sound';
 import {
+  CARE_SOUND_KINDS,
+  CARE_SOUND_MIN_GAP,
+  CARE_SOUNDS,
+} from '../../core/care-sound/care-sound';
+import {
   AMBIENT_SOUND_TIMER,
   AmbientSoundState,
   AUDIO_CONTEXT_FACTORY,
@@ -293,5 +298,103 @@ describe('AmbientSoundState (#411)', () => {
         win.AudioContext = saved;
       }
     }
+  });
+  describe('bruitages de la séance (#625)', () => {
+    /** Nombre de nœuds créés dans le contexte `ctx`. */
+    function nodes(ctx: FakeAudioContext): number {
+      return (
+        ctx.gains.length + ctx.filters.length + ctx.bufferSources.length + ctx.oscillators.length
+      );
+    }
+
+    /** Niveau de crête visé par l'enveloppe du dernier bruitage joué dans `ctx`. */
+    function lastPeak(ctx: FakeAudioContext): number {
+      const envelope = ctx.gains.at(-3)!;
+      const ramp = envelope.gain.events.find((event) => event.startsWith('lin '))!;
+      return Number(ramp.slice(4, ramp.indexOf('@')));
+    }
+
+    it('son coupé (par défaut) : aucun contexte ni nœud audio créé', () => {
+      const state = setup();
+      state.setScene(SCENE);
+      for (const kind of CARE_SOUND_KINDS) {
+        expect(state.playCareSound(kind)).toBe(false);
+      }
+      expect(contexts).toHaveLength(0);
+    });
+
+    it('son décoché après usage : contexte fermé, aucun nouveau contexte ni nœud', () => {
+      const state = setup();
+      state.setEnabled(true);
+      state.setEnabled(false);
+      const created = nodes(contexts[0]);
+      expect(state.playCareSound('clic')).toBe(false);
+      expect(contexts).toHaveLength(1);
+      expect(nodes(contexts[0])).toBe(created);
+    });
+
+    it('choix « actif » mémorisé mais pas encore de geste : rien, aucun contexte créé', () => {
+      localStorage.setItem(AMBIENT_SOUND_STORAGE_KEY, 'actif:30');
+      const state = setup();
+      expect(state.enabled()).toBe(true);
+      expect(state.playCareSound('raclette')).toBe(false);
+      expect(contexts).toHaveLength(0);
+    });
+
+    it('sans Web Audio (fabrique absente) : rien, aucune erreur', () => {
+      const state = setup(null);
+      state.setEnabled(true);
+      expect(() => state.playCareSound('seau')).not.toThrow();
+      expect(state.playCareSound('seau')).toBe(false);
+    });
+
+    it('son activé : bruitage joué dans le contexte existant, au volume réglé', () => {
+      const state = setup();
+      state.setEnabled(true);
+      state.setVolume(0.5);
+      const ctx = contexts[0];
+      const before = nodes(ctx);
+      expect(state.playCareSound('siphon')).toBe(true);
+      expect(contexts).toHaveLength(1);
+      expect(nodes(ctx)).toBe(before + 6);
+      expect(lastPeak(ctx)).toBeCloseTo(CARE_SOUNDS.siphon.gain * 0.5);
+      ctx.currentTime = 10;
+      state.setVolume(1);
+      state.playCareSound('siphon');
+      expect(lastPeak(ctx)).toBeCloseTo(CARE_SOUNDS.siphon.gain);
+    });
+
+    it('volume nul : rien joué, aucun nœud', () => {
+      const state = setup();
+      state.setEnabled(true);
+      state.setVolume(0);
+      const before = nodes(contexts[0]);
+      expect(state.playCareSound('clic')).toBe(false);
+      expect(nodes(contexts[0])).toBe(before);
+    });
+
+    it('même nature trop proche : un seul bruitage ; autre nature ou délai écoulé : joué', () => {
+      const state = setup();
+      state.setEnabled(true);
+      const ctx = contexts[0];
+      ctx.currentTime = 1;
+      expect(state.playCareSound('raclette')).toBe(true);
+      expect(state.playCareSound('raclette')).toBe(false);
+      expect(state.playCareSound('clic')).toBe(true);
+      ctx.currentTime = 1 + CARE_SOUND_MIN_GAP.raclette;
+      expect(state.playCareSound('raclette')).toBe(true);
+    });
+
+    it('onglet masqué ou mode capture : rien joué', () => {
+      const state = setup();
+      state.setEnabled(true);
+      setHidden(true);
+      expect(state.playCareSound('clic')).toBe(false);
+      setHidden(false);
+      expect(state.playCareSound('clic')).toBe(true);
+      state.forbid();
+      expect(state.playCareSound('seau')).toBe(false);
+      expect(contexts).toHaveLength(1);
+    });
   });
 });

@@ -1353,6 +1353,44 @@ describe('AquariumHost', () => {
       state.setEnabled(true);
       expect(state.playing()).toBe(false);
     });
+
+    it('bruitages de la séance (#625) : clic aux étapes faites, rien aux étapes sautées ni au bilan', async () => {
+      await create('?seed=42&vitesse=0');
+      const play = vi.spyOn(TestBed.inject(AmbientSoundState), 'playCareSound');
+      host().openCareSession();
+      host().skipCareSessionStep();
+      expect(play).not.toHaveBeenCalled();
+      host().completeCareSessionStep();
+      expect(play.mock.calls).toEqual([['clic']]);
+      // Filtre sans eau de rinçage choisie : l'étape ne se termine pas, pas de clic.
+      host().completeCareSessionStep();
+      expect(host().careSession()?.step).toBe('filtre');
+      expect(play).toHaveBeenCalledTimes(1);
+      host().skipCareSessionStep();
+      // Eau neuve sans eau retirée : le seau ne verse rien, pas de bruitage.
+      host().pourCareBucket();
+      expect(play).toHaveBeenCalledTimes(1);
+      host().skipCareSessionStep();
+      host().skipCareSessionStep();
+      expect(host().careSession()?.step).toBe('bilan');
+      host().completeCareSessionStep();
+      expect(play).toHaveBeenCalledTimes(1);
+      host().closeCareSession();
+    });
+
+    it('bruitages de la séance (#625) : taille absente (bac sans plante), aucun bruitage', async () => {
+      await create('?seed=42&vitesse=0');
+      host().setEnvironment('recif');
+      const play = vi.spyOn(TestBed.inject(AmbientSoundState), 'playCareSound');
+      host().openCareSession();
+      for (let i = 0; i < 4; i++) {
+        host().skipCareSessionStep();
+      }
+      expect(host().careSession()?.outcomes.taille).toBe('saute');
+      host().completeCareSessionStep();
+      expect(play).not.toHaveBeenCalled();
+      host().closeCareSession();
+    });
   });
 
   describe('eau (#207)', () => {
