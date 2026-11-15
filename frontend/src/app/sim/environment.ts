@@ -458,6 +458,15 @@ export function environmentById(id: EnvironmentId): Environment {
   return ENVIRONMENTS[id];
 }
 
+/**
+ * Sol de sable plat (dalle de `SAND_THICKNESS`, sans berge émergée) : vrai pour le bac et le
+ * bassin, faux pour le paludarium (`terrain` non nul). Sert au voile du sol (#607, ADR 0141).
+ * @throws RangeError si l'environnement est inconnu.
+ */
+export function hasFlatFloor(id: EnvironmentId): boolean {
+  return environmentById(id).terrain === null;
+}
+
 /** Volumes d'eau par lieu (`placeKey`), calculés une fois (partagés, ne pas modifier). */
 const WATER_CACHE = new Map<string, Box3>();
 

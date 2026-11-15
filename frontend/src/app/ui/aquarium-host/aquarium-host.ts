@@ -126,6 +126,7 @@ import {
   DEFAULT_ENVIRONMENT_ID,
   environmentById,
   environmentWater,
+  hasFlatFloor,
   isEnvironmentId,
   isPondShapeable,
   isTankResizable,
@@ -534,6 +535,11 @@ export const ALGAE_ATTRIBUTE = 'data-aqfish-algae';
  * jour avec le relevé de l'eau.
  */
 export const FOULING_ATTRIBUTE = 'data-aqfish-fouling';
+/**
+ * Voile réellement dessiné (#607) : « cases des vitres;cases du sol » (`foulingCounts` de la
+ * vue), `0;0` sans voile, mis à jour avec `FOULING_ATTRIBUTE`.
+ */
+export const FOULING_CELLS_ATTRIBUTE = 'data-aqfish-fouling-cells';
 /** Raclette en main (#476) : `true` ou `false`. */
 export const SCRAPER_ATTRIBUTE = 'data-aqfish-scraper';
 /** Étape de la séance d'entretien affichée (#604), absent hors séance. */
@@ -5060,12 +5066,14 @@ export class AquariumHost {
         ? NO_FOULING
         : sampleFouling(this.captureFouling)
       : worldFouling(world, this.maintenanceStartOf(world));
-    const flatFloor = environmentById(world.environment).terrain === undefined;
-    this.view?.setFouling(environmentWater(world), fouling, flatFloor);
-    this.host.nativeElement.setAttribute(
+    this.view?.setFouling(environmentWater(world), fouling, hasFlatFloor(world.environment));
+    const host = this.host.nativeElement;
+    host.setAttribute(
       FOULING_ATTRIBUTE,
       `${Math.round(fouling.glass * 100)};${Math.round(fouling.floor * 100)}`,
     );
+    const cells = this.view?.foulingCounts ?? NO_FOULING;
+    host.setAttribute(FOULING_CELLS_ATTRIBUTE, `${cells.glass};${cells.floor}`);
   }
 
   /**

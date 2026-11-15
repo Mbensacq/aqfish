@@ -13,10 +13,18 @@ import { card, hostEl, open, openSession, sweepMouse } from './outils-seance';
  * Encrassement visible (issue #607, ADR 0141) : un bac tropical sans entretien depuis 20 jours
  * de jeu porte un voile sur les vitres et sur le sol (`data-aqfish-fouling`, « vitres;sol »
  * en %) ; « Étape terminée » aux vitres efface celui des vitres, le siphon celui du sol. Mode
- * décor : aucun voile.
+ * décor : aucun voile. `data-aqfish-fouling-cells` (« vitres;sol » en cases dessinées) vérifie
+ * le voile réellement rendu, sol compris.
  */
 const ELAPSED = 20 * DEFAULT_DAY_LENGTH_SECONDS;
 const fouling = (page: Page) => hostEl(page).getAttribute('data-aqfish-fouling');
+
+/** Cases du voile dessinées : `[vitres, sol]`. */
+async function drawnCells(page: Page): Promise<[number, number]> {
+  const raw = (await hostEl(page).getAttribute('data-aqfish-fouling-cells')) ?? '';
+  const [glass, floor] = raw.split(';').map(Number);
+  return [glass, floor];
+}
 
 async function importOldTank(page: Page): Promise<void> {
   const world: MutableWorld = createDefaultWorld(42);
@@ -51,12 +59,16 @@ test.describe('encrassement visible (#607)', () => {
     const level = Math.round(foulingLevel(ELAPSED, 0) * 100);
     expect(level).toBeGreaterThan(0);
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-fouling', `${level};${level}`);
+    const [glass, floor] = await drawnCells(page);
+    expect(glass).toBeGreaterThan(0);
+    expect(floor).toBeGreaterThan(0);
 
     await openSession(page);
     await expect(card(page)).toHaveAttribute('data-step', 'vitres');
     await card(page).locator('[data-care-done]').click();
     await expect(card(page)).toHaveAttribute('data-step', 'siphon');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-fouling', `0;${level}`);
+    expect(await drawnCells(page)).toEqual([0, floor]);
 
     await page.locator('[data-preset="top"]').click();
     await sweepMouse(page, [0.5]);
@@ -64,6 +76,7 @@ test.describe('encrassement visible (#607)', () => {
     await expect(card(page)).toHaveAttribute('data-step', 'filtre');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-fouling', '0;0');
     expect(await fouling(page)).toBe('0;0');
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-fouling-cells', '0;0');
     expect(errors).toEqual([]);
   });
 
@@ -80,6 +93,7 @@ test.describe('encrassement visible (#607)', () => {
       .click();
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-mode', 'decor');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-fouling', '0;0');
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-fouling-cells', '0;0');
     expect(errors).toEqual([]);
   });
 });

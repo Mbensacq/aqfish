@@ -5,6 +5,7 @@ import {
   ENVIRONMENTS,
   environmentById,
   environmentWater,
+  hasFlatFloor,
   isEnvironmentId,
   isPondShapeable,
   isTankResizable,
@@ -220,6 +221,16 @@ describe('environnements', () => {
     expect(environmentById('bassin')).toBe(POND);
     expect(() => environmentById('lune' as EnvironmentId)).toThrow(RangeError);
     expect(() => environmentById('constructor' as EnvironmentId)).toThrow(RangeError);
+  });
+
+  it('hasFlatFloor : sable plat partout sauf au paludarium, lève pour un inconnu', () => {
+    expect(hasFlatFloor('tropical')).toBe(true);
+    expect(hasFlatFloor('bassin')).toBe(true);
+    expect(hasFlatFloor('paludarium')).toBe(false);
+    for (const id of ENVIRONMENT_IDS) {
+      expect(hasFlatFloor(id)).toBe(ENVIRONMENTS[id].terrain === null);
+    }
+    expect(() => hasFlatFloor('lune' as EnvironmentId)).toThrow(RangeError);
   });
 
   it('environmentWater donne le volume d’eau des dimensions, calculé une fois', () => {
