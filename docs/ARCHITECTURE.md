@@ -623,7 +623,9 @@ maximal : 60 s par angle), et **aucune mesure de performance** ne doit y être f
   de raclette (`AquariumView.setStrokeEnabled`, `onStroke`) qui coupe la caméra le temps du geste.
   Au siphon, le même passage promène le tuyau sur le sol (`sim/siphon.ts`, ADR 0139) : il aspire
   les granulés posés et compte l'eau retirée dans la séance ; l'eau neuve dilue le bac à la part
-  versée (`changeWaterInPlace` avec `share` et `fresh`).
+  versée (`changeWaterInPlace` avec `share` et `fresh`). Au filtre, l'eau de rinçage choisie
+  (`CareSession.rinse`, `sim/filter-rinse.ts`, ADR 0140) s'applique quand l'étape est terminée :
+  au robinet, le filtre perd une part de ses bactéries et repart en maturation.
   Le bilan du bac (`sim/bilan.ts`, ADR 0117) n'est calculé qu'à la demande, déplié depuis le
   bandeau ; il n'écrit rien dans le monde.
 
@@ -649,7 +651,10 @@ En CI (`.github/workflows/ci.yml`), les tests de bout en bout sont répartis sur
 en parallèle (`npm run e2e -- --shard=N/7`, délai de 45 min par part, #248, #384), à côté d'un job pour formatage, lint, tests
 unitaires et build, et d'un job pour les captures. Le job `frontend` regroupe les résultats :
 c'est le contrôle exigé pour fusionner dans `main`. Un fichier de test e2e n'est jamais
-découpé entre deux machines : garder des fichiers de taille raisonnable.
+découpé entre deux machines : garder des fichiers de taille raisonnable (moins de 5 min en CI,
+`e2e/durees.json`). Au-delà, scinder le fichier en `nom-*.spec.ts` avec ses outils communs dans
+`e2e/outils-*.ts` (`cadrage-panneaux`, `seance-*`, #600), en gardant les appels `test(…)` dans
+les fichiers `.spec.ts`.
 
 ## Budgets
 

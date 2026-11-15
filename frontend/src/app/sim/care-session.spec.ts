@@ -113,8 +113,9 @@ describe('séance d’entretien guidée (#604)', () => {
 
   it('terminer les vitres enregistre leur nettoyage au calendrier', () => {
     expect(careStepTask('vitres')).toBe('glass');
-    // Siphon et eau neuve ont leur tâche depuis le lot 2 (#605, `siphon.spec.ts`).
-    for (const step of ['filtre', 'taille', 'bilan'] as const) {
+    // Siphon et eau neuve ont leur tâche depuis le lot 2 (#605, `siphon.spec.ts`), le filtre
+    // depuis le lot 3 (#606, `filter-rinse.spec.ts`).
+    for (const step of ['taille', 'bilan'] as const) {
       expect(careStepTask(step)).toBeNull();
     }
     const before = initialMaintenance(0);

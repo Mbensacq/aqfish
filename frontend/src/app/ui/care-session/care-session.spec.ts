@@ -5,6 +5,7 @@ import {
   skipCareStep,
   startCareSession,
   withPoured,
+  withRinse,
   withSiphoned,
   type CareSession,
 } from '../../sim/care-session';
@@ -45,10 +46,14 @@ describe('CareSessionPanel (#604)', () => {
   });
 
   it('étape sans geste : seulement « Passer » et « Plus tard »', () => {
-    // Le filtre (lot 3) : le siphon a son geste depuis le lot 2 (#605).
-    const filter = completeCareStep(completeCareStep(startCareSession()));
-    const el = render(filter).nativeElement as HTMLElement;
-    expect(el.querySelector('h2')?.textContent).toContain('Le filtre');
+    // La taille (lot 4) : le siphon a son geste depuis le lot 2 (#605), le filtre depuis le
+    // lot 3 (#606).
+    let pruning = startCareSession();
+    for (let i = 0; i < 4; i++) {
+      pruning = skipCareStep(pruning);
+    }
+    const el = render(pruning).nativeElement as HTMLElement;
+    expect(el.querySelector('h2')?.textContent).toContain('La taille');
     expect(el.querySelector('[data-care-done]')).toBeNull();
     expect(el.querySelector('[data-care-skip]')).not.toBeNull();
   });
@@ -126,5 +131,37 @@ describe('CareSessionPanel (#604)', () => {
     expect(el.querySelector('[data-care-hint]')?.textContent).toContain('rien à remplacer');
     expect(el.querySelector('[data-care-pour]')).toBeNull();
     expect(el.querySelector('[data-care-conditioner]')).toBeNull();
+  });
+
+  it('filtre : deux eaux de rinçage, phrase « pourquoi », terminé après un choix (#606)', () => {
+    const filter = skipCareStep(skipCareStep(startCareSession()));
+    const fixture = render(filter);
+    fixture.componentRef.setInput('filterEfficiency', 0.5);
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('h2')?.textContent).toContain('Le filtre');
+    expect(el.querySelector('[data-care-hint]')?.textContent).toContain('50 %');
+    expect(el.querySelector('[data-care-done]')).toBeNull();
+    expect(el.querySelector('[data-care-rinse-why]')).toBeNull();
+    const chosen: string[] = [];
+    fixture.componentInstance.rinseChosen.subscribe((rinse) => chosen.push(rinse));
+    (el.querySelector('[data-care-rinse="robinet"]') as HTMLButtonElement).click();
+    (el.querySelector('[data-care-rinse="bac"]') as HTMLButtonElement).click();
+    expect(chosen).toEqual(['robinet', 'bac']);
+
+    fixture.componentRef.setInput('session', withRinse(filter, 'robinet'));
+    fixture.detectChanges();
+    const why = el.querySelector('[data-care-rinse-why]');
+    expect(why?.textContent).toContain('chlore');
+    expect(why?.getAttribute('data-warning')).toBe('true');
+    expect(el.querySelector('[data-care-rinse="robinet"]')?.getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    expect(el.querySelector('[data-care-done]')).not.toBeNull();
+
+    fixture.componentRef.setInput('session', withRinse(filter, 'bac'));
+    fixture.detectChanges();
+    expect(el.querySelector('[data-care-rinse-why]')?.textContent).toContain('pas de chlore');
+    expect(el.querySelector('[data-care-rinse-why]')?.hasAttribute('data-warning')).toBe(false);
   });
 });

@@ -279,6 +279,7 @@ import {
   scrapeWorldAlgaeAlongInPlace,
   siphonWorldInPlace,
   refillWorldWaterInPlace,
+  rinseWorldFilterInPlace,
   pruneWorldPlantInPlace,
   recordWorldMaintenanceInPlace,
   worldHasPrunablePlants,
@@ -441,10 +442,13 @@ import {
   skipCareStep,
   startCareSession,
   withPoured,
+  withRinse,
   withSiphoned,
   type CareSession,
 } from '../../sim/care-session';
 import { hasWaterToSiphon, pouredShare, siphonedShare } from '../../sim/siphon';
+import { filterMaturityPercent } from '../../sim/filter-maturation';
+import type { FilterRinseWater } from '../../sim/filter-rinse';
 
 /** Fabrique du renderer, remplaçable dans les tests (jsdom n'a pas WebGL). */
 export const AQUARIUM_RENDERER_FACTORY = new InjectionToken<AquariumRendererFactory>(
@@ -528,6 +532,8 @@ export const ALGAE_ATTRIBUTE = 'data-aqfish-algae';
 export const SCRAPER_ATTRIBUTE = 'data-aqfish-scraper';
 /** Étape de la séance d'entretien affichée (#604), absent hors séance. */
 export const CARE_SESSION_ATTRIBUTE = 'data-aqfish-care-session';
+/** Bactéries du filtre du bac affiché, en pour cent entier (#606, `filterMaturityPercent`). */
+export const FILTER_BACTERIA_ATTRIBUTE = 'data-aqfish-bacteries';
 /** Clé de la séance d'entretien interrompue (#604), distincte de la sauvegarde du monde. */
 export const CARE_SESSION_STORAGE_KEY = 'aqfish.seance-entretien';
 /** Corps dans le bac affiché (#582) : nombre ; absent : aucun. */
@@ -1142,6 +1148,8 @@ export class AquariumHost {
   readonly careConditioner = signal(true);
   /** Écart de température du seau avec le bac à l'étape « eau neuve », en °C (#605). */
   readonly careBucketGap = signal(0);
+  /** Efficacité du filtre du bac (0 à 1), pour la consigne de l'étape « filtre » (#606). */
+  readonly careFilter = signal(1);
   /** Vrai si le dernier clic sur le canvas a retiré un corps (#582) : il ne nourrit pas. */
   private netted = false;
   /** Corps exposés au dernier relevé (#582) : un décès depuis relève aussi les effectifs. */
@@ -1906,6 +1914,11 @@ export class AquariumHost {
     }
     if (session.step === 'eau') {
       this.refillFromCareSession(session.poured ?? 0);
+    } else if (session.step === 'filtre') {
+      if (session.rinse === undefined) {
+        return;
+      }
+      this.rinseFromCareSession(session.rinse);
     } else {
       const task = careStepTask(session.step);
       if (task) {
@@ -1913,6 +1926,25 @@ export class AquariumHost {
       }
     }
     this.showCareSession(completeCareStep(session));
+  }
+
+  /** Choix de l'eau de rinçage de l'éponge (#606) : appliqué quand l'étape est terminée. */
+  chooseCareRinse(rinse: FilterRinseWater): void {
+    const session = this.careSession();
+    if (session?.step === 'filtre') {
+      this.showCareSession(withRinse(session, rinse));
+    }
+  }
+
+  /**
+   * Éponge rincée (#606) : dans l'eau du bac rien ne change, au robinet le chlore tue une part
+   * des bactéries ; nettoyage du filtre au calendrier dans les deux cas.
+   */
+  private rinseFromCareSession(rinse: FilterRinseWater): void {
+    this.applyWaterSetting((world) => {
+      rinseWorldFilterInPlace(world, rinse);
+      this.recordMaintenance(world, 'filter');
+    });
   }
 
   /** Un seau d'eau neuve de plus (#605), jusqu'à remplacer l'eau retirée au siphon. */
@@ -4897,6 +4929,11 @@ export class AquariumHost {
     this.waterReadTick = world.tick;
     this.exposeTankList();
     this.waterSample.set(waterSample(world.water, world.environment, world.tick));
+    this.careFilter.set(world.water.filter);
+    this.host.nativeElement.setAttribute(
+      FILTER_BACTERIA_ATTRIBUTE,
+      String(filterMaturityPercent(world.water)),
+    );
     this.untreatedTap.set(world.water.untreatedTap === true);
     this.carbon.set(world.water.carbon === true);
     this.health.set(healthSummary(world.entities));

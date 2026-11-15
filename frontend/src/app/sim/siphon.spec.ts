@@ -238,7 +238,9 @@ describe('séance : siphon et eau neuve au calendrier (#605)', () => {
     expect(careStepTask('vitres')).toBe('glass');
     expect(careStepTask('siphon')).toBe('siphon');
     expect(careStepTask('eau')).toBe('waterChange');
-    expect(careStepTask('filtre')).toBeNull();
+    // Le filtre enregistre le sien depuis le lot 3 (#606, `filter-rinse.spec.ts`).
+    expect(careStepTask('filtre')).toBe('filter');
+    expect(careStepTask('taille')).toBeNull();
     expect(careStepTask('bilan')).toBeNull();
   });
 

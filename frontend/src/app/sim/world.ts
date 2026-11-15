@@ -129,6 +129,7 @@ import {
   type FoodPellet,
 } from './food';
 import { siphonedFood, siphonFloorPoint, type FloorPoint } from './siphon';
+import { rinseFilterInPlace, type FilterRinseWater } from './filter-rinse';
 import { validateObstacle, type Obstacle } from './obstacles';
 import {
   DEFAULT_POND_SHAPE,
@@ -1753,6 +1754,15 @@ export function changeWorldWater(world: World): World {
  */
 export function changeWorldWaterInPlace(world: MutableWorld): void {
   changeWaterInPlace(world.water as MutableWaterState, world.environment);
+}
+
+/**
+ * Rinçage de l'éponge du filtre (#606), **en modifiant** `world` : dans l'eau du bac, rien ne
+ * change ; au robinet, le chlore tue une part des bactéries (`rinseFilterInPlace`). Réservé au
+ * propriétaire unique du monde, comme `changeWorldWaterInPlace`.
+ */
+export function rinseWorldFilterInPlace(world: MutableWorld, rinse: FilterRinseWater): void {
+  rinseFilterInPlace(world.water as MutableWaterState, rinse);
 }
 
 /** Résultat d'un passage de siphon (#605). */

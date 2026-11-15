@@ -8,16 +8,18 @@ import {
   siphonPercent,
   visiblePatches,
   openSession,
+  swipeTouch,
 } from './outils-seance';
 
 /**
- * Séance d'entretien guidée au doigt (#604, #605) : raclette, siphon et un seau d'eau neuve par
+ * Séance d'entretien guidée au doigt (#604, #605, #606) : raclette, siphon, éponge du filtre et
+ * un seau d'eau neuve par
  * des événements tactiles envoyés en CDP (docs/PIEGES.md).
  */
 test.describe('séance d’entretien au toucher (#604)', () => {
   test.use({ hasTouch: true });
 
-  test('au doigt : raclette, siphon et eau neuve', async ({ page }, testInfo) => {
+  test('au doigt : raclette, siphon, filtre et eau neuve', async ({ page }, testInfo) => {
     testInfo.setTimeout(420_000);
     const errors = await open(page);
     await importAlgaeTank(page);
@@ -26,29 +28,19 @@ test.describe('séance d’entretien au toucher (#604)', () => {
     const box = (await page.locator('app-aquarium-host canvas').boundingBox())!;
     const cdp = await page.context().newCDPSession(page);
     // Un seul passage au doigt : il suffit à retirer une plaque (#620).
-    for (const row of [0.5]) {
-      const y = box.y + box.height * row;
-      const at = (x: number) => [{ x: box.x + box.width * x, y, id: 1 }];
-      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: at(0.2) });
-      for (const x of [0.3, 0.4, 0.5, 0.6, 0.7, 0.8]) {
-        await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: at(x) });
-      }
-      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-    }
+    await swipeTouch(cdp, box, 0.5, [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]);
     await expect.poll(() => visiblePatches(page)).toBeLessThan(ALGAE_PATCH_COUNT);
     await card(page).locator('[data-care-skip]').tap();
     await expect(card(page)).toHaveAttribute('data-step', 'siphon');
     // Siphon au doigt (#605), puis un seau d'eau neuve jusqu'à l'étape suivante.
-    const y = box.y + box.height * 0.5;
-    const at = (x: number) => [{ x: box.x + box.width * x, y, id: 1 }];
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: at(0.3) });
-    for (const x of [0.4, 0.5, 0.6, 0.7]) {
-      await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: at(x) });
-    }
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await swipeTouch(cdp, box, 0.5, [0.3, 0.4, 0.5, 0.6, 0.7]);
     await expect.poll(() => siphonPercent(page)).toBeGreaterThan(0);
     await card(page).locator('[data-care-done]').tap();
-    await card(page).locator('[data-care-skip]').tap();
+    // Éponge du filtre au doigt (#606) : rincée dans l'eau du bac, phrase « pourquoi ».
+    await expect(card(page)).toHaveAttribute('data-step', 'filtre');
+    await card(page).locator('[data-care-rinse="bac"]').tap();
+    await expect(card(page).locator('[data-care-rinse-why]')).toContainText('pas de chlore');
+    await card(page).locator('[data-care-done]').tap();
     await expect(card(page)).toHaveAttribute('data-step', 'eau');
     await card(page).locator('[data-care-pour]').tap();
     await card(page).locator('[data-care-done]').tap();

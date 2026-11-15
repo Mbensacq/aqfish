@@ -8,6 +8,12 @@ import {
   type CareSession,
 } from '../../sim/care-session';
 import {
+  FILTER_RINSE_TEXT,
+  FILTER_RINSE_WATERS,
+  filterStepHint,
+  type FilterRinseWater,
+} from '../../sim/filter-rinse';
+import {
   freshWaterStepHint,
   freshWaterWarnings,
   freshWaterWarningTexts,
@@ -30,7 +36,8 @@ const BUCKET_GAPS = [
  * « pourquoi »), consigne de la raclette à l'étape « vitres », « Étape terminée » ou
  * « Passer », bilan à la fin. Non modale : le bac reste visible et manipulable derrière.
  * Siphon et eau neuve (#605) : jauges de l'eau retirée et versée, conditionneur et température
- * du seau, avertissements. Les étapes sans geste disent qu'il arrive bientôt.
+ * du seau, avertissements. Filtre (#606) : rinçage de l'éponge dans l'eau du bac ou au
+ * robinet, avec sa phrase « pourquoi ». La taille dit que son geste arrive bientôt.
  */
 @Component({
   selector: 'app-care-session',
@@ -71,6 +78,31 @@ const BUCKET_GAPS = [
           >
             {{ siphonHint() }}
           </p>
+        } @else if (current.step === 'filtre') {
+          <p class="care-session__hint" data-care-hint>{{ filterHint() }}</p>
+          <div class="care-session__choices" role="group" aria-label="Eau de rinçage de l’éponge">
+            @for (rinse of rinseWaters; track rinse) {
+              <button
+                type="button"
+                class="care-session__button care-session__choice"
+                [attr.data-care-rinse]="rinse"
+                [attr.aria-pressed]="current.rinse === rinse"
+                (click)="rinseChosen.emit(rinse)"
+              >
+                {{ rinseText[rinse].label }}
+              </button>
+            }
+          </div>
+          @if (current.rinse; as rinse) {
+            <p
+              class="care-session__hint"
+              data-care-rinse-why
+              aria-live="polite"
+              [attr.data-warning]="rinse === 'robinet' || null"
+            >
+              {{ rinseText[rinse].why }}
+            </p>
+          }
         } @else if (current.step === 'eau') {
           <div
             class="care-session__gauge"
@@ -189,6 +221,10 @@ export class CareSessionPanel {
   readonly conditioner = input(true);
   /** Écart de température du seau avec le bac, en °C (eau neuve, #605). */
   readonly bucketGap = input(0);
+  /** Efficacité du filtre du bac, 0 à 1 (consigne du filtre, #606). */
+  readonly filterEfficiency = input(1);
+  /** Choix de l'eau de rinçage de l'éponge (#606). */
+  readonly rinseChosen = output<FilterRinseWater>();
   /** « Verser un seau ». */
   readonly bucketPoured = output<void>();
   /** Case du conditionneur. */
@@ -213,6 +249,11 @@ export class CareSessionPanel {
   });
   protected readonly hint = computed(() => glassStepHint(this.visibleAlgae()));
   protected readonly bucketGaps = BUCKET_GAPS;
+  protected readonly rinseWaters = FILTER_RINSE_WATERS;
+  protected readonly rinseText = FILTER_RINSE_TEXT;
+  protected readonly filterHint = computed(() =>
+    filterStepHint({ filter: this.filterEfficiency() }),
+  );
   protected readonly siphoned = computed(() => this.session()?.siphoned ?? 0);
   protected readonly poured = computed(() => this.session()?.poured ?? 0);
   protected readonly siphonPercent = computed(() => sharePercent(this.siphoned()));
@@ -227,7 +268,10 @@ export class CareSessionPanel {
   protected readonly freshWarnings = computed(() =>
     freshWaterWarningTexts(freshWaterWarnings(this.conditioner(), this.bucketGap(), 0)),
   );
-  /** « Étape terminée » : vitres toujours ; siphon et eau neuve dès qu'il y a eu un geste. */
+  /**
+   * « Étape terminée » : vitres toujours ; siphon et eau neuve dès qu'il y a eu un geste ; filtre
+   * dès que l'eau de rinçage est choisie.
+   */
   protected readonly canComplete = computed(() => {
     switch (this.session()?.step) {
       case 'vitres':
@@ -236,6 +280,8 @@ export class CareSessionPanel {
         return this.siphoned() > 0;
       case 'eau':
         return this.poured() > 0;
+      case 'filtre':
+        return this.session()?.rinse !== undefined;
       default:
         return false;
     }

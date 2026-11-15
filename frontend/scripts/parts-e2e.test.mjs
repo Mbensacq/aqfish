@@ -1,6 +1,9 @@
 // Tests de la répartition des parts e2e (#281) : `npm run test:outils`.
 import assert from 'node:assert/strict';
+import { readdirSync, readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { test } from 'node:test';
+import { fileURLToPath } from 'node:url';
 
 import {
   averageDurations,
@@ -108,4 +111,20 @@ test('hasChosenFiles : la valeur d’une option en deux mots n’est pas un fich
   assert.equal(hasChosenFiles(['--list', 'ph']), true);
   // Option à valeur en dernier, sans valeur : pas de fichier.
   assert.equal(hasChosenFiles(['--grep']), false);
+});
+
+// #600 : avec `e2e/durees.json` remesuré, la part la plus chargée de la CI (7 parts) reste
+// estimée sous 30 min, loin du plafond de 45 min du job (machines lentes : +30 %). Si ce test
+// échoue après une remesure, alléger les fichiers les plus longs ou ajouter une part
+// (`.github/workflows/ci.yml`, zone protégée : `validation-mathis`). Aucun fichier ne dépasse
+// non plus 8 min : un fichier n'est jamais coupé entre deux parts (docs/ARCHITECTURE.md).
+test('durees.json : 7 parts estimées sous 30 min, aucun fichier au-delà de 8 min (#600)', () => {
+  const root = join(dirname(fileURLToPath(import.meta.url)), '..', 'e2e');
+  const durations = JSON.parse(readFileSync(join(root, 'durees.json'), 'utf8'));
+  const files = readdirSync(root).filter((f) => f.endsWith('.spec.ts') && f !== 'captures.spec.ts');
+  const parts = distribute(files, durations, 7);
+  const slowest = Math.max(...parts.map((p) => p.seconds));
+  assert.ok(slowest < 30 * 60, `part la plus chargée : ${(slowest / 60).toFixed(1)} min`);
+  const long = Object.entries(durations).filter(([, s]) => s > 8 * 60);
+  assert.deepEqual(long, [], 'fichiers e2e de plus de 8 min : les scinder');
 });

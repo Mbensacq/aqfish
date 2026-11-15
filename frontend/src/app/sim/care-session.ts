@@ -1,3 +1,4 @@
+import { isFilterRinseWater, type FilterRinseWater } from './filter-rinse';
 import type { MaintenanceTask } from './maintenance';
 import { MAX_SIPHON_SHARE } from './siphon';
 
@@ -8,8 +9,9 @@ import { MAX_SIPHON_SHARE } from './siphon';
  * un rechargement (`readCareSession`). Fonctions pures, sans hasard ni horloge.
  *
  * Lot 1 : l'étape « vitres » a son geste (la raclette). Lot 2 (#605) : le siphon compte l'eau
- * retirée (`siphoned`), l'eau neuve l'eau versée (`poured`, `sim/siphon.ts`). Les autres
- * étapes se sautent en attendant leurs lots.
+ * retirée (`siphoned`), l'eau neuve l'eau versée (`poured`, `sim/siphon.ts`). Lot 3 (#606) :
+ * le filtre retient l'eau de rinçage choisie (`rinse`, `sim/filter-rinse.ts`). La taille se
+ * saute en attendant son lot.
  */
 
 /** Étape d'une séance, dans l'ordre. */
@@ -71,6 +73,8 @@ export interface CareSession {
   readonly siphoned?: number;
   /** Part de l'eau neuve versée (0 à `siphoned`, #605) ; absente : 0. */
   readonly poured?: number;
+  /** Eau de rinçage choisie pour l'éponge du filtre (#606) ; absente : pas encore choisie. */
+  readonly rinse?: FilterRinseWater;
 }
 
 /** Séance neuve, à la première étape. */
@@ -88,6 +92,11 @@ export function withSiphoned(session: CareSession, share: number): CareSession {
 export function withPoured(session: CareSession, share: number): CareSession {
   const limit = session.siphoned ?? 0;
   return { ...session, poured: isShare(share, limit) ? share : (session.poured ?? 0) };
+}
+
+/** Séance `session` avec l'eau de rinçage `rinse` choisie pour l'éponge du filtre (#606). */
+export function withRinse(session: CareSession, rinse: FilterRinseWater): CareSession {
+  return isFilterRinseWater(rinse) ? { ...session, rinse } : session;
 }
 
 const isShare = (value: unknown, max: number): value is number =>
@@ -126,17 +135,18 @@ export function skipCareStep(session: CareSession): CareSession {
   return leaveStep(session, 'saute');
 }
 
-/** Tâche enregistrée par chaque étape qui a déjà son geste (lots 1 et 2). */
+/** Tâche enregistrée par chaque étape qui a déjà son geste (lots 1 à 3). */
 const STEP_TASKS: Readonly<Partial<Record<CareSessionStep, MaintenanceTask>>> = {
   vitres: 'glass',
   siphon: 'siphon',
+  filtre: 'filter',
   eau: 'waterChange',
 };
 
 /**
  * Tâche du calendrier d'entretien (`sim/maintenance.ts`) enregistrée quand l'étape `step` est
- * terminée, `null` si aucune : vitres, siphon et eau neuve (lots 1 et 2) ; le filtre et la
- * taille enregistreront la leur avec leur geste (lots 3 et 4).
+ * terminée, `null` si aucune : vitres, siphon, filtre et eau neuve (lots 1 à 3) ; la taille
+ * enregistrera la sienne avec son geste (lot 4).
  */
 export function careStepTask(step: CareSessionStep): MaintenanceTask | null {
   return STEP_TASKS[step] ?? null;
@@ -178,6 +188,7 @@ export function serializeCareSession(session: CareSession): string {
     outcomes: session.outcomes,
     ...(session.siphoned === undefined ? {} : { siphoned: session.siphoned }),
     ...(session.poured === undefined ? {} : { poured: session.poured }),
+    ...(session.rinse === undefined ? {} : { rinse: session.rinse }),
   });
 }
 
@@ -187,7 +198,7 @@ const isStep = (value: unknown): value is CareSessionStep =>
 /**
  * Relit une séance enregistrée (`serializeCareSession`) : `null` si le texte est absent ou
  * invalide (étape inconnue, issue inconnue, étape à venir déjà passée, part retirée ou versée
- * hors bornes). Ne lève jamais.
+ * hors bornes, eau de rinçage inconnue). Ne lève jamais.
  */
 export function readCareSession(text: string | null): CareSession | null {
   if (text === null) {
@@ -204,6 +215,7 @@ export function readCareSession(text: string | null): CareSession | null {
     outcomes?: unknown;
     siphoned?: unknown;
     poured?: unknown;
+    rinse?: unknown;
   } | null;
   if (typeof record !== 'object' || record === null || !isStep(record.step)) {
     return null;
@@ -225,7 +237,10 @@ export function readCareSession(text: string | null): CareSession | null {
     }
     read[step] = outcome;
   }
-  const { siphoned, poured } = record;
+  const { siphoned, poured, rinse } = record;
+  if (rinse !== undefined && !isFilterRinseWater(rinse)) {
+    return null;
+  }
   if (siphoned !== undefined && !isShare(siphoned, MAX_SIPHON_SHARE)) {
     return null;
   }
@@ -237,5 +252,6 @@ export function readCareSession(text: string | null): CareSession | null {
     outcomes: read,
     ...(siphoned === undefined ? {} : { siphoned }),
     ...(poured === undefined ? {} : { poured }),
+    ...(rinse === undefined ? {} : { rinse }),
   };
 }
