@@ -8201,10 +8201,10 @@
           "note": "Verdict OK, 0 bug, unitaires 5314 + e2e séance verts, captures publiées (146 identiques)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-15T20:59:26.866Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-15T22:20:51.105Z",
+          "note": "PR #645 fusionnée → v1.21.1 (release CI), CI main 7e671f6 verte, dette #646 ; suppression de branche refusée"
         }
       },
       "metriques": {}
