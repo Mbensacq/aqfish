@@ -8064,6 +8064,24 @@
         }
       },
       "metriques": {}
+    },
+    "222": {
+      "numero": 222,
+      "date": "2026-11-15",
+      "debut": "2026-11-15T10:55:26.240Z",
+      "type": "dette",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-15T10:55:26.240Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
