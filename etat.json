@@ -8049,6 +8049,12 @@
           "debut": "2026-11-15T08:04:27.157Z",
           "fin": "2026-11-15T09:19:45.856Z",
           "note": "Corrections #634 seules (sol voilé via hasFlatFloor, attribut data-aqfish-fouling-cells + e2e, captures regardées), CI 11/11 verte, a-corriger retirée ; #623 non commencée (session occupée)"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-15T09:20:18.267Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
