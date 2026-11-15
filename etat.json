@@ -8111,10 +8111,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-15T13:19:59.951Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-15T13:21:25.870Z",
+          "note": "Rétro #640 ; issue #637 (dette XS, + #590) ; PR docs #641 ; nouvelle issue #638"
         }
       },
       "metriques": {}
