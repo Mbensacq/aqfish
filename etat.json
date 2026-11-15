@@ -7963,7 +7963,7 @@
       "debut": "2026-11-15T01:10:25.028Z",
       "type": "fonctionnalite",
       "issue": 600,
-      "pr": null,
+      "pr": 633,
       "version": null,
       "phases": {
         "planif": {
