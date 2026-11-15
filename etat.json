@@ -8147,10 +8147,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-15T16:31:18.257Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-15T16:31:47.371Z",
+          "note": "Issue #623 : taille aux ciseaux (S), critères « absent » ajoutés"
         }
       },
       "metriques": {}
