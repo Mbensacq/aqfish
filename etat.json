@@ -8070,7 +8070,7 @@
       "date": "2026-11-15",
       "debut": "2026-11-15T10:55:26.240Z",
       "type": "dette",
-      "issue": null,
+      "issue": 635,
       "pr": null,
       "version": null,
       "phases": {
