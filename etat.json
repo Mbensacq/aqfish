@@ -8127,6 +8127,12 @@
           "debut": "2026-11-15T14:19:41.816Z",
           "fin": "2026-11-15T15:07:54.200Z",
           "note": "Verdict OK, 0 bug, unitaires verts + CI 11/11, e2e locale interrompue (délai), captures side/three-quarter vues"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-15T15:08:43.812Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
