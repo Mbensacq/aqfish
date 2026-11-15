@@ -8129,10 +8129,10 @@
           "note": "Verdict OK, 0 bug, unitaires verts + CI 11/11, e2e locale interrompue (délai), captures side/three-quarter vues"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-15T15:08:43.812Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-15T16:30:34.107Z",
+          "note": "PR #642 fusionnée → v1.20.6 (release CI), PR docs #641 fusionnée, CI main b4f554c verte ; suppression de branches refusée par le proxy"
         }
       },
       "metriques": {}
