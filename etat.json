@@ -7971,6 +7971,12 @@
           "debut": "2026-11-15T01:10:25.028Z",
           "fin": "2026-11-15T01:10:57.266Z",
           "note": "Issue #600 : CI e2e, rééquilibrer les tranches (M), bug bloquant avant #607"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-15T01:11:32.094Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
