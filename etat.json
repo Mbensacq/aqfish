@@ -8100,6 +8100,24 @@
         }
       },
       "metriques": {}
+    },
+    "223": {
+      "numero": 223,
+      "date": "2026-11-15",
+      "debut": "2026-11-15T13:19:59.951Z",
+      "type": "retro",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-15T13:19:59.951Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
