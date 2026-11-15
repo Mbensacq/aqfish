@@ -8183,10 +8183,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-15T19:27:14.781Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-15T19:27:40.453Z",
+          "note": "Issue #624 : avant / après de la séance (S)"
         }
       },
       "metriques": {}
