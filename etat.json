@@ -7983,6 +7983,12 @@
           "debut": "2026-11-15T03:01:45.675Z",
           "fin": "2026-11-15T03:34:31.970Z",
           "note": "Verdict OK, 0 bug, 695 tests e2e avant/après, CI 7/7 verte, captures 108/151 identiques (c219)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-15T03:35:07.186Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
