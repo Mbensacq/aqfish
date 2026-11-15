@@ -281,6 +281,7 @@ import {
   siphonWorldInPlace,
   refillWorldWaterInPlace,
   rinseWorldFilterInPlace,
+  cutWorldPlantInPlace,
   pruneWorldPlantInPlace,
   recordWorldMaintenanceInPlace,
   worldHasPrunablePlants,
@@ -437,12 +438,15 @@ import {
 import { refreshDue } from '../dashboard-frame/refresh-pace';
 import {
   careSessionFinished,
+  careSessionPruned,
   careStepTask,
   completeCareStep,
   readCareSession,
   serializeCareSession,
+  skipAbsentCareSteps,
   skipCareStep,
   startCareSession,
+  withCut,
   withPoured,
   withRinse,
   withSiphoned,
@@ -1164,6 +1168,8 @@ export class AquariumHost {
   readonly careBucketGap = signal(0);
   /** Efficacité du filtre du bac (0 à 1), pour la consigne de l'étape « filtre » (#606). */
   readonly careFilter = signal(1);
+  /** Le bac a une plante à tailler (#623) : étape « taille » et sa ligne au bilan. */
+  readonly carePrunable = signal(true);
   /** Vrai si le dernier clic sur le canvas a retiré un corps (#582) : il ne nourrit pas. */
   private netted = false;
   /** Corps exposés au dernier relevé (#582) : un décès depuis relève aussi les effectifs. */
@@ -1933,6 +1939,11 @@ export class AquariumHost {
         return;
       }
       this.rinseFromCareSession(session.rinse);
+    } else if (session.step === 'taille') {
+      // Taille (#623) : au calendrier seulement si une coupe a été faite.
+      if (careSessionPruned(session)) {
+        this.applyWaterSetting((world) => this.recordMaintenance(world, 'prune'));
+      }
     } else {
       const task = careStepTask(session.step);
       if (task) {
@@ -1940,6 +1951,26 @@ export class AquariumHost {
       }
     }
     this.showCareSession(completeCareStep(session));
+  }
+
+  /**
+   * Coupe de l'étape « taille » (#623) : taille la plante d'indice `index` du décor, la partie
+   * coupée charge un peu l'eau (`cutWorldPlantInPlace`) ; compte la coupe dans la séance. Le
+   * calendrier n'est mis à jour qu'à « Étape terminée ». Renvoie vrai si une partie a été coupée.
+   */
+  cutCarePlant(index: number): boolean {
+    const session = this.careSession();
+    if (session?.step !== 'taille') {
+      return false;
+    }
+    let cut = false;
+    this.applyWaterSetting((world) => {
+      cut = cutWorldPlantInPlace(world, index);
+    });
+    if (cut) {
+      this.showCareSession(withCut(session));
+    }
+    return cut;
   }
 
   /** Choix de l'eau de rinçage de l'éponge (#606) : appliqué quand l'étape est terminée. */
@@ -2011,17 +2042,29 @@ export class AquariumHost {
     this.applyCareSessionTool(null);
   }
 
-  private showCareSession(session: CareSession): void {
+  private showCareSession(shown: CareSession): void {
+    // Bac sans plante à tailler (#623) : l'étape « taille » est sautée d'office.
+    const world = this.currentWorld;
+    const prunable = world ? worldHasPrunablePlants(world) : true;
+    this.carePrunable.set(prunable);
+    const session = skipAbsentCareSteps(shown, prunable);
     this.careSession.set(session);
     this.writeStoredCareSession(careSessionFinished(session) ? null : session);
     this.applyCareSessionTool(session);
   }
 
-  /** Raclette en main à l'étape « vitres », passage autorisé aux vitres et au siphon. */
+  /**
+   * Raclette en main à l'étape « vitres », sécateur à l'étape « taille » (#623), passage
+   * autorisé aux vitres et au siphon.
+   */
   private applyCareSessionTool(session: CareSession | null): void {
     const glass = session?.step === 'vitres';
     if (glass !== this.scraping()) {
       this.toggleScraper();
+    }
+    const prune = session?.step === 'taille';
+    if (prune !== this.pruning()) {
+      this.togglePruner();
     }
     this.view?.setStrokeEnabled(strokeStep(session));
     if (session?.step === 'eau' && session.poured === undefined) {
@@ -4380,7 +4423,11 @@ export class AquariumHost {
         } else if (this.pruning()) {
           const pick = view.pickDecor(x, y);
           if (pick?.kind === 'item') {
-            this.prunePlant(pick.index);
+            if (this.careSession()?.step === 'taille') {
+              this.cutCarePlant(pick.index);
+            } else {
+              this.prunePlant(pick.index);
+            }
           }
         } else if (this.scraping()) {
           const ray = view.pickRay(x, y);
@@ -4945,6 +4992,7 @@ export class AquariumHost {
     this.exposeTankList();
     this.waterSample.set(waterSample(world.water, world.environment, world.tick));
     this.careFilter.set(world.water.filter);
+    this.carePrunable.set(worldHasPrunablePlants(world));
     this.host.nativeElement.setAttribute(
       FILTER_BACTERIA_ATTRIBUTE,
       String(filterMaturityPercent(world.water)),

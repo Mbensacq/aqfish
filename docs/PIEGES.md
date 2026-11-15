@@ -6,6 +6,10 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Toucher bref sur le canvas en e2e : `page.touchscreen.tap` suffit** (cycle 224, #623) : avec
+  `test.use({ hasTouch: true })`, Chromium en tire `pointerdown` / `pointerup` de type `touch`,
+  donc `onCanvasClick` (sécateur, raclette au clic) ; la session CDP (`swipeTouch`) n'est utile
+  que pour un glissé. (2026-11-15)
 - **Part e2e de la CI au plafond de 45 min : un fichier grossi en silence, `e2e/durees.json`
   périmé** (cycle 219, #600) : `cadrage-panneaux.spec.ts` comptait 370 s dans `durees.json` mais
   prenait 18 à 31 min en CI (81 tests, chacun recharge la scène, 6 à 47 s) ; la part qui le

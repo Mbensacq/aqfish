@@ -156,6 +156,7 @@ import type { SavedJournal } from './journal';
 import {
   changeWaterInPlace,
   freshWater,
+  MAX_CONCENTRATION,
   setHeaterInPlace,
   stepWaterInPlace,
   targetTemperature,
@@ -1888,6 +1889,26 @@ export function scrapeWorldAlgaeAlongInPlace(
     scrapeAlgaeInPlace(world.water as MutableWaterState, index);
   }
   return touched;
+}
+
+/** Ammoniaque ajoutée par une coupe de la séance d'entretien (#623) : la partie coupée pourrit. */
+export const PLANT_CUT_AMMONIA = 0.05;
+
+/**
+ * Coupe de la séance d'entretien (étape « taille », #623), **en modifiant** `world` : taille la
+ * plante d'indice `index` de `World.decor` (`pruneWorldPlantInPlace`, cette plante seulement)
+ * et la partie coupée ajoute `PLANT_CUT_AMMONIA` d'ammoniaque (déchet organique, bornée à
+ * `MAX_CONCENTRATION`). Renvoie vrai si une partie a été coupée ; faux (monde inchangé) pour un
+ * indice inconnu, un autre élément, une plante sans pousse visible ou un bac où rien ne pousse.
+ * La plante repousse ensuite selon son modèle (`stepPlantGrowthInPlace`).
+ */
+export function cutWorldPlantInPlace(world: MutableWorld, index: number): boolean {
+  if (!pruneWorldPlantInPlace(world, index)) {
+    return false;
+  }
+  const water = world.water as MutableWaterState;
+  water.ammonia = Math.min(MAX_CONCENTRATION, water.ammonia + PLANT_CUT_AMMONIA);
+  return true;
 }
 
 /**

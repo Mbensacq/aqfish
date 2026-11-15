@@ -10,8 +10,9 @@ import { MAX_SIPHON_SHARE } from './siphon';
  *
  * Lot 1 : l'étape « vitres » a son geste (la raclette). Lot 2 (#605) : le siphon compte l'eau
  * retirée (`siphoned`), l'eau neuve l'eau versée (`poured`, `sim/siphon.ts`). Lot 3 (#606) :
- * le filtre retient l'eau de rinçage choisie (`rinse`, `sim/filter-rinse.ts`). La taille se
- * saute en attendant son lot.
+ * le filtre retient l'eau de rinçage choisie (`rinse`, `sim/filter-rinse.ts`). Lot 5 (#623) :
+ * la taille compte les coupes (`cuts`) ; elle est sautée d'office dans un bac sans plante à
+ * tailler (`skipAbsentCareSteps`) et n'a alors pas de ligne au bilan.
  */
 
 /** Étape d'une séance, dans l'ordre. */
@@ -52,7 +53,7 @@ export const CARE_SESSION_TEXT: Readonly<
   },
   taille: {
     title: 'La taille',
-    why: 'Couper les tiges trop hautes rend la lumière aux plantes du bas.',
+    why: 'Couper les feuilles abîmées et les tiges trop hautes limite les déchets qui chargent l’eau en nitrates.',
   },
   bilan: {
     title: 'Le bilan',
@@ -75,7 +76,12 @@ export interface CareSession {
   readonly poured?: number;
   /** Eau de rinçage choisie pour l'éponge du filtre (#606) ; absente : pas encore choisie. */
   readonly rinse?: FilterRinseWater;
+  /** Coupes faites à l'étape « taille » (#623), entier dans [0, `MAX_CARE_CUTS`] ; absent : 0. */
+  readonly cuts?: number;
 }
+
+/** Coupes admises à la lecture d'une séance enregistrée. */
+export const MAX_CARE_CUTS = 1000;
 
 /** Séance neuve, à la première étape. */
 export function startCareSession(): CareSession {
@@ -97,6 +103,25 @@ export function withPoured(session: CareSession, share: number): CareSession {
 /** Séance `session` avec l'eau de rinçage `rinse` choisie pour l'éponge du filtre (#606). */
 export function withRinse(session: CareSession, rinse: FilterRinseWater): CareSession {
   return isFilterRinseWater(rinse) ? { ...session, rinse } : session;
+}
+
+/** Séance `session` avec une coupe de plus (#623) ; sans effet hors de l'étape « taille ». */
+export function withCut(session: CareSession): CareSession {
+  if (session.step !== 'taille') {
+    return session;
+  }
+  return { ...session, cuts: Math.min(MAX_CARE_CUTS, (session.cuts ?? 0) + 1) };
+}
+
+const isCuts = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= MAX_CARE_CUTS;
+
+/**
+ * Saute d'office l'étape « taille » d'un bac sans plante à tailler (`prunable` faux, #623) :
+ * rien n'est coupé ni enregistré. Toute autre étape est rendue telle quelle.
+ */
+export function skipAbsentCareSteps(session: CareSession, prunable: boolean): CareSession {
+  return session.step === 'taille' && !prunable ? skipCareStep(session) : session;
 }
 
 const isShare = (value: unknown, max: number): value is number =>
@@ -145,11 +170,17 @@ const STEP_TASKS: Readonly<Partial<Record<CareSessionStep, MaintenanceTask>>> = 
 
 /**
  * Tâche du calendrier d'entretien (`sim/maintenance.ts`) enregistrée quand l'étape `step` est
- * terminée, `null` si aucune : vitres, siphon, filtre et eau neuve (lots 1 à 3) ; la taille
- * enregistrera la sienne avec son geste (lot 4).
+ * terminée, `null` si aucune : vitres, siphon, filtre et eau neuve (lots 1 à 3). La taille
+ * (#623) n'en a pas d'office : la tâche `prune` n'est enregistrée que si une coupe a été faite
+ * (`careSessionPruned`).
  */
 export function careStepTask(step: CareSessionStep): MaintenanceTask | null {
   return STEP_TASKS[step] ?? null;
+}
+
+/** Vrai si la séance doit enregistrer la taille au calendrier : au moins une coupe (#623). */
+export function careSessionPruned(session: CareSession): boolean {
+  return (session.cuts ?? 0) > 0;
 }
 
 /** Ligne du bilan : étape et issue (`null` si elle n'a pas été passée). */
@@ -159,9 +190,17 @@ export interface CareSessionSummaryLine {
   readonly outcome: CareStepOutcome | null;
 }
 
-/** Bilan de la séance : une ligne par étape où l'on agit, dans l'ordre. */
-export function careSessionSummary(session: CareSession): CareSessionSummaryLine[] {
-  return CARE_SESSION_STEPS.filter((s): s is CareSessionTaskStep => s !== 'bilan').map((step) => ({
+/**
+ * Bilan de la séance : une ligne par étape où l'on agit, dans l'ordre ; sans ligne « taille »
+ * dans un bac sans plante à tailler (`prunable` faux, #623).
+ */
+export function careSessionSummary(
+  session: CareSession,
+  prunable = true,
+): CareSessionSummaryLine[] {
+  return CARE_SESSION_STEPS.filter(
+    (s): s is CareSessionTaskStep => s !== 'bilan' && (prunable || s !== 'taille'),
+  ).map((step) => ({
     step,
     title: CARE_SESSION_TEXT[step].title,
     outcome: session.outcomes[step] ?? null,
@@ -181,6 +220,16 @@ export function glassStepHint(remaining: number): string {
     : `Passez la raclette sur les vitres : ${remaining} taches vertes.`;
 }
 
+/** Consigne de l'étape « taille » selon le nombre de coupes `cuts` (#623). */
+export function pruneStepHint(cuts: number): string {
+  if (!(cuts > 0)) {
+    return 'Cliquez ou touchez une tige trop haute pour la couper.';
+  }
+  return cuts === 1
+    ? 'Une coupe : la partie coupée tombe et se décompose. Coupez-en une autre ou terminez.'
+    : `${cuts} coupes : chaque partie coupée tombe et se décompose. Coupez-en une autre ou terminez.`;
+}
+
 /** Texte enregistré d'une séance (reprise après rechargement). */
 export function serializeCareSession(session: CareSession): string {
   return JSON.stringify({
@@ -189,6 +238,7 @@ export function serializeCareSession(session: CareSession): string {
     ...(session.siphoned === undefined ? {} : { siphoned: session.siphoned }),
     ...(session.poured === undefined ? {} : { poured: session.poured }),
     ...(session.rinse === undefined ? {} : { rinse: session.rinse }),
+    ...(session.cuts === undefined ? {} : { cuts: session.cuts }),
   });
 }
 
@@ -198,7 +248,8 @@ const isStep = (value: unknown): value is CareSessionStep =>
 /**
  * Relit une séance enregistrée (`serializeCareSession`) : `null` si le texte est absent ou
  * invalide (étape inconnue, issue inconnue, étape à venir déjà passée, part retirée ou versée
- * hors bornes, eau de rinçage inconnue). Ne lève jamais.
+ * hors bornes, eau de rinçage inconnue, coupes hors bornes). Sans `cuts` (séance enregistrée
+ * avant #623) : aucune coupe. Ne lève jamais.
  */
 export function readCareSession(text: string | null): CareSession | null {
   if (text === null) {
@@ -216,6 +267,7 @@ export function readCareSession(text: string | null): CareSession | null {
     siphoned?: unknown;
     poured?: unknown;
     rinse?: unknown;
+    cuts?: unknown;
   } | null;
   if (typeof record !== 'object' || record === null || !isStep(record.step)) {
     return null;
@@ -237,7 +289,10 @@ export function readCareSession(text: string | null): CareSession | null {
     }
     read[step] = outcome;
   }
-  const { siphoned, poured, rinse } = record;
+  const { siphoned, poured, rinse, cuts } = record;
+  if (cuts !== undefined && !isCuts(cuts)) {
+    return null;
+  }
   if (rinse !== undefined && !isFilterRinseWater(rinse)) {
     return null;
   }
@@ -253,5 +308,6 @@ export function readCareSession(text: string | null): CareSession | null {
     ...(siphoned === undefined ? {} : { siphoned }),
     ...(poured === undefined ? {} : { poured }),
     ...(rinse === undefined ? {} : { rinse }),
+    ...(cuts === undefined ? {} : { cuts }),
   };
 }

@@ -597,11 +597,15 @@ jeu**, sauf mention.
 - Plafond : la pointe reste un voxel sous la surface de l'eau.
 - Taille au sécateur (section « Eau ») : la plante garde 80 % de sa hauteur totale, jamais
   moins que sa hauteur d'origine. Le changement d'eau n'y touche pas.
+- Taille de la séance d'entretien (issue #623, ADR 0142) : même coupe, plante par plante ; la
+  partie coupée qui tombe ajoute 0,05 unité de jeu d'ammoniaque (`PLANT_CUT_AMMONIA`), ordre de
+  grandeur de jeu non sourcé, que le filtre transforme ensuite en nitrates.
 - Chaque plante arrivée au plafond retire 4 % de la lumière du décor du fond, 12 % au plus.
   Cette ombre tombe sur **tout** le décor posé au fond (plantes, rochers, bois flotté), voulu
   ainsi (issue #494) : la canopée assombrit le fond du bac ; ni les animaux, ni l'eau, ni les
   nénuphars n'y sont soumis.
-  Les plantes n'ont pas d'autre effet sur l'eau ni sur les animaux dans le jeu.
+  Hors la coupe de la séance, les plantes n'ont pas d'autre effet sur l'eau ni sur les animaux
+  dans le jeu.
 
 **Fiche produit (structure suggérée)** : `id`, `nom`, `catégorie` ; `dose_efficace`,
 `dose_toxique`, `durée`, `fréquence_max` ; `effets_eau` {pH, KH, GH, Cl, O₂, couleur,

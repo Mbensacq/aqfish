@@ -629,6 +629,11 @@ maximal : 60 s par angle), et **aucune mesure de performance** ne doit y être f
   versée (`changeWaterInPlace` avec `share` et `fresh`). Au filtre, l'eau de rinçage choisie
   (`CareSession.rinse`, `sim/filter-rinse.ts`, ADR 0140) s'applique quand l'étape est terminée :
   au robinet, le filtre perd une part de ses bactéries et repart en maturation.
+  À la taille, le sécateur est en main (ADR 0142) : un clic ou un toucher sur une plante à tige
+  la taille (`cutWorldPlantInPlace` : cette plante seulement, un peu d'ammoniaque pour la partie
+  coupée) et compte la coupe (`CareSession.cuts`) ; la tâche `prune` n'entre au calendrier qu'à
+  « Étape terminée » après une coupe. Bac sans plante à tailler : étape sautée d'office
+  (`skipAbsentCareSteps`), sans ligne au bilan.
   Le bilan du bac (`sim/bilan.ts`, ADR 0117) n'est calculé qu'à la demande, déplié depuis le
   bandeau ; il n'écrit rien dans le monde.
 
