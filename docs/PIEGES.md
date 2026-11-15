@@ -1360,6 +1360,10 @@ environnement)` plutôt que `setPopulation(createDefaultWorld(…))`. (2026-10-2
 
 ## Rendu
 
+- **Cases vertes éparses sous l'eau : `vegetation` ressort bleu-vert** (cycle 220, #607) : des
+  cases isolées de 2 cm en `vegetation` posées contre les vitres sortaient de la passe palette
+  dans les tons de l'eau (trous apparents dans le voile) ; `vegetationClaire` reste verte. Avec
+  `sableOmbre` en fond, le voile se lit brun-vert de jour et bleuté de nuit. (2026-11-15)
 - **Effet translucide d'une couleur « locale » : la passe palette la renvoie ailleurs**
   (cycle 203, #567) : au récif, des rayons en `eauRecifClaire` à 30 % sur l'eau bleue
   retombaient exactement sur l'eau (invisibles), et en `koiBlanc` sur le violet des coraux

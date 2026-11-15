@@ -285,6 +285,12 @@ test.describe('Captures', () => {
     // Algues (#476) : plaques vertes sur les vitres (fond, côtés, bas de la vitre avant).
     { name: 'front-algues', query: 'algues=0.8&camera=front' },
     { name: 'three-quarter-algues', query: 'algues=0.8' },
+    // Encrassement (#607) : voile de dépôts au pied des vitres, dans les coins et sur le sable,
+    // de jour et de nuit ; bac nettoyé = captures sans paramètre, inchangées.
+    { name: 'three-quarter-encrassement', query: 'encrassement=0.8' },
+    { name: 'front-encrassement', query: 'encrassement=0.8&camera=front' },
+    { name: 'three-quarter-encrassement-minuit', query: 'encrassement=0.8&heure=0' },
+    { name: 'front-encrassement-minuit', query: 'encrassement=0.8&camera=front&heure=0' },
     // Distributeur automatique (#583) : petit boîtier gris sur le bord arrière gauche du bac.
     { name: 'three-quarter-distributeur', query: 'distributeur=9,18' },
     { name: 'side-distributeur', query: 'distributeur=9,18&camera=side' },

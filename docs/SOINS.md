@@ -579,6 +579,15 @@ jeu**, sauf mention.
 - Alerte « algues » : attention à 25 % de couverture moyenne, critique à 60 %.
 - Ni bassin ni récif (hors périmètre de l'issue).
 
+**Encrassement visible dans le jeu** (issue #607, ADR 0141, `sim/fouling.ts`) : toutes
+**approximations de jeu**, aucune tirée d'une source.
+- Un voile de dépôts monte sur les vitres et sur le sable : aucun pendant 3 jours de jeu après
+  le dernier geste, puis à plein en 21 jours de plus en eau propre.
+- Au-delà du seuil « à surveiller » des nitrates (20 unités de jeu), il monte plus vite, jusqu'à
+  trois fois plus vite au plein de la jauge (60).
+- La raclette de la séance efface le voile des vitres, le siphon celui du sol ; le voile est
+  seulement visuel (ni l'eau ni les animaux n'en souffrent).
+
 **Plantes qui poussent dans le jeu** (issue #477, ADR 0110, `sim/plant-growth.ts`) : toutes
 **approximations de jeu**, aucune tirée d'une source.
 - Seules les grandes plantes à tige poussent, dans les bacs vitrés d'eau douce (tropical,
