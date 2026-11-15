@@ -8219,10 +8219,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-15T22:21:20.995Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-15T22:21:58.265Z",
+          "note": "Issue #625 : bruitages de la séance (S)"
         }
       },
       "metriques": {}
