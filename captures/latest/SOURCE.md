@@ -1,6 +1,7 @@
-# Captures c220
+# Source c221
+
 - Branche : cycle/c220-encrassement-visible
-- PR : #634 (issue #607)
-- Commit : b4d76b3
-- Graine : celle par défaut des captures
-- Série : 153 images ; 147 identiques à la série précédente (c219), 0 différente, 6 nouvelles dont 4 `*-encrassement*`
+- PR : #634
+- Commit : 9e4ccfa
+- Graine : par défaut des captures
+- Durée : ~17 min, 157 captures
