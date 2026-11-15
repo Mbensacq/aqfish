@@ -8057,10 +8057,10 @@
           "note": "Verdict OK, 0 bug, unitaires 5283 OK, e2e encrassement OK, captures 148/153 identiques + 4 nouvelles (c221)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-15T10:15:23.134Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-15T10:54:54.041Z",
+          "note": "PR #634 fusionnée → v1.20.4 (release créée par la CI), CI main 96fdb5f verte ; dette #635 (retraits PIEGES.md)"
         }
       },
       "metriques": {}
