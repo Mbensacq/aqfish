@@ -8028,6 +8028,24 @@
         }
       },
       "metriques": {}
+    },
+    "221": {
+      "numero": 221,
+      "date": "2026-11-15",
+      "debut": "2026-11-15T08:03:32.634Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-15T08:03:32.634Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
