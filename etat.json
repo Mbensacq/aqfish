@@ -8143,7 +8143,7 @@
       "debut": "2026-11-15T16:31:18.257Z",
       "type": "fonctionnalite",
       "issue": 623,
-      "pr": null,
+      "pr": 643,
       "version": null,
       "phases": {
         "planif": {
