@@ -8079,6 +8079,12 @@
           "debut": "2026-11-15T10:55:26.240Z",
           "fin": "2026-11-15T10:55:53.214Z",
           "note": "Issue #635 : retraits PIEGES.md + points 1-2 de #520 (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-15T10:56:33.133Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
