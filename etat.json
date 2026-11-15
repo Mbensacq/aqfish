@@ -8085,6 +8085,12 @@
           "debut": "2026-11-15T10:56:33.133Z",
           "fin": "2026-11-15T11:56:26.616Z",
           "note": "PR #636 : retraits PIEGES.md rétablis (+ piège Prettier) ; points 1-2 de #520 déjà faits par #528, CI 11/11 verte"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-15T11:57:01.170Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
