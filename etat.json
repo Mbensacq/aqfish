@@ -8179,7 +8179,7 @@
       "debut": "2026-11-15T19:27:14.781Z",
       "type": "fonctionnalite",
       "issue": 624,
-      "pr": null,
+      "pr": 645,
       "version": null,
       "phases": {
         "planif": {
