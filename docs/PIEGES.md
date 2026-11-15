@@ -1369,6 +1369,13 @@ haut de sa section.
 
 ## Rendu
 
+- **Faisceaux translucides : la perspective et la superposition font un bloc** (cycle 223,
+  #590) : les cases des rayons ont un côté fixe en mètres (`RAY_CELL`) ; près de la caméra,
+  chaque case couvre plusieurs pixels et les colonnes voisines allumées se lisent comme un
+  bloc plein, et deux faisceaux qui se recouvrent à l'écran empilent leur opacité (plus
+  clair). Pour un faisceau proche d'une vue préréglée : le rétrécir, le placer entre ses
+  voisins dans cette vue et choisir sa phase pour alterner colonnes à trait et colonnes vides
+  (`columnSeed`) ; `light-rays-layer.spec.ts` le vérifie pour la vue `side`. (2026-11-15)
 - **Cases vertes éparses sous l'eau : `vegetation` ressort bleu-vert** (cycle 220, #607) : des
   cases isolées de 2 cm en `vegetation` posées contre les vitres sortaient de la passe palette
   dans les tons de l'eau (trous apparents dans le voile) ; `vegetationClaire` reste verte. Avec
