@@ -87,8 +87,9 @@ haut de sa section.
   210, #610) : deux recouvrements que `cadrage-panneaux` ne voyait pas. (1) En deux colonnes,
   la bulle du message de soin (240 px à droite de « Réglages ») passait sur l'aide-mémoire
   déplié sous ~1155 px : le seuil des deux colonnes compte désormais la bulle en plus du
-  panneau et de l'aide-mémoire (`$control-panel-two-columns-min-width`, 1167 px au lieu de 915) ; plus étroit, une colonne où le message reste une ligne de la section. Toute nouvelle
-  colonne ou bulle à droite du panneau entre dans ce calcul. (2) Sous 1100 px, le bandeau bas
+  panneau et de l'aide-mémoire (`$control-panel-two-columns-min-width`, 1167 px au lieu de 915) ;
+  plus étroit, une colonne où le message reste une ligne de la section. Toute nouvelle colonne
+  ou bulle à droite du panneau entre dans ce calcul. (2) Sous 1100 px, le bandeau bas
   (santé, alertes) occupe toute la largeur à 64 px du bas ; à 900 × 700, le bas de
   « Commandes » déplié le touchait. Sa hauteur varie (34 à 90 px selon la largeur et la
   police), que le CSS de l'aide-mémoire ne connaît pas : `dashboard-status` la publie à la
@@ -133,14 +134,16 @@ haut de sa section.
   écoulées avant la photo. `e2e/alerte-animaux.spec.ts` allonge ce délai quand `CAPTURE_DIR`
   est défini. (2026-11-08)
 - **Tous les e2e échouent en 3 ms en local : navigateur de Playwright introuvable** (cycle
-  170, #484) : `browserType.launch: Executable doesn't exist at
-/opt/pw-browsers/chromium_headless_shell-1194/…`. L'environnement fournit un Chromium plus
-  récent (`chromium_headless_shell-1243`) que celui attendu par Playwright 1.56 ; sans réseau
-  vers le dépôt des navigateurs, `npx playwright install` échoue. Lien symbolique, hors du
-  dépôt : `mkdir -p /opt/pw-browsers/chromium_headless_shell-1194/chrome-linux && ln -sf
-/opt/pw-browsers/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell
-/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell`. La CI, elle,
-  installe son navigateur. (2026-11-07) Obsolète depuis le cycle 217 (#629) : Playwright 1.63 attend directement la révision 1243.
+  170, #484) :
+  `browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1194/…`.
+  L'environnement fournit un Chromium plus récent (`chromium_headless_shell-1243`) que celui
+  attendu par Playwright 1.56 ; sans réseau vers le dépôt des navigateurs,
+  `npx playwright install` échoue. Lien symbolique, hors du dépôt :
+  `mkdir -p /opt/pw-browsers/chromium_headless_shell-1194/chrome-linux && ln -sf
+  /opt/pw-browsers/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell
+  /opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell`. La CI, elle,
+  installe son navigateur. (2026-11-07) Obsolète depuis le cycle 217 (#629) : Playwright 1.63
+  attend directement la révision 1243.
 - **Remplacer la géométrie d'un maillage en cours de partie : `fond-ecran` compte les
   `WebGLBuffer`** (cycle 165, #477) : l'e2e d'endurance de la vue fond d'écran exige qu'aucun
   `WebGLBuffer` de plus ne soit vivant après une minute (`Runtime.queryObjects` après
@@ -666,6 +669,13 @@ origin/main`, `node_modules` en lien symbolique) ; il sert aussi aux captures «
   changement. `npm run format` ne vise que `frontend/` : ne pas y ajouter `../docs` ;
   remettre un document touché par erreur avec `git checkout HEAD -- <doc>` avant
   d'y refaire la seule modification voulue. (2026-11-07)
+- **Prettier sur une puce Markdown : retraits perdus et lignes fusionnées** (cycle 222, #635) :
+  dans `docs/PIEGES.md`, Prettier recolle à la ligne précédente une ligne qui commence par
+  « nombre + `)` » (`915) ;` se lit comme une liste numérotée) et retire le retrait des lignes
+  qui continuent un code en ligne (`` `…` ``) coupé par un retour à la ligne. Ne jamais
+  commencer une ligne de puce par `12)` ; garder un code en ligne sur une seule ligne quand il
+  tient. Le passage « navigateur de Playwright introuvable » garde une commande coupée : ne
+  pas le passer à Prettier. (2026-11-15)
 
 ## Tests
 
