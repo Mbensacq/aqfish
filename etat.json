@@ -8072,7 +8072,7 @@
       "type": "dette",
       "issue": 635,
       "pr": 636,
-      "version": null,
+      "version": "v1.20.5",
       "phases": {
         "planif": {
           "statut": "termine",
