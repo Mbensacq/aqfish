@@ -8003,10 +8003,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-15T04:54:10.362Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-15T04:54:34.260Z",
+          "note": "Issue #607 : encrassement visible (S), débloquée par #633"
         }
       },
       "metriques": {}
