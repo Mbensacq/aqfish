@@ -7949,10 +7949,10 @@
           "note": "Verdict OK, 0 bug, unitaires/build verts, e2e séances verts, 135 captures identiques, publiées (c218)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-14T22:53:24.187Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-15T01:09:48.080Z",
+          "note": "PR #631 fusionnée → v1.20.2 publiée ; CI main bc7bf35 rouge : e2e 3/7 annulée 2× au plafond 45 min sans échec (#600 passée en bug, prioritaire) ; #627 a-corriger (conflit package.json) ; suppression de branche refusée"
         }
       },
       "metriques": {}
