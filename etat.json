@@ -8055,6 +8055,12 @@
           "debut": "2026-11-15T09:20:18.267Z",
           "fin": "2026-11-15T10:14:47.736Z",
           "note": "Verdict OK, 0 bug, unitaires 5283 OK, e2e encrassement OK, captures 148/153 identiques + 4 nouvelles (c221)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-15T10:15:23.134Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
