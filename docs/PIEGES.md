@@ -669,6 +669,13 @@ origin/main`, `node_modules` en lien symbolique) ; il sert aussi aux captures «
   changement. `npm run format` ne vise que `frontend/` : ne pas y ajouter `../docs` ;
   remettre un document touché par erreur avec `git checkout HEAD -- <doc>` avant
   d'y refaire la seule modification voulue. (2026-11-07)
+- **Prettier sur une puce Markdown : retraits perdus et lignes fusionnées** (cycle 222, #635) :
+  dans `docs/PIEGES.md`, Prettier recolle à la ligne précédente une ligne qui commence par
+  « nombre + `)` » (`915) ;` se lit comme une liste numérotée) et retire le retrait des lignes
+  qui continuent un code en ligne (`` `…` ``) coupé par un retour à la ligne. Ne jamais
+  commencer une ligne de puce par `12)` ; garder un code en ligne sur une seule ligne quand il
+  tient. Le passage « navigateur de Playwright introuvable » garde une commande coupée : ne
+  pas le passer à Prettier. (2026-11-15)
 
 ## Tests
 
