@@ -8081,10 +8081,10 @@
           "note": "Issue #635 : retraits PIEGES.md + points 1-2 de #520 (S)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-15T10:56:33.133Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-15T11:56:26.616Z",
+          "note": "PR #636 : retraits PIEGES.md rétablis (+ piège Prettier) ; points 1-2 de #520 déjà faits par #528, CI 11/11 verte"
         }
       },
       "metriques": {}
