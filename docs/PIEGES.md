@@ -87,8 +87,7 @@ haut de sa section.
   210, #610) : deux recouvrements que `cadrage-panneaux` ne voyait pas. (1) En deux colonnes,
   la bulle du message de soin (240 px à droite de « Réglages ») passait sur l'aide-mémoire
   déplié sous ~1155 px : le seuil des deux colonnes compte désormais la bulle en plus du
-  panneau et de l'aide-mémoire (`$control-panel-two-columns-min-width`, 1167 px au lieu de
-  915) ; plus étroit, une colonne où le message reste une ligne de la section. Toute nouvelle
+  panneau et de l'aide-mémoire (`$control-panel-two-columns-min-width`, 1167 px au lieu de 915) ; plus étroit, une colonne où le message reste une ligne de la section. Toute nouvelle
   colonne ou bulle à droite du panneau entre dans ce calcul. (2) Sous 1100 px, le bandeau bas
   (santé, alertes) occupe toute la largeur à 64 px du bas ; à 900 × 700, le bas de
   « Commandes » déplié le touchait. Sa hauteur varie (34 à 90 px selon la largeur et la
@@ -135,12 +134,12 @@ haut de sa section.
   est défini. (2026-11-08)
 - **Tous les e2e échouent en 3 ms en local : navigateur de Playwright introuvable** (cycle
   170, #484) : `browserType.launch: Executable doesn't exist at
-  /opt/pw-browsers/chromium_headless_shell-1194/…`. L'environnement fournit un Chromium plus
+/opt/pw-browsers/chromium_headless_shell-1194/…`. L'environnement fournit un Chromium plus
   récent (`chromium_headless_shell-1243`) que celui attendu par Playwright 1.56 ; sans réseau
   vers le dépôt des navigateurs, `npx playwright install` échoue. Lien symbolique, hors du
   dépôt : `mkdir -p /opt/pw-browsers/chromium_headless_shell-1194/chrome-linux && ln -sf
-  /opt/pw-browsers/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell
-  /opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell`. La CI, elle,
+/opt/pw-browsers/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell
+/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell`. La CI, elle,
   installe son navigateur. (2026-11-07) Obsolète depuis le cycle 217 (#629) : Playwright 1.63 attend directement la révision 1243.
 - **Remplacer la géométrie d'un maillage en cours de partie : `fond-ecran` compte les
   `WebGLBuffer`** (cycle 165, #477) : l'e2e d'endurance de la vue fond d'écran exige qu'aucun
@@ -1750,3 +1749,7 @@ true })`) : au niveau de la cible, Chromium appelle les écouteurs de capture d'
 - **Taille nulle au premier rendu** : à l'exécution de `afterNextRender`, le canvas peut
   encore mesurer 0 × 0. Ne lever le signal « prêt » qu'après un rendu de taille non nulle,
   à l'image suivante (`ui/aquarium-host/aquarium-host.ts`). (2026-10-16)
+- **`Environment.terrain` vaut `null`, jamais `undefined`** (dalle plate : bac, bassin) : un
+  test `terrain === undefined` est toujours faux et a privé le sol de voile (#634). Passer par
+  `hasFlatFloor(id)` (`sim/environment.ts`), et vérifier en e2e ce qui est **dessiné**
+  (`data-aqfish-fouling-cells`), pas seulement le niveau calculé. (2026-11-15)
