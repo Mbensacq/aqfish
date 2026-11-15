@@ -48,6 +48,10 @@
  * plaques d'algues à cette couverture (réel dans ]0, 1]) à t = 0 ; absent ou invalide, aucune
  * algue (séries existantes inchangées).
  *
+ * Paramètre facultatif `encrassement=<niveau>` (issue #607) : en mode capture, vitres et sol
+ * voilés à ce niveau (réel dans ]0, 1], `sampleFouling`) ; absent ou invalide, bac propre
+ * (séries existantes inchangées).
+ *
  * Paramètre facultatif `affames=1` (issue #208) : en mode capture, animaux affamés de longue
  * date à t = 0 (faim maximale, santé au plancher : nage ralentie, couleurs ternies). Toute
  * autre valeur ou absent : animaux nourris et en bonne santé (séries existantes inchangées).
@@ -216,6 +220,8 @@ export interface CaptureParams {
    * invalide (aucune algue).
    */
   readonly algae: number;
+  /** Niveau du voile d'exemple de `encrassement=` (issue #607), dans ]0, 1] ; 0 sinon. */
+  readonly fouling: number;
   /** Forme du bassin de `forme=` (issue #190), non vérifiée ; `null` si absente. */
   readonly shape: string | null;
   /** Vrai pour `affames=1` : animaux affamés de longue date à t = 0 (issue #208). */
@@ -372,6 +378,7 @@ export const DEFAULT_CAPTURE_PARAMS: CaptureParams = {
   room: false,
   water: null,
   algae: 0,
+  fouling: 0,
   shape: null,
   starved: false,
   ich: false,
@@ -438,6 +445,7 @@ export function parseCaptureParams(search: string): CaptureParams {
     room: params.get('piece') === '1',
     water: params.get('eau'),
     algae: parseAlgae(params.get('algues')),
+    fouling: parseAlgae(params.get('encrassement')),
     shape: params.get('forme'),
     starved: params.get('affames') === '1',
     ich: params.get('points-blancs') === '1',
@@ -718,7 +726,7 @@ function parseFeeder(raw: string | null): readonly number[] | null {
   return feederHours(raw.split(',').map(Number));
 }
 
-/** Couverture de `algues=` : réel dans ]0, 1], sinon 0 (aucune algue). */
+/** Couverture de `algues=` (ou niveau d'`encrassement=`) : réel dans ]0, 1], sinon 0. */
 function parseAlgae(value: string | null): number {
   if (value === null || value.trim() === '') {
     return 0;

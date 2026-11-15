@@ -126,6 +126,7 @@ import {
   DEFAULT_ENVIRONMENT_ID,
   environmentById,
   environmentWater,
+  hasFlatFloor,
   isEnvironmentId,
   isPondShapeable,
   isTankResizable,
@@ -389,6 +390,7 @@ import {
   type ScraperRay,
 } from '../../sim/algae';
 import { feederReadout, hasFeeder, type FeederReadout } from '../../sim/auto-feeder';
+import { NO_FOULING, sampleFouling, worldFouling } from '../../sim/fouling';
 import {
   DEFAULT_LAMP_ON_HOUR,
   LAMP_FADE_HOURS,
@@ -528,6 +530,16 @@ export const CATAPPA_ATTRIBUTE = 'data-aqfish-catappa';
  * `0;0;8` sans algue, mis à jour avec le relevé de l'eau.
  */
 export const ALGAE_ATTRIBUTE = 'data-aqfish-algae';
+/**
+ * Encrassement du bac (#607) : « vitres en %;sol en % » (`worldFouling`), `0;0` propre, mis à
+ * jour avec le relevé de l'eau.
+ */
+export const FOULING_ATTRIBUTE = 'data-aqfish-fouling';
+/**
+ * Voile réellement dessiné (#607) : « cases des vitres;cases du sol » (`foulingCounts` de la
+ * vue), `0;0` sans voile, mis à jour avec `FOULING_ATTRIBUTE`.
+ */
+export const FOULING_CELLS_ATTRIBUTE = 'data-aqfish-fouling-cells';
 /** Raclette en main (#476) : `true` ou `false`. */
 export const SCRAPER_ATTRIBUTE = 'data-aqfish-scraper';
 /** Étape de la séance d'entretien affichée (#604), absent hors séance. */
@@ -981,6 +993,8 @@ export class AquariumHost {
   private frozenWorst = new WeakMap<World, AlertSeverity | null>();
   /** Temps du premier relevé d'entretien de chaque monde sans calendrier (#513). */
   private maintenanceStart = new WeakMap<World, number>();
+  /** Niveau du voile d'exemple de `encrassement=` (#607), en capture ; 0 sinon. */
+  private captureFouling = 0;
   /** Historique de l'eau de chaque monde affiché (#511), hors du monde pendant la partie. */
   private waterHistories = new WeakMap<World, WaterHistory>();
   /** Journal de chaque monde affiché (#581), hors du monde pendant la partie. */
@@ -3856,6 +3870,7 @@ export class AquariumHost {
     }
     const params = parseCaptureParams(win.location.search);
     this.capture = params.capture;
+    this.captureFouling = params.capture ? params.fouling : 0;
     this.soundAllowed.set(!params.capture);
     if (params.capture) {
       this.ambientSound.forbid();
@@ -5037,6 +5052,28 @@ export class AquariumHost {
     this.visibleAlgae.set(visible);
     const percent = Math.round(algaeCoverage(world.water.algae) * 100);
     this.host.nativeElement.setAttribute(ALGAE_ATTRIBUTE, `${visible};${percent};${hours}`);
+    this.exposeFouling(world);
+  }
+
+  /**
+   * Voile d'encrassement (#607) : vue et `FOULING_ATTRIBUTE`. En capture, celui
+   * d'`encrassement=` (séries existantes inchangées) ; jamais en mode décor ni hors des bacs à
+   * algues.
+   */
+  private exposeFouling(world: World): void {
+    const fouling = this.capture
+      ? isDecorMode(world) || !hasAlgae(world.environment)
+        ? NO_FOULING
+        : sampleFouling(this.captureFouling)
+      : worldFouling(world, this.maintenanceStartOf(world));
+    this.view?.setFouling(environmentWater(world), fouling, hasFlatFloor(world.environment));
+    const host = this.host.nativeElement;
+    host.setAttribute(
+      FOULING_ATTRIBUTE,
+      `${Math.round(fouling.glass * 100)};${Math.round(fouling.floor * 100)}`,
+    );
+    const cells = this.view?.foulingCounts ?? NO_FOULING;
+    host.setAttribute(FOULING_CELLS_ATTRIBUTE, `${cells.glass};${cells.floor}`);
   }
 
   /**

@@ -47,6 +47,7 @@ describe('parseCaptureParams', () => {
       room: false,
       water: null,
       algae: 0,
+      fouling: 0,
       shape: null,
       starved: false,
       ich: false,
@@ -227,6 +228,15 @@ describe('parseCaptureParams', () => {
       expect(parseCaptureParams(`?capture=1&algues=${bad}`).algae).toBe(0);
     }
     expect(parseCaptureParams('?capture=1').algae).toBe(0);
+  });
+
+  it('lit le niveau d’encrassement d’exemple : encrassement=… dans ]0, 1], sinon 0 (#607)', () => {
+    expect(parseCaptureParams('?capture=1&encrassement=0.6').fouling).toBe(0.6);
+    expect(parseCaptureParams('?capture=1&encrassement=1').fouling).toBe(1);
+    for (const bad of ['0', '-1', '2', 'sale', '']) {
+      expect(parseCaptureParams(`?capture=1&encrassement=${bad}`).fouling).toBe(0);
+    }
+    expect(parseCaptureParams('?capture=1').fouling).toBe(0);
   });
 
   it('lit le niveau d’eau d’exemple : eau=…, non vérifié ici ; absent, null (#207)', () => {

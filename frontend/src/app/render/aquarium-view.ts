@@ -34,6 +34,7 @@ import {
 import { SPECIES, speciesVariants, type SpeciesId } from '../sim/species';
 import type { Fish } from '../sim/swimmer';
 import type { AlgaePatch } from '../sim/algae';
+import type { TankFouling } from '../sim/fouling';
 import type { Egg } from '../sim/eggs';
 import { createDayLight, type DayLight } from '../sim/daylight';
 import { bubbleSourceFor } from '../sim/bubbles';
@@ -44,10 +45,11 @@ import { seededFeatures } from '../sim/world';
 import type { DecorItem } from '../sim/decor';
 import type { FoodPellet } from '../sim/food';
 import { clampRoom, DEFAULT_ROOM, isRoomAvailable, type Room, type RoomBlock } from '../sim/room';
-import { SAND_THICKNESS } from '../sim/tank';
+import { SAND_THICKNESS, type Box3 } from '../sim/tank';
 import { BubbleLayer } from './bubble-layer';
 import { AlertHighlightLayer } from './alert-highlight-layer';
 import { AlgaeLayer } from './algae-layer';
+import { FoulingLayer } from './fouling-layer';
 import { CatappaLayer } from './catappa-layer';
 import { FeederLayer } from './feeder-layer';
 import { DecorLayer } from './decor-layer';
@@ -272,6 +274,7 @@ export class AquariumView {
   private readonly feederLayer: FeederLayer;
   /** Plaques d'algues sur les vitres (issue #476). */
   private readonly algaeLayer = new AlgaeLayer();
+  private readonly foulingLayer = new FoulingLayer();
   /** Repères des animaux désignés par une alerte (#483), masqués par défaut. */
   private readonly alertHighlightLayer = new AlertHighlightLayer();
   /**
@@ -586,6 +589,7 @@ export class AquariumView {
       this.catappaLayer,
       this.feederLayer,
       this.algaeLayer,
+      this.foulingLayer,
       this.alertHighlightLayer,
       this.roomLayer,
     ];
@@ -1186,6 +1190,7 @@ export class AquariumView {
     this.catappaLayer.setBrightness(brightness);
     this.feederLayer.setBrightness(brightness);
     this.algaeLayer.setBrightness(brightness);
+    this.foulingLayer.setBrightness(brightness);
     const tint = decorTintInto(light.intensity, this.decorTint);
     for (let k = 0; k < 3; k++) {
       tint[k] *= overcast;
@@ -1499,6 +1504,21 @@ export class AquariumView {
   /** Plaques d'algues affichées (tests). */
   get algaeCount(): number {
     return this.algaeLayer.count;
+  }
+
+  /**
+   * Voile d'encrassement (issue #607) du volume d'eau `water` au niveau `fouling`
+   * (`worldFouling`) ; `floor` : sol de sable plat, voilé lui aussi. Sans effet après `dispose`.
+   */
+  setFouling(water: Box3, fouling: TankFouling, floor: boolean): void {
+    if (!this.disposed) {
+      this.foulingLayer.setFouling(water, fouling, floor);
+    }
+  }
+
+  /** Cases du voile dessinées sur les vitres et sur le sol (tests). */
+  get foulingCounts(): { readonly glass: number; readonly floor: number } {
+    return this.foulingLayer.counts;
   }
 
   /**
