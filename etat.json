@@ -8187,6 +8187,12 @@
           "debut": "2026-11-15T19:27:14.781Z",
           "fin": "2026-11-15T19:27:40.453Z",
           "note": "Issue #624 : avant / après de la séance (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-15T19:28:12.308Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
