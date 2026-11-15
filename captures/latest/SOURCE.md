@@ -1,6 +1,6 @@
-Branche : cycle/c223-retraits-faisceau
-PR : #642
-Commit : f0ce0bd88c150a9daafd7dd9801c23e88e88e05a
-Graine : défaut des captures
-Temps : défaut des captures
-Note : série partielle (151 captures, délai atteint avant la fin de la série) ; side et three-quarter regardées
+# Captures c224
+
+- Branche : cycle/c224-taille (PR #643), commit c094767
+- Graine : 42 (graine par défaut des captures)
+- Série partielle : `npm run captures` interrompue par le délai (580 s) ; 139 images produites, toutes identiques à l octet à `latest/` (hors séance inchangé). Ajouts : seance-taille-avant.png, seance-taille-apres.png.
+- Date : 2026-11-15
