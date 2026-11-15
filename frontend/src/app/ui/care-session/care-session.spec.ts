@@ -4,6 +4,7 @@ import {
   completeCareStep,
   skipCareStep,
   startCareSession,
+  withCut,
   withPoured,
   withRinse,
   withSiphoned,
@@ -45,17 +46,36 @@ describe('CareSessionPanel (#604)', () => {
     expect(el.querySelector('[data-care-hint]')?.textContent).toContain('rien à racler');
   });
 
-  it('étape sans geste : seulement « Passer » et « Plus tard »', () => {
-    // La taille (lot 4) : le siphon a son geste depuis le lot 2 (#605), le filtre depuis le
-    // lot 3 (#606).
+  it('taille (#623) : consigne, « Étape terminée » après une coupe seulement', () => {
     let pruning = startCareSession();
     for (let i = 0; i < 4; i++) {
       pruning = skipCareStep(pruning);
     }
-    const el = render(pruning).nativeElement as HTMLElement;
+    let el = render(pruning).nativeElement as HTMLElement;
     expect(el.querySelector('h2')?.textContent).toContain('La taille');
+    expect(el.querySelector('.care-session__why')?.textContent).toContain('nitrates');
+    expect(el.querySelector('[data-care-hint]')?.textContent).toContain('Cliquez ou touchez');
     expect(el.querySelector('[data-care-done]')).toBeNull();
     expect(el.querySelector('[data-care-skip]')).not.toBeNull();
+    el = render(withCut(pruning)).nativeElement as HTMLElement;
+    expect(el.querySelector('[data-care-hint]')?.textContent).toContain('Une coupe');
+    expect(el.querySelector('[data-care-done]')).not.toBeNull();
+  });
+
+  it('bilan d’un bac sans plante à tailler (#623) : pas de ligne « taille »', () => {
+    let session = startCareSession();
+    for (let i = 0; i < 5; i++) {
+      session = skipCareStep(session);
+    }
+    const fixture = TestBed.createComponent(CareSessionPanel);
+    fixture.componentRef.setInput('session', session);
+    fixture.componentRef.setInput('prunable', false);
+    fixture.detectChanges();
+    const lines = [
+      ...(fixture.nativeElement as HTMLElement).querySelectorAll('[data-care-summary] li'),
+    ].map((li) => li.textContent?.trim());
+    expect(lines).toHaveLength(4);
+    expect(lines.join()).not.toContain('taille');
   });
 
   it('bilan : une ligne par étape, fait ou passé', () => {

@@ -1592,6 +1592,64 @@ describe('AquariumHost', () => {
       expect(saved?.[String(decor[index].seed)] ?? 0).toBe(after);
     });
 
+    it('séance, taille (#623) : coupe comptée, eau chargée, calendrier à « Étape terminée »', async () => {
+      await create('?seed=42&vitesse=0');
+      const decor = host().world!.decor;
+      const index = decor.findIndex((d) => d.kind === 'plant' && d.form === 'tall');
+      const world = host().world! as { water: object };
+      world.water = { ...world.water, plantGrowth: { [String(decor[index].seed)]: 9.5 } };
+      const pruneDone = () => host().world!.maintenance?.lastDone.prune;
+      const before = pruneDone();
+      expect(host().cutCarePlant(index)).toBe(false);
+      host().openCareSession();
+      for (let i = 0; i < 4; i++) {
+        host().skipCareSessionStep();
+      }
+      expect(host().careSession()?.step).toBe('taille');
+      expect(host().pruning()).toBe(true);
+      const ammonia = host().world!.water.ammonia;
+      expect(host().cutCarePlant(decor.findIndex((d) => d.kind === 'rock'))).toBe(false);
+      expect(host().cutCarePlant(index)).toBe(true);
+      expect(host().careSession()?.cuts).toBe(1);
+      expect(host().world!.water.ammonia).toBeGreaterThan(ammonia);
+      expect(pruneDone()).toBe(before);
+      host().completeCareSessionStep();
+      expect(host().careSession()?.step).toBe('bilan');
+      expect(host().pruning()).toBe(false);
+      expect(pruneDone()).toBe(host().world!.time);
+      host().closeCareSession();
+    });
+
+    it('séance, taille (#623) : sautée sans coupe, calendrier et eau inchangés', async () => {
+      await create('?seed=42&vitesse=0');
+      const pruneDone = () => host().world!.maintenance?.lastDone.prune;
+      const before = pruneDone();
+      host().openCareSession();
+      for (let i = 0; i < 4; i++) {
+        host().skipCareSessionStep();
+      }
+      const water = JSON.stringify(host().world!.water);
+      host().completeCareSessionStep();
+      expect(host().careSession()?.step).toBe('bilan');
+      expect(pruneDone()).toBe(before);
+      expect(JSON.stringify(host().world!.water)).toBe(water);
+      expect(host().carePrunable()).toBe(true);
+    });
+
+    it('séance, taille (#623) : bac sans plante, étape sautée d’office', async () => {
+      await create('?seed=42&vitesse=0');
+      host().setEnvironment('recif');
+      expect(host().world!.environment).toBe('recif');
+      host().openCareSession();
+      for (let i = 0; i < 4; i++) {
+        host().skipCareSessionStep();
+      }
+      expect(host().careSession()?.step).toBe('bilan');
+      expect(host().careSession()?.outcomes.taille).toBe('saute');
+      expect(host().carePrunable()).toBe(false);
+      expect(host().pruning()).toBe(false);
+    });
+
     it('pousse des plantes (#494) : data-aqfish-plants réécrit seulement s’il change', async () => {
       await create('?seed=42&vitesse=0');
       const element = fixture.nativeElement as HTMLElement;
