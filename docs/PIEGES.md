@@ -6,6 +6,21 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Part e2e de la CI au plafond de 45 min : un fichier grossi en silence, `e2e/durees.json`
+  périmé** (cycle 219, #600) : `cadrage-panneaux.spec.ts` comptait 370 s dans `durees.json` mais
+  prenait 18 à 31 min en CI (81 tests, chacun recharge la scène, 6 à 47 s) ; la part qui le
+  recevait montait à 41–46 min, les autres restaient entre 16 et 35. Le fichier est scindé en
+  cinq (`cadrage-panneaux*.spec.ts`, outils dans `e2e/outils-cadrage.ts`), `panneau.spec.ts`
+  (8,8 min) en deux (`panneau-clavier.spec.ts`, `e2e/outils-panneau.ts`), et `durees.json`
+  remesuré sur trois séries (`--mesurer`), parts estimées à 27,5 min. Deux pièges : (1) un
+  `test(…)` déclaré dans un fichier d'outils est attribué à ce fichier (`outils-cadrage.ts:236`
+  dans `--list`) et `--mesurer` ne le compte plus : n'exporter des outils que des fonctions
+  appelées dans le corps des tests ; (2) un fichier absent de `durees.json` compte pour la
+  moyenne (~110 s), quelle que soit sa vraie durée : remesurer dès qu'un fichier dépasse 5 min
+  dans le journal (`Slow test file`) ou qu'un fichier e2e est ajouté. Avec ~192 min de tests,
+  7 parts laissent ~27 min par part en moyenne, ~36 min sur une machine lente : une 8e part
+  (zone protégée) est proposée en #632. Le test `durees.json : 7 parts…` de
+  `scripts/parts-e2e.test.mjs` échoue si une remesure dépasse 30 min par part ou 8 min par fichier. (2026-11-15)
 - **CI : `Playwright does not support chromium on ubuntu26.04-x64`** (cycle 217, #629) :
   `ubuntu-latest` bascule peu à peu vers Ubuntu 26.04 ; avec Playwright 1.56, l'étape
   « Installer Chromium pour Playwright » échoue sur ces runners (trois essais, même erreur)

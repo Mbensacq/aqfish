@@ -4,7 +4,7 @@ import { expect, type Locator, type Page } from '@playwright/test';
  * Outils communs des e2e du cadrage des panneaux (rétro du sprint 5, #108, #79) : panneaux à
  * contrôler, ouverture d'une scène, boîtes et recouvrements. Les tests sont répartis en
  * plusieurs fichiers `cadrage-panneaux*.spec.ts` pour que la CI les place dans des parts
- * différentes (`e2e/durees.json`, #600) : réunis, ils prenaient 23 à 31 min, soit à eux seuls
+ * différentes (`e2e/durees.json`, #600) : réunis, ils prenaient 18 à 31 min, soit à eux seuls
  * la quasi-totalité d'une part.
  *
  * Tout nouveau panneau (météo, bassin…) s'ajoute à `PANELS` : il est alors contrôlé à chaque
