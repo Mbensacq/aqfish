@@ -8087,10 +8087,10 @@
           "note": "PR #636 : retraits PIEGES.md rétablis (+ piège Prettier) ; points 1-2 de #520 déjà faits par #528, CI 11/11 verte"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-15T11:57:01.170Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-15T12:07:21.039Z",
+          "note": "Verdict OK, 0 bug, PR docs seule, captures c221 reprises, mutation non mesurée (délai)"
         }
       },
       "metriques": {}
