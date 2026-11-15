@@ -8043,6 +8043,12 @@
           "debut": "2026-11-15T08:03:32.634Z",
           "fin": "2026-11-15T08:03:53.696Z",
           "note": "Issue #623 : taille aux ciseaux (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-15T08:04:27.157Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
