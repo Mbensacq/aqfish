@@ -7992,6 +7992,24 @@
         }
       },
       "metriques": {}
+    },
+    "220": {
+      "numero": 220,
+      "date": "2026-11-15",
+      "debut": "2026-11-15T04:54:10.362Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-15T04:54:10.362Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
