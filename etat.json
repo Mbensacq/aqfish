@@ -8163,6 +8163,12 @@
           "debut": "2026-11-15T17:41:12.522Z",
           "fin": "2026-11-15T18:07:48.272Z",
           "note": "Verdict OK, 0 bug, unitaires+3 e2e taille verts, captures hors séance identiques, avant/après vues"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-15T18:08:37.403Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
