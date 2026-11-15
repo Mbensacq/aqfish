@@ -8115,6 +8115,12 @@
           "debut": "2026-11-15T13:19:59.951Z",
           "fin": "2026-11-15T13:21:25.870Z",
           "note": "Rétro #640 ; issue #637 (dette XS, + #590) ; PR docs #641 ; nouvelle issue #638"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-15T13:22:03.064Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
