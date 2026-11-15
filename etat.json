@@ -8051,10 +8051,10 @@
           "note": "Corrections #634 seules (sol voilé via hasFlatFloor, attribut data-aqfish-fouling-cells + e2e, captures regardées), CI 11/11 verte, a-corriger retirée ; #623 non commencée (session occupée)"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-15T09:20:18.267Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-15T10:14:47.736Z",
+          "note": "Verdict OK, 0 bug, unitaires 5283 OK, e2e encrassement OK, captures 148/153 identiques + 4 nouvelles (c221)"
         }
       },
       "metriques": {}
