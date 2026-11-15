@@ -303,11 +303,15 @@ import { netTarget } from '../../sim/mortality';
 import { DROPSY_ADVANCED_AT, DROPSY_MAX } from '../../sim/dropsy';
 import { CHEVRON_COUNTS } from '../../render/current-indicator-layer';
 import {
+  comparisonFileName,
   PHOTO_FAILED_MESSAGE,
   PHOTO_NOTICE_MS,
   photoFileName,
   photoScale,
+  sideBySidePhotos,
   upscalePhoto,
+  type PhotoImage,
+  type PhotoPixels,
 } from '../../render/photo-capture';
 import {
   isCurrentLevel,
@@ -437,6 +441,7 @@ import {
 } from '../../sim/health-summary';
 import { refreshDue } from '../dashboard-frame/refresh-pace';
 import {
+  careSessionCompared,
   careSessionFinished,
   careSessionPruned,
   careStepTask,
@@ -548,6 +553,18 @@ export const FOULING_CELLS_ATTRIBUTE = 'data-aqfish-fouling-cells';
 export const SCRAPER_ATTRIBUTE = 'data-aqfish-scraper';
 /** Étape de la séance d'entretien affichée (#604), absent hors séance. */
 export const CARE_SESSION_ATTRIBUTE = 'data-aqfish-care-session';
+
+/** Avant / après du bilan d'une séance (#624) : images PNG en URL `data:`. */
+export interface CareComparison {
+  readonly before: string;
+  readonly after: string;
+}
+
+/** Écart entre l'avant et l'après de la photo enregistrée (#624), en pixels de scène. */
+const COMPARISON_GAP = 2;
+
+/** Fond de cet écart (#624) : celui de l'interface (`DASHBOARD_COLORS.background`). */
+const COMPARISON_BACKGROUND = [0x14, 0x14, 0x18] as const;
 /** Bactéries du filtre du bac affiché, en pour cent entier (#606, `filterMaturityPercent`). */
 export const FILTER_BACTERIA_ATTRIBUTE = 'data-aqfish-bacteries';
 /** Clé de la séance d'entretien interrompue (#604), distincte de la sauvegarde du monde. */
@@ -1170,6 +1187,15 @@ export class AquariumHost {
   readonly careFilter = signal(1);
   /** Le bac a une plante à tailler (#623) : étape « taille » et sa ligne au bilan. */
   readonly carePrunable = signal(true);
+  /**
+   * Avant / après du bilan (#624) : images PNG (URL `data:`) du bac au début de la séance et au
+   * bilan, à la résolution de la scène ; `null` sans comparaison. Jamais enregistrées.
+   */
+  readonly careComparison = signal<CareComparison | null>(null);
+  /** Relevé du bac au début de la séance (#624), gardé en mémoire jusqu'au bilan ou à l'abandon. */
+  private careBefore: PhotoPixels | null = null;
+  /** Relevé du bac au bilan (#624), pour la photo avant / après enregistrée. */
+  private careAfter: PhotoPixels | null = null;
   /** Vrai si le dernier clic sur le canvas a retiré un corps (#582) : il ne nourrit pas. */
   private netted = false;
   /** Corps exposés au dernier relevé (#582) : un décès depuis relève aussi les effectifs. */
@@ -1923,7 +1949,91 @@ export class AquariumHost {
     if (!world || this.capture || isDecorMode(world)) {
       return;
     }
-    this.showCareSession(readCareSession(this.readStoredCareSession()) ?? startCareSession());
+    const shown = this.careSession();
+    if (shown) {
+      // Déjà ouverte : rien ne change, l'image « avant » est gardée (#624).
+      this.showCareSession(shown);
+      return;
+    }
+    const resumed = readCareSession(this.readStoredCareSession());
+    // Avant / après (#624) : l'image « avant » n'est prise qu'au début d'une séance neuve ; une
+    // séance reprise a perdu la sienne à l'interruption et n'aura pas de comparaison.
+    this.releaseCareImages();
+    if (!resumed) {
+      this.careBefore = this.readCareImage();
+    }
+    this.showCareSession(resumed ?? startCareSession());
+  }
+
+  /** Vrai tant que l'image « avant » de la séance est gardée en mémoire (#624). */
+  hasCareBefore(): boolean {
+    return this.careBefore !== null;
+  }
+
+  /** Relevé du bac pour l'avant / après (#624), `null` si la vue ne sait pas le relire. */
+  private readCareImage(): PhotoPixels | null {
+    try {
+      return this.view?.takePhoto() ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  /** Oublie les images de l'avant / après (#624). */
+  private releaseCareImages(): void {
+    this.careBefore = null;
+    this.careAfter = null;
+    this.careComparison.set(null);
+  }
+
+  /**
+   * Bilan atteint (#624) : relève l'image « après » et prépare la comparaison s'il y a eu au
+   * moins une étape faite et une image « avant » ; sinon, libère l'image « avant ».
+   */
+  private compareCareSession(session: CareSession): void {
+    const before = this.careBefore;
+    if (!before || !careSessionCompared(session)) {
+      this.releaseCareImages();
+      return;
+    }
+    const after = this.readCareImage();
+    const urls = after ? [this.photoDataUrl(before), this.photoDataUrl(after)] : [];
+    if (!after || urls.some((url) => url === null)) {
+      this.releaseCareImages();
+      return;
+    }
+    this.careAfter = after;
+    this.careComparison.set({ before: urls[0]!, after: urls[1]! });
+  }
+
+  /** Image PNG (URL `data:`) d'un relevé à la résolution de la scène, `null` en cas d'échec. */
+  private photoDataUrl(pixels: PhotoPixels): string | null {
+    try {
+      return this.photoCanvas(upscalePhoto(pixels, 1))?.toDataURL('image/png') ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Enregistre la photo avant / après du bilan (#624) : les deux images côte à côte, agrandies
+   * par un entier sans lissage comme la photo. Renvoie `true` si elle a été produite.
+   */
+  saveCareComparison(): boolean {
+    const before = this.careBefore;
+    const after = this.careAfter;
+    if (!before || !after || !this.careComparison()) {
+      return false;
+    }
+    this.setPhotoNotice(null);
+    try {
+      const pair = sideBySidePhotos(before, after, COMPARISON_GAP, COMPARISON_BACKGROUND);
+      const image = upscalePhoto(pair, photoScale(pair.width, pair.height));
+      return this.downloadPhoto(image, comparisonFileName(new Date()));
+    } catch {
+      this.photoFailed();
+      return false;
+    }
   }
 
   /** Termine l'étape affichée : sa tâche entre au calendrier d'entretien (#604). */
@@ -2038,6 +2148,8 @@ export class AquariumHost {
     if (session && careSessionFinished(session)) {
       this.writeStoredCareSession(null);
     }
+    // Avant / après (#624) : libérées à la fin comme à l'abandon.
+    this.releaseCareImages();
     this.careSession.set(null);
     this.applyCareSessionTool(null);
   }
@@ -2048,6 +2160,9 @@ export class AquariumHost {
     const prunable = world ? worldHasPrunablePlants(world) : true;
     this.carePrunable.set(prunable);
     const session = skipAbsentCareSteps(shown, prunable);
+    if (careSessionFinished(session) && !this.careComparison()) {
+      this.compareCareSession(session);
+    }
     this.careSession.set(session);
     this.writeStoredCareSession(careSessionFinished(session) ? null : session);
     this.applyCareSessionTool(session);
@@ -2940,36 +3055,53 @@ export class AquariumHost {
         return false;
       }
       const image = upscalePhoto(pixels, photoScale(pixels.width, pixels.height));
-      const canvas = this.document.createElement('canvas');
-      canvas.width = image.width;
-      canvas.height = image.height;
-      const context = canvas.getContext('2d');
-      if (!context) {
-        this.photoFailed();
-        return false;
-      }
-      const imageData = context.createImageData(image.width, image.height);
-      imageData.data.set(image.data);
-      context.putImageData(imageData, 0, 0);
-      const name = photoFileName(new Date());
-      canvas.toBlob((blob) => {
-        if (!blob) {
-          // Encodage refusé (mémoire, canvas trop grand…) : le dire plutôt que rien (#503).
-          this.photoFailed();
-          return;
-        }
-        const url = win.URL.createObjectURL(blob);
-        const link = this.document.createElement('a');
-        link.href = url;
-        link.download = name;
-        link.click();
-        win.setTimeout(() => win.URL.revokeObjectURL(url), 0);
-      }, 'image/png');
-      return true;
+      return this.downloadPhoto(image, photoFileName(new Date()));
     } catch {
       this.photoFailed();
       return false;
     }
+  }
+
+  /** Canvas 2D hors du document contenant `image`, `null` sans canvas 2D. */
+  private photoCanvas(image: PhotoImage): HTMLCanvasElement | null {
+    const canvas = this.document.createElement('canvas');
+    canvas.width = image.width;
+    canvas.height = image.height;
+    const context = canvas.getContext('2d');
+    if (!context) {
+      return null;
+    }
+    const imageData = context.createImageData(image.width, image.height);
+    imageData.data.set(image.data);
+    context.putImageData(imageData, 0, 0);
+    return canvas;
+  }
+
+  /**
+   * Encode `image` en PNG et la télécharge sous `name` (photo #479, avant / après #624) ;
+   * `false` et message bref sans canvas 2D, message bref si l'encodage échoue ensuite.
+   */
+  private downloadPhoto(image: PhotoImage, name: string): boolean {
+    const win = this.document.defaultView;
+    const canvas = this.photoCanvas(image);
+    if (!win || !canvas) {
+      this.photoFailed();
+      return false;
+    }
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        // Encodage refusé (mémoire, canvas trop grand…) : le dire plutôt que rien (#503).
+        this.photoFailed();
+        return;
+      }
+      const url = win.URL.createObjectURL(blob);
+      const link = this.document.createElement('a');
+      link.href = url;
+      link.download = name;
+      link.click();
+      win.setTimeout(() => win.URL.revokeObjectURL(url), 0);
+    }, 'image/png');
+    return true;
   }
 
   /** Message bref de la photo (#503) : effacé à la photo suivante ou après `PHOTO_NOTICE_MS`. */

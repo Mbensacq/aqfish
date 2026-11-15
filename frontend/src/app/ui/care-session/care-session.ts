@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+  linkedSignal,
+  output,
+} from '@angular/core';
 
 import {
   CARE_SESSION_STEPS,
@@ -39,7 +46,8 @@ const BUCKET_GAPS = [
  * Siphon et eau neuve (#605) : jauges de l'eau retirée et versée, conditionneur et température
  * du seau, avertissements. Filtre (#606) : rinçage de l'éponge dans l'eau du bac ou au
  * robinet, avec sa phrase « pourquoi ». Taille (#623) : sécateur en main, un clic ou un toucher
- * sur une tige trop haute la coupe ; la consigne compte les coupes.
+ * sur une tige trop haute la coupe ; la consigne compte les coupes. Bilan (#624) : avant /
+ * après du bac sous un curseur glissant, et « Enregistrer la photo ».
  */
 @Component({
   selector: 'app-care-session',
@@ -152,9 +160,48 @@ const BUCKET_GAPS = [
               </li>
             }
           </ul>
+          @if (comparison(); as images) {
+            <figure class="care-session__compare" data-care-compare>
+              <div class="care-session__frames" [style.--care-split.%]="split()">
+                <img [src]="images.before" alt="Le bac avant la séance" data-care-before />
+                <img
+                  class="care-session__after"
+                  [src]="images.after"
+                  alt="Le bac après la séance"
+                  data-care-after
+                />
+                <span class="care-session__divider" aria-hidden="true"></span>
+              </div>
+              <figcaption class="care-session__legend" aria-hidden="true">
+                <span>Avant</span><span>Après</span>
+              </figcaption>
+              <input
+                class="care-session__slider"
+                type="range"
+                min="0"
+                max="100"
+                step="5"
+                aria-label="Curseur avant / après"
+                [attr.aria-valuetext]="splitText()"
+                [value]="split()"
+                [attr.data-care-split]="split()"
+                (input)="split.set(+$any($event.target).value)"
+              />
+            </figure>
+          }
         }
         <div class="care-session__buttons">
           @if (current.step === 'bilan') {
+            @if (comparison()) {
+              <button
+                type="button"
+                class="care-session__button"
+                data-care-save-compare
+                (click)="comparisonSaved.emit()"
+              >
+                Enregistrer la photo
+              </button>
+            }
             <button
               type="button"
               class="care-session__button"
@@ -227,6 +274,10 @@ export class CareSessionPanel {
   readonly filterEfficiency = input(1);
   /** Le bac a une plante à tailler (#623) : sinon, pas de ligne « taille » au bilan. */
   readonly prunable = input(true);
+  /** Avant / après du bilan (#624) ; `null` : pas de comparaison (tout sauté, image absente). */
+  readonly comparison = input<{ readonly before: string; readonly after: string } | null>(null);
+  /** « Enregistrer la photo » de l'avant / après (#624). */
+  readonly comparisonSaved = output<void>();
   /** Choix de l'eau de rinçage de l'éponge (#606). */
   readonly rinseChosen = output<FilterRinseWater>();
   /** « Verser un seau ». */
@@ -243,6 +294,18 @@ export class CareSessionPanel {
   readonly closed = output<void>();
 
   protected readonly colors = DASHBOARD_COLORS;
+  /**
+   * Curseur de l'avant / après (#624), en % de la largeur : à gauche l'avant, à droite l'après.
+   * Flèches, Début et Fin au clavier, glissé ou clic à la souris (`input type="range"`).
+   */
+  protected readonly split = linkedSignal({ source: this.comparison, computation: () => 50 });
+  protected readonly splitText = computed(() => {
+    const split = this.split();
+    if (split <= 0) {
+      return 'Après seulement';
+    }
+    return split >= 100 ? 'Avant seulement' : `Avant ${split} %, après ${100 - split} %`;
+  });
   protected readonly text = computed(() => CARE_SESSION_TEXT[this.session()?.step ?? 'vitres']);
   protected readonly count = computed(() => {
     const step = this.session()?.step ?? 'vitres';

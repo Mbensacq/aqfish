@@ -147,3 +147,55 @@
 .care-session__hint[data-care-rinse-why][data-warning] {
   color: var(--dashboard-orange);
 }
+
+// Avant / après du bilan (#624) : l'après recouvre l'avant à droite du curseur. Pixels nets
+// (images à la résolution de la scène, agrandies sans lissage).
+.care-session__compare {
+  margin: 0 0 8px;
+}
+
+.care-session__frames {
+  position: relative;
+  overflow: hidden;
+  border-radius: 6px;
+  background: var(--dashboard-background);
+
+  img {
+    display: block;
+    width: 100%;
+    height: auto;
+    image-rendering: pixelated;
+    // Le bac occupe le milieu de la vue : un peu plus grand, ses bords vides rognés.
+    transform: scale(1.25);
+  }
+}
+
+.care-session__after {
+  position: absolute;
+  inset: 0;
+  clip-path: inset(0 0 0 var(--care-split, 50%));
+}
+
+.care-session__divider {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--care-split, 50%);
+  width: 2px;
+  margin-left: -1px;
+  background: var(--dashboard-ink);
+}
+
+.care-session__legend {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 2px;
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.care-session__slider {
+  width: 100%;
+  margin: 2px 0 0;
+  accent-color: var(--dashboard-vert);
+}

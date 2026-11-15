@@ -104,3 +104,58 @@ export function photoFileName(date: Date): string {
   const time = `${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`;
   return `aqfish-${day}-${time}.png`;
 }
+
+/** Nom de fichier daté de la photo avant / après d'une séance (#624). */
+export function comparisonFileName(date: Date): string {
+  return photoFileName(date).replace(/^aqfish-/, 'aqfish-avant-apres-');
+}
+
+/**
+ * Assemble deux relevés côte à côte (#624, avant / après d'une séance), séparés de `gap`
+ * pixels de la couleur `background` (RGB 0 à 255), alignés en haut ; le reste est rempli de
+ * `background`. Entrées et sortie dans l'ordre WebGL (lignes de bas en haut), pour passer
+ * ensuite par `upscalePhoto`.
+ * @throws RangeError si une entrée n'a pas `width × height × 4` octets ou si `gap` n'est pas
+ *   un entier ≥ 0.
+ */
+export function sideBySidePhotos(
+  left: PhotoPixels,
+  right: PhotoPixels,
+  gap: number,
+  background: readonly [number, number, number],
+): PhotoPixels {
+  if (!Number.isInteger(gap) || gap < 0) {
+    throw new RangeError(`écart invalide : ${gap}`);
+  }
+  for (const { width, height, data } of [left, right]) {
+    if (!Number.isInteger(width) || !Number.isInteger(height) || width < 1 || height < 1) {
+      throw new RangeError(`taille invalide : ${width} × ${height}`);
+    }
+    if (data.length !== width * height * 4) {
+      throw new RangeError(`${data.length} octets pour ${width} × ${height} pixels`);
+    }
+  }
+  const width = left.width + gap + right.width;
+  const height = Math.max(left.height, right.height);
+  const data = new Uint8Array(width * height * 4);
+  for (let i = 0; i < data.length; i += 4) {
+    data[i] = background[0];
+    data[i + 1] = background[1];
+    data[i + 2] = background[2];
+    data[i + 3] = 255;
+  }
+  const paste = (image: PhotoPixels, x0: number): void => {
+    // Alignées en haut : en ordre WebGL, la ligne du bas de l'image monte de l'écart de hauteur.
+    const lift = height - image.height;
+    for (let y = 0; y < image.height; y++) {
+      const source = y * image.width * 4;
+      data.set(
+        image.data.subarray(source, source + image.width * 4),
+        ((y + lift) * width + x0) * 4,
+      );
+    }
+  };
+  paste(left, 0);
+  paste(right, left.width + gap);
+  return { width, height, data };
+}

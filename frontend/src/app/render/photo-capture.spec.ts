@@ -1,8 +1,10 @@
 import {
+  comparisonFileName,
   PHOTO_MAX_FACTOR,
   PHOTO_MAX_SIDE,
   photoFileName,
   photoScale,
+  sideBySidePhotos,
   upscalePhoto,
   type PhotoPixels,
 } from './photo-capture';
@@ -139,5 +141,55 @@ describe('photoFileName (#479)', () => {
   it("date le fichier à l'heure locale, sur deux chiffres", () => {
     expect(photoFileName(new Date(2026, 10, 7, 9, 5, 3))).toBe('aqfish-2026-11-07-090503.png');
     expect(photoFileName(new Date(2027, 0, 31, 23, 59, 59))).toBe('aqfish-2027-01-31-235959.png');
+  });
+});
+
+describe('sideBySidePhotos (#624)', () => {
+  const gray = (width: number, height: number, value: number): PhotoPixels => ({
+    width,
+    height,
+    data: new Uint8Array(width * height * 4).fill(value),
+  });
+
+  it('pose les deux images côte à côte, séparées par l’écart, sans retourner les lignes', () => {
+    const out = sideBySidePhotos(quad(), quad(), 1, [9, 8, 7]);
+    expect([out.width, out.height]).toEqual([5, 2]);
+    const at = (x: number, y: number) =>
+      Array.from(out.data.slice((y * 5 + x) * 4, (y * 5 + x) * 4 + 4));
+    // Ligne du bas (ordre WebGL) : rouge, vert, écart, rouge, vert.
+    expect(at(0, 0)).toEqual([255, 0, 0, 255]);
+    expect(at(1, 0)).toEqual([0, 255, 0, 255]);
+    expect(at(2, 0)).toEqual([9, 8, 7, 255]);
+    expect(at(3, 0)).toEqual([255, 0, 0, 255]);
+    expect(at(4, 1)).toEqual([255, 255, 255, 255]);
+    // Agrandie ensuite : le haut de l'image est la ligne bleu / blanc.
+    const image = upscalePhoto(out, 1);
+    expect(pixelAt(image, 0, 0)).toEqual([0, 0, 255, 255]);
+    expect(pixelAt(image, 2, 1)).toEqual([9, 8, 7, 255]);
+  });
+
+  it('écart nul ; hauteurs différentes alignées en haut, le reste au fond', () => {
+    const out = sideBySidePhotos(gray(1, 3, 100), gray(2, 1, 50), 0, [1, 2, 3]);
+    expect([out.width, out.height]).toEqual([3, 3]);
+    const image = upscalePhoto(out, 1);
+    expect(pixelAt(image, 0, 2)).toEqual([100, 100, 100, 255]);
+    expect(pixelAt(image, 1, 0)).toEqual([50, 50, 50, 255]);
+    expect(pixelAt(image, 2, 0)).toEqual([50, 50, 50, 255]);
+    expect(pixelAt(image, 1, 1)).toEqual([1, 2, 3, 255]);
+    expect(pixelAt(image, 2, 2)).toEqual([1, 2, 3, 255]);
+  });
+
+  it('refuse un écart ou une image invalides', () => {
+    expect(() => sideBySidePhotos(quad(), quad(), -1, [0, 0, 0])).toThrow(RangeError);
+    expect(() => sideBySidePhotos(quad(), quad(), 0.5, [0, 0, 0])).toThrow(RangeError);
+    const short = { width: 2, height: 2, data: new Uint8Array(3) };
+    expect(() => sideBySidePhotos(quad(), short, 0, [0, 0, 0])).toThrow(RangeError);
+    expect(() => sideBySidePhotos(gray(0, 0, 0), quad(), 0, [0, 0, 0])).toThrow(RangeError);
+  });
+
+  it('nomme le fichier avant / après à l’heure locale', () => {
+    expect(comparisonFileName(new Date(2026, 10, 7, 9, 5, 3))).toBe(
+      'aqfish-avant-apres-2026-11-07-090503.png',
+    );
   });
 });

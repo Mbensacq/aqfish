@@ -1650,6 +1650,184 @@ describe('AquariumHost', () => {
       expect(host().pruning()).toBe(false);
     });
 
+    describe('avant / après de la séance (#624)', () => {
+      let reads = 0;
+      let getContext: ReturnType<typeof vi.spyOn>;
+      let toDataUrl: ReturnType<typeof vi.spyOn>;
+
+      /** Bac prêt à relire sa cible : chaque relevé est rempli d'un gris différent. */
+      async function createReadable(search = '?seed=42&vitesse=0'): Promise<void> {
+        await create(search);
+        setCanvasSize(600, 300);
+        frames.flush(0);
+        reads = 0;
+        const renderer = renderers[renderers.length - 1] as FakeRenderer & {
+          readRenderTargetPixels: AquariumRenderer['readRenderTargetPixels'];
+        };
+        renderer.readRenderTargetPixels = (_t, _x, _y, _w, _h, buffer) => {
+          reads++;
+          buffer.fill(reads * 10);
+        };
+      }
+
+      beforeEach(() => {
+        getContext = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(
+          () =>
+            ({
+              createImageData: (w: number, h: number) => ({
+                data: new Uint8ClampedArray(w * h * 4),
+              }),
+              putImageData: () => undefined,
+            }) as unknown as CanvasRenderingContext2D,
+        );
+        let encoded = 0;
+        toDataUrl = vi
+          .spyOn(HTMLCanvasElement.prototype, 'toDataURL')
+          .mockImplementation(() => `data:image/png;base64,${++encoded}`);
+      });
+
+      afterEach(() => {
+        getContext.mockRestore();
+        toDataUrl.mockRestore();
+      });
+
+      const skipToBilan = (done = false) => {
+        if (done) {
+          host().completeCareSessionStep();
+        } else {
+          host().skipCareSessionStep();
+        }
+        while (host().careSession()?.step !== 'bilan') {
+          host().skipCareSessionStep();
+        }
+      };
+
+      it('avant pris au début, après au bilan, tout libéré à la fin', async () => {
+        await createReadable();
+        const world = structuredClone(host().world);
+        expect(host().hasCareBefore()).toBe(false);
+        host().openCareSession();
+        expect(reads).toBe(1);
+        expect(host().hasCareBefore()).toBe(true);
+        expect(host().careComparison()).toBeNull();
+        // Rouvrir la séance déjà affichée ne reprend pas d'image.
+        host().openCareSession();
+        expect(reads).toBe(1);
+        skipToBilan(true);
+        expect(reads).toBe(2);
+        expect(host().careComparison()).toEqual({
+          before: 'data:image/png;base64,1',
+          after: 'data:image/png;base64,2',
+        });
+        // Rien de l'image dans la sauvegarde.
+        expect(saveStorage!.getItem(SAVE_STORAGE_KEY)).not.toContain('data:image');
+        expect(JSON.stringify(host().world)).not.toContain('data:image');
+        host().closeCareSession();
+        expect(host().hasCareBefore()).toBe(false);
+        expect(host().careComparison()).toBeNull();
+        expect(host().saveCareComparison()).toBe(false);
+        expect(host().world!.decor).toEqual(world!.decor);
+      });
+
+      it('séance interrompue : image « avant » abandonnée, pas de comparaison à la reprise', async () => {
+        await createReadable();
+        host().openCareSession();
+        host().completeCareSessionStep();
+        expect(host().hasCareBefore()).toBe(true);
+        // « Plus tard ».
+        host().closeCareSession();
+        expect(host().hasCareBefore()).toBe(false);
+        host().openCareSession();
+        expect(host().careSession()?.step).toBe('siphon');
+        expect(host().hasCareBefore()).toBe(false);
+        expect(reads).toBe(1);
+        skipToBilan();
+        expect(host().careSession()?.outcomes.vitres).toBe('fait');
+        expect(host().careComparison()).toBeNull();
+        expect(reads).toBe(1);
+        host().closeCareSession();
+      });
+
+      it('séance sautée entièrement : pas de comparaison, image « avant » libérée', async () => {
+        await createReadable();
+        host().openCareSession();
+        expect(host().hasCareBefore()).toBe(true);
+        skipToBilan();
+        expect(host().careComparison()).toBeNull();
+        expect(host().hasCareBefore()).toBe(false);
+        expect(reads).toBe(1);
+        expect(host().saveCareComparison()).toBe(false);
+        host().closeCareSession();
+      });
+
+      it('mode décor : aucune séance, donc aucune image', async () => {
+        await createReadable();
+        host().setCareMode('decor');
+        host().openCareSession();
+        expect(host().careSession()).toBeNull();
+        expect(host().hasCareBefore()).toBe(false);
+        expect(reads).toBe(0);
+        // Passage en mode décor pendant une séance : elle se ferme, l'image est libérée.
+        host().setCareMode('soins');
+        host().openCareSession();
+        expect(host().hasCareBefore()).toBe(true);
+        host().setCareMode('decor');
+        expect(host().careSession()).toBeNull();
+        expect(host().hasCareBefore()).toBe(false);
+      });
+
+      it('relecture impossible : séance normale, sans comparaison', async () => {
+        await create('?seed=42&vitesse=0');
+        host().openCareSession();
+        expect(host().hasCareBefore()).toBe(false);
+        skipToBilan(true);
+        expect(host().careSession()?.step).toBe('bilan');
+        expect(host().careComparison()).toBeNull();
+        host().closeCareSession();
+      });
+
+      it('« Enregistrer la photo » : avant et après côte à côte, agrandis, nom daté', async () => {
+        await createReadable();
+        host().openCareSession();
+        skipToBilan(true);
+        let sizes: [number, number] | null = null;
+        const toBlob = vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation(function (
+          this: HTMLCanvasElement,
+          cb: BlobCallback,
+        ) {
+          sizes = [this.width, this.height];
+          cb(new Blob(['png'], { type: 'image/png' }));
+        });
+        Object.assign(window.URL, {
+          createObjectURL: vi.fn(() => 'blob:avant-apres'),
+          revokeObjectURL: vi.fn(),
+        });
+        const names: string[] = [];
+        const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (
+          this: HTMLAnchorElement,
+        ) {
+          names.push(this.download);
+        });
+        try {
+          expect(host().saveCareComparison()).toBe(true);
+          // Deux cibles de 200 × 100 et 2 pixels d'écart : 402 × 100, agrandies par 5.
+          expect(sizes).toEqual([2010, 500]);
+          expect(names[0]).toMatch(/^aqfish-avant-apres-\d{4}-\d{2}-\d{2}-\d{6}\.png$/);
+          expect(host().photoNotice()).toBeNull();
+          // Sans canvas 2D : message bref.
+          getContext.mockImplementation(() => null);
+          expect(host().saveCareComparison()).toBe(false);
+          expect(host().photoNotice()).toBe(PHOTO_FAILED_MESSAGE);
+        } finally {
+          toBlob.mockRestore();
+          click.mockRestore();
+          delete (window.URL as unknown as Record<string, unknown>)['createObjectURL'];
+          delete (window.URL as unknown as Record<string, unknown>)['revokeObjectURL'];
+          host().closeCareSession();
+        }
+      });
+    });
+
     it('pousse des plantes (#494) : data-aqfish-plants réécrit seulement s’il change', async () => {
       await create('?seed=42&vitesse=0');
       const element = fixture.nativeElement as HTMLElement;
