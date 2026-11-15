@@ -1,6 +1,6 @@
-# Captures c224
-
-- Branche : cycle/c224-taille (PR #643), commit c094767
-- Graine : 42 (graine par défaut des captures)
-- Série partielle : `npm run captures` interrompue par le délai (580 s) ; 139 images produites, toutes identiques à l octet à `latest/` (hors séance inchangé). Ajouts : seance-taille-avant.png, seance-taille-apres.png.
-- Date : 2026-11-15
+# Captures du cycle 225
+- Branche : cycle/c225-avant-apres-seance
+- PR : #645 (issue #624)
+- Commit : 7dd4125
+- Graine : celle par défaut des captures
+- Série : 147 images ; 146 identiques à l'octet à la série précédente (hors séance), nouvelle : seance-avant-apres.png
