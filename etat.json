@@ -8199,6 +8199,12 @@
           "debut": "2026-11-15T20:37:01.211Z",
           "fin": "2026-11-15T20:58:49.336Z",
           "note": "Verdict OK, 0 bug, unitaires 5314 + e2e séance verts, captures publiées (146 identiques)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-15T20:59:26.866Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
