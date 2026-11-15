@@ -8223,6 +8223,12 @@
           "debut": "2026-11-15T22:21:20.995Z",
           "fin": "2026-11-15T22:21:58.265Z",
           "note": "Issue #625 : bruitages de la séance (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-15T22:22:49.881Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
