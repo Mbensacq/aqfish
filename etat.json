@@ -8259,6 +8259,12 @@
           "debut": "2026-11-16T02:16:46.132Z",
           "fin": "2026-11-16T02:17:23.825Z",
           "note": "Issue #644 : lot de dette séance (#644, #646, #648) (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-16T02:17:55.457Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
