@@ -170,6 +170,40 @@ describe('calendrier d’entretien (#513)', () => {
     expect(sameMaintenanceReadout(dueA, { ...base, due: [first!.task] })).toBe(true);
   });
 
+  it('compare tout champ présent du relevé, même ajouté plus tard (#520)', () => {
+    // Parcourt les clés réelles du relevé : un champ ajouté sans être comparé fait échouer ce test.
+    const full = maintenanceReadout(maintenanceDone(state, 'waterChange', DAY), 60 * DAY);
+    expect(full.items.length).toBeGreaterThan(1);
+    expect(full.due.length).toBeGreaterThan(0);
+    expect(full.log.length).toBeGreaterThan(0);
+    const altered = (value: unknown): unknown => {
+      if (typeof value === 'number') return value + 1;
+      if (typeof value === 'boolean') return !value;
+      if (typeof value === 'string') return `${value}·`;
+      if (Array.isArray(value)) return value.slice(1);
+      return {};
+    };
+    const change = <T extends object>(value: T, key: string): T => ({
+      ...value,
+      [key]: altered((value as Record<string, unknown>)[key]),
+    });
+    const keys = (value: object): string[] => Object.keys(value);
+    for (const key of keys(full)) {
+      expect(sameMaintenanceReadout(full, change(full, key)), key).toBe(false);
+    }
+    const [item, ...rest] = full.items;
+    for (const key of keys(item!)) {
+      const items = [change(item!, key), ...rest];
+      expect(sameMaintenanceReadout(full, { ...full, items }), `items.${key}`).toBe(false);
+    }
+    const [line, ...older] = full.log;
+    for (const key of keys(line!)) {
+      const log = [change(line!, key), ...older];
+      expect(sameMaintenanceReadout(full, { ...full, log }), `log.${key}`).toBe(false);
+    }
+    expect(sameMaintenanceReadout(full, structuredClone(full))).toBe(true);
+  });
+
   it('relit un calendrier valide et refuse le reste', () => {
     const saved = JSON.parse(JSON.stringify(maintenanceDone(state, 'prune', 5)));
     expect(readMaintenance(saved, [])).toEqual(saved);
