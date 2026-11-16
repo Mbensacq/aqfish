@@ -206,7 +206,9 @@ export class AmbientSoundState {
     if (!engine || engine.isClosed || this.forbidden || this.hidden()) {
       return false;
     }
-    if (!(careSoundLevel(CARE_SOUNDS[kind], this.enabled(), this.volume()) > 0)) {
+    // Le niveau ne dépend que du gain, que le tirage de hauteur (`careSoundSpec`) ne change pas.
+    const level = careSoundLevel(CARE_SOUNDS[kind], this.enabled(), this.volume());
+    if (!(level > 0)) {
       return false;
     }
     const now = engine.time;
@@ -215,7 +217,7 @@ export class AmbientSoundState {
     }
     const spec = careSoundSpec(kind, this.careSoundPrng.next());
     this.careSoundLast.set(kind, now);
-    engine.playCareSound(spec, careSoundLevel(spec, this.enabled(), this.volume()));
+    engine.playCareSound(spec, level);
     return true;
   }
 

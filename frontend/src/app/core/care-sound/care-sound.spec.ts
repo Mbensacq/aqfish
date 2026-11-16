@@ -6,10 +6,12 @@ import {
   careSoundDue,
   careSoundLevel,
   careSoundSpec,
+  CARE_STEPS_WITH_CLICK,
   careStepSound,
   createCareSoundPrng,
 } from './care-sound';
 import { DEFAULT_AMBIENT_VOLUME } from '../ambient-sound/ambient-sound';
+import { CARE_SESSION_STEPS, type CareStepOutcome } from '../../sim/care-session';
 
 describe('bruitages de la séance (#625)', () => {
   it('table : chaque bruitage a une durée brève, des hauteurs positives, un niveau discret', () => {
@@ -109,6 +111,15 @@ describe('bruitages de la séance (#625)', () => {
     expect(careStepSound('bilan', 'fait')).toBeNull();
     expect(careStepSound('inconnue', 'fait')).toBeNull();
     expect(careStepSound('vitres', '')).toBeNull();
+  });
+
+  it('étapes à clic recoupées avec celles de la séance (#648) : toutes sauf le bilan', () => {
+    const taskSteps = CARE_SESSION_STEPS.filter((step) => step !== 'bilan');
+    expect([...CARE_STEPS_WITH_CLICK].sort()).toEqual([...taskSteps].sort());
+    const done: CareStepOutcome = 'fait';
+    for (const step of CARE_SESSION_STEPS) {
+      expect(careStepSound(step, done)).toBe(step === 'bilan' ? null : 'clic');
+    }
   });
 
   it('générateur propre aux bruitages : même graine, même suite', () => {
