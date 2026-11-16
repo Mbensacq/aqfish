@@ -8379,6 +8379,12 @@
           "debut": "2026-11-16T13:56:03.343Z",
           "fin": "2026-11-16T14:40:13.838Z",
           "note": "Verdict OK, 0 nouveau bug (#660 connu), captures c230 publiées (160), verify e2e local interrompu, CI 11/11 verte"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-16T14:40:46.542Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
