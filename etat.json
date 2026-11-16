@@ -8403,6 +8403,12 @@
           "debut": "2026-11-16T16:06:20.845Z",
           "fin": "2026-11-16T16:06:49.118Z",
           "note": "Issue #653 : ponte et œufs du poisson-clown au récif (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-16T16:07:23.872Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
