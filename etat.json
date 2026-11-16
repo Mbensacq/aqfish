@@ -8331,6 +8331,12 @@
           "debut": "2026-11-16T09:38:35.681Z",
           "fin": "2026-11-16T09:38:59.217Z",
           "note": "Issue #520 : dette entretien, points 1-2 (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-16T09:39:31.625Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
