@@ -12,10 +12,10 @@ import {
 
 import { MAX_EGGS, type Egg } from '../sim/eggs';
 import type { SceneLayer } from './effect-layer';
-import { PALETTE } from './palette';
+import { ENVIRONMENT_TONES, PALETTE } from './palette';
 
 /**
- * Œufs des corydoras (issue #478, ADR 0111) : un voxel crème par œuf, collé sur la vitre ou
+ * Œufs des corydoras (issue #478, ADR 0111) et du poisson-clown (#653, orange) : un voxel crème par œuf, collé sur la vitre ou
  * dans une plante, de couleur plate sur toutes ses faces (ombré comme les granulés, son flanc
  * tombait sur le ton du sable et la grappe ne se lisait plus, capture du cycle 168). Un seul maillage
  * instancié de `MAX_EGGS` instances, alloué une fois (aucun tampon recréé en cours de partie) ;
@@ -54,10 +54,24 @@ export const EGG_MIN_OUTLINE_PIXELS = 2;
  */
 export const EGG_OUTLINE_RENDER_ORDER = 1;
 export const EGG_CORE_RENDER_ORDER = 2;
+/**
+ * Œufs du poisson-clown (#653) : dessinés après l'eau et le verre (file des transparents,
+ * opacité pleine), comme les poissons (`FISH_RENDER_ORDER`, 2,5) et juste avant eux. Sous l'eau
+ * bleue du récif, leur orange virait au rose pâle à la passe palette (capture du cycle 231).
+ * Les œufs des corydoras restent dans la file opaque : images inchangées.
+ */
+export const EGG_AFTER_WATER_OUTLINE_RENDER_ORDER = 2.3;
+export const EGG_AFTER_WATER_CORE_RENDER_ORDER = 2.4;
 /** Couleur d'un œuf neuf. */
 export const EGG_COLOR = PALETTE.koiBlanc;
 /** Couleur d'un œuf près d'éclore. */
 export const EGG_RIPE_COLOR = PALETTE.sableClair;
+/**
+ * Œufs du poisson-clown (#653) : orange vif de l'espèce (`clownOrange`), puis un orange plus
+ * sombre près d'éclore (les embryons foncent avant l'éclosion).
+ */
+export const CLOWN_EGG_COLOR = ENVIRONMENT_TONES.clownOrange;
+export const CLOWN_EGG_RIPE_COLOR = PALETTE.tritonOrange;
 
 export class EggLayer implements SceneLayer {
   private readonly geometry = new BoxGeometry(1, 1, 1);
@@ -72,6 +86,8 @@ export class EggLayer implements SceneLayer {
   private readonly baseOutline = new Color(EGG_OUTLINE_COLOR);
   private readonly fresh = new Color(EGG_COLOR);
   private readonly ripe = new Color(EGG_RIPE_COLOR);
+  private readonly clownFresh = new Color(CLOWN_EGG_COLOR);
+  private readonly clownRipe = new Color(CLOWN_EGG_RIPE_COLOR);
   private readonly white = new Color('#ffffff');
   private readonly matrix = new Matrix4();
   private readonly position = new Vector3();
@@ -83,6 +99,8 @@ export class EggLayer implements SceneLayer {
     EGG_VOXEL + EGG_OUTLINE,
   );
   private brightnessFactor = 1;
+  /** Vrai quand les œufs sont dessinés après l'eau (ponte de poisson-clown, #653). */
+  private afterWater = false;
   /** Derniers œufs posés (relus quand le point de vue change) et leur durée d'incubation. */
   private eggs: readonly Egg[] | undefined;
   private hatchTime = 1;
@@ -160,6 +178,11 @@ export class EggLayer implements SceneLayer {
     if (count === 0 && this.mesh.count === 0) {
       return;
     }
+    let reef = false;
+    for (let i = 0; i < count && !reef; i++) {
+      reef = eggs![i].species === 'clown';
+    }
+    this.setAfterWater(reef);
     for (let i = 0; i < count; i++) {
       const egg = eggs![i];
       this.position.set(egg.x, egg.y, egg.z);
@@ -169,7 +192,12 @@ export class EggLayer implements SceneLayer {
       this.matrix.compose(this.position, this.rotation, this.outlineScale);
       this.outline.setMatrixAt(i, this.matrix);
       // Deux teintes seulement (pixel art) : neuf, puis mûr à la seconde moitié.
-      this.mesh.setColorAt(i, egg.age * 2 >= hatchTime ? this.ripe : this.fresh);
+      const ripe = egg.age * 2 >= hatchTime;
+      if (egg.species === 'clown') {
+        this.mesh.setColorAt(i, ripe ? this.clownRipe : this.clownFresh);
+      } else {
+        this.mesh.setColorAt(i, ripe ? this.ripe : this.fresh);
+      }
     }
     this.mesh.count = count;
     this.outline.count = count;
@@ -179,6 +207,30 @@ export class EggLayer implements SceneLayer {
     if (this.mesh.instanceColor) {
       this.mesh.instanceColor.needsUpdate = true;
     }
+  }
+
+  /**
+   * Passe les œufs dans la file des transparents (après l'eau, opacité pleine) ou les remet
+   * dans la file opaque ; sans effet si rien ne change.
+   */
+  private setAfterWater(after: boolean): void {
+    if (after === this.afterWater) {
+      return;
+    }
+    this.afterWater = after;
+    for (const material of [this.material, this.outlineMaterial]) {
+      material.transparent = after;
+      material.needsUpdate = true;
+    }
+    this.outline.renderOrder = after
+      ? EGG_AFTER_WATER_OUTLINE_RENDER_ORDER
+      : EGG_OUTLINE_RENDER_ORDER;
+    this.mesh.renderOrder = after ? EGG_AFTER_WATER_CORE_RENDER_ORDER : EGG_CORE_RENDER_ORDER;
+  }
+
+  /** Vrai si les œufs sont dessinés après l'eau (tests). */
+  get drawnAfterWater(): boolean {
+    return this.afterWater;
   }
 
   /** Nombre d'œufs affichés (tests). */

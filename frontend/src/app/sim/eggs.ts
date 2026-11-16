@@ -1,6 +1,7 @@
 import { deriveSeed, prngOutput } from '../core/random/prng';
 import { MAX_TOTAL_FISH, SIM_DT } from './constants';
-import type { DecorItem } from './decor';
+import type { Anemone } from './anemones';
+import { rockSpheres, type DecorItem } from './decor';
 import { FED_HUNGER, isFry, isPredator } from './fry';
 import { SPECIES, type SpeciesId } from './species';
 import type { Fish } from './swimmer';
@@ -25,12 +26,25 @@ import type { Box3 } from './tank';
  * - **Plafonds** : œufs et animaux de l'espèce ne dépassent pas `maxPopulation`, œufs et
  *   animaux du bac `MAX_TOTAL_FISH`, et le bac garde au plus `MAX_EGGS` œufs.
  *
+ * - **Poisson-clown** (issue #653) : même calendrier, mêmes conditions (température propre à
+ *   l'espèce, `spawnTemperature`) ; la ponte est collée sur une surface dure près d'une anémone
+ *   (`layReefClutch`) : le flanc du rocher le plus proche (`'rocher'`) ou, sans rocher à
+ *   portée, le sable au pied de l'anémone (`'sol'`). Sans anémone, aucune ponte. Ces œufs, gardés
+ *   par le couple, ne sont pas mangés ; ils éclosent en larves planctoniques qui quittent le bac
+ *   (`hatchesToFry` faux : aucun alevin).
+ *
  * Toutes les valeurs sont des **approximations de jeu** : dans la nature, l'éclosion prend
- * plusieurs jours et une ponte compte souvent plusieurs dizaines d'œufs.
+ * plusieurs jours et une ponte compte souvent plusieurs dizaines d'œufs (plusieurs centaines
+ * pour le poisson-clown).
  */
 
 /** Espèces ovipares qui pondent des œufs dans la simulation. */
-export const EGG_SPECIES: readonly SpeciesId[] = Object.freeze(['corydora']);
+export const EGG_SPECIES: readonly SpeciesId[] = Object.freeze(['corydora', 'clown']);
+/**
+ * Espèces dont la ponte est collée près d'une anémone (`layReefClutch`) et dont les œufs
+ * éclosent en larves planctoniques, qui quittent le bac (issue #653).
+ */
+export const REEF_EGG_SPECIES: readonly SpeciesId[] = Object.freeze(['clown']);
 
 /** Période de ponte, en secondes simulées. */
 export const SPAWN_PERIOD = 600;
@@ -43,6 +57,21 @@ export const SPAWN_TEMPERATURE: readonly [number, number] = Object.freeze([22, 2
   number,
   number,
 ];
+/**
+ * Température de ponte du poisson-clown, en °C, bornes comprises : approximation de jeu dans
+ * la plage tolérée de l'espèce (fiche), autour des 26 °C du récif.
+ */
+export const REEF_SPAWN_TEMPERATURE: readonly [number, number] = Object.freeze([
+  24, 28,
+]) as readonly [number, number];
+/** Distance horizontale maximale entre une anémone et le rocher où pondre, en mètres. */
+export const REEF_ROCK_REACH = 0.3;
+/** Distance horizontale d'une ponte sur le sable au centre de l'anémone, en mètres. */
+export const REEF_SAND_DISTANCE = 0.075;
+/** Écart entre deux œufs d'une ponte du récif, en mètres (au plus, par axe). */
+export const REEF_CLUSTER_SPREAD = 0.016;
+/** Hauteur d'un œuf posé sur le sable, au-dessus du fond, en mètres. */
+export const EGG_SAND_LIFT = 0.006;
 /** Nombre d'œufs d'une ponte, bornes comprises (avant plafonds). */
 export const MIN_CLUTCH = 4;
 export const MAX_CLUTCH = 10;
@@ -69,8 +98,13 @@ export const EGG_PLANT_SPREAD = 0.025;
 export const EGG_CLUSTER_SPREAD = 0.03;
 
 /** Surface où un œuf est collé. */
-export type EggSurface = 'vitre' | 'plante';
-export const EGG_SURFACES: readonly EggSurface[] = Object.freeze(['vitre', 'plante']);
+export type EggSurface = 'vitre' | 'plante' | 'rocher' | 'sol';
+export const EGG_SURFACES: readonly EggSurface[] = Object.freeze([
+  'vitre',
+  'plante',
+  'rocher',
+  'sol',
+]);
 
 /** Œuf collé : objet de données pur, sérialisable en JSON. */
 export interface Egg {
@@ -91,6 +125,21 @@ const SPAWN_SALT = 0x0e66;
 /** Vrai si l'espèce pond des œufs. */
 export function laysEggs(species: SpeciesId): boolean {
   return EGG_SPECIES.includes(species);
+}
+
+/** Vrai si l'espèce pond près d'une anémone (`REEF_EGG_SPECIES`). */
+export function laysNearAnemone(species: SpeciesId): boolean {
+  return REEF_EGG_SPECIES.includes(species);
+}
+
+/** Vrai si les œufs de l'espèce éclosent en alevins (faux : larves qui quittent le bac). */
+export function hatchesToFry(species: SpeciesId): boolean {
+  return laysEggs(species) && !laysNearAnemone(species);
+}
+
+/** Plage de température de ponte de l'espèce, en °C, bornes comprises. */
+export function spawnTemperature(species: SpeciesId): readonly [number, number] {
+  return laysNearAnemone(species) ? REEF_SPAWN_TEMPERATURE : SPAWN_TEMPERATURE;
 }
 
 /** Vrai si `age` est un âge d'œuf valide : réel dans [0, `EGG_HATCH_TIME`). */
@@ -137,12 +186,8 @@ export function isFitSpawner(fish: Fish): boolean {
 /** Vrai si l'eau permet à `species` de pondre (qualité, pH, température). */
 export function waterAllowsSpawn(species: SpeciesId, conditions: SpawnConditions): boolean {
   const t = conditions.temperature;
-  return (
-    conditions.goodWater &&
-    !conditions.phOut(species) &&
-    t >= SPAWN_TEMPERATURE[0] &&
-    t <= SPAWN_TEMPERATURE[1]
-  );
+  const [low, high] = spawnTemperature(species);
+  return conditions.goodWater && !conditions.phOut(species) && t >= low && t <= high;
 }
 
 /** Nombre d'adultes en forme de `species` dans `fishes`. */
@@ -252,6 +297,110 @@ export function layClutch(
     }
   }
   return eggs;
+}
+
+/**
+ * Ponte `spawn` de `species` près d'une anémone (issue #653), au plus `count` œufs : une
+ * anémone est tirée de la ponte ; si un rocher du décor est à moins de `REEF_ROCK_REACH` d'elle
+ * (à l'horizontale, le plus proche), la grappe est collée sur le flanc de ce rocher tourné vers
+ * l'anémone, au ras du sable (`'rocher'`) ; sinon, sur le sable à `REEF_SAND_DISTANCE` du centre
+ * de l'anémone (`'sol'`). Sans anémone (`null`, `undefined` ou liste vide), aucun œuf ; un
+ * décor absent compte comme sans rocher. Tous les œufs sont dans `water`, âge 0.
+ */
+export function layReefClutch(
+  seed: number,
+  species: SpeciesId,
+  spawn: number,
+  count: number,
+  water: Box3,
+  decor: readonly DecorItem[] | null | undefined,
+  anemones: readonly Anemone[] | null | undefined,
+): MutableEgg[] {
+  const eggs: MutableEgg[] = [];
+  if (count <= 0 || anemones === null || anemones === undefined || anemones.length === 0) {
+    return eggs;
+  }
+  const draw = (k: number): number => spawnDraw(seed, species, spawn, k);
+  const anemone = anemones[Math.min(anemones.length - 1, Math.floor(draw(1) * anemones.length))];
+  const rock = nearestRock(decor, anemone.x, anemone.z);
+  const inX = (x: number): number =>
+    clamp(x, water.minX + EGG_GLASS_INSET, water.maxX - EGG_GLASS_INSET);
+  const inZ = (z: number): number =>
+    clamp(z, water.minZ + EGG_GLASS_INSET, water.maxZ - EGG_GLASS_INSET);
+  const floor = Math.min(water.maxY, water.minY + EGG_SAND_LIFT);
+  if (rock === null) {
+    const angle = draw(2) * 2 * Math.PI;
+    const cx = anemone.x + REEF_SAND_DISTANCE * Math.cos(angle);
+    const cz = anemone.z + REEF_SAND_DISTANCE * Math.sin(angle);
+    for (let k = 0; k < count; k++) {
+      const base = 8 + 3 * k;
+      eggs.push({
+        species,
+        x: inX(cx + (draw(base) * 2 - 1) * REEF_CLUSTER_SPREAD),
+        y: floor,
+        z: inZ(cz + (draw(base + 1) * 2 - 1) * REEF_CLUSTER_SPREAD),
+        age: 0,
+        surface: 'sol',
+      });
+    }
+    return eggs;
+  }
+  // Sphère du rocher la plus proche d'un point au ras du sable, sous l'anémone.
+  const target = { x: anemone.x, y: water.minY + EGG_MIN_HEIGHT, z: anemone.z };
+  let best = { x: rock.x, y: target.y, z: rock.z, radius: 0 };
+  let bestGap = Infinity;
+  for (const sphere of rockSpheres(rock)) {
+    const gap =
+      Math.hypot(target.x - sphere.x, target.y - sphere.y, target.z - sphere.z) - sphere.radius;
+    if (gap < bestGap) {
+      bestGap = gap;
+      best = sphere;
+    }
+  }
+  const top = Math.min(water.maxY, water.minY + EGG_MAX_HEIGHT);
+  const radius = best.radius + EGG_GLASS_INSET;
+  for (let k = 0; k < count; k++) {
+    const base = 8 + 3 * k;
+    // Point visé près du sable, sous l'anémone, décalé dans la grappe, puis ramené sur la
+    // surface de la sphère (flanc tourné vers l'anémone).
+    const px = target.x + (draw(base) * 2 - 1) * REEF_CLUSTER_SPREAD * 3;
+    const py = target.y + draw(base + 1) * REEF_CLUSTER_SPREAD * 2;
+    const pz = target.z + (draw(base + 2) * 2 - 1) * REEF_CLUSTER_SPREAD * 3;
+    const dx = px - best.x;
+    const dy = py - best.y;
+    const dz = pz - best.z;
+    const d = Math.hypot(dx, dy, dz) || 1;
+    eggs.push({
+      species,
+      x: inX(best.x + (dx / d) * radius),
+      y: clamp(best.y + (dy / d) * radius, floor, Math.max(floor, top)),
+      z: inZ(best.z + (dz / d) * radius),
+      age: 0,
+      surface: 'rocher',
+    });
+  }
+  return eggs;
+}
+
+/** Rocher du décor le plus proche de `(x, z)` à moins de `REEF_ROCK_REACH`, ou `null`. */
+export function nearestRock(
+  decor: readonly DecorItem[] | null | undefined,
+  x: number,
+  z: number,
+): DecorItem | null {
+  let best: DecorItem | null = null;
+  let bestD2 = REEF_ROCK_REACH * REEF_ROCK_REACH;
+  for (const item of decor ?? []) {
+    if (item.kind !== 'rock') {
+      continue;
+    }
+    const d2 = (item.x - x) ** 2 + (item.z - z) ** 2;
+    if (d2 <= bestD2) {
+      bestD2 = d2;
+      best = item;
+    }
+  }
+  return best;
 }
 
 /**
