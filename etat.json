@@ -8280,6 +8280,24 @@
         }
       },
       "metriques": {}
+    },
+    "228": {
+      "numero": 228,
+      "date": "2026-11-16",
+      "debut": "2026-11-16T05:46:09.326Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-16T05:46:09.326Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
