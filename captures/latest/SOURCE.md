@@ -1,5 +1,8 @@
-# Captures c230
-- Branche : cycle/c230-entretien-telephone, PR #659
-- Commit : bb1e0ad4f38fb310416ff4d98c7fcbe8d60b2a7f
-- Graine : celle du harnais `e2e/captures.spec.ts` (par défaut)
-- Série : 160 images, produite en deux passes (délai) ; alerte-animaux.png présente
+# Captures c231
+
+- Branche : cycle/c231-ponte-poisson-clown
+- PR : #661
+- Commit : 7ede01e
+- Graine : 42 (recif-three-quarter-oeufs : 7)
+- Temps : défaut du harnais
+- Note : 161 captures ; interface-liste-bacs diffère de c230 (instable connue, docs/PIEGES.md)
