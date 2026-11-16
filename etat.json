@@ -8295,6 +8295,12 @@
           "debut": "2026-11-16T05:46:09.326Z",
           "fin": "2026-11-16T05:46:39.091Z",
           "note": "Issue #638 : nourriture non mangée, décomposition et pollution de l'eau (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-16T05:47:17.188Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
