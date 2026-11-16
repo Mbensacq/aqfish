@@ -8415,6 +8415,12 @@
           "debut": "2026-11-16T18:03:07.372Z",
           "fin": "2026-11-16T18:28:34.325Z",
           "note": "Verdict OK, 0 bug, captures c231 publiées (161), e2e local non relancé, CI verte"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-16T18:29:13.410Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
