@@ -75,3 +75,24 @@ test('surcharge répétée non mangée : l’alerte ammoniaque du tableau de bor
   await expect(ammoniaAlert(page)).toContainText('Ammoniaque');
   expect(errors).toEqual([]);
 });
+
+test('guide du débutant : « La faim et la nourriture » explique que la nourriture oubliée pollue (#638)', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto('/?vitesse=0');
+  await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+  await page.getByRole('button', { name: 'Wiki des espèces' }).click();
+  await page.getByRole('button', { name: 'Guide du débutant' }).click();
+  const guide = page.getByRole('dialog', { name: 'Guide du débutant' });
+  await expect(guide).toBeVisible();
+  const toggle = guide.locator('[data-why-toggle="nourriture"]');
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  const text = guide.locator('[data-why-text]');
+  await expect(text).toContainText('se décompose');
+  await expect(text).toContainText('l’ammoniaque grimpe');
+  await expect(text).toBeInViewport();
+  expect(errors).toEqual([]);
+});
