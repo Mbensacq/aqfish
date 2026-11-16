@@ -8252,7 +8252,7 @@
       "type": "fonctionnalite",
       "issue": 644,
       "pr": 649,
-      "version": null,
+      "version": "v1.21.3",
       "phases": {
         "planif": {
           "statut": "termine",
