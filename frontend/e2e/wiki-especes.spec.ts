@@ -187,7 +187,8 @@ test.describe('Wiki des espèces (#287)', () => {
         await expect(sheet(page).locator('[data-wiki-detail-status]')).toHaveCount(5);
         await expect(sheet(page).locator('[data-wiki-detail="lifespan"]')).toContainText('ans');
         await expect(sheet(page).locator('[data-wiki-feeding]')).toHaveCount(4);
-        await expect(sheet(page).locator('[data-wiki-mate="avoid"]')).toHaveCount(2);
+        // Koï, axolotl et poisson rouge (#654).
+        await expect(sheet(page).locator('[data-wiki-mate="avoid"]')).toHaveCount(3);
         await page.keyboard.press('Escape');
         await page.keyboard.press('Escape');
         await expect(wiki(page)).toHaveCount(0);

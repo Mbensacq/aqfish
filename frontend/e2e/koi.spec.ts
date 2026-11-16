@@ -51,7 +51,7 @@ test.describe('Koïs (#88)', () => {
     page,
   }) => {
     const errors = await open(page, '?capture=1&seed=42&environnement=bassin&time=20');
-    await expect(host(page)).toHaveAttribute('data-aqfish-population', 'koi:7');
+    await expect(host(page)).toHaveAttribute('data-aqfish-population', 'koi:7,rouge:0');
     const [white, red, orange] = await countColors(page, KOI_COLORS);
     // Un pixel de scène = 3 × 3 pixels d'écran ; plusieurs koïs de chaque robe.
     expect(white).toBeGreaterThan(9 * 20);
@@ -62,21 +62,22 @@ test.describe('Koïs (#88)', () => {
       page,
       '?capture=1&seed=42&environnement=bassin&time=20&population=koi:0',
     );
-    await expect(host(page)).toHaveAttribute('data-aqfish-population', 'koi:0');
+    await expect(host(page)).toHaveAttribute('data-aqfish-population', 'koi:0,rouge:0');
     expect(await countColors(page, KOI_COLORS)).toEqual([0, 0, 0]);
     expect([...errors, ...witness]).toEqual([]);
   });
 
-  test('panneau : le bassin ne propose que les koïs, le bac que ses trois espèces', async ({
+  test('panneau : le bassin propose koïs et poissons rouges (#654), le bac ses trois espèces', async ({
     page,
   }) => {
     const errors = await open(page, '?seed=42&environnement=bassin');
     await page.getByRole('button', { name: 'Réglages' }).click();
     const rows = page.locator('[data-section="population"] [data-species]');
-    await expect(rows).toHaveCount(1);
+    await expect(rows).toHaveCount(2);
     await expect(rows.first()).toHaveAttribute('data-species', 'koi');
+    await expect(rows.nth(1)).toHaveAttribute('data-species', 'rouge');
     await page.getByRole('button', { name: 'Ajouter un koï' }).click();
-    await expect(host(page)).toHaveAttribute('data-aqfish-population', 'koi:8');
+    await expect(host(page)).toHaveAttribute('data-aqfish-population', 'koi:8,rouge:0');
     await page.getByRole('combobox', { name: 'Environnement' }).selectOption('tropical');
     await expect(host(page)).toHaveAttribute('data-aqfish-environment', 'tropical');
     await expect(rows).toHaveCount(17);
