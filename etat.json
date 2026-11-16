@@ -8396,7 +8396,7 @@
       "type": "fonctionnalite",
       "issue": 653,
       "pr": 661,
-      "version": null,
+      "version": "v1.22.0",
       "phases": {
         "planif": {
           "statut": "termine",
