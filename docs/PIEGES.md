@@ -141,8 +141,12 @@ haut de sa section.
   (2026-11-09)
 - **Effet à durée en temps réel : invisible sur une capture en rendu logiciel** (cycle 175,
   #483) : une image peut prendre plusieurs secondes, les 6 s de `ALERT_HIGHLIGHT_MS` sont
-  écoulées avant la photo. `e2e/alerte-animaux.spec.ts` allonge ce délai quand `CAPTURE_DIR`
-  est défini. (2026-11-08)
+  écoulées avant la photo. Le harnais (`e2e/captures.spec.ts`, `alerte-animaux.png`) allonge ce
+  délai par un script d'initialisation. (2026-11-08)
+- **Photo prise dans un e2e seulement quand `CAPTURE_DIR` est défini : absente de la série**
+  (cycle 230, #652) : `npm run captures` ne lance que `e2e/captures.spec.ts` ;
+  `alerte-animaux.png`, prise par `e2e/alerte-animaux.spec.ts`, manquait à chaque série. Une
+  photo qui doit figurer dans la série se prend dans le harnais. (2026-11-16)
 - **Tous les e2e échouent en 3 ms en local : navigateur de Playwright introuvable** (cycle
   170, #484) :
   `browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1194/…`.
