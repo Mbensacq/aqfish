@@ -6,6 +6,12 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Captures d'interface « avant » faussées par la charge de la machine** (cycle 228, #638) :
+  `interface-liste-bacs` et `telephone-fiche-espece` de `main`, générées pendant que les tests
+  unitaires tournaient dans l'autre arbre, différaient de 2 et 13 pixels de celles de la
+  branche ; relancées seules sur `main`, elles étaient identiques à l'octet. Avant de conclure
+  à un écart, relancer la capture suspecte sur `main` au repos
+  (`npx playwright test --project=captures --grep "<nom>"`). (2026-11-16)
 - **Toucher bref sur le canvas en e2e : `page.touchscreen.tap` suffit** (cycle 224, #623) : avec
   `test.use({ hasTouch: true })`, Chromium en tire `pointerdown` / `pointerup` de type `touch`,
   donc `onCanvasClick` (sécateur, raclette au clic) ; la session CDP (`swipeTouch`) n'est utile
