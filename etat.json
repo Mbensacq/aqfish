@@ -8360,7 +8360,7 @@
       "type": "retro",
       "issue": 652,
       "pr": 659,
-      "version": null,
+      "version": "v1.21.6",
       "phases": {
         "planif": {
           "statut": "termine",
