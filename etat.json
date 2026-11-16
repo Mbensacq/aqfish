@@ -8439,6 +8439,12 @@
           "debut": "2026-11-16T21:19:18.725Z",
           "fin": "2026-11-16T21:19:43.804Z",
           "note": "Issue #654 : poisson rouge au bassin d'eau froide (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-16T21:20:26.059Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
