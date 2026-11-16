@@ -1,0 +1,1 @@
+{"score": null, "survivants": null, "note": "stryker sur maintenance.ts : essai à blanc 4 min 18 s (2914 tests), 266 mutants, délai de session dépassé avant la fin ; non mesuré par QA c229. Piste : ignoreStatic + --mutate ciblé + testFiles réduits."}
