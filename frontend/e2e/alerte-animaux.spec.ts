@@ -8,7 +8,8 @@ import { createDefaultWorld, starveWorldInPlace, type MutableWorld } from '../sr
 /**
  * Animaux concernés par une alerte (issue #483, ADR 0115) : le détail nomme les espèces, le
  * bouton « Montrer les animaux » les met en évidence dans la scène quelques secondes. Pages
- * ouvertes avec `vitesse=0` : le monde reste figé, seule la mise en évidence change.
+ * ouvertes avec `vitesse=0` : le monde reste figé, seule la mise en évidence change. La photo
+ * `alerte-animaux.png` est prise par le harnais de captures (`e2e/captures.spec.ts`, #652).
  */
 test('alerte dépliée : espèces nommées, animaux mis en évidence puis repère retiré', async ({
   page,
@@ -21,15 +22,6 @@ test('alerte dépliée : espèces nommées, animaux mis en évidence puis repèr
       errors.push(message.text());
     }
   });
-  // Capture de contrôle (`CAPTURE_DIR`) : rendu logiciel trop lent pour 6 s, le délai est allongé.
-  const captureDir = process.env['CAPTURE_DIR'];
-  if (captureDir) {
-    await page.addInitScript(() => {
-      const original = window.setTimeout;
-      window.setTimeout = ((handler: TimerHandler, delay?: number, ...rest: unknown[]) =>
-        original(handler, delay === 6000 ? 600_000 : delay, ...rest)) as typeof window.setTimeout;
-    });
-  }
   await page.goto('/?seed=42&vitesse=0');
   await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
   const host = page.locator('app-aquarium-host');
@@ -63,11 +55,6 @@ test('alerte dépliée : espèces nommées, animaux mis en évidence puis repèr
   await expect(status.locator('[data-alert-highlight-announcement]')).toContainText(
     'mis en évidence',
   );
-  if (captureDir) {
-    await page.waitForTimeout(4000);
-    await page.screenshot({ path: `${captureDir}/alerte-animaux.png` });
-    return;
-  }
   await expect(host).not.toHaveAttribute('data-aqfish-animaux-signales', /./, { timeout: 15_000 });
   await expect(status.locator('[data-alert-highlight-announcement]')).toHaveText('');
   expect(errors).toEqual([]);

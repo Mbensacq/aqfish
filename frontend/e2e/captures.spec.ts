@@ -839,6 +839,49 @@ test.describe('Captures', () => {
     });
   });
 
+  // Animaux concernés par une alerte (#483, ADR 0115) : alerte « faim » dépliée, néons mis
+  // en évidence par « Montrer les animaux ». En rendu logiciel, une image peut prendre
+  // plusieurs secondes : les 6 s de la mise en évidence sont allongées pour qu'elle soit
+  // encore là sur la photo (docs/PIEGES.md). Faisait partie de `e2e/alerte-animaux.spec.ts`,
+  // hors de la série (#652).
+  test('tableau de bord : alerte-animaux', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    await page.addInitScript(() => {
+      const original = window.setTimeout;
+      window.setTimeout = ((handler: TimerHandler, delay?: number, ...rest: unknown[]) =>
+        original(handler, delay === 6000 ? 600_000 : delay, ...rest)) as typeof window.setTimeout;
+    });
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await page.goto(`/?seed=${SEED}&vitesse=0`);
+    await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+    const world: MutableWorld = createDefaultWorld(SEED);
+    world.water = { ...freshWater('tropical'), ammonia: 6, nitrite: 2.5, nitrate: 50 };
+    starveWorldInPlace(world);
+    const settings = page.getByRole('button', { name: 'Réglages' });
+    await settings.click();
+    await page.locator('[data-section="sauvegarde"] input[type="file"]').setInputFiles({
+      name: 'alertes.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(
+        serializeWorld(world, { speed: 0, clock: createDayClock(12, 1200, true) }),
+      ),
+    });
+    const status = page.locator('[data-dashboard-status]');
+    await expect(status.locator('[data-alert]')).toHaveCount(3);
+    await settings.click();
+    await expect(page.locator('.control-panel')).toHaveCount(0);
+    await status.locator('[data-alert="hunger"] .status__chip').click();
+    await status.locator('[data-alert-show="hunger"]').click();
+    const host = page.locator('app-aquarium-host');
+    await expect(host).toHaveAttribute('data-aqfish-animaux-signales', /^[1-9]\d*$/);
+    // Quelques images rendues avec le repère avant la photo.
+    await page.waitForTimeout(4000);
+    await expect(host).toHaveAttribute('data-aqfish-animaux-signales', /^[1-9]\d*$/);
+    await page.screenshot({ path: join(OUTPUT_DIR, 'alerte-animaux.png'), animations: 'disabled' });
+    expect(errors).toEqual([]);
+  });
+
   test('tracé des trajectoires, vue de dessus', async ({ page }) => {
     const svg = trajectorySvg(SEED, TRACE_SECONDS);
     await page.setViewportSize({ width: svg.width, height: svg.height });
