@@ -1,8 +1,7 @@
-# Captures c228
+# Captures c229
 
-- Branche : cycle/c228-nourriture-decomposition
-- PR : #650
-- Commit : ffeb350bc841959ab9ee746d0d5ed4b167f0f124 (code applicatif ; af2565b n'ajoute qu'un test e2e)
+- Branche : cycle/c229-garde-releve-entretien (PR #651, commit 993c33c)
+- PR de test uniquement (aucun code applicatif modifié) : l'apparence est celle de main (v1.21.4).
 - Graine : celle du contrat de capture (défaut)
-- Série : 160 fichiers PNG (série complète). Par rapport à la série précédente (c227, 155 fichiers) : 154 identiques à l'octet ; interface-liste-bacs.png diffère de 2 px (zone 83×4 px, jauge pH du bandeau, écart connu non lié à la PR, voir docs/PIEGES.md) ; 1 nouvelle liée à la PR (three-quarter-nourriture-decomposition.png, regardée) ; 4 absentes de c227 et présentes ici (three-quarter/tablette/telephone-tableau-de-bord-alerte.png, front-tableau-de-bord-chlore.png, regardées) : la série c227 était incomplète
+- Série : 160 PNG. Les 143 premières ont été régénérées ici et sont identiques à l'octet à c228 ; la génération a dépassé le délai de la session, les 17 restantes sont reprises de c228 (code applicatif identique).
 - Le 2026-11-16, Chromium local
