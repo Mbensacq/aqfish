@@ -245,8 +245,5 @@ découper).
 
 ### Idées notées hors issue
 
-- **Nourriture non mangée qui pollue l'eau** (écart de #583, écarté du lot de dette #597) :
-  aujourd'hui, une ration du distributeur automatique que personne ne mange reste sans
-  conséquence (modèle existant de la nourriture). Idée de fonctionnalité : la nourriture
-  restante se décompose et ajoute de l'ammoniaque, puis des nitrates. À ouvrir en issue
-  `fonctionnalite` par Planif.
+- **Nourriture non mangée qui pollue l'eau** (écart de #583) : ouverte en #638, livrée au
+  cycle 228 (ADR 0145).

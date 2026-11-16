@@ -151,7 +151,10 @@ simulation testable et les captures reproductibles.
   `feed` / `feedInPlace` (5 par dépôt, 60 au plus, hasard tiré une fois au dépôt sur un flux
   séparé), puis vieillis à chaque pas après les poissons (flottaison, chute à vitesse
   constante en forme fermée de l'âge, repos sur le sable ou le dessus d'un rocher, retrait).
-  `advanceToWithFeedings` rejoue des dépôts datés (paramètre de capture `nourrir=`).
+  `advanceToWithFeedings` rejoue des dépôts datés (paramètre de capture `nourrir=`). Un
+  granulé non mangé retiré se décompose (#638, ADR 0145, `sim/food-decay.ts`) :
+  `stepFoodInPlace` renvoie la masse retirée (`pelletMass`, tirée de `foodLook`), ajoutée à
+  l'ammoniaque avant le pas d'eau (`addDecayedFoodInPlace`), hors mode décor.
 - **Faim et attraction** (ADR 0023, `sim/feeding.ts`) : `Fish.hunger` ∈ [0, 1] monte avec le
   temps (vitesse par espèce, `SpeciesDefinition.feeding`). Au début du pas, chaque poisson
   affamé vise le granulé le plus proche dans sa tranche d'eau, à portée et en vue
@@ -465,6 +468,7 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
 | `sim/daylight.ts` | Cycle jour/nuit : horloge de journée (`DayClock`, `hourAt` sur le temps simulé, `freezeClock`, `freezeClockAt`, `resumeClock` ; journée de 1 200 s par défaut, `NOON_HOUR`, `MIDNIGHT_HOUR`), courbe de lumière `lightAt(heure)` et sa variante sans allocation `lightAtInto(heure, tampon)` (intensité, teinte, ciel ; continue, périodique sur 24 h, exactement blanche à midi), moment de la journée `dayPhaseAt` (indicateur, #73), curseur d'heure (`snapHour` au quart d'heure, `formatHour` « 14:30 », #52), sans couleur de la palette (ADR 0018, 0019, 0021) |
 | `sim/light-rays.ts` | Rayons de lumière dans l'eau (#567, ADR 0134) : force selon l'heure (`dayIntensityAt`, nulle la nuit) et la couverture nuageuse (`OVERCAST_RAY_RATIO`), inclinaison selon la course du soleil (`rayTiltAt`, verticale à midi, `MAX_RAY_TILT`) ; `lightRaysAt`, `lightRaysInto` (sans allocation) |
 | `sim/food.ts` | Nourriture (ADR 0022) : granulés sérialisables, dépôt borné et dispersé (`dropFoodInPlace`), sol sous un point (`restHeightAt`, `rockTopAt` sur les voxels des rochers), chute et retrait en place (`stepFoodInPlace`) ; aspect d'un granulé tiré de son identifiant (`foodLook` : grain, flocon ou paillette, nuance, taille, orientation ; #226), sans toucher au hasard de la simulation |
+| `sim/food-decay.ts` | Nourriture non mangée (#638, ADR 0145) : ammoniaque d'une masse de granulés décomposés dans un volume d'eau (`addDecayedFoodInPlace`, `FOOD_DECAY_AMMONIA`), plafonnée |
 | `sim/feeding.ts` | Faim et repas (ADR 0023) : montée et retrait de la faim (`growHunger`, `satiate`), tranche d'eau par espèce (`feedingBand`), visibilité (`hasLineOfSight`), granulé le plus proche et point visé (`nearestPellet`, `foodTarget`), repas en place sans double prise (`eatInPlace`) |
 | `sim/undulation.ts` | Ondulation (fonctions pures) : avance de la phase, amplitude selon la vitesse, pose du corps et de la queue (ADR 0009) |
 | `sim/avoidance.ts` | Forces d'évitement des parois et des obstacles, proximité, déviation pour contourner (ADR 0012) |

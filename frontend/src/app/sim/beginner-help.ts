@@ -133,7 +133,7 @@ const TOPICS: Readonly<Record<WhyTopicId, WhyTopic>> = {
     title: 'La faim et la nourriture',
     paragraphs: [
       'Dans le jeu, la faim monte avec le temps ; un animal affamé longtemps perd de la santé.',
-      'Trop nourrir n’aide pas : la nourriture oubliée pourrit et fait monter l’ammoniaque. Peu, et souvent, vaut mieux.',
+      'Trop nourrir n’aide pas : la nourriture oubliée pourrit et fait monter l’ammoniaque. Dans le jeu, un granulé que personne ne mange se décompose une demi-minute après s’être posé, et l’ammoniaque grimpe à chaque ration de trop. Peu, et souvent, vaut mieux.',
     ],
     status: SIMPLIFICATION,
   },

@@ -250,6 +250,9 @@ export function dropFoodInPlace(
  * L'altitude est une fonction fermée de l'âge (aucun cumul d'erreur sur la position).
  * L'ordre des granulés restants est conservé. Courant (issue #460) : avec `water`, un granulé
  * qui flotte ou coule dérive à la vitesse de l'eau (`currentX`, `currentZ`, m/s), dans `water`.
+ *
+ * Renvoie la masse des granulés retirés pendant le pas (somme des `pelletMass`, 0 si aucun) :
+ * nourriture non mangée qui se décompose dans l'eau (issue #638, `sim/food-decay.ts`).
  */
 export function stepFoodInPlace(
   food: FoodPellet[],
@@ -257,13 +260,15 @@ export function stepFoodInPlace(
   currentX = 0,
   currentZ = 0,
   water: Box3 | null = null,
-): void {
+): number {
   let kept = 0;
+  let decayed = 0;
   // Compactage en place : `kept` ne dépasse jamais l'indice lu.
   for (const item of food) {
     const pellet = item as MutablePellet;
     pellet.age += dt;
     if (pellet.age >= expiryAge(pellet)) {
+      decayed += pelletMass(pellet);
       continue;
     }
     const fall = FOOD_SINK_SPEED * Math.max(0, pellet.age - pellet.floatTime);
@@ -278,6 +283,7 @@ export function stepFoodInPlace(
     food[kept++] = pellet;
   }
   food.length = kept;
+  return decayed;
 }
 
 const DEFAULT_WATER = waterVolume();
@@ -343,4 +349,13 @@ export function foodLook(id: number): FoodLook {
   const size = FOOD_SIZE_FACTORS[((h >>> 16) & 0xff) % FOOD_SIZE_FACTORS.length];
   const turn = (((h >>> 24) & 0xff) % FOOD_TURN_STEPS) * (Math.PI / 2 / FOOD_TURN_STEPS);
   return { shape, shade, size, turn };
+}
+
+/**
+ * Masse relative du granulé `pellet` (issue #638) : cube de son facteur de taille
+ * (`foodLook`), 1 pour un granulé de taille moyenne. Toujours strictement positive et finie.
+ */
+export function pelletMass(pellet: Pick<FoodPellet, 'id'>): number {
+  const size = foodLook(pellet.id).size;
+  return size * size * size;
 }

@@ -89,6 +89,7 @@ import {
   type Place,
 } from './environment';
 import { eatInPlace, feedingBand, foodTarget, type FeedingBand } from './feeding';
+import { addDecayedFoodInPlace } from './food-decay';
 import {
   birthBounds,
   broodIndexAt,
@@ -1067,13 +1068,13 @@ function stepInPlace(world: MutableWorld, dt: number, clock: SimClock): void {
     enforceRivalDistance(fishes, boundsOfFish);
   }
   eatInPlace(fishes, food, bandOfFish, hardOfFish);
-  if (flowing) {
-    stepFoodInPlace(food, dt, flow.x, flow.z, environmentWater(place));
-  } else {
-    stepFoodInPlace(food, dt);
-  }
+  // Masse des granulés non mangés qui se décomposent pendant le pas (issue #638).
+  const decayed = flowing
+    ? stepFoodInPlace(food, dt, flow.x, flow.z, environmentWater(place))
+    : stepFoodInPlace(food, dt);
   if (decor) {
-    // Mode décor (#278) : faim rendue telle qu'au début du pas ; eau et santé en pause.
+    // Mode décor (#278) : faim rendue telle qu'au début du pas ; eau et santé en pause (la
+    // nourriture qui se décompose alors n'atteint pas l'eau).
     restoreHunger(fishes);
     return;
   }
@@ -1082,6 +1083,15 @@ function stepInPlace(world: MutableWorld, dt: number, clock: SimClock): void {
   if (fryPresent) {
     growFryInPlace(fishes, dt);
     eatFryInPlace(fishes, plants);
+  }
+  // Nourriture non mangée (issue #638) : son ammoniaque entre dans l'eau avant le pas d'eau,
+  // donc n'est convertie qu'au pas suivant, comme celle des déchets.
+  if (decayed > 0) {
+    addDecayedFoodInPlace(
+      world.water as MutableWaterState,
+      decayed,
+      waterLiters(environmentWater(place)),
+    );
   }
   // Eau (issue #206) : sans hasard, après les poissons ; ne change rien à leur nage.
   stepWaterInPlace(

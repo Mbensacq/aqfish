@@ -312,6 +312,23 @@ test.describe('Captures', () => {
     });
   }
 
+  // Nourriture non mangée (#638) : bac sans poissons, à 62 s. La ration du centre (t = 0) s'est
+  // décomposée (disparue, son ammoniaque dans l'eau) ; celle du rocher (t = 25) est posée et se
+  // décompose à son tour une demi-minute après. Temps propre : à 30 s, rien n'a encore expiré.
+  test('angle three-quarter-nourriture-decomposition', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    await page.goto(
+      `/?capture=1&seed=${SEED}&camera=three-quarter&time=62&population=neon:0,guppy:0,corydora:0&nourrir=0,25:0.3:0.03,25:-0.4:0.15&granules=voxels`,
+    );
+    await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+    await page.screenshot({
+      path: join(OUTPUT_DIR, 'three-quarter-nourriture-decomposition.png'),
+      animations: 'disabled',
+    });
+    expect(errors).toEqual([]);
+  });
+
   // Bassin (#87) : second environnement, de dessus (sa vue par défaut, sans `camera=`),
   // en trois-quarts et à minuit. Les captures du bac tropical ci-dessus restent inchangées.
   // Fleurs des nénuphars (#104) : ouvertes à midi, fermées à minuit, vues de dessus.
