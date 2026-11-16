@@ -221,6 +221,9 @@ describe('œufs du poisson-clown (#653)', () => {
     expect(eggs.length).toBe(2);
   });
 
+  // Six périodes de ponte pas à pas : ~7 s sur un runner de CI chargé, au-delà des 5 s par
+  // défaut de Vitest (CI de main au commit 7790fbf) ; délai explicite comme les autres longs
+  // tests de simulation (`docs/PIEGES.md`).
   it('total borné : plafond de l’espèce et MAX_EGGS sur un long récif nourri', () => {
     const world = fedReef(5);
     let max = 0;
@@ -239,7 +242,7 @@ describe('œufs du poisson-clown (#653)', () => {
       }
     }
     expect(max).toBeGreaterThan(0);
-  });
+  }, 30_000);
 
   it('sauvegarde : l’aller-retour conserve les œufs ; un clown ne peut pas être un alevin', () => {
     const world = step(fedReef());
