@@ -8359,7 +8359,7 @@
       "debut": "2026-11-16T12:42:34.293Z",
       "type": "retro",
       "issue": 652,
-      "pr": null,
+      "pr": 659,
       "version": null,
       "phases": {
         "planif": {
