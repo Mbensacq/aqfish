@@ -120,6 +120,8 @@ describe('sim/food : masse des granulés retirés (#638)', () => {
   });
 });
 
+// Délai de 30 s pour les tests qui avancent deux fois le bac par défaut (24 animaux) d'une
+// minute : plus de 5 s sous la couverture de la CI.
 describe('sim/world : nourriture non mangée (#638)', () => {
   it('ration non mangée, bac sans filtre ni animal : ammoniaque proportionnelle après le délai', () => {
     const world = emptyWorldWithoutFilter();
@@ -176,11 +178,11 @@ describe('sim/world : nourriture non mangée (#638)', () => {
     const eaten = advanceToWithFeedings(start, firstExpiry - 1, feedings);
     expect(eaten.nextFoodId).toBe(FOOD_PER_DROP);
     expect(eaten.food).toEqual([]);
-    const end = 120;
+    const end = firstExpiry + 5;
     const plain = advanceTo(start, end);
     const fed = advanceToWithFeedings(start, end, feedings);
     expect(fed.water).toEqual(plain.water);
-  });
+  }, 30_000);
 
   it('filtre en marche : l’ammoniaque de la nourriture devient nitrites puis nitrates', () => {
     const world = createWorld(7, [], [], DEFAULT_DECOR) as MutableWorld;
@@ -207,5 +209,5 @@ describe('sim/world : nourriture non mangée (#638)', () => {
     const fed = advanceToWithFeedings(empty, end, feedings);
     expect(fed.water.ammonia).toBeGreaterThan(0);
     expect(advanceTo(empty, end).water.ammonia).toBe(0);
-  });
+  }, 30_000);
 });
