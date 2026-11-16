@@ -1,5 +1,5 @@
-import { compatibility, TEMPERAMENTS, type Temperament } from './compatibility';
-import { SPECIES_LABELS, type SpeciesLabels } from './species-catalog';
+import { compatibility, TEMPERAMENTS, type Compatibility, type Temperament } from './compatibility';
+import { MIX_REASON_TEXT, SPECIES_LABELS, type SpeciesLabels } from './species-catalog';
 import { confidenceText, legalStatus, legalText, type LegalStatus } from './species-legal';
 import { SPECIES, type SpeciesId } from './species';
 import { SPECIES_PH, type PhRange } from './water-ph';
@@ -161,6 +161,10 @@ const FK_CERISE = 'https://www.fishkeeper.co.uk/fish/freshwater/miscellaneous/ch
 const FK_NERITINE = 'https://www.fishkeeper.co.uk/fish/freshwater/miscellaneous/zebra-snail';
 /** Fiche FishBase du xipho, consultée le 2026-11-04 (#425). */
 const FB_XIPHO = 'https://www.fishbase.org/summary/3231';
+/** Fiches du poisson rouge consultées le 2026-11-16 (#654) : OATA et FishKeeper. */
+const OATA_ROUGE =
+  'https://ornamentalfish.org/what-we-do/advice-information/care-sheets/caresheets-coldwater-fish/how-to-look-after-goldfish-in-an-aquarium-fishtank/';
+const FK_ROUGE = 'https://www.fishkeeper.co.uk/fish/freshwater/pond-fish/goldfish-';
 
 function note(text: string, status: FieldStatus): SheetNote {
   return Object.freeze({ text, status });
@@ -680,6 +684,30 @@ const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
       ),
     ],
   },
+  // Poisson rouge (#654) : OATA (aquarium) et FishKeeper (bassin), consultés le 2026-11-16.
+  rouge: {
+    adultSize: sourced(25, `${OATA_ROUGE} (jusqu’à 25 cm environ en aquarium)`),
+    // Plage préférée choisie pour le jeu dans la tolérée : eau fraîche, sous l’eau tropicale.
+    temperaturePreferred: approx(range(15, 22)),
+    temperatureTolerated: sourced(range(4, 25), `${OATA_ROUGE} (4–25 °C)`),
+    diet: sourced('omnivore', `${FK_ROUGE} (granulés, flocons, aliments congelés ou vivants)`),
+    // « Sociable, à garder en groupe » sans effectif (FishKeeper) ; peut vivre seul (OATA).
+    minGroup: approx(3),
+    minLiters: sourced(100, `${OATA_ROUGE} (100 L pour un adulte, 50 L par adulte en plus)`),
+    hardness: sourced(gh(5, 19), `${OATA_ROUGE} (5 à 19 °dH)`),
+    // 6 à 8 ans courants, 20 ans et plus possibles (OATA) : ordre de grandeur, comme ailleurs.
+    lifespan: years(6, 20),
+    notes: [
+      note(
+        'Poisson d’eau froide : sans chauffage, pas avec les poissons tropicaux ; bassin d’au moins 60 cm de profondeur par endroits',
+        source(FK_ROUGE),
+      ),
+      note(
+        'Grand adulte : 100 L pour le premier, 50 L de plus par adulte ; ne jamais relâcher dans la nature',
+        source(OATA_ROUGE),
+      ),
+    ],
+  },
 };
 
 const SPECIES_IDS = Object.keys(SPECIES) as SpeciesId[];
@@ -978,7 +1006,7 @@ export type AddWarning =
       readonly kind: 'incompatible';
       readonly species: SpeciesId;
       readonly other: SpeciesId;
-      readonly reason: 'predateur' | 'territorial';
+      readonly reason: Exclude<Compatibility, 'compatible'>;
     };
 
 function known(id: string): id is SpeciesId {
@@ -1056,7 +1084,7 @@ export function addWarningTextWith(
       return `Groupe trop petit : ${warning.count} ${warning.count === 1 ? singular : plural}, ${warning.minGroup} au moins conseillé${feminine ? 'e' : ''}s`;
     case 'incompatible':
       return `${capitalize(plural)} déconseillé${feminine ? 'e' : ''}s avec les ${labels[warning.other].plural} (${
-        warning.reason === 'predateur' ? 'prédateur' : 'deux espèces territoriales'
+        MIX_REASON_TEXT[warning.reason]
       })`;
   }
 }

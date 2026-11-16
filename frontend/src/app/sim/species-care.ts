@@ -1,4 +1,10 @@
-import { compatibility, TEMPERAMENTS, type Compatibility, type Temperament } from './compatibility';
+import {
+  compatibility,
+  eaterOf,
+  TEMPERAMENTS,
+  type Compatibility,
+  type Temperament,
+} from './compatibility';
 import { ENVIRONMENTS } from './environment';
 import { SPECIES_LABELS } from './species-catalog';
 import {
@@ -269,6 +275,15 @@ const FEEDING: Readonly<Record<SpeciesId, FeedingGuide>> = {
     frequency: FISH_FREQUENCY,
     quantity: PRUDENT_QUANTITY,
   },
+  // Poisson rouge (#654) : FishKeeper, consulté le 2026-11-16.
+  rouge: {
+    foods: sourced(
+      'granulés, bâtonnets, flocons, aliments congelés ou vivants ; en fin d’automne, aliment au germe de blé moins riche en protéines',
+      'https://www.fishkeeper.co.uk/fish/freshwater/pond-fish/goldfish-',
+    ),
+    frequency: approx('selon la température de l’eau : moins souvent quand elle est froide'),
+    quantity: PRUDENT_QUANTITY,
+  },
 };
 
 /** Ligne affichée d'une section du wiki : intitulé, valeur, texte du statut. */
@@ -347,14 +362,17 @@ export function cohabitationReason(
 ): string {
   switch (verdict) {
     case 'predateur': {
-      const idEats =
-        TEMPERAMENTS[id] === 'predateur' && SPECIES[other].bodyLength < SPECIES[id].bodyLength;
-      const [big, small] = idEats ? [id, other] : [other, id];
+      const [big, small] = eaterOf(id, other) === other ? [other, id] : [id, other];
       const smallLabels = SPECIES_LABELS[small];
-      return `les ${SPECIES_LABELS[big].plural} mangent ou blessent les ${smallLabels.plural}, plus petit${smallLabels.feminine ? 'e' : ''}s`;
+      const smaller = SPECIES[small].bodyLength < SPECIES[big].bodyLength;
+      return `les ${SPECIES_LABELS[big].plural} mangent ou blessent les ${smallLabels.plural}${
+        smaller ? `, plus petit${smallLabels.feminine ? 'e' : ''}s` : ''
+      }`;
     }
     case 'territorial':
       return 'deux espèces territoriales : elles se disputent l’espace';
+    case 'temperature':
+      return 'l’une vit en eau froide, l’autre en eau tropicale : aucune température commune';
     case 'compatible':
       return `aucun conflit de caractère (${TEMPERAMENT_WORDS[TEMPERAMENTS[id]]} et ${TEMPERAMENT_WORDS[TEMPERAMENTS[other]]})`;
   }

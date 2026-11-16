@@ -66,6 +66,7 @@ export const SPECIES_LABELS: Readonly<Record<SpeciesId, SpeciesLabels>> = {
   xipho: { singular: 'xipho', plural: 'xiphos', feminine: false },
   cerise: { singular: 'crevette cerise', plural: 'crevettes cerises', feminine: true },
   neritine: { singular: 'néritine zèbre', plural: 'néritines zèbres', feminine: true },
+  rouge: { singular: 'poisson rouge', plural: 'poissons rouges', feminine: false },
 };
 
 /** Entrée du catalogue d'un environnement. */
@@ -190,6 +191,7 @@ export function applySpeciesCounts(world: World, requests: readonly SpeciesCount
 export const MIX_REASON_TEXT: Readonly<Record<MixWarning['reason'], string>> = {
   predateur: 'prédateur',
   territorial: 'deux espèces territoriales',
+  temperature: 'eau froide et eau tropicale',
 };
 
 /**

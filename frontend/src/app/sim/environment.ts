@@ -31,6 +31,7 @@ import {
   OTOCINCLUS,
   PLATY,
   RASBORA,
+  ROUGE,
   TETRA,
   TRITON,
   XIPHO,
@@ -217,7 +218,7 @@ export const POND_DIMENSIONS: TankDimensions = { width: 2, height: 0.4, depth: 1
 /**
  * Bassin à koïs (épopée v0.5), vu de dessus : plus large et moins profond que le bac, eau
  * verte-bleutée plus sombre, fond de vase couvert d'algues, quelques pierres, des koïs
- * (issue #88) et des nénuphars (issue #103).
+ * (issue #88) et des nénuphars (issue #103) ; poissons rouges à ajouter (issue #654).
  */
 export const POND: Environment = {
   id: 'bassin',
@@ -251,7 +252,9 @@ export const POND: Environment = {
   rain: true,
   floatingLeaves: true,
   current: { direction: 0.5, level: 'coupe' },
-  species: [KOI.id],
+  // Poisson rouge (#654) proposé, sans être peuplé d'office : la population de départ reste
+  // celle d'avant (captures identiques à l'octet).
+  species: [KOI.id, ROUGE.id],
   population: defaultPopulation([KOI]),
 };
 

@@ -59,6 +59,7 @@ sur `docs/SOINS.md` § 11 jusqu'à vérification.
 | Guppy (*Poecilia reticulata*) | 17–28 °C | 7,0–8,5 | 8–30 dGH | base 45 × 30 cm (~41 L) | groupe requis | omnivore | paisible | facile | Seriously Fish (moyenne) |
 | Corydoras poivré (*Hoplisoma paleatum*, ex-*Corydoras paleatus*) | 22–26 °C | 6,0–7,0 | 0–12 dGH | 61 × 38 × 30 cm (~70 L) | groupe requis | omnivore opportuniste de fond | paisible | facile | Seriously Fish (moyenne) |
 | Koï (*Cyprinus rubrofuscus* / *C. carpio*) | non vérifié | non vérifié | non vérifié | bassin ; volume non vérifié | non vérifié | non vérifié | non vérifié | non vérifié | USGS NAS (élevée : taxonomie, KHV) |
+| Poisson rouge (*Carassius auratus*) | 4–25 °C (OATA) ; 4–30 °C (FishKeeper) | 6,0–8,0 (OATA) ; 7,0–8,0 préféré (FishKeeper) | 5–19 dGH (OATA) ; jusqu'à 25 dH (FishKeeper) | 100 L pour un adulte, + 50 L par adulte (OATA) ; bassin ≥ 60 cm de profondeur par endroits (FishKeeper) | sociable, en groupe (FishKeeper) ; peut vivre seul (OATA) | omnivore | paisible | facile | OATA [65] (moyenne), FishKeeper [66] (secondaire) |
 | Axolotl (*Ambystoma mexicanum*) | 15,5–18 °C idéal ; > 23 °C = stress thermique | 6,5–8 (idéal 7,4–7,6) | GH 7–14 | non vérifié | seul ou entre axolotls | carnivore | calme, sans poissons | intermédiaire | AmphibiaWeb (élevée), Agave Vet (moyenne), étude MDPI (élevée) |
 | Poisson-clown (*Amphiprion ocellaris*) | 23–27 °C (secondaire) | 8,0–8,5 (secondaire) | densité 1,020–1,026 (secondaire) | ~114 L ; > 190 L avec anémone (secondaire) | couple | omnivore planctonophage | territorial autour de son hôte | facile si né en captivité | FishBase (élevée), Saltcorner (faible) |
 | Chirurgien bleu (*Paracanthurus hepatus*) | non vérifié | non vérifié | non vérifié | ≥ 300 L pour 1 individu < 20 cm (OATA via secondaire) ; 700 L (ReefApp, secondaire) | non vérifié | zooplancton + algues | aiguillon venimeux | **pas pour débutant** | FishBase (élevée), études sur le commerce (élevée) |
@@ -174,6 +175,27 @@ sur `docs/SOINS.md` § 11 jusqu'à vérification.
   Consulter FishBase et une source vétérinaire avant d'afficher des chiffres.
 - **Maladies** : porteuse et vectrice du KHV, capable de fortes mortalités (USGS, élevée).
 - **Débutant** : bassin extérieur seulement.
+
+### Poisson rouge — *Carassius auratus* (#654, consulté le 2026-11-16)
+- **Taille** : jusqu'à environ 25 cm en aquarium, 40 cm et plus rapportés (OATA [65]) ;
+  30 cm et plus (FishKeeper [66]).
+- **Eau** : 4–25 °C, pH 6,0–8,0, 5–19 °dH, ammoniaque et nitrite nuls, nitrate au plus
+  20 mg/L au-dessus de l'eau du robinet (OATA) ; FishKeeper : 4–30 °C, pH 7,0–8,0 (neutre à
+  alcalin préféré), eau dure jusqu'à 25 dH, éviter l'eau douce et acide. Sans chauffage.
+- **Volume** : au moins 100 L pour un adulte, 50 L de plus par adulte (OATA) ; en bassin, au
+  moins 60 cm de profondeur par endroits (FishKeeper).
+- **Alimentation** : granulés, bâtonnets, flocons, aliments congelés ou vivants ; aliment au
+  germe de blé en fin d'automne (FishKeeper).
+- **Longévité** : 6 à 8 ans couramment, 20 ans et plus avec une bonne eau (OATA) ; record cité
+  de 43 ans (FishKeeper).
+- **Cohabitation** : peut vivre seul ou avec d'autres poissons ; ne pas mêler comètes et formes
+  de fantaisie (OATA). Koï : aucune des deux sources n'en parle ; règle de jeu (ADR 0147) :
+  compatibles (même eau froide, la koï du jeu épargne le poisson rouge). Axolotl et poissons
+  tropicaux : incompatibles (températures ; axolotl « sans poissons »).
+- **Dans le jeu** : proposé au bassin, sans y être peuplé d'office ; trois robes (commun,
+  sarasa, jaune) tirées de la graine. Plage préférée 15–22 °C : **approximation de jeu**.
+- **Statut légal en France** : forme domestique, statut **non vérifié** ; ne jamais relâcher
+  (OATA).
 
 ### Axolotl — *Ambystoma mexicanum*
 - **Origine** : lacs Xochimilco et Chalco (Mexique) ; ne survit plus dans la nature que dans
@@ -323,6 +345,12 @@ l'intersection. Conséquence : le paludarium d'avant #271 (axolotl + grenouille 
 n'était pas cohérent avec ces sources (#262) ; depuis l'ADR 0065, l'axolotl a son bac d'eau
 froide.
 
+**Poisson rouge** (#654, ADR 0147) : la règle de température est appliquée par classe d'eau
+(`WATER_CLASSES`, `sim/compatibility.ts`) : eau froide (koï, axolotl, poisson rouge) et eau
+tropicale (bac tropical, récif) sont déconseillées ensemble ; le paludarium (20 °C) est
+tempéré. Poisson rouge ❌ toutes les espèces tropicales (T°), ❌ axolotl (« sans poissons »),
+✅ koï (même eau, approximation de jeu), ✅ sonneur et triton (20 °C dans sa plage).
+
 **Crevette cerise face aux grands omnivores du bac tropical** (#429, 2026-11-05) : FishKeeper
 réserve la crevette aux bacs de « petits poissons paisibles », les plus grands la prenant pour
 un en-cas, sans nommer d'espèce. Décision du jeu (`EXTRA_PREDATORS`, `sim/compatibility.ts`) :
@@ -346,7 +374,7 @@ un en-cas, sans nommer d'espèce. Décision du jeu (`EXTRA_PREDATORS`, `sim/comp
 - **Plus exigeantes ou sous conditions** : néon cardinalis, nez rouge, barbu de Sumatra (réputé
   mordeur de nageoires, non vérifié), gourami nain, gourami perlé, ramirezi, apistogramma,
   scalaire (prédateur potentiel des néons, non vérifié), discus, loche kuhli, loche clown.
-- **Eau froide / bassin** : poisson rouge, white cloud (*Tanichthys albonubes*), ide,
+- **Eau froide / bassin** : poisson rouge (ajouté, #654), white cloud (*Tanichthys albonubes*), ide,
   esturgeon : tailles et volumes à documenter.
 - **Invertébrés** : *Neocaridina*, *Caridina*, néritine, planorbe, ampullaire (vérifier le
   statut UE des ampullaires) ; consulter SeaLifeBase.
@@ -472,3 +500,5 @@ remplacer par une source primaire.
 62. Seriously Fish, *Trichogaster lalius* — https://www.seriouslyfish.com/species/trichogaster-lalius *(consultée le 2026-11-05, #429 : la crevette cerise y est citée comme compagne possible du gourami nain)*
 63. Seriously Fish, *Poecilia sphenops* — https://www.seriouslyfish.com/species/poecilia-sphenops *(consultée le 2026-11-05, #429 : omnivore, zoobenthos et détritus ; aucune mention des crevettes)*
 64. Seriously Fish, *Trichogaster chuna* — https://www.seriouslyfish.com/species/trichogaster-chuna *(consultée le 2026-11-05, #429 : petits invertébrés dans la nature ; aucune mention des crevettes)*
+65. OATA (Ornamental Aquatic Trade Association), « How to look after goldfish in an aquarium » — https://ornamentalfish.org/what-we-do/advice-information/care-sheets/caresheets-coldwater-fish/how-to-look-after-goldfish-in-an-aquarium-fishtank/ *(consultée le 2026-11-16, #654 : 4–25 °C, pH 6–8, 5–19 °dH, 100 L + 50 L par adulte, 25 cm en aquarium)*
+66. FishKeeper, goldfish — https://www.fishkeeper.co.uk/fish/freshwater/pond-fish/goldfish- *(secondaire : boutique ; consultée le 2026-11-16, #654 : 4–30 °C, pH 7–8, sociable)*

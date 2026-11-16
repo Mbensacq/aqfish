@@ -659,6 +659,28 @@ export const NERITINE_FISH: FishTemplate = {
   tailDepth: 2,
 };
 
+/**
+ * Poisson rouge (#654) : corps plus court et plus haut que la koï (4 voxels d'épaisseur, effilé
+ * au pédoncule et au museau vu de dessus), haute dorsale (`f`), flanc (`s`) entre le dos (`k`)
+ * et le ventre (`b`), caudale fourchue en deux lobes. Les couleurs des rôles dépendent de la
+ * robe (`sim/species.ts`, `ROUGE`).
+ */
+export const ROUGE_FISH: FishTemplate = {
+  body: [
+    // queue → tête
+    '....fff....',
+    '..kkkkkkk..',
+    '.kkkkkkkkkk',
+    'sssssssssse',
+    '.bbbbbbbbbb',
+    '...bbbbbb..',
+  ],
+  tail: ['ff.', '.ff', '..f', '..f', '.ff', 'ff.'],
+  bodyDepth: 4,
+  tailDepth: 1,
+  bodyColumnDepths: [2, 2, 4, 4, 4, 4, 4, 4, 4, 2, 2],
+};
+
 /** Gabarit de chaque silhouette déclarée par les espèces (`sim/species.ts`). */
 export const SILHOUETTES: Readonly<Record<SilhouetteId, FishTemplate>> = {
   fuseau: SLENDER_FISH,
@@ -690,6 +712,7 @@ export const SILHOUETTES: Readonly<Record<SilhouetteId, FishTemplate>> = {
   xipho: XIPHO_FISH,
   cerise: CERISE_FISH,
   neritine: NERITINE_FISH,
+  rouge: ROUGE_FISH,
 };
 
 /** Attribut de sommet du rang de taché (`voxelSpotRank`, points blancs, issue #366). */

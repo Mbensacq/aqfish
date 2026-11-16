@@ -120,6 +120,9 @@ export const SPECIES_PH: Readonly<Record<SpeciesId, SpeciesPh>> = {
   xipho: { tolerated: { min: 6.8, max: 8 }, ideal: { min: 7, max: 7.8 } },
   cerise: { tolerated: { min: 6, max: 8 }, ideal: { min: 6.5, max: 7.5 } },
   neritine: { tolerated: { min: 6.8, max: 8.2 }, ideal: { min: 7.2, max: 8 } },
+  // Poisson rouge (#654) : 6,0–8,0 (OATA) toléré, 7,0–8,0 « neutre à alcalin » (FishKeeper)
+  // idéal ; sources consultées le 2026-11-16 (`sim/species-sheet.ts`).
+  rouge: { tolerated: { min: 6, max: 8 }, ideal: { min: 7, max: 8 } },
 };
 
 /** pH de l'eau neuve de l'environnement `environment`. */

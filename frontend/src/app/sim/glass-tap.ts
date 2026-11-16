@@ -57,6 +57,8 @@ export const TAP_REACTIONS: Readonly<Record<SpeciesId, TapReaction | null>> = {
   xipho: 'fuite',
   cerise: null,
   neritine: null,
+  // Poisson rouge (#654) : curieux comme la koï, il vient à la vitre (approximation de jeu).
+  rouge: 'curiosite',
 };
 
 /** Portée du tapotement, en mètres simulés, autour du point touché sur la vitre. */
