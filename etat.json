@@ -8327,10 +8327,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-16T09:38:35.681Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-16T09:38:59.217Z",
+          "note": "Issue #520 : dette entretien, points 1-2 (S)"
         }
       },
       "metriques": {}
