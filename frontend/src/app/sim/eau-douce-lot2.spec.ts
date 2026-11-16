@@ -243,7 +243,11 @@ describe('eau douce, lot 2 (#362) : bac tropical et compatibilité', () => {
     expect(
       mixWarnings(all, counts).filter((w) => NEW.includes(w.first) || NEW.includes(w.second)),
     ).toEqual([]);
-    expect(wikiCare('platy').cohabitation.avoid.map((e) => e.species)).toEqual(['koi', 'axolotl']);
+    expect(wikiCare('platy').cohabitation.avoid.map((e) => e.species)).toEqual([
+      'koi',
+      'axolotl',
+      'rouge',
+    ]);
   });
 
   it('avertissements d’ajout : groupe trop petit, volume du danio, ancistrus seul accepté', () => {

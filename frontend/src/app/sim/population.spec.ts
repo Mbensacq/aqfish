@@ -38,6 +38,7 @@ import {
   BLENNIE,
   CERISE,
   NERITINE,
+  ROUGE,
   XIPHO,
   CHROMIS,
   CREVETTE,
@@ -100,6 +101,7 @@ describe('bornes de population', () => {
       'xipho',
       'cerise',
       'neritine',
+      'rouge',
     ]);
   });
 
@@ -150,6 +152,7 @@ describe('bornes de population', () => {
       xipho: 0,
       cerise: 0,
       neritine: 0,
+      rouge: 0,
     });
     expect(populationCounts(createWorld(42))).toEqual({
       neon: 0,
@@ -180,6 +183,7 @@ describe('bornes de population', () => {
       xipho: 0,
       cerise: 0,
       neritine: 0,
+      rouge: 0,
     });
     expect(populationCounts(createWorld(42))).toEqual(NO_FISH);
   });
@@ -214,6 +218,7 @@ describe('bornes de population', () => {
       xipho: XIPHO.maxPopulation,
       cerise: CERISE.maxPopulation,
       neritine: NERITINE.maxPopulation,
+      rouge: ROUGE.maxPopulation,
     });
   });
 
@@ -314,6 +319,7 @@ describe('setPopulation', () => {
       xipho: 0,
       cerise: 0,
       neritine: 0,
+      rouge: 0,
     });
   });
 
@@ -364,6 +370,7 @@ describe('setPopulation', () => {
       xipho: 0,
       cerise: 0,
       neritine: 0,
+      rouge: 0,
     });
     // Bac plein : plus aucun ajout possible, quelle que soit l'espèce.
     for (const id of SPECIES_IDS) {

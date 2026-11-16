@@ -85,8 +85,8 @@ describe('eau douce, lot 4 (#425) : catalogue complet', () => {
     const freshwater = Object.values(SPECIES).filter(
       (def) => !NEW.includes(def.id) && !livesIn('recif', def.id),
     );
-    // 15 poissons (bac tropical et koï) et 3 amphibiens.
-    expect(freshwater.length).toBe(18);
+    // 16 poissons (bac tropical, koï et poisson rouge, #654) et 3 amphibiens.
+    expect(freshwater.length).toBe(19);
   });
 
   it.each(NEW)('%s : fiche complète, chaque champ sourcé ou approximation', (id) => {

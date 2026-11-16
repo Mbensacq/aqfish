@@ -180,6 +180,9 @@ describe('AquariumView (pipeline pixel art)', () => {
       'poissons-xipho',
       'poissons-cerise',
       'poissons-neritine',
+      'poissons-rouge-commun',
+      'poissons-rouge-sarasa',
+      'poissons-rouge-jaune',
     ]);
   });
 

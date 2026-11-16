@@ -267,6 +267,7 @@ describe('SpeciesWiki, lot 2/2 (#291)', () => {
     expect(all('[data-wiki-mate="avoid"]').map((m) => m.getAttribute('data-species'))).toEqual([
       'koi',
       'axolotl',
+      'rouge',
     ]);
     // Guppy, corydoras et les quatorze espèces des lots 1 à 4 d'eau douce (#238, #362, #391,
     // #425).

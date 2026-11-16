@@ -216,7 +216,7 @@ describe('wiki des espèces : soins de la fiche (#291)', () => {
 
   it('néon : déconseillé avec koï et axolotl, avec guppy et corydoras dans le bac tropical', () => {
     const { avoid, together, elsewhere } = wikiCare('neon').cohabitation;
-    expect(ids(avoid)).toEqual(['koi', 'axolotl']);
+    expect(ids(avoid)).toEqual(['koi', 'axolotl', 'rouge']);
     expect(ids(together)).toEqual([
       'guppy',
       'corydora',
