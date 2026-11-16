@@ -211,6 +211,11 @@ sur `docs/SOINS.md` § 11 jusqu'à vérification.
   anémone** ; les anémones hôtes sont difficiles et déconseillées au débutant (secondaire).
 - **Débutant** : oui pour les individus nés en captivité ; le récif reste plus exigeant que
   l'eau douce. Statut IUCN et CITES : non vérifié.
+- **Dans le jeu** (#653, `sim/eggs.ts`) : un couple sain et nourri, dans une eau bonne entre
+  24 et 28 °C, colle 4 à 10 œufs orange sur le rocher le plus proche de son anémone (ou sur le
+  sable à son pied) ; ils éclosent en larves planctoniques qui quittent le bac. Rythme, nombre
+  et incubation : **approximations de jeu** (une vraie ponte compte plusieurs centaines d'œufs
+  et éclot en une semaine environ, non vérifié ici).
 
 ### Chirurgien bleu — *Paracanthurus hepatus* (Linnaeus, 1766)
 - **Origine** : Indo-Pacifique ; terrasses récifales externes battues par le courant, 2 à 40 m ;

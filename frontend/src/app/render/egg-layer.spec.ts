@@ -2,6 +2,10 @@ import { Color, Matrix4 } from 'three';
 
 import { EGG_HATCH_TIME, MAX_EGGS, type Egg } from '../sim/eggs';
 import {
+  CLOWN_EGG_COLOR,
+  CLOWN_EGG_RIPE_COLOR,
+  EGG_AFTER_WATER_CORE_RENDER_ORDER,
+  EGG_CORE_RENDER_ORDER,
   EGG_COLOR,
   EGG_MIN_OUTLINE_PIXELS,
   EGG_MIN_PIXELS,
@@ -50,6 +54,30 @@ describe('EggLayer (#478)', () => {
     layer.update(undefined, EGG_HATCH_TIME);
     expect(layer.count).toBe(0);
     expect(layer.object.visible).toBe(false);
+    layer.dispose();
+  });
+
+  it('œufs du poisson-clown (#653) : orange, dessinés après l’eau ; corydoras inchangés', () => {
+    const layer = new EggLayer();
+    layer.update([egg(0)], EGG_HATCH_TIME);
+    expect(layer.drawnAfterWater).toBe(false);
+    expect(layer.mesh.renderOrder).toBe(EGG_CORE_RENDER_ORDER);
+    expect(layer.mesh.material.transparent).toBe(false);
+    const clown = (age: number): Egg => ({ ...egg(age), species: 'clown', surface: 'rocher' });
+    layer.update([clown(0), clown(EGG_HATCH_TIME * 0.75)], EGG_HATCH_TIME);
+    expect(layer.drawnAfterWater).toBe(true);
+    expect(layer.mesh.renderOrder).toBe(EGG_AFTER_WATER_CORE_RENDER_ORDER);
+    expect(layer.mesh.material.transparent).toBe(true);
+    expect(layer.mesh.material.opacity).toBe(1);
+    const c = new Color();
+    layer.mesh.getColorAt(0, c);
+    expect(c.getHexString()).toBe(new Color(CLOWN_EGG_COLOR).getHexString());
+    layer.mesh.getColorAt(1, c);
+    expect(c.getHexString()).toBe(new Color(CLOWN_EGG_RIPE_COLOR).getHexString());
+    // Retour aux corydoras : file opaque de nouveau.
+    layer.update([egg(0)], EGG_HATCH_TIME);
+    expect(layer.drawnAfterWater).toBe(false);
+    expect(layer.mesh.renderOrder).toBe(EGG_CORE_RENDER_ORDER);
     layer.dispose();
   });
 

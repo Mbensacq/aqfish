@@ -432,6 +432,20 @@ test.describe('Captures', () => {
     });
   }
 
+  // Ponte du poisson-clown (#653) : œufs orange collés sur le rocher voisin d'une anémone. Graine
+  // fixe 7 : avec celle des captures (42), la ponte est sur la face cachée d'un rocher.
+  test('angle recif-three-quarter-oeufs', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    await page.goto(`/?capture=1&seed=7&time=${TIME_SECONDS}&environnement=recif&oeufs=1`);
+    await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+    await page.screenshot({
+      path: join(OUTPUT_DIR, 'recif-three-quarter-oeufs.png'),
+      animations: 'disabled',
+    });
+    expect(errors).toEqual([]);
+  });
+
   // Bac d'eau froide (#271) : axolotls seuls ; vue trois-quarts par défaut, côté et dessus.
   const COLD_CAPTURES = [
     { name: 'eaufroide-three-quarter', query: 'environnement=eaufroide' },

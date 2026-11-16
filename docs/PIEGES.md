@@ -1431,6 +1431,15 @@ haut de sa section.
   tachables étant justement le rouge et le bleu (ventre et nageoires, trop pâles, ne le sont
   jamais). Épargner les voxels saturés dans le shader (écart max − min des composantes linéaires
   ≥ `VELVET_SPARED_SATURATION`) : rouge et bleu restent, la poussière tombe sur le reste.
+- **Objet coloré opaque sous l'eau du récif : l'orange vire au rose pâle** (cycle 231, #653) :
+  un œuf `clownOrange` dans la file opaque passe sous le volume d'eau bleue (dessiné après) et
+  sort de la passe palette en `poissonRose` / `sable` (sans filtre : `#d88e95`). Les poissons
+  y échappent parce qu'ils sont dans la file des transparents à opacité pleine
+  (`fish-layer.ts`). Pour une couleur vive sous l'eau, faire de même (`transparent: true`,
+  `opacity: 1`, `renderOrder` entre le verre, 2, et les poissons, 2,5), puis vérifier avec
+  `filtre=aucun` (couleur d'entrée attendue à l'octet). Autre piège de la même capture : avec la
+  graine 42 la ponte était sur la face cachée d'un rocher ; `CAPTURE_SEED=<n>` permet d'essayer
+  d'autres graines sans toucher au harnais. (2026-11-16)
 - **Petit objet crème dans l'eau : un pixel et l'ombrage par face le font disparaître**
   (cycle 168, #478) : un œuf de 7 mm (un pixel de scène) ombré par face comme les granulés
   (`shadedVoxelGeometry`) tombait, vu de face, sur le ton du sable (flanc à 0,72) et ne se

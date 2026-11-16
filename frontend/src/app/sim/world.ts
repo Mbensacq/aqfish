@@ -114,7 +114,10 @@ import {
   EGG_SPECIES,
   eggRoom,
   fitSpawners,
+  hatchesToFry,
   layClutch,
+  layReefClutch,
+  laysNearAnemone,
   SPAWN_MIN_ADULTS,
   spawnIndexAt,
   waterAllowsSpawn,
@@ -1279,8 +1282,14 @@ export function removeDeadInPlace(world: MutableWorld, id: number): boolean {
  */
 const HATCH_POINT: Vec3 = { x: 0, y: 0, z: 0 };
 
-/** Éclosion d'un œuf dans `world` (rappel de `ageEggsInPlace`, le monde en contexte, #501). */
+/**
+ * Éclosion d'un œuf dans `world` (rappel de `ageEggsInPlace`, le monde en contexte, #501). Les
+ * larves planctoniques du poisson-clown (#653) quittent le bac : aucun alevin.
+ */
 function hatchEgg(world: MutableWorld, egg: Egg): void {
+  if (!hatchesToFry(egg.species)) {
+    return;
+  }
   HATCH_POINT.x = egg.x;
   HATCH_POINT.y = egg.y;
   HATCH_POINT.z = egg.z;
@@ -1347,14 +1356,18 @@ function layEggsInPlace(
 ): number {
   const eggs = (world.eggs ?? []) as MutableEgg[];
   const room = Math.min(count, eggRoom(world.entities, eggs, species));
-  const clutch = layClutch(
-    world.seed,
-    species,
-    spawn,
-    room,
-    environmentWater(world),
-    fryPlants(world.decor),
-  );
+  const water = environmentWater(world);
+  const clutch = laysNearAnemone(species)
+    ? layReefClutch(
+        world.seed,
+        species,
+        spawn,
+        room,
+        water,
+        world.decor,
+        worldFeatures(world).anemones,
+      )
+    : layClutch(world.seed, species, spawn, room, water, fryPlants(world.decor));
   if (clutch.length > 0) {
     eggs.push(...clutch);
     world.eggs = eggs;

@@ -22,6 +22,7 @@ import {
   EGG_HATCH_TIME,
   EGG_SURFACES,
   isEggAge,
+  hatchesToFry,
   laysEggs,
   MAX_EGGS,
   type Egg,
@@ -955,7 +956,7 @@ function parseFish(
   // (alevin éclos d'un œuf, issue #478) seulement.
   const growth = own(item, 'growth');
   if (growth !== undefined) {
-    if (!hasFry(species) && !laysEggs(species)) {
+    if (!hasFry(species) && !hatchesToFry(species)) {
       report(`l’espèce ${species} n’a pas d’alevins`);
       return null;
     }
