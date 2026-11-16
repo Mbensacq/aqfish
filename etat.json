@@ -8307,6 +8307,12 @@
           "debut": "2026-11-16T07:12:06.113Z",
           "fin": "2026-11-16T08:19:53.207Z",
           "note": "Verdict OK, 0 bug, +1 e2e (guide nourriture), CI 11/11 verte, captures c228 publiées (série complète 160)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-16T08:20:29.328Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
