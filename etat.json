@@ -8343,6 +8343,12 @@
           "debut": "2026-11-16T10:44:10.474Z",
           "fin": "2026-11-16T11:19:32.620Z",
           "note": "Verdict OK, 0 bug, PR de test seule, CI 11/11 verte, captures c229 publiées (160), mutation non mesurée (délai)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-16T11:20:07.104Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
