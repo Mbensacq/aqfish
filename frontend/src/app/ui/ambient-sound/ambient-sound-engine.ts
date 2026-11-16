@@ -7,6 +7,7 @@ import {
   WATER_LFO_DEPTH,
   type AmbientLevels,
 } from '../../core/ambient-sound/ambient-sound';
+import type { CareSoundSpec } from '../../core/care-sound/care-sound';
 import type { Prng } from '../../core/random/prng';
 
 /**
@@ -134,6 +135,7 @@ export class AmbientSoundEngine {
   private readonly bubbles: GainLike;
   private readonly lfoDepth: GainLike;
   private readonly sources: SourceLike[] = [];
+  private readonly noise: BufferLike;
   private levels: AmbientLevels = SILENT_LEVELS;
   private bubbleTimer: unknown = null;
   private closed = false;
@@ -156,6 +158,7 @@ export class AmbientSoundEngine {
 
     const noise = ctx.createBuffer(1, Math.round(ctx.sampleRate * NOISE_SECONDS), ctx.sampleRate);
     fillNoise(noise.getChannelData(0), this.prng);
+    this.noise = noise;
 
     this.water = this.layer(noise, 'lowpass', WATER_CUTOFF, 0);
     this.rain = this.layer(noise, 'highpass', RAIN_CUTOFF, NOISE_SECONDS / 2);
@@ -184,6 +187,11 @@ export class AmbientSoundEngine {
     return this.levels;
   }
 
+  /** Horloge du contexte audio (s). */
+  get time(): number {
+    return this.context.currentTime;
+  }
+
   /** Vrai une fois `close` appelé. */
   get isClosed(): boolean {
     return this.closed;
@@ -200,6 +208,57 @@ export class AmbientSoundEngine {
     this.lfoDepth.gain.setTargetAtTime(levels.water * WATER_LFO_DEPTH, now, FADE_SECONDS);
     this.rain.gain.setTargetAtTime(levels.rain, now, FADE_SECONDS);
     this.bubbles.gain.setTargetAtTime(levels.bubbles, now, FADE_SECONDS);
+  }
+
+  /**
+   * Joue un bruitage de la séance (#625, ADR 0144) au niveau de crête `level` : bruit filtré
+   * (tampon du fond sonore) et sinusoïde glissante, sous une même enveloppe brève, branchés
+   * sur le gain général (donc sur le limiteur). Les nœuds se débranchent à la fin. Sans effet
+   * une fois fermé ou pour un niveau nul, négatif ou non fini (aucun nœud créé).
+   */
+  playCareSound(spec: CareSoundSpec, level: number): void {
+    if (this.closed || !(level > 0) || !Number.isFinite(level)) {
+      return;
+    }
+    const ctx = this.context;
+    const now = ctx.currentTime;
+    const end = now + spec.duration;
+    const envelope = ctx.createGain();
+    envelope.gain.setValueAtTime(0, now);
+    envelope.gain.linearRampToValueAtTime(level, now + spec.attack);
+    envelope.gain.exponentialRampToValueAtTime(0.0001, end);
+    envelope.connect(this.master);
+
+    const noise = ctx.createBufferSource();
+    noise.buffer = this.noise;
+    const filter = ctx.createBiquadFilter();
+    filter.type = spec.filter;
+    filter.frequency.value = spec.filterFrequency;
+    filter.Q.value = 1;
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.value = spec.noise;
+    noise.connect(filter);
+    filter.connect(noiseGain);
+    noiseGain.connect(envelope);
+
+    const tone = ctx.createOscillator();
+    tone.type = 'sine';
+    tone.frequency.setValueAtTime(spec.pitchStart, now);
+    tone.frequency.exponentialRampToValueAtTime(spec.pitchEnd, end);
+    const toneGain = ctx.createGain();
+    toneGain.gain.value = 1 - spec.noise;
+    tone.connect(toneGain);
+    toneGain.connect(envelope);
+
+    tone.onended = () => {
+      for (const node of [noise, filter, noiseGain, tone, toneGain, envelope]) {
+        node.disconnect();
+      }
+    };
+    noise.start(now);
+    noise.stop(end + 0.02);
+    tone.start(now);
+    tone.stop(end + 0.02);
   }
 
   /** Arrête tout, débranche le graphe et ferme le contexte audio. Idempotent. */

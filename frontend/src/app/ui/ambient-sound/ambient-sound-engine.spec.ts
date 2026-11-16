@@ -1,4 +1,5 @@
 import { AmbientSoundEngine, FADE_SECONDS, LIMITER } from './ambient-sound-engine';
+import { CARE_SOUNDS } from '../../core/care-sound/care-sound';
 import { FakeAudioContext, FakeGain, FakeTimer } from './fake-audio-context';
 import { SILENT_LEVELS, type AmbientLevels } from '../../core/ambient-sound/ambient-sound';
 
@@ -131,5 +132,85 @@ describe('AmbientSoundEngine (#411)', () => {
     pending.callback();
     expect(ctx.oscillators).toHaveLength(1);
     expect(timer.pending.size).toBe(0);
+  });
+});
+
+describe('AmbientSoundEngine : bruitages de la séance (#625)', () => {
+  it('bruitage : bruit filtré et sinusoïde sous une enveloppe, branchée sur le gain général', () => {
+    const { ctx, engine } = setup();
+    const gains = ctx.gains.length;
+    const filters = ctx.filters.length;
+    const sources = ctx.bufferSources.length;
+    const oscillators = ctx.oscillators.length;
+    ctx.currentTime = 2;
+    const spec = CARE_SOUNDS.raclette;
+    engine.playCareSound(spec, 0.2);
+    const master = ctx.gains[0];
+    const [envelope, noiseGain, toneGain] = ctx.gains.slice(gains);
+    expect(ctx.gains.length - gains).toBe(3);
+    expect(envelope.outputs).toEqual([master]);
+    expect(envelope.gain.events).toEqual([
+      'set 0@2',
+      `lin 0.2@${2 + spec.attack}`,
+      `exp 0.0001@${2 + spec.duration}`,
+    ]);
+    const filter = ctx.filters[filters];
+    expect(filter.type).toBe('bandpass');
+    expect(filter.frequency.value).toBe(spec.filterFrequency);
+    expect(noiseGain.gain.value).toBe(spec.noise);
+    expect(toneGain.gain.value).toBeCloseTo(1 - spec.noise);
+    const noise = ctx.bufferSources[sources];
+    expect(noise.buffer).toBe(ctx.bufferSources[0].buffer);
+    expect(noise.loop).toBe(false);
+    expect(noise.outputs).toEqual([filter]);
+    expect(filter.outputs).toEqual([noiseGain]);
+    expect(noiseGain.outputs).toEqual([envelope]);
+    const tone = ctx.oscillators[oscillators];
+    expect(tone.frequency.events).toEqual([
+      `set ${spec.pitchStart}@2`,
+      `exp ${spec.pitchEnd}@${2 + spec.duration}`,
+    ]);
+    expect(tone.outputs).toEqual([toneGain]);
+    expect(toneGain.outputs).toEqual([envelope]);
+    expect(noise.started).toBe(2);
+    expect(tone.started).toBe(2);
+    expect(noise.stopped).toBeGreaterThan(2 + spec.duration);
+    expect(tone.stopped).toBeGreaterThan(2 + spec.duration);
+  });
+
+  it('fin du bruitage : tous ses nœuds débranchés, le fond sonore intact', () => {
+    const { ctx, engine } = setup();
+    const gains = ctx.gains.length;
+    engine.playCareSound(CARE_SOUNDS.seau, 0.1);
+    ctx.oscillators.at(-1)!.onended?.();
+    expect(ctx.gains.slice(gains).every((gain) => gain.disconnected)).toBe(true);
+    expect(ctx.filters.at(-1)!.disconnected).toBe(true);
+    expect(ctx.bufferSources.at(-1)!.disconnected).toBe(true);
+    expect(ctx.gains[0].disconnected).toBe(false);
+    expect(ctx.filters[0].disconnected).toBe(false);
+  });
+
+  it('niveau nul, négatif ou non fini, ou moteur fermé : aucun nœud créé', async () => {
+    const { ctx, engine } = setup();
+    const counts = (): number[] => [
+      ctx.gains.length,
+      ctx.filters.length,
+      ctx.bufferSources.length,
+      ctx.oscillators.length,
+    ];
+    const before = counts();
+    for (const level of [0, -0.5, Number.NaN, Number.POSITIVE_INFINITY]) {
+      engine.playCareSound(CARE_SOUNDS.clic, level);
+    }
+    expect(counts()).toEqual(before);
+    await engine.close();
+    engine.playCareSound(CARE_SOUNDS.clic, 0.3);
+    expect(counts()).toEqual(before);
+  });
+
+  it('horloge : celle du contexte audio', () => {
+    const { ctx, engine } = setup();
+    ctx.currentTime = 4.5;
+    expect(engine.time).toBe(4.5);
   });
 });

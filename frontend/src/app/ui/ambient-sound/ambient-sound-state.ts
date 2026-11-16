@@ -20,6 +20,14 @@ import {
   type AmbientScene,
   type AmbientSoundStorage,
 } from '../../core/ambient-sound/ambient-sound';
+import {
+  CARE_SOUNDS,
+  careSoundDue,
+  careSoundLevel,
+  careSoundSpec,
+  createCareSoundPrng,
+  type CareSoundKind,
+} from '../../core/care-sound/care-sound';
 import { AmbientSoundEngine, type AudioContextLike, type TimerLike } from './ambient-sound-engine';
 
 /** Fabrique d'`AudioContext`, `null` si le navigateur n'a pas Web Audio. */
@@ -105,6 +113,10 @@ export class AmbientSoundState {
   private readonly stored = readStoredAmbientSound(this.storage);
   private gestureCleanup: (() => void) | null = null;
   private forbidden = false;
+  /** Hasard des bruitages de la séance (#625), propre au son. */
+  private readonly careSoundPrng = createCareSoundPrng();
+  /** Instant (horloge audio) du dernier bruitage de chaque nature. */
+  private readonly careSoundLast = new Map<CareSoundKind, number>();
 
   /** Web Audio utilisable (faux sans `AudioContext` ou si sa création a échoué). */
   readonly available = signal(this.factory !== null);
@@ -180,6 +192,31 @@ export class AmbientSoundState {
   setScene(scene: AmbientScene | null): void {
     this.scene.set(scene);
     this.apply();
+  }
+
+  /**
+   * Bruitage de la séance d'entretien (#625, ADR 0144), joué par le moteur du fond sonore et
+   * au volume réglé. Ne crée jamais de contexte audio : sans moteur en marche (son coupé, Web
+   * Audio absent, pas encore de geste, mode capture), onglet masqué ou bruitage de même
+   * nature trop proche (`careSoundDue`), rien n'est joué et aucun nœud n'est créé. Renvoie
+   * vrai si le bruitage a été joué.
+   */
+  playCareSound(kind: CareSoundKind): boolean {
+    const engine = this.engine;
+    if (!engine || engine.isClosed || this.forbidden || this.hidden()) {
+      return false;
+    }
+    if (!(careSoundLevel(CARE_SOUNDS[kind], this.enabled(), this.volume()) > 0)) {
+      return false;
+    }
+    const now = engine.time;
+    if (!careSoundDue(kind, this.careSoundLast.get(kind) ?? null, now)) {
+      return false;
+    }
+    const spec = careSoundSpec(kind, this.careSoundPrng.next());
+    this.careSoundLast.set(kind, now);
+    engine.playCareSound(spec, careSoundLevel(spec, this.enabled(), this.volume()));
+    return true;
   }
 
   /**

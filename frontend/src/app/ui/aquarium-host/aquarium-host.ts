@@ -457,6 +457,7 @@ import {
   withSiphoned,
   type CareSession,
 } from '../../sim/care-session';
+import { careStepSound } from '../../core/care-sound/care-sound';
 import { hasWaterToSiphon, pouredShare, siphonedShare } from '../../sim/siphon';
 import { filterMaturityPercent } from '../../sim/filter-maturation';
 import type { FilterRinseWater } from '../../sim/filter-rinse';
@@ -2060,6 +2061,11 @@ export class AquariumHost {
         this.applyWaterSetting((world) => this.recordMaintenance(world, task));
       }
     }
+    // Clic de fin d'étape (#625) : seulement pour une étape vraiment terminée (pas au bilan).
+    const click = careStepSound(session.step, 'fait', !careSessionFinished(session));
+    if (click) {
+      this.ambientSound.playCareSound(click);
+    }
     this.showCareSession(completeCareStep(session));
   }
 
@@ -2106,9 +2112,11 @@ export class AquariumHost {
   pourCareBucket(): void {
     const session = this.careSession();
     if (session?.step === 'eau') {
-      this.showCareSession(
-        withPoured(session, pouredShare(session.poured ?? 0, session.siphoned ?? 0)),
-      );
+      const poured = withPoured(session, pouredShare(session.poured ?? 0, session.siphoned ?? 0));
+      if ((poured.poured ?? 0) > (session.poured ?? 0)) {
+        this.ambientSound.playCareSound('seau');
+      }
+      this.showCareSession(poured);
     }
   }
 
@@ -2198,11 +2206,11 @@ export class AquariumHost {
    * Passage de raclette (#604) : retire les plaques sous les points d'un événement du geste
    * (un seul appel à `scrapeWorldAlgaeAlongInPlace`, #617), enregistre s'il y en a.
    */
-  private scrapeStroke(points: readonly StrokePoint[]): void {
+  private scrapeStroke(points: readonly StrokePoint[]): boolean {
     const world = this.currentWorld;
     const view = this.view;
     if (!world || !view || this.capture) {
-      return;
+      return false;
     }
     const rays: ScraperRay[] = [];
     for (const point of points) {
@@ -2215,15 +2223,18 @@ export class AquariumHost {
       this.exposeWater();
       this.saveNow();
       this.scheduleFrame();
+      return true;
     }
+    return false;
   }
 
   /** Geste de la séance (#604, #605) : raclette aux vitres, tuyau au siphon. */
   private careStroke(points: readonly StrokePoint[]): void {
     if (this.careSession()?.step === 'siphon') {
       this.siphonStroke(points);
-    } else {
-      this.scrapeStroke(points);
+    } else if (this.scrapeStroke(points)) {
+      // Raclette sur la vitre (#625) : seulement quand une plaque a été retirée.
+      this.ambientSound.playCareSound('raclette');
     }
   }
 
@@ -2249,6 +2260,8 @@ export class AquariumHost {
     if (pass.points === 0) {
       return;
     }
+    // Eau qui coule dans le siphon (#625).
+    this.ambientSound.playCareSound('siphon');
     const hasWater = hasWaterToSiphon(waterLiters(environmentWater(world)));
     this.showCareSession(
       withSiphoned(session, siphonedShare(session.siphoned ?? 0, pass.points, hasWater)),
