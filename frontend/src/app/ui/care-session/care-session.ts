@@ -274,6 +274,8 @@ export class CareSessionPanel {
   readonly filterEfficiency = input(1);
   /** Le bac a une plante à tailler (#623) : sinon, pas de ligne « taille » au bilan. */
   readonly prunable = input(true);
+  /** Une plante a une pousse à couper (#644) : sinon, consigne « rien à tailler ». */
+  readonly cuttable = input(true);
   /** Avant / après du bilan (#624) ; `null` : pas de comparaison (tout sauté, image absente). */
   readonly comparison = input<{ readonly before: string; readonly after: string } | null>(null);
   /** « Enregistrer la photo » de l'avant / après (#624). */
@@ -329,7 +331,9 @@ export class CareSessionPanel {
   protected readonly fillPercent = computed(() =>
     this.siphoned() > 0 ? Math.round((this.poured() / this.siphoned()) * 100) : 0,
   );
-  protected readonly pruneHint = computed(() => pruneStepHint(this.session()?.cuts ?? 0));
+  protected readonly pruneHint = computed(() =>
+    pruneStepHint(this.session()?.cuts ?? 0, this.cuttable()),
+  );
   protected readonly siphonTooMuch = computed(() => siphonWarning(this.siphoned()));
   protected readonly siphonHint = computed(() => siphonStepHint(this.siphoned()));
   protected readonly freshHint = computed(() => freshWaterStepHint(this.poured(), this.siphoned()));

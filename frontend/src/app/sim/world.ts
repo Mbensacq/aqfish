@@ -36,6 +36,7 @@ import {
 import {
   hasPlantGrowth,
   isGrowingPlant,
+  plantCuttable,
   plantShade,
   prunePlantInPlace,
   plantLightFactor,
@@ -1944,6 +1945,19 @@ export function recordWorldMaintenanceInPlace(world: MutableWorld, task: Mainten
 /** Vrai si le bac a une plante à tige à tailler (#513). */
 export function worldHasPrunablePlants(world: World): boolean {
   return hasPlantGrowth(world.environment) && world.decor.some(isGrowingPlant);
+}
+
+/**
+ * Vrai si une plante du bac a une pousse à couper maintenant (#644) : la taille la
+ * raccourcirait (`plantCuttable`). Faux quand toutes les plantes à tige sont à leur hauteur
+ * d'origine (ou presque), ou dans un bac où rien ne pousse.
+ */
+export function worldHasCuttablePlants(world: World): boolean {
+  if (!hasPlantGrowth(world.environment)) {
+    return false;
+  }
+  const surface = environmentWater(world).maxY;
+  return world.decor.some((item) => plantCuttable(world.water.plantGrowth, item, surface));
 }
 
 /**

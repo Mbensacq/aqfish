@@ -19,7 +19,12 @@ import { DEFAULT_SAVE_SETTINGS, serializeWorld } from '../../sim/save';
 import { DEFAULT_ROOM } from '../../sim/room';
 import type { AquariumRenderer, AquariumView } from '../../render/aquarium-view';
 import { OVERCAST_FADE_SECONDS, RAIN_OVERCAST_BRIGHTNESS } from '../../render/overcast';
-import { PHOTO_FAILED_MESSAGE, PHOTO_NOTICE_MS } from '../../render/photo-capture';
+import {
+  PHOTO_FAILED_MESSAGE,
+  PHOTO_NOTICE_MS,
+  sideBySidePhotos,
+} from '../../render/photo-capture';
+import { DASHBOARD_COLORS } from '../dashboard-frame/dashboard-frame';
 import { MAX_STEPS_PER_FRAME } from '../../sim/constants';
 import { DEFAULT_SIM_SPEED } from '../../sim/sim-speed';
 import {
@@ -87,6 +92,7 @@ import {
   applyPopulation,
   AQUARIUM_RENDERER_FACTORY,
   AquariumHost,
+  COMPARISON_BACKGROUND,
   DECOR_PHYSICS_ATTRIBUTE,
   DECOR_PHYSICS_LOADER,
   AUTOSAVE_INTERVAL_MS,
@@ -1739,6 +1745,16 @@ describe('AquariumHost', () => {
           host().skipCareSessionStep();
         }
       };
+
+      it('fond de l’écart lu dans la palette de l’interface (#646)', () => {
+        expect(COMPARISON_BACKGROUND).toEqual([0x14, 0x14, 0x18]);
+        const photo = { width: 1, height: 1, data: new Uint8Array([200, 100, 50, 255]) };
+        const pair = sideBySidePhotos(photo, photo, 1, COMPARISON_BACKGROUND);
+        // Pixel du milieu (l'écart) : octets du fond `DASHBOARD_COLORS.background`, opaque.
+        const hex = DASHBOARD_COLORS.background.slice(1);
+        const expected = [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16));
+        expect(Array.from(pair.data.slice(4, 8))).toEqual([...expected, 255]);
+      });
 
       it('avant pris au début, après au bilan, tout libéré à la fin', async () => {
         await createReadable();

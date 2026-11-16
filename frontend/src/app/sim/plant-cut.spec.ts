@@ -23,6 +23,7 @@ import {
   createWorld,
   cutWorldPlantInPlace,
   PLANT_CUT_AMMONIA,
+  worldHasCuttablePlants,
   worldHasPrunablePlants,
   worldShownPlantGrowth,
   type MutableWorld,
@@ -115,6 +116,25 @@ describe('taille de la séance d’entretien (#623)', () => {
       }
     });
 
+    it('pousse à couper (#644) : vraie tant qu’une coupe raccourcit, fausse à hauteur d’origine', () => {
+      const bare = createWorld(42, [], [], DEFAULT_DECOR, 'tropical') as MutableWorld;
+      expect(worldHasPrunablePlants(bare)).toBe(true);
+      expect(worldHasCuttablePlants(bare)).toBe(false);
+      // Pousse trop courte pour que la taille en retire un voxel : rien à couper.
+      expect(worldHasCuttablePlants(grownTank(0.5))).toBe(false);
+      const world = grownTank(9.5);
+      expect(worldHasCuttablePlants(world)).toBe(true);
+      for (const index of tallIndices(world)) {
+        while (cutWorldPlantInPlace(world, index)) {
+          // Jusqu'à la hauteur d'origine.
+        }
+      }
+      expect(worldHasCuttablePlants(world)).toBe(false);
+      for (const env of ['recif', 'bassin'] as const) {
+        expect(worldHasCuttablePlants(createDefaultWorld(42, env))).toBe(false);
+      }
+    });
+
     it('bac sans plante à tailler (récif, bassin) : rien n’est coupé', () => {
       for (const env of ['recif', 'bassin'] as const) {
         const world = createDefaultWorld(42, env) as MutableWorld;
@@ -189,6 +209,17 @@ describe('taille de la séance d’entretien (#623)', () => {
       expect(skipAbsentCareSteps(prune, true)).toBe(prune);
       const start = startCareSession();
       expect(skipAbsentCareSteps(start, false)).toBe(start);
+    });
+
+    it('consigne « rien à tailler » sans pousse à couper, tant qu’aucune coupe n’est faite (#644)', () => {
+      expect(pruneStepHint(0, true)).toBe(pruneStepHint(0));
+      expect(pruneStepHint(0, false)).toBe(
+        'Aucune tige ne dépasse : rien à tailler pour l’instant, passez l’étape.',
+      );
+      expect(pruneStepHint(Number.NaN, false)).toBe(pruneStepHint(0, false));
+      // Après une coupe, le compte des coupes l'emporte, même s'il ne reste rien à couper.
+      expect(pruneStepHint(1, false)).toBe(pruneStepHint(1));
+      expect(pruneStepHint(2, false)).toMatch(/^2 coupes/);
     });
 
     it('consigne : invite à couper, puis compte les coupes', () => {

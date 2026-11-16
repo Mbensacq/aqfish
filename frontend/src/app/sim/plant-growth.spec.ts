@@ -22,6 +22,7 @@ import {
   plantLimits,
   plantShade,
   prunedGrowth,
+  plantCuttable,
   prunePlantInPlace,
   readPlantGrowth,
   shownGrowth,
@@ -176,6 +177,20 @@ describe('pousse des plantes (#477)', () => {
       for (let g = 0; g < 60; g++) {
         expect(prunedGrowth(35, g)).toBeGreaterThanOrEqual(0);
         expect(prunedGrowth(35, g)).toBeLessThanOrEqual(g);
+      }
+    });
+
+    it('pousse à couper : même règle que la taille, sans rien modifier (#644)', () => {
+      const growth: MutablePlantGrowth = { '31': 3.5 };
+      expect(plantCuttable(growth, TALL, SURFACE)).toBe(true);
+      expect(growth).toEqual({ '31': 3.5 });
+      expect(plantCuttable(undefined, TALL, SURFACE)).toBe(false);
+      expect(plantCuttable({}, TALL, SURFACE)).toBe(false);
+      expect(plantCuttable({ '31': 0.5 }, TALL, SURFACE)).toBe(false);
+      expect(plantCuttable({ '32': 9 }, TUFT, SURFACE)).toBe(false);
+      for (let g = 0; g < 40; g += 0.5) {
+        const copy: MutablePlantGrowth = { '31': g };
+        expect(plantCuttable(copy, TALL, SURFACE)).toBe(prunePlantInPlace(copy, TALL, SURFACE));
       }
     });
 

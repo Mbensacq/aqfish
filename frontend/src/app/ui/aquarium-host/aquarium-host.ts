@@ -284,6 +284,7 @@ import {
   cutWorldPlantInPlace,
   pruneWorldPlantInPlace,
   recordWorldMaintenanceInPlace,
+  worldHasCuttablePlants,
   worldHasPrunablePlants,
   worldPlantShade,
   worldShownPlantGrowth,
@@ -439,6 +440,8 @@ import {
   sameHealthSummary,
   type HealthSummary,
 } from '../../sim/health-summary';
+import { parseHex, type Rgb } from '../dashboard-frame/contrast';
+import { DASHBOARD_COLORS } from '../dashboard-frame/dashboard-frame';
 import { refreshDue } from '../dashboard-frame/refresh-pace';
 import {
   careSessionCompared,
@@ -564,8 +567,11 @@ export interface CareComparison {
 /** Écart entre l'avant et l'après de la photo enregistrée (#624), en pixels de scène. */
 const COMPARISON_GAP = 2;
 
-/** Fond de cet écart (#624) : celui de l'interface (`DASHBOARD_COLORS.background`). */
-const COMPARISON_BACKGROUND = [0x14, 0x14, 0x18] as const;
+/**
+ * Fond de cet écart (#624) : celui de l'interface, lu dans `DASHBOARD_COLORS.background` pour
+ * suivre un changement de palette (#646).
+ */
+export const COMPARISON_BACKGROUND: Rgb = parseHex(DASHBOARD_COLORS.background);
 /** Bactéries du filtre du bac affiché, en pour cent entier (#606, `filterMaturityPercent`). */
 export const FILTER_BACTERIA_ATTRIBUTE = 'data-aqfish-bacteries';
 /** Clé de la séance d'entretien interrompue (#604), distincte de la sauvegarde du monde. */
@@ -1188,6 +1194,8 @@ export class AquariumHost {
   readonly careFilter = signal(1);
   /** Le bac a une plante à tailler (#623) : étape « taille » et sa ligne au bilan. */
   readonly carePrunable = signal(true);
+  /** Une plante du bac a une pousse à couper (#644, `worldHasCuttablePlants`). */
+  readonly careCuttable = signal(true);
   /**
    * Avant / après du bilan (#624) : images PNG (URL `data:`) du bac au début de la séance et au
    * bilan, à la résolution de la scène ; `null` sans comparaison. Jamais enregistrées.
@@ -2167,6 +2175,7 @@ export class AquariumHost {
     const world = this.currentWorld;
     const prunable = world ? worldHasPrunablePlants(world) : true;
     this.carePrunable.set(prunable);
+    this.careCuttable.set(world ? worldHasCuttablePlants(world) : true);
     const session = skipAbsentCareSteps(shown, prunable);
     if (careSessionFinished(session) && !this.careComparison()) {
       this.compareCareSession(session);
@@ -5138,6 +5147,7 @@ export class AquariumHost {
     this.waterSample.set(waterSample(world.water, world.environment, world.tick));
     this.careFilter.set(world.water.filter);
     this.carePrunable.set(worldHasPrunablePlants(world));
+    this.careCuttable.set(worldHasCuttablePlants(world));
     this.host.nativeElement.setAttribute(
       FILTER_BACTERIA_ATTRIBUTE,
       String(filterMaturityPercent(world.water)),
