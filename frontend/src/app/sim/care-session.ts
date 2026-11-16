@@ -230,10 +230,16 @@ export function glassStepHint(remaining: number): string {
     : `Passez la raclette sur les vitres : ${remaining} taches vertes.`;
 }
 
-/** Consigne de l'étape « taille » selon le nombre de coupes `cuts` (#623). */
-export function pruneStepHint(cuts: number): string {
+/**
+ * Consigne de l'étape « taille » selon le nombre de coupes `cuts` (#623) ; `cuttable` faux :
+ * aucune plante n'a de pousse à couper (toutes à leur hauteur d'origine), rien à tailler tant
+ * qu'aucune coupe n'a été faite (#644).
+ */
+export function pruneStepHint(cuts: number, cuttable = true): string {
   if (!(cuts > 0)) {
-    return 'Cliquez ou touchez une tige trop haute pour la couper.';
+    return cuttable
+      ? 'Cliquez ou touchez une tige trop haute pour la couper.'
+      : 'Aucune tige ne dépasse : rien à tailler pour l’instant, passez l’étape.';
   }
   return cuts === 1
     ? 'Une coupe : la partie coupée tombe et se décompose. Coupez-en une autre ou terminez.'

@@ -213,7 +213,8 @@ export class AmbientSoundEngine {
   /**
    * Joue un bruitage de la séance (#625, ADR 0144) au niveau de crête `level` : bruit filtré
    * (tampon du fond sonore) et sinusoïde glissante, sous une même enveloppe brève, branchés
-   * sur le gain général (donc sur le limiteur). Les nœuds se débranchent à la fin. Sans effet
+   * sur le gain général (donc sur le limiteur). Les nœuds se débranchent quand les deux sources
+   * ont fini. Sans effet
    * une fois fermé ou pour un niveau nul, négatif ou non fini (aucun nœud créé).
    */
   playCareSound(spec: CareSoundSpec, level: number): void {
@@ -250,11 +251,19 @@ export class AmbientSoundEngine {
     tone.connect(toneGain);
     toneGain.connect(envelope);
 
-    tone.onended = () => {
-      for (const node of [noise, filter, noiseGain, tone, toneGain, envelope]) {
-        node.disconnect();
+    // Débranchement explicite (#648) : quand les deux sources ont fini, dans n'importe quel
+    // ordre (elles s'arrêtent au même instant, mais rien ne garantit l'ordre de `onended`).
+    let playing = 2;
+    const sourceEnded = (): void => {
+      playing--;
+      if (playing === 0) {
+        for (const node of [noise, filter, noiseGain, tone, toneGain, envelope]) {
+          node.disconnect();
+        }
       }
     };
+    noise.onended = sourceEnded;
+    tone.onended = sourceEnded;
     noise.start(now);
     noise.stop(end + 0.02);
     tone.start(now);

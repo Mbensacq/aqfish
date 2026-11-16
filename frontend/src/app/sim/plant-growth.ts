@@ -186,6 +186,24 @@ export function prunedGrowth(height: number, growth: number): number {
 }
 
 /**
+ * Vrai si la taille raccourcirait la plante `item` (#644) : plante qui pousse, dont la pousse
+ * visible dépasse ce que la taille garde (`prunedGrowth`). Faux sans pousse ou pour un autre
+ * élément. Ne modifie rien ; même règle que `prunePlantInPlace`.
+ */
+export function plantCuttable(
+  growth: PlantGrowth | undefined,
+  item: DecorItem,
+  surface: number,
+): boolean {
+  if (!growth || !isGrowingPlant(item)) {
+    return false;
+  }
+  const { key, height } = plantLimits(item, surface);
+  const now = Math.floor(growth[key] ?? 0);
+  return prunedGrowth(height, now) < now;
+}
+
+/**
  * Taille la plante `item`, **en modifiant** `growth` : renvoie vrai si elle a raccourci (faux
  * pour une plante sans pousse visible, ou qui ne pousse pas). Une pousse nulle est retirée.
  */
@@ -194,15 +212,11 @@ export function prunePlantInPlace(
   item: DecorItem,
   surface: number,
 ): boolean {
-  if (!growth || !isGrowingPlant(item)) {
+  if (!growth || !plantCuttable(growth, item, surface)) {
     return false;
   }
   const { key, height } = plantLimits(item, surface);
-  const now = growth[key] ?? 0;
-  const next = prunedGrowth(height, Math.floor(now));
-  if (next >= Math.floor(now)) {
-    return false;
-  }
+  const next = prunedGrowth(height, Math.floor(growth[key] ?? 0));
   if (next === 0) {
     delete growth[key];
   } else {

@@ -41,3 +41,21 @@ aussitôt la tâche `prune` au calendrier.
 - Tailler pendant la séance charge très légèrement l'eau (0,05 pour un seuil « à surveiller » à
   2) : visible seulement après de nombreuses coupes.
 - Aucun changement de rendu hors séance : les captures existantes restent identiques.
+
+## Complément (cycle 227, #644)
+
+- **Écart des deux sécateurs, maintenu et assumé.** Le sécateur de la séance
+  (`cutWorldPlantInPlace`) ajoute `PLANT_CUT_AMMONIA` ; celui du mode Soins
+  (`pruneWorldPlantInPlace`) non. Décision : **ne pas** appliquer le déchet au mode Soins.
+  Le mode Soins est le geste rapide d'entretien courant, réglé et testé depuis #477 (taille
+  aussitôt inscrite au calendrier) ; la séance est le geste guidé qui montre le cycle de
+  l'azote (phrase « pourquoi » de l'étape). Le déchet (0,05 par coupe pour un seuil « à
+  surveiller » à 2) ne change pas l'équilibre d'un bac, mais l'ajouter au mode Soins changerait
+  un comportement existant sans gain de jeu visible. Les deux fonctions partagent la même règle
+  de coupe (`prunePlantInPlace`, `plantCuttable`) : seul le déchet diffère, et seulement ici.
+  À reprendre si le jeu fusionne les deux gestes.
+- **Rien à tailler.** Un bac qui a des plantes à tige (étape présente) mais aucune pousse que
+  la taille raccourcirait (`worldHasCuttablePlants` faux : toutes à leur hauteur d'origine, ou
+  presque) affiche la consigne « Aucune tige ne dépasse : rien à tailler pour l’instant, passez
+  l’étape. » ; « Passer » reste le seul bouton, comme avant. Après une coupe, le compte des
+  coupes l'emporte.

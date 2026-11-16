@@ -154,7 +154,12 @@ export function careStepSound(step: string, outcome: string, present = true): Ca
   return CARE_STEPS_WITH_CLICK.has(step) ? 'clic' : null;
 }
 
-const CARE_STEPS_WITH_CLICK: ReadonlySet<string> = new Set([
+/**
+ * Étapes de la séance qui sonnent le clic une fois faites : toutes celles où l'on agit. Les
+ * noms recopient ceux de `sim/care-session` (`CARE_SESSION_STEPS` hors bilan) ; un test les
+ * recoupe pour qu'un renommage d'étape ne coupe pas le clic en silence (#648).
+ */
+export const CARE_STEPS_WITH_CLICK: ReadonlySet<string> = new Set([
   'vitres',
   'siphon',
   'filtre',

@@ -62,6 +62,21 @@ describe('CareSessionPanel (#604)', () => {
     expect(el.querySelector('[data-care-done]')).not.toBeNull();
   });
 
+  it('taille sans pousse à couper (#644) : consigne « rien à tailler », « Passer » seul', () => {
+    let pruning = startCareSession();
+    for (let i = 0; i < 4; i++) {
+      pruning = skipCareStep(pruning);
+    }
+    const fixture = TestBed.createComponent(CareSessionPanel);
+    fixture.componentRef.setInput('session', pruning);
+    fixture.componentRef.setInput('cuttable', false);
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('[data-care-hint]')?.textContent).toContain('rien à tailler');
+    expect(el.querySelector('[data-care-done]')).toBeNull();
+    expect(el.querySelector('[data-care-skip]')).not.toBeNull();
+  });
+
   it('bilan d’un bac sans plante à tailler (#623) : pas de ligne « taille »', () => {
     let session = startCareSession();
     for (let i = 0; i < 5; i++) {

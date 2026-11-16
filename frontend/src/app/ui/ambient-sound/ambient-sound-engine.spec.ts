@@ -183,11 +183,30 @@ describe('AmbientSoundEngine : bruitages de la séance (#625)', () => {
     const gains = ctx.gains.length;
     engine.playCareSound(CARE_SOUNDS.seau, 0.1);
     ctx.oscillators.at(-1)!.onended?.();
+    // Une seule source finie : rien n'est encore débranché (#648).
+    expect(ctx.gains.slice(gains).some((gain) => gain.disconnected)).toBe(false);
+    expect(ctx.bufferSources.at(-1)!.disconnected).toBe(false);
+    ctx.bufferSources.at(-1)!.onended?.();
     expect(ctx.gains.slice(gains).every((gain) => gain.disconnected)).toBe(true);
+    expect(ctx.oscillators.at(-1)!.disconnected).toBe(true);
     expect(ctx.filters.at(-1)!.disconnected).toBe(true);
     expect(ctx.bufferSources.at(-1)!.disconnected).toBe(true);
     expect(ctx.gains[0].disconnected).toBe(false);
     expect(ctx.filters[0].disconnected).toBe(false);
+  });
+
+  it('fin du bruitage, bruit fini après la sinusoïde ou avant : tout débranché (#648)', () => {
+    const { ctx, engine } = setup();
+    const gains = ctx.gains.length;
+    engine.playCareSound(CARE_SOUNDS.siphon, 0.1);
+    const noise = ctx.bufferSources.at(-1)!;
+    const tone = ctx.oscillators.at(-1)!;
+    noise.onended?.();
+    expect(tone.disconnected).toBe(false);
+    tone.onended?.();
+    const nodes = [...ctx.gains.slice(gains), ctx.filters.at(-1)!, noise, tone];
+    expect(nodes).toHaveLength(6);
+    expect(nodes.every((node) => node.disconnected)).toBe(true);
   });
 
   it('niveau nul, négatif ou non fini, ou moteur fermé : aucun nœud créé', async () => {
