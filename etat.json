@@ -8845,6 +8845,19 @@
         "statut": "termine",
         "note": "6 cycles livrés, 2 alertes"
       }
+    },
+    "2026-11-16": {
+      "metriques": {
+        "cycles": 8,
+        "livres": 7,
+        "version": "v1.21.3",
+        "tests": null,
+        "couvertureLignes": null,
+        "lignesCode": 134666,
+        "bugsOuverts": 0,
+        "ciMain": "success",
+        "mutation": 98.16
+      }
     }
   }
 }
