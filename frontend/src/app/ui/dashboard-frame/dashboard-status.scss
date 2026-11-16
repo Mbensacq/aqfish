@@ -322,12 +322,22 @@
   // dégagé, #265). Le mot et le résumé restent lus.
   .status__review-name,
   .status__maintenance-name,
-  .status__maintenance .status__message {
+  .status__maintenance:not([data-maintenance-due='0']) .status__message {
     position: absolute;
     width: 1px;
     height: 1px;
     overflow: hidden;
     clip-path: inset(50%);
+  }
+
+  // Rien d'échu : le résumé court (« À jour ») reste écrit à côté de l'icône, qui sinon
+  // paraît isolée (#652) ; il tient dans la marge gauche (20 % de la largeur à 390 px).
+  .status__maintenance[data-maintenance-due='0'] .status__message {
+    display: inline-block;
+
+    &::first-letter {
+      text-transform: uppercase;
+    }
   }
 
   .status__maintenance-count {

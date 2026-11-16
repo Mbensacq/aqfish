@@ -71,6 +71,14 @@ test('390 × 844 : le rappel reste dans l’écran et se déplie', async ({ page
   const box = await chip.boundingBox();
   expect(box!.x).toBeGreaterThanOrEqual(0);
   expect(box!.x + box!.width).toBeLessThanOrEqual(390 * 0.2);
+  // Rien d'échu : le résumé court reste écrit à côté de l'icône (#652), pas seulement lu.
+  await expect(chip).toHaveAttribute('data-maintenance-due', '0');
+  const summary = chip.locator('[data-maintenance-summary]');
+  await expect(summary).toHaveText('à jour');
+  const summaryBox = await summary.boundingBox();
+  expect(summaryBox!.width).toBeGreaterThan(10);
+  expect(summaryBox!.x).toBeGreaterThan(box!.x);
+  expect(summaryBox!.x + summaryBox!.width).toBeLessThanOrEqual(box!.x + box!.width);
   await chip.click();
   await expect(page.locator('[data-maintenance-detail]')).toBeVisible();
   const captureDir = process.env['CAPTURE_DIR'];
