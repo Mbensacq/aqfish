@@ -8663,10 +8663,10 @@
           "note": "PR #682 : alevins du platy et du molly (#674), 19 tests unitaires + e2e, capture c238/dev, CI 11/11 verte ; e2e local complet trop lent ; pied d'attribution réinjecté sur la PR"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-17T17:16:42.663Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-17T17:33:25.187Z",
+          "note": "Verdict OK, 0 bug, captures publiées, 5458 tests unitaires verts, CI verte"
         }
       },
       "metriques": {}
