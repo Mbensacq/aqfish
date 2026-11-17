@@ -8683,7 +8683,7 @@
       "debut": "2026-11-17T18:58:10.112Z",
       "type": "fonctionnalite",
       "issue": 675,
-      "pr": null,
+      "pr": 684,
       "version": null,
       "phases": {
         "planif": {
