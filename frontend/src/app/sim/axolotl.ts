@@ -4,6 +4,7 @@ import { obstacleDistance, type Obstacle } from './obstacles';
 import {
   SPECIES,
   type BottomWalkerParams,
+  type CleaningParams,
   type SpeciesDefinition,
   type SpeciesId,
 } from './species';
@@ -69,6 +70,8 @@ const PHASE_SALT = 0x6a09e667;
 const SCRATCH_NORMAL = { x: 0, y: 0, z: 0 };
 /** Sel du déphasage des à-coups de nage. */
 const BURST_SALT = 0xbb67ae85;
+/** Sel du tirage des créneaux d'approche des poissons (#656). */
+const CLEANING_SALT = 0x3c6ef372;
 
 /** Part de la période des à-coups pendant laquelle l'animal accélère (approximation de jeu). */
 export const BURST_SHARE = 0.3;
@@ -259,10 +262,64 @@ function placeOnDeepestPoint(fish: Mutable<Fish>, bounds: SwimBounds, ground: Wa
   }
 }
 
+/**
+ * Vrai si le créneau `slot` de l'individu `id` est un créneau d'approche des poissons
+ * (#656) : fonction pure de la graine, de l'identifiant et du créneau, vraie pour une part
+ * `cleaning.share` des créneaux. Ne vaut que pour les créneaux de marche (`stepWalker`).
+ */
+export function walkerCleansAt(
+  cleaning: CleaningParams,
+  seed: number,
+  id: number,
+  slot: number,
+): boolean {
+  const individual = deriveSeed((assertSeed(seed) ^ CLEANING_SALT) >>> 0, id);
+  return deriveSeed(individual, slot >>> 0) / UINT32_RANGE < cleaning.share;
+}
+
+/**
+ * Poisson que l'individu `fish` approche (#656) : parmi `others`, le plus proche à
+ * l'horizontale, à au plus `cleaning.radius`, au-dessus de lui d'au plus `cleaning.maxHeight`
+ * (jamais en dessous), en ne comptant que les nageurs (ni lui-même, ni un autre marcheur du
+ * fond, ni une espèce amphibie). À égalité, le premier du tableau. `null` si aucun.
+ */
+export function cleaningTarget(
+  fish: Fish,
+  others: readonly Fish[],
+  cleaning: CleaningParams,
+): Fish | null {
+  let best: Fish | null = null;
+  let bestDistance = cleaning.radius * cleaning.radius;
+  for (const other of others) {
+    if (other.id === fish.id) {
+      continue;
+    }
+    const def = SPECIES[other.species];
+    if (def.walker !== undefined || def.amphibian !== undefined) {
+      continue;
+    }
+    const height = other.y - fish.y;
+    if (!(height >= 0 && height <= cleaning.maxHeight)) {
+      continue;
+    }
+    const dx = other.x - fish.x;
+    const dz = other.z - fish.z;
+    const distance = dx * dx + dz * dz;
+    if (distance <= bestDistance && (best === null || distance < bestDistance)) {
+      best = other;
+      bestDistance = distance;
+    }
+  }
+  return best;
+}
+
 /** Aucun obstacle (marcheurs qui les ignorent). */
 const NO_OBSTACLES: readonly Obstacle[] = [];
 
 const PHASE: WalkerPhase = { mode: 'marche', slot: 0, progress: 0, height: 0 };
+
+/** Aucun autre habitant (approche des poissons sans objet). */
+const NO_FISH: readonly Fish[] = [];
 
 /**
  * Fait avancer un individu qui marche sur le fond de `dt` secondes, **en place** (aucune
@@ -272,6 +329,10 @@ const PHASE: WalkerPhase = { mode: 'marche', slot: 0, progress: 0, height: 0 };
  * Garanties (voir l'en-tête du module) : centre dans `bounds.hard`, au-dessus du sol plus
  * `clearance`, sous `bounds.hard.maxY` ; `speed` ∈ [minSpeed, maxSpeed] ;
  * `|pitch|` ≤ maxPitch ; déplacement horizontal d'au plus `maxSpeed · dt`.
+ *
+ * `others` : habitants du bac, lus pour l'approche des poissons de passage des espèces qui la
+ * déclarent (`BottomWalkerParams.cleaning`, #656) ; l'approche se fait en marche, sur le fond,
+ * avec les mêmes refus de pas : les garanties ci-dessus tiennent.
  */
 export function stepWalker(
   fish: Mutable<Fish>,
@@ -281,6 +342,7 @@ export function stepWalker(
   bounds: SwimBounds,
   ground: WalkerGround,
   obstacles: readonly Obstacle[] = [],
+  others: readonly Fish[] = NO_FISH,
 ): void {
   const def = SPECIES[fish.species];
   const walker = def.walker!;
@@ -295,8 +357,28 @@ export function stepWalker(
   const burstPosition = time / walker.burstPeriod + burstOffset;
   const burst = burstPosition - Math.floor(burstPosition);
 
-  // Vitesse : accélération vive, ralentissement lent (à-coups de la nage).
-  const speedGoal = walkerSpeedGoal(def, phase, burst);
+  // Approche d'un poisson de passage (#656) : créneau de marche tiré pour cela et poisson bas
+  // à portée ; sinon (et pour toute autre espèce), marche d'avant, au bit près.
+  const cleaning = walker.cleaning;
+  const visited =
+    cleaning !== undefined &&
+    phase.mode === 'marche' &&
+    others.length > 0 &&
+    walkerCleansAt(cleaning, seed, fish.id, phase.slot)
+      ? cleaningTarget(fish, others, cleaning)
+      : null;
+  let reached = false;
+  let heading = 0;
+  if (visited !== null) {
+    const dx = visited.x - fish.x;
+    const dz = visited.z - fish.z;
+    reached = dx * dx + dz * dz <= cleaning!.standoff * cleaning!.standoff;
+    heading = Math.atan2(dz, dx);
+  }
+
+  // Vitesse : accélération vive, ralentissement lent (à-coups de la nage). Arrivée sous le
+  // poisson approché : elle s'arrête presque (vitesse minimale).
+  const speedGoal = reached ? def.minSpeed : walkerSpeedGoal(def, phase, burst);
   const rate = speedGoal > fish.speed ? SPEED_ATTACK : SPEED_RELEASE;
   fish.speed = clamp(
     fish.speed + (speedGoal - fish.speed) * Math.min(1, rate * dt),
@@ -322,6 +404,12 @@ export function stepWalker(
     const side = left > right ? 1 : left < right ? -1 : fish.turn >= 0 ? 1 : -1;
     yaw += side * def.avoidTurnRate * dt;
     turn = side * def.wanderTurnRate;
+  } else if (visited !== null && !reached) {
+    // Virage vers le poisson approché, borné comme l'évitement ; l'errance reste tirée (un
+    // tirage par pas) mais n'est pas appliquée.
+    const maxTurn = def.avoidTurnRate * dt;
+    yaw += clamp(wrapAngle(heading - yaw), -maxTurn, maxTurn);
+    turn = 0;
   } else {
     yaw += turn * dt;
   }

@@ -222,6 +222,28 @@ export interface BottomWalkerParams {
    * ADR 0065) ; absent : les obstacles sont ignorés en marche.
    */
   readonly avoidsObstacles?: boolean;
+  /**
+   * Approche des poissons de passage (crevette nettoyeuse, #656, ADR 0148) ; absent : jamais.
+   * Pendant une part des créneaux de marche, l'animal se dirige, sans quitter le fond, vers le
+   * poisson le plus proche qui passe bas au-dessus de lui (`sim/axolotl.ts`).
+   */
+  readonly cleaning?: CleaningParams;
+}
+
+/**
+ * Approche « de nettoyage » d'un marcheur du fond (#656). Toutes les valeurs sont des
+ * **approximations de jeu** : la crevette nettoyeuse réelle attend surtout à sa station que
+ * les poissons viennent à elle ; le nettoyage lui-même (parasites, santé) n'est pas simulé.
+ */
+export interface CleaningParams {
+  /** Part des créneaux de marche consacrés à l'approche, dans ]0, 1]. */
+  readonly share: number;
+  /** Distance horizontale maximale du poisson visé, en mètres (> 0). */
+  readonly radius: number;
+  /** Distance horizontale à laquelle l'animal s'arrête sous le poisson, en mètres, dans ]0, radius[. */
+  readonly standoff: number;
+  /** Hauteur maximale du poisson au-dessus de l'animal, en mètres (> 0). */
+  readonly maxHeight: number;
 }
 
 /**
@@ -1809,6 +1831,8 @@ export const CREVETTE: SpeciesDefinition = {
     burstPeriod: 1.8,
     climbSpeed: 0.04,
     avoidsObstacles: true,
+    // Approche des poissons qui passent bas (#656) : approximations de jeu.
+    cleaning: { share: 0.5, radius: 0.3, standoff: 0.05, maxHeight: 0.2 },
   },
 };
 
@@ -2394,11 +2418,31 @@ function validateWalker(walker: BottomWalkerParams, def: SpeciesDefinition): str
   } else if (!(weights.reduce((a, b) => a + b, 0) > 0)) {
     problems.push('walker.weights : la somme des poids doit être strictement positive');
   }
+  if (walker.cleaning !== undefined) {
+    problems.push(...validateCleaning(walker.cleaning));
+  }
   if (def.schooling !== null) {
     problems.push('une espèce qui marche sur le fond est solitaire (schooling: null)');
   }
   if (def.depth !== undefined) {
     problems.push('walker et depth sont exclusifs');
+  }
+  return problems;
+}
+
+function validateCleaning(cleaning: CleaningParams): string[] {
+  const problems: string[] = [];
+  for (const key of ['share', 'radius', 'standoff', 'maxHeight'] as const) {
+    const value = cleaning[key];
+    if (!(value > 0) || !Number.isFinite(value)) {
+      problems.push(`walker.cleaning.${key} doit être un réel strictement positif (reçu : ${value})`);
+    }
+  }
+  if (cleaning.share > 1) {
+    problems.push('walker.cleaning.share doit être dans ]0, 1]');
+  }
+  if (!(cleaning.standoff < cleaning.radius)) {
+    problems.push('walker.cleaning.standoff doit être inférieur à radius');
   }
   return problems;
 }
