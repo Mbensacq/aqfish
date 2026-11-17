@@ -8525,10 +8525,10 @@
           "note": "Verdict OK, 0 bug, 5 angles identiques, crevettes lisibles au récif ; captures partielles (146/156), latest/ écrasé sans purge (rm refusé), e2e limité à recif-qa"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-17T05:54:14.375Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-17T07:13:50.861Z",
+          "note": "PR #668 fusionnée → v1.22.3 (release CI OK, CI main d88ebc9 verte) ; dette #669 (cible sur positions mixtes, pieds de page d'attribution retirés, shard e2e 2/7 à 40/45 min)"
         }
       },
       "metriques": {}
