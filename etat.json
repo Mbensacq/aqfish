@@ -8615,10 +8615,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-17T12:53:17.894Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-17T12:54:53.721Z",
+          "note": "Issue #679 : rétro sprint 34, plan sprint 35 (#674-#678), PR doc #680 ; Dev : bug #660 (S)"
         }
       },
       "metriques": {}
