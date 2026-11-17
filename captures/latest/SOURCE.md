@@ -1,1 +1,1 @@
-Branche cycle/c234-crevette-nettoyeuse, PR #668, commit f6275b4, graine par défaut, série partielle (timeout 500 s : 146 images sur 156).
+Cycle 235 — branche cycle/c235-garde-ponte-clown, PR #671, commit 90ac0b4, série partielle : 12 captures du récif (graine par défaut). Autres environnements non regénérés (aucun œuf, code inchangé).
