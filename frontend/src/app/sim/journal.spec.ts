@@ -2,11 +2,19 @@ import type { Egg } from './eggs';
 import {
   JOURNAL_CAPACITY,
   JOURNAL_ALERT_REPEAT_SECONDS,
+  JOURNAL_EMPTY_TEXT,
+  JOURNAL_FILTERS,
+  JOURNAL_KINDS,
+  JOURNAL_KIND_GROUPS,
   JOURNAL_VERSION,
   addJournalEntry,
+  addPruneEntry,
+  careSessionEntry,
   carryJournalWatches,
   copySavedJournal,
   createJournal,
+  filterJournalLines,
+  freshWaterEntry,
   journalDay,
   journalLines,
   journalText,
@@ -20,6 +28,8 @@ import {
   waterChangeEntry,
   type JournalAlert,
   type JournalEntry,
+  type JournalFilter,
+  type JournalLine,
   type JournalSubject,
   type JournalWatch,
 } from './journal';
@@ -438,8 +448,8 @@ describe('journal du bac (#581)', () => {
       addJournalEntry(journal, waterChangeEntry(10));
       addJournalEntry(journal, { time: 1300, kind: 'ponte', detail: 'corydora', count: 1 });
       expect(journalLines(journal)).toEqual([
-        { kind: 'ponte', day: 2, text: 'Ponte : 1 œuf (Corydora)' },
-        { kind: 'changementEau', day: 1, text: 'Changement d’eau' },
+        { kind: 'ponte', group: 'reproduction', day: 2, text: 'Ponte : 1 œuf (Corydora)' },
+        { kind: 'changementEau', group: 'entretien', day: 1, text: 'Changement d’eau' },
       ]);
     });
 
@@ -528,5 +538,194 @@ describe('journal du bac (#581)', () => {
       ).toHaveLength(JOURNAL_CAPACITY);
       expect(problems).toEqual([]);
     });
+  });
+});
+
+describe('journal : reproduction et entretien (#655)', () => {
+  /** Une entrée de chaque sorte de reproduction et d'entretien, temps croissants. */
+  const careAndBreeding = (): JournalEntry[] => [
+    { time: 100, kind: 'ponte', detail: 'corydora', count: 4 },
+    { time: 1300, kind: 'eclosion', detail: 'corydora', count: 3 },
+    { time: 2500, kind: 'naissance', detail: 'guppy', count: 2 },
+    careSessionEntry(3700),
+    { time: 4900, kind: 'taille', count: 2 },
+    freshWaterEntry(6100),
+    waterChangeEntry(7300),
+  ];
+
+  it('chaque sorte produit une ligne datée, du plus récent au plus ancien', () => {
+    const journal = createJournal();
+    // Ajoutées dans le désordre : l'ordre chronologique est rétabli.
+    for (const entry of careAndBreeding().reverse()) {
+      expect(addJournalEntry(journal, entry)).toBe(true);
+    }
+    expect(journalLines(journal)).toEqual([
+      { kind: 'changementEau', group: 'entretien', day: 7, text: 'Changement d’eau' },
+      { kind: 'eauNeuve', group: 'entretien', day: 6, text: 'Eau neuve versée' },
+      { kind: 'taille', group: 'entretien', day: 5, text: 'Taille des plantes (2 coupes)' },
+      { kind: 'seance', group: 'entretien', day: 4, text: 'Séance d’entretien terminée' },
+      { kind: 'naissance', group: 'reproduction', day: 3, text: 'Naissance : 2 alevins (Guppy)' },
+      {
+        kind: 'eclosion',
+        group: 'reproduction',
+        day: 2,
+        text: 'Éclosion : 3 alevins (Corydora)',
+      },
+      { kind: 'ponte', group: 'reproduction', day: 1, text: 'Ponte : 4 œufs (Corydora)' },
+    ]);
+  });
+
+  it('chaque sorte a une famille, et chaque famille un bouton de filtre', () => {
+    for (const kind of JOURNAL_KINDS) {
+      expect(JOURNAL_FILTERS).toContain(JOURNAL_KIND_GROUPS[kind]);
+    }
+    expect(JOURNAL_FILTERS[0]).toBe('tout');
+  });
+
+  it('journal vide : aucune ligne, texte « rien à signaler », filtre sans erreur', () => {
+    const lines = journalLines(createJournal());
+    expect(lines).toEqual([]);
+    for (const filter of JOURNAL_FILTERS) {
+      expect(filterJournalLines(lines, filter)).toEqual([]);
+    }
+    expect(JOURNAL_EMPTY_TEXT).toBe('Rien à signaler.');
+  });
+
+  it('naissance : alevins d’une espèce vivipare ; éclosion : espèce qui pond', () => {
+    const entities = fishes();
+    const watch = watchJournal(subject(entities));
+    const young = (id: number, species: Fish['species']): Fish => ({
+      ...entities[0]!,
+      id,
+      species,
+      growth: 0,
+    });
+    expect(
+      observeJournal(
+        watch,
+        subject([...entities, young(900, 'guppy'), young(901, 'guppy'), young(902, 'corydora')], 9),
+      ),
+    ).toEqual([
+      { time: 9, kind: 'naissance', detail: 'guppy', count: 2 },
+      { time: 9, kind: 'eclosion', detail: 'corydora', count: 1 },
+    ]);
+  });
+
+  describe('filtre par type', () => {
+    const journal = createJournal();
+    for (const entry of careAndBreeding()) {
+      addJournalEntry(journal, entry);
+    }
+    addJournalEntry(journal, treatmentEntry(8000, 'sel'));
+    const lines = journalLines(journal);
+    const kinds = (shown: readonly JournalLine[]): string[] => shown.map((line) => line.kind);
+
+    it('tout : rien n’est masqué', () => {
+      expect(filterJournalLines(lines, 'tout')).toEqual(lines);
+    });
+
+    it('reproduction et entretien : les autres familles sont masquées', () => {
+      expect(kinds(filterJournalLines(lines, 'reproduction'))).toEqual([
+        'naissance',
+        'eclosion',
+        'ponte',
+      ]);
+      expect(kinds(filterJournalLines(lines, 'entretien'))).toEqual([
+        'changementEau',
+        'eauNeuve',
+        'taille',
+        'seance',
+      ]);
+      expect(kinds(filterJournalLines(lines, 'sante'))).toEqual(['traitement']);
+    });
+
+    it('aucun événement du type : liste vide', () => {
+      expect(filterJournalLines(lines, 'alertes')).toEqual([]);
+      const breeding = journalLines(createJournal());
+      expect(filterJournalLines(breeding, 'reproduction')).toEqual([]);
+    });
+
+    it('filtre inconnu : rien n’est masqué', () => {
+      expect(filterJournalLines(lines, 'inconnu' as JournalFilter)).toEqual(lines);
+    });
+  });
+
+  describe('taille : une ligne par jour qui compte les coupes', () => {
+    it('coupes du même jour regroupées, nouvelle ligne le lendemain', () => {
+      const journal = createJournal();
+      expect(addPruneEntry(journal, 10)).toBe(true);
+      expect(addPruneEntry(journal, 20)).toBe(true);
+      expect(addPruneEntry(journal, 1199)).toBe(true);
+      expect(journal.entries).toEqual([{ time: 10, kind: 'taille', count: 3 }]);
+      expect(journal.version).toBe(3);
+      addPruneEntry(journal, 1200);
+      expect(journal.entries).toEqual([
+        { time: 10, kind: 'taille', count: 3 },
+        { time: 1200, kind: 'taille', count: 1 },
+      ]);
+    });
+
+    it('un autre événement entre deux coupes : nouvelle ligne', () => {
+      const journal = createJournal();
+      addPruneEntry(journal, 10);
+      addJournalEntry(journal, waterChangeEntry(20));
+      addPruneEntry(journal, 30);
+      expect(journal.entries.map((entry) => entry.kind)).toEqual([
+        'taille',
+        'changementEau',
+        'taille',
+      ]);
+    });
+
+    it('temps invalide ou revenu en arrière : pas de regroupement', () => {
+      const journal = createJournal();
+      addPruneEntry(journal, 500);
+      expect(addPruneEntry(journal, Number.NaN)).toBe(false);
+      expect(addPruneEntry(journal, -1)).toBe(false);
+      expect(addPruneEntry(journal, 400)).toBe(true);
+      expect(journal.entries).toEqual([
+        { time: 400, kind: 'taille', count: 1 },
+        { time: 500, kind: 'taille', count: 1 },
+      ]);
+    });
+
+    it('compte plafonné : la ligne reste valide', () => {
+      const journal = createJournal();
+      addJournalEntry(journal, { time: 0, kind: 'taille', count: 10_000 });
+      addPruneEntry(journal, 1);
+      expect(journal.entries).toEqual([{ time: 0, kind: 'taille', count: 10_000 }]);
+      const problems: string[] = [];
+      expect(readJournal(savedJournal(journal), problems)).not.toBeNull();
+    });
+  });
+
+  it(`journal borné : au plus ${JOURNAL_CAPACITY} lignes, les plus anciennes partent`, () => {
+    const journal = createJournal();
+    for (let day = 0; day < JOURNAL_CAPACITY + 10; day++) {
+      addPruneEntry(journal, day * 1200);
+      addJournalEntry(journal, careSessionEntry(day * 1200 + 1));
+    }
+    expect(journal.entries).toHaveLength(JOURNAL_CAPACITY);
+    expect(journalLines(journal)).toHaveLength(JOURNAL_CAPACITY);
+    // Les plus récentes restent : la dernière séance, la plus ancienne gardée est récente.
+    const last = (JOURNAL_CAPACITY + 9) * 1200 + 1;
+    expect(journal.entries[JOURNAL_CAPACITY - 1]).toEqual(careSessionEntry(last));
+    expect(journal.entries[0]!.time).toBe((JOURNAL_CAPACITY / 2 + 10) * 1200);
+  });
+
+  it('sauvegarde : les nouvelles sortes sont relues ; précision ou effectif en trop refusés', () => {
+    const problems: string[] = [];
+    const entries = careAndBreeding();
+    expect(readJournal({ version: JOURNAL_VERSION, entries }, problems)?.entries).toEqual(entries);
+    expect(problems).toEqual([]);
+    for (const bad of [
+      { time: 0, kind: 'seance', count: 2 },
+      { time: 0, kind: 'eauNeuve', detail: 'guppy' },
+      { time: 0, kind: 'taille', detail: 'guppy' },
+      { time: 0, kind: 'naissance', detail: 'inconnue', count: 1 },
+      { time: 0, kind: 'naissance', count: 1 },
+    ]) {
+      expect(addJournalEntry(createJournal(), bad as JournalEntry)).toBe(false);
+    }
   });
 });

@@ -697,8 +697,61 @@ describe('AquariumHost', () => {
       world.entities[0] = { ...world.entities[0], ich: 1 };
       (host() as unknown as { exposeWater: () => void }).exposeWater();
       expect(host().journal()).toEqual([
-        { kind: 'maladie', day: 1, text: 'Maladie déclarée : points blancs (1 animal)' },
+        {
+          kind: 'maladie',
+          group: 'sante',
+          day: 1,
+          text: 'Maladie déclarée : points blancs (1 animal)',
+        },
       ]);
+    });
+
+    it('reproduction et entretien (#655) : taille regroupée, séance faite notée, sautée non', async () => {
+      await create('?seed=42&vitesse=0');
+      const kinds = () =>
+        host()
+          .journal()
+          .map((line) => line.kind);
+      // Séance entièrement sautée : rien au journal.
+      host().openCareSession();
+      for (let i = 0; i < 5; i++) {
+        host().skipCareSessionStep();
+      }
+      expect(host().careSession()?.step).toBe('bilan');
+      host().closeCareSession();
+      expect(kinds()).toEqual([]);
+      // Taille hors séance puis dans une séance : une ligne qui compte les coupes du jour.
+      const decor = host().world!.decor;
+      const tall = decor
+        .map((d, i) => (d.kind === 'plant' && d.form === 'tall' ? i : -1))
+        .filter((i) => i >= 0);
+      const world = host().world! as { water: object };
+      world.water = {
+        ...world.water,
+        plantGrowth: Object.fromEntries(tall.map((i) => [String(decor[i].seed), 9.5])),
+      };
+      expect(host().prunePlant(tall[0]!)).toBe(true);
+      expect(host().journal()).toEqual([
+        {
+          kind: 'taille',
+          group: 'entretien',
+          day: 1,
+          text: 'Taille des plantes (1 coupe)',
+        },
+      ]);
+      host().openCareSession();
+      for (let i = 0; i < 4; i++) {
+        host().skipCareSessionStep();
+      }
+      expect(host().cutCarePlant(tall[1] ?? tall[0]!)).toBe(true);
+      host().completeCareSessionStep();
+      expect(host().careSession()?.step).toBe('bilan');
+      expect(kinds()).toEqual(['seance', 'taille']);
+      expect(host().journal()[1]!.text).toBe('Taille des plantes (2 coupes)');
+      // Le bilan relu ou la séance refermée n'écrivent pas une seconde séance.
+      host().completeCareSessionStep();
+      host().closeCareSession();
+      expect(kinds()).toEqual(['seance', 'taille']);
     });
 
     it('en capture : aucun journal', async () => {

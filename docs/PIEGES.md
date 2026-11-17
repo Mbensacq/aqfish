@@ -75,6 +75,12 @@ haut de sa section.
   secondes, aucun `npm ci`) ; tests unitaires et build y tournent en parallèle. Les e2e et
   captures partagent le port 4300 : arrêter le `ng serve` de l'autre arbre avant d'en lancer
   (`pkill -f 'ng serve'`), sinon Playwright teste l'autre code. (2026-11-13)
+- **Détail déplié du bandeau sur téléphone : le rectangle central de 60 % est intenable**
+  (cycle 233, #655) : à 390 × 844, le bandeau replié occupe déjà 678 à 750 px et le rectangle
+  central de `tableau-de-bord-sante` descend à 675 px ; tout détail déplié (bilan, journal) le
+  touche. Le bac rendu s'arrête vers 565 px : vérifier qu'un détail reste dans le bas de la zone
+  de rendu (≥ 70 %) et le borner en hauteur sur téléphone (liste du journal défilante, six
+  lignes), sinon un journal plein (200 entrées, 40 vh) monte sur le bac. (2026-11-17)
 - **Bac rangé : son monde est un nouvel objet à chaque rattrapage** (cycle 207, #592) :
   `stepRoom` (et un transfert) recopie le monde de chaque bac rangé ; un état de l'hôte gardé
   dans une `WeakMap<World, …>` (observation du journal, cache) est perdu au retour sur le bac.
