@@ -199,6 +199,13 @@ sur `docs/SOINS.md` § 11 jusqu'à vérification.
   tropicaux : incompatibles (températures ; axolotl « sans poissons »).
 - **Dans le jeu** : proposé au bassin, sans y être peuplé d'office ; trois robes (commun,
   sarasa, jaune) tirées de la graine. Plage préférée 15–22 °C : **approximation de jeu**.
+- **Reproduction** (#675, FishKeeper [66]) : poursuite de frai dès 15 °C ; œufs déposés parmi la
+  végétation aquatique (ou sur des « mops » de frai), éclosion en 48 à 72 h selon la
+  température ; en grand bassin, d'autres poissons mangent les œufs. **Dans le jeu**
+  (`sim/eggs.ts`, ADR 0150) : un groupe sain et nourri, dans une eau bonne entre 15 et 22 °C
+  (haut de plage : approximation), fraie le long des tiges des nénuphars ou au pied des
+  plantes ; les adultes mangent les œufs à portée ; éclosion sans alevin (hors périmètre).
+  Rythme, nombre d'œufs et incubation : **approximations de jeu**.
 - **Statut légal en France** : forme domestique, statut **non vérifié** ; ne jamais relâcher
   (OATA).
 
