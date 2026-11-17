@@ -114,11 +114,25 @@ export function clutchGuardInto(
   if (eggs === null || eggs === undefined || eggs.length === 0) {
     return out;
   }
-  const first = eggs.find((egg) => laysNearAnemone(egg.species));
+  // Boucles simples, sans fermeture : appelée à chaque pas tant qu'une ponte est posée (#672).
+  let first: Egg | undefined;
+  for (const egg of eggs) {
+    if (laysNearAnemone(egg.species)) {
+      first = egg;
+      break;
+    }
+  }
   if (first === undefined) {
     return out;
   }
-  const index = fishes.findIndex((fish) => fish.species === first.species && canGuard(fish));
+  let index = -1;
+  for (let i = 0; i < fishes.length; i++) {
+    const fish = fishes[i];
+    if (fish.species === first.species && canGuard(fish)) {
+      index = i;
+      break;
+    }
+  }
   if (index < 0) {
     return out;
   }

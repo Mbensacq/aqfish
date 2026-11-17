@@ -4,10 +4,13 @@ import {
   cleaningTarget,
   createWalker,
   groundHeight,
+  hasCleaningWalker,
+  neighborsInto,
   stepWalker,
   walkerCleansAt,
   walkerPhaseAt,
   type WalkerGround,
+  type WalkerNeighbor,
 } from './axolotl';
 import { SIM_DT } from './constants';
 import { ENVIRONMENTS, environmentWater, livesIn, REEF } from './environment';
@@ -281,4 +284,76 @@ describe('crevette nettoyeuse (#656) : récif simulé', () => {
     expect(a.entities).toEqual(b.entities);
     expect(shrimps(a).map((e) => e.x)).not.toEqual(shrimps(c).map((e) => e.x));
   });
+});
+
+describe('crevette nettoyeuse (#669) : positions du début du pas', () => {
+  it('instantané : longueur suivie, objets réutilisés, aucune référence aux poissons', () => {
+    const a = fishAt(0, 'gobie', 0.1, 0.2, 0.3);
+    const b = fishAt(1, 'chromis', -0.1, 0.25, 0);
+    const out: Mutable<WalkerNeighbor>[] = [];
+    neighborsInto([a, b], out);
+    expect(out).toEqual([
+      { id: 0, species: 'gobie', x: 0.1, y: 0.2, z: 0.3 },
+      { id: 1, species: 'chromis', x: -0.1, y: 0.25, z: 0 },
+    ]);
+    const kept = out[0];
+    expect(kept).not.toBe(a);
+    (a as Mutable<Fish>).x = 0.5;
+    expect(out[0].x).toBe(0.1);
+    neighborsInto([b], out);
+    expect(out).toHaveLength(1);
+    expect(out[0]).toBe(kept);
+    expect(out[0]).toEqual({ id: 1, species: 'chromis', x: -0.1, y: 0.25, z: 0 });
+    expect(neighborsInto([], out)).toEqual([]);
+  });
+
+  it('présence d’une espèce qui approche les poissons', () => {
+    expect(hasCleaningWalker([])).toBe(false);
+    expect(hasCleaningWalker([{ species: 'gobie' }, { species: 'axolotl' }])).toBe(false);
+    expect(hasCleaningWalker([{ species: 'gobie' }, { species: 'crevette' }])).toBe(true);
+  });
+
+  it.each([42, 7])(
+    'graine %i : la crevette vise le poisson à sa position du début du pas, même s’il a déjà nagé',
+    (seed) => {
+      const world = createWorld(
+        seed,
+        [
+          { species: 'gobie', count: 1 },
+          { species: 'crevette', count: 1 },
+        ],
+        [],
+        [],
+        'recif',
+      ) as MutableWorld;
+      (world as { obstacles: unknown }).obstacles = [];
+      const fishes = world.entities as Mutable<Fish>[];
+      const goby = fishes.findIndex((e) => e.species === 'gobie');
+      const index = fishes.findIndex((e) => e.species === 'crevette');
+      // Le gobie est avant la crevette dans le tableau : il a déjà nagé quand elle avance.
+      expect(goby).toBeLessThan(index);
+      const shrimp = fishes[index];
+      shrimp.x = (BOUNDS.hard.minX + BOUNDS.hard.maxX) / 2;
+      shrimp.z = (BOUNDS.hard.minZ + BOUNDS.hard.maxZ) / 2;
+      shrimp.y = groundHeight(shrimp.x, shrimp.z, GROUND) + WALKER.clearance;
+      shrimp.yaw = Math.atan2(-0.06, -0.1);
+      fishes[goby].x = shrimp.x + 0.1;
+      fishes[goby].y = shrimp.y + 0.05;
+      fishes[goby].z = shrimp.z + 0.06;
+      (world as { tick: number }).tick = Math.round(cleaningTime(seed, shrimp.id) / SIM_DT) - 1;
+      let approached = 0;
+      for (let i = 0; i < 60; i++) {
+        const start = structuredClone(fishes);
+        const expected = start[index];
+        const time = (world.tick + 1) * SIM_DT;
+        if (cleaningTarget(expected, start, CLEANING) !== null) {
+          approached++;
+        }
+        stepWalker(expected, SIM_DT, seed, time, BOUNDS, GROUND, [], start);
+        advanceInPlace(world, 1);
+        expect([shrimp.x, shrimp.z, shrimp.yaw]).toEqual([expected.x, expected.z, expected.yaw]);
+      }
+      expect(approached).toBeGreaterThan(0);
+    },
+  );
 });
