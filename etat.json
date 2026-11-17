@@ -8697,6 +8697,12 @@
           "debut": "2026-11-17T18:59:06.753Z",
           "fin": "2026-11-17T20:10:17.933Z",
           "note": "PR #684 : frai du poisson rouge au bassin (#675), 13 tests unitaires, capture c239/dev, CI 11/11 verte ; e2e locaux laissés à la CI ; pied d'attribution réinjecté sur la PR par l'environnement"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-17T20:10:54.217Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
