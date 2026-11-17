@@ -8676,6 +8676,24 @@
         }
       },
       "metriques": {}
+    },
+    "239": {
+      "numero": 239,
+      "date": "2026-11-17",
+      "debut": "2026-11-17T18:58:10.112Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-17T18:58:10.112Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
