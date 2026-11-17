@@ -81,9 +81,14 @@
   font-size: 12px;
 }
 
+// Téléphone : au-dessus du rappel d'entretien, posé lui-même au-dessus du bandeau santé et
+// alertes (`dashboard-status.scss`) : 94 px (bas du bandeau) + sa hauteur + 4 px + le rappel
+// (26 px) + 4 px. Bandeau de deux lignes (36 px) : 164 px, la place d'avant ; de trois lignes
+// (alertes affichées, 72 px) : la languette monte d'autant au lieu de recouvrir le rappel
+// (#660). Hauteur publiée par le bandeau (`--aqfish-status-height`) ; sans elle, 164 px.
 @media (max-width: 480px) {
   :host {
-    bottom: 164px;
+    bottom: max(164px, calc(128px + var(--aqfish-status-height, 0px)));
     left: layout.$edge-phone;
   }
 
