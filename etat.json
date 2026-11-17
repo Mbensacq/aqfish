@@ -8693,10 +8693,10 @@
           "note": "Issue #675 : Frai du poisson rouge au bassin d'eau froide (S)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-17T18:59:06.753Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-17T20:10:17.933Z",
+          "note": "PR #684 : frai du poisson rouge au bassin (#675), 13 tests unitaires, capture c239/dev, CI 11/11 verte ; e2e locaux laissés à la CI ; pied d'attribution réinjecté sur la PR par l'environnement"
         }
       },
       "metriques": {}
