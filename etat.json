@@ -8718,7 +8718,7 @@
       "date": "2026-11-17",
       "debut": "2026-11-17T21:45:25.121Z",
       "type": "fonctionnalite",
-      "issue": null,
+      "issue": 685,
       "pr": null,
       "version": null,
       "phases": {
