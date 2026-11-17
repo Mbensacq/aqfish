@@ -67,6 +67,26 @@ async function frameBoxes(page: Page) {
 }
 
 /**
+ * Rappel d'entretien et bilan du bac, posés au-dessus du bandeau sur téléphone : la languette
+ * du parcours « Mon premier aquarium » ne les recouvre pas, que le bandeau ait deux ou trois
+ * lignes (#660).
+ */
+async function checkPathClear(page: Page) {
+  const toggle = await page.locator('[data-first-tank-path] .path__toggle').boundingBox();
+  expect(toggle, 'languette du parcours affichée').not.toBeNull();
+  for (const selector of ['.status__maintenance-item', '.status__review-item']) {
+    const chip = await status(page).locator(selector).boundingBox();
+    expect(chip, selector).not.toBeNull();
+    const overlap =
+      toggle!.x < chip!.x + chip!.width &&
+      chip!.x < toggle!.x + toggle!.width &&
+      toggle!.y < chip!.y + chip!.height &&
+      chip!.y < toggle!.y + toggle!.height;
+    expect(overlap, `languette du parcours sur ${selector}`).toBe(false);
+  }
+}
+
+/**
  * Santé, simulation et trois alertes à une largeur : texte et icônes, centre du bac dégagé,
  * rien hors de la fenêtre ni sur la barre des vues.
  */
@@ -90,6 +110,9 @@ async function checkViewport(page: Page, viewport: { width: number; height: numb
   await expect(status(page).locator('[data-health-value="health"]')).toHaveText('100 %');
   await expect(status(page).locator('[data-health-value="sick"]')).toHaveText('0');
   await expect(status(page).locator('[data-alert-none]')).toContainText('Aucune alerte');
+  if (viewport.width < 640) {
+    await checkPathClear(page);
+  }
 
   await importAlerts(page);
   await expect(status(page).locator('[data-health-value="health"]')).toHaveText('20 %');
@@ -124,6 +147,9 @@ async function checkViewport(page: Page, viewport: { width: number; height: numb
       center.top < b.bottom,
   );
   expect(intruders, 'éléments du tableau de bord dans le rectangle central').toEqual([]);
+  if (viewport.width < 640) {
+    await checkPathClear(page);
+  }
   // Rien ne déborde de la fenêtre, ni ne recouvre la barre des vues.
   const presets = await page.locator('app-view-presets-bar .view-presets-bar').boundingBox();
   for (const box of boxes) {

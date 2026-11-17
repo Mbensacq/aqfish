@@ -96,6 +96,14 @@ haut de sa section.
   dans une `WeakMap<World, …>` (observation du journal, cache) est perdu au retour sur le bac.
   Le reporter sur le nouvel objet au moment de la copie (`carryJournalWatches` dans
   `advanceBackgroundTanks` et `transferAnimal`). (2026-11-13)
+- **Téléphone : position fixe d'un élément posé au-dessus du bandeau santé et alertes**
+  (cycle 237, #660) : le bandeau fait deux lignes (36 px) sans alerte et trois (72 px) avec ;
+  le rappel d'entretien et le bilan, posés juste au-dessus, montent d'autant, et la languette
+  du parcours (bas fixe à 164 px) recouvrait le rappel. Caler un tel élément sur la hauteur
+  publiée par le bandeau (`--aqfish-status-height`, `dashboard-status.ts`) avec un plancher
+  (`max(164px, calc(128px + var(--aqfish-status-height, 0px)))`) garde la place d'avant à
+  deux lignes (captures identiques à l'octet) ; vérifié par `checkPathClear` dans
+  `e2e/tableau-de-bord-sante.spec.ts`. (2026-11-17)
 - **Détail du bandeau santé et alertes déplié : il monte sur la languette du parcours**
   (cycle 207, #592) : la languette « Mon premier aquarium » a un bas fixe (124 px) et le bandeau
   grandit vers le haut (bilan, journal jusqu'à 40 vh) ; aucune position fixe ne suffit. La
