@@ -8471,10 +8471,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-17T01:24:20.766Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-17T01:24:42.544Z",
+          "note": "Issue #655 : journal du bac, reproduction et entretien (S)"
         }
       },
       "metriques": {}
