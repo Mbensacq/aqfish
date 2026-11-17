@@ -8432,7 +8432,7 @@
       "type": "fonctionnalite",
       "issue": 654,
       "pr": 665,
-      "version": null,
+      "version": "v1.22.1",
       "phases": {
         "planif": {
           "statut": "termine",
