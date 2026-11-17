@@ -8661,6 +8661,12 @@
           "debut": "2026-11-17T15:59:22.236Z",
           "fin": "2026-11-17T17:16:12.126Z",
           "note": "PR #682 : alevins du platy et du molly (#674), 19 tests unitaires + e2e, capture c238/dev, CI 11/11 verte ; e2e local complet trop lent ; pied d'attribution réinjecté sur la PR"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-17T17:16:42.663Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
