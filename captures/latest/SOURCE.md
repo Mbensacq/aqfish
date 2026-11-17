@@ -1,1 +1,6 @@
-Cycle 235 — branche cycle/c235-garde-ponte-clown, PR #671, commit 90ac0b4, série partielle : 12 captures du récif (graine par défaut). Autres environnements non regénérés (aucun œuf, code inchangé).
+Branche cycle/c236-dette-garde-crevette
+PR #673
+Commit 3217a57
+Graine par défaut
+Temps: 2026-11-17
+Note: série partielle (154/157, timeout 9 min), récif complet.
