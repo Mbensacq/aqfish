@@ -8,6 +8,8 @@ vérifiées en revue.
 Objectif : qu'un développeur qui découvre un fichier le comprenne seul, le modifie sans
 crainte, et que les tests lui disent immédiatement s'il a cassé quelque chose.
 
+État de départ et mesures : `docs/audits/2026-11-17-qualite-du-code.md`.
+
 ## 1. Principes
 
 1. **Lisible d'abord.** Un nom juste vaut mieux qu'un commentaire ; un commentaire juste vaut
