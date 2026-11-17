@@ -94,13 +94,15 @@ describe('AquariumView (pipeline pixel art)', () => {
     expect(renderer.calls.filter((c) => c.startsWith('render'))).toEqual([]);
   });
 
-  it('rend la scène dans la cible basse résolution, puis la passe palette à l’écran', () => {
+  it('rend la scène dans la cible basse résolution, la ramène à la palette à la même taille, puis l’agrandit à l’écran (ADR 0151)', () => {
     view.resize(1280, 721);
     renderer.calls.length = 0;
     expect(view.renderFrame()).toBe(true);
     expect(renderer.calls).toEqual([
       'cible 427x241',
       'render PerspectiveCamera',
+      'cible 427x241',
+      'render OrthographicCamera',
       'cible écran',
       'render OrthographicCamera',
     ]);
@@ -126,13 +128,15 @@ describe('AquariumView (pipeline pixel art)', () => {
     expect(view.camera.aspect).toBeCloseTo(427 / 241, 10);
   });
 
-  it('la cible suit le redimensionnement', () => {
+  it('les cibles de la scène et de la palette suivent le redimensionnement', () => {
     view.resize(900, 600);
     view.renderFrame();
     view.resize(300, 30);
     view.renderFrame();
     expect(renderer.targetSizes.filter((t) => t !== null)).toEqual([
       [300, 200],
+      [300, 200],
+      [100, 10],
       [100, 10],
     ]);
   });
@@ -643,6 +647,8 @@ describe('AquariumView (filtre de rendu)', () => {
     expect(renderer.calls).toEqual([
       'cible 427x241',
       'render PerspectiveCamera',
+      'cible 427x241',
+      'render OrthographicCamera',
       'cible écran',
       'render OrthographicCamera',
     ]);
@@ -1577,7 +1583,7 @@ describe('AquariumView (photo, #479)', () => {
     expect(renderer.reads[0].target.texture.magFilter).toBe(NearestFilter);
   });
 
-  it('rétablit l’échelle de la passe : l’image suivante est rendue comme avant', () => {
+  it('l’image suivant une photo est rendue comme avant', () => {
     view.resize(600, 300);
     view.takePhoto();
     renderer.calls.length = 0;
@@ -1585,21 +1591,24 @@ describe('AquariumView (photo, #479)', () => {
     expect(renderer.calls).toEqual([
       'cible 200x100',
       'render PerspectiveCamera',
+      'cible 200x100',
+      'render OrthographicCamera',
       'cible écran',
       'render OrthographicCamera',
     ]);
   });
 
-  it('rétablit l’échelle et l’écran même si la relecture lève (#503)', () => {
-    /** Renderer dont la relecture échoue ; consigne `uPixelScale` à chaque passe palette. */
+  it('rétablit l’écran et l’échelle d’agrandissement même si la relecture lève (#503)', () => {
+    /** Renderer dont la relecture échoue ; consigne `uPixelScale` à chaque agrandissement. */
     class FailingRenderer extends ReadingRenderer {
       readonly scales: number[] = [];
       override render(scene: Scene, camera: Camera): void {
         super.render(scene, camera);
-        if (camera.type === 'OrthographicCamera') {
-          const quad = scene.children.find((child) => child instanceof Mesh) as Mesh | undefined;
-          const material = quad?.material as ShaderMaterial | undefined;
-          this.scales.push(material?.uniforms['uPixelScale'].value as number);
+        const quad = scene.children.find((child) => child instanceof Mesh) as Mesh | undefined;
+        const material = quad?.material as ShaderMaterial | undefined;
+        const scale = material?.uniforms?.['uPixelScale']?.value as number | undefined;
+        if (camera.type === 'OrthographicCamera' && scale !== undefined) {
+          this.scales.push(scale);
         }
       }
       override readRenderTargetPixels(): void {
@@ -1626,6 +1635,8 @@ describe('AquariumView (photo, #479)', () => {
     expect(failing.calls).toEqual([
       'cible 200x100',
       'render PerspectiveCamera',
+      'cible 200x100',
+      'render OrthographicCamera',
       'cible écran',
       'render OrthographicCamera',
     ]);
