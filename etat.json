@@ -8451,6 +8451,12 @@
           "debut": "2026-11-16T23:54:12.667Z",
           "fin": "2026-11-17T00:06:34.367Z",
           "note": "Verdict OK, 0 bug, capture bassin-poissons-rouges publiée (c232), e2e local non relancé, CI verte"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-17T00:07:08.826Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
