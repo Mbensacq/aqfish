@@ -8507,10 +8507,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-17T04:21:02.585Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-17T04:21:25.916Z",
+          "note": "Issue #656 : crevette nettoyeuse au récif (M)"
         }
       },
       "metriques": {}
