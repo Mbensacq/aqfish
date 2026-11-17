@@ -1815,3 +1815,12 @@ haut de sa section.
   sur la branche, et comparer à l'octet (`cmp`). Une issue peut aussi décrire comme nouvelle
   une espèce déjà livrée (crevette nettoyeuse, #422 puis #656) : chercher l'identifiant dans
   `sim/species.ts` avant de coder. (2026-11-17)
+- **Un nageur ne s'approche pas à moins de `wallMargin` + `AVOID_ZONE` d'un obstacle** (11,5 cm
+  pour le clown, cycle 235, #670) : un point visé collé à un rocher ou au pied d'un corail
+  (ponte, objet posé) est hors d'atteinte ; le poisson tourne au-dessus ou autour, jamais
+  dessus. `stepFish(…, closeAvoid)` réduit cette distance pour un poisson donné (filet de
+  sécurité intact), mais à n'activer que près du but : sur tout le trajet, le poisson se coince
+  contre un corail. Les œufs du récif sont aussi sous le bas des bornes de nage
+  (`water.minY + wallMargin`) : relever le point visé. `advanceInPlace(world, n)` compte des
+  **pas** (`SIM_DT` = 1/60 s), pas des secondes. Ne pas lancer Prettier sur `docs/` (hors de
+  son périmètre : il réaligne tous les tableaux). (2026-11-17)

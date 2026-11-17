@@ -199,6 +199,13 @@ const STEER_EPSILON = 1e-9;
  */
 const SCHOOL_SPEED_GAIN = 0.5;
 /**
+ * Évitement rapproché des obstacles (`closeAvoid`, garde de la ponte, issue #670) : marge et
+ * portée réduites, en mètres, pour qu'un poisson puisse tenir près d'une ponte collée à un
+ * rocher (approximations de jeu). Le filet de sécurité reste entier : aucun obstacle traversé.
+ */
+const CLOSE_AVOID_MARGIN = 0.015;
+const CLOSE_AVOID_ZONE = 0.03;
+/**
  * Espèce de fond : au-dessus de `preferredMaxY`, l'inclinaison visée glisse vers la descente
  * en proportion de l'écart, entièrement à partir de `DEPTH_PULL_ZONE` mètres (approximation
  * de jeu) ; de même vers la montée sous `preferredMinY` (espèce de mi-hauteur).
@@ -436,6 +443,10 @@ export function createFish(
  *
  * `hugWalls` (broutage, issue #427, `sim/behaviors.ts`) : avec un point visé, l'évitement des
  * parois est annulé (celui des obstacles reste) ; faux par défaut, nage d'avant au bit près.
+ *
+ * `closeAvoid` (garde de la ponte, issue #670, `sim/clutch-guard.ts`) : avec un point visé,
+ * les obstacles ne sont évités qu'à `CLOSE_AVOID_MARGIN` plus `CLOSE_AVOID_ZONE` de leur
+ * surface, au lieu de `wallMargin` plus `AVOID_ZONE` ; faux par défaut, nage d'avant au bit près.
  */
 export function stepFish(
   fish: Mutable<Fish>,
@@ -448,6 +459,7 @@ export function stepFish(
   food: Vec3 | null = null,
   rest = 0,
   hugWalls = false,
+  closeAvoid = false,
 ): void {
   const def = SPECIES[fish.species];
   const { hard } = bounds;
@@ -561,6 +573,7 @@ export function stepFish(
       wall.z += SCRATCH_SHAPE.z * w;
     }
   }
+  const close = closeAvoid && food !== null;
   const obstacle = obstacleAvoidance(
     fish.x,
     fish.y,
@@ -569,8 +582,8 @@ export function stepFish(
     probeY,
     probeZ,
     obstacles,
-    def.wallMargin,
-    AVOID_ZONE,
+    close ? CLOSE_AVOID_MARGIN : def.wallMargin,
+    close ? CLOSE_AVOID_ZONE : AVOID_ZONE,
     SCRATCH_OBSTACLE,
   );
   const rawX = wall.x + obstacle.x;

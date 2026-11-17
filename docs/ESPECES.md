@@ -238,6 +238,12 @@ sur `docs/SOINS.md` § 11 jusqu'à vérification.
   sable à son pied) ; ils éclosent en larves planctoniques qui quittent le bac. Rythme, nombre
   et incubation : **approximations de jeu** (une vraie ponte compte plusieurs centaines d'œufs
   et éclot en une semaine environ, non vérifié ici).
+- **Garde de la ponte** (#670, `sim/clutch-guard.ts`) : le mâle garde les œufs (FishBase,
+  ci-dessus). Dans le jeu, le sexe n'est pas modélisé : le premier clown adulte sain et pas trop
+  affamé reste à quelques centimètres de la ponte jusqu'à l'éclosion, en va-et-vient devant les
+  œufs (la ventilation) avec de courtes sorties vers l'anémone, et ne court pas aux granulés ;
+  affamé, il retourne manger et un autre clown le relaie. Rayon, rythme et seuil de faim :
+  **approximations de jeu** ; le retrait des œufs morts n'est pas simulé.
 
 ### Chirurgien bleu — *Paracanthurus hepatus* (Linnaeus, 1766)
 - **Origine** : Indo-Pacifique ; terrasses récifales externes battues par le courant, 2 à 40 m ;

@@ -307,11 +307,11 @@ const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
         'Vit très bien sans anémone ; les anémones hôtes sont déconseillées au débutant',
         source(`${ESPECES} (Saltcorner, FishLore : sources secondaires)`),
       ),
-      // Reproduction (#653) : le couple et la garde sont sourcés ; rythme, nombre d'œufs,
+      // Reproduction (#653, garde #670) : le couple et la garde sont sourcés ; rythme, nombre d'œufs,
       // incubation et plage de 24 à 28 °C (plage tolérée ci-dessus) sont choisis pour le jeu
       // (`sim/eggs.ts`, docs/ESPECES.md « Dans le jeu »).
       note(
-        'Reproduction : couple monogame, œufs gardés par le mâle ; dans le jeu, petite ponte orange près de l’anémone, dont les larves partent avec le plancton (approximation de jeu)',
+        'Reproduction : couple monogame, œufs gardés par le mâle ; dans le jeu, petite ponte orange près de l’anémone, qu’un clown garde jusqu’à l’éclosion, et dont les larves partent avec le plancton (approximation de jeu)',
         source(`${ESPECES} (FishBase ; rythme et nombre d’œufs : approximation de jeu)`),
       ),
     ],
