@@ -1,4 +1,5 @@
 import type { GaugeLevel } from '../../sim/water-dashboard';
+import type { JournalGroup } from '../../sim/journal';
 
 /** Côté des icônes de niveau, en pixels d'icône. */
 export const LEVEL_ICON_GRID = 5;
@@ -41,3 +42,30 @@ export const REVIEW_ICON_PIXELS: readonly (readonly [number, number])[] = [
   '.....',
   '#.###',
 ].flatMap((row, y) => [...row].flatMap((cell, x) => (cell === '#' ? [[x, y] as const] : [])));
+
+/**
+ * Icônes des familles du journal (#655), une forme par famille : croix de soin (santé), œuf
+ * (reproduction), raclette (entretien), point d'exclamation (alertes).
+ */
+const JOURNAL_ICON_MASKS: Readonly<Record<JournalGroup, readonly string[]>> = {
+  sante: ['..#..', '..#..', '#####', '..#..', '..#..'],
+  reproduction: ['..#..', '.###.', '#####', '#####', '.###.'],
+  entretien: ['#####', '..#..', '..#..', '..#..', '..#..'],
+  alertes: LEVEL_ICON_MASKS.orange,
+};
+
+/** Pixels pleins de l'icône de chaque famille du journal, `[x, y]`. */
+export const JOURNAL_ICON_PIXELS: Readonly<
+  Record<JournalGroup, readonly (readonly [number, number])[]>
+> = {
+  sante: maskPixels(JOURNAL_ICON_MASKS.sante),
+  reproduction: maskPixels(JOURNAL_ICON_MASKS.reproduction),
+  entretien: maskPixels(JOURNAL_ICON_MASKS.entretien),
+  alertes: maskPixels(JOURNAL_ICON_MASKS.alertes),
+};
+
+function maskPixels(mask: readonly string[]): readonly (readonly [number, number])[] {
+  return mask.flatMap((row, y) =>
+    [...row].flatMap((cell, x) => (cell === '#' ? [[x, y] as const] : [])),
+  );
+}

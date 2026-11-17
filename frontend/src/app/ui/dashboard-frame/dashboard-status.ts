@@ -51,11 +51,19 @@ import { BeginnerGuideState } from '../beginner-guide/beginner-guide-state';
 import {
   levelIconPixels,
   LEVEL_ICON_GRID,
+  JOURNAL_ICON_PIXELS,
   MAINTENANCE_ICON_PIXELS,
   REVIEW_ICON_PIXELS,
 } from './level-icons';
 import type { ReviewPoint } from '../../sim/bilan';
-import type { JournalLine } from '../../sim/journal';
+import {
+  filterJournalLines,
+  JOURNAL_EMPTY_TEXT,
+  JOURNAL_FILTER_LABELS,
+  JOURNAL_FILTERS,
+  type JournalFilter,
+  type JournalLine,
+} from '../../sim/journal';
 import {
   maintenanceSummary,
   type MaintenanceReadout,
@@ -345,17 +353,47 @@ const ICONS: Readonly<Record<GaugeLevel, readonly (readonly [number, number])[]>
         }
         @if (journalShown(); as lines) {
           <div data-journal-detail>
+            <!-- Filtre par famille (#655) : boutons à bascule, un seul enfoncé. -->
+            <p class="status__filters" role="group" aria-label="Filtrer le journal">
+              @for (filter of journalFilters; track filter) {
+                <button
+                  type="button"
+                  class="status__why"
+                  [attr.data-journal-filter]="filter"
+                  [attr.aria-pressed]="journalFilter() === filter"
+                  (click)="journalFilter.set(filter)"
+                >
+                  {{ journalFilterLabels[filter] }}
+                </button>
+              }
+            </p>
             @if (lines.length > 0) {
               <!-- Sans numéro (#592) : la liste va du plus récent au plus ancien, le jour date. -->
               <ul class="status__review-list status__journal-list">
                 @for (line of lines; track $index) {
-                  <li [attr.data-journal-kind]="line.kind">
-                    <b>Jour {{ line.day }} :</b> {{ line.text }}
+                  <li
+                    class="status__journal-line"
+                    [attr.data-journal-kind]="line.kind"
+                    [attr.data-journal-group]="line.group"
+                  >
+                    <svg
+                      class="status__icon"
+                      aria-hidden="true"
+                      [attr.viewBox]="'0 0 ' + iconGrid + ' ' + iconGrid"
+                      shape-rendering="crispEdges"
+                    >
+                      @for (pixel of journalIcons[line.group]; track $index) {
+                        <rect [attr.x]="pixel[0]" [attr.y]="pixel[1]" width="1" height="1" />
+                      }
+                    </svg>
+                    <span
+                      ><b>Jour {{ line.day }} :</b> {{ line.text }}</span
+                    >
                   </li>
                 }
               </ul>
             } @else {
-              <p class="status__review-empty" data-journal-empty>Aucun événement pour l’instant.</p>
+              <p class="status__review-empty" data-journal-empty>{{ journalEmpty }}</p>
             }
           </div>
         } @else if (points.length > 0) {
@@ -496,16 +534,25 @@ export class DashboardStatus {
   /** Journal affiché dans le bilan déplié au lieu de ses points (#581). */
   readonly journalTab = signal(false);
 
+  /** Famille gardée par le filtre du journal (#655) ; revient à `tout` au repli du bilan. */
+  readonly journalFilter = signal<JournalFilter>('tout');
+
   /** Alerte dépliée (une à la fois), `null` : aucune. */
   readonly expanded = signal<AlertId | null>(null);
 
   protected readonly iconGrid = LEVEL_ICON_GRID;
   protected readonly maintenanceIcon = MAINTENANCE_ICON_PIXELS;
   protected readonly reviewIcon = REVIEW_ICON_PIXELS;
-  /** Lignes du journal déplié ; `null` : replié ou sans journal. */
-  protected readonly journalShown = computed(() =>
-    this.reviewOpen() && this.journalTab() && this.reviewOf() !== null ? this.journal() : null,
-  );
+  protected readonly journalFilters = JOURNAL_FILTERS;
+  protected readonly journalFilterLabels = JOURNAL_FILTER_LABELS;
+  protected readonly journalIcons = JOURNAL_ICON_PIXELS;
+  protected readonly journalEmpty = JOURNAL_EMPTY_TEXT;
+  /** Lignes du journal déplié, filtrées (#655) ; `null` : replié ou sans journal. */
+  protected readonly journalShown = computed(() => {
+    const lines =
+      this.reviewOpen() && this.journalTab() && this.reviewOf() !== null ? this.journal() : null;
+    return lines === null ? null : filterJournalLines(lines, this.journalFilter());
+  });
   protected readonly summary = maintenanceSummary;
   /** Points du bilan déplié, relus à chaque relevé de l'eau ; `null` : replié. */
   protected readonly review = computed(() => {
@@ -626,6 +673,7 @@ export class DashboardStatus {
   toggleReview(): void {
     this.reviewOpen.update((open) => !open);
     this.journalTab.set(false);
+    this.journalFilter.set('tout');
     this.expanded.set(null);
     this.maintenanceOpen.set(false);
   }

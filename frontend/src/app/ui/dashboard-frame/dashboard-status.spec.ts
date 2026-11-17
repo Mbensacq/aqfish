@@ -270,8 +270,8 @@ describe('rappel d’entretien (#513)', () => {
     expect(root.querySelector('[data-journal-empty]')).not.toBeNull();
     expect(root.querySelector('[data-review-empty]')).toBeNull();
     host.journal.set([
-      { kind: 'ponte', day: 2, text: 'Ponte : 3 œufs (Corydora)' },
-      { kind: 'changementEau', day: 1, text: 'Changement d’eau' },
+      { kind: 'ponte', group: 'reproduction', day: 2, text: 'Ponte : 3 œufs (Corydora)' },
+      { kind: 'changementEau', group: 'entretien', day: 1, text: 'Changement d’eau' },
     ]);
     flush();
     const items = [...root.querySelectorAll('[data-journal-detail] li')];
@@ -295,6 +295,71 @@ describe('rappel d’entretien (#513)', () => {
     flush();
     expect(root.querySelector('[data-journal-detail]')).toBeNull();
     expect(root.querySelector('[data-journal]')!.getAttribute('aria-pressed')).toBe('false');
+  });
+
+  it('journal (#655) : icône par famille, filtre par type, « rien à signaler »', () => {
+    const { host, root, flush } = mount();
+    host.reviewOf.set(() => []);
+    host.journal.set([]);
+    flush();
+    root.querySelector<HTMLElement>('[data-review]')!.click();
+    flush();
+    root.querySelector<HTMLElement>('[data-journal]')!.click();
+    flush();
+    const empty = (): string | null =>
+      root.querySelector('[data-journal-empty]')?.textContent?.trim() ?? null;
+    expect(empty()).toBe('Rien à signaler.');
+    const filters = [...root.querySelectorAll<HTMLElement>('[data-journal-filter]')];
+    expect(filters.map((button) => button.textContent!.trim())).toEqual([
+      'Tout',
+      'Santé',
+      'Reproduction',
+      'Entretien',
+      'Alertes',
+    ]);
+    expect(filters.map((button) => button.getAttribute('aria-pressed'))).toEqual([
+      'true',
+      'false',
+      'false',
+      'false',
+      'false',
+    ]);
+    host.journal.set([
+      { kind: 'naissance', group: 'reproduction', day: 3, text: 'Naissance : 2 alevins (Guppy)' },
+      { kind: 'seance', group: 'entretien', day: 2, text: 'Séance d’entretien terminée' },
+      { kind: 'ponte', group: 'reproduction', day: 1, text: 'Ponte : 3 œufs (Corydora)' },
+    ]);
+    flush();
+    const kinds = (): (string | null)[] =>
+      [...root.querySelectorAll('[data-journal-detail] li')].map((item) =>
+        item.getAttribute('data-journal-kind'),
+      );
+    expect(kinds()).toEqual(['naissance', 'seance', 'ponte']);
+    // Une icône pixel art par ligne, décorative.
+    const icons = root.querySelectorAll('[data-journal-detail] li svg[aria-hidden="true"]');
+    expect(icons).toHaveLength(3);
+    expect(icons[0]!.querySelectorAll('rect').length).toBeGreaterThan(0);
+    root.querySelector<HTMLElement>('[data-journal-filter="reproduction"]')!.click();
+    flush();
+    expect(kinds()).toEqual(['naissance', 'ponte']);
+    expect(
+      root.querySelector('[data-journal-filter="reproduction"]')!.getAttribute('aria-pressed'),
+    ).toBe('true');
+    root.querySelector<HTMLElement>('[data-journal-filter="entretien"]')!.click();
+    flush();
+    expect(kinds()).toEqual(['seance']);
+    // Aucune ligne du type : la liste se vide, le message le dit.
+    root.querySelector<HTMLElement>('[data-journal-filter="sante"]')!.click();
+    flush();
+    expect(kinds()).toEqual([]);
+    expect(empty()).toBe('Rien à signaler.');
+    // Bilan replié puis rouvert : le filtre revient à « Tout ».
+    root.querySelector<HTMLElement>('[data-review]')!.click();
+    root.querySelector<HTMLElement>('[data-review]')!.click();
+    flush();
+    root.querySelector<HTMLElement>('[data-journal]')!.click();
+    flush();
+    expect(kinds()).toEqual(['naissance', 'seance', 'ponte']);
   });
 
   it('detailOpen (#592) : vrai tant qu’une alerte, le calendrier ou le bilan est déplié', () => {

@@ -343,8 +343,11 @@ import {
 } from '../../sim/first-tank-path';
 import {
   addJournalEntry,
+  addPruneEntry,
+  careSessionEntry,
   carryJournalWatches,
   createJournal,
+  freshWaterEntry,
   journalLines,
   observeJournal,
   restoreJournal,
@@ -1928,6 +1931,7 @@ export class AquariumHost {
       pruned = pruneWorldPlantInPlace(world, index);
       if (pruned) {
         this.recordMaintenance(world, 'prune');
+        addPruneEntry(this.journalOf(world), world.time);
       }
     });
     return pruned;
@@ -2090,6 +2094,10 @@ export class AquariumHost {
     let cut = false;
     this.applyWaterSetting((world) => {
       cut = cutWorldPlantInPlace(world, index);
+      if (cut) {
+        // Journal (#655) : une ligne de taille par jour, qui compte les coupes.
+        addPruneEntry(this.journalOf(world), world.time);
+      }
     });
     if (cut) {
       this.showCareSession(withCut(session));
@@ -2130,8 +2138,9 @@ export class AquariumHost {
 
   /**
    * Eau neuve versée (#605) : la part `share` est remplacée par l'eau du seau (conditionneur,
-   * écart de température choisis), puis calendrier, historique et journal comme le bouton
-   * « Changer l'eau ». Rien n'est versé : rien n'est enregistré.
+   * écart de température choisis), puis calendrier et historique comme le bouton « Changer
+   * l'eau » ; au journal, une ligne « eau neuve » (#655). Rien n'est versé : rien n'est
+   * enregistré.
    */
   private refillFromCareSession(share: number): void {
     if (!(share > 0)) {
@@ -2143,7 +2152,7 @@ export class AquariumHost {
       refillWorldWaterInPlace(world, share, conditioner, world.water.temperature + gap);
       this.recordMaintenance(world, 'waterChange');
       markWaterChange(this.waterHistoryOf(world), world.water, world.tick);
-      addJournalEntry(this.journalOf(world), waterChangeEntry(world.time));
+      addJournalEntry(this.journalOf(world), freshWaterEntry(world.time));
     });
   }
 
@@ -2179,6 +2188,19 @@ export class AquariumHost {
     const session = skipAbsentCareSteps(shown, prunable);
     if (careSessionFinished(session) && !this.careComparison()) {
       this.compareCareSession(session);
+    }
+    const before = this.careSession();
+    if (
+      careSessionFinished(session) &&
+      before !== null &&
+      !careSessionFinished(before) &&
+      Object.values(session.outcomes).includes('fait')
+    ) {
+      // Séance menée jusqu'au bilan avec au moins une étape faite (#655) : une ligne au
+      // journal, une seule fois.
+      this.applyWaterSetting((world) =>
+        addJournalEntry(this.journalOf(world), careSessionEntry(world.time)),
+      );
     }
     this.careSession.set(session);
     this.writeStoredCareSession(careSessionFinished(session) ? null : session);

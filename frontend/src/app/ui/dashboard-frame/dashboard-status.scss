@@ -134,6 +134,36 @@
   list-style: none;
 }
 
+// Ligne du journal (#655) : icône de la famille, puis le texte, qui passe à la ligne.
+.status__journal-line {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.status__journal-line .status__icon {
+  align-self: center;
+}
+
+// Le texte reste à l'encre ; seule l'icône d'une alerte prend la couleur « attention ».
+[data-journal-group='alertes'] .status__icon {
+  color: var(--dashboard-orange);
+}
+
+// Filtre du journal (#655) : passe à la ligne sur téléphone plutôt que de déborder.
+.status__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 4px;
+  margin: 0 0 4px;
+}
+
+.status__filters [aria-pressed='true'] {
+  background: var(--dashboard-ink);
+  color: var(--dashboard-background);
+  font-weight: 700;
+}
+
 /* Bilan sans point (#522) : même marge que la liste, sans retrait. */
 .status__review-empty {
   margin: 0;
@@ -288,6 +318,13 @@
     padding: 2px 6px;
     font-size: 11px;
     line-height: 14px;
+  }
+
+  // Journal sur téléphone (#655) : six lignes au plus à l'écran, le reste défile dans la
+  // liste, pour que le détail déplié ne monte pas sur le bac, même avec 200 entrées.
+  .status__journal-list {
+    max-height: 6 * 14px;
+    overflow-y: auto;
   }
 
   // Deux lignes d'alertes au plus, quelle que soit la police (#265) : chaque alerte prend au

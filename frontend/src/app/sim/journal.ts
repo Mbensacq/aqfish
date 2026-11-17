@@ -1,8 +1,8 @@
 import type { AlertId, AlertSeverity } from './dashboard-alerts';
 import { DEFAULT_DAY_LENGTH_SECONDS } from './daylight';
 import { DISEASES, type DiseaseField } from './diseases';
-import type { Egg } from './eggs';
-import { isFry } from './fry';
+import { laysEggs, type Egg } from './eggs';
+import { hasFry, isFry } from './fry';
 import { SPECIES, type SpeciesId } from './species';
 import type { Fish } from './swimmer';
 import { TREATMENT_KINDS, TREATMENTS, type TreatmentKind } from './treatment';
@@ -12,6 +12,9 @@ import { TREATMENT_KINDS, TREATMENTS, type TreatmentKind } from './treatment';
  * traitement, ponte, éclosion, changement d'eau, alerte franchie — #592), gardés dans l'ordre
  * chronologique et plafonnés à `JOURNAL_CAPACITY` entrées (les plus anciennes partent).
  * Fonctions pures de ce qu'on leur donne, sans hasard ni horloge réelle.
+ *
+ * Reproduction (ponte, éclosion, naissance) et entretien (séance, taille, eau neuve, #655) y
+ * entrent aussi, et l'interface les filtre par famille (`JOURNAL_FILTERS`).
  *
  * Comme l'historique de l'eau (ADR 0118), le journal vit hors du monde pendant la partie
  * (aucun pas n'y touche, la simulation reste identique au bit près) ; sa forme de données
@@ -41,9 +44,51 @@ export const JOURNAL_KINDS = [
   'eclosion',
   'changementEau',
   'alerte',
+  'naissance',
+  'seance',
+  'taille',
+  'eauNeuve',
 ] as const;
 
 export type JournalKind = (typeof JOURNAL_KINDS)[number];
+
+/**
+ * Familles du filtre du journal (#655), dans l'ordre des boutons : `tout` ne masque rien, les
+ * autres ne gardent que leurs sortes (`JOURNAL_KIND_GROUPS`).
+ */
+export const JOURNAL_FILTERS = ['tout', 'sante', 'reproduction', 'entretien', 'alertes'] as const;
+
+export type JournalFilter = (typeof JOURNAL_FILTERS)[number];
+
+/** Famille d'une sorte d'événement (hors `tout`). */
+export type JournalGroup = Exclude<JournalFilter, 'tout'>;
+
+/** Libellé court de chaque bouton du filtre. */
+export const JOURNAL_FILTER_LABELS: Readonly<Record<JournalFilter, string>> = {
+  tout: 'Tout',
+  sante: 'Santé',
+  reproduction: 'Reproduction',
+  entretien: 'Entretien',
+  alertes: 'Alertes',
+};
+
+/** Famille de chaque sorte : elle choisit aussi l'icône de la ligne. */
+export const JOURNAL_KIND_GROUPS: Readonly<Record<JournalKind, JournalGroup>> = {
+  maladie: 'sante',
+  guerison: 'sante',
+  traitement: 'sante',
+  ponte: 'reproduction',
+  eclosion: 'reproduction',
+  naissance: 'reproduction',
+  changementEau: 'entretien',
+  seance: 'entretien',
+  taille: 'entretien',
+  eauNeuve: 'entretien',
+  alerte: 'alertes',
+};
+
+/** Texte d'un journal sans ligne, ou sans ligne du type choisi (#655). */
+export const JOURNAL_EMPTY_TEXT = 'Rien à signaler.';
 
 /** Effectif maximal relu d'une entrée sauvegardée. */
 const MAX_COUNT = 10_000;
@@ -56,12 +101,15 @@ export interface JournalEntry {
   /**
    * Précision selon la sorte : maladie (`DiseaseField`) pour `maladie` et `guerison`, sorte de
    * traitement (`TreatmentKind`) pour `traitement`, espèce (`SpeciesId`) pour `ponte` et
-   * `eclosion`, alerte (`JournalAlertId`) pour `alerte` ; absente pour `changementEau`.
+   * `eclosion` et `naissance`, alerte (`JournalAlertId`) pour `alerte` ; absente pour
+   * `changementEau`, `seance`, `taille` et `eauNeuve`.
    */
   readonly detail?: string;
   /** Gravité atteinte, pour `alerte` seulement (#592). */
   readonly severity?: AlertSeverity;
-  /** Nombre d'animaux ou d'œufs concernés (≥ 1) ; absent : sans objet. */
+  /**
+   * Nombre d'animaux, d'œufs ou de coupes (`taille`) concernés (≥ 1) ; absent : sans objet.
+   */
   readonly count?: number;
 }
 
@@ -82,6 +130,8 @@ export interface SavedJournal {
 /** Ligne du journal lue par l'interface. */
 export interface JournalLine {
   readonly kind: JournalKind;
+  /** Famille de la sorte (filtre et icône, #655). */
+  readonly group: JournalGroup;
   /** Jour simulé (1 : le premier). */
   readonly day: number;
   readonly text: string;
@@ -160,6 +210,42 @@ export function treatmentEntry(time: number, kind: TreatmentKind): JournalEntry 
   return { time, kind: 'traitement', detail: kind };
 }
 
+/** Entrée « séance d'entretien terminée » (#655) au temps `time`. */
+export function careSessionEntry(time: number): JournalEntry {
+  return { time, kind: 'seance' };
+}
+
+/** Entrée « eau neuve versée » pendant une séance (#655) au temps `time`. */
+export function freshWaterEntry(time: number): JournalEntry {
+  return { time, kind: 'eauNeuve' };
+}
+
+/**
+ * Note une coupe de plante (#655) au temps `time` : si la dernière entrée du journal est
+ * déjà une taille du même jour simulé, elle compte une coupe de plus (au plus `MAX_COUNT`) au
+ * lieu d'ajouter une ligne, pour qu'une séance de vingt coups de sécateur ne chasse pas les
+ * autres événements. Renvoie `false` pour un temps invalide.
+ */
+export function addPruneEntry(journal: Journal, time: number): boolean {
+  const { entries } = journal;
+  const last = entries[entries.length - 1];
+  if (
+    last !== undefined &&
+    last.kind === 'taille' &&
+    Number.isFinite(time) &&
+    time >= last.time &&
+    journalDay(time) === journalDay(last.time)
+  ) {
+    entries[entries.length - 1] = {
+      ...last,
+      count: Math.min(MAX_COUNT, (last.count ?? 1) + 1),
+    };
+    journal.version++;
+    return true;
+  }
+  return addJournalEntry(journal, { time, kind: 'taille', count: 1 });
+}
+
 /**
  * Ce que le journal sait du bac à la dernière observation : maladies portées par animal
  * (masque de bits dans l'ordre de `DISEASES`), animaux connus et œufs présents par espèce.
@@ -205,13 +291,14 @@ export function watchJournal(world: JournalSubject): JournalWatch {
 /**
  * Compare le bac à la dernière observation et renvoie les événements survenus, au temps
  * courant du monde (`watch` mis à jour) : maladie déclarée ou guérie (animal toujours présent),
- * ponte (œufs d'une espèce en hausse), éclosion (alevins nouveaux). Un animal apparu adulte
+ * ponte (œufs d'une espèce en hausse), éclosion (alevins nouveaux d'une espèce qui pond) ou
+ * naissance (alevins nouveaux d'une espèce vivipare, sans œuf, #655). Un animal apparu adulte
  * (ajout au panneau, transfert) est retenu sans événement, sauf s'il arrive malade. Une
  * alerte suivie (`JOURNAL_ALERT_LABELS`) qui apparaît, ou passe d'« attention » à
  * « critique », est notée avec sa gravité (#592) ; une alerte qui s'apaise ou disparaît
  * n'écrit rien, et une alerte revenue moins de `JOURNAL_ALERT_REPEAT_SECONDS` après sa dernière
  * entrée de même gravité n'est pas renotée (#599). Ordre stable : maladies dans l'ordre de
- * `DISEASES`, puis pontes, puis éclosions, puis alertes dans l'ordre de `JOURNAL_ALERT_LABELS`.
+ * `DISEASES`, puis pontes, puis éclosions et naissances, puis alertes dans l'ordre de `JOURNAL_ALERT_LABELS`.
  */
 export function observeJournal(watch: JournalWatch, world: JournalSubject): JournalEntry[] {
   const time = world.time;
@@ -261,7 +348,8 @@ export function observeJournal(watch: JournalWatch, world: JournalSubject): Jour
   }
   watch.eggs = eggs;
   for (const [species, count] of hatched) {
-    events.push({ time, kind: 'eclosion', detail: species, count });
+    const kind = hasFry(species) && !laysEggs(species) ? 'naissance' : 'eclosion';
+    events.push({ time, kind, detail: species, count });
   }
   const alerts = alertLevels(world.alerts);
   for (const [id, severity] of alerts) {
@@ -325,9 +413,29 @@ export function journalLines(journal: Journal): JournalLine[] {
   const lines: JournalLine[] = [];
   for (let i = journal.entries.length - 1; i >= 0; i--) {
     const entry = journal.entries[i]!;
-    lines.push({ kind: entry.kind, day: journalDay(entry.time), text: journalText(entry) });
+    lines.push({
+      kind: entry.kind,
+      group: JOURNAL_KIND_GROUPS[entry.kind],
+      day: journalDay(entry.time),
+      text: journalText(entry),
+    });
   }
   return lines;
+}
+
+/**
+ * Lignes gardées par le filtre `filter` (#655), dans leur ordre : toutes pour `tout`, sinon
+ * celles de la famille choisie (liste vide si aucune ne correspond). Un filtre inconnu ne
+ * masque rien.
+ */
+export function filterJournalLines(
+  lines: readonly JournalLine[],
+  filter: JournalFilter,
+): readonly JournalLine[] {
+  if (filter === 'tout' || !(JOURNAL_FILTERS as readonly string[]).includes(filter)) {
+    return lines;
+  }
+  return lines.filter((line) => line.group === filter);
 }
 
 /** Jour simulé d'un temps (1 : le premier jour). */
@@ -350,6 +458,14 @@ export function journalText(entry: JournalEntry): string {
       return `Ponte : ${count} œuf${count > 1 ? 's' : ''} (${speciesLabel(entry.detail)})`;
     case 'eclosion':
       return `Éclosion : ${count} alevin${count > 1 ? 's' : ''} (${speciesLabel(entry.detail)})`;
+    case 'naissance':
+      return `Naissance : ${count} alevin${count > 1 ? 's' : ''} (${speciesLabel(entry.detail)})`;
+    case 'seance':
+      return 'Séance d’entretien terminée';
+    case 'taille':
+      return `Taille des plantes (${count} coupe${count > 1 ? 's' : ''})`;
+    case 'eauNeuve':
+      return 'Eau neuve versée';
     case 'changementEau':
       return 'Changement d’eau';
     case 'alerte':
@@ -446,9 +562,14 @@ function isEntry(entry: JournalEntry): boolean {
       return typeof detail === 'string' && (TREATMENT_KINDS as readonly string[]).includes(detail);
     case 'ponte':
     case 'eclosion':
+    case 'naissance':
       return typeof detail === 'string' && Object.hasOwn(SPECIES, detail);
     case 'changementEau':
+    case 'taille':
       return detail === undefined;
+    case 'seance':
+    case 'eauNeuve':
+      return detail === undefined && count === undefined;
   }
 }
 
