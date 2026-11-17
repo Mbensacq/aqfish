@@ -47,8 +47,13 @@ Lire la revue `## QA — verdict`. `KO` : corrections demandées, sauf si le KO 
 - **Tests** : assertions qui prouvent quelque chose, cas limites, déterminisme. Examiner
   **chaque modification de test existant** : aucun test supprimé, désactivé ou affaibli
   sans justification.
-- **Lisibilité** : noms clairs (code en anglais, textes d'interface en français), fonctions
-  courtes, pas de duplication, pas de code mort.
+- **Lisibilité** : liste de revue de `docs/CONVENTIONS.md` (section 12) : noms clairs (code
+  en anglais, textes en français), fonctions courtes, pas de duplication, pas de code mort,
+  aucune exception ajoutée à `qualite-exceptions.json`, exceptions abaissées quand le code
+  s'améliore.
+- **Non-régression** : toute empreinte modifiée dans `sim/non-regression.spec.ts` est
+  expliquée par un changement de comportement voulu ; une refactorisation n'en modifie
+  aucune (sinon `a-corriger`).
 - **Direction artistique** : couleurs issues du module de palette, filtrage `Nearest`,
   pas d'anticrénelage (`docs/DA.md`).
 - **Sécurité et dépendances** : pas de secret, licences permissives, versions exactes, pas
