@@ -10,7 +10,7 @@
     "complexity": 19
   },
   "render/aquarium-view.ts": {
-    "max-lines": 1643,
+    "max-lines": 1641,
     "max-lines-per-function": 97,
     "complexity": 26
   },

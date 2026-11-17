@@ -1764,15 +1764,12 @@ export class AquariumView {
 
   /** Réglages de la scène qui dépendent de la caméra, communs à l'image et à la photo. */
   private prepareFrame(): void {
+    const { x, y, z } = this.camera.position;
     // Bassin enterré (#105) : coupe du sol et de la margelle si la caméra passe sous le sol.
-    this.world.setViewpoint(this.camera.position.x, this.camera.position.y, this.camera.position.z);
+    this.world.setViewpoint(x, y, z);
     // Pièce (#187, #324) : rien ne cache le bac, la caméra passât-elle sous le bac ou hors de
     // la pièce (chaque mur franchi et le plafond sont masqués).
-    this.roomLayer.setViewpoint(
-      this.camera.position.x,
-      this.camera.position.y,
-      this.camera.position.z,
-    );
+    this.roomLayer.setViewpoint(x, y, z);
     // Taille des granulés selon le zoom (#117) : échelle à la distance de la cible.
     this.foodLayer.setPixelsPerMeter(
       scenePixelsPerMeter(
@@ -1783,9 +1780,9 @@ export class AquariumView {
     );
     // Œufs (#501) : au moins `EGG_MIN_PIXELS` pixels de scène, même loin de la caméra.
     this.eggLayer.setViewpoint(
-      this.camera.position.x,
-      this.camera.position.y,
-      this.camera.position.z,
+      x,
+      y,
+      z,
       scenePixelsPerMeter(1, this.camera.fov, this.targetSize.height),
     );
     // Ronds de pluie vus de biais (#125) : rond extérieur seul, plus clair.
