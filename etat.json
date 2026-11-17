@@ -8539,7 +8539,7 @@
       "debut": "2026-11-17T07:14:22.553Z",
       "type": "fonctionnalite",
       "issue": 670,
-      "pr": null,
+      "pr": 671,
       "version": null,
       "phases": {
         "planif": {
