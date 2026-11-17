@@ -8487,6 +8487,12 @@
           "debut": "2026-11-17T02:33:00.602Z",
           "fin": "2026-11-17T03:01:35.666Z",
           "note": "Verdict OK, 0 bug, 5 angles identiques, capture 390 du journal saine, captures c233 publiées ; revue PR non postée (refusée par l'environnement), e2e local limité à journal.spec"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-17T03:02:06.580Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
