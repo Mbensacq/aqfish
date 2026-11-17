@@ -8532,6 +8532,24 @@
         }
       },
       "metriques": {}
+    },
+    "235": {
+      "numero": 235,
+      "date": "2026-11-17",
+      "debut": "2026-11-17T07:14:22.553Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-17T07:14:22.553Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
