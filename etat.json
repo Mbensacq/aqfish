@@ -8553,6 +8553,12 @@
           "debut": "2026-11-17T07:15:59.862Z",
           "fin": "2026-11-17T08:37:11.165Z",
           "note": "PR #671 : garde de la ponte par le poisson-clown (#670, ADR 0149), CI 11/11 verte ; closeAvoid ajouté à stepFish (gardien seul), seule recif-three-quarter-oeufs change"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-17T08:37:38.788Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
