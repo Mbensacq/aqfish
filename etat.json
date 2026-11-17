@@ -8631,6 +8631,12 @@
           "debut": "2026-11-17T14:02:36.285Z",
           "fin": "2026-11-17T14:39:10.645Z",
           "note": "Verdict OK, 0 bug, captures c237 partielles (téléphone alerte via Dev), verify complet non terminé (lenteur), CI verte"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-17T14:39:43.024Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
