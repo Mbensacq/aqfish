@@ -10,7 +10,8 @@ import type { Fish, SwimBounds } from './swimmer';
  *
  * - **Naissance** : calendrier sans état. Le temps simulé est découpé en portées de
  *   `BROOD_PERIOD` secondes ; au dernier pas de chaque portée, chaque femelle adulte d'une
- *   espèce vivipare (`FRY_SPECIES`, le guppy seul) en bonne santé, nourrie et dans une eau
+ *   espèce vivipare (`FRY_SPECIES` : guppy, platy et molly, issue #674) en bonne santé,
+ *   nourrie et dans une eau
  *   conforme (`BroodConditions`) met bas de `MIN_BROOD` à `MAX_BROOD` alevins, nombre tiré du
  *   hachage (graine du monde, identifiant de la mère, rang de la portée) : aucun tirage pris
  *   aux générateurs des poissons, rien ajouté à l'état du monde hors des alevins eux-mêmes.
@@ -27,10 +28,13 @@ import type { Fish, SwimBounds } from './swimmer';
  * environ quatre semaines, et les guides d'élevage situent sa maturité sexuelle vers deux à
  * trois mois (un peu plus tôt chez le mâle). Le jeu garde l'ordre des étapes (alevin pâle et
  * minuscule, juvénile qui se colore, subadulte presque à taille) sur 20 minutes simulées.
+ * Le platy et le molly (issue #674), vivipares de la même famille (Poeciliidés), suivent le
+ * même calendrier, la même taille de portée et la même croissance : approximation de jeu, leur
+ * gestation réelle n'a pas été vérifiée dans une source (`docs/ESPECES.md`).
  */
 
 /** Espèces vivipares qui mettent bas des alevins dans la simulation. */
-export const FRY_SPECIES: readonly SpeciesId[] = Object.freeze(['guppy']);
+export const FRY_SPECIES: readonly SpeciesId[] = Object.freeze(['guppy', 'platy', 'molly']);
 
 /** Durée d'une portée (gestation de jeu), en secondes simulées. */
 export const BROOD_PERIOD = 300;
@@ -105,12 +109,17 @@ export function hasFry(species: SpeciesId): boolean {
   return FRY_SPECIES.includes(species);
 }
 
-/** Vrai si l'animal est une femelle (apparence `femelle` de l'espèce). */
+/**
+ * Vrai si l'animal est une femelle : apparence `femelle` de l'espèce si elle en a (guppy) ;
+ * sinon, pour une espèce vivipare sans dimorphisme rendu (platy, molly, issue #674), un
+ * individu sur deux, les identifiants impairs, comme l'alternance du guppy (sans effet sur le
+ * rendu ni tirage du générateur) ; jamais pour les autres espèces.
+ */
 export function isFemale(fish: Pick<Fish, 'id' | 'species'>, seed = 0): boolean {
   const def = SPECIES[fish.species];
   const variants = def.variants;
   if (variants === undefined || variants.length === 0) {
-    return false;
+    return hasFry(fish.species) && Number.isInteger(fish.id) && fish.id % 2 === 1;
   }
   return variants[speciesVariantIndex(def, fish.id, seed)]?.id === 'femelle';
 }
@@ -166,10 +175,17 @@ export interface BroodConditions {
 
 /**
  * Vrai si `fish` peut mettre bas : femelle adulte d'une espèce vivipare, santé pleine, sans
- * points blancs, nourrie (`FED_HUNGER`), dans une eau bonne au pH toléré.
+ * points blancs, nourrie (`FED_HUNGER`), dans une eau bonne au pH toléré. Faux, sans
+ * exception, pour une mère absente (`undefined` ou `null`, issue #674).
  */
-export function canBreed(fish: Fish, seed: number, conditions: BroodConditions): boolean {
+export function canBreed(
+  fish: Fish | null | undefined,
+  seed: number,
+  conditions: BroodConditions,
+): boolean {
   return (
+    fish !== null &&
+    fish !== undefined &&
     hasFry(fish.species) &&
     !isFry(fish) &&
     fish.health >= 1 &&
