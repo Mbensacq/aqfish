@@ -57,8 +57,9 @@ const FRESHWATER_LOT2 =
   'population=neon:0,guppy:0,corydora:0,platy:4,danio:8,ancistrus:2,otocinclus:6';
 const FRESHWATER_LOT3 = 'population=neon:0,guppy:0,corydora:0,braise:12,molly:3,miel:2';
 const FRESHWATER_LOT4 = 'population=neon:0,guppy:0,corydora:0,xipho:3,cerise:8,neritine:3';
-/** Courant fort au bac tropical (#460) : poissons de rivière et néons. */
+/** Alevins du platy (#674) : quatre platys parmi les néons et deux corydoras. */
 const PLATY_FRY = 'population=neon:6,guppy:0,corydora:2,platy:4';
+/** Courant fort au bac tropical (#460) : poissons de rivière et néons. */
 const RIVER = 'courant=fort&population=neon:8,guppy:0,corydora:0,danio:8,xipho:3';
 const REEF_LOT2 = 'population=clown:3,chirurgien:4,chromis:7,gobie:2,gramma:2';
 const REEF_LOT3 = 'population=clown:3,chirurgien:4,chromis:7,gobie:2,gramma:2,crevette:2,blennie:1';
