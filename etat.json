@@ -8625,6 +8625,12 @@
           "debut": "2026-11-17T12:55:25.849Z",
           "fin": "2026-11-17T14:01:59.708Z",
           "note": "PR #681 : languette du parcours calée sur --aqfish-status-height (#660), e2e checkPathClear (rouge sur main, vert ici), PIEGES ; CI 11/11 verte ; seule telephone-tableau-de-bord-alerte change ; pied d'attribution réinjecté sur la PR"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-17T14:02:36.285Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
