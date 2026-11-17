@@ -8483,10 +8483,10 @@
           "note": "PR #666 : journal du bac, reproduction, entretien et filtre (#655), CI 11/11 verte ; centre 60 % intenable sur téléphone pour un détail déplié (réserve dans la PR, PIEGES)"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-17T02:33:00.602Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-17T03:01:35.666Z",
+          "note": "Verdict OK, 0 bug, 5 angles identiques, capture 390 du journal saine, captures c233 publiées ; revue PR non postée (refusée par l'environnement), e2e local limité à journal.spec"
         }
       },
       "metriques": {}
