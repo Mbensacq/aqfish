@@ -1,4 +1,3 @@
-Branche : cycle/c239-frai-poisson-rouge — PR #684 — commit e50abbf
-Graine : fixe (celle des captures ; bassin des œufs : graine 9, population=koi:3,rouge:2&oeufs=1)
-Série partielle : l'exécution a été coupée à 550 s (3 fichiers telephone-eau, telephone-wiki-fiche, three-quarter-wiki-fiche non régénérés, conservés de la série précédente).
-Comparaison à latest : three-quarter, top, side, front, bottom, récif, paludarium, eau froide identiques à l'octet.
+Branche cycle/c240-dette-oeufs, PR #700, commit 0276cac, graines des captures (spec), temps figé.
+Série partielle : 159 fichiers sur ~167 (délai de 10 min dépassé) ; manquants non régénérés, vérifiés par la CI.
+Seul bassin-three-quarter-oeufs.png diffère de main (voulu) ; interface-liste-bacs.png diffère d'un détail non visible.
