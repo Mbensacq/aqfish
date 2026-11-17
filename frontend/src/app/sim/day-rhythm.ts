@@ -50,6 +50,8 @@ export const DIURNAL: Readonly<Record<SpeciesId, boolean>> = {
   xipho: true,
   cerise: false,
   neritine: false,
+  // Poisson rouge (#654) : diurne comme la koï (approximation de jeu).
+  rouge: true,
 };
 
 /** Ralentissement en pleine nuit : le déplacement y garde `1 − NIGHT_SLOWDOWN` de sa longueur. */

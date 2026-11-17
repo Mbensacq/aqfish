@@ -111,10 +111,14 @@ describe('fiches d’espèces (#237)', () => {
     });
     expect(byField['minGroup'].value).toBe('6 individus');
     expect(byField['minLiters'].value).toBe('60 L');
-    expect(byField['avoid'].value).toBe('koïs, axolotls');
+    expect(byField['avoid'].value).toBe('koïs, axolotls, poissons rouges');
     expect(sheetRows('axolotl').find((r) => r.field === 'minGroup')?.value).toBe('peut vivre seul');
-    expect(sheetRows('guppy').find((r) => r.field === 'avoid')?.value).toBe('koïs, axolotls');
-    expect(sheetRows('chirurgien').find((r) => r.field === 'avoid')?.value).toBe('koïs');
+    expect(sheetRows('guppy').find((r) => r.field === 'avoid')?.value).toBe(
+      'koïs, axolotls, poissons rouges',
+    );
+    expect(sheetRows('chirurgien').find((r) => r.field === 'avoid')?.value).toBe(
+      'koïs, axolotls, poissons rouges',
+    );
     for (const id of IDS) {
       for (const row of sheetRows(id)) {
         expect(row.value, `${id}.${row.field}`).not.toBe('');
@@ -422,7 +426,7 @@ describe('textes affichés, figés à la lettre (#304)', () => {
       temperament: 'paisible',
       minGroup: '6 individus',
       minLiters: '60 L',
-      avoid: 'koïs, axolotls',
+      avoid: 'koïs, axolotls, poissons rouges',
     });
   });
 

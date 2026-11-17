@@ -6,6 +6,16 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Prettier lancé sur `docs/` : tout le fichier est réécrit** (cycle 232, #654) :
+  `npm run format:check` ne couvre que `frontend/` ; `npx prettier --write ../docs/ESPECES.md`
+  a changé 296 lignes (italiques `*x*` en `_x_`, tableaux réalignés). Ne passer Prettier que sur
+  `frontend/` (`npm run format`) ; les documents de `docs/` s'éditent à la main. (2026-11-16)
+- **Nouvelle espèce : une dizaine de tests listent toutes les espèces** (cycle 232, #654) :
+  `population.spec` (ordre et effectifs), `aquarium-view.spec` (couches), `aquarium-host.spec`
+  (`formatPopulation`, maximums), `control-panel.spec` et `feeding.spec` (objets
+  `Record<SpeciesId, …>`), catalogues d'environnement (`koi.spec`, `species-catalog.spec`) et
+  listes « à éviter » des fiches et du wiki. Prévoir un commit `test` séparé pour ces
+  énumérations ; le compilateur signale les tables `Record<SpeciesId, …>` du code. (2026-11-16)
 - **Captures d'interface « avant » faussées par la charge de la machine** (cycle 228, #638) :
   `interface-liste-bacs` et `telephone-fiche-espece` de `main`, générées pendant que les tests
   unitaires tournaient dans l'autre arbre, différaient de 2 et 13 pixels de celles de la

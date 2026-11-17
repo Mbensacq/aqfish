@@ -311,6 +311,7 @@ class TestHost {
     xipho: 0,
     cerise: 0,
     neritine: 0,
+    rouge: 0,
   });
   readonly populationMax = signal<PopulationCounts>({
     neon: 40,
@@ -341,6 +342,7 @@ class TestHost {
     xipho: 0,
     cerise: 0,
     neritine: 0,
+    rouge: 0,
   });
   readonly tankLiters = signal<number | null>(288);
   readonly water = signal<WaterReadout>(DEFAULT_WATER_READOUT);
@@ -1393,6 +1395,7 @@ describe('ControlPanel', () => {
         xipho: 0,
         cerise: 0,
         neritine: 0,
+        rouge: 0,
       });
       await fixture.whenStable();
       expect(neons.value).toBe('20');

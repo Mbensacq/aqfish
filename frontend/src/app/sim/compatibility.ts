@@ -67,7 +67,57 @@ export const TEMPERAMENTS: Readonly<Record<SpeciesId, Temperament>> = {
   // Crevette cerise et néritine zèbre : invertébrés paisibles (FishKeeper).
   cerise: 'paisible',
   neritine: 'paisible',
+  // Poisson rouge (#654) : « sociable » (FishKeeper), sans conflit de son fait.
+  rouge: 'paisible',
 };
+
+/**
+ * Eau de chaque espèce pour la règle de température (#654) : `froide` (sans chauffage, eau du
+ * bassin et du bac d'eau froide, 17–18 °C), `temperee` (paludarium, 20 °C) ou `tropicale` (bac
+ * tropical et récif, 24–26 °C). Classement selon l'environnement du jeu où vit l'espèce et ses
+ * plages préférées (`docs/ESPECES.md`, matrice de compatibilité : « intersection non vide des
+ * plages ») : **approximation de jeu**. Le type impose une entrée pour toute nouvelle espèce.
+ */
+export type WaterClass = 'froide' | 'temperee' | 'tropicale';
+
+export const WATER_CLASSES: Readonly<Record<SpeciesId, WaterClass>> = {
+  neon: 'tropicale',
+  guppy: 'tropicale',
+  corydora: 'tropicale',
+  koi: 'froide',
+  axolotl: 'froide',
+  grenouille: 'temperee',
+  triton: 'temperee',
+  clown: 'tropicale',
+  chirurgien: 'tropicale',
+  rasbora: 'tropicale',
+  tetra: 'tropicale',
+  kuhli: 'tropicale',
+  gourami: 'tropicale',
+  platy: 'tropicale',
+  danio: 'tropicale',
+  ancistrus: 'tropicale',
+  otocinclus: 'tropicale',
+  braise: 'tropicale',
+  molly: 'tropicale',
+  miel: 'tropicale',
+  chromis: 'tropicale',
+  gobie: 'tropicale',
+  gramma: 'tropicale',
+  crevette: 'tropicale',
+  blennie: 'tropicale',
+  xipho: 'tropicale',
+  cerise: 'tropicale',
+  neritine: 'tropicale',
+  rouge: 'froide',
+};
+
+/** Vrai si les eaux des deux espèces n'ont aucune plage commune (froide et tropicale). */
+function thermalMismatch(a: SpeciesId, b: SpeciesId): boolean {
+  const ca = WATER_CLASSES[a];
+  const cb = WATER_CLASSES[b];
+  return (ca === 'froide' && cb === 'tropicale') || (ca === 'tropicale' && cb === 'froide');
+}
 
 /**
  * Proies hors de la règle des prédateurs (#425, ADR 0104) : pour chaque espèce, les espèces
@@ -82,7 +132,44 @@ export const TEMPERAMENTS: Readonly<Record<SpeciesId, Temperament>> = {
  */
 export const EXTRA_PREDATORS: Readonly<Partial<Record<SpeciesId, readonly SpeciesId[]>>> = {
   cerise: ['xipho', 'molly'],
+  // Axolotl (#654) : « ne se mélange pas aux poissons » (docs/ESPECES.md, FishKeeper) ; le
+  // poisson rouge, plus grand que l'axolotl du jeu, en mordille les branchies : **approximation
+  // de jeu**, motif courant des conseils de maintenance, non sourcé ici.
+  axolotl: ['rouge'],
 };
+
+/**
+ * Proies épargnées (#654) : pour chaque espèce, les prédateurs plus grands qui ne la chassent
+ * pas. Koï et poisson rouge partagent couramment les bassins (FishKeeper range le poisson rouge
+ * parmi les poissons de bassin) : **approximation de jeu**, la koï adulte ne chasse que les
+ * alevins.
+ */
+export const SPARED_PREY: Readonly<Partial<Record<SpeciesId, readonly SpeciesId[]>>> = {
+  rouge: ['koi'],
+};
+
+/** Vrai si le prédateur `predator`, plus grand que `prey`, la mange (règle de taille). */
+function eatsBySize(predator: SpeciesId, prey: SpeciesId): boolean {
+  return (
+    TEMPERAMENTS[predator] === 'predateur' &&
+    SPECIES[prey].bodyLength < SPECIES[predator].bodyLength &&
+    !(SPARED_PREY[prey]?.includes(predator) ?? false)
+  );
+}
+
+/**
+ * Espèce qui mange l'autre dans un couple au verdict `'predateur'` (règle de taille ou
+ * `EXTRA_PREDATORS`), ou `null` si aucune des deux ne mange l'autre.
+ */
+export function eaterOf(a: SpeciesId, b: SpeciesId): SpeciesId | null {
+  if (eatsBySize(a, b) || eatsAsExtra(a, b)) {
+    return a;
+  }
+  if (eatsBySize(b, a) || eatsAsExtra(b, a)) {
+    return b;
+  }
+  return null;
+}
 
 /** Vrai si `predator` mange `prey` d'après `EXTRA_PREDATORS`. */
 function eatsAsExtra(predator: SpeciesId, prey: SpeciesId): boolean {
@@ -90,7 +177,7 @@ function eatsAsExtra(predator: SpeciesId, prey: SpeciesId): boolean {
 }
 
 /** Verdict pour un couple d'espèces. */
-export type Compatibility = 'compatible' | 'predateur' | 'territorial';
+export type Compatibility = 'compatible' | 'predateur' | 'territorial' | 'temperature';
 
 /** Vrai si `id` est une espèce connue (clé propre de `SPECIES`, pas du prototype). */
 function known(id: string): id is SpeciesId {
@@ -101,8 +188,10 @@ function known(id: string): id is SpeciesId {
  * Compatibilité de deux espèces, symétrique (`compatibility(a, b) === compatibility(b, a)`) :
  *
  * - même espèce, ou espèce inconnue (aucune information) : `'compatible'` ;
- * - un prédateur et une espèce **strictement** plus petite (`bodyLength`) : `'predateur'` ;
+ * - un prédateur et une espèce **strictement** plus petite (`bodyLength`), sauf proie épargnée
+ *   (`SPARED_PREY`) : `'predateur'` ;
  * - une proie et une espèce qui la mange d'après `EXTRA_PREDATORS` : `'predateur'` ;
+ * - une espèce d'eau froide et une espèce tropicale (`WATER_CLASSES`, #654) : `'temperature'` ;
  * - deux espèces territoriales différentes : `'territorial'` ;
  * - sinon `'compatible'`.
  *
@@ -112,20 +201,14 @@ export function compatibility(a: string, b: string): Compatibility {
   if (a === b || !known(a) || !known(b)) {
     return 'compatible';
   }
-  const ta = TEMPERAMENTS[a];
-  const tb = TEMPERAMENTS[b];
-  const la = SPECIES[a].bodyLength;
-  const lb = SPECIES[b].bodyLength;
-  if (
-    (ta === 'predateur' && lb < la) ||
-    (tb === 'predateur' && la < lb) ||
-    eatsAsExtra(a, b) ||
-    eatsAsExtra(b, a)
-  ) {
+  if (eaterOf(a, b) !== null) {
     return 'predateur';
   }
-  if (ta === 'territorial' && tb === 'territorial') {
+  if (TEMPERAMENTS[a] === 'territorial' && TEMPERAMENTS[b] === 'territorial') {
     return 'territorial';
+  }
+  if (thermalMismatch(a, b)) {
+    return 'temperature';
   }
   return 'compatible';
 }

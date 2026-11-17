@@ -343,6 +343,11 @@ test.describe('Captures', () => {
     },
     // Bassin enterré (#105) : vues basses en coupe, sol et margelle retirés côté caméra.
     { name: 'bassin-side', query: 'environnement=bassin&camera=side' },
+    // Poisson rouge (#654) : koïs et poissons rouges ensemble, vus de côté.
+    {
+      name: 'bassin-side-poissons-rouges',
+      query: 'environnement=bassin&camera=side&population=koi:5,rouge:6',
+    },
     { name: 'bassin-front', query: 'environnement=bassin&camera=front' },
     { name: 'bassin-bottom', query: 'environnement=bassin&camera=bottom' },
     // Pluie (#106) : gouttes et ronds à la surface, de dessus et en trois-quarts.

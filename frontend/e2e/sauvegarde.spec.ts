@@ -98,7 +98,7 @@ test.describe('Sauvegarde (#70)', () => {
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'bassin');
     await page.getByRole('button', { name: 'Ajouter un koï' }).click();
     const pond = await population();
-    expect(pond).toMatch(/^koi:\d+$/);
+    expect(pond).toMatch(/^koi:\d+,rouge:0$/);
 
     // Retour : le bac tropical tel qu'il a été laissé.
     await environment.selectOption('tropical');
@@ -228,7 +228,7 @@ test.describe('Sauvegarde (#70)', () => {
     );
     await expect(message(page)).toHaveText('Aquarium importé.');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'bassin');
-    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', 'koi:4');
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', 'koi:4,rouge:0');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-hour', '18.00');
 
     // Import invalide : message d'erreur en alerte, bac inchangé.
@@ -238,7 +238,7 @@ test.describe('Sauvegarde (#70)', () => {
     await expect(page.getByRole('alert')).toContainText('Import refusé');
     await expect(page.getByRole('alert')).toContainText('version de sauvegarde inconnue');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'bassin');
-    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', 'koi:4');
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', 'koi:4,rouge:0');
     expect(errors).toEqual([]);
   });
 

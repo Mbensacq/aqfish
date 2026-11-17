@@ -209,6 +209,8 @@ describe('eau douce, lot 1 (#238) : bac tropical et compatibilité', () => {
       'miel',
       'gramma',
       'blennie',
+      // Poisson rouge, eau froide (#654).
+      'rouge',
     ]);
   });
 

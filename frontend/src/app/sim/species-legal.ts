@@ -167,6 +167,13 @@ export const LEGAL_STATUS: Readonly<Record<SpeciesId, LegalStatus>> = {
     ESPECES,
     'aucune ligne de l’annexe 2 ni de la liste de l’Union vérifiée ; origine des sujets non vérifiée ; ne jamais relâcher',
   ),
+  // Poisson rouge (#654) : forme domestique ; ni l'annexe 2 ni la liste de l'Union relues.
+  rouge: legal(
+    'a-verifier',
+    'non-verifie',
+    ESPECES,
+    'statut de la forme domestique non vérifié ; ne jamais relâcher (OATA)',
+  ),
   neritine: legal(
     'a-verifier',
     'non-verifie',

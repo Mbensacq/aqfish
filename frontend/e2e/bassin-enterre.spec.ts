@@ -19,7 +19,7 @@ for (const camera of VUES) {
     await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
     const host = page.locator('app-aquarium-host');
     await expect(host).toHaveAttribute('data-aqfish-environment', 'bassin');
-    await expect(host).toHaveAttribute('data-aqfish-population', 'koi:7');
+    await expect(host).toHaveAttribute('data-aqfish-population', 'koi:7,rouge:0');
     const tick = Number(await host.getAttribute('data-aqfish-tick'));
     await expect
       .poll(async () => Number(await host.getAttribute('data-aqfish-tick')))

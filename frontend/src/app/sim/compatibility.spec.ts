@@ -1,6 +1,7 @@
 import {
   addRivalSteering,
   compatibility,
+  eaterOf,
   enforceRivalDistance,
   hasRivals,
   incompatible,
@@ -80,8 +81,10 @@ describe('compatibility (issue #209)', () => {
     expect(compatibility('axolotl', 'grenouille')).toBe('predateur');
     // Le koï (14 cm) est plus grand que l'axolotl (9 cm) : c'est lui le prédateur.
     expect(compatibility('axolotl', 'koi')).toBe('predateur');
-    // Le chirurgien bleu (11 cm) est plus grand que l'axolotl : compatible.
-    expect(compatibility('axolotl', 'chirurgien')).toBe('compatible');
+    // Le chirurgien bleu (11 cm) est plus grand que l'axolotl : aucun des deux ne mange l'autre.
+    // Depuis #654 (ADR 0147), la règle de température les sépare : eau froide et récif.
+    expect(eaterOf('axolotl', 'chirurgien')).toBeNull();
+    expect(compatibility('axolotl', 'chirurgien')).toBe('temperature');
   });
 
   it('deux espèces paisibles sont compatibles', () => {

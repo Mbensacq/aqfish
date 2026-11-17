@@ -78,7 +78,7 @@ test.describe('Environnement', () => {
     await expect(selector(page)).toHaveValue('bassin');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'bassin');
     // Le bassin a ses koïs (#88), et seulement eux.
-    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', 'koi:7');
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', 'koi:7,rouge:0');
     // Vue par défaut du bassin : de dessus (bouton actif de la barre des vues).
     await expect(page.getByRole('button', { name: /^Vue de dessus/ })).toHaveAttribute(
       'aria-pressed',

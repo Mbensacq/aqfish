@@ -34,7 +34,7 @@ describe('catalogue d’espèces (#189)', () => {
       'cerise',
       'neritine',
     ]);
-    expect(ids('bassin')).toEqual(['koi']);
+    expect(ids('bassin')).toEqual(['koi', 'rouge']);
     expect(ids('paludarium')).toEqual(['axolotl', 'grenouille', 'triton']);
     expect(ids('recif')).toEqual([
       'clown',

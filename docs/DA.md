@@ -74,6 +74,12 @@ individu : *kohaku* (blanc cassé taché de rouge koï), *orenji* (orange koï, 
 nageoires or) et *sanke* (blanc cassé taché de rouge et de noir). Le motif est porté par le
 dos, seul visible de dessus ; le corps est effilé au pédoncule et au museau vu de dessus.
 
+Les **poissons rouges** du bassin (#654, ADR 0147) reprennent la palette des koïs, en trois
+robes tirées de la graine : *commun* (orange koï, ventre or), *sarasa* (dos rouge koï, flanc et
+ventre blanc cassé) et *jaune* (dos or, flanc jaune, ventre blanc cassé). Silhouette propre,
+plus courte et plus haute que la koï, haute dorsale et caudale fourchue ; dos toujours clair ou
+vif pour se détacher de l'eau sombre du bassin.
+
 Le corydora (poisson de fond, ADR 0014) : silhouette trapue (corps court et haut, ventre plat
 clair, haute dorsale sable sombre), flanc crème (`koiBlanc`) « poivré » de taches noires, dos
 roche sombre. Un flanc sable se confondait avec le substrat sur les captures, et un flanc

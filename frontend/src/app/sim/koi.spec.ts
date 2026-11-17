@@ -120,7 +120,8 @@ describe('koï (#88)', () => {
   });
 
   it('vivent dans le bassin seulement ; le bac tropical garde ses trois espèces', () => {
-    expect(POND.species).toEqual(['koi']);
+    // Poisson rouge proposé au bassin depuis #654.
+    expect(POND.species).toEqual(['koi', 'rouge']);
     expect(POND.population).toEqual([{ species: 'koi', count: KOI.defaultPopulation }]);
     expect(TROPICAL_TANK.species).toEqual([
       'neon',

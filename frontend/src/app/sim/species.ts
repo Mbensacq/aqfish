@@ -38,7 +38,8 @@ export type SpeciesId =
   | 'blennie'
   | 'xipho'
   | 'cerise'
-  | 'neritine';
+  | 'neritine'
+  | 'rouge';
 
 /**
  * Silhouette voxel d'une apparence : le rendu associe à chaque identifiant un gabarit de
@@ -74,6 +75,7 @@ export const SILHOUETTE_IDS = [
   'xipho',
   'cerise',
   'neritine',
+  'rouge',
 ] as const;
 export type SilhouetteId = (typeof SILHOUETTE_IDS)[number];
 
@@ -2022,6 +2024,103 @@ export const NERITINE: SpeciesDefinition = {
   },
 };
 
+/**
+ * Poisson rouge (Carassius auratus), bassin (issue #654) : poisson d'eau froide sociable, au
+ * corps plus court et plus haut que la koï, haute dorsale et caudale fourchue.
+ *
+ * - Robes : trois robes courantes, tirées de la graine du monde et de l'identifiant
+ *   (`variantDraw: 'graine'`, comme les koïs) : « commun » (orange, ventre or), « sarasa »
+ *   (rouge et blanc) et « jaune ». Couleurs de la palette commune (docs/DA.md), choisies pour
+ *   se détacher de l'eau sombre du bassin.
+ * - `bodyLength` (10 cm) : **approximation de jeu**, plus petit qu'un adulte réel (25 cm en
+ *   aquarium, OATA ; 30 cm et plus, FishKeeper) pour garder la proportion des koïs du jeu.
+ * - Nage en groupe lâche, plus vive que la koï ; vitesses, virages, banc, alimentation :
+ *   **approximations de jeu**. Valeurs réelles et sources : `sim/species-sheet.ts`.
+ */
+const ROUGE_COMMUN: SpeciesColors = {
+  stripe: '#f08a2c',
+  accent: '#f08a2c',
+  back: '#f08a2c',
+  belly: '#f2c14e',
+  fin: '#f08a2c',
+  eye: '#1c1c22',
+};
+
+export const ROUGE: SpeciesDefinition = {
+  id: 'rouge',
+  name: 'Poisson rouge',
+  scientificName: 'Carassius auratus',
+  bodyLength: 0.1,
+  cruiseSpeed: 0.06,
+  minSpeed: 0.03,
+  maxSpeed: 0.12,
+  wanderTurnRate: 0.8,
+  avoidTurnRate: 2.2,
+  maxPitch: 0.25,
+  wallMargin: 0.05,
+  tailBeatFrequency: 1.8,
+  // Groupe de quatre à l’ajout ; le bassin n’en a pas d’office (captures identiques).
+  defaultPopulation: 4,
+  maxPopulation: 10,
+  schooling: {
+    neighborRadius: 0.45,
+    separationRadius: 0.2,
+    separationWeight: 1.2,
+    alignmentWeight: 0.7,
+    cohesionWeight: 0.4,
+    turnRate: 1,
+    minDistance: 0.11,
+  },
+  silhouette: 'rouge',
+  colors: ROUGE_COMMUN,
+  variants: [
+    {
+      id: 'commun',
+      name: 'Poisson rouge commun',
+      silhouette: 'rouge',
+      scale: 1,
+      colors: ROUGE_COMMUN,
+    },
+    {
+      id: 'sarasa',
+      name: 'Poisson rouge sarasa',
+      silhouette: 'rouge',
+      scale: 1,
+      colors: {
+        stripe: '#f2ead8',
+        accent: '#d94a3a',
+        back: '#d94a3a',
+        belly: '#f2ead8',
+        fin: '#d94a3a',
+        eye: '#1c1c22',
+      },
+    },
+    {
+      id: 'jaune',
+      name: 'Poisson rouge jaune',
+      silhouette: 'rouge',
+      scale: 1,
+      colors: {
+        stripe: '#ffd166',
+        accent: '#f2c14e',
+        back: '#f2c14e',
+        belly: '#f2ead8',
+        fin: '#ffd166',
+        eye: '#1c1c22',
+      },
+    },
+  ],
+  variantDraw: 'graine',
+  // Mange dans toute la hauteur d'eau, faim pleine en 4 min : approximations de jeu.
+  feeding: {
+    hungerRate: 1 / 240,
+    perceptionRadius: 0.45,
+    turnRate: 1.8,
+    minHeightRatio: 0,
+    maxHeightRatio: 1,
+  },
+};
+
 /** Toutes les espèces connues, par identifiant (ordre de déclaration = ordre de peuplement). */
 export const SPECIES: Readonly<Record<SpeciesId, SpeciesDefinition>> = {
   neon: NEON,
@@ -2052,6 +2151,7 @@ export const SPECIES: Readonly<Record<SpeciesId, SpeciesDefinition>> = {
   xipho: XIPHO,
   cerise: CERISE,
   neritine: NERITINE,
+  rouge: ROUGE,
 };
 
 /** Apparences d'une espèce : ses `variants`, ou son apparence par défaut seule. */
