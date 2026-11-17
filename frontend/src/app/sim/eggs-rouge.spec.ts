@@ -129,6 +129,18 @@ describe('frai du poisson rouge (#675)', () => {
     expect(worldLilyPads(createDefaultWorld(7, 'tropical'))).toEqual([]);
   });
 
+  it('nénuphars du monde mémorisés (#685) : même liste rendue, recalculée si la graine change', () => {
+    const world = createDefaultWorld(7, 'bassin');
+    const first = worldLilyPads(world);
+    expect(worldLilyPads(cloneWorld(world))).toBe(first);
+    expect(Object.isFrozen(first)).toBe(true);
+    const other = worldLilyPads(createDefaultWorld(8, 'bassin'));
+    expect(other).not.toBe(first);
+    expect(other).toEqual(lilyPadLayout(8, environmentWater('bassin'), POND.lilyPads));
+    // Retour à la première graine : même disposition qu'avant.
+    expect(worldLilyPads(world)).toEqual(first);
+  });
+
   it('une ponte au plus par période', () => {
     const world = fedPond();
     world.tick = SPAWN_TICKS;
