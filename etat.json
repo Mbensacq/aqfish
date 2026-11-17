@@ -8655,6 +8655,12 @@
           "debut": "2026-11-17T15:58:21.471Z",
           "fin": "2026-11-17T15:58:43.812Z",
           "note": "Issue #674 : Alevins du platy et du molly (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-17T15:59:22.236Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
