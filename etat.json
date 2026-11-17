@@ -8561,10 +8561,10 @@
           "note": "Verdict OK, 0 bug, 12 captures récif publiées, recif-qa 9/9 ; pied de page d'attribution présent dans la revue QA (outil sans édition de revue)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-17T08:48:57.402Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-17T10:12:33.253Z",
+          "note": "PR #671 fusionnée → v1.22.4 (release CI OK, CI main 99e24e1 verte) ; dette #672 ; suppression de branche refusée (403), pied de page d'attribution réajouté par l'environnement à l'édition (#669, #670, revue QA)"
         }
       },
       "metriques": {}
