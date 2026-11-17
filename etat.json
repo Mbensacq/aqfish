@@ -8549,10 +8549,10 @@
           "note": "Issue #670 : garde de la ponte par le poisson-clown (S)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-17T07:15:59.862Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-17T08:37:11.165Z",
+          "note": "PR #671 : garde de la ponte par le poisson-clown (#670, ADR 0149), CI 11/11 verte ; closeAvoid ajouté à stepFish (gardien seul), seule recif-three-quarter-oeufs change"
         }
       },
       "metriques": {}
