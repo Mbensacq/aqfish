@@ -1002,7 +1002,16 @@ function stepInPlace(world: MutableWorld, dt: number, clock: SimClock): void {
     if (SPECIES[fish.species].walker !== undefined) {
       // Espèce qui marche sur le fond (axolotl, crevette nettoyeuse) : sa propre machine à
       // états, sans banc ni recherche de nourriture, qui contourne les obstacles (`sim/axolotl.ts`).
-      stepWalker(fish, dt, world.seed, world.time, bounds, groundFor(place, key), world.obstacles);
+      stepWalker(
+        fish,
+        dt,
+        world.seed,
+        world.time,
+        bounds,
+        groundFor(place, key),
+        world.obstacles,
+        fishes,
+      );
       continue;
     }
     if (SPECIES[fish.species].amphibian !== undefined) {

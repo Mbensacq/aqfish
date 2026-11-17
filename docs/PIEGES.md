@@ -1809,3 +1809,9 @@ haut de sa section.
   test `terrain === undefined` est toujours faux et a privé le sol de voile (#634). Passer par
   `hasFlatFloor(id)` (`sim/environment.ts`), et vérifier en e2e ce qui est **dessiné**
   (`data-aqfish-fouling-cells`), pas seulement le niveau calculé. (2026-11-15)
+- **`npm run captures` complet dépasse 10 min en local** (cycle 234, #656) : plus de 150
+  captures. Pour comparer avant/après, filtrer avec
+  `npx playwright test --project=captures -g "recif"` (ou un motif d'angles), sur `main` puis
+  sur la branche, et comparer à l'octet (`cmp`). Une issue peut aussi décrire comme nouvelle
+  une espèce déjà livrée (crevette nettoyeuse, #422 puis #656) : chercher l'identifiant dans
+  `sim/species.ts` avant de coder. (2026-11-17)
