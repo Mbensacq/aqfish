@@ -8719,7 +8719,7 @@
       "debut": "2026-11-17T21:45:25.121Z",
       "type": "fonctionnalite",
       "issue": 685,
-      "pr": null,
+      "pr": 700,
       "version": null,
       "phases": {
         "planif": {
