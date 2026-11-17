@@ -8651,10 +8651,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-17T15:58:21.471Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-17T15:58:43.812Z",
+          "note": "Issue #674 : Alevins du platy et du molly (S)"
         }
       },
       "metriques": {}
