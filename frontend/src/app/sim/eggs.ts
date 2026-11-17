@@ -4,6 +4,7 @@ import type { Anemone } from './anemones';
 import { rockSpheres, type DecorItem } from './decor';
 import { FED_HUNGER, isFry, isPredator } from './fry';
 import { SPECIES, type SpeciesId } from './species';
+import type { LilyPad } from './lily-pads';
 import type { Fish } from './swimmer';
 import type { Box3 } from './tank';
 
@@ -33,18 +34,31 @@ import type { Box3 } from './tank';
  *   par le couple, ne sont pas mangés ; ils éclosent en larves planctoniques qui quittent le bac
  *   (`hatchesToFry` faux : aucun alevin).
  *
+ * - **Poisson rouge** (issue #675) : même calendrier ; frai dès 15 °C (`GOLDFISH_SPAWN_TEMPERATURE`,
+ *   FishKeeper : poursuite de frai « à 15 °C et au-dessus », œufs « parmi la végétation
+ *   aquatique »). Les œufs sont collés sur la végétation seulement (`layVegetationClutch`) : au
+ *   pied des plantes du décor ou le long des tiges des nénuphars, sous les feuilles. Sans
+ *   végétation, aucune ponte. Ces œufs sont exposés : un adulte nageur à portée
+ *   (`EGG_EAT_RADIUS`) les mange, comme ceux de la vitre. Ils éclosent sans alevin (alevins du
+ *   poisson rouge hors périmètre de #675).
+ *
  * Toutes les valeurs sont des **approximations de jeu** : dans la nature, l'éclosion prend
  * plusieurs jours et une ponte compte souvent plusieurs dizaines d'œufs (plusieurs centaines
  * pour le poisson-clown).
  */
 
 /** Espèces ovipares qui pondent des œufs dans la simulation. */
-export const EGG_SPECIES: readonly SpeciesId[] = Object.freeze(['corydora', 'clown']);
+export const EGG_SPECIES: readonly SpeciesId[] = Object.freeze(['corydora', 'clown', 'rouge']);
 /**
  * Espèces dont la ponte est collée près d'une anémone (`layReefClutch`) et dont les œufs
  * éclosent en larves planctoniques, qui quittent le bac (issue #653).
  */
 export const REEF_EGG_SPECIES: readonly SpeciesId[] = Object.freeze(['clown']);
+/**
+ * Espèces qui fraient sur la végétation seulement (`layVegetationClutch`), œufs exposés aux
+ * adultes, éclosion sans alevin (issue #675).
+ */
+export const VEGETATION_EGG_SPECIES: readonly SpeciesId[] = Object.freeze(['rouge']);
 
 /** Période de ponte, en secondes simulées. */
 export const SPAWN_PERIOD = 600;
@@ -64,6 +78,25 @@ export const SPAWN_TEMPERATURE: readonly [number, number] = Object.freeze([22, 2
 export const REEF_SPAWN_TEMPERATURE: readonly [number, number] = Object.freeze([
   24, 28,
 ]) as readonly [number, number];
+/**
+ * Température de frai du poisson rouge, en °C, bornes comprises : 15 °C (FishKeeper, frai « à
+ * 15 °C et au-dessus ») jusqu'au haut de la plage préférée du jeu (22 °C, approximation de jeu) :
+ * l'eau qui se réchauffe au printemps. Le bassin (18 °C) est dans la plage.
+ */
+export const GOLDFISH_SPAWN_TEMPERATURE: readonly [number, number] = Object.freeze([
+  15, 22,
+]) as readonly [number, number];
+/**
+ * Profondeur d'un œuf sous la surface, le long de la tige d'un nénuphar, en mètres : de `min` à
+ * `max`. Assez bas pour se voir sous la feuille en vue trois-quarts, sans toucher le fond du
+ * bassin (30 cm d'eau). Approximation de jeu.
+ */
+export const LILY_EGG_DEPTH = { min: 0.08, max: 0.2 } as const;
+/**
+ * Écart horizontal d'un œuf à la tige de sa feuille (à l'ancre, la tige partant du fond), en
+ * mètres (au plus).
+ */
+export const LILY_STEM_SPREAD = 0.015;
 /** Distance horizontale maximale entre une anémone et le rocher où pondre, en mètres. */
 export const REEF_ROCK_REACH = 0.3;
 /** Distance horizontale d'une ponte sur le sable au centre de l'anémone, en mètres. */
@@ -132,14 +165,25 @@ export function laysNearAnemone(species: SpeciesId): boolean {
   return REEF_EGG_SPECIES.includes(species);
 }
 
-/** Vrai si les œufs de l'espèce éclosent en alevins (faux : larves qui quittent le bac). */
+/** Vrai si l'espèce fraie sur la végétation seulement (`VEGETATION_EGG_SPECIES`). */
+export function laysOnVegetation(species: SpeciesId): boolean {
+  return VEGETATION_EGG_SPECIES.includes(species);
+}
+
+/**
+ * Vrai si les œufs de l'espèce éclosent en alevins (faux : larves du clown qui quittent le bac,
+ * œufs du poisson rouge dont les alevins ne sont pas encore simulés).
+ */
 export function hatchesToFry(species: SpeciesId): boolean {
-  return laysEggs(species) && !laysNearAnemone(species);
+  return laysEggs(species) && !laysNearAnemone(species) && !laysOnVegetation(species);
 }
 
 /** Plage de température de ponte de l'espèce, en °C, bornes comprises. */
 export function spawnTemperature(species: SpeciesId): readonly [number, number] {
-  return laysNearAnemone(species) ? REEF_SPAWN_TEMPERATURE : SPAWN_TEMPERATURE;
+  if (laysNearAnemone(species)) {
+    return REEF_SPAWN_TEMPERATURE;
+  }
+  return laysOnVegetation(species) ? GOLDFISH_SPAWN_TEMPERATURE : SPAWN_TEMPERATURE;
 }
 
 /** Vrai si `age` est un âge d'œuf valide : réel dans [0, `EGG_HATCH_TIME`). */
@@ -300,6 +344,71 @@ export function layClutch(
 }
 
 /**
+ * Frai `spawn` de `species` sur la végétation (issue #675), au plus `count` œufs : chaque œuf
+ * est tiré, parmi les plantes du décor et les nénuphars, sur l'une d'elles ; au pied d'une plante
+ * (comme `layClutch`), ou le long de la tige d'un nénuphar (à `LILY_STEM_SPREAD` de son ancre,
+ * la tige partant du fond, et à `LILY_EGG_DEPTH` sous la surface). Sans
+ * végétation (listes vides, `null` ou `undefined`), aucun œuf. Tous dans `water`, âge 0,
+ * surface `'plante'`.
+ */
+export function layVegetationClutch(
+  seed: number,
+  species: SpeciesId,
+  spawn: number,
+  count: number,
+  water: Box3,
+  plants: readonly DecorItem[] | null | undefined,
+  pads: readonly LilyPad[] | null | undefined,
+): MutableEgg[] {
+  const eggs: MutableEgg[] = [];
+  const plantCount = plants?.length ?? 0;
+  const padCount = pads?.length ?? 0;
+  const total = plantCount + padCount;
+  if (count <= 0 || total === 0) {
+    return eggs;
+  }
+  const draw = (k: number): number => spawnDraw(seed, species, spawn, k);
+  const inX = (x: number): number =>
+    clamp(x, water.minX + EGG_GLASS_INSET, water.maxX - EGG_GLASS_INSET);
+  const inZ = (z: number): number =>
+    clamp(z, water.minZ + EGG_GLASS_INSET, water.maxZ - EGG_GLASS_INSET);
+  const top = Math.min(water.maxY, water.minY + EGG_MAX_HEIGHT);
+  const bottom = Math.min(top, water.minY + EGG_MIN_HEIGHT);
+  for (let k = 0; k < count; k++) {
+    const base = 8 + 4 * k;
+    const pick = Math.min(total - 1, Math.floor(draw(base) * total));
+    const angle = draw(base + 1) * 2 * Math.PI;
+    const u = draw(base + 2);
+    const v = draw(base + 3);
+    if (pick < plantCount) {
+      const plant = plants![pick];
+      const r = EGG_PLANT_SPREAD * Math.sqrt(u);
+      eggs.push({
+        species,
+        x: inX(plant.x + r * Math.cos(angle)),
+        y: bottom + v * (top - bottom),
+        z: inZ(plant.z + r * Math.sin(angle)),
+        age: 0,
+        surface: 'plante',
+      });
+    } else {
+      const pad = pads![pick - plantCount];
+      const r = LILY_STEM_SPREAD * Math.sqrt(u);
+      const depth = LILY_EGG_DEPTH.min + (LILY_EGG_DEPTH.max - LILY_EGG_DEPTH.min) * v;
+      eggs.push({
+        species,
+        x: inX(pad.x + r * Math.cos(angle)),
+        y: clamp(water.maxY - depth, water.minY + EGG_SAND_LIFT, water.maxY),
+        z: inZ(pad.z + r * Math.sin(angle)),
+        age: 0,
+        surface: 'plante',
+      });
+    }
+  }
+  return eggs;
+}
+
+/**
  * Ponte `spawn` de `species` près d'une anémone (issue #653), au plus `count` œufs : une
  * anémone est tirée de la ponte ; si un rocher du décor est à moins de `REEF_ROCK_REACH` d'elle
  * (à l'horizontale, le plus proche), la grappe est collée sur le flanc de ce rocher tourné vers
@@ -404,11 +513,12 @@ export function nearestRock(
 }
 
 /**
- * Carré de la distance de `fish` à l'œuf de la vitre `egg`, l'écart en profondeur (axe des
- * vitres) diminué de `EGG_GLASS_REACH`.
+ * Carré de la distance de `fish` à l'œuf `egg` : pour un œuf de la vitre, l'écart en profondeur
+ * (axe des vitres) est diminué de `EGG_GLASS_REACH` ; ailleurs, distance ordinaire.
  */
 export function eggReachDistance2(fish: Pick<Fish, 'x' | 'y' | 'z'>, egg: Egg): number {
-  const dz = Math.max(0, Math.abs(fish.z - egg.z) - EGG_GLASS_REACH);
+  const reach = egg.surface === 'vitre' ? EGG_GLASS_REACH : 0;
+  const dz = Math.max(0, Math.abs(fish.z - egg.z) - reach);
   return (fish.x - egg.x) ** 2 + (fish.y - egg.y) ** 2 + dz * dz;
 }
 
@@ -423,16 +533,22 @@ function isEggCaught(fishes: readonly Fish[], egg: Egg): boolean {
   return false;
 }
 
+/** Vrai si `egg` est exposé aux adultes : collé sur la vitre, ou frai sur la végétation (#675). */
+export function isEggExposed(egg: Egg): boolean {
+  return egg.surface === 'vitre' || laysOnVegetation(egg.species);
+}
+
 /**
- * Prédation des œufs, **en place** : retire de `eggs` chaque œuf de la vitre à moins de
- * `EGG_EAT_RADIUS` d'un adulte nageur ; les œufs des plantes sont à l'abri. Renvoie le nombre
- * d'œufs mangés. Coût en O(œufs × animaux), borné par `MAX_EGGS` et `MAX_TOTAL_FISH`.
+ * Prédation des œufs, **en place** : retire de `eggs` chaque œuf exposé (`isEggExposed` : vitre,
+ * frai du poisson rouge) à moins de `EGG_EAT_RADIUS` d'un adulte nageur ; les œufs des
+ * corydoras cachés dans les plantes sont à l'abri. Renvoie le nombre d'œufs mangés. Coût en
+ * O(œufs × animaux), borné par `MAX_EGGS` et `MAX_TOTAL_FISH`.
  */
 export function eatEggsInPlace(eggs: Egg[], fishes: readonly Fish[]): number {
   let eaten = 0;
   for (let i = eggs.length - 1; i >= 0; i--) {
     const egg = eggs[i];
-    if (egg.surface === 'vitre' && isEggCaught(fishes, egg)) {
+    if (isEggExposed(egg) && isEggCaught(fishes, egg)) {
       eggs.splice(i, 1);
       eaten += 1;
     }

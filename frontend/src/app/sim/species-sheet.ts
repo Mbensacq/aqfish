@@ -718,6 +718,12 @@ const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
         'Grand adulte : 100 L pour le premier, 50 L de plus par adulte ; ne jamais relâcher dans la nature',
         source(OATA_ROUGE),
       ),
+      // Frai (#675) : seuil de 15 °C et ponte dans la végétation sourcés (FishKeeper) ; rythme,
+      // nombre d'œufs, incubation, haut de plage (22 °C) et nénuphars : approximations de jeu.
+      note(
+        'Reproduction : fraie dès 15 °C, quand l’eau se réchauffe ; œufs déposés dans la végétation aquatique, éclosion en 48 à 72 h ; dans le jeu, le groupe nourri pond sous les nénuphars ou au pied des plantes, et les adultes mangent les œufs qu’ils croisent',
+        source(`${FK_ROUGE} (rythme et nombre d’œufs : approximation de jeu)`),
+      ),
     ],
   },
 };

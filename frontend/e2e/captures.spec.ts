@@ -455,6 +455,22 @@ test.describe('Captures', () => {
     expect(errors).toEqual([]);
   });
 
+  // Frai du poisson rouge (#675) : œufs le long des tiges des nénuphars du bassin, vus de trois-quarts.
+  // Graine fixe 9 : ponte pleine (8 œufs, plafond de l’espèce), tiges bien visibles.
+  test('angle bassin-three-quarter-oeufs', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    await page.goto(
+      `/?capture=1&seed=9&time=${TIME_SECONDS}&environnement=bassin&camera=three-quarter&population=koi:3,rouge:2&oeufs=1`,
+    );
+    await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+    await page.screenshot({
+      path: join(OUTPUT_DIR, 'bassin-three-quarter-oeufs.png'),
+      animations: 'disabled',
+    });
+    expect(errors).toEqual([]);
+  });
+
   // Bac d'eau froide (#271) : axolotls seuls ; vue trois-quarts par défaut, côté et dessus.
   const COLD_CAPTURES = [
     { name: 'eaufroide-three-quarter', query: 'environnement=eaufroide' },

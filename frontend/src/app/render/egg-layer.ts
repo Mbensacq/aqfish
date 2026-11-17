@@ -15,7 +15,9 @@ import type { SceneLayer } from './effect-layer';
 import { ENVIRONMENT_TONES, PALETTE } from './palette';
 
 /**
- * Œufs des corydoras (issue #478, ADR 0111) et du poisson-clown (#653, orange) : un voxel crème par œuf, collé sur la vitre ou
+ * Œufs des corydoras (issue #478, ADR 0111), du poisson-clown (#653, orange) et du poisson rouge
+ * (#675, crème, dessinés après l'eau comme ceux du clown : sous l'eau sombre du bassin, le long
+ * des tiges des nénuphars) : un voxel crème par œuf, collé sur la vitre ou
  * dans une plante, de couleur plate sur toutes ses faces (ombré comme les granulés, son flanc
  * tombait sur le ton du sable et la grappe ne se lisait plus, capture du cycle 168). Un seul maillage
  * instancié de `MAX_EGGS` instances, alloué une fois (aucun tampon recréé en cours de partie) ;
@@ -99,7 +101,7 @@ export class EggLayer implements SceneLayer {
     EGG_VOXEL + EGG_OUTLINE,
   );
   private brightnessFactor = 1;
-  /** Vrai quand les œufs sont dessinés après l'eau (ponte de poisson-clown, #653). */
+  /** Vrai quand les œufs sont dessinés après l'eau (clown #653, poisson rouge #675). */
   private afterWater = false;
   /** Derniers œufs posés (relus quand le point de vue change) et leur durée d'incubation. */
   private eggs: readonly Egg[] | undefined;
@@ -180,7 +182,7 @@ export class EggLayer implements SceneLayer {
     }
     let reef = false;
     for (let i = 0; i < count && !reef; i++) {
-      reef = eggs![i].species === 'clown';
+      reef = eggs![i].species === 'clown' || eggs![i].species === 'rouge';
     }
     this.setAfterWater(reef);
     for (let i = 0; i < count; i++) {

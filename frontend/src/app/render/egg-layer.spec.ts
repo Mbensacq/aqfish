@@ -81,6 +81,20 @@ describe('EggLayer (#478)', () => {
     layer.dispose();
   });
 
+  it('frai du poisson rouge (#675) : crème comme les corydoras, dessiné après l’eau du bassin', () => {
+    const layer = new EggLayer();
+    const gold: Egg = { ...egg(0), species: 'rouge', surface: 'plante' };
+    layer.update([gold], EGG_HATCH_TIME);
+    expect(layer.drawnAfterWater).toBe(true);
+    expect(layer.mesh.renderOrder).toBe(EGG_AFTER_WATER_CORE_RENDER_ORDER);
+    const c = new Color();
+    layer.mesh.getColorAt(0, c);
+    expect(c.getHexString()).toBe(new Color(EGG_COLOR).getHexString());
+    layer.update([egg(0)], EGG_HATCH_TIME);
+    expect(layer.drawnAfterWater).toBe(false);
+    layer.dispose();
+  });
+
   it('au plus MAX_EGGS œufs, capacité allouée une fois', () => {
     const layer = new EggLayer();
     const array = layer.mesh.instanceMatrix.array;
