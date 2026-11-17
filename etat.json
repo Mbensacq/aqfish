@@ -8583,6 +8583,12 @@
           "debut": "2026-11-17T10:13:03.952Z",
           "fin": "2026-11-17T10:13:25.980Z",
           "note": "Issue #672 + #669 : lot dette garde de ponte sans fermeture, cible crevette début de pas, PIEGES (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-17T10:13:55.765Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
