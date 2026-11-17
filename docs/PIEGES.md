@@ -170,8 +170,8 @@ haut de sa section.
   attendu par Playwright 1.56 ; sans réseau vers le dépôt des navigateurs,
   `npx playwright install` échoue. Lien symbolique, hors du dépôt :
   `mkdir -p /opt/pw-browsers/chromium_headless_shell-1194/chrome-linux && ln -sf
-  /opt/pw-browsers/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell
-  /opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell`. La CI, elle,
+/opt/pw-browsers/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell
+/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell`. La CI, elle,
   installe son navigateur. (2026-11-07) Obsolète depuis le cycle 217 (#629) : Playwright 1.63
   attend directement la révision 1243.
 - **Remplacer la géométrie d'un maillage en cours de partie : `fond-ecran` compte les
@@ -336,7 +336,7 @@ haut de sa section.
   « Réglages » est déjà un geste : un choix « actif » mémorisé crée le contexte à ce clic.
   (2026-11-03)
 - **Lire la source d'un module `.ts` dans un test unitaire** (cycle 137, #411) : `import src
-  from './m.ts' with { loader: 'text' }` fonctionne sous `ng test` comme pour une feuille
+from './m.ts' with { loader: 'text' }` fonctionne sous `ng test` comme pour une feuille
   SCSS, mais TypeScript refuse l'import d'un `.ts` : le précéder de `// @ts-expect-error`
   (voir `core/ambient-sound/ambient-sound.spec.ts`, qui vérifie qu'aucun import ne vient de
   `sim/`). (2026-11-03)
@@ -349,13 +349,13 @@ haut de sa section.
   1,9 min). (2026-11-03)
 - **Lire une feuille SCSS dans un test unitaire** (cycle 136, #407) : pas de `node:fs` dans
   `ng test` (pas de types Node, bundle esbuild). `import x from './_f.scss' with { loader:
-  'text' }` fonctionne (attribut d'import du builder Angular), avec la déclaration de module
+'text' }` fonctionne (attribut d'import du builder Angular), avec la déclaration de module
   `ui/scss-text.d.ts`. Voir `ui/panel-contrast.spec.ts`. (2026-11-03)
 - **`npm run verify` sur `main` en arrière-plan pendant qu'on code : il lit le travail en
   cours** (cycle 127, #363) : lancé sur `main` puis suivi de modifications dans le même clone,
   le build (après formatage, lint et unitaires) a compilé les fichiers déjà modifiés et
   échoué. Pour mesurer `main` sans attendre, un worktree séparé (`git worktree add <dossier>
-  origin/main`, `node_modules` en lien symbolique) ; il sert aussi aux captures « avant ».
+origin/main`, `node_modules` en lien symbolique) ; il sert aussi aux captures « avant ».
   (2026-11-02)
 - **Mesurer le temps d'image en local : ~0,6 s par image en 1280 × 720** (cycle 127, #363) :
   le rendu logiciel du navigateur headless est si lent que les écarts d'une scène à l'autre se
@@ -450,9 +450,9 @@ haut de sa section.
   `sim/room-state.ts` depuis le lot 2 (ADR 0073), sans être utilisée par l'interface ; en
   écrire une seconde a donné « Multiple exports with the same name » au build des tests.
   Avant d'ajouter une fonction de la roadmap, chercher son nom (`grep -rn "export function
-  <nom>" src`) et le tableau des modules de `docs/ARCHITECTURE.md`. (2026-10-29)
+<nom>" src`) et le tableau des modules de `docs/ARCHITECTURE.md`. (2026-10-29)
 - **Prettier sur `docs/` réaligne tous les tableaux** (cycle 98, #305) : `npx prettier
-  --write ../docs/ARCHITECTURE.md` depuis `frontend/` a réécrit ~300 lignes (colonnes des
+--write ../docs/ARCHITECTURE.md` depuis `frontend/` a réécrit ~300 lignes (colonnes des
   tableaux), alors que `npm run format:check` ne regarde pas `docs/`. Ne formater que les
   fichiers de `frontend/` ; vérifier `git diff --stat` avant de commiter de la doc.
   (2026-10-29)
@@ -621,8 +621,8 @@ haut de sa section.
   alors que l'image fournit la version 1243 (`chrome-headless-shell-linux64/chrome-headless-shell`) :
   tous les e2e et captures échouent en 1 ms (« Executable doesn't exist »). Sans rien
   télécharger, créer le dossier attendu et un lien vers le binaire fourni (`mkdir -p
-  …-1194/chrome-linux && ln -s …-1243/chrome-headless-shell-linux64/chrome-headless-shell
-  …-1194/chrome-linux/headless_shell`), plus les fichiers vides `INSTALLATION_COMPLETE` et
+…-1194/chrome-linux && ln -s …-1243/chrome-headless-shell-linux64/chrome-headless-shell
+…-1194/chrome-linux/headless_shell`), plus les fichiers vides `INSTALLATION_COMPLETE` et
   `DEPENDENCIES_VALIDATED`. Captures et e2e passent ensuite normalement. (2026-10-23) Obsolète depuis le cycle 217 (#629) : Playwright 1.63 attend directement la révision 1243.
 - **`git checkout <fichier>` pour retirer un essai jetable efface aussi le travail en cours**
   (cycle 50) : le court-circuit de la passe palette (`vec4(color, 1.0)`, voir « Rendu ») posé
@@ -642,7 +642,7 @@ haut de sa section.
   branche de la PR #177) est ainsi parti sous un autre nom. Tout rôle qui committe (Dev, QA,
   Revue, Superviseur, sur une branche de code comme sur `equipe`) le fait au nom de Mathis,
   l'auteur des commits de `main` : `Mathis BENSACQ
-  <126905623+Mbensacq@users.noreply.github.com>`. Le plus sûr, commit par commit :
+<126905623+Mbensacq@users.noreply.github.com>`. Le plus sûr, commit par commit :
   `git -c user.name="Mathis BENSACQ" -c user.email="126905623+Mbensacq@users.noreply.github.com" commit …`
   (ou `git config user.name` / `user.email` dans le clone, avant le premier commit). Vérifier
   avec `git log -1 --format='%an <%ae>'` avant de pousser ; un commit mal attribué déjà poussé
@@ -775,7 +775,7 @@ haut de sa section.
   dans la page (`page.evaluate`, `fetch` d'une URL `data:`, `createImageBitmap`) ~7 s, chaque
   étape asynchrone attendant que le fil principal ait fini une image ; la boucle elle-même ne
   coûte presque rien. Utiliser `e2e/outils-pixels.ts` : `canvasShot` (`page.screenshot({ clip
-  })` sur la boîte du canevas, mêmes pixels, ~5 s) et `countColors` (PNG décodé dans Node par
+})` sur la boîte du canevas, mêmes pixels, ~5 s) et `countColors` (PNG décodé dans Node par
   `node:zlib`, ~0,1 s, décomptes identiques à ceux du navigateur, vérifiés sur le récif). Les
   actions de l'interface (clic, `fill`) coûtent aussi plusieurs images chacune : en grouper les
   mesures (`evaluateAll`). (2026-11-02)
@@ -1016,7 +1016,7 @@ haut de sa section.
   charge ; un runner de CI lent sous couverture a multiplié les durées par 7 environ
   (`world.spec.ts` « graine N », 0,7 s en local, a dépassé 5 s). Pour les trouver, depuis
   `frontend/` : `npx vitest run --globals --includeTaskLocation src/app/sim src/app/render
-  src/app/core --reporter=./scripts/durees-tests.mjs` (liste ceux restés sur le délai par
+src/app/core --reporter=./scripts/durees-tests.mjs` (liste ceux restés sur le délai par
   défaut ; `SEUIL_MS`, `SORTIE` facultatifs). Les mesures varient de ±15 % d'un passage à
   l'autre : relancer deux fois. Sous Vitest seul, les specs qui ont besoin du DOM
   (`render/aquarium-view`, `core/capture`, `core/keyboard`, `ui/`) échouent : normal, elles
@@ -1094,7 +1094,7 @@ haut de sa section.
 - **Monde par défaut avec décor** (cycle 15) : `createDefaultWorld` contient des rochers
   (`DEFAULT_DECOR`). Un test qui compare les néons du monde par défaut à ceux d'un monde
   de néons seuls doit donner le même décor aux deux (`createWorld(seed, pop, [],
-  DEFAULT_DECOR)`), sinon les trajectoires divergent dès la naissance. (2026-10-19)
+DEFAULT_DECOR)`), sinon les trajectoires divergent dès la naissance. (2026-10-19)
 - **Population par défaut écrite en dur** : `e2e/neon.spec.ts` compte les poissons du monde
   réel ; changer `defaultPopulation` d'une espèce impose de l'y mettre à jour (cycle 8 :
   8 → 12 ; cycle 11 : 12 néons + 6 guppys). (2026-10-18)
@@ -1325,7 +1325,7 @@ haut de sa section.
   que des axolotls, et comptaient sur leurs identifiants (0 à 3) : l'ajout des grenouilles
   (identifiants 2 à 4) les faisait échouer ou changeait les individus observés. Filtrer par
   espèce, et construire le monde observé avec `createWorld(seed, [{ species, count }], [], [],
-  environnement)` plutôt que `setPopulation(createDefaultWorld(…))`. (2026-10-22)
+environnement)` plutôt que `setPopulation(createDefaultWorld(…))`. (2026-10-22)
 - **Nouvelle espèce : tests transverses qui cassent hors des tables** (cycle 121, #362) : en
   plus des listes d'espèces (`kuhli:0,gourami:0` à allonger d'un `sed`, comptes de lignes du
   panneau 7 → 11), trois tests imposent des contraintes globales : le nom scientifique doit être
@@ -1348,7 +1348,7 @@ haut de sa section.
   écrire un script hors du dépôt qui importe `sim/world.ts` (`createDefaultWorld`,
   `advanceInPlace`, `feedInPlace`), le regrouper avec l'esbuild déjà installé
   (`frontend/node_modules/.bin/esbuild bench.ts --bundle --platform=node --format=esm
-  --outfile=bench.mjs`) et le lancer avec `node`. Pour compter les appels d'une fonction
+--outfile=bench.mjs`) et le lancer avec `node`. Pour compter les appels d'une fonction
   interne (impossible à espionner en ESM), ajouter un compteur `globalThis` le temps du
   regroupement, puis restaurer le fichier **avant** tout test. Vérifier qu'une optimisation
   ne change rien en comparant l'empreinte (`sha256` du JSON) du monde après quelques
@@ -1600,7 +1600,7 @@ haut de sa section.
   poser le ton sur la couleur mesurée (passe court-circuitée, voir plus bas). Depuis le
   cycle 139 (ADR 0101), la capture `filtre=aucun` donne l'entrée de la passe en pleine
   résolution ; pour un pixel précis, court-circuiter la passe (`gl_FragColor = vec4(color,
-  1.0)`), et vérifier le choix par `nameAt` dans `palette.spec.ts`, qui applique les vraies
+1.0)`), et vérifier le choix par `nameAt` dans `palette.spec.ts`, qui applique les vraies
   pénalités. (2026-10-24, corrigé le 2026-11-04)
 - **Éditeur : un élément ajouté au bord était posé sans tenir compte de son emprise**
   (cycle 62, #59) : `addDecorItem` ne bornait que le point cliqué (`DECOR_EDGE_MARGIN`,
@@ -1613,7 +1613,7 @@ haut de sa section.
   `pointerdown` sur le canvas dès sa construction ; un écouteur ajouté ensuite passe après lui,
   trop tard pour lui couper la main (`controls.enabled = false`) avant qu'il ne capture le
   pointeur. Écouter en **phase de capture** (`addEventListener('pointerdown', f, { capture:
-  true })`) : au niveau de la cible, Chromium appelle les écouteurs de capture d'abord. Ne
+true })`) : au niveau de la cible, Chromium appelle les écouteurs de capture d'abord. Ne
   plus lire `controls.enabled` pour savoir si la vue est interactive (il change pendant un
   glissement) : garder le réglage d'origine à part (`interactive`). (2026-10-24)
 
@@ -1815,3 +1815,11 @@ haut de sa section.
   sur la branche, et comparer à l'octet (`cmp`). Une issue peut aussi décrire comme nouvelle
   une espèce déjà livrée (crevette nettoyeuse, #422 puis #656) : chercher l'identifiant dans
   `sim/species.ts` avant de coder. (2026-11-17)
+- **Un nageur ne s'approche pas à moins de `wallMargin` + `AVOID_ZONE` d'un obstacle** (11,5 cm
+  pour le clown, cycle 235, #670) : un point visé collé à un rocher ou au pied d'un corail
+  (ponte, objet posé) est hors d'atteinte ; le poisson tourne au-dessus ou autour, jamais
+  dessus. `stepFish(…, closeAvoid)` réduit cette distance pour un poisson donné (filet de
+  sécurité intact), mais à n'activer que près du but : sur tout le trajet, le poisson se coince
+  contre un corail. Les œufs du récif sont aussi sous le bas des bornes de nage
+  (`water.minY + wallMargin`) : relever le point visé. `advanceInPlace(world, n)` compte des
+  **pas** (`SIM_DT` = 1/60 s), pas des secondes. (2026-11-17)

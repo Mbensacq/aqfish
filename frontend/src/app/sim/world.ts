@@ -16,6 +16,14 @@ import {
 } from './mortality';
 import { behaviorTarget, hasLandedFood, speciesBehavior, type BehaviorContext } from './behaviors';
 import { bubbleSourceFor, fillBubbles, type BubbleBuffer } from './bubbles';
+import {
+  clutchGuardInto,
+  GUARD_FLOOR_CLEARANCE,
+  guardTarget,
+  isNearClutch,
+  nearestHome,
+  noGuard,
+} from './clutch-guard';
 import { addRivalSteering, enforceRivalDistance, hasRivals } from './compatibility';
 import type { CareMode } from './care-mode';
 import { catappaActive, withCatappaCount } from './catappa';
@@ -986,6 +994,9 @@ function stepInPlace(world: MutableWorld, dt: number, clock: SimClock): void {
   // Anémones (issue #150) : points d'attache des poissons-clowns, aucun hors du récif.
   const homes = worldAnemoneHomes(world);
   let bondRank = 0;
+  // Garde de la ponte (issue #670) : sans œuf du récif, aucun gardien (nage d'avant, au bit près).
+  const guard = clutchGuardInto(fishes, world.eggs, GUARD);
+  const guardHome = guard.index < 0 ? null : nearestHome(homes, guard);
   // Comportements de l'espèce (issue #427) : points visés calculés, comme le banc, sur les
   // positions du début du pas. Sans espèce concernée, aucun calcul (nage d'avant, au bit près).
   const behaving = computeBehaviorTargets(world, fishes, place, key);
@@ -1037,6 +1048,11 @@ function stepInPlace(world: MutableWorld, dt: number, clock: SimClock): void {
       target = bondTarget(fish, bond, homeForRank(homes, bond, bondRank), food, target);
       bondRank += 1;
     }
+    if (i === guard.index) {
+      // Le gardien reste près des œufs : ni nourriture, ni anémone, ni comportement.
+      const floorY = bounds.hard.minY + GUARD_FLOOR_CLEARANCE;
+      target = guardTarget(guard, guardHome, world.time, GUARD_TARGET, floorY);
+    }
     let grazing = false;
     if (target === null && behaving && behaviorFlags[i] === 1) {
       // La nourriture en vue l'emporte ; sinon, le point visé du comportement.
@@ -1060,6 +1076,7 @@ function stepInPlace(world: MutableWorld, dt: number, clock: SimClock): void {
       target,
       nightRest(fish.species, intensity),
       grazing,
+      i === guard.index && isNearClutch(fish, guard),
     );
     if (flowing) {
       applyCurrentInPlace(
@@ -2041,6 +2058,10 @@ export function setWorldCatappaInPlace(world: MutableWorld, count: number): void
 const FOOD_TARGET: Vec3 = { x: 0, y: 0, z: 0 };
 /** Point visé vers l'anémone, réutilisé d'un poisson à l'autre (aucune allocation). */
 const HOME_TARGET: Vec3 = { x: 0, y: 0, z: 0 };
+/** Garde de la ponte du pas (issue #670), réutilisée d'un pas à l'autre (aucune allocation). */
+const GUARD = noGuard();
+/** Point visé par le gardien de la ponte (aucune allocation). */
+const GUARD_TARGET: Vec3 = { x: 0, y: 0, z: 0 };
 
 /**
  * Point visé par un poisson attaché à l'anémone `home` (issue #150), passé à `stepFish` à la

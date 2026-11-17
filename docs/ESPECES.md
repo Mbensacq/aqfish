@@ -14,10 +14,10 @@ sur `docs/SOINS.md` § 11 jusqu'à vérification.
 2. **Jamais de valeur inventée.** Une donnée sans source consultable est « approximation de
    jeu » (code, fiche, ce fichier). Les désaccords entre sources sont affichés, pas arbitrés en
    silence.
-3. **Niveaux de confiance** : *élevée* (base scientifique ou taxonomique, étude publiée, texte
-   réglementaire, fiche universitaire) ; *moyenne* (base aquariophile reconnue et maintenue,
-   fiche de clinique vétérinaire) ; *faible / secondaire* (boutique, blog, forum, synthèse
-   encyclopédique) ; *non vérifié*. Les sources secondaires sont à remplacer par des primaires.
+3. **Niveaux de confiance** : _élevée_ (base scientifique ou taxonomique, étude publiée, texte
+   réglementaire, fiche universitaire) ; _moyenne_ (base aquariophile reconnue et maintenue,
+   fiche de clinique vétérinaire) ; _faible / secondaire_ (boutique, blog, forum, synthèse
+   encyclopédique) ; _non vérifié_. Les sources secondaires sont à remplacer par des primaires.
 4. **Statut légal** : le droit français a été lu à partir de l'arrêté du 8 octobre 2018 et de
    l'arrêté modificatif du 5 septembre 2025, **pas** de la version consolidée de Légifrance
    (inaccessible pendant la recherche). Tout statut affiché porte « à vérifier auprès de la
@@ -42,29 +42,29 @@ sur `docs/SOINS.md` § 11 jusqu'à vérification.
 - Fiches utilisables (avec badges de confiance) : néon, guppy, corydoras poivré, axolotl,
   poisson-clown (paramètres d'eau de source secondaire seulement), chirurgien bleu.
 - **Fiche koï à bloquer** : aucun paramètre chiffré vérifié.
-- **Xénope (*Xenopus laevis*) : interdit en France**, ne jamais le proposer.
-- **Grenouille naine africaine (*Hymenochirus*)** : famille Pipidae ; en lecture littérale de
+- **Xénope (_Xenopus laevis_) : interdit en France**, ne jamais le proposer.
+- **Grenouille naine africaine (_Hymenochirus_)** : famille Pipidae ; en lecture littérale de
   l'annexe 2 de l'arrêté, certificat de capacité dès 1 individu (non confirmé). Ne pas la
   proposer sans confirmation officielle.
-- **Triton générique** à remplacer par *Cynops pyrrhogaster* ou *C. orientalis* (« Autres
+- **Triton générique** à remplacer par _Cynops pyrrhogaster_ ou _C. orientalis_ (« Autres
   Caudata », 1 à 40 sans formalité) : eau fraîche 14–20 °C, sans poissons.
 - **Chirurgien bleu** : pas une espèce de débutant (31 cm, au moins 300 L, sujets surtout
   prélevés dans la nature).
 
 ## Tableau récapitulatif (espèces actuelles et paludarium)
 
-| Espèce | T° | pH | GH/KH | Volume / dimensions min | Groupe | Régime | Caractère | Difficulté | Sources (confiance) |
-|---|---|---|---|---|---|---|---|---|---|
-| Néon (*Paracheirodon innesi*) | 21–25 °C | 4,0–7,5 | 1–12 dGH ; KH non vérifié | base 60 × 30 cm (~54 L) | groupe requis ; effectif non vérifié | omnivore micro-prédateur | paisible | facile (souche commerciale fragile) | Seriously Fish (moyenne) |
-| Guppy (*Poecilia reticulata*) | 17–28 °C | 7,0–8,5 | 8–30 dGH | base 45 × 30 cm (~41 L) | groupe requis | omnivore | paisible | facile | Seriously Fish (moyenne) |
-| Corydoras poivré (*Hoplisoma paleatum*, ex-*Corydoras paleatus*) | 22–26 °C | 6,0–7,0 | 0–12 dGH | 61 × 38 × 30 cm (~70 L) | groupe requis | omnivore opportuniste de fond | paisible | facile | Seriously Fish (moyenne) |
-| Koï (*Cyprinus rubrofuscus* / *C. carpio*) | non vérifié | non vérifié | non vérifié | bassin ; volume non vérifié | non vérifié | non vérifié | non vérifié | non vérifié | USGS NAS (élevée : taxonomie, KHV) |
-| Poisson rouge (*Carassius auratus*) | 4–25 °C (OATA) ; 4–30 °C (FishKeeper) | 6,0–8,0 (OATA) ; 7,0–8,0 préféré (FishKeeper) | 5–19 dGH (OATA) ; jusqu'à 25 dH (FishKeeper) | 100 L pour un adulte, + 50 L par adulte (OATA) ; bassin ≥ 60 cm de profondeur par endroits (FishKeeper) | sociable, en groupe (FishKeeper) ; peut vivre seul (OATA) | omnivore | paisible | facile | OATA [65] (moyenne), FishKeeper [66] (secondaire) |
-| Axolotl (*Ambystoma mexicanum*) | 15,5–18 °C idéal ; > 23 °C = stress thermique | 6,5–8 (idéal 7,4–7,6) | GH 7–14 | non vérifié | seul ou entre axolotls | carnivore | calme, sans poissons | intermédiaire | AmphibiaWeb (élevée), Agave Vet (moyenne), étude MDPI (élevée) |
-| Poisson-clown (*Amphiprion ocellaris*) | 23–27 °C (secondaire) | 8,0–8,5 (secondaire) | densité 1,020–1,026 (secondaire) | ~114 L ; > 190 L avec anémone (secondaire) | couple | omnivore planctonophage | territorial autour de son hôte | facile si né en captivité | FishBase (élevée), Saltcorner (faible) |
-| Chirurgien bleu (*Paracanthurus hepatus*) | non vérifié | non vérifié | non vérifié | ≥ 300 L pour 1 individu < 20 cm (OATA via secondaire) ; 700 L (ReefApp, secondaire) | non vérifié | zooplancton + algues | aiguillon venimeux | **pas pour débutant** | FishBase (élevée), études sur le commerce (élevée) |
-| Grenouille naine (*Hymenochirus boettgeri*) | optimum 25 °C ; 20–25 °C en protocole de laboratoire | 7,6–7,8 optimum ; 7 ± 0,4 en laboratoire | conductivité 900 ± 100 µS/cm (laboratoire) | non vérifié | non vérifié | carnivore par aspiration | paisible, timide | **statut légal à vérifier** | AmphibiaWeb (élevée), protocole de laboratoire (moyenne) |
-| Triton à ventre de feu chinois (*Cynops orientalis*) | 14–20 °C ; éviter > 23 °C | non vérifié | non vérifié | non vérifié | non vérifié | carnivore (invertébrés) | paisible, sans poissons | intermédiaire (souvent prélevé dans la nature) | Caudata Culture (moyenne) |
+| Espèce                                                           | T°                                                   | pH                                            | GH/KH                                        | Volume / dimensions min                                                                                 | Groupe                                                    | Régime                        | Caractère                      | Difficulté                                     | Sources (confiance)                                            |
+| ---------------------------------------------------------------- | ---------------------------------------------------- | --------------------------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- | ----------------------------- | ------------------------------ | ---------------------------------------------- | -------------------------------------------------------------- |
+| Néon (_Paracheirodon innesi_)                                    | 21–25 °C                                             | 4,0–7,5                                       | 1–12 dGH ; KH non vérifié                    | base 60 × 30 cm (~54 L)                                                                                 | groupe requis ; effectif non vérifié                      | omnivore micro-prédateur      | paisible                       | facile (souche commerciale fragile)            | Seriously Fish (moyenne)                                       |
+| Guppy (_Poecilia reticulata_)                                    | 17–28 °C                                             | 7,0–8,5                                       | 8–30 dGH                                     | base 45 × 30 cm (~41 L)                                                                                 | groupe requis                                             | omnivore                      | paisible                       | facile                                         | Seriously Fish (moyenne)                                       |
+| Corydoras poivré (_Hoplisoma paleatum_, ex-_Corydoras paleatus_) | 22–26 °C                                             | 6,0–7,0                                       | 0–12 dGH                                     | 61 × 38 × 30 cm (~70 L)                                                                                 | groupe requis                                             | omnivore opportuniste de fond | paisible                       | facile                                         | Seriously Fish (moyenne)                                       |
+| Koï (_Cyprinus rubrofuscus_ / _C. carpio_)                       | non vérifié                                          | non vérifié                                   | non vérifié                                  | bassin ; volume non vérifié                                                                             | non vérifié                                               | non vérifié                   | non vérifié                    | non vérifié                                    | USGS NAS (élevée : taxonomie, KHV)                             |
+| Poisson rouge (_Carassius auratus_)                              | 4–25 °C (OATA) ; 4–30 °C (FishKeeper)                | 6,0–8,0 (OATA) ; 7,0–8,0 préféré (FishKeeper) | 5–19 dGH (OATA) ; jusqu'à 25 dH (FishKeeper) | 100 L pour un adulte, + 50 L par adulte (OATA) ; bassin ≥ 60 cm de profondeur par endroits (FishKeeper) | sociable, en groupe (FishKeeper) ; peut vivre seul (OATA) | omnivore                      | paisible                       | facile                                         | OATA [65] (moyenne), FishKeeper [66] (secondaire)              |
+| Axolotl (_Ambystoma mexicanum_)                                  | 15,5–18 °C idéal ; > 23 °C = stress thermique        | 6,5–8 (idéal 7,4–7,6)                         | GH 7–14                                      | non vérifié                                                                                             | seul ou entre axolotls                                    | carnivore                     | calme, sans poissons           | intermédiaire                                  | AmphibiaWeb (élevée), Agave Vet (moyenne), étude MDPI (élevée) |
+| Poisson-clown (_Amphiprion ocellaris_)                           | 23–27 °C (secondaire)                                | 8,0–8,5 (secondaire)                          | densité 1,020–1,026 (secondaire)             | ~114 L ; > 190 L avec anémone (secondaire)                                                              | couple                                                    | omnivore planctonophage       | territorial autour de son hôte | facile si né en captivité                      | FishBase (élevée), Saltcorner (faible)                         |
+| Chirurgien bleu (_Paracanthurus hepatus_)                        | non vérifié                                          | non vérifié                                   | non vérifié                                  | ≥ 300 L pour 1 individu < 20 cm (OATA via secondaire) ; 700 L (ReefApp, secondaire)                     | non vérifié                                               | zooplancton + algues          | aiguillon venimeux             | **pas pour débutant**                          | FishBase (élevée), études sur le commerce (élevée)             |
+| Grenouille naine (_Hymenochirus boettgeri_)                      | optimum 25 °C ; 20–25 °C en protocole de laboratoire | 7,6–7,8 optimum ; 7 ± 0,4 en laboratoire      | conductivité 900 ± 100 µS/cm (laboratoire)   | non vérifié                                                                                             | non vérifié                                               | carnivore par aspiration      | paisible, timide               | **statut légal à vérifier**                    | AmphibiaWeb (élevée), protocole de laboratoire (moyenne)       |
+| Triton à ventre de feu chinois (_Cynops orientalis_)             | 14–20 °C ; éviter > 23 °C                            | non vérifié                                   | non vérifié                                  | non vérifié                                                                                             | non vérifié                                               | carnivore (invertébrés)       | paisible, sans poissons        | intermédiaire (souvent prélevé dans la nature) | Caudata Culture (moyenne)                                      |
 
 ## Qualité d'eau : règles générales
 
@@ -88,7 +88,7 @@ sur `docs/SOINS.md` § 11 jusqu'à vérification.
 - **CL50** : chez le betta adulte, CL50 sur 96 h de 1,7 g/L d'ammoniac total-N, 7,7 mg/L de
   NH₃-N et 343,6 mg/L de nitrite-N (BMC Zoology 2023, élevée) ; la CL50 96 h des poissons d'eau
   douce se situe généralement entre 0,068 et 2,0 mg/L de NH₃. Pour le jeu : la robustesse peut
-  moduler la *vitesse* de dégradation de la santé, jamais la cible.
+  moduler la _vitesse_ de dégradation de la santé, jamais la cible.
 - **Catégories** : eau douce tropicale NH₃ = 0, NO₂ = 0, NO₃ < 20 mg/L ; eau froide (koï,
   poisson rouge) mêmes principes, températures non vérifiées ; marin : seuils Reefkeeping non
   revérifiés ici ; amphibiens : axolotl, ammoniac 0, nitrate < 10 ppm, eau dure (GH 7–14),
@@ -101,8 +101,9 @@ sur `docs/SOINS.md` § 11 jusqu'à vérification.
 
 ## Fiches des espèces actuelles
 
-### Néon — *Paracheirodon innesi* (Myers, 1936)
-- **Taxonomie** : anciens noms *Hyphessobrycon innesi*, *Cheirodon innesi* (Seriously Fish).
+### Néon — _Paracheirodon innesi_ (Myers, 1936)
+
+- **Taxonomie** : anciens noms _Hyphessobrycon innesi_, _Cheirodon innesi_ (Seriously Fish).
 - **Origine** : bassin amazonien (Colombie, Brésil, Pérou) ; ruisseaux forestiers et petits
   affluents ; eau acide, dureté carbonatée et conductivité négligeables, teintée d'acides
   humiques (eau noire), parfois eau claire ; fond de branches, racines et litière.
@@ -112,8 +113,8 @@ sur `docs/SOINS.md` § 11 jusqu'à vérification.
   26,5–29 °C ; un importateur (Quality Marine, secondaire) donne pH 3,5–7,5 et 21–29 °C ;
   `docs/SOINS.md` cite FishBase 20–26 °C, pH 5,0–7,0. Afficher 21–25 °C et signaler que les
   néons d'élevage sont plus adaptables que les sauvages.
-- **Bac** : base 60 × 30 cm (~54 L) ; éclairage tamisé, plantes d'ombre (*Microsorum*,
-  *Taxiphyllum*, *Cryptocoryne*), plantes flottantes, bois, litière de feuilles ; grégaire,
+- **Bac** : base 60 × 30 cm (~54 L) ; éclairage tamisé, plantes d'ombre (_Microsorum_,
+  _Taxiphyllum_, _Cryptocoryne_), plantes flottantes, bois, litière de feuilles ; grégaire,
   effectif minimal chiffré non vérifié.
 - **Alimentation** : micro-prédateur omnivore ; détails non vérifiés.
 - **Comportement** : paisible, avec d'autres espèces paisibles.
@@ -124,7 +125,8 @@ sur `docs/SOINS.md` § 11 jusqu'à vérification.
   chaud.
 - **Statut** : IUCN « Least Concern » (via synthèse encyclopédique, moyenne).
 
-### Guppy — *Poecilia reticulata*
+### Guppy — _Poecilia reticulata_
+
 - **Origine** : nord-est de l'Amérique du Sud et sud des Caraïbes (Venezuela, Trinidad,
   Guyana) ; certaines populations en eau saumâtre.
 - **Taille** : 60 mm en longueur standard au maximum. Durée de vie : non vérifié.
@@ -138,9 +140,10 @@ sur `docs/SOINS.md` § 11 jusqu'à vérification.
 - **Débutant** : oui, **si l'eau est dure**. Erreur classique : le mélanger avec des espèces
   d'eau douce et acide.
 
-### Corydoras poivré — *Hoplisoma paleatum* (anciennement *Corydoras paleatus*)
-- **Taxonomie** : transfert récent de *Corydoras* vers *Hoplisoma* (Seriously Fish, synthèse) ;
-  synonymes *Callichthys paleatus*, *Corydoras maculatus*, *C. marmoratus*. Afficher les deux
+### Corydoras poivré — _Hoplisoma paleatum_ (anciennement _Corydoras paleatus_)
+
+- **Taxonomie** : transfert récent de _Corydoras_ vers _Hoplisoma_ (Seriously Fish, synthèse) ;
+  synonymes _Callichthys paleatus_, _Corydoras maculatus_, _C. marmoratus_. Afficher les deux
   noms.
 - **Origine** : sud du Brésil, Uruguay, Paraguay, Argentine ; rivières, affluents, eaux
   stagnantes.
@@ -163,20 +166,22 @@ sur `docs/SOINS.md` § 11 jusqu'à vérification.
   environ 5 °C plus fraîche ; environ 2 mâles par femelle.
 - **Débutant** : oui. **Statut** : IUCN « Least Concern ».
 
-### Koï — *Cyprinus rubrofuscus* (ou *Cyprinus carpio* selon les sources)
-- **Taxonomie** : l'USGS (NAS) range la koï sous *Cyprinus rubrofuscus* Lacepède, 1803 (carpe
-  de l'Amour), synonymes *C. carpio*, *C. carpio haematopterus*, et précise qu'elle est souvent
+### Koï — _Cyprinus rubrofuscus_ (ou _Cyprinus carpio_ selon les sources)
+
+- **Taxonomie** : l'USGS (NAS) range la koï sous _Cyprinus rubrofuscus_ Lacepède, 1803 (carpe
+  de l'Amour), synonymes _C. carpio_, _C. carpio haematopterus_, et précise qu'elle est souvent
   identifiée à tort comme carpe européenne (Kottelat & Freyhof 2007). Une note taxonomique de
-  2025 (Zenodo) indique que *C. rubrofuscus* est « largement accepté comme distinct » de
-  *C. carpio* mais génétiquement très proche. Afficher « *Cyprinus rubrofuscus* (koï, forme
-  domestique), souvent nommée *C. carpio* dans les anciennes sources ».
+  2025 (Zenodo) indique que _C. rubrofuscus_ est « largement accepté comme distinct » de
+  _C. carpio_ mais génétiquement très proche. Afficher « _Cyprinus rubrofuscus_ (koï, forme
+  domestique), souvent nommée _C. carpio_ dans les anciennes sources ».
 - **Origine du taxon sauvage** : bassins de l'Amour au fleuve Rouge (synthèse USFWS).
 - **Taille, eau, volume, alimentation, longévité, statut légal en France** : **non vérifié**.
   Consulter FishBase et une source vétérinaire avant d'afficher des chiffres.
 - **Maladies** : porteuse et vectrice du KHV, capable de fortes mortalités (USGS, élevée).
 - **Débutant** : bassin extérieur seulement.
 
-### Poisson rouge — *Carassius auratus* (#654, consulté le 2026-11-16)
+### Poisson rouge — _Carassius auratus_ (#654, consulté le 2026-11-16)
+
 - **Taille** : jusqu'à environ 25 cm en aquarium, 40 cm et plus rapportés (OATA [65]) ;
   30 cm et plus (FishKeeper [66]).
 - **Eau** : 4–25 °C, pH 6,0–8,0, 5–19 °dH, ammoniaque et nitrite nuls, nitrate au plus
@@ -197,7 +202,8 @@ sur `docs/SOINS.md` § 11 jusqu'à vérification.
 - **Statut légal en France** : forme domestique, statut **non vérifié** ; ne jamais relâcher
   (OATA).
 
-### Axolotl — *Ambystoma mexicanum*
+### Axolotl — _Ambystoma mexicanum_
+
 - **Origine** : lacs Xochimilco et Chalco (Mexique) ; ne survit plus dans la nature que dans
   les canaux de Xochimilco (Caudata Culture).
 - **Taille** : adulte typique de 20 à 28 cm en longueur totale, jusqu'à 43 cm (Caudata Culture,
@@ -218,12 +224,13 @@ sur `docs/SOINS.md` § 11 jusqu'à vérification.
   sans formalité**, certificat de capacité au-delà (arrêtés de 2018 et 2025). Afficher : « légal
   jusqu'à 40 individus sans démarche ; ne jamais relâcher ; à vérifier auprès de la DDPP ».
 
-### Poisson-clown ocellaris — *Amphiprion ocellaris*
+### Poisson-clown ocellaris — _Amphiprion ocellaris_
+
 - **Origine** : Indo-Pacifique ouest ; récifs et lagons abrités, de 1 à 15 m (FishBase,
   Animal Diversity Web, élevée).
 - **Taille** : 11 cm en longueur totale (FishBase).
-- **Biologie** : vit dans de grandes anémones (*Heteractis magnifica*, *Stichodactyla
-  gigantea*, *S. mertensii*) ; hermaphrodite protandre, couple monogame ; œufs gardés par le
+- **Biologie** : vit dans de grandes anémones (_Heteractis magnifica_, _Stichodactyla
+  gigantea_, _S. mertensii_) ; hermaphrodite protandre, couple monogame ; œufs gardés par le
   mâle ; élevé artificiellement pour le commerce (FishBase). En marin c'est l'exception : selon
   UF/IFAS (FA224), plus de 90 % des poissons d'eau douce sont disponibles nés en captivité, mais
   la grande majorité des poissons marins d'ornement sont prélevés dans la nature.
@@ -238,10 +245,17 @@ sur `docs/SOINS.md` § 11 jusqu'à vérification.
   sable à son pied) ; ils éclosent en larves planctoniques qui quittent le bac. Rythme, nombre
   et incubation : **approximations de jeu** (une vraie ponte compte plusieurs centaines d'œufs
   et éclot en une semaine environ, non vérifié ici).
+- **Garde de la ponte** (#670, `sim/clutch-guard.ts`) : le mâle garde les œufs (FishBase,
+  ci-dessus). Dans le jeu, le sexe n'est pas modélisé : le premier clown adulte sain et pas trop
+  affamé reste à quelques centimètres de la ponte jusqu'à l'éclosion, en va-et-vient au-dessus
+  des œufs (la ventilation) avec de courtes sorties vers l'anémone, et ne court pas aux
+  granulés ; affamé, il retourne manger et un autre clown le relaie. Rayon, rythme et seuil de
+  faim : **approximations de jeu** ; le retrait des œufs morts n'est pas simulé.
 
-### Chirurgien bleu — *Paracanthurus hepatus* (Linnaeus, 1766)
+### Chirurgien bleu — _Paracanthurus hepatus_ (Linnaeus, 1766)
+
 - **Origine** : Indo-Pacifique ; terrasses récifales externes battues par le courant, 2 à 40 m ;
-  juvéniles dans les branches de *Pocillopora eydouxi* (FishBase, élevée).
+  juvéniles dans les branches de _Pocillopora eydouxi_ (FishBase, élevée).
 - **Taille** : **31 cm** en longueur totale (FishBase). **Alimentation** : zooplancton et
   algues. **Danger** : glande à venin associée à l'épine du pédoncule caudal.
 - **Bac** : au moins 300 L pour un individu de moins de 20 cm (OATA, via un revendeur,
@@ -257,6 +271,7 @@ sur `docs/SOINS.md` § 11 jusqu'à vérification.
 ## Paludarium : espèces réelles et légales
 
 ### Cadre légal français (synthèse, à vérifier sur la version consolidée)
+
 - **Texte** : arrêté du 8 octobre 2018 fixant les règles générales de détention d'animaux
   d'espèces non domestiques, modifié par l'arrêté du 5 septembre 2025 (en vigueur le
   10 septembre 2025). Annexe 2 : trois régimes selon l'effectif : (a) pas de formalité,
@@ -264,10 +279,10 @@ sur `docs/SOINS.md` § 11 jusqu'à vérification.
   déclaration se fait **avant** l'acquisition. La Fédération Française d'Aquariophilie juge que
   le texte de 2025 change très peu de choses pour l'aquariophilie.
 - **« Autres Caudata »** (hors annexe A CITES/UE et espèces protégées) : 1 à 40 sans formalité,
-  certificat au-delà : *Cynops*, *Paramesotriton*, *Pleurodeles waltl*, axolotl non domestique.
-- ***Triturus* spp.** : certificat de capacité dès 1 individu.
-- **« Autres espèces de Pipidae (dont *Xenopus* spp.) »** : certificat dès 1 individu ;
-  *Hymenochirus* appartient aux Pipidae.
+  certificat au-delà : _Cynops_, _Paramesotriton_, _Pleurodeles waltl_, axolotl non domestique.
+- **_Triturus_ spp.** : certificat de capacité dès 1 individu.
+- **« Autres espèces de Pipidae (dont _Xenopus_ spp.) »** : certificat dès 1 individu ;
+  _Hymenochirus_ appartient aux Pipidae.
 - **« Autres Anoures »** (hors annexe A et espèces protégées) : 1 à 40 sans formalité.
 - **Espèces indigènes** : l'arrêté du 8 janvier 2021 protège les amphibiens et reptiles de
   métropole ; détention de spécimens prélevés dans la nature interdite, spécimens nés en
@@ -275,13 +290,14 @@ sur `docs/SOINS.md` § 11 jusqu'à vérification.
   français dans le jeu.
 
 ### Grenouille
-- ***Xenopus laevis* (xénope lisse) : à exclure.** Ajouté à la liste des espèces exotiques
+
+- **_Xenopus laevis_ (xénope lisse) : à exclure.** Ajouté à la liste des espèces exotiques
   envahissantes préoccupantes pour l'Union (règlement UE 1143/2014) par le règlement
   d'exécution (UE) 2022/1203 ; en France, l'arrêté du 14 février 2018 interdit son
   introduction dans le milieu naturel, sa détention, son transport, son échange, sa vente et
   son achat (Base d'information espèces introduites, élevée). Plus de 15 000 individus capturés
   dans les Deux-Sèvres entre 2011 et 2013 ; vecteur de la chytridiomycose.
-- ***Hymenochirus boettgeri* (grenouille naine africaine)** : famille Pipidae ; du Nigeria et
+- **_Hymenochirus boettgeri_ (grenouille naine africaine)** : famille Pipidae ; du Nigeria et
   du Cameroun au bassin du Congo, eaux calmes et ombragées ; femelles jusqu'à 35 mm ; conditions
   optimales pH 7,6–7,8 et 25 °C (Rabb 1963 via AmphibiaWeb, élevée) ; protocole de laboratoire :
   20–25 °C, pH 7 ± 0,4, 900 ± 100 µS/cm (moyenne) ; prédateur par aspiration, sans langue ;
@@ -292,18 +308,19 @@ sur `docs/SOINS.md` § 11 jusqu'à vérification.
   aquatique ou semi-aquatique, compatible avec l'environnement, sourcé. Aucun candidat n'a été
   vérifié dans cette recherche : à chercher (#262). À défaut, retirer la grenouille plutôt que
   d'afficher une espèce inexacte.
-- **Retenu au cycle 86 (#270, ADR 0064) : *Bombina orientalis* (sonneur oriental)**, anoure
+- **Retenu au cycle 86 (#270, ADR 0064) : _Bombina orientalis_ (sonneur oriental)**, anoure
   semi-aquatique de Corée, du nord-est de la Chine et du sud-est de la Sibérie (1 700 à
   3 000 m) ; adulte d'environ 6 cm ; terrarium à 20–24 °C, une dizaine de centimètres d'eau et
   un quart de berge sèche ; carnivore (insectes, vers, petites proies) (anapsid.org,
   **secondaire**, [59]). Exotique, hors Pipidae : ligne « Autres Anoures » supposée, **non
   confirmée** sur l'annexe 2 (copies FAOLEX et AIDA lues jusqu'aux oiseaux seulement) ;
-  confiance faible. Ne pas confondre avec *Bombina variegata* (sonneur à ventre jaune),
+  confiance faible. Ne pas confondre avec _Bombina variegata_ (sonneur à ventre jaune),
   indigène protégé, ajouté à la liste d'exclusion.
 
-### Triton : *Cynops* recommandé
-- **Triton à ventre de feu chinois, *Cynops orientalis*** (synonyme *Hypselotriton
-  orientalis*) : endémique de Chine centrale et orientale ; 6 à 10,3 cm (mâles sous 8 cm) ;
+### Triton : _Cynops_ recommandé
+
+- **Triton à ventre de feu chinois, _Cynops orientalis_** (synonyme _Hypselotriton
+  orientalis_) : endémique de Chine centrale et orientale ; 6 à 10,3 cm (mâles sous 8 cm) ;
   aquarium **frais 14–20 °C**, éviter au-dessus de 23 °C ; planté, avec petites zones émergées
   et plantes flottantes ; adultes très aquatiques ; carnivore (vers, insectes, crustacés),
   adulte gardé au frais nourri environ tous les trois jours (Caudata Culture, moyenne).
@@ -313,34 +330,34 @@ sur `docs/SOINS.md` § 11 jusqu'à vérification.
   « Least Concern » (2020), pas de CITES ; **désaccord d'échelle** : reclassé « quasi menacé »
   au niveau national en Chine (Ecology and Evolution 2021). France : « Autres Caudata », 1 à 40
   sans formalité.
-- **Triton à ventre de feu japonais, *Cynops pyrrhogaster*** : 10 à 15 cm ; 15,5–24 °C la plus
+- **Triton à ventre de feu japonais, _Cynops pyrrhogaster_** : 10 à 15 cm ; 15,5–24 °C la plus
   grande partie de l'année ; dix ans de vie raisonnables en captivité ; plus facile à trouver né
   en captivité (Reptiles Magazine, **secondaire**). Même régime légal. **Meilleur choix
   pédagogique** si l'on veut encourager les animaux nés en captivité (à recouper).
-- ***Pleurodeles waltl*** : non indigène en France (péninsule Ibérique, nord du Maroc) ;
+- _**Pleurodeles waltl**_ : non indigène en France (péninsule Ibérique, nord du Maroc) ;
   « Autres Caudata » ; paramètres non vérifiés.
-- ***Paramesotriton* spp.** : « Autres Caudata » ; tout le genre à l'annexe II CITES depuis la
+- **_Paramesotriton_ spp.** : « Autres Caudata » ; tout le genre à l'annexe II CITES depuis la
   CoP18 (2019) ; paramètres non vérifiés.
 
 ## Matrice de compatibilité
 
 ✅ compatible ; ⚠️ possible sous conditions ; ❌ incompatible (raison indiquée).
 
-| | Néon | Guppy | Cory poivré | Koï | Axolotl | Clown | Chirurgien | Hymenochirus | Cynops |
-|---|---|---|---|---|---|---|---|---|---|
-| **Néon** | — | ⚠️ pH commun 7,0–7,5, dureté 8–12 dGH | ✅ 22–25 °C, pH 6–7 ; tétras = compagnons idéaux | ❌ bassin froid / tropical | ❌ T° ; axolotl sans poissons | ❌ eau douce / mer | ❌ eau douce / mer | ⚠️ 25 °C, pH 7–7,5 ; statut légal | ❌ T° ; Cynops sans poissons |
-| **Guppy** | ⚠️ | — | ⚠️ pH commun ≈ 7,0, 8–12 dGH | ❌ bassin / aquarium | ❌ T° ; sans poissons | ❌ | ❌ | ⚠️ pH 7,6–7,8 ; grenouille timide | ❌ sans poissons ; T° |
-| **Cory poivré** | ✅ | ⚠️ | — | ❌ | ❌ T° ; sans poissons | ❌ | ❌ | ⚠️ pH hors plage 6–7 ; fond partagé | ❌ T° ; sans poissons |
-| **Koï** | ❌ | ❌ | ❌ | — | ❌ sans poissons ; carpes impliquées dans le déclin de l'axolotl | ❌ | ❌ | ❌ | ❌ sans poissons |
-| **Axolotl** | ❌ | ❌ | ❌ | ❌ | — | ❌ | ❌ | ❌ T° 25 / 15–18 °C | ❌ pas avec des amphibiens plus grands |
-| **Clown** | ❌ | ❌ | ❌ | ❌ | ❌ | — | ⚠️ même eau, mais ≥ 300–700 L | ❌ | ❌ |
-| **Chirurgien** | ❌ | ❌ | ❌ | ❌ | ❌ | ⚠️ | — | ❌ | ❌ |
-| **Hymenochirus** | ⚠️ | ⚠️ | ⚠️ | ❌ | ❌ | ❌ | ❌ | — | ❌ T° 25 / 14–20 °C |
-| **Cynops** | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | — |
+|                  | Néon | Guppy                                 | Cory poivré                                      | Koï                        | Axolotl                                                          | Clown              | Chirurgien                    | Hymenochirus                        | Cynops                                 |
+| ---------------- | ---- | ------------------------------------- | ------------------------------------------------ | -------------------------- | ---------------------------------------------------------------- | ------------------ | ----------------------------- | ----------------------------------- | -------------------------------------- |
+| **Néon**         | —    | ⚠️ pH commun 7,0–7,5, dureté 8–12 dGH | ✅ 22–25 °C, pH 6–7 ; tétras = compagnons idéaux | ❌ bassin froid / tropical | ❌ T° ; axolotl sans poissons                                    | ❌ eau douce / mer | ❌ eau douce / mer            | ⚠️ 25 °C, pH 7–7,5 ; statut légal   | ❌ T° ; Cynops sans poissons           |
+| **Guppy**        | ⚠️   | —                                     | ⚠️ pH commun ≈ 7,0, 8–12 dGH                     | ❌ bassin / aquarium       | ❌ T° ; sans poissons                                            | ❌                 | ❌                            | ⚠️ pH 7,6–7,8 ; grenouille timide   | ❌ sans poissons ; T°                  |
+| **Cory poivré**  | ✅   | ⚠️                                    | —                                                | ❌                         | ❌ T° ; sans poissons                                            | ❌                 | ❌                            | ⚠️ pH hors plage 6–7 ; fond partagé | ❌ T° ; sans poissons                  |
+| **Koï**          | ❌   | ❌                                    | ❌                                               | —                          | ❌ sans poissons ; carpes impliquées dans le déclin de l'axolotl | ❌                 | ❌                            | ❌                                  | ❌ sans poissons                       |
+| **Axolotl**      | ❌   | ❌                                    | ❌                                               | ❌                         | —                                                                | ❌                 | ❌                            | ❌ T° 25 / 15–18 °C                 | ❌ pas avec des amphibiens plus grands |
+| **Clown**        | ❌   | ❌                                    | ❌                                               | ❌                         | ❌                                                               | —                  | ⚠️ même eau, mais ≥ 300–700 L | ❌                                  | ❌                                     |
+| **Chirurgien**   | ❌   | ❌                                    | ❌                                               | ❌                         | ❌                                                               | ⚠️                 | —                             | ❌                                  | ❌                                     |
+| **Hymenochirus** | ⚠️   | ⚠️                                    | ⚠️                                               | ❌                         | ❌                                                               | ❌                 | ❌                            | —                                   | ❌ T° 25 / 14–20 °C                    |
+| **Cynops**       | ❌   | ❌                                    | ❌                                               | ❌                         | ❌                                                               | ❌                 | ❌                            | ❌                                  | —                                      |
 
 **Règle proposée pour la simulation** : compatibilité = intersection non vide des plages
 (T°, pH, GH), même milieu (douce ou marine), et aucune règle d'exclusion (« sans poissons »
-pour axolotl et *Cynops* ; taille, prédation). Le niveau ⚠️ reflète la largeur de
+pour axolotl et _Cynops_ ; taille, prédation). Le niveau ⚠️ reflète la largeur de
 l'intersection. Conséquence : le paludarium d'avant #271 (axolotl + grenouille + triton)
 n'était pas cohérent avec ces sources (#262) ; depuis l'ADR 0065, l'axolotl a son bac d'eau
 froide.
@@ -354,6 +371,7 @@ tempéré. Poisson rouge ❌ toutes les espèces tropicales (T°), ❌ axolotl (
 **Crevette cerise face aux grands omnivores du bac tropical** (#429, 2026-11-05) : FishKeeper
 réserve la crevette aux bacs de « petits poissons paisibles », les plus grands la prenant pour
 un en-cas, sans nommer d'espèce. Décision du jeu (`EXTRA_PREDATORS`, `sim/compatibility.ts`) :
+
 - **xipho** ❌ (ADR 0104 : FishBase compte les crustacés dans son régime) ;
 - **molly** ❌, **approximation de jeu** : l'un des deux plus grands nageurs du bac, omnivore
   du zoobenthos [63], aucune source lue ne le cite face à la crevette ;
@@ -362,21 +380,21 @@ un en-cas, sans nommer d'espèce. Décision du jeu (`EXTRA_PREDATORS`, `sim/comp
 
 ## Espèces candidates (à sourcer une par une avant ajout)
 
-- **Vérifié partiellement** : poisson-mandarin (*Synchiropus splendidus*) : larves dépendantes
+- **Vérifié partiellement** : poisson-mandarin (_Synchiropus splendidus_) : larves dépendantes
   des copépodes vivants, espèce « largement prélevée dans la nature » (Aquaculture 2018 et
   2020, élevée), individus qui refusent tout sauf les proies vivantes (synthèse) : **pas pour
-  débutant**. *Hoplisoma sterbai* (ex-*Corydoras sterbai*) : toxine possible sous stress ou en
+  débutant**. _Hoplisoma sterbai_ (ex-_Corydoras sterbai_) : toxine possible sous stress ou en
   surpopulation (synthèse secondaire, à confirmer sur Planet Catfish).
 - **Eau douce tropicale, débutant probable** (chiffres non vérifiés) : platy, molly, xipho,
   endler, danio rerio, rasbora arlequin, tétra citron, tétra braise, corydoras bronze,
-  *C. pygmaeus*, ancistrus, otocinclus, gourami miel, betta splendens (robustesse azotée
+  _C. pygmaeus_, ancistrus, otocinclus, gourami miel, betta splendens (robustesse azotée
   documentée, besoins de volume non vérifiés).
 - **Plus exigeantes ou sous conditions** : néon cardinalis, nez rouge, barbu de Sumatra (réputé
   mordeur de nageoires, non vérifié), gourami nain, gourami perlé, ramirezi, apistogramma,
   scalaire (prédateur potentiel des néons, non vérifié), discus, loche kuhli, loche clown.
-- **Eau froide / bassin** : poisson rouge (ajouté, #654), white cloud (*Tanichthys albonubes*), ide,
+- **Eau froide / bassin** : poisson rouge (ajouté, #654), white cloud (_Tanichthys albonubes_), ide,
   esturgeon : tailles et volumes à documenter.
-- **Invertébrés** : *Neocaridina*, *Caridina*, néritine, planorbe, ampullaire (vérifier le
+- **Invertébrés** : _Neocaridina_, _Caridina_, néritine, planorbe, ampullaire (vérifier le
   statut UE des ampullaires) ; consulter SeaLifeBase.
 - **Récif** : gobies, demoiselles, chromis, crevette nettoyeuse, oursins et étoiles courants.
 - Pour chaque espèce ajoutée : statut légal en France (CITES, espèces exotiques envahissantes
@@ -401,19 +419,19 @@ un en-cas, sans nommer d'espèce. Décision du jeu (`EXTRA_PREDATORS`, `sim/comp
 Recherche faite pour lever les points de confiance faible ; aucune source primaire n'a pu être
 lue. Rien n'est relevé ni présenté comme confirmé.
 
-| Point | Source visée | Résultat au 2026-10-28 |
-|---|---|---|
-| Statut légal de *Bombina orientalis* (« Autres Anoures ») et de *Cynops orientalis* (« Autres Caudata »), #284 point 1 | Légifrance, version consolidée de l'arrêté du 8 octobre 2018, annexe 2 | **Toujours non vérifiable** : Légifrance refuse l'accès depuis l'environnement de l'équipe ; la copie FAOLEX trouvée est l'arrêté du 14 octobre 2019 (Guadeloupe), qui modifie une autre ligne de l'annexe 2 sans la reproduire. Confiances inchangées dans `sim/species-legal.ts` (faible pour le sonneur, moyenne pour le triton) |
-| Taille, température et besoins du sonneur oriental, #284 point 2 | AmphibiaWeb, fiche *Bombina orientalis* (n° 2045) | **Toujours non vérifiable** : la page renvoie une vérification anti-robot, aucun contenu lu. Fiche du jeu inchangée (anapsid.org, secondaire, [59]) |
-| Cohabitation sonneur oriental / triton à ventre de feu, #286 point 2 | Source primaire (étude, fiche universitaire ou vétérinaire) | **Toujours non vérifiable** : aucune source primaire trouvée sur ce couple ; seule reste [60] (témoignages, faible). ADR 0065 inchangée |
+| Point                                                                                                                  | Source visée                                                           | Résultat au 2026-10-28                                                                                                                                                                                                                                                                                                              |
+| ---------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Statut légal de _Bombina orientalis_ (« Autres Anoures ») et de _Cynops orientalis_ (« Autres Caudata »), #284 point 1 | Légifrance, version consolidée de l'arrêté du 8 octobre 2018, annexe 2 | **Toujours non vérifiable** : Légifrance refuse l'accès depuis l'environnement de l'équipe ; la copie FAOLEX trouvée est l'arrêté du 14 octobre 2019 (Guadeloupe), qui modifie une autre ligne de l'annexe 2 sans la reproduire. Confiances inchangées dans `sim/species-legal.ts` (faible pour le sonneur, moyenne pour le triton) |
+| Taille, température et besoins du sonneur oriental, #284 point 2                                                       | AmphibiaWeb, fiche _Bombina orientalis_ (n° 2045)                      | **Toujours non vérifiable** : la page renvoie une vérification anti-robot, aucun contenu lu. Fiche du jeu inchangée (anapsid.org, secondaire, [59])                                                                                                                                                                                 |
+| Cohabitation sonneur oriental / triton à ventre de feu, #286 point 2                                                   | Source primaire (étude, fiche universitaire ou vétérinaire)            | **Toujours non vérifiable** : aucune source primaire trouvée sur ce couple ; seule reste [60] (témoignages, faible). ADR 0065 inchangée                                                                                                                                                                                             |
 
 À reprendre par une session qui aura accès à Légifrance et à AmphibiaWeb (ou par Mathis).
 
 ### Nouvel essai du 2026-11-05 (cycle 151, #284 point 1)
 
-| Point | Source visée | Résultat au 2026-11-05 |
-|---|---|---|
-| Lignes « Autres Anoures » (*Bombina orientalis*) et « Autres Caudata » (*Cynops orientalis*) de l'annexe 2 | Légifrance, version consolidée de l'arrêté du 8 octobre 2018 | **Toujours non vérifiable** : Légifrance n'a pas été lisible. Copie préfectorale du texte initial lue (préfecture de Maine-et-Loire, PDF « arrete_du_8_octobre_2018… », [61]) : son article 14 fixe bien le seuil d'autorisation des amphibiens adultes au-delà de **40** animaux, cohérent avec « 1 à 40 sans formalité » ; l'extraction du PDF s'arrête dans l'annexe 2 avant les amphibiens, les deux lignes n'ont donc pas été lues. Texte initial seulement, pas la version consolidée (arrêté modificatif du 5 septembre 2025 non repris). Confiances inchangées dans `sim/species-legal.ts` |
+| Point                                                                                                      | Source visée                                                 | Résultat au 2026-11-05                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Lignes « Autres Anoures » (_Bombina orientalis_) et « Autres Caudata » (_Cynops orientalis_) de l'annexe 2 | Légifrance, version consolidée de l'arrêté du 8 octobre 2018 | **Toujours non vérifiable** : Légifrance n'a pas été lisible. Copie préfectorale du texte initial lue (préfecture de Maine-et-Loire, PDF « arrete_du_8_octobre_2018… », [61]) : son article 14 fixe bien le seuil d'autorisation des amphibiens adultes au-delà de **40** animaux, cohérent avec « 1 à 40 sans formalité » ; l'extraction du PDF s'arrête dans l'annexe 2 avant les amphibiens, les deux lignes n'ont donc pas été lues. Texte initial seulement, pas la version consolidée (arrêté modificatif du 5 septembre 2025 non repris). Confiances inchangées dans `sim/species-legal.ts` |
 
 ## Non vérifié et désaccords
 
@@ -421,84 +439,84 @@ lue. Rien n'est relevé ni présenté comme confirmé.
    20–26 °C (FishBase via `docs/SOINS.md`).
 2. Corydoras poivré : 22–26 °C (Seriously Fish) / 16–24 °C (Animalia.bio, secondaire). Non
    arbitré : le bac tropical (24 °C, ADR 0067) est dans les deux plages.
-3. Koï : *C. rubrofuscus* / *C. carpio* ; tous les paramètres chiffrés non vérifiés.
+3. Koï : _C. rubrofuscus_ / _C. carpio_ ; tous les paramètres chiffrés non vérifiés.
 4. Axolotl : « eau saumâtre » (PetMD) contredite ; « nitrite 1 ppm » (Agave Vet) probablement
    erroné ; formes domestiques en France : désaccord entre sources secondaires.
 5. Chirurgien bleu : « hardy » (FishBase) / « delicate » (ReefApp) ; 300 L / 700 L.
-6. *Cynops orientalis* : LC mondial (IUCN 2020) / « quasi menacé » national en Chine.
-7. *Hymenochirus* : régime légal français non confirmé par l'administration.
+6. _Cynops orientalis_ : LC mondial (IUCN 2020) / « quasi menacé » national en Chine.
+7. _Hymenochirus_ : régime légal français non confirmé par l'administration.
 8. Poisson-clown : paramètres d'eau de source secondaire ; IUCN non vérifié.
 9. Espèces candidates : paramètres non vérifiés.
 10. Durée de quarantaine et règle « 1 cm/L » : non vérifiées.
 
 ## Bibliographie
 
-*(secondaire)* : boutique, blog, forum, synthèse encyclopédique ou article non scientifique, à
+_(secondaire)_ : boutique, blog, forum, synthèse encyclopédique ou article non scientifique, à
 remplacer par une source primaire.
 
-1. Base d'information espèces introduites, *Xenopus laevis* — https://base-information-especes-introduites.fr/espece/xenopus-laevis/
+1. Base d'information espèces introduites, _Xenopus laevis_ — https://base-information-especes-introduites.fr/espece/xenopus-laevis/
 2. UF/IFAS EDIS — https://journals.flvc.org/edis/article/download/118012/115984/172109
 3. Ammonia in Aquatic Systems (UF/IFAS FA16) — https://extension.rwfm.tamu.edu/wp-content/uploads/sites/8/2013/09/Ammonia-in-Aquatic-Systems1.pdf
 4. NMSU, circulaire CR680 — https://pubs.nmsu.edu/_circulars/CR680/
 5. Camargo et al. 2005, Nitrate Toxicity to Aquatic Animals — https://www.researchgate.net/publication/8063535_Nitrate_Toxicity_to_Aquatic_Animals_A_Review_With_New_Data_for_Freshwater_Invertebrates
-6. Monster Fish Keepers, toxicité du nitrate — https://www.monsterfishkeepers.com/forums/threads/nitrate-toxicity.765019/ *(secondaire : forum)*
+6. Monster Fish Keepers, toxicité du nitrate — https://www.monsterfishkeepers.com/forums/threads/nitrate-toxicity.765019/ _(secondaire : forum)_
 7. PetMD, intoxication au nitrate — https://www.petmd.com/fish/conditions/toxicity/nitrate-poisoning-fish
 8. BMC Zoology 2023 (CL50 du betta) — https://pmc.ncbi.nlm.nih.gov/articles/PMC10621081/
 9. Agave Vet, fiche axolotl — https://agavevetcare.com/wp-content/uploads/2023/10/Axolotl-Care-Sheet.pdf
-10. Seriously Fish, *Paracheirodon innesi* — https://www.seriouslyfish.com/species/paracheirodon-innesi
-11. Neon tetra — https://en.wikipedia.org/wiki/Neon_tetra *(secondaire)*
+10. Seriously Fish, _Paracheirodon innesi_ — https://www.seriouslyfish.com/species/paracheirodon-innesi
+11. Neon tetra — https://en.wikipedia.org/wiki/Neon_tetra _(secondaire)_
 12. USGS NAS, koï — https://nas.er.usgs.gov/queries/FactSheet.aspx?SpeciesID=3294
-13. Quality Marine, *Paracheirodon innesi* — https://www.qualitymarine.com/news/paracheirodon-innesi/ *(secondaire)*
-14. Seriously Fish, *Poecilia reticulata* — https://www.seriouslyfish.com/species/poecilia-reticulata
-15. Guppy — https://en.wikipedia.org/wiki/Guppy *(secondaire)*
-16. Seriously Fish, *Corydoras paleatus* — https://www.seriouslyfish.com/species/corydoras-paleatus
-17. *Hoplisoma paleatum* — https://en.wikipedia.org/wiki/Hoplisoma_paleatum *(secondaire)*
-18. Seriously Fish, genre *Corydoras* — https://www.seriouslyfish.com/genus/corydoras/
-19. Animalia, *Corydoras paleatus* — https://animalia.bio/corydoras-paleatus *(secondaire)*
-20. Science.gov, *Corydoras paleatus* — https://www.science.gov/topicpages/f/fish+corydoras+paleatus
+13. Quality Marine, _Paracheirodon innesi_ — https://www.qualitymarine.com/news/paracheirodon-innesi/ _(secondaire)_
+14. Seriously Fish, _Poecilia reticulata_ — https://www.seriouslyfish.com/species/poecilia-reticulata
+15. Guppy — https://en.wikipedia.org/wiki/Guppy _(secondaire)_
+16. Seriously Fish, _Corydoras paleatus_ — https://www.seriouslyfish.com/species/corydoras-paleatus
+17. _Hoplisoma paleatum_ — https://en.wikipedia.org/wiki/Hoplisoma_paleatum _(secondaire)_
+18. Seriously Fish, genre _Corydoras_ — https://www.seriouslyfish.com/genus/corydoras/
+19. Animalia, _Corydoras paleatus_ — https://animalia.bio/corydoras-paleatus _(secondaire)_
+20. Science.gov, _Corydoras paleatus_ — https://www.science.gov/topicpages/f/fish+corydoras+paleatus
 21. Zenodo, note taxonomique 2025 — https://zenodo.org/records/15822600
-22. Britannica, koï — https://www.britannica.com/animal/koi-fish *(secondaire)*
-23. *Cyprinus rubrofuscus* — https://en.wikipedia.org/wiki/Cyprinus_rubrofuscus *(secondaire)*
+22. Britannica, koï — https://www.britannica.com/animal/koi-fish _(secondaire)_
+23. _Cyprinus rubrofuscus_ — https://en.wikipedia.org/wiki/Cyprinus_rubrofuscus _(secondaire)_
 24. USFWS, Ecological Risk Screening Summary, koï — https://www.fws.gov/sites/default/files/documents/Ecological-Risk-Screening-Summary-Koi.pdf
-25. Caudata Culture, *Ambystoma mexicanum* — https://www.caudata.org/cc/species/Ambystoma/A_mexicanum.shtml
+25. Caudata Culture, _Ambystoma mexicanum_ — https://www.caudata.org/cc/species/Ambystoma/A_mexicanum.shtml
 26. MDPI Animals 2023, axolotl — https://www.mdpi.com/2076-2615/13/5/874
 27. PetMD, axolotl — https://www.petmd.com/reptile/species/axolotl-ambystoma-mexicanum
-28. Fishkeeper, axolotl — https://www.fishkeeper.co.uk/fish/freshwater/miscellaneous/axolotl *(secondaire)*
-29. Axolotl — https://en.wikipedia.org/wiki/Axolotl *(secondaire)*
-30. AmphibiaWeb, *Ambystoma mexicanum* — https://amphibiaweb.org/cgi/amphib_query?where-genus=Ambystoma&where-species=mexicanum&account=mol
-31. Code animal, axolotl — https://www.code-animal.com/axolotl-nouvelle-mode-dans-des-zoos/ *(secondaire)*
-32. Kohen Avocats, détention d'animaux sauvages — https://kohenavocats.com/animal-sauvage-chez-soi-renard-tortue-loutre-axolotl-declaration-certificat-capacite-sanctions-2026/ *(secondaire, fiabilité faible)*
-33. Animal Diversity Web, *Amphiprion ocellaris* — https://animaldiversity.org/accounts/Amphiprion_ocellaris/
-34. FishBase, *Amphiprion ocellaris* — https://www.fishbase.se/Fieldguide/FieldGuideSummary.php?genusname=Amphiprion&speciesname=ocellaris&c_code=702
-35. Saltcorner, poisson-clown — http://www.saltcorner.com/AquariumLibrary/browsespecies.php?CritterID=22&filter=0 *(secondaire)*
-36. FishLore, poisson-clown — https://www.fishlore.com/Profiles-ClownFish.htm *(secondaire)*
-37. FishBase, *Paracanthurus hepatus* — https://www.fishbase.se/summary/Paracanthurus-hepatus.html
-38. ReefApp, *Paracanthurus hepatus* — https://reefapp.net/en/encyclopedia/paracanthurus-hepatus *(secondaire)*
-39. Tropical Fish Co, chirurgien bleu (recommandation OATA citée) — https://tropicalfishco.co.uk/products/palette-surgeonfish-paracanthurus-hepatus *(secondaire)*
+28. Fishkeeper, axolotl — https://www.fishkeeper.co.uk/fish/freshwater/miscellaneous/axolotl _(secondaire)_
+29. Axolotl — https://en.wikipedia.org/wiki/Axolotl _(secondaire)_
+30. AmphibiaWeb, _Ambystoma mexicanum_ — https://amphibiaweb.org/cgi/amphib_query?where-genus=Ambystoma&where-species=mexicanum&account=mol
+31. Code animal, axolotl — https://www.code-animal.com/axolotl-nouvelle-mode-dans-des-zoos/ _(secondaire)_
+32. Kohen Avocats, détention d'animaux sauvages — https://kohenavocats.com/animal-sauvage-chez-soi-renard-tortue-loutre-axolotl-declaration-certificat-capacite-sanctions-2026/ _(secondaire, fiabilité faible)_
+33. Animal Diversity Web, _Amphiprion ocellaris_ — https://animaldiversity.org/accounts/Amphiprion_ocellaris/
+34. FishBase, _Amphiprion ocellaris_ — https://www.fishbase.se/Fieldguide/FieldGuideSummary.php?genusname=Amphiprion&speciesname=ocellaris&c_code=702
+35. Saltcorner, poisson-clown — http://www.saltcorner.com/AquariumLibrary/browsespecies.php?CritterID=22&filter=0 _(secondaire)_
+36. FishLore, poisson-clown — https://www.fishlore.com/Profiles-ClownFish.htm _(secondaire)_
+37. FishBase, _Paracanthurus hepatus_ — https://www.fishbase.se/summary/Paracanthurus-hepatus.html
+38. ReefApp, _Paracanthurus hepatus_ — https://reefapp.net/en/encyclopedia/paracanthurus-hepatus _(secondaire)_
+39. Tropical Fish Co, chirurgien bleu (recommandation OATA citée) — https://tropicalfishco.co.uk/products/palette-surgeonfish-paracanthurus-hepatus _(secondaire)_
 40. npj Ocean Sustainability 2023, commerce en Indonésie — https://www.nature.com/articles/s44183-023-00033-7
 41. Baillargeon et al. 2020 (MEPS), analyse productivité-susceptibilité — https://cites.org/sites/default/files/eng/prog/marine_ornamental_fishes/workshops/brisbane_052024/baillargeon_et_al_2020_psa_of_data_limited_fisheries_marpol.pdf
-42. Marcelli et al. 2016, *Paracanthurus hepatus* en Méditerranée — https://link.springer.com/article/10.1007/s12526-016-0573-3
-43. La Ferme Tropicale, législation — https://www.lafermetropicale.com/content/39-legislation *(secondaire)*
+42. Marcelli et al. 2016, _Paracanthurus hepatus_ en Méditerranée — https://link.springer.com/article/10.1007/s12526-016-0573-3
+43. La Ferme Tropicale, législation — https://www.lafermetropicale.com/content/39-legislation _(secondaire)_
 44. Fédération Française d'Aquariophilie, arrêté de 2025 — https://www.fedeaqua.org/pratique/legislation/2853-modification-de-larrete-du-8-octobre-2018-fixant-les-regles-generales-de-detention-danimaux-despeces-non-domestiques
-45. Texte de l'arrêté du 8 octobre 2018 — https://www.eleveur-de-carduelines.com/article/arrete-du-8-octobre-2018-fixant-les-regles-generales-de-detention-danimaux-despeces-non-domestiques/ *(secondaire : reproduction du texte)*
+45. Texte de l'arrêté du 8 octobre 2018 — https://www.eleveur-de-carduelines.com/article/arrete-du-8-octobre-2018-fixant-les-regles-generales-de-detention-danimaux-despeces-non-domestiques/ _(secondaire : reproduction du texte)_
 46. INERIS AIDA, arrêté du 5 septembre 2025 — https://aida.ineris.fr/reglementation/arrete-050925-modifiant-larrete-8-octobre-2018-fixant-regles-generales-detention
-47. Kohen Avocats, espèces interdites en bassin et aquarium — https://kohenavocats.com/perche-soleil-poisson-chat-gambusie-xenope-bassin-aquarium-interdit-vendre-relacher-risques-2026/ *(secondaire)*
-48. AmphibiaWeb, *Hymenochirus boettgeri* — https://amphibiaweb.org/cgi/amphib_query?where-genus=Hymenochirus&where-species=boettgeri
-49. Housing and Care for *Hymenochirus boettgeri* (protocole) — https://www.researchgate.net/publication/376066713_Housing_and_Care_for_Hymenochirus_boettgeri_v1
-50. Ecology and Evolution 2021 (*Cynops orientalis*) — https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8328465/
-51. Caudata Culture, *Cynops orientalis* — https://www.caudata.org/cc/species/Cynops/C_orientalis.shtml
+47. Kohen Avocats, espèces interdites en bassin et aquarium — https://kohenavocats.com/perche-soleil-poisson-chat-gambusie-xenope-bassin-aquarium-interdit-vendre-relacher-risques-2026/ _(secondaire)_
+48. AmphibiaWeb, _Hymenochirus boettgeri_ — https://amphibiaweb.org/cgi/amphib_query?where-genus=Hymenochirus&where-species=boettgeri
+49. Housing and Care for _Hymenochirus boettgeri_ (protocole) — https://www.researchgate.net/publication/376066713_Housing_and_Care_for_Hymenochirus_boettgeri_v1
+50. Ecology and Evolution 2021 (_Cynops orientalis_) — https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8328465/
+51. Caudata Culture, _Cynops orientalis_ — https://www.caudata.org/cc/species/Cynops/C_orientalis.shtml
 52. Caudata Culture, FAQ — https://www.caudata.org/cc/faq/FAQcar.shtml
-53. Reptiles Magazine, *Cynops pyrrhogaster* — https://reptilesmagazine.com/japanese-fire-bellied-newt-care-sheet/ *(secondaire)*
-54. *Pleurodeles waltl* — https://en.wikipedia.org/wiki/Iberian_ribbed_newt *(secondaire)*
+53. Reptiles Magazine, _Cynops pyrrhogaster_ — https://reptilesmagazine.com/japanese-fire-bellied-newt-care-sheet/ _(secondaire)_
+54. _Pleurodeles waltl_ — https://en.wikipedia.org/wiki/Iberian_ribbed_newt _(secondaire)_
 55. Aquaculture 2018, poisson-mandarin — https://www.sciencedirect.com/science/article/abs/pii/S0044848617319737
 56. Aquaculture 2020, poisson-mandarin — https://www.sciencedirect.com/science/article/abs/pii/S0044848619316175
-57. *Synchiropus splendidus* — https://en.wikipedia.org/wiki/Synchiropus_splendidus *(secondaire)*
-58. *Hoplisoma sterbai* — https://en.wikipedia.org/wiki/Sterba%27s_corydoras *(secondaire)*
-59. *Bombina orientalis*, fiche de soins — https://anapsid.org/bombina.html *(secondaire, consultée le 2026-10-27, #270)*
-60. Caudata.org, fil « FB Newts + FB Toad = ?? » (avril 2007) — https://www.caudata.org/threads/fb-newts-fb-toad.3236/ *(témoignages, faible, consulté le 2026-10-27, #271)*
-61. Arrêté du 8 octobre 2018 fixant les règles générales de détention d'animaux d'espèces non domestiques, copie préfectorale (texte initial) — https://www.maine-et-loire.gouv.fr/contenu/telechargement/9307/72734/file/arrete_du_8_octobre_2018_fixant_les_regles_generales_de_detention_d_animaux_d_especes_non_domestiques_.pdf *(officielle, non consolidée, consultée le 2026-11-05, #284)*
-62. Seriously Fish, *Trichogaster lalius* — https://www.seriouslyfish.com/species/trichogaster-lalius *(consultée le 2026-11-05, #429 : la crevette cerise y est citée comme compagne possible du gourami nain)*
-63. Seriously Fish, *Poecilia sphenops* — https://www.seriouslyfish.com/species/poecilia-sphenops *(consultée le 2026-11-05, #429 : omnivore, zoobenthos et détritus ; aucune mention des crevettes)*
-64. Seriously Fish, *Trichogaster chuna* — https://www.seriouslyfish.com/species/trichogaster-chuna *(consultée le 2026-11-05, #429 : petits invertébrés dans la nature ; aucune mention des crevettes)*
-65. OATA (Ornamental Aquatic Trade Association), « How to look after goldfish in an aquarium » — https://ornamentalfish.org/what-we-do/advice-information/care-sheets/caresheets-coldwater-fish/how-to-look-after-goldfish-in-an-aquarium-fishtank/ *(consultée le 2026-11-16, #654 : 4–25 °C, pH 6–8, 5–19 °dH, 100 L + 50 L par adulte, 25 cm en aquarium)*
-66. FishKeeper, goldfish — https://www.fishkeeper.co.uk/fish/freshwater/pond-fish/goldfish- *(secondaire : boutique ; consultée le 2026-11-16, #654 : 4–30 °C, pH 7–8, sociable)*
+57. _Synchiropus splendidus_ — https://en.wikipedia.org/wiki/Synchiropus_splendidus _(secondaire)_
+58. _Hoplisoma sterbai_ — https://en.wikipedia.org/wiki/Sterba%27s_corydoras _(secondaire)_
+59. _Bombina orientalis_, fiche de soins — https://anapsid.org/bombina.html _(secondaire, consultée le 2026-10-27, #270)_
+60. Caudata.org, fil « FB Newts + FB Toad = ?? » (avril 2007) — https://www.caudata.org/threads/fb-newts-fb-toad.3236/ _(témoignages, faible, consulté le 2026-10-27, #271)_
+61. Arrêté du 8 octobre 2018 fixant les règles générales de détention d'animaux d'espèces non domestiques, copie préfectorale (texte initial) — https://www.maine-et-loire.gouv.fr/contenu/telechargement/9307/72734/file/arrete_du_8_octobre_2018_fixant_les_regles_generales_de_detention_d_animaux_d_especes_non_domestiques_.pdf _(officielle, non consolidée, consultée le 2026-11-05, #284)_
+62. Seriously Fish, _Trichogaster lalius_ — https://www.seriouslyfish.com/species/trichogaster-lalius _(consultée le 2026-11-05, #429 : la crevette cerise y est citée comme compagne possible du gourami nain)_
+63. Seriously Fish, _Poecilia sphenops_ — https://www.seriouslyfish.com/species/poecilia-sphenops _(consultée le 2026-11-05, #429 : omnivore, zoobenthos et détritus ; aucune mention des crevettes)_
+64. Seriously Fish, _Trichogaster chuna_ — https://www.seriouslyfish.com/species/trichogaster-chuna _(consultée le 2026-11-05, #429 : petits invertébrés dans la nature ; aucune mention des crevettes)_
+65. OATA (Ornamental Aquatic Trade Association), « How to look after goldfish in an aquarium » — https://ornamentalfish.org/what-we-do/advice-information/care-sheets/caresheets-coldwater-fish/how-to-look-after-goldfish-in-an-aquarium-fishtank/ _(consultée le 2026-11-16, #654 : 4–25 °C, pH 6–8, 5–19 °dH, 100 L + 50 L par adulte, 25 cm en aquarium)_
+66. FishKeeper, goldfish — https://www.fishkeeper.co.uk/fish/freshwater/pond-fish/goldfish- _(secondaire : boutique ; consultée le 2026-11-16, #654 : 4–30 °C, pH 7–8, sociable)_
