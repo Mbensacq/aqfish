@@ -8543,10 +8543,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-17T07:14:22.553Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-17T07:15:26.647Z",
+          "note": "Issue #670 : garde de la ponte par le poisson-clown (S)"
         }
       },
       "metriques": {}
