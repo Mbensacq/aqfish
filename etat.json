@@ -8739,6 +8739,12 @@
           "debut": "2026-11-17T23:12:13.822Z",
           "fin": "2026-11-17T23:30:14.110Z",
           "note": "Verdict OK, 0 bug, captures partielles publiées (159/167), tests unitaires/build verts, CI verte"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-17T23:30:42.971Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
