@@ -8667,6 +8667,12 @@
           "debut": "2026-11-17T17:16:42.663Z",
           "fin": "2026-11-17T17:33:25.187Z",
           "note": "Verdict OK, 0 bug, captures publiées, 5458 tests unitaires verts, CI verte"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-17T17:33:52.444Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
