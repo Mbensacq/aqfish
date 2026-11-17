@@ -8547,6 +8547,12 @@
           "debut": "2026-11-17T07:14:22.553Z",
           "fin": "2026-11-17T07:15:26.647Z",
           "note": "Issue #670 : garde de la ponte par le poisson-clown (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-17T07:15:59.862Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
