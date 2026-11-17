@@ -8585,10 +8585,10 @@
           "note": "Issue #672 + #669 : lot dette garde de ponte sans fermeture, cible crevette début de pas, PIEGES (S)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-17T10:13:55.765Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-17T11:10:43.698Z",
+          "note": "PR #673 : garde sans fermeture (#672) + crevette sur positions du début du pas (#669), PIEGES ; CI 11/11 verte ; seules recif-*-lot3 changent (crevette) ; pied de page d'attribution revenu sur la PR après PATCH"
         }
       },
       "metriques": {}
