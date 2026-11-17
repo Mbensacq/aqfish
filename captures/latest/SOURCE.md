@@ -1,1 +1,1 @@
-Cycle 233 — branche cycle/c233-journal-reproduction-entretien, PR #666, commit 314aa0a, graine par défaut, 2026-11-17T03:01:30Z
+Branche cycle/c234-crevette-nettoyeuse, PR #668, commit f6275b4, graine par défaut, série partielle (timeout 500 s : 146 images sur 156).
