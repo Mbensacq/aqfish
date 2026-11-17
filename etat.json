@@ -8519,10 +8519,10 @@
           "note": "PR #668 : crevette nettoyeuse qui approche les poissons (#656, ADR 0148), CI 11/11 verte ; espèce déjà livrée en #422, seul le comportement ajouté"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-17T05:33:58.862Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-17T05:53:45.238Z",
+          "note": "Verdict OK, 0 bug, 5 angles identiques, crevettes lisibles au récif ; captures partielles (146/156), latest/ écrasé sans purge (rm refusé), e2e limité à recif-qa"
         }
       },
       "metriques": {}
