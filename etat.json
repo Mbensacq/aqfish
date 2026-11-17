@@ -8568,6 +8568,24 @@
         }
       },
       "metriques": {}
+    },
+    "236": {
+      "numero": 236,
+      "date": "2026-11-17",
+      "debut": "2026-11-17T10:13:03.952Z",
+      "type": "dette",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-17T10:13:03.952Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
