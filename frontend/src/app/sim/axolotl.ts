@@ -278,17 +278,66 @@ export function walkerCleansAt(
 }
 
 /**
+ * Habitant tel que le lit l'approche des poissons (#656) : identifiant, espèce et position.
+ * Un `Fish` convient ; `World` passe un instantané des positions du début du pas
+ * (`neighborsInto`, #669).
+ */
+export type WalkerNeighbor = Pick<Fish, 'id' | 'species' | 'x' | 'y' | 'z'>;
+
+/**
+ * Vrai si l'un de `fishes` marche sur le fond et approche les poissons de passage
+ * (`BottomWalkerParams.cleaning`) : sinon, aucun instantané n'est utile.
+ */
+export function hasCleaningWalker(fishes: readonly Pick<Fish, 'species'>[]): boolean {
+  for (const fish of fishes) {
+    if (SPECIES[fish.species].walker?.cleaning !== undefined) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Instantané de `fishes` (identifiant, espèce, position), écrit dans `out` et renvoyé (#669) :
+ * `out` prend la longueur de `fishes` ; ses objets sont réutilisés d'un appel à l'autre, un
+ * nouvel objet n'est créé que si la population croît. Pris avant la boucle de pas, il donne à
+ * l'approche des poissons les positions du **début** du pas, comme le banc et la nourriture,
+ * quel que soit l'ordre de mise à jour.
+ */
+export function neighborsInto(
+  fishes: readonly WalkerNeighbor[],
+  out: Mutable<WalkerNeighbor>[],
+): Mutable<WalkerNeighbor>[] {
+  const n = fishes.length;
+  for (let i = 0; i < n; i++) {
+    const fish = fishes[i];
+    let slot = out[i];
+    if (slot === undefined) {
+      slot = { id: fish.id, species: fish.species, x: 0, y: 0, z: 0 };
+      out[i] = slot;
+    }
+    slot.id = fish.id;
+    slot.species = fish.species;
+    slot.x = fish.x;
+    slot.y = fish.y;
+    slot.z = fish.z;
+  }
+  out.length = n;
+  return out;
+}
+
+/**
  * Poisson que l'individu `fish` approche (#656) : parmi `others`, le plus proche à
  * l'horizontale, à au plus `cleaning.radius`, au-dessus de lui d'au plus `cleaning.maxHeight`
  * (jamais en dessous), en ne comptant que les nageurs (ni lui-même, ni un autre marcheur du
  * fond, ni une espèce amphibie). À égalité, le premier du tableau. `null` si aucun.
  */
-export function cleaningTarget(
-  fish: Fish,
-  others: readonly Fish[],
+export function cleaningTarget<T extends WalkerNeighbor>(
+  fish: WalkerNeighbor,
+  others: readonly T[],
   cleaning: CleaningParams,
-): Fish | null {
-  let best: Fish | null = null;
+): T | null {
+  let best: T | null = null;
   let bestDistance = cleaning.radius * cleaning.radius;
   for (const other of others) {
     if (other.id === fish.id) {
@@ -319,7 +368,7 @@ const NO_OBSTACLES: readonly Obstacle[] = [];
 const PHASE: WalkerPhase = { mode: 'marche', slot: 0, progress: 0, height: 0 };
 
 /** Aucun autre habitant (approche des poissons sans objet). */
-const NO_FISH: readonly Fish[] = [];
+const NO_FISH: readonly WalkerNeighbor[] = [];
 
 /**
  * Fait avancer un individu qui marche sur le fond de `dt` secondes, **en place** (aucune
@@ -332,7 +381,8 @@ const NO_FISH: readonly Fish[] = [];
  *
  * `others` : habitants du bac, lus pour l'approche des poissons de passage des espèces qui la
  * déclarent (`BottomWalkerParams.cleaning`, #656) ; l'approche se fait en marche, sur le fond,
- * avec les mêmes refus de pas : les garanties ci-dessus tiennent.
+ * avec les mêmes refus de pas : les garanties ci-dessus tiennent. `World` y passe les positions
+ * du début du pas (`neighborsInto`, #669).
  */
 export function stepWalker(
   fish: Mutable<Fish>,
@@ -342,7 +392,7 @@ export function stepWalker(
   bounds: SwimBounds,
   ground: WalkerGround,
   obstacles: readonly Obstacle[] = [],
-  others: readonly Fish[] = NO_FISH,
+  others: readonly WalkerNeighbor[] = NO_FISH,
 ): void {
   const def = SPECIES[fish.species];
   const walker = def.walker!;

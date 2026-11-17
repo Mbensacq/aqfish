@@ -4,7 +4,14 @@ import {
   type BacteriaStarterOutcome,
 } from './bacteria-starter';
 import { assertSeed } from '../core/random/prng';
-import { createWalker, stepWalker, type WalkerGround } from './axolotl';
+import {
+  createWalker,
+  hasCleaningWalker,
+  neighborsInto,
+  stepWalker,
+  type WalkerGround,
+  type WalkerNeighbor,
+} from './axolotl';
 import { createFrog, stepFrog } from './frog';
 import {
   deadBody,
@@ -1006,6 +1013,11 @@ function stepInPlace(world: MutableWorld, dt: number, clock: SimClock): void {
   // Courant (issue #460) : coupé, aucun calcul (nage d'avant, au bit près).
   const flow = worldCurrentVelocity(world, CURRENT_SCRATCH);
   const flowing = flow.x !== 0 || flow.z !== 0;
+  // Approche des poissons par la crevette (issue #669) : positions du début du pas, comme le
+  // banc ; sans espèce qui approche, aucun instantané (marche d'avant, au bit près).
+  const neighbors: readonly WalkerNeighbor[] = hasCleaningWalker(fishes)
+    ? neighborsInto(fishes, NEIGHBORS)
+    : fishes;
   // Ordre stable : celui du tableau, c'est-à-dire des identifiants.
   for (let i = 0; i < fishes.length; i++) {
     const fish = fishes[i];
@@ -1021,7 +1033,7 @@ function stepInPlace(world: MutableWorld, dt: number, clock: SimClock): void {
         bounds,
         groundFor(place, key),
         world.obstacles,
-        fishes,
+        neighbors,
       );
       continue;
     }
@@ -2060,6 +2072,8 @@ const FOOD_TARGET: Vec3 = { x: 0, y: 0, z: 0 };
 const HOME_TARGET: Vec3 = { x: 0, y: 0, z: 0 };
 /** Garde de la ponte du pas (issue #670), réutilisée d'un pas à l'autre (aucune allocation). */
 const GUARD = noGuard();
+/** Instantané des habitants au début du pas, lu par l'approche des poissons (issue #669). */
+const NEIGHBORS: Mutable<WalkerNeighbor>[] = [];
 /** Point visé par le gardien de la ponte (aucune allocation). */
 const GUARD_TARGET: Vec3 = { x: 0, y: 0, z: 0 };
 
