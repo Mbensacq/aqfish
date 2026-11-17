@@ -49,6 +49,52 @@ const determinismRules = {
   ],
 };
 
+/**
+ * Limites de lisibilité du code de production (docs/CONVENTIONS.md, chantier #686). Les tests
+ * (`*.spec.ts`, `e2e/`) en sont exemptés : un test long et linéaire reste lisible.
+ */
+const QUALITY_LIMITS = {
+  'max-lines': 600,
+  'max-lines-per-function': 80,
+  complexity: 15,
+  'max-depth': 4,
+  'max-params': 5,
+};
+
+/** Règle ESLint de chaque limite, au seuil donné. */
+function qualityRule(name, max) {
+  if (name === 'max-lines' || name === 'max-lines-per-function') {
+    return ['error', { max, skipBlankLines: true, skipComments: true }];
+  }
+  return ['error', name === 'complexity' ? max : { max }];
+}
+
+/**
+ * Fichiers qui dépassaient les limites à leur introduction (audit du 2026-11-17), avec leur
+ * valeur d'alors : `qualite-exceptions.json`. Chaque ligne est une dette. Le seuil d'un fichier
+ * ne peut que baisser : un fichier qui empire fait échouer le lint. Quand une refactorisation
+ * passe un fichier sous les limites, sa ligne est supprimée ou abaissée dans la même PR
+ * (`npm run qualite:bilan` liste ce qui peut l'être). Aucune nouvelle ligne sans décision de
+ * Mathis.
+ */
+const QUALITY_EXCEPTIONS = require('./qualite-exceptions.json');
+
+const qualityConfigs = [
+  {
+    files: ['src/**/*.ts'],
+    ignores: ['**/*.spec.ts'],
+    rules: Object.fromEntries(
+      Object.entries(QUALITY_LIMITS).map(([name, max]) => [name, qualityRule(name, max)]),
+    ),
+  },
+  ...Object.entries(QUALITY_EXCEPTIONS).map(([file, limits]) => ({
+    files: [`src/app/${file}`],
+    rules: Object.fromEntries(
+      Object.entries(limits).map(([name, max]) => [name, qualityRule(name, max)]),
+    ),
+  })),
+];
+
 module.exports = defineConfig([
   {
     files: ['**/*.ts'],
@@ -100,6 +146,7 @@ module.exports = defineConfig([
       'no-restricted-imports': ['error', { patterns: [noAngular, noThree, noRender, noUi] }],
     },
   },
+  ...qualityConfigs,
   {
     files: ['**/*.html'],
     extends: [angular.configs.templateRecommended, angular.configs.templateAccessibility],

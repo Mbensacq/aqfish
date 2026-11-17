@@ -652,9 +652,15 @@ maximal : 60 s par angle), et **aucune mesure de performance** ne doit y être f
 
 ## Tests
 
+Les règles d'écriture du code et des tests (limites de taille et de complexité, cycles
+d'import interdits, refactorisation sans régression) sont dans `docs/CONVENTIONS.md` ;
+`npm run lint` vérifie les limites (`qualite-exceptions.json`, cliquet) et les cycles
+(`scripts/cycles-imports.mjs`).
+
 | Niveau | Outil | Portée |
 |---|---|---|
 | Unitaire | Vitest (`ng test`, jsdom) | `core`, `sim`, fonctions pures de `render` (calculs de palette, positions de préréglages…) |
+| Non-régression de la simulation | Vitest (`sim/non-regression.spec.ts`) | Empreinte (hachage du JSON de l'état complet) de chaque environnement, avec et sans nourrissage, horloge de journée, à 10 s, 1 min et 5 min simulées : une refactorisation n'en change aucune (#686, `docs/CONVENTIONS.md`) |
 | Composant | Vitest + `TestBed` | Composants `ui` (sans WebGL : jsdom n'en a pas) |
 | Bout en bout | Playwright (`npm run e2e`) | Parcours utilisateur : rotation à la souris, préréglages, nourrissage… |
 | Visuel | Playwright (`npm run captures`) | 5 angles fixes, relus chaque nuit par la QA |

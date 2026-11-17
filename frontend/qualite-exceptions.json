@@ -1,0 +1,218 @@
+{
+  "core/commands/commands.ts": {
+    "max-lines-per-function": 84
+  },
+  "core/decor-physics/decor-physics.ts": {
+    "max-params": 6
+  },
+  "render/aquarium-scene.ts": {
+    "max-lines-per-function": 163,
+    "complexity": 19
+  },
+  "render/aquarium-view.ts": {
+    "max-lines": 1643,
+    "max-lines-per-function": 97,
+    "complexity": 26
+  },
+  "render/coral-model.ts": {
+    "max-params": 6
+  },
+  "render/decor-layer.ts": {
+    "max-lines-per-function": 94
+  },
+  "render/fish-model.ts": {
+    "max-lines": 787,
+    "max-lines-per-function": 145,
+    "complexity": 29,
+    "max-depth": 5,
+    "max-params": 8
+  },
+  "render/free-camera-touch.ts": {
+    "max-params": 6
+  },
+  "render/light-rays-layer.ts": {
+    "max-params": 8
+  },
+  "render/rain-layer.ts": {
+    "max-params": 6
+  },
+  "render/room-layer.ts": {
+    "complexity": 19
+  },
+  "render/terrain-mesh.ts": {
+    "max-lines-per-function": 88,
+    "max-depth": 5,
+    "max-params": 8
+  },
+  "sim/avoidance.ts": {
+    "max-params": 10
+  },
+  "sim/axolotl.ts": {
+    "max-lines-per-function": 136,
+    "complexity": 32,
+    "max-params": 8
+  },
+  "sim/bank-decor.ts": {
+    "max-params": 6
+  },
+  "sim/behaviors.ts": {
+    "max-lines-per-function": 93,
+    "complexity": 22,
+    "max-params": 6
+  },
+  "sim/bubbles.ts": {
+    "max-params": 7
+  },
+  "sim/care-session.ts": {
+    "complexity": 28
+  },
+  "sim/coral-shapes.ts": {
+    "max-params": 7
+  },
+  "sim/decor-edit.ts": {
+    "max-params": 6
+  },
+  "sim/decor.ts": {
+    "complexity": 28,
+    "max-params": 6
+  },
+  "sim/disease.ts": {
+    "complexity": 17,
+    "max-params": 7
+  },
+  "sim/dropsy.ts": {
+    "max-params": 6
+  },
+  "sim/eggs.ts": {
+    "max-params": 7
+  },
+  "sim/feeding.ts": {
+    "complexity": 17,
+    "max-params": 8
+  },
+  "sim/fin-rot.ts": {
+    "max-params": 6
+  },
+  "sim/floating-leaves.ts": {
+    "max-params": 7
+  },
+  "sim/food.ts": {
+    "max-params": 6
+  },
+  "sim/frog.ts": {
+    "max-params": 8
+  },
+  "sim/fungus.ts": {
+    "max-params": 7
+  },
+  "sim/health-summary.ts": {
+    "max-lines-per-function": 123,
+    "complexity": 33
+  },
+  "sim/journal.ts": {
+    "complexity": 30
+  },
+  "sim/maintenance.ts": {
+    "complexity": 17
+  },
+  "sim/mortality.ts": {
+    "max-params": 6
+  },
+  "sim/obstacles.ts": {
+    "complexity": 16
+  },
+  "sim/plant.ts": {
+    "max-lines-per-function": 108
+  },
+  "sim/room-details.ts": {
+    "max-params": 6
+  },
+  "sim/room-furniture.ts": {
+    "complexity": 26,
+    "max-params": 8
+  },
+  "sim/room-layout.ts": {
+    "max-params": 6
+  },
+  "sim/room-save.ts": {
+    "complexity": 20
+  },
+  "sim/room-state.ts": {
+    "max-lines": 623,
+    "complexity": 29,
+    "max-params": 7
+  },
+  "sim/room-window.ts": {
+    "max-params": 7
+  },
+  "sim/room.ts": {
+    "max-lines-per-function": 96,
+    "max-params": 6
+  },
+  "sim/save.ts": {
+    "max-lines": 921,
+    "max-lines-per-function": 132,
+    "complexity": 45,
+    "max-params": 6
+  },
+  "sim/species-care.ts": {
+    "max-params": 7
+  },
+  "sim/species-sheet.ts": {
+    "max-lines": 882,
+    "complexity": 16
+  },
+  "sim/species.ts": {
+    "max-lines": 1877,
+    "complexity": 24
+  },
+  "sim/swimmer.ts": {
+    "max-lines-per-function": 219,
+    "complexity": 54,
+    "max-params": 11
+  },
+  "sim/tank-transfer.ts": {
+    "complexity": 16
+  },
+  "sim/treatment.ts": {
+    "complexity": 24
+  },
+  "sim/velvet.ts": {
+    "complexity": 19,
+    "max-params": 7
+  },
+  "sim/water-current.ts": {
+    "max-params": 7
+  },
+  "sim/water.ts": {
+    "max-lines-per-function": 178,
+    "complexity": 52
+  },
+  "sim/wellbeing.ts": {
+    "max-params": 6
+  },
+  "sim/wood.ts": {
+    "max-lines-per-function": 88
+  },
+  "sim/world.ts": {
+    "max-lines": 1525,
+    "max-lines-per-function": 227,
+    "complexity": 39,
+    "max-params": 6
+  },
+  "ui/aquarium-host/aquarium-host.ts": {
+    "max-lines": 3942,
+    "max-lines-per-function": 207,
+    "complexity": 83
+  },
+  "ui/control-panel/control-panel.ts": {
+    "max-lines": 1871
+  },
+  "ui/decor-editor/decor-editor.ts": {
+    "complexity": 17,
+    "max-params": 6
+  },
+  "ui/immersive-mode/immersive-mode.ts": {
+    "max-lines": 722
+  }
+}
