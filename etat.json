@@ -8729,10 +8729,10 @@
           "note": "Issue #685 : lot de dette œufs/captures (#685, #662, #683), 31 dette > 30 (S)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-17T21:46:29.681Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-17T23:11:28.067Z",
+          "note": "PR #700 : lot de dette œufs/captures (#685, #662, #683), CI 11/11 verte ; e2e locaux laissés à la CI ; 1 seule capture changée (bassin œufs) ; pied d'attribution réinjecté sur la PR par l'environnement"
         }
       },
       "metriques": {}
