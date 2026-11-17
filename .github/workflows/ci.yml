@@ -13,7 +13,9 @@ permissions:
   contents: read
 
 # Les tests de bout en bout (rendu WebGL logiciel, un seul worker) sont répartis sur
-# plusieurs machines en parallèle (`--shard`). Le job `frontend` regroupe les résultats :
+# plusieurs machines en parallèle (`--shard`). L'application est construite une seule fois
+# (`build-e2e`) puis servie telle quelle par chaque part et par les captures
+# (`scripts/servir-dist.mjs`, variable `E2E_DIST`). Le job `frontend` regroupe les résultats :
 # c'est le contrôle exigé par la protection de `main`, son nom ne doit pas changer.
 jobs:
   verifier:
@@ -38,20 +40,57 @@ jobs:
       - name: Formatage
         run: npm run format:check
 
-      - name: Lint (dont frontières d'architecture et déterminisme)
+      - name: Lint (frontières, déterminisme, limites de qualité, cycles d'import)
         run: npm run lint
 
       - name: Tests unitaires avec couverture
         run: npm run test:coverage
 
+      - name: Tests des scripts du dépôt (.github/scripts)
+        run: node --test ../.github/scripts/*.test.mjs
+
       - name: Build de production
         run: npm run build
 
+  build-e2e:
+    name: build pour les tests de bout en bout
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      # Configuration de développement : le mode développement d'Angular reste actif, ses
+      # contrôles (changements détectés après coup…) écrivent dans la console que les tests
+      # lisent, comme avec `ng serve`.
+      - name: Build de développement
+        run: npx ng build --configuration development
+
+      - name: Transmettre le build aux tests
+        uses: actions/upload-artifact@v7
+        with:
+          name: dist-e2e
+          path: frontend/dist/aqfish/browser
+          if-no-files-found: error
+          retention-days: 1
+
   e2e:
     name: e2e ${{ matrix.shard }}/7
+    needs: build-e2e
     runs-on: ubuntu-latest
-    # L'installation de Chromium (paquets système) prend parfois 8 à 12 min sur certains
-    # runners (#248) : marge de 45 min et 6 parts pour rester loin du délai.
+    # Délai historique de 45 min (#248). Les parts duraient 21 à 36 min avant l'ADR 0151 ;
+    # à abaisser une fois les nouvelles durées mesurées (`e2e/durees.json`).
     timeout-minutes: 45
     strategy:
       fail-fast: false
@@ -82,8 +121,16 @@ jobs:
           done
           exit 1
 
+      - name: Récupérer le build
+        uses: actions/download-artifact@v7
+        with:
+          name: dist-e2e
+          path: frontend/dist-e2e
+
       - name: Tests de bout en bout (part ${{ matrix.shard }} sur 7)
         run: npm run e2e -- --shard=${{ matrix.shard }}/7
+        env:
+          E2E_DIST: dist-e2e
 
       - name: Publier le rapport Playwright
         if: failure()
@@ -96,6 +143,7 @@ jobs:
 
   captures:
     name: captures sous 5 angles
+    needs: build-e2e
     runs-on: ubuntu-latest
     timeout-minutes: 30
     defaults:
@@ -123,10 +171,17 @@ jobs:
           done
           exit 1
 
+      - name: Récupérer le build
+        uses: actions/download-artifact@v7
+        with:
+          name: dist-e2e
+          path: frontend/dist-e2e
+
       - name: Captures sous 5 angles
         run: npm run captures
         env:
           CAPTURE_DIR: ${{ github.workspace }}/captures-ci
+          E2E_DIST: dist-e2e
 
       - name: Publier les captures
         if: always()
@@ -172,7 +227,7 @@ jobs:
 
   frontend:
     name: frontend
-    needs: [verifier, e2e, captures, messages]
+    needs: [verifier, build-e2e, e2e, captures, messages]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -180,12 +235,14 @@ jobs:
       - name: Tous les contrôles doivent réussir
         env:
           VERIFIER: ${{ needs.verifier.result }}
+          BUILD_E2E: ${{ needs.build-e2e.result }}
           E2E: ${{ needs.e2e.result }}
           CAPTURES: ${{ needs.captures.result }}
           MESSAGES: ${{ needs.messages.result }}
         run: |
-          echo "vérifications : $VERIFIER ; e2e : $E2E ; captures : $CAPTURES ; messages : $MESSAGES"
+          echo "vérifications : $VERIFIER ; build : $BUILD_E2E ; e2e : $E2E ; captures : $CAPTURES ; messages : $MESSAGES"
           test "$VERIFIER" = success
+          test "$BUILD_E2E" = success
           test "$E2E" = success
           test "$CAPTURES" = success
           # « skipped » hors pull request (push sur main).
