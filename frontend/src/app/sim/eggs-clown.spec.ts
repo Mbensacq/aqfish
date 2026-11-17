@@ -1,4 +1,4 @@
-import { SIM_DT } from './constants';
+import { MAX_TOTAL_FISH, SIM_DT } from './constants';
 import {
   clutchSize,
   eatEggsInPlace,
@@ -74,7 +74,7 @@ describe('œufs du poisson-clown (#653)', () => {
     const world = fedReef();
     const next = step(world);
     const eggs = clownEggs(next);
-    // Plafond de l'espèce : œufs compris (`eggRoom`).
+    // Plafonds (`eggRoom`) : œufs du clown hors plafond de l'espèce (#662).
     const room = eggRoom(world.entities, [], 'clown');
     expect(room).toBeGreaterThan(0);
     expect(eggs.length).toBe(Math.min(clutchSize(42, 'clown', 0), room));
@@ -234,10 +234,14 @@ describe('œufs du poisson-clown (#653)', () => {
         }
         stepEggsInPlace(world, SIM_DT);
         world.tick += 1;
-        const clowns =
-          world.entities.filter((f) => f.species === 'clown').length + clownEggs(world).length;
+        // Les œufs du clown (larves qui quittent le bac) ne comptent pas dans le plafond de
+        // l'espèce (#662, ADR 0146) : seuls les clowns adultes y sont bornés ; œufs et animaux
+        // restent bornés par MAX_TOTAL_FISH et MAX_EGGS.
+        const clowns = world.entities.filter((f) => f.species === 'clown').length;
         expect(clowns).toBeLessThanOrEqual(SPECIES.clown.maxPopulation);
-        expect((world.eggs ?? []).length).toBeLessThanOrEqual(MAX_EGGS);
+        const eggs = (world.eggs ?? []).length;
+        expect(eggs).toBeLessThanOrEqual(MAX_EGGS);
+        expect(world.entities.length + eggs).toBeLessThanOrEqual(MAX_TOTAL_FISH);
         max = Math.max(max, clownEggs(world).length);
       }
     }
