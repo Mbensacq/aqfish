@@ -41,10 +41,13 @@ void main() {
 `;
 
 /**
- * Shader de la passe palette. Chaque pixel d'affichage lit le pixel de scène qui le couvre
- * (`texelFetch` : aucun filtrage), le ramène en sRGB puis le remplace par la couleur la
- * plus proche de la palette, avec la même métrique que `nearestPaletteIndex`
+ * Shader de la passe palette, rendue dans une cible de la taille de la scène (un fragment par
+ * pixel de scène, `texelFetch` : aucun filtrage). Il ramène le pixel en sRGB puis le remplace
+ * par la couleur la plus proche de la palette, avec la même métrique que `nearestPaletteIndex`
  * (`render/pixel-art.ts`) : distance euclidienne en sRGB, première couleur en cas d'égalité.
+ * L'agrandissement à l'écran est fait ensuite par `UPSCALE_SHADER` : la recherche dans la
+ * palette, coûteuse, n'est faite qu'une fois par pixel de scène et non par pixel d'affichage
+ * (ADR 0151 : `PIXEL_SIZE`² fois moins de calcul, image identique au bit près).
  *
  * Palette étendue (ADR 0021) : après les `DAY_SIZE` couleurs de jour viennent les tons de
  * nuit puis ceux du crépuscule ; leur distance reçoit une pénalité (`uNightPenalty`,
@@ -58,12 +61,12 @@ void main() {
  * à 1 dans la cible (fond opaque, mélanges qui gardent 1 sur une destination à 1).
  *
  * La couleur écrite est la valeur sRGB exacte de la palette : le shader n'inclut pas
- * `colorspace_fragment`, Three.js n'y ajoute donc aucune conversion.
+ * `colorspace_fragment`, Three.js n'y ajoute donc aucune conversion, et la cible de la
+ * palette (8 bits, sans espace colorimétrique) la garde telle quelle.
  */
 const FRAGMENT_SHADER = /* glsl */ `
 uniform sampler2D uScene;
 uniform vec2 uSceneSize;
-uniform float uPixelScale;
 uniform vec3 uPalette[PALETTE_SIZE];
 uniform float uNightPenalty;
 uniform float uTwilightPenalty;
@@ -88,8 +91,7 @@ float penalty(int i) {
 ${LINEAR_TO_SRGB_GLSL}
 
 void main() {
-  ivec2 texel = ivec2(floor(gl_FragCoord.xy / uPixelScale));
-  texel = clamp(texel, ivec2(0), ivec2(uSceneSize) - 1);
+  ivec2 texel = clamp(ivec2(floor(gl_FragCoord.xy)), ivec2(0), ivec2(uSceneSize) - 1);
   vec4 scene = texelFetch(uScene, texel, 0);
   vec3 color = linearToSrgb(scene.rgb);
   foodPenalty = scene.a < FOOD_ALPHA_THRESHOLD ? 0.0 : TONE_OFF;
@@ -110,6 +112,23 @@ void main() {
 `;
 
 /**
+ * Shader d'agrandissement : chaque pixel d'affichage recopie, sans filtrage, le pixel de
+ * l'image ramenée à la palette qui le couvre (`uPixelScale` pixels d'affichage par pixel de
+ * scène). Aucune conversion : les valeurs sRGB de la palette sont écrites telles quelles.
+ */
+const UPSCALE_SHADER = /* glsl */ `
+uniform sampler2D uImage;
+uniform vec2 uImageSize;
+uniform float uPixelScale;
+
+void main() {
+  ivec2 texel = ivec2(floor(gl_FragCoord.xy / uPixelScale));
+  texel = clamp(texel, ivec2(0), ivec2(uImageSize) - 1);
+  gl_FragColor = vec4(texelFetch(uImage, texel, 0).rgb, 1.0);
+}
+`;
+
+/**
  * Opacité sous laquelle un pixel de scène est tenu pour un granulé (ADR 0056) : le marqueur
  * des granulés (`FOOD_ALPHA_MARKER`, 0,5) reste sous ce seuil même voilé ensuite par l'eau
  * translucide (0,3 + 0,5 × 0,7 = 0,65) ; un pixel opaque vaut 1 (255 sur 8 bits).
@@ -117,18 +136,30 @@ void main() {
 export const FOOD_ALPHA_THRESHOLD = 254.5 / 255;
 
 /**
- * Pipeline pixel art (ADR 0002) : cible basse résolution où la scène est rendue, puis
- * quad plein écran qui l'agrandit sans lissage et la ramène à la palette.
+ * Pipeline pixel art (ADR 0002, ADR 0151) en trois temps :
+ * 1. la scène est rendue dans `target`, cible basse résolution ;
+ * 2. `scene` (quad de la palette) ramène chaque pixel de scène à la palette dans
+ *    `paletteTarget`, de même taille ;
+ * 3. `upscaleScene` agrandit cette image à l'écran sans lissage.
+ * La photo du bac (#479) relit directement `paletteTarget`.
  */
 export class PalettePass {
   /** Cible basse résolution : NearestFilter, sans mipmaps ; sRGB 8 bits (précision des sombres). */
   readonly target: WebGLRenderTarget;
+  /**
+   * Image ramenée à la palette, un pixel par pixel de scène : même taille que `target`,
+   * NearestFilter, sans mipmaps ni profondeur, 8 bits sans espace colorimétrique (les valeurs
+   * sRGB de la palette y sont gardées telles quelles).
+   */
+  readonly paletteTarget: WebGLRenderTarget;
+  /** Quad de la palette, à rendre dans `paletteTarget` avec `camera`. */
   readonly scene = new Scene();
+  /** Quad d'agrandissement, à rendre à l'écran avec `camera`. */
+  readonly upscaleScene = new Scene();
   readonly camera = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
   private readonly geometry = new PlaneGeometry(2, 2);
   private readonly material: ShaderMaterial;
-  /** Cible de la photo (#479), créée à la demande par `photoTarget`. */
-  private photo: WebGLRenderTarget | null = null;
+  private readonly upscaleMaterial: ShaderMaterial;
 
   /** Nombre de tons d'environnement (fin de la palette du shader). */
   private readonly environmentToneCount: number;
@@ -161,6 +192,12 @@ export class PalettePass {
       depthBuffer: true,
       colorSpace: SRGBColorSpace,
     });
+    this.paletteTarget = new WebGLRenderTarget(1, 1, {
+      minFilter: NearestFilter,
+      magFilter: NearestFilter,
+      generateMipmaps: false,
+      depthBuffer: false,
+    });
     this.material = new ShaderMaterial({
       defines: {
         PALETTE_SIZE: all.length,
@@ -177,7 +214,6 @@ export class PalettePass {
       uniforms: {
         uScene: { value: this.target.texture },
         uSceneSize: { value: [1, 1] },
-        uPixelScale: { value: PIXEL_SIZE },
         uPalette: { value: flattenPalette(all.map(hexToRgb)) },
         uNightPenalty: { value: TONE_PENALTY_OFF },
         uTwilightPenalty: { value: TONE_PENALTY_OFF },
@@ -190,9 +226,19 @@ export class PalettePass {
       depthTest: false,
       depthWrite: false,
     });
-    const quad = new Mesh(this.geometry, this.material);
-    quad.frustumCulled = false;
-    this.scene.add(quad);
+    this.upscaleMaterial = new ShaderMaterial({
+      uniforms: {
+        uImage: { value: this.paletteTarget.texture },
+        uImageSize: { value: [1, 1] },
+        uPixelScale: { value: PIXEL_SIZE },
+      },
+      vertexShader: VERTEX_SHADER,
+      fragmentShader: UPSCALE_SHADER,
+      depthTest: false,
+      depthWrite: false,
+    });
+    this.scene.add(fullScreenQuad(this.geometry, this.material));
+    this.upscaleScene.add(fullScreenQuad(this.geometry, this.upscaleMaterial));
   }
 
   /**
@@ -236,54 +282,34 @@ export class PalettePass {
   }
 
   /**
-   * Adapte la cible à une surface d'affichage de `width` × `height` pixels CSS rendue avec
-   * `pixelRatio` pixels physiques par pixel CSS. Renvoie la taille de la cible.
+   * Adapte les cibles à une surface d'affichage de `width` × `height` pixels CSS rendue avec
+   * `pixelRatio` pixels physiques par pixel CSS. Renvoie la taille des cibles.
    */
   setSize(width: number, height: number, pixelRatio: number): Size {
     const size = lowResolutionSize(width, height);
     this.target.setSize(size.width, size.height);
+    this.paletteTarget.setSize(size.width, size.height);
     this.material.uniforms['uSceneSize'].value = [size.width, size.height];
+    this.upscaleMaterial.uniforms['uImageSize'].value = [size.width, size.height];
     const ratio = Number.isFinite(pixelRatio) && pixelRatio > 0 ? pixelRatio : 1;
-    this.material.uniforms['uPixelScale'].value = PIXEL_SIZE * ratio;
+    this.upscaleMaterial.uniforms['uPixelScale'].value = PIXEL_SIZE * ratio;
     return size;
-  }
-
-  /**
-   * Cible de la photo (#479, ADR 0112) : même taille que `target`, où le quad écrit l'image
-   * déjà ramenée à la palette, un pixel par pixel de scène (voir `setPixelScale`). Créée à la
-   * première photo, puis réutilisée ; NearestFilter, sans mipmaps ni profondeur.
-   */
-  photoTarget(): WebGLRenderTarget {
-    if (this.photo === null) {
-      this.photo = new WebGLRenderTarget(1, 1, {
-        minFilter: NearestFilter,
-        magFilter: NearestFilter,
-        generateMipmaps: false,
-        depthBuffer: false,
-      });
-    }
-    this.photo.setSize(this.target.width, this.target.height);
-    return this.photo;
-  }
-
-  /**
-   * Pixels d'affichage par pixel de scène du quad (`uPixelScale`) : 1 pour la photo, qui
-   * écrit la palette à la taille de la cible. Renvoie l'échelle précédente, à rétablir.
-   * Une échelle non finie ou inférieure à 1 est ramenée à 1.
-   */
-  setPixelScale(scale: number): number {
-    const uniform = this.material.uniforms['uPixelScale'];
-    const previous = uniform.value as number;
-    uniform.value = Number.isFinite(scale) && scale >= 1 ? scale : 1;
-    return previous;
   }
 
   dispose(): void {
     this.target.dispose();
-    this.photo?.dispose();
+    this.paletteTarget.dispose();
     this.geometry.dispose();
     this.material.dispose();
+    this.upscaleMaterial.dispose();
   }
+}
+
+/** Quad plein écran, jamais écarté par le cadrage. */
+function fullScreenQuad(geometry: PlaneGeometry, material: ShaderMaterial): Mesh {
+  const quad = new Mesh(geometry, material);
+  quad.frustumCulled = false;
+  return quad;
 }
 
 /**

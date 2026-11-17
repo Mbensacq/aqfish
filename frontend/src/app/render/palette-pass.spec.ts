@@ -18,6 +18,10 @@ function material(pass: PalettePass): ShaderMaterial {
   return (pass.scene.children[0] as Mesh).material as ShaderMaterial;
 }
 
+function upscale(pass: PalettePass): ShaderMaterial {
+  return (pass.upscaleScene.children[0] as Mesh).material as ShaderMaterial;
+}
+
 describe('PalettePass', () => {
   it('crée une cible sans lissage ni mipmaps', () => {
     const pass = new PalettePass();
@@ -52,67 +56,68 @@ describe('PalettePass', () => {
     pass.dispose();
   });
 
-  it('suit la taille de l’affichage', () => {
+  it('suit la taille de l’affichage : cibles basse résolution et échelle d’agrandissement', () => {
     const pass = new PalettePass();
     expect(pass.setSize(1280, 721, 1)).toEqual({ width: 427, height: 241 });
-    expect(pass.target.width).toBe(427);
-    expect(pass.target.height).toBe(241);
+    expect([pass.target.width, pass.target.height]).toEqual([427, 241]);
+    expect([pass.paletteTarget.width, pass.paletteTarget.height]).toEqual([427, 241]);
     expect(material(pass).uniforms['uSceneSize'].value).toEqual([427, 241]);
-    expect(material(pass).uniforms['uPixelScale'].value).toBe(PIXEL_SIZE);
+    expect(upscale(pass).uniforms['uImageSize'].value).toEqual([427, 241]);
+    expect(upscale(pass).uniforms['uPixelScale'].value).toBe(PIXEL_SIZE);
 
     pass.setSize(600, 300, 2);
     expect(pass.target.width).toBe(200);
-    expect(material(pass).uniforms['uPixelScale'].value).toBe(PIXEL_SIZE * 2);
+    expect(pass.paletteTarget.width).toBe(200);
+    expect(upscale(pass).uniforms['uPixelScale'].value).toBe(PIXEL_SIZE * 2);
 
     pass.setSize(0, 0, Number.NaN);
     expect([pass.target.width, pass.target.height]).toEqual([1, 1]);
-    expect(material(pass).uniforms['uPixelScale'].value).toBe(PIXEL_SIZE);
+    expect([pass.paletteTarget.width, pass.paletteTarget.height]).toEqual([1, 1]);
+    expect(upscale(pass).uniforms['uPixelScale'].value).toBe(PIXEL_SIZE);
     pass.dispose();
   });
 
-  it('libère la cible, la géométrie et le matériau', () => {
-    const pass = new PalettePass();
-    const m = material(pass);
-    const geometry = (pass.scene.children[0] as Mesh).geometry;
-    const disposed: string[] = [];
-    pass.target.addEventListener('dispose', () => disposed.push('cible'));
-    geometry.addEventListener('dispose', () => disposed.push('geometrie'));
-    m.addEventListener('dispose', () => disposed.push('materiau'));
-    pass.dispose();
-    expect(disposed.sort()).toEqual(['cible', 'geometrie', 'materiau']);
-  });
-
-  it('photo (#479) : cible à la taille de la scène, sans lissage, réutilisée et libérée', () => {
-    const pass = new PalettePass();
-    pass.setSize(1280, 720, 2);
-    const photo = pass.photoTarget();
-    expect([photo.width, photo.height]).toEqual([427, 240]);
-    expect(photo.texture.minFilter).toBe(NearestFilter);
-    expect(photo.texture.magFilter).toBe(NearestFilter);
-    expect(photo.texture.generateMipmaps).toBe(false);
-    expect(photo.depthBuffer).toBe(false);
-    expect(photo.samples).toBe(0);
-    pass.setSize(300, 150, 1);
-    expect(pass.photoTarget()).toBe(photo);
-    expect([photo.width, photo.height]).toEqual([100, 50]);
-    let disposed = false;
-    photo.addEventListener('dispose', () => (disposed = true));
-    pass.dispose();
-    expect(disposed).toBe(true);
-  });
-
-  it('photo (#479) : échelle du quad réglable puis rétablie, jamais sous 1', () => {
+  it('ramène à la palette un pixel par pixel de scène : aucune échelle dans la passe palette (ADR 0151)', () => {
     const pass = new PalettePass();
     pass.setSize(600, 300, 2);
-    const scale = () => material(pass).uniforms['uPixelScale'].value as number;
-    expect(pass.setPixelScale(1)).toBe(PIXEL_SIZE * 2);
-    expect(scale()).toBe(1);
-    expect(pass.setPixelScale(PIXEL_SIZE * 2)).toBe(1);
-    expect(scale()).toBe(PIXEL_SIZE * 2);
-    pass.setPixelScale(0.5);
-    expect(scale()).toBe(1);
-    pass.setPixelScale(Number.NaN);
-    expect(scale()).toBe(1);
+    expect(material(pass).uniforms['uPixelScale']).toBeUndefined();
+    expect(material(pass).fragmentShader).not.toContain('uPixelScale');
+    expect(material(pass).uniforms['uScene'].value).toBe(pass.target.texture);
+    expect(upscale(pass).uniforms['uImage'].value).toBe(pass.paletteTarget.texture);
+    pass.dispose();
+  });
+
+  it('libère les cibles, la géométrie et les matériaux', () => {
+    const pass = new PalettePass();
+    const disposed: string[] = [];
+    pass.target.addEventListener('dispose', () => disposed.push('cible'));
+    pass.paletteTarget.addEventListener('dispose', () => disposed.push('cible palette'));
+    (pass.scene.children[0] as Mesh).geometry.addEventListener('dispose', () =>
+      disposed.push('geometrie'),
+    );
+    material(pass).addEventListener('dispose', () => disposed.push('materiau'));
+    upscale(pass).addEventListener('dispose', () => disposed.push('agrandissement'));
+    pass.dispose();
+    expect(disposed.sort()).toEqual([
+      'agrandissement',
+      'cible',
+      'cible palette',
+      'geometrie',
+      'materiau',
+    ]);
+  });
+
+  it('cible de la palette (photo #479 comprise) : sans lissage, sans profondeur, 8 bits bruts', () => {
+    const pass = new PalettePass();
+    pass.setSize(1280, 720, 2);
+    const palette = pass.paletteTarget;
+    expect([palette.width, palette.height]).toEqual([427, 240]);
+    expect(palette.texture.minFilter).toBe(NearestFilter);
+    expect(palette.texture.magFilter).toBe(NearestFilter);
+    expect(palette.texture.generateMipmaps).toBe(false);
+    expect(palette.texture.colorSpace).not.toBe(SRGBColorSpace);
+    expect(palette.depthBuffer).toBe(false);
+    expect(palette.samples).toBe(0);
     pass.dispose();
   });
 

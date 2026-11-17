@@ -1,6 +1,6 @@
 # 0112 — Photo du bac en PNG : relecture d'une cible palette à la taille native
 
-- Statut : acceptée
+- Statut : acceptée ; point 1 remplacé par l'ADR 0151 (la photo relit la cible de la palette de chaque image)
 - Date : 2026-11-07
 - Auteur : Dev, cycle 169, issue #479 (épopée v1.12 « Entretien et plantes »)
 

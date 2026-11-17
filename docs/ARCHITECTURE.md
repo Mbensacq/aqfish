@@ -261,8 +261,11 @@ Principe : une vraie scène 3D, rendue de façon à rester du pixel art quel que
 
 Mise en œuvre des points 1 et 2 (ADR 0007) : `AquariumView.renderFrame()` rend la scène dans
 la cible de `PalettePass` (taille `ceil(canvas / PIXEL_SIZE)`, `PIXEL_SIZE = 3` pixels CSS),
-puis un quad plein écran lit chaque pixel de scène par `texelFetch` et écrit la couleur de
-palette la plus proche (distance euclidienne en sRGB, première couleur en cas d'égalité).
+puis un quad lit chaque pixel de scène par `texelFetch` et écrit la couleur de palette la
+plus proche (distance euclidienne en sRGB, première couleur en cas d'égalité) dans
+`PalettePass.paletteTarget`, de même taille que la scène ; enfin un quad plein écran agrandit
+cette image sans lissage (ADR 0151 : la recherche dans la palette est faite une fois par pixel
+de scène et non par pixel d'affichage, image identique au bit près).
 La cible est en sRGB 8 bits : les surfaces translucides s'y mélangent en espace linéaire.
 La passe connaît aussi des **tons de nuit et du crépuscule** (ADR 0021), placés après les
 couleurs de jour et pénalisés selon l'heure : écartés en plein jour (image de midi
@@ -475,7 +478,7 @@ caméra ni à la scène. Le pixel art reste le mode par défaut.
 | `sim/avoidance.ts` | Forces d'évitement des parois et des obstacles, proximité, déviation pour contourner (ADR 0012) |
 | `render/palette.ts` | Palette unique (32 à 48 couleurs), nommées par usage ; tons de nuit (`NIGHT_TONES`) et du crépuscule (`TWILIGHT_TONES`), palette étendue de la passe (ADR 0021) ; tons d'environnement (`ENVIRONMENT_TONES`, ADR 0039) ; tons de la nourriture (`FOOD_TONES`, ADR 0056) |
 | `render/pixel-art.ts` | `PIXEL_SIZE`, taille de la cible basse résolution, couleur la plus proche avec pénalités facultatives (fonctions pures, même métrique que le shader) |
-| `render/palette-pass.ts` | Cible basse résolution et passe plein écran palette (`ShaderMaterial`) ; pénalités des tons de l'heure et des tons d'environnement (`environmentTonePenalties`), tons de la nourriture selon l'opacité du pixel (`FOOD_ALPHA_THRESHOLD`) ; libération; cible de la photo à la taille native (`photoTarget`, `setPixelScale`, #479) |
+| `render/palette-pass.ts` | Cible basse résolution et passe plein écran palette (`ShaderMaterial`) ; pénalités des tons de l'heure et des tons d'environnement (`environmentTonePenalties`), tons de la nourriture selon l'opacité du pixel (`FOOD_ALPHA_THRESHOLD`) ; libération ; cible de l'image ramenée à la palette (`paletteTarget`, relue par la photo #479) et quad d'agrandissement (`upscaleScene`, ADR 0151) |
 | `render/photo-capture.ts` | Photo du bac (#479, ADR 0112), fonctions pures : facteur entier (`photoScale`), agrandissement au plus proche voisin et retournement des lignes relues (`upscalePhoto`), nom de fichier daté (`photoFileName`) ; avant / après côte à côte d'une séance (`sideBySidePhotos`, `comparisonFileName`, #624) ; relecture par `AquariumView.takePhoto`, encodage PNG par l'hôte |
 | `render/camera-presets.ts` | Dimensions du bac, préréglages de caméra, interpolation des transitions (fonctions pures) |
 | `render/free-camera.ts` | Caméra libre dans la pièce (#343, ADR 0084) : limites (`freeCameraBounds` : pièce et obstacle bac + meuble), position permise (`constrainFreePosition`), départ d'une pose orbitale (`freeCameraFromPose`), orientation (`turnFreeCamera`), déplacement à pas fixes et vitesse amortie, glissant le long des parois (`stepFreeCamera`, pure ; `stepFreeCameraInPlace`, même calcul en place sans allocation pour la boucle d'affichage, #352) ; fonctions pures sauf la variante en place |
