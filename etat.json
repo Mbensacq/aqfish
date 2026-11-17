@@ -8612,7 +8612,7 @@
       "type": "retro",
       "issue": 679,
       "pr": 681,
-      "version": null,
+      "version": "v1.22.6",
       "phases": {
         "planif": {
           "statut": "termine",
