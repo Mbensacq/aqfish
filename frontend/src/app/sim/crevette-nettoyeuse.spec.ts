@@ -178,7 +178,7 @@ describe('crevette nettoyeuse (#656) : approche des poissons', () => {
     const distance = () => Math.hypot(fish.x - shrimp.x, fish.z - shrimp.z);
     const before = distance();
     let time = start;
-    for (let i = 0; i < Math.round(WALKER.slotDuration * 0.8 / SIM_DT); i++) {
+    for (let i = 0; i < Math.round((WALKER.slotDuration * 0.8) / SIM_DT); i++) {
       time += SIM_DT;
       stepWalker(shrimp, SIM_DT, seed, time, BOUNDS, GROUND, [], [fish]);
       const floor = groundHeight(shrimp.x, shrimp.z, GROUND) + WALKER.clearance;
@@ -257,8 +257,13 @@ describe('crevette nettoyeuse (#656) : récif simulé', () => {
     expect(none.entities).toEqual([]);
     const solo = reef(5, false);
     expect(() => advanceInPlace(solo, Math.round(20 / SIM_DT))).not.toThrow();
-    const noRocks = createWorld(5, [{ species: 'crevette', count: 2 }], [], [], 'recif') as
-      MutableWorld;
+    const noRocks = createWorld(
+      5,
+      [{ species: 'crevette', count: 2 }],
+      [],
+      [],
+      'recif',
+    ) as MutableWorld;
     (noRocks as { obstacles: unknown }).obstacles = [];
     expect(() => advanceInPlace(noRocks, Math.round(20 / SIM_DT))).not.toThrow();
     for (const e of shrimps(noRocks)) {

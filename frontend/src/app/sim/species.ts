@@ -2435,7 +2435,9 @@ function validateCleaning(cleaning: CleaningParams): string[] {
   for (const key of ['share', 'radius', 'standoff', 'maxHeight'] as const) {
     const value = cleaning[key];
     if (!(value > 0) || !Number.isFinite(value)) {
-      problems.push(`walker.cleaning.${key} doit être un réel strictement positif (reçu : ${value})`);
+      problems.push(
+        `walker.cleaning.${key} doit être un réel strictement positif (reçu : ${value})`,
+      );
     }
   }
   if (cleaning.share > 1) {
