@@ -8723,10 +8723,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-17T21:45:25.121Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-17T21:46:04.660Z",
+          "note": "Issue #685 : lot de dette œufs/captures (#685, #662, #683), 31 dette > 30 (S)"
         }
       },
       "metriques": {}
