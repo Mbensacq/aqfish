@@ -8712,6 +8712,24 @@
         }
       },
       "metriques": {}
+    },
+    "240": {
+      "numero": 240,
+      "date": "2026-11-17",
+      "debut": "2026-11-17T21:45:25.121Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-17T21:45:25.121Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
