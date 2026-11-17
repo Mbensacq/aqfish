@@ -8633,10 +8633,10 @@
           "note": "Verdict OK, 0 bug, captures c237 partielles (téléphone alerte via Dev), verify complet non terminé (lenteur), CI verte"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-17T14:39:43.024Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-17T15:57:42.623Z",
+          "note": "PR #681 fusionnée → v1.22.6 (release CI OK, CI main 31cf436 verte) ; PR doc #680 fusionnée ; #660 et #679 fermées ; suppression de branche refusée (403)"
         }
       },
       "metriques": {}
