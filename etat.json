@@ -8496,6 +8496,24 @@
         }
       },
       "metriques": {}
+    },
+    "234": {
+      "numero": 234,
+      "date": "2026-11-17",
+      "debut": "2026-11-17T04:21:02.585Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-17T04:21:02.585Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
