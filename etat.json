@@ -8733,6 +8733,12 @@
           "debut": "2026-11-17T21:46:29.681Z",
           "fin": "2026-11-17T23:11:28.067Z",
           "note": "PR #700 : lot de dette œufs/captures (#685, #662, #683), CI 11/11 verte ; e2e locaux laissés à la CI ; 1 seule capture changée (bassin œufs) ; pied d'attribution réinjecté sur la PR par l'environnement"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-17T23:12:13.822Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
