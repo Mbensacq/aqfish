@@ -8611,7 +8611,7 @@
       "debut": "2026-11-17T12:53:17.894Z",
       "type": "retro",
       "issue": 679,
-      "pr": null,
+      "pr": 681,
       "version": null,
       "phases": {
         "planif": {
