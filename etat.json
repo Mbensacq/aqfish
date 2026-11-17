@@ -8579,10 +8579,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-17T10:13:03.952Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-17T10:13:25.980Z",
+          "note": "Issue #672 + #669 : lot dette garde de ponte sans fermeture, cible crevette début de pas, PIEGES (S)"
         }
       },
       "metriques": {}
