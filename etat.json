@@ -8517,6 +8517,12 @@
           "debut": "2026-11-17T04:22:02.375Z",
           "fin": "2026-11-17T05:33:03.079Z",
           "note": "PR #668 : crevette nettoyeuse qui approche les poissons (#656, ADR 0148), CI 11/11 verte ; espèce déjà livrée en #422, seul le comportement ajouté"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-17T05:33:58.862Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
