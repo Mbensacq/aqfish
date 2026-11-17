@@ -8477,10 +8477,10 @@
           "note": "Issue #655 : journal du bac, reproduction et entretien (S)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-17T01:25:14.166Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-17T02:32:28.863Z",
+          "note": "PR #666 : journal du bac, reproduction, entretien et filtre (#655), CI 11/11 verte ; centre 60 % intenable sur téléphone pour un détail déplié (réserve dans la PR, PIEGES)"
         }
       },
       "metriques": {}
