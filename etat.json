@@ -8559,6 +8559,12 @@
           "debut": "2026-11-17T08:37:38.788Z",
           "fin": "2026-11-17T08:48:17.391Z",
           "note": "Verdict OK, 0 bug, 12 captures récif publiées, recif-qa 9/9 ; pied de page d'attribution présent dans la revue QA (outil sans édition de revue)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-17T08:48:57.402Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
