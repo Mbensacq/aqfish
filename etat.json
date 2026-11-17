@@ -8669,10 +8669,10 @@
           "note": "Verdict OK, 0 bug, captures publiées, 5458 tests unitaires verts, CI verte"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-17T17:33:52.444Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-17T18:57:36.727Z",
+          "note": "PR #682 fusionnée → v1.23.0 (release CI OK, CI main 6ca018d verte) ; #674 fermée ; dette #683 ; suppression de branche refusée (403)"
         }
       },
       "metriques": {}
