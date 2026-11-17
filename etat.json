@@ -9090,6 +9090,19 @@
         "statut": "termine",
         "note": "8 cycles, 0 alerte"
       }
+    },
+    "2026-11-17": {
+      "metriques": {
+        "cycles": 6,
+        "livres": 5,
+        "version": "v1.22.2",
+        "tests": null,
+        "couvertureLignes": null,
+        "lignesCode": 136681,
+        "bugsOuverts": 1,
+        "ciMain": "success",
+        "mutation": 98.16
+      }
     }
   }
 }
