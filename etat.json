@@ -8511,6 +8511,12 @@
           "debut": "2026-11-17T04:21:02.585Z",
           "fin": "2026-11-17T04:21:25.916Z",
           "note": "Issue #656 : crevette nettoyeuse au récif (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-17T04:22:02.375Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
