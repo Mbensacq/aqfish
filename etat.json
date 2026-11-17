@@ -8595,6 +8595,12 @@
           "debut": "2026-11-17T11:11:18.136Z",
           "fin": "2026-11-17T11:29:32.733Z",
           "note": "Verdict OK, 0 bug, captures c236 publiées (récif ; mutation non lancée, temps)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-17T11:30:04.512Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
