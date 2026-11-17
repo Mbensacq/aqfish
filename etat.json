@@ -8597,10 +8597,10 @@
           "note": "Verdict OK, 0 bug, captures c236 publiées (récif ; mutation non lancée, temps)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-17T11:30:04.512Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-17T12:52:43.595Z",
+          "note": "PR #673 fusionnée → v1.22.5 (release CI OK, CI main 28418bf verte) ; #672 et #669 fermées ; suppression de branche refusée (403)"
         }
       },
       "metriques": {}
