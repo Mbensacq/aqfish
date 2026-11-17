@@ -58,6 +58,7 @@ const FRESHWATER_LOT2 =
 const FRESHWATER_LOT3 = 'population=neon:0,guppy:0,corydora:0,braise:12,molly:3,miel:2';
 const FRESHWATER_LOT4 = 'population=neon:0,guppy:0,corydora:0,xipho:3,cerise:8,neritine:3';
 /** Courant fort au bac tropical (#460) : poissons de rivière et néons. */
+const PLATY_FRY = 'population=neon:6,guppy:0,corydora:2,platy:4';
 const RIVER = 'courant=fort&population=neon:8,guppy:0,corydora:0,danio:8,xipho:3';
 const REEF_LOT2 = 'population=clown:3,chirurgien:4,chromis:7,gobie:2,gramma:2';
 const REEF_LOT3 = 'population=clown:3,chirurgien:4,chromis:7,gobie:2,gramma:2,crevette:2,blennie:1';
@@ -272,6 +273,9 @@ test.describe('Captures', () => {
     { name: 'three-quarter-alevins', query: 'alevins=1' },
     { name: 'front-alevins', query: 'alevins=1&camera=front' },
     { name: 'top-alevins', query: 'alevins=1&camera=top' },
+    // Alevins du platy (#674) : platys rouges et leurs alevins pâles aux trois jalons, près des
+    // plantes ; guppys retirés pour ne voir que les platys.
+    { name: 'three-quarter-alevins-platy', query: `alevins=1&${PLATY_FRY}` },
     // Œufs de corydoras (#478) : une ponte collée sur la vitre et dans les plantes.
     { name: 'front-oeufs', query: 'oeufs=1&camera=front' },
     { name: 'three-quarter-oeufs', query: 'oeufs=1' },

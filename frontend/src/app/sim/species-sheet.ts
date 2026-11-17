@@ -416,6 +416,12 @@ const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
         'Plusieurs femelles pour un mâle, qui sinon les harcèle ; eau plutôt dure (pH 7 à 8,2)',
         source(`${SF}xiphophorus-maculatus`),
       ),
+      // Reproduction (#674) : vivipare comme le guppy ; rythme, nombre d'alevins et croissance
+      // du jeu (`sim/fry.ts`), gestation réelle non vérifiée dans une source.
+      note(
+        'Reproduction : vivipare, la femelle nourrie dans une eau saine met bas 2 à 6 alevins, qui grandissent cachés dans les plantes en trois étapes ; durée de gestation du jeu',
+        APPROXIMATION,
+      ),
     ],
   },
   danio: {
@@ -497,6 +503,12 @@ const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
       note(
         'S’hybride avec le molly voile (P. latipinna) : une seule des deux espèces par bac',
         source(`${SF}poecilia-sphenops`),
+      ),
+      // Reproduction (#674) : vivipare comme le guppy ; rythme, nombre d'alevins et croissance
+      // du jeu (`sim/fry.ts`), gestation réelle non vérifiée dans une source.
+      note(
+        'Reproduction : vivipare, la femelle nourrie dans une eau dure et saine met bas 2 à 6 alevins, qui grandissent cachés dans les plantes en trois étapes ; durée de gestation du jeu',
+        APPROXIMATION,
       ),
     ],
   },

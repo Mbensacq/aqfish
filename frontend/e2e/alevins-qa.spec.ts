@@ -6,9 +6,13 @@ import { expect, test } from '@playwright/test';
  * paramètre, le bac par défaut ne compte aucun alevin supplémentaire.
  */
 
-function guppyCount(population: string | null): number {
-  const match = /(?:^|,)guppy:(\d+)/.exec(population ?? '');
+function speciesCount(population: string | null, species: string): number {
+  const match = new RegExp(`(?:^|,)${species}:(\\d+)`).exec(population ?? '');
   return match ? Number(match[1]) : 0;
+}
+
+function guppyCount(population: string | null): number {
+  return speciesCount(population, 'guppy');
 }
 
 async function open(page: import('@playwright/test').Page, query: string): Promise<string | null> {
@@ -46,6 +50,17 @@ test.describe('Alevins de guppy', () => {
         .getAttribute('data-aqfish-population');
       expect(guppyCount(population)).toBeGreaterThan(0);
       expect(errors).toEqual([]);
+    });
+  }
+
+  // Alevins du platy et du molly (#674) : mêmes portées que le guppy.
+  for (const species of ['platy', 'molly']) {
+    test(`alevins=1 : le ${species} met bas aussi, sans erreur`, async ({ page }) => {
+      const population = `&population=neon:0,guppy:0,corydora:0,${species}:2`;
+      const base = await open(page, population);
+      const withFry = await open(page, `${population}&alevins=1`);
+      expect(speciesCount(base, species)).toBe(2);
+      expect(speciesCount(withFry, species)).toBeGreaterThan(2);
     });
   }
 });
