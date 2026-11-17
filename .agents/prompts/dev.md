@@ -22,8 +22,8 @@ le travail déborde, réduire le périmètre et le dire, plutôt que livrer à m
 cd frontend && npm ci
 ```
 
-Lire `docs/PIEGES.md`, les sections utiles de `docs/ARCHITECTURE.md`, et `docs/DA.md` si
-l'apparence est concernée.
+Lire `docs/PIEGES.md`, `docs/CONVENTIONS.md`, les sections utiles de `docs/ARCHITECTURE.md`,
+et `docs/DA.md` si l'apparence est concernée.
 
 ## 3. Santé de `main`
 
@@ -57,8 +57,16 @@ Si cela a occupé l'essentiel de la session, s'arrêter là (note de phase expli
    cette PR et écrire « Dépend de #N » en tête de la description de ta PR.
 2. Respecter les couches (`sim` pur et déterministe, `render` sans Angular, `ui` Angular).
    Le lint l'impose ; ne jamais le contourner (pas de `eslint-disable` sur ces règles).
+   Il impose aussi les limites de `docs/CONVENTIONS.md` (taille des fichiers et des fonctions,
+   complexité, imbrication, paramètres) et refuse tout nouveau cycle d'import : découper le
+   code, ne jamais ajouter d'exception dans `qualite-exceptions.json`. Si ton travail améliore
+   un fichier en exception, abaisser son exception (`npm run qualite:bilan -- --ecrire`).
 3. Pour la logique de simulation : écrire les tests d'abord ou en même temps, avec les cas
    limites (zéro, valeurs extrêmes, bords du bac, graines différentes).
+   Les empreintes de `sim/non-regression.spec.ts` ne changent que pour un changement de
+   comportement voulu : le dire dans la PR (scénarios touchés, raison). Pour une
+   refactorisation (lots de dette, chantier #686), aucune ne doit changer : suivre la
+   procédure « Refactoriser sans régression » de `docs/CONVENTIONS.md`.
 4. Pour l'apparence : produire les captures et **les regarder** avec l'outil de lecture
    d'image, puis itérer jusqu'à satisfaire les critères :
    ```bash

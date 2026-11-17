@@ -63,7 +63,10 @@ Dans cet ordre :
 1. un `bug` de gravité **bloquant** ouvert : le cycle le corrige ;
 2. **plus de 30 issues `dette` ouvertes** (décision de Mathis du 2026-11-04) : le cycle traite
    un lot de dette (1 à 3 issues liées, même zone, critères de la section `dette`) au lieu
-   d'une fonctionnalité, jusqu'à revenir sous le seuil ; pendant un sprint de consolidation
+   d'une fonctionnalité, jusqu'à revenir sous le seuil ; **pendant le chantier
+   d'assainissement #686** (décision de Mathis du 2026-11-17), chaque cycle `fonctionnalite`
+   ou `dette` traite le lot suivant de #686, dans son ordre, sans nouvelle fonctionnalité
+   jusqu'à la fin des 13 lots ; pendant un sprint de consolidation
    décidé par Mathis (`docs/ROADMAP.md`), suivre l'ordre des lots fixé par sa rétro ;
 3. une issue issue d'une `idee-mathis` ;
 4. sinon la prochaine issue `fonctionnalite` de l'épopée du sprint, dans l'ordre fixé par

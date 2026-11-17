@@ -13,6 +13,17 @@ const isCI = !!process.env['CI'];
 const BASE_URL = `http://localhost:${PORT}`;
 
 /**
+ * Build déjà construit à servir (`E2E_DIST`, chemin relatif à `frontend/`) : la CI construit
+ * l'application une fois et chaque part la sert avec `scripts/servir-dist.mjs`, au lieu de
+ * recompiler avec `ng serve` sur chaque machine (docs/PIEGES.md, « CI e2e »). Sans
+ * variable : `ng serve`, comme en local.
+ */
+const DIST = process.env['E2E_DIST'];
+const SERVER_COMMAND = DIST
+  ? `node scripts/servir-dist.mjs ${JSON.stringify(DIST)} ${PORT}`
+  : `npx ng serve --port ${PORT}`;
+
+/**
  * Stockage de départ de chaque test (#240, ADR 0072) : « Guide du débutant » déjà vu, pour
  * qu'il ne s'ouvre pas à la première visite par-dessus l'interface. `e2e/guide-debutant.spec.ts`
  * repart d'un stockage vide pour tester cette première visite. Clé et valeur :
@@ -56,7 +67,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `npx ng serve --port ${PORT}`,
+    command: SERVER_COMMAND,
     url: BASE_URL,
     reuseExistingServer: !isCI,
     timeout: 180_000,

@@ -35,6 +35,10 @@ cd frontend && npm ci
    Regarder les 5 images avec l'outil de lecture d'image et les comparer à
    `../equipe/captures/latest/` (série précédente) : objets manquants, écran noir, artefacts,
    pixels flous ou lissés, couleurs hors palette, cadrage incohérent avec l'angle.
+   **Refactorisation** (lots de dette, chantier #686) : toutes les captures doivent être
+   identiques **au pixel près** à la série précédente (comparer les fichiers, pas seulement
+   l'œil : `cmp` ou `e2e/outils-pixels.ts`) et aucune empreinte de
+   `sim/non-regression.spec.ts` ne doit changer ; sinon c'est une régression à signaler.
 4. **Exploration** avec des scripts Playwright jetables (dans `/tmp`, jamais commités) :
    rotation à la souris (glisser), zoom à la molette, préréglages au clavier, petite fenêtre
    (390 × 844), autres graines, paramètres d'URL extrêmes, erreurs dans la console.
