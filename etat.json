@@ -8915,10 +8915,10 @@
           "note": "PR #716 : sauvegardes relues par schémas déclaratifs (save-schema/settings/animals), 660+ cas de caractérisation, exceptions save.ts et room-save.ts retirées, CI verte ; dette #717"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-18T08:26:55.365Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-18T08:45:46.686Z",
+          "note": "Verdict OK, 0 bug, captures publiées (166/166 identiques, 1 instabilité 13 px connue), unitaires/lint/build verts, CI e2e verte"
         }
       },
       "metriques": {}
