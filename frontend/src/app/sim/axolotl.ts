@@ -8,7 +8,8 @@ import {
   type SpeciesDefinition,
   type SpeciesId,
 } from './species';
-import { createFish, random, savePrevious, wrapAngle, type Fish, type SwimBounds } from './swimmer';
+import { advancePhase, clamp, dampedTurn, pitchToward, wrapAngle } from './motion';
+import { createFish, random, savePrevious, type Fish, type SwimBounds } from './swimmer';
 import type { Box3 } from './tank';
 import { terrainHeightAt, type TerrainSettings } from './terrain';
 import { tailBeatRate } from './undulation';
@@ -62,7 +63,6 @@ export interface WalkerGround {
 }
 
 const UINT32_RANGE = 4294967296;
-const TWO_PI = Math.PI * 2;
 
 /** Sel des tirages du comportement (flux séparé du sous-générateur de l'entité). */
 const PHASE_SALT = 0x6a09e667;
@@ -394,134 +394,248 @@ export function stepWalker(
   obstacles: readonly Obstacle[] = [],
   others: readonly WalkerNeighbor[] = NO_FISH,
 ): void {
-  const def = SPECIES[fish.species];
-  const walker = def.walker!;
+  const c = WALK;
+  c.fish = fish;
+  c.def = SPECIES[fish.species];
+  c.walker = c.def.walker!;
+  c.dt = dt;
+  c.bounds = bounds;
+  c.ground = ground;
   // Obstacles contournés seulement par les espèces qui le déclarent (crevette, #422).
-  const blockers = walker.avoidsObstacles === true ? obstacles : NO_OBSTACLES;
-  const { hard } = bounds;
+  c.blockers = c.walker.avoidsObstacles === true ? obstacles : NO_OBSTACLES;
   savePrevious(fish);
-  fish.hunger = growHunger(fish.hunger, def, dt);
+  fish.hunger = growHunger(fish.hunger, c.def, dt);
+  c.phase = walkerPhaseAt(c.walker, seed, fish.id, time, PHASE);
+  c.burst = burstAt(c.walker, seed, fish.id, time);
+  cleaningVisitInPlace(c, seed, others);
+  walkerSpeedInPlace(c);
+  walkerTurnInPlace(c);
+  walkerStepInPlace(c);
+  walkerHeightInPlace(c);
+  walkerPitchInPlace(c);
+  // Queue : bat plus vite à la nage et à la montée qu'à la marche.
+  const effort = Math.max(fish.speed, Math.abs(c.vy));
+  fish.phase = advancePhase(fish.phase, tailBeatRate(c.def, effort), dt);
+}
 
-  const phase = walkerPhaseAt(walker, seed, fish.id, time, PHASE);
-  const burstOffset = deriveSeed((seed ^ BURST_SALT) >>> 0, fish.id) / UINT32_RANGE;
+/**
+ * Contexte d'un pas de marche, partagé par ses étapes : entrées de `stepWalker`, puis
+ * résultats de chaque étape (phase, approche, sol et plafond, vitesse verticale).
+ */
+interface WalkStep {
+  fish: Mutable<Fish>;
+  def: SpeciesDefinition;
+  walker: BottomWalkerParams;
+  dt: number;
+  bounds: SwimBounds;
+  ground: WalkerGround;
+  /** Obstacles contournés (aucun pour une espèce qui ne le déclare pas). */
+  blockers: readonly Obstacle[];
+  phase: WalkerPhase;
+  /** Avancement dans la période des à-coups de nage, dans [0, 1[. */
+  burst: number;
+  /** Poisson approché (#656), ou `null` ; atteint quand l'animal est dessous. */
+  visited: WalkerNeighbor | null;
+  reached: boolean;
+  /** Cap vers le poisson approché, en radians. */
+  heading: number;
+  /** Hauteurs permises du centre au point atteint, en mètres. */
+  floor: number;
+  ceiling: number;
+  /** Vitesse verticale du pas, en m/s. */
+  vy: number;
+}
+
+/** Contexte de travail de `stepWalker` (aucune allocation par pas ; non réentrant). */
+const WALK: WalkStep = {
+  fish: null as unknown as Mutable<Fish>, // renseigné au début de chaque pas
+  def: null as unknown as SpeciesDefinition, // idem
+  walker: null as unknown as BottomWalkerParams, // idem
+  dt: 0,
+  bounds: null as unknown as SwimBounds, // idem
+  ground: null as unknown as WalkerGround, // idem
+  blockers: NO_OBSTACLES,
+  phase: PHASE,
+  burst: 0,
+  visited: null,
+  reached: false,
+  heading: 0,
+  floor: 0,
+  ceiling: 0,
+  vy: 0,
+};
+
+/** Avancement de l'individu `id` dans la période des à-coups au temps `time`, dans [0, 1[. */
+function burstAt(walker: BottomWalkerParams, seed: number, id: number, time: number): number {
+  const burstOffset = deriveSeed((seed ^ BURST_SALT) >>> 0, id) / UINT32_RANGE;
   const burstPosition = time / walker.burstPeriod + burstOffset;
-  const burst = burstPosition - Math.floor(burstPosition);
+  return burstPosition - Math.floor(burstPosition);
+}
 
-  // Approche d'un poisson de passage (#656) : créneau de marche tiré pour cela et poisson bas
-  // à portée ; sinon (et pour toute autre espèce), marche d'avant, au bit près.
-  const cleaning = walker.cleaning;
-  const visited =
+/**
+ * Approche d'un poisson de passage (#656) : créneau de marche tiré pour cela et poisson bas
+ * à portée ; sinon (et pour toute autre espèce), marche d'avant, au bit près.
+ */
+function cleaningVisitInPlace(c: WalkStep, seed: number, others: readonly WalkerNeighbor[]): void {
+  const { fish, phase } = c;
+  const cleaning = c.walker.cleaning;
+  c.visited =
     cleaning !== undefined &&
     phase.mode === 'marche' &&
     others.length > 0 &&
     walkerCleansAt(cleaning, seed, fish.id, phase.slot)
       ? cleaningTarget(fish, others, cleaning)
       : null;
-  let reached = false;
-  let heading = 0;
-  if (visited !== null) {
-    const dx = visited.x - fish.x;
-    const dz = visited.z - fish.z;
-    reached = dx * dx + dz * dz <= cleaning!.standoff * cleaning!.standoff;
-    heading = Math.atan2(dz, dx);
+  c.reached = false;
+  c.heading = 0;
+  if (c.visited !== null) {
+    const dx = c.visited.x - fish.x;
+    const dz = c.visited.z - fish.z;
+    c.reached = dx * dx + dz * dz <= cleaning!.standoff * cleaning!.standoff;
+    c.heading = Math.atan2(dz, dx);
   }
+}
 
-  // Vitesse : accélération vive, ralentissement lent (à-coups de la nage). Arrivée sous le
-  // poisson approché : elle s'arrête presque (vitesse minimale).
-  const speedGoal = reached ? def.minSpeed : walkerSpeedGoal(def, phase, burst);
+/**
+ * Vitesse : accélération vive, ralentissement lent (à-coups de la nage). Arrivée sous le
+ * poisson approché : elle s'arrête presque (vitesse minimale).
+ */
+function walkerSpeedInPlace(c: WalkStep): void {
+  const { fish, def } = c;
+  const speedGoal = c.reached ? def.minSpeed : walkerSpeedGoal(def, c.phase, c.burst);
   const rate = speedGoal > fish.speed ? SPEED_ATTACK : SPEED_RELEASE;
   fish.speed = clamp(
-    fish.speed + (speedGoal - fish.speed) * Math.min(1, rate * dt),
+    fish.speed + (speedGoal - fish.speed) * Math.min(1, rate * c.dt),
     def.minSpeed,
     def.maxSpeed,
   );
+}
 
-  // Cap : errance, sauf si le fond devant remonte trop (berge), si une vitre approche ou si un
-  // obstacle est devant (issue #422) : virage franc du côté le plus dégagé.
-  let turn =
-    fish.turn * (1 - WANDER_DAMPING * dt) +
-    (random(fish) * 2 - 1) * WANDER_JITTER * def.wanderTurnRate * dt;
+/**
+ * Cap : errance, sauf si le fond devant remonte trop (berge), si une vitre approche ou si un
+ * obstacle est devant (issue #422) : virage franc du côté le plus dégagé.
+ */
+function walkerTurnInPlace(c: WalkStep): void {
+  const { fish, def, dt } = c;
+  const jitter = (random(fish) * 2 - 1) * WANDER_JITTER * def.wanderTurnRate * dt;
+  let turn = dampedTurn(fish.turn, WANDER_DAMPING, jitter, dt);
   const reach = def.bodyLength / 2 + Math.max(MIN_PROBE, fish.speed * LOOKAHEAD_SECONDS);
   let yaw = fish.yaw;
-  const aheadX = fish.x + Math.cos(yaw) * reach;
-  const aheadZ = fish.z + Math.sin(yaw) * reach;
-  if (
-    !walkerCanStand(aheadX, aheadZ, def, bounds, ground) ||
-    obstacleClearance(aheadX, fish.y, aheadZ, blockers) < def.wallMargin
-  ) {
-    const left = openness(fish, yaw + SIDE_PROBE_ANGLE, reach, def, bounds, ground, blockers);
-    const right = openness(fish, yaw - SIDE_PROBE_ANGLE, reach, def, bounds, ground, blockers);
-    const side = left > right ? 1 : left < right ? -1 : fish.turn >= 0 ? 1 : -1;
+  if (isBlockedAhead(c, reach)) {
+    const side = clearerSide(c, reach);
     yaw += side * def.avoidTurnRate * dt;
     turn = side * def.wanderTurnRate;
-  } else if (visited !== null && !reached) {
+  } else if (c.visited !== null && !c.reached) {
     // Virage vers le poisson approché, borné comme l'évitement ; l'errance reste tirée (un
     // tirage par pas) mais n'est pas appliquée.
     const maxTurn = def.avoidTurnRate * dt;
-    yaw += clamp(wrapAngle(heading - yaw), -maxTurn, maxTurn);
+    yaw += clamp(wrapAngle(c.heading - yaw), -maxTurn, maxTurn);
     turn = 0;
   } else {
     yaw += turn * dt;
   }
   fish.turn = clamp(turn, -def.wanderTurnRate, def.wanderTurnRate);
   fish.yaw = wrapAngle(yaw);
+}
 
-  // Déplacement horizontal, refusé s'il mène hors des bornes, au-dessus d'un fond trop haut ou
-  // trop près d'un obstacle (sauf s'il s'en éloigne : un individu né contre un corail repart).
-  // Santé basse (issue #208) : pas réduit par `vigor`, exactement 1 à santé pleine.
-  const step = fish.speed * dt * vigor(fish.health);
+/** Vrai si le point à `reach` mètres devant est hors du fond praticable ou trop près d'un obstacle. */
+function isBlockedAhead(c: WalkStep, reach: number): boolean {
+  const { fish, def } = c;
+  const aheadX = fish.x + Math.cos(fish.yaw) * reach;
+  const aheadZ = fish.z + Math.sin(fish.yaw) * reach;
+  return (
+    !walkerCanStand(aheadX, aheadZ, def, c.bounds, c.ground) ||
+    obstacleClearance(aheadX, fish.y, aheadZ, c.blockers) < def.wallMargin
+  );
+}
+
+/** Côté du virage (+1 à gauche, −1 à droite) : le plus dégagé, sinon celui de l'errance. */
+function clearerSide(c: WalkStep, reach: number): number {
+  const { fish, def, bounds, ground, blockers } = c;
+  const yaw = fish.yaw;
+  const left = openness(fish, yaw + SIDE_PROBE_ANGLE, reach, def, bounds, ground, blockers);
+  const right = openness(fish, yaw - SIDE_PROBE_ANGLE, reach, def, bounds, ground, blockers);
+  return left > right ? 1 : left < right ? -1 : fish.turn >= 0 ? 1 : -1;
+}
+
+/**
+ * Déplacement horizontal, refusé s'il mène hors des bornes, au-dessus d'un fond trop haut ou
+ * trop près d'un obstacle (sauf s'il s'en éloigne : un individu né contre un corail repart).
+ * Santé basse (issue #208) : pas réduit par `vigor`, exactement 1 à santé pleine.
+ */
+function walkerStepInPlace(c: WalkStep): void {
+  const { fish, def } = c;
+  const { hard } = c.bounds;
+  const step = fish.speed * c.dt * vigor(fish.health);
   const nx = clamp(fish.x + Math.cos(fish.yaw) * step, hard.minX, hard.maxX);
   const nz = clamp(fish.z + Math.sin(fish.yaw) * step, hard.minZ, hard.maxZ);
   if (
-    walkerCanStand(nx, nz, def, bounds, ground) &&
-    clearOfObstacles(fish, nx, nz, def, blockers)
+    walkerCanStand(nx, nz, def, c.bounds, c.ground) &&
+    clearOfObstacles(fish, nx, nz, def, c.blockers)
   ) {
     fish.x = nx;
     fish.z = nz;
   }
+}
 
-  // Hauteur : jamais sous le sol (centre, museau et queue), jamais au-dessus du plafond.
-  const ceiling = hard.maxY;
+/**
+ * Hauteur : jamais sous le sol (centre, museau et queue), jamais au-dessus du plafond. Montée
+ * ou descente refusée si elle mène dans un obstacle (issue #422) : posée sur un corail qu'elle
+ * survolait, la crevette y reste jusqu'à en sortir à l'horizontale.
+ */
+function walkerHeightInPlace(c: WalkStep): void {
+  const { fish, def, ground, blockers } = c;
+  c.ceiling = c.bounds.hard.maxY;
   const half = def.bodyLength / 2;
   const cos = Math.cos(fish.yaw) * half;
   const sin = Math.sin(fish.yaw) * half;
-  const center = groundHeight(fish.x, fish.z, ground) + walker.clearance;
+  const center = groundHeight(fish.x, fish.z, ground) + c.walker.clearance;
   const ends =
     Math.max(
       groundHeight(fish.x + cos, fish.z + sin, ground),
       groundHeight(fish.x - cos, fish.z - sin, ground),
-    ) + walker.clearance;
-  const floor = Math.max(hard.minY, center, Math.min(ends, ceiling));
-  let goal: number;
-  let vertical: number;
-  switch (phase.mode) {
-    case 'marche':
-      goal = floor;
-      vertical = SETTLE_VERTICAL;
-      break;
-    case 'nage':
-      goal = floor + (ceiling - floor) * phase.height;
-      vertical = SWIM_VERTICAL;
-      break;
-    case 'remontee':
-      goal = phase.progress < RISE_SHARE ? ceiling : floor;
-      vertical = phase.progress < RISE_SHARE ? walker.climbSpeed : SINK_VERTICAL;
-      break;
-  }
-  const vy = clamp((goal - fish.y) * VERTICAL_GAIN, -vertical, vertical);
-  // Montée ou descente refusée si elle mène dans un obstacle (issue #422) : posée sur un corail
-  // qu'elle survolait, la crevette y reste jusqu'à en sortir à l'horizontale.
-  let ny = fish.y + vy * dt;
+    ) + c.walker.clearance;
+  c.floor = Math.max(c.bounds.hard.minY, center, Math.min(ends, c.ceiling));
+  verticalGoalInPlace(c);
+  c.vy = clamp((VERTICAL.goal - fish.y) * VERTICAL_GAIN, -VERTICAL.speed, VERTICAL.speed);
+  let ny = fish.y + c.vy * c.dt;
   if (blockers.length > 0) {
     const next = obstacleClearance(fish.x, ny, fish.z, blockers);
     if (next < def.wallMargin && next < obstacleClearance(fish.x, fish.y, fish.z, blockers)) {
       ny = fish.y;
     }
   }
-  fish.y = clamp(ny, floor, ceiling);
+  fish.y = clamp(ny, c.floor, c.ceiling);
+}
 
-  // Inclinaison : celle du déplacement (pente suivie, montée, descente), lissée, bornée par la
-  // place autour du corps.
+/** Hauteur visée et vitesse verticale maximale du pas (`verticalGoalInPlace`). */
+const VERTICAL = { goal: 0, speed: 0 };
+
+/** Hauteur visée et vitesse verticale maximale selon la phase, écrites dans `VERTICAL`. */
+function verticalGoalInPlace(c: WalkStep): void {
+  const { phase, floor, ceiling } = c;
+  switch (phase.mode) {
+    case 'marche':
+      VERTICAL.goal = floor;
+      VERTICAL.speed = SETTLE_VERTICAL;
+      break;
+    case 'nage':
+      VERTICAL.goal = floor + (ceiling - floor) * phase.height;
+      VERTICAL.speed = SWIM_VERTICAL;
+      break;
+    case 'remontee':
+      VERTICAL.goal = phase.progress < RISE_SHARE ? ceiling : floor;
+      VERTICAL.speed = phase.progress < RISE_SHARE ? c.walker.climbSpeed : SINK_VERTICAL;
+      break;
+  }
+}
+
+/**
+ * Inclinaison : celle du déplacement (pente suivie, montée, descente), lissée, bornée par la
+ * place autour du corps.
+ */
+function walkerPitchInPlace(c: WalkStep): void {
+  const { fish, def, phase, floor, ceiling } = c;
   const dx = fish.x - fish.px;
   const dz = fish.z - fish.pz;
   const dh = Math.sqrt(dx * dx + dz * dz);
@@ -535,20 +649,12 @@ export function stepWalker(
   }
   // Place laissée par le sol et la surface : museau (à une demi-longueur) et queue (à une
   // longueur, nageoire comprise) ne sortent ni de l'eau ni du sol.
+  const half = def.bodyLength / 2;
   const above = (ceiling - fish.y) / half;
   const below = (fish.y - floor) / half;
   const upLimit = Math.min(def.maxPitch, Math.asin(clamp(Math.min(above, below / 2), 0, 1)));
   const downLimit = Math.min(def.maxPitch, Math.asin(clamp(Math.min(below, above / 2), 0, 1)));
-  const maxPitchStep = PITCH_RATE * dt;
-  fish.pitch = clamp(
-    fish.pitch + clamp(fish.pitchTarget - fish.pitch, -maxPitchStep, maxPitchStep),
-    -downLimit,
-    upLimit,
-  );
-
-  // Queue : bat plus vite à la nage et à la montée qu'à la marche.
-  const effort = Math.max(fish.speed, Math.abs(vy));
-  fish.phase = (fish.phase + tailBeatRate(def, effort) * dt) % TWO_PI;
+  fish.pitch = pitchToward(fish.pitch, fish.pitchTarget, PITCH_RATE * c.dt, -downLimit, upLimit);
 }
 
 /**
@@ -609,8 +715,4 @@ function openness(
     return -1;
   }
   return hard.maxY - (groundHeight(x, z, ground) + def.walker!.clearance);
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return value < min ? min : value > max ? max : value;
 }
