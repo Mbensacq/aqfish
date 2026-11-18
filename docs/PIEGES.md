@@ -1447,6 +1447,13 @@ haut de sa section.
   rares (centre posé dans un rocher, longue remontée). Pour relever les empreintes, vider
   d'abord la table attendue : Vitest n'affiche pas toujours le `console.log` d'un test qui
   passe. (2026-11-18)
+- **Règles de sauvegarde déclaratives : `firstProblemOf` quand une règle suppose les
+  précédentes** (lot 5 de #686, `sim/save-schema.ts`) : `problemsOf` évalue **toutes** les
+  règles ; une règle écrite pour un champ déjà vérifié (`(v as string).length` après « texte
+  non vide », espèce admise après « espèce connue ») lève sur une valeur invalide. Les mettre
+  dans une liste lue par `firstProblemOf`, qui s'arrête au premier échec (comme les
+  `else if` d'origine). Les règles de l'horloge lisent `clock[clé]` et non `own` :
+  `settingsData` les applique aussi à l'objet typé écrit par l'application. (2026-11-18)
 - **Découper un lecteur de sauvegarde : deux ordres à garder** (lot 4 de #686, `readWater`) :
   l'ordre des contrôles fixe le message d'erreur (la première erreur l'emporte) et l'ordre des
   clés de l'objet relu fixe le texte JSON des sauvegardes ; les deux diffèrent (`untreatedTap`,
