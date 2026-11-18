@@ -8939,10 +8939,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-18T09:12:16.410Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-18T09:12:40.275Z",
+          "note": "Issue #692 : lot 6/13 assainissement, fonctions complexes restantes de sim, duplications, exports (M)"
         }
       },
       "metriques": {}
