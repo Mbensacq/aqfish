@@ -1434,6 +1434,19 @@ haut de sa section.
   dépasse le délai de 5 s de Vitest. Accumuler les écarts dans un tableau de messages et finir
   par un seul `expect(ecarts).toEqual([])` : plus rapide, et l'échec liste les cas fautifs
   (`bubbles.spec.ts`, issue #473). (2026-11-06)
+- **Découper une fonction de pas sans changer un bit** (lot 3 de #686, `stepFish`,
+  `stepWalker`) : ESLint compte chaque paramètre par défaut dans la complexité (`stepFish`,
+  8 paramètres par défaut, part de 9) ; les étapes extraites partagent un contexte de module
+  (`SWIM`, `WALK`) plutôt que 10 paramètres. Pour rester identique au bit près : recopier
+  les expressions telles quelles (même ordre des opérandes : `a * b * c` n'est pas
+  `a * (b * c)`), garder chaque `random(fish)` dans la même étape et le même ordre, et
+  négations exactes (`!(x > 0)` pour `x > 0` inversé). Relever les empreintes **avant**
+  (`swim-caracterisation.spec.ts`, état complet à chaque pas) ; vérifier la couverture des
+  branches de la fonction par la caractérisation seule (`npx vitest run --globals <spec>
+  --coverage.enabled --coverage.include=<fichier>`), et forcer par le test les branches
+  rares (centre posé dans un rocher, longue remontée). Pour relever les empreintes, vider
+  d'abord la table attendue : Vitest n'affiche pas toujours le `console.log` d'un test qui
+  passe. (2026-11-18)
 
 ## Rendu
 
