@@ -1447,6 +1447,15 @@ haut de sa section.
   rares (centre posé dans un rocher, longue remontée). Pour relever les empreintes, vider
   d'abord la table attendue : Vitest n'affiche pas toujours le `console.log` d'un test qui
   passe. (2026-11-18)
+- **Découper un lecteur de sauvegarde : deux ordres à garder** (lot 4 de #686, `readWater`) :
+  l'ordre des contrôles fixe le message d'erreur (la première erreur l'emporte) et l'ordre des
+  clés de l'objet relu fixe le texte JSON des sauvegardes ; les deux diffèrent (`untreatedTap`,
+  `cycling`, `carbon` contrôlés dans cet ordre, écrits `untreatedTap`, `carbon`, `cycling`).
+  Lire par groupes dans un objet d'appoint, puis assembler selon une liste d'ordre explicite
+  (`OPTIONAL_ORDER`) ; la caractérisation compare le `JSON.stringify` exact de chaque sortie
+  (`water-lecture-caracterisation.spec.ts`), un `toEqual` ne voit pas l'ordre des clés.
+  Nommer les cas avec des guillemets pour les textes : `String('1')` et `String(1)` donnent
+  le même nom et un cas en écrase un autre. (2026-11-18)
 
 ## Rendu
 

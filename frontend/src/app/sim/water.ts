@@ -465,6 +465,71 @@ export type ReadWaterResult =
   | { readonly ok: true; readonly water: WaterState }
   | { readonly ok: false; readonly error: string };
 
+/** Champs numériques obligatoires de l'eau relue, bornes comprises. */
+const REQUIRED_FIELDS = [
+  ['temperature', MIN_WATER_TEMPERATURE, MAX_WATER_TEMPERATURE],
+  ['ammonia', 0, MAX_CONCENTRATION],
+  ['nitrite', 0, MAX_CONCENTRATION],
+  ['nitrate', 0, MAX_CONCENTRATION],
+  ['filter', 0, 1],
+] as const;
+
+/** Quantités facultatives, bornes comprises (sauf `ichCure`, borne haute exclue). */
+const OPTIONAL_AMOUNTS = [
+  ['salt', 0, MAX_SALT],
+  ['medication', 0, MAX_MEDICATION],
+  ['ichCure', 0, 1],
+  ['bacteriaStarter', 0, MAX_BACTERIA_STARTER],
+  ['chlorine', 0, MAX_CHLORINE],
+  ['ammoniaBinder', 0, AMMONIA_BINDER_SECONDS],
+  ['phRegulatorWait', 0, PH_REGULATOR_WAIT_SECONDS],
+] as const;
+
+/** Drapeaux facultatifs : `true` ou absents, contrôlés dans cet ordre. */
+const FLAGS = ['untreatedTap', 'cycling', 'carbon'] as const;
+
+/**
+ * Champs facultatifs de l'eau relue, dans l'ordre où ils sont écrits (il fixe le texte des
+ * sauvegardes) : il diffère de l'ordre des contrôles.
+ */
+const OPTIONAL_ORDER = [
+  'heater',
+  'catappa',
+  ...OPTIONAL_AMOUNTS.map(([key]) => key),
+  'untreatedTap',
+  'carbon',
+  'cycling',
+  'lighting',
+  'lampOn',
+  'algae',
+  'plantGrowth',
+  'gh',
+  'kh',
+] as const satisfies readonly (keyof WaterState)[];
+
+/** Lecture d'une propriété propre de la sauvegarde (`undefined` si absente ou héritée). */
+type FieldReader = (key: keyof WaterState) => unknown;
+
+/** Champs facultatifs retenus au fil de la lecture (absents : non écrits). */
+type WaterExtras = Partial<MutableWaterState>;
+
+/** Lecture d'un groupe de champs : écrit les valeurs retenues, renvoie l'erreur ou `null`. */
+type SectionReader = (read: FieldReader, extras: WaterExtras) => string | null;
+
+/** Groupes de champs facultatifs, dans l'ordre des contrôles (la première erreur l'emporte). */
+const SECTIONS: readonly SectionReader[] = [
+  readHeaterField,
+  readPhField,
+  readCatappaField,
+  readLightingField,
+  readLampOnField,
+  readAlgaeField,
+  readPlantGrowthField,
+  readHardnessFields,
+  readAmountFields,
+  readFlagFields,
+];
+
 /**
  * Relit un état d'eau venu d'une sauvegarde d'un bac de l'environnement `environment` : objet
  * aux cinq champs numériques finis et bornés, plus la consigne du chauffage facultative
@@ -482,178 +547,187 @@ export function readWater(value: unknown, environment: EnvironmentId): ReadWater
     return { ok: false, error: 'eau : doit être un objet' };
   }
   const record = value as Record<string, unknown>;
-  const read = (key: keyof WaterState): unknown =>
-    Object.hasOwn(record, key) ? record[key] : undefined;
-  const fields: [
-    Exclude<
-      keyof WaterState,
-      | 'ph'
-      | 'heater'
-      | 'catappa'
-      | 'salt'
-      | 'medication'
-      | 'bacteriaStarter'
-      | 'chlorine'
-      | 'untreatedTap'
-      | 'cycling'
-      | 'ammoniaBinder'
-      | 'carbon'
-      | 'phRegulatorWait'
-      | 'ichCure'
-      | 'lighting'
-      | 'lampOn'
-      | 'algae'
-      | 'plantGrowth'
-      | 'gh'
-      | 'kh'
-    >,
-    number,
-    number,
-  ][] = [
-    ['temperature', MIN_WATER_TEMPERATURE, MAX_WATER_TEMPERATURE],
-    ['ammonia', 0, MAX_CONCENTRATION],
-    ['nitrite', 0, MAX_CONCENTRATION],
-    ['nitrate', 0, MAX_CONCENTRATION],
-    ['filter', 0, 1],
-  ];
-  for (const [key, min, max] of fields) {
-    if (!isIn(read(key), min, max)) {
-      return { ok: false, error: `eau : ${key} doit être un nombre dans [${min}, ${max}]` };
+  const read: FieldReader = (key) => (Object.hasOwn(record, key) ? record[key] : undefined);
+  const requiredError = requiredFieldsError(read);
+  if (requiredError !== null) {
+    return { ok: false, error: requiredError };
+  }
+  const extras: WaterExtras = {};
+  for (const section of SECTIONS) {
+    const error = section(read, extras);
+    if (error !== null) {
+      return { ok: false, error };
     }
   }
+  return { ok: true, water: assembleWater(read, extras, environment) };
+}
+
+function requiredFieldsError(read: FieldReader): string | null {
+  for (const [key, min, max] of REQUIRED_FIELDS) {
+    if (!isIn(read(key), min, max)) {
+      return `eau : ${key} doit être un nombre dans [${min}, ${max}]`;
+    }
+  }
+  return null;
+}
+
+/** Eau relue : champs obligatoires, pH (celui de l'eau neuve s'il manque), puis facultatifs. */
+function assembleWater(
+  read: FieldReader,
+  extras: WaterExtras,
+  environment: EnvironmentId,
+): WaterState {
+  // Les cinq champs obligatoires ont été contrôlés par `requiredFieldsError`.
+  const water: MutableWaterState = {
+    temperature: read('temperature') as number,
+    ammonia: read('ammonia') as number,
+    nitrite: read('nitrite') as number,
+    nitrate: read('nitrate') as number,
+    filter: read('filter') as number,
+    ph: extras.ph ?? freshPh(environment),
+  };
+  for (const key of OPTIONAL_ORDER) {
+    if (extras[key] !== undefined) {
+      Object.assign(water, { [key]: extras[key] });
+    }
+  }
+  return water;
+}
+
+function readHeaterField(read: FieldReader, extras: WaterExtras): string | null {
   const heater = read('heater');
-  if (heater !== undefined && !isIn(heater, MIN_HEATER_TEMPERATURE, MAX_HEATER_TEMPERATURE)) {
-    return {
-      ok: false,
-      error: `eau : heater doit être un nombre dans [${MIN_HEATER_TEMPERATURE}, ${MAX_HEATER_TEMPERATURE}]`,
-    };
+  if (heater === undefined) {
+    return null;
   }
+  if (!isIn(heater, MIN_HEATER_TEMPERATURE, MAX_HEATER_TEMPERATURE)) {
+    return `eau : heater doit être un nombre dans [${MIN_HEATER_TEMPERATURE}, ${MAX_HEATER_TEMPERATURE}]`;
+  }
+  extras.heater = heater;
+  return null;
+}
+
+function readPhField(read: FieldReader, extras: WaterExtras): string | null {
   const ph = read('ph');
-  if (ph !== undefined && !isIn(ph, MIN_PH, MAX_PH)) {
-    return { ok: false, error: `eau : ph doit être un nombre dans [${MIN_PH}, ${MAX_PH}]` };
+  if (ph === undefined) {
+    return null;
   }
-  const catappaValue = read('catappa');
-  const catappa = catappaValue === undefined ? null : readCatappa(catappaValue);
-  if (catappa !== null && !catappa.ok) {
-    return { ok: false, error: catappa.error };
+  if (!isIn(ph, MIN_PH, MAX_PH)) {
+    return `eau : ph doit être un nombre dans [${MIN_PH}, ${MAX_PH}]`;
   }
+  extras.ph = ph;
+  return null;
+}
+
+function readCatappaField(read: FieldReader, extras: WaterExtras): string | null {
+  const value = read('catappa');
+  if (value === undefined) {
+    return null;
+  }
+  const catappa = readCatappa(value);
+  if (!catappa.ok) {
+    return catappa.error;
+  }
+  if (catappa.leaves.length > 0) {
+    extras.catappa = catappa.leaves;
+  }
+  return null;
+}
+
+function readLightingField(read: FieldReader, extras: WaterExtras): string | null {
   const lighting = read('lighting');
-  if (
-    lighting !== undefined &&
-    (!isIn(lighting, MIN_LIGHTING_HOURS, MAX_LIGHTING_HOURS) || !Number.isInteger(lighting))
-  ) {
-    return {
-      ok: false,
-      error: `eau : lighting doit être un entier dans [${MIN_LIGHTING_HOURS}, ${MAX_LIGHTING_HOURS}]`,
-    };
+  if (lighting === undefined) {
+    return null;
   }
+  if (!isIn(lighting, MIN_LIGHTING_HOURS, MAX_LIGHTING_HOURS) || !Number.isInteger(lighting)) {
+    return `eau : lighting doit être un entier dans [${MIN_LIGHTING_HOURS}, ${MAX_LIGHTING_HOURS}]`;
+  }
+  extras.lighting = lighting;
+  return null;
+}
+
+function readLampOnField(read: FieldReader, extras: WaterExtras): string | null {
   const lampOn = read('lampOn');
-  if (lampOn !== undefined && !isLampOnHour(lampOn)) {
-    return { ok: false, error: 'eau : lampOn doit être un entier dans [0, 23]' };
+  if (lampOn === undefined) {
+    return null;
   }
-  const algaeValue = read('algae');
-  const algae = algaeValue === undefined ? null : readAlgae(algaeValue);
-  if (algae !== null && !algae.ok) {
-    return { ok: false, error: algae.error };
+  if (!isLampOnHour(lampOn)) {
+    return 'eau : lampOn doit être un entier dans [0, 23]';
   }
-  const growthValue = read('plantGrowth');
-  const plantGrowth = growthValue === undefined ? null : readPlantGrowth(growthValue);
-  if (plantGrowth !== null && !plantGrowth.ok) {
-    return { ok: false, error: plantGrowth.error };
+  extras.lampOn = lampOn;
+  return null;
+}
+
+function readAlgaeField(read: FieldReader, extras: WaterExtras): string | null {
+  const value = read('algae');
+  if (value === undefined) {
+    return null;
   }
-  const hardness: { gh?: number; kh?: number } = {};
+  const algae = readAlgae(value);
+  if (!algae.ok) {
+    return algae.error;
+  }
+  if (!algae.algae.every((c) => c === 0)) {
+    extras.algae = algae.algae;
+  }
+  return null;
+}
+
+function readPlantGrowthField(read: FieldReader, extras: WaterExtras): string | null {
+  const value = read('plantGrowth');
+  if (value === undefined) {
+    return null;
+  }
+  const plantGrowth = readPlantGrowth(value);
+  if (!plantGrowth.ok) {
+    return plantGrowth.error;
+  }
+  if (Object.keys(plantGrowth.growth).length > 0) {
+    extras.plantGrowth = plantGrowth.growth;
+  }
+  return null;
+}
+
+function readHardnessFields(read: FieldReader, extras: WaterExtras): string | null {
   for (const key of ['gh', 'kh'] as const) {
     const v = read(key);
     if (v === undefined) {
       continue;
     }
     if (!isHardness(v)) {
-      return {
-        ok: false,
-        error: `eau : ${key} doit être un nombre dans [${MIN_HARDNESS}, ${MAX_HARDNESS}]`,
-      };
+      return `eau : ${key} doit être un nombre dans [${MIN_HARDNESS}, ${MAX_HARDNESS}]`;
     }
-    hardness[key] = v;
+    extras[key] = v;
   }
-  const optional: [
-    (
-      | 'salt'
-      | 'medication'
-      | 'ichCure'
-      | 'bacteriaStarter'
-      | 'chlorine'
-      | 'ammoniaBinder'
-      | 'phRegulatorWait'
-    ),
-    number,
-    number,
-  ][] = [
-    ['salt', 0, MAX_SALT],
-    ['medication', 0, MAX_MEDICATION],
-    ['ichCure', 0, 1],
-    ['bacteriaStarter', 0, MAX_BACTERIA_STARTER],
-    ['chlorine', 0, MAX_CHLORINE],
-    ['ammoniaBinder', 0, AMMONIA_BINDER_SECONDS],
-    ['phRegulatorWait', 0, PH_REGULATOR_WAIT_SECONDS],
-  ];
-  const extra: {
-    salt?: number;
-    medication?: number;
-    ichCure?: number;
-    bacteriaStarter?: number;
-    chlorine?: number;
-    ammoniaBinder?: number;
-    phRegulatorWait?: number;
-  } = {};
-  for (const [key, min, max] of optional) {
+  return null;
+}
+
+function readAmountFields(read: FieldReader, extras: WaterExtras): string | null {
+  for (const [key, min, max] of OPTIONAL_AMOUNTS) {
     const v = read(key);
     if (v === undefined) {
       continue;
     }
-    if (!isIn(v, min, max) || (key === 'ichCure' && v === max)) {
-      return {
-        ok: false,
-        error: `eau : ${key} doit être un nombre dans [${min}, ${max}${key === 'ichCure' ? '[' : ']'}`,
-      };
+    const upperExcluded = key === 'ichCure';
+    if (!isIn(v, min, max) || (upperExcluded && v === max)) {
+      return `eau : ${key} doit être un nombre dans [${min}, ${max}${upperExcluded ? '[' : ']'}`;
     }
-    extra[key] = v;
+    extras[key] = v;
   }
-  const untreatedTap = read('untreatedTap');
-  if (untreatedTap !== undefined && untreatedTap !== true) {
-    return { ok: false, error: 'eau : untreatedTap doit valoir true ou être absent' };
+  return null;
+}
+
+function readFlagFields(read: FieldReader, extras: WaterExtras): string | null {
+  for (const key of FLAGS) {
+    const v = read(key);
+    if (v === undefined) {
+      continue;
+    }
+    if (v !== true) {
+      return `eau : ${key} doit valoir true ou être absent`;
+    }
+    extras[key] = v;
   }
-  const cycling = read('cycling');
-  if (cycling !== undefined && cycling !== true) {
-    return { ok: false, error: 'eau : cycling doit valoir true ou être absent' };
-  }
-  const carbon = read('carbon');
-  if (carbon !== undefined && carbon !== true) {
-    return { ok: false, error: 'eau : carbon doit valoir true ou être absent' };
-  }
-  return {
-    ok: true,
-    water: {
-      temperature: read('temperature') as number,
-      ammonia: read('ammonia') as number,
-      nitrite: read('nitrite') as number,
-      nitrate: read('nitrate') as number,
-      filter: read('filter') as number,
-      ph: (ph as number | undefined) ?? freshPh(environment),
-      ...(heater === undefined ? {} : { heater }),
-      ...(catappa === null || catappa.leaves.length === 0 ? {} : { catappa: catappa.leaves }),
-      ...extra,
-      ...(untreatedTap === true ? { untreatedTap } : {}),
-      ...(carbon === true ? { carbon } : {}),
-      ...(cycling === true ? { cycling } : {}),
-      ...(lighting === undefined ? {} : { lighting }),
-      ...(lampOn === undefined ? {} : { lampOn }),
-      ...(algae === null || algae.algae.every((c) => c === 0) ? {} : { algae: algae.algae }),
-      ...(plantGrowth === null || Object.keys(plantGrowth.growth).length === 0
-        ? {}
-        : { plantGrowth: plantGrowth.growth }),
-      ...hardness,
-    },
-  };
+  return null;
 }
 
 function isIn(value: unknown, min: number, max: number): value is number {

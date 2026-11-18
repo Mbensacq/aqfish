@@ -112,11 +112,14 @@ export interface HealthSummary {
   readonly weakWithoutDisease: number;
 }
 
-/** Synthèse d'un bac sans animal. */
-export const EMPTY_HEALTH_SUMMARY: HealthSummary = {
-  animals: 0,
-  averageHealth: null,
-  averageHunger: null,
+/** Comptes de la synthèse (tout sauf l'effectif et les moyennes). */
+type HealthCounts = Record<
+  Exclude<keyof HealthSummary, 'animals' | 'averageHealth' | 'averageHunger'>,
+  number
+>;
+
+/** Comptes à zéro, dans l'ordre des champs de `HealthSummary`. */
+const ZERO_COUNTS: Readonly<HealthCounts> = {
   sick: 0,
   weak: 0,
   starving: 0,
@@ -136,6 +139,17 @@ export const EMPTY_HEALTH_SUMMARY: HealthSummary = {
   weakWithoutDisease: 0,
 };
 
+/** Noms des comptes, comparés un à un par `sameHealthSummary`. */
+const COUNT_KEYS = Object.keys(ZERO_COUNTS) as readonly (keyof HealthCounts)[]; // clés de ZERO_COUNTS, de type connu
+
+/** Synthèse d'un bac sans animal. */
+export const EMPTY_HEALTH_SUMMARY: HealthSummary = {
+  animals: 0,
+  averageHealth: null,
+  averageHunger: null,
+  ...ZERO_COUNTS,
+};
+
 /** Santé lue : non finie → 1, sinon bornée à [`HEALTH_FLOOR`, 1]. */
 export function readHealth(health: number): number {
   if (!Number.isFinite(health)) {
@@ -152,129 +166,153 @@ export function readHunger(hunger: number): number {
   return Math.min(1, Math.max(0, hunger));
 }
 
+/**
+ * Règle de lecture d'une maladie : son stade, les stades qui montrent des signes, le stade
+ * avancé, et les comptes qu'elle tient. Données pures.
+ */
+interface DiseaseRule {
+  readonly stage: (animal: HealthSubject) => string | null;
+  readonly shown: readonly string[];
+  readonly advanced: string;
+  readonly count: keyof HealthCounts;
+  readonly advancedCount: keyof HealthCounts;
+}
+
+/** Maladies comptées par la synthèse, dans l'ordre des champs de `HealthSubject`. */
+const DISEASE_RULES: readonly DiseaseRule[] = [
+  {
+    stage: (a) => ichStage(a.ich),
+    shown: ['visible', 'aggravee'],
+    advanced: 'aggravee',
+    count: 'ich',
+    advancedCount: 'ichAggravated',
+  },
+  {
+    stage: (a) => finRotStage(a.finRot),
+    shown: ['effilochee', 'avancee'],
+    advanced: 'avancee',
+    count: 'finRot',
+    advancedCount: 'finRotAdvanced',
+  },
+  {
+    stage: (a) => velvetStage(a.velvet),
+    shown: ['voile', 'avance'],
+    advanced: 'avance',
+    count: 'velvet',
+    advancedCount: 'velvetAdvanced',
+  },
+  {
+    stage: (a) => fungusStage(a.fungus),
+    shown: ['coton', 'avance'],
+    advanced: 'avance',
+    count: 'fungus',
+    advancedCount: 'fungusAdvanced',
+  },
+  {
+    stage: (a) => dropsyStage(a.dropsy),
+    shown: ['gonfle', 'herisse'],
+    advanced: 'herisse',
+    count: 'dropsy',
+    advancedCount: 'dropsyAdvanced',
+  },
+];
+
+/** Sommes et comptes accumulés animal par animal. */
+interface HealthTally {
+  count: number;
+  healthSum: number;
+  fed: number;
+  hungerSum: number;
+  readonly counts: HealthCounts;
+}
+
 /** Synthèse de la santé des animaux `animals` (ordre indifférent). */
 export function healthSummary(animals: Iterable<HealthSubject>): HealthSummary {
-  let count = 0;
-  let healthSum = 0;
-  let fed = 0;
-  let hungerSum = 0;
-  let sick = 0;
-  let weak = 0;
-  let starving = 0;
-  let distressed = 0;
-  let ich = 0;
-  let ichAggravated = 0;
-  let weakWithoutIch = 0;
-  let finRot = 0;
-  let finRotAdvanced = 0;
-  let velvet = 0;
-  let velvetAdvanced = 0;
-  let fungus = 0;
-  let fungusAdvanced = 0;
-  let dropsy = 0;
-  let dropsyAdvanced = 0;
-  let diseased = 0;
-  let weakWithoutDisease = 0;
+  const tally: HealthTally = {
+    count: 0,
+    healthSum: 0,
+    fed: 0,
+    hungerSum: 0,
+    counts: { ...ZERO_COUNTS },
+  };
   for (const animal of animals) {
-    count += 1;
-    const health = readHealth(animal.health);
-    healthSum += health;
-    const isWeak = health <= WEAK_HEALTH;
-    const stage = ichStage(animal.ich);
-    const spots = stage === 'visible' || stage === 'aggravee';
-    const rot = finRotStage(animal.finRot);
-    const frayed = rot === 'effilochee' || rot === 'avancee';
-    const veil = velvetStage(animal.velvet);
-    const veiled = veil === 'voile' || veil === 'avance';
-    const cotton = fungusStage(animal.fungus);
-    const tufted = cotton === 'coton' || cotton === 'avance';
-    const belly = dropsyStage(animal.dropsy);
-    const swollen = belly === 'gonfle' || belly === 'herisse';
-    const signs = spots || frayed || veiled || tufted || swollen;
-    if (health <= SICK_HEALTH || signs) {
-      sick += 1;
-    }
-    if (signs) {
-      diseased += 1;
-    }
-    if (frayed) {
-      finRot += 1;
-      if (rot === 'avancee') {
-        finRotAdvanced += 1;
-      }
-    }
-    if (veiled) {
-      velvet += 1;
-      if (veil === 'avance') {
-        velvetAdvanced += 1;
-      }
-    }
-    if (tufted) {
-      fungus += 1;
-      if (cotton === 'avance') {
-        fungusAdvanced += 1;
-      }
-    }
-    if (swollen) {
-      dropsy += 1;
-      if (belly === 'herisse') {
-        dropsyAdvanced += 1;
-      }
-    }
-    if (isWeak) {
-      weak += 1;
-      if (!spots) {
-        weakWithoutIch += 1;
-      }
-      if (!signs) {
-        weakWithoutDisease += 1;
-      }
-    }
-    let isStarving = false;
-    if (feedsOnPellets(SPECIES[animal.species])) {
-      const hunger = readHunger(animal.hunger);
-      fed += 1;
-      hungerSum += hunger;
-      isStarving = hunger >= STARVING_HUNGER;
-      if (isStarving) {
-        starving += 1;
-      }
-    }
-    if (isWeak || isStarving) {
-      distressed += 1;
-    }
-    if (spots) {
-      ich += 1;
-      if (stage === 'aggravee') {
-        ichAggravated += 1;
-      }
-    }
+    tallyAnimal(tally, animal);
   }
-  if (count === 0) {
+  if (tally.count === 0) {
     return EMPTY_HEALTH_SUMMARY;
   }
   return {
-    animals: count,
-    averageHealth: mean(healthSum, count),
-    averageHunger: fed === 0 ? null : mean(hungerSum, fed),
-    sick,
-    weak,
-    starving,
-    distressed,
-    ich,
-    ichAggravated,
-    weakWithoutIch,
-    finRot,
-    finRotAdvanced,
-    velvet,
-    velvetAdvanced,
-    fungus,
-    fungusAdvanced,
-    dropsy,
-    dropsyAdvanced,
-    diseased,
-    weakWithoutDisease,
+    animals: tally.count,
+    averageHealth: mean(tally.healthSum, tally.count),
+    averageHunger: tally.fed === 0 ? null : mean(tally.hungerSum, tally.fed),
+    ...tally.counts,
   };
+}
+
+/** Ajoute `animal` à `tally`. */
+function tallyAnimal(tally: HealthTally, animal: HealthSubject): void {
+  const { counts } = tally;
+  tally.count += 1;
+  const health = readHealth(animal.health);
+  tally.healthSum += health;
+  const shown = tallyDiseases(counts, animal);
+  const signs = shown.any;
+  if (health <= SICK_HEALTH || signs) {
+    counts.sick += 1;
+  }
+  if (signs) {
+    counts.diseased += 1;
+  }
+  const isWeak = health <= WEAK_HEALTH;
+  if (isWeak) {
+    counts.weak += 1;
+    counts.weakWithoutIch += shown.ich ? 0 : 1;
+    counts.weakWithoutDisease += signs ? 0 : 1;
+  }
+  const isStarving = tallyHunger(tally, animal);
+  if (isWeak || isStarving) {
+    counts.distressed += 1;
+  }
+}
+
+/**
+ * Compte les maladies visibles de `animal` dans `counts` ; renvoie s'il en montre une
+ * (`any`) et s'il montre les points blancs (`ich`).
+ */
+function tallyDiseases(
+  counts: HealthCounts,
+  animal: HealthSubject,
+): { readonly any: boolean; readonly ich: boolean } {
+  let any = false;
+  let ich = false;
+  for (const rule of DISEASE_RULES) {
+    const stage = rule.stage(animal);
+    if (stage === null || !rule.shown.includes(stage)) {
+      continue;
+    }
+    any = true;
+    ich ||= rule.count === 'ich';
+    counts[rule.count] += 1;
+    if (stage === rule.advanced) {
+      counts[rule.advancedCount] += 1;
+    }
+  }
+  return { any, ich };
+}
+
+/** Ajoute la faim de `animal` s'il mange les granulés ; renvoie s'il est affamé. */
+function tallyHunger(tally: HealthTally, animal: HealthSubject): boolean {
+  if (!feedsOnPellets(SPECIES[animal.species])) {
+    return false;
+  }
+  const hunger = readHunger(animal.hunger);
+  tally.fed += 1;
+  tally.hungerSum += hunger;
+  const isStarving = hunger >= STARVING_HUNGER;
+  if (isStarving) {
+    tally.counts.starving += 1;
+  }
+  return isStarving;
 }
 
 /**
@@ -297,23 +335,7 @@ export function percent(share: number | null): number | null {
 export function sameHealthSummary(a: HealthSummary, b: HealthSummary): boolean {
   return (
     a.animals === b.animals &&
-    a.sick === b.sick &&
-    a.weak === b.weak &&
-    a.starving === b.starving &&
-    a.distressed === b.distressed &&
-    a.ich === b.ich &&
-    a.ichAggravated === b.ichAggravated &&
-    a.weakWithoutIch === b.weakWithoutIch &&
-    a.finRot === b.finRot &&
-    a.finRotAdvanced === b.finRotAdvanced &&
-    a.velvet === b.velvet &&
-    a.velvetAdvanced === b.velvetAdvanced &&
-    a.fungus === b.fungus &&
-    a.fungusAdvanced === b.fungusAdvanced &&
-    a.dropsy === b.dropsy &&
-    a.dropsyAdvanced === b.dropsyAdvanced &&
-    a.diseased === b.diseased &&
-    a.weakWithoutDisease === b.weakWithoutDisease &&
+    COUNT_KEYS.every((key) => a[key] === b[key]) &&
     percent(a.averageHealth) === percent(b.averageHealth) &&
     percent(a.averageHunger) === percent(b.averageHunger)
   );
