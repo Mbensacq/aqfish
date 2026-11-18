@@ -8993,10 +8993,10 @@
           "note": "Verdict OK, 0 bug, captures publiées (166/166 identiques), unitaires verts, CI e2e verte"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-18T12:21:04.802Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-18T12:45:18.722Z",
+          "note": "PR #719 fusionnée → v1.24.2 (release CI OK) ; main verte"
         }
       },
       "metriques": {}
