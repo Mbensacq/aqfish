@@ -466,6 +466,7 @@ import { careStepSound } from '../../core/care-sound/care-sound';
 import { hasWaterToSiphon, pouredShare, siphonedShare } from '../../sim/siphon';
 import { filterMaturityPercent } from '../../sim/filter-maturation';
 import type { FilterRinseWater } from '../../sim/filter-rinse';
+import { AquariumProbe, type DecorPhysicsState } from './aquarium-probe';
 
 /** Fabrique du renderer, remplaçable dans les tests (jsdom n'a pas WebGL). */
 export const AQUARIUM_RENDERER_FACTORY = new InjectionToken<AquariumRendererFactory>(
@@ -473,92 +474,8 @@ export const AQUARIUM_RENDERER_FACTORY = new InjectionToken<AquariumRendererFact
   { providedIn: 'root', factory: () => createWebGLRenderer },
 );
 
-/** Attribut du composant hôte exposant la position de la caméra aux tests de bout en bout. */
-export const CAMERA_ATTRIBUTE = 'data-aqfish-camera';
-/** Attribut du composant hôte : `true` en caméra libre dans la pièce (#343), `false` sinon. */
-export const FREE_CAMERA_ATTRIBUTE = 'data-aqfish-camera-libre';
-/** Attribut du composant hôte : `true` si les mouvements décoratifs sont réduits (#406). */
-export const REDUCED_MOTION_ATTRIBUTE = 'data-aqfish-mouvements-reduits';
-/** Attribut du composant hôte exposant la cible de la caméra (mis à jour avec la position). */
-export const CAMERA_TARGET_ATTRIBUTE = 'data-aqfish-target';
-/** Attribut du composant hôte exposant `world.tick` (mis à jour quand il change). */
-export const TICK_ATTRIBUTE = 'data-aqfish-tick';
-/** Attribut du composant hôte exposant la graine du monde (fixée au démarrage). */
-export const SEED_ATTRIBUTE = 'data-aqfish-seed';
-/** Attribut du composant hôte exposant le filtre de rendu courant (`pixel` ou `aucun`). */
-export const FILTER_ATTRIBUTE = 'data-aqfish-filter';
-
-/** Attribut du composant hôte exposant le nombre de granulés de nourriture du monde (#67). */
-export const FOOD_ATTRIBUTE = 'data-aqfish-food';
-/** Attribut du composant hôte exposant le rendu des granulés (`points` ou `voxels`, #117). */
-export const FOOD_STYLE_ATTRIBUTE = 'data-aqfish-food-style';
-
-/** Attribut du composant hôte exposant l'heure de la journée affichée (2 décimales). */
-export const HOUR_ATTRIBUTE = 'data-aqfish-hour';
-/**
- * Attribut du composant hôte exposant les rayons de lumière (#567) : `force;temps` (force
- * dans [0, 1] au centième, 0 s'ils sont masqués ; temps du mouvement en secondes entières,
- * fixe sous « Réduire les mouvements »).
- */
-export const LIGHT_RAYS_ATTRIBUTE = 'data-aqfish-rayons';
-/**
- * Attribut du composant hôte exposant l'intensité de la lampe du bac (#584), dans [0, 1] au
- * centième : 0 éteinte ou bac sans lampe, 1 allumée, entre les deux pendant un fondu.
- */
-export const LAMP_ATTRIBUTE = 'data-aqfish-lamp';
-/**
- * Attribut du composant hôte exposant le distributeur automatique (#583) : `aucun`, ou la
- * réserve et les heures (`12;9,18`).
- */
-export const FEEDER_ATTRIBUTE = 'data-aqfish-feeder';
-/** Attribut du composant hôte : `true` si l'heure est figée, `false` sinon. */
-export const HOUR_FROZEN_ATTRIBUTE = 'data-aqfish-hour-frozen';
-
-/** Attribut du composant hôte exposant la vitesse de simulation (#52). */
-export const SPEED_ATTRIBUTE = 'data-aqfish-speed';
-/** Attribut du composant hôte : `true` si le décor est affiché, `false` sinon (#52). */
-export const DECOR_ATTRIBUTE = 'data-aqfish-decor';
-/** Attribut du composant hôte : `true` s'il pleut, `false` sinon (#106). */
-export const RAIN_ATTRIBUTE = 'data-aqfish-rain';
-/** Attribut exposant si la pièce autour du bac est affichée (#187), `true` ou `false`. */
-export const ROOM_ATTRIBUTE = 'data-aqfish-room';
-/** Attribut du composant hôte exposant les effectifs (`neon:12,guppy:6,corydora:6`, #69). */
-export const POPULATION_ATTRIBUTE = 'data-aqfish-population';
-
-/**
- * Attribut du composant hôte exposant le relevé de l'eau (#207) : `niveau;température;visée;
- * ammoniaque;nitrites;nitrates`, valeurs au dixième (`bonne;24;24;0;0;0`), mis à jour quand il
- * change.
- */
-export const WATER_ATTRIBUTE = 'data-aqfish-water';
-/** Animaux mis en évidence depuis une alerte (#483) : nombre ; absent : aucun. */
-export const ALERT_HIGHLIGHT_ATTRIBUTE = 'data-aqfish-animaux-signales';
 /** Durée de la mise en évidence depuis une alerte (#483), en millisecondes de temps réel. */
 export const ALERT_HIGHLIGHT_MS = 6000;
-/**
- * Feuilles de catappa du bac et teinte de l'eau (#239) : « nombre;teinte », `3;1` (teinte 1 :
- * eau brun-thé), mis à jour avec le relevé de l'eau.
- */
-export const CATAPPA_ATTRIBUTE = 'data-aqfish-catappa';
-/**
- * Algues du bac (#476) : « plaques visibles;couverture moyenne en %;éclairage en h »,
- * `0;0;8` sans algue, mis à jour avec le relevé de l'eau.
- */
-export const ALGAE_ATTRIBUTE = 'data-aqfish-algae';
-/**
- * Encrassement du bac (#607) : « vitres en %;sol en % » (`worldFouling`), `0;0` propre, mis à
- * jour avec le relevé de l'eau.
- */
-export const FOULING_ATTRIBUTE = 'data-aqfish-fouling';
-/**
- * Voile réellement dessiné (#607) : « cases des vitres;cases du sol » (`foulingCounts` de la
- * vue), `0;0` sans voile, mis à jour avec `FOULING_ATTRIBUTE`.
- */
-export const FOULING_CELLS_ATTRIBUTE = 'data-aqfish-fouling-cells';
-/** Raclette en main (#476) : `true` ou `false`. */
-export const SCRAPER_ATTRIBUTE = 'data-aqfish-scraper';
-/** Étape de la séance d'entretien affichée (#604), absent hors séance. */
-export const CARE_SESSION_ATTRIBUTE = 'data-aqfish-care-session';
 
 /** Avant / après du bilan d'une séance (#624) : images PNG en URL `data:`. */
 export interface CareComparison {
@@ -574,26 +491,8 @@ const COMPARISON_GAP = 2;
  * suivre un changement de palette (#646).
  */
 export const COMPARISON_BACKGROUND: Rgb = parseHex(DASHBOARD_COLORS.background);
-/** Bactéries du filtre du bac affiché, en pour cent entier (#606, `filterMaturityPercent`). */
-export const FILTER_BACTERIA_ATTRIBUTE = 'data-aqfish-bacteries';
 /** Clé de la séance d'entretien interrompue (#604), distincte de la sauvegarde du monde. */
 export const CARE_SESSION_STORAGE_KEY = 'aqfish.seance-entretien';
-/** Corps dans le bac affiché (#582) : nombre ; absent : aucun. */
-export const DEAD_ATTRIBUTE = 'data-aqfish-morts';
-/** Sécateur en main (#477) : `true` ou `false`. */
-export const PRUNER_ATTRIBUTE = 'data-aqfish-pruner';
-/**
- * Pousse affichée des plantes à tige (#477), en voxels entiers, dans l'ordre du décor,
- * séparées par des virgules (vide sans plante à tige), puis « ;lumière du fond en % ».
- */
-export const PLANTS_ATTRIBUTE = 'data-aqfish-plants';
-/** pH de l'eau et sa zone pour les espèces présentes, « 6.9;tolere » (#236). */
-export const PH_ATTRIBUTE = 'data-aqfish-ph';
-/**
- * Traitement des points blancs en cours (#361) : « jours restants;jours avant de redoser »
- * (`4.5;3.2`, second champ vide sans médicament) ; absent sans traitement.
- */
-export const TREATMENT_ATTRIBUTE = 'data-aqfish-treatment';
 /** Pas de simulation entre deux relevés de l'eau dans la boucle (0,5 s simulée). */
 export const WATER_READOUT_TICKS = 30;
 
@@ -602,14 +501,6 @@ function testSample(world: World): WaterTestSample {
   const { ph, ammonia, nitrite, nitrate } = world.water;
   return { ph, ammonia, nitrite, nitrate, ...waterHardness(world.water, world.environment) };
 }
-/** Attribut du composant hôte exposant l'environnement courant (`tropical`, `bassin`, #87). */
-export const ENVIRONMENT_ATTRIBUTE = 'data-aqfish-environment';
-
-/**
- * Attribut du composant hôte exposant l'état de la sauvegarde automatique (#70) : `active`,
- * `indisponible` ou `plein` ; absent en mode capture (aucune sauvegarde).
- */
-export const SAVE_ATTRIBUTE = 'data-aqfish-save';
 
 /**
  * Chargeur du moteur de chute de l'éditeur (#170, ADR 0046) : import dynamique de Rapier par
@@ -620,45 +511,6 @@ export const DECOR_PHYSICS_LOADER = new InjectionToken<DecorPhysicsLoader>('DECO
   factory: () => loadDecorPhysics,
 });
 
-/** État du moteur de chute de l'éditeur (#170). */
-export type DecorPhysicsState = 'absent' | 'chargement' | 'pret' | 'indisponible';
-
-/** Attribut du composant hôte exposant l'état du moteur de chute (`DecorPhysicsState`, #170). */
-export const DECOR_PHYSICS_ATTRIBUTE = 'data-aqfish-decor-physics';
-
-/** Attribut du composant hôte : `true` en mode édition du décor, `false` sinon (#167). */
-export const EDITING_ATTRIBUTE = 'data-aqfish-editing';
-/** Attribut du composant hôte exposant le nombre d'éléments de `World.decor` (#167). */
-export const DECOR_COUNT_ATTRIBUTE = 'data-aqfish-decor-count';
-/**
- * Attribut du composant hôte exposant l'indice de l'élément de décor sélectionné, `aucun`
- * sans sélection (#167).
- */
-export const DECOR_SELECTION_ATTRIBUTE = 'data-aqfish-decor-selected';
-/**
- * Attribut du composant hôte exposant l'indice de l'élément de la pièce sélectionné, `aucun`
- * sans sélection (#188).
- */
-export const ROOM_SELECTION_ATTRIBUTE = 'data-aqfish-room-selected';
-/** Attribut du composant hôte exposant le nombre d'éléments de la pièce (#188). */
-export const ROOM_COUNT_ATTRIBUTE = 'data-aqfish-room-count';
-/** Nombre de bacs de la pièce de N bacs (#305, lot 2b), bac affiché et bacs rangés compris. */
-export const ROOM_TANKS_ATTRIBUTE = 'data-aqfish-room-tanks';
-/** Nombre de meubles supports de la pièce de N bacs (#305, lot 2b). */
-export const ROOM_SUPPORTS_ATTRIBUTE = 'data-aqfish-room-supports';
-/** Identifiant du bac sélectionné de la pièce (#306, lot 3). */
-export const SELECTED_TANK_ATTRIBUTE = 'data-aqfish-selected-tank';
-/** Mode du bac affiché (#278) : `soins` ou `decor`. */
-export const CARE_MODE_ATTRIBUTE = 'data-aqfish-mode';
-/** Force du courant du bac affiché (#460) : `coupe`, `doux` ou `fort`. */
-export const CURRENT_ATTRIBUTE = 'data-aqfish-current';
-/**
- * Vue fond d'écran (#279) : source de la scène (`fichier`, `script`, `sauvegarde`, `defaut`),
- * absent hors fond d'écran.
- */
-export const WALLPAPER_ATTRIBUTE = 'data-aqfish-fond';
-/** Vue fond d'écran (#279) : `1` quand la boucle est en pause (page masquée), `0` sinon. */
-export const WALLPAPER_PAUSED_ATTRIBUTE = 'data-aqfish-fond-pause';
 /** Préréglage de base de la caméra automatique du fond d'écran (#279). */
 export const WALLPAPER_PRESET: CameraPreset = 'three-quarter';
 /** Écart (s réelles) entre deux expositions de la caméra automatique (`data-aqfish-camera`). */
@@ -720,14 +572,6 @@ export const ROOM_LAYOUT_MESSAGES: Readonly<Record<RoomLayoutRefusal | 'aucune-p
   'dernier-bac': 'La pièce garde au moins un bac.',
   'position-invalide': 'Choix invalide.',
 };
-
-/**
- * Attribut de l'hôte : dimensions du bac en mètres, `longueur:hauteur:profondeur` (issue
- * #171, même ordre que `bac=`).
- */
-export const TANK_ATTRIBUTE = 'data-aqfish-tank';
-/** Attribut de test : forme du bassin du monde courant (`rectangle` hors du bassin, #190). */
-export const SHAPE_ATTRIBUTE = 'data-aqfish-shape';
 
 /** Intervalle de la sauvegarde automatique, en millisecondes (#70). */
 export const AUTOSAVE_INTERVAL_MS = 10_000;
@@ -965,6 +809,8 @@ function browserStorage(win: Window): (FilterStorage & SaveStorage) | null {
 export class AquariumHost {
   private readonly canvasRef = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  /** Seule écrivaine des attributs `data-aqfish-*` de l'élément (#693). */
+  private readonly probe = new AquariumProbe(this.host.nativeElement);
   private readonly document = inject(DOCUMENT);
   private readonly rendererFactory = inject(AQUARIUM_RENDERER_FACTORY);
   private readonly saveStorage = inject(SAVE_STORAGE);
@@ -1031,8 +877,8 @@ export class AquariumHost {
   private journals = new WeakMap<World, Journal>();
   /** Dernière observation du journal de chaque monde affiché (#581). */
   private journalWatches = new WeakMap<World, JournalWatch>();
-  private exposedJournal: Journal | null = null;
-  private exposedJournalVersion = -1;
+  private shownJournal: Journal | null = null;
+  private shownJournalVersion = -1;
   /** Parcours guidé de chaque monde (#512), hors du monde pendant la partie. */
   private firstTankPaths = new WeakMap<World, FirstTankPathState>();
   /** Produits déjà utilisés dans chaque bac depuis le chargement (#533), hors du monde. */
@@ -1040,10 +886,10 @@ export class AquariumHost {
   /** Dernier test de l'eau lancé dans chaque bac (#564), hors du monde : rien n'est sauvegardé. */
   private waterTests = new WeakMap<World, WaterTest>();
   /** Dernier état de parcours publié dans `firstTankPath` (`null` : aucun). */
-  private exposedFirstTankPath: FirstTankPathState | null = null;
+  private shownFirstTankPath: FirstTankPathState | null = null;
   /** Tampon et version du dernier historique exposé. */
-  private exposedHistory: WaterHistory | null = null;
-  private exposedHistoryVersion = -1;
+  private shownHistory: WaterHistory | null = null;
+  private shownHistoryVersion = -1;
   /** Bilan du bac affiché (#514), lu à la demande par le tableau de bord. */
   readonly reviewOfWorld = (): readonly ReviewPoint[] =>
     this.currentWorld ? worldReview(this.currentWorld) : [];
@@ -1056,8 +902,6 @@ export class AquariumHost {
   /** État de la boucle à pas fixe, réécrit à chaque image (aucune allocation). */
   private readonly clock: FixedStepState = createFixedStepState();
   private lastTimestamp: number | null = null;
-  private exposedTick: number | null = null;
-  private exposedFood: number | null = null;
   /** Horloge de la journée simulée (ADR 0018) : l'heure suit `world.time`. */
   private dayClock: DayClock = DEFAULT_DAY_CLOCK;
   /** Heure de l'éclairage appliqué en dernier (`null` : à appliquer à la prochaine image). */
@@ -1066,14 +910,6 @@ export class AquariumHost {
   private readonly light = createDayLight();
   /** Intensité de la lampe appliquée en dernier (`updateLight`). */
   private litLamp: number | null = null;
-  private exposedLamp: string | null = null;
-  /** Dernière valeur exposée du distributeur (`FEEDER_ATTRIBUTE`). */
-  private exposedFeeder: string | null = null;
-  private exposedHour: string | null = null;
-  /** Dernière valeur exposée des rayons de lumière (`LIGHT_RAYS_ATTRIBUTE`). */
-  private exposedRays: string | null = null;
-  /** Valeur de `PLANTS_ATTRIBUTE` écrite en dernier (`exposePlants`, réécrite si elle change). */
-  private exposedPlants: string | null = null;
   private readonly onFrame: FrameRequestCallback = (timestamp) => this.frame(timestamp);
   private readonly cleanups: (() => void)[] = [];
   /** Désabonnements liés à la vue courante (refaits à chaque changement d'environnement). */
@@ -1161,7 +997,7 @@ export class AquariumHost {
   readonly water = signal<WaterReadout>(DEFAULT_WATER_READOUT);
   /**
    * Relevé exact de l'eau lu par le tableau de bord (#256) : remplacé à chaque relevé
-   * (`exposeWater`), donc au plus 4 fois par seconde dans la boucle (`refreshDue`).
+   * (`refreshWater`), donc au plus 4 fois par seconde dans la boucle (`refreshDue`).
    */
   readonly waterSample = signal<WaterSample>(DEFAULT_WATER_SAMPLE);
   /** Vrai si les changements d'eau du bac affiché versent de l'eau non traitée (#530). */
@@ -1210,12 +1046,12 @@ export class AquariumHost {
   /** Vrai si le dernier clic sur le canvas a retiré un corps (#582) : il ne nourrit pas. */
   private netted = false;
   /** Corps exposés au dernier relevé (#582) : un décès depuis relève aussi les effectifs. */
-  private exposedDead = 0;
+  private shownDead = 0;
   /** Vrai tant que le sécateur est en main (#477) : un clic sur une plante à tige la taille. */
   readonly pruning = signal(false);
   /**
    * Synthèse de la santé des animaux lue par le tableau de bord (#260), relevée avec l'eau
-   * (`exposeWater`) et remplacée seulement si ce qu'elle affiche change (`sameHealthSummary`).
+   * (`refreshWater`) et remplacée seulement si ce qu'elle affiche change (`sameHealthSummary`).
    */
   readonly health = signal<HealthSummary>(EMPTY_HEALTH_SUMMARY, { equal: sameHealthSummary });
   /** Animaux désignés par chaque alerte (#483), relevés avec l'eau, remplacés s'ils changent. */
@@ -1246,7 +1082,7 @@ export class AquariumHost {
   readonly treatmentNotice = signal<TreatmentNotice | null>(null);
   /** Monde du dernier geste de soin : le message s'efface quand le bac affiché change. */
   private noticeWorld: World | null = null;
-  /** Pas du dernier relevé de l'eau (`exposeWater`). */
+  /** Pas du dernier relevé de l'eau (`refreshWater`). */
   private waterReadTick = Number.NEGATIVE_INFINITY;
   /** Instant (ms, horloge de `requestAnimationFrame`) du dernier relevé de la boucle. */
   private waterReadAt: number | null = null;
@@ -1387,7 +1223,7 @@ export class AquariumHost {
     this.activePreset.set(preset);
     view.animateToPreset(preset, presetTransitionSeconds(this.reducedMotion(), this.capture));
     if (!view.transitioning) {
-      this.exposeCamera();
+      this.probe.publishCamera(this.view);
     }
     this.scheduleFrame();
   }
@@ -1404,7 +1240,7 @@ export class AquariumHost {
     }
     if (view.setFilter(filter)) {
       this.filter.set(filter);
-      this.exposeFilter();
+      this.probe.publishFilter(this.filter());
       this.scheduleFrame();
     }
     const win = this.document.defaultView;
@@ -1428,7 +1264,7 @@ export class AquariumHost {
     }
     this.dayClock = toggleClock(this.dayClock, this.renderTime());
     this.litHour = null;
-    this.exposeClockFrozen();
+    this.refreshClockFrozen();
     this.scheduleFrame();
   }
 
@@ -1453,7 +1289,7 @@ export class AquariumHost {
       return;
     }
     this.speed.set(speed);
-    this.host.nativeElement.setAttribute(SPEED_ATTRIBUTE, String(speed));
+    this.probe.publishSpeed(speed);
   }
 
   /**
@@ -1468,7 +1304,7 @@ export class AquariumHost {
     }
     view.setDecorVisible(visible);
     this.decorVisible.set(visible);
-    this.host.nativeElement.setAttribute(DECOR_ATTRIBUTE, String(visible));
+    this.probe.publishDecorVisible(visible);
     this.scheduleFrame();
   }
 
@@ -1495,7 +1331,7 @@ export class AquariumHost {
     }
     // Préférence d'affichage (#344) : le mode choisi est repris au prochain chargement.
     this.rememberFreeCamera(this.freeCamera());
-    this.exposeCamera();
+    this.probe.publishCamera(this.view);
     this.scheduleFrame();
   }
 
@@ -1529,7 +1365,7 @@ export class AquariumHost {
       this.freeMoves.clear();
     }
     this.freeCamera.set(active);
-    this.host.nativeElement.setAttribute(FREE_CAMERA_ATTRIBUTE, String(active));
+    this.probe.publishFreeCamera(active);
   }
 
   /**
@@ -1613,7 +1449,7 @@ export class AquariumHost {
       return;
     }
     setWorldCurrentInPlace(world, level);
-    this.exposeCurrent(world);
+    this.refreshCurrent(world);
     this.saveNow();
     this.scheduleFrame();
   }
@@ -1624,10 +1460,10 @@ export class AquariumHost {
   }
 
   /** Expose la force du courant de `world` et la donne à la vue (bulles, feuilles, repère). */
-  private exposeCurrent(world: World): void {
+  private refreshCurrent(world: World): void {
     const level = worldCurrentLevel(world);
     this.current.set(level);
-    this.host.nativeElement.setAttribute(CURRENT_ATTRIBUTE, level);
+    this.probe.publishCurrent(level);
     const v = worldCurrentVelocity(world, this.currentScratch);
     this.view?.setWaterCurrent(
       v.x,
@@ -1669,7 +1505,7 @@ export class AquariumHost {
     const room = this.syncRoomState(world);
     const limit = roomPopulationLimits(room, this.selectedTankId, world)[species];
     setPopulationInPlace(world, species, Math.min(count, limit));
-    this.exposePopulation();
+    this.refreshPopulation();
     this.scheduleFrame();
   }
 
@@ -1686,7 +1522,7 @@ export class AquariumHost {
     this.recordMaintenance(world, 'waterChange');
     markWaterChange(this.waterHistoryOf(world), world.water, world.tick);
     addJournalEntry(this.journalOf(world), waterChangeEntry(world.time));
-    this.exposeWater();
+    this.refreshWater();
     this.saveNow();
     this.scheduleFrame();
   }
@@ -1715,7 +1551,7 @@ export class AquariumHost {
     });
     if (outcome.ok) {
       addJournalEntry(this.journalOf(world), treatmentEntry(world.time, kind));
-      this.exposeWater();
+      this.refreshWater();
       this.saveNow();
       this.scheduleFrame();
     }
@@ -1736,7 +1572,7 @@ export class AquariumHost {
       return;
     }
     this.waterTests.set(world, startWaterTest(kit, testSample(world), world.tick));
-    this.exposeWater();
+    this.refreshWater();
   }
 
   /**
@@ -1760,7 +1596,7 @@ export class AquariumHost {
     this.noticeWorld = world;
     this.treatmentNotice.set({ ok: outcome.ok, text: outcome.message, warning: null });
     if (outcome.ok) {
-      this.exposeWater();
+      this.refreshWater();
       this.saveNow();
       this.scheduleFrame();
     }
@@ -1773,7 +1609,7 @@ export class AquariumHost {
       return;
     }
     setWorldUntreatedTapInPlace(world, world.water.untreatedTap !== true);
-    this.exposeWater();
+    this.refreshWater();
     this.saveNow();
   }
 
@@ -1790,7 +1626,7 @@ export class AquariumHost {
       text: outcome.message,
       warning: outcome.warning ?? null,
     });
-    this.exposeWater();
+    this.refreshWater();
     this.saveNow();
     this.scheduleFrame();
   }
@@ -1809,7 +1645,7 @@ export class AquariumHost {
       warning: outcome.ok ? outcome.warning : null,
     });
     if (outcome.ok) {
-      this.exposeWater();
+      this.refreshWater();
       this.saveNow();
       this.scheduleFrame();
     }
@@ -1829,7 +1665,7 @@ export class AquariumHost {
     this.noticeWorld = world;
     this.treatmentNotice.set({ ok: outcome.ok, text: outcome.message, warning: null });
     if (outcome.ok) {
-      this.exposeWater();
+      this.refreshWater();
       this.saveNow();
       this.scheduleFrame();
     }
@@ -1898,7 +1734,7 @@ export class AquariumHost {
   toggleScraper(): void {
     if (!this.capture) {
       this.scraping.update((on) => !on);
-      this.host.nativeElement.setAttribute(SCRAPER_ATTRIBUTE, String(this.scraping()));
+      this.probe.publishScraper(this.scraping());
       if (this.scraping() && this.pruning()) {
         this.togglePruner();
       }
@@ -1912,7 +1748,7 @@ export class AquariumHost {
   togglePruner(): void {
     if (!this.capture) {
       this.pruning.update((on) => !on);
-      this.host.nativeElement.setAttribute(PRUNER_ATTRIBUTE, String(this.pruning()));
+      this.probe.publishPruner(this.pruning());
       if (this.pruning() && this.scraping()) {
         this.toggleScraper();
       }
@@ -2225,11 +2061,7 @@ export class AquariumHost {
       this.careConditioner.set(true);
       this.careBucketGap.set(0);
     }
-    if (session) {
-      this.host.nativeElement.setAttribute(CARE_SESSION_ATTRIBUTE, session.step);
-    } else {
-      this.host.nativeElement.removeAttribute(CARE_SESSION_ATTRIBUTE);
-    }
+    this.probe.publishCareSession(session?.step ?? null);
   }
 
   /**
@@ -2250,7 +2082,7 @@ export class AquariumHost {
       }
     }
     if (rays.length > 0 && scrapeWorldAlgaeAlongInPlace(world, rays).length > 0) {
-      this.exposeWater();
+      this.refreshWater();
       this.saveNow();
       this.scheduleFrame();
       return true;
@@ -2297,7 +2129,7 @@ export class AquariumHost {
       withSiphoned(session, siphonedShare(session.siphoned ?? 0, pass.points, hasWater)),
     );
     if (pass.food > 0) {
-      this.exposeFood();
+      this.probe.publishFood(this.currentWorld);
       this.saveNow();
       this.scheduleFrame();
     }
@@ -2338,7 +2170,7 @@ export class AquariumHost {
       removed = id !== null && removeDeadInPlace(world, id);
     });
     if (removed) {
-      this.exposePopulation();
+      this.refreshPopulation();
     }
     return removed;
   }
@@ -2366,7 +2198,7 @@ export class AquariumHost {
     } catch {
       return;
     }
-    this.exposeWater();
+    this.refreshWater();
     this.saveNow();
     this.scheduleFrame();
   }
@@ -2406,13 +2238,13 @@ export class AquariumHost {
     this.clock.alpha = 0;
     this.dayClock = carryClock(this.dayClock, fromTime, this.renderTime());
     this.litHour = null;
-    this.exposeEnvironment();
-    this.exposeTick();
-    this.exposeFood();
-    this.exposePopulation();
-    this.exposeWater();
+    this.refreshEnvironment();
+    this.probe.publishTick(this.currentWorld);
+    this.probe.publishFood(this.currentWorld);
+    this.refreshPopulation();
+    this.refreshWater();
     this.createView(environmentById(id).defaultCamera);
-    this.exposeCamera();
+    this.probe.publishCamera(this.view);
     this.saveNow();
     this.scheduleFrame();
   }
@@ -2444,13 +2276,13 @@ export class AquariumHost {
       return;
     }
     const selection = this.decorSelection();
-    this.exposeTankDimensions();
-    this.exposeFood();
+    this.refreshTankDimensions();
+    this.probe.publishFood(this.currentWorld);
     this.createView(this.activePreset() ?? environmentById(world.environment).defaultCamera);
     if (selection !== null && selection < world.decor.length) {
       this.view?.setDecorSelection(selection);
     }
-    this.exposeCamera();
+    this.probe.publishCamera(this.view);
     // Comme une modification du décor : enregistré tout de suite.
     this.saveNow();
     this.scheduleFrame();
@@ -2471,10 +2303,10 @@ export class AquariumHost {
     if (setPondShapeInPlace(world, shape) === null) {
       return;
     }
-    this.exposeTankDimensions();
-    this.exposeFood();
+    this.refreshTankDimensions();
+    this.probe.publishFood(this.currentWorld);
     this.createView(this.activePreset() ?? environmentById(world.environment).defaultCamera);
-    this.exposeCamera();
+    this.probe.publishCamera(this.view);
     this.saveNow();
     this.scheduleFrame();
   }
@@ -2490,7 +2322,7 @@ export class AquariumHost {
     }
     this.dayClock = freezeClockAt(this.dayClock, hour);
     this.litHour = null;
-    this.exposeClockFrozen();
+    this.refreshClockFrozen();
     this.scheduleFrame();
   }
 
@@ -2505,8 +2337,8 @@ export class AquariumHost {
       return;
     }
     if (feedInPlace(world, x, z) > 0) {
-      this.exposeFood();
-      this.exposeFirstTankPath(world);
+      this.probe.publishFood(this.currentWorld);
+      this.refreshFirstTankPath(world);
       this.scheduleFrame();
     }
   }
@@ -2538,19 +2370,19 @@ export class AquariumHost {
     if (this.decorPhysics() !== 'absent') {
       return;
     }
-    this.exposeDecorPhysics('chargement');
+    this.setDecorPhysics('chargement');
     this.physicsLoader().then(
       (dropper) => {
         this.dropper = dropper;
-        this.exposeDecorPhysics('pret');
+        this.setDecorPhysics('pret');
       },
-      () => this.exposeDecorPhysics('indisponible'),
+      () => this.setDecorPhysics('indisponible'),
     );
   }
 
-  private exposeDecorPhysics(state: DecorPhysicsState): void {
+  private setDecorPhysics(state: DecorPhysicsState): void {
     this.decorPhysics.set(state);
-    this.host.nativeElement.setAttribute(DECOR_PHYSICS_ATTRIBUTE, state);
+    this.probe.publishDecorPhysics(state);
   }
 
   /**
@@ -2662,14 +2494,14 @@ export class AquariumHost {
     this.showDecorSelection(view, index);
     // Une seule sélection à la fois : celle de la pièce est levée (#188).
     view.setRoomSelection(null);
-    this.exposeRoomSelection(null);
+    this.refreshRoomSelection(null);
     this.scheduleFrame();
   }
 
   /** Dessine et expose la sélection du décor `index` (sans toucher à celle de la pièce). */
   private showDecorSelection(view: AquariumView, index: number | null): void {
     view.setDecorSelection(index);
-    this.exposeDecorSelection(index);
+    this.refreshDecorSelection(index);
   }
 
   /**
@@ -2691,7 +2523,7 @@ export class AquariumHost {
     this.decorRefused.set(false);
     this.showDecorSelection(view, null);
     view.setRoomSelection(index);
-    this.exposeRoomSelection(index);
+    this.refreshRoomSelection(index);
     this.scheduleFrame();
   }
 
@@ -3062,10 +2894,10 @@ export class AquariumHost {
     }
     this.decorRefused.set(false);
     view.replaceDecorItems(world.decor, world.seed);
-    this.exposePlants(world);
-    this.exposeDecorCount();
+    this.refreshPlants(world);
+    this.refreshDecorCount();
     view.setDecorSelection(selection);
-    this.exposeDecorSelection(selection);
+    this.refreshDecorSelection(selection);
     this.saveNow();
     this.scheduleFrame();
   }
@@ -3188,22 +3020,22 @@ export class AquariumHost {
     );
     this.view?.setRoom(room);
     const shown = this.view?.roomShown ?? false;
-    this.host.nativeElement.setAttribute(ROOM_ATTRIBUTE, String(shown));
+    this.probe.publishRoomShown(shown);
     // Pièce masquée : la vue est revenue à l'orbite (#343).
     if (this.freeCamera() && !this.view?.freeCameraActive) {
       this.activePreset.set(this.presetBeforeFree);
       this.syncFreeCamera(false);
-      this.exposeCamera();
+      this.probe.publishCamera(this.view);
     }
     // Éditeur (#188) : la pièce n'est modifiable que dessinée ; sélection et outil suivent.
     this.roomEditable.set(shown);
     const count = room.items?.length ?? 0;
     this.roomCount.set(count);
-    this.host.nativeElement.setAttribute(ROOM_COUNT_ATTRIBUTE, String(count));
+    this.probe.publishRoomCount(count);
     const selection = this.roomSelection();
     if (selection !== null && (!shown || selection >= count)) {
       this.view?.setRoomSelection(null);
-      this.exposeRoomSelection(null);
+      this.refreshRoomSelection(null);
     }
     if (!shown && isRoomTool(this.decorTool())) {
       this.decorTool.set('select');
@@ -3214,7 +3046,7 @@ export class AquariumHost {
   private applyFoodStyle(style: FoodStyle): void {
     this.foodStyle.set(style);
     this.view?.setFoodStyle(style);
-    this.host.nativeElement.setAttribute(FOOD_STYLE_ATTRIBUTE, style);
+    this.probe.publishFoodStyle(style);
   }
 
   /**
@@ -3233,7 +3065,7 @@ export class AquariumHost {
     } catch {
       status = 'indisponible';
     }
-    this.exposeSaveStatus(status);
+    this.refreshSaveStatus(status);
     return status;
   }
 
@@ -3287,7 +3119,7 @@ export class AquariumHost {
     this.selectedTankId = result.selectedTankId;
     this.loadWorld(result.world as MutableWorld, result.settings, result.others);
     this.createView(environmentById(result.world.environment).defaultCamera);
-    this.exposeCamera();
+    this.probe.publishCamera(this.view);
     this.scheduleFrame();
     this.saveMessage.set({ kind: 'info', text: message });
     this.saveNow();
@@ -3411,8 +3243,8 @@ export class AquariumHost {
     const synced = syncRoom(this.roomState, world, stashedList(this.stash, world.environment));
     this.roomState = synced.room;
     this.selectedTankId = synced.selectedTankId;
-    this.exposeRoomCatalog(this.roomCatalog().message);
-    this.exposeTankList();
+    this.refreshRoomCatalog(this.roomCatalog().message);
+    this.refreshTankList();
     return synced.room;
   }
 
@@ -3461,8 +3293,8 @@ export class AquariumHost {
       return;
     }
     setCareModeInPlace(world, mode);
-    this.exposePopulation();
-    this.exposeWater();
+    this.refreshPopulation();
+    this.refreshWater();
     this.saveNow();
     this.scheduleFrame();
   }
@@ -3479,8 +3311,8 @@ export class AquariumHost {
       return;
     }
     returnToCareInPlace(world, remove);
-    this.exposePopulation();
-    this.exposeWater();
+    this.refreshPopulation();
+    this.refreshWater();
     this.saveNow();
     this.scheduleFrame();
   }
@@ -3501,7 +3333,7 @@ export class AquariumHost {
         kind: 'erreur',
         text: `Nom refusé : de 1 à ${MAX_TANK_NAME_LENGTH} caractères`,
       });
-      this.exposeTankList();
+      this.refreshTankList();
       return;
     }
     this.roomState = renamed;
@@ -3515,7 +3347,7 @@ export class AquariumHost {
    * place) ; les autres bacs gardent leur gravité en cache par monde, recalculée après chaque
    * rattrapage (#316). Rien en capture (aucune interface).
    */
-  private exposeTankList(): void {
+  private refreshTankList(): void {
     const world = this.currentWorld;
     if (!world || this.capture) {
       return;
@@ -3543,7 +3375,7 @@ export class AquariumHost {
       ),
     );
     this.quarantine.set(quarantineView(room, selected, { world }));
-    this.host.nativeElement.setAttribute(SELECTED_TANK_ATTRIBUTE, String(selected));
+    this.probe.publishSelectedTank(selected);
   }
 
   /**
@@ -3637,8 +3469,8 @@ export class AquariumHost {
       kind: 'info',
       text: [`${moved} dans « ${arrival.name} »`, ...warnings].join('. '),
     });
-    this.exposePopulation();
-    this.exposeWater();
+    this.refreshPopulation();
+    this.refreshWater();
     this.saveNow();
     this.scheduleFrame();
   }
@@ -3801,14 +3633,14 @@ export class AquariumHost {
         ...result.warnings.map(addWarningText),
       ].join('. '),
     });
-    this.exposePopulation();
-    this.exposeWater();
+    this.refreshPopulation();
+    this.refreshWater();
     this.saveNow();
     this.scheduleFrame();
   }
 
   /** Expose les bacs et meubles de la pièce (catalogue et attributs, #305). */
-  private exposeRoomCatalog(message: string | null): void {
+  private refreshRoomCatalog(message: string | null): void {
     const room = this.roomState;
     const supports = room?.furniture ?? [];
     const tanks = (room?.tanks ?? []).map((tank): RoomCatalogTank => {
@@ -3836,8 +3668,7 @@ export class AquariumHost {
       })),
       message,
     });
-    this.host.nativeElement.setAttribute(ROOM_TANKS_ATTRIBUTE, String(tanks.length));
-    this.host.nativeElement.setAttribute(ROOM_SUPPORTS_ATTRIBUTE, String(supports.length));
+    this.probe.publishRoomCatalog(tanks.length, supports.length);
   }
 
   /**
@@ -3891,7 +3722,7 @@ export class AquariumHost {
     // Plafond de bacs (#392, ADR 0096) : message explicite plutôt que « pièce pleine ».
     const capped = roomTankCapRefusal(room);
     if (capped !== null) {
-      return this.exposeRoomCatalog(capped);
+      return this.refreshRoomCatalog(capped);
     }
     const { area, obstacles } = this.roomFloor(world);
     const placement = findTankSpot(
@@ -3981,11 +3812,11 @@ export class AquariumHost {
       }
     }
     this.roomState = room;
-    this.exposeRoomCatalog(null);
+    this.refreshRoomCatalog(null);
   }
 
   private refuseRoomLayout(reason: RoomLayoutRefusal | 'aucune-place'): void {
-    this.exposeRoomCatalog(ROOM_LAYOUT_MESSAGES[reason]);
+    this.refreshRoomCatalog(ROOM_LAYOUT_MESSAGES[reason]);
   }
 
   /** Installe la pièce modifiée (ou affiche le refus), redessine et enregistre aussitôt. */
@@ -3994,7 +3825,7 @@ export class AquariumHost {
       return this.refuseRoomLayout(reason ?? 'position-invalide');
     }
     this.roomState = room;
-    this.exposeRoomCatalog(null);
+    this.refreshRoomCatalog(null);
     this.applyRoom(this.room());
     this.saveNow();
     this.scheduleFrame();
@@ -4015,17 +3846,17 @@ export class AquariumHost {
     this.clock.accumulator = 0;
     this.clock.alpha = 0;
     this.speed.set(settings.speed);
-    this.host.nativeElement.setAttribute(SPEED_ATTRIBUTE, String(settings.speed));
+    this.probe.publishSpeed(settings.speed);
     this.dayClock = settings.clock;
     this.foodStyle.set(settings.foodStyle ?? DEFAULT_FOOD_STYLE);
     this.room.set(settings.room ?? DEFAULT_ROOM);
     this.litHour = null;
-    this.exposeClockFrozen();
-    this.exposeEnvironment();
-    this.exposeTick();
-    this.exposeFood();
-    this.exposePopulation();
-    this.exposeWater();
+    this.refreshClockFrozen();
+    this.refreshEnvironment();
+    this.probe.publishTick(this.currentWorld);
+    this.probe.publishFood(this.currentWorld);
+    this.refreshPopulation();
+    this.refreshWater();
   }
 
   /** Bascule entre pixel art et rendu sans filtre. */
@@ -4074,7 +3905,7 @@ export class AquariumHost {
   /** Pose l'état des mouvements sur la vue et l'expose aux tests de bout en bout. */
   private applyReducedMotion(): void {
     const reduced = this.reducedMotion();
-    this.host.nativeElement.setAttribute(REDUCED_MOTION_ATTRIBUTE, String(reduced));
+    this.probe.publishReducedMotion(reduced);
     if (this.view) {
       this.view.setReducedMotion(reduced);
       this.scheduleFrame();
@@ -4106,7 +3937,7 @@ export class AquariumHost {
       }
       void this.loadWallpaperConfig(win, global).then((choice) => {
         if (!this.stopped) {
-          this.host.nativeElement.setAttribute(WALLPAPER_ATTRIBUTE, choice.source);
+          this.probe.publishWallpaper(choice.source);
           this.begin(win, params, choice.value);
         }
       });
@@ -4319,18 +4150,18 @@ export class AquariumHost {
     if (this.wallpaper && !params.capture) {
       this.startWallpaperPause();
     }
-    this.exposeClockFrozen();
-    this.host.nativeElement.setAttribute(SPEED_ATTRIBUTE, String(this.speed()));
-    this.host.nativeElement.setAttribute(DECOR_ATTRIBUTE, String(this.decorVisible()));
+    this.refreshClockFrozen();
+    this.probe.publishSpeed(this.speed());
+    this.probe.publishDecorVisible(this.decorVisible());
     // Pluie de `pluie=1` (#106) : appliquée à la création de la vue (bassin seulement).
     this.rain.set(params.rain);
-    this.host.nativeElement.setAttribute(SEED_ATTRIBUTE, String(this.currentWorld.seed));
-    this.exposeEnvironment();
-    this.exposeTick();
-    this.exposeFood();
-    this.exposePopulation();
-    this.exposeWater();
-    this.exposeSaveStatus(this.saveStatus());
+    this.probe.publishSeed(this.currentWorld.seed);
+    this.refreshEnvironment();
+    this.probe.publishTick(this.currentWorld);
+    this.probe.publishFood(this.currentWorld);
+    this.refreshPopulation();
+    this.refreshWater();
+    this.refreshSaveStatus(this.saveStatus());
 
     const filter = initialRenderFilter(
       params.filter,
@@ -4349,7 +4180,7 @@ export class AquariumHost {
           ? WALLPAPER_PRESET
           : environmentById(this.currentWorld.environment).defaultCamera,
     );
-    this.exposeFilter();
+    this.probe.publishFilter(this.filter());
     this.applyDecorEditing(false);
     // `edition=` (#167) : mode édition et élément sélectionné, en capture seulement.
     if (
@@ -4360,7 +4191,7 @@ export class AquariumHost {
     ) {
       this.applyDecorEditing(true);
       this.view?.setDecorSelection(params.editSelection);
-      this.exposeDecorSelection(params.editSelection);
+      this.refreshDecorSelection(params.editSelection);
     }
     // `edition-meuble=` (#188) : mode édition et élément de la pièce sélectionné, en capture.
     const roomSelection = params.editRoomSelection;
@@ -4372,7 +4203,7 @@ export class AquariumHost {
     ) {
       this.applyDecorEditing(true);
       this.view?.setRoomSelection(roomSelection);
-      this.exposeRoomSelection(roomSelection);
+      this.refreshRoomSelection(roomSelection);
     }
 
     // `libre=` (#343) : pose de la caméra libre, en capture, pièce affichée seulement.
@@ -4387,7 +4218,7 @@ export class AquariumHost {
         )
       ) {
         this.activePreset.set(null);
-        this.exposeCamera();
+        this.probe.publishCamera(this.view);
       }
     }
 
@@ -4472,7 +4303,7 @@ export class AquariumHost {
     const onVisibility = () => {
       const hidden = this.document.visibilityState === 'hidden';
       this.paused = hidden;
-      this.host.nativeElement.setAttribute(WALLPAPER_PAUSED_ATTRIBUTE, hidden ? '1' : '0');
+      this.probe.publishWallpaperPaused(hidden);
       if (hidden) {
         if (this.frameId !== null) {
           this.document.defaultView?.cancelAnimationFrame(this.frameId);
@@ -4561,16 +4392,16 @@ export class AquariumHost {
     // Feuilles de catappa et eau brun-thé (#239).
     view.setWaterTea(this.water().tea);
     view.setCatappa(world.water.catappa);
-    this.exposeAlgae(world);
-    this.exposeFeeder(world);
-    this.exposePlants(world);
-    this.exposeCurrent(world);
+    this.refreshAlgae(world);
+    this.refreshFeeder(world);
+    this.refreshPlants(world);
+    this.refreshCurrent(world);
     this.applyReducedMotion();
     this.litHour = null;
     this.activePreset.set(preset);
     // Vue neuve : en orbite (#343).
     this.syncFreeCamera(false);
-    this.viewCleanups.push(view.onCameraChange(() => this.exposeCamera()));
+    this.viewCleanups.push(view.onCameraChange(() => this.probe.publishCamera(this.view)));
     this.viewCleanups.push(view.onUserInteraction(() => this.activePreset.set(null)));
     view.setDecorDragEnabled(this.decorEditing());
     // Séance d'entretien (#604) : glisser racle à l'étape « vitres ».
@@ -4629,8 +4460,8 @@ export class AquariumHost {
       }),
     );
     // Vue neuve : aucun élément sélectionné.
-    this.exposeDecorSelection(null);
-    this.exposeRoomSelection(null);
+    this.refreshDecorSelection(null);
+    this.refreshRoomSelection(null);
   }
 
   private scheduleFrame(): void {
@@ -4663,14 +4494,14 @@ export class AquariumHost {
       const realDt = this.advanceRealTime(timestamp);
       orbitDt = realDt;
       if (view.stepCameraTransition(realDt)) {
-        this.exposeCamera();
+        this.probe.publishCamera(this.view);
       }
       // Caméra libre (#343) : touches tenues, pas fixes du modèle de déplacement.
       if (
         view.freeCameraActive &&
         view.stepFreeCamera(freeMoveAxesInto(this.freeMoves, this.freeAxes), realDt)
       ) {
-        this.exposeCamera();
+        this.probe.publishCamera(this.view);
       }
       // Fondu du ciel couvert à la bascule de la pluie (#338) : jamais en capture.
       view.stepOvercastFade(realDt);
@@ -4680,7 +4511,7 @@ export class AquariumHost {
     }
     const canvas = this.canvasRef().nativeElement;
     if (view.resize(canvas.clientWidth, canvas.clientHeight)) {
-      this.exposeCamera();
+      this.probe.publishCamera(this.view);
     }
     if (wallpaper) {
       this.stepWallpaperCamera(view, orbitDt);
@@ -4735,7 +4566,7 @@ export class AquariumHost {
     view.applyOrbit(WALLPAPER_PRESET, wallpaperOrbitAngle(this.orbitSeconds));
     if (this.orbitSeconds - this.orbitExposedAt >= WALLPAPER_CAMERA_EXPOSE_SECONDS) {
       this.orbitExposedAt = this.orbitSeconds;
-      this.exposeCamera();
+      this.probe.publishCamera(this.view);
     }
   }
 
@@ -4750,18 +4581,6 @@ export class AquariumHost {
     }
     const alpha = this.capture ? 1 : this.clock.alpha;
     return Math.max(0, world.time - (1 - alpha) * SIM_DT);
-  }
-
-  /**
-   * Expose les rayons de lumière (#567) aux tests de bout en bout : `force;temps`, force au
-   * centième et temps du mouvement à la seconde entière (au plus une écriture par seconde).
-   */
-  private exposeLightRays(view: AquariumView): void {
-    const exposed = `${view.lightRaysStrength.toFixed(2)};${Math.floor(view.lightRaysTime)}`;
-    if (exposed !== this.exposedRays) {
-      this.exposedRays = exposed;
-      this.host.nativeElement.setAttribute(LIGHT_RAYS_ATTRIBUTE, exposed);
-    }
   }
 
   /**
@@ -4785,19 +4604,10 @@ export class AquariumHost {
       this.dayPhase.set(dayPhaseAt(hour));
       this.clockHour.set(snapHour(hour));
     }
-    this.exposeLightRays(view);
-    const exposedLamp = lamp.toFixed(2);
-    if (exposedLamp !== this.exposedLamp) {
-      this.exposedLamp = exposedLamp;
-      this.host.nativeElement.setAttribute(LAMP_ATTRIBUTE, exposedLamp);
-    }
-    // Une heure comme 23,999 s'arrondit à « 24.00 » : affichée « 0.00 ».
-    const rounded = hour.toFixed(2);
-    const exposed = rounded === '24.00' ? '0.00' : rounded;
-    if (exposed !== this.exposedHour) {
-      this.exposedHour = exposed;
-      this.host.nativeElement.setAttribute(HOUR_ATTRIBUTE, exposed);
-    }
+    // Rayons (#567) : au plus une écriture par seconde.
+    this.probe.publishLightRays(view.lightRaysStrength, view.lightRaysTime);
+    this.probe.publishLamp(lamp);
+    this.probe.publishHour(hour);
   }
 
   /**
@@ -4833,8 +4643,8 @@ export class AquariumHost {
     );
     if (clock.steps > 0 && this.currentWorld) {
       this.advanceAndRecord(this.currentWorld, clock.steps);
-      this.exposeTick();
-      this.exposeFood();
+      this.probe.publishTick(this.currentWorld);
+      this.probe.publishFood(this.currentWorld);
       // Au plus 4 relevés par seconde de temps réel, quelle que soit la vitesse (#256).
       if (
         this.currentWorld.tick - this.waterReadTick >= WATER_READOUT_TICKS &&
@@ -4843,38 +4653,14 @@ export class AquariumHost {
         this.waterReadAt = timestamp;
         // Les autres bacs avancent par lots, au rythme des relevés (#316, ADR 0076).
         this.advanceBackgroundTanks();
-        this.exposeWater();
+        this.refreshWater();
       }
     }
     return realDt;
   }
 
-  /**
-   * Expose `world.tick` aux tests de bout en bout (`data-aqfish-tick`), y compris en build de
-   * production. Seule écriture DOM de la boucle : une courte chaîne, et seulement quand le
-   * compteur a changé.
-   */
-  private exposeTick(): void {
-    const world = this.currentWorld;
-    if (!world || world.tick === this.exposedTick) {
-      return;
-    }
-    this.exposedTick = world.tick;
-    this.host.nativeElement.setAttribute(TICK_ATTRIBUTE, String(world.tick));
-  }
-
-  /** Expose le nombre de granulés (`data-aqfish-food`), seulement quand il change. */
-  private exposeFood(): void {
-    const world = this.currentWorld;
-    if (!world || world.food.length === this.exposedFood) {
-      return;
-    }
-    this.exposedFood = world.food.length;
-    this.host.nativeElement.setAttribute(FOOD_ATTRIBUTE, String(world.food.length));
-  }
-
   /** Expose les effectifs (`data-aqfish-population`, signaux `population` et `populationMax`). */
-  private exposePopulation(): void {
+  private refreshPopulation(): void {
     const world = this.currentWorld;
     if (!world) {
       return;
@@ -4891,15 +4677,10 @@ export class AquariumHost {
       room && shownTank ? roomAnimalCapRefusal(room, shownTank.id, 1, world) : null,
     );
     this.health.set(healthSummary(world.entities));
-    this.exposedDead = world.dead?.length ?? 0;
-    if (this.exposedDead === 0) {
-      this.host.nativeElement.removeAttribute(DEAD_ATTRIBUTE);
-    } else {
-      this.host.nativeElement.setAttribute(DEAD_ATTRIBUTE, String(this.exposedDead));
-    }
-    this.exposeAlertAnimals(world);
-    this.host.nativeElement.setAttribute(
-      POPULATION_ATTRIBUTE,
+    this.shownDead = world.dead?.length ?? 0;
+    this.probe.publishDead(this.shownDead);
+    this.refreshAlertAnimals(world);
+    this.probe.publishPopulation(
       formatPopulation(counts, speciesShownIn(environmentById(world.environment).species, counts)),
     );
     const mode = careModeOf(world);
@@ -4907,22 +4688,22 @@ export class AquariumHost {
       this.closeCareSession();
     }
     this.careMode.set(mode);
-    this.host.nativeElement.setAttribute(CARE_MODE_ATTRIBUTE, mode);
-    this.exposeCurrent(world);
+    this.probe.publishCareMode(mode);
+    this.refreshCurrent(world);
   }
 
   /**
    * Corps du bac (#582) : un décès depuis le relevé précédent relève les effectifs (l'animal
    * mort n'y compte plus) et l'attribut `DEAD_ATTRIBUTE`.
    */
-  private exposeDead(world: World): void {
-    if ((world.dead?.length ?? 0) !== this.exposedDead) {
-      this.exposePopulation();
+  private refreshDead(world: World): void {
+    if ((world.dead?.length ?? 0) !== this.shownDead) {
+      this.refreshPopulation();
     }
   }
 
   /** Animaux désignés par chaque alerte (#483) ; la mise en évidence cesse au changement de bac. */
-  private exposeAlertAnimals(world: World): void {
+  private refreshAlertAnimals(world: World): void {
     this.alertAnimals.set(
       alertTargets(world.entities, {
         temperature: world.water.temperature,
@@ -4948,7 +4729,7 @@ export class AquariumHost {
     this.highlightWorld = world;
     this.view?.setAlertHighlight(ids);
     this.highlightedAnimals.set(ids.length);
-    this.host.nativeElement.setAttribute(ALERT_HIGHLIGHT_ATTRIBUTE, String(ids.length));
+    this.probe.publishAlertHighlight(ids.length);
     this.highlightTimer = setTimeout(() => this.clearAlertHighlight(), ALERT_HIGHLIGHT_MS);
   }
 
@@ -4960,7 +4741,7 @@ export class AquariumHost {
     this.highlightWorld = null;
     this.view?.setAlertHighlight([]);
     this.highlightedAnimals.set(0);
-    this.host.nativeElement.removeAttribute(ALERT_HIGHLIGHT_ATTRIBUTE);
+    this.probe.publishAlertHighlight(0);
   }
 
   /** Temps du premier relevé d'un monde sans calendrier : début de son suivi (#513). */
@@ -4994,7 +4775,7 @@ export class AquariumHost {
   }
 
   /** Calendrier d'entretien du bac affiché (#513) ; jamais en capture (monde inchangé). */
-  private exposeMaintenance(world: MutableWorld): void {
+  private refreshMaintenance(world: MutableWorld): void {
     if (this.capture) {
       return;
     }
@@ -5077,7 +4858,7 @@ export class AquariumHost {
    * observation, reportée par `carryJournalWatches`), puis publie le journal s'il a changé.
    * Jamais en capture.
    */
-  private exposeJournal(world: World): void {
+  private refreshJournal(world: World): void {
     if (this.capture) {
       return;
     }
@@ -5096,22 +4877,22 @@ export class AquariumHost {
         addJournalEntry(journal, entry);
       }
     }
-    if (journal !== this.exposedJournal || journal.version !== this.exposedJournalVersion) {
-      this.exposedJournal = journal;
-      this.exposedJournalVersion = journal.version;
+    if (journal !== this.shownJournal || journal.version !== this.shownJournalVersion) {
+      this.shownJournal = journal;
+      this.shownJournalVersion = journal.version;
       this.journal.set(journalLines(journal));
     }
   }
 
   /** Publie l'historique du bac affiché s'il a changé (#511) ; jamais en capture. */
-  private exposeWaterHistory(world: World): void {
+  private refreshWaterHistory(world: World): void {
     if (this.capture) {
       return;
     }
     const history = this.waterHistoryOf(world);
-    if (history !== this.exposedHistory || history.version !== this.exposedHistoryVersion) {
-      this.exposedHistory = history;
-      this.exposedHistoryVersion = history.version;
+    if (history !== this.shownHistory || history.version !== this.shownHistoryVersion) {
+      this.shownHistory = history;
+      this.shownHistoryVersion = history.version;
       this.waterHistory.set(waterHistoryView(history));
     }
   }
@@ -5121,12 +4902,12 @@ export class AquariumHost {
    * en mode décor (eau en pause). Hors du monde (piège du cycle 176), sans allocation de vue
    * tant qu'aucune étape ne change.
    */
-  private exposeFirstTankPath(world: World): void {
+  private refreshFirstTankPath(world: World): void {
     if (this.capture) {
       return;
     }
     if (!firstTankPathAvailable(world.environment) || world.careMode === 'decor') {
-      this.exposedFirstTankPath = null;
+      this.shownFirstTankPath = null;
       this.firstTankPath.set(null);
       return;
     }
@@ -5136,8 +4917,8 @@ export class AquariumHost {
       facts,
     );
     this.firstTankPaths.set(world, state);
-    if (state !== this.exposedFirstTankPath) {
-      this.exposedFirstTankPath = state;
+    if (state !== this.shownFirstTankPath) {
+      this.shownFirstTankPath = state;
       this.firstTankPath.set(firstTankPathView(state));
     }
   }
@@ -5158,30 +4939,27 @@ export class AquariumHost {
    * Relevé de l'eau (#207) : signal `water` et `data-aqfish-water` mis à jour seulement s'il
    * change, trouble de l'eau de la vue suivant le niveau.
    */
-  private exposeWater(): void {
+  private refreshWater(): void {
     const world = this.currentWorld;
     if (!world) {
       return;
     }
     this.waterReadTick = world.tick;
-    this.exposeTankList();
+    this.refreshTankList();
     this.waterSample.set(waterSample(world.water, world.environment, world.tick));
     this.careFilter.set(world.water.filter);
     this.carePrunable.set(worldHasPrunablePlants(world));
     this.careCuttable.set(worldHasCuttablePlants(world));
-    this.host.nativeElement.setAttribute(
-      FILTER_BACTERIA_ATTRIBUTE,
-      String(filterMaturityPercent(world.water)),
-    );
+    this.probe.publishFilterBacteria(filterMaturityPercent(world.water));
     this.untreatedTap.set(world.water.untreatedTap === true);
     this.carbon.set(world.water.carbon === true);
     this.health.set(healthSummary(world.entities));
-    this.exposeDead(world);
-    this.exposeAlertAnimals(world);
-    this.exposeMaintenance(world);
-    this.exposeWaterHistory(world);
-    this.exposeJournal(world);
-    this.exposeFirstTankPath(world);
+    this.refreshDead(world);
+    this.refreshAlertAnimals(world);
+    this.refreshMaintenance(world);
+    this.refreshWaterHistory(world);
+    this.refreshJournal(world);
+    this.refreshFirstTankPath(world);
     const treatment = treatmentReadout(world.water);
     this.treatment.set(treatment);
     const pharmacy = pharmacyState(world.water, this.pharmacyUsed.get(world) ?? []);
@@ -5193,48 +4971,26 @@ export class AquariumHost {
       this.noticeWorld = null;
       this.treatmentNotice.set(null);
     }
-    if (treatment === null) {
-      this.host.nativeElement.removeAttribute(TREATMENT_ATTRIBUTE);
-    } else {
-      this.host.nativeElement.setAttribute(
-        TREATMENT_ATTRIBUTE,
-        `${treatment.remainingDays};${treatment.medicationDays ?? ''}`,
-      );
-    }
+    this.probe.publishTreatment(treatment);
     const readout = waterReadout(
       world.water,
       world.environment,
       world.entities.map((entity) => entity.species),
     );
-    if (
-      !sameReadout(readout, this.water()) ||
-      !this.host.nativeElement.hasAttribute(WATER_ATTRIBUTE)
-    ) {
+    if (!sameReadout(readout, this.water()) || !this.probe.hasWater()) {
       this.water.set(readout);
-      this.host.nativeElement.setAttribute(
-        WATER_ATTRIBUTE,
-        [
-          readout.quality,
-          readout.temperature,
-          readout.target,
-          readout.ammonia,
-          readout.nitrite,
-          readout.nitrate,
-        ].join(';'),
-      );
-      this.host.nativeElement.setAttribute(PH_ATTRIBUTE, `${readout.ph};${readout.phZone}`);
-      this.host.nativeElement.setAttribute(CATAPPA_ATTRIBUTE, `${readout.catappa};${readout.tea}`);
+      this.probe.publishWater(readout);
     }
     this.view?.setWaterTurbidity(waterTurbidity(readout.quality));
     this.view?.setWaterTea(readout.tea);
     this.view?.setCatappa(world.water.catappa);
-    this.exposeAlgae(world);
-    this.exposeFeeder(world);
-    this.exposePlants(world);
+    this.refreshAlgae(world);
+    this.refreshFeeder(world);
+    this.refreshPlants(world);
   }
 
   /** Pousse des plantes à tige (#477) : vue (hauteur, ombre du fond) et `PLANTS_ATTRIBUTE`. */
-  private exposePlants(world: World): void {
+  private refreshPlants(world: World): void {
     const view = this.view;
     let shown = '';
     world.decor.forEach((item, n) => {
@@ -5246,28 +5002,21 @@ export class AquariumHost {
     });
     const shade = worldPlantShade(world);
     view?.setPlantShade(shade);
-    // Attribut réécrit seulement s'il change (#494), comme `exposedTick` et `exposedHour`.
-    const exposed = `${shown};${Math.round(shade * 100)}`;
-    if (exposed !== this.exposedPlants) {
-      this.exposedPlants = exposed;
-      this.host.nativeElement.setAttribute(PLANTS_ATTRIBUTE, exposed);
-    }
+    // Attribut réécrit seulement s'il change (#494), comme le pas et l'heure.
+    this.probe.publishPlants(shown, shade);
   }
 
   /** Distributeur automatique (#583) : vue, signal du tableau de bord et `FEEDER_ATTRIBUTE`. */
-  private exposeFeeder(world: World): void {
+  private refreshFeeder(world: World): void {
     const feeder = world.feeder;
     this.view?.setFeeder(feeder !== undefined);
-    const exposed = feeder === undefined ? 'aucun' : `${feeder.stock};${feeder.hours.join(',')}`;
-    if (exposed !== this.exposedFeeder) {
-      this.exposedFeeder = exposed;
+    if (this.probe.publishFeeder(feeder)) {
       this.feeder.set(feeder === undefined ? null : feederReadout(feeder));
-      this.host.nativeElement.setAttribute(FEEDER_ATTRIBUTE, exposed);
     }
   }
 
   /** Algues du bac (#476) : vue, signal de l'éclairage et `ALGAE_ATTRIBUTE`. */
-  private exposeAlgae(world: World): void {
+  private refreshAlgae(world: World): void {
     this.view?.setAlgae(worldAlgaePatches(world), world.water.algae);
     const hours = lightingOf(world.water);
     this.lighting.set(hours);
@@ -5275,8 +5024,8 @@ export class AquariumHost {
     const visible = visibleAlgaeCount(world.water.algae);
     this.visibleAlgae.set(visible);
     const percent = Math.round(algaeCoverage(world.water.algae) * 100);
-    this.host.nativeElement.setAttribute(ALGAE_ATTRIBUTE, `${visible};${percent};${hours}`);
-    this.exposeFouling(world);
+    this.probe.publishAlgae(visible, percent, hours);
+    this.refreshFouling(world);
   }
 
   /**
@@ -5284,20 +5033,14 @@ export class AquariumHost {
    * d'`encrassement=` (séries existantes inchangées) ; jamais en mode décor ni hors des bacs à
    * algues.
    */
-  private exposeFouling(world: World): void {
+  private refreshFouling(world: World): void {
     const fouling = this.capture
       ? isDecorMode(world) || !hasAlgae(world.environment)
         ? NO_FOULING
         : sampleFouling(this.captureFouling)
       : worldFouling(world, this.maintenanceStartOf(world));
     this.view?.setFouling(environmentWater(world), fouling, hasFlatFloor(world.environment));
-    const host = this.host.nativeElement;
-    host.setAttribute(
-      FOULING_ATTRIBUTE,
-      `${Math.round(fouling.glass * 100)};${Math.round(fouling.floor * 100)}`,
-    );
-    const cells = this.view?.foulingCounts ?? NO_FOULING;
-    host.setAttribute(FOULING_CELLS_ATTRIBUTE, `${cells.glass};${cells.floor}`);
+    this.probe.publishFouling(fouling, this.view?.foulingCounts ?? NO_FOULING);
   }
 
   /**
@@ -5307,27 +5050,27 @@ export class AquariumHost {
   private applyRain(enabled: boolean, fade = false): void {
     const raining = this.view?.setRain(enabled, fade) ?? false;
     this.rain.set(raining);
-    this.host.nativeElement.setAttribute(RAIN_ATTRIBUTE, String(raining));
+    this.probe.publishRain(raining);
   }
 
   /** Expose l'environnement (`data-aqfish-environment` et signal `environment`). */
-  private exposeEnvironment(): void {
+  private refreshEnvironment(): void {
     const world = this.currentWorld;
     if (world) {
       this.environment.set(world.environment);
-      this.host.nativeElement.setAttribute(ENVIRONMENT_ATTRIBUTE, world.environment);
+      this.probe.publishEnvironment(world.environment);
       const editable = isDecorEditable(world.environment);
       this.decorEditable.set(editable);
-      this.exposeTankDimensions();
+      this.refreshTankDimensions();
       if (!editable && this.decorEditing()) {
         this.applyDecorEditing(false);
       }
-      this.exposeDecorCount();
+      this.refreshDecorCount();
     }
   }
 
   /** Expose les dimensions du bac (`data-aqfish-tank` et signal `tankDimensions`). */
-  private exposeTankDimensions(): void {
+  private refreshTankDimensions(): void {
     const world = this.currentWorld;
     if (!world) {
       return;
@@ -5335,12 +5078,8 @@ export class AquariumHost {
     const dims = placeDimensions(world);
     this.tankDimensions.set(isTankResizable(world.environment) ? dims : null);
     this.pondShape.set(world.shape ?? DEFAULT_POND_SHAPE);
-    this.host.nativeElement.setAttribute(SHAPE_ATTRIBUTE, world.shape ?? DEFAULT_POND_SHAPE);
     this.tankLiters.set(waterLiters(environmentWater(world)));
-    this.host.nativeElement.setAttribute(
-      TANK_ATTRIBUTE,
-      `${dims.width}:${dims.height}:${dims.depth}`,
-    );
+    this.probe.publishTank(world.shape ?? DEFAULT_POND_SHAPE, dims);
   }
 
   /** Applique et expose le mode édition (`data-aqfish-editing`, signal `decorEditing`). */
@@ -5349,59 +5088,38 @@ export class AquariumHost {
     this.decorRefused.set(false);
     // Hors capture seulement : `edition=` montre la sélection sans gestes.
     this.view?.setDecorDragEnabled(editing && !this.capture);
-    this.host.nativeElement.setAttribute(EDITING_ATTRIBUTE, String(editing));
+    this.probe.publishEditing(editing);
   }
 
   /** Expose le nombre d'éléments du décor (`data-aqfish-decor-count`, signal `decorCount`). */
-  private exposeDecorCount(): void {
+  private refreshDecorCount(): void {
     const count = this.currentWorld?.decor.length ?? 0;
     this.decorCount.set(count);
-    this.host.nativeElement.setAttribute(DECOR_COUNT_ATTRIBUTE, String(count));
+    this.probe.publishDecorCount(count);
   }
 
   /** Expose la sélection (`data-aqfish-decor-selected`, signal `decorSelection`). */
-  private exposeDecorSelection(index: number | null): void {
+  private refreshDecorSelection(index: number | null): void {
     this.decorSelection.set(index);
-    this.host.nativeElement.setAttribute(
-      DECOR_SELECTION_ATTRIBUTE,
-      index === null ? 'aucun' : String(index),
-    );
+    this.probe.publishDecorSelection(index);
   }
 
   /** Expose la sélection de la pièce (`data-aqfish-room-selected`, signal `roomSelection`). */
-  private exposeRoomSelection(index: number | null): void {
+  private refreshRoomSelection(index: number | null): void {
     this.roomSelection.set(index);
-    this.host.nativeElement.setAttribute(
-      ROOM_SELECTION_ATTRIBUTE,
-      index === null ? 'aucun' : String(index),
-    );
+    this.probe.publishRoomSelection(index);
   }
 
   /** Expose l'état de la sauvegarde (`data-aqfish-save` et signal `saveStatus`). */
-  private exposeSaveStatus(status: SaveStatus | null): void {
+  private refreshSaveStatus(status: SaveStatus | null): void {
     this.saveStatus.set(status);
-    if (status !== null) {
-      this.host.nativeElement.setAttribute(SAVE_ATTRIBUTE, status);
-    }
+    this.probe.publishSave(status);
   }
 
   /** Expose l'état de l'horloge (`data-aqfish-hour-frozen` et signal `clockFrozen`). */
-  private exposeClockFrozen(): void {
+  private refreshClockFrozen(): void {
     this.clockFrozen.set(this.dayClock.frozen);
-    this.host.nativeElement.setAttribute(HOUR_FROZEN_ATTRIBUTE, String(this.dayClock.frozen));
-  }
-
-  private exposeFilter(): void {
-    this.host.nativeElement.setAttribute(FILTER_ATTRIBUTE, this.filter());
-  }
-
-  private exposeCamera(): void {
-    if (!this.view) {
-      return;
-    }
-    const format = (v: readonly number[]) => v.map((c) => c.toFixed(3)).join(',');
-    this.host.nativeElement.setAttribute(CAMERA_ATTRIBUTE, format(this.view.cameraPosition()));
-    this.host.nativeElement.setAttribute(CAMERA_TARGET_ATTRIBUTE, format(this.view.cameraTarget()));
+    this.probe.publishHourFrozen(this.dayClock.frozen);
   }
 
   private stop(): void {

@@ -94,48 +94,50 @@ import {
   AQUARIUM_RENDERER_FACTORY,
   AquariumHost,
   COMPARISON_BACKGROUND,
-  DECOR_PHYSICS_ATTRIBUTE,
   DECOR_PHYSICS_LOADER,
   AUTOSAVE_INTERVAL_MS,
-  SAVE_ATTRIBUTE,
   SAVE_FILE_NAME,
   SAVE_STORAGE,
-  CAMERA_ATTRIBUTE,
-  REDUCED_MOTION_ATTRIBUTE,
-  FREE_CAMERA_ATTRIBUTE,
-  ENVIRONMENT_ATTRIBUTE,
-  WALLPAPER_ATTRIBUTE,
-  WALLPAPER_PAUSED_ATTRIBUTE,
-  RAIN_ATTRIBUTE,
-  WATER_ATTRIBUTE,
-  PH_ATTRIBUTE,
   WATER_READOUT_TICKS,
-  ROOM_ATTRIBUTE,
-  ROOM_COUNT_ATTRIBUTE,
   ROOM_LAYOUT_MESSAGES,
   supportPlaceLabel,
-  ROOM_SUPPORTS_ATTRIBUTE,
-  ROOM_TANKS_ATTRIBUTE,
-  SELECTED_TANK_ATTRIBUTE,
-  ROOM_SELECTION_ATTRIBUTE,
-  TANK_ATTRIBUTE,
+  formatPopulation,
+  initialDayClock,
+} from './aquarium-host';
+import {
+  CAMERA_ATTRIBUTE,
   CAMERA_TARGET_ATTRIBUTE,
   DECOR_ATTRIBUTE,
   DECOR_COUNT_ATTRIBUTE,
+  DECOR_PHYSICS_ATTRIBUTE,
   DECOR_SELECTION_ATTRIBUTE,
   EDITING_ATTRIBUTE,
+  ENVIRONMENT_ATTRIBUTE,
   FILTER_ATTRIBUTE,
-  FOOD_STYLE_ATTRIBUTE,
   FOOD_ATTRIBUTE,
+  FOOD_STYLE_ATTRIBUTE,
+  FREE_CAMERA_ATTRIBUTE,
   HOUR_ATTRIBUTE,
   HOUR_FROZEN_ATTRIBUTE,
-  formatPopulation,
-  initialDayClock,
+  PH_ATTRIBUTE,
   POPULATION_ATTRIBUTE,
+  RAIN_ATTRIBUTE,
+  REDUCED_MOTION_ATTRIBUTE,
+  ROOM_ATTRIBUTE,
+  ROOM_COUNT_ATTRIBUTE,
+  ROOM_SELECTION_ATTRIBUTE,
+  ROOM_SUPPORTS_ATTRIBUTE,
+  ROOM_TANKS_ATTRIBUTE,
+  SAVE_ATTRIBUTE,
   SEED_ATTRIBUTE,
+  SELECTED_TANK_ATTRIBUTE,
   SPEED_ATTRIBUTE,
+  TANK_ATTRIBUTE,
   TICK_ATTRIBUTE,
-} from './aquarium-host';
+  WALLPAPER_ATTRIBUTE,
+  WALLPAPER_PAUSED_ATTRIBUTE,
+  WATER_ATTRIBUTE,
+} from './aquarium-attributes';
 
 /** Double du renderer WebGL (jsdom n'a pas WebGL). */
 class FakeRenderer implements AquariumRenderer {
@@ -672,7 +674,7 @@ describe('AquariumHost', () => {
       // Premier regard sur un bac déjà malade : rien d'écrit.
       expect(host().journal()).toEqual([]);
       const before = JSON.stringify(host().world);
-      (host() as unknown as { exposeWater: () => void }).exposeWater();
+      (host() as unknown as { refreshWater: () => void }).refreshWater();
       expect(JSON.stringify(host().world)).toBe(before);
       host().changeWater();
       host().treat('medicament');
@@ -695,7 +697,7 @@ describe('AquariumHost', () => {
       frames.flush(0);
       const world = host().world! as unknown as { entities: Record<string, unknown>[] };
       world.entities[0] = { ...world.entities[0], ich: 1 };
-      (host() as unknown as { exposeWater: () => void }).exposeWater();
+      (host() as unknown as { refreshWater: () => void }).refreshWater();
       expect(host().journal()).toEqual([
         {
           kind: 'maladie',
@@ -1942,20 +1944,20 @@ describe('AquariumHost', () => {
     it('pousse des plantes (#494) : data-aqfish-plants réécrit seulement s’il change', async () => {
       await create('?seed=42&vitesse=0');
       const element = fixture.nativeElement as HTMLElement;
-      const exposeWater = () => (host() as unknown as { exposeWater: () => void }).exposeWater();
+      const refreshWater = () => (host() as unknown as { refreshWater: () => void }).refreshWater();
       const setAttribute = vi.spyOn(element, 'setAttribute');
       const plantWrites = () =>
         setAttribute.mock.calls.filter(([name]) => name === 'data-aqfish-plants').length;
-      exposeWater();
-      exposeWater();
+      refreshWater();
+      refreshWater();
       expect(plantWrites()).toBe(0);
       expect(element.getAttribute('data-aqfish-plants')).toBe('0,0,0;100');
       const decor = host().world!.decor;
       const index = decor.findIndex((d) => d.kind === 'plant' && d.form === 'tall');
       const world = host().world! as { water: object };
       world.water = { ...world.water, plantGrowth: { [String(decor[index].seed)]: 4 } };
-      exposeWater();
-      exposeWater();
+      refreshWater();
+      refreshWater();
       expect(plantWrites()).toBe(1);
       expect(element.getAttribute('data-aqfish-plants')).toMatch(/^[1-9]\d*,0,0;100$/);
       setAttribute.mockRestore();
@@ -2001,7 +2003,7 @@ describe('AquariumHost', () => {
       delete water['medication'];
       (host().world! as { water: object }).water = water;
       const before = JSON.stringify(host().world);
-      (host() as unknown as { exposeWater: () => void }).exposeWater();
+      (host() as unknown as { refreshWater: () => void }).refreshWater();
       expect(host().pharmacy()).toMatchObject({ active: [], used: ['medicament'] });
       expect(JSON.stringify(host().world)).toBe(before);
       // Conditionneur simple : il agit à l'instant, la pharmacie le garde « terminé ».
