@@ -57,3 +57,104 @@ export function describe(value: unknown): string {
   }
   return value === undefined ? 'absente' : typeof value;
 }
+
+/**
+ * Schémas déclaratifs (lot 5 de #686) : un corps de sauvegarde est décrit par une liste de
+ * règles, contrôlées dans l'ordre. L'ordre des règles fixe l'ordre des messages, donc le
+ * premier message d'un refus.
+ */
+
+/** Validateur : vrai si la valeur reçue convient. */
+export type Validator = (value: unknown) => boolean;
+
+/** Règle sur un sujet (objet relu) : le contrôle et le message en cas d'échec. */
+export interface Rule<T> {
+  readonly valid: (subject: T) => boolean;
+  readonly message: string | ((subject: T) => string);
+}
+
+/** Règle sur un champ propre d'un objet JSON (`own`). */
+export type FieldRule = Rule<Record<string, unknown>>;
+
+/** Nombre fini. */
+export const finiteNumber: Validator = (value) =>
+  typeof value === 'number' && Number.isFinite(value);
+
+/** Nombre fini dans [min − ε, max + ε]. */
+export function numberIn(min: number, max: number, epsilon = 0): Validator {
+  return (value) => isNumberIn(value, min, max, epsilon);
+}
+
+/** Entier dans [min, max]. */
+export function integerIn(min: number, max: number): Validator {
+  return (value) => isIntegerIn(value, min, max);
+}
+
+/** Entier 32 bits non signé. */
+export const uint32: Validator = (value) => isUint32(value);
+
+/** Valeur absente (`undefined`) ou valide. */
+export function optional(valid: Validator): Validator {
+  return (value) => value === undefined || valid(value);
+}
+
+/**
+ * Règle sur le champ `key` : `message` est fixe, ou calculé à partir de la valeur reçue.
+ */
+export function field(
+  key: string,
+  valid: Validator,
+  message: string | ((value: unknown) => string),
+): FieldRule {
+  return {
+    valid: (record) => valid(own(record, key)),
+    message: typeof message === 'string' ? message : (record) => message(own(record, key)),
+  };
+}
+
+function messageOf<T>(rule: Rule<T>, subject: T): string {
+  return typeof rule.message === 'string' ? rule.message : rule.message(subject);
+}
+
+/** Messages de toutes les règles en échec, dans l'ordre des règles. */
+export function problemsOf<T>(subject: T, rules: readonly Rule<T>[]): string[] {
+  return rules.filter((rule) => !rule.valid(subject)).map((rule) => messageOf(rule, subject));
+}
+
+/**
+ * Message de la première règle en échec, ou `null` : les règles suivantes ne sont pas
+ * évaluées (elles peuvent supposer les précédentes satisfaites).
+ */
+export function firstProblemOf<T>(subject: T, rules: readonly Rule<T>[]): string | null {
+  const failed = rules.find((rule) => !rule.valid(subject));
+  return failed === undefined ? null : messageOf(failed, subject);
+}
+
+/** Liste bornée d'une sauvegarde : nom du champ et effectif accepté. */
+export interface ListRule {
+  readonly key: string;
+  readonly min?: number;
+  readonly max: number;
+  /** Message d'un effectif hors de [min, max]. */
+  readonly countMessage: (count: number) => string;
+}
+
+/**
+ * Éléments d'une liste bornée, ou `null` (problème ajouté) si `value` n'est pas une liste ou
+ * si son effectif est hors bornes.
+ */
+export function readList(
+  value: unknown,
+  rule: ListRule,
+  problems: string[],
+): readonly unknown[] | null {
+  if (!Array.isArray(value)) {
+    problems.push(`${rule.key} doit être une liste`);
+    return null;
+  }
+  if (value.length < (rule.min ?? 0) || value.length > rule.max) {
+    problems.push(rule.countMessage(value.length));
+    return null;
+  }
+  return value;
+}
