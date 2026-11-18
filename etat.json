@@ -8811,6 +8811,12 @@
           "debut": "2026-11-18T02:59:49.629Z",
           "fin": "2026-11-18T03:41:48.156Z",
           "note": "Verdict OK, 0 bug, captures publiées (165/167 identiques ; 2 écarts hors PR : dérive #700 et flou 13 px), unitaires/lint verts, e2e laissés à la CI"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-18T03:42:16.211Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
