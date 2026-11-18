@@ -9017,10 +9017,10 @@
           "note": "Issue #694 : lot 8/13 assainissement, séance d'entretien dans un contrôleur (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-18T12:46:47.040Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-18T13:28:59.759Z",
+          "note": "PR #720 : séance d'entretien dans son contrôleur (assainissement 8/13), caractérisation préalable, CI verte"
         }
       },
       "metriques": {}
