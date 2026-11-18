@@ -8775,6 +8775,12 @@
           "debut": "2026-11-18T00:56:56.850Z",
           "fin": "2026-11-18T01:17:28.137Z",
           "note": "Verdict OK, 0 bug, captures complètes publiées (167, identiques au pixel près), tests unitaires/build verts, e2e laissés à la CI"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-18T01:19:08.342Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
