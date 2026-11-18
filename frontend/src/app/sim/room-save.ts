@@ -1,18 +1,14 @@
 import {
   DEFAULT_SAVE_SETTINGS,
-  describe,
-  isIntegerIn,
-  isRecord,
-  isUint32,
   MAX_SAVE_LENGTH,
-  MAX_SAVE_TICK,
-  own,
   parseSaveData,
   parseSettings,
   parseWorldBody,
   SAVE_FORMAT,
   SAVE_SCHEMA,
   SAVE_SCHEMA_1,
+  SEED_RULE,
+  TICK_RULE,
   savedWorld,
   settingsData,
   type SavedWorld,
@@ -37,6 +33,22 @@ import {
   type TankPlace,
   type TankPlacement,
 } from './room-state';
+import {
+  describe,
+  field,
+  firstProblemOf,
+  integerIn,
+  isRecord,
+  isUint32,
+  optional,
+  own,
+  problemsOf,
+  readList,
+  uint32,
+  type FieldRule,
+  type ListRule,
+  type Validator,
+} from './save-schema';
 import type { World } from './world-types';
 
 /**
@@ -277,34 +289,20 @@ export function parseSaveWorlds(text: string):
   }
 }
 
+/** Compteurs de la pièce (schéma 2), contrôlés dans cet ordre. */
+const ROOM_COUNTER_RULES: readonly FieldRule[] = [
+  SEED_RULE,
+  TICK_RULE,
+  field('nextTankId', uint32, 'nextTankId doit être un entier 32 bits non signé'),
+  field('selectedTankId', optional(uint32), 'selectedTankId doit être un entier 32 bits non signé'),
+];
+
 function parseSchema2(value: Record<string, unknown>): ParseSaveResult {
-  const problems: string[] = [];
-  const seed = own(value, 'seed');
-  if (!isUint32(seed)) {
-    problems.push('seed doit être un entier 32 bits non signé');
-  }
-  const tick = own(value, 'tick');
-  if (!isIntegerIn(tick, 0, MAX_SAVE_TICK)) {
-    problems.push(`tick doit être un entier dans [0, ${MAX_SAVE_TICK}]`);
-  }
+  const problems = problemsOf(value, ROOM_COUNTER_RULES);
   const nextTankId = own(value, 'nextTankId');
-  if (!isUint32(nextTankId)) {
-    problems.push('nextTankId doit être un entier 32 bits non signé');
-  }
-  const selectedValue = own(value, 'selectedTankId');
-  if (selectedValue !== undefined && !isUint32(selectedValue)) {
-    problems.push('selectedTankId doit être un entier 32 bits non signé');
-  }
   const settings = parseSettings(own(value, 'settings'), problems);
   const tanks = parseTanks(own(value, 'tanks'), problems);
-  const furnitureValue = own(value, 'furniture');
-  const nextFurnitureValue = own(value, 'nextFurnitureId');
-  const furniture = furnitureValue === undefined ? [] : parseFurniture(furnitureValue, problems);
-  if (nextFurnitureValue !== undefined && !isUint32(nextFurnitureValue)) {
-    problems.push('nextFurnitureId doit être un entier 32 bits non signé');
-  } else if (nextFurnitureValue === undefined && furniture !== null && furniture.length > 0) {
-    problems.push('nextFurnitureId manquant');
-  }
+  const furniture = parseRoomFurniture(value, problems);
   if (tanks !== null) {
     problems.push(
       ...roomProblems(
@@ -317,12 +315,11 @@ function parseSchema2(value: Record<string, unknown>): ParseSaveResult {
     return failureOf(problems);
   }
   const room: RoomState = {
-    seed: seed as number,
-    tick: tick as number,
+    seed: own(value, 'seed') as number,
+    tick: own(value, 'tick') as number,
     tanks,
     nextTankId: nextTankId as number,
-    furniture,
-    nextFurnitureId: (nextFurnitureValue as number | undefined) ?? 0,
+    ...furniture,
   };
   problems.push(...roomLayoutProblems(room));
   if (problems.length > 0) {
@@ -331,25 +328,51 @@ function parseSchema2(value: Record<string, unknown>): ParseSaveResult {
   return {
     ok: true,
     room,
-    selectedTankId: resolveSelectedTank(room, selectedValue as number | undefined),
+    selectedTankId: resolveSelectedTank(room, own(value, 'selectedTankId') as number | undefined),
     settings,
     schema: SAVE_SCHEMA,
   };
 }
 
-/** Bacs du schéma 2 : liste de 1 à `MAX_ROOM_TANKS` bacs valides, ou `null`. */
-function parseTanks(value: unknown, problems: string[]): RoomTank[] | null {
-  if (!Array.isArray(value)) {
-    problems.push('tanks doit être une liste');
+/**
+ * Meubles de la pièce et leur compteur (lot 2) : absents, aucun meuble et compteur à 0 ; le
+ * compteur est obligatoire dès qu'un meuble est posé. `null` si un problème a été ajouté par
+ * la liste des meubles.
+ */
+function parseRoomFurniture(
+  value: Record<string, unknown>,
+  problems: string[],
+): Pick<RoomState, 'furniture' | 'nextFurnitureId'> | null {
+  const furnitureValue = own(value, 'furniture');
+  const nextFurnitureValue = own(value, 'nextFurnitureId');
+  const furniture = furnitureValue === undefined ? [] : parseFurniture(furnitureValue, problems);
+  if (nextFurnitureValue !== undefined && !isUint32(nextFurnitureValue)) {
+    problems.push('nextFurnitureId doit être un entier 32 bits non signé');
+  } else if (nextFurnitureValue === undefined && furniture !== null && furniture.length > 0) {
+    problems.push('nextFurnitureId manquant');
+  }
+  if (furniture === null) {
     return null;
   }
-  if (value.length === 0 || value.length > MAX_ROOM_TANKS) {
-    problems.push(`nombre de bacs hors de [1, ${MAX_ROOM_TANKS}] (${value.length})`);
+  return { furniture, nextFurnitureId: (nextFurnitureValue as number | undefined) ?? 0 };
+}
+
+const TANK_LIST: ListRule = {
+  key: 'tanks',
+  min: 1,
+  max: MAX_ROOM_TANKS,
+  countMessage: (count) => `nombre de bacs hors de [1, ${MAX_ROOM_TANKS}] (${count})`,
+};
+
+/** Bacs du schéma 2 : liste de 1 à `MAX_ROOM_TANKS` bacs valides, ou `null`. */
+function parseTanks(value: unknown, problems: string[]): RoomTank[] | null {
+  const items = readList(value, TANK_LIST, problems);
+  if (items === null) {
     return null;
   }
   const before = problems.length;
   const tanks: RoomTank[] = [];
-  value.forEach((item: unknown, i) => {
+  items.forEach((item: unknown, i) => {
     const tank = parseTank(item, i, problems);
     if (tank !== null) {
       tanks.push(tank);
@@ -361,22 +384,33 @@ function parseTanks(value: unknown, problems: string[]): RoomTank[] | null {
   return problems.length > before ? null : tanks;
 }
 
+/** Identifiant d'un bac. */
+const TANK_ID_RULE = field('id', uint32, 'id doit être un entier 32 bits non signé');
+
+/** Nom d'un bac : texte non vide, puis longueur bornée. */
+const TANK_NAME_RULES: readonly FieldRule[] = [
+  field(
+    'name',
+    (v) => typeof v === 'string' && v.trim().length > 0,
+    'name doit être un texte non vide',
+  ),
+  field(
+    'name',
+    (v) => (v as string).length <= MAX_TANK_NAME_LENGTH,
+    `name trop long (${MAX_TANK_NAME_LENGTH} caractères au plus)`,
+  ),
+];
+
 function parseTank(item: unknown, i: number, problems: string[]): RoomTank | null {
   if (!isRecord(item)) {
     problems.push(`bac ${i} : doit être un objet`);
     return null;
   }
   const id = own(item, 'id');
-  const label = `bac ${isUint32(id) ? id : i}`;
-  const found: string[] = [];
-  if (!isUint32(id)) {
-    found.push('id doit être un entier 32 bits non signé');
-  }
-  const name = own(item, 'name');
-  if (typeof name !== 'string' || name.trim().length === 0) {
-    found.push('name doit être un texte non vide');
-  } else if (name.length > MAX_TANK_NAME_LENGTH) {
-    found.push(`name trop long (${MAX_TANK_NAME_LENGTH} caractères au plus)`);
+  const found = problemsOf(item, [TANK_ID_RULE]);
+  const nameProblem = firstProblemOf(item, TANK_NAME_RULES);
+  if (nameProblem !== null) {
+    found.push(nameProblem);
   }
   const place = own(item, 'place');
   const placementValue = own(item, 'placement');
@@ -384,26 +418,65 @@ function parseTank(item: unknown, i: number, problems: string[]): RoomTank | nul
   if (placement !== null && place === 'jardin') {
     found.push('placement interdit au jardin');
   }
-  const worldValue = own(item, 'world');
-  let world: World | null = null;
-  if (!isRecord(worldValue)) {
-    found.push('world doit être un objet');
-  } else if (JSON.stringify(worldValue).length > MAX_SAVE_LENGTH) {
-    found.push(`world trop volumineux (${MAX_SAVE_LENGTH / 1024} Kio au plus)`);
-  } else {
-    world = parseWorldBody(worldValue, found);
-  }
+  const world = parseTankWorld(own(item, 'world'), found);
   if (world !== null && place !== placeOf(world.environment)) {
     found.push(
       `place doit valoir « ${placeOf(world.environment)} » pour l’environnement ${world.environment}`,
     );
   }
-  problems.push(...found.map((problem) => `${label} : ${problem}`));
+  problems.push(...found.map((problem) => `bac ${isUint32(id) ? id : i} : ${problem}`));
   if (found.length > 0 || world === null) {
     return null;
   }
-  return { id: id as number, name: name as string, place: place as TankPlace, placement, world };
+  const name = own(item, 'name') as string;
+  return { id: id as number, name, place: place as TankPlace, placement, world };
 }
+
+/** Monde d'un bac : un objet de 256 Kio au plus, au corps valide ; sinon `null`. */
+function parseTankWorld(value: unknown, found: string[]): World | null {
+  if (!isRecord(value)) {
+    found.push('world doit être un objet');
+    return null;
+  }
+  if (JSON.stringify(value).length > MAX_SAVE_LENGTH) {
+    found.push(`world trop volumineux (${MAX_SAVE_LENGTH / 1024} Kio au plus)`);
+    return null;
+  }
+  return parseWorldBody(value, found);
+}
+
+/** Abscisse et profondeur au centimètre. */
+function hasCentimetricPosition(record: Record<string, unknown>): boolean {
+  const x = own(record, 'x');
+  const z = own(record, 'z');
+  return typeof x === 'number' && isCentimetric(x) && typeof z === 'number' && isCentimetric(z);
+}
+
+/** Quart de tour d'un bac ou d'un meuble. */
+const QUARTER: Validator = integerIn(0, 3);
+
+/**
+ * Position d'un bac, tous les problèmes relevés. Niveau du support (ADR 0102) : facultatif,
+ * absent dans les documents d'avant l'étagère d'animalerie ; sa validité pour le meuble est
+ * revue avec la disposition.
+ */
+const PLACEMENT_RULES: readonly FieldRule[] = [
+  field(
+    'supportId',
+    (v) => v === null || isUint32(v),
+    'placement.supportId doit être null ou un entier 32 bits non signé',
+  ),
+  {
+    valid: hasCentimetricPosition,
+    message: 'placement.x et placement.z doivent être des mètres au centimètre',
+  },
+  field('quarter', QUARTER, 'placement.quarter doit être 0, 1, 2 ou 3'),
+  field(
+    'level',
+    optional(integerIn(0, MAX_SUPPORT_LEVELS - 1)),
+    `placement.level doit être un entier de 0 à ${MAX_SUPPORT_LEVELS - 1}`,
+  ),
+];
 
 /** Position d'un bac relue, ou `null` (problème ajouté à `found`). */
 function parsePlacement(value: unknown, found: string[]): TankPlacement | null {
@@ -411,68 +484,58 @@ function parsePlacement(value: unknown, found: string[]): TankPlacement | null {
     found.push('placement doit être un objet');
     return null;
   }
-  const supportId = own(value, 'supportId');
-  const x = own(value, 'x');
-  const z = own(value, 'z');
-  const quarter = own(value, 'quarter');
-  const before = found.length;
-  if (supportId !== null && !isUint32(supportId)) {
-    found.push('placement.supportId doit être null ou un entier 32 bits non signé');
-  }
-  if (typeof x !== 'number' || !isCentimetric(x) || typeof z !== 'number' || !isCentimetric(z)) {
-    found.push('placement.x et placement.z doivent être des mètres au centimètre');
-  }
-  if (!isIntegerIn(quarter, 0, 3)) {
-    found.push('placement.quarter doit être 0, 1, 2 ou 3');
-  }
-  // Niveau du support (ADR 0102) : facultatif, absent dans les documents d'avant l'étagère
-  // d'animalerie ; sa validité pour le meuble est revue avec la disposition.
-  const level = own(value, 'level');
-  if (level !== undefined && !isIntegerIn(level, 0, MAX_SUPPORT_LEVELS - 1)) {
-    found.push(`placement.level doit être un entier de 0 à ${MAX_SUPPORT_LEVELS - 1}`);
-  }
-  if (found.length > before) {
+  const problems = problemsOf(value, PLACEMENT_RULES);
+  if (problems.length > 0) {
+    found.push(...problems);
     return null;
   }
-  const placement = { supportId, x, z, quarter } as TankPlacement;
+  const placement = {
+    supportId: own(value, 'supportId'),
+    x: own(value, 'x'),
+    z: own(value, 'z'),
+    quarter: own(value, 'quarter'),
+  } as TankPlacement;
+  const level = own(value, 'level');
   return level === undefined ? placement : { ...placement, level: level as number };
 }
 
+const FURNITURE_LIST: ListRule = {
+  key: 'furniture',
+  max: MAX_ROOM_SUPPORTS,
+  countMessage: (count) => `trop de meubles (${count}, ${MAX_ROOM_SUPPORTS} au plus)`,
+};
+
+/** Meuble : un seul message pour tous ses champs. */
+const SUPPORT_MESSAGE = `id, kind (${SUPPORT_KINDS.join(', ')}), x, z ou quarter invalide`;
+const SUPPORT_RULES: readonly FieldRule[] = [
+  field('id', uint32, SUPPORT_MESSAGE),
+  field('kind', (v) => SUPPORT_KINDS.includes(v as SupportKind), SUPPORT_MESSAGE),
+  { valid: hasCentimetricPosition, message: SUPPORT_MESSAGE },
+  field('quarter', QUARTER, SUPPORT_MESSAGE),
+];
+
 /** Meubles du schéma 2 : liste d'au plus `MAX_ROOM_SUPPORTS` meubles valides, ou `null`. */
 function parseFurniture(value: unknown, problems: string[]): RoomSupport[] | null {
-  if (!Array.isArray(value)) {
-    problems.push('furniture doit être une liste');
-    return null;
-  }
-  if (value.length > MAX_ROOM_SUPPORTS) {
-    problems.push(`trop de meubles (${value.length}, ${MAX_ROOM_SUPPORTS} au plus)`);
+  const items = readList(value, FURNITURE_LIST, problems);
+  if (items === null) {
     return null;
   }
   const before = problems.length;
   const furniture: RoomSupport[] = [];
-  value.forEach((item: unknown, i) => {
+  items.forEach((item: unknown, i) => {
     const label = `meuble ${i}`;
     if (!isRecord(item)) {
       problems.push(`${label} : doit être un objet`);
       return;
     }
-    const id = own(item, 'id');
-    const kind = own(item, 'kind');
-    const x = own(item, 'x');
-    const z = own(item, 'z');
-    const quarter = own(item, 'quarter');
-    const ok =
-      isUint32(id) &&
-      SUPPORT_KINDS.includes(kind as SupportKind) &&
-      typeof x === 'number' &&
-      isCentimetric(x) &&
-      typeof z === 'number' &&
-      isCentimetric(z) &&
-      isIntegerIn(quarter, 0, 3);
-    if (!ok) {
-      problems.push(`${label} : id, kind (${SUPPORT_KINDS.join(', ')}), x, z ou quarter invalide`);
+    const problem = firstProblemOf(item, SUPPORT_RULES);
+    if (problem !== null) {
+      problems.push(`${label} : ${problem}`);
       return;
     }
+    const [id, kind, x, z, quarter] = ['id', 'kind', 'x', 'z', 'quarter'].map((key) =>
+      own(item, key),
+    );
     furniture.push({ id, kind, x, z, quarter } as RoomSupport);
   });
   return problems.length > before ? null : furniture;

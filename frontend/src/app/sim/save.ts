@@ -1,14 +1,10 @@
-import { DEFAULT_FOOD_STYLE, isFoodStyle, type FoodStyle } from '../core/food-style/food-style';
-import { MAX_SEED } from '../core/random/prng';
 import { SIM_DT } from './constants';
-import { acceptsSavedSpecies, isCareMode, type CareMode } from './care-mode';
+import { isCareMode, type CareMode } from './care-mode';
 import { isCurrentLevel, type CurrentLevel } from './water-current';
-import { createDayClock, DEFAULT_DAY_CLOCK, HOURS_PER_DAY, type DayClock } from './daylight';
 import { parseDecorItems, type DecorItem } from './decor';
 import { DISEASES } from './diseases';
 import {
   ENVIRONMENT_IDS,
-  environmentWater,
   isEnvironmentId,
   isPondShapeable,
   isTankResizable,
@@ -17,36 +13,48 @@ import {
   type EnvironmentId,
   type Place,
 } from './environment';
-import { FRY_GROWTH_TIME, hasFry, isFryAge } from './fry';
-import {
-  EGG_HATCH_TIME,
-  EGG_SURFACES,
-  isEggAge,
-  hatchesToFry,
-  laysEggs,
-  MAX_EGGS,
-  type Egg,
-  type EggSurface,
-} from './eggs';
+import type { Egg } from './eggs';
 import { copyFirstTankPath, readFirstTankPath, type FirstTankPathState } from './first-tank-path';
 import { copyMaintenance, readMaintenance, type MaintenanceState } from './maintenance';
 import { copyFeeder, hasFeeder, readFeeder, type FeederState } from './auto-feeder';
-import { DEAD_MAX_AGE, isDeadAge, type DeadAnimal } from './mortality';
+import type { DeadAnimal } from './mortality';
 import { copySavedWaterHistory, readWaterHistory, type SavedWaterHistory } from './water-history';
 import { copySavedJournal, readJournal, type SavedJournal } from './journal';
-import { FOOD_MAX_FLOAT_SECONDS, FOOD_MIN_FLOAT_SECONDS, FOOD_SINK_SPEED, MAX_FOOD } from './food';
 import type { FoodPellet } from './food';
-import { isSpeciesId, MAX_TOTAL_FISH } from './population';
 import { DEFAULT_POND_SHAPE, isPondShape, type PondShape } from './pond-shape';
-import { clampRoom, DEFAULT_ROOM, readRoom, roomData, type Room } from './room';
-import { tidyRoom } from './room-furniture';
-import { DEFAULT_SIM_SPEED, isSimSpeed, type SimSpeed } from './sim-speed';
-import { SPECIES, type SpeciesId } from './species';
 import type { Fish } from './swimmer';
 import { copyWater, readWater, type WaterState } from './water';
-import { HEALTH_FLOOR, HEALTH_START } from './health-scale';
-import { clampTankDimensions, type Box3, type TankDimensions } from './tank';
-import { boundsFor, createWorld, seededObstacleCount } from './world';
+import { clampTankDimensions, type TankDimensions } from './tank';
+import {
+  describe,
+  field,
+  finiteNumber,
+  firstProblemOf,
+  integerIn,
+  isRecord,
+  optional,
+  own,
+  problemsOf,
+  readList,
+  uint32,
+  type FieldRule,
+  type ListRule,
+} from './save-schema';
+import {
+  FISH_NUMBER_KEYS,
+  parseDeadList,
+  parseEggList,
+  parseFishList,
+  parseFoodList,
+  type AnimalContext,
+} from './save-animals';
+import {
+  DEFAULT_SAVE_SETTINGS,
+  parseSettings,
+  settingsData,
+  type SaveSettings,
+} from './save-settings';
+import { createWorld, seededObstacleCount } from './world';
 import type { Entity, MutableWorld, World } from './world-types';
 
 /**
@@ -102,52 +110,14 @@ export const MAX_SAVE_DECOR = 64;
  */
 export const MAX_SAVE_TICK = 2 ** 31;
 
-/**
- * Durée d'une journée simulée acceptée pour l'horloge, en secondes : de 1 min à 1 jour
- * réel (l'application utilise 20 min, `DEFAULT_DAY_LENGTH_SECONDS`).
- */
-export const MIN_DAY_LENGTH_SECONDS = 60;
-export const MAX_DAY_LENGTH_SECONDS = 86_400;
-
-/** Tolérance sur les bornes de position, en mètres (arrondis des calculs de nage). */
-const POSITION_EPSILON = 1e-9;
-/** Tolérance sur les bornes angulaires et de vitesse. */
-const VALUE_EPSILON = 1e-12;
-/**
- * Durée maximale acceptée pour le temps de remontée d'un poisson et l'âge d'un granulé, en
- * secondes : bien au-delà des valeurs atteintes (un granulé disparaît avant 1 min).
- */
-const MAX_DURATION_SECONDS = 3600;
-
-/** Réglages de l'interface enregistrés avec le monde. */
-export interface SaveSettings {
-  /** Vitesse de simulation (`sim/sim-speed.ts`). */
-  readonly speed: SimSpeed;
-  /** Horloge de la journée (`sim/daylight.ts`) : l'heure en dérive au temps du monde. */
-  readonly clock: DayClock;
-  /**
-   * Rendu des granulés (issue #117). Facultatif : absent (anciennes sauvegardes), c'est
-   * `DEFAULT_FOOD_STYLE` ; toujours présent dans une sauvegarde écrite et relue.
-   */
-  readonly foodStyle?: FoodStyle;
-  /**
-   * Pièce autour du bac (issue #187, ADR 0048). Facultative : absente (anciennes
-   * sauvegardes), c'est `DEFAULT_ROOM` (masquée) ; toujours présente dans une sauvegarde
-   * écrite et relue.
-   */
-  readonly room?: Room;
-}
-
-/**
- * Réglages par défaut (vitesse ×1, départ à midi, heure en marche, granulés en points, pièce
- * masquée).
- */
-export const DEFAULT_SAVE_SETTINGS: SaveSettings = {
-  speed: DEFAULT_SIM_SPEED,
-  clock: DEFAULT_DAY_CLOCK,
-  foodStyle: DEFAULT_FOOD_STYLE,
-  room: DEFAULT_ROOM,
-};
+export {
+  DEFAULT_SAVE_SETTINGS,
+  MAX_DAY_LENGTH_SECONDS,
+  MIN_DAY_LENGTH_SECONDS,
+  parseSettings,
+  settingsData,
+  type SaveSettings,
+} from './save-settings';
 
 /** Poisson enregistré : tous les champs de `Fish` sauf `kind` (toujours `fish`). */
 export type SavedFish = Omit<Fish, 'kind'>;
@@ -237,41 +207,6 @@ export type ParseWorldResult =
     }
   | { readonly ok: false; readonly error: string };
 
-/** Champs numériques d'un poisson, dans l'ordre d'écriture. */
-const FISH_NUMBER_KEYS = [
-  'x',
-  'y',
-  'z',
-  'yaw',
-  'pitch',
-  'speed',
-  'turn',
-  'pitchTarget',
-  'phase',
-  'ascent',
-  'hunger',
-  'rng',
-  'px',
-  'py',
-  'pz',
-  'pyaw',
-  'ppitch',
-  'pphase',
-] as const;
-
-/** Champs numériques d'un granulé, dans l'ordre d'écriture. */
-const FOOD_NUMBER_KEYS = [
-  'id',
-  'x',
-  'y',
-  'z',
-  'vy',
-  'age',
-  'floatY',
-  'floatTime',
-  'restY',
-] as const;
-
 /**
  * Contenu de la sauvegarde de `world`, de `settings` et des mondes `others` des autres
  * environnements visités (objet de données, copié : rien n'est partagé avec les mondes).
@@ -306,27 +241,6 @@ export function saveData(
 }
 
 /**
- * Réglages enregistrés (copiés, pièce bornée), communs aux schémas 1 et 2.
- * @throws RangeError si un réglage est invalide.
- */
-export function settingsData(settings: SaveSettings): SaveSettings {
-  const problems = settingsProblems(settings);
-  if (problems.length > 0) {
-    throw new RangeError(`sauvegarde : ${problems.join(' ; ')}`);
-  }
-  return {
-    speed: settings.speed,
-    clock: {
-      startHour: settings.clock.startHour,
-      dayLengthSeconds: settings.clock.dayLengthSeconds,
-      frozen: settings.clock.frozen,
-    },
-    foodStyle: settings.foodStyle ?? DEFAULT_FOOD_STYLE,
-    room: roomData(clampRoom(settings.room ?? DEFAULT_ROOM)),
-  };
-}
-
-/**
  * Corps enregistré d'un monde (copié), commun aux schémas 1 et 2.
  * @throws RangeError si le monde a des obstacles explicites (hors décor et coraux).
  */
@@ -350,6 +264,13 @@ export function savedWorld(world: World): SavedWorld {
     fish: world.entities.map(savedFish),
     food: world.food.map((pellet) => ({ ...pellet })),
     water: copyWater(world.water),
+    ...savedOptionalParts(world),
+  };
+}
+
+/** Champs facultatifs du corps enregistré, dans l'ordre d'écriture (omis s'ils sont vides). */
+function savedOptionalParts(world: World): Partial<SavedWorld> {
+  return {
     ...(world.careMode === undefined ? {} : { careMode: world.careMode }),
     ...(world.current === undefined ? {} : { current: world.current }),
     ...(world.eggs === undefined || world.eggs.length === 0
@@ -483,19 +404,10 @@ function parseOthers(value: unknown, shown: EnvironmentId, problems: string[]): 
   if (value === undefined) {
     return [];
   }
-  if (!Array.isArray(value)) {
-    problems.push('others doit être une liste');
-    return [];
-  }
-  if (value.length > ENVIRONMENT_IDS.length - 1) {
-    problems.push(
-      `trop d’autres environnements (${value.length}, ${ENVIRONMENT_IDS.length - 1} au plus)`,
-    );
-    return [];
-  }
+  const items = readList(value, OTHERS_LIST, problems) ?? [];
   const seen = new Set<EnvironmentId>([shown]);
   const worlds: World[] = [];
-  value.forEach((item: unknown, i) => {
+  items.forEach((item: unknown, i) => {
     if (!isRecord(item)) {
       problems.push(`autre environnement ${i} : doit être un objet`);
       return;
@@ -517,6 +429,101 @@ function parseOthers(value: unknown, shown: EnvironmentId, problems: string[]): 
   return worlds;
 }
 
+const OTHERS_LIST: ListRule = {
+  key: 'others',
+  max: ENVIRONMENT_IDS.length - 1,
+  countMessage: (count) =>
+    `trop d’autres environnements (${count}, ${ENVIRONMENT_IDS.length - 1} au plus)`,
+};
+
+/** Graine d'un monde ou d'une pièce (schémas 1 et 2). */
+export const SEED_RULE = field('seed', uint32, 'seed doit être un entier 32 bits non signé');
+
+/** Compteur de pas d'un monde ou d'une pièce (schémas 1 et 2). */
+export const TICK_RULE = field(
+  'tick',
+  integerIn(0, MAX_SAVE_TICK),
+  `tick doit être un entier dans [0, ${MAX_SAVE_TICK}]`,
+);
+
+/** Compteurs du corps d'un monde, lus après le lieu. */
+const COUNTER_RULES: readonly FieldRule[] = [
+  TICK_RULE,
+  field('nextFishId', uint32, 'nextFishId doit être un entier 32 bits non signé'),
+  field(
+    'nextFoodId',
+    integerIn(0, Number.MAX_SAFE_INTEGER),
+    'nextFoodId doit être un entier positif ou nul',
+  ),
+];
+
+/** Courant enregistrable : connu, jamais « coupe » (#460). */
+function isSavedCurrent(value: unknown): value is Exclude<CurrentLevel, 'coupe'> {
+  return isCurrentLevel(value) && value !== 'coupe';
+}
+
+/** Mode du bac (#278) et courant (#460) : absents, mode soins et courant du lieu. */
+const MODE_RULES: readonly FieldRule[] = [
+  field('careMode', optional(isCareMode), (v) => `mode de bac inconnu (${describe(v)})`),
+  field('current', optional(isSavedCurrent), (v) => `force de courant inconnue (${describe(v)})`),
+];
+
+/** Mortalité (#582) : option absente, aucun décès ; jamais écrite à faux. */
+const MORTALITY_RULE = field(
+  'mortality',
+  optional((v) => v === true),
+  (v) => `mortality doit valoir true (reçu : ${describe(v)})`,
+);
+
+const DECOR_LIST: ListRule = {
+  key: 'decor',
+  max: MAX_SAVE_DECOR,
+  countMessage: (count) => `trop d’éléments de décor (${count}, ${MAX_SAVE_DECOR} au plus)`,
+};
+
+/** États facultatifs d'un monde, relus par leur module, dans l'ordre des messages. */
+const STATE_READERS = [
+  ['maintenance', readMaintenance],
+  ['waterHistory', readWaterHistory],
+  ['journal', readJournal],
+  ['firstTankPath', readFirstTankPath],
+  ['feeder', readFeeder],
+] as const;
+
+/** États facultatifs relus d'un monde. */
+type WorldStates = Partial<Pick<MutableWorld, (typeof STATE_READERS)[number][0]>>;
+
+/** Parties relues d'un corps de monde, avant assemblage. */
+interface WorldParts extends WorldStates {
+  readonly decor: DecorItem[];
+  readonly fish: Entity[];
+  readonly food: FoodPellet[];
+  readonly careMode?: CareMode;
+  readonly current?: Exclude<CurrentLevel, 'coupe'>;
+  readonly eggs?: Egg[];
+  readonly mortality?: true;
+  readonly dead?: DeadAnimal[];
+  readonly water?: WaterState;
+}
+
+/**
+ * Ordre d'écriture des champs facultatifs dans le monde relu : il fixe l'ordre des clés du
+ * monde, différent de l'ordre des contrôles.
+ */
+const WORLD_PART_ORDER = [
+  'water',
+  'careMode',
+  'current',
+  'maintenance',
+  'waterHistory',
+  'journal',
+  'feeder',
+  'firstTankPath',
+  'eggs',
+  'mortality',
+  'dead',
+] as const;
+
 /**
  * Relit le corps d'un monde (`SavedWorld`) : le monde neuf (obstacles recalculés), ou `null`
  * si un problème a été ajouté à `problems`. `afterCounters` est appelé après la lecture des
@@ -528,180 +535,143 @@ export function parseWorldBody(
   afterCounters?: () => void,
 ): MutableWorld | null {
   const before = problems.length;
-  const seed = own(value, 'seed');
-  if (!isUint32(seed)) {
-    problems.push('seed doit être un entier 32 bits non signé');
-  }
+  problems.push(...problemsOf(value, [SEED_RULE]));
   const environment = own(value, 'environment');
   if (!isEnvironmentId(environment)) {
     problems.push(`environnement inconnu (${describe(environment)})`);
     return null;
   }
-  const dimensions = parseDimensions(own(value, 'dimensions'), environment, problems);
-  const shape = parseShape(own(value, 'shape'), environment, problems);
-  const place: Place =
-    dimensions === undefined
-      ? shape === undefined
-        ? environment
-        : { environment, shape }
-      : { environment, dimensions };
-  const tick = own(value, 'tick');
-  if (!isIntegerIn(tick, 0, MAX_SAVE_TICK)) {
-    problems.push(`tick doit être un entier dans [0, ${MAX_SAVE_TICK}]`);
-  }
-  const nextFishId = own(value, 'nextFishId');
-  if (!isUint32(nextFishId)) {
-    problems.push('nextFishId doit être un entier 32 bits non signé');
-  }
-  const nextFoodId = own(value, 'nextFoodId');
-  if (!isIntegerIn(nextFoodId, 0, Number.MAX_SAFE_INTEGER)) {
-    problems.push('nextFoodId doit être un entier positif ou nul');
-  }
+  const place = parsePlace(value, environment, problems);
+  problems.push(...problemsOf(value, COUNTER_RULES));
   afterCounters?.();
-
-  const decorValue = own(value, 'decor');
-  let decor: DecorItem[] = [];
-  if (!Array.isArray(decorValue)) {
-    problems.push('decor doit être une liste');
-  } else if (decorValue.length > MAX_SAVE_DECOR) {
-    problems.push(`trop d’éléments de décor (${decorValue.length}, ${MAX_SAVE_DECOR} au plus)`);
-  } else {
-    try {
-      decor = parseDecorItems(decorValue, placeDimensions(place));
-    } catch (error) {
-      problems.push(`décor : ${(error as Error).message}`);
-    }
-  }
-
-  // Mode du bac (#278) : absent, mode soins et espèces de l'environnement seulement.
-  const careModeValue = own(value, 'careMode');
-  if (careModeValue !== undefined && !isCareMode(careModeValue)) {
-    problems.push(`mode de bac inconnu (${describe(careModeValue)})`);
-  }
-  const careMode = isCareMode(careModeValue) ? careModeValue : undefined;
-  // Courant (#460) : absent, celui de l'environnement ; « coupe » n'est jamais écrit.
-  const currentValue = own(value, 'current');
-  if (currentValue !== undefined && (!isCurrentLevel(currentValue) || currentValue === 'coupe')) {
-    problems.push(`force de courant inconnue (${describe(currentValue)})`);
-  }
-  const current =
-    isCurrentLevel(currentValue) && currentValue !== 'coupe' ? currentValue : undefined;
-  const fish = parseFishList(own(value, 'fish'), place, nextFishId, problems, careMode);
-  const food = parseFoodList(own(value, 'food'), place, nextFoodId, problems);
-  const eggs = parseEggList(own(value, 'eggs'), place, problems);
-  const maintenanceValue = own(value, 'maintenance');
-  const maintenance =
-    maintenanceValue === undefined ? null : readMaintenance(maintenanceValue, problems);
-  const historyValue = own(value, 'waterHistory');
-  const waterHistory = historyValue === undefined ? null : readWaterHistory(historyValue, problems);
-  const journalValue = own(value, 'journal');
-  const journal = journalValue === undefined ? null : readJournal(journalValue, problems);
-  const pathValue = own(value, 'firstTankPath');
-  const firstTankPath = pathValue === undefined ? null : readFirstTankPath(pathValue, problems);
-  // Distributeur (#583) : absent, aucun ; refusé dans un bac où il ne peut pas être posé.
-  const feederValue = own(value, 'feeder');
-  const feeder = feederValue === undefined ? null : readFeeder(feederValue, problems);
-  if (feeder !== null && !hasFeeder(environment)) {
-    problems.push(`distributeur impossible dans l’environnement ${environment}`);
-  }
-  // Mortalité (#582) : option absente, aucun décès ; corps absents, aucun.
-  const mortalityValue = own(value, 'mortality');
-  if (mortalityValue !== undefined && mortalityValue !== true) {
-    problems.push(`mortality doit valoir true (reçu : ${describe(mortalityValue)})`);
-  }
-  const dead = parseDeadList(own(value, 'dead'), place, nextFishId, problems, careMode, fish);
-  // Eau (#206) : absente, eau saine (celle de `createWorld`) ; présente, validée (pH absent :
-  // celui de l'eau neuve de l'environnement, #236).
-  const waterValue = own(value, 'water');
-  const water = waterValue === undefined ? null : readWater(waterValue, environment);
-  if (water !== null && !water.ok) {
-    problems.push(water.error);
-  }
+  const parts = parseWorldParts(value, place, problems);
   if (problems.length > before) {
     return null;
   }
-
-  const world: MutableWorld = createWorld(seed as number, [], [], decor, place);
-  world.tick = tick as number;
-  world.time = (tick as number) * SIM_DT;
-  world.entities = fish;
-  world.food = food;
-  world.nextFishId = nextFishId as number;
-  world.nextFoodId = nextFoodId as number;
-  if (water !== null && water.ok) {
-    world.water = water.water;
-  }
-  if (careMode !== undefined) {
-    world.careMode = careMode;
-  }
-  if (current !== undefined) {
-    world.current = current;
-  }
-  if (maintenance !== null) {
-    world.maintenance = maintenance;
-  }
-  if (waterHistory !== null) {
-    world.waterHistory = waterHistory;
-  }
-  if (journal !== null) {
-    world.journal = journal;
-  }
-  if (feeder !== null) {
-    world.feeder = feeder;
-  }
-  if (firstTankPath !== null) {
-    world.firstTankPath = firstTankPath;
-  }
-  if (eggs.length > 0) {
-    world.eggs = eggs;
-  }
-  if (mortalityValue === true) {
-    world.mortality = true;
-  }
-  if (dead.length > 0) {
-    world.dead = dead;
+  const world: MutableWorld = createWorld(own(value, 'seed') as number, [], [], parts.decor, place);
+  const tick = own(value, 'tick') as number;
+  world.tick = tick;
+  world.time = tick * SIM_DT;
+  world.entities = parts.fish;
+  world.food = parts.food;
+  world.nextFishId = own(value, 'nextFishId') as number;
+  world.nextFoodId = own(value, 'nextFoodId') as number;
+  const target = world as unknown as Record<string, unknown>;
+  for (const key of WORLD_PART_ORDER) {
+    if (parts[key] !== undefined) {
+      target[key] = parts[key];
+    }
   }
   return world;
 }
 
-/**
- * Corps d'une sauvegarde (#582) : liste facultative de poissons enregistrés (mêmes règles que
- * `fish`) portant chacun un âge `deadFor` valide (`isDeadAge`).
- */
-function parseDeadList(
-  value: unknown,
-  place: Place,
-  nextFishId: unknown,
+/** Lieu d'un corps de monde : environnement, dimensions réglées ou forme du bassin. */
+function parsePlace(
+  value: Record<string, unknown>,
+  environment: EnvironmentId,
   problems: string[],
-  careMode: CareMode | undefined,
-  living: readonly { readonly id: number }[],
-): DeadAnimal[] {
-  if (value === undefined) {
-    return [];
+): Place {
+  const dimensions = parseDimensions(own(value, 'dimensions'), environment, problems);
+  const shape = parseShape(own(value, 'shape'), environment, problems);
+  if (dimensions !== undefined) {
+    return { environment, dimensions };
   }
-  const before = problems.length;
-  const bodies = parseFishList(value, place, nextFishId, problems, careMode);
-  if (problems.length > before) {
-    return [];
-  }
-  // `netTarget` et `removeDeadInPlace` travaillent par identifiant (#615) : un corps ne peut
-  // pas porter celui d'un animal vivant.
-  const livingIds = new Set(living.map((animal) => animal.id));
-  const dead: DeadAnimal[] = [];
-  (value as unknown[]).forEach((item, i) => {
-    const age = own(item as Record<string, unknown>, 'deadFor');
-    if (!isDeadAge(age)) {
-      problems.push(`corps ${i} : deadFor hors de [0, ${DEAD_MAX_AGE}]`);
-      return;
-    }
-    if (livingIds.has(bodies[i].id)) {
-      problems.push(`corps ${i} : identifiant ${bodies[i].id} déjà porté par un animal vivant`);
-      return;
-    }
-    dead.push({ ...bodies[i], deadFor: age });
-  });
-  return dead;
+  return shape === undefined ? environment : { environment, shape };
 }
+
+/** Parties d'un corps de monde, dans l'ordre historique des messages. */
+function parseWorldParts(
+  value: Record<string, unknown>,
+  place: Place,
+  problems: string[],
+): WorldParts {
+  const environment = placeEnvironment(place);
+  const decor = parseDecor(own(value, 'decor'), place, problems);
+  problems.push(...problemsOf(value, MODE_RULES));
+  const careModeValue = own(value, 'careMode');
+  const currentValue = own(value, 'current');
+  const careMode = isCareMode(careModeValue) ? careModeValue : undefined;
+  const context: AnimalContext = { place, nextFishId: own(value, 'nextFishId'), careMode };
+  const fish = parseFishList(own(value, 'fish'), context, problems);
+  const food = parseFoodList(own(value, 'food'), place, own(value, 'nextFoodId'), problems);
+  const eggs = parseEggList(own(value, 'eggs'), place, problems);
+  const states = parseStates(value, environment, problems);
+  problems.push(...problemsOf(value, [MORTALITY_RULE]));
+  const dead = parseDeadList(own(value, 'dead'), context, fish, problems);
+  return {
+    decor,
+    fish,
+    food,
+    careMode,
+    current: isSavedCurrent(currentValue) ? currentValue : undefined,
+    eggs: eggs.length > 0 ? eggs : undefined,
+    ...states,
+    mortality: own(value, 'mortality') === true ? true : undefined,
+    dead: dead.length > 0 ? dead : undefined,
+    water: parseWaterField(own(value, 'water'), environment, problems),
+  };
+}
+
+function parseDecor(value: unknown, place: Place, problems: string[]): DecorItem[] {
+  const items = readList(value, DECOR_LIST, problems);
+  if (items === null) {
+    return [];
+  }
+  try {
+    return parseDecorItems(items, placeDimensions(place));
+  } catch (error) {
+    problems.push(`décor : ${(error as Error).message}`);
+    return [];
+  }
+}
+
+/**
+ * États facultatifs (#511, #512, #513, #581, #583) : absents, aucun ; distributeur refusé
+ * dans un bac où il ne peut pas être posé.
+ */
+function parseStates(
+  value: Record<string, unknown>,
+  environment: EnvironmentId,
+  problems: string[],
+): WorldStates {
+  const states: Record<string, unknown> = {};
+  for (const [key, read] of STATE_READERS) {
+    const raw = own(value, key);
+    const state = raw === undefined ? null : read(raw, problems);
+    if (state !== null) {
+      states[key] = state;
+    }
+  }
+  if (states['feeder'] !== undefined && !hasFeeder(environment)) {
+    problems.push(`distributeur impossible dans l’environnement ${environment}`);
+  }
+  return states as WorldStates;
+}
+
+/**
+ * Eau (#206) : absente, eau saine (celle de `createWorld`) ; présente, validée (pH absent :
+ * celui de l'eau neuve de l'environnement, #236).
+ */
+function parseWaterField(
+  value: unknown,
+  environment: EnvironmentId,
+  problems: string[],
+): WaterState | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+  const water = readWater(value, environment);
+  if (!water.ok) {
+    problems.push(water.error);
+    return undefined;
+  }
+  return water.water;
+}
+
+/** Dimensions réglées : trois nombres finis, contrôlés dans cet ordre. */
+const DIMENSION_RULES: readonly FieldRule[] = (['width', 'height', 'depth'] as const).map((key) =>
+  field(key, finiteNumber, `dimensions : ${key} doit être un nombre fini`),
+);
 
 /**
  * Dimensions réglées d'une sauvegarde : `undefined` si absentes ; sinon trois réels finis,
@@ -724,18 +694,16 @@ function parseDimensions(
     problems.push('dimensions doit être un objet');
     return undefined;
   }
-  const raw = {
-    width: own(value, 'width'),
-    height: own(value, 'height'),
-    depth: own(value, 'depth'),
-  };
-  for (const [key, v] of Object.entries(raw)) {
-    if (typeof v !== 'number' || !Number.isFinite(v)) {
-      problems.push(`dimensions : ${key} doit être un nombre fini`);
-      return undefined;
-    }
+  const problem = firstProblemOf(value, DIMENSION_RULES);
+  if (problem !== null) {
+    problems.push(problem);
+    return undefined;
   }
-  return clampTankDimensions(raw as unknown as TankDimensions);
+  return clampTankDimensions({
+    width: own(value, 'width') as number,
+    height: own(value, 'height') as number,
+    depth: own(value, 'depth') as number,
+  });
 }
 
 /**
@@ -764,402 +732,6 @@ function parseShape(
   return value;
 }
 
-/** Relit les réglages (communs aux schémas 1 et 2) ; `null` si un problème a été ajouté. */
-export function parseSettings(value: unknown, problems: string[]): SaveSettings | null {
-  if (!isRecord(value)) {
-    problems.push('settings doit être un objet');
-    return null;
-  }
-  const speed = own(value, 'speed');
-  const clockValue = own(value, 'clock');
-  const startHour = isRecord(clockValue) ? own(clockValue, 'startHour') : undefined;
-  const dayLength = isRecord(clockValue) ? own(clockValue, 'dayLengthSeconds') : undefined;
-  const frozen = isRecord(clockValue) ? own(clockValue, 'frozen') : undefined;
-  const foodStyle = own(value, 'foodStyle');
-  const settings = {
-    speed: speed as SimSpeed,
-    clock: { startHour, dayLengthSeconds: dayLength, frozen } as unknown as DayClock,
-    foodStyle: foodStyle as FoodStyle | undefined,
-  };
-  const found = settingsProblems(settings);
-  // Pièce (#187) : absente, masquée ; présente, validée et bornée (`readRoom`).
-  const roomValue = own(value, 'room');
-  const room =
-    roomValue === undefined ? { ok: true as const, room: DEFAULT_ROOM } : readRoom(roomValue);
-  if (!room.ok) {
-    problems.push(...found, room.error);
-    return null;
-  }
-  if (found.length > 0) {
-    problems.push(...found);
-    return null;
-  }
-  return {
-    speed: settings.speed,
-    clock: createDayClock(
-      settings.clock.startHour,
-      settings.clock.dayLengthSeconds,
-      settings.clock.frozen,
-    ),
-    foodStyle: settings.foodStyle ?? DEFAULT_FOOD_STYLE,
-    // Éléments relus reposés et chevauchements écartés (#200, cas 2).
-    room: tidyRoom(room.room),
-  };
-}
-
-function settingsProblems(settings: SaveSettings): string[] {
-  const problems: string[] = [];
-  if (typeof settings.speed !== 'number' || !isSimSpeed(settings.speed)) {
-    problems.push(`vitesse inconnue (${describe(settings.speed)})`);
-  }
-  const clock: unknown = settings.clock;
-  if (!isRecord(clock)) {
-    problems.push('horloge absente');
-    return problems;
-  }
-  if (!isNumberIn(clock['startHour'], 0, HOURS_PER_DAY) || clock['startHour'] === HOURS_PER_DAY) {
-    problems.push('heure de l’horloge hors de [0, 24)');
-  }
-  if (!isNumberIn(clock['dayLengthSeconds'], MIN_DAY_LENGTH_SECONDS, MAX_DAY_LENGTH_SECONDS)) {
-    problems.push(
-      `durée de la journée hors de [${MIN_DAY_LENGTH_SECONDS}, ${MAX_DAY_LENGTH_SECONDS}] s`,
-    );
-  }
-  if (typeof clock['frozen'] !== 'boolean') {
-    problems.push('horloge : frozen doit être un booléen');
-  }
-  if (settings.foodStyle !== undefined && !isFoodStyle(settings.foodStyle)) {
-    problems.push(`rendu des granulés inconnu (${describe(settings.foodStyle)})`);
-  }
-  if (settings.room !== undefined) {
-    const room = readRoom(settings.room);
-    if (!room.ok) {
-      problems.push(room.error);
-    }
-  }
-  return problems;
-}
-
-function parseFishList(
-  value: unknown,
-  environment: Place,
-  nextFishId: unknown,
-  problems: string[],
-  careMode: CareMode | undefined,
-): Entity[] {
-  if (!Array.isArray(value)) {
-    problems.push('fish doit être une liste');
-    return [];
-  }
-  if (value.length > MAX_TOTAL_FISH) {
-    problems.push(`trop de poissons (${value.length}, ${MAX_TOTAL_FISH} au plus)`);
-    return [];
-  }
-  const fishes: Entity[] = [];
-  const counts = new Map<SpeciesId, number>();
-  let previousId = -1;
-  value.forEach((item: unknown, i) => {
-    const fish = parseFish(item, environment, careMode, (p) =>
-      problems.push(`poisson ${i} : ${p}`),
-    );
-    if (fish === null) {
-      return;
-    }
-    if (fish.id <= previousId) {
-      problems.push(`poisson ${i} : identifiants non strictement croissants`);
-    }
-    if (typeof nextFishId === 'number' && fish.id >= nextFishId) {
-      problems.push(`poisson ${i} : identifiant ${fish.id} ≥ nextFishId`);
-    }
-    previousId = fish.id;
-    counts.set(fish.species, (counts.get(fish.species) ?? 0) + 1);
-    fishes.push(fish);
-  });
-  for (const [species, count] of counts) {
-    if (count > SPECIES[species].maxPopulation) {
-      problems.push(`trop de ${species} (${count}, ${SPECIES[species].maxPopulation} au plus)`);
-    }
-  }
-  return fishes;
-}
-
-function parseFish(
-  item: unknown,
-  environment: Place,
-  careMode: CareMode | undefined,
-  report: (problem: string) => void,
-): Entity | null {
-  if (!isRecord(item)) {
-    report('doit être un objet');
-    return null;
-  }
-  const id = own(item, 'id');
-  const species = own(item, 'species');
-  if (!isUint32(id)) {
-    report('id doit être un entier 32 bits non signé');
-    return null;
-  }
-  if (!isSpeciesId(species)) {
-    report(`espèce inconnue (${describe(species)})`);
-    return null;
-  }
-  const envId = placeEnvironment(environment);
-  if (!acceptsSavedSpecies(envId, careMode, species)) {
-    report(`l’espèce ${species} ne vit pas dans l’environnement ${envId}`);
-    return null;
-  }
-  const fish: Record<string, number | string> = { id, kind: 'fish', species };
-  for (const key of FISH_NUMBER_KEYS) {
-    const v = own(item, key);
-    if (typeof v !== 'number' || !Number.isFinite(v)) {
-      report(`${key} doit être un nombre fini`);
-      return null;
-    }
-    fish[key] = v;
-    if (key === 'hunger') {
-      // Santé (issue #208), juste après la faim (même ordre des champs qu'un poisson neuf) :
-      // facultative, une sauvegarde antérieure n'en a pas (animal en pleine santé) ;
-      // présente, nombre fini dans [plancher, 1].
-      const health = own(item, 'health');
-      if (health !== undefined && (typeof health !== 'number' || !Number.isFinite(health))) {
-        report('health doit être un nombre fini');
-        return null;
-      }
-      fish['health'] = health ?? HEALTH_START;
-    }
-  }
-  // Maladies (table `DISEASES`, issues #360, #485, #532, #548, #562) : facultatives, absentes
-  // pour un animal sain et dans toute sauvegarde antérieure ; présente, progression dans
-  // [0, max]. Ignorée (sauvegarde modifiée à la main) pour un animal qui ne l'attrape pas ici
-  // (#368).
-  for (const disease of DISEASES) {
-    const progress = own(item, disease.field);
-    if (progress === undefined) {
-      continue;
-    }
-    if (!disease.isProgress(progress)) {
-      report(`${disease.field} hors de [0, ${disease.max}]`);
-      return null;
-    }
-    if (disease.catches(species, envId)) {
-      fish[disease.field] = progress;
-    }
-  }
-  // Alevin (issue #459) : facultatif, absent pour un adulte et dans toute sauvegarde
-  // antérieure ; présent, âge dans [0, FRY_GROWTH_TIME), pour une espèce vivipare ou ovipare
-  // (alevin éclos d'un œuf, issue #478) seulement.
-  const growth = own(item, 'growth');
-  if (growth !== undefined) {
-    if (!hasFry(species) && !hatchesToFry(species)) {
-      report(`l’espèce ${species} n’a pas d’alevins`);
-      return null;
-    }
-    if (!isFryAge(growth)) {
-      report(`growth hors de [0, ${FRY_GROWTH_TIME}[`);
-      return null;
-    }
-    fish['growth'] = growth;
-  }
-  const f = fish as unknown as Fish;
-  const def = SPECIES[species];
-  const hard = boundsFor(species, environment).hard;
-  const checks: [boolean, string][] = [
-    [insideBox(hard, f.x, f.y, f.z), 'position hors de la zone de nage'],
-    [insideBox(hard, f.px, f.py, f.pz), 'position précédente hors de la zone de nage'],
-    [isNumberIn(f.yaw, -Math.PI, Math.PI, VALUE_EPSILON), 'yaw hors de [-π, π]'],
-    [isNumberIn(f.pyaw, -Math.PI, Math.PI, VALUE_EPSILON), 'pyaw hors de [-π, π]'],
-    [isNumberIn(f.pitch, -def.maxPitch, def.maxPitch, VALUE_EPSILON), 'pitch hors bornes'],
-    [isNumberIn(f.ppitch, -def.maxPitch, def.maxPitch, VALUE_EPSILON), 'ppitch hors bornes'],
-    [
-      isNumberIn(f.pitchTarget, -def.maxPitch, def.maxPitch, VALUE_EPSILON),
-      'pitchTarget hors bornes',
-    ],
-    [isNumberIn(f.speed, def.minSpeed, def.maxSpeed, VALUE_EPSILON), 'vitesse hors bornes'],
-    [
-      isNumberIn(f.turn, -def.wanderTurnRate, def.wanderTurnRate, VALUE_EPSILON),
-      'turn hors bornes',
-    ],
-    [isNumberIn(f.phase, 0, 2 * Math.PI), 'phase hors de [0, 2π]'],
-    [isNumberIn(f.pphase, 0, 2 * Math.PI), 'pphase hors de [0, 2π]'],
-    [isNumberIn(f.ascent, 0, MAX_DURATION_SECONDS), 'ascent hors bornes'],
-    [isNumberIn(f.hunger, 0, 1), 'hunger hors de [0, 1]'],
-    [isNumberIn(f.health, HEALTH_FLOOR, 1), 'health hors de [plancher, 1]'],
-    [isUint32(f.rng), 'rng doit être un entier 32 bits non signé'],
-  ];
-  for (const [ok, problem] of checks) {
-    if (!ok) {
-      report(problem);
-      return null;
-    }
-  }
-  return f;
-}
-
-function parseFoodList(
-  value: unknown,
-  environment: Place,
-  nextFoodId: unknown,
-  problems: string[],
-): FoodPellet[] {
-  if (!Array.isArray(value)) {
-    problems.push('food doit être une liste');
-    return [];
-  }
-  if (value.length > MAX_FOOD) {
-    problems.push(`trop de granulés (${value.length}, ${MAX_FOOD} au plus)`);
-    return [];
-  }
-  const water = environmentWater(environment);
-  const food: FoodPellet[] = [];
-  let previousId = -1;
-  value.forEach((item: unknown, i) => {
-    const report = (p: string) => problems.push(`granulé ${i} : ${p}`);
-    if (!isRecord(item)) {
-      report('doit être un objet');
-      return;
-    }
-    const pellet: Record<string, number> = {};
-    for (const key of FOOD_NUMBER_KEYS) {
-      const v = own(item, key);
-      if (typeof v !== 'number' || !Number.isFinite(v)) {
-        report(`${key} doit être un nombre fini`);
-        return;
-      }
-      pellet[key] = v;
-    }
-    const p = pellet as unknown as FoodPellet;
-    const checks: [boolean, string][] = [
-      [isIntegerIn(p.id, 0, Number.MAX_SAFE_INTEGER), 'id doit être un entier positif ou nul'],
-      [p.id > previousId, 'identifiants non strictement croissants'],
-      [typeof nextFoodId !== 'number' || p.id < nextFoodId, `identifiant ${p.id} ≥ nextFoodId`],
-      [insideBox(water, p.x, p.y, p.z), 'position hors de l’eau'],
-      [isNumberIn(p.floatY, water.minY, water.maxY), 'floatY hors de l’eau'],
-      [isNumberIn(p.restY, water.minY, p.floatY), 'restY hors de [fond, floatY]'],
-      [isNumberIn(p.vy, -FOOD_SINK_SPEED, 0), 'vy hors bornes'],
-      [isNumberIn(p.age, 0, MAX_DURATION_SECONDS), 'age hors bornes'],
-      [
-        isNumberIn(p.floatTime, FOOD_MIN_FLOAT_SECONDS, FOOD_MAX_FLOAT_SECONDS),
-        'floatTime hors bornes',
-      ],
-    ];
-    for (const [ok, problem] of checks) {
-      if (!ok) {
-        report(problem);
-        return;
-      }
-    }
-    previousId = p.id;
-    food.push(p);
-  });
-  return food;
-}
-
-/**
- * Œufs d'une sauvegarde (issue #478) : absents, aucun ; présents, une liste d'au plus
- * `MAX_EGGS` œufs d'une espèce ovipare, dans l'eau, d'âge dans [0, `EGG_HATCH_TIME`), sur une
- * surface connue. Seuls les champs connus sont copiés.
- */
-function parseEggList(value: unknown, place: Place, problems: string[]): Egg[] {
-  if (value === undefined) {
-    return [];
-  }
-  if (!Array.isArray(value)) {
-    problems.push('eggs doit être une liste');
-    return [];
-  }
-  if (value.length > MAX_EGGS) {
-    problems.push(`trop d’œufs (${value.length}, ${MAX_EGGS} au plus)`);
-    return [];
-  }
-  const water = environmentWater(place);
-  const eggs: Egg[] = [];
-  value.forEach((item: unknown, i) => {
-    const report = (p: string) => problems.push(`œuf ${i} : ${p}`);
-    if (!isRecord(item)) {
-      report('doit être un objet');
-      return;
-    }
-    const species = own(item, 'species');
-    if (!isSpeciesId(species) || !laysEggs(species)) {
-      report(`espèce sans œufs (${describe(species)})`);
-      return;
-    }
-    const x = own(item, 'x');
-    const y = own(item, 'y');
-    const z = own(item, 'z');
-    if (
-      typeof x !== 'number' ||
-      typeof y !== 'number' ||
-      typeof z !== 'number' ||
-      !insideBox(water, x, y, z)
-    ) {
-      report('position hors de l’eau');
-      return;
-    }
-    const age = own(item, 'age');
-    if (!isEggAge(age)) {
-      report(`age hors de [0, ${EGG_HATCH_TIME}[`);
-      return;
-    }
-    const surface = own(item, 'surface');
-    if (!EGG_SURFACES.includes(surface as EggSurface)) {
-      report(`surface inconnue (${describe(surface)})`);
-      return;
-    }
-    eggs.push({ species, x, y, z, age, surface: surface as EggSurface });
-  });
-  return eggs;
-}
-
 function failure(error: string): ParseWorldResult {
   return { ok: false, error };
-}
-
-/** Objet JSON (ni tableau ni `null`). */
-export function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-/**
- * Propriété propre seulement : les clés héritées (`constructor`, `__proto__`…) valent
- * `undefined`.
- */
-export function own(record: Record<string, unknown>, key: string): unknown {
-  return Object.hasOwn(record, key) ? record[key] : undefined;
-}
-
-function isNumberIn(value: unknown, min: number, max: number, epsilon = 0): value is number {
-  return (
-    typeof value === 'number' &&
-    Number.isFinite(value) &&
-    value >= min - epsilon &&
-    value <= max + epsilon
-  );
-}
-
-export function isIntegerIn(value: unknown, min: number, max: number): value is number {
-  return typeof value === 'number' && Number.isInteger(value) && value >= min && value <= max;
-}
-
-export function isUint32(value: unknown): value is number {
-  return isIntegerIn(value, 0, MAX_SEED);
-}
-
-function insideBox(box: Box3, x: number, y: number, z: number): boolean {
-  return (
-    isNumberIn(x, box.minX, box.maxX, POSITION_EPSILON) &&
-    isNumberIn(y, box.minY, box.maxY, POSITION_EPSILON) &&
-    isNumberIn(z, box.minZ, box.maxZ, POSITION_EPSILON)
-  );
-}
-
-/** Description courte d'une valeur reçue, pour les messages (jamais le texte entier). */
-export function describe(value: unknown): string {
-  if (typeof value === 'string') {
-    return `« ${value.slice(0, 20)}${value.length > 20 ? '…' : ''} »`;
-  }
-  if (typeof value === 'number' || typeof value === 'boolean') {
-    return String(value);
-  }
-  return value === undefined ? 'absente' : typeof value;
 }
