@@ -8759,10 +8759,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-18T00:14:44.859Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-18T00:15:25.952Z",
+          "note": "Issue #687 : lot 1/13 assainissement, types du monde et cycles d'import (M) ; Dev corrige d'abord #700"
         }
       },
       "metriques": {}
