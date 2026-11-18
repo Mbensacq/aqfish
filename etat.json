@@ -8849,10 +8849,10 @@
           "note": "Verdict OK, 0 bug, captures publiées (166/166 identiques, 1 instabilité 13 px connue), unitaires/lint/build verts, e2e laissés à la CI, mutation non mesurée (trop long)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-18T05:44:24.523Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-18T06:07:21.198Z",
+          "note": "PR #710 fusionnée → v1.23.6 (release CI OK, main verte) ; dette #711 ; suppression de branche refusée"
         }
       },
       "metriques": {}
