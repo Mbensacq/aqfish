@@ -9011,10 +9011,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-18T12:45:54.034Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-18T12:46:17.637Z",
+          "note": "Issue #694 : lot 8/13 assainissement, séance d'entretien dans un contrôleur (M)"
         }
       },
       "metriques": {}
