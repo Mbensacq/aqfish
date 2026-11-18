@@ -8921,10 +8921,10 @@
           "note": "Verdict OK, 0 bug, captures publiées (166/166 identiques, 1 instabilité 13 px connue), unitaires/lint/build verts, CI e2e verte"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-18T08:46:18.491Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-18T09:11:43.564Z",
+          "note": "PR #716 fusionnée → v1.24.0 (release CI OK) ; main verte ; dette suivie par #717"
         }
       },
       "metriques": {}
