@@ -8813,10 +8813,10 @@
           "note": "Verdict OK, 0 bug, captures publiées (165/167 identiques ; 2 écarts hors PR : dérive #700 et flou 13 px), unitaires/lint verts, e2e laissés à la CI"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-18T03:42:16.211Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-18T04:06:31.831Z",
+          "note": "PR #708 fusionnée → v1.23.5 (release CI OK, main verte) ; dette #709 ; suppression de branche refusée"
         }
       },
       "metriques": {}
