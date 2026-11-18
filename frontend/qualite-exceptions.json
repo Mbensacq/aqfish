@@ -167,8 +167,6 @@
     "complexity": 24
   },
   "sim/swimmer.ts": {
-    "max-lines-per-function": 219,
-    "complexity": 54,
     "max-params": 11
   },
   "sim/tank-transfer.ts": {
