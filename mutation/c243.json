@@ -1,0 +1,1 @@
+{"score": null, "survivants": null, "note": "non mesuré par QA c243 : 26047 mutants sur 120 fichiers, essai à blanc non terminé en 9 min. Piste : --mutate ciblé sur les fichiers de la PR (stepFish, stepWalker)."}
