@@ -9047,10 +9047,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-18T23:42:01.595Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-18T23:42:27.497Z",
+          "note": "Issue #695 : lot 9/13 assainissement, éditeurs du décor et de la pièce dans des contrôleurs (M)"
         }
       },
       "metriques": {}
