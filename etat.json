@@ -8777,10 +8777,10 @@
           "note": "Verdict OK, 0 bug, captures complètes publiées (167, identiques au pixel près), tests unitaires/build verts, e2e laissés à la CI"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-18T01:19:08.342Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-18T01:54:00.302Z",
+          "note": "#700 fusionnée → v1.23.3 et #706 fusionnée → v1.23.4 (releases CI OK, main verte) ; dette #707 ; suppression de branche refusée"
         }
       },
       "metriques": {}
