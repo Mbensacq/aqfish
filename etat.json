@@ -8795,10 +8795,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-18T01:54:30.864Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-18T01:54:53.652Z",
+          "note": "Issue #688 : lot 2/13 assainissement, stepInPlace découpé en étapes (M)"
         }
       },
       "metriques": {}
