@@ -8769,6 +8769,12 @@
           "debut": "2026-11-18T00:15:59.835Z",
           "fin": "2026-11-18T00:56:27.348Z",
           "note": "PR #706 : types du monde hors de world.ts, 0 cycle d'exécution, SCC 60→22, CI verte ; #700 corrigée (world-lily-pads.ts, v1.23.3, CI verte, a-corriger retirée) ; conflit attendu entre #700 et #706 sur l'exception de world.ts ; pied d'attribution réinjecté sur la PR par l'environnement"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-18T00:56:56.850Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
