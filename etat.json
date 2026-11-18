@@ -8826,7 +8826,7 @@
       "date": "2026-11-18",
       "debut": "2026-11-18T04:07:00.853Z",
       "type": "dette",
-      "issue": null,
+      "issue": 689,
       "pr": null,
       "version": null,
       "phases": {
