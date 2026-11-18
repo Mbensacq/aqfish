@@ -12,7 +12,7 @@ import { createFish, random, savePrevious, wrapAngle, type Fish, type SwimBounds
 import type { Box3 } from './tank';
 import { terrainHeightAt, type TerrainSettings } from './terrain';
 import { tailBeatRate } from './undulation';
-import { vigor } from './wellbeing';
+import { vigor } from './health-scale';
 
 /**
  * Déplacement des espèces qui vivent sur le fond (axolotl, issue #130) : à la place de la

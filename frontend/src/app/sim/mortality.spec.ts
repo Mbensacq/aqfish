@@ -25,7 +25,8 @@ import {
 import { parseWorld, serializeWorld } from './save';
 import { SPECIES } from './species';
 import { freshWater, waterLoad } from './water';
-import { HEALTH_FLOOR, STARVING_HUNGER } from './wellbeing';
+import { STARVING_HUNGER } from './wellbeing';
+import { HEALTH_FLOOR } from './health-scale';
 import {
   advanceInPlace,
   cloneWorld,

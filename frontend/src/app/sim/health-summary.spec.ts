@@ -15,7 +15,8 @@ import {
   WEAK_HEALTH,
   type HealthSubject,
 } from './health-summary';
-import { HEALTH_FLOOR, STARVING_HUNGER } from './wellbeing';
+import { STARVING_HUNGER } from './wellbeing';
+import { HEALTH_FLOOR } from './health-scale';
 import { createDefaultWorld, starveWorld } from './world';
 
 function animal(health: number, hunger = 0.5, species: SpeciesId = 'neon'): HealthSubject {

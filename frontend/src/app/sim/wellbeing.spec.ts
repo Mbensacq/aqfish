@@ -9,20 +9,16 @@ import { freshWater } from './water';
 import { FRESH_PH } from './water-ph';
 import { sampleWater } from './water-quality';
 import {
-  dullness,
   feedsOnPellets,
   HEALTH_DECAY_RATE,
-  HEALTH_FLOOR,
   HEALTH_RECOVERY_RATE,
-  HEALTH_SLOWDOWN,
-  HEALTH_START,
   healthStress,
   PH_STRESS,
   STARVING_HUNGER,
   stepHealth,
   stepWellbeingInPlace,
-  vigor,
 } from './wellbeing';
+import { dullness, HEALTH_FLOOR, HEALTH_SLOWDOWN, HEALTH_START, vigor } from './health-scale';
 import {
   advance,
   advanceInPlace,
