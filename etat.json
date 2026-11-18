@@ -8885,10 +8885,10 @@
           "note": "Verdict OK, 0 bug, captures publiées (166/166 identiques, 1 instabilité 13 px connue), unitaires/lint/build verts, e2e CI verts"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-18T07:00:05.986Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-18T07:27:46.848Z",
+          "note": "PR #714 fusionnée → v1.23.7 (release CI OK) ; PR #713 roadmap fusionnée ; main verte (CI de 6b2706f annulée par concurrence, a9fa497 verte) ; dette #715 ; suppression de branche refusée"
         }
       },
       "metriques": {}
