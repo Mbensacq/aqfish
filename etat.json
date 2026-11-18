@@ -8907,6 +8907,12 @@
           "debut": "2026-11-18T07:28:24.639Z",
           "fin": "2026-11-18T07:28:50.646Z",
           "note": "Issue #691 : lot 5/13 assainissement, validation des sauvegardes par schéma déclaratif (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-18T07:29:20.662Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
