@@ -405,61 +405,27 @@ export function dropRoomItem(
   obstacles: readonly Footprint[] = [],
 ): RoomDropResult {
   const items = room.items ?? [];
-  if (replace === undefined && items.length >= MAX_ROOM_ITEMS) {
-    return { ok: false, reason: 'plein' };
-  }
-  if (
-    replace !== undefined &&
-    !(Number.isInteger(replace) && replace >= 0 && replace < items.length)
-  ) {
-    return { ok: false, reason: 'introuvable' };
-  }
-  if (!Number.isFinite(request.x) || !Number.isFinite(request.z)) {
-    return { ok: false, reason: 'hors-piece' };
-  }
   const candidate: RoomItem = {
     kind: request.kind,
     x: snap(request.x),
     z: snap(request.z),
     quarter: request.quarter,
   };
-  const box = roomItemBox(candidate);
-  const bounds = roomArea(dims);
-  if (
-    box.minX < bounds.minX - EPS ||
-    box.maxX > bounds.maxX + EPS ||
-    box.minZ < bounds.minZ - EPS ||
-    box.maxZ > bounds.maxZ + EPS
-  ) {
-    return { ok: false, reason: 'hors-piece' };
-  }
-  if (footprintsOverlap(box, bounds.cabinet)) {
-    return { ok: false, reason: 'meuble-bac' };
-  }
-  if (footprintsOverlap(box, bounds.door)) {
-    return { ok: false, reason: 'porte' };
-  }
-  if (obstacles.some((o) => footprintsOverlap(box, o))) {
-    return { ok: false, reason: 'meuble-support' };
+  const refusal =
+    requestRefusal(items, request, replace) ??
+    footprintRefusal(roomItemBox(candidate), dims, obstacles);
+  if (refusal !== null) {
+    return { ok: false, reason: refusal };
   }
   // Ce que portait l'élément remplacé ne l'arrête pas : il retombe ensuite sur sa nouvelle
   // pose, ou plus bas (rotation sur place : une plante posée sur l'étagère y reste).
   const carried = replace === undefined ? new Set<number>() : carriedBy(items, replace);
-  const others = items.filter((_, i) => i !== replace && !carried.has(i));
-  const { elevation, support } = landing(box, others, Number.POSITIVE_INFINITY);
-  if (support && !ROOM_CATALOG[support.kind].supports) {
-    return { ok: false, reason: 'sur-plante' };
-  }
-  const { cabinetHeight } = clampRoom(room);
-  const top = elevation + ROOM_CATALOG[candidate.kind].height / 100;
-  // Dessus borné sous les poutres (#336) : une pile ne monte jamais dans le plafond.
-  if (top > cabinetHeight + roomInterior(dims).beamY + EPS) {
-    return { ok: false, reason: 'trop-haut' };
-  }
-  const placed = atElevation(candidate, elevation);
-  const placedBox = roomItemBox(placed);
-  if ([...carried].some((i) => boxesOverlap(placedBox, roomItemBox(items[i])))) {
-    return { ok: false, reason: 'chevauche' };
+  const placed = landedItem(room, dims, candidate, {
+    others: items.filter((_, i) => i !== replace && !carried.has(i)),
+    carried: [...carried].map((i) => items[i]!),
+  });
+  if (typeof placed === 'string') {
+    return { ok: false, reason: placed };
   }
   const next =
     replace === undefined
@@ -472,6 +438,90 @@ export function dropRoomItem(
     return { ok: false, reason: 'en-l-air' };
   }
   return { ok: true, items: settled, index: replace ?? next.length - 1 };
+}
+
+/** Refus de la demande elle-même : pièce pleine, indice inconnu, centre non fini. */
+function requestRefusal(
+  items: readonly RoomItem[],
+  request: RoomDropRequest,
+  replace: number | undefined,
+): RoomDropRefusal | null {
+  if (replace === undefined && items.length >= MAX_ROOM_ITEMS) {
+    return 'plein';
+  }
+  if (
+    replace !== undefined &&
+    !(Number.isInteger(replace) && replace >= 0 && replace < items.length)
+  ) {
+    return 'introuvable';
+  }
+  if (!Number.isFinite(request.x) || !Number.isFinite(request.z)) {
+    return 'hors-piece';
+  }
+  return null;
+}
+
+/**
+ * Refus de l'emprise au sol : hors de la pièce (au-delà des marges), sur le meuble du bac,
+ * devant la porte, sur un meuble support ou un bac posé (`obstacles`).
+ */
+function footprintRefusal(
+  box: Footprint,
+  dims: TankDimensions,
+  obstacles: readonly Footprint[],
+): RoomDropRefusal | null {
+  const bounds = roomArea(dims);
+  if (
+    box.minX < bounds.minX - EPS ||
+    box.maxX > bounds.maxX + EPS ||
+    box.minZ < bounds.minZ - EPS ||
+    box.maxZ > bounds.maxZ + EPS
+  ) {
+    return 'hors-piece';
+  }
+  if (footprintsOverlap(box, bounds.cabinet)) {
+    return 'meuble-bac';
+  }
+  if (footprintsOverlap(box, bounds.door)) {
+    return 'porte';
+  }
+  if (obstacles.some((o) => footprintsOverlap(box, o))) {
+    return 'meuble-support';
+  }
+  return null;
+}
+
+/**
+ * Élément `candidate` tombé sur le parquet ou sur le plus haut des éléments `others` que son
+ * emprise chevauche, ou refus : pose sur une plante, dessus plus haut que le dessous des
+ * poutres (#336), chevauchement d'un élément qu'il portait (`carried`).
+ */
+function landedItem(
+  room: Room,
+  dims: TankDimensions,
+  candidate: RoomItem,
+  stack: { readonly others: readonly RoomItem[]; readonly carried: readonly RoomItem[] },
+): RoomItem | RoomDropRefusal {
+  const { elevation, support } = landing(
+    roomItemBox(candidate),
+    stack.others,
+    Number.POSITIVE_INFINITY,
+  );
+  if (support && !ROOM_CATALOG[support.kind].supports) {
+    return 'sur-plante';
+  }
+  const { cabinetHeight } = clampRoom(room);
+  const top = elevation + ROOM_CATALOG[candidate.kind].height / 100;
+  // Dessus borné sous les poutres (#336) : une pile ne monte jamais dans le plafond.
+  if (top > cabinetHeight + roomInterior(dims).beamY + EPS) {
+    return 'trop-haut';
+  }
+  const placed = atElevation(candidate, elevation);
+  const placedBox = roomItemBox(placed);
+  if (stack.carried.some((item) => boxesOverlap(placedBox, roomItemBox(item)))) {
+    return 'chevauche';
+  }
+  return placed;
 }
 
 /**

@@ -268,6 +268,31 @@ const isStep = (value: unknown): value is CareSessionStep =>
  * avant #623) : aucune coupe. Ne lève jamais.
  */
 export function readCareSession(text: string | null): CareSession | null {
+  const record = parseRecord(text);
+  if (record === null || !isStep(record.step)) {
+    return null;
+  }
+  const outcomes = readOutcomes(record.outcomes, record.step);
+  if (outcomes === null || !hasValidExtras(record)) {
+    return null;
+  }
+  // Champs facultatifs vérifiés par `hasValidExtras`.
+  const { siphoned, poured, rinse, cuts } = record as Partial<CareSession>;
+  return {
+    step: record.step,
+    outcomes,
+    ...(siphoned === undefined ? {} : { siphoned }),
+    ...(poured === undefined ? {} : { poured }),
+    ...(rinse === undefined ? {} : { rinse }),
+    ...(cuts === undefined ? {} : { cuts }),
+  };
+}
+
+/** Champs d'une séance enregistrée, encore à valider. */
+type CareSessionRecord = Partial<Record<keyof CareSession, unknown>>;
+
+/** Objet JSON (ou liste) décodé de `text`, `null` si absent ou illisible. */
+function parseRecord(text: string | null): CareSessionRecord | null {
   if (text === null) {
     return null;
   }
@@ -277,53 +302,43 @@ export function readCareSession(text: string | null): CareSession | null {
   } catch {
     return null;
   }
-  const record = value as {
-    step?: unknown;
-    outcomes?: unknown;
-    siphoned?: unknown;
-    poured?: unknown;
-    rinse?: unknown;
-    cuts?: unknown;
-  } | null;
-  if (typeof record !== 'object' || record === null || !isStep(record.step)) {
-    return null;
-  }
-  const outcomes = record.outcomes;
+  // Les champs restent `unknown` : chacun est vérifié par l'appelant.
+  return typeof value === 'object' ? (value as CareSessionRecord | null) : null;
+}
+
+/** Issues des étapes passées avant `step` (`fait` ou `saute`), `null` si une est invalide. */
+function readOutcomes(
+  outcomes: unknown,
+  step: CareSessionStep,
+): Partial<Record<CareSessionTaskStep, CareStepOutcome>> | null {
   if (typeof outcomes !== 'object' || outcomes === null || Array.isArray(outcomes)) {
     return null;
   }
-  const current = CARE_SESSION_STEPS.indexOf(record.step);
+  const current = CARE_SESSION_STEPS.indexOf(step);
   const read: Partial<Record<CareSessionTaskStep, CareStepOutcome>> = {};
-  for (const [step, outcome] of Object.entries(outcomes as Record<string, unknown>)) {
+  for (const [past, outcome] of Object.entries(outcomes as Record<string, unknown>)) {
     if (
-      !isStep(step) ||
-      step === 'bilan' ||
-      CARE_SESSION_STEPS.indexOf(step) >= current ||
+      !isStep(past) ||
+      past === 'bilan' ||
+      CARE_SESSION_STEPS.indexOf(past) >= current ||
       (outcome !== 'fait' && outcome !== 'saute')
     ) {
       return null;
     }
-    read[step] = outcome;
+    read[past] = outcome;
   }
-  const { siphoned, poured, rinse, cuts } = record;
-  if (cuts !== undefined && !isCuts(cuts)) {
-    return null;
-  }
-  if (rinse !== undefined && !isFilterRinseWater(rinse)) {
-    return null;
-  }
-  if (siphoned !== undefined && !isShare(siphoned, MAX_SIPHON_SHARE)) {
-    return null;
-  }
-  if (poured !== undefined && !isShare(poured, typeof siphoned === 'number' ? siphoned : 0)) {
-    return null;
-  }
-  return {
-    step: record.step,
-    outcomes: read,
-    ...(siphoned === undefined ? {} : { siphoned }),
-    ...(poured === undefined ? {} : { poured }),
-    ...(rinse === undefined ? {} : { rinse }),
-    ...(cuts === undefined ? {} : { cuts }),
-  };
+  return read;
+}
+
+/**
+ * Vrai si les champs facultatifs sont absents ou dans leurs bornes : coupes, eau de rinçage,
+ * part retirée (au plus `MAX_SIPHON_SHARE`), part versée (au plus la part retirée).
+ */
+function hasValidExtras({ siphoned, poured, rinse, cuts }: CareSessionRecord): boolean {
+  return (
+    (cuts === undefined || isCuts(cuts)) &&
+    (rinse === undefined || isFilterRinseWater(rinse)) &&
+    (siphoned === undefined || isShare(siphoned, MAX_SIPHON_SHARE)) &&
+    (poured === undefined || isShare(poured, typeof siphoned === 'number' ? siphoned : 0))
+  );
 }
