@@ -9007,7 +9007,7 @@
       "debut": "2026-11-18T12:45:54.034Z",
       "type": "fonctionnalite",
       "issue": 694,
-      "pr": null,
+      "pr": 720,
       "version": null,
       "phases": {
         "planif": {
