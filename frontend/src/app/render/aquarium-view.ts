@@ -1728,16 +1728,17 @@ export class AquariumView {
       return true;
     }
     this.renderPixelScene();
+    this.renderPalette();
     this.renderer.setRenderTarget(null);
-    this.renderer.render(this.pixelPass.scene, this.pixelPass.camera);
+    this.renderer.render(this.pixelPass.upscaleScene, this.pixelPass.camera);
     return true;
   }
 
   /**
    * Photo du bac (#479, ADR 0112) : rend la vue courante dans la cible basse résolution, la
-   * ramène à la palette dans une cible de même taille (un pixel par pixel de scène, sans
-   * lissage) et relit ses pixels, lignes de bas en haut (`render/photo-capture.ts` les
-   * agrandit et les retourne). Toujours en pixel art, quel que soit le filtre affiché.
+   * ramène à la palette (un pixel par pixel de scène, sans lissage, ADR 0151) et relit ses
+   * pixels, lignes de bas en haut (`render/photo-capture.ts` les agrandit et les retourne).
+   * Toujours en pixel art, quel que soit le filtre affiché.
    * Rien n'est dessiné à l'écran et ni le monde ni l'horloge n'avancent ; la relecture suit
    * le rendu dans le même appel (la cible ne dépend pas de `preserveDrawingBuffer`).
    * Renvoie `null` si la vue est libérée, sans taille, ou si le renderer ne sait pas relire.
@@ -1747,35 +1748,28 @@ export class AquariumView {
       return null;
     }
     this.prepareFrame();
-    const target = this.pixelPass.photoTarget();
-    const previousScale = this.pixelPass.setPixelScale(1);
-    // Une erreur du rendu ou de la relecture (#503) ne doit laisser ni la passe palette à
-    // l'échelle 1 ni la cible de la photo branchée : l'image suivante serait faussée.
+    // Une erreur du rendu ou de la relecture (#503) ne doit pas laisser une cible branchée :
+    // l'image suivante serait dessinée hors de l'écran.
     try {
       this.renderPixelScene();
-      this.renderer.setRenderTarget(target);
-      this.renderer.render(this.pixelPass.scene, this.pixelPass.camera);
+      this.renderPalette();
       const { width, height } = this.targetSize;
       const data = new Uint8Array(width * height * 4);
-      this.renderer.readRenderTargetPixels(target, 0, 0, width, height, data);
+      this.renderer.readRenderTargetPixels(this.pixelPass.paletteTarget, 0, 0, width, height, data);
       return { width, height, data };
     } finally {
       this.renderer.setRenderTarget(null);
-      this.pixelPass.setPixelScale(previousScale);
     }
   }
 
   /** Réglages de la scène qui dépendent de la caméra, communs à l'image et à la photo. */
   private prepareFrame(): void {
+    const { x, y, z } = this.camera.position;
     // Bassin enterré (#105) : coupe du sol et de la margelle si la caméra passe sous le sol.
-    this.world.setViewpoint(this.camera.position.x, this.camera.position.y, this.camera.position.z);
+    this.world.setViewpoint(x, y, z);
     // Pièce (#187, #324) : rien ne cache le bac, la caméra passât-elle sous le bac ou hors de
     // la pièce (chaque mur franchi et le plafond sont masqués).
-    this.roomLayer.setViewpoint(
-      this.camera.position.x,
-      this.camera.position.y,
-      this.camera.position.z,
-    );
+    this.roomLayer.setViewpoint(x, y, z);
     // Taille des granulés selon le zoom (#117) : échelle à la distance de la cible.
     this.foodLayer.setPixelsPerMeter(
       scenePixelsPerMeter(
@@ -1786,9 +1780,9 @@ export class AquariumView {
     );
     // Œufs (#501) : au moins `EGG_MIN_PIXELS` pixels de scène, même loin de la caméra.
     this.eggLayer.setViewpoint(
-      this.camera.position.x,
-      this.camera.position.y,
-      this.camera.position.z,
+      x,
+      y,
+      z,
       scenePixelsPerMeter(1, this.camera.fov, this.targetSize.height),
     );
     // Ronds de pluie vus de biais (#125) : rond extérieur seul, plus clair.
@@ -1805,6 +1799,12 @@ export class AquariumView {
     this.foodLayer.setPointScale(1);
     this.renderer.setRenderTarget(this.pixelPass.target);
     this.renderer.render(this.world.scene, this.camera);
+  }
+
+  /** Ramène l'image de la cible basse résolution à la palette, dans `paletteTarget`. */
+  private renderPalette(): void {
+    this.renderer.setRenderTarget(this.pixelPass.paletteTarget);
+    this.renderer.render(this.pixelPass.scene, this.pixelPass.camera);
   }
 
   /** Vrai en caméra libre (#343). */

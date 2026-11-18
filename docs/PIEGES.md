@@ -36,6 +36,18 @@ haut de sa section.
   `test.use({ hasTouch: true })`, Chromium en tire `pointerdown` / `pointerup` de type `touch`,
   donc `onCanvasClick` (sécateur, raclette au clic) ; la session CDP (`swipeTouch`) n'est utile
   que pour un glissé. (2026-11-15)
+- **CI e2e : lenteur venue du rendu, pas des tests** (2026-11-17, ADR 0151, #686) : en rendu
+  logiciel (SwiftShader), l'application tournait à 2 images par seconde en 1280 × 720 et
+  chaque action de Playwright attendait la fin d'une image (~7 s par clic). La profilation
+  du fil principal montrait < 1 % de JavaScript : tout le temps était dans la passe palette,
+  faite par pixel d'affichage. Elle est désormais faite par pixel de scène (11,6 images par
+  seconde, clic ~1,3 s, image identique). Avant d'accuser un test lent, mesurer la cadence
+  (`requestAnimationFrame` sur 5 s) et profiler (`Profiler` de CDP) : un coût de rendu
+  ralentit **tous** les tests. Autre gain : la CI construit l'application une seule fois
+  (`build-e2e`, configuration de développement pour garder les contrôles d'Angular) et chaque
+  part la sert avec `scripts/servir-dist.mjs` (`E2E_DIST`) au lieu de lancer `ng serve`.
+  Après ce changement, remesurer `e2e/durees.json` (`--mesurer`) puis abaisser le délai des
+  parts dans `.github/workflows/ci.yml` (zone protégée).
 - **Part e2e de la CI au plafond de 45 min : un fichier grossi en silence, `e2e/durees.json`
   périmé** (cycle 219, #600) : `cadrage-panneaux.spec.ts` comptait 370 s dans `durees.json` mais
   prenait 18 à 31 min en CI (81 tests, chacun recharge la scène, 6 à 47 s) ; la part qui le

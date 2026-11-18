@@ -23,6 +23,7 @@ Documents de référence, à lire selon le besoin :
 | `docs/ROADMAP.md` | Sprints, versions, épopées, backlog |
 | `docs/adr/` | Décisions d'architecture (une par fichier, numérotées) |
 | `docs/PIEGES.md` | Pièges connus et contournements : **à lire avant de coder**, à compléter |
+| `docs/CONVENTIONS.md` | Conventions de code, limites de taille et de complexité, tests, refactorisation sans régression : **à lire avant de coder** |
 | `.agents/prompts/<rôle>.md` | Consignes détaillées de chaque rôle |
 | `.agents/outils/etat.mjs` | Outil d'état partagé (contexte, tour de rôle, phases, publication) |
 | `.agents/outils/github-rest.md` | Opérations GitHub en REST (GraphQL indisponible) |
@@ -156,7 +157,7 @@ besoin (voir `docs/adr/0004-backend-nestjs.md`) : ne pas créer `backend/` avant
   Angular 22 exige Node ≥ 22.22.3, or l'environnement des agents a Node 22.22.0 : ne pas
   monter de version majeure d'Angular sans ADR.
 - **Three.js** (r186) pour la 3D. **Vitest** (via `ng test`) pour les tests unitaires,
-  **Playwright 1.56** pour le bout en bout et les captures.
+  **Playwright 1.63** pour le bout en bout et les captures.
 - Tout se lance depuis `frontend/` :
 
 | Commande | Rôle |
@@ -165,6 +166,7 @@ besoin (voir `docs/adr/0004-backend-nestjs.md`) : ne pas créer `backend/` avant
 | `npm run verify` | Formatage + lint + tests unitaires + build + e2e : **doit passer avant toute PR** |
 | `npm run test:coverage` | Tests unitaires avec couverture |
 | `npm run captures` | Captures sous 5 angles (variable `CAPTURE_DIR` pour la destination) |
+| `npm run qualite:bilan` | Exceptions de qualité restantes (`-- --ecrire` pour abaisser celles qui peuvent l'être) |
 | `npm run format` | Formater avec Prettier |
 
 - Ajouter une dépendance : `npm install <paquet>@<version exacte>`. Si npm échoue avec
@@ -268,6 +270,10 @@ Une fonctionnalité est terminée quand :
    jour si la structure change.
 6. Aucun test n'a été supprimé, désactivé (`skip`, `only`) ou affaibli pour faire passer la
    CI. Si un test est faux, le corriger dans un commit séparé expliqué dans la PR.
+7. Le code respecte `docs/CONVENTIONS.md` : limites vérifiées par le lint, aucune exception
+   ajoutée à `qualite-exceptions.json`, aucun cycle d'import ; les empreintes de
+   non-régression (`sim/non-regression.spec.ts`) ne changent que pour un changement de
+   comportement voulu, expliqué dans la PR.
 
 ## Mémoire de l'équipe
 
