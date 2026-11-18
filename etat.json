@@ -8837,10 +8837,10 @@
           "note": "Issue #689 : lot 3/13 assainissement, stepFish et stepWalker découpés (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-18T04:08:11.416Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-18T05:02:07.187Z",
+          "note": "PR #710 : stepFish et stepWalker en étapes (complexité max 10, 56 lignes), caractérisation 27 espèces × 10 000 pas au bit près, exceptions abaissées, captures 73/73 identiques, CI verte"
         }
       },
       "metriques": {}
