@@ -8899,7 +8899,7 @@
       "debut": "2026-11-18T07:28:24.639Z",
       "type": "fonctionnalite",
       "issue": 691,
-      "pr": null,
+      "pr": 716,
       "version": null,
       "phases": {
         "planif": {
