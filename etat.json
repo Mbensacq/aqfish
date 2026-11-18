@@ -8871,6 +8871,12 @@
           "debut": "2026-11-18T06:07:51.371Z",
           "fin": "2026-11-18T06:08:57.849Z",
           "note": "Issue #690 : lot 4/13 assainissement, readWater et healthSummary (S) ; rétro #712, PR roadmap"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-18T06:09:30.889Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
