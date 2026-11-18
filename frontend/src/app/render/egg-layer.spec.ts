@@ -1,6 +1,15 @@
 import { Color, Matrix4 } from 'three';
 
-import { EGG_HATCH_TIME, MAX_EGGS, type Egg } from '../sim/eggs';
+import {
+  EGG_HATCH_TIME,
+  EGG_SPECIES,
+  laysNearAnemone,
+  laysOnVegetation,
+  MAX_EGGS,
+  REEF_EGG_SPECIES,
+  VEGETATION_EGG_SPECIES,
+  type Egg,
+} from '../sim/eggs';
 import {
   CLOWN_EGG_COLOR,
   CLOWN_EGG_RIPE_COLOR,
@@ -12,6 +21,7 @@ import {
   EGG_OUTLINE,
   EGG_RIPE_COLOR,
   EGG_VOXEL,
+  eggDrawnAfterWater,
   EggLayer,
 } from './egg-layer';
 
@@ -92,6 +102,31 @@ describe('EggLayer (#478)', () => {
     expect(c.getHexString()).toBe(new Color(EGG_COLOR).getHexString());
     layer.update([egg(0)], EGG_HATCH_TIME);
     expect(layer.drawnAfterWater).toBe(false);
+    layer.dispose();
+  });
+
+  it('espèces dessinées après l’eau tirées des listes de `sim/eggs.ts` (#662, #685)', () => {
+    for (const species of EGG_SPECIES) {
+      expect(eggDrawnAfterWater(species)).toBe(
+        laysNearAnemone(species) || laysOnVegetation(species),
+      );
+      const layer = new EggLayer();
+      layer.update([{ ...egg(EGG_HATCH_TIME * 0.75), species }], EGG_HATCH_TIME);
+      expect(layer.drawnAfterWater).toBe(eggDrawnAfterWater(species));
+      const c = new Color();
+      layer.mesh.getColorAt(0, c);
+      const ripe = laysNearAnemone(species) ? CLOWN_EGG_RIPE_COLOR : EGG_RIPE_COLOR;
+      expect(c.getHexString()).toBe(new Color(ripe).getHexString());
+      layer.dispose();
+    }
+    for (const species of [...REEF_EGG_SPECIES, ...VEGETATION_EGG_SPECIES]) {
+      expect(eggDrawnAfterWater(species)).toBe(true);
+    }
+    expect(eggDrawnAfterWater('corydora')).toBe(false);
+    // Un mélange d'œufs passe toute la couche après l'eau dès qu'un œuf le demande.
+    const layer = new EggLayer();
+    layer.update([egg(0), { ...egg(0), species: VEGETATION_EGG_SPECIES[0] }], EGG_HATCH_TIME);
+    expect(layer.drawnAfterWater).toBe(true);
     layer.dispose();
   });
 

@@ -8,9 +8,11 @@ import {
   eggReachDistance2,
   EGG_HATCH_TIME,
   EGG_MAX_HEIGHT,
+  EGG_SPECIES,
   EGG_MIN_HEIGHT,
   eatEggsInPlace,
   eggRoom,
+  hatchesToFry,
   isEggAge,
   layClutch,
   laysEggs,
@@ -28,7 +30,7 @@ import { isFry } from './fry';
 import { MAX_TOTAL_FISH, populationCounts } from './population';
 import { parseWorld, serializeWorld } from './save';
 import { parseSharedText } from './share-link';
-import { SPECIES } from './species';
+import { SPECIES, type SpeciesId } from './species';
 import { speciesSheet } from './species-sheet';
 import type { Fish } from './swimmer';
 import { sampleWater } from './water-quality';
@@ -252,6 +254,41 @@ describe('œufs : ponte (sim/eggs.ts, #478)', () => {
       surface: 'plante',
     }));
     expect(eggRoom([], many, 'corydora')).toBe(0);
+  });
+
+  it('plafond de l’espèce : œufs comptés seulement pour une espèce à alevins (#662, ADR 0146)', () => {
+    const at = (species: SpeciesId, x: number): Egg => ({
+      species,
+      x,
+      y: 0.05,
+      z: 0,
+      age: 0,
+      surface: 'plante',
+    });
+    for (const species of EGG_SPECIES) {
+      const max = SPECIES[species].maxPopulation;
+      const eggs = Array.from({ length: Math.min(max, MAX_EGGS - 1) }, (_, k) =>
+        at(species, k * 0.01),
+      );
+      const room = eggRoom([], eggs, species);
+      if (hatchesToFry(species)) {
+        // Chaque œuf deviendra un alevin : il prend une place de l'espèce.
+        expect(room).toBe(Math.max(0, max - eggs.length));
+      } else {
+        // Larves ou œufs sans alevin : les œufs ne prennent aucune place de l'espèce.
+        expect(room).toBe(Math.min(max, MAX_EGGS - eggs.length, MAX_TOTAL_FISH - eggs.length));
+        expect(room).toBeGreaterThan(0);
+      }
+    }
+    // Espèce sans alevin à son plafond d'animaux : plus de place, œufs ou pas.
+    const species = EGG_SPECIES.find((id) => !hatchesToFry(id))!;
+    const full = cloneWorld(
+      createWorld(5, [{ species, count: SPECIES[species].maxPopulation }]),
+    ).entities;
+    expect(eggRoom(full, [], species)).toBe(0);
+    // Les œufs sans alevin comptent toujours dans MAX_TOTAL_FISH et MAX_EGGS.
+    const crowd = Array.from({ length: MAX_EGGS }, (_, k) => at(species, k * 0.01));
+    expect(eggRoom([], crowd, species)).toBe(0);
   });
 });
 

@@ -10,7 +10,8 @@ import {
   Vector3,
 } from 'three';
 
-import { MAX_EGGS, type Egg } from '../sim/eggs';
+import type { SpeciesId } from '../sim/species';
+import { laysNearAnemone, laysOnVegetation, MAX_EGGS, type Egg } from '../sim/eggs';
 import type { SceneLayer } from './effect-layer';
 import { ENVIRONMENT_TONES, PALETTE } from './palette';
 
@@ -75,6 +76,16 @@ export const EGG_RIPE_COLOR = PALETTE.sableClair;
 export const CLOWN_EGG_COLOR = ENVIRONMENT_TONES.clownOrange;
 export const CLOWN_EGG_RIPE_COLOR = PALETTE.tritonOrange;
 
+/**
+ * Vrai si les œufs de l'espèce sont dessinés après l'eau : ponte près d'une anémone (récif,
+ * `laysNearAnemone`) ou frai sur la végétation (bassin, `laysOnVegetation`). Tiré des listes de
+ * `sim/eggs.ts`, sans identifiant d'espèce en dur (#662, #685) : une espèce qui rejoint l'une de
+ * ces listes hérite du traitement.
+ */
+export function eggDrawnAfterWater(species: SpeciesId): boolean {
+  return laysNearAnemone(species) || laysOnVegetation(species);
+}
+
 export class EggLayer implements SceneLayer {
   private readonly geometry = new BoxGeometry(1, 1, 1);
   private readonly material = new MeshBasicMaterial({ color: '#ffffff' });
@@ -88,8 +99,8 @@ export class EggLayer implements SceneLayer {
   private readonly baseOutline = new Color(EGG_OUTLINE_COLOR);
   private readonly fresh = new Color(EGG_COLOR);
   private readonly ripe = new Color(EGG_RIPE_COLOR);
-  private readonly clownFresh = new Color(CLOWN_EGG_COLOR);
-  private readonly clownRipe = new Color(CLOWN_EGG_RIPE_COLOR);
+  private readonly reefFresh = new Color(CLOWN_EGG_COLOR);
+  private readonly reefRipe = new Color(CLOWN_EGG_RIPE_COLOR);
   private readonly white = new Color('#ffffff');
   private readonly matrix = new Matrix4();
   private readonly position = new Vector3();
@@ -180,11 +191,11 @@ export class EggLayer implements SceneLayer {
     if (count === 0 && this.mesh.count === 0) {
       return;
     }
-    let reef = false;
-    for (let i = 0; i < count && !reef; i++) {
-      reef = eggs![i].species === 'clown' || eggs![i].species === 'rouge';
+    let afterWater = false;
+    for (let i = 0; i < count && !afterWater; i++) {
+      afterWater = eggDrawnAfterWater(eggs![i].species);
     }
-    this.setAfterWater(reef);
+    this.setAfterWater(afterWater);
     for (let i = 0; i < count; i++) {
       const egg = eggs![i];
       this.position.set(egg.x, egg.y, egg.z);
@@ -195,8 +206,9 @@ export class EggLayer implements SceneLayer {
       this.outline.setMatrixAt(i, this.matrix);
       // Deux teintes seulement (pixel art) : neuf, puis mûr à la seconde moitié.
       const ripe = egg.age * 2 >= hatchTime;
-      if (egg.species === 'clown') {
-        this.mesh.setColorAt(i, ripe ? this.clownRipe : this.clownFresh);
+      // Orange des œufs de récif (clown, #653) ; crème pour les autres.
+      if (laysNearAnemone(egg.species)) {
+        this.mesh.setColorAt(i, ripe ? this.reefRipe : this.reefFresh);
       } else {
         this.mesh.setColorAt(i, ripe ? this.ripe : this.fresh);
       }
