@@ -9036,6 +9036,24 @@
         }
       },
       "metriques": {}
+    },
+    "249": {
+      "numero": 249,
+      "date": "2026-11-19",
+      "debut": "2026-11-18T23:42:01.595Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-18T23:42:01.595Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
