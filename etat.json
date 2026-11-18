@@ -8827,7 +8827,7 @@
       "debut": "2026-11-18T04:07:00.853Z",
       "type": "dette",
       "issue": 689,
-      "pr": null,
+      "pr": 710,
       "version": null,
       "phases": {
         "planif": {
