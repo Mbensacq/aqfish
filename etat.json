@@ -8807,10 +8807,10 @@
           "note": "PR #708 : stepInPlace en 14 étapes (max 48 lignes, complexité 11), empreintes identiques, caractérisation 10 scénarios, exceptions world.ts abaissées, CI verte (e2e 3/7 mode-immersif telephone instable en CI, vert au relancement et en local)"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-18T02:59:49.629Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-18T03:41:48.156Z",
+          "note": "Verdict OK, 0 bug, captures publiées (165/167 identiques ; 2 écarts hors PR : dérive #700 et flou 13 px), unitaires/lint verts, e2e laissés à la CI"
         }
       },
       "metriques": {}
