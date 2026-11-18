@@ -8949,6 +8949,12 @@
           "debut": "2026-11-18T09:13:12.275Z",
           "fin": "2026-11-18T09:46:47.840Z",
           "note": "PR #718 : assainissement 6/13, six gardes sous complexité 15, 0 clone jscpd, 3 exports retirés, caractérisation préalable, CI verte"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-18T09:47:46.469Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
