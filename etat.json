@@ -8741,10 +8741,10 @@
           "note": "Verdict OK, 0 bug, captures partielles publiées (159/167), tests unitaires/build verts, CI verte"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-17T23:30:42.971Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-18T00:13:50.776Z",
+          "note": "Corrections demandées sur #700 (world.ts > limite #702, a-corriger) ; main rouge depuis #701/#702 corrigée par #705 (bug #704) fusionnée → v1.23.2 (release CI OK, main verte) ; suppression de branche refusée"
         }
       },
       "metriques": {}
