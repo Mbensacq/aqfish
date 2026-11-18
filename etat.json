@@ -8831,10 +8831,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-18T04:07:00.853Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-18T04:07:22.218Z",
+          "note": "Issue #689 : lot 3/13 assainissement, stepFish et stepWalker découpés (M)"
         }
       },
       "metriques": {}
