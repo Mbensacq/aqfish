@@ -652,6 +652,18 @@ function outcome(base: Json, mutation: Mutation): string {
   return `ok ${fingerprint(JSON.stringify(result))} ${fingerprint(rewritten)}`;
 }
 
+/** Groupes de cas, par préfixe de nom (chaque cas est dans exactement un groupe). */
+const GROUPS = [
+  'réelle',
+  'others : ',
+  'schéma 1 : ',
+  'monde : ',
+  'autre monde : ',
+  'bac : ',
+  'riche : ',
+  'schéma 2 : ',
+] as const;
+
 const EXPECTED: Record<string, string> = {
   'réelle tropical': 'ok 35d275be c0d86cab',
   'réelle bassin': 'ok ed63b850 2b0af25f',
@@ -1546,17 +1558,30 @@ const EXPECTED: Record<string, string> = {
 };
 
 describe('caractérisation de la relecture des sauvegardes (#686, lot 5)', () => {
-  it('chaque cas a un nom unique', () => {
+  it('chaque cas a un nom unique et un seul groupe', () => {
     expect(new Set(CASES.map(([name]) => name)).size).toBe(CASES.length);
+    for (const [name] of CASES) {
+      expect(GROUPS.filter((group) => name.startsWith(group))).toHaveLength(1);
+    }
   });
 
-  it('résultats identiques : messages exacts, résultats acceptés au JSON près', () => {
-    const actual: Record<string, string> = {};
-    for (const [name, base, mutation] of CASES) {
-      actual[name] = outcome(base, mutation);
-    }
-    expect(actual).toEqual(EXPECTED);
+  it('chaque cas a un résultat attendu', () => {
+    expect(Object.keys(EXPECTED).sort()).toEqual(CASES.map(([name]) => name).sort());
   });
+
+  // Un test par groupe de cas : plusieurs centaines de relectures, trop pour un seul test
+  // sous le délai de 5 s de la CI.
+  for (const group of GROUPS) {
+    it(`résultats identiques (${group}) : messages exacts, résultats acceptés au JSON près`, () => {
+      const actual: Record<string, string> = {};
+      const expected: Record<string, string> = {};
+      for (const [name, base, mutation] of CASES.filter(([n]) => n.startsWith(group))) {
+        actual[name] = outcome(base, mutation);
+        expected[name] = EXPECTED[name] as string;
+      }
+      expect(actual).toEqual(expected);
+    }, 30_000);
+  }
 
   it('textes de premier niveau : non-objets, JSON invalide, schéma 1 migré', () => {
     for (const text of ['', 'null', '3', '"x"', '[]', '{', JSON.stringify({ format: 'aqfish' })]) {
