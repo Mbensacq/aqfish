@@ -1,5 +1,6 @@
 import { environmentById, environmentWater, placeKey } from './environment';
 import {
+  clampIntoBounds,
   constrainToShape,
   insideShape,
   isPondShape,
@@ -11,6 +12,7 @@ import {
   shapeOutline,
   type PondShape,
 } from './pond-shape';
+import type { SwimBounds } from './swimmer';
 import { setPondShapeInPlace, withPondShape } from './pond-reshape';
 import { parseWorld, serializeWorld } from './save';
 import { SPECIES } from './species';
@@ -296,5 +298,28 @@ describe('forme du bassin : réglage et sauvegarde (#190)', () => {
     tropical.shape = 'ovale';
     const refused = parseWorld(JSON.stringify(tropical));
     expect(!refused.ok && refused.error).toContain('forme non réglable');
+  });
+});
+
+describe('clampIntoBounds (#686, lot 6)', () => {
+  const hard = { minX: -1, maxX: 1, minY: 0, maxY: 0.5, minZ: -0.4, maxZ: 0.4 };
+  const bounds = (extra: Partial<SwimBounds> = {}): SwimBounds =>
+    ({ hard, soft: hard, spawn: hard, avoid: hard, ...extra }) as SwimBounds;
+
+  it('ramène chaque coordonnée dans la boîte dure, sans toucher un point déjà dedans', () => {
+    const outside = { x: 3, y: -1, z: -2 };
+    clampIntoBounds(outside, bounds());
+    expect(outside).toEqual({ x: 1, y: 0, z: -0.4 });
+    const inside = { x: 0.2, y: 0.3, z: 0.1 };
+    clampIntoBounds(inside, bounds());
+    expect(inside).toEqual({ x: 0.2, y: 0.3, z: 0.1 });
+  });
+
+  it('avec une forme, ramène aussi le point dans la forme à la marge voulue', () => {
+    const outline = shapeOutline('ovale', { ...hard });
+    const point = { x: 0.99, y: 0.2, z: 0.39 };
+    clampIntoBounds(point, bounds({ outline, outlineMargin: 0.05 }));
+    expect(shapeDistance(outline, point.x, point.z)).toBeGreaterThanOrEqual(0.05 - 1e-9);
+    expect(point.y).toBe(0.2);
   });
 });

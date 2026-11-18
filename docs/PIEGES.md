@@ -1447,6 +1447,17 @@ haut de sa section.
   rares (centre posé dans un rocher, longue remontée). Pour relever les empreintes, vider
   d'abord la table attendue : Vitest n'affiche pas toujours le `console.log` d'un test qui
   passe. (2026-11-18)
+- **Découper une fonction dans un fichier au plafond de lignes** (lot 6 de #686,
+  `tankPlacementRefusal`) : chaque fonction extraite ajoute signature, JSDoc et accolades ;
+  `room-state.ts`, en exception `max-lines` à 623, est passé à 644 et le lint a refusé.
+  Sortir un bloc cohérent dans un nouveau module (`room-cm-box.ts` : `CmBox`, `cm`,
+  chevauchement, sol) et le réexporter si d'autres modules l'importaient. Une fonction à plus
+  de 5 paramètres (`footprintBox`, `box` des détails de la pièce) ne peut pas partir dans un
+  module neuf (aucune exception `max-params`) : la laisser où elle est, ou l'exporter d'un
+  module déjà en exception et déjà importé (`voxelBox` de `room-window.ts`, importé sous son
+  ancien nom par `room-details.ts`). Pour atteindre toutes les issues d'une garde, balayer
+  une grille et vérifier l'ensemble des raisons obtenues dans le test
+  (`gardes-caracterisation.spec.ts`), puis la couverture des branches. (2026-11-18)
 - **Règles de sauvegarde déclaratives : `firstProblemOf` quand une règle suppose les
   précédentes** (lot 5 de #686, `sim/save-schema.ts`) : `problemsOf` évalue **toutes** les
   règles ; une règle écrite pour un champ déjà vérifié (`(v as string).length` après « texte

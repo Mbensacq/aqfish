@@ -64,11 +64,16 @@ const SILL_OVERHANG = 0.04;
 export const PATCH_OFFSET = 0.25;
 export const PATCH_DEPTH = 1.2;
 
-function snap(value: number): number {
+/** Valeur arrondie au voxel de la pièce (`ROOM_VOXEL`, 1 cm). */
+export function snapToVoxel(value: number): number {
   return Math.round(value / ROOM_VOXEL) * ROOM_VOXEL;
 }
 
-function box(
+/**
+ * Boîte dont chaque cote est arrondie au voxel (`snapToVoxel`) ; partagée avec les détails de
+ * la pièce (`room-details.ts`, #686 lot 6).
+ */
+export function voxelBox(
   minX: number,
   maxX: number,
   minY: number,
@@ -77,12 +82,12 @@ function box(
   maxZ: number,
 ): Box3 {
   return {
-    minX: snap(minX),
-    maxX: snap(maxX),
-    minY: snap(minY),
-    maxY: snap(maxY),
-    minZ: snap(minZ),
-    maxZ: snap(maxZ),
+    minX: snapToVoxel(minX),
+    maxX: snapToVoxel(maxX),
+    minY: snapToVoxel(minY),
+    maxY: snapToVoxel(maxY),
+    minZ: snapToVoxel(minZ),
+    maxZ: snapToVoxel(maxZ),
   };
 }
 
@@ -105,10 +110,12 @@ export function roomWindow(dims: TankDimensions): RoomWindow {
   // `roomInterior`) : la fenêtre n'approche jamais le bac de moins de l'écart voulu.
   const tankLeft = inner.minX + ROOM_MARGIN;
   const gap = WINDOW_TANK_GAP + dims.depth;
-  const maxX = snap(Math.max(inner.minX + WINDOW_SIDE_MARGIN + WINDOW_WIDTH, tankLeft - gap));
-  const minX = snap(Math.max(inner.minX + WINDOW_SIDE_MARGIN, maxX - WINDOW_WIDTH));
-  const maxY = snap(inner.beamY - WINDOW_HEADER);
-  const minY = snap(Math.max(WINDOW_MIN_SILL, maxY - WINDOW_MAX_HEIGHT));
+  const maxX = snapToVoxel(
+    Math.max(inner.minX + WINDOW_SIDE_MARGIN + WINDOW_WIDTH, tankLeft - gap),
+  );
+  const minX = snapToVoxel(Math.max(inner.minX + WINDOW_SIDE_MARGIN, maxX - WINDOW_WIDTH));
+  const maxY = snapToVoxel(inner.beamY - WINDOW_HEADER);
+  const minY = snapToVoxel(Math.max(WINDOW_MIN_SILL, maxY - WINDOW_MAX_HEIGHT));
   return { minX, maxX, minY, maxY, wallZ: inner.minZ };
 }
 
@@ -117,8 +124,8 @@ function panes(w: RoomWindow): {
   readonly xs: [number, number][];
   readonly ys: [number, number][];
 } {
-  const midX = snap((w.minX + w.maxX) / 2);
-  const midY = snap((w.minY + w.maxY) / 2);
+  const midX = snapToVoxel((w.minX + w.maxX) / 2);
+  const midY = snapToVoxel((w.minY + w.maxY) / 2);
   const half = WINDOW_BAR / 2;
   return {
     xs: [
@@ -161,24 +168,24 @@ export function roomWindowBlocks(dims: TankDimensions, room: Room): RoomBlock[] 
     blocks.push({ box: b, part: 'fenetre', shade, shell: 'fond' });
   };
   blocks.push({
-    box: box(w.minX, w.maxX, w.minY, w.maxY, z0, glassZ),
+    box: voxelBox(w.minX, w.maxX, w.minY, w.maxY, z0, glassZ),
     part: 'vitre',
     shade: 0,
     shell: 'fond',
   });
   const { xs, ys } = panes(w);
   // Cadre : traverses haute et basse sur toute la largeur, montants entre elles.
-  wood(box(w.minX, w.maxX, w.maxY - WINDOW_FRAME, w.maxY, glassZ, frameZ));
-  wood(box(w.minX, w.maxX, w.minY, w.minY + WINDOW_FRAME, glassZ, frameZ));
-  wood(box(w.minX, xs[0][0], ys[0][0], ys[1][1], glassZ, frameZ));
-  wood(box(xs[1][1], w.maxX, ys[0][0], ys[1][1], glassZ, frameZ));
+  wood(voxelBox(w.minX, w.maxX, w.maxY - WINDOW_FRAME, w.maxY, glassZ, frameZ));
+  wood(voxelBox(w.minX, w.maxX, w.minY, w.minY + WINDOW_FRAME, glassZ, frameZ));
+  wood(voxelBox(w.minX, xs[0][0], ys[0][0], ys[1][1], glassZ, frameZ));
+  wood(voxelBox(xs[1][1], w.maxX, ys[0][0], ys[1][1], glassZ, frameZ));
   // Meneau (vertical) sur toute la hauteur des carreaux, croisillon de part et d'autre.
-  wood(box(xs[0][1], xs[1][0], ys[0][0], ys[1][1], glassZ, frameZ));
-  wood(box(xs[0][0], xs[0][1], ys[0][1], ys[1][0], glassZ, frameZ));
-  wood(box(xs[1][0], xs[1][1], ys[0][1], ys[1][0], glassZ, frameZ));
+  wood(voxelBox(xs[0][1], xs[1][0], ys[0][0], ys[1][1], glassZ, frameZ));
+  wood(voxelBox(xs[0][0], xs[0][1], ys[0][1], ys[1][0], glassZ, frameZ));
+  wood(voxelBox(xs[1][0], xs[1][1], ys[0][1], ys[1][0], glassZ, frameZ));
   // Appui, plus foncé, en saillie sous la fenêtre.
   wood(
-    box(
+    voxelBox(
       w.minX - SILL_OVERHANG,
       w.maxX + SILL_OVERHANG,
       w.minY - SILL_HEIGHT,
@@ -193,8 +200,8 @@ export function roomWindowBlocks(dims: TankDimensions, room: Room): RoomBlock[] 
   const scale = PATCH_DEPTH / (w.maxY - w.minY);
   const zs = ys
     .map(([lo, hi]): [number, number] => [
-      snap(patchStart + (w.maxY - hi) * scale),
-      snap(patchStart + (w.maxY - lo) * scale),
+      snapToVoxel(patchStart + (w.maxY - hi) * scale),
+      snapToVoxel(patchStart + (w.maxY - lo) * scale),
     ])
     .reverse();
   for (const plank of roomBlocks(dims, room)) {
@@ -203,12 +210,12 @@ export function roomWindowBlocks(dims: TankDimensions, room: Room): RoomBlock[] 
     }
     const p = plank.box;
     for (const [x0, x1] of xs) {
-      const ox = overlap(p.minX, p.maxX, snap(x0), snap(x1));
+      const ox = overlap(p.minX, p.maxX, snapToVoxel(x0), snapToVoxel(x1));
       for (const [zLo, zHi] of zs) {
         const oz = overlap(p.minZ, p.maxZ, zLo, zHi);
         if (ox && oz) {
           blocks.push({
-            box: box(ox[0], ox[1], p.minY, p.maxY, oz[0], oz[1]),
+            box: voxelBox(ox[0], ox[1], p.minY, p.maxY, oz[0], oz[1]),
             part: 'lumiere',
             shade: plank.shade,
           });

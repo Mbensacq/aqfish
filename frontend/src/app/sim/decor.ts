@@ -75,6 +75,12 @@ export function validateDecorItem(value: unknown, dims: TankDimensions = DEFAULT
     return ['un élément de décor doit être un objet'];
   }
   const item = value as Record<string, unknown>;
+  const problems = shapeProblems(item);
+  return problems.length > 0 ? problems : rangeProblems(item, dims);
+}
+
+/** Problèmes de forme : clés inconnues, sorte et forme de plante, réels finis. */
+function shapeProblems(item: Record<string, unknown>): string[] {
   const problems: string[] = [];
   for (const key of Object.keys(item)) {
     if (!ITEM_KEYS.includes(key)) {
@@ -96,9 +102,13 @@ export function validateDecorItem(value: unknown, dims: TankDimensions = DEFAULT
       problems.push(`${key} doit être un réel fini (reçu : ${String(v)})`);
     }
   }
-  if (problems.length > 0) {
-    return problems;
-  }
+  return problems;
+}
+
+/** Problèmes de bornes d'un élément de bonne forme : position, échelle, graine, élévation. */
+function rangeProblems(item: Record<string, unknown>, dims: TankDimensions): string[] {
+  const problems: string[] = [];
+  // Forme vérifiée par `shapeProblems` : sorte connue, réels finis.
   const { x, z, scale, seed } = item as unknown as DecorItem;
   if (Math.abs(x) > dims.width / 2) {
     problems.push(`x hors du bac (reçu : ${x}, bornes ± ${dims.width / 2})`);
@@ -114,14 +124,16 @@ export function validateDecorItem(value: unknown, dims: TankDimensions = DEFAULT
   if (!Number.isInteger(seed) || seed < 0 || seed > MAX_SEED) {
     problems.push(`seed doit être un entier 32 bits non signé (reçu : ${seed})`);
   }
-  if ('elevation' in item) {
-    const e = item['elevation'];
-    if (typeof e !== 'number' || !Number.isFinite(e) || e < 0 || e > dims.height) {
-      problems.push(`elevation doit être un réel dans [0, ${dims.height}] (reçu : ${String(e)})`);
-    }
+  if ('elevation' in item && !isElevation(item['elevation'], dims)) {
+    problems.push(
+      `elevation doit être un réel dans [0, ${dims.height}] (reçu : ${String(item['elevation'])})`,
+    );
   }
   return problems;
 }
+
+const isElevation = (e: unknown, dims: TankDimensions): boolean =>
+  typeof e === 'number' && Number.isFinite(e) && e >= 0 && e <= dims.height;
 
 /**
  * Valide une liste d'éléments de décor (données déjà décodées) et renvoie des copies ne

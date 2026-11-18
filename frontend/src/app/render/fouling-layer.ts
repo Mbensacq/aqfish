@@ -11,6 +11,7 @@ import {
 import type { TankFouling } from '../sim/fouling';
 import type { Box3 } from '../sim/tank';
 import type { SceneLayer } from './effect-layer';
+import { applyFlatBrightness } from './night-shade';
 import { PALETTE } from './palette';
 
 /**
@@ -330,11 +331,7 @@ export class FoulingLayer implements SceneLayer {
    * valeur non finie ou négative est ignorée.
    */
   setBrightness(factor: number): void {
-    if (!Number.isFinite(factor) || factor < 0 || factor === this.brightnessFactor) {
-      return;
-    }
-    this.brightnessFactor = factor;
-    this.material.color.setRGB(factor, factor, factor);
+    this.brightnessFactor = applyFlatBrightness(this.material, this.brightnessFactor, factor);
   }
 
   /** Luminosité appliquée (tests). */

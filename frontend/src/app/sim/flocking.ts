@@ -1,6 +1,6 @@
 import { SPECIES, type SchoolingParams } from './species';
 import type { Fish, SwimBounds } from './swimmer';
-import { keepInShape } from './pond-shape';
+import { clampIntoBounds as clampInto } from './pond-shape';
 
 /**
  * Comportement de banc : règles de boids (séparation, alignement, cohésion).
@@ -262,16 +262,6 @@ export function enforceMinDistance(
       clampInto(a, boundsOf(a));
       clampInto(b, boundsOf(b));
     }
-  }
-}
-
-function clampInto(fish: Mutable<Fish>, bounds: SwimBounds): void {
-  const { hard } = bounds;
-  fish.x = Math.min(Math.max(fish.x, hard.minX), hard.maxX);
-  fish.y = Math.min(Math.max(fish.y, hard.minY), hard.maxY);
-  fish.z = Math.min(Math.max(fish.z, hard.minZ), hard.maxZ);
-  if (bounds.outline !== undefined) {
-    keepInShape(fish, bounds.outline, bounds.outlineMargin ?? 0);
   }
 }
 

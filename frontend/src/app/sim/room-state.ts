@@ -7,6 +7,14 @@ import {
   type EnvironmentId,
 } from './environment';
 import type { RoomQuarter } from './room';
+import {
+  cm,
+  cmBoxesOverlap as overlaps,
+  insideRoomFloor as insideFloor,
+  isCentimetric,
+  ROOM_FLOOR,
+  type CmBox,
+} from './room-cm-box';
 import type { TankDimensions } from './tank';
 import { startFilterCyclingInPlace } from './filter-maturation';
 import type { MutableWaterState } from './water';
@@ -289,11 +297,7 @@ function newTank(id: number, world: World): RoomTank {
 /** Nombre maximal de meubles supports dans la pièce (borne provisoire, comme `MAX_ROOM_ITEMS`). */
 export const MAX_ROOM_SUPPORTS = 24;
 
-/**
- * Sol de la pièce, en mètres, origine au centre : une emprise (meuble ou bac posé au sol) doit
- * y tenir entièrement. 8 × 6 m, de quoi aligner plusieurs meubles d'aquarium.
- */
-export const ROOM_FLOOR = { halfWidth: 4, halfDepth: 3 } as const;
+export { isCentimetric, ROOM_FLOOR };
 
 /** Tailles de bac du catalogue, pour les environnements aux dimensions réglables. */
 export const TANK_SIZE_IDS = ['petit', 'moyen', 'grand'] as const;
@@ -454,25 +458,6 @@ export type RoomLayoutResult =
   | { readonly ok: true; readonly room: RoomState; readonly id: number }
   | { readonly ok: false; readonly reason: RoomLayoutRefusal };
 
-/** Boîte alignée sur les axes, en centimètres entiers, base comptée depuis le parquet. */
-interface CmBox {
-  readonly minX: number;
-  readonly maxX: number;
-  readonly minY: number;
-  readonly maxY: number;
-  readonly minZ: number;
-  readonly maxZ: number;
-}
-
-/** Vrai si `value` est un multiple du centimètre, fini (`-1.4` oui, `0.123` non). */
-export function isCentimetric(value: number): boolean {
-  return Number.isFinite(value) && Math.round(value * 100) / 100 === value;
-}
-
-function cm(value: number): number {
-  return Math.round(value * 100);
-}
-
 function isQuarter(value: unknown): value is RoomQuarter {
   return value === 0 || value === 1 || value === 2 || value === 3;
 }
@@ -499,23 +484,6 @@ function footprintBox(
     minZ: cz - d,
     maxZ: cz + d,
   };
-}
-
-function overlaps(a: CmBox, b: CmBox): boolean {
-  return (
-    a.minX < b.maxX &&
-    b.minX < a.maxX &&
-    a.minY < b.maxY &&
-    b.minY < a.maxY &&
-    a.minZ < b.maxZ &&
-    b.minZ < a.maxZ
-  );
-}
-
-function insideFloor(box: CmBox): boolean {
-  const hw = ROOM_FLOOR.halfWidth * 200;
-  const hd = ROOM_FLOOR.halfDepth * 200;
-  return box.minX >= -hw && box.maxX <= hw && box.minZ >= -hd && box.maxZ <= hd;
 }
 
 /** Dimensions d'un bac (les siennes, sinon celles de son environnement). */
@@ -596,58 +564,89 @@ export function tankPlacementRefusal(
   if (!isCentimetric(placement.x) || !isCentimetric(placement.z) || !isQuarter(placement.quarter)) {
     return 'position-invalide';
   }
-  const levelIndex = placementLevel(placement);
-  let support: RoomSupport | null = null;
-  let level: SupportLevel | null = null;
-  if (placement.supportId !== null) {
-    support = room.furniture.find((item) => item.id === placement.supportId) ?? null;
-    if (support === null) {
-      return 'meuble-inconnu';
-    }
-    level = supportLevel(support.kind, levelIndex) ?? null;
-    if (level === null) {
-      return 'position-invalide';
-    }
-  } else if (levelIndex !== 0) {
-    return 'position-invalide';
+  const seat = placementSeat(room, placement);
+  if (typeof seat === 'string') {
+    return seat;
   }
   const box = tankBox(room, tank, placement) as CmBox;
   if (!insideFloor(box)) {
     return 'hors-piece';
   }
-  if (support !== null && level !== null) {
-    const top = footprintBox(
-      support.x,
-      support.z,
-      level.width,
-      level.depth,
-      support.quarter,
-      0,
-      level.height,
-    );
-    if (box.minX < top.minX || box.maxX > top.maxX || box.minZ < top.minZ || box.maxZ > top.maxZ) {
-      return 'hors-support';
-    }
-    if (level.clearance !== null && box.maxY > (level.height + level.clearance) * 2) {
-      return 'trop-haut';
-    }
+  const refusal = seat === null ? null : seatRefusal(box, seat);
+  if (refusal !== null) {
+    return refusal;
   }
   if (box.maxY > ROOM_CEILING_CM * 2) {
     return 'trop-haut';
   }
+  return collides(room, tank, box, seat?.support.id) ? 'chevauchement' : null;
+}
+
+/** Meuble et niveau qui portent un bac. */
+interface TankSeat {
+  readonly support: RoomSupport;
+  readonly level: SupportLevel;
+}
+
+/** Siège visé par `placement` (`null` : au sol), ou refus : meuble ou niveau inconnu. */
+function placementSeat(
+  room: RoomState,
+  placement: TankPlacement,
+): TankSeat | null | RoomLayoutRefusal {
+  const levelIndex = placementLevel(placement);
+  if (placement.supportId === null) {
+    return levelIndex === 0 ? null : 'position-invalide';
+  }
+  const support = room.furniture.find((item) => item.id === placement.supportId);
+  if (support === undefined) {
+    return 'meuble-inconnu';
+  }
+  const level = supportLevel(support.kind, levelIndex);
+  return level === undefined ? 'position-invalide' : { support, level };
+}
+
+/** Refus du siège : emprise hors du plateau du niveau, ou bac plus haut que sa hauteur libre. */
+function seatRefusal(box: CmBox, { support, level }: TankSeat): RoomLayoutRefusal | null {
+  const top = footprintBox(
+    support.x,
+    support.z,
+    level.width,
+    level.depth,
+    support.quarter,
+    0,
+    level.height,
+  );
+  if (box.minX < top.minX || box.maxX > top.maxX || box.minZ < top.minZ || box.maxZ > top.maxZ) {
+    return 'hors-support';
+  }
+  if (level.clearance !== null && box.maxY > (level.height + level.clearance) * 2) {
+    return 'trop-haut';
+  }
+  return null;
+}
+
+/**
+ * Vrai si `box` chevauche un meuble autre que son support (`supportId`) ou un autre bac que
+ * `tank` : son propre meuble ne gêne pas, plateau et hauteur libre sont vérifiés à part.
+ */
+function collides(
+  room: RoomState,
+  tank: RoomTank,
+  box: CmBox,
+  supportId: number | undefined,
+): boolean {
   for (const item of room.furniture) {
-    // Son propre meuble ne gêne pas : plateau et hauteur libre sont vérifiés ci-dessus.
-    if (item.id !== support?.id && overlaps(box, supportBox(item))) {
-      return 'chevauchement';
+    if (item.id !== supportId && overlaps(box, supportBox(item))) {
+      return true;
     }
   }
   for (const other of room.tanks) {
     const otherBox = other.id === tank.id ? null : tankBox(room, other);
     if (otherBox !== null && overlaps(box, otherBox)) {
-      return 'chevauchement';
+      return true;
     }
   }
-  return null;
+  return false;
 }
 
 /**

@@ -61,9 +61,6 @@
   "sim/bubbles.ts": {
     "max-params": 7
   },
-  "sim/care-session.ts": {
-    "complexity": 28
-  },
   "sim/coral-shapes.ts": {
     "max-params": 7
   },
@@ -71,7 +68,6 @@
     "max-params": 6
   },
   "sim/decor.ts": {
-    "complexity": 28,
     "max-params": 6
   },
   "sim/disease.ts": {
@@ -104,7 +100,7 @@
     "max-params": 7
   },
   "sim/journal.ts": {
-    "complexity": 30
+    "complexity": 19
   },
   "sim/maintenance.ts": {
     "complexity": 17
@@ -118,11 +114,7 @@
   "sim/plant.ts": {
     "max-lines-per-function": 108
   },
-  "sim/room-details.ts": {
-    "max-params": 6
-  },
   "sim/room-furniture.ts": {
-    "complexity": 26,
     "max-params": 8
   },
   "sim/room-layout.ts": {
@@ -130,7 +122,7 @@
   },
   "sim/room-state.ts": {
     "max-lines": 623,
-    "complexity": 29,
+    "complexity": 21,
     "max-params": 7
   },
   "sim/room-window.ts": {

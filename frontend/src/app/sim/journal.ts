@@ -302,26 +302,38 @@ export function watchJournal(world: JournalSubject): JournalWatch {
  */
 export function observeJournal(watch: JournalWatch, world: JournalSubject): JournalEntry[] {
   const time = world.time;
-  const caught = new Array<number>(DISEASES.length).fill(0);
-  const cured = new Array<number>(DISEASES.length).fill(0);
-  const hatched = new Map<SpeciesId, number>();
+  const changes = observeDiseases(watch, world.entities);
+  const events: JournalEntry[] = [];
+  pushDiseaseEvents(events, time, changes);
+  pushLayingEvents(events, time, watch, world.eggs);
+  pushHatchingEvents(events, time, changes.hatched);
+  pushAlertEvents(events, time, watch, world.alerts);
+  return events;
+}
+
+/** Maladies déclarées et guéries (par rang de `DISEASES`), alevins nouveaux par espèce. */
+interface DiseaseChanges {
+  readonly caught: number[];
+  readonly cured: number[];
+  readonly hatched: Map<SpeciesId, number>;
+}
+
+/** Compte les changements de santé et les alevins nouveaux ; met à jour `watch.diseases`. */
+function observeDiseases(watch: JournalWatch, entities: readonly Fish[]): DiseaseChanges {
+  const changes: DiseaseChanges = {
+    caught: new Array<number>(DISEASES.length).fill(0),
+    cured: new Array<number>(DISEASES.length).fill(0),
+    hatched: new Map<SpeciesId, number>(),
+  };
   const present = new Set<number>();
-  for (const fish of world.entities) {
+  for (const fish of entities) {
     present.add(fish.id);
     const mask = diseaseMask(fish);
     const before = watch.diseases.get(fish.id);
     if (before === undefined && isFry(fish)) {
-      hatched.set(fish.species, (hatched.get(fish.species) ?? 0) + 1);
+      changes.hatched.set(fish.species, (changes.hatched.get(fish.species) ?? 0) + 1);
     }
-    const known = before ?? 0;
-    for (let d = 0; d < DISEASES.length; d++) {
-      const bit = 1 << d;
-      if ((mask & bit) !== 0 && (known & bit) === 0) {
-        caught[d]!++;
-      } else if (before !== undefined && (mask & bit) === 0 && (known & bit) !== 0) {
-        cured[d]!++;
-      }
-    }
+    countDiseaseChanges(changes, mask, before);
     watch.diseases.set(fish.id, mask);
   }
   for (const id of [...watch.diseases.keys()]) {
@@ -329,7 +341,31 @@ export function observeJournal(watch: JournalWatch, world: JournalSubject): Jour
       watch.diseases.delete(id);
     }
   }
-  const events: JournalEntry[] = [];
+  return changes;
+}
+
+/**
+ * Ajoute à `changes` les maladies déclarées (bit présent, absent avant ou animal nouveau) et
+ * guéries (bit absent, présent avant ; jamais pour un animal nouveau) d'un animal.
+ */
+function countDiseaseChanges(
+  changes: DiseaseChanges,
+  mask: number,
+  before: number | undefined,
+): void {
+  const known = before ?? 0;
+  for (let d = 0; d < DISEASES.length; d++) {
+    const bit = 1 << d;
+    if ((mask & bit) !== 0 && (known & bit) === 0) {
+      changes.caught[d]!++;
+    } else if (before !== undefined && (mask & bit) === 0 && (known & bit) !== 0) {
+      changes.cured[d]!++;
+    }
+  }
+}
+
+function pushDiseaseEvents(events: JournalEntry[], time: number, changes: DiseaseChanges): void {
+  const { caught, cured } = changes;
   for (let d = 0; d < DISEASES.length; d++) {
     const detail = DISEASES[d]!.field;
     if (caught[d]! > 0) {
@@ -339,7 +375,16 @@ export function observeJournal(watch: JournalWatch, world: JournalSubject): Jour
       events.push({ time, kind: 'guerison', detail, count: cured[d]! });
     }
   }
-  const eggs = eggCounts(world.eggs);
+}
+
+/** Pontes : œufs d'une espèce en hausse ; met à jour `watch.eggs`. */
+function pushLayingEvents(
+  events: JournalEntry[],
+  time: number,
+  watch: JournalWatch,
+  worldEggs: readonly Egg[] | undefined,
+): void {
+  const eggs = eggCounts(worldEggs);
   for (const [species, count] of eggs) {
     const laid = count - (watch.eggs.get(species) ?? 0);
     if (laid > 0) {
@@ -347,25 +392,47 @@ export function observeJournal(watch: JournalWatch, world: JournalSubject): Jour
     }
   }
   watch.eggs = eggs;
+}
+
+/** Éclosions (espèce qui pond) et naissances (espèce vivipare), par espèce. */
+function pushHatchingEvents(
+  events: JournalEntry[],
+  time: number,
+  hatched: ReadonlyMap<SpeciesId, number>,
+): void {
   for (const [species, count] of hatched) {
     const kind = hasFry(species) && !laysEggs(species) ? 'naissance' : 'eclosion';
     events.push({ time, kind, detail: species, count });
   }
-  const alerts = alertLevels(world.alerts);
+}
+
+/** Alertes apparues ou aggravées, hors retours trop rapprochés ; met à jour `watch.alerts`. */
+function pushAlertEvents(
+  events: JournalEntry[],
+  time: number,
+  watch: JournalWatch,
+  worldAlerts: readonly JournalAlert[] | undefined,
+): void {
+  const alerts = alertLevels(worldAlerts);
   for (const [id, severity] of alerts) {
     const before = watch.alerts.get(id);
     if (before === undefined || (before === 'attention' && severity === 'critique')) {
       const key = `${id}:${severity}`;
-      const noted = watch.alertNoted.get(key);
-      // Un temps revenu en arrière (bac rechargé) ne retient rien.
-      if (noted === undefined || time < noted || time - noted >= JOURNAL_ALERT_REPEAT_SECONDS) {
+      if (alertDue(watch.alertNoted.get(key), time)) {
         events.push({ time, kind: 'alerte', detail: id, severity });
         watch.alertNoted.set(key, time);
       }
     }
   }
   watch.alerts = alerts;
-  return events;
+}
+
+/**
+ * Vrai si une alerte notée pour la dernière fois à `noted` peut l'être de nouveau à `time` :
+ * jamais notée, temps revenu en arrière (bac rechargé) ou délai de répétition écoulé.
+ */
+function alertDue(noted: number | undefined, time: number): boolean {
+  return noted === undefined || time < noted || time - noted >= JOURNAL_ALERT_REPEAT_SECONDS;
 }
 
 /**
@@ -533,7 +600,7 @@ function readEntry(value: unknown): JournalEntry | null {
 
 /** Vrai pour une entrée valide : temps, sorte, précision attendue et effectif borné. */
 function isEntry(entry: JournalEntry): boolean {
-  const { time, kind, detail, count, severity } = entry;
+  const { time, kind, count } = entry;
   if (typeof time !== 'number' || !Number.isFinite(time) || time < 0) {
     return false;
   }
@@ -543,35 +610,45 @@ function isEntry(entry: JournalEntry): boolean {
   if (count !== undefined && (!Number.isSafeInteger(count) || count < 1 || count > MAX_COUNT)) {
     return false;
   }
-  if (kind === 'alerte') {
-    return (
-      count === undefined &&
-      typeof detail === 'string' &&
-      Object.hasOwn(JOURNAL_ALERT_LABELS, detail) &&
-      (severity === 'attention' || severity === 'critique')
-    );
-  }
-  if (severity !== undefined) {
-    return false;
-  }
-  switch (kind) {
-    case 'maladie':
-    case 'guerison':
-      return typeof detail === 'string' && Object.hasOwn(JOURNAL_DISEASE_LABELS, detail);
-    case 'traitement':
-      return typeof detail === 'string' && (TREATMENT_KINDS as readonly string[]).includes(detail);
-    case 'ponte':
-    case 'eclosion':
-    case 'naissance':
-      return typeof detail === 'string' && Object.hasOwn(SPECIES, detail);
-    case 'changementEau':
-    case 'taille':
-      return detail === undefined;
-    case 'seance':
-    case 'eauNeuve':
-      return detail === undefined && count === undefined;
-  }
+  return ENTRY_RULES[kind](entry);
 }
+
+const isDiseaseDetail = (detail: unknown): boolean =>
+  typeof detail === 'string' && Object.hasOwn(JOURNAL_DISEASE_LABELS, detail);
+
+const isTreatmentDetail = (detail: unknown): boolean =>
+  typeof detail === 'string' && (TREATMENT_KINDS as readonly string[]).includes(detail);
+
+const isSpeciesDetail = (detail: unknown): boolean =>
+  typeof detail === 'string' && Object.hasOwn(SPECIES, detail);
+
+/** Règle propre à une sorte, sans gravité : la gravité est réservée aux alertes. */
+const withoutSeverity =
+  (rule: (entry: JournalEntry) => boolean) =>
+  (entry: JournalEntry): boolean =>
+    entry.severity === undefined && rule(entry);
+
+/**
+ * Précision et effectif attendus pour chaque sorte (temps, sorte et bornes de l'effectif déjà
+ * vérifiés par `isEntry`).
+ */
+const ENTRY_RULES: Readonly<Record<JournalKind, (entry: JournalEntry) => boolean>> = {
+  alerte: ({ count, detail, severity }) =>
+    count === undefined &&
+    typeof detail === 'string' &&
+    Object.hasOwn(JOURNAL_ALERT_LABELS, detail) &&
+    (severity === 'attention' || severity === 'critique'),
+  maladie: withoutSeverity(({ detail }) => isDiseaseDetail(detail)),
+  guerison: withoutSeverity(({ detail }) => isDiseaseDetail(detail)),
+  traitement: withoutSeverity(({ detail }) => isTreatmentDetail(detail)),
+  ponte: withoutSeverity(({ detail }) => isSpeciesDetail(detail)),
+  eclosion: withoutSeverity(({ detail }) => isSpeciesDetail(detail)),
+  naissance: withoutSeverity(({ detail }) => isSpeciesDetail(detail)),
+  changementEau: withoutSeverity(({ detail }) => detail === undefined),
+  taille: withoutSeverity(({ detail }) => detail === undefined),
+  seance: withoutSeverity(({ detail, count }) => detail === undefined && count === undefined),
+  eauNeuve: withoutSeverity(({ detail, count }) => detail === undefined && count === undefined),
+};
 
 function alertLevels(
   alerts: readonly JournalAlert[] | undefined,
