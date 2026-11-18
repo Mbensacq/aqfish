@@ -1,13 +1,8 @@
 import { ENVIRONMENT_IDS, environmentById, type EnvironmentId } from './environment';
 import { MAX_TOTAL_FISH, populationCounts, setPopulation, SPECIES_IDS } from './population';
 import { parseWorld, serializeWorld } from './save';
-import {
-  applySpeciesCounts,
-  applySpeciesCountsInPlace,
-  normalizedCount,
-  SPECIES_LABELS,
-  speciesCatalog,
-} from './species-catalog';
+import { SPECIES_LABELS, speciesCatalog } from './species-catalog';
+import { applySpeciesCounts, applySpeciesCountsInPlace, normalizedCount } from './species-counts';
 import { SPECIES } from './species';
 import { advance, cloneWorld, createDefaultWorld, type World } from './world';
 
