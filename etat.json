@@ -8943,6 +8943,12 @@
           "debut": "2026-11-18T09:12:16.410Z",
           "fin": "2026-11-18T09:12:40.275Z",
           "note": "Issue #692 : lot 6/13 assainissement, fonctions complexes restantes de sim, duplications, exports (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-18T09:13:12.275Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
