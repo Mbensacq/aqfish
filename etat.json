@@ -8970,7 +8970,7 @@
       "date": "2026-11-18",
       "debut": "2026-11-18T10:49:25.521Z",
       "type": "fonctionnalite",
-      "issue": null,
+      "issue": 693,
       "pr": null,
       "version": null,
       "phases": {
