@@ -8843,10 +8843,10 @@
           "note": "PR #710 : stepFish et stepWalker en étapes (complexité max 10, 56 lignes), caractérisation 27 espèces × 10 000 pas au bit près, exceptions abaissées, captures 73/73 identiques, CI verte"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-18T05:02:40.875Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-18T05:43:54.450Z",
+          "note": "Verdict OK, 0 bug, captures publiées (166/166 identiques, 1 instabilité 13 px connue), unitaires/lint/build verts, e2e laissés à la CI, mutation non mesurée (trop long)"
         }
       },
       "metriques": {}
