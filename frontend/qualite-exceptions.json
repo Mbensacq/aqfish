@@ -103,10 +103,6 @@
   "sim/fungus.ts": {
     "max-params": 7
   },
-  "sim/health-summary.ts": {
-    "max-lines-per-function": 123,
-    "complexity": 33
-  },
   "sim/journal.ts": {
     "complexity": 30
   },
@@ -181,8 +177,7 @@
     "max-params": 7
   },
   "sim/water.ts": {
-    "max-lines-per-function": 178,
-    "complexity": 52
+    "complexity": 16
   },
   "sim/wellbeing.ts": {
     "max-params": 6
