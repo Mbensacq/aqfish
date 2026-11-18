@@ -8985,6 +8985,12 @@
           "debut": "2026-11-18T10:50:35.435Z",
           "fin": "2026-11-18T11:42:51.409Z",
           "note": "PR #719 : sonde des attributs de test (assainissement 7/13), 0 expose* dans l'hôte, caractérisation préalable, CI verte"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-18T11:43:22.138Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
