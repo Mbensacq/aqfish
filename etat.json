@@ -8955,6 +8955,12 @@
           "debut": "2026-11-18T09:47:46.469Z",
           "fin": "2026-11-18T10:21:29.540Z",
           "note": "Verdict OK, 0 bug, captures publiées (166/166 identiques), unitaires verts, CI e2e verte"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-18T10:22:13.832Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
