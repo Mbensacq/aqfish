@@ -12,10 +12,10 @@ import { CARE_SESSION_ATTRIBUTE, PRUNER_ATTRIBUTE, SCRAPER_ATTRIBUTE } from './a
 import {
   AQUARIUM_RENDERER_FACTORY,
   AquariumHost,
-  CARE_SESSION_STORAGE_KEY,
   DECOR_PHYSICS_LOADER,
   SAVE_STORAGE,
 } from './aquarium-host';
+import { CARE_SESSION_STORAGE_KEY } from '../care-session/care-session-controller';
 
 /**
  * Caractérisation de la séance d'entretien vue de l'hôte (#694) : outils en main, passage,
