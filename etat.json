@@ -8805,6 +8805,12 @@
           "debut": "2026-11-18T01:55:19.557Z",
           "fin": "2026-11-18T02:59:14.770Z",
           "note": "PR #708 : stepInPlace en 14 étapes (max 48 lignes, complexité 11), empreintes identiques, caractérisation 10 scénarios, exceptions world.ts abaissées, CI verte (e2e 3/7 mode-immersif telephone instable en CI, vert au relancement et en local)"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-18T02:59:49.629Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
