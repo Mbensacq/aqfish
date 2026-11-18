@@ -8873,10 +8873,10 @@
           "note": "Issue #690 : lot 4/13 assainissement, readWater et healthSummary (S) ; rétro #712, PR roadmap"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-18T06:09:30.889Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-18T06:41:39.764Z",
+          "note": "PR #714 : readWater (52→7) et healthSummary (33→4) découpés, caractérisation 100 % des branches au préalable, exceptions abaissées, CI verte"
         }
       },
       "metriques": {}
