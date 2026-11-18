@@ -1,5 +1,4 @@
 import { DEFAULT_FOOD_STYLE, isFoodStyle, type FoodStyle } from '../core/food-style/food-style';
-import { MAX_SEED } from '../core/random/prng';
 import { SIM_DT } from './constants';
 import { acceptsSavedSpecies, isCareMode, type CareMode } from './care-mode';
 import { isCurrentLevel, type CurrentLevel } from './water-current';
@@ -45,7 +44,16 @@ import { SPECIES, type SpeciesId } from './species';
 import type { Fish } from './swimmer';
 import { copyWater, readWater, type WaterState } from './water';
 import { HEALTH_FLOOR, HEALTH_START } from './health-scale';
-import { clampTankDimensions, type Box3, type TankDimensions } from './tank';
+import { clampTankDimensions, type TankDimensions } from './tank';
+import {
+  describe,
+  insideBox,
+  isIntegerIn,
+  isNumberIn,
+  isRecord,
+  isUint32,
+  own,
+} from './save-schema';
 import { boundsFor, createWorld, seededObstacleCount } from './world';
 import type { Entity, MutableWorld, World } from './world-types';
 
@@ -109,8 +117,6 @@ export const MAX_SAVE_TICK = 2 ** 31;
 export const MIN_DAY_LENGTH_SECONDS = 60;
 export const MAX_DAY_LENGTH_SECONDS = 86_400;
 
-/** Tolérance sur les bornes de position, en mètres (arrondis des calculs de nage). */
-const POSITION_EPSILON = 1e-9;
 /** Tolérance sur les bornes angulaires et de vitesse. */
 const VALUE_EPSILON = 1e-12;
 /**
@@ -1113,53 +1119,4 @@ function parseEggList(value: unknown, place: Place, problems: string[]): Egg[] {
 
 function failure(error: string): ParseWorldResult {
   return { ok: false, error };
-}
-
-/** Objet JSON (ni tableau ni `null`). */
-export function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-/**
- * Propriété propre seulement : les clés héritées (`constructor`, `__proto__`…) valent
- * `undefined`.
- */
-export function own(record: Record<string, unknown>, key: string): unknown {
-  return Object.hasOwn(record, key) ? record[key] : undefined;
-}
-
-function isNumberIn(value: unknown, min: number, max: number, epsilon = 0): value is number {
-  return (
-    typeof value === 'number' &&
-    Number.isFinite(value) &&
-    value >= min - epsilon &&
-    value <= max + epsilon
-  );
-}
-
-export function isIntegerIn(value: unknown, min: number, max: number): value is number {
-  return typeof value === 'number' && Number.isInteger(value) && value >= min && value <= max;
-}
-
-export function isUint32(value: unknown): value is number {
-  return isIntegerIn(value, 0, MAX_SEED);
-}
-
-function insideBox(box: Box3, x: number, y: number, z: number): boolean {
-  return (
-    isNumberIn(x, box.minX, box.maxX, POSITION_EPSILON) &&
-    isNumberIn(y, box.minY, box.maxY, POSITION_EPSILON) &&
-    isNumberIn(z, box.minZ, box.maxZ, POSITION_EPSILON)
-  );
-}
-
-/** Description courte d'une valeur reçue, pour les messages (jamais le texte entier). */
-export function describe(value: unknown): string {
-  if (typeof value === 'string') {
-    return `« ${value.slice(0, 20)}${value.length > 20 ? '…' : ''} »`;
-  }
-  if (typeof value === 'number' || typeof value === 'boolean') {
-    return String(value);
-  }
-  return value === undefined ? 'absente' : typeof value;
 }

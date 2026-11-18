@@ -6,14 +6,13 @@ import {
 import { roomAnimalCount, ROOM_ANIMAL_CAP } from './room-limits';
 import { parseSaveWorlds } from './room-save';
 import {
-  isRecord,
   MAX_SAVE_LENGTH,
-  own,
   SAVE_FORMAT,
   SAVE_SCHEMA_1,
   serializeWorld,
   type SaveSettings,
 } from './save';
+import { isRecord, own } from './save-schema';
 import type { World } from './world-types';
 
 /**

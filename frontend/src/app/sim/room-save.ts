@@ -1,12 +1,7 @@
 import {
   DEFAULT_SAVE_SETTINGS,
-  describe,
-  isIntegerIn,
-  isRecord,
-  isUint32,
   MAX_SAVE_LENGTH,
   MAX_SAVE_TICK,
-  own,
   parseSaveData,
   parseSettings,
   parseWorldBody,
@@ -37,6 +32,7 @@ import {
   type TankPlace,
   type TankPlacement,
 } from './room-state';
+import { describe, isIntegerIn, isRecord, isUint32, own } from './save-schema';
 import type { World } from './world-types';
 
 /**
