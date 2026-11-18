@@ -8883,6 +8883,12 @@
           "debut": "2026-11-18T06:42:19.352Z",
           "fin": "2026-11-18T06:59:29.829Z",
           "note": "Verdict OK, 0 bug, captures publiées (166/166 identiques, 1 instabilité 13 px connue), unitaires/lint/build verts, e2e CI verts"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-18T07:00:05.986Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
