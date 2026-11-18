@@ -8856,6 +8856,24 @@
         }
       },
       "metriques": {}
+    },
+    "244": {
+      "numero": 244,
+      "date": "2026-11-18",
+      "debut": "2026-11-18T06:07:51.371Z",
+      "type": "retro",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-18T06:07:51.371Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
