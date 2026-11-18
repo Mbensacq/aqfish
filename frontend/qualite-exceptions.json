@@ -128,9 +128,6 @@
   "sim/room-layout.ts": {
     "max-params": 6
   },
-  "sim/room-save.ts": {
-    "complexity": 20
-  },
   "sim/room-state.ts": {
     "max-lines": 623,
     "complexity": 29,
@@ -141,12 +138,6 @@
   },
   "sim/room.ts": {
     "max-lines-per-function": 96,
-    "max-params": 6
-  },
-  "sim/save.ts": {
-    "max-lines": 915,
-    "max-lines-per-function": 132,
-    "complexity": 45,
     "max-params": 6
   },
   "sim/species-care.ts": {
