@@ -8913,6 +8913,12 @@
           "debut": "2026-11-18T07:29:20.662Z",
           "fin": "2026-11-18T08:24:15.003Z",
           "note": "PR #716 : sauvegardes relues par schémas déclaratifs (save-schema/settings/animals), 660+ cas de caractérisation, exceptions save.ts et room-save.ts retirées, CI verte ; dette #717"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-18T08:26:55.365Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
