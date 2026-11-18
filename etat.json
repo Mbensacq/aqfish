@@ -8903,10 +8903,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-18T07:28:24.639Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-18T07:28:50.646Z",
+          "note": "Issue #691 : lot 5/13 assainissement, validation des sauvegardes par schéma déclaratif (M)"
         }
       },
       "metriques": {}
