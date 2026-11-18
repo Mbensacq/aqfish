@@ -8900,7 +8900,7 @@
       "type": "fonctionnalite",
       "issue": 691,
       "pr": 716,
-      "version": null,
+      "version": "v1.24.0",
       "phases": {
         "planif": {
           "statut": "termine",
