@@ -8841,6 +8841,12 @@
           "debut": "2026-11-18T04:08:11.416Z",
           "fin": "2026-11-18T05:02:07.187Z",
           "note": "PR #710 : stepFish et stepWalker en étapes (complexité max 10, 56 lignes), caractérisation 27 espèces × 10 000 pas au bit près, exceptions abaissées, captures 73/73 identiques, CI verte"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-18T05:02:40.875Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
