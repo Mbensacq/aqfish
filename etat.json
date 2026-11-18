@@ -8945,10 +8945,10 @@
           "note": "Issue #692 : lot 6/13 assainissement, fonctions complexes restantes de sim, duplications, exports (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-18T09:13:12.275Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-18T09:46:47.840Z",
+          "note": "PR #718 : assainissement 6/13, six gardes sous complexité 15, 0 clone jscpd, 3 exports retirés, caractérisation préalable, CI verte"
         }
       },
       "metriques": {}
