@@ -1,3 +1,3 @@
-Branche cycle/c240-dette-oeufs, PR #700, commit 0276cac, graines des captures (spec), temps figé.
-Série partielle : 159 fichiers sur ~167 (délai de 10 min dépassé) ; manquants non régénérés, vérifiés par la CI.
-Seul bassin-three-quarter-oeufs.png diffère de main (voulu) ; interface-liste-bacs.png diffère d'un détail non visible.
+Branche cycle/c241-types-du-monde, PR #706, commit 06870ce, graines des captures (spec), temps figé.
+Série complète : 167 fichiers (166 tests de capture).
+Identique au pixel près à la série précédente pour les 157 fichiers comparables ; bassin-three-quarter-oeufs identique à c239 (avant #700). 9 fichiers sans référence antérieure.
