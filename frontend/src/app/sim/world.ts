@@ -103,7 +103,7 @@ import {
   type EnvironmentId,
   type Place,
 } from './environment';
-import { lilyPadLayout, type LilyPad } from './lily-pads';
+import { worldLilyPads } from './world-lily-pads';
 import { eatInPlace, feedingBand, foodTarget, type FeedingBand } from './feeding';
 import { addDecayedFoodInPlace } from './food-decay';
 import {
@@ -1416,7 +1416,7 @@ function layEggsInPlace(
           room,
           water,
           fryPlants(world.decor),
-          worldLilyPads(world),
+          worldLilyPads(world.seed, world),
         )
       : layClutch(world.seed, species, spawn, room, water, fryPlants(world.decor));
   if (clutch.length > 0) {
@@ -1424,16 +1424,6 @@ function layEggsInPlace(
     world.eggs = eggs;
   }
   return clutch.length;
-}
-
-/**
- * Nénuphars de `world` (`lilyPadLayout`), mêmes ancres que ceux du rendu (même graine, même
- * eau) : surfaces de frai du poisson rouge (#675). Liste vide sans nénuphars. Calculés à la
- * demande (une fois par période de ponte au plus) : aucun état gardé.
- */
-export function worldLilyPads(world: World): readonly LilyPad[] {
-  const settings = environmentById(world.environment).lilyPads;
-  return settings === null ? [] : lilyPadLayout(world.seed, environmentWater(world), settings);
 }
 
 /**

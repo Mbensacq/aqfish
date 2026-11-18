@@ -195,7 +195,7 @@
     "max-lines-per-function": 88
   },
   "sim/world.ts": {
-    "max-lines": 1525,
+    "max-lines": 1521,
     "max-lines-per-function": 227,
     "complexity": 39,
     "max-params": 6

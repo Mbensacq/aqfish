@@ -24,8 +24,9 @@ import type { Box3 } from './tank';
  *   (`EGG_EAT_RADIUS`, plus `EGG_GLASS_REACH` vers la vitre) le mange ; les œufs des plantes sont à l'abri. Aucun adulte n'en meurt.
  * - **Éclosion** : à `EGG_HATCH_TIME` secondes, l'œuf devient un alevin (`Fish.growth`, même
  *   croissance et mêmes cachettes que les alevins de guppy), dans la limite des plafonds.
- * - **Plafonds** : œufs et animaux de l'espèce ne dépassent pas `maxPopulation`, œufs et
- *   animaux du bac `MAX_TOTAL_FISH`, et le bac garde au plus `MAX_EGGS` œufs.
+ * - **Plafonds** : œufs et animaux de l'espèce ne dépassent pas `maxPopulation` (œufs d'une
+ *   espèce sans alevin exclus, `eggRoom`), œufs et animaux du bac `MAX_TOTAL_FISH`, et le bac
+ *   garde au plus `MAX_EGGS` œufs.
  *
  * - **Poisson-clown** (issue #653) : même calendrier, mêmes conditions (température propre à
  *   l'espèce, `spawnTemperature`) ; la ponte est collée sur une surface dure près d'une anémone
@@ -96,7 +97,15 @@ export const LILY_EGG_DEPTH = { min: 0.08, max: 0.2 } as const;
  * Écart horizontal d'un œuf à la tige de sa feuille (à l'ancre, la tige partant du fond), en
  * mètres (au plus).
  */
-export const LILY_STEM_SPREAD = 0.015;
+export const LILY_STEM_SPREAD = 0.04;
+/**
+ * Pas vertical entre deux œufs successifs d'une même tige, en mètres (#685) : les œufs d'une
+ * tige s'étagent sur `LILY_EGG_DEPTH` (en revenant en haut quand la plage est pleine) et
+ * alternent de part et d'autre de la tige, à `LILY_STEM_SPREAD`. Tirés au hasard autour d'un
+ * même point, huit œufs se lisaient comme une seule tache en vue trois-quarts ; ce pas laisse un
+ * creux d'au moins un pixel entre deux œufs, liseré compris.
+ */
+export const LILY_EGG_PITCH = 0.05;
 /** Distance horizontale maximale entre une anémone et le rocher où pondre, en mètres. */
 export const REEF_ROCK_REACH = 0.3;
 /** Distance horizontale d'une ponte sur le sable au centre de l'anémone, en mètres. */
@@ -247,8 +256,11 @@ export function fitSpawners(fishes: readonly Fish[], species: SpeciesId): number
 
 /**
  * Place restante pour des œufs de `species` : le plus petit des écarts aux plafonds
- * (`maxPopulation` de l'espèce, œufs compris ; `MAX_TOTAL_FISH`, œufs compris ; `MAX_EGGS`),
- * jamais négatif.
+ * (`maxPopulation` de l'espèce ; `MAX_TOTAL_FISH`, œufs compris ; `MAX_EGGS`), jamais négatif.
+ * Les œufs d'une espèce qui éclôt en alevins (`hatchesToFry`) comptent dans `maxPopulation` :
+ * chacun deviendra un poisson. Ceux d'une espèce sans alevin (larves du clown qui quittent le
+ * bac, œufs du poisson rouge) n'y comptent pas, faute de quoi la ponte était presque toujours
+ * réduite (issue #662, ADR 0146) ; ils restent comptés dans `MAX_TOTAL_FISH` et `MAX_EGGS`.
  */
 export function eggRoom(fishes: readonly Fish[], eggs: readonly Egg[], species: SpeciesId): number {
   let same = 0;
@@ -257,9 +269,11 @@ export function eggRoom(fishes: readonly Fish[], eggs: readonly Egg[], species: 
       same += 1;
     }
   }
-  for (const egg of eggs) {
-    if (egg.species === species) {
-      same += 1;
+  if (hatchesToFry(species)) {
+    for (const egg of eggs) {
+      if (egg.species === species) {
+        same += 1;
+      }
     }
   }
   return Math.max(
@@ -347,7 +361,8 @@ export function layClutch(
  * Frai `spawn` de `species` sur la végétation (issue #675), au plus `count` œufs : chaque œuf
  * est tiré, parmi les plantes du décor et les nénuphars, sur l'une d'elles ; au pied d'une plante
  * (comme `layClutch`), ou le long de la tige d'un nénuphar (à `LILY_STEM_SPREAD` de son ancre,
- * la tige partant du fond, et à `LILY_EGG_DEPTH` sous la surface). Sans
+ * la tige partant du fond, et à `LILY_EGG_DEPTH` sous la surface), étagés de `LILY_EGG_PITCH`
+ * et alternés de part et d'autre de la tige (#685). Sans
  * végétation (listes vides, `null` ou `undefined`), aucun œuf. Tous dans `water`, âge 0,
  * surface `'plante'`.
  */
@@ -374,6 +389,7 @@ export function layVegetationClutch(
     clamp(z, water.minZ + EGG_GLASS_INSET, water.maxZ - EGG_GLASS_INSET);
   const top = Math.min(water.maxY, water.minY + EGG_MAX_HEIGHT);
   const bottom = Math.min(top, water.minY + EGG_MIN_HEIGHT);
+  const perPad: number[] = [];
   for (let k = 0; k < count; k++) {
     const base = 8 + 4 * k;
     const pick = Math.min(total - 1, Math.floor(draw(base) * total));
@@ -392,14 +408,20 @@ export function layVegetationClutch(
         surface: 'plante',
       });
     } else {
-      const pad = pads![pick - plantCount];
-      const r = LILY_STEM_SPREAD * Math.sqrt(u);
-      const depth = LILY_EGG_DEPTH.min + (LILY_EGG_DEPTH.max - LILY_EGG_DEPTH.min) * v;
+      const index = pick - plantCount;
+      const pad = pads![index];
+      // Rang de l'œuf sur sa tige : étage et côté (#685).
+      const rank = (perPad[index] = (perPad[index] ?? 0) + 1) - 1;
+      const range = LILY_EGG_DEPTH.max - LILY_EGG_DEPTH.min;
+      const side = angle + (rank % 2) * Math.PI;
+      const r = LILY_STEM_SPREAD * (0.75 + 0.25 * u);
+      const depth =
+        LILY_EGG_DEPTH.min + ((rank * LILY_EGG_PITCH + 0.2 * LILY_EGG_PITCH * v) % range);
       eggs.push({
         species,
-        x: inX(pad.x + r * Math.cos(angle)),
+        x: inX(pad.x + r * Math.cos(side)),
         y: clamp(water.maxY - depth, water.minY + EGG_SAND_LIFT, water.maxY),
-        z: inZ(pad.z + r * Math.sin(angle)),
+        z: inZ(pad.z + r * Math.sin(side)),
         age: 0,
         surface: 'plante',
       });
