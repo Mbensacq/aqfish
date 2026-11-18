@@ -1,6 +1,7 @@
 import type { SpeciesId } from './species';
 import type { Box3 } from './tank';
-import { advanceInPlace, type MutableWorld, type World } from './world';
+import { advanceInPlace } from './world';
+import type { MutableWorld, World } from './world-types';
 
 /**
  * Relevé de trajectoires (issue #43) : outil de mesure et de preuve visuelle d'un

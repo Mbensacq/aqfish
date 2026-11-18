@@ -2,7 +2,8 @@ import { setCareModeInPlace } from './care-mode';
 import { isImmersiveEnvironment, livesIn, type ImmersiveEnvironmentId } from './environment';
 import { SPECIES, type SpeciesId } from './species';
 import { IMMERSIVE_LIMITS, clampImmersiveDimensions, type TankDimensions } from './tank';
-import { createWorld, type MutableWorld, type PopulationEntry, type World } from './world';
+import { createWorld } from './world';
+import type { MutableWorld, PopulationEntry, World } from './world-types';
 
 /**
  * Bac du mode immersif (#345, ADR 0086) : le bac prend les proportions exactes de l'écran,

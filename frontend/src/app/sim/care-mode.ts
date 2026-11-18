@@ -1,6 +1,6 @@
 import { livesIn, type EnvironmentId } from './environment';
 import { SPECIES, type SpeciesId } from './species';
-import type { MutableWorld, World } from './world';
+import type { MutableWorld, World } from './world-types';
 
 /**
  * Mode d'un bac (#278, ADR 0077) : « Soins », la simulation complète (eau, faim, santé,

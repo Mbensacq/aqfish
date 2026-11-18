@@ -11,7 +11,7 @@ import { waterSample } from './water-dashboard';
 import { waterReadout } from './water-quality';
 import { SPECIES } from './species';
 import { feedsOnPellets } from './wellbeing';
-import type { World } from './world';
+import type { World } from './world-types';
 
 /**
  * Liste des bacs de la pièce (épopée #264, lot 3, ADR 0061 et 0075) : pour chaque bac, son

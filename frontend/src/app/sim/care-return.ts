@@ -11,7 +11,7 @@ import {
   type ValueRange,
 } from './species-sheet';
 import { SPECIES, type SpeciesId } from './species';
-import type { MutableWorld } from './world';
+import type { MutableWorld } from './world-types';
 
 /**
  * Retour en mode soins d'un bac passé par le mode décor (#278, lot 2, ADR 0078) : liste des

@@ -242,7 +242,8 @@ import {
   treatTank as treatRoomTank,
   type QuarantineView,
 } from '../../sim/quarantine';
-import { applySpeciesCountsInPlace, SPECIES_LABELS } from '../../sim/species-catalog';
+import { SPECIES_LABELS } from '../../sim/species-catalog';
+import { applySpeciesCountsInPlace } from '../../sim/species-counts';
 import {
   DEFAULT_FOOD_STYLE,
   isFoodStyle,
@@ -296,10 +297,8 @@ import {
   doseWorldPhRegulatorInPlace,
   setWorldCarbonInPlace,
   setWorldUntreatedTapInPlace,
-  type Entity,
-  type MutableWorld,
-  type World,
 } from '../../sim/world';
+import type { Entity, MutableWorld, World } from '../../sim/world-types';
 import { netTarget } from '../../sim/mortality';
 import { DROPSY_ADVANCED_AT, DROPSY_MAX } from '../../sim/dropsy';
 import { CHEVRON_COUNTS } from '../../render/current-indicator-layer';

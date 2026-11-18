@@ -3,6 +3,7 @@ import { finRotHealthStress } from './fin-rot';
 import { velvetHealthStress } from './velvet';
 import { fungusHealthStress } from './fungus';
 import { dropsyHealthStress } from './dropsy';
+import { HEALTH_FLOOR, HEALTH_START } from './health-scale';
 import type { SpeciesDefinition } from './species';
 import { likesAcidWater, phOutOfTolerance } from './water-ph';
 
@@ -24,7 +25,7 @@ import { likesAcidWater, phOutOfTolerance } from './water-ph';
  * sont une cause de plus (`ichHealthStress`) ; un animal sain ou en incubation n'en a aucune.
  *
  * Effets : nage plus lente (`vigor`, facteur du déplacement) et couleurs ternies au rendu
- * (`dullness`). À santé 1, `vigor` vaut exactement 1 et `dullness` exactement 0 : un animal
+ * (`dullness`), dans `sim/health-scale.ts` (#687) avec les bornes de la santé. À santé 1, `vigor` vaut exactement 1 et `dullness` exactement 0 : un animal
  * en bonne santé nage et s'affiche comme avant l'issue #208, au bit près.
  *
  * Aucun tirage aléatoire, aucune allocation. Exprimé en temps simulé (`dt`), donc
@@ -34,10 +35,6 @@ import { likesAcidWater, phOutOfTolerance } from './water-ph';
  * Valeurs de jeu (approximations, pas des mesures).
  */
 
-/** Santé minimale : un animal malade ne meurt pas dans ce sprint. */
-export const HEALTH_FLOOR = 0.2;
-/** Santé d'un animal neuf (et d'une sauvegarde antérieure à l'issue #208). */
-export const HEALTH_START = 1;
 /**
  * Perte de santé par seconde et par cause (faim maximale, eau mauvaise) : de 1 au plancher
  * en 8 minutes simulées pour une cause, 4 pour deux.
@@ -58,8 +55,6 @@ export const PH_STRESS = 0.5;
  * pas portée d'un coup : elle cesse seulement de baisser en dessous (`stepHealth`).
  */
 export const CATAPPA_HEALTH_FLOOR = HEALTH_FLOOR + 0.1;
-/** Ralentissement au plancher : la nage y garde `1 − HEALTH_SLOWDOWN` de sa vitesse. */
-export const HEALTH_SLOWDOWN = 0.4;
 
 /**
  * Vrai si l'espèce cherche et mange les granulés (`sim/feeding.ts`). Les espèces qui marchent
@@ -105,28 +100,6 @@ export function stepHealth(
     return clamp(base - stress * HEALTH_DECAY_RATE * dt, lowest, 1);
   }
   return clamp(base + HEALTH_RECOVERY_RATE * dt, HEALTH_FLOOR, 1);
-}
-
-/**
- * Facteur de vitesse de nage pour une santé : exactement 1 à santé 1, `1 − HEALTH_SLOWDOWN`
- * au plancher, linéaire entre les deux. Santé hors bornes ramenée dans [plancher, 1] ; non
- * finie, comptée comme pleine.
- */
-export function vigor(health: number): number {
-  return 1 - HEALTH_SLOWDOWN * dullness(health);
-}
-
-/**
- * Ternissement des couleurs pour une santé, dans [0, 1] : exactement 0 à santé 1, 1 au
- * plancher, linéaire entre les deux. Santé hors bornes ramenée dans [plancher, 1] ; non
- * finie, comptée comme pleine.
- */
-export function dullness(health: number): number {
-  if (!Number.isFinite(health) || health >= 1) {
-    return 0;
-  }
-  const h = health < HEALTH_FLOOR ? HEALTH_FLOOR : health;
-  return (1 - h) / (1 - HEALTH_FLOOR);
 }
 
 /** Animal vu par le bien-être. */

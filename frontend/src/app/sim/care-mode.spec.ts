@@ -12,7 +12,8 @@ import { isSpeciesId, MAX_TOTAL_FISH, NO_FISH, populationCounts, SPECIES_IDS } f
 import { createRoom, stepRoom } from './room-state';
 import { parseSave, serializeRoom } from './room-save';
 import { parseWorld, serializeWorld } from './save';
-import { applySpeciesCounts, decorCatalog, speciesCatalog } from './species-catalog';
+import { decorCatalog, speciesCatalog } from './species-catalog';
+import { applySpeciesCounts } from './species-counts';
 import { isExcluded } from './species-legal';
 import { SPECIES } from './species';
 import { worstAlert } from './tank-list';

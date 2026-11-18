@@ -17,18 +17,10 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const APP = join(ROOT, 'src', 'app');
 
 /**
- * Cycles connus à l'audit du 2026-11-17, à supprimer (#687). Chaque entrée est la liste triée
+ * Cycles connus à l'audit du 2026-11-17, à supprimer (#687) : tous supprimés par #687. Chaque entrée est la liste triée
  * des modules du cycle, relatifs à `src/app`. N'en ajouter aucun.
  */
-export const ALLOWED_CYCLES = [
-  [
-    'sim/population.ts',
-    'sim/species-catalog.ts',
-    'sim/species-sheet.ts',
-    'sim/treatment.ts',
-    'sim/world.ts',
-  ],
-];
+export const ALLOWED_CYCLES = [];
 
 /**
  * Spécificateurs relatifs importés pour leur valeur par un fichier TypeScript : imports et

@@ -37,7 +37,7 @@ import {
   type QualityThresholds,
   type WaterCompound,
 } from './water-quality';
-import type { World } from './world';
+import type { World } from './world-types';
 
 /**
  * Bilan du bac (issue #514, ADR 0117) : les trois points les plus utiles à améliorer, chacun

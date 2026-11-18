@@ -9,7 +9,8 @@ import { REFERENCE_BODY_LENGTH, type WaterState } from './water';
 import { toxicAmmonia } from './water-conditioner';
 import { COMPOUND_THRESHOLDS } from './water-quality';
 import { velvetHealthStress } from './velvet';
-import { HEALTH_FLOOR, STARVING_HUNGER, feedsOnPellets } from './wellbeing';
+import { STARVING_HUNGER, feedsOnPellets } from './wellbeing';
+import { HEALTH_FLOOR } from './health-scale';
 
 /**
  * Mortalité, lot 1 (issue #582, ADR 0137) : un animal très affaibli finit par mourir si

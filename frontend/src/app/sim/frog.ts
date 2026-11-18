@@ -6,7 +6,7 @@ import { waterDirection } from './terrain';
 import { SPECIES, type AmphibianParams, type SpeciesDefinition, type SpeciesId } from './species';
 import { createFish, random, savePrevious, wrapAngle, type Fish, type SwimBounds } from './swimmer';
 import { tailBeatRate } from './undulation';
-import { vigor } from './wellbeing';
+import { vigor } from './health-scale';
 
 /**
  * Déplacement des espèces qui vivent entre terre et eau (grenouille, issue #131, ADR 0036 ;

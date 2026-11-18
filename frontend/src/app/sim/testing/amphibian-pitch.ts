@@ -3,7 +3,8 @@ import { expect } from 'vitest';
 import { type WalkerGround } from '../axolotl';
 import { environmentWater, PALUDARIUM } from '../environment';
 import { frogModeOf, type FrogMode } from '../frog';
-import { advanceInPlace, type MutableWorld } from '../world';
+import { advanceInPlace } from '../world';
+import type { MutableWorld } from '../world-types';
 
 /**
  * Aide de test partagée par `frog.spec.ts` et `triton.spec.ts` (#235). Ce n'est pas une

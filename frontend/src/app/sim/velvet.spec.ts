@@ -27,7 +27,8 @@ import {
 } from './velvet';
 import { DEFAULT_DAY_LENGTH_SECONDS } from './daylight';
 import { freshWater, type MutableWaterState } from './water';
-import { HEALTH_FLOOR, stepWellbeingInPlace } from './wellbeing';
+import { stepWellbeingInPlace } from './wellbeing';
+import { HEALTH_FLOOR } from './health-scale';
 import {
   advanceInPlace,
   cloneWorld,

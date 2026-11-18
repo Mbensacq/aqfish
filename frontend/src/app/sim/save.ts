@@ -44,16 +44,10 @@ import { DEFAULT_SIM_SPEED, isSimSpeed, type SimSpeed } from './sim-speed';
 import { SPECIES, type SpeciesId } from './species';
 import type { Fish } from './swimmer';
 import { copyWater, readWater, type WaterState } from './water';
-import { HEALTH_FLOOR, HEALTH_START } from './wellbeing';
+import { HEALTH_FLOOR, HEALTH_START } from './health-scale';
 import { clampTankDimensions, type Box3, type TankDimensions } from './tank';
-import {
-  boundsFor,
-  createWorld,
-  seededObstacleCount,
-  type Entity,
-  type MutableWorld,
-  type World,
-} from './world';
+import { boundsFor, createWorld, seededObstacleCount } from './world';
+import type { Entity, MutableWorld, World } from './world-types';
 
 /**
  * Sauvegarde du monde (issue #70, ADR 0028) : format JSON versionné, écrit et relu par des

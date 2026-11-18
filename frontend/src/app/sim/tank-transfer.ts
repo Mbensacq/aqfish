@@ -6,14 +6,8 @@ import { SPECIES } from './species';
 import { SPECIES_LABELS } from './species-catalog';
 import { addWarnings, speciesSheet, type AddWarning } from './species-sheet';
 import { waterLiters } from './water';
-import {
-  bondedCount,
-  cloneWorld,
-  homeForRank,
-  spawnEntity,
-  worldAnemoneHomes,
-  type Entity,
-} from './world';
+import { bondedCount, cloneWorld, homeForRank, spawnEntity, worldAnemoneHomes } from './world';
+import type { Entity } from './world-types';
 
 /**
  * Transfert d'un animal d'un bac à un autre « à l'épuisette » (épopée #264, lot 3, ADR 0061

@@ -18,7 +18,7 @@ import { shrinkBox, type Box3 } from './tank';
 import { SPECIES, type SpeciesDefinition, type SpeciesId } from './species';
 import { NIGHT_HEIGHT_RATIO, nightPace } from './day-rhythm';
 import { tailBeatRate } from './undulation';
-import { HEALTH_START, vigor } from './wellbeing';
+import { HEALTH_START, vigor } from './health-scale';
 
 /**
  * Poisson de la simulation : objet de données pur, sérialisable en JSON (ADR 0003).

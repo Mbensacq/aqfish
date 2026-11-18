@@ -21,7 +21,8 @@ import {
   type MutableWaterState,
 } from './water';
 import { likesAcidWater } from './water-ph';
-import { CATAPPA_HEALTH_FLOOR, HEALTH_FLOOR, stepHealth, stepWellbeingInPlace } from './wellbeing';
+import { CATAPPA_HEALTH_FLOOR, stepHealth, stepWellbeingInPlace } from './wellbeing';
+import { HEALTH_FLOOR } from './health-scale';
 import { SPECIES } from './species';
 import {
   advance,

@@ -15,7 +15,7 @@ import { CORYDORA, GUPPY, KOI, NEON, speciesVariantIndex } from '../sim/species'
 import { createFish, stepFish, swimBounds, type Fish } from '../sim/swimmer';
 import { DEFAULT_TANK, waterVolume } from '../sim/tank';
 import { TAIL_LAG } from '../sim/undulation';
-import { HEALTH_FLOOR } from '../sim/wellbeing';
+import { HEALTH_FLOOR } from '../sim/health-scale';
 import { createDefaultWorld } from '../sim/world';
 import { CAMERA_FOV_DEG, framingDistance } from './camera-presets';
 import {

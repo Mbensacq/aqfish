@@ -26,7 +26,8 @@ import { parseWorld, serializeWorld } from './save';
 import { SPECIES, type SpeciesId } from './species';
 import { ENVIRONMENT_IDS } from './environment';
 import { freshWater, type MutableWaterState } from './water';
-import { HEALTH_FLOOR, stepWellbeingInPlace } from './wellbeing';
+import { stepWellbeingInPlace } from './wellbeing';
+import { HEALTH_FLOOR } from './health-scale';
 import {
   advanceInPlace,
   cloneWorld,

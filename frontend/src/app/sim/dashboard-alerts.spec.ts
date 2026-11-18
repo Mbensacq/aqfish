@@ -24,7 +24,7 @@ import { freshWater, WATER_TEMPERATURES } from './water';
 import { waterSample, type WaterSample } from './water-dashboard';
 import { phBands, SPECIES_PH } from './water-ph';
 import { COMPOUND_THRESHOLDS, TEMPERATURE_THRESHOLDS } from './water-quality';
-import { HEALTH_FLOOR } from './wellbeing';
+import { HEALTH_FLOOR } from './health-scale';
 
 const TROPICAL = ['neon', 'guppy', 'corydora'] as const;
 const HEALTHY: HealthSummary = healthSummary([

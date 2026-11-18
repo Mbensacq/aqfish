@@ -4,7 +4,8 @@ import { velvetStage } from './velvet';
 import { fungusStage } from './fungus';
 import { dropsyStage } from './dropsy';
 import { SPECIES, type SpeciesId } from './species';
-import { feedsOnPellets, HEALTH_FLOOR, STARVING_HUNGER } from './wellbeing';
+import { feedsOnPellets, STARVING_HUNGER } from './wellbeing';
+import { HEALTH_FLOOR } from './health-scale';
 import type { GaugeLevel } from './water-dashboard';
 
 /**

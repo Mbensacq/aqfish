@@ -8,7 +8,7 @@ import { NO_FISH, type PopulationCounts } from '../../sim/population';
 import { EMPTY_HEALTH_SUMMARY, healthSummary, type HealthSummary } from '../../sim/health-summary';
 import { DEFAULT_WATER_SAMPLE, type WaterSample } from '../../sim/water-dashboard';
 import { DEFAULT_WATER_READOUT } from '../../sim/water-quality';
-import { HEALTH_FLOOR } from '../../sim/wellbeing';
+import { HEALTH_FLOOR } from '../../sim/health-scale';
 import { DASHBOARD_COLORS, DASHBOARD_REST_OPACITY, DashboardFrame } from './dashboard-frame';
 import { ALERT_TOPICS } from '../../sim/beginner-help';
 import { BeginnerGuideState } from '../beginner-guide/beginner-guide-state';

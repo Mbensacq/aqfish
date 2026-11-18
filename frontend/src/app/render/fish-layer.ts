@@ -27,7 +27,7 @@ import { finRotSeverity, showsFinRot } from '../sim/fin-rot';
 import { showsVelvet, velvetSeverity } from '../sim/velvet';
 import { fungusSeverity, showsFungus } from '../sim/fungus';
 import { dropsyScales, dropsyStage, dropsySwelling, showsDropsy } from '../sim/dropsy';
-import { dullness } from '../sim/wellbeing';
+import { dullness } from '../sim/health-scale';
 import { floatsWhenDead } from '../sim/mortality';
 import { fryPallor, fryScale } from '../sim/fry';
 import { PALETTE } from './palette';
