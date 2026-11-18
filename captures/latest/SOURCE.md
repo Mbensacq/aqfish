@@ -1,3 +1,2 @@
-Branche cycle/c241-types-du-monde, PR #706, commit 06870ce, graines des captures (spec), temps figé.
-Série complète : 167 fichiers (166 tests de capture).
-Identique au pixel près à la série précédente pour les 157 fichiers comparables ; bassin-three-quarter-oeufs identique à c239 (avant #700). 9 fichiers sans référence antérieure.
+Cycle 242, QA. Branche cycle/c242-pas-en-etapes, PR #708, commit d0e841b. Graines des scénarios de captures (seed=7/9…), temps TIME_SECONDS fixe.
+165/167 identiques à la série précédente ; bassin-three-quarter-oeufs diffère, mais identique sur main (dérive due à #700, nénuphars) ; telephone-fiche-espece instable de 13 pixels sur un run complet, identique après relance.
