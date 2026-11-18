@@ -36,10 +36,15 @@ import {
   spawnEggsInPlace,
   step,
   stepEggsInPlace,
-  worldLilyPads,
   type MutableWorld,
   type World,
 } from './world';
+import { worldLilyPads } from './world-lily-pads';
+
+/** Nénuphars du monde `world` (`worldLilyPads` prend la graine et le lieu, #700). */
+function padsOf(world: World): ReturnType<typeof worldLilyPads> {
+  return worldLilyPads(world.seed, world);
+}
 
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
 
@@ -106,7 +111,7 @@ describe('frai du poisson rouge (#675)', () => {
     // la ponte (`stepEggsInPlace`), la ponte entière est là.
     expect(eggs.length).toBe(Math.min(clutchSize(42, 'rouge', 0), room));
     const water = environmentWater(next);
-    const pads = worldLilyPads(next);
+    const pads = padsOf(next);
     expect(pads.length).toBeGreaterThan(0);
     for (const egg of eggs) {
       expect(egg.surface).toBe('plante');
@@ -123,22 +128,20 @@ describe('frai du poisson rouge (#675)', () => {
 
   it('nénuphars du monde : ceux du rendu (même graine, même eau) ; aucun hors du bassin', () => {
     const world = createDefaultWorld(7, 'bassin');
-    expect(worldLilyPads(world)).toEqual(
-      lilyPadLayout(7, environmentWater('bassin'), POND.lilyPads),
-    );
-    expect(worldLilyPads(createDefaultWorld(7, 'tropical'))).toEqual([]);
+    expect(padsOf(world)).toEqual(lilyPadLayout(7, environmentWater('bassin'), POND.lilyPads));
+    expect(padsOf(createDefaultWorld(7, 'tropical'))).toEqual([]);
   });
 
   it('nénuphars du monde mémorisés (#685) : même liste rendue, recalculée si la graine change', () => {
     const world = createDefaultWorld(7, 'bassin');
-    const first = worldLilyPads(world);
-    expect(worldLilyPads(cloneWorld(world))).toBe(first);
+    const first = padsOf(world);
+    expect(padsOf(cloneWorld(world))).toBe(first);
     expect(Object.isFrozen(first)).toBe(true);
-    const other = worldLilyPads(createDefaultWorld(8, 'bassin'));
+    const other = padsOf(createDefaultWorld(8, 'bassin'));
     expect(other).not.toBe(first);
     expect(other).toEqual(lilyPadLayout(8, environmentWater('bassin'), POND.lilyPads));
     // Retour à la première graine : même disposition qu'avant.
-    expect(worldLilyPads(world)).toEqual(first);
+    expect(padsOf(world)).toEqual(first);
   });
 
   it('une ponte au plus par période', () => {

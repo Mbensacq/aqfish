@@ -103,7 +103,7 @@ import {
   type EnvironmentId,
   type Place,
 } from './environment';
-import { lilyPadLayout, type LilyPad, type LilyPadSettings } from './lily-pads';
+import { worldLilyPads } from './world-lily-pads';
 import { eatInPlace, feedingBand, foodTarget, type FeedingBand } from './feeding';
 import { addDecayedFoodInPlace } from './food-decay';
 import {
@@ -165,12 +165,7 @@ import {
 import { plantGrowthFactor } from './side-effects';
 import { SPECIES, type AnemoneBondParams, type SpeciesDefinition, type SpeciesId } from './species';
 import { createFish, stepFish, swimBounds, type Fish, type SwimBounds } from './swimmer';
-import {
-  clampImmersiveDimensions,
-  clampTankDimensions,
-  type Box3,
-  type TankDimensions,
-} from './tank';
+import { clampImmersiveDimensions, clampTankDimensions, type TankDimensions } from './tank';
 import { assertTimeStep } from './time-step';
 import {
   initialMaintenance,
@@ -1421,7 +1416,7 @@ function layEggsInPlace(
           room,
           water,
           fryPlants(world.decor),
-          worldLilyPads(world),
+          worldLilyPads(world.seed, world),
         )
       : layClutch(world.seed, species, spawn, room, water, fryPlants(world.decor));
   if (clutch.length > 0) {
@@ -1429,41 +1424,6 @@ function layEggsInPlace(
     world.eggs = eggs;
   }
   return clutch.length;
-}
-
-/** Dernière disposition calculée par `worldLilyPads`, avec ses clés (#685). */
-let lilyPadMemo: {
-  readonly seed: number;
-  readonly water: Box3;
-  readonly settings: LilyPadSettings;
-  readonly pads: readonly LilyPad[];
-} | null = null;
-
-/**
- * Nénuphars de `world` (`lilyPadLayout`), mêmes ancres que ceux du rendu (même graine, même
- * eau) : surfaces de frai du poisson rouge (#675). Liste vide sans nénuphars. La dernière
- * disposition est mémorisée (graine, eau et réglages identiques : `environmentWater` renvoie
- * le même objet pour un même lieu), donc pas de recalcul à chaque ponte (#685) ; la liste rendue
- * est gelée et partagée.
- */
-export function worldLilyPads(world: World): readonly LilyPad[] {
-  const settings = environmentById(world.environment).lilyPads;
-  if (settings === null) {
-    return [];
-  }
-  const water = environmentWater(world);
-  const memo = lilyPadMemo;
-  if (
-    memo !== null &&
-    memo.seed === world.seed &&
-    memo.water === water &&
-    memo.settings === settings
-  ) {
-    return memo.pads;
-  }
-  const pads = Object.freeze(lilyPadLayout(world.seed, water, settings));
-  lilyPadMemo = { seed: world.seed, water, settings, pads };
-  return pads;
 }
 
 /**
