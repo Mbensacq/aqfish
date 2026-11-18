@@ -5,6 +5,7 @@ import { FUNGUS_ADVANCED_AT, FUNGUS_VISIBLE_AT } from './fungus';
 import {
   EMPTY_HEALTH_SUMMARY,
   healthSummary,
+  sameHealthSummary,
   SICK_HEALTH,
   WEAK_HEALTH,
   type HealthSubject,
@@ -175,5 +176,17 @@ describe('caractérisation de healthSummary (#686, lot 4)', () => {
       hash.add(JSON.stringify(healthSummary(animals)));
     }
     expect(hash.digest()).toBe(EXPECTED_GROUPS);
+  });
+
+  it('synthèses égales : chaque compte compte, les moyennes au pour cent près', () => {
+    const base = healthSummary([{ species: 'neon', health: 0.5, hunger: 0.5 }]);
+    expect(sameHealthSummary(base, { ...base })).toBe(true);
+    for (const key of Object.keys(base) as (keyof typeof base)[]) {
+      const value = base[key];
+      const changed = { ...base, [key]: value === null ? 0.5 : value + 0.5 };
+      expect(sameHealthSummary(base, changed), key).toBe(false);
+      expect(sameHealthSummary(changed, base), key).toBe(false);
+    }
+    expect(sameHealthSummary(base, { ...base, averageHealth: 0.501 })).toBe(true);
   });
 });
