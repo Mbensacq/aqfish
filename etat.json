@@ -8847,6 +8847,12 @@
           "debut": "2026-11-18T05:02:40.875Z",
           "fin": "2026-11-18T05:43:54.450Z",
           "note": "Verdict OK, 0 bug, captures publiées (166/166 identiques, 1 instabilité 13 px connue), unitaires/lint/build verts, e2e laissés à la CI, mutation non mesurée (trop long)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-18T05:44:24.523Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
