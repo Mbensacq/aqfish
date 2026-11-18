@@ -93,7 +93,6 @@ import {
   applyPopulation,
   AQUARIUM_RENDERER_FACTORY,
   AquariumHost,
-  COMPARISON_BACKGROUND,
   DECOR_PHYSICS_LOADER,
   AUTOSAVE_INTERVAL_MS,
   SAVE_FILE_NAME,
@@ -138,6 +137,7 @@ import {
   WALLPAPER_PAUSED_ATTRIBUTE,
   WATER_ATTRIBUTE,
 } from './aquarium-attributes';
+import { COMPARISON_BACKGROUND } from '../care-session/care-session-controller';
 
 /** Double du renderer WebGL (jsdom n'a pas WebGL). */
 class FakeRenderer implements AquariumRenderer {

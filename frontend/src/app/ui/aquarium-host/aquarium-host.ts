@@ -66,7 +66,6 @@ import {
   AquariumView,
   createWebGLRenderer,
   type AquariumRendererFactory,
-  type StrokePoint,
 } from '../../render/aquarium-view';
 import { presetTransitionSeconds } from '../../render/camera-presets';
 import { ReducedMotionState } from '../reduced-motion/reduced-motion-state';
@@ -278,14 +277,8 @@ import {
   refillWorldFeederInPlace,
   setWorldLightingInPlace,
   scrapeWorldAlgaeInPlace,
-  scrapeWorldAlgaeAlongInPlace,
-  siphonWorldInPlace,
-  refillWorldWaterInPlace,
-  rinseWorldFilterInPlace,
-  cutWorldPlantInPlace,
   pruneWorldPlantInPlace,
   recordWorldMaintenanceInPlace,
-  worldHasCuttablePlants,
   worldHasPrunablePlants,
   worldPlantShade,
   worldShownPlantGrowth,
@@ -303,12 +296,10 @@ import { netTarget } from '../../sim/mortality';
 import { DROPSY_ADVANCED_AT, DROPSY_MAX } from '../../sim/dropsy';
 import { CHEVRON_COUNTS } from '../../render/current-indicator-layer';
 import {
-  comparisonFileName,
   PHOTO_FAILED_MESSAGE,
   PHOTO_NOTICE_MS,
   photoFileName,
   photoScale,
-  sideBySidePhotos,
   upscalePhoto,
   type PhotoImage,
   type PhotoPixels,
@@ -343,10 +334,8 @@ import {
 import {
   addJournalEntry,
   addPruneEntry,
-  careSessionEntry,
   carryJournalWatches,
   createJournal,
-  freshWaterEntry,
   journalLines,
   observeJournal,
   restoreJournal,
@@ -395,7 +384,6 @@ import {
   lightingOf,
   sampleAlgae,
   visibleAlgaeCount,
-  type ScraperRay,
 } from '../../sim/algae';
 import { feederReadout, hasFeeder, type FeederReadout } from '../../sim/auto-feeder';
 import { NO_FOULING, sampleFouling, worldFouling } from '../../sim/fouling';
@@ -442,31 +430,11 @@ import {
   sameHealthSummary,
   type HealthSummary,
 } from '../../sim/health-summary';
-import { parseHex, type Rgb } from '../dashboard-frame/contrast';
-import { DASHBOARD_COLORS } from '../dashboard-frame/dashboard-frame';
 import { refreshDue } from '../dashboard-frame/refresh-pace';
-import {
-  careSessionCompared,
-  careSessionFinished,
-  careSessionPruned,
-  careStepTask,
-  completeCareStep,
-  readCareSession,
-  serializeCareSession,
-  skipAbsentCareSteps,
-  skipCareStep,
-  startCareSession,
-  withCut,
-  withPoured,
-  withRinse,
-  withSiphoned,
-  type CareSession,
-} from '../../sim/care-session';
-import { careStepSound } from '../../core/care-sound/care-sound';
-import { hasWaterToSiphon, pouredShare, siphonedShare } from '../../sim/siphon';
 import { filterMaturityPercent } from '../../sim/filter-maturation';
 import type { FilterRinseWater } from '../../sim/filter-rinse';
 import { AquariumProbe, type DecorPhysicsState } from './aquarium-probe';
+import { CareSessionController } from '../care-session/care-session-controller';
 
 /** Fabrique du renderer, remplaçable dans les tests (jsdom n'a pas WebGL). */
 export const AQUARIUM_RENDERER_FACTORY = new InjectionToken<AquariumRendererFactory>(
@@ -477,22 +445,6 @@ export const AQUARIUM_RENDERER_FACTORY = new InjectionToken<AquariumRendererFact
 /** Durée de la mise en évidence depuis une alerte (#483), en millisecondes de temps réel. */
 export const ALERT_HIGHLIGHT_MS = 6000;
 
-/** Avant / après du bilan d'une séance (#624) : images PNG en URL `data:`. */
-export interface CareComparison {
-  readonly before: string;
-  readonly after: string;
-}
-
-/** Écart entre l'avant et l'après de la photo enregistrée (#624), en pixels de scène. */
-const COMPARISON_GAP = 2;
-
-/**
- * Fond de cet écart (#624) : celui de l'interface, lu dans `DASHBOARD_COLORS.background` pour
- * suivre un changement de palette (#646).
- */
-export const COMPARISON_BACKGROUND: Rgb = parseHex(DASHBOARD_COLORS.background);
-/** Clé de la séance d'entretien interrompue (#604), distincte de la sauvegarde du monde. */
-export const CARE_SESSION_STORAGE_KEY = 'aqfish.seance-entretien';
 /** Pas de simulation entre deux relevés de l'eau dans la boucle (0,5 s simulée). */
 export const WATER_READOUT_TICKS = 30;
 
@@ -1020,29 +972,54 @@ export class AquariumHost {
   );
   /** Vrai tant que la raclette est en main (#476) : un clic sur le bac racle. */
   readonly scraping = signal(false);
+  /**
+   * Séance d'entretien guidée (#604, #694, ADR 0154) : état et étapes dans son contrôleur,
+   * qui passe par ces ports pour le monde, la vue, le stockage et la photo.
+   */
+  private readonly care = new CareSessionController({
+    world: () => this.currentWorld,
+    view: () => this.view,
+    isCapture: () => this.capture,
+    storage: () => this.saveStorage,
+    applyWaterSetting: (apply) => this.applyWaterSetting(apply),
+    recordMaintenance: (world, task) => this.recordMaintenance(world, task),
+    journalOf: (world) => this.journalOf(world),
+    waterHistoryOf: (world) => this.waterHistoryOf(world),
+    playSound: (kind) => this.ambientSound.playCareSound(kind),
+    publishStep: (step) => this.probe.publishCareSession(step),
+    publishFood: (world) => this.probe.publishFood(world),
+    refreshWater: () => this.refreshWater(),
+    saveNow: () => this.saveNow(),
+    scheduleFrame: () => this.scheduleFrame(),
+    tools: {
+      scraping: () => this.scraping(),
+      toggleScraper: () => this.toggleScraper(),
+      pruning: () => this.pruning(),
+      togglePruner: () => this.togglePruner(),
+    },
+    photo: {
+      dataUrl: (pixels) => this.photoDataUrl(pixels),
+      download: (image, name) => this.downloadPhoto(image, name),
+      failed: () => this.photoFailed(),
+      clearNotice: () => this.setPhotoNotice(null),
+    },
+  });
   /** Séance d'entretien guidée affichée (#604), `null` hors séance. */
-  readonly careSession = signal<CareSession | null>(null);
+  readonly careSession = this.care.session;
   /** Plaques d'algues visibles, pour la consigne de l'étape « vitres » (#604). */
   readonly visibleAlgae = signal(0);
   /** Conditionneur versé dans le seau à l'étape « eau neuve » (#605). */
-  readonly careConditioner = signal(true);
+  readonly careConditioner = this.care.conditioner;
   /** Écart de température du seau avec le bac à l'étape « eau neuve », en °C (#605). */
-  readonly careBucketGap = signal(0);
+  readonly careBucketGap = this.care.bucketGap;
   /** Efficacité du filtre du bac (0 à 1), pour la consigne de l'étape « filtre » (#606). */
-  readonly careFilter = signal(1);
+  readonly careFilter = this.care.filter;
   /** Le bac a une plante à tailler (#623) : étape « taille » et sa ligne au bilan. */
-  readonly carePrunable = signal(true);
+  readonly carePrunable = this.care.prunable;
   /** Une plante du bac a une pousse à couper (#644, `worldHasCuttablePlants`). */
-  readonly careCuttable = signal(true);
-  /**
-   * Avant / après du bilan (#624) : images PNG (URL `data:`) du bac au début de la séance et au
-   * bilan, à la résolution de la scène ; `null` sans comparaison. Jamais enregistrées.
-   */
-  readonly careComparison = signal<CareComparison | null>(null);
-  /** Relevé du bac au début de la séance (#624), gardé en mémoire jusqu'au bilan ou à l'abandon. */
-  private careBefore: PhotoPixels | null = null;
-  /** Relevé du bac au bilan (#624), pour la photo avant / après enregistrée. */
-  private careAfter: PhotoPixels | null = null;
+  readonly careCuttable = this.care.cuttable;
+  /** Avant / après du bilan (#624), `null` sans comparaison. */
+  readonly careComparison = this.care.comparison;
   /** Vrai si le dernier clic sur le canvas a retiré un corps (#582) : il ne nourrit pas. */
   private netted = false;
   /** Corps exposés au dernier relevé (#582) : un décès depuis relève aussi les effectifs. */
@@ -1788,371 +1765,49 @@ export class AquariumHost {
     return index;
   }
 
-  /**
-   * Ouvre la séance d'entretien guidée (#604, ADR 0138), ou reprend celle qui avait été
-   * interrompue, à son étape. Sans effet en capture, en mode décor ou avant le démarrage.
-   */
+  /** Ouvre ou reprend la séance d'entretien guidée (#604, ADR 0138) : `CareSessionController`. */
   openCareSession(): void {
-    const world = this.currentWorld;
-    if (!world || this.capture || isDecorMode(world)) {
-      return;
-    }
-    const shown = this.careSession();
-    if (shown) {
-      // Déjà ouverte : rien ne change, l'image « avant » est gardée (#624).
-      this.showCareSession(shown);
-      return;
-    }
-    const resumed = readCareSession(this.readStoredCareSession());
-    // Avant / après (#624) : l'image « avant » n'est prise qu'au début d'une séance neuve ; une
-    // séance reprise a perdu la sienne à l'interruption et n'aura pas de comparaison.
-    this.releaseCareImages();
-    if (!resumed) {
-      this.careBefore = this.readCareImage();
-    }
-    this.showCareSession(resumed ?? startCareSession());
+    this.care.open();
   }
 
   /** Vrai tant que l'image « avant » de la séance est gardée en mémoire (#624). */
   hasCareBefore(): boolean {
-    return this.careBefore !== null;
+    return this.care.hasBefore();
   }
 
-  /** Relevé du bac pour l'avant / après (#624), `null` si la vue ne sait pas le relire. */
-  private readCareImage(): PhotoPixels | null {
-    try {
-      return this.view?.takePhoto() ?? null;
-    } catch {
-      return null;
-    }
-  }
-
-  /** Oublie les images de l'avant / après (#624). */
-  private releaseCareImages(): void {
-    this.careBefore = null;
-    this.careAfter = null;
-    this.careComparison.set(null);
-  }
-
-  /**
-   * Bilan atteint (#624) : relève l'image « après » et prépare la comparaison s'il y a eu au
-   * moins une étape faite et une image « avant » ; sinon, libère l'image « avant ».
-   */
-  private compareCareSession(session: CareSession): void {
-    const before = this.careBefore;
-    if (!before || !careSessionCompared(session)) {
-      this.releaseCareImages();
-      return;
-    }
-    const after = this.readCareImage();
-    const urls = after ? [this.photoDataUrl(before), this.photoDataUrl(after)] : [];
-    if (!after || urls.some((url) => url === null)) {
-      this.releaseCareImages();
-      return;
-    }
-    this.careAfter = after;
-    this.careComparison.set({ before: urls[0]!, after: urls[1]! });
-  }
-
-  /** Image PNG (URL `data:`) d'un relevé à la résolution de la scène, `null` en cas d'échec. */
-  private photoDataUrl(pixels: PhotoPixels): string | null {
-    try {
-      return this.photoCanvas(upscalePhoto(pixels, 1))?.toDataURL('image/png') ?? null;
-    } catch {
-      return null;
-    }
-  }
-
-  /**
-   * Enregistre la photo avant / après du bilan (#624) : les deux images côte à côte, agrandies
-   * par un entier sans lissage comme la photo. Renvoie `true` si elle a été produite.
-   */
+  /** Enregistre la photo avant / après du bilan (#624). */
   saveCareComparison(): boolean {
-    const before = this.careBefore;
-    const after = this.careAfter;
-    if (!before || !after || !this.careComparison()) {
-      return false;
-    }
-    this.setPhotoNotice(null);
-    try {
-      const pair = sideBySidePhotos(before, after, COMPARISON_GAP, COMPARISON_BACKGROUND);
-      const image = upscalePhoto(pair, photoScale(pair.width, pair.height));
-      return this.downloadPhoto(image, comparisonFileName(new Date()));
-    } catch {
-      this.photoFailed();
-      return false;
-    }
+    return this.care.saveComparison();
   }
 
-  /** Termine l'étape affichée : sa tâche entre au calendrier d'entretien (#604). */
+  /** Termine l'étape affichée de la séance (#604). */
   completeCareSessionStep(): void {
-    const session = this.careSession();
-    if (!session) {
-      return;
-    }
-    if (session.step === 'eau') {
-      this.refillFromCareSession(session.poured ?? 0);
-    } else if (session.step === 'filtre') {
-      if (session.rinse === undefined) {
-        return;
-      }
-      this.rinseFromCareSession(session.rinse);
-    } else if (session.step === 'taille') {
-      // Taille (#623) : au calendrier seulement si une coupe a été faite.
-      if (careSessionPruned(session)) {
-        this.applyWaterSetting((world) => this.recordMaintenance(world, 'prune'));
-      }
-    } else {
-      const task = careStepTask(session.step);
-      if (task) {
-        this.applyWaterSetting((world) => this.recordMaintenance(world, task));
-      }
-    }
-    // Clic de fin d'étape (#625) : seulement pour une étape vraiment terminée (pas au bilan).
-    const click = careStepSound(session.step, 'fait', !careSessionFinished(session));
-    if (click) {
-      this.ambientSound.playCareSound(click);
-    }
-    this.showCareSession(completeCareStep(session));
+    this.care.completeStep();
   }
 
-  /**
-   * Coupe de l'étape « taille » (#623) : taille la plante d'indice `index` du décor, la partie
-   * coupée charge un peu l'eau (`cutWorldPlantInPlace`) ; compte la coupe dans la séance. Le
-   * calendrier n'est mis à jour qu'à « Étape terminée ». Renvoie vrai si une partie a été coupée.
-   */
+  /** Coupe de l'étape « taille » (#623) ; vrai si une partie a été coupée. */
   cutCarePlant(index: number): boolean {
-    const session = this.careSession();
-    if (session?.step !== 'taille') {
-      return false;
-    }
-    let cut = false;
-    this.applyWaterSetting((world) => {
-      cut = cutWorldPlantInPlace(world, index);
-      if (cut) {
-        // Journal (#655) : une ligne de taille par jour, qui compte les coupes.
-        addPruneEntry(this.journalOf(world), world.time);
-      }
-    });
-    if (cut) {
-      this.showCareSession(withCut(session));
-    }
-    return cut;
+    return this.care.cutPlant(index);
   }
 
-  /** Choix de l'eau de rinçage de l'éponge (#606) : appliqué quand l'étape est terminée. */
+  /** Choix de l'eau de rinçage de l'éponge (#606). */
   chooseCareRinse(rinse: FilterRinseWater): void {
-    const session = this.careSession();
-    if (session?.step === 'filtre') {
-      this.showCareSession(withRinse(session, rinse));
-    }
+    this.care.chooseRinse(rinse);
   }
 
-  /**
-   * Éponge rincée (#606) : dans l'eau du bac rien ne change, au robinet le chlore tue une part
-   * des bactéries ; nettoyage du filtre au calendrier dans les deux cas.
-   */
-  private rinseFromCareSession(rinse: FilterRinseWater): void {
-    this.applyWaterSetting((world) => {
-      rinseWorldFilterInPlace(world, rinse);
-      this.recordMaintenance(world, 'filter');
-    });
-  }
-
-  /** Un seau d'eau neuve de plus (#605), jusqu'à remplacer l'eau retirée au siphon. */
+  /** Un seau d'eau neuve de plus (#605). */
   pourCareBucket(): void {
-    const session = this.careSession();
-    if (session?.step === 'eau') {
-      const poured = withPoured(session, pouredShare(session.poured ?? 0, session.siphoned ?? 0));
-      if ((poured.poured ?? 0) > (session.poured ?? 0)) {
-        this.ambientSound.playCareSound('seau');
-      }
-      this.showCareSession(poured);
-    }
+    this.care.pourBucket();
   }
 
-  /**
-   * Eau neuve versée (#605) : la part `share` est remplacée par l'eau du seau (conditionneur,
-   * écart de température choisis), puis calendrier et historique comme le bouton « Changer
-   * l'eau » ; au journal, une ligne « eau neuve » (#655). Rien n'est versé : rien n'est
-   * enregistré.
-   */
-  private refillFromCareSession(share: number): void {
-    if (!(share > 0)) {
-      return;
-    }
-    const conditioner = this.careConditioner();
-    const gap = this.careBucketGap();
-    this.applyWaterSetting((world) => {
-      refillWorldWaterInPlace(world, share, conditioner, world.water.temperature + gap);
-      this.recordMaintenance(world, 'waterChange');
-      markWaterChange(this.waterHistoryOf(world), world.water, world.tick);
-      addJournalEntry(this.journalOf(world), freshWaterEntry(world.time));
-    });
-  }
-
-  /** Saute l'étape affichée (#604) : rien n'est enregistré au calendrier. */
+  /** Saute l'étape affichée de la séance (#604). */
   skipCareSessionStep(): void {
-    const session = this.careSession();
-    if (session) {
-      this.showCareSession(skipCareStep(session));
-    }
+    this.care.skipStep();
   }
 
-  /**
-   * Ferme la séance (#604) : interrompue, elle reprendra à la même étape ; finie (bilan),
-   * elle est oubliée.
-   */
+  /** Ferme la séance (#604) : interrompue, elle reprendra ; finie, elle est oubliée. */
   closeCareSession(): void {
-    const session = this.careSession();
-    if (session && careSessionFinished(session)) {
-      this.writeStoredCareSession(null);
-    }
-    // Avant / après (#624) : libérées à la fin comme à l'abandon.
-    this.releaseCareImages();
-    this.careSession.set(null);
-    this.applyCareSessionTool(null);
-  }
-
-  private showCareSession(shown: CareSession): void {
-    // Bac sans plante à tailler (#623) : l'étape « taille » est sautée d'office.
-    const world = this.currentWorld;
-    const prunable = world ? worldHasPrunablePlants(world) : true;
-    this.carePrunable.set(prunable);
-    this.careCuttable.set(world ? worldHasCuttablePlants(world) : true);
-    const session = skipAbsentCareSteps(shown, prunable);
-    if (careSessionFinished(session) && !this.careComparison()) {
-      this.compareCareSession(session);
-    }
-    const before = this.careSession();
-    if (
-      careSessionFinished(session) &&
-      before !== null &&
-      !careSessionFinished(before) &&
-      Object.values(session.outcomes).includes('fait')
-    ) {
-      // Séance menée jusqu'au bilan avec au moins une étape faite (#655) : une ligne au
-      // journal, une seule fois.
-      this.applyWaterSetting((world) =>
-        addJournalEntry(this.journalOf(world), careSessionEntry(world.time)),
-      );
-    }
-    this.careSession.set(session);
-    this.writeStoredCareSession(careSessionFinished(session) ? null : session);
-    this.applyCareSessionTool(session);
-  }
-
-  /**
-   * Raclette en main à l'étape « vitres », sécateur à l'étape « taille » (#623), passage
-   * autorisé aux vitres et au siphon.
-   */
-  private applyCareSessionTool(session: CareSession | null): void {
-    const glass = session?.step === 'vitres';
-    if (glass !== this.scraping()) {
-      this.toggleScraper();
-    }
-    const prune = session?.step === 'taille';
-    if (prune !== this.pruning()) {
-      this.togglePruner();
-    }
-    this.view?.setStrokeEnabled(strokeStep(session));
-    if (session?.step === 'eau' && session.poured === undefined) {
-      // Seau neuf : conditionneur versé, eau à la température du bac.
-      this.careConditioner.set(true);
-      this.careBucketGap.set(0);
-    }
-    this.probe.publishCareSession(session?.step ?? null);
-  }
-
-  /**
-   * Passage de raclette (#604) : retire les plaques sous les points d'un événement du geste
-   * (un seul appel à `scrapeWorldAlgaeAlongInPlace`, #617), enregistre s'il y en a.
-   */
-  private scrapeStroke(points: readonly StrokePoint[]): boolean {
-    const world = this.currentWorld;
-    const view = this.view;
-    if (!world || !view || this.capture) {
-      return false;
-    }
-    const rays: ScraperRay[] = [];
-    for (const point of points) {
-      const ray = view.pickRay(point.x, point.y);
-      if (ray) {
-        rays.push(ray);
-      }
-    }
-    if (rays.length > 0 && scrapeWorldAlgaeAlongInPlace(world, rays).length > 0) {
-      this.refreshWater();
-      this.saveNow();
-      this.scheduleFrame();
-      return true;
-    }
-    return false;
-  }
-
-  /** Geste de la séance (#604, #605) : raclette aux vitres, tuyau au siphon. */
-  private careStroke(points: readonly StrokePoint[]): void {
-    if (this.careSession()?.step === 'siphon') {
-      this.siphonStroke(points);
-    } else if (this.scrapeStroke(points)) {
-      // Raclette sur la vitre (#625) : seulement quand une plaque a été retirée.
-      this.ambientSound.playCareSound('raclette');
-    }
-  }
-
-  /**
-   * Passage du siphon (#605) : aspire les granulés posés sous les points et compte l'eau
-   * retirée dans la séance (jauge), sans toucher à l'eau du bac avant l'eau neuve.
-   */
-  private siphonStroke(points: readonly StrokePoint[]): void {
-    const world = this.currentWorld;
-    const view = this.view;
-    const session = this.careSession();
-    if (!world || !view || this.capture || session?.step !== 'siphon') {
-      return;
-    }
-    const rays: ScraperRay[] = [];
-    for (const point of points) {
-      const ray = view.pickRay(point.x, point.y);
-      if (ray) {
-        rays.push(ray);
-      }
-    }
-    const pass = siphonWorldInPlace(world, rays);
-    if (pass.points === 0) {
-      return;
-    }
-    // Eau qui coule dans le siphon (#625).
-    this.ambientSound.playCareSound('siphon');
-    const hasWater = hasWaterToSiphon(waterLiters(environmentWater(world)));
-    this.showCareSession(
-      withSiphoned(session, siphonedShare(session.siphoned ?? 0, pass.points, hasWater)),
-    );
-    if (pass.food > 0) {
-      this.probe.publishFood(this.currentWorld);
-      this.saveNow();
-      this.scheduleFrame();
-    }
-  }
-
-  private readStoredCareSession(): string | null {
-    try {
-      return this.saveStorage?.getItem(CARE_SESSION_STORAGE_KEY) ?? null;
-    } catch {
-      return null;
-    }
-  }
-
-  private writeStoredCareSession(session: CareSession | null): void {
-    try {
-      // Séance finie : texte vide, relu comme « aucune séance » (`readCareSession`).
-      this.saveStorage?.setItem(
-        CARE_SESSION_STORAGE_KEY,
-        session ? serializeCareSession(session) : '',
-      );
-    } catch {
-      // Stockage plein ou refusé : la séance reste affichée, sans reprise.
-    }
+    this.care.close();
   }
 
   /**
@@ -2934,6 +2589,15 @@ export class AquariumHost {
     } catch {
       this.photoFailed();
       return false;
+    }
+  }
+
+  /** Image PNG (URL `data:`) d'un relevé à la résolution de la scène, `null` en cas d'échec. */
+  private photoDataUrl(pixels: PhotoPixels): string | null {
+    try {
+      return this.photoCanvas(upscalePhoto(pixels, 1))?.toDataURL('image/png') ?? null;
+    } catch {
+      return null;
     }
   }
 
@@ -4405,8 +4069,8 @@ export class AquariumHost {
     this.viewCleanups.push(view.onUserInteraction(() => this.activePreset.set(null)));
     view.setDecorDragEnabled(this.decorEditing());
     // Séance d'entretien (#604) : glisser racle à l'étape « vitres ».
-    view.setStrokeEnabled(strokeStep(this.careSession()));
-    this.viewCleanups.push(view.onStroke((points) => this.careStroke(points)));
+    view.setStrokeEnabled(this.care.strokeEnabled());
+    this.viewCleanups.push(view.onStroke((points) => this.care.stroke(points)));
     this.decorDrag = null;
     this.roomDrag = null;
     this.viewCleanups.push(
@@ -4429,7 +4093,7 @@ export class AquariumHost {
         } else if (this.pruning()) {
           const pick = view.pickDecor(x, y);
           if (pick?.kind === 'item') {
-            if (this.careSession()?.step === 'taille') {
+            if (this.care.isCutting()) {
               this.cutCarePlant(pick.index);
             } else {
               this.prunePlant(pick.index);
@@ -4453,7 +4117,7 @@ export class AquariumHost {
         const netted = this.netted;
         this.netted = false;
         // Tuyau du siphon en main (#605) : un clic n'ajoute pas de nourriture à aspirer.
-        const siphoning = this.careSession()?.step === 'siphon';
+        const siphoning = this.care.isSiphoning();
         if (!netted && !siphoning && !this.decorEditing() && !this.scraping() && !this.pruning()) {
           this.feed(x, z);
         }
@@ -4947,9 +4611,7 @@ export class AquariumHost {
     this.waterReadTick = world.tick;
     this.refreshTankList();
     this.waterSample.set(waterSample(world.water, world.environment, world.tick));
-    this.careFilter.set(world.water.filter);
-    this.carePrunable.set(worldHasPrunablePlants(world));
-    this.careCuttable.set(worldHasCuttablePlants(world));
+    this.care.refreshReadouts(world);
     this.probe.publishFilterBacteria(filterMaturityPercent(world.water));
     this.untreatedTap.set(world.water.untreatedTap === true);
     this.carbon.set(world.water.carbon === true);
@@ -5147,9 +4809,4 @@ export class AquariumHost {
       resetCaptureReady(this.document);
     }
   }
-}
-
-/** Vrai à une étape de séance qui se fait d'un geste glissé (vitres, siphon). */
-function strokeStep(session: CareSession | null): boolean {
-  return session?.step === 'vitres' || session?.step === 'siphon';
 }
