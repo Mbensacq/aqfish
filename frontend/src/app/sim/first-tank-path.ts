@@ -5,7 +5,7 @@ import { DEFAULT_DAY_LENGTH_SECONDS } from './daylight';
 import type { MaintenanceLogEntry, MaintenanceTask } from './maintenance';
 import { COMPOUND_THRESHOLDS, levelOf } from './water-quality';
 import type { WaterState } from './water';
-import type { World } from './world';
+import type { World } from './world-types';
 
 /**
  * Parcours guidé « Mon premier aquarium » (issue #512, ADR 0119) : machine à états pure qui lit

@@ -4,13 +4,8 @@ import { environmentWater, isTankResizable } from './environment';
 import type { FoodPellet } from './food';
 import type { Fish } from './swimmer';
 import { clampTankDimensions, sameDimensions, type Box3, type TankDimensions } from './tank';
-import {
-  boundsFor,
-  createWorld,
-  seededObstacleCount,
-  type MutableWorld,
-  type World,
-} from './world';
+import { boundsFor, createWorld, seededObstacleCount } from './world';
+import type { MutableWorld, World } from './world-types';
 
 /**
  * Dimensions réglables du bac (issue #171, ADR 0047) : changer la longueur, la hauteur ou la

@@ -1,6 +1,7 @@
 import { ENVIRONMENT_IDS, type EnvironmentId } from './environment';
 import { capTotalPopulation } from './population';
-import { createDefaultWorld, type World } from './world';
+import { createDefaultWorld } from './world';
+import type { World } from './world-types';
 
 /**
  * Mondes des environnements visités mais non affichés (issue #277, ADR 0063) : changer

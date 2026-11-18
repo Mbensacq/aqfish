@@ -13,14 +13,7 @@ import {
   type WalkerNeighbor,
 } from './axolotl';
 import { createFrog, stepFrog } from './frog';
-import {
-  deadBody,
-  deadLoad,
-  splitDeaths,
-  stepDeadInPlace,
-  toxicWater,
-  type DeadAnimal,
-} from './mortality';
+import { deadBody, deadLoad, splitDeaths, stepDeadInPlace, toxicWater } from './mortality';
 import { behaviorTarget, hasLandedFood, speciesBehavior, type BehaviorContext } from './behaviors';
 import { bubbleSourceFor, fillBubbles, type BubbleBuffer } from './bubbles';
 import {
@@ -32,7 +25,7 @@ import {
   noGuard,
 } from './clutch-guard';
 import { addRivalSteering, enforceRivalDistance, hasRivals } from './compatibility';
-import type { CareMode } from './care-mode';
+
 import { catappaActive, withCatappaCount } from './catappa';
 import { MAX_TOTAL_FISH, SIM_DT } from './constants';
 import { dayIntensityAt, hourAt, type DayClock } from './daylight';
@@ -46,7 +39,6 @@ import {
   rationsDue,
   refillFeederInPlace,
   takeRationsInPlace,
-  type FeederState,
 } from './auto-feeder';
 import {
   hasPlantGrowth,
@@ -164,7 +156,7 @@ import {
 } from './pond-shape';
 import { plantGrowthFactor } from './side-effects';
 import { SPECIES, type AnemoneBondParams, type SpeciesDefinition, type SpeciesId } from './species';
-import { createFish, stepFish, swimBounds, type Fish, type SwimBounds } from './swimmer';
+import { createFish, stepFish, swimBounds, type SwimBounds } from './swimmer';
 import { clampImmersiveDimensions, clampTankDimensions, type TankDimensions } from './tank';
 import { assertTimeStep } from './time-step';
 import {
@@ -173,9 +165,7 @@ import {
   type MaintenanceState,
   type MaintenanceTask,
 } from './maintenance';
-import type { FirstTankPathState } from './first-tank-path';
-import type { SavedWaterHistory } from './water-history';
-import type { SavedJournal } from './journal';
+
 import {
   changeWaterInPlace,
   freshWater,
@@ -186,7 +176,6 @@ import {
   waterLiters,
   waterLoad,
   type MutableWaterState,
-  type WaterState,
 } from './water';
 import { phOutOfTolerance } from './water-ph';
 import {
@@ -219,138 +208,28 @@ import {
   type CurrentVelocity,
 } from './water-current';
 
-/**
- * Entité de la simulation. Seuls les poissons existent pour l'instant (`sim/swimmer.ts`).
- * Chaque entité tire son hasard de son propre sous-générateur, dérivé de la graine du
- * monde et de son identifiant (`deriveSeed`, core/random/prng.ts).
- */
-export type Entity = Fish;
-
-/** Population demandée à la création du monde. */
-export interface PopulationEntry {
-  readonly species: SpeciesId;
-  readonly count: number;
-}
-
-/**
- * État du monde : objet de données pur, sérialisable en JSON (ADR 0003).
- * Ne jamais y placer de classe, de fonction ni d'objet Three.js.
- */
-export interface World {
-  /** Graine du monde, entier 32 bits non signé. */
-  readonly seed: number;
-  /**
-   * Environnement du monde (`sim/environment.ts`, ADR 0026) : son volume d'eau borne la nage
-   * et les dépôts de nourriture. Fixé à la création.
-   */
-  readonly environment: EnvironmentId;
-  /**
-   * Dimensions réglées du bac (issue #171, ADR 0047), bornées à `TANK_LIMITS` ; absentes :
-   * celles de l'environnement. Le monde est ainsi un lieu (`TankPlace`, `sim/environment.ts`).
-   */
-  readonly dimensions?: TankDimensions;
-  /**
-   * Forme du bassin vue de dessus (issue #190, ADR 0080, `sim/pond-shape.ts`) : `ovale` ou
-   * `haricot` ; absente, rectangle (jamais enregistrée ainsi). Fixée à la création.
-   */
-  readonly shape?: PondShape;
-  /** Nombre de pas `SIM_DT` exécutés depuis la création. */
-  readonly tick: number;
-  /**
-   * Temps simulé écoulé, en secondes. Toujours égal à `tick * SIM_DT` tant que le monde n'a
-   * avancé que par pas de `SIM_DT` (cas de l'application) : il est recalculé à partir de
-   * `tick`, jamais cumulé, pour ne pas dériver (erreur flottante).
-   */
-  readonly time: number;
-  readonly entities: readonly Entity[];
-  /**
-   * Obstacles du bac (rochers à venir, `sim/obstacles.ts`), immobiles : les poissons les
-   * contournent (ADR 0012). Données pures, triées par identifiant.
-   */
-  readonly obstacles: readonly Obstacle[];
-  /**
-   * Éléments de décor (rochers, `sim/decor.ts`), immobiles, dans l'ordre donné. Leurs formes
-   * de collision sont ajoutées à `obstacles`, après les obstacles explicites (ADR 0015), puis
-   * les boîtes des coraux tirés de la graine (`sim/corals.ts`, ADR 0040).
-   */
-  readonly decor: readonly DecorItem[];
-  /**
-   * Granulés de nourriture déposés par l'utilisateur (`sim/food.ts`, ADR 0022), dans l'ordre
-   * des dépôts. Vide à la création.
-   */
-  readonly food: readonly FoodPellet[];
-  /** Identifiant du prochain granulé déposé (compteur, jamais réutilisé). */
-  readonly nextFoodId: number;
-  /**
-   * Identifiant du prochain poisson ajouté (`sim/population.ts`, issue #69) : compteur,
-   * jamais réutilisé, égal à l'effectif initial à la création.
-   */
-  readonly nextFishId: number;
-  /**
-   * État de l'eau du bac (`sim/water.ts`, issue #206, ADR 0052) : température, composés
-   * azotés, filtre. Eau saine à la création ; avancé à chaque pas, après la nourriture.
-   */
-  readonly water: WaterState;
-  /**
-   * Mode du bac (#278, `sim/care-mode.ts`, ADR 0077) : absent, le mode soins d'un bac jamais
-   * passé par le mode décor. En mode `decor`, l'eau, la faim et la santé sont en pause.
-   */
-  readonly careMode?: CareMode;
-  /**
-   * Force du courant (issue #460, `sim/water-current.ts`, ADR 0108) : absente, celle de
-   * l'environnement (`Environment.current`, coupée partout) ; jamais enregistrée coupée.
-   */
-  readonly current?: Exclude<CurrentLevel, 'coupe'>;
-  /**
-   * Œufs collés sur les vitres et les plantes (issue #478, `sim/eggs.ts`, ADR 0111) : absents
-   * tant qu'aucune ponte n'a eu lieu, et retirés quand le dernier œuf a éclos ou a été mangé.
-   */
-  readonly eggs?: readonly Egg[];
-  /**
-   * Calendrier d'entretien (issue #513, `sim/maintenance.ts`, ADR 0116) : absent tant que
-   * l'application n'a pas commencé le suivi de ce bac (monde neuf, ancienne sauvegarde).
-   */
-  readonly maintenance?: MaintenanceState;
-  /**
-   * Historique de l'eau (issue #511, `sim/water-history.ts`, ADR 0118), écrit à la sauvegarde
-   * seulement : la partie le tient hors du monde, aucun pas n'y touche.
-   */
-  readonly waterHistory?: SavedWaterHistory;
-  /**
-   * Journal du bac (issue #581, `sim/journal.ts`), écrit à la sauvegarde seulement : la partie
-   * le tient hors du monde, aucun pas n'y touche.
-   */
-  readonly journal?: SavedJournal;
-  /**
-   * Parcours « Mon premier aquarium » (issue #512, `sim/first-tank-path.ts`, ADR 0119), écrit
-   * à la sauvegarde seulement : la partie le tient hors du monde, aucun pas n'y touche.
-   */
-  readonly firstTankPath?: FirstTankPathState;
-  /**
-   * Distributeur de nourriture automatique (issue #583, `sim/auto-feeder.ts`) : absent, aucun
-   * (bac par défaut, anciennes sauvegardes) ; le monde avance alors exactement comme avant.
-   */
-  readonly feeder?: FeederState;
-  /**
-   * Mortalité activée (issue #582, `sim/mortality.ts`, ADR 0137) : absente, aucun animal ne
-   * meurt et le monde avance exactement comme avant ; jamais enregistrée à `false`.
-   */
-  readonly mortality?: true;
-  /**
-   * Corps des animaux morts (issue #582), dans l'ordre des décès : ils ne nagent plus,
-   * flottent ou reposent au fond et polluent l'eau jusqu'à leur retrait (`removeDeadInPlace`).
-   * Absents tant qu'aucun corps n'est dans le bac.
-   */
-  readonly dead?: readonly DeadAnimal[];
-}
-
-type Mutable<T> = { -readonly [K in keyof T]: T[K] };
-
-/**
- * Monde modifiable en place, possédé par un seul propriétaire (la boucle d'affichage de
- * `ui/aquarium-host`). Un `World` fraîchement créé lui est assignable.
- */
-export type MutableWorld = Mutable<World>;
+/** Types de l'état du monde, déclarés dans `sim/world-types.ts` (#687) ; réexportés pour les modules qui ne les importent pas encore de là. */
+export type {
+  Entity,
+  Feeding,
+  MutableWorld,
+  PopulationEntry,
+  SimClock,
+  SiphonPass,
+  World,
+  WorldFeatures,
+} from './world-types';
+import type {
+  Entity,
+  Feeding,
+  Mutable,
+  MutableWorld,
+  PopulationEntry,
+  SimClock,
+  SiphonPass,
+  World,
+  WorldFeatures,
+} from './world-types';
 
 /**
  * Crée un monde à `time = 0`, vide par défaut, peuplé dans l'ordre de `population`
@@ -517,13 +396,6 @@ export function homeForRank(
     return null;
   }
   return homes[Math.floor(rank / bond.perAnemone) % homes.length];
-}
-
-/** Coraux, anémones et points d'attache tirés de la graine d'un monde (`worldFeatures`). */
-export interface WorldFeatures {
-  readonly corals: readonly CoralColony[];
-  readonly anemones: readonly Anemone[];
-  readonly homes: readonly AnemoneHome[];
 }
 
 /**
@@ -702,12 +574,6 @@ export function createDefaultWorld(
   const place: Place = shape === undefined ? environment : { environment, shape };
   return createWorld(seed, env.population, [], env.decor, place);
 }
-
-/**
- * Horloge de journée lue par la simulation (rythme du jour, issue #209), ou `null` : plein
- * jour, nage d'avant au bit près. L'heure de chaque pas est `hourAt(clock, world.time)`.
- */
-export type SimClock = DayClock | null;
 
 /**
  * Fait avancer le monde d'un pas. Fonction pure : `world` n'est **jamais** modifié, un
@@ -919,13 +785,6 @@ export function refillWorldFeederInPlace(world: MutableWorld): boolean {
 const FEED_POINT = { x: 0, z: 0 };
 /** Marge du centre d'un dépôt au bord d'un bassin non rectangulaire, en mètres. */
 const FEED_SHAPE_MARGIN = FOOD_DROP_RADIUS + FOOD_RADIUS;
-
-/** Dépôt de nourriture à un temps simulé donné (contrat de capture, `nourrir=`). */
-export interface Feeding {
-  readonly time: number;
-  readonly x: number;
-  readonly z: number;
-}
 
 /**
  * Avance le monde jusqu'au temps `time` en déposant la nourriture de `feedings` au temps
@@ -1849,14 +1708,6 @@ export function changeWorldWaterInPlace(world: MutableWorld): void {
  */
 export function rinseWorldFilterInPlace(world: MutableWorld, rinse: FilterRinseWater): void {
   rinseFilterInPlace(world.water as MutableWaterState, rinse);
-}
-
-/** Résultat d'un passage de siphon (#605). */
-export interface SiphonPass {
-  /** Points du geste tombés dans l'eau (chacun retire un peu d'eau, `siphonedShare`). */
-  readonly points: number;
-  /** Granulés posés aspirés. */
-  readonly food: number;
 }
 
 /**

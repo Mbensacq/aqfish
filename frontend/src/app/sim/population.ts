@@ -1,15 +1,7 @@
 import { MAX_TOTAL_FISH } from './constants';
 import { SPECIES, type SpeciesId } from './species';
-import {
-  bondedCount,
-  cloneWorld,
-  homeForRank,
-  spawnEntity,
-  worldAnemoneHomes,
-  type Entity,
-  type MutableWorld,
-  type World,
-} from './world';
+import { bondedCount, cloneWorld, homeForRank, spawnEntity, worldAnemoneHomes } from './world';
+import type { Entity, MutableWorld, World } from './world-types';
 
 /**
  * Population réglable par espèce (issue #69, ADR 0025).

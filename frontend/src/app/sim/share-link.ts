@@ -14,7 +14,7 @@ import {
   serializeWorld,
   type SaveSettings,
 } from './save';
-import type { World } from './world';
+import type { World } from './world-types';
 
 /**
  * Partage d'un bac par lien (issue #426, ADR 0105), sans serveur.

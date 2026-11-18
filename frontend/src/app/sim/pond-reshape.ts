@@ -7,7 +7,8 @@ import {
   type PondShape,
 } from './pond-shape';
 import type { Fish } from './swimmer';
-import { boundsFor, type MutableWorld, type World } from './world';
+import { boundsFor } from './world';
+import type { MutableWorld, World } from './world-types';
 
 /**
  * Forme réglable du bassin (issue #190, ADR 0080) : passer un bassin de rectangle à ovale ou

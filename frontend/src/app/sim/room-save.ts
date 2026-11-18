@@ -37,7 +37,7 @@ import {
   type TankPlace,
   type TankPlacement,
 } from './room-state';
-import type { World } from './world';
+import type { World } from './world-types';
 
 /**
  * Sauvegarde de la pièce au schéma 2 (épopée #264, lot 1, ADR 0061 et 0069).

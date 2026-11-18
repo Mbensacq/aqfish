@@ -6,7 +6,7 @@ import {
 } from './population';
 import { findTank, ROOM_TANK_CAP, tankAnimalCount, type RoomState } from './room-state';
 import type { SpeciesId } from './species';
-import type { World } from './world';
+import type { World } from './world-types';
 
 /**
  * Plafonds de performance de la pièce de N bacs (épopée #264, lot 4, issue #392, ADR 0096).

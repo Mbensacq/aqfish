@@ -10,7 +10,8 @@ import {
 import { placeDimensions, placeEnvironment, type EnvironmentId, type Place } from './environment';
 import type { PlantForm } from './plant';
 import { MAX_SAVE_DECOR } from './save';
-import { createWorld, seededObstacleCount, type MutableWorld, type World } from './world';
+import { createWorld, seededObstacleCount } from './world';
+import type { MutableWorld, World } from './world-types';
 
 /**
  * Édition du décor (issue #167, ADR 0043) : fonctions pures qui produisent un **nouveau**
