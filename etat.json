@@ -8790,7 +8790,7 @@
       "date": "2026-11-18",
       "debut": "2026-11-18T01:54:30.864Z",
       "type": "fonctionnalite",
-      "issue": null,
+      "issue": 688,
       "pr": null,
       "version": null,
       "phases": {
