@@ -48,8 +48,6 @@
     "max-params": 10
   },
   "sim/axolotl.ts": {
-    "max-lines-per-function": 136,
-    "complexity": 32,
     "max-params": 8
   },
   "sim/bank-decor.ts": {
@@ -167,8 +165,6 @@
     "complexity": 24
   },
   "sim/swimmer.ts": {
-    "max-lines-per-function": 219,
-    "complexity": 54,
     "max-params": 11
   },
   "sim/tank-transfer.ts": {

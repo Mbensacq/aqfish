@@ -1,24 +1,37 @@
 import { prngNextState, prngOutput, deriveSeed } from '../core/random/prng';
-import { deflect, obstacleAvoidance, proximity, wallAvoidance } from './avoidance';
 import {
   constrainToShape,
   DEFAULT_POND_SHAPE,
   insideShape,
   keepInShape,
-  shapeDistance,
-  shapeNormal,
   shapeOutline,
   type PondShape,
   type ShapeOutline,
 } from './pond-shape';
 import { growHunger, HUNGER_START } from './feeding';
 import type { Vec3 } from './flocking';
-import { obstacleBound, obstacleDistance, type Obstacle } from './obstacles';
+import { obstacleDistance, type Obstacle } from './obstacles';
 import { shrinkBox, type Box3 } from './tank';
 import { SPECIES, type SpeciesDefinition, type SpeciesId } from './species';
-import { NIGHT_HEIGHT_RATIO, nightPace } from './day-rhythm';
+import { nightPace } from './day-rhythm';
 import { tailBeatRate } from './undulation';
 import { HEALTH_START, vigor } from './health-scale';
+import { advancePhase, clamp, dampedTurn, pitchToward, wrapAngle } from './motion';
+import {
+  AVOID_PITCH_RATIO,
+  AVOID_ZONE,
+  avoidanceInPlace,
+  depthPitchGoal,
+  foodSteeringInPlace,
+  headingTurn,
+  nightPitchGoal,
+  pushOutOfObstaclesInPlace,
+  schoolSteeringInPlace,
+  STEER_EPSILON,
+  type SwimStep,
+} from './swim-steering';
+
+export { wrapAngle } from './motion';
 
 /**
  * Poisson de la simulation : objet de données pur, sérialisable en JSON (ADR 0003).
@@ -156,16 +169,6 @@ const TWO_PI = Math.PI * 2;
 const UINT32_RANGE = 4294967296;
 
 /**
- * Portée de l'évitement, en mètres : la force d'une paroi (ou d'un obstacle) croît de 0 à 1
- * quand le point visé passe de `AVOID_ZONE` à 0 de la zone interdite (approximation de jeu).
- */
-const AVOID_ZONE = 0.07;
-/**
- * Gain de l'évitement sur la direction voulue (cap + gain × déviation), sans dimension
- * (approximation de jeu, réglée avec les tests de trajectoire de `swimmer.spec.ts`).
- */
-const AVOID_GAIN = 2;
-/**
  * Mémoire du virage d'évitement : pendant l'évitement, la vitesse de virage d'errance tend,
  * à `AVOID_COMMIT` par seconde, vers `±AVOID_COMMIT_TURN · wanderTurnRate` dans le sens du
  * virage d'évitement (approximations de jeu).
@@ -182,35 +185,10 @@ const PITCH_JITTER = 1.5;
 const PITCH_RATE = 0.8;
 /** Fraction de `maxPitch` utilisée par l'errance (le reste sert à éviter le fond et la surface). */
 const WANDER_PITCH_RATIO = 0.4;
-/** Inclinaison d'évitement du fond et de la surface, en fraction de `maxPitch`. */
-const AVOID_PITCH_RATIO = 0.8;
 /** Variation aléatoire de la vitesse, en multiples de `cruiseSpeed` par seconde. */
 const SPEED_JITTER = 1.5;
 /** Rappel de la vitesse vers la vitesse de croisière, par seconde. */
 const SPEED_RECALL = 0.5;
-/** Distance d'anticipation des parois, en secondes de nage (minimum `MIN_LOOKAHEAD`). */
-const LOOKAHEAD_SECONDS = 1.5;
-const MIN_LOOKAHEAD = 0.08;
-/** Pilotage de banc négligeable : en deçà de cette norme, il est ignoré. */
-const STEER_EPSILON = 1e-9;
-/**
- * Écart maximal de la vitesse visée en banc, en fraction de `cruiseSpeed` : un poisson en
- * retard sur son banc accélère, un poisson en avance ralentit (approximation de jeu).
- */
-const SCHOOL_SPEED_GAIN = 0.5;
-/**
- * Évitement rapproché des obstacles (`closeAvoid`, garde de la ponte, issue #670) : marge et
- * portée réduites, en mètres, pour qu'un poisson puisse tenir près d'une ponte collée à un
- * rocher (approximations de jeu). Le filet de sécurité reste entier : aucun obstacle traversé.
- */
-const CLOSE_AVOID_MARGIN = 0.015;
-const CLOSE_AVOID_ZONE = 0.03;
-/**
- * Espèce de fond : au-dessus de `preferredMaxY`, l'inclinaison visée glisse vers la descente
- * en proportion de l'écart, entièrement à partir de `DEPTH_PULL_ZONE` mètres (approximation
- * de jeu) ; de même vers la montée sous `preferredMinY` (espèce de mi-hauteur).
- */
-const DEPTH_PULL_ZONE = 0.03;
 /**
  * Approche de la nourriture : vitesse visée de `cruiseSpeed` (au contact) à
  * `(cruiseSpeed + maxSpeed) / 2` (à `FOOD_RUSH_DISTANCE` mètres et au-delà), pour accourir
@@ -221,13 +199,8 @@ const FOOD_RUSH_DISTANCE = 0.1;
 const FOOD_SPEED_RECALL = 3;
 /** Aucun obstacle (valeur par défaut partagée, sans allocation). */
 const NO_OBSTACLES: readonly Obstacle[] = Object.freeze([]);
-const SCRATCH_WALL: Vec3 = { x: 0, y: 0, z: 0 };
-const SCRATCH_OBSTACLE: Vec3 = { x: 0, y: 0, z: 0 };
-const SCRATCH_AVOID: Vec3 = { x: 0, y: 0, z: 0 };
 const SCRATCH_NORMAL: Vec3 = { x: 0, y: 0, z: 0 };
 const SCRATCH_SHAPE = { x: 0, z: 0 };
-/** Nombre maximal de passes de projection hors des obstacles par pas. */
-const OBSTACLE_PASSES = 4;
 
 /**
  * Zone de naissance : celle d'avant le réglage du cycle 13 (volume d'eau moins 5 cm, puis
@@ -461,163 +434,116 @@ export function stepFish(
   hugWalls = false,
   closeAvoid = false,
 ): void {
-  const def = SPECIES[fish.species];
-  const { hard } = bounds;
+  const c = SWIM;
+  c.fish = fish;
+  c.def = SPECIES[fish.species];
+  c.dt = dt;
+  c.bounds = bounds;
+  c.obstacles = obstacles;
+  c.food = food;
+  c.rest = rest;
+  c.hugWalls = hugWalls;
+  c.closeAvoid = closeAvoid;
   savePrevious(fish);
-  fish.hunger = growHunger(fish.hunger, def, dt);
+  fish.hunger = growHunger(fish.hunger, c.def, dt);
+  updateAscentInPlace(c);
+  schoolSteeringInPlace(c, steerX, steerY, steerZ);
+  foodSteeringInPlace(c);
+  updateSpeedInPlace(c);
+  avoidanceInPlace(c);
+  turnInPlace(c);
+  pitchInPlace(c);
+  moveInPlace(c);
+  // Battement de queue : plus rapide quand le poisson nage plus vite. La phase n'est lue par
+  // aucun calcul de trajectoire et ne consomme aucun tirage (sim/undulation.ts).
+  fish.phase = advancePhase(fish.phase, tailBeatRate(c.def, fish.speed), dt);
+}
 
-  // Espèce de fond : brève remontée vers la surface, déclenchée au hasard (tirage seulement
-  // pour ces espèces : les autres gardent exactement leur suite de tirages), terminée à la
-  // limite `soft` de la surface ou au bout de `ascentDuration`.
-  const depth = def.depth;
+/** Contexte de travail de `stepFish` (aucune allocation par pas ; la nage n'est pas réentrante). */
+const SWIM: SwimStep = {
+  fish: null as unknown as Mutable<Fish>, // renseigné au début de chaque pas
+  def: null as unknown as SpeciesDefinition, // idem
+  dt: 0,
+  bounds: null as unknown as SwimBounds, // idem
+  obstacles: NO_OBSTACLES,
+  food: null,
+  rest: 0,
+  hugWalls: false,
+  closeAvoid: false,
+  ascending: false,
+  schoolTurn: 0,
+  schoolPitch: 0,
+  schoolBlend: 0,
+  schoolSpeed: 0,
+  foodTurn: 0,
+  foodPitch: 0,
+  foodDistance: 0,
+  headX: 0,
+  headY: 0,
+  headZ: 0,
+  probeX: 0,
+  probeY: 0,
+  probeZ: 0,
+  avoid: 0,
+  yawAvoid: 0,
+  avoidX: 0,
+  avoidY: 0,
+  avoidZ: 0,
+  avoidH: 0,
+};
+
+/**
+ * Espèce de fond : brève remontée vers la surface, déclenchée au hasard (tirage seulement
+ * pour ces espèces : les autres gardent exactement leur suite de tirages), terminée à la
+ * limite `soft` de la surface ou au bout de `ascentDuration`.
+ */
+function updateAscentInPlace(c: SwimStep): void {
+  const { fish, dt } = c;
+  const depth = c.def.depth;
   if (depth !== undefined) {
     if (fish.ascent > 0) {
-      fish.ascent = fish.y >= bounds.soft.maxY ? 0 : Math.max(0, fish.ascent - dt);
+      fish.ascent = fish.y >= c.bounds.soft.maxY ? 0 : Math.max(0, fish.ascent - dt);
     } else if (random(fish) < depth.ascentRate * dt) {
       fish.ascent = depth.ascentDuration;
     }
   }
-  const ascending = fish.ascent > 0;
+  c.ascending = fish.ascent > 0;
+}
 
-  // Pilotage de banc : direction voulue = cap actuel + pilotage.
-  let schoolTurn = 0;
-  let schoolBlend = 0;
-  let schoolPitch = 0;
-  let schoolSpeed = 0;
-  const steerNorm = Math.sqrt(steerX * steerX + steerY * steerY + steerZ * steerZ);
-  if (def.schooling !== null && steerNorm > STEER_EPSILON) {
-    const horizontal = Math.cos(fish.pitch);
-    const hx = Math.cos(fish.yaw) * horizontal;
-    const hy = Math.sin(fish.pitch);
-    const hz = Math.sin(fish.yaw) * horizontal;
-    const dx = hx + steerX;
-    const dy = hy + steerY;
-    const dz = hz + steerZ;
-    const dh = Math.sqrt(dx * dx + dz * dz);
-    if (dh > STEER_EPSILON) {
-      const maxTurn = def.schooling.turnRate * dt;
-      schoolTurn = clamp(wrapAngle(Math.atan2(dz, dx) - fish.yaw), -maxTurn, maxTurn);
-    }
-    const pitchLimit = def.maxPitch * AVOID_PITCH_RATIO;
-    schoolPitch = clamp(Math.atan2(dy, dh), -pitchLimit, pitchLimit);
-    schoolBlend = Math.min(1, steerNorm);
-    schoolSpeed = clamp(
-      steerX * hx + steerY * hy + steerZ * hz,
-      -SCHOOL_SPEED_GAIN,
-      SCHOOL_SPEED_GAIN,
-    );
-  }
-
-  // Nourriture : cap et inclinaison vers le point visé (sans effet si `food` est nul).
-  let foodTurn = 0;
-  let foodPitch = 0;
-  let foodDistance = 0;
-  if (food !== null) {
-    const dx = food.x - fish.x;
-    const dy = food.y - fish.y;
-    const dz = food.z - fish.z;
-    const dh = Math.sqrt(dx * dx + dz * dz);
-    foodDistance = Math.sqrt(dh * dh + dy * dy);
-    if (dh > STEER_EPSILON) {
-      const maxTurn = def.feeding.turnRate * dt;
-      foodTurn = clamp(wrapAngle(Math.atan2(dz, dx) - fish.yaw), -maxTurn, maxTurn);
-    }
-    const pitchLimit = def.maxPitch * AVOID_PITCH_RATIO;
-    foodPitch = clamp(Math.atan2(dy, dh), -pitchLimit, pitchLimit);
-  }
-
-  // Vitesse : petite marche aléatoire rappelée vers la vitesse visée (croisière, ajustée en
-  // banc ; accourue vers la nourriture).
+/**
+ * Vitesse : petite marche aléatoire rappelée vers la vitesse visée (croisière, ajustée en
+ * banc ; accourue vers la nourriture).
+ */
+function updateSpeedInPlace(c: SwimStep): void {
+  const { fish, def, dt, food } = c;
   const rush = (def.cruiseSpeed + def.maxSpeed) / 2;
   const speedGoal =
     food !== null
-      ? def.cruiseSpeed + (rush - def.cruiseSpeed) * Math.min(1, foodDistance / FOOD_RUSH_DISTANCE)
-      : ascending
+      ? def.cruiseSpeed +
+        (rush - def.cruiseSpeed) * Math.min(1, c.foodDistance / FOOD_RUSH_DISTANCE)
+      : c.ascending
         ? rush
-        : def.cruiseSpeed * (1 + schoolSpeed);
+        : def.cruiseSpeed * (1 + c.schoolSpeed);
   const speed =
     fish.speed +
     (random(fish) * 2 - 1) * SPEED_JITTER * def.cruiseSpeed * dt +
     (speedGoal - fish.speed) * (food !== null ? FOOD_SPEED_RECALL : SPEED_RECALL) * dt;
   fish.speed = clamp(speed, def.minSpeed, def.maxSpeed);
+}
 
-  // Évitement : force des parois au point visé, des obstacles le long du segment de
-  // prospection, déviée pour contourner ; `avoid` ∈ [0, 1] en est l'intensité.
-  const cosPitch = Math.cos(fish.pitch);
-  const headX = Math.cos(fish.yaw) * cosPitch;
-  const headY = Math.sin(fish.pitch);
-  const headZ = Math.sin(fish.yaw) * cosPitch;
-  // En approche de la nourriture, la prospection s'arrête au point visé (dans les bornes de
-  // nage) : un granulé posé au fond ou près d'un rocher n'est plus repoussé par l'évitement
-  // de ce qui se trouve au-delà. L'évitement de ce qui est entre les deux reste entier.
-  const reach = Math.max(MIN_LOOKAHEAD, fish.speed * LOOKAHEAD_SECONDS);
-  const lookahead = food !== null ? Math.max(MIN_LOOKAHEAD, Math.min(reach, foodDistance)) : reach;
-  const probeX = fish.x + headX * lookahead;
-  const probeY = fish.y + headY * lookahead;
-  const probeZ = fish.z + headZ * lookahead;
-  const wall = wallAvoidance(probeX, probeY, probeZ, bounds.avoid, AVOID_ZONE, SCRATCH_WALL);
-  if (hugWalls && food !== null) {
-    // Broutage d'une vitre (issue #427) : les parois ne repoussent plus le point visé, collé
-    // à l'une d'elles ; les obstacles et la boîte `hard` gardent le poisson dans l'eau.
-    wall.x = 0;
-    wall.y = 0;
-    wall.z = 0;
-  }
-  if (bounds.outline !== undefined) {
-    // Bord du bassin non rectangulaire (issue #190) : repousse comme une paroi verticale.
-    const d = shapeDistance(bounds.outline, probeX, probeZ) - def.wallMargin;
-    const w = proximity(d, AVOID_ZONE);
-    if (w > 0) {
-      shapeNormal(bounds.outline, probeX, probeZ, SCRATCH_SHAPE);
-      wall.x += SCRATCH_SHAPE.x * w;
-      wall.z += SCRATCH_SHAPE.z * w;
-    }
-  }
-  const close = closeAvoid && food !== null;
-  const obstacle = obstacleAvoidance(
-    fish.x,
-    fish.y,
-    fish.z,
-    probeX,
-    probeY,
-    probeZ,
-    obstacles,
-    close ? CLOSE_AVOID_MARGIN : def.wallMargin,
-    close ? CLOSE_AVOID_ZONE : AVOID_ZONE,
-    SCRATCH_OBSTACLE,
-  );
-  const rawX = wall.x + obstacle.x;
-  const rawY = wall.y + obstacle.y;
-  const rawZ = wall.z + obstacle.z;
-  const avoid = Math.min(1, Math.sqrt(rawX * rawX + rawY * rawY + rawZ * rawZ));
-  // Part de l'évitement dans le cap. Poisson attaché à une anémone (issue #150) qui revient
-  // vers elle : seule la part horizontale compte (le fond, tout proche de l'anémone, ne joue
-  // que sur l'inclinaison), et rien quand le point visé est du côté où l'évitement pousse (dos
-  // à la paroi ou à l'obstacle) : sinon il longe la vitre ou le sable au lieu de faire
-  // demi-tour. Réservé aux espèces `anemone` : la nage des autres reste celle d'avant, à
-  // l'octet.
-  let yawAvoid = avoid;
-  if (def.anemone !== undefined && food !== null && avoid > 0) {
-    const tx = food.x - fish.x;
-    const tz = food.z - fish.z;
-    yawAvoid = tx * rawX + tz * rawZ > 0 ? 0 : Math.min(1, Math.sqrt(rawX * rawX + rawZ * rawZ));
-  }
-  const force = deflect(rawX, rawY, rawZ, fish.yaw, fish.turn, SCRATCH_AVOID);
-  const avoidX = headX + force.x * AVOID_GAIN;
-  const avoidY = headY + force.y * AVOID_GAIN;
-  const avoidZ = headZ + force.z * AVOID_GAIN;
-  const avoidH = Math.sqrt(avoidX * avoidX + avoidZ * avoidZ);
-
-  // Cap : errance (vitesse de virage en marche aléatoire amortie) et banc, cédant la place à
-  // l'évitement en proportion de son intensité.
-  // Le hasard de l'errance s'efface pendant l'évitement (sens du virage stable).
+/**
+ * Cap : errance (vitesse de virage en marche aléatoire amortie) et banc, cédant la place à
+ * l'évitement en proportion de son intensité. Le hasard de l'errance s'efface pendant
+ * l'évitement (sens du virage stable).
+ */
+function turnInPlace(c: SwimStep): void {
+  const { fish, def, dt, yawAvoid } = c;
   const wanderJitter =
     (random(fish) * 2 - 1) * WANDER_JITTER * def.wanderTurnRate * dt * (1 - yawAvoid);
-  let turn = fish.turn * (1 - WANDER_DAMPING * dt) + wanderJitter;
+  let turn = dampedTurn(fish.turn, WANDER_DAMPING, wanderJitter, dt);
   let avoidTurn = 0;
-  if (yawAvoid > 0 && avoidH > STEER_EPSILON) {
-    const maxTurn = def.avoidTurnRate * dt;
-    avoidTurn = clamp(wrapAngle(Math.atan2(avoidZ, avoidX) - fish.yaw), -maxTurn, maxTurn);
+  if (yawAvoid > 0 && c.avoidH > STEER_EPSILON) {
+    avoidTurn = headingTurn(fish.yaw, c.avoidX, c.avoidZ, def.avoidTurnRate * dt);
     // Mémoire du virage : l'errance prend le sens de l'évitement, qui reste ainsi le même
     // d'un pas à l'autre quand le poisson est pile face à la paroi (`deflect`, `side`).
     if (avoidTurn !== 0) {
@@ -626,11 +552,17 @@ export function stepFish(
     }
   }
   fish.turn = clamp(turn, -def.wanderTurnRate, def.wanderTurnRate);
-  const freeTurn = food !== null ? foodTurn : fish.turn * dt + schoolTurn;
+  const freeTurn = c.food !== null ? c.foodTurn : fish.turn * dt + c.schoolTurn;
   fish.yaw = wrapAngle(fish.yaw + avoidTurn * yawAvoid + freeTurn * (1 - yawAvoid));
+}
 
-  // Inclinaison : errance lente (et banc), glissant vers celle de l'évitement du fond, de la
-  // surface et des obstacles.
+/**
+ * Inclinaison : errance lente (et banc), glissant vers celle de la nourriture, de la
+ * profondeur préférée, du repos de nuit, puis de l'évitement du fond, de la surface et des
+ * obstacles.
+ */
+function pitchInPlace(c: SwimStep): void {
+  const { fish, def, dt } = c;
   const wanderPitch = def.maxPitch * WANDER_PITCH_RATIO;
   fish.pitchTarget = clamp(
     fish.pitchTarget + (random(fish) * 2 - 1) * PITCH_JITTER * def.maxPitch * dt,
@@ -638,87 +570,39 @@ export function stepFish(
     wanderPitch,
   );
   // En banc, l'inclinaison visée glisse vers celle de la direction voulue.
-  let pitchGoal = fish.pitchTarget + (schoolPitch - fish.pitchTarget) * schoolBlend;
-  // Espèce de fond : montée à l'inclinaison maximale pendant une remontée, sinon descente
-  // au-dessus de la hauteur préférée. L'évitement (surface, obstacles) garde la priorité ci-dessous.
-  if (food !== null) {
-    pitchGoal = foodPitch;
-  } else if (depth !== undefined) {
-    const steep = def.maxPitch * AVOID_PITCH_RATIO;
-    if (ascending) {
-      pitchGoal = def.maxPitch;
-    } else if (fish.y > bounds.preferredMaxY) {
-      const pull = Math.min(1, (fish.y - bounds.preferredMaxY) / DEPTH_PULL_ZONE);
-      pitchGoal += (-steep - pitchGoal) * pull;
-    } else if (fish.y < bounds.preferredMinY) {
-      // Espèce de mi-hauteur (issue #151) : montée symétrique sous la hauteur minimale.
-      // La nuit (issue #209), l'attrait vers la hauteur minimale faiblit avec le repos.
-      const pull = Math.min(1, (bounds.preferredMinY - fish.y) / DEPTH_PULL_ZONE) * (1 - rest);
-      pitchGoal += (steep - pitchGoal) * pull;
-    }
-  }
-  // Repos de nuit (issue #209) : descente au-dessus du plafond de nuit, hors nourriture et
-  // remontée ; sans effet le jour (`rest` nul).
-  if (rest > 0 && food === null && !ascending) {
-    const ceiling = hard.minY + (hard.maxY - hard.minY) * NIGHT_HEIGHT_RATIO;
-    if (fish.y > ceiling) {
-      const steep = def.maxPitch * AVOID_PITCH_RATIO;
-      const pull = Math.min(1, (fish.y - ceiling) / DEPTH_PULL_ZONE) * rest;
-      pitchGoal += (-steep - pitchGoal) * pull;
-    }
-  }
-  if (avoid > 0) {
+  let pitchGoal = fish.pitchTarget + (c.schoolPitch - fish.pitchTarget) * c.schoolBlend;
+  pitchGoal = c.food !== null ? c.foodPitch : depthPitchGoal(c, pitchGoal);
+  pitchGoal = nightPitchGoal(c, pitchGoal);
+  if (c.avoid > 0) {
     const avoidPitchLimit = def.maxPitch * AVOID_PITCH_RATIO;
-    const avoidPitch = clamp(Math.atan2(avoidY, avoidH), -avoidPitchLimit, avoidPitchLimit);
-    pitchGoal += (avoidPitch - pitchGoal) * avoid;
+    const avoidPitch = clamp(Math.atan2(c.avoidY, c.avoidH), -avoidPitchLimit, avoidPitchLimit);
+    pitchGoal += (avoidPitch - pitchGoal) * c.avoid;
   }
-  const maxPitchStep = PITCH_RATE * dt;
-  fish.pitch = clamp(
-    fish.pitch + clamp(pitchGoal - fish.pitch, -maxPitchStep, maxPitchStep),
-    -def.maxPitch,
-    def.maxPitch,
-  );
+  fish.pitch = pitchToward(fish.pitch, pitchGoal, PITCH_RATE * dt, -def.maxPitch, def.maxPitch);
+}
 
-  // Déplacement, puis filets de sécurité : sortie d'un obstacle (projection sur sa surface),
-  // puis projection sur la boîte (convexe, contenant la position précédente : elle ne peut que
-  // raccourcir le déplacement). Santé basse (issue #208) : déplacement réduit par `vigor`,
-  // exactement 1 à santé pleine (nage d'avant, au bit près).
-  // Repos de nuit (issue #209) : `nightPace`, exactement 1 le jour.
-  const distance = fish.speed * dt * vigor(fish.health) * nightPace(rest);
+/**
+ * Déplacement, puis filets de sécurité : sortie d'un obstacle (projection sur sa surface),
+ * puis projection sur la boîte (convexe, contenant la position précédente : elle ne peut que
+ * raccourcir le déplacement). Santé basse (issue #208) : déplacement réduit par `vigor`,
+ * exactement 1 à santé pleine (nage d'avant, au bit près). Repos de nuit (issue #209) :
+ * `nightPace`, exactement 1 le jour.
+ */
+function moveInPlace(c: SwimStep): void {
+  const { fish, bounds } = c;
+  const { hard } = bounds;
+  const distance = fish.speed * c.dt * vigor(fish.health) * nightPace(c.rest);
   const horizontal = Math.cos(fish.pitch) * distance;
   fish.x += Math.cos(fish.yaw) * horizontal;
   fish.y += Math.sin(fish.pitch) * distance;
   fish.z += Math.sin(fish.yaw) * horizontal;
-  // Plusieurs passes : sorti d'une sphère d'une union (ou d'un obstacle), le centre peut se
-  // retrouver dans une sphère voisine ; sans obstacle, aucune passe.
-  for (let pass = 0; pass < OBSTACLE_PASSES; pass++) {
-    let moved = false;
-    for (const o of obstacles) {
-      if (outsideBound(o, fish.x, fish.y, fish.z)) {
-        continue; // hors de la sphère englobante, donc hors de l'obstacle
-      }
-      const d = obstacleDistance(o, fish.x, fish.y, fish.z, SCRATCH_NORMAL);
-      if (d < 0) {
-        fish.x -= SCRATCH_NORMAL.x * d;
-        fish.y -= SCRATCH_NORMAL.y * d;
-        fish.z -= SCRATCH_NORMAL.z * d;
-        moved = true;
-      }
-    }
-    if (!moved) {
-      break;
-    }
-  }
+  pushOutOfObstaclesInPlace(fish, c.obstacles);
   fish.x = clamp(fish.x, hard.minX, hard.maxX);
   fish.y = clamp(fish.y, hard.minY, hard.maxY);
   fish.z = clamp(fish.z, hard.minZ, hard.maxZ);
   if (bounds.outline !== undefined) {
-    keepInShape(fish, bounds.outline, def.wallMargin);
+    keepInShape(fish, bounds.outline, c.def.wallMargin);
   }
-
-  // Battement de queue : plus rapide quand le poisson nage plus vite. La phase n'est lue par
-  // aucun calcul de trajectoire et ne consomme aucun tirage (sim/undulation.ts).
-  fish.phase = (fish.phase + tailBeatRate(def, fish.speed) * dt) % TWO_PI;
 }
 
 function clearOfObstacles(fish: Fish, obstacles: readonly Obstacle[], margin: number): boolean {
@@ -728,17 +612,6 @@ function clearOfObstacles(fish: Fish, obstacles: readonly Obstacle[], margin: nu
     }
   }
   return true;
-}
-
-/** Ramène un angle dans (-π, π]. */
-export function wrapAngle(angle: number): number {
-  let a = angle % TWO_PI;
-  if (a <= -Math.PI) {
-    a += TWO_PI;
-  } else if (a > Math.PI) {
-    a -= TWO_PI;
-  }
-  return a;
 }
 
 /** Garde l'état du pas précédent (interpolation du rendu). */
@@ -757,19 +630,6 @@ export function random(fish: Mutable<Fish>): number {
   return prngOutput(fish.rng) / UINT32_RANGE;
 }
 
-function clamp(value: number, min: number, max: number): number {
-  return value < min ? min : value > max ? max : value;
-}
-
 function lerp(a: number, b: number, t: number): number {
   return a + (b - a) * t;
-}
-
-/** Vrai si `(x, y, z)` est hors de la sphère englobante de `o` (rejet exact, sans racine). */
-function outsideBound(o: Obstacle, x: number, y: number, z: number): boolean {
-  const b = obstacleBound(o);
-  const dx = x - b.x;
-  const dy = y - b.y;
-  const dz = z - b.z;
-  return dx * dx + dy * dy + dz * dz >= b.radius * b.radius;
 }
