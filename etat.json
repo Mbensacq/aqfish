@@ -8720,7 +8720,7 @@
       "type": "fonctionnalite",
       "issue": 685,
       "pr": 700,
-      "version": null,
+      "version": "v1.23.2",
       "phases": {
         "planif": {
           "statut": "termine",
