@@ -8835,6 +8835,12 @@
           "debut": "2026-11-18T04:07:00.853Z",
           "fin": "2026-11-18T04:07:22.218Z",
           "note": "Issue #689 : lot 3/13 assainissement, stepFish et stepWalker découpés (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-18T04:08:11.416Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
