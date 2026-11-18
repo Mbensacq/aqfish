@@ -9000,6 +9000,24 @@
         }
       },
       "metriques": {}
+    },
+    "248": {
+      "numero": 248,
+      "date": "2026-11-18",
+      "debut": "2026-11-18T12:45:54.034Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-18T12:45:54.034Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
