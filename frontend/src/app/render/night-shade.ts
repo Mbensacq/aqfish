@@ -25,6 +25,23 @@ export function flatBrightness(intensity: number): number {
   return mix(NIGHT_FLAT_BRIGHTNESS, 1, clampIntensity(intensity));
 }
 
+/**
+ * Donne la luminosité `factor` (1 : couleurs d'origine) à la couleur d'un matériau plat et
+ * renvoie le facteur retenu (#686, lot 6) : `current`, sans toucher au matériau, si `factor`
+ * est non fini, négatif ou déjà appliqué.
+ */
+export function applyFlatBrightness(
+  material: { readonly color: { setRGB(r: number, g: number, b: number): unknown } },
+  current: number,
+  factor: number,
+): number {
+  if (!Number.isFinite(factor) || factor < 0 || factor === current) {
+    return current;
+  }
+  material.color.setRGB(factor, factor, factor);
+  return factor;
+}
+
 /** Couleur RVB modifiable, composantes linéaires (facteurs multiplicatifs). */
 export type MutableTint = [number, number, number];
 

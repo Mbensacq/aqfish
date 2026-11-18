@@ -18,7 +18,7 @@ import {
   type RoomPart,
   type RoomShell,
 } from './room';
-import { segmentHitsTank } from './room-window';
+import { segmentHitsTank, snapToVoxel as snap, voxelBox as box } from './room-window';
 import type { Box3, TankDimensions } from './tank';
 
 /**
@@ -80,28 +80,6 @@ export const LAMP_DOOR_GAP = 0.5;
 const LAMP_HEADROOM = 0.1;
 /** Demi-hauteur et demi-largeur du halo de l'applique sur le mur. */
 const HALO_HALF = 0.3;
-
-function snap(value: number): number {
-  return Math.round(value / ROOM_VOXEL) * ROOM_VOXEL;
-}
-
-function box(
-  minX: number,
-  maxX: number,
-  minY: number,
-  maxY: number,
-  minZ: number,
-  maxZ: number,
-): Box3 {
-  return {
-    minX: snap(minX),
-    maxX: snap(maxX),
-    minY: snap(minY),
-    maxY: snap(maxY),
-    minZ: snap(minZ),
-    maxZ: snap(maxZ),
-  };
-}
 
 function assertDims(dims: TankDimensions): void {
   for (const value of [dims.width, dims.height, dims.depth]) {

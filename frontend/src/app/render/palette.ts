@@ -202,8 +202,6 @@ export const FOOD_TONES = {
   granuleBrun: '#6b4428',
 } as const;
 
-export type FoodToneName = keyof typeof FOOD_TONES;
-
 /** Tons de la nourriture, dans leur ordre de déclaration (placés en fin de passe). */
 export const FOOD_TONE_COLORS: readonly string[] = Object.values(FOOD_TONES);
 
@@ -238,9 +236,7 @@ export const INPUT_TONES = {
   surfaceTheEntree: '#c08030',
 } as const;
 
-export type NightToneName = keyof typeof NIGHT_TONES;
 export type EnvironmentToneName = keyof typeof ENVIRONMENT_TONES;
-export type TwilightToneName = keyof typeof TWILIGHT_TONES;
 
 /** Tons de nuit, dans leur ordre de déclaration. */
 export const NIGHT_TONE_COLORS: readonly string[] = Object.values(NIGHT_TONES);

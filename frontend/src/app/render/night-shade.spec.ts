@@ -1,5 +1,6 @@
 import { lightAt } from '../sim/daylight';
 import {
+  applyFlatBrightness,
   DECOR_NIGHT_TINT,
   decorTintInto,
   flatBrightness,
@@ -130,5 +131,33 @@ describe('tonePenalty et tonePenaltiesInto : tons ajoutés à la palette (ADR 00
     expect(tonePenaltiesInto(0.5, out)).toBe(out);
     expect(out.twilight).toBe(0);
     expect(out.night).toBeCloseTo(TONE_PENALTY_SCALE, 12);
+  });
+});
+
+describe('applyFlatBrightness (#686, lot 6)', () => {
+  function material(): {
+    color: { setRGB(r: number, g: number, b: number): void };
+    calls: number[][];
+  } {
+    const calls: number[][] = [];
+    return { calls, color: { setRGB: (r, g, b) => void calls.push([r, g, b]) } };
+  }
+
+  it('applique un facteur nouveau aux trois composantes et le renvoie', () => {
+    const target = material();
+    expect(applyFlatBrightness(target, 1, 0.6)).toBe(0.6);
+    expect(applyFlatBrightness(target, 0.6, 0)).toBe(0);
+    expect(target.calls).toEqual([
+      [0.6, 0.6, 0.6],
+      [0, 0, 0],
+    ]);
+  });
+
+  it('ignore un facteur déjà appliqué, négatif ou non fini', () => {
+    const target = material();
+    for (const factor of [0.6, -0.1, Number.NaN, Number.POSITIVE_INFINITY]) {
+      expect(applyFlatBrightness(target, 0.6, factor)).toBe(0.6);
+    }
+    expect(target.calls).toEqual([]);
   });
 });

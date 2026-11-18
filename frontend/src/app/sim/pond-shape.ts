@@ -1,3 +1,4 @@
+import type { SwimBounds } from './swimmer';
 import type { Box3 } from './tank';
 
 /**
@@ -273,3 +274,18 @@ export function keepInShape(
 }
 
 const KEEP_SCRATCH: { x: number; z: number } = { x: 0, z: 0 };
+
+/**
+ * Ramène en place le point `p` dans la boîte dure de `bounds`, puis dans sa forme s'il en a
+ * une (`keepInShape`, à `outlineMargin` du bord). Partagé par la séparation des bancs et des
+ * espèces (`flocking.ts`, `compatibility.ts`, #686 lot 6). Sans allocation.
+ */
+export function clampIntoBounds(p: { x: number; y: number; z: number }, bounds: SwimBounds): void {
+  const { hard } = bounds;
+  p.x = Math.min(Math.max(p.x, hard.minX), hard.maxX);
+  p.y = Math.min(Math.max(p.y, hard.minY), hard.maxY);
+  p.z = Math.min(Math.max(p.z, hard.minZ), hard.maxZ);
+  if (bounds.outline !== undefined) {
+    keepInShape(p, bounds.outline, bounds.outlineMargin ?? 0);
+  }
+}

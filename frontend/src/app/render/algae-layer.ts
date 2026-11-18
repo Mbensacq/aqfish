@@ -10,6 +10,7 @@ import {
 
 import { ALGAE_VISIBLE_COVERAGE, drawnRadius, type AlgaePatch, type AlgaeWall } from '../sim/algae';
 import type { SceneLayer } from './effect-layer';
+import { applyFlatBrightness } from './night-shade';
 import { PALETTE } from './palette';
 
 /**
@@ -204,11 +205,7 @@ export class AlgaeLayer implements SceneLayer {
    * valeur non finie ou négative est ignorée.
    */
   setBrightness(factor: number): void {
-    if (!Number.isFinite(factor) || factor < 0 || factor === this.brightnessFactor) {
-      return;
-    }
-    this.brightnessFactor = factor;
-    this.material.color.setRGB(factor, factor, factor);
+    this.brightnessFactor = applyFlatBrightness(this.material, this.brightnessFactor, factor);
   }
 
   /** Luminosité appliquée (tests). */
