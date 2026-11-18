@@ -13,7 +13,7 @@ import {
   type WalkerNeighbor,
 } from './axolotl';
 import { createFrog, stepFrog } from './frog';
-import { deadBody, deadLoad, splitDeaths, stepDeadInPlace, toxicWater } from './mortality';
+import { deadBody, splitDeaths, stepDeadInPlace, toxicWater } from './mortality';
 import { behaviorTarget, hasLandedFood, speciesBehavior, type BehaviorContext } from './behaviors';
 import { bubbleSourceFor, fillBubbles, type BubbleBuffer } from './bubbles';
 import {
@@ -23,10 +23,10 @@ import {
   isNearClutch,
   nearestHome,
   noGuard,
+  type ClutchGuard,
 } from './clutch-guard';
 import { addRivalSteering, enforceRivalDistance, hasRivals } from './compatibility';
-
-import { catappaActive, withCatappaCount } from './catappa';
+import { withCatappaCount } from './catappa';
 import { MAX_TOTAL_FISH, SIM_DT } from './constants';
 import { dayIntensityAt, hourAt, type DayClock } from './daylight';
 import { nightRest } from './day-rhythm';
@@ -46,22 +46,17 @@ import {
   plantCuttable,
   plantShade,
   prunePlantInPlace,
-  plantLightFactor,
   shownGrowth,
-  stepPlantGrowthInPlace,
   type MutablePlantGrowth,
 } from './plant-growth';
 import {
-  algaeGrowth,
   cachedAlgaePatches,
   hasAlgae,
-  lightingOf,
   scrapeAlgaeInPlace,
   scrapedPatch,
   scrapedPatchesAlong,
   type ScraperRay,
   setLightingInPlace,
-  stepAlgaeInPlace,
   type AlgaePatch,
 } from './algae';
 import {
@@ -74,11 +69,11 @@ import {
 } from './anemones';
 import { coralLayout, coralObstacles, type CoralColony } from './corals';
 import { decorObstacles, parseDecorItems, type DecorItem } from './decor';
-import { ichStress, infectAllInPlace, isIchAge, stepIchInPlace } from './disease';
-import { finRotCauses, rotAllFinsInPlace, stepFinRotInPlace } from './fin-rot';
-import { isVelvetProgress, stepVelvetInPlace, velvetAllInPlace } from './velvet';
-import { fungusAllInPlace, isFungusProgress, stepFungusInPlace } from './fungus';
-import { dropsyAllInPlace, isDropsyProgress, stepDropsyInPlace } from './dropsy';
+import { infectAllInPlace, isIchAge } from './disease';
+import { rotAllFinsInPlace } from './fin-rot';
+import { isVelvetProgress, velvetAllInPlace } from './velvet';
+import { fungusAllInPlace, isFungusProgress } from './fungus';
+import { dropsyAllInPlace, isDropsyProgress } from './dropsy';
 import { TAP_RADIUS, tapGlassInPlace, type GlassPoint } from './glass-tap';
 import {
   DEFAULT_ENVIRONMENT_ID,
@@ -96,8 +91,14 @@ import {
   type Place,
 } from './environment';
 import { worldLilyPads } from './world-lily-pads';
+import {
+  stepAlgaeStageInPlace,
+  stepDiseasesInPlace,
+  stepHealthStageInPlace,
+  stepPlantsStageInPlace,
+  stepWaterStageInPlace,
+} from './world-step-life';
 import { eatInPlace, feedingBand, foodTarget, type FeedingBand } from './feeding';
-import { addDecayedFoodInPlace } from './food-decay';
 import {
   birthBounds,
   broodIndexAt,
@@ -154,8 +155,7 @@ import {
   shapeOutline,
   type PondShape,
 } from './pond-shape';
-import { plantGrowthFactor } from './side-effects';
-import { SPECIES, type AnemoneBondParams, type SpeciesDefinition, type SpeciesId } from './species';
+import { SPECIES, type AnemoneBondParams, type SpeciesId } from './species';
 import { createFish, stepFish, swimBounds, type SwimBounds } from './swimmer';
 import { clampImmersiveDimensions, clampTankDimensions, type TankDimensions } from './tank';
 import { assertTimeStep } from './time-step';
@@ -165,16 +165,11 @@ import {
   type MaintenanceState,
   type MaintenanceTask,
 } from './maintenance';
-
 import {
   changeWaterInPlace,
   freshWater,
   MAX_CONCENTRATION,
   setHeaterInPlace,
-  stepWaterInPlace,
-  targetTemperature,
-  waterLiters,
-  waterLoad,
   type MutableWaterState,
 } from './water';
 import { phOutOfTolerance } from './water-ph';
@@ -190,15 +185,8 @@ import {
   type PhRegulatorOutcome,
 } from './ph-regulator';
 import { waterQuality } from './water-quality';
-import {
-  applyTreatmentInPlace,
-  ichProtected,
-  medicationProtects,
-  stepTreatmentInPlace,
-  type TreatmentKind,
-  type TreatmentOutcome,
-} from './treatment';
-import { starveInPlace, stepWellbeingInPlace } from './wellbeing';
+import { applyTreatmentInPlace, type TreatmentKind, type TreatmentOutcome } from './treatment';
+import { starveInPlace } from './wellbeing';
 import {
   applyCurrentInPlace,
   currentVelocity,
@@ -825,14 +813,21 @@ export function advanceTo(world: World, time: number, clock: SimClock = null): W
   return advance(world, Math.max(0, ticksFor(time) - world.tick), clock);
 }
 
+/**
+ * Un pas de simulation, **en modifiant** `world`. Les étapes, dans cet ordre (documenté dans
+ * `docs/ARCHITECTURE.md`, « Pas de simulation ») ; changer l'ordre change les tirages et les
+ * empreintes de non-régression :
+ * 1. horloge (`advanceClockInPlace`) ;
+ * 2. faim gelée en mode décor, rations du distributeur (`dropFeederRations`) ;
+ * 3. préparation de la nage (`prepareSwimPass`), sur les positions du début du pas ;
+ * 4. nage de chaque animal, dans l'ordre du tableau (`swimOneInPlace`) ;
+ * 5. distances minimales et repas (`settleSwimmersInPlace`), puis granulés (`stepFoodStage`) ;
+ * 6. en mode décor, faim rendue et fin du pas ; sinon, vie du bac (`stepLifeInPlace`).
+ * Aucune allocation par pas : l'état de la nage vit dans le tampon de module `PASS`.
+ */
 function stepInPlace(world: MutableWorld, dt: number, clock: SimClock): void {
   const startTime = world.time;
-  world.tick += 1;
-  // Pas nominal : temps dérivé du compteur (exact, sans cumul d'erreur flottante).
-  // Pas libre (`step(world, dt)`, tests) : temps cumulé.
-  world.time = dt === SIM_DT ? world.tick * SIM_DT : world.time + dt;
-  // Deux phases : le pilotage de banc de tous les poissons est calculé sur les positions du
-  // début du pas, puis chacun nage. Le résultat ne dépend donc pas de l'ordre de mise à jour.
+  advanceClockInPlace(world, dt);
   const fishes = world.entities as Mutable<Entity>[];
   const decor = world.careMode === 'decor';
   if (decor) {
@@ -844,276 +839,293 @@ function stepInPlace(world: MutableWorld, dt: number, clock: SimClock): void {
   if (world.feeder !== undefined && clock !== null && !decor) {
     dropFeederRations(world, clock, startTime);
   }
-  // Lieu du pas : une seule clé calculée par pas, lue par toutes les tables (`placeKey`).
-  const place: Place = world;
-  const key = placeKey(place);
-  const steering = steeringBuffer(fishes.length);
-  computeSchoolSteering(fishes, steering);
-  // Espèces incompatibles (issue #209) : évitement anticipé ajouté au pilotage, puis distance
-  // minimale après la nage. Sans couple incompatible, rien ne change (nage d'avant au bit près).
-  const rivalsPresent = hasRivals(fishes);
-  if (rivalsPresent) {
-    addRivalSteering(fishes, steering);
-  }
-  // Rythme du jour (issue #209) : intensité du jour au temps du pas ; sans horloge, plein jour.
-  const intensity = clock === null ? 1 : dayIntensityAt(hourAt(clock, world.time));
-  // Nourriture (issue #68) : point visé calculé, comme le banc, sur les positions du début du
-  // pas ; sans granulé, `target` reste nul et la nage est exactement celle d'avant.
-  const food = world.food as FoodPellet[];
-  // Anémones (issue #150) : points d'attache des poissons-clowns, aucun hors du récif.
-  const homes = worldAnemoneHomes(world);
-  let bondRank = 0;
-  // Garde de la ponte (issue #670) : sans œuf du récif, aucun gardien (nage d'avant, au bit près).
-  const guard = clutchGuardInto(fishes, world.eggs, GUARD);
-  const guardHome = guard.index < 0 ? null : nearestHome(homes, guard);
-  // Comportements de l'espèce (issue #427) : points visés calculés, comme le banc, sur les
-  // positions du début du pas. Sans espèce concernée, aucun calcul (nage d'avant, au bit près).
-  const behaving = computeBehaviorTargets(world, fishes, place, key);
-  // Alevins (issue #459) : ils nagent près des plantes. Sans alevin, rien ne change.
-  const fryPresent = fishes.some(isFry);
-  const plants = fryPresent ? fryPlants(world.decor) : NO_PLANTS;
-  // Courant (issue #460) : coupé, aucun calcul (nage d'avant, au bit près).
-  const flow = worldCurrentVelocity(world, CURRENT_SCRATCH);
-  const flowing = flow.x !== 0 || flow.z !== 0;
-  // Approche des poissons par la crevette (issue #669) : positions du début du pas, comme le
-  // banc ; sans espèce qui approche, aucun instantané (marche d'avant, au bit près).
-  const neighbors: readonly WalkerNeighbor[] = hasCleaningWalker(fishes)
-    ? neighborsInto(fishes, NEIGHBORS)
-    : fishes;
+  const pass = prepareSwimPass(world, fishes, clock);
   // Ordre stable : celui du tableau, c'est-à-dire des identifiants.
   for (let i = 0; i < fishes.length; i++) {
-    const fish = fishes[i];
-    const bounds = boundsAt(fish.species, place, key);
-    if (SPECIES[fish.species].walker !== undefined) {
-      // Espèce qui marche sur le fond (axolotl, crevette nettoyeuse) : sa propre machine à
-      // états, sans banc ni recherche de nourriture, qui contourne les obstacles (`sim/axolotl.ts`).
-      stepWalker(
-        fish,
-        dt,
-        world.seed,
-        world.time,
-        bounds,
-        groundFor(place, key),
-        world.obstacles,
-        neighbors,
-      );
-      continue;
-    }
-    if (SPECIES[fish.species].amphibian !== undefined) {
-      // Espèce amphibie (grenouille, triton) : posée, sauts, nage, entre terre et eau, sans banc ni
-      // recherche de nourriture (`sim/frog.ts`).
-      stepFrog(fish, dt, world.seed, world.time, bounds, groundFor(place, key));
-      continue;
-    }
-    let target =
-      food.length === 0
-        ? null
-        : foodTarget(
-            fish,
-            SPECIES[fish.species],
-            food,
-            bandFor(fish.species, place, key),
-            bounds.hard,
-            FOOD_TARGET,
-            world.obstacles,
-          );
-    const bond = SPECIES[fish.species].anemone;
-    if (bond !== undefined) {
-      target = bondTarget(fish, bond, homeForRank(homes, bond, bondRank), food, target);
-      bondRank += 1;
-    }
-    if (i === guard.index) {
-      // Le gardien reste près des œufs : ni nourriture, ni anémone, ni comportement.
-      const floorY = bounds.hard.minY + GUARD_FLOOR_CLEARANCE;
-      target = guardTarget(guard, guardHome, world.time, GUARD_TARGET, floorY);
-    }
-    let grazing = false;
-    if (target === null && behaving && behaviorFlags[i] === 1) {
-      // La nourriture en vue l'emporte ; sinon, le point visé du comportement.
-      BEHAVIOR_TARGET.x = behaviorPoints[3 * i];
-      BEHAVIOR_TARGET.y = behaviorPoints[3 * i + 1];
-      BEHAVIOR_TARGET.z = behaviorPoints[3 * i + 2];
-      target = BEHAVIOR_TARGET;
-      grazing = speciesBehavior(fish.species)?.kind === 'broutage';
-    }
-    if (target === null && fryPresent && fish.growth !== undefined) {
-      target = fryTarget(fish, plants, world.time, bounds, FRY_TARGET);
-    }
-    stepFish(
-      fish,
-      dt,
-      bounds,
-      steering[3 * i],
-      steering[3 * i + 1],
-      steering[3 * i + 2],
-      world.obstacles,
-      target,
-      nightRest(fish.species, intensity),
-      grazing,
-      i === guard.index && isNearClutch(fish, guard),
-    );
-    if (flowing) {
-      applyCurrentInPlace(
-        fish,
-        flow.x,
-        flow.z,
-        dt,
-        isRiverSpecies(fish.species),
-        bounds,
-        SPECIES[fish.species].wallMargin,
-      );
-    }
+    swimOneInPlace(world, fishes[i], i, dt, pass);
   }
-  currentPlace = place;
-  currentKey = key;
-  enforceMinDistance(fishes, boundsOfFish);
-  if (rivalsPresent) {
-    enforceRivalDistance(fishes, boundsOfFish);
-  }
-  eatInPlace(fishes, food, bandOfFish, hardOfFish);
-  // Masse des granulés non mangés qui se décomposent pendant le pas (issue #638).
-  const decayed = flowing
-    ? stepFoodInPlace(food, dt, flow.x, flow.z, environmentWater(place))
-    : stepFoodInPlace(food, dt);
+  settleSwimmersInPlace(fishes, pass);
+  const decayed = stepFoodStage(pass, dt);
   if (decor) {
     // Mode décor (#278) : faim rendue telle qu'au début du pas ; eau et santé en pause (la
     // nourriture qui se décompose alors n'atteint pas l'eau).
     restoreHunger(fishes);
     return;
   }
-  // Alevins (issue #459) : croissance, puis prédation des alevins hors des plantes. En mode
-  // décor, en pause comme l'eau et la santé.
-  if (fryPresent) {
+  stepLifeInPlace(world, fishes, dt, decayed, pass);
+}
+
+/**
+ * Horloge du pas. Pas nominal : temps dérivé du compteur (exact, sans cumul d'erreur
+ * flottante). Pas libre (`step(world, dt)`, tests) : temps cumulé.
+ */
+function advanceClockInPlace(world: MutableWorld, dt: number): void {
+  world.tick += 1;
+  world.time = dt === SIM_DT ? world.tick * SIM_DT : world.time + dt;
+}
+
+/**
+ * État de la nage d'un pas, calculé une fois sur les positions du début du pas
+ * (`prepareSwimPass`) puis lu par chaque animal : le résultat ne dépend donc pas de l'ordre
+ * de mise à jour.
+ */
+interface SwimPass {
+  /** Lieu du pas et sa clé, calculée une fois et lue par toutes les tables (`placeKey`). */
+  place: Place;
+  key: string;
+  /** Pilotage de banc (et évitement des rivaux), 3 composantes par animal. */
+  steering: Float64Array;
+  /** Espèces incompatibles présentes (issue #209). */
+  rivals: boolean;
+  /** Intensité du jour au temps du pas (issue #209) ; sans horloge, plein jour. */
+  intensity: number;
+  food: FoodPellet[];
+  /** Points d'attache des poissons-clowns (issue #150), aucun hors du récif. */
+  homes: readonly AnemoneHome[];
+  /** Rang du prochain poisson attaché à une anémone. */
+  bondRank: number;
+  /** Gardien de la ponte (issue #670) et son anémone. */
+  guard: ClutchGuard;
+  guardHome: AnemoneHome | null;
+  /** Points visés des comportements d'espèce calculés (issue #427). */
+  behaving: boolean;
+  /** Alevins présents (issue #459) et plantes où ils nagent. */
+  fryPresent: boolean;
+  plants: readonly DecorItem[];
+  /** Courant (issue #460) : vitesse de l'eau, et vrai s'il n'est pas coupé. */
+  flow: CurrentVelocity;
+  flowing: boolean;
+  /** Voisins vus par la crevette nettoyeuse (issue #669), positions du début du pas. */
+  neighbors: readonly WalkerNeighbor[];
+  /** Le dernier point visé est un broutage (`swimmerTarget`). */
+  grazing: boolean;
+}
+
+/** État de la nage du pas, réutilisé d'un pas à l'autre (pas non réentrant, voir `hungerKept`). */
+const PASS: SwimPass = {
+  place: DEFAULT_ENVIRONMENT_ID,
+  key: DEFAULT_ENVIRONMENT_ID,
+  steering: new Float64Array(0),
+  rivals: false,
+  intensity: 1,
+  food: [],
+  homes: [],
+  bondRank: 0,
+  guard: noGuard(),
+  guardHome: null,
+  behaving: false,
+  fryPresent: false,
+  plants: [],
+  flow: CURRENT_SCRATCH,
+  flowing: false,
+  neighbors: [],
+  grazing: false,
+};
+
+/**
+ * Remplit `PASS` sur les positions du début du pas. Chaque calcul est sauté quand rien ne le
+ * demande (sans rival, granulé, œuf, comportement, alevin, courant ni crevette, nage d'avant au
+ * bit près).
+ */
+function prepareSwimPass(
+  world: MutableWorld,
+  fishes: Mutable<Entity>[],
+  clock: SimClock,
+): SwimPass {
+  const pass = PASS;
+  pass.place = world;
+  pass.key = placeKey(world);
+  pass.steering = steeringBuffer(fishes.length);
+  computeSchoolSteering(fishes, pass.steering);
+  // Espèces incompatibles : évitement anticipé ajouté au pilotage, puis distance minimale après
+  // la nage (`settleSwimmersInPlace`).
+  pass.rivals = hasRivals(fishes);
+  if (pass.rivals) {
+    addRivalSteering(fishes, pass.steering);
+  }
+  pass.intensity = clock === null ? 1 : dayIntensityAt(hourAt(clock, world.time));
+  pass.food = world.food as FoodPellet[];
+  pass.homes = worldAnemoneHomes(world);
+  pass.bondRank = 0;
+  pass.guard = clutchGuardInto(fishes, world.eggs, GUARD);
+  pass.guardHome = pass.guard.index < 0 ? null : nearestHome(pass.homes, pass.guard);
+  pass.behaving = computeBehaviorTargets(world, fishes, pass.place, pass.key);
+  pass.fryPresent = fishes.some(isFry);
+  pass.plants = pass.fryPresent ? fryPlants(world.decor) : NO_PLANTS;
+  pass.flow = worldCurrentVelocity(world, CURRENT_SCRATCH);
+  pass.flowing = pass.flow.x !== 0 || pass.flow.z !== 0;
+  pass.neighbors = hasCleaningWalker(fishes) ? neighborsInto(fishes, NEIGHBORS) : fishes;
+  return pass;
+}
+
+/**
+ * Nage d'un animal d'indice `i`. Une espèce qui marche sur le fond (axolotl, crevette
+ * nettoyeuse, `sim/axolotl.ts`) ou amphibie (grenouille, triton, `sim/frog.ts`) suit sa propre
+ * machine à états, sans banc ni recherche de nourriture ; un nageur suit son point visé
+ * (`swimmerTarget`), puis le courant.
+ */
+function swimOneInPlace(
+  world: MutableWorld,
+  fish: Mutable<Entity>,
+  i: number,
+  dt: number,
+  pass: SwimPass,
+): void {
+  const bounds = boundsAt(fish.species, pass.place, pass.key);
+  const { seed, time, obstacles } = world;
+  if (SPECIES[fish.species].walker !== undefined) {
+    const ground = groundFor(pass.place, pass.key);
+    stepWalker(fish, dt, seed, time, bounds, ground, obstacles, pass.neighbors);
+    return;
+  }
+  if (SPECIES[fish.species].amphibian !== undefined) {
+    stepFrog(fish, dt, seed, time, bounds, groundFor(pass.place, pass.key));
+    return;
+  }
+  const target = swimmerTarget(world, fish, i, bounds, pass);
+  const s = pass.steering;
+  const guarding = i === pass.guard.index && isNearClutch(fish, pass.guard);
+  const rest = nightRest(fish.species, pass.intensity);
+  stepFish(
+    fish,
+    dt,
+    bounds,
+    s[3 * i],
+    s[3 * i + 1],
+    s[3 * i + 2],
+    obstacles,
+    target,
+    rest,
+    pass.grazing,
+    guarding,
+  );
+  if (pass.flowing) {
+    const river = isRiverSpecies(fish.species);
+    const margin = SPECIES[fish.species].wallMargin;
+    applyCurrentInPlace(fish, pass.flow.x, pass.flow.z, dt, river, bounds, margin);
+  }
+}
+
+/**
+ * Point visé par le nageur d'indice `i`, par priorité croissante : nourriture (issue #68),
+ * anémone (#150), garde de la ponte (le gardien ignore tout le reste, #670) ; sans point visé,
+ * celui de son comportement (#427, `pass.grazing` vrai pour un broutage), puis, pour un alevin,
+ * les plantes (#459). `null` : nage libre.
+ */
+function swimmerTarget(
+  world: MutableWorld,
+  fish: Mutable<Entity>,
+  i: number,
+  bounds: SwimBounds,
+  pass: SwimPass,
+): Vec3 | null {
+  const def = SPECIES[fish.species];
+  let target =
+    pass.food.length === 0
+      ? null
+      : foodTarget(
+          fish,
+          def,
+          pass.food,
+          bandFor(fish.species, pass.place, pass.key),
+          bounds.hard,
+          FOOD_TARGET,
+          world.obstacles,
+        );
+  const bond = def.anemone;
+  if (bond !== undefined) {
+    target = bondTarget(
+      fish,
+      bond,
+      homeForRank(pass.homes, bond, pass.bondRank),
+      pass.food,
+      target,
+    );
+    pass.bondRank += 1;
+  }
+  if (i === pass.guard.index) {
+    const floorY = bounds.hard.minY + GUARD_FLOOR_CLEARANCE;
+    target = guardTarget(pass.guard, pass.guardHome, world.time, GUARD_TARGET, floorY);
+  }
+  pass.grazing = false;
+  if (target === null && pass.behaving && behaviorFlags[i] === 1) {
+    BEHAVIOR_TARGET.x = behaviorPoints[3 * i];
+    BEHAVIOR_TARGET.y = behaviorPoints[3 * i + 1];
+    BEHAVIOR_TARGET.z = behaviorPoints[3 * i + 2];
+    target = BEHAVIOR_TARGET;
+    pass.grazing = speciesBehavior(fish.species)?.kind === 'broutage';
+  }
+  if (target === null && pass.fryPresent && fish.growth !== undefined) {
+    target = fryTarget(fish, pass.plants, world.time, bounds, FRY_TARGET);
+  }
+  return target;
+}
+
+/** Après la nage : distances minimales (banc, puis rivaux), puis repas des granulés. */
+function settleSwimmersInPlace(fishes: Mutable<Entity>[], pass: SwimPass): void {
+  currentPlace = pass.place;
+  currentKey = pass.key;
+  enforceMinDistance(fishes, boundsOfFish);
+  if (pass.rivals) {
+    enforceRivalDistance(fishes, boundsOfFish);
+  }
+  eatInPlace(fishes, pass.food, bandOfFish, hardOfFish);
+}
+
+/**
+ * Granulés non mangés : chute, dérive dans le courant et décomposition ; renvoie la masse
+ * décomposée pendant le pas (issue #638).
+ */
+function stepFoodStage(pass: SwimPass, dt: number): number {
+  return pass.flowing
+    ? stepFoodInPlace(pass.food, dt, pass.flow.x, pass.flow.z, environmentWater(pass.place))
+    : stepFoodInPlace(pass.food, dt);
+}
+
+/**
+ * Vie du bac, hors mode décor, dans cet ordre : alevins (croissance, puis prédation hors des
+ * plantes), eau, algues, plantes, maladies, santé (`sim/world-step-life.ts`), puis population
+ * (`stepPopulationInPlace`).
+ */
+function stepLifeInPlace(
+  world: MutableWorld,
+  fishes: Mutable<Entity>[],
+  dt: number,
+  decayed: number,
+  pass: SwimPass,
+): void {
+  if (pass.fryPresent) {
     growFryInPlace(fishes, dt);
-    eatFryInPlace(fishes, plants);
+    eatFryInPlace(fishes, pass.plants);
   }
-  // Nourriture non mangée (issue #638) : son ammoniaque entre dans l'eau avant le pas d'eau,
-  // donc n'est convertie qu'au pas suivant, comme celle des déchets.
-  if (decayed > 0) {
-    addDecayedFoodInPlace(
-      world.water as MutableWaterState,
-      decayed,
-      waterLiters(environmentWater(place)),
-    );
-  }
-  // Eau (issue #206) : sans hasard, après les poissons ; ne change rien à leur nage.
-  stepWaterInPlace(
-    world.water as MutableWaterState,
-    dt,
-    waterLoad(fishes) + deadLoad(world.dead),
-    waterLiters(environmentWater(place)),
-    targetTemperature(world.water, world.environment),
-  );
-  // Algues (issue #476) : sans hasard, sur les nitrates de fin de pas ; sans pousse (éclairage
-  // normal, eau propre), rien n'est calculé ni écrit.
-  if (
-    hasAlgae(world.environment) &&
-    algaeGrowth(lightingOf(world.water), world.water.nitrate) > 0
-  ) {
-    stepAlgaeInPlace(
-      world.water as MutableWaterState,
-      dt,
-      cachedAlgaePatches(world.seed, environmentWater(place)),
-    );
-  }
-  // Plantes à tige (issue #477) : pousse sans hasard, jusqu'à la surface, ralentie par le sel
-  // (effet secondaire, #549) et par un éclairage court (lampe, #584) ; en pause en mode décor
-  // comme l'eau.
-  if (hasPlantGrowth(world.environment)) {
-    const water = world.water as MutableWaterState;
-    const growth = stepPlantGrowthInPlace(
-      water.plantGrowth as MutablePlantGrowth | undefined,
-      world.decor,
-      dt,
-      environmentWater(place).maxY,
-      plantGrowthFactor(water) * plantLightFactor(lightingOf(water)),
-    );
-    if (growth !== undefined && water.plantGrowth === undefined) {
-      water.plantGrowth = growth;
-    }
-  }
-  // Points blancs (issue #360) : sur l'eau de fin de pas ; aucun tirage sans stress ni
-  // malade, donc un bac sain avance exactement comme avant. Un traitement efficace dans
-  // l'eau (issue #361) empêche toute nouvelle infection, puis fait avancer la cure.
-  stepIchInPlace(
-    fishes,
-    dt,
-    ichStress(world.water, world.environment),
-    world.environment,
-    world.seed,
-    world.tick,
-    ichProtected(world.water),
-  );
-  // Velours (issue #532) : même stress que les points blancs, contagion lente ; le médicament
-  // (sur l'eau du début du pas, avant sa dégradation) le fait reculer. Aucun tirage sans stress
-  // ni malade.
-  stepVelvetInPlace(
-    fishes,
-    dt,
-    ichStress(world.water, world.environment),
-    world.environment,
-    world.seed,
-    world.tick,
-    medicationProtects(world.water),
-  );
-  // Champignons (issue #548) : seulement sur un animal blessé (signes d'une autre maladie) ou
-  // affaibli, jamais spontanés ; le médicament (eau du début du pas) les fait reculer dans une
-  // eau propre. Aucun tirage pour un animal sans porte d'entrée.
-  stepFungusInPlace(
-    fishes,
-    dt,
-    world.environment,
-    world.seed,
-    world.tick,
-    medicationProtects(world.water),
-    finRotCauses(world.water) === 0,
-  );
-  stepTreatmentInPlace(world.water as MutableWaterState, fishes, dt);
-  // Pourriture des nageoires (issue #485) : sur l'ammoniaque et les nitrites de fin de pas ;
-  // tirage d'apparition seulement en eau chargée, guérison sans tirage en eau corrigée.
-  stepFinRotInPlace(
-    fishes,
-    dt,
-    finRotCauses(world.water),
-    world.environment,
-    world.seed,
-    world.tick,
-  );
-  // Hydropisie (issue #565) : sur l'eau de fin de pas et la santé de début de pas ; tirage
-  // d'apparition seulement pour un animal affaibli en eau chargée, recul sans tirage en eau
-  // propre avant le stade avancé.
-  stepDropsyInPlace(
-    fishes,
-    dt,
-    finRotCauses(world.water),
-    world.environment,
-    world.seed,
-    world.tick,
-  );
-  // Santé (issue #208) : sur la faim de fin de pas (après les repas) et l'eau du pas (pH
-  // compris, issue #236), sans hasard ; à santé pleine, la nage reste exactement celle d'avant.
-  stepWellbeingInPlace(
-    fishes,
-    dt,
-    waterQuality(world.water, world.environment) === 'mauvaise',
-    speciesById,
-    world.water.ph,
-    catappaActive(world.water.catappa),
-  );
-  // Mortalité (issue #582) : corps du bac, puis décès sur la santé de fin de pas ; sans corps
-  // ni mortalité activée, rien n'est calculé (monde d'avant au bit près).
+  stepWaterStageInPlace(world, dt, decayed);
+  stepAlgaeStageInPlace(world, dt);
+  stepPlantsStageInPlace(world, dt);
+  stepDiseasesInPlace(world, dt);
+  stepHealthStageInPlace(world, dt);
+  stepPopulationInPlace(world, dt);
+}
+
+/**
+ * Population, sur la santé et l'eau de fin de pas : corps du bac (#582), puis décès si la
+ * mortalité est activée ; mise bas au dernier pas de chaque portée (#459) ; œufs : prédation,
+ * éclosion et ponte (#478). Sans corps, mortalité, portée ni œuf, rien n'est écrit ; aucun
+ * tirage pris aux générateurs des poissons.
+ */
+function stepPopulationInPlace(world: MutableWorld, dt: number): void {
   if (world.dead !== undefined) {
-    stepDeadInPlace(world.dead, dt, (body) => boundsAt(body.species, place, key).hard.maxY);
+    stepDeadInPlace(world.dead, dt, surfaceOfBody);
   }
   if (world.mortality === true) {
     stepMortalityInPlace(world, dt);
   }
-  // Mise bas (issue #459) : au dernier pas de chaque portée seulement, sur la santé et l'eau
-  // de fin de pas ; aucun tirage pris aux générateurs des poissons.
   stepBroodInPlace(world);
-  // Ponte des corydoras (issue #478) : prédation et éclosion des œufs du bac, puis ponte au
-  // dernier pas de chaque période ; sans œuf ni ponte, rien n'est écrit.
   stepEggsInPlace(world, dt);
+}
+
+/** Surface d'eau d'un corps (hauteur maximale de son espèce) dans le lieu du pas en cours. */
+function surfaceOfBody(body: { readonly species: SpeciesId }): number {
+  return boundsAt(body.species, currentPlace, currentKey).hard.maxY;
 }
 
 /**
@@ -1524,10 +1536,6 @@ function restoreHunger(fishes: Mutable<Entity>[]): void {
   for (let i = 0; i < fishes.length; i++) {
     fishes[i].hunger = hungerKept[i];
   }
-}
-
-function speciesById(species: SpeciesId): SpeciesDefinition {
-  return SPECIES[species];
 }
 
 /**
