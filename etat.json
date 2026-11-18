@@ -8867,10 +8867,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-18T06:07:51.371Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-18T06:08:57.849Z",
+          "note": "Issue #690 : lot 4/13 assainissement, readWater et healthSummary (S) ; rétro #712, PR roadmap"
         }
       },
       "metriques": {}
