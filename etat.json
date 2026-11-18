@@ -8981,10 +8981,10 @@
           "note": "Issue #693 : lot 7/13 assainissement, sonde des attributs de test de l'hôte (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-18T10:50:35.435Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-18T11:42:51.409Z",
+          "note": "PR #719 : sonde des attributs de test (assainissement 7/13), 0 expose* dans l'hôte, caractérisation préalable, CI verte"
         }
       },
       "metriques": {}
