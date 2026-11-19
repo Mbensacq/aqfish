@@ -21,7 +21,6 @@ import {
   type CaptureParams,
   type CapturePopulation,
   type CaptureFurniture,
-  type CaptureLayoutEntry,
   type CaptureWood,
 } from '../../core/capture/capture-params';
 import {
@@ -78,27 +77,7 @@ import {
   writeStoredFreeCamera,
 } from '../../core/free-camera-pref/free-camera-pref';
 import type { DecorPick } from '../../render/decor-pick';
-import {
-  addDecorItem,
-  isDecorEditable,
-  isDecorPoseAllowed,
-  isDecorTool,
-  MAX_DECOR_ITEMS,
-  moveDecorItem,
-  removeDecorItem,
-  rotateDecorItem,
-  scaleDecorItem,
-  setDecorInPlace,
-} from '../../sim/decor-edit';
-import {
-  DROP_TIME_STEP,
-  decorDropScene,
-  groundDecorItem,
-  settleDecorItem,
-  type DropPoint,
-} from '../../sim/decor-drop';
-import { decorFallScene, releaseUnsupportedDecor, type DecorFall } from '../../sim/decor-release';
-import type { DecorDropper } from '../../core/decor-physics/decor-physics';
+import { isDecorEditable, MAX_DECOR_ITEMS, setDecorInPlace } from '../../sim/decor-edit';
 import {
   loadDecorPhysics,
   type DecorPhysicsLoader,
@@ -132,7 +111,6 @@ import {
   placeDimensions,
   placeEnvironmentData,
   type EnvironmentId,
-  type Place,
 } from '../../sim/environment';
 import {
   stashedList,
@@ -154,12 +132,9 @@ import {
   DEFAULT_ROOM,
   ROOM_ITEM_KINDS,
   type Room,
-  type RoomItem,
   type RoomItemKind,
-  type RoomQuarter,
 } from '../../sim/room';
-import { dropRoomItem, removeRoomItem, roomArea, roomItemBox } from '../../sim/room-furniture';
-import { isRoomTool, type EditorTool } from '../decor-editor/decor-editor';
+import { dropRoomItem } from '../../sim/room-furniture';
 import { createFixedStepState, fixedStepInto, type FixedStepState } from '../../sim/fixed-step';
 import {
   DEFAULT_SIM_SPEED,
@@ -178,27 +153,15 @@ import {
 } from '../../sim/population';
 import { parseSaveWorlds, serializeRoom } from '../../sim/room-save';
 import {
-  addSupport,
   addTank,
   findTank,
   MAX_TANK_NAME_LENGTH,
-  removeSupport,
-  removeTank,
-  placementLevel,
   renameTank,
   stepRoom,
-  SUPPORT_CATALOG,
-  SUPPORT_KINDS,
   syncRoom,
-  TANK_SIZE_IDS,
-  tankAnimalCount,
   tankResizeRefusal,
-  type RoomLayoutRefusal,
   type RoomState,
-  type RoomSupport,
   type RoomTank,
-  type SupportKind,
-  type TankSizeId,
 } from '../../sim/room-state';
 import {
   ROOM_ANIMAL_CAP,
@@ -207,13 +170,7 @@ import {
   roomPopulationLimits,
   roomTankCapRefusal,
 } from '../../sim/room-limits';
-import {
-  findSupportSpot,
-  findTankSpot,
-  layoutFootprints,
-  roomLayoutBlocks,
-  type FloorRect,
-} from '../../sim/room-layout';
+import { findTankSpot, layoutFootprints, roomLayoutBlocks } from '../../sim/room-layout';
 import type { SaveSettings } from '../../sim/save';
 import type { AlertSeverity } from '../../sim/dashboard-alerts';
 import { addWarningText } from '../../sim/species-sheet';
@@ -250,7 +207,7 @@ import {
   type FoodStyle,
 } from '../../core/food-style/food-style';
 import type { SpeciesId } from '../../sim/species';
-import { decorBaseY, decorElevation, validateDecorItem, type DecorItem } from '../../sim/decor';
+import { validateDecorItem, type DecorItem } from '../../sim/decor';
 import {
   advanceInPlace,
   advanceToWithFeedings,
@@ -433,7 +390,10 @@ import {
 import { refreshDue } from '../dashboard-frame/refresh-pace';
 import { filterMaturityPercent } from '../../sim/filter-maturation';
 import type { FilterRinseWater } from '../../sim/filter-rinse';
-import { AquariumProbe, type DecorPhysicsState } from './aquarium-probe';
+import { AquariumProbe } from './aquarium-probe';
+import { DecorEditingController } from './decor-editing-controller';
+import { RoomEditingController } from './room-editing-controller';
+import { RoomLayoutController } from './room-layout-controller';
 import { CareSessionController } from '../care-session/care-session-controller';
 
 /** Fabrique du renderer, remplaçable dans les tests (jsdom n'a pas WebGL). */
@@ -479,51 +439,13 @@ export interface TankNotice {
   readonly text: string;
 }
 
-/** Bac de la pièce vu par le catalogue « Bacs et meubles » (#305). */
-export interface RoomCatalogTank {
-  readonly id: number;
-  readonly name: string;
-  readonly animals: number;
-  /**
-   * Bac affiché (non retirable). Calculé depuis le bac sélectionné (`selectedTankId`) : c'est
-   * la même notion, le bac sélectionné de la pièce est toujours celui du monde affiché (#313).
-   */
-  readonly shown: boolean;
-  /** Support du bac posé (nom), « sol », ou `null` : position historique. */
-  readonly on: string | null;
-}
-
-/** Meuble support vu par le catalogue « Bacs et meubles » (#305). */
-export interface RoomCatalogSupport {
-  readonly id: number;
-  readonly name: string;
-  /** Vrai si un bac repose dessus (non retirable). */
-  readonly occupied: boolean;
-}
-
-/** Contenu de la pièce de N bacs pour le catalogue « Bacs et meubles » (#305). */
-export interface RoomCatalog {
-  readonly tanks: readonly RoomCatalogTank[];
-  readonly supports: readonly RoomCatalogSupport[];
-  /** Dernier refus, en clair ; `null` après une action acceptée. */
-  readonly message: string | null;
-}
-
-/** Messages des refus du catalogue « Bacs et meubles » (#305). */
-export const ROOM_LAYOUT_MESSAGES: Readonly<Record<RoomLayoutRefusal | 'aucune-place', string>> = {
-  'aucune-place': 'Aucune place libre pour cet élément.',
-  'piece-pleine': 'La pièce est pleine.',
-  'bac-inconnu': 'Ce bac n’existe plus.',
-  'meuble-inconnu': 'Ce meuble n’existe plus.',
-  'hors-piece': 'Hors de la pièce.',
-  'hors-support': 'Le bac dépasse du meuble.',
-  chevauchement: 'Un meuble ou un bac occupe déjà la place.',
-  'support-occupe': 'Un bac repose sur ce meuble.',
-  'trop-haut': 'Le bac est trop haut pour cette place.',
-  jardin: 'Le bassin se trouve au jardin.',
-  'dernier-bac': 'La pièce garde au moins un bac.',
-  'position-invalide': 'Choix invalide.',
-};
+export {
+  ROOM_LAYOUT_MESSAGES,
+  supportPlaceLabel,
+  type RoomCatalog,
+  type RoomCatalogSupport,
+  type RoomCatalogTank,
+} from './room-layout-controller';
 
 /** Intervalle de la sauvegarde automatique, en millisecondes (#70). */
 export const AUTOSAVE_INTERVAL_MS = 10_000;
@@ -591,16 +513,6 @@ export const SAVE_STORAGE = new InjectionToken<SaveStorage | null>('SAVE_STORAGE
     return win ? browserStorage(win) : null;
   },
 });
-
-/**
- * Place d'un bac posé sur `support`, pour le catalogue « Bacs et meubles » : nom et rang du
- * meuble, et le niveau (compté depuis 1) pour un meuble à plusieurs niveaux (ADR 0102).
- */
-export function supportPlaceLabel(support: RoomSupport, level: number): string {
-  const model = SUPPORT_CATALOG[support.kind];
-  const name = `${model.name} ${support.id + 1}`;
-  return model.levels.length > 1 ? `${name}, niveau ${level + 1}` : name;
-}
 
 /**
  * Effectifs au format de `population=` et de `data-aqfish-population` : `neon:12,guppy:6`.
@@ -775,11 +687,6 @@ export class AquariumHost {
   private readonly ambientSound = inject(AmbientSoundState);
   /** Scène sonore autorisée : après le démarrage, hors capture. */
   private readonly soundAllowed = signal(false);
-  /** Moteur de chute, une fois chargé (#170). */
-  private dropper: DecorDropper | null = null;
-  /** Chute affichée (#170) : trajectoire de la base de l'élément `index`, temps écoulé (s). */
-  private dropAnimation: { index: number; path: readonly DropPoint[]; elapsed: number } | null =
-    null;
 
   private view: AquariumView | null = null;
   private frameId: number | null = null;
@@ -1079,26 +986,95 @@ export class AquariumHost {
   /** Aquarium relu du lien, en attente de confirmation (jamais appliqué sans elle). */
   private pendingShare: Extract<ParseShareResult, { ok: true }> | null = null;
 
+  /** Édition du décor (#167, #168, #170, #695, ADR 0155) : `DecorEditingController`. */
+  private readonly decorEdit: DecorEditingController = new DecorEditingController({
+    world: () => this.currentWorld,
+    view: () => this.view,
+    isCapture: () => this.capture,
+    loadPhysics: () => this.physicsLoader(),
+    probe: this.probe,
+    decorVisible: () => this.decorVisible(),
+    showDecor: () => this.setDecorVisible(true),
+    decorChanged: (world) => this.refreshPlants(world),
+    room: {
+      selection: () => this.roomEdit.selection(),
+      editable: () => this.roomEdit.editable(),
+      clearSelection: () => this.roomEdit.clearSelection(),
+      select: (index) => this.roomEdit.select(index),
+      add: (kind, x, z) => this.roomEdit.add(kind, x, z),
+      turnSelected: (steps) => this.roomEdit.turnSelected(steps),
+      deleteSelected: () => this.roomEdit.deleteSelected(),
+    },
+    saveNow: () => this.saveNow(),
+    scheduleFrame: () => this.scheduleFrame(),
+  });
+
+  /** Édition de la pièce graphique (#188, #695, ADR 0155) : `RoomEditingController`. */
+  private readonly roomEdit: RoomEditingController = new RoomEditingController({
+    room: () => this.room(),
+    applyRoom: (room) => this.applyRoom(room),
+    dimensions: () => (this.currentWorld ? placeDimensions(this.currentWorld) : DEFAULT_TANK),
+    obstacles: () => (this.roomState === null ? [] : layoutFootprints(this.roomState)),
+    view: () => this.view,
+    probe: this.probe,
+    editor: {
+      editing: () => this.decorEdit.editing(),
+      setRefused: (refused) => this.decorEdit.refused.set(refused),
+      hideDecorSelection: () => this.decorEdit.showSelection(null),
+      deselectAll: () => this.decorEdit.select(null),
+    },
+    saveNow: () => this.saveNow(),
+    scheduleFrame: () => this.scheduleFrame(),
+  });
+
   /** Mode édition du décor (#167) : les clics sur le bac posent ou choisissent un élément. */
-  readonly decorEditing = signal(false);
-
+  readonly decorEditing = this.decorEdit.editing;
   /** Vrai si le décor de l'environnement courant est modifiable (bac tropical, #167). */
-  readonly decorEditable = signal(false);
-
+  readonly decorEditable = this.decorEdit.editable;
   /** Outil courant de l'éditeur de décor (#167). */
-  readonly decorTool = signal<EditorTool>('rock');
-
+  readonly decorTool = this.decorEdit.tool;
   /** Indice de l'élément de la pièce sélectionné (#188), `null` sinon. */
-  readonly roomSelection = signal<number | null>(null);
-
+  readonly roomSelection = this.roomEdit.selection;
   /** Vrai si la pièce est dessinée, donc modifiable en mode édition (#188). */
-  readonly roomEditable = signal(false);
-
+  readonly roomEditable = this.roomEdit.editable;
   /** Nombre d'éléments de la pièce (#188). */
-  readonly roomCount = signal(0);
+  readonly roomCount = this.roomEdit.count;
+  /** Indice de l'élément de décor sélectionné (#167), `null` sinon. */
+  readonly decorSelection = this.decorEdit.selection;
+  /** Nombre d'éléments du décor (#167). */
+  readonly decorCount = this.decorEdit.count;
+  /** Vrai si la dernière pose demandée a été refusée (#168) : `DecorEditingController.refused`. */
+  readonly decorRefused = this.decorEdit.refused;
+  /** État du moteur de chute (#170), chargé à la première ouverture de l'éditeur. */
+  readonly decorPhysics = this.decorEdit.physics;
+  /** Vrai si le dernier élément lâché a été posé sur le sable faute de moteur (#170). */
+  readonly decorDropGrounded = this.decorEdit.dropGrounded;
+
+  /** Catalogue « Bacs et meubles » de la pièce de N bacs (#305, #695) : `RoomLayoutController`. */
+  private readonly roomLayout = new RoomLayoutController({
+    world: () => this.currentWorld,
+    isCapture: () => this.capture,
+    editable: () => this.roomEdit.editable(),
+    roomState: () => this.roomState,
+    setRoomState: (room) => {
+      this.roomState = room;
+    },
+    syncRoomState: (world) => this.syncRoomState(world),
+    selectedTankId: () => this.selectedTankId,
+    forgetStashed: (environment) => {
+      const stash = new Map(this.stash);
+      stash.delete(environment);
+      this.stash = stash;
+    },
+    room: () => this.room(),
+    redrawRoom: () => this.applyRoom(this.room()),
+    probe: this.probe,
+    saveNow: () => this.saveNow(),
+    scheduleFrame: () => this.scheduleFrame(),
+  });
 
   /** Bacs et meubles supports de la pièce de N bacs (#305), pour le catalogue. */
-  readonly roomCatalog = signal<RoomCatalog>({ tanks: [], supports: [], message: null });
+  readonly roomCatalog = this.roomLayout.catalog;
 
   /**
    * Liste des bacs de la pièce (#306, lot 3) : nom, environnement, litrage, animaux et pire
@@ -1115,28 +1091,6 @@ export class AquariumHost {
   /** Message du dernier transfert ou renommage (#306, #318), `null` avant tout geste. */
   readonly tankNotice = signal<TankNotice | null>(null);
 
-  /** Indice de l'élément de décor sélectionné (#167), `null` sinon. */
-  readonly decorSelection = signal<number | null>(null);
-
-  /** Nombre d'éléments du décor (#167). */
-  readonly decorCount = signal(0);
-
-  /**
-   * Vrai si la dernière pose demandée (glissement, rotation, échelle, #168) a été refusée
-   * parce qu'elle pénétrait un autre élément ; effacé à la sélection suivante ou à la pose
-   * acceptée suivante.
-   */
-  readonly decorRefused = signal(false);
-
-  /** État du moteur de chute (#170), chargé à la première ouverture de l'éditeur. */
-  readonly decorPhysics = signal<DecorPhysicsState>('absent');
-
-  /**
-   * Vrai si le dernier élément lâché a été posé sur le sable sans chute, faute de moteur
-   * (#170) ; effacé à la pose suivante réussie.
-   */
-  readonly decorDropGrounded = signal(false);
-
   /**
    * Dimensions du bac du monde courant (issue #171), `null` si l'environnement ne les règle
    * pas (`isTankResizable`).
@@ -1146,26 +1100,6 @@ export class AquariumHost {
   readonly pondShape = signal<PondShape>(DEFAULT_POND_SHAPE);
   /** Litres d'eau du bac du monde courant (#237, avertissements d'ajout), `null` avant le départ. */
   readonly tankLiters = signal<number | null>(null);
-
-  /**
-   * Glissement en cours (#168) : décor du monde au début du geste (abandon s'il a changé
-   * entre-temps) et dernier aperçu (décor déplacé, borné au bac).
-   */
-  private decorDrag: {
-    readonly base: readonly DecorItem[];
-    readonly index: number;
-    preview: DecorItem[] | null;
-  } | null = null;
-
-  /**
-   * Glissement en cours d'un élément de la pièce (#188) : pièce au début du geste (abandon si
-   * elle a changé entre-temps) et dernière pose acceptée par `dropRoomItem`.
-   */
-  private roomDrag: {
-    readonly base: Room;
-    readonly index: number;
-    preview: readonly RoomItem[] | null;
-  } | null = null;
 
   /** État courant de la simulation (`null` avant le démarrage et après la destruction). */
   get world(): World | null {
@@ -1875,7 +1809,7 @@ export class AquariumHost {
       return;
     }
     // Une chute en cours se termine d'abord : le monde rangé garde un décor posé.
-    this.finishDropAnimation();
+    this.decorEdit.finishDrop();
     const fromTime = this.renderTime();
     // Les autres bacs rattrapent le bac quitté avant l'échange (#316) ; le bac quitté garde
     // son identifiant dans la pièce, même jamais sauvegardé (#264).
@@ -1922,10 +1856,10 @@ export class AquariumHost {
     const room = this.syncRoomState(world);
     const refusal = tankResizeRefusal(room, this.selectedTankId, clampTankDimensions(dims));
     if (refusal !== null) {
-      return this.refuseRoomLayout(refusal);
+      return this.roomLayout.refuse(refusal);
     }
     // Une chute en cours se termine d'abord : son décor est celui que l'on redimensionne.
-    this.finishDropAnimation();
+    this.decorEdit.finishDrop();
     const applied = setTankDimensionsInPlace(world, dims);
     if (applied === null || sameDimensions(applied, previous)) {
       return;
@@ -1954,7 +1888,7 @@ export class AquariumHost {
     if (!world || !this.view || this.capture || (world.shape ?? DEFAULT_POND_SHAPE) === shape) {
       return;
     }
-    this.finishDropAnimation();
+    this.decorEdit.finishDrop();
     if (setPondShapeInPlace(world, shape) === null) {
       return;
     }
@@ -1998,563 +1932,74 @@ export class AquariumHost {
     }
   }
 
-  /**
-   * Entre en mode édition du décor ou en sort (#167). En sortant, la sélection est effacée ;
-   * en entrant, un décor masqué est réaffiché (#176 : on ne pose pas d'obstacle invisible).
-   * Sans effet en mode capture (`edition=`), avant le démarrage, ou pour entrer dans un
-   * environnement dont le décor n'est pas modifiable (`isDecorEditable`).
-   */
+  /** Entre en mode édition du décor ou en sort (#167) : `DecorEditingController.setEditing`. */
   setDecorEditing(editing: boolean): void {
-    const world = this.currentWorld;
-    if (!world || !this.view || this.capture || (editing && !isDecorEditable(world.environment))) {
-      return;
-    }
-    if (!editing) {
-      this.selectDecor(null);
-    } else {
-      if (!this.decorVisible()) {
-        this.setDecorVisible(true);
-      }
-      this.loadDecorPhysics();
-    }
-    this.applyDecorEditing(editing);
+    this.decorEdit.setEditing(editing);
   }
 
-  /** Charge le moteur de chute une seule fois (#170) ; un échec est retenu (`indisponible`). */
-  private loadDecorPhysics(): void {
-    if (this.decorPhysics() !== 'absent') {
-      return;
-    }
-    this.setDecorPhysics('chargement');
-    this.physicsLoader().then(
-      (dropper) => {
-        this.dropper = dropper;
-        this.setDecorPhysics('pret');
-      },
-      () => this.setDecorPhysics('indisponible'),
-    );
-  }
-
-  private setDecorPhysics(state: DecorPhysicsState): void {
-    this.decorPhysics.set(state);
-    this.probe.publishDecorPhysics(state);
-  }
-
-  /**
-   * Fait tomber l'élément `index` de `decor` (#170) depuis le dessus du décor jusqu'au repos
-   * sur le sable ou sur un autre élément. Sans moteur (en chargement ou indisponible), ou si
-   * la chute échoue, l'élément est posé sur le sable à sa position. Renvoie le décor obtenu
-   * et la trajectoire à afficher (vide sans chute).
-   */
-  private dropDecor(
-    decor: readonly DecorItem[],
-    index: number,
-    environment: Place,
-  ): { decor: readonly DecorItem[]; path: readonly DropPoint[] } {
-    const scene = this.dropper ? decorDropScene(decor, index, environment) : null;
-    if (this.dropper && scene) {
-      try {
-        const result = this.dropper.drop(scene);
-        const settled = settleDecorItem(decor, index, result.rest, environment);
-        if (settled) {
-          this.decorDropGrounded.set(false);
-          return { decor: settled, path: [scene.start, ...result.path] };
-        }
-      } catch {
-        // Moteur en erreur : repli sur le sable, comme sans moteur.
-      }
-    }
-    this.decorDropGrounded.set(this.decorPhysics() === 'indisponible');
-    return { decor: groundDecorItem(decor, index) ?? decor, path: [] };
-  }
-
-  /**
-   * Chute d'un élément depuis sa pose (#182) : son support a disparu. Mêmes moteur et lecture
-   * du repos que le lâcher (`dropDecor`), départ à sa pose (`decorFallScene`). `null` sans
-   * moteur, hors d'un environnement éditable, ou si le moteur échoue.
-   */
-  private readonly fallDecor: DecorFall = (decor, index) => {
-    const world = this.currentWorld;
-    const scene = world ? decorFallScene(decor, index, world) : null;
-    if (!world || !this.dropper || !scene) {
-      return null;
-    }
-    try {
-      const result = this.dropper.drop(scene);
-      const settled = settleDecorItem(decor, index, result.rest, world);
-      return settled ? { decor: settled, path: [scene.start, ...result.path] } : null;
-    } catch {
-      return null;
-    }
-  };
-
-  /** Affiche la chute de l'élément `index` le long de `path` (rien si `path` est vide). */
-  private playDrop(index: number, path: readonly DropPoint[]): void {
-    this.dropAnimation = path.length > 0 ? { index, path, elapsed: 0 } : null;
-  }
-
-  /** Avance la chute affichée de `realDt` secondes ; à la fin, l'élément est à sa pose. */
-  private stepDropAnimation(view: AquariumView, realDt: number): void {
-    const animation = this.dropAnimation;
-    const item = animation ? this.currentWorld?.decor[animation.index] : undefined;
-    if (!animation || !item) {
-      this.dropAnimation = null;
-      return;
-    }
-    animation.elapsed += realDt;
-    const step = Math.floor(animation.elapsed / DROP_TIME_STEP);
-    if (step >= animation.path.length - 1) {
-      this.dropAnimation = null;
-      view.previewDecorPose(animation.index, item.x, decorBaseY(item), item.z);
-      return;
-    }
-    const p = animation.path[step];
-    view.previewDecorPose(animation.index, p.x, p.y, p.z);
-  }
-
-  /** Termine aussitôt la chute affichée (l'élément rejoint sa pose). */
-  private finishDropAnimation(): void {
-    if (this.dropAnimation && this.view) {
-      this.stepDropAnimation(this.view, Number.POSITIVE_INFINITY);
-    }
-  }
-
-  /**
-   * Choisit l'outil de l'éditeur de décor (#167), ou un élément de la pièce à poser quand la
-   * pièce est dessinée (#188) ; un outil inconnu ou indisponible est ignoré.
-   */
+  /** Outil de l'éditeur (#167, #188) : `DecorEditingController.setTool`. */
   setDecorTool(tool: string): void {
-    if (isDecorTool(tool) || (isRoomTool(tool) && this.roomEditable())) {
-      this.decorTool.set(tool);
-    }
+    this.decorEdit.setTool(tool);
   }
 
-  /**
-   * Sélectionne l'élément d'indice `index` du décor (contour clair), ou aucun avec `null`
-   * (#167). Sans effet hors du mode édition (sauf pour désélectionner) ou pour un indice
-   * inexistant.
-   */
+  /** Sélectionne un élément du décor, ou aucun (#167) : `DecorEditingController.select`. */
   selectDecor(index: number | null): void {
-    const world = this.currentWorld;
-    const view = this.view;
-    if (!world || !view) {
-      return;
-    }
-    this.decorRefused.set(false);
-    const valid =
-      index !== null && Number.isInteger(index) && index >= 0 && index < world.decor.length;
-    if (index !== null && (!valid || !this.decorEditing())) {
-      return;
-    }
-    this.showDecorSelection(view, index);
-    // Une seule sélection à la fois : celle de la pièce est levée (#188).
-    view.setRoomSelection(null);
-    this.refreshRoomSelection(null);
-    this.scheduleFrame();
+    this.decorEdit.select(index);
   }
 
-  /** Dessine et expose la sélection du décor `index` (sans toucher à celle de la pièce). */
-  private showDecorSelection(view: AquariumView, index: number | null): void {
-    view.setDecorSelection(index);
-    this.refreshDecorSelection(index);
-  }
-
-  /**
-   * Sélectionne l'élément d'indice `index` de la pièce (#188, contour clair), ou aucun avec
-   * `null` ; lève la sélection du décor. Sans effet hors du mode édition (sauf pour
-   * désélectionner) ou pour un indice inexistant.
-   */
+  /** Sélectionne un élément de la pièce, ou aucun (#188) : `RoomEditingController.select`. */
   selectRoomItem(index: number | null): void {
-    const view = this.view;
-    const items = this.room().items ?? [];
-    if (!view) {
-      return;
-    }
-    if (index !== null && !(this.decorEditing() && index >= 0 && index < items.length)) {
-      return;
-    }
-    // Lève la sélection du décor sans passer par `selectDecor`, qui lèverait aussi celle de
-    // la pièce : la coque de contour serait détruite puis reconstruite (#202).
-    this.decorRefused.set(false);
-    this.showDecorSelection(view, null);
-    view.setRoomSelection(index);
-    this.refreshRoomSelection(index);
-    this.scheduleFrame();
+    this.roomEdit.select(index);
   }
 
-  /**
-   * Supprime l'élément de décor sélectionné (touche Suppr, bouton « Supprimer », #167) ;
-   * renvoie `true` s'il a été supprimé. Sans effet sans sélection.
-   */
+  /** Supprime la sélection, du décor ou de la pièce (#167, #188) ; `true` si supprimée. */
   deleteSelectedDecor(): boolean {
-    const roomIndex = this.roomSelection();
-    if (roomIndex !== null && this.decorEditing()) {
-      // Pièce (#188) : ce que l'élément portait retombe ; refus s'il resterait en l'air.
-      const items = removeRoomItem(this.room().items ?? [], roomIndex);
-      if (!items) {
-        this.decorRefused.set(true);
-        return false;
-      }
-      this.applyRoomItems(items, null);
-      return true;
-    }
-    const world = this.currentWorld;
-    const index = this.decorSelection();
-    if (!world || index === null || !this.decorEditing()) {
-      return false;
-    }
-    const decor = removeDecorItem(world.decor, index);
-    if (!decor) {
-      return false;
-    }
-    this.applyDecor(decor, null);
-    return true;
+    return this.decorEdit.deleteSelected();
   }
 
-  /**
-   * Clic en mode édition (#167) : un élément touché est sélectionné ; un point du sable reçoit
-   * l'élément de l'outil courant (qui est alors sélectionné), ou, avec l'outil `select`,
-   * désélectionne ; un clic hors du bac désélectionne. Décor masqué (masqué pendant
-   * l'édition) : rien n'est posé (#176). Sans effet hors du mode édition.
-   */
+  /** Clic en mode édition (#167, #188) : `DecorEditingController.editAt`. */
   editAt(pick: DecorPick): void {
-    const world = this.currentWorld;
-    if (!world || !this.decorEditing()) {
-      return;
-    }
-    if (pick === null) {
-      this.selectDecor(null);
-      return;
-    }
-    if (pick.kind === 'item') {
-      this.selectDecor(pick.index);
-      return;
-    }
-    const tool = this.decorTool();
-    if (pick.kind === 'room-item' || pick.kind === 'floor') {
-      // Pièce (#188) : un outil de la pièce pose au point visé (sur le parquet ou sur le
-      // meuble touché) ; sinon, un élément touché est sélectionné, le parquet désélectionne.
-      if (isRoomTool(tool)) {
-        this.addRoomItem(tool, pick.x, pick.z);
-      } else if (pick.kind === 'room-item') {
-        this.selectRoomItem(pick.index);
-      } else {
-        this.selectDecor(null);
-      }
-      return;
-    }
-    if (tool === 'select' || isRoomTool(tool) || !this.decorVisible()) {
-      this.selectDecor(null);
-      return;
-    }
-    const decor = addDecorItem(world.decor, tool, pick.x, pick.z, world.seed, world);
-    if (decor) {
-      const index = decor.length - 1;
-      const drop = this.dropDecor(decor, index, world);
-      // Un élément ajouté peut chevaucher (#167) ; sa chute ne doit pas l'aggraver.
-      const allowed = isDecorPoseAllowed(decor, drop.decor, index);
-      this.applyDecor(allowed ? drop.decor : decor, index);
-      this.playDrop(index, allowed ? drop.path : []);
-    } else {
-      this.selectDecor(null);
-    }
+    this.decorEdit.editAt(pick);
   }
 
-  /**
-   * Tourne l'élément sélectionné de `steps` pas de 15° (flèches, boutons, #168) ; renvoie
-   * `true` si la pose a changé. Refusée (`decorRefused`) si elle pénètre un autre élément.
-   */
+  /** Tourne la sélection (#168, #188) ; `true` si la pose a changé. */
   rotateSelectedDecor(steps: number): boolean {
-    if (this.roomSelection() !== null) {
-      return this.turnSelectedRoomItem(steps);
-    }
-    return this.editSelected((decor, index, env) => rotateDecorItem(decor, index, steps, env));
+    return this.decorEdit.rotateSelected(steps);
   }
 
-  /**
-   * Agrandit (`steps` > 0) ou réduit l'élément sélectionné (touches + et −, boutons, #168) ;
-   * renvoie `true` si la pose a changé. Sans effet à la borne d'échelle ; refusée
-   * (`decorRefused`) si elle pénètre un autre élément.
-   */
+  /** Agrandit ou réduit la sélection du décor (#168) ; `true` si la pose a changé. */
   scaleSelectedDecor(steps: number): boolean {
-    // Un élément de la pièce garde sa taille (#188).
-    if (this.roomSelection() !== null) {
-      return false;
-    }
-    return this.editSelected((decor, index, env) => scaleDecorItem(decor, index, steps, env));
+    return this.decorEdit.scaleSelected(steps);
   }
 
-  /**
-   * Applique `edit` à l'élément sélectionné ; `null` d'`edit` : pose refusée ou inchangée.
-   * Un élément posé sur un autre retombe ensuite depuis sa position (#183, `redropEdited`).
-   */
-  private editSelected(
-    edit: (decor: readonly DecorItem[], index: number, env: Place) => DecorItem[] | null,
-  ): boolean {
-    const world = this.currentWorld;
-    const index = this.decorSelection();
-    if (!world || index === null || !this.decorEditing() || this.decorDrag) {
-      return false;
-    }
-    const redrop = this.redropEdited(edit, world.decor, index, world);
-    if (redrop) {
-      this.applyDecor(redrop.decor, index);
-      this.playDrop(index, redrop.path);
-      return true;
-    }
-    const decor = edit(world.decor, index, world);
-    if (!decor) {
-      // Inchangée à la borne d'échelle ; sinon, la pose pénétrait un voisin.
-      this.decorRefused.set(this.wouldOverlap(edit, world.decor, index, world));
-      return false;
-    }
-    this.applyDecor(decor, index);
-    return true;
-  }
-
-  /**
-   * Rotation ou échelle d'un élément posé sur un autre (`elevation` > 0, #183) : l'élément
-   * modifié retombe depuis sa position, par le moteur du lâcher (`dropDecor`). Réduit ou
-   * tourné, il rejoint son support au lieu de rester au-dessus d'un vide ; agrandi, il s'y
-   * repose plus haut au lieu d'être refusé. `null` si l'élément est sur le sable (sa pose ne
-   * change pas), si le moteur n'est pas prêt (l'élévation est alors gardée : la poser sur le
-   * sable la ferait pénétrer son support), si `edit` échoue même sans voisins (borne
-   * d'échelle), ou si la pose obtenue pénètre un autre élément (`isDecorPoseAllowed`).
-   */
-  private redropEdited(
-    edit: (decor: readonly DecorItem[], index: number, env: Place) => DecorItem[] | null,
-    decor: readonly DecorItem[],
-    index: number,
-    env: Place,
-  ): { decor: readonly DecorItem[]; path: readonly DropPoint[] } | null {
-    if (!this.dropper || decorElevation(decor[index]) === 0) {
-      return null;
-    }
-    // Sans les voisins : la pose est vérifiée après la chute, pas à l'élévation d'avant.
-    const alone = edit([decor[index]], 0, env);
-    if (!alone) {
-      return null;
-    }
-    const candidate = decor.map((item, n) => (n === index ? alone[0] : item));
-    const drop = this.dropDecor(candidate, index, env);
-    return drop.path.length > 0 && isDecorPoseAllowed(decor, drop.decor, index) ? drop : null;
-  }
-
-  /** Vrai si `edit` a échoué pour cause de chevauchement (et non de borne). */
-  private wouldOverlap(
-    edit: (decor: readonly DecorItem[], index: number, env: Place) => DecorItem[] | null,
-    decor: readonly DecorItem[],
-    index: number,
-    env: Place,
-  ): boolean {
-    // Sans les voisins, la même modification réussit-elle ?
-    return edit([decor[index]], 0, env) !== null;
-  }
-
-  /** Début du glissement de l'élément `index` (#168) : il est sélectionné. */
+  /** Début du glissement d'un élément du décor (#168). */
   startDecorDrag(index: number): void {
-    const world = this.currentWorld;
-    if (!world || !this.decorEditing() || index < 0 || index >= world.decor.length) {
-      return;
-    }
-    this.finishDropAnimation();
-    this.selectDecor(index);
-    this.decorDrag = { base: world.decor, index, preview: null };
+    this.decorEdit.startDrag(index);
   }
 
-  /** Glissement (#168) : aperçu de l'élément au point visé, borné au bac. */
+  /** Glissement d'un élément du décor (#168). */
   moveDecorDrag(index: number, x: number, z: number): void {
-    const world = this.currentWorld;
-    const drag = this.decorDrag;
-    if (!world || !drag || drag.index !== index || world.decor !== drag.base) {
-      return;
-    }
-    const preview = moveDecorItem(world.decor, index, x, z, world);
-    if (preview) {
-      drag.preview = preview;
-      this.view?.previewDecorMove(index, preview[index].x, preview[index].z);
-      this.scheduleFrame();
-    }
+    this.decorEdit.moveDrag(index, x, z);
   }
 
-  /**
-   * Fin du glissement (#168) : la pose est enregistrée si elle ne pénètre aucun autre élément
-   * (`isDecorPoseAllowed`) ; sinon, ou si le geste est abandonné, l'élément revient à sa
-   * dernière pose valide.
-   */
+  /** Fin du glissement d'un élément du décor (#168, #170). */
   endDecorDrag(index: number, commit: boolean): void {
-    const world = this.currentWorld;
-    const drag = this.decorDrag;
-    this.decorDrag = null;
-    if (!world || !drag || drag.index !== index || world.decor !== drag.base || !drag.preview) {
-      return;
-    }
-    // Lâché (#170) : l'élément tombe à sa nouvelle position avant d'être posé.
-    const drop = commit
-      ? this.dropDecor(drag.preview, index, world)
-      : { decor: drag.preview, path: [] };
-    const allowed = isDecorPoseAllowed(world.decor, drop.decor, index);
-    if (commit && this.decorEditing() && allowed) {
-      this.applyDecor(drop.decor, index);
-      this.playDrop(index, drop.path);
-      return;
-    }
-    const last = world.decor[index];
-    this.view?.previewDecorMove(index, last.x, last.z);
-    this.decorRefused.set(commit && !allowed);
-    this.scheduleFrame();
+    this.decorEdit.endDrag(index, commit);
   }
 
-  /**
-   * Pose un élément `kind` de la pièce au point (x, z) (#188) : il tombe sur le parquet ou
-   * sur le meuble que son emprise chevauche (`dropRoomItem`), puis il est sélectionné. Pose
-   * refusée (`decorRefused`) : place prise, hors de la pièce, pièce pleine…
-   */
-  private addRoomItem(kind: RoomItemKind, x: number, z: number): void {
-    const result = dropRoomItem(
-      this.room(),
-      this.roomDimensions(),
-      { kind, x, z, quarter: 0 },
-      undefined,
-      this.roomObstacles(),
-    );
-    if (!result.ok) {
-      this.selectDecor(null);
-      this.decorRefused.set(true);
-      return;
-    }
-    this.applyRoomItems(result.items, result.index);
-  }
-
-  /** Tourne l'élément sélectionné de la pièce d'un quart de tour par pas (signe de `steps`). */
-  private turnSelectedRoomItem(steps: number): boolean {
-    const index = this.roomSelection();
-    const item = index === null ? undefined : this.room().items?.[index];
-    if (!item || index === null || !this.decorEditing() || this.roomDrag || steps === 0) {
-      return false;
-    }
-    const quarter = ((((item.quarter + Math.sign(steps)) % 4) + 4) % 4) as RoomQuarter;
-    const result = dropRoomItem(
-      this.room(),
-      this.roomDimensions(),
-      { kind: item.kind, x: item.x, z: item.z, quarter },
-      index,
-      this.roomObstacles(),
-    );
-    if (!result.ok) {
-      this.decorRefused.set(true);
-      return false;
-    }
-    this.applyRoomItems(result.items, index);
-    return true;
-  }
-
-  /** Début du glissement d'un élément de la pièce (#188) : il est sélectionné. */
+  /** Début du glissement d'un élément de la pièce (#188). */
   startRoomDrag(index: number): void {
-    const items = this.room().items ?? [];
-    if (!this.decorEditing() || index < 0 || index >= items.length) {
-      return;
-    }
-    this.selectRoomItem(index);
-    this.roomDrag = { base: this.room(), index, preview: null };
+    this.roomEdit.startDrag(index);
   }
 
-  /**
-   * Glissement d'un élément de la pièce vers (x, z) : aperçu de sa pose par gravité
-   * (`dropRoomItem`), ce qu'il portait retombant ; une pose refusée garde l'aperçu précédent.
-   */
+  /** Glissement d'un élément de la pièce (#188). */
   moveRoomDrag(index: number, x: number, z: number): void {
-    const drag = this.roomDrag;
-    const item = drag?.base.items?.[index];
-    if (!drag || !item || drag.index !== index || this.room() !== drag.base) {
-      return;
-    }
-    const result = dropRoomItem(
-      drag.base,
-      this.roomDimensions(),
-      { kind: item.kind, x, z, quarter: item.quarter },
-      index,
-      this.roomObstacles(),
-    );
-    if (result.ok) {
-      drag.preview = result.items;
-      this.view?.previewRoom({ ...drag.base, items: result.items });
-      this.scheduleFrame();
-    }
+    this.roomEdit.moveDrag(index, x, z);
   }
 
-  /**
-   * Fin du glissement : la dernière pose acceptée est appliquée et enregistrée (`commit`) ;
-   * sinon (abandon, aucune pose acceptée), la pièce revient à son état du début du geste.
-   */
+  /** Fin du glissement d'un élément de la pièce (#188). */
   endRoomDrag(index: number, commit: boolean): void {
-    const drag = this.roomDrag;
-    this.roomDrag = null;
-    if (!drag || drag.index !== index || this.room() !== drag.base) {
-      return;
-    }
-    if (commit && drag.preview && this.decorEditing()) {
-      this.applyRoomItems(drag.preview, index);
-      return;
-    }
-    this.view?.previewRoom(drag.base);
-    this.decorRefused.set(commit);
-    this.scheduleFrame();
-  }
-
-  /** Dimensions du bac autour duquel la pièce est posée. */
-  private roomDimensions(): TankDimensions {
-    return this.currentWorld ? placeDimensions(this.currentWorld) : DEFAULT_TANK;
-  }
-
-  /**
-   * Emprises au sol des meubles supports et des bacs posés de la pièce de N bacs : un élément
-   * de la pièce graphique ne s'y pose pas (#313, limite de l'ADR 0074 levée).
-   */
-  private roomObstacles(): FloorRect[] {
-    return this.roomState === null ? [] : layoutFootprints(this.roomState);
-  }
-
-  /**
-   * Applique les éléments `items` à la pièce (#188), sélectionne l'élément `selection` (ou
-   * aucun) et enregistre aussitôt (le rechargement les restitue).
-   */
-  private applyRoomItems(items: readonly RoomItem[], selection: number | null): void {
-    const { shown, cabinetHeight } = this.room();
-    this.applyRoom(items.length > 0 ? { shown, cabinetHeight, items } : { shown, cabinetHeight });
-    this.decorRefused.set(false);
-    this.selectRoomItem(selection);
-    this.saveNow();
-    this.scheduleFrame();
-  }
-
-  /**
-   * Installe un décor édité (#167) : les éléments dont le support a disparu retombent d'abord
-   * (#182, `releaseUnsupportedDecor`), puis obstacles du monde recalculés, vue mise à jour,
-   * sélection `selection`, et sauvegarde immédiate (le rechargement le restitue). La première
-   * de ces chutes est affichée, sauf si l'appelant affiche ensuite la sienne (`playDrop`).
-   */
-  private applyDecor(decor: readonly DecorItem[], selection: number | null): void {
-    const world = this.currentWorld;
-    const view = this.view;
-    if (!world || !view) {
-      return;
-    }
-    this.finishDropAnimation();
-    const released = releaseUnsupportedDecor(decor, this.dropper ? this.fallDecor : null);
-    setDecorInPlace(world, released.decor);
-    const first = released.falls[0];
-    if (first) {
-      this.playDrop(first.index, first.path);
-    }
-    this.decorRefused.set(false);
-    view.replaceDecorItems(world.decor, world.seed);
-    this.refreshPlants(world);
-    this.refreshDecorCount();
-    view.setDecorSelection(selection);
-    this.refreshDecorSelection(selection);
-    this.saveNow();
-    this.scheduleFrame();
+    this.roomEdit.endDrag(index, commit);
   }
 
   /** Dépose des granulés au centre du bac (bouton « Nourrir », touche `G`). */
@@ -2692,18 +2137,8 @@ export class AquariumHost {
       this.probe.publishCamera(this.view);
     }
     // Éditeur (#188) : la pièce n'est modifiable que dessinée ; sélection et outil suivent.
-    this.roomEditable.set(shown);
-    const count = room.items?.length ?? 0;
-    this.roomCount.set(count);
-    this.probe.publishRoomCount(count);
-    const selection = this.roomSelection();
-    if (selection !== null && (!shown || selection >= count)) {
-      this.view?.setRoomSelection(null);
-      this.refreshRoomSelection(null);
-    }
-    if (!shown && isRoomTool(this.decorTool())) {
-      this.decorTool.set('select');
-    }
+    this.roomEdit.roomApplied(room, shown);
+    this.decorEdit.roomShownChanged(shown);
   }
 
   /** Applique le rendu des granulés à la vue courante et l'expose. */
@@ -2907,7 +2342,7 @@ export class AquariumHost {
     const synced = syncRoom(this.roomState, world, stashedList(this.stash, world.environment));
     this.roomState = synced.room;
     this.selectedTankId = synced.selectedTankId;
-    this.refreshRoomCatalog(this.roomCatalog().message);
+    this.roomLayout.refreshCatalog(this.roomLayout.catalog().message);
     this.refreshTankList();
     return synced.room;
   }
@@ -3102,7 +2537,7 @@ export class AquariumHost {
       return;
     }
     // Une chute en cours se termine d'abord, comme avant tout changement du monde affiché.
-    this.finishDropAnimation();
+    this.decorEdit.finishDrop();
     (world.entities as Entity[]).splice(index, 1);
     const arrival = findTank(result.room, toId) as RoomTank;
     const departure = findTank(room, toId);
@@ -3160,7 +2595,7 @@ export class AquariumHost {
     }
     const room = this.syncRoomState(world);
     const capped = roomTankCapRefusal(room);
-    const { area, obstacles } = this.roomFloor(world);
+    const { area, obstacles } = this.roomLayout.floor(world);
     const placement =
       capped === null
         ? findTankSpot(room, environment, QUARANTINE_TANK_SIZE, null, area, obstacles)
@@ -3185,7 +2620,7 @@ export class AquariumHost {
       kind: 'info',
       text: `Bac « ${QUARANTINE_TANK_NAME} » installé : laissez mûrir son filtre avant d’y mettre un animal`,
     });
-    this.commitRoomLayout(result.room, null);
+    this.roomLayout.commit(result.room, null);
     this.syncRoomState(world);
   }
 
@@ -3273,7 +2708,7 @@ export class AquariumHost {
       this.tankNotice.set({ kind: 'erreur', text: result.message });
       return;
     }
-    this.finishDropAnimation();
+    this.decorEdit.finishDrop();
     // Le bac affiché reste le même objet (avancé en place par la boucle) : il reçoit l'animal
     // créé par le transfert et le compteur d'identifiants.
     const arrival = (findTank(result.room, this.selectedTankId) as RoomTank).world;
@@ -3303,196 +2738,24 @@ export class AquariumHost {
     this.scheduleFrame();
   }
 
-  /** Expose les bacs et meubles de la pièce (catalogue et attributs, #305). */
-  private refreshRoomCatalog(message: string | null): void {
-    const room = this.roomState;
-    const supports = room?.furniture ?? [];
-    const tanks = (room?.tanks ?? []).map((tank): RoomCatalogTank => {
-      const supportId = tank.placement?.supportId;
-      const support = supports.find((item) => item.id === supportId);
-      return {
-        id: tank.id,
-        name: tank.name,
-        animals: tankAnimalCount(tank),
-        shown: tank.id === this.selectedTankId,
-        on:
-          tank.placement === null
-            ? null
-            : support === undefined
-              ? 'sol'
-              : supportPlaceLabel(support, placementLevel(tank.placement)),
-      };
-    });
-    this.roomCatalog.set({
-      tanks,
-      supports: supports.map((item) => ({
-        id: item.id,
-        name: `${SUPPORT_CATALOG[item.kind].name} ${item.id + 1}`,
-        occupied: (room?.tanks ?? []).some((tank) => tank.placement?.supportId === item.id),
-      })),
-      message,
-    });
-    this.probe.publishRoomCatalog(tanks.length, supports.length);
-  }
-
-  /**
-   * Aire libre de la pièce graphique autour du bac affiché et obstacles (meubles de la pièce
-   * graphique, ADR 0073, et passage devant la porte, #363) : la pose automatique du
-   * catalogue (#305) y cherche une place.
-   */
-  private roomFloor(world: World): { area: FloorRect; obstacles: FloorRect[] } {
-    const area = roomArea(placeDimensions(world));
-    const items = (this.room().items ?? []).map((item) => roomItemBox(item));
-    return { area, obstacles: [area.door, ...items] };
-  }
-
-  /**
-   * Ajoute un meuble support du catalogue « Bacs et meubles » (#305) à la première place libre
-   * de la pièce affichée. Refus (aucune place, pièce pleine) : message dans le catalogue.
-   * Sans effet en capture, avant le démarrage ou pièce masquée.
-   */
+  /** Ajoute un meuble support du catalogue (#305) : `RoomLayoutController.addSupport`. */
   addRoomSupport(kind: string): void {
-    const world = this.currentWorld;
-    if (!world || this.capture || !this.roomEditable()) {
-      return;
-    }
-    if (!(SUPPORT_KINDS as readonly string[]).includes(kind)) {
-      return this.refuseRoomLayout('position-invalide');
-    }
-    const room = this.syncRoomState(world);
-    const { area, obstacles } = this.roomFloor(world);
-    const spot = findSupportSpot(room, kind as SupportKind, area, obstacles);
-    if (spot === null) {
-      return this.refuseRoomLayout('aucune-place');
-    }
-    const result = addSupport(room, kind as SupportKind, spot.x, spot.z, 0);
-    this.commitRoomLayout(result.ok ? result.room : null, result.ok ? null : result.reason);
+    this.roomLayout.addSupport(kind);
   }
 
-  /**
-   * Ajoute un bac vide de l'environnement `environment` et de la taille `size` (catalogue
-   * « Bacs et meubles », #305), posé à la première place libre du meuble `supportId` ou du
-   * sol (`null`). Le bac posé est figé jusqu'au lot 3 (ADR 0073, 0074).
-   */
+  /** Ajoute un bac vide du catalogue (#305) : `RoomLayoutController.addTank`. */
   addRoomTank(environment: string, size: string, supportId: number | null): void {
-    const world = this.currentWorld;
-    if (!world || this.capture || !this.roomEditable()) {
-      return;
-    }
-    if (!isEnvironmentId(environment) || !(TANK_SIZE_IDS as readonly string[]).includes(size)) {
-      return this.refuseRoomLayout('position-invalide');
-    }
-    const room = this.syncRoomState(world);
-    // Plafond de bacs (#392, ADR 0096) : message explicite plutôt que « pièce pleine ».
-    const capped = roomTankCapRefusal(room);
-    if (capped !== null) {
-      return this.refreshRoomCatalog(capped);
-    }
-    const { area, obstacles } = this.roomFloor(world);
-    const placement = findTankSpot(
-      room,
-      environment,
-      size as TankSizeId,
-      supportId,
-      area,
-      obstacles,
-    );
-    if (placement === null) {
-      return this.refuseRoomLayout(
-        supportId !== null && !room.furniture.some((item) => item.id === supportId)
-          ? 'meuble-inconnu'
-          : 'aucune-place',
-      );
-    }
-    const result = addTank(room, { environment, size: size as TankSizeId, placement });
-    this.commitRoomLayout(result.ok ? result.room : null, result.ok ? null : result.reason);
+    this.roomLayout.addTank(environment, size, supportId);
   }
 
-  /**
-   * Retire le bac `id` de la pièce (#305), ses animaux avec lui ; un bac rangé (autre
-   * environnement) quitte aussi les mondes rangés. Le bac affiché ne se retire pas. La
-   * confirmation d'un bac peuplé revient au catalogue.
-   */
+  /** Retire le bac `id` de la pièce (#305) : `RoomLayoutController.removeTank`. */
   removeRoomTank(id: number): void {
-    const world = this.currentWorld;
-    if (!world || this.capture) {
-      return;
-    }
-    const room = this.syncRoomState(world);
-    const tank = findTank(room, id);
-    if (tank === undefined || id === this.selectedTankId) {
-      return this.refuseRoomLayout(tank === undefined ? 'bac-inconnu' : 'position-invalide');
-    }
-    const result = removeTank(room, id);
-    if (result.ok && tank.placement === null) {
-      const stash = new Map(this.stash);
-      stash.delete(tank.world.environment);
-      this.stash = stash;
-    }
-    this.commitRoomLayout(result.ok ? result.room : null, result.ok ? null : result.reason);
+    this.roomLayout.removeTank(id);
   }
 
-  /** Retire le meuble support `id` (#305) ; refusé si un bac repose dessus. */
+  /** Retire le meuble support `id` (#305) : `RoomLayoutController.removeSupport`. */
   removeRoomSupport(id: number): void {
-    const world = this.currentWorld;
-    if (!world || this.capture) {
-      return;
-    }
-    const result = removeSupport(this.syncRoomState(world), id);
-    this.commitRoomLayout(result.ok ? result.room : null, result.ok ? null : result.reason);
-  }
-
-  /**
-   * Meubles et bacs de `bacs=` (#305), en capture : chacun à la première place libre, dans
-   * l'ordre de l'URL ; type, taille, rang de meuble ou pose refusés : entrée ignorée.
-   */
-  private applyCaptureLayout(world: World, entries: readonly CaptureLayoutEntry[]): void {
-    let room = this.syncRoomState(world);
-    const { area, obstacles } = this.roomFloor(world);
-    const supportIds: number[] = [];
-    for (const entry of entries) {
-      if ('kind' in entry) {
-        const kind = entry.kind as SupportKind;
-        const spot = SUPPORT_KINDS.includes(kind)
-          ? findSupportSpot(room, kind, area, obstacles)
-          : null;
-        const result = spot === null ? null : addSupport(room, kind, spot.x, spot.z, 0);
-        if (result?.ok) {
-          room = result.room;
-          supportIds.push(result.id);
-        }
-        continue;
-      }
-      const size = entry.size as TankSizeId;
-      const supportId = entry.on === null ? null : supportIds[entry.on];
-      if (!TANK_SIZE_IDS.includes(size) || supportId === undefined) {
-        continue;
-      }
-      const placement = findTankSpot(room, 'tropical', size, supportId, area, obstacles);
-      const result =
-        placement === null ? null : addTank(room, { environment: 'tropical', size, placement });
-      if (result?.ok) {
-        room = result.room;
-      }
-    }
-    this.roomState = room;
-    this.refreshRoomCatalog(null);
-  }
-
-  private refuseRoomLayout(reason: RoomLayoutRefusal | 'aucune-place'): void {
-    this.refreshRoomCatalog(ROOM_LAYOUT_MESSAGES[reason]);
-  }
-
-  /** Installe la pièce modifiée (ou affiche le refus), redessine et enregistre aussitôt. */
-  private commitRoomLayout(room: RoomState | null, reason: RoomLayoutRefusal | null): void {
-    if (room === null) {
-      return this.refuseRoomLayout(reason ?? 'position-invalide');
-    }
-    this.roomState = room;
-    this.refreshRoomCatalog(null);
-    this.applyRoom(this.room());
-    this.saveNow();
-    this.scheduleFrame();
+    this.roomLayout.removeSupport(id);
   }
 
   /** Message d'erreur d'un fichier trop gros pour être lu (contrôle du panneau, #70). */
@@ -3797,7 +3060,7 @@ export class AquariumHost {
     // `bacs=` en capture, avec `piece=1`, y ajoute meubles supports et bacs posés.
     this.syncRoomState(this.currentWorld);
     if (params.capture && params.room && params.roomLayout.length > 0) {
-      this.applyCaptureLayout(this.currentWorld, params.roomLayout);
+      this.roomLayout.applyCaptureLayout(this.currentWorld, params.roomLayout);
     }
     // Vitesse de `vitesse=` (#232), hors capture : prime sur celle de la sauvegarde.
     // `vitesse=0` : le monde ne quitte pas t = 0 (captures d'interface reproductibles).
@@ -3845,7 +3108,7 @@ export class AquariumHost {
           : environmentById(this.currentWorld.environment).defaultCamera,
     );
     this.probe.publishFilter(this.filter());
-    this.applyDecorEditing(false);
+    this.decorEdit.applyEditing(false);
     // `edition=` (#167) : mode édition et élément sélectionné, en capture seulement.
     if (
       params.capture &&
@@ -3853,9 +3116,7 @@ export class AquariumHost {
       isDecorEditable(this.currentWorld.environment) &&
       params.editSelection < this.currentWorld.decor.length
     ) {
-      this.applyDecorEditing(true);
-      this.view?.setDecorSelection(params.editSelection);
-      this.refreshDecorSelection(params.editSelection);
+      this.decorEdit.showCaptureSelection(params.editSelection);
     }
     // `edition-meuble=` (#188) : mode édition et élément de la pièce sélectionné, en capture.
     const roomSelection = params.editRoomSelection;
@@ -3865,9 +3126,8 @@ export class AquariumHost {
       this.roomEditable() &&
       roomSelection < this.roomCount()
     ) {
-      this.applyDecorEditing(true);
-      this.view?.setRoomSelection(roomSelection);
-      this.refreshRoomSelection(roomSelection);
+      this.decorEdit.applyEditing(true);
+      this.roomEdit.showCaptureSelection(roomSelection);
     }
 
     // `libre=` (#343) : pose de la caméra libre, en capture, pièce affichée seulement.
@@ -4071,8 +3331,6 @@ export class AquariumHost {
     // Séance d'entretien (#604) : glisser racle à l'étape « vitres ».
     view.setStrokeEnabled(this.care.strokeEnabled());
     this.viewCleanups.push(view.onStroke((points) => this.care.stroke(points)));
-    this.decorDrag = null;
-    this.roomDrag = null;
     this.viewCleanups.push(
       view.onDecorDrag({
         start: (index) => this.startDecorDrag(index),
@@ -4123,9 +3381,9 @@ export class AquariumHost {
         }
       }),
     );
-    // Vue neuve : aucun élément sélectionné.
-    this.refreshDecorSelection(null);
-    this.refreshRoomSelection(null);
+    // Vue neuve : aucun glissement en cours, aucun élément sélectionné.
+    this.decorEdit.viewCreated();
+    this.roomEdit.viewCreated();
   }
 
   private scheduleFrame(): void {
@@ -4169,9 +3427,7 @@ export class AquariumHost {
       }
       // Fondu du ciel couvert à la bascule de la pluie (#338) : jamais en capture.
       view.stepOvercastFade(realDt);
-      if (this.dropAnimation) {
-        this.stepDropAnimation(view, realDt);
-      }
+      this.decorEdit.stepDrop(realDt);
     }
     const canvas = this.canvasRef().nativeElement;
     if (view.resize(canvas.clientWidth, canvas.clientHeight)) {
@@ -4721,13 +3977,8 @@ export class AquariumHost {
     if (world) {
       this.environment.set(world.environment);
       this.probe.publishEnvironment(world.environment);
-      const editable = isDecorEditable(world.environment);
-      this.decorEditable.set(editable);
       this.refreshTankDimensions();
-      if (!editable && this.decorEditing()) {
-        this.applyDecorEditing(false);
-      }
-      this.refreshDecorCount();
+      this.decorEdit.environmentChanged(world.environment);
     }
   }
 
@@ -4742,34 +3993,6 @@ export class AquariumHost {
     this.pondShape.set(world.shape ?? DEFAULT_POND_SHAPE);
     this.tankLiters.set(waterLiters(environmentWater(world)));
     this.probe.publishTank(world.shape ?? DEFAULT_POND_SHAPE, dims);
-  }
-
-  /** Applique et expose le mode édition (`data-aqfish-editing`, signal `decorEditing`). */
-  private applyDecorEditing(editing: boolean): void {
-    this.decorEditing.set(editing);
-    this.decorRefused.set(false);
-    // Hors capture seulement : `edition=` montre la sélection sans gestes.
-    this.view?.setDecorDragEnabled(editing && !this.capture);
-    this.probe.publishEditing(editing);
-  }
-
-  /** Expose le nombre d'éléments du décor (`data-aqfish-decor-count`, signal `decorCount`). */
-  private refreshDecorCount(): void {
-    const count = this.currentWorld?.decor.length ?? 0;
-    this.decorCount.set(count);
-    this.probe.publishDecorCount(count);
-  }
-
-  /** Expose la sélection (`data-aqfish-decor-selected`, signal `decorSelection`). */
-  private refreshDecorSelection(index: number | null): void {
-    this.decorSelection.set(index);
-    this.probe.publishDecorSelection(index);
-  }
-
-  /** Expose la sélection de la pièce (`data-aqfish-room-selected`, signal `roomSelection`). */
-  private refreshRoomSelection(index: number | null): void {
-    this.roomSelection.set(index);
-    this.probe.publishRoomSelection(index);
   }
 
   /** Expose l'état de la sauvegarde (`data-aqfish-save` et signal `saveStatus`). */
