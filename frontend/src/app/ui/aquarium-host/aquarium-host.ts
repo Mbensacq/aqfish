@@ -57,12 +57,7 @@ import { presetTransitionSeconds } from '../../render/camera-presets';
 import { ReducedMotionState } from '../reduced-motion/reduced-motion-state';
 import { AmbientSoundState } from '../ambient-sound/ambient-sound-state';
 import type { AmbientScene } from '../../core/ambient-sound/ambient-sound';
-import { freeMoveAxesInto, freeMoveFor, type FreeMoveId } from '../../core/commands/commands';
-import { isTypingContext } from '../../core/keyboard/keyboard';
-import {
-  readStoredFreeCamera,
-  writeStoredFreeCamera,
-} from '../../core/free-camera-pref/free-camera-pref';
+import type { FreeMoveId } from '../../core/commands/commands';
 import type { DecorPick } from '../../render/decor-pick';
 import { isDecorEditable } from '../../sim/decor-edit';
 import {
@@ -164,12 +159,6 @@ import {
   worldPlantShade,
   worldShownPlantGrowth,
   worldAlgaePatches,
-  treatWorldInPlace,
-  doseWorldBacteriaStarterInPlace,
-  doseWorldConditionerInPlace,
-  doseWorldPhRegulatorInPlace,
-  setWorldCarbonInPlace,
-  setWorldUntreatedTapInPlace,
 } from '../../sim/world';
 import type { MutableWorld, World } from '../../sim/world-types';
 import { netTarget } from '../../sim/mortality';
@@ -190,22 +179,11 @@ import {
 import { waterLiters } from '../../sim/water';
 import type { ConditionerKind } from '../../sim/water-conditioner';
 import type { PhRegulatorDirection } from '../../sim/ph-regulator';
-import {
-  addJournalEntry,
-  addPruneEntry,
-  treatmentEntry,
-  waterChangeEntry,
-} from '../../sim/journal';
+import { addJournalEntry, addPruneEntry, waterChangeEntry } from '../../sim/journal';
 import { markWaterChange } from '../../sim/water-history';
 import type { MaintenanceTask } from '../../sim/maintenance';
 import { worldReview, type ReviewPoint } from '../../sim/bilan';
-import { TREATMENTS, type TreatmentKind } from '../../sim/treatment';
-import {
-  sameTreatment,
-  treatmentReadout,
-  type TreatmentNotice,
-  type TreatmentReadout,
-} from '../../sim/treatment-text';
+import type { TreatmentKind } from '../../sim/treatment';
 import { DEFAULT_WATER_SAMPLE, waterSample, type WaterSample } from '../../sim/water-dashboard';
 import {
   algaeCoverage,
@@ -232,27 +210,7 @@ import {
   type AlertTargets,
 } from '../../sim/alert-animals';
 import { mixWarnings } from '../../sim/compatibility';
-import {
-  EMPTY_PHARMACY,
-  pharmacyState,
-  samePharmacy,
-  usedProducts,
-  type PharmacyProduct,
-  type PharmacyState,
-} from '../../sim/pharmacy';
-import { waterHardness } from '../../sim/water-hardness';
-import {
-  isWaterKit,
-  sameWaterTestView,
-  startWaterTest,
-  WATER_TEST_TICKS,
-  waterTestDone,
-  waterTestView,
-  type WaterKit,
-  type WaterTest,
-  type WaterTestSample,
-  type WaterTestView,
-} from '../../sim/water-test';
+import { isWaterKit, type WaterKit } from '../../sim/water-test';
 import {
   EMPTY_HEALTH_SUMMARY,
   healthSummary,
@@ -272,6 +230,8 @@ import { RoomEditingController } from './room-editing-controller';
 import { RoomLayoutController } from './room-layout-controller';
 import { CareSessionController } from '../care-session/care-session-controller';
 import { TankRecordsController } from './tank-records-controller';
+import { FreeCameraController } from './free-camera-controller';
+import { WaterCareController } from './water-care-controller';
 import { TankRoomController } from './tank-room-controller';
 
 /** Fabrique du renderer, remplaçable dans les tests (jsdom n'a pas WebGL). */
@@ -285,12 +245,6 @@ export const ALERT_HIGHLIGHT_MS = 6000;
 
 /** Pas de simulation entre deux relevés de l'eau dans la boucle (0,5 s simulée). */
 export const WATER_READOUT_TICKS = 30;
-
-/** Échantillon d'un test de l'eau (#564) : valeurs exactes du bac, dureté résolue. */
-function testSample(world: World): WaterTestSample {
-  const { ph, ammonia, nitrite, nitrate } = world.water;
-  return { ph, ammonia, nitrite, nitrate, ...waterHardness(world.water, world.environment) };
-}
 
 /**
  * Chargeur du moteur de chute de l'éditeur (#170, ADR 0046) : import dynamique de Rapier par
@@ -471,10 +425,6 @@ export class AquariumHost {
   private currentWorld: MutableWorld | null = null;
   /** Niveau du voile d'exemple de `encrassement=` (#607), en capture ; 0 sinon. */
   private captureFouling = 0;
-  /** Produits déjà utilisés dans chaque bac depuis le chargement (#533), hors du monde. */
-  private pharmacyUsed = new WeakMap<World, readonly PharmacyProduct[]>();
-  /** Dernier test de l'eau lancé dans chaque bac (#564), hors du monde : rien n'est sauvegardé. */
-  private waterTests = new WeakMap<World, WaterTest>();
   /** Bilan du bac affiché (#514), lu à la demande par le tableau de bord. */
   readonly reviewOfWorld = (): readonly ReviewPoint[] =>
     this.currentWorld ? worldReview(this.currentWorld) : [];
@@ -505,14 +455,22 @@ export class AquariumHost {
    */
   readonly activePreset = signal<CameraPreset | null>(null);
 
+  /** Caméra libre dans la pièce (#343, #344, #696) : `FreeCameraController`. */
+  private readonly free = new FreeCameraController({
+    view: () => this.view,
+    isCapture: () => this.capture,
+    isWallpaper: () => this.wallpaper,
+    prefStorage: () => {
+      const win = this.document.defaultView;
+      return win ? browserStorage(win) : null;
+    },
+    activePreset: this.activePreset,
+    publishFreeCamera: (active) => this.probe.publishFreeCamera(active),
+    publishCamera: () => this.probe.publishCamera(this.view),
+    scheduleFrame: () => this.scheduleFrame(),
+  });
   /** Caméra libre dans la pièce en cours (#343) ; la barre des vues l'affiche. */
-  readonly freeCamera = signal(false);
-  /** Déplacements de la caméra libre enfoncés au clavier (#343). */
-  private readonly freeMoves = new Set<FreeMoveId>();
-  /** Consigne de la caméra libre, tampon réutilisé à chaque image (#352). */
-  private readonly freeAxes = { forward: 0, strafe: 0, vertical: 0 };
-  /** Préréglage suivi avant la caméra libre, rendu à la barre en revenant à l'orbite. */
-  private presetBeforeFree: CameraPreset | null = null;
+  readonly freeCamera = this.free.active;
 
   /**
    * Filtre de rendu courant (issue #33). Pixel art par défaut ; `filtre=` dans l'URL prime
@@ -682,12 +640,24 @@ export class AquariumHost {
   private highlightTimer: ReturnType<typeof setTimeout> | null = null;
   /** Monde de la mise en évidence : elle cesse si le bac affiché change. */
   private highlightWorld: World | null = null;
+  /**
+   * Soins de l'eau du bac affiché (#361, #529, #530, #531, #533, #564, #696) : gestes,
+   * pharmacie et test de l'eau, `WaterCareController`.
+   */
+  private readonly waterCare = new WaterCareController({
+    world: () => this.currentWorld,
+    isCapture: () => this.capture,
+    journalOf: (world) => this.records.journalOf(world),
+    refreshWater: () => this.refreshWater(),
+    saveNow: () => this.saveNow(),
+    scheduleFrame: () => this.scheduleFrame(),
+  });
   /** Traitement des points blancs en cours (#361), relevé avec l'eau ; `null` : aucun. */
-  readonly treatment = signal<TreatmentReadout | null>(null, { equal: sameTreatment });
+  readonly treatment = this.waterCare.treatment;
   /** Produits de la pharmacie du bac affiché (#533), relevés avec l'eau. */
-  readonly pharmacy = signal<PharmacyState>(EMPTY_PHARMACY, { equal: samePharmacy });
+  readonly pharmacy = this.waterCare.pharmacy;
   /** Test de l'eau du bac affiché (#564), relevé avec l'eau ; `null` : aucun test lancé. */
-  readonly waterTest = signal<WaterTestView | null>(null, { equal: sameWaterTestView });
+  readonly waterTest = this.waterCare.waterTest;
   /** Calendrier d'entretien du bac affiché (#513) ; `null` en capture. */
   readonly maintenance = this.records.maintenance;
   /** Historique de l'eau du bac affiché (#511), recopié à chaque relevé nouveau ; `null` en capture. */
@@ -697,9 +667,7 @@ export class AquariumHost {
   /** Parcours « Mon premier aquarium » du bac affiché (#512) ; `null` : non proposé. */
   readonly firstTankPath = this.records.firstTankPath;
   /** Message du dernier geste de soin (#361) ; `null` : aucun depuis le dernier changement de bac. */
-  readonly treatmentNotice = signal<TreatmentNotice | null>(null);
-  /** Monde du dernier geste de soin : le message s'efface quand le bac affiché change. */
-  private noticeWorld: World | null = null;
+  readonly treatmentNotice = this.waterCare.notice;
   /** Pas du dernier relevé de l'eau (`refreshWater`). */
   private waterReadTick = Number.NEGATIVE_INFINITY;
   /** Instant (ms, horloge de `requestAnimationFrame`) du dernier relevé de la boucle. */
@@ -901,10 +869,7 @@ export class AquariumHost {
     }
     // Depuis la caméra libre (#343), la vue part de la pose libre vers le préréglage ; le
     // préréglage choisi vaut retour à l'orbite pour la préférence d'affichage (#344).
-    if (this.freeCamera()) {
-      this.rememberFreeCamera(false);
-    }
-    this.syncFreeCamera(false);
+    this.free.leaveForPreset();
     this.activePreset.set(preset);
     view.animateToPreset(preset, presetTransitionSeconds(this.reducedMotion(), this.capture));
     if (!view.transitioning) {
@@ -993,85 +958,14 @@ export class AquariumHost {
     this.scheduleFrame();
   }
 
-  /**
-   * Entre en caméra libre dans la pièce ou revient à l'orbite, pose d'avant rendue (#343,
-   * ADR 0084). Sans effet sans pièce affichée, en mode capture (`libre=`), en fond d'écran ou
-   * avant le démarrage.
-   */
+  /** Caméra libre ou orbite (#343, ADR 0084) : `FreeCameraController.toggle`. */
   toggleFreeCamera(): void {
-    const view = this.view;
-    if (!view || this.capture || this.wallpaper) {
-      return;
-    }
-    if (view.freeCameraActive) {
-      view.exitFreeCamera();
-      this.activePreset.set(this.presetBeforeFree);
-      this.syncFreeCamera(false);
-    } else if (view.enterFreeCamera()) {
-      this.presetBeforeFree = this.activePreset();
-      this.activePreset.set(null);
-      this.syncFreeCamera(true);
-    } else {
-      return;
-    }
-    // Préférence d'affichage (#344) : le mode choisi est repris au prochain chargement.
-    this.rememberFreeCamera(this.freeCamera());
-    this.probe.publishCamera(this.view);
-    this.scheduleFrame();
+    this.free.toggle();
   }
 
-  /** Mémorise le mode de caméra choisi (#344), hors capture et fond d'écran. */
-  private rememberFreeCamera(free: boolean): void {
-    const win = this.document.defaultView;
-    if (win && !this.capture && !this.wallpaper) {
-      writeStoredFreeCamera(browserStorage(win), free);
-    }
-  }
-
-  /**
-   * Déplacement de la caméra libre tenu ou relâché par un bouton à l'écran (#344, boutons
-   * « Avancer » et « Reculer ») : même effet qu'une touche tenue. Sans effet hors caméra libre.
-   */
+  /** Déplacement de la caméra libre tenu à un bouton (#344) : `FreeCameraController`. */
   setFreeMoveHeld(move: FreeMoveId, held: boolean): void {
-    if (!held) {
-      this.freeMoves.delete(move);
-      return;
-    }
-    if (!this.freeCamera()) {
-      return;
-    }
-    this.freeMoves.add(move);
-    this.scheduleFrame();
-  }
-
-  /** Aligne l'état exposé de la caméra libre sur `active` ; touches relâchées en sortant. */
-  private syncFreeCamera(active: boolean): void {
-    if (!active) {
-      this.freeMoves.clear();
-    }
-    this.freeCamera.set(active);
-    this.probe.publishFreeCamera(active);
-  }
-
-  /**
-   * Touches de déplacement de la caméra libre (#343) : tenues enfoncées, lues à chaque image.
-   * Hors caméra libre, dans un champ de saisie ou avec Ctrl, Alt, Meta : laissées au reste.
-   */
-  private onFreeMoveKey(event: KeyboardEvent, down: boolean): void {
-    const move = freeMoveFor(event.key);
-    if (move === null) {
-      return;
-    }
-    if (!down) {
-      this.freeMoves.delete(move);
-      return;
-    }
-    if (!this.freeCamera() || event.defaultPrevented || isTypingContext(event)) {
-      return;
-    }
-    event.preventDefault();
-    this.freeMoves.add(move);
-    this.scheduleFrame();
+    this.free.setMoveHeld(move, held);
   }
 
   /**
@@ -1217,143 +1111,39 @@ export class AquariumHost {
     this.applyWaterSetting((world) => this.records.recordMaintenance(world, task));
   }
 
-  /**
-   * Geste de soin contre les points blancs (#361) : un pas du traitement `kind` (`TREATMENTS`),
-   * accepté ou refusé avec un message (`treatmentNotice`) ; accepté, relevé et enregistrement.
-   * Sans effet en mode capture, en mode décor, avant le démarrage ou pour un traitement inconnu.
-   */
+  /** Geste de soin contre les points blancs (#361) : `WaterCareController.treat`. */
   treat(kind: TreatmentKind): void {
-    const world = this.currentWorld;
-    if (!world || this.capture || isDecorMode(world) || !Object.hasOwn(TREATMENTS, kind)) {
-      return;
-    }
-    const outcome = treatWorldInPlace(world, kind, TREATMENTS[kind].step);
-    this.noticeWorld = world;
-    this.treatmentNotice.set({
-      ok: outcome.ok,
-      text: outcome.message,
-      warning: outcome.ok ? (outcome.warning ?? null) : null,
-    });
-    if (outcome.ok) {
-      addJournalEntry(this.records.journalOf(world), treatmentEntry(world.time, kind));
-      this.refreshWater();
-      this.saveNow();
-      this.scheduleFrame();
-    }
+    this.waterCare.treat(kind);
   }
 
-  /**
-   * Lance un test de l'eau `kit` (#564) sur le bac affiché : échantillon pris maintenant,
-   * résultat après `WATER_TEST_TICKS` pas de simulation. Refusé tant qu'un test court dans ce
-   * bac ; sans effet en mode capture ou avant le démarrage.
-   */
+  /** Lance un test de l'eau `kit` (#564) : `WaterCareController.startWaterTest`. */
   startWaterTest(kit: WaterKit): void {
-    const world = this.currentWorld;
-    if (!world || this.capture) {
-      return;
-    }
-    const running = this.waterTests.get(world);
-    if (running !== undefined && !waterTestDone(running, world.tick)) {
-      return;
-    }
-    this.waterTests.set(world, startWaterTest(kit, testSample(world), world.tick));
-    this.refreshWater();
+    this.waterCare.startWaterTest(kit);
   }
 
-  /**
-   * Verse une dose de conditionneur `kind` (#530), acceptée ou refusée avec un message
-   * (`treatmentNotice`) ; acceptée, relevé et enregistrement. Sans effet en mode capture, en
-   * mode décor ou avant le démarrage.
-   */
+  /** Dose de conditionneur `kind` (#530) : `WaterCareController.doseConditioner`. */
   doseConditioner(kind: ConditionerKind): void {
-    const world = this.currentWorld;
-    if (!world || this.capture || isDecorMode(world)) {
-      return;
-    }
-    const outcome = doseWorldConditionerInPlace(world, kind);
-    if (outcome.ok) {
-      // Le conditionneur simple agit à l'instant : la pharmacie le garde « terminé » (#533).
-      this.pharmacyUsed.set(
-        world,
-        usedProducts(this.pharmacyUsed.get(world) ?? [], ['conditionneur']),
-      );
-    }
-    this.noticeWorld = world;
-    this.treatmentNotice.set({ ok: outcome.ok, text: outcome.message, warning: null });
-    if (outcome.ok) {
-      this.refreshWater();
-      this.saveNow();
-      this.scheduleFrame();
-    }
+    this.waterCare.doseConditioner(kind);
   }
 
-  /** Bascule l'eau du robinet entre traitée et non traitée (#530), enregistrée avec le bac. */
+  /** Eau du robinet traitée ou non (#530) : `WaterCareController.toggleUntreatedTap`. */
   toggleUntreatedTap(): void {
-    const world = this.currentWorld;
-    if (!world || this.capture || isDecorMode(world)) {
-      return;
-    }
-    setWorldUntreatedTapInPlace(world, world.water.untreatedTap !== true);
-    this.refreshWater();
-    this.saveNow();
+    this.waterCare.toggleUntreatedTap();
   }
 
-  /** Place ou retire le charbon actif (#531), avec un message, enregistré avec le bac. */
+  /** Charbon actif posé ou retiré (#531) : `WaterCareController.toggleCarbon`. */
   toggleCarbon(): void {
-    const world = this.currentWorld;
-    if (!world || this.capture || isDecorMode(world)) {
-      return;
-    }
-    const outcome = setWorldCarbonInPlace(world, world.water.carbon !== true);
-    this.noticeWorld = world;
-    this.treatmentNotice.set({
-      ok: true,
-      text: outcome.message,
-      warning: outcome.warning ?? null,
-    });
-    this.refreshWater();
-    this.saveNow();
-    this.scheduleFrame();
+    this.waterCare.toggleCarbon();
   }
 
-  /** Dose de régulateur de pH (#531), acceptée ou refusée avec un message. */
+  /** Dose de régulateur de pH (#531) : `WaterCareController.dosePhRegulator`. */
   dosePhRegulator(direction: PhRegulatorDirection): void {
-    const world = this.currentWorld;
-    if (!world || this.capture || isDecorMode(world)) {
-      return;
-    }
-    const outcome = doseWorldPhRegulatorInPlace(world, direction);
-    this.noticeWorld = world;
-    this.treatmentNotice.set({
-      ok: outcome.ok,
-      text: outcome.message,
-      warning: outcome.ok ? outcome.warning : null,
-    });
-    if (outcome.ok) {
-      this.refreshWater();
-      this.saveNow();
-      this.scheduleFrame();
-    }
+    this.waterCare.dosePhRegulator(direction);
   }
 
-  /**
-   * Verse une dose d'amorce de bactéries (#529), acceptée ou refusée avec un message
-   * (`treatmentNotice`) ; acceptée, relevé et enregistrement. Sans effet en mode capture, en
-   * mode décor ou avant le démarrage.
-   */
+  /** Dose d'amorce de bactéries (#529) : `WaterCareController.doseBacteriaStarter`. */
   doseBacteriaStarter(): void {
-    const world = this.currentWorld;
-    if (!world || this.capture || isDecorMode(world)) {
-      return;
-    }
-    const outcome = doseWorldBacteriaStarterInPlace(world);
-    this.noticeWorld = world;
-    this.treatmentNotice.set({ ok: outcome.ok, text: outcome.message, warning: null });
-    if (outcome.ok) {
-      this.refreshWater();
-      this.saveNow();
-      this.scheduleFrame();
-    }
+    this.waterCare.doseBacteriaStarter();
   }
 
   /**
@@ -1811,11 +1601,7 @@ export class AquariumHost {
     const shown = this.view?.roomShown ?? false;
     this.probe.publishRoomShown(shown);
     // Pièce masquée : la vue est revenue à l'orbite (#343).
-    if (this.freeCamera() && !this.view?.freeCameraActive) {
-      this.activePreset.set(this.presetBeforeFree);
-      this.syncFreeCamera(false);
-      this.probe.publishCamera(this.view);
-    }
+    this.free.roomShownChanged();
     // Éditeur (#188) : la pièce n'est modifiable que dessinée ; sélection et outil suivent.
     this.roomEdit.roomApplied(room, shown);
     this.decorEdit.roomShownChanged(shown);
@@ -2143,7 +1929,7 @@ export class AquariumHost {
     this.publishStartState(world, params);
     this.createStartView(win, params, world);
     this.applyCaptureEditing(world, params);
-    this.applyStartCamera(win, params);
+    this.applyStartCamera(params);
     this.listenWindow(win);
     this.scheduleFrame();
   }
@@ -2196,13 +1982,9 @@ export class AquariumHost {
     const world = params.capture
       ? advanceToWithFeedings(created.world, params.time, params.feedings, this.dayClock)
       : created.world;
-    // Test de l'eau de `test-eau=` (#564), hors capture : lancé avant le chargement, résultat
-    // prêt (captures de la pharmacie reproductibles, simulation à l'arrêt).
+    // Test de l'eau de `test-eau=` (#564), hors capture : résultat déjà prêt.
     if (!params.capture && isWaterKit(params.waterTest)) {
-      this.waterTests.set(
-        world,
-        startWaterTest(params.waterTest, testSample(world), world.tick - WATER_TEST_TICKS),
-      );
+      this.waterCare.presetWaterTest(world, params.waterTest);
     }
     return world;
   }
@@ -2309,7 +2091,7 @@ export class AquariumHost {
    * caméra libre mémorisée (#344), reprise hors capture et hors fond d'écran
    * (`toggleFreeCamera` refuse sinon).
    */
-  private applyStartCamera(win: Window, params: CaptureParams): void {
+  private applyStartCamera(params: CaptureParams): void {
     const free = params.freeCamera;
     if (params.capture && free !== null && this.view?.roomShown) {
       const toRadians = Math.PI / 180;
@@ -2323,9 +2105,7 @@ export class AquariumHost {
         this.probe.publishCamera(this.view);
       }
     }
-    if (!params.capture && !this.wallpaper && readStoredFreeCamera(browserStorage(win))) {
-      this.toggleFreeCamera();
-    }
+    this.free.resumeStored();
   }
 
   /**
@@ -2336,9 +2116,9 @@ export class AquariumHost {
     const onResize = () => this.scheduleFrame();
     win.addEventListener('resize', onResize);
     this.cleanups.push(() => win.removeEventListener('resize', onResize));
-    const onKeyDown = (event: KeyboardEvent) => this.onFreeMoveKey(event, true);
-    const onKeyUp = (event: KeyboardEvent) => this.onFreeMoveKey(event, false);
-    const onBlur = () => this.freeMoves.clear();
+    const onKeyDown = (event: KeyboardEvent) => this.free.onKey(event, true);
+    const onKeyUp = (event: KeyboardEvent) => this.free.onKey(event, false);
+    const onBlur = () => this.free.releaseAll();
     this.document.addEventListener('keydown', onKeyDown);
     this.document.addEventListener('keyup', onKeyUp);
     win.addEventListener('blur', onBlur);
@@ -2419,7 +2199,7 @@ export class AquariumHost {
     this.litHour = null;
     this.activePreset.set(preset);
     // Vue neuve : en orbite (#343).
-    this.syncFreeCamera(false);
+    this.free.reset();
     this.viewCleanups.push(view.onCameraChange(() => this.probe.publishCamera(this.view)));
     this.viewCleanups.push(view.onUserInteraction(() => this.activePreset.set(null)));
     view.setDecorDragEnabled(this.decorEditing());
@@ -2543,10 +2323,7 @@ export class AquariumHost {
       this.probe.publishCamera(this.view);
     }
     // Caméra libre (#343) : touches tenues, pas fixes du modèle de déplacement.
-    if (
-      view.freeCameraActive &&
-      view.stepFreeCamera(freeMoveAxesInto(this.freeMoves, this.freeAxes), realDt)
-    ) {
+    if (this.free.step(view, realDt)) {
       this.probe.publishCamera(this.view);
     }
     // Fondu du ciel couvert à la bascule de la pluie (#338) : jamais en capture.
@@ -2790,18 +2567,7 @@ export class AquariumHost {
     this.refreshDead(world);
     this.refreshAlertAnimals(world);
     this.records.refresh(world);
-    const treatment = treatmentReadout(world.water);
-    this.treatment.set(treatment);
-    const pharmacy = pharmacyState(world.water, this.pharmacyUsed.get(world) ?? []);
-    this.pharmacyUsed.set(world, pharmacy.used);
-    this.pharmacy.set(pharmacy);
-    const test = this.waterTests.get(world);
-    this.waterTest.set(test === undefined ? null : waterTestView(test, world.tick));
-    if (this.noticeWorld !== null && this.noticeWorld !== world) {
-      this.noticeWorld = null;
-      this.treatmentNotice.set(null);
-    }
-    this.probe.publishTreatment(treatment);
+    this.probe.publishTreatment(this.waterCare.refresh(world));
     const readout = waterReadout(
       world.water,
       world.environment,

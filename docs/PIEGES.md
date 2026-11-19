@@ -32,6 +32,9 @@ haut de sa section.
   branche ; relancées seules sur `main`, elles étaient identiques à l'octet. Avant de conclure
   à un écart, relancer la capture suspecte sur `main` au repos
   (`npx playwright test --project=captures --grep "<nom>"`). (2026-11-16)
+  Même constat pour `front-tableau-de-bord-chlore` (cycle 252, #696) : position des poissons
+  légèrement décalée dans une série complète et dans une relance seule sur deux, identique à
+  l'octet dans l'autre ; relancer deux fois avant de conclure. (2026-11-19)
 - **Toucher bref sur le canvas en e2e : `page.touchscreen.tap` suffit** (cycle 224, #623) : avec
   `test.use({ hasTouch: true })`, Chromium en tire `pointerdown` / `pointerup` de type `touch`,
   donc `onCanvasClick` (sécateur, raclette au clic) ; la session CDP (`swipeTouch`) n'est utile
