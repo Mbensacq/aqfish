@@ -40,13 +40,11 @@ import {
   chooseWallpaperConfig,
   clampWallpaperFps,
   DEFAULT_WALLPAPER_FPS,
-  frameDue,
   readWallpaperGlobal,
   shouldReadWallpaperFile,
   WALLPAPER_CONFIG_FILE,
   wallpaperGlobalText,
   wallpaperOrbitAngle,
-  type FrameLimiter,
   type WallpaperGlobal,
   type WallpaperSource,
 } from '../../core/wallpaper/wallpaper';
@@ -116,14 +114,7 @@ import { setTankDimensionsInPlace } from '../../sim/tank-resize';
 import { DEFAULT_POND_SHAPE, type PondShape } from '../../sim/pond-shape';
 import { setPondShapeInPlace } from '../../sim/pond-reshape';
 import { clampRoom, DEFAULT_ROOM, type Room } from '../../sim/room';
-import { createFixedStepState, fixedStepInto, type FixedStepState } from '../../sim/fixed-step';
-import {
-  DEFAULT_SIM_SPEED,
-  isSimSpeed,
-  maxStepsForSpeed,
-  scaledDt,
-  type SimSpeed,
-} from '../../sim/sim-speed';
+import { DEFAULT_SIM_SPEED, isSimSpeed, type SimSpeed } from '../../sim/sim-speed';
 import {
   isSpeciesId,
   NO_FISH,
@@ -346,6 +337,7 @@ import { refreshDue } from '../dashboard-frame/refresh-pace';
 import { filterMaturityPercent } from '../../sim/filter-maturation';
 import type { FilterRinseWater } from '../../sim/filter-rinse';
 import { PhotoController } from './photo-controller';
+import { RenderLoop } from './render-loop';
 import { createStartupWorld } from './startup-world';
 import { SaveShareController, type ImportedSave, type RestoredSave } from './save-share-controller';
 import { AquariumProbe } from './aquarium-probe';
@@ -544,22 +536,15 @@ export class AquariumHost {
   private readonly soundAllowed = signal(false);
 
   private view: AquariumView | null = null;
-  private frameId: number | null = null;
   private readySignaled = false;
   private capture = false;
   /** Vue fond d'écran (#279) : sans interface, caméra automatique, cadence limitée. */
   private wallpaper = false;
   /** Images par seconde de la vue fond d'écran (`fps=` ou `aqfishFond.fps`). */
   private wallpaperFps = DEFAULT_WALLPAPER_FPS;
-  /** Limiteur d'images de la vue fond d'écran, réécrit en place (aucune allocation). */
-  private readonly frameLimiter: FrameLimiter = { next: null };
   /** Temps réel (s) de la caméra automatique et de sa dernière exposition. */
   private orbitSeconds = 0;
   private orbitExposedAt = Number.NEGATIVE_INFINITY;
-  /** Page masquée en vue fond d'écran : aucune image demandée (#279). */
-  private paused = false;
-  /** Rendu suspendu pendant le mode immersif (#345) : aucune image, monde en pause. */
-  private suspended = false;
   /** Vrai après `stop()` : un chargement asynchrone en cours ne démarre plus rien. */
   private stopped = false;
   private currentWorld: MutableWorld | null = null;
@@ -613,9 +598,6 @@ export class AquariumHost {
    */
   private backgroundWorld: World | null = null;
   private backgroundTick = 0;
-  /** État de la boucle à pas fixe, réécrit à chaque image (aucune allocation). */
-  private readonly clock: FixedStepState = createFixedStepState();
-  private lastTimestamp: number | null = null;
   /** Horloge de la journée simulée (ADR 0018) : l'heure suit `world.time`. */
   private dayClock: DayClock = DEFAULT_DAY_CLOCK;
   /** Heure de l'éclairage appliqué en dernier (`null` : à appliquer à la prochaine image). */
@@ -624,7 +606,12 @@ export class AquariumHost {
   private readonly light = createDayLight();
   /** Intensité de la lampe appliquée en dernier (`updateLight`). */
   private litLamp: number | null = null;
-  private readonly onFrame: FrameRequestCallback = (timestamp) => this.frame(timestamp);
+  /** Boucle d'images et pas fixe de la simulation (#696) : `RenderLoop`. */
+  private readonly loop = new RenderLoop({
+    window: () => this.document.defaultView,
+    canRender: () => this.view !== null,
+    frame: (timestamp) => this.frame(timestamp),
+  });
   private readonly cleanups: (() => void)[] = [];
   /** Désabonnements liés à la vue courante (refaits à chaque changement d'environnement). */
   private readonly viewCleanups: (() => void)[] = [];
@@ -999,7 +986,7 @@ export class AquariumHost {
 
   /** Facteur d'interpolation du rendu entre les deux derniers pas, dans [0, 1). */
   get interpolationAlpha(): number {
-    return this.clock.alpha;
+    return this.loop.alpha;
   }
 
   /**
@@ -1709,8 +1696,7 @@ export class AquariumHost {
     this.currentWorld = next.world as MutableWorld;
     // La liste des bacs (#306) suit aussitôt le bac affiché.
     this.syncRoomState(next.world);
-    this.clock.accumulator = 0;
-    this.clock.alpha = 0;
+    this.loop.resetClock();
     this.dayClock = carryClock(this.dayClock, fromTime, this.renderTime());
     this.litHour = null;
     this.refreshEnvironment();
@@ -2427,8 +2413,7 @@ export class AquariumHost {
   private loadWorld(world: MutableWorld, settings: SaveSettings, others: readonly World[]): void {
     this.currentWorld = world;
     this.stash = stashFromList(others, world.environment);
-    this.clock.accumulator = 0;
-    this.clock.alpha = 0;
+    this.loop.resetClock();
     this.speed.set(settings.speed);
     this.probe.publishSpeed(settings.speed);
     this.dayClock = settings.clock;
@@ -2801,24 +2786,12 @@ export class AquariumHost {
    * rattraper le temps passé (le bac était en pause).
    */
   setRenderingSuspended(suspended: boolean): void {
-    if (suspended === this.suspended) {
-      return;
-    }
-    this.suspended = suspended;
-    if (suspended) {
-      if (this.frameId !== null) {
-        this.document.defaultView?.cancelAnimationFrame(this.frameId);
-        this.frameId = null;
-      }
-      return;
-    }
-    this.lastTimestamp = null;
-    this.scheduleFrame();
+    this.loop.setSuspended(suspended);
   }
 
   /** Vrai pendant le mode immersif (rendu suspendu). */
   get renderingSuspended(): boolean {
-    return this.suspended;
+    return this.loop.suspended;
   }
 
   /**
@@ -2828,18 +2801,8 @@ export class AquariumHost {
   private startWallpaperPause(): void {
     const onVisibility = () => {
       const hidden = this.document.visibilityState === 'hidden';
-      this.paused = hidden;
       this.probe.publishWallpaperPaused(hidden);
-      if (hidden) {
-        if (this.frameId !== null) {
-          this.document.defaultView?.cancelAnimationFrame(this.frameId);
-          this.frameId = null;
-        }
-        return;
-      }
-      this.lastTimestamp = null;
-      this.frameLimiter.next = null;
-      this.scheduleFrame();
+      this.loop.setHidden(hidden);
     };
     onVisibility();
     this.document.addEventListener('visibilitychange', onVisibility);
@@ -2906,59 +2869,68 @@ export class AquariumHost {
         end: (index, commit) => this.endRoomDrag(index, commit),
       }),
     );
-    // En mode édition, un clic pose ou choisit un élément du décor au lieu de nourrir (#167).
     this.viewCleanups.push(
-      view.onCanvasClick((x, y) => {
-        if (this.decorEditing()) {
-          this.editAt(view.pickDecor(x, y));
-        } else if (this.pruning()) {
-          const pick = view.pickDecor(x, y);
-          if (pick?.kind === 'item') {
-            if (this.care.isCutting()) {
-              this.cutCarePlant(pick.index);
-            } else {
-              this.prunePlant(pick.index);
-            }
-          }
-        } else if (this.scraping()) {
-          const ray = view.pickRay(x, y);
-          if (ray) {
-            this.scrapeAlong(ray.origin, ray.direction);
-          }
-        } else if (this.currentWorld?.dead !== undefined) {
-          // Épuisette (#582) : un clic sur un corps le retire au lieu de nourrir.
-          const ray = view.pickRay(x, y);
-          this.netted = ray !== null && this.netAlong(ray.origin, ray.direction);
-        }
-      }),
-    );
-    // Raclette en main (#476) : un clic racle au lieu de nourrir.
-    this.viewCleanups.push(
-      view.onSurfaceClick((x, z) => {
-        const netted = this.netted;
-        this.netted = false;
-        // Tuyau du siphon en main (#605) : un clic n'ajoute pas de nourriture à aspirer.
-        const siphoning = this.care.isSiphoning();
-        if (!netted && !siphoning && !this.decorEditing() && !this.scraping() && !this.pruning()) {
-          this.feed(x, z);
-        }
-      }),
+      view.onCanvasClick((x, y) => this.onCanvasClick(view, x, y)),
+      view.onSurfaceClick((x, z) => this.onSurfaceClick(x, z)),
     );
     // Vue neuve : aucun glissement en cours, aucun élément sélectionné.
     this.decorEdit.viewCreated();
     this.roomEdit.viewCreated();
   }
 
-  private scheduleFrame(): void {
-    const win = this.document.defaultView;
-    if (!win || !this.view || this.frameId !== null || this.paused || this.suspended) {
+  /**
+   * Clic sur le canvas, avant la nourriture : en mode édition, il pose ou choisit un élément du
+   * décor (#167) ; sécateur en main, il taille une plante (#477) ou coupe une pousse (#644) ;
+   * raclette en main, il racle (#476) ; épuisette (#582), il retire un corps.
+   */
+  private onCanvasClick(view: AquariumView, x: number, y: number): void {
+    if (this.decorEditing()) {
+      this.editAt(view.pickDecor(x, y));
+    } else if (this.pruning()) {
+      this.pruneAt(view, x, y);
+    } else if (this.scraping()) {
+      const ray = view.pickRay(x, y);
+      if (ray) {
+        this.scrapeAlong(ray.origin, ray.direction);
+      }
+    } else if (this.currentWorld?.dead !== undefined) {
+      // Épuisette (#582) : un clic sur un corps le retire au lieu de nourrir.
+      const ray = view.pickRay(x, y);
+      this.netted = ray !== null && this.netAlong(ray.origin, ray.direction);
+    }
+  }
+
+  /** Sécateur en main : taille la plante visée, ou coupe sa pousse pendant la séance. */
+  private pruneAt(view: AquariumView, x: number, y: number): void {
+    const pick = view.pickDecor(x, y);
+    if (pick?.kind !== 'item') {
       return;
     }
-    this.frameId = win.requestAnimationFrame(this.onFrame);
+    if (this.care.isCutting()) {
+      this.cutCarePlant(pick.index);
+    } else {
+      this.prunePlant(pick.index);
+    }
+  }
+
+  /**
+   * Clic sur la surface de l'eau : nourrit, sauf si le clic a retiré un corps, ou si un outil
+   * (édition, raclette, sécateur, tuyau du siphon #605) est en main.
+   */
+  private onSurfaceClick(x: number, z: number): void {
+    const netted = this.netted;
+    this.netted = false;
+    const siphoning = this.care.isSiphoning();
+    if (!netted && !siphoning && !this.decorEditing() && !this.scraping() && !this.pruning()) {
+      this.feed(x, z);
+    }
+  }
+
+  private scheduleFrame(): void {
+    this.loop.schedule();
   }
 
   private frame(timestamp: number): void {
-    this.frameId = null;
     const view = this.view;
     if (!view) {
       return;
@@ -2966,32 +2938,11 @@ export class AquariumHost {
     const wallpaper = this.wallpaper && !this.capture;
     // Fond d'écran (#279) : au plus `wallpaperFps` images par seconde (le temps réel écoulé
     // entre deux images rendues est versé d'un bloc à la simulation).
-    if (
-      wallpaper &&
-      this.readySignaled &&
-      !frameDue(this.frameLimiter, timestamp, this.wallpaperFps)
-    ) {
+    if (wallpaper && this.readySignaled && this.loop.throttled(timestamp, this.wallpaperFps)) {
       this.scheduleFrame();
       return;
     }
-    let orbitDt = 0;
-    if (!this.capture) {
-      const realDt = this.advanceRealTime(timestamp);
-      orbitDt = realDt;
-      if (view.stepCameraTransition(realDt)) {
-        this.probe.publishCamera(this.view);
-      }
-      // Caméra libre (#343) : touches tenues, pas fixes du modèle de déplacement.
-      if (
-        view.freeCameraActive &&
-        view.stepFreeCamera(freeMoveAxesInto(this.freeMoves, this.freeAxes), realDt)
-      ) {
-        this.probe.publishCamera(this.view);
-      }
-      // Fondu du ciel couvert à la bascule de la pluie (#338) : jamais en capture.
-      view.stepOvercastFade(realDt);
-      this.decorEdit.stepDrop(realDt);
-    }
+    const orbitDt = this.capture ? 0 : this.stepRealTime(view, timestamp);
     const canvas = this.canvasRef().nativeElement;
     if (view.resize(canvas.clientWidth, canvas.clientHeight)) {
       this.probe.publishCamera(this.view);
@@ -3000,42 +2951,74 @@ export class AquariumHost {
       this.stepWallpaperCamera(view, orbitDt);
     }
     if (this.currentWorld) {
-      // En capture, l'image montre exactement l'état au temps demandé (alpha = 1).
-      const time = this.renderTime();
-      // Gestes des comportements (#427) : au temps affiché, fouille seulement s'il y a un
-      // granulé posé (`sim/behaviors.ts`).
-      // Objet de l'instance réécrit à chaque image (#433) : aucune allocation.
-      this.behaviorFrame.time = time;
-      this.behaviorFrame.landedFood = hasLandedFood(this.currentWorld.food);
-      view.updateFish(
-        this.currentWorld.entities,
-        this.capture ? 1 : this.clock.alpha,
-        this.currentWorld.seed,
-        this.behaviorFrame,
-        this.currentWorld.dead,
-      );
-      view.updateFood(this.currentWorld.food);
-      view.updateEggs(this.currentWorld.eggs, EGG_HATCH_TIME);
-      view.updateDecor(time);
-      this.updateLight(view, time);
+      this.drawWorld(view, this.currentWorld);
     }
     const rendered = view.renderFrame();
-
     if (rendered && !this.readySignaled) {
-      this.readySignaled = true;
-      // L'image vient d'être soumise : on attend l'image suivante pour être sûr qu'elle est
-      // composée à l'écran avant de lever le signal du contrat de capture.
-      this.document.defaultView?.requestAnimationFrame(() => {
-        if (this.view) {
-          markCaptureReady(this.document);
-        }
-      });
+      this.signalReady();
     }
     // En mode capture, l'image est figée : on ne rend de nouveau qu'au redimensionnement.
     // Tant qu'aucune image n'a pu être rendue (taille nulle), on réessaie à l'image suivante.
     if (!this.capture || !rendered) {
       this.scheduleFrame();
     }
+  }
+
+  /**
+   * Temps réel de l'image (hors capture) : simulation au pas fixe, transition de caméra,
+   * caméra libre, fondu du ciel couvert et chute du décor. Renvoie le temps réel écoulé (s).
+   */
+  private stepRealTime(view: AquariumView, timestamp: number): number {
+    const realDt = this.advanceRealTime(timestamp);
+    if (view.stepCameraTransition(realDt)) {
+      this.probe.publishCamera(this.view);
+    }
+    // Caméra libre (#343) : touches tenues, pas fixes du modèle de déplacement.
+    if (
+      view.freeCameraActive &&
+      view.stepFreeCamera(freeMoveAxesInto(this.freeMoves, this.freeAxes), realDt)
+    ) {
+      this.probe.publishCamera(this.view);
+    }
+    // Fondu du ciel couvert à la bascule de la pluie (#338) : jamais en capture.
+    view.stepOvercastFade(realDt);
+    this.decorEdit.stepDrop(realDt);
+    return realDt;
+  }
+
+  /** Pose les animaux, la nourriture, les œufs, le décor et la lumière du temps affiché. */
+  private drawWorld(view: AquariumView, world: World): void {
+    // En capture, l'image montre exactement l'état au temps demandé (alpha = 1).
+    const time = this.renderTime();
+    // Gestes des comportements (#427) : au temps affiché, fouille seulement s'il y a un
+    // granulé posé (`sim/behaviors.ts`).
+    // Objet de l'instance réécrit à chaque image (#433) : aucune allocation.
+    this.behaviorFrame.time = time;
+    this.behaviorFrame.landedFood = hasLandedFood(world.food);
+    view.updateFish(
+      world.entities,
+      this.capture ? 1 : this.loop.alpha,
+      world.seed,
+      this.behaviorFrame,
+      world.dead,
+    );
+    view.updateFood(world.food);
+    view.updateEggs(world.eggs, EGG_HATCH_TIME);
+    view.updateDecor(time);
+    this.updateLight(view, time);
+  }
+
+  /**
+   * Première image soumise : on attend l'image suivante pour être sûr qu'elle est composée à
+   * l'écran avant de lever le signal du contrat de capture.
+   */
+  private signalReady(): void {
+    this.readySignaled = true;
+    this.document.defaultView?.requestAnimationFrame(() => {
+      if (this.view) {
+        markCaptureReady(this.document);
+      }
+    });
   }
 
   /**
@@ -3062,7 +3045,7 @@ export class AquariumHost {
     if (!world) {
       return 0;
     }
-    const alpha = this.capture ? 1 : this.clock.alpha;
+    const alpha = this.capture ? 1 : this.loop.alpha;
     return Math.max(0, world.time - (1 - alpha) * SIM_DT);
   }
 
@@ -3112,20 +3095,11 @@ export class AquariumHost {
    * Renvoie ce temps, en secondes (0 à la première image).
    */
   private advanceRealTime(timestamp: number): number {
-    // Première image : pas de durée de référence, aucun pas.
-    const realDt = this.lastTimestamp === null ? 0 : (timestamp - this.lastTimestamp) / 1000;
-    this.lastTimestamp = timestamp;
     // Vitesse (#52) : temps simulé = temps réel × vitesse, toujours par pas `SIM_DT`.
-    const speed = this.speed();
-    const clock = fixedStepInto(
-      this.clock.accumulator,
-      scaledDt(realDt, speed),
-      this.clock,
-      SIM_DT,
-      maxStepsForSpeed(speed),
-    );
-    if (clock.steps > 0 && this.currentWorld) {
-      this.advanceAndRecord(this.currentWorld, clock.steps);
+    const realDt = this.loop.advance(timestamp, this.speed());
+    const steps = this.loop.clock.steps;
+    if (steps > 0 && this.currentWorld) {
+      this.advanceAndRecord(this.currentWorld, steps);
       this.probe.publishTick(this.currentWorld);
       this.probe.publishFood(this.currentWorld);
       // Au plus 4 relevés par seconde de temps réel, quelle que soit la vitesse (#256).
@@ -3572,10 +3546,7 @@ export class AquariumHost {
     // détection de changements.
     this.ambientSound.setScene(null);
     this.photo.dispose();
-    if (this.frameId !== null) {
-      this.document.defaultView?.cancelAnimationFrame(this.frameId);
-      this.frameId = null;
-    }
+    this.loop.cancel();
     this.cleanups.splice(0).forEach((cleanup) => cleanup());
     this.viewCleanups.splice(0).forEach((cleanup) => cleanup());
     this.view?.dispose();
