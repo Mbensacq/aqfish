@@ -14,26 +14,11 @@ import {
   viewChild,
 } from '@angular/core';
 
-import {
-  hasWorldParams,
-  parseCaptureParams,
-  type CameraPreset,
-  type CaptureParams,
-} from '../../core/capture/capture-params';
+import { type CameraPreset } from '../../core/capture/capture-params';
 import { type SaveStatus, type SaveStorage } from '../../core/save-storage/save-storage';
-import {
-  type FilterStorage,
-  initialRenderFilter,
-  readStoredRenderFilter,
-  type RenderFilter,
-} from '../../core/render-filter/render-filter';
+import { type RenderFilter } from '../../core/render-filter/render-filter';
 import { resetCaptureReady } from '../../core/capture/capture-ready';
-import { hasShareFragment, readShare } from '../../sim/share-link';
-import {
-  clampWallpaperFps,
-  DEFAULT_WALLPAPER_FPS,
-  readWallpaperGlobal,
-} from '../../core/wallpaper/wallpaper';
+import { DEFAULT_WALLPAPER_FPS } from '../../core/wallpaper/wallpaper';
 import {
   AquariumView,
   createWebGLRenderer,
@@ -45,42 +30,22 @@ import { AmbientSoundState } from '../ambient-sound/ambient-sound-state';
 import type { AmbientScene } from '../../core/ambient-sound/ambient-sound';
 import type { FreeMoveId } from '../../core/commands/commands';
 import type { DecorPick } from '../../render/decor-pick';
-import { isDecorEditable } from '../../sim/decor-edit';
 import {
   loadDecorPhysics,
   type DecorPhysicsLoader,
 } from '../../core/decor-physics/load-decor-physics';
-import {
-  createDayClock,
-  DEFAULT_DAY_CLOCK,
-  DEFAULT_DAY_LENGTH_SECONDS,
-  DEFAULT_START_HOUR,
-  type DayClock,
-} from '../../sim/daylight';
-import { environmentById, placeDimensions, placeEnvironmentData } from '../../sim/environment';
+import { type DayClock } from '../../sim/daylight';
+import { environmentById, placeDimensions } from '../../sim/environment';
 import { DEFAULT_TANK, type TankDimensions } from '../../sim/tank';
 import { type PondShape } from '../../sim/pond-shape';
-import { DEFAULT_ROOM } from '../../sim/room';
-import { isSimSpeed } from '../../sim/sim-speed';
-import { isSpeciesId, setPopulationInPlace } from '../../sim/population';
 import { serializeRoom } from '../../sim/room-save';
-import { roomPopulationLimits } from '../../sim/room-limits';
 import { layoutFootprints } from '../../sim/room-layout';
 import type { SaveSettings } from '../../sim/save';
-import {
-  acceptsSpecies,
-  careModeOf,
-  isCareMode,
-  setCareModeInPlace,
-  type CareMode,
-} from '../../sim/care-mode';
-import { returnToCareInPlace } from '../../sim/care-return';
-import { DEFAULT_FOOD_STYLE, type FoodStyle } from '../../core/food-style/food-style';
+import { type CareMode } from '../../sim/care-mode';
+import { type FoodStyle } from '../../core/food-style/food-style';
 import type { SpeciesId } from '../../sim/species';
-import { advanceToWithFeedings, feedInPlace } from '../../sim/world';
 import type { MutableWorld, World } from '../../sim/world-types';
 import { type CurrentLevel, type CurrentVelocity } from '../../sim/water-current';
-import { waterTurbidity } from '../../sim/water-quality';
 import type { ConditionerKind } from '../../sim/water-conditioner';
 import type { PhRegulatorDirection } from '../../sim/ph-regulator';
 import type { MaintenanceTask } from '../../sim/maintenance';
@@ -89,22 +54,20 @@ import type { TreatmentKind } from '../../sim/treatment';
 import { hasAlgae } from '../../sim/algae';
 import { hasFeeder } from '../../sim/auto-feeder';
 import { lampReadout, type LampReadout } from '../../sim/lamp';
-import { isWaterKit, type WaterKit } from '../../sim/water-test';
+import { type WaterKit } from '../../sim/water-test';
 import type { FilterRinseWater } from '../../sim/filter-rinse';
 import { PhotoController } from './photo-controller';
 import { RenderLoop } from './render-loop';
-import { FramePainter, WALLPAPER_PRESET } from './frame-painter';
+import { FramePainter } from './frame-painter';
 import { AlertHighlightController } from './alert-highlight-controller';
 import { TankLooksController } from './tank-looks-controller';
 import { TankReadoutsController } from './tank-readouts-controller';
 import { TankPlaceController } from './tank-place-controller';
-import { loadWallpaperConfig } from './wallpaper-config';
 import { ClockController } from './clock-controller';
 import { DisplayController } from './display-controller';
 import { TankToolsController } from './tank-tools-controller';
 import { WaterSettingsController } from './water-settings-controller';
-import { createStartupWorld } from './startup-world';
-import { SaveShareController, type ImportedSave, type RestoredSave } from './save-share-controller';
+import { SaveShareController } from './save-share-controller';
 import { AquariumProbe } from './aquarium-probe';
 import { DecorEditingController } from './decor-editing-controller';
 import { RoomEditingController } from './room-editing-controller';
@@ -114,6 +77,10 @@ import { TankRecordsController } from './tank-records-controller';
 import { FreeCameraController } from './free-camera-controller';
 import { WaterCareController } from './water-care-controller';
 import { TankRoomController } from './tank-room-controller';
+import { browserStorage } from './browser-storage';
+import { PopulationController } from './population-controller';
+import { StartupSequence } from './startup-sequence';
+import { ViewBuilder } from './view-builder';
 
 /** Fabrique du renderer, remplaçable dans les tests (jsdom n'a pas WebGL). */
 export const AQUARIUM_RENDERER_FACTORY = new InjectionToken<AquariumRendererFactory>(
@@ -167,29 +134,7 @@ export const SAVE_STORAGE = new InjectionToken<SaveStorage | null>('SAVE_STORAGE
 export { applyCaptureFurniture, applyCaptureWoods, applyPopulation } from './startup-world';
 export { formatPopulation } from './tank-readouts-controller';
 export { readLocalText } from './wallpaper-config';
-
-/**
- * Horloge de départ (ADR 0018) : `heure=` la fige à cette heure ; sans elle, figée à midi
- * en mode capture (images reproductibles, séries existantes inchangées), en marche depuis
- * midi sinon.
- */
-export function initialDayClock(hour: number | null, capture: boolean): DayClock {
-  if (hour !== null) {
-    return createDayClock(hour, DEFAULT_DAY_LENGTH_SECONDS, true);
-  }
-  return capture
-    ? createDayClock(DEFAULT_START_HOUR, DEFAULT_DAY_LENGTH_SECONDS, true)
-    : DEFAULT_DAY_CLOCK;
-}
-
-/** `localStorage` s'il est accessible, `null` sinon (l'accès lui-même peut lever). */
-function browserStorage(win: Window): (FilterStorage & SaveStorage) | null {
-  try {
-    return win.localStorage ?? null;
-  } catch {
-    return null;
-  }
-}
+export { initialDayClock } from './startup-sequence';
 
 /**
  * Hôte du canvas 3D : crée la vue, porte la boucle `requestAnimationFrame`, suit la taille
@@ -596,7 +541,7 @@ export class AquariumHost {
         this.records.keepFirstTankPath(this.currentWorld);
       }
     },
-    load: (result) => this.loadImported(result),
+    load: (result) => this.startup.loadImported(result),
     tankCount: () => this.tanks.roomState?.tanks.length ?? 1,
     publishSave: (status) => this.probe.publishSave(status),
     onCleanup: (cleanup) => this.cleanups.push(cleanup),
@@ -754,6 +699,103 @@ export class AquariumHost {
     activePreset: () => this.activePreset(),
     decorSelection: () => this.decorSelection(),
     saveNow: () => this.saveNow(),
+    scheduleFrame: () => this.scheduleFrame(),
+  });
+
+  /** Effectifs, nourriture et mode du bac affiché (#67, #69, #278, #392, #696). */
+  private readonly animals = new PopulationController({
+    probe: this.probe,
+    world: () => this.currentWorld,
+    isCapture: () => this.capture,
+    tanks: () => this.tanks,
+    records: () => this.records,
+    refreshPopulation: () => this.readouts.refreshPopulation(),
+    refreshWater: () => this.refreshWater(),
+    saveNow: () => this.saveNow(),
+    scheduleFrame: () => this.scheduleFrame(),
+  });
+
+  /** Création de la vue du monde affiché et de ses rappels (#696) : `ViewBuilder`. */
+  private readonly viewBuilder = new ViewBuilder({
+    probe: this.probe,
+    rendererFactory: this.rendererFactory,
+    controllers: () => ({
+      display: this.display,
+      readouts: this.readouts,
+      looks: this.looks,
+      painter: this.painter,
+      free: this.free,
+      care: this.care,
+      decorEdit: this.decorEdit,
+      roomEdit: this.roomEdit,
+      tools: this.tools,
+    }),
+    canvas: () => this.canvasRef().nativeElement,
+    world: () => this.currentWorld,
+    view: () => this.view,
+    setView: (view) => {
+      this.view = view;
+    },
+    pixelRatio: () => this.pixelRatio,
+    interactive: () => !this.capture && !this.wallpaper,
+    filter: () => this.filter(),
+    setActivePreset: (preset) => this.activePreset.set(preset),
+    viewCleanups: this.viewCleanups,
+  });
+
+  /** Séquence de démarrage : URL, scène, services, première vue et caméra (#696). */
+  private readonly startup = new StartupSequence({
+    document: this.document,
+    saveStorage: this.saveStorage,
+    probe: this.probe,
+    signals: {
+      speed: this.speed,
+      foodStyle: this.foodStyle,
+      room: this.room,
+      rain: this.rain,
+      filter: this.filter,
+      soundAllowed: this.soundAllowed,
+    },
+    controllers: () => ({
+      clock: this.clock,
+      saves: this.saves,
+      tanks: this.tanks,
+      roomLayout: this.roomLayout,
+      waterCare: this.waterCare,
+      readouts: this.readouts,
+      decorEdit: this.decorEdit,
+      roomEdit: this.roomEdit,
+      free: this.free,
+      loop: this.loop,
+    }),
+    isStopped: () => this.stopped,
+    setMode: (mode) => {
+      this.capture = mode.capture;
+      this.captureFouling = mode.fouling;
+      this.wallpaper = mode.wallpaper;
+    },
+    isWallpaper: () => this.wallpaper,
+    setWallpaperFps: (fps) => {
+      this.wallpaperFps = fps;
+    },
+    forbidSound: () => this.ambientSound.forbid(),
+    dayClock: () => this.dayClock,
+    setDayClock: (clock) => {
+      this.dayClock = clock;
+    },
+    setWorld: (world) => {
+      this.currentWorld = world;
+    },
+    setPixelRatio: (ratio) => {
+      this.pixelRatio = ratio;
+    },
+    decorVisible: () => this.decorVisible(),
+    relight: () => this.painter.relight(),
+    refreshWater: () => this.refreshWater(),
+    createView: (preset) => this.createView(preset),
+    view: () => this.view,
+    clearActivePreset: () => this.activePreset.set(null),
+    onCleanup: (cleanup) => this.cleanups.push(cleanup),
     scheduleFrame: () => this.scheduleFrame(),
   });
 
@@ -917,24 +959,7 @@ export class AquariumHost {
    * effectif qui n'est pas un entier positif ou nul.
    */
   setPopulation(species: SpeciesId, count: number): void {
-    const world = this.currentWorld;
-    if (
-      !world ||
-      this.capture ||
-      !isSpeciesId(species) ||
-      !acceptsSpecies(world, species) ||
-      !Number.isInteger(count) ||
-      count < 0
-    ) {
-      return;
-    }
-    // Plafond d'animaux de la pièce (#392, ADR 0096) : un ajout au-delà est ramené à la place
-    // restante, sans effet si elle est nulle ; retirer reste toujours possible.
-    const room = this.tanks.sync(world);
-    const limit = roomPopulationLimits(room, this.tanks.selectedTankId, world)[species];
-    setPopulationInPlace(world, species, Math.min(count, limit));
-    this.readouts.refreshPopulation();
-    this.scheduleFrame();
+    this.animals.setPopulation(species, count);
   }
 
   /**
@@ -1160,15 +1185,7 @@ export class AquariumHost {
    * démarrage, ou pour un point hors du bac.
    */
   feed(x: number, z: number): void {
-    const world = this.currentWorld;
-    if (!world || this.capture || !Number.isFinite(x) || !Number.isFinite(z)) {
-      return;
-    }
-    if (feedInPlace(world, x, z) > 0) {
-      this.probe.publishFood(this.currentWorld);
-      this.records.refreshFirstTankPath(world);
-      this.scheduleFrame();
-    }
+    this.animals.feed(x, z);
   }
 
   /** Entre en mode édition du décor ou en sort (#167) : `DecorEditingController.setEditing`. */
@@ -1279,15 +1296,6 @@ export class AquariumHost {
     return this.saves.importSave(text);
   }
 
-  /** Remplace la pièce par une sauvegarde relue et validée (import, lien partagé). */
-  private loadImported(result: ImportedSave): void {
-    this.tanks.restore(result.room, result.selectedTankId);
-    this.loadWorld(result.world as MutableWorld, result.settings, result.others);
-    this.createView(environmentById(result.world.environment).defaultCamera);
-    this.probe.publishCamera(this.view);
-    this.scheduleFrame();
-  }
-
   /** Bouton « Partager » (#426, ADR 0105) : `SaveShareController.shareTank`. */
   shareTank(): Promise<void> {
     return this.saves.shareTank();
@@ -1323,15 +1331,7 @@ export class AquariumHost {
    * panneau. Sans effet en capture, avant le démarrage, ou pour un mode inconnu.
    */
   setCareMode(mode: CareMode): void {
-    const world = this.currentWorld;
-    if (!world || this.capture || !isCareMode(mode) || careModeOf(world) === mode) {
-      return;
-    }
-    setCareModeInPlace(world, mode);
-    this.readouts.refreshPopulation();
-    this.refreshWater();
-    this.saveNow();
-    this.scheduleFrame();
+    this.animals.setCareMode(mode);
   }
 
   /**
@@ -1341,15 +1341,7 @@ export class AquariumHost {
    * effet en capture, avant le démarrage, ou si le bac n'est pas en mode décor.
    */
   returnToCare(remove: readonly SpeciesId[]): void {
-    const world = this.currentWorld;
-    if (!world || this.capture || careModeOf(world) !== 'decor') {
-      return;
-    }
-    returnToCareInPlace(world, remove);
-    this.readouts.refreshPopulation();
-    this.refreshWater();
-    this.saveNow();
-    this.scheduleFrame();
+    this.animals.returnToCare(remove);
   }
 
   /** Renomme le bac `id` de la liste (#316) : `TankRoomController.rename`. */
@@ -1412,34 +1404,13 @@ export class AquariumHost {
     this.saves.rejectImport(text);
   }
 
-  /**
-   * Installe un monde, ses réglages et les mondes des autres environnements (import) ; la
-   * vue suit à part.
-   */
-  private loadWorld(world: MutableWorld, settings: SaveSettings, others: readonly World[]): void {
-    this.currentWorld = world;
-    this.tanks.stashOthers(others, world.environment);
-    this.loop.resetClock();
-    this.clock.applySpeed(settings.speed);
-    this.dayClock = settings.clock;
-    this.foodStyle.set(settings.foodStyle ?? DEFAULT_FOOD_STYLE);
-    this.room.set(settings.room ?? DEFAULT_ROOM);
-    this.painter.relight();
-    this.clock.refreshFrozen();
-    this.readouts.refreshEnvironment();
-    this.probe.publishTick(this.currentWorld);
-    this.probe.publishFood(this.currentWorld);
-    this.readouts.refreshPopulation();
-    this.refreshWater();
-  }
-
   /** Bascule entre pixel art et rendu sans filtre. */
   toggleFilter(): void {
     this.display.toggleFilter();
   }
 
   constructor() {
-    afterNextRender(() => this.start());
+    afterNextRender(() => this.startup.start());
     inject(DestroyRef).onDestroy(() => {
       this.alerts.clear();
       this.stop();
@@ -1467,271 +1438,6 @@ export class AquariumHost {
     });
   }
 
-  private start(): void {
-    const win = this.document.defaultView;
-    if (!win) {
-      return;
-    }
-    const params = parseCaptureParams(win.location.search);
-    this.capture = params.capture;
-    this.captureFouling = params.capture ? params.fouling : 0;
-    this.soundAllowed.set(!params.capture);
-    if (params.capture) {
-      this.ambientSound.forbid();
-    }
-    // Vue fond d'écran (#279) : `fond=1`, ou la globale `aqfishFond` du paquet. En capture,
-    // seule l'interface est masquée (contrat de capture inchangé).
-    const global = readWallpaperGlobal(win);
-    this.wallpaper = params.wallpaper || global !== null;
-    if (this.wallpaper && !params.capture) {
-      this.wallpaperFps = clampWallpaperFps(params.fps ?? global?.fps ?? DEFAULT_WALLPAPER_FPS);
-      // L'URL qui décrit le monde prime, comme hors fond d'écran.
-      if (hasWorldParams(win.location.search)) {
-        this.begin(win, params, null);
-        return;
-      }
-      void loadWallpaperConfig(win, global, this.saveStorage).then((choice) => {
-        if (!this.stopped) {
-          this.probe.publishWallpaper(choice.source);
-          this.begin(win, params, choice.value);
-        }
-      });
-      return;
-    }
-    // Lien partagé en capture (#426) : le bac du lien est affiché tel quel (même graine, même
-    // temps), sans confirmation ; un lien invalide donne le monde de l'URL.
-    if (params.capture && hasShareFragment(win.location.hash)) {
-      void readShare(win.location.hash).then((result) => {
-        if (!this.stopped) {
-          this.begin(win, params, result.ok ? result : null);
-        }
-      });
-      return;
-    }
-    this.begin(win, params, undefined);
-  }
-
-  /**
-   * Suite du démarrage, une fois la scène connue. `restoredOverride` : scène choisie par le
-   * fond d'écran (`null` : monde neuf) ; `undefined` : sauvegarde automatique habituelle.
-   * Les étapes s'enchaînent dans cet ordre, figé par les tests de l'hôte et les captures.
-   */
-  private begin(
-    win: Window,
-    params: CaptureParams,
-    restoredOverride: RestoredSave | null | undefined,
-  ): void {
-    // En mode capture, le temps demandé est atteint ici, avant toute image (contrat de capture).
-    // Le monde créé ici appartient à l'hôte seul : il pourra être avancé en place.
-    this.dayClock = initialDayClock(params.hour, params.capture);
-    const restored = this.startupSave(win, params, restoredOverride);
-    const world = restored ? this.applyRestored(restored, params) : this.createWorld(params);
-    this.currentWorld = world;
-    this.prepareRoom(world, params);
-    this.startServices(win, params);
-    this.publishStartState(world, params);
-    this.createStartView(win, params, world);
-    this.applyCaptureEditing(world, params);
-    this.applyStartCamera(params);
-    this.listenWindow(win);
-    this.scheduleFrame();
-  }
-
-  /**
-   * Sauvegarde à restaurer au démarrage (#70) : celle du fond d'écran si elle est donnée ;
-   * jamais en capture (images reproductibles), ni si l'URL décrit le monde (`seed`,
-   * `environnement`, `population`). Lue avant toute création : le monde neuf n'est créé que
-   * s'il n'y a rien à restaurer.
-   */
-  private startupSave(
-    win: Window,
-    params: CaptureParams,
-    restoredOverride: RestoredSave | null | undefined,
-  ): RestoredSave | null {
-    if (restoredOverride !== undefined) {
-      return restoredOverride;
-    }
-    if (params.capture || hasWorldParams(win.location.search)) {
-      return null;
-    }
-    return this.saves.readStored();
-  }
-
-  /** Reprend la pièce, les mondes et les réglages d'une sauvegarde ; renvoie le monde affiché. */
-  private applyRestored(restored: RestoredSave, params: CaptureParams): MutableWorld {
-    this.tanks.stashOthers(restored.others, restored.world.environment);
-    this.tanks.restore(restored.room, restored.selectedTankId);
-    this.speed.set(restored.settings.speed);
-    this.foodStyle.set(restored.settings.foodStyle ?? DEFAULT_FOOD_STYLE);
-    this.room.set(restored.settings.room ?? DEFAULT_ROOM);
-    // `heure=` fige l'heure : l'horloge sauvegardée ne s'applique pas.
-    if (params.hour === null) {
-      this.dayClock = restored.settings.clock;
-    }
-    // Monde relu et validé, appartenant à l'hôte seul : il sera avancé en place.
-    return restored.world as MutableWorld;
-  }
-
-  /**
-   * Monde neuf décrit par l'URL (`createStartupWorld`), amené en capture au temps demandé
-   * avec les dépôts de nourriture de `nourrir=` (#67), chacun à son temps simulé.
-   */
-  private createWorld(params: CaptureParams): MutableWorld {
-    if (params.capture && params.foodStyle !== null) {
-      this.foodStyle.set(params.foodStyle);
-    }
-    const created = createStartupWorld(params, this.room());
-    this.room.set(created.room);
-    const world = params.capture
-      ? advanceToWithFeedings(created.world, params.time, params.feedings, this.dayClock)
-      : created.world;
-    // Test de l'eau de `test-eau=` (#564), hors capture : résultat déjà prêt.
-    if (!params.capture && isWaterKit(params.waterTest)) {
-      this.waterCare.presetWaterTest(world, params.waterTest);
-    }
-    return world;
-  }
-
-  /**
-   * Pièce de N bacs (#305) : bacs et meubles exposés au catalogue dès le démarrage ; `bacs=`
-   * en capture, avec `piece=1`, y ajoute meubles supports et bacs posés. Puis la vitesse de
-   * `vitesse=` (#232), hors capture : elle prime sur celle de la sauvegarde (`vitesse=0` : le
-   * monde ne quitte pas t = 0, captures d'interface reproductibles).
-   */
-  private prepareRoom(world: MutableWorld, params: CaptureParams): void {
-    this.tanks.sync(world);
-    if (params.capture && params.room && params.roomLayout.length > 0) {
-      this.roomLayout.applyCaptureLayout(world, params.roomLayout);
-    }
-    if (!params.capture && params.speed !== null && isSimSpeed(params.speed)) {
-      this.speed.set(params.speed);
-    }
-  }
-
-  /**
-   * Sauvegarde automatique et liens partagés, hors capture et hors fond d'écran : le fond
-   * d'écran (#279) n'écrit jamais le stockage (la sauvegarde de l'application n'est pas
-   * remplacée par sa scène) et se met en pause quand la page est masquée.
-   */
-  private startServices(win: Window, params: CaptureParams): void {
-    if (params.capture) {
-      return;
-    }
-    if (this.wallpaper) {
-      this.startWallpaperPause();
-      return;
-    }
-    this.saves.activate(win);
-  }
-
-  /** Expose l'état initial : horloge, vitesse, décor, pluie, graine, eau, sauvegarde. */
-  private publishStartState(world: World, params: CaptureParams): void {
-    this.clock.refreshFrozen();
-    this.probe.publishSpeed(this.speed());
-    this.probe.publishDecorVisible(this.decorVisible());
-    // Pluie de `pluie=1` (#106) : appliquée à la création de la vue (bassin seulement).
-    this.rain.set(params.rain);
-    this.probe.publishSeed(world.seed);
-    this.readouts.refreshEnvironment();
-    this.probe.publishTick(world);
-    this.probe.publishFood(world);
-    this.readouts.refreshPopulation();
-    this.refreshWater();
-    this.saves.publishStatus(this.saveStatus());
-  }
-
-  /**
-   * Filtre de rendu, pixel ratio et première vue. Sans `camera=`, la vue par défaut de
-   * l'environnement (#87 : de dessus pour le bassin) ; en fond d'écran, la vue trois-quarts,
-   * base de la caméra automatique, et un pixel ratio 1 comme en capture (image pixel art).
-   */
-  private createStartView(win: Window, params: CaptureParams, world: World): void {
-    this.filter.set(
-      initialRenderFilter(
-        params.filter,
-        params.capture ? null : readStoredRenderFilter(browserStorage(win)),
-        params.capture,
-      ),
-    );
-    this.pixelRatio = params.capture || this.wallpaper ? 1 : win.devicePixelRatio || 1;
-    this.createView(this.startPreset(params, world));
-    this.probe.publishFilter(this.filter());
-  }
-
-  private startPreset(params: CaptureParams, world: World): CameraPreset {
-    if (params.cameraGiven) {
-      return params.camera;
-    }
-    return this.wallpaper ? WALLPAPER_PRESET : environmentById(world.environment).defaultCamera;
-  }
-
-  /**
-   * Éditeurs fermés, sauf en capture : `edition=` (#167) ouvre l'éditeur du décor sur un
-   * élément, `edition-meuble=` (#188) celui de la pièce sur un meuble.
-   */
-  private applyCaptureEditing(world: World, params: CaptureParams): void {
-    this.decorEdit.applyEditing(false);
-    if (!params.capture) {
-      return;
-    }
-    const decorSelection = params.editSelection;
-    if (
-      decorSelection !== null &&
-      isDecorEditable(world.environment) &&
-      decorSelection < world.decor.length
-    ) {
-      this.decorEdit.showCaptureSelection(decorSelection);
-    }
-    const roomSelection = params.editRoomSelection;
-    if (roomSelection !== null && this.roomEditable() && roomSelection < this.roomCount()) {
-      this.decorEdit.applyEditing(true);
-      this.roomEdit.showCaptureSelection(roomSelection);
-    }
-  }
-
-  /**
-   * Caméra de départ : pose de `libre=` (#343) en capture, pièce affichée seulement ; sinon
-   * caméra libre mémorisée (#344), reprise hors capture et hors fond d'écran
-   * (`toggleFreeCamera` refuse sinon).
-   */
-  private applyStartCamera(params: CaptureParams): void {
-    const free = params.freeCamera;
-    if (params.capture && free !== null && this.view?.roomShown) {
-      const toRadians = Math.PI / 180;
-      const posed = this.view.applyFreePose(
-        [free.x, free.y, free.z],
-        free.yawDeg * toRadians,
-        free.pitchDeg * toRadians,
-      );
-      if (posed) {
-        this.activePreset.set(null);
-        this.probe.publishCamera(this.view);
-      }
-    }
-    this.free.resumeStored();
-  }
-
-  /**
-   * Écoutes de la fenêtre : redimensionnement (nouvelle image), touches tenues de la caméra
-   * libre (#343), tout relâché si la fenêtre perd le focus (le relâchement n'arriverait jamais).
-   */
-  private listenWindow(win: Window): void {
-    const onResize = () => this.scheduleFrame();
-    win.addEventListener('resize', onResize);
-    this.cleanups.push(() => win.removeEventListener('resize', onResize));
-    const onKeyDown = (event: KeyboardEvent) => this.free.onKey(event, true);
-    const onKeyUp = (event: KeyboardEvent) => this.free.onKey(event, false);
-    const onBlur = () => this.free.releaseAll();
-    this.document.addEventListener('keydown', onKeyDown);
-    this.document.addEventListener('keyup', onKeyUp);
-    win.addEventListener('blur', onBlur);
-    this.cleanups.push(() => {
-      this.document.removeEventListener('keydown', onKeyDown);
-      this.document.removeEventListener('keyup', onKeyUp);
-      win.removeEventListener('blur', onBlur);
-    });
-  }
-
   /**
    * Suspend le rendu et la simulation du bac affiché pendant le mode immersif (#345, ADR 0086),
    * qui a sa propre vue : plus aucune image demandée. À la reprise, la boucle repart sans
@@ -1746,86 +1452,9 @@ export class AquariumHost {
     return this.loop.suspended;
   }
 
-  /**
-   * Pause de la vue fond d'écran (#279) : page masquée, plus aucune image demandée ; de
-   * nouveau visible, la boucle repart sans rattraper le temps passé masqué.
-   */
-  private startWallpaperPause(): void {
-    const onVisibility = () => {
-      const hidden = this.document.visibilityState === 'hidden';
-      this.probe.publishWallpaperPaused(hidden);
-      this.loop.setHidden(hidden);
-    };
-    onVisibility();
-    this.document.addEventListener('visibilitychange', onVisibility);
-    this.cleanups.push(() => this.document.removeEventListener('visibilitychange', onVisibility));
-  }
-
-  /**
-   * Crée la vue du monde courant (en libérant la précédente) sur le préréglage `preset`, avec
-   * le filtre et l'affichage du décor courants.
-   */
+  /** Crée la vue du monde courant sur `preset` (#696) : `ViewBuilder.build`. */
   private createView(preset: CameraPreset): void {
-    const world = this.currentWorld;
-    if (!world) {
-      return;
-    }
-    this.viewCleanups.splice(0).forEach((cleanup) => cleanup());
-    this.view?.dispose();
-    const view = new AquariumView({
-      canvas: this.canvasRef().nativeElement,
-      rendererFactory: this.rendererFactory,
-      pixelRatio: this.pixelRatio,
-      preset,
-      interactive: !this.capture && !this.wallpaper,
-      filter: this.filter(),
-      environment: placeEnvironmentData(world),
-    });
-    this.view = view;
-    view.setDecor(world.decor, world.seed);
-    view.setDecorVisible(this.decorVisible());
-    this.display.applyFoodStyle(this.foodStyle());
-    // Hors du bac tropical, la vue ne dessine pas la pièce : l'état exposé suit (#187).
-    this.display.applyRoom(this.room());
-    // Hors du bassin, la vue refuse la pluie : l'état affiché suit (#106).
-    this.display.applyRain(this.rain());
-    // Eau trouble quand elle est mauvaise (#207) : teinte seulement.
-    view.setWaterTurbidity(waterTurbidity(this.water().quality));
-    // Feuilles de catappa et eau brun-thé (#239).
-    view.setWaterTea(this.water().tea);
-    view.setCatappa(world.water.catappa);
-    this.looks.refresh(world);
-    this.readouts.refreshCurrent(world);
-    this.display.applyReducedMotion();
-    this.painter.relight();
-    this.activePreset.set(preset);
-    // Vue neuve : en orbite (#343).
-    this.free.reset();
-    this.viewCleanups.push(view.onCameraChange(() => this.probe.publishCamera(this.view)));
-    this.viewCleanups.push(view.onUserInteraction(() => this.activePreset.set(null)));
-    view.setDecorDragEnabled(this.decorEditing());
-    // Séance d'entretien (#604) : glisser racle à l'étape « vitres ».
-    view.setStrokeEnabled(this.care.strokeEnabled());
-    this.viewCleanups.push(view.onStroke((points) => this.care.stroke(points)));
-    this.viewCleanups.push(
-      view.onDecorDrag({
-        start: (index) => this.startDecorDrag(index),
-        move: (index, x, z) => this.moveDecorDrag(index, x, z),
-        end: (index, commit) => this.endDecorDrag(index, commit),
-      }),
-      view.onRoomDrag({
-        start: (index) => this.startRoomDrag(index),
-        move: (index, x, z) => this.moveRoomDrag(index, x, z),
-        end: (index, commit) => this.endRoomDrag(index, commit),
-      }),
-    );
-    this.viewCleanups.push(
-      view.onCanvasClick((x, y) => this.tools.canvasClick(view, x, y)),
-      view.onSurfaceClick((x, z) => this.tools.surfaceClick(x, z)),
-    );
-    // Vue neuve : aucun glissement en cours, aucun élément sélectionné.
-    this.decorEdit.viewCreated();
-    this.roomEdit.viewCreated();
+    this.viewBuilder.build(preset);
   }
 
   private scheduleFrame(): void {
