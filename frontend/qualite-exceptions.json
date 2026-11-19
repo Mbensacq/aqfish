@@ -173,7 +173,7 @@
     "max-params": 6
   },
   "ui/aquarium-host/aquarium-host.ts": {
-    "max-lines": 1244
+    "max-lines": 969
   },
   "ui/control-panel/control-panel.ts": {
     "max-lines": 1871
