@@ -9123,6 +9123,12 @@
           "debut": "2026-11-19T03:59:24.932Z",
           "fin": "2026-11-19T04:00:02.465Z",
           "note": "Rétro sprint 36 #737 ; issue #696 suite lot 10/13 hôte (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-19T04:00:44.921Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
