@@ -9263,10 +9263,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-19T13:33:42.433Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-19T13:34:06.650Z",
+          "note": "Issue #696 : suite du lot 10/13 hôte (M), hôte à 1 864 lignes"
         }
       },
       "metriques": {}
