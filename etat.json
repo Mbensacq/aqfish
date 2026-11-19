@@ -9150,7 +9150,7 @@
       "date": "2026-11-19",
       "debut": "2026-11-19T05:27:37.478Z",
       "type": "fonctionnalite",
-      "issue": null,
+      "issue": 696,
       "pr": null,
       "version": null,
       "phases": {
