@@ -1,0 +1,13 @@
+// Section « Population » (#69, #189, #697) : règles communes du panneau
+// (`_panel-controls.scss`), dans son ordre.
+@use 'panel-controls' as controls;
+
+@include controls.base;
+
+@include controls.count;
+
+@include controls.phone;
+
+@include controls.texts;
+
+@include controls.sheet;

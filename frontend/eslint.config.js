@@ -127,6 +127,21 @@ module.exports = defineConfig([
     },
   },
   {
+    // Sections du panneau « Réglages » (#697, ADR 0161) : composants posés sur le `fieldset`
+    // de la section par un sélecteur d'attribut, pour que le DOM ne change pas.
+    files: ['src/app/ui/control-panel/*-section.ts'],
+    rules: {
+      '@angular-eslint/component-selector': [
+        'error',
+        {
+          type: 'attribute',
+          prefix: 'app',
+          style: 'kebab-case',
+        },
+      ],
+    },
+  },
+  {
     files: ['src/app/sim/**/*.ts'],
     ignores: ['**/*.spec.ts'],
     rules: {

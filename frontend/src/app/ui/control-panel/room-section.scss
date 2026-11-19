@@ -1,0 +1,13 @@
+// Section « Bacs et meubles » (#305, #697) : règles communes du panneau
+// (`_panel-controls.scss`), dans son ordre.
+@use 'panel-controls' as controls;
+
+@include controls.base;
+
+@include controls.phone;
+
+@include controls.texts;
+
+@include controls.rows;
+
+@include controls.sheet;
