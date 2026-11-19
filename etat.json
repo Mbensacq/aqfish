@@ -9275,10 +9275,10 @@
           "note": "PR #742 : démarrage, création de la vue et animaux hors de l'hôte (10/13, partiel : 1 493 lignes, 969 hors commentaires), CI verte"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-19T14:57:11.342Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-19T15:35:19.516Z",
+          "note": "Verdict OK, 0 bug, 165/166 captures identiques (1 non déterministe connue), publiées"
         }
       },
       "metriques": {}
