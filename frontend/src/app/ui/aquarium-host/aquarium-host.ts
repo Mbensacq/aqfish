@@ -57,12 +57,7 @@ import { presetTransitionSeconds } from '../../render/camera-presets';
 import { ReducedMotionState } from '../reduced-motion/reduced-motion-state';
 import { AmbientSoundState } from '../ambient-sound/ambient-sound-state';
 import type { AmbientScene } from '../../core/ambient-sound/ambient-sound';
-import { freeMoveAxesInto, freeMoveFor, type FreeMoveId } from '../../core/commands/commands';
-import { isTypingContext } from '../../core/keyboard/keyboard';
-import {
-  readStoredFreeCamera,
-  writeStoredFreeCamera,
-} from '../../core/free-camera-pref/free-camera-pref';
+import type { FreeMoveId } from '../../core/commands/commands';
 import type { DecorPick } from '../../render/decor-pick';
 import { isDecorEditable } from '../../sim/decor-edit';
 import {
@@ -235,6 +230,7 @@ import { RoomEditingController } from './room-editing-controller';
 import { RoomLayoutController } from './room-layout-controller';
 import { CareSessionController } from '../care-session/care-session-controller';
 import { TankRecordsController } from './tank-records-controller';
+import { FreeCameraController } from './free-camera-controller';
 import { WaterCareController } from './water-care-controller';
 import { TankRoomController } from './tank-room-controller';
 
@@ -459,14 +455,22 @@ export class AquariumHost {
    */
   readonly activePreset = signal<CameraPreset | null>(null);
 
+  /** Caméra libre dans la pièce (#343, #344, #696) : `FreeCameraController`. */
+  private readonly free = new FreeCameraController({
+    view: () => this.view,
+    isCapture: () => this.capture,
+    isWallpaper: () => this.wallpaper,
+    prefStorage: () => {
+      const win = this.document.defaultView;
+      return win ? browserStorage(win) : null;
+    },
+    activePreset: this.activePreset,
+    publishFreeCamera: (active) => this.probe.publishFreeCamera(active),
+    publishCamera: () => this.probe.publishCamera(this.view),
+    scheduleFrame: () => this.scheduleFrame(),
+  });
   /** Caméra libre dans la pièce en cours (#343) ; la barre des vues l'affiche. */
-  readonly freeCamera = signal(false);
-  /** Déplacements de la caméra libre enfoncés au clavier (#343). */
-  private readonly freeMoves = new Set<FreeMoveId>();
-  /** Consigne de la caméra libre, tampon réutilisé à chaque image (#352). */
-  private readonly freeAxes = { forward: 0, strafe: 0, vertical: 0 };
-  /** Préréglage suivi avant la caméra libre, rendu à la barre en revenant à l'orbite. */
-  private presetBeforeFree: CameraPreset | null = null;
+  readonly freeCamera = this.free.active;
 
   /**
    * Filtre de rendu courant (issue #33). Pixel art par défaut ; `filtre=` dans l'URL prime
@@ -865,10 +869,7 @@ export class AquariumHost {
     }
     // Depuis la caméra libre (#343), la vue part de la pose libre vers le préréglage ; le
     // préréglage choisi vaut retour à l'orbite pour la préférence d'affichage (#344).
-    if (this.freeCamera()) {
-      this.rememberFreeCamera(false);
-    }
-    this.syncFreeCamera(false);
+    this.free.leaveForPreset();
     this.activePreset.set(preset);
     view.animateToPreset(preset, presetTransitionSeconds(this.reducedMotion(), this.capture));
     if (!view.transitioning) {
@@ -957,85 +958,14 @@ export class AquariumHost {
     this.scheduleFrame();
   }
 
-  /**
-   * Entre en caméra libre dans la pièce ou revient à l'orbite, pose d'avant rendue (#343,
-   * ADR 0084). Sans effet sans pièce affichée, en mode capture (`libre=`), en fond d'écran ou
-   * avant le démarrage.
-   */
+  /** Caméra libre ou orbite (#343, ADR 0084) : `FreeCameraController.toggle`. */
   toggleFreeCamera(): void {
-    const view = this.view;
-    if (!view || this.capture || this.wallpaper) {
-      return;
-    }
-    if (view.freeCameraActive) {
-      view.exitFreeCamera();
-      this.activePreset.set(this.presetBeforeFree);
-      this.syncFreeCamera(false);
-    } else if (view.enterFreeCamera()) {
-      this.presetBeforeFree = this.activePreset();
-      this.activePreset.set(null);
-      this.syncFreeCamera(true);
-    } else {
-      return;
-    }
-    // Préférence d'affichage (#344) : le mode choisi est repris au prochain chargement.
-    this.rememberFreeCamera(this.freeCamera());
-    this.probe.publishCamera(this.view);
-    this.scheduleFrame();
+    this.free.toggle();
   }
 
-  /** Mémorise le mode de caméra choisi (#344), hors capture et fond d'écran. */
-  private rememberFreeCamera(free: boolean): void {
-    const win = this.document.defaultView;
-    if (win && !this.capture && !this.wallpaper) {
-      writeStoredFreeCamera(browserStorage(win), free);
-    }
-  }
-
-  /**
-   * Déplacement de la caméra libre tenu ou relâché par un bouton à l'écran (#344, boutons
-   * « Avancer » et « Reculer ») : même effet qu'une touche tenue. Sans effet hors caméra libre.
-   */
+  /** Déplacement de la caméra libre tenu à un bouton (#344) : `FreeCameraController`. */
   setFreeMoveHeld(move: FreeMoveId, held: boolean): void {
-    if (!held) {
-      this.freeMoves.delete(move);
-      return;
-    }
-    if (!this.freeCamera()) {
-      return;
-    }
-    this.freeMoves.add(move);
-    this.scheduleFrame();
-  }
-
-  /** Aligne l'état exposé de la caméra libre sur `active` ; touches relâchées en sortant. */
-  private syncFreeCamera(active: boolean): void {
-    if (!active) {
-      this.freeMoves.clear();
-    }
-    this.freeCamera.set(active);
-    this.probe.publishFreeCamera(active);
-  }
-
-  /**
-   * Touches de déplacement de la caméra libre (#343) : tenues enfoncées, lues à chaque image.
-   * Hors caméra libre, dans un champ de saisie ou avec Ctrl, Alt, Meta : laissées au reste.
-   */
-  private onFreeMoveKey(event: KeyboardEvent, down: boolean): void {
-    const move = freeMoveFor(event.key);
-    if (move === null) {
-      return;
-    }
-    if (!down) {
-      this.freeMoves.delete(move);
-      return;
-    }
-    if (!this.freeCamera() || event.defaultPrevented || isTypingContext(event)) {
-      return;
-    }
-    event.preventDefault();
-    this.freeMoves.add(move);
-    this.scheduleFrame();
+    this.free.setMoveHeld(move, held);
   }
 
   /**
@@ -1671,11 +1601,7 @@ export class AquariumHost {
     const shown = this.view?.roomShown ?? false;
     this.probe.publishRoomShown(shown);
     // Pièce masquée : la vue est revenue à l'orbite (#343).
-    if (this.freeCamera() && !this.view?.freeCameraActive) {
-      this.activePreset.set(this.presetBeforeFree);
-      this.syncFreeCamera(false);
-      this.probe.publishCamera(this.view);
-    }
+    this.free.roomShownChanged();
     // Éditeur (#188) : la pièce n'est modifiable que dessinée ; sélection et outil suivent.
     this.roomEdit.roomApplied(room, shown);
     this.decorEdit.roomShownChanged(shown);
@@ -2003,7 +1929,7 @@ export class AquariumHost {
     this.publishStartState(world, params);
     this.createStartView(win, params, world);
     this.applyCaptureEditing(world, params);
-    this.applyStartCamera(win, params);
+    this.applyStartCamera(params);
     this.listenWindow(win);
     this.scheduleFrame();
   }
@@ -2165,7 +2091,7 @@ export class AquariumHost {
    * caméra libre mémorisée (#344), reprise hors capture et hors fond d'écran
    * (`toggleFreeCamera` refuse sinon).
    */
-  private applyStartCamera(win: Window, params: CaptureParams): void {
+  private applyStartCamera(params: CaptureParams): void {
     const free = params.freeCamera;
     if (params.capture && free !== null && this.view?.roomShown) {
       const toRadians = Math.PI / 180;
@@ -2179,9 +2105,7 @@ export class AquariumHost {
         this.probe.publishCamera(this.view);
       }
     }
-    if (!params.capture && !this.wallpaper && readStoredFreeCamera(browserStorage(win))) {
-      this.toggleFreeCamera();
-    }
+    this.free.resumeStored();
   }
 
   /**
@@ -2192,9 +2116,9 @@ export class AquariumHost {
     const onResize = () => this.scheduleFrame();
     win.addEventListener('resize', onResize);
     this.cleanups.push(() => win.removeEventListener('resize', onResize));
-    const onKeyDown = (event: KeyboardEvent) => this.onFreeMoveKey(event, true);
-    const onKeyUp = (event: KeyboardEvent) => this.onFreeMoveKey(event, false);
-    const onBlur = () => this.freeMoves.clear();
+    const onKeyDown = (event: KeyboardEvent) => this.free.onKey(event, true);
+    const onKeyUp = (event: KeyboardEvent) => this.free.onKey(event, false);
+    const onBlur = () => this.free.releaseAll();
     this.document.addEventListener('keydown', onKeyDown);
     this.document.addEventListener('keyup', onKeyUp);
     win.addEventListener('blur', onBlur);
@@ -2275,7 +2199,7 @@ export class AquariumHost {
     this.litHour = null;
     this.activePreset.set(preset);
     // Vue neuve : en orbite (#343).
-    this.syncFreeCamera(false);
+    this.free.reset();
     this.viewCleanups.push(view.onCameraChange(() => this.probe.publishCamera(this.view)));
     this.viewCleanups.push(view.onUserInteraction(() => this.activePreset.set(null)));
     view.setDecorDragEnabled(this.decorEditing());
@@ -2399,10 +2323,7 @@ export class AquariumHost {
       this.probe.publishCamera(this.view);
     }
     // Caméra libre (#343) : touches tenues, pas fixes du modèle de déplacement.
-    if (
-      view.freeCameraActive &&
-      view.stepFreeCamera(freeMoveAxesInto(this.freeMoves, this.freeAxes), realDt)
-    ) {
+    if (this.free.step(view, realDt)) {
       this.probe.publishCamera(this.view);
     }
     // Fondu du ciel couvert à la bascule de la pluie (#338) : jamais en capture.
