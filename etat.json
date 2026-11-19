@@ -9330,7 +9330,7 @@
       "date": "2026-11-20",
       "debut": "2026-11-19T23:41:30.196Z",
       "type": "dette",
-      "issue": null,
+      "issue": 697,
       "pr": null,
       "version": null,
       "phases": {
