@@ -9053,10 +9053,10 @@
           "note": "Issue #695 : lot 9/13 assainissement, éditeurs du décor et de la pièce dans des contrôleurs (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-18T23:42:59.460Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-19T00:31:42.563Z",
+          "note": "PR #735 : édition du décor et de la pièce dans trois contrôleurs (assainissement 9/13), caractérisation préalable, CI verte"
         }
       },
       "metriques": {}
