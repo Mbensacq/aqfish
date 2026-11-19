@@ -9087,6 +9087,12 @@
           "debut": "2026-11-19T02:17:57.645Z",
           "fin": "2026-11-19T02:18:24.702Z",
           "note": "Issue #696 : lot 10/13 assainissement, hôte (sauvegarde, photo, boucle, begin) (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-19T02:18:59.236Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
