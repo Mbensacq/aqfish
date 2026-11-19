@@ -9260,7 +9260,7 @@
       "type": "fonctionnalite",
       "issue": 696,
       "pr": 742,
-      "version": null,
+      "version": "v1.25.3",
       "phases": {
         "planif": {
           "statut": "termine",
