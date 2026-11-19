@@ -9080,7 +9080,7 @@
       "type": "dette",
       "issue": 696,
       "pr": 736,
-      "version": null,
+      "version": "v1.24.5",
       "phases": {
         "planif": {
           "statut": "termine",
