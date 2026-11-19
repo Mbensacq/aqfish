@@ -9303,6 +9303,12 @@
           "debut": "2026-11-19T16:02:02.307Z",
           "fin": "2026-11-19T16:02:37.412Z",
           "note": "Issue #697 : lot 11/13 panneau de contrôle découpé par section (M, en tranches)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-19T16:03:17.677Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
