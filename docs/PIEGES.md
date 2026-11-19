@@ -1909,3 +1909,13 @@ haut de sa section.
   la parallaxe (`data-immersive-eye-mm`) restait à 0 pendant 60 s quand `npm run verify`
   tournait en même temps que d'autres commandes ; seul, le fichier passe (2 tests, 40 s).
   Relancer le fichier isolément avant de soupçonner le code. (2026-11-19)
+- **Ordre des champs de l'hôte et ports passés par valeur** (cycle 254, #696) : un contrôleur
+  construit dans un initialiseur de champ qui reçoit un autre contrôleur par valeur
+  (`records: this.records`) le reçoit `undefined` s'il est déclaré après ; l'erreur n'apparaît
+  qu'à l'exécution. Déclarer le champ reçu avant, ou passer une fonction. Les tests de l'hôte
+  lisent aussi des membres privés (`refreshWater`, `dayClock`) : garder une délégation au lieu
+  de les supprimer. (2026-11-19)
+- **Capture `front-tableau-de-bord-chlore` prise pendant la transition de caméra** (cycle 254,
+  #696) : après l'import, le clic sur « Face » lance une transition animée (hors capture) et la
+  capture est prise aussitôt ; l'image change d'une exécution à l'autre, sur `main` comme sur
+  une branche. Ne pas la compter comme une régression ; la comparer à l'œil. (2026-11-19)
