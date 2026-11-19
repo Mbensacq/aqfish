@@ -9089,10 +9089,10 @@
           "note": "Issue #696 : lot 10/13 assainissement, hôte (sauvegarde, photo, boucle, begin) (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-19T02:18:59.236Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-19T03:14:56.065Z",
+          "note": "PR #736 : sauvegarde, photo, boucle et démarrage hors de l'hôte (assainissement 10/13, partiel : hôte 3 560 lignes), CI verte"
         }
       },
       "metriques": {}
