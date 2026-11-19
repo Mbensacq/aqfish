@@ -1919,3 +1919,8 @@ haut de sa section.
   #696) : après l'import, le clic sur « Face » lance une transition animée (hors capture) et la
   capture est prise aussitôt ; l'image change d'une exécution à l'autre, sur `main` comme sur
   une branche. Ne pas la compter comme une régression ; la comparer à l'œil. (2026-11-19)
+- **Port `controllers: () => this` dans l'hôte : erreur de type** (cycle 255, #696) : les champs
+  de l'hôte sont privés, donc `this` n'est pas assignable à une interface qui les nomme
+  (« Property 'clock' is private in type 'AquariumHost' »). Renvoyer un objet littéral
+  (`() => ({ clock: this.clock, … })`), lu à l'appel : l'ordre des champs n'importe plus.
+  (2026-11-19)
