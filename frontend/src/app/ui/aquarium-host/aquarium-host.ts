@@ -33,8 +33,7 @@ import {
   toggleRenderFilter,
   writeStoredRenderFilter,
 } from '../../core/render-filter/render-filter';
-import { markCaptureReady, resetCaptureReady } from '../../core/capture/capture-ready';
-import { hasLandedFood } from '../../sim/behaviors';
+import { resetCaptureReady } from '../../core/capture/capture-ready';
 import { hasShareFragment, readShare } from '../../sim/share-link';
 import {
   chooseWallpaperConfig,
@@ -44,7 +43,6 @@ import {
   shouldReadWallpaperFile,
   WALLPAPER_CONFIG_FILE,
   wallpaperGlobalText,
-  wallpaperOrbitAngle,
   type WallpaperGlobal,
   type WallpaperSource,
 } from '../../core/wallpaper/wallpaper';
@@ -64,21 +62,14 @@ import {
   loadDecorPhysics,
   type DecorPhysicsLoader,
 } from '../../core/decor-physics/load-decor-physics';
-import { SIM_DT } from '../../sim/constants';
-import { EGG_HATCH_TIME } from '../../sim/eggs';
 import {
   carryClock,
   createDayClock,
-  createDayLight,
-  dayPhaseAt,
-  type DayPhase,
   DEFAULT_DAY_CLOCK,
   DEFAULT_DAY_LENGTH_SECONDS,
   DEFAULT_START_HOUR,
   freezeClockAt,
   hourAt,
-  lightAtInto,
-  snapHour,
   toggleClock,
   type DayClock,
 } from '../../sim/daylight';
@@ -86,7 +77,6 @@ import {
   DEFAULT_ENVIRONMENT_ID,
   environmentById,
   environmentWater,
-  hasFlatFloor,
   isEnvironmentId,
   isTankResizable,
   placeDimensions,
@@ -127,7 +117,6 @@ import {
   acceptsSpecies,
   careModeOf,
   isCareMode,
-  isDecorMode,
   setCareModeInPlace,
   speciesShownIn,
   type CareMode,
@@ -156,9 +145,6 @@ import {
   setWorldLightingInPlace,
   scrapeWorldAlgaeInPlace,
   pruneWorldPlantInPlace,
-  worldPlantShade,
-  worldShownPlantGrowth,
-  worldAlgaePatches,
 } from '../../sim/world';
 import type { MutableWorld, World } from '../../sim/world-types';
 import { netTarget } from '../../sim/mortality';
@@ -185,31 +171,9 @@ import type { MaintenanceTask } from '../../sim/maintenance';
 import { worldReview, type ReviewPoint } from '../../sim/bilan';
 import type { TreatmentKind } from '../../sim/treatment';
 import { DEFAULT_WATER_SAMPLE, waterSample, type WaterSample } from '../../sim/water-dashboard';
-import {
-  algaeCoverage,
-  DEFAULT_LIGHTING_HOURS,
-  hasAlgae,
-  lightingOf,
-  visibleAlgaeCount,
-} from '../../sim/algae';
-import { feederReadout, hasFeeder, type FeederReadout } from '../../sim/auto-feeder';
-import { NO_FOULING, sampleFouling, worldFouling } from '../../sim/fouling';
-import {
-  DEFAULT_LAMP_ON_HOUR,
-  LAMP_FADE_HOURS,
-  lampOnOf,
-  lampReadout,
-  waterLampAt,
-  withLampInto,
-  type LampReadout,
-} from '../../sim/lamp';
-import {
-  alertTargets,
-  NO_ALERT_TARGETS,
-  sameAlertTargets,
-  type AlertTargets,
-} from '../../sim/alert-animals';
-import { mixWarnings } from '../../sim/compatibility';
+import { hasAlgae } from '../../sim/algae';
+import { hasFeeder } from '../../sim/auto-feeder';
+import { lampReadout, type LampReadout } from '../../sim/lamp';
 import { isWaterKit, type WaterKit } from '../../sim/water-test';
 import {
   EMPTY_HEALTH_SUMMARY,
@@ -217,11 +181,13 @@ import {
   sameHealthSummary,
   type HealthSummary,
 } from '../../sim/health-summary';
-import { refreshDue } from '../dashboard-frame/refresh-pace';
 import { filterMaturityPercent } from '../../sim/filter-maturation';
 import type { FilterRinseWater } from '../../sim/filter-rinse';
 import { PhotoController } from './photo-controller';
 import { RenderLoop } from './render-loop';
+import { FramePainter, WALLPAPER_PRESET } from './frame-painter';
+import { AlertHighlightController } from './alert-highlight-controller';
+import { TankLooksController } from './tank-looks-controller';
 import { createStartupWorld } from './startup-world';
 import { SaveShareController, type ImportedSave, type RestoredSave } from './save-share-controller';
 import { AquariumProbe } from './aquarium-probe';
@@ -240,8 +206,7 @@ export const AQUARIUM_RENDERER_FACTORY = new InjectionToken<AquariumRendererFact
   { providedIn: 'root', factory: () => createWebGLRenderer },
 );
 
-/** Durée de la mise en évidence depuis une alerte (#483), en millisecondes de temps réel. */
-export const ALERT_HIGHLIGHT_MS = 6000;
+export { ALERT_HIGHLIGHT_MS } from './alert-highlight-controller';
 
 /** Pas de simulation entre deux relevés de l'eau dans la boucle (0,5 s simulée). */
 export const WATER_READOUT_TICKS = 30;
@@ -254,13 +219,6 @@ export const DECOR_PHYSICS_LOADER = new InjectionToken<DecorPhysicsLoader>('DECO
   providedIn: 'root',
   factory: () => loadDecorPhysics,
 });
-
-/** Préréglage de base de la caméra automatique du fond d'écran (#279). */
-export const WALLPAPER_PRESET: CameraPreset = 'three-quarter';
-/** Écart (s réelles) entre deux expositions de la caméra automatique (`data-aqfish-camera`). */
-export const WALLPAPER_CAMERA_EXPOSE_SECONDS = 1;
-/** Pas de temps réel maximal versé à la caméra automatique (pas de saut après une pause). */
-const WALLPAPER_MAX_ORBIT_STEP_SECONDS = 0.25;
 
 export type { TankNotice } from './tank-room-controller';
 
@@ -303,13 +261,6 @@ export function formatPopulation(
 }
 
 export { applyCaptureFurniture, applyCaptureWoods, applyPopulation } from './startup-world';
-
-/**
- * Écart d'heure minimal (en heures) avant de recalculer l'éclairage : 0,01 h, soit 0,5 s
- * avec la journée de 20 min. Évite de recalculer (et d'allouer) à chaque image pour un
- * changement invisible une fois l'image ramenée à la palette.
- */
-export const LIGHT_HOUR_STEP = 0.01;
 
 /**
  * Horloge de départ (ADR 0018) : `heure=` la fige à cette heure ; sans elle, figée à midi
@@ -400,8 +351,6 @@ export class AquariumHost {
   private readonly document = inject(DOCUMENT);
   private readonly rendererFactory = inject(AQUARIUM_RENDERER_FACTORY);
   private readonly saveStorage = inject(SAVE_STORAGE);
-  /** Contexte des gestes passé à `updateFish`, réécrit à chaque image (#433). */
-  private readonly behaviorFrame = { time: 0, landedFood: false };
   private readonly physicsLoader = inject(DECOR_PHYSICS_LOADER);
   /** Option « Réduire les mouvements » (#406), partagée avec les réglages et le mode immersif. */
   private readonly motionState = inject(ReducedMotionState);
@@ -411,15 +360,11 @@ export class AquariumHost {
   private readonly soundAllowed = signal(false);
 
   private view: AquariumView | null = null;
-  private readySignaled = false;
   private capture = false;
   /** Vue fond d'écran (#279) : sans interface, caméra automatique, cadence limitée. */
   private wallpaper = false;
   /** Images par seconde de la vue fond d'écran (`fps=` ou `aqfishFond.fps`). */
   private wallpaperFps = DEFAULT_WALLPAPER_FPS;
-  /** Temps réel (s) de la caméra automatique et de sa dernière exposition. */
-  private orbitSeconds = 0;
-  private orbitExposedAt = Number.NEGATIVE_INFINITY;
   /** Vrai après `stop()` : un chargement asynchrone en cours ne démarre plus rien. */
   private stopped = false;
   private currentWorld: MutableWorld | null = null;
@@ -430,17 +375,34 @@ export class AquariumHost {
     this.currentWorld ? worldReview(this.currentWorld) : [];
   /** Horloge de la journée simulée (ADR 0018) : l'heure suit `world.time`. */
   private dayClock: DayClock = DEFAULT_DAY_CLOCK;
-  /** Heure de l'éclairage appliqué en dernier (`null` : à appliquer à la prochaine image). */
-  private litHour: number | null = null;
-  /** Tampon de la lumière du jour, réécrit à chaque recalcul (aucune allocation). */
-  private readonly light = createDayLight();
-  /** Intensité de la lampe appliquée en dernier (`updateLight`). */
-  private litLamp: number | null = null;
   /** Boucle d'images et pas fixe de la simulation (#696) : `RenderLoop`. */
   private readonly loop = new RenderLoop({
     window: () => this.document.defaultView,
     canRender: () => this.view !== null,
-    frame: (timestamp) => this.frame(timestamp),
+    frame: (timestamp) => this.painter.frame(timestamp),
+  });
+  /** Une image : temps réel, caméras, pose du monde, éclairage (#696) : `FramePainter`. */
+  private readonly painter = new FramePainter({
+    document: this.document,
+    loop: this.loop,
+    probe: this.probe,
+    view: () => this.view,
+    world: () => this.currentWorld,
+    canvas: () => this.canvasRef().nativeElement,
+    isCapture: () => this.capture,
+    isWallpaper: () => this.wallpaper,
+    wallpaperFps: () => this.wallpaperFps,
+    speed: () => this.speed(),
+    dayClock: () => this.dayClock,
+    reducedMotion: () => this.reducedMotion(),
+    stepFreeCamera: (view, realDt) => this.free.step(view, realDt),
+    stepDecorDrop: (realDt) => this.decorEdit.stepDrop(realDt),
+    advanceAndRecord: (world, steps, clock) => this.records.advanceAndRecord(world, steps, clock),
+    waterReadDue: (world) => world.tick - this.waterReadTick >= WATER_READOUT_TICKS,
+    readWater: () => {
+      this.tanks.advanceBackground();
+      this.refreshWater();
+    },
   });
   private readonly cleanups: (() => void)[] = [];
   /** Désabonnements liés à la vue courante (refaits à chaque changement d'environnement). */
@@ -478,19 +440,9 @@ export class AquariumHost {
    */
   readonly filter = signal<RenderFilter>('pixel');
 
-  /**
-   * Moment de la journée (issue #73), affiché par l'indicateur soleil / lune. Mis à jour
-   * avec l'éclairage (au plus toutes les `LIGHT_HOUR_STEP` heures), et ne notifie que s'il
-   * change : quatre fois par journée simulée.
-   */
-  readonly dayPhase = signal<DayPhase>(dayPhaseAt(DEFAULT_START_HOUR));
-
-  /**
-   * Heure affichée par le panneau de contrôle (#52), arrondie au quart d'heure : mise à jour
-   * avec l'éclairage et ne notifie qu'au changement de quart d'heure (toutes les 12,5 s
-   * réelles à vitesse ×1), jamais à chaque image.
-   */
-  readonly clockHour = signal<number>(DEFAULT_START_HOUR);
+  /** Moment de la journée (#73) et heure affichée (#52), suivis avec l'éclairage : `FramePainter`. */
+  readonly dayPhase = this.painter.dayPhase;
+  readonly clockHour = this.painter.clockHour;
 
   /** Vrai si l'heure est figée (curseur, touches `H`, `J`, `N`, `heure=`, mode capture). */
   readonly clockFrozen = signal(false);
@@ -543,12 +495,20 @@ export class AquariumHost {
   readonly untreatedTap = signal(false);
   /** Vrai si du charbon actif est dans le filtre du bac affiché (#531). */
   readonly carbon = signal(false);
+  /** Aspect du bac : plantes, distributeur, algues, voile (#476, #477, #583, #607, #696). */
+  private readonly looks = new TankLooksController({
+    probe: this.probe,
+    view: () => this.view,
+    isCapture: () => this.capture,
+    captureFouling: () => this.captureFouling,
+    maintenanceStartOf: (world) => this.records.maintenanceStartOf(world),
+  });
   /** Durée d'éclairage du bac affiché, en heures par jour (#476). */
-  readonly lighting = signal(DEFAULT_LIGHTING_HOURS);
+  readonly lighting = this.looks.lighting;
   /** Heure d'allumage de la lampe du bac affiché (#584). */
-  readonly lampOn = signal(DEFAULT_LAMP_ON_HOUR);
+  readonly lampOn = this.looks.lampOn;
   /** Distributeur automatique du bac affiché (#583) ; `null` : aucun. */
-  readonly feeder = signal<FeederReadout | null>(null);
+  readonly feeder = this.looks.feeder;
   /** Vrai si un distributeur peut être posé dans le bac affiché (#583). */
   readonly feederAvailable = computed(() => hasFeeder(this.environment()));
   /** Ligne « Lampe » du tableau de bord (#584) ; `null` pour un bac sans lampe réglable. */
@@ -608,7 +568,7 @@ export class AquariumHost {
   /** Séance d'entretien guidée affichée (#604), `null` hors séance. */
   readonly careSession = this.care.session;
   /** Plaques d'algues visibles, pour la consigne de l'étape « vitres » (#604). */
-  readonly visibleAlgae = signal(0);
+  readonly visibleAlgae = this.looks.visibleAlgae;
   /** Conditionneur versé dans le seau à l'étape « eau neuve » (#605). */
   readonly careConditioner = this.care.conditioner;
   /** Écart de température du seau avec le bac à l'étape « eau neuve », en °C (#605). */
@@ -632,14 +592,17 @@ export class AquariumHost {
    * (`refreshWater`) et remplacée seulement si ce qu'elle affiche change (`sameHealthSummary`).
    */
   readonly health = signal<HealthSummary>(EMPTY_HEALTH_SUMMARY, { equal: sameHealthSummary });
-  /** Animaux désignés par chaque alerte (#483), relevés avec l'eau, remplacés s'ils changent. */
-  readonly alertAnimals = signal<AlertTargets>(NO_ALERT_TARGETS, { equal: sameAlertTargets });
+  /** Animaux désignés par les alertes et leur mise en évidence (#483, #696). */
+  private readonly alerts = new AlertHighlightController({
+    probe: this.probe,
+    view: () => this.view,
+    world: () => this.currentWorld,
+    isCapture: () => this.capture,
+  });
+  /** Animaux désignés par chaque alerte (#483), relevés avec l'eau. */
+  readonly alertAnimals = this.alerts.alertAnimals;
   /** Nombre d'animaux mis en évidence depuis une alerte (#483) ; 0 : aucun. */
-  readonly highlightedAnimals = signal(0);
-  /** Fin de la mise en évidence en cours (#483). */
-  private highlightTimer: ReturnType<typeof setTimeout> | null = null;
-  /** Monde de la mise en évidence : elle cesse si le bac affiché change. */
-  private highlightWorld: World | null = null;
+  readonly highlightedAnimals = this.alerts.highlightedAnimals;
   /**
    * Soins de l'eau du bac affiché (#361, #529, #530, #531, #533, #564, #696) : gestes,
    * pharmacie et test de l'eau, `WaterCareController`.
@@ -670,8 +633,6 @@ export class AquariumHost {
   readonly treatmentNotice = this.waterCare.notice;
   /** Pas du dernier relevé de l'eau (`refreshWater`). */
   private waterReadTick = Number.NEGATIVE_INFINITY;
-  /** Instant (ms, horloge de `requestAnimationFrame`) du dernier relevé de la boucle. */
-  private waterReadAt: number | null = null;
 
   /**
    * Sauvegarde automatique, export, import et partage par lien (#70, #426, #696) :
@@ -719,7 +680,7 @@ export class AquariumHost {
     probe: this.probe,
     decorVisible: () => this.decorVisible(),
     showDecor: () => this.setDecorVisible(true),
-    decorChanged: (world) => this.refreshPlants(world),
+    decorChanged: (world) => this.looks.refreshPlants(world),
     room: {
       selection: () => this.roomEdit.selection(),
       editable: () => this.roomEdit.editable(),
@@ -901,7 +862,7 @@ export class AquariumHost {
 
   /** Heure de la journée affichée, dans [0, 24) (`null` avant le démarrage). */
   get hour(): number | null {
-    return this.currentWorld ? hourAt(this.dayClock, this.renderTime()) : null;
+    return this.currentWorld ? hourAt(this.dayClock, this.painter.renderTime()) : null;
   }
 
   /**
@@ -912,8 +873,8 @@ export class AquariumHost {
     if (!this.currentWorld || this.capture) {
       return;
     }
-    this.dayClock = toggleClock(this.dayClock, this.renderTime());
-    this.litHour = null;
+    this.dayClock = toggleClock(this.dayClock, this.painter.renderTime());
+    this.painter.relight();
     this.refreshClockFrozen();
     this.scheduleFrame();
   }
@@ -1374,7 +1335,7 @@ export class AquariumHost {
     }
     // Une chute en cours se termine d'abord : le monde rangé garde un décor posé.
     this.decorEdit.finishDrop();
-    const fromTime = this.renderTime();
+    const fromTime = this.painter.renderTime();
     // Les autres bacs rattrapent le bac quitté avant l'échange (#316) ; le bac quitté garde
     // son identifiant dans la pièce, même jamais sauvegardé (#264).
     this.tanks.advanceBackground();
@@ -1388,8 +1349,8 @@ export class AquariumHost {
     // La liste des bacs (#306) suit aussitôt le bac affiché.
     this.tanks.sync(next.world);
     this.loop.resetClock();
-    this.dayClock = carryClock(this.dayClock, fromTime, this.renderTime());
-    this.litHour = null;
+    this.dayClock = carryClock(this.dayClock, fromTime, this.painter.renderTime());
+    this.painter.relight();
     this.refreshEnvironment();
     this.probe.publishTick(this.currentWorld);
     this.probe.publishFood(this.currentWorld);
@@ -1473,7 +1434,7 @@ export class AquariumHost {
       return;
     }
     this.dayClock = freezeClockAt(this.dayClock, hour);
-    this.litHour = null;
+    this.painter.relight();
     this.refreshClockFrozen();
     this.scheduleFrame();
   }
@@ -1775,7 +1736,7 @@ export class AquariumHost {
     this.dayClock = settings.clock;
     this.foodStyle.set(settings.foodStyle ?? DEFAULT_FOOD_STYLE);
     this.room.set(settings.room ?? DEFAULT_ROOM);
-    this.litHour = null;
+    this.painter.relight();
     this.refreshClockFrozen();
     this.refreshEnvironment();
     this.probe.publishTick(this.currentWorld);
@@ -1792,7 +1753,7 @@ export class AquariumHost {
   constructor() {
     afterNextRender(() => this.start());
     inject(DestroyRef).onDestroy(() => {
-      this.clearAlertHighlight();
+      this.alerts.clear();
       this.stop();
     });
     // Option « Réduire les mouvements » (#406) : appliquée à chaud à la vue affichée.
@@ -2191,12 +2152,10 @@ export class AquariumHost {
     // Feuilles de catappa et eau brun-thé (#239).
     view.setWaterTea(this.water().tea);
     view.setCatappa(world.water.catappa);
-    this.refreshAlgae(world);
-    this.refreshFeeder(world);
-    this.refreshPlants(world);
+    this.looks.refresh(world);
     this.refreshCurrent(world);
     this.applyReducedMotion();
-    this.litHour = null;
+    this.painter.relight();
     this.activePreset.set(preset);
     // Vue neuve : en orbite (#343).
     this.free.reset();
@@ -2279,189 +2238,6 @@ export class AquariumHost {
     this.loop.schedule();
   }
 
-  private frame(timestamp: number): void {
-    const view = this.view;
-    if (!view) {
-      return;
-    }
-    const wallpaper = this.wallpaper && !this.capture;
-    // Fond d'écran (#279) : au plus `wallpaperFps` images par seconde (le temps réel écoulé
-    // entre deux images rendues est versé d'un bloc à la simulation).
-    if (wallpaper && this.readySignaled && this.loop.throttled(timestamp, this.wallpaperFps)) {
-      this.scheduleFrame();
-      return;
-    }
-    const orbitDt = this.capture ? 0 : this.stepRealTime(view, timestamp);
-    const canvas = this.canvasRef().nativeElement;
-    if (view.resize(canvas.clientWidth, canvas.clientHeight)) {
-      this.probe.publishCamera(this.view);
-    }
-    if (wallpaper) {
-      this.stepWallpaperCamera(view, orbitDt);
-    }
-    if (this.currentWorld) {
-      this.drawWorld(view, this.currentWorld);
-    }
-    const rendered = view.renderFrame();
-    if (rendered && !this.readySignaled) {
-      this.signalReady();
-    }
-    // En mode capture, l'image est figée : on ne rend de nouveau qu'au redimensionnement.
-    // Tant qu'aucune image n'a pu être rendue (taille nulle), on réessaie à l'image suivante.
-    if (!this.capture || !rendered) {
-      this.scheduleFrame();
-    }
-  }
-
-  /**
-   * Temps réel de l'image (hors capture) : simulation au pas fixe, transition de caméra,
-   * caméra libre, fondu du ciel couvert et chute du décor. Renvoie le temps réel écoulé (s).
-   */
-  private stepRealTime(view: AquariumView, timestamp: number): number {
-    const realDt = this.advanceRealTime(timestamp);
-    if (view.stepCameraTransition(realDt)) {
-      this.probe.publishCamera(this.view);
-    }
-    // Caméra libre (#343) : touches tenues, pas fixes du modèle de déplacement.
-    if (this.free.step(view, realDt)) {
-      this.probe.publishCamera(this.view);
-    }
-    // Fondu du ciel couvert à la bascule de la pluie (#338) : jamais en capture.
-    view.stepOvercastFade(realDt);
-    this.decorEdit.stepDrop(realDt);
-    return realDt;
-  }
-
-  /** Pose les animaux, la nourriture, les œufs, le décor et la lumière du temps affiché. */
-  private drawWorld(view: AquariumView, world: World): void {
-    // En capture, l'image montre exactement l'état au temps demandé (alpha = 1).
-    const time = this.renderTime();
-    // Gestes des comportements (#427) : au temps affiché, fouille seulement s'il y a un
-    // granulé posé (`sim/behaviors.ts`).
-    // Objet de l'instance réécrit à chaque image (#433) : aucune allocation.
-    this.behaviorFrame.time = time;
-    this.behaviorFrame.landedFood = hasLandedFood(world.food);
-    view.updateFish(
-      world.entities,
-      this.capture ? 1 : this.loop.alpha,
-      world.seed,
-      this.behaviorFrame,
-      world.dead,
-    );
-    view.updateFood(world.food);
-    view.updateEggs(world.eggs, EGG_HATCH_TIME);
-    view.updateDecor(time);
-    this.updateLight(view, time);
-  }
-
-  /**
-   * Première image soumise : on attend l'image suivante pour être sûr qu'elle est composée à
-   * l'écran avant de lever le signal du contrat de capture.
-   */
-  private signalReady(): void {
-    this.readySignaled = true;
-    this.document.defaultView?.requestAnimationFrame(() => {
-      if (this.view) {
-        markCaptureReady(this.document);
-      }
-    });
-  }
-
-  /**
-   * Caméra automatique du fond d'écran (#279) : balancement lent autour de la vue
-   * trois-quarts, au temps réel (indépendant de la simulation et de sa vitesse) ; exposée au
-   * plus toutes les `WALLPAPER_CAMERA_EXPOSE_SECONDS`.
-   */
-  private stepWallpaperCamera(view: AquariumView, realDt: number): void {
-    const dt = Number.isFinite(realDt) && realDt > 0 ? realDt : 0;
-    this.orbitSeconds += Math.min(dt, WALLPAPER_MAX_ORBIT_STEP_SECONDS);
-    view.applyOrbit(WALLPAPER_PRESET, wallpaperOrbitAngle(this.orbitSeconds));
-    if (this.orbitSeconds - this.orbitExposedAt >= WALLPAPER_CAMERA_EXPOSE_SECONDS) {
-      this.orbitExposedAt = this.orbitSeconds;
-      this.probe.publishCamera(this.view);
-    }
-  }
-
-  /**
-   * Temps simulé affiché : celui du monde, interpolé comme les poissons (alpha = 0 : pas
-   * précédent ; en capture, alpha = 1 : état exact au temps demandé).
-   */
-  private renderTime(): number {
-    const world = this.currentWorld;
-    if (!world) {
-      return 0;
-    }
-    const alpha = this.capture ? 1 : this.loop.alpha;
-    return Math.max(0, world.time - (1 - alpha) * SIM_DT);
-  }
-
-  /**
-   * Éclairage de l'heure courante, recalculé seulement si l'heure a bougé d'au moins
-   * `LIGHT_HOUR_STEP` (ou après une bascule de l'horloge) ; l'heure exposée suit.
-   */
-  private updateLight(view: AquariumView, time: number): void {
-    const hour = hourAt(this.dayClock, time);
-    const lamp = this.lampAt(hour);
-    if (
-      this.litHour === null ||
-      Math.abs(hour - this.litHour) >= LIGHT_HOUR_STEP ||
-      lamp !== this.litLamp
-    ) {
-      this.litHour = hour;
-      this.litLamp = lamp;
-      // Lampe du bac (#584) : ajoutée à la lumière du jour, sans jamais l'assombrir.
-      view.updateLight(withLampInto(lightAtInto(hour, this.light), lamp));
-      view.updateFlowers(hour);
-      view.updateLightRays(hour);
-      this.dayPhase.set(dayPhaseAt(hour));
-      this.clockHour.set(snapHour(hour));
-    }
-    // Rayons (#567) : au plus une écriture par seconde.
-    this.probe.publishLightRays(view.lightRaysStrength, view.lightRaysTime);
-    this.probe.publishLamp(lamp);
-    this.probe.publishHour(hour);
-  }
-
-  /**
-   * Intensité de la lampe du bac affiché à l'heure `hour` (#584), arrondie au centième (pas de
-   * recalcul de l'éclairage pour un écart invisible) : 0 hors des bacs à lampe. « Réduire les
-   * mouvements » : changement net, sans fondu.
-   */
-  private lampAt(hour: number): number {
-    const world = this.currentWorld;
-    if (!world || !hasAlgae(world.environment)) {
-      return 0;
-    }
-    const fade = this.reducedMotion() ? 0 : LAMP_FADE_HOURS;
-    return Math.round(waterLampAt(world.water, hour, fade) * 100) / 100;
-  }
-
-  /**
-   * Avance la simulation du temps réel écoulé depuis l'image précédente (hors capture).
-   * Renvoie ce temps, en secondes (0 à la première image).
-   */
-  private advanceRealTime(timestamp: number): number {
-    // Vitesse (#52) : temps simulé = temps réel × vitesse, toujours par pas `SIM_DT`.
-    const realDt = this.loop.advance(timestamp, this.speed());
-    const steps = this.loop.clock.steps;
-    if (steps > 0 && this.currentWorld) {
-      this.records.advanceAndRecord(this.currentWorld, steps, this.dayClock);
-      this.probe.publishTick(this.currentWorld);
-      this.probe.publishFood(this.currentWorld);
-      // Au plus 4 relevés par seconde de temps réel, quelle que soit la vitesse (#256).
-      if (
-        this.currentWorld.tick - this.waterReadTick >= WATER_READOUT_TICKS &&
-        refreshDue(timestamp, this.waterReadAt)
-      ) {
-        this.waterReadAt = timestamp;
-        // Les autres bacs avancent par lots, au rythme des relevés (#316, ADR 0076).
-        this.tanks.advanceBackground();
-        this.refreshWater();
-      }
-    }
-    return realDt;
-  }
-
   /** Expose les effectifs (`data-aqfish-population`, signaux `population` et `populationMax`). */
   private refreshPopulation(): void {
     const world = this.currentWorld;
@@ -2482,7 +2258,7 @@ export class AquariumHost {
     this.health.set(healthSummary(world.entities));
     this.shownDead = world.dead?.length ?? 0;
     this.probe.publishDead(this.shownDead);
-    this.refreshAlertAnimals(world);
+    this.alerts.refresh(world, this.population());
     this.probe.publishPopulation(
       formatPopulation(counts, speciesShownIn(environmentById(world.environment).species, counts)),
     );
@@ -2505,46 +2281,9 @@ export class AquariumHost {
     }
   }
 
-  /** Animaux désignés par chaque alerte (#483) ; la mise en évidence cesse au changement de bac. */
-  private refreshAlertAnimals(world: World): void {
-    this.alertAnimals.set(
-      alertTargets(world.entities, {
-        temperature: world.water.temperature,
-        ph: world.water.ph,
-        mixes: mixWarnings(environmentById(world.environment).species, this.population()),
-      }),
-    );
-    if (this.highlightWorld !== null && this.highlightWorld !== world) {
-      this.clearAlertHighlight();
-    }
-  }
-
-  /**
-   * Met en évidence dans la scène les animaux `ids` pendant `ALERT_HIGHLIGHT_MS` (#483). Temps
-   * réel : la mise en évidence vaut aussi simulation en pause. Rien n'est écrit dans le monde.
-   */
+  /** Met en évidence les animaux `ids` d'une alerte (#483) : `AlertHighlightController`. */
   highlightAlertAnimals(ids: readonly number[]): void {
-    const world = this.currentWorld;
-    if (!world || this.capture || ids.length === 0) {
-      return;
-    }
-    this.clearAlertHighlight();
-    this.highlightWorld = world;
-    this.view?.setAlertHighlight(ids);
-    this.highlightedAnimals.set(ids.length);
-    this.probe.publishAlertHighlight(ids.length);
-    this.highlightTimer = setTimeout(() => this.clearAlertHighlight(), ALERT_HIGHLIGHT_MS);
-  }
-
-  private clearAlertHighlight(): void {
-    if (this.highlightTimer !== null) {
-      clearTimeout(this.highlightTimer);
-      this.highlightTimer = null;
-    }
-    this.highlightWorld = null;
-    this.view?.setAlertHighlight([]);
-    this.highlightedAnimals.set(0);
-    this.probe.publishAlertHighlight(0);
+    this.alerts.highlight(ids);
   }
 
   /**
@@ -2565,7 +2304,7 @@ export class AquariumHost {
     this.carbon.set(world.water.carbon === true);
     this.health.set(healthSummary(world.entities));
     this.refreshDead(world);
-    this.refreshAlertAnimals(world);
+    this.alerts.refresh(world, this.population());
     this.records.refresh(world);
     this.probe.publishTreatment(this.waterCare.refresh(world));
     const readout = waterReadout(
@@ -2580,63 +2319,7 @@ export class AquariumHost {
     this.view?.setWaterTurbidity(waterTurbidity(readout.quality));
     this.view?.setWaterTea(readout.tea);
     this.view?.setCatappa(world.water.catappa);
-    this.refreshAlgae(world);
-    this.refreshFeeder(world);
-    this.refreshPlants(world);
-  }
-
-  /** Pousse des plantes à tige (#477) : vue (hauteur, ombre du fond) et `PLANTS_ATTRIBUTE`. */
-  private refreshPlants(world: World): void {
-    const view = this.view;
-    let shown = '';
-    world.decor.forEach((item, n) => {
-      if (item.kind === 'plant' && item.form === 'tall') {
-        const growth = worldShownPlantGrowth(world, n);
-        view?.setPlantGrowth(n, growth);
-        shown += shown === '' ? String(growth) : `,${growth}`;
-      }
-    });
-    const shade = worldPlantShade(world);
-    view?.setPlantShade(shade);
-    // Attribut réécrit seulement s'il change (#494), comme le pas et l'heure.
-    this.probe.publishPlants(shown, shade);
-  }
-
-  /** Distributeur automatique (#583) : vue, signal du tableau de bord et `FEEDER_ATTRIBUTE`. */
-  private refreshFeeder(world: World): void {
-    const feeder = world.feeder;
-    this.view?.setFeeder(feeder !== undefined);
-    if (this.probe.publishFeeder(feeder)) {
-      this.feeder.set(feeder === undefined ? null : feederReadout(feeder));
-    }
-  }
-
-  /** Algues du bac (#476) : vue, signal de l'éclairage et `ALGAE_ATTRIBUTE`. */
-  private refreshAlgae(world: World): void {
-    this.view?.setAlgae(worldAlgaePatches(world), world.water.algae);
-    const hours = lightingOf(world.water);
-    this.lighting.set(hours);
-    this.lampOn.set(lampOnOf(world.water));
-    const visible = visibleAlgaeCount(world.water.algae);
-    this.visibleAlgae.set(visible);
-    const percent = Math.round(algaeCoverage(world.water.algae) * 100);
-    this.probe.publishAlgae(visible, percent, hours);
-    this.refreshFouling(world);
-  }
-
-  /**
-   * Voile d'encrassement (#607) : vue et `FOULING_ATTRIBUTE`. En capture, celui
-   * d'`encrassement=` (séries existantes inchangées) ; jamais en mode décor ni hors des bacs à
-   * algues.
-   */
-  private refreshFouling(world: World): void {
-    const fouling = this.capture
-      ? isDecorMode(world) || !hasAlgae(world.environment)
-        ? NO_FOULING
-        : sampleFouling(this.captureFouling)
-      : worldFouling(world, this.records.maintenanceStartOf(world));
-    this.view?.setFouling(environmentWater(world), fouling, hasFlatFloor(world.environment));
-    this.probe.publishFouling(fouling, this.view?.foulingCounts ?? NO_FOULING);
+    this.looks.refresh(world);
   }
 
   /**
@@ -2694,7 +2377,7 @@ export class AquariumHost {
     this.view = null;
     this.currentWorld = null;
     this.tanks.setRoomState(null);
-    if (this.readySignaled) {
+    if (this.painter.readySignaled) {
       resetCaptureReady(this.document);
     }
   }
