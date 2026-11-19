@@ -9191,10 +9191,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-19T07:18:41.964Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-19T07:19:15.327Z",
+          "note": "Issue #696 : suite du lot 10/13 hôte, nouvelle tranche d'extractions (M)"
         }
       },
       "metriques": {}
