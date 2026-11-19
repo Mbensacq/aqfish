@@ -9152,7 +9152,7 @@
       "type": "fonctionnalite",
       "issue": 696,
       "pr": 739,
-      "version": null,
+      "version": "v1.25.0",
       "phases": {
         "planif": {
           "statut": "termine",
