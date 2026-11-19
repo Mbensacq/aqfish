@@ -9233,10 +9233,10 @@
           "note": "Issue #696 : suite du lot 10/13 hôte (M), hôte à 2 384 lignes"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-19T10:16:55.738Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-19T12:03:00.673Z",
+          "note": "PR #741 : relevés, réglages, outils, affichage, horloge et lieu du bac hors de l'hôte (10/13, partiel : hôte 1 864 lignes), CI verte"
         }
       },
       "metriques": {}
