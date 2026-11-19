@@ -1905,3 +1905,7 @@ haut de sa section.
   (`water.minY + wallMargin`) : relever le point visé. `advanceInPlace(world, n)` compte des
   **pas** (`SIM_DT` = 1/60 s), pas des secondes. Ne pas lancer Prettier sur `docs/` (hors de
   son périmètre : il réaligne tous les tableaux). (2026-11-17)
+- **`e2e/mode-immersif.spec.ts` (« ordinateur ») peut expirer sous charge** (cycle 253, #696) :
+  la parallaxe (`data-immersive-eye-mm`) restait à 0 pendant 60 s quand `npm run verify`
+  tournait en même temps que d'autres commandes ; seul, le fichier passe (2 tests, 40 s).
+  Relancer le fichier isolément avant de soupçonner le code. (2026-11-19)
