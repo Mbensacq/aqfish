@@ -9207,6 +9207,12 @@
           "debut": "2026-11-19T08:35:51.732Z",
           "fin": "2026-11-19T09:47:05.171Z",
           "note": "Verdict OK, 0 bug (1 échec e2e de timing non reproductible), captures identiques, publiées"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-19T09:47:40.125Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
