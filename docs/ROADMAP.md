@@ -133,6 +133,11 @@ jamais eu d'aquarium doit pouvoir commencer ici et apprendre à s'occuper de ses
    la place du mode immersif, selon `docs/INTERFACE.md`. Cinq lots `idee-mathis` (#721 à #725), traités
    **juste après le lot 11 de #686 (#697)**, avant les lots 12 et 13.
 
+9. **Écosystème réaliste (décision du 2026-11-18)** : capacité du bac selon le volume,
+   compatibilités sourcées, plantes, nettoyeurs, roches et bois qui agissent sur l'eau,
+   concentrations en mg/L et scénarios de référence (un bac stable en vrai l'est dans le jeu, et
+   inversement), selon `docs/ECOSYSTEME.md`. Lots #727 à #733, après #721 à #725, #698 et #699.
+
 Toute valeur biologique est sourcée (référence consultable) ou marquée « approximation de jeu » ;
 ce qui n'a pas pu être vérifié est signalé, jamais présenté comme réel. Planif replace les
 sprints à la rétro : la stabilisation de v1.0 reste prévue en fin de parcours, la date peut
