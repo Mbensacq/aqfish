@@ -310,6 +310,19 @@ haut de sa section.
   propres `species-sheet__…`), poser `display: block` sur l'hôte (élément personnalisé
   `inline` par défaut) et garder les attributs de l'ancienne racine sur l'hôte (`role`,
   `id`, `data-…`) pour que tests et e2e ne changent pas. (2026-11-05)
+- **Sortir une section du panneau « Réglages » : garder le `fieldset` dans le panneau**
+  (cycle 256, #697, ADR 0161) : un composant `app-…` autour du `fieldset` casse
+  `:scope > fieldset` (e2e), la bordure `section + section` et les colonnes. Sélecteur
+  d'attribut `fieldset[app-…-section]` (permis par `eslint.config.js` pour
+  `ui/control-panel/*-section.ts`), et dans la feuille de la section les groupes de
+  `_panel-controls.scss` dont elle a besoin, dans l'ordre du fichier : un groupe oublié ne
+  donne aucune erreur, seulement des styles perdus. Comparer les styles calculés de chaque
+  élément avant et après (`getComputedStyle` et `getBoundingClientRect` sur
+  `app-control-panel *`, plusieurs états et tailles d'écran). (2026-11-19)
+- **`npm run verify` en arrière-plan et édition du même clone** (cycle 256) : le build lit les
+  fichiers au moment où il passe ; une vérification de `main` lancée avant de commencer à
+  coder échoue (ou réussit) sur un état mélangé. Attendre sa fin, ou la lancer dans un autre
+  worktree. (2026-11-19)
 - **Mutation hebdomadaire en CI** (décision de Mathis du 2026-11-12, #444) : le workflow
   `Mutation hebdomadaire` mute tout `src/app/sim` chaque dimanche en 12 lots et publie le bilan
   par fichier sur la branche `equipe` (`mutation/hebdo/AAAA-MM-JJ.md`, `dernier.json`, trié du
