@@ -9165,6 +9165,12 @@
           "debut": "2026-11-19T05:28:33.043Z",
           "fin": "2026-11-19T06:23:39.256Z",
           "note": "PR #739 : soins de l'eau et caméra libre hors de l'hôte (10/13, partiel : hôte 2 701 lignes), CI verte"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-19T06:24:30.723Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
