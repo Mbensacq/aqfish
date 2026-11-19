@@ -9159,6 +9159,12 @@
           "debut": "2026-11-19T05:27:37.478Z",
           "fin": "2026-11-19T05:27:59.104Z",
           "note": "Issue #696 : suite du lot 10/13 hôte, photo, boucle d'images et begin (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-19T05:28:33.043Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
