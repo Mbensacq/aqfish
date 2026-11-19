@@ -9224,7 +9224,7 @@
       "type": "fonctionnalite",
       "issue": 696,
       "pr": 741,
-      "version": null,
+      "version": "v1.25.2",
       "phases": {
         "planif": {
           "statut": "termine",
