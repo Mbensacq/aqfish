@@ -30,8 +30,6 @@ import {
   initialRenderFilter,
   readStoredRenderFilter,
   type RenderFilter,
-  toggleRenderFilter,
-  writeStoredRenderFilter,
 } from '../../core/render-filter/render-filter';
 import { resetCaptureReady } from '../../core/capture/capture-ready';
 import { hasShareFragment, readShare } from '../../sim/share-link';
@@ -89,13 +87,13 @@ import {
 import { setTankDimensionsInPlace } from '../../sim/tank-resize';
 import { DEFAULT_POND_SHAPE, type PondShape } from '../../sim/pond-shape';
 import { setPondShapeInPlace } from '../../sim/pond-reshape';
-import { clampRoom, DEFAULT_ROOM, type Room } from '../../sim/room';
+import { DEFAULT_ROOM } from '../../sim/room';
 import { DEFAULT_SIM_SPEED, isSimSpeed, type SimSpeed } from '../../sim/sim-speed';
 import { isSpeciesId, setPopulationInPlace } from '../../sim/population';
 import { parseSaveWorlds, serializeRoom } from '../../sim/room-save';
 import { tankResizeRefusal } from '../../sim/room-state';
 import { ROOM_ANIMAL_CAP, roomAnimalCount, roomPopulationLimits } from '../../sim/room-limits';
-import { layoutFootprints, roomLayoutBlocks } from '../../sim/room-layout';
+import { layoutFootprints } from '../../sim/room-layout';
 import type { SaveSettings } from '../../sim/save';
 import {
   acceptsSpecies,
@@ -105,12 +103,7 @@ import {
   type CareMode,
 } from '../../sim/care-mode';
 import { returnToCareInPlace } from '../../sim/care-return';
-import {
-  DEFAULT_FOOD_STYLE,
-  isFoodStyle,
-  toggleFoodStyle as otherFoodStyle,
-  type FoodStyle,
-} from '../../core/food-style/food-style';
+import { DEFAULT_FOOD_STYLE, type FoodStyle } from '../../core/food-style/food-style';
 import type { SpeciesId } from '../../sim/species';
 import { advanceToWithFeedings, feedInPlace } from '../../sim/world';
 import type { MutableWorld, World } from '../../sim/world-types';
@@ -132,6 +125,7 @@ import { FramePainter, WALLPAPER_PRESET } from './frame-painter';
 import { AlertHighlightController } from './alert-highlight-controller';
 import { TankLooksController } from './tank-looks-controller';
 import { TankReadoutsController } from './tank-readouts-controller';
+import { DisplayController } from './display-controller';
 import { TankToolsController } from './tank-tools-controller';
 import { WaterSettingsController } from './water-settings-controller';
 import { createStartupWorld } from './startup-world';
@@ -330,7 +324,7 @@ export class AquariumHost {
     wallpaperFps: () => this.wallpaperFps,
     speed: () => this.speed(),
     dayClock: () => this.dayClock,
-    reducedMotion: () => this.reducedMotion(),
+    reducedMotion: () => this.display.reducedMotion(),
     stepFreeCamera: (view, realDt) => this.free.step(view, realDt),
     stepDecorDrop: (realDt) => this.decorEdit.stepDrop(realDt),
     advanceAndRecord: (world, steps, clock) => this.records.advanceAndRecord(world, steps, clock),
@@ -370,11 +364,29 @@ export class AquariumHost {
   /** Caméra libre dans la pièce en cours (#343) ; la barre des vues l'affiche. */
   readonly freeCamera = this.free.active;
 
-  /**
-   * Filtre de rendu courant (issue #33). Pixel art par défaut ; `filtre=` dans l'URL prime
-   * sur le choix mémorisé (`aqfish.filtre`). Mis à jour à la bascule seulement.
-   */
-  readonly filter = signal<RenderFilter>('pixel');
+  /** Filtre, décor, pièce, pluie, granulés et mouvements réduits (#33, #52, #106, #117, #187, #406, #696). */
+  private readonly display: DisplayController = new DisplayController({
+    probe: this.probe,
+    view: () => this.view,
+    isCapture: () => this.capture,
+    filterStorage: () => {
+      const win = this.document.defaultView;
+      return win ? browserStorage(win) : null;
+    },
+    motion: this.motionState,
+    roomState: () => this.tanks.roomState,
+    roomShown: (room, shown) => {
+      // Pièce masquée : la vue est revenue à l'orbite (#343).
+      this.free.roomShownChanged();
+      // Éditeur (#188) : la pièce n'est modifiable que dessinée ; sélection et outil suivent.
+      this.roomEdit.roomApplied(room, shown);
+      this.decorEdit.roomShownChanged(shown);
+    },
+    saveNow: () => this.saveNow(),
+    scheduleFrame: () => this.scheduleFrame(),
+  });
+  /** Filtre de rendu courant (#33) : `filtre=` prime sur le choix mémorisé (`aqfish.filtre`). */
+  readonly filter = this.display.filter;
 
   /** Moment de la journée (#73) et heure affichée (#52), suivis avec l'éclairage : `FramePainter`. */
   readonly dayPhase = this.painter.dayPhase;
@@ -387,25 +399,16 @@ export class AquariumHost {
   readonly speed = signal<SimSpeed>(DEFAULT_SIM_SPEED);
 
   /** Décor (rochers et plantes) affiché (#52). Il reste un obstacle pour les poissons. */
-  readonly decorVisible = signal(true);
+  readonly decorVisible = this.display.decorVisible;
 
-  /**
-   * Pluie (#106) : touche `R`, case du panneau, `pluie=1`. Possible dans le bassin seulement ;
-   * jamais sauvegardée.
-   */
-  readonly rain = signal(false);
+  /** Pluie (#106), dans le bassin seulement ; jamais sauvegardée. */
+  readonly rain = this.display.rain;
 
-  /**
-   * Rendu des granulés (#117) : points par défaut, voxels au choix (bouton du panneau),
-   * enregistré avec les réglages de la sauvegarde ; `granules=` en capture.
-   */
-  readonly foodStyle = signal<FoodStyle>(DEFAULT_FOOD_STYLE);
+  /** Rendu des granulés (#117) : points ou voxels, enregistré avec les réglages. */
+  readonly foodStyle = this.display.foodStyle;
 
-  /**
-   * Pièce autour du bac (#187) : case « Afficher la pièce » du panneau, enregistrée avec les
-   * réglages de la sauvegarde ; `piece=1` en capture. Affichée dans le bac tropical seulement.
-   */
-  readonly room = signal<Room>(DEFAULT_ROOM);
+  /** Pièce autour du bac (#187), enregistrée avec les réglages ; `piece=1` en capture. */
+  readonly room = this.display.room;
 
   /**
    * Relevés du bac affiché (#69, #207, #260, #278, #460, #582, #696) : effectifs, eau, santé,
@@ -677,7 +680,7 @@ export class AquariumHost {
   /** Édition de la pièce graphique (#188, #695, ADR 0155) : `RoomEditingController`. */
   private readonly roomEdit: RoomEditingController = new RoomEditingController({
     room: () => this.room(),
-    applyRoom: (room) => this.applyRoom(room),
+    applyRoom: (room) => this.display.applyRoom(room),
     dimensions: () => (this.currentWorld ? placeDimensions(this.currentWorld) : DEFAULT_TANK),
     obstacles: () => (this.tanks.roomState === null ? [] : layoutFootprints(this.tanks.roomState)),
     view: () => this.view,
@@ -726,7 +729,7 @@ export class AquariumHost {
     selectedTankId: () => this.tanks.selectedTankId,
     forgetStashed: (environment) => this.tanks.forgetStashed(environment),
     room: () => this.room(),
-    redrawRoom: () => this.applyRoom(this.room()),
+    redrawRoom: () => this.display.applyRoom(this.room()),
     probe: this.probe,
     saveNow: () => this.saveNow(),
     scheduleFrame: () => this.scheduleFrame(),
@@ -798,7 +801,10 @@ export class AquariumHost {
     // préréglage choisi vaut retour à l'orbite pour la préférence d'affichage (#344).
     this.free.leaveForPreset();
     this.activePreset.set(preset);
-    view.animateToPreset(preset, presetTransitionSeconds(this.reducedMotion(), this.capture));
+    view.animateToPreset(
+      preset,
+      presetTransitionSeconds(this.display.reducedMotion(), this.capture),
+    );
     if (!view.transitioning) {
       this.probe.publishCamera(this.view);
     }
@@ -811,19 +817,7 @@ export class AquariumHost {
    * l'écrire, sinon il reste en mémoire pour la session (repli silencieux).
    */
   setFilter(filter: RenderFilter): void {
-    const view = this.view;
-    if (!view) {
-      return;
-    }
-    if (view.setFilter(filter)) {
-      this.filter.set(filter);
-      this.probe.publishFilter(this.filter());
-      this.scheduleFrame();
-    }
-    const win = this.document.defaultView;
-    if (win && !this.capture) {
-      writeStoredRenderFilter(browserStorage(win), filter);
-    }
+    this.display.setFilter(filter);
   }
 
   /** Heure de la journée affichée, dans [0, 24) (`null` avant le démarrage). */
@@ -875,14 +869,7 @@ export class AquariumHost {
    * avant le démarrage.
    */
   setDecorVisible(visible: boolean): void {
-    const view = this.view;
-    if (!view || this.capture) {
-      return;
-    }
-    view.setDecorVisible(visible);
-    this.decorVisible.set(visible);
-    this.probe.publishDecorVisible(visible);
-    this.scheduleFrame();
+    this.display.setDecorVisible(visible);
   }
 
   /** Caméra libre ou orbite (#343, ADR 0084) : `FreeCameraController.toggle`. */
@@ -902,13 +889,7 @@ export class AquariumHost {
    * le démarrage.
    */
   setRoomShown(shown: boolean): void {
-    const view = this.view;
-    if (!view || this.capture || shown === this.room().shown) {
-      return;
-    }
-    this.applyRoom({ ...this.room(), shown });
-    this.saveNow();
-    this.scheduleFrame();
+    this.display.setRoomShown(shown);
   }
 
   /**
@@ -918,16 +899,12 @@ export class AquariumHost {
    * suit en fondu (issue #338), avancé par la boucle de rendu.
    */
   setRain(enabled: boolean): void {
-    if (!this.view || this.capture) {
-      return;
-    }
-    this.applyRain(enabled, true);
-    this.scheduleFrame();
+    this.display.setRain(enabled);
   }
 
   /** Alterne pluie et beau temps (touche `R`, #106). */
   toggleRain(): void {
-    this.setRain(!this.rain());
+    this.display.setRain(!this.rain());
   }
 
   /**
@@ -936,13 +913,7 @@ export class AquariumHost {
    * avant le démarrage.
    */
   setFoodStyle(style: FoodStyle): void {
-    const view = this.view;
-    if (!view || this.capture || !isFoodStyle(style)) {
-      return;
-    }
-    this.applyFoodStyle(style);
-    this.saveNow();
-    this.scheduleFrame();
+    this.display.setFoodStyle(style);
   }
 
   /**
@@ -962,7 +933,7 @@ export class AquariumHost {
 
   /** Alterne entre granulés en points et en voxels (bouton du panneau, #117). */
   toggleFoodStyle(): void {
-    this.setFoodStyle(otherFoodStyle(this.foodStyle()));
+    this.display.toggleFoodStyle();
   }
 
   /**
@@ -1419,32 +1390,6 @@ export class AquariumHost {
     };
   }
 
-  /** Applique la pièce à la vue courante et l'expose (`ROOM_ATTRIBUTE`). */
-  private applyRoom(room: Room): void {
-    this.room.set(room);
-    // Meubles supports et bacs posés (#305) : dessinés avec la pièce, au parquet du meuble.
-    this.view?.setRoomLayout(
-      this.tanks.roomState === null
-        ? []
-        : roomLayoutBlocks(this.tanks.roomState, clampRoom(room).cabinetHeight),
-    );
-    this.view?.setRoom(room);
-    const shown = this.view?.roomShown ?? false;
-    this.probe.publishRoomShown(shown);
-    // Pièce masquée : la vue est revenue à l'orbite (#343).
-    this.free.roomShownChanged();
-    // Éditeur (#188) : la pièce n'est modifiable que dessinée ; sélection et outil suivent.
-    this.roomEdit.roomApplied(room, shown);
-    this.decorEdit.roomShownChanged(shown);
-  }
-
-  /** Applique le rendu des granulés à la vue courante et l'expose. */
-  private applyFoodStyle(style: FoodStyle): void {
-    this.foodStyle.set(style);
-    this.view?.setFoodStyle(style);
-    this.probe.publishFoodStyle(style);
-  }
-
   /** Sauvegarde automatique immédiate (#70) : `SaveShareController.saveNow`. */
   saveNow(): SaveStatus | null {
     return this.saves.saveNow();
@@ -1617,7 +1562,7 @@ export class AquariumHost {
 
   /** Bascule entre pixel art et rendu sans filtre. */
   toggleFilter(): void {
-    this.setFilter(toggleRenderFilter(this.filter()));
+    this.display.toggleFilter();
   }
 
   constructor() {
@@ -1630,7 +1575,7 @@ export class AquariumHost {
     effect(() => {
       this.motionState.system();
       this.motionState.reduced();
-      untracked(() => this.applyReducedMotion());
+      untracked(() => this.display.applyReducedMotion());
     });
     // Sons d'ambiance (#411) : la scène suit l'environnement, le moment de la journée, la
     // pluie et la pause ; jamais en capture (aucune scène, donc silence). Le son ne lit que ces
@@ -1647,25 +1592,6 @@ export class AquariumHost {
         : null;
       untracked(() => this.ambientSound.setScene(scene));
     });
-  }
-
-  /**
-   * Mouvements réduits (#406) : l'option des réglages, ou la préférence système. En capture,
-   * le choix mémorisé est ignoré (images reproductibles) : seule la préférence système compte,
-   * que Playwright peut émuler (`reducedMotion: 'reduce'`) pour une capture avec l'option.
-   */
-  private reducedMotion(): boolean {
-    return this.capture ? this.motionState.system() : this.motionState.reduced();
-  }
-
-  /** Pose l'état des mouvements sur la vue et l'expose aux tests de bout en bout. */
-  private applyReducedMotion(): void {
-    const reduced = this.reducedMotion();
-    this.probe.publishReducedMotion(reduced);
-    if (this.view) {
-      this.view.setReducedMotion(reduced);
-      this.scheduleFrame();
-    }
   }
 
   private start(): void {
@@ -2012,11 +1938,11 @@ export class AquariumHost {
     this.view = view;
     view.setDecor(world.decor, world.seed);
     view.setDecorVisible(this.decorVisible());
-    this.applyFoodStyle(this.foodStyle());
+    this.display.applyFoodStyle(this.foodStyle());
     // Hors du bac tropical, la vue ne dessine pas la pièce : l'état exposé suit (#187).
-    this.applyRoom(this.room());
+    this.display.applyRoom(this.room());
     // Hors du bassin, la vue refuse la pluie : l'état affiché suit (#106).
-    this.applyRain(this.rain());
+    this.display.applyRain(this.rain());
     // Eau trouble quand elle est mauvaise (#207) : teinte seulement.
     view.setWaterTurbidity(waterTurbidity(this.water().quality));
     // Feuilles de catappa et eau brun-thé (#239).
@@ -2024,7 +1950,7 @@ export class AquariumHost {
     view.setCatappa(world.water.catappa);
     this.looks.refresh(world);
     this.readouts.refreshCurrent(world);
-    this.applyReducedMotion();
+    this.display.applyReducedMotion();
     this.painter.relight();
     this.activePreset.set(preset);
     // Vue neuve : en orbite (#343).
@@ -2063,16 +1989,6 @@ export class AquariumHost {
   /** Met en évidence les animaux `ids` d'une alerte (#483) : `AlertHighlightController`. */
   highlightAlertAnimals(ids: readonly number[]): void {
     this.alerts.highlight(ids);
-  }
-
-  /**
-   * Applique la pluie à la vue courante et expose l'état obtenu (`data-aqfish-rain`).
-   * `fade` : ciel couvert en fondu (bascule en cours de route), sinon d'un coup (démarrage).
-   */
-  private applyRain(enabled: boolean, fade = false): void {
-    const raining = this.view?.setRain(enabled, fade) ?? false;
-    this.rain.set(raining);
-    this.probe.publishRain(raining);
   }
 
   /** Relevé de l'eau du bac affiché (#207) : `TankReadoutsController.refreshWater`. */
