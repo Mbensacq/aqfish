@@ -9299,10 +9299,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-19T16:02:02.307Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-19T16:02:37.412Z",
+          "note": "Issue #697 : lot 11/13 panneau de contrôle découpé par section (M, en tranches)"
         }
       },
       "metriques": {}
