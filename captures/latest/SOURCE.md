@@ -1,5 +1,4 @@
-# Captures c252
-- Branche : cycle/c252-soins-de-l-eau (PR #739), commit da5588f
-- 166 captures ; 165 identiques au pixel près (cmp) à la série c251
-- telephone-fiche-espece.png : 13 pixels différents (bord du bouton « Fiche », invisible à l'œil), mais `main` (f2d13e5) produit lui-même les deux variantes d'une exécution à l'autre : capture instable, pas une régression de la PR
+# Captures c253
+- Branche : cycle/c253-image-aspect-alertes (PR #740), commit d5fd294
+- 167 captures, toutes identiques au pixel près (cmp) à la série c252
 - Graine : celle de captures.spec.ts ; généré le 2026-11-19
