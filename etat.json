@@ -9305,10 +9305,10 @@
           "note": "Issue #697 : lot 11/13 panneau de contrôle découpé par section (M, en tranches)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-19T16:03:17.677Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-19T16:39:43.082Z",
+          "note": "PR #743 : sections Population, Bacs et meubles, Bacs hors du panneau (11/13, tranche 1 : control-panel.ts 1 021 lignes hors commentaires, #697 reste ouverte), CI verte"
         }
       },
       "metriques": {}
