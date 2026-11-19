@@ -9239,10 +9239,10 @@
           "note": "PR #741 : relevés, réglages, outils, affichage, horloge et lieu du bac hors de l'hôte (10/13, partiel : hôte 1 864 lignes), CI verte"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-19T12:03:43.308Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-19T13:05:30.497Z",
+          "note": "Verdict OK, 0 bug, 164/166 captures identiques (2 non déterministes connues), publiées"
         }
       },
       "metriques": {}
