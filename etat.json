@@ -9072,6 +9072,24 @@
         }
       },
       "metriques": {}
+    },
+    "250": {
+      "numero": 250,
+      "date": "2026-11-19",
+      "debut": "2026-11-19T02:17:57.645Z",
+      "type": "dette",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-19T02:17:57.645Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
