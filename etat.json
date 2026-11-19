@@ -9167,10 +9167,10 @@
           "note": "PR #739 : soins de l'eau et caméra libre hors de l'hôte (10/13, partiel : hôte 2 701 lignes), CI verte"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-19T06:24:30.723Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-19T06:44:33.605Z",
+          "note": "Verdict OK, 0 bug PR (capture fiche-espece instable déjà sur main), captures publiées"
         }
       },
       "metriques": {}
