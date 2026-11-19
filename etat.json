@@ -9043,7 +9043,7 @@
       "debut": "2026-11-18T23:42:01.595Z",
       "type": "fonctionnalite",
       "issue": 695,
-      "pr": null,
+      "pr": 735,
       "version": null,
       "phases": {
         "planif": {
