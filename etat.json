@@ -9044,7 +9044,7 @@
       "type": "fonctionnalite",
       "issue": 695,
       "pr": 735,
-      "version": null,
+      "version": "v1.24.4",
       "phases": {
         "planif": {
           "statut": "termine",
