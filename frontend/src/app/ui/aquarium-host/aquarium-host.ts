@@ -57,28 +57,14 @@ import {
   DEFAULT_START_HOUR,
   type DayClock,
 } from '../../sim/daylight';
-import {
-  environmentById,
-  isEnvironmentId,
-  placeDimensions,
-  placeEnvironmentData,
-} from '../../sim/environment';
-import { switchEnvironment } from '../../sim/environment-worlds';
-import {
-  clampTankDimensions,
-  DEFAULT_TANK,
-  sameDimensions,
-  type TankDimensions,
-} from '../../sim/tank';
-import { setTankDimensionsInPlace } from '../../sim/tank-resize';
-import { DEFAULT_POND_SHAPE, type PondShape } from '../../sim/pond-shape';
-import { setPondShapeInPlace } from '../../sim/pond-reshape';
+import { environmentById, placeDimensions, placeEnvironmentData } from '../../sim/environment';
+import { DEFAULT_TANK, type TankDimensions } from '../../sim/tank';
+import { type PondShape } from '../../sim/pond-shape';
 import { DEFAULT_ROOM } from '../../sim/room';
 import { isSimSpeed } from '../../sim/sim-speed';
 import { isSpeciesId, setPopulationInPlace } from '../../sim/population';
 import { serializeRoom } from '../../sim/room-save';
-import { tankResizeRefusal } from '../../sim/room-state';
-import { ROOM_ANIMAL_CAP, roomAnimalCount, roomPopulationLimits } from '../../sim/room-limits';
+import { roomPopulationLimits } from '../../sim/room-limits';
 import { layoutFootprints } from '../../sim/room-layout';
 import type { SaveSettings } from '../../sim/save';
 import {
@@ -111,6 +97,7 @@ import { FramePainter, WALLPAPER_PRESET } from './frame-painter';
 import { AlertHighlightController } from './alert-highlight-controller';
 import { TankLooksController } from './tank-looks-controller';
 import { TankReadoutsController } from './tank-readouts-controller';
+import { TankPlaceController } from './tank-place-controller';
 import { loadWallpaperConfig } from './wallpaper-config';
 import { ClockController } from './clock-controller';
 import { DisplayController } from './display-controller';
@@ -745,6 +732,31 @@ export class AquariumHost {
   /** Message du dernier transfert ou renommage (#306, #318), `null` avant tout geste. */
   readonly tankNotice = this.tanks.notice;
 
+  /** Environnement, dimensions du bac et forme du bassin (#87, #171, #190, #696). */
+  private readonly place = new TankPlaceController({
+    probe: this.probe,
+    world: () => this.currentWorld,
+    setWorld: (world) => {
+      this.currentWorld = world;
+    },
+    view: () => this.view,
+    isCapture: () => this.capture,
+    tanks: this.tanks,
+    refuse: (reason) => this.roomLayout.refuse(reason),
+    finishDrop: () => this.decorEdit.finishDrop(),
+    renderTime: () => this.painter.renderTime(),
+    resetLoopClock: () => this.loop.resetClock(),
+    carryClock: (fromTime) => this.clock.carryFrom(fromTime),
+    relight: () => this.painter.relight(),
+    readouts: this.readouts,
+    refreshWater: () => this.refreshWater(),
+    createView: (preset) => this.createView(preset),
+    activePreset: () => this.activePreset(),
+    decorSelection: () => this.decorSelection(),
+    saveNow: () => this.saveNow(),
+    scheduleFrame: () => this.scheduleFrame(),
+  });
+
   /** État courant de la simulation (`null` avant le démarrage et après la destruction). */
   get world(): World | null {
     return this.currentWorld;
@@ -1118,111 +1130,19 @@ export class AquariumHost {
     this.settingsCtl.setCatappa(count);
   }
 
-  /**
-   * Change d'environnement (#87, ADR 0026, #277, ADR 0063) : range le monde affiché, figé, et
-   * reprend celui de l'environnement choisi tel qu'il avait été laissé (population, décor,
-   * eau, nourriture, dimensions, temps) ; un environnement jamais visité part de son monde de
-   * départ avec la même graine, ramené à la place restante sous le plafond d'animaux de la
-   * pièce (#396). Puis recrée la vue, la caméra allant sur la vue par défaut de
-   * l'environnement. L'heure de la journée continue sans saut (`carryClock`) ; la vitesse, le
-   * filtre et l'affichage du décor sont conservés. Le tout est enregistré aussitôt. Sans effet
-   * en mode capture (`environnement=`), avant le démarrage, pour un environnement inconnu ou
-   * déjà affiché.
-   */
+  /** Change d'environnement (#87, #277, ADR 0063) : `TankPlaceController.setEnvironment`. */
   setEnvironment(id: string): void {
-    const world = this.currentWorld;
-    if (!world || !this.view || this.capture || !isEnvironmentId(id) || id === world.environment) {
-      return;
-    }
-    // Une chute en cours se termine d'abord : le monde rangé garde un décor posé.
-    this.decorEdit.finishDrop();
-    const fromTime = this.painter.renderTime();
-    // Les autres bacs rattrapent le bac quitté avant l'échange (#316) ; le bac quitté garde
-    // son identifiant dans la pièce, même jamais sauvegardé (#264).
-    this.tanks.advanceBackground();
-    const room = this.tanks.sync(world);
-    // Bac de départ d'un environnement jamais visité ramené à la place restante sous le
-    // plafond d'animaux de la pièce (#396, ADR 0096) : vide si la pièce est pleine.
-    const free = Math.max(0, ROOM_ANIMAL_CAP - roomAnimalCount(room));
-    const next = switchEnvironment(world, this.tanks.stash, id, free);
-    this.tanks.setStash(next.stash);
-    this.currentWorld = next.world as MutableWorld;
-    // La liste des bacs (#306) suit aussitôt le bac affiché.
-    this.tanks.sync(next.world);
-    this.loop.resetClock();
-    this.clock.carryFrom(fromTime);
-    this.painter.relight();
-    this.readouts.refreshEnvironment();
-    this.probe.publishTick(this.currentWorld);
-    this.probe.publishFood(this.currentWorld);
-    this.readouts.refreshPopulation();
-    this.refreshWater();
-    this.createView(environmentById(id).defaultCamera);
-    this.probe.publishCamera(this.view);
-    this.saveNow();
-    this.scheduleFrame();
+    this.place.setEnvironment(id);
   }
 
-  /**
-   * Règle les dimensions du bac (issue #171, ADR 0047) : bornées, le décor ramené dans le bac,
-   * poissons et granulés gardés dans l'eau (`setTankDimensionsInPlace`), puis la vue recréée
-   * et la caméra recadrée sur le préréglage actif (la vue par défaut si l'utilisateur l'avait
-   * quitté). La sélection du décor est conservée ; le monde est enregistré aussitôt. Sans effet en mode capture (`bac=`), avant le
-   * démarrage, hors d'un environnement réglable ou à dimensions inchangées.
-   */
+  /** Règle les dimensions du bac (#171, ADR 0047) : `TankPlaceController.setTankDimensions`. */
   setTankDimensions(dims: TankDimensions): void {
-    const world = this.currentWorld;
-    const previous = this.tankDimensions();
-    if (!world || !this.view || this.capture || previous === null) {
-      return;
-    }
-    // Un bac agrandi ne doit chevaucher ni meuble ni bac posé de la pièce (#311) : sinon la
-    // sauvegarde refuserait la pièce entière.
-    const room = this.tanks.sync(world);
-    const refusal = tankResizeRefusal(room, this.tanks.selectedTankId, clampTankDimensions(dims));
-    if (refusal !== null) {
-      return this.roomLayout.refuse(refusal);
-    }
-    // Une chute en cours se termine d'abord : son décor est celui que l'on redimensionne.
-    this.decorEdit.finishDrop();
-    const applied = setTankDimensionsInPlace(world, dims);
-    if (applied === null || sameDimensions(applied, previous)) {
-      return;
-    }
-    const selection = this.decorSelection();
-    this.readouts.refreshTankDimensions();
-    this.probe.publishFood(this.currentWorld);
-    this.createView(this.activePreset() ?? environmentById(world.environment).defaultCamera);
-    if (selection !== null && selection < world.decor.length) {
-      this.view?.setDecorSelection(selection);
-    }
-    this.probe.publishCamera(this.view);
-    // Comme une modification du décor : enregistré tout de suite.
-    this.saveNow();
-    this.scheduleFrame();
+    this.place.setTankDimensions(dims);
   }
 
-  /**
-   * Règle la forme du bassin (issue #190, ADR 0080) : poissons et granulés ramenés dans la
-   * forme (`setPondShapeInPlace`), puis la vue recréée sur le préréglage actif ; le monde est
-   * enregistré aussitôt. Sans effet en mode capture (`forme=`), avant le démarrage, hors du
-   * bassin ou à forme inchangée.
-   */
+  /** Règle la forme du bassin (#190, ADR 0080) : `TankPlaceController.setPondShape`. */
   setPondShape(shape: PondShape): void {
-    const world = this.currentWorld;
-    if (!world || !this.view || this.capture || (world.shape ?? DEFAULT_POND_SHAPE) === shape) {
-      return;
-    }
-    this.decorEdit.finishDrop();
-    if (setPondShapeInPlace(world, shape) === null) {
-      return;
-    }
-    this.readouts.refreshTankDimensions();
-    this.probe.publishFood(this.currentWorld);
-    this.createView(this.activePreset() ?? environmentById(world.environment).defaultCamera);
-    this.probe.publishCamera(this.view);
-    this.saveNow();
-    this.scheduleFrame();
+    this.place.setPondShape(shape);
   }
 
   /**
