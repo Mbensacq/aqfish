@@ -9339,6 +9339,12 @@
           "debut": "2026-11-19T23:41:30.196Z",
           "fin": "2026-11-19T23:41:49.896Z",
           "note": "Issue #697 : lot 11/13 panneau de contrôle, tranche 2 (Eau, Soins, Environnement) (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-19T23:42:22.926Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
