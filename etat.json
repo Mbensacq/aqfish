@@ -9259,7 +9259,7 @@
       "debut": "2026-11-19T13:33:42.433Z",
       "type": "fonctionnalite",
       "issue": 696,
-      "pr": null,
+      "pr": 742,
       "version": null,
       "phases": {
         "planif": {
