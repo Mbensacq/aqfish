@@ -9237,6 +9237,12 @@
           "debut": "2026-11-19T10:16:55.738Z",
           "fin": "2026-11-19T12:03:00.673Z",
           "note": "PR #741 : relevés, réglages, outils, affichage, horloge et lieu du bac hors de l'hôte (10/13, partiel : hôte 1 864 lignes), CI verte"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-19T12:03:43.308Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
