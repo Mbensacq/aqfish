@@ -9059,10 +9059,10 @@
           "note": "PR #735 : édition du décor et de la pièce dans trois contrôleurs (assainissement 9/13), caractérisation préalable, CI verte"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-19T00:32:19.758Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-19T01:51:59.246Z",
+          "note": "Verdict OK, 0 bug, captures publiées (166/166 identiques au pixel près), unitaires et e2e verts"
         }
       },
       "metriques": {}
