@@ -9151,7 +9151,7 @@
       "debut": "2026-11-19T05:27:37.478Z",
       "type": "fonctionnalite",
       "issue": 696,
-      "pr": null,
+      "pr": 739,
       "version": null,
       "phases": {
         "planif": {
