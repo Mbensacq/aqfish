@@ -9161,10 +9161,10 @@
           "note": "Issue #696 : suite du lot 10/13 hôte, photo, boucle d'images et begin (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-19T05:28:33.043Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-19T06:23:39.256Z",
+          "note": "PR #739 : soins de l'eau et caméra libre hors de l'hôte (10/13, partiel : hôte 2 701 lignes), CI verte"
         }
       },
       "metriques": {}
