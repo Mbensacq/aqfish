@@ -9227,10 +9227,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-19T10:15:47.515Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-19T10:16:22.756Z",
+          "note": "Issue #696 : suite du lot 10/13 hôte (M), hôte à 2 384 lignes"
         }
       },
       "metriques": {}
