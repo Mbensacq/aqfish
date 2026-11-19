@@ -2696,7 +2696,8 @@ describe('AquariumHost', () => {
       setCanvasSize(800, 600);
       frames.flush(0);
       run(60);
-      const stash = (host() as unknown as { stash: Map<string, unknown> }).stash;
+      // Mondes rangés : dans le contrôleur des bacs de la pièce depuis #696.
+      const stash = (host() as unknown as { tanks: { stash: Map<string, unknown> } }).tanks.stash;
       expect(stash.size).toBe(0);
     });
 
