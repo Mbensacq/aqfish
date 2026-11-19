@@ -176,7 +176,7 @@
     "max-lines": 969
   },
   "ui/control-panel/control-panel.ts": {
-    "max-lines": 1871
+    "max-lines": 1021
   },
   "ui/decor-editor/decor-editor.ts": {
     "complexity": 17,

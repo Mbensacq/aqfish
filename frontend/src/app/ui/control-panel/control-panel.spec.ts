@@ -207,6 +207,9 @@ describe('fonctions du panneau de contrôle', () => {
     [quarantine]="quarantine()"
     (quarantineStarter)="layout.push(['amorce', $event])"
     (quarantineInstalled)="onQuarantineInstalled()"
+    (quarantineTreated)="layout.push(['soin-quarantaine', $event])"
+    (quarantineReturned)="layout.push(['retour-quarantaine', $event])"
+    [populationNotice]="populationNotice()"
     (wikiPageRequested)="layout.push(['wiki', $event])"
     [careMode]="careMode()"
     (careModeChanged)="layout.push(['mode', $event])"
@@ -345,6 +348,7 @@ class TestHost {
     rouge: 0,
   });
   readonly tankLiters = signal<number | null>(288);
+  readonly populationNotice = signal<string | null>(null);
   readonly water = signal<WaterReadout>(DEFAULT_WATER_READOUT);
   readonly ichCount = signal(0);
   readonly treatment = signal<TreatmentReadout | null>(null);
@@ -475,6 +479,34 @@ describe('ControlPanel', () => {
       await fixture.whenStable();
       expect(starter()).toBeNull();
       expect(section().querySelector('[data-quarantine-filter]')).toBeNull();
+    });
+
+    it('quarantaine (#547) : malades dans la liste, gestes de soin et retour d’un animal', async () => {
+      fixture.componentInstance.quarantine.set({
+        tanks: [
+          { id: 2, name: 'Bac posé', species: [], sick: 0, filter: null },
+          { id: 3, name: 'Quarantaine', species: ['neon', 'guppy'], sick: 2, filter: null },
+        ],
+        sickHere: 0,
+      });
+      await openPanel();
+      const options = [
+        ...section().querySelectorAll<HTMLOptionElement>('[data-quarantine-tank] option'),
+      ].map((option) => option.textContent!.trim());
+      expect(options).toEqual(['Bac posé', 'Quarantaine (2 malades)']);
+      const treatment = section().querySelector<HTMLButtonElement>('[data-quarantine-treatment]')!;
+      const kind = treatment.getAttribute('data-quarantine-treatment');
+      expect(treatment.getAttribute('aria-label')).toMatch(/^Quarantaine : /);
+      treatment.click();
+      const species = section().querySelector<HTMLSelectElement>('[data-quarantine-species]')!;
+      species.value = 'guppy';
+      species.dispatchEvent(new Event('change'));
+      await fixture.whenStable();
+      section().querySelector<HTMLButtonElement>('[data-quarantine-return]')!.click();
+      expect(fixture.componentInstance.layout).toEqual([
+        ['soin-quarantaine', { id: 3, kind }],
+        ['retour-quarantaine', { fromId: 3, species: 'guppy' }],
+      ]);
     });
 
     it('quarantaine installée (#571) : panneau sur une colonne, focus au bac de quarantaine', async () => {
@@ -770,6 +802,20 @@ describe('ControlPanel', () => {
       fixture.componentInstance.environment.set('tropical');
       await fixture.whenStable();
       expect(section()).not.toBeNull();
+    });
+
+    it('retire un meuble libre, pas un meuble occupé (#305)', async () => {
+      await openWithRoom();
+      const remove = (id: number) =>
+        section()!.querySelector<HTMLButtonElement>(
+          `[data-room-support="${id}"] [data-remove-support]`,
+        )!;
+      expect(remove(0).getAttribute('aria-disabled')).toBe('true');
+      expect(remove(0).getAttribute('aria-label')).toBe('Retirer Commode 1');
+      remove(0).click();
+      expect(remove(1).getAttribute('aria-disabled')).toBe('false');
+      remove(1).click();
+      expect(fixture.componentInstance.layout).toEqual([['retrait-meuble', 1]]);
     });
 
     it('ajoute un meuble, puis un bac choisi (environnement, taille, meuble)', async () => {
@@ -1312,6 +1358,17 @@ describe('ControlPanel', () => {
     const field = (plural: string) => byLabel(`Nombre de ${plural}`)!;
     const button = (label: string) =>
       root().querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`)!;
+
+    it('plafond de la pièce (#392) : message de l’hôte en tête de section, absent sinon', async () => {
+      await openPanel();
+      const notice = () => root().querySelector('[data-section="population"] [data-room-cap]');
+      expect(notice()).toBeNull();
+      fixture.componentInstance.populationNotice.set('Pièce pleine : 120 animaux au plus.');
+      await fixture.whenStable();
+      expect(notice()!.textContent!.trim()).toBe('Pièce pleine : 120 animaux au plus.');
+      expect(notice()!.getAttribute('role')).toBe('status');
+      expect(notice()!.classList).toContain('control-panel__warning');
+    });
 
     it('un champ numérique par espèce, nommé, avec la valeur et le maximum de l’hôte', async () => {
       await openPanel();

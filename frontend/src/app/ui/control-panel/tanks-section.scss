@@ -1,0 +1,50 @@
+// Section « Bacs » (#306, #697) : règles communes du panneau (`_panel-controls.scss`, dans son
+// ordre), puis la confirmation du mode et la quarantaine, propres à la section.
+@use '../panel-layout' as layout;
+@use 'panel-controls' as controls;
+
+@include controls.base;
+
+@include controls.phone;
+
+@include controls.texts;
+
+@include controls.rows;
+
+@include controls.sheet;
+
+@include controls.tanks;
+
+// Confirmation du mode (#278) : posée au-dessus du panneau (aucune ligne de plus).
+.control-panel__confirm {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 2;
+  box-sizing: border-box;
+  width: min(360px, calc(100vw - 24px));
+  padding: 12px;
+  border: 1px solid layout.$panel-accent;
+  border-radius: 8px;
+  background: layout.$panel-background;
+  transform: translate(-50%, -50%);
+  // Lot 2 : la liste des animaux inadaptés défile, le dialogue tient à l'écran.
+  max-height: calc(100vh - 24px);
+  overflow-y: auto;
+
+  li {
+    display: grid;
+    overflow-wrap: anywhere;
+  }
+
+  .control-panel__buttons {
+    flex-wrap: wrap;
+  }
+}
+
+// Bac de quarantaine (#547) : bac soigné, gestes, retour ; durée conseillée en note.
+.control-panel__quarantine {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}

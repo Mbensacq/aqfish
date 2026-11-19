@@ -1,15 +1,12 @@
 import { DEFAULT_LIGHTING_HOURS } from '../../sim/algae';
 import { DEFAULT_LAMP_ON_HOUR, LAMP_MAX_HOURS, LAMP_MIN_HOURS, isLampOnHour } from '../../sim/lamp';
 import {
-  afterNextRender,
   ChangeDetectionStrategy,
   Component,
   computed,
   ElementRef,
   inject,
-  Injector,
   input,
-  linkedSignal,
   output,
   signal,
 } from '@angular/core';
@@ -17,7 +14,6 @@ import {
 import {
   DEFAULT_ENVIRONMENT_ID,
   ENVIRONMENT_IDS,
-  ENVIRONMENTS,
   environmentById,
   isPondShapeable,
   type EnvironmentId,
@@ -37,60 +33,20 @@ import { NO_FISH, type PopulationCounts } from '../../sim/population';
 import type { SaveMessage, SaveStatus } from '../../core/save-storage/save-storage';
 import { DEFAULT_FOOD_STYLE, type FoodStyle } from '../../core/food-style/food-style';
 import { isRoomAvailable } from '../../sim/room';
-import {
-  MAX_TANK_NAME_LENGTH,
-  placeOf,
-  SUPPORT_CATALOG,
-  SUPPORT_KINDS,
-  TANK_SIZE_IDS,
-  TANK_SIZES,
-  type SupportKind,
-  type TankSizeId,
-} from '../../sim/room-state';
-import type { RoomCatalog, RoomCatalogTank, TankNotice } from '../aquarium-host/aquarium-host';
-import { ALERT_SEVERITY_LABELS } from '../../sim/dashboard-alerts';
-import {
-  animalCountText,
-  tankListDetail,
-  tankListHint,
-  type TankListEntry,
-} from '../../sim/tank-list';
+import type { RoomCatalog, TankNotice } from '../aquarium-host/aquarium-host';
+import type { TankListEntry } from '../../sim/tank-list';
 import { MAX_SAVE_LENGTH } from '../../sim/save';
-import { sideEffectWarning } from '../../sim/side-effects';
 import { DEFAULT_SIM_SPEED, SIM_SPEEDS, speedLabel, type SimSpeed } from '../../sim/sim-speed';
-import { mixWarnings } from '../../sim/compatibility';
-import { CARE_MODE_LABELS, type CareMode } from '../../sim/care-mode';
+import type { CareMode } from '../../sim/care-mode';
 import { CURRENT_LEVEL_LABELS, type CurrentLevel } from '../../sim/water-current';
-import {
-  unsuitableAnimals,
-  unsuitableLine,
-  unsuitableReasonText,
-  unsuitableTitle,
-  type UnsuitableAnimal,
-} from '../../sim/care-return';
-import {
-  decorCatalog,
-  mixWarningText,
-  SPECIES_LABELS,
-  speciesCatalog,
-  type SpeciesLabels,
-} from '../../sim/species-catalog';
-import { type SpeciesId } from '../../sim/species';
-import { addWarnings, addWarningText } from '../../sim/species-sheet';
-import { SpeciesSheet } from './species-sheet';
+import type { SpeciesId } from '../../sim/species';
 import { TreatmentNotice as TreatmentNoticeView } from './treatment-notice';
 import { MAX_HEATER_TEMPERATURE, MIN_HEATER_TEMPERATURE } from '../../sim/water';
 import { TREATMENT_KINDS, TREATMENTS, type TreatmentKind } from '../../sim/treatment';
-import {
-  EMPTY_QUARANTINE,
-  QUARANTINE_DURATION_TEXT,
-  type QuarantineView,
-} from '../../sim/quarantine';
+import { EMPTY_QUARANTINE, type QuarantineView } from '../../sim/quarantine';
 import {
   treatmentSourcesLine,
-  treatmentSourceText,
   treatmentStatusText,
-  treatedWaterWarning,
   type TreatmentNotice,
   type TreatmentReadout,
 } from '../../sim/treatment-text';
@@ -99,6 +55,24 @@ import type { ConditionerKind } from '../../sim/water-conditioner';
 import type { GuidePage } from '../../sim/care-guide';
 import { formatTenth } from '../../sim/water-dashboard';
 import { DEFAULT_WATER_READOUT, type WaterReadout } from '../../sim/water-quality';
+import { environmentName, isQuarantineShown, treatmentTitle } from './panel-views';
+import { PopulationSection, type PopulationRequest } from './population-section';
+import { RoomSection, type NewTankRequest } from './room-section';
+import { TanksSection } from './tanks-section';
+
+/**
+ * Fonctions et types des sections sorties du panneau (#697), réexportés pour l'hôte et les
+ * tests qui les importent d'ici.
+ */
+export {
+  populationInput,
+  speciesCountLabel,
+  speciesPlural,
+  speciesSliderLabel,
+  speciesStepLabel,
+  type PopulationRequest,
+} from './population-section';
+export type { NewTankRequest } from './room-section';
 
 /** Libellé d'une vitesse (déplacé dans `sim/sim-speed.ts`, partagé avec le tableau de bord). */
 export { speedLabel } from '../../sim/sim-speed';
@@ -128,63 +102,6 @@ export function speedAt(index: string | number): SimSpeed | null {
 export function sliderHour(value: string | number): number | null {
   const hour = toNumber(value);
   return Number.isFinite(hour) && hour >= 0 && hour < HOURS_PER_DAY ? hour : null;
-}
-
-/**
- * Effectif lu dans le champ numérique d'une espèce (une chaîne) : arrondi à l'entier le plus
- * proche et ramené dans [0, max] ; `null` pour une valeur vide ou non numérique.
- */
-export function populationInput(value: string | number, max: number): number | null {
-  const count = toNumber(value);
-  if (!Number.isFinite(count)) {
-    return null;
-  }
-  return Math.min(Math.max(Math.round(count), 0), Math.max(0, max));
-}
-
-/** Demande de réglage d'effectif émise par le panneau (#69). */
-export interface PopulationRequest {
-  readonly species: SpeciesId;
-  readonly count: number;
-}
-
-/**
- * Nom d'une espèce au pluriel, en minuscules (« néons », « poissons-clowns », « chirurgiens
- * bleus ») : porté par le catalogue (`SPECIES_LABELS`, #95), pas deviné.
- */
-export function speciesPlural(species: SpeciesId): string {
-  return SPECIES_LABELS[species].plural;
-}
-
-/**
- * Nom accessible des boutons « − » et « + » : « Retirer un néon », « Ajouter une raie » (genre
- * porté par le catalogue, #95 ; `labels` n'est donné que par les tests, pour exercer le
- * féminin qu'aucune espèce ne porte plus, #284).
- */
-export function speciesStepLabel(
-  species: SpeciesId,
-  delta: -1 | 1,
-  labels: Readonly<Record<SpeciesId, SpeciesLabels>> = SPECIES_LABELS,
-): string {
-  const { singular, feminine } = labels[species];
-  return `${delta < 0 ? 'Retirer' : 'Ajouter'} ${feminine ? 'une' : 'un'} ${singular}`;
-}
-
-/**
- * Nom accessible du champ d'effectif : « Nombre de néons », « Nombre d’axolotls » (élision
- * devant une voyelle, #130).
- */
-export function speciesCountLabel(species: SpeciesId): string {
-  const plural = speciesPlural(species);
-  return /^[aeiouyàâéèêëîïôûù]/.test(plural) ? `Nombre d’${plural}` : `Nombre de ${plural}`;
-}
-
-/**
- * Nom accessible du curseur d'effectif (#189), distinct de celui du champ : « Curseur du
- * nombre de néons », « Curseur du nombre d’axolotls ».
- */
-export function speciesSliderLabel(species: SpeciesId): string {
-  return `Curseur du ${speciesCountLabel(species).replace(/^Nombre/, 'nombre')}`;
 }
 
 /** Pas du curseur du chauffage, en °C (#207). */
@@ -282,17 +199,9 @@ function toNumber(value: string | number): number {
  * et rend le focus au bouton (#407).
  * Absent en mode capture (c'est l'application qui ne l'affiche pas).
  */
-/** Bac vide demandé au catalogue « Bacs et meubles » (#305), validé par l'hôte. */
-export interface NewTankRequest {
-  readonly environment: string;
-  readonly size: string;
-  /** Meuble support, `null` : au sol. */
-  readonly supportId: number | null;
-}
-
 @Component({
   selector: 'app-control-panel',
-  imports: [SpeciesSheet, TreatmentNoticeView],
+  imports: [TreatmentNoticeView, PopulationSection, RoomSection, TanksSection],
   template: `<button
       type="button"
       class="control-panel__toggle"
@@ -835,238 +744,31 @@ export interface NewTankRequest {
           <!-- Bacs et meubles de la pièce (#305, lot 2b) : ajout à la première place libre,
                retrait (confirmation si le bac est peuplé). Les bacs posés restent figés. Après
                « Décor » : l'ordre au clavier des sections précédentes ne change pas. -->
-          <fieldset class="control-panel__section" data-section="bacs-meubles">
-            <legend class="control-panel__legend">Bacs et meubles</legend>
-            <div class="control-panel__row control-panel__row--wrap">
-              @for (kind of supportKinds; track kind) {
-                <button
-                  type="button"
-                  class="control-panel__button control-panel__button--compact"
-                  [attr.data-add-support]="kind"
-                  (click)="supportAdded.emit(kind)"
-                >
-                  {{ supportName(kind) }}
-                </button>
-              }
-            </div>
-            <label class="control-panel__field">
-              <span class="control-panel__label">Environnement du bac</span>
-              <select
-                class="control-panel__select"
-                data-new-tank-environment
-                (change)="newTankEnvironment.set($any($event.target).value)"
-              >
-                @for (id of roomEnvironmentIds; track id) {
-                  <option [value]="id" [selected]="id === newTankEnvironment()">
-                    {{ environmentName(id) }}
-                  </option>
-                }
-              </select>
-            </label>
-            <label class="control-panel__field">
-              <span class="control-panel__label">Taille</span>
-              <select
-                class="control-panel__select"
-                data-new-tank-size
-                (change)="newTankSize.set($any($event.target).value)"
-              >
-                @for (size of tankSizeIds; track size) {
-                  <option [value]="size" [selected]="size === newTankSize()">
-                    {{ tankSizeName(size) }}
-                  </option>
-                }
-              </select>
-            </label>
-            <label class="control-panel__field">
-              <span class="control-panel__label">Posé sur</span>
-              <select
-                class="control-panel__select"
-                data-new-tank-support
-                (change)="newTankSupport.set($any($event.target).value)"
-              >
-                <option value="sol" [selected]="newTankSupport() === 'sol'">Le sol</option>
-                @for (support of roomCatalog().supports; track support.id) {
-                  <option [value]="support.id" [selected]="newTankSupport() === '' + support.id">
-                    {{ support.name }}
-                  </option>
-                }
-              </select>
-            </label>
-            <button type="button" class="control-panel__button" data-add-tank (click)="onAddTank()">
-              Ajouter le bac
-            </button>
-            @if (roomCatalog().message; as message) {
-              <p class="control-panel__message control-panel__message--error" role="status">
-                {{ message }}
-              </p>
-            }
-            <ul class="control-panel__sheet-list" aria-label="Bacs de la pièce">
-              @for (tank of roomCatalog().tanks; track tank.id) {
-                <li class="control-panel__sheet-row" [attr.data-room-tank]="tank.id">
-                  <span>
-                    {{ tank.name }}
-                    <span class="control-panel__sheet-status">{{ tankStatus(tank) }}</span>
-                  </span>
-                  @if (!tank.shown) {
-                    @if (confirmTank() === tank.id) {
-                      <span
-                        class="control-panel__row"
-                        role="group"
-                        aria-label="Confirmer le retrait"
-                      >
-                        <button
-                          type="button"
-                          class="control-panel__button control-panel__button--compact"
-                          data-confirm-remove
-                          (click)="removeTank(tank.id)"
-                        >
-                          Retirer avec {{ tank.animals }} animaux
-                        </button>
-                        <button
-                          type="button"
-                          class="control-panel__button control-panel__button--compact"
-                          (click)="confirmTank.set(null)"
-                        >
-                          Garder
-                        </button>
-                      </span>
-                    } @else {
-                      <button
-                        type="button"
-                        class="control-panel__button control-panel__button--compact"
-                        data-remove-tank
-                        [attr.aria-label]="'Retirer ' + tank.name"
-                        (click)="onRemoveTank(tank)"
-                      >
-                        Retirer
-                      </button>
-                    }
-                  }
-                </li>
-              }
-              @for (support of roomCatalog().supports; track support.id) {
-                <li class="control-panel__sheet-row" [attr.data-room-support]="support.id">
-                  <span>{{ support.name }}</span>
-                  <button
-                    type="button"
-                    class="control-panel__button control-panel__button--compact"
-                    data-remove-support
-                    [attr.aria-label]="'Retirer ' + support.name"
-                    [attr.aria-disabled]="support.occupied"
-                    (click)="support.occupied || supportRemoved.emit(support.id)"
-                  >
-                    Retirer
-                  </button>
-                </li>
-              }
-            </ul>
-          </fieldset>
+          <fieldset
+            class="control-panel__section"
+            data-section="bacs-meubles"
+            app-room-section
+            [roomCatalog]="roomCatalog()"
+            (supportAdded)="supportAdded.emit($event)"
+            (tankAdded)="tankAdded.emit($event)"
+            (tankRemoved)="tankRemoved.emit($event)"
+            (supportRemoved)="supportRemoved.emit($event)"
+          ></fieldset>
         }
 
-        <fieldset class="control-panel__section" data-section="population">
-          <legend class="control-panel__legend">Population</legend>
-          <!-- Plafond d'animaux de la pièce (#392, ADR 0096) : pourquoi « + » ne fait plus rien. -->
-          @if (populationNotice(); as notice) {
-            <p class="control-panel__note control-panel__warning" role="status" data-room-cap>
-              {{ notice }}
-            </p>
-          }
-          @for (entry of catalog(); track entry.species) {
-            @let id = entry.species;
-            <div class="control-panel__count" [attr.data-species]="id">
-              <div class="control-panel__count-head">
-                <label
-                  class="control-panel__count-label"
-                  [for]="'panneau-population-' + id"
-                  [attr.title]="entry.scientificName"
-                >
-                  {{ entry.name }}
-                </label>
-                <button
-                  type="button"
-                  class="control-panel__sheet-toggle"
-                  [attr.aria-label]="'Fiche : ' + entry.name"
-                  [attr.aria-expanded]="openSheet() === id"
-                  [attr.aria-controls]="'fiche-' + id"
-                  [attr.data-sheet-toggle]="id"
-                  (click)="toggleSheet(id)"
-                  (keydown.escape)="closeSheet(id, $event)"
-                >
-                  Fiche
-                </button>
-              </div>
-              <button
-                type="button"
-                class="control-panel__step"
-                [attr.aria-label]="stepLabel(id, -1)"
-                [attr.aria-disabled]="population()[id] <= 0"
-                (click)="step(id, -1)"
-              >
-                −
-              </button>
-              <!-- Curseur d'effectif (#189), entre « − » et le champ : échelle fixe de 0 au
-                   maximum de l'espèce ; la valeur est ramenée à la place restante (maximum
-                   fourni par l'hôte). -->
-              <input
-                class="control-panel__range control-panel__count-range"
-                type="range"
-                min="0"
-                step="1"
-                [attr.max]="entry.maxCount"
-                [value]="population()[id]"
-                [attr.aria-label]="slideLabel(id)"
-                [attr.aria-valuetext]="population()[id] + ' ' + entry.labels.plural"
-                [attr.data-count-slider]="id"
-                (input)="onCount(id, $event)"
-              />
-              <input
-                class="control-panel__number"
-                type="number"
-                inputmode="numeric"
-                min="0"
-                step="1"
-                [id]="'panneau-population-' + id"
-                [attr.aria-label]="countLabel(id)"
-                [attr.max]="populationMax()[id]"
-                [value]="population()[id]"
-                (change)="onCount(id, $event)"
-              />
-              <button
-                type="button"
-                class="control-panel__step"
-                [attr.aria-label]="stepLabel(id, 1)"
-                [attr.aria-disabled]="population()[id] >= populationMax()[id]"
-                (click)="step(id, 1)"
-              >
-                +
-              </button>
-            </div>
-            <!-- Avertissements d'ajout (#237) : bac qui ne convient pas à l'espèce ajoutée. -->
-            @if (lastAdded() === id) {
-              @for (text of addTexts(); track text) {
-                <p class="control-panel__note control-panel__warning" data-add-warning>
-                  {{ text }}
-                </p>
-              }
-            }
-            <!-- Fiche de l'espèce (#237), composant à part (#255). -->
-            @if (openSheet() === id) {
-              <app-species-sheet [entry]="entry" (closed)="closeSheet(id, $event)" />
-            }
-          } @empty {
-            <p class="control-panel__note" data-population-empty>Aucune espèce pour l’instant.</p>
-          }
-          <!-- Mélanges déconseillés (#209) : couples d'espèces présentes incompatibles. -->
-          @for (text of mixTexts(); track text) {
-            <p class="control-panel__note control-panel__warning" data-mix-warning>{{ text }}</p>
-          }
-          <!-- Animaux d'un autre milieu gardés au retour en soins (#278, lot 2). -->
-          @for (text of milieuTexts(); track text) {
-            <p class="control-panel__note control-panel__warning" data-milieu-warning>
-              {{ text }}
-            </p>
-          }
-        </fieldset>
+        <fieldset
+          class="control-panel__section"
+          data-section="population"
+          app-population-section
+          [environment]="environment()"
+          [careMode]="careMode()"
+          [population]="population()"
+          [populationMax]="populationMax()"
+          [populationNotice]="populationNotice()"
+          [tankLiters]="tankLiters()"
+          [water]="water()"
+          (populationChanged)="populationChanged.emit($event)"
+        ></fieldset>
 
         <!-- Liste des bacs de la pièce (#306, lot 3) : sélection et transfert d'un animal.
              Avant « Sauvegarde » : l'ordre au clavier des sections précédentes ne change pas. -->
@@ -1074,330 +776,25 @@ export interface NewTankRequest {
           class="control-panel__section"
           data-section="bacs"
           aria-labelledby="panneau-bacs-titre"
-        >
-          <!-- Mode du bac affiché (#278) : sur la ligne du titre, sans ligne de plus (#316). -->
-          <legend class="control-panel__legend control-panel__legend--row">
-            <span id="panneau-bacs-titre">Bacs</span>
-            <button
-              type="button"
-              class="control-panel__edit"
-              data-care-mode-toggle
-              [attr.data-mode]="careMode()"
-              [attr.aria-label]="
-                'Mode du bac affiché : ' +
-                careModeLabels[careMode()].toLowerCase() +
-                '. Changer de mode'
-              "
-              (click)="onToggleCareMode()"
-            >
-              Mode : {{ careModeLabels[careMode()].toLowerCase() }}
-            </button>
-          </legend>
-          @if (confirmMode(); as mode) {
-            <!-- Confirmation (#278) : posée au-dessus du panneau, sans en changer la mise en
-                 page (les colonnes à 1280 × 720 n'ont plus de place). -->
-            <div
-              class="control-panel__confirm"
-              role="alertdialog"
-              aria-labelledby="care-mode-title"
-              aria-describedby="care-mode-text"
-              data-care-mode-confirm
-              (keydown.escape)="confirmMode.set(null); $event.stopPropagation()"
-            >
-              <p id="care-mode-title" class="control-panel__legend">
-                {{ mode === 'decor' ? 'Passer en mode décor ?' : 'Revenir au mode soins ?' }}
-              </p>
-              <p id="care-mode-text" class="control-panel__note">
-                @if (mode === 'decor') {
-                  « {{ shownTankName() }} » devient un aquarium purement graphique : l’eau, la faim
-                  et la santé sont mises en pause, pas effacées, et reprendront au retour en mode
-                  soins. Toute espèce peut y être ajoutée, sans alerte.
-                } @else if (unsuitable().length === 0) {
-                  « {{ shownTankName() }} » redevient une simulation : l’eau, la faim et la santé
-                  reprennent où elles en étaient.
-                } @else {
-                  « {{ shownTankName() }} » redevient une simulation : l’eau, la faim et la santé
-                  reprennent où elles en étaient. Ces animaux ne conviennent pas à ce bac : les
-                  retirer, ou les garder avec les avertissements habituels.
-                }
-              </p>
-              <!-- Animaux inadaptés au retour en soins (#278, lot 2) : espèce et raison. -->
-              @if (mode === 'soins' && unsuitable().length > 0) {
-                <ul class="control-panel__tanks" aria-label="Animaux inadaptés à ce bac">
-                  @for (animal of unsuitable(); track animal.species) {
-                    <li [attr.data-unsuitable]="animal.species">
-                      <strong>{{ unsuitableTitle(animal) }}</strong>
-                      <span class="control-panel__warning">{{ unsuitableReasonText(animal) }}</span>
-                    </li>
-                  }
-                </ul>
-              }
-              <div class="control-panel__buttons">
-                @if (mode === 'soins' && unsuitable().length > 0) {
-                  <button
-                    type="button"
-                    class="control-panel__button"
-                    data-care-mode-remove
-                    (click)="onRemoveUnsuitable()"
-                  >
-                    Tout retirer
-                  </button>
-                }
-                <button
-                  type="button"
-                  class="control-panel__button"
-                  data-care-mode-confirm-yes
-                  (click)="onConfirmCareMode()"
-                >
-                  {{
-                    mode === 'decor'
-                      ? 'Passer en mode décor'
-                      : unsuitable().length > 0
-                        ? 'Tout garder'
-                        : 'Revenir au mode soins'
-                  }}
-                </button>
-                <button type="button" class="control-panel__button" (click)="confirmMode.set(null)">
-                  Annuler
-                </button>
-              </div>
-            </div>
-          }
-          <ul class="control-panel__tanks" aria-label="Liste des bacs">
-            @for (tank of tankList(); track tank.id) {
-              <li
-                [attr.data-tank]="tank.id"
-                [attr.data-tank-alert]="tank.worst ?? 'aucune'"
-                [attr.data-tank-hunger]="tank.hunger ?? 'aucune'"
-              >
-                <button
-                  type="button"
-                  class="control-panel__tank"
-                  [attr.aria-pressed]="tank.selected"
-                  [attr.aria-disabled]="!tank.selectable"
-                  [attr.aria-label]="tankLabel(tank)"
-                  [attr.title]="tankHint(tank)"
-                  (click)="tank.selectable && !tank.selected && tankSelected.emit(tank.id)"
-                >
-                  <span class="control-panel__tank-name">{{ tank.name }}</span>
-                  @if (tank.worst; as worst) {
-                    <span class="control-panel__tank-alert" [attr.data-level]="worst">{{
-                      severityLabels[worst]
-                    }}</span>
-                  }
-                  <span class="control-panel__sheet-status">{{ tankDetail(tank) }}</span>
-                </button>
-              </li>
-            }
-          </ul>
-          @if (transferTargets().length > 0 && transferSpecies().length > 0) {
-            <div class="control-panel__row" role="group" aria-label="Transférer un animal">
-              <label class="control-panel__field">
-                <span class="control-panel__label">Animal</span>
-                <select
-                  class="control-panel__select"
-                  data-transfer-species
-                  (change)="transferChoice.set($any($event.target).value)"
-                >
-                  @for (id of transferSpecies(); track id) {
-                    <option [value]="id" [selected]="id === transferSpeciesChoice()">
-                      {{ speciesName(id) }}
-                    </option>
-                  }
-                </select>
-              </label>
-              <label class="control-panel__field">
-                <span class="control-panel__label">Vers</span>
-                <select
-                  class="control-panel__select"
-                  data-transfer-target
-                  (change)="transferTarget.set(+$any($event.target).value)"
-                >
-                  @for (tank of transferTargets(); track tank.id) {
-                    <option [value]="tank.id" [selected]="tank.id === transferTargetChoice()">
-                      {{ tank.name }}
-                    </option>
-                  }
-                </select>
-              </label>
-            </div>
-            <button
-              type="button"
-              class="control-panel__button"
-              data-transfer
-              (click)="onTransfer()"
-            >
-              Transférer à l’épuisette
-            </button>
-          }
-          @if (quarantineOffered()) {
-            <!-- Quarantaine (#547) : proposée dès un malade dans le bac affiché ; la durée
-                 sourcée est la description du bouton. Libellé court : il ne passe pas à la
-                 ligne et doit tenir à 320 px avec DejaVu Sans (CI). -->
-            <button
-              type="button"
-              class="control-panel__button"
-              data-quarantine-install
-              aria-label="Installer un bac de quarantaine"
-              [attr.title]="quarantineDuration"
-              (click)="onQuarantineInstall()"
-            >
-              Isoler en quarantaine
-            </button>
-          }
-          @if (quarantineShown()) {
-            <!-- Bac de quarantaine (#547) : un bac posé soigné à part, puis retour au bac affiché. -->
-            <div
-              class="control-panel__quarantine"
-              role="group"
-              aria-label="Quarantaine"
-              data-quarantine
-            >
-              @if (quarantineChoice(); as chosen) {
-                <label class="control-panel__field">
-                  <span class="control-panel__label">Bac de quarantaine</span>
-                  <select
-                    class="control-panel__select"
-                    data-quarantine-tank
-                    (change)="quarantineTarget.set(+$any($event.target).value)"
-                  >
-                    @for (tank of quarantine().tanks; track tank.id) {
-                      <option [value]="tank.id" [selected]="tank.id === chosen.id">
-                        {{ tank.name
-                        }}{{
-                          tank.sick > 0
-                            ? ' (' + tank.sick + ' malade' + (tank.sick > 1 ? 's' : '') + ')'
-                            : ''
-                        }}
-                      </option>
-                    }
-                  </select>
-                </label>
-                <div class="control-panel__row" role="group" aria-label="Soigner la quarantaine">
-                  @for (kind of treatmentKinds; track kind) {
-                    <button
-                      type="button"
-                      class="control-panel__button control-panel__button--compact"
-                      [attr.data-quarantine-treatment]="kind"
-                      [attr.aria-label]="'Quarantaine : ' + treatments[kind].aria"
-                      [attr.title]="treatmentTitle(kind)"
-                      (click)="quarantineTreated.emit({ id: chosen.id, kind })"
-                    >
-                      {{ treatments[kind].button }}
-                    </button>
-                  }
-                </div>
-                @if (chosen.filter !== null) {
-                  <!-- Filtre neuf du bac posé (#553, #538) : l'amorce de bactéries s'y verse
-                       d'ici, le bac posé n'étant pas sélectionnable (ADR 0075). Une ligne, tant
-                       que le filtre n'est pas mûr. -->
-                  <div
-                    class="control-panel__row"
-                    role="group"
-                    aria-label="Filtre de la quarantaine"
-                  >
-                    <button
-                      type="button"
-                      class="control-panel__button control-panel__button--compact"
-                      data-quarantine-starter
-                      [attr.aria-label]="
-                        chosen.name + ' : verser une dose d’amorce de bactéries nitrifiantes'
-                      "
-                      title="Source : docs/SOINS.md § 1.1 (étiquette Stability, secondaire) ; gain du filtre : approximation de jeu."
-                      (click)="quarantineStarter.emit(chosen.id)"
-                    >
-                      Bactéries
-                    </button>
-                    <span class="control-panel__note" data-quarantine-filter>
-                      Filtre neuf : efficace à {{ chosen.filter }} %
-                    </span>
-                  </div>
-                }
-                @if (chosen.species.length > 0) {
-                  <label class="control-panel__field">
-                    <span class="control-panel__label">Animal à ramener</span>
-                    <select
-                      class="control-panel__select"
-                      data-quarantine-species
-                      (change)="quarantineSpecies.set($any($event.target).value)"
-                    >
-                      @for (id of chosen.species; track id) {
-                        <option [value]="id" [selected]="id === quarantineSpeciesChoice()">
-                          {{ speciesName(id) }}
-                        </option>
-                      }
-                    </select>
-                  </label>
-                  <button
-                    type="button"
-                    class="control-panel__button"
-                    data-quarantine-return
-                    (click)="onQuarantineReturn(chosen.id)"
-                  >
-                    Ramener au bac affiché
-                  </button>
-                }
-              }
-              <p class="control-panel__note" data-quarantine-duration>{{ quarantineDuration }}</p>
-            </div>
-          }
-          @if (tankList().length > 1) {
-            <!-- Renommer un bac (#316) : le bac sélectionné par défaut, nom borné. Dès deux
-                 bacs seulement : avec un seul, le panneau tient en deux colonnes à 1280 × 720
-                 (e2e/cadrage-panneaux.spec.ts). -->
-            <div
-              class="control-panel__row control-panel__row--halves"
-              role="group"
-              aria-label="Renommer un bac"
-            >
-              <label class="control-panel__field">
-                <span class="control-panel__label">Bac</span>
-                <select
-                  class="control-panel__select"
-                  data-rename-tank
-                  (change)="renameTarget.set(+$any($event.target).value)"
-                >
-                  @for (tank of tankList(); track tank.id) {
-                    <option [value]="tank.id" [selected]="tank.id === renameTargetChoice()">
-                      {{ tank.name }}
-                    </option>
-                  }
-                </select>
-              </label>
-              <label class="control-panel__field">
-                <span class="control-panel__label">Nouveau nom</span>
-                <input
-                  #renameInput
-                  type="text"
-                  class="control-panel__select"
-                  data-rename-name
-                  autocomplete="off"
-                  [attr.maxlength]="maxTankName"
-                  [value]="renameTargetName()"
-                  (keydown.enter)="onRename(renameInput.value)"
-                />
-              </label>
-            </div>
-            <button
-              type="button"
-              class="control-panel__button"
-              data-rename
-              (click)="onRename(renameInput.value)"
-            >
-              Renommer
-            </button>
-          }
-          @if (tankNotice(); as notice) {
-            <p
-              class="control-panel__message"
-              [class.control-panel__message--error]="notice.kind === 'erreur'"
-              role="status"
-              data-transfer-notice
-            >
-              {{ notice.text }}
-            </p>
-          }
-        </fieldset>
+          app-tanks-section
+          [environment]="environment()"
+          [careMode]="careMode()"
+          [tankList]="tankList()"
+          [tankLiters]="tankLiters()"
+          [population]="population()"
+          [water]="water()"
+          [quarantine]="quarantine()"
+          [tankNotice]="tankNotice()"
+          (tankSelected)="tankSelected.emit($event)"
+          (tankRenamed)="tankRenamed.emit($event)"
+          (careModeChanged)="careModeChanged.emit($event)"
+          (careReturned)="careReturned.emit($event)"
+          (animalTransferred)="animalTransferred.emit($event)"
+          (quarantineInstalled)="quarantineInstalled.emit()"
+          (quarantineTreated)="quarantineTreated.emit($event)"
+          (quarantineStarter)="quarantineStarter.emit($event)"
+          (quarantineReturned)="quarantineReturned.emit($event)"
+        ></fieldset>
 
         <!-- « Partager ce bac » (#426) sur la ligne du titre, comme « Changer l'eau » : aucune
              ligne de plus, « Sauvegarde » reste dans la deuxième colonne à 1280 × 720. -->
@@ -1622,7 +1019,6 @@ export class ControlPanel {
   readonly opened = output<void>();
 
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
-  private readonly injector = inject(Injector);
   /** Option « Réduire les mouvements » (#406), partagée avec l'aquarium et le mode immersif. */
   private readonly motionState = inject(ReducedMotionState);
   /** État effectif de l'option (choix des réglages, sinon préférence système). */
@@ -1643,61 +1039,10 @@ export class ControlPanel {
 
   protected readonly panelId = CONTROL_PANEL_ID;
   protected readonly speeds = SIM_SPEEDS;
-  /**
-   * Catalogue des espèces de l'environnement affiché (#88, #189), dans l'ordre de
-   * `Environment.species`.
-   */
-  protected readonly catalog = computed(() =>
-    this.careMode() === 'decor'
-      ? decorCatalog(this.environment())
-      : speciesCatalog(this.environment()),
+  /** Panneau sur une colonne qui défile tant qu'une quarantaine est affichée (#571). */
+  protected readonly quarantineShown = computed(() =>
+    isQuarantineShown(this.careMode(), this.quarantine()),
   );
-  /**
-   * Libellés des mélanges déconseillés de la population affichée (#209), dans l'ordre du
-   * catalogue (`mixWarnings`, `sim/compatibility.ts`).
-   */
-  protected readonly mixTexts = computed(() =>
-    // Mode décor (#278) : aucun avertissement.
-    (this.careMode() === 'decor'
-      ? []
-      : mixWarnings(
-          this.catalog().map((entry) => entry.species),
-          this.population(),
-        )
-    ).map(mixWarningText),
-  );
-  /** Espèce dont la fiche est ouverte (#237), refermée au changement d'environnement. */
-  protected readonly openSheet = linkedSignal<EnvironmentId, SpeciesId | null>({
-    source: this.environment,
-    computation: () => null,
-  });
-  /** Dernière espèce ajoutée depuis le panneau (#237), oubliée au changement d'environnement. */
-  protected readonly lastAdded = linkedSignal<EnvironmentId, SpeciesId | null>({
-    source: this.environment,
-    computation: () => null,
-  });
-  /**
-   * Avertissements de la dernière espèce ajoutée (#237), recalculés sur la population, le
-   * volume et l'eau courants : ils disparaissent quand le bac convient de nouveau (produit de
-   * traitement toxique pour l'espèce, #374, compris).
-   */
-  protected readonly addTexts = computed(() => {
-    const id = this.lastAdded();
-    if (id === null || this.careMode() === 'decor') {
-      return [];
-    }
-    const population = this.population();
-    const texts = addWarnings(
-      id,
-      population[id],
-      this.tankLiters() ?? Number.NaN,
-      population,
-      this.catalog().map((entry) => entry.species),
-    ).map(addWarningText);
-    // Amphibien ajouté dans une eau déjà traitée (#374) : le produit lui est toxique.
-    const treated = treatedWaterWarning(id, this.water().products);
-    return treated === null ? texts : [...texts, treated];
-  });
   protected readonly environmentIds = ENVIRONMENT_IDS;
   /** Case « Pluie » proposée seulement là où il peut pleuvoir (le bassin, #106). */
   protected readonly rainAvailable = computed(() => environmentById(this.environment()).rain);
@@ -1707,16 +1052,6 @@ export class ControlPanel {
   protected readonly pondShapeLabels = POND_SHAPE_LABELS;
   /** Case « Afficher la pièce » proposée seulement autour du bac tropical (#187). */
   protected readonly roomAvailable = computed(() => isRoomAvailable(this.environment()));
-  protected readonly supportKinds = SUPPORT_KINDS;
-  protected readonly tankSizeIds = TANK_SIZE_IDS;
-  /** Environnements d'un bac de la pièce (le bassin est au jardin). */
-  protected readonly roomEnvironmentIds = ENVIRONMENT_IDS.filter((id) => placeOf(id) === 'piece');
-  /** Choix du prochain bac ajouté (#305). */
-  protected readonly newTankEnvironment = signal<string>(DEFAULT_ENVIRONMENT_ID);
-  protected readonly newTankSize = signal<string>('moyen');
-  protected readonly newTankSupport = signal<string>('sol');
-  /** Bac peuplé dont le retrait attend confirmation (#305), `null` sinon. */
-  protected readonly confirmTank = signal<number | null>(null);
   protected readonly hourStep = HOUR_SLIDER_STEP;
   /** Dernier cran du curseur d'heure : 23:45 (24:00 serait minuit, déjà au cran 0). */
   protected readonly maxHour = HOURS_PER_DAY - HOUR_SLIDER_STEP;
@@ -1736,253 +1071,10 @@ export class ControlPanel {
   protected readonly treatmentStatus = computed(() => treatmentStatusText(this.treatment()));
   protected readonly treatmentKinds = TREATMENT_KINDS;
   protected readonly treatments = TREATMENTS;
-
-  /**
-   * Infobulle d'un geste de soin, description accessible du bouton (lue au focus, avant le
-   * geste) : sa source, puis les effets secondaires du produit (#549).
-   */
-  protected treatmentTitle(kind: TreatmentKind): string {
-    const warning = kind === 'chaleur' ? null : sideEffectWarning(kind);
-    const source = treatmentSourceText(kind);
-    return warning === null ? source : `${source} ${warning}`;
-  }
+  protected readonly treatmentTitle = treatmentTitle;
   protected readonly treatmentSources = treatmentSourcesLine();
 
-  protected supportName(kind: SupportKind): string {
-    return SUPPORT_CATALOG[kind].name;
-  }
-
-  protected tankSizeName(size: TankSizeId): string {
-    return TANK_SIZES[size].name;
-  }
-
-  protected readonly severityLabels = ALERT_SEVERITY_LABELS;
-  /** Longueur maximale d'un nom de bac (#316), aussi bornée par l'hôte. */
-  protected readonly maxTankName = MAX_TANK_NAME_LENGTH;
-  /** Bac à renommer (#316) ; `null` : le bac sélectionné. */
-  protected readonly renameTarget = signal<number | null>(null);
-  protected readonly renameTargetChoice = computed(() => {
-    const list = this.tankList();
-    const wanted = this.renameTarget();
-    return (
-      list.find((tank) => tank.id === wanted) ??
-      list.find((tank) => tank.selected) ??
-      list[0]
-    )?.id;
-  });
-  /** Nom actuel du bac à renommer : valeur de départ du champ. */
-  protected readonly renameTargetName = computed(
-    () => this.tankList().find((tank) => tank.id === this.renameTargetChoice())?.name ?? '',
-  );
-  /** Choix d'espèce et de bac d'arrivée du transfert (#306) ; `null` : premier de la liste. */
-  protected readonly transferChoice = signal<string | null>(null);
-  protected readonly transferTarget = signal<number | null>(null);
-  /** Espèces présentes dans le bac sélectionné, dans l'ordre du catalogue. */
-  protected readonly transferSpecies = computed(() =>
-    environmentById(this.environment()).species.filter((id) => this.population()[id] > 0),
-  );
-  /** Bacs d'arrivée possibles : tous sauf le bac sélectionné. */
-  protected readonly transferTargets = computed(() =>
-    this.tankList().filter((tank) => !tank.selected),
-  );
-  protected readonly transferSpeciesChoice = computed(() => {
-    const list = this.transferSpecies();
-    const wanted = this.transferChoice();
-    return list.find((id) => id === wanted) ?? list[0] ?? null;
-  });
-  protected readonly transferTargetChoice = computed(() => {
-    const list = this.transferTargets();
-    const wanted = this.transferTarget();
-    return (list.find((tank) => tank.id === wanted) ?? list[0])?.id ?? null;
-  });
-
-  protected onRename(name: string): void {
-    const id = this.renameTargetChoice();
-    if (id !== undefined) {
-      this.tankRenamed.emit({ id, name });
-    }
-  }
-
-  /**
-   * Groupe « Quarantaine » de la liste des bacs (#547) : dès qu'un bac posé existe.
-   */
-  protected readonly quarantineShown = computed(
-    () => this.careMode() !== 'decor' && this.quarantine().tanks.length > 0,
-  );
-  /** « Installer un bac de quarantaine » : un malade ici, et aucun bac posé (#547). */
-  protected readonly quarantineOffered = computed(
-    () =>
-      this.careMode() !== 'decor' &&
-      this.quarantine().sickHere > 0 &&
-      this.quarantine().tanks.length === 0,
-  );
-  protected readonly quarantineDuration = QUARANTINE_DURATION_TEXT;
-  protected readonly quarantineTarget = signal<number | null>(null);
-  protected readonly quarantineSpecies = signal<string | null>(null);
-  /** Bac de quarantaine choisi : le dernier choix s'il existe encore, sinon le dernier posé. */
-  protected readonly quarantineChoice = computed(() => {
-    const tanks = this.quarantine().tanks;
-    const wanted = this.quarantineTarget();
-    return tanks.find((tank) => tank.id === wanted) ?? tanks[tanks.length - 1] ?? null;
-  });
-  protected readonly quarantineSpeciesChoice = computed(() => {
-    const list = this.quarantineChoice()?.species ?? [];
-    const wanted = this.quarantineSpecies();
-    return list.find((id) => id === wanted) ?? list[0] ?? null;
-  });
-
-  /**
-   * « Isoler en quarantaine » (#547) : le bouton disparaît une fois le bac posé ; le focus va
-   * au choix du bac de quarantaine, ce qui l'amène à l'écran quand le panneau passe sur une
-   * colonne qui défile (#571).
-   */
-  protected onQuarantineInstall(): void {
-    this.quarantineInstalled.emit();
-    afterNextRender(
-      () =>
-        this.host.nativeElement.querySelector<HTMLSelectElement>('[data-quarantine-tank]')?.focus(),
-      { injector: this.injector },
-    );
-  }
-
-  protected onQuarantineReturn(fromId: number): void {
-    const species = this.quarantineSpeciesChoice();
-    if (species !== null) {
-      this.quarantineReturned.emit({ fromId, species });
-    }
-  }
-
-  protected onTransfer(): void {
-    const species = this.transferSpeciesChoice();
-    const toId = this.transferTargetChoice();
-    if (species !== null && toId !== null) {
-      this.animalTransferred.emit({ species, toId });
-    }
-  }
-
-  /** Nom d'espèce du catalogue de l'environnement affiché. */
-  protected speciesName(id: SpeciesId): string {
-    return this.catalog().find((entry) => entry.species === id)?.name ?? id;
-  }
-
-  /** Sous-titre d'une ligne : environnement (s'il diffère du nom), contenu, bac posé. */
-  protected tankDetail(tank: TankListEntry): string {
-    return [
-      tank.environmentName === tank.name ? null : tank.environmentName,
-      tankListDetail(tank),
-      tank.mode === 'decor' ? 'décor' : null,
-      tank.selectable ? null : 'posé',
-    ]
-      .filter((part) => part !== null)
-      .join(' · ');
-  }
-
-  /** Infobulle d'une ligne (#492) : absence de faim ou faim partielle expliquée. */
-  protected tankHint(tank: TankListEntry): string | null {
-    return tankListHint(tank);
-  }
-
-  protected readonly careModeLabels = CARE_MODE_LABELS;
   protected readonly currentLabels = CURRENT_LEVEL_LABELS;
-  /** Confirmation du changement de mode en cours (#278) : mode demandé, ou `null`. */
-  protected readonly confirmMode = signal<CareMode | null>(null);
-  /** Nom du bac affiché, pour le texte de la confirmation. */
-  protected readonly shownTankName = computed(
-    () => this.tankList().find((tank) => tank.selected)?.name ?? 'ce bac',
-  );
-
-  /**
-   * Animaux du bac affiché inadaptés au mode soins (#278, lot 2) : milieu, température,
-   * volume, groupe, compatibilité (`unsuitableAnimals`). Volume inconnu : pas de contrôle de
-   * volume.
-   */
-  protected readonly unsuitable = computed<readonly UnsuitableAnimal[]>(() =>
-    unsuitableAnimals({
-      environment: this.environment(),
-      counts: this.population(),
-      liters: this.tankLiters() ?? Number.NaN,
-      temperature: this.water().temperature,
-    }),
-  );
-  /**
-   * Avertissements en mode soins des animaux d'un autre milieu gardés (#278, lot 2) : les
-   * autres raisons ont déjà les leurs (mélanges, ajout, tableau de bord).
-   */
-  protected readonly milieuTexts = computed(() =>
-    this.careMode() === 'decor'
-      ? []
-      : this.unsuitable()
-          .filter((animal) => animal.reason.kind === 'milieu')
-          .map(unsuitableLine),
-  );
-  protected readonly unsuitableTitle = unsuitableTitle;
-  protected readonly unsuitableReasonText = unsuitableReasonText;
-
-  /** « Tout retirer » : retire les animaux listés et repasse en mode soins. */
-  protected onRemoveUnsuitable(): void {
-    const species = this.unsuitable().map((animal) => animal.species);
-    this.confirmMode.set(null);
-    this.careReturned.emit(species);
-  }
-
-  /** Demande le passage à l'autre mode : la confirmation explique la conséquence. */
-  protected onToggleCareMode(): void {
-    this.confirmMode.set(this.careMode() === 'decor' ? 'soins' : 'decor');
-  }
-
-  /** Confirme le changement de mode demandé. */
-  protected onConfirmCareMode(): void {
-    const mode = this.confirmMode();
-    this.confirmMode.set(null);
-    if (mode !== null) {
-      this.careModeChanged.emit(mode);
-    }
-  }
-
-  /** Nom accessible d'une ligne : nom, sélection, alerte, contenu. */
-  protected tankLabel(tank: TankListEntry): string {
-    return [
-      tank.name,
-      tank.selected ? 'bac sélectionné' : null,
-      tank.worst === null
-        ? 'aucune alerte'
-        : `alerte ${ALERT_SEVERITY_LABELS[tank.worst].toLowerCase()}`,
-      `${tank.environmentName}, ${tankListDetail(tank)}`,
-      tank.mode === 'decor' ? 'mode décor' : null,
-      tank.selectable ? null : 'posé, pas encore sélectionnable',
-    ]
-      .filter((part) => part !== null)
-      .join(', ');
-  }
-
-  /** Ligne secondaire d'un bac : où il est, et ses animaux. */
-  protected tankStatus(tank: RoomCatalogTank): string {
-    const where = tank.shown ? 'affiché' : tank.on === null ? 'rangé' : `posé sur ${tank.on}`;
-    return `${where}, ${animalCountText(tank.animals)}`;
-  }
-
-  protected onAddTank(): void {
-    const support = this.newTankSupport();
-    this.tankAdded.emit({
-      environment: this.newTankEnvironment(),
-      size: this.newTankSize(),
-      supportId: support === 'sol' ? null : Number(support),
-    });
-  }
-
-  /** « Retirer » : aussitôt si le bac est vide, après confirmation s'il est peuplé (#305). */
-  protected onRemoveTank(tank: RoomCatalogTank): void {
-    if (tank.animals > 0) {
-      this.confirmTank.set(tank.id);
-    } else {
-      this.removeTank(tank.id);
-    }
-  }
-
-  protected removeTank(id: number): void {
-    this.confirmTank.set(null);
-    this.tankRemoved.emit(id);
-  }
 
   /**
    * Fichier choisi avec « Importer » : refusé avant lecture s'il dépasse `MAX_SAVE_LENGTH`
@@ -2044,9 +1136,7 @@ export class ControlPanel {
     this.host.nativeElement.querySelector<HTMLElement>('.control-panel__toggle')?.focus();
   }
 
-  protected environmentName(id: EnvironmentId): string {
-    return ENVIRONMENTS[id].name;
-  }
+  protected readonly environmentName = environmentName;
 
   protected onEnvironment(event: Event): void {
     const id = (event.target as HTMLSelectElement).value;
@@ -2162,70 +1252,5 @@ export class ControlPanel {
 
   protected onDecor(event: Event): void {
     this.decorVisibleChanged.emit((event.target as HTMLInputElement).checked);
-  }
-
-  protected countLabel(id: SpeciesId): string {
-    return speciesCountLabel(id);
-  }
-
-  protected stepLabel(id: SpeciesId, delta: -1 | 1): string {
-    return speciesStepLabel(id, delta);
-  }
-
-  protected slideLabel(id: SpeciesId): string {
-    return speciesSliderLabel(id);
-  }
-
-  /** Bouton « Fiche » : ouvre la fiche de l'espèce, ou la referme si elle est ouverte. */
-  protected toggleSheet(id: SpeciesId): void {
-    this.openSheet.update((open) => (open === id ? null : id));
-  }
-
-  /**
-   * Referme la fiche de `id` (« Fermer la fiche », ou Échap dans la fiche ou sur son bouton)
-   * et rend le focus à son bouton « Fiche ». Échap qui ferme la fiche ne remonte pas plus haut.
-   */
-  protected closeSheet(id: SpeciesId, event?: Event): void {
-    if (this.openSheet() !== id) {
-      return;
-    }
-    event?.stopPropagation();
-    this.openSheet.set(null);
-    const toggle = this.host.nativeElement.querySelector<HTMLButtonElement>(
-      `[data-sheet-toggle="${id}"]`,
-    );
-    toggle?.focus();
-  }
-
-  /** Demande l'effectif `count` ; une hausse retient l'espèce pour ses avertissements (#237). */
-  private request(id: SpeciesId, count: number): void {
-    if (count > this.population()[id]) {
-      this.lastAdded.set(id);
-    } else if (this.lastAdded() === id) {
-      this.lastAdded.set(null);
-    }
-    this.populationChanged.emit({ species: id, count });
-  }
-
-  /** Bouton « − » ou « + » : sans effet à la borne. */
-  protected step(id: SpeciesId, delta: -1 | 1): void {
-    const count = this.population()[id] + delta;
-    if (count >= 0 && count <= this.populationMax()[id]) {
-      this.request(id, count);
-    }
-  }
-
-  /**
-   * Champ numérique validé : l'effectif lu (borné) est réécrit dans le champ, pour qu'une
-   * saisie hors bornes ou invalide n'y reste pas si l'effectif ne change pas.
-   */
-  protected onCount(id: SpeciesId, event: Event): void {
-    const field = event.target as HTMLInputElement;
-    const count = populationInput(field.value, this.populationMax()[id]);
-    const current = this.population()[id];
-    field.value = String(count ?? current);
-    if (count !== null && count !== current) {
-      this.request(id, count);
-    }
   }
 }
