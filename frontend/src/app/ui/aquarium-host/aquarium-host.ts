@@ -61,14 +61,10 @@ import {
   type DecorPhysicsLoader,
 } from '../../core/decor-physics/load-decor-physics';
 import {
-  carryClock,
   createDayClock,
   DEFAULT_DAY_CLOCK,
   DEFAULT_DAY_LENGTH_SECONDS,
   DEFAULT_START_HOUR,
-  freezeClockAt,
-  hourAt,
-  toggleClock,
   type DayClock,
 } from '../../sim/daylight';
 import {
@@ -88,7 +84,7 @@ import { setTankDimensionsInPlace } from '../../sim/tank-resize';
 import { DEFAULT_POND_SHAPE, type PondShape } from '../../sim/pond-shape';
 import { setPondShapeInPlace } from '../../sim/pond-reshape';
 import { DEFAULT_ROOM } from '../../sim/room';
-import { DEFAULT_SIM_SPEED, isSimSpeed, type SimSpeed } from '../../sim/sim-speed';
+import { isSimSpeed } from '../../sim/sim-speed';
 import { isSpeciesId, setPopulationInPlace } from '../../sim/population';
 import { parseSaveWorlds, serializeRoom } from '../../sim/room-save';
 import { tankResizeRefusal } from '../../sim/room-state';
@@ -125,6 +121,7 @@ import { FramePainter, WALLPAPER_PRESET } from './frame-painter';
 import { AlertHighlightController } from './alert-highlight-controller';
 import { TankLooksController } from './tank-looks-controller';
 import { TankReadoutsController } from './tank-readouts-controller';
+import { ClockController } from './clock-controller';
 import { DisplayController } from './display-controller';
 import { TankToolsController } from './tank-tools-controller';
 import { WaterSettingsController } from './water-settings-controller';
@@ -303,8 +300,22 @@ export class AquariumHost {
   /** Bilan du bac affiché (#514), lu à la demande par le tableau de bord. */
   readonly reviewOfWorld = (): readonly ReviewPoint[] =>
     this.currentWorld ? worldReview(this.currentWorld) : [];
+  /** Horloge de la journée (ADR 0018) et vitesse de simulation (#52, #696) : `ClockController`. */
+  private readonly clock: ClockController = new ClockController({
+    probe: this.probe,
+    hasWorld: () => this.currentWorld !== null,
+    isCapture: () => this.capture,
+    renderTime: () => this.painter.renderTime(),
+    relight: () => this.painter.relight(),
+    scheduleFrame: () => this.scheduleFrame(),
+  });
   /** Horloge de la journée simulée (ADR 0018) : l'heure suit `world.time`. */
-  private dayClock: DayClock = DEFAULT_DAY_CLOCK;
+  private get dayClock(): DayClock {
+    return this.clock.dayClock;
+  }
+  private set dayClock(clock: DayClock) {
+    this.clock.dayClock = clock;
+  }
   /** Boucle d'images et pas fixe de la simulation (#696) : `RenderLoop`. */
   private readonly loop = new RenderLoop({
     window: () => this.document.defaultView,
@@ -393,10 +404,10 @@ export class AquariumHost {
   readonly clockHour = this.painter.clockHour;
 
   /** Vrai si l'heure est figée (curseur, touches `H`, `J`, `N`, `heure=`, mode capture). */
-  readonly clockFrozen = signal(false);
+  readonly clockFrozen = this.clock.clockFrozen;
 
   /** Vitesse de simulation (#52) : multiplie le temps réel versé à la boucle à pas fixe. */
-  readonly speed = signal<SimSpeed>(DEFAULT_SIM_SPEED);
+  readonly speed = this.clock.speed;
 
   /** Décor (rochers et plantes) affiché (#52). Il reste un obstacle pour les poissons. */
   readonly decorVisible = this.display.decorVisible;
@@ -822,7 +833,7 @@ export class AquariumHost {
 
   /** Heure de la journée affichée, dans [0, 24) (`null` avant le démarrage). */
   get hour(): number | null {
-    return this.currentWorld ? hourAt(this.dayClock, this.painter.renderTime()) : null;
+    return this.clock.hour();
   }
 
   /**
@@ -830,13 +841,7 @@ export class AquariumHost {
    * capture (l'heure y est toujours figée : contrat de capture).
    */
   toggleClock(): void {
-    if (!this.currentWorld || this.capture) {
-      return;
-    }
-    this.dayClock = toggleClock(this.dayClock, this.painter.renderTime());
-    this.painter.relight();
-    this.refreshClockFrozen();
-    this.scheduleFrame();
+    this.clock.toggle();
   }
 
   /**
@@ -844,9 +849,7 @@ export class AquariumHost {
    * panneau de contrôle (#52). Sans effet si l'horloge est déjà dans l'état demandé.
    */
   setClockRunning(running: boolean): void {
-    if (this.currentWorld && running === this.dayClock.frozen) {
-      this.toggleClock();
-    }
+    this.clock.setRunning(running);
   }
 
   /**
@@ -856,11 +859,7 @@ export class AquariumHost {
    * vitesse hors de `SIM_SPEEDS`.
    */
   setSpeed(speed: number): void {
-    if (!this.currentWorld || this.capture || !isSimSpeed(speed)) {
-      return;
-    }
-    this.speed.set(speed);
-    this.probe.publishSpeed(speed);
+    this.clock.setSpeed(speed);
   }
 
   /**
@@ -1190,7 +1189,7 @@ export class AquariumHost {
     // La liste des bacs (#306) suit aussitôt le bac affiché.
     this.tanks.sync(next.world);
     this.loop.resetClock();
-    this.dayClock = carryClock(this.dayClock, fromTime, this.painter.renderTime());
+    this.clock.carryFrom(fromTime);
     this.painter.relight();
     this.readouts.refreshEnvironment();
     this.probe.publishTick(this.currentWorld);
@@ -1271,13 +1270,7 @@ export class AquariumHost {
    * Sans effet en mode capture (contrat de capture) ou si `hour` n'est pas un réel fini.
    */
   freezeClockAt(hour: number): void {
-    if (!this.currentWorld || this.capture || !Number.isFinite(hour)) {
-      return;
-    }
-    this.dayClock = freezeClockAt(this.dayClock, hour);
-    this.painter.relight();
-    this.refreshClockFrozen();
-    this.scheduleFrame();
+    this.clock.freezeAt(hour);
   }
 
   /**
@@ -1546,13 +1539,12 @@ export class AquariumHost {
     this.currentWorld = world;
     this.tanks.stashOthers(others, world.environment);
     this.loop.resetClock();
-    this.speed.set(settings.speed);
-    this.probe.publishSpeed(settings.speed);
+    this.clock.applySpeed(settings.speed);
     this.dayClock = settings.clock;
     this.foodStyle.set(settings.foodStyle ?? DEFAULT_FOOD_STYLE);
     this.room.set(settings.room ?? DEFAULT_ROOM);
     this.painter.relight();
-    this.refreshClockFrozen();
+    this.clock.refreshFrozen();
     this.readouts.refreshEnvironment();
     this.probe.publishTick(this.currentWorld);
     this.probe.publishFood(this.currentWorld);
@@ -1780,7 +1772,7 @@ export class AquariumHost {
 
   /** Expose l'état initial : horloge, vitesse, décor, pluie, graine, eau, sauvegarde. */
   private publishStartState(world: World, params: CaptureParams): void {
-    this.refreshClockFrozen();
+    this.clock.refreshFrozen();
     this.probe.publishSpeed(this.speed());
     this.probe.publishDecorVisible(this.decorVisible());
     // Pluie de `pluie=1` (#106) : appliquée à la création de la vue (bassin seulement).
@@ -1994,12 +1986,6 @@ export class AquariumHost {
   /** Relevé de l'eau du bac affiché (#207) : `TankReadoutsController.refreshWater`. */
   private refreshWater(): void {
     this.readouts.refreshWater();
-  }
-
-  /** Expose l'état de l'horloge (`data-aqfish-hour-frozen` et signal `clockFrozen`). */
-  private refreshClockFrozen(): void {
-    this.clockFrozen.set(this.dayClock.frozen);
-    this.probe.publishHourFrozen(this.dayClock.frozen);
   }
 
   private stop(): void {
