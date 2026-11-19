@@ -9222,7 +9222,7 @@
       "date": "2026-11-19",
       "debut": "2026-11-19T10:15:47.515Z",
       "type": "fonctionnalite",
-      "issue": null,
+      "issue": 696,
       "pr": null,
       "version": null,
       "phases": {
