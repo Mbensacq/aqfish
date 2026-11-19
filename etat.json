@@ -9197,10 +9197,10 @@
           "note": "Issue #696 : suite du lot 10/13 hôte, nouvelle tranche d'extractions (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-19T07:19:50.574Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-19T08:35:09.518Z",
+          "note": "PR #740 : image, aspect du bac et alertes hors de l'hôte (10/13, partiel : hôte 2 384 lignes), CI verte"
         }
       },
       "metriques": {}
