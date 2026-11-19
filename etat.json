@@ -9269,10 +9269,10 @@
           "note": "Issue #696 : suite du lot 10/13 hôte (M), hôte à 1 864 lignes"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-19T13:34:43.919Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-19T14:56:06.364Z",
+          "note": "PR #742 : démarrage, création de la vue et animaux hors de l'hôte (10/13, partiel : 1 493 lignes, 969 hors commentaires), CI verte"
         }
       },
       "metriques": {}
