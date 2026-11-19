@@ -146,7 +146,7 @@ import { findTankSpot, layoutFootprints, roomLayoutBlocks } from '../../sim/room
 import type { SaveSettings } from '../../sim/save';
 import type { AlertSeverity } from '../../sim/dashboard-alerts';
 import { addWarningText } from '../../sim/species-sheet';
-import { tankList, worldAlerts, worstAlert, type TankListEntry } from '../../sim/tank-list';
+import { tankList, worstAlert, type TankListEntry } from '../../sim/tank-list';
 import {
   acceptsSpecies,
   careModeOf,
@@ -179,7 +179,6 @@ import {
 } from '../../core/food-style/food-style';
 import type { SpeciesId } from '../../sim/species';
 import {
-  advanceInPlace,
   advanceToWithFeedings,
   changeWorldWaterInPlace,
   feedInPlace,
@@ -195,8 +194,6 @@ import {
   setWorldLightingInPlace,
   scrapeWorldAlgaeInPlace,
   pruneWorldPlantInPlace,
-  recordWorldMaintenanceInPlace,
-  worldHasPrunablePlants,
   worldPlantShade,
   worldShownPlantGrowth,
   worldAlgaePatches,
@@ -227,50 +224,14 @@ import { waterLiters, waterProducts } from '../../sim/water';
 import type { ConditionerKind } from '../../sim/water-conditioner';
 import type { PhRegulatorDirection } from '../../sim/ph-regulator';
 import {
-  advanceFirstTankPath,
-  createFirstTankPath,
-  firstTankFacts,
-  firstTankPathAvailable,
-  firstTankPathView,
-  type FirstTankPathState,
-  type FirstTankPathView,
-} from '../../sim/first-tank-path';
-import {
   addJournalEntry,
   addPruneEntry,
-  carryJournalWatches,
-  createJournal,
-  journalLines,
-  observeJournal,
-  restoreJournal,
-  savedJournal,
   tankWorldPairs,
   treatmentEntry,
-  watchJournal,
   waterChangeEntry,
-  type Journal,
-  type JournalLine,
-  type JournalWatch,
 } from '../../sim/journal';
-import {
-  createWaterHistory,
-  markWaterChange,
-  recordWaterHistory,
-  restoreWaterHistory,
-  savedWaterHistory,
-  ticksToNextWaterSample,
-  waterHistoryView,
-  type WaterHistory,
-  type WaterHistoryView,
-} from '../../sim/water-history';
-import {
-  initialMaintenance,
-  MAINTENANCE_TASKS,
-  maintenanceReadout,
-  sameMaintenanceReadout,
-  type MaintenanceReadout,
-  type MaintenanceTask,
-} from '../../sim/maintenance';
+import { markWaterChange } from '../../sim/water-history';
+import type { MaintenanceTask } from '../../sim/maintenance';
 import { worldReview, type ReviewPoint } from '../../sim/bilan';
 import { TREATMENTS, type TreatmentKind } from '../../sim/treatment';
 import {
@@ -345,6 +306,7 @@ import { DecorEditingController } from './decor-editing-controller';
 import { RoomEditingController } from './room-editing-controller';
 import { RoomLayoutController } from './room-layout-controller';
 import { CareSessionController } from '../care-session/care-session-controller';
+import { TankRecordsController } from './tank-records-controller';
 
 /** Fabrique du renderer, remplaçable dans les tests (jsdom n'a pas WebGL). */
 export const AQUARIUM_RENDERER_FACTORY = new InjectionToken<AquariumRendererFactory>(
@@ -566,29 +528,12 @@ export class AquariumHost {
    * entre deux rattrapages (`advanceBackgroundTanks`), qui en créent de nouveaux.
    */
   private frozenWorst = new WeakMap<World, AlertSeverity | null>();
-  /** Temps du premier relevé d'entretien de chaque monde sans calendrier (#513). */
-  private maintenanceStart = new WeakMap<World, number>();
   /** Niveau du voile d'exemple de `encrassement=` (#607), en capture ; 0 sinon. */
   private captureFouling = 0;
-  /** Historique de l'eau de chaque monde affiché (#511), hors du monde pendant la partie. */
-  private waterHistories = new WeakMap<World, WaterHistory>();
-  /** Journal de chaque monde affiché (#581), hors du monde pendant la partie. */
-  private journals = new WeakMap<World, Journal>();
-  /** Dernière observation du journal de chaque monde affiché (#581). */
-  private journalWatches = new WeakMap<World, JournalWatch>();
-  private shownJournal: Journal | null = null;
-  private shownJournalVersion = -1;
-  /** Parcours guidé de chaque monde (#512), hors du monde pendant la partie. */
-  private firstTankPaths = new WeakMap<World, FirstTankPathState>();
   /** Produits déjà utilisés dans chaque bac depuis le chargement (#533), hors du monde. */
   private pharmacyUsed = new WeakMap<World, readonly PharmacyProduct[]>();
   /** Dernier test de l'eau lancé dans chaque bac (#564), hors du monde : rien n'est sauvegardé. */
   private waterTests = new WeakMap<World, WaterTest>();
-  /** Dernier état de parcours publié dans `firstTankPath` (`null` : aucun). */
-  private shownFirstTankPath: FirstTankPathState | null = null;
-  /** Tampon et version du dernier historique exposé. */
-  private shownHistory: WaterHistory | null = null;
-  private shownHistoryVersion = -1;
   /** Bilan du bac affiché (#514), lu à la demande par le tableau de bord. */
   readonly reviewOfWorld = (): readonly ReviewPoint[] =>
     this.currentWorld ? worldReview(this.currentWorld) : [];
@@ -721,6 +666,11 @@ export class AquariumHost {
   );
   /** Vrai tant que la raclette est en main (#476) : un clic sur le bac racle. */
   readonly scraping = signal(false);
+  /**
+   * Suivi du bac affiché hors du monde (#511, #512, #513, #581, #696) : entretien, historique
+   * de l'eau, journal et parcours guidé, `TankRecordsController`.
+   */
+  private readonly records = new TankRecordsController({ isCapture: () => this.capture });
   /** Photo PNG et images de la séance (#479, #503, #624, #696) : `PhotoController`. */
   private readonly photo = new PhotoController({
     document: this.document,
@@ -740,9 +690,9 @@ export class AquariumHost {
     isCapture: () => this.capture,
     storage: () => this.saveStorage,
     applyWaterSetting: (apply) => this.applyWaterSetting(apply),
-    recordMaintenance: (world, task) => this.recordMaintenance(world, task),
-    journalOf: (world) => this.journalOf(world),
-    waterHistoryOf: (world) => this.waterHistoryOf(world),
+    recordMaintenance: (world, task) => this.records.recordMaintenance(world, task),
+    journalOf: (world) => this.records.journalOf(world),
+    waterHistoryOf: (world) => this.records.waterHistoryOf(world),
     playSound: (kind) => this.ambientSound.playCareSound(kind),
     publishStep: (step) => this.probe.publishCareSession(step),
     publishFood: (world) => this.probe.publishFood(world),
@@ -804,15 +754,13 @@ export class AquariumHost {
   /** Test de l'eau du bac affiché (#564), relevé avec l'eau ; `null` : aucun test lancé. */
   readonly waterTest = signal<WaterTestView | null>(null, { equal: sameWaterTestView });
   /** Calendrier d'entretien du bac affiché (#513) ; `null` en capture. */
-  readonly maintenance = signal<MaintenanceReadout | null>(null, {
-    equal: sameMaintenanceReadout,
-  });
+  readonly maintenance = this.records.maintenance;
   /** Historique de l'eau du bac affiché (#511), recopié à chaque relevé nouveau ; `null` en capture. */
-  readonly waterHistory = signal<WaterHistoryView | null>(null);
+  readonly waterHistory = this.records.waterHistory;
   /** Journal du bac affiché (#581), du plus récent au plus ancien ; vide en capture. */
-  readonly journal = signal<readonly JournalLine[]>([]);
+  readonly journal = this.records.journal;
   /** Parcours « Mon premier aquarium » du bac affiché (#512) ; `null` : non proposé. */
-  readonly firstTankPath = signal<FirstTankPathView | null>(null);
+  readonly firstTankPath = this.records.firstTankPath;
   /** Message du dernier geste de soin (#361) ; `null` : aucun depuis le dernier changement de bac. */
   readonly treatmentNotice = signal<TreatmentNotice | null>(null);
   /** Monde du dernier geste de soin : le message s'efface quand le bac affiché change. */
@@ -835,11 +783,11 @@ export class AquariumHost {
     isStopped: () => this.stopped,
     settings: () => this.settings(),
     saveText: (world) => this.saveText(world),
-    beforeExport: (world) => this.keepFirstTankPath(world as MutableWorld),
+    beforeExport: (world) => this.records.keepFirstTankPath(world as MutableWorld),
     beforeAutosave: () => {
-      this.keepMaintenanceStart();
+      this.records.keepMaintenanceStart(this.currentWorld);
       if (this.currentWorld) {
-        this.keepFirstTankPath(this.currentWorld);
+        this.records.keepFirstTankPath(this.currentWorld);
       }
     },
     load: (result) => this.loadImported(result),
@@ -1303,9 +1251,9 @@ export class AquariumHost {
       return;
     }
     changeWorldWaterInPlace(world);
-    this.recordMaintenance(world, 'waterChange');
-    markWaterChange(this.waterHistoryOf(world), world.water, world.tick);
-    addJournalEntry(this.journalOf(world), waterChangeEntry(world.time));
+    this.records.recordMaintenance(world, 'waterChange');
+    markWaterChange(this.records.waterHistoryOf(world), world.water, world.tick);
+    addJournalEntry(this.records.journalOf(world), waterChangeEntry(world.time));
     this.refreshWater();
     this.saveNow();
     this.scheduleFrame();
@@ -1313,7 +1261,7 @@ export class AquariumHost {
 
   /** Marque faite une tâche d'entretien sans geste dans le jeu (filtre, test de l'eau, #513). */
   markMaintenanceDone(task: MaintenanceTask): void {
-    this.applyWaterSetting((world) => this.recordMaintenance(world, task));
+    this.applyWaterSetting((world) => this.records.recordMaintenance(world, task));
   }
 
   /**
@@ -1334,7 +1282,7 @@ export class AquariumHost {
       warning: outcome.ok ? (outcome.warning ?? null) : null,
     });
     if (outcome.ok) {
-      addJournalEntry(this.journalOf(world), treatmentEntry(world.time, kind));
+      addJournalEntry(this.records.journalOf(world), treatmentEntry(world.time, kind));
       this.refreshWater();
       this.saveNow();
       this.scheduleFrame();
@@ -1549,8 +1497,8 @@ export class AquariumHost {
     this.applyWaterSetting((world) => {
       pruned = pruneWorldPlantInPlace(world, index);
       if (pruned) {
-        this.recordMaintenance(world, 'prune');
-        addPruneEntry(this.journalOf(world), world.time);
+        this.records.recordMaintenance(world, 'prune');
+        addPruneEntry(this.records.journalOf(world), world.time);
       }
     });
     return pruned;
@@ -1799,7 +1747,7 @@ export class AquariumHost {
     }
     if (feedInPlace(world, x, z) > 0) {
       this.probe.publishFood(this.currentWorld);
-      this.refreshFirstTankPath(world);
+      this.records.refreshFirstTankPath(world);
       this.scheduleFrame();
     }
   }
@@ -1973,8 +1921,8 @@ export class AquariumHost {
    * @throws RangeError comme `serializeRoom`.
    */
   private saveText(world: World): string {
-    this.keepWaterHistory(world);
-    this.keepJournal(world);
+    this.records.keepWaterHistory(world);
+    this.records.keepJournal(world);
     this.advanceBackgroundTanks();
     const room = this.syncRoomState(world);
     return serializeRoom(room, this.selectedTankId, this.settings());
@@ -2012,7 +1960,7 @@ export class AquariumHost {
     const synced = syncRoom(this.roomState, world, stashedList(this.stash, world.environment));
     const room = stepRoom(synced.room, pending, this.dayClock, synced.selectedTankId);
     // Le bac rangé garde sa dernière observation du journal sous son nouveau monde (#592).
-    carryJournalWatches(this.journalWatches, tankWorldPairs(synced.room.tanks, room.tanks));
+    this.records.carryJournalWatches(tankWorldPairs(synced.room.tanks, room.tanks));
     this.stash = stashFromList(
       room.tanks
         .filter((tank) => tank.placement === null && tank.id !== synced.selectedTankId)
@@ -2143,9 +2091,9 @@ export class AquariumHost {
       return;
     }
     this.tankNotice.set(null);
-    this.keepWaterHistory(world);
-    this.keepJournal(world);
-    this.keepFirstTankPath(world);
+    this.records.keepWaterHistory(world);
+    this.records.keepJournal(world);
+    this.records.keepFirstTankPath(world);
     this.setEnvironment(tank.world.environment);
   }
 
@@ -2185,7 +2133,7 @@ export class AquariumHost {
     const arrival = findTank(result.room, toId) as RoomTank;
     const departure = findTank(room, toId);
     if (departure !== undefined) {
-      carryJournalWatches(this.journalWatches, [[departure.world, arrival.world]]);
+      this.records.carryJournalWatches([[departure.world, arrival.world]]);
     }
     if (arrival.placement === null) {
       const stash = new Map(this.stash);
@@ -3099,7 +3047,7 @@ export class AquariumHost {
     const realDt = this.loop.advance(timestamp, this.speed());
     const steps = this.loop.clock.steps;
     if (steps > 0 && this.currentWorld) {
-      this.advanceAndRecord(this.currentWorld, steps);
+      this.records.advanceAndRecord(this.currentWorld, steps, this.dayClock);
       this.probe.publishTick(this.currentWorld);
       this.probe.publishFood(this.currentWorld);
       // Au plus 4 relevés par seconde de temps réel, quelle que soit la vitesse (#256).
@@ -3201,197 +3149,6 @@ export class AquariumHost {
     this.probe.publishAlertHighlight(0);
   }
 
-  /** Temps du premier relevé d'un monde sans calendrier : début de son suivi (#513). */
-  private maintenanceStartOf(world: World): number {
-    let start = this.maintenanceStart.get(world);
-    if (start === undefined) {
-      start = world.time;
-      this.maintenanceStart.set(world, start);
-    }
-    return start;
-  }
-
-  /** Enregistre une tâche faite ; le suivi commence au premier relevé du monde. */
-  private recordMaintenance(world: MutableWorld, task: MaintenanceTask): void {
-    world.maintenance ??= initialMaintenance(this.maintenanceStartOf(world));
-    recordWorldMaintenanceInPlace(world, task);
-  }
-
-  /**
-   * Inscrit dans le monde le début du suivi une fois le bac avancé, à la sauvegarde
-   * automatique seulement (#513) : la simulation et un bac relu restent identiques au bit près.
-   */
-  private keepMaintenanceStart(): void {
-    const world = this.currentWorld;
-    if (world && !this.capture && world.maintenance === undefined) {
-      const start = this.maintenanceStartOf(world);
-      if (world.time > start) {
-        world.maintenance = initialMaintenance(start);
-      }
-    }
-  }
-
-  /** Calendrier d'entretien du bac affiché (#513) ; jamais en capture (monde inchangé). */
-  private refreshMaintenance(world: MutableWorld): void {
-    if (this.capture) {
-      return;
-    }
-    const state = world.maintenance ?? initialMaintenance(this.maintenanceStartOf(world));
-    this.maintenance.set(
-      maintenanceReadout(
-        state,
-        world.time,
-        worldHasPrunablePlants(world)
-          ? MAINTENANCE_TASKS
-          : MAINTENANCE_TASKS.filter((task) => task !== 'prune'),
-      ),
-    );
-  }
-
-  /**
-   * Avance le bac affiché de `steps` pas, coupés aux frontières de relevé (#511) : l'historique
-   * ne dépend pas de la cadence d'affichage. Rythme du jour (#209) : `dayClock`.
-   */
-  private advanceAndRecord(world: MutableWorld, steps: number): void {
-    const history = this.waterHistoryOf(world);
-    let left = steps;
-    while (left > 0) {
-      const count = Math.min(left, ticksToNextWaterSample(world.tick));
-      advanceInPlace(world, count, this.dayClock);
-      left -= count;
-      recordWaterHistory(history, world.water, world.tick);
-    }
-  }
-
-  /** Tampon d'historique de `world`, repris de sa sauvegarde au premier accès (#511). */
-  private waterHistoryOf(world: World): WaterHistory {
-    let history = this.waterHistories.get(world);
-    if (history === undefined) {
-      history =
-        world.waterHistory === undefined
-          ? createWaterHistory()
-          : restoreWaterHistory(world.waterHistory);
-      this.waterHistories.set(world, history);
-    }
-    return history;
-  }
-
-  /**
-   * Inscrit l'historique dans le monde, à la sauvegarde ou au changement de bac seulement
-   * (#511) : un bac sans relevé nouveau reste identique à sa sauvegarde, au bit près.
-   */
-  private keepWaterHistory(world: MutableWorld): void {
-    const history = this.waterHistories.get(world);
-    if (history !== undefined && history.count > 0) {
-      world.waterHistory = savedWaterHistory(history);
-    }
-  }
-
-  /** Journal de `world`, repris de sa sauvegarde au premier accès (#581). */
-  private journalOf(world: World): Journal {
-    let journal = this.journals.get(world);
-    if (journal === undefined) {
-      journal = world.journal === undefined ? createJournal() : restoreJournal(world.journal);
-      this.journals.set(world, journal);
-    }
-    return journal;
-  }
-
-  /**
-   * Inscrit le journal dans le monde, à la sauvegarde ou au changement de bac seulement
-   * (#581) : un bac sans événement nouveau reste identique à sa sauvegarde, au bit près.
-   */
-  private keepJournal(world: MutableWorld): void {
-    const journal = this.journals.get(world);
-    if (journal !== undefined && journal.entries.length > 0) {
-      world.journal = savedJournal(journal);
-    }
-  }
-
-  /**
-   * Observe le bac affiché au rythme des relevés (#581) : maladies, guérisons, pontes,
-   * éclosions et alertes franchies (#592) survenues depuis la dernière observation entrent au
-   * journal (le premier regard sur un bac n'écrit rien ; un bac rangé garde sa dernière
-   * observation, reportée par `carryJournalWatches`), puis publie le journal s'il a changé.
-   * Jamais en capture.
-   */
-  private refreshJournal(world: World): void {
-    if (this.capture) {
-      return;
-    }
-    const journal = this.journalOf(world);
-    const watch = this.journalWatches.get(world);
-    const subject = {
-      time: world.time,
-      entities: world.entities,
-      ...(world.eggs === undefined ? {} : { eggs: world.eggs }),
-      alerts: worldAlerts(world),
-    };
-    if (watch === undefined) {
-      this.journalWatches.set(world, watchJournal(subject));
-    } else {
-      for (const entry of observeJournal(watch, subject)) {
-        addJournalEntry(journal, entry);
-      }
-    }
-    if (journal !== this.shownJournal || journal.version !== this.shownJournalVersion) {
-      this.shownJournal = journal;
-      this.shownJournalVersion = journal.version;
-      this.journal.set(journalLines(journal));
-    }
-  }
-
-  /** Publie l'historique du bac affiché s'il a changé (#511) ; jamais en capture. */
-  private refreshWaterHistory(world: World): void {
-    if (this.capture) {
-      return;
-    }
-    const history = this.waterHistoryOf(world);
-    if (history !== this.shownHistory || history.version !== this.shownHistoryVersion) {
-      this.shownHistory = history;
-      this.shownHistoryVersion = history.version;
-      this.waterHistory.set(waterHistoryView(history));
-    }
-  }
-
-  /**
-   * Avance et publie le parcours du bac affiché (#512), jamais en capture (monde inchangé) ni
-   * en mode décor (eau en pause). Hors du monde (piège du cycle 176), sans allocation de vue
-   * tant qu'aucune étape ne change.
-   */
-  private refreshFirstTankPath(world: World): void {
-    if (this.capture) {
-      return;
-    }
-    if (!firstTankPathAvailable(world.environment) || world.careMode === 'decor') {
-      this.shownFirstTankPath = null;
-      this.firstTankPath.set(null);
-      return;
-    }
-    const facts = firstTankFacts(world);
-    const state = advanceFirstTankPath(
-      this.firstTankPaths.get(world) ?? world.firstTankPath ?? createFirstTankPath(facts),
-      facts,
-    );
-    this.firstTankPaths.set(world, state);
-    if (state !== this.shownFirstTankPath) {
-      this.shownFirstTankPath = state;
-      this.firstTankPath.set(firstTankPathView(state));
-    }
-  }
-
-  /**
-   * Inscrit le parcours dans le monde, à la sauvegarde automatique, à l'export ou au changement
-   * de bac seulement, une fois le bac avancé (#512), comme le début du suivi d'entretien : un
-   * bac relu et sans pas nouveau reste identique, au bit près.
-   */
-  private keepFirstTankPath(world: MutableWorld): void {
-    const state = this.firstTankPaths.get(world);
-    if (state !== undefined && world.time > state.startedAt) {
-      world.firstTankPath = state;
-    }
-  }
-
   /**
    * Relevé de l'eau (#207) : signal `water` et `data-aqfish-water` mis à jour seulement s'il
    * change, trouble de l'eau de la vue suivant le niveau.
@@ -3411,10 +3168,7 @@ export class AquariumHost {
     this.health.set(healthSummary(world.entities));
     this.refreshDead(world);
     this.refreshAlertAnimals(world);
-    this.refreshMaintenance(world);
-    this.refreshWaterHistory(world);
-    this.refreshJournal(world);
-    this.refreshFirstTankPath(world);
+    this.records.refresh(world);
     const treatment = treatmentReadout(world.water);
     this.treatment.set(treatment);
     const pharmacy = pharmacyState(world.water, this.pharmacyUsed.get(world) ?? []);
@@ -3493,7 +3247,7 @@ export class AquariumHost {
       ? isDecorMode(world) || !hasAlgae(world.environment)
         ? NO_FOULING
         : sampleFouling(this.captureFouling)
-      : worldFouling(world, this.maintenanceStartOf(world));
+      : worldFouling(world, this.records.maintenanceStartOf(world));
     this.view?.setFouling(environmentWater(world), fouling, hasFlatFloor(world.environment));
     this.probe.publishFouling(fouling, this.view?.foulingCounts ?? NO_FOULING);
   }
