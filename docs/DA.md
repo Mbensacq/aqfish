@@ -40,7 +40,7 @@ la passe de post-traitement y ramène chaque pixel affiché (ADR 0007).
 | Petits poissons         | bleu néon `#3fa9f5`, rouge néon `#e63946`, jaune `#ffd166`, rose `#f4978e`             |
 | Amphibiens              | axolotl rose `#f7b2bd`, grenouille `#7bc950`, triton `#e07a2f` (ventre, ADR 0064)       |
 | Fleurs                  | nénuphar rose `#f06a9b`, cœur `#ffb703`                                                |
-| Interface               | fond `#141418` (translucide), texte `#e8e6e3`, accent `#5fbfa3`                        |
+| Interface               | salle `#141418`, panneau plein `#1b1f23`, encre `#ebe7de`, laiton `#d1a65c` (`docs/INTERFACE.md`) |
 | Récif (tons d'environnement) | eau `#3f7597`, eau sous la surface `#4796cb`, corail violet `#7d4fb8` et `#b58be6`, poisson-clown `#ff6d00`, chirurgien `#1d3fbf` |
 | Ciel couvert (tons réservés à la pluie, ADR 0082) | herbe `#42833f`, touffes `#7ab25a`, roche `#5e5a54` et `#3a3934`, terre `#74654d` : couleurs du bassin à 85 % |
 | Nourriture (tons réservés aux granulés, ADR 0056) | ocre `#a0703a`, brun-rouge `#8c4630`, brun `#6b4428` ; plus `#a8916a` (beige) de la palette commune |
@@ -165,11 +165,14 @@ devant lui garde son vert ; aucune couleur ajoutée à la palette.
 
 ## Interface
 
-- Minimale et discrète : barres flottantes sombres translucides aux coins arrondis, qui
-  s'effacent quand on ne les utilise pas. Aucune interface en mode capture.
+- **Charte « la salle d'aquarium » et fenêtre des réglages : `docs/INTERFACE.md`** (décision
+  de Mathis du 2026-11-18). Elle fait foi sur les points ci-dessous qui la contredisent tant
+  que ses lots ne sont pas livrés : panneaux pleins (plus de translucidité), coins à 2 px,
+  accent laiton `#d1a65c` réservé aux actions, Atkinson Hyperlegible Next et Mono.
+- Minimale et discrète : l'interface s'efface devant le bac. Aucune interface en mode capture.
 - Icônes en pixel art, cohérentes avec la palette.
-- Police : une police pixel sous licence OFL pour les titres (choix à justifier dans une PR),
-  une police lisible pour le texte courant.
+- Police : Atkinson Hyperlegible Next pour le texte, Atkinson Hyperlegible Mono pour les
+  valeurs mesurées (OFL, `docs/INTERFACE.md`) ; pas de police pixel pour le texte.
 - Contrôles attendus à terme : préréglages de vue, vitesse de simulation, population,
   jour/nuit, météo (pluie), son, choix de l'environnement, éditeur.
 - Panneaux qui ne tiennent pas côte à côte : jamais ouverts ensemble. Sous 640 px de large,

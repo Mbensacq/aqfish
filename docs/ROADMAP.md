@@ -128,6 +128,11 @@ jamais eu d'aquarium doit pouvoir commencer ici et apprendre à s'occuper de ses
 7. #340 — mode immersif : l'écran devient la vitre de l'aquarium, à taille réelle, parallaxe à
    l'inclinaison du téléphone. Plus tard, après #278 et #279.
 
+8. **Interface (décision du 2026-11-18)** : charte « la salle d'aquarium », fenêtre des
+   réglages au centre de l'écran (catégories, tuiles, recherche) et « Masquer l'interface » à
+   la place du mode immersif, selon `docs/INTERFACE.md`. Cinq lots `idee-mathis` (#721 à #725), traités
+   **juste après le lot 11 de #686 (#697)**, avant les lots 12 et 13.
+
 Toute valeur biologique est sourcée (référence consultable) ou marquée « approximation de jeu » ;
 ce qui n'a pas pu être vérifié est signalé, jamais présenté comme réel. Planif replace les
 sprints à la rétro : la stabilisation de v1.0 reste prévue en fin de parcours, la date peut
