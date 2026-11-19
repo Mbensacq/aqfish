@@ -1915,3 +1915,7 @@ haut de sa section.
   qu'à l'exécution. Déclarer le champ reçu avant, ou passer une fonction. Les tests de l'hôte
   lisent aussi des membres privés (`refreshWater`, `dayClock`) : garder une délégation au lieu
   de les supprimer. (2026-11-19)
+- **Capture `front-tableau-de-bord-chlore` prise pendant la transition de caméra** (cycle 254,
+  #696) : après l'import, le clic sur « Face » lance une transition animée (hors capture) et la
+  capture est prise aussitôt ; l'image change d'une exécution à l'autre, sur `main` comme sur
+  une branche. Ne pas la compter comme une régression ; la comparer à l'œil. (2026-11-19)
