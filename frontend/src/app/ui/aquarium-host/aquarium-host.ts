@@ -98,12 +98,7 @@ import {
   placeEnvironmentData,
   type EnvironmentId,
 } from '../../sim/environment';
-import {
-  stashedList,
-  stashFromList,
-  switchEnvironment,
-  type StashedWorlds,
-} from '../../sim/environment-worlds';
+import { switchEnvironment } from '../../sim/environment-worlds';
 import {
   clampTankDimensions,
   DEFAULT_TANK,
@@ -124,29 +119,15 @@ import {
   type PopulationCounts,
 } from '../../sim/population';
 import { parseSaveWorlds, serializeRoom } from '../../sim/room-save';
-import {
-  addTank,
-  findTank,
-  MAX_TANK_NAME_LENGTH,
-  renameTank,
-  stepRoom,
-  syncRoom,
-  tankResizeRefusal,
-  type RoomState,
-  type RoomTank,
-} from '../../sim/room-state';
+import { tankResizeRefusal } from '../../sim/room-state';
 import {
   ROOM_ANIMAL_CAP,
   roomAnimalCapRefusal,
   roomAnimalCount,
   roomPopulationLimits,
-  roomTankCapRefusal,
 } from '../../sim/room-limits';
-import { findTankSpot, layoutFootprints, roomLayoutBlocks } from '../../sim/room-layout';
+import { layoutFootprints, roomLayoutBlocks } from '../../sim/room-layout';
 import type { SaveSettings } from '../../sim/save';
-import type { AlertSeverity } from '../../sim/dashboard-alerts';
-import { addWarningText } from '../../sim/species-sheet';
-import { tankList, worldAlerts, worstAlert, type TankListEntry } from '../../sim/tank-list';
 import {
   acceptsSpecies,
   careModeOf,
@@ -157,20 +138,6 @@ import {
   type CareMode,
 } from '../../sim/care-mode';
 import { returnToCareInPlace } from '../../sim/care-return';
-import { transferFish } from '../../sim/tank-transfer';
-import {
-  QUARANTINE_ACCLIMATION_REMINDER,
-  QUARANTINE_TANK_NAME,
-  QUARANTINE_TANK_SIZE,
-  EMPTY_QUARANTINE,
-  doseTankStarter,
-  quarantineEnvironment,
-  quarantineView,
-  sameQuarantine,
-  treatTank as treatRoomTank,
-  type QuarantineView,
-} from '../../sim/quarantine';
-import { SPECIES_LABELS } from '../../sim/species-catalog';
 import {
   DEFAULT_FOOD_STYLE,
   isFoodStyle,
@@ -179,7 +146,6 @@ import {
 } from '../../core/food-style/food-style';
 import type { SpeciesId } from '../../sim/species';
 import {
-  advanceInPlace,
   advanceToWithFeedings,
   changeWorldWaterInPlace,
   feedInPlace,
@@ -195,8 +161,6 @@ import {
   setWorldLightingInPlace,
   scrapeWorldAlgaeInPlace,
   pruneWorldPlantInPlace,
-  recordWorldMaintenanceInPlace,
-  worldHasPrunablePlants,
   worldPlantShade,
   worldShownPlantGrowth,
   worldAlgaePatches,
@@ -207,7 +171,7 @@ import {
   setWorldCarbonInPlace,
   setWorldUntreatedTapInPlace,
 } from '../../sim/world';
-import type { Entity, MutableWorld, World } from '../../sim/world-types';
+import type { MutableWorld, World } from '../../sim/world-types';
 import { netTarget } from '../../sim/mortality';
 import { CHEVRON_COUNTS } from '../../render/current-indicator-layer';
 import {
@@ -223,59 +187,21 @@ import {
   waterTurbidity,
   type WaterReadout,
 } from '../../sim/water-quality';
-import { waterLiters, waterProducts } from '../../sim/water';
+import { waterLiters } from '../../sim/water';
 import type { ConditionerKind } from '../../sim/water-conditioner';
 import type { PhRegulatorDirection } from '../../sim/ph-regulator';
 import {
-  advanceFirstTankPath,
-  createFirstTankPath,
-  firstTankFacts,
-  firstTankPathAvailable,
-  firstTankPathView,
-  type FirstTankPathState,
-  type FirstTankPathView,
-} from '../../sim/first-tank-path';
-import {
   addJournalEntry,
   addPruneEntry,
-  carryJournalWatches,
-  createJournal,
-  journalLines,
-  observeJournal,
-  restoreJournal,
-  savedJournal,
-  tankWorldPairs,
   treatmentEntry,
-  watchJournal,
   waterChangeEntry,
-  type Journal,
-  type JournalLine,
-  type JournalWatch,
 } from '../../sim/journal';
-import {
-  createWaterHistory,
-  markWaterChange,
-  recordWaterHistory,
-  restoreWaterHistory,
-  savedWaterHistory,
-  ticksToNextWaterSample,
-  waterHistoryView,
-  type WaterHistory,
-  type WaterHistoryView,
-} from '../../sim/water-history';
-import {
-  initialMaintenance,
-  MAINTENANCE_TASKS,
-  maintenanceReadout,
-  sameMaintenanceReadout,
-  type MaintenanceReadout,
-  type MaintenanceTask,
-} from '../../sim/maintenance';
+import { markWaterChange } from '../../sim/water-history';
+import type { MaintenanceTask } from '../../sim/maintenance';
 import { worldReview, type ReviewPoint } from '../../sim/bilan';
 import { TREATMENTS, type TreatmentKind } from '../../sim/treatment';
 import {
   sameTreatment,
-  treatedWaterWarning,
   treatmentReadout,
   type TreatmentNotice,
   type TreatmentReadout,
@@ -345,6 +271,8 @@ import { DecorEditingController } from './decor-editing-controller';
 import { RoomEditingController } from './room-editing-controller';
 import { RoomLayoutController } from './room-layout-controller';
 import { CareSessionController } from '../care-session/care-session-controller';
+import { TankRecordsController } from './tank-records-controller';
+import { TankRoomController } from './tank-room-controller';
 
 /** Fabrique du renderer, remplaçable dans les tests (jsdom n'a pas WebGL). */
 export const AQUARIUM_RENDERER_FACTORY = new InjectionToken<AquariumRendererFactory>(
@@ -380,14 +308,7 @@ export const WALLPAPER_CAMERA_EXPOSE_SECONDS = 1;
 /** Pas de temps réel maximal versé à la caméra automatique (pas de saut après une pause). */
 const WALLPAPER_MAX_ORBIT_STEP_SECONDS = 0.25;
 
-/**
- * Message du dernier geste sur un bac (#306) : transfert d'animal ou renommage (#316), réussite
- * ou refus. Nommé pour les deux depuis #318 (`transferNotice` auparavant).
- */
-export interface TankNotice {
-  readonly kind: 'info' | 'erreur';
-  readonly text: string;
-}
+export type { TankNotice } from './tank-room-controller';
 
 export {
   ROOM_LAYOUT_MESSAGES,
@@ -548,56 +469,15 @@ export class AquariumHost {
   /** Vrai après `stop()` : un chargement asynchrone en cours ne démarre plus rien. */
   private stopped = false;
   private currentWorld: MutableWorld | null = null;
-  /**
-   * Mondes des autres environnements visités, figés tant qu'ils ne sont pas affichés (#277,
-   * ADR 0063) ; l'hôte en est seul propriétaire, comme du monde courant.
-   */
-  private stash: StashedWorlds = new Map();
-  /**
-   * Pièce de N bacs (#264, lot 1, ADR 0069) : identifiants, noms et graine des bacs,
-   * resynchronisée avec le monde affiché et les mondes rangés à chaque sauvegarde
-   * (`syncRoom`) ; `null` tant qu'aucune sauvegarde n'a été lue ni écrite.
-   */
-  private roomState: RoomState | null = null;
-  /** Bac sélectionné de `roomState` : celui du monde affiché (réglage d'interface). */
-  private selectedTankId = 0;
-  /**
-   * Pire gravité d'alerte des bacs non affichés, par monde (#306) : un monde ne change pas
-   * entre deux rattrapages (`advanceBackgroundTanks`), qui en créent de nouveaux.
-   */
-  private frozenWorst = new WeakMap<World, AlertSeverity | null>();
-  /** Temps du premier relevé d'entretien de chaque monde sans calendrier (#513). */
-  private maintenanceStart = new WeakMap<World, number>();
   /** Niveau du voile d'exemple de `encrassement=` (#607), en capture ; 0 sinon. */
   private captureFouling = 0;
-  /** Historique de l'eau de chaque monde affiché (#511), hors du monde pendant la partie. */
-  private waterHistories = new WeakMap<World, WaterHistory>();
-  /** Journal de chaque monde affiché (#581), hors du monde pendant la partie. */
-  private journals = new WeakMap<World, Journal>();
-  /** Dernière observation du journal de chaque monde affiché (#581). */
-  private journalWatches = new WeakMap<World, JournalWatch>();
-  private shownJournal: Journal | null = null;
-  private shownJournalVersion = -1;
-  /** Parcours guidé de chaque monde (#512), hors du monde pendant la partie. */
-  private firstTankPaths = new WeakMap<World, FirstTankPathState>();
   /** Produits déjà utilisés dans chaque bac depuis le chargement (#533), hors du monde. */
   private pharmacyUsed = new WeakMap<World, readonly PharmacyProduct[]>();
   /** Dernier test de l'eau lancé dans chaque bac (#564), hors du monde : rien n'est sauvegardé. */
   private waterTests = new WeakMap<World, WaterTest>();
-  /** Dernier état de parcours publié dans `firstTankPath` (`null` : aucun). */
-  private shownFirstTankPath: FirstTankPathState | null = null;
-  /** Tampon et version du dernier historique exposé. */
-  private shownHistory: WaterHistory | null = null;
-  private shownHistoryVersion = -1;
   /** Bilan du bac affiché (#514), lu à la demande par le tableau de bord. */
   readonly reviewOfWorld = (): readonly ReviewPoint[] =>
     this.currentWorld ? worldReview(this.currentWorld) : [];
-  /**
-   * Rattrapage des bacs non affichés (#316, ADR 0076) : monde affiché et son `tick` au dernier
-   * rattrapage. Un autre monde affiché (changement de bac, import) repart de zéro.
-   */
-  private backgroundWorld: World | null = null;
-  private backgroundTick = 0;
   /** Horloge de la journée simulée (ADR 0018) : l'heure suit `world.time`. */
   private dayClock: DayClock = DEFAULT_DAY_CLOCK;
   /** Heure de l'éclairage appliqué en dernier (`null` : à appliquer à la prochaine image). */
@@ -721,6 +601,11 @@ export class AquariumHost {
   );
   /** Vrai tant que la raclette est en main (#476) : un clic sur le bac racle. */
   readonly scraping = signal(false);
+  /**
+   * Suivi du bac affiché hors du monde (#511, #512, #513, #581, #696) : entretien, historique
+   * de l'eau, journal et parcours guidé, `TankRecordsController`.
+   */
+  private readonly records = new TankRecordsController({ isCapture: () => this.capture });
   /** Photo PNG et images de la séance (#479, #503, #624, #696) : `PhotoController`. */
   private readonly photo = new PhotoController({
     document: this.document,
@@ -740,9 +625,9 @@ export class AquariumHost {
     isCapture: () => this.capture,
     storage: () => this.saveStorage,
     applyWaterSetting: (apply) => this.applyWaterSetting(apply),
-    recordMaintenance: (world, task) => this.recordMaintenance(world, task),
-    journalOf: (world) => this.journalOf(world),
-    waterHistoryOf: (world) => this.waterHistoryOf(world),
+    recordMaintenance: (world, task) => this.records.recordMaintenance(world, task),
+    journalOf: (world) => this.records.journalOf(world),
+    waterHistoryOf: (world) => this.records.waterHistoryOf(world),
     playSound: (kind) => this.ambientSound.playCareSound(kind),
     publishStep: (step) => this.probe.publishCareSession(step),
     publishFood: (world) => this.probe.publishFood(world),
@@ -804,15 +689,13 @@ export class AquariumHost {
   /** Test de l'eau du bac affiché (#564), relevé avec l'eau ; `null` : aucun test lancé. */
   readonly waterTest = signal<WaterTestView | null>(null, { equal: sameWaterTestView });
   /** Calendrier d'entretien du bac affiché (#513) ; `null` en capture. */
-  readonly maintenance = signal<MaintenanceReadout | null>(null, {
-    equal: sameMaintenanceReadout,
-  });
+  readonly maintenance = this.records.maintenance;
   /** Historique de l'eau du bac affiché (#511), recopié à chaque relevé nouveau ; `null` en capture. */
-  readonly waterHistory = signal<WaterHistoryView | null>(null);
+  readonly waterHistory = this.records.waterHistory;
   /** Journal du bac affiché (#581), du plus récent au plus ancien ; vide en capture. */
-  readonly journal = signal<readonly JournalLine[]>([]);
+  readonly journal = this.records.journal;
   /** Parcours « Mon premier aquarium » du bac affiché (#512) ; `null` : non proposé. */
-  readonly firstTankPath = signal<FirstTankPathView | null>(null);
+  readonly firstTankPath = this.records.firstTankPath;
   /** Message du dernier geste de soin (#361) ; `null` : aucun depuis le dernier changement de bac. */
   readonly treatmentNotice = signal<TreatmentNotice | null>(null);
   /** Monde du dernier geste de soin : le message s'efface quand le bac affiché change. */
@@ -835,15 +718,15 @@ export class AquariumHost {
     isStopped: () => this.stopped,
     settings: () => this.settings(),
     saveText: (world) => this.saveText(world),
-    beforeExport: (world) => this.keepFirstTankPath(world as MutableWorld),
+    beforeExport: (world) => this.records.keepFirstTankPath(world as MutableWorld),
     beforeAutosave: () => {
-      this.keepMaintenanceStart();
+      this.records.keepMaintenanceStart(this.currentWorld);
       if (this.currentWorld) {
-        this.keepFirstTankPath(this.currentWorld);
+        this.records.keepFirstTankPath(this.currentWorld);
       }
     },
     load: (result) => this.loadImported(result),
-    tankCount: () => this.roomState?.tanks.length ?? 1,
+    tankCount: () => this.tanks.roomState?.tanks.length ?? 1,
     publishSave: (status) => this.probe.publishSave(status),
     onCleanup: (cleanup) => this.cleanups.push(cleanup),
   });
@@ -887,7 +770,7 @@ export class AquariumHost {
     room: () => this.room(),
     applyRoom: (room) => this.applyRoom(room),
     dimensions: () => (this.currentWorld ? placeDimensions(this.currentWorld) : DEFAULT_TANK),
-    obstacles: () => (this.roomState === null ? [] : layoutFootprints(this.roomState)),
+    obstacles: () => (this.tanks.roomState === null ? [] : layoutFootprints(this.tanks.roomState)),
     view: () => this.view,
     probe: this.probe,
     editor: {
@@ -924,21 +807,15 @@ export class AquariumHost {
   readonly decorDropGrounded = this.decorEdit.dropGrounded;
 
   /** Catalogue « Bacs et meubles » de la pièce de N bacs (#305, #695) : `RoomLayoutController`. */
-  private readonly roomLayout = new RoomLayoutController({
+  private readonly roomLayout: RoomLayoutController = new RoomLayoutController({
     world: () => this.currentWorld,
     isCapture: () => this.capture,
     editable: () => this.roomEdit.editable(),
-    roomState: () => this.roomState,
-    setRoomState: (room) => {
-      this.roomState = room;
-    },
-    syncRoomState: (world) => this.syncRoomState(world),
-    selectedTankId: () => this.selectedTankId,
-    forgetStashed: (environment) => {
-      const stash = new Map(this.stash);
-      stash.delete(environment);
-      this.stash = stash;
-    },
+    roomState: () => this.tanks.roomState,
+    setRoomState: (room) => this.tanks.setRoomState(room),
+    syncRoomState: (world) => this.tanks.sync(world),
+    selectedTankId: () => this.tanks.selectedTankId,
+    forgetStashed: (environment) => this.tanks.forgetStashed(environment),
     room: () => this.room(),
     redrawRoom: () => this.applyRoom(this.room()),
     probe: this.probe,
@@ -950,19 +827,43 @@ export class AquariumHost {
   readonly roomCatalog = this.roomLayout.catalog;
 
   /**
+   * Bacs de la pièce vus du bac affiché (#264, #306, #316, #547, #696) : pièce et mondes rangés,
+   * rattrapage, liste, quarantaine et transferts, `TankRoomController`.
+   */
+  private readonly tanks: TankRoomController = new TankRoomController({
+    world: () => this.currentWorld,
+    hasView: () => this.view !== null,
+    isCapture: () => this.capture,
+    dayClock: () => this.dayClock,
+    records: this.records,
+    layout: {
+      refresh: () => this.roomLayout.refreshCatalog(this.roomLayout.catalog().message),
+      floor: (world) => this.roomLayout.floor(world),
+      commit: (room) => this.roomLayout.commit(room, null),
+    },
+    publishSelectedTank: (id) => this.probe.publishSelectedTank(id),
+    finishDrop: () => this.decorEdit.finishDrop(),
+    showEnvironment: (id) => this.setEnvironment(id),
+    refreshPopulation: () => this.refreshPopulation(),
+    refreshWater: () => this.refreshWater(),
+    saveNow: () => this.saveNow(),
+    scheduleFrame: () => this.scheduleFrame(),
+  });
+
+  /**
    * Liste des bacs de la pièce (#306, lot 3) : nom, environnement, litrage, animaux et pire
    * gravité d'alerte de chaque bac, bac sélectionné compris (relevé à chaque relevé de l'eau).
    */
-  readonly tankList = signal<readonly TankListEntry[]>([]);
+  readonly tankList = this.tanks.tankList;
   /** Bacs de quarantaine possibles et malades du bac affiché (#547), relevés avec la liste. */
-  readonly quarantine = signal<QuarantineView>(EMPTY_QUARANTINE, { equal: sameQuarantine });
+  readonly quarantine = this.tanks.quarantine;
   /** Mode du bac affiché (#278) : `decor` remplace le tableau de bord par le badge. */
   readonly careMode = signal<CareMode>('soins');
   /** Force du courant du bac affiché (#460). */
   readonly current = signal<CurrentLevel>('coupe');
 
   /** Message du dernier transfert ou renommage (#306, #318), `null` avant tout geste. */
-  readonly tankNotice = signal<TankNotice | null>(null);
+  readonly tankNotice = this.tanks.notice;
 
   /**
    * Dimensions du bac du monde courant (issue #171), `null` si l'environnement ne les règle
@@ -1286,8 +1187,8 @@ export class AquariumHost {
     }
     // Plafond d'animaux de la pièce (#392, ADR 0096) : un ajout au-delà est ramené à la place
     // restante, sans effet si elle est nulle ; retirer reste toujours possible.
-    const room = this.syncRoomState(world);
-    const limit = roomPopulationLimits(room, this.selectedTankId, world)[species];
+    const room = this.tanks.sync(world);
+    const limit = roomPopulationLimits(room, this.tanks.selectedTankId, world)[species];
     setPopulationInPlace(world, species, Math.min(count, limit));
     this.refreshPopulation();
     this.scheduleFrame();
@@ -1303,9 +1204,9 @@ export class AquariumHost {
       return;
     }
     changeWorldWaterInPlace(world);
-    this.recordMaintenance(world, 'waterChange');
-    markWaterChange(this.waterHistoryOf(world), world.water, world.tick);
-    addJournalEntry(this.journalOf(world), waterChangeEntry(world.time));
+    this.records.recordMaintenance(world, 'waterChange');
+    markWaterChange(this.records.waterHistoryOf(world), world.water, world.tick);
+    addJournalEntry(this.records.journalOf(world), waterChangeEntry(world.time));
     this.refreshWater();
     this.saveNow();
     this.scheduleFrame();
@@ -1313,7 +1214,7 @@ export class AquariumHost {
 
   /** Marque faite une tâche d'entretien sans geste dans le jeu (filtre, test de l'eau, #513). */
   markMaintenanceDone(task: MaintenanceTask): void {
-    this.applyWaterSetting((world) => this.recordMaintenance(world, task));
+    this.applyWaterSetting((world) => this.records.recordMaintenance(world, task));
   }
 
   /**
@@ -1334,7 +1235,7 @@ export class AquariumHost {
       warning: outcome.ok ? (outcome.warning ?? null) : null,
     });
     if (outcome.ok) {
-      addJournalEntry(this.journalOf(world), treatmentEntry(world.time, kind));
+      addJournalEntry(this.records.journalOf(world), treatmentEntry(world.time, kind));
       this.refreshWater();
       this.saveNow();
       this.scheduleFrame();
@@ -1549,8 +1450,8 @@ export class AquariumHost {
     this.applyWaterSetting((world) => {
       pruned = pruneWorldPlantInPlace(world, index);
       if (pruned) {
-        this.recordMaintenance(world, 'prune');
-        addPruneEntry(this.journalOf(world), world.time);
+        this.records.recordMaintenance(world, 'prune');
+        addPruneEntry(this.records.journalOf(world), world.time);
       }
     });
     return pruned;
@@ -1686,16 +1587,16 @@ export class AquariumHost {
     const fromTime = this.renderTime();
     // Les autres bacs rattrapent le bac quitté avant l'échange (#316) ; le bac quitté garde
     // son identifiant dans la pièce, même jamais sauvegardé (#264).
-    this.advanceBackgroundTanks();
-    const room = this.syncRoomState(world);
+    this.tanks.advanceBackground();
+    const room = this.tanks.sync(world);
     // Bac de départ d'un environnement jamais visité ramené à la place restante sous le
     // plafond d'animaux de la pièce (#396, ADR 0096) : vide si la pièce est pleine.
     const free = Math.max(0, ROOM_ANIMAL_CAP - roomAnimalCount(room));
-    const next = switchEnvironment(world, this.stash, id, free);
-    this.stash = next.stash;
+    const next = switchEnvironment(world, this.tanks.stash, id, free);
+    this.tanks.setStash(next.stash);
     this.currentWorld = next.world as MutableWorld;
     // La liste des bacs (#306) suit aussitôt le bac affiché.
-    this.syncRoomState(next.world);
+    this.tanks.sync(next.world);
     this.loop.resetClock();
     this.dayClock = carryClock(this.dayClock, fromTime, this.renderTime());
     this.litHour = null;
@@ -1725,8 +1626,8 @@ export class AquariumHost {
     }
     // Un bac agrandi ne doit chevaucher ni meuble ni bac posé de la pièce (#311) : sinon la
     // sauvegarde refuserait la pièce entière.
-    const room = this.syncRoomState(world);
-    const refusal = tankResizeRefusal(room, this.selectedTankId, clampTankDimensions(dims));
+    const room = this.tanks.sync(world);
+    const refusal = tankResizeRefusal(room, this.tanks.selectedTankId, clampTankDimensions(dims));
     if (refusal !== null) {
       return this.roomLayout.refuse(refusal);
     }
@@ -1799,7 +1700,7 @@ export class AquariumHost {
     }
     if (feedInPlace(world, x, z) > 0) {
       this.probe.publishFood(this.currentWorld);
-      this.refreshFirstTankPath(world);
+      this.records.refreshFirstTankPath(world);
       this.scheduleFrame();
     }
   }
@@ -1902,9 +1803,9 @@ export class AquariumHost {
     this.room.set(room);
     // Meubles supports et bacs posés (#305) : dessinés avec la pièce, au parquet du meuble.
     this.view?.setRoomLayout(
-      this.roomState === null
+      this.tanks.roomState === null
         ? []
-        : roomLayoutBlocks(this.roomState, clampRoom(room).cabinetHeight),
+        : roomLayoutBlocks(this.tanks.roomState, clampRoom(room).cabinetHeight),
     );
     this.view?.setRoom(room);
     const shown = this.view?.roomShown ?? false;
@@ -1944,8 +1845,7 @@ export class AquariumHost {
 
   /** Remplace la pièce par une sauvegarde relue et validée (import, lien partagé). */
   private loadImported(result: ImportedSave): void {
-    this.roomState = result.room;
-    this.selectedTankId = result.selectedTankId;
+    this.tanks.restore(result.room, result.selectedTankId);
     this.loadWorld(result.world as MutableWorld, result.settings, result.others);
     this.createView(environmentById(result.world.environment).defaultCamera);
     this.probe.publishCamera(this.view);
@@ -1973,54 +1873,11 @@ export class AquariumHost {
    * @throws RangeError comme `serializeRoom`.
    */
   private saveText(world: World): string {
-    this.keepWaterHistory(world);
-    this.keepJournal(world);
-    this.advanceBackgroundTanks();
-    const room = this.syncRoomState(world);
-    return serializeRoom(room, this.selectedTankId, this.settings());
-  }
-
-  /** Resynchronise la pièce avec le monde affiché et les mondes rangés (`syncRoom`). */
-  private syncRoomState(world: World): RoomState {
-    const synced = syncRoom(this.roomState, world, stashedList(this.stash, world.environment));
-    this.roomState = synced.room;
-    this.selectedTankId = synced.selectedTankId;
-    this.roomLayout.refreshCatalog(this.roomLayout.catalog().message);
-    this.refreshTankList();
-    return synced.room;
-  }
-
-  /**
-   * Rattrapage des bacs non affichés (#316, ADR 0076, fin du gel des ADR 0063 et 0074) : ils
-   * avancent, par `stepRoom`, d'autant de pas que le bac affiché depuis le rattrapage
-   * précédent, avec la même horloge du jour. Appelé au rythme des relevés de l'eau (au plus
-   * 4 fois par seconde de temps réel), et avant tout ce qui lit ou change les autres bacs
-   * (changement de bac, transfert, sauvegarde) : aucune allocation par image. Le bac affiché
-   * n'est pas touché (même objet, avancé en place par la boucle). Sans effet en capture.
-   */
-  private advanceBackgroundTanks(): void {
-    const world = this.currentWorld;
-    if (!world || this.capture) {
-      return;
-    }
-    const pending = this.backgroundWorld === world ? world.tick - this.backgroundTick : 0;
-    this.backgroundWorld = world;
-    this.backgroundTick = world.tick;
-    if (pending <= 0) {
-      return;
-    }
-    const synced = syncRoom(this.roomState, world, stashedList(this.stash, world.environment));
-    const room = stepRoom(synced.room, pending, this.dayClock, synced.selectedTankId);
-    // Le bac rangé garde sa dernière observation du journal sous son nouveau monde (#592).
-    carryJournalWatches(this.journalWatches, tankWorldPairs(synced.room.tanks, room.tanks));
-    this.stash = stashFromList(
-      room.tanks
-        .filter((tank) => tank.placement === null && tank.id !== synced.selectedTankId)
-        .map((tank) => tank.world),
-      world.environment,
-    );
-    this.roomState = { ...room, tick: world.tick };
-    this.selectedTankId = synced.selectedTankId;
+    this.records.keepWaterHistory(world);
+    this.records.keepJournal(world);
+    this.tanks.advanceBackground();
+    const room = this.tanks.sync(world);
+    return serializeRoom(room, this.tanks.selectedTankId, this.settings());
   }
 
   /**
@@ -2059,326 +1916,39 @@ export class AquariumHost {
     this.scheduleFrame();
   }
 
-  /**
-   * Renomme le bac `id` de la liste (#316, `renameTank`) : nom normalisé, non vide, de
-   * `MAX_TANK_NAME_LENGTH` caractères au plus ; enregistré aussitôt. Refus : message dans
-   * `tankNotice`, nom inchangé. Sans effet en capture ou avant le démarrage.
-   */
+  /** Renomme le bac `id` de la liste (#316) : `TankRoomController.rename`. */
   renameTank(id: number, name: string): void {
-    const world = this.currentWorld;
-    if (!world || this.capture) {
-      return;
-    }
-    const renamed = renameTank(this.syncRoomState(world), id, name);
-    if (renamed === null) {
-      this.tankNotice.set({
-        kind: 'erreur',
-        text: `Nom refusé : de 1 à ${MAX_TANK_NAME_LENGTH} caractères`,
-      });
-      this.refreshTankList();
-      return;
-    }
-    this.roomState = renamed;
-    this.tankNotice.set(null);
-    this.syncRoomState(world);
-    this.saveNow();
+    this.tanks.rename(id, name);
   }
 
-  /**
-   * Liste des bacs (#306) : le bac sélectionné est relu à chaque appel (son monde avance en
-   * place) ; les autres bacs gardent leur gravité en cache par monde, recalculée après chaque
-   * rattrapage (#316). Rien en capture (aucune interface).
-   */
-  private refreshTankList(): void {
-    const world = this.currentWorld;
-    if (!world || this.capture) {
-      return;
-    }
-    const room = this.roomState ?? this.syncRoomState(world);
-    const selected = this.selectedTankId;
-    const entries = tankList(room.tanks, selected, (tank) => {
-      if (tank.id === selected) {
-        // Le monde affiché change en place : sa gravité en cache, d'avant son affichage, ne
-        // vaut plus quand il sera de nouveau rangé.
-        this.frozenWorst.delete(world);
-        return worstAlert(world);
-      }
-      let worst = this.frozenWorst.get(tank.world);
-      if (worst === undefined) {
-        worst = worstAlert(tank.world);
-        this.frozenWorst.set(tank.world, worst);
-      }
-      return worst;
-    });
-    // Le bac sélectionné est décrit par le monde affiché, même avant resynchronisation.
-    this.tankList.set(
-      entries.map((entry) =>
-        entry.selected ? { ...entry, animals: world.entities.length } : entry,
-      ),
-    );
-    this.quarantine.set(quarantineView(room, selected, { world }));
-    this.probe.publishSelectedTank(selected);
-  }
-
-  /**
-   * Sélectionne le bac `id` de la liste (#306) : tableau de bord, fiches et wiki décrivent
-   * alors ce bac. Lot 3a : un bac à la position historique (un par environnement) se
-   * sélectionne en changeant d'environnement (`setEnvironment`) ; un bac posé (lot 3c) n'est
-   * pas encore sélectionnable (ADR 0075). Sans effet en capture ou avant le démarrage.
-   */
+  /** Sélectionne le bac `id` de la liste (#306) : `TankRoomController.select`. */
   selectTank(id: number): void {
-    const world = this.currentWorld;
-    if (!world || !this.view || this.capture) {
-      return;
-    }
-    const tank = findTank(this.syncRoomState(world), id);
-    if (tank === undefined || tank.id === this.selectedTankId) {
-      return;
-    }
-    if (tank.placement !== null) {
-      this.tankNotice.set({
-        kind: 'erreur',
-        text: `« ${tank.name} » est posé dans la pièce : pas encore sélectionnable`,
-      });
-      return;
-    }
-    this.tankNotice.set(null);
-    this.keepWaterHistory(world);
-    this.keepJournal(world);
-    this.keepFirstTankPath(world);
-    this.setEnvironment(tank.world.environment);
+    this.tanks.select(id);
   }
 
-  /**
-   * Transfère à l'épuisette un animal de l'espèce `species` du bac sélectionné vers le bac
-   * `toId` (#306, `transferFish`) : le plus récent de cette espèce, comme le retrait de la
-   * population. Le bac affiché perd l'animal en place ; le bac d'arrivée (rangé ou posé)
-   * reçoit le nouvel animal, avec sa faim et sa santé. Refus (milieu, température, bac plein)
-   * ou réussite : message dans `tankNotice`. Enregistré aussitôt. Sans effet en capture
-   * ou avant le démarrage.
-   */
+  /** Transfère un animal vers le bac `toId` (#306) : `TankRoomController.transferAnimal`. */
   transferAnimal(species: string, toId: number): void {
-    const world = this.currentWorld;
-    if (!world || this.capture || !isSpeciesId(species)) {
-      return;
-    }
-    // Le bac d'arrivée est d'abord mis à l'heure du bac affiché (#316).
-    this.advanceBackgroundTanks();
-    const room = this.syncRoomState(world);
-    let index = world.entities.length - 1;
-    while (index >= 0 && world.entities[index].species !== species) {
-      index -= 1;
-    }
-    const fish = world.entities[index];
-    if (fish === undefined) {
-      this.tankNotice.set({ kind: 'erreur', text: 'Aucun animal de cette espèce ici' });
-      return;
-    }
-    const result = transferFish(room, this.selectedTankId, toId, fish.id);
-    if (!result.ok) {
-      this.tankNotice.set({ kind: 'erreur', text: result.message });
-      return;
-    }
-    // Une chute en cours se termine d'abord, comme avant tout changement du monde affiché.
-    this.decorEdit.finishDrop();
-    (world.entities as Entity[]).splice(index, 1);
-    const arrival = findTank(result.room, toId) as RoomTank;
-    const departure = findTank(room, toId);
-    if (departure !== undefined) {
-      carryJournalWatches(this.journalWatches, [[departure.world, arrival.world]]);
-    }
-    if (arrival.placement === null) {
-      const stash = new Map(this.stash);
-      stash.set(arrival.world.environment, arrival.world);
-      this.stash = stash;
-    }
-    this.roomState = {
-      ...result.room,
-      tanks: result.room.tanks.map((tank) =>
-        tank.id === this.selectedTankId ? { ...tank, world } : tank,
-      ),
-    };
-    this.syncRoomState(world);
-    const { singular, feminine } = SPECIES_LABELS[species];
-    const moved = `${singular.charAt(0).toUpperCase()}${singular.slice(1)} transféré${feminine ? 'e' : ''}`;
-    const warnings = result.warnings.map(addWarningText);
-    // Amphibien transféré dans une eau déjà traitée (#374) : le produit lui est toxique.
-    const treated = treatedWaterWarning(species, waterProducts(arrival.world.water));
-    if (treated !== null) {
-      warnings.push(treated);
-    }
-    this.tankNotice.set({
-      kind: 'info',
-      text: [`${moved} dans « ${arrival.name} »`, ...warnings].join('. '),
-    });
-    this.refreshPopulation();
-    this.refreshWater();
-    this.saveNow();
-    this.scheduleFrame();
+    this.tanks.transferAnimal(species, toId);
   }
 
-  /**
-   * Installe un bac de quarantaine (#547) : petit bac vide de l'environnement du bac affiché,
-   * nommé « Quarantaine », posé au sol à la première place libre (comme le catalogue « Bacs et
-   * meubles », la pièce peut rester masquée). Refus (jardin, plafond, aucune place) : message
-   * dans `tankNotice`. Sans effet en capture ou avant le démarrage.
-   */
+  /** Installe un bac de quarantaine (#547) : `TankRoomController.installQuarantine`. */
   installQuarantine(): void {
-    const world = this.currentWorld;
-    if (!world || this.capture) {
-      return;
-    }
-    const environment = quarantineEnvironment(world.environment);
-    if (environment === null) {
-      this.tankNotice.set({
-        kind: 'erreur',
-        text: 'Le bassin est au jardin : installez la quarantaine depuis un bac de la pièce',
-      });
-      return;
-    }
-    const room = this.syncRoomState(world);
-    const capped = roomTankCapRefusal(room);
-    const { area, obstacles } = this.roomLayout.floor(world);
-    const placement =
-      capped === null
-        ? findTankSpot(room, environment, QUARANTINE_TANK_SIZE, null, area, obstacles)
-        : null;
-    const result =
-      placement === null
-        ? null
-        : addTank(room, {
-            environment,
-            size: QUARANTINE_TANK_SIZE,
-            placement,
-            name: QUARANTINE_TANK_NAME,
-          });
-    if (result === null || !result.ok) {
-      this.tankNotice.set({
-        kind: 'erreur',
-        text: capped ?? 'Aucune place libre au sol pour la quarantaine',
-      });
-      return;
-    }
-    this.tankNotice.set({
-      kind: 'info',
-      text: `Bac « ${QUARANTINE_TANK_NAME} » installé : laissez mûrir son filtre avant d’y mettre un animal`,
-    });
-    this.roomLayout.commit(result.room, null);
-    this.syncRoomState(world);
+    this.tanks.installQuarantine();
   }
 
-  /**
-   * Soigne un bac posé de la liste (#547, quarantaine) : un geste du traitement `kind` dans ce
-   * bac **seul** (`treatTank`), le bac affiché n'est pas touché. Le bac est d'abord mis à
-   * l'heure (#316). Réussite ou refus : message dans `tankNotice`. Sans effet en capture, avant
-   * le démarrage, pour le bac affiché ou un bac à la position historique.
-   */
+  /** Soigne le bac posé `id` seul (#547) : `TankRoomController.treatPlacedTank`. */
   treatPlacedTank(id: number, kind: TreatmentKind): void {
-    const world = this.currentWorld;
-    if (!world || this.capture || id === this.selectedTankId) {
-      return;
-    }
-    this.advanceBackgroundTanks();
-    const room = this.syncRoomState(world);
-    const tank = findTank(room, id);
-    if (tank === undefined || tank.placement === null) {
-      return;
-    }
-    const result = treatRoomTank(room, id, kind);
-    if (!result.ok) {
-      this.tankNotice.set({ kind: 'erreur', text: result.message });
-      return;
-    }
-    this.roomState = result.room;
-    this.syncRoomState(world);
-    const { message, warning } = result.outcome;
-    this.tankNotice.set({
-      kind: 'info',
-      text: [`« ${tank.name} » : ${message}`, warning].filter((t) => t !== undefined).join(' '),
-    });
-    this.saveNow();
+    this.tanks.treatPlacedTank(id, kind);
   }
 
-  /**
-   * Verse une dose d'amorce de bactéries dans le bac posé `id` (#553) : son filtre neuf (#538)
-   * mûrit plus vite, le bac affiché n'est pas touché (`doseTankStarter`). Le bac est d'abord
-   * mis à l'heure (#316). Réussite ou refus : message dans `tankNotice`. Sans effet en capture,
-   * avant le démarrage, pour le bac affiché ou un bac à la position historique.
-   */
+  /** Amorce de bactéries dans le bac posé `id` (#553) : `TankRoomController`. */
   doseStarterInPlacedTank(id: number): void {
-    const world = this.currentWorld;
-    if (!world || this.capture || id === this.selectedTankId) {
-      return;
-    }
-    this.advanceBackgroundTanks();
-    const room = this.syncRoomState(world);
-    const tank = findTank(room, id);
-    if (tank === undefined || tank.placement === null) {
-      return;
-    }
-    const result = doseTankStarter(room, id);
-    if (!result.ok) {
-      this.tankNotice.set({ kind: 'erreur', text: `« ${tank.name} » : ${result.message}` });
-      return;
-    }
-    this.roomState = result.room;
-    this.syncRoomState(world);
-    this.tankNotice.set({ kind: 'info', text: `« ${tank.name} » : ${result.outcome.message}` });
-    this.saveNow();
+    this.tanks.doseStarterInPlacedTank(id);
   }
 
-  /**
-   * Ramène à l'épuisette un animal de l'espèce `species` du bac posé `fromId` dans le bac
-   * affiché (#547, retour de quarantaine) : le plus récent de cette espèce, faim, santé et
-   * maladies gardées (`transferFish`). Le bac affiché gagne l'animal en place ; message avec le
-   * rappel d'acclimatation. Refus (milieu, température, bac plein) : message dans `tankNotice`.
-   */
+  /** Ramène un animal du bac posé `fromId` (#547) : `TankRoomController.returnAnimal`. */
   returnAnimal(fromId: number, species: string): void {
-    const world = this.currentWorld;
-    if (!world || this.capture || !isSpeciesId(species) || fromId === this.selectedTankId) {
-      return;
-    }
-    this.advanceBackgroundTanks();
-    const room = this.syncRoomState(world);
-    const from = findTank(room, fromId);
-    const fish = from?.world.entities.filter((entity) => entity.species === species).pop();
-    if (from === undefined || from.placement === null || fish === undefined) {
-      this.tankNotice.set({ kind: 'erreur', text: 'Aucun animal de cette espèce ici' });
-      return;
-    }
-    const result = transferFish(room, fromId, this.selectedTankId, fish.id);
-    if (!result.ok) {
-      this.tankNotice.set({ kind: 'erreur', text: result.message });
-      return;
-    }
-    this.decorEdit.finishDrop();
-    // Le bac affiché reste le même objet (avancé en place par la boucle) : il reçoit l'animal
-    // créé par le transfert et le compteur d'identifiants.
-    const arrival = (findTank(result.room, this.selectedTankId) as RoomTank).world;
-    (world.entities as Entity[]).push(arrival.entities[arrival.entities.length - 1]);
-    (world as MutableWorld).nextFishId = arrival.nextFishId;
-    this.roomState = {
-      ...result.room,
-      tanks: result.room.tanks.map((tank) =>
-        tank.id === this.selectedTankId ? { ...tank, world } : tank,
-      ),
-    };
-    this.syncRoomState(world);
-    const { singular, feminine } = SPECIES_LABELS[species];
-    const moved = `${singular.charAt(0).toUpperCase()}${singular.slice(1)} ramené${feminine ? 'e' : ''}`;
-    const name = findTank(this.roomState, this.selectedTankId)?.name ?? 'ce bac';
-    this.tankNotice.set({
-      kind: 'info',
-      text: [
-        `${moved} dans « ${name} »`,
-        QUARANTINE_ACCLIMATION_REMINDER,
-        ...result.warnings.map(addWarningText),
-      ].join('. '),
-    });
-    this.refreshPopulation();
-    this.refreshWater();
-    this.saveNow();
-    this.scheduleFrame();
+    this.tanks.returnAnimal(fromId, species);
   }
 
   /** Ajoute un meuble support du catalogue (#305) : `RoomLayoutController.addSupport`. */
@@ -2412,7 +1982,7 @@ export class AquariumHost {
    */
   private loadWorld(world: MutableWorld, settings: SaveSettings, others: readonly World[]): void {
     this.currentWorld = world;
-    this.stash = stashFromList(others, world.environment);
+    this.tanks.stashOthers(others, world.environment);
     this.loop.resetClock();
     this.speed.set(settings.speed);
     this.probe.publishSpeed(settings.speed);
@@ -2600,9 +2170,8 @@ export class AquariumHost {
 
   /** Reprend la pièce, les mondes et les réglages d'une sauvegarde ; renvoie le monde affiché. */
   private applyRestored(restored: RestoredSave, params: CaptureParams): MutableWorld {
-    this.stash = stashFromList(restored.others, restored.world.environment);
-    this.roomState = restored.room;
-    this.selectedTankId = restored.selectedTankId;
+    this.tanks.stashOthers(restored.others, restored.world.environment);
+    this.tanks.restore(restored.room, restored.selectedTankId);
     this.speed.set(restored.settings.speed);
     this.foodStyle.set(restored.settings.foodStyle ?? DEFAULT_FOOD_STYLE);
     this.room.set(restored.settings.room ?? DEFAULT_ROOM);
@@ -2645,7 +2214,7 @@ export class AquariumHost {
    * monde ne quitte pas t = 0, captures d'interface reproductibles).
    */
   private prepareRoom(world: MutableWorld, params: CaptureParams): void {
-    this.syncRoomState(world);
+    this.tanks.sync(world);
     if (params.capture && params.room && params.roomLayout.length > 0) {
       this.roomLayout.applyCaptureLayout(world, params.roomLayout);
     }
@@ -3099,7 +2668,7 @@ export class AquariumHost {
     const realDt = this.loop.advance(timestamp, this.speed());
     const steps = this.loop.clock.steps;
     if (steps > 0 && this.currentWorld) {
-      this.advanceAndRecord(this.currentWorld, steps);
+      this.records.advanceAndRecord(this.currentWorld, steps, this.dayClock);
       this.probe.publishTick(this.currentWorld);
       this.probe.publishFood(this.currentWorld);
       // Au plus 4 relevés par seconde de temps réel, quelle que soit la vitesse (#256).
@@ -3109,7 +2678,7 @@ export class AquariumHost {
       ) {
         this.waterReadAt = timestamp;
         // Les autres bacs avancent par lots, au rythme des relevés (#316, ADR 0076).
-        this.advanceBackgroundTanks();
+        this.tanks.advanceBackground();
         this.refreshWater();
       }
     }
@@ -3125,7 +2694,7 @@ export class AquariumHost {
     const counts = populationCounts(world);
     this.population.set(counts);
     // Pièce à jour pour ce monde (même objet) : plafond de la pièce ; sinon, celui du bac seul.
-    const room = this.roomState;
+    const room = this.tanks.roomState;
     const shownTank = room?.tanks.find((tank) => tank.world === world);
     this.populationMax.set(
       room && shownTank ? roomPopulationLimits(room, shownTank.id, world) : populationLimits(world),
@@ -3201,197 +2770,6 @@ export class AquariumHost {
     this.probe.publishAlertHighlight(0);
   }
 
-  /** Temps du premier relevé d'un monde sans calendrier : début de son suivi (#513). */
-  private maintenanceStartOf(world: World): number {
-    let start = this.maintenanceStart.get(world);
-    if (start === undefined) {
-      start = world.time;
-      this.maintenanceStart.set(world, start);
-    }
-    return start;
-  }
-
-  /** Enregistre une tâche faite ; le suivi commence au premier relevé du monde. */
-  private recordMaintenance(world: MutableWorld, task: MaintenanceTask): void {
-    world.maintenance ??= initialMaintenance(this.maintenanceStartOf(world));
-    recordWorldMaintenanceInPlace(world, task);
-  }
-
-  /**
-   * Inscrit dans le monde le début du suivi une fois le bac avancé, à la sauvegarde
-   * automatique seulement (#513) : la simulation et un bac relu restent identiques au bit près.
-   */
-  private keepMaintenanceStart(): void {
-    const world = this.currentWorld;
-    if (world && !this.capture && world.maintenance === undefined) {
-      const start = this.maintenanceStartOf(world);
-      if (world.time > start) {
-        world.maintenance = initialMaintenance(start);
-      }
-    }
-  }
-
-  /** Calendrier d'entretien du bac affiché (#513) ; jamais en capture (monde inchangé). */
-  private refreshMaintenance(world: MutableWorld): void {
-    if (this.capture) {
-      return;
-    }
-    const state = world.maintenance ?? initialMaintenance(this.maintenanceStartOf(world));
-    this.maintenance.set(
-      maintenanceReadout(
-        state,
-        world.time,
-        worldHasPrunablePlants(world)
-          ? MAINTENANCE_TASKS
-          : MAINTENANCE_TASKS.filter((task) => task !== 'prune'),
-      ),
-    );
-  }
-
-  /**
-   * Avance le bac affiché de `steps` pas, coupés aux frontières de relevé (#511) : l'historique
-   * ne dépend pas de la cadence d'affichage. Rythme du jour (#209) : `dayClock`.
-   */
-  private advanceAndRecord(world: MutableWorld, steps: number): void {
-    const history = this.waterHistoryOf(world);
-    let left = steps;
-    while (left > 0) {
-      const count = Math.min(left, ticksToNextWaterSample(world.tick));
-      advanceInPlace(world, count, this.dayClock);
-      left -= count;
-      recordWaterHistory(history, world.water, world.tick);
-    }
-  }
-
-  /** Tampon d'historique de `world`, repris de sa sauvegarde au premier accès (#511). */
-  private waterHistoryOf(world: World): WaterHistory {
-    let history = this.waterHistories.get(world);
-    if (history === undefined) {
-      history =
-        world.waterHistory === undefined
-          ? createWaterHistory()
-          : restoreWaterHistory(world.waterHistory);
-      this.waterHistories.set(world, history);
-    }
-    return history;
-  }
-
-  /**
-   * Inscrit l'historique dans le monde, à la sauvegarde ou au changement de bac seulement
-   * (#511) : un bac sans relevé nouveau reste identique à sa sauvegarde, au bit près.
-   */
-  private keepWaterHistory(world: MutableWorld): void {
-    const history = this.waterHistories.get(world);
-    if (history !== undefined && history.count > 0) {
-      world.waterHistory = savedWaterHistory(history);
-    }
-  }
-
-  /** Journal de `world`, repris de sa sauvegarde au premier accès (#581). */
-  private journalOf(world: World): Journal {
-    let journal = this.journals.get(world);
-    if (journal === undefined) {
-      journal = world.journal === undefined ? createJournal() : restoreJournal(world.journal);
-      this.journals.set(world, journal);
-    }
-    return journal;
-  }
-
-  /**
-   * Inscrit le journal dans le monde, à la sauvegarde ou au changement de bac seulement
-   * (#581) : un bac sans événement nouveau reste identique à sa sauvegarde, au bit près.
-   */
-  private keepJournal(world: MutableWorld): void {
-    const journal = this.journals.get(world);
-    if (journal !== undefined && journal.entries.length > 0) {
-      world.journal = savedJournal(journal);
-    }
-  }
-
-  /**
-   * Observe le bac affiché au rythme des relevés (#581) : maladies, guérisons, pontes,
-   * éclosions et alertes franchies (#592) survenues depuis la dernière observation entrent au
-   * journal (le premier regard sur un bac n'écrit rien ; un bac rangé garde sa dernière
-   * observation, reportée par `carryJournalWatches`), puis publie le journal s'il a changé.
-   * Jamais en capture.
-   */
-  private refreshJournal(world: World): void {
-    if (this.capture) {
-      return;
-    }
-    const journal = this.journalOf(world);
-    const watch = this.journalWatches.get(world);
-    const subject = {
-      time: world.time,
-      entities: world.entities,
-      ...(world.eggs === undefined ? {} : { eggs: world.eggs }),
-      alerts: worldAlerts(world),
-    };
-    if (watch === undefined) {
-      this.journalWatches.set(world, watchJournal(subject));
-    } else {
-      for (const entry of observeJournal(watch, subject)) {
-        addJournalEntry(journal, entry);
-      }
-    }
-    if (journal !== this.shownJournal || journal.version !== this.shownJournalVersion) {
-      this.shownJournal = journal;
-      this.shownJournalVersion = journal.version;
-      this.journal.set(journalLines(journal));
-    }
-  }
-
-  /** Publie l'historique du bac affiché s'il a changé (#511) ; jamais en capture. */
-  private refreshWaterHistory(world: World): void {
-    if (this.capture) {
-      return;
-    }
-    const history = this.waterHistoryOf(world);
-    if (history !== this.shownHistory || history.version !== this.shownHistoryVersion) {
-      this.shownHistory = history;
-      this.shownHistoryVersion = history.version;
-      this.waterHistory.set(waterHistoryView(history));
-    }
-  }
-
-  /**
-   * Avance et publie le parcours du bac affiché (#512), jamais en capture (monde inchangé) ni
-   * en mode décor (eau en pause). Hors du monde (piège du cycle 176), sans allocation de vue
-   * tant qu'aucune étape ne change.
-   */
-  private refreshFirstTankPath(world: World): void {
-    if (this.capture) {
-      return;
-    }
-    if (!firstTankPathAvailable(world.environment) || world.careMode === 'decor') {
-      this.shownFirstTankPath = null;
-      this.firstTankPath.set(null);
-      return;
-    }
-    const facts = firstTankFacts(world);
-    const state = advanceFirstTankPath(
-      this.firstTankPaths.get(world) ?? world.firstTankPath ?? createFirstTankPath(facts),
-      facts,
-    );
-    this.firstTankPaths.set(world, state);
-    if (state !== this.shownFirstTankPath) {
-      this.shownFirstTankPath = state;
-      this.firstTankPath.set(firstTankPathView(state));
-    }
-  }
-
-  /**
-   * Inscrit le parcours dans le monde, à la sauvegarde automatique, à l'export ou au changement
-   * de bac seulement, une fois le bac avancé (#512), comme le début du suivi d'entretien : un
-   * bac relu et sans pas nouveau reste identique, au bit près.
-   */
-  private keepFirstTankPath(world: MutableWorld): void {
-    const state = this.firstTankPaths.get(world);
-    if (state !== undefined && world.time > state.startedAt) {
-      world.firstTankPath = state;
-    }
-  }
-
   /**
    * Relevé de l'eau (#207) : signal `water` et `data-aqfish-water` mis à jour seulement s'il
    * change, trouble de l'eau de la vue suivant le niveau.
@@ -3402,7 +2780,7 @@ export class AquariumHost {
       return;
     }
     this.waterReadTick = world.tick;
-    this.refreshTankList();
+    this.tanks.refreshList();
     this.waterSample.set(waterSample(world.water, world.environment, world.tick));
     this.care.refreshReadouts(world);
     this.probe.publishFilterBacteria(filterMaturityPercent(world.water));
@@ -3411,10 +2789,7 @@ export class AquariumHost {
     this.health.set(healthSummary(world.entities));
     this.refreshDead(world);
     this.refreshAlertAnimals(world);
-    this.refreshMaintenance(world);
-    this.refreshWaterHistory(world);
-    this.refreshJournal(world);
-    this.refreshFirstTankPath(world);
+    this.records.refresh(world);
     const treatment = treatmentReadout(world.water);
     this.treatment.set(treatment);
     const pharmacy = pharmacyState(world.water, this.pharmacyUsed.get(world) ?? []);
@@ -3493,7 +2868,7 @@ export class AquariumHost {
       ? isDecorMode(world) || !hasAlgae(world.environment)
         ? NO_FOULING
         : sampleFouling(this.captureFouling)
-      : worldFouling(world, this.maintenanceStartOf(world));
+      : worldFouling(world, this.records.maintenanceStartOf(world));
     this.view?.setFouling(environmentWater(world), fouling, hasFlatFloor(world.environment));
     this.probe.publishFouling(fouling, this.view?.foulingCounts ?? NO_FOULING);
   }
@@ -3552,7 +2927,7 @@ export class AquariumHost {
     this.view?.dispose();
     this.view = null;
     this.currentWorld = null;
-    this.roomState = null;
+    this.tanks.setRoomState(null);
     if (this.readySignaled) {
       resetCaptureReady(this.document);
     }
