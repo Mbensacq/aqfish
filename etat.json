@@ -9095,10 +9095,10 @@
           "note": "PR #736 : sauvegarde, photo, boucle et démarrage hors de l'hôte (assainissement 10/13, partiel : hôte 3 560 lignes), CI verte"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-19T03:15:34.967Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-19T03:31:37.808Z",
+          "note": "Verdict OK, 0 bug, captures publiées (166/166 identiques), objectif <1000 lignes non atteint (partiel annoncé)"
         }
       },
       "metriques": {}
