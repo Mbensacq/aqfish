@@ -9281,10 +9281,10 @@
           "note": "Verdict OK, 0 bug, 165/166 captures identiques (1 non déterministe connue), publiées"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-19T15:36:01.060Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-19T16:01:24.486Z",
+          "note": "PR #742 fusionnée → v1.25.3 (release CI OK), #696 close (969 lignes hors commentaires) ; main verte ; suppression de branche refusée"
         }
       },
       "metriques": {}
