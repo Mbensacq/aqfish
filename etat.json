@@ -9203,10 +9203,10 @@
           "note": "PR #740 : image, aspect du bac et alertes hors de l'hôte (10/13, partiel : hôte 2 384 lignes), CI verte"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-19T08:35:51.732Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-19T09:47:05.171Z",
+          "note": "Verdict OK, 0 bug (1 échec e2e de timing non reproductible), captures identiques, publiées"
         }
       },
       "metriques": {}
