@@ -9108,6 +9108,24 @@
         }
       },
       "metriques": {}
+    },
+    "251": {
+      "numero": 251,
+      "date": "2026-11-19",
+      "debut": "2026-11-19T03:59:24.932Z",
+      "type": "retro",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-19T03:59:24.932Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
