@@ -9129,6 +9129,12 @@
           "debut": "2026-11-19T04:00:44.921Z",
           "fin": "2026-11-19T04:44:00.704Z",
           "note": "PR #738 : suivi du bac et bacs de la pièce hors de l'hôte (10/13, partiel : hôte 2 935 lignes), CI verte"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-19T04:44:38.025Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
