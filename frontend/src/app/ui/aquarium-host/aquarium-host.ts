@@ -112,34 +112,12 @@ import {
   type FoodStyle,
 } from '../../core/food-style/food-style';
 import type { SpeciesId } from '../../sim/species';
-import {
-  advanceToWithFeedings,
-  changeWorldWaterInPlace,
-  feedInPlace,
-  removeDeadInPlace,
-  setWorldCatappaInPlace,
-  setWorldCurrentInPlace,
-  setWorldHeaterInPlace,
-  setWorldLampOnInPlace,
-  setWorldFeederInPlace,
-  refillWorldFeederInPlace,
-  setWorldLightingInPlace,
-  scrapeWorldAlgaeInPlace,
-  pruneWorldPlantInPlace,
-} from '../../sim/world';
+import { advanceToWithFeedings, feedInPlace } from '../../sim/world';
 import type { MutableWorld, World } from '../../sim/world-types';
-import { netTarget } from '../../sim/mortality';
-import {
-  isCurrentLevel,
-  nextCurrentLevel,
-  type CurrentLevel,
-  type CurrentVelocity,
-} from '../../sim/water-current';
+import { type CurrentLevel, type CurrentVelocity } from '../../sim/water-current';
 import { waterTurbidity } from '../../sim/water-quality';
 import type { ConditionerKind } from '../../sim/water-conditioner';
 import type { PhRegulatorDirection } from '../../sim/ph-regulator';
-import { addJournalEntry, addPruneEntry, waterChangeEntry } from '../../sim/journal';
-import { markWaterChange } from '../../sim/water-history';
 import type { MaintenanceTask } from '../../sim/maintenance';
 import { worldReview, type ReviewPoint } from '../../sim/bilan';
 import type { TreatmentKind } from '../../sim/treatment';
@@ -154,6 +132,8 @@ import { FramePainter, WALLPAPER_PRESET } from './frame-painter';
 import { AlertHighlightController } from './alert-highlight-controller';
 import { TankLooksController } from './tank-looks-controller';
 import { TankReadoutsController } from './tank-readouts-controller';
+import { TankToolsController } from './tank-tools-controller';
+import { WaterSettingsController } from './water-settings-controller';
 import { createStartupWorld } from './startup-world';
 import { SaveShareController, type ImportedSave, type RestoredSave } from './save-share-controller';
 import { AquariumProbe } from './aquarium-probe';
@@ -498,13 +478,45 @@ export class AquariumHost {
       ? lampReadout({ lighting: this.lighting(), lampOn: this.lampOn() })
       : null,
   );
-  /** Vrai tant que la raclette est en main (#476) : un clic sur le bac racle. */
-  readonly scraping = signal(false);
   /**
    * Suivi du bac affiché hors du monde (#511, #512, #513, #581, #696) : entretien, historique
    * de l'eau, journal et parcours guidé, `TankRecordsController`.
    */
   private readonly records = new TankRecordsController({ isCapture: () => this.capture });
+  /** Réglages de l'eau, du courant et de l'entretien (#207, #460, #476, #583, #696). */
+  private readonly settingsCtl = new WaterSettingsController({
+    world: () => this.currentWorld,
+    isCapture: () => this.capture,
+    records: this.records,
+    currentLevel: () => this.current(),
+    refreshWater: () => this.refreshWater(),
+    refreshCurrent: (world) => this.readouts.refreshCurrent(world),
+    saveNow: () => this.saveNow(),
+    scheduleFrame: () => this.scheduleFrame(),
+  });
+  /** Raclette, sécateur, épuisette et clics sur le bac (#476, #477, #582, #696). */
+  private readonly tools: TankToolsController = new TankToolsController({
+    probe: this.probe,
+    world: () => this.currentWorld,
+    isCapture: () => this.capture,
+    applyWaterSetting: (apply) => this.settingsCtl.apply(apply),
+    records: this.records,
+    refreshPopulation: () => this.readouts.refreshPopulation(),
+    editor: {
+      editing: () => this.decorEditing(),
+      editAt: (pick) => this.editAt(pick),
+    },
+    care: {
+      isCutting: () => this.care.isCutting(),
+      cutPlant: (index) => this.cutCarePlant(index),
+      isSiphoning: () => this.care.isSiphoning(),
+    },
+    feed: (x, z) => this.feed(x, z),
+  });
+  /** Vrai tant que la raclette est en main (#476) : un clic sur le bac racle. */
+  readonly scraping = this.tools.scraping;
+  /** Vrai tant que le sécateur est en main (#477) : un clic sur une plante à tige la taille. */
+  readonly pruning = this.tools.pruning;
   /** Photo PNG et images de la séance (#479, #503, #624, #696) : `PhotoController`. */
   private readonly photo = new PhotoController({
     document: this.document,
@@ -523,7 +535,7 @@ export class AquariumHost {
     view: () => this.view,
     isCapture: () => this.capture,
     storage: () => this.saveStorage,
-    applyWaterSetting: (apply) => this.applyWaterSetting(apply),
+    applyWaterSetting: (apply) => this.settingsCtl.apply(apply),
     recordMaintenance: (world, task) => this.records.recordMaintenance(world, task),
     journalOf: (world) => this.records.journalOf(world),
     waterHistoryOf: (world) => this.records.waterHistoryOf(world),
@@ -562,10 +574,6 @@ export class AquariumHost {
   readonly careCuttable = this.care.cuttable;
   /** Avant / après du bilan (#624), `null` sans comparaison. */
   readonly careComparison = this.care.comparison;
-  /** Vrai si le dernier clic sur le canvas a retiré un corps (#582) : il ne nourrit pas. */
-  private netted = false;
-  /** Vrai tant que le sécateur est en main (#477) : un clic sur une plante à tige la taille. */
-  readonly pruning = signal(false);
   /** Animaux désignés par les alertes et leur mise en évidence (#483, #696). */
   private readonly alerts = new AlertHighlightController({
     probe: this.probe,
@@ -942,19 +950,12 @@ export class AquariumHost {
    * capture (le courant passe par `courant=`), avant le démarrage ou pour une force inconnue.
    */
   setCurrent(level: CurrentLevel): void {
-    const world = this.currentWorld;
-    if (!world || this.capture || !isCurrentLevel(level)) {
-      return;
-    }
-    setWorldCurrentInPlace(world, level);
-    this.readouts.refreshCurrent(world);
-    this.saveNow();
-    this.scheduleFrame();
+    this.settingsCtl.setCurrent(level);
   }
 
   /** Force suivante du courant (bouton du panneau, #460) : coupé, doux, fort. */
   cycleCurrent(): void {
-    this.setCurrent(nextCurrentLevel(this.current()));
+    this.settingsCtl.cycleCurrent();
   }
 
   private readonly currentScratch: CurrentVelocity = { x: 0, z: 0 };
@@ -998,22 +999,12 @@ export class AquariumHost {
    * puis enregistre. Sans effet en mode capture ou avant le démarrage.
    */
   changeWater(): void {
-    const world = this.currentWorld;
-    if (!world || this.capture) {
-      return;
-    }
-    changeWorldWaterInPlace(world);
-    this.records.recordMaintenance(world, 'waterChange');
-    markWaterChange(this.records.waterHistoryOf(world), world.water, world.tick);
-    addJournalEntry(this.records.journalOf(world), waterChangeEntry(world.time));
-    this.refreshWater();
-    this.saveNow();
-    this.scheduleFrame();
+    this.settingsCtl.changeWater();
   }
 
   /** Marque faite une tâche d'entretien sans geste dans le jeu (filtre, test de l'eau, #513). */
   markMaintenanceDone(task: MaintenanceTask): void {
-    this.applyWaterSetting((world) => this.records.recordMaintenance(world, task));
+    this.settingsCtl.markMaintenanceDone(task);
   }
 
   /** Geste de soin contre les points blancs (#361) : `WaterCareController.treat`. */
@@ -1057,7 +1048,7 @@ export class AquariumHost {
    * [`MIN_HEATER_TEMPERATURE`, `MAX_HEATER_TEMPERATURE`].
    */
   setHeater(temperature: number): void {
-    this.applyWaterSetting((world) => setWorldHeaterInPlace(world, temperature));
+    this.settingsCtl.setHeater(temperature);
   }
 
   /**
@@ -1066,11 +1057,7 @@ export class AquariumHost {
    * démarrage ou hors bornes.
    */
   setLighting(hours: number): void {
-    this.applyWaterSetting((world) => {
-      if (!setWorldLightingInPlace(world, hours)) {
-        throw new RangeError('éclairage hors bornes');
-      }
-    });
+    this.settingsCtl.setLighting(hours);
   }
 
   /**
@@ -1079,11 +1066,7 @@ export class AquariumHost {
    * avant le démarrage ou hors bornes.
    */
   setLampOn(hour: number): void {
-    this.applyWaterSetting((world) => {
-      if (!setWorldLampOnInPlace(world, hour)) {
-        throw new RangeError('heure d’allumage hors bornes');
-      }
-    });
+    this.settingsCtl.setLampOn(hour);
   }
 
   /**
@@ -1093,18 +1076,12 @@ export class AquariumHost {
    * sans distributeur possible.
    */
   setFeeder(hours: readonly number[] | null): void {
-    this.applyWaterSetting((world) => {
-      if (!setWorldFeederInPlace(world, hours)) {
-        throw new RangeError('distributeur impossible');
-      }
-    });
+    this.settingsCtl.setFeeder(hours);
   }
 
   /** Remplit le distributeur automatique (#583) : 14 rations. Sans effet sans distributeur. */
   refillFeeder(): void {
-    this.applyWaterSetting((world) => {
-      refillWorldFeederInPlace(world);
-    });
+    this.settingsCtl.refillFeeder();
   }
 
   /**
@@ -1112,13 +1089,7 @@ export class AquariumHost {
    * plaque d'algues visée au lieu de nourrir. Sans effet en mode capture.
    */
   toggleScraper(): void {
-    if (!this.capture) {
-      this.scraping.update((on) => !on);
-      this.probe.publishScraper(this.scraping());
-      if (this.scraping() && this.pruning()) {
-        this.togglePruner();
-      }
-    }
+    this.tools.toggleScraper();
   }
 
   /**
@@ -1126,13 +1097,7 @@ export class AquariumHost {
    * taille au lieu de nourrir ; prendre le sécateur pose la raclette. Sans effet en mode capture.
    */
   togglePruner(): void {
-    if (!this.capture) {
-      this.pruning.update((on) => !on);
-      this.probe.publishPruner(this.pruning());
-      if (this.pruning() && this.scraping()) {
-        this.toggleScraper();
-      }
-    }
+    this.tools.togglePruner();
   }
 
   /**
@@ -1141,15 +1106,7 @@ export class AquariumHost {
    * avant le démarrage). Enregistré avec l'eau.
    */
   prunePlant(index: number): boolean {
-    let pruned = false;
-    this.applyWaterSetting((world) => {
-      pruned = pruneWorldPlantInPlace(world, index);
-      if (pruned) {
-        this.records.recordMaintenance(world, 'prune');
-        addPruneEntry(this.records.journalOf(world), world.time);
-      }
-    });
-    return pruned;
+    return this.tools.prunePlant(index);
   }
 
   /**
@@ -1161,11 +1118,7 @@ export class AquariumHost {
     origin: readonly [number, number, number],
     direction: readonly [number, number, number],
   ): number {
-    let index = -1;
-    this.applyWaterSetting((world) => {
-      index = scrapeWorldAlgaeInPlace(world, origin, direction);
-    });
-    return index;
+    return this.tools.scrapeAlong(origin, direction);
   }
 
   /** Ouvre ou reprend la séance d'entretien guidée (#604, ADR 0138) : `CareSessionController`. */
@@ -1222,15 +1175,7 @@ export class AquariumHost {
     origin: readonly [number, number, number],
     direction: readonly [number, number, number],
   ): boolean {
-    let removed = false;
-    this.applyWaterSetting((world) => {
-      const id = netTarget(world.dead, origin, direction);
-      removed = id !== null && removeDeadInPlace(world, id);
-    });
-    if (removed) {
-      this.readouts.refreshPopulation();
-    }
-    return removed;
+    return this.tools.netAlong(origin, direction);
   }
 
   /**
@@ -1239,26 +1184,7 @@ export class AquariumHost {
    * en mode capture, avant le démarrage ou hors bornes.
    */
   setCatappa(count: number): void {
-    this.applyWaterSetting((world) => setWorldCatappaInPlace(world, count));
-  }
-
-  /**
-   * Réglage de l'eau par l'utilisateur : appliqué au monde courant, puis relevé et
-   * enregistrement. Sans effet en mode capture, avant le démarrage ou si `apply` lève.
-   */
-  private applyWaterSetting(apply: (world: MutableWorld) => void): void {
-    const world = this.currentWorld;
-    if (!world || this.capture) {
-      return;
-    }
-    try {
-      apply(world);
-    } catch {
-      return;
-    }
-    this.refreshWater();
-    this.saveNow();
-    this.scheduleFrame();
+    this.settingsCtl.setCatappa(count);
   }
 
   /**
@@ -2122,60 +2048,12 @@ export class AquariumHost {
       }),
     );
     this.viewCleanups.push(
-      view.onCanvasClick((x, y) => this.onCanvasClick(view, x, y)),
-      view.onSurfaceClick((x, z) => this.onSurfaceClick(x, z)),
+      view.onCanvasClick((x, y) => this.tools.canvasClick(view, x, y)),
+      view.onSurfaceClick((x, z) => this.tools.surfaceClick(x, z)),
     );
     // Vue neuve : aucun glissement en cours, aucun élément sélectionné.
     this.decorEdit.viewCreated();
     this.roomEdit.viewCreated();
-  }
-
-  /**
-   * Clic sur le canvas, avant la nourriture : en mode édition, il pose ou choisit un élément du
-   * décor (#167) ; sécateur en main, il taille une plante (#477) ou coupe une pousse (#644) ;
-   * raclette en main, il racle (#476) ; épuisette (#582), il retire un corps.
-   */
-  private onCanvasClick(view: AquariumView, x: number, y: number): void {
-    if (this.decorEditing()) {
-      this.editAt(view.pickDecor(x, y));
-    } else if (this.pruning()) {
-      this.pruneAt(view, x, y);
-    } else if (this.scraping()) {
-      const ray = view.pickRay(x, y);
-      if (ray) {
-        this.scrapeAlong(ray.origin, ray.direction);
-      }
-    } else if (this.currentWorld?.dead !== undefined) {
-      // Épuisette (#582) : un clic sur un corps le retire au lieu de nourrir.
-      const ray = view.pickRay(x, y);
-      this.netted = ray !== null && this.netAlong(ray.origin, ray.direction);
-    }
-  }
-
-  /** Sécateur en main : taille la plante visée, ou coupe sa pousse pendant la séance. */
-  private pruneAt(view: AquariumView, x: number, y: number): void {
-    const pick = view.pickDecor(x, y);
-    if (pick?.kind !== 'item') {
-      return;
-    }
-    if (this.care.isCutting()) {
-      this.cutCarePlant(pick.index);
-    } else {
-      this.prunePlant(pick.index);
-    }
-  }
-
-  /**
-   * Clic sur la surface de l'eau : nourrit, sauf si le clic a retiré un corps, ou si un outil
-   * (édition, raclette, sécateur, tuyau du siphon #605) est en main.
-   */
-  private onSurfaceClick(x: number, z: number): void {
-    const netted = this.netted;
-    this.netted = false;
-    const siphoning = this.care.isSiphoning();
-    if (!netted && !siphoning && !this.decorEditing() && !this.scraping() && !this.pruning()) {
-      this.feed(x, z);
-    }
   }
 
   private scheduleFrame(): void {

@@ -21,8 +21,13 @@ class FakeView {
   setWaterTurbidity(): void {
     this.turbidity++;
   }
-  setWaterTea(): void {}
-  setCatappa(): void {}
+  tea = 0;
+  setWaterTea(): void {
+    this.tea++;
+  }
+  setCatappa(): void {
+    this.tea++;
+  }
   setWaterCurrent(): void {
     this.currents++;
   }
@@ -99,6 +104,7 @@ describe('TankReadoutsController (#696)', () => {
     expect(element.getAttribute(WATER_ATTRIBUTE)).not.toBeNull();
     expect(readouts.waterSample().tick).toBe(world!.tick);
     expect(view.turbidity).toBe(1);
+    expect(view.tea).toBe(2);
   });
 
   it('relevé de l’eau : un décès depuis le relevé précédent relève les effectifs', () => {
