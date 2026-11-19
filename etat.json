@@ -9311,10 +9311,10 @@
           "note": "PR #743 : sections Population, Bacs et meubles, Bacs hors du panneau (11/13, tranche 1 : control-panel.ts 1 021 lignes hors commentaires, #697 reste ouverte), CI verte"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-19T16:40:59.711Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-19T17:40:38.377Z",
+          "note": "Verdict OK, 0 bug, 167/167 captures identiques, publiées"
         }
       },
       "metriques": {}
