@@ -9155,10 +9155,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-19T05:27:37.478Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-19T05:27:59.104Z",
+          "note": "Issue #696 : suite du lot 10/13 hôte, photo, boucle d'images et begin (M)"
         }
       },
       "metriques": {}
