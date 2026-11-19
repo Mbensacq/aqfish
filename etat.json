@@ -9063,6 +9063,12 @@
           "debut": "2026-11-19T00:32:19.758Z",
           "fin": "2026-11-19T01:51:59.246Z",
           "note": "Verdict OK, 0 bug, captures publiées (166/166 identiques au pixel près), unitaires et e2e verts"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-19T01:52:39.711Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
