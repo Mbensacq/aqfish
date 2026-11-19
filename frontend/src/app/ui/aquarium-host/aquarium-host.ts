@@ -19,9 +19,6 @@ import {
   parseCaptureParams,
   type CameraPreset,
   type CaptureParams,
-  type CapturePopulation,
-  type CaptureFurniture,
-  type CaptureWood,
 } from '../../core/capture/capture-params';
 import {
   readStoredSave,
@@ -69,7 +66,7 @@ import {
   writeStoredFreeCamera,
 } from '../../core/free-camera-pref/free-camera-pref';
 import type { DecorPick } from '../../render/decor-pick';
-import { isDecorEditable, MAX_DECOR_ITEMS, setDecorInPlace } from '../../sim/decor-edit';
+import { isDecorEditable } from '../../sim/decor-edit';
 import {
   loadDecorPhysics,
   type DecorPhysicsLoader,
@@ -98,7 +95,6 @@ import {
   environmentWater,
   hasFlatFloor,
   isEnvironmentId,
-  isPondShapeable,
   isTankResizable,
   placeDimensions,
   placeEnvironmentData,
@@ -117,16 +113,9 @@ import {
   type TankDimensions,
 } from '../../sim/tank';
 import { setTankDimensionsInPlace } from '../../sim/tank-resize';
-import { DEFAULT_POND_SHAPE, isPondShape, type PondShape } from '../../sim/pond-shape';
+import { DEFAULT_POND_SHAPE, type PondShape } from '../../sim/pond-shape';
 import { setPondShapeInPlace } from '../../sim/pond-reshape';
-import {
-  clampRoom,
-  DEFAULT_ROOM,
-  ROOM_ITEM_KINDS,
-  type Room,
-  type RoomItemKind,
-} from '../../sim/room';
-import { dropRoomItem } from '../../sim/room-furniture';
+import { clampRoom, DEFAULT_ROOM, type Room } from '../../sim/room';
 import { createFixedStepState, fixedStepInto, type FixedStepState } from '../../sim/fixed-step';
 import {
   DEFAULT_SIM_SPEED,
@@ -191,7 +180,6 @@ import {
   type QuarantineView,
 } from '../../sim/quarantine';
 import { SPECIES_LABELS } from '../../sim/species-catalog';
-import { applySpeciesCountsInPlace } from '../../sim/species-counts';
 import {
   DEFAULT_FOOD_STYLE,
   isFoodStyle,
@@ -199,23 +187,12 @@ import {
   type FoodStyle,
 } from '../../core/food-style/food-style';
 import type { SpeciesId } from '../../sim/species';
-import { validateDecorItem, type DecorItem } from '../../sim/decor';
 import {
   advanceInPlace,
   advanceToWithFeedings,
-  broodWorldInPlace,
-  layEggsWorldInPlace,
   changeWorldWaterInPlace,
-  createDefaultWorld,
   feedInPlace,
-  infectWorldInPlace,
-  killWorldAnimalInPlace,
   removeDeadInPlace,
-  setWorldMortalityInPlace,
-  rotWorldFinsInPlace,
-  velvetWorldInPlace,
-  fungusWorldInPlace,
-  dropsyWorldInPlace,
   setWorldCatappaInPlace,
   setWorldCurrentInPlace,
   worldCurrentLevel,
@@ -232,7 +209,6 @@ import {
   worldPlantShade,
   worldShownPlantGrowth,
   worldAlgaePatches,
-  starveWorldInPlace,
   treatWorldInPlace,
   doseWorldBacteriaStarterInPlace,
   doseWorldConditionerInPlace,
@@ -242,7 +218,6 @@ import {
 } from '../../sim/world';
 import type { Entity, MutableWorld, World } from '../../sim/world-types';
 import { netTarget } from '../../sim/mortality';
-import { DROPSY_ADVANCED_AT, DROPSY_MAX } from '../../sim/dropsy';
 import { CHEVRON_COUNTS } from '../../render/current-indicator-layer';
 import {
   isCurrentLevel,
@@ -252,9 +227,7 @@ import {
 } from '../../sim/water-current';
 import {
   DEFAULT_WATER_READOUT,
-  isWaterQuality,
   sameReadout,
-  sampleWater,
   waterReadout,
   waterTurbidity,
   type WaterReadout,
@@ -322,7 +295,6 @@ import {
   DEFAULT_LIGHTING_HOURS,
   hasAlgae,
   lightingOf,
-  sampleAlgae,
   visibleAlgaeCount,
 } from '../../sim/algae';
 import { feederReadout, hasFeeder, type FeederReadout } from '../../sim/auto-feeder';
@@ -374,6 +346,7 @@ import { refreshDue } from '../dashboard-frame/refresh-pace';
 import { filterMaturityPercent } from '../../sim/filter-maturation';
 import type { FilterRinseWater } from '../../sim/filter-rinse';
 import { PhotoController } from './photo-controller';
+import { createStartupWorld } from './startup-world';
 import { SaveShareController, type ImportedSave, type RestoredSave } from './save-share-controller';
 import { AquariumProbe } from './aquarium-probe';
 import { DecorEditingController } from './decor-editing-controller';
@@ -462,62 +435,7 @@ export function formatPopulation(
   return species.map((id) => `${id}:${counts[id]}`).join(',');
 }
 
-/**
- * Applique les effectifs de `population=` au monde, dans l'ordre de l'URL, bornés par le
- * catalogue d'espèces (`applySpeciesCountsInPlace`, #189). Une espèce inconnue, ou qui ne vit
- * pas dans l'environnement du monde (`Environment.species`, #88), est ignorée.
- */
-export function applyPopulation(
-  world: MutableWorld,
-  population: readonly CapturePopulation[],
-): void {
-  applySpeciesCountsInPlace(world, population);
-}
-
-/**
- * Pièce `room` garnie des éléments de `meubles=` (#188), lâchés dans l'ordre autour d'un bac
- * `dims` (`dropRoomItem`) ; type inconnu ou pose refusée : élément ignoré. Nouvel objet.
- */
-export function applyCaptureFurniture(
-  room: Room,
-  dims: TankDimensions,
-  furniture: readonly CaptureFurniture[],
-): Room {
-  let current = room;
-  for (const { kind, x, z, quarter } of furniture) {
-    if (!(ROOM_ITEM_KINDS as readonly string[]).includes(kind)) {
-      continue;
-    }
-    const result = dropRoomItem(current, dims, { kind: kind as RoomItemKind, x, z, quarter });
-    if (result.ok) {
-      current = { ...current, items: result.items };
-    }
-  }
-  return current;
-}
-
-/**
- * Ajoute au décor du monde les bois flottés de `bois=` (#169), dans l'ordre de l'URL. Un bois
- * invalide (hors du bac de l'environnement, échelle hors bornes, graine invalide) est ignoré,
- * de même que ceux qui dépassent `MAX_DECOR_ITEMS`. Sans bois valide, le monde est inchangé.
- */
-export function applyCaptureWoods(world: MutableWorld, woods: readonly CaptureWood[]): void {
-  const dims = placeDimensions(world);
-  const added = woods
-    .map(({ x, z, rotation, scale, seed }): DecorItem => ({
-      kind: 'wood',
-      x,
-      z,
-      rotation,
-      scale,
-      seed,
-    }))
-    .filter((item) => validateDecorItem(item, dims).length === 0)
-    .slice(0, Math.max(0, MAX_DECOR_ITEMS - world.decor.length));
-  if (added.length > 0) {
-    setDecorInPlace(world, [...world.decor, ...added]);
-  }
-}
+export { applyCaptureFurniture, applyCaptureWoods, applyPopulation } from './startup-world';
 
 /**
  * Écart d'heure minimal (en heures) avant de recalculer l'éclairage : 0,01 h, soit 0,5 s
@@ -2652,6 +2570,7 @@ export class AquariumHost {
   /**
    * Suite du démarrage, une fois la scène connue. `restoredOverride` : scène choisie par le
    * fond d'écran (`null` : monde neuf) ; `undefined` : sauvegarde automatique habituelle.
+   * Les étapes s'enchaînent dans cet ordre, figé par les tests de l'hôte et les captures.
    */
   private begin(
     win: Window,
@@ -2660,240 +2579,209 @@ export class AquariumHost {
   ): void {
     // En mode capture, le temps demandé est atteint ici, avant toute image (contrat de capture).
     // Le monde créé ici appartient à l'hôte seul : il pourra être avancé en place.
-    // Dépôts de nourriture de `nourrir=` (#67) : au temps simulé de chacun, en capture.
     this.dayClock = initialDayClock(params.hour, params.capture);
-    // Sauvegarde automatique (#70) : jamais en capture (images reproductibles) ; restaurée
-    // au démarrage sauf si l'URL décrit le monde (`seed`, `environnement`, `population`).
-    // Lue avant toute création : le monde neuf n'est créé que s'il n'y a rien à restaurer.
-    const restored =
-      restoredOverride !== undefined
-        ? restoredOverride
-        : params.capture || hasWorldParams(win.location.search)
-          ? null
-          : this.saves.readStored();
-    if (restored) {
-      this.currentWorld = restored.world as MutableWorld;
-      this.stash = stashFromList(restored.others, restored.world.environment);
-      this.roomState = restored.room;
-      this.selectedTankId = restored.selectedTankId;
-      this.speed.set(restored.settings.speed);
-      this.foodStyle.set(restored.settings.foodStyle ?? DEFAULT_FOOD_STYLE);
-      this.room.set(restored.settings.room ?? DEFAULT_ROOM);
-      // `heure=` fige l'heure : l'horloge sauvegardée ne s'applique pas.
-      if (params.hour === null) {
-        this.dayClock = restored.settings.clock;
-      }
-    } else {
-      if (params.capture && params.foodStyle !== null) {
-        this.foodStyle.set(params.foodStyle);
-      }
-      // Pièce de `piece=1` (#187), en capture : appliquée à la création de la vue.
-      if (params.capture && params.room) {
-        this.room.set({ ...DEFAULT_ROOM, shown: true });
-      }
-      const environment = isEnvironmentId(params.environment)
-        ? params.environment
-        : DEFAULT_ENVIRONMENT_ID;
-      // Forme du bassin de `forme=` (#190), en capture et au bassin seulement.
-      const shape =
-        params.capture && isPondShape(params.shape) && isPondShapeable(environment)
-          ? params.shape
-          : undefined;
-      const world: MutableWorld = createDefaultWorld(params.seed, environment, shape);
-      // Bois flottés de `bois=` (#169), en capture : ajoutés au décor avant la population,
-      // après les dimensions du bac de `bac=` (#171).
-      if (params.capture) {
-        if (params.tank !== null) {
-          setTankDimensionsInPlace(world, params.tank);
-        }
-        applyCaptureWoods(world, params.woods);
-        // Éléments de la pièce de `meubles=` (#188), aux dimensions du bac de `bac=`.
-        if (params.room && params.furniture.length > 0) {
-          this.room.set(
-            applyCaptureFurniture(this.room(), placeDimensions(world), params.furniture),
-          );
-        }
-      }
-      // Mode décor de `mode=decor` (#278) : avant `population=`, qui admet alors toute espèce.
-      if (params.decorMode) {
-        setCareModeInPlace(world, 'decor');
-      }
-      // Effectifs de `population=` (#69) : appliqués à t = 0, avant d'avancer le monde.
-      applyPopulation(world, params.population);
-      // Eau d'exemple de `eau=` (#207), en capture : à t = 0, avant d'avancer le monde.
-      if (params.capture && isWaterQuality(params.water)) {
-        world.water = sampleWater(world.environment, params.water);
-      }
-      // Algues d'exemple de `algues=` (#476), en capture : à t = 0, après l'eau d'exemple.
-      const algae = params.capture ? sampleAlgae(params.algae) : undefined;
-      if (algae !== undefined && hasAlgae(world.environment)) {
-        world.water = { ...world.water, algae };
-      }
-      // Animaux affamés de `affames=1` (#208), en capture : à t = 0, avant d'avancer le monde.
-      if (params.capture && params.starved) {
-        starveWorldInPlace(world);
-      }
-      // Points blancs de `points-blancs=1` (#366), en capture comme hors capture : à t = 0,
-      // après `population=`, avant d'avancer le monde.
-      if (params.ich) {
-        infectWorldInPlace(world);
-      }
-      // Nageoires effilochées de `pourriture=1` (#485), dans les mêmes conditions.
-      if (params.finRot) {
-        rotWorldFinsInPlace(world);
-      }
-      // Voile doré de `velours=1` (#532), dans les mêmes conditions.
-      if (params.velvet) {
-        velvetWorldInPlace(world);
-      }
-      // Coton blanc de `champignons=1` (#548), dans les mêmes conditions.
-      if (params.fungus) {
-        fungusWorldInPlace(world);
-      }
-      // Hydropisie de `hydropisie=1` ou `hydropisie=gonfle` (#565), dans les mêmes conditions.
-      if (params.dropsy !== null) {
-        dropsyWorldInPlace(world, params.dropsy === 'gonfle' ? DROPSY_ADVANCED_AT - 1 : DROPSY_MAX);
-      }
-      // Animal mort de `mort=1` (#582), dans les mêmes conditions, après les maladies.
-      if (params.dead) {
-        setWorldMortalityInPlace(world, true);
-        const first = world.entities[0];
-        if (first !== undefined) {
-          killWorldAnimalInPlace(world, first.id);
-        }
-      }
-      // Courant de `courant=` (#460), en capture : à t = 0, avant d'avancer le monde.
-      if (params.capture && isCurrentLevel(params.current)) {
-        setWorldCurrentInPlace(world, params.current);
-      }
-      // Alevins de `alevins=1` (#459), en capture : à t = 0, après `population=`.
-      if (params.capture && params.fry) {
-        broodWorldInPlace(world);
-      }
-      // Œufs de `oeufs=1` (#478), en capture : à t = 0, après `population=`.
-      if (params.capture && params.eggs) {
-        layEggsWorldInPlace(world);
-      }
-      // Feuilles de catappa neuves de `catappa=` (#239), en capture : à t = 0.
-      if (params.capture && params.catappa > 0) {
-        setWorldCatappaInPlace(world, params.catappa);
-      }
-      // Distributeur de `distributeur=` (#583), en capture : posé plein à t = 0.
-      if (params.capture && params.feeder !== null) {
-        setWorldFeederInPlace(world, params.feeder);
-      }
-      this.currentWorld = params.capture
-        ? advanceToWithFeedings(world, params.time, params.feedings, this.dayClock)
-        : world;
-      // Test de l'eau de `test-eau=` (#564), hors capture : lancé avant le chargement, résultat
-      // prêt (captures de la pharmacie reproductibles, simulation à l'arrêt).
-      if (!params.capture && isWaterKit(params.waterTest)) {
-        const current = this.currentWorld;
-        this.waterTests.set(
-          current,
-          startWaterTest(params.waterTest, testSample(current), current.tick - WATER_TEST_TICKS),
-        );
-      }
+    const restored = this.startupSave(win, params, restoredOverride);
+    const world = restored ? this.applyRestored(restored, params) : this.createWorld(params);
+    this.currentWorld = world;
+    this.prepareRoom(world, params);
+    this.startServices(win, params);
+    this.publishStartState(world, params);
+    this.createStartView(win, params, world);
+    this.applyCaptureEditing(world, params);
+    this.applyStartCamera(win, params);
+    this.listenWindow(win);
+    this.scheduleFrame();
+  }
+
+  /**
+   * Sauvegarde à restaurer au démarrage (#70) : celle du fond d'écran si elle est donnée ;
+   * jamais en capture (images reproductibles), ni si l'URL décrit le monde (`seed`,
+   * `environnement`, `population`). Lue avant toute création : le monde neuf n'est créé que
+   * s'il n'y a rien à restaurer.
+   */
+  private startupSave(
+    win: Window,
+    params: CaptureParams,
+    restoredOverride: RestoredSave | null | undefined,
+  ): RestoredSave | null {
+    if (restoredOverride !== undefined) {
+      return restoredOverride;
     }
-    // Pièce de N bacs (#305) : bacs et meubles exposés au catalogue dès le démarrage ;
-    // `bacs=` en capture, avec `piece=1`, y ajoute meubles supports et bacs posés.
-    this.syncRoomState(this.currentWorld);
+    if (params.capture || hasWorldParams(win.location.search)) {
+      return null;
+    }
+    return this.saves.readStored();
+  }
+
+  /** Reprend la pièce, les mondes et les réglages d'une sauvegarde ; renvoie le monde affiché. */
+  private applyRestored(restored: RestoredSave, params: CaptureParams): MutableWorld {
+    this.stash = stashFromList(restored.others, restored.world.environment);
+    this.roomState = restored.room;
+    this.selectedTankId = restored.selectedTankId;
+    this.speed.set(restored.settings.speed);
+    this.foodStyle.set(restored.settings.foodStyle ?? DEFAULT_FOOD_STYLE);
+    this.room.set(restored.settings.room ?? DEFAULT_ROOM);
+    // `heure=` fige l'heure : l'horloge sauvegardée ne s'applique pas.
+    if (params.hour === null) {
+      this.dayClock = restored.settings.clock;
+    }
+    // Monde relu et validé, appartenant à l'hôte seul : il sera avancé en place.
+    return restored.world as MutableWorld;
+  }
+
+  /**
+   * Monde neuf décrit par l'URL (`createStartupWorld`), amené en capture au temps demandé
+   * avec les dépôts de nourriture de `nourrir=` (#67), chacun à son temps simulé.
+   */
+  private createWorld(params: CaptureParams): MutableWorld {
+    if (params.capture && params.foodStyle !== null) {
+      this.foodStyle.set(params.foodStyle);
+    }
+    const created = createStartupWorld(params, this.room());
+    this.room.set(created.room);
+    const world = params.capture
+      ? advanceToWithFeedings(created.world, params.time, params.feedings, this.dayClock)
+      : created.world;
+    // Test de l'eau de `test-eau=` (#564), hors capture : lancé avant le chargement, résultat
+    // prêt (captures de la pharmacie reproductibles, simulation à l'arrêt).
+    if (!params.capture && isWaterKit(params.waterTest)) {
+      this.waterTests.set(
+        world,
+        startWaterTest(params.waterTest, testSample(world), world.tick - WATER_TEST_TICKS),
+      );
+    }
+    return world;
+  }
+
+  /**
+   * Pièce de N bacs (#305) : bacs et meubles exposés au catalogue dès le démarrage ; `bacs=`
+   * en capture, avec `piece=1`, y ajoute meubles supports et bacs posés. Puis la vitesse de
+   * `vitesse=` (#232), hors capture : elle prime sur celle de la sauvegarde (`vitesse=0` : le
+   * monde ne quitte pas t = 0, captures d'interface reproductibles).
+   */
+  private prepareRoom(world: MutableWorld, params: CaptureParams): void {
+    this.syncRoomState(world);
     if (params.capture && params.room && params.roomLayout.length > 0) {
-      this.roomLayout.applyCaptureLayout(this.currentWorld, params.roomLayout);
+      this.roomLayout.applyCaptureLayout(world, params.roomLayout);
     }
-    // Vitesse de `vitesse=` (#232), hors capture : prime sur celle de la sauvegarde.
-    // `vitesse=0` : le monde ne quitte pas t = 0 (captures d'interface reproductibles).
     if (!params.capture && params.speed !== null && isSimSpeed(params.speed)) {
       this.speed.set(params.speed);
     }
-    // Fond d'écran (#279) : jamais d'écriture du stockage (la sauvegarde de l'application
-    // n'est pas remplacée par la scène du fond d'écran) ; pause quand la page est masquée.
-    if (!params.capture && !this.wallpaper) {
-      this.saves.activate(win);
+  }
+
+  /**
+   * Sauvegarde automatique et liens partagés, hors capture et hors fond d'écran : le fond
+   * d'écran (#279) n'écrit jamais le stockage (la sauvegarde de l'application n'est pas
+   * remplacée par sa scène) et se met en pause quand la page est masquée.
+   */
+  private startServices(win: Window, params: CaptureParams): void {
+    if (params.capture) {
+      return;
     }
-    if (this.wallpaper && !params.capture) {
+    if (this.wallpaper) {
       this.startWallpaperPause();
+      return;
     }
+    this.saves.activate(win);
+  }
+
+  /** Expose l'état initial : horloge, vitesse, décor, pluie, graine, eau, sauvegarde. */
+  private publishStartState(world: World, params: CaptureParams): void {
     this.refreshClockFrozen();
     this.probe.publishSpeed(this.speed());
     this.probe.publishDecorVisible(this.decorVisible());
     // Pluie de `pluie=1` (#106) : appliquée à la création de la vue (bassin seulement).
     this.rain.set(params.rain);
-    this.probe.publishSeed(this.currentWorld.seed);
+    this.probe.publishSeed(world.seed);
     this.refreshEnvironment();
-    this.probe.publishTick(this.currentWorld);
-    this.probe.publishFood(this.currentWorld);
+    this.probe.publishTick(world);
+    this.probe.publishFood(world);
     this.refreshPopulation();
     this.refreshWater();
     this.saves.publishStatus(this.saveStatus());
+  }
 
-    const filter = initialRenderFilter(
-      params.filter,
-      params.capture ? null : readStoredRenderFilter(browserStorage(win)),
-      params.capture,
+  /**
+   * Filtre de rendu, pixel ratio et première vue. Sans `camera=`, la vue par défaut de
+   * l'environnement (#87 : de dessus pour le bassin) ; en fond d'écran, la vue trois-quarts,
+   * base de la caméra automatique, et un pixel ratio 1 comme en capture (image pixel art).
+   */
+  private createStartView(win: Window, params: CaptureParams, world: World): void {
+    this.filter.set(
+      initialRenderFilter(
+        params.filter,
+        params.capture ? null : readStoredRenderFilter(browserStorage(win)),
+        params.capture,
+      ),
     );
-    this.filter.set(filter);
-    // Fond d'écran (#279) : pixel ratio 1, comme en capture (image pixel art, plus léger).
     this.pixelRatio = params.capture || this.wallpaper ? 1 : win.devicePixelRatio || 1;
-    // Sans `camera=`, la vue par défaut de l'environnement (#87 : de dessus pour le bassin) ;
-    // en fond d'écran, la vue trois-quarts, base de la caméra automatique.
-    this.createView(
-      params.cameraGiven
-        ? params.camera
-        : this.wallpaper
-          ? WALLPAPER_PRESET
-          : environmentById(this.currentWorld.environment).defaultCamera,
-    );
+    this.createView(this.startPreset(params, world));
     this.probe.publishFilter(this.filter());
-    this.decorEdit.applyEditing(false);
-    // `edition=` (#167) : mode édition et élément sélectionné, en capture seulement.
-    if (
-      params.capture &&
-      params.editSelection !== null &&
-      isDecorEditable(this.currentWorld.environment) &&
-      params.editSelection < this.currentWorld.decor.length
-    ) {
-      this.decorEdit.showCaptureSelection(params.editSelection);
+  }
+
+  private startPreset(params: CaptureParams, world: World): CameraPreset {
+    if (params.cameraGiven) {
+      return params.camera;
     }
-    // `edition-meuble=` (#188) : mode édition et élément de la pièce sélectionné, en capture.
-    const roomSelection = params.editRoomSelection;
+    return this.wallpaper ? WALLPAPER_PRESET : environmentById(world.environment).defaultCamera;
+  }
+
+  /**
+   * Éditeurs fermés, sauf en capture : `edition=` (#167) ouvre l'éditeur du décor sur un
+   * élément, `edition-meuble=` (#188) celui de la pièce sur un meuble.
+   */
+  private applyCaptureEditing(world: World, params: CaptureParams): void {
+    this.decorEdit.applyEditing(false);
+    if (!params.capture) {
+      return;
+    }
+    const decorSelection = params.editSelection;
     if (
-      params.capture &&
-      roomSelection !== null &&
-      this.roomEditable() &&
-      roomSelection < this.roomCount()
+      decorSelection !== null &&
+      isDecorEditable(world.environment) &&
+      decorSelection < world.decor.length
     ) {
+      this.decorEdit.showCaptureSelection(decorSelection);
+    }
+    const roomSelection = params.editRoomSelection;
+    if (roomSelection !== null && this.roomEditable() && roomSelection < this.roomCount()) {
       this.decorEdit.applyEditing(true);
       this.roomEdit.showCaptureSelection(roomSelection);
     }
+  }
 
-    // `libre=` (#343) : pose de la caméra libre, en capture, pièce affichée seulement.
+  /**
+   * Caméra de départ : pose de `libre=` (#343) en capture, pièce affichée seulement ; sinon
+   * caméra libre mémorisée (#344), reprise hors capture et hors fond d'écran
+   * (`toggleFreeCamera` refuse sinon).
+   */
+  private applyStartCamera(win: Window, params: CaptureParams): void {
     const free = params.freeCamera;
     if (params.capture && free !== null && this.view?.roomShown) {
       const toRadians = Math.PI / 180;
-      if (
-        this.view.applyFreePose(
-          [free.x, free.y, free.z],
-          free.yawDeg * toRadians,
-          free.pitchDeg * toRadians,
-        )
-      ) {
+      const posed = this.view.applyFreePose(
+        [free.x, free.y, free.z],
+        free.yawDeg * toRadians,
+        free.pitchDeg * toRadians,
+      );
+      if (posed) {
         this.activePreset.set(null);
         this.probe.publishCamera(this.view);
       }
     }
-
-    // Caméra libre mémorisée (#344) : reprise au chargement, pièce affichée, hors capture et
-    // hors fond d'écran (`toggleFreeCamera` refuse sinon).
     if (!params.capture && !this.wallpaper && readStoredFreeCamera(browserStorage(win))) {
       this.toggleFreeCamera();
     }
+  }
 
+  /**
+   * Écoutes de la fenêtre : redimensionnement (nouvelle image), touches tenues de la caméra
+   * libre (#343), tout relâché si la fenêtre perd le focus (le relâchement n'arriverait jamais).
+   */
+  private listenWindow(win: Window): void {
     const onResize = () => this.scheduleFrame();
     win.addEventListener('resize', onResize);
     this.cleanups.push(() => win.removeEventListener('resize', onResize));
-    // Déplacements de la caméra libre (#343) : touches tenues ; tout relâché si la fenêtre
-    // perd le focus (le relâchement n'arriverait jamais).
     const onKeyDown = (event: KeyboardEvent) => this.onFreeMoveKey(event, true);
     const onKeyUp = (event: KeyboardEvent) => this.onFreeMoveKey(event, false);
     const onBlur = () => this.freeMoves.clear();
@@ -2905,8 +2793,6 @@ export class AquariumHost {
       this.document.removeEventListener('keyup', onKeyUp);
       win.removeEventListener('blur', onBlur);
     });
-
-    this.scheduleFrame();
   }
 
   /**
