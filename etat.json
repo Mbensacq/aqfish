@@ -9223,7 +9223,7 @@
       "debut": "2026-11-19T10:15:47.515Z",
       "type": "fonctionnalite",
       "issue": 696,
-      "pr": null,
+      "pr": 741,
       "version": null,
       "phases": {
         "planif": {
