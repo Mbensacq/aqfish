@@ -25,10 +25,8 @@ import {
 } from '../../core/capture/capture-params';
 import {
   readStoredSave,
-  type SaveMessage,
   type SaveStatus,
   type SaveStorage,
-  writeStoredSave,
 } from '../../core/save-storage/save-storage';
 import {
   type FilterStorage,
@@ -40,13 +38,7 @@ import {
 } from '../../core/render-filter/render-filter';
 import { markCaptureReady, resetCaptureReady } from '../../core/capture/capture-ready';
 import { hasLandedFood } from '../../sim/behaviors';
-import {
-  createShare,
-  hasShareFragment,
-  readShare,
-  sharedAnimalCount,
-  type ParseShareResult,
-} from '../../sim/share-link';
+import { hasShareFragment, readShare } from '../../sim/share-link';
 import {
   chooseWallpaperConfig,
   clampWallpaperFps,
@@ -253,15 +245,6 @@ import { netTarget } from '../../sim/mortality';
 import { DROPSY_ADVANCED_AT, DROPSY_MAX } from '../../sim/dropsy';
 import { CHEVRON_COUNTS } from '../../render/current-indicator-layer';
 import {
-  PHOTO_FAILED_MESSAGE,
-  PHOTO_NOTICE_MS,
-  photoFileName,
-  photoScale,
-  upscalePhoto,
-  type PhotoImage,
-  type PhotoPixels,
-} from '../../render/photo-capture';
-import {
   isCurrentLevel,
   nextCurrentLevel,
   type CurrentLevel,
@@ -390,6 +373,8 @@ import {
 import { refreshDue } from '../dashboard-frame/refresh-pace';
 import { filterMaturityPercent } from '../../sim/filter-maturation';
 import type { FilterRinseWater } from '../../sim/filter-rinse';
+import { PhotoController } from './photo-controller';
+import { SaveShareController, type ImportedSave, type RestoredSave } from './save-share-controller';
 import { AquariumProbe } from './aquarium-probe';
 import { DecorEditingController } from './decor-editing-controller';
 import { RoomEditingController } from './room-editing-controller';
@@ -447,60 +432,12 @@ export {
   type RoomCatalogTank,
 } from './room-layout-controller';
 
-/** Intervalle de la sauvegarde automatique, en millisecondes (#70). */
-export const AUTOSAVE_INTERVAL_MS = 10_000;
-
-/** Sauvegarde relue au démarrage (#70) ou choisie par le fond d'écran (#279). */
-interface RestoredSave {
-  readonly room: RoomState;
-  readonly selectedTankId: number;
-  readonly world: World;
-  readonly settings: SaveSettings;
-  readonly others: readonly World[];
-}
-
-/** Nom proposé pour le fichier exporté (#70). */
-export const SAVE_FILE_NAME = 'aqfish-sauvegarde.json';
-
-/** Aquarium reçu par un lien partagé (#426) : proposition d'import, ou refus lisible. */
-export type ShareOffer =
-  | {
-      readonly kind: 'offre';
-      /** Nom de l'environnement du bac reçu. */
-      readonly environment: string;
-      /** Nombre d'animaux du bac reçu. */
-      readonly animals: number;
-      /** Nombre de bacs de la pièce actuelle, remplacée si l'import est accepté. */
-      readonly tanks: number;
-    }
-  | { readonly kind: 'erreur'; readonly text: string };
-
-/** Délai au-delà duquel la copie dans le presse-papiers est tenue pour refusée (#426). */
-const CLIPBOARD_TIMEOUT_MS = 1500;
-
-/** Copie `text` dans le presse-papiers ; `false` si refusé, absent ou sans réponse. Ne lève jamais. */
-async function copyText(win: Window, text: string): Promise<boolean> {
-  const clipboard = win.navigator.clipboard as Clipboard | undefined;
-  if (!clipboard || typeof clipboard.writeText !== 'function') {
-    return false;
-  }
-  let timer = 0;
-  const timeout = new Promise<boolean>((resolve) => {
-    timer = win.setTimeout(() => resolve(false), CLIPBOARD_TIMEOUT_MS);
-  });
-  try {
-    return await Promise.race([clipboard.writeText(text).then(() => true), timeout]);
-  } catch {
-    return false;
-  } finally {
-    win.clearTimeout(timer);
-  }
-}
-
-/** Adresse de la page sans requête ni fragment : base d'un lien partagé (#426). */
-export function shareBase(href: string): string {
-  return href.split('#')[0]!.split('?')[0]!;
-}
+export {
+  AUTOSAVE_INTERVAL_MS,
+  SAVE_FILE_NAME,
+  shareBase,
+  type ShareOffer,
+} from './save-share-controller';
 
 /**
  * Stockage de la sauvegarde automatique (#70) : `localStorage` s'il est accessible, `null`
@@ -879,6 +816,15 @@ export class AquariumHost {
   );
   /** Vrai tant que la raclette est en main (#476) : un clic sur le bac racle. */
   readonly scraping = signal(false);
+  /** Photo PNG et images de la séance (#479, #503, #624, #696) : `PhotoController`. */
+  private readonly photo = new PhotoController({
+    document: this.document,
+    view: () => this.view,
+    isCapture: () => this.capture,
+    isStopped: () => this.stopped,
+  });
+  /** Message bref de la photo (#503), affiché au-dessus de la barre des vues. */
+  readonly photoNotice = this.photo.notice;
   /**
    * Séance d'entretien guidée (#604, #694, ADR 0154) : état et étapes dans son contrôleur,
    * qui passe par ces ports pour le monde, la vue, le stockage et la photo.
@@ -905,10 +851,10 @@ export class AquariumHost {
       togglePruner: () => this.togglePruner(),
     },
     photo: {
-      dataUrl: (pixels) => this.photoDataUrl(pixels),
-      download: (image, name) => this.downloadPhoto(image, name),
-      failed: () => this.photoFailed(),
-      clearNotice: () => this.setPhotoNotice(null),
+      dataUrl: (pixels) => this.photo.dataUrl(pixels),
+      download: (image, name) => this.photo.download(image, name),
+      failed: () => this.photo.failed(),
+      clearNotice: () => this.photo.setNotice(null),
     },
   });
   /** Séance d'entretien guidée affichée (#604), `null` hors séance. */
@@ -972,19 +918,41 @@ export class AquariumHost {
   private waterReadAt: number | null = null;
 
   /**
+   * Sauvegarde automatique, export, import et partage par lien (#70, #426, #696) :
+   * `SaveShareController`.
+   */
+  private readonly saves = new SaveShareController({
+    document: this.document,
+    storage: this.saveStorage,
+    world: () => this.currentWorld,
+    hasView: () => this.view !== null,
+    isCapture: () => this.capture,
+    isStopped: () => this.stopped,
+    settings: () => this.settings(),
+    saveText: (world) => this.saveText(world),
+    beforeExport: (world) => this.keepFirstTankPath(world as MutableWorld),
+    beforeAutosave: () => {
+      this.keepMaintenanceStart();
+      if (this.currentWorld) {
+        this.keepFirstTankPath(this.currentWorld);
+      }
+    },
+    load: (result) => this.loadImported(result),
+    tankCount: () => this.roomState?.tanks.length ?? 1,
+    publishSave: (status) => this.probe.publishSave(status),
+    onCleanup: (cleanup) => this.cleanups.push(cleanup),
+  });
+  /**
    * État de la sauvegarde automatique (#70) : `null` en mode capture (jamais de lecture ni
    * d'écriture du stockage) et avant le démarrage.
    */
-  readonly saveStatus = signal<SaveStatus | null>(null);
-
+  readonly saveStatus = this.saves.status;
   /** Dernier message de la section « Sauvegarde » (import refusé, import réussi…). */
-  readonly saveMessage = signal<SaveMessage | null>(null);
+  readonly saveMessage = this.saves.message;
   /** Dernier lien de partage produit par « Partager » (#426), `null` sinon. */
-  readonly shareLink = signal<string | null>(null);
+  readonly shareLink = this.saves.shareLink;
   /** Aquarium reçu par un lien (#426) : proposition d'import ou refus lisible, `null` sinon. */
-  readonly shareOffer = signal<ShareOffer | null>(null);
-  /** Aquarium relu du lien, en attente de confirmation (jamais appliqué sans elle). */
-  private pendingShare: Extract<ParseShareResult, { ok: true }> | null = null;
+  readonly shareOffer = this.saves.shareOffer;
 
   /** Édition du décor (#167, #168, #170, #695, ADR 0155) : `DecorEditingController`. */
   private readonly decorEdit: DecorEditingController = new DecorEditingController({
@@ -2009,103 +1977,10 @@ export class AquariumHost {
 
   /**
    * Télécharge une photo PNG du bac dans la vue courante (bouton « Photo », #479, ADR 0112) :
-   * cible pixel art relue par la vue, agrandie par un facteur entier sans lissage
-   * (`render/photo-capture.ts`), encodée par un canvas 2D hors du document, sans interface
-   * ni curseur. Le monde et l'horloge ne bougent pas. Renvoie `true` si la photo a été
-   * produite (le téléchargement suit, asynchrone) ; sans effet en mode capture, avant le
-   * démarrage ou si le navigateur ne sait pas relire ou encoder l'image. Ne lève jamais ; un
-   * échec (relecture, canvas 2D ou encodage) affiche un message bref (`photoNotice`, #503).
+   * `PhotoController.take`. Renvoie `true` si la photo a été produite ; ne lève jamais.
    */
   takePhoto(): boolean {
-    const view = this.view;
-    const win = this.document.defaultView;
-    if (!view || !win || this.capture) {
-      return false;
-    }
-    this.setPhotoNotice(null);
-    try {
-      const pixels = view.takePhoto();
-      if (!pixels) {
-        this.photoFailed();
-        return false;
-      }
-      const image = upscalePhoto(pixels, photoScale(pixels.width, pixels.height));
-      return this.downloadPhoto(image, photoFileName(new Date()));
-    } catch {
-      this.photoFailed();
-      return false;
-    }
-  }
-
-  /** Image PNG (URL `data:`) d'un relevé à la résolution de la scène, `null` en cas d'échec. */
-  private photoDataUrl(pixels: PhotoPixels): string | null {
-    try {
-      return this.photoCanvas(upscalePhoto(pixels, 1))?.toDataURL('image/png') ?? null;
-    } catch {
-      return null;
-    }
-  }
-
-  /** Canvas 2D hors du document contenant `image`, `null` sans canvas 2D. */
-  private photoCanvas(image: PhotoImage): HTMLCanvasElement | null {
-    const canvas = this.document.createElement('canvas');
-    canvas.width = image.width;
-    canvas.height = image.height;
-    const context = canvas.getContext('2d');
-    if (!context) {
-      return null;
-    }
-    const imageData = context.createImageData(image.width, image.height);
-    imageData.data.set(image.data);
-    context.putImageData(imageData, 0, 0);
-    return canvas;
-  }
-
-  /**
-   * Encode `image` en PNG et la télécharge sous `name` (photo #479, avant / après #624) ;
-   * `false` et message bref sans canvas 2D, message bref si l'encodage échoue ensuite.
-   */
-  private downloadPhoto(image: PhotoImage, name: string): boolean {
-    const win = this.document.defaultView;
-    const canvas = this.photoCanvas(image);
-    if (!win || !canvas) {
-      this.photoFailed();
-      return false;
-    }
-    canvas.toBlob((blob) => {
-      if (!blob) {
-        // Encodage refusé (mémoire, canvas trop grand…) : le dire plutôt que rien (#503).
-        this.photoFailed();
-        return;
-      }
-      const url = win.URL.createObjectURL(blob);
-      const link = this.document.createElement('a');
-      link.href = url;
-      link.download = name;
-      link.click();
-      win.setTimeout(() => win.URL.revokeObjectURL(url), 0);
-    }, 'image/png');
-    return true;
-  }
-
-  /** Message bref de la photo (#503) : effacé à la photo suivante ou après `PHOTO_NOTICE_MS`. */
-  readonly photoNotice = signal<string | null>(null);
-  private photoNoticeTimer: ReturnType<typeof setTimeout> | null = null;
-
-  private photoFailed(): void {
-    if (this.stopped) {
-      return;
-    }
-    this.setPhotoNotice(PHOTO_FAILED_MESSAGE);
-    this.photoNoticeTimer = setTimeout(() => this.setPhotoNotice(null), PHOTO_NOTICE_MS);
-  }
-
-  private setPhotoNotice(message: string | null): void {
-    if (this.photoNoticeTimer !== null) {
-      clearTimeout(this.photoNoticeTimer);
-      this.photoNoticeTimer = null;
-    }
-    this.photoNotice.set(message);
+    return this.photo.take();
   }
 
   /** Réglages enregistrés avec le monde : vitesse, horloge et rendu des granulés. */
@@ -2148,180 +2023,44 @@ export class AquariumHost {
     this.probe.publishFoodStyle(style);
   }
 
-  /**
-   * Enregistre le monde et les réglages dans le stockage (sauvegarde automatique, #70) et
-   * renvoie l'état obtenu. Sans effet en mode capture ou avant le démarrage (`null`). Ne lève
-   * jamais : un stockage indisponible ou plein est signalé par `saveStatus`.
-   */
+  /** Sauvegarde automatique immédiate (#70) : `SaveShareController.saveNow`. */
   saveNow(): SaveStatus | null {
-    const world = this.currentWorld;
-    if (!world || this.capture) {
-      return null;
-    }
-    let status: SaveStatus;
-    try {
-      status = writeStoredSave(this.saveStorage, this.saveText(world));
-    } catch {
-      status = 'indisponible';
-    }
-    this.refreshSaveStatus(status);
-    return status;
+    return this.saves.saveNow();
   }
 
-  /**
-   * Télécharge la sauvegarde du monde courant (bouton « Exporter », #70) dans un fichier
-   * JSON. Sans effet en mode capture ou avant le démarrage.
-   */
+  /** Bouton « Exporter » (#70) : `SaveShareController.exportSave`. */
   exportSave(): void {
-    const world = this.currentWorld;
-    const win = this.document.defaultView;
-    if (!world || !win || this.capture) {
-      return;
-    }
-    try {
-      this.keepFirstTankPath(world);
-      const text = this.saveText(world);
-      const url = win.URL.createObjectURL(new Blob([text], { type: 'application/json' }));
-      const link = this.document.createElement('a');
-      link.href = url;
-      link.download = SAVE_FILE_NAME;
-      link.click();
-      win.setTimeout(() => win.URL.revokeObjectURL(url), 0);
-      this.saveMessage.set({ kind: 'info', text: 'Aquarium exporté.' });
-    } catch {
-      this.saveMessage.set({ kind: 'erreur', text: 'Export impossible dans ce navigateur.' });
-    }
+    this.saves.exportSave();
   }
 
-  /**
-   * Remplace le monde et les réglages par ceux d'une sauvegarde importée (bouton
-   * « Importer », #70). Une sauvegarde refusée (`parseWorld`) laisse le bac en cours intact
-   * et affiche la raison. Renvoie `true` si l'import a réussi. Sans effet en mode capture ou
-   * avant le démarrage.
-   */
+  /** Bouton « Importer » (#70) : `SaveShareController.importSave`. */
   importSave(text: string): boolean {
-    if (!this.currentWorld || !this.view || this.capture) {
-      return false;
-    }
-    const result = parseSaveWorlds(text);
-    if (!result.ok) {
-      this.saveMessage.set({ kind: 'erreur', text: `Import refusé : ${result.error}.` });
-      return false;
-    }
-    this.applyImported(result, 'Aquarium importé.');
-    return true;
+    return this.saves.importSave(text);
   }
 
-  /** Remplace la pièce par une sauvegarde relue et validée (import, lien partagé), puis enregistre. */
-  private applyImported(result: Extract<ParseShareResult, { ok: true }>, message: string): void {
+  /** Remplace la pièce par une sauvegarde relue et validée (import, lien partagé). */
+  private loadImported(result: ImportedSave): void {
     this.roomState = result.room;
     this.selectedTankId = result.selectedTankId;
     this.loadWorld(result.world as MutableWorld, result.settings, result.others);
     this.createView(environmentById(result.world.environment).defaultCamera);
     this.probe.publishCamera(this.view);
     this.scheduleFrame();
-    this.saveMessage.set({ kind: 'info', text: message });
-    this.saveNow();
   }
 
-  /**
-   * Bouton « Partager » (#426, ADR 0105) : lien dont le fragment contient le bac affiché
-   * (seul), compressé ; copié dans le presse-papiers si le navigateur l'accepte, et exposé
-   * dans `shareLink`. Au-delà de `MAX_SHARE_LINK_LENGTH`, aucun lien : le message propose le
-   * fichier (« Exporter »). Sans effet en mode capture ou avant le démarrage ; ne lève jamais.
-   */
-  async shareTank(): Promise<void> {
-    const world = this.currentWorld;
-    const win = this.document.defaultView;
-    if (!world || !win || this.capture) {
-      return;
-    }
-    let outcome: Awaited<ReturnType<typeof createShare>>;
-    try {
-      // Texte écrit avant le premier `await` : l'état partagé est celui du clic.
-      outcome = await createShare(shareBase(win.location.href), world, this.settings());
-    } catch {
-      this.shareLink.set(null);
-      this.saveMessage.set({ kind: 'erreur', text: 'Partage impossible pour ce bac.' });
-      return;
-    }
-    if (outcome.kind === 'fichier') {
-      this.shareLink.set(null);
-      this.saveMessage.set({
-        kind: 'info',
-        text: `Aquarium trop riche pour un lien (${outcome.reason}) : partagez plutôt le fichier avec « Exporter ».`,
-      });
-      return;
-    }
-    this.shareLink.set(outcome.url);
-    // Presse-papiers refusé, absent ou sans réponse (demande d'autorisation laissée en
-    // suspens) : le lien reste affiché, à copier à la main.
-    const copied = await copyText(win, outcome.url);
-    this.saveMessage.set({
-      kind: 'info',
-      text: copied
-        ? 'Lien de partage copié dans le presse-papiers.'
-        : 'Lien de partage prêt : copiez-le ci-dessous.',
-    });
+  /** Bouton « Partager » (#426, ADR 0105) : `SaveShareController.shareTank`. */
+  shareTank(): Promise<void> {
+    return this.saves.shareTank();
   }
 
-  /**
-   * Lit le lien partagé du fragment de l'adresse (#426) : propose l'import (rien n'est
-   * remplacé avant `acceptShare`) ou affiche la raison du refus. Ne lève jamais.
-   */
-  private async offerShare(win: Window): Promise<void> {
-    const hash = win.location.hash;
-    if (!hasShareFragment(hash)) {
-      return;
-    }
-    const result = await readShare(hash);
-    if (this.stopped || win.location.hash !== hash) {
-      return;
-    }
-    if (!result.ok) {
-      this.pendingShare = null;
-      this.shareOffer.set({ kind: 'erreur', text: `Lien de partage refusé : ${result.error}.` });
-      return;
-    }
-    this.pendingShare = result;
-    this.shareOffer.set({
-      kind: 'offre',
-      environment: environmentById(result.world.environment).name,
-      animals: sharedAnimalCount(result),
-      tanks: this.roomState?.tanks.length ?? 1,
-    });
-  }
-
-  /** « Importer cet aquarium » (#426) : remplace la pièce par le bac reçu, puis enregistre. */
+  /** « Importer cet aquarium » (#426) : `SaveShareController.acceptShare`. */
   acceptShare(): void {
-    const result = this.pendingShare;
-    if (!result || !this.currentWorld || !this.view || this.capture) {
-      return;
-    }
-    this.pendingShare = null;
-    this.shareOffer.set(null);
-    this.clearShareFragment();
-    this.applyImported(result, 'Aquarium partagé importé.');
+    this.saves.acceptShare();
   }
 
-  /** « Ignorer » ou « Fermer » (#426) : la sauvegarde en cours reste intacte. */
+  /** « Ignorer » ou « Fermer » (#426) : `SaveShareController.dismissShare`. */
   dismissShare(): void {
-    this.pendingShare = null;
-    this.shareOffer.set(null);
-    this.clearShareFragment();
-  }
-
-  /** Retire `#partage=…` de l'adresse, sans recharger ni ajouter d'entrée d'historique. */
-  private clearShareFragment(): void {
-    const win = this.document.defaultView;
-    if (!win || !hasShareFragment(win.location.hash)) {
-      return;
-    }
-    try {
-      win.history.replaceState(win.history.state, '', win.location.href.split('#')[0]);
-    } catch {
-      // Historique indisponible (bac à sable) : le fragment reste, sans effet.
-    }
+    this.saves.dismissShare();
   }
 
   /**
@@ -2760,7 +2499,7 @@ export class AquariumHost {
 
   /** Message d'erreur d'un fichier trop gros pour être lu (contrôle du panneau, #70). */
   rejectImport(text: string): void {
-    this.saveMessage.set({ kind: 'erreur', text: `Import refusé : ${text}.` });
+    this.saves.rejectImport(text);
   }
 
   /**
@@ -2931,7 +2670,7 @@ export class AquariumHost {
         ? restoredOverride
         : params.capture || hasWorldParams(win.location.search)
           ? null
-          : this.readSave();
+          : this.saves.readStored();
     if (restored) {
       this.currentWorld = restored.world as MutableWorld;
       this.stash = stashFromList(restored.others, restored.world.environment);
@@ -3070,9 +2809,7 @@ export class AquariumHost {
     // Fond d'écran (#279) : jamais d'écriture du stockage (la sauvegarde de l'application
     // n'est pas remplacée par la scène du fond d'écran) ; pause quand la page est masquée.
     if (!params.capture && !this.wallpaper) {
-      this.saveStatus.set('active');
-      this.startAutosave(win);
-      this.startShareListener(win);
+      this.saves.activate(win);
     }
     if (this.wallpaper && !params.capture) {
       this.startWallpaperPause();
@@ -3088,7 +2825,7 @@ export class AquariumHost {
     this.probe.publishFood(this.currentWorld);
     this.refreshPopulation();
     this.refreshWater();
-    this.refreshSaveStatus(this.saveStatus());
+    this.saves.publishStatus(this.saveStatus());
 
     const filter = initialRenderFilter(
       params.filter,
@@ -3173,27 +2910,6 @@ export class AquariumHost {
   }
 
   /**
-   * Sauvegarde automatique à restaurer au démarrage (#70) : monde et réglages, ou `null` s'il
-   * n'y en a pas. Une sauvegarde illisible est ignorée (`null`) : le bac neuf sera créé, et
-   * un message le signale.
-   */
-  private readSave(): RestoredSave | null {
-    const text = readStoredSave(this.saveStorage);
-    if (text === null) {
-      return null;
-    }
-    const result = parseSaveWorlds(text);
-    if (!result.ok) {
-      this.saveMessage.set({
-        kind: 'erreur',
-        text: `Sauvegarde précédente illisible, aquarium neuf (${result.error}).`,
-      });
-      return null;
-    }
-    return result;
-  }
-
-  /**
    * Suspend le rendu et la simulation du bac affiché pendant le mode immersif (#345, ADR 0086),
    * qui a sa propre vue : plus aucune image demandée. À la reprise, la boucle repart sans
    * rattraper le temps passé (le bac était en pause).
@@ -3242,45 +2958,6 @@ export class AquariumHost {
     onVisibility();
     this.document.addEventListener('visibilitychange', onVisibility);
     this.cleanups.push(() => this.document.removeEventListener('visibilitychange', onVisibility));
-  }
-
-  /**
-   * Liens partagés (#426) : celui de l'adresse au démarrage, puis tout lien collé dans le même
-   * onglet (`hashchange`, sans rechargement).
-   */
-  private startShareListener(win: Window): void {
-    const onHash = () => void this.offerShare(win);
-    win.addEventListener('hashchange', onHash);
-    this.cleanups.push(() => win.removeEventListener('hashchange', onHash));
-    void this.offerShare(win);
-  }
-
-  /**
-   * Sauvegarde automatique (#70) : toutes les `AUTOSAVE_INTERVAL_MS`, quand l'onglet est
-   * masqué et quand la page est quittée (`pagehide`, plus fiable que `beforeunload` sur
-   * mobile).
-   */
-  private startAutosave(win: Window): void {
-    const save = () => {
-      this.keepMaintenanceStart();
-      if (this.currentWorld) {
-        this.keepFirstTankPath(this.currentWorld);
-      }
-      this.saveNow();
-    };
-    const onVisibility = () => {
-      if (this.document.visibilityState === 'hidden') {
-        save();
-      }
-    };
-    const timer = win.setInterval(save, AUTOSAVE_INTERVAL_MS);
-    win.addEventListener('pagehide', save);
-    this.document.addEventListener('visibilitychange', onVisibility);
-    this.cleanups.push(() => {
-      win.clearInterval(timer);
-      win.removeEventListener('pagehide', save);
-      this.document.removeEventListener('visibilitychange', onVisibility);
-    });
   }
 
   /**
@@ -3995,12 +3672,6 @@ export class AquariumHost {
     this.probe.publishTank(world.shape ?? DEFAULT_POND_SHAPE, dims);
   }
 
-  /** Expose l'état de la sauvegarde (`data-aqfish-save` et signal `saveStatus`). */
-  private refreshSaveStatus(status: SaveStatus | null): void {
-    this.saveStatus.set(status);
-    this.probe.publishSave(status);
-  }
-
   /** Expose l'état de l'horloge (`data-aqfish-hour-frozen` et signal `clockFrozen`). */
   private refreshClockFrozen(): void {
     this.clockFrozen.set(this.dayClock.frozen);
@@ -4014,10 +3685,7 @@ export class AquariumHost {
     // n'est consulté que par `apply()`, qui règle le moteur) ; elle ne planifie donc aucune
     // détection de changements.
     this.ambientSound.setScene(null);
-    if (this.photoNoticeTimer !== null) {
-      clearTimeout(this.photoNoticeTimer);
-      this.photoNoticeTimer = null;
-    }
+    this.photo.dispose();
     if (this.frameId !== null) {
       this.document.defaultView?.cancelAnimationFrame(this.frameId);
       this.frameId = null;
