@@ -9525,6 +9525,12 @@
           "debut": "2026-11-20T12:06:56.621Z",
           "fin": "2026-11-20T12:53:24.083Z",
           "note": "PR #750 : charte lot 1 (jetons, polices Atkinson, icône, index.html), CI verte, 143 captures bac seul identiques"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-20T12:54:00.605Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
