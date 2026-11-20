@@ -9587,10 +9587,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-20T15:14:24.082Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-20T15:15:01.293Z",
+          "note": "Issue #715 : dette sim/icônes, avec #667 et mesure des tests (S)"
         }
       },
       "metriques": {}
