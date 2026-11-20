@@ -9345,6 +9345,12 @@
           "debut": "2026-11-19T23:42:22.926Z",
           "fin": "2026-11-20T00:59:19.437Z",
           "note": "PR #744 : Environnement, Eau, Soins, Sauvegarde hors du panneau (11/13 tranche 2, control-panel.ts 567 lignes hors commentaires ; #697 reste ouverte : tanks-section 514 > 500 + 5 petites sections), CI verte"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-20T00:59:59.956Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
