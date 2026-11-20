@@ -562,6 +562,10 @@ export function readWater(value: unknown, environment: EnvironmentId): ReadWater
   return { ok: true, water: assembleWater(read, extras, environment) };
 }
 
+/**
+ * Contrôle les champs obligatoires (`REQUIRED_FIELDS`) ; erreur au premier absent, non numérique
+ * ou hors bornes.
+ */
 function requiredFieldsError(read: FieldReader): string | null {
   for (const [key, min, max] of REQUIRED_FIELDS) {
     if (!isIn(read(key), min, max)) {
@@ -594,6 +598,10 @@ function assembleWater(
   return water;
 }
 
+/**
+ * Lit `heater` (consigne du chauffage) ; erreur s'il est présent mais hors
+ * [`MIN_HEATER_TEMPERATURE`, `MAX_HEATER_TEMPERATURE`].
+ */
 function readHeaterField(read: FieldReader, extras: WaterExtras): string | null {
   const heater = read('heater');
   if (heater === undefined) {
@@ -606,6 +614,7 @@ function readHeaterField(read: FieldReader, extras: WaterExtras): string | null 
   return null;
 }
 
+/** Lit `ph` ; erreur s'il est présent mais hors [`MIN_PH`, `MAX_PH`]. */
 function readPhField(read: FieldReader, extras: WaterExtras): string | null {
   const ph = read('ph');
   if (ph === undefined) {
@@ -618,6 +627,10 @@ function readPhField(read: FieldReader, extras: WaterExtras): string | null {
   return null;
 }
 
+/**
+ * Lit `catappa` (feuilles posées) ; erreur de `readCatappa` si la liste est mal formée, ignoré si
+ * vide.
+ */
 function readCatappaField(read: FieldReader, extras: WaterExtras): string | null {
   const value = read('catappa');
   if (value === undefined) {
@@ -633,6 +646,10 @@ function readCatappaField(read: FieldReader, extras: WaterExtras): string | null
   return null;
 }
 
+/**
+ * Lit `lighting` (heures d'éclairage) ; erreur s'il n'est pas un entier dans
+ * [`MIN_LIGHTING_HOURS`, `MAX_LIGHTING_HOURS`].
+ */
 function readLightingField(read: FieldReader, extras: WaterExtras): string | null {
   const lighting = read('lighting');
   if (lighting === undefined) {
@@ -645,6 +662,7 @@ function readLightingField(read: FieldReader, extras: WaterExtras): string | nul
   return null;
 }
 
+/** Lit `lampOn` (heure d'allumage) ; erreur s'il n'est pas un entier dans [0, 23]. */
 function readLampOnField(read: FieldReader, extras: WaterExtras): string | null {
   const lampOn = read('lampOn');
   if (lampOn === undefined) {
@@ -657,6 +675,9 @@ function readLampOnField(read: FieldReader, extras: WaterExtras): string | null 
   return null;
 }
 
+/**
+ * Lit `algae` (couverture par vitre) ; erreur de `readAlgae` si mal formé, ignoré si tout est nul.
+ */
 function readAlgaeField(read: FieldReader, extras: WaterExtras): string | null {
   const value = read('algae');
   if (value === undefined) {
@@ -672,6 +693,10 @@ function readAlgaeField(read: FieldReader, extras: WaterExtras): string | null {
   return null;
 }
 
+/**
+ * Lit `plantGrowth` (pousse des plantes) ; erreur de `readPlantGrowth` si mal formé, ignoré si
+ * vide.
+ */
 function readPlantGrowthField(read: FieldReader, extras: WaterExtras): string | null {
   const value = read('plantGrowth');
   if (value === undefined) {
@@ -687,6 +712,7 @@ function readPlantGrowthField(read: FieldReader, extras: WaterExtras): string | 
   return null;
 }
 
+/** Lit `gh` et `kh` (duretés) ; erreur au premier présent hors [`MIN_HARDNESS`, `MAX_HARDNESS`]. */
 function readHardnessFields(read: FieldReader, extras: WaterExtras): string | null {
   for (const key of ['gh', 'kh'] as const) {
     const v = read(key);
@@ -701,6 +727,10 @@ function readHardnessFields(read: FieldReader, extras: WaterExtras): string | nu
   return null;
 }
 
+/**
+ * Lit les quantités facultatives (`OPTIONAL_AMOUNTS`) ; erreur à la première hors bornes
+ * (`ichCure` exclut sa borne haute).
+ */
 function readAmountFields(read: FieldReader, extras: WaterExtras): string | null {
   for (const [key, min, max] of OPTIONAL_AMOUNTS) {
     const v = read(key);
@@ -716,6 +746,7 @@ function readAmountFields(read: FieldReader, extras: WaterExtras): string | null
   return null;
 }
 
+/** Lit les drapeaux (`FLAGS`) ; erreur au premier présent qui ne vaut pas `true`. */
 function readFlagFields(read: FieldReader, extras: WaterExtras): string | null {
   for (const key of FLAGS) {
     const v = read(key);

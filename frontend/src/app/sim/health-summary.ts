@@ -256,7 +256,7 @@ function tallyAnimal(tally: HealthTally, animal: HealthSubject): void {
   const health = readHealth(animal.health);
   tally.healthSum += health;
   const shown = tallyDiseases(counts, animal);
-  const signs = shown.any;
+  const signs = (shown & SHOWS_DISEASE) !== 0;
   if (health <= SICK_HEALTH || signs) {
     counts.sick += 1;
   }
@@ -266,7 +266,7 @@ function tallyAnimal(tally: HealthTally, animal: HealthSubject): void {
   const isWeak = health <= WEAK_HEALTH;
   if (isWeak) {
     counts.weak += 1;
-    counts.weakWithoutIch += shown.ich ? 0 : 1;
+    counts.weakWithoutIch += (shown & SHOWS_ICH) !== 0 ? 0 : 1;
     counts.weakWithoutDisease += signs ? 0 : 1;
   }
   const isStarving = tallyHunger(tally, animal);
@@ -275,29 +275,29 @@ function tallyAnimal(tally: HealthTally, animal: HealthSubject): void {
   }
 }
 
+/** Bit de `tallyDiseases` : l'animal montre au moins une maladie. */
+const SHOWS_DISEASE = 1;
+/** Bit de `tallyDiseases` : l'animal montre les points blancs. */
+const SHOWS_ICH = 2;
+
 /**
- * Compte les maladies visibles de `animal` dans `counts` ; renvoie s'il en montre une
- * (`any`) et s'il montre les points blancs (`ich`).
+ * Compte les maladies visibles de `animal` dans `counts` ; renvoie un masque de `SHOWS_DISEASE`
+ * (il en montre une) et `SHOWS_ICH` (il montre les points blancs), sans allouer d'objet.
  */
-function tallyDiseases(
-  counts: HealthCounts,
-  animal: HealthSubject,
-): { readonly any: boolean; readonly ich: boolean } {
-  let any = false;
-  let ich = false;
+function tallyDiseases(counts: HealthCounts, animal: HealthSubject): number {
+  let shown = 0;
   for (const rule of DISEASE_RULES) {
     const stage = rule.stage(animal);
     if (stage === null || !rule.shown.includes(stage)) {
       continue;
     }
-    any = true;
-    ich ||= rule.count === 'ich';
+    shown |= rule.count === 'ich' ? SHOWS_DISEASE | SHOWS_ICH : SHOWS_DISEASE;
     counts[rule.count] += 1;
     if (stage === rule.advanced) {
       counts[rule.advancedCount] += 1;
     }
   }
-  return { any, ich };
+  return shown;
 }
 
 /** Ajoute la faim de `animal` s'il mange les granulés ; renvoie s'il est affamé. */
