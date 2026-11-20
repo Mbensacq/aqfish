@@ -1133,6 +1133,15 @@ haut de sa section.
   Stryker seulement ; `ng test` n'est pas touché. Un nouveau test lourd n'a rien à faire de
   plus ; une nouvelle forme de déclaration (`it.concurrent`, `test.for`…) avec délai devra
   être ajoutée à ce fichier. (2026-10-19)
+- **Mutation : mutants statiques = toute la suite liée, par mutant** (cycle 261, #699) :
+  `npx stryker run --mutate src/app/sim/room-details.ts` instrumente 31 mutants statiques
+  (constantes calculées au chargement) ; chacun relance les ~1 500 tests liés (3 min 40
+  l'exécution à blanc), soit près d'une heure. Pour une mesure dans la session, copier
+  `stryker.config.json` en pointant `vitest.configFile` vers une configuration temporaire qui
+  ne garde que `include: ['src/app/sim/<fichier>.spec.ts']` (score en borne basse, quelques
+  minutes), sans la versionner. Ne pas utiliser `mergeConfig` pour cela : il **concatène** les
+  tableaux `include` au lieu de remplacer celui de base ; écrire
+  `defineConfig({ test: { ...base.test, include: [...] } })`. (2026-11-20)
 - **E2e de geste à la souris lent en rendu logiciel** (#38) : chaque glisser coûte plusieurs
   secondes sous SwiftShader. Pour prouver une borne, un seul glisser long par direction
   suffit s'il la dépasse sans elle ; le vérifier en retirant la borne le temps d'un essai
