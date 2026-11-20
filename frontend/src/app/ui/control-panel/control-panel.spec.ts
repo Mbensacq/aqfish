@@ -26,6 +26,7 @@ import type { RoomCatalog, TankNotice } from '../aquarium-host/aquarium-host';
 import type { TankListEntry } from '../../sim/tank-list';
 import { EMPTY_QUARANTINE, type QuarantineView } from '../../sim/quarantine';
 import type { CareMode } from '../../sim/care-mode';
+import { POND_SHAPES, type PondShape } from '../../sim/pond-shape';
 import {
   CONTROL_PANEL_ID,
   ControlPanel,
@@ -253,6 +254,21 @@ describe('fonctions du panneau de contrôle', () => {
     (currentToggled)="currentToggles = currentToggles + 1"
     [pruning]="pruning()"
     (prunerToggled)="prunerToggles = prunerToggles + 1"
+    [pondShape]="pondShape()"
+    (pondShapeChanged)="layout.push(['forme', $event])"
+    [lighting]="lighting()"
+    (lightingChanged)="events.push(['eclairage', $event])"
+    [lampOn]="lampOn()"
+    (lampOnChanged)="events.push(['lampe', $event])"
+    [scraping]="scraping()"
+    (scraperToggled)="layout.push(['raclette', null])"
+    (bacteriaStarterRequested)="layout.push(['bacteries', null])"
+    [untreatedTap]="untreatedTap()"
+    (untreatedTapToggled)="layout.push(['robinet', null])"
+    (conditionerRequested)="layout.push(['conditionneur', $event])"
+    [carbon]="carbon()"
+    (carbonToggled)="layout.push(['charbon', null])"
+    (phRegulatorRequested)="layout.push(['ph', $event])"
   />`,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -359,6 +375,12 @@ class TestHost {
   currentToggles = 0;
   readonly pruning = signal(false);
   prunerToggles = 0;
+  readonly pondShape = signal<PondShape>('rectangle');
+  readonly lighting = signal(8);
+  readonly lampOn = signal(10);
+  readonly scraping = signal(false);
+  readonly untreatedTap = signal(false);
+  readonly carbon = signal(false);
   readonly events: [string, number | boolean][] = [];
   readonly requests: PopulationRequest[] = [];
   readonly saveStatus = signal<SaveStatus | null>('active');
@@ -1247,6 +1269,22 @@ describe('ControlPanel', () => {
     );
   });
 
+  it('forme du bassin (#190) : bassin seulement, sur la ligne de « Lieu », émet la forme', async () => {
+    await openPanel();
+    const shape = () => root().querySelector<HTMLSelectElement>('[data-pond-shape]');
+    expect(shape()).toBeNull();
+    fixture.componentInstance.environment.set('bassin');
+    fixture.componentInstance.pondShape.set('ovale');
+    await fixture.whenStable();
+    expect(shape()!.getAttribute('aria-label')).toBe('Forme du bassin');
+    expect(shape()!.closest('.control-panel__field--place')).not.toBeNull();
+    expect([...shape()!.options].map((o) => o.value)).toEqual([...POND_SHAPES]);
+    expect(shape()!.value).toBe('ovale');
+    shape()!.value = 'haricot';
+    shape()!.dispatchEvent(new Event('change'));
+    expect(fixture.componentInstance.layout).toEqual([['forme', 'haricot']]);
+  });
+
   it('case « Afficher la pièce » (#187) : bac tropical seulement, suit l’hôte et émet la demande', async () => {
     await openPanel();
     const box = checkbox('Afficher la pièce')!;
@@ -1666,6 +1704,125 @@ describe('ControlPanel', () => {
       ]);
       expect(section().querySelector('[data-catappa-note]')?.textContent).toContain(
         'ne remplace pas un test de pH',
+      );
+    });
+
+    it('éclairage et lampe (#476, #584) : valeurs de l’hôte, côte à côte, émettent la durée et l’heure', async () => {
+      await openPanel();
+      const lighting = byLabel('Durée d’éclairage par jour')!;
+      const lamp = byLabel('Heure d’allumage de la lampe')!;
+      expect(lighting.closest('.control-panel__row')).toBe(lamp.closest('.control-panel__row'));
+      expect([lighting.min, lighting.max, lighting.step, lighting.value]).toEqual([
+        '4',
+        '14',
+        '1',
+        '8',
+      ]);
+      expect([lamp.min, lamp.max, lamp.step, lamp.value]).toEqual(['0', '23', '1', '10']);
+      expect(lighting.getAttribute('aria-valuetext')).toBe('8 h par jour');
+      expect(lamp.getAttribute('aria-valuetext')).toBe('allumée à 10:00');
+      fixture.componentInstance.lighting.set(12);
+      fixture.componentInstance.lampOn.set(7);
+      await fixture.whenStable();
+      expect(lighting.value).toBe('12');
+      expect(section().querySelector('[data-lamp-on]')?.getAttribute('aria-valuetext')).toBe(
+        'allumée à 07:00',
+      );
+      expect(
+        [...section().querySelectorAll('output[aria-hidden="true"]')].map((o) =>
+          o.textContent?.trim(),
+        ),
+      ).toEqual(['12 h', '07:00']);
+      lighting.value = '6';
+      lighting.dispatchEvent(new Event('input'));
+      lamp.value = '22';
+      lamp.dispatchEvent(new Event('input'));
+      expect(fixture.componentInstance.events).toEqual([
+        ['eclairage', 6],
+        ['lampe', 22],
+      ]);
+    });
+
+    it('raclette (#476) : état pressé fourni par l’hôte, libellés, émet la demande', async () => {
+      await openPanel();
+      const scraper = section().querySelector<HTMLButtonElement>('[data-scraper]')!;
+      expect(scraper.textContent?.trim()).toBe('Raclette');
+      expect(scraper.getAttribute('aria-pressed')).toBe('false');
+      scraper.click();
+      expect(fixture.componentInstance.layout).toEqual([['raclette', null]]);
+      fixture.componentInstance.scraping.set(true);
+      await fixture.whenStable();
+      expect(scraper.textContent?.trim()).toBe('Poser la raclette');
+      expect(scraper.getAttribute('aria-label')).toBe('Poser la raclette');
+      expect(scraper.getAttribute('aria-pressed')).toBe('true');
+    });
+
+    it('produits (#529, #530, #531) : rangées, états de l’hôte, chaque bouton émet sa demande', async () => {
+      await openPanel();
+      const button = (selector: string) => section().querySelector<HTMLButtonElement>(selector)!;
+      expect(
+        [...section().querySelectorAll('[role="group"]')].map((g) => g.getAttribute('aria-label')),
+      ).toEqual([
+        'Outils d’entretien',
+        'Eau du robinet et conditionneurs',
+        'Charbon actif et régulateur de pH',
+      ]);
+      expect(button('[data-bacteria-starter]').closest('[role="group"]')).toBe(
+        button('[data-scraper]').closest('[role="group"]'),
+      );
+      expect(button('[data-untreated-tap]').getAttribute('aria-pressed')).toBe('false');
+      expect(button('[data-carbon]').getAttribute('aria-pressed')).toBe('false');
+      for (const selector of [
+        '[data-bacteria-starter]',
+        '[data-untreated-tap]',
+        '[data-conditioner="thiosulfate"]',
+        '[data-conditioner="liant"]',
+        '[data-carbon]',
+        '[data-ph-regulator="-1"]',
+        '[data-ph-regulator="1"]',
+      ]) {
+        expect(button(selector).getAttribute('title'), selector).toBeTruthy();
+        button(selector).click();
+      }
+      expect(fixture.componentInstance.layout).toEqual([
+        ['bacteries', null],
+        ['robinet', null],
+        ['conditionneur', 'thiosulfate'],
+        ['conditionneur', 'liant'],
+        ['charbon', null],
+        ['ph', -1],
+        ['ph', 1],
+      ]);
+      fixture.componentInstance.untreatedTap.set(true);
+      fixture.componentInstance.carbon.set(true);
+      await fixture.whenStable();
+      expect(button('[data-untreated-tap]').getAttribute('aria-pressed')).toBe('true');
+      expect(button('[data-carbon]').getAttribute('aria-pressed')).toBe('true');
+    });
+
+    it('mode décor (#278) : ni produits ni message de produit, outils et catappa restent', async () => {
+      await openPanel();
+      fixture.componentInstance.treatmentNotice.set({
+        ok: true,
+        text: 'Dose versée.',
+        warning: null,
+      });
+      await fixture.whenStable();
+      expect(section().querySelector('[data-starter-message]')?.textContent?.trim()).toBe(
+        'Dose versée.',
+      );
+      fixture.componentInstance.careMode.set('decor');
+      await fixture.whenStable();
+      expect(section().querySelectorAll('[role="group"]')).toHaveLength(1);
+      expect(section().querySelector('[data-bacteria-starter]')).toBeNull();
+      expect(
+        section().querySelector('[data-untreated-tap], [data-carbon], [data-ph-regulator]'),
+      ).toBeNull();
+      expect(section().querySelector('[data-scraper]')).not.toBeNull();
+      expect(section().querySelector('[data-catappa]')).not.toBeNull();
+      // Sans section « Soins » (masquée en décor), le message reste sous les outils de l'eau.
+      expect(section().querySelector('[data-starter-message]')?.textContent?.trim()).toBe(
+        'Dose versée.',
       );
     });
   });
