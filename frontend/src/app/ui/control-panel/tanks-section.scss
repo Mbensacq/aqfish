@@ -24,8 +24,8 @@
   box-sizing: border-box;
   width: min(360px, calc(100vw - 24px));
   padding: 12px;
-  border: 1px solid layout.$panel-accent;
-  border-radius: 8px;
+  border: 1px solid layout.$brass;
+  border-radius: layout.$radius-control;
   background: layout.$panel-background;
   transform: translate(-50%, -50%);
   // Lot 2 : la liste des animaux inadaptés défile, le dialogue tient à l'écran.

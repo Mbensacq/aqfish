@@ -8,7 +8,7 @@
 
 // Même ton que les mises en garde du panneau (`control-panel__warning`).
 .treatment-notice__warning {
-  color: #f2c09a;
+  color: layout.$state-watch;
 }
 
 // Panneau en deux colonnes (mêmes bornes que `control-panel.scss`) : bulle hors du flux, à
@@ -23,8 +23,8 @@
     box-sizing: border-box;
     width: layout.$treatment-notice-width;
     padding: 6px 10px;
-    border: 1px solid rgb(232 230 227 / 8%);
-    border-radius: 10px;
+    border: 1px solid layout.$panel-rule;
+    border-radius: layout.$radius-window;
     background: layout.$panel-background;
     pointer-events: auto;
   }
@@ -35,7 +35,7 @@
   padding: 0;
   border: 0;
   background: none;
-  color: layout.$panel-accent;
+  color: layout.$brass;
   font: inherit;
   text-decoration: underline;
   cursor: pointer;

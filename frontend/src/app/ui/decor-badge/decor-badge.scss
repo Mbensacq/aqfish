@@ -2,12 +2,8 @@
 // place à toutes les largeurs (`dashboard.top-slot`, marges du téléphone comprises, #322),
 // même police, mêmes couleurs d'interface
 // (`DASHBOARD_COLORS`, docs/DA.md « Interface »), posées en variables par le composant.
+@use '../panel-layout' as layout;
 @use '../dashboard-frame/dashboard-surface' as dashboard;
-
-/// Opacité du fond du badge, comme la barre des vues et l'indicateur du jour.
-$background-alpha: 72%;
-/// Opacité de la bordure (encre de l'interface).
-$border-alpha: 18%;
 
 :host {
   z-index: 0;
@@ -22,9 +18,9 @@ $border-alpha: 18%;
 .decor-badge {
   margin: 0;
   padding: 6px 12px;
-  border: 1px solid color-mix(in srgb, var(--dashboard-ink) $border-alpha, transparent);
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--dashboard-background) $background-alpha, transparent);
+  border: 1px solid layout.$panel-border;
+  border-radius: layout.$radius-window;
+  background: layout.$panel-background;
   color: var(--dashboard-ink);
   pointer-events: auto;
 }

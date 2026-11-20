@@ -1806,7 +1806,7 @@ describe('AquariumHost', () => {
       };
 
       it('fond de l’écart lu dans la palette de l’interface (#646)', () => {
-        expect(COMPARISON_BACKGROUND).toEqual([0x14, 0x14, 0x18]);
+        expect(COMPARISON_BACKGROUND).toEqual([0x1b, 0x1f, 0x23]);
         const photo = { width: 1, height: 1, data: new Uint8Array([200, 100, 50, 255]) };
         const pair = sideBySidePhotos(photo, photo, 1, COMPARISON_BACKGROUND);
         // Pixel du milieu (l'écart) : octets du fond `DASHBOARD_COLORS.background`, opaque.

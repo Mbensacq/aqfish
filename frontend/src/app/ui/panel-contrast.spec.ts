@@ -1,32 +1,15 @@
-import { contrastRatio, over, parseHex, type Rgb } from './dashboard-frame/contrast';
+import { contrastRatio, parseHex, type Rgb } from './dashboard-frame/contrast';
 import { DASHBOARD_COLORS } from './dashboard-frame/dashboard-frame';
 
 import panelLayout from './_panel-layout.scss' with { loader: 'text' };
-import beginnerGuide from './beginner-guide/beginner-guide.scss' with { loader: 'text' };
-import commandsHelp from './commands-help/commands-help.scss' with { loader: 'text' };
-import controlPanel from './control-panel/control-panel.scss' with { loader: 'text' };
-import dayIndicator from './day-indicator/day-indicator.scss' with { loader: 'text' };
-import decorEditor from './decor-editor/decor-editor.scss' with { loader: 'text' };
-import freeCameraPad from './free-camera-pad/free-camera-pad.scss' with { loader: 'text' };
-import speciesWiki from './species-wiki/species-wiki.scss' with { loader: 'text' };
-import viewPresetsBar from './view-presets-bar/view-presets-bar.scss' with { loader: 'text' };
 
 /**
- * Contrastes des panneaux (#407), calculés sur les valeurs écrites dans `_panel-layout.scss`
- * (lu comme texte, sans navigateur) : texte ≥ 4,5:1 et anneau de focus ≥ 3:1 (WCAG 2.2,
- * 1.4.3 et 1.4.11), sur une scène de jour comme de nuit. Les panneaux sont translucides : la
- * scène derrière compte, d'où les scènes extrêmes (blanc, noir) en plus des tons du bac.
+ * Contrastes de la charte « la salle d'aquarium » (#407, #721), calculés sur les valeurs
+ * écrites dans `_panel-layout.scss` (lu comme texte, sans navigateur) : texte ≥ 4,5:1 et anneau
+ * de focus ≥ 3:1 (WCAG 2.2, 1.4.3 et 1.4.11). Les panneaux sont pleins : leur contraste ne
+ * dépend pas de la scène ; seul l'anneau de focus, posé aussi sur la scène, la rencontre, et
+ * son halo opaque l'en sépare. L'absence de valeur en dur ailleurs : `charte-jetons.spec.ts`.
  */
-
-/** Scènes derrière les panneaux : jour (clair) et nuit (sombre), bornes comprises. */
-const SCENES: Readonly<Record<'jour' | 'nuit', readonly string[]>> = {
-  // Blanc pur, sable clair, eau de jour, ciel du bassin.
-  jour: ['#ffffff', '#e8d3a8', '#3c9c8c', '#9fd3e6'],
-  // Noir pur, fond de scène, eau de nuit.
-  nuit: ['#000000', '#141418', '#0b1a2a'],
-};
-
-const ALL_SCENES: readonly Rgb[] = [...SCENES.jour, ...SCENES.nuit].map(parseHex);
 
 /**
  * Variables `$nom: valeur;` d'une feuille SCSS, références `$autre` résolues.
@@ -69,51 +52,33 @@ function pixels(value: string): number {
   return Number(match[1]);
 }
 
-/** Opacités `rgb(r g b / NN%)` des déclarations `propriété:` d'une couleur donnée. */
-function alphasOf(source: string, property: string, rgb: Rgb): number[] {
-  const pattern = new RegExp(
-    `(?:^|[\\s;{])${property}:\\s*rgb\\(${rgb[0]} ${rgb[1]} ${rgb[2]} / (\\d+(?:\\.\\d+)?)%\\)`,
-    'g',
-  );
-  return [...source.matchAll(pattern)].map((match) => Number(match[1]) / 100);
-}
-
-/** Couleurs `color: #rrggbb` d'une feuille SCSS. */
-function textHexColors(source: string): string[] {
-  return [...source.matchAll(/(?:^|[\s;{])color:\s*(#[0-9a-f]{6})\b/gi)].map(
-    (match) => match[1] ?? '',
-  );
-}
-
 const tokens = scssVariables(panelLayout);
-const hex = (name: string) => parseHex(tokens.get(name) ?? '');
-const background = hex('panel-background');
-const ink = hex('panel-ink');
-const buttonAlpha = percent(tokens.get('panel-button-alpha') ?? '');
-const panelAlpha = percent(tokens.get('panel-alpha') ?? '');
-const mutedAlpha = percent(tokens.get('panel-muted-alpha') ?? '');
+const token = (name: string) => tokens.get(name) ?? '';
+const hex = (name: string) => parseHex(token(name));
 
-/** Contraste minimal de `text` (opacité `textAlpha`) sur un fond d'opacité `alpha`, toutes scènes. */
-function worstContrast(text: Rgb, alpha: number, textAlpha = 1): number {
-  return Math.min(
-    ...ALL_SCENES.map((scene) => {
-      const panel = over(background, alpha, scene);
-      return contrastRatio(over(text, textAlpha, panel), panel);
-    }),
-  );
-}
+/** Scènes que l'anneau de focus peut rencontrer : blanc, sable, eau de jour, ciel, noir, nuit. */
+const SCENES: readonly Rgb[] = [
+  '#ffffff',
+  '#e8d3a8',
+  '#3c9c8c',
+  '#9fd3e6',
+  '#000000',
+  '#141418',
+  '#0b1a2a',
+].map(parseHex);
 
-/** Feuilles des panneaux sombres translucides, dont les couleurs doivent suivre les jetons. */
-const PANEL_SHEETS: Readonly<Record<string, string>> = {
-  'beginner-guide': beginnerGuide,
-  'commands-help': commandsHelp,
-  'control-panel': controlPanel,
-  'day-indicator': dayIndicator,
-  'decor-editor': decorEditor,
-  'free-camera-pad': freeCameraPad,
-  'species-wiki': speciesWiki,
-  'view-presets-bar': viewPresetsBar,
-};
+/** Fonds sur lesquels se pose du texte : panneau, panneau élevé (choix, survol), salle. */
+const BACKGROUNDS = ['panel-background', 'panel-raised', 'room'] as const;
+
+/** Couleurs de texte de la charte, lisibles sur chacun des fonds. */
+const TEXTS = [
+  'panel-ink',
+  'panel-ink-muted',
+  'brass',
+  'state-good',
+  'state-watch',
+  'state-danger',
+] as const;
 
 describe('lecture des jetons SCSS (#407)', () => {
   it('lit les variables et résout les références', () => {
@@ -136,24 +101,23 @@ describe('lecture des jetons SCSS (#407)', () => {
     expect(pixels('2px')).toBe(2);
     expect(() => pixels('2em')).toThrow();
   });
+});
 
-  it('relève les opacités et les couleurs de texte déclarées', () => {
-    const sheet =
-      '.a {\n  background: rgb(20 20 24 / 72%);\n  color: #e8e6e3;\n}\n' +
-      '.b { color: rgb(232 230 227 / 62%); border-color: #ffffff; }';
-    expect(alphasOf(sheet, 'background', [20, 20, 24])).toEqual([0.72]);
-    expect(alphasOf(sheet, 'color', [232, 230, 227])).toEqual([0.62]);
-    expect(textHexColors(sheet)).toEqual(['#e8e6e3']);
-  });
-
-  it('_panel-layout.scss déclare tous les jetons de couleur', () => {
+describe('jetons de la charte (#721)', () => {
+  it('_panel-layout.scss déclare tous les jetons', () => {
     for (const name of [
-      'panel-background',
-      'panel-button-alpha',
-      'panel-alpha',
-      'panel-ink',
-      'panel-muted-alpha',
-      'panel-accent',
+      ...BACKGROUNDS,
+      ...TEXTS,
+      'panel-rule',
+      'panel-border',
+      'on-brass',
+      'radius-control',
+      'radius-window',
+      'opacity-disabled',
+      'opacity-band',
+      'scrim',
+      'font-text',
+      'font-mono',
       'focus-ring-color',
       'focus-ring-width',
       'focus-halo',
@@ -161,66 +125,83 @@ describe('lecture des jetons SCSS (#407)', () => {
     ]) {
       expect(tokens.has(name), name).toBe(true);
     }
-    expect(buttonAlpha).toBeLessThanOrEqual(panelAlpha);
+  });
+
+  it('valeurs de la charte : salle de la scène, coins de 2 et 4 px, panneaux pleins', () => {
+    // La salle est le fond de la scène (`render/palette.ts` : fondScene), inchangé.
+    expect(token('room')).toBe('#141418');
+    expect(token('panel-background')).toBe('#1b1f23');
+    expect(token('brass')).toBe('#d1a65c');
+    expect(pixels(token('radius-control'))).toBe(2);
+    expect(pixels(token('radius-window'))).toBe(4);
+    // Fini les fonds translucides : plus aucun jeton d'opacité de fond.
+    expect(tokens.has('panel-alpha')).toBe(false);
+    expect(tokens.has('panel-button-alpha')).toBe(false);
+    expect(percent(token('opacity-disabled'))).toBeLessThan(1);
+    expect(token('font-text')).toMatch(/^'Atkinson Hyperlegible Next Variable', /);
+    expect(token('font-mono')).toMatch(/^'Atkinson Hyperlegible Mono Variable', /);
+  });
+
+  it('le tableau de bord de l’eau prend les couleurs de la charte (ADR 0059)', () => {
+    expect(DASHBOARD_COLORS).toEqual({
+      background: token('panel-background'),
+      ink: token('panel-ink'),
+      vert: token('state-good'),
+      orange: token('state-watch'),
+      rouge: token('state-danger'),
+    });
   });
 });
 
-describe('contraste du texte des panneaux ≥ 4,5:1, de jour et de nuit (#407)', () => {
-  it.each(Object.entries(SCENES))('scène de %s', (_moment, scenes) => {
-    for (const scene of scenes.map(parseHex)) {
-      const button = over(background, buttonAlpha, scene);
-      const panel = over(background, panelAlpha, scene);
-      const cases: readonly [string, Rgb, Rgb][] = [
-        ['encre sur bouton', ink, button],
-        ['encre sur panneau', ink, panel],
-        ['texte secondaire sur panneau', over(ink, mutedAlpha, panel), panel],
-        ['accent sur panneau', hex('panel-accent'), panel],
-      ];
-      for (const [label, text, back] of cases) {
-        expect(
-          contrastRatio(text, back),
-          `${label}, scène ${scene.join(',')}`,
-        ).toBeGreaterThanOrEqual(4.5);
-      }
+describe('contraste du texte ≥ 4,5:1 (#407, #721)', () => {
+  it.each(BACKGROUNDS)('sur %s', (background) => {
+    for (const text of TEXTS) {
+      expect(contrastRatio(hex(text), hex(background)), text).toBeGreaterThanOrEqual(4.5);
     }
   });
 
-  it.each(Object.entries(PANEL_SHEETS))(
-    '%s : fonds et textes dans les bornes des jetons',
-    (_name, sheet) => {
-      for (const alpha of alphasOf(sheet, 'background', background)) {
-        expect(alpha).toBeGreaterThanOrEqual(buttonAlpha);
-      }
-      for (const alpha of alphasOf(sheet, 'color', ink)) {
-        expect(alpha).toBeGreaterThanOrEqual(mutedAlpha);
-      }
-      // Toute couleur de texte pleine : lisible sur un panneau déplié, quelle que soit la scène.
-      for (const color of textHexColors(sheet)) {
-        expect(worstContrast(parseHex(color), panelAlpha), color).toBeGreaterThanOrEqual(4.5);
-      }
-    },
-  );
+  it('texte posé sur le laiton', () => {
+    expect(contrastRatio(hex('on-brass'), hex('brass'))).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('encre secondaire plus discrète que l’encre, mais lisible (contre-exemple : filet)', () => {
+    const panel = hex('panel-background');
+    expect(contrastRatio(hex('panel-ink-muted'), panel)).toBeLessThan(
+      contrastRatio(hex('panel-ink'), panel),
+    );
+    // Les filets et bords séparent, ils ne se lisent pas : un texte de cette couleur échouerait.
+    expect(contrastRatio(hex('panel-border'), panel)).toBeLessThan(4.5);
+  });
 });
 
 describe('anneau de focus ≥ 3:1 (#407)', () => {
   const halo = hex('focus-halo');
 
   it('épaisseurs : anneau de 2 px au moins, halo présent', () => {
-    expect(pixels(tokens.get('focus-ring-width') ?? '')).toBeGreaterThanOrEqual(2);
-    expect(pixels(tokens.get('focus-halo-width') ?? '')).toBeGreaterThanOrEqual(1);
+    expect(pixels(token('focus-ring-width'))).toBeGreaterThanOrEqual(2);
+    expect(pixels(token('focus-halo-width'))).toBeGreaterThanOrEqual(1);
+  });
+
+  it('l’anneau commun est en laiton', () => {
+    expect(token('focus-ring-color')).toBe(token('brass'));
   });
 
   it.each([
-    ['anneau commun', tokens.get('focus-ring-color') ?? ''],
+    ['anneau commun', token('focus-ring-color')],
     ['tableau de bord (eau)', DASHBOARD_COLORS.vert],
     ['tableau de bord (alertes)', DASHBOARD_COLORS.ink],
-    ['mode immersif', '#f2c14e'],
-  ])('%s (%s) : contre son halo et contre le fond des panneaux', (_label, color) => {
+  ])('%s (%s) : contre son halo, les panneaux et la scène', (_label, color) => {
     const ring = parseHex(color);
-    // Le halo opaque borde l'anneau des deux côtés : seul voisin, de jour comme de nuit.
+    // Le halo opaque borde l'anneau des deux côtés : seul voisin sur la scène.
     expect(contrastRatio(ring, halo)).toBeGreaterThanOrEqual(3);
-    // Et sans halo (contrôle dans un panneau déplié), sur toute scène.
-    expect(worstContrast(ring, panelAlpha)).toBeGreaterThanOrEqual(3);
+    // Et contre un panneau, plein ou élevé.
+    for (const background of BACKGROUNDS) {
+      expect(contrastRatio(ring, hex(background)), background).toBeGreaterThanOrEqual(3);
+    }
+    // Le halo lui-même se détache des scènes claires, où l'anneau seul pourrait se perdre.
+    for (const scene of SCENES.slice(0, 2)) {
+      expect(contrastRatio(halo, scene)).toBeGreaterThanOrEqual(3);
+    }
   });
 
   it('un anneau trop pâle serait refusé (contre-exemple)', () => {

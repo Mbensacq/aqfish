@@ -15,8 +15,8 @@
   flex-direction: column;
   gap: 4px;
   padding: 0;
-  border-radius: 10px;
-  background: rgb(20 20 24 / 72%); // #141418, comme la barre des vues
+  border-radius: layout.$radius-window;
+  background: layout.$panel-background;
 }
 
 .free-camera-pad__button {
@@ -27,24 +27,22 @@
   height: 44px;
   padding: 0;
   border: 1px solid transparent;
-  border-radius: 8px;
+  border-radius: layout.$radius-control;
   background: transparent;
-  color: #e8e6e3;
-  font:
-    500 14px / 1 system-ui,
-    sans-serif;
+  color: layout.$panel-ink;
+  font: 500 14px / 1 layout.$font-text;
   cursor: pointer;
   touch-action: none;
   user-select: none;
   -webkit-touch-callout: none;
 
   &:hover {
-    background: rgb(232 230 227 / 10%);
+    background: layout.$panel-raised;
   }
 
   &:active {
-    border-color: #5fbfa3;
-    color: #5fbfa3;
+    border-color: layout.$brass;
+    color: layout.$brass;
   }
 }
 

@@ -81,7 +81,7 @@ test('1280 × 720 : « Réglages » ouvert masque entièrement le cadre qu’il 
   // Le panneau croise bien le cadre à ce format, sinon le test ne prouverait rien.
   expect(result.crossed).toBeGreaterThan(0);
   expect(result.seen).toEqual([]);
-  expect(result.background).toBe('rgb(20, 20, 24)');
+  expect(result.background).toBe('rgb(27, 31, 35)'); // $panel-background (charte #721)
   expect(errors).toEqual([]);
 });
 

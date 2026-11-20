@@ -1,5 +1,5 @@
-// Barre flottante discrète (docs/DA.md, « Interface ») : sombre, translucide, coins arrondis,
-// atténuée tant qu'on ne l'utilise pas. Couleurs : `ui/_panel-layout.scss` (#92).
+// Barre flottante discrète (docs/DA.md, « Interface ») : sombre et pleine, coins de
+// 2 à 4 px (charte #721). Couleurs : `ui/_panel-layout.scss` (#92).
 @use '../panel-layout' as layout;
 
 :host {
@@ -14,19 +14,10 @@
   display: flex;
   gap: 4px;
   padding: 4px;
-  border-radius: 10px;
-  background: rgb(20 20 24 / 72%); // #141418, écrit en clair : lu par panel-contrast.spec
+  border-radius: layout.$radius-window;
+  background: layout.$panel-background;
   color: layout.$panel-ink;
-  font:
-    500 14px / 1.2 system-ui,
-    sans-serif;
-  opacity: 0.6;
-  transition: opacity 150ms ease-out;
-
-  &:hover,
-  &:focus-within {
-    opacity: 1;
-  }
+  font: 500 14px / 1.2 layout.$font-text;
 }
 
 .view-presets-bar__group {
@@ -39,7 +30,7 @@
   align-self: stretch;
   width: 1px;
   margin: 4px 2px;
-  background: rgb(232 230 227 / 20%);
+  background: layout.$panel-raised;
 }
 
 .view-presets-bar__button {
@@ -49,7 +40,7 @@
   min-height: 32px;
   padding: 4px 10px;
   border: 1px solid transparent;
-  border-radius: 6px;
+  border-radius: layout.$radius-control;
   background: transparent;
   color: inherit;
   font: inherit;
@@ -57,12 +48,12 @@
   cursor: pointer;
 
   &:hover {
-    background: rgb(232 230 227 / 10%);
+    background: layout.$panel-raised;
   }
 
   &--active {
-    border-color: layout.$panel-accent;
-    color: layout.$panel-accent;
+    border-color: layout.$brass;
+    color: layout.$brass;
   }
 }
 
@@ -73,7 +64,7 @@
   bottom: calc(100% + 6px);
   left: 50%;
   margin: 0;
-  border-radius: 6px;
+  border-radius: layout.$radius-control;
   color: layout.$panel-ink;
   font-size: 13px;
   white-space: nowrap;
@@ -81,15 +72,15 @@
 
   &--shown {
     padding: 4px 10px;
-    background: rgb(20 20 24 / 88%); // #141418, écrit en clair : lu par panel-contrast.spec
+    background: layout.$panel-background;
   }
 }
 
 .view-presets-bar__key {
   min-width: 1.1em;
   padding: 0 3px;
-  border-radius: 3px;
-  background: rgb(232 230 227 / 12%);
+  border-radius: layout.$radius-control;
+  background: layout.$panel-raised;
   font-size: 11px;
   text-align: center;
 }

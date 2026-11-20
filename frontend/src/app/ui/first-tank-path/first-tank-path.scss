@@ -1,5 +1,5 @@
 // Parcours « Mon premier aquarium » (#512, docs/DA.md, « Interface ») : languette sombre
-// translucide en bordure gauche, sous les panneaux (aucun z-index), sans voile.
+// pleine en bordure gauche, sous les panneaux (aucun z-index), sans voile.
 @use '../panel-layout' as layout;
 
 :host {
@@ -8,9 +8,7 @@
   left: layout.$edge;
   display: block;
   color: layout.$panel-ink;
-  font:
-    400 13px / 1.35 system-ui,
-    sans-serif;
+  font: 400 13px / 1.35 layout.$font-text;
 }
 
 .path {
@@ -24,16 +22,17 @@
   gap: 6px;
   max-width: 100%;
   padding: 5px 9px;
-  border: 1px solid rgb(232 230 227 / 12%);
-  border-radius: 8px;
-  background: rgb(20 20 24 / 72%);
+  border: 1px solid layout.$panel-rule;
+  border-radius: layout.$radius-control;
+  background: layout.$panel-background;
   color: inherit;
   font: inherit;
   cursor: pointer;
 }
 
 .path__count {
-  color: layout.$panel-accent;
+  color: layout.$brass;
+  font-family: layout.$font-mono;
   font-variant-numeric: tabular-nums;
 }
 
@@ -41,9 +40,9 @@
   box-sizing: border-box;
   margin-top: 4px;
   padding: 8px 10px 10px;
-  border: 1px solid rgb(232 230 227 / 12%);
-  border-radius: 8px;
-  background: rgb(20 20 24 / 92%);
+  border: 1px solid layout.$panel-rule;
+  border-radius: layout.$radius-control;
+  background: layout.$panel-background;
 
   p {
     margin: 4px 0;
@@ -57,7 +56,7 @@
 }
 
 .path__why {
-  color: rgb(232 230 227 / 78%);
+  color: layout.$panel-ink-muted;
 }
 
 .path__link,
@@ -71,13 +70,13 @@
 }
 
 .path__link {
-  color: layout.$panel-accent;
+  color: layout.$brass;
   text-decoration: underline;
 }
 
 .path__hide {
   margin-top: 4px;
-  color: rgb(232 230 227 / 70%);
+  color: layout.$panel-ink-muted;
   font-size: 12px;
 }
 

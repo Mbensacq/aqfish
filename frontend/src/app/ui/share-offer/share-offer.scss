@@ -1,12 +1,8 @@
 // Bandeau d'un lien partagé (#426) : au-dessus de la scène et des panneaux, centré sous la
-// ligne des boutons, couleurs de l'interface (`DASHBOARD_COLORS`) sur fond presque opaque
+// ligne des boutons, couleurs de l'interface (`DASHBOARD_COLORS`) sur fond plein
 // (texte lisible quelle que soit la scène derrière).
+@use '../panel-layout' as layout;
 @use '../dashboard-frame/dashboard-surface' as dashboard;
-
-/// Opacité du fond : presque opaque, le texte est long.
-$background-alpha: 94%;
-/// Opacité de la bordure (encre de l'interface).
-$border-alpha: 24%;
 
 :host {
   position: fixed;
@@ -29,9 +25,9 @@ $border-alpha: 24%;
 
 .share-offer {
   padding: 12px 14px;
-  border: 1px solid color-mix(in srgb, var(--dashboard-ink) $border-alpha, transparent);
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--dashboard-background) $background-alpha, transparent);
+  border: 1px solid layout.$panel-border;
+  border-radius: layout.$radius-window;
+  background: layout.$panel-background;
   color: var(--dashboard-ink);
 }
 
@@ -55,16 +51,16 @@ $border-alpha: 24%;
   flex: 1 1 auto;
   min-height: 36px;
   padding: 4px 12px;
-  border: 1px solid color-mix(in srgb, var(--dashboard-ink) 30%, transparent);
-  border-radius: 6px;
-  background: color-mix(in srgb, var(--dashboard-ink) 10%, transparent);
+  border: 1px solid layout.$panel-border;
+  border-radius: layout.$radius-control;
+  background: layout.$panel-background;
   color: inherit;
   font: inherit;
   font-weight: 600;
   cursor: pointer;
 
   &:hover {
-    background: color-mix(in srgb, var(--dashboard-ink) 18%, transparent);
+    background: layout.$panel-raised;
   }
 
   &:focus-visible {

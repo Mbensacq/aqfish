@@ -76,7 +76,7 @@ describe('tableau de bord : fonctions de présentation (#256)', () => {
     );
   });
 
-  it('estompé au repos, le texte lu garde un contraste d’au moins 4,5:1 sur toute scène', () => {
+  it('plein au repos (charte #721), le texte lu garde un contraste d’au moins 4,5:1 sur toute scène', () => {
     // Scènes extrêmes et typiques derrière le cadre : blanc, noir, sable clair, eau, fond.
     const scenes: Rgb[] = ['#ffffff', '#000000', '#e8d3a8', '#3c9c8c', '#141418'].map(parseHex);
     const texts = [
@@ -86,7 +86,9 @@ describe('tableau de bord : fonctions de présentation (#256)', () => {
       { text: DASHBOARD_COLORS.orange },
       { text: DASHBOARD_COLORS.rouge },
     ];
-    expect(DASHBOARD_REST_OPACITY).toBeLessThan(1);
+    // Charte « la salle d'aquarium » : cadre plein, fond comme ensemble.
+    expect(DASHBOARD_REST_OPACITY).toBe(1);
+    expect(DASHBOARD_BACKGROUND_ALPHA).toBe(1);
     for (const scene of scenes) {
       for (const { text, textAlpha } of texts) {
         const ratio = fadedContrast({

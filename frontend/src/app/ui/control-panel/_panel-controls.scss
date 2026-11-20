@@ -9,11 +9,9 @@
   .control-panel__legend {
     padding: 0;
     margin-bottom: 4px;
-    color: layout.$panel-accent;
+    color: layout.$panel-ink;
     font-size: 11px;
     font-weight: 600;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
   }
 
   .control-panel__field {
@@ -29,6 +27,7 @@
   }
 
   .control-panel__value {
+    font-family: layout.$font-mono;
     font-variant-numeric: tabular-nums;
     font-weight: 600;
   }
@@ -36,7 +35,7 @@
   .control-panel__range {
     width: 100%;
     margin: 4px 0;
-    accent-color: layout.$panel-accent;
+    accent-color: layout.$brass;
 
     &:focus-visible {
       @include layout.focus-ring(2px);
@@ -49,13 +48,11 @@
     height: 32px;
     margin: 4px 0;
     padding: 0 8px;
-    border: 1px solid rgb(232 230 227 / 16%);
-    border-radius: 6px;
+    border: 1px solid layout.$panel-border;
+    border-radius: layout.$radius-control;
     background: layout.$panel-background;
     color: inherit;
-    font:
-      600 14px / 1 system-ui,
-      sans-serif;
+    font: 600 14px / 1 layout.$font-text;
   }
 
   .control-panel__check {
@@ -69,7 +66,7 @@
       width: 16px;
       height: 16px;
       margin: 0;
-      accent-color: layout.$panel-accent;
+      accent-color: layout.$brass;
     }
 
     input:focus-visible {
@@ -128,13 +125,11 @@
   .control-panel__sheet-toggle {
     box-sizing: border-box;
     height: 28px;
-    border: 1px solid rgb(232 230 227 / 16%);
-    border-radius: 6px;
-    background: rgb(232 230 227 / 6%);
+    border: 1px solid layout.$panel-border;
+    border-radius: layout.$radius-control;
+    background: layout.$panel-raised;
     color: inherit;
-    font:
-      600 14px / 1 system-ui,
-      sans-serif;
+    font: 600 14px / 1 layout.$font-text;
   }
 
   .control-panel__step {
@@ -144,7 +139,7 @@
     cursor: pointer;
 
     &[aria-disabled='true'] {
-      opacity: 0.4;
+      opacity: layout.$opacity-disabled;
       cursor: default;
     }
   }
@@ -153,6 +148,7 @@
     flex: none;
     width: 48px;
     padding: 0 4px;
+    font-family: layout.$font-mono;
     font-variant-numeric: tabular-nums;
     text-align: center;
   }
@@ -206,20 +202,20 @@
   .control-panel__note,
   .control-panel__message {
     margin: 0;
-    color: rgb(232 230 227 / 75%);
+    color: layout.$panel-ink-muted;
     font-size: 12px;
   }
 
   // Mélange déconseillé (#209) : même ton que les messages d'erreur, sans être une erreur.
   .control-panel__warning {
-    color: #f2c09a;
+    color: layout.$state-watch;
   }
 
   .control-panel__message {
-    color: layout.$panel-accent;
+    color: layout.$brass;
 
     &--error {
-      color: #f2a39a;
+      color: layout.$state-danger;
     }
   }
 
@@ -233,13 +229,11 @@
     width: 100%;
     min-height: 28px;
     padding: 2px 6px;
-    border: 1px solid rgb(232 230 227 / 16%);
-    border-radius: 6px;
-    background: rgb(0 0 0 / 25%);
+    border: 1px solid layout.$panel-border;
+    border-radius: layout.$radius-control;
+    background: layout.$room;
     color: inherit;
-    font:
-      12px / 1.2 ui-monospace,
-      monospace;
+    font: 12px / 1.2 layout.$font-mono;
   }
 }
 
@@ -269,18 +263,16 @@
     min-width: 0;
     min-height: 32px;
     padding: 4px 8px;
-    border: 1px solid rgb(232 230 227 / 16%);
-    border-radius: 6px;
-    background: rgb(232 230 227 / 6%);
+    border: 1px solid layout.$panel-border;
+    border-radius: layout.$radius-control;
+    background: layout.$panel-raised;
     color: inherit;
-    font:
-      600 14px / 1.2 system-ui,
-      sans-serif;
+    font: 600 14px / 1.2 layout.$font-text;
     white-space: nowrap;
     cursor: pointer;
 
     &:hover {
-      background: rgb(232 230 227 / 12%);
+      background: layout.$panel-raised;
     }
   }
 
@@ -303,21 +295,19 @@
     margin: -5px 0;
     min-height: 22px;
     padding: 1px 8px;
-    border: 1px solid layout.$panel-accent;
-    border-radius: 6px;
+    border: 1px solid layout.$brass;
+    border-radius: layout.$radius-control;
     background: transparent;
-    color: layout.$panel-accent;
-    font:
-      600 11px / 1.2 system-ui,
-      sans-serif;
+    color: layout.$brass;
+    font: 600 11px / 1.2 layout.$font-text;
     cursor: pointer;
 
     &:hover {
-      background: rgb(95 191 163 / 16%);
+      background: layout.$panel-raised;
     }
 
     &[aria-disabled='true'] {
-      opacity: 0.45;
+      opacity: layout.$opacity-disabled;
       cursor: default;
     }
   }
@@ -342,7 +332,7 @@
     cursor: pointer;
 
     &[aria-expanded='true'] {
-      border-color: layout.$panel-accent;
+      border-color: layout.$brass;
     }
   }
 
@@ -361,7 +351,7 @@
 
   .control-panel__sheet-status {
     display: block;
-    color: rgb(232 230 227 / 62%);
+    color: layout.$panel-ink-muted;
     font-size: 10px;
     line-height: 13px;
   }
@@ -386,8 +376,8 @@
     width: 100%;
     min-height: 32px;
     padding: 4px 8px;
-    border: 1px solid rgb(232 230 227 / 30%);
-    border-radius: 4px;
+    border: 1px solid layout.$panel-border;
+    border-radius: layout.$radius-control;
     background: transparent;
     color: inherit;
     font: inherit;
@@ -397,13 +387,13 @@
     cursor: pointer;
 
     &[aria-pressed='true'] {
-      border-color: layout.$panel-accent;
-      background: rgb(95 191 163 / 16%);
+      border-color: layout.$brass;
+      background: layout.$panel-raised;
     }
 
     &[aria-disabled='true'] {
       cursor: default;
-      opacity: 0.7;
+      opacity: layout.$opacity-disabled;
     }
 
     .control-panel__sheet-status {
@@ -421,11 +411,11 @@
     font-weight: 700;
 
     &[data-level='critique'] {
-      color: #f2a39a;
+      color: layout.$state-danger;
     }
 
     &[data-level='attention'] {
-      color: #f0d68a;
+      color: layout.$state-watch;
     }
   }
 }

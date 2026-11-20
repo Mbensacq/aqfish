@@ -1,12 +1,21 @@
 @use 'app/ui/panel-layout' as layout;
 
+// Polices de la charte (#721, `docs/INTERFACE.md`), servies par le site (OFL-1.1, aucun
+// service externe) : texte en Atkinson Hyperlegible Next (romain et italique), valeurs
+// mesurées en Atkinson Hyperlegible Mono. Les feuilles des paquets déclarent
+// `font-display: swap` : le texte s'affiche tout de suite dans la police de repli.
+@use '@fontsource-variable/atkinson-hyperlegible-next/wght';
+@use '@fontsource-variable/atkinson-hyperlegible-next/wght-italic';
+@use '@fontsource-variable/atkinson-hyperlegible-mono/wght' as mono;
+
 html,
 body {
   margin: 0;
   height: 100%;
   overflow: hidden;
-  background: layout.$panel-background; // render/palette.ts : fondScene
+  background: layout.$room; // render/palette.ts : fondScene
   color: layout.$panel-ink;
+  font-family: layout.$font-text;
 }
 
 // Focus visible de tous les contrôles (#407) : un seul anneau, couleur et épaisseur dans
