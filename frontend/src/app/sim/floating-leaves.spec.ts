@@ -265,6 +265,8 @@ describe('feuilles mortes : bornes (#107)', () => {
     for (const bad of [-1, 1.5, NaN]) {
       expect(() => createFloatingLeafBuffer(bad)).toThrow(RangeError);
     }
+    expect(() => createFloatingLeafBuffer(-1)).toThrow('capacité invalide : -1');
+    expect(() => createFloatingLeafBuffer(1.5)).toThrow('capacité invalide : 1.5');
   });
 
   it('refuse une graine invalide, un temps négatif, non fini ou trop grand', () => {
@@ -272,11 +274,13 @@ describe('feuilles mortes : bornes (#107)', () => {
     expect(() => fillFloatingLeaves(-1, 0, POND_WATER, buffer)).toThrow(RangeError);
     expect(() => fillFloatingLeaves(1.5, 0, POND_WATER, buffer)).toThrow(RangeError);
     for (const bad of [-0.1, NaN, Infinity]) {
-      expect(() => fillFloatingLeaves(1, bad, POND_WATER, buffer)).toThrow(RangeError);
+      expect(() => fillFloatingLeaves(1, bad, POND_WATER, buffer)).toThrow(
+        `time doit être un réel positif ou nul (reçu : ${bad})`,
+      );
     }
     expect(() =>
       fillFloatingLeaves(1, (MAX_SEED + 2) * LEAF_SLOT_PERIOD, POND_WATER, buffer),
-    ).toThrow(RangeError);
+    ).toThrow(`time trop grand pour numéroter les créneaux (reçu : ${(MAX_SEED + 2) * 7})`);
     // Le dernier créneau représentable passe.
     expect(() =>
       fillFloatingLeaves(1, MAX_SEED * LEAF_SLOT_PERIOD, POND_WATER, buffer),
@@ -325,5 +329,106 @@ describe('feuilles mortes : environnements et sauvegarde (#107)', () => {
     const text = serializeWorld(world);
     expect(text).not.toMatch(/feuille|leaf/i);
     expect(parseWorld(text).ok).toBe(true);
+  });
+});
+
+describe('feuilles mortes : valeurs figées (#699)', () => {
+  /** Feuilles de la graine 42 au millionième : x, z, rotation, longueur, forme, teinte. */
+  const fixed = (time: number, water: Box3 = POND_WATER, currentX = 0, currentZ = 0) => {
+    const buffer = createFloatingLeafBuffer();
+    const count = fillFloatingLeaves(42, time, water, buffer, currentX, currentZ);
+    return Array.from({ length: count }, (_, i) =>
+      Array.from(buffer.leaves.subarray(i * LEAF_STRIDE, (i + 1) * LEAF_STRIDE)).map(
+        (v) => Math.round(v * 1e6) / 1e6,
+      ),
+    );
+  };
+
+  it('marge de la surface : bordure, demi-feuille la plus longue et balancement', () => {
+    expect(floatingLeafInset()).toBeCloseTo(
+      LEAF_EDGE_MARGIN + LEAF_LENGTH.max / 2 + LEAF_WOBBLE,
+      12,
+    );
+    expect(floatingLeafInset()).toBeCloseTo(0.105, 12);
+  });
+
+  it('vagues : intensité et cap de la brise', () => {
+    expect(
+      [0, 1, 2].map((k) => {
+        const wave = leafWave(42, k);
+        return [Math.round(wave.intensity * 1e6) / 1e6, Math.round(wave.breeze * 1e6) / 1e6];
+      }),
+    ).toEqual([
+      [0.978152, 0.31575],
+      [0.318438, 3.092128],
+      [0.003408, 0.011572],
+    ]);
+  });
+
+  it('eau calme : position, rotation, taille, forme et teinte', () => {
+    expect(fixed(30)).toEqual([
+      [-0.235163, 0.175989, 7.088585, 0.095174, 4, 1],
+      [-0.741604, -0.336205, 2.0788, 0.104624, 3, 1],
+      [-0.337991, -0.389705, 3.477618, 0.014766, 5, 0],
+    ]);
+    expect(fixed(250)).toEqual([
+      [0.236029, -0.009459, 4.718311, 0.103538, 2, 1],
+      [-0.325195, 0.19439, -0.110969, 0.125446, 1, 0],
+      [0.408325, 0.351181, 6.966826, 0.118429, 0, 1],
+      [0.570679, -0.553842, 1.393594, 0.110749, 1, 1],
+    ]);
+  });
+
+  it('courant selon X, selon Z, ou les deux : dérive ajoutée à la brise (#460)', () => {
+    expect(fixed(250, POND_WATER, 0.004, -0.003)).toEqual([
+      [0.397807, -0.124019, 4.718311, 0.103538, 2, 1],
+      [-0.196187, 0.094063, -0.110969, 0.125446, 1, 0],
+      [0.467509, 0.302182, 6.966826, 0.118429, 0, 1],
+      [0.592108, -0.559938, 1.393594, 0.110749, 1, 1],
+    ]);
+    expect(fixed(250, POND_WATER, 0.004, 0)).toEqual([
+      [0.395075, -0.007559, 4.718311, 0.103538, 2, 1],
+      [-0.195311, 0.192962, -0.110969, 0.125446, 1, 0],
+      [0.470652, 0.350469, 6.966826, 0.118429, 0, 1],
+      [0.588658, -0.550166, 1.393594, 0.110749, 1, 1],
+    ]);
+    expect(fixed(250, POND_WATER, 0, -0.003)).toEqual([
+      [0.239365, -0.124586, 4.718311, 0.103538, 2, 1],
+      [-0.325712, 0.095371, -0.110969, 0.125446, 1, 0],
+      [0.402104, 0.302463, 6.966826, 0.118429, 0, 1],
+      [0.574122, -0.561107, 1.393594, 0.110749, 1, 1],
+    ]);
+  });
+
+  it('courant fort, dans un sens puis dans l’autre : les feuilles s’arrêtent au bord', () => {
+    expect(fixed(1000, POND_WATER, 0.05, 0.02)).toEqual([
+      [-0.572108, 0.598684, 6.126862, 0.107062, 4, 1],
+      [0.899108, 0.135996, 2.374629, 0.125171, 4, 1],
+      [0.898407, 0.558305, 3.820595, 0.096441, 3, 1],
+      [-0.106526, 0.278659, 5.159424, 0.118349, 4, 1],
+    ]);
+    expect(fixed(1000, POND_WATER, -0.05, -0.02)).toEqual([
+      [-0.893611, 0.460057, 6.126862, 0.107062, 4, 1],
+      [-0.898322, -0.558818, 2.374629, 0.125171, 4, 1],
+      [0.234045, 0.301201, 3.820595, 0.096441, 3, 1],
+      [-0.383641, 0.160945, 5.159424, 0.118349, 4, 1],
+    ]);
+  });
+
+  it('bassin plus étroit que deux marges, décentré : feuilles sur la ligne médiane', () => {
+    const narrowX: Box3 = { minX: 1, maxX: 1.1, minY: 0, maxY: 0.3, minZ: -0.5, maxZ: 0.5 };
+    const narrowZ: Box3 = { minX: -0.5, maxX: 0.5, minY: 0, maxY: 0.3, minZ: 2, maxZ: 2.1 };
+    expect(fixed(250, narrowX)).toEqual([
+      [1.052568, 0.021686, 7.154066, 0.103538, 2, 1],
+      [1.048232, -0.200132, 6.682411, 0.125446, 1, 0],
+      [1.057605, 0.147318, 2.113686, 0.118429, 0, 1],
+      [1.05015, 0.253377, 5.490451, 0.110749, 1, 1],
+    ]);
+    expect(fixed(250, narrowZ)).toEqual([
+      [0.033799, 2.040455, 7.154066, 0.103538, 2, 1],
+      [-0.205994, 2.054095, 6.682411, 0.125446, 1, 0],
+      [0.161029, 2.043894, 2.113686, 0.118429, 0, 1],
+      [0.252627, 2.0509, 5.490451, 0.110749, 1, 1],
+    ]);
   });
 });
