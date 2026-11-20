@@ -9623,10 +9623,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-20T23:41:39.005Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-20T23:42:50.846Z",
+          "note": "Rétro #753 ; issue #717 (dette, avec #711) (S) ; PR docs roadmap"
         }
       },
       "metriques": {}
