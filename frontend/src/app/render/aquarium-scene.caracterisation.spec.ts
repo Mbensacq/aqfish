@@ -32,8 +32,8 @@ function fnv1a(text: string): number {
 function geometrySignature(geometry: BufferGeometry): string {
   const position = geometry.getAttribute('position');
   let sum = 0;
-  for (let i = 0; i < position.array.length; i++) {
-    sum = (sum * 31 + Math.round(position.array[i] * 1e6)) % 2147483647;
+  for (const value of position.array) {
+    sum = (sum * 31 + Math.round(value * 1e6)) % 2147483647;
   }
   return `${position.count}:${sum}`;
 }
