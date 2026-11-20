@@ -5,12 +5,8 @@
   "core/decor-physics/decor-physics.ts": {
     "max-params": 6
   },
-  "render/aquarium-scene.ts": {
-    "max-lines-per-function": 163,
-    "complexity": 19
-  },
   "render/aquarium-view.ts": {
-    "max-lines": 994
+    "max-lines": 653
   },
   "render/coral-model.ts": {
     "max-params": 6
@@ -19,10 +15,7 @@
     "max-lines-per-function": 94
   },
   "render/fish-model.ts": {
-    "max-lines": 787,
-    "max-lines-per-function": 145,
-    "complexity": 29,
-    "max-depth": 5,
+    "max-lines": 633,
     "max-params": 8
   },
   "render/free-camera-touch.ts": {
