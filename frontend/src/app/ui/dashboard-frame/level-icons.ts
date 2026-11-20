@@ -20,28 +20,26 @@ export function levelIconPixels(level: GaugeLevel): readonly (readonly [number, 
   if (mask.length !== LEVEL_ICON_GRID || mask.some((row) => row.length !== LEVEL_ICON_GRID)) {
     throw new Error(`Icône « ${level} » : grille ${LEVEL_ICON_GRID} × ${LEVEL_ICON_GRID} attendue`);
   }
-  return mask.flatMap((row, y) =>
-    [...row].flatMap((cell, x) => (cell === '#' ? [[x, y] as const] : [])),
-  );
+  return maskPixels(mask);
 }
 
 /** Icône du rappel d'entretien (calendrier) : forme distincte des trois niveaux (#513). */
-export const MAINTENANCE_ICON_PIXELS: readonly (readonly [number, number])[] = [
+export const MAINTENANCE_ICON_PIXELS: readonly (readonly [number, number])[] = maskPixels([
   '#####',
   '#...#',
   '#.#.#',
   '#...#',
   '#####',
-].flatMap((row, y) => [...row].flatMap((cell, x) => (cell === '#' ? [[x, y] as const] : [])));
+]);
 
 /** Icône du bilan du bac (#514) : une liste de trois lignes. */
-export const REVIEW_ICON_PIXELS: readonly (readonly [number, number])[] = [
+export const REVIEW_ICON_PIXELS: readonly (readonly [number, number])[] = maskPixels([
   '#.###',
   '.....',
   '#.###',
   '.....',
   '#.###',
-].flatMap((row, y) => [...row].flatMap((cell, x) => (cell === '#' ? [[x, y] as const] : [])));
+]);
 
 /**
  * Icônes des familles du journal (#655), une forme par famille : croix de soin (santé), œuf
@@ -64,6 +62,7 @@ export const JOURNAL_ICON_PIXELS: Readonly<
   alertes: maskPixels(JOURNAL_ICON_MASKS.alertes),
 };
 
+/** Pixels pleins d'un masque (`#` plein, `.` vide), `[x, y]`, ligne par ligne. */
 function maskPixels(mask: readonly string[]): readonly (readonly [number, number])[] {
   return mask.flatMap((row, y) =>
     [...row].flatMap((cell, x) => (cell === '#' ? [[x, y] as const] : [])),
