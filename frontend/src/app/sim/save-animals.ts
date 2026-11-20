@@ -112,7 +112,7 @@ export function parseDeadList(
     return [];
   }
   const before = problems.length;
-  const bodies = parseFishList(value, context, problems);
+  const bodies = parseFishList(value, context, problems, DEAD_LIST);
   if (problems.length > before) {
     return [];
   }
@@ -135,18 +135,34 @@ export function parseDeadList(
   return dead;
 }
 
-const FISH_LIST: ListRule = {
+/** Liste d'animaux enregistrés : règle de la liste et nom d'un élément dans les messages. */
+interface AnimalListRule extends ListRule {
+  /** Préfixe des problèmes d'un élément (« poisson 0 : … », « corps 0 : … »). */
+  readonly item: string;
+}
+
+const FISH_LIST: AnimalListRule = {
   key: 'fish',
+  item: 'poisson',
   max: MAX_TOTAL_FISH,
   countMessage: (count) => `trop de poissons (${count}, ${MAX_TOTAL_FISH} au plus)`,
+};
+
+/** Corps (#582) : mêmes règles que `fish`, problèmes signalés comme tels (#717). */
+const DEAD_LIST: AnimalListRule = {
+  key: 'dead',
+  item: 'corps',
+  max: MAX_TOTAL_FISH,
+  countMessage: (count) => `trop de corps (${count}, ${MAX_TOTAL_FISH} au plus)`,
 };
 
 export function parseFishList(
   value: unknown,
   context: AnimalContext,
   problems: string[],
+  rule: AnimalListRule = FISH_LIST,
 ): Entity[] {
-  const items = readList(value, FISH_LIST, problems);
+  const items = readList(value, rule, problems);
   if (items === null) {
     return [];
   }
@@ -156,14 +172,14 @@ export function parseFishList(
   items.forEach((item: unknown, i) => {
     const fish = parseFish(item, context);
     if (typeof fish === 'string') {
-      problems.push(`poisson ${i} : ${fish}`);
+      problems.push(`${rule.item} ${i} : ${fish}`);
       return;
     }
     if (fish.id <= previousId) {
-      problems.push(`poisson ${i} : identifiants non strictement croissants`);
+      problems.push(`${rule.item} ${i} : identifiants non strictement croissants`);
     }
     if (typeof context.nextFishId === 'number' && fish.id >= context.nextFishId) {
-      problems.push(`poisson ${i} : identifiant ${fish.id} ≥ nextFishId`);
+      problems.push(`${rule.item} ${i} : identifiant ${fish.id} ≥ nextFishId`);
     }
     previousId = fish.id;
     counts.set(fish.species, (counts.get(fish.species) ?? 0) + 1);
