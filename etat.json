@@ -9491,10 +9491,10 @@
           "note": "PR #749 : mutants lot 13/13, feuilles 92,4 %, pièce 93,1 %, siphon 97,4 % (bornes basses), 1 garde morte retirée, CI verte ; e2e local coupé (serveur 4300 tombé)"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-20T11:01:57.437Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-20T11:35:15.351Z",
+          "note": "Verdict OK, 0 bug, 167/167 captures identiques, publiées (e2e complets laissés à la CI)"
         }
       },
       "metriques": {}
