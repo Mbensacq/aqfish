@@ -9419,10 +9419,10 @@
           "note": "PR #747 : caméra, caméra libre et gestes du pointeur hors de la vue (tranche 1/2 de #698, aquarium-view 2315→1542 l.), captures identiques, CI verte"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-20T05:22:59.995Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-20T06:26:14.664Z",
+          "note": "Verdict OK, 0 bug, 165/167 captures identiques (2 bruit connu, identiques à main), publiées"
         }
       },
       "metriques": {}
