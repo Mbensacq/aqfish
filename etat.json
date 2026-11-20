@@ -9453,6 +9453,12 @@
           "debut": "2026-11-20T06:55:10.157Z",
           "fin": "2026-11-20T07:41:55.645Z",
           "note": "PR #748 : couches, passes, lumière, lancers de rayon hors de la vue (1542→1127 l.), scène et buildVoxelMesh découpés, captures 165/167 identiques (2 bruits connus), CI verte"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-20T07:42:33.403Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
