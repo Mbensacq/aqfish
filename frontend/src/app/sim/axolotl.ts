@@ -442,6 +442,10 @@ interface WalkStep {
   /** Hauteurs permises du centre au point atteint, en mètres. */
   floor: number;
   ceiling: number;
+  /** Hauteur visée par le pas (`verticalGoalInPlace`), en mètres. */
+  verticalGoal: number;
+  /** Vitesse verticale maximale du pas (`verticalGoalInPlace`), en m/s. */
+  verticalSpeed: number;
   /** Vitesse verticale du pas, en m/s. */
   vy: number;
 }
@@ -462,6 +466,8 @@ const WALK: WalkStep = {
   heading: 0,
   floor: 0,
   ceiling: 0,
+  verticalGoal: 0,
+  verticalSpeed: 0,
   vy: 0,
 };
 
@@ -597,7 +603,7 @@ function walkerHeightInPlace(c: WalkStep): void {
     ) + c.walker.clearance;
   c.floor = Math.max(c.bounds.hard.minY, center, Math.min(ends, c.ceiling));
   verticalGoalInPlace(c);
-  c.vy = clamp((VERTICAL.goal - fish.y) * VERTICAL_GAIN, -VERTICAL.speed, VERTICAL.speed);
+  c.vy = clamp((c.verticalGoal - fish.y) * VERTICAL_GAIN, -c.verticalSpeed, c.verticalSpeed);
   let ny = fish.y + c.vy * c.dt;
   if (blockers.length > 0) {
     const next = obstacleClearance(fish.x, ny, fish.z, blockers);
@@ -608,24 +614,21 @@ function walkerHeightInPlace(c: WalkStep): void {
   fish.y = clamp(ny, c.floor, c.ceiling);
 }
 
-/** Hauteur visée et vitesse verticale maximale du pas (`verticalGoalInPlace`). */
-const VERTICAL = { goal: 0, speed: 0 };
-
-/** Hauteur visée et vitesse verticale maximale selon la phase, écrites dans `VERTICAL`. */
+/** Hauteur visée et vitesse verticale maximale selon la phase, écrites dans le contexte. */
 function verticalGoalInPlace(c: WalkStep): void {
   const { phase, floor, ceiling } = c;
   switch (phase.mode) {
     case 'marche':
-      VERTICAL.goal = floor;
-      VERTICAL.speed = SETTLE_VERTICAL;
+      c.verticalGoal = floor;
+      c.verticalSpeed = SETTLE_VERTICAL;
       break;
     case 'nage':
-      VERTICAL.goal = floor + (ceiling - floor) * phase.height;
-      VERTICAL.speed = SWIM_VERTICAL;
+      c.verticalGoal = floor + (ceiling - floor) * phase.height;
+      c.verticalSpeed = SWIM_VERTICAL;
       break;
     case 'remontee':
-      VERTICAL.goal = phase.progress < RISE_SHARE ? ceiling : floor;
-      VERTICAL.speed = phase.progress < RISE_SHARE ? c.walker.climbSpeed : SINK_VERTICAL;
+      c.verticalGoal = phase.progress < RISE_SHARE ? ceiling : floor;
+      c.verticalSpeed = phase.progress < RISE_SHARE ? c.walker.climbSpeed : SINK_VERTICAL;
       break;
   }
 }
