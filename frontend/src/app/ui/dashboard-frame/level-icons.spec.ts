@@ -26,9 +26,7 @@ describe('icônes du bandeau : pixels exacts (#667)', () => {
   });
 
   it('icône du bilan', () => {
-    expect(fingerprint(REVIEW_ICON_PIXELS)).toBe(
-      '0,0 2,0 3,0 4,0 0,2 2,2 3,2 4,2 0,4 2,4 3,4 4,4',
-    );
+    expect(fingerprint(REVIEW_ICON_PIXELS)).toBe('0,0 2,0 3,0 4,0 0,2 2,2 3,2 4,2 0,4 2,4 3,4 4,4');
   });
 
   it('icônes des familles du journal', () => {
