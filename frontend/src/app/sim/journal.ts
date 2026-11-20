@@ -492,14 +492,15 @@ export function journalLines(journal: Journal): JournalLine[] {
 
 /**
  * Lignes gardées par le filtre `filter` (#655), dans leur ordre : toutes pour `tout`, sinon
- * celles de la famille choisie (liste vide si aucune ne correspond). Un filtre inconnu ne
- * masque rien.
+ * celles de la famille choisie (liste vide si aucune ne correspond). Le filtre n'est jamais
+ * relu du stockage (signal de l'interface, remis à `tout`) : il est toujours une valeur de
+ * `JOURNAL_FILTERS`, d'où l'absence de garde pour un filtre inconnu (#667).
  */
 export function filterJournalLines(
   lines: readonly JournalLine[],
   filter: JournalFilter,
 ): readonly JournalLine[] {
-  if (filter === 'tout' || !(JOURNAL_FILTERS as readonly string[]).includes(filter)) {
+  if (filter === 'tout') {
     return lines;
   }
   return lines.filter((line) => line.group === filter);
