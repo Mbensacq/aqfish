@@ -122,12 +122,14 @@ describe('point du sol visé : cas limites (#699)', () => {
     expect(at([0, 0.5, 2], [0, 0, -2])).toEqual({ x: 0, z: 0.25 });
   });
 
-  it('rayon parallèle à une face, hors de l’eau de chaque côté : aucun point', () => {
+  it('rayon parallèle à une face hors de l’eau, ou qui s’en éloigne : aucun point', () => {
     expect(at([-2, 0.25, 2], [0, 0, -1])).toBeNull();
     expect(at([2, 0.25, 2], [0, 0, -1])).toBeNull();
     expect(at([0, -1, 2], [0, 0, -1])).toBeNull();
     expect(at([0, 1, 2], [0, 0, -1])).toBeNull();
     expect(at([0, 0.25, -2], [1, 0, 0])).toBeNull();
+    // Sous le fond, vers le bas : le fond est derrière le tuyau.
+    expect(at([0, -1, 0], [0, -1, 0])).toBeNull();
   });
 
   it('rayon qui frôle une arête (entrée et sortie confondues) : ce point', () => {
