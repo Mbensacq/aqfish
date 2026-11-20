@@ -9377,10 +9377,10 @@
           "note": "Rétro sprint 37 (#745) ; issue du cycle #697 fin du lot 11/13 (S)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-20T02:40:13.932Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-20T03:14:30.045Z",
+          "note": "PR #746 : Simulation, Journée, Décor, Accessibilité, Son et Quarantaine hors du panneau (fin 11/13 ; control-panel.ts 388, tanks-section.ts 424), CI verte"
         }
       },
       "metriques": {}
