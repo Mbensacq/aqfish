@@ -10,9 +10,7 @@
     "complexity": 19
   },
   "render/aquarium-view.ts": {
-    "max-lines": 1641,
-    "max-lines-per-function": 97,
-    "complexity": 26
+    "max-lines": 994
   },
   "render/coral-model.ts": {
     "max-params": 6
