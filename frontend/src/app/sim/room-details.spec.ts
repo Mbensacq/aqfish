@@ -479,11 +479,12 @@ describe('détails de la pièce : cotes figées (#699)', () => {
       shell,
       ...[b.minX, b.maxX, b.minY, b.maxY, b.minZ, b.maxZ].map((v) => Math.round(v * 100) / 100),
     ]);
-  const cm = (o: object) =>
+  /** Cotes au centimètre, objets imbriqués compris (halo de l'applique). */
+  const cm = (o: object): Record<string, unknown> =>
     Object.fromEntries(
-      Object.entries(o).map(([k, v]) => [
+      Object.entries(o).map(([k, v]: [string, unknown]) => [
         k,
-        typeof v === 'number' ? Math.round(v * 100) / 100 : cm(v),
+        typeof v === 'number' ? Math.round(v * 100) / 100 : cm(v as object),
       ]),
     );
 
