@@ -9533,10 +9533,10 @@
           "note": "Verdict OK, 0 bug, 143 captures bac seul identiques, 24 d'interface changées (attendu), publiées ; e2e complets laissés à la CI"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-20T13:14:23.680Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-20T13:40:49.590Z",
+          "note": "PR #750 fusionnée → v1.26.3 (release CI OK, main verte), #721 fermée ; versions des polices rendues exactes ; suppression de branche refusée par le proxy"
         }
       },
       "metriques": {}
