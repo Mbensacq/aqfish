@@ -10035,6 +10035,19 @@
         "statut": "termine",
         "note": "9 cycles, 0 alerte bloquante"
       }
+    },
+    "2026-11-20": {
+      "metriques": {
+        "cycles": 7,
+        "livres": 7,
+        "version": "v1.25.6",
+        "tests": null,
+        "couvertureLignes": null,
+        "lignesCode": 153518,
+        "bugsOuverts": 0,
+        "ciMain": "success",
+        "mutation": null
+      }
     }
   }
 }
