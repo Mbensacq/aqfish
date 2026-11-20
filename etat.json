@@ -9510,7 +9510,7 @@
       "date": "2026-11-20",
       "debut": "2026-11-20T12:05:29.366Z",
       "type": "fonctionnalite",
-      "issue": null,
+      "issue": 721,
       "pr": null,
       "version": null,
       "phases": {
