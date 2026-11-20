@@ -9403,7 +9403,7 @@
       "debut": "2026-11-20T04:28:15.542Z",
       "type": "fonctionnalite",
       "issue": 698,
-      "pr": null,
+      "pr": 747,
       "version": null,
       "phases": {
         "planif": {
