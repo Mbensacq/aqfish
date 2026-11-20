@@ -9593,10 +9593,10 @@
           "note": "Issue #715 : dette sim/icônes, avec #667 et mesure des tests (S)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-20T15:15:36.841Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-20T16:11:54.391Z",
+          "note": "PR #752 : dette c264 (readWater documenté, masque tallyDiseases, icônes via maskPixels, garde journal retirée, journal.spec 31,3 s), CI verte ; 5983 tests, sim 99,61 %, complexité max 24, fonction max 108 l."
         }
       },
       "metriques": {}
