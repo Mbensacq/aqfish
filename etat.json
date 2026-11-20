@@ -9411,6 +9411,12 @@
           "debut": "2026-11-20T04:28:15.542Z",
           "fin": "2026-11-20T04:28:41.724Z",
           "note": "Issue #698 : vue Three.js, glisser et caméra, tranche 1 (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-20T04:29:17.586Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
