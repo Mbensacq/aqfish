@@ -9485,10 +9485,10 @@
           "note": "Issue #699 : mutants survivants des 3 fichiers les plus faibles, lot 13/13 de #686 (S)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-20T09:21:17.683Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-20T11:01:23.796Z",
+          "note": "PR #749 : mutants lot 13/13, feuilles 92,4 %, pièce 93,1 %, siphon 97,4 % (bornes basses), 1 garde morte retirée, CI verte ; e2e local coupé (serveur 4300 tombé)"
         }
       },
       "metriques": {}
