@@ -9563,10 +9563,10 @@
           "note": "PR #751 : fenêtre des réglages, catégories déclarées et modale bureau (tranche 1 partielle, non branchée), CI verte"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-20T14:24:35.434Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-20T14:47:32.794Z",
+          "note": "Verdict OK, 0 bug, 167 captures identiques, fondations non branchées, publiées"
         }
       },
       "metriques": {}
