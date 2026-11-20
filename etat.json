@@ -9360,6 +9360,24 @@
         }
       },
       "metriques": {}
+    },
+    "258": {
+      "numero": 258,
+      "date": "2026-11-20",
+      "debut": "2026-11-20T02:38:53.436Z",
+      "type": "retro",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-20T02:38:53.436Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
