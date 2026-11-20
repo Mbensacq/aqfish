@@ -9371,10 +9371,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-20T02:38:53.436Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-20T02:39:36.786Z",
+          "note": "Rétro sprint 37 (#745) ; issue du cycle #697 fin du lot 11/13 (S)"
         }
       },
       "metriques": {}
