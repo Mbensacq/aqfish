@@ -9332,7 +9332,7 @@
       "type": "dette",
       "issue": 697,
       "pr": 744,
-      "version": null,
+      "version": "v1.25.5",
       "phases": {
         "planif": {
           "statut": "termine",
