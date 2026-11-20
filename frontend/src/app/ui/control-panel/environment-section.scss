@@ -1,0 +1,23 @@
+// Section « Environnement » (#87, #697) : règles communes du panneau (`_panel-controls.scss`),
+// puis la ligne de « Lieu », à la même place qu'avant le découpage.
+@use 'panel-controls' as controls;
+
+@include controls.base;
+
+// « Lieu » et la case de la pièce sur la première ligne, la liste dessous, sur toute la largeur.
+.control-panel__field--place {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  column-gap: 8px;
+
+  .control-panel__select {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .control-panel__check--inline {
+    grid-column: 2;
+    grid-row: 1;
+  }
+}

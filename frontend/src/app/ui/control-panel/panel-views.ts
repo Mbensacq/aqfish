@@ -41,3 +41,11 @@ export function treatmentTitle(kind: TreatmentKind): string {
   const source = treatmentSourceText(kind);
   return warning === null ? source : `${source} ${warning}`;
 }
+
+/**
+ * Nombre lu dans une valeur de formulaire (curseur, champ) ; une chaîne vide ou blanche donne
+ * `NaN` (et non 0, comme le ferait `Number('')`).
+ */
+export function formNumber(value: string | number): number {
+  return typeof value === 'string' && value.trim() === '' ? Number.NaN : Number(value);
+}

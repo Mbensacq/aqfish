@@ -319,6 +319,15 @@ haut de sa section.
   donne aucune erreur, seulement des styles perdus. Comparer les styles calculés de chaque
   élément avant et après (`getComputedStyle` et `getBoundingClientRect` sur
   `app-control-panel *`, plusieurs états et tailles d'écran). (2026-11-19)
+- **Règle d'une requête média du panneau qui vise un élément de section : elle part avec la
+  section** (cycle 257, #697) : `[data-catappa-note]` et `[data-treatment-sources]`, masquées
+  en deux colonnes dans `control-panel.scss`, portent l'attribut d'encapsulation du panneau ;
+  restées là, elles ne masquent plus rien une fois l'élément dans « Eau » ou « Soins », et
+  « Sauvegarde » part en troisième colonne à 1280 × 720 (#488). Avant d'extraire une
+  section, chercher dans `control-panel.scss` tout sélecteur (attribut ou classe) d'un de ses
+  éléments, et le recopier dans la feuille de la section, dans la même requête. Relevé des
+  styles réutilisable : états « soins » et « soins, message » à 1280 × 720 obligatoires.
+  (2026-11-20)
 - **`npm run verify` en arrière-plan et édition du même clone** (cycle 256) : le build lit les
   fichiers au moment où il passe ; une vérification de `main` lancée avant de commencer à
   coder échoue (ou réussit) sur un état mélangé. Attendre sa fin, ou la lancer dans un autre
