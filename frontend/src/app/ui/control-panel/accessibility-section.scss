@@ -1,0 +1,4 @@
+// Section « Accessibilité » (#406, #697) : règles communes du panneau (`_panel-controls.scss`).
+@use 'panel-controls' as controls;
+
+@include controls.base;

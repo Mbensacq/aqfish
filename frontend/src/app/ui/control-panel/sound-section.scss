@@ -1,0 +1,13 @@
+// Section « Son » (#411, #697) : règles communes du panneau (`_panel-controls.scss`), dans son
+// ordre (le volume reprend la taille d'un curseur de population).
+@use 'panel-controls' as controls;
+
+@include controls.base;
+
+@include controls.count;
+
+@include controls.phone;
+
+@include controls.texts;
+
+@include controls.rows;

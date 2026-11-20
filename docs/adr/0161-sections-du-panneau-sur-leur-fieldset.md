@@ -73,5 +73,15 @@ Deux difficultés :
   panneau identiques à `main` dans 32 états (défaut, bassin, soins, message d'un geste et
   d'un produit, quarantaine, pièce ; 1280 × 720, 1600 × 1000, 1000 × 700, 390 × 844), hors
   la faim des bacs qui avance avec le temps.
-- Restent dans le panneau, petites : « Simulation », « Journée », « Décor », « Accessibilité »
-  et « Son ».
+- Troisième tranche (cycle 258) : « Simulation », « Journée », « Décor », « Accessibilité » et
+  « Son » sortent à leur tour (`simulation-section.ts`, `day-section.ts`, `decor-section.ts`,
+  `accessibility-section.ts`, `sound-section.ts`) ; « Accessibilité » et « Son » lisent leur
+  état partagé (`ReducedMotionState`, `AmbientSoundState`) eux-mêmes, le panneau ne les
+  injecte plus. `speedIndex`, `speedAt` et `sliderHour` suivent leur section et restent
+  réexportés par `control-panel.ts`. Le panneau ne contient plus aucun contrôle : sa feuille
+  n'inclut plus les mixins de `_panel-controls.scss`. Le groupe « Quarantaine » de « Bacs »
+  sort sur le même modèle, posé sur son `div` (`div[app-quarantine-section]`, fichier
+  `quarantine-section.ts` pour que la règle de sélecteur de `eslint.config.js` s'applique) ;
+  le bouton « Isoler en quarantaine » et la règle `.control-panel__quarantine` restent dans
+  « Bacs ». `control-panel.ts` : 388 lignes hors blancs et commentaires, `tanks-section.ts` :
+  424 ; styles calculés, boîtes, attributs et textes identiques à `main` dans 9 états.

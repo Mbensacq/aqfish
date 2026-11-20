@@ -531,6 +531,28 @@ describe('ControlPanel', () => {
       ]);
     });
 
+    it('quarantaine (#547) : le dernier bac posé par défaut, puis le bac choisi dans la liste', async () => {
+      fixture.componentInstance.quarantine.set({
+        tanks: [
+          { id: 2, name: 'Bac posé', species: ['neon'], sick: 0, filter: null },
+          { id: 3, name: 'Quarantaine', species: ['guppy'], sick: 1, filter: null },
+        ],
+        sickHere: 0,
+      });
+      await openPanel();
+      const tank = section().querySelector<HTMLSelectElement>('[data-quarantine-tank]')!;
+      expect(tank.value).toBe('3');
+      section().querySelector<HTMLButtonElement>('[data-quarantine-return]')!.click();
+      tank.value = '2';
+      tank.dispatchEvent(new Event('change'));
+      await fixture.whenStable();
+      section().querySelector<HTMLButtonElement>('[data-quarantine-return]')!.click();
+      expect(fixture.componentInstance.layout).toEqual([
+        ['retour-quarantaine', { fromId: 3, species: 'guppy' }],
+        ['retour-quarantaine', { fromId: 2, species: 'neon' }],
+      ]);
+    });
+
     it('quarantaine installée (#571) : panneau sur une colonne, focus au bac de quarantaine', async () => {
       fixture.componentInstance.quarantine.set({ tanks: [], sickHere: 3 });
       await openPanel();
