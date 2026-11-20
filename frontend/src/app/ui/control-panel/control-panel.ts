@@ -1,5 +1,5 @@
 import { DEFAULT_LIGHTING_HOURS } from '../../sim/algae';
-import { DEFAULT_LAMP_ON_HOUR, LAMP_MAX_HOURS, LAMP_MIN_HOURS, isLampOnHour } from '../../sim/lamp';
+import { DEFAULT_LAMP_ON_HOUR } from '../../sim/lamp';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -11,21 +11,8 @@ import {
   signal,
 } from '@angular/core';
 
-import {
-  DEFAULT_ENVIRONMENT_ID,
-  ENVIRONMENT_IDS,
-  environmentById,
-  isPondShapeable,
-  type EnvironmentId,
-} from '../../sim/environment';
-import {
-  DEFAULT_POND_SHAPE,
-  isPondShape,
-  POND_SHAPE_LABELS,
-  POND_SHAPES,
-  type PondShape,
-} from '../../sim/pond-shape';
-import { MAX_CATAPPA_LEAVES } from '../../sim/catappa';
+import { DEFAULT_ENVIRONMENT_ID, environmentById, type EnvironmentId } from '../../sim/environment';
+import { DEFAULT_POND_SHAPE, type PondShape } from '../../sim/pond-shape';
 import { ReducedMotionState } from '../reduced-motion/reduced-motion-state';
 import { AmbientSoundState } from '../ambient-sound/ambient-sound-state';
 import { formatHour, HOUR_SLIDER_STEP, HOURS_PER_DAY, NOON_HOUR } from '../../sim/daylight';
@@ -35,27 +22,22 @@ import { DEFAULT_FOOD_STYLE, type FoodStyle } from '../../core/food-style/food-s
 import { isRoomAvailable } from '../../sim/room';
 import type { RoomCatalog, TankNotice } from '../aquarium-host/aquarium-host';
 import type { TankListEntry } from '../../sim/tank-list';
-import { MAX_SAVE_LENGTH } from '../../sim/save';
 import { DEFAULT_SIM_SPEED, SIM_SPEEDS, speedLabel, type SimSpeed } from '../../sim/sim-speed';
 import type { CareMode } from '../../sim/care-mode';
-import { CURRENT_LEVEL_LABELS, type CurrentLevel } from '../../sim/water-current';
+import type { CurrentLevel } from '../../sim/water-current';
 import type { SpeciesId } from '../../sim/species';
-import { TreatmentNotice as TreatmentNoticeView } from './treatment-notice';
-import { MAX_HEATER_TEMPERATURE, MIN_HEATER_TEMPERATURE } from '../../sim/water';
-import { TREATMENT_KINDS, TREATMENTS, type TreatmentKind } from '../../sim/treatment';
+import type { TreatmentKind } from '../../sim/treatment';
 import { EMPTY_QUARANTINE, type QuarantineView } from '../../sim/quarantine';
-import {
-  treatmentSourcesLine,
-  treatmentStatusText,
-  type TreatmentNotice,
-  type TreatmentReadout,
-} from '../../sim/treatment-text';
+import type { TreatmentNotice, TreatmentReadout } from '../../sim/treatment-text';
 import type { PhRegulatorDirection } from '../../sim/ph-regulator';
 import type { ConditionerKind } from '../../sim/water-conditioner';
 import type { GuidePage } from '../../sim/care-guide';
-import { formatTenth } from '../../sim/water-dashboard';
 import { DEFAULT_WATER_READOUT, type WaterReadout } from '../../sim/water-quality';
-import { environmentName, isQuarantineShown, treatmentTitle } from './panel-views';
+import { formNumber, isQuarantineShown } from './panel-views';
+import { CareSection } from './care-section';
+import { EnvironmentSection } from './environment-section';
+import { SaveSection } from './save-section';
+import { WaterSection } from './water-section';
 import { PopulationSection, type PopulationRequest } from './population-section';
 import { RoomSection, type NewTankRequest } from './room-section';
 import { TanksSection } from './tanks-section';
@@ -73,6 +55,16 @@ export {
   type PopulationRequest,
 } from './population-section';
 export type { NewTankRequest } from './room-section';
+export { saveStatusText } from './save-section';
+export {
+  HEATER_SLIDER_STEP,
+  heaterText,
+  lampOnText,
+  lightingText,
+  sliderHeater,
+  sliderLampOn,
+  sliderLighting,
+} from './water-section';
 
 /** Libellé d'une vitesse (déplacé dans `sim/sim-speed.ts`, partagé avec le tableau de bord). */
 export { speedLabel } from '../../sim/sim-speed';
@@ -94,80 +86,14 @@ export function speedIndex(speed: number): number {
  * si le rang n'existe pas.
  */
 export function speedAt(index: string | number): SimSpeed | null {
-  const i = toNumber(index);
+  const i = formNumber(index);
   return Number.isInteger(i) && i >= 0 && i < SIM_SPEEDS.length ? SIM_SPEEDS[i] : null;
 }
 
 /** Heure lue sur le curseur d'heure (une chaîne), `null` si elle n'est pas dans [0, 24). */
 export function sliderHour(value: string | number): number | null {
-  const hour = toNumber(value);
+  const hour = formNumber(value);
   return Number.isFinite(hour) && hour >= 0 && hour < HOURS_PER_DAY ? hour : null;
-}
-
-/** Pas du curseur du chauffage, en °C (#207). */
-export const HEATER_SLIDER_STEP = 0.5;
-
-/** Température lue sur le curseur du chauffage (une chaîne), `null` hors des bornes. */
-/** Libellé de la durée d'éclairage (#476) : « 8 h par jour ». */
-export function lightingText(hours: number): string {
-  return `${hours} h par jour`;
-}
-
-/**
- * Durée d'éclairage lue sur le curseur (#476, #584) : entier dans [`LAMP_MIN_HOURS`,
- * `LAMP_MAX_HOURS`] (4 à 14 h), `null` sinon.
- */
-export function sliderLighting(value: string | number): number | null {
-  const h = toNumber(value);
-  return Number.isInteger(h) && h >= LAMP_MIN_HOURS && h <= LAMP_MAX_HOURS ? h : null;
-}
-
-/** Heure d'allumage de la lampe lue sur le curseur (#584) : entier de 0 à 23, `null` sinon. */
-export function sliderLampOn(value: string | number): number | null {
-  const h = toNumber(value);
-  return isLampOnHour(h) ? h : null;
-}
-
-/** Libellé de l'heure d'allumage (#584) : « allumée à 10:00 ». */
-export function lampOnText(hour: number): string {
-  return `allumée à ${formatHour(hour)}`;
-}
-
-export function sliderHeater(value: string | number): number | null {
-  const t = toNumber(value);
-  return Number.isFinite(t) && t >= MIN_HEATER_TEMPERATURE && t <= MAX_HEATER_TEMPERATURE
-    ? t
-    : null;
-}
-
-/**
- * Texte du chauffage (#207) : « 26,0 °C », suivi de la température de l'eau tant qu'elle
- * n'a pas rejoint la consigne (« 26,0 °C · eau 25,3 °C »).
- */
-export function heaterText(readout: WaterReadout): string {
-  const target = `${formatTenth(readout.target)} °C`;
-  return readout.temperature === readout.target
-    ? target
-    : `${target} · eau ${formatTenth(readout.temperature)} °C`;
-}
-
-/** Texte de l'état de la sauvegarde automatique (#70). */
-export function saveStatusText(status: SaveStatus | null): string {
-  switch (status) {
-    case 'active':
-      return 'Enregistré automatiquement dans ce navigateur.';
-    case 'plein':
-      return 'Stockage du navigateur plein : aquarium non enregistré.';
-    case 'indisponible':
-      return 'Stockage du navigateur indisponible : aquarium non enregistré.';
-    default:
-      return 'Sauvegarde automatique désactivée.';
-  }
-}
-
-/** Nombre lu dans une valeur de formulaire ; une chaîne vide donne `NaN` (et non 0). */
-function toNumber(value: string | number): number {
-  return typeof value === 'string' && value.trim() === '' ? Number.NaN : Number(value);
 }
 
 /**
@@ -201,7 +127,15 @@ function toNumber(value: string | number): number {
  */
 @Component({
   selector: 'app-control-panel',
-  imports: [TreatmentNoticeView, PopulationSection, RoomSection, TanksSection],
+  imports: [
+    EnvironmentSection,
+    WaterSection,
+    CareSection,
+    PopulationSection,
+    RoomSection,
+    TanksSection,
+    SaveSection,
+  ],
   template: `<button
       type="button"
       class="control-panel__toggle"
@@ -222,48 +156,17 @@ function toNumber(value: string | number): number {
         [style.--soins]="careShown() ? '570px' : null"
         [class.control-panel--single-column]="quarantineShown()"
       >
-        <fieldset class="control-panel__section" data-section="environnement">
-          <legend class="control-panel__legend">Environnement</legend>
-          <!-- Pièce autour du bac (#187), bac tropical seulement : après la liste au clavier,
-               mais sur la ligne de « Lieu » à l'écran, le panneau ne grandit pas (#101). -->
-          <div class="control-panel__field control-panel__field--place">
-            <label class="control-panel__label" for="panneau-environnement">Lieu</label>
-            <select
-              id="panneau-environnement"
-              class="control-panel__select"
-              aria-label="Environnement"
-              (change)="onEnvironment($event)"
-            >
-              @for (id of environmentIds; track id) {
-                <option [value]="id" [selected]="id === environment()">
-                  {{ environmentName(id) }}
-                </option>
-              }
-            </select>
-            <!-- Forme du bassin (#190), bassin seulement : à la place de la pièce, même ligne. -->
-            @if (shapeAvailable()) {
-              <select
-                class="control-panel__select"
-                data-pond-shape
-                aria-label="Forme du bassin"
-                title="Forme du bassin"
-                (change)="onPondShape($event)"
-              >
-                @for (shape of pondShapes; track shape) {
-                  <option [value]="shape" [selected]="shape === pondShape()">
-                    {{ pondShapeLabels[shape] }}
-                  </option>
-                }
-              </select>
-            }
-            @if (roomAvailable()) {
-              <label class="control-panel__check control-panel__check--inline" data-room>
-                <input type="checkbox" [checked]="roomShown()" (change)="onRoom($event)" />
-                Afficher la pièce
-              </label>
-            }
-          </div>
-        </fieldset>
+        <fieldset
+          class="control-panel__section"
+          data-section="environnement"
+          app-environment-section
+          [environment]="environment()"
+          [pondShape]="pondShape()"
+          [roomShown]="roomShown()"
+          (environmentChanged)="environmentChanged.emit($event)"
+          (pondShapeChanged)="pondShapeChanged.emit($event)"
+          (roomShownChanged)="roomShownChanged.emit($event)"
+        ></fieldset>
 
         <fieldset
           class="control-panel__section"
@@ -341,266 +244,33 @@ function toNumber(value: string | number): number {
           class="control-panel__section"
           data-section="eau"
           aria-labelledby="panneau-eau-titre"
-        >
-          <legend class="control-panel__legend control-panel__legend--row">
-            <span id="panneau-eau-titre">Eau</span>
-            <!-- Courant (#460) : sur la ligne du titre, le panneau ne grandit pas (docs/PIEGES.md). -->
-            <button
-              type="button"
-              class="control-panel__edit"
-              data-current
-              [attr.data-level]="current()"
-              [attr.aria-label]="'Courant : ' + currentLabels[current()] + ', changer de force'"
-              (click)="currentToggled.emit()"
-            >
-              Courant : {{ currentLabels[current()] }}
-            </button>
-            <button
-              type="button"
-              class="control-panel__edit"
-              data-water-change
-              (click)="waterChangeRequested.emit()"
-            >
-              Changer l’eau
-            </button>
-          </legend>
-          <label class="control-panel__field" for="panneau-chauffage">
-            <span class="control-panel__label">
-              Chauffage <output class="control-panel__value">{{ heaterLabel() }}</output>
-            </span>
-            <!-- Bornes en attributs statiques : posées avant la valeur (docs/PIEGES.md). -->
-            <input
-              id="panneau-chauffage"
-              class="control-panel__range"
-              aria-label="Consigne du chauffage"
-              type="range"
-              min="16"
-              max="32"
-              step="0.5"
-              [value]="water().target"
-              [attr.aria-valuetext]="heaterLabel()"
-              (input)="onHeater($event)"
-            />
-          </label>
-          <!-- Éclairage (#476, lampe #584) : 4 à 14 h par jour ; au-delà de 10 h, les algues
-               poussent, sous 8 h les plantes ralentissent. Puis l'heure d'allumage, sur la même
-               ligne (le panneau ne grandit pas à 1280 × 720, docs/PIEGES.md) : valeurs courtes à
-               l'écran, phrases entières pour les lecteurs d'écran. -->
-          <div class="control-panel__row control-panel__row--halves">
-            <label class="control-panel__field" for="panneau-eclairage">
-              <span class="control-panel__label">
-                Éclairage
-                <output class="control-panel__value" aria-hidden="true">{{ lighting() }} h</output>
-              </span>
-              <input
-                id="panneau-eclairage"
-                class="control-panel__range"
-                aria-label="Durée d’éclairage par jour"
-                type="range"
-                min="4"
-                max="14"
-                step="1"
-                data-lighting
-                [value]="lighting()"
-                [attr.aria-valuetext]="lightingLabel()"
-                (input)="onLighting($event)"
-              />
-            </label>
-            <label class="control-panel__field" for="panneau-lampe">
-              <span class="control-panel__label">
-                Lampe
-                <output class="control-panel__value" aria-hidden="true">{{ lampOnShort() }}</output>
-              </span>
-              <input
-                id="panneau-lampe"
-                class="control-panel__range"
-                aria-label="Heure d’allumage de la lampe"
-                type="range"
-                min="0"
-                max="23"
-                step="1"
-                data-lamp-on
-                [value]="lampOn()"
-                [attr.aria-valuetext]="lampOnLabel()"
-                (input)="onLampOn($event)"
-              />
-            </label>
-          </div>
-          <!-- Outils d'entretien, côte à côte (le panneau ne grandit pas, docs/PIEGES.md) :
-               raclette (#476), un clic sur une vitre retire la plaque d'algues visée ; sécateur
-               (#477), un clic sur une plante à tige la taille. -->
-          <div
-            class="control-panel__row control-panel__row--halves"
-            role="group"
-            aria-label="Outils d’entretien"
-          >
-            <button
-              type="button"
-              class="control-panel__edit"
-              data-scraper
-              [attr.aria-pressed]="scraping()"
-              [attr.aria-label]="
-                scraping() ? 'Poser la raclette' : 'Raclette : cliquer sur les algues'
-              "
-              (click)="scraperToggled.emit()"
-            >
-              {{ scraping() ? 'Poser la raclette' : 'Raclette' }}
-            </button>
-            <button
-              type="button"
-              class="control-panel__edit"
-              data-pruner
-              [attr.aria-pressed]="pruning()"
-              [attr.aria-label]="
-                pruning() ? 'Poser le sécateur' : 'Sécateur : cliquer sur une plante haute'
-              "
-              (click)="prunerToggled.emit()"
-            >
-              {{ pruning() ? 'Poser le sécateur' : 'Sécateur' }}
-            </button>
-            @if (careMode() !== 'decor') {
-              <!-- Amorce de bactéries (#529) : un produit, sur la rangée des outils. -->
-              <button
-                type="button"
-                class="control-panel__edit"
-                data-bacteria-starter
-                aria-label="Verser une dose d’amorce de bactéries nitrifiantes"
-                title="Source : docs/SOINS.md § 1.1 (étiquette Stability, secondaire) ; gain du filtre : approximation de jeu."
-                (click)="bacteriaStarterRequested.emit()"
-              >
-                Bactéries
-              </button>
-            }
-          </div>
-          @if (careMode() !== 'decor') {
-            <!-- Chlore (#530) : eau versée au changement d'eau, puis conditionneurs. Rangée à part :
-                 six boutons sur une ligne se chevauchent (docs/PIEGES.md). -->
-            <div
-              class="control-panel__row control-panel__row--halves"
-              role="group"
-              aria-label="Eau du robinet et conditionneurs"
-            >
-              <button
-                type="button"
-                class="control-panel__edit"
-                data-untreated-tap
-                [attr.aria-pressed]="untreatedTap()"
-                aria-label="Eau du robinet non traitée"
-                title="Non traitée : chaque changement d’eau ajoute du chlore (docs/SOINS.md § 2 ; teneur : approximation de jeu)."
-                (click)="untreatedTapToggled.emit()"
-              >
-                Robinet
-              </button>
-              <button
-                type="button"
-                class="control-panel__edit"
-                data-conditioner="thiosulfate"
-                aria-label="Verser du conditionneur au thiosulfate (chlore)"
-                title="Source : docs/SOINS.md § 2 (Merck)."
-                (click)="conditionerRequested.emit('thiosulfate')"
-              >
-                Déchlorer
-              </button>
-              <button
-                type="button"
-                class="control-panel__edit"
-                data-conditioner="liant"
-                aria-label="Verser du conditionneur liant l’ammoniaque"
-                title="Source : docs/SOINS.md § 2 (étiquette via revendeurs, secondaire) ; 48 h revendiquées, non vérifiées."
-                (click)="conditionerRequested.emit('liant')"
-              >
-                Liant
-              </button>
-            </div>
-            <!-- Charbon actif et régulateur de pH (#531) : rangée à part : la précédente ne passe
-                 pas à la ligne (docs/PIEGES.md). -->
-            <div
-              class="control-panel__row control-panel__row--halves"
-              role="group"
-              aria-label="Charbon actif et régulateur de pH"
-            >
-              <button
-                type="button"
-                class="control-panel__edit"
-                data-carbon
-                [attr.aria-pressed]="carbon()"
-                aria-label="Charbon actif dans le filtre"
-                title="Retire médicaments et couleur des tanins ; à enlever pendant un traitement (docs/SOINS.md, Merck)."
-                (click)="carbonToggled.emit()"
-              >
-                Charbon
-              </button>
-              <button
-                type="button"
-                class="control-panel__edit"
-                data-ph-regulator="-1"
-                aria-label="Baisser le pH d’un cran"
-                title="Au plus 0,3 de pH par jour : les variations brusques stressent les animaux (approximation de jeu)."
-                (click)="phRegulatorRequested.emit(-1)"
-              >
-                pH −
-              </button>
-              <button
-                type="button"
-                class="control-panel__edit"
-                data-ph-regulator="1"
-                aria-label="Monter le pH d’un cran"
-                title="Au plus 0,3 de pH par jour : les variations brusques stressent les animaux (approximation de jeu)."
-                (click)="phRegulatorRequested.emit(1)"
-              >
-                pH +
-              </button>
-            </div>
-          }
-          @if (!careShown() && treatmentNotice(); as notice) {
-            <!-- Sans section « Soins », le message du produit s'affiche ici (même bulle, #490). -->
-            <app-treatment-notice
-              class="control-panel__message"
-              [class.control-panel__message--error]="!notice.ok"
-              data-starter-message
-              [notice]="notice"
-              (wikiPageRequested)="wikiPageRequested.emit($event)"
-            />
-          }
-          <!-- Feuilles de catappa (#239) : « − », nombre, « + », puis le rappel que l'effet est
-               simplifié (approximation de jeu, ADR 0071). -->
-          <div class="control-panel__count" data-catappa>
-            <span
-              class="control-panel__count-label"
-              id="panneau-catappa"
-              title="Effet simplifié : ne remplace pas un test de pH."
-              >Feuilles de catappa</span
-            >
-            <button
-              type="button"
-              class="control-panel__step"
-              aria-label="Retirer une feuille de catappa"
-              [attr.aria-disabled]="water().catappa <= 0"
-              (click)="stepCatappa(-1)"
-            >
-              −
-            </button>
-            <output
-              class="control-panel__value"
-              aria-labelledby="panneau-catappa"
-              data-catappa-count
-            >
-              {{ water().catappa }}
-            </output>
-            <button
-              type="button"
-              class="control-panel__step"
-              aria-label="Ajouter une feuille de catappa"
-              [attr.aria-disabled]="water().catappa >= maxCatappa"
-              (click)="stepCatappa(1)"
-            >
-              +
-            </button>
-          </div>
-          <p class="control-panel__note" data-catappa-note>
-            Effet simplifié : ne remplace pas un test de pH.
-          </p>
-        </fieldset>
+          app-water-section
+          [careMode]="careMode()"
+          [careShown]="careShown()"
+          [current]="current()"
+          [water]="water()"
+          [lighting]="lighting()"
+          [lampOn]="lampOn()"
+          [scraping]="scraping()"
+          [pruning]="pruning()"
+          [treatmentNotice]="treatmentNotice()"
+          [untreatedTap]="untreatedTap()"
+          [carbon]="carbon()"
+          (currentToggled)="currentToggled.emit()"
+          (waterChangeRequested)="waterChangeRequested.emit()"
+          (heaterChanged)="heaterChanged.emit($event)"
+          (lightingChanged)="lightingChanged.emit($event)"
+          (lampOnChanged)="lampOnChanged.emit($event)"
+          (scraperToggled)="scraperToggled.emit()"
+          (prunerToggled)="prunerToggled.emit()"
+          (bacteriaStarterRequested)="bacteriaStarterRequested.emit()"
+          (untreatedTapToggled)="untreatedTapToggled.emit()"
+          (conditionerRequested)="conditionerRequested.emit($event)"
+          (carbonToggled)="carbonToggled.emit()"
+          (phRegulatorRequested)="phRegulatorRequested.emit($event)"
+          (wikiPageRequested)="wikiPageRequested.emit($event)"
+          (catappaChanged)="catappaChanged.emit($event)"
+        ></fieldset>
 
         @if (careShown()) {
           <!-- Soins (#361) : seulement avec des points blancs visibles ou un traitement en cours,
@@ -609,40 +279,12 @@ function toNumber(value: string | number): number {
             class="control-panel__section"
             data-section="soins"
             aria-labelledby="panneau-soins-titre"
-          >
-            <legend class="control-panel__legend" id="panneau-soins-titre">
-              Soins : points blancs
-            </legend>
-            <div class="control-panel__row">
-              @for (kind of treatmentKinds; track kind) {
-                <button
-                  type="button"
-                  class="control-panel__button control-panel__button--compact"
-                  [attr.data-treatment]="kind"
-                  [attr.aria-label]="treatments[kind].aria"
-                  [attr.title]="treatmentTitle(kind)"
-                  (click)="treatmentRequested.emit(kind)"
-                >
-                  {{ treatments[kind].button }}
-                </button>
-              }
-            </div>
-            <p class="control-panel__note" data-treatment-status>{{ treatmentStatus() }}</p>
-            @if (treatmentNotice(); as notice) {
-              <!-- Bulle à droite du panneau en deux colonnes (#490, treatment-notice.ts). -->
-              <app-treatment-notice
-                class="control-panel__message"
-                [class.control-panel__message--error]="!notice.ok"
-                data-treatment-message
-                [notice]="notice"
-                (wikiPageRequested)="wikiPageRequested.emit($event)"
-              />
-            } @else {
-              <!-- Sources et niveaux de preuve (infobulle de chaque bouton) ; le message d'un
-                   geste prend leur place, pour que le panneau tienne à 1280 × 720. -->
-              <p class="control-panel__note" data-treatment-sources>{{ treatmentSources }}</p>
-            }
-          </fieldset>
+            app-care-section
+            [treatment]="treatment()"
+            [treatmentNotice]="treatmentNotice()"
+            (treatmentRequested)="treatmentRequested.emit($event)"
+            (wikiPageRequested)="wikiPageRequested.emit($event)"
+          ></fieldset>
         }
 
         <fieldset
@@ -802,54 +444,15 @@ function toNumber(value: string | number): number {
           class="control-panel__section"
           data-section="sauvegarde"
           aria-labelledby="panneau-sauvegarde-titre"
-        >
-          <legend class="control-panel__legend control-panel__legend--row">
-            <span id="panneau-sauvegarde-titre">Sauvegarde</span>
-            <button type="button" class="control-panel__edit" (click)="shareRequested.emit()">
-              Partager ce bac
-            </button>
-          </legend>
-          <p class="control-panel__note" data-save-status>{{ statusText() }}</p>
-          <div class="control-panel__buttons">
-            <button type="button" class="control-panel__button" (click)="exportRequested.emit()">
-              Exporter
-            </button>
-            <button type="button" class="control-panel__button" (click)="fileInput.click()">
-              Importer
-            </button>
-            <input
-              #fileInput
-              class="control-panel__file"
-              type="file"
-              accept="application/json,.json"
-              tabindex="-1"
-              aria-label="Fichier de sauvegarde à importer"
-              (change)="onFile($event)"
-            />
-          </div>
-          <!-- Lien de partage (#426) : celui du bac affiché seul, après « Partager ce bac ». -->
-          @if (shareLink(); as link) {
-            <input
-              class="control-panel__share-link"
-              type="text"
-              readonly
-              aria-label="Lien de partage"
-              data-share-link
-              [value]="link"
-              (focus)="selectAll($event)"
-            />
-          }
-          @if (saveMessage(); as message) {
-            <p
-              class="control-panel__message"
-              [class.control-panel__message--error]="message.kind === 'erreur'"
-              [attr.role]="message.kind === 'erreur' ? 'alert' : 'status'"
-              data-save-message
-            >
-              {{ message.text }}
-            </p>
-          }
-        </fieldset>
+          app-save-section
+          [saveStatus]="saveStatus()"
+          [saveMessage]="saveMessage()"
+          [shareLink]="shareLink()"
+          (exportRequested)="exportRequested.emit()"
+          (shareRequested)="shareRequested.emit()"
+          (importRequested)="importRequested.emit($event)"
+          (importRejected)="importRejected.emit($event)"
+        ></fieldset>
       </section>
     }`,
   styleUrl: './control-panel.scss',
@@ -1043,13 +646,8 @@ export class ControlPanel {
   protected readonly quarantineShown = computed(() =>
     isQuarantineShown(this.careMode(), this.quarantine()),
   );
-  protected readonly environmentIds = ENVIRONMENT_IDS;
   /** Case « Pluie » proposée seulement là où il peut pleuvoir (le bassin, #106). */
   protected readonly rainAvailable = computed(() => environmentById(this.environment()).rain);
-  /** Forme du bassin réglable (issue #190) : le bassin seulement. */
-  protected readonly shapeAvailable = computed(() => isPondShapeable(this.environment()));
-  protected readonly pondShapes = POND_SHAPES;
-  protected readonly pondShapeLabels = POND_SHAPE_LABELS;
   /** Case « Afficher la pièce » proposée seulement autour du bac tropical (#187). */
   protected readonly roomAvailable = computed(() => isRoomAvailable(this.environment()));
   protected readonly hourStep = HOUR_SLIDER_STEP;
@@ -1059,55 +657,10 @@ export class ControlPanel {
   protected readonly speedIndex = computed(() => speedIndex(this.speed()));
   protected readonly speedText = computed(() => speedLabel(this.speed()));
   protected readonly hourText = computed(() => formatHour(this.hour()));
-  protected readonly statusText = computed(() => saveStatusText(this.saveStatus()));
-  protected readonly heaterLabel = computed(() => heaterText(this.water()));
-  protected readonly lightingLabel = computed(() => lightingText(this.lighting()));
-  protected readonly lampOnLabel = computed(() => lampOnText(this.lampOn()));
-  protected readonly lampOnShort = computed(() => formatHour(this.lampOn()));
   /** Section « Soins » (#361) : en mode soins, avec des points blancs ou un traitement. */
   protected readonly careShown = computed(
     () => this.careMode() !== 'decor' && (this.ichCount() > 0 || this.treatment() !== null),
   );
-  protected readonly treatmentStatus = computed(() => treatmentStatusText(this.treatment()));
-  protected readonly treatmentKinds = TREATMENT_KINDS;
-  protected readonly treatments = TREATMENTS;
-  protected readonly treatmentTitle = treatmentTitle;
-  protected readonly treatmentSources = treatmentSourcesLine();
-
-  protected readonly currentLabels = CURRENT_LEVEL_LABELS;
-
-  /**
-   * Fichier choisi avec « Importer » : refusé avant lecture s'il dépasse `MAX_SAVE_LENGTH`
-   * octets, sinon lu en texte et transmis à l'hôte (qui le valide). Le champ est vidé pour
-   * qu'un même fichier puisse être choisi de nouveau.
-   */
-  protected async onFile(event: Event): Promise<void> {
-    const field = event.target as HTMLInputElement;
-    const file = field.files?.[0];
-    field.value = '';
-    if (!file) {
-      return;
-    }
-    if (file.size > MAX_SAVE_LENGTH) {
-      this.importRejected.emit(
-        `fichier trop volumineux (${Math.ceil(file.size / 1024)} Kio, ${MAX_SAVE_LENGTH / 1024} Kio au plus)`,
-      );
-      return;
-    }
-    let text: string;
-    try {
-      text = await file.text();
-    } catch {
-      this.importRejected.emit('fichier illisible');
-      return;
-    }
-    this.importRequested.emit(text);
-  }
-
-  /** Champ du lien de partage (#426) : tout sélectionné au focus, prêt à copier. */
-  protected selectAll(event: Event): void {
-    (event.target as HTMLInputElement).select();
-  }
 
   toggle(): void {
     const open = !this.open();
@@ -1136,15 +689,6 @@ export class ControlPanel {
     this.host.nativeElement.querySelector<HTMLElement>('.control-panel__toggle')?.focus();
   }
 
-  protected readonly environmentName = environmentName;
-
-  protected onEnvironment(event: Event): void {
-    const id = (event.target as HTMLSelectElement).value;
-    if ((ENVIRONMENT_IDS as readonly string[]).includes(id) && id !== this.environment()) {
-      this.environmentChanged.emit(id as EnvironmentId);
-    }
-  }
-
   protected onSpeed(event: Event): void {
     const speed = speedAt((event.target as HTMLInputElement).value);
     if (speed !== null) {
@@ -1159,47 +703,8 @@ export class ControlPanel {
     }
   }
 
-  protected onLighting(event: Event): void {
-    const hours = sliderLighting((event.target as HTMLInputElement).value);
-    if (hours !== null) {
-      this.lightingChanged.emit(hours);
-    }
-  }
-
-  protected onLampOn(event: Event): void {
-    const hour = sliderLampOn((event.target as HTMLInputElement).value);
-    if (hour !== null) {
-      this.lampOnChanged.emit(hour);
-    }
-  }
-
-  protected onHeater(event: Event): void {
-    const temperature = sliderHeater((event.target as HTMLInputElement).value);
-    if (temperature !== null) {
-      this.heaterChanged.emit(temperature);
-    }
-  }
-
-  /** Nombre maximal de feuilles de catappa (#239). */
-  protected readonly maxCatappa = MAX_CATAPPA_LEAVES;
-
-  /** « − » ou « + » des feuilles de catappa (#239) : sans effet aux bornes. */
-  protected stepCatappa(delta: -1 | 1): void {
-    const count = this.water().catappa + delta;
-    if (count >= 0 && count <= MAX_CATAPPA_LEAVES) {
-      this.catappaChanged.emit(count);
-    }
-  }
-
   protected onClockRunning(event: Event): void {
     this.clockRunningChanged.emit((event.target as HTMLInputElement).checked);
-  }
-
-  protected onPondShape(event: Event): void {
-    const value = (event.target as HTMLSelectElement).value;
-    if (isPondShape(value)) {
-      this.pondShapeChanged.emit(value);
-    }
   }
 
   protected onRain(event: Event): void {
@@ -1238,10 +743,6 @@ export class ControlPanel {
       return;
     }
     this.sound.setVolume(Number(input.value) / 100);
-  }
-
-  protected onRoom(event: Event): void {
-    this.roomShownChanged.emit((event.target as HTMLInputElement).checked);
   }
 
   protected onEdit(): void {

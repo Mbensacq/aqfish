@@ -96,28 +96,11 @@
 
 @include controls.base;
 
-// « Lieu » et la case de la pièce sur la première ligne, la liste dessous, sur toute la largeur.
-.control-panel__field--place {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: center;
-  column-gap: 8px;
-
-  .control-panel__select {
-    grid-column: 1 / -1;
-    grid-row: 2;
-  }
-
-  .control-panel__check--inline {
-    grid-column: 2;
-    grid-row: 1;
-  }
-}
-
 @include controls.count;
 
 // Écran large mais peu haut (1280 × 720) : sections sur deux colonnes, pour que tout tienne
-// sans défiler, « Sauvegarde » comprise, malgré la section « Eau » (#207, #101). Plus haut,
+// sans défiler, « Sauvegarde » comprise, malgré la section « Eau » (#207, #101) ; les notes
+// masquées alors dans « Eau » et « Soins » le sont dans leur feuille (#697). Plus haut,
 // une colonne suffit et masque moins le bac. Plus étroit que 1167 px, le panneau large ou la
 // bulle d'un geste de soin recouvrirait l'aide-mémoire déplié (#588, #610) : une colonne qui
 // défile.
@@ -130,18 +113,6 @@
 
   .control-panel__section {
     break-inside: avoid;
-  }
-
-  // Section « Soins » (#488) : sans la note des sources (déjà dans l'infobulle de chaque
-  // bouton), elle tient sous « Eau » et « Sauvegarde » reste dans la deuxième colonne.
-  [data-treatment-sources] {
-    display: none;
-  }
-
-  // Note des feuilles de catappa (#531) : reprise dans l'infobulle ; sa place revient aux rangées
-  // de produits de la section « Eau », pour rester sur deux colonnes (docs/PIEGES.md).
-  [data-catappa-note] {
-    display: none;
   }
 
   // Onze espèces au bac tropical (#362) : la liste défile seule, pour que « Bacs » et
