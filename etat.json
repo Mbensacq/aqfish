@@ -9459,6 +9459,12 @@
           "debut": "2026-11-20T07:42:33.403Z",
           "fin": "2026-11-20T08:48:33.196Z",
           "note": "Verdict OK, 0 bug, 167/167 captures identiques (1 bruit connu relancé), publiées"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-20T08:49:10.244Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
