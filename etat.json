@@ -9569,10 +9569,10 @@
           "note": "Verdict OK, 0 bug, 167 captures identiques, fondations non branchées, publiées"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-20T14:48:13.174Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-20T15:13:43.405Z",
+          "note": "PR #751 fusionnée → v1.26.4 (release CI OK, main verte), #722 reste ouverte (tranche partielle) ; suppression de branche refusée par le proxy"
         }
       },
       "metriques": {}
