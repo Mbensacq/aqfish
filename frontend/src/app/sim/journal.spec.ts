@@ -28,7 +28,6 @@ import {
   waterChangeEntry,
   type JournalAlert,
   type JournalEntry,
-  type JournalFilter,
   type JournalLine,
   type JournalSubject,
   type JournalWatch,
@@ -645,8 +644,14 @@ describe('journal : reproduction et entretien (#655)', () => {
       expect(filterJournalLines(breeding, 'reproduction')).toEqual([]);
     });
 
-    it('filtre inconnu : rien n’est masqué', () => {
-      expect(filterJournalLines(lines, 'inconnu' as JournalFilter)).toEqual(lines);
+    it('chaque filtre de JOURNAL_FILTERS : les familles partitionnent les lignes (#667)', () => {
+      const groups = JOURNAL_FILTERS.filter((filter) => filter !== 'tout');
+      const shown = groups.flatMap((filter) => filterJournalLines(lines, filter));
+      expect(shown).toHaveLength(lines.length);
+      expect(new Set(shown)).toEqual(new Set(lines));
+      for (const filter of groups) {
+        expect(filterJournalLines(lines, filter).every((line) => line.group === filter)).toBe(true);
+      }
     });
   });
 
