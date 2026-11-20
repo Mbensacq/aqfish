@@ -9425,10 +9425,10 @@
           "note": "Verdict OK, 0 bug, 165/167 captures identiques (2 bruit connu, identiques à main), publiées"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-20T06:26:50.970Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-20T06:53:37.275Z",
+          "note": "PR #747 fusionnée → v1.26.0 (release CI OK, main verte), #698 ouverte pour la tranche 2 ; suppression de branche refusée"
         }
       },
       "metriques": {}
