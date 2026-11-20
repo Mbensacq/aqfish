@@ -38,9 +38,17 @@ function geometrySignature(geometry: BufferGeometry): string {
   return `${position.count}:${sum}`;
 }
 
+/**
+ * Numéro de création du matériau : Three.js le pose à l'exécution, mais les types ne le
+ * déclarent pas sur `Material`.
+ */
+function materialId(material: Material): number {
+  return (material as Material & { readonly id: number }).id;
+}
+
 function materialSignature(material: Material, firstId: number): string {
   const color = (material as Material & { color?: { getHexString(): string } }).color;
-  return `${material.type}#${material.id - firstId}/${color?.getHexString() ?? '-'}/${material.opacity}`;
+  return `${material.type}#${materialId(material) - firstId}/${color?.getHexString() ?? '-'}/${material.opacity}`;
 }
 
 /** Description de la scène : un élément par objet, dans l'ordre du parcours. */
@@ -52,7 +60,7 @@ function sceneSignature(root: Object3D): string {
       materials.push(...(Array.isArray(material) ? material : [material]));
     }
   });
-  const firstId = Math.min(...materials.map((m) => m.id));
+  const firstId = Math.min(...materials.map(materialId));
   const parts: string[] = [];
   root.traverse((object) => {
     let part = `${object.name}:${object.type}:${object.visible}:${object.renderOrder}:${object.position.toArray().join(',')}`;
