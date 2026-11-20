@@ -9407,10 +9407,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-20T04:28:15.542Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-20T04:28:41.724Z",
+          "note": "Issue #698 : vue Three.js, glisser et caméra, tranche 1 (M)"
         }
       },
       "metriques": {}
