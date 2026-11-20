@@ -1,5 +1,6 @@
-Branche: cycle/c256-panneau-sections
-PR: #743
-Commit: 0846f23c1f647e21a59af721ed5e82e9c533e807
+Branche: cycle/c257-panneau-eau-soins-environnement
+PR: #744
+Commit: d1c5283ce1f3efa6433237c442d60d9cd114c841
 Graine: défaut
-Temps: ~5,4 min (captures)
+Temps: ~5 min (captures)
+Note: telephone-fiche-espece.png différait de 13 pixels (±1) à la première passe ; relancée, identique à la série précédente (bruit de rendu).
