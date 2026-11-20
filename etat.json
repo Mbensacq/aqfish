@@ -9603,6 +9603,12 @@
           "debut": "2026-11-20T16:12:28.122Z",
           "fin": "2026-11-20T17:32:04.774Z",
           "note": "Verdict OK, 0 bug, 167 captures identiques, publiées"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-20T17:32:34.838Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
