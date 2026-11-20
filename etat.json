@@ -9497,10 +9497,10 @@
           "note": "Verdict OK, 0 bug, 167/167 captures identiques, publiées (e2e complets laissés à la CI)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-20T11:35:48.181Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-20T12:04:55.072Z",
+          "note": "PR #749 fusionnée → v1.26.2 (release CI OK, main verte), #699 fermée ; suppression de branche refusée par le proxy"
         }
       },
       "metriques": {}
