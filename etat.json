@@ -9531,6 +9531,12 @@
           "debut": "2026-11-20T12:54:00.605Z",
           "fin": "2026-11-20T13:13:53.974Z",
           "note": "Verdict OK, 0 bug, 143 captures bac seul identiques, 24 d'interface changées (attendu), publiées ; e2e complets laissés à la CI"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-20T13:14:23.680Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
