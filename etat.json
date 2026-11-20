@@ -9389,10 +9389,10 @@
           "note": "Verdict OK, 0 bug, 166/166 captures identiques, publiées"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-20T03:59:55.831Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-20T04:27:33.339Z",
+          "note": "PR #746 fusionnée → v1.25.6 (release CI OK, main verte), #697 fermée ; suppression de branche refusée"
         }
       },
       "metriques": {}
