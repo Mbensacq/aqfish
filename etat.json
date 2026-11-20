@@ -9413,10 +9413,10 @@
           "note": "Issue #698 : vue Three.js, glisser et caméra, tranche 1 (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-20T04:29:17.586Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-20T05:22:22.481Z",
+          "note": "PR #747 : caméra, caméra libre et gestes du pointeur hors de la vue (tranche 1/2 de #698, aquarium-view 2315→1542 l.), captures identiques, CI verte"
         }
       },
       "metriques": {}
