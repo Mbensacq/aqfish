@@ -137,6 +137,9 @@ describe('détails de la pièce (#363)', () => {
       expect(() => roomDoor({ width: 0, height: 0.5, depth: 0.5 }, SHOWN)).toThrow(RangeError);
       expect(() => roomDoor({ width: 1, height: NaN, depth: 0.5 }, SHOWN)).toThrow(RangeError);
       expect(() => roomTrimBlocks({ width: 1, height: 0.5, depth: -1 }, SHOWN)).toThrow(RangeError);
+      expect(() => roomDoor({ width: 1, height: 0.5, depth: 0 }, SHOWN)).toThrow(
+        'dimensions invalides : {"width":1,"height":0.5,"depth":0}',
+      );
     });
   });
 
@@ -464,5 +467,109 @@ describe('trimLightInto (#388)', () => {
     expect(odd).toEqual([1, 1, 0]);
     const out: MutableRgb = [0, 0, 0];
     expect(trimLightInto(lightAt(7), 1, out)).toBe(out);
+  });
+});
+
+describe('détails de la pièce : cotes figées (#699)', () => {
+  /** Bloc lu au centimètre : pièce, teinte, paroi, puis minX, maxX, minY, maxY, minZ, maxZ. */
+  const rows = (blocks: RoomBlock[]) =>
+    blocks.map(({ part, shade, shell, box: b }) => [
+      part,
+      shade,
+      shell,
+      ...[b.minX, b.maxX, b.minY, b.maxY, b.minZ, b.maxZ].map((v) => Math.round(v * 100) / 100),
+    ]);
+  /** Cotes au centimètre, objets imbriqués compris (halo de l'applique). */
+  const cm = (o: object): Record<string, unknown> =>
+    Object.fromEntries(
+      Object.entries(o).map(([k, v]: [string, unknown]) => [
+        k,
+        typeof v === 'number' ? Math.round(v * 100) / 100 : cm(v as object),
+      ]),
+    );
+
+  it('plinthes et moulures du bac par défaut', () => {
+    expect(rows(roomTrimBlocks(DEFAULT_TANK, SHOWN))).toEqual([
+      ['plinthe-ombre', 1, 'gauche', -3.5, -3.48, -0.75, -0.67, -0.33, 3.23],
+      ['plinthe', 1, 'droite', 3.48, 3.5, -0.75, -0.67, -0.33, 1.48],
+      ['plinthe', 1, 'droite', 3.48, 3.5, -0.75, -0.67, 2.52, 3.23],
+      ['plinthe', 1, 'avant', -3.5, 3.5, -0.75, -0.67, 3.23, 3.25],
+      ['moulure', 1, 'fond', -3.5, 3.5, 1.65, 1.7, -0.35, -0.32],
+      ['moulure', 1, 'avant', -3.5, 3.5, 1.65, 1.7, 3.22, 3.25],
+      ['moulure', 1, 'gauche', -3.5, -3.47, 1.65, 1.7, -0.32, 3.22],
+      ['moulure', 1, 'droite', 3.47, 3.5, 1.65, 1.7, -0.32, 3.22],
+    ]);
+  });
+
+  it('porte du bac par défaut : chambranle, vantail, panneaux et poignée', () => {
+    expect(rows(roomDoorBlocks(DEFAULT_TANK, SHOWN))).toEqual([
+      ['chambranle', 0, 'droite', 3.47, 3.5, -0.75, 1.36, 1.48, 1.55],
+      ['chambranle', 0, 'droite', 3.47, 3.5, -0.75, 1.36, 2.45, 2.52],
+      ['chambranle', 0, 'droite', 3.47, 3.5, 1.29, 1.36, 1.55, 2.45],
+      ['porte', 1, 'droite', 3.49, 3.5, -0.75, 1.29, 1.55, 2.45],
+      ['porte', 0, 'droite', 3.48, 3.49, -0.6, 0.1, 1.67, 2.33],
+      ['porte', 0, 'droite', 3.48, 3.49, 0.2, 1.17, 1.67, 2.33],
+      ['poignee', 0, 'droite', 3.43, 3.49, 0.25, 0.28, 2.28, 2.39],
+    ]);
+  });
+
+  it('applique du bac par défaut : halo en marches, platine, bras et abat-jour', () => {
+    expect(rows(roomLampBlocks(DEFAULT_TANK, SHOWN))).toEqual([
+      ['halo', 1, 'droite', 3.49, 3.5, 0.65, 1.25, 0.52, 0.84],
+      ['halo', 1, 'droite', 3.49, 3.5, 0.77, 1.17, 0.42, 0.94],
+      ['halo', 0, 'droite', 3.48, 3.5, 0.85, 1.19, 0.58, 0.78],
+      ['halo', 0, 'droite', 3.48, 3.5, 0.91, 1.13, 0.52, 0.84],
+      ['applique', 0, 'droite', 3.47, 3.49, 0.88, 1.02, 0.63, 0.73],
+      ['applique', 0, 'droite', 3.42, 3.47, 0.93, 0.95, 0.67, 0.69],
+      ['abat-jour', 0, 'droite', 3.32, 3.44, 0.95, 1.08, 0.61, 0.75],
+    ]);
+  });
+
+  it('porte et applique : bornées par le parquet, ou par la moulure dans une pièce basse', () => {
+    // Bac par défaut : porte de pleine hauteur, applique à LAMP_HEIGHT du parquet.
+    expect(cm(roomDoor(DEFAULT_TANK, SHOWN))).toEqual({
+      minZ: 1.55,
+      maxZ: 2.45,
+      minY: -0.75,
+      maxY: 1.29,
+      wallX: 3.5,
+    });
+    expect(cm(roomLamp(DEFAULT_TANK, SHOWN))).toEqual({
+      y: 0.95,
+      z: 0.68,
+      wallX: 3.5,
+      halo: { minZ: 0.38, maxZ: 0.98, minY: 0.65, maxY: 1.25, wallX: 3.5 },
+    });
+    // Bac très bas (plafond à 1,4 m) : porte et applique plafonnées sous la moulure.
+    const short: TankDimensions = { width: 1, height: 0.2, depth: 0.5 };
+    expect(cm(roomDoor(short, LOW))).toEqual({
+      minZ: 1.55,
+      maxZ: 2.45,
+      minY: -0.6,
+      maxY: 1.13,
+      wallX: 3.5,
+    });
+    expect(cm(roomLamp(short, LOW))).toEqual({
+      y: 0.95,
+      z: 0.68,
+      wallX: 3.5,
+      halo: { minZ: 0.38, maxZ: 0.98, minY: 0.65, maxY: 1.25, wallX: 3.5 },
+    });
+    expect(cm(roomLamp(ODD_TANK, LOW))).toEqual({
+      y: 1.1,
+      z: 0.61,
+      wallX: 3.38,
+      halo: { minZ: 0.31, maxZ: 0.91, minY: 0.8, maxY: 1.4, wallX: 3.38 },
+    });
+  });
+
+  it('passage devant la porte, chambranle compris', () => {
+    expect(cm(doorClearance(DEFAULT_TANK))).toEqual({
+      minX: 2.9,
+      maxX: 3.5,
+      minZ: 1.48,
+      maxZ: 2.52,
+    });
+    expect(cm(doorClearance(ODD_TANK))).toEqual({ minX: 2.78, maxX: 3.38, minZ: 1.41, maxZ: 2.45 });
   });
 });

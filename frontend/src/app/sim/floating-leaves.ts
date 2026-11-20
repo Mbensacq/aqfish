@@ -140,7 +140,9 @@ const scratch = new Float64Array(LEAF_STRIDE);
 
 /**
  * Écrit dans `out` (`LEAF_STRIDE` valeurs) la feuille du créneau `slot` au temps `time`, et
- * renvoie vrai si elle existe et vit à cet instant (née, pas encore disparue).
+ * renvoie vrai si elle existe et vit à cet instant (née, pas encore disparue). Une feuille
+ * pas encore née est écartée par son âge négatif (`fillFloatingLeaves` ne parcourt de toute
+ * façon que des créneaux déjà commencés).
  */
 function leafAt(
   seed: number,
@@ -151,9 +153,6 @@ function leafAt(
   currentX: number,
   currentZ: number,
 ): boolean {
-  if (time < slot * LEAF_SLOT_PERIOD) {
-    return false;
-  }
   const wave = leafWave(seed, Math.floor(slot / LEAF_WAVE_SLOTS), scratchWave);
   rngState = deriveSeed(deriveSeed(seed, FLOATING_LEAF_STREAM), slot);
   if (next() >= LEAF_SPAWN_CHANCE * wave.intensity) {

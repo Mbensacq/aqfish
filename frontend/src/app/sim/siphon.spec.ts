@@ -92,6 +92,51 @@ describe('point du sol visé par le tuyau (#605)', () => {
   });
 });
 
+describe('point du sol visé : cas limites (#699)', () => {
+  /** Eau aux cotes dyadiques : calculs exacts, comparaisons aux bornes au bit près. */
+  const BOX: Box3 = { minX: -0.5, maxX: 0.5, minY: 0, maxY: 0.5, minZ: -0.25, maxZ: 0.25 };
+  const at = (origin: ScraperRay['origin'], direction: ScraperRay['direction']) =>
+    siphonFloorPoint({ origin, direction }, BOX);
+
+  it('rayon oblique qui coupe le fond dans le bac : point du fond, pas d’entrée dans l’eau', () => {
+    // Le fond est atteint à t = 0,5 ; l'entrée dans l'eau (dessus) à t = 0,25 donnerait (0,125 ; 0,0625).
+    expect(at([0, 1, 0], [0.5, -2, 0.25])).toEqual({ x: 0.25, z: 0.125 });
+  });
+
+  it('fond coupé pile sur un bord, rayon qui s’éloigne du centre : le bord du fond', () => {
+    expect(at([-0.25, 1, 0], [-0.25, -1, 0])).toEqual({ x: -0.5, z: 0 });
+    expect(at([0.25, 1, 0], [0.25, -1, 0])).toEqual({ x: 0.5, z: 0 });
+    expect(at([0, 1, -0.125], [0, -1, -0.125])).toEqual({ x: 0, z: -0.25 });
+    expect(at([0, 1, 0.125], [0, -1, 0.125])).toEqual({ x: 0, z: 0.25 });
+  });
+
+  it('fond coupé hors du bac, de chaque côté : aplomb du point d’entrée par le dessus', () => {
+    expect(at([0, 1, 0], [1.5, -2, 0.25])).toEqual({ x: 0.375, z: 0.0625 });
+    expect(at([0, 1, 0], [-1.5, -2, -0.25])).toEqual({ x: -0.375, z: -0.0625 });
+    expect(at([0, 1, 0], [0.25, -2, 0.75])).toEqual({ x: 0.0625, z: 0.1875 });
+    expect(at([0, 1, 0], [-0.25, -2, -0.75])).toEqual({ x: -0.0625, z: -0.1875 });
+  });
+
+  it('rayon horizontal au ras du fond ou de la surface : entre par la vitre', () => {
+    expect(at([0, 0, 2], [0, 0, -2])).toEqual({ x: 0, z: 0.25 });
+    expect(at([0, 0.5, 2], [0, 0, -2])).toEqual({ x: 0, z: 0.25 });
+  });
+
+  it('rayon parallèle à une face hors de l’eau, ou qui s’en éloigne : aucun point', () => {
+    expect(at([-2, 0.25, 2], [0, 0, -1])).toBeNull();
+    expect(at([2, 0.25, 2], [0, 0, -1])).toBeNull();
+    expect(at([0, -1, 2], [0, 0, -1])).toBeNull();
+    expect(at([0, 1, 2], [0, 0, -1])).toBeNull();
+    expect(at([0, 0.25, -2], [1, 0, 0])).toBeNull();
+    // Sous le fond, vers le bas : le fond est derrière le tuyau.
+    expect(at([0, -1, 0], [0, -1, 0])).toBeNull();
+  });
+
+  it('rayon qui frôle une arête (entrée et sortie confondues) : ce point', () => {
+    expect(at([-1, 0, 0], [1, 1, 0])).toEqual({ x: -0.5, z: 0 });
+  });
+});
+
 describe('volume siphonné et jauge (#605)', () => {
   it('zéro point : rien retiré, jauge à 0 %', () => {
     expect(siphonedShare(0, 0, true)).toBe(0);
@@ -153,6 +198,8 @@ describe('nourriture et dépôts retirés par zone du sol (#605)', () => {
     expect(siphonedFood(food, [{ x: 0.3, z: 0.1 + SIPHON_REACH * 0.9 }])).toEqual([1]);
     expect(siphonedFood(food, [{ x: 0.3, z: 0.1 + SIPHON_REACH * 1.1 }])).toEqual([]);
     expect(siphonedFood(food, [])).toEqual([]);
+    // Pile à la portée du tuyau : aspiré.
+    expect(siphonedFood([landed(7, SIPHON_REACH, 0)], [{ x: 0, z: 0 }])).toEqual([0]);
     expect(siphonedFood([], [{ x: 0, z: 0 }])).toEqual([]);
   });
 
@@ -209,6 +256,8 @@ describe('eau neuve (#605)', () => {
     expect(freshWaterWarnings(true, 24 + TEMPERATURE_GAP_WARNING, 24).temperatureGap).toBe(0);
     expect(freshWaterWarnings(true, 30.04, 24).temperatureGap).toBe(6);
     expect(freshWaterWarnings(true, Number.NaN, 24).temperatureGap).toBe(0);
+    expect(freshWaterWarnings(true, Number.POSITIVE_INFINITY, 24).temperatureGap).toBe(0);
+    expect(freshWaterWarnings(true, 24, Number.POSITIVE_INFINITY).temperatureGap).toBe(0);
     expect(freshWaterWarningTexts(freshWaterWarnings(true, 18, 24))).toEqual([
       'Eau plus froide que le bac de 6 °C : un choc pour les poissons.',
     ]);
