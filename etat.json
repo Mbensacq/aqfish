@@ -9561,6 +9561,12 @@
           "debut": "2026-11-20T13:42:41.961Z",
           "fin": "2026-11-20T14:24:01.019Z",
           "note": "PR #751 : fenêtre des réglages, catégories déclarées et modale bureau (tranche 1 partielle, non branchée), CI verte"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-20T14:24:35.434Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
