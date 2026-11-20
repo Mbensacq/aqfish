@@ -9447,6 +9447,12 @@
           "debut": "2026-11-20T06:54:15.336Z",
           "fin": "2026-11-20T06:54:37.067Z",
           "note": "Issue #698 : vue Three.js, tranche 2/2 (pipeline de passes, scène, buildVoxelMesh) (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-20T06:55:10.157Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
