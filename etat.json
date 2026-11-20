@@ -9591,6 +9591,12 @@
           "debut": "2026-11-20T15:14:24.082Z",
           "fin": "2026-11-20T15:15:01.293Z",
           "note": "Issue #715 : dette sim/icônes, avec #667 et mesure des tests (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-20T15:15:36.841Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
