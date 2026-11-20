@@ -7,6 +7,20 @@ import type {
   SpeciesVariant,
 } from '../sim/species';
 import { PALETTE } from './palette';
+import {
+  emitBodyVoxels,
+  emitVoxel,
+  isFilled,
+  pairedVoxelMap,
+  spotRankOf,
+  UNFRAYED_RANK,
+  voxelGrid,
+  type MeshBuffers,
+  type RoleColors,
+  type Voxel,
+} from './voxel-mesh';
+
+export { UNFRAYED_RANK, UNSPOTTED_RANK, voxelFrayRank, voxelSpotRank } from './voxel-mesh';
 
 /**
  * Modèles voxel des poissons, générés par le code à partir des définitions d'espèces
@@ -724,44 +738,6 @@ export const SPOT_ATTRIBUTE = 'aqfishSpot';
  */
 export const FRAY_ATTRIBUTE = 'aqfishFray';
 
-/** Rang d'effilochage d'un voxel qui n'est pas une nageoire : jamais effiloché. */
-export const UNFRAYED_RANK = 1;
-
-/** Part du rang d'effilochage de la caudale donnée par la distance au corps (le reste : hasard). */
-const FRAY_TAIL_DISTANCE = 0.4;
-/** Rang minimal d'un voxel de nageoire du corps : la caudale s'effiloche avant les autres. */
-const FRAY_BODY_MIN = 0.3;
-
-/**
- * Rang d'effilochage d'un voxel (issue #485), dans [0, 1] : un poisson aux nageoires
- * effilochées d'intensité `a` perd les voxels de rang inférieur à `a × FIN_ROT_LOSS_SHARE` et
- * pâlit ceux juste au-dessus (`render/fish-layer.ts`). Caudale (`tail`) : le bout (colonne 0,
- * loin du corps) d'abord, mêlé d'un hachage pour un bord irrégulier. Corps : seuls les voxels
- * de nageoire (`f`) au bord du profil s'effilochent, après la caudale ; les autres jamais
- * (`UNFRAYED_RANK`), pour ne pas trouer le corps.
- */
-export function voxelFrayRank(
-  part: 'body' | 'tail',
-  rows: readonly string[],
-  col: number,
-  row: number,
-  layer: number,
-): number {
-  const noise = voxelSpotRank(col + 101, row + 37, layer + 7);
-  const width = rows[0].length;
-  if (part === 'tail') {
-    return FRAY_TAIL_DISTANCE * (col / width) + (1 - FRAY_TAIL_DISTANCE) * noise;
-  }
-  if (rows[row][col] !== 'f') {
-    return UNFRAYED_RANK;
-  }
-  const empty = (c: number, r: number): boolean =>
-    c < 0 || c >= width || r < 0 || r >= rows.length || rows[r][c] === '.';
-  const edge =
-    empty(col - 1, row) || empty(col + 1, row) || empty(col, row - 1) || empty(col, row + 1);
-  return edge ? FRAY_BODY_MIN + (1 - FRAY_BODY_MIN) * noise : UNFRAYED_RANK;
-}
-
 /** Proportions des voxels : hauteur et épaisseur relatives à la longueur d'un voxel. */
 const VOXEL_HEIGHT_RATIO = 0.75;
 const VOXEL_DEPTH_RATIO = 0.7;
@@ -788,21 +764,6 @@ export interface VoxelMeshData {
 }
 
 /**
- * Rang de taché d'un voxel (issue #366), dans [0, 1) : hachage entier sans état de ses
- * coordonnées dans le gabarit. Un poisson aux points blancs d'intensité `a` blanchit les
- * voxels de rang inférieur à `a × ICH_SPOT_SHARE` (`render/fish-layer.ts`) : les mêmes voxels
- * d'une image à l'autre, de plus en plus nombreux quand la maladie s'aggrave.
- */
-export function voxelSpotRank(col: number, row: number, layer: number): number {
-  let h = Math.imul(col | 0, 0x27d4eb2d) ^ Math.imul(row | 0, 0x165667b1);
-  h = Math.imul(h ^ Math.imul(layer | 0, 0x9e3779b1), 0x85ebca6b);
-  h ^= h >>> 13;
-  h = Math.imul(h, 0xc2b2ae35);
-  h ^= h >>> 16;
-  return (h >>> 0) / 4294967296;
-}
-
-/**
  * Couleur des points blancs (issue #366) : blanc cassé de la palette (`koiBlanc`, `docs/DA.md`),
  * reprise par `ICH_SPOT_COLOR` (`render/fish-layer.ts`).
  */
@@ -815,12 +776,6 @@ export const SPOT_COLOR = PALETTE.koiBlanc;
  * perdu pour la lecture de la maladie. Le sable (#c9b38a, distance 104) reste taché.
  */
 export const SPOT_MIN_CONTRAST = 100;
-
-/**
- * Rang de taché d'un voxel trop pâle : jamais sous `intensité × ICH_SPOT_SHARE` (au plus
- * 1 × `ICH_SPOT_SHARE` < 1, vérifié par `fish-layer.spec.ts`).
- */
-export const UNSPOTTED_RANK = 1;
 
 /**
  * Vrai si un point blanc se voit sur la couleur `color` (issue #370) : distance à
@@ -885,26 +840,53 @@ export function buildVoxelMesh(
   part: 'body' | 'tail' = anchor === 'right' ? 'tail' : 'body',
 ): VoxelMeshData {
   const width = templateWidth(rows);
-  const height = rows.length;
   if (!Number.isInteger(depth) || depth < 1) {
     throw new Error(`Épaisseur de gabarit invalide : ${depth}`);
   }
   if (columnDepths && columnDepths.length !== width) {
     throw new Error(`columnDepths doit avoir ${width} valeurs (reçu : ${columnDepths.length})`);
   }
-  // Première et dernière couche (exclue) remplies dans chaque colonne.
-  const layerStart: number[] = [];
-  const layerEnd: number[] = [];
-  for (let col = 0; col < width; col++) {
-    const d = columnDepths ? columnDepths[col] : depth;
-    if (!Number.isInteger(d) || d < 1 || d > depth || (depth - d) % 2 !== 0) {
-      throw new Error(`Épaisseur de colonne invalide (colonne ${col}) : ${d}`);
-    }
-    layerStart.push((depth - d) / 2);
-    layerEnd.push((depth + d) / 2);
+  const grid = voxelGrid(rows, depth, columnDepths, anchor);
+  const roles = roleColors(colors);
+  const out: MeshBuffers = {
+    positions: [],
+    normals: [],
+    colors: [],
+    spots: [],
+    frays: [],
+    quads: 0,
+  };
+  const filled = (col: number, row: number, layer: number): boolean =>
+    isFilled(grid, col, row, layer);
+  emitBodyVoxels(out, grid, roles, size, part);
+  // Parties paires : après le corps (maillage du corps inchangé pour les autres gabarits).
+  const pairedVoxels = pairedVoxelMap(grid, paired, roles);
+  const occupied = (col: number, row: number, layer: number): boolean =>
+    filled(col, row, layer) || pairedVoxels.has(`${col},${row},${layer}`);
+  for (const [key, char] of pairedVoxels) {
+    const [col, row, layer] = key.split(',').map(Number);
+    const voxel: Voxel = {
+      col,
+      row,
+      layer,
+      color: roles.linear.get(char)!,
+      spot: spotRankOf(roles, char, col, row, layer),
+      fray: UNFRAYED_RANK,
+    };
+    emitVoxel(out, grid, size, voxel, occupied);
   }
+  return {
+    positions: new Float32Array(out.positions),
+    normals: new Float32Array(out.normals),
+    colors: new Float32Array(out.colors),
+    spots: new Float32Array(out.spots),
+    frays: new Float32Array(out.frays),
+    quads: out.quads,
+  };
+}
+
+function roleColors(colors: SpeciesColors): RoleColors {
   const linear = new Map<string, [number, number, number]>();
-  // Rôles de couleur trop pâles pour qu'un point blanc s'y voie (issue #370).
   const pale = new Set<string>();
   for (const [char, role] of Object.entries(ROLES)) {
     const c = new Color(colors[role]);
@@ -913,117 +895,7 @@ export function buildVoxelMesh(
       pale.add(char);
     }
   }
-  const spotRank = (char: string, col: number, row: number, layer: number): number =>
-    pale.has(char) ? UNSPOTTED_RANK : voxelSpotRank(col, row, layer);
-  const filled = (col: number, row: number, layer: number): boolean =>
-    col >= 0 &&
-    col < width &&
-    row >= 0 &&
-    row < height &&
-    layer >= layerStart[col] &&
-    layer < layerEnd[col] &&
-    rows[row][col] !== '.';
-
-  const originX = anchor === 'center' ? -width / 2 : -width;
-  const positions: number[] = [];
-  const normals: number[] = [];
-  const vertexColors: number[] = [];
-  const spots: number[] = [];
-  const frays: number[] = [];
-  let quads = 0;
-
-  for (let row = 0; row < height; row++) {
-    for (let col = 0; col < width; col++) {
-      const char = rows[row][col];
-      if (char === '.') {
-        continue;
-      }
-      const color = linear.get(char);
-      if (!color) {
-        throw new Error(`Caractère de gabarit sans rôle de couleur : « ${char} »`);
-      }
-      for (let layer = layerStart[col]; layer < layerEnd[col]; layer++) {
-        // Coin minimal du voxel, en unités de voxel ; la rangée 0 est en haut.
-        const x0 = originX + col;
-        const y0 = height / 2 - row - 1;
-        const z0 = -depth / 2 + layer;
-        const spot = spotRank(char, col, row, layer);
-        const fray = voxelFrayRank(part, rows, col, row, layer);
-        for (const face of FACES) {
-          if (filled(col + face.dc, row - face.dy, layer + face.dz)) {
-            continue;
-          }
-          quads++;
-          for (const corner of face.corners) {
-            positions.push(
-              (x0 + corner[0]) * size.x,
-              (y0 + corner[1]) * size.y,
-              (z0 + corner[2]) * size.z,
-            );
-            normals.push(face.normal[0], face.normal[1], face.normal[2]);
-            vertexColors.push(color[0], color[1], color[2]);
-            spots.push(spot);
-            frays.push(fray);
-          }
-        }
-      }
-    }
-  }
-  // Parties paires : après le corps (maillage du corps inchangé pour les autres gabarits).
-  const pairedVoxels = new Map<string, string>();
-  paired.forEach((layerRows, distance) => {
-    if (layerRows.length !== height || layerRows.some((r) => r.length !== width)) {
-      throw new Error('Les couches paires doivent avoir les dimensions du corps');
-    }
-    for (let row = 0; row < height; row++) {
-      for (let col = 0; col < width; col++) {
-        const char = layerRows[row][col];
-        if (char === '.') {
-          continue;
-        }
-        if (!linear.has(char)) {
-          throw new Error(`Caractère de gabarit sans rôle de couleur : « ${char} »`);
-        }
-        pairedVoxels.set(`${col},${row},${layerEnd[col] + distance}`, char);
-        pairedVoxels.set(`${col},${row},${layerStart[col] - 1 - distance}`, char);
-      }
-    }
-  });
-  const occupied = (col: number, row: number, layer: number): boolean =>
-    filled(col, row, layer) || pairedVoxels.has(`${col},${row},${layer}`);
-  for (const [key, char] of pairedVoxels) {
-    const [col, row, layer] = key.split(',').map(Number);
-    const color = linear.get(char)!;
-    const x0 = originX + col;
-    const y0 = height / 2 - row - 1;
-    const z0 = -depth / 2 + layer;
-    const spot = spotRank(char, col, row, layer);
-    for (const face of FACES) {
-      if (occupied(col + face.dc, row - face.dy, layer + face.dz)) {
-        continue;
-      }
-      quads++;
-      for (const corner of face.corners) {
-        positions.push(
-          (x0 + corner[0]) * size.x,
-          (y0 + corner[1]) * size.y,
-          (z0 + corner[2]) * size.z,
-        );
-        normals.push(face.normal[0], face.normal[1], face.normal[2]);
-        vertexColors.push(color[0], color[1], color[2]);
-        spots.push(spot);
-        frays.push(UNFRAYED_RANK);
-      }
-    }
-  }
-  return {
-    positions: new Float32Array(positions),
-    normals: new Float32Array(normals),
-    colors: new Float32Array(vertexColors),
-    spots: new Float32Array(spots),
-    frays: new Float32Array(frays),
-    quads,
-  };
+  return { linear, pale };
 }
 
 /**
@@ -1073,64 +945,3 @@ function templateWidth(rows: readonly string[]): number {
   }
   return width;
 }
-
-type Corner = readonly [number, number, number];
-
-interface Face {
-  /** Décalage du voisin : colonne (+X), rangée vers le haut (+Y), couche (+Z). */
-  readonly dc: number;
-  readonly dy: number;
-  readonly dz: number;
-  readonly normal: Corner;
-  /** Deux triangles, sens antihoraire vu depuis l'extérieur. */
-  readonly corners: readonly Corner[];
-}
-
-function quad(a: Corner, b: Corner, c: Corner, d: Corner): Corner[] {
-  return [a, b, c, a, c, d];
-}
-
-const FACES: readonly Face[] = [
-  {
-    dc: 1,
-    dy: 0,
-    dz: 0,
-    normal: [1, 0, 0],
-    corners: quad([1, 0, 1], [1, 0, 0], [1, 1, 0], [1, 1, 1]),
-  },
-  {
-    dc: -1,
-    dy: 0,
-    dz: 0,
-    normal: [-1, 0, 0],
-    corners: quad([0, 0, 0], [0, 0, 1], [0, 1, 1], [0, 1, 0]),
-  },
-  {
-    dc: 0,
-    dy: 1,
-    dz: 0,
-    normal: [0, 1, 0],
-    corners: quad([0, 1, 1], [1, 1, 1], [1, 1, 0], [0, 1, 0]),
-  },
-  {
-    dc: 0,
-    dy: -1,
-    dz: 0,
-    normal: [0, -1, 0],
-    corners: quad([0, 0, 0], [1, 0, 0], [1, 0, 1], [0, 0, 1]),
-  },
-  {
-    dc: 0,
-    dy: 0,
-    dz: 1,
-    normal: [0, 0, 1],
-    corners: quad([0, 0, 1], [1, 0, 1], [1, 1, 1], [0, 1, 1]),
-  },
-  {
-    dc: 0,
-    dy: 0,
-    dz: -1,
-    normal: [0, 0, -1],
-    corners: quad([1, 0, 0], [0, 0, 0], [0, 1, 0], [1, 1, 0]),
-  },
-];

@@ -31,6 +31,7 @@ import {
   UNSPOTTED_RANK,
   voxelSize,
   voxelSpotRank,
+  type VoxelMeshData,
 } from './fish-model';
 import { ENVIRONMENT_IDS, environmentById } from '../sim/environment';
 import {
@@ -649,5 +650,71 @@ describe('modèle du sonneur oriental (#468)', () => {
   it('taille adulte réelle : 6 cm', () => {
     expect(GRENOUILLE.bodyLength).toBe(0.06);
     expect(modelBodyLength(GRENOUILLE, FROG_FISH)).toBeCloseTo(0.06, 9);
+  });
+});
+
+describe('buildVoxelMesh (caractérisation, #698)', () => {
+  /** Empreinte FNV-1a 32 bits des octets des tampons d'un maillage. */
+  function meshHash(data: VoxelMeshData): number {
+    let hash = 0x811c9dc5;
+    for (const array of [data.positions, data.normals, data.colors, data.spots, data.frays]) {
+      const bytes = new Uint8Array(array.buffer, array.byteOffset, array.byteLength);
+      for (const byte of bytes) {
+        hash ^= byte;
+        hash = Math.imul(hash, 0x01000193);
+      }
+    }
+    return (hash ^ data.quads) >>> 0;
+  }
+
+  /** Empreintes relevées avant le découpage de `buildVoxelMesh` (cycle 260). */
+  const HASHES: Readonly<Record<string, readonly [number, number]>> = {
+    fuseau: [2291985801, 173967005],
+    'guppy-male': [2259671733, 1984923827],
+    'guppy-femelle': [2061565523, 512644555],
+    corydora: [2826748069, 1634369283],
+    koi: [1231215791, 3355820661],
+    axolotl: [2405374683, 2437424777],
+    grenouille: [3634429785, 1328884979],
+    triton: [1518219955, 4017862293],
+    clown: [3181930785, 1782721199],
+    chirurgien: [151192849, 769722811],
+    rasbora: [1873779633, 173967005],
+    tetra: [2761400497, 512644555],
+    kuhli: [95473417, 2312317375],
+    gourami: [3853902775, 2671208615],
+    platy: [3992172779, 2866739035],
+    danio: [122700491, 2467897003],
+    ancistrus: [3353071977, 173967005],
+    otocinclus: [3836052733, 2575525569],
+    braise: [45707149, 512644555],
+    molly: [4214135083, 2559963643],
+    miel: [1114572177, 2671208615],
+    chromis: [1505023467, 726885821],
+    gobie: [227171513, 1194056521],
+    gramma: [2783649807, 2671208615],
+    crevette: [320420649, 173967005],
+    blennie: [2828550173, 476463913],
+    xipho: [2816878209, 1287989783],
+    cerise: [1509765299, 173967005],
+    neritine: [3431558567, 2235164533],
+    rouge: [1930561911, 2316556299],
+  };
+
+  it.each(SILHOUETTE_IDS)('même maillage, corps et queue : %s', (id) => {
+    const template = SILHOUETTES[id];
+    const size = { x: 0.01, y: 0.0075, z: 0.007 };
+    const colors = NEON.colors;
+    const body = buildVoxelMesh(
+      template.body,
+      template.bodyDepth,
+      colors,
+      size,
+      'center',
+      template.bodyColumnDepths,
+      template.paired,
+    );
+    const tail = buildVoxelMesh(template.tail, template.tailDepth, colors, size, 'right');
+    expect([meshHash(body), meshHash(tail)]).toEqual(HASHES[id]);
   });
 });

@@ -972,10 +972,15 @@ describe('AquariumView (lancer de rayon du pointeur, #178)', () => {
       preset: 'three-quarter',
       interactive: true,
     });
-    const internals = view as unknown as {
-      raycaster: { setFromCamera: (coords: unknown, camera: unknown) => void };
-      planeAt: (x: number, y: number, plane: number) => { x: number; z: number } | null;
-    };
+    // Lancers de rayon portés par `ViewPicker` depuis #698.
+    const internals = (
+      view as unknown as {
+        picker: {
+          raycaster: { setFromCamera: (coords: unknown, camera: unknown) => void };
+          planeAt: (x: number, y: number, plane: number) => { x: number; z: number } | null;
+        };
+      }
+    ).picker;
     const coords: unknown[] = [];
     const original = internals.raycaster.setFromCamera.bind(internals.raycaster);
     internals.raycaster.setFromCamera = (c, camera) => {

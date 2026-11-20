@@ -1502,6 +1502,13 @@ haut de sa section.
 
 ## Rendu
 
+- **Déplacer la création d'objets Three.js : l'ordre de création peut changer l'image**
+  (cycle 260, #698) : Three.js numérote objets et matériaux à leur création, et le tri des
+  opaques départage par `material.id` puis `id` à égalité d'ordre de rendu. En sortant des
+  couches ou des matériaux d'une classe (champs initialisés avant le corps du constructeur,
+  donc avant la scène), garder leur ordre de création relatif aux objets de la même scène
+  (`ViewLayers`, ADR 0163) ; les passes rendues dans une autre scène peuvent bouger. Comparer
+  ensuite les captures à l'octet. (2026-11-20)
 - **Extraire de `AquariumView` : ordre des écouteurs et champs privés lus par les tests**
   (cycle 259, #698) : glisser, raclette et caméra libre se lisent l'un l'autre et doivent
   garder l'ordre d'enregistrement sur le canvas (contrôles, puis `DragController`, puis

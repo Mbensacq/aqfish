@@ -1,60 +1,34 @@
-import {
-  PerspectiveCamera,
-  Raycaster,
-  Vector2,
-  Vector3,
-  type Camera,
-  type Scene,
-  WebGLRenderer,
-  type WebGLRenderTarget,
-} from 'three';
+import { PerspectiveCamera, WebGLRenderer } from 'three';
 import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 import type { CameraPreset } from '../core/capture/capture-params';
 import { DEFAULT_RENDER_FILTER, type RenderFilter } from '../core/render-filter/render-filter';
 import type { FoodStyle } from '../core/food-style/food-style';
-import { createAquariumScene, type AquariumScene } from './aquarium-scene';
+import type { AquariumScene } from './aquarium-scene';
 import {
   CAMERA_FOV_DEG,
   tankBoundingRadius,
   type TankDimensions,
   type Vec3,
 } from './camera-presets';
-import { SPECIES, speciesVariants, type SpeciesId } from '../sim/species';
+import type { SpeciesId } from '../sim/species';
 import type { Fish } from '../sim/swimmer';
 import type { AlgaePatch } from '../sim/algae';
 import type { TankFouling } from '../sim/fouling';
 import type { Egg } from '../sim/eggs';
-import { createDayLight, type DayLight } from '../sim/daylight';
-import { bubbleSourceFor } from '../sim/bubbles';
+import type { DayLight } from '../sim/daylight';
 import { environmentDataWater, type Environment } from '../sim/environment';
-import { terrainAt } from '../sim/terrain';
 import { flowerOpenness, lilyPadLayout } from '../sim/lily-pads';
 import { seededFeatures } from '../sim/world';
 import type { DecorItem } from '../sim/decor';
 import type { FoodPellet } from '../sim/food';
 import { clampRoom, DEFAULT_ROOM, isRoomAvailable, type Room, type RoomBlock } from '../sim/room';
 import type { Box3 } from '../sim/tank';
-import { BubbleLayer } from './bubble-layer';
-import { AlertHighlightLayer } from './alert-highlight-layer';
-import { AlgaeLayer } from './algae-layer';
-import { FoulingLayer } from './fouling-layer';
-import { CatappaLayer } from './catappa-layer';
-import { FeederLayer } from './feeder-layer';
-import { DecorLayer } from './decor-layer';
-import { planePoint, sandHit, type DecorPick } from './decor-pick';
-import { pickRoom } from './room-pick';
-import { type EffectLayer, type SceneLayer, updateVisibleEffects } from './effect-layer';
-import { CurrentIndicatorLayer } from './current-indicator-layer';
-import { FloatingLeafLayer } from './floating-leaf-layer';
-import { FishLayer, MAX_FISH_PER_SPECIES, type BehaviorFrame } from './fish-layer';
-import { EggLayer } from './egg-layer';
-import { FoodLayer } from './food-layer';
+import type { DecorPick } from './decor-pick';
+import { type EffectLayer, updateVisibleEffects } from './effect-layer';
+import type { BehaviorFrame } from './fish-layer';
 import { scenePixelsPerMeter } from './food-size';
-import { LilyPadLayer } from './lily-pad-layer';
-import { overcastBrightness, RAIN_OVERCAST_BRIGHTNESS, RAIN_TONES, stepOvercast } from './overcast';
-import { isObliqueView, RainLayer } from './rain-layer';
-import { RoomLayer } from './room-layer';
+import { isObliqueView } from './rain-layer';
 import type { FreeCameraInput, FreeCameraState } from './free-camera';
 import {
   CameraController,
@@ -64,21 +38,11 @@ import {
 } from './camera-controller';
 import { DragController, type DecorDragListener, type DragHost } from './drag-controller';
 import type { StrokePoint } from './stroke';
-import { toNormalizedDevice, waterSurfacePoint } from './food-pick';
-import {
-  decorTintInto,
-  flatBrightness,
-  type MutableTint,
-  tonePenaltiesInto,
-  type TonePenalties,
-} from './night-shade';
-import { environmentTonePenalties, PalettePass } from './palette-pass';
-import { DirectPass } from './direct-pass';
-import { PIXEL_SIZE, type Size } from './pixel-art';
+import { FramePipeline, type AquariumRenderer, type FrameScene } from './frame-pipeline';
 import type { PhotoPixels } from './photo-capture';
-import { WaterLightLayer } from './water-light';
-import { LightRaysLayer, LIGHT_RAY_ENVIRONMENTS } from './light-rays-layer';
-import { createLightRays, lightRaysInto } from '../sim/light-rays';
+import { SceneLighting } from './scene-lighting';
+import { ViewLayers } from './view-layers';
+import { ViewPicker, type PickedRay } from './view-picker';
 import { DecorClock } from './decor-clock';
 import {
   FULL_MOTION,
@@ -86,34 +50,7 @@ import {
   type MotionFactors,
 } from '../core/reduced-motion/reduced-motion';
 
-/**
- * Sous-ensemble de `WebGLRenderer` utilisé par la vue. Permet de remplacer le renderer
- * par un double dans les tests unitaires (jsdom n'a pas WebGL, voir docs/PIEGES.md).
- */
-export interface AquariumRenderer {
-  setPixelRatio(ratio: number): void;
-  setSize(width: number, height: number, updateStyle?: boolean): void;
-  setRenderTarget(target: WebGLRenderTarget | null): void;
-  render(scene: Scene, camera: Camera): void;
-  /**
-   * Relit les pixels d'une cible (photo, #479). Facultatif : un double de test peut s'en
-   * passer, la photo est alors refusée.
-   */
-  readRenderTargetPixels?(
-    target: WebGLRenderTarget,
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    buffer: Uint8Array,
-  ): void;
-  dispose(): void;
-}
-
 export type AquariumRendererFactory = (canvas: HTMLCanvasElement) => AquariumRenderer;
-
-/** Tons d'environnement de l'eau teintée par les feuilles de catappa (issue #239). */
-export const TEA_TONES: readonly string[] = ['eauThe', 'eauTheClaire'];
 
 /** Fabrique par défaut : WebGL sans anticrénelage (docs/DA.md, « Aucun lissage »). */
 export const createWebGLRenderer: AquariumRendererFactory = (canvas) =>
@@ -132,6 +69,8 @@ export interface AquariumViewOptions {
   readonly filter?: RenderFilter;
 }
 
+export type { AquariumRenderer } from './frame-pipeline';
+export { TEA_TONES } from './scene-lighting';
 export type { DecorDragListener } from './drag-controller';
 export type { ImmersiveCamera } from './camera-controller';
 export { ORBIT_MOUSE_ACTIONS, ORBIT_TOUCH_ACTIONS } from './camera-controller';
@@ -141,83 +80,28 @@ export { STROKE_STEP_PX, strokePoints, type StrokePoint } from './stroke';
  * Vue 3D du bac, sans Angular : renderer, scène, caméra et contrôles orbitaux.
  * Le composant hôte (`ui/`) porte la boucle d'affichage et appelle `renderFrame()`.
  *
- * Pipeline pixel art (ADR 0002) : la scène est rendue dans la cible basse résolution de
- * `PalettePass`, puis affichée plein écran sans lissage et ramenée à la palette.
+ * Pipeline pixel art (ADR 0002, `FramePipeline`) : la scène est rendue dans la cible basse
+ * résolution de `PalettePass`, puis affichée plein écran sans lissage et ramenée à la palette.
  * Filtre `aucun` (ADR 0010) : la scène est rendue directement à l'écran, en pleine
  * résolution, sans passe palette ; la bascule ne touche ni à la caméra ni à la scène.
+ * Couches (`ViewLayers`), lumière (`SceneLighting`), lancers de rayon (`ViewPicker`), gestes
+ * (`DragController`) et caméra (`CameraController`) vivent à part (#698).
  */
 export class AquariumView {
   readonly camera: PerspectiveCamera;
-  private readonly renderer: AquariumRenderer;
   private readonly world: AquariumScene;
   private readonly controls: OrbitControls;
   private readonly canvas: HTMLCanvasElement;
-  private readonly pixelPass: PalettePass;
-  /** Cible pleine résolution du mode sans filtre (#40, ADR 0101). */
-  private readonly directPass = new DirectPass();
-  /**
-   * Une couche par apparence de chaque espèce de `SPECIES` (`speciesVariants`), dans l'ordre
-   * de déclaration (aucun champ par espèce).
-   */
-  private readonly fishLayers: readonly FishLayer[];
-  /** Décor du monde (rochers), fixé par `setDecor`. */
-  private readonly decorLayer = new DecorLayer();
-  /** Pièce autour du bac (#187), masquée par défaut. */
-  private readonly roomLayer = new RoomLayer();
-  /** Tampons réutilisés par `updateLight` (aucune allocation). */
-  private readonly decorTint: MutableTint = [1, 1, 1];
-  private readonly penalties: TonePenalties = { night: 0, twilight: 0 };
-  /** Dernière lumière du jour appliquée (`updateLight`), réappliquée quand la pluie change. */
-  private readonly light = createDayLight();
-  /** Bulles du diffuseur (ADR 0017), selon la graine fixée par `setDecor`. */
-  private readonly bubbleLayer: BubbleLayer;
-  /** Repère du sens du courant (issue #460), masqué courant coupé. */
-  private readonly currentLayer: CurrentIndicatorLayer;
-  /** Granulés de nourriture (issue #67), posés par `updateFood`. */
-  private readonly foodLayer = new FoodLayer();
-  /** Œufs des corydoras (issue #478) : masqués tant qu'il n'y en a aucun. */
-  private readonly eggLayer = new EggLayer();
-  /** Caustiques sur le sable et reflet de surface (ADR 0017). */
-  private readonly waterLight: WaterLightLayer;
-  /** Rayons de lumière dans l'eau (issue #567, ADR 0134). */
-  private readonly lightRaysLayer: LightRaysLayer;
-  /** Heure des rayons (`updateLightRays`) et tampon des rayons, réutilisé. */
-  private raysHour = 12;
-  private readonly rays = createLightRays();
-  /** Nénuphars (issue #103), tirés de la graine fixée par `setDecor`. */
-  private readonly lilyPadLayer: LilyPadLayer;
-  /** Pluie (issue #106), possible dans un environnement qui en a (`Environment.rain`). */
-  private readonly rainLayer: RainLayer;
-  /**
-   * Facteur de ciel couvert appliqué (ADR 0082) : `overcastBrightness` de la pluie courante,
-   * ou en route vers lui pendant un fondu (`setRain(…, true)`, `stepOvercast`, issue #338).
-   */
-  private overcast = 1;
-  /** Lumière gardée au fond sous les plantes hautes (issue #477, `plantShade`), 1 sans ombre. */
-  private plantShade = 1;
-  /** Feuilles mortes flottantes (issue #107), dans un environnement qui en a. */
-  private readonly floatingLeafLayer: FloatingLeafLayer;
-  /** Feuilles de catappa sur le sol (issue #239). */
-  private readonly catappaLayer: CatappaLayer;
-  /** Distributeur de nourriture automatique, sur le bord du bac (issue #583). */
-  private readonly feederLayer: FeederLayer;
-  /** Plaques d'algues sur les vitres (issue #476). */
-  private readonly algaeLayer = new AlgaeLayer();
-  private readonly foulingLayer = new FoulingLayer();
-  /** Repères des animaux désignés par une alerte (#483), masqués par défaut. */
-  private readonly alertHighlightLayer = new AlertHighlightLayer();
-  /**
-   * Effets animés au contrat commun `EffectLayer` (issue #125) : bulles, pluie, puis feuilles
-   * mortes. Parcourus
-   * par `updateDecor`, `updateLight`, `setDecor` et `dispose`.
-   */
-  private readonly effects: readonly EffectLayer[];
-  /** Toutes les couches, dans l'ordre d'ajout à la scène (et de libération). */
-  private readonly sceneLayers: readonly SceneLayer[];
-  /** Lancer de rayon de `pickDecor`, réutilisé. */
-  private readonly raycaster = new Raycaster();
-  /** Point visé en coordonnées normalisées, réutilisé par chaque lancer de rayon (#178). */
-  private readonly pointerNdc = new Vector2();
+  /** Taille du canvas, cibles des passes et rendu d'une image ou d'une photo. */
+  private readonly frames: FramePipeline;
+  /** Scène, couches et réglages par image passés à `frames`, créés une fois. */
+  private readonly frameScene: FrameScene;
+  /** Scène statique et toutes les couches, dans leur ordre de création. */
+  private readonly layers: ViewLayers;
+  /** Lumière du jour, ciel couvert, rayons et tons de la passe palette. */
+  private readonly lighting: SceneLighting;
+  /** Lancers de rayon sous le pointeur. */
+  private readonly picker: ViewPicker;
   /** Contrôles à la souris demandés (faux en mode capture) ; coupés le temps d'un glissement. */
   private readonly interactive: boolean;
   /** Pièce construite par `setRoom` (choix à la souris), hors aperçu d'un glissement. */
@@ -226,12 +110,6 @@ export class AquariumView {
   private roomLayout: readonly RoomBlock[] = [];
   /** Clics, glisser du décor et de la pièce, passage de raclette (#698). */
   private readonly pointer: DragController;
-  private readonly pixelRatio: number;
-  private width = 0;
-  private height = 0;
-  private currentFilter: RenderFilter;
-  /** Taille de la cible basse résolution (tenue à jour dans les deux modes). */
-  private targetSize: Size = { width: 1, height: 1 };
   private disposed = false;
   /** Facteurs des mouvements décoratifs (#406) : `FULL_MOTION` sauf mouvements réduits. */
   private motion: MotionFactors = FULL_MOTION;
@@ -250,75 +128,22 @@ export class AquariumView {
   private decorTime = 0;
   /** Temps propre d'un effet (`updateVisibleEffects`) : pluie ralentie si mouvements réduits. */
   private readonly effectTime = (layer: EffectLayer, time: number): number =>
-    layer === this.rainLayer ? this.rainClock.at(time) : time;
+    layer === this.layers.rain ? this.rainClock.at(time) : time;
   /** Caméra : préréglages, transitions, caméra libre et mode immersif (#698). */
   private readonly cameras: CameraController;
 
   constructor(options: AquariumViewOptions) {
     this.canvas = options.canvas;
-    this.renderer = options.rendererFactory(options.canvas);
-    this.pixelRatio = options.pixelRatio;
-    this.currentFilter = options.filter ?? DEFAULT_RENDER_FILTER;
-    this.renderer.setPixelRatio(options.pixelRatio);
-    this.pixelPass = new PalettePass();
-    this.world = createAquariumScene(options.environment);
-    this.fishLayers = Object.values(SPECIES).flatMap((species) =>
-      speciesVariants(species).map(
-        (_, index) => new FishLayer(species, MAX_FISH_PER_SPECIES, index),
-      ),
+    this.frames = new FramePipeline(
+      options.rendererFactory(options.canvas),
+      options.pixelRatio,
+      options.filter ?? DEFAULT_RENDER_FILTER,
     );
-    // Bulles et diffuseur : seulement dans un environnement qui en a (bac tropical). Masquées,
-    // elles ne sont pas posées (`updateVisibleEffects`).
-    // Diffuseur à l'échelle du bac (issue #171), comme les bulles de la simulation.
-    this.bubbleLayer = new BubbleLayer(
-      bubbleSourceFor(this.world.dimensions),
-      environmentDataWater(this.world.environment),
-    );
-    this.bubbleLayer.object.visible = this.world.environment.bubbles;
-    const surfaceY = environmentDataWater(this.world.environment).maxY;
-    this.waterLight = new WaterLightLayer(
-      this.world.dimensions,
-      this.world.environment.caustics,
-      surfaceY,
-    );
-    this.lightRaysLayer = new LightRaysLayer(
-      this.world.dimensions,
-      LIGHT_RAY_ENVIRONMENTS.includes(this.world.environment.id),
-      surfaceY,
-    );
-    this.lilyPadLayer = new LilyPadLayer(this.world.dimensions, surfaceY);
-    this.rainLayer = new RainLayer(environmentDataWater(this.world.environment));
-    // Tons propres à l'environnement (eau du récif, ADR 0039) : écartés ailleurs. Après la
-    // pluie, dont ils dépendent (tons du ciel couvert, #123).
-    this.applyTonePenalties();
-    this.floatingLeafLayer = new FloatingLeafLayer(environmentDataWater(this.world.environment));
-    this.floatingLeafLayer.object.visible = this.world.environment.floatingLeaves;
-    this.currentLayer = new CurrentIndicatorLayer(environmentDataWater(this.world.environment));
-    this.effects = [this.bubbleLayer, this.rainLayer, this.floatingLeafLayer, this.currentLayer];
-    this.catappaLayer = new CatappaLayer(environmentDataWater(this.world.environment));
-    this.feederLayer = new FeederLayer(this.world.dimensions);
-    this.sceneLayers = [
-      ...this.fishLayers,
-      this.decorLayer,
-      this.bubbleLayer,
-      this.foodLayer,
-      this.eggLayer,
-      this.waterLight,
-      this.lightRaysLayer,
-      this.lilyPadLayer,
-      this.rainLayer,
-      this.floatingLeafLayer,
-      this.currentLayer,
-      this.catappaLayer,
-      this.feederLayer,
-      this.algaeLayer,
-      this.foulingLayer,
-      this.alertHighlightLayer,
-      this.roomLayer,
-    ];
-    for (const layer of this.sceneLayers) {
-      this.world.scene.add(layer.object);
-    }
+    this.layers = new ViewLayers(options.environment);
+    this.world = this.layers.world;
+    // Tons propres à l'environnement (eau du récif, ADR 0039) : écartés ailleurs.
+    this.lighting = new SceneLighting(this.layers, this.frames.palette);
+    this.lighting.applyTonePenalties();
 
     const radius = tankBoundingRadius(this.world.dimensions);
     this.camera = new PerspectiveCamera(CAMERA_FOV_DEG, 1, radius * 0.05, radius * 40);
@@ -330,6 +155,14 @@ export class AquariumView {
       this.world.dimensions,
       options.interactive,
     );
+    this.picker = new ViewPicker(this.canvas, this.camera, this.layers, () => this.room);
+    this.frameScene = {
+      scene: this.world.scene,
+      camera: this.camera,
+      prepare: () => this.prepareFrame(),
+      setResolution: (width, height) => this.layers.setResolution(width, height),
+      setPointScale: (scale) => this.layers.setPointScale(scale),
+    };
     // Gestes du canvas (#698) : clics, glisser et raclette, puis caméra libre, dans cet ordre.
     this.pointer = new DragController(this.dragHost());
     this.cameras = new CameraController(this.cameraHost(), options.preset);
@@ -344,8 +177,8 @@ export class AquariumView {
       orbitAllowed: () => this.interactive && !this.disposed && !this.cameras.freeCameraActive,
       pickDecor: (x, y) => this.pickDecor(x, y),
       pickWaterSurface: (x, y) => this.pickWaterSurface(x, y),
-      planeAt: (x, y, planeY) => this.planeAt(x, y, planeY),
-      decorItemPosition: (index) => this.decorLayer.itemPosition(index),
+      planeAt: (x, y, planeY) => this.picker.planeAt(x, y, planeY),
+      decorItemPosition: (index) => this.layers.decor.itemPosition(index),
       room: () => this.room,
     };
   }
@@ -361,7 +194,7 @@ export class AquariumView {
       dragging: () => this.pointer.dragging,
       stroking: () => this.pointer.stroking,
       cancelClick: () => this.pointer.cancelClick(),
-      roomBuilt: () => this.roomLayer.built,
+      roomBuilt: () => this.layers.room.built,
       cabinetHeight: () => clampRoom(this.room).cabinetHeight,
       hasSize: () => this.hasSize(),
       updateAspect: () => this.updateAspect(),
@@ -420,16 +253,10 @@ export class AquariumView {
    * Renvoie `true` si la taille a changé.
    */
   resize(width: number, height: number): boolean {
-    const w = Math.max(0, Math.floor(width));
-    const h = Math.max(0, Math.floor(height));
-    if (w === this.width && h === this.height) {
+    if (!this.frames.resize(width, height)) {
       return false;
     }
-    this.width = w;
-    this.height = h;
-    if (w > 0 && h > 0) {
-      this.renderer.setSize(w, h, false);
-      this.targetSize = this.pixelPass.setSize(w, h, this.pixelRatio);
+    if (this.hasSize()) {
       this.updateAspect();
       this.cameras.reframe();
     }
@@ -438,7 +265,7 @@ export class AquariumView {
 
   /** Taille non nulle : une image rendue maintenant est une image complète. */
   hasSize(): boolean {
-    return this.width > 0 && this.height > 0;
+    return this.frames.hasSize();
   }
 
   /**
@@ -466,17 +293,17 @@ export class AquariumView {
       reused.motion = this.motion.behaviorGesture;
       frame = reused;
     }
-    for (const layer of this.fishLayers) {
+    for (const layer of this.layers.fish) {
       // Corps (#582) après les vivants, grisés et retournés.
       layer.update(entities, alpha, seed, frame, dead);
     }
-    this.alertHighlightLayer.update(entities, alpha);
+    this.layers.alertHighlight.update(entities, alpha);
   }
 
   /** Met en évidence les animaux `ids` (#483) ; vide : aucun. */
   setAlertHighlight(ids: readonly number[]): void {
     if (!this.disposed) {
-      this.alertHighlightLayer.setAnimals(ids);
+      this.layers.alertHighlight.setAnimals(ids);
     }
   }
 
@@ -492,12 +319,12 @@ export class AquariumView {
       // horloges rendent exactement le temps simulé (rendu inchangé).
       this.decorTime = time;
       const waterTime = this.waterClock.at(time);
-      this.decorLayer.update(time, this.motion.plantSway);
+      this.layers.decor.update(time, this.motion.plantSway);
       // Sous la pluie, les nénuphars frémissent (issue #106).
-      this.lilyPadLayer.update(waterTime, this.rainLayer.isEnabled ? 1 : 0);
-      updateVisibleEffects(this.effects, time, this.effectTime);
-      this.waterLight.update(waterTime);
-      this.lightRaysLayer.update(this.raysClock.at(time));
+      this.layers.lilyPads.update(waterTime, this.layers.rain.isEnabled ? 1 : 0);
+      updateVisibleEffects(this.layers.effects, time, this.effectTime);
+      this.layers.waterLight.update(waterTime);
+      this.layers.lightRays.update(this.raysClock.at(time));
     }
   }
 
@@ -507,7 +334,7 @@ export class AquariumView {
    */
   setReducedMotion(reduced: boolean): void {
     this.motion = motionFactors(reduced);
-    this.currentLayer.setStill(reduced);
+    this.layers.current.setStill(reduced);
     this.waterClock.setRate(this.motion.waterWave, this.decorTime);
     this.rainClock.setRate(this.motion.rainSpeed, this.decorTime);
     this.raysClock.setRate(this.motion.lightRays, this.decorTime);
@@ -520,23 +347,23 @@ export class AquariumView {
 
   /** Temps des rayons de lumière posé par le dernier `updateDecor`, ramené à la période. */
   get lightRaysTime(): number {
-    return this.lightRaysLayer.time;
+    return this.layers.lightRays.time;
   }
 
   /** Force des rayons de lumière appliquée (0 la nuit ; 0 aussi s'ils sont masqués). */
   get lightRaysStrength(): number {
-    return this.lightRaysLayer.object.visible ? this.lightRaysLayer.raysStrength : 0;
+    return this.layers.lightRays.object.visible ? this.layers.lightRays.raysStrength : 0;
   }
 
   /** Temps des caustiques et du reflet posé par le dernier `updateDecor` (tests). */
   get waterLightTime(): number {
-    return this.waterLight.time;
+    return this.layers.waterLight.time;
   }
 
   /** Pose les granulés de nourriture du monde (`World.food`). À appeler avant `renderFrame()`. */
   updateFood(food: readonly FoodPellet[]): void {
     if (!this.disposed) {
-      this.foodLayer.update(food);
+      this.layers.food.update(food);
     }
   }
 
@@ -546,35 +373,35 @@ export class AquariumView {
    */
   updateEggs(eggs: readonly Egg[] | undefined, hatchTime: number): void {
     if (!this.disposed) {
-      this.eggLayer.update(eggs, hatchTime);
+      this.layers.eggs.update(eggs, hatchTime);
     }
   }
 
   /** Nombre d'œufs posés par le dernier `updateEggs` (tests). */
   get eggCount(): number {
-    return this.eggLayer.count;
+    return this.layers.eggs.count;
   }
 
   /** Nombre de granulés posés par le dernier `updateFood` (tests). */
   get foodCount(): number {
-    return this.foodLayer.count;
+    return this.layers.food.count;
   }
 
   /** Rendu des granulés (points ou voxels, issue #117). */
   get foodStyle(): FoodStyle {
-    return this.foodLayer.style;
+    return this.layers.food.style;
   }
 
   /** Change le rendu des granulés à chaud ; la scène et la caméra ne changent pas. */
   setFoodStyle(style: FoodStyle): void {
     if (!this.disposed) {
-      this.foodLayer.setStyle(style);
+      this.layers.food.setStyle(style);
     }
   }
 
   /** Taille courante du cœur d'un granulé en points, en pixels de la surface de rendu (tests). */
   get foodPointSize(): number {
-    return this.foodLayer.pointSize;
+    return this.layers.food.pointSize;
   }
 
   /**
@@ -583,27 +410,7 @@ export class AquariumView {
    * canvas, hors du bac ou sur la terre émergée du paludarium (#129).
    */
   pickWaterSurface(clientX: number, clientY: number): { x: number; z: number } | null {
-    if (this.disposed) {
-      return null;
-    }
-    const ndc = toNormalizedDevice(clientX, clientY, this.canvas.getBoundingClientRect());
-    if (!ndc) {
-      return null;
-    }
-    const origin = this.camera.position;
-    const direction = new Vector3(ndc.x, ndc.y, 0.5).unproject(this.camera).sub(origin);
-    const env = this.world.environment;
-    const water = environmentDataWater(env);
-    const point = waterSurfacePoint(
-      [origin.x, origin.y, origin.z],
-      [direction.x, direction.y, direction.z],
-      this.world.dimensions,
-      water,
-    );
-    if (point && env.terrain && !terrainAt(point.x, point.z, env.terrain, water).submerged) {
-      return null;
-    }
-    return point;
+    return this.disposed ? null : this.picker.pickWaterSurface(clientX, clientY);
   }
 
   /**
@@ -613,50 +420,7 @@ export class AquariumView {
    * bac). Juste sous les cinq angles de vue : lancer de rayon sur les maillages affichés.
    */
   pickDecor(clientX: number, clientY: number): DecorPick {
-    if (this.disposed) {
-      return null;
-    }
-    const ndc = toNormalizedDevice(clientX, clientY, this.canvas.getBoundingClientRect());
-    if (!ndc) {
-      return null;
-    }
-    this.camera.updateMatrixWorld();
-    this.raycaster.setFromCamera(this.pointerNdc.set(ndc.x, ndc.y), this.camera);
-    const index = this.decorLayer.pickItem(this.raycaster);
-    if (index !== null) {
-      return { kind: 'item', index };
-    }
-    const { origin: o, direction: d } = this.raycaster.ray;
-    const origin: Vec3 = [o.x, o.y, o.z];
-    const direction: Vec3 = [d.x, d.y, d.z];
-    const point = sandHit(origin, direction, this.world.dimensions);
-    // Pièce (#188) : élément ou parquet visé, sauf derrière le sable du bac.
-    const room = this.roomLayer.built
-      ? pickRoom(origin, direction, this.world.dimensions, this.room)
-      : null;
-    if (room && room.distance < (point?.distance ?? Infinity)) {
-      return room.kind === 'floor'
-        ? { kind: 'floor', x: room.x, z: room.z }
-        : { kind: 'room-item', index: room.index, x: room.x, z: room.z };
-    }
-    return point ? { kind: 'sand', x: point.x, z: point.z } : null;
-  }
-
-  /**
-   * Point du plan horizontal Y = `y` (non borné) sous le point de l'écran, `null` hors du
-   * canvas : plan du sable pour le décor, de la base de l'élément pour la pièce.
-   */
-  private planeAt(clientX: number, clientY: number, y: number): { x: number; z: number } | null {
-    const ndc = toNormalizedDevice(clientX, clientY, this.canvas.getBoundingClientRect());
-    if (!ndc) {
-      return null;
-    }
-    this.camera.updateMatrixWorld();
-    this.raycaster.setFromCamera(this.pointerNdc.set(ndc.x, ndc.y), this.camera);
-    const { origin, direction } = this.raycaster.ray;
-    const o: Vec3 = [origin.x, origin.y, origin.z];
-    const d: Vec3 = [direction.x, direction.y, direction.z];
-    return planePoint(o, d, y);
+    return this.disposed ? null : this.picker.pickDecor(clientX, clientY);
   }
 
   /**
@@ -711,7 +475,7 @@ export class AquariumView {
   /** Aperçu du glissement : l'élément `index` affiché en (x, z), sans reconstruire le décor. */
   previewDecorMove(index: number, x: number, z: number): void {
     if (!this.disposed) {
-      this.decorLayer.moveItem(index, x, z);
+      this.layers.decor.moveItem(index, x, z);
     }
   }
 
@@ -721,20 +485,20 @@ export class AquariumView {
    */
   previewDecorPose(index: number, x: number, y: number, z: number): void {
     if (!this.disposed) {
-      this.decorLayer.placeItem(index, x, y, z);
+      this.layers.decor.placeItem(index, x, y, z);
     }
   }
 
   /** Sélectionne l'élément d'indice `index` de `World.decor` (contour clair), ou aucun. */
   setDecorSelection(index: number | null): void {
     if (!this.disposed) {
-      this.decorLayer.setSelected(index);
+      this.layers.decor.setSelected(index);
     }
   }
 
   /** Indice de l'élément de décor sélectionné, `null` sinon (tests). */
   get decorSelection(): number | null {
-    return this.decorLayer.selectedIndex;
+    return this.layers.decor.selectedIndex;
   }
 
   /**
@@ -765,50 +529,8 @@ export class AquariumView {
    */
   updateLight(light: DayLight): void {
     if (!this.disposed) {
-      this.light.intensity = light.intensity;
-      for (let k = 0; k < 3; k++) {
-        this.light.tint[k] = light.tint[k];
-        this.light.sky[k] = light.sky[k];
-      }
-      this.applyLight();
+      this.lighting.update(light);
     }
-  }
-
-  /** Applique `this.light` et le ciel couvert de la pluie courante. */
-  private applyLight(): void {
-    const light = this.light;
-    const overcast = this.overcast;
-    this.world.setOvercast(overcast);
-    this.world.setDaylight(light);
-    this.waterLight.setDaylight(light.intensity);
-    this.applyLightRays();
-    // Poissons, bulles, gouttes et granulés (couleurs plates) gardent leur clarté : vus à
-    // travers l'eau assombrie, et des koïs ou des gouttes assombris changeraient de couleur.
-    const brightness = flatBrightness(light.intensity);
-    for (const layer of this.fishLayers) {
-      layer.setBrightness(brightness);
-    }
-    for (const layer of this.effects) {
-      layer.setBrightness(brightness);
-    }
-    this.foodLayer.setBrightness(brightness);
-    this.eggLayer.setBrightness(brightness);
-    this.catappaLayer.setBrightness(brightness);
-    this.feederLayer.setBrightness(brightness);
-    this.algaeLayer.setBrightness(brightness);
-    this.foulingLayer.setBrightness(brightness);
-    const tint = decorTintInto(light.intensity, this.decorTint);
-    for (let k = 0; k < 3; k++) {
-      tint[k] *= overcast;
-    }
-    // Ombre des plantes hautes (#477, #494) : sur tout le décor posé au fond (plantes, rochers,
-    // bois, une seule matière), ni sur les animaux ni sur l'eau ; × 1 sans ombre.
-    this.decorLayer.setTint(tint, this.plantShade);
-    this.lilyPadLayer.setTint(tint, light.intensity, overcast);
-    this.roomLayer.setDaylight(light, overcast);
-    // Pénalités tirées de la seule intensité du jour : jamais de tons du soir à midi.
-    const penalties = tonePenaltiesInto(light.intensity, this.penalties);
-    this.pixelPass.setTonePenalties(penalties.night, penalties.twilight);
   }
 
   /**
@@ -818,7 +540,7 @@ export class AquariumView {
    */
   updateFlowers(hour: number): void {
     if (!this.disposed) {
-      this.lilyPadLayer.setOpenness(flowerOpenness(hour));
+      this.layers.lilyPads.setOpenness(flowerOpenness(hour));
     }
   }
 
@@ -829,22 +551,13 @@ export class AquariumView {
    */
   updateLightRays(hour: number): void {
     if (!this.disposed) {
-      lightRaysInto(hour, 0, this.rays);
-      this.raysHour = hour;
-      this.applyLightRays();
+      this.lighting.updateLightRays(hour);
     }
-  }
-
-  /** Rayons de l'heure `raysHour` sous le ciel couvert courant (1 − facteur, ramené à [0, 1]). */
-  private applyLightRays(): void {
-    const cloudiness = (1 - this.overcast) / (1 - RAIN_OVERCAST_BRIGHTNESS);
-    lightRaysInto(this.raysHour, cloudiness, this.rays);
-    this.lightRaysLayer.setRays(this.rays.strength, this.rays.tilt);
   }
 
   /** Ouverture courante des fleurs des nénuphars (tests). */
   get flowerOpenness(): number {
-    return this.lilyPadLayer.flowerOpenness;
+    return this.layers.lilyPads.flowerOpenness;
   }
 
   /**
@@ -857,11 +570,11 @@ export class AquariumView {
       // Mêmes coraux et anémones que les obstacles du monde (`createWorld`) : même graine,
       // même décor.
       const { corals, anemones } = seededFeatures(seed, env.id, items);
-      this.decorLayer.setDecor(items, corals, anemones);
-      for (const layer of this.effects) {
+      this.layers.decor.setDecor(items, corals, anemones);
+      for (const layer of this.layers.effects) {
         layer.setSeed(seed);
       }
-      this.lilyPadLayer.setPads(lilyPadLayout(seed, environmentDataWater(env), env.lilyPads));
+      this.layers.lilyPads.setPads(lilyPadLayout(seed, environmentDataWater(env), env.lilyPads));
     }
   }
 
@@ -872,33 +585,33 @@ export class AquariumView {
   replaceDecorItems(items: readonly DecorItem[], seed: number): void {
     if (!this.disposed) {
       const { corals, anemones } = seededFeatures(seed, this.world.environment.id, items);
-      this.decorLayer.setDecor(items, corals, anemones);
+      this.layers.decor.setDecor(items, corals, anemones);
     }
   }
 
   /** Nombre de bulles posées par le dernier `updateDecor` (tests). */
   get bubbleCount(): number {
-    return this.bubbleLayer.count;
+    return this.layers.bubbles.count;
   }
 
   /** Luminosité des couleurs plates de chaque couche de poissons, puis des bulles (tests). */
   get flatBrightnesses(): readonly number[] {
-    return [...this.fishLayers.map((layer) => layer.brightness), this.bubbleLayer.brightness];
+    return [...this.layers.fish.map((layer) => layer.brightness), this.layers.bubbles.brightness];
   }
 
   /** Teinte courante du décor (tests). */
   get decorTintValue(): readonly [number, number, number] {
-    return this.decorLayer.tint;
+    return this.layers.decor.tint;
   }
 
   /** Pénalités courantes des tons de nuit et du crépuscule (tests). */
   get tonePenalties(): readonly [number, number] {
-    return this.pixelPass.tonePenalties;
+    return this.frames.palette.tonePenalties;
   }
 
   /** Pénalités des tons d'environnement, fixées par l'environnement de la vue (tests). */
   get environmentTonePenalties(): readonly number[] {
-    return this.pixelPass.environmentPenalties;
+    return this.frames.palette.environmentPenalties;
   }
 
   /**
@@ -907,8 +620,8 @@ export class AquariumView {
    */
   setDecorVisible(visible: boolean): void {
     if (!this.disposed) {
-      this.decorLayer.object.visible = visible;
-      this.lilyPadLayer.object.visible = visible;
+      this.layers.decor.object.visible = visible;
+      this.layers.lilyPads.object.visible = visible;
     }
   }
 
@@ -932,7 +645,7 @@ export class AquariumView {
    */
   previewRoom(room: Room): void {
     if (!this.disposed) {
-      this.roomLayer.setRoom(
+      this.layers.room.setRoom(
         this.world.dimensions,
         room,
         isRoomAvailable(this.world.environment.id),
@@ -955,28 +668,28 @@ export class AquariumView {
   /** Sélectionne l'élément d'indice `index` de la pièce (contour clair, #188), ou aucun. */
   setRoomSelection(index: number | null): void {
     if (!this.disposed) {
-      this.roomLayer.setSelected(index);
+      this.layers.room.setSelected(index);
     }
   }
 
   /** Indice de l'élément de la pièce sélectionné et dessiné, `null` sinon (tests). */
   get roomSelection(): number | null {
-    return this.roomLayer.selectedIndex;
+    return this.layers.room.selectedIndex;
   }
 
   /** Vrai si la pièce est construite (tests). */
   get roomShown(): boolean {
-    return this.roomLayer.built;
+    return this.layers.room.built;
   }
 
   /** Nombre de blocs de la pièce (tests). */
   get roomBlockCount(): number {
-    return this.roomLayer.count;
+    return this.layers.room.count;
   }
 
   /** Vrai si le mur de la pièce est affiché au dernier rendu (tests). */
   get roomWallVisible(): boolean {
-    return this.roomLayer.wallVisible;
+    return this.layers.room.wallVisible;
   }
 
   /**
@@ -987,19 +700,7 @@ export class AquariumView {
    * `OVERCAST_FADE_SECONDS` avancé par `stepOvercastFade` (issue #338 ; jamais en capture).
    */
   setRain(enabled: boolean, fade = false): boolean {
-    if (!this.disposed && this.world.environment.rain) {
-      const changed = this.rainLayer.isEnabled !== enabled;
-      this.rainLayer.setEnabled(enabled);
-      const overcastBefore = this.overcast;
-      if (!fade) {
-        this.overcast = overcastBrightness(enabled);
-      }
-      if (changed || this.overcast !== overcastBefore) {
-        this.applyLight();
-        this.applyTonePenalties();
-      }
-    }
-    return this.rainLayer.isEnabled;
+    return this.disposed ? this.layers.rain.isEnabled : this.lighting.setRain(enabled, fade);
   }
 
   /**
@@ -1008,25 +709,12 @@ export class AquariumView {
    * réappliqués). Sans effet hors fondu : aucun travail par image.
    */
   stepOvercastFade(dtSeconds: number): boolean {
-    if (this.disposed) {
-      return false;
-    }
-    const target = overcastBrightness(this.rainLayer.isEnabled);
-    if (this.overcast === target) {
-      return false;
-    }
-    const next = stepOvercast(this.overcast, target, dtSeconds);
-    if (next === this.overcast) {
-      return false;
-    }
-    this.overcast = next;
-    this.applyLight();
-    return true;
+    return !this.disposed && this.lighting.stepOvercastFade(dtSeconds);
   }
 
   /** Facteur de ciel couvert appliqué (tests ; 1 hors pluie et fondu terminé). */
   get overcastFactor(): number {
-    return this.overcast;
+    return this.lighting.overcastFactor;
   }
 
   /**
@@ -1046,26 +734,9 @@ export class AquariumView {
    * @throws RangeError si `tea` n'est pas un réel dans [0, 1].
    */
   setWaterTea(tea: number): void {
-    if (!this.disposed && tea !== this.world.tea) {
-      this.world.setTea(tea);
-      this.applyTonePenalties();
+    if (!this.disposed) {
+      this.lighting.setWaterTea(tea);
     }
-  }
-
-  /**
-   * Tons d'environnement proposés à la passe (ADR 0039) : ceux de l'environnement, plus les
-   * tons de l'eau brun-thé (`TEA_TONES`) quand elle est teintée (issue #239), et ceux du ciel
-   * couvert (`RAIN_TONES`) sous la pluie (issue #123).
-   */
-  private applyTonePenalties(): void {
-    const tones = [...this.world.environment.tones];
-    if (this.world.tea > 0) {
-      tones.push(...TEA_TONES);
-    }
-    if (this.rainLayer.isEnabled) {
-      tones.push(...RAIN_TONES);
-    }
-    this.pixelPass.setEnvironmentPenalties(environmentTonePenalties(tones));
   }
 
   /**
@@ -1074,20 +745,20 @@ export class AquariumView {
    */
   setCatappa(leaves: readonly number[] | undefined): void {
     if (!this.disposed) {
-      this.catappaLayer.setLeaves(leaves);
+      this.layers.catappa.setLeaves(leaves);
     }
   }
 
   /** Distributeur automatique (issue #583) : montré s'il est posé. Sans effet après `dispose`. */
   setFeeder(installed: boolean): void {
     if (!this.disposed) {
-      this.feederLayer.setVisible(installed);
+      this.layers.feeder.setVisible(installed);
     }
   }
 
   /** Vrai si le distributeur est affiché (tests). */
   get feederShown(): boolean {
-    return this.feederLayer.visible;
+    return this.layers.feeder.visible;
   }
 
   /**
@@ -1096,13 +767,13 @@ export class AquariumView {
    */
   setAlgae(patches: readonly AlgaePatch[], algae: readonly number[] | undefined): void {
     if (!this.disposed) {
-      this.algaeLayer.setAlgae(patches, algae);
+      this.layers.algae.setAlgae(patches, algae);
     }
   }
 
   /** Plaques d'algues affichées (tests). */
   get algaeCount(): number {
-    return this.algaeLayer.count;
+    return this.layers.algae.count;
   }
 
   /**
@@ -1111,13 +782,13 @@ export class AquariumView {
    */
   setFouling(water: Box3, fouling: TankFouling, floor: boolean): void {
     if (!this.disposed) {
-      this.foulingLayer.setFouling(water, fouling, floor);
+      this.layers.fouling.setFouling(water, fouling, floor);
     }
   }
 
   /** Cases du voile dessinées sur les vitres et sur le sol (tests). */
   get foulingCounts(): { readonly glass: number; readonly floor: number } {
-    return this.foulingLayer.counts;
+    return this.layers.fouling.counts;
   }
 
   /**
@@ -1126,13 +797,13 @@ export class AquariumView {
    */
   setPlantGrowth(index: number, growth: number): void {
     if (!this.disposed) {
-      this.decorLayer.setPlantGrowth(index, growth);
+      this.layers.decor.setPlantGrowth(index, growth);
     }
   }
 
   /** Pousse affichée de la plante d'indice `index`, `null` pour un autre élément (tests). */
   plantGrowth(index: number): number | null {
-    return this.decorLayer.plantGrowth(index);
+    return this.layers.decor.plantGrowth(index);
   }
 
   /**
@@ -1140,9 +811,8 @@ export class AquariumView {
    * multiplie la teinte du décor. Sans effet après `dispose` ou si elle ne change pas.
    */
   setPlantShade(shade: number): void {
-    if (!this.disposed && shade !== this.plantShade && shade > 0 && shade <= 1) {
-      this.plantShade = shade;
-      this.applyLight();
+    if (!this.disposed) {
+      this.lighting.setPlantShade(shade);
     }
   }
 
@@ -1151,26 +821,8 @@ export class AquariumView {
    * repère du bac : origine et direction (raclette, issue #476). `null` hors du canvas ou
    * après `dispose`.
    */
-  pickRay(
-    clientX: number,
-    clientY: number,
-  ): {
-    readonly origin: readonly [number, number, number];
-    readonly direction: readonly [number, number, number];
-  } | null {
-    if (this.disposed) {
-      return null;
-    }
-    const ndc = toNormalizedDevice(clientX, clientY, this.canvas.getBoundingClientRect());
-    if (!ndc) {
-      return null;
-    }
-    const origin = this.camera.position;
-    const direction = new Vector3(ndc.x, ndc.y, 0.5).unproject(this.camera).sub(origin);
-    return {
-      origin: [origin.x, origin.y, origin.z],
-      direction: [direction.x, direction.y, direction.z],
-    };
+  pickRay(clientX: number, clientY: number): PickedRay | null {
+    return this.disposed ? null : this.picker.pickRay(clientX, clientY);
   }
 
   /**
@@ -1180,20 +832,20 @@ export class AquariumView {
    */
   setWaterCurrent(x: number, z: number, direction: number, chevrons: number): void {
     if (!this.disposed) {
-      this.bubbleLayer.setCurrent(x, z);
-      this.floatingLeafLayer.setCurrent(x, z);
-      this.currentLayer.setCurrent(direction, chevrons);
+      this.layers.bubbles.setCurrent(x, z);
+      this.layers.floatingLeaves.setCurrent(x, z);
+      this.layers.current.setCurrent(direction, chevrons);
     }
   }
 
   /** Chevrons du repère du courant posés, et abscisse du premier (tests). */
   get currentIndicator(): readonly [number, number] {
-    return [this.currentLayer.count, this.currentLayer.firstOffset];
+    return [this.layers.current.count, this.layers.current.firstOffset];
   }
 
   /** Feuilles de catappa affichées, puis celles qui sont épuisées (tests). */
   get catappaCounts(): readonly [number, number] {
-    return [this.catappaLayer.count, this.catappaLayer.spentCount];
+    return [this.layers.catappa.count, this.layers.catappa.spentCount];
   }
 
   /** Teinte brun-thé appliquée (tests). */
@@ -1208,63 +860,63 @@ export class AquariumView {
 
   /** Vrai s'il pleut. */
   get raining(): boolean {
-    return this.rainLayer.isEnabled;
+    return this.layers.rain.isEnabled;
   }
 
   /** Nom de chaque couche d'effet (`EffectLayer`), dans l'ordre où la vue les parcourt (tests). */
   get effectLayerNames(): readonly string[] {
-    return this.effects.map((layer) => layer.object.name);
+    return this.layers.effects.map((layer) => layer.object.name);
   }
 
   /** Vrai si les ronds de pluie sont tracés pour une vue de biais (tests). */
   get rainObliqueView(): boolean {
-    return this.rainLayer.obliqueView;
+    return this.layers.rain.obliqueView;
   }
 
   /** Gouttes en l'air et ronds à la surface posés par le dernier `updateDecor` (tests). */
   get rainCounts(): readonly [number, number] {
-    return [this.rainLayer.dropCount, this.rainLayer.rippleCount];
+    return [this.layers.rain.dropCount, this.layers.rain.rippleCount];
   }
 
   /** Feuilles mortes posées par le dernier `updateDecor` (tests). */
   get floatingLeafCount(): number {
-    return this.floatingLeafLayer.object.visible ? this.floatingLeafLayer.count : 0;
+    return this.layers.floatingLeaves.object.visible ? this.layers.floatingLeaves.count : 0;
   }
 
   /** Nombre de nénuphars affichés (tests). */
   get lilyPadCount(): number {
-    return this.lilyPadLayer.count;
+    return this.layers.lilyPads.count;
   }
 
   /** Vrai si les nénuphars sont affichés (tests). */
   get lilyPadsVisible(): boolean {
-    return this.lilyPadLayer.object.visible;
+    return this.layers.lilyPads.object.visible;
   }
 
   /** Vrai si le décor est affiché (tests). */
   get decorVisible(): boolean {
-    return this.decorLayer.object.visible;
+    return this.layers.decor.object.visible;
   }
 
   /** Nombre d'éléments de décor affichés (tests). */
   get decorCount(): number {
-    return this.decorLayer.count;
+    return this.layers.decor.count;
   }
 
   /** Nombre d'anémones affichées (tests). */
   get anemoneCount(): number {
-    return this.decorLayer.anemoneCount;
+    return this.layers.decor.anemoneCount;
   }
 
   /** Nombre de colonies de corail affichées (tests). */
   get coralCount(): number {
-    return this.decorLayer.coralCount;
+    return this.layers.decor.coralCount;
   }
 
   /** Nombre de poissons placés par le dernier `updateFish`, toutes espèces confondues (tests). */
   get fishCount(): number {
     let count = 0;
-    for (const layer of this.fishLayers) {
+    for (const layer of this.layers.fish) {
       count += layer.count;
     }
     return count;
@@ -1272,17 +924,17 @@ export class AquariumView {
 
   /** Espèce de chaque couche de rendu, dans l'ordre des couches (tests). */
   get fishLayerSpecies(): readonly SpeciesId[] {
-    return this.fishLayers.map((layer) => layer.species.id);
+    return this.layers.fish.map((layer) => layer.species.id);
   }
 
   /** Nom de chaque couche de rendu (`poissons-<espèce>[-<apparence>]`), dans l'ordre (tests). */
   get fishLayerNames(): readonly string[] {
-    return this.fishLayers.map((layer) => layer.object.name);
+    return this.layers.fish.map((layer) => layer.object.name);
   }
 
   /** Filtre de rendu courant. */
   get filter(): RenderFilter {
-    return this.currentFilter;
+    return this.frames.filter;
   }
 
   /**
@@ -1291,10 +943,9 @@ export class AquariumView {
    * Renvoie `true` si le filtre a changé.
    */
   setFilter(filter: RenderFilter): boolean {
-    if (this.disposed || filter === this.currentFilter) {
+    if (this.disposed || !this.frames.setFilter(filter)) {
       return false;
     }
-    this.currentFilter = filter;
     if (this.hasSize()) {
       this.updateAspect();
     }
@@ -1303,34 +954,7 @@ export class AquariumView {
 
   /** Rend une image. Renvoie `false` si rien n'a pu être rendu (taille nulle ou vue libérée). */
   renderFrame(): boolean {
-    if (this.disposed || !this.hasSize()) {
-      return false;
-    }
-    this.prepareFrame();
-    if (this.currentFilter === 'aucun') {
-      this.decorLayer.setResolution(this.width * this.pixelRatio, this.height * this.pixelRatio);
-      this.roomLayer.setResolution(this.width * this.pixelRatio, this.height * this.pixelRatio);
-      this.lilyPadLayer.setResolution(this.width * this.pixelRatio, this.height * this.pixelRatio);
-      this.floatingLeafLayer.setResolution(
-        this.width * this.pixelRatio,
-        this.height * this.pixelRatio,
-      );
-      // Sans filtre, une bulle garde la taille d'un pixel de scène du mode pixel art.
-      this.bubbleLayer.setPointScale(PIXEL_SIZE * this.pixelRatio);
-      this.foodLayer.setPointScale(PIXEL_SIZE * this.pixelRatio);
-      // Translucides mélangés en linéaire dans une cible, comme en pixel art (#40).
-      this.directPass.setSize(this.width, this.height, this.pixelRatio);
-      this.renderer.setRenderTarget(this.directPass.target);
-      this.renderer.render(this.world.scene, this.camera);
-      this.renderer.setRenderTarget(null);
-      this.renderer.render(this.directPass.scene, this.directPass.camera);
-      return true;
-    }
-    this.renderPixelScene();
-    this.renderPalette();
-    this.renderer.setRenderTarget(null);
-    this.renderer.render(this.pixelPass.upscaleScene, this.pixelPass.camera);
-    return true;
+    return !this.disposed && this.frames.render(this.frameScene);
   }
 
   /**
@@ -1343,22 +967,7 @@ export class AquariumView {
    * Renvoie `null` si la vue est libérée, sans taille, ou si le renderer ne sait pas relire.
    */
   takePhoto(): PhotoPixels | null {
-    if (this.disposed || !this.hasSize() || !this.renderer.readRenderTargetPixels) {
-      return null;
-    }
-    this.prepareFrame();
-    // Une erreur du rendu ou de la relecture (#503) ne doit pas laisser une cible branchée :
-    // l'image suivante serait dessinée hors de l'écran.
-    try {
-      this.renderPixelScene();
-      this.renderPalette();
-      const { width, height } = this.targetSize;
-      const data = new Uint8Array(width * height * 4);
-      this.renderer.readRenderTargetPixels(this.pixelPass.paletteTarget, 0, 0, width, height, data);
-      return { width, height, data };
-    } finally {
-      this.renderer.setRenderTarget(null);
-    }
+    return this.disposed ? null : this.frames.takePhoto(this.frameScene);
   }
 
   /** Réglages de la scène qui dépendent de la caméra, communs à l'image et à la photo. */
@@ -1368,42 +977,24 @@ export class AquariumView {
     this.world.setViewpoint(x, y, z);
     // Pièce (#187, #324) : rien ne cache le bac, la caméra passât-elle sous le bac ou hors de
     // la pièce (chaque mur franchi et le plafond sont masqués).
-    this.roomLayer.setViewpoint(x, y, z);
+    this.layers.room.setViewpoint(x, y, z);
     // Taille des granulés selon le zoom (#117) : échelle à la distance de la cible.
-    this.foodLayer.setPixelsPerMeter(
+    this.layers.food.setPixelsPerMeter(
       scenePixelsPerMeter(
         this.camera.position.distanceTo(this.controls.target),
         this.camera.fov,
-        this.targetSize.height,
+        this.frames.targetSize.height,
       ),
     );
     // Œufs (#501) : au moins `EGG_MIN_PIXELS` pixels de scène, même loin de la caméra.
-    this.eggLayer.setViewpoint(
+    this.layers.eggs.setViewpoint(
       x,
       y,
       z,
-      scenePixelsPerMeter(1, this.camera.fov, this.targetSize.height),
+      scenePixelsPerMeter(1, this.camera.fov, this.frames.targetSize.height),
     );
     // Ronds de pluie vus de biais (#125) : rond extérieur seul, plus clair.
-    this.rainLayer.setObliqueView(isObliqueView(this.cameraPosition(), this.cameraTarget()));
-  }
-
-  /** Rend la scène dans la cible basse résolution du pixel art (sans la passe palette). */
-  private renderPixelScene(): void {
-    this.decorLayer.setResolution(this.targetSize.width, this.targetSize.height);
-    this.roomLayer.setResolution(this.targetSize.width, this.targetSize.height);
-    this.lilyPadLayer.setResolution(this.targetSize.width, this.targetSize.height);
-    this.floatingLeafLayer.setResolution(this.targetSize.width, this.targetSize.height);
-    this.bubbleLayer.setPointScale(1);
-    this.foodLayer.setPointScale(1);
-    this.renderer.setRenderTarget(this.pixelPass.target);
-    this.renderer.render(this.world.scene, this.camera);
-  }
-
-  /** Ramène l'image de la cible basse résolution à la palette, dans `paletteTarget`. */
-  private renderPalette(): void {
-    this.renderer.setRenderTarget(this.pixelPass.paletteTarget);
-    this.renderer.render(this.pixelPass.scene, this.pixelPass.camera);
+    this.layers.rain.setObliqueView(isObliqueView(this.cameraPosition(), this.cameraTarget()));
   }
 
   /** Vrai en caméra libre (#343). */
@@ -1519,13 +1110,8 @@ export class AquariumView {
     this.pointer.dispose();
     this.cameras.dispose();
     this.controls.dispose();
-    for (const layer of this.sceneLayers) {
-      layer.dispose();
-    }
-    this.world.dispose();
-    this.pixelPass.dispose();
-    this.directPass.dispose();
-    this.renderer.dispose();
+    this.layers.dispose();
+    this.frames.dispose();
   }
 
   /**
@@ -1533,8 +1119,7 @@ export class AquariumView {
    * scène, pour ne pas déformer l'image), celui du canvas sans filtre.
    */
   private updateAspect(): void {
-    const size: Size =
-      this.currentFilter === 'pixel' ? this.targetSize : { width: this.width, height: this.height };
+    const size = this.frames.aspectSize();
     this.camera.aspect = size.width / size.height;
     this.camera.updateProjectionMatrix();
     this.cameras.refreshImmersiveProjection();
