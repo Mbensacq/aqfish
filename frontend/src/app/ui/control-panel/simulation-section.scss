@@ -1,0 +1,9 @@
+// Section « Simulation » (#52, #697) : règles communes du panneau (`_panel-controls.scss`),
+// dans son ordre.
+@use 'panel-controls' as controls;
+
+@include controls.base;
+
+@include controls.phone;
+
+@include controls.rows;

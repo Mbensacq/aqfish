@@ -1,11 +1,12 @@
 // Panneau de contrôle (docs/DA.md, « Interface ») : sombre translucide aux coins arrondis,
 // en haut à gauche à côté de l'indicateur du moment de la journée (39 px de large à 12 px
 // du bord), loin de la barre des préréglages (en bas au centre).
+// Les contrôles sont dans les sections (`*-section.ts`, ADR 0161), avec les règles communes de
+// `_panel-controls.scss` ; cette feuille ne garde que le bouton, le panneau et ses sections.
 // L'hôte est une boîte transparente aussi large que le panneau, du bouton jusqu'au bas du
 // panneau : il ne doit pas capter les clics, sinon il masque le bouton « Commandes » replié
 // en haut à droite sur petit écran (#112). Seuls ses enfants (bouton, panneau) les reçoivent.
 @use '../panel-layout' as layout;
-@use 'panel-controls' as controls;
 
 :host {
   pointer-events: none;
@@ -94,10 +95,6 @@
   }
 }
 
-@include controls.base;
-
-@include controls.count;
-
 // Écran large mais peu haut (1280 × 720) : sections sur deux colonnes, pour que tout tienne
 // sans défiler, « Sauvegarde » comprise, malgré la section « Eau » (#207, #101) ; les notes
 // masquées alors dans « Eau » et « Soins » le sont dans leur feuille (#697). Plus haut,
@@ -153,9 +150,3 @@
     max-height: calc(100vh - 8px - 38px - 120px);
   }
 }
-
-@include controls.phone;
-
-@include controls.texts;
-
-@include controls.rows;

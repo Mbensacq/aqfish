@@ -29,10 +29,11 @@ import {
 import { MAX_TANK_NAME_LENGTH } from '../../sim/room-state';
 import type { SpeciesId } from '../../sim/species';
 import { tankListDetail, tankListHint, type TankListEntry } from '../../sim/tank-list';
-import { TREATMENT_KINDS, TREATMENTS, type TreatmentKind } from '../../sim/treatment';
+import type { TreatmentKind } from '../../sim/treatment';
 import { DEFAULT_WATER_READOUT, type WaterReadout } from '../../sim/water-quality';
 import type { TankNotice } from '../aquarium-host/aquarium-host';
-import { isQuarantineShown, panelCatalog, treatmentTitle } from './panel-views';
+import { isQuarantineShown, panelCatalog } from './panel-views';
+import { QuarantineSection } from './quarantine-section';
 
 /**
  * Section « Bacs » du panneau « Réglages » (#306, sortie du panneau au #697) : liste des bacs
@@ -46,6 +47,7 @@ import { isQuarantineShown, panelCatalog, treatmentTitle } from './panel-views';
 @Component({
   // Sélecteur d'attribut : le `fieldset` reste l'enfant direct du panneau (ADR 0161).
   selector: 'fieldset[app-tanks-section]',
+  imports: [QuarantineSection],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './tanks-section.scss',
   template: `
@@ -214,90 +216,19 @@ import { isQuarantineShown, panelCatalog, treatmentTitle } from './panel-views';
     }
     @if (quarantineShown()) {
       <!-- Bac de quarantaine (#547) : un bac posé soigné à part, puis retour au bac affiché. -->
-      <div class="control-panel__quarantine" role="group" aria-label="Quarantaine" data-quarantine>
-        @if (quarantineChoice(); as chosen) {
-          <label class="control-panel__field">
-            <span class="control-panel__label">Bac de quarantaine</span>
-            <select
-              class="control-panel__select"
-              data-quarantine-tank
-              (change)="quarantineTarget.set(+$any($event.target).value)"
-            >
-              @for (tank of quarantine().tanks; track tank.id) {
-                <option [value]="tank.id" [selected]="tank.id === chosen.id">
-                  {{ tank.name
-                  }}{{
-                    tank.sick > 0
-                      ? ' (' + tank.sick + ' malade' + (tank.sick > 1 ? 's' : '') + ')'
-                      : ''
-                  }}
-                </option>
-              }
-            </select>
-          </label>
-          <div class="control-panel__row" role="group" aria-label="Soigner la quarantaine">
-            @for (kind of treatmentKinds; track kind) {
-              <button
-                type="button"
-                class="control-panel__button control-panel__button--compact"
-                [attr.data-quarantine-treatment]="kind"
-                [attr.aria-label]="'Quarantaine : ' + treatments[kind].aria"
-                [attr.title]="treatmentTitle(kind)"
-                (click)="quarantineTreated.emit({ id: chosen.id, kind })"
-              >
-                {{ treatments[kind].button }}
-              </button>
-            }
-          </div>
-          @if (chosen.filter !== null) {
-            <!-- Filtre neuf du bac posé (#553, #538) : l'amorce de bactéries s'y verse
-                 d'ici, le bac posé n'étant pas sélectionnable (ADR 0075). Une ligne, tant
-                 que le filtre n'est pas mûr. -->
-            <div class="control-panel__row" role="group" aria-label="Filtre de la quarantaine">
-              <button
-                type="button"
-                class="control-panel__button control-panel__button--compact"
-                data-quarantine-starter
-                [attr.aria-label]="
-                  chosen.name + ' : verser une dose d’amorce de bactéries nitrifiantes'
-                "
-                title="Source : docs/SOINS.md § 1.1 (étiquette Stability, secondaire) ; gain du filtre : approximation de jeu."
-                (click)="quarantineStarter.emit(chosen.id)"
-              >
-                Bactéries
-              </button>
-              <span class="control-panel__note" data-quarantine-filter>
-                Filtre neuf : efficace à {{ chosen.filter }} %
-              </span>
-            </div>
-          }
-          @if (chosen.species.length > 0) {
-            <label class="control-panel__field">
-              <span class="control-panel__label">Animal à ramener</span>
-              <select
-                class="control-panel__select"
-                data-quarantine-species
-                (change)="quarantineSpecies.set($any($event.target).value)"
-              >
-                @for (id of chosen.species; track id) {
-                  <option [value]="id" [selected]="id === quarantineSpeciesChoice()">
-                    {{ speciesName(id) }}
-                  </option>
-                }
-              </select>
-            </label>
-            <button
-              type="button"
-              class="control-panel__button"
-              data-quarantine-return
-              (click)="onQuarantineReturn(chosen.id)"
-            >
-              Ramener au bac affiché
-            </button>
-          }
-        }
-        <p class="control-panel__note" data-quarantine-duration>{{ quarantineDuration }}</p>
-      </div>
+      <div
+        class="control-panel__quarantine"
+        role="group"
+        aria-label="Quarantaine"
+        data-quarantine
+        app-quarantine-section
+        [environment]="environment()"
+        [careMode]="careMode()"
+        [quarantine]="quarantine()"
+        (quarantineTreated)="quarantineTreated.emit($event)"
+        (quarantineStarter)="quarantineStarter.emit($event)"
+        (quarantineReturned)="quarantineReturned.emit($event)"
+      ></div>
     }
     @if (tankList().length > 1) {
       <!-- Renommer un bac (#316) : le bac sélectionné par défaut, nom borné. Dès deux
@@ -397,9 +328,6 @@ export class TanksSection {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly injector = inject(Injector);
 
-  protected readonly treatmentKinds = TREATMENT_KINDS;
-  protected readonly treatments = TREATMENTS;
-  protected readonly treatmentTitle = treatmentTitle;
   protected readonly severityLabels = ALERT_SEVERITY_LABELS;
   protected readonly careModeLabels = CARE_MODE_LABELS;
   protected readonly unsuitableTitle = unsuitableTitle;
@@ -458,19 +386,6 @@ export class TanksSection {
       this.quarantine().sickHere > 0 &&
       this.quarantine().tanks.length === 0,
   );
-  protected readonly quarantineTarget = signal<number | null>(null);
-  protected readonly quarantineSpecies = signal<string | null>(null);
-  /** Bac de quarantaine choisi : le dernier choix s'il existe encore, sinon le dernier posé. */
-  protected readonly quarantineChoice = computed(() => {
-    const tanks = this.quarantine().tanks;
-    const wanted = this.quarantineTarget();
-    return tanks.find((tank) => tank.id === wanted) ?? tanks[tanks.length - 1] ?? null;
-  });
-  protected readonly quarantineSpeciesChoice = computed(() => {
-    const list = this.quarantineChoice()?.species ?? [];
-    const wanted = this.quarantineSpecies();
-    return list.find((id) => id === wanted) ?? list[0] ?? null;
-  });
 
   /** Confirmation du changement de mode en cours (#278) : mode demandé, ou `null`. */
   protected readonly confirmMode = signal<CareMode | null>(null);
@@ -511,13 +426,6 @@ export class TanksSection {
         this.host.nativeElement.querySelector<HTMLSelectElement>('[data-quarantine-tank]')?.focus(),
       { injector: this.injector },
     );
-  }
-
-  protected onQuarantineReturn(fromId: number): void {
-    const species = this.quarantineSpeciesChoice();
-    if (species !== null) {
-      this.quarantineReturned.emit({ fromId, species });
-    }
   }
 
   protected onTransfer(): void {

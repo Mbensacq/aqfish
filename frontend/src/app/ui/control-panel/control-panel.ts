@@ -11,18 +11,16 @@ import {
   signal,
 } from '@angular/core';
 
-import { DEFAULT_ENVIRONMENT_ID, environmentById, type EnvironmentId } from '../../sim/environment';
+import { DEFAULT_ENVIRONMENT_ID, type EnvironmentId } from '../../sim/environment';
 import { DEFAULT_POND_SHAPE, type PondShape } from '../../sim/pond-shape';
-import { ReducedMotionState } from '../reduced-motion/reduced-motion-state';
-import { AmbientSoundState } from '../ambient-sound/ambient-sound-state';
-import { formatHour, HOUR_SLIDER_STEP, HOURS_PER_DAY, NOON_HOUR } from '../../sim/daylight';
+import { NOON_HOUR } from '../../sim/daylight';
 import { NO_FISH, type PopulationCounts } from '../../sim/population';
 import type { SaveMessage, SaveStatus } from '../../core/save-storage/save-storage';
 import { DEFAULT_FOOD_STYLE, type FoodStyle } from '../../core/food-style/food-style';
 import { isRoomAvailable } from '../../sim/room';
 import type { RoomCatalog, TankNotice } from '../aquarium-host/aquarium-host';
 import type { TankListEntry } from '../../sim/tank-list';
-import { DEFAULT_SIM_SPEED, SIM_SPEEDS, speedLabel, type SimSpeed } from '../../sim/sim-speed';
+import { DEFAULT_SIM_SPEED, type SimSpeed } from '../../sim/sim-speed';
 import type { CareMode } from '../../sim/care-mode';
 import type { CurrentLevel } from '../../sim/water-current';
 import type { SpeciesId } from '../../sim/species';
@@ -33,9 +31,14 @@ import type { PhRegulatorDirection } from '../../sim/ph-regulator';
 import type { ConditionerKind } from '../../sim/water-conditioner';
 import type { GuidePage } from '../../sim/care-guide';
 import { DEFAULT_WATER_READOUT, type WaterReadout } from '../../sim/water-quality';
-import { formNumber, isQuarantineShown } from './panel-views';
+import { isQuarantineShown } from './panel-views';
+import { AccessibilitySection } from './accessibility-section';
 import { CareSection } from './care-section';
+import { DaySection } from './day-section';
+import { DecorSection } from './decor-section';
 import { EnvironmentSection } from './environment-section';
+import { SimulationSection } from './simulation-section';
+import { SoundSection } from './sound-section';
 import { SaveSection } from './save-section';
 import { WaterSection } from './water-section';
 import { PopulationSection, type PopulationRequest } from './population-section';
@@ -72,29 +75,9 @@ export { speedLabel } from '../../sim/sim-speed';
 /** Identifiant de la région du panneau (cible de `aria-controls`). */
 export const CONTROL_PANEL_ID = 'panneau-controle';
 
-/**
- * Rang d'une vitesse dans `SIM_SPEEDS` (valeur du curseur), celui de la vitesse par défaut
- * pour une valeur inconnue.
- */
-export function speedIndex(speed: number): number {
-  const index = (SIM_SPEEDS as readonly number[]).indexOf(speed);
-  return index >= 0 ? index : SIM_SPEEDS.indexOf(DEFAULT_SIM_SPEED);
-}
-
-/**
- * Vitesse au rang `index` du curseur (valeur de l'élément `input`, donc une chaîne), `null`
- * si le rang n'existe pas.
- */
-export function speedAt(index: string | number): SimSpeed | null {
-  const i = formNumber(index);
-  return Number.isInteger(i) && i >= 0 && i < SIM_SPEEDS.length ? SIM_SPEEDS[i] : null;
-}
-
-/** Heure lue sur le curseur d'heure (une chaîne), `null` si elle n'est pas dans [0, 24). */
-export function sliderHour(value: string | number): number | null {
-  const hour = formNumber(value);
-  return Number.isFinite(hour) && hour >= 0 && hour < HOURS_PER_DAY ? hour : null;
-}
+/** Lecture des curseurs de vitesse et d'heure (sections « Simulation » et « Journée »). */
+export { speedAt, speedIndex } from './simulation-section';
+export { sliderHour } from './day-section';
 
 /**
  * Panneau de contrôle repliable (issue #52, docs/DA.md, « Interface ») : vitesse de la
@@ -129,8 +112,13 @@ export function sliderHour(value: string | number): number | null {
   selector: 'app-control-panel',
   imports: [
     EnvironmentSection,
+    SimulationSection,
+    DaySection,
     WaterSection,
     CareSection,
+    DecorSection,
+    AccessibilitySection,
+    SoundSection,
     PopulationSection,
     RoomSection,
     TanksSection,
@@ -172,71 +160,24 @@ export function sliderHour(value: string | number): number | null {
           class="control-panel__section"
           data-section="simulation"
           aria-labelledby="panneau-simulation-titre"
-        >
-          <!-- Mode immersif (#345) : sur la ligne du titre, le panneau ne grandit pas (#101). -->
-          <legend class="control-panel__legend control-panel__legend--row">
-            <span id="panneau-simulation-titre">Simulation</span>
-            <button
-              type="button"
-              class="control-panel__edit"
-              data-immersive-open
-              (click)="immersiveRequested.emit()"
-            >
-              Mode immersif
-            </button>
-          </legend>
-          <label class="control-panel__field" for="panneau-vitesse">
-            <span class="control-panel__label">
-              Vitesse <output class="control-panel__value">{{ speedText() }}</output>
-            </span>
-            <input
-              id="panneau-vitesse"
-              class="control-panel__range"
-              aria-label="Vitesse de la simulation"
-              type="range"
-              min="0"
-              [attr.max]="speeds.length - 1"
-              step="1"
-              [value]="speedIndex()"
-              [attr.aria-valuetext]="speedText()"
-              (input)="onSpeed($event)"
-            />
-          </label>
-        </fieldset>
+          app-simulation-section
+          [speed]="speed()"
+          (speedChanged)="speedChanged.emit($event)"
+          (immersiveRequested)="immersiveRequested.emit()"
+        ></fieldset>
 
-        <fieldset class="control-panel__section" data-section="journee">
-          <legend class="control-panel__legend">Journée</legend>
-          <label class="control-panel__field" for="panneau-heure">
-            <span class="control-panel__label">
-              Heure <output class="control-panel__value">{{ hourText() }}</output>
-            </span>
-            <input
-              id="panneau-heure"
-              class="control-panel__range"
-              aria-label="Heure de la journée"
-              type="range"
-              min="0"
-              [attr.max]="maxHour"
-              [attr.step]="hourStep"
-              [value]="hour()"
-              [attr.aria-valuetext]="hourText()"
-              (input)="onHour($event)"
-            />
-          </label>
-          <!-- Pluie (#106), bassin seulement : sur la même ligne, le panneau ne grandit pas (#101). -->
-          <div class="control-panel__row">
-            <label class="control-panel__check">
-              <input type="checkbox" [checked]="clockRunning()" (change)="onClockRunning($event)" />
-              Heure automatique
-            </label>
-            @if (rainAvailable()) {
-              <label class="control-panel__check" data-rain>
-                <input type="checkbox" [checked]="rain()" (change)="onRain($event)" />
-                Pluie
-              </label>
-            }
-          </div>
-        </fieldset>
+        <fieldset
+          class="control-panel__section"
+          data-section="journee"
+          app-day-section
+          [environment]="environment()"
+          [hour]="hour()"
+          [clockRunning]="clockRunning()"
+          [rain]="rain()"
+          (hourChanged)="hourChanged.emit($event)"
+          (clockRunningChanged)="clockRunningChanged.emit($event)"
+          (rainChanged)="rainChanged.emit($event)"
+        ></fieldset>
 
         <!-- Eau (#207) : ce qui se règle seulement, « Changer l'eau » sur la ligne du titre puis
              le chauffage ; les jauges sont dans le tableau de bord (#256). -->
@@ -291,96 +232,27 @@ export function sliderHour(value: string | number): number | null {
           class="control-panel__section"
           data-section="decor"
           aria-labelledby="panneau-decor-titre"
-        >
-          <!-- Éditeur (#167) : sur la ligne du titre, le panneau ne grandit pas (#101). -->
-          <legend class="control-panel__legend control-panel__legend--row">
-            <span id="panneau-decor-titre">Décor</span>
-            <button
-              type="button"
-              class="control-panel__edit"
-              data-decor-edit
-              [attr.aria-disabled]="!decorEditable()"
-              [attr.aria-label]="
-                decorEditable() ? 'Éditer le décor' : 'Éditer le décor (bac tropical seulement)'
-              "
-              [attr.title]="decorEditable() ? null : 'Bac tropical seulement'"
-              (click)="onEdit()"
-            >
-              Éditer le décor
-            </button>
-          </legend>
-          <!-- Granulés (#117) : sur la même ligne, le panneau tient sans défiler à 1280 × 720 (#101). -->
-          <div class="control-panel__row">
-            <label class="control-panel__check">
-              <input type="checkbox" [checked]="decorVisible()" (change)="onDecor($event)" />
-              Afficher le décor
-            </label>
-            <button
-              type="button"
-              class="control-panel__button control-panel__button--compact"
-              data-food-style
-              [attr.aria-label]="'Granulés : ' + foodStyle() + ', changer de rendu'"
-              (click)="foodStyleToggled.emit()"
-            >
-              Granulés : {{ foodStyle() }}
-            </button>
-          </div>
-        </fieldset>
+          app-decor-section
+          [decorVisible]="decorVisible()"
+          [decorEditable]="decorEditable()"
+          [foodStyle]="foodStyle()"
+          (decorVisibleChanged)="decorVisibleChanged.emit($event)"
+          (editRequested)="editRequested.emit()"
+          (foodStyleToggled)="foodStyleToggled.emit()"
+        ></fieldset>
 
-        <!-- Accessibilité (#406) : initialisée sur la préférence système, choix mémorisé. Juste
-             après « Décor », dans la première colonne du panneau à 1280 × 720, où il reste de
-             la place (docs/PIEGES.md). -->
-        <fieldset class="control-panel__section" data-section="accessibilite">
-          <legend class="control-panel__legend">Accessibilité</legend>
-          <label class="control-panel__check" data-reduced-motion>
-            <input type="checkbox" [checked]="reducedMotion()" (change)="onReducedMotion($event)" />
-            Réduire les mouvements
-          </label>
-        </fieldset>
+        <!-- Accessibilité (#406) : juste après « Décor », dans la première colonne du panneau à
+             1280 × 720, où il reste de la place (docs/PIEGES.md). -->
+        <fieldset
+          class="control-panel__section"
+          data-section="accessibilite"
+          app-accessibility-section
+        ></fieldset>
 
-        <!-- Son (#411, ADR 0100) : désactivé par défaut, case et volume sur une seule ligne,
-             juste après « Accessibilité » ; à 1280 × 720, en tête de la deuxième colonne, la
-             liste « Population » (qui défile) cède une ligne (docs/PIEGES.md). -->
-        <fieldset class="control-panel__section" data-section="son">
-          <legend class="control-panel__legend">Son</legend>
-          <div class="control-panel__row">
-            <label class="control-panel__check" data-ambient-sound>
-              <input
-                type="checkbox"
-                [checked]="soundEnabled()"
-                [attr.aria-disabled]="soundAvailable() ? null : 'true'"
-                [attr.aria-describedby]="soundAvailable() ? null : 'panneau-son-indisponible'"
-                (click)="onAmbientSoundClick($event)"
-                (change)="onAmbientSound($event)"
-              />
-              Sons d'ambiance
-            </label>
-            <input
-              class="control-panel__range control-panel__count-range"
-              type="range"
-              min="0"
-              max="100"
-              step="5"
-              aria-label="Volume des sons d'ambiance"
-              data-ambient-volume
-              [value]="soundVolume()"
-              [attr.aria-valuetext]="soundVolume() + ' %'"
-              [attr.aria-disabled]="soundAvailable() ? null : 'true'"
-              [attr.aria-describedby]="soundAvailable() ? null : 'panneau-son-indisponible'"
-              (input)="onAmbientVolume($event)"
-            />
-          </div>
-          @if (!soundAvailable()) {
-            <p class="control-panel__message" id="panneau-son-indisponible">
-              @if (soundRefused()) {
-                Sons indisponibles : le navigateur a refusé de démarrer l'audio. Recharger la page
-                pour réessayer.
-              } @else {
-                Sons indisponibles : ce navigateur ne prend pas en charge Web Audio.
-              }
-            </p>
-          }
-        </fieldset>
+        <!-- Son (#411, ADR 0100) : juste après « Accessibilité » ; à 1280 × 720, en tête de la
+             deuxième colonne, la liste « Population » (qui défile) cède une ligne
+             (docs/PIEGES.md). -->
+        <fieldset class="control-panel__section" data-section="son" app-sound-section></fieldset>
 
         @if (roomAvailable() && roomShown()) {
           <!-- Bacs et meubles de la pièce (#305, lot 2b) : ajout à la première place libre,
@@ -622,41 +494,17 @@ export class ControlPanel {
   readonly opened = output<void>();
 
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
-  /** Option « Réduire les mouvements » (#406), partagée avec l'aquarium et le mode immersif. */
-  private readonly motionState = inject(ReducedMotionState);
-  /** État effectif de l'option (choix des réglages, sinon préférence système). */
-  readonly reducedMotion = this.motionState.reduced;
-  /** Sons d'ambiance (#411), partagés avec l'hôte de l'aquarium qui fournit la scène. */
-  private readonly sound = inject(AmbientSoundState);
-  /** Case « Sons d'ambiance » cochée. */
-  readonly soundEnabled = this.sound.enabled;
-  /** Web Audio utilisable ; sinon case et curseur désactivés, avec une explication. */
-  readonly soundAvailable = this.sound.available;
-  /** Web Audio présent mais création du contexte refusée (#413) : autre explication. */
-  readonly soundRefused = this.sound.refused;
-  /** Volume en pour cent, pour le curseur. */
-  readonly soundVolume = computed(() => Math.round(this.sound.volume() * 100));
 
   /** Panneau déplié (fermé par défaut : captures et premier regard inchangés). */
   readonly open = signal(false);
 
   protected readonly panelId = CONTROL_PANEL_ID;
-  protected readonly speeds = SIM_SPEEDS;
   /** Panneau sur une colonne qui défile tant qu'une quarantaine est affichée (#571). */
   protected readonly quarantineShown = computed(() =>
     isQuarantineShown(this.careMode(), this.quarantine()),
   );
-  /** Case « Pluie » proposée seulement là où il peut pleuvoir (le bassin, #106). */
-  protected readonly rainAvailable = computed(() => environmentById(this.environment()).rain);
   /** Case « Afficher la pièce » proposée seulement autour du bac tropical (#187). */
   protected readonly roomAvailable = computed(() => isRoomAvailable(this.environment()));
-  protected readonly hourStep = HOUR_SLIDER_STEP;
-  /** Dernier cran du curseur d'heure : 23:45 (24:00 serait minuit, déjà au cran 0). */
-  protected readonly maxHour = HOURS_PER_DAY - HOUR_SLIDER_STEP;
-
-  protected readonly speedIndex = computed(() => speedIndex(this.speed()));
-  protected readonly speedText = computed(() => speedLabel(this.speed()));
-  protected readonly hourText = computed(() => formatHour(this.hour()));
   /** Section « Soins » (#361) : en mode soins, avec des points blancs ou un traitement. */
   protected readonly careShown = computed(
     () => this.careMode() !== 'decor' && (this.ichCount() > 0 || this.treatment() !== null),
@@ -687,71 +535,5 @@ export class ControlPanel {
     event.preventDefault();
     this.open.set(false);
     this.host.nativeElement.querySelector<HTMLElement>('.control-panel__toggle')?.focus();
-  }
-
-  protected onSpeed(event: Event): void {
-    const speed = speedAt((event.target as HTMLInputElement).value);
-    if (speed !== null) {
-      this.speedChanged.emit(speed);
-    }
-  }
-
-  protected onHour(event: Event): void {
-    const hour = sliderHour((event.target as HTMLInputElement).value);
-    if (hour !== null) {
-      this.hourChanged.emit(hour);
-    }
-  }
-
-  protected onClockRunning(event: Event): void {
-    this.clockRunningChanged.emit((event.target as HTMLInputElement).checked);
-  }
-
-  protected onRain(event: Event): void {
-    this.rainChanged.emit((event.target as HTMLInputElement).checked);
-  }
-
-  /** Case « Réduire les mouvements » (#406) : réglée et mémorisée dans l'état partagé. */
-  protected onReducedMotion(event: Event): void {
-    this.motionState.setReduced((event.target as HTMLInputElement).checked);
-  }
-
-  /**
-   * Sans Web Audio, la case reste atteignable au clavier (`aria-disabled`, comme « Éditer le
-   * décor ») mais ne se coche pas : le clic est annulé.
-   */
-  protected onAmbientSoundClick(event: Event): void {
-    if (!this.soundAvailable()) {
-      event.preventDefault();
-    }
-  }
-
-  /** Case « Sons d'ambiance » (#411) : le `change` est un geste, le contexte audio peut naître. */
-  protected onAmbientSound(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    this.sound.setEnabled(input.checked);
-    // Démarrage refusé (#413) : `enabled` repasse à faux dans le même geste, sans changer de
-    // valeur pour la liaison `[checked]` ; la case est donc recalée à la main.
-    input.checked = this.sound.enabled();
-  }
-
-  /** Curseur du volume (#411), en pour cent ; sans Web Audio, il revient à sa valeur. */
-  protected onAmbientVolume(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (!this.soundAvailable()) {
-      input.value = String(this.soundVolume());
-      return;
-    }
-    this.sound.setVolume(Number(input.value) / 100);
-  }
-
-  protected onEdit(): void {
-    if (this.decorEditable()) {
-      this.editRequested.emit();
-    }
-  }
-
-  protected onDecor(event: Event): void {
-    this.decorVisibleChanged.emit((event.target as HTMLInputElement).checked);
   }
 }

@@ -1,0 +1,7 @@
+// Section « Décor » (#167, #117, #697) : règles communes du panneau (`_panel-controls.scss`),
+// dans son ordre.
+@use 'panel-controls' as controls;
+
+@include controls.base;
+
+@include controls.rows;
