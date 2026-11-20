@@ -9512,7 +9512,7 @@
       "type": "fonctionnalite",
       "issue": 721,
       "pr": 750,
-      "version": null,
+      "version": "v1.26.3",
       "phases": {
         "planif": {
           "statut": "termine",
