@@ -184,6 +184,17 @@ découpé par section), qui fournit les sections réutilisées par la fenêtre :
    `index.html` (titre, description, image de partage `public/partage.png`). Le logo
    (`public/logo.svg`) sera posé dans l'en-tête au lot 4, avec la disposition.
 2. #722 — Fenêtre des réglages : fenêtre, catégories, déplacement de tous les contrôles, téléphone.
+   **Livré (cycle 263, partiel)** : la déclaration unique des catégories
+   (`ui/settings-window/settings-categories.ts` : groupe, titre, explication, sections
+   `data-section` réutilisées, contrôles portés ; un test vérifie que chaque section du panneau
+   actuel est dans une et une seule catégorie) et le composant de fenêtre bureau
+   (`ui/settings-window/settings-window.ts` : `dialog` et `aria-modal`, titre lié, fond assombri,
+   focus piégé, Échap, clic sur le fond, flèches haut et bas, `/` vers la recherche, contenu
+   projeté par le parent). **Reste** : brancher la fenêtre à la place du panneau
+   (`ui/control-panel/control-panel.ts`), rediriger les e2e qui ouvrent l'ancien panneau (~100
+   appels, et les tests de cadrage du panneau en colonnes), sortir les produits de la section
+   « Eau » vers « Soins et produits » et « Pluie » vers « Affichage » ; puis barre du bas,
+   préférence locale, panneaux exclusifs et téléphone.
 3. #723 — Population en tuiles et recherche dans les réglages.
 4. #724 — Habillage de toute la page selon la charte (tableau de bord, barres, aide-mémoire, wiki,
    pharmacie, bilan, guide, parcours du premier bac), textes revus.
