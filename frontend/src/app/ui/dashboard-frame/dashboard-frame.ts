@@ -46,24 +46,28 @@ export const DASHBOARD_GAUGES_ID = 'tableau-de-bord-jauges';
 export const DASHBOARD_CURVE_ID = 'tableau-de-bord-courbe';
 
 /**
- * Couleurs du cadre (docs/DA.md, « Interface ») : fond sombre translucide, texte clair,
- * couleurs de niveau de l'indicateur de qualité (ADR 0053). Posées en variables CSS par le
- * composant, pour que le test de contraste porte sur les valeurs réellement affichées.
+ * Couleurs du cadre, celles de la charte (`ui/_panel-layout.scss`, #721) : panneau plein,
+ * encre, et les trois couleurs d'état pour les niveaux de l'indicateur de qualité (ADR 0053),
+ * toujours doublées d'un mot ou d'un symbole. Posées en variables CSS par le composant, pour
+ * que le test de contraste porte sur les valeurs réellement affichées.
  */
 export const DASHBOARD_COLORS = {
-  background: '#141418',
-  ink: '#e8e6e3',
-  vert: '#a8e6cf',
-  orange: '#f0d68a',
-  rouge: '#f2a39a',
+  background: '#1b1f23',
+  ink: '#ebe7de',
+  vert: '#7db88c',
+  orange: '#e8955f',
+  rouge: '#ec6a5c',
 } as const satisfies Record<'background' | 'ink' | GaugeLevel, string>;
 
-/** Opacité du fond du cadre. */
-export const DASHBOARD_BACKGROUND_ALPHA = 0.88;
+/** Opacité du fond du cadre : plein (charte #721, jamais translucide). */
+export const DASHBOARD_BACKGROUND_ALPHA = 1;
 /** Opacité des noms de jauge, plus discrets que les valeurs. */
 export const DASHBOARD_MUTED_ALPHA = 0.78;
-/** Opacité du cadre au repos (ni survol ni focus) ; 1 au survol et au focus. */
-export const DASHBOARD_REST_OPACITY = 0.85;
+/**
+ * Opacité du cadre au repos (ni survol ni focus) : pleine depuis la charte (#721), comme
+ * celle de tous les panneaux ; la variable reste posée pour le survol et le focus.
+ */
+export const DASHBOARD_REST_OPACITY = 1;
 
 /** Flèche affichée de chaque tendance (le texte lu est dans `aria-valuetext`). */
 export const TREND_ARROWS: Readonly<Record<Trend, string>> = {

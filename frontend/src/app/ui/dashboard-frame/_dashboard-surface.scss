@@ -1,7 +1,7 @@
 // Déclarations communes au cadre haut (`dashboard-frame.scss`) et au bandeau bas
 // (`dashboard-status.scss`) du tableau de bord (#265), et au badge du mode décor qui les
 // remplace (`decor-badge.scss`, #320) : une seule police, une seule surface sombre
-// translucide, une seule place (`top-slot`). Couleurs et opacités : variables posées par
+// pleine, une seule place (`top-slot`). Couleurs et opacités : variables posées par
 // le cadre (`DASHBOARD_COLORS`), celles que le test de contraste vérifie.
 
 @use '../panel-layout' as layout;
@@ -43,17 +43,15 @@
 /// Police du tableau de bord, à poser sur l'hôte : sans elle, le texte prend la police par
 /// défaut du navigateur (à empattements).
 @mixin font {
-  font:
-    400 12px / 1.25 system-ui,
-    sans-serif;
+  font: 400 12px / 1.25 layout.$font-text;
 }
 
-/// Surface translucide aux coins arrondis, discrète au repos, pleine au survol ou au focus.
+/// Surface pleine (charte #721), opacité au repos posée par le composant.
 @mixin surface {
   box-sizing: border-box;
   max-width: 100%;
-  border: 1px solid rgb(232 230 227 / 8%);
-  border-radius: 10px;
+  border: 1px solid layout.$panel-rule;
+  border-radius: layout.$radius-window;
   background: color-mix(
     in srgb,
     var(--dashboard-background) calc(var(--dashboard-background-alpha) * 100%),

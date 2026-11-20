@@ -2,15 +2,15 @@
 @use '../panel-layout' as layout;
 
 // Couleur d'accent du mode (cases à cocher, focus, carte d'étalonnage), #390.
-$accent: #f2c14e;
+$accent: layout.$brass;
 
 :host {
   position: fixed;
   inset: 0;
   z-index: 50;
   display: block;
-  background: #000;
-  color: #f2efe6;
+  background: layout.$room;
+  color: layout.$panel-ink;
   font: inherit;
 }
 
@@ -45,8 +45,8 @@ $accent: #f2c14e;
 .immersive__calibration {
   margin: 0;
   padding: 6px 10px;
-  border-radius: 10px;
-  background: rgb(20 20 24 / 72%); // #141418, comme la barre des vues
+  border-radius: layout.$radius-window;
+  background: layout.$panel-background;
   font-size: 0.85rem;
 }
 
@@ -58,8 +58,8 @@ $accent: #f2c14e;
   margin: 0;
   padding: 4px 10px;
   border: 0;
-  border-radius: 10px;
-  background: rgb(20 20 24 / 72%);
+  border-radius: layout.$radius-window;
+  background: layout.$panel-background;
   font-size: 0.85rem;
 }
 
@@ -96,9 +96,9 @@ $accent: #f2c14e;
 .immersive__button {
   min-height: 44px;
   padding: 0 14px;
-  border: 1px solid rgb(242 239 230 / 35%);
-  border-radius: 8px;
-  background: rgb(20 20 24 / 85%);
+  border: 1px solid layout.$panel-border;
+  border-radius: layout.$radius-control;
+  background: layout.$panel-background;
   color: inherit;
   font: inherit;
   cursor: pointer;
@@ -142,7 +142,7 @@ $accent: #f2c14e;
 
 .immersive__card {
   border: 2px dashed $accent;
-  border-radius: 3.18mm; // coins de la carte ID-1, à l'échelle CSS (indicatif)
+  border-radius: layout.$radius-id-card;
   box-sizing: border-box;
 }
 

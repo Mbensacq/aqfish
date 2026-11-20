@@ -31,19 +31,19 @@ Point de départ à affiner par PR, captures à l'appui. La palette effective (c
 ci-dessous et tons de transition ajoutés depuis) est déclarée dans `render/palette.ts` ;
 la passe de post-traitement y ramène chaque pixel affiché (ADR 0007).
 
-| Usage                   | Couleurs                                                                               |
-| ----------------------- | -------------------------------------------------------------------------------------- |
-| Eau (profonde → claire) | `#0d3b3f` `#1b5e5a` `#2e8b7a` `#5fbfa3` `#a8e6cf`                                      |
-| Sable et roche          | `#e3cf9e` `#c9b38a` `#a8916a` `#6e6a63` `#45423e`                                      |
-| Végétation              | `#163d22` `#1f4d2b` `#2f6b3a` `#4e9a4a` `#8fd16a`                                      |
-| Koïs                    | rouge `#d94a3a`, blanc cassé `#f2ead8`, noir `#1c1c22`, orange `#f08a2c`, or `#f2c14e` |
-| Petits poissons         | bleu néon `#3fa9f5`, rouge néon `#e63946`, jaune `#ffd166`, rose `#f4978e`             |
-| Amphibiens              | axolotl rose `#f7b2bd`, grenouille `#7bc950`, triton `#e07a2f` (ventre, ADR 0064)       |
-| Fleurs                  | nénuphar rose `#f06a9b`, cœur `#ffb703`                                                |
-| Interface               | salle `#141418`, panneau plein `#1b1f23`, encre `#ebe7de`, laiton `#d1a65c` (`docs/INTERFACE.md`) |
-| Récif (tons d'environnement) | eau `#3f7597`, eau sous la surface `#4796cb`, corail violet `#7d4fb8` et `#b58be6`, poisson-clown `#ff6d00`, chirurgien `#1d3fbf` |
-| Ciel couvert (tons réservés à la pluie, ADR 0082) | herbe `#42833f`, touffes `#7ab25a`, roche `#5e5a54` et `#3a3934`, terre `#74654d` : couleurs du bassin à 85 % |
-| Nourriture (tons réservés aux granulés, ADR 0056) | ocre `#a0703a`, brun-rouge `#8c4630`, brun `#6b4428` ; plus `#a8916a` (beige) de la palette commune |
+| Usage                                             | Couleurs                                                                                                                          |
+| ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Eau (profonde → claire)                           | `#0d3b3f` `#1b5e5a` `#2e8b7a` `#5fbfa3` `#a8e6cf`                                                                                 |
+| Sable et roche                                    | `#e3cf9e` `#c9b38a` `#a8916a` `#6e6a63` `#45423e`                                                                                 |
+| Végétation                                        | `#163d22` `#1f4d2b` `#2f6b3a` `#4e9a4a` `#8fd16a`                                                                                 |
+| Koïs                                              | rouge `#d94a3a`, blanc cassé `#f2ead8`, noir `#1c1c22`, orange `#f08a2c`, or `#f2c14e`                                            |
+| Petits poissons                                   | bleu néon `#3fa9f5`, rouge néon `#e63946`, jaune `#ffd166`, rose `#f4978e`                                                        |
+| Amphibiens                                        | axolotl rose `#f7b2bd`, grenouille `#7bc950`, triton `#e07a2f` (ventre, ADR 0064)                                                 |
+| Fleurs                                            | nénuphar rose `#f06a9b`, cœur `#ffb703`                                                                                           |
+| Interface                                         | salle `#141418`, panneau plein `#1b1f23`, encre `#ebe7de`, laiton `#d1a65c` (`docs/INTERFACE.md`)                                 |
+| Récif (tons d'environnement)                      | eau `#3f7597`, eau sous la surface `#4796cb`, corail violet `#7d4fb8` et `#b58be6`, poisson-clown `#ff6d00`, chirurgien `#1d3fbf` |
+| Ciel couvert (tons réservés à la pluie, ADR 0082) | herbe `#42833f`, touffes `#7ab25a`, roche `#5e5a54` et `#3a3934`, terre `#74654d` : couleurs du bassin à 85 %                     |
+| Nourriture (tons réservés aux granulés, ADR 0056) | ocre `#a0703a`, brun-rouge `#8c4630`, brun `#6b4428` ; plus `#a8916a` (beige) de la palette commune                               |
 
 **Nourriture** (#226) : des grains mats, pas des taches. Petits voxels (grain, flocon,
 paillette) de tons de nourriture réelle, une nuance par granulé, ombrés par face (dessus
@@ -51,13 +51,13 @@ clair, flancs plus sombres), sans liseré ; contraste avec le sable et la roche 
 
 ## Environnements visés
 
-| Environnement            | Ambiance                                                                  | Habitants possibles                                   |
-| ------------------------ | ------------------------------------------------------------------------- | ----------------------------------------------------- |
-| Bac tropical d'eau douce | Bac planté, lumière chaude                                                | Néons, guppys, corydoras, scalaires, crevettes        |
-| Bassin extérieur à koïs  | Vue de dessus privilégiée, nénuphars, lotus, pluie, feuilles qui flottent | Koïs, poissons rouges, grenouilles en bordure         |
+| Environnement            | Ambiance                                                                  | Habitants possibles                                                    |
+| ------------------------ | ------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Bac tropical d'eau douce | Bac planté, lumière chaude                                                | Néons, guppys, corydoras, scalaires, crevettes                         |
+| Bassin extérieur à koïs  | Vue de dessus privilégiée, nénuphars, lotus, pluie, feuilles qui flottent | Koïs, poissons rouges, grenouilles en bordure                          |
 | Paludarium               | Partie terrestre et partie aquatique, mousses, racines                    | Sonneurs orientaux et tritons à ventre de feu (terre et eau, ADR 0065) |
-| Bac d'eau froide         | Eau fraîche plus sombre, sans courant ni bulles, sable, plantes au fond   | Axolotls seuls (ADR 0065)                             |
-| Récif marin              | Coraux colorés, lumière bleutée                                           | Poissons-clowns, chirurgiens, anémones                |
+| Bac d'eau froide         | Eau fraîche plus sombre, sans courant ni bulles, sable, plantes au fond   | Axolotls seuls (ADR 0065)                                              |
+| Récif marin              | Coraux colorés, lumière bleutée                                           | Poissons-clowns, chirurgiens, anémones                                 |
 
 Les espèces sont décrites de façon **déclarative** (taille, silhouette, motifs, couleurs,
 comportement, environnements compatibles, température), puis leurs modèles sont générés par
@@ -70,13 +70,13 @@ sable clair. Les espèces autres que le néon n'empruntent pas le bleu et le rou
 (mesures de banc sur image).
 
 Les **koïs** du bassin (#88, ADR 0027) ont trois robes, tirées de la graine pour chaque
-individu : *kohaku* (blanc cassé taché de rouge koï), *orenji* (orange koï, ventre et
-nageoires or) et *sanke* (blanc cassé taché de rouge et de noir). Le motif est porté par le
+individu : _kohaku_ (blanc cassé taché de rouge koï), _orenji_ (orange koï, ventre et
+nageoires or) et _sanke_ (blanc cassé taché de rouge et de noir). Le motif est porté par le
 dos, seul visible de dessus ; le corps est effilé au pédoncule et au museau vu de dessus.
 
 Les **poissons rouges** du bassin (#654, ADR 0147) reprennent la palette des koïs, en trois
-robes tirées de la graine : *commun* (orange koï, ventre or), *sarasa* (dos rouge koï, flanc et
-ventre blanc cassé) et *jaune* (dos or, flanc jaune, ventre blanc cassé). Silhouette propre,
+robes tirées de la graine : _commun_ (orange koï, ventre or), _sarasa_ (dos rouge koï, flanc et
+ventre blanc cassé) et _jaune_ (dos or, flanc jaune, ventre blanc cassé). Silhouette propre,
 plus courte et plus haute que la koï, haute dorsale et caudale fourchue ; dos toujours clair ou
 vif pour se détacher de l'eau sombre du bassin.
 
@@ -91,15 +91,15 @@ crête dorsale, pattes et nageoire de la queue rose poisson, trois branchies de 
 la tête en rose nénuphar (plus soutenu que le corps, pour qu'elles se lisent de profil comme
 de dessus, où elles dépassent des flancs). Il reste rose sur le sable clair du fond.
 
-La **grenouille** du paludarium (#131, ADR 0036), sonneur oriental (*Bombina orientalis*)
+La **grenouille** du paludarium (#131, ADR 0036), sonneur oriental (_Bombina orientalis_)
 depuis #270 (ADR 0064) : corps trapu vert grenouille taché de noir (`koiNoir`), ventre rouge
 (`koiRouge`, le « ventre de feu », rangée basse du corps), deux yeux noirs posés de chaque côté du
 haut de la tête (un œil en bandeau sur le dessus se lisait comme un chapeau noir), cuisses
 et pieds vert sombre qui dépassent des flancs vu de dessus. À la nage, le dos et les yeux
 restent au-dessus de la surface : elle se lit sur l'eau claire du rivage.
 
-Le **triton** du paludarium (#133, ADR 0037), triton à ventre de feu chinois (*Cynops
-orientalis*) depuis #270 (ADR 0064) : corps fin et longue queue noirs (`koiNoir`), ventre
+Le **triton** du paludarium (#133, ADR 0037), triton à ventre de feu chinois (_Cynops
+orientalis_) depuis #270 (ADR 0064) : corps fin et longue queue noirs (`koiNoir`), ventre
 orange triton (`tritonOrange`), quelques taches orange sur le dos et les flancs. Un dos gris
 roche (`rocheSombre`), essayé d'abord, se confondait avec les racines et rochers de la berge.
 
@@ -166,9 +166,12 @@ devant lui garde son vert ; aucune couleur ajoutée à la palette.
 ## Interface
 
 - **Charte « la salle d'aquarium » et fenêtre des réglages : `docs/INTERFACE.md`** (décision
-  de Mathis du 2026-11-18). Elle fait foi sur les points ci-dessous qui la contredisent tant
-  que ses lots ne sont pas livrés : panneaux pleins (plus de translucidité), coins à 2 px,
-  accent laiton `#d1a65c` réservé aux actions, Atkinson Hyperlegible Next et Mono.
+  de Mathis du 2026-11-18). Lot 1 livré (#721) : jetons de couleurs, coins, opacités et
+  polices dans `ui/_panel-layout.scss`, **seul endroit** où une couleur, un rayon ou une
+  opacité s'écrit (`ui/charte-jetons.spec.ts` le vérifie sur toutes les feuilles) ; panneaux
+  pleins, coins à 2 px (contrôles) et 4 px (fenêtres), laiton `#d1a65c` pour l'action, la
+  sélection et le focus, intitulés en casse de phrase. Icône du site et logo :
+  `scripts/generer-icone.mjs` (un seul dessin de 16 × 16).
 - Minimale et discrète : l'interface s'efface devant le bac. Aucune interface en mode capture.
 - Icônes en pixel art, cohérentes avec la palette.
 - Police : Atkinson Hyperlegible Next pour le texte, Atkinson Hyperlegible Mono pour les
@@ -180,10 +183,11 @@ devant lui garde son vert ; aucune couleur ajoutée à la palette.
   replié (paysage de téléphone compris). Un nouveau panneau flottant suit la même règle
   (`ui/exclusive-panels`).
 - Tableau de bord de l'eau (#256, ADR 0059) : cadre sur le bord haut, jamais au centre du
-  bac ; niveaux vert (`#a8e6cf`), orange (`#f0d68a`) et rouge (`#f2a39a`) toujours doublés
-  d'un texte et d'une icône pixel art (coche, point d'exclamation, croix) ; opacité 0,85 au
-  repos, texte lu toujours à 4,5:1 au moins.
-- Focus clavier (#407, ADR 0099) : anneau turquoise `#5fbfa3` de 2 px cerné d'un halo
-  `#141418`, le même sur tous les contrôles ; texte des panneaux à 4,5:1 au moins sur une
-  scène de jour comme de nuit (fond à 72 % au moins sous un bouton, 88 % sous un panneau).
+  bac ; niveaux aux couleurs d'état de la charte, bon (`#7db88c`), à surveiller (`#e8955f`)
+  et danger (`#ec6a5c`), toujours doublés d'un texte et d'une icône pixel art (coche, point
+  d'exclamation, croix) ; plein au repos comme tous les panneaux (#721), texte lu toujours à
+  4,5:1 au moins.
+- Focus clavier (#407, ADR 0099) : anneau laiton `#d1a65c` de 2 px cerné d'un halo
+  `#141418`, le même sur tous les contrôles ; texte des panneaux à 4,5:1 au moins sur le
+  panneau (`#1b1f23`), le panneau élevé (`#232a30`) et la salle (`#141418`).
 - Textes en français.

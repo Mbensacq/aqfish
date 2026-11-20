@@ -1,5 +1,7 @@
-// Indicateur discret (docs/DA.md, « Interface ») : pastille sombre translucide en haut à
-// gauche, atténuée comme la barre des vues ; l'aide-mémoire occupe le haut à droite.
+// Indicateur discret (docs/DA.md, « Interface ») : pastille sombre pleine en haut à
+// gauche, comme la barre des vues ; l'aide-mémoire occupe le haut à droite.
+
+@use '../panel-layout' as layout;
 :host {
   position: fixed;
   top: 12px;
@@ -12,9 +14,8 @@
   display: block;
   box-sizing: content-box;
   padding: 6px;
-  border-radius: 10px;
-  background: rgb(20 20 24 / 72%); // #141418
-  opacity: 0.8;
+  border-radius: layout.$radius-window;
+  background: layout.$panel-background;
   image-rendering: pixelated;
 }
 

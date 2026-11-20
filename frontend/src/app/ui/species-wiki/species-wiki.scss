@@ -1,22 +1,20 @@
 // Wiki des espèces (#287, docs/DA.md, « Interface ») : bouton discret en bas à droite, à côté
-// de la barre des vues ; panneau sombre translucide à droite, sous la ligne des boutons du
+// de la barre des vues ; panneau plein à droite, sous la ligne des boutons du
 // haut et au-dessus de la barre. L'hôte n'est pas positionné : il n'occupe aucune place et
 // ne capte aucun clic (#112) ; seuls le bouton et le panneau sont fixés.
 @use '../panel-layout' as layout;
 
 :host {
-  color: #e8e6e3;
-  font:
-    400 13px / 1.3 system-ui,
-    sans-serif;
+  color: layout.$panel-ink;
+  font: 400 13px / 1.3 layout.$font-text;
 }
 
 .species-wiki__toggle,
 .species-wiki__button,
 .species-wiki__item {
-  border: 1px solid rgb(232 230 227 / 16%);
-  border-radius: 8px;
-  background: rgb(20 20 24 / 72%); // #141418
+  border: 1px solid layout.$panel-border;
+  border-radius: layout.$radius-control;
+  background: layout.$panel-background;
   color: inherit;
   font: inherit;
   cursor: pointer;
@@ -31,17 +29,10 @@
   padding: 4px 10px;
   font-weight: 500;
   white-space: nowrap;
-  opacity: 0.8;
-
-  &:hover,
-  &:focus-visible,
-  &--open {
-    opacity: 1;
-  }
 
   &--open {
-    border-color: #5fbfa3;
-    color: #5fbfa3;
+    border-color: layout.$brass;
+    color: layout.$brass;
   }
 }
 
@@ -60,10 +51,9 @@
   max-height: calc(100vh - 56px - 76px);
   overflow-y: auto;
   padding: 8px 12px 10px;
-  border: 1px solid rgb(232 230 227 / 8%);
-  border-radius: 10px;
-  // Plus opaque que les autres panneaux : il passe sur le tableau de bord sur téléphone.
-  background: rgb(20 20 24 / 96%);
+  border: 1px solid layout.$panel-rule;
+  border-radius: layout.$radius-window;
+  background: layout.$panel-background;
 }
 
 .species-wiki__header,
@@ -88,13 +78,13 @@
   font-size: 12px;
 
   &--add {
-    border-color: #5fbfa3;
-    color: #5fbfa3;
+    border-color: layout.$brass;
+    color: layout.$brass;
   }
 
   &[aria-disabled='true'] {
     cursor: default;
-    opacity: 0.5;
+    opacity: layout.$opacity-disabled;
   }
 }
 
@@ -110,9 +100,9 @@
     width: 100%;
     min-height: 32px;
     padding: 4px 8px;
-    border: 1px solid rgb(232 230 227 / 24%);
-    border-radius: 6px;
-    background: rgb(232 230 227 / 8%);
+    border: 1px solid layout.$panel-border;
+    border-radius: layout.$radius-control;
+    background: layout.$panel-raised;
     color: inherit;
     font: inherit;
 
@@ -124,11 +114,9 @@
 
 .species-wiki__group {
   margin: 8px 0 4px;
-  color: #5fbfa3;
+  color: layout.$panel-ink;
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
 }
 
 .species-wiki__list {
@@ -149,15 +137,16 @@
   justify-content: space-between;
   gap: 8px;
   padding: 6px 10px;
-  background: rgb(232 230 227 / 6%);
+  background: layout.$panel-raised;
   text-align: left;
 
   &:hover {
-    border-color: #5fbfa3;
+    border-color: layout.$brass;
   }
 }
 
 .species-wiki__count {
+  font-family: layout.$font-mono;
   font-variant-numeric: tabular-nums;
   font-weight: 600;
 }
@@ -165,7 +154,7 @@
 .species-wiki__latin,
 .species-wiki__status,
 .species-wiki__empty {
-  color: rgb(232 230 227 / 72%);
+  color: layout.$panel-ink-muted;
   font-size: 11px;
 }
 
@@ -185,7 +174,7 @@
 
 .species-wiki__warning {
   margin: 6px 0;
-  color: #f2c09a;
+  color: layout.$state-watch;
   font-size: 12px;
 }
 
@@ -202,7 +191,7 @@
   display: contents;
 
   dt {
-    color: rgb(232 230 227 / 78%);
+    color: layout.$panel-ink-muted;
   }
 
   dd {

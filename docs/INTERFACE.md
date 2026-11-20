@@ -23,19 +23,19 @@ les **cartels** sobres qui expliquent ce qu'on regarde. L'interface s'efface dev
 
 ### Couleurs
 
-| Rôle | Valeur | Règle |
-|---|---|---|
-| Salle (fond de la page) | `#141418` | Celui de la scène (`fondScene`), inchangé |
-| Panneau | `#1b1f23` | **Plein**, jamais translucide, jamais flouté |
-| Panneau élevé (élément choisi, survol) | `#232a30` | |
-| Filet (séparations) | `#30383f` | Les groupes se séparent par des filets, pas par des cadres |
-| Bord de champ et de bouton secondaire | `#3d4850` | |
-| Encre | `#ebe7de` | Texte principal |
-| Encre secondaire | `#a9b1b5` | Explications, unités, légendes |
-| Laiton (action) | `#d1a65c` | **Seulement** pour l'action principale, la sélection et le focus ; texte posé dessus : `#141418` |
-| Bon | `#7db88c` | Toujours doublé d'un mot ou d'un symbole |
-| À surveiller | `#e8955f` | Idem |
-| Danger | `#ec6a5c` | Idem |
+| Rôle                                   | Valeur    | Règle                                                                                            |
+| -------------------------------------- | --------- | ------------------------------------------------------------------------------------------------ |
+| Salle (fond de la page)                | `#141418` | Celui de la scène (`fondScene`), inchangé                                                        |
+| Panneau                                | `#1b1f23` | **Plein**, jamais translucide, jamais flouté                                                     |
+| Panneau élevé (élément choisi, survol) | `#232a30` |                                                                                                  |
+| Filet (séparations)                    | `#30383f` | Les groupes se séparent par des filets, pas par des cadres                                       |
+| Bord de champ et de bouton secondaire  | `#3d4850` |                                                                                                  |
+| Encre                                  | `#ebe7de` | Texte principal                                                                                  |
+| Encre secondaire                       | `#a9b1b5` | Explications, unités, légendes                                                                   |
+| Laiton (action)                        | `#d1a65c` | **Seulement** pour l'action principale, la sélection et le focus ; texte posé dessus : `#141418` |
+| Bon                                    | `#7db88c` | Toujours doublé d'un mot ou d'un symbole                                                         |
+| À surveiller                           | `#e8955f` | Idem                                                                                             |
+| Danger                                 | `#ec6a5c` | Idem                                                                                             |
 
 Contrastes à vérifier par `ui/panel-contrast.spec.ts` (texte ≥ 4,5:1, focus ≥ 3:1). Mesures
 indicatives sur `#1b1f23` : encre ≈ 13:1, secondaire ≈ 7,5:1, laiton ≈ 7:1, danger ≈ 5:1.
@@ -55,7 +55,7 @@ aucun halo, aucun dégradé, aucune lueur.
 - **Atkinson Hyperlegible Mono** pour les valeurs mesurées : températures, concentrations,
   heures, vitesses, compteurs (`@fontsource-variable/atkinson-hyperlegible-mono`, OFL-1.1).
 - Échelle : 13 (explication), 15 (courant), 18 (titre de section), 24 à 28 (titre de fenêtre).
-- Titres en **casse de phrase**, jamais en capitales. Noms scientifiques en *italique*.
+- Titres en **casse de phrase**, jamais en capitales. Noms scientifiques en _italique_.
 - Pas de police pixel pour le texte : le pixel art est réservé au bac, au logo et aux icônes.
 
 ### Formes et composants
@@ -79,7 +79,7 @@ aucun halo, aucun dégradé, aucune lueur.
 
 Modèle de toutes les explications de l'interface, comme sous un bac de musée : nom courant
 en gras, nom scientifique en italique (et famille), une ligne utile avec des unités vraies,
-un lien vers la fiche du wiki. Exemple : « **Néon** · *Paracheirodon innesi* · Characidae —
+un lien vers la fiche du wiki. Exemple : « **Néon** · _Paracheirodon innesi_ · Characidae —
 Bassin de l'Amazone. Vit en banc de 6 au moins, dans une eau douce entre 20 et 26 °C. »
 Toute valeur biologique suit la règle du projet : sourcée, ou marquée « approximation de jeu ».
 
@@ -118,18 +118,18 @@ lieu du panneau déroulant. La page derrière s'assombrit ; le bac continue de v
 Chaque contrôle actuel garde son comportement, sa valeur et ses attributs de test ; seul son
 emplacement change. **Aucune fonctionnalité n'est perdue.**
 
-| Groupe | Catégorie | Contenu (contrôles actuels) |
-|---|---|---|
-| Le bac | Bac et milieu | Milieu en tuiles (bac tropical, bassin, paludarium, récif, eau froide), forme du bassin, « Afficher la pièce » ; pièce affichée : bacs et meubles (environnement, taille, support, liste des bacs, mode soins ou décor, retrait confirmé) |
-| | Population | Une tuile par espèce de l'environnement : nom, nom scientifique, compteur, lien vers la fiche ; filtres « Toutes », « Dans le bac », « Poissons », « Invertébrés » ; tri par nom, nombre dans le bac, taille adulte ; résumé « N animaux, M espèces » |
-| | Eau et matériel | Chauffage, durée d'éclairage, heure d'allumage de la lampe, courant de la pompe (coupé, doux, fort), changer l'eau |
-| | Soins et produits | Conditionneurs (déchlorer, liant, eau du robinet), filtre (amorce de bactéries, charbon actif), pH et eau noire (pH −, pH +, feuilles de catappa), avec l'avertissement « effets simplifiés » |
-| | Décor | Éditer le décor, afficher le décor, granulés en voxels ou en points |
-| Simulation | Temps | Vitesse (pause, ×0,5, ×1, ×2, ×4), heure de la journée, heure automatique |
-| Préférences | Affichage | Filtre pixel art, masquer l'interface (section 3), pluie sur le bassin |
-| | Son | Sons d'ambiance et volume |
-| | Accessibilité | Réduire les mouvements |
-| Données | Sauvegarde et partage | Partager ce bac (action principale), exporter, importer, photo du bac ; mention de l'enregistrement automatique |
+| Groupe      | Catégorie             | Contenu (contrôles actuels)                                                                                                                                                                                                                           |
+| ----------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Le bac      | Bac et milieu         | Milieu en tuiles (bac tropical, bassin, paludarium, récif, eau froide), forme du bassin, « Afficher la pièce » ; pièce affichée : bacs et meubles (environnement, taille, support, liste des bacs, mode soins ou décor, retrait confirmé)             |
+|             | Population            | Une tuile par espèce de l'environnement : nom, nom scientifique, compteur, lien vers la fiche ; filtres « Toutes », « Dans le bac », « Poissons », « Invertébrés » ; tri par nom, nombre dans le bac, taille adulte ; résumé « N animaux, M espèces » |
+|             | Eau et matériel       | Chauffage, durée d'éclairage, heure d'allumage de la lampe, courant de la pompe (coupé, doux, fort), changer l'eau                                                                                                                                    |
+|             | Soins et produits     | Conditionneurs (déchlorer, liant, eau du robinet), filtre (amorce de bactéries, charbon actif), pH et eau noire (pH −, pH +, feuilles de catappa), avec l'avertissement « effets simplifiés »                                                         |
+|             | Décor                 | Éditer le décor, afficher le décor, granulés en voxels ou en points                                                                                                                                                                                   |
+| Simulation  | Temps                 | Vitesse (pause, ×0,5, ×1, ×2, ×4), heure de la journée, heure automatique                                                                                                                                                                             |
+| Préférences | Affichage             | Filtre pixel art, masquer l'interface (section 3), pluie sur le bassin                                                                                                                                                                                |
+|             | Son                   | Sons d'ambiance et volume                                                                                                                                                                                                                             |
+|             | Accessibilité         | Réduire les mouvements                                                                                                                                                                                                                                |
+| Données     | Sauvegarde et partage | Partager ce bac (action principale), exporter, importer, photo du bac ; mention de l'enregistrement automatique                                                                                                                                       |
 
 Restent **hors de la fenêtre**, sous la main dans la barre du bas : nourrir, raclette,
 sécateur, photo et préréglages de vue (gestes de jeu, pas des réglages). La pharmacie, le wiki,
@@ -176,6 +176,13 @@ découpé par section), qui fournit les sections réutilisées par la fenêtre :
 
 1. #721 — Charte, fondations : jetons de couleurs, typographie, formes, icône et logo, en-tête de
    la page. Aucun changement de disposition.
+   **Livré** : jetons dans `ui/_panel-layout.scss` (`$room`, `$panel-background`,
+   `$panel-raised`, `$panel-rule`, `$panel-border`, `$panel-ink`, `$panel-ink-muted`, `$brass`,
+   `$on-brass`, `$state-good|watch|danger`, `$radius-control|window`, `$space-1…5`,
+   `$opacity-disabled`, `$opacity-band`, `$scrim`, `$font-text`, `$font-mono`) ; polices
+   chargées dans `src/styles.scss` ; icône et logo générés par `scripts/generer-icone.mjs` ;
+   `index.html` (titre, description, image de partage `public/partage.png`). Le logo
+   (`public/logo.svg`) sera posé dans l'en-tête au lot 4, avec la disposition.
 2. #722 — Fenêtre des réglages : fenêtre, catégories, déplacement de tous les contrôles, téléphone.
 3. #723 — Population en tuiles et recherche dans les réglages.
 4. #724 — Habillage de toute la page selon la charte (tableau de bord, barres, aide-mémoire, wiki,

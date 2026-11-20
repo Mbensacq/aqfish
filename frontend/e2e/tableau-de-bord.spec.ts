@@ -127,18 +127,20 @@ for (const viewport of VIEWPORTS) {
   });
 }
 
-test('se replie et se déplie au clavier ; s’estompe hors survol et focus', async ({ page }) => {
+test('se replie et se déplie au clavier ; plein hors survol et focus (charte #721)', async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 1280, height: 720 });
   const errors = await open(page);
   await expect(toggle(page)).toHaveAttribute('aria-expanded', 'true');
   await expect(toggle(page)).toHaveAccessibleName('Eau : bonne. Replier les jauges');
   const controls = await toggle(page).getAttribute('aria-controls');
   await expect(page.locator(`#${controls}`)).toBeVisible();
-  // Au repos, estompé (la souris est hors du cadre).
+  // Au repos (la souris est hors du cadre), plein comme tous les panneaux de la charte.
   await page.mouse.move(640, 400);
   await expect
     .poll(() => dashboard(page).evaluate((el) => Number(getComputedStyle(el).opacity)))
-    .toBeCloseTo(0.85, 2);
+    .toBe(1);
 
   await toggle(page).focus();
   await expect
