@@ -885,14 +885,103 @@ export function buildVoxelMesh(
   part: 'body' | 'tail' = anchor === 'right' ? 'tail' : 'body',
 ): VoxelMeshData {
   const width = templateWidth(rows);
-  const height = rows.length;
   if (!Number.isInteger(depth) || depth < 1) {
     throw new Error(`Épaisseur de gabarit invalide : ${depth}`);
   }
   if (columnDepths && columnDepths.length !== width) {
     throw new Error(`columnDepths doit avoir ${width} valeurs (reçu : ${columnDepths.length})`);
   }
-  // Première et dernière couche (exclue) remplies dans chaque colonne.
+  const grid = voxelGrid(rows, depth, columnDepths, anchor);
+  const roles = roleColors(colors);
+  const out: MeshBuffers = {
+    positions: [],
+    normals: [],
+    colors: [],
+    spots: [],
+    frays: [],
+    quads: 0,
+  };
+  const filled = (col: number, row: number, layer: number): boolean =>
+    isFilled(grid, col, row, layer);
+  emitBodyVoxels(out, grid, roles, size, part);
+  // Parties paires : après le corps (maillage du corps inchangé pour les autres gabarits).
+  const pairedVoxels = pairedVoxelMap(grid, paired, roles);
+  const occupied = (col: number, row: number, layer: number): boolean =>
+    filled(col, row, layer) || pairedVoxels.has(`${col},${row},${layer}`);
+  for (const [key, char] of pairedVoxels) {
+    const [col, row, layer] = key.split(',').map(Number);
+    const voxel: Voxel = {
+      col,
+      row,
+      layer,
+      color: roles.linear.get(char)!,
+      spot: spotRankOf(roles, char, col, row, layer),
+      fray: UNFRAYED_RANK,
+    };
+    emitVoxel(out, grid, size, voxel, occupied);
+  }
+  return {
+    positions: new Float32Array(out.positions),
+    normals: new Float32Array(out.normals),
+    colors: new Float32Array(out.colors),
+    spots: new Float32Array(out.spots),
+    frays: new Float32Array(out.frays),
+    quads: out.quads,
+  };
+}
+
+/** Gabarit de profil extrudé : rangées, dimensions et couches remplies de chaque colonne. */
+interface VoxelGrid {
+  readonly rows: readonly string[];
+  readonly width: number;
+  readonly height: number;
+  readonly depth: number;
+  /** Première et dernière couche (exclue) remplies dans chaque colonne. */
+  readonly layerStart: readonly number[];
+  readonly layerEnd: readonly number[];
+  /** Abscisse du coin gauche du gabarit, en unités de voxel (`anchor`). */
+  readonly originX: number;
+}
+
+/** Couleurs linéaires des rôles du gabarit, et caractères trop pâles pour un point blanc. */
+interface RoleColors {
+  readonly linear: ReadonlyMap<string, readonly [number, number, number]>;
+  /** Rôles de couleur trop pâles pour qu'un point blanc s'y voie (issue #370). */
+  readonly pale: ReadonlySet<string>;
+}
+
+/** Tampons du maillage en construction (`buildVoxelMesh`). */
+interface MeshBuffers {
+  readonly positions: number[];
+  readonly normals: number[];
+  readonly colors: number[];
+  readonly spots: number[];
+  readonly frays: number[];
+  quads: number;
+}
+
+/** Un voxel à émettre : position dans le gabarit, couleur linéaire et rangs par sommet. */
+interface Voxel {
+  readonly col: number;
+  readonly row: number;
+  readonly layer: number;
+  readonly color: readonly [number, number, number];
+  readonly spot: number;
+  readonly fray: number;
+}
+
+/**
+ * Grille d'un gabarit : couches remplies de chaque colonne, centrées (`columnDepths`, sinon
+ * `depth` partout).
+ * @throws Error si l'épaisseur d'une colonne est invalide (hors de [1, depth], parité).
+ */
+function voxelGrid(
+  rows: readonly string[],
+  depth: number,
+  columnDepths: readonly number[] | undefined,
+  anchor: 'center' | 'right',
+): VoxelGrid {
+  const width = rows[0].length;
   const layerStart: number[] = [];
   const layerEnd: number[] = [];
   for (let col = 0; col < width; col++) {
@@ -903,8 +992,12 @@ export function buildVoxelMesh(
     layerStart.push((depth - d) / 2);
     layerEnd.push((depth + d) / 2);
   }
+  const originX = anchor === 'center' ? -width / 2 : -width;
+  return { rows, width, height: rows.length, depth, layerStart, layerEnd, originX };
+}
+
+function roleColors(colors: SpeciesColors): RoleColors {
   const linear = new Map<string, [number, number, number]>();
-  // Rôles de couleur trop pâles pour qu'un point blanc s'y voie (issue #370).
   const pale = new Set<string>();
   for (const [char, role] of Object.entries(ROLES)) {
     const c = new Color(colors[role]);
@@ -913,117 +1006,127 @@ export function buildVoxelMesh(
       pale.add(char);
     }
   }
-  const spotRank = (char: string, col: number, row: number, layer: number): number =>
-    pale.has(char) ? UNSPOTTED_RANK : voxelSpotRank(col, row, layer);
-  const filled = (col: number, row: number, layer: number): boolean =>
+  return { linear, pale };
+}
+
+function spotRankOf(
+  roles: RoleColors,
+  char: string,
+  col: number,
+  row: number,
+  layer: number,
+): number {
+  return roles.pale.has(char) ? UNSPOTTED_RANK : voxelSpotRank(col, row, layer);
+}
+
+/** Vrai si le voxel (`col`, `row`, `layer`) du corps est plein (hors du gabarit : vide). */
+function isFilled(grid: VoxelGrid, col: number, row: number, layer: number): boolean {
+  return (
     col >= 0 &&
-    col < width &&
+    col < grid.width &&
     row >= 0 &&
-    row < height &&
-    layer >= layerStart[col] &&
-    layer < layerEnd[col] &&
-    rows[row][col] !== '.';
+    row < grid.height &&
+    layer >= grid.layerStart[col] &&
+    layer < grid.layerEnd[col] &&
+    grid.rows[row][col] !== '.'
+  );
+}
 
-  const originX = anchor === 'center' ? -width / 2 : -width;
-  const positions: number[] = [];
-  const normals: number[] = [];
-  const vertexColors: number[] = [];
-  const spots: number[] = [];
-  const frays: number[] = [];
-  let quads = 0;
-
-  for (let row = 0; row < height; row++) {
-    for (let col = 0; col < width; col++) {
-      const char = rows[row][col];
+/**
+ * Émet les voxels du corps, rangée par rangée puis colonne par colonne et couche par couche.
+ * @throws Error si un caractère du gabarit n'a pas de rôle de couleur.
+ */
+function emitBodyVoxels(
+  out: MeshBuffers,
+  grid: VoxelGrid,
+  roles: RoleColors,
+  size: VoxelSize,
+  part: 'body' | 'tail',
+): void {
+  const filled = (col: number, row: number, layer: number): boolean =>
+    isFilled(grid, col, row, layer);
+  for (let row = 0; row < grid.height; row++) {
+    for (let col = 0; col < grid.width; col++) {
+      const char = grid.rows[row][col];
       if (char === '.') {
         continue;
       }
-      const color = linear.get(char);
+      const color = roles.linear.get(char);
       if (!color) {
         throw new Error(`Caractère de gabarit sans rôle de couleur : « ${char} »`);
       }
-      for (let layer = layerStart[col]; layer < layerEnd[col]; layer++) {
-        // Coin minimal du voxel, en unités de voxel ; la rangée 0 est en haut.
-        const x0 = originX + col;
-        const y0 = height / 2 - row - 1;
-        const z0 = -depth / 2 + layer;
-        const spot = spotRank(char, col, row, layer);
-        const fray = voxelFrayRank(part, rows, col, row, layer);
-        for (const face of FACES) {
-          if (filled(col + face.dc, row - face.dy, layer + face.dz)) {
-            continue;
-          }
-          quads++;
-          for (const corner of face.corners) {
-            positions.push(
-              (x0 + corner[0]) * size.x,
-              (y0 + corner[1]) * size.y,
-              (z0 + corner[2]) * size.z,
-            );
-            normals.push(face.normal[0], face.normal[1], face.normal[2]);
-            vertexColors.push(color[0], color[1], color[2]);
-            spots.push(spot);
-            frays.push(fray);
-          }
-        }
+      for (let layer = grid.layerStart[col]; layer < grid.layerEnd[col]; layer++) {
+        const spot = spotRankOf(roles, char, col, row, layer);
+        const fray = voxelFrayRank(part, grid.rows, col, row, layer);
+        emitVoxel(out, grid, size, { col, row, layer, color, spot, fray }, filled);
       }
     }
   }
-  // Parties paires : après le corps (maillage du corps inchangé pour les autres gabarits).
-  const pairedVoxels = new Map<string, string>();
+}
+
+/**
+ * Voxels des parties paires (nageoires pectorales…), de part et d'autre du corps à la
+ * distance de leur couche, par clé `col,row,layer`.
+ * @throws Error si une couche n'a pas les dimensions du corps ou si un caractère n'a pas de
+ * rôle de couleur.
+ */
+function pairedVoxelMap(
+  grid: VoxelGrid,
+  paired: readonly (readonly string[])[],
+  roles: RoleColors,
+): Map<string, string> {
+  const voxels = new Map<string, string>();
   paired.forEach((layerRows, distance) => {
-    if (layerRows.length !== height || layerRows.some((r) => r.length !== width)) {
+    if (layerRows.length !== grid.height || layerRows.some((r) => r.length !== grid.width)) {
       throw new Error('Les couches paires doivent avoir les dimensions du corps');
     }
-    for (let row = 0; row < height; row++) {
-      for (let col = 0; col < width; col++) {
+    for (let row = 0; row < grid.height; row++) {
+      for (let col = 0; col < grid.width; col++) {
         const char = layerRows[row][col];
         if (char === '.') {
           continue;
         }
-        if (!linear.has(char)) {
+        if (!roles.linear.has(char)) {
           throw new Error(`Caractère de gabarit sans rôle de couleur : « ${char} »`);
         }
-        pairedVoxels.set(`${col},${row},${layerEnd[col] + distance}`, char);
-        pairedVoxels.set(`${col},${row},${layerStart[col] - 1 - distance}`, char);
+        voxels.set(`${col},${row},${grid.layerEnd[col] + distance}`, char);
+        voxels.set(`${col},${row},${grid.layerStart[col] - 1 - distance}`, char);
       }
     }
   });
-  const occupied = (col: number, row: number, layer: number): boolean =>
-    filled(col, row, layer) || pairedVoxels.has(`${col},${row},${layer}`);
-  for (const [key, char] of pairedVoxels) {
-    const [col, row, layer] = key.split(',').map(Number);
-    const color = linear.get(char)!;
-    const x0 = originX + col;
-    const y0 = height / 2 - row - 1;
-    const z0 = -depth / 2 + layer;
-    const spot = spotRank(char, col, row, layer);
-    for (const face of FACES) {
-      if (occupied(col + face.dc, row - face.dy, layer + face.dz)) {
-        continue;
-      }
-      quads++;
-      for (const corner of face.corners) {
-        positions.push(
-          (x0 + corner[0]) * size.x,
-          (y0 + corner[1]) * size.y,
-          (z0 + corner[2]) * size.z,
-        );
-        normals.push(face.normal[0], face.normal[1], face.normal[2]);
-        vertexColors.push(color[0], color[1], color[2]);
-        spots.push(spot);
-        frays.push(UNFRAYED_RANK);
-      }
+  return voxels;
+}
+
+/** Émet les faces du voxel `voxel` dont le voisin n'est pas `occupied`. */
+function emitVoxel(
+  out: MeshBuffers,
+  grid: VoxelGrid,
+  size: VoxelSize,
+  voxel: Voxel,
+  occupied: (col: number, row: number, layer: number) => boolean,
+): void {
+  const { col, row, layer, color } = voxel;
+  // Coin minimal du voxel, en unités de voxel ; la rangée 0 est en haut.
+  const x0 = grid.originX + col;
+  const y0 = grid.height / 2 - row - 1;
+  const z0 = -grid.depth / 2 + layer;
+  for (const face of FACES) {
+    if (occupied(col + face.dc, row - face.dy, layer + face.dz)) {
+      continue;
+    }
+    out.quads++;
+    for (const corner of face.corners) {
+      out.positions.push(
+        (x0 + corner[0]) * size.x,
+        (y0 + corner[1]) * size.y,
+        (z0 + corner[2]) * size.z,
+      );
+      out.normals.push(face.normal[0], face.normal[1], face.normal[2]);
+      out.colors.push(color[0], color[1], color[2]);
+      out.spots.push(voxel.spot);
+      out.frays.push(voxel.fray);
     }
   }
-  return {
-    positions: new Float32Array(positions),
-    normals: new Float32Array(normals),
-    colors: new Float32Array(vertexColors),
-    spots: new Float32Array(spots),
-    frays: new Float32Array(frays),
-    quads,
-  };
 }
 
 /**
