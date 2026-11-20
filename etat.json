@@ -9627,6 +9627,12 @@
           "debut": "2026-11-20T23:41:39.005Z",
           "fin": "2026-11-20T23:42:50.846Z",
           "note": "Rétro #753 ; issue #717 (dette, avec #711) (S) ; PR docs roadmap"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-20T23:43:23.732Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
