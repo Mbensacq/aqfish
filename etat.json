@@ -9383,10 +9383,10 @@
           "note": "PR #746 : Simulation, Journée, Décor, Accessibilité, Son et Quarantaine hors du panneau (fin 11/13 ; control-panel.ts 388, tanks-section.ts 424), CI verte"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-20T03:15:11.987Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-20T03:59:16.892Z",
+          "note": "Verdict OK, 0 bug, 166/166 captures identiques, publiées"
         }
       },
       "metriques": {}
