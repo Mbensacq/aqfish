@@ -33,6 +33,7 @@ import firstTankPath from './first-tank-path/first-tank-path.scss' with { loader
 import freeCameraPad from './free-camera-pad/free-camera-pad.scss' with { loader: 'text' };
 import immersiveMode from './immersive-mode/immersive-mode.scss' with { loader: 'text' };
 import pharmacy from './pharmacy/pharmacy.scss' with { loader: 'text' };
+import settingsWindow from './settings-window/settings-window.scss' with { loader: 'text' };
 import shareOffer from './share-offer/share-offer.scss' with { loader: 'text' };
 import speciesWiki from './species-wiki/species-wiki.scss' with { loader: 'text' };
 import styles from '../../styles.scss' with { loader: 'text' };
@@ -81,6 +82,7 @@ const SHEETS: Readonly<Record<string, string>> = {
   'free-camera-pad/free-camera-pad.scss': freeCameraPad,
   'immersive-mode/immersive-mode.scss': immersiveMode,
   'pharmacy/pharmacy.scss': pharmacy,
+  'settings-window/settings-window.scss': settingsWindow,
   'share-offer/share-offer.scss': shareOffer,
   'species-wiki/species-wiki.scss': speciesWiki,
   'view-presets-bar/view-presets-bar.scss': viewPresetsBar,
