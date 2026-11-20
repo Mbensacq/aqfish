@@ -9353,10 +9353,10 @@
           "note": "Verdict OK, 0 bug, 167/167 captures identiques, publiées"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-20T02:12:15.191Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-20T02:38:13.382Z",
+          "note": "PR #744 fusionnée → v1.25.5 (release CI OK, main verte), #697 laissée ouverte (tranche 2) ; suppression de branche refusée"
         }
       },
       "metriques": {}
