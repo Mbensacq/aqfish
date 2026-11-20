@@ -30,10 +30,10 @@ import {
 import { createBankDecorObject } from './bank-decor-mesh';
 import { INPUT_TONES, PALETTE, type PaletteColorName } from './palette';
 import { cutawayMask, sidesOfMask } from './pond-cutaway';
-import { createPondGround, pondGroundTop } from './pond-ground';
-import { createPondShapeBank } from './pond-shape-bank';
-import { createStoneBorder } from './stone-border';
-import { createTerrainMesh } from './terrain-mesh';
+import { createPondGround, pondGroundTop, type PondGround } from './pond-ground';
+import { createPondShapeBank, type PondShapeBank } from './pond-shape-bank';
+import { createStoneBorder, type StoneBorder } from './stone-border';
+import { createTerrainMesh, type TerrainMesh } from './terrain-mesh';
 
 // Géométrie du bac : définie dans sim/tank.ts (partagée avec les bornes de nage).
 export { DEFAULT_TANK, SAND_THICKNESS, WATER_LEVEL_RATIO };
@@ -178,26 +178,111 @@ export function createAquariumScene(environment: Environment = TROPICAL_TANK): A
   const lights = createLights(dims, ground.bottom);
   scene.add(lights.group);
   const waterBox = environmentDataWater(environment);
-  // Sol : dalle plate (bac, bassin) ou berge en colonnes (paludarium, #129).
+  const floor = addFloor(scene, environment, ground);
+  const water = createWater(floor.terrain ? insetWater(waterBox) : waterBox, waterTint);
+  scene.add(water);
+  const border = addBorder(scene, environment);
+
+  const [body, , surface] = water.material as MeshBasicMaterial[];
+  const tone = createSceneTone({
+    lights,
+    body,
+    surface,
+    sandBottom: floor.sandBottom,
+    waterTint,
+    groundBottom: ground.bottom,
+  });
+  /** Masque des côtés retirés (`cutawayMask`) ; -1 : jamais appliqué. */
+  let cutaway = -1;
+
+  return {
+    scene,
+    dimensions: dims,
+    environment,
+    get turbidity() {
+      return tone.turbidity;
+    },
+    setTurbidity: (value) => tone.setTurbidity(value),
+    get tea() {
+      return tone.tea;
+    },
+    setTea: (value) => tone.setTea(value),
+    get overcast() {
+      return tone.overcast;
+    },
+    setOvercast: (value) => tone.setOvercast(value),
+    setDaylight: (light) => {
+      tone.setDaylight(light);
+      border.stones?.setDaylight(light.intensity);
+      border.bank?.setDaylight(light.intensity);
+      border.pondGround?.setDaylight(light.intensity);
+    },
+    setViewpoint: (x, y, z) => {
+      if (border.pondGround) {
+        // Appelée à chaque image : rien n'est alloué ni réappliqué tant que les côtés
+        // retirés ne changent pas (#122).
+        const mask = cutawayMask(x, y, z, dims, pondGroundTop(dims));
+        if (mask === cutaway) {
+          return;
+        }
+        cutaway = mask;
+        const hidden = sidesOfMask(mask);
+        border.stones?.setHiddenSides(hidden);
+        border.bank?.setCutaway(hidden.size > 0);
+        border.pondGround.setHiddenSides(hidden);
+      }
+    },
+    dispose: () => disposeObject(scene),
+  };
+}
+
+/** Sol de la scène : berge en colonnes (`terrain`) ou dalle, et dessous du sol à teinter. */
+interface Floor {
+  readonly terrain: TerrainMesh | null;
+  readonly sandBottom: MeshBasicMaterial;
+}
+
+/**
+ * Ajoute le sol à la scène : dalle plate (bac, bassin) ou berge en colonnes (paludarium,
+ * #129), avec les mousses et racines de la berge (#132), aménagement fixe comme le sol.
+ */
+function addFloor(
+  scene: Scene,
+  environment: Environment,
+  ground: { readonly top: string; readonly side: string; readonly bottom: string },
+): Floor {
+  const waterBox = environmentDataWater(environment);
   const terrain = environment.terrain
     ? createTerrainMesh(environment.terrain, waterBox, ground.bottom)
     : null;
-  const sand = terrain ? null : createSand(dims, ground);
+  const sand = terrain ? null : createSand(environment.dimensions, ground);
   scene.add(terrain ? terrain.mesh : (sand as Mesh));
-  // Mousses et racines de la berge (#132) : aménagement fixe, comme le sol.
   if (environment.terrain && environment.bankDecor) {
     const layout = bankDecorLayout(environment.bankDecor, environment.terrain, waterBox);
     scene.add(createBankDecorObject(layout, environment.terrain, waterBox));
   }
-  const water = createWater(terrain ? insetWater(waterBox) : waterBox, waterTint);
-  scene.add(water);
+  const sandBottom = terrain ? terrain.bottom : (sand?.material as MeshBasicMaterial[])[3];
+  return { terrain, sandBottom };
+}
+
+/** Bordure d'un bassin : margelle droite ou berge courbe, et sol qui l'entoure. */
+interface PondBorder {
+  readonly stones: StoneBorder | null;
+  readonly bank: PondShapeBank | null;
+  readonly pondGround: PondGround | null;
+}
+
+/**
+ * Ajoute la bordure à la scène : vitrage du bac, ou, pour un bassin enterré (#105), margelle
+ * (ou berge courbe d'un bassin ovale ou haricot, #190) puis le sol qui l'entoure.
+ */
+function addBorder(scene: Scene, environment: Environment): PondBorder {
+  const dims = environment.dimensions;
   const pond = environment.border === 'pierre';
-  // Bassin ovale ou haricot (#190) : berge et margelle courbe à la place de la margelle droite.
   const shape = pond ? environment.shape : undefined;
   const bank =
     shape !== undefined && shape !== 'rectangle' ? createPondShapeBank(dims, shape) : null;
   const stones = pond && bank === null ? createStoneBorder(dims) : null;
-  // Bassin enterré (#105) : le sol l'entoure, seule une margelle basse dépasse.
   const pondGround = pond ? createPondGround(dims) : null;
   if (pondGround) {
     // Margelle (ou berge) puis sol : même ordre qu'avant #190 pour le bassin rectangulaire.
@@ -205,61 +290,53 @@ export function createAquariumScene(environment: Environment = TROPICAL_TANK): A
   } else {
     scene.add(...createGlass(dims));
   }
+  return { stones, bank, pondGround };
+}
 
-  const [body, , surface] = water.material as MeshBasicMaterial[];
-  const sandBottom = terrain ? terrain.bottom : (sand?.material as MeshBasicMaterial[])[3];
-  const waterColors = {
-    dayBody: new Color(waterTint.body),
-    nightBody: new Color(NIGHT_WATER_BODY),
-    daySurface: new Color(waterTint.surface),
-    nightSurface: new Color(NIGHT_WATER_SURFACE),
-    turbidBody: new Color(TURBID_WATER_BODY),
-    turbidSurface: new Color(TURBID_WATER_SURFACE),
-    teaBody: new Color(TEA_WATER_BODY),
-    teaSurface: new Color(TEA_WATER_SURFACE),
-    // Eau de jour après la teinte brun-thé (`setTea`) : égales aux teintes de jour à 0.
-    tintedBody: new Color(waterTint.body),
-    tintedSurface: new Color(waterTint.surface),
-    // Eau de jour après le trouble (`setTurbidity`) : égales aux teintes de jour à 0.
-    clearBody: new Color(waterTint.body),
-    clearSurface: new Color(waterTint.surface),
-    dayGround: new Color(ground.bottom),
-    nightGround: new Color(NIGHT_GROUND),
-    daySandBottom: new Color(ground.bottom),
-    nightSandBottom: new Color(NIGHT_SAND_BOTTOM),
-  };
+/** Matériaux et lumières teintés par le jour, le ciel couvert, le trouble et la teinte brun-thé. */
+interface SceneToneTargets {
+  readonly lights: Lights;
+  readonly body: MeshBasicMaterial;
+  readonly surface: MeshBasicMaterial;
+  readonly sandBottom: MeshBasicMaterial;
+  readonly waterTint: { readonly body: string; readonly surface: string };
+  readonly groundBottom: string;
+}
 
+/** Réglages de teinte de la scène (`AquariumScene`, hors bordure et point de vue). */
+type SceneTone = Pick<
+  AquariumScene,
+  'setDaylight' | 'setTurbidity' | 'turbidity' | 'setTea' | 'tea' | 'setOvercast' | 'overcast'
+>;
+
+/**
+ * Teintes de l'eau, du dessous du sol et intensités des lumières selon le jour (ADR 0018), le
+ * ciel couvert (#123), le trouble (#207) et la teinte brun-thé (#239).
+ */
+function createSceneTone(targets: SceneToneTargets): SceneTone {
+  const { lights, body, surface, sandBottom, waterTint } = targets;
+  const colors = waterColorsOf(waterTint, targets.groundBottom);
   let day = 1;
   let overcast = 1;
   let turbidity = 0;
   let tea = 0;
-  /** Masque des côtés retirés (`cutawayMask`) ; -1 : jamais appliqué. */
-  let cutaway = -1;
   // Teinte brun-thé puis trouble ; `lerpColors(a, b, 0)` vaut exactement `a`.
   const mixWaterTints = (): void => {
-    waterColors.tintedBody.lerpColors(waterColors.dayBody, waterColors.teaBody, TEA_BODY_MIX * tea);
-    waterColors.tintedSurface.lerpColors(
-      waterColors.daySurface,
-      waterColors.teaSurface,
-      TEA_SURFACE_MIX * tea,
-    );
-    waterColors.clearBody.lerpColors(
-      waterColors.tintedBody,
-      waterColors.turbidBody,
-      TURBID_BODY_MIX * turbidity,
-    );
-    waterColors.clearSurface.lerpColors(
-      waterColors.tintedSurface,
-      waterColors.turbidSurface,
+    colors.tintedBody.lerpColors(colors.dayBody, colors.teaBody, TEA_BODY_MIX * tea);
+    colors.tintedSurface.lerpColors(colors.daySurface, colors.teaSurface, TEA_SURFACE_MIX * tea);
+    colors.clearBody.lerpColors(colors.tintedBody, colors.turbidBody, TURBID_BODY_MIX * turbidity);
+    colors.clearSurface.lerpColors(
+      colors.tintedSurface,
+      colors.turbidSurface,
       TURBID_SURFACE_MIX * turbidity,
     );
   };
   // `lerpColors(a, b, 0)` vaut exactement `a` : à midi et sans trouble, couleurs d'origine.
   // Ciel couvert : `multiplyScalar` n'est appliqué qu'en dessous de 1 (couleurs exactes sinon).
   const applyWaterColors = (): void => {
-    body.color.lerpColors(waterColors.clearBody, waterColors.nightBody, 1 - day);
-    surface.color.lerpColors(waterColors.clearSurface, waterColors.nightSurface, 1 - day);
-    sandBottom.color.lerpColors(waterColors.daySandBottom, waterColors.nightSandBottom, 1 - day);
+    body.color.lerpColors(colors.clearBody, colors.nightBody, 1 - day);
+    surface.color.lerpColors(colors.clearSurface, colors.nightSurface, 1 - day);
+    sandBottom.color.lerpColors(colors.daySandBottom, colors.nightSandBottom, 1 - day);
     if (overcast !== 1) {
       body.color.multiplyScalar(overcast);
       surface.color.multiplyScalar(overcast);
@@ -270,11 +347,7 @@ export function createAquariumScene(environment: Environment = TROPICAL_TANK): A
     lights.ambient.intensity = mix(NIGHT_AMBIENT_INTENSITY, DAY_AMBIENT_INTENSITY, day) * overcast;
     lights.sun.intensity = DAY_SUN_INTENSITY * mix(NIGHT_SUN_RATIO, 1, day) * overcast;
   };
-
   return {
-    scene,
-    dimensions: dims,
-    environment,
     get turbidity() {
       return turbidity;
     },
@@ -311,34 +384,38 @@ export function createAquariumScene(environment: Environment = TROPICAL_TANK): A
     setDaylight: (light) => {
       day = light.intensity;
       setRgb(lights.ambient.color, light.sky);
-      lights.ambient.groundColor.lerpColors(
-        waterColors.dayGround,
-        waterColors.nightGround,
-        1 - day,
-      );
+      lights.ambient.groundColor.lerpColors(colors.dayGround, colors.nightGround, 1 - day);
       setRgb(lights.sun.color, light.tint);
       applyLightIntensities();
       applyWaterColors();
-      stones?.setDaylight(day);
-      bank?.setDaylight(day);
-      pondGround?.setDaylight(day);
     },
-    setViewpoint: (x, y, z) => {
-      if (pondGround) {
-        // Appelée à chaque image : rien n'est alloué ni réappliqué tant que les côtés
-        // retirés ne changent pas (#122).
-        const mask = cutawayMask(x, y, z, dims, pondGroundTop(dims));
-        if (mask === cutaway) {
-          return;
-        }
-        cutaway = mask;
-        const hidden = sidesOfMask(mask);
-        stones?.setHiddenSides(hidden);
-        bank?.setCutaway(hidden.size > 0);
-        pondGround.setHiddenSides(hidden);
-      }
-    },
-    dispose: () => disposeObject(scene),
+  };
+}
+
+/** Teintes de départ et d'arrivée de l'eau et du sol, et tampons des teintes mêlées. */
+function waterColorsOf(
+  waterTint: { readonly body: string; readonly surface: string },
+  groundBottom: string,
+) {
+  return {
+    dayBody: new Color(waterTint.body),
+    nightBody: new Color(NIGHT_WATER_BODY),
+    daySurface: new Color(waterTint.surface),
+    nightSurface: new Color(NIGHT_WATER_SURFACE),
+    turbidBody: new Color(TURBID_WATER_BODY),
+    turbidSurface: new Color(TURBID_WATER_SURFACE),
+    teaBody: new Color(TEA_WATER_BODY),
+    teaSurface: new Color(TEA_WATER_SURFACE),
+    // Eau de jour après la teinte brun-thé (`setTea`) : égales aux teintes de jour à 0.
+    tintedBody: new Color(waterTint.body),
+    tintedSurface: new Color(waterTint.surface),
+    // Eau de jour après le trouble (`setTurbidity`) : égales aux teintes de jour à 0.
+    clearBody: new Color(waterTint.body),
+    clearSurface: new Color(waterTint.surface),
+    dayGround: new Color(groundBottom),
+    nightGround: new Color(NIGHT_GROUND),
+    daySandBottom: new Color(groundBottom),
+    nightSandBottom: new Color(NIGHT_SAND_BOTTOM),
   };
 }
 
