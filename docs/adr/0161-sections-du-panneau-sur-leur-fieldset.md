@@ -62,3 +62,16 @@ Deux difficultés :
   relever les styles calculés (ou regarder les captures) à chaque extraction.
 - Le CSS commun est répété dans chaque section (encapsulation émulée) : quelques kilo-octets
   de plus dans le paquet, sous les budgets.
+- Deuxième tranche (cycle 257) : « Environnement », « Eau », « Soins » et « Sauvegarde »
+  sortent sur le même modèle (`environment-section.ts`, `water-section.ts`,
+  `care-section.ts`, `save-section.ts`). Les règles de la requête « deux colonnes » qui
+  visent un élément d'une section (`[data-catappa-note]`, `[data-treatment-sources]`) et la
+  ligne de « Lieu » (`.control-panel__field--place`) passent dans la feuille de leur section ;
+  `formNumber` (lecture d'un champ de formulaire) rejoint `panel-views.ts`.
+  `control-panel.ts` : 567 lignes hors blancs et commentaires, sous la limite ; son exception
+  de qualité est retirée. Styles calculés, boîtes, attributs et textes de chaque élément du
+  panneau identiques à `main` dans 32 états (défaut, bassin, soins, message d'un geste et
+  d'un produit, quarantaine, pièce ; 1280 × 720, 1600 × 1000, 1000 × 700, 390 × 844), hors
+  la faim des bacs qui avance avec le temps.
+- Restent dans le panneau, petites : « Simulation », « Journée », « Décor », « Accessibilité »
+  et « Son ».
