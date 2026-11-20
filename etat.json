@@ -9366,7 +9366,7 @@
       "date": "2026-11-20",
       "debut": "2026-11-20T02:38:53.436Z",
       "type": "retro",
-      "issue": null,
+      "issue": 697,
       "pr": null,
       "version": null,
       "phases": {
