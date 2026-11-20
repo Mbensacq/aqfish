@@ -9495,6 +9495,12 @@
           "debut": "2026-11-20T11:01:57.437Z",
           "fin": "2026-11-20T11:35:15.351Z",
           "note": "Verdict OK, 0 bug, 167/167 captures identiques, publiées (e2e complets laissés à la CI)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-20T11:35:48.181Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
