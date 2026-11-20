@@ -9551,10 +9551,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-20T13:41:29.182Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-20T13:42:09.573Z",
+          "note": "Issue #722 : fenêtre des réglages, tranche 1/3 bureau (M)"
         }
       },
       "metriques": {}
