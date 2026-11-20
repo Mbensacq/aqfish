@@ -9381,6 +9381,12 @@
           "debut": "2026-11-20T02:40:13.932Z",
           "fin": "2026-11-20T03:14:30.045Z",
           "note": "PR #746 : Simulation, Journée, Décor, Accessibilité, Son et Quarantaine hors du panneau (fin 11/13 ; control-panel.ts 388, tanks-section.ts 424), CI verte"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-20T03:15:11.987Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
