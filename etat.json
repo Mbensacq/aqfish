@@ -9618,7 +9618,7 @@
       "date": "2026-11-21",
       "debut": "2026-11-20T23:41:39.005Z",
       "type": "retro",
-      "issue": null,
+      "issue": 717,
       "pr": null,
       "version": null,
       "phases": {
