@@ -1502,6 +1502,14 @@ haut de sa section.
 
 ## Rendu
 
+- **Extraire de `AquariumView` : ordre des écouteurs et champs privés lus par les tests**
+  (cycle 259, #698) : glisser, raclette et caméra libre se lisent l'un l'autre et doivent
+  garder l'ordre d'enregistrement sur le canvas (contrôles, puis `DragController`, puis
+  `CameraController`, ADR 0162) : construire dans cet ordre. Plusieurs tests de
+  `aquarium-view.spec.ts` lisent ou espionnent des champs privés (`as unknown as { … }` :
+  `presetPose`, `setPose`, `immersive`, `raycaster`, `planeAt`, `controls`) : un champ
+  déplacé fait échouer le test, à repointer vers le nouvel objet dans un commit `test` à
+  part, assertions inchangées. (2026-11-20)
 - **Faisceaux translucides : la perspective et la superposition font un bloc** (cycle 223,
   #590) : les cases des rayons ont un côté fixe en mètres (`RAY_CELL`) ; près de la caméra,
   chaque case couvre plusieurs pixels et les colonnes voisines allumées se lisent comme un

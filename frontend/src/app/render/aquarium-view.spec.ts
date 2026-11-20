@@ -931,8 +931,9 @@ describe('AquariumView (caméra du fond d’écran, #332)', () => {
       interactive: false,
     });
     view.resize(1280, 720);
+    // Caméra de la vue (#698) : `CameraController` porte la pose de base en cache.
     const spy = vi.spyOn(
-      view as unknown as { presetPose(preset: 'three-quarter'): CameraPose },
+      (view as unknown as { cameras: { presetPose(preset: 'three-quarter'): CameraPose } }).cameras,
       'presetPose',
     );
     const expected = (aspect: number, angle: number) =>
@@ -1131,11 +1132,14 @@ describe('AquariumView (caméra libre dans la pièce, #343)', () => {
     const view = create();
     view.stepCameraTransition(0);
     // Pose déplacée à la main, hors préréglage.
-    (view as unknown as { setPose(p: CameraPose): void }).setPose({
+    // Caméra de la vue (#698) : `CameraController` porte la pose et le préréglage suivi.
+    const cameras = (view as unknown as { cameras: { setPose(p: CameraPose): void; preset: null } })
+      .cameras;
+    cameras.setPose({
       position: [0.9, 0.7, 1.1],
       target: [0.05, 0.2, 0],
     });
-    (view as unknown as { preset: null }).preset = null;
+    cameras.preset = null;
     const position = view.cameraPosition();
     const target = view.cameraTarget();
     view.enterFreeCamera();
@@ -1352,7 +1356,9 @@ describe('AquariumView (mode immersif, #345)', () => {
 
   it('copie la caméra dans un objet interne préalloué, le même d’un appel à l’autre (#357)', () => {
     const view = create();
-    const internal = () => (view as unknown as { immersive: object }).immersive;
+    // Caméra de la vue (#698) : `CameraController` porte la caméra immersive.
+    const internal = () =>
+      (view as unknown as { cameras: { immersive: object } }).cameras.immersive;
     const first = internal();
     const eye = { eyeX: 0.02, eyeY: 0, eyeDistance: 1.2 };
     expect(view.setImmersiveCamera(eye)).toBe(true);

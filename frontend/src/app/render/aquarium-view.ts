@@ -1,7 +1,5 @@
 import {
-  MOUSE,
   PerspectiveCamera,
-  TOUCH,
   Raycaster,
   Vector2,
   Vector3,
@@ -10,24 +8,15 @@ import {
   WebGLRenderer,
   type WebGLRenderTarget,
 } from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 import type { CameraPreset } from '../core/capture/capture-params';
-import { ORBIT_MOUSE_BUTTONS, ORBIT_TOUCHES, type OrbitAction } from '../core/commands/commands';
 import { DEFAULT_RENDER_FILTER, type RenderFilter } from '../core/render-filter/render-filter';
 import type { FoodStyle } from '../core/food-style/food-style';
-import { frustumMatrix, offAxisFrustum } from '../core/immersive/off-axis';
 import { createAquariumScene, type AquariumScene } from './aquarium-scene';
 import {
   CAMERA_FOV_DEG,
-  cameraPresetPose,
-  interpolatePose,
-  orbitDistanceLimits,
-  orbitPositionInto,
-  panTargetRadius,
-  type CameraPose,
   tankBoundingRadius,
-  tankCenter,
   type TankDimensions,
   type Vec3,
 } from './camera-presets';
@@ -45,7 +34,7 @@ import { seededFeatures } from '../sim/world';
 import type { DecorItem } from '../sim/decor';
 import type { FoodPellet } from '../sim/food';
 import { clampRoom, DEFAULT_ROOM, isRoomAvailable, type Room, type RoomBlock } from '../sim/room';
-import { SAND_THICKNESS, type Box3 } from '../sim/tank';
+import type { Box3 } from '../sim/tank';
 import { BubbleLayer } from './bubble-layer';
 import { AlertHighlightLayer } from './alert-highlight-layer';
 import { AlgaeLayer } from './algae-layer';
@@ -66,33 +55,16 @@ import { LilyPadLayer } from './lily-pad-layer';
 import { overcastBrightness, RAIN_OVERCAST_BRIGHTNESS, RAIN_TONES, stepOvercast } from './overcast';
 import { isObliqueView, RainLayer } from './rain-layer';
 import { RoomLayer } from './room-layer';
+import type { FreeCameraInput, FreeCameraState } from './free-camera';
 import {
-  clampFreePitch,
-  constrainFreePosition,
-  freeCameraBounds,
-  freeCameraFromPose,
-  freeCameraPose,
-  mutableFreeCameraState,
-  stepFreeCameraInPlace,
-  turnFreeCamera,
-  type FreeCameraBounds,
-  type FreeCameraInput,
-  type FreeCameraState,
-  type MutableFreeCameraState,
-} from './free-camera';
-import {
-  beginLook,
-  beginPinch,
-  combinedForward,
-  decayThrust,
-  moveLook,
-  movePinch,
-  pinchThrust,
-  type LookDelta,
-  type LookGesture,
-  type PinchGesture,
-} from './free-camera-touch';
-import { isClick, toNormalizedDevice, waterSurfacePoint } from './food-pick';
+  CameraController,
+  createOrbitControls,
+  type CameraHost,
+  type ImmersiveCamera,
+} from './camera-controller';
+import { DragController, type DecorDragListener, type DragHost } from './drag-controller';
+import type { StrokePoint } from './stroke';
+import { toNormalizedDevice, waterSurfacePoint } from './food-pick';
 import {
   decorTintInto,
   flatBrightness,
@@ -143,23 +115,6 @@ export type AquariumRendererFactory = (canvas: HTMLCanvasElement) => AquariumRen
 /** Tons d'environnement de l'eau teintée par les feuilles de catappa (issue #239). */
 export const TEA_TONES: readonly string[] = ['eauThe', 'eauTheClaire'];
 
-/** Bouton de la souris d'`OrbitControls` pour chaque action déclarée (`core/commands`). */
-export const ORBIT_MOUSE_ACTIONS: Readonly<Record<OrbitAction, MOUSE>> = {
-  rotate: MOUSE.ROTATE,
-  dolly: MOUSE.DOLLY,
-  pan: MOUSE.PAN,
-};
-
-/** Geste tactile d'`OrbitControls` pour chaque action déclarée (`core/commands`). */
-export const ORBIT_TOUCH_ACTIONS: Readonly<
-  Record<(typeof ORBIT_TOUCHES)['one'] | (typeof ORBIT_TOUCHES)['two'], TOUCH>
-> = {
-  rotate: TOUCH.ROTATE,
-  pan: TOUCH.PAN,
-  'dolly-pan': TOUCH.DOLLY_PAN,
-  'dolly-rotate': TOUCH.DOLLY_ROTATE,
-};
-
 /** Fabrique par défaut : WebGL sans anticrénelage (docs/DA.md, « Aucun lissage »). */
 export const createWebGLRenderer: AquariumRendererFactory = (canvas) =>
   new WebGLRenderer({ canvas, antialias: false, powerPreference: 'low-power' });
@@ -177,29 +132,10 @@ export interface AquariumViewOptions {
   readonly filter?: RenderFilter;
 }
 
-/**
- * Abonné au glissement d'un élément du décor à la souris ou au doigt (#168, `onDecorDrag`).
- * `start` : appui sur l'élément `index` (la caméra ne tourne plus) ; `move` : centre visé en
- * (x, z) sur le plan du sable, **non borné** (le décalage entre le point saisi et le centre
- * est conservé), seulement au-delà de `CLICK_TOLERANCE_PX` ; `end` : relâchement (`commit`
- * vrai si l'élément a bougé), ou abandon (`commit` faux : annulation du pointeur, fin du
- * mode édition).
- */
-export interface DecorDragListener {
-  start(index: number): void;
-  move(index: number, x: number, z: number): void;
-  end(index: number, commit: boolean): void;
-}
-
-/**
- * Caméra du mode immersif (#345, ADR 0086), en mètres de la scène : œil devant la vitre avant
- * du bac, décalé de (`eyeX`, `eyeY`) par rapport à son centre, à `eyeDistance` de la vitre.
- */
-export interface ImmersiveCamera {
-  readonly eyeX: number;
-  readonly eyeY: number;
-  readonly eyeDistance: number;
-}
+export type { DecorDragListener } from './drag-controller';
+export type { ImmersiveCamera } from './camera-controller';
+export { ORBIT_MOUSE_ACTIONS, ORBIT_TOUCH_ACTIONS } from './camera-controller';
+export { STROKE_STEP_PX, strokePoints, type StrokePoint } from './stroke';
 
 /**
  * Vue 3D du bac, sans Angular : renderer, scène, caméra et contrôles orbitaux.
@@ -259,13 +195,6 @@ export class AquariumView {
   private overcast = 1;
   /** Lumière gardée au fond sous les plantes hautes (issue #477, `plantShade`), 1 sans ombre. */
   private plantShade = 1;
-  /**
-   * Pose de base de la caméra du fond d'écran (`applyOrbit`, #332), recalculée seulement si
-   * le préréglage, le rapport d'aspect ou le bac changent ; `null` avant le premier appel.
-   */
-  private orbitBase: OrbitBase | null = null;
-  /** Position tournée de la caméra du fond d'écran, réécrite à chaque image (#332). */
-  private readonly orbitPosition: [number, number, number] = [0, 0, 0];
   /** Feuilles mortes flottantes (issue #107), dans un environnement qui en a. */
   private readonly floatingLeafLayer: FloatingLeafLayer;
   /** Feuilles de catappa sur le sol (issue #239). */
@@ -285,192 +214,18 @@ export class AquariumView {
   private readonly effects: readonly EffectLayer[];
   /** Toutes les couches, dans l'ordre d'ajout à la scène (et de libération). */
   private readonly sceneLayers: readonly SceneLayer[];
-  /** Abonnés au clic sur la surface de l'eau (`onSurfaceClick`). */
-  private readonly surfaceClickListeners = new Set<(x: number, z: number) => void>();
-  /** Abonnés à tout clic sur le canvas (`onCanvasClick`), avant ceux de la surface. */
-  private readonly canvasClickListeners = new Set<(clientX: number, clientY: number) => void>();
-  /** Abonnés aux mouvements de la caméra libre à la souris (`onCameraChange`, #343). */
-  private readonly cameraListeners = new Set<() => void>();
   /** Lancer de rayon de `pickDecor`, réutilisé. */
   private readonly raycaster = new Raycaster();
   /** Point visé en coordonnées normalisées, réutilisé par chaque lancer de rayon (#178). */
   private readonly pointerNdc = new Vector2();
-  /** Appui du pointeur principal en attente de relâchement (`null` : aucun clic possible). */
-  private pendingClick: { readonly id: number; readonly x: number; readonly y: number } | null =
-    null;
   /** Contrôles à la souris demandés (faux en mode capture) ; coupés le temps d'un glissement. */
   private readonly interactive: boolean;
-  /** Glissement du décor possible (mode édition, `setDecorDragEnabled`). */
-  private decorDragEnabled = false;
-  private decorDragListener: DecorDragListener | null = null;
-  /** Abonné au glissement d'un élément de la pièce (#188, `onRoomDrag`). */
-  private roomDragListener: DecorDragListener | null = null;
   /** Pièce construite par `setRoom` (choix à la souris), hors aperçu d'un glissement. */
   private room: Room = DEFAULT_ROOM;
   /** Blocs des meubles supports et des bacs posés (`setRoomLayout`, #305). */
   private roomLayout: readonly RoomBlock[] = [];
-  /** Passage de raclette possible (séance d'entretien, #604, `setStrokeEnabled`). */
-  private strokeEnabled = false;
-  private strokeListener: ((points: readonly StrokePoint[]) => void) | null = null;
-  /** Passage de raclette en cours : pointeur et dernier point transmis (`null` sinon). */
-  private stroke: { readonly id: number; last: { x: number; y: number } } | null = null;
-  /**
-   * Appui en mode raclette (#604) : écouté en phase de capture, avant `OrbitControls`, coupés
-   * pour tout le geste ; les points du glissé (tous les `STROKE_STEP_PX` au plus) sont
-   * transmis à l'abonné, groupés par événement (#617), souris comme doigt.
-   */
-  private readonly onStrokePointerDown = (event: PointerEvent) => {
-    const listener = this.strokeListener;
-    if (
-      !listener ||
-      !this.strokeEnabled ||
-      !this.interactive ||
-      this.drag ||
-      this.stroke ||
-      event.button !== 0 ||
-      !event.isPrimary
-    ) {
-      return;
-    }
-    this.stroke = { id: event.pointerId, last: { x: event.clientX, y: event.clientY } };
-    this.controls.enabled = false;
-    try {
-      this.canvas.setPointerCapture?.(event.pointerId);
-    } catch {
-      // Pointeur déjà relâché : le passage s'arrêtera au prochain relâchement.
-    }
-    listener([{ x: event.clientX, y: event.clientY }]);
-  };
-  private readonly onStrokePointerMove = (event: PointerEvent) => {
-    const stroke = this.stroke;
-    if (!stroke || stroke.id !== event.pointerId) {
-      return;
-    }
-    const to = { x: event.clientX, y: event.clientY };
-    const points = strokePoints(stroke.last, to, STROKE_STEP_PX);
-    if (points.length > 0) {
-      this.strokeListener?.(points);
-    }
-    stroke.last = to;
-  };
-  private readonly onStrokePointerEnd = (event: PointerEvent) => {
-    if (this.stroke?.id === event.pointerId) {
-      this.endStroke();
-    }
-  };
-  /** Glissement en cours d'un élément du décor ou de la pièce (`null` sinon). */
-  private drag: {
-    readonly id: number;
-    /** Élément du décor, ou de la pièce (#188), glissé sur le plan de sa base. */
-    readonly target: 'decor' | 'room';
-    readonly planeY: number;
-    readonly index: number;
-    readonly offsetX: number;
-    readonly offsetZ: number;
-    readonly start: { readonly x: number; readonly y: number };
-    moved: boolean;
-  } | null = null;
-  /**
-   * Appui sur un élément du décor en mode édition (#168) : écouté en phase de capture, donc
-   * avant `OrbitControls`, coupés pour tout le geste (glisser un élément ne tourne pas la
-   * caméra). Un appui dans le vide laisse les contrôles tourner comme avant.
-   */
-  private readonly onDragPointerDown = (event: PointerEvent) => {
-    const listener = this.decorDragListener;
-    if (
-      !listener ||
-      !this.decorDragEnabled ||
-      !this.interactive ||
-      this.drag ||
-      event.button !== 0 ||
-      !event.isPrimary
-    ) {
-      return;
-    }
-    const pick = this.pickDecor(event.clientX, event.clientY);
-    if (pick?.kind !== 'item' && pick?.kind !== 'room-item') {
-      return;
-    }
-    const room = pick.kind === 'room-item' ? this.room.items?.[pick.index] : undefined;
-    const center = pick.kind === 'item' ? this.decorLayer.itemPosition(pick.index) : room;
-    const roomListener = this.roomDragListener;
-    if (!center || (pick.kind === 'room-item' && !(room && roomListener))) {
-      return;
-    }
-    const target = pick.kind === 'item' ? 'decor' : 'room';
-    const planeY = room
-      ? (room.elevation ?? 0) - clampRoom(this.room).cabinetHeight
-      : SAND_THICKNESS;
-    const grab = this.planeAt(event.clientX, event.clientY, planeY);
-    this.drag = {
-      id: event.pointerId,
-      target,
-      planeY,
-      index: pick.index,
-      offsetX: grab ? center.x - grab.x : 0,
-      offsetZ: grab ? center.z - grab.z : 0,
-      start: { x: event.clientX, y: event.clientY },
-      moved: false,
-    };
-    this.controls.enabled = false;
-    this.canvas.style.cursor = 'grabbing';
-    try {
-      this.canvas.setPointerCapture?.(event.pointerId);
-    } catch {
-      // Pointeur déjà relâché : le glissement s'arrêtera au prochain relâchement.
-    }
-    (target === 'room' ? (roomListener as DecorDragListener) : listener).start(pick.index);
-  };
-  private readonly onDragPointerMove = (event: PointerEvent) => {
-    const drag = this.drag;
-    if (!drag || drag.id !== event.pointerId) {
-      return;
-    }
-    if (!drag.moved && isClick(drag.start, { x: event.clientX, y: event.clientY })) {
-      return;
-    }
-    drag.moved = true;
-    const p = this.planeAt(event.clientX, event.clientY, drag.planeY);
-    if (p) {
-      this.dragListener(drag.target)?.move(drag.index, p.x + drag.offsetX, p.z + drag.offsetZ);
-    }
-  };
-  private readonly onPointerDown = (event: PointerEvent) => {
-    this.pendingClick =
-      event.button === 0 && event.isPrimary
-        ? { id: event.pointerId, x: event.clientX, y: event.clientY }
-        : null;
-  };
-  private readonly onPointerUp = (event: PointerEvent) => {
-    if (this.drag?.id === event.pointerId) {
-      this.endDrag(true);
-    }
-    const down = this.pendingClick;
-    this.pendingClick = null;
-    if (
-      !down ||
-      down.id !== event.pointerId ||
-      !this.interactive ||
-      !isClick(down, { x: event.clientX, y: event.clientY })
-    ) {
-      return;
-    }
-    for (const listener of this.canvasClickListeners) {
-      listener(event.clientX, event.clientY);
-    }
-    const point = this.pickWaterSurface(event.clientX, event.clientY);
-    if (point) {
-      for (const listener of this.surfaceClickListeners) {
-        listener(point.x, point.z);
-      }
-    }
-  };
-  private readonly onPointerCancel = (event: PointerEvent) => {
-    this.pendingClick = null;
-    if (this.drag?.id === event.pointerId) {
-      this.endDrag(false);
-    }
-  };
+  /** Clics, glisser du décor et de la pièce, passage de raclette (#698). */
+  private readonly pointer: DragController;
   private readonly pixelRatio: number;
   private width = 0;
   private height = 0;
@@ -496,40 +251,8 @@ export class AquariumView {
   /** Temps propre d'un effet (`updateVisibleEffects`) : pluie ralentie si mouvements réduits. */
   private readonly effectTime = (layer: EffectLayer, time: number): number =>
     layer === this.rainLayer ? this.rainClock.at(time) : time;
-  /** Préréglage courant, recadré à chaque redimensionnement tant que l'utilisateur n'a pas bougé. */
-  private preset: CameraPreset | null;
-  /** Transition en cours vers un préréglage (`null` sinon), avancée par `stepCameraTransition`. */
-  private transition: CameraTransition | null = null;
-  /** Caméra libre dans la pièce (#343, ADR 0084), `null` en orbite. */
-  private free: FreeMode | null = null;
-  /** Glisser d'orientation de la caméra libre en cours (#343, seuil de geste #344). */
-  private look: LookGesture | null = null;
-  /** Déplacement du glisser d'orientation, tampon réutilisé (#344). */
-  private readonly lookDelta: LookDelta = { dx: 0, dy: 0 };
-  /** Premier doigt posé en caméra libre (#344) : point de départ d'un pincement. */
-  private firstTouch: { readonly id: number; x: number; y: number } | null = null;
-  /** Pincement à deux doigts en cours en caméra libre (#344). */
-  private pinch: PinchGesture | null = null;
-  /** Poussée du pincement dans [−1, 1], amortie à chaque image (#344). */
-  private touchThrust = 0;
-  /** Consigne passée au modèle de la caméra libre, tampon réutilisé (#344). */
-  private readonly freeInput = { forward: 0, strafe: 0, vertical: 0 };
-  /** Une interaction à la souris arrête de suivre le préréglage et annule la transition. */
-  private readonly stopFollowingPreset = () => {
-    this.preset = null;
-    this.transition = null;
-  };
-
-  /** Vrai en mode immersif (orbite et caméra libre coupées). */
-  private immersiveOn = false;
-  /**
-   * Caméra du mode immersif, préallouée (#357) : `setImmersiveCamera` y copie les valeurs de
-   * l'appelant, qui peut réutiliser son objet d'une image à l'autre (#355). Lue seulement
-   * quand `immersiveOn` est vrai.
-   */
-  private readonly immersive = { eyeX: 0, eyeY: 0, eyeDistance: 1 };
-  /** Préréglage suivi avant le mode immersif, rendu en sortant. */
-  private presetBeforeImmersive: CameraPreset = 'front';
+  /** Caméra : préréglages, transitions, caméra libre et mode immersif (#698). */
+  private readonly cameras: CameraController;
 
   constructor(options: AquariumViewOptions) {
     this.canvas = options.canvas;
@@ -599,51 +322,50 @@ export class AquariumView {
 
     const radius = tankBoundingRadius(this.world.dimensions);
     this.camera = new PerspectiveCamera(CAMERA_FOV_DEG, 1, radius * 0.05, radius * 40);
-
-    this.controls = new OrbitControls(this.camera, options.canvas);
     this.interactive = options.interactive;
-    this.controls.enabled = options.interactive;
-    this.controls.enableDamping = false;
-    const limits = orbitDistanceLimits(this.world.dimensions);
-    this.controls.minDistance = limits.min;
-    this.controls.maxDistance = limits.max;
-    // Déplacement au clic droit borné (bug #10) : la cible reste dans une sphère autour du
-    // centre du bac, qui reste ainsi dans le champ.
-    this.controls.cursor.set(...tankCenter(this.world.dimensions));
-    this.controls.maxTargetRadius = panTargetRadius(this.world.dimensions);
-    // Gestes déclarés dans `core/commands` (source unique de l'aide-mémoire, #74) : clic
-    // gauche = rotation, molette = zoom, clic droit = déplacement ; un doigt = rotation, deux
-    // doigts = zoom et déplacement (ce sont aussi les valeurs par défaut d'`OrbitControls`).
-    this.controls.mouseButtons = {
-      LEFT: ORBIT_MOUSE_ACTIONS[ORBIT_MOUSE_BUTTONS.left],
-      MIDDLE: ORBIT_MOUSE_ACTIONS[ORBIT_MOUSE_BUTTONS.middle],
-      RIGHT: ORBIT_MOUSE_ACTIONS[ORBIT_MOUSE_BUTTONS.right],
-    };
-    this.controls.touches = {
-      ONE: ORBIT_TOUCH_ACTIONS[ORBIT_TOUCHES.one],
-      TWO: ORBIT_TOUCH_ACTIONS[ORBIT_TOUCHES.two],
-    };
-    this.controls.addEventListener('start', this.stopFollowingPreset);
-    // Nourrissage au clic (issue #67) : écouté à côté des contrôles, qui gardent le glisser.
-    options.canvas.addEventListener('pointerdown', this.onPointerDown);
-    options.canvas.addEventListener('pointerup', this.onPointerUp);
-    options.canvas.addEventListener('pointercancel', this.onPointerCancel);
-    // Glissement du décor (#168) : avant `OrbitControls`, qui écoute en phase de bouillonnement.
-    options.canvas.addEventListener('pointerdown', this.onDragPointerDown, { capture: true });
-    options.canvas.addEventListener('pointermove', this.onDragPointerMove);
-    // Passage de raclette (#604) : comme le glissement du décor, avant `OrbitControls`.
-    options.canvas.addEventListener('pointerdown', this.onStrokePointerDown, { capture: true });
-    options.canvas.addEventListener('pointermove', this.onStrokePointerMove);
-    options.canvas.addEventListener('pointerup', this.onStrokePointerEnd);
-    options.canvas.addEventListener('pointercancel', this.onStrokePointerEnd);
-    // Orientation de la caméra libre (#343) : contrôles orbitaux coupés dans ce mode.
-    options.canvas.addEventListener('pointerdown', this.onLookPointerDown);
-    options.canvas.addEventListener('pointermove', this.onLookPointerMove);
-    options.canvas.addEventListener('pointerup', this.onLookPointerEnd);
-    options.canvas.addEventListener('pointercancel', this.onLookPointerEnd);
+    // Contrôles d'abord : leur `pointerdown` passe avant les gestes de la vue (docs/PIEGES.md).
+    this.controls = createOrbitControls(
+      this.camera,
+      options.canvas,
+      this.world.dimensions,
+      options.interactive,
+    );
+    // Gestes du canvas (#698) : clics, glisser et raclette, puis caméra libre, dans cet ordre.
+    this.pointer = new DragController(this.dragHost());
+    this.cameras = new CameraController(this.cameraHost(), options.preset);
+  }
 
-    this.preset = options.preset;
-    this.applyPreset(options.preset);
+  /** Accès des gestes du pointeur à la vue (`DragController`). */
+  private dragHost(): DragHost {
+    return {
+      canvas: this.canvas,
+      controls: this.controls,
+      interactive: this.interactive,
+      orbitAllowed: () => this.interactive && !this.disposed && !this.cameras.freeCameraActive,
+      pickDecor: (x, y) => this.pickDecor(x, y),
+      pickWaterSurface: (x, y) => this.pickWaterSurface(x, y),
+      planeAt: (x, y, planeY) => this.planeAt(x, y, planeY),
+      decorItemPosition: (index) => this.decorLayer.itemPosition(index),
+      room: () => this.room,
+    };
+  }
+
+  /** Accès de la caméra à la vue (`CameraController`). */
+  private cameraHost(): CameraHost {
+    return {
+      camera: this.camera,
+      controls: this.controls,
+      canvas: this.canvas,
+      dimensions: this.world.dimensions,
+      interactive: this.interactive,
+      dragging: () => this.pointer.dragging,
+      stroking: () => this.pointer.stroking,
+      cancelClick: () => this.pointer.cancelClick(),
+      roomBuilt: () => this.roomLayer.built,
+      cabinetHeight: () => clampRoom(this.room).cabinetHeight,
+      hasSize: () => this.hasSize(),
+      updateAspect: () => this.updateAspect(),
+    };
   }
 
   get dimensions(): TankDimensions {
@@ -657,10 +379,7 @@ export class AquariumView {
 
   /** Place la caméra sur un préréglage, cadré pour le rapport d'aspect courant (instantané). */
   applyPreset(preset: CameraPreset): void {
-    this.leaveFreeMode();
-    this.transition = null;
-    this.preset = preset;
-    this.setPose(this.presetPose(preset));
+    this.cameras.applyPreset(preset);
   }
 
   /**
@@ -669,23 +388,7 @@ export class AquariumView {
    * nulle ou des contrôles inactifs (mode capture, contrat déterministe) : placement instantané.
    */
   animateToPreset(preset: CameraPreset, durationSeconds: number): void {
-    if (this.disposed) {
-      return;
-    }
-    if (!(durationSeconds > 0) || !this.interactive) {
-      this.applyPreset(preset);
-      return;
-    }
-    // Depuis la caméra libre (#343) : la transition part de la pose libre, vers l'orbite.
-    const from = this.currentPose();
-    this.leaveFreeMode();
-    this.preset = null;
-    this.transition = {
-      preset,
-      from,
-      elapsed: 0,
-      duration: durationSeconds,
-    };
+    this.cameras.animateToPreset(preset, durationSeconds);
   }
 
   /**
@@ -695,36 +398,12 @@ export class AquariumView {
    * aucune allocation tant que préréglage, taille et bac ne changent pas (#332).
    */
   applyOrbit(preset: CameraPreset, angle: number): void {
-    if (this.disposed) {
-      return;
-    }
-    this.transition = null;
-    this.preset = preset;
-    const base = this.orbitBasePose(preset);
-    this.setPoseFrom(orbitPositionInto(base, angle, this.orbitPosition), base.target);
-  }
-
-  /** Pose de `presetPose(preset)`, en cache tant que préréglage, aspect et bac sont les mêmes. */
-  private orbitBasePose(preset: CameraPreset): CameraPose {
-    const aspect = this.aspect();
-    const dimensions = this.world.dimensions;
-    const cached = this.orbitBase;
-    if (
-      cached !== null &&
-      cached.preset === preset &&
-      cached.aspect === aspect &&
-      cached.dimensions === dimensions
-    ) {
-      return cached.pose;
-    }
-    const pose = this.presetPose(preset);
-    this.orbitBase = { preset, aspect, dimensions, pose };
-    return pose;
+    this.cameras.applyOrbit(preset, angle);
   }
 
   /** Vrai pendant une transition de caméra. */
   get transitioning(): boolean {
-    return this.transition !== null;
+    return this.cameras.transitioning;
   }
 
   /**
@@ -733,19 +412,7 @@ export class AquariumView {
    * reste cadré. À la fin, la caméra suit de nouveau le préréglage.
    */
   stepCameraTransition(dtSeconds: number): boolean {
-    const transition = this.transition;
-    if (!transition || this.disposed) {
-      return false;
-    }
-    const dt = Number.isFinite(dtSeconds) && dtSeconds > 0 ? dtSeconds : 0;
-    transition.elapsed = Math.min(transition.duration, transition.elapsed + dt);
-    if (transition.elapsed >= transition.duration) {
-      this.applyPreset(transition.preset);
-      return true;
-    }
-    const to = this.presetPose(transition.preset);
-    this.setPose(interpolatePose(transition.from, to, transition.elapsed / transition.duration));
-    return true;
+    return this.cameras.stepCameraTransition(dtSeconds);
   }
 
   /**
@@ -764,9 +431,7 @@ export class AquariumView {
       this.renderer.setSize(w, h, false);
       this.targetSize = this.pixelPass.setSize(w, h, this.pixelRatio);
       this.updateAspect();
-      if (this.preset !== null) {
-        this.applyPreset(this.preset);
-      }
+      this.cameras.reframe();
     }
     return true;
   }
@@ -994,19 +659,12 @@ export class AquariumView {
     return planePoint(o, d, y);
   }
 
-  private dragListener(target: 'decor' | 'room'): DecorDragListener | null {
-    return target === 'room' ? this.roomDragListener : this.decorDragListener;
-  }
-
   /**
    * Autorise ou non le glissement des éléments du décor (mode édition, #168). Le couper
    * pendant un glissement l'abandonne (`end` sans `commit`) et rend la main à la caméra.
    */
   setDecorDragEnabled(enabled: boolean): void {
-    this.decorDragEnabled = enabled;
-    if (!enabled && this.drag) {
-      this.endDrag(false);
-    }
+    this.pointer.setDecorDragEnabled(enabled);
   }
 
   /**
@@ -1015,15 +673,12 @@ export class AquariumView {
    * caméra. Le couper pendant un passage l'arrête et rend la main à la caméra.
    */
   setStrokeEnabled(enabled: boolean): void {
-    this.strokeEnabled = enabled;
-    if (!enabled) {
-      this.endStroke();
-    }
+    this.pointer.setStrokeEnabled(enabled);
   }
 
   /** Vrai pendant un passage de raclette (tests). */
   get stroking(): boolean {
-    return this.stroke !== null;
+    return this.pointer.stroking;
   }
 
   /**
@@ -1032,37 +687,12 @@ export class AquariumView {
    * (jamais vide). Renvoie le désabonnement.
    */
   onStroke(listener: (points: readonly StrokePoint[]) => void): () => void {
-    this.strokeListener = listener;
-    return () => {
-      if (this.strokeListener === listener) {
-        this.strokeListener = null;
-      }
-    };
-  }
-
-  /** Termine le passage de raclette en cours : caméra rendue. */
-  private endStroke(): void {
-    const stroke = this.stroke;
-    if (!stroke) {
-      return;
-    }
-    this.stroke = null;
-    this.controls.enabled = this.interactive && !this.disposed && this.free === null;
-    try {
-      this.canvas.releasePointerCapture?.(stroke.id);
-    } catch {
-      // Capture déjà relâchée par le navigateur.
-    }
+    return this.pointer.onStroke(listener);
   }
 
   /** Abonnement (unique) au glissement du décor (`DecorDragListener`). Renvoie le désabonnement. */
   onDecorDrag(listener: DecorDragListener): () => void {
-    this.decorDragListener = listener;
-    return () => {
-      if (this.decorDragListener === listener) {
-        this.decorDragListener = null;
-      }
-    };
+    return this.pointer.onDecorDrag(listener);
   }
 
   /**
@@ -1070,17 +700,12 @@ export class AquariumView {
    * `onDecorDrag`, (x, z) visés sur le plan de la base de l'élément. Renvoie le désabonnement.
    */
   onRoomDrag(listener: DecorDragListener): () => void {
-    this.roomDragListener = listener;
-    return () => {
-      if (this.roomDragListener === listener) {
-        this.roomDragListener = null;
-      }
-    };
+    return this.pointer.onRoomDrag(listener);
   }
 
   /** Vrai pendant le glissement d'un élément du décor (tests). */
   get decorDragging(): boolean {
-    return this.drag !== null;
+    return this.pointer.dragging;
   }
 
   /** Aperçu du glissement : l'élément `index` affiché en (x, z), sans reconstruire le décor. */
@@ -1098,23 +723,6 @@ export class AquariumView {
     if (!this.disposed) {
       this.decorLayer.placeItem(index, x, y, z);
     }
-  }
-
-  /** Termine le glissement en cours : caméra rendue, abonné prévenu. */
-  private endDrag(commit: boolean): void {
-    const drag = this.drag;
-    if (!drag) {
-      return;
-    }
-    this.drag = null;
-    this.controls.enabled = this.interactive && !this.disposed && this.free === null;
-    this.canvas.style.cursor = '';
-    try {
-      this.canvas.releasePointerCapture?.(drag.id);
-    } catch {
-      // Capture déjà relâchée par le navigateur.
-    }
-    this.dragListener(drag.target)?.end(drag.index, commit && drag.moved);
   }
 
   /** Sélectionne l'élément d'indice `index` de `World.decor` (contour clair), ou aucun. */
@@ -1135,8 +743,7 @@ export class AquariumView {
    * Renvoie le désabonnement.
    */
   onCanvasClick(listener: (clientX: number, clientY: number) => void): () => void {
-    this.canvasClickListeners.add(listener);
-    return () => this.canvasClickListeners.delete(listener);
+    return this.pointer.onCanvasClick(listener);
   }
 
   /**
@@ -1145,8 +752,7 @@ export class AquariumView {
    * (mode capture) ni pour un clic hors du bac. Renvoie le désabonnement.
    */
   onSurfaceClick(listener: (x: number, z: number) => void): () => void {
-    this.surfaceClickListeners.add(listener);
-    return () => this.surfaceClickListeners.delete(listener);
+    return this.pointer.onSurfaceClick(listener);
   }
 
   /**
@@ -1315,15 +921,8 @@ export class AquariumView {
     if (!this.disposed) {
       this.room = room;
       this.previewRoom(room);
-      if (this.free !== null) {
-        // Pièce masquée : retour à l'orbite ; meuble changé : limites recalculées (#343).
-        if (!this.roomLayer.built) {
-          this.exitFreeCamera();
-        } else {
-          this.free.bounds = this.freeBounds();
-          this.applyFreeState(this.free.state);
-        }
-      }
+      // Pièce masquée : retour à l'orbite ; meuble changé : limites recalculées (#343).
+      this.cameras.roomChanged();
     }
   }
 
@@ -1809,7 +1408,7 @@ export class AquariumView {
 
   /** Vrai en caméra libre (#343). */
   get freeCameraActive(): boolean {
-    return this.free !== null;
+    return this.cameras.freeCameraActive;
   }
 
   /**
@@ -1819,30 +1418,7 @@ export class AquariumView {
    * dessinée, en vue non interactive (capture, fond d'écran) ou déjà en caméra libre.
    */
   enterFreeCamera(): boolean {
-    if (this.disposed || !this.interactive || this.free !== null || !this.roomLayer.built) {
-      return false;
-    }
-    const saved = { pose: this.currentPose(), preset: this.preset };
-    this.transition = null;
-    this.preset = null;
-    const bounds = this.freeBounds();
-    this.free = {
-      bounds,
-      saved,
-      state: mutableFreeCameraState(freeCameraFromPose(saved.pose, bounds)),
-      carry: 0,
-      lookDistance: Math.max(
-        0.5,
-        Math.hypot(
-          saved.pose.position[0] - saved.pose.target[0],
-          saved.pose.position[1] - saved.pose.target[1],
-          saved.pose.position[2] - saved.pose.target[2],
-        ),
-      ),
-    };
-    this.controls.enabled = false;
-    this.applyFreeState(this.free.state);
-    return true;
+    return this.cameras.enterFreeCamera();
   }
 
   /**
@@ -1850,17 +1426,7 @@ export class AquariumView {
    * sur le préréglage qu'elle suivait. Renvoie `false` hors caméra libre.
    */
   exitFreeCamera(): boolean {
-    const free = this.free;
-    if (!free || this.disposed) {
-      return false;
-    }
-    this.leaveFreeMode();
-    if (free.saved.preset !== null) {
-      this.applyPreset(free.saved.preset);
-    } else {
-      this.setPose(free.saved.pose);
-    }
-    return true;
+    return this.cameras.exitFreeCamera();
   }
 
   /**
@@ -1868,28 +1434,7 @@ export class AquariumView {
    * (`stepFreeCamera`, pas fixes). Renvoie `true` si la caméra a bougé.
    */
   stepFreeCamera(input: FreeCameraInput, dtSeconds: number): boolean {
-    const free = this.free;
-    if (!free || this.disposed) {
-      return false;
-    }
-    // Poussée du pincement (#344) ajoutée à l'avance du clavier, puis amortie.
-    const thrust = this.touchThrust;
-    this.touchThrust = decayThrust(thrust, dtSeconds);
-    const command = this.freeInput;
-    command.forward = combinedForward(input.forward, thrust);
-    command.strafe = input.strafe;
-    command.vertical = input.vertical;
-    // En place, sans allocation par image (#352) : l'état de la vue est le sien seul.
-    const p = free.state.position;
-    const x = p[0];
-    const y = p[1];
-    const z = p[2];
-    free.carry = stepFreeCameraInPlace(free.state, command, dtSeconds, free.bounds, free.carry);
-    if (p[0] === x && p[1] === y && p[2] === z) {
-      return false;
-    }
-    this.applyFreeState(free.state);
-    return true;
+    return this.cameras.stepFreeCamera(input, dtSeconds);
   }
 
   /**
@@ -1899,29 +1444,7 @@ export class AquariumView {
    * (`false`) sans pièce dessinée : la pose du préréglage reste.
    */
   applyFreePose(position: Vec3, yaw: number, pitch: number): boolean {
-    if (this.disposed || !this.roomLayer.built) {
-      return false;
-    }
-    this.leaveFreeMode();
-    this.transition = null;
-    this.preset = null;
-    const bounds = this.freeBounds();
-    const state: FreeCameraState = {
-      position: constrainFreePosition(bounds, position),
-      yaw: Number.isFinite(yaw) ? yaw : 0,
-      pitch: clampFreePitch(pitch),
-      velocity: [0, 0, 0],
-    };
-    const center = tankCenter(this.world.dimensions);
-    const p = state.position;
-    const pose = freeCameraPose(
-      state,
-      Math.max(0.5, Math.hypot(p[0] - center[0], p[1] - center[1], p[2] - center[2])),
-    );
-    this.camera.position.set(pose.position[0], pose.position[1], pose.position[2]);
-    this.controls.target.set(pose.target[0], pose.target[1], pose.target[2]);
-    this.camera.lookAt(pose.target[0], pose.target[1], pose.target[2]);
-    return true;
+    return this.cameras.applyFreePose(position, yaw, pitch);
   }
 
   /**
@@ -1929,141 +1452,13 @@ export class AquariumView {
    * image (#352) : copier les valeurs à comparer plutôt que garder l'objet.
    */
   get freeCameraState(): FreeCameraState | null {
-    return this.free?.state ?? null;
-  }
-
-  /** Limites de la caméra libre pour le bac et le meuble courants. */
-  private freeBounds(): FreeCameraBounds {
-    return freeCameraBounds(this.world.dimensions, clampRoom(this.room).cabinetHeight);
-  }
-
-  /**
-   * Place la caméra sur l'état libre, sans `controls.update()` : il ramènerait la distance et
-   * la cible dans les bornes de l'orbite. La cible des contrôles suit le point visé.
-   */
-  private applyFreeState(state: FreeCameraState): void {
-    const free = this.free;
-    if (!free) {
-      return;
-    }
-    // Même calcul que `freeCameraPose`, sans allocation (chemin par image, #352).
-    const p = state.position;
-    const k = free.lookDistance;
-    const cos = Math.cos(state.pitch);
-    const tx = p[0] - Math.sin(state.yaw) * cos * k;
-    const ty = p[1] + Math.sin(state.pitch) * k;
-    const tz = p[2] - Math.cos(state.yaw) * cos * k;
-    this.camera.position.set(p[0], p[1], p[2]);
-    this.controls.target.set(tx, ty, tz);
-    this.camera.lookAt(tx, ty, tz);
-  }
-
-  /** Quitte la caméra libre sans toucher à la pose : contrôles orbitaux rendus. */
-  private leaveFreeMode(): void {
-    if (this.free === null) {
-      return;
-    }
-    this.free = null;
-    this.resetFreeGestures();
-    this.controls.enabled = this.interactive && !this.disposed && this.drag === null;
-  }
-
-  /** Abandonne les gestes de la caméra libre en cours (orientation, pincement, poussée). */
-  private resetFreeGestures(): void {
-    this.look = null;
-    this.firstTouch = null;
-    this.pinch = null;
-    this.touchThrust = 0;
+    return this.cameras.freeCameraState;
   }
 
   /** Poussée courante du pincement (tests), dans [−1, 1]. */
   get freeCameraThrust(): number {
-    return this.touchThrust;
+    return this.cameras.freeCameraThrust;
   }
-
-  /**
-   * Appui en caméra libre : un pointeur principal commence un glisser d'orientation (seuil
-   * de geste, #344) ; un second doigt transforme le geste en pincement (avancer, reculer).
-   */
-  private readonly onLookPointerDown = (event: PointerEvent) => {
-    if (!this.free || this.drag || this.stroke) {
-      return;
-    }
-    if (event.pointerType === 'touch') {
-      const first = this.firstTouch;
-      if (first === null) {
-        this.firstTouch = { id: event.pointerId, x: event.clientX, y: event.clientY };
-      } else if (this.pinch === null && first.id !== event.pointerId) {
-        this.pinch = beginPinch(
-          first.id,
-          first.x,
-          first.y,
-          event.pointerId,
-          event.clientX,
-          event.clientY,
-        );
-        // Deux doigts : plus d'orientation, ni de clic du premier doigt.
-        this.look = null;
-        this.pendingClick = null;
-        return;
-      }
-    }
-    if (this.look || this.pinch || event.button !== 0 || !event.isPrimary) {
-      return;
-    }
-    this.look = beginLook(event.pointerId, event.clientX, event.clientY, event.pointerType);
-  };
-
-  private readonly onLookPointerMove = (event: PointerEvent) => {
-    const free = this.free;
-    if (!free || this.drag) {
-      return;
-    }
-    const first = this.firstTouch;
-    if (first !== null && first.id === event.pointerId) {
-      first.x = event.clientX;
-      first.y = event.clientY;
-    }
-    const pinch = this.pinch;
-    if (pinch !== null) {
-      const delta = movePinch(pinch, event.pointerId, event.clientX, event.clientY);
-      if (delta !== 0) {
-        this.touchThrust = pinchThrust(this.touchThrust, delta);
-      }
-      return;
-    }
-    const look = this.look;
-    if (!look || look.id !== event.pointerId) {
-      return;
-    }
-    const delta = this.lookDelta;
-    if (!moveLook(look, event.clientX, event.clientY, delta)) {
-      return;
-    }
-    const state = free.state;
-    const turned = turnFreeCamera(state, delta.dx, delta.dy);
-    if (turned !== state) {
-      // Cap et inclinaison recopiés : l'état de la vue garde ses propres tableaux (#352).
-      state.yaw = turned.yaw;
-      state.pitch = turned.pitch;
-      this.applyFreeState(state);
-      this.cameraListeners.forEach((listener) => listener());
-    }
-  };
-
-  private readonly onLookPointerEnd = (event: PointerEvent) => {
-    const id = event.pointerId;
-    if (this.look?.id === id) {
-      this.look = null;
-    }
-    if (this.firstTouch?.id === id) {
-      this.firstTouch = null;
-    }
-    if (this.pinch !== null && (this.pinch.a === id || this.pinch.b === id)) {
-      // La poussée garde son élan et s'éteint d'elle-même (amortissement).
-      this.pinch = null;
-    }
-  };
 
   /**
    * Mode immersif (#345, ADR 0086) : caméra parallèle à la vitre avant, projection décentrée
@@ -2073,67 +1468,12 @@ export class AquariumView {
    * est invalide (distance non strictement positive, valeur non finie).
    */
   setImmersiveCamera(camera: ImmersiveCamera | null): boolean {
-    if (this.disposed) {
-      return false;
-    }
-    if (camera === null) {
-      if (this.immersiveOn) {
-        this.immersiveOn = false;
-        this.controls.enabled = this.interactive;
-        this.updateAspect();
-        this.applyPreset(this.presetBeforeImmersive);
-      }
-      return true;
-    }
-    if (
-      !Number.isFinite(camera.eyeX) ||
-      !Number.isFinite(camera.eyeY) ||
-      !Number.isFinite(camera.eyeDistance) ||
-      camera.eyeDistance <= 0
-    ) {
-      return false;
-    }
-    this.leaveFreeMode();
-    this.transition = null;
-    if (!this.immersiveOn) {
-      this.presetBeforeImmersive = this.preset ?? 'front';
-    }
-    // Plus de préréglage suivi : un redimensionnement ne replace pas la caméra.
-    this.preset = null;
-    // Copie en place, sans allocation (#357) : l'appelant peut réutiliser son objet (#355).
-    const immersive = this.immersive;
-    immersive.eyeX = camera.eyeX;
-    immersive.eyeY = camera.eyeY;
-    immersive.eyeDistance = camera.eyeDistance;
-    this.immersiveOn = true;
-    this.controls.enabled = false;
-    const { width, height, depth } = this.world.dimensions;
-    const x = camera.eyeX;
-    const y = height / 2 + camera.eyeY;
-    const z = depth / 2 + camera.eyeDistance;
-    this.camera.position.set(x, y, z);
-    this.camera.quaternion.identity();
-    this.controls.target.set(x, y, 0);
-    this.applyImmersiveProjection(width, height);
-    return true;
+    return this.cameras.setImmersiveCamera(camera);
   }
 
   /** Vrai en mode immersif. */
   get immersiveActive(): boolean {
-    return this.immersiveOn;
-  }
-
-  private applyImmersiveProjection(width: number, height: number): void {
-    const camera = this.immersive;
-    const frustum = offAxisFrustum({
-      screenWidth: width,
-      screenHeight: height,
-      eye: { x: camera.eyeX, y: camera.eyeY, z: camera.eyeDistance },
-      near: camera.eyeDistance / 2,
-      far: camera.eyeDistance + this.world.dimensions.depth + 1,
-    });
-    this.camera.projectionMatrix.fromArray(frustumMatrix(frustum));
-    this.camera.projectionMatrixInverse.copy(this.camera.projectionMatrix).invert();
+    return this.cameras.immersiveActive;
   }
 
   /** Position courante de la caméra (exposée pour les tests de bout en bout). */
@@ -2164,10 +1504,10 @@ export class AquariumView {
    */
   onCameraChange(listener: () => void): () => void {
     this.controls.addEventListener('change', listener);
-    this.cameraListeners.add(listener);
+    const offLook = this.cameras.onFreeLook(listener);
     return () => {
       this.controls.removeEventListener('change', listener);
-      this.cameraListeners.delete(listener);
+      offLook();
     };
   }
 
@@ -2176,29 +1516,8 @@ export class AquariumView {
       return;
     }
     this.disposed = true;
-    this.controls.removeEventListener('start', this.stopFollowingPreset);
-    this.canvas.removeEventListener('pointerdown', this.onPointerDown);
-    this.canvas.removeEventListener('pointerup', this.onPointerUp);
-    this.canvas.removeEventListener('pointercancel', this.onPointerCancel);
-    this.canvas.removeEventListener('pointerdown', this.onDragPointerDown, { capture: true });
-    this.canvas.removeEventListener('pointermove', this.onDragPointerMove);
-    this.canvas.removeEventListener('pointerdown', this.onStrokePointerDown, { capture: true });
-    this.canvas.removeEventListener('pointermove', this.onStrokePointerMove);
-    this.canvas.removeEventListener('pointerup', this.onStrokePointerEnd);
-    this.canvas.removeEventListener('pointercancel', this.onStrokePointerEnd);
-    this.stroke = null;
-    this.strokeListener = null;
-    this.canvas.removeEventListener('pointerdown', this.onLookPointerDown);
-    this.canvas.removeEventListener('pointermove', this.onLookPointerMove);
-    this.canvas.removeEventListener('pointerup', this.onLookPointerEnd);
-    this.canvas.removeEventListener('pointercancel', this.onLookPointerEnd);
-    this.free = null;
-    this.resetFreeGestures();
-    this.drag = null;
-    this.decorDragListener = null;
-    this.roomDragListener = null;
-    this.surfaceClickListeners.clear();
-    this.canvasClickListeners.clear();
+    this.pointer.dispose();
+    this.cameras.dispose();
     this.controls.dispose();
     for (const layer of this.sceneLayers) {
       layer.dispose();
@@ -2218,98 +1537,6 @@ export class AquariumView {
       this.currentFilter === 'pixel' ? this.targetSize : { width: this.width, height: this.height };
     this.camera.aspect = size.width / size.height;
     this.camera.updateProjectionMatrix();
-    if (this.immersiveOn) {
-      this.applyImmersiveProjection(this.world.dimensions.width, this.world.dimensions.height);
-    }
+    this.cameras.refreshImmersiveProjection();
   }
-
-  private presetPose(preset: CameraPreset): CameraPose {
-    return cameraPresetPose(preset, this.world.dimensions, this.aspect(), CAMERA_FOV_DEG);
-  }
-
-  private currentPose(): CameraPose {
-    const p = this.camera.position;
-    const t = this.controls.target;
-    return { position: [p.x, p.y, p.z], target: [t.x, t.y, t.z] };
-  }
-
-  private setPose(pose: CameraPose): void {
-    this.setPoseFrom(pose.position, pose.target);
-  }
-
-  /** Place la caméra en `position`, tournée vers `target` (accès indexés, sans allocation). */
-  private setPoseFrom(position: Vec3, target: Vec3): void {
-    this.camera.position.set(position[0], position[1], position[2]);
-    this.controls.target.set(target[0], target[1], target[2]);
-    this.camera.lookAt(target[0], target[1], target[2]);
-    this.controls.update();
-  }
-
-  private aspect(): number {
-    if (this.hasSize()) {
-      return this.camera.aspect;
-    }
-    const w = this.canvas.clientWidth;
-    const h = this.canvas.clientHeight;
-    return w > 0 && h > 0 ? w / h : 1;
-  }
-}
-
-/** Pose de base en cache de la caméra du fond d'écran et ce dont elle dépend (#332). */
-interface OrbitBase {
-  readonly preset: CameraPreset;
-  readonly aspect: number;
-  readonly dimensions: TankDimensions;
-  readonly pose: CameraPose;
-}
-
-/** Caméra libre en cours (#343) : état, limites et pose orbitale à rendre en sortant. */
-interface FreeMode {
-  bounds: FreeCameraBounds;
-  /** État propre à la vue (tableaux non partagés), modifié en place à chaque image (#352). */
-  readonly state: MutableFreeCameraState;
-  /** Reste de temps réel, moins d'un pas fixe, reporté à l'image suivante. */
-  carry: number;
-  readonly saved: { readonly pose: CameraPose; readonly preset: CameraPreset | null };
-  /** Distance du point visé (cible des contrôles, échelle des granulés). */
-  readonly lookDistance: number;
-}
-
-interface CameraTransition {
-  readonly preset: CameraPreset;
-  readonly from: CameraPose;
-  elapsed: number;
-  readonly duration: number;
-}
-
-/** Écart maximal entre deux points transmis d'un passage de raclette, en pixels CSS (#604). */
-export const STROKE_STEP_PX = 6;
-
-/** Point d'un passage de raclette (#604), en pixels CSS du client. */
-export interface StrokePoint {
-  readonly x: number;
-  readonly y: number;
-}
-
-/**
- * Points de `from` (exclu) à `to` (inclus), espacés de `step` pixels au plus : un geste rapide
- * ne saute pas une plaque entre deux événements du pointeur. Aucun point si rien n'a bougé
- * ou si une coordonnée n'est pas finie.
- */
-export function strokePoints(
-  from: StrokePoint,
-  to: StrokePoint,
-  step: number,
-): { x: number; y: number }[] {
-  const dx = to.x - from.x;
-  const dy = to.y - from.y;
-  const length = Math.hypot(dx, dy);
-  if (!Number.isFinite(length) || length === 0 || !(step > 0)) {
-    return [];
-  }
-  const count = Math.ceil(length / step);
-  return Array.from({ length: count }, (_, i) => ({
-    x: from.x + (dx * (i + 1)) / count,
-    y: from.y + (dy * (i + 1)) / count,
-  }));
 }
