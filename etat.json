@@ -9519,6 +9519,12 @@
           "debut": "2026-11-20T12:05:29.366Z",
           "fin": "2026-11-20T12:06:25.331Z",
           "note": "Issue #721 : Interface 1/5, charte et fondations (M) ; #686 soldé"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-20T12:06:56.621Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
