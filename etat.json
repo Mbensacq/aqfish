@@ -9527,10 +9527,10 @@
           "note": "PR #750 : charte lot 1 (jetons, polices Atkinson, icône, index.html), CI verte, 143 captures bac seul identiques"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-20T12:54:00.605Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-20T13:13:53.974Z",
+          "note": "Verdict OK, 0 bug, 143 captures bac seul identiques, 24 d'interface changées (attendu), publiées ; e2e complets laissés à la CI"
         }
       },
       "metriques": {}
