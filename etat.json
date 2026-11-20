@@ -9557,10 +9557,10 @@
           "note": "Issue #722 : fenêtre des réglages, tranche 1/3 bureau (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-20T13:42:41.961Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-20T14:24:01.019Z",
+          "note": "PR #751 : fenêtre des réglages, catégories déclarées et modale bureau (tranche 1 partielle, non branchée), CI verte"
         }
       },
       "metriques": {}
