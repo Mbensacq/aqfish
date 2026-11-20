@@ -9582,7 +9582,7 @@
       "date": "2026-11-20",
       "debut": "2026-11-20T15:14:24.082Z",
       "type": "dette",
-      "issue": null,
+      "issue": 715,
       "pr": null,
       "version": null,
       "phases": {
