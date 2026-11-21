@@ -9872,7 +9872,7 @@
       "type": "retro",
       "issue": 764,
       "pr": 767,
-      "version": null,
+      "version": "v1.27.6",
       "phases": {
         "planif": {
           "statut": "termine",
