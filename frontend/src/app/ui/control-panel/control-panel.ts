@@ -44,6 +44,9 @@ import {
   readStoredSettingsCategory,
   writeStoredSettingsCategory,
 } from '../../core/settings-category-pref/settings-category-pref';
+import { AmbientSoundState } from '../ambient-sound/ambient-sound-state';
+import { ReducedMotionState } from '../reduced-motion/reduced-motion-state';
+import { settingsSummaries } from './settings-summaries';
 import { AccessibilitySection } from './accessibility-section';
 import { CareSection } from './care-section';
 import { DaySection } from './day-section';
@@ -153,6 +156,7 @@ export { sliderHour } from './day-section';
            document, celles des autres catégories sont masquées (attribut « hidden », ADR 0165). -->
       <app-settings-window
         [selected]="category()"
+        [summaries]="summaries()"
         (selectedChange)="chooseCategory($event)"
         (closeRequested)="onCloseRequested()"
       >
@@ -550,6 +554,29 @@ export class ControlPanel {
   /** Section « Soins » (#361) : en mode soins, avec des points blancs ou un traitement. */
   protected readonly careShown = computed(
     () => this.careMode() !== 'decor' && (this.ichCount() > 0 || this.treatment() !== null),
+  );
+
+  private readonly sound = inject(AmbientSoundState);
+  private readonly motion = inject(ReducedMotionState);
+  /** Valeur résumée de chaque catégorie, dans la liste du téléphone (#722, tranche 3). */
+  protected readonly summaries = computed(() =>
+    settingsSummaries({
+      environment: this.environment(),
+      tankCount: this.tankList().length,
+      animals: Object.values(this.population()).reduce((sum, count) => sum + count, 0),
+      temperature: this.water().temperature,
+      current: this.current(),
+      ichCount: this.ichCount(),
+      treating: this.treatment() !== null,
+      decorVisible: this.decorVisible(),
+      speed: this.speed(),
+      hour: this.hour(),
+      clockRunning: this.clockRunning(),
+      soundOn: this.sound.enabled(),
+      volume: this.sound.volume(),
+      reducedMotion: this.motion.reduced(),
+      saveStatus: this.saveStatus(),
+    }),
   );
 
   /** Vrai si la section `key` est dans la catégorie ouverte. */

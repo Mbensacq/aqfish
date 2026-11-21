@@ -36,7 +36,7 @@ export const fenetreReglages = (page: Page) => page.locator('[data-settings-wind
  * `ui/settings-window/settings-categories.ts`), pour y utiliser ses contrôles (#722) : tous
  * les e2e passent par ici. Fenêtre fermée : clic sur le bouton « Réglages », puis sur la
  * catégorie ; déjà ouverte (le fond couvre le bouton) : clic sur la catégorie seulement, pour
- * passer à une autre. Vérifie la catégorie affichée.
+ * passer à une autre (sur téléphone, après « Retour »). Vérifie la catégorie affichée.
  */
 export async function ouvrirReglages(page: Page, categorie: string): Promise<void> {
   const entry = SETTINGS_CATEGORIES.find((candidate) => candidate.title === categorie);
@@ -44,6 +44,11 @@ export async function ouvrirReglages(page: Page, categorie: string): Promise<voi
   if ((await toggle(page).getAttribute('aria-expanded')) !== 'true') {
     await toggle(page).click();
     await expect(toggle(page)).toHaveAttribute('aria-expanded', 'true');
+  }
+  // Téléphone (#722, tranche 3) : une catégorie ouverte cache la liste, « Retour » la rend.
+  const back = fenetreReglages(page).locator('[data-settings-back]');
+  if (await back.isVisible()) {
+    await back.click();
   }
   await fenetreReglages(page).locator(`[data-settings-category="${entry!.id}"]`).click();
   await expect(page.locator('[data-settings-content]')).toHaveAttribute(

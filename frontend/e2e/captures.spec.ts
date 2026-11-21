@@ -529,6 +529,28 @@ test.describe('Captures', () => {
     expect(errors).toEqual([]);
   });
 
+  // Réglages sur téléphone (#722, tranche 3) : panneau qui monte du bas, liste des catégories
+  // avec leur valeur résumée, puis une catégorie ouverte (« Eau et matériel ») avec « Retour ».
+  test('téléphone : réglages, liste des catégories puis une catégorie', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(`/?seed=${SEED}&camera=front&heure=12&vitesse=0`);
+    await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+    await page.getByRole('button', { name: 'Réglages' }).click();
+    await expect(page.locator('[data-settings-list]')).toBeVisible();
+    await page.screenshot({
+      path: join(OUTPUT_DIR, 'telephone-reglages-liste.png'),
+      animations: 'disabled',
+    });
+    await ouvrirReglages(page, 'Eau et matériel');
+    await page.screenshot({
+      path: join(OUTPUT_DIR, 'telephone-reglages-categorie.png'),
+      animations: 'disabled',
+    });
+    expect(errors).toEqual([]);
+  });
+
   // Soins des points blancs (#361) : bac malade (`points-blancs=1`), réglages ouverts, une
   // dose de médicament donnée : section « Soins » avec le traitement en cours et alerte
   // « Traitement en cours ». Simulation à l'arrêt dès t = 0, comme `front-panneau`.

@@ -207,9 +207,14 @@ découpé par section), qui fournit les sections réutilisées par la fenêtre :
    catégorie retenue d'une visite à l'autre (`core/settings-category-pref`, clé
    `aqfish.reglages-categorie`, inconnue ou absente : « Bac et milieu ») ; fenêtre exclusive à
    toute largeur : elle replie « Commandes » le temps d'être ouverte (rendu à sa fermeture
-   au-delà de 639 px), et « Commandes » ouvert (touche `?`) la referme. **Reste** : sortir les
-   produits de la section « Eau » vers « Soins et produits » et « Pluie » vers « Affichage » ;
-   panneau du téléphone.
+   au-delà de 639 px), et « Commandes » ouvert (touche `?`) la referme. **Livré (cycle 269)** :
+   panneau du téléphone sous 640 px (`PHONE_LAYOUT`, `ui/settings-window/phone-layout.ts`,
+   même seuil que les panneaux exclusifs) : monte du bas sur 75 % de la hauteur ; liste des
+   catégories avec leur valeur résumée (`ui/control-panel/settings-summaries.ts`, lue comme
+   description du bouton), puis contenu seul avec « Retour » (focus rendu à la catégorie) ;
+   le bloc non montré est `hidden` (hors du piège du focus) ; `/` ramène la liste ; cibles de
+   44 px ; `ouvrirReglages` passe par « Retour » sur téléphone. **Reste** : sortir les
+   produits de la section « Eau » vers « Soins et produits » et « Pluie » vers « Affichage ».
 3. #723 — Population en tuiles et recherche dans les réglages.
 4. #724 — Habillage de toute la page selon la charte (tableau de bord, barres, aide-mémoire, wiki,
    pharmacie, bilan, guide, parcours du premier bac), textes revus.

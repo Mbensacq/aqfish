@@ -64,3 +64,17 @@ fenêtre affiche, et chaque contrôle actuel doit garder son comportement et ses
 - **Bouton « Fermer »** (et non « Fermer les réglages ») : `getByRole('button', { name:
   'Réglages' })` cherche une sous-chaîne et aurait trouvé deux boutons.
 
+
+## Révision (cycle 269, Dev) : téléphone
+
+- **Disposition choisie en TypeScript, pas seulement en CSS** : sous 640 px, la fenêtre montre
+  soit la liste des catégories, soit le contenu d'une catégorie. Le bloc caché porte `hidden`
+  (et non un simple `display: none` de feuille de style) pour rester hors du piège du focus
+  (`focusableIn` saute `[hidden]`) et des lecteurs d'écran. La largeur est lue par
+  `PHONE_LAYOUT` (`ui/settings-window/phone-layout.ts`), un signal racine qui suit
+  `matchMedia` (téléphone tourné) ; même seuil que les panneaux exclusifs ; sans `matchMedia`
+  (jsdom) : bureau. Au-delà de 639 px, rien ne change (capture `front-panneau` identique).
+- **Valeurs résumées calculées par le panneau** (`ui/control-panel/settings-summaries.ts`,
+  fonction pure testée) et passées à la fenêtre (`summaries`), qui reste sans connaissance de
+  l'état du bac. Sur téléphone, le résumé est la description du bouton (`aria-describedby`),
+  son nom reste le titre de la catégorie.
