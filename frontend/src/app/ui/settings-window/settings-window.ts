@@ -5,12 +5,16 @@ import {
   computed,
   ElementRef,
   inject,
+  Injector,
+  input,
   model,
   output,
+  signal,
 } from '@angular/core';
 
 import { isTypingContext } from '../../core/keyboard/keyboard';
 import { trapTab } from './focus-trap';
+import { PHONE_LAYOUT } from './phone-layout';
 import {
   categoriesOf,
   DEFAULT_SETTINGS_CATEGORY,
@@ -34,6 +38,11 @@ export const SETTINGS_WINDOW_ID = 'fenetre-reglages';
  * dans la recherche (son filtrage arrive au lot 3) ; Échap ou un clic sur le fond demandent la
  * fermeture (`closeRequested`), le parent rend le focus au bouton « Réglages ». Un Échap déjà
  * traité par le contenu (fiche, confirmation : `defaultPrevented`) est ignoré.
+ *
+ * Téléphone (moins de 640 px, tranche 3) : panneau qui monte du bas ; d'abord la recherche et
+ * la liste des catégories, chacune avec sa valeur résumée (`summaries`), puis, une catégorie
+ * touchée, son contenu seul avec « Retour » (focus rendu à la catégorie). Le bloc non montré
+ * est masqué (`hidden`) : ni lu, ni atteint au clavier.
  */
 @Component({
   selector: 'app-settings-window',
@@ -45,11 +54,13 @@ export const SETTINGS_WINDOW_ID = 'fenetre-reglages';
     <div class="settings-window__backdrop" data-settings-backdrop aria-hidden="true"></div>
     <div
       class="settings-window"
+      [class.settings-window--phone-list]="phone() && showList()"
       [id]="windowId"
       role="dialog"
       aria-modal="true"
       aria-labelledby="fenetre-reglages-titre"
       data-settings-window
+      [attr.data-settings-layout]="phone() ? 'telephone' : 'bureau'"
     >
       <div class="settings-window__side">
         <div class="settings-window__header">
@@ -64,42 +75,63 @@ export const SETTINGS_WINDOW_ID = 'fenetre-reglages';
             ×
           </button>
         </div>
-        <input
-          class="settings-window__search"
-          type="search"
-          aria-label="Rechercher un réglage"
-          placeholder="Rechercher (touche /)"
-          data-settings-search
-        />
-        <nav class="settings-window__nav" aria-label="Catégories des réglages">
-          @for (group of groups; track group.name) {
-            <p class="settings-window__group" [id]="'reglages-groupe-' + $index">
-              {{ group.name }}
-            </p>
-            <ul class="settings-window__list" [attr.aria-labelledby]="'reglages-groupe-' + $index">
-              @for (category of group.categories; track category.id) {
-                <li>
-                  <button
-                    type="button"
-                    class="settings-window__category"
-                    [class.settings-window__category--open]="category.id === selected()"
-                    [attr.aria-current]="category.id === selected() ? 'true' : null"
-                    [attr.data-settings-category]="category.id"
-                    (click)="selected.set(category.id)"
-                  >
-                    {{ category.title }}
-                  </button>
-                </li>
-              }
-            </ul>
-          }
-        </nav>
+        <div class="settings-window__browse" [hidden]="!showList()" data-settings-list>
+          <input
+            class="settings-window__search"
+            type="search"
+            aria-label="Rechercher un réglage"
+            placeholder="Rechercher (touche /)"
+            data-settings-search
+          />
+          <nav class="settings-window__nav" aria-label="Catégories des réglages">
+            @for (group of groups; track group.name) {
+              <p class="settings-window__group" [id]="'reglages-groupe-' + $index">
+                {{ group.name }}
+              </p>
+              <ul
+                class="settings-window__list"
+                [attr.aria-labelledby]="'reglages-groupe-' + $index"
+              >
+                @for (category of group.categories; track category.id) {
+                  <li>
+                    <button
+                      type="button"
+                      class="settings-window__category"
+                      [class.settings-window__category--open]="category.id === selected()"
+                      [attr.aria-current]="category.id === selected() ? 'true' : null"
+                      [attr.data-settings-category]="category.id"
+                      [attr.aria-describedby]="phone() ? 'reglages-resume-' + category.id : null"
+                      (click)="choose(category.id)"
+                    >
+                      <span class="settings-window__category-title">{{ category.title }}</span>
+                      @if (phone()) {
+                        <span
+                          class="settings-window__summary"
+                          [id]="'reglages-resume-' + category.id"
+                          aria-hidden="true"
+                          data-settings-summary
+                          >{{ summaries()[category.id] ?? '' }}</span
+                        >
+                      }
+                    </button>
+                  </li>
+                }
+              </ul>
+            }
+          </nav>
+        </div>
       </div>
       <section
         class="settings-window__content"
         aria-labelledby="fenetre-reglages-categorie"
         [attr.data-settings-content]="selected()"
+        [hidden]="!showContent()"
       >
+        @if (phone()) {
+          <button type="button" class="settings-window__back" data-settings-back (click)="back()">
+            ‹ Retour
+          </button>
+        }
         <h3 class="settings-window__heading" id="fenetre-reglages-categorie">
           {{ category().title }}
         </h3>
@@ -112,10 +144,13 @@ export const SETTINGS_WINDOW_ID = 'fenetre-reglages';
 export class SettingsWindow {
   /** Catégorie ouverte (le parent affiche son contenu). */
   readonly selected = model<SettingsCategoryId>(DEFAULT_SETTINGS_CATEGORY);
+  /** Valeur résumée de chaque catégorie, sous son titre dans la liste du téléphone. */
+  readonly summaries = input<Partial<Record<SettingsCategoryId, string>>>({});
   /** Échap, bouton « Fermer » ou clic sur le fond : le parent ferme la fenêtre. */
   readonly closeRequested = output<void>();
 
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly injector = inject(Injector);
 
   protected readonly windowId = SETTINGS_WINDOW_ID;
   protected readonly groups = SETTINGS_GROUPS.map((name) => ({
@@ -124,12 +159,36 @@ export class SettingsWindow {
   }));
   protected readonly category = computed(() => settingsCategory(this.selected()));
 
+  /** Vrai sous 640 px : panneau du téléphone, liste puis contenu (tranche 3). */
+  protected readonly phone = inject(PHONE_LAYOUT);
+  /** Téléphone : liste des catégories (à l'ouverture) ou contenu de la catégorie touchée. */
+  private readonly phoneView = signal<'liste' | 'contenu'>('liste');
+  protected readonly showList = computed(() => !this.phone() || this.phoneView() === 'liste');
+  protected readonly showContent = computed(() => !this.phone() || this.phoneView() === 'contenu');
+
   constructor() {
     afterNextRender(() => this.focusCategory());
   }
 
   protected close(): void {
     this.closeRequested.emit();
+  }
+
+  /** Catégorie touchée : ouverte ; sur téléphone, son contenu remplace la liste. */
+  protected choose(id: SettingsCategoryId): void {
+    this.selected.set(id);
+    if (this.phone()) {
+      this.phoneView.set('contenu');
+      this.afterRender(() =>
+        this.host.nativeElement.querySelector<HTMLElement>('[data-settings-back]')?.focus(),
+      );
+    }
+  }
+
+  /** « Retour » du téléphone : la liste revient, focus sur la catégorie quittée. */
+  protected back(): void {
+    this.phoneView.set('liste');
+    this.afterRender(() => this.focusCategory());
   }
 
   /** Clic sur le fond assombri (pas dans la fenêtre) : fermeture demandée. */
@@ -154,10 +213,22 @@ export class SettingsWindow {
     }
     if (event.key === '/' && !isTypingContext(event)) {
       event.preventDefault();
-      this.host.nativeElement.querySelector<HTMLElement>('[data-settings-search]')?.focus();
+      this.searchFromKeyboard();
       return;
     }
     this.onArrow(event);
+  }
+
+  /** `/` : focus dans la recherche ; sur téléphone, la liste revient d'abord si besoin. */
+  private searchFromKeyboard(): void {
+    const focusSearch = () =>
+      this.host.nativeElement.querySelector<HTMLElement>('[data-settings-search]')?.focus();
+    if (this.showList()) {
+      focusSearch();
+      return;
+    }
+    this.phoneView.set('liste');
+    this.afterRender(focusSearch);
   }
 
   /** Flèches haut et bas sur une catégorie : la voisine s'ouvre et prend le focus. */
@@ -177,5 +248,9 @@ export class SettingsWindow {
     this.host.nativeElement
       .querySelector<HTMLElement>(`[data-settings-category="${this.selected()}"]`)
       ?.focus({ preventScroll: true });
+  }
+
+  private afterRender(action: () => void): void {
+    afterNextRender(action, { injector: this.injector });
   }
 }

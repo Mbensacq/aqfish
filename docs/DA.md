@@ -175,6 +175,10 @@ devant lui garde son vert ; aucune couleur ajoutée à la palette.
 - Fenêtre des réglages (#722, cycle 267) : modale au centre, 1 100 px au plus, page assombrie
   derrière (voile `$scrim`) ; catégories par groupe à gauche, une seule ouverte à droite avec
   son titre et sa phrase d'explication ; la dernière catégorie ouverte est retenue (cycle 268).
+  Sous 640 px (cycle 269) : panneau qui monte du bas sur 75 % de la hauteur (coins hauts
+  arrondis, haut de la page assombri et visible) ; d'abord la recherche et la liste des
+  catégories, chaque titre suivi de sa valeur résumée en gris (« 24 animaux », « Eau à 24 °C »),
+  puis le contenu d'une catégorie seul, sous « ‹ Retour » en laiton ; cibles de 44 px au moins.
 - Barre du bas (cycle 268) : vues, « Libre », puis « Pixel art », « Nourrir », « Raclette »,
   « Sécateur » et « Photo » (gestes de jeu, hors des réglages) ; outil en main : bordure et
   texte laiton, « Poser la raclette ». Pastilles de touche masquées sous 1 280 px, deux

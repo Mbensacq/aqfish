@@ -3,6 +3,7 @@ import { TestBed, type ComponentFixture } from '@angular/core/testing';
 
 import { SETTINGS_CATEGORIES, type SettingsCategoryId } from './settings-categories';
 import { SETTINGS_WINDOW_ID, SettingsWindow } from './settings-window';
+import { PHONE_LAYOUT } from './phone-layout';
 
 @Component({
   imports: [SettingsWindow],
@@ -10,7 +11,11 @@ import { SETTINGS_WINDOW_ID, SettingsWindow } from './settings-window';
   template: `<div>
     <button type="button" id="dehors">Dehors</button>
     @if (open()) {
-      <app-settings-window [(selected)]="selected" (closeRequested)="closes.set(closes() + 1)">
+      <app-settings-window
+        [(selected)]="selected"
+        [summaries]="{ bac: 'Bac tropical', son: 'Coupés' }"
+        (closeRequested)="closes.set(closes() + 1)"
+      >
         <button type="button" data-contenu>Contenu {{ selected() }}</button>
       </app-settings-window>
     }
@@ -138,5 +143,111 @@ describe('SettingsWindow (#722)', () => {
     // Au milieu, le navigateur fait son travail.
     category('bac').focus();
     expect(key(category('bac'), { key: 'Tab' }).defaultPrevented).toBe(false);
+  });
+});
+
+describe('SettingsWindow sur téléphone (#722, tranche 3)', () => {
+  let fixture: ComponentFixture<TestHost>;
+  const phone = signal(true);
+  const root = () => fixture.nativeElement as HTMLElement;
+  const category = (id: string) =>
+    root().querySelector<HTMLButtonElement>(`[data-settings-category="${id}"]`)!;
+  const list = () => root().querySelector<HTMLElement>('[data-settings-list]')!;
+  const content = () => root().querySelector<HTMLElement>('[data-settings-content]')!;
+  const back = () => root().querySelector<HTMLButtonElement>('[data-settings-back]');
+  const active = () => document.activeElement;
+
+  beforeEach(async () => {
+    phone.set(true);
+    TestBed.configureTestingModule({
+      imports: [TestHost],
+      providers: [{ provide: PHONE_LAYOUT, useValue: phone.asReadonly() }],
+    });
+    fixture = TestBed.createComponent(TestHost);
+    document.body.appendChild(fixture.nativeElement);
+    await fixture.whenStable();
+  });
+
+  afterEach(() => {
+    (fixture.nativeElement as HTMLElement).remove();
+  });
+
+  it('d’abord la liste, avec la valeur résumée de chaque catégorie en description', () => {
+    expect(
+      root().querySelector('[data-settings-window]')!.getAttribute('data-settings-layout'),
+    ).toBe('telephone');
+    expect(list().hidden).toBe(false);
+    expect(content().hidden).toBe(true);
+    expect(active()).toBe(category('bac'));
+    const summaryOf = (id: string) => {
+      const described = category(id).getAttribute('aria-describedby')!;
+      return document.getElementById(described)?.textContent?.trim();
+    };
+    expect(summaryOf('bac')).toBe('Bac tropical');
+    expect(summaryOf('son')).toBe('Coupés');
+    expect(summaryOf('eau')).toBe('');
+    expect(
+      category('son').querySelector('[data-settings-summary]')!.getAttribute('aria-hidden'),
+    ).toBe('true');
+  });
+
+  it('une catégorie touchée remplace la liste ; « Retour » la rend, focus sur la catégorie', async () => {
+    category('son').click();
+    await fixture.whenStable();
+    expect(fixture.componentInstance.selected()).toBe('son');
+    expect(list().hidden).toBe(true);
+    expect(content().hidden).toBe(false);
+    expect(active()).toBe(back());
+    back()!.click();
+    await fixture.whenStable();
+    expect(list().hidden).toBe(false);
+    expect(content().hidden).toBe(true);
+    expect(active()).toBe(category('son'));
+  });
+
+  it('« / » depuis le contenu : la liste revient, focus dans la recherche', async () => {
+    category('son').click();
+    await fixture.whenStable();
+    const event = new KeyboardEvent('keydown', { key: '/', bubbles: true, cancelable: true });
+    back()!.dispatchEvent(event);
+    await fixture.whenStable();
+    expect(event.defaultPrevented).toBe(true);
+    expect(list().hidden).toBe(false);
+    expect(active()).toBe(root().querySelector('[data-settings-search]'));
+  });
+
+  it('Tab ne tourne que sur ce qui est montré (liste masquée exclue)', async () => {
+    category('son').click();
+    await fixture.whenStable();
+    const last = root().querySelector<HTMLButtonElement>('[data-contenu]')!;
+    last.focus();
+    last.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }),
+    );
+    expect(active()).toBe(root().querySelector('[data-settings-close]'));
+    const close = active() as HTMLElement;
+    close.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true, cancelable: true }),
+    );
+    expect(active()).toBe(last);
+  });
+
+  it('écran élargi (téléphone tourné) : liste et contenu ensemble, sans « Retour »', async () => {
+    category('son').click();
+    await fixture.whenStable();
+    phone.set(false);
+    await fixture.whenStable();
+    expect(list().hidden).toBe(false);
+    expect(content().hidden).toBe(false);
+    expect(back()).toBeNull();
+    expect(category('son').hasAttribute('aria-describedby')).toBe(false);
+    expect(root().querySelector('[data-settings-summary]')).toBeNull();
+  });
+});
+
+describe('PHONE_LAYOUT (#722, tranche 3)', () => {
+  it('sans matchMedia (jsdom) : jamais téléphone', () => {
+    TestBed.configureTestingModule({});
+    expect(TestBed.inject(PHONE_LAYOUT)()).toBe(false);
   });
 });
