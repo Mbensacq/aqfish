@@ -9771,6 +9771,12 @@
           "debut": "2026-11-21T07:49:56.835Z",
           "fin": "2026-11-21T07:50:22.475Z",
           "note": "Issue #722 : tranche 3, panneau des réglages sur téléphone (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-21T07:51:00.021Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
