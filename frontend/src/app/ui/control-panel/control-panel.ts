@@ -34,10 +34,16 @@ import { DEFAULT_WATER_READOUT, type WaterReadout } from '../../sim/water-qualit
 import { SettingsWindow, SETTINGS_WINDOW_ID } from '../settings-window/settings-window';
 import {
   DEFAULT_SETTINGS_CATEGORY,
+  SETTINGS_CATEGORIES,
   settingsCategory,
   type SettingsCategoryId,
   type SettingsSectionKey,
 } from '../settings-window/settings-categories';
+import { SETTINGS_CATEGORY_STORAGE } from '../settings-window/settings-category-store';
+import {
+  readStoredSettingsCategory,
+  writeStoredSettingsCategory,
+} from '../../core/settings-category-pref/settings-category-pref';
 import { AccessibilitySection } from './accessibility-section';
 import { CareSection } from './care-section';
 import { DaySection } from './day-section';
@@ -145,7 +151,11 @@ export { sliderHour } from './day-section';
     @if (open()) {
       <!-- Fenêtre des réglages (#722, ADR 0165) : toutes les sections restent dans le
            document, celles des autres catégories sont masquées (attribut « hidden », ADR 0165). -->
-      <app-settings-window [(selected)]="category" (closeRequested)="onCloseRequested()">
+      <app-settings-window
+        [selected]="category()"
+        (selectedChange)="chooseCategory($event)"
+        (closeRequested)="onCloseRequested()"
+      >
         <section class="control-panel" aria-label="Réglages de l’aquarium">
           <fieldset
             class="control-panel__section"
@@ -199,8 +209,6 @@ export { sliderHour } from './day-section';
             [water]="water()"
             [lighting]="lighting()"
             [lampOn]="lampOn()"
-            [scraping]="scraping()"
-            [pruning]="pruning()"
             [treatmentNotice]="treatmentNotice()"
             [untreatedTap]="untreatedTap()"
             [carbon]="carbon()"
@@ -209,8 +217,6 @@ export { sliderHour } from './day-section';
             (heaterChanged)="heaterChanged.emit($event)"
             (lightingChanged)="lightingChanged.emit($event)"
             (lampOnChanged)="lampOnChanged.emit($event)"
-            (scraperToggled)="scraperToggled.emit(); closeIfTaken(scraping())"
-            (prunerToggled)="prunerToggled.emit(); closeIfTaken(pruning())"
             (bacteriaStarterRequested)="bacteriaStarterRequested.emit()"
             (untreatedTapToggled)="untreatedTapToggled.emit()"
             (conditionerRequested)="conditionerRequested.emit($event)"
@@ -255,8 +261,7 @@ export { sliderHour } from './day-section';
             (foodStyleToggled)="foodStyleToggled.emit()"
           ></fieldset>
 
-          <!-- Accessibilité (#406) : juste après « Décor », dans la première colonne du panneau à
-             1280 × 720, où il reste de la place (docs/PIEGES.md). -->
+          <!-- Accessibilité (#406) : catégorie « Accessibilité » de la fenêtre (#722). -->
           <fieldset
             class="control-panel__section"
             data-section="accessibilite"
@@ -264,9 +269,7 @@ export { sliderHour } from './day-section';
             app-accessibility-section
           ></fieldset>
 
-          <!-- Son (#411, ADR 0100) : juste après « Accessibilité » ; à 1280 × 720, en tête de la
-             deuxième colonne, la liste « Population » (qui défile) cède une ligne
-             (docs/PIEGES.md). -->
+          <!-- Son (#411, ADR 0100) : catégorie « Son » de la fenêtre (#722). -->
           <fieldset
             class="control-panel__section"
             data-section="son"
@@ -333,8 +336,8 @@ export { sliderHour } from './day-section';
             (quarantineReturned)="quarantineReturned.emit($event)"
           ></fieldset>
 
-          <!-- « Partager ce bac » (#426) sur la ligne du titre, comme « Changer l'eau » : aucune
-             ligne de plus, « Sauvegarde » reste dans la deuxième colonne à 1280 × 720. -->
+          <!-- « Partager ce bac » (#426) sur la ligne du titre, comme « Changer l'eau » ;
+             catégorie « Sauvegarde et partage » de la fenêtre (#722). -->
           <fieldset
             class="control-panel__section"
             data-section="sauvegarde"
@@ -406,10 +409,6 @@ export class ControlPanel {
   readonly lighting = input(DEFAULT_LIGHTING_HOURS);
   /** Heure d'allumage de la lampe (fournie par l'hôte, #584). */
   readonly lampOn = input(DEFAULT_LAMP_ON_HOUR);
-  /** Raclette en main (fournie par l'hôte, #476). */
-  readonly scraping = input(false);
-  /** Sécateur en main (fourni par l'hôte, #477). */
-  readonly pruning = input(false);
   /** Traitement des points blancs en cours (fourni par l'hôte, #361) ; `null` : aucun. */
   readonly treatment = input<TreatmentReadout | null>(null);
   /** Message du dernier geste de soin (fourni par l'hôte, #361) ; `null` : aucun. */
@@ -488,10 +487,6 @@ export class ControlPanel {
   readonly lightingChanged = output<number>();
   /** Heure d'allumage de la lampe demandée (#584), heure entière dans [0, 23]. */
   readonly lampOnChanged = output<number>();
-  /** Bouton « Raclette » (#476) : prendre ou poser la raclette. */
-  readonly scraperToggled = output<void>();
-  /** Bouton « Sécateur » (#477) : prendre ou poser le sécateur. */
-  readonly prunerToggled = output<void>();
   /** Nombre de feuilles de catappa demandé (#239), dans [0, `MAX_CATAPPA_LEAVES`]. */
   readonly catappaChanged = output<number>();
   /** Bouton « Changer l'eau » (#207). */
@@ -518,8 +513,14 @@ export class ControlPanel {
   readonly importRequested = output<string>();
   /** Fichier choisi refusé avant lecture (trop gros, illisible) : raison, en français. */
   readonly importRejected = output<string>();
-  /** Déplié par l'utilisateur, pour replier un panneau voisin sur petit écran (#136). */
+  /** Déplié par l'utilisateur, pour replier un panneau voisin (#136, #722). */
   readonly opened = output<void>();
+  /**
+   * Refermé par l'utilisateur (Échap, « Fermer », fond, bouton « Réglages ») : l'application
+   * rend ce que l'ouverture avait replié (#722). Pas émis par `close`, appelé par un autre
+   * panneau qui prend la place.
+   */
+  readonly closedByUser = output<void>();
 
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
@@ -527,8 +528,19 @@ export class ControlPanel {
   readonly open = signal(false);
 
   protected readonly panelId = CONTROL_PANEL_ID;
-  /** Catégorie ouverte dans la fenêtre (#722) ; gardée d'une ouverture à l'autre. */
-  readonly category = signal<SettingsCategoryId>(DEFAULT_SETTINGS_CATEGORY);
+  /** Stockage de la catégorie retenue (#722, préférence locale de `core/`). */
+  private readonly categoryStorage = inject(SETTINGS_CATEGORY_STORAGE);
+  /**
+   * Catégorie ouverte dans la fenêtre (#722) : retenue d'une ouverture et d'une visite à
+   * l'autre ; inconnue ou absente, la première de la liste.
+   */
+  readonly category = signal<SettingsCategoryId>(
+    readStoredSettingsCategory(
+      this.categoryStorage,
+      SETTINGS_CATEGORIES.map((entry) => entry.id),
+      DEFAULT_SETTINGS_CATEGORY,
+    ),
+  );
   /** Sections de la catégorie ouverte (les autres restent dans le document, masquées). */
   private readonly shownSections = computed(
     () => new Set<SettingsSectionKey>(settingsCategory(this.category()).sections),
@@ -550,6 +562,8 @@ export class ControlPanel {
     this.open.set(open);
     if (open) {
       this.opened.emit();
+    } else {
+      this.closedByUser.emit();
     }
   }
 
@@ -561,17 +575,14 @@ export class ControlPanel {
   /** Échap, « Fermer » ou clic sur le fond de la fenêtre : fermeture, focus au bouton. */
   protected onCloseRequested(): void {
     this.open.set(false);
+    this.closedByUser.emit();
     this.focusToggle();
   }
 
-  /**
-   * Raclette ou sécateur pris dans la fenêtre (#722) : elle se ferme pour laisser le bac
-   * cliquable ; reposer l'outil (fenêtre rouverte) la laisse ouverte.
-   */
-  protected closeIfTaken(holdingBefore: boolean): void {
-    if (!holdingBefore) {
-      this.onCloseRequested();
-    }
+  /** Catégorie choisie dans la fenêtre (clic ou flèches) : ouverte et retenue. */
+  protected chooseCategory(id: SettingsCategoryId): void {
+    this.category.set(id);
+    writeStoredSettingsCategory(this.categoryStorage, id);
   }
 
   /**

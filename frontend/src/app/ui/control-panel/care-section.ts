@@ -14,8 +14,8 @@ import { TreatmentNotice as TreatmentNoticeView } from './treatment-notice';
 /**
  * Section « Soins » du panneau « Réglages » (#361 ; sortie du panneau au #697) : les trois
  * gestes contre les points blancs, l'état du traitement, puis le message du dernier geste
- * (#490) ou, à sa place, les sources et niveaux de preuve. Le panneau ne l'affiche qu'en mode soins, avec des points blancs ou un
- * traitement en cours.
+ * (#490) ou, à sa place, les sources et niveaux de preuve. Le panneau ne l'affiche qu'en mode
+ * soins, avec des points blancs ou un traitement en cours.
  *
  * L'hôte est le `fieldset` de la section, posé par le panneau (ADR 0161).
  */

@@ -11,3 +11,14 @@
 @include controls.texts;
 
 @include controls.rows;
+
+// Rangées de produits (#759) : les boutons y perdent les marges négatives des boutons de titre
+// (« Changer l'eau ») et les rangées sont séparées de 6 px, sinon elles se touchent.
+.control-panel__row[role='group'] {
+  margin-top: 6px;
+
+  > .control-panel__edit {
+    margin: 0;
+    min-height: 26px;
+  }
+}

@@ -189,7 +189,8 @@ describe('App', () => {
         button.click();
         await fixture.whenStable();
       };
-      return { root, settingsButton, helpButton, settings, help, click };
+      const settle = () => fixture.whenStable();
+      return { root, settingsButton, helpButton, settings, help, click, settle };
     }
 
     it('écran étroit : ouvrir l’un replie l’autre, dans les deux sens', async () => {
@@ -206,12 +207,41 @@ describe('App', () => {
       expect(ui.help()).toBeNull();
     });
 
-    it('écran large : les deux restent ouverts ensemble', async () => {
+    it('écran large : la fenêtre des réglages replie « Commandes » le temps d’être ouverte (#722)', async () => {
+      const ui = await render();
+      narrow = false;
+      expect(ui.help()).not.toBeNull();
+      await ui.click(ui.settingsButton());
+      expect(ui.settings()).not.toBeNull();
+      expect(ui.help()).toBeNull();
+      // Refermée par l'utilisateur : « Commandes » revient, comme avant l'ouverture.
+      await ui.click(ui.settingsButton());
+      expect(ui.settings()).toBeNull();
+      expect(ui.help()).not.toBeNull();
+    });
+
+    it('écran large : « Commandes » replié avant, il le reste à la fermeture (#722)', async () => {
+      const ui = await render();
+      narrow = false;
+      await ui.click(ui.helpButton()); // replie « Commandes »
+      expect(ui.help()).toBeNull();
+      await ui.click(ui.settingsButton());
+      await ui.click(ui.settingsButton());
+      expect(ui.settings()).toBeNull();
+      expect(ui.help()).toBeNull();
+    });
+
+    it('écran large : « Commandes » ouvert (touche ?) referme la fenêtre des réglages (#722)', async () => {
       const ui = await render();
       narrow = false;
       await ui.click(ui.settingsButton());
-      expect(ui.settings()).not.toBeNull();
+      expect(ui.help()).toBeNull();
+      document.body.dispatchEvent(
+        new KeyboardEvent('keydown', { key: '?', bubbles: true, cancelable: true }),
+      );
+      await ui.settle();
       expect(ui.help()).not.toBeNull();
+      expect(ui.settings()).toBeNull();
     });
 
     it('la languette du parcours se masque avec « Réglages » ouvert et revient (#527)', async () => {
@@ -251,7 +281,8 @@ describe('App', () => {
       const help = () => root.querySelector('#aide-commandes');
       await click('.control-panel__toggle');
       expect(settings()).not.toBeNull();
-      expect(help()).not.toBeNull();
+      // Fenêtre des réglages : « Commandes » replié le temps qu'elle soit ouverte (#722).
+      expect(help()).toBeNull();
       await click('[data-wiki-toggle]');
       expect(wiki()).not.toBeNull();
       expect(settings()).toBeNull();

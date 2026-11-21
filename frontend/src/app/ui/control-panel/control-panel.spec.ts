@@ -16,6 +16,7 @@ import {
   AUDIO_CONTEXT_FACTORY,
 } from '../ambient-sound/ambient-sound-state';
 import { FakeAudioContext, FakeTimer } from '../ambient-sound/fake-audio-context';
+import { SETTINGS_CATEGORY_STORAGE } from '../settings-window/settings-category-store';
 import { ReducedMotionState } from '../reduced-motion/reduced-motion-state';
 import { SIM_SPEEDS } from '../../sim/sim-speed';
 import type { CurrentLevel } from '../../sim/water-current';
@@ -252,16 +253,12 @@ describe('fonctions du panneau de contrôle', () => {
     (waterChangeRequested)="waterChanges = waterChanges + 1"
     [current]="current()"
     (currentToggled)="currentToggles = currentToggles + 1"
-    [pruning]="pruning()"
-    (prunerToggled)="prunerToggles = prunerToggles + 1"
     [pondShape]="pondShape()"
     (pondShapeChanged)="layout.push(['forme', $event])"
     [lighting]="lighting()"
     (lightingChanged)="events.push(['eclairage', $event])"
     [lampOn]="lampOn()"
     (lampOnChanged)="events.push(['lampe', $event])"
-    [scraping]="scraping()"
-    (scraperToggled)="layout.push(['raclette', null])"
     (bacteriaStarterRequested)="layout.push(['bacteries', null])"
     [untreatedTap]="untreatedTap()"
     (untreatedTapToggled)="layout.push(['robinet', null])"
@@ -373,12 +370,9 @@ class TestHost {
   waterChanges = 0;
   readonly current = signal<CurrentLevel>('coupe');
   currentToggles = 0;
-  readonly pruning = signal(false);
-  prunerToggles = 0;
   readonly pondShape = signal<PondShape>('rectangle');
   readonly lighting = signal(8);
   readonly lampOn = signal(10);
-  readonly scraping = signal(false);
   readonly untreatedTap = signal(false);
   readonly carbon = signal(false);
   readonly events: [string, number | boolean][] = [];
@@ -409,7 +403,11 @@ describe('ControlPanel', () => {
   }
 
   beforeEach(async () => {
-    TestBed.configureTestingModule({ imports: [TestHost] });
+    TestBed.configureTestingModule({
+      imports: [TestHost],
+      // Catégorie retenue (#722) : aucun stockage, chaque test part de la première catégorie.
+      providers: [{ provide: SETTINGS_CATEGORY_STORAGE, useValue: null }],
+    });
     fixture = TestBed.createComponent(TestHost);
     await fixture.whenStable();
   });
@@ -1360,13 +1358,13 @@ describe('ControlPanel', () => {
     // (#237) pour chacune des 17 espèces du bac tropical (#238, #362, #391, #425), puis « Exporter »
     // et « Importer » (#70), « Partager ce bac » (#426), le mode du bac (#278), « Mode
     // immersif » (#345), « Réduire les mouvements » (#406), puis la case « Sons d'ambiance »
-    // et son volume (#411), « Courant » (#460), le curseur de l'éclairage et la raclette
-    // (#476), le sécateur (#477), l'amorce de bactéries (#529),
+    // et son volume (#411), « Courant » (#460), le curseur de l'éclairage (#476), l'amorce de
+    // bactéries (#529) (raclette et sécateur : barre du bas depuis #722),
     // l'eau non traitée et les deux conditionneurs (#530), le charbon et les deux régulateurs
     // de pH (#531), le curseur de l'allumage de la lampe (#584). Le champ du lien de partage
     // n'apparaît qu'avec un lien.
     expect(controls).toHaveLength(
-      5 + 1 + 1 + 1 + 2 + 2 + 17 * 5 + 2 + 1 + 1 + 1 + 1 + 2 + 1 + 2 + 1 + 1 + 3 + 3 + 1,
+      5 + 1 + 1 + 1 + 2 + 2 + 17 * 5 + 2 + 1 + 1 + 1 + 1 + 2 + 1 + 1 + 1 + 3 + 3 + 1,
     );
     expect(root().querySelectorAll('input[type="file"]')).toHaveLength(1);
     for (const control of controls) {
@@ -1663,8 +1661,6 @@ describe('ControlPanel', () => {
         'Consigne du chauffage',
         'Durée d’éclairage par jour',
         'Heure d’allumage de la lampe',
-        'Raclette : cliquer sur les algues',
-        'Sécateur : cliquer sur une plante haute',
         'Verser une dose d’amorce de bactéries nitrifiantes',
         'Eau du robinet non traitée',
         'Verser du conditionneur au thiosulfate (chlore)',
@@ -1677,30 +1673,12 @@ describe('ControlPanel', () => {
       ]);
     });
 
-    it('sécateur (#477) : à côté de la raclette, état pressé fourni par l’hôte, émet la demande', async () => {
+    it('raclette et sécateur (#476, #477) : passés dans la barre du bas (#722), absents de la fenêtre', async () => {
       await openPanel();
-      const pruner = section().querySelector<HTMLButtonElement>('[data-pruner]')!;
-      const scraper = section().querySelector<HTMLButtonElement>('[data-scraper]')!;
-      expect(pruner.parentElement).toBe(scraper.parentElement);
-      expect(pruner.parentElement?.getAttribute('aria-label')).toBe('Outils d’entretien');
-      expect(pruner.textContent?.trim()).toBe('Sécateur');
-      expect(pruner.getAttribute('aria-pressed')).toBe('false');
-      pruner.click();
-      expect(fixture.componentInstance.prunerToggles).toBe(1);
-      // Sécateur pris : la fenêtre se ferme (#722), le bac redevient cliquable.
-      await fixture.whenStable();
-      expect(toggle().getAttribute('aria-expanded')).toBe('false');
-      expect(document.activeElement).toBe(toggle());
-      fixture.componentInstance.pruning.set(true);
-      await openPanel();
-      const held = section().querySelector<HTMLButtonElement>('[data-pruner]')!;
-      expect(held.textContent?.trim()).toBe('Poser le sécateur');
-      expect(held.getAttribute('aria-pressed')).toBe('true');
-      // Le poser laisse la fenêtre ouverte.
-      held.click();
-      await fixture.whenStable();
-      expect(fixture.componentInstance.prunerToggles).toBe(2);
-      expect(toggle().getAttribute('aria-expanded')).toBe('true');
+      // Toutes les catégories sont dans le document (sections masquées, ADR 0165).
+      expect(root().querySelectorAll('[data-section]').length).toBeGreaterThanOrEqual(10);
+      expect(root().querySelector('[data-scraper], [data-pruner]')).toBeNull();
+      expect(root().textContent).not.toMatch(/Raclette|Sécateur/);
     });
 
     it('courant (#460) : bouton sur la ligne du titre, libellé de la force, émet la demande', async () => {
@@ -1781,45 +1759,19 @@ describe('ControlPanel', () => {
       ]);
     });
 
-    it('raclette (#476) : état pressé fourni par l’hôte, libellés, émet la demande', async () => {
-      await openPanel();
-      const scraper = section().querySelector<HTMLButtonElement>('[data-scraper]')!;
-      expect(scraper.textContent?.trim()).toBe('Raclette');
-      expect(scraper.getAttribute('aria-pressed')).toBe('false');
-      scraper.click();
-      expect(fixture.componentInstance.layout).toEqual([['raclette', null]]);
-      // Raclette prise : la fenêtre se ferme (#722), focus rendu au bouton « Réglages ».
-      await fixture.whenStable();
-      expect(toggle().getAttribute('aria-expanded')).toBe('false');
-      expect(document.activeElement).toBe(toggle());
-      fixture.componentInstance.scraping.set(true);
-      await openPanel();
-      const held = section().querySelector<HTMLButtonElement>('[data-scraper]')!;
-      expect(held.textContent?.trim()).toBe('Poser la raclette');
-      expect(held.getAttribute('aria-label')).toBe('Poser la raclette');
-      expect(held.getAttribute('aria-pressed')).toBe('true');
-      held.click();
-      await fixture.whenStable();
-      expect(fixture.componentInstance.layout).toEqual([
-        ['raclette', null],
-        ['raclette', null],
-      ]);
-      expect(toggle().getAttribute('aria-expanded')).toBe('true');
-    });
-
     it('produits (#529, #530, #531) : rangées, états de l’hôte, chaque bouton émet sa demande', async () => {
       await openPanel();
       const button = (selector: string) => section().querySelector<HTMLButtonElement>(selector)!;
       expect(
         [...section().querySelectorAll('[role="group"]')].map((g) => g.getAttribute('aria-label')),
       ).toEqual([
-        'Outils d’entretien',
+        'Filtre',
         'Eau du robinet et conditionneurs',
         'Charbon actif et régulateur de pH',
       ]);
-      expect(button('[data-bacteria-starter]').closest('[role="group"]')).toBe(
-        button('[data-scraper]').closest('[role="group"]'),
-      );
+      expect(
+        button('[data-bacteria-starter]').closest('[role="group"]')?.getAttribute('aria-label'),
+      ).toBe('Filtre');
       expect(button('[data-untreated-tap]').getAttribute('aria-pressed')).toBe('false');
       expect(button('[data-carbon]').getAttribute('aria-pressed')).toBe('false');
       for (const selector of [
@@ -1850,7 +1802,7 @@ describe('ControlPanel', () => {
       expect(button('[data-carbon]').getAttribute('aria-pressed')).toBe('true');
     });
 
-    it('mode décor (#278) : ni produits ni message de produit, outils et catappa restent', async () => {
+    it('mode décor (#278) : ni produits ni message de produit, catappa reste', async () => {
       await openPanel();
       fixture.componentInstance.treatmentNotice.set({
         ok: true,
@@ -1863,12 +1815,11 @@ describe('ControlPanel', () => {
       );
       fixture.componentInstance.careMode.set('decor');
       await fixture.whenStable();
-      expect(section().querySelectorAll('[role="group"]')).toHaveLength(1);
+      expect(section().querySelectorAll('[role="group"]')).toHaveLength(0);
       expect(section().querySelector('[data-bacteria-starter]')).toBeNull();
       expect(
         section().querySelector('[data-untreated-tap], [data-carbon], [data-ph-regulator]'),
       ).toBeNull();
-      expect(section().querySelector('[data-scraper]')).not.toBeNull();
       expect(section().querySelector('[data-catappa]')).not.toBeNull();
       // Sans section « Soins » (masquée en décor), le message reste sous les outils de l'eau.
       expect(section().querySelector('[data-starter-message]')?.textContent?.trim()).toBe(

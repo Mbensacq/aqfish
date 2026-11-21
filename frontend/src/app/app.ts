@@ -36,7 +36,9 @@ import type { GuidePage } from './sim/care-guide';
  * (barre des préréglages de vue, reliée à l'hôte du canvas, indicateur du moment de la
  * journée, tableau de bord (eau et simulation en haut, santé et alertes en bas), panneau de contrôle et aide-mémoire des commandes).
  * Sur écran étroit, « Réglages » et « Commandes » sont exclusifs : ouvrir l'un replie
- * l'autre, pour que leurs textes ne se superposent pas (#136, `EXCLUSIVE_PANELS`).
+ * l'autre, pour que leurs textes ne se superposent pas (#136, `EXCLUSIVE_PANELS`). Plus
+ * large, la fenêtre des réglages (#722) replie « Commandes » le temps d'être ouverte, et
+ * « Commandes » ouvert (touche `?`) la referme.
  * La pharmacie du bac (#533) l'est de même.
  * Le wiki des espèces (#287) est exclusif avec tous les autres panneaux, à toute largeur : il
  * occupe la droite de l'écran, comme « Commandes », et la place de « Réglages » sur téléphone.
@@ -110,29 +112,56 @@ export class App {
   }
 
   /**
-   * « Commandes » déplié : replie « Réglages » et quitte l'éditeur de décor sur écran étroit
-   * (#136, #167).
+   * « Commandes » replié par l'ouverture de la fenêtre des réglages (#722), à redéplier à sa
+   * fermeture.
+   */
+  private helpFoldedForSettings = false;
+
+  /**
+   * « Commandes » déplié (bouton ou touche `?`, même fenêtre des réglages ouverte) : referme
+   * la fenêtre des réglages à toute largeur (#722) ; sur écran étroit, quitte aussi l'éditeur
+   * de décor (#136, #167).
    */
   protected onHelpOpened(): void {
     this.wiki()?.close();
     this.pharmacy()?.close();
+    this.panel()?.close();
+    this.helpFoldedForSettings = false;
     if (this.exclusivePanels()) {
-      this.panel()?.close();
       this.aquarium()?.setDecorEditing(false);
     }
   }
 
   /**
    * « Réglages » déplié : quitte l'éditeur de décor, qui occupe la même place (#167), et
-   * replie « Commandes » sur écran étroit (#136).
+   * replie « Commandes » à toute largeur, sans mémoriser ce repli (#136, #722 : fenêtre
+   * exclusive avec les autres panneaux).
    */
   protected onPanelOpened(): void {
     this.wiki()?.close();
     this.pharmacy()?.close();
     this.aquarium()?.setDecorEditing(false);
-    if (this.exclusivePanels()) {
-      this.help()?.fold();
+    // Écran étroit : repli définitif, comme avant (#136) ; plus large, l'aide-mémoire revient
+    // à la fermeture de la fenêtre, l'écran d'avant est retrouvé.
+    const help = this.help();
+    this.helpFoldedForSettings = !this.exclusivePanels() && (help?.open() ?? false);
+    help?.fold();
+  }
+
+  /** Fenêtre des réglages refermée par l'utilisateur : « Commandes » revient s'il était là. */
+  protected onPanelClosed(): void {
+    if (this.helpFoldedForSettings) {
+      this.helpFoldedForSettings = false;
+      this.help()?.unfold();
     }
+  }
+
+  /**
+   * Raclette ou sécateur pris ou posé dans la barre du bas (#722) : la fenêtre des réglages se
+   * referme, pour que le bac reste cliquable.
+   */
+  protected onToolToggled(): void {
+    this.panel()?.close();
   }
 
   /**
