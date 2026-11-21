@@ -9692,7 +9692,7 @@
       "type": "fonctionnalite",
       "issue": 722,
       "pr": 758,
-      "version": null,
+      "version": "v1.27.1",
       "phases": {
         "planif": {
           "statut": "termine",
