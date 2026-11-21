@@ -9699,6 +9699,12 @@
           "debut": "2026-11-21T03:52:27.954Z",
           "fin": "2026-11-21T03:52:48.570Z",
           "note": "Issue #722 : tranche 1b (suite), brancher la fenêtre des réglages (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-21T03:53:19.838Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
