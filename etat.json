@@ -9870,7 +9870,7 @@
       "date": "2026-11-21",
       "debut": "2026-11-21T13:36:19.270Z",
       "type": "retro",
-      "issue": null,
+      "issue": 764,
       "pr": null,
       "version": null,
       "phases": {
