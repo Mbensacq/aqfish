@@ -176,8 +176,10 @@ test.describe('Clavier et focus visible (#407)', () => {
 
     // Fenêtre des réglages ouverte au clavier (#722) : modale, Tab y tourne sans en sortir,
     // liste des bacs comprise (catégorie « Bac et milieu », ouverte par défaut).
+    await settings.focus();
     await page.keyboard.press('Enter');
     await expect(page.locator('section.control-panel')).toBeVisible();
+    await expect(page.locator('[data-settings-category="bac"]')).toBeFocused();
     const inside = await tabTour(page, (await focusLog(page)).length - 1);
     expect(inside.wrapped, 'Tab tourne dans la fenêtre').toBe(true);
     expect(new Set(inside.seen.map((focused) => focused.owner))).toEqual(

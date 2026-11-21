@@ -13,10 +13,13 @@ const FOCUSABLE = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(', ');
 
-/** Éléments focalisables de `container`, dans l'ordre du document. */
+/**
+ * Éléments focalisables de `container`, dans l'ordre du document. Ceux d'un bloc masqué
+ * (`hidden` : sections des autres catégories, ADR 0165) sont exclus : le navigateur les saute.
+ */
 export function focusableIn(container: HTMLElement): HTMLElement[] {
   return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
-    (element) => element.tabIndex >= 0,
+    (element) => element.tabIndex >= 0 && element.closest('[hidden]') === null,
   );
 }
 

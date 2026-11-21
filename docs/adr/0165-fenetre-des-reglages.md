@@ -41,3 +41,26 @@ fenêtre affiche, et chaque contrôle actuel doit garder son comportement et ses
 
 - Un contrôle qui change de catégorie se déplace en changeant une ligne de données.
 - Les e2e qui ouvrent les réglages devront choisir la catégorie avant d'agir sur un contrôle.
+
+## Révision (cycle 267, branchement)
+
+- **Toutes les sections restent dans le document, celles des autres catégories masquées**
+  (attribut `hidden` sur leur `fieldset`, que `.control-panel__section[hidden]` respecte), au
+  lieu du `@switch` prévu. Raisons : 29 ouvertures des e2e enchaînent plusieurs catégories
+  (PR #757), dont 28 imports de monde par le champ de fichier de « Sauvegarde et partage » ;
+  un champ masqué reste utilisable par `setInputFiles`, et l'état local d'une section (fiche
+  ouverte, confirmation, saisie du renommage) survit à un changement de catégorie. Les tests
+  qui cliquent un contrôle d'une autre catégorie passent par `ouvrirReglages`, qui clique la
+  catégorie quand la fenêtre est déjà ouverte. La recherche (#723) pourra afficher des
+  sections de plusieurs catégories en levant leur `hidden`.
+- **Le panneau garde la catégorie ouverte** (`category`, signal du panneau) d'une ouverture à
+  l'autre ; la préférence locale arrive à la tranche 2.
+- **Fermeture** : Échap, « Fermer » et clic sur le fond rendent le focus au bouton
+  « Réglages » ; prendre la raclette ou le sécateur referme la fenêtre (le bac redevient
+  cliquable) ; l'éditeur de décor et le mode immersif la referment déjà (`app.ts`).
+- **Hôte au-dessus des autres panneaux** : tant que la fenêtre est ouverte, l'hôte du panneau
+  passe en `z-index: 10` (classe `control-panel-host--window`) : le fond couvre la barre des
+  vues, le tableau de bord, l'aide-mémoire et le wiki.
+- **Bouton « Fermer »** (et non « Fermer les réglages ») : `getByRole('button', { name:
+  'Réglages' })` cherche une sous-chaîne et aurait trouvé deux boutons.
+

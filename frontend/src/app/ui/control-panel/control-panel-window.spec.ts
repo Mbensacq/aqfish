@@ -131,6 +131,20 @@ describe('ControlPanel : fenêtre des réglages (#722)', () => {
     }
   });
 
+  it('Tab sur le dernier contrôle affiché revient au premier, sections masquées sautées', async () => {
+    await open();
+    await choose('son');
+    const window = dialog()!;
+    const visible = [...window.querySelectorAll<HTMLElement>('button, input, select')].filter(
+      (element) => element.closest('[hidden]') === null && element.tabIndex >= 0,
+    );
+    const last = visible[visible.length - 1];
+    expect(last.closest('[data-section]')?.getAttribute('data-section')).toBe('son');
+    last.focus();
+    last.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }));
+    expect(document.activeElement).toBe(root().querySelector('[data-settings-close]'));
+  });
+
   it('la catégorie ouverte est gardée d’une ouverture à l’autre', async () => {
     await open();
     await choose('decor');
