@@ -9915,6 +9915,12 @@
           "debut": "2026-11-21T23:41:47.128Z",
           "fin": "2026-11-21T23:42:27.187Z",
           "note": "Issue #724 : Interface 4/5 tranche 1, panneaux d'état et barre du bas (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-21T23:43:07.654Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
