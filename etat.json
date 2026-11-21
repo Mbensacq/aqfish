@@ -9792,6 +9792,24 @@
         }
       },
       "metriques": {}
+    },
+    "270": {
+      "numero": 270,
+      "date": "2026-11-21",
+      "debut": "2026-11-21T09:01:55.453Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-21T09:01:55.453Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
