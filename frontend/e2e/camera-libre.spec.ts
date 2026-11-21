@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { fermerReglages, ouvrirReglages } from './outils-panneau';
 
 /**
  * Caméra libre dans la pièce (issue #343) : bouton « Libre » et touche `L` de la barre des
@@ -42,9 +43,9 @@ test.describe('Caméra libre dans la pièce (#343)', () => {
       expect(await camera(page)).toEqual(before);
     });
 
-    await page.getByRole('button', { name: 'Réglages' }).click();
+    await ouvrirReglages(page, 'Bac et milieu');
     await page.getByRole('checkbox', { name: 'Afficher la pièce' }).check();
-    await page.getByRole('button', { name: 'Réglages' }).click();
+    await fermerReglages(page);
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-room', 'true');
     const orbit = await camera(page);
 

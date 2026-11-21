@@ -4,6 +4,7 @@ import { createDayClock } from '../src/app/sim/daylight';
 import { serializeWorld } from '../src/app/sim/save';
 import { freshWater } from '../src/app/sim/water';
 import { createDefaultWorld, starveWorldInPlace, type MutableWorld } from '../src/app/sim/world';
+import { fermerReglages, ouvrirReglages } from './outils-panneau';
 
 /**
  * Tableau de bord, lot 2 (issue #260, ADR 0060) : simulation dans le cadre haut, santé des
@@ -40,15 +41,14 @@ async function importAlerts(page: Page, speed = 0): Promise<void> {
   world.water = { ...freshWater('tropical'), ammonia: 6, nitrite: 2.5, nitrate: 50 };
   starveWorldInPlace(world);
   const text = serializeWorld(world, { speed, clock: createDayClock(12, 1200, true) });
-  const settings = page.getByRole('button', { name: 'Réglages' });
-  await settings.click();
+  await ouvrirReglages(page, 'Sauvegarde et partage');
   await page.locator('[data-section="sauvegarde"] input[type="file"]').setInputFiles({
     name: 'alertes.json',
     mimeType: 'application/json',
     buffer: Buffer.from(text),
   });
   await expect(status(page).locator('[data-alert]')).toHaveCount(3);
-  await settings.click();
+  await fermerReglages(page);
   await expect(page.locator('.control-panel')).toHaveCount(0);
 }
 

@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { ouvrirReglages } from './outils-panneau';
 
 /**
  * Lampe du bac (issue #584) : intensité exposée (`data-aqfish-lamp`) selon l'heure figée
@@ -20,7 +21,7 @@ async function open(page: Page, search: string): Promise<string[]> {
 }
 
 async function openSettings(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Réglages' }).click();
+  await ouvrirReglages(page, 'Eau et matériel');
   await expect(section(page)).toBeVisible();
 }
 

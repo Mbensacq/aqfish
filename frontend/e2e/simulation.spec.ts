@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { ouvrirReglages } from './outils-panneau';
 
 /**
  * Parcours de la simulation déterministe (QA, nuit 2026-10-16, issue #5) : le monde est
@@ -159,7 +160,7 @@ test.describe('Simulation hors capture', () => {
     await waitFrames(page, 30);
     expect((await readWorld(page)).tick).toBe(0);
 
-    await page.getByRole('button', { name: 'Réglages' }).click();
+    await ouvrirReglages(page, 'Temps');
     const slider = page.getByRole('slider', { name: 'Vitesse de la simulation' });
     await expect(slider).toHaveValue('0');
     await slider.fill('2');

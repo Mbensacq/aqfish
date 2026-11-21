@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { ouvrirReglages } from './outils-panneau';
 
 /**
  * Compatibilité des espèces (issue #209) : le panneau signale chaque mélange déconseillé de
@@ -6,7 +7,6 @@ import { expect, test, type Page } from '@playwright/test';
  */
 
 const hostEl = (page: Page) => page.locator('app-aquarium-host');
-const toggle = (page: Page) => page.getByRole('button', { name: 'Réglages' });
 const warnings = (page: Page) => page.locator('[data-section="population"] [data-mix-warning]');
 const slider = (page: Page, ofPlural: string) =>
   page.getByRole('slider', { name: `Curseur du nombre ${ofPlural}` });
@@ -22,7 +22,7 @@ async function open(page: Page, search: string): Promise<string[]> {
 test.describe('Compatibilité des espèces (#209)', () => {
   test('bac tropical par défaut : aucun mélange déconseillé', async ({ page }) => {
     const errors = await open(page, '?seed=42');
-    await toggle(page).click();
+    await ouvrirReglages(page, 'Population');
     await expect(page.locator('[data-section="population"] [data-species]')).toHaveCount(17);
     await expect(warnings(page)).toHaveCount(0);
     expect(errors).toEqual([]);
@@ -33,7 +33,7 @@ test.describe('Compatibilité des espèces (#209)', () => {
   }) => {
     // Paludarium mixte d'avant #271 : les axolotls n'y sont plus par défaut, on les ajoute.
     const errors = await open(page, '?seed=42&environnement=paludarium&population=axolotl:2');
-    await toggle(page).click();
+    await ouvrirReglages(page, 'Population');
     await expect(warnings(page)).toHaveText([
       'Mélange déconseillé : axolotls et sonneurs orientaux (prédateur)',
       'Mélange déconseillé : axolotls et tritons à ventre de feu (prédateur)',
@@ -70,7 +70,7 @@ test.describe('Compatibilité des espèces (#209)', () => {
       page,
       '?seed=42&population=rasbora:4,tetra:4,kuhli:3,gourami:2,neon:4,guppy:3,corydoras:3',
     );
-    await toggle(page).click();
+    await ouvrirReglages(page, 'Population');
     // Les nouvelles espèces cohabitent avec les anciennes : aucun avertissement.
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /gourami:2/);
     await expect(warnings(page)).toHaveCount(0);
@@ -84,7 +84,7 @@ test.describe('Compatibilité des espèces (#209)', () => {
       page,
       '?seed=42&population=platy:3,danio:5,ancistrus:1,otocinclus:3,neon:4,guppy:3,corydoras:3',
     );
-    await toggle(page).click();
+    await ouvrirReglages(page, 'Population');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /otocinclus:3/);
     await expect(warnings(page)).toHaveCount(0);
     // Les quatre curseurs existent au panneau, sans code d'interface propre à l'espèce.
@@ -109,7 +109,7 @@ test.describe('Compatibilité des espèces (#209)', () => {
       page,
       '?seed=42&population=braise:10,molly:3,miel:2,gourami:2,neon:4,guppy:0,corydoras:0',
     );
-    await toggle(page).click();
+    await ouvrirReglages(page, 'Population');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /miel:2/);
     // Tétra braise et molly : paisibles ; seuls les deux gouramis territoriaux se disputent.
     await expect(warnings(page)).toHaveCount(1);
@@ -129,7 +129,7 @@ test.describe('Compatibilité des espèces (#209)', () => {
       page,
       '?seed=42&population=xipho:3,cerise:8,neritine:2,neon:4,guppy:0,corydora:0',
     );
-    await toggle(page).click();
+    await ouvrirReglages(page, 'Population');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /cerise:8/);
     // Le xipho mange les crevettes naines (#425) ; la néritine ne gêne personne.
     await expect(warnings(page)).toHaveCount(1);
@@ -144,7 +144,7 @@ test.describe('Compatibilité des espèces (#209)', () => {
       page,
     }) => {
       const errors = await open(page, `?seed=42&environnement=${environnement}&heure=0`);
-      await toggle(page).click();
+      await ouvrirReglages(page, 'Population');
       await expect(warnings(page)).toHaveCount(0);
       expect(errors).toEqual([]);
     });

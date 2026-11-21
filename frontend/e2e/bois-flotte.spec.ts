@@ -5,6 +5,7 @@ import { SAVE_STORAGE_KEY } from '../src/app/core/save-storage/save-storage';
 import { DEFAULT_DECOR } from '../src/app/sim/decor';
 import { SAND_THICKNESS } from '../src/app/sim/tank';
 import { selectedTankWorld } from './outils-sauvegarde';
+import { ouvrirReglages } from './outils-panneau';
 
 /**
  * QA du bois flotté (issue #169), parcours : pose depuis le catalogue de l'éditeur, sauvegarde
@@ -34,7 +35,7 @@ async function openScene(page: Page, search = ''): Promise<string[]> {
 }
 
 async function startEditing(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Réglages' }).click();
+  await ouvrirReglages(page, 'Décor');
   await page.getByRole('button', { name: 'Éditer le décor', exact: true }).click();
   await expect(host(page)).toHaveAttribute('data-aqfish-editing', 'true');
   await expect(page.getByRole('region', { name: 'Éditeur de décor' })).toBeVisible();

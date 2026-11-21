@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { ouvrirReglages } from './outils-panneau';
 
 /**
  * Pièce de N bacs, lot 3b (#316) : tous les bacs vivent. Un néon transféré dans un bac posé
@@ -20,7 +21,7 @@ async function open(page: Page): Promise<string[]> {
 }
 
 async function openPanel(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Réglages' }).click();
+  await ouvrirReglages(page, 'Bac et milieu');
   await expect(page.locator('section.control-panel')).toBeVisible();
 }
 

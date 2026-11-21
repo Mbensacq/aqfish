@@ -190,9 +190,14 @@ découpé par section), qui fournit les sections réutilisées par la fenêtre :
    actuel est dans une et une seule catégorie) et le composant de fenêtre bureau
    (`ui/settings-window/settings-window.ts` : `dialog` et `aria-modal`, titre lié, fond assombri,
    focus piégé, Échap, clic sur le fond, flèches haut et bas, `/` vers la recherche, contenu
-   projeté par le parent). **Reste** : brancher la fenêtre à la place du panneau
-   (`ui/control-panel/control-panel.ts`), rediriger les e2e qui ouvrent l'ancien panneau (~100
-   appels, et les tests de cadrage du panneau en colonnes), sortir les produits de la section
+   projeté par le parent). **Livré (cycle 266, partiel)** : tous les e2e ouvrent et
+   referment les réglages par `ouvrirReglages(page, '<catégorie>')` et `fermerReglages(page)`
+   (`e2e/outils-panneau.ts`), posés par script (152 clics dans 70 fichiers) : le branchement
+   ne changera plus que ces deux fonctions et les tests qui utilisent plusieurs catégories.
+   **Reste** : brancher la fenêtre à la place du panneau
+   (`ui/control-panel/control-panel.ts`), ouvrir la catégorie dans `ouvrirReglages`, passer de
+   catégorie dans les tests qui en utilisent plusieurs (liste dans la PR du cycle 266), réécrire
+   les tests de cadrage du panneau en colonnes, `control-panel.spec.ts`, sortir les produits de la section
    « Eau » vers « Soins et produits » et « Pluie » vers « Affichage » ; puis barre du bas,
    préférence locale, panneaux exclusifs et téléphone.
 3. #723 — Population en tuiles et recherche dans les réglages.

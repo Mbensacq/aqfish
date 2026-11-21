@@ -1,15 +1,16 @@
 import { expect, test } from '@playwright/test';
 
 import {
-  hostEl,
-  toggle,
-  speed,
-  hour,
   autoHour,
-  decor,
   count,
+  decor,
+  hostEl,
+  hour,
   open,
   openPanel,
+  ouvrirReglages,
+  speed,
+  toggle,
 } from './outils-panneau';
 
 /**
@@ -22,7 +23,7 @@ test.describe('Panneau de contrôle', () => {
     page,
   }) => {
     const errors = await open(page);
-    await toggle(page).click();
+    await ouvrirReglages(page, 'Accessibilité');
     await decor(page).focus();
     // Le bouton « Granulés » (#117) partage la ligne du décor : il vient juste après.
     await page.keyboard.press('Tab');

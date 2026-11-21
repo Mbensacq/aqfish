@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { ouvrirReglages } from './outils-panneau';
 
 /**
  * Wiki des espèces, lot 1/2 (issue #287) : ouvrir, chercher, ouvrir une fiche, ajouter une
@@ -202,7 +203,7 @@ test.describe('Wiki des espèces (#287)', () => {
     const errors = await open(page, '?seed=42&vitesse=0');
     await toggle(page).click();
     await expect(wiki(page)).toBeVisible();
-    await page.getByRole('button', { name: 'Réglages' }).click();
+    await ouvrirReglages(page, 'Bac et milieu');
     await expect(page.locator('.control-panel')).toBeVisible();
     await expect(wiki(page)).toHaveCount(0);
     await toggle(page).click();

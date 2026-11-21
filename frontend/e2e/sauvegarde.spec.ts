@@ -7,6 +7,7 @@ import { setPopulation } from '../src/app/sim/population';
 import { SAVE_FORMAT, SAVE_SCHEMA, serializeWorld } from '../src/app/sim/save';
 import { advance, createDefaultWorld } from '../src/app/sim/world';
 import { selectedTankWorld } from './outils-sauvegarde';
+import { ouvrirReglages } from './outils-panneau';
 
 /**
  * Sauvegarde (issue #70) : enregistrement automatique dans le navigateur et restauration au
@@ -18,7 +19,6 @@ import { selectedTankWorld } from './outils-sauvegarde';
  */
 
 const hostEl = (page: Page) => page.locator('app-aquarium-host');
-const toggle = (page: Page) => page.getByRole('button', { name: 'Réglages' });
 const exportButton = (page: Page) => page.getByRole('button', { name: 'Exporter' });
 const importButton = (page: Page) => page.getByRole('button', { name: 'Importer' });
 const fileInput = (page: Page) => page.locator('[data-section="sauvegarde"] input[type="file"]');
@@ -42,7 +42,7 @@ async function tick(page: Page): Promise<number> {
 }
 
 async function openPanel(page: Page): Promise<void> {
-  await toggle(page).click();
+  await ouvrirReglages(page, 'Sauvegarde et partage');
   await expect(exportButton(page)).toBeVisible();
 }
 
@@ -404,7 +404,7 @@ test.describe('Sauvegarde (#70)', () => {
     const errors = await open(page);
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'bassin');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /(^|,)koi:3(,|$)/);
-    await toggle(page).click();
+    await ouvrirReglages(page, 'Bac et milieu');
     await page.getByRole('combobox', { name: 'Environnement' }).selectOption('tropical');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'tropical');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /(^|,)guppy:4(,|$)/);

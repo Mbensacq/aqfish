@@ -1,6 +1,7 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 
 import { PALETTE } from '../src/app/render/palette';
+import { SETTINGS_CATEGORIES } from '../src/app/ui/settings-window/settings-categories';
 import { canvasShot, countColors } from './outils-pixels';
 
 /**
@@ -25,6 +26,32 @@ export async function open(page: Page, search = '?seed=42'): Promise<string[]> {
   await page.goto(`/${search}`);
   await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
   return errors;
+}
+
+/**
+ * Ouvre « Réglages » d'un clic, pour y utiliser les contrôles de la catégorie `categorie`
+ * (#722) : tous les e2e passent par ici, pour que le branchement de la fenêtre des réglages
+ * (tranche 1b) ne change que cette fonction. Tant que le panneau déroulant est en place, il
+ * montre toutes les sections : la catégorie (titre déclaré dans
+ * `ui/settings-window/settings-categories.ts`) est seulement vérifiée ; une
+ * fois la fenêtre branchée, elle sera ouverte.
+ *
+ * Catégorie : celle du premier contrôle que le test utilise après l'ouverture, relevée par le
+ * script de migration de la PR (provisoire là où le test en utilise plusieurs, voir la PR).
+ */
+export async function ouvrirReglages(page: Page, categorie: string): Promise<void> {
+  expect(
+    SETTINGS_CATEGORIES.some((entry) => entry.title === categorie),
+    `catégorie « ${categorie} »`,
+  ).toBe(true);
+  await toggle(page).click();
+  await expect(toggle(page)).toHaveAttribute('aria-expanded', 'true');
+}
+
+/** Referme « Réglages » (bouton « Réglages » ; Échap ou « Fermer » avec la fenêtre, #722). */
+export async function fermerReglages(page: Page): Promise<void> {
+  await toggle(page).click();
+  await expect(toggle(page)).toHaveAttribute('aria-expanded', 'false');
 }
 
 /** Ouvre la page puis le panneau « Réglages » d'un clic. */

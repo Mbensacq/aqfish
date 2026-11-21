@@ -8,6 +8,7 @@ import {
   PANEL_VIEWPORTS,
   PANELS,
 } from './outils-cadrage';
+import { ouvrirReglages } from './outils-panneau';
 
 /**
  * Cadrage des panneaux de l'interface (rétro du sprint 5, issue #108, et #79) : chaque
@@ -53,7 +54,7 @@ test('1280 × 720 : « Réglages » ouvert masque entièrement le cadre qu’il 
   page,
 }) => {
   const errors = await openScene(page, '?seed=42&vitesse=0');
-  await page.getByRole('button', { name: 'Réglages' }).click();
+  await ouvrirReglages(page, 'Bac et milieu');
   await expect(page.locator('.control-panel')).toBeVisible();
   const result = await page.evaluate(() => {
     const panel = document.querySelector('.control-panel')!;

@@ -4,6 +4,7 @@ import { createDayClock } from '../src/app/sim/daylight';
 import { JOURNAL_VERSION, careSessionEntry, freshWaterEntry } from '../src/app/sim/journal';
 import { serializeWorld } from '../src/app/sim/save';
 import { createDefaultWorld } from '../src/app/sim/world';
+import { fermerReglages, ouvrirReglages } from './outils-panneau';
 
 /**
  * Journal du bac : reproduction et entretien (issue #655). Un bac importé porte déjà une
@@ -37,15 +38,14 @@ async function openWithJournal(page: Page, days = 0): Promise<string[]> {
     },
   } as Parameters<typeof serializeWorld>[0];
   const text = serializeWorld(world, { speed: 0, clock: createDayClock(12, 1200, true) });
-  const settings = page.getByRole('button', { name: 'Réglages' });
-  await settings.click();
+  await ouvrirReglages(page, 'Sauvegarde et partage');
   await page.locator('[data-section="sauvegarde"] input[type="file"]').setInputFiles({
     name: 'journal.json',
     mimeType: 'application/json',
     buffer: Buffer.from(text),
   });
   await page.getByRole('button', { name: 'Changer l’eau' }).click();
-  await settings.click();
+  await fermerReglages(page);
   await page.locator('[data-review]').click();
   await page.locator('[data-journal]').click();
   return errors;

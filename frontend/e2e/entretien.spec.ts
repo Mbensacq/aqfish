@@ -4,6 +4,7 @@ import { createDayClock } from '../src/app/sim/daylight';
 import { initialMaintenance, MAINTENANCE_DAY_SECONDS } from '../src/app/sim/maintenance';
 import { serializeWorld } from '../src/app/sim/save';
 import { createDefaultWorld, type MutableWorld } from '../src/app/sim/world';
+import { fermerReglages, ouvrirReglages } from './outils-panneau';
 
 /**
  * Calendrier d'entretien (issue #513, ADR 0116) : un bac dont le changement d'eau est échu
@@ -31,15 +32,14 @@ test('changement d’eau : rappel remis à zéro, journal rempli, aucune erreur'
     maintenance: initialMaintenance(0),
   };
   const text = serializeWorld(world, { speed: 0, clock: createDayClock(12, 1200, true) });
-  const settings = page.getByRole('button', { name: 'Réglages' });
-  await settings.click();
+  await ouvrirReglages(page, 'Sauvegarde et partage');
   await page.locator('[data-section="sauvegarde"] input[type="file"]').setInputFiles({
     name: 'entretien.json',
     mimeType: 'application/json',
     buffer: Buffer.from(text),
   });
 
-  await settings.click();
+  await fermerReglages(page);
   const chip = page.locator('[data-maintenance]');
   await expect(chip).toHaveAttribute('data-maintenance-due', '2');
   await expect(chip).toContainText('2 tâches à faire');
@@ -53,7 +53,7 @@ test('changement d’eau : rappel remis à zéro, journal rempli, aucune erreur'
     await page.screenshot({ path: `${captureDir}/entretien-rappel.png` });
   }
 
-  await settings.click();
+  await ouvrirReglages(page, 'Eau et matériel');
   await page.locator('[data-water-change]').click();
   await expect(water).toHaveAttribute('data-overdue', 'false');
   await expect(chip).toHaveAttribute('data-maintenance-due', '1');

@@ -6,6 +6,7 @@ import { environmentWater } from '../src/app/sim/environment';
 import { isGrowingPlant, plantLimits } from '../src/app/sim/plant-growth';
 import { serializeWorld } from '../src/app/sim/save';
 import { createDefaultWorld, type MutableWorld } from '../src/app/sim/world';
+import { fermerReglages, ouvrirReglages } from './outils-panneau';
 
 /**
  * Plantes qui poussent et se taillent (issue #477) : le bac tropical par défaut est importé
@@ -47,7 +48,7 @@ test.describe('plantes qui poussent (#477)', () => {
       plantGrowth: Object.fromEntries(tall.map((item, n) => [String(item.seed), caps[n]])),
     };
     const text = serializeWorld(world, { speed: 0, clock: createDayClock(12, 1200, true) });
-    await page.getByRole('button', { name: 'Réglages' }).click();
+    await ouvrirReglages(page, 'Sauvegarde et partage');
     await page.locator('[data-section="sauvegarde"] input[type="file"]').setInputFiles({
       name: 'plantes.json',
       mimeType: 'application/json',
@@ -62,7 +63,7 @@ test.describe('plantes qui poussent (#477)', () => {
     await expect(pruner(page)).toHaveAttribute('aria-pressed', 'true');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-pruner', 'true');
     // Le panneau couvre une partie de l'écran : on le referme pour viser le bac.
-    await page.getByRole('button', { name: 'Réglages' }).click();
+    await fermerReglages(page);
     const box = await page.locator('canvas').first().boundingBox();
     expect(box).not.toBeNull();
     const { x, y, width, height } = box!;

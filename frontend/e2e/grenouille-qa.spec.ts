@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { ouvrirReglages } from './outils-panneau';
 
 /**
  * QA des grenouilles (#131) : temps extrêmes en mode capture, déterminisme de l'image,
@@ -69,7 +70,7 @@ test.describe('Grenouilles : parcours utilisateur (QA)', () => {
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     const errors = await open(page, '?environnement=paludarium&seed=42');
-    await page.getByRole('button', { name: 'Réglages' }).click();
+    await ouvrirReglages(page, 'Population');
     const field = page.getByRole('spinbutton', { name: 'Nombre de sonneurs orientaux' });
     await field.scrollIntoViewIfNeeded();
     await expect(field).toBeInViewport();
@@ -87,7 +88,7 @@ test.describe('Grenouilles : parcours utilisateur (QA)', () => {
     page,
   }) => {
     const errors = await open(page, '?environnement=paludarium&seed=42');
-    await page.getByRole('button', { name: 'Réglages' }).click();
+    await ouvrirReglages(page, 'Bac et milieu');
     const place = page.getByRole('combobox', { name: 'Environnement' });
     await place.selectOption('tropical');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'tropical');

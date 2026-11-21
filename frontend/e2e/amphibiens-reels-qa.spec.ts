@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { ouvrirReglages } from './outils-panneau';
 
 /**
  * QA des amphibiens réels du paludarium (#270) : les fiches du sonneur oriental et du triton à
@@ -16,7 +17,7 @@ async function open(page: Page): Promise<string[]> {
   });
   await page.goto('/?environnement=paludarium&seed=42&vitesse=0');
   await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
-  await page.getByRole('button', { name: 'Réglages' }).click();
+  await ouvrirReglages(page, 'Population');
   await expect(section(page)).toBeVisible();
   return errors;
 }

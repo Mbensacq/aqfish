@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
 import { openScene } from './outils-decor';
+import { ouvrirReglages } from './outils-panneau';
 
 /**
  * Mode immersif, choix du bac (issue #375) : appui long, choix du récif dans l'interface
@@ -22,7 +23,7 @@ test('mode immersif (#375) : choisir un autre bac, telephone', async ({ page }, 
   });
   const errors = await openScene(page);
 
-  await page.getByRole('button', { name: 'Réglages' }).click();
+  await ouvrirReglages(page, 'Temps');
   await page.getByRole('button', { name: 'Mode immersif' }).click();
   await expect(overlay(page)).toHaveAttribute('data-immersive-tank', 'tropical');
 

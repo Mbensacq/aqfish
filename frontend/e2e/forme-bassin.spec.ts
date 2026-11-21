@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 import { host, openScene } from './outils-decor';
+import { ouvrirReglages } from './outils-panneau';
 
 /**
  * Forme du bassin (issue #190) : liste « Forme du bassin » sur la ligne « Lieu » du panneau,
@@ -12,7 +13,7 @@ test.describe('Forme du bassin (#190)', () => {
   test('choisie au panneau, conservée au rechargement', async ({ page }) => {
     const errors = await openScene(page, '?seed=42&environnement=bassin');
     await expect(host(page)).toHaveAttribute('data-aqfish-shape', 'rectangle');
-    await page.getByRole('button', { name: 'Réglages' }).click();
+    await ouvrirReglages(page, 'Bac et milieu');
     const select = page.getByRole('combobox', { name: 'Forme du bassin' });
     await expect(select).toBeVisible();
     await select.selectOption('haricot');
@@ -31,7 +32,7 @@ test.describe('Forme du bassin (#190)', () => {
     await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
     await expect(host(page)).toHaveAttribute('data-aqfish-shape', 'ovale');
     await openScene(page, '?seed=42');
-    await page.getByRole('button', { name: 'Réglages' }).click();
+    await ouvrirReglages(page, 'Bac et milieu');
     await expect(page.getByRole('combobox', { name: 'Environnement' })).toBeVisible();
     await expect(page.getByRole('combobox', { name: 'Forme du bassin' })).toHaveCount(0);
     expect(errors).toEqual([]);

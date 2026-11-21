@@ -4,6 +4,7 @@ import { createDayClock } from '../src/app/sim/daylight';
 import { serializeWorld } from '../src/app/sim/save';
 import { sampleWater } from '../src/app/sim/water-quality';
 import { createDefaultWorld, type MutableWorld } from '../src/app/sim/world';
+import { fermerReglages, ouvrirReglages } from './outils-panneau';
 
 /**
  * Tableau de bord de l'eau (issue #256, ADR 0059) : cadre sur le bord haut, jauges toujours
@@ -166,11 +167,11 @@ test('se replie à la souris ; une eau mauvaise est signalée en texte et en ic�
   const world: MutableWorld = createDefaultWorld(42);
   world.water = sampleWater('tropical', 'mauvaise');
   const text = serializeWorld(world, { speed: 0, clock: createDayClock(12, 1200, true) });
-  await page.getByRole('button', { name: 'Réglages' }).click();
+  await ouvrirReglages(page, 'Sauvegarde et partage');
   await page
     .locator('[data-section="sauvegarde"] input[type="file"]')
     .setInputFiles({ name: 'eau.json', mimeType: 'application/json', buffer: Buffer.from(text) });
-  await page.getByRole('button', { name: 'Réglages' }).click();
+  await fermerReglages(page);
   const nitrate = dashboard(page).locator('[data-gauge="nitrate"]');
   await expect(nitrate).toHaveAttribute('data-level', 'rouge');
   await expect(nitrate.locator('[data-level-label]')).toHaveText('Critique');

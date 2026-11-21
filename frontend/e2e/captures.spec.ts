@@ -19,6 +19,7 @@ import {
   type MutableWorld,
   type World,
 } from '../src/app/sim/world';
+import { fermerReglages, ouvrirReglages } from './outils-panneau';
 
 /**
  * Harnais de captures (projet Playwright « captures »).
@@ -520,7 +521,7 @@ test.describe('Captures', () => {
     page.on('pageerror', (error) => errors.push(error.message));
     await page.goto(`/?seed=${SEED}&camera=front&heure=12&vitesse=0`);
     await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
-    await page.getByRole('button', { name: 'Réglages' }).click();
+    await ouvrirReglages(page, 'Soins et produits');
     await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-speed', '0');
     await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-tick', '0');
     await page.screenshot({ path: join(OUTPUT_DIR, 'front-panneau.png'), animations: 'disabled' });
@@ -535,7 +536,7 @@ test.describe('Captures', () => {
     page.on('pageerror', (error) => errors.push(error.message));
     await page.goto(`/?seed=${SEED}&camera=front&heure=12&vitesse=0&points-blancs=1`);
     await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
-    await page.getByRole('button', { name: 'Réglages' }).click();
+    await ouvrirReglages(page, 'Soins et produits');
     await page.getByRole('button', { name: 'Ajouter 1 dose de médicament' }).click();
     await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-treatment', /^5;/);
     await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-tick', '0');
@@ -554,12 +555,11 @@ test.describe('Captures', () => {
     await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
     const host = page.locator('app-aquarium-host');
     await expect(host).toHaveAttribute('data-aqfish-lamp', '0.00');
-    const settings = page.getByRole('button', { name: 'Réglages' });
-    await settings.click();
+    await ouvrirReglages(page, 'Eau et matériel');
     const lampOn = page.locator('[data-section="eau"] [data-lamp-on]');
     await lampOn.fill('20');
     await expect(lampOn).toHaveAttribute('aria-valuetext', 'allumée à 20:00');
-    await settings.click();
+    await fermerReglages(page);
     await expect(page.locator('.control-panel')).toHaveCount(0);
     await expect(host).toHaveAttribute('data-aqfish-lamp', '1.00');
     await expect(host).toHaveAttribute('data-aqfish-tick', '0');
@@ -642,7 +642,7 @@ test.describe('Captures', () => {
       await page.setViewportSize({ width: shot.width, height: shot.height });
       await page.goto(`/?seed=${SEED}&camera=front&heure=12&vitesse=0`);
       await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
-      await page.getByRole('button', { name: 'Réglages' }).click();
+      await ouvrirReglages(page, 'Bac et milieu');
       const environment = page.getByRole('combobox', { name: 'Environnement', exact: true });
       for (const id of ['recif', 'paludarium', 'tropical']) {
         await environment.selectOption(id);
@@ -669,7 +669,7 @@ test.describe('Captures', () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(`/?seed=${SEED}&camera=three-quarter&heure=12&vitesse=0`);
     await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
-    await page.getByRole('button', { name: 'Réglages' }).click();
+    await ouvrirReglages(page, 'Population');
     await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-speed', '0');
     await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-tick', '0');
     await page.locator('[data-section="population"]').scrollIntoViewIfNeeded();
@@ -688,7 +688,7 @@ test.describe('Captures', () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(`/?seed=${SEED}&camera=three-quarter&heure=12&vitesse=0`);
     await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
-    await page.getByRole('button', { name: 'Réglages' }).click();
+    await ouvrirReglages(page, 'Population');
     await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-speed', '0');
     await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-tick', '0');
     await page.getByRole('button', { name: 'Fiche : Néon' }).click();
@@ -709,7 +709,7 @@ test.describe('Captures', () => {
     page.on('pageerror', (error) => errors.push(error.message));
     await page.goto(`/?environnement=recif&seed=${SEED}&camera=three-quarter&heure=12&vitesse=0`);
     await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
-    await page.getByRole('button', { name: 'Réglages' }).click();
+    await ouvrirReglages(page, 'Population');
     await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-speed', '0');
     await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-tick', '0');
     await page.getByRole('button', { name: 'Fiche : Chirurgien bleu' }).click();
@@ -754,7 +754,7 @@ test.describe('Captures', () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(`/?seed=${SEED}&camera=three-quarter&heure=12&vitesse=0`);
     await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
-    await page.getByRole('button', { name: 'Réglages' }).click();
+    await ouvrirReglages(page, 'Eau et matériel');
     await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-speed', '0');
     await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-tick', '0');
     await page.locator('[data-section="eau"]').scrollIntoViewIfNeeded();
@@ -770,7 +770,7 @@ test.describe('Captures', () => {
     page.on('pageerror', (error) => errors.push(error.message));
     await page.goto(`/?seed=${SEED}&camera=three-quarter&heure=12&vitesse=0`);
     await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
-    await page.getByRole('button', { name: 'Réglages' }).click();
+    await ouvrirReglages(page, 'Eau et matériel');
     await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-speed', '0');
     await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-tick', '0');
     await page.locator('[data-section="eau"]').scrollIntoViewIfNeeded();
@@ -789,7 +789,7 @@ test.describe('Captures', () => {
     page.on('pageerror', (error) => errors.push(error.message));
     await page.goto(`/?seed=${SEED}&camera=three-quarter&heure=12&vitesse=0`);
     await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
-    await page.getByRole('button', { name: 'Réglages' }).click();
+    await ouvrirReglages(page, 'Son');
     await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-speed', '0');
     await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-tick', '0');
     await page.locator('[data-section="son"]').scrollIntoViewIfNeeded();
@@ -824,8 +824,7 @@ test.describe('Captures', () => {
         world.water = { ...freshWater('tropical'), ammonia: 6, nitrite: 2.5, nitrate: 50 };
         starveWorldInPlace(world);
         const text = serializeWorld(world, { speed: 0, clock: createDayClock(12, 1200, true) });
-        const settings = page.getByRole('button', { name: 'Réglages' });
-        await settings.click();
+        await ouvrirReglages(page, 'Sauvegarde et partage');
         await page.locator('[data-section="sauvegarde"] input[type="file"]').setInputFiles({
           name: 'eau.json',
           mimeType: 'application/json',
@@ -836,7 +835,7 @@ test.describe('Captures', () => {
           'rouge',
         );
         await expect(page.locator('[data-dashboard-status] [data-alert]')).toHaveCount(3);
-        await settings.click();
+        await fermerReglages(page);
         await expect(page.locator('.control-panel')).toHaveCount(0);
       }
       await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-speed', '0');
@@ -856,8 +855,7 @@ test.describe('Captures', () => {
     await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
     const world: MutableWorld = createDefaultWorld(SEED);
     world.water = { ...freshWater('tropical'), chlorine: 0.15, untreatedTap: true };
-    const settings = page.getByRole('button', { name: 'Réglages' });
-    await settings.click();
+    await ouvrirReglages(page, 'Sauvegarde et partage');
     await page.locator('[data-section="sauvegarde"] input[type="file"]').setInputFiles({
       name: 'chlore.json',
       mimeType: 'application/json',
@@ -868,7 +866,7 @@ test.describe('Captures', () => {
     await expect(page.locator('[data-dashboard-status] [data-alert]').first()).toContainText(
       'Chlore',
     );
-    await settings.click();
+    await fermerReglages(page);
     await expect(page.locator('.control-panel')).toHaveCount(0);
     // L'import remet la caméra du bac : revenir à la vue de face.
     await page.getByRole('button', { name: 'Face' }).click();
@@ -898,8 +896,7 @@ test.describe('Captures', () => {
     const world: MutableWorld = createDefaultWorld(SEED);
     world.water = { ...freshWater('tropical'), ammonia: 6, nitrite: 2.5, nitrate: 50 };
     starveWorldInPlace(world);
-    const settings = page.getByRole('button', { name: 'Réglages' });
-    await settings.click();
+    await ouvrirReglages(page, 'Sauvegarde et partage');
     await page.locator('[data-section="sauvegarde"] input[type="file"]').setInputFiles({
       name: 'alertes.json',
       mimeType: 'application/json',
@@ -909,7 +906,7 @@ test.describe('Captures', () => {
     });
     const status = page.locator('[data-dashboard-status]');
     await expect(status.locator('[data-alert]')).toHaveCount(3);
-    await settings.click();
+    await fermerReglages(page);
     await expect(page.locator('.control-panel')).toHaveCount(0);
     await status.locator('[data-alert="hunger"] .status__chip').click();
     await status.locator('[data-alert-show="hunger"]').click();

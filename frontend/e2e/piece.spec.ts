@@ -5,6 +5,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { DEFAULT_SAVE_SETTINGS, serializeWorld } from '../src/app/sim/save';
 import { createDefaultWorld } from '../src/app/sim/world';
 import { canvasShot } from './outils-pixels';
+import { ouvrirReglages } from './outils-panneau';
 
 /**
  * Pièce autour du bac (issue #187) : case « Afficher la pièce » des réglages (bac tropical
@@ -15,7 +16,6 @@ import { canvasShot } from './outils-pixels';
  */
 
 const hostEl = (page: Page) => page.locator('app-aquarium-host');
-const toggle = (page: Page) => page.getByRole('button', { name: 'Réglages' });
 const roomBox = (page: Page) => page.getByRole('checkbox', { name: 'Afficher la pièce' });
 const roomAttr = (page: Page) => hostEl(page).getAttribute('data-aqfish-room');
 
@@ -28,7 +28,7 @@ async function open(page: Page, search = ''): Promise<string[]> {
 }
 
 async function openPanel(page: Page): Promise<void> {
-  await toggle(page).click();
+  await ouvrirReglages(page, 'Bac et milieu');
   await expect(page.locator('section.control-panel')).toBeVisible();
 }
 

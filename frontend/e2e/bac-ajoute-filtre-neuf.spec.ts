@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { ouvrirReglages } from './outils-panneau';
 
 /**
  * Filtre d'un bac ajouté (issues #538 et #553) : ajouter un bac ne touche pas le filtre mûr du
@@ -14,7 +15,7 @@ test('bac ajouté : filtre neuf amorcé depuis la liste, bac de départ inchang�
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/');
   await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
-  await page.getByRole('button', { name: 'Réglages' }).click();
+  await ouvrirReglages(page, 'Temps');
   await page.getByRole('slider', { name: 'Vitesse de la simulation' }).fill('0');
 
   const button = page.locator('[data-bacteria-starter]');

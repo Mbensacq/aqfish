@@ -4,6 +4,7 @@ import { createDayClock } from '../src/app/sim/daylight';
 import { serializeWorld } from '../src/app/sim/save';
 import { freshWater } from '../src/app/sim/water';
 import { createDefaultWorld, starveWorldInPlace, type MutableWorld } from '../src/app/sim/world';
+import { fermerReglages, ouvrirReglages } from './outils-panneau';
 
 /**
  * Animaux concernés par une alerte (issue #483, ADR 0115) : le détail nomme les espèces, le
@@ -32,8 +33,7 @@ test('alerte dépliée : espèces nommées, animaux mis en évidence puis repèr
   world.water = { ...freshWater('tropical'), ammonia: 6, nitrite: 2.5, nitrate: 50 };
   starveWorldInPlace(world);
   const text = serializeWorld(world, { speed: 0, clock: createDayClock(12, 1200, true) });
-  const settings = page.getByRole('button', { name: 'Réglages' });
-  await settings.click();
+  await ouvrirReglages(page, 'Sauvegarde et partage');
   await page.locator('[data-section="sauvegarde"] input[type="file"]').setInputFiles({
     name: 'alertes.json',
     mimeType: 'application/json',
@@ -41,7 +41,7 @@ test('alerte dépliée : espèces nommées, animaux mis en évidence puis repèr
   });
   const status = page.locator('[data-dashboard-status]');
   await expect(status.locator('[data-alert]')).toHaveCount(3);
-  await settings.click();
+  await fermerReglages(page);
   await expect(page.locator('.control-panel')).toHaveCount(0);
 
   await status.locator('[data-alert="hunger"] .status__chip').click();

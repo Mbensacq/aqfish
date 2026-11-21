@@ -1,11 +1,11 @@
 import { expect, test, type Page } from '@playwright/test';
 
 import { canvasShot, countColors } from './outils-pixels';
+import { ouvrirReglages } from './outils-panneau';
 
 /** QA des coraux du récif (#149) : présence à l'écran, case « Afficher le décor », autres environnements. */
 
 const hostEl = (page: Page) => page.locator('app-aquarium-host');
-const toggle = (page: Page) => page.getByRole('button', { name: 'Réglages' });
 const speed = (page: Page) => page.getByRole('slider', { name: 'Vitesse de la simulation' });
 const decor = (page: Page) => page.getByRole('checkbox', { name: 'Afficher le décor' });
 
@@ -29,7 +29,7 @@ async function violetPixels(page: Page): Promise<number> {
 }
 
 async function freeze(page: Page): Promise<void> {
-  await toggle(page).click();
+  await ouvrirReglages(page, 'Temps');
   await speed(page).fill('0');
   await page.getByRole('button', { name: /vue de face/i }).click();
   await page.waitForTimeout(800);

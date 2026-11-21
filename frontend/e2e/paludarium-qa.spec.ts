@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { ouvrirReglages } from './outils-panneau';
 
 /** QA du paludarium (#129) : interactions à la souris, petit écran, graines et URL extrêmes. */
 
@@ -48,7 +49,7 @@ test.describe('Paludarium : parcours utilisateur', () => {
   test('à 390 × 844 : le paludarium s’affiche, le panneau garde le choix', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     const errors = await open(page, '?environnement=paludarium');
-    await page.getByRole('button', { name: 'Réglages' }).click();
+    await ouvrirReglages(page, 'Bac et milieu');
     await expect(page.getByRole('combobox', { name: 'Environnement' })).toHaveValue('paludarium');
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth > window.innerWidth,

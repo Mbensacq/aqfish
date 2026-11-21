@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { ouvrirReglages } from './outils-panneau';
 
 /**
  * Pharmacie du bac (#533) : ouverte au clavier depuis son bouton, conseil selon l'alerte la
@@ -77,7 +78,7 @@ test('pharmacie : exclusive avec le wiki et « Réglages »', async ({ page }) =
   await expect(page.locator(panel)).toBeVisible();
   await expect(page.locator('#wiki-especes')).toHaveCount(0);
 
-  await page.getByRole('button', { name: 'Réglages' }).click();
+  await ouvrirReglages(page, 'Soins et produits');
   await expect(page.locator('.control-panel')).toBeVisible();
   await expect(page.locator(panel)).toHaveCount(0);
 });
@@ -108,7 +109,7 @@ test('effets secondaires (#549) : avertissement affiché, lu au clavier avant le
 
   // Geste dans « Réglages, Soins » : la description du bouton, lue au focus, porte
   // l'avertissement ; rien n'est versé avant la touche Entrée.
-  await page.getByRole('button', { name: 'Réglages' }).click();
+  await ouvrirReglages(page, 'Soins et produits');
   const medication = page.locator('[data-treatment="medicament"]');
   await expect(medication).toBeVisible();
   await medication.focus();
