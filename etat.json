@@ -9799,7 +9799,7 @@
       "debut": "2026-11-21T09:01:55.453Z",
       "type": "fonctionnalite",
       "issue": 723,
-      "pr": null,
+      "pr": 763,
       "version": null,
       "phases": {
         "planif": {
