@@ -23,6 +23,7 @@ import {
   settingsCategory,
   type SettingsCategoryId,
 } from './settings-categories';
+import type { SettingsSearchResult } from './settings-index';
 
 /** Identifiant de la fenêtre (cible de `aria-controls` du bouton « Réglages »). */
 export const SETTINGS_WINDOW_ID = 'fenetre-reglages';
@@ -35,7 +36,7 @@ export const SETTINGS_WINDOW_ID = 'fenetre-reglages';
  *
  * Clavier : le focus entre sur la catégorie ouverte ; Tab et Maj+Tab tournent dans la
  * fenêtre ; flèches haut et bas d'une catégorie à l'autre (en boucle) ; `/` place le focus
- * dans la recherche (son filtrage arrive au lot 3) ; Échap ou un clic sur le fond demandent la
+ * dans la recherche ; Échap ou un clic sur le fond demandent la
  * fermeture (`closeRequested`), le parent rend le focus au bouton « Réglages ». Un Échap déjà
  * traité par le contenu (fiche, confirmation : `defaultPrevented`) est ignoré.
  *
@@ -43,6 +44,12 @@ export const SETTINGS_WINDOW_ID = 'fenetre-reglages';
  * la liste des catégories, chacune avec sa valeur résumée (`summaries`), puis, une catégorie
  * touchée, son contenu seul avec « Retour » (focus rendu à la catégorie). Le bloc non montré
  * est masqué (`hidden`) : ni lu, ni atteint au clavier.
+ *
+ * Recherche (#723) : la requête (`query`) est relayée au parent, qui fournit les résultats
+ * (`results`, index de `settings-index.ts`) et montre sous la liste les sections qui portent
+ * ces réglages, pour les régler sur place. Le nom de catégorie d'un résultat y mène ; Entrée
+ * ouvre le premier ; aucun résultat : un message et la liste des catégories. Sur téléphone, les
+ * résultats remplacent la liste des catégories sous le champ.
  */
 @Component({
   selector: 'app-settings-window',
@@ -54,7 +61,7 @@ export const SETTINGS_WINDOW_ID = 'fenetre-reglages';
     <div class="settings-window__backdrop" data-settings-backdrop aria-hidden="true"></div>
     <div
       class="settings-window"
-      [class.settings-window--phone-list]="phone() && showList()"
+      [class.settings-window--phone-list]="phone() && showList() && !searching()"
       [id]="windowId"
       role="dialog"
       aria-modal="true"
@@ -82,8 +89,15 @@ export const SETTINGS_WINDOW_ID = 'fenetre-reglages';
             aria-label="Rechercher un réglage"
             placeholder="Rechercher (touche /)"
             data-settings-search
+            [value]="query()"
+            (input)="onSearch($event)"
+            (keydown.enter)="openFirst($event)"
           />
-          <nav class="settings-window__nav" aria-label="Catégories des réglages">
+          <nav
+            class="settings-window__nav"
+            aria-label="Catégories des réglages"
+            [hidden]="phone() && searching()"
+          >
             @for (group of groups; track group.name) {
               <p class="settings-window__group" [id]="'reglages-groupe-' + $index">
                 {{ group.name }}
@@ -127,15 +141,59 @@ export const SETTINGS_WINDOW_ID = 'fenetre-reglages';
         [attr.data-settings-content]="selected()"
         [hidden]="!showContent()"
       >
-        @if (phone()) {
+        @if (phone() && !searching()) {
           <button type="button" class="settings-window__back" data-settings-back (click)="back()">
             ‹ Retour
           </button>
         }
-        <h3 class="settings-window__heading" id="fenetre-reglages-categorie">
-          {{ category().title }}
-        </h3>
-        <p class="settings-window__explanation">{{ category().explanation }}</p>
+        @if (searching()) {
+          <h3 class="settings-window__heading" id="fenetre-reglages-categorie">Résultats</h3>
+          @if (results().length > 0) {
+            <ul class="settings-window__results" data-settings-results>
+              @for (result of results(); track result.kind + result.name) {
+                <li class="settings-window__result" [attr.data-settings-result]="result.name">
+                  <span class="settings-window__result-name">{{ result.name }}</span>
+                  <span
+                    class="settings-window__result-text"
+                    [class.settings-window__result-text--scientific]="result.kind === 'espece'"
+                    >{{ result.explanation }}</span
+                  >
+                  <button
+                    type="button"
+                    class="settings-window__result-category"
+                    [attr.data-settings-result-category]="result.category"
+                    (click)="openResult(result)"
+                  >
+                    {{ result.categoryTitle }}
+                  </button>
+                </li>
+              }
+            </ul>
+          } @else {
+            <p class="settings-window__explanation" role="status" data-settings-no-result>
+              Aucun réglage ne correspond à « {{ query().trim() }} ». Les catégories :
+            </p>
+            <ul class="settings-window__results">
+              @for (entry of allCategories; track entry.id) {
+                <li>
+                  <button
+                    type="button"
+                    class="settings-window__result-category"
+                    [attr.data-settings-result-category]="entry.id"
+                    (click)="openCategory(entry.id)"
+                  >
+                    {{ entry.title }}
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+        } @else {
+          <h3 class="settings-window__heading" id="fenetre-reglages-categorie">
+            {{ category().title }}
+          </h3>
+          <p class="settings-window__explanation">{{ category().explanation }}</p>
+        }
         <ng-content />
       </section>
     </div>
@@ -146,6 +204,10 @@ export class SettingsWindow {
   readonly selected = model<SettingsCategoryId>(DEFAULT_SETTINGS_CATEGORY);
   /** Valeur résumée de chaque catégorie, sous son titre dans la liste du téléphone. */
   readonly summaries = input<Partial<Record<SettingsCategoryId, string>>>({});
+  /** Texte de la recherche (#723), relayé au parent qui calcule les résultats. */
+  readonly query = model('');
+  /** Résultats de la recherche courante, dans l'ordre de pertinence (#723). */
+  readonly results = input<readonly SettingsSearchResult[]>([]);
   /** Échap, bouton « Fermer » ou clic sur le fond : le parent ferme la fenêtre. */
   readonly closeRequested = output<void>();
 
@@ -158,13 +220,18 @@ export class SettingsWindow {
     categories: categoriesOf(name),
   }));
   protected readonly category = computed(() => settingsCategory(this.selected()));
+  protected readonly allCategories = this.groups.flatMap((group) => group.categories);
+  /** Vrai pendant une recherche (requête non blanche) : les résultats remplacent la catégorie. */
+  protected readonly searching = computed(() => this.query().trim() !== '');
 
   /** Vrai sous 640 px : panneau du téléphone, liste puis contenu (tranche 3). */
   protected readonly phone = inject(PHONE_LAYOUT);
   /** Téléphone : liste des catégories (à l'ouverture) ou contenu de la catégorie touchée. */
   private readonly phoneView = signal<'liste' | 'contenu'>('liste');
   protected readonly showList = computed(() => !this.phone() || this.phoneView() === 'liste');
-  protected readonly showContent = computed(() => !this.phone() || this.phoneView() === 'contenu');
+  protected readonly showContent = computed(
+    () => !this.phone() || this.phoneView() === 'contenu' || this.searching(),
+  );
 
   constructor() {
     afterNextRender(() => this.focusCategory());
@@ -182,6 +249,37 @@ export class SettingsWindow {
       this.afterRender(() =>
         this.host.nativeElement.querySelector<HTMLElement>('[data-settings-back]')?.focus(),
       );
+    }
+  }
+
+  /** Saisie dans la recherche. */
+  protected onSearch(event: Event): void {
+    if (event.target instanceof HTMLInputElement) {
+      this.query.set(event.target.value);
+    }
+  }
+
+  /** Entrée dans la recherche : le premier résultat s'ouvre (sans résultat : rien). */
+  protected openFirst(event: Event): void {
+    const first = this.results()[0];
+    if (!this.searching() || first === undefined) {
+      return;
+    }
+    event.preventDefault();
+    this.openResult(first);
+  }
+
+  /** Nom de catégorie d'un résultat : la recherche s'efface, la catégorie s'ouvre. */
+  protected openResult(result: SettingsSearchResult): void {
+    this.openCategory(result.category);
+  }
+
+  /** Ouvre la catégorie `id` depuis la recherche (résultat ou liste sans résultat). */
+  protected openCategory(id: SettingsCategoryId): void {
+    this.query.set('');
+    this.choose(id);
+    if (!this.phone()) {
+      this.afterRender(() => this.focusCategory());
     }
   }
 

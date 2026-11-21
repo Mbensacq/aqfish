@@ -41,6 +41,12 @@ import {
 } from '../settings-window/settings-categories';
 import { SETTINGS_CATEGORY_STORAGE } from '../settings-window/settings-category-store';
 import {
+  buildSettingsIndex,
+  searchDisplay,
+  searchSettings,
+} from '../settings-window/settings-index';
+import { panelCatalog } from './panel-views';
+import {
   readStoredSettingsCategory,
   writeStoredSettingsCategory,
 } from '../../core/settings-category-pref/settings-category-pref';
@@ -157,6 +163,8 @@ export { sliderHour } from './day-section';
       <app-settings-window
         [selected]="category()"
         [summaries]="summaries()"
+        [(query)]="searchQuery"
+        [results]="searchResults()"
         (selectedChange)="chooseCategory($event)"
         (closeRequested)="onCloseRequested()"
       >
@@ -310,6 +318,7 @@ export { sliderHour } from './day-section';
             [populationNotice]="populationNotice()"
             [tankLiters]="tankLiters()"
             [water]="water()"
+            [onlySpecies]="searchSpecies()"
             (populationChanged)="populationChanged.emit($event)"
           ></fieldset>
 
@@ -545,9 +554,31 @@ export class ControlPanel {
       DEFAULT_SETTINGS_CATEGORY,
     ),
   );
-  /** Sections de la catégorie ouverte (les autres restent dans le document, masquées). */
+  /** Texte de la recherche de la fenêtre (#723), effacé à la fermeture. */
+  protected readonly searchQuery = signal('');
+  /**
+   * Index de la recherche (#723) : la déclaration des catégories et les espèces du milieu
+   * affiché, reconstruit seulement au changement de milieu ou de mode.
+   */
+  private readonly searchIndex = computed(() =>
+    buildSettingsIndex(SETTINGS_CATEGORIES, panelCatalog(this.environment(), this.careMode())),
+  );
+  protected readonly searchResults = computed(() =>
+    searchSettings(this.searchIndex(), this.searchQuery()),
+  );
+  private readonly searchShown = computed(() =>
+    this.searchQuery().trim() === '' ? null : searchDisplay(this.searchResults()),
+  );
+  /** Tuiles gardées pendant une recherche d'espèce ; `null` : toutes. */
+  protected readonly searchSpecies = computed(() => this.searchShown()?.species ?? null);
+  /**
+   * Sections montrées : celles de la catégorie ouverte, ou pendant une recherche celles qui
+   * portent les résultats (réglables sur place) ; les autres restent dans le document, masquées.
+   */
   private readonly shownSections = computed(
-    () => new Set<SettingsSectionKey>(settingsCategory(this.category()).sections),
+    () =>
+      this.searchShown()?.sections ??
+      new Set<SettingsSectionKey>(settingsCategory(this.category()).sections),
   );
   /** Case « Afficher la pièce » proposée seulement autour du bac tropical (#187). */
   protected readonly roomAvailable = computed(() => isRoomAvailable(this.environment()));
@@ -587,6 +618,7 @@ export class ControlPanel {
   toggle(): void {
     const open = !this.open();
     this.open.set(open);
+    this.searchQuery.set('');
     if (open) {
       this.opened.emit();
     } else {
@@ -597,11 +629,12 @@ export class ControlPanel {
   /** Replie le panneau pour laisser la place à un autre (#136). */
   close(): void {
     this.open.set(false);
+    this.searchQuery.set('');
   }
 
   /** Échap, « Fermer » ou clic sur le fond de la fenêtre : fermeture, focus au bouton. */
   protected onCloseRequested(): void {
-    this.open.set(false);
+    this.close();
     this.closedByUser.emit();
     this.focusToggle();
   }

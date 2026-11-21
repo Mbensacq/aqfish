@@ -179,6 +179,13 @@ devant lui garde son vert ; aucune couleur ajoutée à la palette.
   arrondis, haut de la page assombri et visible) ; d'abord la recherche et la liste des
   catégories, chaque titre suivi de sa valeur résumée en gris (« 24 animaux », « Eau à 24 °C »),
   puis le contenu d'une catégorie seul, sous « ‹ Retour » en laiton ; cibles de 44 px au moins.
+- Population et recherche (#723, cycle 270) : une tuile par espèce (filet de 1 px, coins de
+  2 px, deux colonnes ou plus selon la largeur, une sous 640 px) avec le nom, le nom
+  scientifique en italique gris, le compteur et « Fiche » ; filtres en boutons accolés, le
+  choix courant plein en laiton ; tri en liste ; résumé « 24 animaux, 3 espèces » en police
+  mono. Recherche : les résultats remplacent le titre de la catégorie (« Résultats »), une
+  ligne par réglage (nom en gras, explication en gris, nom de sa catégorie en lien laiton,
+  filet entre deux lignes), puis les sections qui les portent, réglables sur place.
 - Barre du bas (cycle 268) : vues, « Libre », puis « Pixel art », « Nourrir », « Raclette »,
   « Sécateur » et « Photo » (gestes de jeu, hors des réglages) ; outil en main : bordure et
   texte laiton, « Poser la raclette ». Pastilles de touche masquées sous 1 280 px, deux

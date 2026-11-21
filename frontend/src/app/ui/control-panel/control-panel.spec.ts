@@ -1350,7 +1350,7 @@ describe('ControlPanel', () => {
     const content = root().querySelector<HTMLElement>('.control-panel')!;
     const controls = [
       toggle(),
-      ...content.querySelectorAll<HTMLElement>('button, input:not([type="file"])'),
+      ...content.querySelectorAll<HTMLElement>('button, select, input:not([type="file"])'),
     ];
     // 5 contrôles de #52, « Éditer le décor » (#167), « Granulés » (#117), « Afficher la
     // pièce » (#187), « Changer l’eau » et le curseur du chauffage (#207), « − » et « + » des
@@ -1361,10 +1361,11 @@ describe('ControlPanel', () => {
     // et son volume (#411), « Courant » (#460), le curseur de l'éclairage (#476), l'amorce de
     // bactéries (#529) (raclette et sécateur : barre du bas depuis #722),
     // l'eau non traitée et les deux conditionneurs (#530), le charbon et les deux régulateurs
-    // de pH (#531), le curseur de l'allumage de la lampe (#584). Le champ du lien de partage
-    // n'apparaît qu'avec un lien.
+    // de pH (#531), le curseur de l'allumage de la lampe (#584), les quatre filtres et le tri
+    // de la population (#723), et la liste « Environnement » (#87, comptée depuis que les
+    // listes le sont, #723). Le champ du lien de partage n'apparaît qu'avec un lien.
     expect(controls).toHaveLength(
-      5 + 1 + 1 + 1 + 2 + 2 + 17 * 5 + 2 + 1 + 1 + 1 + 1 + 2 + 1 + 1 + 1 + 3 + 3 + 1,
+      5 + 1 + 1 + 1 + 2 + 2 + 17 * 5 + 2 + 1 + 1 + 1 + 1 + 2 + 1 + 1 + 1 + 3 + 3 + 1 + 4 + 1 + 1,
     );
     expect(root().querySelectorAll('input[type="file"]')).toHaveLength(1);
     for (const control of controls) {

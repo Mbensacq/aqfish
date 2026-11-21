@@ -226,4 +226,96 @@ describe('ControlPanel : fenêtre des réglages (#722)', () => {
     await open();
     expect(host.classList).toContain('control-panel-host--window');
   });
+
+  describe('recherche (#723)', () => {
+    const search = () => root().querySelector<HTMLInputElement>('[data-settings-search]')!;
+    const results = () =>
+      [...root().querySelectorAll('[data-settings-result]')].map((item) =>
+        item.getAttribute('data-settings-result'),
+      );
+    const tiles = () =>
+      [...root().querySelectorAll('[data-section="population"] [data-species]')].map((tile) =>
+        tile.getAttribute('data-species'),
+      );
+
+    async function type(text: string): Promise<void> {
+      search().value = text;
+      search().dispatchEvent(new Event('input'));
+      await fixture.whenStable();
+    }
+
+    it('« chauffage » : le résultat, sa catégorie, et la section « eau » réglable sur place', async () => {
+      await open();
+      await type('chauffage');
+      expect(results()[0]).toBe('Chauffage');
+      expect(root().querySelector('#fenetre-reglages-categorie')?.textContent?.trim()).toBe(
+        'Résultats',
+      );
+      expect(shownSections()).toEqual(['eau']);
+      expect(root().querySelector('[data-section="eau"] input[type="range"]')).not.toBeNull();
+    });
+
+    it('« LUM » : éclairage, lampe et heure en tête ; leurs sections « eau » et « journee » montrées', async () => {
+      await open();
+      await type('LUM');
+      expect(results().slice(0, 3)).toEqual(['Éclairage', 'Lampe', 'Heure']);
+      expect(shownSections()).toEqual(expect.arrayContaining(['eau', 'journee']));
+    });
+
+    it('« néon » : sa tuile seule dans la population', async () => {
+      await open();
+      await type('néon');
+      expect(results()[0]).toBe('Néon');
+      expect(shownSections()).toEqual(['population']);
+      expect(tiles()).toEqual(['neon']);
+    });
+
+    it('Entrée ouvre la catégorie du premier résultat et efface la recherche', async () => {
+      await open();
+      await type('chauffage');
+      search().dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+      await fixture.whenStable();
+      expect(search().value).toBe('');
+      expect(
+        root().querySelector('[data-settings-content]')?.getAttribute('data-settings-content'),
+      ).toBe('eau');
+      expect(storage.data.get(SETTINGS_CATEGORY_STORAGE_KEY)).toBe('eau');
+    });
+
+    it('le nom de catégorie d’un résultat y mène', async () => {
+      await open();
+      await type('volume');
+      root().querySelector<HTMLButtonElement>('[data-settings-result-category="son"]')!.click();
+      await fixture.whenStable();
+      expect(shownSections()).toEqual(['son']);
+      expect(search().value).toBe('');
+    });
+
+    it('aucun résultat : un message, la liste des catégories, aucune section ; Entrée sans effet', async () => {
+      await open();
+      await type('zzzz');
+      const message = root().querySelector('[data-settings-no-result]');
+      expect(message?.textContent).toContain('« zzzz »');
+      expect(message?.getAttribute('role')).toBe('status');
+      expect(root().querySelectorAll('[data-settings-result-category]')).toHaveLength(
+        SETTINGS_CATEGORIES.length,
+      );
+      expect(shownSections()).toEqual([]);
+      search().dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+      await fixture.whenStable();
+      expect(search().value).toBe('zzzz');
+    });
+
+    it('recherche effacée : la catégorie ouverte revient ; refermée : la recherche repart vide', async () => {
+      await open();
+      await type('chauffage');
+      await type('  ');
+      expect(shownSections()).toEqual(['environnement', 'bacs-meubles', 'bacs']);
+      await type('son');
+      toggle().click();
+      await fixture.whenStable();
+      await open();
+      expect(search().value).toBe('');
+    });
+  });
 });
