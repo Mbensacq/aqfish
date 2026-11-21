@@ -9641,10 +9641,10 @@
           "note": "Verdict OK, 0 bug, 167 captures identiques, publiées (1 flaky e2e simulation temps réel, vert en isolé)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-21T01:43:27.709Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-21T02:21:23.972Z",
+          "note": "PR #755 fusionnée → v1.26.6 (release CI OK, main verte), #717 #711 fermées ; PR #754 roadmap fusionnée (corrigée), #753 fermée ; dette #756 ; suppression de branche refusée par le proxy"
         }
       },
       "metriques": {}
