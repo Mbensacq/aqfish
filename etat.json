@@ -9803,10 +9803,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-21T09:01:55.453Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-21T09:02:25.934Z",
+          "note": "Issue #723 : population en tuiles, filtres, tri et recherche (M)"
         }
       },
       "metriques": {}
