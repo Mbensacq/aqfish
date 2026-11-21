@@ -9701,10 +9701,10 @@
           "note": "Issue #722 : tranche 1b (suite), brancher la fenêtre des réglages (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-21T03:53:19.838Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-21T05:05:33.835Z",
+          "note": "PR #758 : fenêtre des réglages branchée (tranche 1b de #722, sections masquées, e2e repris pour la fenêtre modale), CI verte"
         }
       },
       "metriques": {}
