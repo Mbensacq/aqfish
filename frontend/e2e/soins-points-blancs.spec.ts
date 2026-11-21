@@ -68,13 +68,13 @@ test.describe('Soins des points blancs (#361)', () => {
       'data-severity',
       'critique',
     );
+    await ouvrirReglages(page, 'Soins et produits');
     await expect(care(page)).toBeVisible();
     await expect(care(page).locator('[data-treatment-status]')).toHaveText(
       'Aucun traitement en cours.',
     );
     await expect(care(page).locator('[data-treatment-sources]')).toContainText('Merck');
 
-    await ouvrirReglages(page, 'Soins et produits');
     await care(page).getByRole('button', { name: 'Ajouter 1 dose de médicament' }).click();
     await expect(care(page).locator('[data-treatment-message]')).toContainText('Dose ajoutée');
     await expect(care(page).locator('[data-treatment-status]')).toContainText(
@@ -85,7 +85,6 @@ test.describe('Soins des points blancs (#361)', () => {
       'Traitement en cours',
     );
     // Redoser aussitôt : surdosage refusé.
-    await ouvrirReglages(page, 'Soins et produits');
     await care(page).getByRole('button', { name: 'Ajouter 1 dose de médicament' }).click();
     await expect(care(page).locator('[data-treatment-message]')).toContainText('Surdosage');
 
@@ -135,9 +134,9 @@ test.describe('Soins des points blancs (#361)', () => {
     world.careMode = 'soins';
     infectWorldInPlace(world);
     await importWorld(page, world);
+    await ouvrirReglages(page, 'Soins et produits');
     await expect(care(page)).toBeVisible();
 
-    await ouvrirReglages(page, 'Soins et produits');
     await care(page).getByRole('button', { name: 'Ajouter 1 g/L de sel' }).click();
     const message = care(page).locator('[data-treatment-message]');
     await expect(message).toContainText('Sel refusé : toxique pour les amphibiens');
@@ -150,7 +149,6 @@ test.describe('Soins des points blancs (#361)', () => {
     await expect(hostEl(page)).not.toHaveAttribute('data-aqfish-treatment', /.*/);
 
     // Chaleur plafonnée à la plage tolérée la plus basse : l'axolotl (eau froide) l'interdit ici.
-    await ouvrirReglages(page, 'Soins et produits');
     await care(page).getByRole('button', { name: 'Monter le chauffage de 1 °C' }).click();
     await expect(message).toContainText('Chaleur refusée');
     await expect(message).toContainText('axolotls : ');
