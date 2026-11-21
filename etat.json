@@ -9819,6 +9819,12 @@
           "debut": "2026-11-21T10:05:55.374Z",
           "fin": "2026-11-21T10:44:01.296Z",
           "note": "Verdict OK, 0 bug, 167 captures publiées, 3 changées (interface Population, attendu)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-21T10:44:36.091Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
