@@ -18,7 +18,7 @@ test('bac ajouté : filtre neuf amorcé depuis la liste, bac de départ inchang�
   await ouvrirReglages(page, 'Temps');
   await page.getByRole('slider', { name: 'Vitesse de la simulation' }).fill('0');
 
-  await ouvrirReglages(page, 'Eau et matériel');
+  await ouvrirReglages(page, 'Soins et produits');
   const button = page.locator('[data-bacteria-starter]');
   const message = page.locator('[data-starter-message]');
   // Bac de départ : filtre mûr.
@@ -46,7 +46,7 @@ test('bac ajouté : filtre neuf amorcé depuis la liste, bac de départ inchang�
   await expect(notice).toContainText('Amorce de bactéries versée');
   await starter.click();
   await expect(notice).toContainText('Amorce encore active');
-  await ouvrirReglages(page, 'Eau et matériel');
+  await ouvrirReglages(page, 'Soins et produits');
   await button.click();
   await expect(message).toContainText('Filtre déjà mûr');
   expect(errors).toEqual([]);

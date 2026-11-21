@@ -59,9 +59,9 @@ test.describe('message de soin et « Commandes » ouverts ensemble (#610, #722)'
 
 // #490 : à 1280 × 720, le message de soin le plus long (sel avec néons et corydoras, mise en
 // garde comprise) agrandissait la section « Soins » au point de pousser « Sauvegarde » hors du
-// panneau. Dans la fenêtre, la catégorie « Soins et produits » ne montre que sa section : le
-// message, les gestes et l'état du traitement y tiennent sans défilement horizontal, et la
-// note des sources reste lisible.
+// panneau. Dans la fenêtre, la catégorie « Soins et produits » montre ses sections, les soins
+// puis les produits (#762) : le message, les gestes et l'état du traitement y tiennent sans
+// défilement horizontal, et la note des sources reste lisible.
 test.describe('message de soin à 1280 × 720 (#490, #722)', () => {
   for (const font of FONTS) {
     test(`catégorie « Soins et produits » entière, message dans la fenêtre (police ${font ?? 'par défaut'})`, async ({
@@ -84,7 +84,7 @@ test.describe('message de soin à 1280 × 720 (#490, #722)', () => {
           .filter((section) => !section.hidden)
           .map((section) => section.dataset['section']),
       );
-      expect(shown).toEqual(['soins']);
+      expect(shown).toEqual(['soins', 'produits']);
       const section = await box(page.locator("[data-section='soins']"));
       expect(section.y + section.height, 'section « Soins » coupée').toBeLessThanOrEqual(
         window.y + window.height,

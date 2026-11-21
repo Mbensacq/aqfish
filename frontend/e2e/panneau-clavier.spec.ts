@@ -178,14 +178,14 @@ test.describe('Panneau de contrôle', () => {
     expect(errors).toEqual([]);
   });
 
-  test('au clavier : section « Eau », du courant à l’amorce de bactéries', async ({ page }) => {
+  test('au clavier : section « Eau », du courant à la lampe', async ({ page }) => {
     const errors = await openPanel(page);
     // Catégorie « Eau et matériel », premier contrôle après la liste des catégories.
     await tabIntoCategory(page, 'eau');
 
     // Section « Eau » (#207) : « Courant » (#460) et « Changer l’eau », sur la ligne du titre,
-    // puis le chauffage, l'éclairage (#476), la lampe (#584) et l'amorce de bactéries (#529) ;
-    // raclette et sécateur sont dans la barre du bas (#722).
+    // puis le chauffage, l'éclairage (#476) et la lampe (#584) ; raclette et sécateur sont dans
+    // la barre du bas (#722), les produits dans « Soins et produits » (#762).
     await expect(
       page.getByRole('button', { name: 'Courant : coupé, changer de force' }),
     ).toBeFocused();
@@ -206,23 +206,19 @@ test.describe('Panneau de contrôle', () => {
     await expect(lampOn).toBeFocused();
     await page.keyboard.press('ArrowRight');
     await expect(lampOn).toHaveAttribute('aria-valuetext', 'allumée à 11:00');
-    // Amorce de bactéries (#529), sous la lampe.
-    await page.keyboard.press('Tab');
-    await expect(
-      page.getByRole('button', { name: 'Verser une dose d’amorce de bactéries nitrifiantes' }),
-    ).toBeFocused();
     expect(errors).toEqual([]);
   });
 
-  test('au clavier : section « Eau », des conditionneurs au catappa, puis « Décor »', async ({
+  test('au clavier : « Soins et produits », de l’amorce au catappa, puis « Décor »', async ({
     page,
   }) => {
     const errors = await openPanel(page);
-    await ouvrirReglages(page, 'Eau et matériel');
-    // Reprise sur l'amorce de bactéries, dernier contrôle vérifié par le test précédent.
-    await page
-      .getByRole('button', { name: 'Verser une dose d’amorce de bactéries nitrifiantes' })
-      .focus();
+    // Sans points blancs, la section « Produits » (#762) est seule : l'amorce de bactéries
+    // (#529) est le premier contrôle après la liste des catégories.
+    await tabIntoCategory(page, 'soins');
+    await expect(
+      page.getByRole('button', { name: 'Verser une dose d’amorce de bactéries nitrifiantes' }),
+    ).toBeFocused();
 
     // Eau non traitée et conditionneurs (#530).
     for (const name of [

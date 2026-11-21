@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 
 import { formatHour, HOUR_SLIDER_STEP, HOURS_PER_DAY, NOON_HOUR } from '../../sim/daylight';
-import { DEFAULT_ENVIRONMENT_ID, environmentById, type EnvironmentId } from '../../sim/environment';
 import { formNumber } from './panel-views';
 
 /** Heure lue sur le curseur d'heure (une chaîne), `null` si elle n'est pas dans [0, 24). */
@@ -12,8 +11,8 @@ export function sliderHour(value: string | number): number | null {
 
 /**
  * Section « Journée » du panneau « Réglages » (#52 ; sortie du panneau au #697) : curseur
- * d'heure au quart d'heure, case « Heure automatique » et, au bassin seulement, « Pluie »
- * (#106) sur la même ligne.
+ * d'heure au quart d'heure et case « Heure automatique ». « Pluie » (#106) est passée dans la
+ * section « Affichage » (#762, `display-section.ts`).
  *
  * L'hôte est le `fieldset` de la section, posé par le panneau (ADR 0161).
  */
@@ -41,44 +40,29 @@ export function sliderHour(value: string | number): number | null {
         (input)="onHour($event)"
       />
     </label>
-    <!-- Pluie (#106), bassin seulement : sur la même ligne, le panneau ne grandit pas (#101). -->
     <div class="control-panel__row">
       <label class="control-panel__check">
         <input type="checkbox" [checked]="clockRunning()" (change)="onClockRunning($event)" />
         Heure automatique
       </label>
-      @if (rainAvailable()) {
-        <label class="control-panel__check" data-rain>
-          <input type="checkbox" [checked]="rain()" (change)="onRain($event)" />
-          Pluie
-        </label>
-      }
     </div>
   `,
 })
 export class DaySection {
-  /** Environnement affiché : la pluie n'est proposée que là où il peut pleuvoir. */
-  readonly environment = input<EnvironmentId>(DEFAULT_ENVIRONMENT_ID);
   /** Heure affichée, au quart d'heure. */
   readonly hour = input<number>(NOON_HOUR);
   /** Vrai si l'heure avance d'elle-même. */
   readonly clockRunning = input(true);
-  /** Vrai s'il pleut (#106). */
-  readonly rain = input(false);
 
   /** Heure choisie au curseur (l'hôte fige l'horloge à cette heure). */
   readonly hourChanged = output<number>();
   /** Case « Heure automatique ». */
   readonly clockRunningChanged = output<boolean>();
-  /** Case « Pluie » (#106). */
-  readonly rainChanged = output<boolean>();
 
   protected readonly hourStep = HOUR_SLIDER_STEP;
   /** Dernier cran du curseur d'heure : 23:45 (24:00 serait minuit, déjà au cran 0). */
   protected readonly maxHour = HOURS_PER_DAY - HOUR_SLIDER_STEP;
   protected readonly hourText = computed(() => formatHour(this.hour()));
-  /** Case « Pluie » proposée seulement là où il peut pleuvoir (le bassin, #106). */
-  protected readonly rainAvailable = computed(() => environmentById(this.environment()).rain);
 
   protected onHour(event: Event): void {
     const hour = sliderHour((event.target as HTMLInputElement).value);
@@ -89,9 +73,5 @@ export class DaySection {
 
   protected onClockRunning(event: Event): void {
     this.clockRunningChanged.emit((event.target as HTMLInputElement).checked);
-  }
-
-  protected onRain(event: Event): void {
-    this.rainChanged.emit((event.target as HTMLInputElement).checked);
   }
 }

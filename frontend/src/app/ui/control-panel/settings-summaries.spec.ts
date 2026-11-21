@@ -10,6 +10,7 @@ const BASE: SettingsSummaryState = {
   ichCount: 0,
   treating: false,
   decorVisible: true,
+  rain: false,
   speed: 1,
   hour: 14.5,
   clockRunning: true,
@@ -38,6 +39,7 @@ describe('settingsSummaries (#722, tranche 3)', () => {
       soins: 'Rien à soigner',
       decor: 'Décor affiché',
       temps: '×1, 14:30',
+      affichage: 'Sans pluie ici',
       son: 'Coupés',
       accessibilite: 'Mouvements normaux',
       sauvegarde: 'Enregistré automatiquement',
@@ -48,6 +50,12 @@ describe('settingsSummaries (#722, tranche 3)', () => {
     expect(summary({ tankCount: 0 }).bac).toBe('Bac tropical');
     expect(summary({ tankCount: 3 }).bac).toBe('Bac tropical, 3 bacs');
     expect(summary({ environment: 'bassin' }).bac).not.toBe('Bac tropical');
+  });
+
+  it('affichage (#762) : la pluie au bassin seulement', () => {
+    expect(summary({ rain: true }).affichage).toBe('Sans pluie ici');
+    expect(summary({ environment: 'bassin' }).affichage).toBe('Pas de pluie');
+    expect(summary({ environment: 'bassin', rain: true }).affichage).toBe('Pluie sur le bassin');
   });
 
   it('population : zéro, un, plusieurs ; valeurs absurdes ramenées à zéro', () => {

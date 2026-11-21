@@ -213,8 +213,13 @@ découpé par section), qui fournit les sections réutilisées par la fenêtre :
    catégories avec leur valeur résumée (`ui/control-panel/settings-summaries.ts`, lue comme
    description du bouton), puis contenu seul avec « Retour » (focus rendu à la catégorie) ;
    le bloc non montré est `hidden` (hors du piège du focus) ; `/` ramène la liste ; cibles de
-   44 px ; `ouvrirReglages` passe par « Retour » sur téléphone. **Reste** : sortir les
-   produits de la section « Eau » vers « Soins et produits » et « Pluie » vers « Affichage ».
+   44 px ; `ouvrirReglages` passe par « Retour » sur téléphone. **Livré (cycle 271, #762)** :
+   produits sortis de « Eau » dans leur section (`ui/control-panel/products-section.ts`,
+   `data-section="produits"`), après les traitements dans « Soins et produits » (sans points
+   blancs : la phrase « rien à soigner » puis les produits) ; « Pluie » sortie de « Journée »
+   dans la section « Affichage » (`display-section.ts`), nouvelle catégorie du groupe
+   « Préférences » (ailleurs qu'au bassin : « Il ne pleut que sur le bassin. »), résumée sur
+   téléphone (« Pluie sur le bassin », « Pas de pluie », « Sans pluie ici »).
 3. #723 — Population en tuiles et recherche dans les réglages.
    **Livré (cycle 270)** : chaque réglage est déclaré une seule fois
    (`ui/settings-window/settings-categories.ts` : nom, explication, mots voisins, section qui

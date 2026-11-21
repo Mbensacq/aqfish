@@ -34,7 +34,7 @@ async function panelSections(): Promise<string[]> {
 describe('catégories des réglages (#722)', () => {
   it('chaque section du panneau actuel est dans une et une seule catégorie', async () => {
     const sections = await panelSections();
-    expect(sections.length).toBe(12);
+    expect(sections.length).toBe(14);
     const declared = SETTINGS_CATEGORIES.flatMap((category) => category.sections);
     expect(new Set(declared).size).toBe(declared.length);
     expect([...declared].sort()).toEqual([...sections].sort());
@@ -53,6 +53,38 @@ describe('catégories des réglages (#722)', () => {
       'Eau et matériel',
       'Soins et produits',
       'Décor',
+    ]);
+  });
+
+  it('produits dans « Soins et produits », « Pluie » dans « Affichage » (#762)', () => {
+    expect(categoriesOf('Préférences').map((category) => category.title)).toEqual([
+      'Affichage',
+      'Son',
+      'Accessibilité',
+    ]);
+    const owner = (name: string) =>
+      SETTINGS_CATEGORIES.find((category) =>
+        category.controls.some((control) => control.name === name),
+      )?.id;
+    for (const name of [
+      'Bactéries',
+      'Robinet',
+      'Déchlorer',
+      'Liant',
+      'Charbon',
+      'pH −',
+      'pH +',
+      'Feuilles de catappa',
+    ]) {
+      expect(owner(name), name).toBe('soins');
+    }
+    expect(owner('Pluie')).toBe('affichage');
+    expect(settingsCategory('eau').controls.map((control) => control.name)).toEqual([
+      'Courant',
+      'Changer l’eau',
+      'Chauffage',
+      'Éclairage',
+      'Lampe',
     ]);
   });
 

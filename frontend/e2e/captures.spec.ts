@@ -805,6 +805,24 @@ test.describe('Captures', () => {
     expect(errors).toEqual([]);
   });
 
+  // Catégorie « Soins et produits » sans points blancs (#762) : la phrase « rien à soigner »,
+  // puis la section « Produits » sortie de « Eau ». Trois-quarts, 1280 × 720, simulation à
+  // l'arrêt dès t = 0. Capture d'interface, comme ci-dessus.
+  test('angle three-quarter avec la catégorie « Soins et produits » ouverte', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    await page.goto(`/?seed=${SEED}&camera=three-quarter&heure=12&vitesse=0`);
+    await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+    await ouvrirReglages(page, 'Soins et produits');
+    await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-tick', '0');
+    await expect(page.locator('[data-section="produits"] [data-catappa]')).toBeVisible();
+    await page.screenshot({
+      path: join(OUTPUT_DIR, 'three-quarter-panneau-produits.png'),
+      animations: 'disabled',
+    });
+    expect(errors).toEqual([]);
+  });
+
   // Section « Son » (#411), trois-quarts, 1280 × 720 : panneau ouvert, section amenée en vue,
   // simulation à l'arrêt dès t = 0. Son désactivé (défaut) : rien ne démarre.
   test('angle three-quarter avec la section « Son » ouverte', async ({ page }) => {

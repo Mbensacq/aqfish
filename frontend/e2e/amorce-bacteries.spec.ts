@@ -14,7 +14,7 @@ test('amorce de bactéries : clavier et annonce (#529)', async ({ page }) => {
   test.setTimeout(180_000);
   await page.goto('/');
   await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
-  await ouvrirReglages(page, 'Eau et matériel');
+  await ouvrirReglages(page, 'Soins et produits');
 
   const button = page.locator('[data-bacteria-starter]');
   const message = page.locator('[data-starter-message]');
@@ -40,7 +40,7 @@ test('amorce de bactéries : clavier et annonce (#529)', async ({ page }) => {
   });
   await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-speed', '0');
 
-  await ouvrirReglages(page, 'Eau et matériel');
+  await ouvrirReglages(page, 'Soins et produits');
   await button.focus();
   await page.keyboard.press('Enter');
   await expect(message).toContainText('Amorce de bactéries versée');

@@ -1,0 +1,6 @@
+// Section « Affichage » (#762) : règles communes du panneau (`_panel-controls.scss`).
+@use 'panel-controls' as controls;
+
+@include controls.base;
+
+@include controls.texts;

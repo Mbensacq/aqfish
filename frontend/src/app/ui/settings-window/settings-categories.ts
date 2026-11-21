@@ -16,9 +16,11 @@ export type SettingsSectionKey =
   | 'population'
   | 'eau'
   | 'soins'
+  | 'produits'
   | 'decor'
   | 'simulation'
   | 'journee'
+  | 'affichage'
   | 'son'
   | 'accessibilite'
   | 'sauvegarde';
@@ -34,6 +36,7 @@ export type SettingsCategoryId =
   | 'soins'
   | 'decor'
   | 'temps'
+  | 'affichage'
   | 'son'
   | 'accessibilite'
   | 'sauvegarde';
@@ -84,10 +87,9 @@ function setting(
 }
 
 /**
- * Catégories, dans l'ordre de la liste (tableau de `docs/INTERFACE.md`, section 2). Écarts
- * provisoires, repris aux lots suivants : « Pluie » reste dans « Temps » avec la journée tant
- * que « Affichage » n'a pas son contenu (filtre pixel art et « Masquer l'interface », lot 5) ;
- * les produits restent dans la section « Eau » jusqu'à son découpage.
+ * Catégories, dans l'ordre de la liste (tableau de `docs/INTERFACE.md`, section 2). Les
+ * produits ont leur section, dans « Soins et produits », et « Pluie » est dans « Affichage »
+ * (#762) ; le filtre pixel art et « Masquer l'interface » y viendront avec le lot 5 (#725).
  */
 export const SETTINGS_CATEGORIES: readonly SettingsCategory[] = [
   {
@@ -169,7 +171,7 @@ export const SETTINGS_CATEGORIES: readonly SettingsCategory[] = [
     id: 'eau',
     group: 'Le bac',
     title: 'Eau et matériel',
-    explanation: 'Le chauffage, la lampe, la pompe, l’eau et les produits qu’on y verse.',
+    explanation: 'Le chauffage, la lampe, la pompe et le changement d’eau.',
     sections: ['eau'],
     controls: [
       setting('Courant', 'eau', 'La pompe : coupée, douce ou forte.', [
@@ -199,32 +201,6 @@ export const SETTINGS_CATEGORIES: readonly SettingsCategory[] = [
         'allumage',
         'éclairage',
       ]),
-      setting('Bactéries', 'eau', 'Une amorce de bactéries pour un filtre neuf.', [
-        'filtre',
-        'amorce',
-        'cycle',
-      ]),
-      setting('Robinet', 'eau', 'Verser de l’eau du robinet, chlorée.', [
-        'eau du robinet',
-        'chlore',
-      ]),
-      setting('Déchlorer', 'eau', 'Un conditionneur qui retire le chlore de l’eau.', [
-        'chlore',
-        'conditionneur',
-      ]),
-      setting('Liant', 'eau', 'Un produit qui fixe l’ammoniaque.', ['ammoniaque', 'conditionneur']),
-      setting('Charbon', 'eau', 'Le charbon actif du filtre, qui retire les produits dissous.', [
-        'charbon actif',
-        'filtre',
-      ]),
-      setting('pH −', 'eau', 'Faire baisser le pH. Effets simplifiés.', ['acide', 'ph']),
-      setting('pH +', 'eau', 'Faire monter le pH. Effets simplifiés.', ['basique', 'ph']),
-      setting(
-        'Feuilles de catappa',
-        'eau',
-        'Des feuilles qui teintent l’eau et la rendent plus acide.',
-        ['eau noire', 'catappa', 'ph'],
-      ),
     ],
   },
   {
@@ -232,14 +208,45 @@ export const SETTINGS_CATEGORIES: readonly SettingsCategory[] = [
     group: 'Le bac',
     title: 'Soins et produits',
     explanation:
-      'Les traitements des points blancs, proposés quand un animal en montre. Effets simplifiés.',
-    sections: ['soins'],
+      'Les produits qu’on verse dans l’eau et, quand un animal montre des points blancs, leurs traitements. Effets simplifiés.',
+    sections: ['soins', 'produits'],
     controls: [
       setting(
         'Traitements des points blancs',
         'soins',
         'Chaleur, sel ou médicament contre les points blancs.',
         ['maladie', 'malade', 'médicament', 'sel', 'soigner'],
+      ),
+      setting('Bactéries', 'produits', 'Une amorce de bactéries pour un filtre neuf.', [
+        'filtre',
+        'amorce',
+        'cycle',
+      ]),
+      setting('Robinet', 'produits', 'Verser de l’eau du robinet, chlorée.', [
+        'eau du robinet',
+        'chlore',
+      ]),
+      setting('Déchlorer', 'produits', 'Un conditionneur qui retire le chlore de l’eau.', [
+        'chlore',
+        'conditionneur',
+      ]),
+      setting('Liant', 'produits', 'Un produit qui fixe l’ammoniaque.', [
+        'ammoniaque',
+        'conditionneur',
+      ]),
+      setting(
+        'Charbon',
+        'produits',
+        'Le charbon actif du filtre, qui retire les produits dissous.',
+        ['charbon actif', 'filtre'],
+      ),
+      setting('pH −', 'produits', 'Faire baisser le pH. Effets simplifiés.', ['acide', 'ph']),
+      setting('pH +', 'produits', 'Faire monter le pH. Effets simplifiés.', ['basique', 'ph']),
+      setting(
+        'Feuilles de catappa',
+        'produits',
+        'Des feuilles qui teintent l’eau et la rendent plus acide.',
+        ['eau noire', 'catappa', 'ph'],
       ),
     ],
   },
@@ -289,8 +296,15 @@ export const SETTINGS_CATEGORIES: readonly SettingsCategory[] = [
         'jour',
         'nuit',
       ]),
-      setting('Pluie', 'journee', 'La pluie sur le bassin.', ['météo', 'averse']),
     ],
+  },
+  {
+    id: 'affichage',
+    group: 'Préférences',
+    title: 'Affichage',
+    explanation: 'Ce que l’on voit autour des animaux : la pluie sur le bassin.',
+    sections: ['affichage'],
+    controls: [setting('Pluie', 'affichage', 'La pluie sur le bassin.', ['météo', 'averse'])],
   },
   {
     id: 'son',

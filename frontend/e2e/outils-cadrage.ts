@@ -97,12 +97,12 @@ export const SETTINGS_CASES: readonly PanelCase[] = [
     },
   },
   {
-    // Bassin (#106) : case « Pluie » en plus, sur la ligne de « Heure automatique ».
+    // Bassin (#106) : case « Pluie », dans la catégorie « Affichage » (#762).
     name: 'Réglages (bassin)',
     search: '?seed=42&environnement=bassin',
     panel: (page) => page.locator('[data-settings-window]'),
     open: async (page) => {
-      await ouvrirReglages(page, 'Temps');
+      await ouvrirReglages(page, 'Affichage');
       await expect(page.locator('.control-panel [data-rain]')).toBeVisible();
     },
   },
