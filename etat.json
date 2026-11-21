@@ -9851,10 +9851,10 @@
           "note": "PR #765 : produits vers « Soins et produits », « Pluie » vers « Affichage » (#762) + caractérisation #756, CI verte (2e essai : cadrage-panneaux-soins redirigé) ; pied de page d'attribution réapparu sur la PR (PIEGES)"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-21T12:26:45.524Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-21T13:08:29.871Z",
+          "note": "Verdict OK, 0 bug, captures publiées (bac identique, 10 vues d'interface changées, attendu)"
         }
       },
       "metriques": {}
