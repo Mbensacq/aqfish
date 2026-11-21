@@ -43,11 +43,14 @@ test.describe('Pièce autour du bac (#187)', () => {
     await openPanel(page);
     await expect(roomBox(page)).not.toBeChecked();
     // Vitesse 0 : seule la pièce change l'image entre les deux captures du canvas.
+    await ouvrirReglages(page, 'Temps');
     await page.getByRole('slider', { name: 'Vitesse de la simulation' }).fill('0');
+    await ouvrirReglages(page, 'Bac et milieu');
     const before = await canvasShot(page);
 
     await roomBox(page).check();
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-room', 'true');
+    // Même fenêtre ouverte aux deux captures : seule la pièce change l'image (fond assombri).
     await expect.poll(async () => (await canvasShot(page)).equals(before)).toBe(false);
 
     // Enregistrée : relue au rechargement.
@@ -58,6 +61,7 @@ test.describe('Pièce autour du bac (#187)', () => {
     await expect(roomBox(page)).toBeChecked();
 
     // Export : la pièce est dans les réglages du fichier.
+    await ouvrirReglages(page, 'Sauvegarde et partage');
     const [download] = await Promise.all([
       page.waitForEvent('download'),
       page.getByRole('button', { name: 'Exporter' }).click(),
@@ -66,6 +70,7 @@ test.describe('Pièce autour du bac (#187)', () => {
     expect(exported.settings.room).toEqual({ shown: true, cabinetHeight: 0.75 });
 
     // Masquée, puis réaffichée par l'import d'un fichier qui l'affiche.
+    await ouvrirReglages(page, 'Bac et milieu');
     await roomBox(page).uncheck();
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-room', 'false');
     const text = serializeWorld(createDefaultWorld(7), {

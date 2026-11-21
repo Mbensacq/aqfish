@@ -32,11 +32,13 @@ test.describe('Panneau de contrôle', () => {
     await ouvrirReglages(page, 'Temps');
     await expect(toggle(page)).toHaveAttribute('aria-expanded', 'true');
     await expect(page.getByRole('region', { name: 'Réglages de l’aquarium' })).toBeVisible();
-    for (const control of [speed(page), hour(page), autoHour(page), decor(page)]) {
+    for (const control of [speed(page), hour(page), autoHour(page)]) {
       await expect(control).toBeVisible();
     }
     await expect(speed(page)).toHaveAttribute('aria-valuetext', '×1');
     await expect(autoHour(page)).toBeChecked();
+    await ouvrirReglages(page, 'Décor');
+    await expect(decor(page)).toBeVisible();
     await expect(decor(page)).toBeChecked();
     await fermerReglages(page);
     await expect(speed(page)).toHaveCount(0);
@@ -50,12 +52,14 @@ test.describe('Panneau de contrôle', () => {
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-speed', '0');
     await expect(speed(page)).toHaveAttribute('aria-valuetext', 'Pause');
     const stopped = await tick(page);
-    // Le rendu continue : une transition de caméra avance toujours.
+    // Le rendu continue : une transition de caméra avance toujours (fenêtre refermée, #722).
+    await fermerReglages(page);
     const before = await hostEl(page).getAttribute('data-aqfish-camera');
     await page.getByRole('button', { name: /vue de dessus/i }).click();
     await expect(hostEl(page)).not.toHaveAttribute('data-aqfish-camera', before!);
     await page.waitForTimeout(1000);
     expect(await tick(page)).toBe(stopped);
+    await ouvrirReglages(page, 'Temps');
     await speed(page).fill('4');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-speed', '4');
     await expect.poll(() => tick(page)).toBeGreaterThan(stopped);
@@ -89,14 +93,20 @@ test.describe('Panneau de contrôle', () => {
     await ouvrirReglages(page, 'Temps');
     // Simulation à l'arrêt : seules les images du décor changent.
     await speed(page).fill('0');
+    await fermerReglages(page);
     await page.getByRole('button', { name: /vue de face/i }).click();
     await page.waitForTimeout(800);
     const shown = await vegetationPixels(page);
     expect(shown).toBeGreaterThan(500);
+    // Fenêtre des réglages (#722) : refermée entre chaque bascule, pour que le bac se voie.
+    await ouvrirReglages(page, 'Décor');
     await decor(page).uncheck();
+    await fermerReglages(page);
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-decor', 'false');
     await expect.poll(() => vegetationPixels(page)).toBeLessThan(shown * 0.01);
+    await ouvrirReglages(page, 'Décor');
     await decor(page).check();
+    await fermerReglages(page);
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-decor', 'true');
     await expect.poll(() => vegetationPixels(page)).toBeGreaterThan(shown * 0.9);
     expect(errors).toEqual([]);

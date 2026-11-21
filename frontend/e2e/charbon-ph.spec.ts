@@ -45,6 +45,7 @@ test.describe('Charbon actif et régulateur de pH (#531)', () => {
     // Pas de charbon : pas d'alerte « charbon ».
     await expect(status(page).locator('[data-alert="carbon"]')).toHaveCount(0);
 
+    await ouvrirReglages(page, 'Eau et matériel');
     await expect(carbon(page)).toHaveAttribute('aria-pressed', 'false');
     await carbon(page).click();
     await expect(carbon(page)).toHaveAttribute('aria-pressed', 'true');

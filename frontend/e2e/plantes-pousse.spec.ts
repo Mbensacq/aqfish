@@ -58,11 +58,14 @@ test.describe('plantes qui poussent (#477)', () => {
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-plants', `${caps.join(',')};88`);
     const population = await hostEl(page).getAttribute('data-aqfish-population');
 
+    await ouvrirReglages(page, 'Eau et matériel');
     await expect(pruner(page)).toHaveAttribute('aria-pressed', 'false');
     await pruner(page).click();
-    await expect(pruner(page)).toHaveAttribute('aria-pressed', 'true');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-pruner', 'true');
-    // Le panneau couvre une partie de l'écran : on le referme pour viser le bac.
+    // Sécateur pris : la fenêtre se referme d'elle-même pour viser le bac (#722).
+    await fermerReglages(page);
+    await ouvrirReglages(page, 'Eau et matériel');
+    await expect(pruner(page)).toHaveAttribute('aria-pressed', 'true');
     await fermerReglages(page);
     const box = await page.locator('canvas').first().boundingBox();
     expect(box).not.toBeNull();

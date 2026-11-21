@@ -141,6 +141,7 @@ test.describe('Environnement', () => {
       'axolotl:0,grenouille:3,triton:2',
     );
     // L'axolotl vit dans le bac d'eau froide depuis #271 : proposé ici, à zéro par défaut.
+    await ouvrirReglages(page, 'Population');
     await expect(page.getByRole('spinbutton', { name: 'Nombre d’axolotls' })).toHaveValue('0');
     await expect(
       page.getByRole('spinbutton', { name: 'Nombre de sonneurs orientaux' }),
@@ -233,6 +234,7 @@ test.describe('Environnement', () => {
       await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', id);
     }
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', 'axolotl:2');
+    await ouvrirReglages(page, 'Population');
     await expect(page.getByRole('spinbutton', { name: 'Nombre d’axolotls' })).toHaveValue('2');
     await expect(page.locator('[data-mix-warning]')).toHaveCount(0);
     await page.reload();

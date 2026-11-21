@@ -18,12 +18,14 @@ test('bac ajouté : filtre neuf amorcé depuis la liste, bac de départ inchang�
   await ouvrirReglages(page, 'Temps');
   await page.getByRole('slider', { name: 'Vitesse de la simulation' }).fill('0');
 
+  await ouvrirReglages(page, 'Eau et matériel');
   const button = page.locator('[data-bacteria-starter]');
   const message = page.locator('[data-starter-message]');
   // Bac de départ : filtre mûr.
   await button.click();
   await expect(message).toContainText('Filtre déjà mûr');
 
+  await ouvrirReglages(page, 'Bac et milieu');
   await page.getByRole('checkbox', { name: 'Afficher la pièce' }).check();
   const catalog = page.locator('[data-section="bacs-meubles"]');
   await expect(catalog).toBeVisible();

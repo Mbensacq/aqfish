@@ -42,7 +42,10 @@ test.describe('Mode décor (#278)', () => {
     const toggle = bacs(page).locator('[data-care-mode-toggle]');
     await expect(toggle).toHaveText(/Mode : soins/);
     // En soins, le poisson-clown (récif) n'est pas proposé dans le bac tropical.
+    await ouvrirReglages(page, 'Population');
+    await expect(page.locator('[data-section="population"] [data-species]').first()).toBeVisible();
     await expect(page.getByRole('button', { name: 'Ajouter un poisson-clown' })).toHaveCount(0);
+    await ouvrirReglages(page, 'Bac et milieu');
 
     await test.step('Soins → Décor : confirmation, puis badge à la place du tableau de bord', async () => {
       await toggle.click();
@@ -64,8 +67,10 @@ test.describe('Mode décor (#278)', () => {
     });
 
     await test.step('Décor : une espèce d’eau de mer s’ajoute au bac tropical', async () => {
+      await ouvrirReglages(page, 'Population');
       await page.getByRole('button', { name: 'Ajouter un poisson-clown' }).click();
       await expect.poll(() => count(page, 'clown')).toBe(1);
+      await ouvrirReglages(page, 'Bac et milieu');
     });
 
     await test.step('Décor → Soins : animal inadapté listé, « Tout garder », état repris', async () => {
@@ -106,10 +111,12 @@ test.describe('Mode décor (#278)', () => {
     await toggle.click();
     await confirmBox(page).getByRole('button', { name: 'Passer en mode décor' }).click();
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-mode', 'decor');
+    await ouvrirReglages(page, 'Population');
     await page.getByRole('button', { name: 'Ajouter un poisson-clown' }).click();
     await page.getByRole('button', { name: 'Ajouter un koï' }).click();
     await expect.poll(() => count(page, 'koi')).toBe(1);
     await expect.poll(() => count(page, 'clown')).toBe(1);
+    await ouvrirReglages(page, 'Bac et milieu');
     await toggle.click();
     await expect(confirmBox(page)).toBeVisible();
   }

@@ -127,6 +127,7 @@ export const PANELS: readonly PanelCase[] = [
     open: async (page) => {
       await ouvrirReglages(page, 'Soins et produits');
       await page.getByRole('button', { name: 'Ajouter 1 g/L de sel' }).click();
+      await ouvrirReglages(page, 'Eau et matériel');
       await page.getByRole('button', { name: 'Changer l’eau' }).click();
       await fermerReglages(page);
       await page.locator('[data-review]').click();

@@ -89,6 +89,7 @@ test.describe('Plafond de bacs de la pièce (#396)', () => {
     await ouvrirReglages(page, 'Temps');
     await expect(page.locator('section.control-panel')).toBeVisible();
     await page.getByRole('slider', { name: 'Vitesse de la simulation' }).fill('0');
+    await ouvrirReglages(page, 'Bac et milieu');
 
     await test.step('16 bacs : « Ajouter le bac » affiche le plafond, rien ne change', async () => {
       await page.getByRole('checkbox', { name: 'Afficher la pièce' }).check();
