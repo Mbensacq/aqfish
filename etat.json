@@ -9891,6 +9891,12 @@
           "debut": "2026-11-21T14:39:59.903Z",
           "fin": "2026-11-21T15:13:56.069Z",
           "note": "Verdict OK, 0 bug, captures publiées (bac identique, 5 vues d'interface changées, attendu)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-21T15:14:28.064Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
