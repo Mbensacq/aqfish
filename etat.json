@@ -9815,10 +9815,10 @@
           "note": "PR #763 : population en tuiles, filtres, tri et recherche (#723), CI verte ; tri par défaut « Ordre du milieu » ajouté ; ~1100 lignes hors tests (données + réindentation) ; pied de page d'attribution réapparu sur la PR (PIEGES)"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-21T10:05:55.374Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-21T10:44:01.296Z",
+          "note": "Verdict OK, 0 bug, 167 captures publiées, 3 changées (interface Population, attendu)"
         }
       },
       "metriques": {}
