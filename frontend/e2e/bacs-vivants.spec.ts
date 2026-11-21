@@ -39,8 +39,10 @@ test.describe('Tous les bacs vivants (#316)', () => {
   }) => {
     const errors = await open(page);
     await openPanel(page);
+    await ouvrirReglages(page, 'Temps');
     const speed = page.getByRole('slider', { name: 'Vitesse de la simulation' });
     await speed.fill('0');
+    await ouvrirReglages(page, 'Bac et milieu');
     // Un petit bac tropical vide posé au sol (catalogue « Bacs et meubles », #305).
     await page.getByRole('checkbox', { name: 'Afficher la pièce' }).check();
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-room', 'true');
@@ -59,7 +61,9 @@ test.describe('Tous les bacs vivants (#316)', () => {
     expect(Number.isFinite(before)).toBe(true);
 
     // Vitesse maximale : quelques dizaines de secondes simulées suffisent.
+    await ouvrirReglages(page, 'Temps');
     await speed.fill('4');
+    await ouvrirReglages(page, 'Bac et milieu');
     await expect
       .poll(() => hunger(page, 1), { timeout: 120_000, intervals: [1000] })
       .toBeGreaterThan(before);

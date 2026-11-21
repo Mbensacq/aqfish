@@ -32,61 +32,6 @@ export interface PanelCase {
 
 export const PANELS: readonly PanelCase[] = [
   {
-    name: 'Réglages',
-    panel: (page) => page.locator('.control-panel'),
-    open: async (page) => {
-      await ouvrirReglages(page, 'Temps');
-      await expect(page.locator('.control-panel')).toBeVisible();
-    },
-  },
-  {
-    // Bassin (#106) : case « Pluie » en plus, sur la ligne de « Heure automatique ».
-    name: 'Réglages (bassin)',
-    search: '?seed=42&environnement=bassin',
-    panel: (page) => page.locator('.control-panel'),
-    open: async (page) => {
-      await ouvrirReglages(page, 'Temps');
-      await expect(page.locator('.control-panel [data-rain]')).toBeVisible();
-    },
-  },
-  {
-    // Section « Soins » affichée (bac malade, #488) : à 1280 × 720, « Sauvegarde » passait
-    // dans une troisième colonne, hors du panneau (débordement horizontal).
-    name: 'Réglages (soins)',
-    search: '?seed=42&points-blancs=1',
-    panel: (page) => page.locator('.control-panel'),
-    open: async (page) => {
-      await ouvrirReglages(page, 'Soins et produits');
-      await expect(page.locator(".control-panel [data-section='soins']")).toBeVisible();
-    },
-  },
-  {
-    // Message d'un geste de soin affiché (#490) : en deux colonnes, il passe dans une bulle à
-    // droite du panneau, la section « Soins » ne grandit pas et « Sauvegarde » reste visible.
-    name: 'Réglages (soins, message)',
-    search: '?seed=42&points-blancs=1',
-    panel: (page) => page.locator('.control-panel'),
-    open: async (page) => {
-      await ouvrirReglages(page, 'Soins et produits');
-      await page.getByRole('button', { name: 'Ajouter 1 g/L de sel' }).click();
-      await expect(page.locator('.control-panel [data-treatment-message]')).toContainText(
-        'Prudence',
-      );
-    },
-  },
-  {
-    // Quarantaine installée (#571) : à 1280 × 720, « Bacs » partait en troisième colonne et
-    // « Sauvegarde » en quatrième ; le panneau passe sur une colonne qui défile.
-    name: 'Réglages (quarantaine)',
-    search: '?seed=42&points-blancs=1',
-    panel: (page) => page.locator('.control-panel'),
-    open: async (page) => {
-      await ouvrirReglages(page, 'Bac et milieu');
-      await page.getByRole('button', { name: 'Installer un bac de quarantaine' }).click();
-      await expect(page.locator('.control-panel [data-quarantine]')).toBeVisible();
-    },
-  },
-  {
     name: 'Commandes',
     panel: (page) => page.locator('#aide-commandes'),
     open: async (page) => {
@@ -127,11 +72,75 @@ export const PANELS: readonly PanelCase[] = [
     open: async (page) => {
       await ouvrirReglages(page, 'Soins et produits');
       await page.getByRole('button', { name: 'Ajouter 1 g/L de sel' }).click();
+      await ouvrirReglages(page, 'Eau et matériel');
       await page.getByRole('button', { name: 'Changer l’eau' }).click();
       await fermerReglages(page);
       await page.locator('[data-review]').click();
       await page.locator('[data-journal]').click();
       await expect(page.locator('[data-journal-detail] li')).toHaveCount(2);
+    },
+  },
+];
+
+/**
+ * Cas de la fenêtre des réglages (#722) : modale, elle couvre la page (fond assombri) au lieu
+ * de laisser libres la barre des vues et les boutons d'interface comme les panneaux de
+ * `PANELS` ; contrôlée par `checkSettingsWindowInViewport`.
+ */
+export const SETTINGS_CASES: readonly PanelCase[] = [
+  {
+    name: 'Réglages',
+    panel: (page) => page.locator('[data-settings-window]'),
+    open: async (page) => {
+      await ouvrirReglages(page, 'Temps');
+      await expect(page.locator('.control-panel')).toBeVisible();
+    },
+  },
+  {
+    // Bassin (#106) : case « Pluie » en plus, sur la ligne de « Heure automatique ».
+    name: 'Réglages (bassin)',
+    search: '?seed=42&environnement=bassin',
+    panel: (page) => page.locator('[data-settings-window]'),
+    open: async (page) => {
+      await ouvrirReglages(page, 'Temps');
+      await expect(page.locator('.control-panel [data-rain]')).toBeVisible();
+    },
+  },
+  {
+    // Section « Soins » affichée (bac malade, #488) : à 1280 × 720, « Sauvegarde » passait
+    // dans une troisième colonne, hors du panneau (débordement horizontal).
+    name: 'Réglages (soins)',
+    search: '?seed=42&points-blancs=1',
+    panel: (page) => page.locator('[data-settings-window]'),
+    open: async (page) => {
+      await ouvrirReglages(page, 'Soins et produits');
+      await expect(page.locator(".control-panel [data-section='soins']")).toBeVisible();
+    },
+  },
+  {
+    // Message d'un geste de soin affiché (#490) : en deux colonnes, il passe dans une bulle à
+    // droite du panneau, la section « Soins » ne grandit pas et « Sauvegarde » reste visible.
+    name: 'Réglages (soins, message)',
+    search: '?seed=42&points-blancs=1',
+    panel: (page) => page.locator('[data-settings-window]'),
+    open: async (page) => {
+      await ouvrirReglages(page, 'Soins et produits');
+      await page.getByRole('button', { name: 'Ajouter 1 g/L de sel' }).click();
+      await expect(page.locator('.control-panel [data-treatment-message]')).toContainText(
+        'Prudence',
+      );
+    },
+  },
+  {
+    // Quarantaine installée (#571) : à 1280 × 720, « Bacs » partait en troisième colonne et
+    // « Sauvegarde » en quatrième ; le panneau passe sur une colonne qui défile.
+    name: 'Réglages (quarantaine)',
+    search: '?seed=42&points-blancs=1',
+    panel: (page) => page.locator('[data-settings-window]'),
+    open: async (page) => {
+      await ouvrirReglages(page, 'Bac et milieu');
+      await page.getByRole('button', { name: 'Installer un bac de quarantaine' }).click();
+      await expect(page.locator('.control-panel [data-quarantine]')).toBeVisible();
     },
   },
 ];
@@ -249,5 +258,42 @@ export async function checkPanelInViewport(
   expect(await coveredButtons(panelCase.panel(page)), 'boutons d’interface recouverts').toEqual([]);
   // Pas de débordement horizontal (texte coupé à droite).
   expect(await panelCase.panel(page).evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+  expect(errors).toEqual([]);
+}
+
+/**
+ * Contrôle la fenêtre des réglages ouverte (cas de `SETTINGS_CASES`) au format `viewport` :
+ * entière dans l'écran, contenu sans débordement horizontal, page sans défilement horizontal,
+ * et chaque bouton d'interface visible couvert par la fenêtre ou son fond (modale, #722).
+ */
+export async function checkSettingsWindowInViewport(
+  page: Page,
+  settingsCase: PanelCase,
+  viewport: { readonly width: number; readonly height: number },
+): Promise<void> {
+  const errors = await openScene(page, settingsCase.search);
+  await settingsCase.open(page);
+  const window = await box(settingsCase.panel(page));
+  expect(window.x).toBeGreaterThanOrEqual(0);
+  expect(window.y).toBeGreaterThanOrEqual(0);
+  expect(window.x + window.width).toBeLessThanOrEqual(viewport.width);
+  expect(window.y + window.height).toBeLessThanOrEqual(viewport.height);
+  const content = page.locator('.settings-window__content');
+  expect(await content.evaluate((el) => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+    true,
+  );
+  const uncovered = await page.evaluate((selector) => {
+    const host = document.querySelector('app-settings-window')!;
+    return Array.from(document.querySelectorAll<HTMLElement>(selector)).flatMap((button) => {
+      const r = button.getBoundingClientRect();
+      if (r.width === 0 || r.height === 0 || host.contains(button)) {
+        return [];
+      }
+      const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      return hit !== null && host.contains(hit) ? [] : [button.textContent?.trim() ?? '?'];
+    });
+  }, INTERFACE_BUTTONS);
+  expect(uncovered, 'boutons d’interface hors du fond de la fenêtre').toEqual([]);
   expect(errors).toEqual([]);
 }

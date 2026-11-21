@@ -127,6 +127,7 @@ test.describe('pH (#236)', () => {
       mimeType: 'application/json',
       buffer: Buffer.from(JSON.stringify(pond)),
     });
+    await ouvrirReglages(page, 'Sauvegarde et partage');
     await expect(page.getByRole('alert')).toContainText('ph');
     await expect(value(page)).toHaveText('7,5');
     expect(errors).toEqual([]);
@@ -135,6 +136,7 @@ test.describe('pH (#236)', () => {
   test('l’export de la sauvegarde contient le pH affiché', async ({ page }) => {
     const errors = await open(page);
     await importAcidTank(page);
+    await ouvrirReglages(page, 'Sauvegarde et partage');
     const [download] = await Promise.all([
       page.waitForEvent('download'),
       page.locator('[data-section="sauvegarde"]').getByRole('button', { name: 'Exporter' }).click(),

@@ -79,8 +79,10 @@ test.describe('Koïs (#88)', () => {
     await expect(rows.nth(1)).toHaveAttribute('data-species', 'rouge');
     await page.getByRole('button', { name: 'Ajouter un koï' }).click();
     await expect(host(page)).toHaveAttribute('data-aqfish-population', 'koi:8,rouge:0');
+    await ouvrirReglages(page, 'Bac et milieu');
     await page.getByRole('combobox', { name: 'Environnement' }).selectOption('tropical');
     await expect(host(page)).toHaveAttribute('data-aqfish-environment', 'tropical');
+    await ouvrirReglages(page, 'Population');
     await expect(rows).toHaveCount(17);
     await expect(host(page)).toHaveAttribute(
       'data-aqfish-population',

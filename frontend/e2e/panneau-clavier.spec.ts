@@ -1,4 +1,9 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
+
+import {
+  SETTINGS_CATEGORIES,
+  type SettingsCategoryId,
+} from '../src/app/ui/settings-window/settings-categories';
 
 import {
   autoHour,
@@ -16,28 +21,44 @@ import {
 /**
  * Panneau de contrôle « Réglages » au clavier (#52, #69) : Tab et flèches dans la population
  * et dans chaque section. Séparé de `panneau.spec.ts` pour la répartition de la CI (#600).
+ *
+ * Fenêtre des réglages (#722) : une catégorie à la fois ; dans la fenêtre, Tab parcourt
+ * « Fermer », la recherche, les catégories, puis le contenu de la catégorie ouverte.
  */
+
+/**
+ * Ouvre la catégorie `id`, place le focus sur son bouton dans la liste, puis Tab jusqu'au
+ * premier contrôle de son contenu (après les catégories suivantes de la liste).
+ */
+async function tabIntoCategory(page: Page, id: SettingsCategoryId): Promise<void> {
+  const index = SETTINGS_CATEGORIES.findIndex((category) => category.id === id);
+  await ouvrirReglages(page, SETTINGS_CATEGORIES[index].title);
+  await page.locator(`[data-settings-category="${id}"]`).focus();
+  for (let k = index + 1; k <= SETTINGS_CATEGORIES.length; k++) {
+    await page.keyboard.press('Tab');
+  }
+}
 
 test.describe('Panneau de contrôle', () => {
   test('population au clavier : Tab jusqu’aux boutons et au champ, flèches comprises', async ({
     page,
   }) => {
     const errors = await open(page);
-    await ouvrirReglages(page, 'Accessibilité');
+    await ouvrirReglages(page, 'Décor');
     await decor(page).focus();
     // Le bouton « Granulés » (#117) partage la ligne du décor : il vient juste après.
     await page.keyboard.press('Tab');
     await expect(page.getByRole('button', { name: /^Granulés : / })).toBeFocused();
-    // Section « Accessibilité » (#406), entre « Décor » et « Population ».
-    await page.keyboard.press('Tab');
+    // Catégorie « Accessibilité » (#406) : sa seule case, juste après la liste.
+    await tabIntoCategory(page, 'accessibilite');
     await expect(page.getByRole('checkbox', { name: 'Réduire les mouvements' })).toBeFocused();
-    // Section « Son » (#411) : la case puis le volume, sur la même ligne.
-    await page.keyboard.press('Tab');
+    // Catégorie « Son » (#411) : la case puis le volume, sur la même ligne.
+    await tabIntoCategory(page, 'son');
     await expect(page.getByRole('checkbox', { name: "Sons d'ambiance" })).toBeFocused();
     await page.keyboard.press('Tab');
     await expect(page.getByRole('slider', { name: "Volume des sons d'ambiance" })).toBeFocused();
-    // Bouton « Fiche » (#237), sur la ligne du nom, avant « − ».
-    await page.keyboard.press('Tab');
+    // Catégorie « Population » : bouton « Fiche » (#237), sur la ligne du nom, avant « − ».
+    await tabIntoCategory(page, 'population');
     await expect(page.getByRole('button', { name: 'Fiche : Néon' })).toBeFocused();
     await page.keyboard.press('Tab');
     await expect(page.getByRole('button', { name: 'Retirer un néon' })).toBeFocused();
@@ -107,8 +128,12 @@ test.describe('Panneau de contrôle', () => {
     await expect(toggle(page)).toBeFocused();
     await page.keyboard.press('Enter');
     await expect(toggle(page)).toHaveAttribute('aria-expanded', 'true');
+    // Fenêtre des réglages (#722) : le focus entre sur la catégorie ouverte, « Bac et milieu ».
+    await expect(page.locator('[data-settings-category="bac"]')).toBeFocused();
 
-    // Premier contrôle : la liste des environnements (#87, testée dans environnement.spec.ts).
+    // Premier contrôle, après les autres catégories : la liste des environnements (#87,
+    // testée dans environnement.spec.ts).
+    for (let k = 1; k < SETTINGS_CATEGORIES.length; k++) await page.keyboard.press('Tab');
     await page.keyboard.press('Tab');
     await expect(page.getByRole('combobox', { name: 'Environnement' })).toBeFocused();
 
@@ -118,8 +143,9 @@ test.describe('Panneau de contrôle', () => {
     await page.keyboard.press('Space');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-room', 'true');
 
-    // Bouton « Mode immersif » (#345), sur la ligne du titre « Simulation ».
-    await page.keyboard.press('Tab');
+    // Catégorie « Temps » : bouton « Mode immersif » (#345), sur la ligne du titre
+    // « Simulation ».
+    await tabIntoCategory(page, 'temps');
     await expect(page.getByRole('button', { name: 'Mode immersif' })).toBeFocused();
 
     await page.keyboard.press('Tab');
@@ -141,13 +167,12 @@ test.describe('Panneau de contrôle', () => {
 
   test('au clavier : section « Eau », du courant à l’amorce de bactéries', async ({ page }) => {
     const errors = await openPanel(page);
-    // Reprise sur le dernier contrôle de la section « Simulation » (test précédent).
-    await autoHour(page).focus();
+    // Catégorie « Eau et matériel », premier contrôle après la liste des catégories.
+    await tabIntoCategory(page, 'eau');
 
     // Section « Eau » (#207) : « Courant » (#460) et « Changer l’eau », sur la ligne du titre,
     // puis le chauffage, l'éclairage (#476), la lampe (#584) et la raclette (#476), les
     // feuilles de catappa (#239).
-    await page.keyboard.press('Tab');
     await expect(
       page.getByRole('button', { name: 'Courant : coupé, changer de force' }),
     ).toBeFocused();
@@ -189,6 +214,7 @@ test.describe('Panneau de contrôle', () => {
     page,
   }) => {
     const errors = await openPanel(page);
+    await ouvrirReglages(page, 'Eau et matériel');
     // Reprise sur l'amorce de bactéries, dernier contrôle vérifié par le test précédent.
     await page
       .getByRole('button', { name: 'Verser une dose d’amorce de bactéries nitrifiantes' })
@@ -216,8 +242,8 @@ test.describe('Panneau de contrôle', () => {
       page.getByRole('button', { name: 'Ajouter une feuille de catappa' }),
     ).toBeFocused();
 
-    // Section « Décor » : « Éditer le décor » (#167), sur la ligne du titre, puis la case.
-    await page.keyboard.press('Tab');
+    // Catégorie « Décor » : « Éditer le décor » (#167), sur la ligne du titre, puis la case.
+    await tabIntoCategory(page, 'decor');
     await expect(page.getByRole('button', { name: 'Éditer le décor', exact: true })).toBeFocused();
     await page.keyboard.press('Tab');
     await expect(decor(page)).toBeFocused();

@@ -44,6 +44,7 @@ async function openWithJournal(page: Page, days = 0): Promise<string[]> {
     mimeType: 'application/json',
     buffer: Buffer.from(text),
   });
+  await ouvrirReglages(page, 'Eau et matériel');
   await page.getByRole('button', { name: 'Changer l’eau' }).click();
   await fermerReglages(page);
   await page.locator('[data-review]').click();

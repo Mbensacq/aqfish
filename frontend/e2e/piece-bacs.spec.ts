@@ -39,7 +39,9 @@ test.describe('Pièce de N bacs : bacs et meubles (#305)', () => {
     const errors = await open(page);
     await openPanel(page);
     // Vitesse 0 : seuls la commode et le bac changent l'image.
+    await ouvrirReglages(page, 'Temps');
     await page.getByRole('slider', { name: 'Vitesse de la simulation' }).fill('0');
+    await ouvrirReglages(page, 'Bac et milieu');
     await showRoom(page);
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-room-tanks', '1');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-room-supports', '0');
@@ -82,7 +84,9 @@ test.describe('Pièce de N bacs : bacs et meubles (#305)', () => {
   }) => {
     const errors = await open(page);
     await openPanel(page);
+    await ouvrirReglages(page, 'Temps');
     await page.getByRole('slider', { name: 'Vitesse de la simulation' }).fill('0');
+    await ouvrirReglages(page, 'Bac et milieu');
     await showRoom(page);
     await catalog(page).getByRole('button', { name: 'Étagère d’animalerie' }).click();
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-room-supports', '1');

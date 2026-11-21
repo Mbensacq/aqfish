@@ -521,7 +521,8 @@ test.describe('Captures', () => {
     page.on('pageerror', (error) => errors.push(error.message));
     await page.goto(`/?seed=${SEED}&camera=front&heure=12&vitesse=0`);
     await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
-    await ouvrirReglages(page, 'Soins et produits');
+    // Fenêtre des réglages (#722) sur sa première catégorie, « Bac et milieu ».
+    await ouvrirReglages(page, 'Bac et milieu');
     await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-speed', '0');
     await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-tick', '0');
     await page.screenshot({ path: join(OUTPUT_DIR, 'front-panneau.png'), animations: 'disabled' });

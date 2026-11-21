@@ -1,10 +1,11 @@
 import { expect, test } from '@playwright/test';
 
-import { box, FONTS, openScene, overlaps, PANELS } from './outils-cadrage';
+import { box, FONTS, openScene, PANELS, SETTINGS_CASES } from './outils-cadrage';
+import { fermerReglages } from './outils-panneau';
 
 /**
- * Cadrage de l'aide-mémoire « Commandes » (#79, #588, #610) : entier à 1280 × 720, à côté de
- * « Réglages » sans le recouvrir, au-dessus du bandeau bas. Séparé de
+ * Cadrage de l'aide-mémoire « Commandes » (#79, #588, #610) : entier à 1280 × 720, sous le
+ * fond de la fenêtre des réglages quand elle est ouverte (#722), au-dessus du bandeau bas. Séparé de
  * `cadrage-panneaux.spec.ts` pour la répartition de la CI (#600).
  */
 
@@ -57,38 +58,37 @@ test.describe('panneau « Commandes » (#79)', () => {
   });
 });
 
-// #588 : à 900 × 700, « Réglages » en deux colonnes (532 px, de 59 à 591 px) recouvrait
-// l'aide-mémoire « Commandes » déplié (300 px, à 12 px du bord droit : dès 588 px). Le panneau
-// ne passe en deux colonnes qu'à partir de 1167 px de large (915 px avant #610, qui y ajoute la
-// bulle de soin) ; plus étroit, une colonne. Les deux panneaux ouverts ensemble restent séparés
-// d'au moins 12 px, de part et d'autre de l'ancien seuil comme du nouveau.
-test.describe('« Réglages » et « Commandes » ouverts ensemble (#588)', () => {
+// #588 : à 900 × 700, « Réglages » en deux colonnes recouvrait l'aide-mémoire « Commandes »
+// déplié. Fenêtre des réglages (#722) : modale, elle couvre « Commandes » de son fond, sans
+// le replier au-delà de 639 px (#136) ; refermée, l'aide-mémoire est toujours là.
+test.describe('« Réglages » ouvert par-dessus « Commandes » (#588, #722)', () => {
   for (const viewport of [
     { width: 900, height: 700 },
-    { width: 914, height: 700 },
-    { width: 915, height: 700 },
     { width: 1024, height: 700 },
-    { width: 1166, height: 700 },
-    { width: 1167, height: 700 },
     { width: 1280, height: 720 },
   ]) {
     for (const search of ['?seed=42', '?seed=42&points-blancs=1']) {
-      test(`${viewport.width} × ${viewport.height} : sans se recouvrir (${search})`, async ({
+      test(`${viewport.width} × ${viewport.height} : « Commandes » sous le fond, puis rendu (${search})`, async ({
         page,
       }) => {
         await page.setViewportSize(viewport);
         const errors = await openScene(page, search);
         await PANELS.find((p) => p.name === 'Commandes')!.open(page);
-        await PANELS.find((p) => p.name === 'Réglages')!.open(page);
-        // Au-delà de 639 px, ouvrir « Réglages » ne replie pas « Commandes » (#136).
+        await SETTINGS_CASES.find((p) => p.name === 'Réglages')!.open(page);
         await expect(page.locator('#aide-commandes')).toBeVisible();
-        const settings = await box(page.locator('.control-panel'));
-        const commands = await box(page.locator('#aide-commandes'));
-        expect(overlaps(settings, commands), '« Réglages » recouvre « Commandes »').toBe(false);
-        expect(commands.x - (settings.x + settings.width)).toBeGreaterThanOrEqual(12);
+        const covered = await page.evaluate(() => {
+          const r = document.querySelector('#aide-commandes')!.getBoundingClientRect();
+          const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+          return hit !== null && document.querySelector('app-settings-window')!.contains(hit);
+        });
+        expect(covered, '« Commandes » sous le fond de la fenêtre').toBe(true);
         expect(
-          await page.locator('.control-panel').evaluate((el) => el.scrollWidth <= el.clientWidth),
+          await page
+            .locator('.settings-window__content')
+            .evaluate((el) => el.scrollWidth <= el.clientWidth + 1),
         ).toBe(true);
+        await fermerReglages(page);
+        await expect(page.locator('#aide-commandes')).toBeVisible();
         expect(errors).toEqual([]);
       });
     }

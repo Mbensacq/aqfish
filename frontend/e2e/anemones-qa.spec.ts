@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
 import { canvasShot, countColors } from './outils-pixels';
-import { ouvrirReglages } from './outils-panneau';
+import { dansReglages, fermerReglages, ouvrirReglages } from './outils-panneau';
 
 /** QA des anémones et des poissons-clowns du récif (#150) : présence à l'écran et isolation. */
 
@@ -31,6 +31,7 @@ async function count(page: Page, colors: string[]): Promise<number[]> {
 async function freeze(page: Page): Promise<void> {
   await ouvrirReglages(page, 'Temps');
   await speed(page).fill('0');
+  await fermerReglages(page);
   await page.getByRole('button', { name: /vue de face/i }).click();
   await page.waitForTimeout(800);
 }
@@ -44,11 +45,11 @@ test.describe('Anémones et poissons-clowns : parcours utilisateur', () => {
     const [orange, rouge] = await count(page, [CLOWN_ORANGE, TENTACULE_ROUGE]);
     expect(rouge).toBeGreaterThan(30);
     expect(orange).toBeGreaterThan(0);
-    await decor(page).uncheck();
+    await dansReglages(page, 'Décor', () => decor(page).uncheck());
     await expect
       .poll(async () => (await count(page, [TENTACULE_ROUGE]))[0])
       .toBeLessThan(rouge * 0.05);
-    await decor(page).check();
+    await dansReglages(page, 'Décor', () => decor(page).check());
     await expect
       .poll(async () => (await count(page, [TENTACULE_ROUGE]))[0])
       .toBeGreaterThan(rouge * 0.9);

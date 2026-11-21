@@ -51,6 +51,7 @@ test.describe('Sauvegarde (#70)', () => {
     const errors = await open(page);
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-save', 'active');
     await openPanel(page);
+    await ouvrirReglages(page, 'Population');
     await page.getByRole('button', { name: 'Retirer un guppy' }).click();
     await page.getByRole('button', { name: 'Retirer un guppy' }).click();
     await page.getByRole('button', { name: 'Ajouter un néon' }).click();
@@ -58,6 +59,7 @@ test.describe('Sauvegarde (#70)', () => {
       'data-aqfish-population',
       'neon:13,guppy:4,corydora:6,rasbora:0,tetra:0,kuhli:0,gourami:0,platy:0,danio:0,ancistrus:0,otocinclus:0,braise:0,molly:0,miel:0,xipho:0,cerise:0,neritine:0',
     );
+    await ouvrirReglages(page, 'Temps');
     await page.getByRole('slider', { name: 'Vitesse de la simulation' }).focus();
     await page.keyboard.press('ArrowRight');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-speed', '2');
@@ -86,6 +88,7 @@ test.describe('Sauvegarde (#70)', () => {
     const population = () => hostEl(page).getAttribute('data-aqfish-population');
     await openPanel(page);
     // Bac tropical modifié : un guppy de moins, un néon de plus.
+    await ouvrirReglages(page, 'Population');
     await page.getByRole('button', { name: 'Retirer un guppy' }).click();
     await page.getByRole('button', { name: 'Ajouter un néon' }).click();
     const tropical =
@@ -94,13 +97,16 @@ test.describe('Sauvegarde (#70)', () => {
     await expect.poll(() => tick(page)).toBeGreaterThan(10);
 
     // Au bassin : monde de départ, modifié à son tour.
+    await ouvrirReglages(page, 'Bac et milieu');
     await environment.selectOption('bassin');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'bassin');
+    await ouvrirReglages(page, 'Population');
     await page.getByRole('button', { name: 'Ajouter un koï' }).click();
     const pond = await population();
     expect(pond).toMatch(/^koi:\d+,rouge:0$/);
 
     // Retour : le bac tropical tel qu'il a été laissé.
+    await ouvrirReglages(page, 'Bac et milieu');
     await environment.selectOption('tropical');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'tropical');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', tropical);
@@ -111,6 +117,7 @@ test.describe('Sauvegarde (#70)', () => {
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'tropical');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', tropical);
     await openPanel(page);
+    await ouvrirReglages(page, 'Bac et milieu');
     await environment.selectOption('bassin');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', pond!);
     expect(errors).toEqual([]);
@@ -123,6 +130,7 @@ test.describe('Sauvegarde (#70)', () => {
     const errors = await open(page);
     const environment = page.getByRole('combobox', { name: 'Environnement' });
     await openPanel(page);
+    await ouvrirReglages(page, 'Population');
     await page.getByRole('button', { name: 'Ajouter un néon' }).click();
     const tropical =
       'neon:13,guppy:6,corydora:6,rasbora:0,tetra:0,kuhli:0,gourami:0,platy:0,danio:0,ancistrus:0,otocinclus:0,braise:0,molly:0,miel:0,xipho:0,cerise:0,neritine:0';
@@ -131,9 +139,11 @@ test.describe('Sauvegarde (#70)', () => {
     const tickAtDeparture = await tick(page);
 
     for (const id of ['bassin', 'paludarium', 'recif']) {
+      await ouvrirReglages(page, 'Bac et milieu');
       await environment.selectOption(id);
       await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', id);
     }
+    await ouvrirReglages(page, 'Bac et milieu');
     await environment.selectOption('tropical');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', tropical);
     expect(await tick(page)).toBeGreaterThanOrEqual(tickAtDeparture);
@@ -162,6 +172,7 @@ test.describe('Sauvegarde (#70)', () => {
   }) => {
     const errors = await open(page);
     await openPanel(page);
+    await ouvrirReglages(page, 'Population');
     await page.getByRole('button', { name: 'Ajouter un néon' }).click();
     await expect(hostEl(page)).toHaveAttribute(
       'data-aqfish-population',
@@ -182,6 +193,7 @@ test.describe('Sauvegarde (#70)', () => {
   test('un paramètre de monde dans l’URL prime sur la sauvegarde', async ({ page }) => {
     await open(page);
     await openPanel(page);
+    await ouvrirReglages(page, 'Population');
     await page.getByRole('button', { name: 'Ajouter un néon' }).click();
     await expect(hostEl(page)).toHaveAttribute(
       'data-aqfish-population',
@@ -271,22 +283,26 @@ test.describe('Sauvegarde (#70)', () => {
   });
 
   // #101 : à 1280 × 720 (capture `front-panneau`), les boutons étaient rognés au bas du
-  // panneau et demandaient un défilement. Ils doivent tenir entiers sans défiler, et le
-  // panneau rester au-dessus de la barre des préréglages (à 390 px aussi, avec défilement).
+  // panneau et demandaient un défilement. Ils doivent tenir entiers sans défiler. Fenêtre des
+  // réglages (#722) : elle couvre la page (fond assombri, barre des préréglages comprise) et
+  // tient entière dans l'écran, à 390 px aussi.
   for (const [width, height] of [
     [1280, 720],
     [390, 844],
   ] as const) {
-    test(`${width} × ${height} : panneau au-dessus de la barre ; à 1280, boutons entiers sans défiler`, async ({
+    test(`${width} × ${height} : fenêtre entière dans l’écran ; à 1280, boutons entiers sans défiler`, async ({
       page,
     }) => {
       await page.setViewportSize({ width, height });
       const errors = await open(page, '?seed=42');
       await openPanel(page);
-      const panel = page.locator('.control-panel');
+      const window = (await page.locator('[data-settings-window]').boundingBox())!;
+      expect(window.x).toBeGreaterThanOrEqual(0);
+      expect(window.y).toBeGreaterThanOrEqual(0);
+      expect(window.x + window.width).toBeLessThanOrEqual(width);
+      expect(window.y + window.height).toBeLessThanOrEqual(height);
+      const panel = page.locator('.settings-window__content');
       const panelBox = (await panel.boundingBox())!;
-      const barBox = (await page.locator('.view-presets-bar').boundingBox())!;
-      expect(panelBox.y + panelBox.height).toBeLessThanOrEqual(barBox.y);
       if (width === 1280) {
         expect(await panel.evaluate((el) => el.scrollTop)).toBe(0);
         for (const button of [exportButton(page), importButton(page)]) {
@@ -303,7 +319,7 @@ test.describe('Sauvegarde (#70)', () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await open(page);
     await openPanel(page);
-    const panel = page.locator('.control-panel');
+    const panel = page.locator('.settings-window__content');
     await panel.evaluate((el) => el.scrollTo(0, el.scrollHeight));
     for (const button of [exportButton(page), importButton(page)]) {
       await expect(button).toBeVisible();
@@ -328,6 +344,7 @@ test.describe('Sauvegarde (#70)', () => {
   test('mode capture : aucune sauvegarde lue ni écrite', async ({ page }) => {
     await open(page);
     await openPanel(page);
+    await ouvrirReglages(page, 'Population');
     await page.getByRole('button', { name: 'Ajouter un néon' }).click();
     await expect(hostEl(page)).toHaveAttribute(
       'data-aqfish-population',

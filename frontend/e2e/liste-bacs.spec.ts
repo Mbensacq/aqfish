@@ -77,7 +77,9 @@ test.describe('Liste des bacs : sélection et transfert (#306)', () => {
   test('transférer un néon vers un bac posé ; refus vers le récif', async ({ page }) => {
     const errors = await open(page);
     await openPanel(page);
+    await ouvrirReglages(page, 'Temps');
     await page.getByRole('slider', { name: 'Vitesse de la simulation' }).fill('0');
+    await ouvrirReglages(page, 'Bac et milieu');
     const environment = page.getByRole('combobox', { name: 'Environnement', exact: true });
     await environment.selectOption('recif');
     await environment.selectOption('tropical');

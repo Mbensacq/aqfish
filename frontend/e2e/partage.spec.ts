@@ -60,6 +60,7 @@ test.describe('Partage par lien (#426)', () => {
     const population = await hostEl(page).getAttribute('data-aqfish-population');
     expect(population).toContain('neon:13,guppy:5');
 
+    await ouvrirReglages(page, 'Sauvegarde et partage');
     await page.getByRole('button', { name: 'Partager ce bac' }).click();
     const field = page.locator('[data-share-link]');
     await expect(field).toBeVisible();

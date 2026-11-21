@@ -68,6 +68,7 @@ test.describe('Éditeur de la pièce (#188)', () => {
     await ouvrirReglages(page, 'Bac et milieu');
     await page.getByRole('checkbox', { name: 'Afficher la pièce' }).check();
     await expect(host(page)).toHaveAttribute('data-aqfish-room', 'true');
+    await ouvrirReglages(page, 'Décor');
     await page.getByRole('button', { name: 'Éditer le décor', exact: true }).click();
     await expect(host(page)).toHaveAttribute('data-aqfish-editing', 'true');
     const editor = page.getByRole('region', { name: 'Éditeur de décor' });
@@ -121,6 +122,7 @@ test.describe('Éditeur de la pièce (#188)', () => {
     await ouvrirReglages(page, 'Bac et milieu');
     await page.getByRole('checkbox', { name: 'Afficher la pièce' }).check();
     await expect(host(page)).toHaveAttribute('data-aqfish-room', 'true');
+    await ouvrirReglages(page, 'Décor');
     await page.getByRole('button', { name: 'Éditer le décor', exact: true }).click();
     await expect(host(page)).toHaveAttribute('data-aqfish-editing', 'true');
     const editor = page.getByRole('region', { name: 'Éditeur de décor' });

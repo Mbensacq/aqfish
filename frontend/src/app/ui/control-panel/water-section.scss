@@ -1,19 +1,10 @@
 // Section « Eau » (#207, #697) : règles communes du panneau (`_panel-controls.scss`), dans son
-// ordre, et la note des feuilles de catappa masquée en deux colonnes.
-@use '../panel-layout' as layout;
+// ordre. Dans la fenêtre des réglages (#722), la note des feuilles de catappa reste affichée.
 @use 'panel-controls' as controls;
 
 @include controls.base;
 
 @include controls.count;
-
-// Note des feuilles de catappa (#531) : reprise dans l'infobulle ; en deux colonnes (1280 × 720),
-// sa place revient aux rangées de produits, pour que le panneau tienne (docs/PIEGES.md).
-@media #{layout.$control-panel-two-columns-query} {
-  [data-catappa-note] {
-    display: none;
-  }
-}
 
 @include controls.phone;
 

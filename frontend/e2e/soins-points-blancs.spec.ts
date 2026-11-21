@@ -68,6 +68,7 @@ test.describe('Soins des points blancs (#361)', () => {
       'data-severity',
       'critique',
     );
+    await ouvrirReglages(page, 'Soins et produits');
     await expect(care(page)).toBeVisible();
     await expect(care(page).locator('[data-treatment-status]')).toHaveText(
       'Aucun traitement en cours.',
@@ -133,6 +134,7 @@ test.describe('Soins des points blancs (#361)', () => {
     world.careMode = 'soins';
     infectWorldInPlace(world);
     await importWorld(page, world);
+    await ouvrirReglages(page, 'Soins et produits');
     await expect(care(page)).toBeVisible();
 
     await care(page).getByRole('button', { name: 'Ajouter 1 g/L de sel' }).click();

@@ -57,7 +57,7 @@ export const SETTINGS_WINDOW_ID = 'fenetre-reglages';
           <button
             type="button"
             class="settings-window__close"
-            aria-label="Fermer les réglages"
+            aria-label="Fermer"
             data-settings-close
             (click)="close()"
           >

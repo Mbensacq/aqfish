@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { ouvrirReglages } from './outils-panneau';
+import { fermerReglages, ouvrirReglages } from './outils-panneau';
 
 /**
  * Wiki des espèces, lot 1/2 (issue #287) : ouvrir, chercher, ouvrir une fiche, ajouter une
@@ -206,6 +206,9 @@ test.describe('Wiki des espèces (#287)', () => {
     await ouvrirReglages(page, 'Bac et milieu');
     await expect(page.locator('.control-panel')).toBeVisible();
     await expect(wiki(page)).toHaveCount(0);
+    // Fenêtre des réglages (#722) : modale, son fond couvre le bouton « Wiki » ; refermée, le
+    // wiki se rouvre et « Réglages » reste fermé.
+    await fermerReglages(page);
     await toggle(page).click();
     await expect(page.locator('.control-panel')).toHaveCount(0);
     await expect(wiki(page)).toBeVisible();

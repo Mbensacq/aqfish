@@ -14,8 +14,7 @@ import { TreatmentNotice as TreatmentNoticeView } from './treatment-notice';
 /**
  * Section « Soins » du panneau « Réglages » (#361 ; sortie du panneau au #697) : les trois
  * gestes contre les points blancs, l'état du traitement, puis le message du dernier geste
- * (bulle à droite du panneau en deux colonnes, #490) ou, à sa place, les sources et niveaux
- * de preuve. Le panneau ne l'affiche qu'en mode soins, avec des points blancs ou un
+ * (#490) ou, à sa place, les sources et niveaux de preuve. Le panneau ne l'affiche qu'en mode soins, avec des points blancs ou un
  * traitement en cours.
  *
  * L'hôte est le `fieldset` de la section, posé par le panneau (ADR 0161).
@@ -44,7 +43,6 @@ import { TreatmentNotice as TreatmentNoticeView } from './treatment-notice';
     </div>
     <p class="control-panel__note" data-treatment-status>{{ treatmentStatus() }}</p>
     @if (treatmentNotice(); as notice) {
-      <!-- Bulle à droite du panneau en deux colonnes (#490, treatment-notice.ts). -->
       <app-treatment-notice
         class="control-panel__message"
         [class.control-panel__message--error]="!notice.ok"

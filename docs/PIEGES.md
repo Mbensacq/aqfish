@@ -772,16 +772,29 @@ origin/main`, `node_modules` en lien symbolique) ; il sert aussi aux captures «
 
 ## Tests
 
-- **E2e : ouvrir « Réglages » par `ouvrirReglages`, jamais par un clic direct** (cycle 266,
-  #722) : la fenêtre des réglages remplace le panneau déroulant ; elle couvre toute la page
-  (fond assombri, le bouton « Réglages » n'est plus cliquable une fois ouverte) et n'affiche
-  qu'une catégorie. `ouvrirReglages(page, 'Eau et matériel')` et `fermerReglages(page)`
-  (`e2e/outils-panneau.ts`) sont les seuls chemins. Le test qui utilise plusieurs catégories
-  doit en changer avant chaque contrôle d'une autre catégorie ; l'import d'un monde par
-  `[data-section="sauvegarde"] input[type="file"]` (28 appels) a besoin de « Sauvegarde et
-  partage » ouverte, là où il ne demandait que le panneau déplié.
-  Catégorie d'un appel : celle du premier contrôle utilisé ensuite (relevé par le script de la
-  PR du cycle 266, à partir des jetons du panneau rendu). (2026-11-21)
+- **E2e : ouvrir « Réglages » par `ouvrirReglages`, jamais par un clic direct** (cycles 266
+  et 267, #722) : la fenêtre des réglages est **modale** ; son fond couvre toute la page
+  (bouton « Réglages », barre des vues, tableau de bord, aide-mémoire, wiki, **et le bac**) et
+  n'affiche qu'une catégorie. `ouvrirReglages(page, '<catégorie>')` ouvre la fenêtre ou, déjà
+  ouverte, clique la catégorie ; `fermerReglages(page)` passe par « Fermer » (sans effet si
+  la fenêtre est déjà refermée). Trois conséquences :
+  1. un contrôle d'une autre catégorie est masqué (`hidden`) : `getByRole` ne le trouve plus et
+     un clic attend jusqu'au délai ; changer de catégorie avant (l'import par
+     `[data-section="sauvegarde"] input[type="file"]` marche sans, le champ masqué restant
+     utilisable par `setInputFiles`) ;
+  2. tout clic, glisser, molette ou appui sur la barre des vues, le tableau de bord ou le bac,
+     et **toute mesure de pixels** (`canvasShot`, `countColors`, `vegetationPixels`, capture
+     d'écran : le fond assombrit l'image) se font fenêtre fermée ; `dansReglages(page,
+     'Décor', () => decor(page).uncheck())` agit puis referme ;
+  3. prendre la raclette ou le sécateur referme la fenêtre : relire leur état
+     (`aria-pressed`) après `ouvrirReglages`.
+  Repérer les cas : un script qui suit chaque test depuis `ouvrirReglages` (catégorie
+  courante) et signale les jetons d'une autre catégorie ou les gestes hors fenêtre (méthode de
+  la PR du cycle 267). (2026-11-21)
+- **`getByRole` cherche une sous-chaîne du nom** : un bouton « Fermer les réglages » rendait
+  `getByRole('button', { name: 'Réglages' })` ambigu (deux boutons, erreur « strict mode
+  violation ») dans des dizaines d'e2e. Nommer les nouveaux boutons sans reprendre le nom
+  d'un bouton existant, ou chercher avec `exact: true`. (2026-11-21)
 - **Éléments en ligne d'un `@for` : aucun espace entre eux dans le texte** (cycle 197, #574) :
   Angular retire les nœuds de texte faits seulement d'espaces entre deux éléments (option
   `preserveWhitespaces` à `false`). Deux `<strong>` successifs d'un `@for` s'affichent espacés

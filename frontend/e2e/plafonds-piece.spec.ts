@@ -35,6 +35,7 @@ async function total(page: Page): Promise<number> {
 
 /** Saisit un effectif trop grand : l'hôte le ramène à la place restante. */
 async function fillMax(page: Page, species: string): Promise<void> {
+  await ouvrirReglages(page, 'Population');
   const field = page.locator(`[data-species="${species}"] input[type="number"]`);
   await field.fill('99');
   await field.press('Enter');
@@ -51,6 +52,7 @@ async function fillTank(page: Page): Promise<void> {
 }
 
 async function decorMode(page: Page): Promise<void> {
+  await ouvrirReglages(page, 'Bac et milieu');
   await bacs(page).locator('[data-care-mode-toggle]').click();
   await page
     .locator('[data-care-mode-confirm]')
@@ -80,12 +82,14 @@ test.describe('Plafonds de la pièce (#392)', () => {
       await expect.poll(() => total(page)).toBe(60);
       await expect(notice(page)).toHaveCount(0);
       for (const id of ['recif', 'paludarium']) {
+        await ouvrirReglages(page, 'Bac et milieu');
         await environment.selectOption(id);
         await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', id);
         await decorMode(page);
         await fillTank(page);
         await expect.poll(() => total(page)).toBe(60);
       }
+      await ouvrirReglages(page, 'Bac et milieu');
       await environment.selectOption('bassin');
       await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'bassin');
       await expect.poll(() => total(page)).toBe(7);
@@ -93,6 +97,7 @@ test.describe('Plafonds de la pièce (#392)', () => {
     });
 
     await test.step('eau froide : la pièce, pas le bac, arrête l’ajout à 53 (240 en tout)', async () => {
+      await ouvrirReglages(page, 'Bac et milieu');
       await environment.selectOption('eaufroide');
       await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'eaufroide');
       await decorMode(page);

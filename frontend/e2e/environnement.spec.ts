@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 import { ENVIRONMENT_TONES, PALETTE } from '../src/app/render/palette';
 import { FOOD_PER_DROP } from '../src/app/sim/food';
+import { SETTINGS_CATEGORIES } from '../src/app/ui/settings-window/settings-categories';
 import { fermerReglages, ouvrirReglages } from './outils-panneau';
 
 /**
@@ -71,8 +72,10 @@ test.describe('Environnement', () => {
     await toggle(page).focus();
     await page.keyboard.press('Enter');
     await expect(selector(page)).toHaveValue('tropical');
-    // Le sélecteur est le premier contrôle du panneau, juste après le bouton « Réglages ».
-    await page.keyboard.press('Tab');
+    // Fenêtre des réglages (#722) : le focus entre sur la catégorie « Bac et milieu » ; le
+    // sélecteur est le premier contrôle de son contenu, après les autres catégories.
+    await expect(page.locator('[data-settings-category="bac"]')).toBeFocused();
+    for (let k = 1; k <= SETTINGS_CATEGORIES.length; k++) await page.keyboard.press('Tab');
     await expect(selector(page)).toBeFocused();
     // Flèche bas sur la liste fermée : option suivante (Chromium), sans souris.
     await page.keyboard.press('ArrowDown');
@@ -141,6 +144,7 @@ test.describe('Environnement', () => {
       'axolotl:0,grenouille:3,triton:2',
     );
     // L'axolotl vit dans le bac d'eau froide depuis #271 : proposé ici, à zéro par défaut.
+    await ouvrirReglages(page, 'Population');
     await expect(page.getByRole('spinbutton', { name: 'Nombre d’axolotls' })).toHaveValue('0');
     await expect(
       page.getByRole('spinbutton', { name: 'Nombre de sonneurs orientaux' }),
@@ -233,6 +237,7 @@ test.describe('Environnement', () => {
       await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', id);
     }
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', 'axolotl:2');
+    await ouvrirReglages(page, 'Population');
     await expect(page.getByRole('spinbutton', { name: 'Nombre d’axolotls' })).toHaveValue('2');
     await expect(page.locator('[data-mix-warning]')).toHaveCount(0);
     await page.reload();
@@ -313,6 +318,7 @@ test.describe('Environnement', () => {
     await ouvrirReglages(page, 'Bac et milieu');
     await selector(page).selectOption('bassin');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'bassin');
+    await fermerReglages(page);
     const canvas = (await page.locator('canvas').first().boundingBox())!;
     const cx = canvas.x + canvas.width / 2;
     const cy = canvas.y + canvas.height / 2;
@@ -323,6 +329,7 @@ test.describe('Environnement', () => {
     await page.mouse.wheel(0, -400);
     await page.mouse.wheel(0, 800);
     for (const key of ['1', '2', '3', '4', '5']) await page.keyboard.press(key);
+    await ouvrirReglages(page, 'Bac et milieu');
     await selector(page).selectOption('tropical');
     await selector(page).selectOption('bassin');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'bassin');

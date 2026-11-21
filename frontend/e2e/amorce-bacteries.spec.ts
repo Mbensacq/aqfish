@@ -40,6 +40,7 @@ test('amorce de bactéries : clavier et annonce (#529)', async ({ page }) => {
   });
   await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-speed', '0');
 
+  await ouvrirReglages(page, 'Eau et matériel');
   await button.focus();
   await page.keyboard.press('Enter');
   await expect(message).toContainText('Amorce de bactéries versée');
