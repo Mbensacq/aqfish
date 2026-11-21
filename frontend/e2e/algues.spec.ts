@@ -4,7 +4,7 @@ import { ALGAE_PATCH_COUNT } from '../src/app/sim/algae';
 import { createDayClock } from '../src/app/sim/daylight';
 import { serializeWorld } from '../src/app/sim/save';
 import { createDefaultWorld, type MutableWorld } from '../src/app/sim/world';
-import { ouvrirReglages } from './outils-panneau';
+import { fermerReglages, ouvrirReglages } from './outils-panneau';
 
 /**
  * Algues (issue #476) : réglage de l'éclairage dans la section « Eau », alerte du tableau de
@@ -73,7 +73,7 @@ test.describe('algues (#476)', () => {
     await expect(alert).toHaveAttribute('data-severity', 'critique');
     await expect(alert).toContainText('Algues envahissantes');
     // Le panneau ouvert recouvre le tableau de bord : on le referme.
-    await ouvrirReglages(page, 'Eau et matériel');
+    await fermerReglages(page);
     await alert.locator('button').first().click();
     await expect(page.locator('[data-alert-wiki="entretien"]')).toContainText('Wiki : Entretien');
     expect(errors).toEqual([]);
@@ -93,7 +93,7 @@ test.describe('algues (#476)', () => {
     await expect(scraper(page)).toHaveAttribute('aria-pressed', 'true');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-scraper', 'true');
     // Le panneau couvre une partie de l'écran : on le referme pour viser le bac.
-    await ouvrirReglages(page, 'Eau et matériel');
+    await fermerReglages(page);
     const box = await page.locator('canvas').first().boundingBox();
     expect(box).not.toBeNull();
     const { x, y, width, height } = box!;

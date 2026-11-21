@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 import { createDayClock } from '../src/app/sim/daylight';
 import { serializeWorld } from '../src/app/sim/save';
 import { createDefaultWorld, type MutableWorld } from '../src/app/sim/world';
-import { fermerReglages, ouvrirReglages } from './outils-panneau';
+import { ouvrirReglages } from './outils-panneau';
 
 /**
  * Amorce de bactéries (issue #529) : le bouton s'atteint au clavier et le geste est annoncé,
@@ -28,7 +28,8 @@ test('amorce de bactéries : clavier et annonce (#529)', async ({ page }) => {
   await expect(link).toHaveText('Produits et traitements');
   await link.click();
   await expect(page.locator('[data-wiki-page-view="produits"]')).toBeVisible();
-  await fermerReglages(page);
+  // Le wiki ouvert a replié « Réglages » (panneaux exclusifs) : on les rouvre.
+  await ouvrirReglages(page, 'Sauvegarde et partage');
 
   const world = createDefaultWorld(11, 'tropical') as MutableWorld;
   world.water = { ...world.water, filter: 0.2 };

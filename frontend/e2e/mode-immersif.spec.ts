@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
 import { openScene } from './outils-decor';
-import { fermerReglages, ouvrirReglages } from './outils-panneau';
+import { ouvrirReglages } from './outils-panneau';
 
 /**
  * Mode immersif, lot 1 (issue #345) : entrer depuis « Réglages », taille estimée signalée,
@@ -210,7 +210,8 @@ for (const viewport of [
       await expect
         .poll(async () => Number(await host.getAttribute('data-aqfish-tick')))
         .toBeGreaterThan(tick);
-      await fermerReglages(page);
+      // Le mode immersif a replié « Réglages » : on les rouvre.
+      await ouvrirReglages(page, 'Temps');
       await page.getByRole('button', { name: 'Mode immersif' }).click();
       await expect(overlay(page)).toHaveAttribute('data-immersive-calibrated', 'true');
       await page.keyboard.press('Escape');

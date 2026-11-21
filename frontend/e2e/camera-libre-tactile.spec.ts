@@ -11,7 +11,7 @@ import {
   savedDecor,
   touchDragTank,
 } from './outils-decor';
-import { ouvrirReglages } from './outils-panneau';
+import { fermerReglages, ouvrirReglages } from './outils-panneau';
 
 /**
  * Caméra libre dans la pièce, lot 2 (issue #344) : au doigt (glisser pour orienter, pincer
@@ -137,7 +137,7 @@ test.describe('Caméra libre au doigt, 390 × 844 (#344)', () => {
       await expect(hostEl(page)).toHaveAttribute('data-aqfish-camera-libre', 'true');
       await expect(pad(page)).toBeVisible();
       await expectPadClearOf(page, '.control-panel');
-      await ouvrirReglages(page, 'Bac et milieu');
+      await fermerReglages(page);
       await expect(page.locator('.control-panel')).toBeHidden();
       await expectPadClearOf(page, 'app-dashboard-frame, app-dashboard-status');
       await page.screenshot({ path: testInfo.outputPath('pave-390.png') });
