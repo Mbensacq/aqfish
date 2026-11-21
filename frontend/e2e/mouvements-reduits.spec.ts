@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { fermerReglages, ouvrirReglages } from './outils-panneau';
+import { ouvrirReglages } from './outils-panneau';
 
 /**
  * Option « Réduire les mouvements » (#406) : initialisée sur `prefers-reduced-motion`,
@@ -51,7 +51,7 @@ test.describe('option des réglages', () => {
     await page.reload();
     await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
     await expect(host(page)).toHaveAttribute('data-aqfish-mouvements-reduits', 'true');
-    await fermerReglages(page);
+    await ouvrirReglages(page, 'Accessibilité');
     await expect(option(page)).toBeChecked();
     // Décochée : mouvements normaux, choix mémorisé aussi.
     await option(page).uncheck();
