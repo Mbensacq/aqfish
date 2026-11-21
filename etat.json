@@ -9695,10 +9695,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-21T03:52:27.954Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-21T03:52:48.570Z",
+          "note": "Issue #722 : tranche 1b (suite), brancher la fenêtre des réglages (M)"
         }
       },
       "metriques": {}
