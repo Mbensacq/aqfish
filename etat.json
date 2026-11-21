@@ -9893,10 +9893,10 @@
           "note": "Verdict OK, 0 bug, captures publiées (bac identique, 5 vues d'interface changées, attendu)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-21T15:14:28.064Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-21T15:41:57.862Z",
+          "note": "PR #767 fusionnée → v1.27.6 (release CI OK, main verte), #764 fermée, dette #768 ; suppression de la branche refusée par l'environnement"
         }
       },
       "metriques": {}
