@@ -9763,7 +9763,7 @@
       "debut": "2026-11-21T07:49:56.835Z",
       "type": "fonctionnalite",
       "issue": 722,
-      "pr": null,
+      "pr": 761,
       "version": null,
       "phases": {
         "planif": {
