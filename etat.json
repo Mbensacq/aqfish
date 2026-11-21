@@ -9735,6 +9735,12 @@
           "debut": "2026-11-21T05:50:30.341Z",
           "fin": "2026-11-21T05:50:50.517Z",
           "note": "Issue #722 : tranche 1c, barre du bas, catégorie retenue, exclusifs, restes #759 (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-21T05:51:23.460Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
