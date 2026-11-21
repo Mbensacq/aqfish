@@ -9900,6 +9900,24 @@
         }
       },
       "metriques": {}
+    },
+    "273": {
+      "numero": 273,
+      "date": "2026-11-22",
+      "debut": "2026-11-21T23:41:47.128Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-21T23:41:47.128Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
