@@ -6,6 +6,18 @@ import {
   type SettingsCategoryId,
 } from '../settings-window/settings-categories';
 import { ControlPanel } from './control-panel';
+import { SETTINGS_CATEGORY_STORAGE } from '../settings-window/settings-category-store';
+import { SETTINGS_CATEGORY_STORAGE_KEY } from '../../core/settings-category-pref/settings-category-pref';
+
+/** Stockage en mémoire de la catégorie retenue, partagé entre deux montages du panneau. */
+function memoryStorage() {
+  const data = new Map<string, string>();
+  return {
+    data,
+    getItem: (key: string) => data.get(key) ?? null,
+    setItem: (key: string, value: string) => void data.set(key, value),
+  };
+}
 
 /** Panneau avec toutes ses sections possibles : pièce affichée, points blancs selon `ich`. */
 @Component({
@@ -15,11 +27,13 @@ import { ControlPanel } from './control-panel';
     [roomShown]="true"
     [ichCount]="ich()"
     (editRequested)="edits = edits + 1"
+    (closedByUser)="closes = closes + 1"
   />`,
 })
 class WindowHost {
   readonly ich = signal(1);
   edits = 0;
+  closes = 0;
 }
 
 /**
@@ -46,9 +60,19 @@ describe('ControlPanel : fenêtre des réglages (#722)', () => {
     await fixture.whenStable();
   }
 
-  beforeEach(async () => {
-    TestBed.configureTestingModule({ imports: [WindowHost] });
+  let storage: ReturnType<typeof memoryStorage>;
+
+  function mount(): void {
     fixture = TestBed.createComponent(WindowHost);
+  }
+
+  beforeEach(async () => {
+    storage = memoryStorage();
+    TestBed.configureTestingModule({
+      imports: [WindowHost],
+      providers: [{ provide: SETTINGS_CATEGORY_STORAGE, useValue: storage }],
+    });
+    mount();
     await fixture.whenStable();
   });
 
@@ -84,8 +108,6 @@ describe('ControlPanel : fenêtre des réglages (#722)', () => {
       ['select[aria-label="Environnement"], [data-section="environnement"] select', 'bac'],
       ['[data-quarantine-install], [data-section="bacs"] button', 'bac'],
       ['[data-current]', 'eau'],
-      ['[data-scraper]', 'eau'],
-      ['[data-pruner]', 'eau'],
       ['[data-bacteria-starter]', 'eau'],
       ['[data-untreated-tap]', 'eau'],
       ['[data-carbon]', 'eau'],
@@ -129,6 +151,13 @@ describe('ControlPanel : fenêtre des réglages (#722)', () => {
       expect(toggle().getAttribute('aria-expanded')).toBe('false');
       expect(document.activeElement).toBe(toggle());
     }
+    // Chaque fermeture par l'utilisateur est signalée (l'application rend « Commandes »).
+    expect(fixture.componentInstance.closes).toBe(3);
+  });
+
+  it('raclette et sécateur ne sont plus dans la fenêtre (barre du bas, #722)', async () => {
+    await open();
+    expect(root().querySelector('[data-scraper], [data-pruner]')).toBeNull();
   });
 
   it('Tab sur le dernier contrôle affiché revient au premier, sections masquées sautées', async () => {
@@ -152,6 +181,43 @@ describe('ControlPanel : fenêtre des réglages (#722)', () => {
     await fixture.whenStable();
     await open();
     expect(shownSections()).toEqual(['decor']);
+  });
+
+  it('catégorie retenue d’une visite à l’autre (préférence locale, #722)', async () => {
+    expect(storage.data.has(SETTINGS_CATEGORY_STORAGE_KEY)).toBe(false);
+    await open();
+    // Ouvrir sans choisir n'écrit rien : la préférence reste absente.
+    expect(storage.data.has(SETTINGS_CATEGORY_STORAGE_KEY)).toBe(false);
+    await choose('son');
+    expect(storage.data.get(SETTINGS_CATEGORY_STORAGE_KEY)).toBe('son');
+    // Nouveau montage (rechargement de la page) : la fenêtre rouvre « Son ».
+    fixture.destroy();
+    mount();
+    await fixture.whenStable();
+    await open();
+    expect(
+      root().querySelector('[data-settings-content]')?.getAttribute('data-settings-content'),
+    ).toBe('son');
+    expect(shownSections()).toEqual(['son']);
+  });
+
+  it('flèches dans la liste : la catégorie atteinte est retenue', async () => {
+    await open();
+    const current = root().querySelector<HTMLElement>('[data-settings-category="bac"]')!;
+    current.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    await fixture.whenStable();
+    expect(storage.data.get(SETTINGS_CATEGORY_STORAGE_KEY)).toBe(SETTINGS_CATEGORIES[1].id);
+  });
+
+  it('catégorie retenue inconnue (retirée, renommée) : la première de la liste', async () => {
+    fixture.destroy();
+    storage.data.set(SETTINGS_CATEGORY_STORAGE_KEY, 'affichage-ancien');
+    mount();
+    await fixture.whenStable();
+    await open();
+    expect(
+      root().querySelector('[data-settings-content]')?.getAttribute('data-settings-content'),
+    ).toBe(SETTINGS_CATEGORIES[0].id);
   });
 
   it('l’hôte passe au-dessus des autres panneaux tant que la fenêtre est ouverte', async () => {

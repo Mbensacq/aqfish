@@ -200,10 +200,16 @@ découpé par section), qui fournit les sections réutilisées par la fenêtre :
    focus rendu au bouton à la fermeture ; raclette et sécateur pris referment la fenêtre ;
    `ouvrirReglages` clique la catégorie ; e2e repris pour la fenêtre modale (catégories,
    fermeture avant de toucher ou de mesurer le bac, cadrage, clavier) ; repli provisoire sous
-   640 px (catégories au-dessus du contenu). **Reste** : sortir les produits de la section
-   « Eau » vers « Soins et produits » et « Pluie » vers « Affichage » ; barre du bas (nourrir,
-   raclette, sécateur, photo), préférence locale de la catégorie, panneaux exclusifs, panneau
-   du téléphone.
+   640 px (catégories au-dessus du contenu). **Livré (cycle 268)** : raclette et sécateur dans
+   la barre du bas, après « Nourrir » et avant « Photo » (groupe « Outils d'entretien », mêmes
+   attributs `data-scraper` et `data-pruner`, nourrir et photo y étaient déjà) ; barre sans
+   pastilles de touche sous 1 280 px et sur deux lignes sous 640 px pour tenir à l'écran ;
+   catégorie retenue d'une visite à l'autre (`core/settings-category-pref`, clé
+   `aqfish.reglages-categorie`, inconnue ou absente : « Bac et milieu ») ; fenêtre exclusive à
+   toute largeur : elle replie « Commandes » le temps d'être ouverte (rendu à sa fermeture
+   au-delà de 639 px), et « Commandes » ouvert (touche `?`) la referme. **Reste** : sortir les
+   produits de la section « Eau » vers « Soins et produits » et « Pluie » vers « Affichage » ;
+   panneau du téléphone.
 3. #723 — Population en tuiles et recherche dans les réglages.
 4. #724 — Habillage de toute la page selon la charte (tableau de bord, barres, aide-mémoire, wiki,
    pharmacie, bilan, guide, parcours du premier bac), textes revus.

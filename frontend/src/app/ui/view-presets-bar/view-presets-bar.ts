@@ -118,6 +118,8 @@ export function presetForKey(key: string): CameraPreset | null {
  * Bouton « Libre » (pièce affichée seulement, `freeCameraAvailable`) et touche `L` (issue
  * #343) : demandent d'entrer en caméra libre ou de revenir à l'orbite (sans pièce, l'hôte
  * refuse) ; l'état affiché (`freeCamera`) vient de l'hôte.
+ * Boutons « Raclette » et « Sécateur » (#476, #477 ; sortis des réglages au #722, sans
+ * touche) : demandent de prendre ou de poser l'outil ; l'état affiché vient de l'hôte.
  * Bouton « Photo » (issue #479, sans touche) : demande à l'hôte de télécharger une image PNG
  * du bac dans la vue courante ; un échec est dit au-dessus de la barre (`photoNotice`, #503).
  * Absente en mode capture (c'est l'application qui ne l'affiche pas).
@@ -181,6 +183,35 @@ export function presetForKey(key: string): CameraPreset | null {
       <span class="view-presets-bar__key" aria-hidden="true">{{ feedKey }}</span>
       Nourrir
     </button>
+    <!-- Outils d'entretien (#722, venus de la fenêtre des réglages) : raclette (#476), un clic
+         sur une vitre retire la plaque d'algues visée ; sécateur (#477), un clic sur une plante
+         à tige la taille. État affiché fourni par l'hôte. -->
+    <div class="view-presets-bar__group" role="group" aria-label="Outils d’entretien">
+      <button
+        type="button"
+        class="view-presets-bar__button"
+        [class.view-presets-bar__button--active]="scraping()"
+        data-scraper
+        [attr.aria-pressed]="scraping()"
+        [attr.aria-label]="scraping() ? 'Poser la raclette' : 'Raclette : cliquer sur les algues'"
+        (click)="scraperToggled.emit()"
+      >
+        {{ scraping() ? 'Poser la raclette' : 'Raclette' }}
+      </button>
+      <button
+        type="button"
+        class="view-presets-bar__button"
+        [class.view-presets-bar__button--active]="pruning()"
+        data-pruner
+        [attr.aria-pressed]="pruning()"
+        [attr.aria-label]="
+          pruning() ? 'Poser le sécateur' : 'Sécateur : cliquer sur une plante haute'
+        "
+        (click)="prunerToggled.emit()"
+      >
+        {{ pruning() ? 'Poser le sécateur' : 'Sécateur' }}
+      </button>
+    </div>
     <button
       type="button"
       class="view-presets-bar__button"
@@ -257,6 +288,15 @@ export class ViewPresetsBar {
   protected feed(): void {
     this.fed.emit();
   }
+
+  /** Raclette en main (fournie par l'hôte, #476). */
+  readonly scraping = input(false);
+  /** Sécateur en main (fourni par l'hôte, #477). */
+  readonly pruning = input(false);
+  /** Bouton « Raclette » (#476, dans la barre depuis #722) : prendre ou poser la raclette. */
+  readonly scraperToggled = output<void>();
+  /** Bouton « Sécateur » (#477, dans la barre depuis #722) : prendre ou poser le sécateur. */
+  readonly prunerToggled = output<void>();
 
   /** Demande de photo du bac (bouton « Photo », issue #479). */
   readonly photoRequested = output<void>();

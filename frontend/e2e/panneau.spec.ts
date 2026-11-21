@@ -44,6 +44,46 @@ test.describe('Panneau de contrôle', () => {
     expect(errors).toEqual([]);
   });
 
+  test('catégorie retenue (#722) : rouverte telle quelle, même après un rechargement', async ({
+    page,
+  }) => {
+    const errors = await open(page);
+    // Contexte neuf : première ouverture sur la première catégorie.
+    await toggle(page).click();
+    await expect(page.locator('[data-settings-content]')).toHaveAttribute(
+      'data-settings-content',
+      'bac',
+    );
+    await ouvrirReglages(page, 'Son');
+    await fermerReglages(page);
+    await toggle(page).click();
+    await expect(page.locator('[data-settings-content]')).toHaveAttribute(
+      'data-settings-content',
+      'son',
+    );
+    expect(await page.evaluate(() => localStorage.getItem('aqfish.reglages-categorie'))).toBe(
+      'son',
+    );
+    // Rechargement (sans `seed=`, docs/PIEGES.md) : toujours « Son ».
+    await page.goto('/');
+    await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+    await toggle(page).click();
+    await expect(page.locator('[data-settings-content]')).toHaveAttribute(
+      'data-settings-content',
+      'son',
+    );
+    // Valeur inconnue (catégorie retirée) : la première catégorie.
+    await page.evaluate(() => localStorage.setItem('aqfish.reglages-categorie', 'inconnue'));
+    await page.goto('/');
+    await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+    await toggle(page).click();
+    await expect(page.locator('[data-settings-content]')).toHaveAttribute(
+      'data-settings-content',
+      'bac',
+    );
+    expect(errors).toEqual([]);
+  });
+
   test('vitesse 0 : la simulation s’arrête, le rendu continue ; ×4 reprend', async ({ page }) => {
     const errors = await open(page);
     await ouvrirReglages(page, 'Temps');

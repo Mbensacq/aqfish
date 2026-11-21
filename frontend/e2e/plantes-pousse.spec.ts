@@ -16,8 +16,8 @@ import { fermerReglages, ouvrirReglages } from './outils-panneau';
  */
 
 const hostEl = (page: Page) => page.locator('app-aquarium-host');
-const section = (page: Page) => page.locator('[data-section="eau"]');
-const pruner = (page: Page) => section(page).locator('[data-pruner]');
+/** Sécateur : dans la barre du bas, avec les vues (#722). */
+const pruner = (page: Page) => page.locator('app-view-presets-bar [data-pruner]');
 
 /** Pousses affichées (`data-aqfish-plants`, « p1,p2,…;lumière du fond en % »). */
 async function growths(page: Page): Promise<number[]> {
@@ -58,15 +58,13 @@ test.describe('plantes qui poussent (#477)', () => {
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-plants', `${caps.join(',')};88`);
     const population = await hostEl(page).getAttribute('data-aqfish-population');
 
-    await ouvrirReglages(page, 'Eau et matériel');
+    // Fenêtre des réglages refermée : la barre du bas redevient cliquable (#722).
+    await fermerReglages(page);
     await expect(pruner(page)).toHaveAttribute('aria-pressed', 'false');
     await pruner(page).click();
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-pruner', 'true');
-    // Sécateur pris : la fenêtre se referme d'elle-même pour viser le bac (#722).
-    await fermerReglages(page);
-    await ouvrirReglages(page, 'Eau et matériel');
     await expect(pruner(page)).toHaveAttribute('aria-pressed', 'true');
-    await fermerReglages(page);
+    await expect(pruner(page)).toHaveText('Poser le sécateur');
     const box = await page.locator('canvas').first().boundingBox();
     expect(box).not.toBeNull();
     const { x, y, width, height } = box!;

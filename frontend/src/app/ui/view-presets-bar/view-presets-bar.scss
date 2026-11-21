@@ -91,27 +91,52 @@
   }
 }
 
-// Petit écran (bug #22) : la barre doit tenir entière à 390 px. Les pastilles de touche
-// (inutiles sans clavier) sont masquées et les marges resserrées ; la largeur reste bornée
-// à la fenêtre et, depuis le bouton « Nourrir » (#67), la barre passe sur deux lignes
-// plutôt que de rogner un bouton.
-@media (max-width: 480px) {
+// Écran moyen (#722) : avec la raclette et le sécateur, la barre fait 862 px avec ses
+// pastilles de touche ; sous 1280 px elle débordait sur « Wiki » et « Pharmacie », puis hors
+// de l'écran (dès 768 px). Les pastilles (rappelées par l'aide-mémoire et le nom accessible)
+// sont masquées et les marges resserrées : ~620 px, qui tiennent jusqu'à 640 px de large.
+@media (max-width: 1279px) {
+  .view-presets-bar__button {
+    padding: 4px 6px;
+  }
+
+  .view-presets-bar__key {
+    display: none;
+  }
+}
+
+// Petit écran (bug #22, téléphone < 640 px, paysage compris) : la barre passe sur deux
+// lignes plutôt que de rogner un bouton. L'hôte s'étend d'un bord à l'autre (à 8 px), pour que
+// chaque ligne profite de toute la largeur (sinon trois lignes, #722) ; il laisse passer le
+// pointeur hors de la barre.
+@media (max-width: 639px) {
+  :host {
+    right: 8px;
+    left: 8px;
+    display: flex;
+    justify-content: center;
+    pointer-events: none;
+    transform: none;
+  }
+
   .view-presets-bar {
     flex-wrap: wrap;
     justify-content: center;
     gap: 2px;
-    max-width: calc(100vw - 16px);
-  }
-
-  .view-presets-bar__button {
-    padding: 4px 6px;
+    max-width: 100%;
+    pointer-events: auto;
   }
 
   .view-presets-bar__separator {
     margin: 4px 0;
   }
+}
 
-  .view-presets-bar__key {
-    display: none;
+// Téléphone étroit (320 à 480 px, #722) : deux lignes au plus, comme avant la raclette et le
+// sécateur ; une troisième montait sur le bandeau santé et alertes.
+@media (max-width: 480px) {
+  .view-presets-bar__button {
+    padding: 4px;
+    font-size: 13px;
   }
 }

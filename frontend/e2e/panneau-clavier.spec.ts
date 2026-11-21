@@ -124,7 +124,13 @@ test.describe('Panneau de contrôle', () => {
       });
     }
     expect(at, 'bouton « Réglages » atteint par Tab').toBeGreaterThanOrEqual(0);
-    for (let k = at + 1; k < length; k++) await page.keyboard.press('Shift+Tab');
+    // Un appui de trop peut sortir de la page (après « Pharmacie », vers le navigateur) sans
+    // être consigné : on revient en arrière jusqu'au bouton, au plus un appui de plus que le
+    // journal n'en compte (#722, raclette et sécateur dans la barre : deux arrêts de plus).
+    const isFocused = () => toggle(page).evaluate((el) => el === document.activeElement);
+    for (let k = at + 1; k <= length && !(await isFocused()); k++) {
+      await page.keyboard.press('Shift+Tab');
+    }
     await expect(toggle(page)).toBeFocused();
     await page.keyboard.press('Enter');
     await expect(toggle(page)).toHaveAttribute('aria-expanded', 'true');
@@ -171,8 +177,8 @@ test.describe('Panneau de contrôle', () => {
     await tabIntoCategory(page, 'eau');
 
     // Section « Eau » (#207) : « Courant » (#460) et « Changer l’eau », sur la ligne du titre,
-    // puis le chauffage, l'éclairage (#476), la lampe (#584) et la raclette (#476), les
-    // feuilles de catappa (#239).
+    // puis le chauffage, l'éclairage (#476), la lampe (#584) et l'amorce de bactéries (#529) ;
+    // raclette et sécateur sont dans la barre du bas (#722).
     await expect(
       page.getByRole('button', { name: 'Courant : coupé, changer de force' }),
     ).toBeFocused();
@@ -182,7 +188,7 @@ test.describe('Panneau de contrôle', () => {
     await expect(page.getByRole('slider', { name: 'Consigne du chauffage' })).toBeFocused();
     await page.keyboard.press('ArrowRight');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-water', /^[a-z-]+;[\d.]+;24\.5;/);
-    // Éclairage et raclette (#476), sous le chauffage.
+    // Éclairage (#476), sous le chauffage.
     await page.keyboard.press('Tab');
     await expect(page.getByRole('slider', { name: 'Durée d’éclairage par jour' })).toBeFocused();
     await page.keyboard.press('ArrowRight');
@@ -193,16 +199,7 @@ test.describe('Panneau de contrôle', () => {
     await expect(lampOn).toBeFocused();
     await page.keyboard.press('ArrowRight');
     await expect(lampOn).toHaveAttribute('aria-valuetext', 'allumée à 11:00');
-    await page.keyboard.press('Tab');
-    await expect(
-      page.getByRole('button', { name: 'Raclette : cliquer sur les algues' }),
-    ).toBeFocused();
-    // Sécateur (#477), à côté de la raclette.
-    await page.keyboard.press('Tab');
-    await expect(
-      page.getByRole('button', { name: 'Sécateur : cliquer sur une plante haute' }),
-    ).toBeFocused();
-    // Amorce de bactéries (#529), à côté du sécateur.
+    // Amorce de bactéries (#529), sous la lampe.
     await page.keyboard.press('Tab');
     await expect(
       page.getByRole('button', { name: 'Verser une dose d’amorce de bactéries nitrifiantes' }),

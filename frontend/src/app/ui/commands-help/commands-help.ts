@@ -137,6 +137,14 @@ export class CommandsHelp {
   }
 
   /**
+   * Redéplie l'aide-mémoire replié par `fold` (fenêtre des réglages refermée, #722), sans
+   * mémoriser l'état ni signaler d'ouverture : on retrouve l'écran d'avant.
+   */
+  unfold(): void {
+    this.open.set(true);
+  }
+
+  /**
    * Échap dans le panneau déplié (#407) : le replie (choix de l'utilisateur, mémorisé) et
    * rend le focus au bouton « Commandes » qui le remplace, une fois la vue à jour.
    */

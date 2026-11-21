@@ -175,19 +175,36 @@ for (const viewport of SMALL_VIEWPORTS) {
 test.describe('800 × 400 (#136)', () => {
   test.use({ viewport: { width: 800, height: 400 } });
 
-  test('écran assez large : « Commandes » reste déplié sous la fenêtre des réglages', async ({
+  test('écran assez large : « Commandes » replié le temps de la fenêtre des réglages, puis rendu', async ({
     page,
   }) => {
     const errors = await openScene(page);
     await expect(helpPanel(page)).toBeVisible(); // déplié par défaut au-delà de 639 px
     await ouvrirReglages(page, 'Bac et milieu');
     await expect(settingsPanel(page)).toBeVisible();
-    await expect(helpPanel(page)).toBeVisible();
-    // Fenêtre modale (#722) : l'aide-mémoire n'est pas replié, il est sous le fond.
+    // Fenêtre exclusive (#722) : l'aide-mémoire se replie, sa bascule est sous le fond.
+    await expect(helpPanel(page)).toHaveCount(0);
     expect(await togglesOutsideWindow(page)).toEqual([]);
     await fermerReglages(page);
     await expect(helpPanel(page)).toBeVisible();
     expect(await blockedToggles(page)).toEqual([]);
+    expect(errors).toEqual([]);
+  });
+
+  test('« Commandes » ouvert à la touche ? referme la fenêtre des réglages (#722)', async ({
+    page,
+  }) => {
+    const errors = await openScene(page);
+    await ouvrirReglages(page, 'Son');
+    await expect(helpPanel(page)).toHaveCount(0);
+    await page.keyboard.press('?');
+    await expect(helpPanel(page)).toBeVisible();
+    await expect(settingsPanel(page)).toHaveCount(0);
+    await expect(settingsButton(page)).toHaveAttribute('aria-expanded', 'false');
+    expect(await blockedToggles(page)).toEqual([]);
+    // Rouvrir la fenêtre replie de nouveau l'aide-mémoire.
+    await ouvrirReglages(page, 'Son');
+    await expect(helpPanel(page)).toHaveCount(0);
     expect(errors).toEqual([]);
   });
 });

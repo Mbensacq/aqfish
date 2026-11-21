@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 import { keyCommand } from '../src/app/core/commands/commands';
 import { PALETTE } from '../src/app/render/palette';
-import { ouvrirReglages } from './outils-panneau';
+import { fermerReglages, ouvrirReglages } from './outils-panneau';
 
 /**
  * Pluie dans le bassin (issue #106) : touche `R` et case « Pluie » du panneau, sans effet
@@ -65,6 +65,8 @@ test.describe('Pluie (#106)', () => {
     await expect(host(page)).toHaveAttribute('data-aqfish-rain', 'false');
     await expect(rainBox(page)).not.toBeChecked();
 
+    // Fenêtre refermée : « Commandes », replié le temps de la fenêtre (#722), est rendu.
+    await fermerReglages(page);
     const command = keyCommand('pluie');
     const row = page.locator('#aide-commandes [data-command="pluie"]');
     await expect(row.locator('kbd')).toHaveText('R');

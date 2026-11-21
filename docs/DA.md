@@ -174,7 +174,11 @@ devant lui garde son vert ; aucune couleur ajoutée à la palette.
   `scripts/generer-icone.mjs` (un seul dessin de 16 × 16).
 - Fenêtre des réglages (#722, cycle 267) : modale au centre, 1 100 px au plus, page assombrie
   derrière (voile `$scrim`) ; catégories par groupe à gauche, une seule ouverte à droite avec
-  son titre et sa phrase d'explication. Prendre la raclette ou le sécateur la referme.
+  son titre et sa phrase d'explication ; la dernière catégorie ouverte est retenue (cycle 268).
+- Barre du bas (cycle 268) : vues, « Libre », puis « Pixel art », « Nourrir », « Raclette »,
+  « Sécateur » et « Photo » (gestes de jeu, hors des réglages) ; outil en main : bordure et
+  texte laiton, « Poser la raclette ». Pastilles de touche masquées sous 1 280 px, deux
+  lignes sous 640 px (jamais trois, jamais hors de l'écran).
 - Minimale et discrète : l'interface s'efface devant le bac. Aucune interface en mode capture.
 - Icônes en pixel art, cohérentes avec la palette.
 - Police : Atkinson Hyperlegible Next pour le texte, Atkinson Hyperlegible Mono pour les
@@ -183,8 +187,8 @@ devant lui garde son vert ; aucune couleur ajoutée à la palette.
   jour/nuit, météo (pluie), son, choix de l'environnement, éditeur.
 - Panneaux qui ne tiennent pas côte à côte : jamais ouverts ensemble. Sous 640 px de large,
   ouvrir « Réglages » replie « Commandes » et inversement (#136) ; plus large, la fenêtre des
-  réglages couvre « Commandes » de son fond sans le replier, et l'aide-mémoire démarre
-  replié (paysage de téléphone compris). Un nouveau panneau flottant suit la même règle
+  réglages replie « Commandes » le temps d'être ouverte et le rend à sa fermeture (#722), et
+  l'aide-mémoire démarre replié sous 640 px (paysage de téléphone compris). Un nouveau panneau flottant suit la même règle
   (`ui/exclusive-panels`).
 - Tableau de bord de l'eau (#256, ADR 0059) : cadre sur le bord haut, jamais au centre du
   bac ; niveaux aux couleurs d'état de la charte, bon (`#7db88c`), à surveiller (`#e8955f`)

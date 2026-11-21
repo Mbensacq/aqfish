@@ -162,38 +162,10 @@ export function heaterText(readout: WaterReadout): string {
         />
       </label>
     </div>
-    <!-- Outils d'entretien, côte à côte (le panneau ne grandit pas, docs/PIEGES.md) :
-         raclette (#476), un clic sur une vitre retire la plaque d'algues visée ; sécateur
-         (#477), un clic sur une plante à tige la taille. -->
-    <div
-      class="control-panel__row control-panel__row--halves"
-      role="group"
-      aria-label="Outils d’entretien"
-    >
-      <button
-        type="button"
-        class="control-panel__edit"
-        data-scraper
-        [attr.aria-pressed]="scraping()"
-        [attr.aria-label]="scraping() ? 'Poser la raclette' : 'Raclette : cliquer sur les algues'"
-        (click)="scraperToggled.emit()"
-      >
-        {{ scraping() ? 'Poser la raclette' : 'Raclette' }}
-      </button>
-      <button
-        type="button"
-        class="control-panel__edit"
-        data-pruner
-        [attr.aria-pressed]="pruning()"
-        [attr.aria-label]="
-          pruning() ? 'Poser le sécateur' : 'Sécateur : cliquer sur une plante haute'
-        "
-        (click)="prunerToggled.emit()"
-      >
-        {{ pruning() ? 'Poser le sécateur' : 'Sécateur' }}
-      </button>
-      @if (careMode() !== 'decor') {
-        <!-- Amorce de bactéries (#529) : un produit, sur la rangée des outils. -->
+    @if (careMode() !== 'decor') {
+      <!-- Amorce de bactéries (#529) : un produit. Raclette et sécateur sont passés dans la
+           barre du bas, avec les vues (#722, docs/INTERFACE.md section 2). -->
+      <div class="control-panel__row control-panel__row--halves" role="group" aria-label="Filtre">
         <button
           type="button"
           class="control-panel__edit"
@@ -204,8 +176,8 @@ export function heaterText(readout: WaterReadout): string {
         >
           Bactéries
         </button>
-      }
-    </div>
+      </div>
+    }
     @if (careMode() !== 'decor') {
       <!-- Chlore (#530) : eau versée au changement d'eau, puis conditionneurs. Rangée à part :
            six boutons sur une ligne se chevauchent (docs/PIEGES.md). -->
@@ -345,10 +317,6 @@ export class WaterSection {
   readonly lighting = input(DEFAULT_LIGHTING_HOURS);
   /** Heure d'allumage de la lampe (#584). */
   readonly lampOn = input(DEFAULT_LAMP_ON_HOUR);
-  /** Raclette en main (#476). */
-  readonly scraping = input(false);
-  /** Sécateur en main (#477). */
-  readonly pruning = input(false);
   /** Message du dernier geste de soin (#361) ; `null` : aucun. */
   readonly treatmentNotice = input<TreatmentNotice | null>(null);
   /** Changements d'eau à l'eau du robinet non traitée (#530). */
@@ -366,10 +334,6 @@ export class WaterSection {
   readonly lightingChanged = output<number>();
   /** Heure d'allumage de la lampe demandée (#584), heure entière dans [0, 23]. */
   readonly lampOnChanged = output<number>();
-  /** Bouton « Raclette » (#476). */
-  readonly scraperToggled = output<void>();
-  /** Bouton « Sécateur » (#477). */
-  readonly prunerToggled = output<void>();
   /** Dose d'amorce de bactéries demandée (#529). */
   readonly bacteriaStarterRequested = output<void>();
   /** Bascule de l'eau du robinet entre traitée et non traitée (#530). */

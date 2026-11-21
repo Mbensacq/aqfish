@@ -59,8 +59,9 @@ test.describe('panneau « Commandes » (#79)', () => {
 });
 
 // #588 : à 900 × 700, « Réglages » en deux colonnes recouvrait l'aide-mémoire « Commandes »
-// déplié. Fenêtre des réglages (#722) : modale, elle couvre « Commandes » de son fond, sans
-// le replier au-delà de 639 px (#136) ; refermée, l'aide-mémoire est toujours là.
+// déplié. Fenêtre des réglages (#722) : exclusive avec les autres panneaux, elle replie
+// « Commandes » le temps d'être ouverte (sa bascule reste sous le fond) ; refermée,
+// l'aide-mémoire est revenu.
 test.describe('« Réglages » ouvert par-dessus « Commandes » (#588, #722)', () => {
   for (const viewport of [
     { width: 900, height: 700 },
@@ -68,20 +69,20 @@ test.describe('« Réglages » ouvert par-dessus « Commandes » (#588, #722)', 
     { width: 1280, height: 720 },
   ]) {
     for (const search of ['?seed=42', '?seed=42&points-blancs=1']) {
-      test(`${viewport.width} × ${viewport.height} : « Commandes » sous le fond, puis rendu (${search})`, async ({
+      test(`${viewport.width} × ${viewport.height} : « Commandes » replié sous le fond, puis rendu (${search})`, async ({
         page,
       }) => {
         await page.setViewportSize(viewport);
         const errors = await openScene(page, search);
         await PANELS.find((p) => p.name === 'Commandes')!.open(page);
         await SETTINGS_CASES.find((p) => p.name === 'Réglages')!.open(page);
-        await expect(page.locator('#aide-commandes')).toBeVisible();
+        await expect(page.locator('#aide-commandes')).toHaveCount(0);
         const covered = await page.evaluate(() => {
-          const r = document.querySelector('#aide-commandes')!.getBoundingClientRect();
+          const r = document.querySelector('.commands-help__toggle')!.getBoundingClientRect();
           const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
           return hit !== null && document.querySelector('app-settings-window')!.contains(hit);
         });
-        expect(covered, '« Commandes » sous le fond de la fenêtre').toBe(true);
+        expect(covered, 'bascule de « Commandes » sous le fond de la fenêtre').toBe(true);
         expect(
           await page
             .locator('.settings-window__content')

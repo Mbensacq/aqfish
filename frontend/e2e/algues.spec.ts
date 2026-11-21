@@ -8,7 +8,7 @@ import { fermerReglages, ouvrirReglages } from './outils-panneau';
 
 /**
  * Algues (issue #476) : réglage de l'éclairage dans la section « Eau », alerte du tableau de
- * bord, raclette.
+ * bord, raclette (dans la barre du bas depuis #722).
  *
  * Le bac tropical par défaut est importé avec toutes ses plaques d'algues à couverture pleine,
  * simulation en pause (vitesse 0) : rien ne pousse ni ne bouge pendant le test. Raclette en
@@ -17,7 +17,8 @@ import { fermerReglages, ouvrirReglages } from './outils-panneau';
 
 const hostEl = (page: Page) => page.locator('app-aquarium-host');
 const section = (page: Page) => page.locator('[data-section="eau"]');
-const scraper = (page: Page) => section(page).locator('[data-scraper]');
+/** Raclette : dans la barre du bas, avec les vues (#722). */
+const scraper = (page: Page) => page.locator('app-view-presets-bar [data-scraper]');
 
 async function open(page: Page): Promise<string[]> {
   const errors: string[] = [];
@@ -88,15 +89,13 @@ test.describe('algues (#476)', () => {
     await openSettings(page);
     await importAlgaeTank(page);
     const population = await hostEl(page).getAttribute('data-aqfish-population');
-    await ouvrirReglages(page, 'Eau et matériel');
+    // Fenêtre des réglages refermée : la barre du bas redevient cliquable (#722).
+    await fermerReglages(page);
     await expect(scraper(page)).toHaveAttribute('aria-pressed', 'false');
     await scraper(page).click();
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-scraper', 'true');
-    // Raclette prise : la fenêtre se referme d'elle-même pour viser le bac (#722).
-    await fermerReglages(page);
-    await ouvrirReglages(page, 'Eau et matériel');
     await expect(scraper(page)).toHaveAttribute('aria-pressed', 'true');
-    await fermerReglages(page);
+    await expect(scraper(page)).toHaveText('Poser la raclette');
     const box = await page.locator('canvas').first().boundingBox();
     expect(box).not.toBeNull();
     const { x, y, width, height } = box!;

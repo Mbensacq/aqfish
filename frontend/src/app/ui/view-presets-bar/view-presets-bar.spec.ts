@@ -280,6 +280,69 @@ describe('ViewPresetsBar', () => {
     });
   });
 
+  describe('raclette et sécateur (#476, #477 ; dans la barre depuis #722)', () => {
+    const bar = () => fixture.nativeElement as HTMLElement;
+    const scraper = () => bar().querySelector<HTMLButtonElement>('[data-scraper]')!;
+    const pruner = () => bar().querySelector<HTMLButtonElement>('[data-pruner]')!;
+
+    it('après « Nourrir », avant « Photo », groupés « Outils d’entretien », hors des vues', () => {
+      const id = (button: HTMLButtonElement): string | null =>
+        button.getAttribute('data-action') ??
+        (button.hasAttribute('data-scraper') ? 'raclette' : null) ??
+        (button.hasAttribute('data-pruner') ? 'secateur' : null);
+      const order = [...bar().querySelectorAll('button')].map(id);
+      expect(order.filter((id) => id !== null)).toEqual([
+        'nourrir',
+        'raclette',
+        'secateur',
+        'photo',
+      ]);
+      expect(scraper().parentElement).toBe(pruner().parentElement);
+      expect(scraper().parentElement?.getAttribute('role')).toBe('group');
+      expect(scraper().parentElement?.getAttribute('aria-label')).toBe('Outils d’entretien');
+      expect(scraper().closest('[role="toolbar"]')).toBeNull();
+      // Mêmes noms qu'avant dans la fenêtre des réglages, sans touche (aucune n'existait).
+      expect(scraper().textContent?.trim()).toBe('Raclette');
+      expect(scraper().getAttribute('aria-label')).toBe('Raclette : cliquer sur les algues');
+      expect(pruner().textContent?.trim()).toBe('Sécateur');
+      expect(pruner().getAttribute('aria-label')).toBe('Sécateur : cliquer sur une plante haute');
+      for (const button of [scraper(), pruner()]) {
+        expect(button.type).toBe('button');
+        expect(button.getAttribute('aria-pressed')).toBe('false');
+        expect(button.hasAttribute('aria-keyshortcuts')).toBe(false);
+      }
+    });
+
+    it('chaque bouton émet sa demande, sans préréglage', () => {
+      const toggles: string[] = [];
+      fixture.componentInstance.scraperToggled.subscribe(() => toggles.push('raclette'));
+      fixture.componentInstance.prunerToggled.subscribe(() => toggles.push('secateur'));
+      scraper().click();
+      pruner().click();
+      scraper().click();
+      expect(toggles).toEqual(['raclette', 'secateur', 'raclette']);
+      expect(emitted).toEqual([]);
+    });
+
+    it('outil en main (état de l’hôte) : pressé, actif, « Poser … »', async () => {
+      fixture.componentRef.setInput('scraping', true);
+      await fixture.whenStable();
+      expect(scraper().getAttribute('aria-pressed')).toBe('true');
+      expect(scraper().classList).toContain('view-presets-bar__button--active');
+      expect(scraper().textContent?.trim()).toBe('Poser la raclette');
+      expect(scraper().getAttribute('aria-label')).toBe('Poser la raclette');
+      expect(pruner().getAttribute('aria-pressed')).toBe('false');
+      fixture.componentRef.setInput('scraping', false);
+      fixture.componentRef.setInput('pruning', true);
+      await fixture.whenStable();
+      expect(scraper().getAttribute('aria-pressed')).toBe('false');
+      expect(scraper().classList).not.toContain('view-presets-bar__button--active');
+      expect(pruner().getAttribute('aria-pressed')).toBe('true');
+      expect(pruner().textContent?.trim()).toBe('Poser le sécateur');
+      expect(pruner().getAttribute('aria-label')).toBe('Poser le sécateur');
+    });
+  });
+
   describe('pluie (#106)', () => {
     let toggles: number;
 

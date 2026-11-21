@@ -111,8 +111,8 @@ test.describe('Photo du bac (#479)', () => {
     const errors = await open(page);
     const button = photoButton(page);
     await expect(button).toHaveAccessibleName('Photo du bac : télécharger une image PNG de la vue');
-    // Parcours au clavier depuis le bouton précédent de la barre (« Nourrir »).
-    await page.locator('button[data-action="nourrir"]').focus();
+    // Parcours au clavier depuis le bouton précédent de la barre (« Sécateur », #722).
+    await page.locator('app-view-presets-bar [data-pruner]').focus();
     await page.keyboard.press('Tab');
     await expect(button).toBeFocused();
     const ring = await button.evaluate((el) => {
