@@ -9677,10 +9677,10 @@
           "note": "Verdict RÉSERVES (PR partielle, fenêtre non branchée), 0 bug, 167 captures identiques (1 instable en série complète), publiées"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-21T03:26:39.489Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-21T03:51:56.930Z",
+          "note": "PR #757 fusionnée → v1.27.0 (release CI OK, main verte), #722 reste ouverte (tranche 1b partielle) ; capture chlore instable notée dans #709"
         }
       },
       "metriques": {}
