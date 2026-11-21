@@ -416,6 +416,14 @@ function richCases(): Case[] {
     c('corps id vivant', setIn(['dead', 0, 'id'], fishOf(TROPICAL)[0]?.['id'])),
     c('corps espèce inconnue', setIn(['dead', 0, 'species'], 'dragon')),
     c('corps pas objet', setIn(['dead', 0], 'x')),
+    // Liste plus longue que `MAX_TOTAL_FISH` (#756) : refusée avant de lire ses corps.
+    c(
+      'corps trop',
+      setIn(
+        ['dead'],
+        Array.from({ length: 999 }, () => ({})),
+      ),
+    ),
     [
       'riche : distributeur au bassin',
       WITH_OTHERS,
@@ -1473,6 +1481,7 @@ const EXPECTED: Record<string, string> = {
   'riche : corps id vivant': 'refus : corps 0 : identifiant 0 déjà porté par un animal vivant',
   'riche : corps espèce inconnue': 'refus : corps 0 : espèce inconnue (« dragon »)',
   'riche : corps pas objet': 'refus : corps 0 : doit être un objet',
+  'riche : corps trop': 'refus : trop de corps (999, 60 au plus)',
   'riche : distributeur au bassin':
     'refus : autre environnement bassin : distributeur impossible dans l’environnement bassin',
   'riche : alevin d’une espèce à alevins': 'ok 5839870f ad8e4a90',
