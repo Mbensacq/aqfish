@@ -9911,10 +9911,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-21T23:41:47.128Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-21T23:42:27.187Z",
+          "note": "Issue #724 : Interface 4/5 tranche 1, panneaux d'état et barre du bas (M)"
         }
       },
       "metriques": {}
