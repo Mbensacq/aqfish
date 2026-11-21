@@ -1,20 +1,23 @@
 import { expect, test } from '@playwright/test';
 
-import { box, FONTS, openScene, PANELS } from './outils-cadrage';
+import { box, FONTS, openScene, SETTINGS_CASES } from './outils-cadrage';
+import { ouvrirReglages } from './outils-panneau';
 
 /**
- * Cadrage du contenu de « Réglages » (#370, #322, #571) : liste « Population » sans ligne
- * coupée, badge du mode décor à la place du cadre haut, quarantaine installée sans débord.
+ * Cadrage du contenu de « Réglages » (#370, #322, #571), dans la fenêtre des réglages (#722) :
+ * lignes « Population » entières, badge du mode décor à la place du cadre haut, quarantaine
+ * installée sans débord.
  * Séparé de `cadrage-panneaux.spec.ts` pour la répartition de la CI (#600).
  */
 
-// #370 : à 1280 × 720, la liste « Population » défile seule ; sa hauteur est arrondie à un
-// nombre entier de lignes d'espèce, pour qu'aucune ne soit coupée à mi-hauteur. Avec la
-// section « Soins » (bac malade, `points-blancs=1`), la liste est plus courte : même règle.
-test.describe('liste « Population » du panneau « Réglages » (#370)', () => {
+// #370 : à 1280 × 720, la liste « Population » défilait seule, sa hauteur arrondie à un nombre
+// entier de lignes. Fenêtre des réglages (#722) : la catégorie « Population » défile dans le
+// contenu de la fenêtre ; chaque ligne d'espèce y est entière en largeur, et plusieurs sont
+// visibles sans défiler, avec ou sans la section « Soins » (bac malade, `points-blancs=1`).
+test.describe('catégorie « Population » de la fenêtre des réglages (#370, #722)', () => {
   for (const font of FONTS) {
     for (const search of ['?seed=42', '?seed=42&points-blancs=1']) {
-      test(`1280 × 720 : aucune ligne d’espèce coupée (${search}, police ${font ?? 'par défaut'})`, async ({
+      test(`1280 × 720 : lignes d’espèce entières en largeur (${search}, police ${font ?? 'par défaut'})`, async ({
         page,
       }) => {
         await page.setViewportSize({ width: 1280, height: 720 });
@@ -24,30 +27,31 @@ test.describe('liste « Population » du panneau « Réglages » (#370)', () => 
             content: `app-control-panel, app-control-panel * { font-family: '${font}' !important; }`,
           });
         }
-        const settings = PANELS.find((p) => p.name === 'Réglages')!;
-        await settings.open(page);
-        const list = settings.panel(page).locator("[data-section='population']");
-        const { visibleTop, visibleBottom, scrolls, rows } = await list.evaluate((el) => {
-          const top = el.getBoundingClientRect().top + el.clientTop;
+        await ouvrirReglages(page, 'Population');
+        const content = page.locator('.settings-window__content');
+        const { left, right, top, bottom, overflow, rows } = await content.evaluate((el) => {
+          const r = el.getBoundingClientRect();
           return {
-            visibleTop: top,
-            visibleBottom: top + el.clientHeight,
-            scrolls: el.scrollHeight > el.clientHeight,
-            rows: [...el.querySelectorAll('.control-panel__count')].map((row) => {
-              const r = row.getBoundingClientRect();
-              return { top: r.top, bottom: r.bottom };
-            }),
+            left: r.left,
+            right: r.right,
+            top: r.top,
+            bottom: r.bottom,
+            overflow: el.scrollWidth > el.clientWidth + 1,
+            rows: [...el.querySelectorAll('[data-section="population"] .control-panel__count')].map(
+              (row) => {
+                const b = row.getBoundingClientRect();
+                return { left: b.left, right: b.right, top: b.top, bottom: b.bottom };
+              },
+            ),
           };
         });
-        expect(scrolls, 'quatorze espèces : la liste défile à ce format').toBe(true);
+        expect(overflow, 'débordement horizontal').toBe(false);
         expect(rows.length).toBeGreaterThan(0);
-        let shown = 0;
         for (const [i, row] of rows.entries()) {
-          const inside = row.top >= visibleTop && row.bottom <= visibleBottom;
-          const outside = row.top >= visibleBottom || row.bottom <= visibleTop;
-          expect(inside || outside, `ligne ${i + 1} coupée par le bas de la liste`).toBe(true);
-          shown += inside ? 1 : 0;
+          expect(row.left, `ligne ${i + 1}`).toBeGreaterThanOrEqual(left);
+          expect(row.right, `ligne ${i + 1}`).toBeLessThanOrEqual(right);
         }
+        const shown = rows.filter((row) => row.top >= top && row.bottom <= bottom).length;
         expect(shown, 'au moins trois espèces visibles sans défiler').toBeGreaterThanOrEqual(3);
         expect(errors).toEqual([]);
       });
@@ -96,9 +100,9 @@ test.describe('badge du mode décor à la place du cadre haut (#322)', () => {
   }
 });
 
-// #571 : quarantaine installée, le panneau ne déborde pas en largeur, aussi à 900 × 700 (une
-// colonne depuis #588 ; plus petit format à deux colonnes jusque-là) et avec DejaVu Sans (police de la CI, plus large) ; le choix du
-// bac de quarantaine reçoit le focus et reste visible dans le panneau qui défile.
+// #571 : quarantaine installée, le contenu de la fenêtre (#722) ne déborde pas en largeur,
+// aussi à 900 × 700 et avec DejaVu Sans (police de la CI, plus large) ; le choix du bac de
+// quarantaine reçoit le focus et reste visible dans le contenu qui défile.
 test.describe('quarantaine installée (#571)', () => {
   for (const viewport of [
     { width: 1280, height: 720 },
@@ -115,9 +119,9 @@ test.describe('quarantaine installée (#571)', () => {
             content: `app-control-panel, app-control-panel * { font-family: '${font}' !important; }`,
           });
         }
-        await PANELS.find((p) => p.name === 'Réglages (quarantaine)')!.open(page);
-        const panel = page.locator('.control-panel');
-        expect(await panel.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+        await SETTINGS_CASES.find((p) => p.name === 'Réglages (quarantaine)')!.open(page);
+        const panel = page.locator('.settings-window__content');
+        expect(await panel.evaluate((el) => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
         const panelBox = await box(panel);
         expect(panelBox.x + panelBox.width).toBeLessThanOrEqual(viewport.width);
         expect(panelBox.y + panelBox.height).toBeLessThanOrEqual(viewport.height);
@@ -126,11 +130,11 @@ test.describe('quarantaine installée (#571)', () => {
         const selectBox = await box(select);
         expect(selectBox.y).toBeGreaterThanOrEqual(panelBox.y);
         expect(selectBox.y + selectBox.height).toBeLessThanOrEqual(panelBox.y + panelBox.height);
-        // « Sauvegarde » reste atteignable en défilant, dans la largeur du panneau.
-        const save = panel.locator("[data-section='sauvegarde']");
-        await save.scrollIntoViewIfNeeded();
-        const saveBox = await box(save);
-        expect(saveBox.x + saveBox.width).toBeLessThanOrEqual(panelBox.x + panelBox.width);
+        // Le reste de la section « Bacs » atteignable en défilant, dans la largeur du contenu.
+        const tanks = panel.locator("[data-section='bacs']");
+        await tanks.scrollIntoViewIfNeeded();
+        const tanksBox = await box(tanks);
+        expect(tanksBox.x + tanksBox.width).toBeLessThanOrEqual(panelBox.x + panelBox.width);
         expect(errors).toEqual([]);
       });
     }

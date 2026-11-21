@@ -1,6 +1,12 @@
 import { test } from '@playwright/test';
 
-import { checkPanelInViewport, PANEL_VIEWPORTS, PANELS } from './outils-cadrage';
+import {
+  checkPanelInViewport,
+  checkSettingsWindowInViewport,
+  PANEL_VIEWPORTS,
+  PANELS,
+  SETTINGS_CASES,
+} from './outils-cadrage';
 
 /**
  * Cadrage des panneaux à 1280 × 720 (bureau, format des captures ; #108, #79) : chaque
@@ -16,6 +22,14 @@ for (const viewport of PANEL_VIEWPORTS.slice(0, 1)) {
         page,
       }) => {
         await checkPanelInViewport(page, panelCase, viewport);
+      });
+    }
+
+    for (const settingsCase of SETTINGS_CASES) {
+      test(`fenêtre « ${settingsCase.name} » ouverte : entière, page couverte par son fond`, async ({
+        page,
+      }) => {
+        await checkSettingsWindowInViewport(page, settingsCase, viewport);
       });
     }
   });

@@ -3,12 +3,14 @@ import { expect, test } from '@playwright/test';
 import {
   box,
   checkPanelInViewport,
+  checkSettingsWindowInViewport,
   openScene,
   overlaps,
   PANEL_VIEWPORTS,
   PANELS,
+  SETTINGS_CASES,
 } from './outils-cadrage';
-import { ouvrirReglages } from './outils-panneau';
+import { fermerReglages, ouvrirReglages } from './outils-panneau';
 
 /**
  * Cadrage des panneaux de l'interface (rétro du sprint 5, issue #108, et #79) : chaque
@@ -29,27 +31,36 @@ for (const viewport of PANEL_VIEWPORTS.slice(1)) {
         await checkPanelInViewport(page, panelCase, viewport);
       });
     }
+
+    for (const settingsCase of SETTINGS_CASES) {
+      test(`fenêtre « ${settingsCase.name} » ouverte : entière, page couverte par son fond`, async ({
+        page,
+      }) => {
+        await checkSettingsWindowInViewport(page, settingsCase, viewport);
+      });
+    }
   });
 }
 
 // #112 : à 320 × 568, l'hôte du panneau « Réglages » (transparent, aussi large que le
-// panneau) interceptait le clic sur le bouton « Commandes » replié, en haut à droite.
-test('320 × 568 : « Réglages » ouvert, le bouton « Commandes » ouvre l’aide-mémoire (#112)', async ({
+// panneau) interceptait le clic sur le bouton « Commandes » replié, en haut à droite. Fenêtre
+// des réglages (#722) : refermée, son hôte ne capte plus rien.
+test('320 × 568 : « Réglages » ouvert puis refermé, le bouton « Commandes » ouvre l’aide-mémoire (#112)', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 320, height: 568 });
   const errors = await openScene(page);
-  await PANELS.find((p) => p.name === 'Réglages')!.open(page);
+  await SETTINGS_CASES.find((p) => p.name === 'Réglages')!.open(page);
+  await fermerReglages(page);
   await page.getByRole('button', { name: /Afficher l’aide-mémoire des commandes/ }).click();
   await expect(page.locator('#aide-commandes')).toBeVisible();
-  // #136 : sous 640 px, ouvrir « Commandes » replie « Réglages » (panneaux exclusifs).
   await expect(page.locator('.control-panel')).toHaveCount(0);
   expect(errors).toEqual([]);
 });
 
-// #257 : « Réglages » ouvert passe par-dessus le cadre du tableau de bord (ADR 0059). Le
-// panneau est opaque, et chaque élément visible du cadre qu'il croise est bien dessous : au
-// centre de la partie recouverte, le point appartient au panneau.
+// #257 : « Réglages » ouvert passe par-dessus le cadre du tableau de bord (ADR 0059). La
+// fenêtre des réglages (#722) est opaque, et chaque élément visible du cadre qu'elle croise est
+// bien dessous : au centre de la partie recouverte, le point appartient à la fenêtre.
 test('1280 × 720 : « Réglages » ouvert masque entièrement le cadre qu’il recouvre (#257)', async ({
   page,
 }) => {
@@ -57,7 +68,7 @@ test('1280 × 720 : « Réglages » ouvert masque entièrement le cadre qu’il 
   await ouvrirReglages(page, 'Bac et milieu');
   await expect(page.locator('.control-panel')).toBeVisible();
   const result = await page.evaluate(() => {
-    const panel = document.querySelector('.control-panel')!;
+    const panel = document.querySelector('[data-settings-window]')!;
     const rect = panel.getBoundingClientRect();
     const background = getComputedStyle(panel).backgroundColor;
     let crossed = 0;

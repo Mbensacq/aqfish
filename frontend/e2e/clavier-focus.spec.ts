@@ -104,6 +104,41 @@ function focusLog(page: Page): Promise<Focused[]> {
   return page.evaluate(() => (window as unknown as { __focusLog: Focused[] }).__focusLog);
 }
 
+/**
+ * Appuie sur Tab autant de fois qu'il y a de contrôles atteignables (plus trois), puis relit le
+ * journal du focus depuis `before` : élément de départ, éléments vus jusqu'au premier retour
+ * sur un élément déjà vu, éléments contrôlés (le retour compris).
+ */
+async function tabTour(
+  page: Page,
+  before: number,
+): Promise<{ start?: Focused; seen: Focused[]; checked: Focused[]; wrapped: boolean }> {
+  const reachable = await page.evaluate(
+    () =>
+      [
+        ...document.querySelectorAll<HTMLElement>(
+          'button, input, select, textarea, a[href], [tabindex]',
+        ),
+      ].filter((el) => el.tabIndex >= 0 && !(el as HTMLButtonElement).disabled).length,
+  );
+  for (let i = 0; i < reachable + 3; i++) {
+    await page.keyboard.press('Tab');
+  }
+  const [start, ...tabbed] = (await focusLog(page)).slice(before);
+  const seen: Focused[] = start ? [start] : [];
+  const checked: Focused[] = [];
+  let wrapped = false;
+  for (const focused of tabbed) {
+    checked.push(focused);
+    wrapped = seen.some((other) => other.key === focused.key);
+    if (wrapped) {
+      break;
+    }
+    seen.push(focused);
+  }
+  return { start, seen, checked, wrapped };
+}
+
 /** Couleur calculée `rgb(r, g, b)` ou `rgba(…)` lue en composantes. */
 function parseRgb(value: string): Rgb {
   const parts = /rgba?\((\d+), (\d+), (\d+)/.exec(value);
@@ -121,43 +156,14 @@ test.describe('Clavier et focus visible (#407)', () => {
     await page.setViewportSize({ width: 800, height: 600 });
     await recordFocus(page);
     const errors = await openScene(page);
-    // Réglages ouverts au clavier, pour que leurs contrôles (liste des bacs comprise) soient
-    // dans le parcours ; le parcours part de leur bouton.
-    const before = (await focusLog(page)).length;
+    // Parcours de la page, « Réglages » fermé : il part de son bouton et revient au début.
     const settings = page.getByRole('button', { name: 'Réglages', exact: true });
+    const before = (await focusLog(page)).length;
     await settings.focus();
-    await page.keyboard.press('Enter');
-    await expect(page.locator('section.control-panel')).toBeVisible();
-    // Contrôles atteignables au clavier : le parcours doit en faire le tour, et revenir.
-    const reachable = await page.evaluate(
-      () =>
-        [
-          ...document.querySelectorAll<HTMLElement>(
-            'button, input, select, textarea, a[href], [tabindex]',
-          ),
-        ].filter((el) => el.tabIndex >= 0 && !(el as HTMLButtonElement).disabled).length,
-    );
-    for (let i = 0; i < reachable + 3; i++) {
-      await page.keyboard.press('Tab');
-    }
-    // Premier élément : « Réglages » (focus posé par le test) ; les suivants, atteints à Tab,
-    // jusqu'au retour sur un élément déjà vu.
-    const [start, ...tabbed] = (await focusLog(page)).slice(before);
-    expect(start?.name).toBe('Réglages');
-    const seen: Focused[] = start ? [start] : [];
-    const checked: Focused[] = [];
-    let wrapped = false;
-    for (const focused of tabbed) {
-      checked.push(focused);
-      wrapped = seen.some((other) => other.key === focused.key);
-      if (wrapped) {
-        break;
-      }
-      seen.push(focused);
-    }
-
-    expect(wrapped, 'le parcours revient au premier contrôle (aucun piège)').toBe(true);
-    const owners = new Set(seen.map((focused) => focused.owner));
+    const page1 = await tabTour(page, before);
+    expect(page1.start?.name).toBe('Réglages');
+    expect(page1.wrapped, 'le parcours revient au premier contrôle (aucun piège)').toBe(true);
+    const owners = new Set(page1.seen.map((focused) => focused.owner));
     for (const owner of [
       'app-view-presets-bar',
       'app-dashboard-frame',
@@ -167,10 +173,21 @@ test.describe('Clavier et focus visible (#407)', () => {
     ]) {
       expect(owners, owner).toContain(owner);
     }
+
+    // Fenêtre des réglages ouverte au clavier (#722) : modale, Tab y tourne sans en sortir,
+    // liste des bacs comprise (catégorie « Bac et milieu », ouverte par défaut).
+    await page.keyboard.press('Enter');
+    await expect(page.locator('section.control-panel')).toBeVisible();
+    const inside = await tabTour(page, (await focusLog(page)).length - 1);
+    expect(inside.wrapped, 'Tab tourne dans la fenêtre').toBe(true);
+    expect(new Set(inside.seen.map((focused) => focused.owner))).toEqual(
+      new Set(['app-control-panel']),
+    );
     expect(
-      seen.some((focused) => focused.inTankList),
+      inside.seen.some((focused) => focused.inTankList),
       'liste des bacs',
     ).toBe(true);
+    const checked = [...page1.checked, ...inside.checked];
 
     for (const focused of checked) {
       const label = `${focused.owner} ${focused.tag} « ${focused.name} »`;
@@ -201,8 +218,9 @@ test.describe('Clavier et focus visible (#407)', () => {
     await expect(settings).toHaveAttribute('aria-expanded', 'true');
     await page.keyboard.press('Tab');
     await expect(page.locator('section.control-panel')).toContainText('Environnement');
+    // Focus dans la fenêtre des réglages (#722 : il entre sur la catégorie ouverte).
     expect(
-      await page.evaluate(() => !!document.activeElement?.closest('section.control-panel')),
+      await page.evaluate(() => !!document.activeElement?.closest('app-settings-window')),
     ).toBe(true);
     await page.keyboard.press('Escape');
     await expect(page.locator('section.control-panel')).toHaveCount(0);

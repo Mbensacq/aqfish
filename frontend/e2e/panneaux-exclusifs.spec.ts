@@ -1,11 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
-import { ouvrirReglages } from './outils-panneau';
+import { fermerReglages, ouvrirReglages } from './outils-panneau';
 
 /**
  * « Réglages » et « Commandes » sur petit écran (#136) : sous 640 px de large, ouvrir l'un
  * replie l'autre, pour que leurs textes ne se superposent jamais ; les deux bascules restent
- * cliquables dans chaque état ; en paysage de téléphone (568 × 320), l'aide-mémoire démarre
- * replié. Les boîtes sont mesurées (`boundingBox`) et les clics vérifiés par
+ * cliquables dans chaque état où la fenêtre des réglages est fermée ; ouverte, elle est
+ * modale (#722) et son fond couvre les deux bascules ; en paysage de téléphone (568 × 320),
+ * l'aide-mémoire démarre replié. Les boîtes sont mesurées (`boundingBox`) et les clics vérifiés par
  * `elementFromPoint`, plutôt que sur une capture (docs/PIEGES.md).
  */
 
@@ -36,10 +37,6 @@ async function openScene(page: Page): Promise<string[]> {
   await page.goto('/?seed=42');
   await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
   return errors;
-}
-
-function overlaps(a: Box, b: Box): boolean {
-  return a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
 }
 
 /** Boîtes des panneaux ouverts (aucun, un seul, ou les deux s'ils sont visibles ensemble). */
@@ -94,14 +91,34 @@ async function blockedToggles(page: Page): Promise<string[]> {
   });
 }
 
-/** Contrôle d'un état : au plus un panneau ouvert, aucun recouvrement, bascules libres. */
+/** Bascules qui ne sont pas sous la fenêtre des réglages (modale, #722) ou son fond. */
+async function togglesOutsideWindow(page: Page): Promise<string[]> {
+  return page.evaluate(() => {
+    const host = document.querySelector('app-settings-window');
+    return Array.from(
+      document.querySelectorAll<HTMLElement>('.control-panel__toggle, .commands-help__toggle'),
+    ).flatMap((button) => {
+      const r = button.getBoundingClientRect();
+      const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      return host !== null && hit !== null && host.contains(hit)
+        ? []
+        : [button.textContent?.trim() ?? '?'];
+    });
+  });
+}
+
+/**
+ * Contrôle d'un état : au plus un panneau ouvert, aucun recouvrement ; bascules libres si la
+ * fenêtre des réglages est fermée, toutes sous son fond si elle est ouverte (#722).
+ */
 async function expectReadable(page: Page, state: string): Promise<void> {
   const boxes = await openPanels(page);
   expect(boxes.length, `${state} : deux panneaux ouverts ensemble`).toBeLessThanOrEqual(1);
-  if (boxes.length === 2) {
-    expect(overlaps(boxes[0], boxes[1]), `${state} : panneaux superposés`).toBe(false);
+  if ((await settingsPanel(page).count()) > 0) {
+    expect(await togglesOutsideWindow(page), `${state} : bascules hors du fond`).toEqual([]);
+  } else {
+    expect(await blockedToggles(page), `${state} : bascules recouvertes`).toEqual([]);
   }
-  expect(await blockedToggles(page), `${state} : bascules recouvertes`).toEqual([]);
 }
 
 for (const viewport of SMALL_VIEWPORTS) {
@@ -125,6 +142,8 @@ for (const viewport of SMALL_VIEWPORTS) {
       await expect(settingsPanel(page)).toBeVisible();
       await expectReadable(page, '« Réglages » ouvert');
 
+      // Fenêtre modale (#722) : refermée d'abord, son fond couvrant la bascule de l'aide.
+      await fermerReglages(page);
       await helpUnfold(page).click();
       await expect(helpPanel(page)).toBeVisible();
       await expect(settingsPanel(page)).toHaveCount(0);
@@ -137,6 +156,7 @@ for (const viewport of SMALL_VIEWPORTS) {
       await expectReadable(page, '« Réglages » rouvert');
 
       // Touche `?` : même règle qu'au clic.
+      await fermerReglages(page);
       await page.locator('body').press('?');
       await expect(helpPanel(page)).toBeVisible();
       await expect(settingsPanel(page)).toHaveCount(0);
@@ -155,15 +175,18 @@ for (const viewport of SMALL_VIEWPORTS) {
 test.describe('800 × 400 (#136)', () => {
   test.use({ viewport: { width: 800, height: 400 } });
 
-  test('écran assez large : les deux panneaux ouverts ensemble, côte à côte', async ({ page }) => {
+  test('écran assez large : « Commandes » reste déplié sous la fenêtre des réglages', async ({
+    page,
+  }) => {
     const errors = await openScene(page);
     await expect(helpPanel(page)).toBeVisible(); // déplié par défaut au-delà de 639 px
     await ouvrirReglages(page, 'Bac et milieu');
     await expect(settingsPanel(page)).toBeVisible();
     await expect(helpPanel(page)).toBeVisible();
-    const boxes = await openPanels(page);
-    expect(boxes).toHaveLength(2);
-    expect(overlaps(boxes[0], boxes[1]), 'panneaux superposés').toBe(false);
+    // Fenêtre modale (#722) : l'aide-mémoire n'est pas replié, il est sous le fond.
+    expect(await togglesOutsideWindow(page)).toEqual([]);
+    await fermerReglages(page);
+    await expect(helpPanel(page)).toBeVisible();
     expect(await blockedToggles(page)).toEqual([]);
     expect(errors).toEqual([]);
   });
