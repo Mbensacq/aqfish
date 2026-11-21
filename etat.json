@@ -9707,10 +9707,10 @@
           "note": "PR #758 : fenêtre des réglages branchée (tranche 1b de #722, sections masquées, e2e repris pour la fenêtre modale), CI verte"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-21T05:06:02.818Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-21T05:22:24.301Z",
+          "note": "Verdict RÉSERVES (téléphone provisoire), 0 bug, 167 captures, 10 d'interface différentes, publiées"
         }
       },
       "metriques": {}
