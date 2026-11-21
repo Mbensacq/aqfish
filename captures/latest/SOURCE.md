@@ -1,6 +1,7 @@
-Branche: cycle/c266-reglages-ouvrir-fermer (PR #757)
-PR: #757
-Commit: 72d3473939bf31e5d85fbe346428607b15668115
-Graine: défaut
-Temps: ~4,5 min (captures)
-Écarts vs c265 : aucun sur 166 captures sur 167 ; front-tableau-de-bord-chlore différait dans la série complète (cadrage décalé de quelques pixels, aucun fichier src touché) mais identique à c265 en exécution isolée : c'est la version isolée qui est publiée (instabilité de capture, pas une régression).
+# Source c267
+
+- Branche : cycle/c267-brancher-fenetre-reglages
+- PR : #758
+- Commit : 66faa3f2a7ea20a5988cfd64577c14803b050115
+- Graine : celle de captures.spec.ts (défaut)
+- Durée : 166 tests en 5,8 min
