@@ -9849,6 +9849,12 @@
           "debut": "2026-11-21T11:13:25.279Z",
           "fin": "2026-11-21T12:26:14.043Z",
           "note": "PR #765 : produits vers « Soins et produits », « Pluie » vers « Affichage » (#762) + caractérisation #756, CI verte (2e essai : cadrage-panneaux-soins redirigé) ; pied de page d'attribution réapparu sur la PR (PIEGES)"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-21T12:26:45.524Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
