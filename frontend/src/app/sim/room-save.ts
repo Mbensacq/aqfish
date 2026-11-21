@@ -378,6 +378,8 @@ function parseTanks(value: unknown, problems: string[]): RoomTank[] | null {
       tanks.push(tank);
     }
   });
+  // Atteignable (#717) : `parseTank` impose la place de chaque bac selon son environnement,
+  // mais deux bassins valides sont tous deux au jardin, qui n'en reçoit qu'un.
   if (tanks.filter((tank) => tank.place === 'jardin').length > 1) {
     problems.push('un seul bac au jardin');
   }

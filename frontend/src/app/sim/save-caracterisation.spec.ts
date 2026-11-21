@@ -565,6 +565,12 @@ function roomCases(): Case[] {
     c('format absent', remove('format')),
     c('schéma 1 invalide', all(set('schema', 1), set('environment', 'x'))),
     c('deux bacs au jardin', setIn(['tanks', 2, 'place'], 'jardin')),
+    c('deux bassins au jardin', (data) => {
+      const garden = tanks.find((t) => t['place'] === 'jardin');
+      const id = data['nextTankId'] as number;
+      (data['tanks'] as Json[]).push({ ...garden, id, name: 'Bassin 2' });
+      data['nextTankId'] = id + 1;
+    }),
     c('placement au jardin', tank(1, 'placement', { supportId: null, x: 0.5, z: -1, quarter: 1 })),
     c('world trop volumineux', setIn(['tanks', 0, 'world', 'remplissage'], 'x'.repeat(256 * 1024))),
     c('bac placement valide', tank(0, 'placement', { supportId: null, x: 0.5, z: -1, quarter: 1 })),
@@ -908,7 +914,7 @@ const EXPECTED: Record<string, string> = {
   'monde : mortality true': 'ok e2548cc9 474c8c10',
   'monde : mortality false': 'refus : mortality doit valoir true (reçu : false)',
   'monde : mortality texte': 'refus : mortality doit valoir true (reçu : « oui »)',
-  'monde : dead texte': 'refus : fish doit être une liste',
+  'monde : dead texte': 'refus : dead doit être une liste',
   'monde : dead vide': 'ok 35d275be c0d86cab',
   'monde : water texte': 'refus : eau : doit être un objet',
   'monde : water sans pH': 'ok d26f9146 52ce99ff',
@@ -920,9 +926,9 @@ const EXPECTED: Record<string, string> = {
   'monde : ordre : food, eggs, maintenance, waterHistory, journal':
     'refus : food doit être une liste ; eggs doit être une liste ; maintenance doit être un objet ; waterHistory doit être un objet ; journal doit être un objet',
   'monde : ordre : journal, firstTankPath, feeder, mortality, dead, water':
-    'refus : journal doit être un objet ; firstTankPath doit être un objet ; feeder doit être un objet ; mortality doit valoir true (reçu : « x ») ; fish doit être une liste ; …',
+    'refus : journal doit être un objet ; firstTankPath doit être un objet ; feeder doit être un objet ; mortality doit valoir true (reçu : « x ») ; dead doit être une liste ; …',
   'monde : ordre : firstTankPath, feeder, mortality, dead, water':
-    'refus : firstTankPath doit être un objet ; feeder doit être un objet ; mortality doit valoir true (reçu : « x ») ; fish doit être une liste ; eau : doit être un objet',
+    'refus : firstTankPath doit être un objet ; feeder doit être un objet ; mortality doit valoir true (reçu : « x ») ; dead doit être une liste ; eau : doit être un objet',
   'autre monde : seed absente':
     'refus : autre environnement bassin : seed doit être un entier 32 bits non signé',
   'autre monde : seed négative':
@@ -1236,7 +1242,7 @@ const EXPECTED: Record<string, string> = {
     'refus : autre environnement bassin : mortality doit valoir true (reçu : false)',
   'autre monde : mortality texte':
     'refus : autre environnement bassin : mortality doit valoir true (reçu : « oui »)',
-  'autre monde : dead texte': 'refus : autre environnement bassin : fish doit être une liste',
+  'autre monde : dead texte': 'refus : autre environnement bassin : dead doit être une liste',
   'autre monde : dead vide': 'ok bcbc90a2 4f8027ae',
   'autre monde : water texte': 'refus : autre environnement bassin : eau : doit être un objet',
   'autre monde : water sans pH': 'ok 99e2a988 0c32c648',
@@ -1249,9 +1255,9 @@ const EXPECTED: Record<string, string> = {
   'autre monde : ordre : food, eggs, maintenance, waterHistory, journal':
     'refus : autre environnement bassin : food doit être une liste ; autre environnement bassin : eggs doit être une liste ; autre environnement bassin : maintenance doit être un objet ; autre environnement bassin : waterHistory doit être un objet ; autre environnement bassin : journal doit être un objet',
   'autre monde : ordre : journal, firstTankPath, feeder, mortality, dead, water':
-    'refus : autre environnement bassin : journal doit être un objet ; autre environnement bassin : firstTankPath doit être un objet ; autre environnement bassin : feeder doit être un objet ; autre environnement bassin : mortality doit valoir true (reçu : « x ») ; autre environnement bassin : fish doit être une liste ; …',
+    'refus : autre environnement bassin : journal doit être un objet ; autre environnement bassin : firstTankPath doit être un objet ; autre environnement bassin : feeder doit être un objet ; autre environnement bassin : mortality doit valoir true (reçu : « x ») ; autre environnement bassin : dead doit être une liste ; …',
   'autre monde : ordre : firstTankPath, feeder, mortality, dead, water':
-    'refus : autre environnement bassin : firstTankPath doit être un objet ; autre environnement bassin : feeder doit être un objet ; autre environnement bassin : mortality doit valoir true (reçu : « x ») ; autre environnement bassin : fish doit être une liste ; autre environnement bassin : eau : doit être un objet',
+    'refus : autre environnement bassin : firstTankPath doit être un objet ; autre environnement bassin : feeder doit être un objet ; autre environnement bassin : mortality doit valoir true (reçu : « x ») ; autre environnement bassin : dead doit être une liste ; autre environnement bassin : eau : doit être un objet',
   'bac : seed absente': 'refus : bac 0 : seed doit être un entier 32 bits non signé',
   'bac : seed négative': 'refus : bac 0 : seed doit être un entier 32 bits non signé',
   'bac : seed 2^32': 'refus : bac 0 : seed doit être un entier 32 bits non signé',
@@ -1446,7 +1452,7 @@ const EXPECTED: Record<string, string> = {
   'bac : mortality true': 'ok 34388357 17e26756',
   'bac : mortality false': 'refus : bac 0 : mortality doit valoir true (reçu : false)',
   'bac : mortality texte': 'refus : bac 0 : mortality doit valoir true (reçu : « oui »)',
-  'bac : dead texte': 'refus : bac 0 : fish doit être une liste',
+  'bac : dead texte': 'refus : bac 0 : dead doit être une liste',
   'bac : dead vide': 'ok 804f0e1e dc03c073',
   'bac : water texte': 'refus : bac 0 : eau : doit être un objet',
   'bac : water sans pH': 'ok 3af5e136 3317294f',
@@ -1458,15 +1464,15 @@ const EXPECTED: Record<string, string> = {
   'bac : ordre : food, eggs, maintenance, waterHistory, journal':
     'refus : bac 0 : food doit être une liste ; bac 0 : eggs doit être une liste ; bac 0 : maintenance doit être un objet ; bac 0 : waterHistory doit être un objet ; bac 0 : journal doit être un objet',
   'bac : ordre : journal, firstTankPath, feeder, mortality, dead, water':
-    'refus : bac 0 : journal doit être un objet ; bac 0 : firstTankPath doit être un objet ; bac 0 : feeder doit être un objet ; bac 0 : mortality doit valoir true (reçu : « x ») ; bac 0 : fish doit être une liste ; …',
+    'refus : bac 0 : journal doit être un objet ; bac 0 : firstTankPath doit être un objet ; bac 0 : feeder doit être un objet ; bac 0 : mortality doit valoir true (reçu : « x ») ; bac 0 : dead doit être une liste ; …',
   'bac : ordre : firstTankPath, feeder, mortality, dead, water':
-    'refus : bac 0 : firstTankPath doit être un objet ; bac 0 : feeder doit être un objet ; bac 0 : mortality doit valoir true (reçu : « x ») ; bac 0 : fish doit être une liste ; bac 0 : eau : doit être un objet',
+    'refus : bac 0 : firstTankPath doit être un objet ; bac 0 : feeder doit être un objet ; bac 0 : mortality doit valoir true (reçu : « x ») ; bac 0 : dead doit être une liste ; bac 0 : eau : doit être un objet',
   'riche : telle quelle': 'ok 2a275d0b afdd0134',
   'riche : corps deadFor négatif': 'refus : corps 0 : deadFor hors de [0, 86400]',
   'riche : corps deadFor absent': 'refus : corps 0 : deadFor hors de [0, 86400]',
   'riche : corps id vivant': 'refus : corps 0 : identifiant 0 déjà porté par un animal vivant',
-  'riche : corps espèce inconnue': 'refus : poisson 0 : espèce inconnue (« dragon »)',
-  'riche : corps pas objet': 'refus : poisson 0 : doit être un objet',
+  'riche : corps espèce inconnue': 'refus : corps 0 : espèce inconnue (« dragon »)',
+  'riche : corps pas objet': 'refus : corps 0 : doit être un objet',
   'riche : distributeur au bassin':
     'refus : autre environnement bassin : distributeur impossible dans l’environnement bassin',
   'riche : alevin d’une espèce à alevins': 'ok 5839870f ad8e4a90',
@@ -1505,6 +1511,7 @@ const EXPECTED: Record<string, string> = {
   'schéma 2 : schéma 1 invalide': 'refus : environnement inconnu (« x »)',
   'schéma 2 : deux bacs au jardin':
     'refus : bac 2 : place doit valoir « piece » pour l’environnement paludarium',
+  'schéma 2 : deux bassins au jardin': 'refus : un seul bac au jardin',
   'schéma 2 : placement au jardin': 'refus : bac 1 : placement interdit au jardin',
   'schéma 2 : world trop volumineux': 'refus : bac 0 : world trop volumineux (256 Kio au plus)',
   'schéma 2 : bac placement valide': 'ok 19cd01b0 747ce201',
