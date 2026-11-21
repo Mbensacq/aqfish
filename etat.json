@@ -9785,10 +9785,10 @@
           "note": "Verdict OK, 0 bug, 167 captures publiées, 4 telephone-* changées (attendu)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-21T08:34:40.400Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-21T09:01:23.282Z",
+          "note": "PR #761 fusionnée → v1.27.3 (release CI OK, main verte), #722 fermée, suivi #762 (dette) ; suppression de la branche refusée par l'environnement"
         }
       },
       "metriques": {}
