@@ -9813,6 +9813,12 @@
           "debut": "2026-11-21T09:03:00.827Z",
           "fin": "2026-11-21T10:05:23.549Z",
           "note": "PR #763 : population en tuiles, filtres, tri et recherche (#723), CI verte ; tri par défaut « Ordre du milieu » ajouté ; ~1100 lignes hors tests (données + réindentation) ; pied de page d'attribution réapparu sur la PR (PIEGES)"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-21T10:05:55.374Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
