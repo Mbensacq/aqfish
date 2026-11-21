@@ -9779,10 +9779,10 @@
           "note": "PR #761 : réglages sur téléphone (tranche 3 de #722), CI verte ; optionnel produits/pluie non fait (Partiel) ; pied de page d'attribution réapparu sur la PR (PIEGES)"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-21T08:27:21.159Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-21T08:34:05.411Z",
+          "note": "Verdict OK, 0 bug, 167 captures publiées, 4 telephone-* changées (attendu)"
         }
       },
       "metriques": {}
