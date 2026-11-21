@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 
 import { DEFAULT_ENVIRONMENT_ID, environmentById, type EnvironmentId } from '../../sim/environment';
+import { SectionLegend } from '../settings-window/settings-search-filter';
 
 /**
  * Section « Affichage » du panneau « Réglages » (#762, catégorie « Affichage » de la fenêtre,
@@ -10,12 +11,13 @@ import { DEFAULT_ENVIRONMENT_ID, environmentById, type EnvironmentId } from '../
  * L'hôte est le `fieldset` de la section, posé par le panneau (ADR 0161).
  */
 @Component({
+  imports: [SectionLegend],
   // Sélecteur d'attribut : le `fieldset` reste l'enfant direct du panneau (ADR 0161).
   selector: 'fieldset[app-display-section]',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './display-section.scss',
   template: `
-    <legend class="control-panel__legend">Affichage</legend>
+    <legend class="control-panel__legend" appSectionLegend>Affichage</legend>
     @if (rainAvailable()) {
       <label class="control-panel__check" data-rain>
         <input type="checkbox" [checked]="rain()" (change)="onRain($event)" />

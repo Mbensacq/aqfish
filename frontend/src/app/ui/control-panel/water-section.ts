@@ -8,6 +8,7 @@ import { CURRENT_LEVEL_LABELS, type CurrentLevel } from '../../sim/water-current
 import { formatTenth } from '../../sim/water-dashboard';
 import { DEFAULT_WATER_READOUT, type WaterReadout } from '../../sim/water-quality';
 import { formNumber } from './panel-views';
+import { SettingMark } from '../settings-window/settings-search-filter';
 
 /** Pas du curseur du chauffage, en °C (#207). */
 export const HEATER_SLIDER_STEP = 0.5;
@@ -65,6 +66,7 @@ export function heaterText(readout: WaterReadout): string {
  * L'hôte est le `fieldset` de la section, posé par le panneau (ADR 0161).
  */
 @Component({
+  imports: [SettingMark],
   // Sélecteur d'attribut : le `fieldset` reste l'enfant direct du panneau (ADR 0161).
   selector: 'fieldset[app-water-section]',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -76,6 +78,7 @@ export function heaterText(readout: WaterReadout): string {
       <button
         type="button"
         class="control-panel__edit"
+        appSetting="Courant"
         data-current
         [attr.data-level]="current()"
         [attr.aria-label]="'Courant : ' + currentLabels[current()] + ', changer de force'"
@@ -86,13 +89,14 @@ export function heaterText(readout: WaterReadout): string {
       <button
         type="button"
         class="control-panel__edit"
+        appSetting="Changer l’eau"
         data-water-change
         (click)="waterChangeRequested.emit()"
       >
         Changer l’eau
       </button>
     </legend>
-    <label class="control-panel__field" for="panneau-chauffage">
+    <label class="control-panel__field" for="panneau-chauffage" appSetting="Chauffage">
       <span class="control-panel__label">
         Chauffage <output class="control-panel__value">{{ heaterLabel() }}</output>
       </span>
@@ -115,7 +119,7 @@ export function heaterText(readout: WaterReadout): string {
          ligne (le panneau ne grandit pas à 1280 × 720, docs/PIEGES.md) : valeurs courtes à
          l'écran, phrases entières pour les lecteurs d'écran. -->
     <div class="control-panel__row control-panel__row--halves">
-      <label class="control-panel__field" for="panneau-eclairage">
+      <label class="control-panel__field" for="panneau-eclairage" appSetting="Éclairage">
         <span class="control-panel__label">
           Éclairage
           <output class="control-panel__value" aria-hidden="true">{{ lighting() }} h</output>
@@ -134,7 +138,7 @@ export function heaterText(readout: WaterReadout): string {
           (input)="onLighting($event)"
         />
       </label>
-      <label class="control-panel__field" for="panneau-lampe">
+      <label class="control-panel__field" for="panneau-lampe" appSetting="Lampe">
         <span class="control-panel__label">
           Lampe
           <output class="control-panel__value" aria-hidden="true">{{ lampOnShort() }}</output>

@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 
 import { DEFAULT_FOOD_STYLE, type FoodStyle } from '../../core/food-style/food-style';
+import { SettingMark } from '../settings-window/settings-search-filter';
 
 /**
  * Section « Décor » du panneau « Réglages » (#52 ; sortie du panneau au #697) : « Éditer le
@@ -10,6 +11,7 @@ import { DEFAULT_FOOD_STYLE, type FoodStyle } from '../../core/food-style/food-s
  * L'hôte est le `fieldset` de la section, posé par le panneau (ADR 0161).
  */
 @Component({
+  imports: [SettingMark],
   // Sélecteur d'attribut : le `fieldset` reste l'enfant direct du panneau (ADR 0161).
   selector: 'fieldset[app-decor-section]',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -21,6 +23,7 @@ import { DEFAULT_FOOD_STYLE, type FoodStyle } from '../../core/food-style/food-s
       <button
         type="button"
         class="control-panel__edit"
+        appSetting="Éditer le décor"
         data-decor-edit
         [attr.aria-disabled]="!decorEditable()"
         [attr.aria-label]="
@@ -34,13 +37,14 @@ import { DEFAULT_FOOD_STYLE, type FoodStyle } from '../../core/food-style/food-s
     </legend>
     <!-- Granulés (#117) : sur la même ligne, le panneau tient sans défiler à 1280 × 720 (#101). -->
     <div class="control-panel__row">
-      <label class="control-panel__check">
+      <label class="control-panel__check" appSetting="Afficher le décor">
         <input type="checkbox" [checked]="decorVisible()" (change)="onDecor($event)" />
         Afficher le décor
       </label>
       <button
         type="button"
         class="control-panel__button control-panel__button--compact"
+        appSetting="Granulés"
         data-food-style
         [attr.aria-label]="'Granulés : ' + foodStyle() + ', changer de rendu'"
         (click)="foodStyleToggled.emit()"

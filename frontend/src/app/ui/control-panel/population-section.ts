@@ -30,6 +30,7 @@ import {
   type PopulationSort,
 } from './population-view';
 import { SpeciesSheet } from './species-sheet';
+import { SectionLegend } from '../settings-window/settings-search-filter';
 
 /** Nombre lu dans une valeur de formulaire ; une chaîne vide donne `NaN` (et non 0). */
 function toNumber(value: string | number): number {
@@ -117,11 +118,11 @@ export function speciesSliderLabel(species: SpeciesId): string {
 @Component({
   // Sélecteur d'attribut : le `fieldset` reste l'enfant direct du panneau (ADR 0161).
   selector: 'fieldset[app-population-section]',
-  imports: [SpeciesSheet],
+  imports: [SpeciesSheet, SectionLegend],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './population-section.scss',
   template: `
-    <legend class="control-panel__legend">Population</legend>
+    <legend class="control-panel__legend" appSectionLegend>Population</legend>
     <!-- Plafond d'animaux de la pièce (#392, ADR 0096) : pourquoi « + » ne fait plus rien. -->
     @if (populationNotice(); as notice) {
       <p class="control-panel__note control-panel__warning" role="status" data-room-cap>

@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
 
 import { DEFAULT_SIM_SPEED, SIM_SPEEDS, speedLabel, type SimSpeed } from '../../sim/sim-speed';
 import { formNumber } from './panel-views';
+import { SettingMark } from '../settings-window/settings-search-filter';
 
 /**
  * Rang d'une vitesse dans `SIM_SPEEDS` (valeur du curseur), celui de la vitesse par défaut
@@ -28,6 +29,7 @@ export function speedAt(index: string | number): SimSpeed | null {
  * L'hôte est le `fieldset` de la section, posé par le panneau (ADR 0161).
  */
 @Component({
+  imports: [SettingMark],
   // Sélecteur d'attribut : le `fieldset` reste l'enfant direct du panneau (ADR 0161).
   selector: 'fieldset[app-simulation-section]',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -39,13 +41,14 @@ export function speedAt(index: string | number): SimSpeed | null {
       <button
         type="button"
         class="control-panel__edit"
+        appSetting="Mode immersif"
         data-immersive-open
         (click)="immersiveRequested.emit()"
       >
         Mode immersif
       </button>
     </legend>
-    <label class="control-panel__field" for="panneau-vitesse">
+    <label class="control-panel__field" for="panneau-vitesse" appSetting="Vitesse de la simulation">
       <span class="control-panel__label">
         Vitesse <output class="control-panel__value">{{ speedText() }}</output>
       </span>

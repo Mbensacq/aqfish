@@ -27,6 +27,12 @@ test.describe('recherche des réglages (#723)', () => {
     await expect(results(page).nth(1)).toHaveAttribute('data-settings-result', 'Lampe');
     await expect(results(page).nth(2)).toHaveAttribute('data-settings-result', 'Heure');
     expect(await shownSections(page)).toEqual(expect.arrayContaining(['eau', 'journee']));
+    // Seules les lignes trouvées (#764) : l'éclairage, pas le chauffage de la même section.
+    await expect(page.getByRole('slider', { name: 'Durée d’éclairage par jour' })).toBeVisible();
+    await expect(page.getByRole('slider', { name: 'Consigne du chauffage' })).toBeHidden();
+    await expect(
+      results(page).and(page.locator('[data-settings-result="Fiche de l’espèce"]')),
+    ).toHaveCount(0);
     // Réglable sur place : le curseur de l'heure est visible et répond.
     const hour = page.getByRole('slider', { name: 'Heure de la journée' });
     await expect(hour).toBeVisible();

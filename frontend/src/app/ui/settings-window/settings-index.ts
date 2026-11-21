@@ -121,11 +121,25 @@ function hasWordStarting(text: string, query: string): boolean {
 }
 
 /**
+ * Vrai si `query` apparaît dans `text` au début d'un mot (début du texte, ou après un caractère
+ * qui n'est ni une lettre ni un chiffre) : « lum » est trouvé dans « (lumière) », pas dans
+ * « volume » ; une requête de plusieurs mots (« d'eau ») aussi (#764).
+ */
+function startsAtWord(text: string, query: string): boolean {
+  for (let at = text.indexOf(query); at >= 0; at = text.indexOf(query, at + 1)) {
+    if (at === 0 || !/[\p{L}\p{N}]/u.test(text[at - 1])) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
  * Rang d'une entrée pour `query` (plus petit = mieux), `null` si elle ne correspond pas :
  * 0 nom qui commence par la requête, 1 mot du nom qui commence par elle, 2 mot voisin (ou nom
  * scientifique) dont un mot commence par elle, 3 nom qui la contient, 4 mot voisin qui la
- * contient, 5 explication qui la contient. « lum » trouve donc l'éclairage (« lumière ») avant
- * le volume.
+ * contient, 5 explication dont un mot commence par elle (#764 : « lum » ne trouve pas la fiche
+ * de l'espèce par « volume »). « lum » trouve donc l'éclairage (« lumière ») avant le volume.
  */
 function rank(item: IndexEntry, query: string): number | null {
   const checks: readonly boolean[] = [
@@ -134,7 +148,7 @@ function rank(item: IndexEntry, query: string): number | null {
     item.words.some((word) => hasWordStarting(word, query)),
     item.name.includes(query),
     item.words.some((word) => word.includes(query)),
-    item.explanation.includes(query),
+    startsAtWord(item.explanation, query),
   ];
   const found = checks.indexOf(true);
   return found < 0 ? null : found;
@@ -161,6 +175,8 @@ export function searchSettings(index: SettingsIndex, query: string): SettingsSea
 export interface SearchDisplay {
   /** Sections qui portent les résultats, à montrer sous la liste. */
   readonly sections: ReadonlySet<SettingsSectionKey>;
+  /** Noms des réglages trouvés : seuls leurs contrôles restent visibles dans ces sections (#764). */
+  readonly settings: ReadonlySet<string>;
   /**
    * Tuiles de « Population » à garder : les espèces trouvées, ou `null` pour toutes (un
    * réglage de la population est lui-même trouvé, ou aucune espèce ne l'est).
@@ -168,15 +184,19 @@ export interface SearchDisplay {
   readonly species: readonly SpeciesId[] | null;
 }
 
-/** Sections et tuiles à montrer pour `results` (aucun résultat : aucune section). */
+/** Sections, réglages et tuiles à montrer pour `results` (aucun résultat : aucune section). */
 export function searchDisplay(results: readonly SettingsSearchResult[]): SearchDisplay {
   const sections = new Set(results.map((result) => result.section));
   const settingInPopulation = results.some(
     (result) => result.kind === 'reglage' && result.section === 'population',
   );
   const species = results.flatMap((result) => (result.species === null ? [] : [result.species]));
+  const settings = new Set(
+    results.flatMap((result) => (result.kind === 'reglage' ? [result.name] : [])),
+  );
   return {
     sections,
+    settings,
     species: settingInPopulation || species.length === 0 ? null : species,
   };
 }

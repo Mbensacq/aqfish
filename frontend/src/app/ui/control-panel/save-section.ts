@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
 
 import type { SaveMessage, SaveStatus } from '../../core/save-storage/save-storage';
 import { MAX_SAVE_LENGTH } from '../../sim/save';
+import { SettingMark } from '../settings-window/settings-search-filter';
 
 /** Texte de l'état de la sauvegarde automatique (#70). */
 export function saveStatusText(status: SaveStatus | null): string {
@@ -25,6 +26,7 @@ export function saveStatusText(status: SaveStatus | null): string {
  * L'hôte est le `fieldset` de la section, posé par le panneau (ADR 0161).
  */
 @Component({
+  imports: [SettingMark],
   // Sélecteur d'attribut : le `fieldset` reste l'enfant direct du panneau (ADR 0161).
   selector: 'fieldset[app-save-section]',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -32,16 +34,31 @@ export function saveStatusText(status: SaveStatus | null): string {
   template: `
     <legend class="control-panel__legend control-panel__legend--row">
       <span id="panneau-sauvegarde-titre">Sauvegarde</span>
-      <button type="button" class="control-panel__edit" (click)="shareRequested.emit()">
+      <button
+        type="button"
+        class="control-panel__edit"
+        appSetting="Partager ce bac"
+        (click)="shareRequested.emit()"
+      >
         Partager ce bac
       </button>
     </legend>
     <p class="control-panel__note" data-save-status>{{ statusText() }}</p>
     <div class="control-panel__buttons">
-      <button type="button" class="control-panel__button" (click)="exportRequested.emit()">
+      <button
+        type="button"
+        class="control-panel__button"
+        appSetting="Exporter"
+        (click)="exportRequested.emit()"
+      >
         Exporter
       </button>
-      <button type="button" class="control-panel__button" (click)="fileInput.click()">
+      <button
+        type="button"
+        class="control-panel__button"
+        appSetting="Importer"
+        (click)="fileInput.click()"
+      >
         Importer
       </button>
       <input
