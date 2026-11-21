@@ -9773,10 +9773,10 @@
           "note": "Issue #722 : tranche 3, panneau des réglages sur téléphone (S)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-21T07:51:00.021Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-21T08:26:47.461Z",
+          "note": "PR #761 : réglages sur téléphone (tranche 3 de #722), CI verte ; optionnel produits/pluie non fait (Partiel) ; pied de page d'attribution réapparu sur la PR (PIEGES)"
         }
       },
       "metriques": {}
