@@ -127,6 +127,7 @@ test.describe('pH (#236)', () => {
       mimeType: 'application/json',
       buffer: Buffer.from(JSON.stringify(pond)),
     });
+    await ouvrirReglages(page, 'Sauvegarde et partage');
     await expect(page.getByRole('alert')).toContainText('ph');
     await expect(value(page)).toHaveText('7,5');
     expect(errors).toEqual([]);

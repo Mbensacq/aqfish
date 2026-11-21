@@ -194,12 +194,16 @@ découpé par section), qui fournit les sections réutilisées par la fenêtre :
    referment les réglages par `ouvrirReglages(page, '<catégorie>')` et `fermerReglages(page)`
    (`e2e/outils-panneau.ts`), posés par script (152 clics dans 70 fichiers) : le branchement
    ne changera plus que ces deux fonctions et les tests qui utilisent plusieurs catégories.
-   **Reste** : brancher la fenêtre à la place du panneau
-   (`ui/control-panel/control-panel.ts`), ouvrir la catégorie dans `ouvrirReglages`, passer de
-   catégorie dans les tests qui en utilisent plusieurs (liste dans la PR du cycle 266), réécrire
-   les tests de cadrage du panneau en colonnes, `control-panel.spec.ts`, sortir les produits de la section
-   « Eau » vers « Soins et produits » et « Pluie » vers « Affichage » ; puis barre du bas,
-   préférence locale, panneaux exclusifs et téléphone.
+   **Livré (cycle 267)** : la fenêtre remplace le panneau déroulant
+   (`ui/control-panel/control-panel.ts` : toutes les sections dans le document, celles des
+   autres catégories masquées, ADR 0165 révisée) ; catégorie gardée d'une ouverture à l'autre ;
+   focus rendu au bouton à la fermeture ; raclette et sécateur pris referment la fenêtre ;
+   `ouvrirReglages` clique la catégorie ; e2e repris pour la fenêtre modale (catégories,
+   fermeture avant de toucher ou de mesurer le bac, cadrage, clavier) ; repli provisoire sous
+   640 px (catégories au-dessus du contenu). **Reste** : sortir les produits de la section
+   « Eau » vers « Soins et produits » et « Pluie » vers « Affichage » ; barre du bas (nourrir,
+   raclette, sécateur, photo), préférence locale de la catégorie, panneaux exclusifs, panneau
+   du téléphone.
 3. #723 — Population en tuiles et recherche dans les réglages.
 4. #724 — Habillage de toute la page selon la charte (tableau de bord, barres, aide-mémoire, wiki,
    pharmacie, bilan, guide, parcours du premier bac), textes revus.

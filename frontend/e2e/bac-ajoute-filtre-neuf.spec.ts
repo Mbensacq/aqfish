@@ -46,6 +46,7 @@ test('bac ajouté : filtre neuf amorcé depuis la liste, bac de départ inchang�
   await expect(notice).toContainText('Amorce de bactéries versée');
   await starter.click();
   await expect(notice).toContainText('Amorce encore active');
+  await ouvrirReglages(page, 'Eau et matériel');
   await button.click();
   await expect(message).toContainText('Filtre déjà mûr');
   expect(errors).toEqual([]);
