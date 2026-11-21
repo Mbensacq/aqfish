@@ -226,8 +226,8 @@ découpé par section), qui fournit les sections réutilisées par la fenêtre :
    le porte) ; l'index de la recherche (`ui/settings-window/settings-index.ts`, module pur) en
    est tiré, avec les espèces du milieu affiché (nom courant et scientifique). Normalisation :
    minuscules, NFD sans diacritiques. Rang : nom qui commence par la requête, mot du nom, mot
-   voisin, nom qui la contient, mot voisin qui la contient, explication ; égalités dans l'ordre
-   de la déclaration. Pendant une recherche, le contenu montre la liste des résultats puis les
+   voisin, nom qui la contient, mot voisin qui la contient, explication (au début d'un
+   mot, #764) ; égalités dans l'ordre de la déclaration. Pendant une recherche, le contenu montre la liste des résultats puis les
    sections qui les portent (réglables sur place ; une recherche d'espèce ne garde que ses
    tuiles) ; le nom de catégorie d'un résultat y mène, Entrée ouvre le premier, aucun
    résultat : un message et les catégories. Population (`ui/control-panel/population-view.ts`,
@@ -235,8 +235,15 @@ découpé par section), qui fournit les sections réutilisées par la fenêtre :
    amphibien), « Invertébrés » (`INVERTEBRATES`) ; tri « Ordre du milieu » (par défaut, ajouté
    pour garder l'ordre du catalogue), nom, nombre dans le bac (le plus nombreux d'abord), taille
    adulte (`bodyLength` de la simulation, la plus grande d'abord) ; résumé « N animaux,
-   M espèces ». **Reste** : les sections montrées par une recherche le sont en entier (pas
-   seulement la ligne du réglage trouvé) ; les sections absentes du bac (« Soins » sans
+   M espèces ». **Suite (cycle 272, #764)** : dans les sections montrées par une recherche,
+   seules les lignes des réglages trouvés restent visibles (marque `appSetting` d'un contrôle,
+   `ui/settings-window/settings-search-filter.ts` ; sections « eau », « journee », « son »,
+   « simulation », « decor », « sauvegarde ») ; l'explication n'est cherchée qu'au début d'un
+   mot (« lum » ne trouve plus la fiche par « volume ») ; la légende d'une section qui répète
+   le titre de la catégorie (« Population », « Affichage », « Son », « Accessibilité ») est
+   masquée à l'écran, gardée pour les lecteurs d'écran. **Reste** : les sections
+   « environnement », « bacs », « produits » et « population » se montrent encore en entier ;
+   les sections absentes du bac (« Soins » sans
    points blancs, pièce masquée) restent proposées dans les résultats sans contenu.
 4. #724 — Habillage de toute la page selon la charte (tableau de bord, barres, aide-mémoire, wiki,
    pharmacie, bilan, guide, parcours du premier bac), textes revus.

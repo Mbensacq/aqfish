@@ -264,6 +264,63 @@ describe('ControlPanel : fenêtre des réglages (#722)', () => {
       expect(shownSections()).toEqual(expect.arrayContaining(['eau', 'journee']));
     });
 
+    /** Noms des contrôles marqués (`appSetting`) visibles dans la section `key`. */
+    const shownSettings = (key: string) =>
+      [...root().querySelectorAll<HTMLElement>(`[data-section="${key}"] [data-setting]`)]
+        .filter((control) => control.style.display !== 'none')
+        .map((control) => control.getAttribute('data-setting'));
+
+    it('« lum » : seuls l’éclairage et la lampe dans « eau », l’heure dans « journee » (#764)', async () => {
+      await open();
+      await type('lum');
+      expect(shownSettings('eau')).toEqual(['Éclairage', 'Lampe']);
+      expect(shownSettings('journee')).toEqual(['Heure']);
+      expect(root().querySelector('[data-section="eau"] [data-current]')).toHaveProperty(
+        'style.display',
+        'none',
+      );
+      // Recherche effacée : la section entière revient.
+      await type('');
+      await choose('eau');
+      expect(shownSettings('eau')).toEqual([
+        'Courant',
+        'Changer l’eau',
+        'Chauffage',
+        'Éclairage',
+        'Lampe',
+      ]);
+    });
+
+    it('chaque contrôle marqué porte le nom d’un réglage déclaré dans sa section (#764)', async () => {
+      await open();
+      const marked = [...root().querySelectorAll<HTMLElement>('[data-setting]')];
+      expect(marked.length).toBeGreaterThanOrEqual(17);
+      for (const control of marked) {
+        const section = control.closest('[data-section]')?.getAttribute('data-section');
+        const declared = SETTINGS_CATEGORIES.flatMap((category) => category.controls).find(
+          (entry) => entry.name === control.getAttribute('data-setting'),
+        );
+        expect(declared?.section, control.getAttribute('data-setting') ?? '').toBe(section);
+      }
+    });
+
+    it('la légende qui répète le titre est masquée à l’écran, pas pendant une recherche (#764)', async () => {
+      const legend = () =>
+        root().querySelector<HTMLElement>('[data-section="population"] > legend')!;
+      await open();
+      await choose('population');
+      expect(legend().classList).toContain('control-panel__legend--repete');
+      expect(legend().textContent?.trim()).toBe('Population');
+      await choose('eau');
+      expect(
+        root()
+          .querySelector('[data-section="eau"] > legend')
+          ?.classList.contains('control-panel__legend--repete'),
+      ).toBe(false);
+      await type('néon');
+      expect(legend().classList).not.toContain('control-panel__legend--repete');
+    });
+
     it('« néon » : sa tuile seule dans la population', async () => {
       await open();
       await type('néon');

@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
 
 import { formatHour, HOUR_SLIDER_STEP, HOURS_PER_DAY, NOON_HOUR } from '../../sim/daylight';
 import { formNumber } from './panel-views';
+import { SettingMark } from '../settings-window/settings-search-filter';
 
 /** Heure lue sur le curseur d'heure (une chaîne), `null` si elle n'est pas dans [0, 24). */
 export function sliderHour(value: string | number): number | null {
@@ -17,13 +18,14 @@ export function sliderHour(value: string | number): number | null {
  * L'hôte est le `fieldset` de la section, posé par le panneau (ADR 0161).
  */
 @Component({
+  imports: [SettingMark],
   // Sélecteur d'attribut : le `fieldset` reste l'enfant direct du panneau (ADR 0161).
   selector: 'fieldset[app-day-section]',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './day-section.scss',
   template: `
     <legend class="control-panel__legend">Journée</legend>
-    <label class="control-panel__field" for="panneau-heure">
+    <label class="control-panel__field" for="panneau-heure" appSetting="Heure">
       <span class="control-panel__label">
         Heure <output class="control-panel__value">{{ hourText() }}</output>
       </span>
@@ -40,7 +42,7 @@ export function sliderHour(value: string | number): number | null {
         (input)="onHour($event)"
       />
     </label>
-    <div class="control-panel__row">
+    <div class="control-panel__row" appSetting="Heure automatique">
       <label class="control-panel__check">
         <input type="checkbox" [checked]="clockRunning()" (change)="onClockRunning($event)" />
         Heure automatique

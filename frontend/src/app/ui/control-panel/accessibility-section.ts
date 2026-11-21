@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 
 import { ReducedMotionState } from '../reduced-motion/reduced-motion-state';
+import { SectionLegend } from '../settings-window/settings-search-filter';
 
 /**
  * Section « Accessibilité » du panneau « Réglages » (#406 ; sortie du panneau au #697) :
@@ -10,12 +11,13 @@ import { ReducedMotionState } from '../reduced-motion/reduced-motion-state';
  * L'hôte est le `fieldset` de la section, posé par le panneau (ADR 0161).
  */
 @Component({
+  imports: [SectionLegend],
   // Sélecteur d'attribut : le `fieldset` reste l'enfant direct du panneau (ADR 0161).
   selector: 'fieldset[app-accessibility-section]',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './accessibility-section.scss',
   template: `
-    <legend class="control-panel__legend">Accessibilité</legend>
+    <legend class="control-panel__legend" appSectionLegend>Accessibilité</legend>
     <label class="control-panel__check" data-reduced-motion>
       <input type="checkbox" [checked]="reducedMotion()" (change)="onReducedMotion($event)" />
       Réduire les mouvements

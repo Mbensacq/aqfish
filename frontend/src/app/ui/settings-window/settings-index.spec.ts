@@ -72,6 +72,16 @@ describe('recherche des réglages (#723)', () => {
     expect(searchSettings(index, 'paracheirodon')[0].species).toBe('neon');
   });
 
+  it('explication : seulement au début d’un mot (#764) ; « lum » ne trouve plus la fiche par « volume »', () => {
+    expect(names('lum')).not.toContain('Fiche de l’espèce');
+    // « olume » est au milieu de « volume » : pas la fiche ; « volume », au début d'un mot : la fiche.
+    expect(names('olume')).not.toContain('Fiche de l’espèce');
+    expect(names('volume')).toContain('Fiche de l’espèce');
+    // Après une apostrophe ou une ponctuation, et sur plusieurs mots.
+    expect(names('allumage')).toContain('Lampe');
+    expect(names('baisser le')).toEqual(['Changer l’eau', 'pH −']);
+  });
+
   it('aucun résultat : liste vide ; requête vide ou blanche : aucun résultat', () => {
     expect(searchSettings(index, 'zzzz')).toEqual([]);
     expect(searchSettings(index, '')).toEqual([]);
@@ -106,6 +116,19 @@ describe('affichage d’une recherche (#723)', () => {
     const display = searchDisplay(searchSettings(index, 'effectif'));
     expect(display.sections.has('population')).toBe(true);
     expect(display.species).toBeNull();
+  });
+
+  it('« lum » : les réglages trouvés seuls, pas les autres réglages de « eau » (#764)', () => {
+    const display = searchDisplay(searchSettings(index, 'lum'));
+    expect(display.sections.has('eau')).toBe(true);
+    expect([...display.settings]).toEqual(expect.arrayContaining(['Éclairage', 'Lampe']));
+    for (const other of ['Chauffage', 'Courant', 'Changer l’eau', 'Fiche de l’espèce']) {
+      expect(display.settings.has(other), other).toBe(false);
+    }
+  });
+
+  it('une espèce trouvée n’est pas un réglage : aucun nom de réglage', () => {
+    expect(searchDisplay(searchSettings(index, 'néon')).settings.size).toBe(0);
   });
 
   it('aucun résultat : aucune section, aucune restriction des tuiles', () => {

@@ -5,6 +5,7 @@ import {
   Component,
   computed,
   ElementRef,
+  forwardRef,
   inject,
   input,
   output,
@@ -40,6 +41,7 @@ import {
   type SettingsSectionKey,
 } from '../settings-window/settings-categories';
 import { SETTINGS_CATEGORY_STORAGE } from '../settings-window/settings-category-store';
+import { SettingsSearchFilter } from '../settings-window/settings-search-filter';
 import {
   buildSettingsIndex,
   searchDisplay,
@@ -133,6 +135,8 @@ export { sliderHour } from './day-section';
  */
 @Component({
   selector: 'app-control-panel',
+  // Filtre de la recherche (#764) : les sections masquent les contrôles non trouvés.
+  providers: [{ provide: SettingsSearchFilter, useExisting: forwardRef(() => ControlPanel) }],
   imports: [
     SettingsWindow,
     EnvironmentSection,
@@ -398,7 +402,7 @@ export { sliderHour } from './day-section';
     '[class.control-panel-host--window]': 'open()',
   },
 })
-export class ControlPanel {
+export class ControlPanel implements SettingsSearchFilter {
   /** Environnement affiché (fourni par l'hôte). */
   readonly environment = input<EnvironmentId>(DEFAULT_ENVIRONMENT_ID);
   /** Forme du bassin du monde courant (issue #190, fournie par l'hôte). */
@@ -591,6 +595,12 @@ export class ControlPanel {
   );
   private readonly searchShown = computed(() =>
     this.searchQuery().trim() === '' ? null : searchDisplay(this.searchResults()),
+  );
+  /** Réglages trouvés (`SettingsSearchFilter`, #764) ; `null` hors recherche. */
+  readonly found = computed(() => this.searchShown()?.settings ?? null);
+  /** Titre en tête du contenu (`SettingsSearchFilter`, #764) ; `null` pendant une recherche. */
+  readonly heading = computed(() =>
+    this.searchShown() === null ? settingsCategory(this.category()).title : null,
   );
   /** Tuiles gardées pendant une recherche d'espèce ; `null` : toutes. */
   protected readonly searchSpecies = computed(() => this.searchShown()?.species ?? null);

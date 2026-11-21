@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 
 import { AmbientSoundState } from '../ambient-sound/ambient-sound-state';
+import { SectionLegend, SettingMark } from '../settings-window/settings-search-filter';
 
 /**
  * Section « Son » du panneau « Réglages » (#411, ADR 0100 ; sortie du panneau au #697) :
@@ -10,14 +11,15 @@ import { AmbientSoundState } from '../ambient-sound/ambient-sound-state';
  * L'hôte est le `fieldset` de la section, posé par le panneau (ADR 0161).
  */
 @Component({
+  imports: [SectionLegend, SettingMark],
   // Sélecteur d'attribut : le `fieldset` reste l'enfant direct du panneau (ADR 0161).
   selector: 'fieldset[app-sound-section]',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './sound-section.scss',
   template: `
-    <legend class="control-panel__legend">Son</legend>
+    <legend class="control-panel__legend" appSectionLegend>Son</legend>
     <div class="control-panel__row">
-      <label class="control-panel__check" data-ambient-sound>
+      <label class="control-panel__check" data-ambient-sound appSetting="Sons d’ambiance">
         <input
           type="checkbox"
           [checked]="soundEnabled()"
@@ -35,6 +37,7 @@ import { AmbientSoundState } from '../ambient-sound/ambient-sound-state';
         max="100"
         step="5"
         aria-label="Volume des sons d'ambiance"
+        appSetting="Volume"
         data-ambient-volume
         [value]="soundVolume()"
         [attr.aria-valuetext]="soundVolume() + ' %'"
