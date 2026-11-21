@@ -9881,10 +9881,10 @@
           "note": "Issue #764 : recherche des réglages (dette, S) ; rétro sprint 39 en #766 ; pied de page d'attribution réapparu sur #766 et #764 après PATCH (PIEGES)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-21T13:38:09.280Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-21T14:39:30.775Z",
+          "note": "PR #767 : recherche des réglages, ligne trouvée seule, rang 5 au début d'un mot, légende non répétée (#764) + ROADMAP v1.27/v1.28, CI verte ; pied de page d'attribution revenu sur la PR après PATCH (PIEGES)"
         }
       },
       "metriques": {}
