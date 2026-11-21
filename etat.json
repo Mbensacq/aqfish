@@ -9737,10 +9737,10 @@
           "note": "Issue #722 : tranche 1c, barre du bas, catégorie retenue, exclusifs, restes #759 (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-21T05:51:23.460Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-21T07:08:51.563Z",
+          "note": "PR #760 : raclette et sécateur dans la barre du bas, catégorie retenue, fenêtre exclusive, restes #759 (tranche 1c de #722), CI verte ; pied de page d'attribution réapparu sur la PR après édition (PIEGES)"
         }
       },
       "metriques": {}
