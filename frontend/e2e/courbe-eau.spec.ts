@@ -11,6 +11,7 @@ import {
   savedWaterHistory,
 } from '../src/app/sim/water-history';
 import { createDefaultWorld, type MutableWorld } from '../src/app/sim/world';
+import { fermerReglages, ouvrirReglages } from './outils-panneau';
 
 /**
  * Courbes d'historique de l'eau (issue #511, ADR 0118) : un bac importé montre, dans le détail
@@ -48,14 +49,13 @@ test('bac importé : la jauge dépliée montre sa courbe, au clavier aussi', asy
     waterHistory: savedWaterHistory(history),
   };
   const text = serializeWorld(world, { speed: 0, clock: createDayClock(12, 1200, true) });
-  const settings = page.getByRole('button', { name: 'Réglages' });
-  await settings.click();
+  await ouvrirReglages(page, 'Sauvegarde et partage');
   await page.locator('[data-section="sauvegarde"] input[type="file"]').setInputFiles({
     name: 'courbe.json',
     mimeType: 'application/json',
     buffer: Buffer.from(text),
   });
-  await settings.click();
+  await fermerReglages(page);
 
   const toggle = page.locator('[data-curve-toggle="nitrate"]');
   await expect(toggle).toHaveAttribute('aria-expanded', 'false');

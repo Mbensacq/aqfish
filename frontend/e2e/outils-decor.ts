@@ -6,6 +6,7 @@ import { DEFAULT_DECOR, type DecorItem } from '../src/app/sim/decor';
 import { addDecorItem, type DecorChoiceId } from '../src/app/sim/decor-edit';
 import { DEFAULT_TANK, SAND_THICKNESS } from '../src/app/sim/tank';
 import { selectedTankWorld } from './outils-sauvegarde';
+import { ouvrirReglages } from './outils-panneau';
 
 /**
  * Outils communs des e2e de l'éditeur de décor (#167, #168, #170) : ouverture de la scène et
@@ -28,7 +29,7 @@ export async function openScene(page: Page, search = ''): Promise<string[]> {
 }
 
 export async function startEditing(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Réglages' }).click();
+  await ouvrirReglages(page, 'Décor');
   await page.getByRole('button', { name: 'Éditer le décor', exact: true }).click();
   await expect(host(page)).toHaveAttribute('data-aqfish-editing', 'true');
   await expect(page.getByRole('region', { name: 'Éditeur de décor' })).toBeVisible();

@@ -3,6 +3,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { SAVE_STORAGE_KEY } from '../src/app/core/save-storage/save-storage';
 import { DEFAULT_ROOM } from '../src/app/sim/room';
 import { dragTank, host, openScene, projectToScreen, screenProjector } from './outils-decor';
+import { ouvrirReglages } from './outils-panneau';
 
 /**
  * Éditeur de la pièce (issue #188) : en mode édition, pièce affichée, un élément du
@@ -64,7 +65,7 @@ test.describe('Éditeur de la pièce (#188)', () => {
 
   test('ajouter un meuble, le déplacer, recharger : il est restitué', async ({ page }) => {
     const errors = await openScene(page);
-    await page.getByRole('button', { name: 'Réglages' }).click();
+    await ouvrirReglages(page, 'Bac et milieu');
     await page.getByRole('checkbox', { name: 'Afficher la pièce' }).check();
     await expect(host(page)).toHaveAttribute('data-aqfish-room', 'true');
     await page.getByRole('button', { name: 'Éditer le décor', exact: true }).click();
@@ -117,7 +118,7 @@ test.describe('Éditeur de la pièce (#188)', () => {
     page,
   }) => {
     const errors = await openScene(page);
-    await page.getByRole('button', { name: 'Réglages' }).click();
+    await ouvrirReglages(page, 'Bac et milieu');
     await page.getByRole('checkbox', { name: 'Afficher la pièce' }).check();
     await expect(host(page)).toHaveAttribute('data-aqfish-room', 'true');
     await page.getByRole('button', { name: 'Éditer le décor', exact: true }).click();

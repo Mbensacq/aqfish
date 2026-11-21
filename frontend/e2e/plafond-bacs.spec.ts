@@ -6,6 +6,7 @@ import { ROOM_ANIMAL_CAP, ROOM_TANK_CAP, roomAnimalCount } from '../src/app/sim/
 import { serializeRoom } from '../src/app/sim/room-save';
 import { addTank, createRoom, type RoomState } from '../src/app/sim/room-state';
 import { createDefaultWorld, type MutableWorld } from '../src/app/sim/world';
+import { ouvrirReglages } from './outils-panneau';
 
 /**
  * Plafonds de la pièce, suite (#396, ADR 0096) : une sauvegarde de pièce à 16 bacs, chargée
@@ -85,7 +86,7 @@ test.describe('Plafond de bacs de la pièce (#396)', () => {
     await page.goto('/');
     await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-room-tanks', String(ROOM_TANK_CAP));
-    await page.getByRole('button', { name: 'Réglages' }).click();
+    await ouvrirReglages(page, 'Temps');
     await expect(page.locator('section.control-panel')).toBeVisible();
     await page.getByRole('slider', { name: 'Vitesse de la simulation' }).fill('0');
 

@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
 import { PALETTE } from '../src/app/render/palette';
+import { ouvrirReglages } from './outils-panneau';
 
 /**
  * Koïs, première espèce du bassin (issue #88) : visibles de dessus avec les couleurs de leurs
@@ -71,7 +72,7 @@ test.describe('Koïs (#88)', () => {
     page,
   }) => {
     const errors = await open(page, '?seed=42&environnement=bassin');
-    await page.getByRole('button', { name: 'Réglages' }).click();
+    await ouvrirReglages(page, 'Population');
     const rows = page.locator('[data-section="population"] [data-species]');
     await expect(rows).toHaveCount(2);
     await expect(rows.first()).toHaveAttribute('data-species', 'koi');

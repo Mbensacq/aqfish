@@ -8,6 +8,7 @@ import { initialMaintenance } from '../src/app/sim/maintenance';
 import { serializeWorld } from '../src/app/sim/save';
 import { createDefaultWorld, feedInPlace, type MutableWorld } from '../src/app/sim/world';
 import { card, hostEl, open, openSession, sweepMouse } from './outils-seance';
+import { fermerReglages, ouvrirReglages } from './outils-panneau';
 
 /**
  * Encrassement visible (issue #607, ADR 0141) : un bac tropical sans entretien depuis 20 jours
@@ -37,15 +38,14 @@ async function importOldTank(page: Page): Promise<void> {
   }
   world.food = world.food.map((p) => ({ ...p, age: landingAge(p) + 1, y: p.restY, vy: 0 }));
   const text = serializeWorld(world, { speed: 0, clock: createDayClock(12, 1200, true) });
-  const settings = page.getByRole('button', { name: 'Réglages' });
-  await settings.click();
+  await ouvrirReglages(page, 'Sauvegarde et partage');
   await page.locator('[data-section="sauvegarde"] input[type="file"]').setInputFiles({
     name: 'encrasse.json',
     mimeType: 'application/json',
     buffer: Buffer.from(text),
   });
   await expect(hostEl(page)).toHaveAttribute('data-aqfish-speed', '0');
-  await settings.click();
+  await fermerReglages(page);
 }
 
 test.describe('encrassement visible (#607)', () => {
@@ -85,7 +85,7 @@ test.describe('encrassement visible (#607)', () => {
     const errors = await open(page);
     await importOldTank(page);
     await expect(hostEl(page)).not.toHaveAttribute('data-aqfish-fouling', '0;0');
-    await page.getByRole('button', { name: 'Réglages' }).click();
+    await ouvrirReglages(page, 'Bac et milieu');
     await page.locator('[data-section="bacs"] [data-care-mode-toggle]').click();
     await page
       .locator('[data-care-mode-confirm]')

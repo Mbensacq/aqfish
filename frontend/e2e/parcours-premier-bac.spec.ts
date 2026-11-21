@@ -4,6 +4,7 @@ import { createDayClock } from '../src/app/sim/daylight';
 import { CYCLE_SECONDS, createFirstTankPath, firstTankFacts } from '../src/app/sim/first-tank-path';
 import { serializeWorld } from '../src/app/sim/save';
 import { createDefaultWorld, type MutableWorld } from '../src/app/sim/world';
+import { fermerReglages, ouvrirReglages } from './outils-panneau';
 
 /**
  * Parcours « Mon premier aquarium » (issue #512, ADR 0119) : un bac vide, importé juste avant la
@@ -38,14 +39,13 @@ test('de la première à la deuxième étape en temps accéléré, sauvegarde re
     },
   };
   const text = serializeWorld(world, { speed: 4, clock: createDayClock(12, 1200, true) });
-  const settings = page.getByRole('button', { name: 'Réglages' });
-  await settings.click();
+  await ouvrirReglages(page, 'Sauvegarde et partage');
   await page.locator('[data-section="sauvegarde"] input[type="file"]').setInputFiles({
     name: 'parcours.json',
     mimeType: 'application/json',
     buffer: Buffer.from(text),
   });
-  await settings.click();
+  await fermerReglages(page);
 
   const path = page.locator('[data-first-tank-path]');
   await expect(path).toHaveAttribute('data-step', 'first-fish', { timeout: 120_000 });
@@ -93,13 +93,12 @@ test('Réglages ouvert : la languette se masque, revient à la fermeture dans le
   await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
 
   const path = page.locator('[data-first-tank-path]');
-  const settings = page.getByRole('button', { name: 'Réglages' });
   await expect(path).toBeVisible();
   await expect(page.locator('[data-first-tank-body]')).toBeVisible();
 
-  await settings.click();
+  await ouvrirReglages(page, 'Sauvegarde et partage');
   await expect(path).toHaveCount(0);
-  await settings.click();
+  await fermerReglages(page);
   await expect(path).toBeVisible();
   await expect(page.locator('[data-first-tank-body]')).toBeVisible();
 });

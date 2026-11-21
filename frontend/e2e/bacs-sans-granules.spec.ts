@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { ouvrirReglages } from './outils-panneau';
 
 /**
  * QA de #492 : un bac habité sans animal nourri aux granulés (Paludarium) l'indique dans la
@@ -11,7 +12,7 @@ test('la liste des bacs dit « sans granulés » au Paludarium et garde la faim 
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/');
   await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
-  await page.getByRole('button', { name: 'Réglages' }).click();
+  await ouvrirReglages(page, 'Bac et milieu');
   const environment = page.getByRole('combobox', { name: 'Environnement', exact: true });
   for (const id of ['recif', 'paludarium', 'tropical']) {
     await environment.selectOption(id);

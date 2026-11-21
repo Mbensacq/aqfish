@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { ouvrirReglages } from './outils-panneau';
 
 /**
  * Grenouilles du paludarium (#131) : trois par défaut, effectif réglable au panneau et par
@@ -27,7 +28,7 @@ test.describe('Grenouilles (#131)', () => {
   test('trois par défaut, réglables au panneau, bornées à 4', async ({ page }) => {
     const errors = await open(page, '?environnement=paludarium&seed=42');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /grenouille:3/);
-    await page.getByRole('button', { name: 'Réglages' }).click();
+    await ouvrirReglages(page, 'Population');
     const field = page.getByRole('spinbutton', { name: 'Nombre de sonneurs orientaux' });
     await expect(field).toHaveValue('3');
     await field.fill('9');

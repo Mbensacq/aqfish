@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { fermerReglages, ouvrirReglages } from './outils-panneau';
 
 /**
  * « Réglages » et « Commandes » sur petit écran (#136) : sous 640 px de large, ouvrir l'un
@@ -120,7 +121,7 @@ for (const viewport of SMALL_VIEWPORTS) {
     }) => {
       const errors = await openScene(page);
 
-      await settingsButton(page).click();
+      await ouvrirReglages(page, 'Bac et milieu');
       await expect(settingsPanel(page)).toBeVisible();
       await expectReadable(page, '« Réglages » ouvert');
 
@@ -130,7 +131,7 @@ for (const viewport of SMALL_VIEWPORTS) {
       await expect(settingsButton(page)).toHaveAttribute('aria-expanded', 'false');
       await expectReadable(page, '« Commandes » ouvert après « Réglages »');
 
-      await settingsButton(page).click();
+      await fermerReglages(page);
       await expect(settingsPanel(page)).toBeVisible();
       await expect(helpPanel(page)).toHaveCount(0);
       await expectReadable(page, '« Réglages » rouvert');
@@ -157,7 +158,7 @@ test.describe('800 × 400 (#136)', () => {
   test('écran assez large : les deux panneaux ouverts ensemble, côte à côte', async ({ page }) => {
     const errors = await openScene(page);
     await expect(helpPanel(page)).toBeVisible(); // déplié par défaut au-delà de 639 px
-    await settingsButton(page).click();
+    await ouvrirReglages(page, 'Bac et milieu');
     await expect(settingsPanel(page)).toBeVisible();
     await expect(helpPanel(page)).toBeVisible();
     const boxes = await openPanels(page);

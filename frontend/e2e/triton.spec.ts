@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { ouvrirReglages } from './outils-panneau';
 
 /**
  * Tritons du paludarium (#133) : deux par défaut, effectif réglable au panneau et par l'URL
@@ -28,7 +29,7 @@ test.describe('Tritons (#133)', () => {
     const errors = await open(page, '?environnement=paludarium&seed=42');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /triton:2/);
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /grenouille:3/);
-    await page.getByRole('button', { name: 'Réglages' }).click();
+    await ouvrirReglages(page, 'Population');
     const field = page.getByRole('spinbutton', { name: 'Nombre de tritons à ventre de feu' });
     await expect(field).toHaveValue('2');
     await field.fill('9');

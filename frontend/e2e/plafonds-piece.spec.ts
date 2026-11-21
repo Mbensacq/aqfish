@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { ouvrirReglages } from './outils-panneau';
 
 /**
  * Plafonds de performance de la pièce (#392, lot 4 de #264, ADR 0096) : au plafond
@@ -69,7 +70,7 @@ test.describe('Plafonds de la pièce (#392)', () => {
     page.on('pageerror', (error) => errors.push(error.message));
     await page.goto('/');
     await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
-    await page.getByRole('button', { name: 'Réglages' }).click();
+    await ouvrirReglages(page, 'Temps');
     await expect(page.locator('section.control-panel')).toBeVisible();
     await page.getByRole('slider', { name: 'Vitesse de la simulation' }).fill('0');
     const environment = page.getByRole('combobox', { name: 'Environnement', exact: true });

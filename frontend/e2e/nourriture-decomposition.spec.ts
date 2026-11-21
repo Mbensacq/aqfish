@@ -5,6 +5,7 @@ import { expiryAge, MAX_FOOD, type FoodPellet } from '../src/app/sim/food';
 import { serializeWorld } from '../src/app/sim/save';
 import { freshWater } from '../src/app/sim/water';
 import { createDefaultWorld, feedInPlace, type MutableWorld } from '../src/app/sim/world';
+import { fermerReglages, ouvrirReglages } from './outils-panneau';
 
 /**
  * Nourriture non mangée (issue #638) : une surcharge répétée (douze rations, `MAX_FOOD`
@@ -39,14 +40,13 @@ function overfedWorld(withFood: boolean): string {
 }
 
 async function importWorld(page: Page, text: string): Promise<void> {
-  const settings = page.getByRole('button', { name: 'Réglages' });
-  await settings.click();
+  await ouvrirReglages(page, 'Sauvegarde et partage');
   await page.locator('[data-section="sauvegarde"] input[type="file"]').setInputFiles({
     name: 'surcharge.json',
     mimeType: 'application/json',
     buffer: Buffer.from(text),
   });
-  await settings.click();
+  await fermerReglages(page);
   await expect(page.locator('.control-panel')).toHaveCount(0);
 }
 

@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { ouvrirReglages } from './outils-panneau';
 
 /**
  * Fiches d'espèces (issue #237) : bouton « Fiche » de chaque espèce du panneau « Population »,
@@ -21,7 +22,7 @@ async function open(page: Page): Promise<string[]> {
   });
   await page.goto('/?seed=42&vitesse=0');
   await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
-  await page.getByRole('button', { name: 'Réglages' }).click();
+  await ouvrirReglages(page, 'Population');
   await expect(section(page)).toBeVisible();
   return errors;
 }

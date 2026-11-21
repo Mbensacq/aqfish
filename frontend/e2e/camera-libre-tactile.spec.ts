@@ -11,6 +11,7 @@ import {
   savedDecor,
   touchDragTank,
 } from './outils-decor';
+import { ouvrirReglages } from './outils-panneau';
 
 /**
  * Caméra libre dans la pièce, lot 2 (issue #344) : au doigt (glisser pour orienter, pincer
@@ -77,7 +78,7 @@ async function expectPadClearOf(page: Page, selector: string): Promise<void> {
 
 /** Ouvre « Réglages », affiche la pièce ; le panneau reste ouvert. */
 async function showRoom(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Réglages' }).click();
+  await ouvrirReglages(page, 'Bac et milieu');
   await page.getByRole('checkbox', { name: 'Afficher la pièce' }).check();
   await expect(hostEl(page)).toHaveAttribute('data-aqfish-room', 'true');
 }
@@ -136,7 +137,7 @@ test.describe('Caméra libre au doigt, 390 × 844 (#344)', () => {
       await expect(hostEl(page)).toHaveAttribute('data-aqfish-camera-libre', 'true');
       await expect(pad(page)).toBeVisible();
       await expectPadClearOf(page, '.control-panel');
-      await page.getByRole('button', { name: 'Réglages' }).click();
+      await ouvrirReglages(page, 'Bac et milieu');
       await expect(page.locator('.control-panel')).toBeHidden();
       await expectPadClearOf(page, 'app-dashboard-frame, app-dashboard-status');
       await page.screenshot({ path: testInfo.outputPath('pave-390.png') });

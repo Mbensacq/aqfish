@@ -21,6 +21,7 @@ import {
   touchDragTank,
 } from './outils-decor';
 import { selectedTankWorld } from './outils-sauvegarde';
+import { ouvrirReglages } from './outils-panneau';
 
 /**
  * Éditeur de décor (issue #167) : « Réglages » → « Éditer le décor » ouvre le mode édition ;
@@ -155,7 +156,7 @@ test.describe('Éditeur de décor (#167)', () => {
 
   test('hors du bac tropical, « Éditer le décor » est inactif', async ({ page }) => {
     const errors = await openScene(page, '?seed=42&environnement=bassin');
-    await page.getByRole('button', { name: 'Réglages' }).click();
+    await ouvrirReglages(page, 'Décor');
     const button = page.locator('[data-decor-edit]');
     await expect(button).toHaveAttribute('aria-disabled', 'true');
     // Bouton focalisable mais sans effet (`aria-disabled`) : clic envoyé directement.

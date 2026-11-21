@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { ouvrirReglages } from './outils-panneau';
 
 /**
  * QA de l'axolotl (#130) : effectifs au panneau, bornes de l'URL, autres environnements
@@ -40,7 +41,7 @@ test.describe('Axolotl : parcours utilisateur', () => {
   test('le panneau ajoute et retire un axolotl, bornes comprises', async ({ page }) => {
     // Bac d'eau froide : deux axolotls par défaut depuis #271 (aucun au paludarium).
     const errors = await open(page, '?environnement=eaufroide&seed=42');
-    await page.getByRole('button', { name: 'Réglages' }).click();
+    await ouvrirReglages(page, 'Population');
     const field = page.getByRole('spinbutton', { name: 'Nombre d’axolotls' });
     await expect(field).toHaveValue('2');
     await page.getByRole('button', { name: 'Ajouter un axolotl' }).click();
@@ -66,7 +67,7 @@ test.describe('Axolotl : parcours utilisateur', () => {
       expect((await hostEl(page).getAttribute('data-aqfish-population')) ?? '').not.toContain(
         'axolotl',
       );
-      await page.getByRole('button', { name: 'Réglages' }).click();
+      await ouvrirReglages(page, 'Population');
       await expect(page.getByRole('spinbutton', { name: 'Nombre d’axolotls' })).toHaveCount(0);
       expect(errors).toEqual([]);
     }
@@ -101,7 +102,7 @@ test.describe('Axolotl : parcours utilisateur', () => {
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     const errors = await open(page, '?environnement=paludarium&seed=7');
-    await page.getByRole('button', { name: 'Réglages' }).click();
+    await ouvrirReglages(page, 'Population');
     const field = page.getByRole('spinbutton', { name: 'Nombre d’axolotls' });
     await field.scrollIntoViewIfNeeded();
     const inside = await field.evaluate((el) => {

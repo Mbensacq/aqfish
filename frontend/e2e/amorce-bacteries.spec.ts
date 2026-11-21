@@ -3,6 +3,7 @@ import { expect, test } from '@playwright/test';
 import { createDayClock } from '../src/app/sim/daylight';
 import { serializeWorld } from '../src/app/sim/save';
 import { createDefaultWorld, type MutableWorld } from '../src/app/sim/world';
+import { fermerReglages, ouvrirReglages } from './outils-panneau';
 
 /**
  * Amorce de bactéries (issue #529) : le bouton s'atteint au clavier et le geste est annoncé,
@@ -13,7 +14,7 @@ test('amorce de bactéries : clavier et annonce (#529)', async ({ page }) => {
   test.setTimeout(180_000);
   await page.goto('/');
   await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
-  await page.getByRole('button', { name: 'Réglages' }).click();
+  await ouvrirReglages(page, 'Eau et matériel');
 
   const button = page.locator('[data-bacteria-starter]');
   const message = page.locator('[data-starter-message]');
@@ -27,7 +28,7 @@ test('amorce de bactéries : clavier et annonce (#529)', async ({ page }) => {
   await expect(link).toHaveText('Produits et traitements');
   await link.click();
   await expect(page.locator('[data-wiki-page-view="produits"]')).toBeVisible();
-  await page.getByRole('button', { name: 'Réglages' }).click();
+  await fermerReglages(page);
 
   const world = createDefaultWorld(11, 'tropical') as MutableWorld;
   world.water = { ...world.water, filter: 0.2 };

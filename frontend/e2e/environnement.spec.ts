@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 import { ENVIRONMENT_TONES, PALETTE } from '../src/app/render/palette';
 import { FOOD_PER_DROP } from '../src/app/sim/food';
+import { fermerReglages, ouvrirReglages } from './outils-panneau';
 
 /**
  * Environnements (issue #87) : choix entre le bac tropical, le bassin, le paludarium (#129),
@@ -102,7 +103,7 @@ test.describe('Environnement', () => {
   test('à 390 px : liste entière dans le panneau, libellés lisibles', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     const errors = await open(page, '?seed=42');
-    await toggle(page).click();
+    await ouvrirReglages(page, 'Bac et milieu');
     const panel = (await page.locator('section.control-panel').boundingBox())!;
     const list = (await selector(page).boundingBox())!;
     expect(list.x).toBeGreaterThanOrEqual(panel.x);
@@ -132,7 +133,7 @@ test.describe('Environnement', () => {
   }) => {
     // Sans `seed=` : la sauvegarde automatique restaure le monde au rechargement.
     const errors = await open(page, '');
-    await toggle(page).click();
+    await ouvrirReglages(page, 'Bac et milieu');
     await selector(page).selectOption('paludarium');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'paludarium');
     await expect(hostEl(page)).toHaveAttribute(
@@ -148,7 +149,7 @@ test.describe('Environnement', () => {
       page.getByRole('spinbutton', { name: 'Nombre de tritons à ventre de feu' }),
     ).toHaveValue('2');
     await expect(page.locator('[data-population-empty]')).toHaveCount(0);
-    await toggle(page).click();
+    await fermerReglages(page);
 
     // Vue de dessus : la berge à gauche (−X), l'eau à droite (+X).
     await page.keyboard.press('1');
@@ -187,7 +188,7 @@ test.describe('Environnement', () => {
   }) => {
     // Sans `seed=` : la sauvegarde automatique restaure le monde au rechargement.
     const errors = await open(page, '');
-    await toggle(page).click();
+    await ouvrirReglages(page, 'Bac et milieu');
     await expect(selector(page).locator('option[value="recif"]')).toHaveText('Récif');
     await selector(page).selectOption('recif');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'recif');
@@ -197,7 +198,7 @@ test.describe('Environnement', () => {
       'clown:3,chirurgien:4,chromis:0,gobie:0,gramma:0,crevette:0,blennie:0',
     );
     await expect(page.locator('[data-population-empty]')).toHaveCount(0);
-    await toggle(page).click();
+    await fermerReglages(page);
 
     // Vue de dessus : un clic au centre dépose des granulés sur l'eau.
     await page.keyboard.press('1');
@@ -218,7 +219,7 @@ test.describe('Environnement', () => {
   }) => {
     // Sans `seed=` : la sauvegarde automatique restaure le monde au rechargement.
     const errors = await open(page, '');
-    await toggle(page).click();
+    await ouvrirReglages(page, 'Bac et milieu');
     await expect(selector(page).locator('option')).toHaveText([
       'Bac tropical',
       'Bassin',
@@ -309,7 +310,7 @@ test.describe('Environnement', () => {
     page,
   }) => {
     const errors = await open(page, '?seed=7');
-    await toggle(page).click();
+    await ouvrirReglages(page, 'Bac et milieu');
     await selector(page).selectOption('bassin');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'bassin');
     const canvas = (await page.locator('canvas').first().boundingBox())!;

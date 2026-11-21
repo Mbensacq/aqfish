@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { ouvrirReglages } from './outils-panneau';
 
 /**
  * Catalogue d'espèces (issue #189) : dans le panneau, les espèces de l'environnement courant,
@@ -8,7 +9,6 @@ import { expect, test, type Page } from '@playwright/test';
  */
 
 const hostEl = (page: Page) => page.locator('app-aquarium-host');
-const toggle = (page: Page) => page.getByRole('button', { name: 'Réglages' });
 /** Curseur d'une espèce, désigné par la fin de son nom (« de néons », « d’axolotls »). */
 const slider = (page: Page, ofPlural: string) =>
   page.getByRole('slider', { name: `Curseur du nombre ${ofPlural}` });
@@ -26,7 +26,7 @@ test.describe('Catalogue d’espèces (#189)', () => {
   test('curseur : l’effectif réel change, borné au maximum de l’espèce', async ({ page }) => {
     // Sans paramètre de monde dans l'URL : le rechargement relit la sauvegarde automatique.
     const errors = await open(page, '');
-    await toggle(page).click();
+    await ouvrirReglages(page, 'Population');
     await expect(rows(page)).toHaveCount(17);
     await expect(hostEl(page)).toHaveAttribute(
       'data-aqfish-population',
@@ -81,7 +81,7 @@ test.describe('Catalogue d’espèces (#189)', () => {
     page,
   }) => {
     const errors = await open(page, '?seed=42&environnement=paludarium');
-    await toggle(page).click();
+    await ouvrirReglages(page, 'Population');
     await expect(rows(page)).toHaveCount(3);
     expect(
       await rows(page).evaluateAll((els) => els.map((el) => el.getAttribute('data-species'))),
@@ -97,7 +97,7 @@ test.describe('Catalogue d’espèces (#189)', () => {
   test('390 px : chaque curseur entier dans le panneau', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     const errors = await open(page);
-    await toggle(page).click();
+    await ouvrirReglages(page, 'Population');
     const panel = await page.locator('section.control-panel').boundingBox();
     expect(panel).not.toBeNull();
     for (const plural of ['néons', 'guppys', 'corydoras']) {

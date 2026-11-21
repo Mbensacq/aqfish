@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 import { keyCommand } from '../src/app/core/commands/commands';
 import { PALETTE } from '../src/app/render/palette';
+import { ouvrirReglages } from './outils-panneau';
 
 /**
  * Pluie dans le bassin (issue #106) : touche `R` et case « Pluie » du panneau, sans effet
@@ -52,7 +53,7 @@ test.describe('Pluie (#106)', () => {
     await expect(host(page)).toHaveAttribute('data-aqfish-rain', 'false');
     await page.keyboard.press('r');
     await expect(host(page)).toHaveAttribute('data-aqfish-rain', 'true');
-    await page.getByRole('button', { name: 'Réglages' }).click();
+    await ouvrirReglages(page, 'Temps');
     await expect(rainBox(page)).toBeChecked();
     await rainBox(page).uncheck();
     await expect(host(page)).toHaveAttribute('data-aqfish-rain', 'false');
@@ -77,7 +78,7 @@ test.describe('Pluie (#106)', () => {
     const errors = await open(page, '?seed=42');
     await page.keyboard.press('r');
     await expect(host(page)).toHaveAttribute('data-aqfish-rain', 'false');
-    await page.getByRole('button', { name: 'Réglages' }).click();
+    await ouvrirReglages(page, 'Temps');
     await expect(page.locator('.control-panel')).toBeVisible();
     await expect(rainBox(page)).toHaveCount(0);
 

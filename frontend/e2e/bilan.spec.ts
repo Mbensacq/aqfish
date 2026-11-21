@@ -4,6 +4,7 @@ import { createDayClock } from '../src/app/sim/daylight';
 import { setPopulation } from '../src/app/sim/population';
 import { serializeWorld } from '../src/app/sim/save';
 import { createDefaultWorld } from '../src/app/sim/world';
+import { fermerReglages, ouvrirReglages } from './outils-panneau';
 
 /**
  * Bilan du bac (issue #514, ADR 0117) : jamais affiché sans demande ; un bac surpeuplé importé
@@ -25,14 +26,13 @@ test('bac surpeuplé importé : bilan à la demande, densité en premier', async
 
   const packed = setPopulation(setPopulation(createDefaultWorld(42), 'neon', 40), 'guppy', 20);
   const text = serializeWorld(packed, { speed: 0, clock: createDayClock(12, 1200, true) });
-  const settings = page.getByRole('button', { name: 'Réglages' });
-  await settings.click();
+  await ouvrirReglages(page, 'Sauvegarde et partage');
   await page.locator('[data-section="sauvegarde"] input[type="file"]').setInputFiles({
     name: 'surpeuple.json',
     mimeType: 'application/json',
     buffer: Buffer.from(text),
   });
-  await settings.click();
+  await fermerReglages(page);
 
   await expect(page.locator('[data-review-detail]')).toHaveCount(0);
   const button = page.getByRole('button', { name: 'Bilan du bac' });

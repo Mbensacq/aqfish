@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { fermerReglages, ouvrirReglages } from './outils-panneau';
 
 /**
  * Option « Réduire les mouvements » (#406) : initialisée sur `prefers-reduced-motion`,
@@ -7,7 +8,6 @@ import { expect, test, type Page } from '@playwright/test';
  */
 
 const host = (page: Page) => page.locator('app-aquarium-host');
-const settings = (page: Page) => page.getByRole('button', { name: 'Réglages' });
 const option = (page: Page) => page.getByRole('checkbox', { name: 'Réduire les mouvements' });
 
 async function openScene(page: Page, search = ''): Promise<string[]> {
@@ -30,7 +30,7 @@ test.describe('préférence système « réduire les mouvements »', () => {
   test('option cochée d’emblée, mouvements réduits', async ({ page }) => {
     const errors = await openScene(page);
     await expect(host(page)).toHaveAttribute('data-aqfish-mouvements-reduits', 'true');
-    await settings(page).click();
+    await ouvrirReglages(page, 'Accessibilité');
     await expect(option(page)).toBeChecked();
     expect(errors).toEqual([]);
   });
@@ -44,14 +44,14 @@ test.describe('option des réglages', () => {
   }) => {
     const errors = await openScene(page);
     await expect(host(page)).toHaveAttribute('data-aqfish-mouvements-reduits', 'false');
-    await settings(page).click();
+    await ouvrirReglages(page, 'Accessibilité');
     await expect(option(page)).not.toBeChecked();
     await option(page).check();
     await expect(host(page)).toHaveAttribute('data-aqfish-mouvements-reduits', 'true');
     await page.reload();
     await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
     await expect(host(page)).toHaveAttribute('data-aqfish-mouvements-reduits', 'true');
-    await settings(page).click();
+    await fermerReglages(page);
     await expect(option(page)).toBeChecked();
     // Décochée : mouvements normaux, choix mémorisé aussi.
     await option(page).uncheck();

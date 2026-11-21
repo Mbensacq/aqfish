@@ -4,6 +4,7 @@ import { createDayClock } from '../src/app/sim/daylight';
 import { serializeWorld } from '../src/app/sim/save';
 import { sampleWater } from '../src/app/sim/water-quality';
 import { createDefaultWorld, type MutableWorld } from '../src/app/sim/world';
+import { ouvrirReglages } from './outils-panneau';
 
 /**
  * Eau (issue #207) : section « Eau » du panneau (changement d'eau, chauffage) et, depuis
@@ -32,7 +33,7 @@ async function open(page: Page): Promise<string[]> {
 }
 
 async function openPanel(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Réglages' }).click();
+  await ouvrirReglages(page, 'Eau et matériel');
   await expect(section(page)).toBeVisible();
 }
 

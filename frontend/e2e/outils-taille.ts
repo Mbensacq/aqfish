@@ -7,6 +7,7 @@ import { isGrowingPlant, plantLimits } from '../src/app/sim/plant-growth';
 import { serializeWorld } from '../src/app/sim/save';
 import { createDefaultWorld, type MutableWorld } from '../src/app/sim/world';
 import { card, hostEl } from './outils-seance';
+import { fermerReglages, ouvrirReglages } from './outils-panneau';
 
 /**
  * Outils des e2e de l'étape « taille » de la séance d'entretien (#623) : import d'un bac aux
@@ -33,15 +34,14 @@ export const pruned = async (page: Page): Promise<boolean> =>
 /** Importe `world`, simulation en pause, midi figé. */
 export async function importWorld(page: Page, world: MutableWorld, name: string): Promise<void> {
   const text = serializeWorld(world, { speed: 0, clock: createDayClock(12, 1200, true) });
-  const settings = page.getByRole('button', { name: 'Réglages' });
-  await settings.click();
+  await ouvrirReglages(page, 'Sauvegarde et partage');
   await page.locator('[data-section="sauvegarde"] input[type="file"]').setInputFiles({
     name,
     mimeType: 'application/json',
     buffer: Buffer.from(text),
   });
   await expect(hostEl(page)).toHaveAttribute('data-aqfish-speed', '0');
-  await settings.click();
+  await fermerReglages(page);
 }
 
 /** Bac tropical par défaut, plantes à tige à leur plafond. */

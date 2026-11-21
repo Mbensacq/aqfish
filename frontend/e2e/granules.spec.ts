@@ -3,6 +3,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { createDayClock } from '../src/app/sim/daylight';
 import { saveData } from '../src/app/sim/save';
 import { createDefaultWorld } from '../src/app/sim/world';
+import { ouvrirReglages } from './outils-panneau';
 
 /**
  * Rendu des granulés (issues #117 et #226) : voxels par défaut, bouton du panneau pour passer
@@ -26,7 +27,7 @@ async function open(page: Page, search = ''): Promise<string[]> {
 }
 
 async function openPanel(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Réglages' }).click();
+  await ouvrirReglages(page, 'Décor');
   await expect(foodButton(page)).toBeVisible();
 }
 

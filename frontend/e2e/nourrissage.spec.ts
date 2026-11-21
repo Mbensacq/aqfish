@@ -6,6 +6,7 @@ import { CAMERA_FOV_DEG } from '../src/app/render/camera-presets';
 import { FOOD_PER_DROP, MAX_FOOD } from '../src/app/sim/food';
 import { advanceToWithFeedings, createDefaultWorld } from '../src/app/sim/world';
 import { waterVolume } from '../src/app/sim/tank';
+import { fermerReglages, ouvrirReglages } from './outils-panneau';
 
 /**
  * Nourrissage au clic (issue #67) : un clic sur l'eau dépose des granulés, un glisser de
@@ -225,12 +226,11 @@ test.describe('Nourrissage (#67)', () => {
     test.setTimeout(300_000);
     await page.setViewportSize({ width: 640, height: 480 });
     const errors = await openScene(page, '?seed=42');
-    const toggle = page.getByRole('button', { name: 'Réglages' });
-    await toggle.click();
+    await ouvrirReglages(page, 'Temps');
     await page.getByRole('slider', { name: 'Vitesse de la simulation' }).fill('0');
     await expect(host(page)).toHaveAttribute('data-aqfish-speed', '0');
     // Replier le panneau : la touche `G` est ignorée tant que le focus est dans un champ.
-    await toggle.click();
+    await fermerReglages(page);
     await expect(host(page)).toHaveAttribute('data-aqfish-food', '0');
     for (let i = 0; i < MAX_FOOD / FOOD_PER_DROP + 4; i++) {
       await page.keyboard.press('g');

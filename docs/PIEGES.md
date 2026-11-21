@@ -772,6 +772,16 @@ origin/main`, `node_modules` en lien symbolique) ; il sert aussi aux captures «
 
 ## Tests
 
+- **E2e : ouvrir « Réglages » par `ouvrirReglages`, jamais par un clic direct** (cycle 266,
+  #722) : la fenêtre des réglages remplace le panneau déroulant ; elle couvre toute la page
+  (fond assombri, le bouton « Réglages » n'est plus cliquable une fois ouverte) et n'affiche
+  qu'une catégorie. `ouvrirReglages(page, 'Eau et matériel')` et `fermerReglages(page)`
+  (`e2e/outils-panneau.ts`) sont les seuls chemins. Le test qui utilise plusieurs catégories
+  doit en changer avant chaque contrôle d'une autre catégorie ; l'import d'un monde par
+  `[data-section="sauvegarde"] input[type="file"]` (28 appels) a besoin de « Sauvegarde et
+  partage » ouverte, là où il ne demandait que le panneau déplié.
+  Catégorie d'un appel : celle du premier contrôle utilisé ensuite (relevé par le script de la
+  PR du cycle 266, à partir des jetons du panneau rendu). (2026-11-21)
 - **Éléments en ligne d'un `@for` : aucun espace entre eux dans le texte** (cycle 197, #574) :
   Angular retire les nœuds de texte faits seulement d'espaces entre deux éléments (option
   `preserveWhitespaces` à `false`). Deux `<strong>` successifs d'un `@for` s'affichent espacés

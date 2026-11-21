@@ -7,6 +7,7 @@ import { serializeWorld } from '../src/app/sim/save';
 import { freshWater } from '../src/app/sim/water';
 import { createDefaultWorld, type MutableWorld } from '../src/app/sim/world';
 import { selectedTankWorld } from './outils-sauvegarde';
+import { ouvrirReglages } from './outils-panneau';
 
 /**
  * pH (issue #236) : jauge « pH » (dans le tableau de bord en bordure depuis #256), zone selon
@@ -29,7 +30,7 @@ async function open(page: Page): Promise<string[]> {
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/');
   await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
-  await page.getByRole('button', { name: 'Réglages' }).click();
+  await ouvrirReglages(page, 'Eau et matériel');
   await expect(section(page)).toBeVisible();
   return errors;
 }

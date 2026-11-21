@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { ouvrirReglages } from './outils-panneau';
 
 /**
  * Mode décor, lot 1 (#278, ADR 0077) : changer de mode demande une confirmation qui explique
@@ -20,7 +21,7 @@ async function count(page: Page, species: string): Promise<number> {
 }
 
 async function openPanel(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Réglages' }).click();
+  await ouvrirReglages(page, 'Bac et milieu');
   await expect(page.locator('section.control-panel')).toBeVisible();
 }
 

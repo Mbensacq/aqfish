@@ -8,6 +8,7 @@ import {
   infectWorldInPlace,
   type MutableWorld,
 } from '../src/app/sim/world';
+import { ouvrirReglages } from './outils-panneau';
 
 /**
  * Soins des points blancs (issue #361, ADR 0091) : section « Soins » des réglages, gestes,
@@ -34,7 +35,7 @@ async function open(page: Page): Promise<string[]> {
 }
 
 async function openPanel(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Réglages' }).click();
+  await ouvrirReglages(page, 'Eau et matériel');
   await expect(page.locator('[data-section="eau"]')).toBeVisible();
 }
 

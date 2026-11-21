@@ -1,4 +1,5 @@
 import { expect, type Locator, type Page } from '@playwright/test';
+import { fermerReglages, ouvrirReglages } from './outils-panneau';
 
 /**
  * Outils communs des e2e du cadrage des panneaux (rétro du sprint 5, #108, #79) : panneaux à
@@ -34,7 +35,7 @@ export const PANELS: readonly PanelCase[] = [
     name: 'Réglages',
     panel: (page) => page.locator('.control-panel'),
     open: async (page) => {
-      await page.getByRole('button', { name: 'Réglages' }).click();
+      await ouvrirReglages(page, 'Temps');
       await expect(page.locator('.control-panel')).toBeVisible();
     },
   },
@@ -44,7 +45,7 @@ export const PANELS: readonly PanelCase[] = [
     search: '?seed=42&environnement=bassin',
     panel: (page) => page.locator('.control-panel'),
     open: async (page) => {
-      await page.getByRole('button', { name: 'Réglages' }).click();
+      await ouvrirReglages(page, 'Temps');
       await expect(page.locator('.control-panel [data-rain]')).toBeVisible();
     },
   },
@@ -55,7 +56,7 @@ export const PANELS: readonly PanelCase[] = [
     search: '?seed=42&points-blancs=1',
     panel: (page) => page.locator('.control-panel'),
     open: async (page) => {
-      await page.getByRole('button', { name: 'Réglages' }).click();
+      await ouvrirReglages(page, 'Soins et produits');
       await expect(page.locator(".control-panel [data-section='soins']")).toBeVisible();
     },
   },
@@ -66,7 +67,7 @@ export const PANELS: readonly PanelCase[] = [
     search: '?seed=42&points-blancs=1',
     panel: (page) => page.locator('.control-panel'),
     open: async (page) => {
-      await page.getByRole('button', { name: 'Réglages' }).click();
+      await ouvrirReglages(page, 'Soins et produits');
       await page.getByRole('button', { name: 'Ajouter 1 g/L de sel' }).click();
       await expect(page.locator('.control-panel [data-treatment-message]')).toContainText(
         'Prudence',
@@ -80,7 +81,7 @@ export const PANELS: readonly PanelCase[] = [
     search: '?seed=42&points-blancs=1',
     panel: (page) => page.locator('.control-panel'),
     open: async (page) => {
-      await page.getByRole('button', { name: 'Réglages' }).click();
+      await ouvrirReglages(page, 'Bac et milieu');
       await page.getByRole('button', { name: 'Installer un bac de quarantaine' }).click();
       await expect(page.locator('.control-panel [data-quarantine]')).toBeVisible();
     },
@@ -124,10 +125,10 @@ export const PANELS: readonly PanelCase[] = [
     search: '?seed=42&points-blancs=1',
     panel: (page) => page.locator('[data-review-detail]'),
     open: async (page) => {
-      await page.getByRole('button', { name: 'Réglages' }).click();
+      await ouvrirReglages(page, 'Soins et produits');
       await page.getByRole('button', { name: 'Ajouter 1 g/L de sel' }).click();
       await page.getByRole('button', { name: 'Changer l’eau' }).click();
-      await page.getByRole('button', { name: 'Réglages' }).click();
+      await fermerReglages(page);
       await page.locator('[data-review]').click();
       await page.locator('[data-journal]').click();
       await expect(page.locator('[data-journal-detail] li')).toHaveCount(2);

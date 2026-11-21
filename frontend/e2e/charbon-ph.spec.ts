@@ -3,6 +3,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { createDayClock } from '../src/app/sim/daylight';
 import { serializeWorld } from '../src/app/sim/save';
 import { createDefaultWorld, infectWorldInPlace, type MutableWorld } from '../src/app/sim/world';
+import { ouvrirReglages } from './outils-panneau';
 
 /**
  * Charbon actif et régulateur de pH (issue #531, ADR 0122), vus par le joueur : l'alerte du
@@ -34,7 +35,7 @@ test.describe('Charbon actif et régulateur de pH (#531)', () => {
     page.on('pageerror', (error) => errors.push(error.message));
     await page.goto('/');
     await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
-    await page.getByRole('button', { name: 'Réglages' }).click();
+    await ouvrirReglages(page, 'Soins et produits');
 
     const world: MutableWorld = createDefaultWorld(42);
     infectWorldInPlace(world);

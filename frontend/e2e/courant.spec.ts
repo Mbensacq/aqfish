@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { ouvrirReglages } from './outils-panneau';
 
 /**
  * Courant d'eau (issue #460) : bouton « Courant » de la section « Eau » du panneau
@@ -14,7 +15,7 @@ async function open(page: Page): Promise<string[]> {
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/');
   await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
-  await page.getByRole('button', { name: 'Réglages' }).click();
+  await ouvrirReglages(page, 'Eau et matériel');
   await expect(button(page)).toBeVisible();
   return errors;
 }
@@ -38,7 +39,7 @@ test.describe('courant (#460)', () => {
     await page.reload();
     await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-current', 'fort');
-    await page.getByRole('button', { name: 'Réglages' }).click();
+    await ouvrirReglages(page, 'Eau et matériel');
     await button(page).click();
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-current', 'coupe');
     expect(errors).toEqual([]);

@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { ouvrirReglages } from './outils-panneau';
 
 /**
  * Sons d'ambiance (#411, ADR 0100) : section « Son » des réglages, désactivée par défaut,
@@ -11,8 +12,6 @@ interface AudioCount {
   created: number;
   closed: number;
 }
-
-const settings = (page: Page) => page.getByRole('button', { name: 'Réglages' });
 const soundBox = (page: Page) => page.getByRole('checkbox', { name: "Sons d'ambiance" });
 const volume = (page: Page) => page.getByRole('slider', { name: "Volume des sons d'ambiance" });
 const motionBox = (page: Page) => page.getByRole('checkbox', { name: 'Réduire les mouvements' });
@@ -64,7 +63,7 @@ test.describe('sons d’ambiance', () => {
   }) => {
     const errors = await openScene(page, '?vitesse=0');
     expect(await audioCount(page)).toEqual({ created: 0, closed: 0 });
-    await settings(page).click();
+    await ouvrirReglages(page, 'Son');
     await expect(soundBox(page)).not.toBeChecked();
     await expect(volume(page)).toHaveValue('30');
     // Aucun contexte audio tant que la case n'est pas cochée, même après des gestes.
@@ -98,7 +97,7 @@ test.describe('sons d’ambiance', () => {
   }) => {
     const errors = await openScene(page, '?vitesse=0', 'actif:60');
     expect(await audioCount(page)).toEqual({ created: 0, closed: 0 });
-    await settings(page).click();
+    await ouvrirReglages(page, 'Son');
     await expect(soundBox(page)).toBeChecked();
     await expect(volume(page)).toHaveValue('60');
     await expect.poll(() => audioCount(page)).toEqual({ created: 1, closed: 0 });
@@ -120,7 +119,7 @@ test.describe('sons d’ambiance', () => {
     });
     await page.goto('/?vitesse=0');
     await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
-    await settings(page).click();
+    await ouvrirReglages(page, 'Son');
     await expect(soundBox(page)).toBeEnabled();
     await soundBox(page).click();
     const message = page.locator('#panneau-son-indisponible');

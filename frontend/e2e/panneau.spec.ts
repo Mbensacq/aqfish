@@ -1,18 +1,20 @@
 import { expect, test } from '@playwright/test';
 
 import {
-  hostEl,
-  toggle,
-  speed,
-  hour,
   autoHour,
-  decor,
-  count,
-  population,
-  open,
-  tick,
-  overlaps,
   box,
+  count,
+  decor,
+  fermerReglages,
+  hostEl,
+  hour,
+  open,
+  ouvrirReglages,
+  overlaps,
+  population,
+  speed,
+  tick,
+  toggle,
   vegetationPixels,
 } from './outils-panneau';
 
@@ -27,7 +29,7 @@ test.describe('Panneau de contrôle', () => {
     const errors = await open(page);
     await expect(toggle(page)).toHaveAttribute('aria-expanded', 'false');
     await expect(speed(page)).toHaveCount(0);
-    await toggle(page).click();
+    await ouvrirReglages(page, 'Temps');
     await expect(toggle(page)).toHaveAttribute('aria-expanded', 'true');
     await expect(page.getByRole('region', { name: 'Réglages de l’aquarium' })).toBeVisible();
     for (const control of [speed(page), hour(page), autoHour(page), decor(page)]) {
@@ -36,14 +38,14 @@ test.describe('Panneau de contrôle', () => {
     await expect(speed(page)).toHaveAttribute('aria-valuetext', '×1');
     await expect(autoHour(page)).toBeChecked();
     await expect(decor(page)).toBeChecked();
-    await toggle(page).click();
+    await fermerReglages(page);
     await expect(speed(page)).toHaveCount(0);
     expect(errors).toEqual([]);
   });
 
   test('vitesse 0 : la simulation s’arrête, le rendu continue ; ×4 reprend', async ({ page }) => {
     const errors = await open(page);
-    await toggle(page).click();
+    await ouvrirReglages(page, 'Temps');
     await speed(page).fill('0');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-speed', '0');
     await expect(speed(page)).toHaveAttribute('aria-valuetext', 'Pause');
@@ -64,7 +66,7 @@ test.describe('Panneau de contrôle', () => {
     page,
   }) => {
     const errors = await open(page);
-    await toggle(page).click();
+    await ouvrirReglages(page, 'Temps');
     await hour(page).fill('14.5');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-hour', '14.50');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-hour-frozen', 'true');
@@ -84,7 +86,7 @@ test.describe('Panneau de contrôle', () => {
 
   test('décor : la case masque puis réaffiche rochers et plantes', async ({ page }) => {
     const errors = await open(page, '?seed=42&heure=12');
-    await toggle(page).click();
+    await ouvrirReglages(page, 'Temps');
     // Simulation à l'arrêt : seules les images du décor changent.
     await speed(page).fill('0');
     await page.getByRole('button', { name: /vue de face/i }).click();
@@ -104,7 +106,7 @@ test.describe('Panneau de contrôle', () => {
     page,
   }) => {
     const errors = await open(page);
-    await toggle(page).click();
+    await ouvrirReglages(page, 'Population');
     await expect(hostEl(page)).toHaveAttribute(
       'data-aqfish-population',
       'neon:12,guppy:6,corydora:6,rasbora:0,tetra:0,kuhli:0,gourami:0,platy:0,danio:0,ancistrus:0,otocinclus:0,braise:0,molly:0,miel:0,xipho:0,cerise:0,neritine:0',
@@ -148,7 +150,7 @@ test.describe('Panneau de contrôle', () => {
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     const errors = await open(page);
-    await toggle(page).click();
+    await ouvrirReglages(page, 'Population');
     const panel = await box(page.locator('section.control-panel'));
     const button = await box(toggle(page));
     for (const b of [panel, button]) {

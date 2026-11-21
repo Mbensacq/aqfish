@@ -5,6 +5,7 @@ import { expect, test, type Browser, type Page } from '@playwright/test';
 import { DEFAULT_SAVE_SETTINGS } from '../src/app/sim/save';
 import { createShare } from '../src/app/sim/share-link';
 import { createDefaultWorld } from '../src/app/sim/world';
+import { ouvrirReglages } from './outils-panneau';
 
 /**
  * Partage d'un bac par lien (#426, ADR 0105) : « Partager ce bac » produit un lien ; ouvert
@@ -53,7 +54,7 @@ test.describe('Partage par lien (#426)', () => {
   }) => {
     test.setTimeout(240_000);
     const source = await open(page, '/');
-    await page.getByRole('button', { name: 'Réglages' }).click();
+    await ouvrirReglages(page, 'Population');
     await page.getByRole('button', { name: 'Retirer un guppy' }).click();
     await page.getByRole('button', { name: 'Ajouter un néon' }).click();
     const population = await hostEl(page).getAttribute('data-aqfish-population');

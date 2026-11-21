@@ -5,6 +5,7 @@ import { createDayClock } from '../src/app/sim/daylight';
 import { landingAge } from '../src/app/sim/food';
 import { serializeWorld } from '../src/app/sim/save';
 import { createDefaultWorld, feedInPlace, type MutableWorld } from '../src/app/sim/world';
+import { fermerReglages, ouvrirReglages } from './outils-panneau';
 
 /**
  * Outils communs des e2e de la séance d'entretien guidée (#604, #605, ADR 0138) : import d'un
@@ -28,15 +29,14 @@ export async function importAlgaeTank(page: Page): Promise<void> {
   const world: MutableWorld = createDefaultWorld(42);
   world.water = { ...world.water, algae: new Array<number>(ALGAE_PATCH_COUNT).fill(1) };
   const text = serializeWorld(world, { speed: 0, clock: createDayClock(12, 1200, true) });
-  const settings = page.getByRole('button', { name: 'Réglages' });
-  await settings.click();
+  await ouvrirReglages(page, 'Sauvegarde et partage');
   await page.locator('[data-section="sauvegarde"] input[type="file"]').setInputFiles({
     name: 'algues.json',
     mimeType: 'application/json',
     buffer: Buffer.from(text),
   });
   await expect(hostEl(page)).toHaveAttribute('data-aqfish-speed', '0');
-  await settings.click();
+  await fermerReglages(page);
 }
 
 /**
@@ -51,15 +51,14 @@ export async function importDirtyTank(page: Page): Promise<void> {
   world.food = world.food.map((p) => ({ ...p, age: landingAge(p) + 1, y: p.restY, vy: 0 }));
   world.water = { ...world.water, nitrate: 40 };
   const text = serializeWorld(world, { speed: 0, clock: createDayClock(12, 1200, true) });
-  const settings = page.getByRole('button', { name: 'Réglages' });
-  await settings.click();
+  await ouvrirReglages(page, 'Sauvegarde et partage');
   await page.locator('[data-section="sauvegarde"] input[type="file"]').setInputFiles({
     name: 'restes.json',
     mimeType: 'application/json',
     buffer: Buffer.from(text),
   });
   await expect(hostEl(page)).toHaveAttribute('data-aqfish-speed', '0');
-  await settings.click();
+  await fermerReglages(page);
 }
 
 export const foodCount = async (page: Page) =>
