@@ -9633,6 +9633,12 @@
           "debut": "2026-11-20T23:43:23.732Z",
           "fin": "2026-11-21T00:26:26.095Z",
           "note": "PR #755 : dette c265 (#717 corps préfixés, contrôle jardin atteignable donc justifié + cas figé ; #711 VERTICAL → WalkStep), CI verte ; 5983 tests, complexité max 24, fonction max 108 l., exceptions inchangées"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-21T00:27:01.633Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
