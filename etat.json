@@ -9800,7 +9800,7 @@
       "type": "fonctionnalite",
       "issue": 723,
       "pr": 763,
-      "version": null,
+      "version": "v1.27.4",
       "phases": {
         "planif": {
           "statut": "termine",
