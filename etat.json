@@ -9705,6 +9705,12 @@
           "debut": "2026-11-21T03:53:19.838Z",
           "fin": "2026-11-21T05:05:33.835Z",
           "note": "PR #758 : fenêtre des réglages branchée (tranche 1b de #722, sections masquées, e2e repris pour la fenêtre modale), CI verte"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-21T05:06:02.818Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
