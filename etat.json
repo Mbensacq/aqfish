@@ -9843,6 +9843,12 @@
           "debut": "2026-11-21T11:12:29.450Z",
           "fin": "2026-11-21T11:12:53.583Z",
           "note": "Issue #762 : produits et pluie vers leurs catégories + #756 caractérisation (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-21T11:13:25.279Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
