@@ -9756,6 +9756,24 @@
         }
       },
       "metriques": {}
+    },
+    "269": {
+      "numero": 269,
+      "date": "2026-11-21",
+      "debut": "2026-11-21T07:49:56.835Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-21T07:49:56.835Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
