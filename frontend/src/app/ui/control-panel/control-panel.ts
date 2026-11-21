@@ -57,12 +57,14 @@ import { AccessibilitySection } from './accessibility-section';
 import { CareSection } from './care-section';
 import { DaySection } from './day-section';
 import { DecorSection } from './decor-section';
+import { DisplaySection } from './display-section';
 import { EnvironmentSection } from './environment-section';
 import { SimulationSection } from './simulation-section';
 import { SoundSection } from './sound-section';
 import { SaveSection } from './save-section';
 import { WaterSection } from './water-section';
 import { PopulationSection, type PopulationRequest } from './population-section';
+import { ProductsSection } from './products-section';
 import { RoomSection, type NewTankRequest } from './room-section';
 import { TanksSection } from './tanks-section';
 
@@ -138,7 +140,9 @@ export { sliderHour } from './day-section';
     DaySection,
     WaterSection,
     CareSection,
+    ProductsSection,
     DecorSection,
+    DisplaySection,
     AccessibilitySection,
     SoundSection,
     PopulationSection,
@@ -198,13 +202,10 @@ export { sliderHour } from './day-section';
             data-section="journee"
             [hidden]="!shows('journee')"
             app-day-section
-            [environment]="environment()"
             [hour]="hour()"
             [clockRunning]="clockRunning()"
-            [rain]="rain()"
             (hourChanged)="hourChanged.emit($event)"
             (clockRunningChanged)="clockRunningChanged.emit($event)"
-            (rainChanged)="rainChanged.emit($event)"
           ></fieldset>
 
           <!-- Eau (#207) : ce qui se règle seulement, « Changer l'eau » sur la ligne du titre puis
@@ -215,27 +216,15 @@ export { sliderHour } from './day-section';
             [hidden]="!shows('eau')"
             aria-labelledby="panneau-eau-titre"
             app-water-section
-            [careMode]="careMode()"
-            [careShown]="careShown()"
             [current]="current()"
             [water]="water()"
             [lighting]="lighting()"
             [lampOn]="lampOn()"
-            [treatmentNotice]="treatmentNotice()"
-            [untreatedTap]="untreatedTap()"
-            [carbon]="carbon()"
             (currentToggled)="currentToggled.emit()"
             (waterChangeRequested)="waterChangeRequested.emit()"
             (heaterChanged)="heaterChanged.emit($event)"
             (lightingChanged)="lightingChanged.emit($event)"
             (lampOnChanged)="lampOnChanged.emit($event)"
-            (bacteriaStarterRequested)="bacteriaStarterRequested.emit()"
-            (untreatedTapToggled)="untreatedTapToggled.emit()"
-            (conditionerRequested)="conditionerRequested.emit($event)"
-            (carbonToggled)="carbonToggled.emit()"
-            (phRegulatorRequested)="phRegulatorRequested.emit($event)"
-            (wikiPageRequested)="wikiPageRequested.emit($event)"
-            (catappaChanged)="catappaChanged.emit($event)"
           ></fieldset>
 
           @if (!careShown() && category() === 'soins') {
@@ -259,6 +248,29 @@ export { sliderHour } from './day-section';
             ></fieldset>
           }
 
+          <!-- Produits (#762, sortis de « Eau ») : catégorie « Soins et produits », après les
+             traitements des points blancs. -->
+          <fieldset
+            class="control-panel__section"
+            data-section="produits"
+            [hidden]="!shows('produits')"
+            aria-labelledby="panneau-produits-titre"
+            app-products-section
+            [careMode]="careMode()"
+            [careShown]="careShown()"
+            [water]="water()"
+            [treatmentNotice]="treatmentNotice()"
+            [untreatedTap]="untreatedTap()"
+            [carbon]="carbon()"
+            (bacteriaStarterRequested)="bacteriaStarterRequested.emit()"
+            (untreatedTapToggled)="untreatedTapToggled.emit()"
+            (conditionerRequested)="conditionerRequested.emit($event)"
+            (carbonToggled)="carbonToggled.emit()"
+            (phRegulatorRequested)="phRegulatorRequested.emit($event)"
+            (wikiPageRequested)="wikiPageRequested.emit($event)"
+            (catappaChanged)="catappaChanged.emit($event)"
+          ></fieldset>
+
           <fieldset
             class="control-panel__section"
             data-section="decor"
@@ -271,6 +283,17 @@ export { sliderHour } from './day-section';
             (decorVisibleChanged)="decorVisibleChanged.emit($event)"
             (editRequested)="editRequested.emit()"
             (foodStyleToggled)="foodStyleToggled.emit()"
+          ></fieldset>
+
+          <!-- Pluie (#106) : catégorie « Affichage » de la fenêtre (#762). -->
+          <fieldset
+            class="control-panel__section"
+            data-section="affichage"
+            [hidden]="!shows('affichage')"
+            app-display-section
+            [environment]="environment()"
+            [rain]="rain()"
+            (rainChanged)="rainChanged.emit($event)"
           ></fieldset>
 
           <!-- Accessibilité (#406) : catégorie « Accessibilité » de la fenêtre (#722). -->
@@ -600,6 +623,7 @@ export class ControlPanel {
       ichCount: this.ichCount(),
       treating: this.treatment() !== null,
       decorVisible: this.decorVisible(),
+      rain: this.rain(),
       speed: this.speed(),
       hour: this.hour(),
       clockRunning: this.clockRunning(),

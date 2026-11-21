@@ -1,6 +1,6 @@
 import type { SaveStatus } from '../../core/save-storage/save-storage';
 import { formatHour } from '../../sim/daylight';
-import type { EnvironmentId } from '../../sim/environment';
+import { environmentById, type EnvironmentId } from '../../sim/environment';
 import { speedLabel } from '../../sim/sim-speed';
 import { CURRENT_LEVEL_LABELS, type CurrentLevel } from '../../sim/water-current';
 import type { SettingsCategoryId } from '../settings-window/settings-categories';
@@ -24,6 +24,8 @@ export interface SettingsSummaryState {
   /** Vrai si un traitement des points blancs est en cours. */
   readonly treating: boolean;
   readonly decorVisible: boolean;
+  /** Vrai s'il pleut sur le bassin (#106) ; sans effet là où il ne pleut pas. */
+  readonly rain: boolean;
   readonly speed: number;
   readonly hour: number;
   readonly clockRunning: boolean;
@@ -71,6 +73,13 @@ function careSummary(state: SettingsSummaryState): string {
   return sick === 0 ? 'Rien à soigner' : `${animalCount(sick, '')} à soigner`;
 }
 
+function displaySummary(state: SettingsSummaryState): string {
+  if (!environmentById(state.environment).rain) {
+    return 'Sans pluie ici';
+  }
+  return state.rain ? 'Pluie sur le bassin' : 'Pas de pluie';
+}
+
 function timeSummary(state: SettingsSummaryState): string {
   const time = `${speedLabel(state.speed)}, ${formatHour(state.hour)}`;
   return state.clockRunning ? time : `${time}, heure figée`;
@@ -94,7 +103,7 @@ function saveSummary(status: SaveStatus | null): string {
   }
 }
 
-/** Valeurs résumées des neuf catégories, pour la liste du téléphone. */
+/** Valeurs résumées des dix catégories, pour la liste du téléphone. */
 export function settingsSummaries(state: SettingsSummaryState): SettingsSummaries {
   return {
     bac: tankSummary(state),
@@ -103,6 +112,7 @@ export function settingsSummaries(state: SettingsSummaryState): SettingsSummarie
     soins: careSummary(state),
     decor: state.decorVisible ? 'Décor affiché' : 'Décor masqué',
     temps: timeSummary(state),
+    affichage: displaySummary(state),
     son: soundSummary(state),
     accessibilite: state.reducedMotion ? 'Mouvements réduits' : 'Mouvements normaux',
     sauvegarde: saveSummary(state.saveStatus),

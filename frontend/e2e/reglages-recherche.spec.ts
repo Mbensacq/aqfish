@@ -54,6 +54,24 @@ test.describe('recherche des réglages (#723)', () => {
     expect(errors).toEqual([]);
   });
 
+  test('« charbon » et « pluie » : leurs nouvelles catégories (#762)', async ({ page }) => {
+    const errors = await open(page, '?seed=42&vitesse=0&environnement=bassin');
+    await ouvrirReglages(page, 'Bac et milieu');
+    await search(page).fill('charbon');
+    await expect(results(page).first()).toHaveAttribute('data-settings-result', 'Charbon');
+    expect(await shownSections(page)).toEqual(['produits']);
+    await expect(page.getByRole('button', { name: 'Charbon actif dans le filtre' })).toBeVisible();
+    await search(page).fill('pluie');
+    await expect(results(page).first()).toHaveAttribute('data-settings-result', 'Pluie');
+    await search(page).press('Enter');
+    await expect(page.locator('[data-settings-content]')).toHaveAttribute(
+      'data-settings-content',
+      'affichage',
+    );
+    await expect(page.locator('[data-section="affichage"] [data-rain]')).toBeVisible();
+    expect(errors).toEqual([]);
+  });
+
   test('« néon » : sa tuile seule ; « + » ajoute un néon au bac', async ({ page }) => {
     const errors = await open(page, '?seed=42&vitesse=0');
     await ouvrirReglages(page, 'Bac et milieu');

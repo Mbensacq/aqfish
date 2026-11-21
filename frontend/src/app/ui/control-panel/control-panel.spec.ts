@@ -1185,7 +1185,7 @@ describe('ControlPanel', () => {
     expect(root().querySelector('[role="dialog"]')).toBeNull();
   });
 
-  it('sections extensibles : environnement, simulation, journée, eau, décor, accessibilité, son, population, bacs, sauvegarde, chacune avec sa légende', async () => {
+  it('sections extensibles : environnement, simulation, journée, eau, produits, décor, affichage, accessibilité, son, population, bacs, sauvegarde, chacune avec sa légende', async () => {
     await openPanel();
     const sections = [...root().querySelectorAll('fieldset')];
     expect(sections.map((s) => s.getAttribute('data-section'))).toEqual([
@@ -1193,7 +1193,9 @@ describe('ControlPanel', () => {
       'simulation',
       'journee',
       'eau',
+      'produits',
       'decor',
+      'affichage',
       'accessibilite',
       'son',
       'population',
@@ -1214,7 +1216,9 @@ describe('ControlPanel', () => {
       'Simulation',
       'Journée',
       'Eau',
+      'Produits',
       'Décor',
+      'Affichage',
       'Accessibilité',
       'Son',
       'Population',
@@ -1284,10 +1288,22 @@ describe('ControlPanel', () => {
     fixture.componentInstance.rain.set(true);
     await fixture.whenStable();
     expect(checkbox('Pluie')!.checked).toBe(true);
-    // Sur la ligne de « Heure automatique » : le panneau ne grandit pas (#101).
-    expect(box.closest('.control-panel__row')).toBe(
-      checkbox('Heure automatique')!.closest('.control-panel__row'),
+    // Dans la section « Affichage » (#762), plus dans « Journée ».
+    expect(box.closest('[data-section]')?.getAttribute('data-section')).toBe('affichage');
+    expect(root().querySelector('[data-section="journee"] [data-rain]')).toBeNull();
+  });
+
+  it('section « Affichage » (#762) : hors du bassin, une note dit qu’il n’y pleut pas', async () => {
+    await openPanel();
+    const display = root().querySelector<HTMLElement>('[data-section="affichage"]')!;
+    expect(display.querySelector('[data-rain]')).toBeNull();
+    expect(display.querySelector('[data-rain-note]')?.textContent?.trim()).toBe(
+      'Il ne pleut que sur le bassin.',
     );
+    fixture.componentInstance.environment.set('bassin');
+    await fixture.whenStable();
+    expect(display.querySelector('[data-rain-note]')).toBeNull();
+    expect(display.querySelector('[data-rain]')).not.toBeNull();
   });
 
   it('forme du bassin (#190) : bassin seulement, sur la ligne de « Lieu », émet la forme', async () => {
@@ -1603,6 +1619,8 @@ describe('ControlPanel', () => {
   describe('eau (#207)', () => {
     const section = () => root().querySelector<HTMLElement>('[data-section="eau"]')!;
     const heater = () => byLabel('Consigne du chauffage')!;
+    // Produits et feuilles de catappa : leur section, dans « Soins et produits » (#762).
+    const products = () => root().querySelector<HTMLElement>('[data-section="produits"]')!;
 
     it('« Changer l’eau » émet la demande', async () => {
       await openPanel();
@@ -1648,20 +1666,22 @@ describe('ControlPanel', () => {
       expect(section().querySelectorAll('[data-gauge], meter, [role="meter"]')).toHaveLength(0);
       expect(section().textContent).not.toContain('Mauvaise');
       expect(section().textContent).not.toContain('Nitrates');
-      // Restent : le courant (#460), le changement d'eau, le chauffage et les feuilles de
-      // catappa (#239).
+      // Restent : le courant (#460), le changement d'eau, le chauffage, l'éclairage et la lampe ;
+      // les produits et les feuilles de catappa (#239) ont leur section (#762).
       expect(section().querySelector('[data-water-change]')).not.toBeNull();
       expect(heater()).not.toBeNull();
-      expect(
-        [...section().querySelectorAll('button, input')].map(
+      const labels = (host: HTMLElement) =>
+        [...host.querySelectorAll('button, input')].map(
           (el) => el.getAttribute('aria-label') ?? el.textContent?.trim(),
-        ),
-      ).toEqual([
+        );
+      expect(labels(section())).toEqual([
         'Courant : coupé, changer de force',
         'Changer l’eau',
         'Consigne du chauffage',
         'Durée d’éclairage par jour',
         'Heure d’allumage de la lampe',
+      ]);
+      expect(labels(products())).toEqual([
         'Verser une dose d’amorce de bactéries nitrifiantes',
         'Eau du robinet non traitée',
         'Verser du conditionneur au thiosulfate (chlore)',
@@ -1698,20 +1718,20 @@ describe('ControlPanel', () => {
     it('feuilles de catappa (#239) : « + » et « − » émettent le nombre voulu, bornés à [0, 5]', async () => {
       await openPanel();
       const add = () =>
-        section().querySelector<HTMLButtonElement>(
+        products().querySelector<HTMLButtonElement>(
           '[aria-label="Ajouter une feuille de catappa"]',
         )!;
       const remove = () =>
-        section().querySelector<HTMLButtonElement>(
+        products().querySelector<HTMLButtonElement>(
           '[aria-label="Retirer une feuille de catappa"]',
         )!;
-      expect(section().querySelector('[data-catappa-count]')?.textContent?.trim()).toBe('0');
+      expect(products().querySelector('[data-catappa-count]')?.textContent?.trim()).toBe('0');
       expect(remove().getAttribute('aria-disabled')).toBe('true');
       remove().click();
       add().click();
       fixture.componentInstance.water.set({ ...DEFAULT_WATER_READOUT, catappa: 5, tea: 1 });
       await fixture.whenStable();
-      expect(section().querySelector('[data-catappa-count]')?.textContent?.trim()).toBe('5');
+      expect(products().querySelector('[data-catappa-count]')?.textContent?.trim()).toBe('5');
       expect(add().getAttribute('aria-disabled')).toBe('true');
       add().click();
       remove().click();
@@ -1719,7 +1739,7 @@ describe('ControlPanel', () => {
         ['catappa', 1],
         ['catappa', 4],
       ]);
-      expect(section().querySelector('[data-catappa-note]')?.textContent).toContain(
+      expect(products().querySelector('[data-catappa-note]')?.textContent).toContain(
         'ne remplace pas un test de pH',
       );
     });
@@ -1762,9 +1782,9 @@ describe('ControlPanel', () => {
 
     it('produits (#529, #530, #531) : rangées, états de l’hôte, chaque bouton émet sa demande', async () => {
       await openPanel();
-      const button = (selector: string) => section().querySelector<HTMLButtonElement>(selector)!;
+      const button = (selector: string) => products().querySelector<HTMLButtonElement>(selector)!;
       expect(
-        [...section().querySelectorAll('[role="group"]')].map((g) => g.getAttribute('aria-label')),
+        [...products().querySelectorAll('[role="group"]')].map((g) => g.getAttribute('aria-label')),
       ).toEqual([
         'Filtre',
         'Eau du robinet et conditionneurs',
@@ -1811,19 +1831,19 @@ describe('ControlPanel', () => {
         warning: null,
       });
       await fixture.whenStable();
-      expect(section().querySelector('[data-starter-message]')?.textContent?.trim()).toBe(
+      expect(products().querySelector('[data-starter-message]')?.textContent?.trim()).toBe(
         'Dose versée.',
       );
       fixture.componentInstance.careMode.set('decor');
       await fixture.whenStable();
-      expect(section().querySelectorAll('[role="group"]')).toHaveLength(0);
-      expect(section().querySelector('[data-bacteria-starter]')).toBeNull();
+      expect(products().querySelectorAll('[role="group"]')).toHaveLength(0);
+      expect(products().querySelector('[data-bacteria-starter]')).toBeNull();
       expect(
-        section().querySelector('[data-untreated-tap], [data-carbon], [data-ph-regulator]'),
+        products().querySelector('[data-untreated-tap], [data-carbon], [data-ph-regulator]'),
       ).toBeNull();
-      expect(section().querySelector('[data-catappa]')).not.toBeNull();
-      // Sans section « Soins » (masquée en décor), le message reste sous les outils de l'eau.
-      expect(section().querySelector('[data-starter-message]')?.textContent?.trim()).toBe(
+      expect(products().querySelector('[data-catappa]')).not.toBeNull();
+      // Sans section « Soins » (masquée en décor), le message reste dans la section des produits.
+      expect(products().querySelector('[data-starter-message]')?.textContent?.trim()).toBe(
         'Dose versée.',
       );
     });

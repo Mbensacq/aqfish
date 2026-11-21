@@ -1,24 +1,11 @@
 // Section « Eau » (#207, #697) : règles communes du panneau (`_panel-controls.scss`), dans son
-// ordre. Dans la fenêtre des réglages (#722), la note des feuilles de catappa reste affichée.
+// ordre. Les produits ont leur section (#762, `products-section.scss`).
 @use 'panel-controls' as controls;
 
 @include controls.base;
-
-@include controls.count;
 
 @include controls.phone;
 
 @include controls.texts;
 
 @include controls.rows;
-
-// Rangées de produits (#759) : les boutons y perdent les marges négatives des boutons de titre
-// (« Changer l'eau ») et les rangées sont séparées de 6 px, sinon elles se touchent.
-.control-panel__row[role='group'] {
-  margin-top: 6px;
-
-  > .control-panel__edit {
-    margin: 0;
-    min-height: 26px;
-  }
-}

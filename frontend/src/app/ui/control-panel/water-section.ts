@@ -1,20 +1,13 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 
 import { DEFAULT_LIGHTING_HOURS } from '../../sim/algae';
-import type { CareMode } from '../../sim/care-mode';
-import type { GuidePage } from '../../sim/care-guide';
-import { MAX_CATAPPA_LEAVES } from '../../sim/catappa';
 import { formatHour } from '../../sim/daylight';
 import { DEFAULT_LAMP_ON_HOUR, LAMP_MAX_HOURS, LAMP_MIN_HOURS, isLampOnHour } from '../../sim/lamp';
-import type { PhRegulatorDirection } from '../../sim/ph-regulator';
-import type { TreatmentNotice } from '../../sim/treatment-text';
 import { MAX_HEATER_TEMPERATURE, MIN_HEATER_TEMPERATURE } from '../../sim/water';
-import type { ConditionerKind } from '../../sim/water-conditioner';
 import { CURRENT_LEVEL_LABELS, type CurrentLevel } from '../../sim/water-current';
 import { formatTenth } from '../../sim/water-dashboard';
 import { DEFAULT_WATER_READOUT, type WaterReadout } from '../../sim/water-quality';
 import { formNumber } from './panel-views';
-import { TreatmentNotice as TreatmentNoticeView } from './treatment-notice';
 
 /** Pas du curseur du chauffage, en °C (#207). */
 export const HEATER_SLIDER_STEP = 0.5;
@@ -65,16 +58,15 @@ export function heaterText(readout: WaterReadout): string {
 
 /**
  * Section « Eau » du panneau « Réglages » (#207 ; sortie du panneau au #697) : ce qui se
- * règle seulement (courant, changement d'eau, chauffage, éclairage et lampe, outils
- * d'entretien, produits, feuilles de catappa) ; les jauges sont dans le tableau de bord
- * (#256). Sans section « Soins », le message du dernier produit s'affiche ici (#490).
+ * règle seulement (courant, changement d'eau, chauffage, éclairage et lampe) ; les jauges
+ * sont dans le tableau de bord (#256), les produits dans leur section (#762,
+ * `products-section.ts`, catégorie « Soins et produits »).
  *
  * L'hôte est le `fieldset` de la section, posé par le panneau (ADR 0161).
  */
 @Component({
   // Sélecteur d'attribut : le `fieldset` reste l'enfant direct du panneau (ADR 0161).
   selector: 'fieldset[app-water-section]',
-  imports: [TreatmentNoticeView],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './water-section.scss',
   template: `
@@ -162,153 +154,9 @@ export function heaterText(readout: WaterReadout): string {
         />
       </label>
     </div>
-    @if (careMode() !== 'decor') {
-      <!-- Amorce de bactéries (#529) : un produit. Raclette et sécateur sont passés dans la
-           barre du bas, avec les vues (#722, docs/INTERFACE.md section 2). -->
-      <div class="control-panel__row control-panel__row--halves" role="group" aria-label="Filtre">
-        <button
-          type="button"
-          class="control-panel__edit"
-          data-bacteria-starter
-          aria-label="Verser une dose d’amorce de bactéries nitrifiantes"
-          title="Source : docs/SOINS.md § 1.1 (étiquette Stability, secondaire) ; gain du filtre : approximation de jeu."
-          (click)="bacteriaStarterRequested.emit()"
-        >
-          Bactéries
-        </button>
-      </div>
-    }
-    @if (careMode() !== 'decor') {
-      <!-- Chlore (#530) : eau versée au changement d'eau, puis conditionneurs. Rangée à part :
-           six boutons sur une ligne se chevauchent (docs/PIEGES.md). -->
-      <div
-        class="control-panel__row control-panel__row--halves"
-        role="group"
-        aria-label="Eau du robinet et conditionneurs"
-      >
-        <button
-          type="button"
-          class="control-panel__edit"
-          data-untreated-tap
-          [attr.aria-pressed]="untreatedTap()"
-          aria-label="Eau du robinet non traitée"
-          title="Non traitée : chaque changement d’eau ajoute du chlore (docs/SOINS.md § 2 ; teneur : approximation de jeu)."
-          (click)="untreatedTapToggled.emit()"
-        >
-          Robinet
-        </button>
-        <button
-          type="button"
-          class="control-panel__edit"
-          data-conditioner="thiosulfate"
-          aria-label="Verser du conditionneur au thiosulfate (chlore)"
-          title="Source : docs/SOINS.md § 2 (Merck)."
-          (click)="conditionerRequested.emit('thiosulfate')"
-        >
-          Déchlorer
-        </button>
-        <button
-          type="button"
-          class="control-panel__edit"
-          data-conditioner="liant"
-          aria-label="Verser du conditionneur liant l’ammoniaque"
-          title="Source : docs/SOINS.md § 2 (étiquette via revendeurs, secondaire) ; 48 h revendiquées, non vérifiées."
-          (click)="conditionerRequested.emit('liant')"
-        >
-          Liant
-        </button>
-      </div>
-      <!-- Charbon actif et régulateur de pH (#531) : rangée à part : la précédente ne passe
-           pas à la ligne (docs/PIEGES.md). -->
-      <div
-        class="control-panel__row control-panel__row--halves"
-        role="group"
-        aria-label="Charbon actif et régulateur de pH"
-      >
-        <button
-          type="button"
-          class="control-panel__edit"
-          data-carbon
-          [attr.aria-pressed]="carbon()"
-          aria-label="Charbon actif dans le filtre"
-          title="Retire médicaments et couleur des tanins ; à enlever pendant un traitement (docs/SOINS.md, Merck)."
-          (click)="carbonToggled.emit()"
-        >
-          Charbon
-        </button>
-        <button
-          type="button"
-          class="control-panel__edit"
-          data-ph-regulator="-1"
-          aria-label="Baisser le pH d’un cran"
-          title="Au plus 0,3 de pH par jour : les variations brusques stressent les animaux (approximation de jeu)."
-          (click)="phRegulatorRequested.emit(-1)"
-        >
-          pH −
-        </button>
-        <button
-          type="button"
-          class="control-panel__edit"
-          data-ph-regulator="1"
-          aria-label="Monter le pH d’un cran"
-          title="Au plus 0,3 de pH par jour : les variations brusques stressent les animaux (approximation de jeu)."
-          (click)="phRegulatorRequested.emit(1)"
-        >
-          pH +
-        </button>
-      </div>
-    }
-    @if (!careShown() && treatmentNotice(); as notice) {
-      <!-- Sans section « Soins », le message du produit s'affiche ici (même bulle, #490). -->
-      <app-treatment-notice
-        class="control-panel__message"
-        [class.control-panel__message--error]="!notice.ok"
-        data-starter-message
-        [notice]="notice"
-        (wikiPageRequested)="wikiPageRequested.emit($event)"
-      />
-    }
-    <!-- Feuilles de catappa (#239) : « − », nombre, « + », puis le rappel que l'effet est
-         simplifié (approximation de jeu, ADR 0071). -->
-    <div class="control-panel__count" data-catappa>
-      <span
-        class="control-panel__count-label"
-        id="panneau-catappa"
-        title="Effet simplifié : ne remplace pas un test de pH."
-        >Feuilles de catappa</span
-      >
-      <button
-        type="button"
-        class="control-panel__step"
-        aria-label="Retirer une feuille de catappa"
-        [attr.aria-disabled]="water().catappa <= 0"
-        (click)="stepCatappa(-1)"
-      >
-        −
-      </button>
-      <output class="control-panel__value" aria-labelledby="panneau-catappa" data-catappa-count>
-        {{ water().catappa }}
-      </output>
-      <button
-        type="button"
-        class="control-panel__step"
-        aria-label="Ajouter une feuille de catappa"
-        [attr.aria-disabled]="water().catappa >= maxCatappa"
-        (click)="stepCatappa(1)"
-      >
-        +
-      </button>
-    </div>
-    <p class="control-panel__note" data-catappa-note>
-      Effet simplifié : ne remplace pas un test de pH.
-    </p>
   `,
 })
 export class WaterSection {
-  /** Mode du bac affiché (#278) : aucun produit en décor. */
-  readonly careMode = input<CareMode>('soins');
-  /** Section « Soins » affichée (#361) : le message d'un produit y va plutôt qu'ici. */
-  readonly careShown = input(false);
   /** Force du courant du bac (#460). */
   readonly current = input<CurrentLevel>('coupe');
   /** Relevé de l'eau (#207). */
@@ -317,12 +165,6 @@ export class WaterSection {
   readonly lighting = input(DEFAULT_LIGHTING_HOURS);
   /** Heure d'allumage de la lampe (#584). */
   readonly lampOn = input(DEFAULT_LAMP_ON_HOUR);
-  /** Message du dernier geste de soin (#361) ; `null` : aucun. */
-  readonly treatmentNotice = input<TreatmentNotice | null>(null);
-  /** Changements d'eau à l'eau du robinet non traitée (#530). */
-  readonly untreatedTap = input(false);
-  /** Charbon actif dans le filtre (#531). */
-  readonly carbon = input(false);
 
   /** Force suivante du courant demandée (#460). */
   readonly currentToggled = output<void>();
@@ -334,24 +176,8 @@ export class WaterSection {
   readonly lightingChanged = output<number>();
   /** Heure d'allumage de la lampe demandée (#584), heure entière dans [0, 23]. */
   readonly lampOnChanged = output<number>();
-  /** Dose d'amorce de bactéries demandée (#529). */
-  readonly bacteriaStarterRequested = output<void>();
-  /** Bascule de l'eau du robinet entre traitée et non traitée (#530). */
-  readonly untreatedTapToggled = output<void>();
-  /** Dose de conditionneur demandée (#530). */
-  readonly conditionerRequested = output<ConditionerKind>();
-  /** Bascule du charbon actif (#531). */
-  readonly carbonToggled = output<void>();
-  /** Dose de régulateur de pH demandée (#531). */
-  readonly phRegulatorRequested = output<PhRegulatorDirection>();
-  /** Lien « Produits et traitements » du message d'un produit (#554). */
-  readonly wikiPageRequested = output<GuidePage>();
-  /** Nombre de feuilles de catappa demandé (#239), dans [0, `MAX_CATAPPA_LEAVES`]. */
-  readonly catappaChanged = output<number>();
 
   protected readonly currentLabels = CURRENT_LEVEL_LABELS;
-  /** Nombre maximal de feuilles de catappa (#239). */
-  protected readonly maxCatappa = MAX_CATAPPA_LEAVES;
   protected readonly heaterLabel = computed(() => heaterText(this.water()));
   protected readonly lightingLabel = computed(() => lightingText(this.lighting()));
   protected readonly lampOnLabel = computed(() => lampOnText(this.lampOn()));
@@ -375,14 +201,6 @@ export class WaterSection {
     const hour = sliderLampOn((event.target as HTMLInputElement).value);
     if (hour !== null) {
       this.lampOnChanged.emit(hour);
-    }
-  }
-
-  /** « − » ou « + » des feuilles de catappa (#239) : sans effet aux bornes. */
-  protected stepCatappa(delta: -1 | 1): void {
-    const count = this.water().catappa + delta;
-    if (count >= 0 && count <= MAX_CATAPPA_LEAVES) {
-      this.catappaChanged.emit(count);
     }
   }
 }

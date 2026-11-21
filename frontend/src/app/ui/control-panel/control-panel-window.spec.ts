@@ -93,7 +93,7 @@ describe('ControlPanel : fenêtre des réglages (#722)', () => {
   it('les sections des autres catégories restent dans le document, masquées', async () => {
     await open();
     await choose('son');
-    expect(root().querySelectorAll('[data-section]')).toHaveLength(12);
+    expect(root().querySelectorAll('[data-section]')).toHaveLength(14);
     const water = root().querySelector<HTMLElement>('[data-section="eau"]')!;
     expect(water.hidden).toBe(true);
     // Le champ d'import reste joignable (e2e : `setInputFiles` sans changer de catégorie).
@@ -108,12 +108,14 @@ describe('ControlPanel : fenêtre des réglages (#722)', () => {
       ['select[aria-label="Environnement"], [data-section="environnement"] select', 'bac'],
       ['[data-quarantine-install], [data-section="bacs"] button', 'bac'],
       ['[data-current]', 'eau'],
-      ['[data-bacteria-starter]', 'eau'],
-      ['[data-untreated-tap]', 'eau'],
-      ['[data-carbon]', 'eau'],
+      ['[data-bacteria-starter]', 'soins'],
+      ['[data-untreated-tap]', 'soins'],
+      ['[data-carbon]', 'soins'],
+      ['[data-catappa]', 'soins'],
       ['[data-treatment-status]', 'soins'],
       ['input[aria-label="Vitesse de la simulation"]', 'temps'],
       ['input[aria-label="Heure de la journée"]', 'temps'],
+      ['[data-rain-note]', 'affichage'],
       ['[data-section="sauvegarde"] input[type="file"]', 'sauvegarde'],
     ];
     for (const [selector, id] of placed) {
@@ -126,11 +128,11 @@ describe('ControlPanel : fenêtre des réglages (#722)', () => {
     }
   });
 
-  it('« Soins et produits » sans points blancs : une phrase, aucune section', async () => {
+  it('« Soins et produits » sans points blancs : une phrase, puis les produits seuls', async () => {
     fixture.componentInstance.ich.set(0);
     await open();
     await choose('soins');
-    expect(shownSections()).toEqual([]);
+    expect(shownSections()).toEqual(['produits']);
     expect(root().querySelector('[data-settings-empty]')?.textContent).toContain('points blancs');
     await choose('eau');
     expect(root().querySelector('[data-settings-empty]')).toBeNull();

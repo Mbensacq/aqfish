@@ -10,7 +10,7 @@ import { selectedTankWorld } from './outils-sauvegarde';
 import { ouvrirReglages } from './outils-panneau';
 
 /**
- * Feuilles de catappa (issue #239) : ajout et retrait depuis la section « Eau », note de
+ * Feuilles de catappa (issue #239) : ajout et retrait depuis la section « Produits » (#762), note de
  * simplification, jauge pH qui réagit.
  *
  * Le bac tropical est importé **sans habitant** (aucune dérive organique du pH) avec une eau
@@ -20,7 +20,7 @@ import { ouvrirReglages } from './outils-panneau';
  */
 
 const hostEl = (page: Page) => page.locator('app-aquarium-host');
-const section = (page: Page) => page.locator('[data-section="eau"]');
+const section = (page: Page) => page.locator('[data-section="produits"]');
 const phValue = (page: Page) => page.locator('[data-dashboard] [data-gauge-value="ph"]');
 const addLeaf = (page: Page) =>
   section(page).getByRole('button', { name: 'Ajouter une feuille de catappa' });
@@ -32,7 +32,7 @@ async function open(page: Page): Promise<string[]> {
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/');
   await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
-  await ouvrirReglages(page, 'Eau et matériel');
+  await ouvrirReglages(page, 'Soins et produits');
   await expect(section(page)).toBeVisible();
   return errors;
 }
