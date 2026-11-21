@@ -14,7 +14,6 @@ interface AudioCount {
 }
 const soundBox = (page: Page) => page.getByRole('checkbox', { name: "Sons d'ambiance" });
 const volume = (page: Page) => page.getByRole('slider', { name: "Volume des sons d'ambiance" });
-const motionBox = (page: Page) => page.getByRole('checkbox', { name: 'Réduire les mouvements' });
 
 const audioCount = (page: Page): Promise<AudioCount> =>
   page.evaluate(() => (window as unknown as { __aqfishAudio: AudioCount }).__aqfishAudio);
@@ -68,9 +67,10 @@ test.describe('sons d’ambiance', () => {
     await expect(volume(page)).toHaveValue('30');
     // Aucun contexte audio tant que la case n'est pas cochée, même après des gestes.
     expect(await audioCount(page)).toEqual({ created: 0, closed: 0 });
-    // Départ du parcours sur la case précédente (« Accessibilité »), puis Tab.
-    await motionBox(page).focus();
-    await page.keyboard.press('Tab');
+    // Départ du parcours sur la catégorie « Son » de la fenêtre (#722) : Tab passe les
+    // catégories suivantes (« Accessibilité », « Sauvegarde et partage ») puis la case.
+    await page.locator('[data-settings-category="son"]').focus();
+    for (let k = 0; k < 3; k++) await page.keyboard.press('Tab');
     await expect(soundBox(page)).toBeFocused();
     const outline = await soundBox(page).evaluate((el) => getComputedStyle(el).outlineStyle);
     expect(outline).not.toBe('none');

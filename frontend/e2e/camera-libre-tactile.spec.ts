@@ -76,11 +76,15 @@ async function expectPadClearOf(page: Page, selector: string): Promise<void> {
   }
 }
 
-/** Ouvre « Réglages », affiche la pièce ; le panneau reste ouvert. */
+/**
+ * Ouvre « Réglages », affiche la pièce, puis referme la fenêtre : modale (#722), son fond
+ * couvrirait le bouton « Libre » et le bac.
+ */
 async function showRoom(page: Page): Promise<void> {
   await ouvrirReglages(page, 'Bac et milieu');
   await page.getByRole('checkbox', { name: 'Afficher la pièce' }).check();
   await expect(hostEl(page)).toHaveAttribute('data-aqfish-room', 'true');
+  await fermerReglages(page);
 }
 
 /** Événements pointeur tactiles envoyés au canvas : `tracks` = un trajet par doigt. */
@@ -136,8 +140,6 @@ test.describe('Caméra libre au doigt, 390 × 844 (#344)', () => {
       await freeButton(page).tap();
       await expect(hostEl(page)).toHaveAttribute('data-aqfish-camera-libre', 'true');
       await expect(pad(page)).toBeVisible();
-      await expectPadClearOf(page, '.control-panel');
-      await fermerReglages(page);
       await expect(page.locator('.control-panel')).toBeHidden();
       await expectPadClearOf(page, 'app-dashboard-frame, app-dashboard-status');
       await page.screenshot({ path: testInfo.outputPath('pave-390.png') });
@@ -203,6 +205,7 @@ test.describe('Caméra libre au doigt, 390 × 844 (#344)', () => {
     await showRoom(page);
     await freeButton(page).tap();
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-camera-libre', 'true');
+    await ouvrirReglages(page, 'Décor');
     await page.getByRole('button', { name: 'Éditer le décor', exact: true }).click();
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-editing', 'true');
     const camera0 = await hostEl(page).getAttribute('data-aqfish-camera');
@@ -235,10 +238,10 @@ test.describe('Caméra libre et édition, 1280 × 720 (#344)', () => {
     await freeButton(page).click();
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-camera-libre', 'true');
     await expect(pad(page)).toBeVisible();
-    await expectPadClearOf(page, '.control-panel');
     await expectPadClearOf(page, 'app-dashboard-frame, app-dashboard-status');
     await page.screenshot({ path: testInfo.outputPath('pave-1280.png') });
 
+    await ouvrirReglages(page, 'Décor');
     await page.getByRole('button', { name: 'Éditer le décor', exact: true }).click();
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-editing', 'true');
     // L'édition ne quitte pas la caméra libre.

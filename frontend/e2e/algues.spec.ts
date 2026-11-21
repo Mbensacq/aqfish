@@ -88,11 +88,14 @@ test.describe('algues (#476)', () => {
     await openSettings(page);
     await importAlgaeTank(page);
     const population = await hostEl(page).getAttribute('data-aqfish-population');
+    await ouvrirReglages(page, 'Eau et matériel');
     await expect(scraper(page)).toHaveAttribute('aria-pressed', 'false');
     await scraper(page).click();
-    await expect(scraper(page)).toHaveAttribute('aria-pressed', 'true');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-scraper', 'true');
-    // Le panneau couvre une partie de l'écran : on le referme pour viser le bac.
+    // Raclette prise : la fenêtre se referme d'elle-même pour viser le bac (#722).
+    await fermerReglages(page);
+    await ouvrirReglages(page, 'Eau et matériel');
+    await expect(scraper(page)).toHaveAttribute('aria-pressed', 'true');
     await fermerReglages(page);
     const box = await page.locator('canvas').first().boundingBox();
     expect(box).not.toBeNull();
