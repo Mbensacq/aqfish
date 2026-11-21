@@ -9783,6 +9783,12 @@
           "debut": "2026-11-21T08:27:21.159Z",
           "fin": "2026-11-21T08:34:05.411Z",
           "note": "Verdict OK, 0 bug, 167 captures publiées, 4 telephone-* changées (attendu)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-21T08:34:40.400Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
