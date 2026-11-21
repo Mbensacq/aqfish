@@ -9,7 +9,7 @@ import { EMPTY_HEALTH_SUMMARY, healthSummary, type HealthSummary } from '../../s
 import { DEFAULT_WATER_SAMPLE, type WaterSample } from '../../sim/water-dashboard';
 import { DEFAULT_WATER_READOUT } from '../../sim/water-quality';
 import { HEALTH_FLOOR } from '../../sim/health-scale';
-import { DASHBOARD_COLORS, DASHBOARD_REST_OPACITY, DashboardFrame } from './dashboard-frame';
+import { DASHBOARD_COLORS, DashboardFrame } from './dashboard-frame';
 import { ALERT_TOPICS } from '../../sim/beginner-help';
 import { BeginnerGuideState } from '../beginner-guide/beginner-guide-state';
 import {
@@ -598,9 +598,8 @@ describe('DashboardStatus (#260)', () => {
   it('couleurs du cadre posées en variables CSS sur l’hôte (même test de contraste)', () => {
     const host = root().querySelector<HTMLElement>('app-dashboard-status')!;
     expect(host.style.getPropertyValue('--dashboard-ink')).toBe(DASHBOARD_COLORS.ink);
-    expect(host.style.getPropertyValue('--dashboard-rest-opacity')).toBe(
-      String(DASHBOARD_REST_OPACITY),
-    );
+    expect(host.style.getPropertyValue('--dashboard-ink-muted')).toBe(DASHBOARD_COLORS.inkMuted);
+    expect(host.style.getPropertyValue('--dashboard-rest-opacity')).toBe('');
   });
 
   it('alerte dépliée qui disparaît : le détail se referme', async () => {

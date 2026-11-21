@@ -139,7 +139,7 @@ export function presetForKey(key: string): CameraPreset | null {
           [attr.data-preset]="button.preset"
           (click)="choose(button.preset)"
         >
-          <span class="view-presets-bar__key" aria-hidden="true">{{ button.key }}</span>
+          <kbd class="view-presets-bar__key" aria-hidden="true">{{ button.key }}</kbd>
           {{ button.label }}
         </button>
       }
@@ -154,7 +154,7 @@ export function presetForKey(key: string): CameraPreset | null {
           data-action="camera-libre"
           (click)="toggleFreeCamera()"
         >
-          <span class="view-presets-bar__key" aria-hidden="true">{{ freeCameraKey }}</span>
+          <kbd class="view-presets-bar__key" aria-hidden="true">{{ freeCameraKey }}</kbd>
           Libre
         </button>
       }
@@ -169,7 +169,7 @@ export function presetForKey(key: string): CameraPreset | null {
       [attr.aria-pressed]="pixelArt()"
       (click)="togglePixelArt()"
     >
-      <span class="view-presets-bar__key" aria-hidden="true">{{ pixelArtKey }}</span>
+      <kbd class="view-presets-bar__key" aria-hidden="true">{{ pixelArtKey }}</kbd>
       Pixel art
     </button>
     <button
@@ -180,7 +180,7 @@ export function presetForKey(key: string): CameraPreset | null {
       data-action="nourrir"
       (click)="feed()"
     >
-      <span class="view-presets-bar__key" aria-hidden="true">{{ feedKey }}</span>
+      <kbd class="view-presets-bar__key" aria-hidden="true">{{ feedKey }}</kbd>
       Nourrir
     </button>
     <!-- Outils d'entretien (#722, venus de la fenêtre des réglages) : raclette (#476), un clic

@@ -1,5 +1,5 @@
-// Tableau de bord de l'eau (#256, ADR 0059, docs/DA.md « Interface ») : sombre plein
-// aux coins arrondis, sur le bord haut, jamais au centre du bac.
+// Tableau de bord de l'eau (#256, ADR 0059, docs/DA.md « Interface ») : panneau plein de la
+// charte (#721, #724), coins de 4 px, sur le bord haut, jamais au centre du bac.
 // - Bureau (≥ 1100 px) : barre haute dans la ligne des boutons, entre « Réglages » (qui
 //   finit à `$settings-button-end`) et l'aide-mémoire déplié (`$commands-help-width` à `$edge`
 //   du bord droit), valeurs lues dans `../_panel-layout.scss`.
@@ -10,8 +10,8 @@
 // Partout, un panneau ouvert (« Réglages », « Commandes », éditeur, plan 1) passe par-dessus.
 // L'hôte est une boîte transparente : seuls le cadre et ses boutons reçoivent le pointeur,
 // le reste va au canvas (docs/PIEGES.md, « Hôte transparent »).
-// Couleurs et opacités : variables posées par le composant (`DASHBOARD_COLORS`), celles que
-// le test de contraste vérifie. Police et surface communes au bandeau bas
+// Couleurs : variables posées par le composant (`DASHBOARD_COLORS`), celles que le test de
+// contraste vérifie ; focus en laiton (anneau commun de la charte). Police et surface communes au bandeau bas
 // (`_dashboard-surface.scss`, #265).
 @use '../panel-layout' as layout;
 @use 'dashboard-surface' as dashboard;
@@ -54,19 +54,27 @@
   color: inherit;
   font: inherit;
   cursor: pointer;
-
-  &:focus-visible {
-    @include layout.focus-ring(1px, var(--dashboard-vert));
-  }
 }
 
 .dashboard__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-size: 13px;
   font-weight: 600;
 }
 
+// Chevron dessiné en pixels (#724), à la place des flèches de texte : vers le bas replié,
+// retourné déplié.
 .dashboard__chevron {
-  font-size: 10px;
+  flex: none;
+  width: 8px;
+  height: 8px;
+  fill: currentcolor;
+
+  &--open {
+    transform: scaleY(-1);
+  }
 }
 
 .dashboard__quality,
@@ -126,11 +134,7 @@
 
 .dashboard__name {
   overflow: hidden;
-  color: color-mix(
-    in srgb,
-    var(--dashboard-ink) calc(var(--dashboard-muted-alpha) * 100%),
-    transparent
-  );
+  color: var(--dashboard-ink-muted);
   font-size: 11px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -139,7 +143,7 @@
 // Nom de jauge, bouton qui déplie sa courbe (#511).
 .dashboard__curve-toggle {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 3px;
   min-width: 0;
   padding: 0;
@@ -148,15 +152,11 @@
   color: inherit;
   font: inherit;
   cursor: pointer;
-
-  &:focus-visible {
-    @include layout.focus-ring(1px, var(--dashboard-vert));
-  }
 }
 
-.dashboard__curve-chevron {
-  flex: none;
-  font-size: 8px;
+.dashboard__curve-toggle .dashboard__chevron {
+  width: 6px;
+  height: 6px;
 }
 
 .dashboard__curve {
@@ -204,7 +204,7 @@
   inset: 0;
 }
 
-// Repère de la valeur sur les zones du pH : clair, cerné de sombre.
+// Repère de la valeur sur les zones du pH : clair, cerné d'un filet sombre (pas d'ombre).
 .dashboard__mark {
   position: absolute;
   top: 0;
@@ -212,7 +212,7 @@
   height: 100%;
   margin-left: -1px;
   background: var(--dashboard-ink);
-  box-shadow: 0 0 0 1px var(--dashboard-background);
+  outline: 1px solid var(--dashboard-background);
 }
 
 .dashboard__fill {
@@ -293,12 +293,6 @@
 
   .dashboard__level {
     font-size: 10px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .dashboard {
-    transition: none;
   }
 }
 

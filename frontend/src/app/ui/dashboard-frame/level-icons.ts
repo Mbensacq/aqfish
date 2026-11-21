@@ -32,6 +32,18 @@ export const MAINTENANCE_ICON_PIXELS: readonly (readonly [number, number])[] = m
   '#####',
 ]);
 
+/**
+ * Chevron dessiné (#724) : pointe vers le bas, retourné quand la partie qu'il commande est
+ * dépliée. Remplace les flèches de texte ▴ ▾ (charte : pas de flèche décorative).
+ */
+export const CHEVRON_ICON_PIXELS: readonly (readonly [number, number])[] = maskPixels([
+  '.....',
+  '#...#',
+  '.#.#.',
+  '..#..',
+  '.....',
+]);
+
 /** Icône du bilan du bac (#514) : une liste de trois lignes. */
 export const REVIEW_ICON_PIXELS: readonly (readonly [number, number])[] = maskPixels([
   '#.###',

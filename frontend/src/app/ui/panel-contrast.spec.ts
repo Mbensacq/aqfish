@@ -146,6 +146,7 @@ describe('jetons de la charte (#721)', () => {
     expect(DASHBOARD_COLORS).toEqual({
       background: token('panel-background'),
       ink: token('panel-ink'),
+      inkMuted: token('panel-ink-muted'),
       vert: token('state-good'),
       orange: token('state-watch'),
       rouge: token('state-danger'),

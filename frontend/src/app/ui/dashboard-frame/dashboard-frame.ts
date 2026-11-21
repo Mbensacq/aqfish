@@ -29,7 +29,7 @@ import {
 import type { WaterHistoryView } from '../../sim/water-history';
 import { MAX_PH, MIN_PH, type PhBands } from '../../sim/water-ph';
 import { DAY_PHASE_LABELS, dayIconPixels, DAY_ICON_GRID } from '../day-indicator/day-indicator';
-import { LEVEL_ICON_GRID, levelIconPixels } from './level-icons';
+import { CHEVRON_ICON_PIXELS, LEVEL_ICON_GRID, levelIconPixels } from './level-icons';
 import { WaterHistoryChart } from './water-history-chart';
 import {
   DEFAULT_WATER_READOUT,
@@ -47,27 +47,20 @@ export const DASHBOARD_CURVE_ID = 'tableau-de-bord-courbe';
 
 /**
  * Couleurs du cadre, celles de la charte (`ui/_panel-layout.scss`, #721) : panneau plein,
- * encre, et les trois couleurs d'état pour les niveaux de l'indicateur de qualité (ADR 0053),
- * toujours doublées d'un mot ou d'un symbole. Posées en variables CSS par le composant, pour
- * que le test de contraste porte sur les valeurs réellement affichées.
+ * encre, encre secondaire (noms des jauges, #724) et les trois couleurs d'état pour les
+ * niveaux de l'indicateur de qualité (ADR 0053), toujours doublées d'un mot ou d'un symbole.
+ * Posées en variables CSS par le composant, pour que le test de contraste porte sur les
+ * valeurs réellement affichées. Aucune opacité : le cadre est plein, au repos comme au
+ * survol (#724).
  */
 export const DASHBOARD_COLORS = {
   background: '#1b1f23',
   ink: '#ebe7de',
+  inkMuted: '#a9b1b5',
   vert: '#7db88c',
   orange: '#e8955f',
   rouge: '#ec6a5c',
-} as const satisfies Record<'background' | 'ink' | GaugeLevel, string>;
-
-/** Opacité du fond du cadre : plein (charte #721, jamais translucide). */
-export const DASHBOARD_BACKGROUND_ALPHA = 1;
-/** Opacité des noms de jauge, plus discrets que les valeurs. */
-export const DASHBOARD_MUTED_ALPHA = 0.78;
-/**
- * Opacité du cadre au repos (ni survol ni focus) : pleine depuis la charte (#721), comme
- * celle de tous les panneaux ; la variable reste posée pour le survol et le focus.
- */
-export const DASHBOARD_REST_OPACITY = 1;
+} as const satisfies Record<'background' | 'ink' | 'inkMuted' | GaugeLevel, string>;
 
 /** Flèche affichée de chaque tendance (le texte lu est dans `aria-valuetext`). */
 export const TREND_ARROWS: Readonly<Record<Trend, string>> = {
@@ -138,8 +131,8 @@ const ICONS: Readonly<Record<GaugeLevel, readonly (readonly [number, number])[]>
  * Cadre du tableau de bord (issue #256, ADR 0059) : barre haute sur bureau, bandeau sous
  * les boutons sur tablette et téléphone, qui affiche en permanence les jauges de l'eau
  * (température, ammoniaque, nitrites, nitrates, pH), chacune avec son niveau en texte et en
- * icône et sa tendance. Repliable (bouton « Eau », `aria-expanded`), estompé hors survol et
- * focus. Aucune logique de simulation : il lit les relevés que l'hôte lui donne (au plus
+ * icône et sa tendance. Repliable (bouton « Eau », `aria-expanded`), plein au repos comme au
+ * survol (#724). Aucune logique de simulation : il lit les relevés que l'hôte lui donne (au plus
  * 4 fois par seconde) ; seule la mémoire de la tendance vit ici, dérivée de ces relevés.
  * Absent en mode capture (c'est l'application qui ne l'affiche pas).
  */
@@ -162,10 +155,17 @@ const ICONS: Readonly<Record<GaugeLevel, readonly (readonly [number, number])[]>
     >
       <span class="dashboard__title"
         >Eau
-        <span class="dashboard__chevron" aria-hidden="true">{{
-          expanded() ? '▴' : '▾'
-        }}</span></span
-      >
+        <svg
+          class="dashboard__chevron"
+          [class.dashboard__chevron--open]="expanded()"
+          aria-hidden="true"
+          [attr.viewBox]="'0 0 ' + iconGrid + ' ' + iconGrid"
+          shape-rendering="crispEdges"
+        >
+          @for (pixel of chevron; track $index) {
+            <rect [attr.x]="pixel[0]" [attr.y]="pixel[1]" width="1" height="1" />
+          }</svg
+      ></span>
       <span class="dashboard__quality" [attr.data-level]="qualityLevel()">
         <svg
           class="dashboard__icon"
@@ -200,9 +200,17 @@ const ICONS: Readonly<Record<GaugeLevel, readonly (readonly [number, number])[]>
               (click)="toggleCurve(gauge.id)"
             >
               <span class="dashboard__name" aria-hidden="true">{{ gauge.label }}</span>
-              <span class="dashboard__curve-chevron" aria-hidden="true">{{
-                curve() === gauge.id ? '▴' : '▾'
-              }}</span>
+              <svg
+                class="dashboard__chevron"
+                [class.dashboard__chevron--open]="curve() === gauge.id"
+                aria-hidden="true"
+                [attr.viewBox]="'0 0 ' + iconGrid + ' ' + iconGrid"
+                shape-rendering="crispEdges"
+              >
+                @for (pixel of chevron; track $index) {
+                  <rect [attr.x]="pixel[0]" [attr.y]="pixel[1]" width="1" height="1" />
+                }
+              </svg>
             </button>
             <span class="dashboard__reading" aria-hidden="true">
               <span class="dashboard__value" [attr.data-gauge-value]="gauge.id">{{
@@ -297,9 +305,7 @@ const ICONS: Readonly<Record<GaugeLevel, readonly (readonly [number, number])[]>
     '[style.--dashboard-vert]': 'colors.vert',
     '[style.--dashboard-orange]': 'colors.orange',
     '[style.--dashboard-rouge]': 'colors.rouge',
-    '[style.--dashboard-background-alpha]': 'backgroundAlpha',
-    '[style.--dashboard-muted-alpha]': 'mutedAlpha',
-    '[style.--dashboard-rest-opacity]': 'restOpacity',
+    '[style.--dashboard-ink-muted]': 'colors.inkMuted',
   },
 })
 export class DashboardFrame {
@@ -332,9 +338,7 @@ export class DashboardFrame {
   protected readonly arrows = TREND_ARROWS;
   protected readonly bounds = GAUGE_BOUNDS;
   protected readonly colors = DASHBOARD_COLORS;
-  protected readonly backgroundAlpha = DASHBOARD_BACKGROUND_ALPHA;
-  protected readonly mutedAlpha = DASHBOARD_MUTED_ALPHA;
-  protected readonly restOpacity = DASHBOARD_REST_OPACITY;
+  protected readonly chevron = CHEVRON_ICON_PIXELS;
 
   /** Mémoire de la tendance, avancée à chaque nouveau relevé (`nextTrendState`). */
   private readonly trendState = linkedSignal<WaterSample, TrendState>({

@@ -1,5 +1,7 @@
-// Barre flottante discrète (docs/DA.md, « Interface ») : sombre et pleine, coins de
-// 2 à 4 px (charte #721). Couleurs : `ui/_panel-layout.scss` (#92).
+// Barre flottante discrète (docs/DA.md, « Interface ») : panneau plein à filet, coins de
+// 2 à 4 px (charte #721, #724). Les cinq vues sont un choix exclusif : boutons accolés, la vue
+// courante pleine en laiton. Les bascules (pixel art, caméra libre, outils) gardent un bord
+// laiton quand elles sont actives. Touches en `kbd` à filet. Couleurs : `ui/_panel-layout.scss`.
 @use '../panel-layout' as layout;
 
 :host {
@@ -13,7 +15,8 @@
 .view-presets-bar {
   display: flex;
   gap: 4px;
-  padding: 4px;
+  padding: 3px;
+  border: 1px solid layout.$panel-rule;
   border-radius: layout.$radius-window;
   background: layout.$panel-background;
   color: layout.$panel-ink;
@@ -30,7 +33,12 @@
   align-self: stretch;
   width: 1px;
   margin: 4px 2px;
-  background: layout.$panel-raised;
+  background: layout.$panel-rule;
+}
+
+// Choix exclusif des vues : boutons accolés, sans écart.
+.view-presets-bar__group[role='toolbar'] {
+  gap: 0;
 }
 
 .view-presets-bar__button {
@@ -57,6 +65,17 @@
   }
 }
 
+// Vue courante : pleine en laiton, texte sombre posé dessus.
+.view-presets-bar__button--active[data-preset] {
+  background: layout.$brass;
+  color: layout.$on-brass;
+
+  .view-presets-bar__key {
+    border-color: layout.$on-brass;
+    color: layout.$on-brass;
+  }
+}
+
 // Message de la photo (#503) : au-dessus de la barre, hors du flux (la barre ne bouge pas) ;
 // vide, il ne se voit pas mais reste une région annoncée.
 .view-presets-bar__notice {
@@ -72,28 +91,26 @@
 
   &--shown {
     padding: 4px 10px;
+    border: 1px solid layout.$panel-rule;
     background: layout.$panel-background;
   }
 }
 
+// Touche : `kbd` de la charte, à filet, bord bas épaissi, police mono.
 .view-presets-bar__key {
   min-width: 1.1em;
   padding: 0 3px;
+  border: 1px solid layout.$panel-border;
+  border-bottom-width: 2px;
   border-radius: layout.$radius-control;
-  background: layout.$panel-raised;
-  font-size: 11px;
+  color: layout.$panel-ink-muted;
+  font: 600 11px / 1.3 layout.$font-mono;
   text-align: center;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .view-presets-bar {
-    transition: none;
-  }
-}
-
 // Écran moyen (#722) : avec la raclette et le sécateur, la barre fait 862 px avec ses
-// pastilles de touche ; sous 1280 px elle débordait sur « Wiki » et « Pharmacie », puis hors
-// de l'écran (dès 768 px). Les pastilles (rappelées par l'aide-mémoire et le nom accessible)
+// touches ; sous 1280 px elle débordait sur « Wiki » et « Pharmacie », puis hors
+// de l'écran (dès 768 px). Les touches (rappelées par l'aide-mémoire et le nom accessible)
 // sont masquées et les marges resserrées : ~620 px, qui tiennent jusqu'à 640 px de large.
 @media (max-width: 1279px) {
   .view-presets-bar__button {

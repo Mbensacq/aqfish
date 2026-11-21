@@ -247,6 +247,21 @@ découpé par section), qui fournit les sections réutilisées par la fenêtre :
    points blancs, pièce masquée) restent proposées dans les résultats sans contenu.
 4. #724 — Habillage de toute la page selon la charte (tableau de bord, barres, aide-mémoire, wiki,
    pharmacie, bilan, guide, parcours du premier bac), textes revus.
+   **Livré (cycle 273, tranche 1)** : tableau de bord de l'eau, bandeau bas (santé, alertes,
+   entretien, bilan et journal), indicateur du jour et barre du bas. Surface commune
+   (`dashboard-frame/_dashboard-surface.scss`) pleine sans opacité au repos ni transition
+   (constantes `DASHBOARD_BACKGROUND_ALPHA`, `DASHBOARD_MUTED_ALPHA` et
+   `DASHBOARD_REST_OPACITY` retirées ; encre secondaire `DASHBOARD_COLORS.inkMuted`) ; focus en
+   laiton partout (plus d'anneau vert ou blanc) ; chevrons dessinés (`CHEVRON_ICON_PIXELS`) ;
+   boutons du bandeau à filet ; onglets et filtres du journal pleins en laiton ; vues de la
+   barre accolées, la courante pleine en laiton ; touches en `kbd`. Un test lit les feuilles
+   du tableau de bord et refuse `color-mix`, `opacity`, couleur à canal alpha, ombre,
+   capitales et rayon hors charte. Textes : renvois aux catégories actuelles des réglages
+   (« Soins et produits », « Eau et matériel ») et raclette dans la barre du bas.
+   **Reste (tranche 2)** : aide-mémoire, wiki, pharmacie, guide, parcours du premier bac,
+   offre de partage, éditeur de décor, format « cartel », icônes pixel sur grille de 12 de la
+   barre du bas, renvois « Réglages, Eau » encore écrits dans `sim/pharmacy.ts`,
+   `sim/first-tank-path.ts` et `sim/water-test.ts`, recherche globale finale.
 5. #725 — Masquer l'interface à la place du mode immersif.
 
 Pour chaque lot : tests unitaires et e2e mis à jour pour les nouveaux emplacements (jamais

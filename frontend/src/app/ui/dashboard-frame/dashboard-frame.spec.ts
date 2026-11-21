@@ -10,14 +10,14 @@ import {
 } from '../../sim/water-dashboard';
 import { MAX_PH, MIN_PH, phBands } from '../../sim/water-ph';
 import { DEFAULT_WATER_READOUT, GAUGE_MAX, type WaterReadout } from '../../sim/water-quality';
-import { parseHex, fadedContrast, type Rgb } from './contrast';
+import { contrastRatio, parseHex } from './contrast';
+import frameStyles from './dashboard-frame.scss' with { loader: 'text' };
+import statusStyles from './dashboard-status.scss' with { loader: 'text' };
+import surfaceStyles from './_dashboard-surface.scss' with { loader: 'text' };
 import {
-  DASHBOARD_BACKGROUND_ALPHA,
   DASHBOARD_COLORS,
   DASHBOARD_CURVE_ID,
   DASHBOARD_GAUGES_ID,
-  DASHBOARD_MUTED_ALPHA,
-  DASHBOARD_REST_OPACITY,
   DashboardFrame,
   GAUGE_BOUNDS,
   LEVEL_ICON_GRID,
@@ -76,33 +76,36 @@ describe('tableau de bord : fonctions de présentation (#256)', () => {
     );
   });
 
-  it('plein au repos (charte #721), le texte lu garde un contraste d’au moins 4,5:1 sur toute scène', () => {
-    // Scènes extrêmes et typiques derrière le cadre : blanc, noir, sable clair, eau, fond.
-    const scenes: Rgb[] = ['#ffffff', '#000000', '#e8d3a8', '#3c9c8c', '#141418'].map(parseHex);
+  it('plein (charte #721, #724) : chaque encre et chaque couleur d’état à 4,5:1 au moins sur le panneau', () => {
+    const background = parseHex(DASHBOARD_COLORS.background);
     const texts = [
-      { text: DASHBOARD_COLORS.ink },
-      { text: DASHBOARD_COLORS.ink, textAlpha: DASHBOARD_MUTED_ALPHA },
-      { text: DASHBOARD_COLORS.vert },
-      { text: DASHBOARD_COLORS.orange },
-      { text: DASHBOARD_COLORS.rouge },
+      DASHBOARD_COLORS.ink,
+      DASHBOARD_COLORS.inkMuted,
+      DASHBOARD_COLORS.vert,
+      DASHBOARD_COLORS.orange,
+      DASHBOARD_COLORS.rouge,
     ];
-    // Charte « la salle d'aquarium » : cadre plein, fond comme ensemble.
-    expect(DASHBOARD_REST_OPACITY).toBe(1);
-    expect(DASHBOARD_BACKGROUND_ALPHA).toBe(1);
-    for (const scene of scenes) {
-      for (const { text, textAlpha } of texts) {
-        const ratio = fadedContrast({
-          text: parseHex(text),
-          textAlpha,
-          background: parseHex(DASHBOARD_COLORS.background),
-          backgroundAlpha: DASHBOARD_BACKGROUND_ALPHA,
-          groupOpacity: DASHBOARD_REST_OPACITY,
-          scene,
-        });
-        expect(ratio, `${text} (${textAlpha ?? 1}) sur ${scene.join(',')}`).toBeGreaterThanOrEqual(
-          4.5,
-        );
-      }
+    for (const text of texts) {
+      expect(contrastRatio(parseHex(text), background), text).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  it.each([
+    ['_dashboard-surface.scss', surfaceStyles],
+    ['dashboard-frame.scss', frameStyles],
+    ['dashboard-status.scss', statusStyles],
+  ])('%s : ni fond translucide, ni opacité, ni ombre, ni capitales (charte, #724)', (_, styles) => {
+    // Le cadre et le bandeau sont pleins au repos comme au survol : plus de mélange avec
+    // la scène (`color-mix(… transparent)`), plus d'opacité ni de couleur à canal alpha.
+    expect(styles).not.toMatch(/color-mix\(/);
+    expect(styles).not.toMatch(/(^|[\s;{])opacity\s*:/m);
+    expect(styles).not.toMatch(/rgba?\([^)]*\//);
+    expect(styles).not.toMatch(/box-shadow/);
+    // Casse de phrase : seule la première lettre d'un résumé peut être mise en capitale.
+    expect(styles.replace(/::first-letter\s*\{[^}]*\}/g, '')).not.toMatch(/uppercase/);
+    // Coins de la charte seulement (2 ou 4 px, lus dans `_panel-layout.scss`).
+    for (const radius of styles.match(/border-radius\s*:[^;]+/g) ?? []) {
+      expect(radius).toMatch(/layout\.\$radius-(control|window)$/);
     }
   });
 });
@@ -274,20 +277,24 @@ describe('DashboardFrame (#256)', () => {
     expect(gauge('nitrite')?.getAttribute('data-level')).toBe('rouge');
   });
 
-  it('couleurs et opacités du test de contraste posées en variables CSS sur l’hôte', () => {
+  it('couleurs du test de contraste posées en variables CSS sur l’hôte, sans opacité', () => {
     const host = root().querySelector<HTMLElement>('app-dashboard-frame')!;
     expect(host.style.getPropertyValue('--dashboard-ink')).toBe(DASHBOARD_COLORS.ink);
+    expect(host.style.getPropertyValue('--dashboard-ink-muted')).toBe(DASHBOARD_COLORS.inkMuted);
     expect(host.style.getPropertyValue('--dashboard-background')).toBe(DASHBOARD_COLORS.background);
     expect(host.style.getPropertyValue('--dashboard-rouge')).toBe(DASHBOARD_COLORS.rouge);
-    expect(Number(host.style.getPropertyValue('--dashboard-rest-opacity'))).toBe(
-      DASHBOARD_REST_OPACITY,
-    );
-    expect(Number(host.style.getPropertyValue('--dashboard-muted-alpha'))).toBe(
-      DASHBOARD_MUTED_ALPHA,
-    );
-    expect(Number(host.style.getPropertyValue('--dashboard-background-alpha'))).toBe(
-      DASHBOARD_BACKGROUND_ALPHA,
-    );
+    expect(host.style.getPropertyValue('--dashboard-rest-opacity')).toBe('');
+    expect(host.style.getPropertyValue('--dashboard-background-alpha')).toBe('');
+  });
+
+  it('chevrons dessinés (#724) : aucune flèche de texte, retournés quand la partie est dépliée', async () => {
+    const toggle = root().querySelector<HTMLElement>('.dashboard__toggle')!;
+    expect(root().textContent).not.toMatch(/[▴▾▸]/);
+    expect(toggle.querySelector('.dashboard__chevron--open')).not.toBeNull();
+    toggle.click();
+    await fixture.whenStable();
+    expect(toggle.querySelector('.dashboard__chevron')).not.toBeNull();
+    expect(toggle.querySelector('.dashboard__chevron--open')).toBeNull();
   });
 });
 
