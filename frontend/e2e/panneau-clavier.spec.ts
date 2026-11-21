@@ -57,8 +57,15 @@ test.describe('Panneau de contrôle', () => {
     await expect(page.getByRole('checkbox', { name: "Sons d'ambiance" })).toBeFocused();
     await page.keyboard.press('Tab');
     await expect(page.getByRole('slider', { name: "Volume des sons d'ambiance" })).toBeFocused();
-    // Catégorie « Population » : bouton « Fiche » (#237), sur la ligne du nom, avant « − ».
+    // Catégorie « Population » : les quatre filtres, puis le tri (#723), puis la première
+    // tuile : bouton « Fiche » (#237), sur la ligne du nom, avant « − ».
     await tabIntoCategory(page, 'population');
+    for (const filter of ['Toutes', 'Dans le bac', 'Poissons', 'Invertébrés']) {
+      await expect(page.getByRole('button', { name: filter, exact: true })).toBeFocused();
+      await page.keyboard.press('Tab');
+    }
+    await expect(page.getByRole('combobox', { name: 'Trier par' })).toBeFocused();
+    await page.keyboard.press('Tab');
     await expect(page.getByRole('button', { name: 'Fiche : Néon' })).toBeFocused();
     await page.keyboard.press('Tab');
     await expect(page.getByRole('button', { name: 'Retirer un néon' })).toBeFocused();
