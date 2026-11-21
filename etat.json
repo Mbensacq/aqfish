@@ -9879,6 +9879,12 @@
           "debut": "2026-11-21T13:36:19.270Z",
           "fin": "2026-11-21T13:37:37.357Z",
           "note": "Issue #764 : recherche des réglages (dette, S) ; rétro sprint 39 en #766 ; pied de page d'attribution réapparu sur #766 et #764 après PATCH (PIEGES)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-21T13:38:09.280Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
