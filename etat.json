@@ -9711,6 +9711,12 @@
           "debut": "2026-11-21T05:06:02.818Z",
           "fin": "2026-11-21T05:22:24.301Z",
           "note": "Verdict RÉSERVES (téléphone provisoire), 0 bug, 167 captures, 10 d'interface différentes, publiées"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-21T05:22:56.668Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
