@@ -9887,10 +9887,10 @@
           "note": "PR #767 : recherche des réglages, ligne trouvée seule, rang 5 au début d'un mot, légende non répétée (#764) + ROADMAP v1.27/v1.28, CI verte ; pied de page d'attribution revenu sur la PR après PATCH (PIEGES)"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-21T14:39:59.903Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-21T15:13:56.069Z",
+          "note": "Verdict OK, 0 bug, captures publiées (bac identique, 5 vues d'interface changées, attendu)"
         }
       },
       "metriques": {}
