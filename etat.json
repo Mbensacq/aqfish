@@ -9857,10 +9857,10 @@
           "note": "Verdict OK, 0 bug, captures publiées (bac identique, 10 vues d'interface changées, attendu)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-21T13:09:20.333Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-21T13:35:48.496Z",
+          "note": "PR #765 fusionnée → v1.27.5 (release CI OK, main verte), #762 et #756 fermées ; suppression de la branche refusée par l'environnement"
         }
       },
       "metriques": {}
