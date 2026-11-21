@@ -9669,6 +9669,12 @@
           "debut": "2026-11-21T02:23:08.320Z",
           "fin": "2026-11-21T03:18:11.831Z",
           "note": "PR #757 : e2e ouvrent/ferment « Réglages » par ouvrirReglages/fermerReglages (152 clics par script, 7 corrigés à la main), CI verte ; partiel : fenêtre non branchée, 29 ouvertures multi-catégories listées"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-21T03:18:45.399Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
