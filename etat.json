@@ -9821,10 +9821,10 @@
           "note": "Verdict OK, 0 bug, 167 captures publiées, 3 changées (interface Population, attendu)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-21T10:44:36.091Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-21T11:11:59.425Z",
+          "note": "PR #763 fusionnée → v1.27.4 (release CI OK, main verte), #723 fermée, dette #764 ; suppression de la branche refusée par l'environnement"
         }
       },
       "metriques": {}
