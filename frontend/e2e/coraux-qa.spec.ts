@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
 import { canvasShot, countColors } from './outils-pixels';
-import { ouvrirReglages } from './outils-panneau';
+import { dansReglages, fermerReglages, ouvrirReglages } from './outils-panneau';
 
 /** QA des coraux du récif (#149) : présence à l'écran, case « Afficher le décor », autres environnements. */
 
@@ -31,6 +31,7 @@ async function violetPixels(page: Page): Promise<number> {
 async function freeze(page: Page): Promise<void> {
   await ouvrirReglages(page, 'Temps');
   await speed(page).fill('0');
+  await fermerReglages(page);
   await page.getByRole('button', { name: /vue de face/i }).click();
   await page.waitForTimeout(800);
 }
@@ -43,10 +44,10 @@ test.describe('Coraux du récif : parcours utilisateur', () => {
     await freeze(page);
     const shown = await violetPixels(page);
     expect(shown).toBeGreaterThan(200);
-    await decor(page).uncheck();
+    await dansReglages(page, 'Décor', () => decor(page).uncheck());
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-decor', 'false');
     await expect.poll(() => violetPixels(page)).toBeLessThan(shown * 0.01);
-    await decor(page).check();
+    await dansReglages(page, 'Décor', () => decor(page).check());
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-decor', 'true');
     await expect.poll(() => violetPixels(page)).toBeGreaterThan(shown * 0.9);
     expect(errors).toEqual([]);

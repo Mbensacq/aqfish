@@ -53,7 +53,7 @@ export async function ouvrirReglages(page: Page, categorie: string): Promise<voi
 }
 
 /**
- * Referme « Réglages » par « Fermer les réglages » (le fond de la fenêtre couvre le bouton
+ * Referme « Réglages » par le bouton « Fermer » de la fenêtre (son fond couvre le bouton
  * « Réglages », #722). Déjà refermée (raclette ou sécateur pris, éditeur de décor ouvert) :
  * rien à faire. Vérifie l'état du bouton après.
  */
@@ -62,6 +62,20 @@ export async function fermerReglages(page: Page): Promise<void> {
     await page.locator('[data-settings-close]').click();
   }
   await expect(toggle(page)).toHaveAttribute('aria-expanded', 'false');
+}
+
+/**
+ * Agit dans la catégorie `categorie` de « Réglages », puis referme la fenêtre : son fond
+ * assombrit et couvre le bac (#722), qu'on veut ensuite regarder (pixels) ou toucher.
+ */
+export async function dansReglages(
+  page: Page,
+  categorie: string,
+  action: () => Promise<unknown>,
+): Promise<void> {
+  await ouvrirReglages(page, categorie);
+  await action();
+  await fermerReglages(page);
 }
 
 /** Ouvre la page puis le panneau « Réglages » d'un clic. */

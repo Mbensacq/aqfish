@@ -10,7 +10,6 @@ import {
   hour,
   open,
   ouvrirReglages,
-  overlaps,
   population,
   speed,
   tick,
@@ -155,7 +154,7 @@ test.describe('Panneau de contrôle', () => {
     expect(errors).toEqual([]);
   });
 
-  test('à 390 px : panneau ouvert entier, sans masquer la barre des préréglages', async ({
+  test('à 390 px : fenêtre des réglages entière, lignes de population entières', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
@@ -168,14 +167,13 @@ test.describe('Panneau de contrôle', () => {
       expect(b.y).toBeGreaterThanOrEqual(0);
       expect(b.x + b.width).toBeLessThanOrEqual(390);
     }
-    const bar = await box(page.locator('.view-presets-bar'));
-    const indicator = await box(page.getByRole('img', { name: /Moment de la journée/ }));
-    const help = await box(page.locator('app-commands-help button').first());
-    for (const b of [panel, button]) {
-      expect(overlaps(b, bar), 'barre des préréglages').toBe(false);
-      expect(overlaps(b, indicator), 'indicateur du moment').toBe(false);
-      expect(overlaps(b, help), 'aide-mémoire').toBe(false);
-    }
+    // Fenêtre des réglages (#722) : modale, elle couvre la barre des préréglages, l'indicateur
+    // et l'aide-mémoire (fond assombri) ; elle tient entière dans l'écran.
+    const window = await box(page.locator('[data-settings-window]'));
+    expect(window.x).toBeGreaterThanOrEqual(0);
+    expect(window.y).toBeGreaterThanOrEqual(0);
+    expect(window.x + window.width).toBeLessThanOrEqual(390);
+    expect(window.y + window.height).toBeLessThanOrEqual(844);
     // Population (#69) : chaque ligne entière dans le panneau, contrôles de taille tactile.
     const rows = page.locator('[data-section="population"] .control-panel__count');
     // Bac tropical : trois espèces peuplées et quatorze ajoutables (#238, #362, #391, #425).

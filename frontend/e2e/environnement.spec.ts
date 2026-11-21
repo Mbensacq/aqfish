@@ -315,6 +315,7 @@ test.describe('Environnement', () => {
     await ouvrirReglages(page, 'Bac et milieu');
     await selector(page).selectOption('bassin');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'bassin');
+    await fermerReglages(page);
     const canvas = (await page.locator('canvas').first().boundingBox())!;
     const cx = canvas.x + canvas.width / 2;
     const cy = canvas.y + canvas.height / 2;
@@ -325,6 +326,7 @@ test.describe('Environnement', () => {
     await page.mouse.wheel(0, -400);
     await page.mouse.wheel(0, 800);
     for (const key of ['1', '2', '3', '4', '5']) await page.keyboard.press(key);
+    await ouvrirReglages(page, 'Bac et milieu');
     await selector(page).selectOption('tropical');
     await selector(page).selectOption('bassin');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'bassin');

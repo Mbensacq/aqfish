@@ -86,6 +86,8 @@ test.describe('feuilles de catappa (#239)', () => {
     await addLeaf(page).dispatchEvent('click');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-catappa', '5;1');
 
+    await ouvrirReglages(page, 'Sauvegarde et partage');
+
     const [download] = await Promise.all([
       page.waitForEvent('download'),
       page.locator('[data-section="sauvegarde"]').getByRole('button', { name: 'Exporter' }).click(),

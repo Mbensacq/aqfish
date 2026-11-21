@@ -135,6 +135,7 @@ test.describe('pH (#236)', () => {
   test('l’export de la sauvegarde contient le pH affiché', async ({ page }) => {
     const errors = await open(page);
     await importAcidTank(page);
+    await ouvrirReglages(page, 'Sauvegarde et partage');
     const [download] = await Promise.all([
       page.waitForEvent('download'),
       page.locator('[data-section="sauvegarde"]').getByRole('button', { name: 'Exporter' }).click(),
