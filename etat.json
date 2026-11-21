@@ -9620,7 +9620,7 @@
       "type": "retro",
       "issue": 717,
       "pr": 755,
-      "version": null,
+      "version": "v1.26.6",
       "phases": {
         "planif": {
           "statut": "termine",
