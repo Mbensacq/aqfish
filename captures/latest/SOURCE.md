@@ -1,7 +1,2 @@
-# Source c267
-
-- Branche : cycle/c267-brancher-fenetre-reglages
-- PR : #758
-- Commit : 66faa3f2a7ea20a5988cfd64577c14803b050115
-- Graine : celle de captures.spec.ts (défaut)
-- Durée : 166 tests en 5,8 min
+Cycle 268 — branche cycle/c268-barre-outils-categorie, PR #760, commit 202e4c3, graine par défaut des captures, 166 tests en 5,7 min.
+146 captures identiques à c267 à l'octet, 21 différentes (barre du bas ou fenêtre des réglages).
