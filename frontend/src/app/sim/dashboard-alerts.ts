@@ -202,7 +202,7 @@ export function chlorineAlert(chlorine: number | undefined): DashboardAlert | nu
     severity: Number.isFinite(chlorine) && chlorine < CHLORINE_HARMFUL ? 'attention' : 'critique',
     message: 'Chlore dans l’eau',
     cause: Number.isFinite(chlorine) ? 'eau du robinet versée sans conditionneur' : INVALID_CAUSE,
-    action: 'Verser du conditionneur : Réglages, Eau',
+    action: 'Verser du conditionneur : Réglages, Soins et produits',
     wiki: 'produits',
   };
 }
@@ -333,7 +333,7 @@ export function ichAlert(health: HealthSummary): DashboardAlert | null {
       `parasite (Ichthyophthirius) favorisé par une eau instable ; ${animalCount(health.ich)} touché${health.ich > 1 ? 's' : ''}` +
       (aggravated ? `, dont ${health.ichAggravated} au stade aggravé` : ''),
     action:
-      'Traiter plusieurs jours : Réglages, Soins ; garder l’eau stable (température, ammoniaque, nitrites)',
+      'Traiter plusieurs jours : Réglages, Soins et produits ; garder l’eau stable (température, ammoniaque, nitrites)',
     wiki: 'maladies',
   };
 }
@@ -378,7 +378,7 @@ export function velvetAlert(health: HealthSummary): DashboardAlert | null {
       `parasite (Oodinium) favorisé par le stress, contagieux ; ${animalCount(health.velvet)} touché${health.velvet > 1 ? 's' : ''}` +
       (advanced ? `, dont ${health.velvetAdvanced} au stade avancé` : ''),
     action:
-      'Médicament tous les deux jours jusqu’à la disparition du voile : Réglages, Soins ; le sel et la chaleur n’y font rien',
+      'Médicament tous les deux jours jusqu’à la disparition du voile : Réglages, Soins et produits ; le sel et la chaleur n’y font rien',
     wiki: 'maladies',
   };
 }
@@ -401,7 +401,7 @@ export function fungusAlert(health: HealthSummary): DashboardAlert | null {
       `Saprolegnia sur un animal blessé ou affaibli ; ${animalCount(health.fungus)} touché${health.fungus > 1 ? 's' : ''}` +
       (advanced ? `, dont ${health.fungusAdvanced} au stade avancé` : ''),
     action:
-      'Médicament tous les deux jours et eau propre (changer l’eau) jusqu’à la disparition du coton : Réglages, Soins',
+      'Médicament tous les deux jours et eau propre (changer l’eau) jusqu’à la disparition du coton : Réglages, Soins et produits',
     wiki: 'maladies',
   };
 }
@@ -460,7 +460,7 @@ export function carbonAlert(active: true | undefined): DashboardAlert | null {
     severity: 'attention',
     message: 'Charbon actif pendant un traitement',
     cause: 'le charbon retire le médicament de l’eau',
-    action: 'Retirer le charbon : Réglages, Eau',
+    action: 'Retirer le charbon : Réglages, Soins et produits',
     wiki: 'produits',
   };
 }
@@ -551,7 +551,7 @@ export function algaeAlert(coverage: number | undefined): DashboardAlert | null 
     cause: Number.isFinite(coverage)
       ? `éclairage trop long ou nitrates élevés ; vitres couvertes à ${percent}`
       : INVALID_CAUSE,
-    action: 'Passer la raclette (Réglages, Eau), réduire l’éclairage et changer l’eau',
+    action: 'Passer la raclette (barre du bas), réduire l’éclairage et changer l’eau',
     wiki: 'entretien',
   };
 }
