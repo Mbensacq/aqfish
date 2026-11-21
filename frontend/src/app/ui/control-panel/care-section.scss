@@ -1,17 +1,8 @@
 // Section « Soins » (#361, #697) : règles communes du panneau (`_panel-controls.scss`), dans
-// son ordre, et la note des sources masquée en deux colonnes.
-@use '../panel-layout' as layout;
+// son ordre. Dans la fenêtre des réglages (#722), la note des sources reste affichée.
 @use 'panel-controls' as controls;
 
 @include controls.base;
-
-// Sans la note des sources (déjà dans l'infobulle de chaque bouton), la section tient sous
-// « Eau » en deux colonnes (1280 × 720) et « Sauvegarde » reste dans la deuxième (#488).
-@media #{layout.$control-panel-two-columns-query} {
-  [data-treatment-sources] {
-    display: none;
-  }
-}
 
 @include controls.texts;
 

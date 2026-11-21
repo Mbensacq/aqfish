@@ -11,25 +11,6 @@
   color: layout.$state-watch;
 }
 
-// Panneau en deux colonnes (mêmes bornes que `control-panel.scss`) : bulle hors du flux, à
-// droite du panneau, alignée sur son bas. Le bloc conteneur est l'hôte du panneau (position
-// fixe, aussi large que le panneau) : ni la section ni le panneau ne sont positionnés, et le
-// défilement du panneau ne la rogne pas.
-@media #{layout.$control-panel-two-columns-query} {
-  :host {
-    position: absolute;
-    bottom: 0;
-    left: calc(100% + #{layout.$edge});
-    box-sizing: border-box;
-    width: layout.$treatment-notice-width;
-    padding: 6px 10px;
-    border: 1px solid layout.$panel-rule;
-    border-radius: layout.$radius-window;
-    background: layout.$panel-background;
-    pointer-events: auto;
-  }
-}
-
 // Renvoi au wiki (#554) : un bouton qui se lit comme le texte, souligné comme un lien.
 .treatment-notice__link {
   padding: 0;

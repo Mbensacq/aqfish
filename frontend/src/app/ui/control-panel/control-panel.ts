@@ -31,7 +31,13 @@ import type { PhRegulatorDirection } from '../../sim/ph-regulator';
 import type { ConditionerKind } from '../../sim/water-conditioner';
 import type { GuidePage } from '../../sim/care-guide';
 import { DEFAULT_WATER_READOUT, type WaterReadout } from '../../sim/water-quality';
-import { isQuarantineShown } from './panel-views';
+import { SettingsWindow, SETTINGS_WINDOW_ID } from '../settings-window/settings-window';
+import {
+  DEFAULT_SETTINGS_CATEGORY,
+  settingsCategory,
+  type SettingsCategoryId,
+  type SettingsSectionKey,
+} from '../settings-window/settings-categories';
 import { AccessibilitySection } from './accessibility-section';
 import { CareSection } from './care-section';
 import { DaySection } from './day-section';
@@ -72,8 +78,8 @@ export {
 /** Libellé d'une vitesse (déplacé dans `sim/sim-speed.ts`, partagé avec le tableau de bord). */
 export { speedLabel } from '../../sim/sim-speed';
 
-/** Identifiant de la région du panneau (cible de `aria-controls`). */
-export const CONTROL_PANEL_ID = 'panneau-controle';
+/** Identifiant de la fenêtre des réglages (cible de `aria-controls` du bouton, #722). */
+export const CONTROL_PANEL_ID = SETTINGS_WINDOW_ID;
 
 /** Lecture des curseurs de vitesse et d'heure (sections « Simulation » et « Journée »). */
 export { speedAt, speedIndex } from './simulation-section';
@@ -111,6 +117,7 @@ export { sliderHour } from './day-section';
 @Component({
   selector: 'app-control-panel',
   imports: [
+    SettingsWindow,
     EnvironmentSection,
     SimulationSection,
     DaySection,
@@ -128,6 +135,7 @@ export { sliderHour } from './day-section';
       type="button"
       class="control-panel__toggle"
       [class.control-panel__toggle--open]="open()"
+      aria-haspopup="dialog"
       [attr.aria-expanded]="open()"
       [attr.aria-controls]="panelId"
       (click)="toggle()"
@@ -135,201 +143,221 @@ export { sliderHour } from './day-section';
       Réglages
     </button>
     @if (open()) {
-      <!-- Section « Soins » (#361) affichée : la liste des espèces défile plus tôt, pour que
-           « Sauvegarde » reste dans la deuxième colonne à 1280 × 720 (docs/PIEGES.md). -->
-      <section
-        class="control-panel"
-        [id]="panelId"
-        aria-label="Réglages de l’aquarium"
-        [style.--soins]="careShown() ? '570px' : null"
-        [class.control-panel--single-column]="quarantineShown()"
-      >
-        <fieldset
-          class="control-panel__section"
-          data-section="environnement"
-          app-environment-section
-          [environment]="environment()"
-          [pondShape]="pondShape()"
-          [roomShown]="roomShown()"
-          (environmentChanged)="environmentChanged.emit($event)"
-          (pondShapeChanged)="pondShapeChanged.emit($event)"
-          (roomShownChanged)="roomShownChanged.emit($event)"
-        ></fieldset>
-
-        <fieldset
-          class="control-panel__section"
-          data-section="simulation"
-          aria-labelledby="panneau-simulation-titre"
-          app-simulation-section
-          [speed]="speed()"
-          (speedChanged)="speedChanged.emit($event)"
-          (immersiveRequested)="immersiveRequested.emit()"
-        ></fieldset>
-
-        <fieldset
-          class="control-panel__section"
-          data-section="journee"
-          app-day-section
-          [environment]="environment()"
-          [hour]="hour()"
-          [clockRunning]="clockRunning()"
-          [rain]="rain()"
-          (hourChanged)="hourChanged.emit($event)"
-          (clockRunningChanged)="clockRunningChanged.emit($event)"
-          (rainChanged)="rainChanged.emit($event)"
-        ></fieldset>
-
-        <!-- Eau (#207) : ce qui se règle seulement, « Changer l'eau » sur la ligne du titre puis
-             le chauffage ; les jauges sont dans le tableau de bord (#256). -->
-        <fieldset
-          class="control-panel__section"
-          data-section="eau"
-          aria-labelledby="panneau-eau-titre"
-          app-water-section
-          [careMode]="careMode()"
-          [careShown]="careShown()"
-          [current]="current()"
-          [water]="water()"
-          [lighting]="lighting()"
-          [lampOn]="lampOn()"
-          [scraping]="scraping()"
-          [pruning]="pruning()"
-          [treatmentNotice]="treatmentNotice()"
-          [untreatedTap]="untreatedTap()"
-          [carbon]="carbon()"
-          (currentToggled)="currentToggled.emit()"
-          (waterChangeRequested)="waterChangeRequested.emit()"
-          (heaterChanged)="heaterChanged.emit($event)"
-          (lightingChanged)="lightingChanged.emit($event)"
-          (lampOnChanged)="lampOnChanged.emit($event)"
-          (scraperToggled)="scraperToggled.emit()"
-          (prunerToggled)="prunerToggled.emit()"
-          (bacteriaStarterRequested)="bacteriaStarterRequested.emit()"
-          (untreatedTapToggled)="untreatedTapToggled.emit()"
-          (conditionerRequested)="conditionerRequested.emit($event)"
-          (carbonToggled)="carbonToggled.emit()"
-          (phRegulatorRequested)="phRegulatorRequested.emit($event)"
-          (wikiPageRequested)="wikiPageRequested.emit($event)"
-          (catappaChanged)="catappaChanged.emit($event)"
-        ></fieldset>
-
-        @if (careShown()) {
-          <!-- Soins (#361) : seulement avec des points blancs visibles ou un traitement en cours,
-               pour que le panneau ne grandisse pas dans le cas par défaut (docs/PIEGES.md). -->
+      <!-- Fenêtre des réglages (#722, ADR 0165) : toutes les sections restent dans le
+           document, celles des autres catégories sont masquées (attribut « hidden », ADR 0165). -->
+      <app-settings-window [(selected)]="category" (closeRequested)="onCloseRequested()">
+        <section class="control-panel" aria-label="Réglages de l’aquarium">
           <fieldset
             class="control-panel__section"
-            data-section="soins"
-            aria-labelledby="panneau-soins-titre"
-            app-care-section
-            [treatment]="treatment()"
-            [treatmentNotice]="treatmentNotice()"
-            (treatmentRequested)="treatmentRequested.emit($event)"
-            (wikiPageRequested)="wikiPageRequested.emit($event)"
+            data-section="environnement"
+            [hidden]="!shows('environnement')"
+            app-environment-section
+            [environment]="environment()"
+            [pondShape]="pondShape()"
+            [roomShown]="roomShown()"
+            (environmentChanged)="environmentChanged.emit($event)"
+            (pondShapeChanged)="pondShapeChanged.emit($event)"
+            (roomShownChanged)="roomShownChanged.emit($event)"
           ></fieldset>
-        }
 
-        <fieldset
-          class="control-panel__section"
-          data-section="decor"
-          aria-labelledby="panneau-decor-titre"
-          app-decor-section
-          [decorVisible]="decorVisible()"
-          [decorEditable]="decorEditable()"
-          [foodStyle]="foodStyle()"
-          (decorVisibleChanged)="decorVisibleChanged.emit($event)"
-          (editRequested)="editRequested.emit()"
-          (foodStyleToggled)="foodStyleToggled.emit()"
-        ></fieldset>
+          <fieldset
+            class="control-panel__section"
+            data-section="simulation"
+            [hidden]="!shows('simulation')"
+            aria-labelledby="panneau-simulation-titre"
+            app-simulation-section
+            [speed]="speed()"
+            (speedChanged)="speedChanged.emit($event)"
+            (immersiveRequested)="immersiveRequested.emit()"
+          ></fieldset>
 
-        <!-- Accessibilité (#406) : juste après « Décor », dans la première colonne du panneau à
+          <fieldset
+            class="control-panel__section"
+            data-section="journee"
+            [hidden]="!shows('journee')"
+            app-day-section
+            [environment]="environment()"
+            [hour]="hour()"
+            [clockRunning]="clockRunning()"
+            [rain]="rain()"
+            (hourChanged)="hourChanged.emit($event)"
+            (clockRunningChanged)="clockRunningChanged.emit($event)"
+            (rainChanged)="rainChanged.emit($event)"
+          ></fieldset>
+
+          <!-- Eau (#207) : ce qui se règle seulement, « Changer l'eau » sur la ligne du titre puis
+             le chauffage ; les jauges sont dans le tableau de bord (#256). -->
+          <fieldset
+            class="control-panel__section"
+            data-section="eau"
+            [hidden]="!shows('eau')"
+            aria-labelledby="panneau-eau-titre"
+            app-water-section
+            [careMode]="careMode()"
+            [careShown]="careShown()"
+            [current]="current()"
+            [water]="water()"
+            [lighting]="lighting()"
+            [lampOn]="lampOn()"
+            [scraping]="scraping()"
+            [pruning]="pruning()"
+            [treatmentNotice]="treatmentNotice()"
+            [untreatedTap]="untreatedTap()"
+            [carbon]="carbon()"
+            (currentToggled)="currentToggled.emit()"
+            (waterChangeRequested)="waterChangeRequested.emit()"
+            (heaterChanged)="heaterChanged.emit($event)"
+            (lightingChanged)="lightingChanged.emit($event)"
+            (lampOnChanged)="lampOnChanged.emit($event)"
+            (scraperToggled)="scraperToggled.emit(); closeIfTaken(scraping())"
+            (prunerToggled)="prunerToggled.emit(); closeIfTaken(pruning())"
+            (bacteriaStarterRequested)="bacteriaStarterRequested.emit()"
+            (untreatedTapToggled)="untreatedTapToggled.emit()"
+            (conditionerRequested)="conditionerRequested.emit($event)"
+            (carbonToggled)="carbonToggled.emit()"
+            (phRegulatorRequested)="phRegulatorRequested.emit($event)"
+            (wikiPageRequested)="wikiPageRequested.emit($event)"
+            (catappaChanged)="catappaChanged.emit($event)"
+          ></fieldset>
+
+          @if (!careShown() && category() === 'soins') {
+            <p class="control-panel__empty" data-settings-empty>
+              Aucun animal ne montre de points blancs : rien à soigner pour l’instant.
+            </p>
+          }
+          @if (careShown()) {
+            <!-- Soins (#361) : seulement avec des points blancs visibles ou un traitement en cours,
+               pour que le panneau ne grandisse pas dans le cas par défaut (docs/PIEGES.md). -->
+            <fieldset
+              class="control-panel__section"
+              data-section="soins"
+              [hidden]="!shows('soins')"
+              aria-labelledby="panneau-soins-titre"
+              app-care-section
+              [treatment]="treatment()"
+              [treatmentNotice]="treatmentNotice()"
+              (treatmentRequested)="treatmentRequested.emit($event)"
+              (wikiPageRequested)="wikiPageRequested.emit($event)"
+            ></fieldset>
+          }
+
+          <fieldset
+            class="control-panel__section"
+            data-section="decor"
+            [hidden]="!shows('decor')"
+            aria-labelledby="panneau-decor-titre"
+            app-decor-section
+            [decorVisible]="decorVisible()"
+            [decorEditable]="decorEditable()"
+            [foodStyle]="foodStyle()"
+            (decorVisibleChanged)="decorVisibleChanged.emit($event)"
+            (editRequested)="editRequested.emit()"
+            (foodStyleToggled)="foodStyleToggled.emit()"
+          ></fieldset>
+
+          <!-- Accessibilité (#406) : juste après « Décor », dans la première colonne du panneau à
              1280 × 720, où il reste de la place (docs/PIEGES.md). -->
-        <fieldset
-          class="control-panel__section"
-          data-section="accessibilite"
-          app-accessibility-section
-        ></fieldset>
+          <fieldset
+            class="control-panel__section"
+            data-section="accessibilite"
+            [hidden]="!shows('accessibilite')"
+            app-accessibility-section
+          ></fieldset>
 
-        <!-- Son (#411, ADR 0100) : juste après « Accessibilité » ; à 1280 × 720, en tête de la
+          <!-- Son (#411, ADR 0100) : juste après « Accessibilité » ; à 1280 × 720, en tête de la
              deuxième colonne, la liste « Population » (qui défile) cède une ligne
              (docs/PIEGES.md). -->
-        <fieldset class="control-panel__section" data-section="son" app-sound-section></fieldset>
-
-        @if (roomAvailable() && roomShown()) {
-          <!-- Bacs et meubles de la pièce (#305, lot 2b) : ajout à la première place libre,
-               retrait (confirmation si le bac est peuplé). Les bacs posés restent figés. Après
-               « Décor » : l'ordre au clavier des sections précédentes ne change pas. -->
           <fieldset
             class="control-panel__section"
-            data-section="bacs-meubles"
-            app-room-section
-            [roomCatalog]="roomCatalog()"
-            (supportAdded)="supportAdded.emit($event)"
-            (tankAdded)="tankAdded.emit($event)"
-            (tankRemoved)="tankRemoved.emit($event)"
-            (supportRemoved)="supportRemoved.emit($event)"
+            data-section="son"
+            [hidden]="!shows('son')"
+            app-sound-section
           ></fieldset>
-        }
 
-        <fieldset
-          class="control-panel__section"
-          data-section="population"
-          app-population-section
-          [environment]="environment()"
-          [careMode]="careMode()"
-          [population]="population()"
-          [populationMax]="populationMax()"
-          [populationNotice]="populationNotice()"
-          [tankLiters]="tankLiters()"
-          [water]="water()"
-          (populationChanged)="populationChanged.emit($event)"
-        ></fieldset>
+          @if (roomAvailable() && roomShown()) {
+            <!-- Bacs et meubles de la pièce (#305, lot 2b) : ajout à la première place libre,
+               retrait (confirmation si le bac est peuplé). Les bacs posés restent figés. Après
+               « Décor » : l'ordre au clavier des sections précédentes ne change pas. -->
+            <fieldset
+              class="control-panel__section"
+              data-section="bacs-meubles"
+              [hidden]="!shows('bacs-meubles')"
+              app-room-section
+              [roomCatalog]="roomCatalog()"
+              (supportAdded)="supportAdded.emit($event)"
+              (tankAdded)="tankAdded.emit($event)"
+              (tankRemoved)="tankRemoved.emit($event)"
+              (supportRemoved)="supportRemoved.emit($event)"
+            ></fieldset>
+          }
 
-        <!-- Liste des bacs de la pièce (#306, lot 3) : sélection et transfert d'un animal.
+          <fieldset
+            class="control-panel__section"
+            data-section="population"
+            [hidden]="!shows('population')"
+            app-population-section
+            [environment]="environment()"
+            [careMode]="careMode()"
+            [population]="population()"
+            [populationMax]="populationMax()"
+            [populationNotice]="populationNotice()"
+            [tankLiters]="tankLiters()"
+            [water]="water()"
+            (populationChanged)="populationChanged.emit($event)"
+          ></fieldset>
+
+          <!-- Liste des bacs de la pièce (#306, lot 3) : sélection et transfert d'un animal.
              Avant « Sauvegarde » : l'ordre au clavier des sections précédentes ne change pas. -->
-        <fieldset
-          class="control-panel__section"
-          data-section="bacs"
-          aria-labelledby="panneau-bacs-titre"
-          app-tanks-section
-          [environment]="environment()"
-          [careMode]="careMode()"
-          [tankList]="tankList()"
-          [tankLiters]="tankLiters()"
-          [population]="population()"
-          [water]="water()"
-          [quarantine]="quarantine()"
-          [tankNotice]="tankNotice()"
-          (tankSelected)="tankSelected.emit($event)"
-          (tankRenamed)="tankRenamed.emit($event)"
-          (careModeChanged)="careModeChanged.emit($event)"
-          (careReturned)="careReturned.emit($event)"
-          (animalTransferred)="animalTransferred.emit($event)"
-          (quarantineInstalled)="quarantineInstalled.emit()"
-          (quarantineTreated)="quarantineTreated.emit($event)"
-          (quarantineStarter)="quarantineStarter.emit($event)"
-          (quarantineReturned)="quarantineReturned.emit($event)"
-        ></fieldset>
+          <fieldset
+            class="control-panel__section"
+            data-section="bacs"
+            [hidden]="!shows('bacs')"
+            aria-labelledby="panneau-bacs-titre"
+            app-tanks-section
+            [environment]="environment()"
+            [careMode]="careMode()"
+            [tankList]="tankList()"
+            [tankLiters]="tankLiters()"
+            [population]="population()"
+            [water]="water()"
+            [quarantine]="quarantine()"
+            [tankNotice]="tankNotice()"
+            (tankSelected)="tankSelected.emit($event)"
+            (tankRenamed)="tankRenamed.emit($event)"
+            (careModeChanged)="careModeChanged.emit($event)"
+            (careReturned)="careReturned.emit($event)"
+            (animalTransferred)="animalTransferred.emit($event)"
+            (quarantineInstalled)="quarantineInstalled.emit()"
+            (quarantineTreated)="quarantineTreated.emit($event)"
+            (quarantineStarter)="quarantineStarter.emit($event)"
+            (quarantineReturned)="quarantineReturned.emit($event)"
+          ></fieldset>
 
-        <!-- « Partager ce bac » (#426) sur la ligne du titre, comme « Changer l'eau » : aucune
+          <!-- « Partager ce bac » (#426) sur la ligne du titre, comme « Changer l'eau » : aucune
              ligne de plus, « Sauvegarde » reste dans la deuxième colonne à 1280 × 720. -->
-        <fieldset
-          class="control-panel__section"
-          data-section="sauvegarde"
-          aria-labelledby="panneau-sauvegarde-titre"
-          app-save-section
-          [saveStatus]="saveStatus()"
-          [saveMessage]="saveMessage()"
-          [shareLink]="shareLink()"
-          (exportRequested)="exportRequested.emit()"
-          (shareRequested)="shareRequested.emit()"
-          (importRequested)="importRequested.emit($event)"
-          (importRejected)="importRejected.emit($event)"
-        ></fieldset>
-      </section>
+          <fieldset
+            class="control-panel__section"
+            data-section="sauvegarde"
+            [hidden]="!shows('sauvegarde')"
+            aria-labelledby="panneau-sauvegarde-titre"
+            app-save-section
+            [saveStatus]="saveStatus()"
+            [saveMessage]="saveMessage()"
+            [shareLink]="shareLink()"
+            (exportRequested)="exportRequested.emit()"
+            (shareRequested)="shareRequested.emit()"
+            (importRequested)="importRequested.emit($event)"
+            (importRejected)="importRejected.emit($event)"
+          ></fieldset>
+        </section>
+      </app-settings-window>
     }`,
   styleUrl: './control-panel.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { '(keydown.escape)': 'onEscape($event)' },
+  host: {
+    '(keydown.escape)': 'onEscape($event)',
+    '[class.control-panel-host--window]': 'open()',
+  },
 })
 export class ControlPanel {
   /** Environnement affiché (fourni par l'hôte). */
@@ -499,9 +527,11 @@ export class ControlPanel {
   readonly open = signal(false);
 
   protected readonly panelId = CONTROL_PANEL_ID;
-  /** Panneau sur une colonne qui défile tant qu'une quarantaine est affichée (#571). */
-  protected readonly quarantineShown = computed(() =>
-    isQuarantineShown(this.careMode(), this.quarantine()),
+  /** Catégorie ouverte dans la fenêtre (#722) ; gardée d'une ouverture à l'autre. */
+  readonly category = signal<SettingsCategoryId>(DEFAULT_SETTINGS_CATEGORY);
+  /** Sections de la catégorie ouverte (les autres restent dans le document, masquées). */
+  private readonly shownSections = computed(
+    () => new Set<SettingsSectionKey>(settingsCategory(this.category()).sections),
   );
   /** Case « Afficher la pièce » proposée seulement autour du bac tropical (#187). */
   protected readonly roomAvailable = computed(() => isRoomAvailable(this.environment()));
@@ -509,6 +539,11 @@ export class ControlPanel {
   protected readonly careShown = computed(
     () => this.careMode() !== 'decor' && (this.ichCount() > 0 || this.treatment() !== null),
   );
+
+  /** Vrai si la section `key` est dans la catégorie ouverte. */
+  protected shows(key: SettingsSectionKey): boolean {
+    return this.shownSections().has(key);
+  }
 
   toggle(): void {
     const open = !this.open();
@@ -523,6 +558,22 @@ export class ControlPanel {
     this.open.set(false);
   }
 
+  /** Échap, « Fermer » ou clic sur le fond de la fenêtre : fermeture, focus au bouton. */
+  protected onCloseRequested(): void {
+    this.open.set(false);
+    this.focusToggle();
+  }
+
+  /**
+   * Raclette ou sécateur pris dans la fenêtre (#722) : elle se ferme pour laisser le bac
+   * cliquable ; reposer l'outil (fenêtre rouverte) la laisse ouverte.
+   */
+  protected closeIfTaken(holdingBefore: boolean): void {
+    if (!holdingBefore) {
+      this.onCloseRequested();
+    }
+  }
+
   /**
    * Échap dans le panneau ou sur son bouton (#407) : replie le panneau et rend le focus au
    * bouton « Réglages ». Une fiche ouverte ou une confirmation se ferme d'abord (elles
@@ -533,7 +584,10 @@ export class ControlPanel {
       return;
     }
     event.preventDefault();
-    this.open.set(false);
+    this.onCloseRequested();
+  }
+
+  private focusToggle(): void {
     this.host.nativeElement.querySelector<HTMLElement>('.control-panel__toggle')?.focus();
   }
 }

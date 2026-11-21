@@ -2,7 +2,8 @@
 // en haut à gauche à côté de l'indicateur du moment de la journée (39 px de large à 12 px
 // du bord), loin de la barre des préréglages (en bas au centre).
 // Les contrôles sont dans les sections (`*-section.ts`, ADR 0161), avec les règles communes de
-// `_panel-controls.scss` ; cette feuille ne garde que le bouton, le panneau et ses sections.
+// `_panel-controls.scss` ; cette feuille ne garde que le bouton et la disposition des sections
+// dans la fenêtre des réglages (`ui/settings-window`, #722).
 // L'hôte est une boîte transparente aussi large que le panneau, du bouton jusqu'au bas du
 // panneau : il ne doit pas capter les clics, sinon il masque le bouton « Commandes » replié
 // en haut à droite sur petit écran (#112). Seuls ses enfants (bouton, panneau) les reçoivent.
@@ -22,9 +23,14 @@
   font: 400 13px / 1.3 layout.$font-text;
 }
 
-.control-panel__toggle,
-.control-panel {
+.control-panel__toggle {
   pointer-events: auto;
+}
+
+// Fenêtre des réglages ouverte (#722) : l'hôte passe au-dessus des autres panneaux (z-index 1
+// et 2), pour que le fond assombri de la fenêtre les couvre tous.
+:host(.control-panel-host--window) {
+  z-index: 10;
 }
 
 .control-panel__toggle {
@@ -50,23 +56,13 @@
   }
 }
 
+// Contenu de la catégorie ouverte, dans la fenêtre (#722) : les sections les unes sous les
+// autres ; la fenêtre fait défiler son contenu.
 .control-panel {
-  box-sizing: border-box;
-  width: 260px;
-  // Jamais hors de la fenêtre, à 390 px compris (`$control-panel-left` à gauche, `$edge` à droite).
-  max-width: calc(100vw - #{layout.$control-panel-left} - #{layout.$edge});
-  // Jamais jusqu'à la barre des préréglages (bas : 16 px + une ligne de ~40 px, plus un
-  // écart de 24 px) ; à 1280 × 720, la section « Sauvegarde » tient entière (#101, voir les
-  // contrôles d'espèce compacts plus bas, #189). Sous 480 px, la barre passe sur deux lignes :
-  // voir plus bas.
-  max-height: calc(100vh - 12px - 38px - 80px);
-  overflow-y: auto;
-  padding: 6px 12px 10px;
-  border: 1px solid layout.$panel-rule;
-  border-radius: layout.$radius-window;
-  // Opaque (#257, ADR 0059) : le panneau ouvert passe par-dessus le cadre du tableau de bord,
-  // dont le texte ne doit pas se deviner dessous (`e2e/cadrage-panneaux.spec.ts`).
-  background: layout.$panel-background;
+  display: flex;
+  flex-direction: column;
+  gap: layout.$space-2;
+  max-width: 640px;
 }
 
 .control-panel__section {
@@ -78,45 +74,15 @@
   padding: 6px 0 4px;
   border: 0;
 
-  & + & {
-    border-top: 1px solid layout.$panel-rule;
+  // Section d'une autre catégorie (ADR 0165) : dans le document, jamais affichée.
+  &[hidden] {
+    display: none;
   }
 }
 
-// Écran large mais peu haut (1280 × 720) : sections sur deux colonnes, pour que tout tienne
-// sans défiler, « Sauvegarde » comprise, malgré la section « Eau » (#207, #101) ; les notes
-// masquées alors dans « Eau » et « Soins » le sont dans leur feuille (#697). Plus haut,
-// une colonne suffit et masque moins le bac. Plus étroit que 1167 px, le panneau large ou la
-// bulle d'un geste de soin recouvrirait l'aide-mémoire déplié (#588, #610) : une colonne qui
-// défile.
-@media #{layout.$control-panel-two-columns-query} {
-  .control-panel {
-    width: layout.$control-panel-two-columns-width;
-    column-count: 2;
-    column-gap: 12px;
-  }
-
-  .control-panel__section {
-    break-inside: avoid;
-  }
-
-  // Onze espèces au bac tropical (#362) : la liste défile seule, pour que « Bacs » et
-  // « Sauvegarde » restent dans la deuxième colonne (voir docs/PIEGES.md). Hauteur arrondie à
-  // un nombre entier de lignes d'espèce (#370) : pas de 46 px, 56 px de titre, de marges et
-  // d'écart (3 px sous la dernière ligne) ; aucune ligne coupée à mi-hauteur.
-  // Repli (#386) : sans `round()`, la déclaration suivante est ignorée ; celle-ci reste.
-  [data-section='population'] {
-    max-height: calc(100vh - var(--soins, 470px));
-    max-height: calc(round(down, 100vh - var(--soins, 470px) - 56px, 46px) + 56px);
-    overflow-y: auto;
-  }
-
-  // Quarantaine installée (#571) : « Bacs » ne tient plus dans deux colonnes ; une seule
-  // colonne qui défile, comme sur un écran plus haut, plutôt qu'une troisième hors du cadre.
-  .control-panel--single-column {
-    width: 260px;
-    column-count: auto;
-  }
+.control-panel__empty {
+  margin: 0;
+  color: layout.$panel-ink-muted;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -130,11 +96,5 @@
   :host {
     top: 8px;
     left: 55px;
-  }
-
-  .control-panel {
-    max-width: calc(100vw - 55px - 8px);
-    // Barre des préréglages sur deux lignes (bas : 16 px + deux lignes de ~40 px).
-    max-height: calc(100vh - 8px - 38px - 120px);
   }
 }

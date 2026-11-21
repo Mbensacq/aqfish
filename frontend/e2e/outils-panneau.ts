@@ -28,29 +28,39 @@ export async function open(page: Page, search = '?seed=42'): Promise<string[]> {
   return errors;
 }
 
+/** Fenêtre des réglages (#722), présente seulement quand elle est ouverte. */
+export const fenetreReglages = (page: Page) => page.locator('[data-settings-window]');
+
 /**
- * Ouvre « Réglages » d'un clic, pour y utiliser les contrôles de la catégorie `categorie`
- * (#722) : tous les e2e passent par ici, pour que le branchement de la fenêtre des réglages
- * (tranche 1b) ne change que cette fonction. Tant que le panneau déroulant est en place, il
- * montre toutes les sections : la catégorie (titre déclaré dans
- * `ui/settings-window/settings-categories.ts`) est seulement vérifiée ; une
- * fois la fenêtre branchée, elle sera ouverte.
- *
- * Catégorie : celle du premier contrôle que le test utilise après l'ouverture, relevée par le
- * script de migration de la PR (provisoire là où le test en utilise plusieurs, voir la PR).
+ * Ouvre « Réglages » sur la catégorie `categorie` (titre déclaré dans
+ * `ui/settings-window/settings-categories.ts`), pour y utiliser ses contrôles (#722) : tous
+ * les e2e passent par ici. Fenêtre fermée : clic sur le bouton « Réglages », puis sur la
+ * catégorie ; déjà ouverte (le fond couvre le bouton) : clic sur la catégorie seulement, pour
+ * passer à une autre. Vérifie la catégorie affichée.
  */
 export async function ouvrirReglages(page: Page, categorie: string): Promise<void> {
-  expect(
-    SETTINGS_CATEGORIES.some((entry) => entry.title === categorie),
-    `catégorie « ${categorie} »`,
-  ).toBe(true);
-  await toggle(page).click();
-  await expect(toggle(page)).toHaveAttribute('aria-expanded', 'true');
+  const entry = SETTINGS_CATEGORIES.find((candidate) => candidate.title === categorie);
+  expect(entry, `catégorie « ${categorie} »`).toBeDefined();
+  if ((await toggle(page).getAttribute('aria-expanded')) !== 'true') {
+    await toggle(page).click();
+    await expect(toggle(page)).toHaveAttribute('aria-expanded', 'true');
+  }
+  await fenetreReglages(page).locator(`[data-settings-category="${entry!.id}"]`).click();
+  await expect(page.locator('[data-settings-content]')).toHaveAttribute(
+    'data-settings-content',
+    entry!.id,
+  );
 }
 
-/** Referme « Réglages » (bouton « Réglages » ; Échap ou « Fermer » avec la fenêtre, #722). */
+/**
+ * Referme « Réglages » par « Fermer les réglages » (le fond de la fenêtre couvre le bouton
+ * « Réglages », #722). Déjà refermée (raclette ou sécateur pris, éditeur de décor ouvert) :
+ * rien à faire. Vérifie l'état du bouton après.
+ */
 export async function fermerReglages(page: Page): Promise<void> {
-  await toggle(page).click();
+  if ((await toggle(page).getAttribute('aria-expanded')) === 'true') {
+    await page.locator('[data-settings-close]').click();
+  }
   await expect(toggle(page)).toHaveAttribute('aria-expanded', 'false');
 }
 

@@ -553,22 +553,20 @@ describe('ControlPanel', () => {
       ]);
     });
 
-    it('quarantaine installée (#571) : panneau sur une colonne, focus au bac de quarantaine', async () => {
+    it('quarantaine installée (#571) : focus au bac de quarantaine, section toujours affichée', async () => {
       fixture.componentInstance.quarantine.set({ tanks: [], sickHere: 3 });
       await openPanel();
-      const panel = () => root().querySelector<HTMLElement>('.control-panel')!;
-      expect(panel().classList).not.toContain('control-panel--single-column');
       section().querySelector<HTMLButtonElement>('[data-quarantine-install]')!.click();
       await fixture.whenStable();
       expect(fixture.componentInstance.layout).toContainEqual(['quarantaine', null]);
-      expect(panel().classList).toContain('control-panel--single-column');
       const select = section().querySelector('[data-quarantine-tank]');
       expect(select).not.toBeNull();
       expect(document.activeElement).toBe(select);
-      // Plus de bac posé : retour aux deux colonnes.
-      fixture.componentInstance.quarantine.set({ tanks: [], sickHere: 0 });
-      await fixture.whenStable();
-      expect(panel().classList).not.toContain('control-panel--single-column');
+      // Fenêtre des réglages (#722) : plus de colonnes, la section reste dans « Bac et milieu ».
+      expect(section().hidden).toBe(false);
+      expect(
+        root().querySelector('[data-settings-content]')?.getAttribute('data-settings-content'),
+      ).toBe('bac');
     });
 
     it('Paludarium (#492) : « sans granulés » et infobulle, aucune infobulle sinon', async () => {
@@ -1175,15 +1173,18 @@ describe('ControlPanel', () => {
     expect(fixture.componentInstance.environments).toEqual(['bassin']);
   });
 
-  it('se déplie et se replie au bouton', async () => {
+  it('se déplie et se replie au bouton : fenêtre modale titrée (#722)', async () => {
     await openPanel();
     expect(toggle().getAttribute('aria-expanded')).toBe('true');
-    const section = root().querySelector('section');
-    expect(section?.id).toBe(CONTROL_PANEL_ID);
-    expect(section?.getAttribute('aria-label')).toBe('Réglages de l’aquarium');
+    expect(toggle().getAttribute('aria-haspopup')).toBe('dialog');
+    const dialog = root().querySelector('[role="dialog"]');
+    expect(dialog?.id).toBe(CONTROL_PANEL_ID);
+    expect(dialog?.getAttribute('aria-modal')).toBe('true');
+    const title = dialog?.getAttribute('aria-labelledby');
+    expect(root().querySelector(`#${title}`)?.textContent?.trim()).toBe('Réglages');
     await openPanel();
     expect(toggle().getAttribute('aria-expanded')).toBe('false');
-    expect(root().querySelector('section')).toBeNull();
+    expect(root().querySelector('[role="dialog"]')).toBeNull();
   });
 
   it('sections extensibles : environnement, simulation, journée, eau, décor, accessibilité, son, population, bacs, sauvegarde, chacune avec sa légende', async () => {
@@ -1346,8 +1347,13 @@ describe('ControlPanel', () => {
 
   it('chaque contrôle a un nom accessible et est atteignable au clavier (aucun tabindex négatif)', async () => {
     await openPanel();
-    // Le champ de fichier natif est masqué : le bouton « Importer » l'ouvre (#70).
-    const controls = [...root().querySelectorAll<HTMLElement>('button, input:not([type="file"])')];
+    // Le champ de fichier natif est masqué : le bouton « Importer » l'ouvre (#70). Contrôles
+    // des sections seulement : ceux de la fenêtre (#722) sont dans `settings-window.spec.ts`.
+    const content = root().querySelector<HTMLElement>('.control-panel')!;
+    const controls = [
+      toggle(),
+      ...content.querySelectorAll<HTMLElement>('button, input:not([type="file"])'),
+    ];
     // 5 contrôles de #52, « Éditer le décor » (#167), « Granulés » (#117), « Afficher la
     // pièce » (#187), « Changer l’eau » et le curseur du chauffage (#207), « − » et « + » des
     // feuilles de catappa (#239), puis « − », champ, « + » (#69), curseur (#189) et « Fiche »
@@ -1681,10 +1687,20 @@ describe('ControlPanel', () => {
       expect(pruner.getAttribute('aria-pressed')).toBe('false');
       pruner.click();
       expect(fixture.componentInstance.prunerToggles).toBe(1);
+      // Sécateur pris : la fenêtre se ferme (#722), le bac redevient cliquable.
+      await fixture.whenStable();
+      expect(toggle().getAttribute('aria-expanded')).toBe('false');
+      expect(document.activeElement).toBe(toggle());
       fixture.componentInstance.pruning.set(true);
-      fixture.detectChanges();
-      expect(pruner.textContent?.trim()).toBe('Poser le sécateur');
-      expect(pruner.getAttribute('aria-pressed')).toBe('true');
+      await openPanel();
+      const held = section().querySelector<HTMLButtonElement>('[data-pruner]')!;
+      expect(held.textContent?.trim()).toBe('Poser le sécateur');
+      expect(held.getAttribute('aria-pressed')).toBe('true');
+      // Le poser laisse la fenêtre ouverte.
+      held.click();
+      await fixture.whenStable();
+      expect(fixture.componentInstance.prunerToggles).toBe(2);
+      expect(toggle().getAttribute('aria-expanded')).toBe('true');
     });
 
     it('courant (#460) : bouton sur la ligne du titre, libellé de la force, émet la demande', async () => {
@@ -1772,11 +1788,23 @@ describe('ControlPanel', () => {
       expect(scraper.getAttribute('aria-pressed')).toBe('false');
       scraper.click();
       expect(fixture.componentInstance.layout).toEqual([['raclette', null]]);
-      fixture.componentInstance.scraping.set(true);
+      // Raclette prise : la fenêtre se ferme (#722), focus rendu au bouton « Réglages ».
       await fixture.whenStable();
-      expect(scraper.textContent?.trim()).toBe('Poser la raclette');
-      expect(scraper.getAttribute('aria-label')).toBe('Poser la raclette');
-      expect(scraper.getAttribute('aria-pressed')).toBe('true');
+      expect(toggle().getAttribute('aria-expanded')).toBe('false');
+      expect(document.activeElement).toBe(toggle());
+      fixture.componentInstance.scraping.set(true);
+      await openPanel();
+      const held = section().querySelector<HTMLButtonElement>('[data-scraper]')!;
+      expect(held.textContent?.trim()).toBe('Poser la raclette');
+      expect(held.getAttribute('aria-label')).toBe('Poser la raclette');
+      expect(held.getAttribute('aria-pressed')).toBe('true');
+      held.click();
+      await fixture.whenStable();
+      expect(fixture.componentInstance.layout).toEqual([
+        ['raclette', null],
+        ['raclette', null],
+      ]);
+      expect(toggle().getAttribute('aria-expanded')).toBe('true');
     });
 
     it('produits (#529, #530, #531) : rangées, états de l’hôte, chaque bouton émet sa demande', async () => {

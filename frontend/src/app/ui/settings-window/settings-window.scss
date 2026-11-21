@@ -4,6 +4,8 @@
 @use '../panel-layout' as layout;
 
 :host {
+  // L'hôte du panneau ne capte pas les clics (`control-panel.scss`) : la fenêtre, si.
+  pointer-events: auto;
   position: fixed;
   inset: 0;
   z-index: 10;
