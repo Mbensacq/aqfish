@@ -9713,10 +9713,10 @@
           "note": "Verdict RÉSERVES (téléphone provisoire), 0 bug, 167 captures, 10 d'interface différentes, publiées"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-21T05:22:56.668Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-21T05:50:00.510Z",
+          "note": "PR #758 fusionnée → v1.27.1 (release CI OK, main verte), #722 reste ouverte (tranches suivantes) ; dette #759 (restes des deux colonnes, boutons serrés)"
         }
       },
       "metriques": {}
