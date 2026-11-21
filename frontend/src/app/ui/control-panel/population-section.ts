@@ -7,6 +7,7 @@ import {
   input,
   linkedSignal,
   output,
+  signal,
 } from '@angular/core';
 
 import type { CareMode } from '../../sim/care-mode';
@@ -20,6 +21,14 @@ import { addWarnings, addWarningText } from '../../sim/species-sheet';
 import { treatedWaterWarning } from '../../sim/treatment-text';
 import { DEFAULT_WATER_READOUT, type WaterReadout } from '../../sim/water-quality';
 import { panelCatalog } from './panel-views';
+import {
+  POPULATION_FILTERS,
+  POPULATION_SORTS,
+  populationSummary,
+  populationTiles,
+  type PopulationFilter,
+  type PopulationSort,
+} from './population-view';
 import { SpeciesSheet } from './species-sheet';
 
 /** Nombre lu dans une valeur de formulaire ; une chaîne vide donne `NaN` (et non 0). */
@@ -97,6 +106,12 @@ export function speciesSliderLabel(species: SpeciesId): string {
  * Échap ou « Fermer la fiche » la referme et rend le focus au bouton. Après un ajout, des
  * lignes d'avertissement sous la ligne de l'espèce si le bac ne lui convient pas.
  *
+ * Tuiles (#723, `docs/INTERFACE.md` section 2) : une tuile par espèce du milieu (nom, nom
+ * scientifique en italique, compteur, « Fiche »), filtres « Toutes », « Dans le bac »,
+ * « Poissons », « Invertébrés » (boutons accolés, `aria-pressed`), tri (ordre du milieu, nom,
+ * nombre, taille adulte : `population-view.ts`) et résumé « N animaux, M espèces ». Pendant une
+ * recherche de la fenêtre, seules les espèces trouvées restent (`onlySpecies`).
+ *
  * L'hôte est le `fieldset` de la section, posé par le panneau (ADR 0161).
  */
 @Component({
@@ -113,91 +128,137 @@ export function speciesSliderLabel(species: SpeciesId): string {
         {{ notice }}
       </p>
     }
-    @for (entry of catalog(); track entry.species) {
-      @let id = entry.species;
-      <div class="control-panel__count" [attr.data-species]="id">
-        <div class="control-panel__count-head">
-          <label
-            class="control-panel__count-label"
-            [for]="'panneau-population-' + id"
-            [attr.title]="entry.scientificName"
-          >
-            {{ entry.name }}
-          </label>
+    <div class="population__toolbar">
+      <div class="population__filters" role="group" aria-label="Filtrer les espèces">
+        @for (choice of filters; track choice.id) {
           <button
             type="button"
-            class="control-panel__sheet-toggle"
-            [attr.aria-label]="'Fiche : ' + entry.name"
-            [attr.aria-expanded]="openSheet() === id"
-            [attr.aria-controls]="'fiche-' + id"
-            [attr.data-sheet-toggle]="id"
-            (click)="toggleSheet(id)"
-            (keydown.escape)="closeSheet(id, $event)"
+            class="population__filter"
+            [attr.aria-pressed]="filter() === choice.id"
+            [attr.data-population-filter]="choice.id"
+            (click)="filter.set(choice.id)"
           >
-            Fiche
+            {{ choice.label }}
           </button>
-        </div>
-        <button
-          type="button"
-          class="control-panel__step"
-          [attr.aria-label]="stepLabel(id, -1)"
-          [attr.aria-disabled]="population()[id] <= 0"
-          (click)="step(id, -1)"
+        }
+      </div>
+      <label class="population__sort">
+        Trier par
+        <select
+          class="population__sort-select"
+          data-population-sort
+          [value]="sort()"
+          (change)="onSort($event)"
         >
-          −
-        </button>
-        <!-- Curseur d'effectif (#189), entre « − » et le champ : échelle fixe de 0 au
+          @for (choice of sorts; track choice.id) {
+            <option [value]="choice.id" [selected]="sort() === choice.id">
+              {{ choice.label }}
+            </option>
+          }
+        </select>
+      </label>
+    </div>
+    <p class="population__summary" data-population-summary>{{ summary() }}</p>
+    <div class="population__tiles">
+      @for (entry of tiles(); track entry.species) {
+        @let id = entry.species;
+        <div class="control-panel__count population__tile" [attr.data-species]="id">
+          <div class="control-panel__count-head">
+            <label
+              class="control-panel__count-label"
+              [for]="'panneau-population-' + id"
+              [attr.title]="entry.scientificName"
+            >
+              {{ entry.name }}
+            </label>
+            <button
+              type="button"
+              class="control-panel__sheet-toggle"
+              [attr.aria-label]="'Fiche : ' + entry.name"
+              [attr.aria-expanded]="openSheet() === id"
+              [attr.aria-controls]="'fiche-' + id"
+              [attr.data-sheet-toggle]="id"
+              (click)="toggleSheet(id)"
+              (keydown.escape)="closeSheet(id, $event)"
+            >
+              Fiche
+            </button>
+          </div>
+          <i class="population__scientific">{{ entry.scientificName }}</i>
+          <button
+            type="button"
+            class="control-panel__step"
+            [attr.aria-label]="stepLabel(id, -1)"
+            [attr.aria-disabled]="population()[id] <= 0"
+            (click)="step(id, -1)"
+          >
+            −
+          </button>
+          <!-- Curseur d'effectif (#189), entre « − » et le champ : échelle fixe de 0 au
              maximum de l'espèce ; la valeur est ramenée à la place restante (maximum
              fourni par l'hôte). -->
-        <input
-          class="control-panel__range control-panel__count-range"
-          type="range"
-          min="0"
-          step="1"
-          [attr.max]="entry.maxCount"
-          [value]="population()[id]"
-          [attr.aria-label]="slideLabel(id)"
-          [attr.aria-valuetext]="population()[id] + ' ' + entry.labels.plural"
-          [attr.data-count-slider]="id"
-          (input)="onCount(id, $event)"
-        />
-        <input
-          class="control-panel__number"
-          type="number"
-          inputmode="numeric"
-          min="0"
-          step="1"
-          [id]="'panneau-population-' + id"
-          [attr.aria-label]="countLabel(id)"
-          [attr.max]="populationMax()[id]"
-          [value]="population()[id]"
-          (change)="onCount(id, $event)"
-        />
-        <button
-          type="button"
-          class="control-panel__step"
-          [attr.aria-label]="stepLabel(id, 1)"
-          [attr.aria-disabled]="population()[id] >= populationMax()[id]"
-          (click)="step(id, 1)"
-        >
-          +
-        </button>
-      </div>
-      <!-- Avertissements d'ajout (#237) : bac qui ne convient pas à l'espèce ajoutée. -->
-      @if (lastAdded() === id) {
-        @for (text of addTexts(); track text) {
-          <p class="control-panel__note control-panel__warning" data-add-warning>
-            {{ text }}
+          <input
+            class="control-panel__range control-panel__count-range"
+            type="range"
+            min="0"
+            step="1"
+            [attr.max]="entry.maxCount"
+            [value]="population()[id]"
+            [attr.aria-label]="slideLabel(id)"
+            [attr.aria-valuetext]="population()[id] + ' ' + entry.labels.plural"
+            [attr.data-count-slider]="id"
+            (input)="onCount(id, $event)"
+          />
+          <input
+            class="control-panel__number"
+            type="number"
+            inputmode="numeric"
+            min="0"
+            step="1"
+            [id]="'panneau-population-' + id"
+            [attr.aria-label]="countLabel(id)"
+            [attr.max]="populationMax()[id]"
+            [value]="population()[id]"
+            (change)="onCount(id, $event)"
+          />
+          <button
+            type="button"
+            class="control-panel__step"
+            [attr.aria-label]="stepLabel(id, 1)"
+            [attr.aria-disabled]="population()[id] >= populationMax()[id]"
+            (click)="step(id, 1)"
+          >
+            +
+          </button>
+        </div>
+        <!-- Avertissements d'ajout (#237) : bac qui ne convient pas à l'espèce ajoutée. -->
+        @if (lastAdded() === id) {
+          @for (text of addTexts(); track text) {
+            <p class="control-panel__note control-panel__warning population__wide" data-add-warning>
+              {{ text }}
+            </p>
+          }
+        }
+        <!-- Fiche de l'espèce (#237), composant à part (#255). -->
+        @if (openSheet() === id) {
+          <app-species-sheet
+            class="population__wide"
+            [entry]="entry"
+            (closed)="closeSheet(id, $event)"
+          />
+        }
+      } @empty {
+        @if (catalog().length === 0) {
+          <p class="control-panel__note population__wide" data-population-empty>
+            Aucune espèce pour l’instant.
+          </p>
+        } @else {
+          <p class="control-panel__note population__wide" role="status" data-population-none>
+            Aucune espèce ne correspond à ce filtre.
           </p>
         }
       }
-      <!-- Fiche de l'espèce (#237), composant à part (#255). -->
-      @if (openSheet() === id) {
-        <app-species-sheet [entry]="entry" (closed)="closeSheet(id, $event)" />
-      }
-    } @empty {
-      <p class="control-panel__note" data-population-empty>Aucune espèce pour l’instant.</p>
-    }
+    </div>
     <!-- Mélanges déconseillés (#209) : couples d'espèces présentes incompatibles. -->
     @for (text of mixTexts(); track text) {
       <p class="control-panel__note control-panel__warning" data-mix-warning>{{ text }}</p>
@@ -226,6 +287,9 @@ export class PopulationSection {
   /** Relevé de l'eau (produits de traitement, température). */
   readonly water = input<WaterReadout>(DEFAULT_WATER_READOUT);
 
+  /** Espèces gardées par une recherche de la fenêtre (#723) ; `null` : toutes. */
+  readonly onlySpecies = input<readonly SpeciesId[] | null>(null);
+
   /** Effectif demandé pour une espèce (déjà borné à [0, maximum]). */
   readonly populationChanged = output<PopulationRequest>();
 
@@ -233,6 +297,22 @@ export class PopulationSection {
 
   /** Catalogue des espèces de l'environnement affiché (#88, #189). */
   protected readonly catalog = computed(() => panelCatalog(this.environment(), this.careMode()));
+  protected readonly filters = POPULATION_FILTERS;
+  protected readonly sorts = POPULATION_SORTS;
+  /** Filtre choisi (#723) : « Toutes » au départ. */
+  protected readonly filter = signal<PopulationFilter>('toutes');
+  /** Tri choisi (#723) : l'ordre du milieu au départ. */
+  protected readonly sort = signal<PopulationSort>('milieu');
+  /** Tuiles affichées : filtre, tri, puis la recherche de la fenêtre s'il y en a une. */
+  protected readonly tiles = computed(() => {
+    const only = this.onlySpecies();
+    // Recherche : les espèces trouvées, quel que soit le filtre choisi.
+    const filter = only === null ? this.filter() : 'toutes';
+    const tiles = populationTiles(this.catalog(), this.population(), filter, this.sort());
+    return only === null ? tiles : tiles.filter((entry) => only.includes(entry.species));
+  });
+  /** « N animaux, M espèces » du milieu affiché (#723). */
+  protected readonly summary = computed(() => populationSummary(this.catalog(), this.population()));
   /**
    * Libellés des mélanges déconseillés de la population affichée (#209), dans l'ordre du
    * catalogue (`mixWarnings`, `sim/compatibility.ts`).
@@ -307,6 +387,18 @@ export class PopulationSection {
 
   protected slideLabel(id: SpeciesId): string {
     return speciesSliderLabel(id);
+  }
+
+  /** Liste « Trier par » : tri choisi (valeur inconnue ignorée). */
+  protected onSort(event: Event): void {
+    const select = event.target;
+    const choice =
+      select instanceof HTMLSelectElement
+        ? POPULATION_SORTS.find((entry) => entry.id === select.value)
+        : undefined;
+    if (choice !== undefined) {
+      this.sort.set(choice.id);
+    }
   }
 
   /** Bouton « Fiche » : ouvre la fiche de l'espèce, ou la referme si elle est ouverte. */

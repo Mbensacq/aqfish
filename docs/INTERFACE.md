@@ -216,6 +216,23 @@ découpé par section), qui fournit les sections réutilisées par la fenêtre :
    44 px ; `ouvrirReglages` passe par « Retour » sur téléphone. **Reste** : sortir les
    produits de la section « Eau » vers « Soins et produits » et « Pluie » vers « Affichage ».
 3. #723 — Population en tuiles et recherche dans les réglages.
+   **Livré (cycle 270)** : chaque réglage est déclaré une seule fois
+   (`ui/settings-window/settings-categories.ts` : nom, explication, mots voisins, section qui
+   le porte) ; l'index de la recherche (`ui/settings-window/settings-index.ts`, module pur) en
+   est tiré, avec les espèces du milieu affiché (nom courant et scientifique). Normalisation :
+   minuscules, NFD sans diacritiques. Rang : nom qui commence par la requête, mot du nom, mot
+   voisin, nom qui la contient, mot voisin qui la contient, explication ; égalités dans l'ordre
+   de la déclaration. Pendant une recherche, le contenu montre la liste des résultats puis les
+   sections qui les portent (réglables sur place ; une recherche d'espèce ne garde que ses
+   tuiles) ; le nom de catégorie d'un résultat y mène, Entrée ouvre le premier, aucun
+   résultat : un message et les catégories. Population (`ui/control-panel/population-view.ts`,
+   fonctions pures) : filtres « Toutes », « Dans le bac », « Poissons » (ni invertébré ni
+   amphibien), « Invertébrés » (`INVERTEBRATES`) ; tri « Ordre du milieu » (par défaut, ajouté
+   pour garder l'ordre du catalogue), nom, nombre dans le bac (le plus nombreux d'abord), taille
+   adulte (`bodyLength` de la simulation, la plus grande d'abord) ; résumé « N animaux,
+   M espèces ». **Reste** : les sections montrées par une recherche le sont en entier (pas
+   seulement la ligne du réglage trouvé) ; les sections absentes du bac (« Soins » sans
+   points blancs, pièce masquée) restent proposées dans les résultats sans contenu.
 4. #724 — Habillage de toute la page selon la charte (tableau de bord, barres, aide-mémoire, wiki,
    pharmacie, bilan, guide, parcours du premier bac), textes revus.
 5. #725 — Masquer l'interface à la place du mode immersif.
