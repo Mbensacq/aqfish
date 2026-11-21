@@ -9807,6 +9807,12 @@
           "debut": "2026-11-21T09:01:55.453Z",
           "fin": "2026-11-21T09:02:25.934Z",
           "note": "Issue #723 : population en tuiles, filtres, tri et recherche (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-21T09:03:00.827Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
