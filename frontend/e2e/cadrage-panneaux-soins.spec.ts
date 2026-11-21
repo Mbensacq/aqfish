@@ -6,7 +6,8 @@ import { fermerReglages } from './outils-panneau';
 /**
  * Cadrage du message d'un geste de soin (#490, #610) dans la fenêtre des réglages (#722) : il
  * était une bulle à droite du panneau en deux colonnes ; c'est désormais une ligne de la
- * catégorie « Soins et produits », dans la fenêtre, qui couvre « Commandes » de son fond.
+ * catégorie « Soins et produits », dans la fenêtre, qui replie « Commandes » le temps d'être
+ * ouverte (sa bascule sous le fond) et le rend à sa fermeture.
  * Séparé de `cadrage-panneaux.spec.ts` pour la répartition de la CI (#600).
  */
 
@@ -22,7 +23,7 @@ async function coveredBySettings(page: Page, selector: string): Promise<boolean>
 
 // #610 : la bulle d'un geste de soin recouvrait « Commandes » déplié sous 1155 px de large.
 // Dans la fenêtre, le message reste dans le contenu de la catégorie, entier en largeur, quelle
-// que soit la largeur ; « Commandes » reste déplié derrière le fond (au-delà de 639 px, #136).
+// que soit la largeur ; « Commandes » est replié le temps de la fenêtre, puis rendu (#722).
 test.describe('message de soin et « Commandes » ouverts ensemble (#610, #722)', () => {
   for (const viewport of [
     { width: 915, height: 700 },
@@ -30,7 +31,7 @@ test.describe('message de soin et « Commandes » ouverts ensemble (#610, #722)'
     { width: 1280, height: 720 },
   ]) {
     for (const font of FONTS) {
-      test(`${viewport.width} × ${viewport.height} : message dans la fenêtre, « Commandes » dessous (police ${font ?? 'par défaut'})`, async ({
+      test(`${viewport.width} × ${viewport.height} : message dans la fenêtre, « Commandes » replié puis rendu (police ${font ?? 'par défaut'})`, async ({
         page,
       }) => {
         await page.setViewportSize(viewport);
@@ -46,7 +47,8 @@ test.describe('message de soin et « Commandes » ouverts ensemble (#610, #722)'
         expect(message.x).toBeGreaterThanOrEqual(contentBox.x);
         expect(message.x + message.width).toBeLessThanOrEqual(contentBox.x + contentBox.width);
         expect(await content.evaluate((el) => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
-        expect(await coveredBySettings(page, '#aide-commandes')).toBe(true);
+        await expect(page.locator('#aide-commandes')).toHaveCount(0);
+        expect(await coveredBySettings(page, '.commands-help__toggle')).toBe(true);
         await fermerReglages(page);
         await expect(page.locator('#aide-commandes')).toBeVisible();
         expect(errors).toEqual([]);
