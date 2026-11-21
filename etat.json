@@ -9749,10 +9749,10 @@
           "note": "Verdict OK, 0 bug, 167 captures publiées, 146 identiques"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-21T07:17:00.839Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-21T07:49:26.623Z",
+          "note": "PR #760 fusionnée → v1.27.2 (release CI OK, main verte), #759 fermée, #722 reste ouverte ; captures relancées une fois (installation du navigateur en échec côté CI)"
         }
       },
       "metriques": {}
