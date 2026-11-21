@@ -9767,10 +9767,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-21T07:49:56.835Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-21T07:50:22.475Z",
+          "note": "Issue #722 : tranche 3, panneau des réglages sur téléphone (S)"
         }
       },
       "metriques": {}
