@@ -9727,7 +9727,7 @@
       "debut": "2026-11-21T05:50:30.341Z",
       "type": "fonctionnalite",
       "issue": 722,
-      "pr": null,
+      "pr": 760,
       "version": null,
       "phases": {
         "planif": {
