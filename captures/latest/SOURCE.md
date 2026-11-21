@@ -1,6 +1,6 @@
-Branche: cycle/c264-dette-sim-icones (PR #752)
-PR: #752
-Commit: 9d5df6c267dcae6b12262494d336a25cdb76e05e
+Branche: cycle/c265-dette-sauvegarde-marche (PR #755)
+PR: #755
+Commit: 113303131a5cbb71e5d665579c1fcce6da91806f
 Graine: défaut
-Temps: ~5,6 min (captures), verify 52 min e2e
-Écarts vs c263 : aucun, 167 captures identiques au pixel près (cmp).
+Temps: ~5,4 min (captures), verify 49 min e2e
+Écarts vs c264 : aucun, 167 captures identiques au pixel près (cmp).
