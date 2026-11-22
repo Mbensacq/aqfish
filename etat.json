@@ -10116,6 +10116,24 @@
         }
       },
       "metriques": {}
+    },
+    "279": {
+      "numero": 279,
+      "date": "2026-11-22",
+      "debut": "2026-11-22T15:31:12.333Z",
+      "type": "retro",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-22T15:31:12.333Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
