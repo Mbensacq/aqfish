@@ -161,7 +161,8 @@ oriente la vue comme on veut, puis tout disparaît sauf le bac.
 
 - Interrupteur dans Affichage, et touche **I**. Échap, I ou un appui long sur écran tactile
   fait revenir l'interface.
-- Une indication discrète au moment du masquage (« I ou Échap pour revenir »), qui
+- Une indication discrète au moment du masquage (« I ou Échap pour revenir », « Appui long
+  pour revenir » au doigt, #775), qui
   s'efface après 3 s (aucune si « Réduire les mouvements » : elle reste 3 s sans fondu).
 - La caméra reste utilisable (glisser, molette, vues 1 à 5, caméra libre) ; la simulation
   continue.
@@ -277,8 +278,9 @@ découpé par section), qui fournit les sections réutilisées par la fenêtre :
    ou un appui long immobile (600 ms, à la souris aussi), indication 3 s en haut au centre
    (petit panneau plein de la charte), curseur caché après 2 s d'immobilité ; interface et
    noyau du mode immersif retirés (`ui/immersive-mode`, `core/immersive`, caméra immersive,
-   bouton de « Simulation »). Tranche 2 : la partie `sim/` (`immersive-tank.ts`,
-   `glass-tap.ts`, lieu `immersive: true`).
+   bouton de « Simulation »). Tranche 2 (cycle 276, #776) : la partie `sim/` retirée
+   (`immersive-tank.ts`, `glass-tap.ts`, lieu `immersive: true`) ; indication adaptée au
+   doigt (#775).
 
 Pour chaque lot : tests unitaires et e2e mis à jour pour les nouveaux emplacements (jamais
 affaiblis), contrastes vérifiés, captures regardées, `docs/DA.md` à jour. Les captures du bac
