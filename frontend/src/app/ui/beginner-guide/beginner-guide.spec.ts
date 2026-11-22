@@ -101,6 +101,21 @@ describe('Guide du débutant (#240)', () => {
     expect(document.activeElement).toBe(d);
   });
 
+  it('explications à chevron dessiné, retourné quand elles sont dépliées (#724)', async () => {
+    await create();
+    opener().click();
+    await fixture.whenStable();
+    const d = dialog()!;
+    const first = d.querySelector<HTMLElement>('[data-why-toggle]')!;
+    const chevron = () => first.querySelector('.guide__chevron')!;
+    expect(chevron().querySelectorAll('rect').length).toBeGreaterThan(0);
+    expect(chevron().classList.contains('guide__chevron--open')).toBe(false);
+    first.click();
+    await fixture.whenStable();
+    expect(chevron().classList.contains('guide__chevron--open')).toBe(true);
+    expect(d.textContent).not.toMatch(/[▸▾]/);
+  });
+
   it('ouvrir marque la visite ; Échap ferme et rend le focus au bouton d’ouverture', async () => {
     await create();
     opener().focus();

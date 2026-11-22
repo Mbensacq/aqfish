@@ -113,7 +113,7 @@ export function decorEditorHint(
       : 'Pose refusée : l’élément chevaucherait un autre élément.';
   }
   if (roomSelected && selection !== null) {
-    return 'Glissez pour déplacer ; ← → tournent d’un quart de tour, Suppr retire.';
+    return 'Glissez pour déplacer ; les flèches gauche et droite tournent d’un quart de tour, Suppr retire.';
   }
   if (room && isRoomTool(tool)) {
     return full
@@ -124,7 +124,7 @@ export function decorEditorHint(
     return 'Chute indisponible (moteur non chargé) : élément posé sur le sable.';
   }
   if (selection !== null) {
-    return 'Glissez pour déplacer ; ← → tournent, + − changent la taille, Suppr retire.';
+    return 'Glissez pour déplacer ; les flèches gauche et droite tournent, + et − changent la taille, Suppr retire.';
   }
   if (tool === 'select') {
     return 'Cliquez sur un élément pour le sélectionner.';

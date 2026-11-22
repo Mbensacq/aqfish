@@ -145,7 +145,13 @@
 }
 
 .guide__chevron {
+  --pixel-icon-size: 8px;
+
   color: layout.$brass;
+
+  &--open {
+    transform: scaleY(-1);
+  }
 }
 
 .guide__why-text {

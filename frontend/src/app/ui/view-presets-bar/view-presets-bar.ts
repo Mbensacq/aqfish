@@ -4,6 +4,8 @@ import type { CameraPreset } from '../../core/capture/capture-params';
 import { VIEW_COMMAND_PRESETS, commandKey, keyCommand } from '../../core/commands/commands';
 import { isTypingContext } from '../../core/keyboard/keyboard';
 import { MIDNIGHT_HOUR, NOON_HOUR } from '../../sim/daylight';
+import { PixelIcon } from '../pixel-icon/pixel-icon';
+import { TOOLBAR_ICON_PIXELS } from './toolbar-icons';
 
 /** Bouton de la barre : préréglage, libellé visible, nom accessible et touche associée. */
 export interface ViewPresetButton {
@@ -181,6 +183,7 @@ export function presetForKey(key: string): CameraPreset | null {
       (click)="feed()"
     >
       <kbd class="view-presets-bar__key" aria-hidden="true">{{ feedKey }}</kbd>
+      <app-pixel-icon class="view-presets-bar__icon" [pixels]="icons.nourrir" />
       Nourrir
     </button>
     <!-- Outils d'entretien (#722, venus de la fenêtre des réglages) : raclette (#476), un clic
@@ -196,6 +199,7 @@ export function presetForKey(key: string): CameraPreset | null {
         [attr.aria-label]="scraping() ? 'Poser la raclette' : 'Raclette : cliquer sur les algues'"
         (click)="scraperToggled.emit()"
       >
+        <app-pixel-icon class="view-presets-bar__icon" [pixels]="icons.raclette" />
         {{ scraping() ? 'Poser la raclette' : 'Raclette' }}
       </button>
       <button
@@ -209,6 +213,7 @@ export function presetForKey(key: string): CameraPreset | null {
         "
         (click)="prunerToggled.emit()"
       >
+        <app-pixel-icon class="view-presets-bar__icon" [pixels]="icons.secateur" />
         {{ pruning() ? 'Poser le sécateur' : 'Sécateur' }}
       </button>
     </div>
@@ -219,6 +224,7 @@ export function presetForKey(key: string): CameraPreset | null {
       data-action="photo"
       (click)="photo()"
     >
+      <app-pixel-icon class="view-presets-bar__icon" [pixels]="icons.photo" />
       Photo
     </button>
     <!-- Message bref de la photo (#503) : région toujours présente, annoncée quand elle change. -->
@@ -231,6 +237,7 @@ export function presetForKey(key: string): CameraPreset | null {
       {{ photoNotice() ?? '' }}
     </p>
   </div>`,
+  imports: [PixelIcon],
   styleUrl: './view-presets-bar.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { '(document:keydown)': 'onKeydown($event)' },
@@ -273,6 +280,8 @@ export class ViewPresetsBar {
 
   /** Touche de la caméra libre telle qu'affichée (`L`) et sa description (nom accessible). */
   protected readonly freeCameraKey = keyCommand('camera-libre').display;
+  /** Icônes pixel des outils (grille de 12, #724). */
+  protected readonly icons = TOOLBAR_ICON_PIXELS;
   protected readonly freeCameraDescription = keyCommand('camera-libre').description;
 
   protected toggleFreeCamera(): void {

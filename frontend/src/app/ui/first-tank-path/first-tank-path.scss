@@ -95,3 +95,12 @@
     max-width: calc(100vw - 16px);
   }
 }
+
+// Chevron dessiné en pixels (#724) : vers le bas replié, retourné déplié.
+.path__chevron {
+  --pixel-icon-size: 8px;
+
+  &--open {
+    transform: scaleY(-1);
+  }
+}

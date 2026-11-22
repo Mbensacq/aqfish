@@ -54,8 +54,8 @@ export const FIRST_TANK_STEPS: readonly FirstTankStep[] = [
   {
     id: 'cycle',
     title: 'Laisser le bac se cycler',
-    action: 'Laissez tourner le bac : la vitesse ×4 raccourcit l’attente (Réglages, Vitesse).',
-    why: 'Le filtre doit éliminer ammoniaque et nitrites. Dans un vrai bac, cela prend 6 à 8 semaines ; ici, quelques heures de jeu. Du chlore dans l’eau bloque cette étape : versez du conditionneur (Réglages, Eau).',
+    action: 'Laissez tourner le bac : la vitesse ×4 raccourcit l’attente (Réglages, Temps).',
+    why: 'Le filtre doit éliminer ammoniaque et nitrites. Dans un vrai bac, cela prend 6 à 8 semaines ; ici, quelques heures de jeu. Du chlore dans l’eau bloque cette étape : versez du conditionneur (Réglages, Soins et produits).',
     link: { kind: 'wiki', page: 'entretien', label: 'Wiki : entretien' },
   },
   {
@@ -82,7 +82,7 @@ export const FIRST_TANK_STEPS: readonly FirstTankStep[] = [
   {
     id: 'change-water',
     title: 'Changer une partie de l’eau',
-    action: 'Réglages, Eau : « Changer l’eau ».',
+    action: 'Réglages, Eau et matériel : « Changer l’eau ».',
     why: 'Les nitrates s’accumulent ; un changement partiel les fait baisser sans brusquer les animaux.',
     link: { kind: 'wiki', page: 'entretien', label: 'Wiki : entretien' },
   },

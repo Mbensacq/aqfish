@@ -191,9 +191,21 @@ devant lui garde son vert ; aucune couleur ajoutée à la palette.
   texte laiton, « Poser la raclette ». Touches masquées sous 1 280 px, deux
   lignes sous 640 px (jamais trois, jamais hors de l'écran). Charte (#724, cycle 273) :
   panneau plein à filet ; les cinq vues en boutons accolés, la vue courante pleine en laiton
-  (texte `#141418`) ; touches en `kbd` à filet, bord bas de 2 px, police mono.
+  (texte `#141418`) ; touches en `kbd` à filet, bord bas de 2 px, police mono. Icônes des
+  outils (#724, cycle 274) : nourrir (boîte de granulés), raclette, sécateur et photo dessinés
+  en pixels sur une grille de 12 (`ui/view-presets-bar/toolbar-icons.ts`), à la couleur du
+  texte, 12 px à l'écran ; masquées avec les touches sous 1 280 px (la barre tient à 640 px).
 - Minimale et discrète : l'interface s'efface devant le bac. Aucune interface en mode capture.
-- Icônes en pixel art, cohérentes avec la palette.
+- Icônes en pixel art, cohérentes avec la palette : composant commun `ui/pixel-icon`
+  (un carré par pixel plein, sans lissage, décoratif). Chevrons dessinés (grille de 5) partout
+  où un panneau se déplie : tableau de bord, guide du débutant, parcours du premier bac ; plus
+  aucune flèche de texte ▸ ▾.
+- Fiche d'espèce du wiki en cartel (#724) : nom courant en gras, nom scientifique en
+  italique sur la même ligne après un point médian, puis une ligne utile avec ses unités
+  (taille adulte, eau préférée, groupe, volume), tirée des lignes sourcées de la fiche.
+- Une seule action pleine en laiton par zone : « Importer cet aquarium » dans l'offre de
+  partage ; l'autre bouton reste à filet. Intitulés des groupes de la fenêtre des réglages en
+  casse de phrase (plus de capitales espacées).
 - Police : Atkinson Hyperlegible Next pour le texte, Atkinson Hyperlegible Mono pour les
   valeurs mesurées (OFL, `docs/INTERFACE.md`) ; pas de police pixel pour le texte.
 - Contrôles attendus à terme : préréglages de vue, vitesse de simulation, population,

@@ -147,3 +147,53 @@ describe('charte : valeurs en dur (#721)', () => {
     expect(hardCodedValues(sheet)).toEqual([]);
   });
 });
+
+/**
+ * Recherche finale de la charte (#724) dans toutes les feuilles de l'interface : intitulés en
+ * capitales, fonds translucides (mélange avec la scène, flou) et ombres. Seule la première
+ * lettre d'un message peut passer en capitale ; seul l'anneau de focus (halo sombre de
+ * `layout.focus-ring`, lu par `$focus-halo`) porte un `box-shadow`.
+ */
+function charterViolations(source: string): string[] {
+  const code = withoutComments(source).replace(/::first-letter\s*\{[^}]*\}/g, '');
+  const found: string[] = [];
+  for (const match of code.matchAll(/text-transform:\s*(uppercase|capitalize)|small-caps/g)) {
+    found.push(match[0]);
+  }
+  for (const match of code.matchAll(/backdrop-filter|color-mix\(|\btransparent\s*\)/g)) {
+    found.push(match[0]);
+  }
+  for (const match of code.matchAll(/box-shadow:\s*([^;]+);/g)) {
+    if (!/layout\.\$focus-(ring|halo)/.test(match[1] ?? '')) {
+      found.push(match[0]);
+    }
+  }
+  return found;
+}
+
+describe('charte : recherche finale (#724)', () => {
+  it('relève capitales, flou, mélange avec la scène et ombres, pas l’anneau de focus', () => {
+    const sheet =
+      '// text-transform: uppercase dans un commentaire\n' +
+      '.a { text-transform: uppercase; font-variant: small-caps; }\n' +
+      '.b { backdrop-filter: blur(4px); background: color-mix(in srgb, red, transparent); }\n' +
+      '.c { box-shadow: 0 2px 8px black; }\n' +
+      '.d { box-shadow: 0 0 0 4px layout.$focus-halo; }\n' +
+      '.e::first-letter { text-transform: uppercase; }';
+    expect(charterViolations(sheet)).toEqual([
+      'text-transform: uppercase',
+      'small-caps',
+      'backdrop-filter',
+      'color-mix(',
+      'transparent)',
+      'box-shadow: 0 2px 8px black;',
+    ]);
+  });
+
+  it.each(Object.entries(SHEETS))(
+    '%s : ni capitales, ni fond translucide, ni ombre',
+    (_n, sheet) => {
+      expect(charterViolations(sheet)).toEqual([]);
+    },
+  );
+});

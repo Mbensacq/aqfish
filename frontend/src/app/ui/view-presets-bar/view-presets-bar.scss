@@ -76,6 +76,11 @@
   }
 }
 
+// Icônes des outils (#724) : pixels sur une grille de 12, à la couleur du texte du bouton.
+.view-presets-bar__icon {
+  --pixel-icon-size: 12px;
+}
+
 // Message de la photo (#503) : au-dessus de la barre, hors du flux (la barre ne bouge pas) ;
 // vide, il ne se voit pas mais reste une région annoncée.
 .view-presets-bar__notice {
@@ -112,12 +117,14 @@
 // touches ; sous 1280 px elle débordait sur « Wiki » et « Pharmacie », puis hors
 // de l'écran (dès 768 px). Les touches (rappelées par l'aide-mémoire et le nom accessible)
 // sont masquées et les marges resserrées : ~620 px, qui tiennent jusqu'à 640 px de large.
+// Les icônes des outils (#724) aussi : elles ajouteraient ~70 px, la barre déborderait.
 @media (max-width: 1279px) {
   .view-presets-bar__button {
     padding: 4px 6px;
   }
 
-  .view-presets-bar__key {
+  .view-presets-bar__key,
+  .view-presets-bar__icon {
     display: none;
   }
 }

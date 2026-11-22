@@ -11,7 +11,9 @@ import {
 } from '@angular/core';
 
 import { GUIDE_STEPS, helpStatusText, whyTopics, type WhyTopicId } from '../../sim/beginner-help';
+import { CHEVRON_ICON_PIXELS, LEVEL_ICON_GRID } from '../dashboard-frame/level-icons';
 import { FirstTankPathPrefs } from '../first-tank-path/first-tank-path-prefs';
+import { PixelIcon } from '../pixel-icon/pixel-icon';
 import { BeginnerGuideState } from './beginner-guide-state';
 
 /** Identifiant du titre du dialogue (cible de `aria-labelledby`). */
@@ -82,9 +84,12 @@ const FOCUSABLE = 'button:not([disabled]), [href], input, select, textarea, [tab
               [attr.data-why-toggle]="topic.id"
               (click)="toggle(topic.id)"
             >
-              <span class="guide__chevron" aria-hidden="true">{{
-                expanded() === topic.id ? '▾' : '▸'
-              }}</span>
+              <app-pixel-icon
+                class="guide__chevron"
+                [class.guide__chevron--open]="expanded() === topic.id"
+                [pixels]="chevron"
+                [grid]="chevronGrid"
+              />
               {{ topic.title }}
             </button>
             @if (expanded() === topic.id) {
@@ -113,6 +118,7 @@ const FOCUSABLE = 'button:not([disabled]), [href], input, select, textarea, [tab
       </p>
     </div>
   }`,
+  imports: [PixelIcon],
   styleUrl: './beginner-guide.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
@@ -121,6 +127,10 @@ const FOCUSABLE = 'button:not([disabled]), [href], input, select, textarea, [tab
   },
 })
 export class BeginnerGuide {
+  /** Chevron dessiné (#724), à la place des flèches de texte ▸ ▾. */
+  protected readonly chevron = CHEVRON_ICON_PIXELS;
+  protected readonly chevronGrid = LEVEL_ICON_GRID;
+
   protected readonly state = inject(BeginnerGuideState);
   protected readonly pathPrefs = inject(FirstTankPathPrefs);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);

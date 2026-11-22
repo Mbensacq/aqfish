@@ -258,10 +258,20 @@ découpé par section), qui fournit les sections réutilisées par la fenêtre :
    du tableau de bord et refuse `color-mix`, `opacity`, couleur à canal alpha, ombre,
    capitales et rayon hors charte. Textes : renvois aux catégories actuelles des réglages
    (« Soins et produits », « Eau et matériel ») et raclette dans la barre du bas.
-   **Reste (tranche 2)** : aide-mémoire, wiki, pharmacie, guide, parcours du premier bac,
-   offre de partage, éditeur de décor, format « cartel », icônes pixel sur grille de 12 de la
-   barre du bas, renvois « Réglages, Eau » encore écrits dans `sim/pharmacy.ts`,
-   `sim/first-tank-path.ts` et `sim/water-test.ts`, recherche globale finale.
+   **Livré (cycle 274, tranche 2)** : icônes pixel des outils de la barre du bas sur une
+   grille de 12 (`ui/view-presets-bar/toolbar-icons.ts`, composant `ui/pixel-icon`) ;
+   chevrons dessinés dans le guide du débutant et le parcours du premier bac ; fiche du wiki
+   en cartel (`cartelLine`, `sim/species-wiki.ts`) ; « Importer cet aquarium » plein en
+   laiton ; focus laiton commun dans l'offre de partage et la séance de soins ; groupes de la
+   fenêtre des réglages en casse de phrase. Textes : renvois aux catégories actuelles dans
+   `sim/pharmacy.ts`, `sim/first-tank-path.ts`, `sim/water-test.ts` et `sim/beginner-help.ts`,
+   « Bravo » retiré de la fin du parcours, ← → de l'éditeur de décor écrits en mots.
+   Recherche globale finale tenue par un test (`ui/charte-jetons.spec.ts`) : aucune capitale
+   (hors première lettre d'un message), aucun flou, aucun mélange avec la scène, aucune ombre
+   hors de l'anneau de focus, dans toutes les feuilles de l'interface. Captures ajoutées :
+   guide et parcours (jour, nuit, téléphone), offre de partage (bureau, téléphone).
+   Restent volontairement : les flèches de tendance ↑ → ↓ du tableau de bord et ▲ ▼ du pavé de
+   la caméra libre (information et gestes, pas décoration).
 5. #725 — Masquer l'interface à la place du mode immersif.
 
 Pour chaque lot : tests unitaires et e2e mis à jour pour les nouveaux emplacements (jamais
