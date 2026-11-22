@@ -512,11 +512,6 @@ export interface TankPlace {
    * Seuls les environnements de `SHAPED_ENVIRONMENTS` en ont une autre.
    */
   readonly shape?: PondShape;
-  /**
-   * Bac du mode immersif (#345, ADR 0086) : dimensions bornées à `IMMERSIVE_LIMITS` (aux
-   * proportions de l'écran) au lieu de `TANK_LIMITS`. Lu seulement à la création du monde.
-   */
-  readonly immersive?: true;
 }
 
 /** Environnement seul (dimensions d'origine) ou lieu aux dimensions réglées. */
@@ -528,19 +523,6 @@ export const RESIZABLE_ENVIRONMENTS: readonly EnvironmentId[] = ['tropical'];
 /** Vrai si les dimensions de l'environnement `id` se règlent. */
 export function isTankResizable(id: EnvironmentId): boolean {
   return RESIZABLE_ENVIRONMENTS.includes(id);
-}
-
-/**
- * Environnements proposés au mode immersif (#375, ADR 0094) : bacs vitrés dont les espèces
- * nagent en pleine eau, sans berge émergée ni margelle. Leurs dimensions suivent l'écran
- * (`TankPlace.immersive`), même quand elles ne se règlent pas ailleurs.
- */
-export const IMMERSIVE_ENVIRONMENTS = ['tropical', 'recif'] as const;
-export type ImmersiveEnvironmentId = (typeof IMMERSIVE_ENVIRONMENTS)[number];
-
-/** Vrai si `value` est un environnement proposé au mode immersif. */
-export function isImmersiveEnvironment(value: unknown): value is ImmersiveEnvironmentId {
-  return (IMMERSIVE_ENVIRONMENTS as readonly unknown[]).includes(value);
 }
 
 /** Environnements dont la forme se règle (issue #190 : le bassin seulement). */

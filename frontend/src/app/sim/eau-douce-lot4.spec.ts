@@ -2,9 +2,7 @@ import { compatibility, EXTRA_PREDATORS, mixWarnings, TEMPERAMENTS } from './com
 import { SIM_DT } from './constants';
 import { DIURNAL } from './day-rhythm';
 import { catchesIch } from './disease';
-import { environmentWater, IMMERSIVE_ENVIRONMENTS, livesIn, TROPICAL_TANK } from './environment';
-import { TAP_REACTIONS } from './glass-tap';
-import { immersivePopulation } from './immersive-tank';
+import { environmentWater, livesIn, TROPICAL_TANK } from './environment';
 import { addWarnings, sheetRows, speciesSheet } from './species-sheet';
 import { SPECIES_LABELS, speciesCatalog } from './species-catalog';
 import { legalStatus } from './species-legal';
@@ -161,16 +159,13 @@ describe('eau douce, lot 4 (#425) : catalogue complet', () => {
     expect(freshPh('tropical')).toBeLessThanOrEqual(ph.tolerated.max);
   });
 
-  it('régimes, rythmes et tapotement', () => {
+  it('régimes et rythmes', () => {
     expect(speciesSheet('xipho').diet.value).toBe('omnivore');
     expect(speciesSheet('cerise').diet.value).toBe('omnivore');
     expect(speciesSheet('neritine').diet.value).toBe('herbivore');
     expect(DIURNAL.xipho).toBe(true);
     expect(DIURNAL.cerise).toBe(false);
     expect(DIURNAL.neritine).toBe(false);
-    expect(TAP_REACTIONS.xipho).toBe('fuite');
-    expect(TAP_REACTIONS.cerise).toBeNull();
-    expect(TAP_REACTIONS.neritine).toBeNull();
   });
 
   it('invertébrés : groupe des traitements, ni points blancs ni banc', () => {
@@ -190,7 +185,7 @@ describe('eau douce, lot 4 (#425) : catalogue complet', () => {
     expect(NERITINE.walker!.walkSpeed).toBeLessThan(CERISE.walker!.walkSpeed);
   });
 
-  it('modèles agrandis pour la vue de face, mode immersif inchangé', () => {
+  it('modèles agrandis pour la vue de face', () => {
     // Lisibles sans zoom : au moins deux fois la taille réelle (cm → m) pour les invertébrés.
     for (const def of [CERISE, NERITINE]) {
       expect(def.bodyLength, def.id).toBeGreaterThanOrEqual(
@@ -202,17 +197,6 @@ describe('eau douce, lot 4 (#425) : catalogue complet', () => {
     expect(XIPHO.bodyLength).toBeLessThan(SPECIES.koi.bodyLength);
     for (const def of NEW.map((id) => SPECIES[id])) {
       expect(def.wallMargin, def.id).toBeGreaterThanOrEqual(def.bodyLength / 2);
-    }
-    expect(immersivePopulation('tropical').map((p) => p.species)).toEqual([
-      'otocinclus',
-      'corydora',
-      'rasbora',
-    ]);
-    for (const env of IMMERSIVE_ENVIRONMENTS) {
-      const species = immersivePopulation(env).map((e) => e.species);
-      for (const id of NEW) {
-        expect(species, `${env}/${id}`).not.toContain(id);
-      }
     }
   });
 

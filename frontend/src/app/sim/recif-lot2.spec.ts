@@ -3,8 +3,6 @@ import { SIM_DT } from './constants';
 import { DIURNAL } from './day-rhythm';
 import { catchesIch } from './disease';
 import { environmentWater, livesIn, REEF, TROPICAL_TANK } from './environment';
-import { TAP_REACTIONS } from './glass-tap';
-import { immersivePopulation } from './immersive-tank';
 import { createRoom, findTank, type RoomState } from './room-state';
 import { addWarnings, sheetRows, speciesSheet } from './species-sheet';
 import { SPECIES_LABELS, speciesCatalog } from './species-catalog';
@@ -180,11 +178,10 @@ describe('récif, lot 2 (#403) : catalogue complet', () => {
     expect(ph.tolerated.min).toBeGreaterThan(freshPh('tropical'));
   });
 
-  it('régimes, rythmes et tapotement : trois espèces diurnes qui fuient', () => {
+  it('régimes et rythmes : trois espèces diurnes', () => {
     expect(speciesSheet('chromis').diet.value).toBe('omnivore');
     expect(speciesSheet('gramma').diet.value).toBe('carnivore');
     expect(NEW.every((id) => DIURNAL[id])).toBe(true);
-    expect(NEW.every((id) => TAP_REACTIONS[id] === 'fuite')).toBe(true);
   });
 
   it('comportements : chromis en banc ; gobie au fond ; gramma dans le bas, sous le chromis', () => {
@@ -211,19 +208,6 @@ describe('récif, lot 2 (#403) : catalogue complet', () => {
       if (id === 'gobie') continue;
       expect(SPECIES[id].bodyLength, id).toBeLessThan(CHIRURGIEN.bodyLength);
     }
-  });
-
-  it('mode immersif du récif : ses trois plus petites espèces nageuses (ADR 0094, ADR 0097)', () => {
-    expect(immersivePopulation('recif').map((p) => p.species)).toEqual([
-      'chromis',
-      'clown',
-      'gramma',
-    ]);
-    expect(immersivePopulation('tropical').map((p) => p.species)).toEqual([
-      'otocinclus',
-      'corydora',
-      'rasbora',
-    ]);
   });
 
   it('hauteurs (graine 42, 60 s) : gobie au ras du sable, gramma bas, chromis au-dessus', () => {

@@ -1456,8 +1456,7 @@ export const BRAISE: SpeciesDefinition = {
   id: 'braise',
   name: 'Tétra braise',
   scientificName: 'Hyphessobrycon amandae',
-  // Modèle agrandi, juste au-dessus du rasbora (0,055) : le mode immersif peuple ses trois plus
-  // petites espèces nageuses (`sim/immersive-tank.ts`), sa population par défaut ne change pas.
+  // Modèle agrandi, juste au-dessus du rasbora (0,055).
   bodyLength: 0.056,
   cruiseSpeed: 0.05,
   minSpeed: 0.02,
@@ -1618,8 +1617,7 @@ export const CHROMIS: SpeciesDefinition = {
   id: 'chromis',
   name: 'Chromis vert',
   scientificName: 'Chromis viridis',
-  // Le plus petit modèle du récif (10 cm en vrai, agrandi pour la lisibilité comme le clown) :
-  // premier du mode immersif du récif (ADR 0097).
+  // Le plus petit modèle du récif (10 cm en vrai, agrandi pour la lisibilité comme le clown).
   bodyLength: 0.085,
   cruiseSpeed: 0.055,
   minSpeed: 0.025,
@@ -1791,8 +1789,7 @@ export const CREVETTE: SpeciesDefinition = {
   name: 'Crevette nettoyeuse',
   scientificName: 'Lysmata amboinensis',
   // 6 cm en vrai ; modèle de 12 cm antennes comprises (un tiers de sa longueur), agrandi pour
-  // la lisibilité en vue de face. Marcheuse : hors du mode immersif (`smallSwimmers`), quelle
-  // que soit sa taille.
+  // la lisibilité en vue de face.
   bodyLength: 0.12,
   cruiseSpeed: 0.02,
   minSpeed: 0.006,
@@ -1846,8 +1843,7 @@ export const BLENNIE: SpeciesDefinition = {
   id: 'blennie',
   name: 'Blennie bicolore',
   scientificName: 'Ecsenius bicolor',
-  // 11 cm en vrai (longueur totale). Au-dessus du gramma (0,1), sinon elle entrerait dans le
-  // mode immersif du récif à sa place (`smallSwimmers`, ordre alphabétique à égalité).
+  // 11 cm en vrai (longueur totale), au-dessus du gramma (0,1).
   bodyLength: 0.106,
   cruiseSpeed: 0.022,
   minSpeed: 0.008,

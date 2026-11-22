@@ -2,9 +2,7 @@ import { compatibility, mixWarnings, TEMPERAMENTS } from './compatibility';
 import { SIM_DT } from './constants';
 import { DIURNAL } from './day-rhythm';
 import { catchesIch } from './disease';
-import { environmentWater, IMMERSIVE_ENVIRONMENTS, livesIn, TROPICAL_TANK } from './environment';
-import { TAP_REACTIONS } from './glass-tap';
-import { immersivePopulation } from './immersive-tank';
+import { environmentWater, livesIn, TROPICAL_TANK } from './environment';
 import { addWarnings, sheetRows, speciesSheet } from './species-sheet';
 import { SPECIES_LABELS, speciesCatalog } from './species-catalog';
 import { legalStatus } from './species-legal';
@@ -142,13 +140,10 @@ describe('eau douce, lot 3 (#391) : catalogue complet', () => {
     expect(freshPh('tropical')).toBeLessThanOrEqual(ph.tolerated.max);
   });
 
-  it('régimes, rythmes et tapotement : trois espèces diurnes, le molly seul curieux', () => {
+  it('régimes et rythmes : trois espèces diurnes', () => {
     expect(speciesSheet('molly').diet.value).toBe('omnivore');
     expect(speciesSheet('braise').diet.value).toBe('carnivore');
     expect(NEW.every((id) => DIURNAL[id])).toBe(true);
-    expect(TAP_REACTIONS.braise).toBe('fuite');
-    expect(TAP_REACTIONS.miel).toBe('fuite');
-    expect(TAP_REACTIONS.molly).toBe('curiosite');
   });
 
   it('comportements : braise en banc, plus petit en vrai ; molly le plus long ; miel le plus haut', () => {
@@ -156,18 +151,12 @@ describe('eau douce, lot 3 (#391) : catalogue complet', () => {
     expect(MOLLY.schooling).toBeNull();
     expect(MIEL.schooling).toBeNull();
     const tropical = TROPICAL_TANK.species;
-    // Le plus petit en vrai (2 cm SL) ; modèle juste au-dessus du rasbora pour ne pas changer
-    // la population du mode immersif (ses trois plus petites espèces nageuses).
+    // Le plus petit en vrai (2 cm SL) ; modèle entre le rasbora et le néon.
     expect(speciesSheet('braise').adultSize.value).toBe(
       Math.min(...tropical.map((id) => speciesSheet(id).adultSize.value)),
     );
     expect(BRAISE.bodyLength).toBeGreaterThan(SPECIES.rasbora.bodyLength);
     expect(BRAISE.bodyLength).toBeLessThan(SPECIES.neon.bodyLength);
-    expect(immersivePopulation('tropical').map((p) => p.species)).toEqual([
-      'otocinclus',
-      'corydora',
-      'rasbora',
-    ]);
     for (const id of tropical.filter((s) => s !== 'molly' && s !== 'ancistrus')) {
       expect(MOLLY.bodyLength, id).toBeGreaterThanOrEqual(SPECIES[id].bodyLength);
     }
@@ -180,7 +169,7 @@ describe('eau douce, lot 3 (#391) : catalogue complet', () => {
     expect(MIEL.depth?.ascentRate).toBeGreaterThan(0);
   });
 
-  it('modèles du molly et du gourami miel agrandis pour la vue de face (#394), immersif inchangé', () => {
+  it('modèles du molly et du gourami miel agrandis pour la vue de face (#394)', () => {
     // Lisibles sans zoom : au moins 1,5 fois la taille réelle (SL, en cm → m).
     expect(MOLLY.bodyLength).toBeGreaterThanOrEqual(
       (1.5 * speciesSheet('molly').adultSize.value) / 100,
@@ -194,18 +183,6 @@ describe('eau douce, lot 3 (#391) : catalogue complet', () => {
     }
     // Le molly reste plus court que le koï, le plus grand modèle d'eau douce.
     expect(MOLLY.bodyLength).toBeLessThan(SPECIES.koi.bodyLength);
-    // Population du mode immersif inchangée (ses trois plus petites espèces nageuses), dans
-    // chaque environnement.
-    expect(immersivePopulation('tropical')).toEqual([
-      { species: 'otocinclus', count: expect.any(Number) },
-      { species: 'corydora', count: expect.any(Number) },
-      { species: 'rasbora', count: expect.any(Number) },
-    ]);
-    for (const env of IMMERSIVE_ENVIRONMENTS) {
-      const species = immersivePopulation(env).map((e) => e.species);
-      expect(species, env).not.toContain('molly');
-      expect(species, env).not.toContain('miel');
-    }
   });
 
   it('gourami miel sous la surface, braise et molly dans le haut (graine 42, 60 s)', () => {
