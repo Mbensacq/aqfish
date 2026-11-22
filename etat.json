@@ -10067,10 +10067,10 @@
           "note": "PR #779 : superpositions UI (offre de partage sous le cadre, Pharmacie sous les panneaux sur téléphone, JSDoc), Closes #773 #772 #778, CI verte ; pied de page d'attribution réinjecté par l'environnement dans la PR (PIEGES)"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-22T12:14:19.191Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-22T13:14:18.674Z",
+          "note": "Verdict RÉSERVES, 0 bug : verify 556 e2e verts, critères OK, 8 captures téléphone ±1 px (coins du cadre) hors main ; captures publiées ; pied d'attribution réinjecté dans la revue"
         }
       },
       "metriques": {}
