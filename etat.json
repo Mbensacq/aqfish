@@ -9979,7 +9979,7 @@
       "debut": "2026-11-22T04:17:05.867Z",
       "type": "fonctionnalite",
       "issue": 725,
-      "pr": null,
+      "pr": 774,
       "version": null,
       "phases": {
         "planif": {
