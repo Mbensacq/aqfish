@@ -9959,10 +9959,10 @@
           "note": "PR #771 : #724 tranche 2 (icônes grille 12, cartel du wiki, chevrons, textes, recherche finale en test), Closes #724, CI verte"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-22T03:30:00.359Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-22T03:47:23.897Z",
+          "note": "Verdict OK, 1 bug (#772, préexistant), captures publiées (148 identiques, bac seul inchangé)"
         }
       },
       "metriques": {}
