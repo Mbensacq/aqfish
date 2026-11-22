@@ -247,7 +247,6 @@ describe('fonctions du panneau de contrôle', () => {
     (environmentChanged)="environments.push($event)"
     (foodStyleToggled)="foodToggles = foodToggles + 1"
     (editRequested)="edits = edits + 1"
-    (immersiveRequested)="immersives = immersives + 1"
     (heaterChanged)="events.push(['chauffage', $event])"
     (catappaChanged)="events.push(['catappa', $event])"
     (waterChangeRequested)="waterChanges = waterChanges + 1"
@@ -297,7 +296,6 @@ class TestHost {
   foodToggles = 0;
   readonly editable = signal(true);
   edits = 0;
-  immersives = 0;
   readonly population = signal<PopulationCounts>({
     neon: 12,
     guppy: 6,
@@ -1372,8 +1370,8 @@ describe('ControlPanel', () => {
     // pièce » (#187), « Changer l’eau » et le curseur du chauffage (#207), « − » et « + » des
     // feuilles de catappa (#239), puis « − », champ, « + » (#69), curseur (#189) et « Fiche »
     // (#237) pour chacune des 17 espèces du bac tropical (#238, #362, #391, #425), puis « Exporter »
-    // et « Importer » (#70), « Partager ce bac » (#426), le mode du bac (#278), « Mode
-    // immersif » (#345), « Réduire les mouvements » (#406), puis la case « Sons d'ambiance »
+    // et « Importer » (#70), « Partager ce bac » (#426), le mode du bac (#278), « Masquer
+    // l’interface » (#725, à la place de « Mode immersif »), « Réduire les mouvements » (#406), puis la case « Sons d'ambiance »
     // et son volume (#411), « Courant » (#460), le curseur de l'éclairage (#476), l'amorce de
     // bactéries (#529) (raclette et sécateur : barre du bas depuis #722),
     // l'eau non traitée et les deux conditionneurs (#530), le charbon et les deux régulateurs
@@ -1393,16 +1391,6 @@ describe('ControlPanel', () => {
       expect(control.tabIndex).toBeGreaterThanOrEqual(0);
       expect(control.hasAttribute('disabled')).toBe(false);
     }
-  });
-
-  it('bouton « Mode immersif » (#345) : sur la ligne du titre « Simulation », émet la demande', async () => {
-    await openPanel();
-    const button = root().querySelector<HTMLButtonElement>(
-      '[data-section="simulation"] legend [data-immersive-open]',
-    )!;
-    expect(button.textContent?.trim()).toBe('Mode immersif');
-    button.click();
-    expect(fixture.componentInstance.immersives).toBe(1);
   });
 
   it('bouton « Éditer le décor » (#167) : émet la demande si le décor est modifiable', async () => {

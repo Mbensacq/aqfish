@@ -296,4 +296,81 @@ describe('App', () => {
       expect(wiki()).toBeNull();
     });
   });
+
+  describe('« Masquer l’interface » (#725)', () => {
+    const press = (key: string) =>
+      document.dispatchEvent(
+        new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }),
+      );
+
+    it('I masque (classe et attribut de la racine, indication), Échap réaffiche', async () => {
+      TestBed.overrideProvider(COMMANDS_HELP_STORE, { useValue: createFallbackStore(null) });
+      const fixture = TestBed.createComponent(App);
+      await fixture.whenStable();
+      const root = fixture.nativeElement as HTMLElement;
+      expect(root.getAttribute('data-interface-hidden')).toBe('false');
+      press('i');
+      await fixture.whenStable();
+      expect(root.classList.contains('app--ui-hidden')).toBe(true);
+      expect(root.getAttribute('data-interface-hidden')).toBe('true');
+      expect(root.querySelector('[data-hidden-interface-hint]')?.textContent?.trim()).toBe(
+        'I ou Échap pour revenir',
+      );
+      // Les composants restent créés : leur état est gardé, leurs raccourcis marchent.
+      expect(root.querySelector('app-view-presets-bar')).not.toBeNull();
+      press('Escape');
+      await fixture.whenStable();
+      expect(root.classList.contains('app--ui-hidden')).toBe(false);
+      expect(root.querySelector('[data-hidden-interface-hint]')).toBeNull();
+    });
+
+    it('l’interrupteur d’« Affichage » masque et referme la fenêtre des réglages', async () => {
+      TestBed.overrideProvider(COMMANDS_HELP_STORE, { useValue: createFallbackStore(null) });
+      const fixture = TestBed.createComponent(App);
+      await fixture.whenStable();
+      const root = fixture.nativeElement as HTMLElement;
+      root.querySelector<HTMLButtonElement>('.control-panel__toggle')!.click();
+      await fixture.whenStable();
+      const box = root.querySelector<HTMLInputElement>('[data-hide-interface] input')!;
+      expect(box.checked).toBe(false);
+      box.click();
+      await fixture.whenStable();
+      expect(root.getAttribute('data-interface-hidden')).toBe('true');
+      expect(root.querySelector('.control-panel')).toBeNull();
+      press('I');
+      await fixture.whenStable();
+      expect(root.getAttribute('data-interface-hidden')).toBe('false');
+    });
+
+    it('mode capture : I sans effet', async () => {
+      window.history.replaceState(null, '', '/?capture=1');
+      try {
+        const fixture = TestBed.createComponent(App);
+        await fixture.whenStable();
+        press('i');
+        await fixture.whenStable();
+        expect((fixture.nativeElement as HTMLElement).classList).not.toContain('app--ui-hidden');
+      } finally {
+        window.history.replaceState(null, '', '/');
+      }
+    });
+
+    it('un étalonnage enregistré par l’ancien mode immersif est ignoré sans erreur', async () => {
+      // Clé de l'étalonnage du mode immersif retiré (#345) : plus jamais lue.
+      localStorage.setItem(
+        'aqfish.etalonnage-ecran',
+        JSON.stringify({ pxPerMm: 4.2, eyeDistanceMm: 400, measured: true }),
+      );
+      try {
+        const fixture = TestBed.createComponent(App);
+        await fixture.whenStable();
+        const root = fixture.nativeElement as HTMLElement;
+        expect(root.querySelector('app-aquarium-host canvas')).not.toBeNull();
+        expect(root.querySelector('[data-immersive-open]')).toBeNull();
+        expect(localStorage.getItem('aqfish.etalonnage-ecran')).not.toBeNull();
+      } finally {
+        localStorage.removeItem('aqfish.etalonnage-ecran');
+      }
+    });
+  });
 });

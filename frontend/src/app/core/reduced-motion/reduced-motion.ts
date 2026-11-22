@@ -104,8 +104,6 @@ export interface MotionFactors {
    * (le nombre de gouttes en l'air ne change pas, elles tombent plus lentement).
    */
   readonly rainSpeed: number;
-  /** Part du décalage de l'œil dû à l'inclinaison de l'appareil (mode immersif). */
-  readonly parallax: number;
   /**
    * Amplitude des gestes de comportement (#427, `sim/behaviors.ts`) : hochement de la fouille,
    * râpe du broutage, frémissement de la défense. La posture (museau baissé) reste.
@@ -121,21 +119,19 @@ export const FULL_MOTION: MotionFactors = Object.freeze({
   waterWave: 1,
   plantSway: 1,
   rainSpeed: 1,
-  parallax: 1,
   behaviorGesture: 1,
   lightRays: 1,
 });
 
 /**
  * Mouvements réduits (valeurs de jeu, choisies à l'œil sur capture) : caméra qui saute, eau
- * et plantes calmes, pluie plus lente, parallaxe coupée.
+ * et plantes calmes, pluie plus lente.
  */
 export const REDUCED_MOTION: MotionFactors = Object.freeze({
   cameraTransition: 0,
   waterWave: 0.25,
   plantSway: 0.3,
   rainSpeed: 0.4,
-  parallax: 0,
   behaviorGesture: 0,
   lightRays: 0,
 });

@@ -2,9 +2,11 @@ import {
   computed,
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   DOCUMENT,
+  effect,
   inject,
-  signal,
+  untracked,
   viewChild,
 } from '@angular/core';
 
@@ -28,7 +30,11 @@ import { CareSessionPanel } from './ui/care-session/care-session';
 import { SpeciesWiki } from './ui/species-wiki/species-wiki';
 import { ViewPresetsBar } from './ui/view-presets-bar/view-presets-bar';
 import { FreeCameraPad } from './ui/free-camera-pad/free-camera-pad';
-import { ImmersiveMode } from './ui/immersive-mode/immersive-mode';
+import { HiddenInterfaceHint } from './ui/hidden-interface/hidden-interface-hint';
+import {
+  HiddenInterfaceState,
+  listenToHiddenInterface,
+} from './ui/hidden-interface/hidden-interface-state';
 import type { GuidePage } from './sim/care-guide';
 
 /**
@@ -45,6 +51,8 @@ import type { GuidePage } from './sim/care-guide';
  * À la première visite, le « Guide du débutant » s'ouvre une fois (#240, ADR 0072).
  * Le signal « prêt » du contrat de capture est émis par `AquariumHost` après la première
  * image complète (docs/ARCHITECTURE.md, « Contrat de capture »).
+ * « Masquer l'interface » (#725, ADR 0166) cache tout sauf le bac : la racine relaie le
+ * clavier et le pointeur à `HiddenInterfaceState` et cache ses enfants (`app.scss`).
  */
 @Component({
   selector: 'app-root',
@@ -65,11 +73,16 @@ import type { GuidePage } from './sim/care-guide';
     SpeciesWiki,
     ViewPresetsBar,
     FreeCameraPad,
-    ImmersiveMode,
+    HiddenInterfaceHint,
   ],
   templateUrl: './app.html',
   styleUrl: './app.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '[class.app--ui-hidden]': 'hiddenInterface.hidden()',
+    '[class.app--cursor-hidden]': 'hiddenInterface.cursorHidden()',
+    '[attr.data-interface-hidden]': 'hiddenInterface.hidden()',
+  },
 })
 export class App {
   private readonly win = inject(DOCUMENT).defaultView;
@@ -100,14 +113,32 @@ export class App {
   private readonly aquarium = viewChild<AquariumHost>('aquarium');
   private readonly wiki = viewChild<SpeciesWiki>('wiki');
   private readonly pharmacy = viewChild<Pharmacy>('pharmacy');
-  /** Mode immersif ouvert (#345). */
-  protected readonly immersive = signal(false);
+  /** « Masquer l'interface » (#725) : interrupteur dans « Affichage », touche `I`. */
+  protected readonly hiddenInterface = inject(HiddenInterfaceState);
 
   constructor() {
     // Première visite (#240, ADR 0072) : le guide s'ouvre une fois, jamais en mode capture
     // ni en fond d'écran (#279).
     if (this.interfaceShown) {
       inject(BeginnerGuideState).showOnFirstVisit();
+      const stop = listenToHiddenInterface(inject(DOCUMENT), this.hiddenInterface);
+      inject(DestroyRef).onDestroy(stop);
+    }
+    // Au masquage, la fenêtre des réglages (où est l'interrupteur) se referme et le focus
+    // quitte les contrôles cachés : `I` doit marcher tout de suite.
+    effect(() => {
+      if (this.hiddenInterface.hidden()) {
+        untracked(() => this.onInterfaceHidden());
+      }
+    });
+  }
+
+  /** Interface masquée : referme la fenêtre des réglages et rend le focus à la page. */
+  private onInterfaceHidden(): void {
+    this.panel()?.close();
+    const active = this.win?.document.activeElement;
+    if (active instanceof HTMLElement && active !== this.win?.document.body) {
+      active.blur();
     }
   }
 
@@ -206,22 +237,5 @@ export class App {
     this.panel()?.close();
     this.help()?.fold();
     this.aquarium()?.setDecorEditing(false);
-  }
-
-  /** « Mode immersif » (#345) : replie les panneaux et quitte l'éditeur, puis ouvre le mode. */
-  protected onImmersiveRequested(): void {
-    this.panel()?.close();
-    this.wiki()?.close();
-    this.pharmacy()?.close();
-    this.aquarium()?.setDecorEditing(false);
-    // Le bac affiché ne se rend plus derrière le plein cadre (un seul contexte WebGL actif).
-    this.aquarium()?.setRenderingSuspended(true);
-    this.immersive.set(true);
-  }
-
-  /** Sortie du mode immersif : le bac affiché reprend. */
-  protected onImmersiveClosed(): void {
-    this.immersive.set(false);
-    this.aquarium()?.setRenderingSuspended(false);
   }
 }

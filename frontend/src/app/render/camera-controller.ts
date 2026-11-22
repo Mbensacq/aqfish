@@ -3,7 +3,6 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 import type { CameraPreset } from '../core/capture/capture-params';
 import { ORBIT_MOUSE_BUTTONS, ORBIT_TOUCHES, type OrbitAction } from '../core/commands/commands';
-import { frustumMatrix, offAxisFrustum } from '../core/immersive/off-axis';
 import {
   CAMERA_FOV_DEG,
   cameraPresetPose,
@@ -35,16 +34,6 @@ export const ORBIT_TOUCH_ACTIONS: Readonly<
   'dolly-pan': TOUCH.DOLLY_PAN,
   'dolly-rotate': TOUCH.DOLLY_ROTATE,
 };
-
-/**
- * Caméra du mode immersif (#345, ADR 0086), en mètres de la scène : œil devant la vitre avant
- * du bac, décalé de (`eyeX`, `eyeY`) par rapport à son centre, à `eyeDistance` de la vitre.
- */
-export interface ImmersiveCamera {
-  readonly eyeX: number;
-  readonly eyeY: number;
-  readonly eyeDistance: number;
-}
 
 /**
  * Contrôles orbitaux de la vue sur `canvas` (#74) : bornes de distance et de déplacement du
@@ -86,8 +75,6 @@ export function createOrbitControls(
 export interface CameraHost extends FreeCameraHost {
   /** Taille non nulle : le rapport d'aspect de la caméra est à jour. */
   hasSize(): boolean;
-  /** Recale le rapport d'aspect de la caméra (sortie du mode immersif). */
-  updateAspect(): void;
 }
 
 /** Pose de base en cache de la caméra du fond d'écran et ce dont elle dépend (#332). */
@@ -107,7 +94,7 @@ interface CameraTransition {
 
 /**
  * Caméra de la vue (#698) : préréglages, transitions, orbite du fond d'écran, caméra libre
- * (déléguée à `FreeCameraGestures`) et mode immersif. Les méthodes publiques sont celles de
+ * (déléguée à `FreeCameraGestures`). Les méthodes publiques sont celles de
  * `AquariumView`, qui les délègue ; leur documentation y reste.
  */
 export class CameraController {
@@ -124,16 +111,6 @@ export class CameraController {
   private readonly orbitPosition: [number, number, number] = [0, 0, 0];
   /** Caméra libre dans la pièce et ses gestes (#343, #344). */
   private readonly free: FreeCameraGestures;
-  /** Vrai en mode immersif (orbite et caméra libre coupées). */
-  private immersiveOn = false;
-  /**
-   * Caméra du mode immersif, préallouée (#357) : `setImmersiveCamera` y copie les valeurs de
-   * l'appelant, qui peut réutiliser son objet d'une image à l'autre (#355). Lue seulement
-   * quand `immersiveOn` est vrai.
-   */
-  private readonly immersive = { eyeX: 0, eyeY: 0, eyeDistance: 1 };
-  /** Préréglage suivi avant le mode immersif, rendu en sortant. */
-  private presetBeforeImmersive: CameraPreset = 'front';
   private disposed = false;
   /** Une interaction à la souris arrête de suivre le préréglage et annule la transition. */
   private readonly stopFollowingPreset = () => {
@@ -298,80 +275,6 @@ export class CameraController {
   /** Voir `AquariumView.onCameraChange` : orientation de la caméra libre à la souris. */
   onFreeLook(listener: () => void): () => void {
     return this.free.onLook(listener);
-  }
-
-  setImmersiveCamera(camera: ImmersiveCamera | null): boolean {
-    if (this.disposed) {
-      return false;
-    }
-    if (camera === null) {
-      if (this.immersiveOn) {
-        this.immersiveOn = false;
-        this.host.controls.enabled = this.host.interactive;
-        this.host.updateAspect();
-        this.applyPreset(this.presetBeforeImmersive);
-      }
-      return true;
-    }
-    if (
-      !Number.isFinite(camera.eyeX) ||
-      !Number.isFinite(camera.eyeY) ||
-      !Number.isFinite(camera.eyeDistance) ||
-      camera.eyeDistance <= 0
-    ) {
-      return false;
-    }
-    this.enterImmersive(camera);
-    return true;
-  }
-
-  /** Passe (ou reste) en mode immersif sur `camera`, déjà validée. */
-  private enterImmersive(camera: ImmersiveCamera): void {
-    this.free.leave();
-    this.transition = null;
-    if (!this.immersiveOn) {
-      this.presetBeforeImmersive = this.preset ?? 'front';
-    }
-    // Plus de préréglage suivi : un redimensionnement ne replace pas la caméra.
-    this.preset = null;
-    // Copie en place, sans allocation (#357) : l'appelant peut réutiliser son objet (#355).
-    const immersive = this.immersive;
-    immersive.eyeX = camera.eyeX;
-    immersive.eyeY = camera.eyeY;
-    immersive.eyeDistance = camera.eyeDistance;
-    this.immersiveOn = true;
-    this.host.controls.enabled = false;
-    const { height, depth } = this.host.dimensions;
-    const x = camera.eyeX;
-    const y = height / 2 + camera.eyeY;
-    const z = depth / 2 + camera.eyeDistance;
-    this.host.camera.position.set(x, y, z);
-    this.host.camera.quaternion.identity();
-    this.host.controls.target.set(x, y, 0);
-    this.refreshImmersiveProjection();
-  }
-
-  get immersiveActive(): boolean {
-    return this.immersiveOn;
-  }
-
-  /** Projection décentrée du mode immersif, réappliquée après un recalage de l'aspect. */
-  refreshImmersiveProjection(): void {
-    if (!this.immersiveOn) {
-      return;
-    }
-    const camera = this.immersive;
-    const { width, height, depth } = this.host.dimensions;
-    const frustum = offAxisFrustum({
-      screenWidth: width,
-      screenHeight: height,
-      eye: { x: camera.eyeX, y: camera.eyeY, z: camera.eyeDistance },
-      near: camera.eyeDistance / 2,
-      far: camera.eyeDistance + depth + 1,
-    });
-    const projection = this.host.camera.projectionMatrix;
-    projection.fromArray(frustumMatrix(frustum));
-    this.host.camera.projectionMatrixInverse.copy(projection).invert();
   }
 
   /** Retire l'écouteur des contrôles et les gestes de la caméra libre. */

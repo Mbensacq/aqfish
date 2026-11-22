@@ -31,7 +31,9 @@ import decorBadge from './decor-badge/decor-badge.scss' with { loader: 'text' };
 import decorEditor from './decor-editor/decor-editor.scss' with { loader: 'text' };
 import firstTankPath from './first-tank-path/first-tank-path.scss' with { loader: 'text' };
 import freeCameraPad from './free-camera-pad/free-camera-pad.scss' with { loader: 'text' };
-import immersiveMode from './immersive-mode/immersive-mode.scss' with { loader: 'text' };
+import hiddenInterfaceHint from './hidden-interface/hidden-interface-hint.scss' with {
+  loader: 'text',
+};
 import pharmacy from './pharmacy/pharmacy.scss' with { loader: 'text' };
 import settingsWindow from './settings-window/settings-window.scss' with { loader: 'text' };
 import shareOffer from './share-offer/share-offer.scss' with { loader: 'text' };
@@ -80,7 +82,7 @@ const SHEETS: Readonly<Record<string, string>> = {
   'decor-editor/decor-editor.scss': decorEditor,
   'first-tank-path/first-tank-path.scss': firstTankPath,
   'free-camera-pad/free-camera-pad.scss': freeCameraPad,
-  'immersive-mode/immersive-mode.scss': immersiveMode,
+  'hidden-interface/hidden-interface-hint.scss': hiddenInterfaceHint,
   'pharmacy/pharmacy.scss': pharmacy,
   'settings-window/settings-window.scss': settingsWindow,
   'share-offer/share-offer.scss': shareOffer,

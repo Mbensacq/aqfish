@@ -1,6 +1,6 @@
 # 0087 — Mode immersif, lot 2 : parallaxe et API d'appareil
 
-- Statut : acceptée
+- Statut : remplacée par 0166 (mode immersif retiré, #725)
 - Date : 2026-10-31
 - Auteur : Dev, cycle 116, issue #346
 

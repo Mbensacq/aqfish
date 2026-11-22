@@ -1,6 +1,6 @@
 # 0086 — Mode immersif, lot 1 : étalonnage et projection décentrée
 
-- Statut : acceptée
+- Statut : remplacée par 0166 (mode immersif retiré, #725)
 - Date : 2026-10-31
 - Auteur : Dev, cycle 115, issue #345
 

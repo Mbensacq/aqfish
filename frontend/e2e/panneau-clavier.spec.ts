@@ -156,12 +156,8 @@ test.describe('Panneau de contrôle', () => {
     await page.keyboard.press('Space');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-room', 'true');
 
-    // Catégorie « Temps » : bouton « Mode immersif » (#345), sur la ligne du titre
-    // « Simulation ».
+    // Catégorie « Temps » : le curseur de vitesse d'abord (« Mode immersif » retiré, #725).
     await tabIntoCategory(page, 'temps');
-    await expect(page.getByRole('button', { name: 'Mode immersif' })).toBeFocused();
-
-    await page.keyboard.press('Tab');
     await expect(speed(page)).toBeFocused();
     await page.keyboard.press('ArrowRight');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-speed', '2');

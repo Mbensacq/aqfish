@@ -20,7 +20,7 @@ function windowStorage(win: Window | null): ReducedMotionStorage | null {
 
 /**
  * État partagé de l'option « Réduire les mouvements » (#406, `core/reduced-motion`) : lu par
- * l'hôte de l'aquarium et le mode immersif, réglé dans « Réglages ». La préférence système
+ * l'hôte de l'aquarium et l'indication de l'interface masquée, réglé dans « Réglages ». La préférence système
  * est suivie en direct (`change` de la requête média) ; le choix fait dans les réglages est
  * mémorisé et l'emporte. Si le stockage refuse l'écriture, le choix vaut pour la session
  * (repli en mémoire : le signal le garde).

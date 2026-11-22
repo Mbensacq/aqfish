@@ -15,9 +15,8 @@ export interface RenderLoopPorts {
 
 /**
  * Boucle d'images de l'hôte (#696) : demande des images (`requestAnimationFrame`), pause de la
- * vue fond d'écran (#279) et suspension du mode immersif (#345, ADR 0086), cadence limitée du
- * fond d'écran, et pas fixe de la simulation (ADR 0002) au temps réel multiplié par la vitesse
- * (#52). Aucune allocation par image : l'état du pas fixe et le limiteur sont réécrits en
+ * vue fond d'écran (#279), cadence limitée du fond d'écran, et pas fixe de la simulation
+ * (ADR 0002) au temps réel multiplié par la vitesse (#52). Aucune allocation par image : l'état du pas fixe et le limiteur sont réécrits en
  * place. Sortie de l'hôte au lot 10 de l'assainissement, sans changement de comportement.
  */
 export class RenderLoop {
@@ -29,8 +28,6 @@ export class RenderLoop {
   private readonly limiter: FrameLimiter = { next: null };
   /** Page masquée en vue fond d'écran : aucune image demandée (#279). */
   private paused = false;
-  /** Rendu suspendu pendant le mode immersif (#345) : aucune image, monde en pause. */
-  private isSuspended = false;
   private readonly onFrame: FrameRequestCallback = (timestamp) => {
     this.frameId = null;
     this.ports.frame(timestamp);
@@ -38,23 +35,15 @@ export class RenderLoop {
 
   constructor(private readonly ports: RenderLoopPorts) {}
 
-  /** Vrai pendant le mode immersif (rendu suspendu). */
-  get suspended(): boolean {
-    return this.isSuspended;
-  }
-
   /** Coefficient d'interpolation entre les deux derniers pas (0 à 1). */
   get alpha(): number {
     return this.clock.alpha;
   }
 
-  /** Demande une image, sauf si une est déjà demandée, sans vue, en pause ou suspendu. */
+  /** Demande une image, sauf si une est déjà demandée, sans vue ou en pause. */
   schedule(): void {
     const win = this.ports.window();
     if (!win || !this.ports.canRender() || this.frameId !== null || this.paused) {
-      return;
-    }
-    if (this.isSuspended) {
       return;
     }
     this.frameId = win.requestAnimationFrame(this.onFrame);
@@ -66,24 +55,6 @@ export class RenderLoop {
       this.ports.window()?.cancelAnimationFrame(this.frameId);
       this.frameId = null;
     }
-  }
-
-  /**
-   * Suspend ou reprend la boucle (mode immersif, #345). À la reprise, elle repart sans
-   * rattraper le temps passé. Renvoie `false` si l'état demandé était déjà le bon.
-   */
-  setSuspended(suspended: boolean): boolean {
-    if (suspended === this.isSuspended) {
-      return false;
-    }
-    this.isSuspended = suspended;
-    if (suspended) {
-      this.cancel();
-      return true;
-    }
-    this.lastTimestamp = null;
-    this.schedule();
-    return true;
   }
 
   /**

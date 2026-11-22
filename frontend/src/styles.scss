@@ -24,3 +24,10 @@ body {
 :focus-visible {
   @include layout.focus-ring;
 }
+
+// « Masquer l'interface » (#725) : curseur caché après 2 s d'immobilité, jusque dans le
+// canvas (la règle doit traverser l'encapsulation des composants, d'où la feuille globale).
+app-root.app--cursor-hidden,
+app-root.app--cursor-hidden * {
+  cursor: none !important;
+}

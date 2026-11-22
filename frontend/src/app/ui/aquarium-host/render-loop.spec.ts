@@ -44,21 +44,6 @@ describe('RenderLoop (#696)', () => {
     expect(requested).toHaveLength(0);
   });
 
-  it('suspendu (mode immersif) : image annulée, aucune demandée ; reprise sans rattrapage', () => {
-    loop.schedule();
-    expect(loop.setSuspended(true)).toBe(true);
-    expect(loop.suspended).toBe(true);
-    expect(cancelled).toEqual([1]);
-    loop.schedule();
-    expect(requested).toHaveLength(1);
-    expect(loop.setSuspended(true)).toBe(false);
-    loop.advance(1000, 1);
-    expect(loop.setSuspended(false)).toBe(true);
-    expect(requested).toHaveLength(2);
-    expect(loop.advance(60_000, 1)).toBe(0);
-    expect(loop.clock.steps).toBe(0);
-  });
-
   it('page masquée (fond d’écran) : aucune image ; visible, la cadence repart de zéro', () => {
     loop.schedule();
     loop.setHidden(true);
