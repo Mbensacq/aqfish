@@ -10152,6 +10152,24 @@
         }
       },
       "metriques": {}
+    },
+    "280": {
+      "numero": 280,
+      "date": "2026-11-22",
+      "debut": "2026-11-22T17:10:52.258Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-22T17:10:52.258Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
