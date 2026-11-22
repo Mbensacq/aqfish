@@ -7,6 +7,7 @@ import type { PhRegulatorDirection } from '../../sim/ph-regulator';
 import type { TreatmentNotice } from '../../sim/treatment-text';
 import type { ConditionerKind } from '../../sim/water-conditioner';
 import { DEFAULT_WATER_READOUT, type WaterReadout } from '../../sim/water-quality';
+import { SettingMark } from '../settings-window/settings-search-filter';
 import { TreatmentNotice as TreatmentNoticeView } from './treatment-notice';
 
 /**
@@ -21,7 +22,7 @@ import { TreatmentNotice as TreatmentNoticeView } from './treatment-notice';
 @Component({
   // Sélecteur d'attribut : le `fieldset` reste l'enfant direct du panneau (ADR 0161).
   selector: 'fieldset[app-products-section]',
-  imports: [TreatmentNoticeView],
+  imports: [TreatmentNoticeView, SettingMark],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './products-section.scss',
   template: `
@@ -33,6 +34,7 @@ import { TreatmentNotice as TreatmentNoticeView } from './treatment-notice';
           type="button"
           class="control-panel__edit"
           data-bacteria-starter
+          appSetting="Bactéries"
           aria-label="Verser une dose d’amorce de bactéries nitrifiantes"
           title="Source : docs/SOINS.md § 1.1 (étiquette Stability, secondaire) ; gain du filtre : approximation de jeu."
           (click)="bacteriaStarterRequested.emit()"
@@ -53,6 +55,7 @@ import { TreatmentNotice as TreatmentNoticeView } from './treatment-notice';
           type="button"
           class="control-panel__edit"
           data-untreated-tap
+          appSetting="Robinet"
           [attr.aria-pressed]="untreatedTap()"
           aria-label="Eau du robinet non traitée"
           title="Non traitée : chaque changement d’eau ajoute du chlore (docs/SOINS.md § 2 ; teneur : approximation de jeu)."
@@ -64,6 +67,7 @@ import { TreatmentNotice as TreatmentNoticeView } from './treatment-notice';
           type="button"
           class="control-panel__edit"
           data-conditioner="thiosulfate"
+          appSetting="Déchlorer"
           aria-label="Verser du conditionneur au thiosulfate (chlore)"
           title="Source : docs/SOINS.md § 2 (Merck)."
           (click)="conditionerRequested.emit('thiosulfate')"
@@ -74,6 +78,7 @@ import { TreatmentNotice as TreatmentNoticeView } from './treatment-notice';
           type="button"
           class="control-panel__edit"
           data-conditioner="liant"
+          appSetting="Liant"
           aria-label="Verser du conditionneur liant l’ammoniaque"
           title="Source : docs/SOINS.md § 2 (étiquette via revendeurs, secondaire) ; 48 h revendiquées, non vérifiées."
           (click)="conditionerRequested.emit('liant')"
@@ -92,6 +97,7 @@ import { TreatmentNotice as TreatmentNoticeView } from './treatment-notice';
           type="button"
           class="control-panel__edit"
           data-carbon
+          appSetting="Charbon"
           [attr.aria-pressed]="carbon()"
           aria-label="Charbon actif dans le filtre"
           title="Retire médicaments et couleur des tanins ; à enlever pendant un traitement (docs/SOINS.md, Merck)."
@@ -103,6 +109,7 @@ import { TreatmentNotice as TreatmentNoticeView } from './treatment-notice';
           type="button"
           class="control-panel__edit"
           data-ph-regulator="-1"
+          appSetting="pH −"
           aria-label="Baisser le pH d’un cran"
           title="Au plus 0,3 de pH par jour : les variations brusques stressent les animaux (approximation de jeu)."
           (click)="phRegulatorRequested.emit(-1)"
@@ -113,6 +120,7 @@ import { TreatmentNotice as TreatmentNoticeView } from './treatment-notice';
           type="button"
           class="control-panel__edit"
           data-ph-regulator="1"
+          appSetting="pH +"
           aria-label="Monter le pH d’un cran"
           title="Au plus 0,3 de pH par jour : les variations brusques stressent les animaux (approximation de jeu)."
           (click)="phRegulatorRequested.emit(1)"
@@ -133,7 +141,7 @@ import { TreatmentNotice as TreatmentNoticeView } from './treatment-notice';
     }
     <!-- Feuilles de catappa (#239) : « − », nombre, « + », puis le rappel que l'effet est
          simplifié (approximation de jeu, ADR 0071). -->
-    <div class="control-panel__count" data-catappa>
+    <div class="control-panel__count" data-catappa appSetting="Feuilles de catappa">
       <span
         class="control-panel__count-label"
         id="panneau-catappa"
@@ -162,7 +170,7 @@ import { TreatmentNotice as TreatmentNoticeView } from './treatment-notice';
         +
       </button>
     </div>
-    <p class="control-panel__note" data-catappa-note>
+    <p class="control-panel__note" data-catappa-note appSetting="Feuilles de catappa">
       Effet simplifié : ne remplace pas un test de pH.
     </p>
   `,

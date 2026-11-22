@@ -309,16 +309,16 @@ describe('ControlPanel : fenêtre des réglages (#722)', () => {
         root().querySelector<HTMLElement>('[data-section="population"] > legend')!;
       await open();
       await choose('population');
-      expect(legend().classList).toContain('control-panel__legend--repete');
+      expect(legend().classList).toContain('control-panel__legend--repeated');
       expect(legend().textContent?.trim()).toBe('Population');
       await choose('eau');
       expect(
         root()
           .querySelector('[data-section="eau"] > legend')
-          ?.classList.contains('control-panel__legend--repete'),
+          ?.classList.contains('control-panel__legend--repeated'),
       ).toBe(false);
       await type('néon');
-      expect(legend().classList).not.toContain('control-panel__legend--repete');
+      expect(legend().classList).not.toContain('control-panel__legend--repeated');
     });
 
     it('« néon » : sa tuile seule dans la population', async () => {

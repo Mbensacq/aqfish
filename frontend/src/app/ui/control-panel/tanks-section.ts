@@ -33,6 +33,7 @@ import type { TreatmentKind } from '../../sim/treatment';
 import { DEFAULT_WATER_READOUT, type WaterReadout } from '../../sim/water-quality';
 import type { TankNotice } from '../aquarium-host/aquarium-host';
 import { isQuarantineShown, panelCatalog } from './panel-views';
+import { SettingMark } from '../settings-window/settings-search-filter';
 import { QuarantineSection } from './quarantine-section';
 
 /**
@@ -47,7 +48,7 @@ import { QuarantineSection } from './quarantine-section';
 @Component({
   // Sélecteur d'attribut : le `fieldset` reste l'enfant direct du panneau (ADR 0161).
   selector: 'fieldset[app-tanks-section]',
-  imports: [QuarantineSection],
+  imports: [QuarantineSection, SettingMark],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './tanks-section.scss',
   template: `
@@ -58,6 +59,7 @@ import { QuarantineSection } from './quarantine-section';
         type="button"
         class="control-panel__edit"
         data-care-mode-toggle
+        appSetting="Mode soins ou décor"
         [attr.data-mode]="careMode()"
         [attr.aria-label]="
           'Mode du bac affiché : ' + careModeLabels[careMode()].toLowerCase() + '. Changer de mode'
@@ -137,7 +139,7 @@ import { QuarantineSection } from './quarantine-section';
         </div>
       </div>
     }
-    <ul class="control-panel__tanks" aria-label="Liste des bacs">
+    <ul class="control-panel__tanks" aria-label="Liste des bacs" appSetting="Liste des bacs">
       @for (tank of tankList(); track tank.id) {
         <li
           [attr.data-tank]="tank.id"
@@ -165,7 +167,12 @@ import { QuarantineSection } from './quarantine-section';
       }
     </ul>
     @if (transferTargets().length > 0 && transferSpecies().length > 0) {
-      <div class="control-panel__row" role="group" aria-label="Transférer un animal">
+      <div
+        class="control-panel__row"
+        role="group"
+        aria-label="Transférer un animal"
+        appSetting="Transférer à l’épuisette"
+      >
         <label class="control-panel__field">
           <span class="control-panel__label">Animal</span>
           <select
@@ -195,7 +202,13 @@ import { QuarantineSection } from './quarantine-section';
           </select>
         </label>
       </div>
-      <button type="button" class="control-panel__button" data-transfer (click)="onTransfer()">
+      <button
+        type="button"
+        class="control-panel__button"
+        data-transfer
+        appSetting="Transférer à l’épuisette"
+        (click)="onTransfer()"
+      >
         Transférer à l’épuisette
       </button>
     }
@@ -207,6 +220,7 @@ import { QuarantineSection } from './quarantine-section';
         type="button"
         class="control-panel__button"
         data-quarantine-install
+        appSetting="Quarantaine"
         aria-label="Installer un bac de quarantaine"
         [attr.title]="quarantineDuration"
         (click)="onQuarantineInstall()"
@@ -221,6 +235,7 @@ import { QuarantineSection } from './quarantine-section';
         role="group"
         aria-label="Quarantaine"
         data-quarantine
+        appSetting="Quarantaine"
         app-quarantine-section
         [environment]="environment()"
         [careMode]="careMode()"
@@ -238,6 +253,7 @@ import { QuarantineSection } from './quarantine-section';
         class="control-panel__row control-panel__row--halves"
         role="group"
         aria-label="Renommer un bac"
+        appSetting="Renommer"
       >
         <label class="control-panel__field">
           <span class="control-panel__label">Bac</span>
@@ -271,6 +287,7 @@ import { QuarantineSection } from './quarantine-section';
         type="button"
         class="control-panel__button"
         data-rename
+        appSetting="Renommer"
         (click)="onRename(renameInput.value)"
       >
         Renommer

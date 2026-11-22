@@ -14,6 +14,7 @@ import {
   type PondShape,
 } from '../../sim/pond-shape';
 import { isRoomAvailable } from '../../sim/room';
+import { SettingMark } from '../settings-window/settings-search-filter';
 import { environmentName } from './panel-views';
 
 /**
@@ -26,6 +27,7 @@ import { environmentName } from './panel-views';
 @Component({
   // Sélecteur d'attribut : le `fieldset` reste l'enfant direct du panneau (ADR 0161).
   selector: 'fieldset[app-environment-section]',
+  imports: [SettingMark],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './environment-section.scss',
   template: `
@@ -33,24 +35,29 @@ import { environmentName } from './panel-views';
     <!-- Pièce autour du bac (#187), bac tropical seulement : après la liste au clavier,
          mais sur la ligne de « Lieu » à l'écran, le panneau ne grandit pas (#101). -->
     <div class="control-panel__field control-panel__field--place">
-      <label class="control-panel__label" for="panneau-environnement">Lieu</label>
-      <select
-        id="panneau-environnement"
-        class="control-panel__select"
-        aria-label="Environnement"
-        (change)="onEnvironment($event)"
-      >
-        @for (id of environmentIds; track id) {
-          <option [value]="id" [selected]="id === environment()">
-            {{ environmentName(id) }}
-          </option>
-        }
-      </select>
+      <!-- Libellé et liste ensemble pour la recherche (#768) ; « display: contents » garde
+           la grille de la ligne. -->
+      <span class="environment__place" appSetting="Environnement">
+        <label class="control-panel__label" for="panneau-environnement">Lieu</label>
+        <select
+          id="panneau-environnement"
+          class="control-panel__select"
+          aria-label="Environnement"
+          (change)="onEnvironment($event)"
+        >
+          @for (id of environmentIds; track id) {
+            <option [value]="id" [selected]="id === environment()">
+              {{ environmentName(id) }}
+            </option>
+          }
+        </select>
+      </span>
       <!-- Forme du bassin (#190), bassin seulement : à la place de la pièce, même ligne. -->
       @if (shapeAvailable()) {
         <select
           class="control-panel__select"
           data-pond-shape
+          appSetting="Forme du bassin"
           aria-label="Forme du bassin"
           title="Forme du bassin"
           (change)="onPondShape($event)"
@@ -63,7 +70,11 @@ import { environmentName } from './panel-views';
         </select>
       }
       @if (roomAvailable()) {
-        <label class="control-panel__check control-panel__check--inline" data-room>
+        <label
+          class="control-panel__check control-panel__check--inline"
+          data-room
+          appSetting="Afficher la pièce"
+        >
           <input type="checkbox" [checked]="roomShown()" (change)="onRoom($event)" />
           Afficher la pièce
         </label>

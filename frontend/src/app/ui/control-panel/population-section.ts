@@ -30,7 +30,7 @@ import {
   type PopulationSort,
 } from './population-view';
 import { SpeciesSheet } from './species-sheet';
-import { SectionLegend } from '../settings-window/settings-search-filter';
+import { SectionLegend, SettingMark } from '../settings-window/settings-search-filter';
 
 /** Nombre lu dans une valeur de formulaire ; une chaîne vide donne `NaN` (et non 0). */
 function toNumber(value: string | number): number {
@@ -111,14 +111,15 @@ export function speciesSliderLabel(species: SpeciesId): string {
  * scientifique en italique, compteur, « Fiche »), filtres « Toutes », « Dans le bac »,
  * « Poissons », « Invertébrés » (boutons accolés, `aria-pressed`), tri (ordre du milieu, nom,
  * nombre, taille adulte : `population-view.ts`) et résumé « N animaux, M espèces ». Pendant une
- * recherche de la fenêtre, seules les espèces trouvées restent (`onlySpecies`).
+ * recherche de la fenêtre, seules les espèces trouvées restent (`onlySpecies`) ; filtres, tri et
+ * résumé ne restent que pour « Nombre par espèce » (marque `appSetting`, #768).
  *
  * L'hôte est le `fieldset` de la section, posé par le panneau (ADR 0161).
  */
 @Component({
   // Sélecteur d'attribut : le `fieldset` reste l'enfant direct du panneau (ADR 0161).
   selector: 'fieldset[app-population-section]',
-  imports: [SpeciesSheet, SectionLegend],
+  imports: [SpeciesSheet, SectionLegend, SettingMark],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './population-section.scss',
   template: `
@@ -129,7 +130,9 @@ export function speciesSliderLabel(species: SpeciesId): string {
         {{ notice }}
       </p>
     }
-    <div class="population__toolbar">
+    <!-- Filtres, tri et résumé : parcourir les effectifs ; une recherche d’espèce ou de fiche
+         ne garde que les tuiles (#768). -->
+    <div class="population__toolbar" appSetting="Nombre par espèce">
       <div class="population__filters" role="group" aria-label="Filtrer les espèces">
         @for (choice of filters; track choice.id) {
           <button
@@ -159,7 +162,9 @@ export function speciesSliderLabel(species: SpeciesId): string {
         </select>
       </label>
     </div>
-    <p class="population__summary" data-population-summary>{{ summary() }}</p>
+    <p class="population__summary" data-population-summary appSetting="Nombre par espèce">
+      {{ summary() }}
+    </p>
     <div class="population__tiles">
       @for (entry of tiles(); track entry.species) {
         @let id = entry.species;
