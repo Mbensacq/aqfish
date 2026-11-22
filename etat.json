@@ -9999,6 +9999,12 @@
           "debut": "2026-11-22T05:24:53.725Z",
           "fin": "2026-11-22T06:48:41.571Z",
           "note": "Verdict OK, 0 bug, verify 551 e2e verts, captures publiées (170 identiques, 9 = aide-mémoire)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-22T06:49:15.068Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
