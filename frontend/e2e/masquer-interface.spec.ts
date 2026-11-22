@@ -129,3 +129,28 @@ test('préférences du mode immersif retiré : ignorées au chargement, sans err
   await expect(root(page)).toHaveAttribute('data-interface-hidden', 'true');
   expect(errors).toEqual([]);
 });
+
+test.describe('téléphone tactile (#775)', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+
+  test('l’indication dit « Appui long pour revenir », et l’appui long fait revenir', async ({
+    page,
+  }) => {
+    const errors = await openScene(page);
+    await ouvrirReglages(page, 'Affichage');
+    // Au doigt (`tap`) : le dernier appui est tactile, l'indication ne parle pas de touches.
+    await page.getByRole('checkbox', { name: 'Masquer l’interface' }).tap();
+    await expect(root(page)).toHaveAttribute('data-interface-hidden', 'true');
+    await expect(hint(page)).toHaveText('Appui long pour revenir');
+    await page.screenshot({ path: test.info().outputPath('indication-tactile.png') });
+
+    // Appui long immobile au doigt : l'interface revient.
+    const cdp = await page.context().newCDPSession(page);
+    const point = { x: 195, y: 420 };
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point] });
+    await page.waitForTimeout(900);
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await expect(root(page)).toHaveAttribute('data-interface-hidden', 'false');
+    expect(errors).toEqual([]);
+  });
+});

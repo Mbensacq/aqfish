@@ -30,12 +30,25 @@ interface Press {
  * qui masque les panneaux et relaie le clavier et le pointeur.
  *
  * - `I` masque ou réaffiche ; `Échap` ou un appui long (sans glisser) réaffiche.
- * - Au masquage, l'indication « I ou Échap pour revenir » reste `HINT_DURATION_MS`.
+ * - Au masquage, l'indication « I ou Échap pour revenir » (« Appui long pour revenir » au
+ *   doigt, `touch`) reste `HINT_DURATION_MS`.
  * - Masquée, le curseur disparaît après `CURSOR_IDLE_MS` d'immobilité et revient au
  *   moindre mouvement.
  *
  * Non enregistré : chaque visite commence avec l'interface.
  */
+/** Requête média d'un écran tactile sans souris (pointeur principal grossier, #775). */
+export const COARSE_POINTER_QUERY = '(pointer: coarse)';
+
+/** Vrai si le pointeur principal de `win` est grossier (doigt) ; faux sans `matchMedia`. */
+function coarsePointer(win: Window | null): boolean {
+  try {
+    return typeof win?.matchMedia === 'function' && win.matchMedia(COARSE_POINTER_QUERY).matches;
+  } catch {
+    return false;
+  }
+}
+
 @Injectable({ providedIn: 'root' })
 export class HiddenInterfaceState {
   private readonly win = inject(DOCUMENT).defaultView;
@@ -46,6 +59,12 @@ export class HiddenInterfaceState {
   readonly hintShown = signal(false);
   /** Vrai quand le curseur est caché (interface masquée et pointeur immobile). */
   readonly cursorHidden = signal(false);
+  /**
+   * Vrai si l'on se sert du doigt (#775) : pointeur principal grossier au départ, puis type du
+   * dernier appui (doigt : vrai ; souris ou stylet : faux). L'indication dit alors « Appui long
+   * pour revenir » au lieu des touches.
+   */
+  readonly touch = signal(coarsePointer(this.win));
 
   private hintTimer: ReturnType<typeof setTimeout> | null = null;
   private cursorTimer: ReturnType<typeof setTimeout> | null = null;
@@ -105,6 +124,7 @@ export class HiddenInterfaceState {
   /** Appui (doigt, stylet ou souris) : candidat à l'appui long quand l'interface est masquée. */
   onPointerDown(event: PointerEvent): void {
     this.cancelPress();
+    this.notePointerType(event.pointerType);
     if (!this.hidden() || !event.isPrimary || !this.win) {
       return;
     }
@@ -119,6 +139,15 @@ export class HiddenInterfaceState {
   /** Appui relâché ou interrompu : ce n'était pas un appui long. */
   onPointerEnd(): void {
     this.cancelPress();
+  }
+
+  /** Retient le type du dernier appui ; un type inconnu (vide) ne change rien. */
+  private notePointerType(type: string | undefined): void {
+    if (type === 'touch') {
+      this.touch.set(true);
+    } else if (type === 'mouse' || type === 'pen') {
+      this.touch.set(false);
+    }
   }
 
   private hide(): void {

@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 
 import {
+  COARSE_POINTER_QUERY,
   CURSOR_IDLE_MS,
   HiddenInterfaceState,
   HINT_DURATION_MS,
@@ -25,11 +26,12 @@ function key(name: string, init: KeyboardEventInit = {}, target?: Element): Keyb
 function pointer(
   x: number,
   y: number,
-  init: { id?: number; primary?: boolean } = {},
+  init: { id?: number; primary?: boolean; type?: string } = {},
 ): PointerEvent {
   return {
     pointerId: init.id ?? 1,
     isPrimary: init.primary ?? true,
+    pointerType: init.type ?? '',
     clientX: x,
     clientY: y,
   } as PointerEvent; // Seuls ces champs sont lus par l'état.
@@ -175,5 +177,62 @@ describe('HiddenInterfaceState (#725)', () => {
     state.setHidden(true);
     vi.advanceTimersByTime(LONG_PRESS_MS);
     expect(state.hidden()).toBe(true);
+  });
+});
+
+describe('HiddenInterfaceState : doigt ou clavier (#775)', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  function inject(coarse: boolean | 'leve' | null): HiddenInterfaceState {
+    if (coarse === 'leve') {
+      vi.stubGlobal('matchMedia', () => {
+        throw new Error('matchMedia refusé');
+      });
+    } else if (coarse !== null) {
+      vi.stubGlobal('matchMedia', (query: string) => ({
+        matches: query === COARSE_POINTER_QUERY && coarse,
+      }));
+    }
+    TestBed.configureTestingModule({});
+    return TestBed.inject(HiddenInterfaceState);
+  }
+
+  it('pointeur principal grossier au départ : doigt ; fin : clavier', () => {
+    expect(inject(true).touch()).toBe(true);
+    TestBed.resetTestingModule();
+    expect(inject(false).touch()).toBe(false);
+  });
+
+  it('sans matchMedia ou s’il lève : clavier, sans erreur', () => {
+    expect(inject('leve').touch()).toBe(false);
+  });
+
+  it('le type du dernier appui l’emporte ; un type inconnu ne change rien', () => {
+    const state = inject(false);
+    state.onPointerDown(pointer(10, 10, { type: 'touch' }));
+    expect(state.touch()).toBe(true);
+    state.onPointerDown(pointer(10, 10, { type: '' }));
+    expect(state.touch()).toBe(true);
+    state.onPointerDown(pointer(10, 10, { type: 'mouse' }));
+    expect(state.touch()).toBe(false);
+    state.onPointerDown(pointer(10, 10, { type: 'touch' }));
+    state.onPointerDown(pointer(10, 10, { type: 'pen' }));
+    expect(state.touch()).toBe(false);
+  });
+
+  it('un appui au doigt, interface masquée, reste un candidat à l’appui long', () => {
+    vi.useFakeTimers();
+    try {
+      const state = inject(false);
+      state.setHidden(true);
+      state.onPointerDown(pointer(10, 10, { type: 'touch' }));
+      expect(state.touch()).toBe(true);
+      vi.advanceTimersByTime(LONG_PRESS_MS);
+      expect(state.hidden()).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
