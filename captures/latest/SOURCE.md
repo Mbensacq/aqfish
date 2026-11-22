@@ -1,8 +1,5 @@
-# Captures du cycle 273
-
-- Branche : cycle/c273-charte-panneaux-etat
-- PR : #769
-- Commit : d487465894100393407fbd96db6d0658561ac8e7
-- Graine : celle des captures (par défaut)
-- Durée : 168 captures en 6,1 min
-- Comparaison à la série précédente (latest) : 143 identiques à l'octet (tout le bac seul), 27 différentes, toutes des vues avec interface
+Branche : cycle/c274-charte-habillage
+PR : #771
+Commit : 982e0aae5be1bba01ed747ca68b002dede676f22
+Graine : celle de e2e/captures.spec.ts (défaut)
+Temps : 5,9 min, 173 tests
