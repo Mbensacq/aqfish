@@ -9987,6 +9987,12 @@
           "debut": "2026-11-22T04:17:05.867Z",
           "fin": "2026-11-22T04:17:41.896Z",
           "note": "Issue #725 : Interface 5/5, Masquer l'interface à la place du mode immersif (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-22T04:18:14.686Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
