@@ -9972,6 +9972,24 @@
         }
       },
       "metriques": {}
+    },
+    "275": {
+      "numero": 275,
+      "date": "2026-11-22",
+      "debut": "2026-11-22T04:17:05.867Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-22T04:17:05.867Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
