@@ -10029,6 +10029,12 @@
           "debut": "2026-11-22T07:19:35.238Z",
           "fin": "2026-11-22T08:56:46.676Z",
           "note": "PR #777 : retrait de la partie sim/ du mode immersif + indication tactile, Closes #776 #775, CI verte, captures 178/178 identiques"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-22T08:57:24.020Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
