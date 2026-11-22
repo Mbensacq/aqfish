@@ -10131,6 +10131,12 @@
           "debut": "2026-11-22T15:31:12.333Z",
           "fin": "2026-11-22T15:32:03.436Z",
           "note": "Rétro sprint 40 en #782 ; issue #768 : dette recherche des réglages (S) pour Dev"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-22T15:32:36.395Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
