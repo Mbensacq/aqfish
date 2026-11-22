@@ -11,6 +11,11 @@
   align-items: center;
   column-gap: 8px;
 
+  // Libellé et liste marqués ensemble pour la recherche (#768) : sans boîte, la grille les place.
+  .environment__place {
+    display: contents;
+  }
+
   .control-panel__select {
     grid-column: 1 / -1;
     grid-row: 2;

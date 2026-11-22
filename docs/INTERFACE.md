@@ -242,9 +242,13 @@ découpé par section), qui fournit les sections réutilisées par la fenêtre :
    « simulation », « decor », « sauvegarde ») ; l'explication n'est cherchée qu'au début d'un
    mot (« lum » ne trouve plus la fiche par « volume ») ; la légende d'une section qui répète
    le titre de la catégorie (« Population », « Affichage », « Son », « Accessibilité ») est
-   masquée à l'écran, gardée pour les lecteurs d'écran. **Reste** : les sections
-   « environnement », « bacs », « produits » et « population » se montrent encore en entier ;
-   les sections absentes du bac (« Soins » sans
+   masquée à l'écran, gardée pour les lecteurs d'écran. **Cycle 279 (#768)** : les sections
+   « environnement », « bacs » et « produits » sont marquées à leur tour ; dans « population »,
+   filtres, tri et résumé ne restent que pour « Nombre par espèce » (une recherche d'espèce ou
+   de fiche ne garde que les tuiles) ; modificateur `control-panel__legend--repeated` ; un test
+   vérifie, pour chaque catégorie à section unique, la légende masquée attendue
+   (`settings-search-sections.spec.ts`). Seule « bacs-meubles », qui ne porte qu’un réglage, se montre en entier.
+   **Reste** : les sections absentes du bac (« Soins » sans
    points blancs, pièce masquée) restent proposées dans les résultats sans contenu.
 4. #724 — Habillage de toute la page selon la charte (tableau de bord, barres, aide-mémoire, wiki,
    pharmacie, bilan, guide, parcours du premier bac), textes revus.

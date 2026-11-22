@@ -41,7 +41,7 @@ export class SettingMark {
  */
 @Directive({
   selector: 'legend[appSectionLegend]',
-  host: { '[class.control-panel__legend--repete]': 'repeated()' },
+  host: { '[class.control-panel__legend--repeated]': 'repeated()' },
 })
 export class SectionLegend {
   private readonly element = inject<ElementRef<HTMLElement>>(ElementRef);
