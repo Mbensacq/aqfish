@@ -9965,10 +9965,10 @@
           "note": "Verdict OK, 1 bug (#772, préexistant), captures publiées (148 identiques, bac seul inchangé)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-22T03:47:58.924Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-22T04:16:31.579Z",
+          "note": "PR #771 fusionnée → v1.28.1 (release CI OK, main verte), #724 fermée, dette #773"
         }
       },
       "metriques": {}
