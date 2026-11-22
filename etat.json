@@ -10097,10 +10097,10 @@
           "note": "Issue #780 : lot de dette bruit captures téléphone + restes tableau de bord (#780 + #770) (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-22T13:43:49.361Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-22T14:41:56.920Z",
+          "note": "PR #781 : dette tableau de bord + cause du bruit captures téléphone (z-index Pharmacie, PIEGES), Closes #780 #770, CI verte (e2e local interrompu, CI complète verte) ; pied d'attribution réinjecté par l'environnement dans la PR (PIEGES)"
         }
       },
       "metriques": {}
