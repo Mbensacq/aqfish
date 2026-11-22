@@ -10001,10 +10001,10 @@
           "note": "Verdict OK, 0 bug, verify 551 e2e verts, captures publiées (170 identiques, 9 = aide-mémoire)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-22T06:49:15.068Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-22T07:17:38.493Z",
+          "note": "PR #774 fusionnée → v1.28.2 (release CI OK, main verte), #725 fermée, dette #775 #776 ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
