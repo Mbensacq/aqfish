@@ -10103,10 +10103,10 @@
           "note": "PR #781 : dette tableau de bord + cause du bruit captures téléphone (z-index Pharmacie, PIEGES), Closes #780 #770, CI verte (e2e local interrompu, CI complète verte) ; pied d'attribution réinjecté par l'environnement dans la PR (PIEGES)"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-22T14:42:31.416Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-22T15:02:51.683Z",
+          "note": "Verdict OK, 0 bug : verify OK (CI 7/7 e2e), critères OK, 177/178 captures identiques à l'octet (chlore identique sur main) ; captures publiées"
         }
       },
       "metriques": {}
