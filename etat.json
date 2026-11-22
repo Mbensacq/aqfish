@@ -9923,10 +9923,10 @@
           "note": "PR #769 : #724 tranche 1, tableau de bord, bandeau bas, indicateur du jour et barre du bas à la charte (Refs #724), CI verte ; pied de page d'attribution ajouté au corps de la PR malgré -F body=@ (PIEGES)"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-22T00:34:51.399Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-22T01:12:01.967Z",
+          "note": "Verdict OK, 0 bug, captures publiées (143 identiques, 27 vues d'interface changées, attendu)"
         }
       },
       "metriques": {}
