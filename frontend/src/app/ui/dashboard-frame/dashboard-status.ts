@@ -40,12 +40,7 @@ import type { LampReadout } from '../../sim/lamp';
 import type { FeederReadout } from '../../sim/auto-feeder';
 import type { TreatmentReadout } from '../../sim/treatment-text';
 import { DEFAULT_WATER_READOUT, type WaterReadout } from '../../sim/water-quality';
-import {
-  DASHBOARD_BACKGROUND_ALPHA,
-  DASHBOARD_COLORS,
-  DASHBOARD_MUTED_ALPHA,
-  DASHBOARD_REST_OPACITY,
-} from './dashboard-frame';
+import { DASHBOARD_COLORS } from './dashboard-frame';
 import { FeederPanel } from './feeder-panel';
 import { BeginnerGuideState } from '../beginner-guide/beginner-guide-state';
 import {
@@ -462,9 +457,7 @@ const ICONS: Readonly<Record<GaugeLevel, readonly (readonly [number, number])[]>
     '[style.--dashboard-vert]': 'colors.vert',
     '[style.--dashboard-orange]': 'colors.orange',
     '[style.--dashboard-rouge]': 'colors.rouge',
-    '[style.--dashboard-background-alpha]': 'backgroundAlpha',
-    '[style.--dashboard-muted-alpha]': 'mutedAlpha',
-    '[style.--dashboard-rest-opacity]': 'restOpacity',
+    '[style.--dashboard-ink-muted]': 'colors.inkMuted',
   },
 })
 export class DashboardStatus {
@@ -575,9 +568,6 @@ export class DashboardStatus {
   /** « Pourquoi ? » sous une alerte : ouvre le guide sur l'explication liée (#240). */
   protected readonly guide = inject(BeginnerGuideState);
   protected readonly colors = DASHBOARD_COLORS;
-  protected readonly backgroundAlpha = DASHBOARD_BACKGROUND_ALPHA;
-  protected readonly mutedAlpha = DASHBOARD_MUTED_ALPHA;
-  protected readonly restOpacity = DASHBOARD_REST_OPACITY;
 
   /** Alertes de l'eau et des animaux, ordonnées par gravité, recalculées à chaque relevé. */
   readonly alerts = computed<readonly DashboardAlert[]>(() =>

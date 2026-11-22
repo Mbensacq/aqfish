@@ -188,8 +188,10 @@ devant lui garde son vert ; aucune couleur ajoutée à la palette.
   filet entre deux lignes), puis les sections qui les portent, réglables sur place.
 - Barre du bas (cycle 268) : vues, « Libre », puis « Pixel art », « Nourrir », « Raclette »,
   « Sécateur » et « Photo » (gestes de jeu, hors des réglages) ; outil en main : bordure et
-  texte laiton, « Poser la raclette ». Pastilles de touche masquées sous 1 280 px, deux
-  lignes sous 640 px (jamais trois, jamais hors de l'écran).
+  texte laiton, « Poser la raclette ». Touches masquées sous 1 280 px, deux
+  lignes sous 640 px (jamais trois, jamais hors de l'écran). Charte (#724, cycle 273) :
+  panneau plein à filet ; les cinq vues en boutons accolés, la vue courante pleine en laiton
+  (texte `#141418`) ; touches en `kbd` à filet, bord bas de 2 px, police mono.
 - Minimale et discrète : l'interface s'efface devant le bac. Aucune interface en mode capture.
 - Icônes en pixel art, cohérentes avec la palette.
 - Police : Atkinson Hyperlegible Next pour le texte, Atkinson Hyperlegible Mono pour les
@@ -204,8 +206,12 @@ devant lui garde son vert ; aucune couleur ajoutée à la palette.
 - Tableau de bord de l'eau (#256, ADR 0059) : cadre sur le bord haut, jamais au centre du
   bac ; niveaux aux couleurs d'état de la charte, bon (`#7db88c`), à surveiller (`#e8955f`)
   et danger (`#ec6a5c`), toujours doublés d'un texte et d'une icône pixel art (coche, point
-  d'exclamation, croix) ; plein au repos comme tous les panneaux (#721), texte lu toujours à
-  4,5:1 au moins.
+  d'exclamation, croix) ; plein au repos comme au survol, sans opacité ni transition (#721,
+  #724) ; noms des jauges en encre secondaire `#a9b1b5`, valeurs et heure en police mono ;
+  chevrons dessinés en pixels (grille de 5) à la place des flèches ▴ ▾ ; focus en laiton.
+  Bandeau bas (santé, alertes, entretien, bilan) : boutons à filet `#3d4850`, la couleur
+  d'état sur l'icône et le texte seulement ; onglets « Bilan » et « Journal » et filtres du
+  journal en choix exclusif, plein en laiton.
 - Focus clavier (#407, ADR 0099) : anneau laiton `#d1a65c` de 2 px cerné d'un halo
   `#141418`, le même sur tous les contrôles ; texte des panneaux à 4,5:1 au moins sur le
   panneau (`#1b1f23`), le panneau élevé (`#232a30`) et la salle (`#141418`).

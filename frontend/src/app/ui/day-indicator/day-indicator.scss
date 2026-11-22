@@ -1,5 +1,7 @@
-// Indicateur discret (docs/DA.md, « Interface ») : pastille sombre pleine en haut à
-// gauche, comme la barre des vues ; l'aide-mémoire occupe le haut à droite.
+// Indicateur discret (docs/DA.md, « Interface ») : petit panneau plein de la charte (#724),
+// coins de 4 px, en haut à gauche, comme la barre des vues ; l'aide-mémoire occupe le haut à
+// droite. Sans filet : sa largeur (39 px) fixe la place du bouton « Réglages »
+// (`$control-panel-left`).
 
 @use '../panel-layout' as layout;
 :host {

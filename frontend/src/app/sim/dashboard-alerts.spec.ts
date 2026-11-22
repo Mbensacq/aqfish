@@ -311,7 +311,7 @@ describe('alerte des points blancs (#366)', () => {
         message: 'Points blancs',
         cause: 'parasite (Ichthyophthirius) favorisé par une eau instable ; 1 animal touché',
         action:
-          'Traiter plusieurs jours : Réglages, Soins ; garder l’eau stable (température, ammoniaque, nitrites)',
+          'Traiter plusieurs jours : Réglages, Soins et produits ; garder l’eau stable (température, ammoniaque, nitrites)',
         wiki: 'maladies',
       },
     ]);
@@ -429,7 +429,7 @@ describe('alerte des algues (#476)', () => {
     expect(alerts[0].action).toMatch(/raclette/);
     // #488 : la raclette est dans la section « Eau » (« Soins » n'apparaît qu'avec des points
     // blancs).
-    expect(alerts[0].action).toContain('Passer la raclette (Réglages, Eau)');
+    expect(alerts[0].action).toContain('Passer la raclette (barre du bas)');
     expect(alerts[0].action).not.toContain('Soins');
   });
 

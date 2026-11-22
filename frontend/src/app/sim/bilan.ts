@@ -305,7 +305,7 @@ function temperaturePoint(sample: WaterSample): ReviewPoint | null {
     measure: Number.isFinite(sample.temperature)
       ? `Eau à ${formatTenth(sample.temperature)} °C pour ${WATER_TEMPERATURES[sample.environment]} °C attendus`
       : INVALID,
-    action: 'Régler le chauffage (Réglages, Eau)',
+    action: 'Régler le chauffage (Réglages, Eau et matériel)',
   };
 }
 

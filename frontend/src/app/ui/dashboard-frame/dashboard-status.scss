@@ -1,7 +1,7 @@
 // Bandeau bas du tableau de bord (#260, addendum de l'ADR 0059) : santé et alertes,
 // au-dessus de la barre des vues (40 px de haut à 16 px du bas ; deux lignes, 74 px, sur
-// téléphone), jamais au centre du bac. Couleurs et opacités : variables posées par le cadre
-// (`DASHBOARD_COLORS`), héritées. Hôte transparent au pointeur, comme le cadre ; même police
+// téléphone), jamais au centre du bac. Couleurs : variables posées par le cadre
+// (`DASHBOARD_COLORS`), héritées ; panneau plein, focus en laiton (charte, #724). Hôte transparent au pointeur, comme le cadre ; même police
 // et même surface (`_dashboard-surface.scss`, #265).
 @use '../panel-layout' as layout;
 @use 'dashboard-surface' as dashboard;
@@ -50,11 +50,7 @@
 }
 
 .status__name {
-  color: color-mix(
-    in srgb,
-    var(--dashboard-ink) calc(var(--dashboard-muted-alpha) * 100%),
-    transparent
-  );
+  color: var(--dashboard-ink-muted);
 }
 
 .status__value,
@@ -64,17 +60,19 @@
   font-variant-numeric: tabular-nums;
 }
 
+// Alerte, entretien, bilan : boutons à filet de la charte (#724) ; la couleur d'état reste
+// sur l'icône et le texte, toujours doublée de la forme de l'icône et d'un mot.
 .status__chip {
   min-height: 24px;
   padding: 1px 8px;
-  border: 1px solid currentcolor;
+  border: 1px solid layout.$panel-border;
   border-radius: layout.$radius-control;
   background: transparent;
   font: inherit;
   cursor: pointer;
 
-  &:focus-visible {
-    @include layout.focus-ring(1px, var(--dashboard-ink));
+  &:hover {
+    background: layout.$panel-raised;
   }
 }
 
@@ -120,11 +118,12 @@
   margin: 0 0 4px;
 }
 
-// Vue affichée : pastille claire en négatif, sans soulignement (#592 : en gras seul, les deux
-// onglets se distinguaient mal) ; `aria-pressed` porte l'état lu.
-.status__tabs [aria-pressed='true'] {
-  background: var(--dashboard-ink);
-  color: var(--dashboard-background);
+// Vue affichée : choix exclusif de la charte (#724), plein en laiton, sans soulignement (#592 :
+// en gras seul, les deux onglets se distinguaient mal) ; `aria-pressed` porte l'état lu.
+.status__tabs [aria-pressed='true'],
+.status__filters [aria-pressed='true'] {
+  background: layout.$brass;
+  color: layout.$on-brass;
   font-weight: 700;
   text-decoration: none;
 }
@@ -157,12 +156,6 @@
   flex-wrap: wrap;
   gap: 2px 4px;
   margin: 0 0 4px;
-}
-
-.status__filters [aria-pressed='true'] {
-  background: var(--dashboard-ink);
-  color: var(--dashboard-background);
-  font-weight: 700;
 }
 
 /* Bilan sans point (#522) : même marge que la liste, sans retrait. */
@@ -410,11 +403,5 @@
   .status__message {
     overflow: hidden;
     text-overflow: ellipsis;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .status {
-    transition: none;
   }
 }
