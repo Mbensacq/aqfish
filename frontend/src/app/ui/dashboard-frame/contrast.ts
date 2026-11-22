@@ -1,8 +1,7 @@
 /**
- * Contraste du texte du tableau de bord (issue #256) : couleurs composées comme le fait le
- * navigateur (mélange en sRGB, opacité du groupe par-dessus la scène), puis rapport de
- * contraste WCAG 2. Fonctions pures, testées en unitaire : le cadre s'estompe sans que le
- * texte lu passe sous 4,5:1, quel que soit le fond de la scène.
+ * Contraste du texte des panneaux (issue #256) : couleurs composées comme le fait le
+ * navigateur (mélange en sRGB d'un fond translucide sur la scène), puis rapport de
+ * contraste WCAG 2. Fonctions pures, testées en unitaire.
  */
 
 /** Couleur sRGB, composantes dans [0, 255]. */
@@ -39,24 +38,4 @@ export function contrastRatio(a: Rgb, b: Rgb): number {
   const la = luminance(a);
   const lb = luminance(b);
   return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
-}
-
-/**
- * Contraste d'un texte de couleur `text` (opacité `textAlpha`) sur un fond `background`
- * d'opacité `backgroundAlpha`, le tout estompé à `groupOpacity` par-dessus la scène `scene`.
- */
-export function fadedContrast(options: {
-  readonly text: Rgb;
-  readonly textAlpha?: number;
-  readonly background: Rgb;
-  readonly backgroundAlpha: number;
-  readonly groupOpacity: number;
-  readonly scene: Rgb;
-}): number {
-  const panel = over(options.background, options.backgroundAlpha, options.scene);
-  const ink = over(options.text, options.textAlpha ?? 1, panel);
-  return contrastRatio(
-    over(ink, options.groupOpacity, options.scene),
-    over(panel, options.groupOpacity, options.scene),
-  );
 }
