@@ -10127,10 +10127,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-22T15:31:12.333Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-22T15:32:03.436Z",
+          "note": "Rétro sprint 40 en #782 ; issue #768 : dette recherche des réglages (S) pour Dev"
         }
       },
       "metriques": {}
