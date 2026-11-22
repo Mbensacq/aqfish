@@ -10019,10 +10019,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-22T07:18:16.398Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-22T07:18:56.048Z",
+          "note": "Issue #776 : retirer la partie sim/ du mode immersif, lot de dette >30 (+ #775 optionnelle) (M)"
         }
       },
       "metriques": {}
