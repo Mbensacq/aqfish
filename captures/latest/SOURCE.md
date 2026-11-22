@@ -1,7 +1,7 @@
-# Captures du cycle 275
-- Branche : cycle/c275-masquer-interface
-- PR : #774 (Closes #725, tranche 1)
-- Commit : a7389d3040ea9a0dd687926b111cc5fc429c6098
+# Captures du cycle 276
+- Branche : cycle/c276-retrait-sim-immersif
+- PR : #777 (Closes #776, #775)
+- Commit : ca6ffcf59264fee46906b503b2e628b65f7033ab
 - Graine : celle par défaut de npm run captures
-- Temps : 173 tests de capture en 5,9 min
-- Comparaison avec c274 : 170 identiques à l'octet (tout le bac seul), 9 différentes (aide-mémoire : ligne « I »)
+- Temps : 173 tests de capture en 7,2 min
+- Comparaison avec c275 : 178 images identiques à l'octet (cmp), 0 différence
