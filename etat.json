@@ -9983,10 +9983,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-22T04:17:05.867Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-22T04:17:41.896Z",
+          "note": "Issue #725 : Interface 5/5, Masquer l'interface à la place du mode immersif (M)"
         }
       },
       "metriques": {}
