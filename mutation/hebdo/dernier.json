@@ -1,56 +1,40 @@
 {
-  "jour": "2026-11-15",
-  "score": 86.95,
-  "detectes": 8829,
-  "valides": 10154,
+  "jour": "2026-11-22",
+  "score": 88.26,
+  "detectes": 7843,
+  "valides": 8886,
   "fichiers": [
     {
-      "fichier": "src/app/sim/floating-leaves.ts",
-      "score": 64.88,
-      "detectes": 133,
-      "survivants": 70,
+      "fichier": "src/app/sim/room-layout.ts",
+      "score": 59.37,
+      "detectes": 301,
+      "survivants": 203,
+      "sansCouverture": 3,
+      "valides": 507
+    },
+    {
+      "fichier": "src/app/sim/pond-shape.ts",
+      "score": 66.3,
+      "detectes": 183,
+      "survivants": 90,
+      "sansCouverture": 3,
+      "valides": 276
+    },
+    {
+      "fichier": "src/app/sim/sim-speed.ts",
+      "score": 68.97,
+      "detectes": 20,
+      "survivants": 1,
+      "sansCouverture": 8,
+      "valides": 29
+    },
+    {
+      "fichier": "src/app/sim/room-furniture.ts",
+      "score": 79.94,
+      "detectes": 546,
+      "survivants": 135,
       "sansCouverture": 2,
-      "valides": 205
-    },
-    {
-      "fichier": "src/app/sim/room-details.ts",
-      "score": 72,
-      "detectes": 180,
-      "survivants": 70,
-      "sansCouverture": 0,
-      "valides": 250
-    },
-    {
-      "fichier": "src/app/sim/siphon.ts",
-      "score": 72.11,
-      "detectes": 137,
-      "survivants": 53,
-      "sansCouverture": 0,
-      "valides": 190
-    },
-    {
-      "fichier": "src/app/sim/behaviors.ts",
-      "score": 76.49,
-      "detectes": 244,
-      "survivants": 73,
-      "sansCouverture": 2,
-      "valides": 319
-    },
-    {
-      "fichier": "src/app/sim/lily-pads.ts",
-      "score": 79,
-      "detectes": 158,
-      "survivants": 42,
-      "sansCouverture": 0,
-      "valides": 200
-    },
-    {
-      "fichier": "src/app/sim/eggs.ts",
-      "score": 79.08,
-      "detectes": 189,
-      "survivants": 50,
-      "sansCouverture": 0,
-      "valides": 239
+      "valides": 683
     },
     {
       "fichier": "src/app/sim/light-rays.ts",
@@ -61,28 +45,20 @@
       "valides": 25
     },
     {
-      "fichier": "src/app/sim/save.ts",
-      "score": 81.21,
-      "detectes": 830,
-      "survivants": 177,
-      "sansCouverture": 15,
-      "valides": 1022
+      "fichier": "src/app/sim/eggs.ts",
+      "score": 80.37,
+      "detectes": 393,
+      "survivants": 95,
+      "sansCouverture": 1,
+      "valides": 489
     },
     {
-      "fichier": "src/app/sim/room-save.ts",
-      "score": 83.13,
-      "detectes": 414,
-      "survivants": 75,
-      "sansCouverture": 9,
-      "valides": 498
-    },
-    {
-      "fichier": "src/app/sim/treatment.ts",
-      "score": 83.54,
-      "detectes": 345,
-      "survivants": 66,
-      "sansCouverture": 2,
-      "valides": 413
+      "fichier": "src/app/sim/mortality.ts",
+      "score": 81.55,
+      "detectes": 168,
+      "survivants": 38,
+      "sansCouverture": 0,
+      "valides": 206
     },
     {
       "fichier": "src/app/sim/tank-resize.ts",
@@ -91,14 +67,6 @@
       "survivants": 7,
       "sansCouverture": 1,
       "valides": 58
-    },
-    {
-      "fichier": "src/app/sim/decor-release.ts",
-      "score": 86.73,
-      "detectes": 98,
-      "survivants": 15,
-      "sansCouverture": 0,
-      "valides": 113
     },
     {
       "fichier": "src/app/sim/water-conditioner.ts",
@@ -117,28 +85,12 @@
       "valides": 156
     },
     {
-      "fichier": "src/app/sim/feeding.ts",
-      "score": 87.91,
-      "detectes": 189,
-      "survivants": 26,
-      "sansCouverture": 0,
-      "valides": 215
-    },
-    {
       "fichier": "src/app/sim/tank-transfer.ts",
       "score": 88.03,
       "detectes": 125,
       "survivants": 16,
       "sansCouverture": 1,
       "valides": 142
-    },
-    {
-      "fichier": "src/app/sim/velvet.ts",
-      "score": 88.32,
-      "detectes": 121,
-      "survivants": 16,
-      "sansCouverture": 0,
-      "valides": 137
     },
     {
       "fichier": "src/app/sim/dashboard-alerts.ts",
@@ -149,68 +101,36 @@
       "valides": 522
     },
     {
-      "fichier": "src/app/sim/share-link.ts",
+      "fichier": "src/app/sim/undulation.ts",
       "score": 88.57,
-      "detectes": 217,
-      "survivants": 22,
-      "sansCouverture": 6,
-      "valides": 245
-    },
-    {
-      "fichier": "src/app/sim/plant-sway.ts",
-      "score": 88.68,
-      "detectes": 47,
-      "survivants": 6,
-      "sansCouverture": 0,
-      "valides": 53
-    },
-    {
-      "fichier": "src/app/sim/room-window.ts",
-      "score": 88.69,
-      "detectes": 149,
-      "survivants": 19,
-      "sansCouverture": 0,
-      "valides": 168
-    },
-    {
-      "fichier": "src/app/sim/species.ts",
-      "score": 88.69,
-      "detectes": 980,
-      "survivants": 123,
-      "sansCouverture": 2,
-      "valides": 1105
-    },
-    {
-      "fichier": "src/app/sim/anemones.ts",
-      "score": 90.2,
-      "detectes": 267,
-      "survivants": 28,
-      "sansCouverture": 1,
-      "valides": 296
-    },
-    {
-      "fichier": "src/app/sim/water-hardness.ts",
-      "score": 90.48,
-      "detectes": 38,
+      "detectes": 31,
       "survivants": 4,
       "sansCouverture": 0,
-      "valides": 42
+      "valides": 35
     },
     {
-      "fichier": "src/app/sim/room-state.ts",
-      "score": 90.66,
-      "detectes": 670,
-      "survivants": 62,
-      "sansCouverture": 7,
-      "valides": 739
-    },
-    {
-      "fichier": "src/app/sim/algae.ts",
-      "score": 90.67,
-      "detectes": 311,
-      "survivants": 32,
+      "fichier": "src/app/sim/room-limits.ts",
+      "score": 89.19,
+      "detectes": 33,
+      "survivants": 4,
       "sansCouverture": 0,
-      "valides": 343
+      "valides": 37
+    },
+    {
+      "fichier": "src/app/sim/health-scale.ts",
+      "score": 89.47,
+      "detectes": 17,
+      "survivants": 2,
+      "sansCouverture": 0,
+      "valides": 19
+    },
+    {
+      "fichier": "src/app/sim/tank.ts",
+      "score": 90.79,
+      "detectes": 69,
+      "survivants": 7,
+      "sansCouverture": 0,
+      "valides": 76
     },
     {
       "fichier": "src/app/sim/pharmacy.ts",
@@ -221,6 +141,22 @@
       "valides": 196
     },
     {
+      "fichier": "src/app/sim/algae.ts",
+      "score": 91.25,
+      "detectes": 313,
+      "survivants": 30,
+      "sansCouverture": 0,
+      "valides": 343
+    },
+    {
+      "fichier": "src/app/sim/catappa.ts",
+      "score": 91.53,
+      "detectes": 108,
+      "survivants": 10,
+      "sansCouverture": 0,
+      "valides": 118
+    },
+    {
       "fichier": "src/app/sim/quarantine.ts",
       "score": 91.6,
       "detectes": 120,
@@ -229,20 +165,20 @@
       "valides": 131
     },
     {
-      "fichier": "src/app/sim/species-care.ts",
-      "score": 91.84,
-      "detectes": 259,
-      "survivants": 23,
+      "fichier": "src/app/sim/time-step.ts",
+      "score": 91.67,
+      "detectes": 11,
+      "survivants": 1,
       "sansCouverture": 0,
-      "valides": 282
+      "valides": 12
     },
     {
-      "fichier": "src/app/sim/glass-tap.ts",
-      "score": 92.52,
-      "detectes": 99,
-      "survivants": 8,
+      "fichier": "src/app/sim/floating-leaves.ts",
+      "score": 92.42,
+      "detectes": 183,
+      "survivants": 15,
       "sansCouverture": 0,
-      "valides": 107
+      "valides": 198
     },
     {
       "fichier": "src/app/sim/care-return.ts",
@@ -253,36 +189,76 @@
       "valides": 94
     },
     {
-      "fichier": "src/app/sim/fry.ts",
-      "score": 92.94,
-      "detectes": 237,
+      "fichier": "src/app/sim/room-state.ts",
+      "score": 92.8,
+      "detectes": 632,
+      "survivants": 45,
+      "sansCouverture": 4,
+      "valides": 681
+    },
+    {
+      "fichier": "src/app/sim/species.ts",
+      "score": 92.98,
+      "detectes": 1099,
+      "survivants": 81,
+      "sansCouverture": 2,
+      "valides": 1182
+    },
+    {
+      "fichier": "src/app/sim/plant.ts",
+      "score": 93.21,
+      "detectes": 247,
       "survivants": 18,
       "sansCouverture": 0,
-      "valides": 255
+      "valides": 265
     },
     {
-      "fichier": "src/app/sim/species-legal.ts",
-      "score": 93.69,
-      "detectes": 208,
-      "survivants": 13,
-      "sansCouverture": 1,
-      "valides": 222
-    },
-    {
-      "fichier": "src/app/sim/filter-rinse.ts",
-      "score": 94,
-      "detectes": 47,
-      "survivants": 3,
+      "fichier": "src/app/sim/species-wiki.ts",
+      "score": 93.81,
+      "detectes": 91,
+      "survivants": 6,
       "sansCouverture": 0,
-      "valides": 50
+      "valides": 97
     },
     {
-      "fichier": "src/app/sim/first-tank-path.ts",
-      "score": 94.56,
-      "detectes": 226,
+      "fichier": "src/app/sim/food.ts",
+      "score": 93.94,
+      "detectes": 186,
+      "survivants": 12,
+      "sansCouverture": 0,
+      "valides": 198
+    },
+    {
+      "fichier": "src/app/sim/daylight.ts",
+      "score": 93.99,
+      "detectes": 172,
+      "survivants": 11,
+      "sansCouverture": 0,
+      "valides": 183
+    },
+    {
+      "fichier": "src/app/sim/maintenance.ts",
+      "score": 94.74,
+      "detectes": 252,
+      "survivants": 14,
+      "sansCouverture": 0,
+      "valides": 266
+    },
+    {
+      "fichier": "src/app/sim/health-summary.ts",
+      "score": 95.04,
+      "detectes": 249,
       "survivants": 13,
       "sansCouverture": 0,
-      "valides": 239
+      "valides": 262
+    },
+    {
+      "fichier": "src/app/sim/wood.ts",
+      "score": 95.07,
+      "detectes": 328,
+      "survivants": 17,
+      "sansCouverture": 0,
+      "valides": 345
     },
     {
       "fichier": "src/app/sim/tank-list.ts",
@@ -293,20 +269,12 @@
       "valides": 85
     },
     {
-      "fichier": "src/app/sim/bubbles.ts",
-      "score": 96.27,
-      "detectes": 129,
+      "fichier": "src/app/sim/siphon.ts",
+      "score": 97.37,
+      "detectes": 185,
       "survivants": 5,
       "sansCouverture": 0,
-      "valides": 134
-    },
-    {
-      "fichier": "src/app/sim/dropsy.ts",
-      "score": 97.9,
-      "detectes": 140,
-      "survivants": 3,
-      "sansCouverture": 0,
-      "valides": 143
+      "valides": 190
     },
     {
       "fichier": "src/app/sim/beginner-help.ts",
@@ -317,12 +285,20 @@
       "valides": 139
     },
     {
-      "fichier": "src/app/sim/coral-shapes.ts",
-      "score": 99.47,
-      "detectes": 186,
+      "fichier": "src/app/sim/population.ts",
+      "score": 98.88,
+      "detectes": 88,
       "survivants": 1,
       "sansCouverture": 0,
-      "valides": 187
+      "valides": 89
+    },
+    {
+      "fichier": "src/app/sim/care-guide.ts",
+      "score": 100,
+      "detectes": 401,
+      "survivants": 0,
+      "sansCouverture": 0,
+      "valides": 401
     },
     {
       "fichier": "src/app/sim/constants.ts",
@@ -333,20 +309,12 @@
       "valides": 1
     },
     {
-      "fichier": "src/app/sim/filter-maturation.ts",
+      "fichier": "src/app/sim/diseases.ts",
       "score": 100,
-      "detectes": 43,
+      "detectes": 23,
       "survivants": 0,
       "sansCouverture": 0,
-      "valides": 43
-    },
-    {
-      "fichier": "src/app/sim/fixed-step.ts",
-      "score": 100,
-      "detectes": 24,
-      "survivants": 0,
-      "sansCouverture": 0,
-      "valides": 24
+      "valides": 23
     },
     {
       "fichier": "src/app/sim/side-effects.ts",
