@@ -79,10 +79,7 @@
     background: layout.$panel-raised;
   }
 
-  &:focus-visible {
-    outline: 2px solid var(--dashboard-ink);
-    outline-offset: 2px;
-  }
+  // Focus : l'anneau laiton commun (`src/styles.scss`, charte #724).
 
   &--quiet {
     flex: 0 0 auto;

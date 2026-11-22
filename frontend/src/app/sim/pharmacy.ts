@@ -47,12 +47,12 @@ export const PHARMACY_STATUS_LABELS: Readonly<Record<PharmacyStatus, string>> = 
 export interface PharmacyProductInfo {
   readonly label: string;
   readonly use: string;
-  /** Où le verser dans l'interface (« Réglages, Eau »). */
+  /** Où le verser dans l'interface (« Réglages, Soins et produits »). */
   readonly where: string;
 }
 
-const WATER = 'Réglages, Eau';
-const CARE = 'Réglages, Soins (animal malade)';
+const WATER = 'Réglages, Soins et produits';
+const CARE = 'Réglages, Soins et produits (animal malade)';
 
 /** Produits : nom, usage, emplacement. */
 export const PHARMACY_INFO: Readonly<Record<PharmacyProduct, PharmacyProductInfo>> = {
@@ -172,7 +172,7 @@ export interface PharmacyAdvice {
   readonly text: string;
 }
 
-const CHANGE_WATER = 'changer l’eau (Réglages, Eau)';
+const CHANGE_WATER = 'changer l’eau (Réglages, Eau et matériel)';
 
 /** Conseil pour l'ammoniaque et les nitrites : l'amorce si le filtre est jeune, l'eau sinon. */
 function filterAdvice(state: PharmacyState): Pick<PharmacyAdvice, 'product' | 'text'> {

@@ -8,8 +8,16 @@ import {
   SPECIES_BEHAVIOR_TEXT,
   speciesSheet,
   statusText,
+  type SheetRow,
 } from './species-sheet';
-import { matchesWikiSearch, searchKey, wikiCare, wikiLists, wikiSheet } from './species-wiki';
+import {
+  cartelLine,
+  matchesWikiSearch,
+  searchKey,
+  wikiCare,
+  wikiLists,
+  wikiSheet,
+} from './species-wiki';
 
 const IDS = Object.keys(SPECIES) as SpeciesId[];
 
@@ -195,6 +203,44 @@ describe('wiki des espèces : modèle de vue d’une fiche (#287)', () => {
     const status = speciesSheet('triton').adultSize.status;
     expect(status.kind).toBe('source');
     expect(triton?.status).toBe(statusText(status));
+  });
+});
+
+describe('wiki des espèces : cartel de la fiche (#724)', () => {
+  /** Lignes minimales d'une fiche, valeurs choisies par le test. */
+  const rows = (group: string): SheetRow[] =>
+    (
+      [
+        ['adultSize', '4 cm'],
+        ['temperaturePreferred', '22 – 26 °C'],
+        ['phPreferred', '6 – 7,5'],
+        ['minGroup', group],
+        ['minLiters', '60 L'],
+      ] as const
+    ).map(([field, value]) => ({ field, value, label: field, status: '' }));
+
+  it('taille, eau, groupe et volume avec leurs unités, sans point d’exclamation', () => {
+    expect(cartelLine(rows('6 individus'))).toBe(
+      'Adulte : 4 cm. Eau à 22 – 26 °C, pH 6 – 7,5. En groupe de 6 individus au moins, 60 L conseillés.',
+    );
+  });
+
+  it('espèce qui peut vivre seule : pas de groupe minimal écrit', () => {
+    expect(cartelLine(rows('peut vivre seul'))).toBe(
+      'Adulte : 4 cm. Eau à 22 – 26 °C, pH 6 – 7,5. Peut vivre seul, 60 L conseillés.',
+    );
+  });
+
+  it('ligne manquante : erreur qui la nomme', () => {
+    expect(() => cartelLine([])).toThrow(/adultSize/);
+  });
+
+  it.each(IDS)('%s : cartel tiré des lignes de la fiche', (id) => {
+    const view = wikiSheet(id);
+    expect(view.cartel).toBe(cartelLine(view.rows));
+    const size = view.rows.find((row) => row.field === 'adultSize')!.value;
+    expect(view.cartel).toContain(size);
+    expect(view.cartel).not.toMatch(/[!▸▾]/);
   });
 });
 

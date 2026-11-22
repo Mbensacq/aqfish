@@ -205,7 +205,7 @@ export function formatKitValue(kit: WaterKit, value: KitValue): string {
   return `${prefix}${number}${suffix}`;
 }
 
-const WATER_CHANGE = 'changer une partie de l’eau (Réglages, Eau)';
+const WATER_CHANGE = 'changer une partie de l’eau (Réglages, Eau et matériel)';
 
 function compoundAdvice(
   value: KitValue,

@@ -59,6 +59,19 @@ describe('FirstTankPath (#512)', () => {
     expect(store.read(FIRST_TANK_PATH_STORAGE_KEY)).toBe('replie');
   });
 
+  it('chevron dessiné en pixels, retourné déplié ; aucune flèche de texte (#724)', () => {
+    const { q, root, render } = setup();
+    const chevron = () => q('[data-first-tank-toggle] .path__chevron');
+    expect(chevron()?.querySelectorAll('rect').length).toBeGreaterThan(0);
+    expect(chevron()?.getAttribute('aria-hidden')).toBe('true');
+    expect(chevron()?.classList.contains('path__chevron--open')).toBe(false);
+    expect(root.textContent).not.toMatch(/[▸▾]/);
+    q('[data-first-tank-toggle]')?.click();
+    render();
+    expect(chevron()?.classList.contains('path__chevron--open')).toBe(true);
+    expect(root.textContent).not.toMatch(/[▸▾!]/);
+  });
+
   it('relit la préférence ; une valeur inconnue vaut « replié »', () => {
     expect(setup('ouvert').q('[data-first-tank-body]')).not.toBeNull();
     TestBed.resetTestingModule();

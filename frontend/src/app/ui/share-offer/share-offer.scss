@@ -63,8 +63,15 @@
     background: layout.$panel-raised;
   }
 
-  &:focus-visible {
-    outline: 2px solid var(--dashboard-ink);
-    outline-offset: 2px;
+  // Action principale (charte) : pleine en laiton, seule de la zone ; l'autre reste à filet.
+  // Le focus est l'anneau laiton commun (`src/styles.scss`).
+  &--primary {
+    border-color: layout.$brass;
+    background: layout.$brass;
+    color: layout.$on-brass;
+
+    &:hover {
+      background: layout.$brass;
+    }
   }
 }

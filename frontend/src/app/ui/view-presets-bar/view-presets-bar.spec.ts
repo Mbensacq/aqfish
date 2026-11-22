@@ -16,6 +16,7 @@ import {
   VIEW_PRESET_BUTTONS,
   ViewPresetsBar,
 } from './view-presets-bar';
+import { TOOLBAR_ICON_PIXELS } from './toolbar-icons';
 
 describe('ViewPresetsBar', () => {
   let fixture: ComponentFixture<ViewPresetsBar>;
@@ -515,6 +516,24 @@ describe('ViewPresetsBar', () => {
     fixture.destroy();
     press('1');
     expect(emitted).toEqual([]);
+  });
+
+  it('icônes pixel sur la grille de 12 pour nourrir, raclette, sécateur et photo (#724)', () => {
+    const root = fixture.nativeElement as HTMLElement;
+    const iconOf = (selector: string) => root.querySelector(`${selector} [data-pixel-icon]`);
+    for (const [selector, icon] of [
+      ['[data-action="nourrir"]', 'nourrir'],
+      ['[data-scraper]', 'raclette'],
+      ['[data-pruner]', 'secateur'],
+      ['[data-action="photo"]', 'photo'],
+    ] as const) {
+      const element = iconOf(selector);
+      expect(element?.getAttribute('aria-hidden'), selector).toBe('true');
+      expect(element?.querySelector('svg')?.getAttribute('viewBox')).toBe('0 0 12 12');
+      expect(element?.querySelectorAll('rect').length).toBe(TOOLBAR_ICON_PIXELS[icon].length);
+    }
+    // Les vues gardent leur libellé et leur touche, sans icône.
+    expect(root.querySelectorAll('[role="toolbar"] [data-pixel-icon]').length).toBe(0);
   });
 });
 

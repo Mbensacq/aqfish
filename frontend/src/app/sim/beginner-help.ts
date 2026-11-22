@@ -205,7 +205,7 @@ export const GUIDE_STEPS: readonly GuideStep[] = [
     id: 'installer',
     title: 'Installer le bac',
     text: 'Choisir un milieu (bac tropical, bassin, paludarium, récif) et régler le chauffage à la température de ce milieu.',
-    inGame: 'Réglages : Environnement, puis Eau pour le chauffage.',
+    inGame: 'Réglages : Bac et milieu, puis Eau et matériel pour le chauffage.',
     topic: 'temperature',
     status: SIMPLIFICATION,
   },
@@ -238,7 +238,7 @@ export const GUIDE_STEPS: readonly GuideStep[] = [
     title: 'Entretenir',
     text: 'Changer une partie de l’eau quand les nitrates montent, jamais toute l’eau d’un coup, et lire les alertes : chacune dit quoi faire.',
     inGame:
-      'Réglages : Eau, « Changer l’eau » ; alertes au-dessus de la barre des vues. La lampe s’y règle aussi : 8 à 10 h par jour (approximation de jeu) ; au-delà, les algues poussent, en deçà, les plantes ralentissent.',
+      'Réglages : Eau et matériel, « Changer l’eau » ; alertes au-dessus de la barre des vues. La lampe s’y règle aussi : 8 à 10 h par jour (approximation de jeu) ; au-delà, les algues poussent, en deçà, les plantes ralentissent.',
     topic: 'azote',
     status: source(`${SOINS} § 14 (UF/IFAS)`),
   },

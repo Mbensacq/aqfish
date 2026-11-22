@@ -32,7 +32,11 @@ export function shareOfferText(offer: Extract<ShareOfferData, { kind: 'offre' }>
         >
           <p id="share-offer-text" class="share-offer__text">{{ text() }}</p>
           <div class="share-offer__buttons">
-            <button type="button" class="share-offer__button" (click)="accepted.emit()">
+            <button
+              type="button"
+              class="share-offer__button share-offer__button--primary"
+              (click)="accepted.emit()"
+            >
               Importer cet aquarium
             </button>
             <button type="button" class="share-offer__button" (click)="dismissed.emit()">

@@ -5,7 +5,8 @@ import { expect, test } from '@playwright/test';
 
 import { SIM_DT } from '../src/app/sim/constants';
 import { createDayClock } from '../src/app/sim/daylight';
-import { serializeWorld } from '../src/app/sim/save';
+import { DEFAULT_SAVE_SETTINGS, serializeWorld } from '../src/app/sim/save';
+import { createShare } from '../src/app/sim/share-link';
 import { SPECIES } from '../src/app/sim/species';
 import { swimBounds } from '../src/app/sim/swimmer';
 import { waterVolume } from '../src/app/sim/tank';
@@ -763,6 +764,74 @@ test.describe('Captures', () => {
       await expect(page.locator('[data-wiki-sheet="neon"]')).toBeVisible();
       await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-tick', '0');
       // Souris hors des panneaux : opacité de repos des boutons.
+      await page.mouse.move(shot.width / 2, shot.height / 2);
+      await page.screenshot({ path: join(OUTPUT_DIR, `${shot.name}.png`), animations: 'disabled' });
+      expect(errors).toEqual([]);
+    });
+  }
+
+  // Guide du débutant et parcours du premier bac (#724, charte) : guide ouvert depuis le wiki,
+  // une explication dépliée (chevron dessiné) ; puis le parcours déplié, guide refermé. De jour
+  // (midi) et de nuit (minuit), bureau et téléphone ; simulation à l'arrêt dès t = 0.
+  for (const shot of [
+    { name: 'three-quarter', width: 1280, height: 720, heure: 12 },
+    { name: 'three-quarter-minuit', width: 1280, height: 720, heure: 0 },
+    { name: 'telephone', width: 390, height: 844, heure: 12 },
+  ]) {
+    test(`guide et parcours : ${shot.name}`, async ({ page }) => {
+      const errors: string[] = [];
+      page.on('pageerror', (error) => errors.push(error.message));
+      await page.setViewportSize({ width: shot.width, height: shot.height });
+      await page.goto(`/?seed=${SEED}&camera=three-quarter&heure=${shot.heure}&vitesse=0`);
+      await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+      await page.getByRole('button', { name: 'Wiki des espèces' }).click();
+      await page.getByRole('button', { name: 'Guide du débutant' }).click();
+      const guide = page.getByRole('dialog', { name: 'Guide du débutant' });
+      await guide.locator('[data-why-toggle="nourriture"]').click();
+      await expect(guide.locator('[data-why-text]')).toBeVisible();
+      await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-tick', '0');
+      await page.screenshot({
+        path: join(OUTPUT_DIR, `${shot.name}-guide.png`),
+        animations: 'disabled',
+      });
+      await page.keyboard.press('Escape');
+      await expect(guide).toHaveCount(0);
+      await page.keyboard.press('Escape');
+      const toggle = page.locator('[data-first-tank-toggle]');
+      if ((await toggle.getAttribute('aria-expanded')) !== 'true') {
+        await toggle.click();
+      }
+      await expect(page.locator('[data-first-tank-body]')).toBeVisible();
+      await page.mouse.move(shot.width / 2, shot.height / 2);
+      await page.screenshot({
+        path: join(OUTPUT_DIR, `${shot.name}-parcours.png`),
+        animations: 'disabled',
+      });
+      expect(errors).toEqual([]);
+    });
+  }
+
+  // Offre de partage (#426, charte #724) : lien d'un bassin collé dans l'onglet, offre
+  // affichée ; bureau et téléphone, simulation à l'arrêt dès t = 0.
+  for (const shot of [
+    { name: 'three-quarter-partage', width: 1280, height: 720 },
+    { name: 'telephone-partage', width: 390, height: 844 },
+  ]) {
+    test(`offre de partage : ${shot.name}`, async ({ page }) => {
+      const errors: string[] = [];
+      page.on('pageerror', (error) => errors.push(error.message));
+      await page.setViewportSize({ width: shot.width, height: shot.height });
+      await page.goto(`/?seed=${SEED}&camera=three-quarter&heure=12&vitesse=0`);
+      await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+      const outcome = await createShare(
+        'http://x/',
+        createDefaultWorld(5, 'bassin'),
+        DEFAULT_SAVE_SETTINGS,
+      );
+      expect(outcome.kind).toBe('lien');
+      const fragment = outcome.kind === 'lien' ? outcome.url.split('#')[1]! : '';
+      await page.evaluate((hash) => (window.location.hash = hash), fragment);
+      await expect(page.locator('[data-share-offer]')).toContainText('Bassin');
       await page.mouse.move(shot.width / 2, shot.height / 2);
       await page.screenshot({ path: join(OUTPUT_DIR, `${shot.name}.png`), animations: 'disabled' });
       expect(errors).toEqual([]);

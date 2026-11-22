@@ -38,6 +38,11 @@ export interface WikiSheet {
   readonly species: SpeciesId;
   readonly name: string;
   readonly scientificName: string;
+  /**
+   * Ligne du cartel (#724, `docs/INTERFACE.md`) : taille adulte, eau préférée, groupe et volume,
+   * avec leurs unités, tirés des lignes de la fiche (même sourçage, détaillé plus bas).
+   */
+  readonly cartel: string;
   /** Lignes de la fiche (`sheetRows`), chacune avec le texte de son statut de sourçage. */
   readonly rows: readonly SheetRow[];
   /** Fiche complète (#484) : dureté, durée de vie, seuils azotés du jeu (`detailRows`). */
@@ -128,11 +133,13 @@ export function wikiLists(
 /** Modèle de vue de la fiche de `id` : lignes et mises en garde de `sim/species-sheet.ts`. */
 export function wikiSheet(id: SpeciesId): WikiSheet {
   const { name, scientificName } = SPECIES[id];
+  const rows = sheetRows(id);
   return Object.freeze({
     species: id,
     name,
     scientificName,
-    rows: sheetRows(id),
+    cartel: cartelLine(rows),
+    rows,
     details: detailRows(id),
     notes: sheetNotes(id),
   });
@@ -191,4 +198,30 @@ export function wikiCare(id: SpeciesId): WikiCare {
       status: COHABITATION_STATUS,
     }),
   });
+}
+
+/** Valeur de « Groupe minimal » pour une espèce qui peut vivre seule (`sim/species-sheet.ts`). */
+const SOLITARY_GROUP = 'peut vivre seul';
+
+/** Valeur affichée de la ligne `field` d'une fiche. @throws RangeError si elle manque. */
+function rowValue(rows: readonly SheetRow[], field: SheetRow['field']): string {
+  const row = rows.find((candidate) => candidate.field === field);
+  if (row === undefined) {
+    throw new RangeError(`Fiche sans ligne « ${field} »`);
+  }
+  return row.value;
+}
+
+/**
+ * Ligne du cartel d'une fiche, écrite comme sous un bac de musée : « Adulte : 4 cm. Eau à
+ * 22 – 26 °C, pH 6 – 7,5. En groupe de 6 individus au moins, 60 L conseillés. » Les valeurs
+ * sont celles des lignes de la fiche, sans arrondi ni texte ajouté.
+ * @throws RangeError si une ligne attendue manque.
+ */
+export function cartelLine(rows: readonly SheetRow[]): string {
+  const size = rowValue(rows, 'adultSize');
+  const water = `Eau à ${rowValue(rows, 'temperaturePreferred')}, pH ${rowValue(rows, 'phPreferred')}`;
+  const group = rowValue(rows, 'minGroup');
+  const living = group === SOLITARY_GROUP ? 'Peut vivre seul' : `En groupe de ${group} au moins`;
+  return `Adulte : ${size}. ${water}. ${living}, ${rowValue(rows, 'minLiters')} conseillés.`;
 }

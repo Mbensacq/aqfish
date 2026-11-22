@@ -83,10 +83,13 @@ export function wikiAddCount(
             [attr.aria-labelledby]="'wiki-fiche-' + view.species"
             [attr.data-wiki-sheet]="view.species"
           >
+            <!-- Cartel (#724, docs/INTERFACE.md) : nom courant en gras, nom scientifique en
+                 italique, une ligne utile avec ses unités. -->
             <h3 class="species-wiki__name" [id]="'wiki-fiche-' + view.species">
               {{ view.name }}
               <span class="species-wiki__latin">{{ view.scientificName }}</span>
             </h3>
+            <p class="species-wiki__cartel" data-wiki-cartel>{{ view.cartel }}</p>
             @for (item of view.notes; track item.text) {
               <p class="species-wiki__warning" data-wiki-note>
                 {{ item.text }}

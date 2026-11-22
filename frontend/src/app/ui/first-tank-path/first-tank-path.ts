@@ -3,6 +3,8 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, output } f
 import type { GuidePage } from '../../sim/care-guide';
 import type { FirstTankLink, FirstTankPathView } from '../../sim/first-tank-path';
 import { BeginnerGuideState } from '../beginner-guide/beginner-guide-state';
+import { CHEVRON_ICON_PIXELS, LEVEL_ICON_GRID } from '../dashboard-frame/level-icons';
+import { PixelIcon } from '../pixel-icon/pixel-icon';
 import { FirstTankPathPrefs } from './first-tank-path-prefs';
 
 /**
@@ -28,7 +30,12 @@ import { FirstTankPathPrefs } from './first-tank-path-prefs';
         [attr.aria-expanded]="expanded()"
         (click)="toggle()"
       >
-        <span aria-hidden="true">{{ expanded() ? '▾' : '▸' }}</span>
+        <app-pixel-icon
+          class="path__chevron"
+          [class.path__chevron--open]="expanded()"
+          [pixels]="chevron"
+          [grid]="chevronGrid"
+        />
         Mon premier aquarium
         <span class="path__count">{{ path.doneCount }}/{{ path.total }}</span>
       </button>
@@ -49,7 +56,8 @@ import { FirstTankPathPrefs } from './first-tank-path-prefs';
           } @else {
             <h2 class="path__title">Parcours terminé</h2>
             <p>
-              Bravo : votre bac tourne, et vous savez l’entretenir. Le calendrier prend le relais.
+              Votre bac tourne et vous savez l’entretenir. Le calendrier d’entretien prend le
+              relais.
             </p>
           }
           <button type="button" class="path__hide" data-first-tank-hide (click)="hide()">
@@ -59,10 +67,15 @@ import { FirstTankPathPrefs } from './first-tank-path-prefs';
       }
     </aside>
   }`,
+  imports: [PixelIcon],
   styleUrl: './first-tank-path.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FirstTankPath {
+  /** Chevron dessiné (#724), à la place des flèches de texte ▸ ▾. */
+  protected readonly chevron = CHEVRON_ICON_PIXELS;
+  protected readonly chevronGrid = LEVEL_ICON_GRID;
+
   private readonly prefs = inject(FirstTankPathPrefs);
   private readonly guide = inject(BeginnerGuideState);
 
