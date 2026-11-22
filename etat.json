@@ -9993,6 +9993,12 @@
           "debut": "2026-11-22T04:18:14.686Z",
           "fin": "2026-11-22T05:24:21.264Z",
           "note": "PR #774 : masquer l'interface (I, Échap, appui long) à la place du mode immersif, tranche 1 (partie sim/ en tranche 2), Closes #725, CI verte"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-22T05:24:53.725Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
