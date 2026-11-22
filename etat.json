@@ -10025,10 +10025,10 @@
           "note": "Issue #776 : retirer la partie sim/ du mode immersif, lot de dette >30 (+ #775 optionnelle) (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-22T07:19:35.238Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-22T08:56:46.676Z",
+          "note": "PR #777 : retrait de la partie sim/ du mode immersif + indication tactile, Closes #776 #775, CI verte, captures 178/178 identiques"
         }
       },
       "metriques": {}
