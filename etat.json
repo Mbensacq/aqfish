@@ -9953,10 +9953,10 @@
           "note": "Issue #724 : Interface 4/5 tranche 2, reste de l'habillage et textes (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-22T01:40:18.140Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-22T03:29:23.929Z",
+          "note": "PR #771 : #724 tranche 2 (icônes grille 12, cartel du wiki, chevrons, textes, recherche finale en test), Closes #724, CI verte"
         }
       },
       "metriques": {}
