@@ -440,7 +440,7 @@ lue. Rien n'est relevé ni présenté comme confirmé.
 | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Lignes « Autres Anoures » (_Bombina orientalis_) et « Autres Caudata » (_Cynops orientalis_) de l'annexe 2 | Légifrance, version consolidée de l'arrêté du 8 octobre 2018 | **Toujours non vérifiable** : Légifrance n'a pas été lisible. Copie préfectorale du texte initial lue (préfecture de Maine-et-Loire, PDF « arrete_du_8_octobre_2018… », [61]) : son article 14 fixe bien le seuil d'autorisation des amphibiens adultes au-delà de **40** animaux, cohérent avec « 1 à 40 sans formalité » ; l'extraction du PDF s'arrête dans l'annexe 2 avant les amphibiens, les deux lignes n'ont donc pas été lues. Texte initial seulement, pas la version consolidée (arrêté modificatif du 5 septembre 2025 non repris). Confiances inchangées dans `sim/species-legal.ts` |
 
-## Données d'écologie (#784, eau douce tropicale)
+## Données d'écologie (#784 eau douce tropicale, #785 mer et eau froide)
 
 Première tranche de #727 (`docs/ECOSYSTEME.md` § 3.1), dans `sim/species-ecology.ts`, exposée
 par la fiche (`ecology`) mais **pas encore utilisée** par la simulation. Taille, volume minimal,
@@ -458,6 +458,21 @@ groupe, températures, pH et dureté conseillée restent ceux de la fiche ; s'aj
 
 La crevette nettoyeuse (récif) est rangée dans cette tranche par l'issue : classe « récif » et
 dureté tolérée (KH) en approximation.
+
+### Mer et eau froide (#785)
+
+Deuxième tranche, mêmes champs. En mer, la dureté tolérée est une KH (alcalinité) élargie
+autour de celle du récif de la fiche (KH 7–11).
+
+| Donnée                           | Sourcé                                                                                                                                         | Approximation de jeu                                                                                                       |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Classe de densité                | Poisson rouge : eau froide, 4 L par cm (RSPCA)                                                                                                 | Koï : eau froide (la règle de la RSPCA vise le poisson rouge) ; les six poissons de mer : récif (2 à 3 L/cm, à sourcer)    |
+| Volume par adulte supplémentaire | Poisson rouge : 100 L pour le premier adulte, puis 50 L par adulte (OATA) ; **désaccord** RSPCA, au moins 60 L chacun : le jeu garde l'OATA | Koï : aucun (bassin de 800 L de la fiche, non vérifié, point 3) ; mer : aucun, la classe de densité s'applique              |
+| Dureté tolérée                   | —                                                                                                                                              | Toutes : plage conseillée élargie (KH 6–12 en mer, GH 4–22 pour le poisson rouge, GH 4–25 pour la koï)                     |
+| Régime détaillé                  | Chromis (Wikipédia, secondaire) ; gramma (Wikipédia, secondaire) ; blennie (FishBase, niveau trophique 2,0) ; poisson rouge (FishKeeper)       | Clown, chirurgien, gobie, koï ; granulés du chromis et de la blennie                                                       |
+| Proies                           | Poisson rouge : crevettes cerises adultes (Practical Fishkeeping)                                                                              | Les autres : aucune parmi les espèces du jeu                                                                               |
+| Prédateurs                       | —                                                                                                                                              | Aucun connu parmi les espèces du jeu (les prédateurs du chromis, « grands poissons », n'y sont pas)                        |
+| Comportement                     | Gramma territorial (Wikipédia, secondaire)                                                                                                     | Clown, chirurgien, blennie territoriaux ; chirurgien et chromis nageurs rapides ; aucun mangeur de nageoires dans la tranche |
 
 ## Non vérifié et désaccords
 
@@ -484,6 +499,11 @@ dureté tolérée (KH) en approximation.
     le gourami nain mange les jeunes crevettes est une **approximation de jeu**.
 14. Dureté du guppy : 8–30 °dGH (Seriously Fish) / dH 9–19 (FishBase) ; la fiche garde
     Seriously Fish.
+15. Poisson rouge, volume (#785) : 100 L puis 50 L par adulte supplémentaire (OATA) / au moins
+    60 L chacun (RSPCA) ; le jeu garde l'OATA, plus stricte, et l'écrit dans la référence de la
+    fiche (`ecology.extraLitersPerAdult`).
+16. Koï, volume du bassin (#785) : aucune source consultable pendant le cycle (accès réseau des
+    agents limité aux registres de paquets) ; 800 L restent une **approximation de jeu**.
 
 ## Bibliographie
 
