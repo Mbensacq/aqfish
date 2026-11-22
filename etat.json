@@ -9943,7 +9943,7 @@
       "debut": "2026-11-22T01:39:21.053Z",
       "type": "fonctionnalite",
       "issue": 724,
-      "pr": null,
+      "pr": 771,
       "version": null,
       "phases": {
         "planif": {
