@@ -38,6 +38,7 @@ export type KeyCommandId =
   | 'camera-libre'
   | 'pixel-art'
   | 'pluie'
+  | 'masquer-interface'
   | 'horloge'
   | 'plein-jour'
   | 'nuit'
@@ -94,6 +95,14 @@ export const KEY_COMMANDS: readonly KeyCommand[] = [
     key: 'r',
     display: 'R',
     description: 'Pluie dans le bassin : marche ou arrêt',
+    group: 'affichage',
+  },
+  {
+    id: 'masquer-interface',
+    key: 'i',
+    display: 'I',
+    // « Masquer l'interface » (#725) : Échap ou un appui long la font aussi revenir.
+    description: 'Masquer ou réafficher l’interface',
     group: 'affichage',
   },
   {
@@ -177,7 +186,9 @@ export const ORBIT_TOUCHES: Readonly<{ one: 'rotate' | 'pan'; two: 'dolly-pan' |
 
 const ORBIT_ACTION_DESCRIPTIONS: Readonly<Record<OrbitAction, string>> = {
   rotate: 'Tourner autour du bac',
-  dolly: 'Rapprocher ou éloigner la vue',
+  // Sans « la vue » (#725) : une seule ligne dans l'aide-mémoire, qui accueille la touche `I`
+  // sans défiler à 1280 × 720 (`e2e/cadrage-panneaux-commandes.spec.ts`).
+  dolly: 'Rapprocher ou éloigner',
   pan: 'Déplacer la vue',
 };
 

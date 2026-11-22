@@ -23,8 +23,8 @@ export function speedAt(index: string | number): SimSpeed | null {
 }
 
 /**
- * Section « Simulation » du panneau « Réglages » (#52 ; sortie du panneau au #697) : « Mode
- * immersif » sur la ligne du titre (#345), puis le curseur de vitesse.
+ * Section « Simulation » du panneau « Réglages » (#52 ; sortie du panneau au #697) : le
+ * curseur de vitesse (le bouton « Mode immersif » est retiré au #725).
  *
  * L'hôte est le `fieldset` de la section, posé par le panneau (ADR 0161).
  */
@@ -35,18 +35,8 @@ export function speedAt(index: string | number): SimSpeed | null {
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './simulation-section.scss',
   template: `
-    <!-- Mode immersif (#345) : sur la ligne du titre, le panneau ne grandit pas (#101). -->
-    <legend class="control-panel__legend control-panel__legend--row">
+    <legend class="control-panel__legend">
       <span id="panneau-simulation-titre">Simulation</span>
-      <button
-        type="button"
-        class="control-panel__edit"
-        appSetting="Mode immersif"
-        data-immersive-open
-        (click)="immersiveRequested.emit()"
-      >
-        Mode immersif
-      </button>
     </legend>
     <label class="control-panel__field" for="panneau-vitesse" appSetting="Vitesse de la simulation">
       <span class="control-panel__label">
@@ -73,8 +63,6 @@ export class SimulationSection {
 
   /** Vitesse choisie au curseur. */
   readonly speedChanged = output<SimSpeed>();
-  /** « Mode immersif » (#345). */
-  readonly immersiveRequested = output<void>();
 
   protected readonly speeds = SIM_SPEEDS;
   protected readonly speedIndex = computed(() => speedIndex(this.speed()));

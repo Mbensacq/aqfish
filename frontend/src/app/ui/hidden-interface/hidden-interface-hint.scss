@@ -1,0 +1,40 @@
+// Indication « I ou Échap pour revenir » (#725) : petit panneau plein de la charte (#724), en
+// haut au centre, qui ne capte pas le pointeur (le bac reste manipulable dessous).
+
+@use '../panel-layout' as layout;
+
+:host {
+  position: fixed;
+  top: layout.$space-4;
+  left: 50%;
+  z-index: 3;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.hidden-interface-hint {
+  margin: 0;
+  padding: layout.$space-2 layout.$space-3;
+  border-radius: layout.$radius-window;
+  background: layout.$panel-background;
+  color: layout.$panel-ink;
+  font-size: 14px;
+  white-space: nowrap;
+  // Fondu sur la dernière seconde des 3 s (`HINT_DURATION_MS`).
+  animation: hidden-interface-hint-fade 3s linear forwards;
+}
+
+.hidden-interface-hint--still {
+  animation: none;
+}
+
+@keyframes hidden-interface-hint-fade {
+  0%,
+  66% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}

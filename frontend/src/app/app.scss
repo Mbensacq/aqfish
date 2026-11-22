@@ -9,3 +9,10 @@
   white-space: nowrap;
   border: 0;
 }
+
+// « Masquer l'interface » (#725, ADR 0166) : tout disparaît sauf le bac et l'indication
+// « I ou Échap pour revenir ». Les composants restent créés (leur état est gardé) et leurs
+// raccourcis clavier marchent toujours (vues 1 à 5, caméra libre).
+:host(.app--ui-hidden) > :not(app-aquarium-host, app-hidden-interface-hint) {
+  display: none !important;
+}

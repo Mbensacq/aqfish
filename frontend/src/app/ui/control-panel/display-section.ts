@@ -1,17 +1,19 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 
 import { DEFAULT_ENVIRONMENT_ID, environmentById, type EnvironmentId } from '../../sim/environment';
-import { SectionLegend } from '../settings-window/settings-search-filter';
+import { HiddenInterfaceState } from '../hidden-interface/hidden-interface-state';
+import { SectionLegend, SettingMark } from '../settings-window/settings-search-filter';
 
 /**
  * Section « Affichage » du panneau « Réglages » (#762, catégorie « Affichage » de la fenêtre,
  * `docs/INTERFACE.md` section 2) : la pluie sur le bassin (#106), sortie de la section
- * « Journée ». Ailleurs qu'au bassin, une note dit qu'il n'y pleut pas.
+ * « Journée ». Ailleurs qu'au bassin, une note dit qu'il n'y pleut pas. Puis « Masquer
+ * l'interface » (#725, à la place du mode immersif) : tout disparaît sauf le bac.
  *
  * L'hôte est le `fieldset` de la section, posé par le panneau (ADR 0161).
  */
 @Component({
-  imports: [SectionLegend],
+  imports: [SectionLegend, SettingMark],
   // Sélecteur d'attribut : le `fieldset` reste l'enfant direct du panneau (ADR 0161).
   selector: 'fieldset[app-display-section]',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -26,6 +28,14 @@ import { SectionLegend } from '../settings-window/settings-search-filter';
     } @else {
       <p class="control-panel__note" data-rain-note>Il ne pleut que sur le bassin.</p>
     }
+    <label class="control-panel__check" appSetting="Masquer l’interface" data-hide-interface>
+      <input
+        type="checkbox"
+        [checked]="hiddenInterface.hidden()"
+        (change)="onHideInterface($event)"
+      />
+      Masquer l’interface
+    </label>
   `,
 })
 export class DisplaySection {
@@ -39,6 +49,13 @@ export class DisplaySection {
 
   /** Case « Pluie » proposée seulement là où il peut pleuvoir (le bassin, #106). */
   protected readonly rainAvailable = computed(() => environmentById(this.environment()).rain);
+
+  /** « Masquer l'interface » (#725), état partagé avec la racine et la touche `I`. */
+  protected readonly hiddenInterface = inject(HiddenInterfaceState);
+
+  protected onHideInterface(event: Event): void {
+    this.hiddenInterface.setHidden((event.target as HTMLInputElement).checked);
+  }
 
   protected onRain(event: Event): void {
     this.rainChanged.emit((event.target as HTMLInputElement).checked);

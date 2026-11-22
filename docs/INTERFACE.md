@@ -272,7 +272,13 @@ découpé par section), qui fournit les sections réutilisées par la fenêtre :
    guide et parcours (jour, nuit, téléphone), offre de partage (bureau, téléphone).
    Restent volontairement : les flèches de tendance ↑ → ↓ du tableau de bord et ▲ ▼ du pavé de
    la caméra libre (information et gestes, pas décoration).
-5. #725 — Masquer l'interface à la place du mode immersif.
+5. #725 — Masquer l'interface à la place du mode immersif. Tranche 1 (cycle 275, ADR 0166) :
+   interrupteur « Masquer l'interface » dans « Affichage », touche `I`, retour par `I`, Échap
+   ou un appui long immobile (600 ms, à la souris aussi), indication 3 s en haut au centre
+   (petit panneau plein de la charte), curseur caché après 2 s d'immobilité ; interface et
+   noyau du mode immersif retirés (`ui/immersive-mode`, `core/immersive`, caméra immersive,
+   bouton de « Simulation »). Tranche 2 : la partie `sim/` (`immersive-tank.ts`,
+   `glass-tap.ts`, lieu `immersive: true`).
 
 Pour chaque lot : tests unitaires et e2e mis à jour pour les nouveaux emplacements (jamais
 affaiblis), contrastes vérifiés, captures regardées, `docs/DA.md` à jour. Les captures du bac

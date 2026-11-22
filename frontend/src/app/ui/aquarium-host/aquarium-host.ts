@@ -172,7 +172,7 @@ export class AquariumHost {
   private readonly rendererFactory = inject(AQUARIUM_RENDERER_FACTORY);
   private readonly saveStorage = inject(SAVE_STORAGE);
   private readonly physicsLoader = inject(DECOR_PHYSICS_LOADER);
-  /** Option « Réduire les mouvements » (#406), partagée avec les réglages et le mode immersif. */
+  /** Option « Réduire les mouvements » (#406), partagée avec les réglages. */
   private readonly motionState = inject(ReducedMotionState);
   /** Sons d'ambiance (#411) : l'hôte fournit la scène, le service décide du reste. */
   private readonly ambientSound = inject(AmbientSoundState);
@@ -1436,20 +1436,6 @@ export class AquariumHost {
         : null;
       untracked(() => this.ambientSound.setScene(scene));
     });
-  }
-
-  /**
-   * Suspend le rendu et la simulation du bac affiché pendant le mode immersif (#345, ADR 0086),
-   * qui a sa propre vue : plus aucune image demandée. À la reprise, la boucle repart sans
-   * rattraper le temps passé (le bac était en pause).
-   */
-  setRenderingSuspended(suspended: boolean): void {
-    this.loop.setSuspended(suspended);
-  }
-
-  /** Vrai pendant le mode immersif (rendu suspendu). */
-  get renderingSuspended(): boolean {
-    return this.loop.suspended;
   }
 
   /** Crée la vue du monde courant sur `preset` (#696) : `ViewBuilder.build`. */

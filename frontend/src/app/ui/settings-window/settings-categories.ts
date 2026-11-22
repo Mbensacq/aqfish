@@ -282,9 +282,6 @@ export const SETTINGS_CATEGORIES: readonly SettingsCategory[] = [
         'accélérer',
         'ralentir',
       ]),
-      setting('Mode immersif', 'simulation', 'La vue suit le regard, à la façon d’une fenêtre.', [
-        'immersion',
-      ]),
       setting('Heure', 'journee', 'L’heure de la journée dans le bac.', [
         'lumière',
         'jour',
@@ -302,9 +299,17 @@ export const SETTINGS_CATEGORIES: readonly SettingsCategory[] = [
     id: 'affichage',
     group: 'Préférences',
     title: 'Affichage',
-    explanation: 'Ce que l’on voit autour des animaux : la pluie sur le bassin.',
+    explanation: 'Ce que l’on voit autour des animaux : la pluie, et l’interface à masquer.',
     sections: ['affichage'],
-    controls: [setting('Pluie', 'affichage', 'La pluie sur le bassin.', ['météo', 'averse'])],
+    controls: [
+      setting('Pluie', 'affichage', 'La pluie sur le bassin.', ['météo', 'averse']),
+      setting(
+        'Masquer l’interface',
+        'affichage',
+        'Tout disparaît sauf le bac ; I ou Échap pour revenir.',
+        ['immersif', 'immersion', 'plein écran', 'cacher'],
+      ),
+    ],
   },
   {
     id: 'son',

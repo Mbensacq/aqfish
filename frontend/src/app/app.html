@@ -6,6 +6,8 @@
   <app-commands-help #help (opened)="onHelpOpened()" />
   <!-- Guide du débutant (#240) : dialogue modal, ouvert une fois à la première visite. -->
   <app-beginner-guide />
+  <!-- « Masquer l'interface » (#725) : seule indication visible, 3 s au masquage. -->
+  <app-hidden-interface-hint />
 }
 <!-- Three.js est chargé à part pour garder le bundle initial sous le budget (angular.json). -->
 @defer (on immediate) {
@@ -156,7 +158,6 @@
       (shareRequested)="aquarium.shareTank()"
       (importRequested)="aquarium.importSave($event)"
       (importRejected)="aquarium.rejectImport($event)"
-      (immersiveRequested)="onImmersiveRequested()"
     />
     <!-- Séance d'entretien guidée (#604) : carte non modale, le bac reste manipulable. -->
     <app-care-session
@@ -183,10 +184,6 @@
       (accepted)="aquarium.acceptShare()"
       (dismissed)="aquarium.dismissShare()"
     />
-    <!-- Mode immersif (#345) : plein cadre au-dessus de tout, l'écran devient la vitre. -->
-    @if (immersive()) {
-      <app-immersive-mode (closed)="onImmersiveClosed()" />
-    }
     <!-- Wiki des espèces (#287) : bouton discret en bas à droite, panneau exclusif avec les autres. -->
     <app-species-wiki
       #wiki

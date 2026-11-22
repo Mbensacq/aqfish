@@ -6,7 +6,7 @@
     "max-params": 6
   },
   "render/aquarium-view.ts": {
-    "max-lines": 653
+    "max-lines": 639
   },
   "render/coral-model.ts": {
     "max-params": 6
@@ -164,13 +164,10 @@
     "max-params": 6
   },
   "ui/aquarium-host/aquarium-host.ts": {
-    "max-lines": 969
+    "max-lines": 963
   },
   "ui/decor-editor/decor-editor.ts": {
     "complexity": 17,
     "max-params": 6
-  },
-  "ui/immersive-mode/immersive-mode.ts": {
-    "max-lines": 722
   }
 }

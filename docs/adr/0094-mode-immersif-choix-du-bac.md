@@ -1,6 +1,6 @@
 # 0094 — Mode immersif : choix du bac
 
-- Statut : acceptée
+- Statut : remplacée par 0166 (mode immersif retiré, #725)
 - Date : 2026-11-02
 - Auteur : Dev, cycle 128, issue #375
 

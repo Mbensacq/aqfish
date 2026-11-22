@@ -28,6 +28,7 @@ describe('commandes (#74)', () => {
       ['camera-libre', 'l'],
       ['pixel-art', 'p'],
       ['pluie', 'r'],
+      ['masquer-interface', 'i'],
       ['horloge', 'h'],
       ['plein-jour', 'j'],
       ['nuit', 'n'],
@@ -103,7 +104,7 @@ describe('commandes (#74)', () => {
       expect(byId.get('souris-gauche')?.description).toBe('Tourner autour du bac');
       expect(byId.get('souris-molette')?.description).toBe('Zoomer');
       expect(byId.get('souris-droit')?.description).toBe('Déplacer la vue');
-      expect(byId.get('souris-milieu')?.description).toBe('Rapprocher ou éloigner la vue');
+      expect(byId.get('souris-milieu')?.description).toBe('Rapprocher ou éloigner');
       expect(byId.get('souris-maj')?.description).toBe('Déplacer la vue');
       expect(byId.get('tactile-un-doigt')?.description).toBe('Tourner autour du bac');
       expect(byId.get('tactile-deux-doigts')?.description).toMatch(/zoomer.*déplacer/);

@@ -1,6 +1,6 @@
 # 0092 — Mode immersif : tapoter la vitre, nourrir, interface par appui long
 
-- Statut : acceptée
+- Statut : remplacée par 0166 (mode immersif retiré, #725)
 - Date : 2026-11-01
 - Auteur : Dev, cycle 123, issue #346
 

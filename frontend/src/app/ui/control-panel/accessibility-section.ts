@@ -6,7 +6,7 @@ import { SectionLegend } from '../settings-window/settings-search-filter';
 /**
  * Section « Accessibilité » du panneau « Réglages » (#406 ; sortie du panneau au #697) :
  * « Réduire les mouvements », initialisée sur la préférence système, choix mémorisé dans
- * l'état partagé avec l'aquarium et le mode immersif.
+ * l'état partagé avec l'aquarium et l'indication de l'interface masquée.
  *
  * L'hôte est le `fieldset` de la section, posé par le panneau (ADR 0161).
  */

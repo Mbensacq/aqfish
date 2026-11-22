@@ -1997,10 +1997,6 @@ true })`) : au niveau de la cible, Chromium appelle les écouteurs de capture d'
   (`water.minY + wallMargin`) : relever le point visé. `advanceInPlace(world, n)` compte des
   **pas** (`SIM_DT` = 1/60 s), pas des secondes. Ne pas lancer Prettier sur `docs/` (hors de
   son périmètre : il réaligne tous les tableaux). (2026-11-17)
-- **`e2e/mode-immersif.spec.ts` (« ordinateur ») peut expirer sous charge** (cycle 253, #696) :
-  la parallaxe (`data-immersive-eye-mm`) restait à 0 pendant 60 s quand `npm run verify`
-  tournait en même temps que d'autres commandes ; seul, le fichier passe (2 tests, 40 s).
-  Relancer le fichier isolément avant de soupçonner le code. (2026-11-19)
 - **Ordre des champs de l'hôte et ports passés par valeur** (cycle 254, #696) : un contrôleur
   construit dans un initialiseur de champ qui reçoit un autre contrôleur par valeur
   (`records: this.records`) le reçoit `undefined` s'il est déclaré après ; l'erreur n'apparaît
@@ -2016,3 +2012,10 @@ true })`) : au niveau de la cible, Chromium appelle les écouteurs de capture d'
   (« Property 'clock' is private in type 'AquariumHost' »). Renvoyer un objet littéral
   (`() => ({ clock: this.clock, … })`), lu à l'appel : l'ordre des champs n'importe plus.
   (2026-11-19)
+- **Masquer l'interface : le focus reste dans le contrôle caché** (cycle 275, #725) : cocher
+  « Masquer l'interface » laisse le focus sur la case, cachée par `display: none` ; tant que
+  le navigateur ne l'a pas retiré, `isTypingContext` voit un `input` et la touche `I` est
+  ignorée. Au masquage, la racine referme la fenêtre des réglages et appelle `blur()` sur
+  l'élément actif. Échap, lui, réaffiche même depuis un champ. Les entrées plus haut sur le
+  mode immersif (minuteries SwiftShader, deux vues WebGL, population `smallSwimmers`) ne
+  valent plus que pour `sim/immersive-tank.ts`, retiré à la tranche 2 de #725. (2026-11-22)

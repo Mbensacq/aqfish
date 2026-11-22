@@ -198,7 +198,6 @@ export { sliderHour } from './day-section';
             app-simulation-section
             [speed]="speed()"
             (speedChanged)="speedChanged.emit($event)"
-            (immersiveRequested)="immersiveRequested.emit()"
           ></fieldset>
 
           <fieldset
@@ -478,8 +477,6 @@ export class ControlPanel implements SettingsSearchFilter {
   readonly decorVisibleChanged = output<boolean>();
   /** Bouton « Éditer le décor » (#167), seulement si le décor est modifiable. */
   readonly editRequested = output<void>();
-  /** « Mode immersif » (#345) : l'application ouvre le mode en plein cadre. */
-  readonly immersiveRequested = output<void>();
   /** Case « Pluie » (#106) : `true` pour faire pleuvoir, `false` pour arrêter. */
   readonly rainChanged = output<boolean>();
   /** Case « Afficher la pièce » (#187). */

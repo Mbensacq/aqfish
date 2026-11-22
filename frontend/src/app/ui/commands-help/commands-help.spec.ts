@@ -1,8 +1,12 @@
-import { Component, DOCUMENT } from '@angular/core';
+import { Component, DestroyRef, DOCUMENT, inject } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 
 import { GESTURE_COMMANDS, KEY_COMMANDS, keyCommandFor } from '../../core/commands/commands';
 import { ViewPresetsBar } from '../view-presets-bar/view-presets-bar';
+import {
+  HiddenInterfaceState,
+  listenToHiddenInterface,
+} from '../hidden-interface/hidden-interface-state';
 import {
   COMMANDS_HELP_DEFAULT_OPEN,
   COMMANDS_HELP_NARROW_MAX_WIDTH,
@@ -372,12 +376,20 @@ describe('createFallbackStore', () => {
   });
 });
 
-/** L'interface complète (hors mode capture) : barre des préréglages et aide-mémoire. */
+/**
+ * L'interface complète (hors mode capture) : barre des préréglages, aide-mémoire et, comme la
+ * racine de l'application, « Masquer l'interface » (#725, touche `I`).
+ */
 @Component({
   imports: [ViewPresetsBar, CommandsHelp],
   template: `<app-view-presets-bar /><app-commands-help />`,
 })
-class KeyboardHost {}
+class KeyboardHost {
+  constructor() {
+    const stop = listenToHiddenInterface(inject(DOCUMENT), inject(HiddenInterfaceState));
+    inject(DestroyRef).onDestroy(stop);
+  }
+}
 
 /**
  * Test d'exhaustivité (#74) : toute touche gérée par l'interface figure dans l'aide-mémoire,

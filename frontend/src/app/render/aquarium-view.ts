@@ -30,12 +30,7 @@ import type { BehaviorFrame } from './fish-layer';
 import { scenePixelsPerMeter } from './food-size';
 import { isObliqueView } from './rain-layer';
 import type { FreeCameraInput, FreeCameraState } from './free-camera';
-import {
-  CameraController,
-  createOrbitControls,
-  type CameraHost,
-  type ImmersiveCamera,
-} from './camera-controller';
+import { CameraController, createOrbitControls, type CameraHost } from './camera-controller';
 import { DragController, type DecorDragListener, type DragHost } from './drag-controller';
 import type { StrokePoint } from './stroke';
 import { FramePipeline, type AquariumRenderer, type FrameScene } from './frame-pipeline';
@@ -72,7 +67,6 @@ export interface AquariumViewOptions {
 export type { AquariumRenderer } from './frame-pipeline';
 export { TEA_TONES } from './scene-lighting';
 export type { DecorDragListener } from './drag-controller';
-export type { ImmersiveCamera } from './camera-controller';
 export { ORBIT_MOUSE_ACTIONS, ORBIT_TOUCH_ACTIONS } from './camera-controller';
 export { STROKE_STEP_PX, strokePoints, type StrokePoint } from './stroke';
 
@@ -129,7 +123,7 @@ export class AquariumView {
   /** Temps propre d'un effet (`updateVisibleEffects`) : pluie ralentie si mouvements réduits. */
   private readonly effectTime = (layer: EffectLayer, time: number): number =>
     layer === this.layers.rain ? this.rainClock.at(time) : time;
-  /** Caméra : préréglages, transitions, caméra libre et mode immersif (#698). */
+  /** Caméra : préréglages, transitions, caméra libre (#698). */
   private readonly cameras: CameraController;
 
   constructor(options: AquariumViewOptions) {
@@ -197,7 +191,6 @@ export class AquariumView {
       roomBuilt: () => this.layers.room.built,
       cabinetHeight: () => clampRoom(this.room).cabinetHeight,
       hasSize: () => this.hasSize(),
-      updateAspect: () => this.updateAspect(),
     };
   }
 
@@ -1051,22 +1044,6 @@ export class AquariumView {
     return this.cameras.freeCameraThrust;
   }
 
-  /**
-   * Mode immersif (#345, ADR 0086) : caméra parallèle à la vitre avant, projection décentrée
-   * dont le tronc passe par les quatre bords de la vitre (`core/immersive/off-axis.ts`), qui
-   * coïncide ainsi avec l'écran ; contrôles orbitaux et caméra libre coupés. `null` rend
-   * l'orbite sur le préréglage courant. Renvoie faux si la vue est libérée ou si la caméra
-   * est invalide (distance non strictement positive, valeur non finie).
-   */
-  setImmersiveCamera(camera: ImmersiveCamera | null): boolean {
-    return this.cameras.setImmersiveCamera(camera);
-  }
-
-  /** Vrai en mode immersif. */
-  get immersiveActive(): boolean {
-    return this.cameras.immersiveActive;
-  }
-
   /** Position courante de la caméra (exposée pour les tests de bout en bout). */
   cameraPosition(): Vec3 {
     const p = this.camera.position;
@@ -1122,6 +1099,5 @@ export class AquariumView {
     const size = this.frames.aspectSize();
     this.camera.aspect = size.width / size.height;
     this.camera.updateProjectionMatrix();
-    this.cameras.refreshImmersiveProjection();
   }
 }
