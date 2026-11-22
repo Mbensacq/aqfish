@@ -10055,10 +10055,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-22T10:59:39.695Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-22T11:00:15.096Z",
+          "note": "Issue #773 : lot de dette superpositions UI (#773 + #772 + #778) (M)"
         }
       },
       "metriques": {}
