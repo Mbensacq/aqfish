@@ -31,6 +31,7 @@ import { MAX_PH, MIN_PH, type PhBands } from '../../sim/water-ph';
 import { DAY_PHASE_LABELS, dayIconPixels, DAY_ICON_GRID } from '../day-indicator/day-indicator';
 import { CHEVRON_ICON_PIXELS, LEVEL_ICON_GRID, levelIconPixels } from './level-icons';
 import { WaterHistoryChart } from './water-history-chart';
+import { publishHostHeight } from '../publish-host-height';
 import {
   DEFAULT_WATER_READOUT,
   GAUGE_MAX,
@@ -44,6 +45,12 @@ export { LEVEL_ICON_GRID, levelIconPixels } from './level-icons';
 export const DASHBOARD_GAUGES_ID = 'tableau-de-bord-jauges';
 /** Identifiant de la courbe dépliée d'une jauge (cible de `aria-controls`). */
 export const DASHBOARD_CURVE_ID = 'tableau-de-bord-courbe';
+
+/**
+ * Propriété CSS de la racine du document qui porte la hauteur du cadre du tableau de bord,
+ * en pixels (#773) : l'offre de partage se place sous lui (share-offer.scss).
+ */
+export const FRAME_HEIGHT_PROPERTY = '--aqfish-frame-height';
 
 /**
  * Couleurs du cadre, celles de la charte (`ui/_panel-layout.scss`, #721) : panneau plein,
@@ -370,6 +377,13 @@ export class DashboardFrame {
         this.speed() === 0 ? 'en pause' : `vitesse ${this.speedText()}`
       }`,
   );
+
+  constructor() {
+    // Hauteur du cadre publiée à la racine (#773) : l'offre de partage se pose dessous
+    // (share-offer.scss), jauges dépliées ou non, courbe ouverte comprise.
+    publishHostHeight(FRAME_HEIGHT_PROPERTY);
+  }
+
   /** Replie ou déplie les jauges. */
   toggle(): void {
     this.expanded.update((open) => !open);

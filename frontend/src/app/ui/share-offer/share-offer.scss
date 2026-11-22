@@ -1,18 +1,18 @@
-// Bandeau d'un lien partagé (#426) : au-dessus de la scène et des panneaux, centré sous la
-// ligne des boutons, couleurs de l'interface (`DASHBOARD_COLORS`) sur fond plein
-// (texte lisible quelle que soit la scène derrière).
+// Bandeau d'un lien partagé (#426) : au-dessus de la scène et des panneaux, centré sous le
+// cadre du tableau de bord de l'eau sans le recouvrir (#773), couleurs de l'interface
+// (`DASHBOARD_COLORS`) sur fond plein (texte lisible quelle que soit la scène derrière).
 @use '../panel-layout' as layout;
 @use '../dashboard-frame/dashboard-surface' as dashboard;
 
 :host {
   position: fixed;
   z-index: 2;
-  top: 64px;
   left: 50%;
   width: min(440px, calc(100vw - 32px));
   transform: translateX(-50%);
 
   @include dashboard.font;
+  @include dashboard.below-top-slot(layout.$space-2);
 
   // Téléphone (#431) : le cadre du tableau de bord passe sous la ligne des boutons (48 px) et
   // occupe le haut ; le bandeau bas et la barre des vues le bas. Le bandeau se centre dans la
