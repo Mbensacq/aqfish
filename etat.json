@@ -9929,10 +9929,10 @@
           "note": "Verdict OK, 0 bug, captures publiées (143 identiques, 27 vues d'interface changées, attendu)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-22T01:12:33.562Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-22T01:38:51.554Z",
+          "note": "PR #769 fusionnée → v1.28.0 (release CI OK, main verte), #724 reste ouverte (tranche 2), dette #770"
         }
       },
       "metriques": {}
