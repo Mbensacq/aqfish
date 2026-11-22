@@ -10181,10 +10181,10 @@
           "note": "Verdict OK, 0 bug : verify OK (CI 7/7 e2e), critères OK, 178/178 captures identiques à l'octet ; captures publiées"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-22T18:06:10.223Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-22T18:35:59.078Z",
+          "note": "PR #787 fusionnée → v1.29.0 (release CI OK, main verte), #784 fermée, dette #788 ; suppression de la branche refusée par l'environnement"
         }
       },
       "metriques": {}
