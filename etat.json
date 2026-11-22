@@ -10175,10 +10175,10 @@
           "note": "PR #787 : données d'écologie eau douce tropicale (18 espèces), Closes #784, CI verte (e2e local interrompu, CI 7/7) ; pied d'attribution réinjecté par l'environnement dans la PR (PIEGES)"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-22T17:49:42.357Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-22T18:05:36.653Z",
+          "note": "Verdict OK, 0 bug : verify OK (CI 7/7 e2e), critères OK, 178/178 captures identiques à l'octet ; captures publiées"
         }
       },
       "metriques": {}
