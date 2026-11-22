@@ -30,6 +30,7 @@ import type { WaterHistoryView } from '../../sim/water-history';
 import { MAX_PH, MIN_PH, type PhBands } from '../../sim/water-ph';
 import { DAY_PHASE_LABELS, dayIconPixels, DAY_ICON_GRID } from '../day-indicator/day-indicator';
 import { CHEVRON_ICON_PIXELS, LEVEL_ICON_GRID, levelIconPixels } from './level-icons';
+import { PixelIcon } from '../pixel-icon/pixel-icon';
 import { WaterHistoryChart } from './water-history-chart';
 import { publishHostHeight } from '../publish-host-height';
 import {
@@ -162,28 +163,18 @@ const ICONS: Readonly<Record<GaugeLevel, readonly (readonly [number, number])[]>
     >
       <span class="dashboard__title"
         >Eau
-        <svg
+        <app-pixel-icon
           class="dashboard__chevron"
           [class.dashboard__chevron--open]="expanded()"
-          aria-hidden="true"
-          [attr.viewBox]="'0 0 ' + iconGrid + ' ' + iconGrid"
-          shape-rendering="crispEdges"
-        >
-          @for (pixel of chevron; track $index) {
-            <rect [attr.x]="pixel[0]" [attr.y]="pixel[1]" width="1" height="1" />
-          }</svg
-      ></span>
+          [pixels]="chevron"
+          [grid]="iconGrid"
+      /></span>
       <span class="dashboard__quality" [attr.data-level]="qualityLevel()">
-        <svg
+        <app-pixel-icon
           class="dashboard__icon"
-          aria-hidden="true"
-          [attr.viewBox]="'0 0 ' + iconGrid + ' ' + iconGrid"
-          shape-rendering="crispEdges"
-        >
-          @for (pixel of icons[qualityLevel()]; track $index) {
-            <rect [attr.x]="pixel[0]" [attr.y]="pixel[1]" width="1" height="1" />
-          }
-        </svg>
+          [pixels]="icons[qualityLevel()]"
+          [grid]="iconGrid"
+        />
         {{ qualityText() }}
       </span>
     </button>
@@ -207,17 +198,12 @@ const ICONS: Readonly<Record<GaugeLevel, readonly (readonly [number, number])[]>
               (click)="toggleCurve(gauge.id)"
             >
               <span class="dashboard__name" aria-hidden="true">{{ gauge.label }}</span>
-              <svg
+              <app-pixel-icon
                 class="dashboard__chevron"
                 [class.dashboard__chevron--open]="curve() === gauge.id"
-                aria-hidden="true"
-                [attr.viewBox]="'0 0 ' + iconGrid + ' ' + iconGrid"
-                shape-rendering="crispEdges"
-              >
-                @for (pixel of chevron; track $index) {
-                  <rect [attr.x]="pixel[0]" [attr.y]="pixel[1]" width="1" height="1" />
-                }
-              </svg>
+                [pixels]="chevron"
+                [grid]="iconGrid"
+              />
             </button>
             <span class="dashboard__reading" aria-hidden="true">
               <span class="dashboard__value" [attr.data-gauge-value]="gauge.id">{{
@@ -248,15 +234,11 @@ const ICONS: Readonly<Record<GaugeLevel, readonly (readonly [number, number])[]>
               }
             </span>
             <span class="dashboard__level" [attr.data-level-label]="gauge.level" aria-hidden="true">
-              <svg
+              <app-pixel-icon
                 class="dashboard__icon"
-                [attr.viewBox]="'0 0 ' + iconGrid + ' ' + iconGrid"
-                shape-rendering="crispEdges"
-              >
-                @for (pixel of icons[gauge.level]; track $index) {
-                  <rect [attr.x]="pixel[0]" [attr.y]="pixel[1]" width="1" height="1" />
-                }
-              </svg>
+                [pixels]="icons[gauge.level]"
+                [grid]="iconGrid"
+              />
               {{ gauge.levelLabel }}
             </span>
           </li>
@@ -303,7 +285,7 @@ const ICONS: Readonly<Record<GaugeLevel, readonly (readonly [number, number])[]>
     </p>
   </section>`,
   styleUrl: './dashboard-frame.scss',
-  imports: [WaterHistoryChart],
+  imports: [PixelIcon, WaterHistoryChart],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '(keydown.escape)': 'closeCurve()',

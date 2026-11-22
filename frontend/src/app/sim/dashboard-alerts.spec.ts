@@ -427,8 +427,7 @@ describe('alerte des algues (#476)', () => {
     });
     expect(alerts[0].cause).toContain('25 %');
     expect(alerts[0].action).toMatch(/raclette/);
-    // #488 : la raclette est dans la section « Eau » (« Soins » n'apparaît qu'avec des points
-    // blancs).
+    // La raclette est dans la barre du bas (« Soins » n'apparaît qu'avec des points blancs).
     expect(alerts[0].action).toContain('Passer la raclette (barre du bas)');
     expect(alerts[0].action).not.toContain('Soins');
   });

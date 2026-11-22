@@ -6,6 +6,15 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **`z-index` d'un bouton fixe : bruit d'un niveau de couleur sur les coins arrondis
+  voisins** (cycle 278, #780) : le `z-index: 0` posé sur « Pharmacie » au téléphone (#772)
+  change 6 à 41 pixels (écart ≤ 2) dans 8 captures `telephone-*` : coins des boutons de la
+  ligne du haut (y 8–46) et du bouton lui-même. Cause prouvée en retirant la seule ligne
+  `z-index: 0` : les captures redeviennent identiques à l'octet à celles d'avant #779. Un
+  nouveau contexte d'empilement redistribue les calques du compositeur, et l'anticrénelage
+  des coins arrondis se mélange autrement. Écart invisible, gardé (le correctif #772 en a
+  besoin). Tout changement de `z-index` ou de contexte d'empilement (`opacity`, `transform`,
+  `isolation`) peut faire de même : l'annoncer dans la PR, avec les pixels touchés. (2026-11-22)
 - **Panneau posé sous le tableau de bord à une hauteur écrite en dur** (cycle 277, #773) :
   l'offre de partage (`top: 64px`) recouvrait le bas du cadre de l'eau à 1 280 px (il finit à
   78 px) et la ligne d'état du pH disparaissait ; le cadre change de hauteur avec le dépliage,
@@ -58,6 +67,9 @@ haut de sa section.
   Même constat pour `front-tableau-de-bord-chlore` (cycle 252, #696) : position des poissons
   légèrement décalée dans une série complète et dans une relance seule sur deux, identique à
   l'octet dans l'autre ; relancer deux fois avant de conclure. (2026-11-19)
+  Et pour `three-quarter-partage` et `three-quarter-tableau-de-bord` (cycle 278, #780) : deux
+  images possibles, 7 pixels d'écart 1 aux coins droits du panneau « Commandes »
+  (x 1 266–1 267), sur `main` comme sur la branche, d'une relance à l'autre. (2026-11-22)
 - **Toucher bref sur le canvas en e2e : `page.touchscreen.tap` suffit** (cycle 224, #623) : avec
   `test.use({ hasTouch: true })`, Chromium en tire `pointerdown` / `pointerup` de type `touch`,
   donc `onCanvasClick` (sécateur, raclette au clic) ; la session CDP (`swipeTouch`) n'est utile
@@ -807,13 +819,14 @@ origin/main`, `node_modules` en lien symbolique) ; il sert aussi aux captures «
      utilisable par `setInputFiles`) ;
   2. tout clic, glisser, molette ou appui sur la barre des vues, le tableau de bord ou le bac,
      et **toute mesure de pixels** (`canvasShot`, `countColors`, `vegetationPixels`, capture
-     d'écran : le fond assombrit l'image) se font fenêtre fermée ; `dansReglages(page,
-'Décor', () => decor(page).uncheck())` agit puis referme ;
+     d'écran : le fond assombrit l'image) se font fenêtre fermée ;
+     `dansReglages(page, 'Décor', () => decor(page).uncheck())` agit puis referme ;
   3. prendre la raclette ou le sécateur referme la fenêtre : relire leur état
      (`aria-pressed`) après `ouvrirReglages`.
-     Repérer les cas : un script qui suit chaque test depuis `ouvrirReglages` (catégorie
-     courante) et signale les jetons d'une autre catégorie ou les gestes hors fenêtre (méthode de
-     la PR du cycle 267). (2026-11-21)
+
+  Repérer les cas : un script qui suit chaque test depuis `ouvrirReglages` (catégorie
+  courante) et signale les jetons d'une autre catégorie ou les gestes hors fenêtre (méthode de
+  la PR du cycle 267). (2026-11-21)
 - **`getByRole` cherche une sous-chaîne du nom** : un bouton « Fermer les réglages » rendait
   `getByRole('button', { name: 'Réglages' })` ambigu (deux boutons, erreur « strict mode
   violation ») dans des dizaines d'e2e. Nommer les nouveaux boutons sans reprendre le nom

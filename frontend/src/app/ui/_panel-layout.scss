@@ -97,10 +97,10 @@ $focus-halo-width: 2px;
 
 /// Anneau de focus de tous les contrôles, posé une fois pour toutes sur `:focus-visible`
 /// dans `src/styles.scss`. Un contrôle ne l'inclut lui-même que pour changer l'écart
-/// (curseurs : 2 px) ou la couleur (tableau de bord), jamais l'épaisseur.
+/// (curseurs : 2 px), jamais l'épaisseur ni la couleur (laiton commun, tableau de bord compris).
 /// Aucun mouvement ni transition (option « Réduire les mouvements », #406).
-@mixin focus-ring($offset: 1px, $color: $focus-ring-color) {
-  outline: $focus-ring-width solid $color;
+@mixin focus-ring($offset: 1px) {
+  outline: $focus-ring-width solid $focus-ring-color;
   outline-offset: $offset;
   box-shadow: 0 0 0 ($offset + $focus-ring-width + $focus-halo-width) $focus-halo;
 }

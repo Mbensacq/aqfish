@@ -67,10 +67,7 @@
 // Chevron dessiné en pixels (#724), à la place des flèches de texte : vers le bas replié,
 // retourné déplié.
 .dashboard__chevron {
-  flex: none;
-  width: 8px;
-  height: 8px;
-  fill: currentcolor;
+  --pixel-icon-size: 8px;
 
   &--open {
     transform: scaleY(-1);
@@ -102,10 +99,7 @@
 }
 
 .dashboard__icon {
-  flex: none;
-  width: 10px;
-  height: 10px;
-  fill: currentcolor;
+  --pixel-icon-size: 10px;
 }
 
 .dashboard--folded .dashboard__toggle {
@@ -155,8 +149,7 @@
 }
 
 .dashboard__curve-toggle .dashboard__chevron {
-  width: 6px;
-  height: 6px;
+  --pixel-icon-size: 6px;
 }
 
 .dashboard__curve {
