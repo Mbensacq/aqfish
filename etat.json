@@ -10091,10 +10091,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-22T13:42:41.266Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-22T13:43:12.210Z",
+          "note": "Issue #780 : lot de dette bruit captures téléphone + restes tableau de bord (#780 + #770) (M)"
         }
       },
       "metriques": {}
