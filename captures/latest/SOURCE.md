@@ -1,5 +1,8 @@
-Branche cycle/c272-recherche-ligne-trouvee
-PR #767
-Commit ef84f17c
-Graine et temps : ceux de npm run captures
-Bac seul : 165/170 identiques au pixel près ; 5 captures d'interface changées (attendu : légende répétée masquée)
+# Captures du cycle 273
+
+- Branche : cycle/c273-charte-panneaux-etat
+- PR : #769
+- Commit : d487465894100393407fbd96db6d0658561ac8e7
+- Graine : celle des captures (par défaut)
+- Durée : 168 captures en 6,1 min
+- Comparaison à la série précédente (latest) : 143 identiques à l'octet (tout le bac seul), 27 différentes, toutes des vues avec interface
