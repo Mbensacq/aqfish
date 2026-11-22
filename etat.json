@@ -9980,7 +9980,7 @@
       "type": "fonctionnalite",
       "issue": 725,
       "pr": 774,
-      "version": null,
+      "version": "v1.28.2",
       "phases": {
         "planif": {
           "statut": "termine",
