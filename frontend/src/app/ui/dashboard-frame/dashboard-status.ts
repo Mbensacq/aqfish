@@ -1,11 +1,7 @@
 import {
-  afterNextRender,
   ChangeDetectionStrategy,
   Component,
   computed,
-  DestroyRef,
-  DOCUMENT,
-  ElementRef,
   inject,
   input,
   output,
@@ -43,6 +39,7 @@ import { DEFAULT_WATER_READOUT, type WaterReadout } from '../../sim/water-qualit
 import { DASHBOARD_COLORS } from './dashboard-frame';
 import { FeederPanel } from './feeder-panel';
 import { BeginnerGuideState } from '../beginner-guide/beginner-guide-state';
+import { publishHostHeight } from '../publish-host-height';
 import {
   levelIconPixels,
   LEVEL_ICON_GRID,
@@ -616,27 +613,7 @@ export class DashboardStatus {
     // lignes entre 640 et 1099 px) et la police, que le CSS de l'aide-mémoire ne connaît pas.
     // Un détail déplié (alerte, bilan, calendrier) n'est pas compté : il passe sous les
     // panneaux, comme ailleurs, et l'aide-mémoire ne rétrécit pas à chaque dépliage.
-    const host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
-    const root = inject(DOCUMENT).documentElement;
-    let observer: ResizeObserver | null = null;
-    afterNextRender(() => {
-      if (typeof ResizeObserver === 'undefined') {
-        return;
-      }
-      observer = new ResizeObserver(() => {
-        if (!this.detailOpen()) {
-          root.style.setProperty(
-            STATUS_HEIGHT_PROPERTY,
-            `${host.getBoundingClientRect().height}px`,
-          );
-        }
-      });
-      observer.observe(host);
-    });
-    inject(DestroyRef).onDestroy(() => {
-      observer?.disconnect();
-      root.style.removeProperty(STATUS_HEIGHT_PROPERTY);
-    });
+    publishHostHeight(STATUS_HEIGHT_PROPERTY, () => this.detailOpen());
   }
 
   /** Déplie l'alerte `id` (repliant l'autre), ou la replie si elle l'était. */
