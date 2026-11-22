@@ -10107,6 +10107,12 @@
           "debut": "2026-11-22T14:42:31.416Z",
           "fin": "2026-11-22T15:02:51.683Z",
           "note": "Verdict OK, 0 bug : verify OK (CI 7/7 e2e), critères OK, 177/178 captures identiques à l'octet (chlore identique sur main) ; captures publiées"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-22T15:03:26.405Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
