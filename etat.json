@@ -10203,6 +10203,12 @@
           "debut": "2026-11-22T23:41:58.214Z",
           "fin": "2026-11-22T23:42:21.163Z",
           "note": "Issue #785 : données de population, mer et eau froide (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-22T23:43:01.331Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
