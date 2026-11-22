@@ -10160,7 +10160,7 @@
       "type": "fonctionnalite",
       "issue": 784,
       "pr": 787,
-      "version": null,
+      "version": "v1.29.0",
       "phases": {
         "planif": {
           "statut": "termine",
