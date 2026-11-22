@@ -9963,6 +9963,12 @@
           "debut": "2026-11-22T03:30:00.359Z",
           "fin": "2026-11-22T03:47:23.897Z",
           "note": "Verdict OK, 1 bug (#772, préexistant), captures publiées (148 identiques, bac seul inchangé)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-22T03:47:58.924Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
