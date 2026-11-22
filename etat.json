@@ -9917,10 +9917,10 @@
           "note": "Issue #724 : Interface 4/5 tranche 1, panneaux d'état et barre du bas (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-21T23:43:07.654Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-22T00:34:18.643Z",
+          "note": "PR #769 : #724 tranche 1, tableau de bord, bandeau bas, indicateur du jour et barre du bas à la charte (Refs #724), CI verte ; pied de page d'attribution ajouté au corps de la PR malgré -F body=@ (PIEGES)"
         }
       },
       "metriques": {}
