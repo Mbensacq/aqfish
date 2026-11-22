@@ -9947,10 +9947,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-22T01:39:21.053Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-22T01:39:46.231Z",
+          "note": "Issue #724 : Interface 4/5 tranche 2, reste de l'habillage et textes (M)"
         }
       },
       "metriques": {}
