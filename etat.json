@@ -10008,6 +10008,24 @@
         }
       },
       "metriques": {}
+    },
+    "276": {
+      "numero": 276,
+      "date": "2026-11-22",
+      "debut": "2026-11-22T07:18:16.398Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-22T07:18:16.398Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
