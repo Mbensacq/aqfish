@@ -10137,6 +10137,12 @@
           "debut": "2026-11-22T15:32:36.395Z",
           "fin": "2026-11-22T16:02:42.499Z",
           "note": "PR #783 : recherche des réglages dans les sections restantes, Closes #768, CI verte (e2e local interrompu, CI 7/7 verte) ; pied d'attribution réinjecté par l'environnement dans la PR (PIEGES)"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-22T16:03:18.163Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
