@@ -10169,10 +10169,10 @@
           "note": "Issue #784 : données de population, eau douce tropicale (M) ; #727 découpée en #784 #785 #786"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-22T17:12:21.536Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-22T17:49:06.643Z",
+          "note": "PR #787 : données d'écologie eau douce tropicale (18 espèces), Closes #784, CI verte (e2e local interrompu, CI 7/7) ; pied d'attribution réinjecté par l'environnement dans la PR (PIEGES)"
         }
       },
       "metriques": {}
