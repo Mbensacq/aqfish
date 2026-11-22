@@ -10167,6 +10167,12 @@
           "debut": "2026-11-22T17:10:52.258Z",
           "fin": "2026-11-22T17:11:49.242Z",
           "note": "Issue #784 : données de population, eau douce tropicale (M) ; #727 découpée en #784 #785 #786"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-22T17:12:21.536Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
