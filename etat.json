@@ -10122,7 +10122,7 @@
       "date": "2026-11-22",
       "debut": "2026-11-22T15:31:12.333Z",
       "type": "retro",
-      "issue": null,
+      "issue": 768,
       "pr": null,
       "version": null,
       "phases": {
