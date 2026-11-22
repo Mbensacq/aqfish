@@ -9927,6 +9927,12 @@
           "debut": "2026-11-22T00:34:51.399Z",
           "fin": "2026-11-22T01:12:01.967Z",
           "note": "Verdict OK, 0 bug, captures publiées (143 identiques, 27 vues d'interface changées, attendu)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-22T01:12:33.562Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
