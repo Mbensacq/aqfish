@@ -23,6 +23,18 @@ interface Press {
   readonly timer: ReturnType<typeof setTimeout>;
 }
 
+/** Requête média d'un écran tactile sans souris (pointeur principal grossier, #775). */
+export const COARSE_POINTER_QUERY = '(pointer: coarse)';
+
+/** Vrai si le pointeur principal de `win` est grossier (doigt) ; faux sans `matchMedia`. */
+function coarsePointer(win: Window | null): boolean {
+  try {
+    return typeof win?.matchMedia === 'function' && win.matchMedia(COARSE_POINTER_QUERY).matches;
+  } catch {
+    return false;
+  }
+}
+
 /**
  * « Masquer l'interface » (#725, `docs/INTERFACE.md` section 3, ADR 0166), à la place du
  * mode immersif : tout disparaît sauf le bac, la caméra et la simulation continuent. L'état
@@ -37,18 +49,6 @@ interface Press {
  *
  * Non enregistré : chaque visite commence avec l'interface.
  */
-/** Requête média d'un écran tactile sans souris (pointeur principal grossier, #775). */
-export const COARSE_POINTER_QUERY = '(pointer: coarse)';
-
-/** Vrai si le pointeur principal de `win` est grossier (doigt) ; faux sans `matchMedia`. */
-function coarsePointer(win: Window | null): boolean {
-  try {
-    return typeof win?.matchMedia === 'function' && win.matchMedia(COARSE_POINTER_QUERY).matches;
-  } catch {
-    return false;
-  }
-}
-
 @Injectable({ providedIn: 'root' })
 export class HiddenInterfaceState {
   private readonly win = inject(DOCUMENT).defaultView;

@@ -19,6 +19,7 @@ import {
   DASHBOARD_CURVE_ID,
   DASHBOARD_GAUGES_ID,
   DashboardFrame,
+  FRAME_HEIGHT_PROPERTY,
   GAUGE_BOUNDS,
   LEVEL_ICON_GRID,
   levelIconPixels,
@@ -378,5 +379,44 @@ describe('tableau de bord : courbe d’une jauge (#511)', () => {
     fixture.componentInstance.toggle();
     fixture.detectChanges();
     expect(root.querySelector('[data-water-curve]')).toBeNull();
+  });
+});
+
+describe('hauteur du cadre publiée pour l’offre de partage (#773)', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    document.documentElement.style.removeProperty(FRAME_HEIGHT_PROPERTY);
+  });
+
+  it('publie la hauteur du cadre à la racine sous `--aqfish-frame-height`, retirée ensuite', async () => {
+    let callback: () => void = () => undefined;
+    let observed = 0;
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(onResize: () => void) {
+          callback = onResize;
+        }
+        observe(): void {
+          observed += 1;
+        }
+        disconnect(): void {
+          observed -= 1;
+        }
+      },
+    );
+    const fixture = TestBed.createComponent(DashboardFrame);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const host = fixture.nativeElement as HTMLElement;
+    vi.spyOn(host, 'getBoundingClientRect').mockReturnValue(new DOMRect(155, 12, 801, 66));
+    expect(observed).toBe(1);
+    callback();
+    const root = document.documentElement.style;
+    expect(FRAME_HEIGHT_PROPERTY).toBe('--aqfish-frame-height');
+    expect(root.getPropertyValue(FRAME_HEIGHT_PROPERTY)).toBe('66px');
+    fixture.destroy();
+    expect(observed).toBe(0);
+    expect(root.getPropertyValue(FRAME_HEIGHT_PROPERTY)).toBe('');
   });
 });

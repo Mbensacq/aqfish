@@ -232,8 +232,11 @@
 
 // Téléphone : la ligne du haut est pleine, et le bas change de hauteur avec les alertes ; à
 // droite, juste sous le tableau de bord du haut (qui finit à 143 px), au-dessus de la scène.
+// Là, il est dans la zone des panneaux pleine largeur (wiki, réglages, aide-mémoire) : plan 0,
+// comme le tableau de bord, pour qu'un panneau ouvert (plan 1) passe par-dessus (#772).
 @media (max-width: 480px) {
   .pharmacy__toggle {
+    z-index: 0;
     top: 151px;
     right: 8px;
     left: auto;

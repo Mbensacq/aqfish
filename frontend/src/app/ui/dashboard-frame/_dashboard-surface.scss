@@ -15,6 +15,15 @@
   left: layout.$settings-button-end + layout.$edge;
 }
 
+/// Bord haut de la place du cadre : bureau, sous 1100 px, téléphone (`top-slot`).
+$top-slot-desk: layout.$edge;
+$top-slot-narrow: 56px;
+$top-slot-phone: 48px;
+
+/// Hauteur du cadre jauges dépliées à 1 280 px, avant la première mesure
+/// (`FRAME_HEIGHT_PROPERTY`, dashboard-frame.ts).
+$frame-height-fallback: 66px;
+
 /// Place du cadre haut à toutes les largeurs, à poser sur l'hôte : le cadre
 /// (`dashboard-frame.scss`) et le badge du mode décor qui le remplace (`decor-badge.scss`)
 /// la partagent, marges du téléphone comprises (#322).
@@ -23,20 +32,31 @@
 /// - Téléphone (≤ 480 px) : boutons plus bas et plus serrés, marges de 8 px.
 @mixin top-slot {
   position: fixed;
-  top: layout.$edge;
+  top: $top-slot-desk;
 
   @include desk-slot;
 
   @media (max-width: 1099px) {
-    top: 56px;
+    top: $top-slot-narrow;
     right: layout.$edge;
     left: layout.$edge;
   }
 
   @media (max-width: 480px) {
-    top: 48px;
+    top: $top-slot-phone;
     right: layout.$edge-phone;
     left: layout.$edge-phone;
+  }
+}
+
+/// Pose un panneau `$gap` sous le cadre haut, au-dessus de 480 px (#773) : bord haut de la
+/// place du cadre plus sa hauteur publiée (`--aqfish-frame-height`), qui suit le dépliage,
+/// la courbe d'une jauge et le retour à la ligne. Sur téléphone, à chaque panneau sa place.
+@mixin below-top-slot($gap) {
+  top: calc($top-slot-desk + var(--aqfish-frame-height, $frame-height-fallback) + $gap);
+
+  @media (max-width: 1099px) {
+    top: calc($top-slot-narrow + var(--aqfish-frame-height, $frame-height-fallback) + $gap);
   }
 }
 

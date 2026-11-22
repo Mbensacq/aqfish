@@ -199,4 +199,37 @@ test.describe('Partage par lien (#426)', () => {
     await page.screenshot({ path: test.info().outputPath('telephone-refus-partage.png') });
     expect(opened.errors).toEqual([]);
   });
+
+  // #773 : l'offre se pose sous le cadre du tableau de bord de l'eau, sans masquer le pH.
+  for (const size of [
+    { width: 1280, height: 720 },
+    { width: 900, height: 720 },
+    { width: 390, height: 844 },
+  ]) {
+    test(`${size.width} px : l'offre ne recouvre pas le tableau de bord de l'eau (#773)`, async ({
+      page,
+    }) => {
+      await page.setViewportSize(size);
+      const opened = await open(page, '/?seed=42&vitesse=0');
+      const world = createDefaultWorld(5, 'bassin');
+      const outcome = await createShare('http://x/', world, DEFAULT_SAVE_SETTINGS);
+      const fragment = (outcome as { url: string }).url.split('#')[1]!;
+      await page.evaluate((hash) => (window.location.hash = hash), fragment);
+      await expect(offer(page)).toContainText('Bassin');
+      const frame = (await page.locator('app-dashboard-frame .dashboard').boundingBox())!;
+      const box = (await offer(page).boundingBox())!;
+      expect(box.y).toBeGreaterThanOrEqual(frame.y + frame.height);
+      // La ligne d'état du pH reste visible : l'élément au point est bien le sien.
+      const ph = page.locator('app-dashboard-frame [data-gauge="ph"]').first();
+      const phBox = (await ph.boundingBox())!;
+      const topmost = await page.evaluate(
+        ([x, y]) => document.elementFromPoint(x!, y!)?.closest('app-dashboard-frame') !== null,
+        [phBox.x + phBox.width / 2, phBox.y + phBox.height - 2],
+      );
+      expect(topmost).toBe(true);
+      expect(box.x).toBeGreaterThanOrEqual(0);
+      expect(box.x + box.width).toBeLessThanOrEqual(size.width);
+      expect(opened.errors).toEqual([]);
+    });
+  }
 });
