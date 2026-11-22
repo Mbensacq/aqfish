@@ -10073,10 +10073,10 @@
           "note": "Verdict RÉSERVES, 0 bug : verify 556 e2e verts, critères OK, 8 captures téléphone ±1 px (coins du cadre) hors main ; captures publiées ; pied d'attribution réinjecté dans la revue"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-22T13:14:56.814Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-22T13:42:02.572Z",
+          "note": "PR #779 fusionnée → v1.28.4 (release CI OK, main verte), #773 #772 #778 fermées, dette #780 ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
