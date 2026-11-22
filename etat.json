@@ -9942,7 +9942,7 @@
       "date": "2026-11-22",
       "debut": "2026-11-22T01:39:21.053Z",
       "type": "fonctionnalite",
-      "issue": null,
+      "issue": 724,
       "pr": null,
       "version": null,
       "phases": {
