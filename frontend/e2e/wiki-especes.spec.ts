@@ -284,4 +284,40 @@ test.describe('Wiki des espèces : ligne « Comportement » (#427)', () => {
     await expect(sheet(page).locator('[data-wiki-field="behavior"]')).toHaveCount(0);
     expect(errors).toEqual([]);
   });
+
+  test('téléphone : le bouton « Pharmacie » passe sous la fiche ouverte (#772)', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    const errors = await open(page, '?seed=42&vitesse=0');
+    const pharmacy = page.locator('[data-pharmacy-toggle]');
+    await toggle(page).click();
+    await wiki(page).locator('[data-wiki-species="neon"]').click();
+    await expect(sheet(page)).toBeVisible();
+    const button = (await pharmacy.boundingBox())!;
+    const panel = (await wiki(page).boundingBox())!;
+    // Les boîtes se recouvrent (le bouton est sous la zone du panneau) : c'est le panneau
+    // qui est au premier plan, aux quatre coins et au centre du bouton.
+    expect(button.y).toBeGreaterThan(panel.y);
+    expect(button.y + button.height).toBeLessThan(panel.y + panel.height);
+    const points = [
+      [button.x + 2, button.y + 2],
+      [button.x + button.width - 2, button.y + 2],
+      [button.x + 2, button.y + button.height - 2],
+      [button.x + button.width - 2, button.y + button.height - 2],
+      [button.x + button.width / 2, button.y + button.height / 2],
+    ];
+    const onTop = await page.evaluate(
+      (list) =>
+        list.map(([x, y]) => document.elementFromPoint(x!, y!)?.closest('#wiki-especes') !== null),
+      points,
+    );
+    expect(onTop).toEqual([true, true, true, true, true]);
+    // Wiki refermé : le bouton revient au premier plan et s'ouvre au doigt comme à la souris.
+    await wiki(page).getByRole('button', { name: 'Fermer' }).click();
+    await expect(wiki(page)).toHaveCount(0);
+    await pharmacy.click();
+    await expect(pharmacy).toHaveAttribute('aria-expanded', 'true');
+    expect(errors).toEqual([]);
+  });
 });
