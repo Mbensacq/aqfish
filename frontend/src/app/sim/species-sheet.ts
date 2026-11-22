@@ -3,6 +3,20 @@ import { MIX_REASON_TEXT, SPECIES_LABELS, type SpeciesLabels } from './species-c
 import { confidenceText, legalStatus, legalText, type LegalStatus } from './species-legal';
 import { SPECIES, type SpeciesId } from './species';
 import { SPECIES_PH, type PhRange } from './water-ph';
+import {
+  APPROXIMATION,
+  approx,
+  gh,
+  kh,
+  range,
+  source,
+  sourced,
+  type FieldStatus,
+  type HardnessRange,
+  type SheetField,
+  type ValueRange,
+} from './sheet-field';
+import { SPECIES_ECOLOGY, type SpeciesEcology } from './species-ecology';
 import { COMPOUND_THRESHOLDS, type WaterCompound } from './water-quality';
 
 /**
@@ -16,30 +30,7 @@ import { COMPOUND_THRESHOLDS, type WaterCompound } from './water-quality';
  * éviter) ne sont pas recopiés : la fiche lit `SPECIES_PH`, `TEMPERAMENTS` et `compatibility`.
  */
 
-/** Statut d'un champ de fiche. */
-export type FieldStatus =
-  { readonly kind: 'source'; readonly reference: string } | { readonly kind: 'approximation' };
-
-/** Valeur d'une fiche et son statut. */
-export interface SheetField<T> {
-  readonly value: T;
-  readonly status: FieldStatus;
-}
-
-/** Plage de valeurs, bornes comprises. */
-export interface ValueRange {
-  readonly min: number;
-  readonly max: number;
-}
-
-/**
- * Plage de dureté d'une espèce (issue #484), bornes comprises : dureté générale (`gh`, en
- * °dGH) pour l'eau douce, carbonatée (`kh`, en °dKH) pour le récif, où la GH de l'eau de mer
- * n'a pas de sens pour l'aquariophile (`sim/water-hardness.ts`).
- */
-export interface HardnessRange extends ValueRange {
-  readonly kind: 'gh' | 'kh';
-}
+export type { FieldStatus, HardnessRange, SheetField, ValueRange } from './sheet-field';
 
 /** Régime alimentaire. */
 export type Diet = 'omnivore' | 'carnivore' | 'herbivore';
@@ -74,6 +65,11 @@ export interface SpeciesSheet {
   readonly legal: SheetField<LegalStatus>;
   /** Mises en garde affichées en tête de fiche (#269), sourcées ou non vérifiées. */
   readonly notes: readonly SheetNote[];
+  /**
+   * Données d'écologie (#784, `docs/ECOSYSTEME.md` § 3.1) : optionnelles tant que toutes les
+   * tranches de #727 ne sont pas livrées (eau douce tropicale au c280).
+   */
+  readonly ecology?: SpeciesEcology;
 }
 
 /** Mise en garde d'une fiche : texte et statut. */
@@ -82,34 +78,12 @@ export interface SheetNote {
   readonly status: FieldStatus;
 }
 
-const APPROXIMATION: FieldStatus = Object.freeze({ kind: 'approximation' });
-
-function source(reference: string): FieldStatus {
-  return Object.freeze({ kind: 'source', reference });
-}
-
-function approx<T>(value: T): SheetField<T> {
-  return Object.freeze({ value, status: APPROXIMATION });
-}
-
-function sourced<T>(value: T, reference: string): SheetField<T> {
-  return Object.freeze({ value, status: source(reference) });
-}
-
-function range(min: number, max: number): ValueRange {
-  return Object.freeze({ min, max });
-}
-
-function gh(min: number, max: number): HardnessRange {
-  return Object.freeze({ kind: 'gh', min, max });
-}
-
 /**
  * Alcalinité du récif, 7–11 dKH (Holmes-Farley, `docs/SOINS.md` § 3), commune à toutes les
  * espèces de récif du jeu : paramètre de bac, pas propre à l'espèce.
  */
 const REEF_KH: SheetField<HardnessRange> = sourced(
-  Object.freeze({ kind: 'kh', min: 7, max: 11 }),
+  kh(7, 11),
   'docs/SOINS.md § 3 (Holmes-Farley, alcalinité du récif)',
 );
 
@@ -739,6 +713,7 @@ const SHEETS: Readonly<Record<SpeciesId, SpeciesSheet>> = Object.fromEntries(
       ...data,
       notes: Object.freeze([...(notes ?? [])]),
       legal: sourced(legal, legal.reference),
+      ...(SPECIES_ECOLOGY[id] ? { ecology: SPECIES_ECOLOGY[id] } : {}),
       // Source unique : les plages de la simulation (ADR 0057), approximations de jeu.
       phPreferred: approx(SPECIES_PH[id].ideal),
       phTolerated: approx(SPECIES_PH[id].tolerated),

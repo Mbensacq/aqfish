@@ -440,6 +440,25 @@ lue. Rien n'est relevé ni présenté comme confirmé.
 | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Lignes « Autres Anoures » (_Bombina orientalis_) et « Autres Caudata » (_Cynops orientalis_) de l'annexe 2 | Légifrance, version consolidée de l'arrêté du 8 octobre 2018 | **Toujours non vérifiable** : Légifrance n'a pas été lisible. Copie préfectorale du texte initial lue (préfecture de Maine-et-Loire, PDF « arrete_du_8_octobre_2018… », [61]) : son article 14 fixe bien le seuil d'autorisation des amphibiens adultes au-delà de **40** animaux, cohérent avec « 1 à 40 sans formalité » ; l'extraction du PDF s'arrête dans l'annexe 2 avant les amphibiens, les deux lignes n'ont donc pas été lues. Texte initial seulement, pas la version consolidée (arrêté modificatif du 5 septembre 2025 non repris). Confiances inchangées dans `sim/species-legal.ts` |
 
+## Données d'écologie (#784, eau douce tropicale)
+
+Première tranche de #727 (`docs/ECOSYSTEME.md` § 3.1), dans `sim/species-ecology.ts`, exposée
+par la fiche (`ecology`) mais **pas encore utilisée** par la simulation. Taille, volume minimal,
+groupe, températures, pH et dureté conseillée restent ceux de la fiche ; s'ajoutent :
+
+| Donnée                           | Sourcé                                                                                                                                                                | Approximation de jeu                                                                                  |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Classe de densité                | Poissons tropicaux : 1,5 à 2 L par cm (RSPCA) ; eau froide : 4 L par cm (RSPCA)                                                                                       | Invertébrés (1 à 1,5 L/cm) et récif (2 à 3 L/cm) : à sourcer                                          |
+| Volume par adulte supplémentaire | Néritine : 40 L (Aquarium Breeder, « 1 pour 20 à 40 L »)                                                                                                              | Aucune source pour les autres : la classe de densité s'applique                                       |
+| Dureté tolérée                   | —                                                                                                                                                                     | Toutes : plage conseillée élargie de quelques degrés (aucune source ne distingue préférée et tolérée) |
+| Régime détaillé                  | Ancistrus, otocinclus (Seriously Fish) ; molly (Seriously Fish) ; xipho (FishBase) ; crevette cerise (Garnelio, FishKeeper) ; néritine (Aquarium Breeder, FishKeeper) | Les autres                                                                                            |
+| Proies                           | Guppy, corydoras, rasbora, kuhli, danio : au moins les jeunes crevettes (Practical Fishkeeping) ; xipho (FishKeeper)                                                  | Tétra citron, gourami nain, platy, molly : jeunes crevettes                                           |
+| Prédateurs                       | Crevette cerise : liste de Practical Fishkeeping et FishKeeper, poisson rouge compris                                                                                 | Les autres : aucun connu parmi les espèces du jeu                                                     |
+| Comportement                     | Gourami nain, ancistrus, xipho territoriaux ; danio nageur rapide (Seriously Fish, FishKeeper)                                                                        | Les autres ; aucun mangeur de nageoires retenu dans la tranche                                        |
+
+La crevette nettoyeuse (récif) est rangée dans cette tranche par l'issue : classe « récif » et
+dureté tolérée (KH) en approximation.
+
 ## Non vérifié et désaccords
 
 1. Néon : 21–25 °C (Seriously Fish 2026) / 26,5–29 °C (ancien texte) / 21–29 °C (importateur) /
@@ -459,6 +478,12 @@ lue. Rien n'est relevé ni présenté comme confirmé.
     donne le calendrier du guppy (portée de 300 s simulées, 2 à 6 alevins, adulte à 1 200 s,
     `sim/fry.ts`) : **approximation de jeu**. Le sexe d'un individu, non rendu, suit l'alternance
     des identifiants (impair = femelle).
+12. Néritine, volume par adulte (#784) : « 1 pour 20 à 40 L » (Aquarium Breeder), fourchette
+    sans critère ; le jeu garde la borne stricte, 40 L.
+13. Gourami nain et crevettes (#784) : Practical Fishkeeping cite les « grands gouramis » ; que
+    le gourami nain mange les jeunes crevettes est une **approximation de jeu**.
+14. Dureté du guppy : 8–30 °dGH (Seriously Fish) / dH 9–19 (FishBase) ; la fiche garde
+    Seriously Fish.
 
 ## Bibliographie
 

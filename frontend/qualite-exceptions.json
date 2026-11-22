@@ -127,7 +127,7 @@
     "max-params": 7
   },
   "sim/species-sheet.ts": {
-    "max-lines": 882,
+    "max-lines": 870,
     "complexity": 16
   },
   "sim/species.ts": {
