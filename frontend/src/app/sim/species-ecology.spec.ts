@@ -173,8 +173,7 @@ describe('données d’écologie, eau douce tropicale (#784)', () => {
     expect(Object.isFrozen(ecologyOf('guppy').prey.value[0])).toBe(true);
   });
 
-  it('les espèces hors tranche n’ont pas encore de données (tranches c281 et c283)', () => {
-    expect(speciesSheet('rouge').ecology).toBeUndefined();
+  it('les espèces hors tranches n’ont pas encore de données (tranche c283)', () => {
     expect(speciesSheet('axolotl').ecology).toBeUndefined();
   });
 
