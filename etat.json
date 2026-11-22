@@ -10080,6 +10080,24 @@
         }
       },
       "metriques": {}
+    },
+    "278": {
+      "numero": 278,
+      "date": "2026-11-22",
+      "debut": "2026-11-22T13:42:41.266Z",
+      "type": "dette",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-22T13:42:41.266Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
