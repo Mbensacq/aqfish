@@ -10071,6 +10071,12 @@
           "debut": "2026-11-22T12:14:19.191Z",
           "fin": "2026-11-22T13:14:18.674Z",
           "note": "Verdict RÉSERVES, 0 bug : verify 556 e2e verts, critères OK, 8 captures téléphone ±1 px (coins du cadre) hors main ; captures publiées ; pied d'attribution réinjecté dans la revue"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-22T13:14:56.814Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
