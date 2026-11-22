@@ -835,6 +835,21 @@ describe('parseWorld : champs inconnus et prototypes', () => {
     expect(Object.keys(world.food[0])).not.toContain('goût');
   });
 
+  it('lit comme un bac ordinaire un lieu marqué par l’ancien mode immersif (#776)', () => {
+    // Le bac immersif n'était jamais sauvegardé ; un champ `immersive` resté dans un fichier
+    // est ignoré, sans erreur, et les dimensions restent celles du bac ordinaire.
+    const reference = restored(parseMutated(() => undefined)).world;
+    const { world } = restored(
+      parseMutated((d) => {
+        d['immersive'] = true;
+      }),
+    );
+    expect(Object.keys(world)).not.toContain('immersive');
+    expect(world.environment).toBe(reference.environment);
+    expect(world.dimensions).toEqual(reference.dimensions);
+    expect(world.entities).toEqual(reference.entities);
+  });
+
   it('ne lit ni ne pollue les prototypes (__proto__, constructor)', () => {
     const base = serializeWorld(createDefaultWorld(42));
     // Champ obligatoire fourni seulement par un faux prototype : ignoré, donc refusé.

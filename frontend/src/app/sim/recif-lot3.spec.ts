@@ -4,8 +4,6 @@ import { SIM_DT } from './constants';
 import { DIURNAL } from './day-rhythm';
 import { catchesIch } from './disease';
 import { environmentWater, livesIn, REEF, TROPICAL_TANK } from './environment';
-import { TAP_REACTIONS } from './glass-tap';
-import { immersivePopulation, smallSwimmers } from './immersive-tank';
 import { createRoom, findTank, type RoomState } from './room-state';
 import { addWarnings, sheetRows, speciesSheet } from './species-sheet';
 import { SPECIES_LABELS, speciesCatalog } from './species-catalog';
@@ -167,14 +165,12 @@ describe('récif, lot 3 (#422) : catalogue complet', () => {
     expect(ph.tolerated.min).toBeGreaterThan(freshPh('tropical'));
   });
 
-  it('rythmes et tapotement : blennie diurne qui fuit ; crevette marcheuse, sans réaction', () => {
+  it('rythmes : blennie diurne ; crevette au rythme de l’axolotl', () => {
     expect(DIURNAL.blennie).toBe(true);
-    expect(TAP_REACTIONS.blennie).toBe('fuite');
     expect(DIURNAL.crevette).toBe(DIURNAL.axolotl);
-    expect(TAP_REACTIONS.crevette).toBeNull();
   });
 
-  it('crevette : invertébré marcheur du fond, au plus deux, hors du mode immersif', () => {
+  it('crevette : invertébré marcheur du fond, au plus deux', () => {
     expect(treatmentGroup('crevette')).toBe('invertebre');
     expect(treatmentGroup('blennie')).toBe('poisson');
     expect(CREVETTE.walker).toBeDefined();
@@ -186,7 +182,6 @@ describe('récif, lot 3 (#422) : catalogue complet', () => {
     expect(CREVETTE.depth).toBeUndefined();
     expect(CREVETTE.schooling).toBeNull();
     expect(CREVETTE.maxPopulation).toBe(2);
-    expect(smallSwimmers('recif')).not.toContain('crevette');
     expect(catchesIch('crevette', 'recif')).toBe(false);
     expect(catchesIch('blennie', 'recif')).toBe(false);
   });
@@ -198,21 +193,8 @@ describe('récif, lot 3 (#422) : catalogue complet', () => {
     expect(band?.minHeightRatio ?? 0).toBeGreaterThan(0);
     expect(GOBIE.depth?.maxHeightRatio ?? 1).toBeLessThan(band?.maxHeightRatio ?? 0);
     expect(band?.maxHeightRatio ?? 1).toBeLessThan(GRAMMA.depth?.minHeightRatio ?? 0);
-    // Plus long que le gramma : hors du trio du mode immersif du récif.
+    // Plus long que le gramma.
     expect(BLENNIE.bodyLength).toBeGreaterThan(GRAMMA.bodyLength);
-  });
-
-  it('mode immersif du récif inchangé : chromis, clown, gramma (ADR 0097, ADR 0103)', () => {
-    expect(immersivePopulation('recif').map((p) => p.species)).toEqual([
-      'chromis',
-      'clown',
-      'gramma',
-    ]);
-    expect(immersivePopulation('tropical').map((p) => p.species)).toEqual([
-      'otocinclus',
-      'corydora',
-      'rasbora',
-    ]);
   });
 });
 

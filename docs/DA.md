@@ -197,7 +197,8 @@ devant lui garde son vert ; aucune couleur ajoutée à la palette.
   texte, 12 px à l'écran ; masquées avec les touches sous 1 280 px (la barre tient à 640 px).
 - Minimale et discrète : l'interface s'efface devant le bac. Aucune interface en mode capture.
 - Masquer l'interface (#725, cycle 275, à la place du mode immersif) : tout disparaît sauf le
-  bac ; seule l'indication « I ou Échap pour revenir » reste 3 s, petit panneau plein de la
+  bac ; seule l'indication « I ou Échap pour revenir » (« Appui long pour revenir » au doigt)
+  reste 3 s, petit panneau plein de la
   charte (coins de 4 px) en haut au centre, fondu sur sa dernière seconde (aucun fondu si
   « Réduire les mouvements ») ; le curseur se cache après 2 s d'immobilité.
 - Icônes en pixel art, cohérentes avec la palette : composant commun `ui/pixel-icon`

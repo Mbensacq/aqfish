@@ -10,7 +10,6 @@ import {
 import { SIM_DT } from './constants';
 import { DIURNAL } from './day-rhythm';
 import { environmentWater, ENVIRONMENTS, livesIn, POND } from './environment';
-import { TAP_REACTIONS } from './glass-tap';
 import { populationCounts, setPopulation } from './population';
 import { parseWorld, serializeWorld } from './save';
 import { cohabitationReason } from './species-care';
@@ -146,9 +145,8 @@ describe('poisson rouge (#654) : espèce et fiche', () => {
     expect(legal.note).toContain('ne jamais relâcher');
   });
 
-  it('diurne, curieux à la vitre, banc lâche', () => {
+  it('diurne, banc lâche', () => {
     expect(DIURNAL.rouge).toBe(true);
-    expect(TAP_REACTIONS.rouge).toBe('curiosite');
     expect(ROUGE.schooling).not.toBeNull();
     expect(TEMPERAMENTS.rouge).toBe('paisible');
   });

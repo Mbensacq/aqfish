@@ -74,12 +74,10 @@ import { rotAllFinsInPlace } from './fin-rot';
 import { isVelvetProgress, velvetAllInPlace } from './velvet';
 import { fungusAllInPlace, isFungusProgress } from './fungus';
 import { dropsyAllInPlace, isDropsyProgress } from './dropsy';
-import { TAP_RADIUS, tapGlassInPlace, type GlassPoint } from './glass-tap';
 import {
   DEFAULT_ENVIRONMENT_ID,
   environmentById,
   environmentWater,
-  isImmersiveEnvironment,
   isPondShapeable,
   isTankResizable,
   PLACE_CACHE_LIMIT,
@@ -157,7 +155,7 @@ import {
 } from './pond-shape';
 import { SPECIES, type AnemoneBondParams, type SpeciesId } from './species';
 import { createFish, stepFish, swimBounds, type SwimBounds } from './swimmer';
-import { clampImmersiveDimensions, clampTankDimensions, type TankDimensions } from './tank';
+import { clampTankDimensions, type TankDimensions } from './tank';
 import { assertTimeStep } from './time-step';
 import {
   initialMaintenance,
@@ -302,13 +300,6 @@ export function createWorld(
 function worldDimensions(place: Place): TankDimensions | undefined {
   if (typeof place === 'string' || place.dimensions === undefined) {
     return undefined;
-  }
-  if (place.immersive === true) {
-    // Bac immersif (#375) : dimensions de l'écran, dans les environnements qui le proposent.
-    if (!isImmersiveEnvironment(place.environment)) {
-      throw new RangeError(`pas de bac immersif dans l’environnement ${place.environment}`);
-    }
-    return clampImmersiveDimensions(place.dimensions);
   }
   if (!isTankResizable(place.environment)) {
     throw new RangeError(`dimensions non réglables dans l’environnement ${place.environment}`);
@@ -701,20 +692,6 @@ export function feedInPlace(world: MutableWorld, x: number, z: number): number {
     );
   }
   return dropFoodInPlace(world as MutableWorld & { food: FoodPellet[] }, x, z, water, terrain);
-}
-
-/**
- * Tapotement de la vitre au point `tap` (`tapGlassInPlace`, issue #346, ADR 0092), **en
- * modifiant** les poissons de `world` à moins de `radius` mètres ; renvoie le nombre de
- * poissons qui ont réagi. Réservé au propriétaire unique du monde (`ui/immersive-mode`), comme
- * `feedInPlace`.
- */
-export function tapGlassInWorld(
-  world: MutableWorld,
-  tap: GlassPoint,
-  radius: number = TAP_RADIUS,
-): number {
-  return tapGlassInPlace(world.entities as Mutable<Entity>[], tap, radius);
 }
 
 /**
