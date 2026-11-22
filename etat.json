@@ -9936,6 +9936,24 @@
         }
       },
       "metriques": {}
+    },
+    "274": {
+      "numero": 274,
+      "date": "2026-11-22",
+      "debut": "2026-11-22T01:39:21.053Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-22T01:39:21.053Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
