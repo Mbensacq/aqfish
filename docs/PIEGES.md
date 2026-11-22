@@ -6,6 +6,14 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Panneau posé sous le tableau de bord à une hauteur écrite en dur** (cycle 277, #773) :
+  l'offre de partage (`top: 64px`) recouvrait le bas du cadre de l'eau à 1 280 px (il finit à
+  78 px) et la ligne d'état du pH disparaissait ; le cadre change de hauteur avec le dépliage,
+  la courbe d'une jauge et le retour à la ligne. Se caler sur sa hauteur publiée
+  (`--aqfish-frame-height`, mixin `below-top-slot` de `_dashboard-surface.scss`) ; pour un
+  bouton dans la zone des panneaux pleine largeur du téléphone (« Pharmacie », #772), plan 0
+  (`z-index: 0`) : un panneau ouvert passe dessus. Vérifier par `elementFromPoint`, pas
+  seulement par les boîtes. (2026-11-22)
 - **Bouton de plus dans la barre du bas : elle sortait de l'écran sans qu'aucun e2e échoue**
   (cycle 268, #722) : `.view-presets-bar` faisait déjà 702 px sur `main` (débord à gauche dès
   640 px de large) ; avec la raclette et le sécateur, 862 px, sur « Wiki » à 900 px et sur
