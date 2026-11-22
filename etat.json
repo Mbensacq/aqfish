@@ -10065,6 +10065,12 @@
           "debut": "2026-11-22T11:00:52.017Z",
           "fin": "2026-11-22T12:13:47.070Z",
           "note": "PR #779 : superpositions UI (offre de partage sous le cadre, Pharmacie sous les panneaux sur téléphone, JSDoc), Closes #773 #772 #778, CI verte ; pied de page d'attribution réinjecté par l'environnement dans la PR (PIEGES)"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-22T12:14:19.191Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
