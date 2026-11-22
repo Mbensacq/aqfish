@@ -808,12 +808,12 @@ origin/main`, `node_modules` en lien symbolique) ; il sert aussi aux captures «
   2. tout clic, glisser, molette ou appui sur la barre des vues, le tableau de bord ou le bac,
      et **toute mesure de pixels** (`canvasShot`, `countColors`, `vegetationPixels`, capture
      d'écran : le fond assombrit l'image) se font fenêtre fermée ; `dansReglages(page,
-     'Décor', () => decor(page).uncheck())` agit puis referme ;
+'Décor', () => decor(page).uncheck())` agit puis referme ;
   3. prendre la raclette ou le sécateur referme la fenêtre : relire leur état
      (`aria-pressed`) après `ouvrirReglages`.
-  Repérer les cas : un script qui suit chaque test depuis `ouvrirReglages` (catégorie
-  courante) et signale les jetons d'une autre catégorie ou les gestes hors fenêtre (méthode de
-  la PR du cycle 267). (2026-11-21)
+     Repérer les cas : un script qui suit chaque test depuis `ouvrirReglages` (catégorie
+     courante) et signale les jetons d'une autre catégorie ou les gestes hors fenêtre (méthode de
+     la PR du cycle 267). (2026-11-21)
 - **`getByRole` cherche une sous-chaîne du nom** : un bouton « Fermer les réglages » rendait
   `getByRole('button', { name: 'Réglages' })` ambigu (deux boutons, erreur « strict mode
   violation ») dans des dizaines d'e2e. Nommer les nouveaux boutons sans reprendre le nom
