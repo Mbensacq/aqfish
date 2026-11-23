@@ -10340,7 +10340,7 @@
       "type": "dette",
       "issue": 795,
       "pr": 797,
-      "version": null,
+      "version": "v1.29.5",
       "phases": {
         "planif": {
           "statut": "termine",
