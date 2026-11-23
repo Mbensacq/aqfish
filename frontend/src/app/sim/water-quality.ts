@@ -134,8 +134,9 @@ export function waterTurbidity(quality: WaterQuality): number {
 }
 
 /**
- * Relevé de l'eau affiché par le panneau (issue #207) : valeurs arrondies au dixième (au centième pour ammoniaque et nitrites, en mg/L), pour
- * que l'interface ne change qu'avec ce qu'elle montre. Objet de données pur.
+ * Relevé de l'eau affiché par le panneau (issue #207) : valeurs arrondies au dixième (au
+ * centième pour ammoniaque et nitrites, en mg/L), pour que l'interface ne change qu'avec ce
+ * qu'elle montre. Objet de données pur.
  */
 export interface WaterReadout {
   readonly quality: WaterQuality;
