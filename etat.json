@@ -10209,6 +10209,12 @@
           "debut": "2026-11-22T23:43:01.331Z",
           "fin": "2026-11-23T00:20:59.507Z",
           "note": "PR #789 : données d'écologie mer et eau froide (8 espèces), Closes #785, CI verte (e2e local partiel, CI 7/7) ; pied d'attribution réinjecté par l'environnement dans la PR (PIEGES)"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-23T00:21:34.922Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
