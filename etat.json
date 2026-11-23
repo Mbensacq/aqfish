@@ -10395,6 +10395,12 @@
           "debut": "2026-11-23T09:37:23.187Z",
           "fin": "2026-11-23T10:02:37.862Z",
           "note": "Verdict OK, 0 bug : 6135 tests, CI e2e 7/7, captures identiques c285 (1 capture sensible à la charge), mutation non mesurée (retro)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-23T10:03:10.219Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
