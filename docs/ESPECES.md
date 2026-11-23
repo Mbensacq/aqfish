@@ -446,15 +446,15 @@ Première tranche de #727 (`docs/ECOSYSTEME.md` § 3.1), dans `sim/species-ecolo
 par la fiche (`ecology`) mais **pas encore utilisée** par la simulation. Taille, volume minimal,
 groupe, températures, pH et dureté conseillée restent ceux de la fiche ; s'ajoutent :
 
-| Donnée                           | Sourcé                                                                                                                                                                | Approximation de jeu                                                                                  |
-| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| Classe de densité                | Poissons tropicaux : 1,5 à 2 L par cm (RSPCA) ; eau froide : 4 L par cm (RSPCA)                                                                                       | Invertébrés (1 à 1,5 L/cm) et récif (2 à 3 L/cm) : à sourcer                                          |
-| Volume par adulte supplémentaire | Néritine : 40 L (Aquarium Breeder, « 1 pour 20 à 40 L »)                                                                                                              | Aucune source pour les autres : la classe de densité s'applique                                       |
-| Dureté tolérée                   | —                                                                                                                                                                     | Toutes : plage conseillée élargie de quelques degrés (aucune source ne distingue préférée et tolérée) |
-| Régime détaillé                  | Ancistrus, otocinclus (Seriously Fish) ; molly (Seriously Fish) ; xipho (FishBase) ; crevette cerise (Garnelio, FishKeeper) ; néritine (Aquarium Breeder, FishKeeper) | Les autres                                                                                            |
-| Proies                           | Guppy, corydoras, rasbora, kuhli, danio : au moins les jeunes crevettes (Practical Fishkeeping) ; xipho (FishKeeper)                                                  | Tétra citron, gourami nain, platy, molly : jeunes crevettes                                           |
-| Prédateurs                       | Crevette cerise : liste de Practical Fishkeeping et FishKeeper, poisson rouge compris                                                                                 | Les autres : aucun connu parmi les espèces du jeu                                                     |
-| Comportement                     | Gourami nain, ancistrus, xipho territoriaux ; danio nageur rapide (Seriously Fish, FishKeeper)                                                                        | Les autres ; aucun mangeur de nageoires retenu dans la tranche                                        |
+| Donnée                           | Sourcé                                                                                                                                                                | Approximation de jeu                                                                                             |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Classe de densité                | Poissons tropicaux : 1,5 à 2 L par cm (RSPCA) ; eau froide : 4 L par cm (RSPCA)                                                                                       | Invertébrés (1 à 1,5 L/cm) et récif (2 à 3 L/cm) : à sourcer                                                     |
+| Volume par adulte supplémentaire | Néritine : 40 L (Aquarium Breeder, « 1 pour 20 à 40 L »)                                                                                                              | Aucune source pour les autres : la classe de densité s'applique                                                  |
+| Dureté tolérée                   | —                                                                                                                                                                     | Toutes : plage conseillée élargie de quelques degrés (aucune source ne distingue préférée et tolérée)            |
+| Régime détaillé                  | Ancistrus, otocinclus (Seriously Fish) ; molly (Seriously Fish) ; xipho (FishBase) ; crevette cerise (Garnelio, FishKeeper) ; néritine (Aquarium Breeder, FishKeeper) | Les autres                                                                                                       |
+| Proies                           | Guppy, corydoras, rasbora, kuhli, danio : au moins les jeunes crevettes (Practical Fishkeeping) ; xipho (FishKeeper)                                                  | Tétra citron, gourami nain, platy, molly : jeunes crevettes                                                      |
+| Prédateurs                       | — (la source de chaque prédateur de la crevette cerise est portée par ses proies, ligne au-dessus)                                                                    | Crevette cerise : liste mixte, donc approximation (point 17) ; les autres : aucun connu parmi les espèces du jeu |
+| Comportement                     | Gourami nain, ancistrus, xipho territoriaux ; danio nageur rapide (Seriously Fish, FishKeeper)                                                                        | Les autres ; aucun mangeur de nageoires retenu dans la tranche                                                   |
 
 La crevette nettoyeuse (récif) est rangée dans cette tranche par l'issue : classe « récif » et
 dureté tolérée (KH) en approximation.
@@ -464,15 +464,15 @@ dureté tolérée (KH) en approximation.
 Deuxième tranche, mêmes champs. En mer, la dureté tolérée est une KH (alcalinité) élargie
 autour de celle du récif de la fiche (KH 7–11).
 
-| Donnée                           | Sourcé                                                                                                                                         | Approximation de jeu                                                                                                       |
-| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| Classe de densité                | Poisson rouge : eau froide, 4 L par cm (RSPCA)                                                                                                 | Koï : eau froide (la règle de la RSPCA vise le poisson rouge) ; les six poissons de mer : récif (2 à 3 L/cm, à sourcer)    |
-| Volume par adulte supplémentaire | Poisson rouge : 100 L pour le premier adulte, puis 50 L par adulte (OATA) ; **désaccord** RSPCA, au moins 60 L chacun : le jeu garde l'OATA | Koï : aucun (bassin de 800 L de la fiche, non vérifié, point 3) ; mer : aucun, la classe de densité s'applique              |
-| Dureté tolérée                   | —                                                                                                                                              | Toutes : plage conseillée élargie (KH 6–12 en mer, GH 4–22 pour le poisson rouge, GH 4–25 pour la koï)                     |
-| Régime détaillé                  | Chromis (Wikipédia, secondaire) ; gramma (Wikipédia, secondaire) ; blennie (FishBase, niveau trophique 2,0) ; poisson rouge (FishKeeper)       | Clown, chirurgien, gobie, koï ; granulés du chromis et de la blennie                                                       |
-| Proies                           | Poisson rouge : crevettes cerises adultes (Practical Fishkeeping)                                                                              | Les autres : aucune parmi les espèces du jeu                                                                               |
-| Prédateurs                       | —                                                                                                                                              | Aucun connu parmi les espèces du jeu (les prédateurs du chromis, « grands poissons », n'y sont pas)                        |
-| Comportement                     | Gramma territorial (Wikipédia, secondaire)                                                                                                     | Clown, chirurgien, blennie territoriaux ; chirurgien et chromis nageurs rapides ; aucun mangeur de nageoires dans la tranche |
+| Donnée                           | Sourcé                                                                                                                                                                                           | Approximation de jeu                                                                                                         |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| Classe de densité                | Poisson rouge : eau froide, 4 L par cm (RSPCA)                                                                                                                                                   | Koï : eau froide (la règle de la RSPCA vise le poisson rouge) ; les six poissons de mer : récif (2 à 3 L/cm, à sourcer)      |
+| Volume par adulte supplémentaire | Poisson rouge : 100 L pour le premier adulte, puis 50 L par adulte (OATA) ; **désaccord** RSPCA, au moins 60 L chacun : le jeu garde l'OATA, plus stricte jusqu'à 4 adultes seulement (point 15) | Koï : aucun (bassin de 800 L de la fiche, non vérifié, point 3) ; mer : aucun, la classe de densité s'applique               |
+| Dureté tolérée                   | —                                                                                                                                                                                                | Toutes : plage conseillée élargie (KH 6–12 en mer, GH 4–22 pour le poisson rouge, GH 4–25 pour la koï)                       |
+| Régime détaillé                  | Chromis (Wikipédia, secondaire) ; gramma (Wikipédia, secondaire) ; blennie (FishBase, niveau trophique 2,0) ; poisson rouge (FishKeeper)                                                         | Clown, chirurgien, gobie, koï ; granulés du chromis et de la blennie                                                         |
+| Proies                           | Poisson rouge : crevettes cerises adultes (Practical Fishkeeping)                                                                                                                                | Les autres : aucune parmi les espèces du jeu                                                                                 |
+| Prédateurs                       | —                                                                                                                                                                                                | Aucun connu parmi les espèces du jeu (les prédateurs du chromis, « grands poissons », n'y sont pas)                          |
+| Comportement                     | Gramma territorial (Wikipédia, secondaire)                                                                                                                                                       | Clown, chirurgien, blennie territoriaux ; chirurgien et chromis nageurs rapides ; aucun mangeur de nageoires dans la tranche |
 
 ## Non vérifié et désaccords
 
@@ -498,12 +498,20 @@ autour de celle du récif de la fiche (KH 7–11).
 13. Gourami nain et crevettes (#784) : Practical Fishkeeping cite les « grands gouramis » ; que
     le gourami nain mange les jeunes crevettes est une **approximation de jeu**.
 14. Dureté du guppy : 8–30 °dGH (Seriously Fish) / dH 9–19 (FishBase) ; la fiche garde
-    Seriously Fish.
+    Seriously Fish et écrit « désaccord » dans sa référence (#788).
 15. Poisson rouge, volume (#785) : 100 L puis 50 L par adulte supplémentaire (OATA) / au moins
-    60 L chacun (RSPCA) ; le jeu garde l'OATA, plus stricte, et l'écrit dans la référence de la
-    fiche (`ecology.extraLitersPerAdult`).
+    60 L chacun (RSPCA) ; le jeu garde l'OATA et l'écrit dans la référence de la fiche
+    (`ecology.extraLitersPerAdult`). L'OATA n'est plus stricte que jusqu'à 4 adultes (250 L contre
+    240 L) ; les deux règles s'égalisent à 5 (300 L) et la RSPCA est plus stricte au-delà
+    (6 adultes : 360 L contre 350 L). Comportement fixé par un test (#790) ; quand la simulation
+    lira ce volume (#728 et suivantes), elle pourra garder le maximum des deux règles.
 16. Koï, volume du bassin (#785) : aucune source consultable pendant le cycle (accès réseau des
     agents limité aux registres de paquets) ; 800 L restent une **approximation de jeu**.
+17. Prédateurs de la crevette cerise (#788) : la liste mêle prédateurs sourcés (guppy, corydoras,
+    rasbora, kuhli, danio et poisson rouge : Practical Fishkeeping ; xipho : FishKeeper) et
+    approximations (tétra citron, gourami nain, platy, molly). Le champ `predators` de la crevette
+    est donc une **approximation de jeu** ; la source de chaque prédateur reste dans son champ
+    `prey`, pour qu'aucun champ sourcé ne recouvre une valeur non sourcée (testé).
 
 ## Bibliographie
 
