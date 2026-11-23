@@ -96,7 +96,7 @@ import {
   stepPlantsStageInPlace,
   stepWaterStageInPlace,
 } from './world-step-life';
-import { eatInPlace, feedingBand, foodTarget, type FeedingBand } from './feeding';
+import { eatMassInPlace, feedingBand, foodTarget, type FeedingBand } from './feeding';
 import {
   birthBounds,
   broodIndexAt,
@@ -814,14 +814,14 @@ function stepInPlace(world: MutableWorld, dt: number, clock: SimClock): void {
     swimOneInPlace(world, fishes[i], i, dt, pass);
   }
   settleSwimmersInPlace(fishes, pass);
-  const decayed = stepFoodStage(pass, dt);
+  pass.decayed = stepFoodStage(pass, dt);
   if (decor) {
     // Mode décor (#278) : faim rendue telle qu'au début du pas ; eau et santé en pause (la
     // nourriture qui se décompose alors n'atteint pas l'eau).
     restoreHunger(fishes);
     return;
   }
-  stepLifeInPlace(world, fishes, dt, decayed, pass);
+  stepLifeInPlace(world, dt, pass);
 }
 
 /**
@@ -868,6 +868,9 @@ interface SwimPass {
   neighbors: readonly WalkerNeighbor[];
   /** Le dernier point visé est un broutage (`swimmerTarget`). */
   grazing: boolean;
+  /** Masses de nourriture mangée (`settleSwimmersInPlace`) et pourrie (`stepFoodStage`) du pas. */
+  eaten: number;
+  decayed: number;
 }
 
 /** État de la nage du pas, réutilisé d'un pas à l'autre (pas non réentrant, voir `hungerKept`). */
@@ -889,6 +892,8 @@ const PASS: SwimPass = {
   flowing: false,
   neighbors: [],
   grazing: false,
+  eaten: 0,
+  decayed: 0,
 };
 
 /**
@@ -1030,7 +1035,7 @@ function swimmerTarget(
   return target;
 }
 
-/** Après la nage : distances minimales (banc, puis rivaux), puis repas des granulés. */
+/** Après la nage : distances minimales (banc, puis rivaux), puis repas (masse dans `eaten`). */
 function settleSwimmersInPlace(fishes: Mutable<Entity>[], pass: SwimPass): void {
   currentPlace = pass.place;
   currentKey = pass.key;
@@ -1038,7 +1043,7 @@ function settleSwimmersInPlace(fishes: Mutable<Entity>[], pass: SwimPass): void 
   if (pass.rivals) {
     enforceRivalDistance(fishes, boundsOfFish);
   }
-  eatInPlace(fishes, pass.food, bandOfFish, hardOfFish);
+  pass.eaten = eatMassInPlace(fishes, pass.food, bandOfFish, hardOfFish);
 }
 
 /**
@@ -1056,18 +1061,13 @@ function stepFoodStage(pass: SwimPass, dt: number): number {
  * plantes), eau, algues, plantes, maladies, santé (`sim/world-step-life.ts`), puis population
  * (`stepPopulationInPlace`).
  */
-function stepLifeInPlace(
-  world: MutableWorld,
-  fishes: Mutable<Entity>[],
-  dt: number,
-  decayed: number,
-  pass: SwimPass,
-): void {
+function stepLifeInPlace(world: MutableWorld, dt: number, pass: SwimPass): void {
+  const fishes = world.entities as Mutable<Entity>[];
   if (pass.fryPresent) {
     growFryInPlace(fishes, dt);
     eatFryInPlace(fishes, pass.plants);
   }
-  stepWaterStageInPlace(world, dt, decayed);
+  stepWaterStageInPlace(world, dt, pass.decayed, pass.eaten);
   stepAlgaeStageInPlace(world, dt);
   stepPlantsStageInPlace(world, dt);
   stepDiseasesInPlace(world, dt);

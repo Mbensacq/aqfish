@@ -4,7 +4,7 @@ import { ichStress, stepIchInPlace } from './disease';
 import { stepDropsyInPlace } from './dropsy';
 import { environmentWater } from './environment';
 import { finRotCauses, stepFinRotInPlace } from './fin-rot';
-import { addDecayedFoodInPlace } from './food-decay';
+import { addDecayedFoodInPlace, addEatenFoodInPlace } from './food-decay';
 import { stepFungusInPlace } from './fungus';
 import { deadLoad } from './mortality';
 import {
@@ -18,6 +18,9 @@ import { SPECIES, type SpeciesDefinition, type SpeciesId } from './species';
 import { ichProtected, medicationProtects, stepTreatmentInPlace } from './treatment';
 import { stepVelvetInPlace } from './velvet';
 import {
+  AMMONIA_PER_LOAD_LITER,
+  MAX_CONCENTRATIONS,
+  RESTING_AMMONIA_PER_LOAD_LITER,
   stepWaterInPlace,
   targetTemperature,
   waterLiters,
@@ -36,22 +39,55 @@ import type { Entity, Mutable, MutableWorld } from './world-types';
  */
 
 /**
- * Eau (issues #206 et #638) : l'ammoniaque des granulés décomposés (`decayed`, masse du pas)
- * entre dans l'eau avant le pas d'eau, donc n'est convertie qu'au pas suivant, comme celle des
- * déchets ; puis le pas d'eau, sans hasard, après les poissons (ne change rien à leur nage).
+ * Eau (issues #206, #638 et #798) : l'ammoniaque de la nourriture du pas, pourrie (`decayed`)
+ * et mangée (`eaten`, masses du pas, `sim/food-decay.ts`), et celle des corps en décomposition
+ * entrent dans l'eau avant le pas d'eau, donc ne sont converties qu'au pas suivant, comme
+ * celle produite au repos ; puis le pas d'eau, sans hasard, après les poissons (ne change rien
+ * à leur nage).
  */
-export function stepWaterStageInPlace(world: MutableWorld, dt: number, decayed: number): void {
+export function stepWaterStageInPlace(
+  world: MutableWorld,
+  dt: number,
+  decayed: number,
+  eaten: number,
+): void {
   const water = world.water as MutableWaterState;
   const liters = waterLiters(environmentWater(world));
   if (decayed > 0) {
     addDecayedFoodInPlace(water, decayed, liters);
   }
+  if (eaten > 0) {
+    addEatenFoodInPlace(water, eaten, liters);
+  }
+  const bodies = deadLoad(world.dead);
+  if (bodies > 0) {
+    addBodyDecayInPlace(water, bodies, liters, dt);
+  }
   stepWaterInPlace(
     water,
     dt,
-    waterLoad(world.entities) + deadLoad(world.dead),
+    waterLoad(world.entities) + bodies,
     liters,
     targetTemperature(world.water, world.environment),
+  );
+}
+
+/**
+ * Corps en décomposition (issue #582) : un corps ne mange pas, mais pourrit au rythme d'avant
+ * l'issue #798. Sa charge (`deadLoad`) passe par `stepWaterInPlace` pour la part « au repos »
+ * (`RESTING_AMMONIA_PER_LOAD_LITER`) et le pH ; le reste de `AMMONIA_PER_LOAD_LITER` est
+ * ajouté ici, plafonné à `MAX_CONCENTRATIONS.ammonia`.
+ */
+function addBodyDecayInPlace(
+  water: MutableWaterState,
+  bodies: number,
+  liters: number,
+  dt: number,
+): void {
+  const rest = AMMONIA_PER_LOAD_LITER - RESTING_AMMONIA_PER_LOAD_LITER;
+  water.ammonia = Math.min(
+    MAX_CONCENTRATIONS.ammonia,
+    water.ammonia + ((rest * bodies) / liters) * dt,
   );
 }
 

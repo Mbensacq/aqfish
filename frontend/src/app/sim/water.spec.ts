@@ -15,6 +15,7 @@ import {
   MIN_WATER_TEMPERATURE,
   readWater,
   REFERENCE_BODY_LENGTH,
+  RESTING_AMMONIA_PER_LOAD_LITER,
   setHeaterInPlace,
   stepWater,
   stepWaterInPlace,
@@ -45,6 +46,11 @@ import { FRESH_PH, MAX_PH, MIN_PH } from './water-ph';
 /** Bac tropical par défaut : charge et litres. */
 const TROPICAL_LITERS = waterLiters(environmentWater('tropical'));
 const TROPICAL_LOAD = waterLoad(createDefaultWorld(42).entities);
+/**
+ * Charge qui, au repos seul, produit l'ammoniaque d'un bac par défaut **nourri à sa faim**
+ * (repas compris, `AMMONIA_PER_LOAD_LITER`) : la calibration d'avant l'issue #798.
+ */
+const FED_TROPICAL_LOAD = (TROPICAL_LOAD * AMMONIA_PER_LOAD_LITER) / RESTING_AMMONIA_PER_LOAD_LITER;
 
 /** Avance une copie de `water` de `steps` pas de `SIM_DT`. */
 function run(
@@ -136,18 +142,22 @@ describe('stepWaterInPlace', () => {
     expect(state.ammonia / 0.5 + state.nitrite / 0.125 + state.nitrate).toBeCloseTo(10, 9);
   });
 
+  it('production au repos (#798) : un tiers de celle d’un bac nourri', () => {
+    expect(RESTING_AMMONIA_PER_LOAD_LITER / AMMONIA_PER_LOAD_LITER).toBeCloseTo(1 / 3, 12);
+  });
+
   it('production d’ammoniaque proportionnelle à la charge et inverse du volume', () => {
     const dt = 1;
     const off = { ...freshWater('tropical'), filter: 0 };
     const a = stepWater(off, dt, 10, 100, 25).ammonia;
-    expect(a).toBeCloseTo((AMMONIA_PER_LOAD_LITER * 10) / 100, 12);
+    expect(a).toBeCloseTo((RESTING_AMMONIA_PER_LOAD_LITER * 10) / 100, 12);
     expect(stepWater(off, dt, 20, 100, 25).ammonia).toBeCloseTo(2 * a, 12);
     expect(stepWater(off, dt, 10, 200, 25).ammonia).toBeCloseTo(a / 2, 12);
   });
 
-  it('population par défaut : ammoniaque et nitrites restent bas, les nitrates montent', () => {
-    const after1h = run(freshWater('tropical'), minutes(60));
-    const after2h = run(after1h, minutes(60));
+  it('population par défaut nourrie : ammoniaque et nitrites restent bas, les nitrates montent', () => {
+    const after1h = run(freshWater('tropical'), minutes(60), FED_TROPICAL_LOAD);
+    const after2h = run(after1h, minutes(60), FED_TROPICAL_LOAD);
     expect(after2h.ammonia).toBeLessThan(2);
     expect(after2h.nitrite).toBeLessThan(3);
     expect(after2h.nitrate).toBeGreaterThan(after1h.nitrate);
@@ -157,10 +167,20 @@ describe('stepWaterInPlace', () => {
     expectBounded(after2h);
   });
 
-  it('calibrage de l’indicateur (#207) : à surveiller avant 1 h, mauvaise avant 2 h', () => {
-    expect(waterQuality(run(freshWater('tropical'), minutes(20)), 'tropical')).toBe('bonne');
-    expect(waterQuality(run(freshWater('tropical'), minutes(60)), 'tropical')).toBe('a-surveiller');
-    expect(waterQuality(run(freshWater('tropical'), minutes(120)), 'tropical')).toBe('mauvaise');
+  it('calibrage de l’indicateur (#207) : nourri, à surveiller avant 1 h, mauvaise avant 2 h', () => {
+    const fed = (m: number): WaterState =>
+      run(freshWater('tropical'), minutes(m), FED_TROPICAL_LOAD);
+    expect(waterQuality(fed(20), 'tropical')).toBe('bonne');
+    expect(waterQuality(fed(60), 'tropical')).toBe('a-surveiller');
+    expect(waterQuality(fed(120), 'tropical')).toBe('mauvaise');
+  });
+
+  it('à jeun (#798) : seule la part au repos, l’eau se dégrade bien plus lentement', () => {
+    const fasting = run(freshWater('tropical'), minutes(120));
+    const fed = run(freshWater('tropical'), minutes(120), FED_TROPICAL_LOAD);
+    expect(fasting.nitrate).toBeGreaterThan(0);
+    expect(fasting.nitrate / fed.nitrate).toBeCloseTo(1 / 3, 2);
+    expect(waterQuality(fasting, 'tropical')).not.toBe('mauvaise');
   });
 
   it('surpeuplement : tout monte plus vite qu’avec la population par défaut', () => {
@@ -177,7 +197,7 @@ describe('stepWaterInPlace', () => {
   it('filtre à 0 : l’ammoniaque s’accumule, rien n’est converti', () => {
     const state = run({ ...freshWater('tropical'), filter: 0, nitrite: 4 }, minutes(10));
     expect(state.ammonia).toBeCloseTo(
-      ((AMMONIA_PER_LOAD_LITER * TROPICAL_LOAD) / TROPICAL_LITERS) * 600,
+      ((RESTING_AMMONIA_PER_LOAD_LITER * TROPICAL_LOAD) / TROPICAL_LITERS) * 600,
       6,
     );
     expect(state.nitrite).toBe(4);

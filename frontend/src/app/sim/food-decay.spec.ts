@@ -13,7 +13,7 @@ import {
   type FoodPellet,
   type FoodState,
 } from './food';
-import { addDecayedFoodInPlace, FOOD_DECAY_AMMONIA } from './food-decay';
+import { addDecayedFoodInPlace, EATEN_FOOD_AMMONIA, FOOD_DECAY_AMMONIA } from './food-decay';
 import { freshWater, MAX_CONCENTRATIONS, waterLiters, type MutableWaterState } from './water';
 import {
   advanceTo,
@@ -164,7 +164,7 @@ describe('sim/world : nourriture non mangée (#638)', () => {
     expect(ammonia).toBeLessThan(0.75);
   });
 
-  it('ration mangée en entier : aucune ammoniaque en plus', () => {
+  it('ration mangée en entier : seulement l’ammoniaque des déchets (#798), rien ne pourrit', () => {
     // Poissons du bac par défaut affamés : ils mangent tout avant le délai.
     const start = createDefaultWorld(42) as MutableWorld;
     for (const fish of start.entities as unknown as { hunger: number }[]) {
@@ -181,7 +181,14 @@ describe('sim/world : nourriture non mangée (#638)', () => {
     const end = firstExpiry + 5;
     const plain = advanceTo(start, end);
     const fed = advanceToWithFeedings(start, end, feedings);
-    expect(fed.water).toEqual(plain.water);
+    // Azote total (unités de jeu d'avant #793, conservé par le filtre) : la ration mangée
+    // ajoute exactement la part des déchets, la moitié de ce qu'elle aurait donné en pourrissant.
+    const nitrogen = (w: World): number =>
+      w.water.ammonia / 0.5 + w.water.nitrite / 0.125 + w.water.nitrate;
+    const extra = (EATEN_FOOD_AMMONIA * massOf(probe.food)) / liters(fed) / 0.5;
+    expect(nitrogen(fed) - nitrogen(plain)).toBeCloseTo(extra, 9);
+    expect(EATEN_FOOD_AMMONIA).toBe(FOOD_DECAY_AMMONIA / 2);
+    expect(fed.water.ph).toBe(plain.water.ph);
   }, 30_000);
 
   it('filtre en marche : l’ammoniaque de la nourriture devient nitrites puis nitrates', () => {

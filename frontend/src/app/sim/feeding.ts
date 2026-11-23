@@ -1,5 +1,5 @@
 import type { Vec3 } from './flocking';
-import type { FoodPellet } from './food';
+import { pelletMass, type FoodPellet } from './food';
 import { obstacleBound, obstacleDistance, type Obstacle } from './obstacles';
 import type { FeedingParams, SpeciesDefinition } from './species';
 import type { Box3 } from './tank';
@@ -255,6 +255,30 @@ export function eatInPlace<F extends MutableFeeder>(
   bandOf: (fish: F) => FeedingBand,
   hardOf: (fish: F) => Box3,
 ): number {
+  return eatWeighedInPlace(fishes, food, bandOf, hardOf, countPellet);
+}
+
+/**
+ * Comme `eatInPlace`, mais renvoie la **masse** des granulés mangés (somme des `pelletMass`,
+ * 0 si aucun) : la nourriture mangée fait l'ammoniaque des déchets (issue #798).
+ */
+export function eatMassInPlace<F extends MutableFeeder>(
+  fishes: readonly F[],
+  food: FoodPellet[],
+  bandOf: (fish: F) => FeedingBand,
+  hardOf: (fish: F) => Box3,
+): number {
+  return eatWeighedInPlace(fishes, food, bandOf, hardOf, pelletMass);
+}
+
+/** Repas du pas ; renvoie la somme de `weigh` sur les granulés mangés. */
+function eatWeighedInPlace<F extends MutableFeeder>(
+  fishes: readonly F[],
+  food: FoodPellet[],
+  bandOf: (fish: F) => FeedingBand,
+  hardOf: (fish: F) => Box3,
+  weigh: (pellet: FoodPellet) => number,
+): number {
   if (food.length === 0) {
     return 0;
   }
@@ -271,16 +295,30 @@ export function eatInPlace<F extends MutableFeeder>(
       eaten++;
     }
   }
-  if (eaten > 0) {
-    let kept = 0;
-    for (let i = 0; i < food.length; i++) {
-      if (taken[i] === 0) {
-        food[kept++] = food[i];
-      }
+  return eaten > 0 ? removeTakenInPlace(food, taken, weigh) : 0;
+}
+
+/** Retire de `food` les granulés marqués dans `taken`, dans l'ordre ; renvoie leur poids. */
+function removeTakenInPlace(
+  food: FoodPellet[],
+  taken: Uint8Array,
+  weigh: (pellet: FoodPellet) => number,
+): number {
+  let weight = 0;
+  let kept = 0;
+  for (let i = 0; i < food.length; i++) {
+    if (taken[i] === 0) {
+      food[kept++] = food[i];
+    } else {
+      weight += weigh(food[i]);
     }
-    food.length = kept;
   }
-  return eaten;
+  food.length = kept;
+  return weight;
+}
+
+function countPellet(): number {
+  return 1;
 }
 
 const NO_OBSTACLES: readonly Obstacle[] = Object.freeze([]);

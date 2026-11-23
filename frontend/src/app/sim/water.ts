@@ -46,7 +46,8 @@ import {
  * dynamique est celle d'avant.
  *
  * Équations simplifiées, par seconde (B : charge des habitants, L : litres d'eau, f : filtre) :
- * - ammoniaque produite : `AMMONIA_PER_LOAD_LITER · B / L` ;
+ * - ammoniaque produite au repos : `RESTING_AMMONIA_PER_LOAD_LITER · B / L` (issue #798) ; la
+ *   part liée aux repas entre par la nourriture mangée (`sim/food-decay.ts`) ;
  * - ammoniaque → nitrites, puis nitrites → nitrates : décroissance du premier ordre de taux
  *   `AMMONIA_CONVERSION · f` et `NITRITE_CONVERSION · f` (forme exacte `1 − e^(−k·dt)`,
  *   stable quel que soit le pas), la masse convertie étant comptée avec `NITRITE_PER_AMMONIA`
@@ -220,13 +221,25 @@ export function setHeaterInPlace(water: MutableWaterState, temperature: number):
 export const REFERENCE_BODY_LENGTH = 0.05;
 
 /**
- * Ammoniaque produite par seconde, en mg × L par unité de charge (soit des mg/L par seconde
- * pour une charge de 1 dans 1 L). **Approximation de jeu** (ancienne valeur 0,045 convertie,
- * `sim/water-units.ts`) : la population par défaut du bac tropical (24 habitants, charge ≈ 45
- * dans 288 L) fait monter les nitrates d'environ 50 mg/L en deux heures simulées sans
- * changement d'eau (six journées de 20 min).
+ * Ammoniaque produite par seconde par des habitants **nourris à leur faim**, en mg × L par
+ * unité de charge (soit des mg/L par seconde pour une charge de 1 dans 1 L), repas et repos
+ * compris. **Approximation de jeu** (ancienne valeur 0,045 convertie, `sim/water-units.ts`) :
+ * la population par défaut du bac tropical (24 habitants, charge ≈ 45 dans 288 L) fait monter
+ * les nitrates d'environ 50 mg/L en deux heures simulées sans changement d'eau (six journées
+ * de 20 min). Référence du bilan (`sim/bilan.ts`) ; depuis l'issue #798, la simulation la
+ * sépare en une part au repos (`RESTING_AMMONIA_PER_LOAD_LITER`) et une part apportée par la
+ * nourriture mangée (`sim/food-decay.ts`).
  */
 export const AMMONIA_PER_LOAD_LITER = 0.0225;
+
+/**
+ * Ammoniaque produite **au repos**, sans repas, par seconde, en mg × L par unité de charge
+ * (`waterLoad` : la masse, cube de la taille de chaque espèce), issue #798 : un tiers de
+ * `AMMONIA_PER_LOAD_LITER`. **Approximation de jeu** : un poisson à jeun excrète encore de
+ * l'ammoniaque, mais aucune source retenue ne chiffre cette part pour les espèces du jeu.
+ * Valeur écrite telle quelle (moitié exacte de 0,015 en unités de jeu d'avant #793).
+ */
+export const RESTING_AMMONIA_PER_LOAD_LITER = 0.0075;
 
 /** Taux de conversion de l'ammoniaque en nitrites par un filtre neuf, en s⁻¹ (≈ 2 min). */
 export const AMMONIA_CONVERSION = 1 / 120;
@@ -337,7 +350,7 @@ export function stepWaterInPlace(
   // pendant le pas n'est convertie qu'au pas suivant.
   const toNitrite = water.ammonia * (1 - Math.exp(-AMMONIA_CONVERSION * filter * dt));
   const toNitrate = water.nitrite * (1 - Math.exp(-NITRITE_CONVERSION * filter * dt));
-  const produced = ((AMMONIA_PER_LOAD_LITER * load) / liters) * dt;
+  const produced = ((RESTING_AMMONIA_PER_LOAD_LITER * load) / liters) * dt;
   water.ammonia = clampConcentration(water.ammonia - toNitrite + produced, 'ammonia');
   water.nitrite = clampConcentration(
     water.nitrite + toNitrite * NITRITE_PER_AMMONIA - toNitrate,
