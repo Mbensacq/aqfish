@@ -10332,6 +10332,24 @@
         }
       },
       "metriques": {}
+    },
+    "285": {
+      "numero": 285,
+      "date": "2026-11-23",
+      "debut": "2026-11-23T06:58:25.459Z",
+      "type": "dette",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-23T06:58:25.459Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
