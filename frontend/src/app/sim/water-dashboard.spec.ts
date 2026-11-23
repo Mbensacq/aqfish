@@ -239,13 +239,13 @@ describe('tableau de bord de l’eau (#256)', () => {
       const [temperature, , , nitrate, ph] = DEFAULT_DASHBOARD_GAUGES;
       expect(temperature).toMatchObject({ label: 'Temp.', value: '24,0', unit: '°C' });
       expect(temperature?.spoken).toBe('Température : 24,0 degrés, bon, stable');
-      expect(nitrate).toMatchObject({ label: 'NO₃⁻', value: '0,0', unit: 'u.', fill: 0 });
+      expect(nitrate).toMatchObject({ label: 'NO₃⁻', value: '0,0', unit: 'mg/L', fill: 0 });
       expect(ph).toMatchObject({ value: '7,0', unit: '', levelLabel: 'Idéal' });
       expect(ph?.spoken).toBe('pH : 7,0, idéal, stable');
     });
 
     it('eau polluée : niveaux sur les valeurs exactes, tendances reprises', () => {
-      const polluted = sample(100, { ammonia: 2, nitrite: 4.99, nitrate: 42.46, ph: 6 });
+      const polluted = sample(100, { ammonia: 1, nitrite: 0.6249, nitrate: 42.46, ph: 6 });
       const readout = waterReadout(freshWater('tropical'), 'tropical', ['guppy']);
       const gauges = dashboardGauges(
         polluted,
@@ -255,15 +255,15 @@ describe('tableau de bord de l’eau (#256)', () => {
       const byId = Object.fromEntries(gauges.map((g) => [g.id, g]));
       expect(byId['ammonia']?.level).toBe('orange');
       expect(byId['nitrite']?.level).toBe('orange');
-      // 4,99 s'affiche 5,0 mais reste sous le seuil « mauvaise ».
-      expect(byId['nitrite']?.value).toBe('5,0');
+      // En mg/L (#793), au centième : 0,6249 s'affiche 0,62, sous le seuil « mauvaise » (0,625).
+      expect(byId['nitrite']?.value).toBe('0,62');
       expect(byId['nitrate']).toMatchObject({
         level: 'rouge',
         levelLabel: 'Critique',
         value: '42,5',
       });
       expect(byId['nitrate']?.spoken).toBe(
-        'Nitrates (NO₃⁻) : 42,5 unités de jeu, critique, en hausse',
+        'Nitrates (NO₃⁻) : 42,5 milligrammes par litre, critique, en hausse',
       );
       expect(byId['ph']).toMatchObject({
         level: 'rouge',
@@ -310,16 +310,16 @@ describe('tableau de bord de l’eau (#256)', () => {
       // Valeurs choisies pour que les trois formules donnent trois parts différentes.
       const water = sample(0, {
         temperature: 20,
-        ammonia: 1.5,
-        nitrite: 3,
+        ammonia: 0.75,
+        nitrite: 0.375,
         nitrate: 45,
         ph: 5.375,
       });
       const gauges = dashboardGauges(water, { phZone: 'tolere' });
       expect(gauges.map((g) => [g.id, g.fill])).toEqual([
         ['temperature', 0.25],
-        ['ammonia', gaugeFill('ammonia', 1.5)],
-        ['nitrite', gaugeFill('nitrite', 3)],
+        ['ammonia', gaugeFill('ammonia', 0.75)],
+        ['nitrite', gaugeFill('nitrite', 0.375)],
         ['nitrate', gaugeFill('nitrate', 45)],
         ['ph', 0.25],
       ]);
@@ -348,8 +348,8 @@ describe('tableau de bord de l’eau (#256)', () => {
       expect(DASHBOARD_GAUGES).toEqual(['temperature', 'ammonia', 'nitrite', 'nitrate', 'ph']);
       const water = sample(0, {
         temperature: 20,
-        ammonia: 1.5,
-        nitrite: 3,
+        ammonia: 0.75,
+        nitrite: 0.375,
         nitrate: 45,
         ph: 5.375,
       });
@@ -366,16 +366,16 @@ describe('tableau de bord de l’eau (#256)', () => {
       );
       expect(gauges.map((g) => [g.label, g.name, g.unit, g.value, g.trend])).toEqual([
         ['Temp.', 'Température', '°C', '20,0', 'hausse'],
-        ['NH₃/NH₄⁺', 'Ammoniaque (NH₃/NH₄⁺)', 'u.', '1,5', 'baisse'],
-        ['NO₂⁻', 'Nitrites (NO₂⁻)', 'u.', '3,0', 'stable'],
-        ['NO₃⁻', 'Nitrates (NO₃⁻)', 'u.', '45,0', 'hausse'],
+        ['NH₃/NH₄⁺', 'Ammoniaque (NH₃/NH₄⁺)', 'mg/L', '0,75', 'baisse'],
+        ['NO₂⁻', 'Nitrites (NO₂⁻)', 'mg/L', '0,38', 'stable'],
+        ['NO₃⁻', 'Nitrates (NO₃⁻)', 'mg/L', '45,0', 'hausse'],
         ['pH', 'pH', '', '5,4', 'baisse'],
       ]);
       expect(gauges.map((g) => g.spoken)).toEqual([
         'Température : 20,0 degrés, à surveiller, en hausse',
-        'Ammoniaque (NH₃/NH₄⁺) : 1,5 unités de jeu, bon, en baisse',
-        'Nitrites (NO₂⁻) : 3,0 unités de jeu, à surveiller, stable',
-        'Nitrates (NO₃⁻) : 45,0 unités de jeu, critique, en hausse',
+        'Ammoniaque (NH₃/NH₄⁺) : 0,75 milligrammes par litre, bon, en baisse',
+        'Nitrites (NO₂⁻) : 0,38 milligrammes par litre, à surveiller, stable',
+        'Nitrates (NO₃⁻) : 45,0 milligrammes par litre, critique, en hausse',
         'pH : 5,4, hors plage, en baisse',
       ]);
     });

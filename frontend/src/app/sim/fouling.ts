@@ -40,7 +40,7 @@ export const NO_FOULING: TankFouling = Object.freeze({ glass: 0, floor: 0 });
 
 /**
  * Niveau d'encrassement, dans [0, 1], `elapsed` secondes simulées après le dernier geste et
- * pour des nitrates `nitrate` (unités de jeu) : nul pendant le délai de grâce, croissant avec
+ * pour des nitrates `nitrate` (mg/L) : nul pendant le délai de grâce, croissant avec
  * le temps et avec les nitrates, plafonné à 1. Un temps non fini ou négatif, ou des nitrates
  * non finis ou négatifs, comptent pour zéro (aucun voile fantôme).
  */

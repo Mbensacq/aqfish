@@ -55,7 +55,7 @@ export const ROOM_ATTRIBUTE = 'data-aqfish-room';
 export const POPULATION_ATTRIBUTE = 'data-aqfish-population';
 /**
  * Attribut du composant hôte exposant le relevé de l'eau (#207) : `niveau;température;visée;
- * ammoniaque;nitrites;nitrates`, valeurs au dixième (`bonne;24;24;0;0;0`), mis à jour quand il
+ * ammoniaque;nitrites;nitrates`, valeurs au dixième, ammoniaque et nitrites au centième (`bonne;24;24;0;0;0`), mis à jour quand il
  * change.
  */
 export const WATER_ATTRIBUTE = 'data-aqfish-water';

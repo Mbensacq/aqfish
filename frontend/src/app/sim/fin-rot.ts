@@ -60,7 +60,7 @@ export const FIN_ROT_RATE = 1 / 3600;
 /** Poids dans la santé (`sim/wellbeing.ts`) : nageoires effilochées, puis stade avancé. */
 export const FIN_ROT_VISIBLE_HEALTH_STRESS = 0.5;
 export const FIN_ROT_ADVANCED_HEALTH_STRESS = 1;
-/** Ammoniaque et nitrites qui rendent malade : le seuil « mauvaise » (unités de jeu). */
+/** Ammoniaque et nitrites qui rendent malade : le seuil « mauvaise » (mg/L). */
 export const FIN_ROT_AMMONIA = COMPOUND_THRESHOLDS.ammonia.bad;
 export const FIN_ROT_NITRITE = COMPOUND_THRESHOLDS.nitrite.bad;
 

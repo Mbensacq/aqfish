@@ -20,9 +20,9 @@ import { phBands, phZone, sameBands, type PhBands, type PhZone } from './water-p
  *
  * Un composé ou un écart de température atteint un niveau dès qu'il **atteint** son seuil
  * (comparaison `>=`) ; l'indicateur global est le pire des quatre. Les seuils sont des
- * **valeurs de jeu**, calées sur `sim/water.ts` : avec la population par défaut du bac
- * tropical et un filtre neuf, l'ammoniaque (~0,8) et les nitrites (~1,3) restent sous le
- * seuil « à surveiller » ; les nitrates (~25 unités par heure simulée au départ) l'atteignent
+ * mg/L (`COMPOUND_THRESHOLDS`), calés sur `sim/water.ts` : avec la population par défaut du bac
+ * tropical et un filtre neuf, l'ammoniaque (~0,4) et les nitrites (~0,16) restent sous le
+ * seuil « à surveiller » ; les nitrates (~25 mg/L par heure simulée au départ) l'atteignent
  * en moins d'une heure, puis « mauvaise » en moins de deux sans changement d'eau.
  */
 
@@ -51,10 +51,13 @@ export type WaterCompound = 'ammonia' | 'nitrite' | 'nitrate';
 /** Composés, dans l'ordre d'affichage. */
 export const WATER_COMPOUNDS: readonly WaterCompound[] = ['ammonia', 'nitrite', 'nitrate'];
 
-/** Seuils de chaque composé, en unités de jeu (`sim/water.ts`). */
+/**
+ * Seuils de chaque composé, en mg/L (issue #793, ADR 0167) : anciens seuils de jeu convertis
+ * (`sim/water-units.ts`, sources de `docs/SOINS.md` et part d'approximation de jeu).
+ */
 export const COMPOUND_THRESHOLDS: Readonly<Record<WaterCompound, QualityThresholds>> = {
-  ammonia: { watch: 2, bad: 5 },
-  nitrite: { watch: 2, bad: 5 },
+  ammonia: { watch: 1, bad: 2.5 },
+  nitrite: { watch: 0.25, bad: 0.625 },
   nitrate: { watch: 20, bad: 40 },
 };
 
@@ -66,12 +69,12 @@ export const COMPOUND_THRESHOLDS: Readonly<Record<WaterCompound, QualityThreshol
 export const TEMPERATURE_THRESHOLDS: QualityThresholds = { watch: 3, bad: 6 };
 
 /**
- * Plein de chaque jauge, en unités de jeu : une fois et demie le seuil « mauvaise », pour que
- * les trois zones se voient. Une valeur au-delà remplit la jauge.
+ * Plein de chaque jauge, en mg/L : une fois et demie le seuil « mauvaise », pour que les trois
+ * zones se voient. Une valeur au-delà remplit la jauge.
  */
 export const GAUGE_MAX: Readonly<Record<WaterCompound, number>> = {
-  ammonia: 7.5,
-  nitrite: 7.5,
+  ammonia: 3.75,
+  nitrite: 0.9375,
   nitrate: 60,
 };
 
@@ -131,7 +134,7 @@ export function waterTurbidity(quality: WaterQuality): number {
 }
 
 /**
- * Relevé de l'eau affiché par le panneau (issue #207) : valeurs arrondies au dixième, pour
+ * Relevé de l'eau affiché par le panneau (issue #207) : valeurs arrondies au dixième (au centième pour ammoniaque et nitrites, en mg/L), pour
  * que l'interface ne change qu'avec ce qu'elle montre. Objet de données pur.
  */
 export interface WaterReadout {
@@ -171,7 +174,7 @@ export const DEFAULT_WATER_READOUT: WaterReadout = waterReadout(
 /**
  * Relevé de l'eau `water` d'un bac de l'environnement `environment` peuplé des espèces
  * `species` (doublons permis) : indicateur global et zone du pH (calculés sur les valeurs
- * exactes), valeurs arrondies au dixième.
+ * exactes), valeurs arrondies (`WaterReadout`).
  */
 export function waterReadout(
   water: WaterState,
@@ -184,8 +187,8 @@ export function waterReadout(
     quality: waterQuality(water, environment),
     temperature: tenth(water.temperature),
     target: tenth(targetTemperature(water, environment)),
-    ammonia: tenth(water.ammonia),
-    nitrite: tenth(water.nitrite),
+    ammonia: hundredth(water.ammonia),
+    nitrite: hundredth(water.nitrite),
     nitrate: tenth(water.nitrate),
     ph: tenth(water.ph),
     phZone: phZone(water.ph, bands),
@@ -244,4 +247,9 @@ export function isWaterQuality(value: unknown): value is WaterQuality {
 /** Arrondi au dixième (−0 ramené à 0). */
 function tenth(value: number): number {
   return Math.round(value * 10) / 10 + 0;
+}
+
+/** Arrondi au centième (−0 ramené à 0) : ammoniaque et nitrites, en mg/L (issue #793). */
+function hundredth(value: number): number {
+  return Math.round(value * 100) / 100 + 0;
 }

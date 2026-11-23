@@ -95,8 +95,8 @@ function tanksOf(doc: Record<string, unknown>): Record<string, unknown>[] {
 }
 
 describe('serializeRoom / parseSave : schéma 2', () => {
-  it('SAVE_SCHEMA vaut 2 et le document a la forme de l’ADR 0069', () => {
-    expect(SAVE_SCHEMA).toBe(2);
+  it('SAVE_SCHEMA vaut 3 (mg/L, #793) et le document a la forme de l’ADR 0069', () => {
+    expect(SAVE_SCHEMA).toBe(3);
     const doc = validDoc();
     expect(Object.keys(doc)).toEqual([
       'format',
@@ -108,7 +108,7 @@ describe('serializeRoom / parseSave : schéma 2', () => {
       'tanks',
       'settings',
     ]);
-    expect(doc).toMatchObject({ format: SAVE_FORMAT, schema: 2, seed: 42, tick: 60 });
+    expect(doc).toMatchObject({ format: SAVE_FORMAT, schema: 3, seed: 42, tick: 60 });
     expect(tanksOf(doc).map((t) => [t['id'], t['name'], t['place']])).toEqual([
       [0, 'Bac tropical', 'piece'],
       [1, 'Bassin', 'jardin'],
@@ -131,7 +131,7 @@ describe('serializeRoom / parseSave : schéma 2', () => {
     };
     const text = serializeRoom(room, 1, settings);
     const back = loaded(parseSave(text));
-    expect(back.schema).toBe(2);
+    expect(back.schema).toBe(3);
     expect(back.selectedTankId).toBe(1);
     expect(back.settings.speed).toBe(2);
     expect(back.settings.clock).toEqual(settings.clock);
@@ -181,7 +181,7 @@ describe('serializeRoom / parseSave : schéma 2', () => {
   });
 
   it.each<[string, (d: Record<string, unknown>) => void, RegExp]>([
-    ['schéma inconnu', (d) => (d['schema'] = 3), /version de sauvegarde inconnue/],
+    ['schéma inconnu', (d) => (d['schema'] = 4), /version de sauvegarde inconnue/],
     ['graine invalide', (d) => (d['seed'] = -1), /seed/],
     ['tick hors bornes', (d) => (d['tick'] = 2 ** 40), /tick/],
     ['compteur trop petit', (d) => (d['nextTankId'] = 2), /nextTankId/],
@@ -275,9 +275,9 @@ describe('migrateSchema1 : schéma 1 → pièce', () => {
       const tank = back.room.tanks.find((t) => t.world.environment === original.environment)!;
       expect(text1(tank.world)).toBe(text1(original));
     }
-    // Ré-écrit au schéma 2 puis relu : la même pièce.
+    // Ré-écrit au schéma 3 (#793) puis relu : la même pièce.
     const again = loaded(parseSave(serializeRoom(back.room, back.selectedTankId, back.settings)));
-    expect(again.schema).toBe(2);
+    expect(again.schema).toBe(3);
     expect(again.room.tanks.map((t) => text1(t.world))).toEqual(
       back.room.tanks.map((t) => text1(t.world)),
     );

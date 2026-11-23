@@ -24,6 +24,7 @@ import type { FoodPellet } from './food';
 import { DEFAULT_POND_SHAPE, isPondShape, type PondShape } from './pond-shape';
 import type { Fish } from './swimmer';
 import { copyWater, readWater, type WaterState } from './water';
+import { savedWorldInGameUnits, schema1ToMgPerLiter } from './save-units';
 import { clampTankDimensions, type TankDimensions } from './tank';
 import {
   describe,
@@ -83,9 +84,16 @@ export const SAVE_FORMAT = 'aqfish';
 
 /**
  * Version du schéma de la sauvegarde de l'application : la pièce de N bacs (ADR 0061, 0069),
- * écrite par `serializeRoom` (`sim/room-save.ts`).
+ * écrite par `serializeRoom` (`sim/room-save.ts`), composés azotés en mg/L (issue #793,
+ * ADR 0167).
  */
-export const SAVE_SCHEMA = 2;
+export const SAVE_SCHEMA = 3;
+
+/**
+ * Schéma 2 : la même pièce, composés azotés en unités de jeu ; relu et converti aux mg/L par
+ * `sim/room-save.ts` (`sim/save-units.ts`).
+ */
+export const SAVE_SCHEMA_2 = 2;
 
 /**
  * Schéma 1 : un monde affiché et les mondes rangés des autres environnements. Écrit par
@@ -231,12 +239,15 @@ export function saveData(
   const ordered = ENVIRONMENT_IDS.flatMap((id) =>
     others.filter((other) => other.environment === id),
   );
+  // Schéma 1 : composés azotés en unités de jeu (`sim/save-units.ts`, issue #793).
   return {
     format: SAVE_FORMAT,
     schema: SAVE_SCHEMA_1,
-    ...savedWorld(world),
+    ...savedWorldInGameUnits(savedWorld(world)),
     settings: settingsCopy,
-    ...(ordered.length === 0 ? {} : { others: ordered.map(savedWorld) }),
+    ...(ordered.length === 0
+      ? {}
+      : { others: ordered.map((other) => savedWorldInGameUnits(savedWorld(other))) }),
   };
 }
 
@@ -364,7 +375,9 @@ export function parseWorld(text: string): ParseWorldResult {
 }
 
 /** Comme `parseWorld`, sur des données JSON déjà décodées. Ne lève jamais. */
-export function parseSaveData(value: unknown): ParseWorldResult {
+export function parseSaveData(json: unknown): ParseWorldResult {
+  // Schéma 1 : composés azotés en unités de jeu, convertis avant la validation (#793).
+  const value = schema1ToMgPerLiter(json);
   if (!isRecord(value)) {
     return failure('la sauvegarde doit être un objet JSON');
   }

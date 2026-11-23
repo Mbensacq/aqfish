@@ -75,7 +75,7 @@ export const ICH_TEMPERATURE_GAP = TEMPERATURE_THRESHOLDS.bad;
  * au moins 18 °C par heure simulée à cet écart. Approximation de jeu.
  */
 export const ICH_SHOCK_GAP = 3;
-/** Ammoniaque et nitrites qui stressent : le seuil « mauvaise » de chacun (unités de jeu). */
+/** Ammoniaque et nitrites qui stressent : le seuil « mauvaise » de chacun (mg/L). */
 export const ICH_AMMONIA = COMPOUND_THRESHOLDS.ammonia.bad;
 export const ICH_NITRITE = COMPOUND_THRESHOLDS.nitrite.bad;
 

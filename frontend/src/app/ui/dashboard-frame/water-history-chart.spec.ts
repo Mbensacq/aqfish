@@ -63,7 +63,7 @@ describe('mini-courbe : géométrie (#511)', () => {
   it('phrase lue : valeur, extrêmes, changements d’eau', () => {
     const geometry = curveGeometry([1, 2], [], null, 1);
     expect(curveSummary('nitrate', 2, geometry, 0)).toBe(
-      'Nitrates (NO₃⁻) sur les dernières 24 h : 2,0 unités de jeu maintenant, minimum 1,0 unités de jeu, maximum 2,0 unités de jeu, aucun changement d’eau.',
+      'Nitrates (NO₃⁻) sur les dernières 24 h : 2,0 milligrammes par litre maintenant, minimum 1,0 milligrammes par litre, maximum 2,0 milligrammes par litre, aucun changement d’eau.',
     );
     expect(curveSummary('ph', 7, geometry, 2)).toContain('2 changements d’eau');
     expect(curveSummary('ph', 7, curveGeometry([], [], null, 1), 0)).toContain(
@@ -101,7 +101,7 @@ describe('mini-courbe : composant (#511)', () => {
     expect(root.querySelector('[data-water-curve-band]')?.getAttribute('fill')).toBe(
       'url(#curve-trame)',
     );
-    expect(root.querySelector('[data-water-curve-now]')?.textContent).toContain('u.');
+    expect(root.querySelector('[data-water-curve-now]')?.textContent).toContain('mg/L');
     expect(root.textContent).toContain('min 5,0 · max 30,0');
     expect(root.querySelector('svg')?.getAttribute('role')).toBe('img');
     expect(root.querySelector('svg')?.getAttribute('aria-label')).toContain('1 changement d’eau');

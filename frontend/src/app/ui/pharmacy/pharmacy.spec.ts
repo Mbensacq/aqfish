@@ -184,7 +184,7 @@ describe('Pharmacy (#533)', () => {
   });
 
   describe('kits de test de l’eau (#564)', () => {
-    const SAMPLE = { ph: 7.13, ammonia: 3.5, nitrite: 0, nitrate: 0, gh: 10, kh: 4 };
+    const SAMPLE = { ph: 7.13, ammonia: 1.75, nitrite: 0, nitrate: 0, gh: 10, kh: 4 };
     const kit = (name: string) =>
       root().querySelector<HTMLButtonElement>(`[data-water-kit="${name}"]`)!;
     const result = () => root().querySelector<HTMLElement>('[data-water-test]')!;
@@ -214,7 +214,7 @@ describe('Pharmacy (#533)', () => {
       );
       await openPharmacy();
       expect(result().getAttribute('data-state')).toBe('termine');
-      expect(root().querySelector('[data-water-result]')?.textContent).toContain('≈ 4 u.');
+      expect(root().querySelector('[data-water-result]')?.textContent).toContain('≈ 2 mg/L');
       expect(root().querySelector('[data-water-test-advice]')?.textContent).toContain(
         'à surveiller',
       );

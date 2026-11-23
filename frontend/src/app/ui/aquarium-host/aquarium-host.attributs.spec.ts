@@ -238,7 +238,7 @@ describe('AquariumHost : attributs publiés (caractérisation, #693)', () => {
       'data-aqfish-tank': '1.2:0.6:0.5',
       'data-aqfish-target': '0.000,0.300,0.000',
       'data-aqfish-tick': '151',
-      'data-aqfish-water': 'bonne;24;24;0;0;0',
+      'data-aqfish-water': 'bonne;24;24;0.01;0;0',
     });
   });
 

@@ -8,7 +8,7 @@ import {
   changeWater,
   changeWaterInPlace,
   freshWater,
-  MAX_CONCENTRATION,
+  MAX_CONCENTRATIONS,
   MAX_HEATER_TEMPERATURE,
   MAX_WATER_TEMPERATURE,
   MIN_HEATER_TEMPERATURE,
@@ -68,9 +68,9 @@ function expectBounded(water: WaterState): void {
   }
   expect(water.temperature).toBeGreaterThanOrEqual(MIN_WATER_TEMPERATURE);
   expect(water.temperature).toBeLessThanOrEqual(MAX_WATER_TEMPERATURE);
-  for (const v of [water.ammonia, water.nitrite, water.nitrate]) {
-    expect(v).toBeGreaterThanOrEqual(0);
-    expect(v).toBeLessThanOrEqual(MAX_CONCENTRATION);
+  for (const compound of ['ammonia', 'nitrite', 'nitrate'] as const) {
+    expect(water[compound]).toBeGreaterThanOrEqual(0);
+    expect(water[compound]).toBeLessThanOrEqual(MAX_CONCENTRATIONS[compound]);
   }
   expect(water.filter).toBeGreaterThanOrEqual(0);
   expect(water.filter).toBeLessThanOrEqual(1);
@@ -128,11 +128,12 @@ describe('stepWaterInPlace', () => {
   });
 
   it('bac vide : les composés présents passent aux nitrates, total conservé', () => {
-    const start = { ...freshWater('tropical'), ammonia: 5, nitrite: 3, nitrate: 2 };
+    // En mg/L (#793) : 5, 3 et 2 anciennes unités ; le total se compte en anciennes unités.
+    const start = { ...freshWater('tropical'), ammonia: 2.5, nitrite: 0.375, nitrate: 2 };
     const state = run(start, minutes(60), 0);
     expect(state.ammonia).toBeLessThan(1e-6);
     expect(state.nitrite).toBeLessThan(1e-4);
-    expect(state.ammonia + state.nitrite + state.nitrate).toBeCloseTo(10, 9);
+    expect(state.ammonia / 0.5 + state.nitrite / 0.125 + state.nitrate).toBeCloseTo(10, 9);
   });
 
   it('production d’ammoniaque proportionnelle à la charge et inverse du volume', () => {
@@ -193,15 +194,10 @@ describe('stepWaterInPlace', () => {
 
   it('valeurs bornées : plafond des concentrations, jamais négatives', () => {
     const saturated = run({ ...freshWater('tropical'), filter: 0 }, minutes(5), 1e9, 1);
-    expect(saturated.ammonia).toBe(MAX_CONCENTRATION);
-    const full = run(
-      { ...freshWater('tropical'), ammonia: 100, nitrite: 100, nitrate: 100 },
-      minutes(10),
-      1e6,
-      1,
-    );
+    expect(saturated.ammonia).toBe(MAX_CONCENTRATIONS.ammonia);
+    const full = run({ ...freshWater('tropical'), ...MAX_CONCENTRATIONS }, minutes(10), 1e6, 1);
     expectBounded(full);
-    expect(full.nitrate).toBe(MAX_CONCENTRATION);
+    expect(full.nitrate).toBe(MAX_CONCENTRATIONS.nitrate);
     // Un très grand pas convertit tout sans passer sous zéro.
     const big = stepWater({ ...freshWater('tropical'), ammonia: 50, nitrite: 50 }, 1e6, 0, 10, 25);
     expectBounded(big);
@@ -291,7 +287,10 @@ describe('changeWater', () => {
   });
 
   it('en place : même objet ; eau saine inchangée ; répétés, les nitrates tendent vers 0', () => {
-    const state: MutableWaterState = { ...freshWater('bassin'), nitrate: MAX_CONCENTRATION };
+    const state: MutableWaterState = {
+      ...freshWater('bassin'),
+      nitrate: MAX_CONCENTRATIONS.nitrate,
+    };
     expect(changeWaterInPlace(state, 'bassin')).toBe(state);
     for (let i = 0; i < 60; i++) {
       changeWaterInPlace(state, 'bassin');
@@ -319,7 +318,7 @@ describe('readWater', () => {
     ['champ absent', { temperature: 25, ammonia: 0, nitrite: 0, nitrate: 0 }],
     ['texte', { ...freshWater('tropical'), ammonia: '0' }],
     ['négatif', { ...freshWater('tropical'), nitrite: -0.1 }],
-    ['au-delà du plafond', { ...freshWater('tropical'), nitrate: MAX_CONCENTRATION + 1 }],
+    ['au-delà du plafond', { ...freshWater('tropical'), nitrate: MAX_CONCENTRATIONS.nitrate + 1 }],
     ['infini', { ...freshWater('tropical'), ammonia: Number.POSITIVE_INFINITY }],
     ['NaN', { ...freshWater('tropical'), temperature: Number.NaN }],
     ['température hors bornes', { ...freshWater('tropical'), temperature: 41 }],

@@ -234,7 +234,7 @@ describe('alertes du tableau de bord (#260)', () => {
     expect(alertsAnnouncement(dashboardAlerts(input({ nitrate: 55 })))).toBe(
       alertsAnnouncement(one),
     );
-    expect(alertsAnnouncement(dashboardAlerts(input({ nitrate: 45, ammonia: 2.5 })))).toBe(
+    expect(alertsAnnouncement(dashboardAlerts(input({ nitrate: 45, ammonia: 1.25 })))).toBe(
       '2 alertes : Nitrates trop hauts (critique), Ammoniaque trop haute (attention).',
     );
   });

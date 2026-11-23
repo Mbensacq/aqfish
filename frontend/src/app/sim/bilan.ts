@@ -21,8 +21,10 @@ import {
   waterLiters,
   waterLoad,
 } from './water';
+import { NITRITE_PER_AMMONIA } from './water-units';
 import {
   compoundLevel,
+  formatGaugeValue,
   formatTenth,
   QUALITY_LEVELS,
   temperatureLevel,
@@ -72,12 +74,18 @@ export const MAX_REVIEW_POINTS = 3;
 /**
  * Charge par litre (`waterLoad / waterLiters`) à partir de laquelle un filtre neuf ne garde
  * plus les nitrites sous leurs seuils : à l'équilibre, nitrites = `AMMONIA_PER_LOAD_LITER` ×
- * charge par litre / `NITRITE_CONVERSION`. Les populations par défaut restent en dessous.
+ * `NITRITE_PER_AMMONIA` × charge par litre / `NITRITE_CONVERSION`. Les populations par
+ * défaut restent en dessous.
  */
 export const DENSITY_THRESHOLDS: QualityThresholds = {
-  watch: (COMPOUND_THRESHOLDS.nitrite.watch * NITRITE_CONVERSION) / AMMONIA_PER_LOAD_LITER,
-  bad: (COMPOUND_THRESHOLDS.nitrite.bad * NITRITE_CONVERSION) / AMMONIA_PER_LOAD_LITER,
+  watch: densityFor(COMPOUND_THRESHOLDS.nitrite.watch),
+  bad: densityFor(COMPOUND_THRESHOLDS.nitrite.bad),
 };
+
+/** Charge par litre dont l'équilibre des nitrites atteint `nitrite` (mg/L). */
+function densityFor(nitrite: number): number {
+  return (nitrite * NITRITE_CONVERSION) / (AMMONIA_PER_LOAD_LITER * NITRITE_PER_AMMONIA);
+}
 
 /** Granulés encore dans l'eau au-delà desquels des animaux rassasiés signalent un excès (3 dépôts). */
 export const OVERFEEDING_PELLETS = 3 * FOOD_PER_DROP;
@@ -184,7 +192,7 @@ function nitrogenPoint(sample: WaterSample): ReviewPoint | null {
     severity: worst.severity,
     title: text.title,
     measure: Number.isFinite(value)
-      ? `${text.name} à ${formatTenth(value)} (à garder sous ${COMPOUND_THRESHOLDS[worst.compound].watch}) : ${text.why}`
+      ? `${text.name} à ${formatGaugeValue(worst.compound, value)} mg/L (à garder sous ${String(COMPOUND_THRESHOLDS[worst.compound].watch).replace('.', ',')} mg/L) : ${text.why}`
       : INVALID,
     action: `${CHANGE_WATER} et nourrir moins pendant quelques jours`,
   };
