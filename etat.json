@@ -10349,10 +10349,10 @@
           "note": "Issue #795 : lot de dette (suites de #794 + délai velvet #796) (S)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-23T06:59:26.155Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-23T07:52:20.827Z",
+          "note": "PR #797 : suites revue mg/L + tests de redosage velours/champignons sur 3 néons (#795, #796), CI verte 14/14, empreintes inchangées ; e2e local non relancé ; pied d'attribution réinjecté dans la PR (PIEGES)"
         }
       },
       "metriques": {}
