@@ -10319,10 +10319,10 @@
           "note": "PR #794 : composés azotés en mg/L, sauvegardes au schéma 3 (#793), CI verte 14/14, empreintes reconverties = main ; e2e local partiel ; pied d'attribution réinjecté dans la PR (PIEGES)"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-23T05:26:44.769Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-23T06:19:50.490Z",
+          "note": "Verdict OK, 0 bug : 6135 tests, CI 14/14, captures mg/L OK et publiées"
         }
       },
       "metriques": {}
