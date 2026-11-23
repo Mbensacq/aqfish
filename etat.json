@@ -10391,10 +10391,10 @@
           "note": "PR #801 : types du monde importés de world-types (#707) + ROADMAP v1.29/v1.30 (Closes #727), CI verte 13/13, empreintes inchangées ; e2e local interrompu (CI e2e 7/7 OK) ; pied d'attribution réinjecté dans la PR (PIEGES)"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-23T09:37:23.187Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-23T10:02:37.862Z",
+          "note": "Verdict OK, 0 bug : 6135 tests, CI e2e 7/7, captures identiques c285 (1 capture sensible à la charge), mutation non mesurée (retro)"
         }
       },
       "metriques": {}
