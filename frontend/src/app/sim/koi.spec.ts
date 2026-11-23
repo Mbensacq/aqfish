@@ -9,13 +9,8 @@ import {
 } from './species';
 import { POND, TROPICAL_TANK, livesIn } from './environment';
 import { obstacleDistance } from './obstacles';
-import {
-  boundsFor,
-  createDefaultWorld,
-  createWorld,
-  advanceInPlace,
-  type MutableWorld,
-} from './world';
+import { boundsFor, createDefaultWorld, createWorld, advanceInPlace } from './world';
+import type { MutableWorld } from './world-types';
 import { DEFAULT_DECOR } from './decor';
 import type { Vec3 } from './flocking';
 

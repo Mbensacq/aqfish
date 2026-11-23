@@ -25,7 +25,8 @@ import {
 import { waterSample } from './water-dashboard';
 import { phBands } from './water-ph';
 import { waterQuality } from './water-quality';
-import { advanceInPlace, createDefaultWorld, type MutableWorld } from './world';
+import { advanceInPlace, createDefaultWorld } from './world';
+import type { MutableWorld } from './world-types';
 
 const water = (): MutableWaterState => freshWater('tropical') as MutableWaterState;
 

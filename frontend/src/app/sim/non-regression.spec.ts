@@ -1,6 +1,7 @@
 import { DEFAULT_DAY_CLOCK } from './daylight';
 import { ENVIRONMENT_IDS, type EnvironmentId } from './environment';
-import { advance, advanceToWithFeedings, createDefaultWorld, type World } from './world';
+import { advance, advanceToWithFeedings, createDefaultWorld } from './world';
+import type { World } from './world-types';
 
 /**
  * Non-régression de la simulation (chantier d'assainissement #686) : empreinte de l'état

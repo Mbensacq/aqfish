@@ -1,7 +1,8 @@
 import { stashedList, stashFromList, switchEnvironment } from './environment-worlds';
 import { capTotalPopulation, setPopulation } from './population';
 import { serializeWorld } from './save';
-import { advance, createDefaultWorld, feed, type World } from './world';
+import { advance, createDefaultWorld, feed } from './world';
+import type { World } from './world-types';
 import type { EnvironmentId } from './environment';
 
 /** Bac tropical modifié : population réglée, nourri, avancé. */

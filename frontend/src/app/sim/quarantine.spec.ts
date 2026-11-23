@@ -20,7 +20,8 @@ import {
 import { addTank, createRoom, findTank, type RoomState, type RoomTank } from './room-state';
 import { serializeWorld } from './save';
 import { transferFish } from './tank-transfer';
-import { advance, cloneWorld, type Entity, type World } from './world';
+import { advance, cloneWorld } from './world';
+import type { Entity, World } from './world-types';
 
 function worldOf(room: RoomState, id: number): World {
   return (findTank(room, id) as { world: World }).world;

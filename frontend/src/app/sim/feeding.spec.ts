@@ -21,14 +21,8 @@ import { obstacleDistance, sphereObstacle, type Obstacle } from './obstacles';
 import { CORYDORA, GUPPY, NEON, SPECIES, type SpeciesId } from './species';
 import { createFish, stepFish, swimBounds, type Fish } from './swimmer';
 import { waterVolume, type Box3 } from './tank';
-import {
-  advance,
-  createDefaultWorld,
-  createWorld,
-  feed,
-  type MutableWorld,
-  type World,
-} from './world';
+import { advance, createDefaultWorld, createWorld, feed } from './world';
+import type { MutableWorld, World } from './world-types';
 
 type MutableFish = { -readonly [K in keyof Fish]: Fish[K] };
 

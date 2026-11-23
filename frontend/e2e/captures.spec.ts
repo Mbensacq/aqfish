@@ -12,14 +12,8 @@ import { swimBounds } from '../src/app/sim/swimmer';
 import { waterVolume } from '../src/app/sim/tank';
 import { freshWater } from '../src/app/sim/water';
 import { glassStats, recordTrajectories } from '../src/app/sim/trajectory';
-import {
-  advance,
-  createDefaultWorld,
-  feed,
-  starveWorldInPlace,
-  type MutableWorld,
-  type World,
-} from '../src/app/sim/world';
+import { advance, createDefaultWorld, feed, starveWorldInPlace } from '../src/app/sim/world';
+import type { MutableWorld, World } from '../src/app/sim/world-types';
 import { fermerReglages, ouvrirReglages } from './outils-panneau';
 
 /**

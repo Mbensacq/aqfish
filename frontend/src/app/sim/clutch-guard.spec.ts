@@ -29,9 +29,8 @@ import {
   layEggsWorldInPlace,
   step,
   worldAnemoneHomes,
-  type MutableWorld,
-  type World,
 } from './world';
+import type { MutableWorld, World } from './world-types';
 
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
 

@@ -9,7 +9,8 @@ import {
   tankListHint,
   worstAlert,
 } from './tank-list';
-import { advance, type World } from './world';
+import { advance } from './world';
+import type { World } from './world-types';
 
 function withWorld(room: RoomState, id: number, world: World): RoomState {
   return { ...room, tanks: room.tanks.map((t) => (t.id === id ? { ...t, world } : t)) };

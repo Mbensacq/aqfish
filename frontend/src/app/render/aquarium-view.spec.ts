@@ -17,13 +17,8 @@ import { lightAt } from '../sim/daylight';
 import { SPECIES, speciesVariants } from '../sim/species';
 import { environmentWater, PALUDARIUM, POND, REEF, TROPICAL_TANK } from '../sim/environment';
 import { lilyPadLayout } from '../sim/lily-pads';
-import {
-  advanceInPlace,
-  createDefaultWorld,
-  createWorld,
-  seededFeatures,
-  type MutableWorld,
-} from '../sim/world';
+import { advanceInPlace, createDefaultWorld, createWorld, seededFeatures } from '../sim/world';
+import type { MutableWorld } from '../sim/world-types';
 import { REDUCED_MOTION } from '../core/reduced-motion/reduced-motion';
 import { lightTime } from './water-light';
 import { rayTime } from './light-rays-layer';

@@ -25,7 +25,8 @@ import {
   type RoomState,
   type TankPlacement,
 } from './room-state';
-import { cloneWorld, type MutableWorld } from './world';
+import { cloneWorld } from './world';
+import type { MutableWorld } from './world-types';
 
 const TROPICAL = environmentById('tropical').species;
 

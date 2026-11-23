@@ -23,7 +23,8 @@ import {
   stepWaterInPlace,
   type MutableWaterState,
 } from './water';
-import { createDefaultWorld, type MutableWorld } from './world';
+import { createDefaultWorld } from './world';
+import type { MutableWorld } from './world-types';
 
 const DAY = DEFAULT_DAY_LENGTH_SECONDS;
 

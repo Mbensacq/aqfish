@@ -1,7 +1,8 @@
 import { createDayClock, DEFAULT_DAY_CLOCK, MIDNIGHT_HOUR, NOON_HOUR } from './daylight';
 import { DIURNAL, NIGHT_SLOWDOWN, nightPace, nightRest } from './day-rhythm';
 import { SPECIES, type SpeciesId } from './species';
-import { advance, createDefaultWorld, type World } from './world';
+import { advance, createDefaultWorld } from './world';
+import type { World } from './world-types';
 
 const MIDNIGHT = createDayClock(MIDNIGHT_HOUR, DEFAULT_DAY_CLOCK.dayLengthSeconds, true);
 const NOON = createDayClock(NOON_HOUR, DEFAULT_DAY_CLOCK.dayLengthSeconds, true);

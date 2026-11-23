@@ -40,8 +40,8 @@ import {
   setWorldLightingInPlace,
   worldPlantShade,
   worldShownPlantGrowth,
-  type MutableWorld,
 } from './world';
+import type { MutableWorld } from './world-types';
 
 const TALL: DecorItem = {
   kind: 'plant',

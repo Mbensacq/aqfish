@@ -26,13 +26,8 @@ import { transferFish, transferRefusal } from './tank-transfer';
 import { treatmentGroup } from './treatment';
 import { WATER_TEMPERATURES } from './water';
 import { freshPh, SPECIES_PH } from './water-ph';
-import {
-  advanceInPlace,
-  createDefaultWorld,
-  createWorld,
-  type MutableWorld,
-  type World,
-} from './world';
+import { advanceInPlace, createDefaultWorld, createWorld } from './world';
+import type { MutableWorld, World } from './world-types';
 
 /**
  * Issue #422 : récif, lot 3 (crevette nettoyeuse, blennie bicolore ; gobie et gramma plus

@@ -20,7 +20,8 @@ import {
   type MutableWaterState,
   type WaterState,
 } from './water';
-import { createDefaultWorld, type MutableWorld } from './world';
+import { createDefaultWorld } from './world';
+import type { MutableWorld } from './world-types';
 
 const young = (extra: Partial<WaterState> = {}): MutableWaterState =>
   copyWater({ ...freshWater('tropical'), filter: 0.2, ...extra });

@@ -6,7 +6,8 @@ import { landingAge } from '../src/app/sim/food';
 import { foulingLevel } from '../src/app/sim/fouling';
 import { initialMaintenance } from '../src/app/sim/maintenance';
 import { serializeWorld } from '../src/app/sim/save';
-import { createDefaultWorld, feedInPlace, type MutableWorld } from '../src/app/sim/world';
+import { createDefaultWorld, feedInPlace } from '../src/app/sim/world';
+import type { MutableWorld } from '../src/app/sim/world-types';
 import { card, hostEl, open, openSession, sweepMouse } from './outils-seance';
 import { fermerReglages, ouvrirReglages } from './outils-panneau';
 

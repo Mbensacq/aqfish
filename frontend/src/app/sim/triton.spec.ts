@@ -25,9 +25,8 @@ import {
   cloneWorld,
   createDefaultWorld,
   createWorld,
-  type MutableWorld,
-  type World,
 } from './world';
+import type { MutableWorld, World } from './world-types';
 
 /**
  * Tritons du paludarium (#133) : même machine à états que la grenouille (`sim/frog.ts`,

@@ -3,7 +3,8 @@ import { expect, test, type Page } from '@playwright/test';
 import { ALGAE_PATCH_COUNT } from '../src/app/sim/algae';
 import { createDayClock } from '../src/app/sim/daylight';
 import { serializeWorld } from '../src/app/sim/save';
-import { createDefaultWorld, type MutableWorld } from '../src/app/sim/world';
+import { createDefaultWorld } from '../src/app/sim/world';
+import type { MutableWorld } from '../src/app/sim/world-types';
 import { fermerReglages, ouvrirReglages } from './outils-panneau';
 
 /**

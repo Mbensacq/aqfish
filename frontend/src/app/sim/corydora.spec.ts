@@ -3,13 +3,8 @@ import { SIM_DT } from './constants';
 import { CORYDORA, NEON, SPECIES } from './species';
 import { swimBounds, type Fish } from './swimmer';
 import { waterVolume } from './tank';
-import {
-  advance,
-  advanceInPlace,
-  createDefaultWorld,
-  createWorld,
-  type MutableWorld,
-} from './world';
+import { advance, advanceInPlace, createDefaultWorld, createWorld } from './world';
+import type { MutableWorld } from './world-types';
 
 /**
  * Issue #31 : corydora, poisson de fond. Mesures en temps simulé uniquement (graines fixes,

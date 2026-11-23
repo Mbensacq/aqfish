@@ -32,8 +32,8 @@ import {
   homeForRank,
   seededFeatures,
   worldAnemoneHomes,
-  type World,
 } from './world';
+import type { World } from './world-types';
 
 const SEEDS = Array.from({ length: 200 }, (_, n) => (n * 2654435761) >>> 0);
 const settings = REEF.anemones!;

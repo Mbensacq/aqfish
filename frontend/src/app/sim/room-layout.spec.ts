@@ -13,7 +13,6 @@ import {
   addSupport,
   addTank,
   createRoom,
-  isCentimetric,
   MAX_ROOM_TANKS,
   removeTank,
   resolveSelectedTank,
@@ -26,6 +25,7 @@ import {
   type RoomLayoutResult,
   type RoomState,
 } from './room-state';
+import { isCentimetric } from './room-cm-box';
 import { createDefaultWorld } from './world';
 
 function ok(result: RoomLayoutResult): { room: RoomState; id: number } {

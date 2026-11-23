@@ -33,9 +33,8 @@ import {
   createWorld,
   refillWorldFeederInPlace,
   setWorldFeederInPlace,
-  type MutableWorld,
-  type World,
 } from './world';
+import type { MutableWorld, World } from './world-types';
 import { setCareModeInPlace } from './care-mode';
 
 /** Horloge partant de `hour`, journée courte de 48 s (tests rapides : 2 s par heure de jeu). */

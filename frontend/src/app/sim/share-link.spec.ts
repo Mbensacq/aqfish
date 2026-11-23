@@ -19,7 +19,8 @@ import {
   toBase64Url,
   type ShareOutcome,
 } from './share-link';
-import { advance, createDefaultWorld, type World } from './world';
+import { advance, createDefaultWorld } from './world';
+import type { World } from './world-types';
 import { createWaterHistory, markWaterChange, savedWaterHistory } from './water-history';
 
 const BASE = 'https://exemple.test/aqfish/';

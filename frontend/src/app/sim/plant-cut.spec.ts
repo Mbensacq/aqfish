@@ -26,8 +26,8 @@ import {
   worldHasCuttablePlants,
   worldHasPrunablePlants,
   worldShownPlantGrowth,
-  type MutableWorld,
 } from './world';
+import type { MutableWorld } from './world-types';
 
 /** Bac tropical au décor par défaut, sans animal, plantes à tige poussées de `growth` voxels. */
 function grownTank(growth: number): MutableWorld {

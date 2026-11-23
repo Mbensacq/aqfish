@@ -19,14 +19,8 @@ import { speciesSheet } from './species-sheet';
 import type { SpeciesId } from './species';
 import { sampleWater } from './water-quality';
 import { WATER_TEMPERATURES, waterLiters } from './water';
-import {
-  advance,
-  cloneWorld,
-  createDefaultWorld,
-  starveWorld,
-  type MutableWorld,
-  type World,
-} from './world';
+import { advance, cloneWorld, createDefaultWorld, starveWorld } from './world';
+import type { MutableWorld, World } from './world-types';
 
 /** Bac de l'environnement `environment` peuplé de `counts`, à son eau et son volume. */
 function tank(

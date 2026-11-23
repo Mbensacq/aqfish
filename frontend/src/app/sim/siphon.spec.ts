@@ -41,12 +41,8 @@ import {
 import type { Box3 } from './tank';
 import { TAP_CHLORINE } from './water-conditioner';
 import { changeWaterInPlace, copyWater, freshWater, WATER_CHANGE_SHARE } from './water';
-import {
-  createDefaultWorld,
-  refillWorldWaterInPlace,
-  siphonWorldInPlace,
-  type MutableWorld,
-} from './world';
+import { createDefaultWorld, refillWorldWaterInPlace, siphonWorldInPlace } from './world';
+import type { MutableWorld } from './world-types';
 
 const WATER: Box3 = { minX: -0.4, maxX: 0.4, minY: 0, maxY: 0.4, minZ: -0.2, maxZ: 0.2 };
 

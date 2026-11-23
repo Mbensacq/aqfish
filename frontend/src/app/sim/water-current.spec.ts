@@ -26,9 +26,8 @@ import {
   worldBubbles,
   worldCurrentLevel,
   worldCurrentVelocity,
-  type MutableWorld,
-  type World,
 } from './world';
+import type { MutableWorld, World } from './world-types';
 import { createFish } from './swimmer';
 
 /** Abscisse moyenne des poissons, moyennée sur `steps` pas. */

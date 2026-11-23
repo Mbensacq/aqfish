@@ -17,7 +17,8 @@ import {
   sideEffectWarning,
 } from './side-effects';
 import { copyWater, freshWater, type MutableWaterState } from './water';
-import { advanceInPlace, createWorld, type MutableWorld } from './world';
+import { advanceInPlace, createWorld } from './world';
+import type { MutableWorld } from './world-types';
 
 const TALL: DecorItem = {
   kind: 'plant',

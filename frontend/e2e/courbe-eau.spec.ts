@@ -10,7 +10,8 @@ import {
   recordWaterHistory,
   savedWaterHistory,
 } from '../src/app/sim/water-history';
-import { createDefaultWorld, type MutableWorld } from '../src/app/sim/world';
+import { createDefaultWorld } from '../src/app/sim/world';
+import type { MutableWorld } from '../src/app/sim/world-types';
 import { fermerReglages, ouvrirReglages } from './outils-panneau';
 
 /**

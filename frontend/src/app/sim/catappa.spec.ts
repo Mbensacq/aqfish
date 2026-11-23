@@ -30,8 +30,8 @@ import {
   createDefaultWorld,
   setWorldCatappa,
   setWorldCatappaInPlace,
-  type MutableWorld,
 } from './world';
+import type { MutableWorld } from './world-types';
 
 const LITERS = CATAPPA_REFERENCE_LITERS;
 

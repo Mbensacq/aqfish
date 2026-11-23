@@ -47,8 +47,8 @@ import {
   setWorldHeater,
   worldFeatureComputations,
   worldFeatures,
-  type World,
 } from './world';
+import type { World } from './world-types';
 
 /** Monde restauré, ou échec du test avec le message de refus. */
 function restored(result: ParseWorldResult): {

@@ -21,7 +21,8 @@ import { obstacleDistance, sphereObstacle, validateObstacle, type Obstacle } fro
 import { NEON } from './species';
 import { createFish, stepFish, swimBounds, type Fish } from './swimmer';
 import { DEFAULT_TANK, SAND_THICKNESS, waterVolume } from './tank';
-import { advanceInPlace, createDefaultWorld, createWorld, type MutableWorld } from './world';
+import { advanceInPlace, createDefaultWorld, createWorld } from './world';
+import type { MutableWorld } from './world-types';
 
 type MutableFish = { -readonly [K in keyof Fish]: Fish[K] };
 

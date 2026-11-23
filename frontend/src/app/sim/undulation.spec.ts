@@ -12,7 +12,8 @@ import {
   undulationScale,
   type Undulation,
 } from './undulation';
-import { advance, createDefaultWorld, createWorld, type World } from './world';
+import { advance, createDefaultWorld, createWorld } from './world';
+import type { World } from './world-types';
 
 const TWO_PI = Math.PI * 2;
 

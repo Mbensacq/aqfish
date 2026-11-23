@@ -3,7 +3,8 @@ import { createRoom, findTank, type RoomState } from './room-state';
 import { serializeWorld } from './save';
 import { speciesSheet } from './species-sheet';
 import { transferFish, transferMessage, transferRefusal } from './tank-transfer';
-import { advance, type World } from './world';
+import { advance } from './world';
+import type { World } from './world-types';
 
 /** Remplace le monde du bac `id`. */
 function withWorld(room: RoomState, id: number, world: World): RoomState {

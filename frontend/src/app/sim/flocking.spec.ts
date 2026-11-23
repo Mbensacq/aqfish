@@ -14,7 +14,8 @@ import {
 import { NEON, type SchoolingParams, type SpeciesId } from './species';
 import { createFish, stepFish, swimBounds, type Fish } from './swimmer';
 import { waterVolume } from './tank';
-import { advance, advanceInPlace, createWorld, type MutableWorld } from './world';
+import { advance, advanceInPlace, createWorld } from './world';
+import type { MutableWorld } from './world-types';
 
 type MutableFish = { -readonly [K in keyof Fish]: Fish[K] };
 

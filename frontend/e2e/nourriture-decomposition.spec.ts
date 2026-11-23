@@ -4,7 +4,8 @@ import { createDayClock } from '../src/app/sim/daylight';
 import { expiryAge, MAX_FOOD, type FoodPellet } from '../src/app/sim/food';
 import { serializeWorld } from '../src/app/sim/save';
 import { freshWater } from '../src/app/sim/water';
-import { createDefaultWorld, feedInPlace, type MutableWorld } from '../src/app/sim/world';
+import { createDefaultWorld, feedInPlace } from '../src/app/sim/world';
+import type { MutableWorld } from '../src/app/sim/world-types';
 import { fermerReglages, ouvrirReglages } from './outils-panneau';
 
 /**

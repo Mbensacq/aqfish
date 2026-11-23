@@ -24,8 +24,8 @@ import {
   createDefaultWorld,
   createWorld,
   feed,
-  type World,
 } from './world';
+import type { World } from './world-types';
 
 /** Boîte de 2 m × 1,4 m centrée (celle de l'eau du bassin, en X et Z). */
 const BOX = { minX: -1, maxX: 1, minY: 0, maxY: 0.3, minZ: -0.7, maxZ: 0.7 };

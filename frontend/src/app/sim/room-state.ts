@@ -12,14 +12,14 @@ import {
   cmBoxesOverlap as overlaps,
   insideRoomFloor as insideFloor,
   isCentimetric,
-  ROOM_FLOOR,
   type CmBox,
 } from './room-cm-box';
 import type { TankDimensions } from './tank';
 import { startFilterCyclingInPlace } from './filter-maturation';
 import type { MutableWaterState } from './water';
 import { withTankDimensions } from './tank-resize';
-import { advance, createDefaultWorld, createWorld, type SimClock, type World } from './world';
+import { advance, createDefaultWorld, createWorld } from './world';
+import type { SimClock, World } from './world-types';
 
 /**
  * État de la pièce de N bacs (épopée #264, ADR 0061 et 0069), lot 1 : modèle de données
@@ -296,8 +296,6 @@ function newTank(id: number, world: World): RoomTank {
 
 /** Nombre maximal de meubles supports dans la pièce (borne provisoire, comme `MAX_ROOM_ITEMS`). */
 export const MAX_ROOM_SUPPORTS = 24;
-
-export { isCentimetric, ROOM_FLOOR };
 
 /** Tailles de bac du catalogue, pour les environnements aux dimensions réglables. */
 export const TANK_SIZE_IDS = ['petit', 'moyen', 'grand'] as const;

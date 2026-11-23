@@ -4,14 +4,8 @@ import { obstacleDistance } from './obstacles';
 import { populationCounts, populationLimit, setPopulation } from './population';
 import { CHIRURGIEN, CLOWN, CORYDORA, NEON, SPECIES, validateSpecies } from './species';
 import { createFish, stepFish, swimBounds, type Fish } from './swimmer';
-import {
-  advanceInPlace,
-  cloneWorld,
-  createDefaultWorld,
-  createWorld,
-  type MutableWorld,
-  type World,
-} from './world';
+import { advanceInPlace, cloneWorld, createDefaultWorld, createWorld } from './world';
+import type { MutableWorld, World } from './world-types';
 
 /**
  * Issue #151 : chirurgiens bleus du récif, en banc lâche à mi-hauteur. Mesures en temps

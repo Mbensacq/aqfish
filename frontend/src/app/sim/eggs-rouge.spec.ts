@@ -36,9 +36,8 @@ import {
   spawnEggsInPlace,
   step,
   stepEggsInPlace,
-  type MutableWorld,
-  type World,
 } from './world';
+import type { MutableWorld, World } from './world-types';
 import { worldLilyPads } from './world-lily-pads';
 
 /** Nénuphars du monde `world` (`worldLilyPads` prend la graine et le lieu, #700). */

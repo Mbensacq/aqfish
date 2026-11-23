@@ -18,7 +18,8 @@ import { legalStatus } from './species-legal';
 import { speciesSheet } from './species-sheet';
 import { CREVETTE, SPECIES, validateSpecies, type SpeciesDefinition } from './species';
 import { createFish, type Fish } from './swimmer';
-import { advanceInPlace, boundsFor, createWorld, type MutableWorld } from './world';
+import { advanceInPlace, boundsFor, createWorld } from './world';
+import type { MutableWorld } from './world-types';
 
 /**
  * Issue #656 : crevette nettoyeuse du récif qui approche de temps en temps un poisson de
