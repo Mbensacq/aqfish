@@ -304,8 +304,8 @@ describe('santé et alerte', () => {
 });
 
 describe('monde : champignons dans la boucle à pas fixe', () => {
-  const tank = (seed = 42): MutableWorld =>
-    cloneWorld(createWorld(seed, [{ species: 'neon', count: 12 }]));
+  const tank = (seed = 42, count = 12): MutableWorld =>
+    cloneWorld(createWorld(seed, [{ species: 'neon', count }]));
 
   it('bac par défaut : aucun cas tant que les animaux restent en forme', () => {
     const world = cloneWorld(createDefaultWorld(42));
@@ -337,7 +337,9 @@ describe('monde : champignons dans la boucle à pas fixe', () => {
   }, 60_000);
 
   it('médicament en eau propre : guérison ; redosé tous les deux jours', () => {
-    const world = tank();
+    // Trois néons suffisent (tous malades, tous guéris) : 2,5 journées simulées à 12 néons
+    // frôlaient le délai sur un runner chargé (#796).
+    const world = tank(42, 3);
     fungusWorldInPlace(world);
     const outcome = treatWorldInPlace(world, 'medicament', 1);
     expect(outcome.ok).toBe(true);

@@ -171,6 +171,11 @@ haut de sa section.
   une journée par défaut fait 72 000 pas ; avec la population par défaut, un test de 5 jours
   dépasse les 5 s de Vitest. `createDayClock(h, 48)` (2 s par heure) et `createWorld(seed)`
   (sans poisson) suffisent pour une logique d'horaire. (2026-11-12)
+- **Test de maladie sur 2,5 journées à 12 néons : délai de 60 s dépassé sur la CI** (cycle
+  285, #796) : « redosé tous les deux jours » (`velvet.spec.ts`, `fungus.spec.ts`) prenait 28 à
+  64 s sur la CI pour 5 à 11 s en local ; un runner chargé suffisait à le faire échouer sans
+  régression. Le coût suit le nombre d'animaux : 3 néons prouvent la même chose (tous malades,
+  tous guéris), 1,0 à 1,7 s en local. Réduire la population avant de relever un délai. (2026-11-23)
 - **Largeur d'un panneau qui coexiste avec un autre : vérifier les deux ouverts ensemble**
   (cycle 209, #588) : `cadrage-panneaux` contrôle chaque panneau seul ; « Réglages » en deux
   colonnes (532 px dès 900 px de large) recouvrait l'aide-mémoire déplié à 900 × 700 sans
