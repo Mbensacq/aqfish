@@ -10431,6 +10431,12 @@
           "debut": "2026-11-23T11:59:50.174Z",
           "fin": "2026-11-23T12:25:32.925Z",
           "note": "Verdict OK, 0 bug : 6149 tests, CI 14/14, captures 177/178 identiques c285 (1 sensible à la charge), publiées"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-23T12:26:03.576Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
