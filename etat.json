@@ -10239,6 +10239,12 @@
           "debut": "2026-11-23T01:07:45.055Z",
           "fin": "2026-11-23T01:08:25.610Z",
           "note": "Issue #788 (+ #790) : lot de dette données d'écologie (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-23T01:08:58.378Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
