@@ -10383,6 +10383,12 @@
           "debut": "2026-11-23T08:49:55.860Z",
           "fin": "2026-11-23T08:51:02.770Z",
           "note": "Issue #800 : Rétro sprint 41 ; dette #707 pour Dev ; #798 et #799 créées (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-23T08:51:37.427Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
