@@ -10289,10 +10289,10 @@
           "note": "Verdict OK, 0 bug : verify 6121 tests, CI 14/14, 177/178 captures identiques (instabilité chlore connue) ; captures publiées"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-23T03:34:19.712Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-23T04:04:02.790Z",
+          "note": "PR #792 fusionnée → v1.29.3 (release CI OK, main verte), #786 fermée ; suppression de la branche refusée par l'environnement"
         }
       },
       "metriques": {}
