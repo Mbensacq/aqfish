@@ -10275,6 +10275,12 @@
           "debut": "2026-11-23T02:37:57.366Z",
           "fin": "2026-11-23T02:38:31.057Z",
           "note": "Issue #786 : données d'écologie du paludarium, champ obligatoire (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-23T02:39:05.147Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
