@@ -10325,10 +10325,10 @@
           "note": "Verdict OK, 0 bug : 6135 tests, CI 14/14, captures mg/L OK et publiées"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-23T06:20:21.749Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-23T06:57:52.497Z",
+          "note": "PR #794 fusionnée → v1.29.4 (release CI OK), #793 fermée, dette #795 ; CI main rouge au 1er passage (délai velvet.spec, flaky) verte à la relance, bug #796 ; suppression de branche refusée"
         }
       },
       "metriques": {}
