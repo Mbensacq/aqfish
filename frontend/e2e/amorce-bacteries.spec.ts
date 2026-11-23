@@ -2,7 +2,8 @@ import { expect, test } from '@playwright/test';
 
 import { createDayClock } from '../src/app/sim/daylight';
 import { serializeWorld } from '../src/app/sim/save';
-import { createDefaultWorld, type MutableWorld } from '../src/app/sim/world';
+import { createDefaultWorld } from '../src/app/sim/world';
+import type { MutableWorld } from '../src/app/sim/world-types';
 import { ouvrirReglages } from './outils-panneau';
 
 /**

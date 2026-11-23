@@ -1,6 +1,5 @@
 import { createFeeder } from './auto-feeder';
 import { DEFAULT_DAY_CLOCK } from './daylight';
-import type { MutableWorld } from './world-types';
 import {
   advance,
   broodWorldInPlace,
@@ -21,8 +20,8 @@ import {
   starveWorldInPlace,
   step,
   velvetWorldInPlace,
-  type World,
 } from './world';
+import type { MutableWorld, World } from './world-types';
 
 /**
  * Caractérisation du pas de simulation (`stepInPlace`, `sim/world.ts`), lot 2 du chantier

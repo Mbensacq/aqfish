@@ -37,9 +37,8 @@ import {
   setWorldHeaterInPlace,
   treatWorldInPlace,
   velvetWorldInPlace,
-  type MutableWorld,
-  type World,
 } from './world';
+import type { MutableWorld, World } from './world-types';
 
 /** Animaux de test : identifiants consécutifs à partir de 0. */
 function animals(species: readonly SpeciesId[]): VelvetSubject[] {

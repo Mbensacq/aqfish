@@ -3,7 +3,8 @@ import { expect, test, type Page } from '@playwright/test';
 import { createDayClock } from '../src/app/sim/daylight';
 import { serializeWorld } from '../src/app/sim/save';
 import { freshWater } from '../src/app/sim/water';
-import { createDefaultWorld, starveWorldInPlace, type MutableWorld } from '../src/app/sim/world';
+import { createDefaultWorld, starveWorldInPlace } from '../src/app/sim/world';
+import type { MutableWorld } from '../src/app/sim/world-types';
 
 /**
  * Aides pour débutant (issue #240, ADR 0072) : « Guide du débutant » en dialogue modal,

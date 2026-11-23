@@ -31,9 +31,8 @@ import {
   createWorld,
   step,
   stepBroodInPlace,
-  type MutableWorld,
-  type World,
 } from './world';
+import type { MutableWorld, World } from './world-types';
 
 /** Alevins du platy et du molly (issue #674) : même calendrier que le guppy (#459). */
 

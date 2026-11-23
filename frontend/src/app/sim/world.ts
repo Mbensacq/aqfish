@@ -194,20 +194,6 @@ import {
   type CurrentVelocity,
 } from './water-current';
 
-/**
- * Types de l'état du monde, déclarés dans `sim/world-types.ts` (#687) ; réexportés pour les
- * modules qui ne les importent pas encore de là.
- */
-export type {
-  Entity,
-  Feeding,
-  MutableWorld,
-  PopulationEntry,
-  SimClock,
-  SiphonPass,
-  World,
-  WorldFeatures,
-} from './world-types';
 import type {
   Entity,
   Feeding,

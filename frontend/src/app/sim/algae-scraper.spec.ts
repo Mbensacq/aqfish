@@ -16,8 +16,8 @@ import {
   createDefaultWorld,
   scrapeWorldAlgaeAlongInPlace,
   worldAlgaePatches,
-  type MutableWorld,
 } from './world';
+import type { MutableWorld } from './world-types';
 
 /** Deux plaques sur la vitre du fond (z = -0,2), l'une à gauche, l'autre à droite. */
 const PATCHES: readonly AlgaePatch[] = [

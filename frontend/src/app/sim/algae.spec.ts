@@ -34,8 +34,8 @@ import {
   scrapeWorldAlgaeInPlace,
   setWorldLightingInPlace,
   worldAlgaePatches,
-  type MutableWorld,
 } from './world';
+import type { MutableWorld } from './world-types';
 
 const WATER = environmentWater({ environment: 'tropical' });
 const DAY = DEFAULT_DAY_LENGTH_SECONDS;

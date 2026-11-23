@@ -17,7 +17,8 @@ import {
   waterHistoryView,
   type WaterHistory,
 } from './water-history';
-import { advanceInPlace, createDefaultWorld, type MutableWorld } from './world';
+import { advanceInPlace, createDefaultWorld } from './world';
+import type { MutableWorld } from './world-types';
 
 const water = (nitrate: number): WaterState => ({ ...freshWater('tropical'), nitrate });
 

@@ -5,7 +5,8 @@ import { setPopulationInPlace } from '../src/app/sim/population';
 import { ROOM_ANIMAL_CAP, ROOM_TANK_CAP, roomAnimalCount } from '../src/app/sim/room-limits';
 import { serializeRoom } from '../src/app/sim/room-save';
 import { addTank, createRoom, type RoomState } from '../src/app/sim/room-state';
-import { createDefaultWorld, type MutableWorld } from '../src/app/sim/world';
+import { createDefaultWorld } from '../src/app/sim/world';
+import type { MutableWorld } from '../src/app/sim/world-types';
 import { ouvrirReglages } from './outils-panneau';
 
 /**

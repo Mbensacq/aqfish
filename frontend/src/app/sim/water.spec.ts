@@ -37,8 +37,8 @@ import {
   createWorld,
   setWorldHeater,
   setWorldHeaterInPlace,
-  type World,
 } from './world';
+import type { World } from './world-types';
 import { waterQuality } from './water-quality';
 import { FRESH_PH, MAX_PH, MIN_PH } from './water-ph';
 

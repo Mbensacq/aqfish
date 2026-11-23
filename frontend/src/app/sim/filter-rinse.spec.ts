@@ -23,7 +23,8 @@ import {
 } from './filter-rinse';
 import { initialMaintenance, maintenanceDone } from './maintenance';
 import { copyWater, freshWater, stepWaterInPlace, type MutableWaterState } from './water';
-import { createDefaultWorld, rinseWorldFilterInPlace, type MutableWorld } from './world';
+import { createDefaultWorld, rinseWorldFilterInPlace } from './world';
+import type { MutableWorld } from './world-types';
 
 const DAY = DEFAULT_DAY_LENGTH_SECONDS;
 

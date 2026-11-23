@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 
-import { createDefaultWorld, type MutableWorld } from '../src/app/sim/world';
+import { createDefaultWorld } from '../src/app/sim/world';
+import type { MutableWorld } from '../src/app/sim/world-types';
 import { card, hostEl, open, openSession } from './outils-seance';
 import {
   caps,

@@ -2,13 +2,11 @@ import {
   addSupport,
   addTank,
   createRoom,
-  isCentimetric,
   MAX_ROOM_SUPPORTS,
   moveTank,
   removeSupport,
   removeTank,
   renameTank,
-  ROOM_FLOOR,
   ROOM_TANK_CAP,
   roomLayoutProblems,
   stepRoom,
@@ -24,6 +22,7 @@ import {
   type RoomState,
   type TankPlacement,
 } from './room-state';
+import { isCentimetric, ROOM_FLOOR } from './room-cm-box';
 import { serializeWorld } from './save';
 import { TANK_LIMITS } from './tank';
 import { createDefaultWorld } from './world';

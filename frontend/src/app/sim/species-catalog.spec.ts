@@ -4,7 +4,8 @@ import { parseWorld, serializeWorld } from './save';
 import { SPECIES_LABELS, speciesCatalog } from './species-catalog';
 import { applySpeciesCounts, applySpeciesCountsInPlace, normalizedCount } from './species-counts';
 import { SPECIES } from './species';
-import { advance, cloneWorld, createDefaultWorld, type World } from './world';
+import { advance, cloneWorld, createDefaultWorld } from './world';
+import type { World } from './world-types';
 
 const ids = (env: EnvironmentId) => speciesCatalog(env).map((entry) => entry.species);
 

@@ -46,15 +46,8 @@ import {
   GRAMMA,
 } from './species';
 import { waterVolume } from './tank';
-import {
-  advance,
-  boundsFor,
-  cloneWorld,
-  createDefaultWorld,
-  createWorld,
-  feed,
-  type World,
-} from './world';
+import { advance, boundsFor, cloneWorld, createDefaultWorld, createWorld, feed } from './world';
+import type { World } from './world-types';
 
 const of = (world: World, species: SpeciesId) =>
   world.entities.filter((e) => e.species === species);

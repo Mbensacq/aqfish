@@ -34,8 +34,8 @@ import {
   killWorldAnimalInPlace,
   removeDeadInPlace,
   setWorldMortalityInPlace,
-  type MutableWorld,
 } from './world';
+import type { MutableWorld } from './world-types';
 
 const weak = (extra: Partial<MortalitySubject> = {}): MortalitySubject => ({
   id: 0,

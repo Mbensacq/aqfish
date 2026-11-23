@@ -11,8 +11,8 @@ import {
   feed,
   step,
   worldBubbles,
-  type World,
 } from './world';
+import type { World } from './world-types';
 
 /** Vrai si tous les poissons sont dans la limite de nage `hard` de leur espèce. */
 function allInside(world: World): boolean {

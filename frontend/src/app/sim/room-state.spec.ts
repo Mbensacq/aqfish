@@ -19,7 +19,8 @@ import {
   type RoomState,
 } from './room-state';
 import { serializeWorld } from './save';
-import { advance, changeWorldWater, createDefaultWorld, feed, type World } from './world';
+import { advance, changeWorldWater, createDefaultWorld, feed } from './world';
+import type { World } from './world-types';
 
 /** Texte complet d'un monde (schéma 1) : comparaison au bit près. */
 const text = (world: World): string => serializeWorld(world);

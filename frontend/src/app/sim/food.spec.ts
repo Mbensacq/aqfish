@@ -31,8 +31,8 @@ import {
   createWorld,
   feed,
   feedInPlace,
-  type MutableWorld,
 } from './world';
+import type { MutableWorld } from './world-types';
 
 const WATER = waterVolume();
 const FLOAT_Y = WATER.maxY - FOOD_RADIUS;

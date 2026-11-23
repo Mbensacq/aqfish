@@ -33,13 +33,8 @@ import { environmentById } from './environment';
 import { obstacleDistance, sphereObstacle } from './obstacles';
 import { parseWorld, serializeWorld } from './save';
 import { DEFAULT_TANK } from './tank';
-import {
-  advance,
-  advanceInPlace,
-  createDefaultWorld,
-  createWorld,
-  type MutableWorld,
-} from './world';
+import { advance, advanceInPlace, createDefaultWorld, createWorld } from './world';
+import type { MutableWorld } from './world-types';
 
 const HALF_W = DEFAULT_TANK.width / 2;
 const HALF_D = DEFAULT_TANK.depth / 2;

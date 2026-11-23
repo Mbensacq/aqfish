@@ -21,7 +21,8 @@ import {
 } from './plant';
 import { plantSway } from './plant-sway';
 import { SAND_THICKNESS } from './tank';
-import { advanceInPlace, createDefaultWorld, type MutableWorld } from './world';
+import { advanceInPlace, createDefaultWorld } from './world';
+import type { MutableWorld } from './world-types';
 
 const TALL: DecorItem = {
   kind: 'plant',

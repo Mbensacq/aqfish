@@ -15,7 +15,8 @@ import { ENVIRONMENT_IDS, environmentById } from './environment';
 import { mixWarningText } from './species-catalog';
 import { SPECIES, type SpeciesId } from './species';
 import type { Fish, SwimBounds } from './swimmer';
-import { createDefaultWorld, createWorld, step, type World } from './world';
+import { createDefaultWorld, createWorld, step } from './world';
+import type { World } from './world-types';
 
 const IDS = Object.keys(SPECIES) as SpeciesId[];
 

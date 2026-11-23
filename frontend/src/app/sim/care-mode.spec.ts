@@ -18,16 +18,8 @@ import { isExcluded } from './species-legal';
 import { SPECIES } from './species';
 import { worstAlert } from './tank-list';
 import { sampleWater } from './water-quality';
-import {
-  advance,
-  boundsFor,
-  cloneWorld,
-  createDefaultWorld,
-  feed,
-  starveWorld,
-  type MutableWorld,
-  type World,
-} from './world';
+import { advance, boundsFor, cloneWorld, createDefaultWorld, feed, starveWorld } from './world';
+import type { MutableWorld, World } from './world-types';
 
 /** Monde de `world` au mode `mode` (copie). */
 function withMode(world: World, mode: CareMode): MutableWorld {

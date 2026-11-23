@@ -112,7 +112,7 @@
     "max-params": 6
   },
   "sim/room-state.ts": {
-    "max-lines": 623,
+    "max-lines": 622,
     "complexity": 21,
     "max-params": 7
   },
@@ -160,7 +160,7 @@
     "max-lines-per-function": 88
   },
   "sim/world.ts": {
-    "max-lines": 1454,
+    "max-lines": 1444,
     "max-params": 6
   },
   "ui/aquarium-host/aquarium-host.ts": {

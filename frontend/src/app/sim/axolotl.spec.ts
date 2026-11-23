@@ -34,8 +34,8 @@ import {
   cloneWorld,
   createDefaultWorld,
   createWorld,
-  type World,
 } from './world';
+import type { World } from './world-types';
 
 const WALKER = AXOLOTL.walker!;
 const WATER = environmentWater('paludarium');

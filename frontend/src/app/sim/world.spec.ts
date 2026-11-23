@@ -15,9 +15,8 @@ import {
   createWorld,
   step,
   ticksFor,
-  type MutableWorld,
-  type World,
 } from './world';
+import type { MutableWorld, World } from './world-types';
 
 describe('createWorld', () => {
   it('crée un monde vide à t = 0 avec la graine donnée', () => {

@@ -21,9 +21,8 @@ import {
   createDefaultWorld,
   createWorld,
   feedInPlace,
-  type MutableWorld,
-  type World,
 } from './world';
+import type { MutableWorld, World } from './world-types';
 
 /** Monde sans animaux ni filtre : l'ammoniaque n'y vient que de la nourriture et y reste. */
 function emptyWorldWithoutFilter(seed = 7): MutableWorld {

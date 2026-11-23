@@ -18,7 +18,8 @@ import {
 } from './species';
 import { WATER_TEMPERATURES } from './water';
 import { freshPh, SPECIES_PH } from './water-ph';
-import { advanceInPlace, createDefaultWorld, createWorld, type MutableWorld } from './world';
+import { advanceInPlace, createDefaultWorld, createWorld } from './world';
+import type { MutableWorld } from './world-types';
 
 /**
  * Issue #238 : eau douce tropicale, lot 1 (rasbora arlequin, tétra citron, loche kuhli,

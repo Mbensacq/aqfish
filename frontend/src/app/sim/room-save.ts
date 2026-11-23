@@ -16,7 +16,6 @@ import {
   type SaveSettings,
 } from './save';
 import {
-  isCentimetric,
   MAX_ROOM_SUPPORTS,
   MAX_ROOM_TANKS,
   MAX_SUPPORT_LEVELS,
@@ -34,6 +33,7 @@ import {
   type TankPlace,
   type TankPlacement,
 } from './room-state';
+import { isCentimetric } from './room-cm-box';
 import {
   describe,
   field,

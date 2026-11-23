@@ -42,9 +42,8 @@ import {
   createWorld,
   fungusWorldInPlace,
   treatWorldInPlace,
-  type MutableWorld,
-  type World,
 } from './world';
+import type { MutableWorld, World } from './world-types';
 
 type Subject = FungusSubject & {
   health: number;

@@ -25,14 +25,8 @@ import { FULL_MOTION, REDUCED_MOTION } from '../core/reduced-motion/reduced-moti
 import type { Obstacle } from './obstacles';
 import { SPECIES, type SpeciesId } from './species';
 import { swimBounds, type Fish, type SwimBounds } from './swimmer';
-import {
-  advanceInPlace,
-  createWorld,
-  feedInPlace,
-  step,
-  type MutableWorld,
-  type World,
-} from './world';
+import { advanceInPlace, createWorld, feedInPlace, step } from './world';
+import type { MutableWorld, World } from './world-types';
 import { MAX_TOTAL_FISH } from './population';
 import { sheetRows, SPECIES_BEHAVIOR_TEXT } from './species-sheet';
 

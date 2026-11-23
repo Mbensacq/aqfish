@@ -31,9 +31,8 @@ import {
   createWorld,
   feed,
   worldBubbles,
-  type MutableWorld,
-  type World,
 } from './world';
+import type { MutableWorld, World } from './world-types';
 
 const SMALL: TankDimensions = { width: 0.6, height: 0.5, depth: 0.3 };
 const LARGE: TankDimensions = MAX_TANK;
