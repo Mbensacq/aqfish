@@ -95,12 +95,13 @@ const FK_ROUGE = 'https://www.fishkeeper.co.uk/fish/freshwater/pond-fish/goldfis
  * Litres par cm de poisson adulte, par classe : `min` est le plafond (au-delà, le bac est
  * surpeuplé), `max` le conseillé. Poisson rouge : 2 L par 0,5 cm selon la RSPCA, soit 4 L/cm.
  */
-export const DENSITY_LITERS_PER_CM: Readonly<Record<DensityClass, SheetField<ValueRange>>> = {
-  tropical: sourced(range(1.5, 2), `${RSPCA} (1,5 à 2 L par cm de poisson tropical)`),
-  coldwater: sourced(range(4, 4), `${RSPCA} (2 L par 0,5 cm de poisson rouge)`),
-  invertebrate: approx(range(1, 1.5)),
-  marine: approx(range(2, 3)),
-};
+export const DENSITY_LITERS_PER_CM: Readonly<Record<DensityClass, SheetField<ValueRange>>> =
+  Object.freeze({
+    tropical: sourced(range(1.5, 2), `${RSPCA} (1,5 à 2 L par cm de poisson tropical)`),
+    coldwater: sourced(range(4, 4), `${RSPCA} (2 L par 0,5 cm de poisson rouge)`),
+    invertebrate: approx(range(1, 1.5)),
+    marine: approx(range(2, 3)),
+  });
 
 const TROPICAL: SheetField<DensityClass> = sourced(
   'tropical',
@@ -172,8 +173,21 @@ function reefFish(overrides: Partial<SpeciesEcology> = {}): SpeciesEcology {
 
 const PF_YOUNG = `${PF_SHRIMP} (mange au moins les jeunes crevettes)`;
 
+/**
+ * Fige chaque entrée et la table (#788) : les entrées écrites par décomposition
+ * (`{ ...peacefulTropical(…), prey }`) ne le seraient pas sinon.
+ */
+function frozenTable(
+  table: Partial<Record<SpeciesId, SpeciesEcology>>,
+): Readonly<Partial<Record<SpeciesId, SpeciesEcology>>> {
+  for (const ecology of Object.values(table)) {
+    Object.freeze(ecology);
+  }
+  return Object.freeze(table);
+}
+
 /** Données des tranches d'eau douce tropicale (#784), de mer et d'eau froide (#785). */
-export const SPECIES_ECOLOGY: Readonly<Partial<Record<SpeciesId, SpeciesEcology>>> = {
+export const SPECIES_ECOLOGY: Readonly<Partial<Record<SpeciesId, SpeciesEcology>>> = frozenTable({
   neon: peacefulTropical(gh(0, 15)),
   guppy: {
     ...peacefulTropical(gh(5, 35), approx(foods('algae', 'pellets'))),
@@ -244,7 +258,11 @@ export const SPECIES_ECOLOGY: Readonly<Partial<Record<SpeciesId, SpeciesEcology>
       `${GARNELIO} (biofilm, jeunes algues, restes) ; ${FK_CERISE} (flocons)`,
     ),
     prey: NO_PREY,
-    predators: sourced(
+    // Approximation (#788) : la liste mêle prédateurs sourcés et approximations. La source de
+    // chacun est portée par le champ `prey` du prédateur : Practical Fishkeeping pour guppy,
+    // corydora, rasbora, kuhli, danio et poisson rouge (les adultes), FishKeeper pour le xipho ;
+    // tétra, gourami nain, platy et molly sont des approximations (`docs/ESPECES.md`, point 17).
+    predators: approx(
       ids(
         'guppy',
         'corydora',
@@ -258,7 +276,6 @@ export const SPECIES_ECOLOGY: Readonly<Partial<Record<SpeciesId, SpeciesEcology>
         'xipho',
         'rouge',
       ),
-      `${PF_SHRIMP} (poisson rouge : les adultes) ; ${FK_XIPHO} ; tétra, gourami nain, platy et molly : approximation`,
     ),
     territorial: NO,
     finNipper: NO,
@@ -330,7 +347,7 @@ export const SPECIES_ECOLOGY: Readonly<Partial<Record<SpeciesId, SpeciesEcology>
     densityClass: sourced('coldwater', `${RSPCA} (poisson rouge : 2 L par 0,5 cm)`),
     extraLitersPerAdult: sourced(
       50,
-      `${OATA_ROUGE} (100 L pour le premier adulte, puis 50 L par adulte en plus) ; désaccord : RSPCA, au moins 60 L chacun (${RSPCA}) ; le jeu garde l’OATA, plus stricte`,
+      `${OATA_ROUGE} (100 L pour le premier adulte, puis 50 L par adulte en plus) ; désaccord : RSPCA, au moins 60 L chacun (${RSPCA}) ; le jeu garde l’OATA, plus stricte jusqu’à 4 adultes seulement (égalité à 5, RSPCA plus stricte au-delà)`,
     ),
     hardnessTolerated: approx(gh(4, 22)),
     foods: sourced(foods('pellets'), `${FK_ROUGE} (granulés, flocons, aliments congelés)`),
@@ -360,4 +377,4 @@ export const SPECIES_ECOLOGY: Readonly<Partial<Record<SpeciesId, SpeciesEcology>
     finNipper: NO,
     fastSwimmer: NO,
   },
-};
+});

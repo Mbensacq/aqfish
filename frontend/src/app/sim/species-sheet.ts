@@ -169,7 +169,7 @@ const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
     diet: approx('omnivore'),
     minGroup: approx(3),
     minLiters: approx(60),
-    hardness: sourced(gh(8, 30), `${ESPECES} (Seriously Fish ; FishBase : dH 9–19)`),
+    hardness: sourced(gh(8, 30), `${ESPECES} (Seriously Fish ; désaccord : FishBase, dH 9–19)`),
     lifespan: years(2, 3),
     // Reproduction (#459) : vivipare ; rythme et nombre d'alevins choisis pour le jeu
     // (`sim/fry.ts`), la gestation réelle dure environ quatre semaines.
