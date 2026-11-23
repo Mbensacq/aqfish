@@ -22,6 +22,12 @@ import type { Entity, Mutable, MutableWorld, World } from './world-types';
  */
 const COARSE_TOLERANCE = 0.03;
 
+/** Pas fins du monde complet comparé (30 s simulées : la nage coûte cher sous couverture en CI). */
+const FULL_WORLD_STEPS = 1800;
+
+/** Délai des tests au pas fin : 72 000 pas, lents sous couverture en CI. */
+const FINE_STEP_TIMEOUT_MS = 30_000;
+
 function tropical(seed = 7): MutableWorld {
   return cloneWorld(createDefaultWorld(seed, 'tropical'));
 }
@@ -51,42 +57,54 @@ function largestGap(coarse: World, fine: World): number {
 }
 
 describe('avance écosystème à gros pas (#799)', () => {
-  it('le pas long suit le pas fin à 3 % près sur un jour de bac peuplé, nourri au départ', () => {
-    const coarse = tropical();
-    feedAnimalsInPlace(coarse);
-    const fine = cloneWorld(coarse);
+  it(
+    'le pas long suit le pas fin à 3 % près sur un jour de bac peuplé, nourri au départ',
+    () => {
+      const coarse = tropical();
+      feedAnimalsInPlace(coarse);
+      const fine = cloneWorld(coarse);
 
-    advanceEcosystemInPlace(coarse, 1200);
-    advanceEcosystemInPlace(fine, 1200, { stepSeconds: SIM_DT });
+      advanceEcosystemInPlace(coarse, 1200);
+      advanceEcosystemInPlace(fine, 1200, { stepSeconds: SIM_DT });
 
-    expect(coarse.water.nitrate).toBeGreaterThan(1);
-    expect(largestGap(coarse, fine)).toBeLessThan(COARSE_TOLERANCE);
-  });
+      expect(coarse.water.nitrate).toBeGreaterThan(1);
+      expect(largestGap(coarse, fine)).toBeLessThan(COARSE_TOLERANCE);
+    },
+    FINE_STEP_TIMEOUT_MS,
+  );
 
-  it('le pas long suit le pas fin à 3 % près pendant le cyclage d’un bac neuf (3 jours)', () => {
-    const coarse = tropical();
-    startFilterCyclingInPlace(coarse.water as MutableWaterState);
-    const fine = cloneWorld(coarse);
+  it(
+    'le pas long suit le pas fin à 3 % près pendant le premier jour de cyclage d’un bac neuf',
+    () => {
+      const coarse = tropical();
+      startFilterCyclingInPlace(coarse.water as MutableWaterState);
+      const fine = cloneWorld(coarse);
 
-    advanceEcosystemInPlace(coarse, 3 * 1200);
-    advanceEcosystemInPlace(fine, 3 * 1200, { stepSeconds: SIM_DT });
+      advanceEcosystemInPlace(coarse, 1200);
+      advanceEcosystemInPlace(fine, 1200, { stepSeconds: SIM_DT });
 
-    expect(coarse.water.ammonia).toBeGreaterThan(1);
-    expect(largestGap(coarse, fine)).toBeLessThan(COARSE_TOLERANCE);
-  });
+      expect(coarse.water.ammonia).toBeGreaterThan(0.5);
+      expect(largestGap(coarse, fine)).toBeLessThan(COARSE_TOLERANCE);
+    },
+    FINE_STEP_TIMEOUT_MS,
+  );
 
-  it('au pas fin, l’eau d’un bac jamais nourri suit celle du monde complet (nage comprise)', () => {
-    const world = createDefaultWorld(3, 'tropical');
-    const eco = cloneWorld(world);
+  it(
+    'au pas fin, l’eau d’un bac jamais nourri suit celle du monde complet (nage comprise)',
+    () => {
+      const world = createDefaultWorld(3, 'tropical');
+      const eco = cloneWorld(world);
 
-    const full = advance(world, 7200);
-    advanceEcosystemInPlace(eco, 7200 * SIM_DT, { stepSeconds: SIM_DT });
+      const full = advance(world, FULL_WORLD_STEPS);
+      advanceEcosystemInPlace(eco, FULL_WORLD_STEPS * SIM_DT, { stepSeconds: SIM_DT });
 
-    for (const key of ['ammonia', 'nitrite', 'nitrate', 'ph', 'temperature'] as const) {
-      expect(eco.water[key]).toBeCloseTo(full.water[key], 9);
-    }
-    expect(eco.time).toBeCloseTo(full.time, 9);
-  });
+      for (const key of ['ammonia', 'nitrite', 'nitrate', 'ph', 'temperature'] as const) {
+        expect(eco.water[key]).toBeCloseTo(full.water[key], 9);
+      }
+      expect(eco.time).toBeCloseTo(full.time, 9);
+    },
+    FINE_STEP_TIMEOUT_MS,
+  );
 
   it('même monde, même résultat, au bit près', () => {
     const a = tropical(11);

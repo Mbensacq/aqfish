@@ -1302,6 +1302,9 @@ DEFAULT_DECOR)`), sinon les trajectoires divergent dès la naissance. (2026-10-1
   et toutes les empreintes). Les repas du harnais doivent aussi tomber assez souvent : la faim
   d'un guppy est pleine en 150 s, et une faim pleine fait chuter la santé (un repas toutes les
   2 minutes laisse les guppys affamés).
+  Comparer au pas fin coûte cher : 72 000 pas pour un jour de jeu, et la CI (couverture v8)
+  est environ 18 fois plus lente qu'en local ; au premier essai, deux tests ont dépassé les 5 s
+  par défaut de Vitest. Comparer sur un jour au plus, et donner un délai explicite.
 - **Scénarios d'écosystème : jours de 20 minutes, azote en secondes** (cycle 288, #799) : les
   durées d'entretien et de maturation du filtre sont en jours de jeu (1 200 s), la production
   et la conversion de l'azote en secondes (calées sur le tableau de bord). Un scénario de
