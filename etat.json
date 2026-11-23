@@ -10482,7 +10482,7 @@
       "date": "2026-11-24",
       "debut": "2026-11-23T23:41:49.286Z",
       "type": "fonctionnalite",
-      "issue": null,
+      "issue": 805,
       "pr": null,
       "version": null,
       "phases": {
