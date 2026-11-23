@@ -10347,6 +10347,12 @@
           "debut": "2026-11-23T06:58:25.459Z",
           "fin": "2026-11-23T06:58:52.143Z",
           "note": "Issue #795 : lot de dette (suites de #794 + délai velvet #796) (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-23T06:59:26.155Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
