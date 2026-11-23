@@ -10247,10 +10247,10 @@
           "note": "PR #791 : données d'écologie figées et statuts des prédateurs (#788 + #790), CI verte 14/14 (e2e local partiel) ; pied d'attribution réinjecté par l'environnement dans la PR (PIEGES)"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-23T01:50:01.400Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-23T02:07:00.299Z",
+          "note": "Verdict OK, 0 bug : verify 6112 tests, CI 14/14, 178/178 captures identiques (1 instabilité chlore, rejouée identique) ; captures publiées"
         }
       },
       "metriques": {}
