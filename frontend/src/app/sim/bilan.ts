@@ -75,8 +75,8 @@ export const MAX_REVIEW_POINTS = 3;
 /**
  * Charge par litre (`waterLoad / waterLiters`) à partir de laquelle un filtre neuf ne garde
  * plus les nitrites sous leurs seuils : à l'équilibre, nitrites = `AMMONIA_PER_LOAD_LITER` ×
- * `NITRITE_PER_AMMONIA` × charge par litre / `NITRITE_CONVERSION`. Les populations par
- * défaut restent en dessous.
+ * `NITRITE_PER_AMMONIA` × charge par litre / `NITRITE_CONVERSION`, pour un bac nourri à sa
+ * faim (repas et repos, #798 ; à jeun, un tiers). Les populations par défaut restent en dessous.
  */
 export const DENSITY_THRESHOLDS: QualityThresholds = {
   watch: densityFor(COMPOUND_THRESHOLDS.nitrite.watch),

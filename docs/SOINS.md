@@ -556,6 +556,22 @@ l'alcalinité ; **un bac récifal ne peut jamais recevoir de cuivre**.
 - Sel et médicament → invertébrés : refusés quand le bac en compte (ci-dessus, non vérifié).
 - Conditionneur, amorce, charbon, régulateur de pH, catappa : aucun effet secondaire déclaré.
 
+**Pollution liée à la nourriture dans le jeu** (issue #798, ADR 0168, `sim/food-decay.ts`,
+`sim/water.ts`) :
+- nourriture **mangée** : 4 % de son poids rendu en ammoniaque, milieu de la fourchette de 3 à
+  5 % donnée pour une nourriture à 30–55 % de protéines (Global Seafood Alliance, « Flow rate
+  estimation for RAS » [64] : 16 % de la protéine est de l'azote, la moitié n'est pas retenue
+  par le poisson) ;
+- nourriture **non mangée** : tout son azote passe dans l'eau en pourrissant, soit deux fois la
+  part d'un granulé mangé (même raisonnement, **approximation de jeu** : délai et vitesse de la
+  décomposition ne sont pas sourcés) ;
+- part **au repos** (poisson à jeun) : un tiers de la production d'un bac nourri à sa faim,
+  proportionnelle à la masse des animaux (cube de leur taille) : **approximation de jeu**, non
+  sourcée ;
+- poids de nourriture d'un granulé de jeu : 31,25 mg (**approximation de jeu**, quantités
+  compressées comme le temps) ;
+- seuils de maladie et d'alerte inchangés (§ 12, moteur d'eau, et `sim/water-quality.ts`).
+
 **Algues dans le jeu** (issue #476, ADR 0109, `sim/algae.ts`) : toutes **approximations de
 jeu**, sauf mention.
 - Durée d'éclairage par bac, de 0 à 24 h par jour, 8 h par défaut ; au-delà de 10 h, les
@@ -765,6 +781,7 @@ remplacer par une source primaire.
 61. Texas A&M, Cryptocaryon irritans — https://extension.rwfm.tamu.edu/wp-content/uploads/sites/8/2013/09/Cryptocaryon-irritans-Infections-Marine-White-Spot-Disease-in-Fish.pdf
 62. Reef Central, forum — https://reefcentral.com/forums/showthread.php?t=2383310 *(secondaire : forum)*
 63. Reefs.com, magazine — https://reefs.com/magazine/aquarium-fish-news-from-the-warfront-with-cryptocaryon-irritans-part-three-of-five/ *(secondaire)*
+64. Global Seafood Alliance, « Flow rate estimation for RAS » — https://www.globalseafood.org/advocate/flow-rate-estimation-for-ras/
 
 **Dureté de l'eau dans le jeu** (issue #484, ADR 0113, `sim/water-hardness.ts`) :
 - GH et KH de l'eau du robinet du jeu : **approximations de jeu** (tropical 10 / 6, bassin

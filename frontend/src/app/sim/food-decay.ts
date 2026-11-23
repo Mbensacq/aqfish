@@ -1,14 +1,21 @@
 import { MAX_CONCENTRATIONS, type MutableWaterState } from './water';
 
 /**
- * Décomposition de la nourriture non mangée (issue #638, ADR 0145) : un granulé que personne
- * ne mange reste posé `FOOD_GROUND_SECONDS` (`sim/food.ts`), puis disparaît de `World.food` en
- * se décomposant. Sa masse passe alors dans l'eau sous forme d'ammoniaque, qui suit ensuite le
- * cycle de l'azote existant (`sim/water.ts` : nitrites, puis nitrates).
+ * Ammoniaque venue de la nourriture (issues #638 et #798, ADR 0145 et 0168).
  *
- * Pur et déterministe : aucun hasard, aucune horloge. La masse d'un granulé vient de son aspect
- * (`pelletMass`, tirée de `foodLook`, hachage de son seul identifiant) : la même ration donne toujours la même
- * quantité d'ammoniaque. Un granulé mangé ou siphonné ne se décompose pas.
+ * - **Nourriture mangée** (#798) : un granulé mangé rend à l'eau, par les déchets du poisson,
+ *   `EATEN_FOOD_AMMONIA` mg d'ammoniaque par unité de masse, au pas du repas. En aquaculture,
+ *   l'ammoniaque totale produite vaut 3 à 5 % du poids de nourriture (Global Seafood Alliance,
+ *   `docs/SOINS.md` § 12) : le jeu prend 4 %.
+ * - **Nourriture non mangée** (#638) : un granulé que personne ne mange reste posé
+ *   `FOOD_GROUND_SECONDS` (`sim/food.ts`), puis disparaît de `World.food` en se décomposant.
+ *   Tout son azote passe alors dans l'eau (`FOOD_DECAY_AMMONIA`, deux fois la part d'un
+ *   granulé mangé : le poisson en retient la moitié). Un granulé siphonné ne pollue pas.
+ *
+ * Les deux parts suivent ensuite le cycle de l'azote existant (`sim/water.ts` : nitrites, puis
+ * nitrates). Pur et déterministe : aucun hasard, aucune horloge. La masse d'un granulé vient de
+ * son aspect (`pelletMass`, tirée de `foodLook`, hachage de son seul identifiant) : la même
+ * ration donne toujours la même quantité d'ammoniaque.
  *
  * Valeur de jeu (approximation, pas une mesure) : une pleine surcharge (`MAX_FOOD` granulés,
  * douze clics) laissée à pourrir ajoute environ 0,5 mg/L d'ammoniaque dans les 288 L du bac
@@ -17,7 +24,24 @@ import { MAX_CONCENTRATIONS, type MutableWaterState } from './water';
  */
 
 /**
- * Ammoniaque apportée par un granulé de masse 1 qui se décompose, en mg (mg/L × litres).
+ * Poids de nourriture d'un granulé de masse 1, en mg. **Approximation de jeu** (temps et
+ * quantités compressés comme le reste de la simulation) : choisi pour que la part mangée
+ * (4 %) et la part pourrie (8 %) retombent sur les valeurs de jeu d'avant #798.
+ */
+export const PELLET_FOOD_MG = 31.25;
+
+/**
+ * Part du poids de nourriture mangée rendue en ammoniaque : 4 %, milieu de la fourchette de
+ * 3 à 5 % (Global Seafood Alliance, « Flow rate estimation for RAS », `docs/SOINS.md` § 12).
+ */
+export const EATEN_FOOD_AMMONIA_SHARE = 0.04;
+
+/** Ammoniaque rendue par un granulé de masse 1 mangé, en mg (4 % de `PELLET_FOOD_MG`). */
+export const EATEN_FOOD_AMMONIA = 1.25;
+
+/**
+ * Ammoniaque apportée par un granulé de masse 1 qui se décompose, en mg (mg/L × litres) :
+ * 8 % de `PELLET_FOOD_MG`, tout l'azote d'une nourriture à 50 % de protéines (16 % d'azote).
  * Approximation de jeu : ancienne valeur 5 convertie (`sim/water-units.ts`, issue #793).
  */
 export const FOOD_DECAY_AMMONIA = 2.5;
@@ -34,6 +58,29 @@ export function addDecayedFoodInPlace(
   mass: number,
   liters: number,
 ): number {
+  return addFoodAmmoniaInPlace(water, FOOD_DECAY_AMMONIA, mass, liters);
+}
+
+/**
+ * Ajoute à `water`, **en le modifiant**, l'ammoniaque des déchets de `mass` unités de
+ * nourriture mangée dans `liters` litres (issue #798), et renvoie la quantité ajoutée (mg/L).
+ * Proportionnelle à la masse mangée ; plafonnée comme `addDecayedFoodInPlace`.
+ * @throws RangeError mêmes cas que `addDecayedFoodInPlace` (eau inchangée).
+ */
+export function addEatenFoodInPlace(
+  water: MutableWaterState,
+  mass: number,
+  liters: number,
+): number {
+  return addFoodAmmoniaInPlace(water, EATEN_FOOD_AMMONIA, mass, liters);
+}
+
+function addFoodAmmoniaInPlace(
+  water: MutableWaterState,
+  ammoniaPerMass: number,
+  mass: number,
+  liters: number,
+): number {
   if (!(mass >= 0) || !Number.isFinite(mass)) {
     throw new RangeError(`mass doit être un réel positif ou nul (reçu : ${mass})`);
   }
@@ -44,9 +91,6 @@ export function addDecayedFoodInPlace(
     return 0;
   }
   const before = water.ammonia;
-  water.ammonia = Math.min(
-    MAX_CONCENTRATIONS.ammonia,
-    before + (FOOD_DECAY_AMMONIA * mass) / liters,
-  );
+  water.ammonia = Math.min(MAX_CONCENTRATIONS.ammonia, before + (ammoniaPerMass * mass) / liters);
   return water.ammonia - before;
 }

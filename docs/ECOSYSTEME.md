@@ -150,7 +150,7 @@ Verdict par couple d'espèces, avec sa raison : **compatible**, **avec précauti
 
 | Élément | Effet simulé | Base |
 |---|---|---|
-| Poissons et invertébrés | Produisent de l'ammoniaque selon **la nourriture mangée** (3 à 5 % du poids de nourriture) et leur masse au repos | Global Seafood Alliance ; masse ∝ longueur³ |
+| Poissons et invertébrés | Produisent de l'ammoniaque selon **la nourriture mangée** (3 à 5 % du poids de nourriture) et leur masse au repos. **Fait** (#798, ADR 0168) : 4 % ; au repos, un tiers d'un bac nourri | Global Seafood Alliance ; masse ∝ longueur³ |
 | Nourriture non mangée | Se décompose en ammoniaque (#638), **sauf si un charognard la mange avant** | Existant + Garnelio |
 | Filtre | Ammoniaque → nitrites → nitrates, maturation (existant) | `docs/SOINS.md` |
 | Plantes | Absorbent l'ammonium, puis le nitrate, selon leur masse, leur type (flottante, rapide, lente) et la lumière ; poussent si elles trouvent de l'azote ; concurrencent les algues ; servent de refuge (alevins, jeunes crevettes) | Reddy et De Busk ; Walstad |

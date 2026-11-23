@@ -1303,6 +1303,15 @@ DEFAULT_DECOR)`), sinon les trajectoires divergent dès la naissance. (2026-10-1
   retrouver l'ancienne valeur. Pour prouver qu'un changement d'unités ne change pas le
   comportement, reconvertir l'eau en unités de jeu avant le hachage des empreintes : elles
   doivent retomber sur celles de `main`. (2026-11-23)
+- **Changer la production d'ammoniaque change des caractérisations qui ne parlent pas d'eau**
+  (cycle 287, #798, ADR 0168) : `save-caracterisation.spec.ts` part de sauvegardes **simulées**
+  (`realWorld` : bac avancé et nourri), donc toutes ses empreintes « ok » changent (93 cas),
+  jamais ses messages de refus : ne remplacer que les lignes `ok …` (diff `- Expected / +
+  Received` de l'échec), et vérifier qu'aucun refus ne bouge. `room-state.spec.ts` (empreinte
+  dorée) : remettre dans l'eau les composés azotés relevés sur `main` avant le changement, et
+  vérifier les nouveaux à part, plutôt que réécrire l'empreinte. Pour relever une valeur de
+  `main`, un spec jetable qui échoue avec `expect([a, b, c]).toEqual([])` affiche les nombres
+  en entier (pas de `node:fs` dans les specs : pas de types Node). (2026-11-23)
 - **Lire `fishes` pendant la boucle de pas mélange fin et début de pas** (cycle 236, #669) : la
   crevette nettoyeuse (`stepWalker`) recevait le tableau vivant des animaux ; ceux déjà avancés
   dans la boucle étaient lus à leur position de fin de pas, les autres au début. Déterministe,

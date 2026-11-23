@@ -123,6 +123,12 @@ describe('stepRoom : temps commun, aucune lecture croisée', () => {
 
 /** Empreinte du bac tropical de graine 42 après 600 pas, relevée sur `main` (v1.3.2). */
 const GOLDEN_HASH = '92dfd116';
+/** Composés azotés du bac affiché de ce test, relevés sur `main` (v1.29.6) avant #798. */
+const BEFORE_798 = {
+  ammonia: 0.03387303731560388,
+  nitrite: 0.0003505855943115,
+  nitrate: 0.000052365614301020484,
+} as const;
 
 /** Empreinte FNV-1a 32 bits du texte complet d'un monde : « état haché ». */
 function hashWorld(world: World): string {
@@ -178,10 +184,17 @@ describe('stepRoom sauf le bac affiché (#316, lot 3b)', () => {
     // Empreinte relevée sur `main` avant le lot 3b (v1.3.2) : la boucle du bac affiché n'a
     // pas changé. La pousse des plantes (#477, `water.plantGrowth`) est un état ajouté
     // depuis : retirée de l'empreinte, et vérifiée à part, tout le reste est identique.
+    // Depuis #798, un bac à jeun ne produit plus que la part au repos : un tiers de
+    // l'ammoniaque d'avant. Les composés azotés relevés sur `main` (v1.29.6) avant #798 sont
+    // remis à leur place : tout le reste est identique à l'empreinte dorée, et les nouveaux
+    // sont à un tiers des anciens (aucune nourriture dans ce bac).
     const { plantGrowth, ...water } = alone.water;
     expect(plantGrowth).toBeDefined();
     expect(Object.values(plantGrowth!).every((g) => g > 0 && g < 1)).toBe(true);
-    expect(hashWorld({ ...alone, water })).toBe(GOLDEN_HASH);
+    for (const compound of ['ammonia', 'nitrite', 'nitrate'] as const) {
+      expect(water[compound] / BEFORE_798[compound]).toBeCloseTo(1 / 3, 6);
+    }
+    expect(hashWorld({ ...alone, water: { ...water, ...BEFORE_798 } })).toBe(GOLDEN_HASH);
   });
 
   it('un identifiant inconnu avance tous les bacs', () => {
