@@ -10313,10 +10313,10 @@
           "note": "Issue #793 : mg/L et migration des sauvegardes, tranche 2a de #728 (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-23T04:05:55.998Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-23T05:26:08.400Z",
+          "note": "PR #794 : composés azotés en mg/L, sauvegardes au schéma 3 (#793), CI verte 14/14, empreintes reconverties = main ; e2e local partiel ; pied d'attribution réinjecté dans la PR (PIEGES)"
         }
       },
       "metriques": {}
