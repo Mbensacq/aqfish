@@ -9,6 +9,7 @@ import {
   type ValueRange,
 } from './sheet-field';
 import type { SpeciesId } from './species';
+import { AMPHIBIAN_ECOLOGY } from './species-ecology-amphibiens';
 
 /**
  * Données d'écologie des espèces (issue #784, première tranche de #727, `docs/ECOSYSTEME.md`
@@ -22,15 +23,17 @@ import type { SpeciesId } from './species';
  * `docs/ESPECES.md`, jamais arbitré en silence.
  *
  * Tranche du c280 (#784) : les 18 espèces d'eau douce tropicale (et la crevette nettoyeuse,
- * rangée dans la tranche par l'issue). Tranche du c281 (#785) : mer et eau froide. Les
- * amphibiens suivent au c283 ; la dernière tranche rendra ces données obligatoires.
+ * rangée dans la tranche par l'issue). Tranche du c281 (#785) : mer et eau froide. Tranche du
+ * c283 (#786) : paludarium (`sim/species-ecology-amphibiens.ts`), qui rend ces données
+ * obligatoires : la table couvre toutes les espèces et le compilateur l'impose.
  */
 
 /**
- * Classe de densité : litres par cm de poisson adulte (`docs/ECOSYSTEME.md` § 3.1). `tropical`
- * et `coldwater` viennent de la RSPCA ; `invertebrate` et `marine` sont à sourcer.
+ * Classe de densité : litres par cm d'animal adulte (`docs/ECOSYSTEME.md` § 3.1). `tropical`
+ * et `coldwater` viennent de la RSPCA ; `invertebrate`, `marine` et `amphibian` sont à sourcer.
+ * Pour `amphibian`, les litres sont ceux de l'eau du milieu, berge déduite (#786).
  */
-export type DensityClass = 'tropical' | 'coldwater' | 'invertebrate' | 'marine';
+export type DensityClass = 'tropical' | 'coldwater' | 'invertebrate' | 'marine' | 'amphibian';
 
 /** Ce qu'une espèce mange dans le bac, en plus des proies vivantes. */
 export type FoodKind = 'algae' | 'biofilm' | 'leftovers' | 'pellets';
@@ -101,6 +104,8 @@ export const DENSITY_LITERS_PER_CM: Readonly<Record<DensityClass, SheetField<Val
     coldwater: sourced(range(4, 4), `${RSPCA} (2 L par 0,5 cm de poisson rouge)`),
     invertebrate: approx(range(1, 1.5)),
     marine: approx(range(2, 3)),
+    // Amphibiens (#786) : 3 L d'eau par cm redonnent les 75 L de la fiche pour un axolotl de 25 cm.
+    amphibian: approx(range(3, 4)),
   });
 
 const TROPICAL: SheetField<DensityClass> = sourced(
@@ -178,16 +183,19 @@ const PF_YOUNG = `${PF_SHRIMP} (mange au moins les jeunes crevettes)`;
  * (`{ ...peacefulTropical(…), prey }`) ne le seraient pas sinon.
  */
 function frozenTable(
-  table: Partial<Record<SpeciesId, SpeciesEcology>>,
-): Readonly<Partial<Record<SpeciesId, SpeciesEcology>>> {
+  table: Record<SpeciesId, SpeciesEcology>,
+): Readonly<Record<SpeciesId, SpeciesEcology>> {
   for (const ecology of Object.values(table)) {
     Object.freeze(ecology);
   }
   return Object.freeze(table);
 }
 
-/** Données des tranches d'eau douce tropicale (#784), de mer et d'eau froide (#785). */
-export const SPECIES_ECOLOGY: Readonly<Partial<Record<SpeciesId, SpeciesEcology>>> = frozenTable({
+/**
+ * Données de toutes les espèces : eau douce tropicale (#784), mer et eau froide (#785),
+ * paludarium (#786). Le type impose une entrée par espèce.
+ */
+export const SPECIES_ECOLOGY: Readonly<Record<SpeciesId, SpeciesEcology>> = frozenTable({
   neon: peacefulTropical(gh(0, 15)),
   guppy: {
     ...peacefulTropical(gh(5, 35), approx(foods('algae', 'pellets'))),
@@ -377,4 +385,5 @@ export const SPECIES_ECOLOGY: Readonly<Partial<Record<SpeciesId, SpeciesEcology>
     finNipper: NO,
     fastSwimmer: NO,
   },
+  ...AMPHIBIAN_ECOLOGY,
 });

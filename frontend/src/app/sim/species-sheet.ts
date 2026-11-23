@@ -66,10 +66,10 @@ export interface SpeciesSheet {
   /** Mises en garde affichées en tête de fiche (#269), sourcées ou non vérifiées. */
   readonly notes: readonly SheetNote[];
   /**
-   * Données d'écologie (#784, `docs/ECOSYSTEME.md` § 3.1) : optionnelles tant que toutes les
-   * tranches de #727 ne sont pas livrées (eau douce tropicale au c280).
+   * Données d'écologie (#784 à #786, `docs/ECOSYSTEME.md` § 3.1), obligatoires : toute
+   * nouvelle espèce doit les fournir dans `SPECIES_ECOLOGY`.
    */
-  readonly ecology?: SpeciesEcology;
+  readonly ecology: SpeciesEcology;
 }
 
 /** Mise en garde d'une fiche : texte et statut. */
@@ -713,7 +713,7 @@ const SHEETS: Readonly<Record<SpeciesId, SpeciesSheet>> = Object.fromEntries(
       ...data,
       notes: Object.freeze([...(notes ?? [])]),
       legal: sourced(legal, legal.reference),
-      ...(SPECIES_ECOLOGY[id] ? { ecology: SPECIES_ECOLOGY[id] } : {}),
+      ecology: SPECIES_ECOLOGY[id],
       // Source unique : les plages de la simulation (ADR 0057), approximations de jeu.
       phPreferred: approx(SPECIES_PH[id].ideal),
       phTolerated: approx(SPECIES_PH[id].tolerated),

@@ -109,7 +109,7 @@ Pour chaque espèce, la fiche porte (sourcé ou approximation) :
 | Donnée | Exemple |
 |---|---|
 | Longueur adulte (standard, sans queue), en cm | Néon : 3 |
-| Classe de densité | tropical 1,5–2 L/cm ; eau froide 4 L/cm ; invertébré (à sourcer) |
+| Classe de densité | tropical 1,5–2 L/cm ; eau froide 4 L/cm ; invertébré, récif, amphibien (à sourcer ; amphibien : litres d'eau, berge déduite) |
 | Volume minimal du bac | Néon : 54 L (base 60 × 30) |
 | Volume par adulte supplémentaire, quand une source le donne | Poisson rouge : 100 L puis 50 L |
 | Groupe minimal | Néon : 8 |

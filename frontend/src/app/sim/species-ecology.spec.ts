@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { setPopulation } from './population';
 import { parseWorld, serializeWorld } from './save';
 import type { FieldStatus, SheetField, ValueRange } from './sheet-field';
-import type { SpeciesId } from './species';
+import { SPECIES, type SpeciesId } from './species';
 import { DENSITY_LITERS_PER_CM, SPECIES_ECOLOGY, type SpeciesEcology } from './species-ecology';
 import { speciesSheet } from './species-sheet';
 import { createDefaultWorld } from './world';
@@ -173,8 +173,19 @@ describe('données d’écologie, eau douce tropicale (#784)', () => {
     expect(Object.isFrozen(ecologyOf('guppy').prey.value[0])).toBe(true);
   });
 
-  it('les espèces hors tranches n’ont pas encore de données (tranche c283)', () => {
-    expect(speciesSheet('axolotl').ecology).toBeUndefined();
+  it('toutes les espèces de SPECIES ont toutes leurs données (champ obligatoire, #786)', () => {
+    const all = Object.keys(SPECIES) as SpeciesId[];
+    expect(all).toHaveLength(29);
+    expect(Object.keys(SPECIES_ECOLOGY).sort()).toEqual([...all].sort());
+    for (const id of all) {
+      const ecology = speciesSheet(id).ecology;
+      expect(ecology, id).toBe(SPECIES_ECOLOGY[id]);
+      for (const field of ECOLOGY_FIELDS) {
+        const value = ecology[field] as SheetField<unknown>;
+        expect(value.value, `${id}.${field}`).not.toBeUndefined();
+        expectValidStatus(value.status, `${id}.${field}`);
+      }
+    }
   });
 
   it('les sauvegardes se relisent à l’identique : aucune donnée d’écologie n’y est écrite', () => {
