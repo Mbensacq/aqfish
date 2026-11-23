@@ -33,12 +33,12 @@ async function open(page: Page, search = '?seed=42&vitesse=0'): Promise<string[]
 }
 
 /**
- * Importe un bac à l'eau mauvaise (ammoniaque 6, nitrites 2,5, nitrates 50) aux animaux
+ * Importe un bac à l'eau mauvaise (en mg/L : ammoniaque 3, nitrites 0,3125, nitrates 50) aux animaux
  * affamés de longue date : cinq alertes (#260), dont trois affichées.
  */
 async function importAlerts(page: Page, speed = 0): Promise<void> {
   const world: MutableWorld = createDefaultWorld(42);
-  world.water = { ...freshWater('tropical'), ammonia: 6, nitrite: 2.5, nitrate: 50 };
+  world.water = { ...freshWater('tropical'), ammonia: 3, nitrite: 0.3125, nitrate: 50 };
   starveWorldInPlace(world);
   const text = serializeWorld(world, { speed, clock: createDayClock(12, 1200, true) });
   await ouvrirReglages(page, 'Sauvegarde et partage');

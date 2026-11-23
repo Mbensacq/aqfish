@@ -26,12 +26,12 @@ async function open(page: Page, search = '?vitesse=0'): Promise<string[]> {
 }
 
 /**
- * Bac à l'eau mauvaise (ammoniaque 6, nitrites 2,5, nitrates 50) aux animaux affamés : des
+ * Bac à l'eau mauvaise (en mg/L : ammoniaque 3, nitrites 0,3125, nitrates 50) aux animaux affamés : des
  * alertes dès le démarrage. Posé dans la sauvegarde automatique avant le chargement.
  */
 async function withAlerts(page: Page): Promise<void> {
   const world: MutableWorld = createDefaultWorld(42);
-  world.water = { ...freshWater('tropical'), ammonia: 6, nitrite: 2.5, nitrate: 50 };
+  world.water = { ...freshWater('tropical'), ammonia: 3, nitrite: 0.3125, nitrate: 50 };
   starveWorldInPlace(world);
   const text = serializeWorld(world, { speed: 0, clock: createDayClock(12, 1200, true) });
   await page.addInitScript((saved) => {

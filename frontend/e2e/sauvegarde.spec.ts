@@ -149,12 +149,12 @@ test.describe('Sauvegarde (#70)', () => {
     expect(await tick(page)).toBeGreaterThanOrEqual(tickAtDeparture);
 
     const stored = await page.evaluate(() => localStorage.getItem('aqfish.sauvegarde'));
-    // Schéma 2 (#264, ADR 0069) : un bac par environnement visité, dans l'ordre des visites.
+    // Schéma de la pièce (#264, ADR 0069) : un bac par environnement visité, dans l'ordre des visites.
     const document = JSON.parse(stored!) as {
       schema: number;
       tanks: { id: number; world: { environment: string } }[];
     };
-    expect(document.schema).toBe(2);
+    expect(document.schema).toBe(SAVE_SCHEMA);
     expect(document.tanks.map((tank) => [tank.id, tank.world.environment])).toEqual([
       [0, 'tropical'],
       [1, 'bassin'],
@@ -384,7 +384,7 @@ test.describe('Sauvegarde (#70)', () => {
     expect(errors).toEqual([]);
   });
 
-  test('ancienne sauvegarde au schéma 1 (#264) : chargée sans erreur, copiée puis réécrite au schéma 2', async ({
+  test('ancienne sauvegarde au schéma 1 (#264) : chargée sans erreur, copiée puis réécrite au schéma de la pièce', async ({
     page,
   }) => {
     const pond = setPopulation(advance(createDefaultWorld(5, 'bassin'), 300), 'koi', 3);
@@ -403,7 +403,11 @@ test.describe('Sauvegarde (#70)', () => {
       copy: localStorage.getItem('aqfish.sauvegarde.schema1'),
     }));
     expect(stored.copy).toBe(legacy);
-    expect(JSON.parse(stored.current!)).toMatchObject({ schema: 2, seed: 5, selectedTankId: 0 });
+    expect(JSON.parse(stored.current!)).toMatchObject({
+      schema: SAVE_SCHEMA,
+      seed: 5,
+      selectedTankId: 0,
+    });
     expect(selectedTankWorld<{ environment: string }>(stored.current!).environment).toBe('bassin');
     expect(errors).toEqual([]);
   });
