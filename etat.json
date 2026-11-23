@@ -10317,6 +10317,12 @@
           "debut": "2026-11-23T04:05:55.998Z",
           "fin": "2026-11-23T05:26:08.400Z",
           "note": "PR #794 : composés azotés en mg/L, sauvegardes au schéma 3 (#793), CI verte 14/14, empreintes reconverties = main ; e2e local partiel ; pied d'attribution réinjecté dans la PR (PIEGES)"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-23T05:26:44.769Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
