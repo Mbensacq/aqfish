@@ -10469,10 +10469,10 @@
           "note": "Verdict RÉSERVES (S2 et S12 non verts, déclarés par Dev, recalage azote à planifier), 0 bug nouveau, 177/178 captures identiques c287 (chlore instable), publiées ; pied d'attribution ajouté par erreur dans la revue (PIEGES)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-23T14:11:52.704Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-23T14:42:31.111Z",
+          "note": "PR #804 fusionnée → v1.30.1 (release CI OK, CI main verte), #799 fermée, reste S2/S12 + clôture #728 → #805 ; suppression de branche refusée"
         }
       },
       "metriques": {}
