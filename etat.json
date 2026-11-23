@@ -10353,6 +10353,12 @@
           "debut": "2026-11-23T06:59:26.155Z",
           "fin": "2026-11-23T07:52:20.827Z",
           "note": "PR #797 : suites revue mg/L + tests de redosage velours/champignons sur 3 néons (#795, #796), CI verte 14/14, empreintes inchangées ; e2e local non relancé ; pied d'attribution réinjecté dans la PR (PIEGES)"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-23T07:53:01.944Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
