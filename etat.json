@@ -10307,10 +10307,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-23T04:04:38.395Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-23T04:05:19.239Z",
+          "note": "Issue #793 : mg/L et migration des sauvegardes, tranche 2a de #728 (M)"
         }
       },
       "metriques": {}
