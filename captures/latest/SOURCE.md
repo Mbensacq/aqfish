@@ -1,8 +1,7 @@
-# Captures c284
+# Captures c285
 
-- Branche : cycle/c284-mg-par-litre
-- PR : #794
-- Commit : b6678aab
-- Graine : celle de e2e/captures.spec.ts (défaut)
-- Temps : 173 captures en 6,0 min
-- Écarts vs c283 : 23 fichiers (textes de jauge en mg/L, panneaux d'interface) ; scène 3D inchangée
+- Branche : cycle/c285-dette-mgl-velvet
+- PR : #797
+- Commit : 51640927
+- Graine : celle du contrat de capture (par défaut)
+- Série : 178 images, identiques au pixel près (cmp) à la série précédente c284

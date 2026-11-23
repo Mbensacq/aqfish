@@ -1,0 +1,1 @@
+{"score": null, "survivants": null, "note": "non mesuré par QA c285 : lot de dette (formateur, commentaires, tests de redosage allégés), aucune logique de sim changée ; run complet (25901 mutants) hors de portée d une session ; bilan hebdomadaire en CI (mutation/hebdo/)."}
