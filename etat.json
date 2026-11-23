@@ -10433,10 +10433,10 @@
           "note": "Verdict OK, 0 bug : 6149 tests, CI 14/14, captures 177/178 identiques c285 (1 sensible à la charge), publiées"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-23T12:26:03.576Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-23T12:56:12.564Z",
+          "note": "PR #802 fusionnée → v1.30.0 (release CI OK, CI main verte), #798 fermée, dette #803 ; suppression de branche refusée"
         }
       },
       "metriques": {}
