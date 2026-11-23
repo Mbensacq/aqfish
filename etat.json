@@ -10419,6 +10419,12 @@
           "debut": "2026-11-23T10:32:11.721Z",
           "fin": "2026-11-23T10:32:29.316Z",
           "note": "Issue #798 : Écosystème 2b/7, pollution liée à la nourriture mangée (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-23T10:32:57.955Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
