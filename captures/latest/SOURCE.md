@@ -1,6 +1,6 @@
-Branche : cycle/c282-dette-ecologie-figee
-PR : #791
-Commit : 1e755f42
+Branche : cycle/c283-ecologie-paludarium
+PR : #792
+Commit : beb2ccb7
 Graine : défaut des captures
-Temps : 5,6 min (173 tests de capture)
-Comparaison : 178/178 PNG identiques à l'octet à la série précédente. Au premier passage complet, front-tableau-de-bord-chlore.png différait (7785 px, zone du tableau de bord) ; rejoué seul, il est identique à la série précédente : instabilité de capture sous charge, pas une régression (à surveiller).
+Temps : 4,8 min (173 tests de capture)
+Comparaison : 177/178 PNG identiques à l'octet à la série précédente. front-tableau-de-bord-chlore.png diffère (7785 px, zone du tableau de bord, même écart qu'au cycle 282) ; rejoué seul, il diffère autrement (31950 px) : rendu non déterministe de cette capture sous charge, pas une régression liée à la PR (aucun fichier de rendu touché). Instabilité à surveiller.
