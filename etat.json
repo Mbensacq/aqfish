@@ -10281,6 +10281,12 @@
           "debut": "2026-11-23T02:39:05.147Z",
           "fin": "2026-11-23T03:17:19.644Z",
           "note": "PR #792 : données d'écologie du paludarium, champ obligatoire (#786), CI verte 14/14 (e2e local partiel) ; pied d'attribution réinjecté par l'environnement dans la PR (PIEGES)"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-23T03:17:56.883Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
