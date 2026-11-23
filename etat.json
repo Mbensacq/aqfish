@@ -10368,6 +10368,24 @@
         }
       },
       "metriques": {}
+    },
+    "286": {
+      "numero": 286,
+      "date": "2026-11-23",
+      "debut": "2026-11-23T08:49:55.860Z",
+      "type": "retro",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-23T08:49:55.860Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
