@@ -59,6 +59,17 @@ export function stepWaterStageInPlace(
   if (eaten > 0) {
     addEatenFoodInPlace(water, eaten, liters);
   }
+  stepLivingWaterInPlace(world, dt, liters);
+}
+
+/**
+ * Pas d'eau des habitants dans `liters` litres (issue #799) : corps en décomposition, puis
+ * `stepWaterInPlace` (part au repos, filtre, température, pH). Partagé par le pas fin
+ * (`stepWaterStageInPlace`) et l'avance à gros pas (`sim/ecosystem-step.ts`), qui peut imposer
+ * un volume.
+ */
+export function stepLivingWaterInPlace(world: MutableWorld, dt: number, liters: number): void {
+  const water = world.water as MutableWaterState;
   const bodies = deadLoad(world.dead);
   if (bodies > 0) {
     addBodyDecayInPlace(water, bodies, liters, dt);
