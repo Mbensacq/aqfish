@@ -1,6 +1,8 @@
-Branche : cycle/c283-ecologie-paludarium
-PR : #792
-Commit : beb2ccb7
-Graine : défaut des captures
-Temps : 4,8 min (173 tests de capture)
-Comparaison : 177/178 PNG identiques à l'octet à la série précédente. front-tableau-de-bord-chlore.png diffère (7785 px, zone du tableau de bord, même écart qu'au cycle 282) ; rejoué seul, il diffère autrement (31950 px) : rendu non déterministe de cette capture sous charge, pas une régression liée à la PR (aucun fichier de rendu touché). Instabilité à surveiller.
+# Captures c284
+
+- Branche : cycle/c284-mg-par-litre
+- PR : #794
+- Commit : b6678aab
+- Graine : celle de e2e/captures.spec.ts (défaut)
+- Temps : 173 captures en 6,0 min
+- Écarts vs c283 : 23 fichiers (textes de jauge en mg/L, panneaux d'interface) ; scène 3D inchangée
