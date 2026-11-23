@@ -19,8 +19,8 @@ import { fermerReglages, ouvrirReglages } from './outils-panneau';
 const status = (page: Page) => page.locator('[data-dashboard-status]');
 const ammoniaAlert = (page: Page) => status(page).locator('[data-alert="ammonia"]');
 
-/** Ammoniaque de départ : sous le seuil de vigilance (2), au-dessus de l'équilibre du bac. */
-const START_AMMONIA = 1.6;
+/** Ammoniaque de départ, en mg/L (#793) : sous le seuil de vigilance (1), au-dessus de l'équilibre du bac. */
+const START_AMMONIA = 0.8;
 
 function overfedWorld(withFood: boolean): string {
   const world: MutableWorld = createDefaultWorld(42);

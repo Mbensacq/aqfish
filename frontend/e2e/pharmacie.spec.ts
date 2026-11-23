@@ -148,7 +148,7 @@ test('kit de test de l’eau (#564) : résultat arrondi après le délai, avec l
   await expect(page.locator('[data-water-kit="ph"]')).toBeDisabled();
 
   await expect(result).toHaveAttribute('data-state', 'termine', { timeout: 15_000 });
-  await expect(page.locator('[data-water-result]')).toHaveText('NH₃/NH₄⁺ ≈ 0 u.');
+  await expect(page.locator('[data-water-result]')).toHaveText('NH₃/NH₄⁺ ≈ 0 mg/L');
   await expect(page.locator('[data-water-test-advice]')).toContainText('Rien à signaler');
   await expect(page.locator('[data-water-test-guide]')).toContainText('salicylate');
   await expect(page.locator('[data-water-kit="ph"]')).toBeEnabled();

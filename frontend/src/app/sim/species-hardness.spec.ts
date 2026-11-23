@@ -113,7 +113,7 @@ describe('detailRows (#484)', () => {
 
   it('seuils azotés : ceux du jeu (COMPOUND_THRESHOLDS), communs à toutes les espèces', () => {
     expect(thresholdText('ammonia')).toBe(
-      'à surveiller dès 2, eau mauvaise dès 5 (unités de jeu, toutes espèces)',
+      'à surveiller dès 1, eau mauvaise dès 2,5 mg/L (toutes espèces)',
     );
     expect(thresholdText('nitrate')).toContain(`dès ${COMPOUND_THRESHOLDS.nitrate.bad}`);
     const rows = detailRows('axolotl').slice(2);

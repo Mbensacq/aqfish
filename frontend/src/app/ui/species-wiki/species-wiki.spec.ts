@@ -297,7 +297,7 @@ describe('SpeciesWiki, lot 2/2 (#291)', () => {
     expect(hardness.textContent).toContain('1 – 12 °dGH');
     expect(hardness.querySelector('[data-wiki-detail-status]')!.textContent).toMatch(/^Source : /);
     expect(q('[data-wiki-detail="lifespan"]')!.textContent).toContain('3 à 5 ans');
-    expect(q('[data-wiki-detail="ammonia"]')!.textContent).toContain('eau mauvaise dès 5');
+    expect(q('[data-wiki-detail="ammonia"]')!.textContent).toContain('eau mauvaise dès 2,5 mg/L');
     // Les champs de la fiche du panneau ne changent pas.
     expect(all('[data-wiki-field]')).toHaveLength(11);
   });

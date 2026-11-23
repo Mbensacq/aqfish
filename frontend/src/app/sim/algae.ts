@@ -43,11 +43,11 @@ export const MAX_LIGHTING_HOURS = 24;
 export const ALGAE_LIGHT_LIMIT_HOURS = 10;
 
 /**
- * Nitrates au-delà desquels les algues poussent, en unités de jeu : le seuil « à surveiller »
+ * Nitrates au-delà desquels les algues poussent, en mg/L : le seuil « à surveiller »
  * de la jauge (`COMPOUND_THRESHOLDS.nitrate.watch`, `sim/water-quality.ts`, vérifié par test).
  */
 export const ALGAE_NITRATE_LIMIT = 20;
-/** Nitrates d'une pousse à plein, en unités de jeu : le plein de la jauge (`GAUGE_MAX`). */
+/** Nitrates d'une pousse à plein, en mg/L : le plein de la jauge (`GAUGE_MAX`). */
 export const ALGAE_NITRATE_FULL = 60;
 
 /**
@@ -175,7 +175,7 @@ export function cachedAlgaePatches(seed: number, water: Box3): readonly AlgaePat
 
 /**
  * Pousse des algues, dans [0, 1], pour une durée d'éclairage `hours` (heures par jour) et des
- * nitrates `nitrate` (unités de jeu) : nulle sans lumière, nulle à éclairage normal et eau
+ * nitrates `nitrate` (mg/L) : nulle sans lumière, nulle à éclairage normal et eau
  * propre, pleine à 24 h d'éclairage ou au plein de la jauge des nitrates. Une valeur non
  * finie ou négative compte pour zéro (aucune pousse fantôme).
  */

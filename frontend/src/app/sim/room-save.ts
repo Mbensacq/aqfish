@@ -7,6 +7,7 @@ import {
   SAVE_FORMAT,
   SAVE_SCHEMA,
   SAVE_SCHEMA_1,
+  SAVE_SCHEMA_2,
   SEED_RULE,
   TICK_RULE,
   savedWorld,
@@ -49,15 +50,19 @@ import {
   type ListRule,
   type Validator,
 } from './save-schema';
+import { schema2ToMgPerLiter } from './save-units';
 import type { World } from './world-types';
 
 /**
- * Sauvegarde de la pièce au schéma 2 (épopée #264, lot 1, ADR 0061 et 0069).
+ * Sauvegarde de la pièce au schéma 3 (épopée #264, lot 1, ADR 0061 et 0069 ; mg/L, #793 et
+ * ADR 0167).
  *
- * Écriture : `serializeRoom` écrit **toujours** le schéma 2. Lecture : `parseSave` lit le
- * schéma 2 et le schéma 1 (migré par `migrateSchema1`, après sa validation complète) ; tout
- * autre schéma est refusé. Le corps du monde de chaque bac est exactement celui du schéma 1
- * (graine comprise, ADR 0069), relu par le même validateur, avec ses messages préfixés du bac.
+ * Écriture : `serializeRoom` écrit **toujours** le schéma 3. Lecture : `parseSave` lit le
+ * schéma 3, le schéma 2 (même pièce, composés azotés en unités de jeu convertis aux mg/L avant
+ * la validation, `sim/save-units.ts`) et le schéma 1 (migré par `migrateSchema1`, après sa
+ * validation complète) ; tout autre schéma est refusé. Le corps du monde de chaque bac est
+ * celui du schéma 1 (graine comprise, ADR 0069) en mg/L, relu par le même validateur, avec ses
+ * messages préfixés du bac.
  * Comme le schéma 1 : aucune exception, champs inconnus ignorés, propriétés propres seulement.
  */
 
@@ -98,7 +103,7 @@ export type ParseSaveResult =
       readonly selectedTankId: number;
       readonly settings: SaveSettings;
       /** Schéma lu (1 : sauvegarde migrée). */
-      readonly schema: typeof SAVE_SCHEMA | typeof SAVE_SCHEMA_1;
+      readonly schema: typeof SAVE_SCHEMA | typeof SAVE_SCHEMA_2 | typeof SAVE_SCHEMA_1;
     }
   | { readonly ok: false; readonly error: string };
 
@@ -232,9 +237,15 @@ export function parseRoomSaveData(value: unknown): ParseSaveResult {
     const migrated = migrateSchema1(legacy.world, legacy.others);
     return { ok: true, ...migrated, settings: legacy.settings, schema: SAVE_SCHEMA_1 };
   }
+  if (schema === SAVE_SCHEMA_2) {
+    // Composés azotés en unités de jeu : convertis aux mg/L avant la validation (#793).
+    // Un objet reste un objet : `schema2ToMgPerLiter` n'en renvoie qu'une copie.
+    const result = parseSchema2(schema2ToMgPerLiter(value) as Record<string, unknown>);
+    return result.ok ? { ...result, schema: SAVE_SCHEMA_2 } : result;
+  }
   if (schema !== SAVE_SCHEMA) {
     return failure(
-      `version de sauvegarde inconnue (${describe(schema)}, version ${SAVE_SCHEMA_1} ou ${SAVE_SCHEMA} attendue)`,
+      `version de sauvegarde inconnue (${describe(schema)}, version ${SAVE_SCHEMA_1}, ${SAVE_SCHEMA_2} ou ${SAVE_SCHEMA} attendue)`,
     );
   }
   return parseSchema2(value);

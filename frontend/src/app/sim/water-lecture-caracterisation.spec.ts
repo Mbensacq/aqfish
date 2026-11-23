@@ -176,8 +176,8 @@ const EXPECTED: Readonly<Record<string, string>> = {
   'complète eaufroide':
     '{"ok":true,"water":{"temperature":25,"ammonia":0,"nitrite":0,"nitrate":5,"filter":1,"ph":6.8,"heater":26,"catappa":[0.5,1],"salt":1,"medication":0.5,"ichCure":0.25,"bacteriaStarter":0.5,"chlorine":0.5,"ammoniaBinder":3,"phRegulatorWait":10,"untreatedTap":true,"carbon":true,"cycling":true,"lighting":10,"lampOn":9,"algae":[0.1,0],"plantGrowth":{"7":0.5},"gh":8,"kh":6}}',
   'sans temperature': '{"ok":false,"error":"eau : temperature doit être un nombre dans [0, 40]"}',
-  'sans ammonia': '{"ok":false,"error":"eau : ammonia doit être un nombre dans [0, 100]"}',
-  'sans nitrite': '{"ok":false,"error":"eau : nitrite doit être un nombre dans [0, 100]"}',
+  'sans ammonia': '{"ok":false,"error":"eau : ammonia doit être un nombre dans [0, 50]"}',
+  'sans nitrite': '{"ok":false,"error":"eau : nitrite doit être un nombre dans [0, 12.5]"}',
   'sans nitrate': '{"ok":false,"error":"eau : nitrate doit être un nombre dans [0, 100]"}',
   'sans filter': '{"ok":false,"error":"eau : filter doit être un nombre dans [0, 1]"}',
   'temperature = 0':
@@ -195,26 +195,23 @@ const EXPECTED: Readonly<Record<string, string>> = {
   'temperature = null': '{"ok":false,"error":"eau : temperature doit être un nombre dans [0, 40]"}',
   'ammonia = 0':
     '{"ok":true,"water":{"temperature":25,"ammonia":0,"nitrite":0,"nitrate":5,"filter":1,"ph":7}}',
-  'ammonia = 100':
-    '{"ok":true,"water":{"temperature":25,"ammonia":100,"nitrite":0,"nitrate":5,"filter":1,"ph":7}}',
+  'ammonia = 100': '{"ok":false,"error":"eau : ammonia doit être un nombre dans [0, 50]"}',
   'ammonia = 50':
     '{"ok":true,"water":{"temperature":25,"ammonia":50,"nitrite":0,"nitrate":5,"filter":1,"ph":7}}',
-  'ammonia = -0.01': '{"ok":false,"error":"eau : ammonia doit être un nombre dans [0, 100]"}',
-  'ammonia = 100.01': '{"ok":false,"error":"eau : ammonia doit être un nombre dans [0, 100]"}',
-  'ammonia = NaN': '{"ok":false,"error":"eau : ammonia doit être un nombre dans [0, 100]"}',
-  "ammonia = '1'": '{"ok":false,"error":"eau : ammonia doit être un nombre dans [0, 100]"}',
-  'ammonia = null': '{"ok":false,"error":"eau : ammonia doit être un nombre dans [0, 100]"}',
+  'ammonia = -0.01': '{"ok":false,"error":"eau : ammonia doit être un nombre dans [0, 50]"}',
+  'ammonia = 100.01': '{"ok":false,"error":"eau : ammonia doit être un nombre dans [0, 50]"}',
+  'ammonia = NaN': '{"ok":false,"error":"eau : ammonia doit être un nombre dans [0, 50]"}',
+  "ammonia = '1'": '{"ok":false,"error":"eau : ammonia doit être un nombre dans [0, 50]"}',
+  'ammonia = null': '{"ok":false,"error":"eau : ammonia doit être un nombre dans [0, 50]"}',
   'nitrite = 0':
     '{"ok":true,"water":{"temperature":25,"ammonia":0,"nitrite":0,"nitrate":5,"filter":1,"ph":7}}',
-  'nitrite = 100':
-    '{"ok":true,"water":{"temperature":25,"ammonia":0,"nitrite":100,"nitrate":5,"filter":1,"ph":7}}',
-  'nitrite = 50':
-    '{"ok":true,"water":{"temperature":25,"ammonia":0,"nitrite":50,"nitrate":5,"filter":1,"ph":7}}',
-  'nitrite = -0.01': '{"ok":false,"error":"eau : nitrite doit être un nombre dans [0, 100]"}',
-  'nitrite = 100.01': '{"ok":false,"error":"eau : nitrite doit être un nombre dans [0, 100]"}',
-  'nitrite = NaN': '{"ok":false,"error":"eau : nitrite doit être un nombre dans [0, 100]"}',
-  "nitrite = '1'": '{"ok":false,"error":"eau : nitrite doit être un nombre dans [0, 100]"}',
-  'nitrite = null': '{"ok":false,"error":"eau : nitrite doit être un nombre dans [0, 100]"}',
+  'nitrite = 100': '{"ok":false,"error":"eau : nitrite doit être un nombre dans [0, 12.5]"}',
+  'nitrite = 50': '{"ok":false,"error":"eau : nitrite doit être un nombre dans [0, 12.5]"}',
+  'nitrite = -0.01': '{"ok":false,"error":"eau : nitrite doit être un nombre dans [0, 12.5]"}',
+  'nitrite = 100.01': '{"ok":false,"error":"eau : nitrite doit être un nombre dans [0, 12.5]"}',
+  'nitrite = NaN': '{"ok":false,"error":"eau : nitrite doit être un nombre dans [0, 12.5]"}',
+  "nitrite = '1'": '{"ok":false,"error":"eau : nitrite doit être un nombre dans [0, 12.5]"}',
+  'nitrite = null': '{"ok":false,"error":"eau : nitrite doit être un nombre dans [0, 12.5]"}',
   'nitrate = 0':
     '{"ok":true,"water":{"temperature":25,"ammonia":0,"nitrite":0,"nitrate":0,"filter":1,"ph":7}}',
   'nitrate = 100':

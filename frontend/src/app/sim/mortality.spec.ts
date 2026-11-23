@@ -94,11 +94,12 @@ describe('mortalité : risque (fonction pure)', () => {
   it('eau toxique au seuil « mauvaise » d’ammoniaque libre ou de nitrites', () => {
     const water = freshWater('tropical');
     expect(toxicWater(water)).toBe(false);
-    expect(toxicWater({ ...water, ammonia: 5 })).toBe(true);
-    expect(toxicWater({ ...water, ammonia: 4.99 })).toBe(false);
-    expect(toxicWater({ ...water, nitrite: 5 })).toBe(true);
+    // Seuils « mauvaise » en mg/L (#793) : ammoniaque 2,5, nitrites 0,625.
+    expect(toxicWater({ ...water, ammonia: 2.5 })).toBe(true);
+    expect(toxicWater({ ...water, ammonia: 2.49 })).toBe(false);
+    expect(toxicWater({ ...water, nitrite: 0.625 })).toBe(true);
     // Ammoniaque liée par le conditionneur : elle n'agit plus.
-    expect(toxicWater({ ...water, ammonia: 5, ammoniaBinder: 1 })).toBe(false);
+    expect(toxicWater({ ...water, ammonia: 2.5, ammoniaBinder: 1 })).toBe(false);
   });
 
   it('probabilité d’un pas : nulle à taux ou pas nul, non fini ou négatif', () => {

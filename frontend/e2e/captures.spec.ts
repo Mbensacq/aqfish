@@ -913,7 +913,7 @@ test.describe('Captures', () => {
 
   // Tableau de bord (#256, #260) en bordure, trois-quarts, bureau, tablette et téléphone :
   // panneaux fermés (« Commandes » à son état par défaut), simulation à l'arrêt dès t = 0.
-  // Avec `alerte`, bac importé à l'eau mauvaise (ammoniaque 6, nitrites 2,5, nitrates 50) et
+  // Avec `alerte`, bac importé à l'eau mauvaise (en mg/L : ammoniaque 3, nitrites 0,3125, nitrates 50) et
   // animaux affamés de longue date : cinq alertes, trois affichées. Captures d'interface.
   for (const shot of [
     { name: 'three-quarter-tableau-de-bord', width: 1280, height: 720, alert: false },
@@ -931,7 +931,7 @@ test.describe('Captures', () => {
       await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
       if (shot.alert) {
         const world: MutableWorld = createDefaultWorld(SEED);
-        world.water = { ...freshWater('tropical'), ammonia: 6, nitrite: 2.5, nitrate: 50 };
+        world.water = { ...freshWater('tropical'), ammonia: 3, nitrite: 0.3125, nitrate: 50 };
         starveWorldInPlace(world);
         const text = serializeWorld(world, { speed: 0, clock: createDayClock(12, 1200, true) });
         await ouvrirReglages(page, 'Sauvegarde et partage');
@@ -1004,7 +1004,7 @@ test.describe('Captures', () => {
     await page.goto(`/?seed=${SEED}&vitesse=0`);
     await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
     const world: MutableWorld = createDefaultWorld(SEED);
-    world.water = { ...freshWater('tropical'), ammonia: 6, nitrite: 2.5, nitrate: 50 };
+    world.water = { ...freshWater('tropical'), ammonia: 3, nitrite: 0.3125, nitrate: 50 };
     starveWorldInPlace(world);
     await ouvrirReglages(page, 'Sauvegarde et partage');
     await page.locator('[data-section="sauvegarde"] input[type="file"]').setInputFiles({

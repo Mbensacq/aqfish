@@ -21,6 +21,12 @@ import {
 import { PH_REGULATOR_WAIT_SECONDS, stepPhRegulatorInPlace } from './ph-regulator';
 import { freshPh, MAX_PH, MIN_PH, phAfterWaterChange, stepPh } from './water-ph';
 import {
+  MAX_CONCENTRATIONS,
+  NITRATE_PER_NITRITE,
+  NITRITE_PER_AMMONIA,
+  type NitrogenCompound,
+} from './water-units';
+import {
   HARDNESS_TRACE,
   hardnessAfterWaterChange,
   isHardness,
@@ -34,15 +40,17 @@ import {
  * efficacité du filtre d'un bac, avancés par pas fixe. Pur et déterministe : aucun hasard,
  * aucune horloge, aucune allocation par pas (`stepWaterInPlace`).
  *
- * Les concentrations sont des **unités de jeu** dans [0, `MAX_CONCENTRATION`] (0 : eau
- * saine), pas des mg/L : seules comptent leur évolution relative et leurs paliers, que le
- * rendu et la santé des poissons liront plus tard.
+ * Les concentrations sont en **mg/L** (ammoniaque totale, nitrites, nitrates), dans
+ * [0, `MAX_CONCENTRATIONS`] (0 : eau saine) : issue #793, ADR 0167, `sim/water-units.ts`.
+ * Les constantes sont les anciennes valeurs de jeu converties (facteurs exacts) : la
+ * dynamique est celle d'avant.
  *
  * Équations simplifiées, par seconde (B : charge des habitants, L : litres d'eau, f : filtre) :
  * - ammoniaque produite : `AMMONIA_PER_LOAD_LITER · B / L` ;
  * - ammoniaque → nitrites, puis nitrites → nitrates : décroissance du premier ordre de taux
  *   `AMMONIA_CONVERSION · f` et `NITRITE_CONVERSION · f` (forme exacte `1 − e^(−k·dt)`,
- *   stable quel que soit le pas) ;
+ *   stable quel que soit le pas), la masse convertie étant comptée avec `NITRITE_PER_AMMONIA`
+ *   et `NITRATE_PER_NITRITE` ;
  * - nitrates : s'accumulent, retirés seulement par un changement d'eau (`changeWaterInPlace`) ;
  * - température : tend vers celle visée (consigne du chauffage `heater` si elle est réglée,
  *   sinon celle de l'environnement, `WATER_TEMPERATURES` ; issue #207), constante de temps
@@ -50,18 +58,18 @@ import {
  * - pH : baisse lente avec la charge, remonte vers celui de l'eau neuve au changement d'eau
  *   (`sim/water-ph.ts`, issue #236, ADR 0057) ; les feuilles de catappa le tirent vers un
  *   plancher et se décomposent (`sim/catappa.ts`, issue #239, ADR 0071).
- * Une concentration plafonnée perd ce qui la ferait dépasser `MAX_CONCENTRATION`.
+ * Une concentration plafonnée perd ce qui la ferait dépasser son plafond (`MAX_CONCENTRATIONS`).
  */
 
 /** État de l'eau d'un bac : objet de données pur, sérialisable en JSON. */
 export interface WaterState {
   /** Température, en °C, dans [`MIN_WATER_TEMPERATURE`, `MAX_WATER_TEMPERATURE`]. */
   readonly temperature: number;
-  /** Ammoniaque, en unités de jeu, dans [0, `MAX_CONCENTRATION`]. */
+  /** Ammoniaque, en mg/L, dans [0, `MAX_CONCENTRATIONS.ammonia`]. */
   readonly ammonia: number;
-  /** Nitrites, en unités de jeu, dans [0, `MAX_CONCENTRATION`]. */
+  /** Nitrites, en mg/L, dans [0, `MAX_CONCENTRATIONS.nitrite`]. */
   readonly nitrite: number;
-  /** Nitrates, en unités de jeu, dans [0, `MAX_CONCENTRATION`]. */
+  /** Nitrates, en mg/L, dans [0, `MAX_CONCENTRATIONS.nitrate`]. */
   readonly nitrate: number;
   /** Efficacité du filtre, dans [0, 1] : 0, filtre arrêté ; 1, filtre neuf. */
   readonly filter: number;
@@ -155,8 +163,7 @@ export interface WaterState {
 /** État de l'eau modifiable en place (propriétaire unique : le monde). */
 export type MutableWaterState = { -readonly [K in keyof WaterState]: WaterState[K] };
 
-/** Plafond des concentrations, en unités de jeu. */
-export const MAX_CONCENTRATION = 100;
+export { MAX_CONCENTRATIONS } from './water-units';
 
 /** Bornes de la température acceptée, en °C. */
 export const MIN_WATER_TEMPERATURE = 0;
@@ -213,12 +220,13 @@ export function setHeaterInPlace(water: MutableWaterState, temperature: number):
 export const REFERENCE_BODY_LENGTH = 0.05;
 
 /**
- * Ammoniaque produite par seconde, en unités de jeu, par unité de charge et par litre.
- * **Valeur de jeu** : la population par défaut du bac tropical (24 habitants, charge ≈ 45
- * dans 288 L) fait monter les nitrates d'environ 50 unités en deux heures simulées sans
+ * Ammoniaque produite par seconde, en mg × L par unité de charge (soit des mg/L par seconde
+ * pour une charge de 1 dans 1 L). **Approximation de jeu** (ancienne valeur 0,045 convertie,
+ * `sim/water-units.ts`) : la population par défaut du bac tropical (24 habitants, charge ≈ 45
+ * dans 288 L) fait monter les nitrates d'environ 50 mg/L en deux heures simulées sans
  * changement d'eau (six journées de 20 min).
  */
-export const AMMONIA_PER_LOAD_LITER = 0.045;
+export const AMMONIA_PER_LOAD_LITER = 0.0225;
 
 /** Taux de conversion de l'ammoniaque en nitrites par un filtre neuf, en s⁻¹ (≈ 2 min). */
 export const AMMONIA_CONVERSION = 1 / 120;
@@ -330,9 +338,12 @@ export function stepWaterInPlace(
   const toNitrite = water.ammonia * (1 - Math.exp(-AMMONIA_CONVERSION * filter * dt));
   const toNitrate = water.nitrite * (1 - Math.exp(-NITRITE_CONVERSION * filter * dt));
   const produced = ((AMMONIA_PER_LOAD_LITER * load) / liters) * dt;
-  water.ammonia = clampConcentration(water.ammonia - toNitrite + produced);
-  water.nitrite = clampConcentration(water.nitrite + toNitrite - toNitrate);
-  water.nitrate = clampConcentration(water.nitrate + toNitrate);
+  water.ammonia = clampConcentration(water.ammonia - toNitrite + produced, 'ammonia');
+  water.nitrite = clampConcentration(
+    water.nitrite + toNitrite * NITRITE_PER_AMMONIA - toNitrate,
+    'nitrite',
+  );
+  water.nitrate = clampConcentration(water.nitrate + toNitrate * NITRATE_PER_NITRITE, 'nitrate');
   const follow = 1 - Math.exp(-dt / TEMPERATURE_TIME_CONSTANT);
   water.temperature = clamp(
     water.temperature + (temperature - water.temperature) * follow,
@@ -468,9 +479,9 @@ export type ReadWaterResult =
 /** Champs numériques obligatoires de l'eau relue, bornes comprises. */
 const REQUIRED_FIELDS = [
   ['temperature', MIN_WATER_TEMPERATURE, MAX_WATER_TEMPERATURE],
-  ['ammonia', 0, MAX_CONCENTRATION],
-  ['nitrite', 0, MAX_CONCENTRATION],
-  ['nitrate', 0, MAX_CONCENTRATION],
+  ['ammonia', 0, MAX_CONCENTRATIONS.ammonia],
+  ['nitrite', 0, MAX_CONCENTRATIONS.nitrite],
+  ['nitrate', 0, MAX_CONCENTRATIONS.nitrate],
   ['filter', 0, 1],
 ] as const;
 
@@ -769,7 +780,7 @@ function clamp(v: number, lo: number, hi: number): number {
   return Math.min(hi, Math.max(lo, v));
 }
 
-/** Concentration ramenée dans [0, `MAX_CONCENTRATION`] (un résidu négatif d'arrondi vaut 0). */
-function clampConcentration(v: number): number {
-  return clamp(v, 0, MAX_CONCENTRATION);
+/** Concentration ramenée dans [0, son plafond] (un résidu négatif d'arrondi vaut 0). */
+function clampConcentration(v: number, compound: NitrogenCompound): number {
+  return clamp(v, 0, MAX_CONCENTRATIONS[compound]);
 }

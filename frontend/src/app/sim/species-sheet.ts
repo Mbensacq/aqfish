@@ -932,13 +932,13 @@ const COMPOUND_LABELS: Readonly<Record<WaterCompound, string>> = {
 };
 
 /**
- * Seuils des composés azotés, communs à toutes les espèces (`COMPOUND_THRESHOLDS`, unités de
- * jeu de `sim/water.ts`) : approximations de jeu (ADR 0052). Au seuil « mauvaise », l'eau use
+ * Seuils des composés azotés, communs à toutes les espèces (`COMPOUND_THRESHOLDS`, en mg/L,
+ * issue #793) : approximations de jeu (ADR 0052, 0167). Au seuil « mauvaise », l'eau use
  * la santé des habitants (`sim/wellbeing.ts`).
  */
 export function thresholdText(compound: WaterCompound): string {
   const { watch, bad } = COMPOUND_THRESHOLDS[compound];
-  return `à surveiller dès ${frenchNumber(watch)}, eau mauvaise dès ${frenchNumber(bad)} (unités de jeu, toutes espèces)`;
+  return `à surveiller dès ${frenchNumber(watch)}, eau mauvaise dès ${frenchNumber(bad)} mg/L (toutes espèces)`;
 }
 
 /** Statut des seuils azotés (valeurs de jeu, ADR 0052). */

@@ -81,17 +81,14 @@ export const GAUGE_NAMES: Readonly<
   ph: { short: 'pH', full: 'pH' },
 };
 
-/**
- * Unité affichée et unité lue de chaque jauge. Les composés sont en **unités de jeu**
- * (`sim/water.ts`), pas en mg/L : l'interface le dit plutôt que d'inventer une unité.
- */
+/** Unité affichée et unité lue de chaque jauge. Les composés sont en mg/L (issue #793). */
 export const GAUGE_UNITS: Readonly<
   Record<DashboardGaugeId, { readonly short: string; readonly spoken: string }>
 > = {
   temperature: { short: '°C', spoken: 'degrés' },
-  ammonia: { short: 'u.', spoken: 'unités de jeu' },
-  nitrite: { short: 'u.', spoken: 'unités de jeu' },
-  nitrate: { short: 'u.', spoken: 'unités de jeu' },
+  ammonia: { short: 'mg/L', spoken: 'milligrammes par litre' },
+  nitrite: { short: 'mg/L', spoken: 'milligrammes par litre' },
+  nitrate: { short: 'mg/L', spoken: 'milligrammes par litre' },
   ph: { short: '', spoken: '' },
 };
 
@@ -108,13 +105,14 @@ export const TREND_LABELS: Readonly<Record<Trend, string>> = {
 /**
  * Écart minimal, sur la fenêtre de tendance, pour qu'une jauge soit en hausse ou en baisse
  * (seuil compris). Calés sur `sim/water.ts` et `sim/water-ph.ts` pour la population par
- * défaut du bac tropical : nitrates +25 par heure (≈ +0,4 par minute), pH −0,25 par heure
- * (≈ −0,004 par minute), température qui rejoint la consigne en une dizaine de minutes.
+ * défaut du bac tropical : nitrates +25 mg/L par heure (≈ +0,4 par minute), pH −0,25 par
+ * heure (≈ −0,004 par minute), température qui rejoint la consigne en une dizaine de minutes.
+ * Ammoniaque et nitrites : anciens seuils de jeu convertis en mg/L (issue #793).
  */
 export const TREND_THRESHOLDS: Readonly<Record<DashboardGaugeId, number>> = {
   temperature: 0.1,
-  ammonia: 0.05,
-  nitrite: 0.05,
+  ammonia: 0.025,
+  nitrite: 0.00625,
   nitrate: 0.2,
   ph: 0.003,
 };
@@ -265,7 +263,7 @@ export interface DashboardGauge {
   readonly label: string;
   /** Nom complet (lecteurs d'écran, info-bulle). */
   readonly name: string;
-  /** Valeur affichée, au dixième, virgule décimale (« 25,0 ») ; « – » si elle n'est pas finie. */
+  /** Valeur affichée (`formatGaugeValue` : « 25,0 », « 0,25 ») ; « – » si elle n'est pas finie. */
   readonly value: string;
   readonly unit: string;
   readonly level: GaugeLevel;
@@ -273,7 +271,7 @@ export interface DashboardGauge {
   /** Part remplie de la jauge, dans [0, 1]. */
   readonly fill: number;
   readonly trend: Trend;
-  /** Texte lu complet : « Nitrates : 42,5 unités de jeu, critique, en hausse ». */
+  /** Texte lu complet : « Nitrates : 42,5 milligrammes par litre, critique, en hausse ». */
   readonly spoken: string;
 }
 
@@ -310,14 +308,36 @@ export function phFill(ph: number): number {
 
 /** Nombre au dixième, virgule décimale (« 25,0 », « 0,8 ») ; « – » s'il n'est pas fini. */
 export function formatTenth(value: number): string {
+  return formatDecimals(value, 1);
+}
+
+/**
+ * Décimales affichées de chaque jauge : ammoniaque et nitrites au centième, leurs seuils en
+ * mg/L étant sous l'unité (issue #793) ; les autres au dixième.
+ */
+export const GAUGE_DECIMALS: Readonly<Record<DashboardGaugeId, 1 | 2>> = {
+  temperature: 1,
+  ammonia: 2,
+  nitrite: 2,
+  nitrate: 1,
+  ph: 1,
+};
+
+/** Valeur d'une jauge, virgule décimale (« 0,25 », « 42,5 ») ; « – » si elle n'est pas finie. */
+export function formatGaugeValue(id: DashboardGaugeId, value: number): string {
+  return formatDecimals(value, GAUGE_DECIMALS[id]);
+}
+
+function formatDecimals(value: number, decimals: 1 | 2): string {
+  const scale = decimals === 1 ? 10 : 100;
   return Number.isFinite(value)
-    ? (Math.round(value * 10) / 10 + 0).toFixed(1).replace('.', ',')
+    ? (Math.round(value * scale) / scale + 0).toFixed(decimals).replace('.', ',')
     : '–';
 }
 
 /**
  * Jauges du tableau de bord : niveaux calculés sur les valeurs exactes de `sample` (et la
- * zone du pH de `readout`, pour les espèces présentes), valeurs affichées au dixième,
+ * zone du pH de `readout`, pour les espèces présentes), valeurs affichées par `formatGaugeValue`,
  * tendances `trends`. Bac sans animal : toute l'échelle du pH est idéale (`phBands`).
  */
 export function dashboardGauges(
@@ -336,7 +356,7 @@ export function dashboardGauges(
     const fill =
       id === 'temperature' ? temperatureFill(raw) : id === 'ph' ? phFill(raw) : gaugeFill(id, raw);
     const levelLabel = (id === 'ph' ? PH_LEVEL_LABELS : GAUGE_LEVEL_LABELS)[level];
-    const value = formatTenth(raw);
+    const value = formatGaugeValue(id, raw);
     const unit = GAUGE_UNITS[id];
     const trend = trends[id];
     const reading = unit.spoken === '' ? value : `${value} ${unit.spoken}`;

@@ -30,7 +30,7 @@ test('alerte dépliée : espèces nommées, animaux mis en évidence puis repèr
   await expect(host).not.toHaveAttribute('data-aqfish-animaux-signales');
 
   const world: MutableWorld = createDefaultWorld(42);
-  world.water = { ...freshWater('tropical'), ammonia: 6, nitrite: 2.5, nitrate: 50 };
+  world.water = { ...freshWater('tropical'), ammonia: 3, nitrite: 0.3125, nitrate: 50 };
   starveWorldInPlace(world);
   const text = serializeWorld(world, { speed: 0, clock: createDayClock(12, 1200, true) });
   await ouvrirReglages(page, 'Sauvegarde et partage');

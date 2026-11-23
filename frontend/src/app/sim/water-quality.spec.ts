@@ -1,5 +1,5 @@
 import { ENVIRONMENT_IDS } from './environment';
-import { freshWater, MAX_CONCENTRATION, WATER_TEMPERATURES, type WaterState } from './water';
+import { freshWater, MAX_CONCENTRATIONS, WATER_TEMPERATURES, type WaterState } from './water';
 import {
   COMPOUND_THRESHOLDS,
   DEFAULT_WATER_READOUT,
@@ -39,7 +39,7 @@ describe('levelOf', () => {
   });
 
   it('valeurs extrêmes : très grande, mauvaise ; non finie, mauvaise (jamais rassurant)', () => {
-    expect(levelOf(MAX_CONCENTRATION, thresholds)).toBe('mauvaise');
+    expect(levelOf(MAX_CONCENTRATIONS.nitrate, thresholds)).toBe('mauvaise');
     expect(levelOf(Number.NaN, thresholds)).toBe('mauvaise');
     expect(levelOf(Number.POSITIVE_INFINITY, thresholds)).toBe('mauvaise');
   });
@@ -71,7 +71,7 @@ describe('waterQuality', () => {
       expect(waterQuality(tropical({ [compound]: watch * 0.99 }), 'tropical')).toBe('bonne');
       expect(waterQuality(tropical({ [compound]: watch }), 'tropical')).toBe('a-surveiller');
       expect(waterQuality(tropical({ [compound]: bad }), 'tropical')).toBe('mauvaise');
-      expect(waterQuality(tropical({ [compound]: MAX_CONCENTRATION }), 'tropical')).toBe(
+      expect(waterQuality(tropical({ [compound]: MAX_CONCENTRATIONS[compound] }), 'tropical')).toBe(
         'mauvaise',
       );
     }
@@ -133,7 +133,7 @@ describe('gaugeFill', () => {
       expect(gaugeFill(compound, 0)).toBe(0);
       expect(gaugeFill(compound, GAUGE_MAX[compound] / 2)).toBeCloseTo(0.5, 12);
       expect(gaugeFill(compound, GAUGE_MAX[compound])).toBe(1);
-      expect(gaugeFill(compound, MAX_CONCENTRATION)).toBe(1);
+      expect(gaugeFill(compound, MAX_CONCENTRATIONS[compound])).toBe(1);
     }
   });
 
@@ -198,17 +198,17 @@ describe('waterReadout et sameReadout', () => {
     });
   });
 
-  it('valeurs au dixième ; consigne du chauffage comme température visée', () => {
+  it('valeurs au dixième, ammoniaque et nitrites au centième ; consigne comme température visée', () => {
     const readout = waterReadout(
-      tropical({ temperature: 25.26, ammonia: 0.84, nitrite: 1.25, nitrate: 19.96, heater: 27 }),
+      tropical({ temperature: 25.26, ammonia: 0.844, nitrite: 0.156, nitrate: 19.96, heater: 27 }),
       'tropical',
     );
     expect(readout).toEqual({
       quality: 'bonne',
       temperature: 25.3,
       target: 27,
-      ammonia: 0.8,
-      nitrite: 1.3,
+      ammonia: 0.84,
+      nitrite: 0.16,
       nitrate: 20,
       ph: 7,
       phZone: 'ideal',

@@ -293,8 +293,12 @@ describe('serializeWorld / parseWorld : aller-retour', () => {
   it('écrit et restitue l’état de l’eau (#206), changement d’eau compris', () => {
     const world = changeWorldWater(advance(createDefaultWorld(42, 'bassin'), 3600));
     const data = saveData(world);
-    expect(data.water).toEqual(world.water);
-    expect(data.water).not.toBe(world.water);
+    // Schéma 1 : composés azotés en unités de jeu (#793, `sim/save-units.ts`).
+    expect(data.water).toEqual({
+      ...world.water,
+      ammonia: world.water.ammonia * 2,
+      nitrite: world.water.nitrite * 8,
+    });
     expect(world.water.nitrite).toBeGreaterThan(0);
     const { world: back } = restored(parseWorld(serializeWorld(world)));
     expect(back.water).toEqual(world.water);

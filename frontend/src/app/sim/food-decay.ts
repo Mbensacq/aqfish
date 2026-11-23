@@ -1,4 +1,4 @@
-import { MAX_CONCENTRATION, type MutableWaterState } from './water';
+import { MAX_CONCENTRATIONS, type MutableWaterState } from './water';
 
 /**
  * Décomposition de la nourriture non mangée (issue #638, ADR 0145) : un granulé que personne
@@ -11,18 +11,21 @@ import { MAX_CONCENTRATION, type MutableWaterState } from './water';
  * quantité d'ammoniaque. Un granulé mangé ou siphonné ne se décompose pas.
  *
  * Valeur de jeu (approximation, pas une mesure) : une pleine surcharge (`MAX_FOOD` granulés,
- * douze clics) laissée à pourrir ajoute environ 1 unité d'ammoniaque dans les 288 L du bac
+ * douze clics) laissée à pourrir ajoute environ 0,5 mg/L d'ammoniaque dans les 288 L du bac
  * tropical ; répétée à chaque minute, elle fait passer l'ammoniaque au-dessus du seuil de
  * vigilance du tableau de bord.
  */
 
-/** Ammoniaque apportée par un granulé de masse 1 qui se décompose, en unités de jeu × litres. */
-export const FOOD_DECAY_AMMONIA = 5;
+/**
+ * Ammoniaque apportée par un granulé de masse 1 qui se décompose, en mg (mg/L × litres).
+ * Approximation de jeu : ancienne valeur 5 convertie (`sim/water-units.ts`, issue #793).
+ */
+export const FOOD_DECAY_AMMONIA = 2.5;
 
 /**
  * Ajoute à `water`, **en le modifiant**, l'ammoniaque de `mass` unités de nourriture
- * décomposée dans `liters` litres, et renvoie la quantité ajoutée (unités de jeu). Une masse
- * nulle ne change rien ; l'ammoniaque reste plafonnée à `MAX_CONCENTRATION`.
+ * décomposée dans `liters` litres, et renvoie la quantité ajoutée (mg/L). Une masse
+ * nulle ne change rien ; l'ammoniaque reste plafonnée à `MAX_CONCENTRATIONS.ammonia`.
  * @throws RangeError si `mass` n'est pas un réel positif ou nul, ou si `liters` n'est pas un
  * réel strictement positif (eau inchangée).
  */
@@ -41,6 +44,9 @@ export function addDecayedFoodInPlace(
     return 0;
   }
   const before = water.ammonia;
-  water.ammonia = Math.min(MAX_CONCENTRATION, before + (FOOD_DECAY_AMMONIA * mass) / liters);
+  water.ammonia = Math.min(
+    MAX_CONCENTRATIONS.ammonia,
+    before + (FOOD_DECAY_AMMONIA * mass) / liters,
+  );
   return water.ammonia - before;
 }

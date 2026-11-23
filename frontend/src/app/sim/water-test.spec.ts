@@ -108,7 +108,7 @@ describe('readKit et formatKitValue', () => {
     expect(formatKitValue('ph', { parameter: 'ph', value: 6, bound: 'au-dessous' })).toBe('≤ 6,0');
     expect(
       formatKitValue('ammoniaque', { parameter: 'ammonia', value: 8, bound: 'au-dessus' }),
-    ).toBe('≥ 8 u.');
+    ).toBe('≥ 8 mg/L');
     expect(formatKitValue('durete', { parameter: 'gh', value: 1, bound: 'dedans' })).toBe(
       '1 goutte',
     );

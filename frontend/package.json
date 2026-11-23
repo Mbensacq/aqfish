@@ -1,6 +1,6 @@
 {
   "name": "aqfish",
-  "version": "1.29.3",
+  "version": "1.29.4",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",

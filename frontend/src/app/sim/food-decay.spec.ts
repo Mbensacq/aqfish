@@ -14,7 +14,7 @@ import {
   type FoodState,
 } from './food';
 import { addDecayedFoodInPlace, FOOD_DECAY_AMMONIA } from './food-decay';
-import { freshWater, MAX_CONCENTRATION, waterLiters, type MutableWaterState } from './water';
+import { freshWater, MAX_CONCENTRATIONS, waterLiters, type MutableWaterState } from './water';
 import {
   advanceTo,
   advanceToWithFeedings,
@@ -72,10 +72,10 @@ describe('sim/food-decay : addDecayedFoodInPlace (#638)', () => {
     expect(small.ammonia).toBeCloseTo(10 * one.ammonia, 12);
   });
 
-  it('plafonnée à MAX_CONCENTRATION ; seuls nitrites et nitrates inchangés', () => {
-    const water = { ...freshWater('tropical'), ammonia: MAX_CONCENTRATION - 0.5 };
+  it('plafonnée à MAX_CONCENTRATIONS.ammonia ; seuls nitrites et nitrates inchangés', () => {
+    const water = { ...freshWater('tropical'), ammonia: MAX_CONCENTRATIONS.ammonia - 0.5 };
     const added = addDecayedFoodInPlace(water as MutableWaterState, 1e6, 1);
-    expect(water.ammonia).toBe(MAX_CONCENTRATION);
+    expect(water.ammonia).toBe(MAX_CONCENTRATIONS.ammonia);
     expect(added).toBeCloseTo(0.5, 12);
     expect(water.nitrite).toBe(0);
     expect(water.nitrate).toBe(0);
@@ -154,14 +154,15 @@ describe('sim/world : nourriture non mangée (#638)', () => {
     expect(ratio).toBeLessThan(2.5);
   });
 
-  it('surcharge pleine : environ 1 unité dans le bac tropical', () => {
+  it('surcharge pleine : environ 0,5 mg/L dans le bac tropical', () => {
     const world = emptyWorldWithoutFilter();
     while (world.food.length < MAX_FOOD) {
       feedInPlace(world, 0, 0);
     }
     const ammonia = advanceTo(world, FOOD_GROUND_SECONDS + 60).water.ammonia;
-    expect(ammonia).toBeGreaterThan(0.7);
-    expect(ammonia).toBeLessThan(1.5);
+    // Anciennes bornes 0,7 et 1,5 unité, converties en mg/L (#793).
+    expect(ammonia).toBeGreaterThan(0.35);
+    expect(ammonia).toBeLessThan(0.75);
   });
 
   it('ration mangée en entier : aucune ammoniaque en plus', () => {

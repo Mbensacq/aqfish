@@ -36,16 +36,16 @@ const FEEDINGS = [
  * `<environnement>+nourri`, une valeur par instant de `CHECKPOINTS`.
  */
 const EXPECTED: Record<string, readonly string[]> = {
-  tropical: ['1c8894390162dd', '09cf76ad1cc8e0', '11f6e0c690a09d'],
-  'tropical+nourri': ['17f84ed24f8127', '082c1679a79d18', '06fb05d2e0d9f5'],
-  bassin: ['169868b9249096', '0c0b5dd5e1a97f', '070106695fb85a'],
-  'bassin+nourri': ['05aae27eba49e3', '0e5eff3073dca8', '1a251e2ba5f866'],
-  paludarium: ['08e9b6b2588da6', '1e602c04d0edde', '1d5aa959fcdf0e'],
-  'paludarium+nourri': ['1927bb2ca8f7c6', '0ddf5d2b9b9d0a', '1ecb1b865337dc'],
-  recif: ['06cc673cf6b309', '08c08cbfe32f8d', '1c76a67c113c98'],
-  'recif+nourri': ['1484af284565b9', '00b73807ba6d70', '1cefd4f305dc03'],
-  eaufroide: ['18fb616d57f138', '00f356c460ee5f', '0dc84329f719bc'],
-  'eaufroide+nourri': ['1cfb285b8be363', '0763708059cadf', '0ade5f936e89fc'],
+  tropical: ['1d85093864e8e3', '004493dc1b5e5f', '1aa033dc65a203'],
+  'tropical+nourri': ['112fbb7021a65b', '096746a9c88a77', '011cfc15ce4faa'],
+  bassin: ['17a82424ca63ac', '02228b71fec2d3', '17de8aeb08177b'],
+  'bassin+nourri': ['01d2787b0969e5', '11e917e2669365', '1271e0f8d54b3e'],
+  paludarium: ['1ea91de9904cc2', '0b39c711ead763', '047ad5d9939a2b'],
+  'paludarium+nourri': ['04008086817af6', '1c120beb3f19cd', '0d3a4702188f66'],
+  recif: ['0ec6476af9d2e0', '0be5f8ab2d1dc8', '0b7ef6d485348c'],
+  'recif+nourri': ['07404a33bf2125', '1c279cb18eb524', '16e461534d172e'],
+  eaufroide: ['1426bedacde399', '120f1e5a7fe339', '17d545a7e441d4'],
+  'eaufroide+nourri': ['08deb6ab8c73e2', '0823eb59c58012', '1fde4a968ae374'],
 };
 
 /**

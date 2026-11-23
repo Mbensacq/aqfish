@@ -4,7 +4,7 @@ import {
   DEFAULT_WATER_SAMPLE,
   GAUGE_NAMES,
   GAUGE_UNITS,
-  formatTenth,
+  formatGaugeValue,
   type DashboardGaugeId,
   type WaterSample,
 } from '../../sim/water-dashboard';
@@ -22,8 +22,8 @@ export const CURVE_HEIGHT = 24;
 /** Écart minimal de l'échelle verticale, pour qu'une eau stable ne dessine pas de faux relief. */
 export const CURVE_MIN_SPAN: Readonly<Record<DashboardGaugeId, number>> = {
   temperature: 2,
-  ammonia: 1,
-  nitrite: 1,
+  ammonia: 0.5,
+  nitrite: 0.125,
   nitrate: 5,
   ph: 0.5,
 };
@@ -110,16 +110,18 @@ function clippedBand(
   return bottom > y ? { y, height: bottom - y } : null;
 }
 
-/** Valeur lue, avec son unité parlée (« 12,5 unités de jeu »). */
+/** Valeur lue, avec son unité parlée (« 12,5 milligrammes par litre »). */
 function spokenValue(value: number, id: DashboardGaugeId): string {
   const unit = GAUGE_UNITS[id].spoken;
-  return unit === '' ? formatTenth(value) : `${formatTenth(value)} ${unit}`;
+  const shown = formatGaugeValue(id, value);
+  return unit === '' ? shown : `${shown} ${unit}`;
 }
 
-/** Valeur affichée, avec son unité courte (« 12,5 u. »). */
+/** Valeur affichée, avec son unité courte (« 12,5 mg/L »). */
 function shownValue(value: number, id: DashboardGaugeId): string {
   const unit = GAUGE_UNITS[id].short;
-  return unit === '' ? formatTenth(value) : `${formatTenth(value)} ${unit}`;
+  const shown = formatGaugeValue(id, value);
+  return unit === '' ? shown : `${shown} ${unit}`;
 }
 
 /** Phrase lue aux lecteurs d'écran : valeur actuelle, extrêmes, changements d'eau. */
@@ -242,7 +244,7 @@ export class WaterHistoryChart {
     const range = this.geometry().range;
     return range === null
       ? 'pas encore de relevé'
-      : `min ${formatTenth(range.min)} · max ${formatTenth(range.max)}`;
+      : `min ${formatGaugeValue(this.gauge(), range.min)} · max ${formatGaugeValue(this.gauge(), range.max)}`;
   });
   protected readonly summary = computed(() =>
     curveSummary(

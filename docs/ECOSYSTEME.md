@@ -167,6 +167,8 @@ Verdict par couple d'espèces, avec sa raison : **compatible**, **avec précauti
 
 - Les concentrations passent en **mg/L** (ammoniaque totale, nitrites, nitrates), pour que les
   kits de test, la jauge et les seuils de `docs/SOINS.md` parlent la même langue que la réalité.
+  **Fait** (#793, ADR 0167) : facteurs exacts, même dynamique, seuils et correspondance dans
+  l'ADR.
 - L'équilibre se juge sur des **semaines et des mois** simulés. La partie « eau, plantes,
   algues, faim » doit donc pouvoir avancer seule à **gros pas** (par exemple une minute
   simulée), de façon déterministe, sans le mouvement des animaux ni le rendu, pour que les

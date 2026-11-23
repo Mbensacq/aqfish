@@ -26,8 +26,12 @@ export const CHLORINE_HARMFUL = 0.02;
 export const CHLORINE_TRACE = 0.001;
 /** Durée de protection de l'ammoniaque liée, en secondes simulées (2 journées). */
 export const AMMONIA_BINDER_SECONDS = 2 * DEFAULT_DAY_LENGTH_SECONDS;
-/** Ammoniaque neutralisée pendant la protection, en unités de jeu (≈ 1 mg/L par dose). */
-export const AMMONIA_BINDER_CAPACITY = 1;
+/**
+ * Ammoniaque neutralisée pendant la protection, en mg/L. Approximation de jeu : ancienne valeur
+ * 1 convertie (issue #793), sous les ≈ 1 mg/L par dose de l'étiquette (`docs/SOINS.md` § 1.2),
+ * pour garder le comportement d'avant.
+ */
+export const AMMONIA_BINDER_CAPACITY = 0.5;
 
 /** Conditionneur : simple (thiosulfate, chlore seul) ou liant aussi l'ammoniaque. */
 export type ConditionerKind = 'thiosulfate' | 'liant';

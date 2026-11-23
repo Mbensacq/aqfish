@@ -169,14 +169,14 @@ describe('DashboardFrame (#256)', () => {
     }
     expect(value('temperature')).toBe('24,0');
     expect(gauge('temperature')?.textContent).toContain('°C');
-    expect(gauge('nitrate')?.textContent).toContain('u.');
+    expect(gauge('nitrate')?.textContent).toContain('mg/L');
     expect(value('ph')).toBe('7,0');
   });
 
-  it('trois composés : valeur au dixième, plein de la jauge, niveau aux seuils', async () => {
-    await set({ ammonia: 0.84, nitrite: 2, nitrate: 42.46 });
-    expect(value('ammonia')).toBe('0,8');
-    expect(value('nitrite')).toBe('2,0');
+  it('trois composés : valeur arrondie (mg/L, #793), plein de la jauge, niveau aux seuils', async () => {
+    await set({ ammonia: 0.844, nitrite: 0.25, nitrate: 42.46 });
+    expect(value('ammonia')).toBe('0,84');
+    expect(value('nitrite')).toBe('0,25');
     expect(value('nitrate')).toBe('42,5');
     expect(meter('nitrate').getAttribute('aria-valuemax')).toBe(String(GAUGE_MAX.nitrate));
     expect(meter('nitrate').getAttribute('aria-valuenow')).toBe('42.5');
@@ -187,7 +187,7 @@ describe('DashboardFrame (#256)', () => {
       'Critique',
     );
     expect(meter('nitrate').getAttribute('aria-valuetext')).toBe(
-      'Nitrates (NO₃⁻) : 42,5 unités de jeu, critique, stable',
+      'Nitrates (NO₃⁻) : 42,5 milligrammes par litre, critique, stable',
     );
     const fill = gauge('nitrate')!.querySelector<HTMLElement>('.dashboard__fill')!;
     expect(parseFloat(fill.style.width)).toBeCloseTo((42.46 / GAUGE_MAX.nitrate) * 100, 6);

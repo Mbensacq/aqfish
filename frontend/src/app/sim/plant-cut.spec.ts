@@ -17,7 +17,7 @@ import { SIM_DT } from './constants';
 import { DEFAULT_DECOR } from './decor';
 import { environmentWater } from './environment';
 import { isGrowingPlant, plantLimits, stepPlantGrowthInPlace } from './plant-growth';
-import { MAX_CONCENTRATION, type MutableWaterState } from './water';
+import { MAX_CONCENTRATIONS, type MutableWaterState } from './water';
 import {
   createDefaultWorld,
   createWorld,
@@ -73,9 +73,9 @@ describe('taille de la séance d’entretien (#623)', () => {
       expect(PLANT_CUT_AMMONIA).toBeGreaterThan(0);
       expect(PLANT_CUT_AMMONIA).toBeLessThan(0.5);
       const world = grownTank(9.5);
-      (world.water as MutableWaterState).ammonia = MAX_CONCENTRATION;
+      (world.water as MutableWaterState).ammonia = MAX_CONCENTRATIONS.ammonia;
       expect(cutWorldPlantInPlace(world, tallIndices(world)[0]!)).toBe(true);
-      expect(world.water.ammonia).toBe(MAX_CONCENTRATION);
+      expect(world.water.ammonia).toBe(MAX_CONCENTRATIONS.ammonia);
     });
 
     it('plante déjà taillée : chaque coupe raccourcit encore, jusqu’à sa hauteur d’origine', () => {

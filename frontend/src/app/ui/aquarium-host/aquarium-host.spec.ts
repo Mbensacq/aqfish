@@ -3255,7 +3255,7 @@ describe('AquariumHost', () => {
         selectedTankId: number;
         tanks: { id: number; world: { environment: string } }[];
       };
-      expect(stored.schema).toBe(2);
+      expect(stored.schema).toBe(3);
       expect(stored.tanks.map((t) => [t.id, t.world.environment])).toEqual([
         [0, 'tropical'],
         [1, 'bassin'],
@@ -3300,13 +3300,13 @@ describe('AquariumHost', () => {
       expect(memory().data.has(LEGACY_SAVE_STORAGE_KEY)).toBe(false);
     });
 
-    it('schéma 1 restauré (#264) : copie gardée, réécrit au schéma 2', async () => {
+    it('schéma 1 restauré (#264) : copie gardée, réécrit au schéma 3 (#793)', async () => {
       const legacy = storePond();
       await create();
       expect(host().environment()).toBe('bassin');
       host().saveNow();
       expect(memory().data.get(LEGACY_SAVE_STORAGE_KEY)).toBe(legacy);
-      expect(memory().data.get(SAVE_STORAGE_KEY)).toMatch(/^\{"format":"aqfish","schema":2,/);
+      expect(memory().data.get(SAVE_STORAGE_KEY)).toMatch(/^\{"format":"aqfish","schema":3,/);
     });
 
     it('import (#277) : remplace aussi les mondes des autres environnements', async () => {

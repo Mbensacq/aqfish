@@ -10,8 +10,8 @@ import { COMPOUND_THRESHOLDS, type QualityThresholds } from './water-quality';
  * est tenu par l'hôte, hors du monde : rien n'est sauvegardé.
  *
  * **Approximations de jeu** : les paliers reprennent la forme des cartes de couleur des kits
- * en gouttes courants (`docs/SOINS.md` § 1.5 et § 6 ne donnent pas de cartes) ; ammoniaque,
- * nitrites et nitrates sont lus en **unités de jeu** (`sim/water.ts`), pas en mg/L. La dureté
+ * en gouttes courants, en mg/L (`docs/SOINS.md` § 1.5 et § 6 ne donnent pas de cartes) ;
+ * ammoniaque totale, nitrites et nitrates sont lus en mg/L (`sim/water.ts`, issue #793). La dureté
  * se titre goutte à goutte : une goutte par degré allemand, comptée jusqu'au virage.
  */
 
@@ -65,21 +65,21 @@ export const WATER_KIT_INFO: Readonly<Record<WaterKit, WaterKitInfo>> = {
     parameters: ['ammonia'],
     reading: 'carte',
     chart: [0, 0.25, 0.5, 1, 2, 4, 8],
-    unit: 'u.',
+    unit: 'mg/L',
   },
   nitrites: {
     label: 'Nitrites',
     parameters: ['nitrite'],
     reading: 'carte',
     chart: [0, 0.25, 0.5, 1, 2, 5],
-    unit: 'u.',
+    unit: 'mg/L',
   },
   nitrates: {
     label: 'Nitrates',
     parameters: ['nitrate'],
     reading: 'carte',
     chart: [0, 5, 10, 20, 40, 80, 160],
-    unit: 'u.',
+    unit: 'mg/L',
   },
   durete: {
     label: 'Dureté',
@@ -194,7 +194,7 @@ export function waterTestDone(test: WaterTest, tick: number): boolean {
   return waterTestRemainingTicks(test, tick) === 0;
 }
 
-/** Valeur affichée : « 7,2 », « ≥ 8 u. », « 7 gouttes ». */
+/** Valeur affichée : « 7,2 », « ≥ 8 mg/L », « 7 gouttes ». */
 export function formatKitValue(kit: WaterKit, value: KitValue): string {
   const unit = WATER_KIT_INFO[kit].unit;
   const prefix = value.bound === 'au-dessus' ? '≥ ' : value.bound === 'au-dessous' ? '≤ ' : '';
