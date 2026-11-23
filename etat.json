@@ -10397,10 +10397,10 @@
           "note": "Verdict OK, 0 bug : 6135 tests, CI e2e 7/7, captures identiques c285 (1 capture sensible à la charge), mutation non mesurée (retro)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-23T10:03:10.219Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-23T10:31:37.978Z",
+          "note": "PR #801 fusionnée → v1.29.6 (release CI OK, CI main verte), #707 et #727 fermées ; suppression de branche refusée"
         }
       },
       "metriques": {}
