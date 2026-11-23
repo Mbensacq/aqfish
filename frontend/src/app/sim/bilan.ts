@@ -13,6 +13,7 @@ import { populationCounts } from './population';
 import { type SpeciesId } from './species';
 import { MIX_REASON_TEXT, SPECIES_LABELS } from './species-catalog';
 import { comparisonRowOf, tankComparison, type TankComparisonRow } from './species-care';
+import { frenchNumber } from './species-sheet';
 import {
   AMMONIA_PER_LOAD_LITER,
   NITRITE_CONVERSION,
@@ -192,7 +193,7 @@ function nitrogenPoint(sample: WaterSample): ReviewPoint | null {
     severity: worst.severity,
     title: text.title,
     measure: Number.isFinite(value)
-      ? `${text.name} à ${formatGaugeValue(worst.compound, value)} mg/L (à garder sous ${String(COMPOUND_THRESHOLDS[worst.compound].watch).replace('.', ',')} mg/L) : ${text.why}`
+      ? `${text.name} à ${formatGaugeValue(worst.compound, value)} mg/L (à garder sous ${frenchNumber(COMPOUND_THRESHOLDS[worst.compound].watch)} mg/L) : ${text.why}`
       : INVALID,
     action: `${CHANGE_WATER} et nourrir moins pendant quelques jours`,
   };
