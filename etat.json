@@ -10463,10 +10463,10 @@
           "note": "PR #804 : avance écosystème à gros pas + harnais, S1 et S4 verts ; PARTIEL : S2 et S12 mesurés rouges (azote trop rapide par jour de jeu, recalage à planifier) ; CI verte 13/13 ; e2e local non lancé ; pied d'attribution réinjecté dans la PR (PIEGES)"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-23T13:52:25.404Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-23T14:11:15.254Z",
+          "note": "Verdict RÉSERVES (S2 et S12 non verts, déclarés par Dev, recalage azote à planifier), 0 bug nouveau, 177/178 captures identiques c287 (chlore instable), publiées ; pied d'attribution ajouté par erreur dans la revue (PIEGES)"
         }
       },
       "metriques": {}
