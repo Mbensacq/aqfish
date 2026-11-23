@@ -10491,6 +10491,12 @@
           "debut": "2026-11-23T23:41:49.286Z",
           "fin": "2026-11-23T23:42:18.068Z",
           "note": "Issue #805 : Écosystème 2d/7, recalage de l'azote sur le jour de jeu, S2 et S12 (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-23T23:42:53.939Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
