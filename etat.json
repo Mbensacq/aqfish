@@ -10427,10 +10427,10 @@
           "note": "PR #802 : ammoniaque selon la nourriture mangée (#798), CI verte 14/14, captures identiques c285 ; e2e local interrompu 141/556 (CI e2e 7/7 OK) ; pied d'attribution réinjecté dans la PR (PIEGES)"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-23T11:59:50.174Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-23T12:25:32.925Z",
+          "note": "Verdict OK, 0 bug : 6149 tests, CI 14/14, captures 177/178 identiques c285 (1 sensible à la charge), publiées"
         }
       },
       "metriques": {}
