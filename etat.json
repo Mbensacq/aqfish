@@ -10487,10 +10487,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-23T23:41:49.286Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-23T23:42:18.068Z",
+          "note": "Issue #805 : Écosystème 2d/7, recalage de l'azote sur le jour de jeu, S2 et S12 (M)"
         }
       },
       "metriques": {}
