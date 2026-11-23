@@ -21,9 +21,9 @@ import type { SpeciesId } from './species';
  * un désaccord entre sources est écrit dans la référence (« désaccord ») et noté dans
  * `docs/ESPECES.md`, jamais arbitré en silence.
  *
- * Tranche du c280 : les 18 espèces d'eau douce tropicale (et la crevette nettoyeuse, rangée
- * dans la tranche par l'issue). Les autres espèces suivent aux c281 et c283 ; la dernière
- * tranche rendra ces données obligatoires.
+ * Tranche du c280 (#784) : les 18 espèces d'eau douce tropicale (et la crevette nettoyeuse,
+ * rangée dans la tranche par l'issue). Tranche du c281 (#785) : mer et eau froide. Les
+ * amphibiens suivent au c283 ; la dernière tranche rendra ces données obligatoires.
  */
 
 /**
@@ -84,6 +84,12 @@ const FB_XIPHO = 'https://www.fishbase.org/summary/3231';
 const FK_XIPHO = 'https://fishkeeper.co.uk/fish/freshwater/livebearers/swordtail';
 const FK_CERISE = 'https://www.fishkeeper.co.uk/fish/freshwater/miscellaneous/cherry-shrimp';
 const FK_NERITINE = 'https://www.fishkeeper.co.uk/fish/freshwater/miscellaneous/zebra-snail';
+/** Fiches déjà citées par `sim/species-sheet.ts` pour la mer et l'eau froide (#785). */
+const FB = 'https://www.fishbase.se/summary/';
+const WP = 'https://en.wikipedia.org/wiki/';
+const OATA_ROUGE =
+  'https://ornamentalfish.org/what-we-do/advice-information/care-sheets/caresheets-coldwater-fish/how-to-look-after-goldfish-in-an-aquarium-fishtank/';
+const FK_ROUGE = 'https://www.fishkeeper.co.uk/fish/freshwater/pond-fish/goldfish-';
 
 /**
  * Litres par cm de poisson adulte, par classe : `min` est le plafond (au-delà, le bac est
@@ -101,6 +107,8 @@ const TROPICAL: SheetField<DensityClass> = sourced(
   `${RSPCA} (poisson tropical d’eau douce)`,
 );
 const INVERTEBRATE: SheetField<DensityClass> = approx('invertebrate');
+/** Aucune source ne range les poissons de récif dans une classe de densité (à sourcer). */
+const MARINE: SheetField<DensityClass> = approx('marine');
 const NO_EXTRA: SheetField<number | null> = approx(null);
 const NO: SheetField<boolean> = approx(false);
 const NO_PREY: SheetField<readonly Prey[]> = approx(Object.freeze([]));
@@ -143,9 +151,28 @@ function shrimpletEater(reference?: string): SheetField<readonly Prey[]> {
   return reference ? sourced(young('cerise'), reference) : approx(young('cerise'));
 }
 
+/**
+ * Poisson de récif aux données non sourcées sauf celles passées dans `overrides` : dureté
+ * tolérée (KH) élargie autour de l'alcalinité du récif de la fiche (KH 7–11).
+ */
+function reefFish(overrides: Partial<SpeciesEcology> = {}): SpeciesEcology {
+  return Object.freeze({
+    densityClass: MARINE,
+    extraLitersPerAdult: NO_EXTRA,
+    hardnessTolerated: approx(kh(6, 12)),
+    foods: approx(foods('pellets')),
+    prey: NO_PREY,
+    predators: NO_PREDATOR,
+    territorial: NO,
+    finNipper: NO,
+    fastSwimmer: NO,
+    ...overrides,
+  });
+}
+
 const PF_YOUNG = `${PF_SHRIMP} (mange au moins les jeunes crevettes)`;
 
-/** Données de la tranche d'eau douce tropicale (#784). */
+/** Données des tranches d'eau douce tropicale (#784), de mer et d'eau froide (#785). */
 export const SPECIES_ECOLOGY: Readonly<Partial<Record<SpeciesId, SpeciesEcology>>> = {
   neon: peacefulTropical(gh(0, 15)),
   guppy: {
@@ -239,11 +266,78 @@ export const SPECIES_ECOLOGY: Readonly<Partial<Record<SpeciesId, SpeciesEcology>
   },
   // Crevette nettoyeuse de récif (Lysmata amboinensis), rangée dans la tranche par l'issue.
   crevette: {
-    densityClass: approx('marine'),
+    densityClass: MARINE,
     extraLitersPerAdult: NO_EXTRA,
     hardnessTolerated: approx(kh(6, 12)),
     foods: approx(foods('leftovers', 'pellets')),
     prey: NO_PREY,
+    predators: NO_PREDATOR,
+    territorial: NO,
+    finNipper: NO,
+    fastSwimmer: NO,
+  },
+  // Mer (#785) : FishBase et Wikipédia (secondaire), sources déjà citées par les fiches.
+  clown: reefFish({
+    foods: approx(foods('algae', 'pellets')),
+    // Défend son anémone ou son coin de roche : comportement connu, non sourcé ici.
+    territorial: approx(true),
+  }),
+  chirurgien: reefFish({
+    foods: approx(foods('algae', 'pellets')),
+    territorial: approx(true),
+    fastSwimmer: approx(true),
+  }),
+  chromis: reefFish({
+    foods: sourced(
+      foods('algae', 'pellets'),
+      `${WP}Chromis_viridis (secondaire : phytoplancton, zooplancton, algues ; granulés : approximation)`,
+    ),
+    fastSwimmer: approx(true),
+  }),
+  gobie: reefFish({
+    // Régime non donné par FishBase : proies congelées et granulés en bac.
+    foods: approx(foods('leftovers', 'pellets')),
+  }),
+  gramma: reefFish({
+    foods: sourced(
+      foods('pellets'),
+      `${WP}Royal_gramma (secondaire : planctonophage, zooplancton et crustacés)`,
+    ),
+    territorial: sourced(true, `${WP}Royal_gramma (secondaire : territorial dans les roches)`),
+  }),
+  blennie: reefFish({
+    foods: sourced(
+      foods('algae', 'pellets'),
+      `${FB}6033 (niveau trophique 2,0 : algues ; granulés : approximation)`,
+    ),
+    territorial: approx(true),
+  }),
+  // Eau froide (#785) : OATA et FishKeeper pour le poisson rouge ; koï non vérifiée.
+  koi: {
+    densityClass: approx('coldwater'),
+    // Volume du bassin : aucune source consultable (`docs/ESPECES.md`, point 3) ; la fiche
+    // garde 800 L en approximation et aucun volume par adulte supplémentaire.
+    extraLitersPerAdult: NO_EXTRA,
+    hardnessTolerated: approx(gh(4, 25)),
+    foods: approx(foods('algae', 'leftovers', 'pellets')),
+    prey: NO_PREY,
+    predators: NO_PREDATOR,
+    territorial: NO,
+    finNipper: NO,
+    fastSwimmer: NO,
+  },
+  rouge: {
+    densityClass: sourced('coldwater', `${RSPCA} (poisson rouge : 2 L par 0,5 cm)`),
+    extraLitersPerAdult: sourced(
+      50,
+      `${OATA_ROUGE} (100 L pour le premier adulte, puis 50 L par adulte en plus) ; désaccord : RSPCA, au moins 60 L chacun (${RSPCA}) ; le jeu garde l’OATA, plus stricte`,
+    ),
+    hardnessTolerated: approx(gh(4, 22)),
+    foods: sourced(foods('pellets'), `${FK_ROUGE} (granulés, flocons, aliments congelés)`),
+    prey: sourced(
+      Object.freeze([Object.freeze({ species: 'cerise', stage: 'adult' as const })]),
+      `${PF_SHRIMP} (les poissons rouges mangent les crevettes « tôt ou tard »)`,
+    ),
     predators: NO_PREDATOR,
     territorial: NO,
     finNipper: NO,
