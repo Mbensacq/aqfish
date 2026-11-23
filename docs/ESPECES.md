@@ -440,7 +440,7 @@ lue. Rien n'est relevé ni présenté comme confirmé.
 | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Lignes « Autres Anoures » (_Bombina orientalis_) et « Autres Caudata » (_Cynops orientalis_) de l'annexe 2 | Légifrance, version consolidée de l'arrêté du 8 octobre 2018 | **Toujours non vérifiable** : Légifrance n'a pas été lisible. Copie préfectorale du texte initial lue (préfecture de Maine-et-Loire, PDF « arrete_du_8_octobre_2018… », [61]) : son article 14 fixe bien le seuil d'autorisation des amphibiens adultes au-delà de **40** animaux, cohérent avec « 1 à 40 sans formalité » ; l'extraction du PDF s'arrête dans l'annexe 2 avant les amphibiens, les deux lignes n'ont donc pas été lues. Texte initial seulement, pas la version consolidée (arrêté modificatif du 5 septembre 2025 non repris). Confiances inchangées dans `sim/species-legal.ts` |
 
-## Données d'écologie (#784 eau douce tropicale, #785 mer et eau froide)
+## Données d'écologie (#784 eau douce tropicale, #785 mer et eau froide, #786 paludarium)
 
 Première tranche de #727 (`docs/ECOSYSTEME.md` § 3.1), dans `sim/species-ecology.ts`, exposée
 par la fiche (`ecology`) mais **pas encore utilisée** par la simulation. Taille, volume minimal,
@@ -473,6 +473,31 @@ autour de celle du récif de la fiche (KH 7–11).
 | Proies                           | Poisson rouge : crevettes cerises adultes (Practical Fishkeeping)                                                                                                                                | Les autres : aucune parmi les espèces du jeu                                                                                 |
 | Prédateurs                       | —                                                                                                                                                                                                | Aucun connu parmi les espèces du jeu (les prédateurs du chromis, « grands poissons », n'y sont pas)                          |
 | Comportement                     | Gramma territorial (Wikipédia, secondaire)                                                                                                                                                       | Clown, chirurgien, blennie territoriaux ; chirurgien et chromis nageurs rapides ; aucun mangeur de nageoires dans la tranche |
+
+### Paludarium (#786) : données obligatoires
+
+Dernière tranche, mêmes champs, dans `sim/species-ecology-amphibiens.ts`. Les données
+d'écologie sont désormais **obligatoires** : `SpeciesSheet.ecology` n'est plus optionnel et
+`SPECIES_ECOLOGY` doit avoir une entrée par espèce (le compilateur l'impose, un test le
+vérifie pour les 29 espèces).
+
+**Part d'eau** : la densité d'un amphibien se compte sur l'eau du milieu, berge déduite.
+`AMPHIBIAN_WATER_SHARE` donne la part du volume remplie d'eau et `amphibianWaterLiters` le
+volume d'eau d'un milieu ; la classe « amphibien » et le volume minimal de la fiche s'y
+appliquent (point 18).
+
+| Donnée                           | Sourcé                                                         | Approximation de jeu                                                                                                          |
+| -------------------------------- | -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| Part d'eau                       | Sonneur oriental : 0,75, « un quart de berge sèche » (Anapsid) | Axolotl : 1 (entièrement aquatique) ; triton : 0,9 (« très aquatique, petites zones émergées », Caudata Culture, non chiffré) |
+| Classe de densité                | —                                                              | Amphibien : 3 à 4 L d'eau par cm (3 L/cm redonnent les 75 L de la fiche de l'axolotl de 25 cm)                                |
+| Volume par adulte supplémentaire | —                                                              | Aucun : la classe de densité s'applique                                                                                       |
+| Dureté tolérée                   | —                                                              | Plage conseillée élargie (GH 5–22 pour l'axolotl, GH 3–18 pour le sonneur et le triton)                                       |
+| Régime détaillé                  | —                                                              | Granulés pour l'axolotl et le triton ; aucun aliment du bac pour le sonneur (proies vivantes seulement)                       |
+| Proies, prédateurs               | —                                                              | Aucun parmi les espèces du jeu : les trois vivent sans poissons ni crevettes                                                  |
+| Comportement                     | —                                                              | Ni territorial, ni mangeur de nageoires, ni nageur rapide                                                                     |
+
+Les exclusions légales (_Xenopus_, Pipidae dont _Hymenochirus_, _Triturus_, indigènes
+protégées comme _Bombina variegata_) restent testées avec la tranche.
 
 ## Non vérifié et désaccords
 
@@ -512,6 +537,10 @@ autour de celle du récif de la fiche (KH 7–11).
     approximations (tétra citron, gourami nain, platy, molly). Le champ `predators` de la crevette
     est donc une **approximation de jeu** ; la source de chaque prédateur reste dans son champ
     `prey`, pour qu'aucun champ sourcé ne recouvre une valeur non sourcée (testé).
+18. Amphibiens, volume (#786) : aucune source consultable ne donne de litres par cm pour les
+    amphibiens ; la classe « amphibien » (3 à 4 L d'eau par cm) et les parts d'eau de l'axolotl
+    et du triton sont des **approximations de jeu**, choisies pour que le volume minimal de
+    chaque fiche, berge déduite, loge un adulte au plafond de densité (testé).
 
 ## Bibliographie
 

@@ -8,7 +8,7 @@ import { speciesSheet } from './species-sheet';
  * prédateurs sans mélange sourcé / approximation, règle de volume du poisson rouge.
  */
 
-/** Tranches #784 (eau douce tropicale) et #785 (mer, eau froide). */
+/** Tranches #784 (eau douce tropicale), #785 (mer, eau froide) et #786 (paludarium). */
 const TOUTES: readonly SpeciesId[] = [
   'neon',
   'guppy',
@@ -36,6 +36,9 @@ const TOUTES: readonly SpeciesId[] = [
   'blennie',
   'koi',
   'rouge',
+  'axolotl',
+  'grenouille',
+  'triton',
 ];
 
 /** Chemins des objets non figés sous `value` (vide : tout est figé, en profondeur). */
@@ -69,8 +72,8 @@ function rspcaLiters(adults: number): number {
 }
 
 describe('données d’écologie : figées et statuts cohérents (#788, #790)', () => {
-  it('les 26 espèces des deux tranches, la table et les classes de densité sont figées en profondeur', () => {
-    expect(new Set(TOUTES).size).toBe(26);
+  it('les 29 espèces des trois tranches, la table et les classes de densité sont figées en profondeur', () => {
+    expect(new Set(TOUTES).size).toBe(29);
     expect(Object.keys(SPECIES_ECOLOGY).sort()).toEqual([...TOUTES].sort());
     for (const id of TOUTES) {
       expect(unfrozenPaths(ecologyOf(id), id)).toEqual([]);
