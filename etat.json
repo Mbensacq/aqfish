@@ -10241,10 +10241,10 @@
           "note": "Issue #788 (+ #790) : lot de dette données d'écologie (S)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-23T01:08:58.378Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-23T01:49:24.173Z",
+          "note": "PR #791 : données d'écologie figées et statuts des prédateurs (#788 + #790), CI verte 14/14 (e2e local partiel) ; pied d'attribution réinjecté par l'environnement dans la PR (PIEGES)"
         }
       },
       "metriques": {}
