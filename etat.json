@@ -10343,10 +10343,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-23T06:58:25.459Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-23T06:58:52.143Z",
+          "note": "Issue #795 : lot de dette (suites de #794 + délai velvet #796) (S)"
         }
       },
       "metriques": {}
