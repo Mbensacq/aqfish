@@ -10224,6 +10224,24 @@
         }
       },
       "metriques": {}
+    },
+    "282": {
+      "numero": 282,
+      "date": "2026-11-23",
+      "debut": "2026-11-23T01:07:45.055Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-23T01:07:45.055Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
