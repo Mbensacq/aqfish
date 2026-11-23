@@ -10323,6 +10323,12 @@
           "debut": "2026-11-23T05:26:44.769Z",
           "fin": "2026-11-23T06:19:50.490Z",
           "note": "Verdict OK, 0 bug : 6135 tests, CI 14/14, captures mg/L OK et publiées"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-23T06:20:21.749Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
