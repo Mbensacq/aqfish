@@ -10476,6 +10476,24 @@
         }
       },
       "metriques": {}
+    },
+    "289": {
+      "numero": 289,
+      "date": "2026-11-24",
+      "debut": "2026-11-23T23:41:49.286Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-23T23:41:49.286Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
