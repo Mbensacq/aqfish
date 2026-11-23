@@ -1288,6 +1288,16 @@ DEFAULT_DECOR)`), sinon les trajectoires divergent dès la naissance. (2026-10-1
 
 ## Simulation
 
+- **Composés azotés : mg/L en mémoire, unités de jeu au schéma 1** (cycle 284, #793, ADR 0167) :
+  `World.water.ammonia`, `nitrite`, `nitrate` sont en mg/L, mais un document au **schéma 1**
+  (`serializeWorld`, liens partagés, fichiers `.json` fabriqués dans les e2e) les écrit en
+  unités de jeu (ammoniaque × 2, nitrites × 8) et `parseWorld` les reconvertit. Un e2e qui pose
+  `world.water = { ammonia: 1 }` puis passe par `serializeWorld` parle donc en mg/L ; un JSON
+  au schéma 1 **écrit à la main** doit être en unités de jeu. Nouveau seuil ou nouvelle
+  constante azotée : en mg/L, et le diviser par le facteur de `sim/water-units.ts` pour
+  retrouver l'ancienne valeur. Pour prouver qu'un changement d'unités ne change pas le
+  comportement, reconvertir l'eau en unités de jeu avant le hachage des empreintes : elles
+  doivent retomber sur celles de `main`. (2026-11-23)
 - **Lire `fishes` pendant la boucle de pas mélange fin et début de pas** (cycle 236, #669) : la
   crevette nettoyeuse (`stepWalker`) recevait le tableau vivant des animaux ; ceux déjà avancés
   dans la boucle étaient lus à leur position de fin de pas, les autres au début. Déterministe,
