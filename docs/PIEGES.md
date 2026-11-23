@@ -832,6 +832,7 @@ origin/main`, `node_modules` en lien symbolique) ; il sert aussi aux captures «
   Repérer les cas : un script qui suit chaque test depuis `ouvrirReglages` (catégorie
   courante) et signale les jetons d'une autre catégorie ou les gestes hors fenêtre (méthode de
   la PR du cycle 267). (2026-11-21)
+
 - **`getByRole` cherche une sous-chaîne du nom** : un bouton « Fermer les réglages » rendait
   `getByRole('button', { name: 'Réglages' })` ambigu (deux boutons, erreur « strict mode
   violation ») dans des dizaines d'e2e. Nommer les nouveaux boutons sans reprendre le nom
@@ -1293,6 +1294,19 @@ DEFAULT_DECOR)`), sinon les trajectoires divergent dès la naissance. (2026-10-1
 
 ## Simulation
 
+- **Avance à gros pas : l'ammoniaque d'un pas n'est convertie qu'au pas suivant** (cycle 288,
+  #799, ADR 0169) : `stepWaterInPlace` calcule les conversions sur les concentrations du début
+  du pas, puis ajoute la production. À pas long, l'ammoniaque de fin de pas est donc trop haute
+  d'environ `pas × AMMONIA_CONVERSION` (27 % à 60 s, 2 % à 5 s). Garder
+  `ECOSYSTEM_STEP_SECONDS` petit devant 120 s, ou intégrer exactement (ce qui change le pas fin
+  et toutes les empreintes). Les repas du harnais doivent aussi tomber assez souvent : la faim
+  d'un guppy est pleine en 150 s, et une faim pleine fait chuter la santé (un repas toutes les
+  2 minutes laisse les guppys affamés).
+- **Scénarios d'écosystème : jours de 20 minutes, azote en secondes** (cycle 288, #799) : les
+  durées d'entretien et de maturation du filtre sont en jours de jeu (1 200 s), la production
+  et la conversion de l'azote en secondes (calées sur le tableau de bord). Un scénario de
+  plusieurs semaines voit donc les nitrates monter de plusieurs dizaines de mg/L par semaine
+  de jeu (`docs/ECOSYSTEME.md` § 4, relevés S2 et S12).
 - **Composés azotés : mg/L en mémoire, unités de jeu au schéma 1** (cycle 284, #793, ADR 0167) :
   `World.water.ammonia`, `nitrite`, `nitrate` sont en mg/L, mais un document au **schéma 1**
   (`serializeWorld`, liens partagés, fichiers `.json` fabriqués dans les e2e) les écrit en
@@ -1307,7 +1321,7 @@ DEFAULT_DECOR)`), sinon les trajectoires divergent dès la naissance. (2026-10-1
   (cycle 287, #798, ADR 0168) : `save-caracterisation.spec.ts` part de sauvegardes **simulées**
   (`realWorld` : bac avancé et nourri), donc toutes ses empreintes « ok » changent (93 cas),
   jamais ses messages de refus : ne remplacer que les lignes `ok …` (diff `- Expected / +
-  Received` de l'échec), et vérifier qu'aucun refus ne bouge. `room-state.spec.ts` (empreinte
+Received` de l'échec), et vérifier qu'aucun refus ne bouge. `room-state.spec.ts` (empreinte
   dorée) : remettre dans l'eau les composés azotés relevés sur `main` avant le changement, et
   vérifier les nouveaux à part, plutôt que réécrire l'empreinte. Pour relever une valeur de
   `main`, un spec jetable qui échoue avec `expect([a, b, c]).toEqual([])` affiche les nombres

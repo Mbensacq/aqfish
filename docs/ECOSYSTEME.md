@@ -12,17 +12,17 @@ ou marquée **approximation de jeu** ; ce qui n'a pas pu être vérifié est sig
 
 ## 1. Ce que fait le jeu aujourd'hui (audit du 2026-11-18)
 
-| Sujet | État actuel | Écart avec la réalité |
-|---|---|---|
-| Nombre d'animaux | Plafond fixe par espèce (`maxPopulation`, 40 néons…) et 60 animaux au total, quel que soit le volume | Un bac de 30 L accepte autant d'animaux qu'un bac de 300 L |
-| Volume conseillé | `minLiters` par espèce, simple avertissement à l'ajout | Pas de volume par animal supplémentaire (le poisson rouge : 100 L, puis 50 L par adulte) |
-| Charge biologique | Somme des cubes des longueurs (`waterLoad`) : bonne base | Unités de jeu, pas de lien avec la nourriture distribuée |
-| Compatibilités | Tempérament (paisible, territorial, prédateur), classe d'eau, listes de proies : approximations non sourcées | Pas de recouvrement des plages de température, de pH, de dureté ; prédation des crevettes non traitée |
-| Plantes | Poussent, se taillent, servent de décor | **N'absorbent rien** : les nitrates ne baissent qu'avec un changement d'eau |
-| Algues | Poussent avec la lumière et les nitrates | **Personne ne les mange** : seule la raclette les retire |
-| Crevettes, escargots, otocinclus, ancistrus | Présents | **Aucun rôle** de nettoyage, aucune faim liée aux algues |
-| Roches, bois | Décor et obstacles | **Aucun effet** sur l'eau (le catappa, lui, agit sur le pH) |
-| Concentrations | Unités de jeu dans [0, 1] | Impossible de comparer aux kits réels et aux seuils de `docs/SOINS.md` en mg/L |
+| Sujet                                       | État actuel                                                                                                  | Écart avec la réalité                                                                                 |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| Nombre d'animaux                            | Plafond fixe par espèce (`maxPopulation`, 40 néons…) et 60 animaux au total, quel que soit le volume         | Un bac de 30 L accepte autant d'animaux qu'un bac de 300 L                                            |
+| Volume conseillé                            | `minLiters` par espèce, simple avertissement à l'ajout                                                       | Pas de volume par animal supplémentaire (le poisson rouge : 100 L, puis 50 L par adulte)              |
+| Charge biologique                           | Somme des cubes des longueurs (`waterLoad`) : bonne base                                                     | Unités de jeu, pas de lien avec la nourriture distribuée                                              |
+| Compatibilités                              | Tempérament (paisible, territorial, prédateur), classe d'eau, listes de proies : approximations non sourcées | Pas de recouvrement des plages de température, de pH, de dureté ; prédation des crevettes non traitée |
+| Plantes                                     | Poussent, se taillent, servent de décor                                                                      | **N'absorbent rien** : les nitrates ne baissent qu'avec un changement d'eau                           |
+| Algues                                      | Poussent avec la lumière et les nitrates                                                                     | **Personne ne les mange** : seule la raclette les retire                                              |
+| Crevettes, escargots, otocinclus, ancistrus | Présents                                                                                                     | **Aucun rôle** de nettoyage, aucune faim liée aux algues                                              |
+| Roches, bois                                | Décor et obstacles                                                                                           | **Aucun effet** sur l'eau (le catappa, lui, agit sur le pH)                                           |
+| Concentrations                              | Unités de jeu dans [0, 1]                                                                                    | Impossible de comparer aux kits réels et aux seuils de `docs/SOINS.md` en mg/L                        |
 
 Conséquence : on ne peut construire aucun des bacs équilibrés qui existent en vrai (bac
 planté peu peuplé presque sans changement d'eau, bac à crevettes autonome), et rien n'empêche
@@ -65,18 +65,18 @@ deux sources sérieuses, l'OATA, et affiche le désaccord dans la fiche.
 - Les plantes absorbent l'azote : **l'ammonium d'abord, le nitrate ensuite**, quand
   l'ammonium manque (études citées sur The Krib, dont Reddy et De Busk, 1985).
 - Ordres de grandeur d'absorption d'azote en bacs extérieurs de 700–900 L, en été, en mg par
-  m² et par jour (Reddy et De Busk, 1985) : *Egeria densa* 125, *Lemna minor* 292, *Salvinia*
-  406, *Pistia stratiotes* 985. Les **plantes flottantes et à croissance rapide** retirent
-  beaucoup plus que les plantes lentes. *Egeria* a retiré 85 à 97 % de nitrates partant de
+  m² et par jour (Reddy et De Busk, 1985) : _Egeria densa_ 125, _Lemna minor_ 292, _Salvinia_
+  406, _Pistia stratiotes_ 985. Les **plantes flottantes et à croissance rapide** retirent
+  beaucoup plus que les plantes lentes. _Egeria_ a retiré 85 à 97 % de nitrates partant de
   1–4 mg/L en 7 jours (Reddy et al., 1987, cité).
-- **Méthode Walstad** (*Ecology of the Planted Aquarium*, Diana Walstad) : terre sous le sable,
+- **Méthode Walstad** (_Ecology of the Planted Aquarium_, Diana Walstad) : terre sous le sable,
   beaucoup de plantes, peu de poissons, lumière moyenne, très peu de changements d'eau ; stable
   parce que les plantes absorbent les déchets, nourries par le sol, et concurrencent les algues.
   Un bac **surpeuplé** fait basculer l'équilibre vers les algues.
 
 ### Algues et nettoyeurs
 
-- Crevettes naines (*Neocaridina*, *Caridina*) : mangent le biofilm, les jeunes algues et les
+- Crevettes naines (_Neocaridina_, _Caridina_) : mangent le biofilm, les jeunes algues et les
   restes de nourriture ; **préviennent** les algues mais ne viennent pas à bout d'une invasion ni
   des algues dures (Garnelio).
 - Néritines : mangent les algues vertes en couche et le biofilm ; **ne se reproduisent pas en eau
@@ -106,13 +106,13 @@ deux sources sérieuses, l'OATA, et affiche le désaccord dans la fiche.
 
 Pour chaque espèce, la fiche porte (sourcé ou approximation) :
 
-| Donnée | Exemple |
-|---|---|
-| Longueur adulte (standard, sans queue), en cm | Néon : 3 |
-| Classe de densité | tropical 1,5–2 L/cm ; eau froide 4 L/cm ; invertébré, récif, amphibien (à sourcer ; amphibien : litres d'eau, berge déduite) |
-| Volume minimal du bac | Néon : 54 L (base 60 × 30) |
-| Volume par adulte supplémentaire, quand une source le donne | Poisson rouge : 100 L puis 50 L |
-| Groupe minimal | Néon : 8 |
+| Donnée                                                      | Exemple                                                                                                                      |
+| ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Longueur adulte (standard, sans queue), en cm               | Néon : 3                                                                                                                     |
+| Classe de densité                                           | tropical 1,5–2 L/cm ; eau froide 4 L/cm ; invertébré, récif, amphibien (à sourcer ; amphibien : litres d'eau, berge déduite) |
+| Volume minimal du bac                                       | Néon : 54 L (base 60 × 30)                                                                                                   |
+| Volume par adulte supplémentaire, quand une source le donne | Poisson rouge : 100 L puis 50 L                                                                                              |
+| Groupe minimal                                              | Néon : 8                                                                                                                     |
 
 Règles :
 
@@ -148,20 +148,20 @@ Verdict par couple d'espèces, avec sa raison : **compatible**, **avec précauti
 
 ### 3.3 Rôles dans l'équilibre
 
-| Élément | Effet simulé | Base |
-|---|---|---|
-| Poissons et invertébrés | Produisent de l'ammoniaque selon **la nourriture mangée** (3 à 5 % du poids de nourriture) et leur masse au repos. **Fait** (#798, ADR 0168) : 4 % ; au repos, un tiers d'un bac nourri | Global Seafood Alliance ; masse ∝ longueur³ |
-| Nourriture non mangée | Se décompose en ammoniaque (#638), **sauf si un charognard la mange avant** | Existant + Garnelio |
-| Filtre | Ammoniaque → nitrites → nitrates, maturation (existant) | `docs/SOINS.md` |
-| Plantes | Absorbent l'ammonium, puis le nitrate, selon leur masse, leur type (flottante, rapide, lente) et la lumière ; poussent si elles trouvent de l'azote ; concurrencent les algues ; servent de refuge (alevins, jeunes crevettes) | Reddy et De Busk ; Walstad |
-| Algues | Poussent avec la lumière en excès et les nutriments **laissés par les plantes** ; mangées par les brouteurs | Existant + Garnelio |
-| Brouteurs (néritine, otocinclus, ancistrus, crevettes) | Mangent algues et biofilm selon leur espèce ; **ont faim** s'il n'y en a plus et qu'on ne les nourrit pas | Garnelio ; Aquarium Breeder |
-| Crevettes naines | Se reproduisent ; la colonie se limite d'elle-même (nourriture, place, prédation) | À sourcer (fiche *Neocaridina davidi*) |
-| Néritines | Ne se reproduisent pas en eau douce | Aquarium Breeder |
-| Roche calcaire | Relève la dureté et tire le pH vers 7,6–7,9, vite ou lentement selon surface et courant | aquariumscience.org |
-| Roche inerte | Aucun effet sur l'eau ; cachettes et territoires | aquariumscience.org |
-| Bois flotté | Tanins, légère baisse du pH | À sourcer |
-| Changement d'eau | Retire une part de tout ce qui est dissous (existant) | — |
+| Élément                                                | Effet simulé                                                                                                                                                                                                                   | Base                                        |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------- |
+| Poissons et invertébrés                                | Produisent de l'ammoniaque selon **la nourriture mangée** (3 à 5 % du poids de nourriture) et leur masse au repos. **Fait** (#798, ADR 0168) : 4 % ; au repos, un tiers d'un bac nourri                                        | Global Seafood Alliance ; masse ∝ longueur³ |
+| Nourriture non mangée                                  | Se décompose en ammoniaque (#638), **sauf si un charognard la mange avant**                                                                                                                                                    | Existant + Garnelio                         |
+| Filtre                                                 | Ammoniaque → nitrites → nitrates, maturation (existant)                                                                                                                                                                        | `docs/SOINS.md`                             |
+| Plantes                                                | Absorbent l'ammonium, puis le nitrate, selon leur masse, leur type (flottante, rapide, lente) et la lumière ; poussent si elles trouvent de l'azote ; concurrencent les algues ; servent de refuge (alevins, jeunes crevettes) | Reddy et De Busk ; Walstad                  |
+| Algues                                                 | Poussent avec la lumière en excès et les nutriments **laissés par les plantes** ; mangées par les brouteurs                                                                                                                    | Existant + Garnelio                         |
+| Brouteurs (néritine, otocinclus, ancistrus, crevettes) | Mangent algues et biofilm selon leur espèce ; **ont faim** s'il n'y en a plus et qu'on ne les nourrit pas                                                                                                                      | Garnelio ; Aquarium Breeder                 |
+| Crevettes naines                                       | Se reproduisent ; la colonie se limite d'elle-même (nourriture, place, prédation)                                                                                                                                              | À sourcer (fiche _Neocaridina davidi_)      |
+| Néritines                                              | Ne se reproduisent pas en eau douce                                                                                                                                                                                            | Aquarium Breeder                            |
+| Roche calcaire                                         | Relève la dureté et tire le pH vers 7,6–7,9, vite ou lentement selon surface et courant                                                                                                                                        | aquariumscience.org                         |
+| Roche inerte                                           | Aucun effet sur l'eau ; cachettes et territoires                                                                                                                                                                               | aquariumscience.org                         |
+| Bois flotté                                            | Tanins, légère baisse du pH                                                                                                                                                                                                    | À sourcer                                   |
+| Changement d'eau                                       | Retire une part de tout ce qui est dissous (existant)                                                                                                                                                                          | —                                           |
 
 ### 3.4 Unités réelles et temps long
 
@@ -173,6 +173,7 @@ Verdict par couple d'espèces, avec sa raison : **compatible**, **avec précauti
   algues, faim » doit donc pouvoir avancer seule à **gros pas** (par exemple une minute
   simulée), de façon déterministe, sans le mouvement des animaux ni le rendu, pour que les
   scénarios de la section 4 tournent en quelques secondes dans les tests.
+  **Fait** (#799, ADR 0169) : `sim/ecosystem-step.ts`, pas de 5 s, écart au pas fin sous 3 %.
 
 ## 4. Scénarios de référence
 
@@ -181,20 +182,45 @@ bac longtemps à gros pas et vérifie l'issue attendue. Un changement qui fait �
 scénario est une **régression de réalisme**, au même titre qu'une régression de code. Chaque lot
 de la section 5 ajoute les scénarios qu'il rend possibles ; aucun n'est désactivé.
 
-| # | Bac | Issue attendue | Pourquoi |
-|---|---|---|---|
-| S1 | Bocal de 10 L, un poisson rouge, sans filtre | **Instable** : ammoniaque toxique en quelques jours, poisson malade | RSPCA : bocaux inadaptés |
-| S2 | 120 L filtré et mûr, un poisson rouge, 25 % d'eau changée par semaine | **Stable** sur 3 mois | OATA |
-| S3 | 120 L, deuxième poisson rouge | **Refusé** par la capacité (mode soins) | OATA : 150 L pour deux |
-| S4 | Bac neuf non cyclé rempli d'un coup | **Pic** d'ammoniaque puis de nitrites les premières semaines | `docs/SOINS.md` |
-| S5 | 60 L très planté (plantes rapides et flottantes), peu peuplé (10 néons), nourrissage léger, **sans changement d'eau** | **Stable** : nitrates bas, pas d'algues | Walstad |
-| S6 | Le même sans plantes | Nitrates qui montent sans cesse, algues ; **instable** en quelques mois | Plantes absentes |
-| S7 | Le même surpeuplé (construit directement par le test, au-delà de la capacité) | Algues et nitrates qui montent malgré les plantes | Walstad : le surpeuplement fait basculer |
-| S8 | 30 L planté, crevettes *Neocaridina* et une néritine, nourrissage léger | **Stable** ; la colonie de crevettes grandit puis se stabilise | Bacs à crevettes courants (à sourcer) |
-| S9 | Crevettes avec des poissons rouges | Les crevettes disparaissent | Practical Fishkeeping |
-| S10 | Néritines dans un bac sans algues, jamais nourries | Faim, puis mort | Aquarium Breeder |
-| S11 | Roche calcaire dans un bac de néons en eau douce | pH tiré vers 7,6–7,9 en quelques semaines ou mois ; néons en limite de tolérance | aquariumscience.org ; Seriously Fish (néon : pH 4–7,5) |
-| S12 | Bac par défaut de chaque environnement, entretien normal | **Stable** | Le jeu doit être jouable tel qu'il démarre |
+Harnais : `sim/testing/ecosystem-scenario.ts` (bac, volume imposé, entretien, durée → pics,
+pire qualité de l'eau, santé, algues) ; tests : `sim/ecosystem-scenarios.spec.ts`.
+
+**État au 2026-11-23** (#799) : S1 et S4 sont verts. **S2 et S12 échouent** avec l'entretien
+normal (un repas par minute simulée, 30 % d'eau tous les 7 jours de jeu) : les nitrates
+montent trop vite **par jour de jeu** (bac tropical par défaut : environ 8 mg/L par jour, soit
+60 par semaine, quand un bac réel en prend quelques-uns) et dépassent 40 mg/L entre deux
+changements d'eau. Les durées de l'azote (production, conversion) sont en secondes, calées
+sur le tableau de bord, alors que l'entretien et le filtre se comptent en jours de 20 minutes.
+Relevés sur 90 jours de jeu :
+
+| Scénario          | Pire qualité | Premier jour « mauvaise » | Pic NH₃/NH₄⁺ | Pic NO₂⁻ | Pic NO₃⁻ | Santé min. | Algues max. |
+| ----------------- | ------------ | ------------------------- | ------------ | -------- | -------- | ---------- | ----------- |
+| S2 (25 %/semaine) | mauvaise     | 55,5                      | 0,09         | 0,03     | 43,9     | 0,20       | 0           |
+| S12 tropical      | mauvaise     | 4,9                       | 0,53         | 0,16     | 100      | 0,20       | 1           |
+| S12 bassin        | mauvaise     | 13,3                      | 0,19         | 0,07     | 82,9     | 0,20       | 0           |
+| S12 paludarium    | mauvaise     | 62,7                      | 0,09         | 0,03     | 41,6     | 0,20       | 1           |
+| S12 récif         | mauvaise     | 18,1                      | 0,19         | 0,06     | 74,6     | 0,20       | 0           |
+| S12 eau froide    | à surveiller | —                         | 0,07         | 0,03     | 30,8     | 1          | 1           |
+
+Les rendre verts demande de recaler la production d'azote sur le jour de jeu (environ ÷ 8 pour
+le bac tropical), en gardant S1 (bocal toxique en quelques jours) et S4 (pics du cyclage au-dessus
+des seuils « à surveiller ») : changement de comportement de tout le jeu, à faire dans sa propre
+issue, avec ses empreintes.
+
+| #   | Bac                                                                                                                   | Issue attendue                                                                   | Pourquoi                                               |
+| --- | --------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| S1  | Bocal de 10 L, un poisson rouge, sans filtre                                                                          | **Instable** : ammoniaque toxique en quelques jours, poisson malade              | RSPCA : bocaux inadaptés                               |
+| S2  | 120 L filtré et mûr, un poisson rouge, 25 % d'eau changée par semaine                                                 | **Stable** sur 3 mois                                                            | OATA                                                   |
+| S3  | 120 L, deuxième poisson rouge                                                                                         | **Refusé** par la capacité (mode soins)                                          | OATA : 150 L pour deux                                 |
+| S4  | Bac neuf non cyclé rempli d'un coup                                                                                   | **Pic** d'ammoniaque puis de nitrites les premières semaines                     | `docs/SOINS.md`                                        |
+| S5  | 60 L très planté (plantes rapides et flottantes), peu peuplé (10 néons), nourrissage léger, **sans changement d'eau** | **Stable** : nitrates bas, pas d'algues                                          | Walstad                                                |
+| S6  | Le même sans plantes                                                                                                  | Nitrates qui montent sans cesse, algues ; **instable** en quelques mois          | Plantes absentes                                       |
+| S7  | Le même surpeuplé (construit directement par le test, au-delà de la capacité)                                         | Algues et nitrates qui montent malgré les plantes                                | Walstad : le surpeuplement fait basculer               |
+| S8  | 30 L planté, crevettes _Neocaridina_ et une néritine, nourrissage léger                                               | **Stable** ; la colonie de crevettes grandit puis se stabilise                   | Bacs à crevettes courants (à sourcer)                  |
+| S9  | Crevettes avec des poissons rouges                                                                                    | Les crevettes disparaissent                                                      | Practical Fishkeeping                                  |
+| S10 | Néritines dans un bac sans algues, jamais nourries                                                                    | Faim, puis mort                                                                  | Aquarium Breeder                                       |
+| S11 | Roche calcaire dans un bac de néons en eau douce                                                                      | pH tiré vers 7,6–7,9 en quelques semaines ou mois ; néons en limite de tolérance | aquariumscience.org ; Seriously Fish (néon : pH 4–7,5) |
+| S12 | Bac par défaut de chaque environnement, entretien normal                                                              | **Stable**                                                                       | Le jeu doit être jouable tel qu'il démarre             |
 
 ## 5. Mise en œuvre
 
@@ -220,10 +246,10 @@ le changement voulu et expliquées dans la PR, sauvegardes anciennes toujours li
 
 - RSPCA, « Choosing an aquarium » : https://www.rspca.org.uk/adviceandwelfare/pets/fish/environment
 - OATA, « Goldfish in aquaria » : https://ornamentalfish.org/wp-content/uploads/Goldfish-in-aquaria.pdf
-- Seriously Fish, *Paracheirodon innesi* : https://seriouslyfish.com/species/paracheirodon-innesi
+- Seriously Fish, _Paracheirodon innesi_ : https://seriouslyfish.com/species/paracheirodon-innesi
 - Global Seafood Alliance, « Flow rate estimation for RAS » : https://www.globalseafood.org/advocate/flow-rate-estimation-for-ras/
 - The Krib, « Nitrate consumption » (Reddy et De Busk, 1985 ; Reddy et al., 1987 ; autres) : https://thekrib.com/Plants/Fertilizer/nitrate-chart.html
-- Fish Tank Advisor, « Walstad method » (d'après D. Walstad, *Ecology of the Planted Aquarium*) : https://fishtankadvisor.com/walstad-method/
+- Fish Tank Advisor, « Walstad method » (d'après D. Walstad, _Ecology of the Planted Aquarium_) : https://fishtankadvisor.com/walstad-method/
 - Garnelio, « Shrimp and snails as a cleanup crew » : https://www.garnelio.de/en/blog/invertebrates/the-invertebrate-algae-police-shrimp-and-snails-as-a-cleanup-crew
 - Aquarium Breeder, « Nerite snails » : https://aquariumbreeder.com/nerite-snails-detailed-guide-care-diet-and-breeding/
 - Practical Fishkeeping, « What can I keep with shrimp? » : https://www.practicalfishkeeping.co.uk/features/what-can-i-keep-with-shrimp/
