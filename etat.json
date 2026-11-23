@@ -10421,10 +10421,10 @@
           "note": "Issue #798 : Écosystème 2b/7, pollution liée à la nourriture mangée (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-23T10:32:57.955Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-23T11:59:15.187Z",
+          "note": "PR #802 : ammoniaque selon la nourriture mangée (#798), CI verte 14/14, captures identiques c285 ; e2e local interrompu 141/556 (CI e2e 7/7 OK) ; pied d'attribution réinjecté dans la PR (PIEGES)"
         }
       },
       "metriques": {}
