@@ -10283,10 +10283,10 @@
           "note": "PR #792 : données d'écologie du paludarium, champ obligatoire (#786), CI verte 14/14 (e2e local partiel) ; pied d'attribution réinjecté par l'environnement dans la PR (PIEGES)"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-23T03:17:56.883Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-23T03:33:43.622Z",
+          "note": "Verdict OK, 0 bug : verify 6121 tests, CI 14/14, 177/178 captures identiques (instabilité chlore connue) ; captures publiées"
         }
       },
       "metriques": {}
