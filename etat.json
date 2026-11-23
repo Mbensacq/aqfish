@@ -10232,7 +10232,7 @@
       "type": "fonctionnalite",
       "issue": 788,
       "pr": 791,
-      "version": null,
+      "version": "v1.29.2",
       "phases": {
         "planif": {
           "statut": "termine",
