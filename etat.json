@@ -10251,6 +10251,12 @@
           "debut": "2026-11-23T01:50:01.400Z",
           "fin": "2026-11-23T02:07:00.299Z",
           "note": "Verdict OK, 0 bug : verify 6112 tests, CI 14/14, 178/178 captures identiques (1 instabilité chlore, rejouée identique) ; captures publiées"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-23T02:07:37.782Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
