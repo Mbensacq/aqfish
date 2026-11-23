@@ -10379,10 +10379,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-23T08:49:55.860Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-23T08:51:02.770Z",
+          "note": "Issue #800 : Rétro sprint 41 ; dette #707 pour Dev ; #798 et #799 créées (S)"
         }
       },
       "metriques": {}
