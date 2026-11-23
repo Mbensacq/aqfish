@@ -10302,7 +10302,7 @@
       "date": "2026-11-23",
       "debut": "2026-11-23T04:04:38.395Z",
       "type": "fonctionnalite",
-      "issue": null,
+      "issue": 793,
       "pr": null,
       "version": null,
       "phases": {
