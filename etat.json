@@ -10425,6 +10425,12 @@
           "debut": "2026-11-23T10:32:57.955Z",
           "fin": "2026-11-23T11:59:15.187Z",
           "note": "PR #802 : ammoniaque selon la nourriture mangée (#798), CI verte 14/14, captures identiques c285 ; e2e local interrompu 141/556 (CI e2e 7/7 OK) ; pied d'attribution réinjecté dans la PR (PIEGES)"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-23T11:59:50.174Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
