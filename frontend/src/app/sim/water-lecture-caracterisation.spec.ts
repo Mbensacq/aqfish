@@ -91,6 +91,9 @@ const CASES: readonly Case[] = [
   ...numberCases('temperature', 0, 40),
   ...numberCases('ammonia', 0, 100),
   ...numberCases('nitrite', 0, 100),
+  ['ammonia = 50.01', withField('ammonia', 50.01), 'tropical'],
+  ['nitrite = 12.5', withField('nitrite', 12.5), 'tropical'],
+  ['nitrite = 12.51', withField('nitrite', 12.51), 'tropical'],
   ...numberCases('nitrate', 0, 100),
   ...numberCases('filter', 0, 1),
   ...numberCases('heater', 16, 32),
@@ -211,6 +214,10 @@ const EXPECTED: Readonly<Record<string, string>> = {
   'nitrite = 100.01': '{"ok":false,"error":"eau : nitrite doit être un nombre dans [0, 12.5]"}',
   'nitrite = NaN': '{"ok":false,"error":"eau : nitrite doit être un nombre dans [0, 12.5]"}',
   "nitrite = '1'": '{"ok":false,"error":"eau : nitrite doit être un nombre dans [0, 12.5]"}',
+  'ammonia = 50.01': '{"ok":false,"error":"eau : ammonia doit être un nombre dans [0, 50]"}',
+  'nitrite = 12.5':
+    '{"ok":true,"water":{"temperature":25,"ammonia":0,"nitrite":12.5,"nitrate":5,"filter":1,"ph":7}}',
+  'nitrite = 12.51': '{"ok":false,"error":"eau : nitrite doit être un nombre dans [0, 12.5]"}',
   'nitrite = null': '{"ok":false,"error":"eau : nitrite doit être un nombre dans [0, 12.5]"}',
   'nitrate = 0':
     '{"ok":true,"water":{"temperature":25,"ammonia":0,"nitrite":0,"nitrate":0,"filter":1,"ph":7}}',
