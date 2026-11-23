@@ -194,7 +194,10 @@ import {
   type CurrentVelocity,
 } from './water-current';
 
-/** Types de l'état du monde, déclarés dans `sim/world-types.ts` (#687) ; réexportés pour les modules qui ne les importent pas encore de là. */
+/**
+ * Types de l'état du monde, déclarés dans `sim/world-types.ts` (#687) ; réexportés pour les
+ * modules qui ne les importent pas encore de là.
+ */
 export type {
   Entity,
   Feeding,
@@ -737,7 +740,10 @@ export function setWorldFeederInPlace(
   return true;
 }
 
-/** Remplit le distributeur du bac (issue #583), **en modifiant** `world` ; faux sans distributeur. */
+/**
+ * Remplit le distributeur du bac (issue #583), **en modifiant** `world` ; faux sans
+ * distributeur.
+ */
 export function refillWorldFeederInPlace(world: MutableWorld): boolean {
   if (world.feeder === undefined) {
     return false;
@@ -1812,8 +1818,9 @@ export const PLANT_CUT_AMMONIA = 0.025;
  * Coupe de la séance d'entretien (étape « taille », #623), **en modifiant** `world` : taille la
  * plante d'indice `index` de `World.decor` (`pruneWorldPlantInPlace`, cette plante seulement)
  * et la partie coupée ajoute `PLANT_CUT_AMMONIA` d'ammoniaque (déchet organique, bornée à
- * `MAX_CONCENTRATIONS.ammonia`). Renvoie vrai si une partie a été coupée ; faux (monde inchangé) pour un
- * indice inconnu, un autre élément, une plante sans pousse visible ou un bac où rien ne pousse.
+ * `MAX_CONCENTRATIONS.ammonia`). Renvoie vrai si une partie a été coupée ; faux (monde
+ * inchangé) pour un indice inconnu, un autre élément, une plante sans pousse visible ou un bac
+ * où rien ne pousse.
  * La plante repousse ensuite selon son modèle (`stepPlantGrowthInPlace`).
  */
 export function cutWorldPlantInPlace(world: MutableWorld, index: number): boolean {

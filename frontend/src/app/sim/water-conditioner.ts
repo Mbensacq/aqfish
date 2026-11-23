@@ -27,9 +27,10 @@ export const CHLORINE_TRACE = 0.001;
 /** Durée de protection de l'ammoniaque liée, en secondes simulées (2 journées). */
 export const AMMONIA_BINDER_SECONDS = 2 * DEFAULT_DAY_LENGTH_SECONDS;
 /**
- * Ammoniaque neutralisée pendant la protection, en mg/L. Approximation de jeu : ancienne valeur
- * 1 convertie (issue #793), sous les ≈ 1 mg/L par dose de l'étiquette (`docs/SOINS.md` § 1.2),
- * pour garder le comportement d'avant.
+ * Ammoniaque neutralisée pendant la protection, en mg/L. Approximation de jeu définitive
+ * (#795) : ancienne valeur 1 convertie en mg/L (issue #793), la moitié des ≈ 1 mg/L par dose de
+ * l'étiquette (`docs/SOINS.md` § 1.1). Gardée ainsi : une dose du jeu n'a pas de volume, et la
+ * relever changerait l'équilibre des soins et les empreintes sans gain pour le joueur.
  */
 export const AMMONIA_BINDER_CAPACITY = 0.5;
 
