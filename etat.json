@@ -10455,6 +10455,12 @@
           "debut": "2026-11-23T12:56:48.346Z",
           "fin": "2026-11-23T12:57:06.174Z",
           "note": "Issue #799 : Écosystème 2c/7, avance à gros pas, harnais et scénarios (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-23T12:57:37.677Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
