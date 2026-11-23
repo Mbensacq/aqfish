@@ -10215,6 +10215,12 @@
           "debut": "2026-11-23T00:21:34.922Z",
           "fin": "2026-11-23T00:38:50.244Z",
           "note": "Verdict OK, 0 bug : tests ciblés 32/32, CI 13/13, critères OK, 178/178 captures identiques à l'octet ; captures publiées"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-23T00:39:30.364Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
