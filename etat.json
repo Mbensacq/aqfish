@@ -10483,7 +10483,7 @@
       "debut": "2026-11-23T23:41:49.286Z",
       "type": "fonctionnalite",
       "issue": 805,
-      "pr": null,
+      "pr": 806,
       "version": null,
       "phases": {
         "planif": {
