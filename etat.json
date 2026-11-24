@@ -10762,10 +10762,10 @@
           "note": "Verdict OK, 0 bug, 177/177 captures identiques c295, publiées (e2e complet par la CI)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-24T17:17:46.015Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-24T17:45:13.604Z",
+          "note": "PR #822 fusionnée → v1.31.2 (release CI OK, CI main verte), #821 fermée ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
