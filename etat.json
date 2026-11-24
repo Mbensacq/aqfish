@@ -10784,6 +10784,12 @@
           "debut": "2026-11-24T23:41:47.352Z",
           "fin": "2026-11-24T23:42:27.739Z",
           "note": "Issue #823 : #731 tranche 2, refuges gradués des alevins (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-24T23:43:03.771Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
