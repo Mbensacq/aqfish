@@ -129,6 +129,10 @@ Règles :
 5. Une ancienne sauvegarde qui dépasse la capacité se charge telle quelle, avec une alerte : on
    ne supprime jamais d'animal en silence.
 
+**Calcul fait** (#807, ADR 0171) : `sim/tank-capacity.ts` (`canAdd`, `capacityStatus`) et
+`sim/tank-water-volume.ts` (volume d'eau réel, décor et berge déduits) ; S3 vert. Pas encore
+branché sur les compteurs (tranche 2).
+
 ### 3.2 Compatibilités
 
 Verdict par couple d'espèces, avec sa raison : **compatible**, **avec précautions**,

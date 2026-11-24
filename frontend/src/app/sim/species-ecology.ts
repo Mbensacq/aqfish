@@ -14,7 +14,7 @@ import { AMPHIBIAN_ECOLOGY } from './species-ecology-amphibiens';
 /**
  * Données d'écologie des espèces (issue #784, première tranche de #727, `docs/ECOSYSTEME.md`
  * § 2 et § 3.1) : ce qu'il faut pour décider combien d'animaux tient un bac, qui mange qui et
- * qui nettoie quoi. **Aucune n'est encore utilisée par la simulation** (#728 et suivantes).
+ * qui nettoie quoi. Lues par le calcul de capacité (`sim/tank-capacity.ts`, #807).
  *
  * Les champs déjà portés par la fiche (`sim/species-sheet.ts` : taille adulte, températures,
  * pH, groupe minimal, volume minimal, dureté conseillée) sont réutilisés, pas recopiés : on
