@@ -121,3 +121,18 @@ export async function vegetationPixels(page: Page): Promise<number> {
   const counts = countColors(await canvasShot(page), [...VEGETATION]);
   return counts.reduce((sum, n) => sum + n, 0);
 }
+
+/**
+ * Passe le bac affiché en mode décor (#278), confirmation comprise : la capacité du bac
+ * (#809) n'y borne plus les effectifs, seuls les plafonds techniques restent. Pour tester ces
+ * plafonds dans un bac par défaut déjà plein (bassin, paludarium, ADR 0171).
+ */
+export async function passerEnModeDecor(page: Page): Promise<void> {
+  await ouvrirReglages(page, 'Bac et milieu');
+  await page.locator('[data-section="bacs"] [data-care-mode-toggle]').click();
+  await page
+    .locator('[data-care-mode-confirm]')
+    .getByRole('button', { name: 'Passer en mode décor' })
+    .click();
+  await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-mode', 'decor');
+}
