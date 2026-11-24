@@ -10605,6 +10605,12 @@
           "debut": "2026-11-24T06:33:32.895Z",
           "fin": "2026-11-24T07:46:18.675Z",
           "note": "PR #812 : populations par défaut sous la capacité (bassin 3 koïs 86 %, paludarium 2 sonneurs 79 %, ADR 0173), CI verte ; #709 non traité ; verify main : unitaires+build OK, e2e interrompus (CI main verte) ; pied d'attribution réinjecté dans la PR (PIEGES)"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-24T07:46:52.898Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
