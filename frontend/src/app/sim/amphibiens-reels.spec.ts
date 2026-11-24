@@ -42,12 +42,13 @@ describe('amphibiens réels du paludarium (#270)', () => {
       expect(entry).toMatchObject({ name, scientificName: scientific });
       expect(livesIn('paludarium', id)).toBe(true);
     }
+    // Effectifs de départ ramenés sous la capacité du paludarium (#811, ADR 0173).
     expect(entries.find((e) => e.species === 'grenouille')).toMatchObject({
-      defaultCount: 3,
+      defaultCount: 2,
       maxCount: 4,
     });
     expect(entries.find((e) => e.species === 'triton')).toMatchObject({
-      defaultCount: 2,
+      defaultCount: 0,
       maxCount: 3,
     });
   });

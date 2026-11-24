@@ -1,11 +1,12 @@
-import { ENVIRONMENT_IDS } from './environment';
+import { ENVIRONMENT_IDS, environmentById } from './environment';
 import { copyFirstTankPath, createFirstTankPath, firstTankFacts } from './first-tank-path';
 import { JOURNAL_VERSION, waterChangeEntry } from './journal';
 import { initialMaintenance, maintenanceDone } from './maintenance';
 import { createWaterHistory, markWaterChange, savedWaterHistory } from './water-history';
 import { migrateSchema1, parseSave, serializeRoom } from './room-save';
 import { parseWorld, serializeWorld } from './save';
-import { advance, createDefaultWorld, feed } from './world';
+import { advance, createWorld, feed } from './world';
+import type { PopulationEntry } from './world-types';
 
 /**
  * Caractérisation de la relecture des sauvegardes (`parseWorld`, `parseSave`), lot 5 du
@@ -28,9 +29,26 @@ function fingerprint(text: string): string {
   return hash.toString(16).padStart(8, '0');
 }
 
+/**
+ * Populations de départ d'avant #811 (ADR 0173) : les sauvegardes caractérisées restent celles
+ * qui ont figé les résultats, le changement des populations par défaut ne les touche pas.
+ */
+const POPULATIONS_BEFORE_811: Partial<
+  Record<(typeof ENVIRONMENT_IDS)[number], readonly PopulationEntry[]>
+> = {
+  bassin: [{ species: 'koi', count: 7 }],
+  paludarium: [
+    { species: 'grenouille', count: 3 },
+    { species: 'triton', count: 2 },
+  ],
+};
+
 /** Sauvegarde réelle (schéma 1) d'un bac avancé et nourri de chaque environnement. */
 function realWorld(environment: (typeof ENVIRONMENT_IDS)[number]): ReturnType<typeof advance> {
-  return advance(feed(advance(createDefaultWorld(42, environment), 120), 0.1, 0), 30);
+  const env = environmentById(environment);
+  const population = POPULATIONS_BEFORE_811[environment] ?? env.population;
+  const world = createWorld(42, population, [], env.decor, environment);
+  return advance(feed(advance(world, 120), 0.1, 0), 30);
 }
 
 const TROPICAL = JSON.parse(serializeWorld(realWorld('tropical'))) as Json;

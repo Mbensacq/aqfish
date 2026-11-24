@@ -16,7 +16,10 @@ const list = (page: Page, part: 'present' | 'addable') =>
   wiki(page).locator(`[data-wiki-list="${part}"] [data-wiki-species]`);
 const sheet = (page: Page) => wiki(page).locator('[data-wiki-sheet]');
 
-async function open(page: Page, search = '?seed=42&vitesse=0&environnement=paludarium') {
+async function open(
+  page: Page,
+  search = '?seed=42&vitesse=0&environnement=paludarium&population=triton:2',
+) {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   page.on('console', (message) => {

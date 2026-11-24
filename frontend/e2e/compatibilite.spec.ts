@@ -31,8 +31,11 @@ test.describe('Compatibilité des espèces (#209)', () => {
   test('paludarium : axolotl déconseillé avec grenouilles et tritons, libellé qui suit les effectifs', async ({
     page,
   }) => {
-    // Paludarium mixte d'avant #271 : les axolotls n'y sont plus par défaut, on les ajoute.
-    const errors = await open(page, '?seed=42&environnement=paludarium&population=axolotl:2');
+    // Paludarium mixte d'avant #271 : ni axolotls (#271) ni tritons (#811) par défaut, on les ajoute.
+    const errors = await open(
+      page,
+      '?seed=42&environnement=paludarium&population=axolotl:2,triton:2',
+    );
     await ouvrirReglages(page, 'Population');
     await expect(warnings(page)).toHaveText([
       'Mélange déconseillé : axolotls et sonneurs orientaux (prédateur)',

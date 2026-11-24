@@ -24,7 +24,7 @@ const catalog = (page: Page) => page.locator('[data-section="bacs-meubles"]');
 const notice = (page: Page) => page.locator('[data-section="population"] [data-room-cap]');
 
 /** Places laissées sous le plafond d'animaux par la sauvegarde. */
-const FREE = 3;
+const FREE = 2;
 
 /**
  * Pièce de `ROOM_TANK_CAP` bacs tropicaux (bac affiché, puis petits bacs posés au sol en
@@ -108,7 +108,7 @@ test.describe('Plafond de bacs de la pièce (#396)', () => {
       await expect(hostEl(page)).toHaveAttribute('data-aqfish-room', 'false');
     });
 
-    await test.step('bassin jamais visité : 3 koïs au lieu de 7, la pièce à son plafond', async () => {
+    await test.step('bassin jamais visité : 2 koïs au lieu de 3, la pièce à son plafond', async () => {
       expect(createDefaultWorld(3, 'bassin').entities.length).toBeGreaterThan(FREE);
       const environment = page.getByRole('combobox', { name: 'Environnement', exact: true });
       await environment.selectOption('bassin');

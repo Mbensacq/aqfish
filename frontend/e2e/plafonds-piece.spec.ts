@@ -7,8 +7,8 @@ import { ouvrirReglages } from './outils-panneau';
  * l'ajout est sans effet ; retirer un animal reste possible.
  *
  * Tropical (en soins), récif et paludarium (en mode décor, où toute espèce s'ajoute, #278)
- * à 60 animaux, le plafond d'un bac ; bassin à ses 7 koïs de départ ; puis l'eau froide, en
- * décor, ne peut plus en prendre que 53 : c'est la pièce qui bloque, pas le bac.
+ * à 60 animaux, le plafond d'un bac ; bassin à ses 3 koïs de départ ; puis l'eau froide, en
+ * décor, ne peut plus en prendre que 57 : c'est la pièce qui bloque, pas le bac.
  */
 
 const hostEl = (page: Page) => page.locator('app-aquarium-host');
@@ -77,7 +77,7 @@ test.describe('Plafonds de la pièce (#392)', () => {
     await page.getByRole('slider', { name: 'Vitesse de la simulation' }).fill('0');
     const environment = page.getByRole('combobox', { name: 'Environnement', exact: true });
 
-    await test.step('trois bacs à 60, le bassin à 7 : 187 animaux, sous le plafond', async () => {
+    await test.step('trois bacs à 60, le bassin à 3 : 183 animaux, sous le plafond', async () => {
       // Mode décor : la capacité du bac (#809) ne borne pas, seul le plafond technique.
       await decorMode(page);
       await fillTank(page);
@@ -94,18 +94,18 @@ test.describe('Plafonds de la pièce (#392)', () => {
       await ouvrirReglages(page, 'Bac et milieu');
       await environment.selectOption('bassin');
       await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'bassin');
-      await expect.poll(() => total(page)).toBe(7);
+      await expect.poll(() => total(page)).toBe(3);
       await expect(notice(page)).toHaveCount(0);
     });
 
-    await test.step('eau froide : la pièce, pas le bac, arrête l’ajout à 53 (240 en tout)', async () => {
+    await test.step('eau froide : la pièce, pas le bac, arrête l’ajout à 57 (240 en tout)', async () => {
       await ouvrirReglages(page, 'Bac et milieu');
       await environment.selectOption('eaufroide');
       await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'eaufroide');
       await decorMode(page);
       await fillTank(page);
-      // 60 − 7 − 3 × 60 = 53 : le bac pourrait en prendre 60, la pièce est à 240.
-      await expect.poll(() => total(page)).toBe(53);
+      // 240 − 3 − 3 × 60 = 57 : le bac pourrait en prendre 60, la pièce est à 240.
+      await expect.poll(() => total(page)).toBe(57);
       await expect(notice(page)).toHaveText(
         'Plafond de la pièce atteint : 240 animaux au plus, tous bacs confondus.',
       );
@@ -120,10 +120,10 @@ test.describe('Plafonds de la pièce (#392)', () => {
 
     await test.step('retirer un animal fait disparaître le message ; le rajouter le rétablit', async () => {
       await page.locator('[data-species="neon"] button[aria-label^="Retirer"]').click();
-      await expect.poll(() => total(page)).toBe(52);
+      await expect.poll(() => total(page)).toBe(56);
       await expect(notice(page)).toHaveCount(0);
       await page.locator('[data-species="neon"] button[aria-label^="Ajouter"]').click();
-      await expect.poll(() => total(page)).toBe(53);
+      await expect.poll(() => total(page)).toBe(57);
       await expect(notice(page)).toBeVisible();
     });
     expect(errors).toEqual([]);

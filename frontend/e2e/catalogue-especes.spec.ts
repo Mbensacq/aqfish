@@ -87,9 +87,9 @@ test.describe('Catalogue d’espèces (#189)', () => {
       await rows(page).evaluateAll((els) => els.map((el) => el.getAttribute('data-species'))),
     ).toEqual(['axolotl', 'grenouille', 'triton']);
     await page.getByRole('button', { name: 'Retirer un sonneur oriental' }).click();
-    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /grenouille:2/);
-    await expect(slider(page, 'de sonneurs orientaux')).toHaveValue('2');
-    // Paludarium par défaut au-delà de sa capacité (ADR 0171) : l'ajout se teste en mode décor (#809).
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /grenouille:1/);
+    await expect(slider(page, 'de sonneurs orientaux')).toHaveValue('1');
+    // Paludarium sous le volume minimal d'un axolotl (75 L, ADR 0171) : l'ajout se teste en mode décor.
     await passerEnModeDecor(page);
     await ouvrirReglages(page, 'Population');
     await slider(page, 'd’axolotls').fill('4');

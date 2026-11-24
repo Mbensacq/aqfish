@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { ouvrirReglages, passerEnModeDecor } from './outils-panneau';
 
 /**
- * Grenouilles du paludarium (#131) : trois par défaut, effectif réglable au panneau et par
+ * Grenouilles du paludarium (#131) : deux par défaut (#811), effectif réglable au panneau et par
  * l'URL (borné à 4), absentes des autres environnements, simulation qui avance sans erreur.
  */
 
@@ -25,15 +25,15 @@ function frogCount(population: string | null): number {
 }
 
 test.describe('Grenouilles (#131)', () => {
-  test('trois par défaut, réglables au panneau, bornées à 4', async ({ page }) => {
+  test('deux par défaut, réglables au panneau, bornées à 4', async ({ page }) => {
     const errors = await open(page, '?environnement=paludarium&seed=42');
-    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /grenouille:3/);
-    // Paludarium par défaut au-delà de sa capacité (ADR 0171) : en mode soins, aucun ajout
-    // (#809) ; le plafond technique (4) se teste en mode décor.
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /grenouille:2/);
+    // Plafond technique (4) au-delà de la capacité du paludarium (3 sonneurs : 54 L pour
+    // 45,7 L, ADR 0173) : il se teste en mode décor.
     await passerEnModeDecor(page);
     await ouvrirReglages(page, 'Population');
     const field = page.getByRole('spinbutton', { name: 'Nombre de sonneurs orientaux' });
-    await expect(field).toHaveValue('3');
+    await expect(field).toHaveValue('2');
     await field.fill('9');
     await field.dispatchEvent('change');
     await expect(field).toHaveValue('4');

@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { ouvrirReglages, passerEnModeDecor } from './outils-panneau';
 
 /**
- * Tritons du paludarium (#133) : deux par défaut, effectif réglable au panneau et par l'URL
+ * Tritons du paludarium (#133) : proposés sans être peuplés d'office (#811), effectif réglable au panneau et par l'URL
  * (borné à 3), absents des autres environnements, simulation qui avance sans erreur.
  */
 
@@ -25,16 +25,16 @@ function newtCount(population: string | null): number {
 }
 
 test.describe('Tritons (#133)', () => {
-  test('deux par défaut, réglables au panneau, bornés à 3', async ({ page }) => {
+  test('aucun par défaut, réglables au panneau, bornés à 3', async ({ page }) => {
     const errors = await open(page, '?environnement=paludarium&seed=42');
-    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /triton:2/);
-    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /grenouille:3/);
-    // Paludarium par défaut au-delà de sa capacité (ADR 0171) : en mode soins, aucun ajout
-    // (#809) ; le plafond technique (3) se teste en mode décor.
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /triton:0/);
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /grenouille:2/);
+    // Un triton (30 L) ne tient pas avec les deux sonneurs (36 L) dans 45,7 L d'eau réelle
+    // (ADR 0173) : le réglage et le plafond technique (3) se testent en mode décor.
     await passerEnModeDecor(page);
     await ouvrirReglages(page, 'Population');
     const field = page.getByRole('spinbutton', { name: 'Nombre de tritons à ventre de feu' });
-    await expect(field).toHaveValue('2');
+    await expect(field).toHaveValue('0');
     await field.fill('9');
     await field.dispatchEvent('change');
     await expect(field).toHaveValue('3');
@@ -43,7 +43,7 @@ test.describe('Tritons (#133)', () => {
     await field.dispatchEvent('change');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /triton:0/);
     // Les grenouilles ne bougent pas.
-    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /grenouille:3/);
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /grenouille:2/);
     expect(errors).toEqual([]);
   });
 

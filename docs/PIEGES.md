@@ -813,13 +813,16 @@ origin/main`, `node_modules` en lien symbolique) ; il sert aussi aux captures «
 ## Tests
 
 - **Ajouter un animal dans un e2e : la capacité du bac peut le refuser** (cycle 291, #809) : en
-  mode soins, les compteurs sont bornés par la capacité (ADR 0172). Le bassin (7 koïs, 201 %) et
-  le paludarium par défaut sont déjà au-delà, et le paludarium est sous le volume minimal d'un
-  axolotl (75 L) : tout « + », « Ajouter au bac » du wiki ou effectif saisi plus grand y est
-  refusé (bouton `aria-disabled`, `click()` attend jusqu'au délai). L'eau froide (98 %) refuse un
-  troisième axolotl ; le bac tropical arrête les néons à 36. Pour tester un plafond technique ou
-  un ajout, passer d'abord en mode décor (`passerEnModeDecor`, `e2e/outils-panneau.ts`) ; pour
-  le plafond de la pièce, mettre aussi le bac tropical en décor. (2026-11-24)
+  mode soins, les compteurs sont bornés par la capacité (ADR 0172). Depuis #811 (ADR 0173), le
+  bassin (3 koïs, 86 %) refuse une quatrième koï, le paludarium (2 sonneurs, 79 %) un troisième
+  sonneur ou un triton, et il est sous le volume minimal d'un axolotl (75 L) : ces « + »,
+  « Ajouter au bac » du wiki ou effectifs saisis plus grands y sont refusés (bouton
+  `aria-disabled`, `click()` attend jusqu'au délai). Les tritons ne sont plus peuplés d'office :
+  un e2e qui en a besoin les met par l'URL (`population=triton:2`, non bornée par la capacité).
+  L'eau froide (98 %) refuse un troisième axolotl ; le bac tropical arrête les néons à 36. Pour
+  tester un plafond technique ou un ajout, passer d'abord en mode décor (`passerEnModeDecor`,
+  `e2e/outils-panneau.ts`) ; pour le plafond de la pièce, mettre aussi le bac tropical en
+  décor. (2026-11-24)
 
 - **E2e : ouvrir « Réglages » par `ouvrirReglages`, jamais par un clic direct** (cycles 266
   et 267, #722) : la fenêtre des réglages est **modale** ; son fond couvre toute la page

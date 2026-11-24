@@ -22,7 +22,7 @@ test.describe('Tritons, parcours QA (#133)', () => {
   test('petite fenêtre : quatre graines, la simulation avance sans erreur', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     for (const seed of ['1', '42', '2024', '4294967295']) {
-      const errors = await open(page, `?environnement=paludarium&seed=${seed}`);
+      const errors = await open(page, `?environnement=paludarium&seed=${seed}&population=triton:2`);
       await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /triton:2/);
       const tick = Number(await hostEl(page).getAttribute('data-aqfish-tick'));
       await expect
@@ -35,7 +35,8 @@ test.describe('Tritons, parcours QA (#133)', () => {
   test('rotation à la souris et zoom à la molette : effectif et rendu stables', async ({
     page,
   }) => {
-    const errors = await open(page, '?environnement=paludarium&seed=42');
+    // Tritons ajoutés par l'URL : plus peuplés d'office depuis #811 (ADR 0173).
+    const errors = await open(page, '?environnement=paludarium&seed=42&population=triton:2');
     const box = await page.locator('canvas').first().boundingBox();
     if (!box) throw new Error('canvas introuvable');
     const cx = box.x + box.width / 2;

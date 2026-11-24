@@ -89,12 +89,15 @@ describe('populations par défaut cohérentes (#271)', () => {
     expect(defaultSpecies('eaufroide')).toEqual(['axolotl']);
   });
 
-  it('paludarium : sonneurs et tritons par défaut ; un axolotl ajouté est déconseillé avec eux', () => {
-    expect(defaultSpecies('paludarium')).toEqual(['grenouille', 'triton']);
+  it('paludarium : sonneurs par défaut ; un axolotl ajouté est déconseillé avec eux et les tritons', () => {
+    // Tritons proposés, plus peuplés d'office (capacité du paludarium, #811, ADR 0173).
+    expect(defaultSpecies('paludarium')).toEqual(['grenouille']);
     const species = environmentById('paludarium').species;
-    expect(mixWarnings(species, { ...defaultCounts('paludarium'), axolotl: 1 })).toEqual([
-      { first: 'axolotl', second: 'grenouille', reason: 'predateur' },
-      { first: 'axolotl', second: 'triton', reason: 'predateur' },
-    ]);
+    expect(mixWarnings(species, { ...defaultCounts('paludarium'), triton: 2, axolotl: 1 })).toEqual(
+      [
+        { first: 'axolotl', second: 'grenouille', reason: 'predateur' },
+        { first: 'axolotl', second: 'triton', reason: 'predateur' },
+      ],
+    );
   });
 });

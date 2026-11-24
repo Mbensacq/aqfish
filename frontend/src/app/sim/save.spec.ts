@@ -458,7 +458,13 @@ describe('serializeWorld / parseWorld : aller-retour', () => {
   it('ancienne sauvegarde du paludarium (#270) : grenouilles et tritons migrés vers les espèces réelles', () => {
     // Avant #270, `grenouille` et `triton` désignaient Anura et Salamandridae ; les noms ne
     // sont jamais écrits (ADR 0064) : la migration est l'identité, monde affiché et `others`.
-    const paludarium = advance(createDefaultWorld(11, 'paludarium'), 90);
+    // Population de départ d'avant #811 (3 sonneurs, 2 tritons) : les tritons n'y sont plus
+    // peuplés d'office (capacité, ADR 0173).
+    const old = [
+      { species: 'grenouille' as const, count: 3 },
+      { species: 'triton' as const, count: 2 },
+    ];
+    const paludarium = advance(createWorld(11, old, [], [], 'paludarium'), 90);
     const counts = populationCounts(paludarium);
     expect(counts.grenouille).toBeGreaterThan(0);
     expect(counts.triton).toBeGreaterThan(0);

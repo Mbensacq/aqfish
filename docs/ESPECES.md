@@ -556,8 +556,10 @@ chaque valeur garde la source ou le statut de son champ, repris dans la raison d
 19. Capacité des bacs par défaut (#807) : au plafond, le bassin (7 koïs de 60 cm, eau froide
     4 L/cm, règle de la RSPCA pour le poisson rouge appliquée à la koï) demande 1 680 L pour
     834 L d'eau, et le paludarium (classe « amphibien » 3 L/cm, approximation) 114 L pour 45,7 L
-    d'eau réelle, berge déduite. Non arbitré : populations par défaut ou classes à sourcer, à
-    décider avant de brancher les compteurs (tranche 2 de #729).
+    d'eau réelle, berge déduite. **Arbitré** (#811, ADR 0173) : populations par défaut ramenées
+    sous la capacité (bassin : 3 koïs, 86 % ; paludarium : 2 sonneurs, 79 %, tritons proposés
+    seulement), faute de source donnant des litres d'eau par cm pour les koïs adultes ou les
+    amphibiens (les fiches de soins secondaires donnent un volume de terrarium entier).
 
 ## Bibliographie
 

@@ -1169,19 +1169,19 @@ describe('AquariumHost', () => {
         fill();
       }
       expect(roomTotal()).toBe(ROOM_ANIMAL_CAP);
-      // Trois places libérées : le bassin, jamais visité, part avec 3 koïs au lieu de 7.
-      host().setPopulation('neon', host().population().neon - 3);
-      expect(roomTotal()).toBe(ROOM_ANIMAL_CAP - 3);
-      expect(createDefaultWorld(4, 'bassin').entities.length).toBeGreaterThan(3);
+      // Deux places libérées : le bassin, jamais visité, part avec 2 koïs au lieu de 3.
+      host().setPopulation('neon', host().population().neon - 2);
+      expect(roomTotal()).toBe(ROOM_ANIMAL_CAP - 2);
+      expect(createDefaultWorld(4, 'bassin').entities.length).toBeGreaterThan(2);
       host().setEnvironment('bassin');
-      expect(host().world).toEqual(capTotalPopulation(createDefaultWorld(4, 'bassin'), 3));
-      expect(host().population().koi).toBe(3);
+      expect(host().world).toEqual(capTotalPopulation(createDefaultWorld(4, 'bassin'), 2));
+      expect(host().population().koi).toBe(2);
       expect(roomTotal()).toBe(ROOM_ANIMAL_CAP);
       // Un bac repris garde ses animaux : ce n'est pas un ajout.
       host().setEnvironment('tropical');
       expect(host().population().neon).toBeGreaterThan(0);
       host().setEnvironment('bassin');
-      expect(host().population().koi).toBe(3);
+      expect(host().population().koi).toBe(2);
     });
 
     it('setEnvironment (#396) : pièce pleine, le bac de départ d’un environnement neuf est vide', async () => {
@@ -3489,7 +3489,8 @@ describe('AquariumHost', () => {
 
     it('importSave : remplace le monde et les réglages, puis enregistre', async () => {
       await create('?seed=4');
-      const world = advance(createDefaultWorld(8, 'bassin'), 300);
+      // Bassin à 7 koïs (population de départ d'avant #811) : au-delà de sa capacité.
+      const world = advance(setPopulation(createDefaultWorld(8, 'bassin'), 'koi', 7), 300);
       expect(
         host().importSave(
           serializeWorld(world, { speed: 0.5, clock: createDayClock(3, 1200, false) }),
@@ -3499,7 +3500,7 @@ describe('AquariumHost', () => {
       expect(host().environment()).toBe('bassin');
       expect(host().speed()).toBe(0.5);
       expect(host().clockFrozen()).toBe(false);
-      // Bassin par défaut au-delà de sa capacité (ADR 0171) : signalé, aucun koï retiré (#809).
+      // Bac au-delà de sa capacité (ADR 0172) : signalé, aucun koï retiré (#809).
       expect(host().saveMessage()?.kind).toBe('info');
       expect(host().saveMessage()?.text).toMatch(
         /^Aquarium importé\. Bac au-delà de sa capacité \(\d+ %\).*Aucun animal n’a été retiré/,

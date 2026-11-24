@@ -86,22 +86,16 @@ describe('grenouille : espèce du paludarium (#131)', () => {
     expect(GRENOUILLE.colors.back).toBe('#7bc950');
   });
 
-  it('déclarée en données pour le paludarium seulement, trois par défaut', () => {
+  it('déclarée en données pour le paludarium seulement, deux par défaut', () => {
     expect(PALUDARIUM.species).toEqual(['axolotl', 'grenouille', 'triton']);
-    expect(PALUDARIUM.population).toContainEqual({ species: 'grenouille', count: 3 });
+    expect(PALUDARIUM.population).toContainEqual({ species: 'grenouille', count: 2 });
     expect(livesIn('paludarium', 'grenouille')).toBe(true);
     expect(TROPICAL_TANK.species).not.toContain('grenouille');
     expect(POND.species).not.toContain('grenouille');
     const world = createDefaultWorld(42, 'paludarium');
-    expect(frogs(world)).toHaveLength(3);
-    // Sans axolotl par défaut depuis l'issue #271 (ADR 0065).
-    expect(world.entities.map((e) => e.species)).toEqual([
-      'grenouille',
-      'grenouille',
-      'grenouille',
-      'triton',
-      'triton',
-    ]);
+    expect(frogs(world)).toHaveLength(2);
+    // Sans axolotl par défaut depuis l'issue #271 (ADR 0065), sans triton depuis #811.
+    expect(world.entities.map((e) => e.species)).toEqual(['grenouille', 'grenouille']);
   });
 
   it('population réglable de 0 à 4, nées sur la berge', () => {
