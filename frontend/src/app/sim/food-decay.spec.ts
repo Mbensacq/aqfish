@@ -15,6 +15,7 @@ import {
 } from './food';
 import { addDecayedFoodInPlace, EATEN_FOOD_AMMONIA, FOOD_DECAY_AMMONIA } from './food-decay';
 import { freshWater, MAX_CONCENTRATIONS, waterLiters, type MutableWaterState } from './water';
+import { NITROGEN_DAY_SCALE } from './water-units';
 import {
   advanceTo,
   advanceToWithFeedings,
@@ -153,15 +154,16 @@ describe('sim/world : nourriture non mangée (#638)', () => {
     expect(ratio).toBeLessThan(2.5);
   });
 
-  it('surcharge pleine : environ 0,5 mg/L dans le bac tropical', () => {
+  it('surcharge pleine : environ 0,06 mg/L dans le bac tropical (granulé recalé, #805)', () => {
     const world = emptyWorldWithoutFilter();
     while (world.food.length < MAX_FOOD) {
       feedInPlace(world, 0, 0);
     }
     const ammonia = advanceTo(world, FOOD_GROUND_SECONDS + 60).water.ammonia;
-    // Anciennes bornes 0,7 et 1,5 unité, converties en mg/L (#793).
-    expect(ammonia).toBeGreaterThan(0.35);
-    expect(ammonia).toBeLessThan(0.75);
+    // Anciennes bornes 0,7 et 1,5 unité, converties en mg/L (#793), puis ramenées au granulé
+    // recalé sur le jour de jeu (#805).
+    expect(ammonia).toBeGreaterThan(0.35 * NITROGEN_DAY_SCALE);
+    expect(ammonia).toBeLessThan(0.75 * NITROGEN_DAY_SCALE);
   });
 
   it('ration mangée en entier : seulement l’ammoniaque des déchets (#798), rien ne pourrit', () => {

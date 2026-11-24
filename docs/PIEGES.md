@@ -1305,11 +1305,20 @@ DEFAULT_DECOR)`), sinon les trajectoires divergent dès la naissance. (2026-10-1
   Comparer au pas fin coûte cher : 72 000 pas pour un jour de jeu, et la CI (couverture v8)
   est environ 18 fois plus lente qu'en local ; au premier essai, deux tests ont dépassé les 5 s
   par défaut de Vitest. Comparer sur un jour au plus, et donner un délai explicite.
-- **Scénarios d'écosystème : jours de 20 minutes, azote en secondes** (cycle 288, #799) : les
-  durées d'entretien et de maturation du filtre sont en jours de jeu (1 200 s), la production
-  et la conversion de l'azote en secondes (calées sur le tableau de bord). Un scénario de
-  plusieurs semaines voit donc les nitrates monter de plusieurs dizaines de mg/L par semaine
-  de jeu (`docs/ECOSYSTEME.md` § 4, relevés S2 et S12).
+- **Scénarios d'écosystème : jours de 20 minutes, azote en secondes** (cycle 288, #799 ;
+  **résolu** cycle 289, #805, ADR 0170) : l'azote était calé en secondes sur le tableau de
+  bord, l'entretien et la maturation du filtre en jours de jeu (1 200 s). Désormais
+  `NITROGEN_DAY_SCALE` (1/8) ralentit tout le cycle de l'azote **et** la dérive du pH. Toute
+  nouvelle durée d'azote, de pH ou de calibrage du tableau de bord se pense en jours de jeu ;
+  un test de calibrage écrit en minutes d'avant #805 se réécrit en durées × 8
+  (`runNitrogen` de `water.spec.ts`, pas × 8 pour garder le nombre de pas), pas en bornes affaiblies.
+- **Recaler l'azote : ne pas oublier le pH** (cycle 289, #805) : avec seulement l'azote divisé
+  par 8, S12 restait rouge par la santé (0,20) et non par l'eau : la dérive du pH, elle aussi
+  calée en secondes, tirait le pH hors de la plage tolérée des espèces entre deux changements
+  d'eau. Relever la santé et le pH en même temps que les composés quand un scénario échoue.
+  Diviser la production **et** les conversions garde les concentrations d'équilibre
+  (ammoniaque, nitrites, densité du bilan) au bit près ; diviser la seule production aurait
+  rendu le cyclage (S4) invisible.
 - **Composés azotés : mg/L en mémoire, unités de jeu au schéma 1** (cycle 284, #793, ADR 0167) :
   `World.water.ammonia`, `nitrite`, `nitrate` sont en mg/L, mais un document au **schéma 1**
   (`serializeWorld`, liens partagés, fichiers `.json` fabriqués dans les e2e) les écrit en

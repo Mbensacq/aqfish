@@ -21,6 +21,8 @@ import {
 import { serializeWorld } from './save';
 import { advance, changeWorldWater, createDefaultWorld, feed } from './world';
 import type { World } from './world-types';
+import { FRESH_PH } from './water-ph';
+import { NITROGEN_DAY_SCALE } from './water-units';
 
 /** Texte complet d'un monde (schéma 1) : comparaison au bit près. */
 const text = (world: World): string => serializeWorld(world);
@@ -130,6 +132,15 @@ const BEFORE_798 = {
   nitrate: 0.000052365614301020484,
 } as const;
 
+/** Composés azotés du même bac relevés après le recalage sur le jour de jeu (#805). */
+const AFTER_805 = {
+  ammonia: 0.001463276741440777,
+  nitrite: 0.0000019010318129728867,
+  nitrate: 3.513761466260068e-8,
+} as const;
+/** pH du même bac relevé sur `main` (v1.30.1) avant #805. */
+const BEFORE_805_PH = 6.999293968750003;
+
 /** Empreinte FNV-1a 32 bits du texte complet d'un monde : « état haché ». */
 function hashWorld(world: World): string {
   let hash = 0x811c9dc5;
@@ -187,14 +198,22 @@ describe('stepRoom sauf le bac affiché (#316, lot 3b)', () => {
     // Depuis #798, un bac à jeun ne produit plus que la part au repos : un tiers de
     // l'ammoniaque d'avant. Les composés azotés relevés sur `main` (v1.29.6) avant #798 sont
     // remis à leur place : tout le reste est identique à l'empreinte dorée, et les nouveaux
-    // sont à un tiers des anciens (aucune nourriture dans ce bac).
+    // sont relevés à part (aucune nourriture dans ce bac). Depuis #805, l'azote et la dérive du
+    // pH sont recalés sur le jour de jeu (`NITROGEN_DAY_SCALE`) : le pH relevé sur `main`
+    // (v1.30.1) est remis lui aussi, et la nouvelle baisse vaut le huitième de l'ancienne.
     const { plantGrowth, ...water } = alone.water;
     expect(plantGrowth).toBeDefined();
     expect(Object.values(plantGrowth!).every((g) => g > 0 && g < 1)).toBe(true);
     for (const compound of ['ammonia', 'nitrite', 'nitrate'] as const) {
-      expect(water[compound] / BEFORE_798[compound]).toBeCloseTo(1 / 3, 6);
+      expect(water[compound]).toBe(AFTER_805[compound]);
     }
-    expect(hashWorld({ ...alone, water: { ...water, ...BEFORE_798 } })).toBe(GOLDEN_HASH);
+    expect(FRESH_PH.tropical - water.ph).toBeCloseTo(
+      (FRESH_PH.tropical - BEFORE_805_PH) * NITROGEN_DAY_SCALE,
+      12,
+    );
+    expect(hashWorld({ ...alone, water: { ...water, ...BEFORE_798, ph: BEFORE_805_PH } })).toBe(
+      GOLDEN_HASH,
+    );
   });
 
   it('un identifiant inconnu avance tous les bacs', () => {

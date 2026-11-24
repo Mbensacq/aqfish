@@ -57,3 +57,14 @@ export const NITRITE_PER_AMMONIA =
 /** mg/L de nitrates formés par mg/L de nitrites convertis (même convention). */
 export const NITRATE_PER_NITRITE =
   MG_PER_LITER_PER_GAME_UNIT.nitrate / MG_PER_LITER_PER_GAME_UNIT.nitrite;
+
+/**
+ * Recalage du cycle de l'azote sur le jour de jeu (issue #805, ADR 0170) : facteur appliqué à
+ * la production d'ammoniaque (au repos, repas, nourriture et corps qui pourrissent), aux
+ * vitesses de conversion du filtre et à la dérive du pH. Tout le cycle se déroule ainsi huit
+ * fois plus lentement qu'avant, aux mêmes concentrations d'équilibre : l'entretien et la
+ * maturation du filtre, comptés en jours de 20 minutes, retrouvent des ordres de grandeur
+ * réels (le bac tropical par défaut prend environ 1 mg/L de nitrates par jour de jeu au lieu
+ * de 8). **Approximation de jeu** ; puissance de deux, donc multiplication exacte.
+ */
+export const NITROGEN_DAY_SCALE = 1 / 8;

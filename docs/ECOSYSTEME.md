@@ -174,6 +174,7 @@ Verdict par couple d'espèces, avec sa raison : **compatible**, **avec précauti
   simulée), de façon déterministe, sans le mouvement des animaux ni le rendu, pour que les
   scénarios de la section 4 tournent en quelques secondes dans les tests.
   **Fait** (#799, ADR 0169) : `sim/ecosystem-step.ts`, pas de 5 s, écart au pas fin sous 3 %.
+  Azote recalé sur le jour de jeu (#805, ADR 0170) : S2 et S12 stables.
 
 ## 4. Scénarios de référence
 
@@ -185,27 +186,28 @@ de la section 5 ajoute les scénarios qu'il rend possibles ; aucun n'est désact
 Harnais : `sim/testing/ecosystem-scenario.ts` (bac, volume imposé, entretien, durée → pics,
 pire qualité de l'eau, santé, algues) ; tests : `sim/ecosystem-scenarios.spec.ts`.
 
-**État au 2026-11-23** (#799) : S1 et S4 sont verts. **S2 et S12 échouent** avec l'entretien
-normal (un repas par minute simulée, 30 % d'eau tous les 7 jours de jeu) : les nitrates
-montent trop vite **par jour de jeu** (bac tropical par défaut : environ 8 mg/L par jour, soit
-60 par semaine, quand un bac réel en prend quelques-uns) et dépassent 40 mg/L entre deux
-changements d'eau. Les durées de l'azote (production, conversion) sont en secondes, calées
-sur le tableau de bord, alors que l'entretien et le filtre se comptent en jours de 20 minutes.
-Relevés sur 90 jours de jeu :
+**État au 2026-11-24** (#805, ADR 0170) : S1, S2, S4 et S12 sont des tests verts. Le cycle de
+l'azote (production, nourriture, conversions du filtre, dérive du pH) est recalé sur le jour
+de jeu par un facteur unique, `NITROGEN_DAY_SCALE` = 1/8 : il se déroule huit fois plus
+lentement, aux mêmes concentrations d'équilibre. Le bac tropical par défaut prend environ
+1 mg/L de nitrates par jour de jeu (8 avant). Relevés sur 90 jours de jeu, entretien normal
+(un repas par minute simulée, 30 % d'eau tous les 7 jours de jeu ; S2 : 25 %), S1 sur 7 jours
+et S4 sur 63 :
 
-| Scénario          | Pire qualité | Premier jour « mauvaise » | Pic NH₃/NH₄⁺ | Pic NO₂⁻ | Pic NO₃⁻ | Santé min. | Algues max. |
-| ----------------- | ------------ | ------------------------- | ------------ | -------- | -------- | ---------- | ----------- |
-| S2 (25 %/semaine) | mauvaise     | 55,5                      | 0,09         | 0,03     | 43,9     | 0,20       | 0           |
-| S12 tropical      | mauvaise     | 4,9                       | 0,53         | 0,16     | 100      | 0,20       | 1           |
-| S12 bassin        | mauvaise     | 13,3                      | 0,19         | 0,07     | 82,9     | 0,20       | 0           |
-| S12 paludarium    | mauvaise     | 62,7                      | 0,09         | 0,03     | 41,6     | 0,20       | 1           |
-| S12 récif         | mauvaise     | 18,1                      | 0,19         | 0,06     | 74,6     | 0,20       | 0           |
-| S12 eau froide    | à surveiller | —                         | 0,07         | 0,03     | 30,8     | 1          | 1           |
+| Scénario          | Pire qualité | Premier jour « mauvaise » | Pic NH₃/NH₄⁺ | Pic NO₂⁻   | Pic NO₃⁻ | Santé min. | Algues max. |
+| ----------------- | ------------ | ------------------------- | ------------ | ---------- | -------- | ---------- | ----------- |
+| S1 bocal 10 L     | mauvaise     | 2,0                       | 8,6          | 0          | 0        | 0,20       | 0           |
+| S4 bac neuf       | mauvaise     | 6,6                       | 2,6 (j 7)    | 0,6 (j 14) | 21,8     | 0,28       | 0,03        |
+| S2 (25 %/semaine) | bonne        | —                         | 0,08         | 0,03       | 5,1      | 1          | 0           |
+| S12 tropical      | à surveiller | —                         | 0,44         | 0,16       | 22,5     | 1          | 0,13        |
+| S12 bassin        | bonne        | —                         | 0,18         | 0,07       | 9,6      | 1          | 0           |
+| S12 paludarium    | bonne        | —                         | 0,09         | 0,03       | 4,8      | 1          | 0           |
+| S12 récif         | bonne        | —                         | 0,17         | 0,06       | 8,6      | 1          | 0           |
+| S12 eau froide    | bonne        | —                         | 0,07         | 0,03       | 3,6      | 1          | 0           |
 
-Les rendre verts demande de recaler la production d'azote sur le jour de jeu (environ ÷ 8 pour
-le bac tropical), en gardant S1 (bocal toxique en quelques jours) et S4 (pics du cyclage au-dessus
-des seuils « à surveiller ») : changement de comportement de tout le jeu, à faire dans sa propre
-issue, avec ses empreintes.
+Avant le recalage (2026-11-23, #799), S2 et S12 échouaient : nitrates de 31 à 100 mg/L, eau
+« mauvaise » dès le 5e jour pour le bac tropical, santé minimale 0,20 (pH tiré trop bas par la
+dérive, elle aussi calée en secondes).
 
 | #   | Bac                                                                                                                   | Issue attendue                                                                   | Pourquoi                                               |
 | --- | --------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------ |

@@ -21,6 +21,7 @@ import {
   NITRATE_PER_NITRITE,
   NITRITE_PER_AMMONIA,
   NITROGEN_COMPOUNDS,
+  NITROGEN_DAY_SCALE,
 } from './water-units';
 import { createDefaultWorld, PLANT_CUT_AMMONIA } from './world';
 
@@ -40,7 +41,10 @@ const LEGACY = {
   gaugeMax: { ammonia: 7.5, nitrite: 7.5, nitrate: 60 },
 } as const;
 
-/** Ancien pas de l'eau (unités de jeu), réduit aux composés azotés : la référence. */
+/**
+ * Ancien pas de l'eau (unités de jeu), réduit aux composés azotés : la référence, avec la
+ * production recalée sur le jour de jeu (`NITROGEN_DAY_SCALE`, #805).
+ */
 function legacyStep(
   water: { ammonia: number; nitrite: number; nitrate: number },
   dt: number,
@@ -50,7 +54,7 @@ function legacyStep(
   const clamp = (v: number) => Math.min(Math.max(v, 0), LEGACY_MAX_CONCENTRATION);
   const toNitrite = water.ammonia * (1 - Math.exp(-AMMONIA_CONVERSION * dt));
   const toNitrate = water.nitrite * (1 - Math.exp(-NITRITE_CONVERSION * dt));
-  const produced = ((LEGACY.restingAmmoniaPerLoadLiter * load) / liters) * dt;
+  const produced = ((LEGACY.restingAmmoniaPerLoadLiter * NITROGEN_DAY_SCALE * load) / liters) * dt;
   water.ammonia = clamp(water.ammonia - toNitrite + produced);
   water.nitrite = clamp(water.nitrite + toNitrite - toNitrate);
   water.nitrate = clamp(water.nitrate + toNitrate);
@@ -84,11 +88,12 @@ describe('unités des composés azotés (mg/L, #793)', () => {
     expect(COMPOUND_THRESHOLDS.nitrate).toEqual({ watch: 20, bad: 40 });
   });
 
-  it('les apports d’ammoniaque sont les anciens apports convertis', () => {
+  it('les apports d’ammoniaque sont les anciens apports convertis, recalés sur le jour de jeu (#805)', () => {
     const k = MG_PER_LITER_PER_GAME_UNIT.ammonia;
-    expect(AMMONIA_PER_LOAD_LITER).toBe(LEGACY.ammoniaPerLoadLiter * k);
-    expect(RESTING_AMMONIA_PER_LOAD_LITER).toBe(LEGACY.restingAmmoniaPerLoadLiter * k);
-    expect(FOOD_DECAY_AMMONIA).toBe(LEGACY.foodDecayAmmonia * k);
+    const day = NITROGEN_DAY_SCALE;
+    expect(AMMONIA_PER_LOAD_LITER).toBe(LEGACY.ammoniaPerLoadLiter * k * day);
+    expect(RESTING_AMMONIA_PER_LOAD_LITER).toBe(LEGACY.restingAmmoniaPerLoadLiter * k * day);
+    expect(FOOD_DECAY_AMMONIA).toBe(LEGACY.foodDecayAmmonia * k * day);
     expect(PLANT_CUT_AMMONIA).toBe(LEGACY.plantCutAmmonia * k);
     expect(AMMONIA_BINDER_CAPACITY).toBe(LEGACY.binderCapacity * k);
   });
@@ -98,16 +103,18 @@ describe('unités des composés azotés (mg/L, #793)', () => {
     expect(NITRATE_PER_NITRITE).toBe(8);
   });
 
-  it('un bac tropical peuplé évolue sur 1 h simulée comme l’ancien pas (part au repos, #798), au facteur près, au bit près', () => {
+  it('un bac tropical peuplé évolue sur 8 h simulées comme l’ancien pas (part au repos, #798, recalé #805), au facteur près, au bit près', () => {
     const world = createDefaultWorld(7, 'tropical');
     // Charge triple : au repos, la production d'un bac nourri à sa faim (#798).
     const load = 3 * waterLoad(world.entities);
     const liters = waterLiters(environmentWater('tropical'));
     const water: MutableWaterState = { ...freshWater('tropical'), ammonia: 1, nitrite: 0.5 };
     const legacy = { ammonia: 2, nitrite: 4, nitrate: 0 };
+    // Pas de 8 × SIM_DT : autant de pas qu'avant #805 pour une durée huit fois plus longue.
+    const dt = SIM_DT / NITROGEN_DAY_SCALE;
     for (let tick = 0; tick < 3600 / SIM_DT; tick++) {
-      stepWaterInPlace(water, SIM_DT, load, liters, 24);
-      legacyStep(legacy, SIM_DT, load, liters);
+      stepWaterInPlace(water, dt, load, liters, 24);
+      legacyStep(legacy, dt, load, liters);
     }
     for (const compound of NITROGEN_COMPOUNDS) {
       expect(water[compound]).toBe(legacy[compound] * MG_PER_LITER_PER_GAME_UNIT[compound]);

@@ -22,8 +22,9 @@ import { phBands, phZone, sameBands, type PhBands, type PhZone } from './water-p
  * (comparaison `>=`) ; l'indicateur global est le pire des quatre. Les seuils sont des
  * mg/L (`COMPOUND_THRESHOLDS`), calés sur `sim/water.ts` : avec la population par défaut du bac
  * tropical et un filtre neuf, l'ammoniaque (~0,4) et les nitrites (~0,16) restent sous le
- * seuil « à surveiller » ; les nitrates (~25 mg/L par heure simulée au départ) l'atteignent
- * en moins d'une heure, puis « mauvaise » en moins de deux sans changement d'eau.
+ * seuil « à surveiller » ; les nitrates (~25 mg/L en huit heures simulées au départ, depuis
+ * le recalage sur le jour de jeu, #805) l'atteignent en moins de huit heures, puis « mauvaise »
+ * en moins de seize sans changement d'eau.
  */
 
 /** Niveau de l'indicateur global, du meilleur au pire. */
