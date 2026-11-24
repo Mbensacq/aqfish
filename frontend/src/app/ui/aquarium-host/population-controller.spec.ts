@@ -1,6 +1,7 @@
 import { careModeOf } from '../../sim/care-mode';
 import { populationCounts } from '../../sim/population';
 import { syncRoom, type RoomState } from '../../sim/room-state';
+import { realWaterLiters } from '../../sim/tank-water-volume';
 import { createWorld } from '../../sim/world';
 import type { MutableWorld, World } from '../../sim/world-types';
 import { FOOD_ATTRIBUTE } from './aquarium-attributes';
@@ -69,6 +70,34 @@ describe('PopulationController (#696)', () => {
     const count = populationCounts(world!).neon;
     expect(count).toBeGreaterThan(2);
     expect(count).toBeLessThan(10_000);
+  });
+
+  it('mode soins : un ajout est ramené sous la capacité du bac, sans retirer d’animal (#809)', () => {
+    // Petit bac (60 × 50 × 30 cm) : la capacité arrête les loches avant leur plafond technique.
+    const small = {
+      environment: 'tropical' as const,
+      dimensions: { width: 0.6, height: 0.5, depth: 0.3 },
+    };
+    world = createWorld(5, [{ species: 'kuhli', count: 2 }], [], [], small) as MutableWorld;
+    animals.setPopulation('kuhli', 12);
+    const kuhli = populationCounts(world).kuhli;
+    // Loche kuhli : 10 cm × 1,5 L/cm (RSPCA) = 15 L chacune, dans le volume d'eau réel.
+    expect(kuhli).toBe(Math.floor(realWaterLiters(world) / 15));
+    expect(kuhli).toBeLessThan(12);
+    animals.setPopulation('neon', 10);
+    expect(populationCounts(world).neon).toBeLessThan(10);
+    expect(populationCounts(world).kuhli).toBe(kuhli);
+  });
+
+  it('mode décor : aucune contrainte de capacité (#809)', () => {
+    const small = {
+      environment: 'tropical' as const,
+      dimensions: { width: 0.6, height: 0.5, depth: 0.3 },
+    };
+    world = createWorld(5, [], [], [], small) as MutableWorld;
+    animals.setCareMode('decor');
+    animals.setPopulation('kuhli', 12);
+    expect(populationCounts(world).kuhli).toBe(12);
   });
 
   it('nourrit au point visé : nourriture exposée, parcours relevé, nouvelle image', () => {

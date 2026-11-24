@@ -78,6 +78,8 @@ test.describe('Plafonds de la pièce (#392)', () => {
     const environment = page.getByRole('combobox', { name: 'Environnement', exact: true });
 
     await test.step('trois bacs à 60, le bassin à 7 : 187 animaux, sous le plafond', async () => {
+      // Mode décor : la capacité du bac (#809) ne borne pas, seul le plafond technique.
+      await decorMode(page);
       await fillTank(page);
       await expect.poll(() => total(page)).toBe(60);
       await expect(notice(page)).toHaveCount(0);

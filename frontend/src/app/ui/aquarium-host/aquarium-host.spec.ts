@@ -59,7 +59,10 @@ import {
   ROUGE,
 } from '../../sim/species';
 import { expiryAge, FOOD_PER_DROP } from '../../sim/food';
-import { capTotalPopulation, setPopulation } from '../../sim/population';
+import { capTotalPopulation, setPopulation, type PopulationCounts } from '../../sim/population';
+import { environmentById } from '../../sim/environment';
+import { populationOf } from '../../sim/tank-capacity';
+import { capacityLimits, tankCapacity } from '../../sim/tank-capacity-limits';
 import { ROOM_ANIMAL_CAP } from '../../sim/room-limits';
 import {
   advance,
@@ -1157,6 +1160,8 @@ describe('AquariumHost', () => {
         host().setPopulation('neon', 99);
         host().setPopulation('guppy', 99);
       };
+      // Mode décor partout : la capacité du bac (#809) ne borne pas, seul le plafond de la pièce.
+      host().setCareMode('decor');
       fill();
       for (const id of ['recif', 'paludarium', 'eaufroide']) {
         host().setEnvironment(id);
@@ -1181,6 +1186,7 @@ describe('AquariumHost', () => {
 
     it('setEnvironment (#396) : pièce pleine, le bac de départ d’un environnement neuf est vide', async () => {
       await create('?seed=4&vitesse=0');
+      host().setCareMode('decor');
       host().setPopulation('neon', 99);
       host().setPopulation('guppy', 99);
       for (const id of ['recif', 'paludarium', 'eaufroide']) {
@@ -2837,7 +2843,8 @@ describe('AquariumHost', () => {
         neritine: 0,
         rouge: 0,
       });
-      expect(host().populationMax()).toEqual({
+      // Plafonds techniques, ramenés sous la capacité du bac pour les espèces du milieu (#809).
+      const technical: PopulationCounts = {
         neon: NEON.maxPopulation,
         guppy: GUPPY.maxPopulation,
         corydora: CORYDORA.maxPopulation,
@@ -2867,7 +2874,15 @@ describe('AquariumHost', () => {
         cerise: CERISE.maxPopulation,
         neritine: NERITINE.maxPopulation,
         rouge: ROUGE.maxPopulation,
-      });
+      };
+      const world = host().world!;
+      expect(host().populationMax()).toEqual(
+        capacityLimits(
+          { liters: tankCapacity(world).liters, population: populationOf(world) },
+          environmentById('tropical').species,
+          technical,
+        ).limits,
+      );
     });
 
     it('setPopulation : ajoute et retire sans remettre la simulation à zéro', async () => {
@@ -3484,7 +3499,12 @@ describe('AquariumHost', () => {
       expect(host().environment()).toBe('bassin');
       expect(host().speed()).toBe(0.5);
       expect(host().clockFrozen()).toBe(false);
-      expect(host().saveMessage()).toEqual({ kind: 'info', text: 'Aquarium importé.' });
+      // Bassin par défaut au-delà de sa capacité (ADR 0171) : signalé, aucun koï retiré (#809).
+      expect(host().saveMessage()?.kind).toBe('info');
+      expect(host().saveMessage()?.text).toMatch(
+        /^Aquarium importé\. Bac au-delà de sa capacité \(\d+ %\).*Aucun animal n’a été retiré/,
+      );
+      expect(host().world!.entities).toHaveLength(world.entities.length);
       expect(renderers).toHaveLength(2);
       expect(renderers[0].disposed).toBe(true);
       expect(element().getAttribute(TICK_ATTRIBUTE)).toBe('300');

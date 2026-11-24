@@ -176,16 +176,17 @@ test.describe('Panneau de contrôle', () => {
       'data-aqfish-population',
       'neon:13,guppy:2,corydora:5,rasbora:0,tetra:0,kuhli:0,gourami:0,platy:0,danio:0,ancistrus:0,otocinclus:0,braise:0,molly:0,miel:0,xipho:0,cerise:0,neritine:0',
     );
-    // Hors bornes : ramené au maximum de l'espèce, affiché dans le champ.
+    // Hors bornes : ramené au maximum permis, affiché dans le champ ; en mode soins, la
+    // capacité du bac (#809) arrête les néons à 36 (283,8 L d'eau réelle), avant leur plafond (40).
     await count(page, 'néons').fill('500');
     await count(page, 'néons').press('Enter');
-    await expect(count(page, 'néons')).toHaveValue('40');
+    await expect(count(page, 'néons')).toHaveValue('36');
     await expect(page.getByRole('button', { name: 'Ajouter un néon' })).toHaveAttribute(
       'aria-disabled',
       'true',
     );
     expect(await population(page)).toBe(
-      'neon:40,guppy:2,corydora:5,rasbora:0,tetra:0,kuhli:0,gourami:0,platy:0,danio:0,ancistrus:0,otocinclus:0,braise:0,molly:0,miel:0,xipho:0,cerise:0,neritine:0',
+      'neon:36,guppy:2,corydora:5,rasbora:0,tetra:0,kuhli:0,gourami:0,platy:0,danio:0,ancistrus:0,otocinclus:0,braise:0,molly:0,miel:0,xipho:0,cerise:0,neritine:0',
     );
     // Le temps n'est pas remis à zéro, et la simulation continue.
     const after = await tick(page);

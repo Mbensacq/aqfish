@@ -77,8 +77,9 @@ test.describe('Koïs (#88)', () => {
     await expect(rows).toHaveCount(2);
     await expect(rows.first()).toHaveAttribute('data-species', 'koi');
     await expect(rows.nth(1)).toHaveAttribute('data-species', 'rouge');
-    await page.getByRole('button', { name: 'Ajouter un koï' }).click();
-    await expect(host(page)).toHaveAttribute('data-aqfish-population', 'koi:8,rouge:0');
+    // Bassin par défaut au-delà de sa capacité (ADR 0171, #809) : l'ajout est refusé, on retire.
+    await page.getByRole('button', { name: 'Retirer un koï' }).click();
+    await expect(host(page)).toHaveAttribute('data-aqfish-population', 'koi:6,rouge:0');
     await ouvrirReglages(page, 'Bac et milieu');
     await page.getByRole('combobox', { name: 'Environnement' }).selectOption('tropical');
     await expect(host(page)).toHaveAttribute('data-aqfish-environment', 'tropical');

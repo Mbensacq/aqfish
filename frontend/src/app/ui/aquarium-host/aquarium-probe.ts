@@ -9,6 +9,7 @@ import {
   ALGAE_ATTRIBUTE,
   CAMERA_ATTRIBUTE,
   CAMERA_TARGET_ATTRIBUTE,
+  CAPACITY_ATTRIBUTE,
   CARE_MODE_ATTRIBUTE,
   CARE_SESSION_ATTRIBUTE,
   CATAPPA_ATTRIBUTE,
@@ -234,6 +235,14 @@ export class AquariumProbe {
   /** Mode du bac (soins ou décor). */
   publishCareMode(mode: string): void {
     this.set(CARE_MODE_ATTRIBUTE, mode);
+  }
+
+  /** Occupation du bac (#809), fraction de sa capacité : pourcentage entier ou `inf`. */
+  publishCapacity(occupation: number): void {
+    this.set(
+      CAPACITY_ATTRIBUTE,
+      Number.isFinite(occupation) ? String(Math.round(occupation * 100)) : 'inf',
+    );
   }
 
   /** Force du courant (#460). */

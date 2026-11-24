@@ -50,17 +50,19 @@ test.describe('Compatibilité des espèces (#209)', () => {
       'Mélange déconseillé : axolotls et sonneurs orientaux (prédateur)',
     ]);
 
+    // Un seul axolotl : le libellé reste. (Le paludarium par défaut est au-delà de sa capacité,
+    // ADR 0171 : en mode soins, un axolotl retiré ne revient plus, #809 ; on descend donc.)
+    await slider(page, 'd’axolotls').fill('1');
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /axolotl:1/);
+    await expect(warnings(page)).toHaveText([
+      'Mélange déconseillé : axolotls et sonneurs orientaux (prédateur)',
+    ]);
+
     // Sans axolotls : plus aucun mélange déconseillé.
     await slider(page, 'd’axolotls').fill('0');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /axolotl:0/);
     await expect(warnings(page)).toHaveCount(0);
     await expect(alert).toHaveCount(0);
-
-    // Un axolotl de retour : le libellé revient.
-    await slider(page, 'd’axolotls').fill('1');
-    await expect(warnings(page)).toHaveText([
-      'Mélange déconseillé : axolotls et sonneurs orientaux (prédateur)',
-    ]);
     expect(errors).toEqual([]);
   });
   test('espèces d’eau douce du lot 1 : cohabitation avec néon, guppy et corydoras sans mélange déconseillé', async ({

@@ -101,7 +101,8 @@ test.describe('Sauvegarde (#70)', () => {
     await environment.selectOption('bassin');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'bassin');
     await ouvrirReglages(page, 'Population');
-    await page.getByRole('button', { name: 'Ajouter un koï' }).click();
+    // Bassin par défaut au-delà de sa capacité (ADR 0171, #809) : on en retire un, l'ajout est refusé.
+    await page.getByRole('button', { name: 'Retirer un koï' }).click();
     const pond = await population();
     expect(pond).toMatch(/^koi:\d+,rouge:0$/);
 
@@ -238,7 +239,10 @@ test.describe('Sauvegarde (#70)', () => {
         serializeWorld(pond, { speed: 1, clock: createDayClock(18, 1200, true) }),
       ),
     );
-    await expect(message(page)).toHaveText('Aquarium importé.');
+    // Bassin à 4 koïs : au-delà de sa capacité (#809), signalé à l'import, sans koï retiré.
+    await expect(message(page)).toHaveText(
+      /Aquarium importé\. Bac au-delà de sa capacité \(115 %\)/,
+    );
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'bassin');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', 'koi:4,rouge:0');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-hour', '18.00');

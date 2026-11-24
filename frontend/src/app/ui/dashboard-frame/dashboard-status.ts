@@ -388,17 +388,23 @@ const ICONS: Readonly<Record<GaugeLevel, readonly (readonly [number, number])[]>
               <p class="status__review-empty" data-journal-empty>{{ journalEmpty }}</p>
             }
           </div>
-        } @else if (points.length > 0) {
-          <ol class="status__review-list">
-            @for (point of points; track point.id) {
-              <li [attr.data-review-point]="point.id" [attr.data-severity]="point.severity">
-                <b>{{ severityLabels[point.severity] }} : {{ point.title }}.</b>
-                {{ point.measure }}. <b>À faire :</b> {{ point.action }}.
-              </li>
-            }
-          </ol>
         } @else {
-          <p class="status__review-empty" data-review-empty>Rien à améliorer pour l’instant.</p>
+          <!-- Occupation du bac (#809, ADR 0172), en tête des points. -->
+          @if (capacityLine(); as line) {
+            <p class="status__review-empty" data-review-capacity>{{ line }}</p>
+          }
+          @if (points.length > 0) {
+            <ol class="status__review-list">
+              @for (point of points; track point.id) {
+                <li [attr.data-review-point]="point.id" [attr.data-severity]="point.severity">
+                  <b>{{ severityLabels[point.severity] }} : {{ point.title }}.</b>
+                  {{ point.measure }}. <b>À faire :</b> {{ point.action }}.
+                </li>
+              }
+            </ol>
+          } @else {
+            <p class="status__review-empty" data-review-empty>Rien à améliorer pour l’instant.</p>
+          }
         }
       </div>
     }
@@ -510,6 +516,9 @@ export class DashboardStatus {
 
   /** Bilan du bac (fourni par l'hôte, #514), lu à la demande ; `null` : pas de bilan. */
   readonly reviewOf = input<(() => readonly ReviewPoint[]) | null>(null);
+
+  /** Occupation du bac (#809, `capacityLine`), en tête du bilan ; `null` : rien à afficher. */
+  readonly capacityLine = input<string | null>(null);
 
   /** Bilan déplié (#514) : il n'apparaît jamais sans demande. */
   readonly reviewOpen = signal(false);

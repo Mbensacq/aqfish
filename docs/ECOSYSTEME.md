@@ -130,8 +130,11 @@ Règles :
    ne supprime jamais d'animal en silence.
 
 **Calcul fait** (#807, ADR 0171) : `sim/tank-capacity.ts` (`canAdd`, `capacityStatus`) et
-`sim/tank-water-volume.ts` (volume d'eau réel, décor et berge déduits) ; S3 vert. Pas encore
-branché sur les compteurs (tranche 2).
+`sim/tank-water-volume.ts` (volume d'eau réel, décor et berge déduits) ; S3 vert.
+**Branché** (#809, ADR 0172) : `sim/tank-capacity-limits.ts` borne les compteurs en mode soins
+(raison du refus sous la tuile), affiche l'occupation et le volume réel (section « Population »,
+bilan du bac) et signale un bac trop plein (section « Population », message d'import). Reste à
+arbitrer : bassin et paludarium par défaut au-delà de leur capacité (`docs/ESPECES.md` point 19).
 
 ### 3.2 Compatibilités
 
