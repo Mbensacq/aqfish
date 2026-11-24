@@ -10613,10 +10613,10 @@
           "note": "Verdict OK, 0 bug, 153/178 captures identiques c291 (25 attendues), publiées"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-24T08:32:21.842Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-24T09:02:54.389Z",
+          "note": "PR #812 fusionnée → v1.30.5 (release CI OK, CI main verte), #811 fermée, dette #813 (cohabitation sonneurs/tritons) ; suppression de branche refusée"
         }
       },
       "metriques": {}
