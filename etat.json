@@ -10708,10 +10708,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-24T12:26:47.534Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-24T12:27:29.384Z",
+          "note": "Issue #818 : #730 tranche 2, espèces encore possibles (M)"
         }
       },
       "metriques": {}
