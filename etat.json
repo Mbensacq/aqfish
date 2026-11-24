@@ -10519,7 +10519,7 @@
       "debut": "2026-11-24T01:57:58.711Z",
       "type": "fonctionnalite",
       "issue": 807,
-      "pr": null,
+      "pr": 808,
       "version": null,
       "phases": {
         "planif": {
