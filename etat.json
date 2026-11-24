@@ -10577,10 +10577,10 @@
           "note": "Verdict RÉSERVES (arbitrage populations par défaut non fait, S3 non jouable en UI), 0 bug, 175/178 captures identiques c290, publiées"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-24T05:59:04.965Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-24T06:31:43.595Z",
+          "note": "PR #810 fusionnée → v1.30.4 (release CI OK, CI main verte), #809 fermée, dette #811 (populations par défaut) ; suppression de branche refusée"
         }
       },
       "metriques": {}
