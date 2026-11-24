@@ -10520,7 +10520,7 @@
       "type": "fonctionnalite",
       "issue": 807,
       "pr": 808,
-      "version": null,
+      "version": "v1.30.3",
       "phases": {
         "planif": {
           "statut": "termine",
