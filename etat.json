@@ -10718,6 +10718,12 @@
           "debut": "2026-11-24T12:28:06.172Z",
           "fin": "2026-11-24T13:31:13.203Z",
           "note": "PR #819 : espèces encore possibles (sim/possible-species.ts, liste en cartel, raisons sourcées à l'ajout), CI verte ; 6345 tests ; mixWarnings inchangé (addendum ADR 0174) ; 2e essai : liste après les tuiles (ordre de Tab)"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-24T13:31:53.038Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
