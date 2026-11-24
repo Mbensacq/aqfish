@@ -10635,6 +10635,12 @@
           "debut": "2026-11-24T09:03:33.287Z",
           "fin": "2026-11-24T09:04:35.709Z",
           "note": "Issue #814 : Rétro sprint 42, dev sur #803 (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-24T09:05:18.643Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
