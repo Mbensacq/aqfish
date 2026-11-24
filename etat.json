@@ -10643,10 +10643,10 @@
           "note": "PR #815 : #803 (eatInPlace retirée, constantes d'ammoniaque dérivées au bit près) + ROADMAP v1.30/v1.31, CI verte ; mesures relevées (6278 tests, sim 99,59 % lignes, complexité max 24, fonction max 108 l.) ; #729 laissée ouverte (S3 non jouable en interface) ; e2e locaux interrompus (CI e2e verte) ; pied d'attribution réinjecté dans la PR (PIEGES)"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-24T09:43:15.975Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-24T10:05:57.887Z",
+          "note": "Verdict OK, 0 bug, 178/178 captures identiques c292, publiées"
         }
       },
       "metriques": {
