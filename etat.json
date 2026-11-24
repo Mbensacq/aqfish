@@ -10748,6 +10748,12 @@
           "debut": "2026-11-24T15:40:28.988Z",
           "fin": "2026-11-24T15:41:20.547Z",
           "note": "Issue #821 : #731 tranche 1, plantes actives (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-24T15:41:58.082Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
