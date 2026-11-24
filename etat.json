@@ -10676,6 +10676,12 @@
           "debut": "2026-11-24T10:35:08.720Z",
           "fin": "2026-11-24T10:35:59.441Z",
           "note": "Issue #816 : #730 tranche 1, matrice des verdicts (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-24T10:36:36.830Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
