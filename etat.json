@@ -10744,10 +10744,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-24T15:40:28.988Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-24T15:41:20.547Z",
+          "note": "Issue #821 : #731 tranche 1, plantes actives (M)"
         }
       },
       "metriques": {}
