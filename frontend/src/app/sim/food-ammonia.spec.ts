@@ -1,11 +1,12 @@
 import { SIM_DT } from './constants';
 import { DEFAULT_DECOR } from './decor';
 import { environmentWater } from './environment';
-import { eatInPlace, eatMassInPlace, type MutableFeeder } from './feeding';
+import { eatMassInPlace, type MutableFeeder } from './feeding';
 import { FOOD_GROUND_SECONDS, MAX_FOOD, pelletMass, type FoodPellet } from './food';
 import {
   addDecayedFoodInPlace,
   addEatenFoodInPlace,
+  DECAYED_FOOD_AMMONIA_SHARE,
   EATEN_FOOD_AMMONIA,
   EATEN_FOOD_AMMONIA_SHARE,
   FOOD_DECAY_AMMONIA,
@@ -21,6 +22,7 @@ import {
   waterLoad,
   type MutableWaterState,
 } from './water';
+import { NITROGEN_DAY_SCALE } from './water-units';
 import { advance, advanceTo, createWorld, feedInPlace } from './world';
 import type { MutableWorld, World } from './world-types';
 
@@ -51,6 +53,12 @@ describe('ammoniaque de la nourriture mangée (#798)', () => {
     expect(FOOD_DECAY_AMMONIA).toBeCloseTo(2 * EATEN_FOOD_AMMONIA, 12);
   });
 
+  it('constantes dérivées des parts : mêmes valeurs au bit près que les littéraux (#803)', () => {
+    expect(DECAYED_FOOD_AMMONIA_SHARE).toBe(2 * EATEN_FOOD_AMMONIA_SHARE);
+    expect(EATEN_FOOD_AMMONIA).toBe(1.25 * NITROGEN_DAY_SCALE);
+    expect(FOOD_DECAY_AMMONIA).toBe(2.5 * NITROGEN_DAY_SCALE);
+  });
+
   it('doubler la nourriture mangée double l’ammoniaque (tolérance relative 1e-12)', () => {
     for (const mass of [0.1, 1, 3.7, 40]) {
       const once = freshWater('tropical') as MutableWaterState;
@@ -73,7 +81,7 @@ describe('ammoniaque de la nourriture mangée (#798)', () => {
     expect(() => addEatenFoodInPlace(water, Number.NaN, 288)).toThrow(RangeError);
   });
 
-  it('eatMassInPlace : mêmes repas que eatInPlace, renvoie la masse mangée', () => {
+  it('eatMassInPlace : deux affamés mangent chacun le sien, renvoie la masse mangée', () => {
     const fishes = (): MutableFeeder[] => [
       { x: 0, y: 0.5, z: 0, hunger: 1 },
       { x: 0.3, y: 0.5, z: 0, hunger: 1 },
@@ -83,17 +91,14 @@ describe('ammoniaque de la nourriture mangée (#798)', () => {
       [0, 0.3, 0.6].map((x, id) => ({ id, x, y: 0.5, z: 0, vy: 0, age: 0 }) as FoodPellet);
     const band = (): { minY: number; maxY: number } => ({ minY: 0, maxY: 1 });
     const box = () => ({ minX: -1, maxX: 1, minY: 0, maxY: 1, minZ: -1, maxZ: 1 });
-    const a = pellets();
     const b = pellets();
-    const fa = fishes();
     const fb = fishes();
-    expect(eatInPlace(fa, a, band, box)).toBe(2);
     expect(eatMassInPlace(fb, b, band, box)).toBeCloseTo(
       pelletMass({ id: 0 }) + pelletMass({ id: 1 }),
       12,
     );
-    expect(b).toEqual(a);
-    expect(fb).toEqual(fa);
+    expect(b.map((p) => p.id)).toEqual([2]);
+    expect(fb.map((f) => f.hunger < 1)).toEqual([true, true, false]);
     expect(eatMassInPlace(fishes(), [], band, box)).toBe(0);
   });
 

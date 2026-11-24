@@ -246,38 +246,15 @@ export interface MutableFeeder extends Feeder {
 /**
  * Repas d'un pas, **en place** : dans l'ordre de `fishes` (identifiants), chaque poisson
  * affamé mange le granulé le plus proche à moins de `EAT_DISTANCE` (dans sa tranche d'eau),
- * qui disparaît : deux poissons ne mangent jamais le même granulé. Renvoie le nombre de
- * granulés mangés ; l'ordre des granulés restants est conservé.
- */
-export function eatInPlace<F extends MutableFeeder>(
-  fishes: readonly F[],
-  food: FoodPellet[],
-  bandOf: (fish: F) => FeedingBand,
-  hardOf: (fish: F) => Box3,
-): number {
-  return eatWeighedInPlace(fishes, food, bandOf, hardOf, countPellet);
-}
-
-/**
- * Comme `eatInPlace`, mais renvoie la **masse** des granulés mangés (somme des `pelletMass`,
- * 0 si aucun) : la nourriture mangée fait l'ammoniaque des déchets (issue #798).
+ * qui disparaît : deux poissons ne mangent jamais le même granulé. Renvoie la **masse** des
+ * granulés mangés (somme des `pelletMass`, 0 si aucun) : la nourriture mangée fait
+ * l'ammoniaque des déchets (issue #798). L'ordre des granulés restants est conservé.
  */
 export function eatMassInPlace<F extends MutableFeeder>(
   fishes: readonly F[],
   food: FoodPellet[],
   bandOf: (fish: F) => FeedingBand,
   hardOf: (fish: F) => Box3,
-): number {
-  return eatWeighedInPlace(fishes, food, bandOf, hardOf, pelletMass);
-}
-
-/** Repas du pas ; renvoie la somme de `weigh` sur les granulés mangés. */
-function eatWeighedInPlace<F extends MutableFeeder>(
-  fishes: readonly F[],
-  food: FoodPellet[],
-  bandOf: (fish: F) => FeedingBand,
-  hardOf: (fish: F) => Box3,
-  weigh: (pellet: FoodPellet) => number,
 ): number {
   if (food.length === 0) {
     return 0;
@@ -295,30 +272,22 @@ function eatWeighedInPlace<F extends MutableFeeder>(
       eaten++;
     }
   }
-  return eaten > 0 ? removeTakenInPlace(food, taken, weigh) : 0;
+  return eaten > 0 ? removeTakenInPlace(food, taken) : 0;
 }
 
 /** Retire de `food` les granulés marqués dans `taken`, dans l'ordre ; renvoie leur poids. */
-function removeTakenInPlace(
-  food: FoodPellet[],
-  taken: Uint8Array,
-  weigh: (pellet: FoodPellet) => number,
-): number {
+function removeTakenInPlace(food: FoodPellet[], taken: Uint8Array): number {
   let weight = 0;
   let kept = 0;
   for (let i = 0; i < food.length; i++) {
     if (taken[i] === 0) {
       food[kept++] = food[i];
     } else {
-      weight += weigh(food[i]);
+      weight += pelletMass(food[i]);
     }
   }
   food.length = kept;
   return weight;
-}
-
-function countPellet(): number {
-  return 1;
 }
 
 const NO_OBSTACLES: readonly Obstacle[] = Object.freeze([]);

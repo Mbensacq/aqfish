@@ -1,6 +1,6 @@
 import { SIM_DT } from './constants';
-import { eatInPlace, HUNGER_START, PELLET_SATIATION, type FeedingBand } from './feeding';
-import type { FoodPellet } from './food';
+import { eatMassInPlace, HUNGER_START, PELLET_SATIATION, type FeedingBand } from './feeding';
+import { pelletMass, type FoodPellet } from './food';
 import { parseWorld, serializeWorld } from './save';
 import { AXOLOTL, NEON, SPECIES } from './species';
 import { stepFish, swimBounds, type Fish } from './swimmer';
@@ -314,13 +314,13 @@ describe('faim et santé dans le monde', () => {
       },
     ];
     expect(
-      eatInPlace(
+      eatMassInPlace(
         [fish],
         food,
         () => OPEN_BAND,
         () => OPEN_BOX,
       ),
-    ).toBe(1);
+    ).toBe(pelletMass({ id: 0 }));
     expect(fish.hunger).toBeCloseTo(hungry - PELLET_SATIATION, 12);
     const healed = advance(world, steps(60));
     expect(healed.entities[0].health).toBeCloseTo(HEALTH_FLOOR + 60 * HEALTH_RECOVERY_RATE, 6);
