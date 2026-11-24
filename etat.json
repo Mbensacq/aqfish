@@ -10672,10 +10672,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-24T10:35:08.720Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-24T10:35:59.441Z",
+          "note": "Issue #816 : #730 tranche 1, matrice des verdicts (M)"
         }
       },
       "metriques": {}
