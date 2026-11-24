@@ -238,7 +238,8 @@ test.describe('Sauvegarde (#70)', () => {
         serializeWorld(pond, { speed: 1, clock: createDayClock(18, 1200, true) }),
       ),
     );
-    await expect(message(page)).toHaveText('Aquarium importé.');
+    // Bassin à 4 koïs : au-delà de sa capacité (#809), signalé à l'import, sans koï retiré.
+    await expect(message(page)).toHaveText(/^Aquarium importé\. Bac au-delà de sa capacité/);
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'bassin');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', 'koi:4,rouge:0');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-hour', '18.00');

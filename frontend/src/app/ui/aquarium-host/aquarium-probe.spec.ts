@@ -23,6 +23,7 @@ const PUBLISHED_ATTRIBUTES = [
   'data-aqfish-bacteries',
   'data-aqfish-camera',
   'data-aqfish-camera-libre',
+  'data-aqfish-capacity',
   'data-aqfish-care-session',
   'data-aqfish-catappa',
   'data-aqfish-current',
@@ -90,6 +91,7 @@ function publishAll(probe: AquariumProbe, world: World): void {
   probe.publishWater(waterReadout(freshWater('tropical'), 'tropical'));
   probe.publishTreatment({ products: 'sel', remainingDays: 4.5, medicationDays: null });
   probe.publishFilterBacteria(100);
+  probe.publishCapacity(0.78);
   probe.publishAlgae(0, 0, 8);
   probe.publishFouling({ glass: 0.2, floor: 0.1 }, { glass: 3, floor: 1 });
   probe.publishDead(1);
@@ -145,6 +147,13 @@ describe('AquariumProbe (#693)', () => {
   it('chaque attribut déclaré dans aquarium-attributes est publié par la sonde', () => {
     const declared = Object.values(attributes).sort();
     expect(declared).toEqual(PUBLISHED_ATTRIBUTES);
+  });
+
+  it('occupation du bac (#809) : pourcentage entier, « inf » sans eau', () => {
+    probe.publishCapacity(0.784);
+    expect(element.getAttribute('data-aqfish-capacity')).toBe('78');
+    probe.publishCapacity(Number.POSITIVE_INFINITY);
+    expect(element.getAttribute('data-aqfish-capacity')).toBe('inf');
   });
 
   it("n'écrit rien de plus que les attributs data-aqfish-*", () => {
