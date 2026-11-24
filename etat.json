@@ -10754,6 +10754,12 @@
           "debut": "2026-11-24T15:41:58.082Z",
           "fin": "2026-11-24T16:41:23.418Z",
           "note": "PR #822 : plantes actives (sim/plant-uptake.ts, ammonium puis nitrate, pousse liée à l'azote, pH relevé), S5-S7 verts, CI verte ; 6373 tests ; empreintes des bacs plantés mises à jour (ADR 0175) ; e2e complet par la CI"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-24T16:41:59.478Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
