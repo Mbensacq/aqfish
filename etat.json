@@ -10620,6 +10620,24 @@
         }
       },
       "metriques": {}
+    },
+    "293": {
+      "numero": 293,
+      "date": "2026-11-24",
+      "debut": "2026-11-24T09:03:33.287Z",
+      "type": "retro",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-24T09:03:33.287Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
