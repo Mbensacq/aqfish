@@ -44,15 +44,19 @@ test.describe('Axolotl : parcours utilisateur', () => {
     await ouvrirReglages(page, 'Population');
     const field = page.getByRole('spinbutton', { name: 'Nombre d’axolotls' });
     await expect(field).toHaveValue('2');
+    // Deux axolotls remplissent le bac d'eau froide (98 % de sa capacité, ADR 0171) : en mode
+    // soins, la capacité (#809) borne l'effectif à 2, avant le plafond technique (4).
+    await page.getByRole('button', { name: 'Retirer un axolotl' }).click();
+    await expect(field).toHaveValue('1');
     await page.getByRole('button', { name: 'Ajouter un axolotl' }).click();
-    await expect(field).toHaveValue('3');
-    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /axolotl:3/);
+    await expect(field).toHaveValue('2');
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /axolotl:2/);
     await field.fill('4');
     await field.dispatchEvent('change');
-    await expect(field).toHaveValue('4');
+    await expect(field).toHaveValue('2');
     // Au maximum : le bouton « Ajouter » ne dépasse pas la borne.
     await page.getByRole('button', { name: 'Ajouter un axolotl' }).click({ force: true });
-    await expect(field).toHaveValue('4');
+    await expect(field).toHaveValue('2');
     await field.fill('0');
     await field.dispatchEvent('change');
     await expect(field).toHaveValue('0');
