@@ -10726,10 +10726,10 @@
           "note": "Verdict OK, 0 bug, 178/178 captures identiques c294, publiées"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-24T15:08:33.173Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-24T15:39:53.846Z",
+          "note": "PR #819 fusionnée → v1.31.1 (release CI OK, CI main verte), #818 fermée, dette #820 ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
