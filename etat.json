@@ -10559,10 +10559,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-24T03:36:29.981Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-24T03:37:14.533Z",
+          "note": "Issue #809 : capacité du bac, tranche 2 (3b) de #729 (M)"
         }
       },
       "metriques": {}
