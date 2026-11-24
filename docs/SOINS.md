@@ -620,8 +620,23 @@ jeu**, sauf mention.
   Cette ombre tombe sur **tout** le décor posé au fond (plantes, rochers, bois flotté), voulu
   ainsi (issue #494) : la canopée assombrit le fond du bac ; ni les animaux, ni l'eau, ni les
   nénuphars n'y sont soumis.
-  Hors la coupe de la séance, les plantes n'ont pas d'autre effet sur l'eau ni sur les animaux
-  dans le jeu.
+  Hors la coupe de la séance et l'absorption ci-dessous, les plantes n'ont pas d'autre effet
+  sur l'eau ni sur les animaux dans le jeu.
+
+**Plantes actives** (issue #821, ADR 0175, `sim/plant-uptake.ts`, `docs/ECOSYSTEME.md` § 3.3) :
+- Absorption d'azote d'une couverture pleine, en mg d'azote par m² et par jour (Reddy et De
+  Busk 1985, bacs extérieurs de 700–900 L en été, cités par The Krib) : flottante 406
+  (_Salvinia_), rapide 125 (_Egeria densa_) ; lente 31 : **approximation de jeu** (le quart
+  d'_Egeria_). Un jour de jeu compte pour un jour réel (ADR 0170).
+- L'ammonium est pris avant le nitrate (même source) ; demi-saturation 0,05 mg N/L :
+  **approximation de jeu**.
+- Masse d'une plante : emprise 0,02 m² (plante à tige) ou 0,01 m² (touffe) à l'échelle 1, ×
+  hauteur totale / hauteur d'origine ; plantes à tige = rapides, touffes = lentes :
+  **approximations de jeu**. Aucune absorption sans lumière, plafond proportionnel à la masse.
+- Sans azote dissous, une plante pousse au quart de son rythme : **approximation de jeu**.
+- L'azote absorbé relève le pH de la baisse qu'il aurait causée, jusqu'au pH de l'eau neuve :
+  **approximation de jeu** (l'ammonium pris par les plantes n'est pas nitrifié).
+- Pas encore de plantes actives au bassin ni au récif.
 
 **Fiche produit (structure suggérée)** : `id`, `nom`, `catégorie` ; `dose_efficace`,
 `dose_toxique`, `durée`, `fréquence_max` ; `effets_eau` {pH, KH, GH, Cl, O₂, couleur,

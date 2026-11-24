@@ -112,7 +112,7 @@ function stepEcosystemInPlace(world: MutableWorld, dt: number, liters: number): 
   }
   stepLivingWaterInPlace(world, dt, liters);
   stepAlgaeStageInPlace(world, dt);
-  stepPlantsStageInPlace(world, dt);
+  stepPlantsStageInPlace(world, dt, liters);
   stepHealthStageInPlace(world, dt);
 }
 

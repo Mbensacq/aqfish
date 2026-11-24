@@ -1306,6 +1306,16 @@ DEFAULT_DECOR)`), sinon les trajectoires divergent dès la naissance. (2026-10-1
 
 ## Simulation
 
+- **Plantes actives : l'azote d'un bac au décor par défaut n'est plus conservé** (cycle 296,
+  #821, ADR 0175) : les plantes du décor (tropical, eau froide) absorbent ammoniaque et nitrates
+  et relèvent le pH dès le premier pas. Un test qui mesure l'azote au mg/L près (part au repos,
+  ration mangée, conservation par le filtre) avec `DEFAULT_DECOR` échoue sans régression :
+  éteindre la lampe (`lighting: 0`, aucune absorption ni pousse, le reste du pas identique) ou
+  prendre un décor sans plante, plutôt qu'affaiblir l'assertion. Les empreintes de
+  `non-regression.spec.ts`, `step-caracterisation.spec.ts` et les lignes « ok » de
+  `save-caracterisation.spec.ts` changent pour les bacs plantés (paludarium par défaut sans
+  plante : inchangé). Un bac peuplé sans changement d'eau finit acide (dérive linéaire du pH) :
+  le pH se relève seulement par l'azote absorbé. (2026-11-24)
 - **Avance à gros pas : l'ammoniaque d'un pas n'est convertie qu'au pas suivant** (cycle 288,
   #799, ADR 0169) : `stepWaterInPlace` calcule les conversions sur les concentrations du début
   du pas, puis ajoute la production. À pas long, l'ammoniaque de fin de pas est donc trop haute

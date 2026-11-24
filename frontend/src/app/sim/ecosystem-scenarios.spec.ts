@@ -14,6 +14,7 @@ import { canAdd, populationOf } from './tank-capacity';
 import { ENVIRONMENT_IDS } from './environment';
 import { cloneWorld, createDefaultWorld, createWorld } from './world';
 import type { World } from './world-types';
+import type { DecorItem } from './decor';
 
 /**
  * Scénarios de référence de l'écosystème (`docs/ECOSYSTEME.md` § 4, issue #799) : chacun fait
@@ -33,6 +34,43 @@ function goldfish(filter: number): World {
   return world;
 }
 
+/** Volume des scénarios du bac planté (S5, S6, S7). */
+const PLANTED_LITERS = 60;
+
+/**
+ * Bac des scénarios S5 à S7 (`docs/ECOSYSTEME.md` § 4) : `neons` néons, filtre mûr, et, si
+ * `planted`, seize plantes à tige (rapides) sur deux rangs au fond et huit touffes devant.
+ */
+function plantedTank(neons: number, planted: boolean): World {
+  const decor: DecorItem[] = [];
+  if (planted) {
+    for (let i = 0; i < 16; i++) {
+      const x = -0.5 + (i % 8) * 0.14;
+      decor.push({
+        kind: 'plant',
+        form: 'tall',
+        x,
+        z: i < 8 ? -0.17 : -0.07,
+        rotation: i,
+        scale: 1,
+        seed: 1000 + i,
+      });
+    }
+    for (let i = 0; i < 8; i++) {
+      const x = -0.5 + i * 0.14;
+      decor.push({ kind: 'plant', form: 'tuft', x, z: 0.1, rotation: i, scale: 1, seed: 2000 + i });
+    }
+  }
+  const world = cloneWorld(
+    createWorld(1, [{ species: 'neon', count: neons }], [], decor, 'tropical'),
+  );
+  (world.water as MutableWaterState).filter = 1;
+  return world;
+}
+
+/** Entretien des scénarios S5 à S7 : repas normaux, **aucun** changement d'eau. */
+const NO_WATER_CHANGE = { feedEverySeconds: NORMAL_CARE.feedEverySeconds };
+
 /** Durée des scénarios « stable » : trois mois de jeu. */
 const STABLE_DAYS = 90;
 
@@ -48,7 +86,7 @@ function expectStable(record: ScenarioRecord): void {
   expect(record.minHealth).toBeGreaterThanOrEqual(SICK_HEALTH);
 }
 
-describe('scénarios de référence de l’écosystème (#799, #805, #807)', () => {
+describe('scénarios de référence de l’écosystème (#799, #805, #807, #821)', () => {
   it(
     'S1 — bocal de 10 L, un poisson rouge, sans filtre : ammoniaque toxique en quelques jours, poisson malade',
     () => {
@@ -128,6 +166,65 @@ describe('scénarios de référence de l’écosystème (#799, #805, #807)', () 
       });
 
       expectStable(record);
+    },
+    SCENARIO_TIMEOUT_MS,
+  );
+
+  it(
+    'S5 — 60 L très planté, 10 néons, sans changement d’eau : stable sur 3 mois, nitrates bas, pas d’algues',
+    () => {
+      const record = runScenario({
+        world: plantedTank(10, true),
+        liters: PLANTED_LITERS,
+        care: NO_WATER_CHANGE,
+        days: STABLE_DAYS,
+      });
+
+      expectStable(record);
+      expect(record.nitrate.value).toBeLessThan(COMPOUND_THRESHOLDS.nitrate.watch / 2);
+      expect(record.maxAlgae).toBe(0);
+      expect(record.worstQuality).toBe('bonne');
+    },
+    SCENARIO_TIMEOUT_MS,
+  );
+
+  it(
+    'S6 — le même sans plantes : nitrates qui montent sans cesse, algues, eau mauvaise en moins de 3 mois',
+    () => {
+      const record = runScenario({
+        world: plantedTank(10, false),
+        liters: PLANTED_LITERS,
+        care: NO_WATER_CHANGE,
+        days: STABLE_DAYS,
+      });
+
+      expect(record.firstBadDay).not.toBeNull();
+      expect(record.nitrate.value).toBeGreaterThan(COMPOUND_THRESHOLDS.nitrate.bad);
+      expect(record.nitrate.day).toBeGreaterThan(record.firstBadDay!);
+      expect(record.maxAlgae).toBeGreaterThan(0);
+      expect(record.minHealth).toBeLessThan(SICK_HEALTH);
+    },
+    SCENARIO_TIMEOUT_MS,
+  );
+
+  it(
+    'S7 — le même bac planté surpeuplé (30 néons, au-delà de la capacité) : algues et nitrates montent malgré les plantes',
+    () => {
+      const crowded = plantedTank(30, true);
+      expect(canAdd({ liters: PLANTED_LITERS, population: populationOf(crowded) }, 'neon').ok).toBe(
+        false,
+      );
+
+      const record = runScenario({
+        world: crowded,
+        liters: PLANTED_LITERS,
+        care: NO_WATER_CHANGE,
+        days: STABLE_DAYS,
+      });
+
+      expect(record.nitrate.value).toBeGreaterThan(COMPOUND_THRESHOLDS.nitrate.bad);
+      expect(record.maxAlgae).toBeGreaterThan(0);
+      expect(record.worstQuality).toBe('mauvaise');
     },
     SCENARIO_TIMEOUT_MS,
   );
