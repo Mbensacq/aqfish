@@ -38,10 +38,13 @@ function liters(world: World): number {
   return waterLiters(environmentWater(world.environment));
 }
 
-/** Bac tropical sans filtre : l'ammoniaque produite y reste. */
+/**
+ * Bac tropical sans filtre, lampe éteinte : l'ammoniaque produite y reste (sans lumière, les
+ * plantes du décor n'en absorbent pas, #821).
+ */
 function withoutFilter(world: World): MutableWorld {
   const copy = { ...world } as MutableWorld;
-  copy.water = { ...world.water, filter: 0 };
+  copy.water = { ...world.water, filter: 0, lighting: 0 };
   return copy;
 }
 

@@ -13,6 +13,12 @@ import {
   stepPlantGrowthInPlace,
   type MutablePlantGrowth,
 } from './plant-growth';
+import {
+  absorbNitrogenInPlace,
+  nitrogenGrowthFactor,
+  phAfterUptake,
+  plantUptakeCapacity,
+} from './plant-uptake';
 import { plantGrowthFactor } from './side-effects';
 import { SPECIES, type SpeciesDefinition, type SpeciesId } from './species';
 import { ichProtected, medicationProtects, stepTreatmentInPlace } from './treatment';
@@ -27,6 +33,7 @@ import {
   waterLoad,
   type MutableWaterState,
 } from './water';
+import { freshPh } from './water-ph';
 import { waterQuality } from './water-quality';
 import { stepWellbeingInPlace } from './wellbeing';
 import type { Entity, Mutable, MutableWorld } from './world-types';
@@ -120,20 +127,36 @@ export function stepAlgaeStageInPlace(world: MutableWorld, dt: number): void {
 }
 
 /**
- * Plantes à tige (issue #477) : pousse sans hasard, jusqu'à la surface, ralentie par le sel
- * (effet secondaire, #549) et par un éclairage court (lampe, #584).
+ * Plantes (issues #477 et #821) : elles absorbent l'azote dans `liters` litres (défaut : ceux
+ * du bac), l'ammonium d'abord, selon leur masse et la lumière (`sim/plant-uptake.ts`), sur
+ * l'eau de fin de pas, avant les algues du pas suivant ; puis les plantes à tige poussent sans
+ * hasard, jusqu'à la surface, ralenties par le sel (effet secondaire, #549), un éclairage
+ * court (lampe, #584) et le manque d'azote (#821).
  */
-export function stepPlantsStageInPlace(world: MutableWorld, dt: number): void {
+export function stepPlantsStageInPlace(
+  world: MutableWorld,
+  dt: number,
+  liters = waterLiters(environmentWater(world)),
+): void {
   if (!hasPlantGrowth(world.environment)) {
     return;
   }
   const water = world.water as MutableWaterState;
+  const surface = environmentWater(world).maxY;
+  const light = plantLightFactor(lightingOf(water));
+  const absorbed = absorbNitrogenInPlace(
+    water,
+    plantUptakeCapacity(world.decor, water.plantGrowth, surface, light),
+    liters,
+    dt,
+  );
+  water.ph = phAfterUptake(water.ph, absorbed, freshPh(world.environment));
   const growth = stepPlantGrowthInPlace(
     water.plantGrowth as MutablePlantGrowth | undefined,
     world.decor,
     dt,
-    environmentWater(world).maxY,
-    plantGrowthFactor(water) * plantLightFactor(lightingOf(water)),
+    surface,
+    plantGrowthFactor(water) * light * nitrogenGrowthFactor(water),
   );
   if (growth !== undefined && water.plantGrowth === undefined) {
     water.plantGrowth = growth;

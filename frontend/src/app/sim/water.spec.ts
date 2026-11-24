@@ -1,5 +1,5 @@
 import { SIM_DT } from './constants';
-import { ENVIRONMENT_IDS, environmentWater } from './environment';
+import { ENVIRONMENT_IDS, environmentById, environmentWater } from './environment';
 import { stepPlantGrowthInPlace, type MutablePlantGrowth } from './plant-growth';
 import { setPopulation } from './population';
 import { SPECIES } from './species';
@@ -460,17 +460,33 @@ describe('eau du monde', () => {
   });
 
   it('avancé pas à pas, l’eau suit le modèle avec la charge et le volume du bac', () => {
-    const world = createDefaultWorld(42);
+    // Décor sans plante : depuis #821, les plantes absorbent l'azote (comparé à part).
+    const base = createDefaultWorld(42);
+    const decor = base.decor.filter((item) => item.kind !== 'plant');
+    const world = createWorld(42, environmentById('tropical').population, [], decor, 'tropical');
     const expected = run(world.water, 600, waterLoad(world.entities));
+    expect(advance(world, 600).water).toEqual(expected);
+  });
+
+  it('avancé pas à pas avec ses plantes, le bac par défaut a l’eau du modèle moins ce que les plantes absorbent (#821)', () => {
+    const world = createDefaultWorld(42);
+    const model = run(world.water, 600, waterLoad(world.entities));
     // La pousse des plantes (#477) est rangée dans l'eau sans dépendre du modèle de l'eau :
-    // comparée à part, à la pousse des plantes à tige du décor.
+    // comparée à part, à la pousse des plantes à tige du décor (ralentie sans azote, #821).
     const { plantGrowth, ...water } = advance(world, 600).water;
-    expect(water).toEqual(expected);
+    expect(water.ammonia).toBeLessThan(model.ammonia);
+    expect(water.nitrate).toBeLessThanOrEqual(model.nitrate);
+    expect(water.nitrite).toBeLessThanOrEqual(model.nitrite);
+    expect(water.temperature).toBe(model.temperature);
+    expect(plantGrowth).toBeDefined();
     let growth: MutablePlantGrowth | undefined;
     for (let n = 0; n < 600; n++) {
       growth = stepPlantGrowthInPlace(growth, world.decor, SIM_DT, environmentWater(world).maxY);
     }
-    expect(plantGrowth).toEqual(growth);
+    for (const [seed, grown] of Object.entries(plantGrowth!)) {
+      expect(grown).toBeGreaterThan(0);
+      expect(grown).toBeLessThan(growth![seed]!);
+    }
   });
 
   it('advanceInPlace : l’état de l’eau est mis à jour sur place (même objet)', () => {

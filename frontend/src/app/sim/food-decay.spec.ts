@@ -25,10 +25,13 @@ import {
 } from './world';
 import type { MutableWorld, World } from './world-types';
 
-/** Monde sans animaux ni filtre : l'ammoniaque n'y vient que de la nourriture et y reste. */
+/**
+ * Monde sans animaux ni filtre, lampe éteinte : l'ammoniaque n'y vient que de la nourriture et
+ * y reste (sans lumière, les plantes du décor n'en absorbent pas, #821).
+ */
 function emptyWorldWithoutFilter(seed = 7): MutableWorld {
   const world = createWorld(seed, [], [], DEFAULT_DECOR) as MutableWorld;
-  world.water = { ...freshWater('tropical'), filter: 0 };
+  world.water = { ...freshWater('tropical'), filter: 0, lighting: 0 };
   return world;
 }
 
@@ -172,6 +175,8 @@ describe('sim/world : nourriture non mangée (#638)', () => {
     for (const fish of start.entities as unknown as { hunger: number }[]) {
       fish.hunger = 1;
     }
+    // Lampe éteinte : les plantes n'absorbent pas d'azote (#821), le filtre le conserve.
+    start.water = { ...start.water, lighting: 0 };
     const feedings = [{ time: 1, x: 0, z: 0 }];
     // Tout est mangé avant que le premier granulé posé n'ait pu se décomposer.
     const probe = emptyWorldWithoutFilter();
