@@ -10565,10 +10565,10 @@
           "note": "Issue #809 : capacité du bac, tranche 2 (3b) de #729 (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-24T03:37:50.571Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-24T05:04:15.185Z",
+          "note": "PR #810 : capacité branchée (compteurs bornés en soins, raison chiffrée, occupation au bilan et dans Population, alerte à l'import), CI verte 13/13 ; Partiel : S3 non jouable en UI (poisson rouge seulement au bassin fixe), populations par défaut bassin/paludarium non arbitrées (ajouts refusés, e2e passés en mode décor) ; pied d'attribution réinjecté dans la PR (PIEGES)"
         }
       },
       "metriques": {}
