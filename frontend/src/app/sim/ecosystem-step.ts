@@ -34,7 +34,8 @@ import type { Entity, Mutable, MutableWorld } from './world-types';
 /**
  * Pas long par défaut, en secondes simulées : 300 pas fins. L'ammoniaque produite pendant un pas
  * n'est convertie qu'au pas suivant (`stepWaterInPlace`) : l'écart avec le pas fin vaut environ
- * `pas × AMMONIA_CONVERSION` (≈ 4 % à 5 s, 27 % à 60 s, mesuré). À 5 s, trois mois simulés
+ * `pas × AMMONIA_CONVERSION` (≈ 4 % à 5 s, 27 % à 60 s, mesuré avant le recalage #805 qui
+ * divise ce taux par 8). À 5 s, trois mois simulés
  * d'un bac peuplé tournent en une fraction de seconde.
  */
 export const ECOSYSTEM_STEP_SECONDS = 5;

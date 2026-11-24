@@ -31,7 +31,10 @@ export interface ScenarioCare {
    * jamais nourri.
    */
   readonly feedEverySeconds?: number;
-  /** Période des changements d'eau, en jours de jeu ; absente : jamais. */
+  /**
+   * Période des changements d'eau, en jours de jeu, dont la durée est un multiple de
+   * `ECOSYSTEM_STEP_SECONDS` ; absente : jamais.
+   */
   readonly waterChangeEveryDays?: number;
   /** Part d'eau changée, dans [0, 1] (défaut : `WATER_CHANGE_SHARE`). */
   readonly waterChangeShare?: number;
@@ -81,14 +84,20 @@ export interface ScenarioRecord {
   readonly world: World;
 }
 
-/** Fait tourner `scenario` et renvoie son relevé. Déterministe : aucun hasard. */
+/**
+ * Fait tourner `scenario` et renvoie son relevé. Déterministe : aucun hasard.
+ * @throws RangeError si une période d'entretien ne tombe pas sur un pas long (`ScenarioCare`).
+ */
 export function runScenario(scenario: EcosystemScenario): ScenarioRecord {
   const world = cloneWorld(scenario.world);
   const { care, liters } = scenario;
   const step = ECOSYSTEM_STEP_SECONDS;
   const total = Math.round((scenario.days * SCENARIO_DAY_SECONDS) / step);
-  const feedEvery = (care.feedEverySeconds ?? 0) / step;
-  const changeEvery = ((care.waterChangeEveryDays ?? 0) * SCENARIO_DAY_SECONDS) / step;
+  const feedEvery = periodInSteps('feedEverySeconds', care.feedEverySeconds ?? 0);
+  const changeEvery = periodInSteps(
+    'waterChangeEveryDays',
+    (care.waterChangeEveryDays ?? 0) * SCENARIO_DAY_SECONDS,
+  );
   const share = care.waterChangeShare ?? WATER_CHANGE_SHARE;
   const recorder = new Recorder();
   for (let i = 0; i < total; i++) {
@@ -102,6 +111,22 @@ export function runScenario(scenario: EcosystemScenario): ScenarioRecord {
     recorder.record(world, ((i + 1) * step) / SCENARIO_DAY_SECONDS);
   }
   return recorder.result(world);
+}
+
+/**
+ * Période `seconds` en nombre de pas longs (0 : jamais). Une période qui ne tombe pas sur un
+ * pas ne déclencherait l'action qu'au premier pas, en silence : elle est refusée.
+ * @throws RangeError si `seconds` est négative, non finie, ou pas un multiple de
+ * `ECOSYSTEM_STEP_SECONDS`.
+ */
+function periodInSteps(name: string, seconds: number): number {
+  const steps = seconds / ECOSYSTEM_STEP_SECONDS;
+  if (!(steps >= 0) || !Number.isInteger(steps)) {
+    throw new RangeError(
+      `${name} doit donner un multiple positif de ${ECOSYSTEM_STEP_SECONDS} s (reçu : ${seconds} s)`,
+    );
+  }
+  return steps;
 }
 
 /** Relevé en cours d'un scénario. */

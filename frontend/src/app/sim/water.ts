@@ -24,6 +24,7 @@ import {
   MAX_CONCENTRATIONS,
   NITRATE_PER_NITRITE,
   NITRITE_PER_AMMONIA,
+  NITROGEN_DAY_SCALE,
   type NitrogenCompound,
 } from './water-units';
 import {
@@ -223,29 +224,36 @@ export const REFERENCE_BODY_LENGTH = 0.05;
 /**
  * Ammoniaque produite par seconde par des habitants **nourris à leur faim**, en mg × L par
  * unité de charge (soit des mg/L par seconde pour une charge de 1 dans 1 L), repas et repos
- * compris. **Approximation de jeu** (ancienne valeur 0,045 convertie, `sim/water-units.ts`) :
- * la population par défaut du bac tropical (24 habitants, charge ≈ 45 dans 288 L) fait monter
- * les nitrates d'environ 50 mg/L en deux heures simulées sans changement d'eau (six journées
- * de 20 min). Référence du bilan (`sim/bilan.ts`) ; depuis l'issue #798, la simulation la
+ * compris. **Approximation de jeu** (ancienne valeur 0,045 convertie, `sim/water-units.ts`,
+ * puis recalée sur le jour de jeu, `NITROGEN_DAY_SCALE`, #805) : la population par défaut du
+ * bac tropical (24 habitants, charge ≈ 45 dans 288 L) fait monter les nitrates d'environ
+ * 50 mg/L en seize heures simulées sans changement d'eau (48 journées de 20 min). Référence du bilan (`sim/bilan.ts`) ; depuis l'issue #798, la simulation la
  * sépare en une part au repos (`RESTING_AMMONIA_PER_LOAD_LITER`) et une part apportée par la
  * nourriture mangée (`sim/food-decay.ts`).
  */
-export const AMMONIA_PER_LOAD_LITER = 0.0225;
+export const AMMONIA_PER_LOAD_LITER = 0.0225 * NITROGEN_DAY_SCALE;
 
 /**
  * Ammoniaque produite **au repos**, sans repas, par seconde, en mg × L par unité de charge
  * (`waterLoad` : la masse, cube de la taille de chaque espèce), issue #798 : un tiers de
  * `AMMONIA_PER_LOAD_LITER`. **Approximation de jeu** : un poisson à jeun excrète encore de
  * l'ammoniaque, mais aucune source retenue ne chiffre cette part pour les espèces du jeu.
- * Valeur écrite telle quelle (moitié exacte de 0,015 en unités de jeu d'avant #793).
+ * Valeur écrite telle quelle (moitié exacte de 0,015 en unités de jeu d'avant #793), recalée
+ * sur le jour de jeu (#805).
  */
-export const RESTING_AMMONIA_PER_LOAD_LITER = 0.0075;
+export const RESTING_AMMONIA_PER_LOAD_LITER = 0.0075 * NITROGEN_DAY_SCALE;
 
-/** Taux de conversion de l'ammoniaque en nitrites par un filtre neuf, en s⁻¹ (≈ 2 min). */
-export const AMMONIA_CONVERSION = 1 / 120;
+/**
+ * Taux de conversion de l'ammoniaque en nitrites par un filtre mûr, en s⁻¹ (≈ 16 min, soit
+ * moins d'un jour de jeu ; 2 min avant le recalage #805).
+ */
+export const AMMONIA_CONVERSION = (1 / 120) * NITROGEN_DAY_SCALE;
 
-/** Taux de conversion des nitrites en nitrates par un filtre neuf, en s⁻¹ (≈ 3 min). */
-export const NITRITE_CONVERSION = 1 / 180;
+/**
+ * Taux de conversion des nitrites en nitrates par un filtre mûr, en s⁻¹ (≈ 24 min ; 3 min
+ * avant le recalage #805).
+ */
+export const NITRITE_CONVERSION = (1 / 180) * NITROGEN_DAY_SCALE;
 
 /** Constante de temps du retour de la température à celle de l'environnement, en s. */
 export const TEMPERATURE_TIME_CONSTANT = 600;

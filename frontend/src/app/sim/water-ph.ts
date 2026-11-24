@@ -1,5 +1,6 @@
 import type { EnvironmentId } from './environment';
 import type { SpeciesId } from './species';
+import { NITROGEN_DAY_SCALE } from './water-units';
 
 /**
  * pH de l'eau (issue #236, ADR 0057) : valeur de départ de chaque environnement, dérive lente
@@ -38,11 +39,11 @@ export const FRESH_PH: Readonly<Record<EnvironmentId, number>> = {
 
 /**
  * Baisse du pH par seconde, par unité de charge (`waterLoad`) et par litre. **Valeur de
- * jeu** : la population par défaut du bac tropical (charge ≈ 45 dans 288 L) perd environ
- * 0,25 de pH par heure simulée (trois journées de 20 min) sans changement d'eau ; un bac sans
- * habitant ne dérive pas.
+ * jeu**, recalée sur le jour de jeu avec l'azote (`NITROGEN_DAY_SCALE`, #805) : la population
+ * par défaut du bac tropical (charge ≈ 45 dans 288 L) perd environ 0,25 de pH en huit heures
+ * simulées (24 journées de 20 min) sans changement d'eau ; un bac sans habitant ne dérive pas.
  */
-export const PH_DROP_PER_LOAD_LITER = 4.5e-4;
+export const PH_DROP_PER_LOAD_LITER = 4.5e-4 * NITROGEN_DAY_SCALE;
 
 /** Plage de pH, bornes comprises. */
 export interface PhRange {

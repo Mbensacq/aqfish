@@ -89,8 +89,9 @@ describe('rinçage à l’eau du robinet (#606)', () => {
     const tank = rinseFilterInPlace(matureWater(), 'bac');
     // Sur le coup, l'ammoniaque ne bouge pas : c'est le filtre affaibli qui la convertit moins.
     expect(tap.ammonia).toBe(tank.ammonia);
-    run(tap, 48);
-    run(tank, 48);
+    // Trois jours : l'azote suit le filtre affaibli plus lentement depuis #805.
+    run(tap, 72);
+    run(tank, 72);
     expect(tap.ammonia).toBeGreaterThan(tank.ammonia * 1.5);
     expect(tap.filter).toBeLessThan(1);
   });

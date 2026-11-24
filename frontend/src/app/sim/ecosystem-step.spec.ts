@@ -13,6 +13,7 @@ import { PELLET_SATIATION } from './feeding';
 import { EATEN_FOOD_AMMONIA } from './food-decay';
 import { startFilterCyclingInPlace } from './filter-maturation';
 import { waterLiters, type MutableWaterState } from './water';
+import { NITROGEN_DAY_SCALE } from './water-units';
 import { advance, cloneWorld, createDefaultWorld, createWorld } from './world';
 import type { Entity, Mutable, MutableWorld, World } from './world-types';
 
@@ -67,7 +68,9 @@ describe('avance écosystème à gros pas (#799)', () => {
       advanceEcosystemInPlace(coarse, 1200);
       advanceEcosystemInPlace(fine, 1200, { stepSeconds: SIM_DT });
 
-      expect(coarse.water.nitrate).toBeGreaterThan(1);
+      // Seuils de signification ramenés au cycle de l'azote ralenti (#805) : en un jour, les
+      // nitrates se forment déjà (≈ 0,04 mg/L), à comparer à leur huitième d'avant (1 mg/L).
+      expect(coarse.water.nitrate).toBeGreaterThan(0.25 * NITROGEN_DAY_SCALE);
       expect(largestGap(coarse, fine)).toBeLessThan(COARSE_TOLERANCE);
     },
     FINE_STEP_TIMEOUT_MS,
@@ -83,7 +86,7 @@ describe('avance écosystème à gros pas (#799)', () => {
       advanceEcosystemInPlace(coarse, 1200);
       advanceEcosystemInPlace(fine, 1200, { stepSeconds: SIM_DT });
 
-      expect(coarse.water.ammonia).toBeGreaterThan(0.5);
+      expect(coarse.water.ammonia).toBeGreaterThan(0.5 * NITROGEN_DAY_SCALE);
       expect(largestGap(coarse, fine)).toBeLessThan(COARSE_TOLERANCE);
     },
     FINE_STEP_TIMEOUT_MS,
