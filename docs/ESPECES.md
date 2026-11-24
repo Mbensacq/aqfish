@@ -513,8 +513,10 @@ chaque valeur garde la source ou le statut de son champ, repris dans la raison d
 
 ## Verdicts par paire (#816, tranche 1 de #730)
 
-Calcul pur `verdict(a, b)` (`sim/verdict.ts`, ADR 0174), pas encore branché sur l'interface
-ni sur les rivalités des nageurs (qui suivent toujours `sim/compatibility.ts`). Règles de
+Calcul pur `verdict(a, b)` (`sim/verdict.ts`, ADR 0174). Depuis #818 (tranche 2), il est lu
+par l'interface : liste « Espèces encore possibles » de la section Population
+(`sim/possible-species.ts`) et raisons sourcées sous l'espèce ajoutée. Les rivalités des
+nageurs et les mélanges déconseillés du tableau de bord suivent toujours `sim/compatibility.ts`. Règles de
 `docs/ECOSYSTEME.md` § 3.2 : classes d'eau (douce ou mer ; froide ou tropicale), plages
 préférées puis tolérées (température, pH, dureté), prédation (listes nominatives des données
 d'écologie, sinon règle de taille des prédateurs du jeu), comportement (territoriaux, mangeurs
