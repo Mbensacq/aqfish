@@ -10571,10 +10571,10 @@
           "note": "PR #810 : capacité branchée (compteurs bornés en soins, raison chiffrée, occupation au bilan et dans Population, alerte à l'import), CI verte 13/13 ; Partiel : S3 non jouable en UI (poisson rouge seulement au bassin fixe), populations par défaut bassin/paludarium non arbitrées (ajouts refusés, e2e passés en mode décor) ; pied d'attribution réinjecté dans la PR (PIEGES)"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-24T05:04:52.367Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-24T05:58:31.065Z",
+          "note": "Verdict RÉSERVES (arbitrage populations par défaut non fait, S3 non jouable en UI), 0 bug, 175/178 captures identiques c290, publiées"
         }
       },
       "metriques": {}
