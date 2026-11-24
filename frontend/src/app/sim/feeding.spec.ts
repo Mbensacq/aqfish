@@ -1,7 +1,7 @@
 import { SIM_DT } from './constants';
 import {
   EAT_DISTANCE,
-  eatInPlace,
+  eatMassInPlace,
   feedingBand,
   foodTarget,
   growHunger,
@@ -16,7 +16,7 @@ import {
   type MutableFeeder,
 } from './feeding';
 import type { Vec3 } from './flocking';
-import { expiryAge, type FoodPellet } from './food';
+import { expiryAge, pelletMass, type FoodPellet } from './food';
 import { obstacleDistance, sphereObstacle, type Obstacle } from './obstacles';
 import { CORYDORA, GUPPY, NEON, SPECIES, type SpeciesId } from './species';
 import { createFish, stepFish, swimBounds, type Fish } from './swimmer';
@@ -265,7 +265,7 @@ describe('sim/feeding : repas', () => {
   it('un granulé touché disparaît et rassasie ; l’ordre des autres est conservé', () => {
     const food = [pellet(0, 1, 0, 0), pellet(1, 0, 0, 0.01), pellet(2, -1, 0, 0)];
     const fish = [feeder(0, 0, 0, 0.8)];
-    expect(eatInPlace(fish, food, bandOf, hardOf)).toBe(1);
+    expect(eatMassInPlace(fish, food, bandOf, hardOf)).toBe(pelletMass({ id: 1 }));
     expect(food.map((p) => p.id)).toEqual([0, 2]);
     expect(fish[0].hunger).toBeCloseTo(0.8 - PELLET_SATIATION, 12);
   });
@@ -273,7 +273,7 @@ describe('sim/feeding : repas', () => {
   it('deux poissons ne mangent pas le même granulé (le premier dans l’ordre l’emporte)', () => {
     const food = [pellet(0, 0, 0, 0)];
     const fish = [feeder(0.005, 0, 0), feeder(0.001, 0, 0)];
-    expect(eatInPlace(fish, food, bandOf, hardOf)).toBe(1);
+    expect(eatMassInPlace(fish, food, bandOf, hardOf)).toBe(pelletMass({ id: 0 }));
     expect(food).toEqual([]);
     expect(fish[0].hunger).toBe(1 - PELLET_SATIATION);
     expect(fish[1].hunger).toBe(1);
@@ -282,18 +282,20 @@ describe('sim/feeding : repas', () => {
   it('deux poissons, deux granulés à portée : chacun le sien', () => {
     const food = [pellet(0, 0, 0, 0), pellet(1, 0.008, 0, 0)];
     const fish = [feeder(0.004, 0, 0), feeder(0.004, 0, 0)];
-    expect(eatInPlace(fish, food, bandOf, hardOf)).toBe(2);
+    expect(eatMassInPlace(fish, food, bandOf, hardOf)).toBe(
+      pelletMass({ id: 0 }) + pelletMass({ id: 1 }),
+    );
     expect(food).toEqual([]);
   });
 
   it('rassasié, trop loin ou hors de sa tranche : ne mange pas', () => {
     const food = [pellet(0, 0, 0.5, 0)];
-    expect(eatInPlace([feeder(0, 0.5, 0, 0.1)], food, bandOf, hardOf)).toBe(0);
-    expect(eatInPlace([feeder(EAT_DISTANCE * 1.01, 0.5, 0)], food, bandOf, hardOf)).toBe(0);
+    expect(eatMassInPlace([feeder(0, 0.5, 0, 0.1)], food, bandOf, hardOf)).toBe(0);
+    expect(eatMassInPlace([feeder(EAT_DISTANCE * 1.01, 0.5, 0)], food, bandOf, hardOf)).toBe(0);
     const bottom = () => ({ minY: 0, maxY: 0.1 });
-    expect(eatInPlace([feeder(0, 0.5, 0)], food, bottom, hardOf)).toBe(0);
+    expect(eatMassInPlace([feeder(0, 0.5, 0)], food, bottom, hardOf)).toBe(0);
     expect(food).toHaveLength(1);
-    expect(eatInPlace([feeder(0, 0.5, 0)], [], bandOf, hardOf)).toBe(0);
+    expect(eatMassInPlace([feeder(0, 0.5, 0)], [], bandOf, hardOf)).toBe(0);
   });
 });
 
