@@ -11266,6 +11266,10 @@
         "bugsOuverts": 0,
         "ciMain": "success",
         "mutation": null
+      },
+      "rapport": {
+        "statut": "termine",
+        "note": "7 cycles, 1 alerte mineure"
       }
     }
   }
