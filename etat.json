@@ -10595,10 +10595,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-24T06:32:18.681Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-24T06:32:59.383Z",
+          "note": "Issue #811 : populations par défaut du bassin et du paludarium (M), avec #709 en second point"
         }
       },
       "metriques": {}
