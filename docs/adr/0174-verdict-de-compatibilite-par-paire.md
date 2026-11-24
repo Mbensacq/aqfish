@@ -58,3 +58,24 @@ effets de comportement restent identiques ; la tranche 2 branchera l'interface) 
   précautions (pH et dureté, crevette cerise et mangeurs de jeunes).
 - La fraction de taille, les longues nageoires et le pH des fiches restent des approximations
   de jeu à sourcer (`docs/ESPECES.md`, « Non vérifié et désaccords »).
+
+## Addendum — tranche 2 (cycle 295, issue #818)
+
+- **Espèces encore possibles** : `sim/possible-species.ts` (`possibleSpecies`) donne, pour
+  chaque espèce du milieu, le pire verdict face aux espèces **présentes**, toutes les raisons
+  gardées avec l'espèce visée, et le nombre restant (effectif maximal de `capacityLimits` moins
+  l'effectif actuel). Plus de place compte comme `incompatible`, avec la raison de `canAdd` (ou
+  sans texte quand seule la borne technique bloque). Tri stable : compatibles, précautions,
+  incompatibles. Mode décor : ni verdict ni capacité.
+- **Calcul** : fait par l'hôte au relevé des effectifs, avec la capacité déjà calculée
+  (`CapacityShown.possible`), jamais dans la boucle d'affichage ; l'interface ne fait que
+  mettre en texte (`computed`).
+- **Interface** : liste repliable « Espèces encore possibles » dans la section Population,
+  au format du cartel ; sous l'espèce ajoutée, ses raisons de verdict sourcées
+  (`data-add-verdict`), en plus des avertissements d'ajout existants.
+- **Écarté pour cette tranche** : réécrire `mixWarnings` et l'avertissement « mélange
+  déconseillé » sur le verdict. Ils alimentent aussi le tableau de bord, le bilan et la liste
+  des bacs ; les passer au verdict aurait changé leurs textes et leurs alertes (le bac tropical
+  par défaut a des paires à précautions) et donc les tests existants, que l'issue demande
+  inchangés. `compatibility()` reste la source des rivalités, des mélanges déconseillés et des
+  alertes ; le verdict s'y ajoute comme explication sourcée.

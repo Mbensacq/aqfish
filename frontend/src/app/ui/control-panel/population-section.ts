@@ -15,6 +15,7 @@ import { unsuitableAnimals, unsuitableLine } from '../../sim/care-return';
 import { mixWarnings } from '../../sim/compatibility';
 import { DEFAULT_ENVIRONMENT_ID, type EnvironmentId } from '../../sim/environment';
 import { NO_FISH, type PopulationCounts } from '../../sim/population';
+import { possibleReasonText } from '../../sim/possible-species-text';
 import type { SpeciesId } from '../../sim/species';
 import { mixWarningText, SPECIES_LABELS, type SpeciesLabels } from '../../sim/species-catalog';
 import { addWarnings, addWarningText } from '../../sim/species-sheet';
@@ -30,6 +31,7 @@ import {
   type PopulationFilter,
   type PopulationSort,
 } from './population-view';
+import { PossibleSpeciesList } from './possible-species-list';
 import { SpeciesSheet } from './species-sheet';
 import { SectionLegend, SettingMark } from '../settings-window/settings-search-filter';
 
@@ -120,7 +122,7 @@ export function speciesSliderLabel(species: SpeciesId): string {
 @Component({
   // Sélecteur d'attribut : le `fieldset` reste l'enfant direct du panneau (ADR 0161).
   selector: 'fieldset[app-population-section]',
-  imports: [SpeciesSheet, SectionLegend, SettingMark],
+  imports: [PossibleSpeciesList, SpeciesSheet, SectionLegend, SettingMark],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './population-section.scss',
   template: `
@@ -264,6 +266,12 @@ export function speciesSliderLabel(species: SpeciesId): string {
               {{ text }}
             </p>
           }
+          <!-- Verdict sourcé de l'espèce ajoutée face aux présentes (#818, ADR 0174). -->
+          @for (text of addVerdictTexts(); track text) {
+            <p class="control-panel__note control-panel__warning population__wide" data-add-verdict>
+              {{ text }}
+            </p>
+          }
         }
         <!-- Fiche de l'espèce (#237), composant à part (#255). -->
         @if (openSheet() === id) {
@@ -289,6 +297,13 @@ export function speciesSliderLabel(species: SpeciesId): string {
     @for (text of mixTexts(); track text) {
       <p class="control-panel__note control-panel__warning" data-mix-warning>{{ text }}</p>
     }
+    <!-- Espèces encore possibles (#818) : verdict face aux présentes et place restante, après
+         les tuiles : l'ordre de Tab des filtres et des compteurs ne change pas. -->
+    <app-possible-species-list
+      appSetting="Nombre par espèce"
+      [entries]="capacity().possible"
+      [careMode]="careMode()"
+    />
     <!-- Animaux d'un autre milieu gardés au retour en soins (#278, lot 2). -->
     @for (text of milieuTexts(); track text) {
       <p class="control-panel__note control-panel__warning" data-milieu-warning>
@@ -394,6 +409,17 @@ export class PopulationSection {
     // Amphibien ajouté dans une eau déjà traitée (#374) : le produit lui est toxique.
     const treated = treatedWaterWarning(id, this.water().products);
     return treated === null ? texts : [...texts, treated];
+  });
+  /**
+   * Raisons du verdict de la dernière espèce ajoutée face aux espèces présentes (#818), avec
+   * leur source : le relevé des effectifs les recalcule, elles suivent la population.
+   */
+  protected readonly addVerdictTexts = computed(() => {
+    const id = this.lastAdded();
+    const entry = this.capacity().possible.find((possible) => possible.species === id);
+    return entry === undefined || this.careMode() === 'decor'
+      ? []
+      : entry.reasons.filter((reason) => reason.kind === 'verdict').map(possibleReasonText);
   });
   /**
    * Avertissements en mode soins des animaux d'un autre milieu gardés (#278, lot 2) : les

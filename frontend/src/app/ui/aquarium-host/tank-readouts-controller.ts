@@ -36,6 +36,7 @@ import {
   tankCapacity,
   type CapacityShown,
 } from '../../sim/tank-capacity-limits';
+import { possibleSpecies, type PossibleSpeciesTank } from '../../sim/possible-species';
 import { populationOf } from '../../sim/tank-capacity';
 import type { TankDimensions } from '../../sim/tank';
 import type { TreatmentReadout } from '../../sim/treatment-text';
@@ -202,17 +203,22 @@ export class TankReadoutsController {
    */
   private refreshCapacity(world: World, bounds: PopulationCounts): void {
     const readout = tankCapacity(world);
-    const { limits, reasons } = capacityLimits(
-      {
-        liters: readout.liters,
-        population: populationOf(world),
-        mode: readout.decor ? 'decor' : 'soins',
-      },
-      environmentById(world.environment).species,
+    const tank: PossibleSpeciesTank = {
+      liters: readout.liters,
+      population: populationOf(world),
+      mode: readout.decor ? 'decor' : 'soins',
+      species: environmentById(world.environment).species,
       bounds,
-    );
-    this.populationMax.set(limits);
-    this.capacity.set({ text: capacityLine(readout), alert: capacityAlert(readout), reasons });
+    };
+    const capacity = capacityLimits(tank, tank.species, bounds);
+    this.populationMax.set(capacity.limits);
+    this.capacity.set({
+      text: capacityLine(readout),
+      alert: capacityAlert(readout),
+      reasons: capacity.reasons,
+      // Espèces encore possibles (#818) : même capacité, recalculée seulement ici.
+      possible: possibleSpecies(tank, capacity),
+    });
     this.ports.probe.publishCapacity(readout.status.occupation);
   }
 
