@@ -98,7 +98,9 @@ describe('ammoniaque de la nourriture mangée (#798)', () => {
       12,
     );
     expect(b.map((p) => p.id)).toEqual([2]);
-    expect(fb.map((f) => f.hunger < 1)).toEqual([true, true, false]);
+    expect(fb[0].hunger).toBeLessThan(1);
+    expect(fb[1].hunger).toBeLessThan(1);
+    expect(fb[2].hunger).toBe(0);
     expect(eatMassInPlace(fishes(), [], band, box)).toBe(0);
   });
 
