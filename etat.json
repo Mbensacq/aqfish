@@ -10592,7 +10592,7 @@
       "type": "dette",
       "issue": 811,
       "pr": 812,
-      "version": null,
+      "version": "v1.30.5",
       "phases": {
         "planif": {
           "statut": "termine",
