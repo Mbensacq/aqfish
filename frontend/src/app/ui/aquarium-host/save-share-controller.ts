@@ -9,6 +9,7 @@ import {
 } from '../../core/save-storage/save-storage';
 import { environmentById } from '../../sim/environment';
 import { parseSaveWorlds } from '../../sim/room-save';
+import { capacityAlert, tankCapacity } from '../../sim/tank-capacity-limits';
 import type { RoomState } from '../../sim/room-state';
 import type { SaveSettings } from '../../sim/save';
 import {
@@ -306,10 +307,16 @@ export class SaveShareController {
     return this.ports.world() !== null && this.ports.hasView() && !this.ports.isCapture();
   }
 
-  /** Remplace la pièce par une sauvegarde relue et validée (import, lien partagé), puis enregistre. */
+  /**
+   * Remplace la pièce par une sauvegarde relue et validée (import, lien partagé), puis enregistre.
+   * Un bac affiché au-delà de sa capacité (#809, ADR 0172) le signale dans le message, sans
+   * retirer d'animal.
+   */
   private applyImported(result: ImportedSave, message: string): void {
     this.ports.load(result);
-    this.message.set({ kind: 'info', text: message });
+    const world = this.ports.world();
+    const alert = world === null ? null : capacityAlert(tankCapacity(world));
+    this.message.set({ kind: 'info', text: alert === null ? message : `${message} ${alert}` });
     this.saveNow();
   }
 

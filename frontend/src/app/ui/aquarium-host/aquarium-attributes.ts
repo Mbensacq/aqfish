@@ -136,6 +136,11 @@ export const ROOM_SUPPORTS_ATTRIBUTE = 'data-aqfish-room-supports';
 export const SELECTED_TANK_ATTRIBUTE = 'data-aqfish-selected-tank';
 /** Mode du bac affiché (#278) : `soins` ou `decor`. */
 export const CARE_MODE_ATTRIBUTE = 'data-aqfish-mode';
+/**
+ * Occupation du bac affiché (#809, ADR 0172), en pourcentage entier de sa capacité au plafond
+ * (`78`), `inf` pour un besoin dans un bac sans eau.
+ */
+export const CAPACITY_ATTRIBUTE = 'data-aqfish-capacity';
 /** Force du courant du bac affiché (#460) : `coupe`, `doux` ou `fort`. */
 export const CURRENT_ATTRIBUTE = 'data-aqfish-current';
 /**

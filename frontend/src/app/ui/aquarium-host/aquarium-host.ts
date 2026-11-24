@@ -343,6 +343,8 @@ export class AquariumHost {
   readonly populationMax = this.readouts.populationMax;
   /** Plafond d'animaux de la pièce atteint (#392, ADR 0096) : message en clair, sinon `null`. */
   readonly populationNotice = this.readouts.populationNotice;
+  /** Capacité du bac affiché (#809, ADR 0172) : occupation, alerte et raisons des refus. */
+  readonly capacity = this.readouts.capacity;
   /** Relevé de l'eau affiché par le tableau de bord et le panneau (#207, #256), au dixième. */
   readonly water = this.readouts.water;
   /** Relevé exact de l'eau lu par le tableau de bord (#256). */
@@ -827,10 +829,8 @@ export class AquariumHost {
     // préréglage choisi vaut retour à l'orbite pour la préférence d'affichage (#344).
     this.free.leaveForPreset();
     this.activePreset.set(preset);
-    view.animateToPreset(
-      preset,
-      presetTransitionSeconds(this.display.reducedMotion(), this.capture),
-    );
+    const seconds = presetTransitionSeconds(this.display.reducedMotion(), this.capture);
+    view.animateToPreset(preset, seconds);
     if (!view.transitioning) {
       this.probe.publishCamera(this.view);
     }

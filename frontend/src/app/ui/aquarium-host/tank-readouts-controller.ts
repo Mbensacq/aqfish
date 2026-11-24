@@ -28,6 +28,15 @@ import {
 import { roomAnimalCapRefusal, roomPopulationLimits } from '../../sim/room-limits';
 import type { RoomState } from '../../sim/room-state';
 import type { SpeciesId } from '../../sim/species';
+import {
+  capacityAlert,
+  capacityLimits,
+  capacityLine,
+  NO_CAPACITY,
+  tankCapacity,
+  type CapacityShown,
+} from '../../sim/tank-capacity-limits';
+import { populationOf } from '../../sim/tank-capacity';
 import type { TankDimensions } from '../../sim/tank';
 import type { TreatmentReadout } from '../../sim/treatment-text';
 import { waterLiters } from '../../sim/water';
@@ -104,6 +113,11 @@ export class TankReadoutsController {
   readonly populationMax = signal<PopulationCounts>(NO_FISH);
   /** Plafond d'animaux de la pièce atteint (#392, ADR 0096) : message en clair, sinon `null`. */
   readonly populationNotice = signal<string | null>(null);
+  /**
+   * Capacité du bac affiché (#809, ADR 0172) : ligne d'occupation et de volume réel, alerte
+   * d'un bac trop plein et raisons des refus (`CapacityShown`).
+   */
+  readonly capacity = signal<CapacityShown>(NO_CAPACITY);
   /** Relevé de l'eau affiché par le tableau de bord et le panneau (#207, #256), au dixième. */
   readonly water = signal<WaterReadout>(DEFAULT_WATER_READOUT);
   /**
@@ -159,9 +173,9 @@ export class TankReadoutsController {
     // Pièce à jour pour ce monde (même objet) : plafond de la pièce ; sinon, celui du bac seul.
     const room = ports.roomState();
     const shownTank = room?.tanks.find((tank) => tank.world === world);
-    this.populationMax.set(
-      room && shownTank ? roomPopulationLimits(room, shownTank.id, world) : populationLimits(world),
-    );
+    const bounds =
+      room && shownTank ? roomPopulationLimits(room, shownTank.id, world) : populationLimits(world);
+    this.refreshCapacity(world, bounds);
     this.populationNotice.set(
       room && shownTank ? roomAnimalCapRefusal(room, shownTank.id, 1, world) : null,
     );
@@ -179,6 +193,27 @@ export class TankReadoutsController {
     this.careMode.set(mode);
     ports.probe.publishCareMode(mode);
     this.refreshCurrent(world);
+  }
+
+  /**
+   * Capacité du bac (#809, ADR 0172) : effectifs maximaux de `bounds` ramenés sous la capacité
+   * en mode soins (jamais sous l'effectif actuel), raisons des refus, ligne d'occupation et
+   * alerte d'un bac trop plein.
+   */
+  private refreshCapacity(world: World, bounds: PopulationCounts): void {
+    const readout = tankCapacity(world);
+    const { limits, reasons } = capacityLimits(
+      {
+        liters: readout.liters,
+        population: populationOf(world),
+        mode: readout.decor ? 'decor' : 'soins',
+      },
+      environmentById(world.environment).species,
+      bounds,
+    );
+    this.populationMax.set(limits);
+    this.capacity.set({ text: capacityLine(readout), alert: capacityAlert(readout), reasons });
+    this.ports.probe.publishCapacity(readout.status.occupation);
   }
 
   /**

@@ -164,7 +164,7 @@
     "max-params": 6
   },
   "ui/aquarium-host/aquarium-host.ts": {
-    "max-lines": 963
+    "max-lines": 962
   },
   "ui/decor-editor/decor-editor.ts": {
     "complexity": 17,

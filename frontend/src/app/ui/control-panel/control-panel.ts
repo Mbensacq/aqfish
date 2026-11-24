@@ -21,6 +21,7 @@ import { DEFAULT_FOOD_STYLE, type FoodStyle } from '../../core/food-style/food-s
 import { isRoomAvailable } from '../../sim/room';
 import type { RoomCatalog, TankNotice } from '../aquarium-host/aquarium-host';
 import type { TankListEntry } from '../../sim/tank-list';
+import { NO_CAPACITY, type CapacityShown } from '../../sim/tank-capacity-limits';
 import { DEFAULT_SIM_SPEED, type SimSpeed } from '../../sim/sim-speed';
 import type { CareMode } from '../../sim/care-mode';
 import type { CurrentLevel } from '../../sim/water-current';
@@ -342,6 +343,7 @@ export { sliderHour } from './day-section';
             [population]="population()"
             [populationMax]="populationMax()"
             [populationNotice]="populationNotice()"
+            [capacity]="capacity()"
             [tankLiters]="tankLiters()"
             [water]="water()"
             [onlySpecies]="searchSpecies()"
@@ -438,6 +440,8 @@ export class ControlPanel implements SettingsSearchFilter {
   readonly populationMax = input<PopulationCounts>(NO_FISH);
   /** Plafond d'animaux de la pièce atteint (#392) : message de l'hôte, sinon `null`. */
   readonly populationNotice = input<string | null>(null);
+  /** Capacité du bac (fournie par l'hôte, #809) : occupation, alerte, raisons des refus. */
+  readonly capacity = input<CapacityShown>(NO_CAPACITY);
   /** Litres d'eau du bac courant (fournis par l'hôte, #237) ; `null` : inconnus. */
   readonly tankLiters = input<number | null>(null);
   /** Relevé de l'eau (fourni par l'hôte, #207). */

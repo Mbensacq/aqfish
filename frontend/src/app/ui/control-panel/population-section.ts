@@ -18,6 +18,7 @@ import { NO_FISH, type PopulationCounts } from '../../sim/population';
 import type { SpeciesId } from '../../sim/species';
 import { mixWarningText, SPECIES_LABELS, type SpeciesLabels } from '../../sim/species-catalog';
 import { addWarnings, addWarningText } from '../../sim/species-sheet';
+import { NO_CAPACITY, type CapacityShown } from '../../sim/tank-capacity-limits';
 import { treatedWaterWarning } from '../../sim/treatment-text';
 import { DEFAULT_WATER_READOUT, type WaterReadout } from '../../sim/water-quality';
 import { panelCatalog } from './panel-views';
@@ -130,6 +131,16 @@ export function speciesSliderLabel(species: SpeciesId): string {
         {{ notice }}
       </p>
     }
+    <!-- Capacité du bac (#809, ADR 0172) : occupation et volume d'eau réel, alerte d'un bac
+         trop plein (sauvegarde chargée), jamais d'animal retiré. -->
+    @if (capacity().text; as line) {
+      <p class="control-panel__note" data-capacity>{{ line }}</p>
+    }
+    @if (capacity().alert; as alert) {
+      <p class="control-panel__note control-panel__warning" role="status" data-capacity-alert>
+        {{ alert }}
+      </p>
+    }
     <!-- Filtres, tri et résumé : parcourir les effectifs ; une recherche d’espèce ou de fiche
          ne garde que les tuiles (#768). -->
     <div class="population__toolbar" appSetting="Nombre par espèce">
@@ -237,6 +248,15 @@ export function speciesSliderLabel(species: SpeciesId): string {
             +
           </button>
         </div>
+        <!-- Refus de capacité (#809) : pourquoi « + » ne fait plus rien pour cette espèce. -->
+        @if ((lastAdded() === id || refused() === id) && capacity().reasons[id]; as reason) {
+          <p
+            class="control-panel__note control-panel__warning population__wide"
+            [attr.data-capacity-refusal]="id"
+          >
+            {{ reason }}
+          </p>
+        }
         <!-- Avertissements d'ajout (#237) : bac qui ne convient pas à l'espèce ajoutée. -->
         @if (lastAdded() === id) {
           @for (text of addTexts(); track text) {
@@ -288,6 +308,8 @@ export class PopulationSection {
   readonly populationMax = input<PopulationCounts>(NO_FISH);
   /** Plafond d'animaux de la pièce atteint (#392) : message de l'hôte, sinon `null`. */
   readonly populationNotice = input<string | null>(null);
+  /** Capacité du bac (#809) : occupation, alerte d'un bac trop plein, raisons des refus. */
+  readonly capacity = input<CapacityShown>(NO_CAPACITY);
   /** Litres d'eau du bac (#237) ; `null` : inconnus. */
   readonly tankLiters = input<number | null>(null);
   /** Relevé de l'eau (produits de traitement, température). */
@@ -340,6 +362,14 @@ export class PopulationSection {
   });
   /** Dernière espèce ajoutée depuis le panneau (#237), oubliée au changement d'environnement. */
   protected readonly lastAdded = linkedSignal<EnvironmentId, SpeciesId | null>({
+    source: this.environment,
+    computation: () => null,
+  });
+  /**
+   * Dernière espèce dont « + » a été refusé à sa borne (#809) : sa raison de capacité reste
+   * affichée, oubliée au changement d'environnement.
+   */
+  protected readonly refused = linkedSignal<EnvironmentId, SpeciesId | null>({
     source: this.environment,
     computation: () => null,
   });
@@ -438,11 +468,17 @@ export class PopulationSection {
     this.populationChanged.emit({ species: id, count });
   }
 
-  /** Bouton « − » ou « + » : sans effet à la borne. */
+  /**
+   * Bouton « − » ou « + » : sans effet à la borne, où « + » retient l'espèce pour afficher la
+   * raison d'un refus de capacité (#809).
+   */
   protected step(id: SpeciesId, delta: -1 | 1): void {
     const count = this.population()[id] + delta;
     if (count >= 0 && count <= this.populationMax()[id]) {
+      this.refused.set(null);
       this.request(id, count);
+    } else if (delta > 0) {
+      this.refused.set(id);
     }
   }
 

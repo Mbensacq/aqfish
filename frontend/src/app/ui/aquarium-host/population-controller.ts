@@ -9,6 +9,8 @@ import { returnToCareInPlace } from '../../sim/care-return';
 import { isSpeciesId, setPopulationInPlace } from '../../sim/population';
 import { roomPopulationLimits } from '../../sim/room-limits';
 import type { SpeciesId } from '../../sim/species';
+import { capacityLimits, tankCapacity } from '../../sim/tank-capacity-limits';
+import { populationOf } from '../../sim/tank-capacity';
 import { feedInPlace } from '../../sim/world';
 import type { MutableWorld } from '../../sim/world-types';
 import type { AquariumProbe } from './aquarium-probe';
@@ -44,7 +46,8 @@ export class PopulationController {
    * à une position valide, les plus récents sont retirés ; ni le temps ni le décor ne sont
    * réinitialisés. Sans effet en mode capture (les effectifs passent par `population=`),
    * avant le démarrage, pour une espèce inconnue ou absente de l'environnement (#88, sauf en
-   * mode décor, #278), ou un effectif qui n'est pas un entier positif ou nul.
+   * mode décor, #278), ou un effectif qui n'est pas un entier positif ou nul. En mode soins, un
+   * ajout est aussi borné par la capacité du bac (#809).
    */
   setPopulation(species: SpeciesId, count: number): void {
     const { ports } = this;
@@ -63,7 +66,15 @@ export class PopulationController {
     // restante, sans effet si elle est nulle ; retirer reste toujours possible.
     const tanks = ports.tanks();
     const room = tanks.sync(world);
-    const limit = roomPopulationLimits(room, tanks.selectedTankId, world)[species];
+    const limits = roomPopulationLimits(room, tanks.selectedTankId, world);
+    // Capacité du bac en mode soins (#809, ADR 0172) : un ajout au-delà est ramené au plus grand
+    // effectif qu'elle permet, jamais sous l'effectif actuel ; le mode décor n'est pas borné.
+    const { liters, decor } = tankCapacity(world);
+    const limit = capacityLimits(
+      { liters, population: populationOf(world), mode: decor ? 'decor' : 'soins' },
+      [species],
+      limits,
+    ).limits[species];
     setPopulationInPlace(world, species, Math.min(count, limit));
     ports.refreshPopulation();
     ports.scheduleFrame();
