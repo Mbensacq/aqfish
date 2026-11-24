@@ -10505,10 +10505,10 @@
           "note": "Verdict OK, 0 bug, 178/178 captures identiques c288, publiées"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-24T01:25:27.158Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-24T01:57:26.089Z",
+          "note": "PR #806 fusionnée → v1.30.2 (release CI OK, CI main verte), #805 et #728 fermées ; suppression de branche refusée"
         }
       },
       "metriques": {}
