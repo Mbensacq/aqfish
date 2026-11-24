@@ -40,15 +40,21 @@ export const PELLET_FOOD_MG = 31.25 * NITROGEN_DAY_SCALE;
 export const EATEN_FOOD_AMMONIA_SHARE = 0.04;
 
 /** Ammoniaque rendue par un granulé de masse 1 mangé, en mg (4 % de `PELLET_FOOD_MG`). */
-export const EATEN_FOOD_AMMONIA = 1.25 * NITROGEN_DAY_SCALE;
+export const EATEN_FOOD_AMMONIA = PELLET_FOOD_MG * EATEN_FOOD_AMMONIA_SHARE;
+
+/**
+ * Part du poids de nourriture qui se décompose rendue en ammoniaque : 8 %, tout l'azote d'une
+ * nourriture à 50 % de protéines (16 % d'azote).
+ */
+export const DECAYED_FOOD_AMMONIA_SHARE = 0.08;
 
 /**
  * Ammoniaque apportée par un granulé de masse 1 qui se décompose, en mg (mg/L × litres) :
- * 8 % de `PELLET_FOOD_MG`, tout l'azote d'une nourriture à 50 % de protéines (16 % d'azote).
- * Approximation de jeu : ancienne valeur 5 convertie (`sim/water-units.ts`, issue #793), puis
- * recalée sur le jour de jeu (#805).
+ * `DECAYED_FOOD_AMMONIA_SHARE` de `PELLET_FOOD_MG`. Approximation de jeu : ancienne valeur 5
+ * convertie (`sim/water-units.ts`, issue #793), puis recalée sur le jour de jeu (#805). Dérivée
+ * des parts (#803) : mêmes valeurs au bit près que les anciens littéraux.
  */
-export const FOOD_DECAY_AMMONIA = 2.5 * NITROGEN_DAY_SCALE;
+export const FOOD_DECAY_AMMONIA = PELLET_FOOD_MG * DECAYED_FOOD_AMMONIA_SHARE;
 
 /**
  * Ajoute à `water`, **en le modifiant**, l'ammoniaque de `mass` unités de nourriture
