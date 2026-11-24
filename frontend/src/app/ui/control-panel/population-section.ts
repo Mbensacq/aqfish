@@ -143,12 +143,6 @@ export function speciesSliderLabel(species: SpeciesId): string {
         {{ alert }}
       </p>
     }
-    <!-- Espèces encore possibles (#818) : verdict face aux présentes et place restante. -->
-    <app-possible-species-list
-      appSetting="Nombre par espèce"
-      [entries]="capacity().possible"
-      [careMode]="careMode()"
-    />
     <!-- Filtres, tri et résumé : parcourir les effectifs ; une recherche d’espèce ou de fiche
          ne garde que les tuiles (#768). -->
     <div class="population__toolbar" appSetting="Nombre par espèce">
@@ -303,6 +297,13 @@ export function speciesSliderLabel(species: SpeciesId): string {
     @for (text of mixTexts(); track text) {
       <p class="control-panel__note control-panel__warning" data-mix-warning>{{ text }}</p>
     }
+    <!-- Espèces encore possibles (#818) : verdict face aux présentes et place restante, après
+         les tuiles : l'ordre de Tab des filtres et des compteurs ne change pas. -->
+    <app-possible-species-list
+      appSetting="Nombre par espèce"
+      [entries]="capacity().possible"
+      [careMode]="careMode()"
+    />
     <!-- Animaux d'un autre milieu gardés au retour en soins (#278, lot 2). -->
     @for (text of milieuTexts(); track text) {
       <p class="control-panel__note control-panel__warning" data-milieu-warning>
