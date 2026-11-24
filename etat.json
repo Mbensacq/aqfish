@@ -10631,10 +10631,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-24T09:03:33.287Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-24T09:04:35.709Z",
+          "note": "Issue #814 : Rétro sprint 42, dev sur #803 (S)"
         }
       },
       "metriques": {}
