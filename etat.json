@@ -10575,6 +10575,12 @@
           "debut": "2026-11-24T05:04:52.367Z",
           "fin": "2026-11-24T05:58:31.065Z",
           "note": "Verdict RÉSERVES (arbitrage populations par défaut non fait, S3 non jouable en UI), 0 bug, 175/178 captures identiques c290, publiées"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-24T05:59:04.965Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
