@@ -160,10 +160,8 @@ describe('AquariumHost : partage par lien (caractérisation, #696)', () => {
     expect(host().environment()).toBe('bassin');
     expect(host().world!.seed).toBe(9);
     expect(window.location.hash).toBe('');
-    // Bassin par défaut au-delà de sa capacité (ADR 0171) : l'import le signale (#809).
-    expect(host().saveMessage()?.text).toMatch(
-      /^Aquarium partagé importé\. Bac au-delà de sa capacité/,
-    );
+    // Bassin par défaut sous sa capacité depuis #811 (ADR 0173) : aucune alerte à l'import.
+    expect(host().saveMessage()).toEqual({ kind: 'info', text: 'Aquarium partagé importé.' });
     const saved = parseSaveWorlds(storage.data.get(SAVE_STORAGE_KEY)!);
     expect(saved.ok && saved.world.environment).toBe('bassin');
   });

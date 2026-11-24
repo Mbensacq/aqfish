@@ -82,7 +82,7 @@ test.describe('Environnement', () => {
     await expect(selector(page)).toHaveValue('bassin');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'bassin');
     // Le bassin a ses koïs (#88), et seulement eux.
-    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', 'koi:7,rouge:0');
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', 'koi:3,rouge:0');
     // Vue par défaut du bassin : de dessus (bouton actif de la barre des vues).
     await expect(page.getByRole('button', { name: /^Vue de dessus/ })).toHaveAttribute(
       'aria-pressed',
@@ -131,7 +131,7 @@ test.describe('Environnement', () => {
     expect(errors).toEqual([]);
   });
 
-  test('paludarium (#129) : choisi au panneau, sans axolotl (#271), trois grenouilles (#131) et deux tritons (#133), nourri sur l’eau seulement, gardé au rechargement', async ({
+  test('paludarium (#129) : choisi au panneau, sans axolotl (#271), deux grenouilles et aucun triton (#811), nourri sur l’eau seulement, gardé au rechargement', async ({
     page,
   }) => {
     // Sans `seed=` : la sauvegarde automatique restaure le monde au rechargement.
@@ -141,17 +141,18 @@ test.describe('Environnement', () => {
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'paludarium');
     await expect(hostEl(page)).toHaveAttribute(
       'data-aqfish-population',
-      'axolotl:0,grenouille:3,triton:2',
+      'axolotl:0,grenouille:2,triton:0',
     );
     // L'axolotl vit dans le bac d'eau froide depuis #271 : proposé ici, à zéro par défaut.
     await ouvrirReglages(page, 'Population');
     await expect(page.getByRole('spinbutton', { name: 'Nombre d’axolotls' })).toHaveValue('0');
     await expect(
       page.getByRole('spinbutton', { name: 'Nombre de sonneurs orientaux' }),
-    ).toHaveValue('3');
+    ).toHaveValue('2');
+    // Tritons proposés, plus peuplés d'office (capacité du paludarium, ADR 0173).
     await expect(
       page.getByRole('spinbutton', { name: 'Nombre de tritons à ventre de feu' }),
-    ).toHaveValue('2');
+    ).toHaveValue('0');
     await expect(page.locator('[data-population-empty]')).toHaveCount(0);
     await fermerReglages(page);
 

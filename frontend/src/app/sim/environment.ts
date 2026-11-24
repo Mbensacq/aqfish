@@ -252,8 +252,8 @@ export const POND: Environment = {
   rain: true,
   floatingLeaves: true,
   current: { direction: 0.5, level: 'coupe' },
-  // Poisson rouge (#654) proposé, sans être peuplé d'office : la population de départ reste
-  // celle d'avant (captures identiques à l'octet).
+  // Poisson rouge (#654) proposé, sans être peuplé d'office. Trois koïs au départ (#811,
+  // ADR 0173) : 720 L demandés pour 834 L d'eau réelle, sous la capacité.
   species: [KOI.id, ROUGE.id],
   population: defaultPopulation([KOI]),
 };
@@ -313,7 +313,9 @@ export const PALUDARIUM: Environment = {
   floatingLeaves: false,
   current: { direction: Math.PI / 2, level: 'coupe' },
   species: [AXOLOTL.id, GRENOUILLE.id, TRITON.id],
-  population: defaultPopulation([GRENOUILLE, TRITON]),
+  // Population de départ sous la capacité (#811, ADR 0173) : deux sonneurs (36 L pour 45,7 L
+  // d'eau réelle). Le triton reste proposé ; un triton (30 L) avec un sonneur dépasse déjà.
+  population: defaultPopulation([GRENOUILLE]),
 };
 
 /**

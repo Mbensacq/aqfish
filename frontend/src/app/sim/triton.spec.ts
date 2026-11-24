@@ -47,6 +47,23 @@ function newts(world: World): Fish[] {
   return world.entities.filter((e) => e.species === 'triton');
 }
 
+/**
+ * Paludarium mixte, population de départ d'avant #811 (3 sonneurs, 2 tritons) : les tritons n'y
+ * sont plus peuplés d'office (capacité, ADR 0173), les tests de cohabitation partent de lui.
+ */
+function mixedPaludarium(seed: number): World {
+  return createWorld(
+    seed,
+    [
+      { species: 'grenouille', count: 3 },
+      { species: 'triton', count: 2 },
+    ],
+    [],
+    [],
+    'paludarium',
+  );
+}
+
 /** Monde du paludarium peuplé de `count` tritons seulement. */
 function newtWorld(seed: number, count = 3): MutableWorld {
   return cloneWorld(
@@ -86,21 +103,19 @@ describe('triton : espèce du paludarium (#133)', () => {
     expect(TRITON.colors.belly).toBe('#e07a2f');
   });
 
-  it('déclaré en données pour le paludarium seulement, deux par défaut', () => {
+  it('déclaré en données pour le paludarium seulement, proposé sans être peuplé d’office', () => {
     expect(PALUDARIUM.species).toEqual(['axolotl', 'grenouille', 'triton']);
-    expect(PALUDARIUM.population).toContainEqual({ species: 'triton', count: 2 });
+    // Plus peuplé par défaut depuis #811 (capacité, ADR 0173).
+    expect(PALUDARIUM.population.map((p) => p.species)).not.toContain('triton');
     expect(livesIn('paludarium', 'triton')).toBe(true);
     expect(TROPICAL_TANK.species).not.toContain('triton');
     expect(POND.species).not.toContain('triton');
     const world = createDefaultWorld(42, 'paludarium');
-    expect(newts(world)).toHaveLength(2);
-    // Après les grenouilles ; sans axolotl par défaut depuis l'issue #271 (ADR 0065).
+    expect(newts(world)).toEqual([]);
+    // Sans axolotl par défaut depuis l'issue #271 (ADR 0065), sans triton depuis #811.
     expect(world.entities.map((e) => `${e.species}:${e.id}`)).toEqual([
       'grenouille:0',
       'grenouille:1',
-      'grenouille:2',
-      'triton:3',
-      'triton:4',
     ]);
     for (const env of ['tropical', 'bassin'] as const) {
       expect(newts(createDefaultWorld(42, env))).toEqual([]);
@@ -108,7 +123,7 @@ describe('triton : espèce du paludarium (#133)', () => {
   });
 
   it('population réglable de 0 à 3, nés sur la berge', () => {
-    const world = createDefaultWorld(9, 'paludarium');
+    const world = mixedPaludarium(9);
     expect(populationLimit(world, 'triton')).toBe(3);
     const more = setPopulation(world, 'triton', 10);
     expect(newts(more)).toHaveLength(3);
@@ -270,7 +285,7 @@ describe('triton : bornes sur 20 000 pas', () => {
   it.each([1, 42, 2024, 4294967295])(
     'graine %i : dans le bac, jamais sous le sol, terre → eau et eau → terre',
     (seed) => {
-      const world: MutableWorld = cloneWorld(createDefaultWorld(seed, 'paludarium'));
+      const world: MutableWorld = cloneWorld(mixedPaludarium(seed));
       const { hard } = BOUNDS;
       const state = new Map<number, { inWater: boolean; toWater: number; toLand: number }>();
       for (const f of newts(world)) {
@@ -400,15 +415,15 @@ describe('triton : inclinaison à la sortie de l’eau (#233)', () => {
 
 describe('triton : déterminisme et sauvegarde', () => {
   it('même graine, mêmes trajectoires ; graines différentes, trajectoires différentes', () => {
-    const a = advance(createDefaultWorld(77, 'paludarium'), 3000);
-    const b = advance(createDefaultWorld(77, 'paludarium'), 3000);
-    const c = advance(createDefaultWorld(78, 'paludarium'), 3000);
+    const a = advance(mixedPaludarium(77), 3000);
+    const b = advance(mixedPaludarium(77), 3000);
+    const c = advance(mixedPaludarium(78), 3000);
     expect(newts(a)).toEqual(newts(b));
     expect(newts(a)).not.toEqual(newts(c));
   });
 
   it('un monde sauvegardé en plein pas rampant reprend à l’identique', () => {
-    let world: World = createDefaultWorld(11, 'paludarium');
+    let world: World = mixedPaludarium(11);
     for (let k = 0; k < 4000 && !newts(world).some((f) => f.ascent > 0); k++) {
       world = advance(world, 1);
     }

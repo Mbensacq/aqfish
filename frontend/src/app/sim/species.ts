@@ -635,7 +635,7 @@ export const KOI: SpeciesDefinition = {
   maxPitch: 0.2,
   wallMargin: 0.07,
   tailBeatFrequency: 1.2,
-  defaultPopulation: 7,
+  defaultPopulation: 3,
   maxPopulation: 14,
   schooling: {
     neighborRadius: 0.6,
@@ -784,7 +784,7 @@ export const GRENOUILLE: SpeciesDefinition = {
   maxPitch: 0.9,
   wallMargin: 0.05,
   tailBeatFrequency: 2,
-  defaultPopulation: 3,
+  defaultPopulation: 2,
   maxPopulation: 4,
   schooling: null,
   silhouette: 'grenouille',

@@ -101,7 +101,7 @@ test.describe('Sauvegarde (#70)', () => {
     await environment.selectOption('bassin');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-environment', 'bassin');
     await ouvrirReglages(page, 'Population');
-    // Bassin par défaut au-delà de sa capacité (ADR 0171, #809) : on en retire un, l'ajout est refusé.
+    // Bassin par défaut à 3 koïs (ADR 0173) : une quatrième dépasse la capacité, on en retire un.
     await page.getByRole('button', { name: 'Retirer un koï' }).click();
     const pond = await population();
     expect(pond).toMatch(/^koi:\d+,rouge:0$/);

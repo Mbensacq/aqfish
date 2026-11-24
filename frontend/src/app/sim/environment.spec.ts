@@ -69,10 +69,8 @@ describe('environnements', () => {
     expect(PALUDARIUM.waterLevel).toBeLessThan(WATER_LEVEL_RATIO);
     // Axolotls proposés depuis l'issue #130 ; plus peuplés par défaut depuis l'issue #271.
     expect(PALUDARIUM.species).toEqual(['axolotl', 'grenouille', 'triton']);
-    expect(PALUDARIUM.population).toEqual([
-      { species: 'grenouille', count: 3 },
-      { species: 'triton', count: 2 },
-    ]);
+    // Sous la capacité depuis #811 (ADR 0173) : deux sonneurs, tritons proposés seulement.
+    expect(PALUDARIUM.population).toEqual([{ species: 'grenouille', count: 2 }]);
     expect(PALUDARIUM.bubbles || PALUDARIUM.caustics || PALUDARIUM.rain).toBe(false);
     expect(PALUDARIUM.lilyPads).toBeNull();
     const terrain = PALUDARIUM.terrain;

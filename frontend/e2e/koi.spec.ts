@@ -52,7 +52,7 @@ test.describe('Koïs (#88)', () => {
     page,
   }) => {
     const errors = await open(page, '?capture=1&seed=42&environnement=bassin&time=20');
-    await expect(host(page)).toHaveAttribute('data-aqfish-population', 'koi:7,rouge:0');
+    await expect(host(page)).toHaveAttribute('data-aqfish-population', 'koi:3,rouge:0');
     const [white, red, orange] = await countColors(page, KOI_COLORS);
     // Un pixel de scène = 3 × 3 pixels d'écran ; plusieurs koïs de chaque robe.
     expect(white).toBeGreaterThan(9 * 20);
@@ -77,9 +77,9 @@ test.describe('Koïs (#88)', () => {
     await expect(rows).toHaveCount(2);
     await expect(rows.first()).toHaveAttribute('data-species', 'koi');
     await expect(rows.nth(1)).toHaveAttribute('data-species', 'rouge');
-    // Bassin par défaut au-delà de sa capacité (ADR 0171, #809) : l'ajout est refusé, on retire.
+    // Bassin par défaut plein à 86 % (3 koïs, ADR 0173) : une quatrième est refusée, on retire.
     await page.getByRole('button', { name: 'Retirer un koï' }).click();
-    await expect(host(page)).toHaveAttribute('data-aqfish-population', 'koi:6,rouge:0');
+    await expect(host(page)).toHaveAttribute('data-aqfish-population', 'koi:2,rouge:0');
     await ouvrirReglages(page, 'Bac et milieu');
     await page.getByRole('combobox', { name: 'Environnement' }).selectOption('tropical');
     await expect(host(page)).toHaveAttribute('data-aqfish-environment', 'tropical');
