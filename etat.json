@@ -10523,10 +10523,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-24T01:57:58.711Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-24T01:58:51.755Z",
+          "note": "Issue #807 : capacité du bac, calcul de simulation, tranche 1 de #729 (M)"
         }
       },
       "metriques": {}
