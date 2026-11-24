@@ -10780,10 +10780,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-24T23:41:47.352Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-24T23:42:27.739Z",
+          "note": "Issue #823 : #731 tranche 2, refuges gradués des alevins (M)"
         }
       },
       "metriques": {}
