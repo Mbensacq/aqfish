@@ -10684,10 +10684,10 @@
           "note": "PR #817 : verdict de compatibilité par paire (sim/verdict.ts, ADR 0174, matrice dans ESPECES.md), CI verte ; 40 tests ; bundle identique à main (captures inchangées) ; e2e locaux interrompus (CI e2e verte)"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-24T11:21:05.125Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-24T11:56:54.357Z",
+          "note": "Verdict OK, 0 bug, 178/178 captures identiques c293, publiées"
         }
       },
       "metriques": {}
