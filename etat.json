@@ -10649,10 +10649,10 @@
           "note": "Verdict OK, 0 bug, 178/178 captures identiques c292, publiées"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-24T10:06:33.924Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-24T10:34:23.648Z",
+          "note": "PR #815 fusionnée → v1.30.6 (release CI OK, CI main verte), #803 et #814 fermées ; suppression de branche refusée"
         }
       },
       "metriques": {
