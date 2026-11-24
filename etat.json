@@ -10769,6 +10769,24 @@
         }
       },
       "metriques": {}
+    },
+    "297": {
+      "numero": 297,
+      "date": "2026-11-25",
+      "debut": "2026-11-24T23:41:47.352Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-24T23:41:47.352Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
