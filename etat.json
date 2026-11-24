@@ -10661,6 +10661,24 @@
         "complexiteMax": 24,
         "plusLongueFonction": 108
       }
+    },
+    "294": {
+      "numero": 294,
+      "date": "2026-11-24",
+      "debut": "2026-11-24T10:35:08.720Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-24T10:35:08.720Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
