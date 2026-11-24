@@ -10533,6 +10533,12 @@
           "debut": "2026-11-24T01:59:24.149Z",
           "fin": "2026-11-24T02:42:09.050Z",
           "note": "PR #808 : capacité du bac (volume réel, canAdd, S3 vert, ADR 0171), CI verte 13/13 ; e2e local partiel ; bassin et paludarium par défaut au-delà de la capacité (ESPECES point 19) ; pied d'attribution réinjecté dans la PR (PIEGES)"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-24T02:42:51.838Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
