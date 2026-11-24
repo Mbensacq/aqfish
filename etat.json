@@ -10599,6 +10599,12 @@
           "debut": "2026-11-24T06:32:18.681Z",
           "fin": "2026-11-24T06:32:59.383Z",
           "note": "Issue #811 : populations par défaut du bassin et du paludarium (M), avec #709 en second point"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-24T06:33:32.895Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
