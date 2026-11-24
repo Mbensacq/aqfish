@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { fermerReglages, ouvrirReglages } from './outils-panneau';
+import { fermerReglages, ouvrirReglages, passerEnModeDecor } from './outils-panneau';
 
 /**
  * Wiki des espèces, lot 1/2 (issue #287) : ouvrir, chercher, ouvrir une fiche, ajouter une
@@ -36,6 +36,10 @@ async function ids(locator: Locator): Promise<(string | null)[]> {
 test.describe('Wiki des espèces (#287)', () => {
   test('à la souris : ouvrir, chercher, fiche, ajouter, fermer', async ({ page }) => {
     const errors = await open(page);
+    // Paludarium par défaut au-delà de sa capacité, et sous le volume minimal d'un axolotl
+    // (ADR 0171) : en mode soins, l'ajout est refusé (#809) ; il se teste en mode décor.
+    await passerEnModeDecor(page);
+    await fermerReglages(page);
     await expect(wiki(page)).toHaveCount(0);
     await toggle(page).click();
     await expect(wiki(page)).toBeVisible();
@@ -79,6 +83,9 @@ test.describe('Wiki des espèces (#287)', () => {
     page,
   }) => {
     const errors = await open(page);
+    // Ajout de l'axolotl en mode décor, comme à la souris (capacité du paludarium, #809).
+    await passerEnModeDecor(page);
+    await fermerReglages(page);
     await toggle(page).focus();
     await page.keyboard.press('Enter');
     await expect(wiki(page)).toBeVisible();
