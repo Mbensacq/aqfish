@@ -10,6 +10,7 @@ import {
 } from './testing/ecosystem-scenario';
 import type { MutableWaterState } from './water';
 import { COMPOUND_THRESHOLDS } from './water-quality';
+import { canAdd, populationOf } from './tank-capacity';
 import { ENVIRONMENT_IDS } from './environment';
 import { cloneWorld, createDefaultWorld, createWorld } from './world';
 import type { World } from './world-types';
@@ -47,7 +48,7 @@ function expectStable(record: ScenarioRecord): void {
   expect(record.minHealth).toBeGreaterThanOrEqual(SICK_HEALTH);
 }
 
-describe('scénarios de référence de l’écosystème (#799, #805)', () => {
+describe('scénarios de référence de l’écosystème (#799, #805, #807)', () => {
   it(
     'S1 — bocal de 10 L, un poisson rouge, sans filtre : ammoniaque toxique en quelques jours, poisson malade',
     () => {
@@ -101,6 +102,21 @@ describe('scénarios de référence de l’écosystème (#799, #805)', () => {
     },
     SCENARIO_TIMEOUT_MS,
   );
+
+  it('S3 — 120 L, un poisson rouge adulte : le deuxième est refusé par la capacité (OATA : 150 L pour deux)', () => {
+    const tank = { liters: 120, population: populationOf(goldfish(1)) };
+
+    const first = canAdd({ liters: 120, population: [] }, 'rouge');
+    const second = canAdd(tank, 'rouge');
+
+    expect(first.ok).toBe(true);
+    expect(second.ok).toBe(false);
+    expect(second.limit).toBe('capacite');
+    expect(second.reason).toBe(
+      '120 L : un poisson rouge adulte demande 100 L, puis 50 L par poisson rouge en plus (OATA) ; il faudrait 150 L',
+    );
+    expect(second.disagreement).toContain('RSPCA');
+  });
 
   it.each(ENVIRONMENT_IDS)(
     'S12 — bac par défaut « %s », entretien normal : stable sur 3 mois',

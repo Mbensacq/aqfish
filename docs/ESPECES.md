@@ -499,6 +499,18 @@ appliquent (point 18).
 Les exclusions légales (_Xenopus_, Pipidae dont _Hymenochirus_, _Triturus_, indigènes
 protégées comme _Bombina variegata_) restent testées avec la tranche.
 
+## Capacité du bac (#807, tranche 1 de #729)
+
+Le calcul de capacité (`sim/tank-capacity.ts`, ADR 0171) lit les données ci-dessus et la fiche ;
+chaque valeur garde la source ou le statut de son champ, repris dans la raison d'un verdict.
+
+| Valeur                                  | Sourcé                                                                       | Approximation de jeu                                                                     |
+| --------------------------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Plafond et conseillé                    | Tropicaux : 1,5 L/cm (plafond) et 2 L/cm (conseillé), RSPCA                  | Bornes basse et haute des classes invertébré, récif et amphibien                         |
+| Besoin avec volume par adulte en plus   | Poisson rouge : 100 L puis 50 L (OATA, désaccord RSPCA, point 15)            | Néritine : la première compte aussi 40 L (le volume minimal de la fiche, 30 L, est plus bas) |
+| Âge des animaux                         | —                                                                            | Tout animal compte comme un adulte                                                       |
+| Volume d'eau réel                       | —                                                                            | Plantes non déduites ; coraux et anémones à la moitié de leur boîte ; sol échantillonné au cm |
+
 ## Non vérifié et désaccords
 
 1. Néon : 21–25 °C (Seriously Fish 2026) / 26,5–29 °C (ancien texte) / 21–29 °C (importateur) /
@@ -541,6 +553,11 @@ protégées comme _Bombina variegata_) restent testées avec la tranche.
     amphibiens ; la classe « amphibien » (3 à 4 L d'eau par cm) et les parts d'eau de l'axolotl
     et du triton sont des **approximations de jeu**, choisies pour que le volume minimal de
     chaque fiche, berge déduite, loge un adulte au plafond de densité (testé).
+19. Capacité des bacs par défaut (#807) : au plafond, le bassin (7 koïs de 60 cm, eau froide
+    4 L/cm, règle de la RSPCA pour le poisson rouge appliquée à la koï) demande 1 680 L pour
+    834 L d'eau, et le paludarium (classe « amphibien » 3 L/cm, approximation) 114 L pour 45,7 L
+    d'eau réelle, berge déduite. Non arbitré : populations par défaut ou classes à sourcer, à
+    décider avant de brancher les compteurs (tranche 2 de #729).
 
 ## Bibliographie
 
