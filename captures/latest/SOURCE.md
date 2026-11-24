@@ -1,6 +1,7 @@
-Branche : cycle/c293-retro-sprint-42
-PR : #815
-Commit : 497a6c66
-Graine : défaut (captures)
-Série : 173 tests, 178 images ; 178 identiques à c292 (comparaison octet par octet)
-Temps : figé par le mode capture
+Cycle 294
+Branche: cycle/c294-verdicts-par-paire
+PR: #817
+Commit: f8873486
+Graine: celle de captures.spec.ts (par défaut)
+Temps: 2026-11-24 ~12:00 UTC
+Résultat: 178/178 captures identiques à c293 (cmp)
