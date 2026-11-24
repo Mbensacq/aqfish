@@ -10643,7 +10643,12 @@
           "note": null
         }
       },
-      "metriques": {}
+      "metriques": {
+        "tests": 6278,
+        "couvertureSimLignes": 99.59,
+        "complexiteMax": 24,
+        "plusLongueFonction": 108
+      }
     }
   },
   "jours": {
