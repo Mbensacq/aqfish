@@ -10682,6 +10682,12 @@
           "debut": "2026-11-24T10:36:36.830Z",
           "fin": "2026-11-24T11:20:27.093Z",
           "note": "PR #817 : verdict de compatibilité par paire (sim/verdict.ts, ADR 0174, matrice dans ESPECES.md), CI verte ; 40 tests ; bundle identique à main (captures inchangées) ; e2e locaux interrompus (CI e2e verte)"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-24T11:21:05.125Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
