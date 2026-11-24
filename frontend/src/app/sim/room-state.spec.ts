@@ -138,6 +138,16 @@ const AFTER_805 = {
   nitrite: 0.0000019010318129728867,
   nitrate: 3.513761466260068e-8,
 } as const;
+/**
+ * Composés azotés et pH du même bac depuis #821 (plantes actives) : les plantes en retirent un
+ * peu et relèvent le pH d'autant.
+ */
+const AFTER_821 = {
+  ammonia: 0.001459650409117813,
+  nitrite: 0.000001897875575531862,
+  nitrate: 3.505024738322309e-8,
+  ph: 6.999911818873768,
+} as const;
 /** pH du même bac relevé sur `main` (v1.30.1) avant #805. */
 const BEFORE_805_PH = 6.999293968750003;
 
@@ -204,12 +214,16 @@ describe('stepRoom sauf le bac affiché (#316, lot 3b)', () => {
     const { plantGrowth, ...water } = alone.water;
     expect(plantGrowth).toBeDefined();
     expect(Object.values(plantGrowth!).every((g) => g > 0 && g < 1)).toBe(true);
+    // Depuis #821, les plantes du décor absorbent l'azote et relèvent d'autant le pH : les
+    // valeurs de #805 restent des bornes (les plantes ne font que retirer), les nouvelles sont
+    // relevées à part.
     for (const compound of ['ammonia', 'nitrite', 'nitrate'] as const) {
-      expect(water[compound]).toBe(AFTER_805[compound]);
+      expect(water[compound]).toBe(AFTER_821[compound]);
+      expect(water[compound]).toBeLessThan(AFTER_805[compound]);
     }
-    expect(FRESH_PH.tropical - water.ph).toBeCloseTo(
+    expect(water.ph).toBe(AFTER_821.ph);
+    expect(FRESH_PH.tropical - water.ph).toBeLessThan(
       (FRESH_PH.tropical - BEFORE_805_PH) * NITROGEN_DAY_SCALE,
-      12,
     );
     expect(hashWorld({ ...alone, water: { ...water, ...BEFORE_798, ph: BEFORE_805_PH } })).toBe(
       GOLDEN_HASH,

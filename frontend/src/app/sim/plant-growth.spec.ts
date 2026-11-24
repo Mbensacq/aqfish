@@ -1,3 +1,4 @@
+import { PLANT_MIN_NITROGEN_GROWTH } from './plant-uptake';
 import { SIM_DT } from './constants';
 import { setCareModeInPlace } from './care-mode';
 import { DEFAULT_DAY_LENGTH_SECONDS } from './daylight';
@@ -279,10 +280,12 @@ describe('pousse des plantes (#477)', () => {
       expect(world.water.plantGrowth).toBeUndefined();
       advanceInPlace(world, Math.round(DAY / SIM_DT));
       const tall = DEFAULT_DECOR.filter(isGrowingPlant);
+      // Bac sans habitant : aucun azote dissous, les plantes poussent au plancher (#821).
+      expect(world.water.ammonia + world.water.nitrate).toBe(0);
       for (const item of tall) {
         const cap = plantLimits(item, SURFACE).cap;
         expect(growthOf(world.water.plantGrowth, item.seed)).toBeCloseTo(
-          plantGrowthAt(item.seed, DAY, cap),
+          plantGrowthAt(item.seed, DAY * PLANT_MIN_NITROGEN_GROWTH, cap),
           6,
         );
       }
