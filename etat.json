@@ -10760,6 +10760,12 @@
           "debut": "2026-11-24T16:41:59.478Z",
           "fin": "2026-11-24T17:17:12.396Z",
           "note": "Verdict OK, 0 bug, 177/177 captures identiques c295, publiées (e2e complet par la CI)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-24T17:17:46.015Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
