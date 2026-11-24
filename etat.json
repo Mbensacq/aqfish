@@ -10497,6 +10497,12 @@
           "debut": "2026-11-23T23:42:53.939Z",
           "fin": "2026-11-24T00:59:32.657Z",
           "note": "PR #806 : azote recalé sur le jour de jeu (NITROGEN_DAY_SCALE 1/8, ADR 0170), S1/S2/S4/S12 verts, empreintes relevées, CI verte 13/13 ; e2e local partiel (160 tests eau) ; pied d'attribution réinjecté dans la PR (PIEGES)"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-24T01:00:13.817Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
