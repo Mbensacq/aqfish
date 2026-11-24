@@ -20,8 +20,12 @@ import { fermerReglages, ouvrirReglages } from './outils-panneau';
 const status = (page: Page) => page.locator('[data-dashboard-status]');
 const ammoniaAlert = (page: Page) => status(page).locator('[data-alert="ammonia"]');
 
-/** Ammoniaque de départ, en mg/L (#793) : sous le seuil de vigilance (1), au-dessus de l'équilibre du bac. */
-const START_AMMONIA = 0.8;
+/**
+ * Ammoniaque de départ, en mg/L (#793) : sous le seuil de vigilance (1), au-dessus de
+ * l'équilibre du bac. Depuis le recalage sur le jour de jeu (#805), une pleine surcharge
+ * n'ajoute plus qu'environ 0,07 mg/L (0,5 avant) : l'eau part juste sous le seuil.
+ */
+const START_AMMONIA = 0.95;
 
 function overfedWorld(withFood: boolean): string {
   const world: MutableWorld = createDefaultWorld(42);
