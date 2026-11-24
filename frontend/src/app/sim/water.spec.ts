@@ -87,10 +87,20 @@ function expectBounded(water: WaterState): void {
 
 const minutes = (m: number): number => Math.round((m * 60) / SIM_DT);
 /**
- * Pas fins de `m` minutes « d'azote » : le cycle de l'azote est ralenti de `NITROGEN_DAY_SCALE`
- * (#805), une ancienne minute de calibrage en vaut huit.
+ * Avance une copie de `water` de `m` minutes « d'azote » (#805) : le cycle de l'azote est
+ * ralenti de `NITROGEN_DAY_SCALE`, une ancienne minute de calibrage en vaut huit. Pas de
+ * `SIM_DT / NITROGEN_DAY_SCALE` : autant de pas qu'une ancienne minute au pas fin (le test
+ * resterait sinon huit fois plus long, au-delà du délai en CI), et des conversions en forme
+ * exacte, donc le même azote qu'au pas fin à l'arrondi près.
  */
-const nitrogenMinutes = (m: number): number => minutes(m / NITROGEN_DAY_SCALE);
+function runNitrogen(water: WaterState, m: number, load = TROPICAL_LOAD): MutableWaterState {
+  const state: MutableWaterState = { ...water };
+  const dt = SIM_DT / NITROGEN_DAY_SCALE;
+  for (let i = 0; i < minutes(m); i++) {
+    stepWaterInPlace(state, dt, load, TROPICAL_LITERS, WATER_TEMPERATURES.tropical);
+  }
+  return state;
+}
 
 describe('freshWater', () => {
   it.each(ENVIRONMENT_IDS)('%s : eau saine à la température de l’environnement', (id) => {
@@ -142,7 +152,7 @@ describe('stepWaterInPlace', () => {
   it('bac vide : les composés présents passent aux nitrates, total conservé', () => {
     // En mg/L (#793) : 5, 3 et 2 anciennes unités ; le total se compte en anciennes unités.
     const start = { ...freshWater('tropical'), ammonia: 2.5, nitrite: 0.375, nitrate: 2 };
-    const state = run(start, nitrogenMinutes(60), 0);
+    const state = runNitrogen(start, 60, 0);
     expect(state.ammonia).toBeLessThan(1e-6);
     expect(state.nitrite).toBeLessThan(1e-4);
     expect(state.ammonia / 0.5 + state.nitrite / 0.125 + state.nitrate).toBeCloseTo(10, 9);
@@ -162,8 +172,8 @@ describe('stepWaterInPlace', () => {
   });
 
   it('population par défaut nourrie : ammoniaque et nitrites restent bas, les nitrates montent', () => {
-    const after1h = run(freshWater('tropical'), nitrogenMinutes(60), FED_TROPICAL_LOAD);
-    const after2h = run(after1h, nitrogenMinutes(60), FED_TROPICAL_LOAD);
+    const after1h = runNitrogen(freshWater('tropical'), 60, FED_TROPICAL_LOAD);
+    const after2h = runNitrogen(after1h, 60, FED_TROPICAL_LOAD);
     expect(after2h.ammonia).toBeLessThan(2);
     expect(after2h.nitrite).toBeLessThan(3);
     expect(after2h.nitrate).toBeGreaterThan(after1h.nitrate);
@@ -176,7 +186,7 @@ describe('stepWaterInPlace', () => {
 
   it('calibrage de l’indicateur (#207, #805) : nourri, à surveiller avant 8 h, mauvaise avant 16 h', () => {
     const fed = (m: number): WaterState =>
-      run(freshWater('tropical'), nitrogenMinutes(m), FED_TROPICAL_LOAD);
+      runNitrogen(freshWater('tropical'), m, FED_TROPICAL_LOAD);
     expect(waterQuality(fed(20), 'tropical')).toBe('bonne');
     expect(waterQuality(fed(60), 'tropical')).toBe('a-surveiller');
     expect(waterQuality(fed(120), 'tropical')).toBe('mauvaise');
@@ -515,7 +525,7 @@ describe('pH de l’eau (#236)', () => {
   });
 
   it('dérive lente : bac tropical par défaut, ~0,25 de pH en huit heures simulées (#805)', () => {
-    const after = run(freshWater('tropical'), nitrogenMinutes(60));
+    const after = runNitrogen(freshWater('tropical'), 60);
     expect(FRESH_PH.tropical - after.ph).toBeGreaterThan(0.2);
     expect(FRESH_PH.tropical - after.ph).toBeLessThan(0.3);
   });

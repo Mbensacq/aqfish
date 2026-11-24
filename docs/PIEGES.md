@@ -1311,7 +1311,7 @@ DEFAULT_DECOR)`), sinon les trajectoires divergent dès la naissance. (2026-10-1
   `NITROGEN_DAY_SCALE` (1/8) ralentit tout le cycle de l'azote **et** la dérive du pH. Toute
   nouvelle durée d'azote, de pH ou de calibrage du tableau de bord se pense en jours de jeu ;
   un test de calibrage écrit en minutes d'avant #805 se réécrit en durées × 8
-  (`nitrogenMinutes` de `water.spec.ts`), pas en bornes affaiblies.
+  (`runNitrogen` de `water.spec.ts`, pas × 8 pour garder le nombre de pas), pas en bornes affaiblies.
 - **Recaler l'azote : ne pas oublier le pH** (cycle 289, #805) : avec seulement l'azote divisé
   par 8, S12 restait rouge par la santé (0,20) et non par l'eau : la dérive du pH, elle aussi
   calée en secondes, tirait le pH hors de la plage tolérée des espèces entre deux changements
