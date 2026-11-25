@@ -1,4 +1,4 @@
-import { decorMaterial, type DecorItem } from './decor';
+import type { DecorItem } from './decor';
 import type { EnvironmentId } from './environment';
 import type { MutableWaterState } from './water';
 import { isHardness, MAX_HARDNESS, tapHardness } from './water-hardness';
@@ -68,26 +68,43 @@ export const WOOD_PH_RATE = 1 / 288_000;
 /** Volume de référence des taux, en litres : le bac tropical par défaut (288 L). */
 export const DECOR_REFERENCE_LITERS = 288;
 
-/** Surface de roche calcaire du décor (somme des échelles au carré ; 0 sans calcaire). */
-export function limestoneSurface(decor: readonly DecorItem[]): number {
-  let total = 0;
+/**
+ * Surfaces actives d'un décor, en somme d'échelles au carré : accumulateur réutilisable, écrit
+ * par `decorSurfacesInto` (aucune allocation dans le pas).
+ */
+export interface DecorSurfaces {
+  /** Roches calcaires ; un rocher sans matière écrite est inerte. */
+  limestone: number;
+  /** Bois flotté. */
+  wood: number;
+}
+
+/**
+ * Écrit dans `out` les surfaces de calcaire et de bois de `decor` (0 sans l'une ou l'autre) et
+ * le renvoie : seule source de ces sommes, pour le pas comme pour les lectures. Une seule
+ * boucle, sans appel ni allocation : elle tourne à chaque pas fin (60 par seconde).
+ */
+export function decorSurfacesInto(decor: readonly DecorItem[], out: DecorSurfaces): DecorSurfaces {
+  out.limestone = 0;
+  out.wood = 0;
   for (const item of decor) {
-    if (decorMaterial(item) === 'limestone') {
-      total += item.scale * item.scale;
+    if (item.kind === 'wood') {
+      out.wood += item.scale * item.scale;
+    } else if (item.kind === 'rock' && item.material === 'limestone') {
+      out.limestone += item.scale * item.scale;
     }
   }
-  return total;
+  return out;
+}
+
+/** Surface de roche calcaire du décor (somme des échelles au carré ; 0 sans calcaire). */
+export function limestoneSurface(decor: readonly DecorItem[]): number {
+  return decorSurfacesInto(decor, { limestone: 0, wood: 0 }).limestone;
 }
 
 /** Surface de bois flotté du décor (somme des échelles au carré ; 0 sans bois). */
 export function woodSurface(decor: readonly DecorItem[]): number {
-  let total = 0;
-  for (const item of decor) {
-    if (item.kind === 'wood') {
-      total += item.scale * item.scale;
-    }
-  }
-  return total;
+  return decorSurfacesInto(decor, { limestone: 0, wood: 0 }).wood;
 }
 
 /**
@@ -137,6 +154,9 @@ export function woodPh(ph: number, surface: number, liters: number, dt: number):
   return WOOD_PH_FLOOR + (ph - WOOD_PH_FLOOR) * Math.exp(-rate * dt);
 }
 
+/** Accumulateur du pas, réutilisé (le pas n'est pas réentrant). */
+const SURFACES: DecorSurfaces = { limestone: 0, wood: 0 };
+
 /**
  * Fait agir le décor `decor` sur `water` (bac de l'environnement `environment`, `liters`
  * litres) pendant `dt` secondes, **en modifiant** l'eau : roches calcaires (dureté écrite
@@ -151,16 +171,7 @@ export function stepDecorWaterInPlace(
   liters: number,
   dt: number,
 ): void {
-  // Une seule boucle, sans appel : ce pas tourne à chaque pas fin (60 par seconde).
-  let limestone = 0;
-  let wood = 0;
-  for (const item of decor) {
-    if (item.kind === 'wood') {
-      wood += item.scale * item.scale;
-    } else if (item.material === 'limestone') {
-      limestone += item.scale * item.scale;
-    }
-  }
+  const { limestone, wood } = decorSurfacesInto(decor, SURFACES);
   if (limestone > 0) {
     const rate = limestoneRate(limestone, water.filter, liters);
     dissolveLimestoneInPlace(water, environment, rate, dt);
