@@ -10964,6 +10964,12 @@
           "debut": "2026-11-25T08:58:43.730Z",
           "fin": "2026-11-25T08:59:19.621Z",
           "note": "Issue #833 : Écosystème 6/7 tranche 1, brouteurs (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-25T08:59:55.684Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
