@@ -11050,10 +11050,10 @@
           "note": "Verdict OK, 0 bug, captures c304 publiées (unitaires verts, e2e local interrompu par le délai, CI 12/12)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-25T14:25:09.111Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-25T14:53:45.645Z",
+          "note": "PR #840 fusionnée → v1.32.3 (release CI OK, CI main verte), #733 fermée, dette #841 ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
