@@ -10919,7 +10919,7 @@
       "date": "2026-11-25",
       "debut": "2026-11-25T06:47:40.289Z",
       "type": "fonctionnalite",
-      "issue": null,
+      "issue": 824,
       "pr": null,
       "version": null,
       "phases": {
