@@ -4,6 +4,9 @@ import type { CareMode } from '../../sim/care-mode';
 import type { PossibleSpecies } from '../../sim/possible-species';
 import { possibleSpeciesCartel } from '../../sim/possible-species-text';
 
+/** Numéro de la dernière instance, pour un `id` de liste unique dans la page (#820). */
+let lastListNumber = 0;
+
 /**
  * Liste des espèces encore possibles pour le bac courant (issue #818, tranche 2 de #730,
  * `docs/ECOSYSTEME.md` § 3.2), dans la section « Population » : un bouton « Espèces encore
@@ -24,7 +27,7 @@ import { possibleSpeciesCartel } from '../../sim/possible-species-text';
       <button
         type="button"
         class="possible__toggle"
-        aria-controls="especes-possibles"
+        [attr.aria-controls]="listId"
         [attr.aria-expanded]="open()"
         data-possible-toggle
         (click)="open.set(!open())"
@@ -32,7 +35,7 @@ import { possibleSpeciesCartel } from '../../sim/possible-species-text';
         Espèces encore possibles ({{ possibleCount() }} sur {{ cartels().length }})
       </button>
       @if (open()) {
-        <ul class="possible__list" id="especes-possibles" data-possible-list>
+        <ul class="possible__list" [id]="listId" data-possible-list>
           @for (cartel of cartels(); track cartel.species) {
             <li
               class="possible__item"
@@ -59,6 +62,8 @@ export class PossibleSpeciesList {
   /** Mode du bac : rien à afficher en décor. */
   readonly careMode = input<CareMode>('soins');
 
+  /** `id` de la liste, unique par instance (fiche, pièce…), visé par `aria-controls`. */
+  protected readonly listId = `especes-possibles-${++lastListNumber}`;
   /** Liste ouverte (fermée au départ). */
   protected readonly open = signal(false);
   /** Cartels de la liste, recalculés seulement quand les espèces changent. */

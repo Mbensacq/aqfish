@@ -31,7 +31,8 @@
 }
 
 .possible__item {
-  padding: layout.$space-1 0;
+  // Marge droite (#820) : à 390 px, le résumé (« encore 30 ») ne touche plus le bord du panneau.
+  padding: layout.$space-1 layout.$space-2 layout.$space-1 0;
   font-size: 12px;
   line-height: 16px;
   border-top: 1px solid layout.$panel-border;

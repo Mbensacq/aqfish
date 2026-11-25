@@ -32,10 +32,9 @@ import {
   capacityAlert,
   capacityLimits,
   capacityLine,
-  NO_CAPACITY,
   tankCapacity,
-  type CapacityShown,
 } from '../../sim/tank-capacity-limits';
+import { NO_CAPACITY, type CapacityShown } from '../../sim/capacity-shown';
 import { possibleSpecies, type PossibleSpeciesTank } from '../../sim/possible-species';
 import { populationOf } from '../../sim/tank-capacity';
 import type { TankDimensions } from '../../sim/tank';
