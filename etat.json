@@ -10798,10 +10798,10 @@
           "note": "Verdict OK, 0 bug, captures publiées (5 images alevins changées, attendu ; e2e complet par la CI)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-25T01:07:47.042Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-25T01:37:01.207Z",
+          "note": "PR #825 fusionnée → v1.31.3 (release CI OK, CI main verte), #823 fermée, dette #826 ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
