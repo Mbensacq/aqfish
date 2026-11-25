@@ -10877,6 +10877,24 @@
         }
       },
       "metriques": {}
+    },
+    "300": {
+      "numero": 300,
+      "date": "2026-11-25",
+      "debut": "2026-11-25T05:53:44.206Z",
+      "type": "retro",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-25T05:53:44.206Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
