@@ -10813,7 +10813,7 @@
       "type": "fonctionnalite",
       "issue": 826,
       "pr": 827,
-      "version": null,
+      "version": "v1.31.4",
       "phases": {
         "planif": {
           "statut": "termine",
