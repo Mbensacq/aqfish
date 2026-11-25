@@ -139,6 +139,8 @@ import {
   stepFoodInPlace,
   type FoodPellet,
 } from './food';
+import { scavengeFoodInPlace } from './scavenging';
+import { stepShrimpColonyInPlace } from './shrimp-colony';
 import { siphonedFood, siphonFloorPoint, type FloorPoint } from './siphon';
 import { rinseFilterInPlace, type FilterRinseWater } from './filter-rinse';
 import { validateObstacle, type Obstacle } from './obstacles';
@@ -1032,7 +1034,10 @@ function swimmerTarget(
   return target;
 }
 
-/** Après la nage : distances minimales (banc, puis rivaux), puis repas (masse dans `eaten`). */
+/**
+ * Après la nage : distances minimales (banc, puis rivaux), puis repas des nageurs et des
+ * charognards (#836, `sim/scavenging.ts`), masse dans `eaten`.
+ */
 function settleSwimmersInPlace(fishes: Mutable<Entity>[], pass: SwimPass): void {
   currentPlace = pass.place;
   currentKey = pass.key;
@@ -1041,6 +1046,7 @@ function settleSwimmersInPlace(fishes: Mutable<Entity>[], pass: SwimPass): void 
     enforceRivalDistance(fishes, boundsOfFish);
   }
   pass.eaten = eatMassInPlace(fishes, pass.food, bandOfFish, hardOfFish);
+  pass.eaten += scavengeFoodInPlace(fishes, pass.food);
 }
 
 /**
@@ -1074,7 +1080,8 @@ function stepLifeInPlace(world: MutableWorld, dt: number, pass: SwimPass): void 
 
 /**
  * Population, sur la santé et l'eau de fin de pas : corps du bac (#582), puis décès si la
- * mortalité est activée ; mise bas au dernier pas de chaque portée (#459) ; œufs : prédation,
+ * mortalité est activée ; mise bas au dernier pas de chaque portée (#459) ; colonie de crevettes
+ * (#836, `sim/shrimp-colony.ts`) ; œufs : prédation,
  * éclosion et ponte (#478). Sans corps, mortalité, portée ni œuf, rien n'est écrit ; aucun
  * tirage pris aux générateurs des poissons.
  */
@@ -1086,6 +1093,7 @@ function stepPopulationInPlace(world: MutableWorld, dt: number): void {
     stepMortalityInPlace(world, dt);
   }
   stepBroodInPlace(world);
+  stepShrimpColonyInPlace(world, dt, birthYoungInPlace);
   stepEggsInPlace(world, dt);
 }
 

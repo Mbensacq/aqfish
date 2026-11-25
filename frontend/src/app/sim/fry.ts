@@ -432,7 +432,11 @@ export function eatFryInPlace(
   let eaten = 0;
   for (let i = fishes.length - 1; i >= 0; i--) {
     const fry = fishes[i];
-    if (fry.growth === undefined || fry.growth < FRY_SAFE_AGE || !isCaught(fishes, fry, r2)) {
+    // Jeunes crevettes (marcheuses) : prédation de la colonie (#836, `sim/shrimp-colony.ts`).
+    if (fry.growth === undefined || SPECIES[fry.species].walker !== undefined) {
+      continue;
+    }
+    if (fry.growth < FRY_SAFE_AGE || !isCaught(fishes, fry, r2)) {
       continue;
     }
     if (!isSheltered(fry, plants, source, surface)) {

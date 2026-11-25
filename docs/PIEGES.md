@@ -1330,6 +1330,14 @@ DEFAULT_DECOR)`), sinon les trajectoires divergent dès la naissance. (2026-10-1
 
 ## Simulation
 
+- **Modèle agrandi pour la lisibilité : la charge dans l'eau suivait la taille du modèle**
+  (cycle 303, #836) : `waterLoad` prend le cube de `bodyLength` ; la crevette cerise a un modèle
+  de 10 cm pour 3 cm en vrai, si bien que dix crevettes dans 30 L faisaient monter l'ammoniaque à
+  1,2 mg/L et le pH à 4 (S8 impossible). Sa longueur réelle est dans `LOAD_BODY_LENGTHS`
+  (`sim/water.ts`) ; toute espèce agrandie pour le rendu doit y figurer. Autre piège du même
+  cycle : une condition « nourrie » lue à un instant fixe (fin de couvée) tombe sur la même phase
+  que les repas du harnais (périodes multiples l'une de l'autre) ; un seuil à 0,5 basculait selon
+  l'arrondi (0,4999 ou 0,5000001). Prendre une marge (`SHRIMP_FED_HUNGER` = 0,75). (2026-11-25)
 - **Plantes à tige : les alevins s'écartent de leur refuge** (cycle 297, #823) : pour un
   scénario « bac très planté », deux plantes à tige serrées (échelles 1,2 et 1) gardaient
   **moins** d'alevins que de petites touffes (0 à 2 contre 4 à 7 sur 15 en 120 s) : relevé fait,

@@ -1,11 +1,15 @@
 import { environmentWater } from './environment';
 import { growHunger, isHungry, satiate } from './feeding';
 import { FOOD_SIZE_FACTORS } from './food';
+import { growFryInPlace } from './fry';
 import { addEatenFoodInPlace } from './food-decay';
+import { isScavenger } from './scavenging';
+import { stepShrimpColonyInPlace } from './shrimp-colony';
 import { SPECIES } from './species';
 import { assertTimeStep } from './time-step';
 import { waterLiters, type MutableWaterState } from './water';
 import { hungerCounts } from './wellbeing';
+import { birthYoungInPlace } from './world';
 import {
   stepAlgaeStageInPlace,
   stepHealthStageInPlace,
@@ -22,7 +26,8 @@ import type { Entity, Mutable, MutableWorld } from './world-types';
  * en quelques secondes, pour les scénarios de référence (`docs/ECOSYSTEME.md` § 4).
  *
  * Chaque pas appelle les mêmes étapes que le pas fin du monde (`sim/world-step-life.ts`), dans
- * le même ordre : faim (comme la nage), eau, algues, plantes, santé. Toutes sont intégrées sous
+ * le même ordre : faim (comme la nage), eau, algues, plantes, santé ; puis croissance des jeunes
+ * et colonie de crevettes (#836), dont les éclosions et la prédation suivent le temps simulé. Toutes sont intégrées sous
  * une forme stable quel que soit le pas (exponentielles, logistique, bornes) : à gros pas, le
  * résultat reste proche de celui du pas fin (tolérance dans `ecosystem-step.spec.ts`). Rien
  * n'est tiré au hasard : même monde, même résultat.
@@ -114,11 +119,14 @@ function stepEcosystemInPlace(world: MutableWorld, dt: number, liters: number): 
   stepAlgaeStageInPlace(world, dt);
   stepPlantsStageInPlace(world, dt, liters);
   stepHealthStageInPlace(world, dt);
+  growFryInPlace(animals, dt);
+  stepShrimpColonyInPlace(world, dt, birthYoungInPlace, liters);
 }
 
 /**
  * Repas sans nage, **en modifiant** `world` : chaque animal dont la faim compte
- * (`hungerCounts` : granulés, ou pastilles des néritines, #833) et a faim (`isHungry`) en mange jusqu'à ne plus avoir faim, de masse
+ * (`hungerCounts` : granulés, ou pastilles des néritines, #833) ou charognard (restes tombés
+ * au fond, #836) et a faim (`isHungry`) en mange jusqu'à ne plus avoir faim, de masse
  * `MEAN_PELLET_MASS` chacun ; l'ammoniaque des repas entre dans l'eau
  * (`addEatenFoodInPlace`, ADR 0168) dans `liters` litres (défaut : ceux du monde). Rien ne
  * tombe ni ne pourrit : c'est un nourrissage « juste ce qu'il faut ». Renvoie la masse mangée.
@@ -128,7 +136,7 @@ export function feedAnimalsInPlace(world: MutableWorld, liters?: number): number
   const volume = ecosystemLiters(world, liters);
   let mass = 0;
   for (const animal of world.entities as Mutable<Entity>[]) {
-    if (!hungerCounts(SPECIES[animal.species])) {
+    if (!hungerCounts(SPECIES[animal.species]) && !isScavenger(animal.species)) {
       continue;
     }
     while (isHungry(animal.hunger)) {
