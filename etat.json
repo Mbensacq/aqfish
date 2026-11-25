@@ -10888,10 +10888,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-25T05:53:44.206Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-25T05:54:30.602Z",
+          "note": "Issue #829 : Rétro sprint 43 (S)"
         }
       },
       "metriques": {}
