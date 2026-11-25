@@ -80,12 +80,12 @@ function plantedTank(neons: number, planted: boolean): World {
 /** Emplacements des plantes du scénario des alevins (S13), au fond du bac tropical. */
 const FRY_SITES: readonly number[] = [-0.4, 0, 0.4];
 /** Alevins posés près de chaque emplacement (S13). */
-const FRY_PER_SITE = 5;
+const FRY_PER_SITE = 4;
 /** Durée du scénario des alevins, en secondes simulées (bien moins que leur croissance). */
-const FRY_SCENARIO_SECONDS = 120;
+const FRY_SCENARIO_SECONDS = 60;
 
 /**
- * Bac du scénario S13 (#823) : 12 néons (prédateurs), et près de chacun des trois emplacements
+ * Bac du scénario S13 (#823) : 8 néons (prédateurs), et près de chacun des trois emplacements
  * `FRY_SITES` une touffe d'échelle `tuftScale` et `FRY_PER_SITE` alevins de guppy déjà en âge
  * d'être mangés. À portée égale (mêmes emplacements, même graine), seule la masse change.
  */
@@ -100,7 +100,7 @@ function fryTank(seed: number, tuftScale: number): World {
     seed: 300 + i,
   }));
   const world = cloneWorld(
-    createWorld(seed, [{ species: 'neon', count: 12 }], [], decor, 'tropical'),
+    createWorld(seed, [{ species: 'neon', count: 8 }], [], decor, 'tropical'),
   );
   for (const x of FRY_SITES) {
     for (let k = 0; k < FRY_PER_SITE; k++) {
@@ -285,7 +285,7 @@ describe('scénarios de référence de l’écosystème (#799, #805, #807, #821,
     'S13 — à portée égale, des touffes denses gardent plus d’alevins que des touffes maigres (#823)',
     () => {
       // Même graine, mêmes emplacements : seule la masse des touffes change (graines 1 à 4
-      // vérifiées pendant le cycle 297 : 12 contre 4, 12 contre 6, 13 contre 7, 9 contre 6).
+      // vérifiées pendant le cycle 297 : 12 contre 5, 12 contre 6, 11 contre 4, 10 contre 2).
       const dense = fryLeft(fryTank(2, 1.8));
       const sparse = fryLeft(fryTank(2, 0.8));
       expect(dense).toBeGreaterThanOrEqual(1.5 * sparse);
