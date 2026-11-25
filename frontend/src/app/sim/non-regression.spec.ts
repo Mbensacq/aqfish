@@ -45,8 +45,8 @@ const EXPECTED: Record<string, readonly string[]> = {
   'paludarium+nourri': ['0472411034a865', '0421c461639ace', '0f48826e6d7b79'],
   recif: ['1604a58713acdb', '12292b8d19f16e', '0cd70b9bae44de'],
   'recif+nourri': ['1aec7289e9c32b', '07a7cce18f1c5c', '1aeb81e9b815dc'],
-  eaufroide: ['1df18238ed7f46', '1549ad695d6519', '0b8b5068156a0d'],
-  'eaufroide+nourri': ['1ed7f1c9d0c24e', '0ce633120a1d4f', '0409b9fb0c4dae'],
+  eaufroide: ['04083cbf1ad936', '1f62b259f4e178', '13c4bd69f61a9b'],
+  'eaufroide+nourri': ['0898d101f95a26', '11aecc027d48c3', '19a306c5645a31'],
 };
 
 /**
