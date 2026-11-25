@@ -1065,7 +1065,7 @@ function stepLifeInPlace(world: MutableWorld, dt: number, pass: SwimPass): void 
   const fishes = world.entities as Mutable<Entity>[];
   if (pass.fryPresent) {
     growFryInPlace(fishes, dt);
-    eatFryInPlace(fishes, pass.plants);
+    eatFryInPlace(fishes, pass.plants, world);
   }
   stepWaterStageInPlace(world, dt, pass.decayed, pass.eaten);
   stepAlgaeStageInPlace(world, dt);

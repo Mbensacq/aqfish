@@ -3,7 +3,12 @@ import { expect, test } from '@playwright/test';
 import { createDayClock } from '../src/app/sim/daylight';
 import { setPopulation } from '../src/app/sim/population';
 import { serializeWorld } from '../src/app/sim/save';
-import { createDefaultWorld } from '../src/app/sim/world';
+import {
+  birthYoungInPlace,
+  cloneWorld,
+  createDefaultWorld,
+  createWorld,
+} from '../src/app/sim/world';
 import { fermerReglages, ouvrirReglages } from './outils-panneau';
 
 /**
@@ -71,4 +76,38 @@ test('390 × 844 : le bouton reste dans la marge et le bilan se déplie', async 
   if (captureDir) {
     await page.screenshot({ path: `${captureDir}/bilan-390.png` });
   }
+});
+
+test('alevins sans plante importés : le bilan dit que leur refuge ne suffit pas (#823)', async ({
+  page,
+}, testInfo) => {
+  testInfo.setTimeout(120_000);
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto('/?seed=42&vitesse=0');
+  await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+
+  const bare = cloneWorld(createWorld(42, [{ species: 'guppy', count: 4 }], [], [], 'tropical'));
+  for (let i = 0; i < 3; i++) {
+    birthYoungInPlace(bare, 'guppy', { x: 0, y: 0.15, z: 0 });
+  }
+  const text = serializeWorld(bare, { speed: 0, clock: createDayClock(12, 1200, true) });
+  await ouvrirReglages(page, 'Sauvegarde et partage');
+  await page.locator('[data-section="sauvegarde"] input[type="file"]').setInputFiles({
+    name: 'alevins-sans-plante.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(text),
+  });
+  await fermerReglages(page);
+
+  await page.getByRole('button', { name: 'Bilan du bac' }).click();
+  const point = page.locator('[data-review-point="fry"]');
+  await expect(point).toContainText('Alevins sans refuge suffisant');
+  await expect(point).toContainText('0 alevin sur 3 à l’abri des plantes');
+  await expect(point).toContainText('approximation de jeu');
+  const captureDir = process.env['CAPTURE_DIR'];
+  if (captureDir) {
+    await page.screenshot({ path: `${captureDir}/bilan-alevins.png` });
+  }
+  expect(errors).toEqual([]);
 });

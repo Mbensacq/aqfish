@@ -6,6 +6,7 @@ import {
   broodSize,
   canBreed,
   eatFryInPlace,
+  type FryRefugeSource,
   FED_HUNGER,
   FRY_EAT_RADIUS,
   FRY_GROWTH_TIME,
@@ -62,6 +63,15 @@ const PLANT: DecorItem = {
   scale: 1,
   seed: 6,
 };
+
+/**
+ * Plante dense : sa masse (`plantMass`) dépasse `FRY_FULL_COVER_M2`, donc tout alevin à moins de
+ * `FRY_HIDE_RADIUS` est à l'abri, quelle que soit sa vigilance (refuge gradué, #823).
+ */
+const DENSE_PLANT: DecorItem = { ...PLANT, scale: 1.3 };
+
+/** Bac lu par la prédation dans les tests unitaires (refuge gradué, #823). */
+const SOURCE: FryRefugeSource = { environment: 'tropical', seed: 0, water: {} };
 
 /** Bac de guppys nourris, en pleine santé, au pas qui précède la fin de la première portée. */
 function fedGuppies(seed: number, count = 4, decor: readonly DecorItem[] = []): MutableWorld {
@@ -369,13 +379,13 @@ describe('alevins : cachettes et prédation', () => {
       animal(0, 'neon', 0.5),
       animal(1, 'guppy', 0.5 + FRY_EAT_RADIUS / 2, FRY_SAFE_AGE),
     ];
-    expect(eatFryInPlace(fishes, [])).toBe(1);
+    expect(eatFryInPlace(fishes, [], SOURCE)).toBe(1);
     expect(fishes.map((f) => f.id)).toEqual([0]);
   });
 
   it('un nouveau-né n’est pas encore mangé (le temps de gagner les plantes)', () => {
     const fishes = [animal(0, 'neon', 0.5), animal(1, 'guppy', 0.5, FRY_SAFE_AGE - 0.01)];
-    expect(eatFryInPlace(fishes, [])).toBe(0);
+    expect(eatFryInPlace(fishes, [], SOURCE)).toBe(0);
     expect(fishes).toHaveLength(2);
   });
 
@@ -384,12 +394,12 @@ describe('alevins : cachettes et prédation', () => {
       animal(0, 'neon', 0.5),
       animal(1, 'guppy', 0.5 + FRY_EAT_RADIUS / 2, FRY_SAFE_AGE),
     ];
-    const plant = { ...PLANT, x: 0.5 + FRY_HIDE_RADIUS / 2 };
-    expect(eatFryInPlace(fishes, [plant])).toBe(0);
+    const plant = { ...DENSE_PLANT, x: 0.5 + FRY_HIDE_RADIUS / 2 };
+    expect(eatFryInPlace(fishes, [plant], SOURCE)).toBe(0);
     expect(fishes).toHaveLength(2);
     // Plante trop loin : plus de cachette.
-    const far = { ...PLANT, x: 0.5 + 3 * FRY_HIDE_RADIUS };
-    expect(eatFryInPlace(fishes, [far])).toBe(1);
+    const far = { ...DENSE_PLANT, x: 0.5 + 3 * FRY_HIDE_RADIUS };
+    expect(eatFryInPlace(fishes, [far], SOURCE)).toBe(1);
   });
 
   it('ni un autre alevin, ni un marcheur ou un amphibien, ni un adulte trop loin ne le mangent', () => {
@@ -402,15 +412,15 @@ describe('alevins : cachettes et prédation', () => {
     expect(isPredator(fishes[1])).toBe(false);
     expect(isPredator(fishes[0])).toBe(false);
     expect(isPredator(fishes[2])).toBe(true);
-    expect(eatFryInPlace(fishes, [])).toBe(0);
+    expect(eatFryInPlace(fishes, [], SOURCE)).toBe(0);
     // Sans alevin, rien à faire.
-    expect(eatFryInPlace([animal(0, 'neon', 0), animal(1, 'neon', 0)], [])).toBe(0);
+    expect(eatFryInPlace([animal(0, 'neon', 0), animal(1, 'neon', 0)], [], SOURCE)).toBe(0);
   });
 
   it('dans le monde : sans plante l’alevin collé à un adulte est mangé, avec une plante il reste', () => {
     for (const [decor, survives] of [
       [[], false],
-      [[PLANT], true],
+      [[DENSE_PLANT], true],
     ] as const) {
       const world = cloneWorld(createWorld(9, [{ species: 'neon', count: 1 }], [], decor));
       const neon = world.entities[0];

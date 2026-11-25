@@ -1,7 +1,10 @@
 import { deriveSeed, prngOutput } from '../core/random/prng';
 import { SIM_DT } from './constants';
 import type { DecorItem } from './decor';
+import { environmentWater, type TankPlace } from './environment';
 import type { Vec3 } from './flocking';
+import type { PlantGrowth } from './plant-growth';
+import { plantMass } from './plant-uptake';
 import { SPECIES, speciesVariantIndex, type SpeciesId } from './species';
 import type { Fish, SwimBounds } from './swimmer';
 
@@ -21,8 +24,12 @@ import type { Fish, SwimBounds } from './swimmer';
  *   et devient adulte au bout de `FRY_GROWTH_TIME` : le champ disparaît. Il nage près des
  *   plantes (`fryTarget`).
  * - **Prédation** : un adulte nageur à moins de `FRY_EAT_RADIUS` d'un alevin d'au moins
- *   `FRY_SAFE_AGE` qui n'est à moins de `FRY_HIDE_RADIUS` d'aucune plante (à l'horizontale)
- *   le mange.
+ *   `FRY_SAFE_AGE` qui n'est pas à l'abri (`isSheltered`) le mange.
+ * - **Refuge gradué** (issue #823, ADR 0176) : la protection d'un alevin croît avec la masse
+ *   des plantes (`plantMass`) à moins de `FRY_HIDE_RADIUS` de lui (à l'horizontale), pleine à
+ *   partir de `FRY_FULL_COVER_M2`, nulle sans plante. Chaque alevin a une vigilance fixe,
+ *   tirée du hachage (graine du monde, identifiant) ; il est à l'abri si sa vigilance est sous
+ *   la protection. Sous une couverture pleine, tous les alevins sont à l'abri, comme avant.
  *
  * Toutes les valeurs sont des **approximations de jeu** : la gestation réelle du guppy dure
  * environ quatre semaines, et les guides d'élevage situent sa maturité sexuelle vers deux à
@@ -89,8 +96,18 @@ const FRY_CIRCLE_RATE = 0.15;
 /** Hauteur visée, en fraction de la hauteur de nage au-dessus du fond. */
 const FRY_HEIGHT_RATIO = 0.45;
 
+/**
+ * Couverture végétale, en m² de masse de plantes (`plantMass`) à moins de `FRY_HIDE_RADIUS`,
+ * à partir de laquelle un alevin est toujours à l'abri (**approximation de jeu**) : une touffe
+ * dense d'environ 17 × 17 cm, soit une plante à tige et demie à sa taille d'origine. Les
+ * guides d'élevage conseillent des massifs denses (mousse de Java, plantes flottantes) pour
+ * protéger les alevins de guppy, sans valeur chiffrée.
+ */
+export const FRY_FULL_COVER_M2 = 0.03;
+
 const UINT32_RANGE = 4294967296;
 const BROOD_SALT = 0xa1e7;
+const VIGILANCE_SALT = 0x5e1f;
 
 /** Vrai si l'animal est un alevin. */
 export function isFry(fish: Pick<Fish, 'growth'>): boolean {
@@ -324,26 +341,112 @@ function isCaught(fishes: readonly Fish[], fry: Fish, r2: number): boolean {
   return false;
 }
 
+/** Bac lu par le refuge des alevins : lieu (surface de l'eau), graine et pousse des plantes. */
+export interface FryRefugeSource extends TankPlace {
+  readonly seed: number;
+  readonly water: { readonly plantGrowth?: PlantGrowth };
+}
+
 /**
- * Prédation, **en place** : retire de `fishes` chaque alevin d'au moins `FRY_SAFE_AGE`, non
- * caché (`isHidden`), à moins de
- * `FRY_EAT_RADIUS` d'un adulte nageur (`isPredator`), dans l'ordre du tableau. Renvoie le
- * nombre d'alevins mangés. Sans alevin, ne parcourt le tableau qu'une fois.
- *
- * Coût en O(alevins × animaux), borné par `MAX_TOTAL_FISH` (ADR 0107) ; aucune allocation.
+ * Couverture végétale d'un point `(x, z)`, en m² : somme des masses (`plantMass`) des plantes à
+ * moins de `FRY_HIDE_RADIUS` à l'horizontale ; 0 sans plante proche. Aucune allocation.
  */
-export function eatFryInPlace(fishes: Fish[], plants: readonly DecorItem[]): number {
+export function fryCover(
+  plants: readonly DecorItem[],
+  x: number,
+  z: number,
+  growth: PlantGrowth | undefined,
+  surface: number,
+): number {
+  const r2 = FRY_HIDE_RADIUS * FRY_HIDE_RADIUS;
+  let cover = 0;
+  for (const plant of plants) {
+    if ((plant.x - x) ** 2 + (plant.z - z) ** 2 <= r2) {
+      cover += plantMass(plant, growth, surface);
+    }
+  }
+  return cover;
+}
+
+/**
+ * Protection d'une couverture `cover` (m²), dans [0, 1] : la part des alevins à l'abri,
+ * proportionnelle à la couverture jusqu'à `FRY_FULL_COVER_M2`, puis pleine ; 0 (plancher) sans
+ * plante ou pour une valeur non finie.
+ */
+export function fryProtection(cover: number): number {
+  return cover > 0 && Number.isFinite(cover) ? Math.min(1, cover / FRY_FULL_COVER_M2) : 0;
+}
+
+/** Vigilance de l'alevin `fryId` dans le monde de graine `seed`, dans [0, 1[ : hachage pur. */
+export function fryVigilance(seed: number, fryId: number): number {
+  return prngOutput(deriveSeed(deriveSeed(seed, fryId >>> 0), VIGILANCE_SALT)) / UINT32_RANGE;
+}
+
+/** Vrai si l'alevin `fry` est à l'abri des plantes : vigilance sous la protection du lieu. */
+export function isSheltered(
+  fry: Pick<Fish, 'id' | 'x' | 'z'>,
+  plants: readonly DecorItem[],
+  source: FryRefugeSource,
+  surface: number,
+): boolean {
+  if (plants.length === 0) {
+    return false;
+  }
+  const cover = fryCover(plants, fry.x, fry.z, source.water.plantGrowth, surface);
+  return fryVigilance(source.seed, fry.id) < fryProtection(cover);
+}
+
+/** Alevins du bac et alevins à l'abri des plantes (`isSheltered`), pour le bilan. */
+export interface FryShelterCount {
+  readonly fry: number;
+  readonly sheltered: number;
+}
+
+/** Compte les alevins de `fishes` et ceux à l'abri dans le bac `source` aux plantes `decor`. */
+export function fryShelterCount(
+  fishes: readonly Fish[],
+  decor: readonly DecorItem[],
+  source: FryRefugeSource,
+): FryShelterCount {
+  const plants = fryPlants(decor);
+  const surface = environmentWater(source).maxY;
+  let fry = 0;
+  let sheltered = 0;
+  for (const fish of fishes) {
+    if (isFry(fish)) {
+      fry += 1;
+      sheltered += isSheltered(fish, plants, source, surface) ? 1 : 0;
+    }
+  }
+  return { fry, sheltered };
+}
+
+/**
+ * Prédation, **en place** : retire de `fishes` chaque alevin d'au moins `FRY_SAFE_AGE`, à moins
+ * de `FRY_EAT_RADIUS` d'un adulte nageur (`isPredator`) et pas à l'abri des plantes
+ * (`isSheltered`, refuge gradué du bac `source`), dans l'ordre du tableau. Renvoie le nombre
+ * d'alevins mangés. Sans alevin, ne parcourt le tableau qu'une fois.
+ *
+ * Coût en O(alevins × animaux), borné par `MAX_TOTAL_FISH` (ADR 0107) ; aucune allocation. La
+ * couverture n'est calculée que pour un alevin à portée d'un adulte.
+ */
+export function eatFryInPlace(
+  fishes: Fish[],
+  plants: readonly DecorItem[],
+  source: FryRefugeSource,
+): number {
   if (!fishes.some(isFry)) {
     return 0;
   }
   const r2 = FRY_EAT_RADIUS * FRY_EAT_RADIUS;
+  const surface = environmentWater(source).maxY;
   let eaten = 0;
   for (let i = fishes.length - 1; i >= 0; i--) {
     const fry = fishes[i];
-    if (fry.growth === undefined || fry.growth < FRY_SAFE_AGE || isHidden(plants, fry.x, fry.z)) {
+    if (fry.growth === undefined || fry.growth < FRY_SAFE_AGE || !isCaught(fishes, fry, r2)) {
       continue;
     }
-    if (isCaught(fishes, fry, r2)) {
+    if (!isSheltered(fry, plants, source, surface)) {
       fishes.splice(i, 1);
       eaten += 1;
     }

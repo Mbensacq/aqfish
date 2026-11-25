@@ -1306,6 +1306,17 @@ DEFAULT_DECOR)`), sinon les trajectoires divergent dès la naissance. (2026-10-1
 
 ## Simulation
 
+- **Plantes à tige : les alevins s'écartent de leur refuge** (cycle 297, #823) : pour un
+  scénario « bac très planté », deux plantes à tige serrées (échelles 1,2 et 1) gardaient
+  **moins** d'alevins que de petites touffes (0 à 2 contre 4 à 7 sur 15 en 120 s) : relevé fait,
+  les alevins quittent souvent le rayon de refuge ; cause probable, non prouvée : leurs
+  sphères de collision repoussent les alevins qui tournent autour à 7 cm, et ils sortent
+  souvent du rayon de refuge (`FRY_HIDE_RADIUS`, 12 cm), couverture 0. Des touffes (collision
+  basse) gardent les alevins dans le rayon. Pour tester un refuge, mesurer d'abord la
+  couverture des alevins au fil du temps (`fryCover`) plutôt que supposer qu'ils restent près
+  de leur plante. Le scénario S13 fait la nage complète (pas de 1/60 s) : 120 s de jeu pour
+  deux bacs prenaient 1,4 s en local mais 6,3 s sur la CI (délai de 5 s dépassé) ; le réduire
+  à 60 s et 8 néons a suffi. Compter un facteur 5 entre local et CI. (2026-11-25)
 - **Plantes actives : l'azote d'un bac au décor par défaut n'est plus conservé** (cycle 296,
   #821, ADR 0175) : les plantes du décor (tropical, eau froide) absorbent ammoniaque et nitrates
   et relèvent le pH dès le premier pas. Un test qui mesure l'azote au mg/L près (part au repos,
