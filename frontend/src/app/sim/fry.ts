@@ -263,17 +263,6 @@ export function nearestPlant(plants: readonly DecorItem[], x: number, z: number)
   return best;
 }
 
-/** Vrai si un animal en `(x, z)` est à moins de `FRY_HIDE_RADIUS` d'une plante. */
-export function isHidden(plants: readonly DecorItem[], x: number, z: number): boolean {
-  const r2 = FRY_HIDE_RADIUS * FRY_HIDE_RADIUS;
-  for (const plant of plants) {
-    if ((plant.x - x) ** 2 + (plant.z - z) ** 2 <= r2) {
-      return true;
-    }
-  }
-  return false;
-}
-
 /**
  * Point visé par un alevin : un cercle lent de rayon `FRY_CIRCLE_RADIUS` autour de la plante
  * la plus proche, bas dans l'eau, ramené dans `bounds.hard` ; écrit dans `out`. `null` sans
