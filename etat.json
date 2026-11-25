@@ -11057,6 +11057,24 @@
         }
       },
       "metriques": {}
+    },
+    "305": {
+      "numero": 305,
+      "date": "2026-11-26",
+      "debut": "2026-11-25T23:41:44.590Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-25T23:41:44.590Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
