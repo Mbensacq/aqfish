@@ -10942,10 +10942,10 @@
           "note": "Verdict OK, 0 bug, captures c301 publiées (e2e local interrompu, CI 7/7)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-25T08:28:16.750Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-25T08:58:10.591Z",
+          "note": "PR #831 fusionnée → v1.32.0 (release CI OK, CI main verte), #824 fermée, dette #832 ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
