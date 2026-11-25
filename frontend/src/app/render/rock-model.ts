@@ -38,6 +38,20 @@ export const ROCK_COLORS = {
   shade: PALETTE.rocheSombre,
 } as const;
 
+/**
+ * Couleurs d'une roche calcaire (issue #733) : même dessin, blanc crème veiné de gris, pour la
+ * distinguer d'un rocher inerte et du sable sans nouveau modèle.
+ */
+export const LIMESTONE_COLORS = {
+  top: PALETTE.koiBlanc,
+  dusted: PALETTE.sableClair,
+  side: PALETTE.koiBlanc,
+  shade: PALETTE.roche,
+} as const;
+
+/** Jeu de couleurs d'un rocher : `ROCK_COLORS` ou `LIMESTONE_COLORS`. */
+export type RockColors = Readonly<Record<keyof typeof ROCK_COLORS, string>>;
+
 /** Rangées du bas (en voxels) toujours sombres : ombre de contact avec le sable. */
 const SHADED_BASE_ROWS = 1;
 
@@ -76,20 +90,31 @@ export function cellHash(seed: number, i: number, j: number, k: number): number 
 }
 
 /** Couleur (nom de palette résolu) d'une face d'un voxel. */
-export function rockFaceColor(seed: number, cell: RockCell, up: boolean): string {
+export function rockFaceColor(
+  seed: number,
+  cell: RockCell,
+  up: boolean,
+  colors: RockColors = ROCK_COLORS,
+): string {
   const h = cellHash(seed, cell.i, cell.j, cell.k);
   if (up) {
-    return h < 0.15 ? ROCK_COLORS.dusted : ROCK_COLORS.top;
+    return h < 0.15 ? colors.dusted : colors.top;
   }
-  return cell.j < SHADED_BASE_ROWS || h < 0.3 ? ROCK_COLORS.shade : ROCK_COLORS.side;
+  return cell.j < SHADED_BASE_ROWS || h < 0.3 ? colors.shade : colors.side;
 }
 
 /**
  * Maillage d'un rocher dans son repère local (mètres, Y = 0 à la base), centré sur l'origine
  * comme son modèle. `seed` choisit les couleurs (même graine, même rocher).
  */
-export function buildRockMesh(model: RockModel, seed: number): RockMeshData {
-  return buildVoxelMesh(model.cells, model.voxelSize, (cell, up) => rockFaceColor(seed, cell, up));
+export function buildRockMesh(
+  model: RockModel,
+  seed: number,
+  colors: RockColors = ROCK_COLORS,
+): RockMeshData {
+  return buildVoxelMesh(model.cells, model.voxelSize, (cell, up) =>
+    rockFaceColor(seed, cell, up, colors),
+  );
 }
 
 /**

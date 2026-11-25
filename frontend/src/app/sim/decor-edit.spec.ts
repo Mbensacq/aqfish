@@ -68,6 +68,16 @@ describe('addDecorItem', () => {
     expect(addDecorItem([], 'tall', 0, 0, 7, 'tropical')![0].form).toBe('tall');
   });
 
+  it('la roche calcaire (#733) pose un rocher calcaire, gardé par la sauvegarde', () => {
+    const decor = addDecorItem([], 'limestone', 0, 0, 7, 'tropical')!;
+    expect(decor[0]).toMatchObject({ kind: 'rock', material: 'limestone' });
+    expect(validateDecorItem(decor[0])).toEqual([]);
+    expect('material' in addDecorItem([], 'rock', 0, 0, 7, 'tropical')![0]).toBe(false);
+    const world = createWorld(7, [], [], decor, 'tropical');
+    const result = parseWorld(serializeWorld(world));
+    expect(result.ok && result.world.decor[0].material).toBe('limestone');
+  });
+
   it('est déterministe : même graine, même décor, même élément', () => {
     const a = addDecorItem(DEFAULT_DECOR, 'rock', 0, 0, 42, 'tropical');
     const b = addDecorItem(DEFAULT_DECOR, 'rock', 0, 0, 42, 'tropical');
