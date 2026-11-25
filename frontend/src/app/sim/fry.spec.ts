@@ -1,4 +1,3 @@
-import { broodWorldInPlace } from './fry-sample';
 import { SIM_DT } from './constants';
 import type { DecorItem } from './decor';
 import {
@@ -33,6 +32,7 @@ import {
   MIN_BROOD,
   nearestPlant,
 } from './fry';
+import { broodWorldInPlace } from './fry-sample';
 import { MAX_TOTAL_FISH, populationCounts } from './population';
 import { parseWorld, serializeWorld } from './save';
 import { parseSharedText } from './share-link';

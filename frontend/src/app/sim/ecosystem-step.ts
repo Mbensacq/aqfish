@@ -25,12 +25,12 @@ import type { Entity, Mutable, MutableWorld } from './world-types';
  * rendu. L'équilibre d'un bac se juge sur des semaines simulées : cette avance les fait tourner
  * en quelques secondes, pour les scénarios de référence (`docs/ECOSYSTEME.md` § 4).
  *
- * Chaque pas appelle les mêmes étapes que le pas fin du monde (`sim/world-step-life.ts`), dans
- * le même ordre : faim (comme la nage), eau, algues, plantes, santé ; puis croissance des jeunes
- * et colonie de crevettes (#836), dont les éclosions et la prédation suivent le temps simulé. Toutes sont intégrées sous
- * une forme stable quel que soit le pas (exponentielles, logistique, bornes) : à gros pas, le
- * résultat reste proche de celui du pas fin (tolérance dans `ecosystem-step.spec.ts`). Rien
- * n'est tiré au hasard : même monde, même résultat.
+ * Chaque pas appelle les mêmes étapes que le pas fin du monde (`sim/world-step-life.ts`), dans le
+ * même ordre : faim (comme la nage), eau, algues, plantes, santé ; puis croissance des jeunes et
+ * colonie de crevettes (#836), dont les éclosions et la prédation suivent le temps simulé. Toutes
+ * sont intégrées sous une forme stable quel que soit le pas (exponentielles, logistique, bornes) :
+ * à gros pas, le résultat reste proche de celui du pas fin (tolérance dans
+ * `ecosystem-step.spec.ts`). Rien n'est tiré au hasard : même monde, même résultat.
  *
  * Le volume d'eau peut être imposé (`liters`) pour simuler un bac plus petit que ce que
  * permettent les dimensions réglables (bocal de 10 L du scénario S1).

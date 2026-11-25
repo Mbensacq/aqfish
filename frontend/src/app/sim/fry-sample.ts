@@ -13,11 +13,11 @@ import { birthFryInPlace, boundsFor } from './world';
 import type { Entity, Mutable, MutableWorld } from './world-types';
 
 /**
- * Alevins d'exemple (paramètre d'URL `alevins=1`, issue #459), **en modifiant** `world`
- * (monde en construction, avant le rendu) : chaque femelle d'une espèce vivipare met bas sa
- * première portée, et chaque crevette cerise femelle fait éclore autant de jeunes (#836), sans condition de santé ni d'eau, dans la limite des plafonds, près de la
- * plante la plus proche (déjà à couvert) ; les alevins sont répartis entre les `FRY_STAGES`
- * jalons de croissance pour qu'ils se voient tous.
+ * Alevins d'exemple (paramètre d'URL `alevins=1`, issue #459), **en modifiant** `world` (monde en
+ * construction, avant le rendu) : chaque femelle d'une espèce vivipare met bas sa première portée,
+ * et chaque crevette cerise femelle fait éclore autant de jeunes (#836), sans condition de santé ni
+ * d'eau, dans la limite des plafonds, près de la plante la plus proche (déjà à couvert) ; les
+ * alevins sont répartis entre les `FRY_STAGES` jalons de croissance pour qu'ils se voient tous.
  * Renvoie le nombre d'alevins.
  */
 export function broodWorldInPlace(world: MutableWorld): number {
