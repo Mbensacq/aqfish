@@ -10985,6 +10985,24 @@
         }
       },
       "metriques": {}
+    },
+    "303": {
+      "numero": 303,
+      "date": "2026-11-25",
+      "debut": "2026-11-25T10:23:59.907Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-25T10:23:59.907Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
