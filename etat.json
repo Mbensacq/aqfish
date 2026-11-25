@@ -10906,10 +10906,10 @@
           "note": "Verdict OK, 0 bug, PR docs seule, captures c299 reprises"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-25T06:16:28.272Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-25T06:47:06.304Z",
+          "note": "PR #830 fusionnée → v1.31.6 (release CI OK, CI main verte), #829 #730 #731 fermées ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
