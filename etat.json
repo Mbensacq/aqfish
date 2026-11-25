@@ -10900,10 +10900,10 @@
           "note": "PR #830 : rétro sprint 43 (ROADMAP v1.31/v1.32, ADR 0177 arbitrage #813, Closes #730 #731 #829), CI verte ; mise en œuvre de #813 au c306 ; pied d'attribution réinjecté par l'environnement dans la PR et le commentaire #813"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-25T06:15:19.961Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-25T06:15:54.821Z",
+          "note": "Verdict OK, 0 bug, PR docs seule, captures c299 reprises"
         }
       },
       "metriques": {}
