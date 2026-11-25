@@ -10862,6 +10862,12 @@
           "debut": "2026-11-25T03:17:54.256Z",
           "fin": "2026-11-25T04:27:48.470Z",
           "note": "PR #828 : captures et appui long sans attente sur une durée réelle (#709), CI verte ; 2 séries identiques à l'octet, instabilité minuit-guide reproduite sur main sous charge et corrigée ; aucun src/ modifié"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-25T04:28:22.461Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
