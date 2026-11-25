@@ -1,5 +1,6 @@
 import { algaeGrowth, cachedAlgaePatches, hasAlgae, lightingOf, stepAlgaeInPlace } from './algae';
 import { catappaActive } from './catappa';
+import { stepDecorWaterInPlace } from './decor-water';
 import { ichStress, stepIchInPlace } from './disease';
 import { stepDropsyInPlace } from './dropsy';
 import { environmentWater } from './environment';
@@ -72,7 +73,8 @@ export function stepWaterStageInPlace(
 
 /**
  * Pas d'eau des habitants dans `liters` litres (issue #799) : corps en décomposition, puis
- * `stepWaterInPlace` (part au repos, filtre, température, pH). Partagé par le pas fin
+ * `stepWaterInPlace` (part au repos, filtre, température, pH), puis l'effet du décor sur
+ * l'eau (`sim/decor-water.ts`). Partagé par le pas fin
  * (`stepWaterStageInPlace`) et l'avance à gros pas (`sim/ecosystem-step.ts`), qui peut imposer
  * un volume.
  */
@@ -89,6 +91,8 @@ export function stepLivingWaterInPlace(world: MutableWorld, dt: number, liters: 
     liters,
     targetTemperature(world.water, world.environment),
   );
+  // Roches calcaires et bois flotté (issue #733), après le pH du pas d'eau.
+  stepDecorWaterInPlace(water, world.decor, world.environment, liters, dt);
 }
 
 /**

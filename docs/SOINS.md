@@ -648,6 +648,21 @@ jeu**, sauf mention.
 - Le bilan du bac signale un refuge insuffisant quand moins d'un alevin sur deux est à l'abri :
   **approximation de jeu**.
 
+**Roches et bois** (issue #733, ADR 0181, `sim/decor-water.ts`, `docs/ECOSYSTEME.md` § 2) :
+- Roche **calcaire** (choisie dans l'éditeur : « Roche calcaire ») : relève la dureté et tire le
+  pH vers 7,8, jamais au-delà, et ne se dissout plus au-dessus de pH 8,4 ; plus vite avec de la
+  surface et du courant, en quelques mois pour un bloc en eau calme (aquariumscience.org,
+  « Rocks », consulté le 2026-11-25). Chiffres du jeu, **approximations de jeu** calées sur ces
+  ordres de grandeur : cible 7,8 (dans les 7,6–7,9 de la source) ; constante de temps de
+  60 jours de jeu pour une roche à l'échelle 1 dans 288 L, filtre en marche, quatre fois plus
+  longue filtre arrêté ; dureté carbonatée menée vers 10 °dKH, la générale relevée d'autant
+  (le carbonate de calcium apporte autant de l'une que de l'autre).
+- Roche **inerte** (« Rocher », toute roche d'une sauvegarde antérieure) : aucun effet ;
+  aucune roche ne filtre (même source) : aucun bonus de filtration.
+- **Bois flotté** : tanins, légère baisse du pH (plancher 6,5, constante de temps de 240 jours
+  de jeu à l'échelle 1 dans 288 L) : **approximation de jeu**, aucune quantification trouvée
+  (§ 3 : effet qualitatif seulement). Pas de teinte de l'eau (réservée au catappa).
+
 **Fiche produit (structure suggérée)** : `id`, `nom`, `catégorie` ; `dose_efficace`,
 `dose_toxique`, `durée`, `fréquence_max` ; `effets_eau` {pH, KH, GH, Cl, O₂, couleur,
 NH₃_lié} ; `demi-vie` (souvent non vérifiée : « retiré par changements d'eau ou charbon » en

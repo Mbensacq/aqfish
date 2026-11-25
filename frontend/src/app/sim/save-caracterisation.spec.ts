@@ -701,8 +701,8 @@ const EXPECTED: Record<string, string> = {
   'réelle bassin': 'ok c26134fb e78d7b8d',
   'réelle paludarium': 'ok 884af1c1 6e3d3a70',
   'réelle recif': 'ok 77a65b61 30e096ec',
-  'réelle eaufroide': 'ok 4bf2011a 4e49167e',
-  'réelle avec others': 'ok 66ac4a4c a9af186a',
+  'réelle eaufroide': 'ok d9a07ac5 c6833d8b',
+  'réelle avec others': 'ok de0ceed7 18c93cf5',
   'schéma 1 : format absent': 'refus : ce fichier n’est pas une sauvegarde aqfish',
   'schéma 1 : format autre': 'refus : ce fichier n’est pas une sauvegarde aqfish',
   'schéma 1 : schéma 3': 'refus : version de sauvegarde inconnue (3, version 1 attendue)',
@@ -977,15 +977,15 @@ const EXPECTED: Record<string, string> = {
     'refus : autre environnement bassin : dimensions non réglables dans l’environnement bassin',
   'autre monde : dimensions infinies':
     'refus : autre environnement bassin : dimensions non réglables dans l’environnement bassin',
-  'autre monde : shape rectangle': 'ok 66ac4a4c a9af186a',
+  'autre monde : shape rectangle': 'ok de0ceed7 18c93cf5',
   'autre monde : shape inconnue':
     'refus : autre environnement bassin : forme de bassin inconnue (« étoile »)',
-  'autre monde : shape haricot': 'ok 86f529b3 c63f02c1',
+  'autre monde : shape haricot': 'ok d2f0d6b2 622d5238',
   'autre monde : tick absent':
     'refus : autre environnement bassin : tick doit être un entier dans [0, 2147483648]',
   'autre monde : tick négatif':
     'refus : autre environnement bassin : tick doit être un entier dans [0, 2147483648]',
-  'autre monde : tick 2^31': 'ok 158820b5 254f01f7',
+  'autre monde : tick 2^31': 'ok 8f7db81c 834a1bc6',
   'autre monde : tick 2^31 + 1':
     'refus : autre environnement bassin : tick doit être un entier dans [0, 2147483648]',
   'autre monde : tick réel':
@@ -1001,19 +1001,19 @@ const EXPECTED: Record<string, string> = {
   'autre monde : decor texte': 'refus : autre environnement bassin : decor doit être une liste',
   'autre monde : decor trop long':
     'refus : autre environnement bassin : trop d’éléments de décor (65, 64 au plus)',
-  'autre monde : decor vide': 'ok d2dbb1dd e60b1cb3',
+  'autre monde : decor vide': 'ok 0a165104 827e5fb2',
   'autre monde : decor invalide':
     'refus : autre environnement bassin : décor : élément 0 : kind inconnu : licorne ; élément 0 : x doit être un réel fini (reçu : undefined) ; élément 0 : z doit être un réel fini (reçu : undefined) ; élément 0 : rotation doit être un réel fini (reçu : undefined) ; élément 0 : scale doit être un réel fini (reçu : undefined) ; élément 0 : seed doit être un réel fini (reçu : undefined)',
-  'autre monde : careMode decor': 'ok c8bbed7b 4a394bbf',
+  'autre monde : careMode decor': 'ok 2364421a 24ea3eee',
   'autre monde : careMode inconnu':
     'refus : autre environnement bassin : mode de bac inconnu (« libre »)',
-  'autre monde : current fort': 'ok ed0ae014 9783414e',
+  'autre monde : current fort': 'ok 485fe8bf ae452ab9',
   'autre monde : current coupe':
     'refus : autre environnement bassin : force de courant inconnue (« coupe »)',
   'autre monde : current inconnu':
     'refus : autre environnement bassin : force de courant inconnue (7)',
   'autre monde : fish texte': 'refus : autre environnement bassin : fish doit être une liste',
-  'autre monde : fish vide': 'ok 358c0267 e7f4fef5',
+  'autre monde : fish vide': 'ok f1a14136 a8f887dc',
   'autre monde : fish trop':
     'refus : autre environnement bassin : trop de poissons (999, 60 au plus)',
   'autre monde : poisson id absent':
@@ -1026,7 +1026,7 @@ const EXPECTED: Record<string, string> = {
     'refus : autre environnement bassin : poisson 0 : espèce inconnue (« dragon »)',
   'autre monde : poisson espèce absente':
     'refus : autre environnement bassin : poisson 0 : espèce inconnue (absente)',
-  'autre monde : poisson espèce d’un autre lieu': 'ok 66ac4a4c a9af186a',
+  'autre monde : poisson espèce d’un autre lieu': 'ok de0ceed7 18c93cf5',
   'autre monde : poisson x absent':
     'refus : autre environnement bassin : poisson 0 : x doit être un nombre fini',
   'autre monde : poisson y absent':
@@ -1099,7 +1099,7 @@ const EXPECTED: Record<string, string> = {
     'refus : autre environnement bassin : poisson 0 : ppitch doit être un nombre fini',
   'autre monde : poisson pphase infini':
     'refus : autre environnement bassin : poisson 0 : pphase doit être un nombre fini',
-  'autre monde : poisson health absente': 'ok 66ac4a4c a9af186a',
+  'autre monde : poisson health absente': 'ok de0ceed7 18c93cf5',
   'autre monde : poisson health texte':
     'refus : autre environnement bassin : poisson 0 : health doit être un nombre fini',
   'autre monde : poisson health basse':
@@ -1112,8 +1112,8 @@ const EXPECTED: Record<string, string> = {
     'refus : autre environnement bassin : poisson 0 : position précédente hors de la zone de nage',
   'autre monde : poisson yaw 4':
     'refus : autre environnement bassin : poisson 0 : yaw hors de [-π, π]',
-  'autre monde : poisson yaw π': 'ok fd64aabc 59b0eafc',
-  'autre monde : poisson yaw π+ε': 'ok c7920029 aaa56745',
+  'autre monde : poisson yaw π': 'ok 05e3a807 354969c7',
+  'autre monde : poisson yaw π+ε': 'ok 9c8eb0c0 30eaae2c',
   'autre monde : poisson yaw π+1e-11':
     'refus : autre environnement bassin : poisson 0 : yaw hors de [-π, π]',
   'autre monde : poisson pyaw 4':
@@ -1144,15 +1144,15 @@ const EXPECTED: Record<string, string> = {
     'refus : autre environnement bassin : poisson 0 : rng doit être un entier 32 bits non signé',
   'autre monde : poisson rng 2^32':
     'refus : autre environnement bassin : poisson 0 : rng doit être un entier 32 bits non signé',
-  'autre monde : poisson ich 0': 'ok b65a36ae d61267d4',
+  'autre monde : poisson ich 0': 'ok 1d8aed19 4f1a9bff',
   'autre monde : poisson ich -1':
     'refus : autre environnement bassin : poisson 0 : ich hors de [0, 900]',
-  'autre monde : poisson finRot 0': 'ok 736567ba 5d13a01e',
+  'autre monde : poisson finRot 0': 'ok 559846c5 9acbc949',
   'autre monde : poisson finRot texte':
     'refus : autre environnement bassin : poisson 0 : finRot hors de [0, 1200]',
-  'autre monde : poisson velvet 0': 'ok 6f5d0a72 8ba0c1fe',
-  'autre monde : poisson fungus 0': 'ok 7741048a 59ad7f22',
-  'autre monde : poisson dropsy 0': 'ok 4982a521 de138339',
+  'autre monde : poisson velvet 0': 'ok 4a80549d c0ec9429',
+  'autre monde : poisson fungus 0': 'ok 4866e615 dc01000d',
+  'autre monde : poisson dropsy 0': 'ok 6ce9a898 778ae590',
   'autre monde : poisson dropsy 1e9':
     'refus : autre environnement bassin : poisson 0 : dropsy hors de [0, 2400]',
   'autre monde : poisson growth 0':
@@ -1190,7 +1190,7 @@ const EXPECTED: Record<string, string> = {
   'autre monde : poissons tous invalides':
     'refus : autre environnement bassin : poisson 0 : doit être un objet ; autre environnement bassin : poisson 1 : doit être un objet ; autre environnement bassin : poisson 2 : doit être un objet ; autre environnement bassin : poisson 3 : doit être un objet ; autre environnement bassin : poisson 4 : doit être un objet ; …',
   'autre monde : food texte': 'refus : autre environnement bassin : food doit être une liste',
-  'autre monde : food vide': 'ok 0b2c085f 061ca9e3',
+  'autre monde : food vide': 'ok 4bebbf8e d5d327a2',
   'autre monde : food trop':
     'refus : autre environnement bassin : trop de granulés (999, 60 au plus)',
   'autre monde : granulé pas objet':
@@ -1236,7 +1236,7 @@ const EXPECTED: Record<string, string> = {
   'autre monde : granulés en double':
     'refus : autre environnement bassin : granulé 1 : id doit être un entier positif ou nul',
   'autre monde : eggs texte': 'refus : autre environnement bassin : eggs doit être une liste',
-  'autre monde : eggs vide': 'ok 66ac4a4c a9af186a',
+  'autre monde : eggs vide': 'ok de0ceed7 18c93cf5',
   'autre monde : eggs trop': 'refus : autre environnement bassin : trop d’œufs (31, 30 au plus)',
   'autre monde : œuf pas objet': 'refus : autre environnement bassin : œuf 0 : doit être un objet',
   'autre monde : œuf espèce sans œufs':
@@ -1250,7 +1250,7 @@ const EXPECTED: Record<string, string> = {
   'autre monde : œuf âge': 'refus : autre environnement bassin : œuf 0 : age hors de [0, 180[',
   'autre monde : œuf surface':
     'refus : autre environnement bassin : œuf 0 : surface inconnue (« toit »)',
-  'autre monde : œufs valides': 'ok c97edf69 796c1bc1',
+  'autre monde : œufs valides': 'ok ca401780 722bad38',
   'autre monde : maintenance texte':
     'refus : autre environnement bassin : maintenance doit être un objet',
   'autre monde : waterHistory texte':
@@ -1263,15 +1263,15 @@ const EXPECTED: Record<string, string> = {
     'refus : autre environnement bassin : distributeur impossible dans l’environnement bassin',
   'autre monde : feeder heures':
     'refus : autre environnement bassin : feeder.hours doit lister 1 à 4 heures distinctes dans [0, 23]',
-  'autre monde : mortality true': 'ok 12e4a56b 2455da4b',
+  'autre monde : mortality true': 'ok 7e258a0a 613b8fea',
   'autre monde : mortality false':
     'refus : autre environnement bassin : mortality doit valoir true (reçu : false)',
   'autre monde : mortality texte':
     'refus : autre environnement bassin : mortality doit valoir true (reçu : « oui »)',
   'autre monde : dead texte': 'refus : autre environnement bassin : dead doit être une liste',
-  'autre monde : dead vide': 'ok 66ac4a4c a9af186a',
+  'autre monde : dead vide': 'ok de0ceed7 18c93cf5',
   'autre monde : water texte': 'refus : autre environnement bassin : eau : doit être un objet',
-  'autre monde : water sans pH': 'ok 1fc4cf12 f00e3d30',
+  'autre monde : water sans pH': 'ok 800277bd b5f1678b',
   'autre monde : water température':
     'refus : autre environnement bassin : eau : temperature doit être un nombre dans [0, 40]',
   'autre monde : ordre : seed, dimensions, tick, compteurs':
@@ -1297,12 +1297,12 @@ const EXPECTED: Record<string, string> = {
   'bac : dimensions texte': 'refus : bac 0 : dimensions doit être un objet',
   'bac : dimensions incomplètes': 'refus : bac 0 : dimensions : depth doit être un nombre fini',
   'bac : dimensions infinies': 'refus : bac 0 : dimensions : depth doit être un nombre fini',
-  'bac : shape rectangle': 'ok fc63fdf7 ebb83c6a',
+  'bac : shape rectangle': 'ok 97394c06 e88b0697',
   'bac : shape inconnue': 'refus : bac 0 : forme de bassin inconnue (« étoile »)',
   'bac : shape haricot': 'refus : bac 0 : forme non réglable dans l’environnement tropical',
   'bac : tick absent': 'refus : bac 0 : tick doit être un entier dans [0, 2147483648]',
   'bac : tick négatif': 'refus : bac 0 : tick doit être un entier dans [0, 2147483648]',
-  'bac : tick 2^31': 'ok 0e62655a bb2a97d5',
+  'bac : tick 2^31': 'ok 419815f1 dea79c06',
   'bac : tick 2^31 + 1': 'refus : bac 0 : tick doit être un entier dans [0, 2147483648]',
   'bac : tick réel': 'refus : bac 0 : tick doit être un entier dans [0, 2147483648]',
   'bac : nextFishId absent': 'refus : bac 0 : nextFishId doit être un entier 32 bits non signé',
@@ -1313,16 +1313,16 @@ const EXPECTED: Record<string, string> = {
     'refus : bac 0 : nextFoodId doit être un entier positif ou nul ; bac 0 : granulé 3 : identifiant 3 ≥ nextFoodId ; bac 0 : granulé 4 : identifiant 4 ≥ nextFoodId',
   'bac : decor texte': 'refus : bac 0 : decor doit être une liste',
   'bac : decor trop long': 'refus : bac 0 : trop d’éléments de décor (65, 64 au plus)',
-  'bac : decor vide': 'ok ea5a1f98 6b1699eb',
+  'bac : decor vide': 'ok e685ab5f 92e06624',
   'bac : decor invalide':
     'refus : bac 0 : décor : élément 0 : kind inconnu : licorne ; élément 0 : x doit être un réel fini (reçu : undefined) ; élément 0 : z doit être un réel fini (reçu : undefined) ; élément 0 : rotation doit être un réel fini (reçu : undefined) ; élément 0 : scale doit être un réel fini (reçu : undefined) ; élément 0 : seed doit être un réel fini (reçu : undefined)',
-  'bac : careMode decor': 'ok f2b6d66e 83e59009',
+  'bac : careMode decor': 'ok 5e0b96b5 fdd4fe8a',
   'bac : careMode inconnu': 'refus : bac 0 : mode de bac inconnu (« libre »)',
-  'bac : current fort': 'ok f9ae86fd 721d473e',
+  'bac : current fort': 'ok d430e71c 37438c6b',
   'bac : current coupe': 'refus : bac 0 : force de courant inconnue (« coupe »)',
   'bac : current inconnu': 'refus : bac 0 : force de courant inconnue (7)',
   'bac : fish texte': 'refus : bac 0 : fish doit être une liste',
-  'bac : fish vide': 'ok 5277edca 811d40b7',
+  'bac : fish vide': 'ok 869d8e21 4ae099a0',
   'bac : fish trop': 'refus : bac 0 : trop de poissons (999, 60 au plus)',
   'bac : poisson id absent': 'refus : bac 0 : poisson 0 : id doit être un entier 32 bits non signé',
   'bac : poisson pas objet': 'refus : bac 0 : poisson 0 : doit être un objet',
@@ -1369,7 +1369,7 @@ const EXPECTED: Record<string, string> = {
   'bac : poisson pyaw infini': 'refus : bac 0 : poisson 0 : pyaw doit être un nombre fini',
   'bac : poisson ppitch infini': 'refus : bac 0 : poisson 0 : ppitch doit être un nombre fini',
   'bac : poisson pphase infini': 'refus : bac 0 : poisson 0 : pphase doit être un nombre fini',
-  'bac : poisson health absente': 'ok fc63fdf7 ebb83c6a',
+  'bac : poisson health absente': 'ok 97394c06 e88b0697',
   'bac : poisson health texte': 'refus : bac 0 : poisson 0 : health doit être un nombre fini',
   'bac : poisson health basse': 'refus : bac 0 : poisson 0 : health hors de [plancher, 1]',
   'bac : poisson health haute': 'refus : bac 0 : poisson 0 : health hors de [plancher, 1]',
@@ -1377,8 +1377,8 @@ const EXPECTED: Record<string, string> = {
   'bac : poisson px hors zone':
     'refus : bac 0 : poisson 0 : position précédente hors de la zone de nage',
   'bac : poisson yaw 4': 'refus : bac 0 : poisson 0 : yaw hors de [-π, π]',
-  'bac : poisson yaw π': 'ok 537789c3 8ffe632e',
-  'bac : poisson yaw π+ε': 'ok 387b0252 cd5073c5',
+  'bac : poisson yaw π': 'ok be9b9e32 4ee7ba1b',
+  'bac : poisson yaw π+ε': 'ok ccf351e9 6707ac76',
   'bac : poisson yaw π+1e-11': 'refus : bac 0 : poisson 0 : yaw hors de [-π, π]',
   'bac : poisson pyaw 4': 'refus : bac 0 : poisson 0 : pyaw hors de [-π, π]',
   'bac : poisson pitch 3': 'refus : bac 0 : poisson 0 : pitch hors bornes',
@@ -1394,13 +1394,13 @@ const EXPECTED: Record<string, string> = {
   'bac : poisson hunger 2': 'refus : bac 0 : poisson 0 : hunger hors de [0, 1]',
   'bac : poisson rng réel': 'refus : bac 0 : poisson 0 : rng doit être un entier 32 bits non signé',
   'bac : poisson rng 2^32': 'refus : bac 0 : poisson 0 : rng doit être un entier 32 bits non signé',
-  'bac : poisson ich 0': 'ok a9bd165d b512ad40',
+  'bac : poisson ich 0': 'ok 501d2c7c b3ec3ee5',
   'bac : poisson ich -1': 'refus : bac 0 : poisson 0 : ich hors de [0, 900]',
-  'bac : poisson finRot 0': 'ok a697d59b 574d8d2e',
+  'bac : poisson finRot 0': 'ok 2f828aea 1086d81b',
   'bac : poisson finRot texte': 'refus : bac 0 : poisson 0 : finRot hors de [0, 1200]',
-  'bac : poisson velvet 0': 'ok f424c4bb 8bb645fe',
-  'bac : poisson fungus 0': 'ok bf201d0f 9358173a',
-  'bac : poisson dropsy 0': 'ok 8007e692 be029799',
+  'bac : poisson velvet 0': 'ok c1baa80a e6ae13ab',
+  'bac : poisson fungus 0': 'ok d86db55e 26ac3b67',
+  'bac : poisson dropsy 0': 'ok 115a96a9 affef05a',
   'bac : poisson dropsy 1e9': 'refus : bac 0 : poisson 0 : dropsy hors de [0, 2400]',
   'bac : poisson growth 0': 'refus : bac 0 : poisson 0 : l’espèce neon n’a pas d’alevins',
   'bac : poisson growth -1': 'refus : bac 0 : poisson 0 : l’espèce neon n’a pas d’alevins',
@@ -1431,7 +1431,7 @@ const EXPECTED: Record<string, string> = {
   'bac : poissons tous invalides':
     'refus : bac 0 : poisson 0 : doit être un objet ; bac 0 : poisson 1 : doit être un objet ; bac 0 : poisson 2 : doit être un objet ; bac 0 : poisson 3 : doit être un objet ; bac 0 : poisson 4 : doit être un objet ; …',
   'bac : food texte': 'refus : bac 0 : food doit être une liste',
-  'bac : food vide': 'ok 6df7c948 356996bf',
+  'bac : food vide': 'ok 6e690a4f 517d8228',
   'bac : food trop': 'refus : bac 0 : trop de granulés (999, 60 au plus)',
   'bac : granulé pas objet': 'refus : bac 0 : granulé 0 : doit être un objet',
   'bac : granulé id absent': 'refus : bac 0 : granulé 0 : id doit être un nombre fini',
@@ -1457,7 +1457,7 @@ const EXPECTED: Record<string, string> = {
     'refus : bac 0 : granulé 0 : id doit être un entier positif ou nul',
   'bac : granulés en double': 'refus : bac 0 : granulé 1 : id doit être un entier positif ou nul',
   'bac : eggs texte': 'refus : bac 0 : eggs doit être une liste',
-  'bac : eggs vide': 'ok fc63fdf7 ebb83c6a',
+  'bac : eggs vide': 'ok 97394c06 e88b0697',
   'bac : eggs trop': 'refus : bac 0 : trop d’œufs (31, 30 au plus)',
   'bac : œuf pas objet': 'refus : bac 0 : œuf 0 : doit être un objet',
   'bac : œuf espèce sans œufs': 'refus : bac 0 : œuf 0 : espèce sans œufs (« neon »)',
@@ -1466,22 +1466,22 @@ const EXPECTED: Record<string, string> = {
   'bac : œuf position texte': 'refus : bac 0 : œuf 0 : position hors de l’eau',
   'bac : œuf âge': 'refus : bac 0 : œuf 0 : age hors de [0, 180[',
   'bac : œuf surface': 'refus : bac 0 : œuf 0 : surface inconnue (« toit »)',
-  'bac : œufs valides': 'ok db8b460e 0c482009',
+  'bac : œufs valides': 'ok acd4b0d5 b0fdae8a',
   'bac : maintenance texte': 'refus : bac 0 : maintenance doit être un objet',
   'bac : waterHistory texte': 'refus : bac 0 : waterHistory doit être un objet',
   'bac : journal texte': 'refus : bac 0 : journal doit être un objet',
   'bac : firstTankPath texte': 'refus : bac 0 : firstTankPath doit être un objet',
   'bac : feeder texte': 'refus : bac 0 : feeder doit être un objet',
-  'bac : feeder valide': 'ok 65fd085e bd4b5cfb',
+  'bac : feeder valide': 'ok 4093bb25 ba5fc1b4',
   'bac : feeder heures':
     'refus : bac 0 : feeder.hours doit lister 1 à 4 heures distinctes dans [0, 23]',
-  'bac : mortality true': 'ok d0a0f08a 9c1bdf3d',
+  'bac : mortality true': 'ok 6e73d261 82521aae',
   'bac : mortality false': 'refus : bac 0 : mortality doit valoir true (reçu : false)',
   'bac : mortality texte': 'refus : bac 0 : mortality doit valoir true (reçu : « oui »)',
   'bac : dead texte': 'refus : bac 0 : dead doit être une liste',
-  'bac : dead vide': 'ok fc63fdf7 ebb83c6a',
+  'bac : dead vide': 'ok 97394c06 e88b0697',
   'bac : water texte': 'refus : bac 0 : eau : doit être un objet',
-  'bac : water sans pH': 'ok edec0dcf 85953e22',
+  'bac : water sans pH': 'ok 5e63df9e 59b04caf',
   'bac : water température': 'refus : bac 0 : eau : temperature doit être un nombre dans [0, 40]',
   'bac : ordre : seed, dimensions, tick, compteurs':
     'refus : bac 0 : seed doit être un entier 32 bits non signé ; bac 0 : dimensions doit être un objet ; bac 0 : tick doit être un entier dans [0, 2147483648] ; bac 0 : nextFishId doit être un entier 32 bits non signé ; bac 0 : nextFoodId doit être un entier positif ou nul ; …',
@@ -1511,14 +1511,14 @@ const EXPECTED: Record<string, string> = {
   'riche : espèce au nom long': 'refus : poisson 0 : espèce inconnue (« xxxxxxxxxxxxxxxxxxxx… »)',
   'riche : espèce objet': 'refus : poisson 0 : espèce inconnue (object)',
   'riche : mode décor : espèce d’ailleurs': 'ok a0dfdd1a b8eb8b15',
-  'schéma 2 : réelle': 'ok fc63fdf7 ebb83c6a',
+  'schéma 2 : réelle': 'ok 97394c06 e88b0697',
   'schéma 2 : schéma 4': 'refus : version de sauvegarde inconnue (4, version 1, 2 ou 3 attendue)',
   'schéma 2 : seed': 'refus : seed doit être un entier 32 bits non signé',
   'schéma 2 : tick': 'refus : tick doit être un entier dans [0, 2147483648]',
   'schéma 2 : nextTankId': 'refus : nextTankId doit être un entier 32 bits non signé',
   'schéma 2 : selectedTankId texte': 'refus : selectedTankId doit être un entier 32 bits non signé',
-  'schéma 2 : selectedTankId absent': 'ok fc63fdf7 ebb83c6a',
-  'schéma 2 : selectedTankId inconnu': 'ok fc63fdf7 ebb83c6a',
+  'schéma 2 : selectedTankId absent': 'ok 97394c06 e88b0697',
+  'schéma 2 : selectedTankId inconnu': 'ok 97394c06 e88b0697',
   'schéma 2 : tanks texte': 'refus : tanks doit être une liste',
   'schéma 2 : tanks vide': 'refus : nombre de bacs hors de [1, 32] (0)',
   'schéma 2 : tanks trop': 'refus : nombre de bacs hors de [1, 32] (99)',
@@ -1541,7 +1541,7 @@ const EXPECTED: Record<string, string> = {
   'schéma 2 : deux bassins au jardin': 'refus : un seul bac au jardin',
   'schéma 2 : placement au jardin': 'refus : bac 1 : placement interdit au jardin',
   'schéma 2 : world trop volumineux': 'refus : bac 0 : world trop volumineux (256 Kio au plus)',
-  'schéma 2 : bac placement valide': 'ok 50e7aa55 da22f988',
+  'schéma 2 : bac placement valide': 'ok 8a592a94 b452784d',
   'schéma 2 : bac placement niveau': 'refus : bac 0 : position-invalide',
   'schéma 2 : bac placement invalide':
     'refus : bac 0 : placement.supportId doit être null ou un entier 32 bits non signé ; bac 0 : placement.x et placement.z doivent être des mètres au centimètre ; bac 0 : placement.quarter doit être 0, 1, 2 ou 3 ; bac 0 : placement.level doit être un entier de 0 à 2',
@@ -1551,15 +1551,15 @@ const EXPECTED: Record<string, string> = {
   'schéma 2 : bac id ≥ nextTankId': 'refus : bac 50 : identifiant ≥ nextTankId',
   'schéma 2 : furniture texte': 'refus : furniture doit être une liste',
   'schéma 2 : furniture sans compteur': 'refus : nextFurnitureId manquant',
-  'schéma 2 : furniture valide': 'ok eb7a17cf 3b3312ac',
-  'schéma 2 : furniture vide': 'ok fc63fdf7 ebb83c6a',
+  'schéma 2 : furniture valide': 'ok 9c88b2a2 53a65061',
+  'schéma 2 : furniture vide': 'ok 97394c06 e88b0697',
   'schéma 2 : furniture trop': 'refus : trop de meubles (99, 24 au plus)',
   'schéma 2 : meuble pas objet': 'refus : meuble 0 : doit être un objet',
   'schéma 2 : meuble invalide':
     'refus : meuble 0 : id, kind (commode, etagere-bacs, etagere-animalerie), x, z ou quarter invalide',
   'schéma 2 : nextFurnitureId texte':
     'refus : nextFurnitureId doit être un entier 32 bits non signé',
-  'schéma 2 : nextFurnitureId seul': 'ok cee5689b 4afb90b8',
+  'schéma 2 : nextFurnitureId seul': 'ok 1ba547b2 7bff313d',
   'schéma 2 : ordre : seed, tick, nextTankId, selectedTankId, settings':
     'refus : seed doit être un entier 32 bits non signé ; tick doit être un entier dans [0, 2147483648] ; nextTankId doit être un entier 32 bits non signé ; selectedTankId doit être un entier 32 bits non signé ; settings doit être un objet',
   'schéma 2 : ordre : settings, tanks, furniture, nextFurnitureId':
@@ -1569,20 +1569,20 @@ const EXPECTED: Record<string, string> = {
   'schéma 2 : settings tableau': 'refus : settings doit être un objet',
   'schéma 2 : vitesse inconnue': 'refus : vitesse inconnue (3)',
   'schéma 2 : vitesse texte': 'refus : vitesse inconnue (« 1 »)',
-  'schéma 2 : vitesse 0': 'ok 19892b5c 20785917',
+  'schéma 2 : vitesse 0': 'ok 90a88331 b3cae9ea',
   'schéma 2 : horloge absente':
     'refus : heure de l’horloge hors de [0, 24) ; durée de la journée hors de [60, 86400] s ; horloge : frozen doit être un booléen',
   'schéma 2 : horloge texte':
     'refus : heure de l’horloge hors de [0, 24) ; durée de la journée hors de [60, 86400] s ; horloge : frozen doit être un booléen',
   'schéma 2 : heure 24': 'refus : heure de l’horloge hors de [0, 24)',
-  'schéma 2 : heure 23.99': 'ok 72d26bc9 b8b3250a',
+  'schéma 2 : heure 23.99': 'ok 7519f826 e51fdda1',
   'schéma 2 : heure -1': 'refus : heure de l’horloge hors de [0, 24)',
   'schéma 2 : journée 59': 'refus : durée de la journée hors de [60, 86400] s',
-  'schéma 2 : journée 86400': 'ok 689b6842 293d742f',
+  'schéma 2 : journée 86400': 'ok 793cdeb1 08afbaf8',
   'schéma 2 : frozen texte': 'refus : horloge : frozen doit être un booléen',
   'schéma 2 : foodStyle inconnu': 'refus : rendu des granulés inconnu (« cubes »)',
-  'schéma 2 : foodStyle absent': 'ok fc63fdf7 ebb83c6a',
-  'schéma 2 : room absente': 'ok fc63fdf7 ebb83c6a',
+  'schéma 2 : foodStyle absent': 'ok 97394c06 e88b0697',
+  'schéma 2 : room absente': 'ok 97394c06 e88b0697',
   'schéma 2 : room texte': 'refus : pièce : doit être un objet',
   'schéma 2 : room texte et vitesse': 'refus : vitesse inconnue (3) ; pièce : doit être un objet',
   'schéma 2 : room et horloge':

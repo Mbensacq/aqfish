@@ -44,6 +44,8 @@ import {
   buildRockMesh,
   createOutlineGeometry,
   createRockGeometry,
+  LIMESTONE_COLORS,
+  ROCK_COLORS,
   type VoxelMeshData,
 } from './rock-model';
 import { buildWoodMesh } from './wood-model';
@@ -213,7 +215,11 @@ export class DecorLayer {
         name = `bois-${n}`;
       } else {
         const model = rockModel(item.seed, item.scale);
-        data = buildRockMesh(model, item.seed);
+        data = buildRockMesh(
+          model,
+          item.seed,
+          item.material === 'limestone' ? LIMESTONE_COLORS : ROCK_COLORS,
+        );
         baseY = rockBaseY(model.voxelSize);
         name = `rocher-${n}`;
       }

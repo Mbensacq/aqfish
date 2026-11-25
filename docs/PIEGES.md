@@ -6,6 +6,13 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Effet ajouté à chaque pas fin : le test de 3 jours de `plant-growth.spec.ts` passe 5 s en CI**
+  (cycle 304, #733) : « taille d'une plante du monde » fait 216 000 pas fins (2,5 s en CI sur
+  `main`) ; avec l'effet du décor sur l'eau (deux boucles sur le décor et un appel de fonction
+  par élément à chaque pas), il a dépassé le délai de 5 s deux fois de suite, alors que la
+  mesure locale ne montrait pas d'écart net (bruit de ±30 %). Une étape appelée au pas fin
+  parcourt le décor **une fois**, sans appel par élément ; comparer la durée de ce test dans le
+  journal de la CI (`✓ … ms`) avec celle d'un passage récent sur `main`. (2026-11-25)
 - **Algues des captures : voile teal qu'on prend pour les plantes du fond** (cycle 302, #833) :
   sur `front-algues.png`, les plaques (voile `vegetation` voilé par l'eau, filaments verticaux)
   ressemblent aux plantes d'arrière-plan ; on croit à tort qu'elles ne sont pas dessinées. Pour

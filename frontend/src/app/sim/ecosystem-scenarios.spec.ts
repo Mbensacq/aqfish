@@ -30,6 +30,8 @@ import type { World } from './world-types';
 import type { DecorItem } from './decor';
 import type { SpeciesId } from './species';
 import { shrimpPlace } from './shrimp-colony';
+import { SPECIES_PH } from './water-ph';
+import { TAP_HARDNESS } from './water-hardness';
 
 /**
  * Scénarios de référence de l'écosystème (`docs/ECOSYSTEME.md` § 4, issue #799) : chacun fait
@@ -89,6 +91,9 @@ function tankWith(population: { species: SpeciesId; count: number }[], decor: De
   (world.water as MutableWaterState).filter = 1;
   return world;
 }
+
+/** Roche du scénario S11 (#733), au milieu du bac planté, devant les plantes à tige. */
+const S11_ROCK: DecorItem = { kind: 'rock', x: 0.2, z: 0, rotation: 0.5, scale: 1.5, seed: 3100 };
 
 /** Volume du bac à crevettes (S8), en litres. */
 const SHRIMP_TANK_LITERS = 30;
@@ -175,7 +180,7 @@ function expectStable(record: ScenarioRecord): void {
   expect(record.minHealth).toBeGreaterThanOrEqual(SICK_HEALTH);
 }
 
-describe('scénarios de référence de l’écosystème (#799, #805, #807, #821, #823, #833)', () => {
+describe('scénarios de référence de l’écosystème (#799, #805, #807, #821, #823, #833, #733)', () => {
   it(
     'S1 — bocal de 10 L, un poisson rouge, sans filtre : ammoniaque toxique en quelques jours, poisson malade',
     () => {
@@ -403,6 +408,42 @@ describe('scénarios de référence de l’écosystème (#799, #805, #807, #821,
 
       expect(record.world.entities.filter((e) => e.species === 'cerise')).toHaveLength(0);
       expect(record.world.entities.filter((e) => e.species === 'rouge')).toHaveLength(2);
+    },
+    SCENARIO_TIMEOUT_MS,
+  );
+
+  it(
+    'S11 — roche calcaire dans le bac planté de 10 néons : pH tiré vers 7,6–7,9 en quelques semaines, néons en limite',
+    () => {
+      const limestone = (material: 'inert' | 'limestone', days: number): ScenarioRecord =>
+        runScenario({
+          world: tankWith(
+            [{ species: 'neon', count: 10 }],
+            [...plantedDecor(), { ...S11_ROCK, material }],
+          ),
+          liters: PLANTED_LITERS,
+          care: NO_WATER_CHANGE,
+          days,
+        });
+
+      const week = limestone('limestone', 7).world.water;
+      const record = limestone('limestone', STABLE_DAYS);
+      const inert = limestone('inert', STABLE_DAYS).world.water;
+      const { ph, kh } = record.world.water;
+      const neon = SPECIES_PH.neon;
+
+      // Quelques semaines : pas encore à 7,6 après une semaine.
+      expect(week.ph).toBeLessThan(7.6);
+      expect(ph).toBeGreaterThanOrEqual(7.6);
+      expect(ph).toBeLessThanOrEqual(7.9);
+      // Néons en limite : hors de leur plage idéale, encore dans la tolérée.
+      expect(ph).toBeGreaterThan(neon.ideal.max);
+      expect(ph).toBeLessThanOrEqual(neon.tolerated.max);
+      expect(kh).toBeGreaterThan(TAP_HARDNESS.tropical.kh);
+      expectStable(record);
+      // Témoin : la même roche, inerte, ne relève ni le pH ni la dureté.
+      expect(inert.ph).toBeLessThan(neon.ideal.max);
+      expect(inert.kh).toBeUndefined();
     },
     SCENARIO_TIMEOUT_MS,
   );

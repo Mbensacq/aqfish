@@ -27,6 +27,18 @@ export const DECOR_KINDS = ['rock', 'plant', 'wood'] as const;
 export type DecorKind = (typeof DECOR_KINDS)[number];
 
 /**
+ * Matières d'un rocher (issue #733, ADR 0181) : `inert` (quartz, granit, ardoise, lave, grès :
+ * aucun effet sur l'eau) ou `limestone` (calcaire, marbre, roche de corail… : relève la
+ * dureté et le pH, `sim/decor-water.ts`). Un rocher sans matière écrite est inerte : une
+ * sauvegarde antérieure se relit sans changement.
+ */
+export const ROCK_MATERIALS = ['inert', 'limestone'] as const;
+export type RockMaterial = (typeof ROCK_MATERIALS)[number];
+
+/** Matière d'un élément de décor pour l'eau : celle d'un rocher, `wood`, ou `null` (plante). */
+export type DecorMaterial = RockMaterial | 'wood';
+
+/**
  * Élément de décor posé sur le sable. Unités : mètres et radians. L'altitude découle du type
  * (`decorBaseY`) : un élément repose sur le sable, sauf s'il a été posé sur un autre élément
  * par la chute de l'éditeur (`elevation`, ADR 0046).
@@ -49,6 +61,11 @@ export interface DecorItem {
    * Non nulle seulement pour un élément posé sur un autre (ADR 0046).
    */
   readonly elevation?: number;
+  /**
+   * Matière d'un rocher (`ROCK_MATERIALS`, issue #733), interdite aux autres types ; absente :
+   * `inert` (la clé n'est écrite que pour `limestone`).
+   */
+  readonly material?: RockMaterial;
 }
 
 export const MIN_DECOR_SCALE = 0.25;
@@ -63,6 +80,7 @@ const ITEM_KEYS: readonly string[] = [
   'seed',
   'form',
   'elevation',
+  'material',
 ];
 
 /**
@@ -104,7 +122,29 @@ function shapeProblems(item: Record<string, unknown>): string[] {
       problems.push(`${key} doit être un réel fini (reçu : ${String(v)})`);
     }
   }
+  problems.push(...materialProblems(item));
   return problems;
+}
+
+/** Problèmes de matière (issue #733) : réservée aux rochers, valeur de `ROCK_MATERIALS`. */
+function materialProblems(item: Record<string, unknown>): string[] {
+  if (!('material' in item)) {
+    return [];
+  }
+  if (item['kind'] !== 'rock') {
+    return ['material est réservée aux rochers'];
+  }
+  return (ROCK_MATERIALS as readonly unknown[]).includes(item['material'])
+    ? []
+    : [`material doit être ${ROCK_MATERIALS.join(' ou ')} (reçu : ${String(item['material'])})`];
+}
+
+/** Matière de `item` pour l'eau (issue #733) : rocher sans matière écrite : `inert`. */
+export function decorMaterial(item: DecorItem): DecorMaterial | null {
+  if (item.kind === 'rock') {
+    return item.material ?? 'inert';
+  }
+  return item.kind === 'wood' ? 'wood' : null;
 }
 
 /** Problèmes de bornes d'un élément de bonne forme : position, échelle, graine, élévation. */
@@ -155,13 +195,17 @@ export function parseDecorItems(value: unknown, dims: TankDimensions = DEFAULT_T
   if (problems.length > 0) {
     throw new RangeError(problems.join(' ; '));
   }
-  return (value as DecorItem[]).map(({ kind, x, z, rotation, scale, seed, form, elevation }) => {
-    const item: DecorItem =
-      form === undefined
-        ? { kind, x, z, rotation, scale, seed }
-        : { kind, x, z, rotation, scale, seed, form };
-    return elevation === undefined ? item : withElevation(item, elevation);
-  });
+  return (value as DecorItem[]).map(
+    ({ kind, x, z, rotation, scale, seed, form, elevation, material }) => {
+      const base: DecorItem =
+        form === undefined
+          ? { kind, x, z, rotation, scale, seed }
+          : { kind, x, z, rotation, scale, seed, form };
+      // Matière inerte : clé omise, comme une sauvegarde antérieure à l'issue #733.
+      const item = material === 'limestone' ? { ...base, material } : base;
+      return elevation === undefined ? item : withElevation(item, elevation);
+    },
+  );
 }
 
 /**

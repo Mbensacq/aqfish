@@ -9,6 +9,7 @@ import {
   validateDecorItem,
   withElevation,
   type DecorItem,
+  type RockMaterial,
 } from './decor';
 import {
   environmentWater,
@@ -55,9 +56,11 @@ export interface DecorChoice {
   readonly name: string;
   readonly kind: DecorItem['kind'];
   readonly form?: PlantForm;
+  /** Matière d'un rocher (issue #733) ; absente : inerte. */
+  readonly material?: RockMaterial;
 }
 
-export const DECOR_CHOICE_IDS = ['rock', 'wood', 'tall', 'tuft', 'floating'] as const;
+export const DECOR_CHOICE_IDS = ['rock', 'limestone', 'wood', 'tall', 'tuft', 'floating'] as const;
 export type DecorChoiceId = (typeof DECOR_CHOICE_IDS)[number];
 
 /**
@@ -74,6 +77,7 @@ export function isDecorTool(value: unknown): value is DecorTool {
 /** Catalogue de l'éditeur, dans l'ordre d'affichage. */
 export const DECOR_CATALOG: Readonly<Record<DecorChoiceId, DecorChoice>> = {
   rock: { id: 'rock', name: 'Rocher', kind: 'rock' },
+  limestone: { id: 'limestone', name: 'Roche calcaire', kind: 'rock', material: 'limestone' },
   wood: { id: 'wood', name: 'Bois flotté', kind: 'wood' },
   tall: { id: 'tall', name: 'Grande plante', kind: 'plant', form: 'tall' },
   tuft: { id: 'tuft', name: 'Touffe', kind: 'plant', form: 'tuft' },
@@ -154,11 +158,12 @@ export function addDecorItem(
   }
   const seed = nextDecorSeed(worldSeed, decor);
   const rotation = createPrng(seed).next() * 2 * Math.PI;
-  const { kind, form } = DECOR_CATALOG[choice];
-  const placed: DecorItem =
+  const { kind, form, material } = DECOR_CATALOG[choice];
+  const bare: DecorItem =
     form === undefined
       ? { kind, x, z, rotation, scale: 1, seed }
       : { kind, x, z, rotation, scale: 1, seed, form };
+  const placed: DecorItem = material === undefined ? bare : { ...bare, material };
   const p = clampDecorPosition(placed, x, z, environment);
   if (p === null) {
     return null;

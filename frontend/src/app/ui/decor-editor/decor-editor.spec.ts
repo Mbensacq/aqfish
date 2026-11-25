@@ -15,7 +15,14 @@ import {
 
 describe('decorEditorHint', () => {
   it('dit ce que fera un clic, selon l’outil et la sélection', () => {
-    expect(decorEditorHint('rock', null, false)).toBe('Cliquez sur le sable pour poser : rocher.');
+    expect(decorEditorHint('rock', null, false)).toBe(
+      'Cliquez sur le sable pour poser : rocher. Rocher inerte : aucun effet sur l’eau (aquariumscience.org).',
+    );
+    expect(decorEditorHint('limestone', null, false)).toContain('tire le pH vers 7,8');
+    expect(decorEditorHint('wood', null, false)).toContain('approximation de jeu');
+    expect(decorEditorHint('tall', null, false)).toBe(
+      'Cliquez sur le sable pour poser : grande plante.',
+    );
     expect(decorEditorHint('tuft', null, false)).toContain('touffe');
     expect(decorEditorHint('select', null, false)).toContain('sélectionner');
     expect(decorEditorHint('rock', 0, false)).toContain('Suppr');
@@ -50,6 +57,7 @@ describe('decorEditorHint', () => {
     expect(DECOR_TOOLS.map((t) => t.id)).toEqual([
       'select',
       'rock',
+      'limestone',
       'wood',
       'tall',
       'tuft',
@@ -121,6 +129,7 @@ describe('DecorEditor', () => {
     expect(radios.map((r) => r.textContent?.trim())).toEqual([
       'Sélection',
       'Rocher',
+      'Roche calcaire',
       'Bois flotté',
       'Grande plante',
       'Touffe',
@@ -129,6 +138,7 @@ describe('DecorEditor', () => {
     expect(radios.map((r) => r.getAttribute('aria-checked'))).toEqual([
       'false',
       'true',
+      'false',
       'false',
       'false',
       'false',

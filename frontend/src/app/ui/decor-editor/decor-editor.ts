@@ -94,6 +94,17 @@ const POSE_KEYS: Readonly<Record<string, { readonly rotate: number; readonly sca
 };
 
 /**
+ * Effet sur l'eau des éléments qui en ont un (issue #733), au format cartel de
+ * `docs/INTERFACE.md`, ajouté à la consigne de pose.
+ */
+export const DECOR_WATER_NOTES: Partial<Readonly<Record<DecorChoiceId, string>>> = {
+  rock: 'Rocher inerte : aucun effet sur l’eau (aquariumscience.org).',
+  limestone:
+    'Roche calcaire : relève la dureté et tire le pH vers 7,8, jamais au-delà, en quelques semaines à quelques mois (aquariumscience.org).',
+  wood: 'Bois flotté : ses tanins tirent lentement le pH vers 6,5 (approximation de jeu).',
+};
+
+/**
  * Consigne de l'éditeur selon l'outil, la sélection et la dernière pose (#167, #168, #170) :
  * ce qu'un geste fera, pourquoi la pose a été refusée, ou que l'élément a été posé sans
  * chute faute de moteur.
@@ -132,7 +143,14 @@ export function decorEditorHint(
   if (full) {
     return `Décor plein (${MAX_DECOR_ITEMS} éléments) : retirez-en un d’abord.`;
   }
-  return `Cliquez sur le sable pour poser : ${DECOR_CATALOG[tool as DecorChoiceId].name.toLowerCase()}.`;
+  return decorPoseHint(tool as DecorChoiceId);
+}
+
+/** Consigne de pose d'un élément du catalogue, suivie de son effet sur l'eau s'il en a un. */
+function decorPoseHint(choice: DecorChoiceId): string {
+  const pose = `Cliquez sur le sable pour poser : ${DECOR_CATALOG[choice].name.toLowerCase()}.`;
+  const note = DECOR_WATER_NOTES[choice];
+  return note === undefined ? pose : `${pose} ${note}`;
 }
 
 /**

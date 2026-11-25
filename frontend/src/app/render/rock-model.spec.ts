@@ -7,6 +7,7 @@ import {
   cellHash,
   createOutlineGeometry,
   createRockGeometry,
+  LIMESTONE_COLORS,
   ROCK_COLORS,
   rockFaceColor,
 } from './rock-model';
@@ -98,6 +99,21 @@ describe('couleurs des faces', () => {
         rockFaceColor(7, { i, j: 2, k: 0 }, true),
       );
       expect(rockFaceColor(7, { i, j: 0, k: 0 }, false)).toBe(ROCK_COLORS.shade);
+    }
+  });
+
+  it('roche calcaire (#733) : même dessin, blanc crème, distincte du rocher', () => {
+    const model = rockModel(11, 1);
+    const plain = buildRockMesh(model, 11);
+    const limestone = buildRockMesh(model, 11, LIMESTONE_COLORS);
+    expect(limestone.positions).toEqual(plain.positions);
+    expect(limestone.colors).not.toEqual(plain.colors);
+    expect(LIMESTONE_COLORS.top).not.toBe(ROCK_COLORS.top);
+    for (let i = -5; i < 5; i++) {
+      for (const up of [true, false]) {
+        const color = rockFaceColor(7, { i, j: i + 5, k: 0 }, up, LIMESTONE_COLORS);
+        expect(Object.values(LIMESTONE_COLORS)).toContain(color);
+      }
     }
   });
 });
