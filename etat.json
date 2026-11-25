@@ -11012,6 +11012,12 @@
           "debut": "2026-11-25T11:13:43.214Z",
           "fin": "2026-11-25T11:28:56.193Z",
           "note": "Verdict OK, 0 bug, captures c303 publiées (e2e local interrompu par le délai, unitaires 6431 verts, CI 13/13)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-25T11:29:24.384Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
