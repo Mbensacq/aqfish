@@ -11000,6 +11000,12 @@
           "debut": "2026-11-25T10:23:59.907Z",
           "fin": "2026-11-25T10:24:41.784Z",
           "note": "Issue #836 : écosystème 6/7 tranche 2, charognards, crevettes, prédation (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-25T10:25:29.257Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
