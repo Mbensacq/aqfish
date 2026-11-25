@@ -11068,10 +11068,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-25T23:41:44.590Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-25T23:42:22.364Z",
+          "note": "Issue #841 : lot de dette décor/eau + #838 (S), >30 dettes ouvertes"
         }
       },
       "metriques": {}
