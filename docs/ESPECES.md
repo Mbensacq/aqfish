@@ -663,6 +663,12 @@ Désaccords entre sources :
     amphibiens ; la classe « amphibien » (3 à 4 L d'eau par cm) et les parts d'eau de l'axolotl
     et du triton sont des **approximations de jeu**, choisies pour que le volume minimal de
     chaque fiche, berge déduite, loge un adulte au plafond de densité (testé).
+    **Arbitré** (#813, ADR 0177) : quatre fiches de soins secondaires ([67] à [70], dont une
+    rédigée par une vétérinaire) donnent un volume de **terrarium entier** pour le triton
+    (56,8 L pour un, 18,9 L par adulte de plus) et le sonneur (37,9 L pour un couple ;
+    désaccord : 56,8 L pour cinq selon [70]). Décision : sonneur et triton seront comptés sur
+    le volume du milieu, berge comprise ; l'axolotl reste compté sur l'eau. Mise en œuvre au
+    lot de dette du cycle 306 ; d'ici là, la règle de l'ADR 0171 s'applique.
 19. Capacité des bacs par défaut (#807) : au plafond, le bassin (7 koïs de 60 cm, eau froide
     4 L/cm, règle de la RSPCA pour le poisson rouge appliquée à la koï) demande 1 680 L pour
     834 L d'eau, et le paludarium (classe « amphibien » 3 L/cm, approximation) 114 L pour 45,7 L
@@ -748,3 +754,7 @@ remplacer par une source primaire.
 64. Seriously Fish, _Trichogaster chuna_ — https://www.seriouslyfish.com/species/trichogaster-chuna _(consultée le 2026-11-05, #429 : petits invertébrés dans la nature ; aucune mention des crevettes)_
 65. OATA (Ornamental Aquatic Trade Association), « How to look after goldfish in an aquarium » — https://ornamentalfish.org/what-we-do/advice-information/care-sheets/caresheets-coldwater-fish/how-to-look-after-goldfish-in-an-aquarium-fishtank/ _(consultée le 2026-11-16, #654 : 4–25 °C, pH 6–8, 5–19 °dH, 100 L + 50 L par adulte, 25 cm en aquarium)_
 66. FishKeeper, goldfish — https://www.fishkeeper.co.uk/fish/freshwater/pond-fish/goldfish- _(secondaire : boutique ; consultée le 2026-11-16, #654 : 4–30 °C, pH 7–8, sociable)_
+67. PetMD, « Fire-Bellied Newt Care Sheet », M. Zayas, DVM (2023) — https://www.petmd.com/exotic/fire-bellied-newt-care-sheet _(secondaire, rédigée par une vétérinaire ; consultée le 2026-11-25, #813 : 15 gallons pour un triton, 20 pour deux, milieu entier)_
+68. Reptiles Magazine, « Chinese Fire-bellied Newt » — https://reptilesmagazine.com/Frog-Amphibian-Species/Chinese-Fire-bellied-Newt/ _(secondaire, rédaction ; consultée le 2026-11-25, #813 : 20 gallons pour quatre tritons au plus)_
+69. Reptiles Magazine, « Oriental Fire-bellied Toad » — https://reptilesmagazine.com/Frog-Amphibian-Species/Oriental-Fire-bellied-Toad/ _(secondaire, rédaction ; consultée le 2026-11-25, #813 : 10 gallons pour un couple au plus, partie sèche et partie en eau)_
+70. amphibiancare.com, « Fire-Bellied Toad » (2008) — https://www.amphibiancare.com/frogs/caresheets/firebelliedtoad.html _(secondaire, sans auteur ; consultée le 2026-11-25, #813 : 15 gallons, 61 × 30 × 30 cm, pour cinq adultes ; berge sur la moitié aux deux tiers du sol)_
