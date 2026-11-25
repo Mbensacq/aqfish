@@ -9,6 +9,7 @@ import {
 } from './health-summary';
 import type { AlertSeverity } from './dashboard-alerts';
 import { environmentById, environmentWater } from './environment';
+import { FRY_FULL_COVER_M2, FRY_HIDE_RADIUS, fryShelterCount, type FryShelterCount } from './fry';
 import { populationCounts } from './population';
 import { type SpeciesId } from './species';
 import { MIX_REASON_TEXT, SPECIES_LABELS } from './species-catalog';
@@ -57,7 +58,7 @@ import type { World } from './world-types';
 
 /** Sujets du bilan, dans l'ordre retenu à gravité égale. */
 export type ReviewPointId =
-  'density' | 'nitrogen' | 'feeding' | 'compatibility' | 'hardness' | 'temperature';
+  'density' | 'nitrogen' | 'feeding' | 'compatibility' | 'hardness' | 'temperature' | 'fry';
 
 /** Ordre des points de même gravité. */
 export const REVIEW_ORDER: readonly ReviewPointId[] = [
@@ -67,6 +68,7 @@ export const REVIEW_ORDER: readonly ReviewPointId[] = [
   'compatibility',
   'hardness',
   'temperature',
+  'fry',
 ];
 
 /** Nombre de points affichés au plus. */
@@ -87,6 +89,12 @@ export const DENSITY_THRESHOLDS: QualityThresholds = {
 function densityFor(nitrite: number): number {
   return (nitrite * NITRITE_CONVERSION) / (AMMONIA_PER_LOAD_LITER * NITRITE_PER_AMMONIA);
 }
+
+/**
+ * Part des alevins à l'abri des plantes (`fryShelterCount`) sous laquelle le refuge est jugé
+ * insuffisant (issue #823, **approximation de jeu**) : moins d'un alevin sur deux.
+ */
+export const FRY_REFUGE_SUFFICIENT = 0.5;
 
 /** Granulés encore dans l'eau au-delà desquels des animaux rassasiés signalent un excès (3 dépôts). */
 export const OVERFEEDING_PELLETS = 3 * FOOD_PER_DROP;
@@ -119,6 +127,8 @@ export interface ReviewInput {
   readonly species: readonly SpeciesId[];
   /** Dureté du bac ; absente : ce point est ignoré. */
   readonly hardness?: Hardness;
+  /** Alevins et alevins à l'abri des plantes (#823) ; absent : ce point est ignoré. */
+  readonly fry?: FryShelterCount;
 }
 
 const INVALID = 'mesure invalide (état de l’eau abîmé)';
@@ -318,13 +328,34 @@ function temperaturePoint(sample: WaterSample): ReviewPoint | null {
   };
 }
 
+/**
+ * Refuge des alevins (#823) : moins de `FRY_REFUGE_SUFFICIENT` d'entre eux à l'abri des plantes.
+ * Sans alevin, ou à l'abri en nombre suffisant, aucun point.
+ */
+function fryPoint(fry: FryShelterCount | undefined): ReviewPoint | null {
+  if (fry === undefined || !(fry.fry > 0) || fry.sheltered >= FRY_REFUGE_SUFFICIENT * fry.fry) {
+    return null;
+  }
+  const cover = frenchNumber(Math.round(FRY_FULL_COVER_M2 * 10000));
+  const radius = frenchNumber(Math.round(FRY_HIDE_RADIUS * 100));
+  return {
+    id: 'fry',
+    severity: 'attention',
+    title: 'Alevins sans refuge suffisant',
+    measure: `${fry.sheltered} alevin${fry.sheltered > 1 ? 's' : ''} sur ${fry.fry} à l’abri des plantes : il faut environ ${cover} cm² de feuillage à moins de ${radius} cm d’un alevin pour le cacher des adultes (approximation de jeu)`,
+    action:
+      'Planter des touffes denses près des alevins ou laisser pousser les plantes (Réglages, Décor)',
+  };
+}
+
 function rank(point: ReviewPoint): number {
   return (point.severity === 'critique' ? 0 : REVIEW_ORDER.length) + REVIEW_ORDER.indexOf(point.id);
 }
 
 /** Les points à améliorer, classés par gravité, au plus `MAX_REVIEW_POINTS`. */
 export function tankReview(input: ReviewInput): readonly ReviewPoint[] {
-  const { sample, animals, load, liters, averageHunger, pellets, mixes, species, hardness } = input;
+  const { sample, animals, load, liters, averageHunger, pellets, mixes, species, hardness, fry } =
+    input;
   return [
     densityPoint(animals, load, liters),
     nitrogenPoint(sample),
@@ -332,6 +363,7 @@ export function tankReview(input: ReviewInput): readonly ReviewPoint[] {
     compatibilityPoint(mixes),
     hardnessPoint(species, hardness, sample),
     temperaturePoint(sample),
+    fryPoint(fry),
   ]
     .filter((point): point is ReviewPoint => point !== null)
     .sort((a, b) => rank(a) - rank(b))
@@ -350,5 +382,6 @@ export function worldReview(world: World): readonly ReviewPoint[] {
     mixes: mixWarnings(environmentById(world.environment).species, populationCounts(world)),
     species: [...new Set(world.entities.map((entity) => entity.species))],
     hardness: waterHardness(world.water, world.environment),
+    fry: fryShelterCount(world.entities, world.decor, world),
   });
 }

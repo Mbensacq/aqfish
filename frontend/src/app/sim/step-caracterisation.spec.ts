@@ -118,7 +118,7 @@ const EXPECTED: Record<string, readonly string[]> = {
     '2f633342ef921932',
   ],
   rivaux: ['95514027671f5007', 'ae24ffa376e42c7f', 'b1dc3d4906705cf9', '364b566bb7770857'],
-  alevins: ['332b41add00a2d69', '629ccb4d0d5655bd', '76bc1e77d78ed3c5', '07f320eae4c3804c'],
+  alevins: ['11893bab92e7004f', '8c6b0c3bba594419', '74d4c0a7f8797437', 'f4afe4e6ff4bf4c6'],
   oeufs: ['67daa3ebdb3d802b', '68383128fe05b97e', 'e7c50fc697e8b3da', '191149883b683c92'],
   'oeufs+recif': ['78a65971c655f7e3', '5981a8c45050e9ea', '045139668f08355a', '1dbe5dfaee4fd14e'],
   maladies: ['0eef066187b89eeb', '3e9b97b08e71f420', '67a8d734709fef10', '602ba9a522baa28b'],

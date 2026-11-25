@@ -12,7 +12,16 @@ import type { MutableWaterState } from './water';
 import { COMPOUND_THRESHOLDS } from './water-quality';
 import { canAdd, populationOf } from './tank-capacity';
 import { ENVIRONMENT_IDS } from './environment';
-import { cloneWorld, createDefaultWorld, createWorld } from './world';
+import {
+  advanceInPlace,
+  birthYoungInPlace,
+  cloneWorld,
+  createDefaultWorld,
+  createWorld,
+} from './world';
+import { FRY_SAFE_AGE, isFry } from './fry';
+import { SIM_DT } from './constants';
+import type { Fish } from './swimmer';
 import type { World } from './world-types';
 import type { DecorItem } from './decor';
 
@@ -68,6 +77,49 @@ function plantedTank(neons: number, planted: boolean): World {
   return world;
 }
 
+/** Emplacements des plantes du scénario des alevins (S13), au fond du bac tropical. */
+const FRY_SITES: readonly number[] = [-0.4, 0, 0.4];
+/** Alevins posés près de chaque emplacement (S13). */
+const FRY_PER_SITE = 5;
+/** Durée du scénario des alevins, en secondes simulées (bien moins que leur croissance). */
+const FRY_SCENARIO_SECONDS = 120;
+
+/**
+ * Bac du scénario S13 (#823) : 12 néons (prédateurs), et près de chacun des trois emplacements
+ * `FRY_SITES` une touffe d'échelle `tuftScale` et `FRY_PER_SITE` alevins de guppy déjà en âge
+ * d'être mangés. À portée égale (mêmes emplacements, même graine), seule la masse change.
+ */
+function fryTank(seed: number, tuftScale: number): World {
+  const decor: DecorItem[] = FRY_SITES.map((x, i) => ({
+    kind: 'plant',
+    form: 'tuft',
+    x,
+    z: -0.05,
+    rotation: i,
+    scale: tuftScale,
+    seed: 300 + i,
+  }));
+  const world = cloneWorld(
+    createWorld(seed, [{ species: 'neon', count: 12 }], [], decor, 'tropical'),
+  );
+  for (const x of FRY_SITES) {
+    for (let k = 0; k < FRY_PER_SITE; k++) {
+      const fry = birthYoungInPlace(world, 'guppy', { x, y: 0.15, z: -0.05 }) as {
+        growth?: number;
+      };
+      fry.growth = FRY_SAFE_AGE;
+    }
+  }
+  return world;
+}
+
+/** Alevins encore là après `FRY_SCENARIO_SECONDS` de nage (pas complet, prédation comprise). */
+function fryLeft(world: World): number {
+  const run = cloneWorld(world);
+  advanceInPlace(run, Math.round(FRY_SCENARIO_SECONDS / SIM_DT));
+  return run.entities.filter((fish: Fish) => isFry(fish)).length;
+}
+
 /** Entretien des scénarios S5 à S7 : repas normaux, **aucun** changement d'eau. */
 const NO_WATER_CHANGE = { feedEverySeconds: NORMAL_CARE.feedEverySeconds };
 
@@ -86,7 +138,7 @@ function expectStable(record: ScenarioRecord): void {
   expect(record.minHealth).toBeGreaterThanOrEqual(SICK_HEALTH);
 }
 
-describe('scénarios de référence de l’écosystème (#799, #805, #807, #821)', () => {
+describe('scénarios de référence de l’écosystème (#799, #805, #807, #821, #823)', () => {
   it(
     'S1 — bocal de 10 L, un poisson rouge, sans filtre : ammoniaque toxique en quelques jours, poisson malade',
     () => {
@@ -225,6 +277,19 @@ describe('scénarios de référence de l’écosystème (#799, #805, #807, #821)
       expect(record.nitrate.value).toBeGreaterThan(COMPOUND_THRESHOLDS.nitrate.bad);
       expect(record.maxAlgae).toBeGreaterThan(0);
       expect(record.worstQuality).toBe('mauvaise');
+    },
+    SCENARIO_TIMEOUT_MS,
+  );
+
+  it(
+    'S13 — à portée égale, des touffes denses gardent plus d’alevins que des touffes maigres (#823)',
+    () => {
+      // Même graine, mêmes emplacements : seule la masse des touffes change (graines 1 à 4
+      // vérifiées pendant le cycle 297 : 12 contre 4, 12 contre 6, 13 contre 7, 9 contre 6).
+      const dense = fryLeft(fryTank(2, 1.8));
+      const sparse = fryLeft(fryTank(2, 0.8));
+      expect(dense).toBeGreaterThanOrEqual(1.5 * sparse);
+      expect(sparse).toBeLessThan(FRY_SITES.length * FRY_PER_SITE);
     },
     SCENARIO_TIMEOUT_MS,
   );

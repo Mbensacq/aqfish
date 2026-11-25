@@ -638,6 +638,16 @@ jeu**, sauf mention.
   **approximation de jeu** (l'ammonium pris par les plantes n'est pas nitrifié).
 - Pas encore de plantes actives au bassin ni au récif.
 
+**Refuge des alevins** (issue #823, ADR 0176, `sim/fry.ts`) :
+- Un alevin est protégé selon la masse des plantes à moins de 12 cm de lui : protection
+  proportionnelle jusqu'à 0,03 m² (une touffe dense d'environ 17 × 17 cm), pleine au-delà,
+  nulle sans plante : **approximation de jeu**. Les guides d'élevage du guppy conseillent des
+  massifs denses ou des plantes flottantes pour cacher les alevins, sans valeur chiffrée.
+- Chaque alevin a une vigilance fixe tirée de la graine : sous une protection de 40 %, environ
+  quatre alevins sur dix échappent aux adultes qui passent à leur portée.
+- Le bilan du bac signale un refuge insuffisant quand moins d'un alevin sur deux est à l'abri :
+  **approximation de jeu**.
+
 **Fiche produit (structure suggérée)** : `id`, `nom`, `catégorie` ; `dose_efficace`,
 `dose_toxique`, `durée`, `fréquence_max` ; `effets_eau` {pH, KH, GH, Cl, O₂, couleur,
 NH₃_lié} ; `demi-vie` (souvent non vérifiée : « retiré par changements d'eau ou charbon » en

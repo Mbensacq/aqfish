@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { ENVIRONMENT_IDS } from './environment';
 import {
   DENSITY_THRESHOLDS,
+  FRY_REFUGE_SUFFICIENT,
   MAX_REVIEW_POINTS,
   OVERFEEDING_PELLETS,
   REVIEW_ORDER,
@@ -12,7 +13,7 @@ import {
 } from './bilan';
 import { setPopulation } from './population';
 import { DEFAULT_WATER_SAMPLE } from './water-dashboard';
-import { createDefaultWorld } from './world';
+import { birthYoungInPlace, cloneWorld, createDefaultWorld, createWorld } from './world';
 
 const LITERS = 288;
 
@@ -197,5 +198,45 @@ describe('worldReview (#514)', () => {
   it('bac tropical plein : la densité en premier', () => {
     const packed = setPopulation(setPopulation(createDefaultWorld(42), 'neon', 40), 'guppy', 20);
     expect(worldReview(packed)[0].id).toBe('density');
+  });
+});
+
+describe('bilan : refuge des alevins (#823)', () => {
+  it('signale des alevins trop peu à l’abri, avec la mesure et l’action', () => {
+    const points = tankReview(input({ fry: { fry: 5, sheltered: 2 } }));
+    expect(points).toEqual([
+      {
+        id: 'fry',
+        severity: 'attention',
+        title: 'Alevins sans refuge suffisant',
+        measure:
+          '2 alevins sur 5 à l’abri des plantes : il faut environ 300 cm² de feuillage à moins de 12 cm d’un alevin pour le cacher des adultes (approximation de jeu)',
+        action:
+          'Planter des touffes denses près des alevins ou laisser pousser les plantes (Réglages, Décor)',
+      },
+    ]);
+    expect(tankReview(input({ fry: { fry: 3, sheltered: 0 } }))[0].measure).toMatch(
+      /^0 alevin sur 3 /,
+    );
+  });
+
+  it('aucun point sans alevin, ou à l’abri pour moitié au moins', () => {
+    expect(tankReview(input({ fry: { fry: 0, sheltered: 0 } }))).toEqual([]);
+    expect(tankReview(input({ fry: { fry: 4, sheltered: 2 } }))).toEqual([]);
+    expect(tankReview(input({ fry: { fry: 4, sheltered: 4 } }))).toEqual([]);
+    expect(FRY_REFUGE_SUFFICIENT).toBe(0.5);
+  });
+
+  it('dans le monde : des alevins sans plante sont signalés, sous une touffe dense non', () => {
+    for (const [decor, flagged] of [
+      [[], true],
+      [[{ kind: 'plant', form: 'tuft', x: 0, z: 0, rotation: 0, scale: 1.8, seed: 3 }], false],
+    ] as const) {
+      const world = cloneWorld(createWorld(4, [{ species: 'guppy', count: 2 }], [], decor));
+      for (let i = 0; i < 3; i++) {
+        birthYoungInPlace(world, 'guppy', { x: 0, y: 0.1, z: 0 });
+      }
+      expect(worldReview(world).some((point) => point.id === 'fry')).toBe(flagged);
+    }
   });
 });
