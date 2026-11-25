@@ -10816,10 +10816,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-25T01:37:35.776Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-25T01:38:08.408Z",
+          "note": "Issue #826 : lot de dette #826 + #820 (S)"
         }
       },
       "metriques": {}
