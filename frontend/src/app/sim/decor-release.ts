@@ -1,4 +1,4 @@
-import { decorBaseY, decorElevation, decorSpheres, type DecorItem } from './decor';
+import { decorBaseY, decorElevation, decorSpheres, isFloatingPlant, type DecorItem } from './decor';
 import {
   DROP_SKIN,
   decorDropScene,
@@ -73,14 +73,15 @@ function restsOn(own: readonly Sphere[], support: readonly Sphere[]): boolean {
 /**
  * Vrai si l'élément `index` de `decor` est soutenu : posé sur le sable (élévation nulle), ou
  * au contact, par en dessous, d'un rocher ou d'un bois (les plantes ne portent rien, ADR
- * 0046). Faux pour un indice absent.
+ * 0046) ; une plante flottante l'est toujours, par l'eau (issue #824). Faux pour un indice
+ * absent.
  */
 export function isDecorItemSupported(decor: readonly DecorItem[], index: number): boolean {
   const item = Number.isInteger(index) ? decor[index] : undefined;
   if (!item) {
     return false;
   }
-  if (decorElevation(item) === 0) {
+  if (decorElevation(item) === 0 || isFloatingPlant(item)) {
     return true;
   }
   const own = decorSpheres(item);

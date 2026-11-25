@@ -1,8 +1,10 @@
 import { createPrng, MAX_SEED } from '../core/random/prng';
 import type { Sphere, SpheresObstacle } from './obstacles';
 import {
+  FLOATING_LEAF_ROW,
   PLANT_FORMS,
   PLANT_SINK_VOXELS,
+  PLANT_VOXEL_SIZE,
   plantCollision,
   plantModel,
   type PlantForm,
@@ -311,6 +313,25 @@ export function decorToTank(
 /** Altitude de la racine d'une plante (repère du bac) : enfoncée de `PLANT_SINK_VOXELS`. */
 export function plantBaseY(voxelSize: number): number {
   return SAND_THICKNESS - PLANT_SINK_VOXELS * voxelSize;
+}
+
+/**
+ * Vrai si `item` est une plante flottante (issue #824, ADR 0178) : posée à la surface par son
+ * élévation (`floatingPlantElevation`), elle ne tombe pas et ne porte rien.
+ */
+export function isFloatingPlant(item: DecorItem): boolean {
+  return item.kind === 'plant' && item.form === 'floating';
+}
+
+/**
+ * Élévation d'une plante flottante `item` dont la rangée de feuilles (`FLOATING_LEAF_ROW`)
+ * affleure la surface de l'eau `surfaceY` (repère du bac) : le milieu des feuilles est à la
+ * surface, les racines pendent dessous. Arrondie au millionième de mètre, jamais négative.
+ */
+export function floatingPlantElevation(item: DecorItem, surfaceY: number): number {
+  const v = PLANT_VOXEL_SIZE * item.scale;
+  const base = surfaceY - (FLOATING_LEAF_ROW + 0.5) * v;
+  return Math.max(0, Math.round((base - plantBaseY(v)) * 1e6) / 1e6);
 }
 
 /** Altitude de la base d'un bois flotté (repère du bac) : sur le sable, légèrement enfoncée. */

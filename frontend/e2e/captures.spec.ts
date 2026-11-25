@@ -5,6 +5,8 @@ import { expect, test, type Page } from '@playwright/test';
 
 import { SIM_DT } from '../src/app/sim/constants';
 import { createDayClock } from '../src/app/sim/daylight';
+import type { DecorItem } from '../src/app/sim/decor';
+import { addDecorItem, setDecorInPlace } from '../src/app/sim/decor-edit';
 import { DEFAULT_SAVE_SETTINGS, serializeWorld } from '../src/app/sim/save';
 import { createShare } from '../src/app/sim/share-link';
 import { SPECIES } from '../src/app/sim/species';
@@ -1000,6 +1002,51 @@ test.describe('Captures', () => {
       animations: 'disabled',
     });
   });
+
+  // Plantes flottantes (#824) : trois radeaux de salvinia posés par l'éditeur à la surface du
+  // bac par défaut, importés par une sauvegarde ; ombre sur le fond, vus de dessus et de 3/4.
+  for (const shot of [
+    { name: 'top-salvinia', camera: 'top', key: '1' },
+    { name: 'three-quarter-salvinia', camera: 'three-quarter', key: '5' },
+  ]) {
+    test(`plantes flottantes : ${shot.name}`, async ({ page }) => {
+      const errors: string[] = [];
+      page.on('pageerror', (error) => errors.push(error.message));
+      await page.setViewportSize({ width: 1280, height: 720 });
+      await page.goto(`/?seed=${SEED}&camera=${shot.camera}&heure=12&vitesse=0`);
+      await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+      const host = page.locator('app-aquarium-host');
+      const pose = await host.getAttribute('data-aqfish-camera');
+      expect(pose).toBeTruthy();
+      const world: MutableWorld = createDefaultWorld(SEED);
+      let decor: readonly DecorItem[] = world.decor;
+      for (const [x, z] of [
+        [-0.3, 0.06],
+        [0.12, -0.04],
+        [0.4, 0.12],
+      ]) {
+        decor = addDecorItem(decor, 'floating', x, z, SEED, world) ?? decor;
+      }
+      setDecorInPlace(world, decor);
+      await ouvrirReglages(page, 'Sauvegarde et partage');
+      await page.locator('[data-section="sauvegarde"] input[type="file"]').setInputFiles({
+        name: 'salvinia.json',
+        mimeType: 'application/json',
+        buffer: Buffer.from(
+          serializeWorld(world, { speed: 0, clock: createDayClock(12, 1200, true) }),
+        ),
+      });
+      await expect(host).toHaveAttribute('data-aqfish-decor-count', String(decor.length));
+      await fermerReglages(page);
+      await expect(page.locator('.control-panel')).toHaveCount(0);
+      // L'import remet la caméra du bac : revenir à la vue demandée (pose finale, #709).
+      await page.keyboard.press(shot.key);
+      await expect(host).toHaveAttribute('data-aqfish-camera', pose!);
+      await poserSourisAuRepos(page);
+      await page.screenshot({ path: join(OUTPUT_DIR, `${shot.name}.png`), animations: 'disabled' });
+      expect(errors).toEqual([]);
+    });
+  }
 
   // Animaux concernés par une alerte (#483, ADR 0115) : alerte « faim » dépliée, néons mis
   // en évidence par « Montrer les animaux ». En rendu logiciel, une image peut prendre

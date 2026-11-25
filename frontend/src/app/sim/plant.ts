@@ -4,14 +4,16 @@ import { createPrng, deriveSeed } from '../core/random/prng';
  * Plantes voxel du décor (issue #49, ADR 0016) : modèle généré depuis une graine, pur et
  * déterministe, sans Three.js (ADR 0003).
  *
- * Deux formes : `tall` (deux à quatre longues tiges serrées, portant des feuilles courtes
- * alternées) et `tuft` (touffe basse de brins qui s'écartent). Le modèle est donné au repos ;
+ * Trois formes : `tall` (deux à quatre longues tiges serrées, portant des feuilles courtes
+ * alternées), `tuft` (touffe basse de brins qui s'écartent) et `floating` (radeau de salvinia
+ * posé à la surface, issue #824, ADR 0178 : frondes de feuilles plates sur une rangée,
+ * racines courtes en dessous, sans ondulation). Le modèle est donné au repos ;
  * l'ondulation (`sim/plant-sway.ts`) est appliquée par le rendu à partir du temps simulé.
  * La forme de collision (`plantCollision`) couvre les tiges seules, élargies de la borne
  * de l'ondulation : le feuillage reste traversable.
  */
 
-export const PLANT_FORMS = ['tall', 'tuft'] as const;
+export const PLANT_FORMS = ['tall', 'tuft', 'floating'] as const;
 export type PlantForm = (typeof PLANT_FORMS)[number];
 
 /** Arête d'un voxel de plante à l'échelle 1, en mètres (plus fin qu'un rocher). */
@@ -28,6 +30,18 @@ export const STEM_SPHERE_SPACING = 2;
 
 /** Rayon de la sphère de collet d'une touffe, en voxels. */
 export const TUFT_COLLAR_RADIUS = 2;
+
+/**
+ * Rangée des feuilles d'une plante flottante, en voxels au-dessus de sa base : les rangées du
+ * dessous portent ses racines (issue #824).
+ */
+export const FLOATING_LEAF_ROW = 2;
+
+/** Rayon du disque où se tirent les frondes d'une plante flottante, en voxels. */
+export const FLOATING_RAFT_RADIUS = 7;
+
+/** Nombre de frondes d'une plante flottante : de `min` à `max`, tiré de sa graine. */
+export const FLOATING_FRONDS = { min: 7, max: 11 } as const;
 
 /** Voxel plein d'une plante : indices entiers, le voxel occupe [i, i + 1] × [j, j + 1] × [k, k + 1]. */
 export interface PlantCell {
@@ -111,7 +125,9 @@ export function plantModel(seed: number, scale: number, form: PlantForm, growth 
     }
   };
   let strands: number;
-  if (form === 'tall') {
+  if (form === 'floating') {
+    strands = addFloatingRaft(() => rng.next(), add);
+  } else if (form === 'tall') {
     strands = 2 + Math.floor(rng.next() * 3);
     const spots = shuffled(
       [-1, 0, 1].flatMap((x) => [-1, 0, 1].map((z) => [x, z] as const)),
@@ -169,24 +185,7 @@ export function plantModel(seed: number, scale: number, form: PlantForm, growth 
       }
     });
   } else {
-    strands = 6 + Math.floor(rng.next() * 4);
-    for (let b = 0; b < strands; b++) {
-      const angle = (2 * Math.PI * b) / strands + rng.next() * 0.6;
-      const reach = rng.next() * 1.5;
-      const bladeHeight = 6 + Math.floor(rng.next() * 7);
-      const lean = 0.3 + rng.next() * 0.2;
-      for (let j = 0; j < bladeHeight; j++) {
-        const d = reach + j * lean;
-        add({
-          i: Math.round(Math.cos(angle) * d),
-          j,
-          k: Math.round(Math.sin(angle) * d),
-          part: 'leaf',
-          strand: b,
-          tip: j === bladeHeight - 1,
-        });
-      }
-    }
+    strands = addTuft(() => rng.next(), add);
   }
   const sorted = [...cells.values()].sort((a, b) => a.j - b.j || a.i - b.i || a.k - b.k);
   const height = sorted.reduce((h, c) => Math.max(h, c.j + 1), 0);
@@ -197,7 +196,8 @@ export function plantModel(seed: number, scale: number, form: PlantForm, growth 
     height,
     strands,
     phase,
-    amplitude: PLANT_SWAY_RATIO * height * voxelSize,
+    // Une plante flottante n'ondule pas : elle dérive avec la surface (hors périmètre, #824).
+    amplitude: form === 'floating' ? 0 : PLANT_SWAY_RATIO * height * voxelSize,
     cells: sorted,
   };
 }
@@ -210,6 +210,8 @@ export function plantModel(seed: number, scale: number, form: PlantForm, growth 
  * vertical) **plus** la borne de l'ondulation au haut du tronçon : la tige reste dans sa
  * forme à tout instant, et les sphères ne bougent pas. Les feuilles qui dépassent restent
  * traversables. `tuft` : une seule petite sphère au collet, le feuillage est traversable.
+ * `floating` : sans tige non plus, la même petite sphère, au bout de la racine du centre du
+ * radeau (sous la surface) ; les feuilles restent traversables.
  */
 export function plantCollision(model: PlantModel): PlantSphere[] {
   const stems = model.cells.filter((c) => c.part === 'stem' && c.j === 0);
@@ -233,6 +235,66 @@ export function plantCollision(model: PlantModel): PlantSphere[] {
     spheres.push({ x: ax, y, z: az, r: Math.hypot(core, half) + swayVoxels * h * h });
   }
   return spheres;
+}
+
+/**
+ * Touffe : six à neuf brins qui partent du collet et s'écartent en montant. Mêmes tirages, dans
+ * le même ordre, qu'avant l'extraction de cette fonction. Renvoie le nombre de brins.
+ */
+function addTuft(next: () => number, add: (cell: PlantCell) => void): number {
+  const strands = 6 + Math.floor(next() * 4);
+  for (let b = 0; b < strands; b++) {
+    const angle = (2 * Math.PI * b) / strands + next() * 0.6;
+    const reach = next() * 1.5;
+    const bladeHeight = 6 + Math.floor(next() * 7);
+    const lean = 0.3 + next() * 0.2;
+    for (let j = 0; j < bladeHeight; j++) {
+      const d = reach + j * lean;
+      add({
+        i: Math.round(Math.cos(angle) * d),
+        j,
+        k: Math.round(Math.sin(angle) * d),
+        part: 'leaf',
+        strand: b,
+        tip: j === bladeHeight - 1,
+      });
+    }
+  }
+  return strands;
+}
+
+/**
+ * Radeau d'une plante flottante (issue #824) : frondes tirées dans un disque de rayon
+ * `FLOATING_RAFT_RADIUS`, la première au centre ; chacune est un carré de 3 × 3 feuilles sur
+ * la rangée `FLOATING_LEAF_ROW` (bout clair au milieu de chaque feuille, de part et d'autre du
+ * rhizome) et une racine qui pend jusqu'à la base. Renvoie le nombre de frondes.
+ */
+function addFloatingRaft(next: () => number, add: (cell: PlantCell) => void): number {
+  const fronds =
+    FLOATING_FRONDS.min + Math.floor(next() * (FLOATING_FRONDS.max - FLOATING_FRONDS.min + 1));
+  for (let f = 0; f < fronds; f++) {
+    const angle = next() * 2 * Math.PI;
+    const d = f === 0 ? 0 : Math.sqrt(next()) * FLOATING_RAFT_RADIUS;
+    const ci = Math.round(Math.cos(angle) * d);
+    const ck = Math.round(Math.sin(angle) * d);
+    const alongI = next() < 0.5;
+    for (let u = -1; u <= 1; u++) {
+      for (let p = -1; p <= 1; p++) {
+        add({
+          i: ci + (alongI ? u : p),
+          j: FLOATING_LEAF_ROW,
+          k: ck + (alongI ? p : u),
+          part: 'leaf',
+          strand: f,
+          tip: u === 0 && p !== 0,
+        });
+      }
+    }
+    for (let j = 0; j < FLOATING_LEAF_ROW; j++) {
+      add({ i: ci, j, k: ck, part: 'leaf', strand: f, tip: false });
+    }
+  }
+  return fronds;
 }
 
 function shuffled<T>(items: readonly T[], next: () => number): T[] {

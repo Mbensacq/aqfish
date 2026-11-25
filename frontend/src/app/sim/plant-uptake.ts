@@ -47,21 +47,26 @@ export const PLANT_UPTAKE_MG_N_PER_M2_DAY: Readonly<Record<PlantKind, number>> =
 
 /**
  * Type de chaque forme de plante du décor : les plantes à tige (`tall`) poussent vite, les
- * touffes (`tuft`) lentement (**approximation de jeu**). Aucune forme flottante n'existe encore
- * dans les bacs (tranche 2 de #731).
+ * touffes (`tuft`) lentement (**approximation de jeu**) ; le radeau de salvinia (`floating`,
+ * issue #824) est une plante flottante.
  */
 export const PLANT_FORM_KIND: Readonly<Record<PlantForm, PlantKind>> = {
   tall: 'rapide',
   tuft: 'lente',
+  floating: 'flottante',
 };
 
 /**
  * Emprise d'une plante d'échelle 1 à sa hauteur d'origine, en m² (**approximation de jeu**) :
- * une plante à tige couvre environ 10 × 10 cm, une touffe la moitié.
+ * une plante à tige couvre environ 10 × 10 cm, une touffe la moitié. Une plante flottante
+ * couvre la surface de son radeau, un disque d'environ 8 cm de rayon (π · 0,08² ≈ 0,02 m²,
+ * `FLOATING_RAFT_RADIUS` plus la demi-fronde, en voxels de 8 mm) : à masse égale, elle
+ * absorbe plus qu'une plante à tige (406 contre 125 mg N/m²/j).
  */
 export const PLANT_FOOTPRINT_M2: Readonly<Record<PlantForm, number>> = {
   tall: 0.02,
   tuft: 0.01,
+  floating: 0.02,
 };
 
 /**

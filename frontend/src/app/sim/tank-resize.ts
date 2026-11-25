@@ -1,5 +1,5 @@
-import type { DecorItem } from './decor';
-import { clampDecorPosition } from './decor-edit';
+import { isFloatingPlant, type DecorItem } from './decor';
+import { clampDecorPosition, floatAtSurface } from './decor-edit';
 import { environmentWater, isTankResizable } from './environment';
 import type { FoodPellet } from './food';
 import type { Fish } from './swimmer';
@@ -14,7 +14,8 @@ import type { MutableWorld, World } from './world-types';
  * - Les dimensions demandées sont bornées à `TANK_LIMITS`, au pas (`clampTankDimensions`).
  * - Chaque élément du décor est ramené dans le bac compte tenu de son emprise
  *   (`clampDecorPosition`) ; sa graine, son genre, sa forme, sa rotation et son échelle ne
- *   changent pas. Une élévation (élément posé sur un autre) est bornée à la hauteur du bac.
+ *   changent pas. Une élévation (élément posé sur un autre) est bornée à la hauteur du bac ;
+ *   une plante flottante suit la surface de l'eau (`floatAtSurface`, issue #824).
  * - Les obstacles sont recalculés comme à la création (`createWorld`).
  * - Chaque poisson (position courante et précédente) est ramené dans sa zone de nage dure ;
  *   chaque granulé, dans l'eau. Le pas suivant ne voit donc rien hors du bac.
@@ -64,8 +65,11 @@ function fitDecorItem(
   place: { environment: World['environment']; dimensions: TankDimensions },
 ): DecorItem {
   const p = clampDecorPosition(item, item.x, item.z, place);
-  const elevation =
-    item.elevation === undefined ? undefined : Math.min(item.elevation, place.dimensions.height);
+  const elevation = isFloatingPlant(item)
+    ? floatAtSurface(item, place).elevation
+    : item.elevation === undefined
+      ? undefined
+      : Math.min(item.elevation, place.dimensions.height);
   if (p === null || (p.x === item.x && p.z === item.z && elevation === item.elevation)) {
     return item;
   }

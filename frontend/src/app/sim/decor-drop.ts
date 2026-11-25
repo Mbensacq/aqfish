@@ -1,6 +1,7 @@
 import {
   decorGroundBaseY,
   decorSpheres,
+  isFloatingPlant,
   liftedSphereY,
   validateDecorItem,
   withElevation,
@@ -73,7 +74,8 @@ export interface DropScene {
  * plantes, qui plient : un élément qui finirait dans une plante est refusé ensuite par
  * `isDecorPoseAllowed`), le sol et les vitres. Le corps part assez haut pour passer au-dessus de tous les autres éléments
  * (`DROP_CLEARANCE`), et au moins à `DROP_MIN_HEIGHT` du sable. `null` si le décor n'est pas
- * éditable ou si l'indice n'existe pas.
+ * éditable, si l'indice n'existe pas ou si l'élément est une plante flottante (elle reste à
+ * la surface, issue #824).
  */
 export function decorDropScene(
   decor: readonly DecorItem[],
@@ -84,7 +86,8 @@ export function decorDropScene(
     !isDecorEditable(placeEnvironment(environment)) ||
     !Number.isInteger(index) ||
     index < 0 ||
-    index >= decor.length
+    index >= decor.length ||
+    isFloatingPlant(decor[index])
   ) {
     return null;
   }
@@ -168,12 +171,14 @@ export function settleDecorItem(
 
 /**
  * Décor `decor` dont l'élément `index` est posé sur le sable à sa position (élévation
- * nulle) : repli quand le moteur de chute n'est pas disponible. `null` si l'indice n'existe
- * pas.
+ * nulle) : repli quand le moteur de chute n'est pas disponible. Une plante flottante reste à
+ * la surface (inchangée, issue #824). `null` si l'indice n'existe pas.
  */
 export function groundDecorItem(decor: readonly DecorItem[], index: number): DecorItem[] | null {
   if (!Number.isInteger(index) || index < 0 || index >= decor.length) {
     return null;
   }
-  return decor.map((item, n) => (n === index ? withElevation(item, 0) : item));
+  return decor.map((item, n) =>
+    n === index && !isFloatingPlant(item) ? withElevation(item, 0) : item,
+  );
 }

@@ -2,12 +2,21 @@ import { createPrng, deriveSeed } from '../core/random/prng';
 import {
   decorSpheres,
   decorVoxels,
+  floatingPlantElevation,
+  isFloatingPlant,
   MAX_DECOR_SCALE,
   MIN_DECOR_SCALE,
   validateDecorItem,
+  withElevation,
   type DecorItem,
 } from './decor';
-import { placeDimensions, placeEnvironment, type EnvironmentId, type Place } from './environment';
+import {
+  environmentWater,
+  placeDimensions,
+  placeEnvironment,
+  type EnvironmentId,
+  type Place,
+} from './environment';
 import type { PlantForm } from './plant';
 import { MAX_SAVE_DECOR } from './save';
 import { createWorld, seededObstacleCount } from './world';
@@ -48,7 +57,7 @@ export interface DecorChoice {
   readonly form?: PlantForm;
 }
 
-export const DECOR_CHOICE_IDS = ['rock', 'wood', 'tall', 'tuft'] as const;
+export const DECOR_CHOICE_IDS = ['rock', 'wood', 'tall', 'tuft', 'floating'] as const;
 export type DecorChoiceId = (typeof DECOR_CHOICE_IDS)[number];
 
 /**
@@ -68,7 +77,19 @@ export const DECOR_CATALOG: Readonly<Record<DecorChoiceId, DecorChoice>> = {
   wood: { id: 'wood', name: 'Bois flotté', kind: 'wood' },
   tall: { id: 'tall', name: 'Grande plante', kind: 'plant', form: 'tall' },
   tuft: { id: 'tuft', name: 'Touffe', kind: 'plant', form: 'tuft' },
+  floating: { id: 'floating', name: 'Salvinia flottante', kind: 'plant', form: 'floating' },
 };
+
+/**
+ * `item` posé à la surface de l'eau de `environment` s'il s'agit d'une plante flottante
+ * (`floatingPlantElevation`, issue #824) ; l'élément lui-même sinon.
+ */
+export function floatAtSurface(item: DecorItem, environment: Place): DecorItem {
+  if (!isFloatingPlant(item)) {
+    return item;
+  }
+  return withElevation(item, floatingPlantElevation(item, environmentWater(environment).maxY));
+}
 
 /** Vrai si `value` est un identifiant du catalogue. */
 export function isDecorChoiceId(value: unknown): value is DecorChoiceId {
@@ -112,7 +133,8 @@ export function canPlaceDecorAt(x: number, z: number, environment: Place): boole
  * l'hôte pose l'élément par gravité et ne garde la chute que si elle est permise
  * (`isDecorPoseAllowed`, #167). `null` (rien n'est ajouté) si le décor n'est pas éditable, s'il est
  * plein (`MAX_DECOR_ITEMS`), si le point est hors des bornes (`canPlaceDecorAt`) ou si
- * l'élément obtenu est invalide (`validateDecorItem`).
+ * l'élément obtenu est invalide (`validateDecorItem`). Une plante flottante est posée à la
+ * surface (`floatAtSurface`), sans chute.
  */
 export function addDecorItem(
   decor: readonly DecorItem[],
@@ -141,7 +163,10 @@ export function addDecorItem(
   if (p === null) {
     return null;
   }
-  const item: DecorItem = p.x === x && p.z === z ? placed : { ...placed, x: p.x, z: p.z };
+  const item = floatAtSurface(
+    p.x === x && p.z === z ? placed : { ...placed, x: p.x, z: p.z },
+    environment,
+  );
   if (validateDecorItem(item, placeDimensions(environment)).length > 0) {
     return null;
   }
@@ -412,6 +437,7 @@ export function scaleDecorItem(
   if (!p) {
     return null;
   }
-  const next = replaceItem(decor, index, { ...resized, x: p.x, z: p.z }, environment);
+  const placed = floatAtSurface({ ...resized, x: p.x, z: p.z }, environment);
+  const next = replaceItem(decor, index, placed, environment);
   return next && isDecorPoseAllowed(decor, next, index) ? next : null;
 }
