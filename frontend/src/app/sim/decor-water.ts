@@ -151,13 +151,21 @@ export function stepDecorWaterInPlace(
   liters: number,
   dt: number,
 ): void {
-  const limestone = limestoneSurface(decor);
+  // Une seule boucle, sans appel : ce pas tourne à chaque pas fin (60 par seconde).
+  let limestone = 0;
+  let wood = 0;
+  for (const item of decor) {
+    if (item.kind === 'wood') {
+      wood += item.scale * item.scale;
+    } else if (item.material === 'limestone') {
+      limestone += item.scale * item.scale;
+    }
+  }
   if (limestone > 0) {
     const rate = limestoneRate(limestone, water.filter, liters);
     dissolveLimestoneInPlace(water, environment, rate, dt);
     water.ph = limestonePh(water.ph, rate, dt);
   }
-  const wood = woodSurface(decor);
   if (wood > 0) {
     water.ph = woodPh(water.ph, wood, liters, dt);
   }
