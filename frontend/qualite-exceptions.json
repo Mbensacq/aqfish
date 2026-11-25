@@ -11,9 +11,6 @@
   "render/coral-model.ts": {
     "max-params": 6
   },
-  "render/decor-layer.ts": {
-    "max-lines-per-function": 94
-  },
   "render/fish-model.ts": {
     "max-lines": 633,
     "max-params": 8
@@ -103,7 +100,7 @@
     "complexity": 16
   },
   "sim/plant.ts": {
-    "max-lines-per-function": 108
+    "max-lines-per-function": 93
   },
   "sim/room-furniture.ts": {
     "max-params": 8

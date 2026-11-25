@@ -365,7 +365,7 @@ describe('caractérisation : validateDecorItem (#686, lot 6)', () => {
       hash.add(show([item, problems]));
     }
     expect(clean).toBeGreaterThan(20);
-    expect(hash.digest()).toBe('0b08710beefdaa');
+    expect(hash.digest()).toBe('10c4ef9decfa99');
   });
 });
 

@@ -16,6 +16,7 @@ import { anemoneBaseY, anemoneModel, type Anemone } from '../sim/anemones';
 import { coralBaseY, coralModel, type CoralColony } from '../sim/corals';
 import {
   decorElevation,
+  isFloatingPlant,
   plantBaseY,
   rockBaseY,
   rockModel,
@@ -28,6 +29,7 @@ import { woodModel } from '../sim/wood';
 import { buildAnemoneMesh } from './anemone-model';
 import { buildCoralMesh } from './coral-model';
 import { FISH_RENDER_ORDER } from './fish-layer';
+import { createFloatingPlantShadow, createFloatingShadowMaterial } from './floating-plant-shadow';
 import { PALETTE } from './palette';
 import {
   applyPlantSway,
@@ -150,6 +152,8 @@ export class DecorLayer {
     opacity: 1,
   });
   private readonly outlineMaterial = createOutlineMaterial();
+  /** Ombres des plantes flottantes sur le fond (`addFloatingShadows`). */
+  private readonly shadowMaterial = createFloatingShadowMaterial();
   /** Contour de l'élément sélectionné (`setSelected`). */
   private readonly selectionMaterial = createOutlineMaterial(SELECTION_COLOR, SELECTION_WIDTH_PX);
   private geometries: BufferGeometry[] = [];
@@ -163,6 +167,8 @@ export class DecorLayer {
   private swayTime = 0;
   private swayScale = 1;
   private corals = 0;
+  /** Ombres des plantes flottantes affichées (hors du compte des éléments). */
+  private shadows = 0;
   private anemones = 0;
 
   constructor() {
@@ -246,6 +252,25 @@ export class DecorLayer {
           : undefined,
       );
     });
+    this.addFloatingShadows(items);
+    this.addReefLife(corals, anemones);
+  }
+
+  /** Ombres sur le fond des plantes flottantes de `items` (issue #824). */
+  private addFloatingShadows(items: readonly DecorItem[]): void {
+    this.shadows = 0;
+    items.forEach((item, n) => {
+      if (isFloatingPlant(item)) {
+        this.shadows += 1;
+        const shadow = createFloatingPlantShadow(item, n, this.shadowMaterial);
+        this.geometries.push(shadow.geometry);
+        this.object.add(shadow);
+      }
+    });
+  }
+
+  /** Colonies de corail `corals`, puis anémones `anemones` (qui ondulent comme les plantes). */
+  private addReefLife(corals: readonly CoralColony[], anemones: readonly Anemone[]): void {
     corals.forEach((colony, n) => {
       const model = coralModel(colony.form, colony.seed, colony.scale);
       const data = buildCoralMesh(colony.form, model, colony.hue, colony.seed);
@@ -478,9 +503,9 @@ export class DecorLayer {
     return this.anemones;
   }
 
-  /** Nombre d'éléments affichés (coraux et anémones compris). */
+  /** Nombre d'éléments affichés (coraux et anémones compris, ombres non comprises). */
   get count(): number {
-    return this.object.children.length;
+    return this.object.children.length - this.shadows;
   }
 
   /** Résolution de la surface de rendu, en pixels (épaisseur constante du contour). */
@@ -497,6 +522,7 @@ export class DecorLayer {
     this.clear();
     this.material.dispose();
     this.outlineMaterial.dispose();
+    this.shadowMaterial.dispose();
     this.selectionMaterial.dispose();
   }
 
