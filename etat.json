@@ -11008,10 +11008,10 @@
           "note": "PR #837 : charognards, colonie de crevettes et prédation (ADR 0180, S8 et S9 verts, empreintes inchangées, Closes #836), CI verte 13/13 ; e2e local limité aux captures ; pied d'attribution réinjecté par l'environnement dans la description de la PR"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-25T11:13:43.214Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-25T11:28:56.193Z",
+          "note": "Verdict OK, 0 bug, captures c303 publiées (e2e local interrompu par le délai, unitaires 6431 verts, CI 13/13)"
         }
       },
       "metriques": {}
