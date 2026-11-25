@@ -10868,6 +10868,12 @@
           "debut": "2026-11-25T04:28:22.461Z",
           "fin": "2026-11-25T05:26:09.330Z",
           "note": "Verdict OK, 0 bug, captures publiées (178/178 identiques au pixel)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-25T05:26:39.296Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
