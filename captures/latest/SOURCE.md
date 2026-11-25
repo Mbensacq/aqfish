@@ -1,7 +1,1 @@
-# Captures c303
-
-- Branche : cycle/c303-colonie-crevettes
-- PR : #837
-- Commit : 07d38dbf
-- Graine : par défaut
-- Temps : 5,1 min (npm run captures)
+Branche cycle/c304-roches-et-bois, PR #840, commit 0b97065a, graine par défaut des captures, temps : horloge réelle du jeu.
