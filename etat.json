@@ -10792,10 +10792,10 @@
           "note": "PR #825 : refuge gradué des alevins (masse des plantes proches, point du bilan, S13, ADR 0176), CI verte ; 6384 tests ; empreinte alevins de step-caracterisation mise à jour ; issue #824 plantes flottantes proposée ; e2e complet par la CI"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-25T00:50:17.817Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-25T01:07:10.826Z",
+          "note": "Verdict OK, 0 bug, captures publiées (5 images alevins changées, attendu ; e2e complet par la CI)"
         }
       },
       "metriques": {}
