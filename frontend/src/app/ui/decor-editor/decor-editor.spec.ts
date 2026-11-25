@@ -47,7 +47,14 @@ describe('decorEditorHint', () => {
   });
 
   it('propose la sélection puis chaque type du catalogue', () => {
-    expect(DECOR_TOOLS.map((t) => t.id)).toEqual(['select', 'rock', 'wood', 'tall', 'tuft']);
+    expect(DECOR_TOOLS.map((t) => t.id)).toEqual([
+      'select',
+      'rock',
+      'wood',
+      'tall',
+      'tuft',
+      'floating',
+    ]);
   });
 });
 
@@ -117,10 +124,12 @@ describe('DecorEditor', () => {
       'Bois flotté',
       'Grande plante',
       'Touffe',
+      'Salvinia flottante',
     ]);
     expect(radios.map((r) => r.getAttribute('aria-checked'))).toEqual([
       'false',
       'true',
+      'false',
       'false',
       'false',
       'false',
