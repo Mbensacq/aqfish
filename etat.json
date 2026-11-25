@@ -10940,6 +10940,12 @@
           "debut": "2026-11-25T07:54:31.244Z",
           "fin": "2026-11-25T08:27:40.616Z",
           "note": "Verdict OK, 0 bug, captures c301 publiées (e2e local interrompu, CI 7/7)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-25T08:28:16.750Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
