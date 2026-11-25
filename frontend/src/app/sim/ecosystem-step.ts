@@ -5,7 +5,7 @@ import { addEatenFoodInPlace } from './food-decay';
 import { SPECIES } from './species';
 import { assertTimeStep } from './time-step';
 import { waterLiters, type MutableWaterState } from './water';
-import { feedsOnPellets } from './wellbeing';
+import { hungerCounts } from './wellbeing';
 import {
   stepAlgaeStageInPlace,
   stepHealthStageInPlace,
@@ -117,8 +117,8 @@ function stepEcosystemInPlace(world: MutableWorld, dt: number, liters: number): 
 }
 
 /**
- * Repas sans nage, **en modifiant** `world` : chaque animal qui mange les granulés
- * (`feedsOnPellets`) et a faim (`isHungry`) en mange jusqu'à ne plus avoir faim, de masse
+ * Repas sans nage, **en modifiant** `world` : chaque animal dont la faim compte
+ * (`hungerCounts` : granulés, ou pastilles des néritines, #833) et a faim (`isHungry`) en mange jusqu'à ne plus avoir faim, de masse
  * `MEAN_PELLET_MASS` chacun ; l'ammoniaque des repas entre dans l'eau
  * (`addEatenFoodInPlace`, ADR 0168) dans `liters` litres (défaut : ceux du monde). Rien ne
  * tombe ni ne pourrit : c'est un nourrissage « juste ce qu'il faut ». Renvoie la masse mangée.
@@ -128,7 +128,7 @@ export function feedAnimalsInPlace(world: MutableWorld, liters?: number): number
   const volume = ecosystemLiters(world, liters);
   let mass = 0;
   for (const animal of world.entities as Mutable<Entity>[]) {
-    if (!feedsOnPellets(SPECIES[animal.species])) {
+    if (!hungerCounts(SPECIES[animal.species])) {
       continue;
     }
     while (isHungry(animal.hunger)) {

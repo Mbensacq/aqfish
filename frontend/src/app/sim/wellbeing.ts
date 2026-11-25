@@ -3,6 +3,7 @@ import { finRotHealthStress } from './fin-rot';
 import { velvetHealthStress } from './velvet';
 import { fungusHealthStress } from './fungus';
 import { dropsyHealthStress } from './dropsy';
+import { starvesWithoutFood } from './grazing';
 import { HEALTH_FLOOR, HEALTH_START } from './health-scale';
 import type { SpeciesDefinition } from './species';
 import { likesAcidWater, phOutOfTolerance } from './water-ph';
@@ -67,8 +68,17 @@ export function feedsOnPellets(def: SpeciesDefinition): boolean {
 }
 
 /**
+ * Vrai si la faim de l'espèce compte dans sa santé et sa mortalité : elle mange les granulés
+ * (`feedsOnPellets`), ou c'est un brouteur sans autre ressource que les algues et les
+ * pastilles (néritine, `starvesWithoutFood`, issue #833).
+ */
+export function hungerCounts(def: SpeciesDefinition): boolean {
+  return feedsOnPellets(def) || starvesWithoutFood(def.id);
+}
+
+/**
  * Poids des causes de souffrance, de 0 à 2,5 : faim maximale (1, seulement pour une espèce
- * qui mange les granulés, `feedsOnPellets`), eau mauvaise (1) et pH hors de la plage tolérée
+ * dont la faim compte, `hungerCounts`), eau mauvaise (1) et pH hors de la plage tolérée
  * (`PH_STRESS`, issue #236). Une faim non finie ne compte pas.
  */
 export function healthStress(
@@ -77,7 +87,7 @@ export function healthStress(
   badWater: boolean,
   phOut = false,
 ): number {
-  const starving = feedsOnPellets(def) && hunger >= STARVING_HUNGER ? 1 : 0;
+  const starving = hungerCounts(def) && hunger >= STARVING_HUNGER ? 1 : 0;
   return starving + (badWater ? 1 : 0) + (phOut ? PH_STRESS : 0);
 }
 

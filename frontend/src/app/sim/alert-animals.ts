@@ -16,7 +16,7 @@ import { SPECIES, type SpeciesId } from './species';
 import { SPECIES_LABELS } from './species-catalog';
 import { speciesSheet } from './species-sheet';
 import { inPhRange, SPECIES_PH } from './water-ph';
-import { feedsOnPellets, STARVING_HUNGER } from './wellbeing';
+import { hungerCounts, STARVING_HUNGER } from './wellbeing';
 
 /**
  * Animaux concernés par une alerte du tableau de bord (issue #483, lot 3/3 de #251, ADR 0115) :
@@ -123,7 +123,7 @@ function showsBelly(animal: AlertAnimal): boolean {
 }
 
 function hungerSelection(animals: readonly AlertAnimal[]): AlertAnimal[] {
-  const fed = animals.filter((a) => feedsOnPellets(SPECIES[a.species]));
+  const fed = animals.filter((a) => hungerCounts(SPECIES[a.species]));
   const starving = fed.filter((a) => readHunger(a.hunger) >= STARVING_HUNGER);
   return starving.length > 0 ? starving : fed.filter((a) => readHunger(a.hunger) >= HUNGRY_AVERAGE);
 }
