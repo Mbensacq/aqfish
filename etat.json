@@ -11042,6 +11042,12 @@
           "debut": "2026-11-25T12:09:37.296Z",
           "fin": "2026-11-25T13:57:57.785Z",
           "note": "PR #840 : roches calcaires et bois flotté sur l'eau (ADR 0181, S11 vert, empreintes eaufroide mises à jour, Closes #733), CI verte 12/12 après 2 relances (S10 #839 et délai plant-growth) ; e2e local limité ; pied d'attribution réinjecté dans la PR"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-25T13:58:40.762Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
