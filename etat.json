@@ -11063,7 +11063,7 @@
       "date": "2026-11-26",
       "debut": "2026-11-25T23:41:44.590Z",
       "type": "fonctionnalite",
-      "issue": null,
+      "issue": 841,
       "pr": null,
       "version": null,
       "phases": {
