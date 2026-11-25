@@ -151,6 +151,28 @@ describe('colonie de crevettes (#836)', () => {
     expect(second).toEqual(first);
   });
 
+  it('caractérisation : naissances et pertes figées (graine 4, couvées et prédation)', () => {
+    const fed = runScenario({
+      world: tank([{ species: 'cerise', count: 4 }]),
+      liters: 300,
+      care: { feedEverySeconds: 60 },
+      days: 2.5,
+    }).world;
+    const hunted = tank([{ species: 'guppy', count: 6 }]);
+    for (const x of [-0.4, 0, 0.4]) {
+      for (let k = 0; k < 4; k++) {
+        const young = birthYoungInPlace(hunted, 'cerise', { x, y: 0.05, z: -0.05 });
+        (young as Mutable<Entity>).growth = 0;
+      }
+    }
+    const after = runScenario({ world: hunted, care: { feedEverySeconds: 60 }, days: 0.1 }).world;
+
+    const ids = (world: World): number[] =>
+      world.entities.filter((e) => e.species === 'cerise').map((e) => e.id);
+    expect(ids(fed)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]);
+    expect(ids(after)).toEqual([8, 10, 11, 16]);
+  });
+
   it('un refuge de plantes réduit les pertes de jeunes crevettes face aux guppys', () => {
     const survivors = (decor: DecorItem[]): number => {
       const world = tank([{ species: 'guppy', count: 6 }], decor);

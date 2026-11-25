@@ -101,6 +101,21 @@ describe('surfaces et taux', () => {
     expect(woodSurface([])).toBe(0);
   });
 
+  it('le pas lit les mêmes surfaces que limestoneSurface et woodSurface (décor mixte)', () => {
+    const decor = [rock('limestone', 2), rock('inert', 3), rock(undefined, 1.5), WOOD, PLANT];
+    const stepped = tropicalWater();
+    stepped.ph = 7;
+    stepDecorWaterInPlace(stepped, decor, 'tropical', 60, DAY);
+
+    const expected = tropicalWater();
+    const rate = limestoneRate(limestoneSurface(decor), expected.filter, 60);
+    const dissolved = limestoneDissolved(TAP_HARDNESS.tropical.kh, 7, rate, DAY);
+    const ph = woodPh(limestonePh(7, rate, DAY), woodSurface(decor), 60, DAY);
+
+    expect(stepped.kh).toBe(TAP_HARDNESS.tropical.kh + dissolved);
+    expect(stepped.ph).toBe(ph);
+  });
+
   it('le courant accélère la roche ; sans filtre, elle garde le quart de son taux', () => {
     expect(limestoneRate(1, 1, DECOR_REFERENCE_LITERS)).toBeCloseTo(LIMESTONE_RATE, 15);
     expect(limestoneRate(1, 0, DECOR_REFERENCE_LITERS)).toBeCloseTo(
