@@ -6,6 +6,12 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Algues des captures : voile teal qu'on prend pour les plantes du fond** (cycle 302, #833) :
+  sur `front-algues.png`, les plaques (voile `vegetation` voilé par l'eau, filaments verticaux)
+  ressemblent aux plantes d'arrière-plan ; on croit à tort qu'elles ne sont pas dessinées. Pour
+  juger un changement d'algues, comparer à `front.png` (masque des pixels différents) et lire
+  `data-aqfish-algae` (`visibles;pourcentage;heures`) sur la page servie
+  (`scripts/servir-dist.mjs`). (2026-11-25)
 - **Capture ou e2e qui dépend d'une durée réelle : instable seulement sous charge**
   (cycle 299, #709) : deux séries complètes au repos sont identiques à l'octet, mais les
   séries de QA (machine chargée) sortaient des écarts isolés, absents à la relance. Trois
