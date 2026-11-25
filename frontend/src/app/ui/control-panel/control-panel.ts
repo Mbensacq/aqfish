@@ -21,7 +21,7 @@ import { DEFAULT_FOOD_STYLE, type FoodStyle } from '../../core/food-style/food-s
 import { isRoomAvailable } from '../../sim/room';
 import type { RoomCatalog, TankNotice } from '../aquarium-host/aquarium-host';
 import type { TankListEntry } from '../../sim/tank-list';
-import { NO_CAPACITY, type CapacityShown } from '../../sim/tank-capacity-limits';
+import { NO_CAPACITY, type CapacityShown } from '../../sim/capacity-shown';
 import { DEFAULT_SIM_SPEED, type SimSpeed } from '../../sim/sim-speed';
 import type { CareMode } from '../../sim/care-mode';
 import type { CurrentLevel } from '../../sim/water-current';

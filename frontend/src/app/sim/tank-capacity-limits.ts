@@ -1,6 +1,5 @@
 import { careModeOf } from './care-mode';
 import type { PopulationCounts } from './population';
-import type { PossibleSpecies } from './possible-species';
 import type { SpeciesId } from './species';
 import { frenchNumber } from './species-sheet';
 import {
@@ -39,26 +38,6 @@ export interface CapacityLimits {
   /** Raison chiffrée et sourcée du refus, pour les espèces que la capacité bloque. */
   readonly reasons: Readonly<Partial<Record<SpeciesId, string>>>;
 }
-
-/** Capacité telle que l'interface l'affiche (#809). */
-export interface CapacityShown {
-  /** Ligne d'occupation et de volume (`capacityLine`), `null` avant le démarrage. */
-  readonly text: string | null;
-  /** Alerte d'un bac trop plein (`capacityAlert`), sinon `null`. */
-  readonly alert: string | null;
-  /** Raison du refus d'un animal de plus, pour les espèces que la capacité bloque. */
-  readonly reasons: Readonly<Partial<Record<SpeciesId, string>>>;
-  /** Espèces encore possibles du milieu, triées par verdict (`possibleSpecies`, #818). */
-  readonly possible: readonly PossibleSpecies[];
-}
-
-/** Rien à afficher (avant le démarrage). */
-export const NO_CAPACITY: CapacityShown = Object.freeze({
-  text: null,
-  alert: null,
-  reasons: {},
-  possible: [],
-});
 
 /** Capacité du bac `world` : volume brut et réel, besoin et occupation, mode. */
 export function tankCapacity(world: World): TankCapacityReadout {

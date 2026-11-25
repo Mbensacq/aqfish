@@ -16,6 +16,7 @@ import {
   FRY_SCALES,
   FRY_STAGE_NAMES,
   FRY_STAGES,
+  fryCover,
   fryPallor,
   fryPlants,
   fryScale,
@@ -26,7 +27,6 @@ import {
   isFemale,
   isFry,
   isFryAge,
-  isHidden,
   isPredator,
   MAX_BROOD,
   MIN_BROOD,
@@ -53,6 +53,11 @@ import {
 import type { MutableWorld, World } from './world-types';
 
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
+
+/** Vrai si `(x, z)` est sous la couverture d'une plante (`fryCover` non nulle, sans pousse). */
+function underCover(plants: readonly DecorItem[], x: number, z: number): boolean {
+  return fryCover(plants, x, z, undefined, 1) > 0;
+}
 
 const PLANT: DecorItem = {
   kind: 'plant',
@@ -441,8 +446,8 @@ describe('alevins : cachettes et prédation', () => {
     const b = { ...PLANT, x: 0.3 };
     expect(nearestPlant([a, b], 0.2, 0)).toBe(b);
     expect(nearestPlant([], 0, 0)).toBeNull();
-    expect(isHidden([a], -0.3, FRY_HIDE_RADIUS)).toBe(true);
-    expect(isHidden([a], -0.3, FRY_HIDE_RADIUS * 1.01)).toBe(false);
+    expect(underCover([a], -0.3, FRY_HIDE_RADIUS)).toBe(true);
+    expect(underCover([a], -0.3, FRY_HIDE_RADIUS * 1.01)).toBe(false);
     const rock = { kind: 'rock', x: 0, z: 0, rotation: 0, scale: 1, seed: 1 } as DecorItem;
     expect(fryPlants([rock, a, b])).toEqual([a, b]);
   });
@@ -488,7 +493,7 @@ describe('alevins : cachettes et prédation', () => {
     }
     const fry = fryOf(world);
     expect(fry.length).toBeGreaterThan(0);
-    const near = fry.filter((f) => isHidden([PLANT], f.x, f.z)).length;
+    const near = fry.filter((f) => underCover([PLANT], f.x, f.z)).length;
     expect(near / fry.length).toBeGreaterThan(0.5);
   }, 30_000);
 });
@@ -564,7 +569,7 @@ describe('alevins d’exemple (`alevins=1`)', () => {
     const fry = fryOf(next);
     expect(fry.length).toBeGreaterThanOrEqual(born / 2);
     const plants = fryPlants(next.decor);
-    expect(fry.filter((f) => isHidden(plants, f.x, f.z)).length).toBeGreaterThanOrEqual(
+    expect(fry.filter((f) => underCover(plants, f.x, f.z)).length).toBeGreaterThanOrEqual(
       fry.length / 2,
     );
   }, 30_000);

@@ -6,7 +6,7 @@ import { environmentById } from '../../sim/environment';
 import { NO_FISH, type PopulationCounts } from '../../sim/population';
 import { possibleSpecies, type PossibleSpecies } from '../../sim/possible-species';
 import type { SpeciesId } from '../../sim/species';
-import { NO_CAPACITY, type CapacityShown } from '../../sim/tank-capacity-limits';
+import { NO_CAPACITY, type CapacityShown } from '../../sim/capacity-shown';
 import type { PopulationEntry } from '../../sim/world-types';
 import { PopulationSection } from './population-section';
 import { PossibleSpeciesList } from './possible-species-list';
@@ -74,6 +74,25 @@ describe('liste des espèces encore possibles (#818)', () => {
       'Avec les xiphos : xipho mange les jeunes (précautions) — FishKeeper',
     );
     expect(toggle()?.textContent).toContain('sur 17');
+  });
+
+  it('deux instances : chaque bouton vise sa propre liste par un id unique (#820)', async () => {
+    const other = TestBed.createComponent(ListHost);
+    await other.whenStable();
+    const roots = [root(), other.nativeElement as HTMLElement];
+    for (const el of roots) {
+      el.querySelector<HTMLButtonElement>('[data-possible-toggle]')!.click();
+    }
+    await fixture.whenStable();
+    await other.whenStable();
+
+    const ids = roots.map((el) => el.querySelector('[data-possible-list]')?.id ?? '');
+    expect(ids[0]).toMatch(/^especes-possibles-\d+$/);
+    expect(ids[1]).not.toBe(ids[0]);
+    roots.forEach((el, i) => {
+      const button = el.querySelector('[data-possible-toggle]');
+      expect(button?.getAttribute('aria-controls')).toBe(ids[i]);
+    });
   });
 
   it('mode décor ou liste vide : rien n’est affiché', async () => {

@@ -79,6 +79,19 @@ test.describe('Espèces encore possibles (#818)', () => {
     expect(overflow).toBeLessThanOrEqual(0);
     const box = await item(page, 'cerise').boundingBox();
     expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(390);
+    // Marge droite (#820) : aucun résumé (« encore 30 ») à moins de 8 px du bord de la liste.
+    const gaps = await section(page)
+      .locator('[data-possible-list]')
+      .evaluate((list) => {
+        const right = list.getBoundingClientRect().right;
+        return [...list.querySelectorAll('.possible__summary')].map((summary) => {
+          const range = document.createRange();
+          range.selectNodeContents(summary);
+          return Math.min(...[...range.getClientRects()].map((r) => right - r.right));
+        });
+      });
+    expect(gaps.length).toBeGreaterThan(0);
+    expect(Math.min(...gaps)).toBeGreaterThanOrEqual(8);
     expect(errors).toEqual([]);
   });
 });
