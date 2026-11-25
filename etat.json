@@ -10828,10 +10828,10 @@
           "note": "PR #827 : lot de dette #826 (isHidden retiré, tests sur fryCover) + #820 (sim/capacity-shown.ts, id unique, marge droite 8 px), CI verte ; 6385 tests ; empreintes inchangées ; captures avant/après dans captures/c298/dev"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-25T02:22:29.101Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-25T02:49:29.152Z",
+          "note": "Verdict OK, 0 bug, captures publiées (177/178 identiques au pixel ; 1 écart préexistant de 12 px sur main)"
         }
       },
       "metriques": {}
