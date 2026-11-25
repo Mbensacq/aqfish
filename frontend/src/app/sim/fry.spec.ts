@@ -1,3 +1,4 @@
+import { broodWorldInPlace } from './fry-sample';
 import { SIM_DT } from './constants';
 import type { DecorItem } from './decor';
 import {
@@ -43,7 +44,6 @@ import {
   advance,
   birthFryInPlace,
   boundsFor,
-  broodWorldInPlace,
   cloneWorld,
   createDefaultWorld,
   createWorld,

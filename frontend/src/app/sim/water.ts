@@ -309,13 +309,26 @@ export function freshWater(environment: EnvironmentId): WaterState {
 }
 
 /**
- * Charge des habitants `entities` : somme des cubes de `bodyLength / REFERENCE_BODY_LENGTH`
- * (la masse, donc les déchets, croît comme le cube de la taille). Aucune allocation.
+ * Longueur réelle, en mètres, des espèces dont le modèle est agrandi pour rester lisible
+ * (issue #836) : la crevette cerise mesure 3 cm (FishKeeper,
+ * https://www.fishkeeper.co.uk/fish/freshwater/miscellaneous/cherry-shrimp), son modèle 10 cm.
+ * Sans elle, dix crevettes pesaient dans l'eau autant que dix poissons de 10 cm.
+ */
+const LOAD_BODY_LENGTHS: Readonly<Partial<Record<SpeciesId, number>>> = Object.freeze({
+  cerise: 0.03,
+});
+
+/**
+ * Charge des habitants `entities` : somme des cubes de leur longueur rapportée à
+ * `REFERENCE_BODY_LENGTH` (la masse, donc les déchets, croît comme le cube de la taille) ;
+ * longueur réelle (`LOAD_BODY_LENGTHS`) quand le modèle est agrandi, sinon `bodyLength`.
+ * Aucune allocation.
  */
 export function waterLoad(entities: readonly { readonly species: SpeciesId }[]): number {
   let load = 0;
   for (const entity of entities) {
-    const r = SPECIES[entity.species].bodyLength / REFERENCE_BODY_LENGTH;
+    const length = LOAD_BODY_LENGTHS[entity.species] ?? SPECIES[entity.species].bodyLength;
+    const r = length / REFERENCE_BODY_LENGTH;
     load += r * r * r;
   }
   return load;

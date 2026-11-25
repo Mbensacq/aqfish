@@ -57,6 +57,8 @@ const FRESHWATER_LOT3 = 'population=neon:0,guppy:0,corydora:0,braise:12,molly:3,
 /** Brouteurs d'algues tendres (#833) seuls dans le bac tropical : otocinclus et crevettes. */
 const GRAZERS = 'population=neon:0,guppy:0,corydora:0,otocinclus:6,cerise:8';
 const FRESHWATER_LOT4 = 'population=neon:0,guppy:0,corydora:0,xipho:3,cerise:8,neritine:3';
+/** Colonie de crevettes cerises (#836) : douze crevettes, sans poisson. */
+const SHRIMP_COLONY = 'population=neon:0,guppy:0,corydora:0,cerise:12';
 /** Alevins du platy (#674) : quatre platys parmi les néons et deux corydoras. */
 const PLATY_FRY = 'population=neon:6,guppy:0,corydora:2,platy:4';
 /** Courant fort au bac tropical (#460) : poissons de rivière et néons. */
@@ -287,6 +289,9 @@ test.describe('Captures', () => {
     // Alevins du platy (#674) : platys rouges et leurs alevins pâles aux trois jalons, près des
     // plantes ; guppys retirés pour ne voir que les platys.
     { name: 'three-quarter-alevins-platy', query: `alevins=1&${PLATY_FRY}` },
+    // Jeunes crevettes cerises (#836) : chaque femelle fait éclore ses jeunes, petits et pâles,
+    // posés au fond près d'elle ; seules les crevettes restent dans le bac.
+    { name: 'front-alevins-crevettes', query: `alevins=1&camera=front&${SHRIMP_COLONY}` },
     // Œufs de corydoras (#478) : une ponte collée sur la vitre et dans les plantes.
     { name: 'front-oeufs', query: 'oeufs=1&camera=front' },
     { name: 'three-quarter-oeufs', query: 'oeufs=1' },

@@ -6,6 +6,7 @@ import {
   runScenario,
   SCENARIO_DAY_SECONDS,
   type EcosystemScenario,
+  type ScenarioCare,
   type ScenarioRecord,
 } from './testing/ecosystem-scenario';
 import type { MutableWaterState } from './water';
@@ -27,6 +28,8 @@ import { SIM_DT } from './constants';
 import type { Fish } from './swimmer';
 import type { World } from './world-types';
 import type { DecorItem } from './decor';
+import type { SpeciesId } from './species';
+import { shrimpPlace } from './shrimp-colony';
 
 /**
  * Scénarios de référence de l'écosystème (`docs/ECOSYSTEME.md` § 4, issue #799) : chacun fait
@@ -54,31 +57,48 @@ const PLANTED_LITERS = 60;
  * `planted`, seize plantes à tige (rapides) sur deux rangs au fond et huit touffes devant.
  */
 function plantedTank(neons: number, planted: boolean): World {
+  const decor = planted ? plantedDecor() : [];
+  return tankWith([{ species: 'neon', count: neons }], decor);
+}
+
+/** Plantes des bacs plantés (S5, S7, S8) : seize plantes à tige au fond, huit touffes devant. */
+function plantedDecor(): DecorItem[] {
   const decor: DecorItem[] = [];
-  if (planted) {
-    for (let i = 0; i < 16; i++) {
-      const x = -0.5 + (i % 8) * 0.14;
-      decor.push({
-        kind: 'plant',
-        form: 'tall',
-        x,
-        z: i < 8 ? -0.17 : -0.07,
-        rotation: i,
-        scale: 1,
-        seed: 1000 + i,
-      });
-    }
-    for (let i = 0; i < 8; i++) {
-      const x = -0.5 + i * 0.14;
-      decor.push({ kind: 'plant', form: 'tuft', x, z: 0.1, rotation: i, scale: 1, seed: 2000 + i });
-    }
+  for (let i = 0; i < 16; i++) {
+    const x = -0.5 + (i % 8) * 0.14;
+    decor.push({
+      kind: 'plant',
+      form: 'tall',
+      x,
+      z: i < 8 ? -0.17 : -0.07,
+      rotation: i,
+      scale: 1,
+      seed: 1000 + i,
+    });
   }
-  const world = cloneWorld(
-    createWorld(1, [{ species: 'neon', count: neons }], [], decor, 'tropical'),
-  );
+  for (let i = 0; i < 8; i++) {
+    const x = -0.5 + i * 0.14;
+    decor.push({ kind: 'plant', form: 'tuft', x, z: 0.1, rotation: i, scale: 1, seed: 2000 + i });
+  }
+  return decor;
+}
+
+/** Bac tropical à filtre mûr avec `population` et `decor`. */
+function tankWith(population: { species: SpeciesId; count: number }[], decor: DecorItem[]): World {
+  const world = cloneWorld(createWorld(1, population, [], decor, 'tropical'));
   (world.water as MutableWaterState).filter = 1;
   return world;
 }
+
+/** Volume du bac à crevettes (S8), en litres. */
+const SHRIMP_TANK_LITERS = 30;
+
+/**
+ * Nourrissage léger des bacs à crevettes (S8, S9) : un repas « juste ce qu'il faut » toutes les
+ * deux minutes simulées, deux fois moins souvent que l'entretien normal
+ * (`feedAnimalsInPlace` : rien ne tombe ni ne pourrit), sans changement d'eau.
+ */
+const LIGHT_CARE: ScenarioCare = { feedEverySeconds: 2 * NORMAL_CARE.feedEverySeconds! };
 
 /** Temps laissé aux néritines affamées pour mourir au pas fin (S10), en secondes simulées. */
 const NERITE_DEATH_SECONDS = 3600;
@@ -334,6 +354,55 @@ describe('scénarios de référence de l’écosystème (#799, #805, #807, #821,
       advanceInPlace(dying, Math.round(NERITE_DEATH_SECONDS / SIM_DT));
       expect(dying.entities).toHaveLength(0);
       expect(dying.dead?.map((body) => body.species)).toEqual(['neritine', 'neritine']);
+    },
+    SCENARIO_TIMEOUT_MS,
+  );
+
+  it(
+    'S8 — 30 L planté, crevettes cerises et une néritine, nourrissage léger : stable, colonie qui grandit puis se stabilise (#836)',
+    () => {
+      const world = tankWith(
+        [
+          { species: 'cerise', count: 4 },
+          { species: 'neritine', count: 1 },
+        ],
+        plantedDecor(),
+      );
+      const scenario = (days: number): ScenarioRecord =>
+        runScenario({ world, liters: SHRIMP_TANK_LITERS, care: LIGHT_CARE, days });
+      const shrimps = (record: ScenarioRecord): number =>
+        record.world.entities.filter((e) => e.species === 'cerise').length;
+
+      const early = scenario(1.5);
+      const settled = scenario(30);
+      const later = scenario(60);
+
+      expect(shrimps(early)).toBeGreaterThan(4);
+      expect(shrimps(settled)).toBe(shrimpPlace(SHRIMP_TANK_LITERS));
+      expect(shrimps(later)).toBe(shrimps(settled));
+      expect(later.worstQuality).not.toBe('mauvaise');
+      expect(later.minHealth).toBeGreaterThan(SICK_HEALTH);
+      expect(later.world.entities.filter((e) => e.species === 'neritine')).toHaveLength(1);
+    },
+    SCENARIO_TIMEOUT_MS,
+  );
+
+  it(
+    'S9 — crevettes cerises avec des poissons rouges : les crevettes disparaissent (#836)',
+    () => {
+      const world = tankWith(
+        [
+          { species: 'cerise', count: 10 },
+          { species: 'rouge', count: 2 },
+        ],
+        // Sans plantes : un massif dense abrite les jeunes (refuge, #823), voir l'ADR 0180.
+        [],
+      );
+
+      const record = runScenario({ world, care: LIGHT_CARE, days: 10 });
+
+      expect(record.world.entities.filter((e) => e.species === 'cerise')).toHaveLength(0);
+      expect(record.world.entities.filter((e) => e.species === 'rouge')).toHaveLength(2);
     },
     SCENARIO_TIMEOUT_MS,
   );

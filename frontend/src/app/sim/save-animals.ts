@@ -1,3 +1,4 @@
+import { isColonySpecies } from './shrimp-colony';
 import { acceptsSavedSpecies, type CareMode } from './care-mode';
 import { DISEASES } from './diseases';
 import { environmentWater, placeEnvironment, type EnvironmentId, type Place } from './environment';
@@ -282,7 +283,8 @@ function readDiseases(
 /**
  * Alevin (issue #459) : facultatif, absent pour un adulte et dans toute sauvegarde
  * antérieure ; présent, âge dans [0, FRY_GROWTH_TIME), pour une espèce vivipare ou ovipare
- * (alevin éclos d'un œuf, issue #478) seulement. Renvoie le problème, ou `null`.
+ * (alevin éclos d'un œuf, issue #478) ou en colonie (jeune crevette, #836) seulement. Renvoie
+ * le problème, ou `null`.
  */
 function readGrowth(
   item: Record<string, unknown>,
@@ -293,7 +295,7 @@ function readGrowth(
     return null;
   }
   const species = fish['species'] as SpeciesId;
-  if (!hasFry(species) && !hatchesToFry(species)) {
+  if (!hasFry(species) && !hatchesToFry(species) && !isColonySpecies(species)) {
     return `l’espèce ${species} n’a pas d’alevins`;
   }
   if (!isFryAge(growth)) {
