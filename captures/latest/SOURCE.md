@@ -1,2 +1,5 @@
-Branche cycle/c301-plantes-flottantes, PR #831, commit 82b6b558, graine par défaut, 2026-11-25.
-5 angles standard identiques à la série précédente ; top-salvinia et three-quarter-salvinia nouvelles.
+Branche cycle/c302-brouteurs
+PR #834
+Commit b6f22aa0
+Graine par défaut (voir e2e/captures.spec.ts)
+verify local : unitaires 6414 verts, e2e complet interrompu par le délai (CI e2e verte)
