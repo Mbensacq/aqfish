@@ -10904,6 +10904,12 @@
           "debut": "2026-11-25T06:15:19.961Z",
           "fin": "2026-11-25T06:15:54.821Z",
           "note": "Verdict OK, 0 bug, PR docs seule, captures c299 reprises"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-25T06:16:28.272Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
