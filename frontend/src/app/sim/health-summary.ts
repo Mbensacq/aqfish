@@ -4,7 +4,7 @@ import { velvetStage } from './velvet';
 import { fungusStage } from './fungus';
 import { dropsyStage } from './dropsy';
 import { SPECIES, type SpeciesId } from './species';
-import { feedsOnPellets, STARVING_HUNGER } from './wellbeing';
+import { hungerCounts, STARVING_HUNGER } from './wellbeing';
 import { HEALTH_FLOOR } from './health-scale';
 import type { GaugeLevel } from './water-dashboard';
 
@@ -19,7 +19,7 @@ import type { GaugeLevel } from './water-dashboard';
  *   ramenée dans [`HEALTH_FLOOR`, 1] ;
  * - une faim non finie compte pour 0 (comme `growHunger`), une faim hors bornes est ramenée
  *   dans [0, 1] ;
- * - la faim ne compte que pour les espèces qui mangent les granulés (`feedsOnPellets`) : les
+ * - la faim ne compte que pour les espèces dont la faim use la santé (`hungerCounts`) : les
  *   autres ne peuvent pas être nourries, leur faim n'use pas leur santé.
  *
  * Points blancs (issue #366, ADR 0089) : la synthèse compte aussi les animaux qui en
@@ -300,9 +300,9 @@ function tallyDiseases(counts: HealthCounts, animal: HealthSubject): number {
   return shown;
 }
 
-/** Ajoute la faim de `animal` s'il mange les granulés ; renvoie s'il est affamé. */
+/** Ajoute la faim de `animal` si elle compte (`hungerCounts`) ; renvoie s'il est affamé. */
 function tallyHunger(tally: HealthTally, animal: HealthSubject): boolean {
-  if (!feedsOnPellets(SPECIES[animal.species])) {
+  if (!hungerCounts(SPECIES[animal.species])) {
     return false;
   }
   const hunger = readHunger(animal.hunger);

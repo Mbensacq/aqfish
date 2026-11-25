@@ -18,7 +18,10 @@ import {
   cloneWorld,
   createDefaultWorld,
   createWorld,
+  setWorldMortalityInPlace,
 } from './world';
+import { HEALTH_FLOOR } from './health-scale';
+import { sampleAlgae } from './algae';
 import { FRY_SAFE_AGE, isFry } from './fry';
 import { SIM_DT } from './constants';
 import type { Fish } from './swimmer';
@@ -74,6 +77,20 @@ function plantedTank(neons: number, planted: boolean): World {
     createWorld(1, [{ species: 'neon', count: neons }], [], decor, 'tropical'),
   );
   (world.water as MutableWaterState).filter = 1;
+  return world;
+}
+
+/** Temps laissé aux néritines affamées pour mourir au pas fin (S10), en secondes simulées. */
+const NERITE_DEATH_SECONDS = 3600;
+
+/** Bac du scénario S10 : deux néritines, filtre mûr, algues `algae` (absentes : aucune). */
+function neriteTank(algae: number[] | undefined): World {
+  const world = cloneWorld(createWorld(3, [{ species: 'neritine', count: 2 }], [], [], 'tropical'));
+  const water = world.water as MutableWaterState;
+  water.filter = 1;
+  if (algae !== undefined) {
+    water.algae = algae;
+  }
   return world;
 }
 
@@ -138,7 +155,7 @@ function expectStable(record: ScenarioRecord): void {
   expect(record.minHealth).toBeGreaterThanOrEqual(SICK_HEALTH);
 }
 
-describe('scénarios de référence de l’écosystème (#799, #805, #807, #821, #823)', () => {
+describe('scénarios de référence de l’écosystème (#799, #805, #807, #821, #823, #833)', () => {
   it(
     'S1 — bocal de 10 L, un poisson rouge, sans filtre : ammoniaque toxique en quelques jours, poisson malade',
     () => {
@@ -290,6 +307,33 @@ describe('scénarios de référence de l’écosystème (#799, #805, #807, #821,
       const sparse = fryLeft(fryTank(2, 0.8));
       expect(dense).toBeGreaterThanOrEqual(1.5 * sparse);
       expect(sparse).toBeLessThan(FRY_SITES.length * FRY_PER_SITE);
+    },
+    SCENARIO_TIMEOUT_MS,
+  );
+
+  it(
+    'S10 — néritines dans un bac sans algues, jamais nourries : faim, puis mort ; avec des algues, rassasiées',
+    () => {
+      const bare = neriteTank(undefined);
+      const grazed = neriteTank(sampleAlgae(0.6));
+
+      const starving = runScenario({ world: bare, care: {}, days: 1 });
+      // Deux néritines mangent environ 6 plaques par jour de jeu : une demi-journée laisse des algues.
+      const fed = runScenario({ world: grazed, care: {}, days: 0.5 });
+
+      for (const snail of starving.world.entities) {
+        expect(snail.hunger).toBe(1);
+        expect(snail.health).toBe(HEALTH_FLOOR);
+      }
+      expect(fed.minHealth).toBe(1);
+      expect(fed.maxAlgae).toBeGreaterThan(0);
+
+      // Mort : la mortalité (option du monde, #582) se joue au pas fin, tirage par animal.
+      const dying = cloneWorld(starving.world);
+      setWorldMortalityInPlace(dying, true);
+      advanceInPlace(dying, Math.round(NERITE_DEATH_SECONDS / SIM_DT));
+      expect(dying.entities).toHaveLength(0);
+      expect(dying.dead?.map((body) => body.species)).toEqual(['neritine', 'neritine']);
     },
     SCENARIO_TIMEOUT_MS,
   );

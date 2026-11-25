@@ -54,6 +54,8 @@ const FRESHWATER_LOT1 = 'population=neon:0,guppy:0,corydora:0,rasbora:8,tetra:8,
 const FRESHWATER_LOT2 =
   'population=neon:0,guppy:0,corydora:0,platy:4,danio:8,ancistrus:2,otocinclus:6';
 const FRESHWATER_LOT3 = 'population=neon:0,guppy:0,corydora:0,braise:12,molly:3,miel:2';
+/** Brouteurs d'algues tendres (#833) seuls dans le bac tropical : otocinclus et crevettes. */
+const GRAZERS = 'population=neon:0,guppy:0,corydora:0,otocinclus:6,cerise:8';
 const FRESHWATER_LOT4 = 'population=neon:0,guppy:0,corydora:0,xipho:3,cerise:8,neritine:3';
 /** Alevins du platy (#674) : quatre platys parmi les néons et deux corydoras. */
 const PLATY_FRY = 'population=neon:6,guppy:0,corydora:2,platy:4';
@@ -298,6 +300,9 @@ test.describe('Captures', () => {
     // Algues (#476) : plaques vertes sur les vitres (fond, côtés, bas de la vitre avant).
     { name: 'front-algues', query: 'algues=0.8&camera=front' },
     { name: 'three-quarter-algues', query: 'algues=0.8' },
+    // Brouteurs (#833) : mêmes algues après 10 minutes d'otocinclus et de crevettes ; les deux
+    // plaques d'algues dures (fond, côté droit), qu'ils ne mangent pas, restent seules.
+    { name: 'front-algues-brouteurs', query: `algues=0.8&camera=front&${GRAZERS}&time=600` },
     // Encrassement (#607) : voile de dépôts au pied des vitres, dans les coins et sur le sable,
     // de jour et de nuit ; bac nettoyé = captures sans paramètre, inchangées.
     { name: 'three-quarter-encrassement', query: 'encrassement=0.8' },

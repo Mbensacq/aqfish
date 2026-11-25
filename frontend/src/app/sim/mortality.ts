@@ -9,7 +9,7 @@ import { REFERENCE_BODY_LENGTH, type WaterState } from './water';
 import { toxicAmmonia } from './water-conditioner';
 import { COMPOUND_THRESHOLDS } from './water-quality';
 import { velvetHealthStress } from './velvet';
-import { STARVING_HUNGER, feedsOnPellets } from './wellbeing';
+import { STARVING_HUNGER, hungerCounts } from './wellbeing';
 import { HEALTH_FLOOR } from './health-scale';
 
 /**
@@ -23,7 +23,7 @@ import { HEALTH_FLOOR } from './health-scale';
  * **Risque** : seul un animal dont la santé est au plus `MORTALITY_HEALTH` (à peine au-dessus
  * du plancher, `sim/wellbeing.ts`) peut mourir. Trois causes, chacune de poids 1 au plus :
  * maladie (somme des poids des maladies dans la santé, bornée à 1), jeûne (faim maximale,
- * seulement pour une espèce nourrie aux granulés) et eau toxique (ammoniaque libre ou nitrites
+ * seulement pour une espèce dont la faim compte, `hungerCounts`) et eau toxique (ammoniaque libre ou nitrites
  * au seuil « mauvaise »). Taux de décès λ = causes · `MORTALITY_RATE_PER_CAUSE` ; sans cause
  * (animal qui se remet), aucun décès. La santé met 8 minutes simulées à tomber au plancher
  * pour une cause : un bac négligé perd son premier animal en une demi-heure simulée environ,
@@ -111,7 +111,7 @@ export function mortalityRate(animal: MortalitySubject, toxic: boolean): number 
     return 0;
   }
   const def = SPECIES[animal.species];
-  const starving = feedsOnPellets(def) && animal.hunger >= STARVING_HUNGER ? 1 : 0;
+  const starving = hungerCounts(def) && animal.hunger >= STARVING_HUNGER ? 1 : 0;
   const causes = diseaseCause(animal) + starving + (toxic ? 1 : 0);
   return causes * MORTALITY_RATE_PER_CAUSE;
 }

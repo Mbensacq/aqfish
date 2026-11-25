@@ -5,6 +5,7 @@ import { stepDropsyInPlace } from './dropsy';
 import { environmentWater } from './environment';
 import { finRotCauses, stepFinRotInPlace } from './fin-rot';
 import { addDecayedFoodInPlace, addEatenFoodInPlace } from './food-decay';
+import { grazeAlgaeInPlace } from './grazing';
 import { stepFungusInPlace } from './fungus';
 import { deadLoad } from './mortality';
 import {
@@ -111,18 +112,19 @@ function addBodyDecayInPlace(
 
 /**
  * Algues (issue #476) : sans hasard, sur les nitrates de fin de pas ; sans pousse (éclairage
- * normal, eau propre), rien n'est calculé ni écrit.
+ * normal, eau propre), rien n'est calculé ni écrit. Puis les brouteurs les mangent (#833,
+ * `sim/grazing.ts`) ; sans algues, rien n'est calculé.
  */
 export function stepAlgaeStageInPlace(world: MutableWorld, dt: number): void {
-  if (
-    hasAlgae(world.environment) &&
-    algaeGrowth(lightingOf(world.water), world.water.nitrate) > 0
-  ) {
-    stepAlgaeInPlace(
-      world.water as MutableWaterState,
-      dt,
-      cachedAlgaePatches(world.seed, environmentWater(world)),
-    );
+  if (!hasAlgae(world.environment)) {
+    return;
+  }
+  const water = world.water as MutableWaterState;
+  if (algaeGrowth(lightingOf(water), water.nitrate) > 0) {
+    stepAlgaeInPlace(water, dt, cachedAlgaePatches(world.seed, environmentWater(world)));
+  }
+  if (water.algae !== undefined) {
+    grazeAlgaeInPlace(water, world.entities as Mutable<Entity>[], dt);
   }
 }
 

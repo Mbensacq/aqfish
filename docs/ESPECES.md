@@ -511,6 +511,18 @@ chaque valeur garde la source ou le statut de son champ, repris dans la raison d
 | Âge des animaux                         | —                                                                            | Tout animal compte comme un adulte                                                       |
 | Volume d'eau réel                       | —                                                                            | Plantes non déduites ; coraux et anémones à la moitié de leur boîte ; sol échantillonné au cm |
 
+## Brouteurs d'algues (#833, tranche 1 de #732)
+
+Le broutage (`sim/grazing.ts`, ADR 0179) lit le régime ci-dessus (algues) et la table `GRAZERS`.
+
+| Valeur                                   | Sourcé                                                                                       | Approximation de jeu                                                                                   |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Vitesse de broutage                      | —                                                                                            | Couverture par seconde : ancistrus 1/150, néritine 1/200, otocinclus 1/300, crevette cerise 1/600      |
+| Faim calmée par une plaque mangée        | —                                                                                            | Une plaque pleine calme une faim pleine                                                                |
+| Algues dures                             | Crevettes : n'en viennent pas à bout (Garnelio)                                              | Deux plaques sur huit ; mangées par la néritine et l'ancistrus, pas par l'otocinclus                   |
+| Faim qui use la santé sans nourriture    | Néritine : meurt de faim sans algues ni nourriture d'appoint (Aquarium Breeder)              | Crevette cerise : nourrie par le biofilm, non simulé, sa faim reste sans effet (tranche 2 de #732)     |
+| Biofilm                                  | —                                                                                            | Non simulé                                                                                             |
+
 ## Verdicts par paire (#816, tranche 1 de #730)
 
 Calcul pur `verdict(a, b)` (`sim/verdict.ts`, ADR 0174). Depuis #818 (tranche 2), il est lu
