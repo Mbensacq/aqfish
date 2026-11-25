@@ -10924,10 +10924,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-25T06:47:40.289Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-25T06:48:12.155Z",
+          "note": "Issue #824 : plantes flottantes, absorption et refuge (M)"
         }
       },
       "metriques": {}
