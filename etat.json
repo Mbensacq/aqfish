@@ -10972,10 +10972,10 @@
           "note": "PR #834 : brouteurs d'algues et faim des néritines (ADR 0179, S10 vert, Closes #833), CI verte 13/13 ; e2e local limité à la capture ; pied d'attribution réinjecté par l'environnement dans la description de la PR"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-25T09:38:59.740Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-25T09:54:55.889Z",
+          "note": "Verdict OK, 0 bug, captures c302 publiées (e2e local interrompu par le délai, CI 13/13)"
         }
       },
       "metriques": {}
