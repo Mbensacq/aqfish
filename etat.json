@@ -10934,6 +10934,12 @@
           "debut": "2026-11-25T06:48:40.073Z",
           "fin": "2026-11-25T07:53:55.694Z",
           "note": "PR #831 : plantes flottantes (salvinia, ADR 0178, Closes #824), CI verte ; e2e local interrompu (CI e2e 7/7 vertes) ; pied d'attribution réinjecté par l'environnement dans la description de la PR"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-25T07:54:31.244Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
