@@ -10928,6 +10928,12 @@
           "debut": "2026-11-25T06:47:40.289Z",
           "fin": "2026-11-25T06:48:12.155Z",
           "note": "Issue #824 : plantes flottantes, absorption et refuge (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-25T06:48:40.073Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
