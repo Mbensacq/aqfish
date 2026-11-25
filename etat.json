@@ -10870,10 +10870,10 @@
           "note": "Verdict OK, 0 bug, captures publiées (178/178 identiques au pixel)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-25T05:26:39.296Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-25T05:53:08.665Z",
+          "note": "PR #828 fusionnée → v1.31.5 (release CI OK, CI main verte), #709 fermée ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
