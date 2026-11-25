@@ -1,2 +1,2 @@
-Cycle 298, QA. Branche cycle/c298-dette-alevins-especes-possibles, PR #827, commit eafc8859, graine par défaut du harnais.
-Refactorisation : 177 captures sur 178 identiques au pixel près à la série précédente ; three-quarter-minuit-guide.png diffère de 12 pixels (zone 993-1255 x 597-633) mais est identique sur main : écart préexistant, hors PR.
+Cycle 299, QA. Branche cycle/c299-captures-stables, PR #828, commit 49496a5f, graine par défaut du harnais.
+Refactorisation (tests seuls) : 178 captures sur 178 identiques au pixel près (cmp) à la série précédente c298, y compris three-quarter-minuit-guide.png (12 px d'écart au cycle 298, désormais stable).
