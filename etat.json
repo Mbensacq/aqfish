@@ -10936,10 +10936,10 @@
           "note": "PR #831 : plantes flottantes (salvinia, ADR 0178, Closes #824), CI verte ; e2e local interrompu (CI e2e 7/7 vertes) ; pied d'attribution réinjecté par l'environnement dans la description de la PR"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-25T07:54:31.244Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-25T08:27:40.616Z",
+          "note": "Verdict OK, 0 bug, captures c301 publiées (e2e local interrompu, CI 7/7)"
         }
       },
       "metriques": {}
