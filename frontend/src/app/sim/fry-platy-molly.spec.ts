@@ -23,15 +23,8 @@ import { speciesSheet } from './species-sheet';
 import { SPECIES, type SpeciesId } from './species';
 import type { Fish } from './swimmer';
 import { sampleWater } from './water-quality';
-import {
-  advance,
-  boundsFor,
-  broodWorldInPlace,
-  cloneWorld,
-  createWorld,
-  step,
-  stepBroodInPlace,
-} from './world';
+import { broodWorldInPlace } from './fry-sample';
+import { advance, boundsFor, cloneWorld, createWorld, step, stepBroodInPlace } from './world';
 import type { MutableWorld, World } from './world-types';
 
 /** Alevins du platy et du molly (issue #674) : même calendrier que le guppy (#459). */

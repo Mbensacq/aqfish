@@ -23,8 +23,8 @@ import type { TankDimensions } from '../../sim/tank';
 import { setTankDimensionsInPlace } from '../../sim/tank-resize';
 import { isCurrentLevel } from '../../sim/water-current';
 import { isWaterQuality, sampleWater } from '../../sim/water-quality';
+import { broodWorldInPlace } from '../../sim/fry-sample';
 import {
-  broodWorldInPlace,
   createDefaultWorld,
   dropsyWorldInPlace,
   fungusWorldInPlace,
