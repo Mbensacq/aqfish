@@ -21,9 +21,9 @@ import type { Entity, Mutable, MutableWorld } from './world-types';
  *
  * - **Éclosions** : le temps est découpé en couvées de `CLUTCH_PERIOD_SECONDS` ; à la fin de
  *   chacune, chaque femelle adulte (identifiant impair, comme le platy) en pleine santé,
- *   nourrie (`SHRIMP_FED_HUNGER`), dans une eau bonne au pH toléré, fait éclore `clutchSize` jeunes,
- *   tant que la colonie a sa place (`shrimpPlace` : capacité du bac, #729, pour les seules
- *   crevettes). Un jeune est un animal à `growth` (comme un alevin, `sim/fry.ts`), posé au
+ *   nourrie (`SHRIMP_FED_HUNGER`), dans une eau bonne au pH toléré, fait éclore `clutchSize`
+ *   jeunes, tant que la colonie a sa place (`shrimpPlace` : capacité du bac, #729, pour les
+ *   seules crevettes). Un jeune est un animal à `growth` (comme un alevin, `sim/fry.ts`), posé au
  *   fond près de sa mère ; il devient adulte au bout de `FRY_GROWTH_TIME`.
  * - **Néritines** : aucune éclosion en eau douce (`NERITE_HATCHES_IN_FRESHWATER`).
  * - **Prédation** (`docs/ECOSYSTEME.md` § 3.3, listes `prey` de `sim/species-ecology.ts`) : à
@@ -44,7 +44,7 @@ const AB_NERITE =
 /** Espèces dont la colonie se reproduit dans le bac. */
 export const COLONY_SPECIES: readonly SpeciesId[] = Object.freeze(['cerise']);
 
-/** Les néritines font-elles éclore leurs œufs en eau douce ? Non : il leur faut une eau saumâtre. */
+/** Les néritines font-elles éclore leurs œufs en eau douce ? Non : l'eau doit être saumâtre. */
 export const NERITE_HATCHES_IN_FRESHWATER: SheetField<boolean> = sourced(
   false,
   `${AB_NERITE} (œufs viables seulement en eau saumâtre, 5 à 15 ‰)`,
@@ -113,12 +113,24 @@ export function clutchSize(seed: number, motherId: number, clutch: number): numb
 
 /**
  * Rang de la dernière fenêtre de `period` secondes achevée entre `start` (exclu) et `end`
- * (inclus), ou -1 si aucune ne s'achève. Un pas plus long qu'une fenêtre n'en compte qu'une.
+ * (inclus), ou -1 si aucune ne s'achève. Le nombre de fenêtres achevées est donné par
+ * `endedWindowCount`.
  */
 export function endedWindow(start: number, end: number, period: number): number {
   const before = Math.floor(start / period + WINDOW_EPSILON);
   const after = Math.floor(end / period + WINDOW_EPSILON);
   return after > before ? after - 1 : -1;
+}
+
+/**
+ * Nombre de fenêtres de `period` secondes achevées entre `start` (exclu) et `end` (inclus) :
+ * 0 ou 1 au pas fin, davantage quand le pas dépasse une fenêtre (`advanceEcosystemInPlace`
+ * accepte un `stepSeconds` quelconque, #838).
+ */
+export function endedWindowCount(start: number, end: number, period: number): number {
+  const before = Math.floor(start / period + WINDOW_EPSILON);
+  const after = Math.floor(end / period + WINDOW_EPSILON);
+  return Math.max(0, after - before);
 }
 
 /** Bac lu par la colonie : conditions d'éclosion d'une femelle. */
@@ -152,6 +164,11 @@ export type BirthYoung = (world: MutableWorld, species: SpeciesId, near: Vec3) =
  * `world` : prédation à la fin de chaque fenêtre de `PREDATION_PERIOD_SECONDS`, puis éclosions
  * à la fin de chaque couvée. `liters` : volume d'eau (défaut : celui du bac). Sans crevette ni
  * fin de fenêtre, rien n'est calculé. Renvoie le nombre de naissances moins celui des pertes.
+ *
+ * Un pas plus long qu'une fenêtre compte toutes celles qu'il achève (#838) : la prédation
+ * tire une seule fois la probabilité composée des `n` fenêtres, `1 − exp(−risque × période ×
+ * n)`, puis chaque couvée achevée éclôt dans l'ordre. Au pas de `ECOSYSTEM_STEP_SECONDS`
+ * (5 s), `n` vaut 0 ou 1 : rien ne change.
  */
 export function stepShrimpColonyInPlace(
   world: MutableWorld,
@@ -165,9 +182,19 @@ export function stepShrimpColonyInPlace(
   if ((hunt < 0 && clutch < 0) || !world.entities.some(isColonyAnimal)) {
     return 0;
   }
-  const eaten = hunt < 0 ? 0 : huntShrimpInPlace(world, hunt);
+  const huntWindows = endedWindowCount(start, world.time, PREDATION_PERIOD_SECONDS);
+  const eaten = hunt < 0 ? 0 : huntShrimpInPlace(world, hunt, huntWindows);
   const volume = liters ?? waterLiters(environmentWater(world));
-  const born = clutch < 0 ? 0 : hatchClutchInPlace(world, clutch, birth, volume);
+  const clutches = endedWindowCount(start, world.time, CLUTCH_PERIOD_SECONDS);
+  let born = 0;
+  for (let c = clutch - clutches + 1; clutch >= 0 && c <= clutch; c++) {
+    const hatched = hatchClutchInPlace(world, c, birth, volume);
+    born += hatched;
+    if (hatched === 0) {
+      // Mêmes mères, colonie au moins aussi grande : les couvées suivantes n'éclosent pas.
+      break;
+    }
+  }
   return born - eaten;
 }
 
@@ -180,11 +207,10 @@ function hatchClutchInPlace(
 ): number {
   const place = shrimpPlace(liters);
   let count = world.entities.filter(isColonyAnimal).length;
+  // Seul `phOutOfTolerance` dépend de l'espèce : la qualité de l'eau est lue une fois (#838).
+  const goodWater = waterQuality(world.water, world.environment) === 'bonne';
   const mothers = world.entities.filter((fish) =>
-    canHatch(fish, {
-      goodWater: waterQuality(world.water, world.environment) === 'bonne',
-      phOut: phOutOfTolerance(world.water.ph, fish.species),
-    }),
+    canHatch(fish, { goodWater, phOut: phOutOfTolerance(world.water.ph, fish.species) }),
   );
   let born = 0;
   for (const mother of mothers) {
@@ -224,8 +250,11 @@ function countShrimpEaters(entities: readonly Entity[]): ShrimpEaters {
   return eaters;
 }
 
-/** Prédation de la fenêtre `window` ; renvoie le nombre de crevettes mangées. */
-function huntShrimpInPlace(world: MutableWorld, window: number): number {
+/**
+ * Prédation des `windows` fenêtres achevées, la dernière de rang `window` (graine des tirages) ;
+ * renvoie le nombre de crevettes mangées.
+ */
+function huntShrimpInPlace(world: MutableWorld, window: number, windows: number): number {
   const eaters = countShrimpEaters(world.entities);
   if (eaters.adults + eaters.young === 0) {
     return 0;
@@ -245,7 +274,7 @@ function huntShrimpInPlace(world: MutableWorld, window: number): number {
       const exposed = 1 - Math.min(1, cover / FRY_FULL_COVER_M2);
       risk = (eaters.adults + eaters.young) * YOUNG_SHRIMP_RISK * exposed;
     }
-    const chance = 1 - Math.exp(-risk * PREDATION_PERIOD_SECONDS);
+    const chance = 1 - Math.exp(-risk * PREDATION_PERIOD_SECONDS * windows);
     if (hashUnit(world.seed, shrimp.id, window ^ HUNT_SALT) < chance) {
       entities.splice(i, 1);
       eaten += 1;

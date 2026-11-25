@@ -3,25 +3,26 @@ import { describe, expect, it } from 'vitest';
 import { sampleAlgae } from './algae';
 import type { DecorItem } from './decor';
 import { isFry } from './fry';
+import { broodWorldInPlace } from './fry-sample';
+import { parseWorld, serializeWorld } from './save';
 import {
   canHatch,
   clutchSize,
   CLUTCH_PERIOD_SECONDS,
   COLONY_SPECIES,
   endedWindow,
+  endedWindowCount,
   isShrimpFemale,
   MAX_CLUTCH,
   MIN_CLUTCH,
   NERITE_HATCHES_IN_FRESHWATER,
   SHRIMP_FED_HUNGER,
   shrimpPlace,
+  stepShrimpColonyInPlace,
 } from './shrimp-colony';
-import type { SpeciesId } from './species';
+import { SPECIES, type SpeciesId } from './species';
 import { runScenario, SCENARIO_DAY_SECONDS } from './testing/ecosystem-scenario';
-import { parseWorld, serializeWorld } from './save';
-import { broodWorldInPlace } from './fry-sample';
 import { waterLoad, type MutableWaterState } from './water';
-import { SPECIES } from './species';
 import { birthYoungInPlace, cloneWorld, createWorld } from './world';
 import type { Entity, Mutable, World } from './world-types';
 
@@ -67,6 +68,17 @@ describe('colonie de crevettes (#836)', () => {
     expect(endedWindow(60, 65, 60)).toBe(-1);
     expect(endedWindow(59.99999999999999, 60.1, 60)).toBe(-1);
     expect(endedWindow(0, 0, 60)).toBe(-1);
+  });
+
+  it('endedWindowCount : toutes les fenêtres achevées par un pas, 0 sans fin de fenêtre (#838)', () => {
+    expect(endedWindowCount(55, 60, 60)).toBe(1);
+    expect(endedWindowCount(60, 65, 60)).toBe(0);
+    expect(endedWindowCount(59.99999999999999, 60.1, 60)).toBe(0);
+    expect(endedWindowCount(0, 130, 60)).toBe(2);
+    expect(endedWindowCount(0, 1500, 60)).toBe(25);
+    expect(endedWindowCount(1000, 2500, CLUTCH_PERIOD_SECONDS)).toBe(2);
+    expect(endedWindowCount(0, 1500, CLUTCH_PERIOD_SECONDS)).toBe(1);
+    expect(endedWindow(1000, 2500, CLUTCH_PERIOD_SECONDS)).toBe(1);
   });
 
   it('shrimpPlace : 3 L par crevette adulte (capacité #729), rien sans eau', () => {
@@ -171,6 +183,63 @@ describe('colonie de crevettes (#836)', () => {
       world.entities.filter((e) => e.species === 'cerise').map((e) => e.id);
     expect(ids(fed)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]);
     expect(ids(after)).toEqual([8, 10, 11, 16]);
+  });
+
+  it('un pas de 1500 s fait éclore les deux couvées qu’il achève, comme deux pas (#838)', () => {
+    const fedTank = (): Mutable<World> => {
+      const world = tank([{ species: 'cerise', count: 4 }]);
+      for (const animal of world.entities as Mutable<Entity>[]) {
+        animal.health = 1;
+        animal.hunger = 0;
+      }
+      return world;
+    };
+    const ids = (world: World): number[] => world.entities.map((e) => e.id);
+
+    const long = fedTank();
+    long.time = 2500;
+    const longBorn = stepShrimpColonyInPlace(long, 1500, birthYoungInPlace, 300);
+    const split = fedTank();
+    split.time = 1200;
+    const firstBorn = stepShrimpColonyInPlace(split, 200, birthYoungInPlace, 300);
+    split.time = 2500;
+    const secondBorn = stepShrimpColonyInPlace(split, 1300, birthYoungInPlace, 300);
+    const single = fedTank();
+    single.time = 1500;
+
+    expect(firstBorn).toBeGreaterThan(0);
+    expect(secondBorn).toBeGreaterThan(0);
+    expect(longBorn).toBe(firstBorn + secondBorn);
+    expect(ids(long)).toEqual(ids(split));
+    expect(stepShrimpColonyInPlace(single, 1500, birthYoungInPlace, 300)).toBe(firstBorn);
+  });
+
+  it('prédation : un pas de 130 s ou de 1500 s compose le risque de toutes ses fenêtres (#838)', () => {
+    const YOUNG = 20;
+    const SEEDS = [1, 2, 3, 4, 5];
+    const eatenOver = (dt: number): number => {
+      let eaten = 0;
+      for (const seed of SEEDS) {
+        const world = tank([{ species: 'guppy', count: 6 }], [], seed);
+        for (let k = 0; k < YOUNG; k++) {
+          const near = { x: (k % 10) * 0.05 - 0.25, y: 0.05, z: 0 };
+          (birthYoungInPlace(world, 'cerise', near) as Mutable<Entity>).growth = 0;
+        }
+        world.time = dt;
+        eaten -= stepShrimpColonyInPlace(world, dt, birthYoungInPlace, 300);
+      }
+      return eaten;
+    };
+    // Six guppys, jeunes à découvert : 1 − exp(−6 / 600 × 60 × n) pour un pas de n fenêtres.
+    const total = YOUNG * SEEDS.length;
+    const one = eatenOver(60);
+    const two = eatenOver(130);
+
+    expect(one).toBeGreaterThan(total * (1 - Math.exp(-0.6)) - 15);
+    expect(one).toBeLessThan(total * (1 - Math.exp(-0.6)) + 15);
+    expect(two).toBeGreaterThan(total * (1 - Math.exp(-1.2)) - 15);
+    expect(two).toBeLessThan(total * (1 - Math.exp(-1.2)) + 15);
+    expect(eatenOver(1500)).toBe(total);
   });
 
   it('un refuge de plantes réduit les pertes de jeunes crevettes face aux guppys', () => {
