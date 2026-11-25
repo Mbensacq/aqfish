@@ -10790,6 +10790,12 @@
           "debut": "2026-11-24T23:43:03.771Z",
           "fin": "2026-11-25T00:49:42.377Z",
           "note": "PR #825 : refuge gradué des alevins (masse des plantes proches, point du bilan, S13, ADR 0176), CI verte ; 6384 tests ; empreinte alevins de step-caracterisation mise à jour ; issue #824 plantes flottantes proposée ; e2e complet par la CI"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-25T00:50:17.817Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
