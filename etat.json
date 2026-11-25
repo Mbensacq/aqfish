@@ -10996,10 +10996,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-25T10:23:59.907Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-25T10:24:41.784Z",
+          "note": "Issue #836 : écosystème 6/7 tranche 2, charognards, crevettes, prédation (M)"
         }
       },
       "metriques": {}
