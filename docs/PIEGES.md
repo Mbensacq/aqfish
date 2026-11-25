@@ -6,6 +6,24 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Capture ou e2e qui dépend d'une durée réelle : instable seulement sous charge**
+  (cycle 299, #709) : deux séries complètes au repos sont identiques à l'octet, mais les
+  séries de QA (machine chargée) sortaient des écarts isolés, absents à la relance. Trois
+  causes, trois corrections dans les tests : (1) `front-tableau-de-bord-chlore` cliquait
+  « Face » hors mode capture, ce qui lance une **transition de caméra en temps réel**, puis
+  photographiait aussitôt (cadrage du bac décalé de 2 000 à 8 000 pixels aux cycles 277 et
+  287) : relever `data-aqfish-camera` de la vue chargée et attendre d'y être revenu ;
+  (2) après un clic qui ouvre ou fait défiler un panneau (`telephone-fiche-espece`,
+  `telephone-catalogue`, `*-guide`), la souris reste sur le bouton et Chromium ne recalcule
+  le survol qu'au **prochain mouvement simulé**, à un moment qui varie (écart de ±1 sur les
+  coins arrondis du bouton : `three-quarter-minuit-guide`, cycle 297) : poser la souris au
+  repos (`poserSourisAuRepos`) avant la photo ; (3) l'appui long de
+  `e2e/masquer-interface.spec.ts` relevait le doigt à 900 ms fixes : une image en rendu
+  logiciel qui occupe la page fait passer le relâcher avant le minuteur de 600 ms. Attendre
+  l'effet attendu le doigt posé, puis relever. Règle : jamais de photo ni de relâcher après une
+  durée fixe ou juste après une animation ; attendre l'état final publié. Pour retrouver une
+  capture instable : comparer les empreintes d'un même fichier sur `captures/c2xx/` de la
+  branche `equipe` (une valeur isolée entre deux identiques). (2026-11-25)
 - **`z-index` d'un bouton fixe : bruit d'un niveau de couleur sur les coins arrondis
   voisins** (cycle 278, #780) : le `z-index: 0` posé sur « Pharmacie » au téléphone (#772)
   change 6 à 41 pixels (écart ≤ 2) dans 8 captures `telephone-*` : coins des boutons de la

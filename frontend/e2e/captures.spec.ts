@@ -1,7 +1,7 @@
 import { mkdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 import { SIM_DT } from '../src/app/sim/constants';
 import { createDayClock } from '../src/app/sim/daylight';
@@ -62,6 +62,16 @@ const REEF_LOT3 = 'population=clown:3,chirurgien:4,chromis:7,gobie:2,gramma:2,cr
 const OUTPUT_DIR = resolve(
   process.env['CAPTURE_DIR'] ?? join(__dirname, '..', '..', 'docs', 'captures', 'latest'),
 );
+
+/**
+ * Souris posée au coin haut gauche (hors des panneaux et des boutons) juste avant une photo
+ * d'interface prise après un clic (#709). Sinon la souris reste sur le bouton cliqué, et
+ * Chromium ne recalcule le survol qu'au prochain mouvement simulé, à un moment qui varie après
+ * une ouverture ou un défilement : la photo gardait ou non le survol d'une série à l'autre.
+ */
+async function poserSourisAuRepos(page: Page): Promise<void> {
+  await page.mouse.move(0, 0);
+}
 
 test.describe('Captures', () => {
   test.beforeAll(() => {
@@ -691,6 +701,7 @@ test.describe('Captures', () => {
     await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-speed', '0');
     await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-tick', '0');
     await page.locator('[data-section="population"]').scrollIntoViewIfNeeded();
+    await poserSourisAuRepos(page);
     await page.screenshot({
       path: join(OUTPUT_DIR, 'telephone-catalogue.png'),
       animations: 'disabled',
@@ -713,6 +724,7 @@ test.describe('Captures', () => {
     const sheet = page.locator('[data-species-sheet="neon"]');
     await expect(sheet).toBeVisible();
     await sheet.scrollIntoViewIfNeeded();
+    await poserSourisAuRepos(page);
     await page.screenshot({
       path: join(OUTPUT_DIR, 'telephone-fiche-espece.png'),
       animations: 'disabled',
@@ -784,6 +796,7 @@ test.describe('Captures', () => {
       await guide.locator('[data-why-toggle="nourriture"]').click();
       await expect(guide.locator('[data-why-text]')).toBeVisible();
       await expect(page.locator('app-aquarium-host')).toHaveAttribute('data-aqfish-tick', '0');
+      await poserSourisAuRepos(page);
       await page.screenshot({
         path: join(OUTPUT_DIR, `${shot.name}-guide.png`),
         animations: 'disabled',
@@ -957,6 +970,10 @@ test.describe('Captures', () => {
     await page.setViewportSize({ width: 1280, height: 720 });
     await page.goto(`/?seed=${SEED}&camera=front&heure=12&vitesse=0`);
     await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+    // Pose de la vue de face au chargement : la photo attend que la caméra y soit revenue.
+    const host = page.locator('app-aquarium-host');
+    const frontPose = await host.getAttribute('data-aqfish-camera');
+    expect(frontPose).toBeTruthy();
     const world: MutableWorld = createDefaultWorld(SEED);
     world.water = { ...freshWater('tropical'), chlorine: 0.15, untreatedTap: true };
     await ouvrirReglages(page, 'Sauvegarde et partage');
@@ -972,8 +989,11 @@ test.describe('Captures', () => {
     );
     await fermerReglages(page);
     await expect(page.locator('.control-panel')).toHaveCount(0);
-    // L'import remet la caméra du bac : revenir à la vue de face.
+    // L'import remet la caméra du bac : revenir à la vue de face. Hors capture, le bouton
+    // lance une transition en temps réel : photographier avant sa fin donnait un cadrage qui
+    // variait d'une série à l'autre (#709). Attendre la pose finale, publiée à la fin.
     await page.getByRole('button', { name: 'Face' }).click();
+    await expect(host).toHaveAttribute('data-aqfish-camera', frontPose!);
     await page.mouse.move(640, 360);
     await page.screenshot({
       path: join(OUTPUT_DIR, 'front-tableau-de-bord-chlore.png'),

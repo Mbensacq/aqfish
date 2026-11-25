@@ -144,11 +144,13 @@ test.describe('téléphone tactile (#775)', () => {
     await expect(hint(page)).toHaveText('Appui long pour revenir');
     await page.screenshot({ path: test.info().outputPath('indication-tactile.png') });
 
-    // Appui long immobile au doigt : l'interface revient.
+    // Appui long immobile au doigt : l'interface revient pendant que le doigt est posé. Le
+    // doigt n'est relevé qu'après : relevé à heure fixe (900 ms), il pouvait passer avant le
+    // minuteur de 600 ms quand une image en rendu logiciel occupait la page (#709).
     const cdp = await page.context().newCDPSession(page);
     const point = { x: 195, y: 420 };
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point] });
-    await page.waitForTimeout(900);
+    await expect(root(page)).toHaveAttribute('data-interface-hidden', 'false');
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
     await expect(root(page)).toHaveAttribute('data-interface-hidden', 'false');
     expect(errors).toEqual([]);
