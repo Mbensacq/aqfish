@@ -11180,6 +11180,12 @@
           "debut": "2026-11-26T05:22:43.748Z",
           "fin": "2026-11-26T05:23:15.869Z",
           "note": "Issue #676 : Ponte du triton au paludarium (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-26T05:23:52.491Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
