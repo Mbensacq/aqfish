@@ -1,1 +1,1 @@
-Branche cycle/c304-roches-et-bois, PR #840, commit 0b97065a, graine par défaut des captures, temps : horloge réelle du jeu.
+Branche cycle/c305-dette-decor-eau-crevettes, PR #842, commit 146977f9, graine par défaut des captures, temps : horloge réelle du jeu.
