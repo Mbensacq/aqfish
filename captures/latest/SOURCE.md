@@ -1,5 +1,5 @@
-Branche : cycle/c309-bilan-reproduction
-PR : #849
-Commit : 0326eb08f7c87af732a610f45abfc0bda67d2c00
+Branche : cycle/c310-lisibilite-algues
+PR : #851
+Commit : 53439db041486872ea966ae1d916d399e4618218
 Graine : défaut des captures
-Temps : 6,4 min (178 tests de captures)
+Temps : 5,4 min (179 tests de captures)
