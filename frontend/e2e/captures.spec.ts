@@ -1095,15 +1095,17 @@ test.describe('Captures', () => {
 
   // Plantes flottantes (#824) : trois radeaux de salvinia posés par l'éditeur à la surface du
   // bac par défaut, importés par une sauvegarde ; ombre sur le fond, vus de dessus et de 3/4.
+  // À minuit (#832), l'ombre passe au bleu nuit comme celle des nénuphars.
   for (const shot of [
-    { name: 'top-salvinia', camera: 'top', key: '1' },
-    { name: 'three-quarter-salvinia', camera: 'three-quarter', key: '5' },
+    { name: 'top-salvinia', camera: 'top', key: '1', heure: 12 },
+    { name: 'three-quarter-salvinia', camera: 'three-quarter', key: '5', heure: 12 },
+    { name: 'top-salvinia-minuit', camera: 'top', key: '1', heure: 0 },
   ]) {
     test(`plantes flottantes : ${shot.name}`, async ({ page }) => {
       const errors: string[] = [];
       page.on('pageerror', (error) => errors.push(error.message));
       await page.setViewportSize({ width: 1280, height: 720 });
-      await page.goto(`/?seed=${SEED}&camera=${shot.camera}&heure=12&vitesse=0`);
+      await page.goto(`/?seed=${SEED}&camera=${shot.camera}&heure=${shot.heure}&vitesse=0`);
       await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
       const host = page.locator('app-aquarium-host');
       const pose = await host.getAttribute('data-aqfish-camera');
@@ -1123,7 +1125,7 @@ test.describe('Captures', () => {
         name: 'salvinia.json',
         mimeType: 'application/json',
         buffer: Buffer.from(
-          serializeWorld(world, { speed: 0, clock: createDayClock(12, 1200, true) }),
+          serializeWorld(world, { speed: 0, clock: createDayClock(shot.heure, 1200, true) }),
         ),
       });
       await expect(host).toHaveAttribute('data-aqfish-decor-count', String(decor.length));

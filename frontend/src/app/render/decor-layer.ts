@@ -30,6 +30,7 @@ import { buildAnemoneMesh } from './anemone-model';
 import { buildCoralMesh } from './coral-model';
 import { FISH_RENDER_ORDER } from './fish-layer';
 import { createFloatingPlantShadow, createFloatingShadowMaterial } from './floating-plant-shadow';
+import { floorShadowInto } from './floor-shadow';
 import { PALETTE } from './palette';
 import {
   applyPlantSway,
@@ -482,10 +483,18 @@ export class DecorLayer {
    * multiplie les trois canaux ; 1 : sans effet. Décision #494 : l'ombre tombe sur **tout** le
    * décor posé au fond (plantes, rochers, bois, qui partagent une seule matière), voulu ainsi :
    * la canopée assombrit le fond du bac, pas seulement les plantes ; animaux et eau n'y sont
-   * pas soumis.
+   * pas soumis. L'ombre des plantes flottantes, posée au fond, suit la lumière comme celle des
+   * nénuphars (#832, `floorShadowInto`) : intensité du jour `intensity` et ciel couvert
+   * `overcast` (1 par défaut : plein jour, ciel clair), sans le facteur de la canopée.
    */
-  setTint(tint: readonly [number, number, number], factor = 1): void {
+  setTint(tint: readonly [number, number, number], factor = 1, intensity = 1, overcast = 1): void {
     this.material.color.setRGB(tint[0] * factor, tint[1] * factor, tint[2] * factor);
+    floorShadowInto(tint, intensity, overcast, this.shadowMaterial.color);
+  }
+
+  /** Couleur courante de l'ombre des plantes flottantes (tests). */
+  get floatingShadowColor(): Color {
+    return this.shadowMaterial.color;
   }
 
   /** Teinte courante du décor (tests). */
