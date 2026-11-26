@@ -11252,6 +11252,12 @@
           "debut": "2026-11-26T09:35:22.921Z",
           "fin": "2026-11-26T09:36:05.404Z",
           "note": "Issue #835 : lot de dette rendu/algues + #832 + #850 (S), >30 dettes ouvertes"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-26T09:36:55.986Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
