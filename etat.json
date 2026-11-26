@@ -11288,6 +11288,12 @@
           "debut": "2026-11-26T11:03:48.399Z",
           "fin": "2026-11-26T11:04:33.201Z",
           "note": "Issue #678 : capsules d'œufs de la néritine (S) ; #593 déjà livrée en lots, ligne roadmap c311 périmée"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-26T11:05:14.153Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
