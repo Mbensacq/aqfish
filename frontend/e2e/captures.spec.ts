@@ -306,6 +306,8 @@ test.describe('Captures', () => {
     // Œufs de corydoras (#478) : une ponte collée sur la vitre et dans les plantes.
     { name: 'front-oeufs', query: 'oeufs=1&camera=front' },
     { name: 'three-quarter-oeufs', query: 'oeufs=1' },
+    // Capsules de la néritine (#678) : lot 4 (trois néritines), première ponte sur les rochers.
+    { name: 'three-quarter-oeufs-neritine', query: `${FRESHWATER_LOT4}&oeufs=1` },
     // Courant fort (#460) : danios zébrés et xiphos face au courant, néons emportés, bulles
     // déviées vers l'aval, chevrons sombres sur le sable le long de la vitre avant.
     { name: 'three-quarter-courant', query: RIVER },

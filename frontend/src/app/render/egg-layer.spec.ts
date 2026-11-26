@@ -3,6 +3,7 @@ import { Color, Matrix4 } from 'three';
 import {
   EGG_HATCH_TIME,
   EGG_SPECIES,
+  laysCapsules,
   laysInLeaves,
   laysNearAnemone,
   laysOnVegetation,
@@ -106,21 +107,29 @@ describe('EggLayer (#478)', () => {
     layer.dispose();
   });
 
-  it('espèces dessinées après l’eau tirées des listes de `sim/eggs.ts` (#662, #685, #676)', () => {
+  it('espèces dessinées après l’eau tirées des listes de `sim/eggs.ts` (#662, #685, #676, #678)', () => {
     for (const species of EGG_SPECIES) {
       expect(eggDrawnAfterWater(species)).toBe(
-        laysNearAnemone(species) || laysOnVegetation(species) || laysInLeaves(species),
+        laysNearAnemone(species) ||
+          laysOnVegetation(species) ||
+          laysInLeaves(species) ||
+          laysCapsules(species),
       );
       const layer = new EggLayer();
       layer.update([{ ...egg(EGG_HATCH_TIME * 0.75), species }], EGG_HATCH_TIME);
       expect(layer.drawnAfterWater).toBe(eggDrawnAfterWater(species));
       const c = new Color();
       layer.mesh.getColorAt(0, c);
-      const ripe = laysNearAnemone(species) ? CLOWN_EGG_RIPE_COLOR : EGG_RIPE_COLOR;
+      // Capsules de la néritine (#678) : jamais mûres, toujours blanches.
+      const ripe = laysCapsules(species)
+        ? EGG_COLOR
+        : laysNearAnemone(species)
+          ? CLOWN_EGG_RIPE_COLOR
+          : EGG_RIPE_COLOR;
       expect(c.getHexString()).toBe(new Color(ripe).getHexString());
       layer.dispose();
     }
-    for (const species of [...REEF_EGG_SPECIES, ...VEGETATION_EGG_SPECIES]) {
+    for (const species of [...REEF_EGG_SPECIES, ...VEGETATION_EGG_SPECIES, 'neritine' as const]) {
       expect(eggDrawnAfterWater(species)).toBe(true);
     }
     expect(eggDrawnAfterWater('corydora')).toBe(false);

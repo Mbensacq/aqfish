@@ -80,7 +80,8 @@ deux sources sérieuses, l'OATA, et affiche le désaccord dans la fiche.
   restes de nourriture ; **préviennent** les algues mais ne viennent pas à bout d'une invasion ni
   des algues dures (Garnelio).
 - Néritines : mangent les algues vertes en couche et le biofilm ; **ne se reproduisent pas en eau
-  douce** (les œufs demandent une eau saumâtre, 5–15 ‰) ; **meurent de faim** quand il n'y a plus
+  douce** (les œufs demandent une eau saumâtre, 5–15 ‰ ; elles collent pourtant leurs capsules
+  sur le décor, simulées depuis #678 sans éclosion) ; **meurent de faim** quand il n'y a plus
   d'algues sans nourriture d'appoint ; environ **1 pour 20 à 40 L** (Aquarium Breeder).
 - Prédation : avec les crevettes, les grands poissons, cichlidés, poissons rouges et grands
   gouramis les mangent « tôt ou tard » ; guppys, rasboras, petits danios, loches kuhli,

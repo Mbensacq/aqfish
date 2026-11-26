@@ -664,11 +664,13 @@ const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
     lifespan: years(1, 2),
     notes: [
       note(
-        'Eau dure et alcaline (pH 7,2 à 8,2) pour protéger la coquille ; intolérante au cuivre',
+        'Eau dure et alcaline (pH 7,2 à 8,2) pour protéger la coquille ; intolérante au cuivre ; bac bien couvert, elle sort de l’eau',
         source(FK_NERITINE),
       ),
+      // Ponte (#678) : capsules dures, non écloses en eau douce (FishKeeper) ;
+      // rythme, nombre et durée avant effacement : approximations de jeu.
       note(
-        'Pond sur le décor, mais les œufs n’éclosent pas en eau douce ; bac bien couvert, elle sort de l’eau',
+        'Reproduction : de petites capsules blanches et dures collées sur le décor, qui n’éclosent pas en eau douce ; dans le jeu (approximation), un couple nourri entre 22 et 26 °C en colle quelques-unes sur les rochers à chaque période, et elles s’effacent sans éclore',
         source(FK_NERITINE),
       ),
     ],
