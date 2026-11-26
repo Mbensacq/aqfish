@@ -11192,6 +11192,12 @@
           "debut": "2026-11-26T06:08:55.086Z",
           "fin": "2026-11-26T06:46:23.914Z",
           "note": "Verdict OK, 0 bug, captures c308 publiées (unitaires 6479 OK, CI 13/13, 176/177 identiques à c307, salvinia = bruit HUD connu ; e2e local interrompu)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-26T06:46:58.870Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
