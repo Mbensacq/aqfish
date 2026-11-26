@@ -3,6 +3,7 @@ import { Color, Matrix4 } from 'three';
 import {
   EGG_HATCH_TIME,
   EGG_SPECIES,
+  laysInLeaves,
   laysNearAnemone,
   laysOnVegetation,
   MAX_EGGS,
@@ -105,10 +106,10 @@ describe('EggLayer (#478)', () => {
     layer.dispose();
   });
 
-  it('espèces dessinées après l’eau tirées des listes de `sim/eggs.ts` (#662, #685)', () => {
+  it('espèces dessinées après l’eau tirées des listes de `sim/eggs.ts` (#662, #685, #676)', () => {
     for (const species of EGG_SPECIES) {
       expect(eggDrawnAfterWater(species)).toBe(
-        laysNearAnemone(species) || laysOnVegetation(species),
+        laysNearAnemone(species) || laysOnVegetation(species) || laysInLeaves(species),
       );
       const layer = new EggLayer();
       layer.update([{ ...egg(EGG_HATCH_TIME * 0.75), species }], EGG_HATCH_TIME);

@@ -455,6 +455,11 @@ describe('textes affichés, figés à la lettre (#304)', () => {
         text: 'Sans poissons ; éviter au-dessus de 23 °C ; préférer les sujets nés en captivité',
         status: 'Source : documentation du projet (Caudata Culture)',
       },
+      // Ponte (#676) : note ajoutée, source Caudata Culture.
+      {
+        text: 'Reproduction : de mars à juillet, entre 15 et 23 °C, la femelle pond ses œufs un à un et replie une feuille de plante aquatique sur chacun ; dans le jeu (approximation), un couple nourri pond un œuf à la fois dans une feuille libre d’une plante, et la larve n’est pas simulée',
+        status: 'Source : https://caudata.org/cc/species/Cynops/C_orientalis.shtml',
+      },
     ]);
     expect(sheetNotes('kuhli')).toEqual([
       {
