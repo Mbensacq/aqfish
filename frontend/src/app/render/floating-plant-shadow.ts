@@ -3,7 +3,7 @@ import { BufferAttribute, BufferGeometry, DoubleSide, Mesh, MeshBasicMaterial } 
 import type { DecorItem } from '../sim/decor';
 import { FLOATING_LEAF_ROW, plantModel, type PlantModel } from '../sim/plant';
 import { SAND_THICKNESS } from '../sim/tank';
-import { PALETTE } from './palette';
+import { FLOOR_SHADOW_COLOR } from './floor-shadow';
 
 /**
  * Ombre d'une plante flottante sur le fond (issue #824), comme celle des nénuphars
@@ -18,8 +18,11 @@ export const FLOATING_SHADOW_LIFT = 0.003;
 /** Décalage de l'ombre sur le fond, repère du bac (mètres) : celui des nénuphars. */
 export const FLOATING_SHADOW_OFFSET = { x: -0.009, z: -0.044 } as const;
 
-/** Couleur de l'ombre : l'eau, plus sombre sous le radeau. */
-export const FLOATING_SHADOW_COLOR = PALETTE.eauProfonde;
+/**
+ * Couleur de l'ombre en plein jour : l'eau, plus sombre sous le radeau. Elle suit ensuite la
+ * lumière comme l'ombre des nénuphars (`floorShadowInto`, #832) : bleu nuit la nuit.
+ */
+export const FLOATING_SHADOW_COLOR = FLOOR_SHADOW_COLOR;
 
 /** Ordre de rendu de l'ombre : après le volume d'eau (1), comme l'ombre des nénuphars. */
 export const FLOATING_SHADOW_RENDER_ORDER = 1.2;

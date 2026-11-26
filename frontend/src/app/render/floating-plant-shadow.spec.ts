@@ -1,4 +1,4 @@
-import { MeshBasicMaterial } from 'three';
+import { Color, type Mesh, MeshBasicMaterial } from 'three';
 import { describe, expect, it } from 'vitest';
 
 import type { DecorItem } from '../sim/decor';
@@ -9,8 +9,11 @@ import {
   createFloatingPlantShadow,
   FLOATING_SHADOW_LIFT,
   FLOATING_SHADOW_OFFSET,
+  FLOATING_SHADOW_COLOR,
   floatingPlantShadowGeometry,
 } from './floating-plant-shadow';
+import { FLOOR_NIGHT_SHADOW_COLOR, floorShadowInto } from './floor-shadow';
+import { PALETTE } from './palette';
 
 /** Ombre des plantes flottantes sur le fond (issue #824). */
 
@@ -58,6 +61,28 @@ describe('ombre des plantes flottantes (#824)', () => {
     layer.setDecor([rock]);
     expect(layer.count).toBe(1);
     expect(layer.object.getObjectByName('plante-1-ombre')).toBeUndefined();
+    layer.dispose();
+  });
+
+  it('l’ombre suit la lumière comme celle des nénuphars (#832), sans allocation', () => {
+    const layer = new DecorLayer();
+    layer.setDecor([ITEM]);
+    const shadow = layer.object.getObjectByName('plante-0-ombre') as Mesh;
+    const color = layer.floatingShadowColor;
+    expect(shadow.material).toBeInstanceOf(MeshBasicMaterial);
+    expect((shadow.material as MeshBasicMaterial).color).toBe(color);
+    expect(FLOATING_SHADOW_COLOR).toBe(PALETTE.eauProfonde);
+    // Plein jour sous une teinte blanche : l'eau profonde, à l'octet près.
+    layer.setTint([1, 1, 1]);
+    expect(`#${color.getHexString()}`).toBe(FLOATING_SHADOW_COLOR);
+    // Pleine nuit, ciel clair : le bleu nuit des ombres du fond, même objet couleur.
+    layer.setTint([0.3, 0.35, 0.5], 0.9, 0, 1);
+    expect(layer.floatingShadowColor).toBe(color);
+    expect(`#${color.getHexString()}`).toBe(FLOOR_NIGHT_SHADOW_COLOR);
+    // Entre les deux : la même couleur que l'ombre des nénuphars, sans le facteur de canopée.
+    layer.setTint([0.6, 0.7, 0.8], 0.88, 0.4, 0.7);
+    const expected = floorShadowInto([0.6, 0.7, 0.8], 0.4, 0.7, new Color());
+    expect(color.equals(expected)).toBe(true);
     layer.dispose();
   });
 });

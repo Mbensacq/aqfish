@@ -148,7 +148,7 @@ export class SceneLighting {
     }
     // Ombre des plantes hautes (#477, #494) : sur tout le décor posé au fond (plantes, rochers,
     // bois, une seule matière), ni sur les animaux ni sur l'eau ; × 1 sans ombre.
-    layers.decor.setTint(tint, this.plantShade);
+    layers.decor.setTint(tint, this.plantShade, light.intensity, overcast);
     layers.lilyPads.setTint(tint, light.intensity, overcast);
     layers.room.setDaylight(light, overcast);
     // Pénalités tirées de la seule intensité du jour : jamais de tons du soir à midi.

@@ -12,7 +12,11 @@ haut de sa section.
   par élément à chaque pas), il a dépassé le délai de 5 s deux fois de suite, alors que la
   mesure locale ne montrait pas d'écart net (bruit de ±30 %). Une étape appelée au pas fin
   parcourt le décor **une fois**, sans appel par élément ; comparer la durée de ce test dans le
-  journal de la CI (`✓ … ms`) avec celle d'un passage récent sur `main`. (2026-11-25)
+  journal de la CI (`✓ … ms`) avec celle d'un passage récent sur `main`. Le test a de nouveau
+  dépassé 5 s deux fois sur un commit sans code (cycle 309, #850, runner lent) : il pose
+  désormais la pousse au plafond et n'avance qu'une minute (34 ms en local au lieu de 391) ;
+  un test qui ne vise pas la pousse elle-même part d'un état posé, pas de jours de pas fins.
+  (2026-11-26)
 - **Algues des captures : voile teal qu'on prend pour les plantes du fond** (cycle 302, #833) :
   sur `front-algues.png`, les plaques (voile `vegetation` voilé par l'eau, filaments verticaux)
   ressemblent aux plantes d'arrière-plan ; on croit à tort qu'elles ne sont pas dessinées. Pour

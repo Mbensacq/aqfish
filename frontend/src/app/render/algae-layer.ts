@@ -9,6 +9,7 @@ import {
 } from 'three';
 
 import { ALGAE_VISIBLE_COVERAGE, drawnRadius, type AlgaePatch, type AlgaeWall } from '../sim/algae';
+import { isHardAlgae } from '../sim/grazing';
 import type { SceneLayer } from './effect-layer';
 import { applyFlatBrightness } from './night-shade';
 import { PALETTE } from './palette';
@@ -19,24 +20,50 @@ import { PALETTE } from './palette';
  * suit la couverture (rayon dessiné `drawnRadius`) ; sous `ALGAE_VISIBLE_COVERAGE`, elle est
  * masquée.
  *
- * Aspect (#488) : un voile terne et filamenteux, pour ne pas ressembler aux plantes (contour
- * sombre, feuilles claires et reflets lumineux). Fond `vegetation` (vert moyen, sans reflet),
- * filaments verticaux `vegetationOmbre` une colonne sur deux, coupés par endroits ; bord
- * tramé (une case sur deux) au lieu d'un contour, pour un bord flou où l'eau transparaît.
- * Couleurs de la végétation de la palette, voilées par l'eau comme les plantes : aucune
- * couleur ajoutée à la palette. Sans algue, la couche est masquée : images inchangées, à
- * l'octet près.
+ * Aspect (#488) : un voile filamenteux, pour ne pas ressembler aux plantes (contour sombre,
+ * feuilles claires et reflets lumineux) ; bord tramé (une case sur deux) au lieu d'un contour,
+ * pour un bord flou où l'eau transparaît.
+ *
+ * Lisibilité (#835) : voilées par l'eau, les couleurs d'origine (`vegetation` et
+ * `vegetationOmbre`) tombaient sur les tons de l'eau et les plaques ne se voyaient plus. Les
+ * filaments verticaux, une colonne sur deux coupée par endroits, sont désormais
+ * `grenouilleVert` (vert-jaune des algues filamenteuses) sur un fond `vegetation` qui se fond
+ * dans l'eau : le recul des plaques broutées se lit sur les vitres. Les algues dures
+ * (`HARD_ALGAE_PATCHES`) ont leur propre aspect : voile brun-gris semé de points sombres.
+ * Couleurs de la palette, aucune couleur ajoutée. Sans algue, la couche est masquée : images
+ * inchangées, à l'octet près.
  */
 
 /** Côté d'un pixel de plaque, en mètres (comme les voxels des feuilles de catappa). */
 export const ALGAE_PIXEL = 0.01;
 /** Retrait de la plaque vers l'intérieur du bac, en mètres : devant la vitre, sans la toucher. */
 export const ALGAE_INSET = 0.003;
-/** Couleurs du voile et de ses filaments (#488 : ni contour sombre, ni reflet clair). */
+/**
+ * Retrait des plaques d'algues dures (#835) : un peu plus loin de la vitre que les autres, pour
+ * passer devant une plaque tendre qui les chevauche.
+ */
+export const HARD_ALGAE_INSET = 0.004;
+/** Couleurs du voile et de ses filaments (#488 : ni contour sombre, ni reflet clair ; #835). */
 export const ALGAE_COLORS = {
   voile: PALETTE.vegetation,
-  filament: PALETTE.vegetationOmbre,
+  filament: PALETTE.grenouilleVert,
 } as const;
+/**
+ * Couleurs des plaques d'algues dures (`HARD_ALGAE_PATCHES`, #835) : voile brun-gris semé de
+ * points sombres, pour qu'on les distingue des algues vertes tendres que mangent les crevettes.
+ */
+export const HARD_ALGAE_COLORS = {
+  voile: PALETTE.sableOmbre,
+  point: PALETTE.rocheSombre,
+} as const;
+
+/**
+ * Vrai si la case (`r`, `c`) d'une plaque d'algues dures de variante `variant` porte un point
+ * dur : une rangée sur trois, un point toutes les trois cases, décalé d'une rangée à l'autre.
+ */
+export function isHardSpot(r: number, c: number, variant: number): boolean {
+  return r % 3 === 0 && (c + r / 3 + variant) % 3 === 0;
+}
 
 /**
  * Vrai si la case (`r`, `c`) d'une plaque de variante `variant` porte un filament : une
@@ -76,12 +103,14 @@ export function algaeMask(cells: number, variant: number): boolean[][] {
 export function buildAlgaePatch(
   cells: number,
   variant: number,
+  hard = false,
 ): { readonly positions: Float32Array; readonly colors: Float32Array } {
   const mask = algaeMask(cells, variant);
   const size = mask.length;
   const filled = (r: number, c: number) => r >= 0 && r < size && c >= 0 && c < size && mask[r][c];
-  const voile = new Color(ALGAE_COLORS.voile);
-  const filament = new Color(ALGAE_COLORS.filament);
+  const voile = new Color(hard ? HARD_ALGAE_COLORS.voile : ALGAE_COLORS.voile);
+  const filament = new Color(hard ? HARD_ALGAE_COLORS.point : ALGAE_COLORS.filament);
+  const marked = hard ? isHardSpot : isFilament;
   const positions: number[] = [];
   const colors: number[] = [];
   const p = ALGAE_PIXEL;
@@ -96,7 +125,7 @@ export function buildAlgaePatch(
       if (edge && (r + c) % 2 === 1) {
         continue;
       }
-      const color = isFilament(r, c, variant) ? filament : voile;
+      const color = marked(r, c, variant) ? filament : voile;
       const x0 = c * p - half;
       const y0 = half - (r + 1) * p;
       const x1 = x0 + p;
@@ -179,13 +208,14 @@ export class AlgaeLayer implements SceneLayer {
     this.disposeMeshes();
     this.patches = patches;
     this.meshes = patches.map((patch, index) => {
-      const data = buildAlgaePatch(patch.radius / ALGAE_PIXEL, index);
+      const data = buildAlgaePatch(patch.radius / ALGAE_PIXEL, index, isHardAlgae(index));
       const geometry = new BufferGeometry();
       geometry.setAttribute('position', new BufferAttribute(data.positions, 3));
       geometry.setAttribute('color', new BufferAttribute(data.colors, 3));
       const mesh = new Mesh(geometry, this.material);
       const [ix, iz] = WALL_INWARD[patch.wall];
-      mesh.position.set(patch.x + ix * ALGAE_INSET, patch.y, patch.z + iz * ALGAE_INSET);
+      const inset = isHardAlgae(index) ? HARD_ALGAE_INSET : ALGAE_INSET;
+      mesh.position.set(patch.x + ix * inset, patch.y, patch.z + iz * inset);
       mesh.rotation.y = WALL_YAW[patch.wall];
       mesh.visible = false;
       mesh.matrixAutoUpdate = false;

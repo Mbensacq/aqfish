@@ -4,10 +4,14 @@ import {
   ALGAE_COLORS,
   ALGAE_INSET,
   AlgaeLayer,
+  HARD_ALGAE_COLORS,
+  HARD_ALGAE_INSET,
   algaeMask,
   buildAlgaePatch,
   isFilament,
+  isHardSpot,
 } from './algae-layer';
+import { HARD_ALGAE_PATCHES } from '../sim/grazing';
 import { ALGAE_PATCH_COUNT, ALGAE_VISIBLE_COVERAGE, algaePatches } from '../sim/algae';
 import { waterVolume } from '../sim/tank';
 import { PALETTE, PALETTE_COLORS } from './palette';
@@ -53,6 +57,28 @@ describe('AlgaeLayer (#476)', () => {
       expect(mesh.position.z).toBeGreaterThanOrEqual(WATER.minZ + ALGAE_INSET - 1e-12);
       expect(mesh.position.z).toBeLessThanOrEqual(WATER.maxZ - ALGAE_INSET + 1e-12);
     });
+    layer.dispose();
+  });
+
+  it('algues dures (#835) : teinte propre, un peu plus loin de leur vitre', () => {
+    const layer = new AlgaeLayer();
+    layer.setAlgae(PATCHES, new Array(ALGAE_PATCH_COUNT).fill(1));
+    const hardVoile = new Color(HARD_ALGAE_COLORS.voile);
+    PATCHES.forEach((patch, i) => {
+      const mesh = layer.object.children[i] as Mesh;
+      const colors = mesh.geometry.getAttribute('color').array;
+      const hard = HARD_ALGAE_PATCHES.includes(i);
+      const hasHardVoile = Array.from({ length: colors.length / 3 }, (_, k) => k * 3).some(
+        (k) => colors[k] === Math.fround(hardVoile.r) && colors[k + 1] === Math.fround(hardVoile.g),
+      );
+      expect(hasHardVoile).toBe(hard);
+      const inset =
+        patch.wall === 'fond' || patch.wall === 'devant'
+          ? Math.abs(mesh.position.z - patch.z)
+          : Math.abs(mesh.position.x - patch.x);
+      expect(inset).toBeCloseTo(hard ? HARD_ALGAE_INSET : ALGAE_INSET, 12);
+    });
+    expect(HARD_ALGAE_INSET).toBeGreaterThan(ALGAE_INSET);
     layer.dispose();
   });
 
@@ -116,6 +142,46 @@ describe('plaque d’algues en pixels (#476)', () => {
     expect(threads).toBeGreaterThan(0);
     expect(film).toBeGreaterThan(0);
     expect(threads + film).toBe(data.colors.length / 3);
+  });
+
+  it('algues dures : couleurs de la palette, distinctes des algues tendres et des plantes', () => {
+    for (const color of Object.values(HARD_ALGAE_COLORS)) {
+      expect(PALETTE_COLORS).toContain(color);
+      expect(Object.values(ALGAE_COLORS)).not.toContain(color);
+      expect([PALETTE.vegetationClaire, PALETTE.vegetationLumineuse]).not.toContain(color);
+    }
+    const data = buildAlgaePatch(5, 3, true);
+    expect(data.colors.length).toBe(data.positions.length);
+    const voile = new Color(HARD_ALGAE_COLORS.voile);
+    const point = new Color(HARD_ALGAE_COLORS.point);
+    let film = 0;
+    let spots = 0;
+    for (let k = 0; k < data.colors.length; k += 3) {
+      if (data.colors[k] === Math.fround(voile.r) && data.colors[k + 1] === Math.fround(voile.g)) {
+        film++;
+      } else if (
+        data.colors[k] === Math.fround(point.r) &&
+        data.colors[k + 1] === Math.fround(point.g)
+      ) {
+        spots++;
+      }
+    }
+    expect(spots).toBeGreaterThan(0);
+    expect(film).toBeGreaterThan(spots);
+    expect(film + spots).toBe(data.colors.length / 3);
+    // Même forme que la plaque tendre de même variante : seule la couleur change.
+    expect(data.positions).toEqual(buildAlgaePatch(5, 3).positions);
+  });
+
+  it('points durs : une rangée sur trois, un point toutes les trois cases, déterministes', () => {
+    const row = Array.from({ length: 9 }, (_, c) => isHardSpot(0, c, 0));
+    expect(row.filter(Boolean)).toHaveLength(3);
+    for (let c = 0; c < 9; c++) {
+      expect(isHardSpot(1, c, 0)).toBe(false);
+      expect(isHardSpot(2, c, 0)).toBe(false);
+      expect(isHardSpot(3, c, 0)).toBe(isHardSpot(0, c + 1, 0));
+      expect(isHardSpot(0, c, 1)).toBe(isHardSpot(0, c + 1, 0));
+    }
   });
 
   it('filaments : une colonne sur deux, coupés par endroits, déterministes', () => {
