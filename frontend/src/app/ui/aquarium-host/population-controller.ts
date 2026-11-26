@@ -69,9 +69,14 @@ export class PopulationController {
     const limits = roomPopulationLimits(room, tanks.selectedTankId, world);
     // Capacité du bac en mode soins (#809, ADR 0172) : un ajout au-delà est ramené au plus grand
     // effectif qu'elle permet, jamais sous l'effectif actuel ; le mode décor n'est pas borné.
-    const { liters, decor } = tankCapacity(world);
+    const { liters, grossLiters, decor } = tankCapacity(world);
     const limit = capacityLimits(
-      { liters, population: populationOf(world), mode: decor ? 'decor' : 'soins' },
+      {
+        liters,
+        milieuLiters: grossLiters,
+        population: populationOf(world),
+        mode: decor ? 'decor' : 'soins',
+      },
       [species],
       limits,
     ).limits[species];

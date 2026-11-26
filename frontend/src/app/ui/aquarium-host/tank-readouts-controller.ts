@@ -204,6 +204,7 @@ export class TankReadoutsController {
     const readout = tankCapacity(world);
     const tank: PossibleSpeciesTank = {
       liters: readout.liters,
+      milieuLiters: readout.grossLiters,
       population: populationOf(world),
       mode: readout.decor ? 'decor' : 'soins',
       species: environmentById(world.environment).species,

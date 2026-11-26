@@ -679,8 +679,9 @@ Désaccords entre sources :
     rédigée par une vétérinaire) donnent un volume de **terrarium entier** pour le triton
     (56,8 L pour un, 18,9 L par adulte de plus) et le sonneur (37,9 L pour un couple ;
     désaccord : 56,8 L pour cinq selon [70]). Décision : sonneur et triton seront comptés sur
-    le volume du milieu, berge comprise ; l'axolotl reste compté sur l'eau. Mise en œuvre au
-    lot de dette du cycle 306 ; d'ici là, la règle de l'ADR 0171 s'applique.
+    le volume du milieu, berge comprise ; l'axolotl reste compté sur l'eau. **Mis en œuvre**
+    au cycle 307 (`sim/semi-terrestrial-needs.ts`) : au paludarium par défaut, 2 sonneurs et
+    1 triton demandent 94,6 L des 105 L du milieu (90 %) ; un second triton est refusé.
 19. Capacité des bacs par défaut (#807) : au plafond, le bassin (7 koïs de 60 cm, eau froide
     4 L/cm, règle de la RSPCA pour le poisson rouge appliquée à la koï) demande 1 680 L pour
     834 L d'eau, et le paludarium (classe « amphibien » 3 L/cm, approximation) 114 L pour 45,7 L

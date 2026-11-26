@@ -45,7 +45,11 @@ export function tankCapacity(world: World): TankCapacityReadout {
   return {
     grossLiters: volume.grossLiters,
     liters: volume.liters,
-    status: capacityStatus({ liters: volume.liters, population: populationOf(world) }),
+    status: capacityStatus({
+      liters: volume.liters,
+      milieuLiters: volume.grossLiters,
+      population: populationOf(world),
+    }),
     decor: careModeOf(world) === 'decor',
   };
 }
@@ -119,7 +123,18 @@ export function capacityLine(readout: TankCapacityReadout): string {
     return `Mode décor : capacité non contrôlée ; ${volume}`;
   }
   const { needLiters, occupation } = readout.status;
-  return `${percentText(occupation)} de la capacité : ${litersText(needLiters)} demandés pour ${volume}`;
+  return `${percentText(occupation)} de la capacité : ${litersText(needLiters)} demandés pour ${volume}${milieuText(readout)}`;
+}
+
+/**
+ * Part des amphibiens semi-terrestres, comptés sur le milieu (ADR 0177) : « ; et 37,8 L pour
+ * 105 L de milieu (berge comprise) », ou rien si le bac n'en a pas.
+ */
+function milieuText(readout: TankCapacityReadout): string {
+  const need = readout.status.milieuNeedLiters;
+  return need > 0
+    ? ` ; et ${litersText(need)} pour ${litersText(readout.grossLiters)} de milieu (berge comprise)`
+    : '';
 }
 
 /**
@@ -130,5 +145,5 @@ export function capacityAlert(readout: TankCapacityReadout): string | null {
   if (readout.decor || !readout.status.over) {
     return null;
   }
-  return `Bac au-delà de sa capacité (${percentText(readout.status.occupation)}) : ${litersText(readout.status.needLiters)} demandés pour ${litersText(readout.liters)} d’eau réelle. Aucun animal n’a été retiré ; ajouts refusés tant que le bac reste trop plein.`;
+  return `Bac au-delà de sa capacité (${percentText(readout.status.occupation)}) : ${litersText(readout.status.needLiters)} demandés pour ${litersText(readout.liters)} d’eau réelle${milieuText(readout)}. Aucun animal n’a été retiré ; ajouts refusés tant que le bac reste trop plein.`;
 }

@@ -29,8 +29,8 @@ test.describe('Tritons (#133)', () => {
     const errors = await open(page, '?environnement=paludarium&seed=42');
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /triton:0/);
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /grenouille:2/);
-    // Un triton (30 L) ne tient pas avec les deux sonneurs (36 L) dans 45,7 L d'eau réelle
-    // (ADR 0173) : le réglage et le plafond technique (3) se testent en mode décor.
+    // Plafond technique (3) au-delà de la capacité (un seul triton avec les deux sonneurs dans
+    // les 105 L du milieu, ADR 0177) : il se teste en mode décor.
     await passerEnModeDecor(page);
     await ouvrirReglages(page, 'Population');
     const field = page.getByRole('spinbutton', { name: 'Nombre de tritons à ventre de feu' });
@@ -44,6 +44,20 @@ test.describe('Tritons (#133)', () => {
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /triton:0/);
     // Les grenouilles ne bougent pas.
     await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /grenouille:2/);
+    expect(errors).toEqual([]);
+  });
+
+  test('mode soins : un triton cohabite avec les deux sonneurs, pas deux (#813, ADR 0177)', async ({
+    page,
+  }) => {
+    const errors = await open(page, '?environnement=paludarium&seed=42');
+    await ouvrirReglages(page, 'Population');
+    const field = page.getByRole('spinbutton', { name: 'Nombre de tritons à ventre de feu' });
+    await field.fill('3');
+    await field.dispatchEvent('change');
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /triton:1/);
+    await expect(hostEl(page)).toHaveAttribute('data-aqfish-population', /grenouille:2/);
+    await expect(field).toHaveValue('1');
     expect(errors).toEqual([]);
   });
 
