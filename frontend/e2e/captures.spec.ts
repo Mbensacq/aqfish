@@ -317,7 +317,8 @@ test.describe('Captures', () => {
     { name: 'front-algues', query: 'algues=0.8&camera=front' },
     { name: 'three-quarter-algues', query: 'algues=0.8' },
     // Brouteurs (#833) : mêmes algues après 10 minutes d'otocinclus et de crevettes ; les deux
-    // plaques d'algues dures (fond, côté droit), qu'ils ne mangent pas, restent seules.
+    // plaques d'algues dures (fond, côté droit, brun-gris depuis #835), qu'ils ne mangent pas,
+    // restent seules.
     { name: 'front-algues-brouteurs', query: `algues=0.8&camera=front&${GRAZERS}&time=600` },
     // Encrassement (#607) : voile de dépôts au pied des vitres, dans les coins et sur le sable,
     // de jour et de nuit ; bac nettoyé = captures sans paramètre, inchangées.
