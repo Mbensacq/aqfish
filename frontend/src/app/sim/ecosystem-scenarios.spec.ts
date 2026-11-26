@@ -36,11 +36,15 @@ import { TAP_HARDNESS } from './water-hardness';
 /**
  * Scénarios de référence de l'écosystème (`docs/ECOSYSTEME.md` § 4, issue #799) : chacun fait
  * tourner un bac des semaines durant à gros pas et vérifie l'issue attendue. Un échec est une
- * **régression de réalisme**. Chaque scénario tourne en bien moins de 5 s (`timeout`).
+ * **régression de réalisme**. Chaque scénario tourne en bien moins de 5 s en local ; le délai
+ * explicite protège d'un runner de CI chargé (`docs/PIEGES.md`, « Délai de 5 s de Vitest », #839).
  */
 
-/** Durée maximale d'un scénario, en millisecondes (critère de l'issue #799). */
-const SCENARIO_TIMEOUT_MS = 5000;
+/**
+ * Délai d'un scénario, en millisecondes : bien au-delà des 5 s par défaut de Vitest, qu'un
+ * runner chargé a déjà dépassées (S10, #839) sans que le code soit en cause.
+ */
+const SCENARIO_TIMEOUT_MS = 30_000;
 
 /** Santé en dessous de laquelle un animal est dit malade (moitié de la pleine santé). */
 const SICK_HEALTH = 0.5;
@@ -448,18 +452,22 @@ describe('scénarios de référence de l’écosystème (#799, #805, #807, #821,
     SCENARIO_TIMEOUT_MS,
   );
 
-  it('le harnais ne modifie jamais le bac de départ et rend le même relevé deux fois', () => {
-    const world = goldfish(1);
-    const before = JSON.stringify(world);
-    const scenario: EcosystemScenario = { world, liters: 120, care: NORMAL_CARE, days: 3 };
+  it(
+    'le harnais ne modifie jamais le bac de départ et rend le même relevé deux fois',
+    () => {
+      const world = goldfish(1);
+      const before = JSON.stringify(world);
+      const scenario: EcosystemScenario = { world, liters: 120, care: NORMAL_CARE, days: 3 };
 
-    const first = runScenario(scenario);
-    const second = runScenario(scenario);
+      const first = runScenario(scenario);
+      const second = runScenario(scenario);
 
-    expect(JSON.stringify(world)).toBe(before);
-    expect(JSON.stringify(second)).toBe(JSON.stringify(first));
-    expect(first.world.time).toBe(3 * SCENARIO_DAY_SECONDS);
-  });
+      expect(JSON.stringify(world)).toBe(before);
+      expect(JSON.stringify(second)).toBe(JSON.stringify(first));
+      expect(first.world.time).toBe(3 * SCENARIO_DAY_SECONDS);
+    },
+    SCENARIO_TIMEOUT_MS,
+  );
 
   it.each([
     { feedEverySeconds: 7 },
@@ -471,14 +479,22 @@ describe('scénarios de référence de l’écosystème (#799, #805, #807, #821,
     expect(() => runScenario({ world: goldfish(1), care, days: 1 })).toThrow(RangeError);
   });
 
-  it('nourri sans changement d’eau, un bac peuplé finit en eau mauvaise (le harnais voit la dégradation)', () => {
-    const record = runScenario({
-      world: createDefaultWorld(1, 'tropical'),
-      care: { feedEverySeconds: NORMAL_CARE.feedEverySeconds },
-      days: 60,
-    });
+  it(
+    'nourri sans changement d’eau, un bac peuplé finit en eau mauvaise (le harnais voit la dégradation)',
+    () => {
+      const record = runScenario({
+        world: createDefaultWorld(1, 'tropical'),
+        care: { feedEverySeconds: NORMAL_CARE.feedEverySeconds },
+        days: 60,
+      });
 
-    expect(record.worstQuality).toBe('mauvaise');
-    expect(record.firstBadDay).toBeGreaterThan(0);
+      expect(record.worstQuality).toBe('mauvaise');
+      expect(record.firstBadDay).toBeGreaterThan(0);
+    },
+    SCENARIO_TIMEOUT_MS,
+  );
+
+  it('le délai des scénarios dépasse nettement les 5 s par défaut de Vitest (#839)', () => {
+    expect(SCENARIO_TIMEOUT_MS).toBeGreaterThanOrEqual(30_000);
   });
 });

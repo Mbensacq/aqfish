@@ -132,10 +132,20 @@ export function grazeAlgaeInPlace(
       eaten += biteInPlace(cover, animal, grazer, dt);
     }
   }
-  if (eaten > 0 && cover.every((c) => c === 0)) {
+  if (eaten > 0 && isEmptyCover(cover)) {
     delete water.algae;
   }
   return eaten;
+}
+
+/** Vrai si toutes les plaques sont nues ; boucle simple, sans fermeture par pas (#835). */
+function isEmptyCover(cover: readonly number[]): boolean {
+  for (const c of cover) {
+    if (c !== 0) {
+      return false;
+    }
+  }
+  return true;
 }
 
 /** Une bouchée d'un brouteur, répartie sur les plaques qu'il mange ; renvoie sa taille. */
