@@ -31,6 +31,7 @@ import {
   type MaintenanceReadout,
   type MaintenanceTask,
 } from '../../sim/maintenance';
+import { reproductionSummary, reproductionText } from '../../sim/reproduction-summary';
 import { worldAlerts } from '../../sim/tank-list';
 import {
   createWaterHistory,
@@ -72,6 +73,8 @@ export class TankRecordsController {
   readonly waterHistory = signal<WaterHistoryView | null>(null);
   /** Journal du bac affiché (#581), du plus récent au plus ancien ; vide en capture. */
   readonly journal = signal<readonly JournalLine[]>([]);
+  /** Bilan de reproduction des derniers jours du bac affiché (#677) ; `null` en capture. */
+  readonly reproduction = signal<string | null>(null);
   /** Parcours « Mon premier aquarium » du bac affiché (#512) ; `null` : non proposé. */
   readonly firstTankPath = signal<FirstTankPathView | null>(null);
 
@@ -303,5 +306,7 @@ export class TankRecordsController {
       this.shownJournalVersion = journal.version;
       this.journal.set(journalLines(journal));
     }
+    // Relu à chaque relevé : la période glisse avec les jours ; le texte, inchangé, ne republie rien.
+    this.reproduction.set(reproductionText(reproductionSummary(journal.entries, world.time)));
   }
 }
