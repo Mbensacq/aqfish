@@ -107,6 +107,20 @@ describe('brouteurs d’algues (#833)', () => {
     expect(water.algae).toEqual(new Array(8).fill(0.5));
   });
 
+  it('le champ algae n’est retiré que si le broutage vide toutes les plaques (#835)', () => {
+    const emptied: { algae?: readonly number[] } = { algae: [0, 0.001, 0, 0, 0, 0, 0, 0] };
+    expect(grazeAlgaeInPlace(emptied, [animal('ancistrus', 1)], 1000)).toBeCloseTo(0.001, 12);
+    expect(emptied.algae).toBeUndefined();
+
+    const left: { algae?: readonly number[] } = { algae: [0, 0.001, 0, 0.5, 0, 0, 0, 0] };
+    expect(grazeAlgaeInPlace(left, [animal('cerise', 1)], 1000)).toBeCloseTo(0.001, 12);
+    expect(left.algae).toEqual([0, 0, 0, 0.5, 0, 0, 0, 0]);
+
+    const bare: { algae?: readonly number[] } = { algae: new Array(8).fill(0) };
+    expect(grazeAlgaeInPlace(bare, [animal('neritine', 1)], 1)).toBe(0);
+    expect(bare.algae).toEqual(new Array(8).fill(0));
+  });
+
   it('crevettes face aux seules algues dures : rien à manger, faim intacte', () => {
     const water = { algae: [0, 0, 0, 0.5, 0, 0, 0.5, 0] };
     const shrimp = animal('cerise', 0.8);
