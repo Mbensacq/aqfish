@@ -43,13 +43,23 @@ import type { Box3 } from './tank';
  *   (`EGG_EAT_RADIUS`) les mange, comme ceux de la vitre. Ils éclosent sans alevin (alevins du
  *   poisson rouge hors périmètre de #675).
  *
+ * - **Triton** (issue #676) : même calendrier ; ponte de 15 à 23 °C (`NEWT_SPAWN_TEMPERATURE`,
+ *   Caudata Culture), un œuf par période (`LEAF_CLUTCH`), posé dans une feuille immergée libre
+ *   d'une plante enracinée (`layLeafClutch`, `sim/eggs-leaf.ts`) : un œuf par feuille. Sans plante, aucune
+ *   ponte. Repliés dans la feuille, ils ne sont pas mangés ; ils éclosent sans larve simulée.
+ *
  * Toutes les valeurs sont des **approximations de jeu** : dans la nature, l'éclosion prend
  * plusieurs jours et une ponte compte souvent plusieurs dizaines d'œufs (plusieurs centaines
  * pour le poisson-clown).
  */
 
 /** Espèces ovipares qui pondent des œufs dans la simulation. */
-export const EGG_SPECIES: readonly SpeciesId[] = Object.freeze(['corydora', 'clown', 'rouge']);
+export const EGG_SPECIES: readonly SpeciesId[] = Object.freeze([
+  'corydora',
+  'clown',
+  'rouge',
+  'triton',
+]);
 /**
  * Espèces dont la ponte est collée près d'une anémone (`layReefClutch`) et dont les œufs
  * éclosent en larves planctoniques, qui quittent le bac (issue #653).
@@ -60,6 +70,12 @@ export const REEF_EGG_SPECIES: readonly SpeciesId[] = Object.freeze(['clown']);
  * adultes, éclosion sans alevin (issue #675).
  */
 export const VEGETATION_EGG_SPECIES: readonly SpeciesId[] = Object.freeze(['rouge']);
+/**
+ * Espèces qui pondent un à un dans les feuilles des plantes (`layLeafClutch` de
+ * `sim/eggs-leaf.ts`, issue #676) : œufs isolés, repliés dans la feuille (à l'abri des adultes),
+ * éclosion sans larve simulée.
+ */
+export const LEAF_EGG_SPECIES: readonly SpeciesId[] = Object.freeze(['triton']);
 
 /** Période de ponte, en secondes simulées. */
 export const SPAWN_PERIOD = 600;
@@ -117,6 +133,20 @@ export const EGG_SAND_LIFT = 0.006;
 /** Nombre d'œufs d'une ponte, bornes comprises (avant plafonds). */
 export const MIN_CLUTCH = 4;
 export const MAX_CLUTCH = 10;
+/**
+ * Nombre d'œufs d'une ponte dans les feuilles (triton) : un seul, la femelle pond « un à un »
+ * (Caudata Culture, _Cynops orientalis_ : 2,8 œufs par jour en moyenne) ; une ponte par période
+ * (approximation de jeu). Les œufs s'accumulent d'une période à l'autre, chacun sur sa feuille.
+ */
+export const LEAF_CLUTCH = 1;
+/**
+ * Température de ponte du triton, en °C, bornes comprises : Caudata Culture (_Cynops
+ * orientalis_), reproduction de mars à juillet « quand l'eau est entre 15 et 23 °C ». Le
+ * paludarium (20 °C) est dans la plage.
+ */
+export const NEWT_SPAWN_TEMPERATURE: readonly [number, number] = Object.freeze([
+  15, 23,
+]) as readonly [number, number];
 /** Nombre maximal d'œufs dans un bac. */
 export const MAX_EGGS = 30;
 /** Durée d'incubation, en secondes simulées. */
@@ -179,18 +209,32 @@ export function laysOnVegetation(species: SpeciesId): boolean {
   return VEGETATION_EGG_SPECIES.includes(species);
 }
 
+/** Vrai si l'espèce pond un à un dans les feuilles (`LEAF_EGG_SPECIES`). */
+export function laysInLeaves(species: SpeciesId): boolean {
+  return LEAF_EGG_SPECIES.includes(species);
+}
+
 /**
  * Vrai si les œufs de l'espèce éclosent en alevins (faux : larves du clown qui quittent le bac,
- * œufs du poisson rouge dont les alevins ne sont pas encore simulés).
+ * œufs du poisson rouge dont les alevins ne sont pas encore simulés, larves du triton non
+ * simulées).
  */
 export function hatchesToFry(species: SpeciesId): boolean {
-  return laysEggs(species) && !laysNearAnemone(species) && !laysOnVegetation(species);
+  return (
+    laysEggs(species) &&
+    !laysNearAnemone(species) &&
+    !laysOnVegetation(species) &&
+    !laysInLeaves(species)
+  );
 }
 
 /** Plage de température de ponte de l'espèce, en °C, bornes comprises. */
 export function spawnTemperature(species: SpeciesId): readonly [number, number] {
   if (laysNearAnemone(species)) {
     return REEF_SPAWN_TEMPERATURE;
+  }
+  if (laysInLeaves(species)) {
+    return NEWT_SPAWN_TEMPERATURE;
   }
   return laysOnVegetation(species) ? GOLDFISH_SPAWN_TEMPERATURE : SPAWN_TEMPERATURE;
 }
@@ -215,8 +259,14 @@ export function spawnDraw(seed: number, species: SpeciesId, spawn: number, k: nu
   return prngOutput(state) / UINT32_RANGE;
 }
 
-/** Nombre d'œufs d'une ponte, dans [`MIN_CLUTCH`, `MAX_CLUTCH`]. */
+/**
+ * Nombre d'œufs d'une ponte, dans [`MIN_CLUTCH`, `MAX_CLUTCH`] ; `LEAF_CLUTCH` pour une espèce
+ * qui pond dans les feuilles.
+ */
 export function clutchSize(seed: number, species: SpeciesId, spawn: number): number {
+  if (laysInLeaves(species)) {
+    return LEAF_CLUTCH;
+  }
   const u = spawnDraw(seed, species, spawn, 0);
   return MIN_CLUTCH + Math.floor(u * (MAX_CLUTCH - MIN_CLUTCH + 1));
 }

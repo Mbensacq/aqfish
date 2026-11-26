@@ -120,6 +120,7 @@ import {
   fitSpawners,
   hatchesToFry,
   layClutch,
+  laysInLeaves,
   layVegetationClutch,
   laysOnVegetation,
   layReefClutch,
@@ -131,6 +132,7 @@ import {
   type MutableEgg,
   type SpawnConditions,
 } from './eggs';
+import { layLeafClutch } from './eggs-leaf';
 import { computeSchoolSteering, enforceMinDistance, type Vec3 } from './flocking';
 import {
   dropFoodInPlace,
@@ -1243,27 +1245,14 @@ function layEggsInPlace(
   const eggs = (world.eggs ?? []) as MutableEgg[];
   const room = Math.min(count, eggRoom(world.entities, eggs, species));
   const water = environmentWater(world);
+  const { seed, decor } = world;
   const clutch = laysNearAnemone(species)
-    ? layReefClutch(
-        world.seed,
-        species,
-        spawn,
-        room,
-        water,
-        world.decor,
-        worldFeatures(world).anemones,
-      )
+    ? layReefClutch(seed, species, spawn, room, water, decor, worldFeatures(world).anemones)
     : laysOnVegetation(species)
-      ? layVegetationClutch(
-          world.seed,
-          species,
-          spawn,
-          room,
-          water,
-          fryPlants(world.decor),
-          worldLilyPads(world.seed, world),
-        )
-      : layClutch(world.seed, species, spawn, room, water, fryPlants(world.decor));
+      ? layVegetationClutch(seed, species, spawn, room, water, fryPlants(decor), padsOf(world))
+      : laysInLeaves(species)
+        ? layLeafClutch({ seed, species, spawn, count: room }, water, decor, eggs)
+        : layClutch(seed, species, spawn, room, water, fryPlants(decor));
   if (clutch.length > 0) {
     eggs.push(...clutch);
     world.eggs = eggs;
@@ -1293,6 +1282,9 @@ export function layEggsWorldInPlace(world: MutableWorld): number {
   }
   return laid;
 }
+
+/** Nénuphars du monde (`worldLilyPads`). */
+const padsOf = (world: World): ReturnType<typeof worldLilyPads> => worldLilyPads(world.seed, world);
 
 const NO_PLANTS: readonly DecorItem[] = Object.freeze([]);
 const FRY_TARGET: Vec3 = { x: 0, y: 0, z: 0 };

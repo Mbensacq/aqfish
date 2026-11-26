@@ -7,14 +7,25 @@ import { SIM_DT } from '../src/app/sim/constants';
 import { createDayClock } from '../src/app/sim/daylight';
 import type { DecorItem } from '../src/app/sim/decor';
 import { addDecorItem, setDecorInPlace } from '../src/app/sim/decor-edit';
+import { environmentById, environmentWater } from '../src/app/sim/environment';
+import { terrainHeightAt } from '../src/app/sim/terrain';
 import { DEFAULT_SAVE_SETTINGS, serializeWorld } from '../src/app/sim/save';
 import { createShare } from '../src/app/sim/share-link';
 import { SPECIES } from '../src/app/sim/species';
 import { swimBounds } from '../src/app/sim/swimmer';
-import { waterVolume } from '../src/app/sim/tank';
+import { SAND_THICKNESS, waterVolume } from '../src/app/sim/tank';
 import { freshWater } from '../src/app/sim/water';
 import { glassStats, recordTrajectories } from '../src/app/sim/trajectory';
-import { advance, createDefaultWorld, feed, starveWorldInPlace } from '../src/app/sim/world';
+import { SPAWN_TICKS } from '../src/app/sim/eggs';
+import {
+  advance,
+  cloneWorld,
+  createDefaultWorld,
+  createWorld,
+  feed,
+  spawnEggsInPlace,
+  starveWorldInPlace,
+} from '../src/app/sim/world';
 import type { MutableWorld, World } from '../src/app/sim/world-types';
 import { fermerReglages, ouvrirReglages } from './outils-panneau';
 
@@ -485,6 +496,74 @@ test.describe('Captures', () => {
     await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
     await page.screenshot({
       path: join(OUTPUT_DIR, 'bassin-three-quarter-oeufs.png'),
+      animations: 'disabled',
+    });
+    expect(errors).toEqual([]);
+  });
+
+  // Ponte du triton (#676) : paludarium planté de deux plantes à tige côté eau, deux tritons
+  // nourris ; six périodes de ponte calculées hors de l'application (un œuf par période, chacun
+  // sur sa feuille), importées par une sauvegarde, vues de trois-quarts.
+  test('angle paludarium-three-quarter-oeufs', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await page.goto(
+      `/?seed=${SEED}&environnement=paludarium&camera=three-quarter&heure=12&vitesse=0`,
+    );
+    await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+    const host = page.locator('app-aquarium-host');
+    const pose = await host.getAttribute('data-aqfish-camera');
+    expect(pose).toBeTruthy();
+    // Le décor du paludarium n'est pas éditable : plantes posées à la main, sur le fond en
+    // pente (élévation : hauteur du sol au-dessus du sable).
+    const palu = environmentById('paludarium');
+    const decor: readonly DecorItem[] = [
+      [0.2, 0.1, 21],
+      [0.34, -0.06, 22],
+    ].map(([x, z, seed]) => {
+      const ground = terrainHeightAt(x!, z!, palu.terrain!, environmentWater('paludarium'));
+      const elevation = Math.round(Math.max(0, ground - SAND_THICKNESS) * 1e6) / 1e6;
+      const plant: DecorItem = {
+        kind: 'plant',
+        form: 'tall',
+        x: x!,
+        z: z!,
+        rotation: 0.4,
+        scale: 1,
+        seed: seed!,
+      };
+      return elevation > 0 ? { ...plant, elevation } : plant;
+    });
+    const world: MutableWorld = cloneWorld(
+      createWorld(SEED, [{ species: 'triton', count: 2 }], [], decor, 'paludarium'),
+    );
+    for (const fish of world.entities as { hunger: number; health: number }[]) {
+      fish.hunger = 0.1;
+      fish.health = 1;
+    }
+    for (let k = 1; k <= 6; k++) {
+      world.tick = k * SPAWN_TICKS;
+      spawnEggsInPlace(world);
+    }
+    world.tick = 0;
+    expect(world.eggs?.length).toBe(6);
+    await ouvrirReglages(page, 'Sauvegarde et partage');
+    await page.locator('[data-section="sauvegarde"] input[type="file"]').setInputFiles({
+      name: 'triton.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(
+        serializeWorld(world, { speed: 0, clock: createDayClock(12, 1200, true) }),
+      ),
+    });
+    await expect(host).toHaveAttribute('data-aqfish-decor-count', String(decor.length));
+    await fermerReglages(page);
+    await expect(page.locator('.control-panel')).toHaveCount(0);
+    await page.keyboard.press('5');
+    await expect(host).toHaveAttribute('data-aqfish-camera', pose!);
+    await poserSourisAuRepos(page);
+    await page.screenshot({
+      path: join(OUTPUT_DIR, 'paludarium-three-quarter-oeufs.png'),
       animations: 'disabled',
     });
     expect(errors).toEqual([]);
