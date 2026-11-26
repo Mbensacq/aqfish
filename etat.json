@@ -11158,10 +11158,10 @@
           "note": "Verdict OK, 0 bug, captures c307 publiées (CI 13/13, 176/177 identiques à c306, 11 px de bruit HUD sur salvinia)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-26T04:54:38.784Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-26T05:22:10.120Z",
+          "note": "PR #845 fusionnée → v1.32.6 (release CI OK, CI main verte), #844/#813/#732 fermées ; dette #846 ; GitHub n'a traité que 10 Closes sur 15, 8 rétros fermées en REST ; suppression de branche refusée"
         }
       },
       "metriques": {}
