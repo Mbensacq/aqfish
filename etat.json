@@ -11122,10 +11122,10 @@
           "note": "Verdict OK, 0 bug, captures c306 publiées (unitaires 6456 verts, CI 14/14, captures identiques à c305 hors bruit UI HUD)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-26T02:56:12.251Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-26T03:25:18.198Z",
+          "note": "PR #843 fusionnée → v1.32.5 (release CI OK, CI main verte), #839 fermée ; suppression de branche refusée par l'environnement"
         }
       },
       "metriques": {}
