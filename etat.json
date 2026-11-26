@@ -11084,6 +11084,12 @@
           "debut": "2026-11-26T00:41:40.542Z",
           "fin": "2026-11-26T01:34:55.902Z",
           "note": "Verdict OK, 0 bug, captures c305 publiées (unitaires 6454 verts, CI 14/14, captures identiques à c304 hors bruit UI)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-26T01:35:35.635Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
