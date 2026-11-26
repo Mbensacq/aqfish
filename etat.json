@@ -11216,6 +11216,12 @@
           "debut": "2026-11-26T07:18:21.106Z",
           "fin": "2026-11-26T07:18:51.260Z",
           "note": "Issue #677 : Bilan de reproduction dans le journal et le relevé (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-26T07:19:32.165Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
