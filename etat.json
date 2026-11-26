@@ -11110,10 +11110,10 @@
           "note": "Issue #839 : délais des scénarios d'écosystème + allocation grazeAlgaeInPlace de #835 (S)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-26T02:06:05.117Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-26T02:36:56.304Z",
+          "note": "PR #843 : délai 30 s des scénarios + isEmptyCover (#839, #835 pt 3), empreintes inchangées, captures = c305 au pixel, CI verte 14/14 ; e2e local interrompu (CI) ; pied d'attribution réinjecté dans la PR par l'environnement"
         }
       },
       "metriques": {}
