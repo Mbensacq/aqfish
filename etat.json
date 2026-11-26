@@ -11296,10 +11296,10 @@
           "note": "PR #852 : capsules d'œufs de la néritine sur les rochers (#678), CI verte (13/13) ; unitaires locaux 6504/6504, e2e local interrompu au profit de la CI"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-26T12:01:56.470Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-26T12:26:08.839Z",
+          "note": "Verdict OK, 0 bug, captures c311 publiées (unitaires 6504, 184 captures identiques sauf la nouvelle)"
         }
       },
       "metriques": {}
