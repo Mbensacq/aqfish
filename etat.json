@@ -11173,7 +11173,7 @@
       "type": "fonctionnalite",
       "issue": 676,
       "pr": 848,
-      "version": null,
+      "version": "v1.33.0",
       "phases": {
         "planif": {
           "statut": "termine",
