@@ -1,5 +1,8 @@
-Branche : cycle/c310-lisibilite-algues
-PR : #851
-Commit : 53439db041486872ea966ae1d916d399e4618218
-Graine : défaut des captures
-Temps : 5,4 min (179 tests de captures)
+# Captures c311
+
+- Branche : cycle/c311-capsules-neritine
+- PR : #852
+- Commit : 97877b4f
+- Graine : celle de e2e/captures.spec.ts (défaut)
+- Date : 2026-11-26
+- Résultat : 184 captures identiques à l'octet à la série précédente ; nouvelle : three-quarter-oeufs-neritine.png
