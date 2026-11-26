@@ -11280,7 +11280,7 @@
       "debut": "2026-11-26T11:03:48.399Z",
       "type": "fonctionnalite",
       "issue": 678,
-      "pr": null,
+      "pr": 852,
       "version": null,
       "phases": {
         "planif": {
