@@ -11258,6 +11258,12 @@
           "debut": "2026-11-26T09:36:55.986Z",
           "fin": "2026-11-26T10:15:40.979Z",
           "note": "PR #851 : algues lisibles + algues dures (#835), ombre flottante de nuit (#832), test de pousse allégé (#850), CI verte ; point 3 de #835 déjà fait (#843) ; unitaires locaux 6493/6493, e2e laissé à la CI"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-26T10:16:14.483Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
