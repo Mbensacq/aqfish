@@ -11104,10 +11104,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-26T02:04:52.310Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-26T02:05:31.438Z",
+          "note": "Issue #839 : délais des scénarios d'écosystème + allocation grazeAlgaeInPlace de #835 (S)"
         }
       },
       "metriques": {}
