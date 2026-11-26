@@ -48,6 +48,13 @@ import type { Box3 } from './tank';
  *   d'une plante enracinée (`layLeafClutch`, `sim/eggs-leaf.ts`) : un œuf par feuille. Sans plante, aucune
  *   ponte. Repliés dans la feuille, ils ne sont pas mangés ; ils éclosent sans larve simulée.
  *
+ * - **Néritine** (issue #678) : même calendrier et même plage de température que les corydoras
+ *   (22–26 °C, la plage tolérée de la fiche, FishKeeper) ; des capsules blanches isolées sont
+ *   collées sur les rochers du décor (`layCapsuleClutch`, `sim/eggs-nerite.ts`, surface
+ *   `'rocher'`). Sans rocher, aucune ponte. Dures, elles ne sont pas mangées ; en eau douce,
+ *   elles n'éclosent jamais (`NERITE_HATCHES_IN_FRESHWATER`, Aquarium Breeder) et s'effacent à
+ *   `EGG_HATCH_TIME`, sans larve ni alevin.
+ *
  * Toutes les valeurs sont des **approximations de jeu** : dans la nature, l'éclosion prend
  * plusieurs jours et une ponte compte souvent plusieurs dizaines d'œufs (plusieurs centaines
  * pour le poisson-clown).
@@ -59,6 +66,7 @@ export const EGG_SPECIES: readonly SpeciesId[] = Object.freeze([
   'clown',
   'rouge',
   'triton',
+  'neritine',
 ]);
 /**
  * Espèces dont la ponte est collée près d'une anémone (`layReefClutch`) et dont les œufs
@@ -76,6 +84,11 @@ export const VEGETATION_EGG_SPECIES: readonly SpeciesId[] = Object.freeze(['roug
  * éclosion sans larve simulée.
  */
 export const LEAF_EGG_SPECIES: readonly SpeciesId[] = Object.freeze(['triton']);
+/**
+ * Espèces qui collent des capsules dures sur les rochers (`layCapsuleClutch` de
+ * `sim/eggs-nerite.ts`, issue #678) : à l'abri des adultes, jamais écloses en eau douce.
+ */
+export const CAPSULE_EGG_SPECIES: readonly SpeciesId[] = Object.freeze(['neritine']);
 
 /** Période de ponte, en secondes simulées. */
 export const SPAWN_PERIOD = 600;
@@ -214,17 +227,23 @@ export function laysInLeaves(species: SpeciesId): boolean {
   return LEAF_EGG_SPECIES.includes(species);
 }
 
+/** Vrai si l'espèce colle des capsules sur les rochers (`CAPSULE_EGG_SPECIES`). */
+export function laysCapsules(species: SpeciesId): boolean {
+  return CAPSULE_EGG_SPECIES.includes(species);
+}
+
 /**
  * Vrai si les œufs de l'espèce éclosent en alevins (faux : larves du clown qui quittent le bac,
  * œufs du poisson rouge dont les alevins ne sont pas encore simulés, larves du triton non
- * simulées).
+ * simulées, capsules de la néritine qui n'éclosent pas en eau douce).
  */
 export function hatchesToFry(species: SpeciesId): boolean {
   return (
     laysEggs(species) &&
     !laysNearAnemone(species) &&
     !laysOnVegetation(species) &&
-    !laysInLeaves(species)
+    !laysInLeaves(species) &&
+    !laysCapsules(species)
   );
 }
 

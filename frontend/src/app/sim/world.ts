@@ -119,12 +119,6 @@ import {
   eggRoom,
   fitSpawners,
   hatchesToFry,
-  layClutch,
-  laysInLeaves,
-  layVegetationClutch,
-  laysOnVegetation,
-  layReefClutch,
-  laysNearAnemone,
   SPAWN_MIN_ADULTS,
   spawnIndexAt,
   waterAllowsSpawn,
@@ -132,7 +126,7 @@ import {
   type MutableEgg,
   type SpawnConditions,
 } from './eggs';
-import { layLeafClutch } from './eggs-leaf';
+import { laySpeciesClutch } from './eggs-clutch';
 import { computeSchoolSteering, enforceMinDistance, type Vec3 } from './flocking';
 import {
   dropFoodInPlace,
@@ -1245,14 +1239,14 @@ function layEggsInPlace(
   const eggs = (world.eggs ?? []) as MutableEgg[];
   const room = Math.min(count, eggRoom(world.entities, eggs, species));
   const water = environmentWater(world);
-  const { seed, decor } = world;
-  const clutch = laysNearAnemone(species)
-    ? layReefClutch(seed, species, spawn, room, water, decor, worldFeatures(world).anemones)
-    : laysOnVegetation(species)
-      ? layVegetationClutch(seed, species, spawn, room, water, fryPlants(decor), padsOf(world))
-      : laysInLeaves(species)
-        ? layLeafClutch({ seed, species, spawn, count: room }, water, decor, eggs)
-        : layClutch(seed, species, spawn, room, water, fryPlants(decor));
+  const { decor } = world;
+  const clutch = laySpeciesClutch({ seed: world.seed, species, spawn, count: room }, water, {
+    decor,
+    plants: fryPlants(decor),
+    anemones: worldFeatures(world).anemones,
+    pads: padsOf(world),
+    laid: eggs,
+  });
   if (clutch.length > 0) {
     eggs.push(...clutch);
     world.eggs = eggs;

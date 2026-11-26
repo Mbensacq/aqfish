@@ -704,6 +704,14 @@ Désaccords entre sources :
     de jeu** ; Practical Fishkeeping cite les « grands gouramis » face aux crevettes, le jeu
     garde le gourami nain parmi les mangeurs de jeunes en approximation (point 13). Aucun
     mangeur de nageoires ni nageur lent dans le jeu : les règles existent, sans paire concernée.
+21. Ponte de la néritine (#678, ADR 0184) : capsules blanches et dures collées sur le décor,
+    non écloses en eau douce (FishKeeper ; eau saumâtre de 5 à 15 ‰ : Aquarium Breeder, voir
+    `docs/ECOSYSTEME.md`). **Dans le jeu** (`sim/eggs.ts`, `sim/eggs-nerite.ts`) : un couple
+    sain et nourri, dans une eau bonne entre 22 et 26 °C (plage tolérée de la fiche, FishKeeper),
+    colle 4 à 10 capsules isolées sur les rochers du décor à chaque période de ponte ; elles ne
+    sont pas mangées et s'effacent sans éclore au bout de l'incubation commune. Nombre, rythme,
+    durée avant effacement et choix des seuls rochers : **approximations de jeu** (les vraies
+    capsules restent collées des semaines).
 
 ## Bibliographie
 

@@ -11,7 +11,14 @@ import {
 } from 'three';
 
 import type { SpeciesId } from '../sim/species';
-import { laysInLeaves, laysNearAnemone, laysOnVegetation, MAX_EGGS, type Egg } from '../sim/eggs';
+import {
+  laysCapsules,
+  laysInLeaves,
+  laysNearAnemone,
+  laysOnVegetation,
+  MAX_EGGS,
+  type Egg,
+} from '../sim/eggs';
 import type { SceneLayer } from './effect-layer';
 import { ENVIRONMENT_TONES, PALETTE } from './palette';
 
@@ -78,13 +85,19 @@ export const CLOWN_EGG_RIPE_COLOR = PALETTE.tritonOrange;
 
 /**
  * Vrai si les œufs de l'espèce sont dessinés après l'eau : ponte près d'une anémone (récif,
- * `laysNearAnemone`), frai sur la végétation (bassin, `laysOnVegetation`) ou ponte du triton dans
- * les feuilles (paludarium, `laysInLeaves`, #676). Tiré des listes de
+ * `laysNearAnemone`), frai sur la végétation (bassin, `laysOnVegetation`), ponte du triton dans
+ * les feuilles (paludarium, `laysInLeaves`, #676) ou capsules de la néritine (bac tropical,
+ * `laysCapsules`, #678 : dans la file opaque, leur blanc virait au bleu pâle des bulles). Tiré des listes de
  * `sim/eggs.ts`, sans identifiant d'espèce en dur (#662, #685) : une espèce qui rejoint l'une de
  * ces listes hérite du traitement.
  */
 export function eggDrawnAfterWater(species: SpeciesId): boolean {
-  return laysNearAnemone(species) || laysOnVegetation(species) || laysInLeaves(species);
+  return (
+    laysNearAnemone(species) ||
+    laysOnVegetation(species) ||
+    laysInLeaves(species) ||
+    laysCapsules(species)
+  );
 }
 
 export class EggLayer implements SceneLayer {
@@ -205,8 +218,9 @@ export class EggLayer implements SceneLayer {
       this.mesh.setMatrixAt(i, this.matrix);
       this.matrix.compose(this.position, this.rotation, this.outlineScale);
       this.outline.setMatrixAt(i, this.matrix);
-      // Deux teintes seulement (pixel art) : neuf, puis mûr à la seconde moitié.
-      const ripe = egg.age * 2 >= hatchTime;
+      // Deux teintes seulement (pixel art) : neuf, puis mûr à la seconde moitié ; les capsules
+      // de la néritine (#678), jamais fécondées en eau douce, restent blanches.
+      const ripe = egg.age * 2 >= hatchTime && !laysCapsules(egg.species);
       // Orange des œufs de récif (clown, #653) ; crème pour les autres.
       if (laysNearAnemone(egg.species)) {
         this.mesh.setColorAt(i, ripe ? this.reefRipe : this.reefFresh);

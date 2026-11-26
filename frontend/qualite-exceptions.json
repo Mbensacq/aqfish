@@ -157,7 +157,7 @@
     "max-lines-per-function": 88
   },
   "sim/world.ts": {
-    "max-lines": 1413,
+    "max-lines": 1407,
     "max-params": 6
   },
   "ui/aquarium-host/aquarium-host.ts": {
