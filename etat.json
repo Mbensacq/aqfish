@@ -11336,6 +11336,12 @@
           "debut": "2026-11-26T14:07:06.911Z",
           "fin": "2026-11-26T14:24:23.640Z",
           "note": "Verdict OK, 0 bug, captures c312 publiées (CI 13/13, 7 captures paludarium changées comme prévu)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-26T14:25:00.495Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
