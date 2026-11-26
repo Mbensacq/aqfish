@@ -326,10 +326,16 @@ describe('pousse des plantes (#477)', () => {
     }, 30_000);
 
     it('taille d’une plante du monde ; le changement d’eau n’y touche pas', () => {
+      // Pousse posée au plafond puis une minute simulée, au lieu de trois jours de pas fins
+      // (216 000 pas, au bord du délai de 5 s en CI, #850) : la pousse elle-même est couverte
+      // par les tests de rythme et de sauvegarde ; ici, seules la taille et l'eau comptent.
       const world = emptyTank();
-      advanceInPlace(world, Math.round((3 * DAY) / SIM_DT));
       const index = DEFAULT_DECOR.findIndex(isGrowingPlant);
+      const { cap, key } = plantLimits(DEFAULT_DECOR[index], SURFACE);
+      world.water = { ...world.water, plantGrowth: { [key]: cap } };
+      advanceInPlace(world, Math.round(60 / SIM_DT));
       const before = worldShownPlantGrowth(world, index);
+      expect(before).toBe(cap);
       expect(before).toBeGreaterThan(0);
       changeWorldWaterInPlace(world);
       expect(worldShownPlantGrowth(world, index)).toBe(before);
