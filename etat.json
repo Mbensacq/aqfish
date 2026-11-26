@@ -11146,10 +11146,10 @@
           "note": "Issue #844 : Rétro sprint 44, Dev = #813 + mesures + feuille de route (S)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-26T03:27:19.867Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-26T04:22:45.990Z",
+          "note": "PR #845 : #813 mis en œuvre (sonneur et triton sur le milieu, 1 triton + 2 sonneurs en soins), ROADMAP v1.32/v1.33, Closes #732 + 13 rétros soldées ; mesures : 6466 tests, couverture sim 99,4 % lignes, complexité max 24 (validateSpecies, exception), plus longue fonction 108 l. (roomBlocks) ; empreintes inchangées ; CI verte 13/13 ; e2e local interrompu (CI) ; pied d'attribution réinjecté dans la PR"
         }
       },
       "metriques": {}
