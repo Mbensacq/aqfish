@@ -11338,10 +11338,10 @@
           "note": "Verdict OK, 0 bug, captures c312 publiées (CI 13/13, 7 captures paludarium changées comme prévu)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-26T14:25:00.495Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-26T14:53:53.844Z",
+          "note": "PR #854 fusionnée → v1.33.4 (release CI OK, CI main verte), #847 fermée ; suppression de branche refusée"
         }
       },
       "metriques": {}
