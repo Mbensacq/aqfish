@@ -11266,10 +11266,10 @@
           "note": "Verdict OK, 0 bug, captures c310 publiées (CI 13/13, unitaires 6493/6493, 4 captures changées voulues)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-26T10:33:30.221Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-26T11:02:59.790Z",
+          "note": "PR #851 fusionnée → v1.33.2 (release CI OK, CI main verte), #835/#832/#850 fermées ; suppression de branche refusée"
         }
       },
       "metriques": {}
