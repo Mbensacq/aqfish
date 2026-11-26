@@ -17,8 +17,9 @@ baisse légèrement le pH. Le scénario S11 (roche calcaire chez des néons) res
 - **Matière d'un rocher** : champ optionnel `material` de `DecorItem` (`sim/decor.ts`),
   `inert` ou `limestone`, refusé pour un bois ou une plante. Absent : inerte. La clé n'est
   écrite que pour `limestone` : une sauvegarde antérieure se relit à l'identique, et une roche
-  inerte ne change pas le texte de sauvegarde. `decorMaterial` donne la matière vue par l'eau
-  (`inert`, `limestone`, `wood`, ou `null` pour une plante).
+  inerte ne change pas le texte de sauvegarde. Les surfaces actives sont sommées par
+  `decorSurfacesInto` (`sim/decor-water.ts`), seule source pour le pas et les lectures
+  (cycle 305, #841 : `decorMaterial` supprimé, il ne servait plus qu'aux tests).
 - **Éditeur** : une entrée « Roche calcaire » du catalogue (`limestone`, après « Rocher ») pose
   un rocher calcaire ; la consigne de pose dit l'effet sur l'eau de chaque élément qui en a un
   (rocher inerte, roche calcaire, bois flotté), source ou « approximation de jeu » comprise.

@@ -1,4 +1,3 @@
-import { isColonySpecies } from './shrimp-colony';
 import { acceptsSavedSpecies, type CareMode } from './care-mode';
 import { DISEASES } from './diseases';
 import { environmentWater, placeEnvironment, type EnvironmentId, type Place } from './environment';
@@ -37,6 +36,7 @@ import {
   type ListRule,
   type Rule,
 } from './save-schema';
+import { isColonySpecies } from './shrimp-colony';
 import { SPECIES, type SpeciesId } from './species';
 import type { Fish } from './swimmer';
 import type { Box3 } from './tank';

@@ -35,9 +35,6 @@ export type DecorKind = (typeof DECOR_KINDS)[number];
 export const ROCK_MATERIALS = ['inert', 'limestone'] as const;
 export type RockMaterial = (typeof ROCK_MATERIALS)[number];
 
-/** Matière d'un élément de décor pour l'eau : celle d'un rocher, `wood`, ou `null` (plante). */
-export type DecorMaterial = RockMaterial | 'wood';
-
 /**
  * Élément de décor posé sur le sable. Unités : mètres et radians. L'altitude découle du type
  * (`decorBaseY`) : un élément repose sur le sable, sauf s'il a été posé sur un autre élément
@@ -137,14 +134,6 @@ function materialProblems(item: Record<string, unknown>): string[] {
   return (ROCK_MATERIALS as readonly unknown[]).includes(item['material'])
     ? []
     : [`material doit être ${ROCK_MATERIALS.join(' ou ')} (reçu : ${String(item['material'])})`];
-}
-
-/** Matière de `item` pour l'eau (issue #733) : rocher sans matière écrite : `inert`. */
-export function decorMaterial(item: DecorItem): DecorMaterial | null {
-  if (item.kind === 'rock') {
-    return item.material ?? 'inert';
-  }
-  return item.kind === 'wood' ? 'wood' : null;
 }
 
 /** Problèmes de bornes d'un élément de bonne forme : position, échelle, graine, élévation. */

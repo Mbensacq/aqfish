@@ -1,14 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  decorMaterial,
-  parseDecor,
-  parseDecorItems,
-  validateDecorItem,
-  type DecorItem,
-} from './decor';
+import { parseDecor, parseDecorItems, validateDecorItem, type DecorItem } from './decor';
 import {
   DECOR_REFERENCE_LITERS,
+  decorSurfacesInto,
   LIMESTONE_INACTIVE_PH,
   LIMESTONE_KH_CEILING,
   LIMESTONE_PH_TARGET,
@@ -66,9 +61,9 @@ describe('matière du décor (#733)', () => {
       '[{ "kind": "rock", "x": 0, "z": 0, "rotation": 0, "scale": 1, "seed": 3 }]',
     );
     expect(old.material).toBeUndefined();
-    expect(decorMaterial(old)).toBe('inert');
-    expect(decorMaterial(WOOD)).toBe('wood');
-    expect(decorMaterial(PLANT)).toBeNull();
+    expect(limestoneSurface([old])).toBe(0);
+    expect(woodSurface([old, PLANT])).toBe(0);
+    expect(woodSurface([WOOD])).toBe(1);
   });
 
   it('la matière calcaire est gardée à la relecture, la matière inerte n’est pas écrite', () => {
@@ -99,6 +94,30 @@ describe('surfaces et taux', () => {
     expect(woodSurface(decor)).toBe(1);
     expect(limestoneSurface([])).toBe(0);
     expect(woodSurface([])).toBe(0);
+  });
+
+  it('decorSurfacesInto : remet l’accumulateur à zéro et le renvoie, décor vide compris', () => {
+    const out = { limestone: 9, wood: 9 };
+    const decor = [rock('limestone', 2), rock('inert', 3), WOOD, { ...WOOD, scale: 0.5 }, PLANT];
+
+    expect(decorSurfacesInto(decor, out)).toBe(out);
+    expect(out).toEqual({ limestone: 4, wood: 1.25 });
+    expect(decorSurfacesInto([], out)).toEqual({ limestone: 0, wood: 0 });
+  });
+
+  it('le pas lit les mêmes surfaces que limestoneSurface et woodSurface (décor mixte)', () => {
+    const decor = [rock('limestone', 2), rock('inert', 3), rock(undefined, 1.5), WOOD, PLANT];
+    const stepped = tropicalWater();
+    stepped.ph = 7;
+    stepDecorWaterInPlace(stepped, decor, 'tropical', 60, DAY);
+
+    const expected = tropicalWater();
+    const rate = limestoneRate(limestoneSurface(decor), expected.filter, 60);
+    const dissolved = limestoneDissolved(TAP_HARDNESS.tropical.kh, 7, rate, DAY);
+    const ph = woodPh(limestonePh(7, rate, DAY), woodSurface(decor), 60, DAY);
+
+    expect(stepped.kh).toBe(TAP_HARDNESS.tropical.kh + dissolved);
+    expect(stepped.ph).toBe(ph);
   });
 
   it('le courant accélère la roche ; sans filtre, elle garde le quart de son taux', () => {

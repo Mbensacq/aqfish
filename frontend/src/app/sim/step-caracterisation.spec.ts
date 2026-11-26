@@ -1,6 +1,6 @@
-import { broodWorldInPlace } from './fry-sample';
 import { createFeeder } from './auto-feeder';
 import { DEFAULT_DAY_CLOCK } from './daylight';
+import { broodWorldInPlace } from './fry-sample';
 import {
   advance,
   cloneWorld,
