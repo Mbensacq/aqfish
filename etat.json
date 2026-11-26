@@ -11224,10 +11224,10 @@
           "note": "PR #849 : bilan de reproduction (7 jours, lu dans le journal, ADR 0183) + filtre du journal retenu, CI verte 13/13 ; 9 tests ajoutés, 1 test de composant modifié (commit séparé), empreintes inchangées, 5 angles identiques ; e2e local limité à journal et bilan"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-26T08:19:46.571Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-26T08:39:00.138Z",
+          "note": "Verdict OK, 0 bug, captures c309 publiées (CI 13/13, e2e journal+bilan 5/5, 176/178 identiques, 2 écarts = bruit HUD connu ; unitaires locaux non terminés)"
         }
       },
       "metriques": {}
