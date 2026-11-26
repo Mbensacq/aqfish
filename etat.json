@@ -11078,6 +11078,12 @@
           "debut": "2026-11-25T23:42:58.852Z",
           "fin": "2026-11-26T00:41:02.946Z",
           "note": "PR #842 : surfaces du décor en une source + finitions colonie (#841, #838), empreintes inchangées, captures = c304, CI verte ; e2e local non lancé (CI) ; pied d'attribution réinjecté dans la PR par l'environnement"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-26T00:41:40.542Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
