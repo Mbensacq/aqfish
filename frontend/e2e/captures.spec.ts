@@ -7,13 +7,12 @@ import { SIM_DT } from '../src/app/sim/constants';
 import { createDayClock } from '../src/app/sim/daylight';
 import type { DecorItem } from '../src/app/sim/decor';
 import { addDecorItem, setDecorInPlace } from '../src/app/sim/decor-edit';
-import { environmentById, environmentWater } from '../src/app/sim/environment';
-import { terrainHeightAt } from '../src/app/sim/terrain';
+import { environmentById } from '../src/app/sim/environment';
 import { DEFAULT_SAVE_SETTINGS, serializeWorld } from '../src/app/sim/save';
 import { createShare } from '../src/app/sim/share-link';
 import { SPECIES } from '../src/app/sim/species';
 import { swimBounds } from '../src/app/sim/swimmer';
-import { SAND_THICKNESS, waterVolume } from '../src/app/sim/tank';
+import { waterVolume } from '../src/app/sim/tank';
 import { freshWater } from '../src/app/sim/water';
 import { glassStats, recordTrajectories } from '../src/app/sim/trajectory';
 import { SPAWN_TICKS } from '../src/app/sim/eggs';
@@ -504,7 +503,7 @@ test.describe('Captures', () => {
     expect(errors).toEqual([]);
   });
 
-  // Ponte du triton (#676) : paludarium planté de deux plantes à tige côté eau, deux tritons
+  // Ponte du triton (#676) : paludarium planté par défaut (#847), deux tritons
   // nourris ; six périodes de ponte calculées hors de l'application (un œuf par période, chacun
   // sur sa feuille), importées par une sauvegarde, vues de trois-quarts.
   test('angle paludarium-three-quarter-oeufs', async ({ page }) => {
@@ -518,26 +517,8 @@ test.describe('Captures', () => {
     const host = page.locator('app-aquarium-host');
     const pose = await host.getAttribute('data-aqfish-camera');
     expect(pose).toBeTruthy();
-    // Le décor du paludarium n'est pas éditable : plantes posées à la main, sur le fond en
-    // pente (élévation : hauteur du sol au-dessus du sable).
-    const palu = environmentById('paludarium');
-    const decor: readonly DecorItem[] = [
-      [0.2, 0.1, 21],
-      [0.34, -0.06, 22],
-    ].map(([x, z, seed]) => {
-      const ground = terrainHeightAt(x!, z!, palu.terrain!, environmentWater('paludarium'));
-      const elevation = Math.round(Math.max(0, ground - SAND_THICKNESS) * 1e6) / 1e6;
-      const plant: DecorItem = {
-        kind: 'plant',
-        form: 'tall',
-        x: x!,
-        z: z!,
-        rotation: 0.4,
-        scale: 1,
-        seed: seed!,
-      };
-      return elevation > 0 ? { ...plant, elevation } : plant;
-    });
+    // Décor par défaut du paludarium (#847, ADR 0185) : plantes côté eau, dont une sur la pente.
+    const decor = environmentById('paludarium').decor;
     const world: MutableWorld = cloneWorld(
       createWorld(SEED, [{ species: 'triton', count: 2 }], [], decor, 'paludarium'),
     );

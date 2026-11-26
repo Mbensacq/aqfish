@@ -1,3 +1,4 @@
+import type { DecorItem } from './decor';
 import { ENVIRONMENT_IDS, environmentById } from './environment';
 import { copyFirstTankPath, createFirstTankPath, firstTankFacts } from './first-tank-path';
 import { JOURNAL_VERSION, waterChangeEntry } from './journal';
@@ -43,11 +44,20 @@ const POPULATIONS_BEFORE_811: Partial<
   ],
 };
 
+/**
+ * Décors par défaut d'avant #847 (ADR 0185) : le paludarium n'avait pas de plantes ; les
+ * sauvegardes caractérisées restent celles qui ont figé les résultats.
+ */
+const DECOR_BEFORE_847: Partial<Record<(typeof ENVIRONMENT_IDS)[number], readonly DecorItem[]>> = {
+  paludarium: [],
+};
+
 /** Sauvegarde réelle (schéma 1) d'un bac avancé et nourri de chaque environnement. */
 function realWorld(environment: (typeof ENVIRONMENT_IDS)[number]): ReturnType<typeof advance> {
   const env = environmentById(environment);
   const population = POPULATIONS_BEFORE_811[environment] ?? env.population;
-  const world = createWorld(42, population, [], env.decor, environment);
+  const decor = DECOR_BEFORE_847[environment] ?? env.decor;
+  const world = createWorld(42, population, [], decor, environment);
   return advance(feed(advance(world, 120), 0.1, 0), 30);
 }
 

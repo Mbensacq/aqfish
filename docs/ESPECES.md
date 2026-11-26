@@ -344,8 +344,8 @@ sur `docs/SOINS.md` § 11 jusqu'à vérification.
   sain et nourri, dans une eau bonne entre 15 et 23 °C, pond **un œuf par période** dans une
   feuille immergée libre d'une plante enracinée (un œuf par feuille) ; à l'abri des adultes ;
   la larve n'est pas simulée (l'œuf disparaît à l'éclosion). Rythme et incubation :
-  **approximations de jeu**. Le décor du paludarium n'étant pas éditable et sans plante par
-  défaut, la ponte n'y a lieu qu'avec un décor planté importé (sauvegarde).
+  **approximations de jeu**. Depuis #847 (ADR 0185), le paludarium est planté par défaut côté
+  eau (deux plantes à tige, une touffe, une plante flottante) : la ponte y a lieu sans import.
 - **Triton à ventre de feu japonais, _Cynops pyrrhogaster_** : 10 à 15 cm ; 15,5–24 °C la plus
   grande partie de l'année ; dix ans de vie raisonnables en captivité ; plus facile à trouver né
   en captivité (Reptiles Magazine, **secondaire**). Même régime légal. **Meilleur choix

@@ -38,6 +38,7 @@ import {
   type SpeciesId,
 } from './species';
 import { assertTerrainSettings, type TerrainSettings } from './terrain';
+import { waterSidePlants, type WaterSidePlantSpot } from './water-side-plants';
 import { NO_CURRENT, type CurrentField } from './water-current';
 import {
   DEFAULT_TANK,
@@ -261,11 +262,40 @@ export const POND: Environment = {
 /** Paludarium : 1 m × 50 cm, 60 cm de haut, eau à 27 cm. */
 export const PALUDARIUM_DIMENSIONS: TankDimensions = { width: 1, height: 0.6, depth: 0.5 };
 
+/** Niveau de l'eau du paludarium, en fraction de la hauteur du bac. */
+const PALUDARIUM_WATER_LEVEL = 0.45;
+
+/** Sol du paludarium : berge −X, eau +X (`sim/terrain.ts`, ADR 0034). */
+const PALUDARIUM_TERRAIN: TerrainSettings = assertTerrainSettings({
+  seed: 129,
+  shoreX: -0.02,
+  shoreWave: 0.06,
+  bedHeight: SAND_THICKNESS,
+  underwaterSlope: 0.24,
+  landSlope: 0.26,
+  landRise: 0.1,
+  relief: 0.025,
+  rock: { threshold: 0.55, height: 0.04 },
+});
+
+/**
+ * Plantes côté eau du paludarium (issue #847, ADR 0185) : deux plantes à tige, l'une sur la
+ * pente immergée, l'autre sur le fond plat, une touffe et une plante flottante (« planté, avec
+ * plantes flottantes », Caudata Culture). Les tritons pondent dans leurs feuilles (ADR 0182).
+ */
+const PALUDARIUM_PLANT_SPOTS: readonly WaterSidePlantSpot[] = [
+  { form: 'tall', x: 0.2, z: 0.1, rotation: 0.4, scale: 0.8, seed: 21 },
+  { form: 'tall', x: 0.34, z: -0.06, rotation: 0.4, scale: 0.9, seed: 22 },
+  { form: 'tuft', x: 0.42, z: 0.16, rotation: 1.1, scale: 1, seed: 4 },
+  { form: 'floating', x: 0.38, z: -0.17, rotation: 2.2, scale: 1, seed: 5 },
+];
+
 /**
  * Paludarium (épopée v0.7, issue #129, ADR 0034) : bac vitré dont la moitié +X est en eau et
  * la moitié −X une berge de terre et de roche qui émerge, en pente douce vers l'eau
  * (`sim/terrain.ts`). Sonneurs orientaux entre terre et eau (issue #131, ADR 0064), tritons à
- * ventre de feu plus aquatiques (issue #133) ; mousses et racines (#132).
+ * ventre de feu plus aquatiques (issue #133) ; mousses et racines (#132) ; plantes côté eau
+ * (#847, ADR 0185).
  *
  * Population par défaut sans axolotl (issue #271, ADR 0065) : il vit seul, dans le bac d'eau
  * froide. Il reste proposé ici (`species`) pour que les anciennes sauvegardes du paludarium
@@ -275,18 +305,8 @@ export const PALUDARIUM: Environment = {
   id: 'paludarium',
   name: 'Paludarium',
   dimensions: PALUDARIUM_DIMENSIONS,
-  waterLevel: 0.45,
-  terrain: assertTerrainSettings({
-    seed: 129,
-    shoreX: -0.02,
-    shoreWave: 0.06,
-    bedHeight: SAND_THICKNESS,
-    underwaterSlope: 0.24,
-    landSlope: 0.26,
-    landRise: 0.1,
-    relief: 0.025,
-    rock: { threshold: 0.55, height: 0.04 },
-  }),
+  waterLevel: PALUDARIUM_WATER_LEVEL,
+  terrain: PALUDARIUM_TERRAIN,
   water: { body: 'eauMoyenne', surface: 'eauClaire' },
   tones: [],
   // Dessus et côtés : ceux du fond immergé ; la terre et la roche ont leurs couleurs
@@ -296,7 +316,12 @@ export const PALUDARIUM: Environment = {
   defaultCamera: 'three-quarter',
   bubbles: false,
   caustics: false,
-  decor: [],
+  decor: waterSidePlants(
+    PALUDARIUM_PLANT_SPOTS,
+    PALUDARIUM_TERRAIN,
+    waterVolume(PALUDARIUM_DIMENSIONS, PALUDARIUM_WATER_LEVEL),
+    PALUDARIUM_DIMENSIONS,
+  ),
   corals: null,
   anemones: null,
   lilyPads: null,
