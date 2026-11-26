@@ -11273,6 +11273,24 @@
         }
       },
       "metriques": {}
+    },
+    "311": {
+      "numero": 311,
+      "date": "2026-11-26",
+      "debut": "2026-11-26T11:03:48.399Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-26T11:03:48.399Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
