@@ -11356,10 +11356,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-26T23:42:00.834Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-26T23:42:29.183Z",
+          "note": "Issue #846 : dette fiches amphibiens, ligne de capacité, capsules néritine (+#853) (S)"
         }
       },
       "metriques": {}
