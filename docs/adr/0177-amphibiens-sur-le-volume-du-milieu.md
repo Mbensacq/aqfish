@@ -1,6 +1,6 @@
 # 0177 — Amphibiens semi-terrestres comptés sur le volume du milieu (arbitrage)
 
-- Statut : acceptée (décision) ; mise en œuvre à faire
+- Statut : acceptée ; mise en œuvre au cycle 307 (issue #813)
 - Date : 2026-11-25
 - Auteur : Dev, cycle 300, issue #813 (suite des ADR 0171 et 0173)
 
@@ -63,7 +63,7 @@ chiffrée (bibliographie de `docs/ESPECES.md`, [67] à [70]) :
   faire passer la population voulue.
 - **Surface de berge** : seule [70] en parle (proportion du sol, pas une surface par animal).
 
-## Mise en œuvre (reste à faire, lot de dette du cycle 306)
+## Mise en œuvre (proposition du cycle 300)
 
 Le calcul mêle désormais deux références de volume dans un même bac. Proposition : chaque
 espèce consomme une fraction de sa référence (eau ou milieu) et l'occupation du bac est la
@@ -72,3 +72,19 @@ somme des fractions ; les raisons affichées donnent les litres de la référenc
 (un sonneur et un triton acceptés au paludarium par défaut en mode soins), les empreintes
 `paludarium` expliquées si la population par défaut change, et `docs/ESPECES.md` (point 18)
 mis à jour.
+
+## Mise en œuvre (cycle 307)
+
+- `sim/semi-terrestrial-needs.ts` porte les valeurs sourcées du sonneur (18,9 L par adulte dès
+  le premier, milieu d'au moins 37,9 L, désaccord de [70] dans la référence) et du triton
+  (56,8 L, puis 18,9 L par adulte). Les fiches (`species-sheet.ts`, volume conseillé de 40 L en
+  approximation) ne changent pas : elles restent l'affichage du wiki, la capacité lit ce module.
+- `sim/tank-capacity.ts` : chaque profil a une **référence** (`eau` ou `milieu`) ; le bac reçoit
+  `milieuLiters` (litres bruts de la boîte d'eau, berge comprise : 105 L au paludarium par
+  défaut). L'occupation est la somme des fractions (`populationLoad`) ; le volume minimal d'une
+  espèce du milieu se compare au milieu. Sans espèce du milieu, le calcul est inchangé.
+- `CapacityStatus` sépare `needLiters` (eau réelle) et `milieuNeedLiters` ; la ligne et
+  l'alerte de capacité écrivent la part du milieu à part.
+- Population par défaut **inchangée** (2 sonneurs, 36 %) : un triton est accepté en mode soins
+  (90 %), un second refusé. La repeupler d'office changerait les empreintes et les captures du
+  paludarium, sans être demandé par #813 : à décider dans une issue de fonctionnalité.

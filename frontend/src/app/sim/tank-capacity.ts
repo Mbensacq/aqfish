@@ -3,6 +3,7 @@ import type { SheetField, ValueRange } from './sheet-field';
 import { SPECIES_LABELS } from './species-catalog';
 import { DENSITY_LITERS_PER_CM, SPECIES_ECOLOGY } from './species-ecology';
 import { frenchNumber, publicReference, speciesSheet } from './species-sheet';
+import { SEMI_TERRESTRIAL_NEEDS } from './semi-terrestrial-needs';
 import type { SpeciesId } from './species';
 import type { PopulationEntry, World } from './world-types';
 
@@ -20,6 +21,12 @@ import type { PopulationEntry, World } from './world-types';
  * - sinon : `n` × longueur adulte × litres par cm de sa classe (`DENSITY_LITERS_PER_CM`), borne
  *   basse pour le **plafond** (1,5 L/cm en tropical), borne haute pour le **conseillé** (2 L/cm).
  *
+ * Amphibiens semi-terrestres (sonneur, triton : `sim/semi-terrestrial-needs.ts`, ADR 0177) :
+ * besoin sourcé en volume du **milieu** (litres bruts, berge comprise), premier adulte puis
+ * volume par adulte en plus. Un bac mêle alors deux références de volume : chaque espèce occupe
+ * une fraction de la sienne (eau réelle ou milieu), et l'occupation du bac est la somme de ces
+ * fractions (`populationLoad`).
+ *
  * Tout animal compte comme un adulte (approximation de jeu : un alevin grandit). Les plafonds
  * techniques (`MAX_TOTAL_FISH`, `sim/constants.ts`) sont à part : ils bornent l'affichage, pas
  * le bien-être.
@@ -27,6 +34,9 @@ import type { PopulationEntry, World } from './world-types';
 
 /** Seuil lu : le plafond (au-delà, bac surpeuplé) ou le volume conseillé. */
 export type CapacityLevel = 'plafond' | 'conseille';
+
+/** Volume sur lequel le besoin d'une espèce se compte : eau réelle, ou milieu entier. */
+export type CapacityReference = 'eau' | 'milieu';
 
 /** Ce qui décide d'un verdict. */
 export type CapacityLimit = 'aucune' | 'volume-minimal' | 'capacite' | 'mode-decor';
@@ -42,6 +52,13 @@ export interface CapacityProfile {
   readonly minLiters: SheetField<number>;
   /** Volume par adulte supplémentaire, en litres, ou `null`. */
   readonly extraLitersPerAdult: SheetField<number | null>;
+  /**
+   * Volume du premier adulte quand une source le donne à part, ou `null` : le plus grand du
+   * volume minimal et du volume par adulte supplémentaire.
+   */
+  readonly firstAdultLiters: SheetField<number> | null;
+  /** Volume sur lequel le besoin se compte. */
+  readonly reference: CapacityReference;
 }
 
 /** Verdict d'ajout d'un animal. */
@@ -64,14 +81,18 @@ export interface CapacityTank {
   /** Volume d'eau réel, en litres ; non fini ou négatif : 0. */
   readonly liters: number;
   readonly population: readonly PopulationEntry[];
+  /** Volume du milieu (litres bruts, berge comprise) ; absent : `liters`. */
+  readonly milieuLiters?: number;
   /** Mode du bac ; absent : soins. */
   readonly mode?: CareMode;
 }
 
 /** État de capacité d'un bac, pour signaler une sauvegarde au-delà de la capacité. */
 export interface CapacityStatus {
-  /** Besoin de la population, en litres. */
+  /** Besoin des espèces comptées sur l'eau réelle, en litres. */
   readonly needLiters: number;
+  /** Besoin des espèces comptées sur le milieu (amphibiens semi-terrestres), en litres. */
+  readonly milieuNeedLiters: number;
   readonly occupation: number;
   /** Vrai si le besoin dépasse le volume d'eau réel. */
   readonly over: boolean;
@@ -81,12 +102,21 @@ export interface CapacityStatus {
 export function capacityProfile(species: SpeciesId): CapacityProfile {
   const sheet = speciesSheet(species);
   const ecology = SPECIES_ECOLOGY[species];
-  return {
+  const base = {
     species,
     adultSizeCm: sheet.adultSize,
     litersPerCm: DENSITY_LITERS_PER_CM[ecology.densityClass.value],
+  };
+  const milieu = SEMI_TERRESTRIAL_NEEDS[species];
+  if (milieu !== undefined) {
+    return { ...base, ...milieu, reference: 'milieu' };
+  }
+  return {
+    ...base,
     minLiters: sheet.minLiters,
     extraLitersPerAdult: ecology.extraLitersPerAdult,
+    firstAdultLiters: null,
+    reference: 'eau',
   };
 }
 
@@ -99,6 +129,14 @@ function nonNegative(value: number): number {
 function litersPerCmAt(profile: CapacityProfile, level: CapacityLevel): number {
   const { min, max } = profile.litersPerCm.value;
   return level === 'plafond' ? min : max;
+}
+
+/** Volume demandé par le premier adulte d'une espèce à volume par adulte (`extra`). */
+function firstAdultLiters(profile: CapacityProfile, extra: number): number {
+  const first = profile.firstAdultLiters;
+  return first === null
+    ? Math.max(nonNegative(profile.minLiters.value), extra)
+    : nonNegative(first.value);
 }
 
 /**
@@ -117,21 +155,51 @@ export function speciesNeedLiters(
   const extra = profile.extraLitersPerAdult.value;
   if (extra !== null) {
     const each = nonNegative(extra);
-    return Math.max(nonNegative(profile.minLiters.value), each) + (n - 1) * each;
+    return firstAdultLiters(profile, each) + (n - 1) * each;
   }
   return n * nonNegative(profile.adultSizeCm.value) * litersPerCmAt(profile, level);
 }
 
-/** Besoin, en litres, de toute la population `population` (espèces mélangées). */
+/**
+ * Besoin, en litres, de la population `population` (espèces mélangées) ; avec `reference`,
+ * seulement celui des espèces comptées sur ce volume.
+ */
 export function populationNeedLiters(
   population: readonly PopulationEntry[],
   level: CapacityLevel = 'plafond',
+  reference?: CapacityReference,
 ): number {
   let need = 0;
   for (const entry of population) {
-    need += speciesNeedLiters(capacityProfile(entry.species), entry.count, level);
+    const profile = capacityProfile(entry.species);
+    if (reference === undefined || profile.reference === reference) {
+      need += speciesNeedLiters(profile, entry.count, level);
+    }
   }
   return need;
+}
+
+/** Volume de `tank` sur lequel se comptent les espèces de référence `reference`. */
+export function referenceLiters(tank: CapacityTank, reference: CapacityReference): number {
+  const liters = reference === 'milieu' ? (tank.milieuLiters ?? tank.liters) : tank.liters;
+  return nonNegative(liters);
+}
+
+/**
+ * Occupation de `tank` par `population`, en fraction de sa capacité : somme de l'occupation de
+ * l'eau réelle par les espèces comptées sur l'eau et de celle du milieu par les autres.
+ */
+export function populationLoad(
+  tank: CapacityTank,
+  population: readonly PopulationEntry[],
+  level: CapacityLevel = 'plafond',
+): number {
+  let load = 0;
+  for (const reference of ['eau', 'milieu'] as const) {
+    const need = populationNeedLiters(population, level, reference);
+    load += occupation(referenceLiters(tank, reference), need);
+  }
+  return load;
 }
 
 /**
@@ -161,9 +229,10 @@ export function populationOf(world: Pick<World, 'entities'>): PopulationEntry[] 
  * **signalée** (`over`), jamais corrigée ; rien n'est modifié.
  */
 export function capacityStatus(tank: CapacityTank): CapacityStatus {
-  const needLiters = populationNeedLiters(tank.population);
-  const ratio = occupation(tank.liters, needLiters);
-  return { needLiters, occupation: ratio, over: ratio > 1 };
+  const needLiters = populationNeedLiters(tank.population, 'plafond', 'eau');
+  const milieuNeedLiters = populationNeedLiters(tank.population, 'plafond', 'milieu');
+  const ratio = populationLoad(tank, tank.population);
+  return { needLiters, milieuNeedLiters, occupation: ratio, over: ratio > 1 };
 }
 
 /** Nom court d'une source, d'après sa référence. */
@@ -178,6 +247,8 @@ const SOURCE_NAMES: readonly (readonly [string, string])[] = [
   ['garnelio.de', 'Garnelio'],
   ['wikipedia.org', 'Wikipédia'],
   ['reeflex.net', 'Reeflex'],
+  ['petmd.com', 'PetMD'],
+  ['reptilesmagazine.com', 'Reptiles Magazine'],
 ];
 
 /**
@@ -228,7 +299,7 @@ function needRule(
   const extra = profile.extraLitersPerAdult.value;
   if (extra !== null) {
     return {
-      text: `${oneOf(profile.species)} adulte demande ${litersText(Math.max(profile.minLiters.value, extra))}, puis ${litersText(extra)} par ${name} en plus`,
+      text: `${oneOf(profile.species)} adulte demande ${litersText(firstAdultLiters(profile, nonNegative(extra)))}, puis ${litersText(extra)} par ${name} en plus`,
       field: profile.extraLitersPerAdult,
     };
   }
@@ -256,8 +327,10 @@ function countOf(population: readonly PopulationEntry[], species: SpeciesId): nu
  * défaut), dans l'ordre :
  *
  * 1. mode décor : accepté sans contrainte (`mode-decor`) ;
- * 2. bac sous le volume minimal de l'espèce : refusé (`volume-minimal`) ;
- * 3. besoin de la population, animal compris, au-delà du volume réel : refusé (`capacite`) ;
+ * 2. bac (ou milieu, pour une espèce comptée sur le milieu) sous le volume minimal de
+ *    l'espèce : refusé (`volume-minimal`) ;
+ * 3. occupation de la population, animal compris (`populationLoad`), au-delà de 1 : refusé
+ *    (`capacite`) ;
  * 4. sinon accepté (`aucune`).
  *
  * L'occupation est toujours celle du bac avec l'animal demandé.
@@ -267,31 +340,38 @@ export function canAdd(
   species: SpeciesId,
   level: CapacityLevel = 'plafond',
 ): CapacityVerdict {
-  const liters = nonNegative(tank.liters);
   const profile = capacityProfile(species);
-  const others = populationNeedLiters(
-    tank.population.filter((entry) => entry.species !== species),
-    level,
-  );
-  const need = others + speciesNeedLiters(profile, countOf(tank.population, species) + 1, level);
-  const ratio = occupation(liters, need);
+  const liters = referenceLiters(tank, profile.reference);
+  const withOne = [
+    ...tank.population.filter((entry) => entry.species !== species),
+    { species, count: countOf(tank.population, species) + 1 },
+  ];
+  const ratio = populationLoad(tank, withOne, level);
   const percent = `${Math.round(ratio * 100)} % de la capacité`;
   if (tank.mode === 'decor') {
     return verdict(true, 'mode-decor', 'Mode décor : aucune contrainte de capacité', ratio, null);
   }
+  const volume = volumeText(liters, profile.reference);
   const minimum = nonNegative(profile.minLiters.value);
   if (liters < minimum) {
-    const reason = `${litersText(liters)} : ${oneOf(species)} demande un bac d’au moins ${litersText(minimum)} (${sourceLabel(profile.minLiters)})`;
+    const reason = `${volume} : ${oneOf(species)} demande ${profile.reference === 'milieu' ? 'un milieu' : 'un bac'} d’au moins ${litersText(minimum)} (${sourceLabel(profile.minLiters)})`;
     return verdict(false, 'volume-minimal', reason, ratio, disagreementOf(profile.minLiters));
   }
   const rule = needRule(profile, level);
   const disagreement = disagreementOf(rule.field);
   if (ratio > 1) {
-    const reason = `${litersText(liters)} : ${rule.text} (${sourceLabel(rule.field)}) ; il faudrait ${litersText(need)}`;
+    // Besoin équivalent sur la référence de l'espèce (le besoin lui-même si le bac n'en a qu'une).
+    const need = Number.isFinite(ratio) ? ratio * liters : populationNeedLiters(withOne, level);
+    const reason = `${volume} : ${rule.text} (${sourceLabel(rule.field)}) ; il faudrait ${litersText(need)}`;
     return verdict(false, 'capacite', reason, ratio, disagreement);
   }
-  const reason = `${litersText(liters)} : place pour ${oneOf(species)} de plus (${percent}) ; ${rule.text} (${sourceLabel(rule.field)})`;
+  const reason = `${volume} : place pour ${oneOf(species)} de plus (${percent}) ; ${rule.text} (${sourceLabel(rule.field)})`;
   return verdict(true, 'aucune', reason, ratio, disagreement);
+}
+
+/** « 45,7 L », ou « 105 L de milieu » pour une espèce comptée sur le milieu. */
+function volumeText(liters: number, reference: CapacityReference): string {
+  return reference === 'milieu' ? `${litersText(liters)} de milieu` : litersText(liters);
 }
 
 function verdict(

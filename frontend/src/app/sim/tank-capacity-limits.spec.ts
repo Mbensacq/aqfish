@@ -24,7 +24,7 @@ function readout(overrides: Partial<TankCapacityReadout> = {}): TankCapacityRead
   return {
     grossLiters: 288,
     liters: 283.8,
-    status: { needLiters: 179.3, occupation: 179.3 / 283.8, over: false },
+    status: { needLiters: 179.3, milieuNeedLiters: 0, occupation: 179.3 / 283.8, over: false },
     decor: false,
     ...overrides,
   };
@@ -157,7 +157,10 @@ describe('textes de la capacité (#809)', () => {
 
   it('bac sans eau avec des animaux : occupation infinie écrite « ∞ % »', () => {
     const line = capacityLine(
-      readout({ liters: 0, status: { needLiters: 6, occupation: Infinity, over: true } }),
+      readout({
+        liters: 0,
+        status: { needLiters: 6, milieuNeedLiters: 0, occupation: Infinity, over: true },
+      }),
     );
 
     expect(line).toMatch(/^∞ % de la capacité/);
@@ -166,7 +169,11 @@ describe('textes de la capacité (#809)', () => {
   it('alerte seulement au-delà de la capacité', () => {
     expect(capacityAlert(readout())).toBeNull();
     expect(
-      capacityAlert(readout({ status: { needLiters: 300, occupation: 300 / 283.8, over: true } })),
+      capacityAlert(
+        readout({
+          status: { needLiters: 300, milieuNeedLiters: 0, occupation: 300 / 283.8, over: true },
+        }),
+      ),
     ).toBe(
       'Bac au-delà de sa capacité (106 %) : 300 L demandés pour 283,8 L d’eau réelle. Aucun animal n’a été retiré ; ajouts refusés tant que le bac reste trop plein.',
     );

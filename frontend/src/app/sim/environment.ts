@@ -313,8 +313,9 @@ export const PALUDARIUM: Environment = {
   floatingLeaves: false,
   current: { direction: Math.PI / 2, level: 'coupe' },
   species: [AXOLOTL.id, GRENOUILLE.id, TRITON.id],
-  // Population de départ sous la capacité (#811, ADR 0173) : deux sonneurs (36 L pour 45,7 L
-  // d'eau réelle). Le triton reste proposé ; un triton (30 L) avec un sonneur dépasse déjà.
+  // Population de départ sous la capacité (#811, ADR 0173) : deux sonneurs. Depuis l'ADR 0177
+  // (#813), sonneurs et tritons sont comptés sur les 105 L du milieu : un triton peut les
+  // rejoindre en mode soins (94,6 L), mais n'est pas peuplé d'office.
   population: defaultPopulation([GRENOUILLE]),
 };
 

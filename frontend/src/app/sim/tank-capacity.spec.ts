@@ -26,6 +26,8 @@ function profile(overrides: Partial<CapacityProfile> = {}): CapacityProfile {
     litersPerCm: approx(range(1.5, 2)),
     minLiters: approx(20),
     extraLitersPerAdult: approx(null),
+    firstAdultLiters: null,
+    reference: 'eau',
     ...overrides,
   };
 }
@@ -116,6 +118,7 @@ describe('capacité du bac : besoin et occupation (#807)', () => {
   it('bac vide : besoin nul, occupation nulle, pas de dépassement', () => {
     expect(capacityStatus({ liters: 100, population: [] })).toEqual({
       needLiters: 0,
+      milieuNeedLiters: 0,
       occupation: 0,
       over: false,
     });
