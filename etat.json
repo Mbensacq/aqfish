@@ -11309,6 +11309,24 @@
         }
       },
       "metriques": {}
+    },
+    "312": {
+      "numero": 312,
+      "date": "2026-11-26",
+      "debut": "2026-11-26T12:55:44.914Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-26T12:55:44.914Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
