@@ -11911,6 +11911,10 @@
         "bugsOuverts": 0,
         "ciMain": "success",
         "mutation": null
+      },
+      "rapport": {
+        "statut": "termine",
+        "note": "8 cycles, 0 alerte"
       }
     }
   }
