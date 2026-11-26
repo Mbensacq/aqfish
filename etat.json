@@ -11201,6 +11201,24 @@
         }
       },
       "metriques": {}
+    },
+    "309": {
+      "numero": 309,
+      "date": "2026-11-26",
+      "debut": "2026-11-26T07:18:21.106Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-26T07:18:21.106Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
