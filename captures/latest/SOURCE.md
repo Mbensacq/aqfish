@@ -1,5 +1,5 @@
-Branche : cycle/c308-ponte-triton
-PR : #848
-Commit : 52f5ee79360b972ceb402bdfd3bcbc810f02a4e5
+Branche : cycle/c309-bilan-reproduction
+PR : #849
+Commit : 0326eb08f7c87af732a610f45abfc0bda67d2c00
 Graine : défaut des captures
-Temps : 7,1 min (178 tests de captures)
+Temps : 6,4 min (178 tests de captures)
