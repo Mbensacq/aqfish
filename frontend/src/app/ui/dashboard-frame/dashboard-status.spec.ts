@@ -32,9 +32,25 @@ import type { ReviewPoint } from '../../sim/bilan';
 import { lampReadout, type LampReadout } from '../../sim/lamp';
 import { feederReadout, type FeederReadout } from '../../sim/auto-feeder';
 import type { JournalLine } from '../../sim/journal';
+import {
+  JOURNAL_FILTER_STORAGE,
+  JOURNAL_FILTER_STORAGE_KEY,
+  type JournalFilterStorage,
+} from './journal-filter-store';
 import { NO_ALERT_TARGETS, type AlertTargets } from '../../sim/alert-animals';
 import type { GuidePage } from '../../sim/care-guide';
 import { ICH_AGGRAVATED_AT } from '../../sim/disease';
+
+/** Stockage en mémoire, à la façon de `localStorage`. */
+function memoryStorage(data = new Map<string, string>()): JournalFilterStorage & {
+  readonly data: Map<string, string>;
+} {
+  return {
+    data,
+    getItem: (key) => data.get(key) ?? null,
+    setItem: (key, value) => void data.set(key, value),
+  };
+}
 
 const STARVED: HealthSummary = healthSummary(
   Array.from({ length: 4 }, () => ({ species: 'neon' as const, health: HEALTH_FLOOR, hunger: 1 })),
@@ -57,6 +73,7 @@ const STARVED: HealthSummary = healthSummary(
     [feederAvailable]="feederAvailable()"
     [reviewOf]="reviewOf()"
     [journal]="journal()"
+    [reproduction]="reproduction()"
     (maintenanceDone)="done.push($event)"
     (feederChanged)="feederChanges.push($event)"
     (feederRefilled)="refills = refills + 1"
@@ -64,6 +81,8 @@ const STARVED: HealthSummary = healthSummary(
     (wikiPageRequested)="wikiPages.push($event)"
   />`,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  // Filtre du journal retenu (#677) : un stockage neuf par hôte, rien ne passe d'un test à l'autre.
+  providers: [{ provide: JOURNAL_FILTER_STORAGE, useFactory: memoryStorage }],
 })
 class StatusHost {
   /** Pages du wiki demandées par les alertes (#366). */
@@ -79,6 +98,7 @@ class StatusHost {
   refills = 0;
   readonly reviewOf = signal<(() => readonly ReviewPoint[]) | null>(null);
   readonly journal = signal<readonly JournalLine[] | null>(null);
+  readonly reproduction = signal<string | null>(null);
   readonly targets = signal<AlertTargets>(NO_ALERT_TARGETS);
   readonly highlighted = signal(0);
   readonly sample = signal<WaterSample>(DEFAULT_WATER_SAMPLE);
@@ -353,13 +373,81 @@ describe('rappel d’entretien (#513)', () => {
     flush();
     expect(kinds()).toEqual([]);
     expect(empty()).toBe('Rien à signaler.');
-    // Bilan replié puis rouvert : le filtre revient à « Tout ».
+    // Bilan replié puis rouvert : le filtre garde sa sélection (#677, auparavant « Tout »).
     root.querySelector<HTMLElement>('[data-review]')!.click();
     root.querySelector<HTMLElement>('[data-review]')!.click();
     flush();
     root.querySelector<HTMLElement>('[data-journal]')!.click();
     flush();
+    expect(kinds()).toEqual([]);
+    root.querySelector<HTMLElement>('[data-journal-filter="tout"]')!.click();
+    flush();
     expect(kinds()).toEqual(['naissance', 'seance', 'ponte']);
+  });
+
+  it('filtre du journal (#677) : retenu au rechargement ; valeur inconnue : « Tout »', () => {
+    const storage = memoryStorage();
+    TestBed.overrideComponent(StatusHost, {
+      set: { providers: [{ provide: JOURNAL_FILTER_STORAGE, useValue: storage }] },
+    });
+    const pressed = (root: HTMLElement): string[] =>
+      [...root.querySelectorAll('[data-journal-filter][aria-pressed="true"]')].map((button) =>
+        button.getAttribute('data-journal-filter')!,
+      );
+    const open = (): HTMLElement => {
+      const { host, root, flush } = mount();
+      host.reviewOf.set(() => []);
+      host.journal.set([]);
+      flush();
+      root.querySelector<HTMLElement>('[data-review]')!.click();
+      flush();
+      root.querySelector<HTMLElement>('[data-journal]')!.click();
+      flush();
+      return root;
+    };
+    const first = open();
+    expect(pressed(first)).toEqual(['tout']);
+    first.querySelector<HTMLElement>('[data-journal-filter="entretien"]')!.click();
+    expect(storage.data.get(JOURNAL_FILTER_STORAGE_KEY)).toBe('entretien');
+    // Page rechargée : un nouveau composant relit le filtre retenu.
+    expect(pressed(open())).toEqual(['entretien']);
+    storage.data.set(JOURNAL_FILTER_STORAGE_KEY, 'licornes');
+    expect(pressed(open())).toEqual(['tout']);
+  });
+
+  it('bilan de reproduction (#677) : « rien de nouveau » sans événement, compte sinon', () => {
+    const { host, root, flush } = mount();
+    host.reviewOf.set(() => []);
+    host.journal.set([]);
+    host.reproduction.set('Reproduction, 7 derniers jours : rien de nouveau.');
+    flush();
+    const summary = (): string | null =>
+      root.querySelector('[data-reproduction-summary]')?.textContent?.trim() ?? null;
+    expect(summary()).toBeNull();
+    root.querySelector<HTMLElement>('[data-review]')!.click();
+    flush();
+    // Dans le bilan, sous ses points.
+    expect(summary()).toBe('Reproduction, 7 derniers jours : rien de nouveau.');
+    expect(root.querySelector('[data-review-empty]')).not.toBeNull();
+    host.reproduction.set(
+      'Reproduction, 7 derniers jours : Guppy, 1 naissance (2 alevins) ; Corydora, 1 ponte (4 œufs).',
+    );
+    flush();
+    expect(summary()).toContain('Guppy, 1 naissance (2 alevins)');
+    // Dans le journal : seulement sous le filtre « Reproduction ».
+    root.querySelector<HTMLElement>('[data-journal]')!.click();
+    flush();
+    expect(summary()).toBeNull();
+    root.querySelector<HTMLElement>('[data-journal-filter="reproduction"]')!.click();
+    flush();
+    expect(summary()).toContain('Corydora, 1 ponte (4 œufs)');
+    expect(root.querySelector('[data-journal-empty]')!.textContent!.trim()).toBe(
+      'Rien à signaler.',
+    );
+    // Sans bilan fourni (capture) : rien.
+    host.reproduction.set(null);
+    flush();
+    expect(summary()).toBeNull();
   });
 
   it('detailOpen (#592) : vrai tant qu’une alerte, le calendrier ou le bilan est déplié', () => {
