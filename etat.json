@@ -11099,7 +11099,7 @@
       "date": "2026-11-26",
       "debut": "2026-11-26T02:04:52.310Z",
       "type": "dette",
-      "issue": null,
+      "issue": 839,
       "pr": null,
       "version": null,
       "phases": {
