@@ -11260,10 +11260,10 @@
           "note": "PR #851 : algues lisibles + algues dures (#835), ombre flottante de nuit (#832), test de pousse allégé (#850), CI verte ; point 3 de #835 déjà fait (#843) ; unitaires locaux 6493/6493, e2e laissé à la CI"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-26T10:16:14.483Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-26T10:32:50.086Z",
+          "note": "Verdict OK, 0 bug, captures c310 publiées (CI 13/13, unitaires 6493/6493, 4 captures changées voulues)"
         }
       },
       "metriques": {}
