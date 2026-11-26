@@ -11172,7 +11172,7 @@
       "debut": "2026-11-26T05:22:43.748Z",
       "type": "fonctionnalite",
       "issue": 676,
-      "pr": null,
+      "pr": 848,
       "version": null,
       "phases": {
         "planif": {
