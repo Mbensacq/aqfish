@@ -11230,10 +11230,10 @@
           "note": "Verdict OK, 0 bug, captures c309 publiées (CI 13/13, e2e journal+bilan 5/5, 176/178 identiques, 2 écarts = bruit HUD connu ; unitaires locaux non terminés)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-26T08:39:38.230Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-26T09:34:34.903Z",
+          "note": "PR #849 fusionnée → v1.33.1 (release CI OK, CI main verte), #677 fermée ; test plant-growth en délai 2× sur la CI (relancé, dette #850) ; suppression de branche refusée"
         }
       },
       "metriques": {}
