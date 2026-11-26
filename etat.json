@@ -11108,6 +11108,12 @@
           "debut": "2026-11-26T02:04:52.310Z",
           "fin": "2026-11-26T02:05:31.438Z",
           "note": "Issue #839 : délais des scénarios d'écosystème + allocation grazeAlgaeInPlace de #835 (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-26T02:06:05.117Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
