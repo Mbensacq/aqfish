@@ -11228,6 +11228,12 @@
           "debut": "2026-11-26T08:19:46.571Z",
           "fin": "2026-11-26T08:39:00.138Z",
           "note": "Verdict OK, 0 bug, captures c309 publiées (CI 13/13, e2e journal+bilan 5/5, 176/178 identiques, 2 écarts = bruit HUD connu ; unitaires locaux non terminés)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-26T08:39:38.230Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
