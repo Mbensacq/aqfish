@@ -11093,6 +11093,24 @@
         }
       },
       "metriques": {}
+    },
+    "306": {
+      "numero": 306,
+      "date": "2026-11-26",
+      "debut": "2026-11-26T02:04:52.310Z",
+      "type": "dette",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-26T02:04:52.310Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
