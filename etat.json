@@ -11182,10 +11182,10 @@
           "note": "Issue #676 : Ponte du triton au paludarium (S)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-26T05:23:52.491Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-26T06:08:16.164Z",
+          "note": "PR #848 : ponte du triton (un œuf par période dans une feuille immergée libre, ADR 0182), CI verte 13/13 ; 13 tests ajoutés, empreintes inchangées, world.ts abaissé 1423→1413 ; limite : paludarium sans plante ni décor éditable → suite #847 ; e2e local interrompu (CI)"
         }
       },
       "metriques": {}
