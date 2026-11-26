@@ -82,18 +82,15 @@ export interface SheetNote {
  * Alcalinité du récif, 7–11 dKH (Holmes-Farley, `docs/SOINS.md` § 3), commune à toutes les
  * espèces de récif du jeu : paramètre de bac, pas propre à l'espèce.
  */
-const REEF_KH: SheetField<HardnessRange> = sourced(
-  kh(7, 11),
-  'docs/SOINS.md § 3 (Holmes-Farley, alcalinité du récif)',
-);
+const REEF_KH = sourced(kh(7, 11), 'docs/SOINS.md § 3 (Holmes-Farley, alcalinité du récif)');
 
 /** Durée de vie, approximation de jeu : ordre de grandeur, en années (issue #484). */
-function years(min: number, max: number): SheetField<ValueRange> {
-  return approx(range(min, max));
-}
+const years = (min: number, max: number): SheetField<ValueRange> => approx(range(min, max));
 
 /** Références de `docs/SOINS.md` § 11 (paramètres cibles par espèce, bibliographie du document). */
 const SOINS = 'docs/SOINS.md § 11';
+/** Caudata Culture, fiche de _Cynops orientalis_ (ponte, #676). */
+const CAUDATA_NEWT = 'https://caudata.org/cc/species/Cynops/C_orientalis.shtml';
 
 /** Données propres aux fiches (le reste vient de la simulation). */
 interface SheetData {
@@ -264,6 +261,12 @@ const SHEET_DATA: Readonly<Record<SpeciesId, SheetData>> = {
       note(
         'Sans poissons ; éviter au-dessus de 23 °C ; préférer les sujets nés en captivité',
         source(`${ESPECES} (Caudata Culture)`),
+      ),
+      // Ponte (#676) : œufs un à un, feuilles repliées, 15–23 °C sourcés (Caudata Culture) ;
+      // un œuf par période dans le jeu, incubation : approximations de jeu.
+      note(
+        'Reproduction : de mars à juillet, entre 15 et 23 °C, la femelle pond ses œufs un à un et replie une feuille de plante aquatique sur chacun ; dans le jeu (approximation), un couple nourri pond un œuf à la fois dans une feuille libre d’une plante, et la larve n’est pas simulée',
+        source(CAUDATA_NEWT),
       ),
     ],
   },

@@ -337,6 +337,15 @@ sur `docs/SOINS.md` § 11 jusqu'à vérification.
   « Least Concern » (2020), pas de CITES ; **désaccord d'échelle** : reclassé « quasi menacé »
   au niveau national en Chine (Ecology and Evolution 2021). France : « Autres Caudata », 1 à 40
   sans formalité.
+  **Reproduction** (#676, Caudata Culture, consulté le 2026-11-26) : de mars à juillet, eau
+  entre 15 et 23 °C ; les œufs sont « pondus un à un sur la végétation aquatique » et la femelle
+  « replie les feuilles des plantes aquatiques sur l'œuf » ; 10 à 236 œufs par saison, 2,8 par
+  jour en moyenne. **Dans le jeu** (`sim/eggs.ts`, `sim/eggs-leaf.ts`, ADR 0182) : un couple
+  sain et nourri, dans une eau bonne entre 15 et 23 °C, pond **un œuf par période** dans une
+  feuille immergée libre d'une plante enracinée (un œuf par feuille) ; à l'abri des adultes ;
+  la larve n'est pas simulée (l'œuf disparaît à l'éclosion). Rythme et incubation :
+  **approximations de jeu**. Le décor du paludarium n'étant pas éditable et sans plante par
+  défaut, la ponte n'y a lieu qu'avec un décor planté importé (sauvegarde).
 - **Triton à ventre de feu japonais, _Cynops pyrrhogaster_** : 10 à 15 cm ; 15,5–24 °C la plus
   grande partie de l'année ; dix ans de vie raisonnables en captivité ; plus facile à trouver né
   en captivité (Reptiles Magazine, **secondaire**). Même régime légal. **Meilleur choix

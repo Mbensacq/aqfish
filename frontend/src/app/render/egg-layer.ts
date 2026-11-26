@@ -11,7 +11,7 @@ import {
 } from 'three';
 
 import type { SpeciesId } from '../sim/species';
-import { laysNearAnemone, laysOnVegetation, MAX_EGGS, type Egg } from '../sim/eggs';
+import { laysInLeaves, laysNearAnemone, laysOnVegetation, MAX_EGGS, type Egg } from '../sim/eggs';
 import type { SceneLayer } from './effect-layer';
 import { ENVIRONMENT_TONES, PALETTE } from './palette';
 
@@ -78,12 +78,13 @@ export const CLOWN_EGG_RIPE_COLOR = PALETTE.tritonOrange;
 
 /**
  * Vrai si les œufs de l'espèce sont dessinés après l'eau : ponte près d'une anémone (récif,
- * `laysNearAnemone`) ou frai sur la végétation (bassin, `laysOnVegetation`). Tiré des listes de
+ * `laysNearAnemone`), frai sur la végétation (bassin, `laysOnVegetation`) ou ponte du triton dans
+ * les feuilles (paludarium, `laysInLeaves`, #676). Tiré des listes de
  * `sim/eggs.ts`, sans identifiant d'espèce en dur (#662, #685) : une espèce qui rejoint l'une de
  * ces listes hérite du traitement.
  */
 export function eggDrawnAfterWater(species: SpeciesId): boolean {
-  return laysNearAnemone(species) || laysOnVegetation(species);
+  return laysNearAnemone(species) || laysOnVegetation(species) || laysInLeaves(species);
 }
 
 export class EggLayer implements SceneLayer {
