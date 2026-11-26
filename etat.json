@@ -11080,10 +11080,10 @@
           "note": "PR #842 : surfaces du décor en une source + finitions colonie (#841, #838), empreintes inchangées, captures = c304, CI verte ; e2e local non lancé (CI) ; pied d'attribution réinjecté dans la PR par l'environnement"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-26T00:41:40.542Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-26T01:34:55.902Z",
+          "note": "Verdict OK, 0 bug, captures c305 publiées (unitaires 6454 verts, CI 14/14, captures identiques à c304 hors bruit UI)"
         }
       },
       "metriques": {}
