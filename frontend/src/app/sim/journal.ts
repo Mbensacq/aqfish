@@ -492,9 +492,9 @@ export function journalLines(journal: Journal): JournalLine[] {
 
 /**
  * Lignes gardées par le filtre `filter` (#655), dans leur ordre : toutes pour `tout`, sinon
- * celles de la famille choisie (liste vide si aucune ne correspond). Le filtre n'est jamais
- * relu du stockage (signal de l'interface, remis à `tout`) : il est toujours une valeur de
- * `JOURNAL_FILTERS`, d'où l'absence de garde pour un filtre inconnu (#667).
+ * celles de la famille choisie (liste vide si aucune ne correspond). Le filtre relu du stockage
+ * (#677) est validé à la lecture (`readJournalFilter`, valeur inconnue ramenée à `tout`) : il est
+ * toujours une valeur de `JOURNAL_FILTERS`, d'où l'absence de garde ici (#667).
  */
 export function filterJournalLines(
   lines: readonly JournalLine[],

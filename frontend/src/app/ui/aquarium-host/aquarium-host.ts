@@ -518,6 +518,8 @@ export class AquariumHost {
   readonly waterHistory = this.records.waterHistory;
   /** Journal du bac affiché (#581), du plus récent au plus ancien ; vide en capture. */
   readonly journal = this.records.journal;
+  /** Bilan de reproduction des derniers jours (#677) ; `null` en capture. */
+  readonly reproduction = this.records.reproduction;
   /** Parcours « Mon premier aquarium » du bac affiché (#512) ; `null` : non proposé. */
   readonly firstTankPath = this.records.firstTankPath;
   /** Message du dernier geste de soin (#361) ; `null` : aucun depuis le dernier changement de bac. */
@@ -1320,8 +1322,7 @@ export class AquariumHost {
     this.records.keepWaterHistory(world);
     this.records.keepJournal(world);
     this.tanks.advanceBackground();
-    const room = this.tanks.sync(world);
-    return serializeRoom(room, this.tanks.selectedTankId, this.settings());
+    return serializeRoom(this.tanks.sync(world), this.tanks.selectedTankId, this.settings());
   }
 
   /**

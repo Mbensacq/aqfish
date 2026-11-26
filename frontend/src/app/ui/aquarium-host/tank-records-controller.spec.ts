@@ -138,6 +138,17 @@ describe('TankRecordsController (#696)', () => {
       records.refresh(after);
       expect(records.journal().map((line) => line.kind)).toEqual(['maladie']);
     });
+
+    it('bilan de reproduction (#677) : publié avec le journal, « rien de nouveau » sans ponte', () => {
+      const w = world();
+      records.refresh(w);
+      expect(records.reproduction()).toBe('Reproduction, 7 derniers jours : rien de nouveau.');
+      addJournalEntry(records.journalOf(w), { time: 0, kind: 'ponte', detail: 'neon', count: 3 });
+      records.refresh(w);
+      expect(records.reproduction()).toBe(
+        'Reproduction, 7 derniers jours : Néon, 1 ponte (3 œufs).',
+      );
+    });
   });
 
   describe('parcours « Mon premier aquarium » (#512)', () => {
@@ -172,6 +183,7 @@ describe('TankRecordsController (#696)', () => {
     expect(records.maintenance()).toBeNull();
     expect(records.waterHistory()).toBeNull();
     expect(records.journal()).toEqual([]);
+    expect(records.reproduction()).toBeNull();
     expect(records.firstTankPath()).toBeNull();
     expect(JSON.stringify(w)).toBe(before);
   });

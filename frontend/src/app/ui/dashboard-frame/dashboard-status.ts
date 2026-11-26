@@ -57,6 +57,11 @@ import {
   type JournalLine,
 } from '../../sim/journal';
 import {
+  JOURNAL_FILTER_STORAGE,
+  readJournalFilter,
+  writeJournalFilter,
+} from './journal-filter-store';
+import {
   maintenanceSummary,
   type MaintenanceReadout,
   type MaintenanceTask,
@@ -353,12 +358,16 @@ const ICONS: Readonly<Record<GaugeLevel, readonly (readonly [number, number])[]>
                   class="status__why"
                   [attr.data-journal-filter]="filter"
                   [attr.aria-pressed]="journalFilter() === filter"
-                  (click)="journalFilter.set(filter)"
+                  (click)="chooseJournalFilter(filter)"
                 >
                   {{ journalFilterLabels[filter] }}
                 </button>
               }
             </p>
+            <!-- Bilan de reproduction (#677), en tête de la famille « Reproduction ». -->
+            @if (journalFilter() === 'reproduction' && reproduction(); as line) {
+              <p class="status__review-empty" data-reproduction-summary>{{ line }}</p>
+            }
             @if (lines.length > 0) {
               <!-- Sans numéro (#592) : la liste va du plus récent au plus ancien, le jour date. -->
               <ul class="status__review-list status__journal-list">
@@ -392,6 +401,10 @@ const ICONS: Readonly<Record<GaugeLevel, readonly (readonly [number, number])[]>
           <!-- Occupation du bac (#809, ADR 0172), en tête des points. -->
           @if (capacityLine(); as line) {
             <p class="status__review-empty" data-review-capacity>{{ line }}</p>
+          }
+          <!-- Bilan de reproduction des derniers jours (#677), lu dans le journal. -->
+          @if (reproduction(); as line) {
+            <p class="status__review-empty" data-reproduction-summary>{{ line }}</p>
           }
           @if (points.length > 0) {
             <ol class="status__review-list">
@@ -533,8 +546,20 @@ export class DashboardStatus {
   /** Journal affiché dans le bilan déplié au lieu de ses points (#581). */
   readonly journalTab = signal(false);
 
-  /** Famille gardée par le filtre du journal (#655) ; revient à `tout` au repli du bilan. */
-  readonly journalFilter = signal<JournalFilter>('tout');
+  /**
+   * Bilan de reproduction des derniers jours (fourni par l'hôte, #677), dans le bilan et sous le
+   * filtre « Reproduction » du journal ; `null` : rien à afficher (capture).
+   */
+  readonly reproduction = input<string | null>(null);
+
+  /** Stockage du filtre retenu du journal (#677). */
+  private readonly journalFilterStorage = inject(JOURNAL_FILTER_STORAGE);
+
+  /**
+   * Famille gardée par le filtre du journal (#655), retenue au repli du bilan et au
+   * rechargement (#677).
+   */
+  readonly journalFilter = signal<JournalFilter>(readJournalFilter(this.journalFilterStorage));
 
   /** Alerte dépliée (une à la fois), `null` : aucune. */
   readonly expanded = signal<AlertId | null>(null);
@@ -649,9 +674,14 @@ export class DashboardStatus {
   toggleReview(): void {
     this.reviewOpen.update((open) => !open);
     this.journalTab.set(false);
-    this.journalFilter.set('tout');
     this.expanded.set(null);
     this.maintenanceOpen.set(false);
+  }
+
+  /** Choisit la famille du filtre du journal et la retient (#677). */
+  chooseJournalFilter(filter: JournalFilter): void {
+    this.journalFilter.set(filter);
+    writeJournalFilter(this.journalFilterStorage, filter);
   }
 
   /** Vrai pour une tâche sans geste dans le jeu, marquée à la main (#513). */
