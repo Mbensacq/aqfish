@@ -11218,10 +11218,10 @@
           "note": "Issue #677 : Bilan de reproduction dans le journal et le relevé (S)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-26T07:19:32.165Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-26T08:19:09.739Z",
+          "note": "PR #849 : bilan de reproduction (7 jours, lu dans le journal, ADR 0183) + filtre du journal retenu, CI verte 13/13 ; 9 tests ajoutés, 1 test de composant modifié (commit séparé), empreintes inchangées, 5 angles identiques ; e2e local limité à journal et bilan"
         }
       },
       "metriques": {}
