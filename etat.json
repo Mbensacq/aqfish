@@ -11326,10 +11326,10 @@
           "note": "Issue #847 : plantes côté eau au paludarium (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-26T12:56:57.597Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-26T14:06:27.992Z",
+          "note": "PR #854 : plantes côté eau par défaut au paludarium (#847, ADR 0185), CI verte (13/13) ; unitaires 6518/6518, e2e ciblés 60/60, e2e complet via CI"
         }
       },
       "metriques": {}
