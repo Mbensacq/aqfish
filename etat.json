@@ -11320,10 +11320,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-26T12:55:44.914Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-26T12:56:14.018Z",
+          "note": "Issue #847 : plantes côté eau au paludarium (M)"
         }
       },
       "metriques": {}
