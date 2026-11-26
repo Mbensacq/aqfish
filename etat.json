@@ -11116,10 +11116,10 @@
           "note": "PR #843 : délai 30 s des scénarios + isEmptyCover (#839, #835 pt 3), empreintes inchangées, captures = c305 au pixel, CI verte 14/14 ; e2e local interrompu (CI) ; pied d'attribution réinjecté dans la PR par l'environnement"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-26T02:37:28.584Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-26T02:55:38.414Z",
+          "note": "Verdict OK, 0 bug, captures c306 publiées (unitaires 6456 verts, CI 14/14, captures identiques à c305 hors bruit UI HUD)"
         }
       },
       "metriques": {}
