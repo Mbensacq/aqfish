@@ -11590,10 +11590,10 @@
           "note": "Verdict OK, 0 bug, captures c319 publiées (188/189 identiques, guide instable connu)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-27T14:08:13.270Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-27T14:41:49.624Z",
+          "note": "PR #873 fusionnée → v1.34.4 (release CI OK, CI main verte), #866 #872 #870 fermées"
         }
       },
       "metriques": {}
