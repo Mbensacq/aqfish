@@ -11470,10 +11470,10 @@
           "note": "Issue #857 : Vieillissement et durée de vie (M)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-27T04:56:55.437Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-27T06:29:43.882Z",
+          "note": "PR #867 : vieillissement et durée de vie (naissance bornAt, mort de vieillesse, âge dans fiche et wiki), CI verte ; correctif relecture des corps hors ordre"
         }
       },
       "metriques": {}
