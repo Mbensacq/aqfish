@@ -1,3 +1,4 @@
+import { ageSeconds } from './aging';
 import { diseasesOf } from './diseases';
 import { environmentById, environmentWater, livesIn } from './environment';
 import { populationCounts, populationLimit } from './population';
@@ -79,7 +80,7 @@ export function transferRefusal(
  * Transfère l'animal `fishId` du bac `fromId` au bac `toId` (contrôles de
  * `transferRefusal`). Le bac de départ perd l'animal ; le bac d'arrivée gagne un animal de la
  * même espèce, d'identifiant `nextFishId`, né dans sa zone de naissance comme à un ajout, avec
- * la faim, la santé et les maladies de l'animal transféré (un animal malade le reste, avec
+ * la faim, la santé, l'âge (#857) et les maladies de l'animal transféré (un animal malade le reste, avec
  * l'avancement de sa maladie, #547). Les autres bacs, la
  * graine et le compteur de la pièce ne changent pas. Fonction pure : `room` n'est pas modifiée.
  */
@@ -110,7 +111,15 @@ export function transferFish(
     arrival.obstacles,
     homeForRank(worldAnemoneHomes(arrival), SPECIES[fish.species].anemone, bondedCount(entities)),
   );
-  entities.push({ ...spawned, hunger: fish.hunger, health: fish.health, ...diseasesOf(fish) });
+  // Âge gardé (#857) : la naissance est ramenée à l'horloge du bac d'arrivée.
+  const bornAt = arrival.time - ageSeconds(fish, from.world.seed, from.world.time);
+  entities.push({
+    ...spawned,
+    hunger: fish.hunger,
+    health: fish.health,
+    ...diseasesOf(fish),
+    bornAt,
+  });
   arrival.nextFishId = id + 1;
   const counts = populationCounts(arrival);
   const warnings = addWarnings(

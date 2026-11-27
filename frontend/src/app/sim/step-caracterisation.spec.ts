@@ -118,7 +118,8 @@ const EXPECTED: Record<string, readonly string[]> = {
     'a65710f21163cf42',
   ],
   rivaux: ['95514027671f5007', 'ae24ffa376e42c7f', 'b1dc3d4906705cf9', '364b566bb7770857'],
-  alevins: ['11893bab92e7004f', '8c6b0c3bba594419', '74d4c0a7f8797437', 'f4afe4e6ff4bf4c6'],
+  // Alevins : naissance `bornAt` posée à la mise bas (#857, ADR 0187).
+  alevins: ['1c7792459c076c45', '88be8d61ea4b20c3', '554d70ddb252b825', 'fadcedc6e027fa90'],
   oeufs: ['67daa3ebdb3d802b', '68383128fe05b97e', 'e7c50fc697e8b3da', '191149883b683c92'],
   'oeufs+recif': ['78a65971c655f7e3', '5981a8c45050e9ea', '045139668f08355a', '1dbe5dfaee4fd14e'],
   maladies: ['0eef066187b89eeb', '3e9b97b08e71f420', '67a8d734709fef10', '602ba9a522baa28b'],

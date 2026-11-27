@@ -1,3 +1,4 @@
+import { NO_AGES, sameAgeDays, speciesAges, type AgeReadout } from '../../sim/aging-text';
 import { signal } from '@angular/core';
 
 import { CHEVRON_COUNTS } from '../../render/current-indicator-layer';
@@ -113,6 +114,8 @@ export class TankReadoutsController {
   readonly populationMax = signal<PopulationCounts>(NO_FISH);
   /** Plafond d'animaux de la pièce atteint (#392, ADR 0096) : message en clair, sinon `null`. */
   readonly populationNotice = signal<string | null>(null);
+  /** Âges extrêmes de chaque espèce du bac (#857), relevés avec les effectifs et l'eau. */
+  readonly ages = signal<AgeReadout>(NO_AGES);
   /**
    * Capacité du bac affiché (#809, ADR 0172) : ligne d'occupation et de volume réel, alerte
    * d'un bac trop plein et raisons des refus (`CapacityShown`).
@@ -180,6 +183,7 @@ export class TankReadoutsController {
       room && shownTank ? roomAnimalCapRefusal(room, shownTank.id, 1, world) : null,
     );
     this.health.set(healthSummary(world.entities));
+    this.refreshAges(world);
     this.shownDead = world.dead?.length ?? 0;
     ports.probe.publishDead(this.shownDead);
     ports.refreshAlerts(world, this.population());
@@ -240,12 +244,21 @@ export class TankReadoutsController {
     this.untreatedTap.set(world.water.untreatedTap === true);
     this.carbon.set(world.water.carbon === true);
     this.health.set(healthSummary(world.entities));
+    this.refreshAges(world);
     this.refreshDead(world);
     ports.refreshAlerts(world, this.population());
     ports.refreshRecords(world);
     ports.probe.publishTreatment(ports.refreshWaterCare(world));
     this.publishWater(world);
     ports.refreshLooks(world);
+  }
+
+  /** Âges du bac (#857) : signal changé seulement quand un nombre de jours affiché change. */
+  private refreshAges(world: World): void {
+    const ages = speciesAges(world);
+    if (!sameAgeDays(ages, this.ages())) {
+      this.ages.set(ages);
+    }
   }
 
   /** Expose la force du courant de `world` et la donne à la vue (bulles, feuilles, repère). */

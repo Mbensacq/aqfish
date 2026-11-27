@@ -1,3 +1,4 @@
+import { adultBornAt } from './aging';
 import { MAX_TOTAL_FISH } from './constants';
 import { SPECIES, type SpeciesId } from './species';
 import { bondedCount, cloneWorld, homeForRank, spawnEntity, worldAnemoneHomes } from './world';
@@ -110,16 +111,17 @@ export function setPopulationInPlace(
     }
   }
   while (current < target) {
-    entities.push(
-      spawnEntity(
-        world.seed,
-        world.nextFishId,
-        species,
-        world,
-        world.obstacles,
-        homeForRank(worldAnemoneHomes(world), SPECIES[species].anemone, bondedCount(entities)),
-      ),
+    const animal = spawnEntity(
+      world.seed,
+      world.nextFishId,
+      species,
+      world,
+      world.obstacles,
+      homeForRank(worldAnemoneHomes(world), SPECIES[species].anemone, bondedCount(entities)),
     );
+    // Adulte arrivé maintenant (#857) : son âge tiré de la graine part de l'heure d'ajout.
+    const bornAt = adultBornAt(world.seed, animal.id, species, world.time);
+    entities.push(bornAt === undefined ? animal : { ...animal, bornAt });
     world.nextFishId += 1;
     current += 1;
   }

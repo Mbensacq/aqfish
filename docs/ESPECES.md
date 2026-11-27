@@ -642,6 +642,48 @@ Désaccords entre sources :
 
 - néon et molly : dureté (précautions) [documentation du projet (Seriously Fish ; FishBase : dH 1–2, désaccord) ; https://www.seriouslyfish.com/species/poecilia-sphenops (15 à 30 °dGH)]
 
+## Durées de vie du jeu (#857, ADR 0187)
+
+Durée de vie moyenne en captivité utilisée par le vieillissement (`sim/aging.ts`) : milieu de
+la plage `lifespan` de chaque fiche (`sim/species-sheet.ts`). **Toutes sont des approximations
+de jeu** (ordres de grandeur, aucune source consultable pendant les cycles #484 et #857) ; un
+test (`sim/aging.spec.ts`) vérifie que chaque espèce a une valeur et un statut de sourçage.
+Remplacer une approximation par une valeur sourcée : changer la plage et son statut dans la
+fiche, puis ce tableau.
+
+| Espèce | Plage de la fiche | Moyenne du jeu | Statut |
+| --- | --- | --- | --- |
+| Néon | 3–5 ans | 4 ans | approximation de jeu |
+| Guppy | 2–3 ans | 2,5 ans | approximation de jeu |
+| Corydora | 5–10 ans | 7,5 ans | approximation de jeu |
+| Koï | 25–35 ans | 30 ans | approximation de jeu |
+| Axolotl | 10–15 ans | 12,5 ans | approximation de jeu |
+| Sonneur oriental | 10–15 ans | 12,5 ans | approximation de jeu |
+| Triton à ventre de feu | 10–15 ans | 12,5 ans | approximation de jeu |
+| Poisson-clown | 10–20 ans | 15 ans | approximation de jeu |
+| Chirurgien bleu | 8–20 ans | 14 ans | approximation de jeu |
+| Rasbora arlequin | 4–6 ans | 5 ans | approximation de jeu |
+| Tétra citron | 3–5 ans | 4 ans | approximation de jeu |
+| Loche kuhli | 8–10 ans | 9 ans | approximation de jeu |
+| Gourami nain | 3–4 ans | 3,5 ans | approximation de jeu |
+| Platy | 2–4 ans | 3 ans | approximation de jeu |
+| Danio zébré | 3–5 ans | 4 ans | approximation de jeu |
+| Ancistrus commun | 8–12 ans | 10 ans | approximation de jeu |
+| Otocinclus | 3–5 ans | 4 ans | approximation de jeu |
+| Tétra braise | 3–5 ans | 4 ans | approximation de jeu |
+| Molly | 3–5 ans | 4 ans | approximation de jeu |
+| Gourami miel | 4–5 ans | 4,5 ans | approximation de jeu |
+| Chromis vert | 5–8 ans | 6,5 ans | approximation de jeu |
+| Gobie à crevette jaune | 5–8 ans | 6,5 ans | approximation de jeu |
+| Gramma royal | 5–8 ans | 6,5 ans | approximation de jeu |
+| Crevette nettoyeuse | 3–5 ans | 4 ans | approximation de jeu |
+| Blennie bicolore | 3–5 ans | 4 ans | approximation de jeu |
+| Xipho | 3–5 ans | 4 ans | approximation de jeu |
+| Crevette cerise | 1–2 ans | 1,5 an | approximation de jeu |
+| Néritine zèbre | 1–2 ans | 1,5 an | approximation de jeu |
+| Poisson rouge | 6–20 ans | 13 ans | approximation de jeu |
+
+
 ## Non vérifié et désaccords
 
 1. Néon : 21–25 °C (Seriously Fish 2026) / 26,5–29 °C (ancien texte) / 21–29 °C (importateur) /

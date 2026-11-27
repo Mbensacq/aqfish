@@ -1,3 +1,4 @@
+import { NO_AGES, type AgeReadout } from '../../sim/aging-text';
 import { DEFAULT_LIGHTING_HOURS } from '../../sim/algae';
 import { DEFAULT_LAMP_ON_HOUR } from '../../sim/lamp';
 import {
@@ -342,6 +343,7 @@ export { sliderHour } from './day-section';
             [careMode]="careMode()"
             [population]="population()"
             [populationMax]="populationMax()"
+            [ages]="ages()"
             [populationNotice]="populationNotice()"
             [capacity]="capacity()"
             [tankLiters]="tankLiters()"
@@ -438,6 +440,8 @@ export class ControlPanel implements SettingsSearchFilter {
   readonly population = input<PopulationCounts>(NO_FISH);
   /** Effectif maximal de chaque espèce, compte tenu des autres (fourni par l'hôte). */
   readonly populationMax = input<PopulationCounts>(NO_FISH);
+  /** Âges extrêmes de chaque espèce du bac (#857), pour les fiches. */
+  readonly ages = input<AgeReadout>(NO_AGES);
   /** Plafond d'animaux de la pièce atteint (#392) : message de l'hôte, sinon `null`. */
   readonly populationNotice = input<string | null>(null);
   /** Capacité du bac (fournie par l'hôte, #809) : occupation, alerte, raisons des refus. */

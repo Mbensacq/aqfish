@@ -292,6 +292,7 @@ export class TankRecordsController {
       time: world.time,
       entities: world.entities,
       ...(world.eggs === undefined ? {} : { eggs: world.eggs }),
+      ...(world.dead === undefined ? {} : { dead: world.dead }),
       alerts: worldAlerts(world),
     };
     if (watch === undefined) {

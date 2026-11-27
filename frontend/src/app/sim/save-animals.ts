@@ -1,3 +1,4 @@
+import { isBirthTime } from './aging';
 import { acceptsSavedSpecies, type CareMode } from './care-mode';
 import { DISEASES } from './diseases';
 import { environmentWater, placeEnvironment, type EnvironmentId, type Place } from './environment';
@@ -131,7 +132,12 @@ export function parseDeadList(
       problems.push(`corps ${i} : identifiant ${bodies[i].id} déjà porté par un animal vivant`);
       return;
     }
-    dead.push({ ...bodies[i], deadFor: age });
+    const cause = own(item as Record<string, unknown>, 'cause');
+    if (cause !== undefined && cause !== 'vieillesse') {
+      problems.push(`corps ${i} : cause inconnue (${describe(cause)})`);
+      return;
+    }
+    dead.push({ ...bodies[i], deadFor: age, ...(cause === undefined ? {} : { cause }) });
   });
   return dead;
 }
@@ -140,11 +146,20 @@ export function parseDeadList(
 interface AnimalListRule extends ListRule {
   /** Préfixe des problèmes d'un élément (« poisson 0 : … », « corps 0 : … »). */
   readonly item: string;
+  /**
+   * Identifiants strictement croissants exigés (poissons) ; sinon seulement distincts : les
+   * corps sont dans l'ordre des décès, pas des identifiants (#857).
+   */
+  readonly ordered: boolean;
 }
+
+const ORDER_PROBLEM = 'identifiants non strictement croissants';
+const DUPLICATE_PROBLEM = 'identifiant en double';
 
 const FISH_LIST: AnimalListRule = {
   key: 'fish',
   item: 'poisson',
+  ordered: true,
   max: MAX_TOTAL_FISH,
   countMessage: (count) => `trop de poissons (${count}, ${MAX_TOTAL_FISH} au plus)`,
 };
@@ -153,6 +168,7 @@ const FISH_LIST: AnimalListRule = {
 const DEAD_LIST: AnimalListRule = {
   key: 'dead',
   item: 'corps',
+  ordered: false,
   max: MAX_TOTAL_FISH,
   countMessage: (count) => `trop de corps (${count}, ${MAX_TOTAL_FISH} au plus)`,
 };
@@ -170,15 +186,17 @@ export function parseFishList(
   const fishes: Entity[] = [];
   const counts = new Map<SpeciesId, number>();
   let previousId = -1;
+  const seen = new Set<number>();
   items.forEach((item: unknown, i) => {
     const fish = parseFish(item, context);
     if (typeof fish === 'string') {
       problems.push(`${rule.item} ${i} : ${fish}`);
       return;
     }
-    if (fish.id <= previousId) {
-      problems.push(`${rule.item} ${i} : identifiants non strictement croissants`);
+    if (rule.ordered ? fish.id <= previousId : seen.has(fish.id)) {
+      problems.push(`${rule.item} ${i} : ${rule.ordered ? ORDER_PROBLEM : DUPLICATE_PROBLEM}`);
     }
+    seen.add(fish.id);
     if (typeof context.nextFishId === 'number' && fish.id >= context.nextFishId) {
       problems.push(`${rule.item} ${i} : identifiant ${fish.id} ≥ nextFishId`);
     }
@@ -245,7 +263,8 @@ function parseFish(item: unknown, context: AnimalContext): Entity | string {
       fish['health'] = (own(item, 'health') as number | undefined) ?? HEALTH_START;
     }
   }
-  const extra = readDiseases(item, fish, environment) ?? readGrowth(item, fish);
+  const extra =
+    readDiseases(item, fish, environment) ?? readGrowth(item, fish) ?? readBirth(item, fish);
   if (extra !== null) {
     return extra;
   }
@@ -302,6 +321,25 @@ function readGrowth(
     return `growth hors de [0, ${FRY_GROWTH_TIME}[`;
   }
   fish['growth'] = growth;
+  return null;
+}
+
+/**
+ * Naissance (issue #857) : facultative, absente pour un animal du monde neuf et dans toute
+ * sauvegarde antérieure (âge tiré de la graine, `birthTime`) ; présente, nombre fini.
+ */
+function readBirth(
+  item: Record<string, unknown>,
+  fish: Record<string, number | string>,
+): string | null {
+  const bornAt = own(item, 'bornAt');
+  if (bornAt === undefined) {
+    return null;
+  }
+  if (!isBirthTime(bornAt)) {
+    return 'bornAt doit être un nombre fini';
+  }
+  fish['bornAt'] = bornAt;
   return null;
 }
 

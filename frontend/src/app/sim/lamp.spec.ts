@@ -1,6 +1,7 @@
 import { algaeGrowth, ALGAE_LIGHT_LIMIT_HOURS, DEFAULT_LIGHTING_HOURS } from './algae';
 import { createDayLight, lightAt, lightAtInto } from './daylight';
 import {
+  shownLampReadout,
   DEFAULT_LAMP_ON_HOUR,
   LAMP_ADVISED_MAX_HOURS,
   LAMP_ADVISED_MIN_HOURS,
@@ -205,5 +206,12 @@ describe('lampe du bac (#584)', () => {
         expect(plantLightFactor(bad)).toBe(0);
       }
     });
+  });
+});
+
+describe('relevé de lampe affiché selon l’environnement (#857, extrait de l’hôte)', () => {
+  it('aucun relevé là où les algues ne poussent pas, le relevé ailleurs', () => {
+    expect(shownLampReadout('recif', {})).toBe(null);
+    expect(shownLampReadout('tropical', { lighting: 8 })).toEqual(lampReadout({ lighting: 8 }));
   });
 });

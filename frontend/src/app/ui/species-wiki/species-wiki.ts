@@ -20,6 +20,7 @@ import {
   guideView,
   type GuidePage,
 } from '../../sim/care-guide';
+import { ageRows, NO_AGES, type AgeReadout } from '../../sim/aging-text';
 import { NO_FISH, type PopulationCounts } from '../../sim/population';
 import { type SpeciesId } from '../../sim/species';
 import { addWarnings, addWarningText } from '../../sim/add-warnings';
@@ -137,6 +138,15 @@ export function wikiAddCount(
                     <small class="species-wiki__status" data-wiki-detail-status>{{
                       row.status
                     }}</small>
+                  </dd>
+                </div>
+              }
+              @for (row of ageRows(); track row.field) {
+                <div class="species-wiki__row" [attr.data-wiki-age]="row.field">
+                  <dt>{{ row.label }}</dt>
+                  <dd>
+                    {{ row.value }}
+                    <small class="species-wiki__status">{{ row.status }}</small>
                   </dd>
                 </div>
               }
@@ -321,6 +331,8 @@ export class SpeciesWiki {
   readonly population = input<PopulationCounts>(NO_FISH);
   /** Effectif maximal de chaque espèce, place restante comprise. */
   readonly populationMax = input<PopulationCounts>(NO_FISH);
+  /** Âges extrêmes de chaque espèce du bac (#857), pour la fiche affichée. */
+  readonly ages = input<AgeReadout>(NO_AGES);
   /** Volume d'eau du bac, en litres (`null` : inconnu), pour les avertissements d'ajout. */
   readonly tankLiters = input<number | null>(null);
   /** Température de l'eau du bac, en °C (`NaN` : inconnue), pour la comparaison (#291). */
@@ -368,6 +380,11 @@ export class SpeciesWiki {
   protected readonly sheet = computed(() => {
     const id = this.selected();
     return id === null ? null : wikiSheet(id);
+  });
+  /** Âge dans le bac et durée de vie moyenne de l'espèce affichée (#857). */
+  protected readonly ageRows = computed(() => {
+    const id = this.selected();
+    return id === null ? [] : ageRows(id, this.ages()[id]);
   });
   /** Comparaison de l'espèce affichée avec l'eau du bac (#291). */
   protected readonly comparison = computed(() => {

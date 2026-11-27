@@ -1,4 +1,5 @@
-import { lightingOf } from './algae';
+import { hasAlgae, lightingOf } from './algae';
+import type { EnvironmentId } from './environment';
 import { HOURS_PER_DAY, formatHour, mix, normalizeHour, type MutableDayLight } from './daylight';
 
 /**
@@ -146,6 +147,17 @@ export function lampReadout(water: {
     advice,
     text: `${LAMP_ADVICE_TEXT[advice]} (conseillé : ${LAMP_ADVISED_MIN_HOURS} à ${LAMP_ADVISED_MAX_HOURS} h, approximation de jeu)`,
   };
+}
+
+/**
+ * Relevé de la lampe du tableau de bord pour un bac de `environment` : `null` là où les algues
+ * ne poussent pas (pas de lampe à régler), sinon `lampReadout(water)`.
+ */
+export function shownLampReadout(
+  environment: EnvironmentId,
+  water: { readonly lighting?: number; readonly lampOn?: number },
+): LampReadout | null {
+  return hasAlgae(environment) ? lampReadout(water) : null;
 }
 
 /**

@@ -17,7 +17,7 @@ import type { Egg } from './eggs';
 import { copyFirstTankPath, readFirstTankPath, type FirstTankPathState } from './first-tank-path';
 import { copyMaintenance, readMaintenance, type MaintenanceState } from './maintenance';
 import { copyFeeder, hasFeeder, readFeeder, type FeederState } from './auto-feeder';
-import type { DeadAnimal } from './mortality';
+import type { DeadAnimal, DeathCause } from './mortality';
 import { copySavedWaterHistory, readWaterHistory, type SavedWaterHistory } from './water-history';
 import { copySavedJournal, readJournal, type SavedJournal } from './journal';
 import type { FoodPellet } from './food';
@@ -187,7 +187,10 @@ export interface SavedWorld {
   /** Mortalité activée (#582) : absente des sauvegardes antérieures, jamais écrite à faux. */
   readonly mortality?: true;
   /** Corps des animaux morts (#582) : absents des sauvegardes antérieures, jamais écrits vides. */
-  readonly dead?: readonly (SavedFish & { readonly deadFor: number })[];
+  readonly dead?: readonly (SavedFish & {
+    readonly deadFor: number;
+    readonly cause?: DeathCause;
+  })[];
 }
 
 /** Contenu d'une sauvegarde (schéma 1). */
@@ -300,7 +303,11 @@ function savedOptionalParts(world: World): Partial<SavedWorld> {
     ...(world.dead === undefined || world.dead.length === 0
       ? {}
       : {
-          dead: world.dead.map((body) => ({ ...savedFish(body), deadFor: body.deadFor })),
+          dead: world.dead.map((body) => ({
+            ...savedFish(body),
+            deadFor: body.deadFor,
+            ...(body.cause === undefined ? {} : { cause: body.cause }),
+          })),
         }),
   };
 }
@@ -322,6 +329,10 @@ function savedFish(fish: Fish): SavedFish {
   if (fish.growth !== undefined) {
     // Alevin (issue #459) : âge écrit seulement pour un alevin.
     saved['growth'] = fish.growth;
+  }
+  if (fish.bornAt !== undefined) {
+    // Naissance (#857) : absente, l'âge est tiré de la graine à la relecture comme au départ.
+    saved['bornAt'] = fish.bornAt;
   }
   return saved as unknown as SavedFish;
 }
