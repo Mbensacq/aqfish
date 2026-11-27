@@ -11410,10 +11410,10 @@
           "note": "Verdict OK, 0 bug, captures c314 publiées (179/180 identiques, salvinia 11 px)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-27T02:22:37.011Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-27T02:51:10.305Z",
+          "note": "PR #863 fusionnée → v1.33.6 (release CI OK, CI main verte), #861 fermée ; suppression de branche refusée"
         }
       },
       "metriques": {}
