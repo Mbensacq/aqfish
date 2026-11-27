@@ -9,6 +9,7 @@ import type { PopulationCounts } from '../../sim/population';
 import type { SaveMessage, SaveStatus } from '../../core/save-storage/save-storage';
 import { MAX_SAVE_LENGTH } from '../../sim/save';
 import { REDUCED_MOTION_STORAGE_KEY } from '../../core/reduced-motion/reduced-motion';
+import { MOON_OPTION_STORAGE_KEY } from '../../core/moon-option/moon-option';
 import { AMBIENT_SOUND_STORAGE_KEY } from '../../core/ambient-sound/ambient-sound';
 import {
   AMBIENT_SOUND_TIMER,
@@ -18,6 +19,7 @@ import {
 import { FakeAudioContext, FakeTimer } from '../ambient-sound/fake-audio-context';
 import { SETTINGS_CATEGORY_STORAGE } from '../settings-window/settings-category-store';
 import { ReducedMotionState } from '../reduced-motion/reduced-motion-state';
+import { MoonOptionState } from '../moon-option/moon-option-state';
 import { SIM_SPEEDS } from '../../sim/sim-speed';
 import type { CurrentLevel } from '../../sim/water-current';
 import { MAX_HEATER_TEMPERATURE, MIN_HEATER_TEMPERATURE } from '../../sim/water';
@@ -1379,10 +1381,33 @@ describe('ControlPanel', () => {
     // bactéries (#529) (raclette et sécateur : barre du bas depuis #722),
     // l'eau non traitée et les deux conditionneurs (#530), le charbon et les deux régulateurs
     // de pH (#531), le curseur de l'allumage de la lampe (#584), les quatre filtres et le tri
-    // de la population (#723), et la liste « Environnement » (#87, comptée depuis que les
-    // listes le sont, #723). Le champ du lien de partage n'apparaît qu'avec un lien.
+    // de la population (#723), la liste « Environnement » (#87, comptée depuis que les
+    // listes le sont, #723) et la case « Lune » (#856). Le champ du lien de partage n'apparaît
+    // qu'avec un lien.
     expect(controls).toHaveLength(
-      5 + 1 + 1 + 1 + 2 + 2 + 17 * 5 + 2 + 1 + 1 + 1 + 1 + 2 + 1 + 1 + 1 + 3 + 3 + 1 + 4 + 1 + 1,
+      5 +
+        1 +
+        1 +
+        1 +
+        2 +
+        2 +
+        17 * 5 +
+        2 +
+        1 +
+        1 +
+        1 +
+        1 +
+        2 +
+        1 +
+        1 +
+        1 +
+        3 +
+        3 +
+        1 +
+        4 +
+        1 +
+        1 +
+        1,
     );
     expect(root().querySelectorAll('input[type="file"]')).toHaveLength(1);
     for (const control of controls) {
@@ -1951,6 +1976,21 @@ describe('ControlPanel', () => {
       await fixture.whenStable();
       expect(state.reduced()).toBe(false);
       expect(localStorage.getItem(REDUCED_MOTION_STORAGE_KEY)).toBe('normaux');
+    });
+  });
+
+  describe('affichage : lune (#856)', () => {
+    afterEach(() => localStorage.removeItem(MOON_OPTION_STORAGE_KEY));
+
+    it('case cochée par défaut, dans « Affichage » ; la décocher règle et mémorise le choix', async () => {
+      await openPanel();
+      const box = checkbox('Lune')!;
+      expect(box.checked).toBe(true);
+      expect(box.closest('[data-section]')?.getAttribute('data-section')).toBe('affichage');
+      box.click();
+      await fixture.whenStable();
+      expect(TestBed.inject(MoonOptionState).enabled()).toBe(false);
+      expect(localStorage.getItem(MOON_OPTION_STORAGE_KEY)).toBe('coupee');
     });
   });
 

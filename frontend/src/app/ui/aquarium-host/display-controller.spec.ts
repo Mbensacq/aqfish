@@ -1,4 +1,5 @@
 import type { AquariumView } from '../../render/aquarium-view';
+import { LUNAR_CYCLE_DAYS, moonGlow, NEW_MOON_GLOW, REDUCED_MOON_AMPLITUDE } from '../../sim/moon';
 import type { Room } from '../../sim/room';
 import {
   FILTER_ATTRIBUTE,
@@ -48,6 +49,7 @@ describe('DisplayController (#696)', () => {
   let stored: Map<string, string>;
   let system: boolean;
   let reduced: boolean;
+  let moonEnabled: boolean;
   let calls: string[];
   let display: DisplayController;
 
@@ -58,6 +60,7 @@ describe('DisplayController (#696)', () => {
     stored = new Map();
     system = false;
     reduced = false;
+    moonEnabled = true;
     calls = [];
     display = new DisplayController({
       probe: new AquariumProbe(element),
@@ -68,11 +71,36 @@ describe('DisplayController (#696)', () => {
         setItem: (key, value) => void stored.set(key, value),
       }),
       motion: { system: () => system, reduced: () => reduced },
+      moon: { enabled: () => moonEnabled },
       roomState: () => null,
       roomShown: (_room, shown) => calls.push(`pièce:${shown}`),
       saveNow: () => calls.push('sauvegarde'),
       scheduleFrame: () => calls.push('image'),
     });
+  });
+
+  it('lune (#856) : variation entière, minimale avec « Réduire les mouvements », nulle sans l’option', () => {
+    const newMoonDay = LUNAR_CYCLE_DAYS / 2;
+    expect(display.moonGlowAt(0)).toBe(1);
+    expect(display.moonGlowAt(newMoonDay)).toBe(NEW_MOON_GLOW);
+    reduced = true;
+    expect(display.moonGlowAt(newMoonDay)).toBe(moonGlow(0, REDUCED_MOON_AMPLITUDE));
+    moonEnabled = false;
+    expect(display.moonGlowAt(newMoonDay)).toBe(1);
+  });
+
+  it('lune en capture : option mémorisée ignorée, `lune=` fixe la phase', () => {
+    display.setCaptureMoonPhase(0);
+    expect(display.moonGlowAt(0)).toBe(1);
+    capture = true;
+    moonEnabled = false;
+    expect(display.moonGlowAt(0)).toBe(1);
+    display.setCaptureMoonPhase(0);
+    expect(display.moonGlowAt(0)).toBe(NEW_MOON_GLOW);
+    system = true;
+    expect(display.moonGlowAt(0)).toBe(moonGlow(0, REDUCED_MOON_AMPLITUDE));
+    display.setCaptureMoonPhase(null);
+    expect(display.moonGlowAt(0)).toBe(1);
   });
 
   it('filtre : appliqué, exposé et mémorisé ; jamais mémorisé en capture', () => {

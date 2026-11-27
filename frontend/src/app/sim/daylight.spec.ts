@@ -45,11 +45,11 @@ function lightDistance(a: DayLight, b: DayLight): number {
 
 describe('lightAt : courbe de lumière', () => {
   it('midi : plein jour, lumière et ciel exactement blancs', () => {
-    expect(lightAt(12)).toEqual({ intensity: 1, tint: [1, 1, 1], sky: [1, 1, 1] });
+    expect(lightAt(12)).toEqual({ intensity: 1, tint: [1, 1, 1], sky: [1, 1, 1], moon: 1 });
   });
 
   it('minuit : intensité nulle, teintes de nuit exactes', () => {
-    expect(lightAt(0)).toEqual({ intensity: 0, tint: NIGHT_TINT, sky: NIGHT_SKY });
+    expect(lightAt(0)).toEqual({ intensity: 0, tint: NIGHT_TINT, sky: NIGHT_SKY, moon: 1 });
   });
 
   it('bornes : 0 h et 24 h donnent la même lumière ; périodique de 24 h', () => {
@@ -332,10 +332,11 @@ describe('lightAtInto : variante sans allocation', () => {
     expect(lightAtInto(0, out)).toBe(out);
     expect(out.tint).toBe(tint);
     expect(out.sky).toBe(sky);
-    expect(out).toEqual({ intensity: 0, tint: NIGHT_TINT, sky: NIGHT_SKY });
-    // Retour à midi après la nuit : aucune valeur résiduelle.
+    expect(out).toEqual({ intensity: 0, tint: NIGHT_TINT, sky: NIGHT_SKY, moon: 1 });
+    // Retour à midi après la nuit : aucune valeur résiduelle (lune comprise, #856).
+    out.moon = 0.72;
     lightAtInto(12, out);
-    expect(out).toEqual({ intensity: 1, tint: [1, 1, 1], sky: [1, 1, 1] });
+    expect(out).toEqual({ intensity: 1, tint: [1, 1, 1], sky: [1, 1, 1], moon: 1 });
     expect(out.tint).toBe(tint);
   });
 

@@ -21,6 +21,7 @@ import {
 describe('StartupSequence (#696)', () => {
   let calls: string[];
   let modes: StartupMode[];
+  let moonPhases: (number | null)[];
   let world: MutableWorld | null;
   let dayClock: DayClock;
   let stored: RestoredSave | null;
@@ -35,6 +36,7 @@ describe('StartupSequence (#696)', () => {
   beforeEach(() => {
     calls = [];
     modes = [];
+    moonPhases = [];
     world = null;
     dayClock = DEFAULT_DAY_CLOCK;
     stored = null;
@@ -48,6 +50,7 @@ describe('StartupSequence (#696)', () => {
       calls.push(name);
     };
     const controllers = {
+      display: { setCaptureMoonPhase: (phase: number | null) => void moonPhases.push(phase) },
       clock: { refreshFrozen: log('heure figée ?'), applySpeed: log('vitesse') },
       saves: {
         readStored: () => {
@@ -171,6 +174,8 @@ describe('StartupSequence (#696)', () => {
     ]);
     expect(world?.environment).toBe('tropical');
     expect(dayClock).toEqual(initialDayClock(null, false));
+    // Sans `lune=` : phase du jour de jeu (#856).
+    expect(moonPhases).toEqual([null]);
   });
 
   it('reprend la sauvegarde lue : mondes rangés, pièce, réglages et horloge', () => {

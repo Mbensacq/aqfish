@@ -31,6 +31,10 @@
  * nourriture, en mode capture seulement ; absent ou invalide, en points (séries existantes
  * inchangées).
  *
+ * Paramètre facultatif `lune=` (issue #856) : en mode capture, phase de la lune, réel dans
+ * [0, 1) (`lune=0` : nouvelle lune, `lune=0.5` : pleine lune) ; absent ou invalide, phase du
+ * jour de jeu (séries existantes inchangées).
+ *
  * Paramètre facultatif `pluie=1` (issue #106) : fait pleuvoir dans le bassin, en capture
  * comme hors capture (sans effet dans un environnement sans pluie) ; toute autre valeur ou
  * absent, pas de pluie (séries existantes inchangées).
@@ -203,6 +207,8 @@ export interface CaptureParams {
   readonly filter: RenderFilter | null;
   /** Heure figée par `heure=`, dans [0, 24) ; `null` si absente ou invalide. */
   readonly hour: number | null;
+  /** Phase de la lune de `lune=`, dans [0, 1) ; `null` si absente ou invalide (#856). */
+  readonly moonPhase: number | null;
   /** Dépôts de nourriture demandés par `nourrir=` (vide si absent). */
   readonly feedings: readonly CaptureFeeding[];
   /** Effectifs demandés par `population=`, dans l'ordre de l'URL (vide si absent). */
@@ -371,6 +377,7 @@ export const DEFAULT_CAPTURE_PARAMS: CaptureParams = {
   time: 0,
   filter: null,
   hour: null,
+  moonPhase: null,
   feedings: [],
   population: [],
   foodStyle: null,
@@ -438,6 +445,7 @@ export function parseCaptureParams(search: string): CaptureParams {
     time: parseTime(params.get('time')),
     filter: parseFilter(params.get('filtre')),
     hour: parseHour(params.get('heure')),
+    moonPhase: parseMoonPhase(params.get('lune')),
     feedings: parseFeedings(params.get('nourrir')),
     population: parsePopulation(params.get('population')),
     foodStyle: parseFoodStyle(params.get('granules')),
@@ -653,6 +661,15 @@ function parseHour(raw: string | null): number | null {
   }
   const value = Number(raw);
   return value < 24 ? value : null;
+}
+
+/** Phase de `lune=` : réel décimal dans [0, 1), sinon `null`. */
+function parseMoonPhase(raw: string | null): number | null {
+  if (raw === null || !HOUR_PATTERN.test(raw)) {
+    return null;
+  }
+  const value = Number(raw);
+  return value < 1 ? value : null;
 }
 
 /** Réel décimal signé, sans exposant ni espace. */

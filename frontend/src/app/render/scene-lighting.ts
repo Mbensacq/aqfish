@@ -49,6 +49,7 @@ export class SceneLighting {
   /** Applique la lumière du jour `light` (copiée) et le ciel couvert courant. */
   update(light: DayLight): void {
     this.light.intensity = light.intensity;
+    this.light.moon = light.moon ?? 1;
     for (let k = 0; k < 3; k++) {
       this.light.tint[k] = light.tint[k];
       this.light.sky[k] = light.sky[k];
@@ -132,9 +133,14 @@ export class SceneLighting {
     this.palette.setEnvironmentPenalties(environmentTonePenalties(tones));
   }
 
-  /** Applique `this.light` et le ciel couvert de la pluie courante. */
+  /**
+   * Applique `this.light` et le ciel couvert de la pluie courante. La clarté lunaire
+   * (`light.moon`, #856, 1 en plein jour) s'y multiplie comme un ciel plus ou moins couvert :
+   * lumières, eau, décor et pièce ; les rayons ne suivent que la pluie.
+   */
   private applyLight(): void {
-    const { light, overcast, layers } = this;
+    const { light, layers } = this;
+    const overcast = this.overcast * light.moon;
     layers.world.setOvercast(overcast);
     layers.world.setDaylight(light);
     layers.waterLight.setDaylight(light.intensity);

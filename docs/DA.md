@@ -45,6 +45,11 @@ la passe de post-traitement y ramène chaque pixel affiché (ADR 0007).
 | Ciel couvert (tons réservés à la pluie, ADR 0082) | herbe `#42833f`, touffes `#7ab25a`, roche `#5e5a54` et `#3a3934`, terre `#74654d` : couleurs du bassin à 85 %                     |
 | Nourriture (tons réservés aux granulés, ADR 0056) | ocre `#a0703a`, brun-rouge `#8c4630`, brun `#6b4428` ; plus `#a8916a` (beige) de la palette commune                               |
 
+**Lune** (#856, ADR 0189) : les nuits suivent un cycle de 29,5 jours de jeu. Sous la pleine
+lune, la nuit d'avant (tons de nuit, ADR 0021) ; sans lune, lumières, eau et décor gardent 72 %
+de cette clarté, sans ton ajouté : la passe palette tire le décor vers les tons de nuit plus
+sombres (roches gris-vert, coraux violets tramés de bleu). Le jour n'est jamais touché.
+
 **Nourriture** (#226) : des grains mats, pas des taches. Petits voxels (grain, flocon,
 paillette) de tons de nourriture réelle, une nuance par granulé, ombrés par face (dessus
 clair, flancs plus sombres), sans liseré ; contraste avec le sable et la roche par la clarté.

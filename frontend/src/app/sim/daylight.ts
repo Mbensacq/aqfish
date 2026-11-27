@@ -49,6 +49,11 @@ export interface DayLight {
   readonly tint: Rgb;
   /** Teinte du ciel (lumière ambiante venant du haut) : blanc à midi. */
   readonly sky: Rgb;
+  /**
+   * Clarté de la nuit due à la lune (`sim/moon.ts`, issue #856), facteur dans ]0, 1] : 1 (ou
+   * absente) en plein jour et sous la pleine lune, plus bas les nuits sans lune.
+   */
+  readonly moon?: number;
 }
 
 /**
@@ -58,13 +63,14 @@ export interface DayLight {
  */
 export interface MutableDayLight extends DayLight {
   intensity: number;
+  moon: number;
   readonly tint: MutableRgb;
   readonly sky: MutableRgb;
 }
 
 /** Nouveau tampon de lumière, initialisé à la lumière de midi. */
 export function createDayLight(): MutableDayLight {
-  return { intensity: 1, tint: [1, 1, 1], sky: [1, 1, 1] };
+  return { intensity: 1, tint: [1, 1, 1], sky: [1, 1, 1], moon: 1 };
 }
 
 /**
@@ -229,6 +235,8 @@ export function lightAtInto(hour: number, out: MutableDayLight): MutableDayLight
   const intensity = dayIntensityAt(hour);
   const twilight = TWILIGHT_STRENGTH * twilightWeight(intensity);
   out.intensity = intensity;
+  // Lune (#856) : ajoutée ensuite par `withMoonInto`, sans effet par défaut.
+  out.moon = 1;
   for (let k = 0; k < 3; k++) {
     out.tint[k] = mix(mix(NIGHT_TINT[k], WHITE[k], intensity), TWILIGHT_TINT[k], twilight);
     out.sky[k] = mix(mix(NIGHT_SKY[k], WHITE[k], intensity), TWILIGHT_SKY[k], twilight);

@@ -19,6 +19,7 @@ import {
 } from '../../sim/daylight';
 import { EGG_HATCH_TIME } from '../../sim/eggs';
 import { LAMP_FADE_HOURS, waterLampAt, withLampInto } from '../../sim/lamp';
+import { gameDayAt, withMoonInto } from '../../sim/moon';
 import type { MutableWorld, World } from '../../sim/world-types';
 import { refreshDue } from '../dashboard-frame/refresh-pace';
 import type { AquariumProbe } from './aquarium-probe';
@@ -61,6 +62,8 @@ export interface FramePainterPorts {
   dayClock(): DayClock;
   /** Option « Réduire les mouvements » (#406). */
   reducedMotion(): boolean;
+  /** Clarté de la nuit au jour de jeu donné (#856, `DisplayController.moonGlowAt`). */
+  moonGlowAt(gameDay: number): number;
   /** Caméra libre (#343) : vrai si la caméra a bougé. */
   stepFreeCamera(view: AquariumView, realDt: number): boolean;
   /** Chute du décor posé (#170). */
@@ -101,6 +104,8 @@ export class FramePainter {
   private litHour: number | null = null;
   /** Intensité de la lampe appliquée en dernier (`updateLight`). */
   private litLamp: number | null = null;
+  /** Clarté lunaire appliquée en dernier (`updateLight`, #856). */
+  private litMoon: number | null = null;
   /** Tampon de la lumière du jour, réécrit à chaque recalcul (aucune allocation). */
   private readonly light = createDayLight();
   /** Contexte des gestes passé à `updateFish`, réécrit à chaque image (#433). */
@@ -255,17 +260,24 @@ export class FramePainter {
    * `LIGHT_HOUR_STEP` (ou après une bascule de l'horloge) ; l'heure exposée suit.
    */
   private updateLight(view: AquariumView, time: number): void {
-    const hour = hourAt(this.ports.dayClock(), time);
+    const clock = this.ports.dayClock();
+    const hour = hourAt(clock, time);
     const lamp = this.lampAt(hour);
+    // Lune (#856) : arrondie au centième, elle ne change qu'une fois en quelques heures de jeu.
+    const moon = this.ports.moonGlowAt(gameDayAt(time, clock.dayLengthSeconds));
     if (
       this.litHour === null ||
       Math.abs(hour - this.litHour) >= LIGHT_HOUR_STEP ||
-      lamp !== this.litLamp
+      lamp !== this.litLamp ||
+      moon !== this.litMoon
     ) {
       this.litHour = hour;
       this.litLamp = lamp;
-      // Lampe du bac (#584) : ajoutée à la lumière du jour, sans jamais l'assombrir.
-      view.updateLight(withLampInto(lightAtInto(hour, this.light), lamp));
+      this.litMoon = moon;
+      // Lampe du bac (#584) : ajoutée à la lumière du jour, sans jamais l'assombrir ; puis la
+      // lune, qui n'agit que la nuit (une lampe allumée l'efface).
+      const light = withLampInto(lightAtInto(hour, this.light), lamp);
+      view.updateLight(withMoonInto(light, moon));
       view.updateFlowers(hour);
       view.updateLightRays(hour);
       this.dayPhase.set(dayPhaseAt(hour));

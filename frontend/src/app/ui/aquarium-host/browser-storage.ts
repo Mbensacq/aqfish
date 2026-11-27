@@ -9,3 +9,9 @@ export function browserStorage(win: Window): (FilterStorage & SaveStorage) | nul
     return null;
   }
 }
+
+/** Stockage de la fenêtre du document (`browserStorage`), `null` sans fenêtre. */
+export function documentStorage(doc: Document): (FilterStorage & SaveStorage) | null {
+  const win = doc.defaultView;
+  return win ? browserStorage(win) : null;
+}
