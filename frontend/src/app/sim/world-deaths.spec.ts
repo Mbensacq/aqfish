@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { ageSeconds, birthTime, lifespanSeconds } from './aging';
+import { DEFAULT_DAY_LENGTH_SECONDS } from './daylight';
 import {
   addJournalEntry,
   createJournal,
@@ -20,6 +21,7 @@ import {
   createWorld,
   setWorldMortalityInPlace,
 } from './world';
+import { stepDeathsInPlace } from './world-deaths';
 import type { MutableWorld } from './world-types';
 
 /** Bac de `count` crevettes cerises (durée de vie la plus courte), mortalité activée ou non. */
@@ -27,6 +29,18 @@ function shrimpTank(mortality: boolean, count = 6): MutableWorld {
   const world = cloneWorld(createWorld(7, [{ species: 'cerise', count }]));
   setWorldMortalityInPlace(world, mortality);
   return world;
+}
+
+/**
+ * Avance les décès seuls (`stepDeathsInPlace`) de `days` pas d'un jour de jeu : le pas complet
+ * du monde serait trop lent pour atteindre une fin de vie (taux de l'ordre de 1/6000 s⁻¹).
+ */
+function liveDaysInPlace(world: MutableWorld, days: number): void {
+  for (let day = 0; day < days; day++) {
+    world.tick += 1;
+    world.time += DEFAULT_DAY_LENGTH_SECONDS;
+    stepDeathsInPlace(world, DEFAULT_DAY_LENGTH_SECONDS);
+  }
 }
 
 /** Fait naître chaque animal de `world` assez tôt pour qu'il ait `age` secondes au temps 0. */
@@ -63,8 +77,8 @@ describe('vieillissement dans le monde (#857)', () => {
 
   it('juste avant sa durée de vie, aucun animal ne meurt de vieillesse', () => {
     const world = shrimpTank(true);
-    ageAllInPlace(world, lifespanSeconds('cerise') - 3600);
-    advanceInPlace(world, 60 * 60 * 30);
+    ageAllInPlace(world, lifespanSeconds('cerise') - 3 * DEFAULT_DAY_LENGTH_SECONDS);
+    liveDaysInPlace(world, 2);
     expect(world.entities).toHaveLength(6);
     expect(world.dead).toBeUndefined();
   });
@@ -72,7 +86,7 @@ describe('vieillissement dans le monde (#857)', () => {
   it('bien au-delà de sa durée de vie, l’animal meurt de vieillesse, corps marqué', () => {
     const world = shrimpTank(true);
     ageAllInPlace(world, 2 * lifespanSeconds('cerise'));
-    advanceInPlace(world, 60 * 60 * 60);
+    liveDaysInPlace(world, 30);
     expect(world.dead?.length ?? 0).toBeGreaterThan(0);
     for (const body of world.dead ?? []) {
       expect(body.cause).toBe('vieillesse');
@@ -82,7 +96,7 @@ describe('vieillissement dans le monde (#857)', () => {
   it('mortalité coupée : aucun animal ne meurt, même très vieux', () => {
     const world = shrimpTank(false);
     ageAllInPlace(world, 2 * lifespanSeconds('cerise'));
-    advanceInPlace(world, 60 * 60 * 60);
+    advanceInPlace(world, 600);
     expect(world.entities).toHaveLength(6);
     expect(world.dead).toBeUndefined();
   });
@@ -91,7 +105,7 @@ describe('vieillissement dans le monde (#857)', () => {
     const world = shrimpTank(true);
     const watch = watchJournal(world);
     ageAllInPlace(world, 2 * lifespanSeconds('cerise'));
-    advanceInPlace(world, 60 * 60 * 60);
+    liveDaysInPlace(world, 30);
     const events = observeJournal(watch, world);
     const journal = createJournal();
     for (const event of events) {
@@ -107,7 +121,7 @@ describe('vieillissement dans le monde (#857)', () => {
   it('naissance et cause de décès passent par la sauvegarde', () => {
     const world = shrimpTank(true);
     ageAllInPlace(world, 2 * lifespanSeconds('cerise'));
-    advanceInPlace(world, 60 * 60 * 60);
+    liveDaysInPlace(world, 30);
     const parsed = parseWorld(serializeWorld(world));
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) {
@@ -146,7 +160,7 @@ describe('vieillissement dans le monde (#857)', () => {
 
     const old = shrimpTank(true, 2);
     ageAllInPlace(old, 2 * lifespanSeconds('cerise'));
-    advanceInPlace(old, 60 * 60 * 60);
+    liveDaysInPlace(old, 30);
     const withBody = JSON.parse(serializeWorld(old)) as { dead: Record<string, unknown>[] };
     withBody.dead[0]!['cause'] = 'mystère';
     expect(parseWorld(JSON.stringify(withBody)).ok).toBe(false);
