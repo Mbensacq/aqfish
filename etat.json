@@ -11624,6 +11624,12 @@
           "debut": "2026-11-27T16:01:17.034Z",
           "fin": "2026-11-27T16:47:45.765Z",
           "note": "Verdict OK, 0 bug, captures c320 publiées (189/189 identiques à c319), mutation fichier 93,75 %"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-27T16:48:25.939Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
