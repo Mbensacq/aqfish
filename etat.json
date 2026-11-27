@@ -11372,6 +11372,12 @@
           "debut": "2026-11-27T00:20:24.935Z",
           "fin": "2026-11-27T00:58:37.329Z",
           "note": "Verdict OK, 0 bug, captures c313 publiées (neritine changée comme prévu)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-27T00:59:08.299Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
