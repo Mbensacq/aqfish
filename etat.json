@@ -11552,6 +11552,12 @@
           "debut": "2026-11-27T12:00:52.989Z",
           "fin": "2026-11-27T12:22:55.884Z",
           "note": "Verdict OK, 0 bug, captures c318 publiées (jour identique ; guide 12 px sous charge, stable seule)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-27T12:23:33.908Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
