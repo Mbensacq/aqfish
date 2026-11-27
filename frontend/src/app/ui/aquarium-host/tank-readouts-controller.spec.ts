@@ -1,5 +1,7 @@
 import type { AquariumView } from '../../render/aquarium-view';
+import { speciesAges } from '../../sim/aging-text';
 import { setCareModeInPlace } from '../../sim/care-mode';
+import { DEFAULT_DAY_LENGTH_SECONDS } from '../../sim/daylight';
 import { deadBody } from '../../sim/mortality';
 import { createWorld } from '../../sim/world';
 import type { MutableWorld } from '../../sim/world-types';
@@ -113,6 +115,18 @@ describe('TankReadoutsController (#696)', () => {
     calls = [];
     readouts.refreshWater();
     expect(calls).toEqual(['liste', 'séance', 'alertes', 'alertes', 'suivi', 'soins', 'aspect']);
+  });
+
+  it('âges : même relevé tant que les jours ne changent pas, nouveau au jour suivant (#868)', () => {
+    readouts.refreshWater();
+    const first = readouts.ages();
+    expect(first).toEqual(speciesAges(world!));
+    readouts.refreshWater();
+    expect(readouts.ages()).toBe(first);
+    world = { ...world!, time: world!.time + DEFAULT_DAY_LENGTH_SECONDS } as MutableWorld;
+    readouts.refreshWater();
+    expect(readouts.ages()).not.toBe(first);
+    expect(readouts.ages()).toEqual(speciesAges(world));
   });
 
   it('relevé dû : seulement après `ticks` pas depuis le dernier relevé', () => {
