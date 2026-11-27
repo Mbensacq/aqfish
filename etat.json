@@ -11516,6 +11516,12 @@
           "debut": "2026-11-27T09:03:42.841Z",
           "fin": "2026-11-27T10:30:06.066Z",
           "note": "Verdict OK, 0 bug, captures c317 publiées (1 e2e de chronométrage instable sous charge, repasse seul)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-27T10:30:48.778Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
