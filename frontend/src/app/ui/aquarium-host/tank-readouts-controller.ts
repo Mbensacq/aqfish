@@ -1,8 +1,9 @@
-import { NO_AGES, sameAgeDays, speciesAges, type AgeReadout } from '../../sim/aging-text';
 import { signal } from '@angular/core';
 
 import { CHEVRON_COUNTS } from '../../render/current-indicator-layer';
 import type { AquariumView } from '../../render/aquarium-view';
+import { AgeReadoutBuffer } from '../../sim/age-readout-buffer';
+import { NO_AGES, type AgeReadout } from '../../sim/aging-text';
 import { careModeOf, speciesShownIn, type CareMode } from '../../sim/care-mode';
 import {
   DEFAULT_ENVIRONMENT_ID,
@@ -156,6 +157,8 @@ export class TankReadoutsController {
   /** Corps exposés au dernier relevé (#582) : un décès depuis relève aussi les effectifs. */
   private shownDead = 0;
   private readonly currentScratch: CurrentVelocity = { x: 0, z: 0 };
+  /** Âges recalculés sans allocation tant que les jours affichés ne changent pas (#868). */
+  private readonly agesBuffer = new AgeReadoutBuffer();
 
   constructor(private readonly ports: TankReadoutsPorts) {}
 
@@ -253,10 +256,14 @@ export class TankReadoutsController {
     ports.refreshLooks(world);
   }
 
-  /** Âges du bac (#857) : signal changé seulement quand un nombre de jours affiché change. */
+  /**
+   * Âges du bac (#857) : signal changé seulement quand un nombre de jours affiché change ;
+   * sinon aucun objet construit (tampon `AgeReadoutBuffer`, #868).
+   */
   private refreshAges(world: World): void {
-    const ages = speciesAges(world);
-    if (!sameAgeDays(ages, this.ages())) {
+    const shown = this.ages();
+    const ages = this.agesBuffer.readout(world, shown);
+    if (ages !== shown) {
       this.ages.set(ages);
     }
   }

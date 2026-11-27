@@ -6,6 +6,18 @@ haut de sa section.
 
 ## Environnement des agents
 
+- **Écart d'un niveau sur les coins arrondis du bandeau de l'horloge : pas les polices**
+  (cycle 320, #868) : à la revue de #867, `three-quarter-salvinia.png` et
+  `paludarium-three-quarter-oeufs.png` de c316 différaient de c315 sur une bande
+  x 921–925, y 13–79 attribuée au lissage du texte « Vitesse Pause ». Mesure pixel par pixel :
+  11 pixels d'écart 1, tous aux **coins arrondis droits** du bandeau (y 13–15 et 75–78), aucun
+  dans le texte ; empreintes de ces deux fichiers identiques à l'octet en c315, c317, c318 et
+  c319, c316 seule à part. Même famille que l'anticrénelage des coins arrondis sous charge
+  (entrées « Capture … instable seulement sous charge » et « Captures d'interface « avant »
+  faussées ») : rien à figer dans la page, la police n'y est pour rien. Règle de comparaison :
+  un écart ≤ 1 limité aux coins arrondis d'un cadre, absent des séries voisines, est du
+  bruit ; le mesurer (pixels, écart maximal, boîte) et le citer, puis relancer la capture
+  seule avant de conclure. (2026-11-27)
 - **Effet ajouté à chaque pas fin : le test de 3 jours de `plant-growth.spec.ts` passe 5 s en CI**
   (cycle 304, #733) : « taille d'une plante du monde » fait 216 000 pas fins (2,5 s en CI sur
   `main`) ; avec l'effet du décor sur l'eau (deux boucles sur le décor et un appel de fonction
