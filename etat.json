@@ -11536,10 +11536,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-27T10:58:35.512Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-27T10:59:04.014Z",
+          "note": "Issue #856 : Cycle lunaire et nuits du récif (S)"
         }
       },
       "metriques": {}
