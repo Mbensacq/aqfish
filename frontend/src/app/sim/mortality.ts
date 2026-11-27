@@ -63,8 +63,14 @@ export const DEAD_MAX_AGE = 86400;
 /** Sel du hachage des tirages de décès (séparé des autres usages de la graine). */
 const MORTALITY_SALT = 0x6d0e7a11;
 
-/** Animal mort : ses données de vivant, figées, et l'âge du corps en secondes simulées. */
-export type DeadAnimal = Fish & { readonly deadFor: number };
+/** Cause de décès notée sur le corps (#857) ; absente : faiblesse (maladie, jeûne, eau). */
+export type DeathCause = 'vieillesse';
+
+/**
+ * Animal mort : ses données de vivant, figées, l'âge du corps en secondes simulées et, pour
+ * une mort de vieillesse, sa cause.
+ */
+export type DeadAnimal = Fish & { readonly deadFor: number; readonly cause?: DeathCause };
 
 /** Animal vu par la mortalité. */
 export interface MortalitySubject {

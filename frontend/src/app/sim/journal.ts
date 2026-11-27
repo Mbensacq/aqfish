@@ -3,6 +3,7 @@ import { DEFAULT_DAY_LENGTH_SECONDS } from './daylight';
 import { DISEASES, type DiseaseField } from './diseases';
 import { laysEggs, type Egg } from './eggs';
 import { hasFry, isFry } from './fry';
+import type { DeadAnimal } from './mortality';
 import { SPECIES, type SpeciesId } from './species';
 import type { Fish } from './swimmer';
 import { TREATMENT_KINDS, TREATMENTS, type TreatmentKind } from './treatment';
@@ -48,6 +49,7 @@ export const JOURNAL_KINDS = [
   'seance',
   'taille',
   'eauNeuve',
+  'vieillesse',
 ] as const;
 
 export type JournalKind = (typeof JOURNAL_KINDS)[number];
@@ -85,6 +87,7 @@ export const JOURNAL_KIND_GROUPS: Readonly<Record<JournalKind, JournalGroup>> = 
   taille: 'entretien',
   eauNeuve: 'entretien',
   alerte: 'alertes',
+  vieillesse: 'sante',
 };
 
 /** Texte d'un journal sans ligne, ou sans ligne du type choisi (#655). */
@@ -100,8 +103,8 @@ export interface JournalEntry {
   readonly kind: JournalKind;
   /**
    * Précision selon la sorte : maladie (`DiseaseField`) pour `maladie` et `guerison`, sorte de
-   * traitement (`TreatmentKind`) pour `traitement`, espèce (`SpeciesId`) pour `ponte` et
-   * `eclosion` et `naissance`, alerte (`JournalAlertId`) pour `alerte` ; absente pour
+   * traitement (`TreatmentKind`) pour `traitement`, espèce (`SpeciesId`) pour `ponte`,
+   * `eclosion`, `naissance` et `vieillesse` (#857), alerte (`JournalAlertId`) pour `alerte` ; absente pour
    * `changementEau`, `seance`, `taille` et `eauNeuve`.
    */
   readonly detail?: string;
@@ -260,6 +263,8 @@ export interface JournalWatch {
    * `alerte:gravité` : retient les retours trop rapprochés (`JOURNAL_ALERT_REPEAT_SECONDS`).
    */
   readonly alertNoted: Map<string, number>;
+  /** Identifiants des corps déjà vus (#857) : une mort de vieillesse n'est notée qu'une fois. */
+  deadSeen: Set<number>;
 }
 
 /** Ce qu'`observeJournal` lit du monde. */
@@ -267,6 +272,8 @@ export interface JournalSubject {
   readonly time: number;
   readonly entities: readonly Fish[];
   readonly eggs?: readonly Egg[];
+  /** Corps du bac (#582) ; ceux marqués `vieillesse` entrent au journal (#857). */
+  readonly dead?: readonly DeadAnimal[];
   /** Alertes du tableau de bord du bac (#592) ; absentes : aucune. */
   readonly alerts?: readonly JournalAlert[];
 }
@@ -285,6 +292,7 @@ export function watchJournal(world: JournalSubject): JournalWatch {
     eggs: eggCounts(world.eggs),
     alerts: alertLevels(world.alerts),
     alertNoted: new Map(),
+    deadSeen: deadIds(world.dead),
   };
 }
 
@@ -307,6 +315,7 @@ export function observeJournal(watch: JournalWatch, world: JournalSubject): Jour
   pushDiseaseEvents(events, time, changes);
   pushLayingEvents(events, time, watch, world.eggs);
   pushHatchingEvents(events, time, changes.hatched);
+  pushOldAgeEvents(events, time, watch, world.dead);
   pushAlertEvents(events, time, watch, world.alerts);
   return events;
 }
@@ -404,6 +413,33 @@ function pushHatchingEvents(
     const kind = hasFry(species) && !laysEggs(species) ? 'naissance' : 'eclosion';
     events.push({ time, kind, detail: species, count });
   }
+}
+
+/**
+ * Morts de vieillesse (#857) : corps nouveaux marqués `vieillesse`, par espèce, dans l'ordre
+ * des corps ; une ligne neutre de la famille « Santé », jamais une alerte. Met à jour
+ * `watch.deadSeen` (un corps retiré à l'épuisette en sort).
+ */
+function pushOldAgeEvents(
+  events: JournalEntry[],
+  time: number,
+  watch: JournalWatch,
+  dead: readonly DeadAnimal[] | undefined,
+): void {
+  const died = new Map<SpeciesId, number>();
+  for (const body of dead ?? []) {
+    if (body.cause === 'vieillesse' && !watch.deadSeen.has(body.id)) {
+      died.set(body.species, (died.get(body.species) ?? 0) + 1);
+    }
+  }
+  for (const [species, count] of died) {
+    events.push({ time, kind: 'vieillesse', detail: species, count });
+  }
+  watch.deadSeen = deadIds(dead);
+}
+
+function deadIds(dead: readonly DeadAnimal[] | undefined): Set<number> {
+  return new Set((dead ?? []).map((body) => body.id));
 }
 
 /** Alertes apparues ou aggravées, hors retours trop rapprochés ; met à jour `watch.alerts`. */
@@ -511,6 +547,13 @@ export function journalDay(time: number): number {
   return Math.floor(time / DEFAULT_DAY_LENGTH_SECONDS) + 1;
 }
 
+/** Texte des sortes sans précision ni effectif. */
+const FIXED_TEXTS = {
+  seance: 'Séance d’entretien terminée',
+  eauNeuve: 'Eau neuve versée',
+  changementEau: 'Changement d’eau',
+} as const satisfies Partial<Record<JournalKind, string>>;
+
 /** Texte d'une entrée, en français. */
 export function journalText(entry: JournalEntry): string {
   const count = entry.count ?? 1;
@@ -528,16 +571,14 @@ export function journalText(entry: JournalEntry): string {
       return `Éclosion : ${count} alevin${count > 1 ? 's' : ''} (${speciesLabel(entry.detail)})`;
     case 'naissance':
       return `Naissance : ${count} alevin${count > 1 ? 's' : ''} (${speciesLabel(entry.detail)})`;
-    case 'seance':
-      return 'Séance d’entretien terminée';
     case 'taille':
       return `Taille des plantes (${count} coupe${count > 1 ? 's' : ''})`;
-    case 'eauNeuve':
-      return 'Eau neuve versée';
-    case 'changementEau':
-      return 'Changement d’eau';
+    case 'vieillesse':
+      return `Mort de vieillesse : ${speciesLabel(entry.detail)} (${animals})`;
     case 'alerte':
       return `Alerte ${entry.severity === 'critique' ? 'critique' : 'attention'} : ${alertLabel(entry.detail)}`;
+    default:
+      return FIXED_TEXTS[entry.kind];
   }
 }
 
@@ -645,6 +686,7 @@ const ENTRY_RULES: Readonly<Record<JournalKind, (entry: JournalEntry) => boolean
   ponte: withoutSeverity(({ detail }) => isSpeciesDetail(detail)),
   eclosion: withoutSeverity(({ detail }) => isSpeciesDetail(detail)),
   naissance: withoutSeverity(({ detail }) => isSpeciesDetail(detail)),
+  vieillesse: withoutSeverity(({ detail }) => isSpeciesDetail(detail)),
   changementEau: withoutSeverity(({ detail }) => detail === undefined),
   taille: withoutSeverity(({ detail }) => detail === undefined),
   seance: withoutSeverity(({ detail, count }) => detail === undefined && count === undefined),

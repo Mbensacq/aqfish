@@ -115,6 +115,11 @@ export interface Fish {
    * #459) ; absent : adulte. Lecture seule pour le rendu (`fryScale`).
    */
   readonly growth?: number;
+  /**
+   * Temps simulé de la naissance, en secondes (négatif : avant la création du monde,
+   * `sim/aging.ts`, issue #857) ; absent : âge adulte tiré de la graine (`birthTime`).
+   */
+  readonly bornAt?: number;
   /** État du sous-générateur de l'entité (mulberry32, voir `prngNextState`). */
   readonly rng: number;
   // État au pas précédent (interpolation du rendu).

@@ -88,7 +88,7 @@
     "max-params": 7
   },
   "sim/journal.ts": {
-    "complexity": 19
+    "complexity": 17
   },
   "sim/maintenance.ts": {
     "complexity": 17
@@ -156,11 +156,11 @@
     "max-lines-per-function": 88
   },
   "sim/world.ts": {
-    "max-lines": 1407,
+    "max-lines": 1401,
     "max-params": 6
   },
   "ui/aquarium-host/aquarium-host.ts": {
-    "max-lines": 962
+    "max-lines": 960
   },
   "ui/decor-editor/decor-editor.ts": {
     "complexity": 17,

@@ -513,24 +513,24 @@ protégées comme _Bombina variegata_) restent testées avec la tranche.
 Le calcul de capacité (`sim/tank-capacity.ts`, ADR 0171) lit les données ci-dessus et la fiche ;
 chaque valeur garde la source ou le statut de son champ, repris dans la raison d'un verdict.
 
-| Valeur                                  | Sourcé                                                                       | Approximation de jeu                                                                     |
-| --------------------------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| Plafond et conseillé                    | Tropicaux : 1,5 L/cm (plafond) et 2 L/cm (conseillé), RSPCA                  | Bornes basse et haute des classes invertébré, récif et amphibien                         |
-| Besoin avec volume par adulte en plus   | Poisson rouge : 100 L puis 50 L (OATA, désaccord RSPCA, point 15)            | Néritine : la première compte aussi 40 L (le volume minimal de la fiche, 30 L, est plus bas) |
-| Âge des animaux                         | —                                                                            | Tout animal compte comme un adulte                                                       |
-| Volume d'eau réel                       | —                                                                            | Plantes non déduites ; coraux et anémones à la moitié de leur boîte ; sol échantillonné au cm |
+| Valeur                                | Sourcé                                                            | Approximation de jeu                                                                          |
+| ------------------------------------- | ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Plafond et conseillé                  | Tropicaux : 1,5 L/cm (plafond) et 2 L/cm (conseillé), RSPCA       | Bornes basse et haute des classes invertébré, récif et amphibien                              |
+| Besoin avec volume par adulte en plus | Poisson rouge : 100 L puis 50 L (OATA, désaccord RSPCA, point 15) | Néritine : la première compte aussi 40 L (le volume minimal de la fiche, 30 L, est plus bas)  |
+| Âge des animaux                       | —                                                                 | Tout animal compte comme un adulte                                                            |
+| Volume d'eau réel                     | —                                                                 | Plantes non déduites ; coraux et anémones à la moitié de leur boîte ; sol échantillonné au cm |
 
 ## Brouteurs d'algues (#833, tranche 1 de #732)
 
 Le broutage (`sim/grazing.ts`, ADR 0179) lit le régime ci-dessus (algues) et la table `GRAZERS`.
 
-| Valeur                                   | Sourcé                                                                                       | Approximation de jeu                                                                                   |
-| ---------------------------------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| Vitesse de broutage                      | —                                                                                            | Couverture par seconde : ancistrus 1/150, néritine 1/200, otocinclus 1/300, crevette cerise 1/600      |
-| Faim calmée par une plaque mangée        | —                                                                                            | Une plaque pleine calme une faim pleine                                                                |
-| Algues dures                             | Crevettes : n'en viennent pas à bout (Garnelio)                                              | Deux plaques sur huit ; mangées par la néritine et l'ancistrus, pas par l'otocinclus                   |
-| Faim qui use la santé sans nourriture    | Néritine : meurt de faim sans algues ni nourriture d'appoint (Aquarium Breeder)              | Crevette cerise : nourrie par le biofilm, non simulé, sa faim reste sans effet (tranche 2 de #732)     |
-| Biofilm                                  | —                                                                                            | Non simulé                                                                                             |
+| Valeur                                | Sourcé                                                                          | Approximation de jeu                                                                               |
+| ------------------------------------- | ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Vitesse de broutage                   | —                                                                               | Couverture par seconde : ancistrus 1/150, néritine 1/200, otocinclus 1/300, crevette cerise 1/600  |
+| Faim calmée par une plaque mangée     | —                                                                               | Une plaque pleine calme une faim pleine                                                            |
+| Algues dures                          | Crevettes : n'en viennent pas à bout (Garnelio)                                 | Deux plaques sur huit ; mangées par la néritine et l'ancistrus, pas par l'otocinclus               |
+| Faim qui use la santé sans nourriture | Néritine : meurt de faim sans algues ni nourriture d'appoint (Aquarium Breeder) | Crevette cerise : nourrie par le biofilm, non simulé, sa faim reste sans effet (tranche 2 de #732) |
+| Biofilm                               | —                                                                               | Non simulé                                                                                         |
 
 ## Verdicts par paire (#816, tranche 1 de #730)
 
@@ -549,98 +549,139 @@ en-tête) ; la regénérer à chaque changement des fiches, de l'écologie ou de
 de classes d'eau différentes sont incompatibles par la classe seule (approximation de jeu, le
 classement du jeu) et ne sont pas détaillées.
 
-| | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 | 26 | 27 | 28 | 29 |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 1. néon | — | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ⚠️ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ | ❌ |
-| 2. guppy | ✅ | — | ✅ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ⚠️ | ✅ | ❌ |
-| 3. corydora | ✅ | ✅ | — | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ⚠️ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ⚠️ | ✅ | ❌ |
-| 4. koï | ❌ | ❌ | ❌ | — | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
-| 5. axolotl | ❌ | ❌ | ❌ | ❌ | — | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| 6. sonneur oriental | ✅ | ✅ | ✅ | ❌ | ❌ | — | ✅ | ❌ | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ | ✅ |
-| 7. triton à ventre de feu | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | — | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| 8. poisson-clown | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | — | ⚠️ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ❌ | ❌ | ❌ | ❌ |
-| 9. chirurgien bleu | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ⚠️ | — | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ⚠️ | ✅ | ⚠️ | ❌ | ❌ | ❌ | ❌ |
-| 10. rasbora arlequin | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ⚠️ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ⚠️ | ⚠️ | ❌ |
-| 11. tétra citron | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ⚠️ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ⚠️ | ✅ | ❌ |
-| 12. loche kuhli | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ✅ | ✅ | — | ✅ | ⚠️ | ✅ | ✅ | ✅ | ✅ | ⚠️ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ⚠️ | ⚠️ | ⚠️ | ❌ |
-| 13. gourami nain | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ | — | ✅ | ✅ | ⚠️ | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ⚠️ | ⚠️ | ✅ | ❌ |
-| 14. platy | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ✅ | ✅ | ⚠️ | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ⚠️ | ✅ | ❌ |
-| 15. danio zébré | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | — | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ⚠️ | ✅ | ❌ |
-| 16. ancistrus commun | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ | ⚠️ | ✅ | ✅ | — | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ⚠️ | ✅ | ✅ | ❌ |
-| 17. otocinclus | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — | ✅ | ⚠️ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ | ❌ |
-| 18. tétra braise | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — | ⚠️ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ⚠️ | ❌ |
-| 19. molly | ⚠️ | ✅ | ⚠️ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | — | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ⚠️ | ✅ | ❌ |
-| 20. gourami miel | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ | ❌ |
-| 21. chromis vert | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | — | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
-| 22. gobie à crevette jaune | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | — | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
-| 23. gramma royal | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ⚠️ | ⚠️ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | — | ✅ | ⚠️ | ❌ | ❌ | ❌ | ❌ |
-| 24. crevette nettoyeuse | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ | — | ✅ | ❌ | ❌ | ❌ | ❌ |
-| 25. blennie bicolore | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ⚠️ | ⚠️ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ⚠️ | ✅ | — | ❌ | ❌ | ❌ | ❌ |
-| 26. xipho | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ✅ | ⚠️ | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | — | ⚠️ | ✅ | ❌ |
-| 27. crevette cerise | ✅ | ⚠️ | ⚠️ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ | ✅ | ⚠️ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ⚠️ | — | ✅ | ❌ |
-| 28. néritine zèbre | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ⚠️ | ✅ | ⚠️ | ✅ | ✅ | ✅ | ✅ | ✅ | ⚠️ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | — | ❌ |
-| 29. poisson rouge | ❌ | ❌ | ❌ | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | — |
+|                            | 1   | 2   | 3   | 4   | 5   | 6   | 7   | 8   | 9   | 10  | 11  | 12  | 13  | 14  | 15  | 16  | 17  | 18  | 19  | 20  | 21  | 22  | 23  | 24  | 25  | 26  | 27  | 28  | 29  |
+| -------------------------- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1. néon                    | —   | ✅  | ✅  | ❌  | ❌  | ✅  | ❌  | ❌  | ❌  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ⚠️  | ✅  | ❌  | ❌  | ❌  | ❌  | ❌  | ✅  | ✅  | ✅  | ❌  |
+| 2. guppy                   | ✅  | —   | ✅  | ❌  | ❌  | ✅  | ❌  | ❌  | ❌  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ❌  | ❌  | ❌  | ❌  | ❌  | ✅  | ⚠️  | ✅  | ❌  |
+| 3. corydora                | ✅  | ✅  | —   | ❌  | ❌  | ✅  | ❌  | ❌  | ❌  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ⚠️  | ✅  | ❌  | ❌  | ❌  | ❌  | ❌  | ✅  | ⚠️  | ✅  | ❌  |
+| 4. koï                     | ❌  | ❌  | ❌  | —   | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ✅  |
+| 5. axolotl                 | ❌  | ❌  | ❌  | ❌  | —   | ❌  | ✅  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  |
+| 6. sonneur oriental        | ✅  | ✅  | ✅  | ❌  | ❌  | —   | ✅  | ❌  | ❌  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ❌  | ❌  | ❌  | ❌  | ❌  | ✅  | ✅  | ✅  | ✅  |
+| 7. triton à ventre de feu  | ❌  | ❌  | ❌  | ❌  | ✅  | ✅  | —   | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  |
+| 8. poisson-clown           | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | —   | ⚠️  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ✅  | ✅  | ⚠️  | ✅  | ⚠️  | ❌  | ❌  | ❌  | ❌  |
+| 9. chirurgien bleu         | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ⚠️  | —   | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ✅  | ✅  | ⚠️  | ✅  | ⚠️  | ❌  | ❌  | ❌  | ❌  |
+| 10. rasbora arlequin       | ✅  | ✅  | ✅  | ❌  | ❌  | ✅  | ❌  | ❌  | ❌  | —   | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ⚠️  | ✅  | ❌  | ❌  | ❌  | ❌  | ❌  | ✅  | ⚠️  | ⚠️  | ❌  |
+| 11. tétra citron           | ✅  | ✅  | ✅  | ❌  | ❌  | ✅  | ❌  | ❌  | ❌  | ✅  | —   | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ⚠️  | ✅  | ❌  | ❌  | ❌  | ❌  | ❌  | ✅  | ⚠️  | ✅  | ❌  |
+| 12. loche kuhli            | ✅  | ✅  | ✅  | ❌  | ❌  | ✅  | ❌  | ❌  | ❌  | ✅  | ✅  | —   | ✅  | ⚠️  | ✅  | ✅  | ✅  | ✅  | ⚠️  | ✅  | ❌  | ❌  | ❌  | ❌  | ❌  | ⚠️  | ⚠️  | ⚠️  | ❌  |
+| 13. gourami nain           | ✅  | ✅  | ✅  | ❌  | ❌  | ✅  | ❌  | ❌  | ❌  | ✅  | ✅  | ✅  | —   | ✅  | ✅  | ⚠️  | ✅  | ✅  | ✅  | ✅  | ❌  | ❌  | ❌  | ❌  | ❌  | ⚠️  | ⚠️  | ✅  | ❌  |
+| 14. platy                  | ✅  | ✅  | ✅  | ❌  | ❌  | ✅  | ❌  | ❌  | ❌  | ✅  | ✅  | ⚠️  | ✅  | —   | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ❌  | ❌  | ❌  | ❌  | ❌  | ✅  | ⚠️  | ✅  | ❌  |
+| 15. danio zébré            | ✅  | ✅  | ✅  | ❌  | ❌  | ✅  | ❌  | ❌  | ❌  | ✅  | ✅  | ✅  | ✅  | ✅  | —   | ✅  | ✅  | ✅  | ✅  | ✅  | ❌  | ❌  | ❌  | ❌  | ❌  | ✅  | ⚠️  | ✅  | ❌  |
+| 16. ancistrus commun       | ✅  | ✅  | ✅  | ❌  | ❌  | ✅  | ❌  | ❌  | ❌  | ✅  | ✅  | ✅  | ⚠️  | ✅  | ✅  | —   | ✅  | ✅  | ✅  | ✅  | ❌  | ❌  | ❌  | ❌  | ❌  | ⚠️  | ✅  | ✅  | ❌  |
+| 17. otocinclus             | ✅  | ✅  | ✅  | ❌  | ❌  | ✅  | ❌  | ❌  | ❌  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | —   | ✅  | ⚠️  | ✅  | ❌  | ❌  | ❌  | ❌  | ❌  | ✅  | ✅  | ✅  | ❌  |
+| 18. tétra braise           | ✅  | ✅  | ✅  | ❌  | ❌  | ✅  | ❌  | ❌  | ❌  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | —   | ⚠️  | ✅  | ❌  | ❌  | ❌  | ❌  | ❌  | ✅  | ✅  | ⚠️  | ❌  |
+| 19. molly                  | ⚠️  | ✅  | ⚠️  | ❌  | ❌  | ✅  | ❌  | ❌  | ❌  | ⚠️  | ⚠️  | ⚠️  | ✅  | ✅  | ✅  | ✅  | ⚠️  | ⚠️  | —   | ✅  | ❌  | ❌  | ❌  | ❌  | ❌  | ✅  | ⚠️  | ✅  | ❌  |
+| 20. gourami miel           | ✅  | ✅  | ✅  | ❌  | ❌  | ✅  | ❌  | ❌  | ❌  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | —   | ❌  | ❌  | ❌  | ❌  | ❌  | ✅  | ✅  | ✅  | ❌  |
+| 21. chromis vert           | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ✅  | ✅  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | —   | ✅  | ✅  | ✅  | ✅  | ❌  | ❌  | ❌  | ❌  |
+| 22. gobie à crevette jaune | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ✅  | ✅  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ✅  | —   | ✅  | ✅  | ✅  | ❌  | ❌  | ❌  | ❌  |
+| 23. gramma royal           | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ⚠️  | ⚠️  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ✅  | ✅  | —   | ✅  | ⚠️  | ❌  | ❌  | ❌  | ❌  |
+| 24. crevette nettoyeuse    | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ✅  | ✅  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ✅  | ✅  | ✅  | —   | ✅  | ❌  | ❌  | ❌  | ❌  |
+| 25. blennie bicolore       | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ⚠️  | ⚠️  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ✅  | ✅  | ⚠️  | ✅  | —   | ❌  | ❌  | ❌  | ❌  |
+| 26. xipho                  | ✅  | ✅  | ✅  | ❌  | ❌  | ✅  | ❌  | ❌  | ❌  | ✅  | ✅  | ⚠️  | ⚠️  | ✅  | ✅  | ⚠️  | ✅  | ✅  | ✅  | ✅  | ❌  | ❌  | ❌  | ❌  | ❌  | —   | ⚠️  | ✅  | ❌  |
+| 27. crevette cerise        | ✅  | ⚠️  | ⚠️  | ❌  | ❌  | ✅  | ❌  | ❌  | ❌  | ⚠️  | ⚠️  | ⚠️  | ⚠️  | ⚠️  | ⚠️  | ✅  | ✅  | ✅  | ⚠️  | ✅  | ❌  | ❌  | ❌  | ❌  | ❌  | ⚠️  | —   | ✅  | ❌  |
+| 28. néritine zèbre         | ✅  | ✅  | ✅  | ❌  | ❌  | ✅  | ❌  | ❌  | ❌  | ⚠️  | ✅  | ⚠️  | ✅  | ✅  | ✅  | ✅  | ✅  | ⚠️  | ✅  | ✅  | ❌  | ❌  | ❌  | ❌  | ❌  | ✅  | ✅  | —   | ❌  |
+| 29. poisson rouge          | ❌  | ❌  | ❌  | ✅  | ❌  | ✅  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | —   |
 
-| Paire | Verdict | Raisons et sources |
-|---|---|---|
-| néon et triton à ventre de feu | ❌ | température (précautions) [approximation de jeu] ; triton à ventre de feu : vit sans poissons (incompatible) [documentation du projet (Caudata Culture : sans poissons)] |
-| néon et molly | ⚠️ | dureté (précautions) [documentation du projet (Seriously Fish ; FishBase : dH 1–2, désaccord) ; https://www.seriouslyfish.com/species/poecilia-sphenops (15 à 30 °dGH)] |
-| guppy et triton à ventre de feu | ❌ | température (précautions) [approximation de jeu] ; triton à ventre de feu : vit sans poissons (incompatible) [documentation du projet (Caudata Culture : sans poissons)] |
-| guppy et crevette cerise | ⚠️ | guppy : mange les jeunes (précautions) [https://www.practicalfishkeeping.co.uk/features/what-can-i-keep-with-shrimp/ (mange au moins les jeunes crevettes)] |
-| corydora et triton à ventre de feu | ❌ | température (précautions) [approximation de jeu] ; triton à ventre de feu : vit sans poissons (incompatible) [documentation du projet (Caudata Culture : sans poissons)] |
-| corydora et molly | ⚠️ | dureté (précautions) [documentation du projet (Seriously Fish) ; https://www.seriouslyfish.com/species/poecilia-sphenops (15 à 30 °dGH)] |
-| corydora et crevette cerise | ⚠️ | corydora : mange les jeunes (précautions) [https://www.practicalfishkeeping.co.uk/features/what-can-i-keep-with-shrimp/ (mange au moins les jeunes crevettes)] |
-| koï et axolotl | ❌ | axolotl : vit sans poissons (incompatible) [documentation du projet (FishKeeper, secondaire : ne se mélange pas aux poissons)] |
-| koï et sonneur oriental | ❌ | koï : mange les plus petits (taille) (incompatible) [approximation de jeu] |
-| koï et triton à ventre de feu | ❌ | koï : mange les plus petits (taille) (incompatible) [approximation de jeu] ; triton à ventre de feu : vit sans poissons (incompatible) [documentation du projet (Caudata Culture : sans poissons)] |
-| axolotl et sonneur oriental | ❌ | température (précautions) [documentation du projet (WSAVA/VIN ; PMC10948202) ; https://anapsid.org/bombina.html (secondaire) (température du terrarium)] ; axolotl : mange les plus petits (taille) (incompatible) [approximation de jeu] |
-| axolotl et poisson rouge | ❌ | axolotl : vit sans poissons (incompatible) [documentation du projet (FishKeeper, secondaire : ne se mélange pas aux poissons)] |
-| triton à ventre de feu et rasbora arlequin | ❌ | température (précautions) [approximation de jeu] ; triton à ventre de feu : vit sans poissons (incompatible) [documentation du projet (Caudata Culture : sans poissons)] |
-| triton à ventre de feu et tétra citron | ❌ | température (précautions) [approximation de jeu] ; triton à ventre de feu : vit sans poissons (incompatible) [documentation du projet (Caudata Culture : sans poissons)] |
-| triton à ventre de feu et loche kuhli | ❌ | température (précautions) [approximation de jeu] ; triton à ventre de feu : vit sans poissons (incompatible) [documentation du projet (Caudata Culture : sans poissons)] |
-| triton à ventre de feu et gourami nain | ❌ | température (précautions) [approximation de jeu] ; triton à ventre de feu : vit sans poissons (incompatible) [documentation du projet (Caudata Culture : sans poissons)] |
-| triton à ventre de feu et platy | ❌ | température (précautions) [approximation de jeu] ; triton à ventre de feu : vit sans poissons (incompatible) [documentation du projet (Caudata Culture : sans poissons)] |
-| triton à ventre de feu et danio zébré | ❌ | température (précautions) [approximation de jeu] ; triton à ventre de feu : vit sans poissons (incompatible) [documentation du projet (Caudata Culture : sans poissons)] |
-| triton à ventre de feu et ancistrus commun | ❌ | température (précautions) [approximation de jeu] ; triton à ventre de feu : vit sans poissons (incompatible) [documentation du projet (Caudata Culture : sans poissons)] |
-| triton à ventre de feu et otocinclus | ❌ | température (précautions) [approximation de jeu] ; triton à ventre de feu : vit sans poissons (incompatible) [documentation du projet (Caudata Culture : sans poissons)] |
-| triton à ventre de feu et tétra braise | ❌ | température (précautions) [approximation de jeu] ; triton à ventre de feu : vit sans poissons (incompatible) [documentation du projet (Caudata Culture : sans poissons)] |
-| triton à ventre de feu et molly | ❌ | température (précautions) [approximation de jeu] ; triton à ventre de feu : vit sans poissons (incompatible) [documentation du projet (Caudata Culture : sans poissons)] |
-| triton à ventre de feu et gourami miel | ❌ | température (précautions) [approximation de jeu] ; triton à ventre de feu : vit sans poissons (incompatible) [documentation du projet (Caudata Culture : sans poissons)] |
-| triton à ventre de feu et xipho | ❌ | température (précautions) [approximation de jeu] ; triton à ventre de feu : vit sans poissons (incompatible) [documentation du projet (Caudata Culture : sans poissons)] |
-| triton à ventre de feu et crevette cerise | ❌ | triton à ventre de feu : vit sans poissons (incompatible) [documentation du projet (Caudata Culture : sans poissons)] |
-| triton à ventre de feu et néritine zèbre | ❌ | température (précautions) [approximation de jeu] ; triton à ventre de feu : vit sans poissons (incompatible) [documentation du projet (Caudata Culture : sans poissons)] |
-| triton à ventre de feu et poisson rouge | ❌ | triton à ventre de feu : vit sans poissons (incompatible) [documentation du projet (Caudata Culture : sans poissons)] |
-| poisson-clown et chirurgien bleu | ⚠️ | deux espèces territoriales (précautions) [approximation de jeu] |
-| poisson-clown et gramma royal | ⚠️ | deux espèces territoriales (précautions) [approximation de jeu] |
-| poisson-clown et blennie bicolore | ⚠️ | deux espèces territoriales (précautions) [approximation de jeu] |
-| chirurgien bleu et gramma royal | ⚠️ | deux espèces territoriales (précautions) [approximation de jeu] |
-| chirurgien bleu et blennie bicolore | ⚠️ | deux espèces territoriales (précautions) [approximation de jeu] |
-| rasbora arlequin et molly | ⚠️ | pH (précautions) [approximation de jeu] ; dureté (précautions) [approximation de jeu] |
-| rasbora arlequin et crevette cerise | ⚠️ | rasbora arlequin : mange les jeunes (précautions) [https://www.practicalfishkeeping.co.uk/features/what-can-i-keep-with-shrimp/ (mange au moins les jeunes crevettes)] |
-| rasbora arlequin et néritine zèbre | ⚠️ | pH (précautions) [approximation de jeu] |
-| tétra citron et molly | ⚠️ | dureté (précautions) [approximation de jeu] |
-| tétra citron et crevette cerise | ⚠️ | tétra citron : mange les jeunes (précautions) [approximation de jeu] |
-| loche kuhli et platy | ⚠️ | pH (précautions) [approximation de jeu] |
-| loche kuhli et molly | ⚠️ | pH (précautions) [approximation de jeu] ; dureté (précautions) [approximation de jeu] |
-| loche kuhli et xipho | ⚠️ | pH (précautions) [approximation de jeu] |
-| loche kuhli et crevette cerise | ⚠️ | loche kuhli : mange les jeunes (précautions) [https://www.practicalfishkeeping.co.uk/features/what-can-i-keep-with-shrimp/ (mange au moins les jeunes crevettes)] |
-| loche kuhli et néritine zèbre | ⚠️ | pH (précautions) [approximation de jeu] |
-| gourami nain et ancistrus commun | ⚠️ | deux espèces territoriales (précautions) [https://www.seriouslyfish.com/species/trichogaster-lalius (mâle parfois agressif) ; https://www.seriouslyfish.com/species/ancistrus-cf-cirrhosus (envers ses congénères)] |
-| gourami nain et xipho | ⚠️ | deux espèces territoriales (précautions) [https://www.seriouslyfish.com/species/trichogaster-lalius (mâle parfois agressif) ; https://fishkeeper.co.uk/fish/freshwater/livebearers/swordtail (les mâles se disputent)] |
-| gourami nain et crevette cerise | ⚠️ | gourami nain : mange les jeunes (précautions) [approximation de jeu] |
-| platy et crevette cerise | ⚠️ | platy : mange les jeunes (précautions) [approximation de jeu] |
-| danio zébré et crevette cerise | ⚠️ | danio zébré : mange les jeunes (précautions) [https://www.practicalfishkeeping.co.uk/features/what-can-i-keep-with-shrimp/ (petits danios : au moins les jeunes crevettes)] |
-| ancistrus commun et xipho | ⚠️ | deux espèces territoriales (précautions) [https://www.seriouslyfish.com/species/ancistrus-cf-cirrhosus (envers ses congénères) ; https://fishkeeper.co.uk/fish/freshwater/livebearers/swordtail (les mâles se disputent)] |
-| otocinclus et molly | ⚠️ | dureté (précautions) [approximation de jeu] |
-| tétra braise et molly | ⚠️ | pH (précautions) [approximation de jeu] ; dureté (précautions) [approximation de jeu] |
-| tétra braise et néritine zèbre | ⚠️ | pH (précautions) [approximation de jeu] |
-| molly et crevette cerise | ⚠️ | dureté (précautions) [approximation de jeu] ; molly : mange les jeunes (précautions) [approximation de jeu] |
-| gramma royal et blennie bicolore | ⚠️ | deux espèces territoriales (précautions) [approximation de jeu] |
-| xipho et crevette cerise | ⚠️ | xipho : mange les jeunes (précautions) [https://fishkeeper.co.uk/fish/freshwater/livebearers/swordtail (mange alevins et crevettes naines)] |
+| Paire                                      | Verdict | Raisons et sources                                                                                                                                                                                                                        |
+| ------------------------------------------ | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| néon et triton à ventre de feu             | ❌      | température (précautions) [approximation de jeu] ; triton à ventre de feu : vit sans poissons (incompatible) [documentation du projet (Caudata Culture : sans poissons)]                                                                  |
+| néon et molly                              | ⚠️      | dureté (précautions) [documentation du projet (Seriously Fish ; FishBase : dH 1–2, désaccord) ; https://www.seriouslyfish.com/species/poecilia-sphenops (15 à 30 °dGH)]                                                                   |
+| guppy et triton à ventre de feu            | ❌      | température (précautions) [approximation de jeu] ; triton à ventre de feu : vit sans poissons (incompatible) [documentation du projet (Caudata Culture : sans poissons)]                                                                  |
+| guppy et crevette cerise                   | ⚠️      | guppy : mange les jeunes (précautions) [https://www.practicalfishkeeping.co.uk/features/what-can-i-keep-with-shrimp/ (mange au moins les jeunes crevettes)]                                                                               |
+| corydora et triton à ventre de feu         | ❌      | température (précautions) [approximation de jeu] ; triton à ventre de feu : vit sans poissons (incompatible) [documentation du projet (Caudata Culture : sans poissons)]                                                                  |
+| corydora et molly                          | ⚠️      | dureté (précautions) [documentation du projet (Seriously Fish) ; https://www.seriouslyfish.com/species/poecilia-sphenops (15 à 30 °dGH)]                                                                                                  |
+| corydora et crevette cerise                | ⚠️      | corydora : mange les jeunes (précautions) [https://www.practicalfishkeeping.co.uk/features/what-can-i-keep-with-shrimp/ (mange au moins les jeunes crevettes)]                                                                            |
+| koï et axolotl                             | ❌      | axolotl : vit sans poissons (incompatible) [documentation du projet (FishKeeper, secondaire : ne se mélange pas aux poissons)]                                                                                                            |
+| koï et sonneur oriental                    | ❌      | koï : mange les plus petits (taille) (incompatible) [approximation de jeu]                                                                                                                                                                |
+| koï et triton à ventre de feu              | ❌      | koï : mange les plus petits (taille) (incompatible) [approximation de jeu] ; triton à ventre de feu : vit sans poissons (incompatible) [documentation du projet (Caudata Culture : sans poissons)]                                        |
+| axolotl et sonneur oriental                | ❌      | température (précautions) [documentation du projet (WSAVA/VIN ; PMC10948202) ; https://anapsid.org/bombina.html (secondaire) (température du terrarium)] ; axolotl : mange les plus petits (taille) (incompatible) [approximation de jeu] |
+| axolotl et poisson rouge                   | ❌      | axolotl : vit sans poissons (incompatible) [documentation du projet (FishKeeper, secondaire : ne se mélange pas aux poissons)]                                                                                                            |
+| triton à ventre de feu et rasbora arlequin | ❌      | température (précautions) [approximation de jeu] ; triton à ventre de feu : vit sans poissons (incompatible) [documentation du projet (Caudata Culture : sans poissons)]                                                                  |
+| triton à ventre de feu et tétra citron     | ❌      | température (précautions) [approximation de jeu] ; triton à ventre de feu : vit sans poissons (incompatible) [documentation du projet (Caudata Culture : sans poissons)]                                                                  |
+| triton à ventre de feu et loche kuhli      | ❌      | température (précautions) [approximation de jeu] ; triton à ventre de feu : vit sans poissons (incompatible) [documentation du projet (Caudata Culture : sans poissons)]                                                                  |
+| triton à ventre de feu et gourami nain     | ❌      | température (précautions) [approximation de jeu] ; triton à ventre de feu : vit sans poissons (incompatible) [documentation du projet (Caudata Culture : sans poissons)]                                                                  |
+| triton à ventre de feu et platy            | ❌      | température (précautions) [approximation de jeu] ; triton à ventre de feu : vit sans poissons (incompatible) [documentation du projet (Caudata Culture : sans poissons)]                                                                  |
+| triton à ventre de feu et danio zébré      | ❌      | température (précautions) [approximation de jeu] ; triton à ventre de feu : vit sans poissons (incompatible) [documentation du projet (Caudata Culture : sans poissons)]                                                                  |
+| triton à ventre de feu et ancistrus commun | ❌      | température (précautions) [approximation de jeu] ; triton à ventre de feu : vit sans poissons (incompatible) [documentation du projet (Caudata Culture : sans poissons)]                                                                  |
+| triton à ventre de feu et otocinclus       | ❌      | température (précautions) [approximation de jeu] ; triton à ventre de feu : vit sans poissons (incompatible) [documentation du projet (Caudata Culture : sans poissons)]                                                                  |
+| triton à ventre de feu et tétra braise     | ❌      | température (précautions) [approximation de jeu] ; triton à ventre de feu : vit sans poissons (incompatible) [documentation du projet (Caudata Culture : sans poissons)]                                                                  |
+| triton à ventre de feu et molly            | ❌      | température (précautions) [approximation de jeu] ; triton à ventre de feu : vit sans poissons (incompatible) [documentation du projet (Caudata Culture : sans poissons)]                                                                  |
+| triton à ventre de feu et gourami miel     | ❌      | température (précautions) [approximation de jeu] ; triton à ventre de feu : vit sans poissons (incompatible) [documentation du projet (Caudata Culture : sans poissons)]                                                                  |
+| triton à ventre de feu et xipho            | ❌      | température (précautions) [approximation de jeu] ; triton à ventre de feu : vit sans poissons (incompatible) [documentation du projet (Caudata Culture : sans poissons)]                                                                  |
+| triton à ventre de feu et crevette cerise  | ❌      | triton à ventre de feu : vit sans poissons (incompatible) [documentation du projet (Caudata Culture : sans poissons)]                                                                                                                     |
+| triton à ventre de feu et néritine zèbre   | ❌      | température (précautions) [approximation de jeu] ; triton à ventre de feu : vit sans poissons (incompatible) [documentation du projet (Caudata Culture : sans poissons)]                                                                  |
+| triton à ventre de feu et poisson rouge    | ❌      | triton à ventre de feu : vit sans poissons (incompatible) [documentation du projet (Caudata Culture : sans poissons)]                                                                                                                     |
+| poisson-clown et chirurgien bleu           | ⚠️      | deux espèces territoriales (précautions) [approximation de jeu]                                                                                                                                                                           |
+| poisson-clown et gramma royal              | ⚠️      | deux espèces territoriales (précautions) [approximation de jeu]                                                                                                                                                                           |
+| poisson-clown et blennie bicolore          | ⚠️      | deux espèces territoriales (précautions) [approximation de jeu]                                                                                                                                                                           |
+| chirurgien bleu et gramma royal            | ⚠️      | deux espèces territoriales (précautions) [approximation de jeu]                                                                                                                                                                           |
+| chirurgien bleu et blennie bicolore        | ⚠️      | deux espèces territoriales (précautions) [approximation de jeu]                                                                                                                                                                           |
+| rasbora arlequin et molly                  | ⚠️      | pH (précautions) [approximation de jeu] ; dureté (précautions) [approximation de jeu]                                                                                                                                                     |
+| rasbora arlequin et crevette cerise        | ⚠️      | rasbora arlequin : mange les jeunes (précautions) [https://www.practicalfishkeeping.co.uk/features/what-can-i-keep-with-shrimp/ (mange au moins les jeunes crevettes)]                                                                    |
+| rasbora arlequin et néritine zèbre         | ⚠️      | pH (précautions) [approximation de jeu]                                                                                                                                                                                                   |
+| tétra citron et molly                      | ⚠️      | dureté (précautions) [approximation de jeu]                                                                                                                                                                                               |
+| tétra citron et crevette cerise            | ⚠️      | tétra citron : mange les jeunes (précautions) [approximation de jeu]                                                                                                                                                                      |
+| loche kuhli et platy                       | ⚠️      | pH (précautions) [approximation de jeu]                                                                                                                                                                                                   |
+| loche kuhli et molly                       | ⚠️      | pH (précautions) [approximation de jeu] ; dureté (précautions) [approximation de jeu]                                                                                                                                                     |
+| loche kuhli et xipho                       | ⚠️      | pH (précautions) [approximation de jeu]                                                                                                                                                                                                   |
+| loche kuhli et crevette cerise             | ⚠️      | loche kuhli : mange les jeunes (précautions) [https://www.practicalfishkeeping.co.uk/features/what-can-i-keep-with-shrimp/ (mange au moins les jeunes crevettes)]                                                                         |
+| loche kuhli et néritine zèbre              | ⚠️      | pH (précautions) [approximation de jeu]                                                                                                                                                                                                   |
+| gourami nain et ancistrus commun           | ⚠️      | deux espèces territoriales (précautions) [https://www.seriouslyfish.com/species/trichogaster-lalius (mâle parfois agressif) ; https://www.seriouslyfish.com/species/ancistrus-cf-cirrhosus (envers ses congénères)]                       |
+| gourami nain et xipho                      | ⚠️      | deux espèces territoriales (précautions) [https://www.seriouslyfish.com/species/trichogaster-lalius (mâle parfois agressif) ; https://fishkeeper.co.uk/fish/freshwater/livebearers/swordtail (les mâles se disputent)]                    |
+| gourami nain et crevette cerise            | ⚠️      | gourami nain : mange les jeunes (précautions) [approximation de jeu]                                                                                                                                                                      |
+| platy et crevette cerise                   | ⚠️      | platy : mange les jeunes (précautions) [approximation de jeu]                                                                                                                                                                             |
+| danio zébré et crevette cerise             | ⚠️      | danio zébré : mange les jeunes (précautions) [https://www.practicalfishkeeping.co.uk/features/what-can-i-keep-with-shrimp/ (petits danios : au moins les jeunes crevettes)]                                                               |
+| ancistrus commun et xipho                  | ⚠️      | deux espèces territoriales (précautions) [https://www.seriouslyfish.com/species/ancistrus-cf-cirrhosus (envers ses congénères) ; https://fishkeeper.co.uk/fish/freshwater/livebearers/swordtail (les mâles se disputent)]                 |
+| otocinclus et molly                        | ⚠️      | dureté (précautions) [approximation de jeu]                                                                                                                                                                                               |
+| tétra braise et molly                      | ⚠️      | pH (précautions) [approximation de jeu] ; dureté (précautions) [approximation de jeu]                                                                                                                                                     |
+| tétra braise et néritine zèbre             | ⚠️      | pH (précautions) [approximation de jeu]                                                                                                                                                                                                   |
+| molly et crevette cerise                   | ⚠️      | dureté (précautions) [approximation de jeu] ; molly : mange les jeunes (précautions) [approximation de jeu]                                                                                                                               |
+| gramma royal et blennie bicolore           | ⚠️      | deux espèces territoriales (précautions) [approximation de jeu]                                                                                                                                                                           |
+| xipho et crevette cerise                   | ⚠️      | xipho : mange les jeunes (précautions) [https://fishkeeper.co.uk/fish/freshwater/livebearers/swordtail (mange alevins et crevettes naines)]                                                                                               |
 
 Désaccords entre sources :
 
 - néon et molly : dureté (précautions) [documentation du projet (Seriously Fish ; FishBase : dH 1–2, désaccord) ; https://www.seriouslyfish.com/species/poecilia-sphenops (15 à 30 °dGH)]
+
+## Durées de vie du jeu (#857, ADR 0187)
+
+Durée de vie moyenne en captivité utilisée par le vieillissement (`sim/aging.ts`) : milieu de
+la plage `lifespan` de chaque fiche (`sim/species-sheet.ts`). **Toutes sont des approximations
+de jeu** (ordres de grandeur, aucune source consultable pendant les cycles #484 et #857) ; un
+test (`sim/aging.spec.ts`) vérifie que chaque espèce a une valeur et un statut de sourçage.
+Remplacer une approximation par une valeur sourcée : changer la plage et son statut dans la
+fiche, puis ce tableau.
+
+| Espèce                 | Plage de la fiche | Moyenne du jeu | Statut               |
+| ---------------------- | ----------------- | -------------- | -------------------- |
+| Néon                   | 3–5 ans           | 4 ans          | approximation de jeu |
+| Guppy                  | 2–3 ans           | 2,5 ans        | approximation de jeu |
+| Corydora               | 5–10 ans          | 7,5 ans        | approximation de jeu |
+| Koï                    | 25–35 ans         | 30 ans         | approximation de jeu |
+| Axolotl                | 10–15 ans         | 12,5 ans       | approximation de jeu |
+| Sonneur oriental       | 10–15 ans         | 12,5 ans       | approximation de jeu |
+| Triton à ventre de feu | 10–15 ans         | 12,5 ans       | approximation de jeu |
+| Poisson-clown          | 10–20 ans         | 15 ans         | approximation de jeu |
+| Chirurgien bleu        | 8–20 ans          | 14 ans         | approximation de jeu |
+| Rasbora arlequin       | 4–6 ans           | 5 ans          | approximation de jeu |
+| Tétra citron           | 3–5 ans           | 4 ans          | approximation de jeu |
+| Loche kuhli            | 8–10 ans          | 9 ans          | approximation de jeu |
+| Gourami nain           | 3–4 ans           | 3,5 ans        | approximation de jeu |
+| Platy                  | 2–4 ans           | 3 ans          | approximation de jeu |
+| Danio zébré            | 3–5 ans           | 4 ans          | approximation de jeu |
+| Ancistrus commun       | 8–12 ans          | 10 ans         | approximation de jeu |
+| Otocinclus             | 3–5 ans           | 4 ans          | approximation de jeu |
+| Tétra braise           | 3–5 ans           | 4 ans          | approximation de jeu |
+| Molly                  | 3–5 ans           | 4 ans          | approximation de jeu |
+| Gourami miel           | 4–5 ans           | 4,5 ans        | approximation de jeu |
+| Chromis vert           | 5–8 ans           | 6,5 ans        | approximation de jeu |
+| Gobie à crevette jaune | 5–8 ans           | 6,5 ans        | approximation de jeu |
+| Gramma royal           | 5–8 ans           | 6,5 ans        | approximation de jeu |
+| Crevette nettoyeuse    | 3–5 ans           | 4 ans          | approximation de jeu |
+| Blennie bicolore       | 3–5 ans           | 4 ans          | approximation de jeu |
+| Xipho                  | 3–5 ans           | 4 ans          | approximation de jeu |
+| Crevette cerise        | 1–2 ans           | 1,5 an         | approximation de jeu |
+| Néritine zèbre         | 1–2 ans           | 1,5 an         | approximation de jeu |
+| Poisson rouge          | 6–20 ans          | 13 ans         | approximation de jeu |
 
 ## Non vérifié et désaccords
 

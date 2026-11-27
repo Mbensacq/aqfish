@@ -13,7 +13,8 @@ import {
   type WalkerNeighbor,
 } from './axolotl';
 import { createFrog, stepFrog } from './frog';
-import { deadBody, splitDeaths, stepDeadInPlace, toxicWater } from './mortality';
+import { deadBody, stepDeadInPlace } from './mortality';
+import { stepDeathsInPlace } from './world-deaths';
 import { behaviorTarget, hasLandedFood, speciesBehavior, type BehaviorContext } from './behaviors';
 import { bubbleSourceFor, fillBubbles, type BubbleBuffer } from './bubbles';
 import {
@@ -1086,7 +1087,7 @@ function stepPopulationInPlace(world: MutableWorld, dt: number): void {
     stepDeadInPlace(world.dead, dt, surfaceOfBody);
   }
   if (world.mortality === true) {
-    stepMortalityInPlace(world, dt);
+    stepDeathsInPlace(world, dt);
   }
   stepBroodInPlace(world);
   stepShrimpColonyInPlace(world, dt, birthYoungInPlace);
@@ -1096,20 +1097,6 @@ function stepPopulationInPlace(world: MutableWorld, dt: number): void {
 /** Surface d'eau d'un corps (hauteur maximale de son espèce) dans le lieu du pas en cours. */
 function surfaceOfBody(body: { readonly species: SpeciesId }): number {
   return boundsAt(body.species, currentPlace, currentKey).hard.maxY;
-}
-
-/**
- * Décès du pas (`splitDeaths`, `sim/mortality.ts`), **en modifiant** `world` : chaque animal
- * qui meurt passe de `entities` à `dead` (`deadBody`), un seul tirage par animal. Aucune
- * allocation si personne ne meurt.
- */
-function stepMortalityInPlace(world: MutableWorld, dt: number): void {
-  const split = splitDeaths(world.entities, toxicWater(world.water), dt, world.seed, world.tick);
-  if (split === null) {
-    return;
-  }
-  world.entities = split.living;
-  world.dead = [...(world.dead ?? []), ...split.dying.map(deadBody)];
 }
 
 /**
@@ -1355,6 +1342,7 @@ export function birthYoungInPlace(
     world.obstacles,
   );
   fry.growth = 0;
+  fry.bornAt = world.time;
   (world.entities as Entity[]).push(fry);
   world.nextFishId += 1;
   return fry;
