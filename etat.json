@@ -11459,7 +11459,7 @@
       "date": "2026-11-27",
       "debut": "2026-11-27T04:55:50.687Z",
       "type": "fonctionnalite",
-      "issue": null,
+      "issue": 857,
       "pr": null,
       "version": null,
       "phases": {
