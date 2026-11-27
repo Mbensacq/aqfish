@@ -11374,10 +11374,10 @@
           "note": "Verdict OK, 0 bug, captures c313 publiées (neritine changée comme prévu)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-27T00:59:08.299Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-27T01:38:13.821Z",
+          "note": "PR #855 fusionnée → v1.33.5 (release CI OK, CI main verte), #846 et #853 fermées ; e2e 7/7 relancé (panne apt 403) ; suppression de branche refusée"
         }
       },
       "metriques": {}
