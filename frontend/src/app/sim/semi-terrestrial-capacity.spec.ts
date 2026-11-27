@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { SEMI_TERRESTRIAL_NEEDS } from './semi-terrestrial-needs';
-import { capacityLine, type TankCapacityReadout } from './tank-capacity-limits';
+import { capacityAlert, capacityLine, type TankCapacityReadout } from './tank-capacity-limits';
 import {
   canAdd,
   capacityProfile,
@@ -114,8 +114,34 @@ describe('capacité : amphibiens semi-terrestres sur le milieu (#813)', () => {
     expect(status.milieuNeedLiters).toBeCloseTo(37.8, 9);
     expect(status.over).toBe(false);
     const readout: TankCapacityReadout = { grossLiters: 105, liters: 45.7, status, decor: false };
+    // Rien n'est compté sur l'eau (#846) : la part « 0 L demandés pour … » n'est pas écrite.
     expect(capacityLine(readout)).toBe(
-      '36 % de la capacité : 0 L demandés pour 45,7 L d’eau réelle (105 L bruts, décor déduit) ; et 37,8 L pour 105 L de milieu (berge comprise)',
+      '36 % de la capacité : 37,8 L demandés pour 105 L de milieu (berge comprise) ; 45,7 L d’eau réelle (105 L bruts, décor déduit)',
+    );
+    expect(capacityLine(readout)).not.toContain('0 L demandés');
+  });
+
+  it('ligne de capacité : eau et milieu comptés tous deux, les deux parts sont écrites', () => {
+    const readout: TankCapacityReadout = {
+      grossLiters: 105,
+      liters: 45.7,
+      status: { needLiters: 20, milieuNeedLiters: 37.8, occupation: 0.44, over: false },
+      decor: false,
+    };
+    expect(capacityLine(readout)).toBe(
+      '44 % de la capacité : 20 L demandés pour 45,7 L d’eau réelle (105 L bruts, décor déduit) ; et 37,8 L pour 105 L de milieu (berge comprise)',
+    );
+  });
+
+  it('alerte de capacité : milieu seul compté, sans « 0 L demandés » (#846)', () => {
+    const readout: TankCapacityReadout = {
+      grossLiters: 105,
+      liters: 45.7,
+      status: { needLiters: 0, milieuNeedLiters: 113.4, occupation: 1.08, over: true },
+      decor: false,
+    };
+    expect(capacityAlert(readout)).toBe(
+      'Bac au-delà de sa capacité (108 %) : 113,4 L demandés pour 105 L de milieu (berge comprise) ; 45,7 L d’eau réelle. Aucun animal n’a été retiré ; ajouts refusés tant que le bac reste trop plein.',
     );
   });
 });

@@ -4,9 +4,6 @@ import { ENVIRONMENT_IDS, environmentById, environmentWater } from './environmen
 import { SPECIES, type SpeciesId } from './species';
 import { SPECIES_LABELS, speciesCatalog } from './species-catalog';
 import {
-  addWarnings,
-  addWarningText,
-  addWarningTextWith,
   frenchNumber,
   publicReference,
   SHEET_FIELD_LABELS,
@@ -17,6 +14,8 @@ import {
   statusText,
   type SheetField,
 } from './species-sheet';
+import { addWarnings, addWarningText, addWarningTextWith } from './add-warnings';
+import { NEWT_NEED, SEMI_TERRESTRIAL_NEEDS, TOAD_NEED } from './semi-terrestrial-needs';
 import { TANK_LIMITS } from './tank';
 import { waterLiters } from './water';
 import { SPECIES_PH } from './water-ph';
@@ -441,6 +440,12 @@ describe('textes affichés, figés à la lettre (#304)', () => {
 
   it('mises en garde et leurs sources, à la lettre', () => {
     expect(sheetNotes('grenouille')).toEqual([
+      // Besoins du milieu (#846, ADR 0177) : ceux de `semi-terrestrial-needs.ts`.
+      {
+        text: 'Volume compté sur le milieu entier, berge comprise : 18,9 L pour un adulte, 18,9 L par adulte en plus, 37,9 L au moins',
+        status:
+          'Source : https://reptilesmagazine.com/Frog-Amphibian-Species/Oriental-Fire-bellied-Toad/ (10 gallons pour un couple, soit 18,9 L par sonneur ; désaccord : 15 gallons pour cinq adultes selon https://www.amphibiancare.com/frogs/caresheets/firebelliedtoad.html)',
+      },
       {
         text: 'Semi-aquatique : un quart de berge sèche environ, eau peu profonde (une dizaine de cm)',
         status: 'Source : https://anapsid.org/bombina.html (secondaire) (milieu semi-aquatique)',
@@ -451,6 +456,11 @@ describe('textes affichés, figés à la lettre (#304)', () => {
       },
     ]);
     expect(sheetNotes('triton')).toEqual([
+      {
+        text: 'Volume compté sur le milieu entier, berge comprise : 56,8 L pour un adulte, 18,9 L par adulte en plus, 56,8 L au moins',
+        status:
+          'Source : https://www.petmd.com/exotic/fire-bellied-newt-care-sheet (20 gallons pour deux : 5 gallons par triton de plus, milieu entier)',
+      },
       {
         text: 'Sans poissons ; éviter au-dessus de 23 °C ; préférer les sujets nés en captivité',
         status: 'Source : documentation du projet (Caudata Culture)',
@@ -472,6 +482,36 @@ describe('textes affichés, figés à la lettre (#304)', () => {
         text: 'Un couple plutôt qu’un groupe ; mâle parfois agressif envers les autres poissons à labyrinthe',
         status: 'Source : https://www.seriouslyfish.com/species/trichogaster-lalius',
       },
+    ]);
+  });
+});
+
+describe('amphibiens semi-terrestres : fiches alignées sur la capacité (#846, ADR 0177)', () => {
+  it('volume conseillé du sonneur et du triton : celui du milieu, sourcé, de semi-terrestrial-needs', () => {
+    for (const [id, need] of [
+      ['grenouille', TOAD_NEED],
+      ['triton', NEWT_NEED],
+    ] as const) {
+      expect(speciesSheet(id).minLiters).toBe(need.minLiters);
+      expect(SEMI_TERRESTRIAL_NEEDS[id]).toBe(need);
+      expect(speciesSheet(id).minLiters.status.kind).toBe('source');
+    }
+    const row = (id: SpeciesId): string | undefined =>
+      sheetRows(id).find((r) => r.field === 'minLiters')?.value;
+    expect(row('grenouille')).toBe('37,9 L de milieu');
+    expect(row('triton')).toBe('56,8 L de milieu');
+    // Les espèces comptées sur l'eau gardent l'écriture « 60 L ».
+    expect(row('neon')).toBe('60 L');
+    expect(row('axolotl')).toBe('75 L');
+  });
+
+  it('aucun avertissement de volume sur l’eau pour eux : le milieu est contrôlé par la capacité', () => {
+    // 45,7 L d'eau réelle au paludarium par défaut, sous les 56,8 L de milieu du triton.
+    expect(addWarnings('triton', 1, 45.7, { triton: 1 }, ['triton'])).toEqual([]);
+    expect(addWarnings('grenouille', 1, 10, { grenouille: 1 }, ['grenouille'])).toEqual([]);
+    // L'axolotl, compté sur l'eau, reste averti.
+    expect(addWarnings('axolotl', 1, 45.7, { axolotl: 1 }, ['axolotl'])).toEqual([
+      { kind: 'volume', species: 'axolotl', liters: 45.7, minLiters: 75 },
     ]);
   });
 });

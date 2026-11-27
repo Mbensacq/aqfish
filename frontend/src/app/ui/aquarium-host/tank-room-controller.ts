@@ -31,7 +31,7 @@ import {
   type RoomTank,
 } from '../../sim/room-state';
 import { SPECIES_LABELS } from '../../sim/species-catalog';
-import { addWarningText } from '../../sim/species-sheet';
+import { addWarningText } from '../../sim/add-warnings';
 import { tankList, worstAlert, type TankListEntry } from '../../sim/tank-list';
 import { transferFish } from '../../sim/tank-transfer';
 import type { TreatmentKind } from '../../sim/treatment';

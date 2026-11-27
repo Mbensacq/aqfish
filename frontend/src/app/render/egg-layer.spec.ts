@@ -13,6 +13,7 @@ import {
   type Egg,
 } from '../sim/eggs';
 import {
+  CAPSULE_SIZE_FACTOR,
   CLOWN_EGG_COLOR,
   CLOWN_EGG_RIPE_COLOR,
   EGG_AFTER_WATER_CORE_RENDER_ORDER,
@@ -208,6 +209,25 @@ describe('EggLayer (#478)', () => {
       }
       layer.setViewpoint(0, 0.1, 0.24, 100);
       expect(sides(layer)[0]).toBeCloseTo(EGG_VOXEL, 9);
+      layer.dispose();
+    });
+
+    it('capsules de la néritine (#853) : cœur agrandi, liseré inchangé ; autres œufs intacts', () => {
+      expect(CAPSULE_SIZE_FACTOR).toBeGreaterThan(1);
+      const capsule: Egg = { ...egg(0, 0.1), species: 'neritine' };
+      const layer = new EggLayer();
+      layer.update([egg(0), capsule], EGG_HATCH_TIME);
+      // Échelle inconnue : tailles de base, multipliées pour la capsule seule.
+      expect(sides(layer, 0)[0]).toBeCloseTo(EGG_VOXEL, 9);
+      expect(sides(layer, 0)[1]).toBeCloseTo(EGG_VOXEL + EGG_OUTLINE, 9);
+      const [core, outline] = sides(layer, 1);
+      expect(core).toBeCloseTo(EGG_VOXEL * CAPSULE_SIZE_FACTOR, 6);
+      expect(outline - core).toBeCloseTo(EGG_OUTLINE, 6);
+      // Loin (50 px/m) : le plancher en pixels est multiplié lui aussi, liseré au plancher.
+      layer.setViewpoint(0.1, 0.1, 2.24, 100);
+      const [farCore, farOutline] = sides(layer, 1);
+      expect(farCore * 50).toBeCloseTo(EGG_MIN_PIXELS * CAPSULE_SIZE_FACTOR, 6);
+      expect((farOutline - farCore) * 50).toBeCloseTo(EGG_MIN_OUTLINE_PIXELS, 6);
       layer.dispose();
     });
 

@@ -3,13 +3,8 @@ import { compatibility } from './compatibility';
 import { ENVIRONMENT_IDS, environmentById, livesIn, type EnvironmentId } from './environment';
 import { isSpeciesId, populationCounts, setPopulationInPlace } from './population';
 import { SPECIES_LABELS } from './species-catalog';
-import {
-  addWarnings,
-  addWarningText,
-  speciesSheet,
-  type AddWarning,
-  type ValueRange,
-} from './species-sheet';
+import { speciesSheet, type ValueRange } from './species-sheet';
+import { addWarnings, addWarningText, type AddWarning } from './add-warnings';
 import { SPECIES, type SpeciesId } from './species';
 import type { MutableWorld } from './world-types';
 
