@@ -25,7 +25,7 @@ export class AgeReadoutBuffer {
 
   /**
    * Relevé des âges de `world` : `shown` lui-même s'il affiche les mêmes espèces et les mêmes
-   * nombres de jours (`sameAgeDays`), sinon un nouveau relevé.
+   * nombres de jours (comparaison `sameDaysAs`), sinon un nouveau relevé.
    */
   readout(world: Pick<World, 'seed' | 'time' | 'entities'>, shown: AgeReadout): AgeReadout {
     this.fill(world);

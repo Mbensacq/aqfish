@@ -1,15 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { lifespanSeconds, YEAR_SECONDS } from './aging';
-import {
-  AGE_STATUS,
-  ageDays,
-  ageRows,
-  ageText,
-  lifespanText,
-  sameAgeDays,
-  speciesAges,
-} from './aging-text';
+import { AGE_STATUS, ageDays, ageRows, ageText, lifespanText, speciesAges } from './aging-text';
 import { DEFAULT_DAY_LENGTH_SECONDS } from './daylight';
 import { createWorld } from './world';
 
@@ -83,13 +75,5 @@ describe('relevé des âges du bac', () => {
     expect(ages.neon!.youngest).toBeLessThanOrEqual(ages.neon!.oldest);
     expect(ages.guppy!.youngest).toBe(ages.guppy!.oldest);
     expect(speciesAges({ ...world, entities: [] })).toEqual({});
-  });
-
-  it('deux relevés de mêmes jours sont égaux ; un jour de plus les distingue', () => {
-    const a = { neon: { youngest: DAY, oldest: 2 * DAY } };
-    expect(sameAgeDays(a, { neon: { youngest: DAY + 5, oldest: 2 * DAY + 5 } })).toBe(true);
-    expect(sameAgeDays(a, { neon: { youngest: DAY, oldest: 3 * DAY } })).toBe(false);
-    expect(sameAgeDays(a, {})).toBe(false);
-    expect(sameAgeDays(a, { guppy: { youngest: DAY, oldest: 2 * DAY } })).toBe(false);
   });
 });
