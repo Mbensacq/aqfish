@@ -11398,10 +11398,10 @@
           "note": "Issue #861 : Rétro sprint 45 ; sprint 46 prêt (#856 à #860), Dev : audit #729 et ROADMAP (S)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-27T01:41:26.902Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-27T02:13:30.632Z",
+          "note": "PR #863 : rétro s45 (ROADMAP v1.33/v1.34, ECOSYSTEME), CI verte ; #729 auditée et fermée (reste #862), 15 rétros soldées fermées ; unitaires 6523/6523 sur main"
         }
       },
       "metriques": {}
