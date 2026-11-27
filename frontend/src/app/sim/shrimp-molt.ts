@@ -2,7 +2,7 @@ import { deriveSeed, prngOutput } from '../core/random/prng';
 import { environmentWater } from './environment';
 import { fryScale } from './fry';
 import type { SpeciesId } from './species';
-import type { Entity, MutableWorld } from './world-types';
+import type { Entity, MutableWorld, World } from './world-types';
 
 /**
  * Mue des crevettes naines et exuvies (issue #859, ADR 0188, `docs/ECOSYSTEME.md` § 3.3).
@@ -139,11 +139,11 @@ export function stepMoltsInPlace(world: MutableWorld, dt: number): number {
   }
   const time = world.time;
   const shells = world.exuviae ?? NO_EXUVIAE;
-  const expired = shells.some((shell) => time - shell.time >= EXUVIA_LIFETIME_SECONDS);
-  const molts = (fish: Entity): boolean => moltsDuring(fish, world.seed, time - dt, time);
-  if (!expired && !world.entities.some(molts)) {
+  // Pas fin courant (crevettes, aucune mue) : deux boucles, aucune fermeture (#870).
+  if (!hasExpired(shells, time) && !anyMolts(world, dt)) {
     return 0;
   }
+  const molts = (fish: Entity): boolean => moltsDuring(fish, world.seed, time - dt, time);
   const molting = world.entities.filter(molts);
   const kept = shells.filter((shell) => time - shell.time < EXUVIA_LIFETIME_SECONDS);
   // Dans l'ordre des mues, même quand un gros pas en achève plusieurs.
@@ -161,6 +161,27 @@ export function stepMoltsInPlace(world: MutableWorld, dt: number): number {
 }
 
 const NO_EXUVIAE: readonly Exuvia[] = Object.freeze([]);
+
+/** Vrai si l'une des exuvies `shells` a fini son temps au temps `time`. */
+function hasExpired(shells: readonly Exuvia[], time: number): boolean {
+  for (const shell of shells) {
+    if (time - shell.time >= EXUVIA_LIFETIME_SECONDS) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/** Vrai si un animal de `world` mue pendant le pas `dt` qui s'achève à `world.time`. */
+function anyMolts(world: World, dt: number): boolean {
+  const time = world.time;
+  for (const fish of world.entities) {
+    if (moltsDuring(fish, world.seed, time - dt, time)) {
+      return true;
+    }
+  }
+  return false;
+}
 
 function hasMolter(entities: readonly Entity[]): boolean {
   for (const fish of entities) {

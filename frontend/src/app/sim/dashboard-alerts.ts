@@ -5,10 +5,11 @@ import { HUNGRY_AVERAGE, type HealthSummary } from './health-summary';
 import { MIX_REASON_TEXT, SPECIES_LABELS } from './species-catalog';
 import { tenthText } from './treatment';
 import { redoseText, type TreatmentReadout } from './treatment-text';
-import { WATER_CHANGE_SHARE } from './water';
+import { MAX_HEATER_TEMPERATURE, MIN_HEATER_TEMPERATURE, WATER_CHANGE_SHARE } from './water';
 import { CHLORINE_HARMFUL } from './water-conditioner';
 import {
   compoundLevel,
+  formatTenth,
   sampleReference,
   temperatureLevel,
   type GaugeLevel,
@@ -214,14 +215,13 @@ function temperatureAlert(sample: WaterSample): DashboardAlert | null {
   if (severity === null) {
     return null;
   }
-  const action = `Régler le chauffage sur ${reference} °C`;
   if (!Number.isFinite(sample.temperature)) {
     return {
       id: 'temperature',
       severity,
       message: 'Température anormale',
       cause: INVALID_CAUSE,
-      action,
+      action: temperatureAdvice(true, reference).action,
     };
   }
   const hot = sample.temperature > reference;
@@ -229,9 +229,35 @@ function temperatureAlert(sample: WaterSample): DashboardAlert | null {
     id: 'temperature',
     severity,
     message: hot ? 'Eau trop chaude' : 'Eau trop froide',
-    cause: hot ? 'chauffage réglé trop haut' : 'chauffage réglé trop bas',
-    action,
+    ...temperatureAdvice(hot, reference),
   };
+}
+
+/**
+ * Cause et action d'une eau trop chaude (`hot`) ou trop froide pour la référence `reference`
+ * (issue #866), arrondie au dixième. Référence hors des bornes du chauffage (bassin en hiver) :
+ * aucune consigne ne l'atteint ; si le chauffage pousse l'eau du mauvais côté, le régler au
+ * plus près, sinon laisser l'eau rejoindre la saison.
+ */
+function temperatureAdvice(
+  hot: boolean,
+  reference: number,
+): Pick<DashboardAlert, 'cause' | 'action'> {
+  const bound = Math.min(Math.max(reference, MIN_HEATER_TEMPERATURE), MAX_HEATER_TEMPERATURE);
+  if (bound === reference || !Number.isFinite(reference)) {
+    return {
+      cause: hot ? 'chauffage réglé trop haut' : 'chauffage réglé trop bas',
+      action: `Régler le chauffage sur ${formatTenth(reference)} °C`,
+    };
+  }
+  const side = hot ? 'plus chaude' : 'plus froide';
+  const cause = `eau ${side} que les ${formatTenth(reference)} °C de saison`;
+  // Chauffage du mauvais côté (assez chaud pour un hiver sous sa borne basse) : au plus près.
+  const heaterPushes = hot === reference < MIN_HEATER_TEMPERATURE;
+  const action = heaterPushes
+    ? `Régler le chauffage au plus ${hot ? 'bas' : 'haut'} (${formatTenth(bound)} °C)`
+    : 'Attendre que l’eau rejoigne la température de saison';
+  return { cause, action };
 }
 
 function phAlert(ph: number, bands: PhBands): DashboardAlert | null {

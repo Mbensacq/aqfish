@@ -235,7 +235,7 @@ export class WaterHistoryChart {
     return curveGeometry(
       history?.series[id] ?? [],
       history?.marks ?? [],
-      toleratedRange(id, this.sample().environment, this.bands()),
+      toleratedRange(id, this.sample().environment, this.bands(), this.sample().ambient),
       CURVE_MIN_SPAN[id],
     );
   });

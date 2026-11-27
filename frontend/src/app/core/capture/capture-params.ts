@@ -652,11 +652,14 @@ function parseFoodStyle(raw: string | null): FoodStyle | null {
   return isFoodStyle(raw) ? raw : null;
 }
 
-/** Heure décimale : chiffres, point décimal facultatif (ni signe, ni exposant, ni espace). */
-const HOUR_PATTERN = /^\d{1,2}(\.\d+)?$/;
+/**
+ * Réel décimal positif court (heure `heure=`, phase `lune=`) : un ou deux chiffres, point
+ * décimal facultatif (ni signe, ni exposant, ni espace) ; les bornes sont vérifiées après.
+ */
+const SHORT_UNSIGNED_DECIMAL_PATTERN = /^\d{1,2}(\.\d+)?$/;
 
 function parseHour(raw: string | null): number | null {
-  if (raw === null || !HOUR_PATTERN.test(raw)) {
+  if (raw === null || !SHORT_UNSIGNED_DECIMAL_PATTERN.test(raw)) {
     return null;
   }
   const value = Number(raw);
@@ -665,7 +668,7 @@ function parseHour(raw: string | null): number | null {
 
 /** Phase de `lune=` : réel décimal dans [0, 1), sinon `null`. */
 function parseMoonPhase(raw: string | null): number | null {
-  if (raw === null || !HOUR_PATTERN.test(raw)) {
+  if (raw === null || !SHORT_UNSIGNED_DECIMAL_PATTERN.test(raw)) {
     return null;
   }
   const value = Number(raw);

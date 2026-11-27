@@ -1371,44 +1371,34 @@ describe('ControlPanel', () => {
       toggle(),
       ...content.querySelectorAll<HTMLElement>('button, select, input:not([type="file"])'),
     ];
-    // 5 contrôles de #52, « Éditer le décor » (#167), « Granulés » (#117), « Afficher la
-    // pièce » (#187), « Changer l’eau » et le curseur du chauffage (#207), « − » et « + » des
-    // feuilles de catappa (#239), puis « − », champ, « + » (#69), curseur (#189) et « Fiche »
-    // (#237) pour chacune des 17 espèces du bac tropical (#238, #362, #391, #425), puis « Exporter »
-    // et « Importer » (#70), « Partager ce bac » (#426), le mode du bac (#278), « Masquer
-    // l’interface » (#725, à la place de « Mode immersif »), « Réduire les mouvements » (#406), puis la case « Sons d'ambiance »
-    // et son volume (#411), « Courant » (#460), le curseur de l'éclairage (#476), l'amorce de
-    // bactéries (#529) (raclette et sécateur : barre du bas depuis #722),
-    // l'eau non traitée et les deux conditionneurs (#530), le charbon et les deux régulateurs
-    // de pH (#531), le curseur de l'allumage de la lampe (#584), les quatre filtres et le tri
-    // de la population (#723), la liste « Environnement » (#87, comptée depuis que les
-    // listes le sont, #723) et la case « Lune » (#856). Le champ du lien de partage n'apparaît
-    // qu'avec un lien.
-    expect(controls).toHaveLength(
-      5 +
-        1 +
-        1 +
-        1 +
-        2 +
-        2 +
-        17 * 5 +
-        2 +
-        1 +
-        1 +
-        1 +
-        1 +
-        2 +
-        1 +
-        1 +
-        1 +
-        3 +
-        3 +
-        1 +
-        4 +
-        1 +
-        1 +
-        1,
-    );
+    // Contrôles attendus par section (raclette et sécateur : barre du bas depuis #722). Le
+    // champ du lien de partage n'apparaît qu'avec un lien.
+    const controlsBySection = [
+      { section: 'contrôles de base (#52)', count: 5 },
+      { section: '« Éditer le décor » (#167)', count: 1 },
+      { section: '« Granulés » (#117)', count: 1 },
+      { section: '« Afficher la pièce » (#187)', count: 1 },
+      { section: '« Changer l’eau » et chauffage (#207)', count: 2 },
+      { section: 'catappa « − » et « + » (#239)', count: 2 },
+      { section: '17 espèces : « − », champ, « + », curseur, « Fiche » (#69)', count: 17 * 5 },
+      { section: '« Exporter » et « Importer » (#70)', count: 2 },
+      { section: '« Partager ce bac » (#426)', count: 1 },
+      { section: 'mode du bac (#278)', count: 1 },
+      { section: '« Masquer l’interface » (#725)', count: 1 },
+      { section: '« Réduire les mouvements » (#406)', count: 1 },
+      { section: "« Sons d'ambiance » et volume (#411)", count: 2 },
+      { section: '« Courant » (#460)', count: 1 },
+      { section: 'éclairage (#476)', count: 1 },
+      { section: 'amorce de bactéries (#529)', count: 1 },
+      { section: 'eau non traitée et deux conditionneurs (#530)', count: 3 },
+      { section: 'charbon et deux régulateurs de pH (#531)', count: 3 },
+      { section: 'allumage de la lampe (#584)', count: 1 },
+      { section: 'quatre filtres de la population (#723)', count: 4 },
+      { section: 'tri de la population (#723)', count: 1 },
+      { section: 'liste « Environnement » (#87, #723)', count: 1 },
+      { section: 'case « Lune » (#856)', count: 1 },
+    ];
+    expect(controls).toHaveLength(controlsBySection.reduce((sum, { count }) => sum + count, 0));
     expect(root().querySelectorAll('input[type="file"]')).toHaveLength(1);
     for (const control of controls) {
       const name =

@@ -4,6 +4,7 @@ import type { CameraPreset } from '../../core/capture/capture-params';
 import { markCaptureReady } from '../../core/capture/capture-ready';
 import { wallpaperOrbitAngle } from '../../core/wallpaper/wallpaper';
 import type { AquariumView } from '../../render/aquarium-view';
+import type { GroundFrame } from '../../render/view-layers';
 import { hasAlgae } from '../../sim/algae';
 import { hasLandedFood } from '../../sim/behaviors';
 import { SIM_DT } from '../../sim/constants';
@@ -20,7 +21,7 @@ import {
 import { EGG_HATCH_TIME } from '../../sim/eggs';
 import { LAMP_FADE_HOURS, waterLampAt, withLampInto } from '../../sim/lamp';
 import { gameDayAt, withMoonInto } from '../../sim/moon';
-import type { MutableWorld, World } from '../../sim/world-types';
+import type { Mutable, MutableWorld, World } from '../../sim/world-types';
 import { refreshDue } from '../dashboard-frame/refresh-pace';
 import type { AquariumProbe } from './aquarium-probe';
 import type { RenderLoop } from './render-loop';
@@ -110,6 +111,14 @@ export class FramePainter {
   private readonly light = createDayLight();
   /** Contexte des gestes passé à `updateFish`, réécrit à chaque image (#433). */
   private readonly behaviorFrame = { time: 0, landedFood: false };
+  /** Couches du sol passées à `updateGround`, réécrites à chaque image (#870). */
+  private readonly groundFrame: Mutable<GroundFrame> = {
+    food: [],
+    eggs: undefined,
+    hatchTime: EGG_HATCH_TIME,
+    exuviae: undefined,
+    time: 0,
+  };
   /** Instant (ms, horloge de `requestAnimationFrame`) du dernier relevé de la boucle. */
   private waterReadAt: number | null = null;
 
@@ -215,13 +224,13 @@ export class FramePainter {
       this.behaviorFrame,
       world.dead,
     );
-    view.updateGround({
-      food: world.food,
-      eggs: world.eggs,
-      hatchTime: EGG_HATCH_TIME,
-      exuviae: world.exuviae,
-      time: world.time,
-    });
+    // Objet de l'instance réécrit à chaque image (#870) : aucune allocation.
+    const ground = this.groundFrame;
+    ground.food = world.food;
+    ground.eggs = world.eggs;
+    ground.exuviae = world.exuviae;
+    ground.time = world.time;
+    view.updateGround(ground);
     view.updateDecor(time);
     this.updateLight(view, time);
   }
