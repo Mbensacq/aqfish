@@ -11444,6 +11444,12 @@
           "debut": "2026-11-27T03:48:00.511Z",
           "fin": "2026-11-27T04:25:27.501Z",
           "note": "Verdict RÉSERVES (critères 4-5 reportés en #864), 0 bug, captures c315 publiées (identiques à c314)"
+        },
+        "revue": {
+          "statut": "en-cours",
+          "debut": "2026-11-27T04:25:59.839Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
