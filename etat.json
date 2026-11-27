@@ -11506,10 +11506,10 @@
           "note": "Issue #859 : Mue des crevettes et exuvies (S)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-27T07:47:10.729Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-27T09:03:08.355Z",
+          "note": "PR #869 : mue des crevettes et exuvies (ADR 0188), CI verte ; 1er passage CI : délai Vitest dépassé sur crevette-nettoyeuse, mues sans allocation hors crevettes"
         }
       },
       "metriques": {}
