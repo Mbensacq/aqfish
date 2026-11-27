@@ -11362,10 +11362,10 @@
           "note": "Issue #846 : dette fiches amphibiens, ligne de capacité, capsules néritine (+#853) (S)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-26T23:43:04.547Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-27T00:19:49.635Z",
+          "note": "PR #855 : dette fiches amphibiens, ligne de capacité, capsules néritine (#846, #853), CI verte ; unitaires 6523/6523, e2e ciblés 52/52"
         }
       },
       "metriques": {}
