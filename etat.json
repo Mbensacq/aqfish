@@ -11476,10 +11476,10 @@
           "note": "PR #867 : vieillissement et durée de vie (naissance bornAt, mort de vieillesse, âge dans fiche et wiki), CI verte ; correctif relecture des corps hors ordre"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-27T06:30:22.925Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-27T07:16:30.275Z",
+          "note": "Verdict RÉSERVES (2 captures de scène à 11 px près dans le bandeau), 0 bug, captures c316 publiées"
         }
       },
       "metriques": {}
