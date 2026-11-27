@@ -1,2 +1,2 @@
-Cycle 317 — branche cycle/c317-mue-crevettes, PR #869, commit 67ce5c6b, graine par défaut des captures, 182 tests de capture verts.
-Différences avec c316 : nouvelles captures front-mues, top-mues, dev-front-mues, dev-top-mues (attendues) ; three-quarter-salvinia et paludarium-three-quarter-oeufs : les mêmes 11 pixels du bandeau haut qu'au c316 (x 921-925, y 13-79), scène identique. Toutes les autres captures identiques à l'octet.
+Cycle 318 — branche cycle/c318-cycle-lunaire, PR #871, commit 4dce157f096bb9ad0541821e1b32cd5926dc928e, graine par défaut, temps 0.
+Note : three-quarter-guide a 12 pixels différents en passe complète (charge) mais est identique à latest lancée seule.
