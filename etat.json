@@ -11582,6 +11582,12 @@
           "debut": "2026-11-27T12:57:46.453Z",
           "fin": "2026-11-27T13:41:08.516Z",
           "note": "PR #873 : lot dette #866+#872+#870, CI verte ; 208+/69- (10 fichiers), 6644 tests, captures identiques à c318 (189/190, guide instable connu), #870 pt3 écarté"
+        },
+        "qa": {
+          "statut": "en-cours",
+          "debut": "2026-11-27T13:41:46.038Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
