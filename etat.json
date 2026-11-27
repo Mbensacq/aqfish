@@ -11389,7 +11389,7 @@
       "type": "retro",
       "issue": 861,
       "pr": 863,
-      "version": null,
+      "version": "v1.33.6",
       "phases": {
         "planif": {
           "statut": "termine",
