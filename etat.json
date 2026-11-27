@@ -11428,10 +11428,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-27T02:51:46.115Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-27T02:52:13.224Z",
+          "note": "Issue #858 : Saisons du bassin, température et activité des koïs (S)"
         }
       },
       "metriques": {}
