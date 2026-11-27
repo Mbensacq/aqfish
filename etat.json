@@ -11482,10 +11482,10 @@
           "note": "Verdict RÉSERVES (2 captures de scène à 11 px près dans le bandeau), 0 bug, captures c316 publiées"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-27T07:17:16.898Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-27T07:45:34.090Z",
+          "note": "PR #867 fusionnée → v1.34.1 (release CI OK, CI main verte), #857 fermée ; remarques mineures en #868"
         }
       },
       "metriques": {}
