@@ -20,6 +20,7 @@ import {
   shrimpPlace,
   stepShrimpColonyInPlace,
 } from './shrimp-colony';
+import { isShrimpHiding } from './shrimp-molt';
 import { SPECIES, type SpeciesId } from './species';
 import { runScenario, SCENARIO_DAY_SECONDS } from './testing/ecosystem-scenario';
 import { waterLoad, type MutableWaterState } from './water';
@@ -217,8 +218,10 @@ describe('colonie de crevettes (#836)', () => {
   it('prédation : un pas de 130 s ou de 1500 s compose le risque de toutes ses fenêtres (#838)', () => {
     const YOUNG = 20;
     const SEEDS = [1, 2, 3, 4, 5];
+    let hidden = 0;
     const eatenOver = (dt: number): number => {
       let eaten = 0;
+      hidden = 0;
       for (const seed of SEEDS) {
         const world = tank([{ species: 'guppy', count: 6 }], [], seed);
         for (let k = 0; k < YOUNG; k++) {
@@ -226,6 +229,7 @@ describe('colonie de crevettes (#836)', () => {
           (birthYoungInPlace(world, 'cerise', near) as Mutable<Entity>).growth = 0;
         }
         world.time = dt;
+        hidden += world.entities.filter((e) => isShrimpHiding(e, seed, dt)).length;
         eaten -= stepShrimpColonyInPlace(world, dt, birthYoungInPlace, 300);
       }
       return eaten;
@@ -239,7 +243,9 @@ describe('colonie de crevettes (#836)', () => {
     expect(one).toBeLessThan(total * (1 - Math.exp(-0.6)) + 15);
     expect(two).toBeGreaterThan(total * (1 - Math.exp(-1.2)) - 15);
     expect(two).toBeLessThan(total * (1 - Math.exp(-1.2)) + 15);
-    expect(eatenOver(1500)).toBe(total);
+    // Tout jeune visible est mangé ; ceux qui viennent de muer se cachent (#859).
+    expect(eatenOver(1500)).toBe(total - hidden);
+    expect(hidden).toBeLessThan(total / 4);
   });
 
   it('un refuge de plantes réduit les pertes de jeunes crevettes face aux guppys', () => {
