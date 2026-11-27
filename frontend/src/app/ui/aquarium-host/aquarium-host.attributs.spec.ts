@@ -300,7 +300,8 @@ describe('AquariumHost : attributs publiés (caractérisation, #693)', () => {
       'data-aqfish-tank': '2:0.4:1.4',
       'data-aqfish-target': '0.000,0.200,0.000',
       'data-aqfish-tick': '42',
-      'data-aqfish-water': 'bonne;18;18;0;0;0',
+      // Bassin (#858, ADR 0186) : température visée saisonnière, 18,06 °C au 19 mai.
+      'data-aqfish-water': 'bonne;18;18.1;0;0;0',
     });
   });
 

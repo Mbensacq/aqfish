@@ -5,10 +5,11 @@ import { HUNGRY_AVERAGE, type HealthSummary } from './health-summary';
 import { MIX_REASON_TEXT, SPECIES_LABELS } from './species-catalog';
 import { tenthText } from './treatment';
 import { redoseText, type TreatmentReadout } from './treatment-text';
-import { WATER_CHANGE_SHARE, WATER_TEMPERATURES } from './water';
+import { WATER_CHANGE_SHARE } from './water';
 import { CHLORINE_HARMFUL } from './water-conditioner';
 import {
   compoundLevel,
+  sampleReference,
   temperatureLevel,
   type GaugeLevel,
   type WaterSample,
@@ -208,11 +209,11 @@ export function chlorineAlert(chlorine: number | undefined): DashboardAlert | nu
 }
 
 function temperatureAlert(sample: WaterSample): DashboardAlert | null {
-  const severity = SEVERITY_OF[temperatureLevel(sample.temperature, sample.environment)];
+  const reference = sampleReference(sample);
+  const severity = SEVERITY_OF[temperatureLevel(sample.temperature, sample.environment, reference)];
   if (severity === null) {
     return null;
   }
-  const reference = WATER_TEMPERATURES[sample.environment];
   const action = `Régler le chauffage sur ${reference} °C`;
   if (!Number.isFinite(sample.temperature)) {
     return {

@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 
 import { DEFAULT_START_HOUR, formatHour, type DayPhase } from '../../sim/daylight';
+import { dashboardSeason } from '../../sim/pond-season';
 import { DEFAULT_SIM_SPEED, speedLabel } from '../../sim/sim-speed';
 import { MAX_HEATER_TEMPERATURE, MIN_HEATER_TEMPERATURE } from '../../sim/water';
 import {
@@ -277,6 +278,17 @@ const ICONS: Readonly<Record<GaugeLevel, readonly (readonly [number, number])[]>
           />
         }
       </svg>
+      @if (season(); as s) {
+        <!-- Saison du bassin (#858) : mot et flèche de tendance, phrase dans l'infobulle. -->
+        <span
+          class="dashboard__season"
+          data-dashboard-season
+          [attr.data-season]="s.season"
+          [attr.data-season-trend]="s.trend"
+          [attr.title]="s.spoken"
+          >{{ s.label }} {{ arrows[s.trend] }}</span
+        >
+      }
       <span class="dashboard__phase">{{ phaseText() }}</span>
       <span class="dashboard__clock" data-dashboard-hour>{{ hourText() }}</span>
       <span class="dashboard__speed" data-dashboard-speed
@@ -353,9 +365,15 @@ export class DashboardFrame {
     Number.isFinite(this.hour()) ? formatHour(this.hour()) : '–',
   );
   protected readonly speedText = computed(() => speedLabel(this.speed()));
+  /** Saison du bassin (#858) ; `null` pour un bac intérieur. */
+  protected readonly season = computed(() => dashboardSeason(this.sample()));
+  private readonly seasonSpoken = computed(() => {
+    const season = this.season();
+    return season === null ? '' : `${season.text}, `;
+  });
   protected readonly simSpoken = computed(
     () =>
-      `Simulation : ${DAY_PHASE_LABELS[this.phase()]}, ${this.hourText()}, ${
+      `Simulation : ${this.seasonSpoken()}${DAY_PHASE_LABELS[this.phase()]}, ${this.hourText()}, ${
         this.speed() === 0 ? 'en pause' : `vitesse ${this.speedText()}`
       }`,
   );

@@ -22,6 +22,7 @@ import {
   plantUptakeCapacity,
 } from './plant-uptake';
 import { plantGrowthFactor } from './side-effects';
+import { stepPondSeasonInPlace } from './pond-season';
 import { SPECIES, type SpeciesDefinition, type SpeciesId } from './species';
 import { ichProtected, medicationProtects, stepTreatmentInPlace } from './treatment';
 import { stepVelvetInPlace } from './velvet';
@@ -72,13 +73,16 @@ export function stepWaterStageInPlace(
 }
 
 /**
- * Pas d'eau des habitants dans `liters` litres (issue #799) : corps en décomposition, puis
+ * Pas d'eau des habitants dans `liters` litres (issue #799) : saison du bassin
+ * (`stepPondSeasonInPlace`, #858), corps en décomposition, puis
  * `stepWaterInPlace` (part au repos, filtre, température, pH), puis l'effet du décor sur
  * l'eau (`sim/decor-water.ts`). Partagé par le pas fin
  * (`stepWaterStageInPlace`) et l'avance à gros pas (`sim/ecosystem-step.ts`), qui peut imposer
  * un volume.
  */
 export function stepLivingWaterInPlace(world: MutableWorld, dt: number, liters: number): void {
+  // Saisons du bassin (#858) : température ambiante du jour, appétit des poissons transis.
+  stepPondSeasonInPlace(world, dt);
   const water = world.water as MutableWaterState;
   const bodies = deadLoad(world.dead);
   if (bodies > 0) {

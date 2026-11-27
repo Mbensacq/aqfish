@@ -1,7 +1,13 @@
 import { expect, test, type Page } from '@playwright/test';
 
 import { PALETTE } from '../src/app/render/palette';
+import { SIM_DT } from '../src/app/sim/constants';
+import { DEFAULT_DAY_LENGTH_SECONDS } from '../src/app/sim/daylight';
+import { START_DAY_OF_YEAR, DAYS_PER_YEAR } from '../src/app/sim/pond-season';
+import { createDefaultWorld } from '../src/app/sim/world';
+import type { MutableWorld } from '../src/app/sim/world-types';
 import { ouvrirReglages } from './outils-panneau';
+import { importWorld } from './outils-taille';
 
 /**
  * Koïs, première espèce du bassin (issue #88) : visibles de dessus avec les couleurs de leurs
@@ -9,6 +15,19 @@ import { ouvrirReglages } from './outils-panneau';
  */
 
 const host = (page: Page) => page.locator('app-aquarium-host');
+
+/**
+ * Bassin par défaut au jour `day` de l'année (#858), eau et température ambiante à
+ * `temperature` °C (la simulation est importée en pause : elles restent telles quelles).
+ */
+function pondOnDay(day: number, temperature: number): MutableWorld {
+  const world: MutableWorld = createDefaultWorld(42, 'bassin');
+  const days = (day - START_DAY_OF_YEAR + DAYS_PER_YEAR) % DAYS_PER_YEAR;
+  world.tick = Math.round((days * DEFAULT_DAY_LENGTH_SECONDS) / SIM_DT);
+  world.time = world.tick * SIM_DT;
+  world.water = { ...world.water, temperature, ambient: temperature };
+  return world;
+}
 
 async function open(page: Page, search: string): Promise<string[]> {
   const errors: string[] = [];
@@ -98,6 +117,31 @@ test.describe('Koïs (#88)', () => {
       'data-aqfish-population',
       'neon:3,guppy:6,corydora:6,rasbora:0,tetra:0,kuhli:0,gourami:0,platy:0,danio:0,ancistrus:0,otocinclus:0,braise:0,molly:0,miel:0,xipho:0,cerise:0,neritine:0',
     );
+    expect(errors).toEqual([]);
+  });
+
+  test('saisons (#858) : la jauge de température du bassin suit la date de jeu', async ({
+    page,
+  }) => {
+    // Deux imports d'un bassin, l'un en hiver, l'autre en été : ~30 s en rendu logiciel.
+    test.setTimeout(120_000);
+    const errors = await open(page, '');
+    const temperature = page.locator('[data-gauge="temperature"] [data-gauge-value]');
+    const season = page.locator('[data-dashboard-season]');
+    await expect(season).toHaveCount(0);
+
+    await importWorld(page, pondOnDay(20, 4), 'hiver.json');
+    await expect(temperature).toHaveText('4,0');
+    await expect(season).toHaveAttribute('data-season', 'hiver');
+    await expect(season).toHaveText(/^Hiver /);
+    await expect(season).toHaveAttribute('title', /^Saison : hiver, /);
+    // Eau à la température de saison : la jauge reste au vert, en texte comme en couleur.
+    await expect(page.locator('[data-gauge="temperature"]')).toHaveAttribute('data-level', 'vert');
+
+    await importWorld(page, pondOnDay(200, 23.5), 'ete.json');
+    await expect(temperature).toHaveText('23,5');
+    await expect(season).toHaveAttribute('data-season', 'ete');
+    await expect(season).toHaveText(/^Été /);
     expect(errors).toEqual([]);
   });
 });

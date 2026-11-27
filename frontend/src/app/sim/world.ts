@@ -29,7 +29,7 @@ import { addRivalSteering, enforceRivalDistance, hasRivals } from './compatibili
 import { withCatappaCount } from './catappa';
 import { MAX_TOTAL_FISH, SIM_DT } from './constants';
 import { dayIntensityAt, hourAt, type DayClock } from './daylight';
-import { nightRest } from './day-rhythm';
+import { restWeight } from './day-rhythm';
 import { setLampOnInPlace } from './lamp';
 import {
   createFeeder,
@@ -954,7 +954,7 @@ function swimOneInPlace(
   const target = swimmerTarget(world, fish, i, bounds, pass);
   const s = pass.steering;
   const guarding = i === pass.guard.index && isNearClutch(fish, pass.guard);
-  const rest = nightRest(fish.species, pass.intensity);
+  const rest = restWeight(fish.species, pass.intensity, world.water.temperature);
   stepFish(
     fish,
     dt,
