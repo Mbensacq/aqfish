@@ -25,6 +25,7 @@ import {
   type AquariumRendererFactory,
 } from '../../render/aquarium-view';
 import { presetTransitionSeconds } from '../../render/camera-presets';
+import { MoonOptionState } from '../moon-option/moon-option-state';
 import { ReducedMotionState } from '../reduced-motion/reduced-motion-state';
 import { AmbientSoundState } from '../ambient-sound/ambient-sound-state';
 import type { AmbientScene } from '../../core/ambient-sound/ambient-sound';
@@ -76,7 +77,7 @@ import { TankRecordsController } from './tank-records-controller';
 import { FreeCameraController } from './free-camera-controller';
 import { WaterCareController } from './water-care-controller';
 import { TankRoomController } from './tank-room-controller';
-import { browserStorage } from './browser-storage';
+import { documentStorage } from './browser-storage';
 import { PopulationController } from './population-controller';
 import { StartupSequence } from './startup-sequence';
 import { ViewBuilder } from './view-builder';
@@ -124,10 +125,7 @@ export {
  */
 export const SAVE_STORAGE = new InjectionToken<SaveStorage | null>('SAVE_STORAGE', {
   providedIn: 'root',
-  factory: () => {
-    const win = inject(DOCUMENT).defaultView;
-    return win ? browserStorage(win) : null;
-  },
+  factory: () => documentStorage(inject(DOCUMENT)),
 });
 
 export { applyCaptureFurniture, applyCaptureWoods, applyPopulation } from './startup-world';
@@ -173,6 +171,7 @@ export class AquariumHost {
   private readonly physicsLoader = inject(DECOR_PHYSICS_LOADER);
   /** Option « Réduire les mouvements » (#406), partagée avec les réglages. */
   private readonly motionState = inject(ReducedMotionState);
+  private readonly moonState = inject(MoonOptionState);
   /** Sons d'ambiance (#411) : l'hôte fournit la scène, le service décide du reste. */
   private readonly ambientSound = inject(AmbientSoundState);
   /** Scène sonore autorisée : après le démarrage, hors capture. */
@@ -228,6 +227,7 @@ export class AquariumHost {
     speed: () => this.speed(),
     dayClock: () => this.dayClock,
     reducedMotion: () => this.display.reducedMotion(),
+    moonGlowAt: (gameDay) => this.display.moonGlowAt(gameDay),
     stepFreeCamera: (view, realDt) => this.free.step(view, realDt),
     stepDecorDrop: (realDt) => this.decorEdit.stepDrop(realDt),
     advanceAndRecord: (world, steps, clock) => this.records.advanceAndRecord(world, steps, clock),
@@ -255,10 +255,7 @@ export class AquariumHost {
     view: () => this.view,
     isCapture: () => this.capture,
     isWallpaper: () => this.wallpaper,
-    prefStorage: () => {
-      const win = this.document.defaultView;
-      return win ? browserStorage(win) : null;
-    },
+    prefStorage: () => documentStorage(this.document),
     activePreset: this.activePreset,
     publishFreeCamera: (active) => this.probe.publishFreeCamera(active),
     publishCamera: () => this.probe.publishCamera(this.view),
@@ -272,11 +269,9 @@ export class AquariumHost {
     probe: this.probe,
     view: () => this.view,
     isCapture: () => this.capture,
-    filterStorage: () => {
-      const win = this.document.defaultView;
-      return win ? browserStorage(win) : null;
-    },
+    filterStorage: () => documentStorage(this.document),
     motion: this.motionState,
+    moon: this.moonState,
     roomState: () => this.tanks.roomState,
     roomShown: (room, shown) => {
       // Pièce masquée : la vue est revenue à l'orbite (#343).
@@ -760,6 +755,7 @@ export class AquariumHost {
       soundAllowed: this.soundAllowed,
     },
     controllers: () => ({
+      display: this.display,
       clock: this.clock,
       saves: this.saves,
       tanks: this.tanks,
@@ -1415,10 +1411,11 @@ export class AquariumHost {
       this.alerts.clear();
       this.stop();
     });
-    // Option « Réduire les mouvements » (#406) : appliquée à chaud à la vue affichée.
+    // Options « Réduire les mouvements » (#406) et « Lune » (#856) : appliquées à chaud à la vue.
     effect(() => {
       this.motionState.system();
       this.motionState.reduced();
+      this.moonState.enabled();
       untracked(() => this.display.applyReducedMotion());
     });
     // Sons d'ambiance (#411) : la scène suit l'environnement, le moment de la journée, la

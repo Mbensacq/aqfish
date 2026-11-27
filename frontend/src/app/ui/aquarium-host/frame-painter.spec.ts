@@ -1,7 +1,12 @@
 import { CAPTURE_READY_ATTRIBUTE, resetCaptureReady } from '../../core/capture/capture-ready';
 import type { AquariumView } from '../../render/aquarium-view';
 import { SIM_DT } from '../../sim/constants';
-import { createDayClock, DEFAULT_DAY_CLOCK, type DayClock } from '../../sim/daylight';
+import {
+  createDayClock,
+  DEFAULT_DAY_CLOCK,
+  type DayClock,
+  type DayLight,
+} from '../../sim/daylight';
 import { createWorld } from '../../sim/world';
 import type { MutableWorld } from '../../sim/world-types';
 import type { AquariumProbe } from './aquarium-probe';
@@ -46,8 +51,11 @@ class FakeView {
   updateDecor(): void {
     this.other++;
   }
-  updateLight(): void {
+  /** Clarté lunaire de la dernière lumière reçue (#856). */
+  lastMoon: number | undefined;
+  updateLight(light: DayLight): void {
     this.lights++;
+    this.lastMoon = light.moon;
   }
   updateFlowers(): void {
     this.other++;
@@ -117,6 +125,7 @@ describe('FramePainter (#696)', () => {
   let advanced: number[];
   let waterReads: number;
   let rafCallbacks: FrameRequestCallback[];
+  let glow: number;
   let painter: FramePainter;
 
   beforeEach(() => {
@@ -132,6 +141,7 @@ describe('FramePainter (#696)', () => {
     advanced = [];
     waterReads = 0;
     rafCallbacks = [];
+    glow = 1;
     resetCaptureReady(document);
     // Le document réel porte l'attribut ; seule la fenêtre (rAF) est doublée.
     const doc = {
@@ -151,6 +161,7 @@ describe('FramePainter (#696)', () => {
       speed: () => 1,
       dayClock: () => clock,
       reducedMotion: () => false,
+      moonGlowAt: () => glow,
       stepFreeCamera: () => false,
       stepDecorDrop: () => undefined,
       advanceAndRecord: (_world, steps) => advanced.push(steps),
@@ -243,6 +254,22 @@ describe('FramePainter (#696)', () => {
     expect(view.lights).toBe(2);
     // Heure exposée à chaque image, même sans recalcul.
     expect(probe.hours).toEqual([10, 10, 10]);
+  });
+
+  it('lune (#856) : recalcule l’éclairage quand la clarté change, effet nul à midi', () => {
+    clock = createDayClock(0, 1200, true);
+    painter.frame(16);
+    expect(view.lastMoon).toBe(1);
+    glow = 0.72;
+    painter.frame(32);
+    expect(view.lights).toBe(2);
+    expect(view.lastMoon).toBe(0.72);
+    painter.frame(48);
+    expect(view.lights).toBe(2);
+    clock = createDayClock(12, 1200, true);
+    painter.relight();
+    painter.frame(64);
+    expect(view.lastMoon).toBe(1);
   });
 
   it("suit l'heure qui avance au-delà de LIGHT_HOUR_STEP", () => {

@@ -40,6 +40,7 @@ describe('parseCaptureParams', () => {
       time: 12.5,
       filter: null,
       hour: null,
+      moonPhase: null,
       feedings: [],
       population: [],
       foodStyle: null,
@@ -455,6 +456,28 @@ describe('parseCaptureParams', () => {
 
   it('sans heure= : null', () => {
     expect(parseCaptureParams('?capture=1&camera=top').hour).toBeNull();
+  });
+});
+
+describe('lune= (issue #856)', () => {
+  it.each([
+    ['0', 0],
+    ['0.5', 0.5],
+    ['0.25', 0.25],
+    ['0.999', 0.999],
+  ])('lit la phase de lune=%s', (raw, phase) => {
+    expect(parseCaptureParams(`?capture=1&lune=${raw}`).moonPhase).toBe(phase);
+  });
+
+  it.each(['', '1', '1.5', '-0.5', 'pleine', '.5', '0.', 'NaN', '1e-1'])(
+    'ignore la phase invalide « %s »',
+    (raw) => {
+      expect(parseCaptureParams(`?capture=1&lune=${encodeURIComponent(raw)}`).moonPhase).toBeNull();
+    },
+  );
+
+  it('sans lune= : null', () => {
+    expect(parseCaptureParams('?capture=1').moonPhase).toBeNull();
   });
 });
 

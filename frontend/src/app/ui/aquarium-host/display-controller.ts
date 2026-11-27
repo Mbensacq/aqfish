@@ -13,6 +13,7 @@ import {
   type RenderFilter,
 } from '../../core/render-filter/render-filter';
 import type { AquariumView } from '../../render/aquarium-view';
+import { lunarPhase, moonGlow, REDUCED_MOON_AMPLITUDE } from '../../sim/moon';
 import { clampRoom, DEFAULT_ROOM, type Room } from '../../sim/room';
 import { roomLayoutBlocks } from '../../sim/room-layout';
 import type { RoomState } from '../../sim/room-state';
@@ -32,6 +33,8 @@ export interface DisplayPorts {
     system(): boolean;
     reduced(): boolean;
   };
+  /** Option « Lune » des réglages (#856). */
+  readonly moon: { enabled(): boolean };
   /** Pièce de N bacs (#305), `null` avant sa première synchronisation. */
   roomState(): RoomState | null;
   /** Ceux qui suivent la pièce dessinée : caméra libre (#343), éditeurs (#188). */
@@ -70,7 +73,28 @@ export class DisplayController {
    */
   readonly room = signal<Room>(DEFAULT_ROOM);
 
+  /** Phase de lune imposée par `lune=` en capture (#856), `null` : celle du jour de jeu. */
+  private captureMoonPhase: number | null = null;
+
   constructor(private readonly ports: DisplayPorts) {}
+
+  /** Phase de lune de `lune=` (#856), lue au démarrage ; ignorée hors capture. */
+  setCaptureMoonPhase(phase: number | null): void {
+    this.captureMoonPhase = this.ports.isCapture() ? phase : null;
+  }
+
+  /**
+   * Clarté de la nuit au jour de jeu `gameDay` (`sim/moon.ts`, #856) : variation entière avec
+   * l'option « Lune », au minimum avec « Réduire les mouvements », aucune sans l'option. En
+   * capture, l'option mémorisée est ignorée (images reproductibles) et `lune=` fixe la phase.
+   */
+  moonGlowAt(gameDay: number): number {
+    if (!this.ports.isCapture() && !this.ports.moon.enabled()) {
+      return 1;
+    }
+    const amplitude = this.reducedMotion() ? REDUCED_MOON_AMPLITUDE : 1;
+    return moonGlow(this.captureMoonPhase ?? lunarPhase(gameDay), amplitude);
+  }
 
   /**
    * Change le filtre de rendu à chaud (bouton « Pixel art », touche `P`) : la simulation, la

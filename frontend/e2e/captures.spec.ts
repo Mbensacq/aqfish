@@ -467,6 +467,9 @@ test.describe('Captures', () => {
     { name: 'recif-side', query: 'environnement=recif&camera=side' },
     { name: 'recif-bottom', query: 'environnement=recif&camera=bottom' },
     { name: 'recif-three-quarter-minuit', query: 'environnement=recif&heure=0' },
+    // Cycle lunaire (#856) : la même nuit sous la pleine lune et sans lune.
+    { name: 'recif-three-quarter-pleine-lune', query: 'environnement=recif&heure=0&lune=0.5' },
+    { name: 'recif-three-quarter-nouvelle-lune', query: 'environnement=recif&heure=0&lune=0' },
     // Coraux (#149) : mêmes teintes sans le filtre pixel art (cf. #40).
     { name: 'recif-three-quarter-sans-filtre', query: 'environnement=recif&filtre=aucun' },
     // Récif, lot 2 (#403) : chromis verts, gobie à crevette jaune et grammas royaux mêlés aux

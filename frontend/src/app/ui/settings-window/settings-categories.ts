@@ -299,10 +299,16 @@ export const SETTINGS_CATEGORIES: readonly SettingsCategory[] = [
     id: 'affichage',
     group: 'Préférences',
     title: 'Affichage',
-    explanation: 'Ce que l’on voit autour des animaux : la pluie, et l’interface à masquer.',
+    explanation:
+      'Ce que l’on voit autour des animaux : la pluie, la lune, et l’interface à masquer.',
     sections: ['affichage'],
     controls: [
       setting('Pluie', 'affichage', 'La pluie sur le bassin.', ['météo', 'averse']),
+      setting('Lune', 'affichage', 'Les nuits suivent les phases de la lune.', [
+        'pleine lune',
+        'nuit',
+        'clair de lune',
+      ]),
       setting(
         'Masquer l’interface',
         'affichage',

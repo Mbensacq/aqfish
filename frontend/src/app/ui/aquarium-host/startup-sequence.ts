@@ -40,6 +40,7 @@ import type { AquariumProbe } from './aquarium-probe';
 import { browserStorage } from './browser-storage';
 import type { ClockController } from './clock-controller';
 import type { DecorEditingController } from './decor-editing-controller';
+import type { DisplayController } from './display-controller';
 import type { FreeCameraController } from './free-camera-controller';
 import { WALLPAPER_PRESET } from './frame-painter';
 import type { RenderLoop } from './render-loop';
@@ -88,6 +89,7 @@ export interface StartupSignals {
 
 /** Contrôleurs de l'hôte que le démarrage enchaîne. */
 export interface StartupControllers {
+  readonly display: Pick<DisplayController, 'setCaptureMoonPhase'>;
   readonly clock: Pick<ClockController, 'refreshFrozen' | 'applySpeed'>;
   readonly saves: Pick<SaveShareController, 'readStored' | 'activate' | 'publishStatus' | 'status'>;
   readonly tanks: Pick<TankRoomController, 'stashOthers' | 'restore' | 'sync'>;
@@ -157,6 +159,8 @@ export class StartupSequence {
       fouling: params.capture ? params.fouling : 0,
       wallpaper: params.wallpaper || global !== null,
     });
+    // Phase de lune de `lune=` (#856), en capture seulement (le contrôleur l'ignore sinon).
+    ports.controllers().display.setCaptureMoonPhase(params.moonPhase);
     ports.signals.soundAllowed.set(!params.capture);
     if (params.capture) {
       ports.forbidSound();
