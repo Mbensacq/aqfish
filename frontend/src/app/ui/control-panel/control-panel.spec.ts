@@ -1381,10 +1381,33 @@ describe('ControlPanel', () => {
     // bactéries (#529) (raclette et sécateur : barre du bas depuis #722),
     // l'eau non traitée et les deux conditionneurs (#530), le charbon et les deux régulateurs
     // de pH (#531), le curseur de l'allumage de la lampe (#584), les quatre filtres et le tri
-    // de la population (#723), et la liste « Environnement » (#87, comptée depuis que les
-    // listes le sont, #723). Le champ du lien de partage n'apparaît qu'avec un lien.
+    // de la population (#723), la liste « Environnement » (#87, comptée depuis que les
+    // listes le sont, #723) et la case « Lune » (#856). Le champ du lien de partage n'apparaît
+    // qu'avec un lien.
     expect(controls).toHaveLength(
-      5 + 1 + 1 + 1 + 2 + 2 + 17 * 5 + 2 + 1 + 1 + 1 + 1 + 2 + 1 + 1 + 1 + 3 + 3 + 1 + 4 + 1 + 1,
+      5 +
+        1 +
+        1 +
+        1 +
+        2 +
+        2 +
+        17 * 5 +
+        2 +
+        1 +
+        1 +
+        1 +
+        1 +
+        2 +
+        1 +
+        1 +
+        1 +
+        3 +
+        3 +
+        1 +
+        4 +
+        1 +
+        1 +
+        1,
     );
     expect(root().querySelectorAll('input[type="file"]')).toHaveLength(1);
     for (const control of controls) {
