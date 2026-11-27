@@ -11639,7 +11639,7 @@
       "date": "2026-11-28",
       "debut": "2026-11-27T23:41:56.625Z",
       "type": "retro",
-      "issue": null,
+      "issue": 878,
       "pr": null,
       "version": null,
       "phases": {
