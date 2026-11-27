@@ -133,6 +133,10 @@ export function moltsDuring(fish: Entity, seed: number, start: number, end: numb
  * inchangé au bit près. Renvoie le nombre de mues.
  */
 export function stepMoltsInPlace(world: MutableWorld, dt: number): number {
+  if (world.exuviae === undefined && !hasMolter(world.entities)) {
+    // Cas courant au pas fin (bac sans crevette) : une boucle, aucune allocation.
+    return 0;
+  }
   const time = world.time;
   const shells = world.exuviae ?? NO_EXUVIAE;
   const expired = shells.some((shell) => time - shell.time >= EXUVIA_LIFETIME_SECONDS);
@@ -157,6 +161,15 @@ export function stepMoltsInPlace(world: MutableWorld, dt: number): number {
 }
 
 const NO_EXUVIAE: readonly Exuvia[] = Object.freeze([]);
+
+function hasMolter(entities: readonly Entity[]): boolean {
+  for (const fish of entities) {
+    if (moltsShell(fish.species)) {
+      return true;
+    }
+  }
+  return false;
+}
 
 function exuviaOf(fish: Entity, floor: number, time: number): Exuvia {
   return {
