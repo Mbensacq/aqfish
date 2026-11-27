@@ -11626,10 +11626,10 @@
           "note": "Verdict OK, 0 bug, captures c320 publiées (189/189 identiques à c319), mutation fichier 93,75 %"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-27T16:48:25.939Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-27T17:22:32.380Z",
+          "note": "PR #874 fusionnée → v1.34.5 (release CI OK, CI main verte), #868 fermée, dette #875 ; suppression de branche refusée par le proxy"
         }
       },
       "metriques": {}
