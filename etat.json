@@ -11434,10 +11434,10 @@
           "note": "Issue #858 : Saisons du bassin, température et activité des koïs (S)"
         },
         "dev": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-27T02:52:47.185Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-27T03:47:25.667Z",
+          "note": "PR #865 : saisons du bassin (courbe 4–24 °C, repos/appétit des koïs < 10 °C, saison au tableau de bord), CI verte ; partiel : option réglage et captures été/hiver reportées en #864"
         }
       },
       "metriques": {}
