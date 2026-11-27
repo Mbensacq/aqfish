@@ -11572,10 +11572,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-27T12:56:21.682Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-27T12:57:03.544Z",
+          "note": "Issue #866 : lot dette alertes de température + #872 + #870 (S/M, dette > 30)"
         }
       },
       "metriques": {}
