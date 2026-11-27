@@ -231,6 +231,13 @@ describe('plage tolérée d’une jauge (#511)', () => {
     expect(range.max - range.min).toBe(12);
     expect((range.max + range.min) / 2).toBe(freshWater('tropical').temperature);
   });
+  it('température au bassin : autour de la référence saisonnière (#866)', () => {
+    const winter = toleratedRange('temperature', 'bassin', bands, 4.2)!;
+    expect((winter.max + winter.min) / 2).toBeCloseTo(4.2, 10);
+    expect(winter.max - winter.min).toBe(12);
+    const unset = toleratedRange('temperature', 'bassin', bands)!;
+    expect((unset.max + unset.min) / 2).toBe(freshWater('bassin').temperature);
+  });
   it('composé : de zéro au seuil critique', () => {
     expect(toleratedRange('nitrate', 'tropical', bands)).toEqual({ min: 0, max: 40 });
   });

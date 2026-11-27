@@ -280,17 +280,22 @@ function isSavedValue(value: unknown): boolean {
   );
 }
 
-/** Plage tolérée d'une jauge : là où son niveau n'est pas critique ; `null` : aucune. */
+/**
+ * Plage tolérée d'une jauge : là où son niveau n'est pas critique ; `null` : aucune. La
+ * température s'y centre sur la référence saisonnière `ambient` si elle est posée (bassin,
+ * issue #866), sinon sur celle de l'environnement, comme le niveau de la jauge.
+ */
 export function toleratedRange(
   id: DashboardGaugeId,
   environment: EnvironmentId,
   bands: PhBands,
+  ambient?: number,
 ): { readonly min: number; readonly max: number } | null {
   if (id === 'ph') {
     return bands.tolerated;
   }
   if (id === 'temperature') {
-    const target = WATER_TEMPERATURES[environment];
+    const target = ambient ?? WATER_TEMPERATURES[environment];
     return { min: target - TEMPERATURE_THRESHOLDS.bad, max: target + TEMPERATURE_THRESHOLDS.bad };
   }
   return { min: 0, max: COMPOUND_THRESHOLDS[id].bad };

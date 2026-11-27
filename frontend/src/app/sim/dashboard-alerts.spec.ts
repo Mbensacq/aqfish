@@ -20,7 +20,13 @@ import { ICH_AGGRAVATED_AT, ICH_VISIBLE_AT } from './disease';
 import { FIN_ROT_ADVANCED_AT, FIN_ROT_VISIBLE_AT } from './fin-rot';
 import { VELVET_ADVANCED_AT, VELVET_VISIBLE_AT } from './velvet';
 import { EMPTY_HEALTH_SUMMARY, healthSummary, type HealthSummary } from './health-summary';
-import { freshWater, WATER_TEMPERATURES } from './water';
+import { ENVIRONMENT_IDS } from './environment';
+import {
+  freshWater,
+  MAX_HEATER_TEMPERATURE,
+  MIN_HEATER_TEMPERATURE,
+  WATER_TEMPERATURES,
+} from './water';
 import { waterSample, type WaterSample } from './water-dashboard';
 import { phBands, SPECIES_PH } from './water-ph';
 import { COMPOUND_THRESHOLDS, TEMPERATURE_THRESHOLDS } from './water-quality';
@@ -41,6 +47,8 @@ function input(changes: Partial<WaterSample> = {}, health = HEALTHY): AlertInput
 }
 
 const ids = (alerts: readonly DashboardAlert[]) => alerts.map((a) => a.id);
+const temperatureOf = (alert: AlertInput) =>
+  dashboardAlerts(alert).find((a) => a.id === 'temperature');
 
 describe('alertes du tableau de bord (#260)', () => {
   it('eau saine et animaux en bonne santé : aucune alerte', () => {
@@ -81,11 +89,70 @@ describe('alertes du tableau de bord (#260)', () => {
       id: 'temperature',
       severity: 'attention',
       message: 'Eau trop chaude',
-      action: `Régler le chauffage sur ${reference} °C`,
+      action: 'Régler le chauffage sur 24,0 °C',
     });
     const cold = dashboardAlerts(input({ temperature: reference - TEMPERATURE_THRESHOLDS.bad }));
     expect(cold[0]).toMatchObject({ severity: 'critique', message: 'Eau trop froide' });
     expect(dashboardAlerts(input({ temperature: reference + 2.9 }))).toEqual([]);
+  });
+
+  it('température au bassin : référence saisonnière arrondie au dixième (#866)', () => {
+    const ambient = 18.063427;
+    const alert = temperatureOf(
+      input({ environment: 'bassin', ambient, temperature: ambient + TEMPERATURE_THRESHOLDS.bad }),
+    );
+    expect(alert).toMatchObject({
+      id: 'temperature',
+      severity: 'critique',
+      message: 'Eau trop chaude',
+      cause: 'chauffage réglé trop haut',
+      action: 'Régler le chauffage sur 18,1 °C',
+    });
+  });
+
+  it('température au bassin en hiver : aucune consigne hors des bornes du chauffage (#866)', () => {
+    const ambient = 4.2;
+    const hot = temperatureOf(input({ environment: 'bassin', ambient, temperature: 16 }));
+    expect(hot).toMatchObject({
+      message: 'Eau trop chaude',
+      cause: 'eau plus chaude que les 4,2 °C de saison',
+      action: `Régler le chauffage au plus bas (${MIN_HEATER_TEMPERATURE},0 °C)`,
+    });
+    const cold = temperatureOf(input({ environment: 'bassin', ambient, temperature: -3 }));
+    expect(cold).toMatchObject({
+      message: 'Eau trop froide',
+      cause: 'eau plus froide que les 4,2 °C de saison',
+      action: 'Attendre que l’eau rejoigne la température de saison',
+    });
+    const invalid = temperatureOf(input({ environment: 'bassin', ambient, temperature: NaN }));
+    expect(invalid?.action).toBe(
+      `Régler le chauffage au plus bas (${MIN_HEATER_TEMPERATURE},0 °C)`,
+    );
+  });
+
+  it('température : référence au-dessus des bornes, chauffage au plus haut ou attente', () => {
+    const ambient = MAX_HEATER_TEMPERATURE + 2.25;
+    const cold = temperatureOf(input({ environment: 'bassin', ambient, temperature: 20 }));
+    expect(cold).toMatchObject({
+      cause: 'eau plus froide que les 34,3 °C de saison',
+      action: `Régler le chauffage au plus haut (${MAX_HEATER_TEMPERATURE},0 °C)`,
+    });
+    const hot = temperatureOf(input({ environment: 'bassin', ambient, temperature: 45 }));
+    expect(hot?.action).toBe('Attendre que l’eau rejoigne la température de saison');
+  });
+
+  it('température : aucun nombre non arrondi dans les textes, quel que soit l’environnement', () => {
+    for (const environment of ENVIRONMENT_IDS) {
+      for (const ambient of [undefined, 3.14159, 17.77777, 40.123456]) {
+        for (const offset of [-20, -TEMPERATURE_THRESHOLDS.bad, 20]) {
+          const reference = ambient ?? WATER_TEMPERATURES[environment];
+          const sample = input({ environment, ambient, temperature: reference + offset });
+          for (const alert of dashboardAlerts(sample)) {
+            expect(`${alert.cause} ${alert.action}`).not.toMatch(/\d[.,]\d{2}/);
+          }
+        }
+      }
+    }
   });
 
   it('pH : toléré → attention, hors plage → critique, du bon côté', () => {
