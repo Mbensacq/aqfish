@@ -11561,6 +11561,24 @@
         }
       },
       "metriques": {}
+    },
+    "319": {
+      "numero": 319,
+      "date": "2026-11-27",
+      "debut": "2026-11-27T12:56:21.682Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-27T12:56:21.682Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
