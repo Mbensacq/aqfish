@@ -11504,6 +11504,12 @@
           "debut": "2026-11-27T07:46:11.189Z",
           "fin": "2026-11-27T07:46:34.708Z",
           "note": "Issue #859 : Mue des crevettes et exuvies (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-27T07:47:10.729Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
