@@ -11440,10 +11440,10 @@
           "note": "PR #865 : saisons du bassin (courbe 4–24 °C, repos/appétit des koïs < 10 °C, saison au tableau de bord), CI verte ; partiel : option réglage et captures été/hiver reportées en #864"
         },
         "qa": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-27T03:48:00.511Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-27T04:25:27.501Z",
+          "note": "Verdict RÉSERVES (critères 4-5 reportés en #864), 0 bug, captures c315 publiées (identiques à c314)"
         }
       },
       "metriques": {}
