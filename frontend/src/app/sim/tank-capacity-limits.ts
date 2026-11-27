@@ -122,19 +122,27 @@ export function capacityLine(readout: TankCapacityReadout): string {
   if (readout.decor) {
     return `Mode décor : capacité non contrôlée ; ${volume}`;
   }
-  const { needLiters, occupation } = readout.status;
-  return `${percentText(occupation)} de la capacité : ${litersText(needLiters)} demandés pour ${volume}${milieuText(readout)}`;
+  return `${percentText(readout.status.occupation)} de la capacité : ${needsText(readout, volume)}`;
 }
 
 /**
- * Part des amphibiens semi-terrestres, comptés sur le milieu (ADR 0177) : « ; et 37,8 L pour
- * 105 L de milieu (berge comprise) », ou rien si le bac n'en a pas.
+ * Besoins du bac face à ses volumes, `water` décrivant l'eau réelle : « 179,3 L demandés pour
+ * 283,8 L d’eau réelle », suivi de la part des amphibiens semi-terrestres comptés sur le milieu
+ * (ADR 0177) : « ; et 37,8 L pour 105 L de milieu (berge comprise) ». Quand rien n'est compté
+ * sur l'eau mais que le milieu porte un besoin (paludarium par défaut, #846), la part de l'eau,
+ * nulle, n'est pas écrite : « 37,8 L demandés pour 105 L de milieu (berge comprise) ;
+ * 45,7 L d’eau réelle ».
  */
-function milieuText(readout: TankCapacityReadout): string {
-  const need = readout.status.milieuNeedLiters;
-  return need > 0
-    ? ` ; et ${litersText(need)} pour ${litersText(readout.grossLiters)} de milieu (berge comprise)`
-    : '';
+function needsText(readout: TankCapacityReadout, water: string): string {
+  const { needLiters, milieuNeedLiters } = readout.status;
+  const milieu = `${litersText(readout.grossLiters)} de milieu (berge comprise)`;
+  if (milieuNeedLiters <= 0) {
+    return `${litersText(needLiters)} demandés pour ${water}`;
+  }
+  if (needLiters <= 0) {
+    return `${litersText(milieuNeedLiters)} demandés pour ${milieu} ; ${water}`;
+  }
+  return `${litersText(needLiters)} demandés pour ${water} ; et ${litersText(milieuNeedLiters)} pour ${milieu}`;
 }
 
 /**
@@ -145,5 +153,6 @@ export function capacityAlert(readout: TankCapacityReadout): string | null {
   if (readout.decor || !readout.status.over) {
     return null;
   }
-  return `Bac au-delà de sa capacité (${percentText(readout.status.occupation)}) : ${litersText(readout.status.needLiters)} demandés pour ${litersText(readout.liters)} d’eau réelle${milieuText(readout)}. Aucun animal n’a été retiré ; ajouts refusés tant que le bac reste trop plein.`;
+  const water = `${litersText(readout.liters)} d’eau réelle`;
+  return `Bac au-delà de sa capacité (${percentText(readout.status.occupation)}) : ${needsText(readout, water)}. Aucun animal n’a été retiré ; ajouts refusés tant que le bac reste trop plein.`;
 }

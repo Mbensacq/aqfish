@@ -15,7 +15,8 @@ import { parseWorld, serializeWorld } from './save';
 import { cohabitationReason } from './species-care';
 import { speciesCatalog, SPECIES_LABELS } from './species-catalog';
 import { legalStatus } from './species-legal';
-import { addWarnings, addWarningText, sheetRows, speciesSheet } from './species-sheet';
+import { sheetRows, speciesSheet } from './species-sheet';
+import { addWarnings, addWarningText } from './add-warnings';
 import {
   ROUGE,
   SILHOUETTE_IDS,

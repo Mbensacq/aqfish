@@ -46,17 +46,20 @@ const TOAD_EACH = sourced(
 );
 const TOAD_MIN = sourced(37.9, `${RM_TOAD} (10 gallons pour un couple au plus, milieu entier)`);
 
+/** Besoins du sonneur oriental (`grenouille`), lus aussi par sa fiche (#846). */
+export const TOAD_NEED: SemiTerrestrialNeed = Object.freeze({
+  firstAdultLiters: TOAD_EACH,
+  extraLitersPerAdult: TOAD_EACH,
+  minLiters: TOAD_MIN,
+});
+
+/** Besoins du triton à ventre de feu, lus aussi par sa fiche (#846). */
+export const NEWT_NEED: SemiTerrestrialNeed = Object.freeze({
+  firstAdultLiters: NEWT_FIRST,
+  extraLitersPerAdult: NEWT_EXTRA,
+  minLiters: NEWT_FIRST,
+});
+
 /** Espèces comptées sur le volume du milieu et leurs besoins (ADR 0177). */
 export const SEMI_TERRESTRIAL_NEEDS: Readonly<Partial<Record<SpeciesId, SemiTerrestrialNeed>>> =
-  Object.freeze({
-    grenouille: Object.freeze({
-      firstAdultLiters: TOAD_EACH,
-      extraLitersPerAdult: TOAD_EACH,
-      minLiters: TOAD_MIN,
-    }),
-    triton: Object.freeze({
-      firstAdultLiters: NEWT_FIRST,
-      extraLitersPerAdult: NEWT_EXTRA,
-      minLiters: NEWT_FIRST,
-    }),
-  });
+  Object.freeze({ grenouille: TOAD_NEED, triton: NEWT_NEED });

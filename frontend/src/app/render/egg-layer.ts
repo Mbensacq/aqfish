@@ -56,6 +56,13 @@ export const EGG_OUTLINE_COLOR = PALETTE.koiNoir;
  * proches (vitre avant, vue de face) gardent leur taille de base.
  */
 export const EGG_MIN_PIXELS = 3;
+/**
+ * Capsules de la néritine (#678, #853) : cœur agrandi de ce facteur, plancher en pixels compris,
+ * liseré inchangé. À la taille d'un œuf de corydoras, elles ne faisaient que quelques pixels en
+ * vue trois-quarts et se confondaient avec les reflets (revue du cycle 311). Une vraie capsule
+ * fait ~1 mm ; la taille reste une lisibilité de jeu, réservée à l'espèce (`laysCapsules`).
+ */
+export const CAPSULE_SIZE_FACTOR = 1.6;
 /** Plancher du liseré, en pixels de scène, des deux côtés ensemble : un pixel de chaque côté. */
 export const EGG_MIN_OUTLINE_PIXELS = 2;
 /**
@@ -183,17 +190,18 @@ export class EggLayer implements SceneLayer {
 
   /**
    * Côtés du cœur et du liseré d'un œuf à cette distance de la caméra, en mètres, écrits dans
-   * `scale` et `outlineScale` (réutilisés : aucune allocation par œuf ni par image, #507).
+   * `scale` et `outlineScale` (réutilisés : aucune allocation par œuf ni par image, #507). Le
+   * cœur est multiplié par `factor` (1, ou `CAPSULE_SIZE_FACTOR` pour la néritine, #853).
    */
-  private applySides(distance: number): void {
+  private applySides(distance: number, factor: number): void {
     const ppm =
       this.pixelsPerMeterAtUnit > 0 && distance > 0 ? this.pixelsPerMeterAtUnit / distance : 0;
     if (ppm === 0) {
-      this.scale.setScalar(EGG_VOXEL);
-      this.outlineScale.setScalar(EGG_VOXEL + EGG_OUTLINE);
+      this.scale.setScalar(EGG_VOXEL * factor);
+      this.outlineScale.setScalar(EGG_VOXEL * factor + EGG_OUTLINE);
       return;
     }
-    const core = Math.max(EGG_VOXEL, EGG_MIN_PIXELS / ppm);
+    const core = Math.max(EGG_VOXEL, EGG_MIN_PIXELS / ppm) * factor;
     this.scale.setScalar(core);
     this.outlineScale.setScalar(core + Math.max(EGG_OUTLINE, EGG_MIN_OUTLINE_PIXELS / ppm));
   }
@@ -213,7 +221,8 @@ export class EggLayer implements SceneLayer {
     for (let i = 0; i < count; i++) {
       const egg = eggs![i];
       this.position.set(egg.x, egg.y, egg.z);
-      this.applySides(this.position.distanceTo(this.viewpoint));
+      const factor = laysCapsules(egg.species) ? CAPSULE_SIZE_FACTOR : 1;
+      this.applySides(this.position.distanceTo(this.viewpoint), factor);
       this.matrix.compose(this.position, this.rotation, this.scale);
       this.mesh.setMatrixAt(i, this.matrix);
       this.matrix.compose(this.position, this.rotation, this.outlineScale);

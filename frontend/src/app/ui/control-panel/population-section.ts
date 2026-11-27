@@ -18,7 +18,7 @@ import { NO_FISH, type PopulationCounts } from '../../sim/population';
 import { possibleReasonText } from '../../sim/possible-species-text';
 import type { SpeciesId } from '../../sim/species';
 import { mixWarningText, SPECIES_LABELS, type SpeciesLabels } from '../../sim/species-catalog';
-import { addWarnings, addWarningText } from '../../sim/species-sheet';
+import { addWarnings, addWarningText } from '../../sim/add-warnings';
 import { NO_CAPACITY, type CapacityShown } from '../../sim/capacity-shown';
 import { treatedWaterWarning } from '../../sim/treatment-text';
 import { DEFAULT_WATER_READOUT, type WaterReadout } from '../../sim/water-quality';

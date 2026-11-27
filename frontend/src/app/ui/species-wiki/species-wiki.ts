@@ -22,7 +22,7 @@ import {
 } from '../../sim/care-guide';
 import { NO_FISH, type PopulationCounts } from '../../sim/population';
 import { type SpeciesId } from '../../sim/species';
-import { addWarnings, addWarningText } from '../../sim/species-sheet';
+import { addWarnings, addWarningText } from '../../sim/add-warnings';
 import { tankComparison } from '../../sim/species-care';
 import { wikiCare, wikiLists, wikiSheet } from '../../sim/species-wiki';
 import { BeginnerGuideState } from '../beginner-guide/beginner-guide-state';
