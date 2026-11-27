@@ -11468,6 +11468,12 @@
           "debut": "2026-11-27T04:55:50.687Z",
           "fin": "2026-11-27T04:56:18.112Z",
           "note": "Issue #857 : Vieillissement et durée de vie (M)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-27T04:56:55.437Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
