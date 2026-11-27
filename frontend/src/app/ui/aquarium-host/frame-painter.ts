@@ -210,8 +210,13 @@ export class FramePainter {
       this.behaviorFrame,
       world.dead,
     );
-    view.updateFood(world.food);
-    view.updateEggs(world.eggs, EGG_HATCH_TIME);
+    view.updateGround({
+      food: world.food,
+      eggs: world.eggs,
+      hatchTime: EGG_HATCH_TIME,
+      exuviae: world.exuviae,
+      time: world.time,
+    });
     view.updateDecor(time);
     this.updateLight(view, time);
   }

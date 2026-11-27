@@ -4,6 +4,7 @@ import { DISEASES, type DiseaseField } from './diseases';
 import { laysEggs, type Egg } from './eggs';
 import { hasFry, isFry } from './fry';
 import type { DeadAnimal } from './mortality';
+import type { Exuvia } from './shrimp-molt';
 import { SPECIES, type SpeciesId } from './species';
 import type { Fish } from './swimmer';
 import { TREATMENT_KINDS, TREATMENTS, type TreatmentKind } from './treatment';
@@ -50,6 +51,7 @@ export const JOURNAL_KINDS = [
   'taille',
   'eauNeuve',
   'vieillesse',
+  'mue',
 ] as const;
 
 export type JournalKind = (typeof JOURNAL_KINDS)[number];
@@ -88,6 +90,7 @@ export const JOURNAL_KIND_GROUPS: Readonly<Record<JournalKind, JournalGroup>> = 
   eauNeuve: 'entretien',
   alerte: 'alertes',
   vieillesse: 'sante',
+  mue: 'sante',
 };
 
 /** Texte d'un journal sans ligne, ou sans ligne du type choisi (#655). */
@@ -104,7 +107,7 @@ export interface JournalEntry {
   /**
    * Précision selon la sorte : maladie (`DiseaseField`) pour `maladie` et `guerison`, sorte de
    * traitement (`TreatmentKind`) pour `traitement`, espèce (`SpeciesId`) pour `ponte`,
-   * `eclosion`, `naissance` et `vieillesse` (#857), alerte (`JournalAlertId`) pour `alerte` ; absente pour
+   * `eclosion`, `naissance`, `vieillesse` (#857) et `mue` (#859), alerte (`JournalAlertId`) pour `alerte` ; absente pour
    * `changementEau`, `seance`, `taille` et `eauNeuve`.
    */
   readonly detail?: string;
@@ -265,6 +268,8 @@ export interface JournalWatch {
   readonly alertNoted: Map<string, number>;
   /** Identifiants des corps déjà vus (#857) : une mort de vieillesse n'est notée qu'une fois. */
   deadSeen: Set<number>;
+  /** Temps de la dernière mue vue (#859) : seules les exuvies plus récentes sont notées. */
+  moltSeen: number;
 }
 
 /** Ce qu'`observeJournal` lit du monde. */
@@ -274,6 +279,8 @@ export interface JournalSubject {
   readonly eggs?: readonly Egg[];
   /** Corps du bac (#582) ; ceux marqués `vieillesse` entrent au journal (#857). */
   readonly dead?: readonly DeadAnimal[];
+  /** Exuvies du bac (#859) : chaque nouvelle mue entre au journal. */
+  readonly exuviae?: readonly Exuvia[];
   /** Alertes du tableau de bord du bac (#592) ; absentes : aucune. */
   readonly alerts?: readonly JournalAlert[];
 }
@@ -293,6 +300,7 @@ export function watchJournal(world: JournalSubject): JournalWatch {
     alerts: alertLevels(world.alerts),
     alertNoted: new Map(),
     deadSeen: deadIds(world.dead),
+    moltSeen: lastMolt(world.exuviae, -Infinity),
   };
 }
 
@@ -316,6 +324,7 @@ export function observeJournal(watch: JournalWatch, world: JournalSubject): Jour
   pushLayingEvents(events, time, watch, world.eggs);
   pushHatchingEvents(events, time, changes.hatched);
   pushOldAgeEvents(events, time, watch, world.dead);
+  pushMoltEvents(events, time, watch, world.exuviae);
   pushAlertEvents(events, time, watch, world.alerts);
   return events;
 }
@@ -438,6 +447,32 @@ function pushOldAgeEvents(
   watch.deadSeen = deadIds(dead);
 }
 
+/**
+ * Mues (#859) : exuvies plus récentes que la dernière vue, par espèce, dans l'ordre des exuvies ;
+ * une ligne neutre de la famille « Santé ». Met à jour `watch.moltSeen`.
+ */
+function pushMoltEvents(
+  events: JournalEntry[],
+  time: number,
+  watch: JournalWatch,
+  exuviae: readonly Exuvia[] | undefined,
+): void {
+  const molted = new Map<SpeciesId, number>();
+  for (const shell of exuviae ?? []) {
+    if (shell.time > watch.moltSeen) {
+      molted.set(shell.species, (molted.get(shell.species) ?? 0) + 1);
+    }
+  }
+  for (const [species, count] of molted) {
+    events.push({ time, kind: 'mue', detail: species, count });
+  }
+  watch.moltSeen = lastMolt(exuviae, watch.moltSeen);
+}
+
+function lastMolt(exuviae: readonly Exuvia[] | undefined, seen: number): number {
+  return (exuviae ?? []).reduce((latest, shell) => Math.max(latest, shell.time), seen);
+}
+
 function deadIds(dead: readonly DeadAnimal[] | undefined): Set<number> {
   return new Set((dead ?? []).map((body) => body.id));
 }
@@ -554,10 +589,20 @@ const FIXED_TEXTS = {
   changementEau: 'Changement d’eau',
 } as const satisfies Partial<Record<JournalKind, string>>;
 
+/** Début du texte des sortes « espèce (effectif) » (#857, #859). */
+const SPECIES_ANIMAL_TEXTS = { vieillesse: 'Mort de vieillesse', mue: 'Mue' } as const;
+
+function isSpeciesAnimalKind(kind: JournalKind): kind is keyof typeof SPECIES_ANIMAL_TEXTS {
+  return Object.hasOwn(SPECIES_ANIMAL_TEXTS, kind);
+}
+
 /** Texte d'une entrée, en français. */
 export function journalText(entry: JournalEntry): string {
   const count = entry.count ?? 1;
   const animals = `${count} ${count > 1 ? 'animaux' : 'animal'}`;
+  if (isSpeciesAnimalKind(entry.kind)) {
+    return `${SPECIES_ANIMAL_TEXTS[entry.kind]} : ${speciesLabel(entry.detail)} (${animals})`;
+  }
   switch (entry.kind) {
     case 'maladie':
       return `Maladie déclarée : ${diseaseLabel(entry.detail)} (${animals})`;
@@ -573,8 +618,6 @@ export function journalText(entry: JournalEntry): string {
       return `Naissance : ${count} alevin${count > 1 ? 's' : ''} (${speciesLabel(entry.detail)})`;
     case 'taille':
       return `Taille des plantes (${count} coupe${count > 1 ? 's' : ''})`;
-    case 'vieillesse':
-      return `Mort de vieillesse : ${speciesLabel(entry.detail)} (${animals})`;
     case 'alerte':
       return `Alerte ${entry.severity === 'critique' ? 'critique' : 'attention'} : ${alertLabel(entry.detail)}`;
     default:
@@ -687,6 +730,7 @@ const ENTRY_RULES: Readonly<Record<JournalKind, (entry: JournalEntry) => boolean
   eclosion: withoutSeverity(({ detail }) => isSpeciesDetail(detail)),
   naissance: withoutSeverity(({ detail }) => isSpeciesDetail(detail)),
   vieillesse: withoutSeverity(({ detail }) => isSpeciesDetail(detail)),
+  mue: withoutSeverity(({ detail }) => isSpeciesDetail(detail)),
   changementEau: withoutSeverity(({ detail }) => detail === undefined),
   taille: withoutSeverity(({ detail }) => detail === undefined),
   seance: withoutSeverity(({ detail, count }) => detail === undefined && count === undefined),

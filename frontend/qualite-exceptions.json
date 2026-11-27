@@ -6,7 +6,7 @@
     "max-params": 6
   },
   "render/aquarium-view.ts": {
-    "max-lines": 639
+    "max-lines": 634
   },
   "render/coral-model.ts": {
     "max-params": 6

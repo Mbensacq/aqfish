@@ -210,8 +210,8 @@ describe('caractérisation : readJournal et isEntry (#686, lot 6)', () => {
     }
     expect(valid).toBeGreaterThan(50);
     expect(invalid).toBeGreaterThan(valid);
-    // Sorte « vieillesse » ajoutée (#857) : nouvelles entrées valides.
-    expect(hash.digest()).toBe('132895329961de');
+    // Sortes « vieillesse » (#857) puis « mue » (#859) ajoutées : nouvelles entrées valides.
+    expect(hash.digest()).toBe('0a4fcb069dcc82');
   });
 });
 

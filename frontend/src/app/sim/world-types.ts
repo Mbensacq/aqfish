@@ -13,6 +13,7 @@ import type { MaintenanceState } from './maintenance';
 import type { DeadAnimal } from './mortality';
 import type { Obstacle } from './obstacles';
 import type { PondShape } from './pond-shape';
+import type { Exuvia } from './shrimp-molt';
 import type { SpeciesId } from './species';
 import type { Fish } from './swimmer';
 import type { TankDimensions } from './tank';
@@ -149,6 +150,11 @@ export interface World {
    * Absents tant qu'aucun corps n'est dans le bac.
    */
   readonly dead?: readonly DeadAnimal[];
+  /**
+   * Exuvies des crevettes (issue #859, `sim/shrimp-molt.ts`), dans l'ordre des mues : elles
+   * reposent au sol puis se dissolvent. Absentes tant qu'aucune n'est dans le bac.
+   */
+  readonly exuviae?: readonly Exuvia[];
 }
 
 /** Copie de `T` sans `readonly` (premier niveau seulement). */

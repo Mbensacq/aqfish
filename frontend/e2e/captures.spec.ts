@@ -348,6 +348,22 @@ test.describe('Captures', () => {
     });
   }
 
+  // Mues des crevettes cerises (#859) : colonie de douze crevettes à 1 200 s (temps propre :
+  // le `time=` commun passerait devant), six exuvies claires au sable, là où elles ont mué.
+  for (const camera of ['top', 'front'] as const) {
+    test(`angle ${camera}-mues`, async ({ page }) => {
+      const errors: string[] = [];
+      page.on('pageerror', (error) => errors.push(error.message));
+      await page.goto(`/?capture=1&seed=${SEED}&camera=${camera}&time=1200&${SHRIMP_COLONY}`);
+      await expect(page.locator('body')).toHaveAttribute('data-aqfish-ready', 'true');
+      await page.screenshot({
+        path: join(OUTPUT_DIR, `${camera}-mues.png`),
+        animations: 'disabled',
+      });
+      expect(errors).toEqual([]);
+    });
+  }
+
   // Nourriture non mangée (#638) : bac sans poissons, à 62 s. La ration du centre (t = 0) s'est
   // décomposée (disparue, son ammoniaque dans l'eau) ; celle du rocher (t = 25) est posée et se
   // décompose à son tour une demi-minute après. Temps propre : à 30 s, rien n'a encore expiré.

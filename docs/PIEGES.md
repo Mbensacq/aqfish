@@ -2173,3 +2173,10 @@ true })`) : au niveau de la cible, Chromium appelle les écouteurs de capture d'
   l'élément actif. Échap, lui, réaffiche même depuis un champ. Les entrées plus haut sur le
   mode immersif (minuteries SwiftShader, deux vues WebGL, population `smallSwimmers`) ne
   valent plus que pour `sim/immersive-tank.ts`, retiré à la tranche 2 de #725. (2026-11-22)
+- **`time=` ignoré dans les captures de jour** (cycle 317, #859) : la boucle des captures de jour
+  (`e2e/captures.spec.ts`) écrit `time=${TIME_SECONDS}` (30 s) avant la requête, et
+  `URLSearchParams.get` lit le premier : un `time=` dans `query` n'a aucun effet (c'est le cas de
+  `front-algues-brouteurs`, prise à 30 s malgré son `time=600`). Pour un autre temps, écrire un
+  test à part (`three-quarter-nourriture-decomposition`, `top-mues`). Autre piège revu : un
+  objet crème de la file opaque (exuvies, capsules) vire au vert d'eau pâle à la passe palette
+  et se fond dans le sable ; le dessiner après l'eau. (2026-11-27)
