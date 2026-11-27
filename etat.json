@@ -11518,10 +11518,10 @@
           "note": "Verdict OK, 0 bug, captures c317 publiées (1 e2e de chronométrage instable sous charge, repasse seul)"
         },
         "revue": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-27T10:30:48.778Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-27T10:57:59.790Z",
+          "note": "PR #869 fusionnée → v1.34.2 (release CI OK, CI main verte), #859 fermée ; remarques mineures en #870"
         }
       },
       "metriques": {}
