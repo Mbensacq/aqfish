@@ -1,0 +1,2 @@
+Cycle 317 — branche cycle/c317-mue-crevettes, PR #869, commit 67ce5c6b, graine par défaut des captures, 182 tests de capture verts.
+Différences avec c316 : nouvelles captures front-mues, top-mues, dev-front-mues, dev-top-mues (attendues) ; three-quarter-salvinia et paludarium-three-quarter-oeufs : les mêmes 11 pixels du bandeau haut qu'au c316 (x 921-925, y 13-79), scène identique. Toutes les autres captures identiques à l'octet.
