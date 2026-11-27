@@ -11392,10 +11392,10 @@
       "version": null,
       "phases": {
         "planif": {
-          "statut": "en-cours",
+          "statut": "termine",
           "debut": "2026-11-27T01:38:48.642Z",
-          "fin": null,
-          "note": null
+          "fin": "2026-11-27T01:40:52.828Z",
+          "note": "Issue #861 : Rétro sprint 45 ; sprint 46 prêt (#856 à #860), Dev : audit #729 et ROADMAP (S)"
         }
       },
       "metriques": {}
