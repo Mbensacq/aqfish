@@ -11648,6 +11648,12 @@
           "debut": "2026-11-27T23:41:56.625Z",
           "fin": "2026-11-27T23:43:09.962Z",
           "note": "Issue #878 : rétro sprint 46, plan sprint 47 (#860, #864, #862, #876, #877), dette #875 (S)"
+        },
+        "dev": {
+          "statut": "en-cours",
+          "debut": "2026-11-27T23:43:45.798Z",
+          "fin": null,
+          "note": null
         }
       },
       "metriques": {}
