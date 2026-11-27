@@ -11453,6 +11453,24 @@
         }
       },
       "metriques": {}
+    },
+    "316": {
+      "numero": 316,
+      "date": "2026-11-27",
+      "debut": "2026-11-27T04:55:50.687Z",
+      "type": "fonctionnalite",
+      "issue": null,
+      "pr": null,
+      "version": null,
+      "phases": {
+        "planif": {
+          "statut": "en-cours",
+          "debut": "2026-11-27T04:55:50.687Z",
+          "fin": null,
+          "note": null
+        }
+      },
+      "metriques": {}
     }
   },
   "jours": {
